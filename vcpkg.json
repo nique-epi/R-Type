@@ -1,0 +1,25 @@
+{
+  "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
+  "name": "r-type",
+  "builtin-baseline": "9e593bb18ea69cc5095e012465dcd675a822ed0d",
+  "dependencies": [
+    "asio",
+    {
+      "name": "sfml",
+      "default-features": false,
+      "features": [
+        "audio",
+        "graphics",
+        "window"
+      ]
+    }
+  ],
+  "features": {
+    "tests": {
+      "description": "Build the unit tests",
+      "dependencies": [
+        "gtest"
+      ]
+    }
+  }
+}
