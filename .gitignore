@@ -1,0 +1,12 @@
+build/
+.cache/
+compile_commands.json
+Testing/
+/r-type_server
+/r-type_client
+/Debug/
+/Release/
+/RelWithDebInfo/
+/MinSizeRel/
+.DS_Store
+B-CPP-500_rtype.pdf

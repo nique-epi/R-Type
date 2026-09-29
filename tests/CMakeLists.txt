@@ -1,0 +1,35 @@
+find_package(GTest CONFIG REQUIRED)
+
+include(GoogleTest)
+
+function(rtype_add_test)
+  set(oneValueArgs NAME)
+  set(multiValueArgs SOURCES LIBS)
+  cmake_parse_arguments(ARG "" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
+
+  if(NOT ARG_NAME)
+    message(FATAL_ERROR "rtype_add_test: NAME is required")
+  endif()
+  if(NOT ARG_SOURCES)
+    message(FATAL_ERROR "rtype_add_test(${ARG_NAME}): SOURCES is required")
+  endif()
+
+  add_executable(${ARG_NAME} ${ARG_SOURCES})
+
+  target_link_libraries(${ARG_NAME}
+    PRIVATE
+      GTest::gtest_main
+      ${ARG_LIBS}
+  )
+
+  set_target_properties(${ARG_NAME}
+    PROPERTIES
+      RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+  )
+
+  rtype_enable_warnings(${ARG_NAME})
+
+  gtest_discover_tests(${ARG_NAME})
+endfunction()
+
+rtype_add_test(NAME harness_tests SOURCES HarnessTest.cpp)
