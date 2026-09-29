@@ -1,6 +1,7 @@
 ---
 description: Nom de fichier = nom PascalCase exact de la classe principale qu'il déclare ou définit
-trigger: always_on
+paths:
+  - "**/*.{cpp,hpp,tpp}"
 ---
 
 # RULE : Nom de fichier = nom `PascalCase` de la classe principale

@@ -1,6 +1,7 @@
 ---
 description: Séparation stricte .hpp / .cpp — le header déclare, le .cpp définit
-trigger: always_on
+paths:
+  - "**/*.{cpp,hpp,tpp}"
 ---
 
 # RULE : Un `.hpp` ne contient que des déclarations, toute définition va dans le `.cpp`

@@ -1,6 +1,7 @@
 ---
 description: Nommage des constantes — pas de préfixe k, lowerCamelCase par défaut, UPPER_SNAKE_CASE toléré pour les constantes publiques d'un header
-trigger: always_on
+paths:
+  - "**/*.{cpp,hpp,tpp}"
 ---
 
 # RULE : Pas de préfixe `k` pour les constantes

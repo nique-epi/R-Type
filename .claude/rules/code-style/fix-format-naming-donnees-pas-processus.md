@@ -1,6 +1,7 @@
 ---
 description: Les classes et fichiers structurels se nomment d'après la donnée ou le domaine qu'ils servent, jamais d'après un processus ou du jargon
-trigger: always_on
+paths:
+  - "**/*.{cpp,hpp,tpp}"
 ---
 
 # RULE : Les artefacts structurels se nomment d'après la DONNÉE / le DOMAINE qu'ils servent, jamais d'après un processus ou du jargon

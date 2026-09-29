@@ -1,6 +1,7 @@
 ---
-description: Gestion d'erreur — exceptions custom par module dans Exceptions/, jamais de throw std:: brut ni de message en dur
-trigger: always_on
+description: "Gestion d'erreur — exceptions custom par module dans Exceptions/, jamais de throw std:: brut ni de message en dur"
+paths:
+  - "**/*.{cpp,hpp,tpp}"
 ---
 
 # RULE : Les erreurs métier se lèvent via des exceptions custom du module, jamais `throw std::…` brut

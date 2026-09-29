@@ -1,6 +1,7 @@
 ---
 description: Commentaires — anglais, Doxygen au-dessus des déclarations, aucun commentaire dans le corps des fonctions, zéro référence de ticket
-trigger: always_on
+paths:
+  - "**/*.{cpp,hpp,tpp}"
 ---
 
 # RULE : Commentaires en anglais, au-dessus des déclarations, jamais dans le corps, sans référence de ticket

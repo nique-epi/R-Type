@@ -31,7 +31,7 @@ Nommer l'erreur clairement, expliquer brièvement ce qui s'est passé, ne pas la
 
 Le cœur est chargé à chaque session ; l'historique ne l'est pas. Seul ce qui prescrit va dans le cœur, le récit de l'incident va dans l'historique.
 
-**Cœur** — `.claude/rules/fix-[catégorie]-[description-courte].md` :
+**Cœur** — `.claude/rules/fix/[catégorie]/fix-[catégorie]-[description-courte].md` :
 
 ```markdown
 ---
@@ -51,7 +51,7 @@ Pourquoi : [une phrase, seulement si la règle ne se comprend pas sans elle]
 - ✅ **Après (correct)** : [ce qu'il faut faire à la place]
 ```
 
-**Historique** — `.claude/rules-history/fix-[catégorie]-[description-courte].md`, jamais chargé (hors de `.claude/rules/`, que Claude Code charge en entier) : le fichier complet, avec `## Contexte`, `## Erreur commise`, `## Cause racine`, puis la règle et l'exemple.
+**Historique** — `.claude/rules-history/fix-[catégorie]-[description-courte].md`, jamais chargé (hors de `.claude/rules/`, que Claude Code charge en entier, sous-dossiers compris) : le fichier complet, avec `## Contexte`, `## Erreur commise`, `## Cause racine`, puis la règle et l'exemple.
 
 **Récidive ou complément** : la prescription s'ajoute au cœur sous un sous-titre `### <titre court>` de « Règle à appliquer » ; le récit s'ajoute à l'historique dans une section `## Mise à jour (date) — <titre>`.
 
@@ -71,7 +71,8 @@ Indiquer le nom du fichier créé, résumer la règle en une phrase, reprendre l
 - **Granularité** : une rule = une erreur spécifique. Pas de rule fourre-tout.
 - **Clarté** : la section « Règle à appliquer » est une instruction simple, autoportante.
 - **Pas de doublons** : avant de créer, vérifier qu'aucune rule ne couvre déjà le cas. Si oui, l'enrichir plutôt que d'en créer une nouvelle.
-- **Nommage cohérent** : catégories `raisonnement`, `execution`, `interpretation`, `format`, `process`, `architecture`.
+- **Nommage cohérent** : catégories `raisonnement`, `execution`, `interpretation`, `format`, `process`, `architecture`. Le sous-dossier `fix/<catégorie>/` porte la catégorie ; le préfixe `fix-<catégorie>-` reste dans le nom du fichier.
+- **Portée par chemin** : une rule qui ne concerne que le code C++ va dans `architecture/` ou `code-style/` avec `paths: ["**/*.{cpp,hpp,tpp}"]` dans son frontmatter ; elle n'est alors chargée que quand un fichier C++ est lu. Toute autre rule reste sans `paths`, donc chargée à chaque session. Le frontmatter doit rester du YAML valide (description entre guillemets si elle contient `: `), sinon `paths` est ignoré.
 - **Langue** : français (langue de travail du projet). Les exemples de code restent en anglais, comme le code.
 - **Dépôt public** : une rule ou un historique ne contient ni secret, ni donnée personnelle, ni détail d'un autre projet.
 - **Portée** : les `fix-*.md` sont contraignants au même titre que les rules de contrat. Les consulter et les appliquer avant de coder ou de livrer.

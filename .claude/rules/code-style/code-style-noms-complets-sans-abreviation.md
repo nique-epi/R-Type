@@ -1,6 +1,7 @@
 ---
 description: Identifiants — noms complets et explicites, jamais d'abréviation, même idiomatique dans le domaine
-trigger: always_on
+paths:
+  - "**/*.{cpp,hpp,tpp}"
 ---
 
 # RULE : Pas d'abréviation dans les identifiants

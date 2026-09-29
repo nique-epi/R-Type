@@ -1,6 +1,7 @@
 ---
 description: Membres privés — underscore en suffixe (name_), jamais en préfixe ; pas d'underscore sur les membres publics
-trigger: always_on
+paths:
+  - "**/*.{cpp,hpp,tpp}"
 ---
 
 # RULE : Underscore en suffixe pour les membres privés

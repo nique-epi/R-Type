@@ -1,6 +1,7 @@
 ---
 description: Interfaces C++ — uniquement des méthodes pures (= 0) et un destructeur virtuel = default
-trigger: always_on
+paths:
+  - "**/*.{cpp,hpp,tpp}"
 ---
 
 # RULE : Une interface n'expose que des méthodes purement virtuelles

@@ -1,6 +1,7 @@
 ---
 description: Valeurs magiques — adresses, ports, nombres et chaînes porteurs de sens en constantes nommées, jamais inline
-trigger: always_on
+paths:
+  - "**/*.{cpp,hpp,tpp}"
 ---
 
 # RULE : Adresses, ports, magic numbers et magic strings — JAMAIS inline, toujours en constantes nommées

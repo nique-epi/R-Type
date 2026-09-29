@@ -1,6 +1,7 @@
 ---
 description: Tests GoogleTest — un comportement par test, nom descriptif, doc-comment Given / When / Then au-dessus du TEST
-trigger: always_on
+paths:
+  - "**/*.{cpp,hpp,tpp}"
 ---
 
 # RULE : Chaque test décrit son scénario en Given / When / Then
