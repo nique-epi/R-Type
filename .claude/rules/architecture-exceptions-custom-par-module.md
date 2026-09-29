@@ -18,7 +18,6 @@ Une exception `std::` générique levée depuis le code métier ne porte aucune 
 - **Pas de message en dur dans le `throw`** : le message est construit par la classe d'exception, à partir de ses paramètres ou de constantes nommées du module.
 - **Avant de créer une exception, vérifier qu'elle n'existe pas déjà** ; sinon étendre l'existante plutôt que multiplier les classes.
 - Les fichiers d'`Exceptions/` sont ajoutés à la cible CMake du module.
-- Une exception **ne traverse jamais la boucle réseau du serveur** : une erreur due à un client (paquet invalide, client inconnu) se traite au niveau de ce client, sans faire tomber le serveur.
 - Écrire `throw std::` est le signal qu'il manque une classe dans l'`Exceptions/` du module.
 
 ## Exemples

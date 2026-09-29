@@ -39,7 +39,7 @@ Chaque fichier de `.claude/rules/` est une règle isolée, chargée automatiquem
 |---|---|
 | Écrire du C++ | `architecture-*.md`, `code-style-*.md`, `fix-architecture-*.md` |
 | Écrire un test | `code-style-tests-given-when-then.md`, `fix-process-test-vert-qui-verrouille-un-defaut-et-fake-trop-deterministe.md` |
-| Toucher au réseau | `architecture-parseur-parse-ne-valide-pas.md`, section sécurité de `code-review.md` |
+| Toucher au réseau | section sécurité de `code-review.md` |
 | Créer une branche | `fix-process-brancher-avant-le-premier-commit-jamais-sur-la-branche-en-cours.md`, `fix-execution-checkout-b-part-de-head-pas-de-main.md` |
 | Committer | `commit.md`, `fix-process-pas-de-co-author-commit.md`, `fix-execution-verifier-l-index-avant-de-committer.md` |
 | Ouvrir une PR | `fix-format-pull-requests-en-anglais.md`, `fix-process-pr-toujours-creee-en-draft.md` |
@@ -60,10 +60,7 @@ Chaque fichier de `.claude/rules/` est une règle isolée, chargée automatiquem
 - `architecture-hpp-declarations-cpp-definitions.md`
 - `architecture-interfaces-purement-virtuelles.md`
 - `architecture-exceptions-custom-par-module.md`
-- `architecture-parseur-parse-ne-valide-pas.md`
-- `architecture-logger-instance-par-module.md`
 - `fix-architecture-urls-et-valeurs-magiques-en-constantes.md`
-- `fix-architecture-config-metier-constantes-pas-env.md`
 
 **Style de code**
 - `code-style-constantes-sans-prefixe-k.md`
@@ -137,6 +134,5 @@ Chaque fichier de `.claude/rules/` est une règle isolée, chargée automatiquem
 - [ ] `cmake --workflow --preset test` vert, **zéro warning**, sortie et code de retour lus.
 - [ ] `format-check` et `tidy` verts.
 - [ ] Aucune violation des rules `architecture-*` et `code-style-*`.
-- [ ] Toute entrée réseau validée avant d'être parsée.
 - [ ] Tests Given / When / Then pour le comportement ajouté ou corrigé.
 - [ ] Commits et PR en anglais, **aucune mention d'IA**, PR ouverte en draft.

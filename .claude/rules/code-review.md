@@ -57,7 +57,7 @@ Dans cet ordre d'importance :
 
 Le serveur reçoit des données de clients **non fiables** sur le réseau.
 
-- **Entrées réseau** : toute taille, tout index, tout identifiant lu dans un paquet est borné **avant** usage. Un paquet tronqué, trop long ou d'un type inconnu est rejeté sans crash (cf. `architecture-parseur-parse-ne-valide-pas.md` pour *où* vit cette validation).
+- **Entrées réseau** : toute taille, tout index, tout identifiant lu dans un paquet est borné **avant** usage. Un paquet tronqué, trop long ou d'un type inconnu est rejeté sans crash.
 - **Mémoire** : pas de lecture/écriture hors borne, pas de pointeur ou référence qui survit à son propriétaire, pas de `reinterpret_cast` sur un buffer réseau sans contrôle de taille et d'alignement.
 - **Endianness et types** : format sur le fil explicite (taille fixe, ordre des octets défini), jamais `sizeof` d'une struct non packée envoyée telle quelle.
 - **Concurrence** : toute donnée partagée entre le thread réseau et la boucle de jeu est protégée ou transférée par une file dédiée.
@@ -73,7 +73,6 @@ Le serveur reçoit des données de clients **non fiables** sur le réseau.
 | Aucun corps de méthode dans un `.hpp` (hors templates, `constexpr`, `= default`/`= delete`) | `architecture-hpp-declarations-cpp-definitions.md` |
 | Interfaces : uniquement des méthodes `= 0` + destructeur virtuel `= default` | `architecture-interfaces-purement-virtuelles.md` |
 | Erreurs métier en exceptions custom par module, jamais `throw std::…` brut | `architecture-exceptions-custom-par-module.md` |
-| Un parseur/désérialiseur ne valide pas ; la validation vit dans une couche distincte | `architecture-parseur-parse-ne-valide-pas.md` |
 | Nommage : pas de préfixe `k`, pas d'abréviation, `membre_` en suffixe, fichier = classe | `code-style-*.md` |
 | Commentaires en anglais, hors du corps des fonctions, sans référence de ticket | `code-style-commentaires-anglais-hors-du-corps-sans-tickets.md` |
 | Valeurs magiques en constantes nommées | `fix-architecture-urls-et-valeurs-magiques-en-constantes.md` |
