@@ -62,6 +62,8 @@ jobs:
           restore-keys: vcpkg-${{ runner.os }}-
 
       - name: Configure
+        env:
+          VCPKG_SSL_REVOKE_BEST_EFFORT: ${{ runner.os == 'Windows' && '1' || '0' }}
         run: cmake --preset test -DCMAKE_COMPILE_WARNING_AS_ERROR=ON
 
       - name: Save vcpkg binary cache
