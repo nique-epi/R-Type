@@ -1,0 +1,78 @@
+name: build and test
+
+on:
+  push:
+    branches:
+      - "main"
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  format-check:
+    name: Format check
+    runs-on: ubuntu-latest
+    container: epitechcontent/epitest-docker:latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install clang-format
+        run: apt-get update && apt-get install -y clang-format-20
+
+      - name: Check formatting
+        run: |
+          find src tests \( -name '*.cpp' -o -name '*.hpp' \) -print0 \
+            | xargs -0 clang-format-20 --dry-run -Werror
+
+  build:
+    name: Build and test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          submodules: true
+
+      - name: Install system dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libx11-dev libxi-dev libxrandr-dev libxcursor-dev libudev-dev libgl1-mesa-dev
+
+      - name: Point vcpkg at a local binary cache
+        shell: bash
+        run: |
+          cmake -E make_directory "$RUNNER_TEMP/vcpkg-cache"
+          echo "VCPKG_BINARY_SOURCES=clear;files,$RUNNER_TEMP/vcpkg-cache,readwrite" >> "$GITHUB_ENV"
+
+      - name: Restore vcpkg binary cache
+        id: vcpkg-cache
+        uses: actions/cache/restore@v4
+        with:
+          path: ${{ runner.temp }}/vcpkg-cache
+          key: vcpkg-${{ runner.os }}-${{ hashFiles('vcpkg.json') }}
+          restore-keys: vcpkg-${{ runner.os }}-
+
+      - name: Configure
+        env:
+          VCPKG_SSL_REVOKE_BEST_EFFORT: ${{ runner.os == 'Windows' && '1' || '0' }}
+        run: cmake --preset test -DCMAKE_COMPILE_WARNING_AS_ERROR=ON
+
+      - name: Save vcpkg binary cache
+        if: steps.vcpkg-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: ${{ runner.temp }}/vcpkg-cache
+          key: ${{ steps.vcpkg-cache.outputs.cache-primary-key }}
+
+      - name: Build
+        run: cmake --build --preset test
+
+      - name: Test
+        run: ctest --preset test
