@@ -9,6 +9,15 @@
         "CMAKE_BUILD_TYPE": "Release",
         "BUILD_TESTS": "OFF"
       }
+    },
+    {
+      "name": "test",
+      "inherits": "default",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "BUILD_TESTS": "ON",
+        "VCPKG_MANIFEST_FEATURES": "tests"
+      }
     }
   ],
   "buildPresets": [
@@ -16,6 +25,21 @@
       "name": "default",
       "configurePreset": "default",
       "configuration": "Release"
+    },
+    {
+      "name": "test",
+      "configurePreset": "test",
+      "configuration": "Debug"
+    }
+  ],
+  "testPresets": [
+    {
+      "name": "test",
+      "configurePreset": "test",
+      "configuration": "Debug",
+      "output": {
+        "outputOnFailure": true
+      }
     }
   ],
   "workflowPresets": [
@@ -29,6 +53,23 @@
         {
           "type": "build",
           "name": "default"
+        }
+      ]
+    },
+    {
+      "name": "test",
+      "steps": [
+        {
+          "type": "configure",
+          "name": "test"
+        },
+        {
+          "type": "build",
+          "name": "test"
+        },
+        {
+          "type": "test",
+          "name": "test"
         }
       ]
     }
