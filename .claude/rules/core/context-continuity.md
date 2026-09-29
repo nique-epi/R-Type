@@ -1,31 +1,31 @@
 ---
-description: Continuité de contexte — tenir .context/context.md à jour au fil de l'eau comme point de reprise
+description: Context continuity — keep .context/context.md up to date as you go, as the resume point
 trigger: always_on
 ---
 
-# RULE : Continuité de contexte
+# RULE: Context continuity
 
-## Objectif
+## Goal
 
-Le point de reprise du travail doit être **à jour en permanence**, pas seulement en fin de conversation. La prochaine session — ou un reset de contexte en plein milieu — doit pouvoir reprendre **sans re-lire ni ré-explorer** les mêmes fichiers. Chaque re-découverte est un coût payé deux fois.
+The resume point of the work must be **up to date at all times**, not only at the end of a conversation. The next session — or a context reset mid-session — must be able to resume **without re-reading or re-exploring** the same files. Every rediscovery is a cost paid twice.
 
-Sur ce projet, le point de reprise est **`.context/context.md`**. Il est local à chaque développeur (ignoré par git) : il décrit **ma** session, pas l'état de l'équipe.
+On this project the resume point is **`.context/context.md`**. It is local to each developer (ignored by git): it describes **my** session, not the state of the team.
 
-## Règles
+## Rules
 
-- **Cadence** : mettre à jour `.context/context.md` **au fil de l'eau** — après chaque commit atomique ou unité logique de travail, à chaque décision d'architecture, quand on découvre le fonctionnement d'un sous-système (moteur, ECS, protocole réseau, build), à l'ouverture/merge d'une PR, à la correction d'un bug, et quand l'utilisateur demande de faire une pause. Une continuité écrite seulement à la fin est perdue si la session est interrompue avant.
-- **Contenu** :
-  - **Où on en est** : branche courante, étape, statut ;
-  - **Ce qui a été fait** : commits, fichiers touchés, décisions prises ;
-  - **Prochaine étape** : la commande ou l'action exacte pour reprendre ;
-  - **Fichiers clés** du travail en cours ;
-  - **En attente** : ce qui est inachevé ou attend l'utilisateur ;
-  - **Décisions importantes** qui engagent la suite.
-- **Compaction** : au-delà de ~150 lignes, archiver les étapes terminées dans une section « History » (2-3 lignes chacune), garder l'étape courante détaillée, conserver tous les items en attente et les décisions engageantes.
-- **Format** : scannable — tables pour les listes de fichiers, puces pour les décisions, blocs de code pour les commandes. Pas de longs paragraphes.
-- **Ce qui concerne l'équipe ne vit pas ici** : une décision d'architecture partagée va dans la doc du dépôt ou dans la PR, pas seulement dans un fichier ignoré.
+- **Cadence**: update `.context/context.md` **as you go** — after each atomic commit or logical unit of work, at each architecture decision, when you learn how a subsystem works (engine, ECS, network protocol, build), when a PR is opened or merged, when a bug is fixed, and when the user asks to pause. Continuity written only at the end is lost if the session is interrupted before.
+- **Content**:
+  - **Where we are**: current branch, step, status;
+  - **What was done**: commits, files touched, decisions made;
+  - **Next step**: the exact command or action to resume;
+  - **Key files** of the current work;
+  - **Pending**: what is unfinished or waiting on the user;
+  - **Important decisions** that commit the future.
+- **Compaction**: past ~150 lines, archive finished steps into a "History" section (2-3 lines each), keep the current step detailed, keep every pending item and every binding decision.
+- **Format**: scannable — tables for file lists, bullets for decisions, code blocks for commands. No long paragraphs.
+- **What concerns the team does not live here**: a shared architecture decision goes into the repository docs or the PR, not only into an ignored file.
 
-## Exemples
+## Examples
 
-- ❌ **Interdit** : enchaîner cinq commits puis mettre `.context/context.md` à jour d'un coup à la fin (ou pas du tout) → une interruption au commit 3 perd tout le fil.
-- ✅ **À la place** : après chaque étape signifiante, refléter l'avancement dans `.context/context.md` **avant** de passer à la suite.
+- ❌ **Forbidden**: chaining five commits then updating `.context/context.md` all at once at the end (or not at all) → an interruption at commit 3 loses the thread.
+- ✅ **Instead**: after each meaningful step, reflect progress in `.context/context.md` **before** moving on.

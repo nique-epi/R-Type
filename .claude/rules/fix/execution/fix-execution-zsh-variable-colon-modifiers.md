@@ -1,17 +1,17 @@
 ---
-description: En zsh, $VAR:qqchose déclenche les modifiers d'expansion — écrire les specs git rev:path en littéral
+description: In zsh, $VAR:something triggers expansion modifiers — write git rev:path specs literally
 trigger: always_on
 ---
 
-# RULE : En zsh, `$VAR:chemin` déclenche les MODIFIERS d'expansion (`:s`, `:h`, `:t`…)
+# RULE: In zsh, `$VAR:path` triggers expansion MODIFIERS (`:s`, `:h`, `:t`…)
 
-## Règle à appliquer
+## Rule
 
-1. **Ne jamais écrire `$VAR:qqchose` nu en zsh.** Pour un spec git `rev:path`, écrire le littéral : `git show "origin/main:src/server/main.cpp"`. Les modifiers s'appliquent aussi entre guillemets ; si une variable est inévitable, placer le `:` hors de l'expansion : `git show "$rev":"$file"`.
-2. **Un `git show` qui affiche un en-tête de commit** alors qu'on attendait un contenu de fichier est le symptôme de ce bug (le chemin a été avalé). Ne jamais raisonner sur cette sortie.
-3. Tout idiome shell venu d'un réflexe bash se vérifie pour zsh avant d'interpréter son résultat.
+1. **Never write a bare `$VAR:something` in zsh.** For a git `rev:path` spec, write the literal: `git show "origin/main:src/server/main.cpp"`. Modifiers also apply inside quotes; if a variable is unavoidable, put the `:` outside the expansion: `git show "$rev":"$file"`.
+2. **A `git show` that prints a commit header** when you expected file content is the symptom of this bug (the path was swallowed). Never reason on that output.
+3. Any shell idiom coming from a bash reflex is checked for zsh before interpreting its result.
 
-## Exemple
+## Example
 
-- ❌ **Avant (incorrect)** : `base=$(git merge-base HEAD origin/main); git show $base:CMakeLists.txt` → zsh applique un modifier → sortie incohérente.
-- ✅ **Après (correct)** : `git show "$(git merge-base HEAD origin/main)":CMakeLists.txt` → contenu du fichier.
+- ❌ **Before (wrong)**: `base=$(git merge-base HEAD origin/main); git show $base:CMakeLists.txt` → zsh applies a modifier → inconsistent output.
+- ✅ **After (right)**: `git show "$(git merge-base HEAD origin/main)":CMakeLists.txt` → file content.

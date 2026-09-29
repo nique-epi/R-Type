@@ -1,29 +1,29 @@
 ---
-description: Séparation stricte .hpp / .cpp — le header déclare, le .cpp définit
+description: Strict .hpp / .cpp split — the header declares, the .cpp defines
 paths:
   - "**/*.{cpp,hpp,tpp}"
 ---
 
-# RULE : Un `.hpp` ne contient que des déclarations, toute définition va dans le `.cpp`
+# RULE: A `.hpp` only holds declarations, every definition goes in the `.cpp`
 
-## Objectif
+## Goal
 
-Un `.hpp` décrit l'**interface** d'un composant : il doit pouvoir être survolé en quelques secondes pour comprendre son API. Garder les corps de méthodes hors des headers réduit les temps de compilation, évite les dépendances transitives et sépare clairement contrat et implémentation.
+A `.hpp` describes the **interface** of a component: skimming it for a few seconds must be enough to understand its API. Keeping method bodies out of headers reduces compile times, avoids transitive dependencies and clearly separates contract from implementation.
 
-## Règles
+## Rules
 
-- Un `.hpp` contient uniquement : classes, signatures de méthodes, `enum`, `struct`, `using`, déclarations de templates, forward declarations.
-- **Aucune logique, aucun corps de méthode** dans un `.hpp` — y compris les getters/setters d'une ligne.
-- **Exceptions techniques, limitées et justifiées** :
-  - templates qui doivent être définis dans le header (ou dans un `.tpp` inclus en fin de header) ;
-  - `constexpr` quand la définition est requise à la compilation ;
-  - méthodes triviales `= default` / `= delete`.
-- Un header n'inclut que ce dont ses **déclarations** ont besoin ; le reste des `#include` va dans le `.cpp`. Préférer une forward declaration quand un pointeur ou une référence suffit.
-- S'applique à tout `.hpp` de `src/` et `tests/`.
+- A `.hpp` only contains: classes, method signatures, `enum`, `struct`, `using`, template declarations, forward declarations.
+- **No logic, no method body** in a `.hpp` — one-line getters and setters included.
+- **Limited, justified technical exceptions**:
+  - templates that must be defined in the header (or in a `.tpp` included at the end of the header);
+  - `constexpr` when the definition is needed at compile time;
+  - trivial `= default` / `= delete` methods.
+- A header only includes what its **declarations** need; other `#include`s go in the `.cpp`. Prefer a forward declaration when a pointer or reference is enough.
+- Applies to every `.hpp` in `src/` and `tests/`.
 
-## Exemples
+## Examples
 
-- ❌ **Interdit** (`Player.hpp`) :
+- ❌ **Forbidden** (`Player.hpp`):
   ```cpp
   class Player {
    public:
@@ -36,7 +36,7 @@ Un `.hpp` décrit l'**interface** d'un composant : il doit pouvoir être survol�
     int health_;
   };
   ```
-- ✅ **À la place** :
+- ✅ **Instead**:
   ```cpp
   // Player.hpp
   class Player {

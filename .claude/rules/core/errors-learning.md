@@ -1,84 +1,84 @@
 ---
-description: Auto-correction — créer une rule fix-* corrective à chaque erreur pour empêcher sa répétition
+description: Self-correction — create a corrective fix-* rule after every mistake so it cannot happen again
 trigger: always_on
 ---
 
-# RULE : Auto-correction par création de rules
+# RULE: Self-correction through new rules
 
-## Objectif
+## Goal
 
-Chaque fois qu'une erreur est commise — de raisonnement, d'exécution, d'interprétation, de format ou de comportement — une **rule corrective dédiée doit être créée** pour empêcher sa répétition. On construit ainsi, en continu, une base de connaissances corrective propre à **ce projet**. Cette règle est **toujours active** : la création d'une rule corrective fait partie intégrante du traitement de l'erreur, jamais reportée.
+Every time a mistake is made — in reasoning, execution, interpretation, format or behavior — a **dedicated corrective rule must be created** to prevent it from happening again. This continuously builds a corrective knowledge base specific to **this project**. The rule is **always active**: creating the corrective rule is part of handling the mistake, never postponed.
 
-## Déclencheurs
+## Triggers
 
-Créer une rule corrective quand :
+Create a corrective rule when:
 
-1. **Erreur de raisonnement** — déduction incorrecte, confusion de deux concepts, logique erronée.
-2. **Erreur d'exécution** — script/commande qui échoue à cause d'une syntaxe, d'un chemin ou d'un paramètre mal généré.
-3. **Erreur d'interprétation** — mauvaise compréhension de la demande, hypothèse fausse sur le contexte ou l'état du code.
-4. **Erreur de format / output** — livrable dans le mauvais format, mauvaise structure, conventions non respectées.
-5. **Erreur de process** — étape oubliée, mauvais ordre, contrainte explicite ignorée.
-6. **Régression** — répétition d'une erreur déjà signalée ou corrigée.
-7. **Correction par l'utilisateur** — l'utilisateur corrige explicitement, même sur un point mineur.
+1. **Reasoning error** — wrong deduction, two concepts confused, flawed logic.
+2. **Execution error** — a script or command fails because of a syntax, path or parameter I generated.
+3. **Interpretation error** — the request was misunderstood, or a wrong assumption was made about the context or the state of the code.
+4. **Format / output error** — deliverable in the wrong format or structure, conventions not followed.
+5. **Process error** — step forgotten, wrong order, explicit constraint ignored.
+6. **Regression** — repeating a mistake that was already reported or fixed.
+7. **User correction** — the user explicitly corrects something, even a minor point.
 
-## Procédure
+## Procedure
 
-### Étape 1 — Identifier et reconnaître
+### Step 1 — Identify and acknowledge
 
-Nommer l'erreur clairement, expliquer brièvement ce qui s'est passé, ne pas la noyer dans des excuses.
+Name the mistake clearly, briefly explain what happened, do not bury it in apologies.
 
-### Étape 2 — Créer la rule corrective, en deux fichiers de même nom
+### Step 2 — Create the corrective rule, as two files with the same name
 
-Le cœur est chargé à chaque session ; l'historique ne l'est pas. Seul ce qui prescrit va dans le cœur, le récit de l'incident va dans l'historique.
+The core is loaded every session; the history is not. Only what prescribes goes in the core; the story of the incident goes in the history.
 
-**Cœur** — `.claude/rules/fix/[catégorie]/fix-[catégorie]-[description-courte].md` :
+**Core** — `.claude/rules/fix/[category]/fix-[category]-[short-description].md`:
 
 ```markdown
 ---
-description: <une ligne>
+description: <one line>
 trigger: always_on
 ---
 
-# RULE : [Titre court et descriptif]
+# RULE: [Short, descriptive title]
 
-Pourquoi : [une phrase, seulement si la règle ne se comprend pas sans elle]
+Why: [one sentence, only if the rule cannot be understood without it]
 
-## Règle à appliquer
-[Instruction claire, impérative, actionnable, suivable sans contexte supplémentaire]
+## Rule
+[Clear, imperative, actionable instruction, usable without extra context]
 
-## Exemple
-- ❌ **Avant (incorrect)** : [ce qui a été fait]
-- ✅ **Après (correct)** : [ce qu'il faut faire à la place]
+## Example
+- ❌ **Before (wrong)**: [what was done]
+- ✅ **After (right)**: [what to do instead]
 ```
 
-**Historique** — `.claude/rules-history/fix-[catégorie]-[description-courte].md`, jamais chargé (hors de `.claude/rules/`, que Claude Code charge en entier, sous-dossiers compris) : le fichier complet, avec `## Contexte`, `## Erreur commise`, `## Cause racine`, puis la règle et l'exemple.
+**History** — `.claude/rules-history/fix-[category]-[short-description].md`, never loaded (outside `.claude/rules/`, which Claude Code loads entirely, subdirectories included): the full file, with `## Context`, `## Mistake`, `## Root cause`, then the rule and the example.
 
-**Récidive ou complément** : la prescription s'ajoute au cœur sous un sous-titre `### <titre court>` de « Règle à appliquer » ; le récit s'ajoute à l'historique dans une section `## Mise à jour (date) — <titre>`.
+**Recurrence or addition**: the new prescription is added to the core under a `### <short title>` subheading of "Rule"; the story is added to the history under `## Update (date) — <title>`.
 
-**Quand lire l'historique** — il porte le même nom que la rule, dans `.claude/rules-history/`, et se lit à la demande :
-- avant d'enrichir une rule sur une récidive (savoir ce qui a déjà été essayé et raté) ;
-- quand la portée d'une rule est douteuse sur le cas en cours (l'incident d'origine dit ce qu'elle visait) ;
-- quand l'utilisateur demande pourquoi une rule existe.
+**When to read the history** — it has the same name as the rule, in `.claude/rules-history/`, and is read on demand:
+- before extending a rule after a recurrence (to know what was already tried and failed);
+- when the scope of a rule is unclear for the case at hand (the original incident says what it targeted);
+- when the user asks why a rule exists.
 
-Les rules importées d'autres projets au démarrage de R-Type n'ont pas d'historique ici : leur incident d'origine appartient à un autre dépôt.
+Rules imported from other projects when R-Type started have no history here: their original incident belongs to another repository.
 
-### Étape 3 — Confirmer
+### Step 3 — Confirm
 
-Indiquer le nom du fichier créé, résumer la règle en une phrase, reprendre la tâche en appliquant immédiatement la correction.
+State the name of the created file, summarize the rule in one sentence, and resume the task applying the correction immediately.
 
-## Règles sur les rules
+## Rules about rules
 
-- **Granularité** : une rule = une erreur spécifique. Pas de rule fourre-tout.
-- **Clarté** : la section « Règle à appliquer » est une instruction simple, autoportante.
-- **Pas de doublons** : avant de créer, vérifier qu'aucune rule ne couvre déjà le cas. Si oui, l'enrichir plutôt que d'en créer une nouvelle.
-- **Nommage cohérent** : catégories `raisonnement`, `execution`, `interpretation`, `format`, `process`, `architecture`. Le sous-dossier `fix/<catégorie>/` porte la catégorie ; le préfixe `fix-<catégorie>-` reste dans le nom du fichier.
-- **Portée par chemin** : une rule qui ne concerne que le code C++ va dans `architecture/` ou `code-style/` avec `paths: ["**/*.{cpp,hpp,tpp}"]` dans son frontmatter ; elle n'est alors chargée que quand un fichier C++ est lu. Toute autre rule reste sans `paths`, donc chargée à chaque session. Le frontmatter doit rester du YAML valide (description entre guillemets si elle contient `: `), sinon `paths` est ignoré.
-- **Langue** : français (langue de travail du projet). Les exemples de code restent en anglais, comme le code.
-- **Dépôt public** : une rule ou un historique ne contient ni secret, ni donnée personnelle, ni détail d'un autre projet.
-- **Portée** : les `fix-*.md` sont contraignants au même titre que les rules de contrat. Les consulter et les appliquer avant de coder ou de livrer.
-- **Index** : toute nouvelle rule s'ajoute à la table de `.claude/CLAUDE.md`.
+- **Granularity**: one rule = one specific mistake. No catch-all rules.
+- **Clarity**: the "Rule" section is a simple, self-contained instruction.
+- **No duplicates**: before creating a rule, check that none already covers the case. If one does, extend it instead.
+- **Consistent naming**: categories `reasoning`, `execution`, `interpretation`, `format`, `process`, `architecture`. The `fix/<category>/` folder carries the category; the `fix-<category>-` prefix stays in the file name.
+- **Path scoping**: a rule that only concerns C++ code goes in `architecture/` or `code-style/` with `paths: ["**/*.{cpp,hpp,tpp}"]` in its frontmatter; it is then loaded only when a C++ file is read. Every other rule has no `paths` and is loaded every session. The frontmatter must stay valid YAML (quote the description if it contains `: `), otherwise `paths` is ignored.
+- **Language**: English, like the code, commits and pull requests.
+- **Public repository**: a rule or a history never contains secrets, personal data or details of another project.
+- **Scope**: `fix-*` rules are as binding as the contract rules. Read and apply them before coding or delivering.
+- **Index**: every new rule is added to the index in `.claude/CLAUDE.md`.
 
-## Exemples
+## Examples
 
-- ❌ **Interdit** : détecter une erreur, s'excuser, et reprendre sans rien acter — l'erreur pourra se reproduire.
-- ✅ **À la place** : détecter l'erreur → créer `fix-[catégorie]-[slug].md` (+ son historique) → confirmer → reprendre en appliquant la correction.
+- ❌ **Forbidden**: noticing a mistake, apologizing, and moving on without recording anything — the mistake can happen again.
+- ✅ **Instead**: notice the mistake → create `fix/[category]/fix-[category]-[slug].md` (+ its history) → confirm → resume applying the correction.

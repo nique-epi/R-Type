@@ -1,15 +1,15 @@
 ---
-description: Commits — Conventional Commits en anglais, types fixés, scope facultatif mais jamais vague, un commit = une intention
+description: Commits — Conventional Commits in English, fixed types, optional but never vague scope, one commit = one intent
 trigger: always_on
 ---
 
-# RULE : Commits Conventional Commits, sobres et en anglais
+# RULE: Plain Conventional Commits in English
 
-## Objectif
+## Goal
 
-Chaque commit produit par l'agent suit **strictement** Conventional Commits, en **anglais**, et décrit **une seule intention**. Un message non conforme ne part pas : on le corrige avant de committer.
+Every commit made by the agent **strictly** follows Conventional Commits, in **English**, and carries **a single intent**. A non-compliant message does not go out: fix it before committing.
 
-L'historique du dépôt fait foi pour le style (`git log --format=%s`) : sujets courts, à l'impératif, sans scope pour l'instant.
+The repository history is the reference for style (`git log --format=%s`): short subjects, imperative mood, no scope so far.
 
 ## Format
 
@@ -19,46 +19,46 @@ L'historique du dépôt fait foi pour le style (`git log --format=%s`) : sujets 
 [body]
 ```
 
-## Types autorisés
+## Allowed types
 
-`feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`, `revert`. Aucun autre type.
+`feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`, `revert`. No other type.
 
-| Type | Quand |
+| Type | When |
 |---|---|
-| `build` | CMake, presets, vcpkg, dépendances |
-| `ci` | workflows GitHub Actions |
-| `test` | ajout ou correction de tests seuls |
-| `chore` | outillage, configs de lint/format, fichiers du dépôt sans effet sur le binaire |
+| `build` | CMake, presets, vcpkg, dependencies |
+| `ci` | GitHub Actions workflows |
+| `test` | adding or fixing tests only |
+| `chore` | tooling, lint/format configs, repository files with no effect on the binaries |
 
 ## Scope
 
-- **Facultatif.** L'historique actuel n'en utilise pas ; on reste cohérent à l'intérieur d'une même PR.
-- S'il est utilisé, il désigne une **zone réelle du dépôt** (`server`, `client`, `engine`, `network`, `ecs`… selon l'arborescence du moment), en minuscules.
-- Jamais de scope vague : `misc`, `stuff`, `various`, `update`, `changes`, `project`, `tmp`.
-- Si un commit mélange deux zones sans rapport, **on le découpe** au lieu de chercher un scope large.
+- **Optional.** The current history uses none; stay consistent within a PR.
+- When used, it names a **real area of the repository** (`server`, `client`, `engine`, `network`, `ecs`… depending on the layout at the time), in lowercase.
+- Never a vague scope: `misc`, `stuff`, `various`, `update`, `changes`, `project`, `tmp`.
+- If a commit mixes two unrelated areas, **split it** instead of looking for a broad scope.
 
 ## Description
 
-1. Anglais, impératif présent (`add`, `fix`, `wire`), minuscule initiale, pas de point final.
-2. Dit l'**effet** du commit, pas la liste des fichiers.
-3. Aucune référence à un ticket, une tâche, une phase de plan (cf. `code-style-commentaires-anglais-hors-du-corps-sans-tickets.md`).
-4. Le body, s'il existe, explique le **pourquoi** ; lignes ≤ 100 caractères.
+1. English, imperative present (`add`, `fix`, `wire`), lowercase first letter, no trailing period.
+2. States the **effect** of the commit, not the list of files.
+3. No reference to a ticket, task or plan phase (see `code-style-comments-english-outside-bodies-no-tickets.md`).
+4. The body, if any, explains **why**; lines ≤ 100 characters.
 
 ## Breaking change
 
-`!` après le type (ou le scope) **et** une ligne `BREAKING CHANGE: <explication>` dans le body — typiquement un changement de format de paquet réseau.
+`!` after the type (or scope) **and** a `BREAKING CHANGE: <explanation>` line in the body — typically a change to a network packet format.
 
-## Vérification avant chaque commit
+## Checks before every commit
 
-1. type dans la liste ;
-2. scope absent, ou réel et précis ;
-3. description en anglais, à l'impératif, sans point final ;
-4. **aucun trailer ni mention d'IA** (cf. `fix-process-pas-de-co-author-commit.md`) ;
-5. l'index contient exactement ce que le message annonce (cf. `fix-execution-verifier-l-index-avant-de-committer.md`).
+1. type is in the list;
+2. scope is absent, or real and precise;
+3. description in English, imperative, no trailing period;
+4. **no AI trailer or mention** (see `fix-process-no-co-author-trailer.md`);
+5. the index contains exactly what the message announces (see `fix-execution-check-the-index-before-committing.md`).
 
-## Exemples
+## Examples
 
-Correct :
+Right:
 
 ```text
 build: pin vcpkg and declare third-party dependencies
@@ -67,11 +67,11 @@ fix(server): drop packets shorter than the header
 test: cover the entity registry removal path
 ```
 
-Incorrect :
+Wrong:
 
 ```text
 Update stuff
-feat: Ajout du parseur de paquets.
+feat: Added the packet parser.
 fix(misc): various fixes
 feat(network): add packet parser (TASK-12)
 ```

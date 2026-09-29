@@ -1,26 +1,26 @@
 ---
-description: Tests GoogleTest — un comportement par test, nom descriptif, doc-comment Given / When / Then au-dessus du TEST
+description: GoogleTest tests — one behavior per test, descriptive name, Given / When / Then doc comment above the TEST
 paths:
   - "**/*.{cpp,hpp,tpp}"
 ---
 
-# RULE : Chaque test décrit son scénario en Given / When / Then
+# RULE: Every test describes its scenario as Given / When / Then
 
-## Objectif
+## Goal
 
-Le nom d'un test dit *quoi*, pas *dans quelles conditions* ni *ce qui est attendu*. Le triptyque Given / When / Then rend explicites le pré-état, l'action et le résultat : il sert de mini-spécification, accélère la revue et le diagnostic d'un échec, et pousse à ne valider qu'**un seul** comportement par test.
+A test name says *what*, not *under which conditions* nor *what is expected*. Given / When / Then makes the initial state, the action and the result explicit: it acts as a mini-specification, speeds up review and failure diagnosis, and pushes toward validating **a single** behavior per test.
 
-## Règles
+## Rules
 
-- Tout `TEST` / `TEST_F` / `TEST_P` porte, **au-dessus** de sa déclaration, un doc-comment en trois clauses, une par ligne : `Given` (contexte initial), `When` (action), `Then` (résultat attendu). Il est au-dessus, pas dans le corps (cf. `code-style-commentaires-anglais-hors-du-corps-sans-tickets.md`).
-- **Un comportement par test.** Deux `Then` indépendants = deux tests.
-- Suite et nom de test en `PascalCase`, décrivant le comportement : `TEST(PacketReader, RejectsPayloadShorterThanHeader)`. Aucun ID de ticket.
-- Le `Then` énonce ce que le produit exige, jamais la sortie observée (cf. `fix-process-test-vert-qui-verrouille-un-defaut-et-fake-trop-deterministe.md`).
-- Les tests se déclarent via `rtype_add_test()` dans `tests/CMakeLists.txt`.
+- Every `TEST` / `TEST_F` / `TEST_P` has, **above** its declaration, a three-clause doc comment, one per line: `Given` (initial context), `When` (action), `Then` (expected result). It sits above, not in the body (see `code-style-comments-english-outside-bodies-no-tickets.md`).
+- **One behavior per test.** Two independent `Then`s = two tests.
+- Suite and test names in `PascalCase`, describing the behavior: `TEST(PacketReader, RejectsPayloadShorterThanHeader)`. No ticket id.
+- The `Then` states what the product requires, never the observed output (see `fix-process-green-test-locking-a-defect-and-overly-deterministic-fake.md`).
+- Tests are declared through `rtype_add_test()` in `tests/CMakeLists.txt`.
 
-## Exemples
+## Examples
 
-- ❌ **Interdit** :
+- ❌ **Forbidden**:
   ```cpp
   TEST(Registry, Test1) {
     Registry registry;
@@ -30,7 +30,7 @@ Le nom d'un test dit *quoi*, pas *dans quelles conditions* ni *ce qui est attend
     EXPECT_EQ(registry.size(), 0);
   }
   ```
-- ✅ **À la place** :
+- ✅ **Instead**:
   ```cpp
   /**
    * Given a registry holding a single entity
