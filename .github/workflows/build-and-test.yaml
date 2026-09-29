@@ -98,11 +98,10 @@ jobs:
           chmod 600 ~/.ssh/mirror_key
           ssh-keyscan github.com >> ~/.ssh/known_hosts
 
-      - name: Filter .claude/ from history and push to the mirror
+      - name: Push every branch and tag to the mirror
         env:
           GIT_SSH_COMMAND: ssh -i ~/.ssh/mirror_key -o IdentitiesOnly=yes
-        run: |
-          pip install --quiet git-filter-repo
-          git filter-repo --force --path .claude --invert-paths
-          git remote add mirror "$MIRROR_URL"
-          git push --force --mirror mirror
+        run: >-
+          git push --force --prune "$MIRROR_URL"
+          "refs/remotes/origin/*:refs/heads/*"
+          "refs/tags/*:refs/tags/*"
