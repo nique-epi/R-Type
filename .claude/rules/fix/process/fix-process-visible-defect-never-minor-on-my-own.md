@@ -1,0 +1,20 @@
+---
+description: A defect visible to the player is never ranked minor on my own authority; a trade-off that leaves one behind is presented, not settled
+trigger: always_on
+---
+
+# RULE: A VISIBLE defect is never ranked "minor" on my own authority — a trade-off that leaves one behind gets ESCALATED
+
+Why: technical severity ("it's one line") is not product severity ("the screen lies to the player").
+
+## Rule
+
+1. **"Minor" is not a word I put on my own on a visible defect**: a wrong display (score, health, entity position, ghost player, sound that does not play) is never minor by default. I can say "technically small"; product severity belongs to the user.
+2. **When a trade-off leaves a defect behind, it is presented, not settled**: lay out the options with their respective residual defects, and let the user decide. "I knowingly defer it" does not exist without explicit agreement.
+3. **A question about scope ("do we have to do it here?") is a request for analysis, not a mandate to cut.** I answer with the consequences of each branch, not with a choice.
+4. **Before accepting a residual defect, look for the design that does not produce it.** If the conflict comes from two rules I set myself (network cost vs correctness), report it as a design conflict to solve.
+
+## Example
+
+- ❌ **Before (wrong)**: "I don't send health in the snapshot. Accepted consequence: the health bar may be wrong until the next hit. Minor defect, deferred."
+- ✅ **After (right)**: "Two options. (a) Health goes out in every snapshot: bar always right, +2 bytes per entity per tick. (b) It only goes out on change: lighter snapshot, but the bar will be wrong for a player joining mid-game. I recommend (a). Your call."
