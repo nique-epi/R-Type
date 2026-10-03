@@ -1,2 +1,5 @@
+add_subdirectory(engine)
+add_subdirectory(game)
+add_subdirectory(network)
 add_subdirectory(server)
 add_subdirectory(client)
