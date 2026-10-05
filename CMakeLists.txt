@@ -22,6 +22,23 @@ endfunction()
 
 add_subdirectory(src)
 
+function(rtype_forbid_links target)
+  get_target_property(linked ${target} LINK_LIBRARIES)
+  get_target_property(interface_linked ${target} INTERFACE_LINK_LIBRARIES)
+  foreach(forbidden IN LISTS ARGN)
+    foreach(library IN LISTS linked interface_linked)
+      if(library MATCHES "^${forbidden}")
+        message(FATAL_ERROR "${target} must not link ${library}")
+      endif()
+    endforeach()
+  endforeach()
+endfunction()
+
+rtype_forbid_links(rtype_engine "SFML::" "asio::" "rtype_")
+rtype_forbid_links(rtype_game "SFML::" "asio::" "rtype_network" "rtype_client")
+rtype_forbid_links(rtype_network "SFML::" "rtype_game" "rtype_engine" "rtype_client")
+rtype_forbid_links(r-type_server "SFML::" "rtype_client")
+
 if(BUILD_TESTS)
   enable_testing()
   add_subdirectory(tests)

@@ -4,6 +4,8 @@ A networked multiplayer remake of the R-Type shoot'em up, built on a custom C++ 
 
 The repository currently holds the build system and empty client and server entry points.
 
+The code is split into engine, game and network libraries; see [docs/architecture.md](docs/architecture.md).
+
 ## Requirements
 
 - CMake 3.28 or newer
