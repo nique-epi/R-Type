@@ -1,10 +1,12 @@
 find_package(SFML 3 COMPONENTS Graphics Window System Audio CONFIG REQUIRED)
 
+add_subdirectory(Window)
+
 add_executable(r-type_client main.cpp)
 
 target_link_libraries(r-type_client
   PRIVATE
-    SFML::Graphics
+    rtype_client_window
     SFML::Audio
 )
 
