@@ -1,4 +1,6 @@
 #include "EngineException.hpp"
+#include <stdexcept>
+#include <string>
 
 namespace rtype::engine {
 

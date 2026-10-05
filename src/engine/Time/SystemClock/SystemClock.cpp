@@ -1,5 +1,6 @@
 #include "SystemClock.hpp"
 #include <chrono>
+#include "TimeConstants.hpp"
 
 namespace rtype::engine {
 

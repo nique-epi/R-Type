@@ -20,8 +20,11 @@ constexpr double SPEED_UNITS_PER_SECOND = 120.0;
 // The tick length is a whole number of nanoseconds, so 60 ticks fall 0.4
 // parts per million short of one second.
 constexpr double POSITION_TOLERANCE_UNITS = 1e-4;
+constexpr std::size_t RESULT_ALIGNMENT = 16;
+constexpr Duration SHORT_TICK_DURATION(100);
+constexpr Duration HALF_SHORT_TICK(SHORT_TICK_DURATION / 2);
 
-struct SimulationResult {
+struct alignas(RESULT_ALIGNMENT) SimulationResult {
   std::size_t ticks = 0;
   double position = 0.0;
 };
@@ -104,11 +107,11 @@ TEST(FixedTimestep, OneTickWhenExactlyOneTickHasElapsed) {
  */
 TEST(FixedTimestep, RemainderIsKeptBetweenCalls) {
   SimulatedClock clock;
-  FixedTimestep timestep(clock, Duration(100));
+  FixedTimestep timestep(clock, SHORT_TICK_DURATION);
 
-  clock.advance(Duration(50));
+  clock.advance(HALF_SHORT_TICK);
   const std::size_t first = timestep.consumeTicks();
-  clock.advance(Duration(50));
+  clock.advance(HALF_SHORT_TICK);
   const std::size_t second = timestep.consumeTicks();
 
   EXPECT_EQ(first, 0U);
@@ -138,7 +141,7 @@ TEST(FixedTimestep, LongStallIsCappedAndTheExcessDropped) {
  * Then it is rejected
  */
 TEST(FixedTimestep, ZeroTickDurationIsRejected) {
-  SimulatedClock clock;
+  const SimulatedClock clock;
 
   EXPECT_THROW(FixedTimestep(clock, Duration::zero()),
                rtype::engine::InvalidTickDurationException);

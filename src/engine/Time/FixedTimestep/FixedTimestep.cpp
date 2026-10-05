@@ -1,6 +1,9 @@
 #include "FixedTimestep.hpp"
 #include <algorithm>
+#include <cstddef>
 #include "EngineException.hpp"
+#include "IClock.hpp"
+#include "TimeConstants.hpp"
 
 namespace rtype::engine {
 
