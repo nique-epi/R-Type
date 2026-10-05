@@ -34,6 +34,10 @@ The client and the server are the only places where the libraries meet: they tra
 
 Alternative considered: a classic class hierarchy of game objects with virtual `update()` and `draw()`. It is simpler at first, but ties logic to rendering, which the server cannot afford, and makes cross-cutting behaviours (a boss that is also a shooter) awkward.
 
+## Time
+
+The simulation advances at a fixed rate (`SIMULATION_TICKS_PER_SECOND`, 60), whatever the rendering rate. `FixedTimestep` (`rtype_engine`) turns the time read from an `IClock` into a whole number of ticks to simulate; the remainder is kept for the next call, and a stall longer than `MAXIMUM_TICKS_PER_ADVANCE` ticks is dropped rather than caught up. Speeds are expressed in units per second and multiplied by the tick duration. Tests drive a simulated clock, so the result is the same at 30, 60 and 144 frames per second.
+
 ## Consequences
 
 - Only a minimal `EntityRegistry` exists today; components and systems are added by the next stories.
