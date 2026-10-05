@@ -64,6 +64,7 @@ Paths below are relative to `.claude/rules/`.
 **C++ architecture — `architecture/` (loaded when a C++ file is read)**
 - `architecture/architecture-custom-exceptions-per-module.md`
 - `architecture/architecture-hpp-declarations-cpp-definitions.md`
+- `architecture/architecture-one-folder-per-concrete-class.md`
 - `architecture/architecture-pure-virtual-interfaces.md`
 - `architecture/fix-architecture-magic-values-as-named-constants.md`
 
