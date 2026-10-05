@@ -49,7 +49,7 @@ Paths below are relative to `.claude/rules/`.
 | Committing | `core/commit.md`, `fix/process/fix-process-no-co-author-trailer.md`, `fix/execution/fix-execution-check-the-index-before-committing.md` |
 | Opening a PR | `fix/format/fix-format-pull-requests-in-english.md`, `fix/process/fix-process-pr-always-opened-as-draft.md` |
 | Reviewing | `core/code-review.md` |
-| Announcing a green gate | `fix/execution/fix-execution-zsh-pipestatus.md`, `fix/execution/fix-execution-zero-warnings-proven-on-a-recompiling-build.md` |
+| Announcing a green gate | `fix/execution/fix-execution-zsh-pipestatus.md`, `fix/execution/fix-execution-zero-warnings-proven-on-a-recompiling-build.md`, `fix/execution/fix-execution-run-clang-tidy-before-push.md` |
 | Making a mistake | `core/errors-learning.md` — the mistake produces a new rule |
 | Pausing, finishing a step | `core/context-continuity.md` |
 
@@ -118,6 +118,7 @@ Paths below are relative to `.claude/rules/`.
 - `fix/execution/fix-execution-git-check-branch-before-writing-history.md`
 - `fix/execution/fix-execution-git-stash-pop-without-effective-push.md`
 - `fix/execution/fix-execution-new-caller-keeps-existing-callers-guards.md`
+- `fix/execution/fix-execution-run-clang-tidy-before-push.md`
 - `fix/execution/fix-execution-silent-push-and-detached-head-compare-remote-sha.md`
 - `fix/execution/fix-execution-touch-recreates-deleted-files.md`
 - `fix/execution/fix-execution-unquoted-heredoc-runs-backticks.md`
