@@ -1,4 +1,6 @@
 #include "World.hpp"
+#include <cstddef>
+#include "Entity.hpp"
 
 namespace rtype::game {
 

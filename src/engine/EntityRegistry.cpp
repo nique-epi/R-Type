@@ -1,4 +1,6 @@
 #include "EntityRegistry.hpp"
+#include <cstddef>
+#include "Entity.hpp"
 
 namespace rtype::engine {
 

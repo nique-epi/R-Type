@@ -1,4 +1,5 @@
 #include <gtest/gtest.h>
+#include "Entity.hpp"
 #include "EntityRegistry.hpp"
 
 /**
