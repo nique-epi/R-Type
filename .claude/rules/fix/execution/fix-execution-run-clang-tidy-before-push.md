@@ -21,6 +21,13 @@ Why: the CI `Clang-tidy` job treats warnings as errors; a local failure put down
 4. **`tidy` is part of the gates announced** with the tests and `format-check`: say which files it covered. "Not run" or "no verdict" is stated as such and the push waits for the user's decision.
 5. **Header findings** (`misc-include-cleaner`, magic numbers, `misc-const-correctness`, struct alignment) apply to tests too: tests are linted like the sources.
 
+### A new or changed header is linted with its own diagnostics shown
+
+1. **A `.hpp` I create or edit is linted with header diagnostics enabled**: `--header-filter='.*'`. Without it clang-tidy hides every finding located in a header, and "exit 0" says nothing about the header.
+2. **Prove the header was covered**: run the same command once on a deliberate fault placed *in the header's kind of code* (or on an existing header known to raise a finding) and see it reported. A calibration fault placed in the `.cpp` does not validate header coverage.
+3. **A filter I wrote myself is tested before trusted**: a regular expression such as `.*/src/game/.*` does not match the relative path `src/game/Position.hpp`.
+4. **Say what the CI covers**: the CI `Clang-tidy` job runs without a header filter, so header findings never fail it; they still show in the editor. Report them with their origin (new file or pre-existing) instead of announcing the headers clean.
+
 ## Example
 
 - ❌ **Before (wrong)**: local `tidy` fails on missing system headers → "environment issue, the CI will cover it" → push → the CI reports 12 real errors.
