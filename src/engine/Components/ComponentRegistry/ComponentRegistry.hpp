@@ -1,0 +1,113 @@
+#pragma once
+
+#include <memory>
+#include <typeindex>
+#include <unordered_map>
+#include <utility>
+#include "ComponentStorage.hpp"
+#include "EngineException.hpp"
+#include "Entity.hpp"
+#include "EntityRegistry.hpp"
+#include "IComponentStorage.hpp"
+
+namespace rtype::engine {
+
+/**
+ * @brief Owns the components of the entities of an EntityRegistry, one storage
+ * per component type.
+ * The EntityRegistry must outlive it. Entities must be destroyed through
+ * destroy() here, otherwise their components stay behind.
+ */
+class ComponentRegistry {
+ public:
+  explicit ComponentRegistry(EntityRegistry& entities);
+
+  /**
+   * @brief Attaches a component, replacing the one of the same type if present.
+   * @throws DeadEntityException when the entity is not alive.
+   */
+  template <typename T>
+  void add(Entity entity, T component) {
+    if (!entities_.isAlive(entity)) {
+      throw DeadEntityException();
+    }
+    createStorageIfMissing<T>().set(entity.index, std::move(component));
+  }
+
+  /**
+   * @returns The component, or nullptr when absent or when the entity is not
+   * alive. The pointer is invalidated by a later add or remove of the same
+   * type.
+   */
+  template <typename T>
+  T* get(Entity entity) {
+    ComponentStorage<T>* storage = findStorage<T>();
+    if (storage == nullptr || !entities_.isAlive(entity)) {
+      return nullptr;
+    }
+    return storage->find(entity.index);
+  }
+
+  /** @returns true when the entity is alive and carries a component of type T.
+   */
+  template <typename T>
+  bool has(Entity entity) const {
+    const ComponentStorage<T>* storage = findStorage<T>();
+    return storage != nullptr && entities_.isAlive(entity) &&
+           storage->find(entity.index) != nullptr;
+  }
+
+  /**
+   * @returns true when a component was removed; false when it was absent or
+   * the entity is not alive.
+   */
+  template <typename T>
+  bool remove(Entity entity) {
+    ComponentStorage<T>* storage = findStorage<T>();
+    if (storage == nullptr || !entities_.isAlive(entity)) {
+      return false;
+    }
+    return storage->erase(entity.index);
+  }
+
+  /**
+   * @brief Removes every component of the entity, then destroys it in the
+   * EntityRegistry.
+   * Does nothing when the entity is not alive: a stale handle never removes
+   * the components of the entity that now uses its index.
+   */
+  void destroy(Entity entity);
+
+ private:
+  template <typename T>
+  ComponentStorage<T>& createStorageIfMissing() {
+    std::unique_ptr<IComponentStorage>& slot =
+        storages_[std::type_index(typeid(T))];
+    if (!slot) {
+      slot = std::make_unique<ComponentStorage<T>>();
+    }
+    return static_cast<ComponentStorage<T>&>(*slot);
+  }
+
+  template <typename T>
+  ComponentStorage<T>* findStorage() {
+    const auto found = storages_.find(std::type_index(typeid(T)));
+    return found == storages_.end()
+               ? nullptr
+               : static_cast<ComponentStorage<T>*>(found->second.get());
+  }
+
+  template <typename T>
+  const ComponentStorage<T>* findStorage() const {
+    const auto found = storages_.find(std::type_index(typeid(T)));
+    return found == storages_.end()
+               ? nullptr
+               : static_cast<const ComponentStorage<T>*>(found->second.get());
+  }
+
+  EntityRegistry& entities_;
+  std::unordered_map<std::type_index, std::unique_ptr<IComponentStorage>>
+      storages_;
+};
+
+}  // namespace rtype::engine
