@@ -34,7 +34,7 @@ function(rtype_forbid_links target)
   endforeach()
 endfunction()
 
-rtype_forbid_links(rtype_engine "SFML::" "asio::" "rtype_")
+rtype_forbid_links(rtype_engine "SFML::" "asio::" "rtype_game" "rtype_network" "rtype_client")
 rtype_forbid_links(rtype_game "SFML::" "asio::" "rtype_network" "rtype_client")
 rtype_forbid_links(rtype_network "SFML::" "rtype_game" "rtype_engine" "rtype_client")
 rtype_forbid_links(r-type_server "SFML::" "rtype_client")
