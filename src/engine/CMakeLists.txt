@@ -1,5 +1,7 @@
-add_library(rtype_engine STATIC EntityRegistry.cpp)
+add_subdirectory(EntityRegistry)
 
-target_include_directories(rtype_engine PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+add_library(rtype_engine INTERFACE)
 
-rtype_enable_warnings(rtype_engine)
+target_include_directories(rtype_engine INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
+
+target_link_libraries(rtype_engine INTERFACE rtype_engine_entity_registry)
