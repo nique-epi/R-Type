@@ -11,7 +11,7 @@ Why: the repository's `.clang-tidy` disables `readability-magic-numbers`; this r
 ## Rule
 
 1. **Zero magic number / magic string in function bodies**: every meaningful literal (tick rate, speed, buffer size, packet header size, timeout, max player count, asset path, packet type id) gets a **name** as a constant. The test: if you need to read the context to understand what the literal stands for, it must be named.
-2. **Where to put them**: at the top of the `.cpp` (anonymous namespace) if the value is local to the file; in a module constants header (`NetworkConstants.hpp`) if it is shared. A shared value is never duplicated.
+2. **Where to put them**: always in a dedicated constants header of the module, named after the concept (`NetworkConstants.hpp`, `WindowConstants.hpp`), even when a single `.cpp` reads them. Never in an anonymous namespace at the top of a `.cpp`, never mixed into a class header. A shared value is never duplicated.
 3. **Address and port**: a default named as a constant, overridden by command-line arguments; never an address written inside a function body.
 4. **Consistency within a file**: if one value of the file is a constant, every value of the same kind is.
 5. Not magic: `0`, `1`, `-1` in their obvious arithmetic meaning, `nullptr`, `true`/`false`.

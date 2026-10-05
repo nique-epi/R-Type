@@ -67,6 +67,9 @@ Paths below are relative to `.claude/rules/`.
 - `architecture/architecture-pure-virtual-interfaces.md`
 - `architecture/fix-architecture-magic-values-as-named-constants.md`
 
+**Build architecture — `fix/architecture/` (loaded every session)**
+- `fix/architecture/fix-architecture-one-cmakelists-per-folder.md`
+
 **Code style — `code-style/` (loaded when a C++ file is read)**
 - `code-style/code-style-comments-english-outside-bodies-no-tickets.md`
 - `code-style/code-style-constants-without-k-prefix.md`
@@ -127,6 +130,7 @@ Paths below are relative to `.claude/rules/`.
 **Format — `fix/format/`**
 - `fix/format/fix-format-context-before-the-deliverable.md`
 - `fix/format/fix-format-no-tool-call-artifacts-in-written-files.md`
+- `fix/format/fix-format-plan-shows-all-code-and-explains-it.md`
 - `fix/format/fix-format-pull-requests-in-english.md`
 
 **Interpretation — `fix/interpretation/`**
