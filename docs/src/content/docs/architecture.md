@@ -44,6 +44,17 @@ The simulation advances at a fixed rate (`SIMULATION_TICKS_PER_SECOND`, 60), wha
 
 `TimerScheduler` runs a callback after a delay or at a regular interval, and can cancel it through the `TimerHandle` returned when it is scheduled. It never reads a clock: the caller passes `SIMULATION_TICK_DURATION` to `advance()` once per tick returned by `FixedTimestep`, so timers follow simulation time and not wall-clock time. A repeating timer fires once per elapsed interval even when several pass in one `advance()`, timers due together fire in creation order, and a callback may schedule or cancel timers, itself included.
 
+## Coordinate system
+
+Game logic uses one logical frame, the same on the server and on the client, and never a window size in pixels.
+
+- The playfield is `PLAYFIELD_WIDTH` × `PLAYFIELD_HEIGHT` logical units, defined once in `rtype_game` (`PlayfieldConstants.hpp`).
+- These dimensions are **provisional**: 800 × 600, the current size of the client window. They will be revised once the proportions of the game are decided. Code must read the constants and never assume they match the window.
+- The origin is the top-left corner, x grows to the right and y grows downwards.
+- `Position` is the center of an entity, `Velocity` is in units per second, `CollisionBox` is a size centered on the position.
+- SFML puts the origin of a sprite at its top-left corner by default, so the client sets it to the center of each sprite.
+- The client is the only place that knows pixels: it scales the playfield to its window.
+
 ## Consequences
 
 - Only a minimal `EntityRegistry` exists today; components and systems are added by the next stories.
