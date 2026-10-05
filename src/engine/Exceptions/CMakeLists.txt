@@ -1,0 +1,5 @@
+add_library(rtype_engine_exceptions STATIC EngineException.cpp)
+
+target_include_directories(rtype_engine_exceptions PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+
+rtype_enable_warnings(rtype_engine_exceptions)

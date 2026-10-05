@@ -1,0 +1,7 @@
+add_library(rtype_engine_system_clock STATIC SystemClock.cpp)
+
+target_include_directories(rtype_engine_system_clock PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+
+target_link_libraries(rtype_engine_system_clock PUBLIC rtype_engine_time)
+
+rtype_enable_warnings(rtype_engine_system_clock)
