@@ -29,6 +29,13 @@ trigger: always_on
 3. **A new binary is proposed only when no existing binary can host it** as a mode or a command-line option.
 4. **Present the count**: N libraries and M binaries, and for each new one the constraint that forces it. A proposal that cannot name the constraint drops the library.
 
+### An optional feature never sits on the path of the base feature
+
+1. **Write down the base path first**: what a player needs to launch a game. Everything else (accounts, tickets, ranking, admin) is an add-on.
+2. **No base issue is blocked by an add-on issue**, and no base screen, message or route requires an add-on: a player plays without an account.
+3. **An add-on brings its own security with it** (tickets, passwords): the base path does not pay for it.
+4. **Test tooling stays out of the product**: a load or measurement tool is instrumentation, built with the tests, never an option of the player's binary.
+
 ## Example
 
 - ❌ **Before (wrong)**: the game loop drifts → write a homemade `sleep_for`-based timer, then fix it three times with guessed values.

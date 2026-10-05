@@ -16,5 +16,16 @@ Each library was justified by a role ("the bot needs the client without SFML", "
 ### Correction
 Three libraries that already exist (engine, game, network) and three programs (client with a bot option, server, master).
 
+## Update (2026-10-05): an optional feature never sits on the base path
+
+### Mistake
+In the same architecture, guests needed a ticket from the master to join a server, and the admin web page needed an admin account: accounts sat on the path of a plain game. The load-test client was first a separate binary, then an option of the player's client. The user stated that a player must be able to play without an account, that accounts are an add-on, and that the bot is instrumentation.
+
+### Root cause
+The base path (what a player needs to play) was never written down, so add-on issues ended up as blockers of base issues.
+
+### Correction
+Guests join with a nickname, no ticket; tickets come with the accounts add-on; the admin authenticates with a secret given at the master's launch; the load-test client is a test tool.
+
 ## Rule
 See `.claude/rules/fix/process/fix-process-do-not-over-engineer-step-back.md`, section "Every new library or binary names the constraint that forces it".
