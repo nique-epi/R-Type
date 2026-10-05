@@ -133,6 +133,7 @@ Paths below are relative to `.claude/rules/`.
 
 **Format — `fix/format/`**
 - `fix/format/fix-format-context-before-the-deliverable.md`
+- `fix/format/fix-format-identifiers-proposed-outside-code.md`
 - `fix/format/fix-format-no-tool-call-artifacts-in-written-files.md`
 - `fix/format/fix-format-plan-shows-all-code-and-explains-it.md`
 - `fix/format/fix-format-pull-requests-in-english.md`
