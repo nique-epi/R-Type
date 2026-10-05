@@ -22,6 +22,13 @@ trigger: always_on
 3. **Aligning conventions is proposed, not delivered**: "these two modules differ on X, I can align them — do you want that?".
 4. A reuse opportunity spotted along the way is a **finding to report**, not a project to start in the same commit.
 
+### Every new library or binary names the constraint that forces it
+
+1. **Before proposing a module structure, compare it with reference projects of the same kind**: at least two open-source networked games (ioq3, Teeworlds, Source SDK) and the team's previous projects. They converge on shared code, a client and a server; start from that shape.
+2. **A new library is proposed only when a constraint forces it**: several binaries share the code AND it cannot live in an existing library without breaking a dependency rule. Otherwise it is a folder inside an existing library or binary.
+3. **A new binary is proposed only when no existing binary can host it** as a mode or a command-line option.
+4. **Present the count**: N libraries and M binaries, and for each new one the constraint that forces it. A proposal that cannot name the constraint drops the library.
+
 ## Example
 
 - ❌ **Before (wrong)**: the game loop drifts → write a homemade `sleep_for`-based timer, then fix it three times with guessed values.
