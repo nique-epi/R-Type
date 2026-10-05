@@ -1,4 +1,8 @@
-# Architecture decision: engine, game and network libraries
+---
+title: 'Architecture decision: engine, game and network libraries'
+sidebar:
+  label: Architecture
+---
 
 ## Context
 

@@ -4,7 +4,7 @@ A networked multiplayer remake of the R-Type shoot'em up, built on a custom C++ 
 
 The repository currently holds the build system and empty client and server entry points.
 
-The code is split into engine, game and network libraries; see [docs/architecture.md](docs/architecture.md).
+The code is split into engine, game and network libraries; see [the architecture decision](docs/src/content/docs/architecture.md).
 
 ## Requirements
 
@@ -51,3 +51,17 @@ The `clang-format` and `clang-tidy` configurations live at the repository root. 
 ```bash
 cmake --build build --target format
 ```
+
+## Documentation
+
+The documentation site is built with [Starlight](https://starlight.astro.build) and published at <https://nique-epi.github.io/R-Type/>. Each page is a Markdown file in `docs/src/content/docs/`.
+
+To preview it locally, with Node.js 22.12 or newer:
+
+```bash
+cd docs
+npm ci
+npm run dev
+```
+
+`npm run build` fails on a broken internal link, like the `docs` check on pull requests.

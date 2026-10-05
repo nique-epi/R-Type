@@ -12,3 +12,6 @@ Testing/
 B-CPP-500_rtype.pdf
 .context/
 .claude/settings.local.json
+node_modules/
+/docs/dist/
+/docs/.astro/
