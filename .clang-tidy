@@ -13,8 +13,14 @@ Checks: '*,
          -readability-function-cognitive-complexity,
          -altera-unroll-loops,
          -altera-id-dependent-backward-branch,
+         -altera-struct-pack-align,
+         -portability-avoid-pragma-once,
+         -llvm-header-guard,
          -modernize-use-trailing-return-type,
          -llvm-include-order'
 
 # Treat warnings as errors so the CI fails on bad code
 WarningsAsErrors: '*'
+
+CheckOptions:
+  misc-non-private-member-variables-in-classes.IgnoreClassesWithAllMemberVariablesBeingPublic: true
