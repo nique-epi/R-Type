@@ -21,4 +21,29 @@ class InvalidTickDurationException : public EngineException {
   InvalidTickDurationException();
 };
 
+/**
+ * @brief A timer was scheduled with a negative delay.
+ */
+class InvalidTimerDelayException : public EngineException {
+ public:
+  InvalidTimerDelayException();
+};
+
+/**
+ * @brief A repeating timer was scheduled with an interval that is not
+ * positive.
+ */
+class InvalidTimerIntervalException : public EngineException {
+ public:
+  InvalidTimerIntervalException();
+};
+
+/**
+ * @brief Simulation time was advanced by a negative amount.
+ */
+class NegativeElapsedTimeException : public EngineException {
+ public:
+  NegativeElapsedTimeException();
+};
+
 }  // namespace rtype::engine
