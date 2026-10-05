@@ -64,6 +64,7 @@ Paths below are relative to `.claude/rules/`.
 **C++ architecture — `architecture/` (loaded when a C++ file is read)**
 - `architecture/architecture-custom-exceptions-per-module.md`
 - `architecture/architecture-hpp-declarations-cpp-definitions.md`
+- `architecture/architecture-one-folder-per-concrete-class.md`
 - `architecture/architecture-pure-virtual-interfaces.md`
 - `architecture/fix-architecture-magic-values-as-named-constants.md`
 
@@ -83,6 +84,7 @@ Paths below are relative to `.claude/rules/`.
 - `fix/process/fix-process-ask-what-is-observed-before-building-a-protocol.md`
 - `fix/process/fix-process-branch-before-first-commit.md`
 - `fix/process/fix-process-do-not-over-engineer-step-back.md`
+- `fix/process/fix-process-follow-ci-after-opening-a-pr.md`
 - `fix/process/fix-process-green-test-locking-a-defect-and-overly-deterministic-fake.md`
 - `fix/process/fix-process-instrument-before-reasoning-docs-are-truth.md`
 - `fix/process/fix-process-no-co-author-trailer.md`
