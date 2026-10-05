@@ -12,6 +12,7 @@ Checks: '*,
          -readability-magic-numbers,
          -readability-function-cognitive-complexity,
          -altera-unroll-loops,
+         -altera-id-dependent-backward-branch,
          -modernize-use-trailing-return-type,
          -llvm-include-order'
 
