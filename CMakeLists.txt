@@ -20,6 +20,42 @@ function(rtype_enable_warnings target)
   )
 endfunction()
 
+# LOG_LEVEL is the lowest log level compiled into the binaries. It is
+# translated into RT_LOG_BUILD_LEVEL (0..5) and injected as a compile
+# definition: Logger.hpp wraps each logging method in `if constexpr`, so calls
+# below this level produce no code at all.
+#
+# The default keeps every level in every build type, so that the level chosen
+# when a program is launched always takes effect.
+if(NOT DEFINED LOG_LEVEL)
+  set(LOG_LEVEL "trace")
+endif()
+
+string(TOLOWER "${LOG_LEVEL}" LOG_LEVEL_LOWER)
+if(LOG_LEVEL_LOWER STREQUAL "trace")
+  set(RT_LOG_BUILD_LEVEL 0)
+elseif(LOG_LEVEL_LOWER STREQUAL "debug")
+  set(RT_LOG_BUILD_LEVEL 1)
+elseif(LOG_LEVEL_LOWER STREQUAL "info")
+  set(RT_LOG_BUILD_LEVEL 2)
+elseif(LOG_LEVEL_LOWER STREQUAL "warn" OR LOG_LEVEL_LOWER STREQUAL "warning")
+  set(RT_LOG_BUILD_LEVEL 3)
+elseif(LOG_LEVEL_LOWER STREQUAL "error")
+  set(RT_LOG_BUILD_LEVEL 4)
+elseif(LOG_LEVEL_LOWER STREQUAL "silent"
+       OR LOG_LEVEL_LOWER STREQUAL "off"
+       OR LOG_LEVEL_LOWER STREQUAL "none")
+  set(RT_LOG_BUILD_LEVEL 5)
+else()
+  message(FATAL_ERROR
+    "Invalid LOG_LEVEL='${LOG_LEVEL}'. "
+    "Expected one of: trace, debug, info, warn, error, silent.")
+endif()
+
+message(STATUS
+  "Log level: ${LOG_LEVEL_LOWER} (RT_LOG_BUILD_LEVEL=${RT_LOG_BUILD_LEVEL})")
+add_compile_definitions(RT_LOG_BUILD_LEVEL=${RT_LOG_BUILD_LEVEL})
+
 add_subdirectory(src)
 
 function(rtype_forbid_links target)
@@ -37,6 +73,7 @@ endfunction()
 rtype_forbid_links(rtype_engine "SFML::" "asio::" "rtype_game" "rtype_network" "rtype_client")
 rtype_forbid_links(rtype_game "SFML::" "asio::" "rtype_network" "rtype_client")
 rtype_forbid_links(rtype_network "SFML::" "rtype_game" "rtype_engine" "rtype_client")
+rtype_forbid_links(rtype_logging "SFML::" "asio::" "rtype_engine" "rtype_game" "rtype_network" "rtype_client")
 rtype_forbid_links(r-type_server "SFML::" "rtype_client")
 
 if(BUILD_TESTS)
