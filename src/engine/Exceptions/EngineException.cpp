@@ -19,4 +19,8 @@ InvalidTimerIntervalException::InvalidTimerIntervalException()
 NegativeElapsedTimeException::NegativeElapsedTimeException()
     : EngineException("The elapsed simulation time must not be negative") {}
 
+DeadEntityException::DeadEntityException()
+    : EngineException(
+          "A component cannot be added to an entity that is not alive") {}
+
 }  // namespace rtype::engine

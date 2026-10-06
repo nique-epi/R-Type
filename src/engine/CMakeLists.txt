@@ -1,6 +1,7 @@
 add_subdirectory(Exceptions)
 add_subdirectory(Time)
 add_subdirectory(EntityRegistry)
+add_subdirectory(Components)
 
 add_library(rtype_engine INTERFACE)
 
@@ -14,4 +15,7 @@ target_link_libraries(rtype_engine
     rtype_engine_fixed_timestep
     rtype_engine_timer_scheduler
     rtype_engine_entity_registry
+    rtype_engine_components
+    rtype_engine_entity_index_map
+    rtype_engine_component_registry
 )

@@ -46,4 +46,12 @@ class NegativeElapsedTimeException : public EngineException {
   NegativeElapsedTimeException();
 };
 
+/**
+ * @brief A component was added to an entity that is not alive.
+ */
+class DeadEntityException : public EngineException {
+ public:
+  DeadEntityException();
+};
+
 }  // namespace rtype::engine
