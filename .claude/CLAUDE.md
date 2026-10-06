@@ -47,10 +47,11 @@ Paths below are relative to `.claude/rules/`.
 | Touching the network | security section of `core/code-review.md` |
 | Creating a branch | `fix/process/fix-process-branch-before-first-commit.md`, `fix/execution/fix-execution-checkout-b-starts-from-head-not-main.md` |
 | Committing | `core/commit.md`, `fix/process/fix-process-no-co-author-trailer.md`, `fix/execution/fix-execution-check-the-index-before-committing.md` |
-| Opening a PR | `fix/format/fix-format-pull-requests-in-english.md`, `fix/process/fix-process-pr-always-opened-as-draft.md` |
+| Finishing a feature | the `document-feature` skill (`.claude/skills/document-feature/SKILL.md`) |
+| Opening a PR | `fix/format/fix-format-pull-requests-in-english.md`, `fix/process/fix-process-pr-always-opened-as-draft.md`, the `document-feature` skill if the feature is not documented yet |
 | Reviewing | `core/code-review.md` |
 | Announcing a green gate | `fix/execution/fix-execution-zsh-pipestatus.md`, `fix/execution/fix-execution-zero-warnings-proven-on-a-recompiling-build.md`, `fix/execution/fix-execution-run-clang-tidy-before-push.md` |
-| Writing a documentation page or a diagram | `fix/format/fix-format-schematic-diagrams-and-map-level-pages.md`, `fix/format/fix-format-context-before-the-deliverable.md` |
+| Writing a documentation page or a diagram | `fix/format/fix-format-schematic-diagrams-and-map-level-pages.md`, `fix/format/fix-format-context-before-the-deliverable.md`, the `document-feature` skill |
 | Making a mistake | `core/errors-learning.md` — the mistake produces a new rule |
 | Pausing, finishing a step | `core/context-continuity.md` |
 
@@ -144,6 +145,12 @@ Paths below are relative to `.claude/rules/`.
 - `fix/interpretation/fix-interpretation-flagged-placeholder-must-be-replaced.md`
 - `fix/interpretation/fix-interpretation-positive-guideline-is-not-a-prohibition.md`
 - `fix/interpretation/fix-interpretation-typo-reading-that-contradicts-a-rule.md`
+
+### Skills
+
+Skills live in `.claude/skills/<name>/SKILL.md`, relative to the repository root. Each one is a procedure loaded on demand, not a rule.
+
+- `document-feature`: writes or updates the documentation site (`docs/src/content/docs/`) and the README for a finished feature, in the house style of the existing pages.
 
 ## Definition of done
 
