@@ -10,7 +10,7 @@ The client renders with SFML, the server talks over the network with Asio, and b
 
 ## Decision
 
-The code is split into three static libraries with one-way dependencies, and the game objects are organised as an **ECS** (Entity Component System).
+The code is split into three static libraries with one-way dependencies, and the game objects are organized as an **ECS** (Entity Component System).
 
 ```
 r-type_client -> rtype_client_window -> SFML
@@ -32,11 +32,11 @@ The client and the server are the only places where the libraries meet: they tra
 ## Why an ECS
 
 - A level holds many entities of a few kinds (bullets, enemies, players); an ECS stores their data contiguously and iterates over it cheaply.
-- Data is separate from behaviour, which matches the engine/game split: the engine knows how to store and iterate, the game decides what a component or a system means.
+- Data is separate from behavior, which matches the engine/game split: the engine knows how to store and iterate, the game decides what a component or a system means.
 - Client and server share the same components; only the systems differ (the client adds rendering and input, the server adds authority).
 - A new enemy or power-up is a new combination of components, not a new class in a hierarchy.
 
-Alternative considered: a classic class hierarchy of game objects with virtual `update()` and `draw()`. It is simpler at first, but ties logic to rendering, which the server cannot afford, and makes cross-cutting behaviours (a boss that is also a shooter) awkward.
+Alternative considered: a classic class hierarchy of game objects with virtual `update()` and `draw()`. It is simpler at first, but ties logic to rendering, which the server cannot afford, and makes cross-cutting behaviors (a boss that is also a shooter) awkward.
 
 ## Components
 
