@@ -44,7 +44,7 @@ Sinks& sinks() {
 std::string toLower(std::string_view input) {
   std::string out(input);
   std::ranges::transform(out, out.begin(), [](unsigned char character) {
-    return std::tolower(character);
+    return static_cast<char>(std::tolower(character));
   });
   return out;
 }
