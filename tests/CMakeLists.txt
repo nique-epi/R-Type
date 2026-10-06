@@ -38,4 +38,4 @@ rtype_add_test(NAME engine_tests SOURCES ComponentQueryTest.cpp ComponentTest.cp
 rtype_add_test(NAME game_tests SOURCES WorldTest.cpp PlayfieldTest.cpp LIBS rtype_game)
 rtype_add_test(NAME network_tests SOURCES NetworkContextTest.cpp LIBS rtype_network)
 rtype_add_test(NAME logging_tests SOURCES LoggerTest.cpp LogLaunchOptionsTest.cpp JournalFile.cpp LIBS rtype_logging)
-rtype_add_test(NAME client_tests SOURCES client/Platform/ExecutablePathTest.cpp client/Assets/TemporaryFolder.cpp client/Assets/SilentSound.cpp client/Assets/AssetIdsTest.cpp client/Assets/AssetFolderTest.cpp client/Assets/AssetLibraryTest.cpp LIBS rtype_client_asset_library GTest::gmock)
+rtype_add_test(NAME client_tests SOURCES client/Platform/ExecutablePathTest.cpp client/Assets/TemporaryFolder.cpp client/Assets/SilentSound.cpp client/Assets/AssetIdsTest.cpp client/Assets/AssetFolderTest.cpp client/Assets/AssetLibraryTest.cpp client/Assets/AssetLoadingStepTest.cpp LIBS rtype_client_asset_loading_step GTest::gmock)
