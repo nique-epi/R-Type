@@ -7,6 +7,8 @@ target_link_libraries(rtype_client_game_window
     SFML::Graphics
   PRIVATE
     rtype_client_window
+    rtype_client_playfield_viewport
+    rtype_game
 )
 
 rtype_enable_warnings(rtype_client_game_window)

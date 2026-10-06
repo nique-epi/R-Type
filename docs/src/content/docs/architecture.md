@@ -61,7 +61,7 @@ Game logic uses one logical frame, the same on the server and on the client, and
 - The origin is the top-left corner, x grows to the right and y grows downwards.
 - `Position` is the center of an entity, `Velocity` is in units per second, `CollisionBox` is a size centered on the position.
 - SFML puts the origin of a sprite at its top-left corner by default, so the client sets it to the center of each sprite.
-- The client is the only place that knows pixels: it scales the playfield to its window.
+- The client is the only place that knows pixels. `GameWindow` draws through a view that always covers the whole playfield, and `fitPlayfieldInWindow` (`src/client/Window/PlayfieldViewport/`) picks the largest centered rectangle of the window with the proportions of the playfield; the rest stays black. Resizing the window changes that rectangle only, never a logical position or a speed.
 
 ## Consequences
 
