@@ -57,7 +57,7 @@ The simulation advances at a fixed rate (`SIMULATION_TICKS_PER_SECOND`, 60), wha
 Game logic uses one logical frame, the same on the server and on the client, and never a window size in pixels.
 
 - The playfield is `PLAYFIELD_WIDTH` × `PLAYFIELD_HEIGHT` logical units, defined once in `rtype_game` (`PlayfieldConstants.hpp`).
-- These dimensions are **provisional**: 800 × 600, the current size of the client window. They will be revised once the proportions of the game are decided. Code must read the constants and never assume they match the window.
+- These dimensions are 1920 × 1080: the playfield has the proportions of a 16:9 screen. Code must read the constants and never assume they match the window.
 - The origin is the top-left corner, x grows to the right and y grows downwards.
 - `Position` is the center of an entity, `Velocity` is in units per second, `CollisionBox` is a size centered on the position.
 - SFML puts the origin of a sprite at its top-left corner by default, so the client sets it to the center of each sprite.
