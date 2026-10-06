@@ -54,4 +54,13 @@ class DeadEntityException : public EngineException {
   DeadEntityException();
 };
 
+/**
+ * @brief A component was added or removed while a query was visiting
+ * components.
+ */
+class ComponentChangeDuringIterationException : public EngineException {
+ public:
+  ComponentChangeDuringIterationException();
+};
+
 }  // namespace rtype::engine
