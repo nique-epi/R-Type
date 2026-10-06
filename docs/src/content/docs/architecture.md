@@ -46,6 +46,14 @@ Each component type has its own `ComponentStorage<T>`, created the first time th
 
 Alternative considered: one `std::vector<std::optional<T>>` per type, indexed by entity index. It is simpler, but the array has as many slots as the highest index in use, most of them empty in a level where bullets come and go, so walking one type touches memory that holds nothing.
 
+## Systems
+
+A system is an object implementing `ISystem`; `SystemScheduler` calls them in the order they were added, so the order is decided in one place and is the same on every tick. `ComponentRegistry::forEach<First, Second>` gives a system the entities that have both components.
+
+Destroying an entity inside a `forEach` is postponed until the outermost `forEach` returns, because removing a component moves the last one into the hole and would shift the walk. An entity destroyed this way is no longer visited. Adding or removing a component during a `forEach` is refused with an exception rather than allowed to corrupt the walk.
+
+Alternative considered: a numeric priority on each system, sorted by the scheduler. It lets a system be placed without touching the others, but the order then lives in numbers scattered across classes and two systems can tie. A single list of `add()` calls is the one place that says what runs after what.
+
 ## Time
 
 The simulation advances at a fixed rate (`SIMULATION_TICKS_PER_SECOND`, 60), whatever the rendering rate. `FixedTimestep` (`rtype_engine`) turns the time read from an `IClock` into a whole number of ticks to simulate; the remainder is kept for the next call, and a stall longer than `MAXIMUM_TICKS_PER_ADVANCE` ticks is dropped rather than caught up. Speeds are expressed in units per second and multiplied by the tick duration. Tests drive a simulated clock, so the result is the same at 30, 60 and 144 frames per second.
@@ -65,7 +73,7 @@ Game logic uses one logical frame, the same on the server and on the client, and
 
 ## Consequences
 
-- `EntityRegistry` and `ComponentRegistry` exist today; systems are added by the next stories.
+- `EntityRegistry`, `ComponentRegistry`, `ISystem` and `SystemScheduler` exist today; the loop that calls the scheduler is added by a later story.
 - Any new target declares its links explicitly; a link that breaks the table above fails the configure step.
 
 ## Validation
