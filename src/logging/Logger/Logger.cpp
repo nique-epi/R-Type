@@ -7,6 +7,7 @@
 #endif
 
 #include <algorithm>
+#include <array>
 #include <atomic>
 #include <cctype>
 #include <chrono>
@@ -40,6 +41,23 @@ Sinks& sinks() {
   static Sinks instance;
   return instance;
 }
+
+struct LevelName {
+  std::string_view name;
+  LogLevel level;
+};
+
+constexpr std::array levelNames{
+    LevelName{.name = TRACE_NAME, .level = LogLevel::Trace},
+    LevelName{.name = DEBUG_NAME, .level = LogLevel::Debug},
+    LevelName{.name = INFO_NAME, .level = LogLevel::Info},
+    LevelName{.name = WARN_NAME, .level = LogLevel::Warn},
+    LevelName{.name = WARNING_NAME, .level = LogLevel::Warn},
+    LevelName{.name = ERROR_NAME, .level = LogLevel::Error},
+    LevelName{.name = SILENT_NAME, .level = LogLevel::Silent},
+    LevelName{.name = OFF_NAME, .level = LogLevel::Silent},
+    LevelName{.name = NONE_NAME, .level = LogLevel::Silent},
+};
 
 std::string toLower(std::string_view input) {
   std::string out(input);
@@ -188,23 +206,10 @@ Logger::Logger(std::string module) : module_(std::move(module)) {}
 
 std::optional<LogLevel> Logger::parseLevel(std::string_view text) {
   const std::string lower = toLower(text);
-  if (lower == TRACE_NAME) {
-    return LogLevel::Trace;
-  }
-  if (lower == DEBUG_NAME) {
-    return LogLevel::Debug;
-  }
-  if (lower == INFO_NAME) {
-    return LogLevel::Info;
-  }
-  if (lower == WARN_NAME || lower == WARNING_NAME) {
-    return LogLevel::Warn;
-  }
-  if (lower == ERROR_NAME) {
-    return LogLevel::Error;
-  }
-  if (lower == SILENT_NAME || lower == OFF_NAME || lower == NONE_NAME) {
-    return LogLevel::Silent;
+  for (const LevelName& levelName : levelNames) {
+    if (levelName.name == lower) {
+      return levelName.level;
+    }
   }
   return std::nullopt;
 }
