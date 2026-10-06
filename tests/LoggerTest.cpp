@@ -12,6 +12,7 @@
 #include <set>
 #include <sstream>
 #include <string>
+#include <string_view>
 #include <thread>
 #include <utility>
 #include <vector>
@@ -293,6 +294,51 @@ TEST_F(LoggerTest, ShouldLogMatchesLevel) {
   EXPECT_TRUE(Logger::shouldLog(LogLevel::Info));
   EXPECT_TRUE(Logger::shouldLog(LogLevel::Warn));
   EXPECT_TRUE(Logger::shouldLog(LogLevel::Error));
+}
+
+/**
+ * Given every level name and alias that parseLevel documents
+ * When each one is parsed
+ * Then it yields the level it names
+ */
+TEST_F(LoggerTest, ParseLevelRecognizesEveryDocumentedName) {
+  const auto documentedNames =
+      std::to_array<std::pair<std::string_view, LogLevel>>({
+          {"trace", LogLevel::Trace},
+          {"debug", LogLevel::Debug},
+          {"info", LogLevel::Info},
+          {"warn", LogLevel::Warn},
+          {"warning", LogLevel::Warn},
+          {"error", LogLevel::Error},
+          {"silent", LogLevel::Silent},
+          {"off", LogLevel::Silent},
+          {"none", LogLevel::Silent},
+      });
+
+  for (const auto& [name, level] : documentedNames) {
+    EXPECT_EQ(Logger::parseLevel(name), level) << name;
+  }
+}
+
+/**
+ * Given level names written in upper and mixed case
+ * When they are parsed
+ * Then they yield the same levels as their lowercase spelling
+ */
+TEST_F(LoggerTest, ParseLevelIgnoresCase) {
+  EXPECT_EQ(Logger::parseLevel("DEBUG"), LogLevel::Debug);
+  EXPECT_EQ(Logger::parseLevel("Warning"), LogLevel::Warn);
+  EXPECT_EQ(Logger::parseLevel("OFF"), LogLevel::Silent);
+}
+
+/**
+ * Given a name that is not a level, and an empty name
+ * When they are parsed
+ * Then neither yields a level
+ */
+TEST_F(LoggerTest, ParseLevelRejectsUnknownNames) {
+  EXPECT_FALSE(Logger::parseLevel("verbose").has_value());
+  EXPECT_FALSE(Logger::parseLevel("").has_value());
 }
 
 /**
