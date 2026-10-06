@@ -13,7 +13,7 @@
  *
  * logger_.info("listening on port ", port);
  * logger_.warn("dropped a packet of ", size, " bytes");
- * auto timer = logger_.scope("tick");
+ * auto timer = logger_.scope("load assets");
  * ```
  *
  * Output line format: `[YYYY-MM-DDTHH:MM:SS.mmmZ] [LEVEL] [Module] - body`,
