@@ -9,3 +9,5 @@ target_link_libraries(rtype_client_assets
 )
 
 rtype_enable_warnings(rtype_client_assets)
+
+add_subdirectory(AssetLibrary)
