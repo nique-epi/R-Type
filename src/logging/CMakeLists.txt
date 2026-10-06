@@ -1,0 +1,8 @@
+add_subdirectory(Logger)
+
+add_library(rtype_logging INTERFACE)
+target_include_directories(rtype_logging INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
+target_link_libraries(rtype_logging
+  INTERFACE
+    rtype_logging_logger
+)
