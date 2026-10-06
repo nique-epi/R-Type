@@ -1,4 +1,5 @@
 #include "LogLaunchOptions.hpp"
+#include <array>
 #include <cstddef>
 #include <filesystem>
 #include <optional>
@@ -14,6 +15,63 @@ namespace rtype::logging {
 
 namespace {
 
+struct LaunchSettings {
+  std::optional<LogLevel> level;
+  LogOutput output;
+};
+
+struct LaunchOption {
+  std::string_view name;
+  bool takesValue;
+  void (*record)(LaunchSettings& settings, std::string_view value);
+};
+
+void recordLevel(LaunchSettings& settings, std::string_view levelName) {
+  settings.level = Logger::parseLevel(levelName);
+  if (!settings.level.has_value()) {
+    throw UnknownLogLevelException(std::string(levelName));
+  }
+}
+
+void recordFilePath(LaunchSettings& settings, std::string_view filePath) {
+  settings.output.filePath = std::filesystem::path(filePath);
+}
+
+void recordNoFile(LaunchSettings& settings,
+                  [[maybe_unused]] std::string_view value) {
+  settings.output.filePath.reset();
+}
+
+void recordStderr(LaunchSettings& settings,
+                  [[maybe_unused]] std::string_view value) {
+  settings.output.toStderr = true;
+}
+
+constexpr std::array launchOptions{
+    LaunchOption{
+        .name = LEVEL_OPTION, .takesValue = true, .record = recordLevel},
+    LaunchOption{
+        .name = FILE_OPTION, .takesValue = true, .record = recordFilePath},
+    LaunchOption{
+        .name = NO_FILE_OPTION, .takesValue = false, .record = recordNoFile},
+    LaunchOption{
+        .name = STDERR_OPTION, .takesValue = false, .record = recordStderr},
+};
+
+std::optional<LaunchOption> findLaunchOption(std::string_view argument) {
+  for (const LaunchOption& option : launchOptions) {
+    if (option.name == argument) {
+      return option;
+    }
+  }
+  return std::nullopt;
+}
+
+bool isLoggingOption(std::string_view argument) {
+  return argument.starts_with(LOG_OPTION_PREFIX) ||
+         argument.starts_with(NO_LOG_OPTION_PREFIX);
+}
+
 std::string_view valueAfter(std::span<const std::string_view> arguments,
                             std::size_t& index) {
   const std::size_t valueIndex = index + 1;
@@ -28,31 +86,25 @@ std::string_view valueAfter(std::span<const std::string_view> arguments,
 
 void LogLaunchOptions::apply(std::span<const std::string_view> arguments,
                              std::string_view defaultFileName) {
-  std::optional<LogLevel> level;
-  LogOutput output{.toStderr = false,
-                   .filePath = std::filesystem::path(defaultFileName)};
+  LaunchSettings settings{
+      .level = std::nullopt,
+      .output = LogOutput{.toStderr = false,
+                          .filePath = std::filesystem::path(defaultFileName)}};
   for (std::size_t index = 0; index < arguments.size(); ++index) {
     const std::string_view argument = arguments[index];
-    if (argument == LEVEL_OPTION) {
-      const std::string_view name = valueAfter(arguments, index);
-      level = Logger::parseLevel(name);
-      if (!level.has_value()) {
-        throw UnknownLogLevelException(std::string(name));
-      }
-    } else if (argument == FILE_OPTION) {
-      output.filePath = std::filesystem::path(valueAfter(arguments, index));
-    } else if (argument == NO_FILE_OPTION) {
-      output.filePath.reset();
-    } else if (argument == STDERR_OPTION) {
-      output.toStderr = true;
-    } else if (argument.starts_with(LOG_OPTION_PREFIX) ||
-               argument.starts_with(NO_LOG_OPTION_PREFIX)) {
+    const std::optional<LaunchOption> option = findLaunchOption(argument);
+    if (option.has_value()) {
+      const std::string_view value = option->takesValue
+                                         ? valueAfter(arguments, index)
+                                         : std::string_view{};
+      option->record(settings, value);
+    } else if (isLoggingOption(argument)) {
       throw InvalidLogOptionException(std::string(argument));
     }
   }
-  Logger::setOutput(output);
-  if (level.has_value()) {
-    Logger::setLevel(*level);
+  Logger::setOutput(settings.output);
+  if (settings.level.has_value()) {
+    Logger::setLevel(*settings.level);
   }
 }
 
