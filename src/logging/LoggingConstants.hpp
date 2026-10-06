@@ -9,6 +9,16 @@ constexpr std::string_view NO_COLOR_ENVIRONMENT_VARIABLE = "NO_COLOR";
 constexpr std::string_view PROJECT_NO_COLOR_ENVIRONMENT_VARIABLE =
     "RT_LOG_NO_COLOR";
 
+constexpr std::string_view LEVEL_OPTION = "--log-level";
+constexpr std::string_view FILE_OPTION = "--log-file";
+constexpr std::string_view NO_FILE_OPTION = "--no-log-file";
+constexpr std::string_view STDERR_OPTION = "--log-stderr";
+constexpr std::string_view LOG_OPTION_PREFIX = "--log-";
+constexpr std::string_view NO_LOG_OPTION_PREFIX = "--no-log-";
+
+constexpr std::string_view SERVER_LOG_FILE_NAME = "r-type_server.log";
+constexpr std::string_view CLIENT_LOG_FILE_NAME = "r-type_client.log";
+
 constexpr std::string_view TRACE_NAME = "trace";
 constexpr std::string_view DEBUG_NAME = "debug";
 constexpr std::string_view INFO_NAME = "info";

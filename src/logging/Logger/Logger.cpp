@@ -49,29 +49,6 @@ std::string toLower(std::string_view input) {
   return out;
 }
 
-LogLevel parseLevel(std::string_view text, LogLevel fallback) {
-  const std::string lower = toLower(text);
-  if (lower == TRACE_NAME) {
-    return LogLevel::Trace;
-  }
-  if (lower == DEBUG_NAME) {
-    return LogLevel::Debug;
-  }
-  if (lower == INFO_NAME) {
-    return LogLevel::Info;
-  }
-  if (lower == WARN_NAME || lower == WARNING_NAME) {
-    return LogLevel::Warn;
-  }
-  if (lower == ERROR_NAME) {
-    return LogLevel::Error;
-  }
-  if (lower == SILENT_NAME || lower == OFF_NAME || lower == NONE_NAME) {
-    return LogLevel::Silent;
-  }
-  return fallback;
-}
-
 std::optional<std::string> readEnvironment(std::string_view name) {
   const std::string terminatedName(name);
 #if defined(_WIN32)
@@ -101,7 +78,7 @@ LogLevel initialLevel() {
   if (!value.has_value()) {
     return LogLevel::Info;
   }
-  return parseLevel(*value, LogLevel::Info);
+  return Logger::parseLevel(*value).value_or(LogLevel::Info);
 }
 
 std::atomic<LogLevel>& currentLevel() {
@@ -208,6 +185,29 @@ void emitLine(LogLevel level, std::string_view module, std::string_view body) {
 }  // namespace
 
 Logger::Logger(std::string module) : module_(std::move(module)) {}
+
+std::optional<LogLevel> Logger::parseLevel(std::string_view text) {
+  const std::string lower = toLower(text);
+  if (lower == TRACE_NAME) {
+    return LogLevel::Trace;
+  }
+  if (lower == DEBUG_NAME) {
+    return LogLevel::Debug;
+  }
+  if (lower == INFO_NAME) {
+    return LogLevel::Info;
+  }
+  if (lower == WARN_NAME || lower == WARNING_NAME) {
+    return LogLevel::Warn;
+  }
+  if (lower == ERROR_NAME) {
+    return LogLevel::Error;
+  }
+  if (lower == SILENT_NAME || lower == OFF_NAME || lower == NONE_NAME) {
+    return LogLevel::Silent;
+  }
+  return std::nullopt;
+}
 
 LogLevel Logger::level() {
   return currentLevel().load(std::memory_order_acquire);

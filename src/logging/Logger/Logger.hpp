@@ -91,6 +91,13 @@ class Logger {
   static bool shouldLog(LogLevel candidate);
 
   /**
+   * @return the level named @p text, compared without regard to case, or
+   *         nothing when @p text names no level. Accepted names: trace,
+   *         debug, info, warn (or warning), error, silent (or off, none).
+   */
+  static std::optional<LogLevel> parseLevel(std::string_view text);
+
+  /**
    * @brief Replaces the sinks. The file is opened in append mode, before
    *        anything changes, and flushed after every line.
    * @throws LogFileOpenException when the file cannot be opened. The previous
