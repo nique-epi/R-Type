@@ -1,635 +1,246 @@
 ---
 title: Project layout
-description: Where every file of the libraries, the programs, the tests and the web frontend goes, and the conventions that decide it.
+description: Where the code you are about to write goes, what each library and program holds, and how to add a class.
 sidebar:
   label: Project layout
 ---
 
-The repository builds three programs (`r-type_client`, `r-type_server` and, in part 2, `r-type_master`) on four libraries (`rtype_engine`, `rtype_game`, `rtype_network`, `rtype_logging`). Part 2 adds a master server, a web frontend, several games per server and the anti-lag techniques: most of the classes of the project do not exist yet and will be written by several people at the same time.
+This page answers one question: **where does the code I am about to write go?** It is a map of the repository, not an inventory. It names the libraries, the programs and their main folders, says what each one holds and what it must never hold, and shows how to add a class. Why the code is split this way is explained in [Architecture](/R-Type/architecture/).
 
-This page gives each of them a home before it is written: which library or program it belongs to, the folder it goes in, how the file and its CMake target are named, and where its test goes. The reasons behind the split itself are in [Architecture](/R-Type/architecture/).
+Most folders below do not exist yet. Each section says which ones do; the story that creates a folder may adjust what is inside, and updates this page in the same pull request.
 
-**How to read it.** Every folder carries a status:
+## Who may link what
 
-| Status | Meaning |
-|---|---|
-| exists | on `main` today |
-| in progress | its story is being written now |
-| to create | the agreed home of code that does not exist yet |
-| to move | exists, but not where the conventions put it (see [Moves](#moves-from-todays-code)) |
-| add-on | optional feature: nothing in the base game depends on it |
+The repository builds three programs on four libraries. Programs link libraries, never the reverse. Between libraries, the only links are `rtype_game` to `rtype_engine`, and any library to `rtype_logging`.
 
-Class names under "to create" are the expected ones. The story that writes a class may rename it, and updates this page in the same pull request.
-
-## The big picture
-
-```mermaid
-flowchart TB
-  web["web/<br/>React frontend, in the browser"]
-  subgraph programs["Programs"]
-    client["r-type_client · src/client<br/>Application · LaunchOptions<br/>Window · Assets · Screens<br/>Widgets · Rendering · Audio<br/>Input · Settings · Connection<br/>Replication · Prediction<br/><i>+ SFML 3</i>"]
-    server["r-type_server · src/server<br/>Application · LaunchOptions<br/>Lobby · ChatRoom · Instances<br/>Replication · MasterLink<br/>AdminConsole · ServerMetrics<br/>Storage<br/><i>+ SQLite</i>"]
-    master["r-type_master · src/master<br/>Application · LaunchOptions<br/>Http · Storage · GameServers<br/>Administration · Matchmaking<br/>Accounts, Tickets (add-ons)<br/><i>+ SQLite, cpp-httplib</i>"]
-  end
-  subgraph libraries["Shared libraries"]
-    game["rtype_game · src/game<br/>World · ShipControl<br/>Components · Systems<br/>Spawning · Waves · Events"]
-    network["rtype_network · src/network<br/>Transport · Serialization<br/>Protocol · Handshake · Sessions<br/>Reliability · Snapshots<br/>Statistics · Master · Tickets<br/><i>+ Asio, libsodium</i>"]
-    engine["rtype_engine · src/engine<br/>EntityRegistry · Components<br/>Systems · Events · Time<br/>Concurrency · NetworkIds"]
-    logging["rtype_logging · src/logging<br/>Logger · LogLaunchOptions<br/>used by every target"]
-  end
-
-  web -. "HTTP API" .-> master
-  client --> game
-  client --> network
-  server --> game
-  server --> network
-  master --> network
-  game --> engine
-```
-
-Solid arrows are links; a program reaches `rtype_engine` through `rtype_game`. Every library and program may link `rtype_logging`, so its arrows are left out. The dotted arrow from `web/` is a call at run time, not a link. Third-party libraries are in italics.
-
-| Target | Role | May link | Never links |
-|---|---|---|---|
-| `rtype_engine` | Generic mechanisms any game needs: entities, components, systems, events, time, queues between threads | `rtype_logging` | SFML, Asio, `rtype_game`, `rtype_network`, client code |
-| `rtype_game` | What happens during a match: R-Type components, systems, waves, ship control | `rtype_engine`, `rtype_logging` | SFML, Asio, `rtype_network`, client code |
-| `rtype_network` | Everything that crosses the wire: UDP, sessions, reliability, the message contract, the master contract | Asio, libsodium, `rtype_logging`; cpp-httplib and nlohmann-json if the master is reached over HTTP | SFML, `rtype_engine`, `rtype_game`, client code |
-| `rtype_logging` | Timestamped log lines, shared by everything | standard library only | everything else |
-| `r-type_client` | Screens, rendering, sound, input, connection, prediction | `rtype_game`, `rtype_network`, `rtype_logging`, SFML | server or master code |
-| `r-type_server` | Lobby, games running in parallel, replication, link with the master, console | `rtype_game`, `rtype_network`, `rtype_logging`, SQLite | SFML, client code |
-| `r-type_master` | List of game servers and their status, administration, HTTP API, serves `web/` | `rtype_network`, `rtype_logging`, SQLite, cpp-httplib, nlohmann-json | SFML, `rtype_game`, client code |
-
-`rtype_logging` is a library of its own because `rtype_network` must not link `rtype_engine`, and both need to write log lines. The forbidden links are checked at configure time by `rtype_forbid_links` in the root `CMakeLists.txt`.
-
-## Which library?
-
-```mermaid
-flowchart TD
-  start(["A new class"]) --> draws{"Does it draw, play a sound<br/>or read the keyboard or a gamepad?"}
-  draws -- yes --> client["src/client"]
-  draws -- no --> bytes{"Does it turn data into bytes,<br/>or read or write a socket,<br/>for at least two programs?"}
-  bytes -- yes --> network["src/network"]
-  bytes -- no --> match{"Does it decide what happens<br/>during a match?<br/>(movement, damage, score, waves)"}
-  match -- yes --> game["src/game"]
-  match -- no --> generic{"Would another game,<br/>Pong for example, need it as is?"}
-  generic -- yes --> engine["src/engine"]
-  generic -- no --> program["The program that runs it:<br/>src/server, src/client or src/master"]
-```
-
-Two consequences:
-
-- **The rules of a match live in `src/game`, even the ones only the server runs.** `src/server` decides who plays where and how the state reaches the players; `src/game` decides what happens in the match. A system can then be tested by stepping a `World`, without a thread or a socket.
-- **A class that only one program uses stays in that program**, even if it talks to the network: the server's link with the master is `src/server/MasterLink`, built on the contract in `src/network/Master`.
-
-## Conventions for a new file
-
-| What you add | Where | Example in the code |
+| Target | Holds | Never links |
 |---|---|---|
-| A concrete class `Foo` | Its own folder: `<module>/Foo/` holding `Foo.hpp`, `Foo.cpp` and `CMakeLists.txt`, nothing else | `src/engine/Time/SystemClock/` |
-| An interface (`IFoo`), an abstract class, a plain struct with no `.cpp`, a constants header | The parent folder | `Time/IClock.hpp`, `Time/TimerHandle.hpp`, `game/Components/Position.hpp` |
-| A literal with a meaning (port, rate, size, timeout) | `<Concept>Constants.hpp` in the folder of the concept | `Time/TimeConstants.hpp`, `game/PlayfieldConstants.hpp` |
-| An error | A subclass of the root exception in `<owner>/Exceptions/<Owner>Exception.hpp`, never a raw `throw std::` | `DeadEntityException` in `engine/Exceptions/EngineException.hpp` |
-| A namespace | One per library or program | `rtype::engine`, `rtype::game`, `rtype::network`, `rtype::client`; to come: `rtype::logging`, `rtype::server`, `rtype::master` |
-| The CMake target of a class folder | A library named after the class: `rtype_<owner>_<class_in_snake_case>` | `rtype_engine_system_clock` |
-| The CMake target of a folder without a class | An `INTERFACE` library named after the folder, exposing its headers | `rtype_engine_time`, `rtype_game_components` |
-| The CMake target of a library | An `INTERFACE` aggregate `rtype_<owner>` that links every target below it | `rtype_engine` |
-| The classes of a program | Class targets `rtype_<program>_<class>`, linked by the executable and by its tests | `rtype_client_window` (to rename, see [Moves](#moves-from-todays-code)) |
-| A test | `tests/<owner>/<Module>/FooTest.cpp`, added to the `<owner>_tests` executable | `tests/engine/Time/TimerSchedulerTest.cpp` (today at the root of `tests/`) |
-| A test double (fake clock, fake transport) | `tests/doubles/` | `SimulatedClock.hpp` (today at the root of `tests/`) |
+| `r-type_client` | what the player sees, hears and presses | server or master code |
+| `r-type_server` | the lobby, the games running in parallel, the link with the master | SFML |
+| `r-type_master` | the list of game servers, their status, administration, the HTTP API | SFML, `rtype_game` |
+| `rtype_game` | what happens during a match | SFML, Asio, `rtype_network` |
+| `rtype_network` | everything that crosses the wire | SFML, `rtype_engine`, `rtype_game` |
+| `rtype_engine` | the building blocks any game needs | SFML, Asio, `rtype_game`, `rtype_network` |
+| `rtype_logging` | log lines; every other target may link it | anything else |
 
-Every folder has its own `CMakeLists.txt`, and its parent adds it with `add_subdirectory`. Every new target calls `rtype_enable_warnings()`. File names are the `PascalCase` name of the class they hold.
+`rtype_logging` stands alone because `rtype_network` may not link `rtype_engine` and both write logs. A forbidden link fails the CMake configure step (`rtype_forbid_links` in the root `CMakeLists.txt`).
 
-### What comes from our previous projects
+## Where does a new class go?
 
-| Pattern | Raytracer | Zappy | R-Type |
-|---|---|---|---|
-| Shared code in libraries, one aggregate target | One static library per module, aggregated by `raytracer_src` | `common/`: one static library per folder (`zappy_protocol`, `zappy_schema`, `zappy_cli`...), linked by `zappy_server` and `zappy_gui`, no aggregate | `rtype_engine`, `rtype_game`, `rtype_network`, `rtype_logging`, each with an aggregate target |
-| Interface in the domain folder, implementations below it | `components/Primitives/IObject.hpp`, `Primitives/sphere/Sphere.cpp` | `gui/Network/INetworkClient.hpp` | `Time/IClock.hpp`, `Time/SystemClock/` |
-| One message contract read by both ends | none | `common/Protocol` (`AiProtocol`, `GuiProtocol`), `common/Rpc/Message` | `src/network/Protocol`, `src/network/Master` |
-| Bounded reading of incoming data | none | `common/Schema/Fields` (`BoundedNumberFieldType`) | `src/network/Serialization/BitReader` |
-| An application folder and a command-line folder per program | `application/Application`, `application/ArgsParser` | `server/App/GameServer`, `server/Cli/ArgsParser`, `gui/App/Application` | `<program>/Application`, `<program>/LaunchOptions` |
-| Exceptions per domain | `ImageException`, `MaterialException`, `SceneParseException` | `gui/Exceptions/GuiException`, `HandshakeException` | `<owner>/Exceptions/<Owner>Exception.hpp` |
-| One logger per module | `common/helper/Logger` | none | `src/logging/Logger`, ported from the raytracer |
-| Tests that mirror the sources | `tests/components/Primitives/SphereTest.cpp` | `tests/Gui/`, `tests/Net/` | `tests/<owner>/<Module>/` |
-| Test doubles apart | `tests/fixtures/` | `tests/Gui/mocks/FakeNetwork` | `tests/doubles/` |
-| Not kept | Lowercase folders (`sphere/`, `cone/`) | Several classes in one folder (`server/App/World/`) | `PascalCase` folders, one folder per class |
+Ask the questions in order. The first "yes" decides.
 
-## The folders
+| | Question | If yes |
+|---|---|---|
+| 1 | Does it draw, play a sound or read the keyboard or a gamepad? | `src/client` |
+| 2 | Is it a message two programs exchange, or code that encodes or transports messages? | `src/network` |
+| 3 | Does it decide what happens during a match: movement, damage, score, waves? | `src/game` |
+| 4 | Would any other game need it unchanged? | `src/engine` |
+| 5 | None of the above | the program that runs it: `src/server`, `src/client` or `src/master` |
 
-### Repository root
+The cases where people hesitate:
 
-```
-r-type/
-├── CMakeLists.txt         options, warnings, rtype_forbid_links, format and tidy targets
-├── CMakePresets.json
-├── vcpkg.json, vcpkg/     pinned dependencies
-├── src/
-│   ├── engine/            rtype_engine                exists
-│   ├── logging/           rtype_logging               in progress
-│   ├── game/              rtype_game                  exists
-│   ├── network/           rtype_network               exists
-│   ├── client/            r-type_client               exists
-│   ├── server/            r-type_server               exists
-│   └── master/            r-type_master               to create
-├── tests/                 GoogleTest, one executable per library or program
-├── assets/                files read at run time      to create
-├── web/                   web frontend                to create
-├── docs/                  this site
-└── .github/workflows/     build-and-test, docs
-```
+| Code | Goes in | Because |
+|---|---|---|
+| Moving the ship from the player's input | `src/game/ShipControl` | the server runs it, and the client runs the same code to predict its own ship |
+| Damage after a collision | `src/game/Systems` | it is a rule of the match, even though only the server runs it |
+| A queue between two threads | `src/engine/Concurrency` | the client and the server both need it, and it knows nothing about R-Type |
+| Finding an entity from its network id | `src/engine/NetworkIds` | `rtype_network` may not know entities |
+| The heartbeat sent to the master | `src/server/MasterLink` | only the server sends it; the message format lives in `src/network/Master` |
+| A new protocol message | `src/network/Protocol` | one struct per message, its encoding next to it, then a line in the protocol RFC |
+| A fake transport that loses datagrams | `tests/doubles` | test doubles are never built into a program |
 
-### `src/engine`: `rtype_engine`
+## The libraries
+
+### Engine
+
+`src/engine` builds `rtype_engine`, the building blocks of a networked game, R-Type or not. **Never** an R-Type word (Bydo, missile, score), never SFML or Asio.
 
 ```
 src/engine/
-├── CMakeLists.txt              rtype_engine, aggregate                         exists
-├── Entity.hpp                  entity handle: index and generation             exists
-├── EntityRegistry/             creates, destroys, recycles entities            exists
-├── Components/                 IComponentStorage.hpp                           exists
-│   ├── ComponentStorage.hpp    contiguous storage of one component type        to move
-│   ├── ComponentRegistry/      add, get, has, remove by type                   exists
-│   └── EntityIndexMap/         sparse set: entity index to position            exists
-├── Systems/                    ISystem.hpp                                     in progress
-│   └── SystemScheduler/        runs the systems in a fixed order, queries
-│                               "entities with A and B", deferred destruction
-├── Events/                                                                     in progress
-│   └── EventBus/               typed publish and subscribe
-├── Time/                       IClock.hpp, TimeConstants.hpp, TimerHandle.hpp  exists
-│   ├── FixedTimestep/          wall time to a whole number of ticks            exists
-│   ├── SystemClock/            the real clock                                  exists
-│   └── TimerScheduler/         callbacks after a delay or at an interval       exists
-├── Concurrency/                                                                to create
-│   └── BoundedQueue/           hands messages from one thread to another
-├── NetworkIds/                                                                 to create
-│   └── NetworkIdRegistry/      entity to network id and back, on both sides
-└── Exceptions/                 EngineException.hpp                             exists
+├── EntityRegistry/   creates and recycles entities
+├── Components/       stores components by type
+├── Systems/          runs systems in a fixed order
+├── Events/           typed event bus
+├── Time/             fixed timestep, clocks, timers
+├── Concurrency/      queues between threads
+├── NetworkIds/       entity to network id, and back
+└── Exceptions/
 ```
 
-The engine never names an R-Type concept: no Bydo, no missile, no score. `NetworkIds` holds integers, not sockets: the client and the server both need to find a local entity from the id the server gave it.
+`EntityRegistry`, `Components`, `Time` and `Exceptions` exist; `Systems` and `Events` are being written.
 
-### `src/logging`: `rtype_logging`
+### Logging
 
-```
-src/logging/                                                                    in progress
-├── LoggingConstants.hpp
-├── Logger/                     one instance per module, thread-safe lines
-├── LogLaunchOptions/           log level and outputs read at launch
-└── Exceptions/                 LoggingException.hpp
-```
+`src/logging` builds `rtype_logging`: one `Logger` per module, writing timestamped lines to the terminal and to a file, with the level chosen at launch. It links nothing else of the repository. It is being written, with `Logger/` and `LogLaunchOptions/`.
 
-### `src/game`: `rtype_game`
+### Game
+
+`src/game` builds `rtype_game`, the rules of a match: what moves, what collides, what dies, what scores. The server runs all of it; the client only runs `ShipControl`, to predict its own ship. **Never** SFML, Asio or a network message.
 
 ```
 src/game/
-├── CMakeLists.txt              rtype_game                                      exists
-├── PlayfieldConstants.hpp      size of the logical playfield                   exists
-├── PlayerInput.hpp             the actions a player can press, 8 bits          to create
-├── InstanceRules.hpp           difficulty, lives, friendly fire, max players,
-│                               assisted mode, with their bounds                to create
-├── World.hpp, World.cpp        the state of one match                          to move into World/
-├── ShipControl/                applies a PlayerInput to a ship: run by the
-│                               server tick and by the client prediction        to create
-├── Components/                 Position, Velocity, CollisionBox                exists
-│                               to come: entity type, Health, Faction, Weapon,
-│                               Projectile, ScoreValue, PlayerSlot, Lives
-├── Systems/                                                                    to create
-│   ├── MovementSystem/         moves entities by their velocity                in progress
-│   ├── CollisionSystem/        publishes a collision event
-│   ├── DamageSystem/           collision between factions: health, destruction
-│   ├── ShootingSystem/         player and enemy weapons, fire rate
-│   ├── EnemyBehaviourSystem/   Bydo movement patterns
-│   ├── LivesSystem/            death, respawn, elimination
-│   ├── ScoreSystem/
-│   ├── PowerUpSystem/          bonuses dropped and picked up
-│   └── EndOfGameSystem/        last wave cleared, or every ship dead
-├── Spawning/                                                                   to create
-│   └── EntitySpawner/          creates a ship, a Bydo, a missile, a bonus
-│                               with its components
-├── Waves/                                                                      to create
-│   └── WaveDirector/           when and which enemies appear, harder over time
-├── Events/                     one struct per game event: collision,           to create
-│                               entity destroyed, player left, score changed
-└── Exceptions/                 GameException.hpp                               to create
+├── World/            the state of one match
+├── ShipControl/      applies a player's input to their ship
+├── Components/       Position, Velocity, CollisionBox, Health...
+├── Systems/          movement, collisions, damage, shooting, score, lives
+├── Spawning/         creates ships, enemies, missiles, bonuses
+├── Waves/            when and which enemies appear
+└── Events/           collision, entity destroyed, player left...
 ```
 
-The only game code the client runs is `ShipControl` (prediction of its own ship) and the components it reads to draw. Everything else runs in the server's game instances.
+`World` and `Components` exist; the movement system is being written.
 
-### `src/network`: `rtype_network`
+### Network
+
+`src/network` builds `rtype_network`: everything that crosses the wire, for the client, the server and the master. **Never** a component: messages carry plain data (ids, quantized positions, health), and the client and the server translate between messages and entities in their own `Replication` folders.
 
 ```
 src/network/
-├── CMakeLists.txt              rtype_network                                   exists
-├── NetworkConstants.hpp        protocol id, version, 1200-byte datagrams,
-│                               default port, timeouts                          to create
-├── NetworkContext.hpp, .cpp    the Asio event loop                             to move into NetworkContext/
-├── Transport/                  IDatagramTransport.hpp                          to create
-│   ├── UdpTransport/           Asio UDP socket, for client, server and master
-│   └── ConditionSimulator/     adds latency, loss, duplicates and reordering
-│                               in front of a transport
-├── Serialization/                                                              to create
-│   ├── BitWriter/
-│   └── BitReader/              every read checks the bytes left first
-├── Protocol/                   PacketHeader.hpp, MessageType.hpp               to create
-│   ├── Messages/               one struct per message: ConnectRequest.hpp,
-│   │                           InputCommands.hpp, Snapshot.hpp,
-│   │                           ServerInformation.hpp...
-│   ├── MessageCodec/           message to bytes and back, bounds checked
-│   └── MessageDispatcher/      message type to the typed handler a program
-│                               registered
-├── Handshake/                                                                  to create
-│   ├── ChallengeCookie/        stateless cookie: MAC of address and time
-│   ├── ConnectionGuard/        rate limit per address, temporary bans, version
-│   └── ClientHandshake/        client side: request, challenge, token
-├── Sessions/                                                                   to create
-│   ├── Session/                one peer: token, sequences, acks, channels, ping
-│   └── SessionRegistry/        sessions by address and token, timeouts,
-│                               reconnection window
-├── Reliability/                                                                to create
-│   ├── AckTracker/             sequence numbers and the 32 acknowledgement bits
-│   ├── ReliableChannel/        resends until acknowledged, delivers in order
-│   └── Fragmenter/             splits and reassembles large messages
-├── Snapshots/                  EntityState.hpp: net id, type, quantized
-│                               position, health                                to create
-│   ├── SnapshotHistory/        snapshots sent, baseline of each client
-│   └── DeltaEncoder/           entity states compared with a baseline
-├── Statistics/                                                                 to create
-│   └── TrafficCounters/        bytes, datagrams, rejected packets, per direction
-├── Master/                     contract with r-type_master                     to create
-│   ├── Messages/               one struct per message: registration,
-│   │                           heartbeat, server list entry, admin command
-│   └── MasterClient/           registers, sends heartbeats, fetches the list
-├── Tickets/                    Ticket.hpp                                      add-on
-│   └── TicketSigner/           signs and verifies a join ticket
-└── Exceptions/                 NetworkException.hpp                            to create
+├── Transport/        UDP socket, lag and loss simulator
+├── Serialization/    bit reader and writer, every read bounded
+├── Protocol/         one struct per message, encoding, dispatch by type
+├── Handshake/        challenge, rate limit, version check
+├── Sessions/         session token, sequence numbers, timeouts
+├── Reliability/      acknowledgements, ordered channel, fragments
+├── Snapshots/        history and delta encoding of the world state
+├── Statistics/       bytes and packets counted per direction
+└── Master/           messages and client of the master
 ```
 
-Messages carry plain data (ids, quantized positions, health), never a component: the network does not know the ECS. The server and the client translate between components and messages, in their `Replication` folders.
+Only the Asio event loop exists today (`NetworkContext`).
 
-### `src/server`: `r-type_server`
+## The programs
+
+### Server
+
+`src/server` builds `r-type_server`: who plays where, and how the state reaches them. Every game runs on its own thread and owns its `World`; the network thread owns the sessions and the lobby; threads only talk through queues.
 
 ```
 src/server/
-├── main.cpp                    entry point                                     exists
-├── CMakeLists.txt              r-type_server                                   exists
-├── Application/                starts and stops the threads: network,
-│                               instances, master link, console                 to create
-├── LaunchOptions/              port, name, max instances, tick and snapshot
-│                               rates, timeouts, master address                 to create
-├── Lobby/                      players connected but not in a game: list,
-│                               create, join, leave, quick play                 to create
-├── ChatRoom/                   lobby and game chat, bounded length and rate    to create
-├── Instances/                  InstanceState.hpp: waiting, countdown,
-│                               playing, finished, closed, crashed              to create
-│   ├── InstanceRegistry/       creates and closes games, max_instances, finds
-│   │                           the game of a player
-│   ├── GameInstance/           one game: its thread, World, tick, input queue;
-│   │                           catches its own exceptions
-│   └── PositionHistory/        past positions for lag compensation
-├── Replication/                                                                to create
-│   ├── SnapshotBuilder/        World to Snapshot, at the snapshot rate
-│   └── GameEventBroadcaster/   game events to reliable messages
-├── MasterLink/                 registration, heartbeat every 5 s, applies the
-│                               admin commands of the reply                     to create
-├── AdminConsole/               commands read on stdin: list, kick, close       to create
-├── ServerMetrics/              atomic counters: tick time, players, traffic    to create
-├── Storage/                                                                    to create
-│   ├── ServerDatabase/         the SQLite file of this server
-│   ├── LeaderboardRepository/
-│   ├── PlayerStatisticsRepository/
-│   └── BanRepository/          bans of this server only                        add-on
-└── Exceptions/                 ServerException.hpp                             to create
+├── Application/      starts and stops the threads
+├── LaunchOptions/    port, name, limits, master address
+├── Lobby/            players not in a game: list, create, join, chat
+├── Instances/        one GameInstance per game, each on its thread
+├── Replication/      world to snapshots and game events
+├── MasterLink/       registration and heartbeat
+├── AdminConsole/     kick and close a game from the terminal
+├── Metrics/          tick time and traffic, sent in the heartbeat
+└── Storage/          this server's SQLite file: leaderboard, statistics
 ```
 
-### `src/client`: `r-type_client`
+Only `main.cpp` exists today.
+
+### Client
+
+`src/client` builds `r-type_client`: what the player sees, hears and presses. The frame loop never waits: the network and HTTP threads hand their results over through queues.
 
 ```
 src/client/
-├── main.cpp                                                                    exists
-├── CMakeLists.txt              r-type_client                                   exists
-├── Application/                owns the frame loop (today GameWindow::run),
-│                               the screen stack and the network threads        to create
-├── LaunchOptions/              address and port for a direct connection        to create
-├── Window/                     WindowConstants.hpp                             exists
-│   └── GameWindow/             the SFML window, scaling of the playfield       to move
-├── Assets/                                                                     to create
-│   └── AssetCache/             textures, sounds, fonts loaded once, by id
-├── Screens/                    IScreen.hpp                                     to create
-│   ├── ScreenStack/
-│   ├── HomeScreen/             guest nickname
-│   ├── ServerListScreen/       servers from the master, with ping
-│   ├── ConnectScreen/          direct connection by address
-│   ├── LobbyScreen/            games of a server, chat
-│   ├── CreateInstanceScreen/
-│   ├── WaitingRoomScreen/      players, colors, Ready
-│   ├── GameScreen/
-│   ├── EndScreen/              scores
-│   ├── OptionsScreen/
-│   ├── HelpScreen/
-│   └── LeaderboardScreen/
-├── Widgets/                    Button/, TextField/, ListView/, Slider/,
-│                               ChatPanel/, Notice/                             to create
-├── Rendering/                                                                  to create
-│   ├── SpriteRenderer/         draws entities, scaled from the playfield
-│   ├── SpriteAnimator/
-│   ├── Starfield/              scrolling background
-│   ├── Hud/                    lives, score, players
-│   ├── ParticleEffects/        explosions, hits
-│   └── Lagometer/              ping curve, losses
-├── Audio/                                                                      to create
-│   ├── SoundPlayer/
-│   └── MusicPlayer/
-├── Input/                                                                      to create
-│   └── InputMapper/            keyboard and gamepad to PlayerInput,
-│                               remapping, auto fire
-├── Settings/                   UserSettings.hpp: volumes, key bindings,
-│                               color blind mode, interface size, reduced
-│                               effects                                         to create
-│   └── SettingsFile/           loads and saves the settings
-├── Connection/                                                                 to create
-│   ├── GameConnection/         session with a server on the network thread,
-│   │                           queues to the frame loop
-│   └── ServerDirectory/        list from the master and ping of each server,
-│                               on a background thread
-├── Replication/                                                                to create
-│   └── SnapshotApplier/        creates, updates, destroys local entities
-│                               by network id
-├── Prediction/                                                                 to create
-│   ├── Predictor/              own ship: applied at once, reconciled
-│   ├── Interpolator/           other entities, shown 100 ms in the past
-│   └── ServerClock/            estimate of the server time
-└── Exceptions/                 ClientException.hpp                             to create
+├── Application/      frame loop and screen stack
+├── Window/           the SFML window
+├── Assets/           textures, sounds and fonts loaded once
+├── Screens/          home, server list, lobby, game, end, options...
+├── Widgets/          buttons, text fields, lists
+├── Rendering/        sprites, starfield, HUD, effects, lagometer
+├── Audio/            sounds and music
+├── Input/            keyboard and gamepad to player input, remapping
+├── Settings/         volumes, key bindings, accessibility, saved to disk
+├── Connection/       session with a server, server list from the master
+├── Replication/      applies snapshots to the local entities
+└── Prediction/       own ship predicted, other ships interpolated
 ```
 
-The frame loop never waits: the network and HTTP threads hand their results over through queues that the loop drains once per frame.
+Only `Window` exists today.
 
-### `src/master`: `r-type_master`
+### Master
+
+`src/master` builds `r-type_master`, the directory of game servers: it records their heartbeats, computes their status, runs administration and serves the web frontend. Game servers send a heartbeat every 5 seconds and receive admin commands in the reply. Like the other programs, it has `Application/` and `LaunchOptions/`.
 
 ```
-src/master/                                                                     to create
-├── main.cpp
-├── CMakeLists.txt              r-type_master
-├── Application/                starts the HTTP server, the status sweeper and
-│                               the probe
-├── LaunchOptions/              port, database path, web folder; the admin
-│                               secret comes from the environment
-├── Http/
-│   ├── HttpServer/             routes under /api, serves web/ under /
-│   └── RequestAuthenticator/   server key or admin secret
-├── Storage/
-│   ├── Database/               SQLite connection, transactions
-│   ├── MigrationRunner/
-│   └── migrations/             numbered .sql files
-├── GameServers/
-│   ├── GameServerController/   register, heartbeat, list, detail, history
-│   ├── GameServerService/
-│   ├── GameServerRepository/
-│   ├── ServerSampleRepository/ one sample every 5 s, kept 7 days
-│   ├── LeaderboardRepository/  last top 10 received from each server
-│   ├── StatusSweeper/          recomputes the five statuses every 5 s
-│   └── UdpProbe/               ServerInformation request to each server
-├── Administration/
-│   ├── AdministrationController/
-│   ├── AdministrationService/  server keys, maintenance, bans, kicks
-│   ├── BanRepository/
-│   ├── PendingCommandRepository/
-│   │                           commands sent with the next heartbeat reply
-│   └── AuditRepository/
-├── Matchmaking/
-│   └── MatchmakingService/     quick play: picks a server
-├── Accounts/                   AccountController/, AccountService/,
-│                               AccountRepository/, SessionRepository/,
-│                               PasswordHasher/                                 add-on
-├── Tickets/
-│   └── TicketService/          issues join tickets (format in rtype_network)   add-on
-└── Exceptions/                 MasterException.hpp
+src/master/
+├── Http/             routes, server key and admin secret check
+├── Storage/          SQLite connection and migrations
+├── GameServers/      registration, heartbeats, status, top 10 of each server
+├── Administration/   bans, kicks, maintenance, audit log
+├── Matchmaking/      quick play
+└── Accounts/         optional, with Tickets/
 ```
 
-Each module of the master splits its classes by role:
+Each module splits its classes into a controller (HTTP in and out), a service (the rules) and repositories (the only place with SQL). Nothing exists yet.
 
-| Role | Does | Never |
+### Tests, web frontend, assets
+
+- **`tests/`** mirrors `src/`: the test of `src/game/Waves/WaveDirector` is `tests/game/Waves/WaveDirectorTest.cpp`, built into `game_tests`, one executable per library or program. Test doubles (fake clock, lossy transport) go in `tests/doubles/`; load-test bots in `tests/tools/`, never shipped. Today the tests sit at the root of `tests/`.
+- **`web/`** is the React frontend served by the master: `src/api/` (one function per route), `src/pages/`, `src/components/`.
+- **`assets/`** holds the files read at run time: `sprites/`, `sounds/`, `music/` and `fonts/` for the client, `waves/` for the server.
+
+## Adding a class
+
+Adding `WaveDirector` to `src/game/Waves`:
+
+```
+src/game/Waves/
+├── CMakeLists.txt         add_subdirectory(WaveDirector)
+└── WaveDirector/
+    ├── CMakeLists.txt     add_library(rtype_game_wave_director STATIC WaveDirector.cpp)
+    ├── WaveDirector.hpp
+    └── WaveDirector.cpp
+```
+
+- A concrete class has its own folder, named after it, holding only its `.hpp`, its `.cpp` and its `CMakeLists.txt`.
+- Interfaces (`IWaveSource`), plain structs and constants headers (`WaveConstants.hpp`) stay in the parent folder.
+- The class library is `rtype_<owner>_<class_in_snake_case>`, linked by the aggregate of its library (`rtype_game`) or by its program.
+- The namespace is `rtype::<owner>`: `rtype::game` here.
+- An error is a subclass of the owner's root exception, in `<owner>/Exceptions/`: `GameException` here.
+
+This follows our previous projects: shared code in libraries and one folder per program, like Zappy; one library per module, interfaces next to their implementations and tests that mirror the sources, like the Raytracer. Two things differ: folders are `PascalCase`, and a folder holds one class.
+
+## A key press, from one screen to another
+
+Player A holds the Up arrow and player B sees A's ship move. Each step happens in one place.
+
+```mermaid
+sequenceDiagram
+  participant A as Client A
+  participant N as Server network thread
+  participant G as Server game thread
+  participant B as Client B
+  Note over A: moves its ship at once
+  A->>N: inputs
+  N->>G: queue
+  Note over G: tick
+  G->>N: snapshot
+  N->>A: snapshot
+  Note over A: corrects its ship
+  N->>B: snapshot
+  Note over B: draws A's ship
+```
+
+| In the diagram | What happens | Where |
 |---|---|---|
-| Controller | Reads the HTTP request, validates it, calls a service, returns JSON | SQL, a business rule |
-| Service | Applies the rules, calls its own repositories and the services of other modules | The repository of another module |
-| Repository | The only place with SQL, prepared statements only | Calls a service |
-| Record (plain struct, parent folder) | Data, no behaviour | Logic |
-
-### `tests`
-
-```
-tests/
-├── CMakeLists.txt              rtype_add_test: one executable per library or
-│                               program (engine_tests, game_tests...)           exists
-├── doubles/                    SimulatedClock.hpp (today at tests/),
-│                               FakeTransport (loses, duplicates, reorders,
-│                               delays datagrams)                               to create
-├── engine/                     mirrors src/engine: Time/TimerSchedulerTest.cpp to move
-├── logging/                                                                    in progress
-├── game/                                                                       to move
-├── network/                    including malformed and truncated packets       to move
-├── server/                                                                     to create
-├── client/                     logic only: prediction, input, replication;
-│                               no test opens a window                          to create
-├── master/                                                                     to create
-└── tools/
-    └── LoadTestClient/         bots replaying scripted inputs for the
-                                measurements; built with the tests, never
-                                shipped                                         to create
-```
-
-### `web`, `assets`, `docs`
-
-```
-web/                            React, Vite, TypeScript; built by the CI and    to create
-│                               served by r-type_master
-├── package.json, vite.config.ts
-└── src/
-    ├── api/                    one typed function per master route
-    ├── pages/                  ServersPage, ServerDetailPage,
-    │                           LeaderboardPage, admin/
-    ├── components/             StatusChip, ServerTable, StatusTimeline,
-    │                           MetricChart
-    └── hooks/                  usePolling
-
-assets/                         every file read at run time                     to create
-├── sprites/  sounds/  music/  fonts/    read by the client
-└── waves/                      read by the server, once waves are described
-                                in files
-
-docs/src/content/docs/          one page per topic: architecture, engine,
-                                project layout; to come: logging, client,
-                                server, network, protocol RFC, master API
-```
-
-## Threads of the server
-
-```mermaid
-flowchart TB
-  socket["UDP socket, one port<br/>network/Transport"]
-  subgraph netThread["Network thread (Asio)"]
-    direction TB
-    guard["network/Handshake, network/Sessions<br/>token, sequence, timeouts"]
-    dispatch["network/Protocol · MessageDispatcher<br/>message type to handler"]
-    lobby["server/Lobby, server/ChatRoom<br/>players not in a game"]
-    registry["server/Instances · InstanceRegistry<br/>finds the game of the sender"]
-    guard --> dispatch
-    dispatch --> lobby
-    dispatch --> registry
-  end
-  subgraph instanceThread["One thread per game"]
-    direction TB
-    instance["server/Instances · GameInstance<br/>tick 60 times per second"]
-    world["game/World, game/Systems<br/>the match itself"]
-    replication["server/Replication<br/>Snapshot and game events"]
-    instance --> world
-    world --> replication
-  end
-  subgraph otherThreads["Other threads"]
-    direction LR
-    masterLink["server/MasterLink<br/>heartbeat every 5 s"]
-    console["server/AdminConsole<br/>stdin"]
-  end
-  socket --> guard
-  registry -- "bounded input queue<br/>engine/Concurrency" --> instance
-  replication -- "outgoing queue" --> socket
-  masterLink -- "kick, ban" --> dispatch
-  console -- "kick, close a game" --> dispatch
-```
-
-A piece of data has one owner thread. The network thread owns the sessions and the lobby, each game thread owns its `World`, and threads only talk through bounded queues: the simulation takes no lock.
-
-## A key press, folder by folder
-
-Player A holds the Up arrow; player B sees A's ship move.
-
-```mermaid
-flowchart TB
-  subgraph clientA["Client A"]
-    direction TB
-    a1["1 · client/Input · InputMapper<br/>the Up arrow becomes a PlayerInput"]
-    a2["2 · client/Prediction · Predictor<br/>moves the own ship at once<br/>with game/ShipControl"]
-    a3["3 · client/Connection · GameConnection<br/>InputCommands datagram: the last<br/>inputs not yet confirmed"]
-    a1 --> a2 --> a3
-  end
-  subgraph server["Server"]
-    direction TB
-    s1["4 · rtype_network<br/>token and sequence checked,<br/>message decoded"]
-    s2["5 · server/Instances · GameInstance<br/>input queued for the game of A"]
-    s3["6 · rtype_game, next tick<br/>ShipControl, then the Systems:<br/>movement, collisions, damage"]
-    s4["7 · server/Replication · SnapshotBuilder<br/>Snapshot, 20 times per second"]
-    s1 --> s2 --> s3 --> s4
-  end
-  subgraph clientAAgain["Client A"]
-    a4["8 · client/Prediction · Predictor<br/>restarts from the server position,<br/>replays the newer inputs"]
-  end
-  subgraph clientB["Client B"]
-    direction TB
-    b1["8 · client/Replication · SnapshotApplier<br/>updates the ship of A"]
-    b2["9 · client/Prediction · Interpolator<br/>draws it 100 ms in the past"]
-    b1 --> b2
-  end
-  a3 --> s1
-  s4 --> a4
-  s4 --> b1
-```
-
-## The master, folder by folder
-
-A server joins the list, a player browses it, an admin bans a player.
-
-```mermaid
-flowchart TB
-  link["r-type_server · server/MasterLink<br/>registration with the server key,<br/>then a heartbeat every 5 s:<br/>players, games, tick time, top 10"]
-  directory["r-type_client · client/Connection · ServerDirectory<br/>server list, then a ServerInformation<br/>request over UDP to each server for the ping"]
-  browser["web/ · pages<br/>server list every 5 s,<br/>admin bans a player"]
-  subgraph master["r-type_master"]
-    direction TB
-    http["master/Http · HttpServer, RequestAuthenticator<br/>routes, server key, admin secret"]
-    servers["master/GameServers<br/>Controller, Service, Repositories<br/>StatusSweeper every 5 s, UdpProbe"]
-    admin["master/Administration<br/>bans, kicks, audit,<br/>commands waiting for a heartbeat"]
-    storage[("master/Storage · SQLite")]
-    http --> servers
-    http --> admin
-    servers -- "pending commands<br/>of this server" --> admin
-    servers --> storage
-    admin --> storage
-  end
-  link -- "network/Master · MasterClient" --> http
-  directory -- "network/Master · MasterClient" --> http
-  browser -- "HTTP API" --> http
-  http -. "heartbeat reply carries the kick" .-> link
-```
-
-## Where does this code go?
-
-| I want to… | Folder |
-|---|---|
-| **Engine and logging** | |
-| Store a new kind of data on entities | A struct in `src/game/Components/`; `ComponentRegistry` creates its storage on first use |
-| Walk every entity that has A and B, in a fixed order | A system in `src/game/Systems/`, scheduled by `src/engine/Systems/` |
-| Let two systems talk without including each other | An event struct in `src/game/Events/`, published on `src/engine/Events/EventBus/` |
-| Run something after a delay | `src/engine/Time/TimerScheduler/` |
-| Hand data from one thread to another | `src/engine/Concurrency/BoundedQueue/` |
-| Write a log line | A `Logger` of `src/logging/`, one per module |
-| **Game** | |
-| Move the ship with the arrows | `src/game/ShipControl/`, used by the server and by the client prediction |
-| Detect that a missile touches a Bydo | `src/game/Systems/CollisionSystem/` publishes a collision event |
-| Decide that the Bydo loses health or explodes | `src/game/Systems/DamageSystem/` |
-| Spawn Bydos, harder wave after wave | `src/game/Waves/WaveDirector/` |
-| Create a ship, a Bydo, a missile with its components | `src/game/Spawning/EntitySpawner/` |
-| Add a rule chosen when a game is created | `src/game/InstanceRules.hpp`, checked by `src/server/Lobby/` |
-| **Network** | |
-| Add a message to the protocol | A struct in `src/network/Protocol/Messages/`, its id in `MessageType.hpp`, its encoding in `MessageCodec/`, then the protocol RFC |
-| Read a value from a received datagram | `src/network/Serialization/BitReader/`, never a cast on the buffer |
-| Make a message arrive, in order | `src/network/Reliability/ReliableChannel/` |
-| Refuse a client that floods connection requests | `src/network/Handshake/ConnectionGuard/` |
-| Notice a client that stopped sending | `src/network/Sessions/SessionRegistry/` |
-| Simulate 150 ms of lag and 5 % loss | `src/network/Transport/ConditionSimulator/` |
-| Count the bytes per second | `src/network/Statistics/TrafficCounters/` |
-| Send only what changed since the last acknowledged snapshot | `src/network/Snapshots/DeltaEncoder/` |
-| **Server** | |
-| Run several games at once | `src/server/Instances/` |
-| Start a game when everyone is ready | `src/server/Instances/GameInstance/` |
-| List, create, join a game | `src/server/Lobby/` |
-| Send the world to the players | `src/server/Replication/SnapshotBuilder/` |
-| Tell the master the server is alive | `src/server/MasterLink/` |
-| Kick a player from the server terminal | `src/server/AdminConsole/` |
-| Keep this server's leaderboard | `src/server/Storage/LeaderboardRepository/` |
-| Add a launch option | `src/server/LaunchOptions/`, default value in a constants header |
-| **Client** | |
-| Add a screen | `src/client/Screens/<Name>Screen/`, implementing `IScreen` |
-| Add a button or a text field | `src/client/Widgets/` |
-| Load a texture once and share it | `src/client/Assets/AssetCache/`, file in `assets/sprites/` |
-| Remap the keys, play with a gamepad | `src/client/Input/InputMapper/`, saved by `src/client/Settings/` |
-| Volume, color blind mode, interface size | `src/client/Settings/UserSettings.hpp`, applied by `Audio/` and `Rendering/` |
-| Starfield, HUD, explosions, lagometer | `src/client/Rendering/` |
-| Show the own ship at once and the others smoothly | `src/client/Prediction/` |
-| Apply the world received from the server | `src/client/Replication/SnapshotApplier/` |
-| Show the server list with ping | `src/client/Connection/ServerDirectory/` and `Screens/ServerListScreen/` |
-| **Master and web** | |
-| Add an HTTP route | The controller of its module in `src/master/<Module>/`; SQL only in a repository |
-| Add a table | A numbered `.sql` file in `src/master/Storage/migrations/` |
-| Compute the status of the servers | `src/master/GameServers/StatusSweeper/` |
-| Ban a player on every server | `src/master/Administration/` |
-| Add a page to the web frontend | `web/src/pages/`, its call in `web/src/api/` |
-| **Tests** | |
-| A network that loses and reorders datagrams | `tests/doubles/` |
-| Bots for the load measurements | `tests/tools/LoadTestClient/` |
+| moves its ship at once | The key becomes a player input; the ship moves without waiting for the server | `client/Input`, `client/Prediction`, `game/ShipControl` |
+| inputs | The last inputs not yet confirmed are sent | `client/Connection`, `network/Protocol` |
+| queue | Token and sequence checked, input queued for A's game | `network/Sessions`, `server/Instances` |
+| tick | Ship control, then the systems | `game/ShipControl`, `game/Systems` |
+| snapshot | The world is sent to every player, 20 times per second | `server/Replication`, `network/Snapshots` |
+| corrects its ship | A restarts from the server position and replays its newer inputs | `client/Prediction` |
+| draws A's ship | B shows A's ship 100 ms in the past, between two snapshots | `client/Replication`, `client/Prediction` |
 
 ## Moves from today's code
 
-These files predate the conventions above. Each move changes no behaviour and goes in its own `refactor` pull request.
+A few files predate these conventions. Each move is a `refactor` pull request that changes no behaviour.
 
-| Today | Target | Why |
-|---|---|---|
-| `src/game/World.hpp`, `World.cpp` | `src/game/World/`, target `rtype_game_world` | A concrete class has its own folder |
-| `src/network/NetworkContext.hpp`, `.cpp` | `src/network/NetworkContext/` | Same |
-| `src/client/Window/GameWindow.hpp`, `.cpp`, target `rtype_client_window` | `src/client/Window/GameWindow/`, target `rtype_client_game_window` | Same, and the target is named after the class |
-| `src/engine/Components/ComponentStorage.hpp` | `src/engine/Components/ComponentStorage/`, `INTERFACE` target | A class template is still a concrete class |
-| `tests/*.cpp` | `tests/<owner>/<Module>/` | Tests mirror the sources |
-| `tests/SimulatedClock.hpp` | `tests/doubles/` | Test doubles in one place |
-| `rtype_forbid_links` reads the direct links of a target only | Walk the links recursively | A class library inside `rtype_engine` that links SFML passes the check today |
+| Today | Target |
+|---|---|
+| `src/game/World.cpp` | `src/game/World/` |
+| `src/network/NetworkContext.cpp` | `src/network/NetworkContext/` |
+| `src/client/Window/GameWindow.cpp`, target `rtype_client_window` | `src/client/Window/GameWindow/`, target `rtype_client_game_window` |
+| `src/engine/Components/ComponentStorage.hpp` | `src/engine/Components/ComponentStorage/` |
+| `tests/*.cpp`, `tests/SimulatedClock.hpp` | `tests/<owner>/<Module>/`, `tests/doubles/` |
+
+`rtype_forbid_links` also reads only the direct links of a target: a class library inside `rtype_engine` that linked SFML would pass. It must walk the links recursively.
 
 ## Not decided yet
 
-- **Transport between the programs and the master: HTTP or UDP.** The folders do not change: only the inside of `src/network/Master/MasterClient/`, and whether `rtype_network` links cpp-httplib and nlohmann-json. The browser talks HTTP to the master in both cases.
-- **Track 1 (engine as a separate project, resources, scripting).** It would add folders to `src/engine` (resources, scripting) and move generic components out of `src/game`. Nothing here depends on it.
+- **HTTP or UDP between the programs and the master.** Only the inside of `src/network/Master` changes.
+- **Track 1** (the engine as its own project, scripting). It would add folders to `src/engine`; nothing on this page depends on it.
