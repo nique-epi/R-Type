@@ -16,7 +16,7 @@ trigger: always_on
 
 1. **Every statement a brief makes about the environment** ("the build works", "dependencies are installed", "the tests pass on this checkout") **is run once in the exact setup the agent receives** (same worktree, same links, same command) before the brief is sent.
 2. **A shortcut that changes the setup is a new environment**: a symlinked dependency folder, a shared build directory, a copied cache. Measure it there; never inherit the result from the folder it was copied from.
-3. **A claim found false after launch is corrected at once**: tell every running agent, say the failure comes from the setup, and forbid the destructive workaround (deleting or reinstalling a shared folder).
+3. **A claim found false after launch is corrected at once**: tell every running agent that the claim was false and what was observed (command, exit code, error), and forbid the destructive workaround (deleting or reinstalling a shared folder). Name the setup as the cause only with evidence that tells it apart from a code defect, such as the same command passing once the setup is repaired.
 
 ## Example
 
