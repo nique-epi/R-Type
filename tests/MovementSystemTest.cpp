@@ -8,6 +8,7 @@
 #include "EntityRegistry.hpp"
 #include "FixedTimestep.hpp"
 #include "MovementSystem.hpp"
+#include "PlayfieldConstants.hpp"
 #include "Position.hpp"
 #include "SimulatedClock.hpp"
 #include "SystemScheduler.hpp"
@@ -22,6 +23,7 @@ using rtype::engine::FixedTimestep;
 using rtype::engine::SIMULATION_TICK_DURATION;
 using rtype::engine::SystemScheduler;
 using rtype::game::MovementSystem;
+using rtype::game::PLAYFIELD_WIDTH;
 using rtype::game::Position;
 using rtype::game::Velocity;
 
@@ -32,6 +34,7 @@ constexpr float START_Y = 200.0F;
 constexpr float SPEED_X = 120.0F;
 constexpr float SPEED_Y = -60.0F;
 constexpr Duration HALF_SECOND = std::chrono::milliseconds(500);
+constexpr Duration ONE_SECOND = std::chrono::seconds(1);
 constexpr float HALF_SECOND_ARRIVAL_X = 160.0F;
 constexpr float HALF_SECOND_ARRIVAL_Y = 170.0F;
 constexpr std::int64_t NANOSECONDS_PER_SECOND = 1'000'000'000;
@@ -106,6 +109,26 @@ TEST(MovementSystem,
     EXPECT_NEAR(position->x, SPEED_X, POSITION_TOLERANCE_UNITS)
         << framesPerSecond << " frames per second";
   }
+}
+
+/**
+ * Given a ship on the left edge moving right at one playfield width per second
+ * When one second of movement is applied
+ * Then it is on the right edge
+ */
+TEST(MovementSystem, ShipCrossesThePlayfieldInOneSecondAtOneWidthPerSecond) {
+  EntityRegistry entities;
+  ComponentRegistry components(entities);
+  const Entity ship = entities.create();
+  components.add(ship, Position{.x = 0.0F, .y = START_Y});
+  components.add(ship, Velocity{.x = PLAYFIELD_WIDTH, .y = 0.0F});
+  MovementSystem movement;
+
+  movement.update(components, ONE_SECOND);
+
+  const Position* position = components.get<Position>(ship);
+  ASSERT_NE(position, nullptr);
+  EXPECT_FLOAT_EQ(position->x, PLAYFIELD_WIDTH);
 }
 
 /**
