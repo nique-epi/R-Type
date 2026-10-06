@@ -14,6 +14,12 @@ trigger: always_on
 5. **A correction is contextualized twice**: recall what was claimed, then what I measured.
 6. **Reread test**: would a reader who saw none of my tool calls understand the first paragraph? If not, rewrite the opening.
 
+### A summary of an issue separates what already exists from what the change adds
+
+1. The first line of the context names what the change **adds**, and only that.
+2. When the issue lists items that already exist in the code, say so in a table (what the issue asks / state / in this change), never by repeating the issue's list as the scope.
+3. Reread test: could a reader believe the change creates something it does not touch? If yes, rewrite.
+
 ## Example
 
 - ❌ **Before (wrong)**: "`ClientRegistry::find` returns `end()` for the IPv6-mapped endpoint (ClientRegistry.cpp:31). I normalize in `UdpServer`…"
