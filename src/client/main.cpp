@@ -1,5 +1,8 @@
 #include <exception>
 #include <iostream>
+#include "AssetFolder.hpp"
+#include "AssetIds.hpp"
+#include "AssetLibrary.hpp"
 #include "GameWindow.hpp"
 #include "LogLaunchOptions.hpp"
 #include "Logger.hpp"
@@ -11,6 +14,9 @@ int main(int argumentCount, char** arguments) {
         argumentCount, arguments, rtype::logging::CLIENT_LOG_FILE_NAME);
     const rtype::logging::Logger logger{"Client"};
     logger.info("client starting");
+    const rtype::client::AssetLibrary assets{
+        rtype::client::locateAssetFolder()};
+    logger.info("assets folder: ", rtype::client::genericText(assets.folder()));
     rtype::client::GameWindow gameWindow;
     gameWindow.run();
     logger.info("client stopped");

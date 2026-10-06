@@ -10,6 +10,7 @@ add_executable(r-type_client main.cpp)
 target_link_libraries(r-type_client
   PRIVATE
     rtype_client_window
+    rtype_client_asset_library
     rtype_game
     rtype_logging
     rtype_network
