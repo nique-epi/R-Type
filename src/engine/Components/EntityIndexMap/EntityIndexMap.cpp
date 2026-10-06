@@ -41,4 +41,8 @@ std::optional<std::size_t> EntityIndexMap::erase(std::uint32_t entityIndex) {
 
 std::size_t EntityIndexMap::size() const { return entityIndices_.size(); }
 
+std::uint32_t EntityIndexMap::entityIndexAt(std::size_t position) const {
+  return entityIndices_[position];
+}
+
 }  // namespace rtype::engine

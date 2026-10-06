@@ -41,6 +41,17 @@ class ComponentStorage final : public IComponentStorage {
     return position.has_value() ? &components_[*position] : nullptr;
   }
 
+  /** @returns The number of components stored. */
+  std::size_t size() const { return entityIndexMap_.size(); }
+
+  /**
+   * @returns The entity index owning the component at the position, which must
+   * be lower than size().
+   */
+  std::uint32_t entityIndexAt(std::size_t position) const {
+    return entityIndexMap_.entityIndexAt(position);
+  }
+
   /** @returns true when a component was removed. */
   bool erase(std::uint32_t entityIndex) override {
     const std::optional<std::size_t> vacated =

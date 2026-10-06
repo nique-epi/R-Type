@@ -30,6 +30,10 @@ bool EntityRegistry::isAlive(Entity entity) const {
          generations_[entity.index] == entity.generation;
 }
 
+Entity EntityRegistry::entityAt(std::uint32_t entityIndex) const {
+  return Entity{.index = entityIndex, .generation = generations_[entityIndex]};
+}
+
 std::size_t EntityRegistry::size() const {
   return generations_.size() - freeIndices_.size();
 }
