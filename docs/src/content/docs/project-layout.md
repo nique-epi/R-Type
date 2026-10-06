@@ -228,7 +228,7 @@ sequenceDiagram
 
 ## Moves from today's code
 
-A few files predate these conventions. Each move is a `refactor` pull request that changes no behaviour.
+A few files predate these conventions. Each move is a `refactor` pull request that changes no behavior.
 
 | Today | Target |
 |---|---|
