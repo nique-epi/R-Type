@@ -68,6 +68,7 @@ Paths below are relative to `.claude/rules/`.
 - `architecture/architecture-one-folder-per-concrete-class.md`
 - `architecture/architecture-pure-virtual-interfaces.md`
 - `architecture/fix-architecture-magic-values-as-named-constants.md`
+- `architecture/fix-architecture-platform-code-one-file-per-platform.md`
 
 **Build architecture — `fix/architecture/` (loaded every session)**
 - `fix/architecture/fix-architecture-one-cmakelists-per-folder.md`
