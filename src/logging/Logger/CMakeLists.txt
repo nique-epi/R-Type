@@ -11,6 +11,7 @@ target_include_directories(rtype_logging_logger
 target_link_libraries(rtype_logging_logger
   PUBLIC
     Threads::Threads
+    rtype_logging_exceptions
 )
 
 rtype_enable_warnings(rtype_logging_logger)

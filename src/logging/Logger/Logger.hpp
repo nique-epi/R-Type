@@ -16,7 +16,9 @@
  * auto timer = logger_.scope("tick");
  * ```
  *
- * Output line format: `[HH:MM:SS.mmm] [LEVEL] [Module] - body`.
+ * Output line format: `[YYYY-MM-DDTHH:MM:SS.mmmZ] [LEVEL] [Module] - body`,
+ * with the time in UTC. Lines go to the sinks set by `Logger::setOutput()`:
+ * a file (appended to, flushed after every line) and/or standard error.
  *
  * Two filter layers:
  *
@@ -34,6 +36,8 @@
 
 #include <chrono>
 #include <cstdint>
+#include <filesystem>
+#include <optional>
 #include <sstream>
 #include <string>
 #include <string_view>
@@ -65,6 +69,15 @@ constexpr bool isCompiledIn(LogLevel candidate) {
          static_cast<std::uint8_t>(buildMinLevel);
 }
 
+/**
+ * @brief Where lines are written. Standard error is on by default so that a
+ *        program that never calls Logger::setOutput() still shows its logs.
+ */
+struct LogOutput {
+  bool toStderr{true};
+  std::optional<std::filesystem::path> filePath;
+};
+
 class Logger {
  public:
   /**
@@ -76,6 +89,14 @@ class Logger {
   static LogLevel level();
   static void setLevel(LogLevel newLevel);
   static bool shouldLog(LogLevel candidate);
+
+  /**
+   * @brief Replaces the sinks. The file is opened in append mode, before
+   *        anything changes, and flushed after every line.
+   * @throws LogFileOpenException when the file cannot be opened. The previous
+   *         sinks are then kept.
+   */
+  static void setOutput(const LogOutput& output);
 
   template <class... Args>
   void trace(Args&&... args) const {

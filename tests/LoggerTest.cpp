@@ -1,7 +1,12 @@
 #include <gtest/gtest.h>
+#include <array>
 #include <chrono>
 #include <cstddef>
+#include <cstdlib>
+#include <ctime>
+#include <filesystem>
 #include <iostream>
+#include <optional>
 #include <ostream>
 #include <regex>
 #include <set>
@@ -10,12 +15,93 @@
 #include <thread>
 #include <utility>
 #include <vector>
+#if defined(_WIN32)
+#include <memory>
+#endif
+#include "JournalFile.hpp"
 #include "Logger.hpp"
+#include "LoggingException.hpp"
 
+using rtype::logging::LogFileOpenException;
 using rtype::logging::Logger;
 using rtype::logging::LogLevel;
+using rtype::logging::LogOutput;
 
 namespace {
+
+constexpr std::size_t hourPrefixBufferSize = 16;
+
+std::optional<std::string> readTimezone() {
+#if defined(_WIN32)
+  char* rawValue = nullptr;
+  std::size_t length = 0;
+  if (_dupenv_s(&rawValue, &length, "TZ") != 0) {
+    return std::nullopt;
+  }
+  const std::unique_ptr<char, decltype(&std::free)> owned(rawValue, &std::free);
+  if (owned == nullptr) {
+    return std::nullopt;
+  }
+  return std::string(owned.get());
+#else
+  // NOLINTNEXTLINE(concurrency-mt-unsafe)
+  const char* value = std::getenv("TZ");
+  if (value == nullptr) {
+    return std::nullopt;
+  }
+  return std::string(value);
+#endif
+}
+
+void writeTimezone(const std::optional<std::string>& value) {
+#if defined(_WIN32)
+  _putenv_s("TZ", value.value_or("").c_str());
+  _tzset();
+#else
+  if (value.has_value()) {
+    // NOLINTNEXTLINE(concurrency-mt-unsafe,misc-include-cleaner)
+    setenv("TZ", value->c_str(), 1);
+  } else {
+    // NOLINTNEXTLINE(concurrency-mt-unsafe,misc-include-cleaner)
+    unsetenv("TZ");
+  }
+  // NOLINTNEXTLINE(misc-include-cleaner)
+  tzset();
+#endif
+}
+
+class TimezoneOverride {
+ public:
+  explicit TimezoneOverride(const std::string& value)
+      : previous_(readTimezone()) {
+    writeTimezone(value);
+  }
+
+  ~TimezoneOverride() { writeTimezone(previous_); }
+
+  TimezoneOverride(const TimezoneOverride&) = delete;
+  TimezoneOverride& operator=(const TimezoneOverride&) = delete;
+  TimezoneOverride(TimezoneOverride&&) = delete;
+  TimezoneOverride& operator=(TimezoneOverride&&) = delete;
+
+ private:
+  std::optional<std::string> previous_;
+};
+
+std::string universalHourPrefix() {
+  const std::time_t now =
+      std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+  std::tm universalTime{};
+#if defined(_WIN32)
+  (void)gmtime_s(&universalTime, &now);
+#else
+  (void)gmtime_r(&now, &universalTime);
+#endif
+  std::array<char, hourPrefixBufferSize> buffer{};
+  (void)std::strftime(buffer.data(), buffer.size(), "%Y-%m-%dT%H",
+                      &universalTime);
+  return buffer.data();
+}
 
 class CerrCapture {
  public:
@@ -39,8 +125,14 @@ class CerrCapture {
 
 class LoggerTest : public ::testing::Test {
  protected:
-  void SetUp() override { savedLevel_ = Logger::level(); }
-  void TearDown() override { Logger::setLevel(savedLevel_); }
+  void SetUp() override {
+    savedLevel_ = Logger::level();
+    Logger::setOutput(LogOutput{});
+  }
+  void TearDown() override {
+    Logger::setLevel(savedLevel_);
+    Logger::setOutput(LogOutput{});
+  }
 
  private:
   LogLevel savedLevel_{LogLevel::Info};
@@ -65,11 +157,18 @@ std::vector<std::string> splitLines(const std::string& text) {
   return lines;
 }
 
+std::string plainLinePattern(const std::string& label,
+                             const std::string& module,
+                             const std::string& body) {
+  return R"(\[\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z\] \[)" + label +
+         R"(\] \[)" + module + R"(\] - )" + body;
+}
+
 std::string standardErrorLinePattern(const std::string& label,
                                      const std::string& module,
                                      const std::string& body) {
-  return R"((\x1b\[\d+m)?\[\d{2}:\d{2}:\d{2}\.\d{3}\] \[)" + label +
-         R"(\] \[)" + module + R"(\] - )" + body + R"((\x1b\[0m)?)";
+  return R"((\x1b\[\d+m)?)" + plainLinePattern(label, module, body) +
+         R"((\x1b\[0m)?)";
 }
 
 std::size_t countOccurrences(const std::string& text,
@@ -306,4 +405,147 @@ TEST_F(LoggerTest, IsThreadSafeAcrossConcurrentWrites) {
   }
   EXPECT_EQ(seen.size(),
             static_cast<std::size_t>(threadCount * messagesPerThread));
+}
+
+/**
+ * Given a process whose time zone is nine hours ahead of UTC
+ * When a line is logged
+ * Then its timestamp is the UTC time
+ */
+TEST_F(LoggerTest, TimestampIsInUniversalTime) {
+  const TimezoneOverride tokyo("JST-9");
+  Logger::setLevel(LogLevel::Info);
+  const JournalFile journal;
+  Logger::setOutput({.toStderr = false, .filePath = journal.path()});
+  const Logger logger("Clock");
+
+  const std::string before = universalHourPrefix();
+  logger.info("tick");
+  const std::string after = universalHourPrefix();
+
+  const std::vector<std::string> lines = journal.lines();
+  ASSERT_EQ(lines.size(), 1U);
+  const std::string stamped = lines[0].substr(1, before.size());
+  EXPECT_TRUE(stamped == before || stamped == after) << stamped;
+}
+
+/**
+ * Given a file as the only sink
+ * When a line is logged
+ * Then the file holds it and standard error stays empty
+ */
+TEST_F(LoggerTest, FileSinkReceivesTheLineAndStderrStaysEmpty) {
+  Logger::setLevel(LogLevel::Info);
+  const JournalFile journal;
+  const CerrCapture capture;
+  Logger::setOutput({.toStderr = false, .filePath = journal.path()});
+  const Logger logger("File");
+
+  logger.info("hello");
+
+  const std::vector<std::string> lines = journal.lines();
+  ASSERT_EQ(lines.size(), 1U);
+  EXPECT_TRUE(std::regex_match(
+      lines[0], std::regex(plainLinePattern("INFO ", "File", "hello"))));
+  EXPECT_TRUE(capture.str().empty());
+}
+
+/**
+ * Given a file and standard error as sinks
+ * When a line is logged
+ * Then standard error carries the text that the file holds
+ */
+TEST_F(LoggerTest, BothSinksReceiveTheSameText) {
+  Logger::setLevel(LogLevel::Info);
+  const JournalFile journal;
+  const CerrCapture capture;
+  Logger::setOutput({.toStderr = true, .filePath = journal.path()});
+  const Logger logger("Both");
+
+  logger.info("hello");
+
+  const std::vector<std::string> lines = journal.lines();
+  ASSERT_EQ(lines.size(), 1U);
+  EXPECT_NE(capture.str().find(lines[0]), std::string::npos);
+}
+
+/**
+ * Given neither a file nor standard error
+ * When a line is logged
+ * Then nothing is written anywhere
+ */
+TEST_F(LoggerTest, NoSinkWritesNothing) {
+  Logger::setLevel(LogLevel::Info);
+  const CerrCapture capture;
+  Logger::setOutput({.toStderr = false, .filePath = std::nullopt});
+  const Logger logger("Nowhere");
+
+  logger.info("lost");
+
+  EXPECT_TRUE(capture.str().empty());
+}
+
+/**
+ * Given a journal that already holds a line
+ * When the output is set again on the same file
+ * Then the old line is kept and the new one is appended
+ */
+TEST_F(LoggerTest, SettingTheSameFileAgainAppends) {
+  Logger::setLevel(LogLevel::Info);
+  const JournalFile journal;
+  Logger::setOutput({.toStderr = false, .filePath = journal.path()});
+  const Logger logger("Journal");
+  logger.info("first");
+
+  Logger::setOutput({.toStderr = false, .filePath = journal.path()});
+  logger.info("second");
+
+  const std::vector<std::string> lines = journal.lines();
+  ASSERT_EQ(lines.size(), 2U);
+  EXPECT_TRUE(std::regex_match(
+      lines[0], std::regex(plainLinePattern("INFO ", "Journal", "first"))));
+  EXPECT_TRUE(std::regex_match(
+      lines[1], std::regex(plainLinePattern("INFO ", "Journal", "second"))));
+}
+
+/**
+ * Given a working file sink
+ * When the output is set to a file in a missing directory
+ * Then the error is raised and lines still go to the previous file
+ */
+TEST_F(LoggerTest, UnopenableFileKeepsThePreviousOutput) {
+  Logger::setLevel(LogLevel::Info);
+  const JournalFile journal;
+  Logger::setOutput({.toStderr = false, .filePath = journal.path()});
+  const Logger logger("Config");
+  const std::filesystem::path missing = std::filesystem::temp_directory_path() /
+                                        "rtype_missing_directory" /
+                                        "journal.log";
+
+  EXPECT_THROW(Logger::setOutput({.toStderr = false, .filePath = missing}),
+               LogFileOpenException);
+
+  logger.info("still written");
+  EXPECT_EQ(journal.lines().size(), 1U);
+}
+
+/**
+ * Given a file sink and a scoped timer
+ * When the scope ends
+ * Then the timer line goes to the file like any other line
+ */
+TEST_F(LoggerTest, ScopedTimerWritesToTheFileSink) {
+  Logger::setLevel(LogLevel::Info);
+  const JournalFile journal;
+  Logger::setOutput({.toStderr = false, .filePath = journal.path()});
+  const Logger logger("Timer");
+  {
+    auto timer = logger.scope("phase");
+  }
+
+  const std::vector<std::string> lines = journal.lines();
+  ASSERT_EQ(lines.size(), 1U);
+  EXPECT_TRUE(std::regex_match(
+      lines[0], std::regex(plainLinePattern("INFO ", "Timer",
+                                            R"(phase took \d+\.\d{3} ms)"))));
 }

@@ -13,6 +13,8 @@
 #include <cstdint>
 #include <cstdlib>
 #include <ctime>
+#include <filesystem>
+#include <fstream>
 #include <iomanip>
 #include <iostream>
 #include <mutex>
@@ -22,14 +24,21 @@
 #include <string_view>
 #include <utility>
 #include "LoggingConstants.hpp"
+#include "LoggingException.hpp"
 
 namespace rtype::logging {
 
 namespace {
 
-std::mutex& outputMutex() {
-  static std::mutex mutex;
-  return mutex;
+struct Sinks {
+  std::mutex mutex;
+  std::ofstream file;
+  bool toStderr{true};
+};
+
+Sinks& sinks() {
+  static Sinks instance;
+  return instance;
 }
 
 std::string toLower(std::string_view input) {
@@ -163,17 +172,37 @@ std::string formatTimestamp() {
   const auto elapsedMilliseconds =
       duration_cast<milliseconds>(now - seconds).count();
   const std::time_t timeValue = system_clock::to_time_t(now);
-  std::tm broken{};
+  std::tm universalTime{};
 #if defined(_WIN32)
-  localtime_s(&broken, &timeValue);
+  (void)gmtime_s(&universalTime, &timeValue);
 #else
-  (void)localtime_r(&timeValue, &broken);
+  (void)gmtime_r(&timeValue, &universalTime);
 #endif
   std::ostringstream out;
-  out << std::put_time(&broken, TIMESTAMP_FORMAT) << '.'
+  out << std::put_time(&universalTime, TIMESTAMP_FORMAT) << '.'
       << std::setw(MILLISECOND_DIGITS) << std::setfill('0')
-      << elapsedMilliseconds;
+      << elapsedMilliseconds << 'Z';
   return out.str();
+}
+
+void emitLine(LogLevel level, std::string_view module, std::string_view body) {
+  Sinks& destination = sinks();
+  const std::lock_guard<std::mutex> lock(destination.mutex);
+  std::ostringstream line;
+  line << '[' << formatTimestamp() << "] [" << labelForLevel(level) << "] ["
+       << module << "] - " << body;
+  const std::string text = line.str();
+  if (destination.file.is_open()) {
+    destination.file << text << '\n';
+    destination.file.flush();
+  }
+  if (destination.toStderr) {
+    if (colorEnabled()) {
+      std::cerr << ansiForLevel(level) << text << ANSI_RESET << '\n';
+    } else {
+      std::cerr << text << '\n';
+    }
+  }
 }
 
 }  // namespace
@@ -193,16 +222,23 @@ bool Logger::shouldLog(LogLevel candidate) {
          static_cast<std::uint8_t>(level());
 }
 
-void Logger::writeLine(LogLevel candidate, std::string_view body) const {
-  const std::string_view color =
-      colorEnabled() ? ansiForLevel(candidate) : std::string_view{};
-  const std::string_view reset =
-      colorEnabled() ? ANSI_RESET : std::string_view{};
-  const std::string timestamp = formatTimestamp();
+void Logger::setOutput(const LogOutput& output) {
+  std::ofstream file;
+  if (output.filePath.has_value()) {
+    file.open(*output.filePath, std::ios::app);
+    if (!file.is_open()) {
+      throw LogFileOpenException(output.filePath->string());
+    }
+  }
+  Sinks& destination = sinks();
+  const std::lock_guard<std::mutex> lock(destination.mutex);
+  destination.file.close();
+  destination.file = std::move(file);
+  destination.toStderr = output.toStderr;
+}
 
-  const std::lock_guard<std::mutex> lock(outputMutex());
-  std::cerr << color << '[' << timestamp << "] [" << labelForLevel(candidate)
-            << "] [" << module_ << "] - " << body << reset << '\n';
+void Logger::writeLine(LogLevel candidate, std::string_view body) const {
+  emitLine(candidate, module_, body);
 }
 
 Logger::ScopedTimer Logger::scope(std::string label, LogLevel level) const {
@@ -241,16 +277,7 @@ Logger::ScopedTimer::~ScopedTimer() {
     std::ostringstream out;
     out << label_ << " took " << std::fixed
         << std::setprecision(DURATION_DECIMALS) << milliseconds << " ms";
-
-    const std::string_view color =
-        colorEnabled() ? ansiForLevel(level_) : std::string_view{};
-    const std::string_view reset =
-        colorEnabled() ? ANSI_RESET : std::string_view{};
-    const std::string timestamp = formatTimestamp();
-
-    const std::lock_guard<std::mutex> lock(outputMutex());
-    std::cerr << color << '[' << timestamp << "] [" << labelForLevel(level_)
-              << "] [" << module_ << "] - " << out.str() << reset << '\n';
+    emitLine(level_, module_, out.str());
   } catch (...) {  // NOLINT(bugprone-empty-catch)
   }
 }

@@ -34,7 +34,7 @@ constexpr std::string_view ANSI_GREEN = "\x1b[32m";
 constexpr std::string_view ANSI_YELLOW = "\x1b[33m";
 constexpr std::string_view ANSI_RED = "\x1b[31m";
 
-constexpr const char* TIMESTAMP_FORMAT = "%H:%M:%S";
+constexpr const char* TIMESTAMP_FORMAT = "%Y-%m-%dT%H:%M:%S";
 constexpr int MILLISECOND_DIGITS = 3;
 constexpr int DURATION_DECIMALS = 3;
 constexpr double MICROSECONDS_PER_MILLISECOND = 1000.0;
