@@ -88,7 +88,7 @@ src/game/
 └── Events/           collision, entity destroyed, player left...
 ```
 
-`World` and `Components` exist; the movement system is being written.
+`World`, `Components` and the movement system (`Systems/MovementSystem/`) exist; the other systems and folders are not written yet.
 
 ### Network
 
