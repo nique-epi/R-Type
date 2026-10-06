@@ -16,6 +16,11 @@ When a conclusion is about **what was delivered** (a binary, a CI run, a PR, a r
 5. **Before attributing a write to a tool** (clang-format, CMake, vcpkg), prove who wrote it: `git log -- <file>`.
 6. **A tool's index is not the disk**: before claiming a space is purged, list the medium itself (`git worktree list` **and** the folder, `git branch` **and** `git ls-remote`).
 
+### A pull request's state is read before it is stated
+
+1. **Before writing that a PR is open, kept, merged or closed**, read it in the same turn: `gh pr view <n> --json state,closedAt,mergedAt`. A state remembered from an earlier turn is not a state: the user may have closed or merged it meanwhile.
+2. **When the user answers a question about a PR** ("keep or close?"), read its state before acting on the answer: the question may already be settled on GitHub.
+
 ## Example
 
 - ❌ **Before (wrong)**: "the Windows CI passes" because the Linux job is green and the code has nothing platform-specific.
