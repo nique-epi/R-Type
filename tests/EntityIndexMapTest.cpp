@@ -128,3 +128,31 @@ TEST(EntityIndexMap, ErasingAbsentEntityChangesNothing) {
   EXPECT_FALSE(map.erase(UNKNOWN_ENTITY).has_value());
   EXPECT_EQ(map.size(), THIRD_POSITION + 1);
 }
+
+/**
+ * Given a map with three entity indices
+ * When the entity index at each position is requested
+ * Then they come back in the order they were appended
+ */
+TEST(EntityIndexMap, EntityIndexAtFollowsAppendOrder) {
+  const EntityIndexMap map = makeMapOfThree();
+
+  EXPECT_EQ(map.entityIndexAt(FIRST_POSITION), FIRST_ENTITY);
+  EXPECT_EQ(map.entityIndexAt(SECOND_POSITION), SECOND_ENTITY);
+  EXPECT_EQ(map.entityIndexAt(THIRD_POSITION), THIRD_ENTITY);
+}
+
+/**
+ * Given a map with three entity indices
+ * When the first one is erased
+ * Then the vacated position holds the entity index that was last
+ */
+TEST(EntityIndexMap, EntityIndexAtSeesTheEntityThatTookTheVacatedPosition) {
+  EntityIndexMap map = makeMapOfThree();
+
+  map.erase(FIRST_ENTITY);
+
+  EXPECT_EQ(map.entityIndexAt(FIRST_POSITION), THIRD_ENTITY);
+  EXPECT_EQ(map.entityIndexAt(SECOND_POSITION), SECOND_ENTITY);
+  EXPECT_EQ(map.size(), SECOND_POSITION + 1);
+}

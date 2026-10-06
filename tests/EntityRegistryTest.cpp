@@ -146,3 +146,31 @@ TEST(EntityRegistry, DestroyingUnknownEntityOnEmptyRegistryIsIgnored) {
 
   EXPECT_EQ(registry.size(), 0U);
 }
+
+/**
+ * Given a registry holding an entity
+ * When the entity at the index of that entity is requested
+ * Then it is the entity that was created
+ */
+TEST(EntityRegistry, EntityAtGivesBackTheHandleOfAnAliveEntity) {
+  rtype::engine::EntityRegistry registry;
+  const rtype::engine::Entity entity = registry.create();
+
+  EXPECT_EQ(registry.entityAt(entity.index), entity);
+}
+
+/**
+ * Given an entity destroyed and its index recycled by a new entity
+ * When the entity at that index is requested
+ * Then it is the new entity, not the destroyed one
+ */
+TEST(EntityRegistry, EntityAtGivesTheNewHandleAfterTheIndexIsRecycled) {
+  rtype::engine::EntityRegistry registry;
+  const rtype::engine::Entity destroyed = registry.create();
+  registry.destroy(destroyed);
+  const rtype::engine::Entity recycled = registry.create();
+
+  ASSERT_EQ(recycled.index, destroyed.index);
+  EXPECT_EQ(registry.entityAt(destroyed.index), recycled);
+  EXPECT_NE(registry.entityAt(destroyed.index), destroyed);
+}

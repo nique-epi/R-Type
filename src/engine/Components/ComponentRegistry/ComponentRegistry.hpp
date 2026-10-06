@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstddef>
 #include <memory>
 #include <typeindex>
 #include <unordered_map>
@@ -68,6 +69,29 @@ class ComponentRegistry {
       return false;
     }
     return storage->erase(entity.index);
+  }
+
+  /**
+   * @brief Calls callback(entity, first, second) for every alive entity that
+   * has both a First and a Second component.
+   *
+   * Entities are visited in no particular order, each at most once. The
+   * references given to the callback are only valid during that call.
+   */
+  template <typename First, typename Second, typename Callback>
+  void forEach(Callback&& callback) {
+    ComponentStorage<First>* storage = findStorage<First>();
+    if (storage == nullptr) {
+      return;
+    }
+    const std::size_t count = storage->size();
+    for (std::size_t position = 0; position < count; ++position) {
+      const Entity entity =
+          entities_.entityAt(storage->entityIndexAt(position));
+      if (has<Second>(entity)) {
+        callback(entity, *get<First>(entity), *get<Second>(entity));
+      }
+    }
   }
 
   /**
