@@ -50,6 +50,7 @@ Paths below are relative to `.claude/rules/`.
 | Opening a PR | `fix/format/fix-format-pull-requests-in-english.md`, `fix/process/fix-process-pr-always-opened-as-draft.md` |
 | Reviewing | `core/code-review.md` |
 | Announcing a green gate | `fix/execution/fix-execution-zsh-pipestatus.md`, `fix/execution/fix-execution-zero-warnings-proven-on-a-recompiling-build.md`, `fix/execution/fix-execution-run-clang-tidy-before-push.md` |
+| Writing a documentation page or a diagram | `fix/format/fix-format-schematic-diagrams-and-map-level-pages.md`, `fix/format/fix-format-context-before-the-deliverable.md` |
 | Making a mistake | `core/errors-learning.md` — the mistake produces a new rule |
 | Pausing, finishing a step | `core/context-continuity.md` |
 
@@ -136,6 +137,7 @@ Paths below are relative to `.claude/rules/`.
 - `fix/format/fix-format-no-tool-call-artifacts-in-written-files.md`
 - `fix/format/fix-format-plan-shows-all-code-and-explains-it.md`
 - `fix/format/fix-format-pull-requests-in-english.md`
+- `fix/format/fix-format-schematic-diagrams-and-map-level-pages.md`
 
 **Interpretation — `fix/interpretation/`**
 - `fix/interpretation/fix-interpretation-confirm-ambiguous-negation-before-inverting.md`
