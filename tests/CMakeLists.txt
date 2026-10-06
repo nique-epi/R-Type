@@ -34,5 +34,5 @@ endfunction()
 
 rtype_add_test(NAME harness_tests SOURCES HarnessTest.cpp)
 rtype_add_test(NAME engine_tests SOURCES ComponentTest.cpp EntityIndexMapTest.cpp EntityRegistryTest.cpp FixedTimestepTest.cpp TimerSchedulerTest.cpp LIBS rtype_engine)
-rtype_add_test(NAME game_tests SOURCES WorldTest.cpp LIBS rtype_game)
+rtype_add_test(NAME game_tests SOURCES WorldTest.cpp PlayfieldTest.cpp LIBS rtype_game)
 rtype_add_test(NAME network_tests SOURCES NetworkContextTest.cpp LIBS rtype_network)
