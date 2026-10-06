@@ -13,7 +13,7 @@ The client renders with SFML, the server talks over the network with Asio, and b
 The code is split into three static libraries with one-way dependencies, and the game objects are organised as an **ECS** (Entity Component System).
 
 ```
-r-type_client -> rtype_client_window -> SFML
+r-type_client -> rtype_client_game_window -> SFML
       |-> rtype_game    -> rtype_engine
       '-> rtype_network -> Asio
 

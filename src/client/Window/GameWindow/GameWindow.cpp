@@ -19,7 +19,6 @@ void GameWindow::run() {
 }
 
 void GameWindow::handleEvents() {
-  // NOLINTNEXTLINE(altera-id-dependent-backward-branch)
   while (const std::optional windowEvent = window_.pollEvent()) {
     if (windowEvent->is<sf::Event::Closed>()) {
       window_.close();
