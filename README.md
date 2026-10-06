@@ -2,7 +2,7 @@
 
 A networked multiplayer remake of the R-Type shoot'em up, built on a custom C++ game engine.
 
-The repository currently holds the build system and empty client and server entry points.
+The client opens an empty window, and the server exits right after starting: it does not listen on the network yet.
 
 The code is split into engine, game and network libraries; see [the architecture decision](docs/src/content/docs/architecture.md).
 

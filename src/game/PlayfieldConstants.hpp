@@ -8,8 +8,8 @@ namespace rtype::game {
  * Every position, velocity and collision box of the game is expressed in this
  * frame, on the server and on the client alike. The origin is the top-left
  * corner of the playfield, x grows to the right and y grows downwards. A
- * logical unit is not a pixel: the client scales the playfield to whatever
- * size its window has.
+ * logical unit is not a pixel: the client must scale the playfield to
+ * whatever size its window has.
  *
  * These dimensions are provisional. They currently equal the size of the
  * client window in pixels and are meant to be revised once the proportions of

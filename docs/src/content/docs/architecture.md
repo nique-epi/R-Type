@@ -10,7 +10,7 @@ The client renders with SFML, the server talks over the network with Asio, and b
 
 ## Decision
 
-The code is split into three static libraries with one-way dependencies, and the game objects are organized as an **ECS** (Entity Component System).
+The code is split into three libraries with one-way dependencies, and the game objects are organized as an **ECS** (Entity Component System).
 
 ```
 r-type_client -> rtype_client_window -> SFML
@@ -60,8 +60,8 @@ Game logic uses one logical frame, the same on the server and on the client, and
 - These dimensions are **provisional**: 800 × 600, the current size of the client window. They will be revised once the proportions of the game are decided. Code must read the constants and never assume they match the window.
 - The origin is the top-left corner, x grows to the right and y grows downwards.
 - `Position` is the center of an entity, `Velocity` is in units per second, `CollisionBox` is a size centered on the position.
-- SFML puts the origin of a sprite at its top-left corner by default, so the client sets it to the center of each sprite.
-- The client is the only place that knows pixels: it scales the playfield to its window.
+- SFML puts the origin of a sprite at its top-left corner by default, so the client must set it to the center of each sprite.
+- The client is the only place that knows pixels: it must scale the playfield to its window.
 
 ## Consequences
 
