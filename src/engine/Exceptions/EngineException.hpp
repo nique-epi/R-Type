@@ -63,4 +63,12 @@ class ComponentChangeDuringIterationException : public EngineException {
   ComponentChangeDuringIterationException();
 };
 
+/**
+ * @brief A null system was added to the scheduler.
+ */
+class NullSystemException : public EngineException {
+ public:
+  NullSystemException();
+};
+
 }  // namespace rtype::engine

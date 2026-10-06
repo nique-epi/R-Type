@@ -29,4 +29,7 @@ ComponentChangeDuringIterationException::
           "Components cannot be added or removed while a query is visiting "
           "components") {}
 
+NullSystemException::NullSystemException()
+    : EngineException("A null system cannot be added to the scheduler") {}
+
 }  // namespace rtype::engine
