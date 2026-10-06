@@ -95,6 +95,7 @@ Paths below are relative to `.claude/rules/`.
 - `fix/process/fix-process-relay-agent-report-separating-verified-facts.md`
 - `fix/process/fix-process-resolve-mechanical-conflicts-escalate-big-ones.md`
 - `fix/process/fix-process-rework-preexisting-inconsistencies.md`
+- `fix/process/fix-process-verification-tooling-stays-on-my-side.md`
 - `fix/process/fix-process-visible-defect-never-minor-on-my-own.md`
 
 **Reasoning — `fix/reasoning/`**
