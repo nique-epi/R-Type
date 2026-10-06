@@ -105,6 +105,61 @@ jobs:
           fi
           xargs -0 -a "$RUNNER_TEMP/files-to-lint" clang-tidy-20 -p build --quiet
 
+  tidy-windows:
+    name: Clang-tidy (Windows-only files)
+    runs-on: windows-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          submodules: true
+
+      - name: Select the Windows-only files
+        id: select
+        shell: bash
+        run: |
+          git ls-files -z -- 'src/*Windows.cpp' 'tests/*Windows.cpp' > "$RUNNER_TEMP/files-to-lint"
+          echo "Files to lint:"
+          tr '\0' '\n' < "$RUNNER_TEMP/files-to-lint"
+          if [ -s "$RUNNER_TEMP/files-to-lint" ]; then
+            echo "found=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "No Windows-only file to lint."
+            echo "found=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Set up the MSVC environment
+        if: steps.select.outputs.found == 'true'
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Point vcpkg at a local binary cache
+        if: steps.select.outputs.found == 'true'
+        shell: bash
+        run: |
+          cmake -E make_directory "$RUNNER_TEMP/vcpkg-cache"
+          echo "VCPKG_BINARY_SOURCES=clear;files,$RUNNER_TEMP/vcpkg-cache,readwrite" >> "$GITHUB_ENV"
+
+      - name: Restore vcpkg binary cache
+        if: steps.select.outputs.found == 'true'
+        uses: actions/cache/restore@v4
+        with:
+          path: ${{ runner.temp }}/vcpkg-cache
+          key: vcpkg-${{ runner.os }}-${{ hashFiles('vcpkg.json') }}
+          restore-keys: vcpkg-${{ runner.os }}-
+
+      - name: Configure with Ninja to get the compile commands
+        if: steps.select.outputs.found == 'true'
+        env:
+          VCPKG_SSL_REVOKE_BEST_EFFORT: '1'
+        run: cmake --preset test -G Ninja
+
+      - name: Run clang-tidy
+        if: steps.select.outputs.found == 'true'
+        shell: bash
+        run: |
+          "/c/Program Files/LLVM/bin/clang-tidy.exe" --version
+          xargs -0 -a "$RUNNER_TEMP/files-to-lint" "/c/Program Files/LLVM/bin/clang-tidy.exe" -p build --quiet
+
   build:
     name: Build and test (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
@@ -159,7 +214,7 @@ jobs:
   mirror:
     name: Push to Epitech mirror
     runs-on: ubuntu-latest
-    needs: [format-check, tidy, build]
+    needs: [format-check, tidy, tidy-windows, build]
     if: github.event_name == 'push' && github.repository == 'nique-epi/R-Type'
     env:
       MIRROR_URL: git@github.com:EpitechPGE3-2026/G-ING-500-NAN-5-1-rtype-1.git
