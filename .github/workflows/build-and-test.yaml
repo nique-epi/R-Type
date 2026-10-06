@@ -87,6 +87,13 @@ jobs:
             git diff --name-only -z --diff-filter=ACMR "$BASE_SHA"...HEAD -- 'src/*.cpp' 'tests/*.cpp' \
               > "$RUNNER_TEMP/files-to-lint"
           fi
+          jq -r --arg root "$GITHUB_WORKSPACE/" '.[].file | ltrimstr($root)' build/compile_commands.json \
+            | sort -u > "$RUNNER_TEMP/compiled-files"
+          tr '\0' '\n' < "$RUNNER_TEMP/files-to-lint" | sort -u > "$RUNNER_TEMP/selected-files"
+          echo "Files the Linux build does not compile, linted elsewhere:"
+          comm -23 "$RUNNER_TEMP/selected-files" "$RUNNER_TEMP/compiled-files"
+          comm -12 "$RUNNER_TEMP/selected-files" "$RUNNER_TEMP/compiled-files" \
+            | tr '\n' '\0' > "$RUNNER_TEMP/files-to-lint"
           echo "Files to lint:"
           tr '\0' '\n' < "$RUNNER_TEMP/files-to-lint"
 
