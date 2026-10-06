@@ -1,4 +1,4 @@
-# RULE: An implementation plan shows all the code, explains each block simply, and leaves the on-screen test to the user
+# History: a plan in prose, code in the repository
 
 ## Context
 
@@ -27,3 +27,18 @@ A plan was treated as a summary of intent rather than as the code review that pr
 ## Update (2026-10-06) — plan code formatted by the tool, predictions measured
 
 The plan for scaling the playfield to the client window showed its C++ wrapped by hand. Two statements of `GameWindow.cpp` were wrapped differently from what `clang-format` produces, so the approved code failed `format-check` as written and had to be reformatted after approval. The same plan stated that inverting the ratio comparison would turn four tests red; run, it turned three red. The fourth only checks that the rectangle keeps the proportions of the playfield, which stays true when the rectangle overflows the window, and the overflow is what another test catches. Both were stated as facts in a document the user approves.
+
+## Update (2026-10-06): no code in the chat
+
+### Context
+The client resource manager plan pasted the full content of every file in the chat, twice, as this rule then required.
+
+### Mistake
+The user asked to stop: code files in the chat cost context and credits for nothing. They validate the design, the files and the behavior, and read the code in the diff.
+
+### Rule
+The rule now asks for a plan in prose (context, decisions, files, behavior, tests, risks, on-screen checks) and for the code to be written in the repository at implementation. Its file was renamed from `fix-format-plan-shows-all-code-and-explains-it.md`, and the second point of `fix-format-designated-initializers-for-aggregates.md`, about code shown in plans, was dropped.
+
+## Update (2026-10-07): the previous update kept
+
+The rule was rewritten for plans in prose after the update above was merged. Its two prescriptions are kept in the new rule: a snippet shown in a plan goes through `clang-format`, and a test prediction is written as a prediction until it is run.

@@ -143,7 +143,7 @@ Paths below are relative to `.claude/rules/`.
 - `fix/format/fix-format-a-summary-keeps-the-conditions-of-its-rule.md`
 - `fix/format/fix-format-context-before-the-deliverable.md`
 - `fix/format/fix-format-no-tool-call-artifacts-in-written-files.md`
-- `fix/format/fix-format-plan-shows-all-code-and-explains-it.md`
+- `fix/format/fix-format-plan-in-prose-code-in-the-repository.md`
 - `fix/format/fix-format-pr-links-its-linear-issue.md`
 - `fix/format/fix-format-pull-requests-in-english.md`
 - `fix/format/fix-format-schematic-diagrams-and-map-level-pages.md`
