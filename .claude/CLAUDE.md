@@ -48,7 +48,7 @@ Paths below are relative to `.claude/rules/`.
 | Creating a branch | `fix/process/fix-process-branch-before-first-commit.md`, `fix/execution/fix-execution-checkout-b-starts-from-head-not-main.md` |
 | Committing | `core/commit.md`, `fix/process/fix-process-no-co-author-trailer.md`, `fix/execution/fix-execution-check-the-index-before-committing.md` |
 | Finishing a feature | the `document-feature` skill (`.claude/skills/document-feature/SKILL.md`) |
-| Opening a PR | `fix/format/fix-format-pull-requests-in-english.md`, `fix/process/fix-process-pr-always-opened-as-draft.md`, the `document-feature` skill if the feature is not documented yet |
+| Opening a PR | `fix/format/fix-format-pull-requests-in-english.md`, `fix/format/fix-format-pr-links-its-linear-issue.md`, `fix/process/fix-process-pr-always-opened-as-draft.md`, the `document-feature` skill if the feature is not documented yet |
 | Reviewing | `core/code-review.md` |
 | Announcing a green gate | `fix/execution/fix-execution-zsh-pipestatus.md`, `fix/execution/fix-execution-zero-warnings-proven-on-a-recompiling-build.md`, `fix/execution/fix-execution-run-clang-tidy-before-push.md` |
 | Writing a documentation page or a diagram | `fix/format/fix-format-schematic-diagrams-and-map-level-pages.md`, `fix/format/fix-format-context-before-the-deliverable.md`, the `document-feature` skill |
@@ -143,6 +143,7 @@ Paths below are relative to `.claude/rules/`.
 - `fix/format/fix-format-context-before-the-deliverable.md`
 - `fix/format/fix-format-no-tool-call-artifacts-in-written-files.md`
 - `fix/format/fix-format-plan-shows-all-code-and-explains-it.md`
+- `fix/format/fix-format-pr-links-its-linear-issue.md`
 - `fix/format/fix-format-pull-requests-in-english.md`
 - `fix/format/fix-format-schematic-diagrams-and-map-level-pages.md`
 
