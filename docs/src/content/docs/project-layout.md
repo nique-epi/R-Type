@@ -16,7 +16,7 @@ The repository builds three programs on four libraries. Programs link libraries,
 | Target | Holds | Never links |
 |---|---|---|
 | `r-type_client` | what the player sees, hears and presses | server or master code |
-| `r-type_server` | the lobby, the games running in parallel, the link with the master | SFML |
+| `r-type_server` | the lobby, the games running in parallel, the link with the master | SFML, Asio |
 | `r-type_master` | the list of game servers, their status, administration, the HTTP API | SFML, `rtype_game` |
 | `rtype_game` | what happens during a match | SFML, Asio, `rtype_network` |
 | `rtype_network` | everything that crosses the wire | SFML, `rtype_engine`, `rtype_game` |
@@ -96,6 +96,7 @@ src/game/
 
 ```
 src/network/
+├── NetworkContext/   the Asio event loop
 ├── Transport/        UDP socket, lag and loss simulator
 ├── Serialization/    bit reader and writer, every read bounded
 ├── Protocol/         one struct per message, encoding, dispatch by type
@@ -104,10 +105,11 @@ src/network/
 ├── Reliability/      acknowledgements, ordered channel, fragments
 ├── Snapshots/        history and delta encoding of the world state
 ├── Statistics/       bytes and packets counted per direction
-└── Master/           messages and client of the master
+├── Master/           messages and client of the master
+└── Exceptions/
 ```
 
-Only the Asio event loop exists today (`NetworkContext`).
+`NetworkContext`, `Transport` (the UDP socket, not the simulator) and `Exceptions` exist; see [Network](/R-Type/network/).
 
 ## The programs
 
@@ -235,7 +237,6 @@ A few files predate these conventions. Each move is a `refactor` pull request th
 | Today | Target |
 |---|---|
 | `src/game/World.cpp` | `src/game/World/` |
-| `src/network/NetworkContext.cpp` | `src/network/NetworkContext/` |
 | `src/engine/Components/ComponentStorage.hpp` | `src/engine/Components/ComponentStorage/` |
 | `tests/*.cpp`, `tests/SimulatedClock.hpp` | `tests/<owner>/<Module>/`, `tests/doubles/` |
 
