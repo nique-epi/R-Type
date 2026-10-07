@@ -15,28 +15,11 @@ namespace rtype::engine {
 
 /**
  * @brief Carries typed events from the code that publishes them to the code
- * that subscribed to them, without either one knowing the other.
+ * that subscribed to their type, without either one knowing the other.
  *
- * An event is a copyable struct, and its type is its kind: a subscriber only
- * receives the events of the type it subscribed to.
- *
- * publish() only queues the event. dispatch() delivers the queued events in
- * the order they were published, each one to the subscribers of its type in
- * the order they subscribed. An event published by a subscriber during
- * dispatch() is delivered by that same dispatch(), so a subscriber that
- * publishes the event it receives makes dispatch() run forever. An event that
- * has no subscriber when it is delivered is dropped.
- *
- * The game loop calls dispatch() after the systems of a tick, outside any
- * ComponentRegistry::forEach, so subscribers may add and remove components.
- *
- * A subscriber may unsubscribe itself, or subscribe another callback, while it
- * is called: a callback subscribed during a delivery receives the next events,
- * not the one being delivered. dispatch() must not be called from a
- * subscriber. When a subscriber throws, the exception leaves dispatch() and
- * the events not delivered yet wait for the next dispatch().
- *
- * Not thread-safe: every thread that runs a game or a frame loop owns its bus.
+ * publish() only queues; the game loop must call dispatch() after the systems,
+ * outside any forEach, so subscribers may add and remove components. Not
+ * thread-safe.
  */
 class EventBus {
  public:
@@ -44,9 +27,8 @@ class EventBus {
   using Callback = std::function<void(const Event&)>;
 
   /**
-   * @brief Calls callback with every event of type Event delivered from now
-   * on, until unsubscribe(). The event type is always written explicitly:
-   * subscribe<Collision>(callback).
+   * @brief Calls callback with every later event of type Event, until
+   * unsubscribe(). The type is written explicitly: subscribe<Collision>(...).
    * @throws EmptyEventCallbackException if callback is empty.
    */
   template <typename Event>
@@ -65,7 +47,7 @@ class EventBus {
     return handle;
   }
 
-  /** @brief Queues the event until the next dispatch(). */
+  /** @brief Queues the event, a copyable struct, until the next dispatch(). */
   template <typename Event>
   void publish(Event event) {
     pendingEvents_.emplace_back(std::move(event));
@@ -73,11 +55,16 @@ class EventBus {
 
   /**
    * @returns true if the subscription was removed, false if the handle is
-   * unknown or already unsubscribed.
+   * unknown or already unsubscribed. A subscriber may unsubscribe itself.
    */
   bool unsubscribe(SubscriptionHandle handle);
 
-  /** @brief Delivers the queued events until the queue is empty. */
+  /**
+   * @brief Empties the queue, events published meanwhile included, delivering
+   * each in publication order to its subscribers in subscription order.
+   * Never call it from a subscriber, and never republish the event received.
+   * If a subscriber throws, the events left wait for the next dispatch().
+   */
   void dispatch();
 
  private:
