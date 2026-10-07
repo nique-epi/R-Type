@@ -2,7 +2,7 @@
 
 A networked multiplayer remake of the R-Type shoot'em up, built on a custom C++ game engine.
 
-The repository currently holds the build system and empty client and server entry points.
+The client opens an empty window, and the server exits right after starting: it does not listen on the network yet.
 
 The code is split into engine, game and network libraries; see [the architecture decision](docs/src/content/docs/architecture.md).
 
@@ -37,6 +37,23 @@ If the repository was cloned without its submodules, run `git submodule update -
 ```bash
 cmake --workflow --preset test
 ```
+
+## Logging
+
+The client and the server write a timestamped journal, `r-type_server.log` or `r-type_client.log` in the current directory. The level and the output are chosen at launch:
+
+```bash
+./r-type_server --log-stderr --log-level debug
+```
+
+| Option | Effect |
+|---|---|
+| `--log-level <name>` | `trace`, `debug`, `info` (default), `warn`, `error` or `silent` |
+| `--log-file <path>` | Write the journal to this file |
+| `--no-log-file` | Do not write a journal |
+| `--log-stderr` | Also write to standard error |
+
+The build option `-DLOG_LEVEL=<name>` removes the calls below a level from the binaries. See [the logging page](docs/src/content/docs/logging.md).
 
 ## Code style
 

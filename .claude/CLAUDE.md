@@ -44,13 +44,14 @@ Paths below are relative to `.claude/rules/`.
 |---|---|
 | Writing C++ | `architecture/`, `code-style/` |
 | Writing a test | `code-style/code-style-tests-given-when-then.md`, `fix/process/fix-process-green-test-locking-a-defect-and-overly-deterministic-fake.md` |
-| Touching the network | security section of `core/code-review.md` |
+| Touching the network | security section of `core/code-review.md`, `fix/reasoning/fix-reasoning-an-exception-to-a-check-is-read-as-the-forger.md`, `fix/reasoning/fix-reasoning-last-received-is-not-newest-over-udp.md` |
 | Creating a branch | `fix/process/fix-process-branch-before-first-commit.md`, `fix/execution/fix-execution-checkout-b-starts-from-head-not-main.md` |
 | Committing | `core/commit.md`, `fix/process/fix-process-no-co-author-trailer.md`, `fix/execution/fix-execution-check-the-index-before-committing.md` |
-| Opening a PR | `fix/format/fix-format-pull-requests-in-english.md`, `fix/process/fix-process-pr-always-opened-as-draft.md` |
+| Finishing a feature | the `document-feature` skill (`.claude/skills/document-feature/SKILL.md`) |
+| Opening a PR | `fix/format/fix-format-pull-requests-in-english.md`, `fix/process/fix-process-pr-always-opened-as-draft.md`, the `document-feature` skill if the feature is not documented yet |
 | Reviewing | `core/code-review.md` |
 | Announcing a green gate | `fix/execution/fix-execution-zsh-pipestatus.md`, `fix/execution/fix-execution-zero-warnings-proven-on-a-recompiling-build.md`, `fix/execution/fix-execution-run-clang-tidy-before-push.md` |
-| Writing a documentation page or a diagram | `fix/format/fix-format-schematic-diagrams-and-map-level-pages.md`, `fix/format/fix-format-context-before-the-deliverable.md` |
+| Writing a documentation page or a diagram | `fix/format/fix-format-schematic-diagrams-and-map-level-pages.md`, `fix/format/fix-format-context-before-the-deliverable.md`, the `document-feature` skill |
 | Making a mistake | `core/errors-learning.md` — the mistake produces a new rule |
 | Pausing, finishing a step | `core/context-continuity.md` |
 
@@ -94,18 +95,21 @@ Paths below are relative to `.claude/rules/`.
 - `fix/process/fix-process-relay-agent-report-separating-verified-facts.md`
 - `fix/process/fix-process-resolve-mechanical-conflicts-escalate-big-ones.md`
 - `fix/process/fix-process-rework-preexisting-inconsistencies.md`
+- `fix/process/fix-process-verification-tooling-stays-on-my-side.md`
 - `fix/process/fix-process-visible-defect-never-minor-on-my-own.md`
 
 **Reasoning — `fix/reasoning/`**
 - `fix/reasoning/fix-reasoning-a-guard-after-the-write-is-only-an-alarm.md`
 - `fix/reasoning/fix-reasoning-a-sequence-asserts-its-starting-state.md`
 - `fix/reasoning/fix-reasoning-an-error-type-is-not-a-diagnosis.md`
+- `fix/reasoning/fix-reasoning-an-exception-to-a-check-is-read-as-the-forger.md`
 - `fix/reasoning/fix-reasoning-bounded-contract-check-the-empty-state.md`
 - `fix/reasoning/fix-reasoning-check-code-state-before-scoping.md`
 - `fix/reasoning/fix-reasoning-check-the-delivered-artifact-not-its-footprint.md`
 - `fix/reasoning/fix-reasoning-convention-from-a-single-sample.md`
 - `fix/reasoning/fix-reasoning-delegated-invariant-must-be-computed.md`
 - `fix/reasoning/fix-reasoning-evidence-that-does-not-discriminate.md`
+- `fix/reasoning/fix-reasoning-last-received-is-not-newest-over-udp.md`
 - `fix/reasoning/fix-reasoning-name-the-axis-when-neutral-here-beneficial-there.md`
 - `fix/reasoning/fix-reasoning-never-assume-unread-file-content.md`
 - `fix/reasoning/fix-reasoning-present-code-is-not-behavior.md`
@@ -133,6 +137,7 @@ Paths below are relative to `.claude/rules/`.
 - `fix/execution/fix-execution-zsh-word-splitting.md`
 
 **Format — `fix/format/`**
+- `fix/format/fix-format-a-summary-keeps-the-conditions-of-its-rule.md`
 - `fix/format/fix-format-context-before-the-deliverable.md`
 - `fix/format/fix-format-no-tool-call-artifacts-in-written-files.md`
 - `fix/format/fix-format-plan-shows-all-code-and-explains-it.md`
@@ -144,6 +149,12 @@ Paths below are relative to `.claude/rules/`.
 - `fix/interpretation/fix-interpretation-flagged-placeholder-must-be-replaced.md`
 - `fix/interpretation/fix-interpretation-positive-guideline-is-not-a-prohibition.md`
 - `fix/interpretation/fix-interpretation-typo-reading-that-contradicts-a-rule.md`
+
+### Skills
+
+Skills live in `.claude/skills/<name>/SKILL.md`, relative to the repository root. Each one is a procedure loaded on demand, not a rule.
+
+- `document-feature`: writes or updates the documentation site (`docs/src/content/docs/`) and the README for a finished feature, in the house style of the existing pages.
 
 ## Definition of done
 

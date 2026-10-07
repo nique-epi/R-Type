@@ -10,7 +10,7 @@ The client renders with SFML, the server talks over the network with Asio, and b
 
 ## Decision
 
-The code is split into three static libraries with one-way dependencies, and the game objects are organised as an **ECS** (Entity Component System).
+The code is split into three libraries with one-way dependencies, and the game objects are organized as an **ECS** (Entity Component System).
 
 ```
 r-type_client -> rtype_client_game_window -> SFML
@@ -32,11 +32,11 @@ The client and the server are the only places where the libraries meet: they tra
 ## Why an ECS
 
 - A level holds many entities of a few kinds (bullets, enemies, players); an ECS stores their data contiguously and iterates over it cheaply.
-- Data is separate from behaviour, which matches the engine/game split: the engine knows how to store and iterate, the game decides what a component or a system means.
+- Data is separate from behavior, which matches the engine/game split: the engine knows how to store and iterate, the game decides what a component or a system means.
 - Client and server share the same components; only the systems differ (the client adds rendering and input, the server adds authority).
 - A new enemy or power-up is a new combination of components, not a new class in a hierarchy.
 
-Alternative considered: a classic class hierarchy of game objects with virtual `update()` and `draw()`. It is simpler at first, but ties logic to rendering, which the server cannot afford, and makes cross-cutting behaviours (a boss that is also a shooter) awkward.
+Alternative considered: a classic class hierarchy of game objects with virtual `update()` and `draw()`. It is simpler at first, but ties logic to rendering, which the server cannot afford, and makes cross-cutting behaviors (a boss that is also a shooter) awkward.
 
 ## Components
 
@@ -45,6 +45,14 @@ A component is a plain struct attached to an entity by type: `ComponentRegistry`
 Each component type has its own `ComponentStorage<T>`, created the first time the type is added. A storage keeps its components in one contiguous `std::vector<T>`, and an `EntityIndexMap` tells at which position the component of an entity index sits (a sparse set). Add, lookup and removal are constant time; a removal moves the last component into the hole, so the array never has gaps and a system that walks one type reads one compact array.
 
 Alternative considered: one `std::vector<std::optional<T>>` per type, indexed by entity index. It is simpler, but the array has as many slots as the highest index in use, most of them empty in a level where bullets come and go, so walking one type touches memory that holds nothing.
+
+## Systems
+
+A system is an object implementing `ISystem`; `SystemScheduler` calls them in the order they were added, so the order is decided in one place and is the same on every tick. `ComponentRegistry::forEach<First, Second>` gives a system the entities that have both components.
+
+Destroying an entity inside a `forEach` is postponed until the outermost `forEach` returns, because removing a component moves the last one into the hole and would shift the walk. An entity destroyed this way is no longer visited. Adding or removing a component during a `forEach` is refused with an exception rather than allowed to corrupt the walk.
+
+Alternative considered: a numeric priority on each system, sorted by the scheduler. It lets a system be placed without touching the others, but the order then lives in numbers scattered across classes and two systems can tie. A single list of `add()` calls is the one place that says what runs after what.
 
 ## Time
 
@@ -60,14 +68,14 @@ Game logic uses one logical frame, the same on the server and on the client, and
 - These dimensions are 1920 × 1080: the playfield has the proportions of a 16:9 screen. Code must read the constants and never assume they match the window.
 - The origin is the top-left corner, x grows to the right and y grows downwards.
 - `Position` is the center of an entity, `Velocity` is in units per second, `CollisionBox` is a size centered on the position.
-- SFML puts the origin of a sprite at its top-left corner by default, so the client sets it to the center of each sprite.
+- SFML puts the origin of a sprite at its top-left corner by default, so the client must set it to the center of each sprite.
 - The client is the only place that knows pixels. `GameWindow` draws through a view that always covers the whole playfield, and `fitPlayfieldInWindow` (`src/client/Window/PlayfieldViewport/`) picks the largest centered rectangle of the window with the proportions of the playfield; the rest stays black. Resizing the window changes that rectangle only, never a logical position or a speed.
 - The window cannot be resized by dragging its border. The player picks one of five sizes with the proportions of the playfield (`WINDOW_SIZES` in `src/client/Window/WindowConstants.hpp`: 960 × 540, 1280 × 720, 1600 × 900, 1920 × 1080, 2560 × 1440), so no black bar shows. `WindowSizeSelection` only offers the sizes strictly smaller than the desktop and opens the window at the largest of them. The black bars remain as a safety net for the cases where the system gives the window another shape.
 - The size is picked with a row of buttons at the top-left corner of the playfield (`WindowSizeButtons`), each labelled with the size it gives. The button of a size too large for the desktop is dimmed and ignores clicks. **These buttons are provisional**: they will move into the options menu when it exists. Their font, `assets/fonts/tuffy.ttf` (Tuffy, public domain), is loaded from a path relative to the launch folder, so the client must be launched from the root of the repository until the resource manager locates assets.
 
 ## Consequences
 
-- `EntityRegistry` and `ComponentRegistry` exist today; systems are added by the next stories.
+- `EntityRegistry`, `ComponentRegistry`, `ISystem` and `SystemScheduler` exist today; the loop that calls the scheduler is added by a later story.
 - Any new target declares its links explicitly; a link that breaks the table above fails the configure step.
 
 ## Validation

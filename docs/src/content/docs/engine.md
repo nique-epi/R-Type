@@ -12,7 +12,7 @@ This page tells you where to look when you need to change something. It describe
 | Entities | Available | `src/engine/EntityRegistry/`, `src/engine/Entity.hpp` |
 | Components | Available | `src/engine/Components/` |
 | Fixed timestep and timers | Available | `src/engine/Time/` |
-| Systems | Not yet written | — |
+| Systems and queries | Available | `src/engine/Systems/`, `ComponentRegistry::forEach` |
 | Game loop | Not yet written: the pieces exist, nothing assembles them | — |
 | Event bus | Not yet written | — |
 
@@ -23,12 +23,12 @@ flowchart LR
   Clock[IClock] --> Step[FixedTimestep]
   Step -- "ticks to simulate" --> Loop["game loop (to write)"]
   Loop -- "once per tick" --> Timers[TimerScheduler]
-  Loop -- "once per tick" --> Systems["systems (to write)"]
+  Loop -- "once per tick" --> Systems[SystemScheduler]
   Systems --> Components[ComponentRegistry]
   Components --> Entities[EntityRegistry]
 ```
 
-The client and the server will each own one loop. The engine provides the building blocks; the loop and the systems are added by the next stories.
+The client and the server will each own one loop. The engine provides the building blocks; the loop itself is added by a later story.
 
 ## ECS: entities and components
 
@@ -62,6 +62,31 @@ if (auto* position = components.get<rtype::game::Position>(ship)) {
 components.destroy(ship);
 ```
 
+## Systems and queries
+
+A **system** is one behavior of the game: a class that implements `ISystem` (`src/engine/Systems/ISystem.hpp`) and reads or updates components in `update(components, elapsed)`.
+
+### Queries: `ComponentRegistry::forEach`
+
+`forEach<First, Second>(callback)` calls `callback(entity, first, second)` for every alive entity that has both a `First` and a `Second` component. It walks the storage of `First` and looks up `Second` for each entity. Entities are visited in no particular order, each at most once. The references given to the callback are only valid during that call. A query takes exactly two component types; to walk a single type, ask for it twice.
+
+```cpp
+components.forEach<rtype::game::Position, rtype::game::Velocity>(
+    [](rtype::engine::Entity, rtype::game::Position& position,
+       rtype::game::Velocity& velocity) {
+      position.x += velocity.x;
+    });
+```
+
+### Changing entities during a query
+
+- `ComponentRegistry::destroy` called during a `forEach` is postponed until the outermost `forEach` returns. Until then the entity is still alive and readable, but it is no longer visited. Destroying the same entity twice, or through a stale handle, is harmless.
+- `add<T>` and `remove<T>` during a `forEach` throw `ComponentChangeDuringIterationException`: adding reallocates a storage and removing moves its last component, either of which would corrupt the walk. A system that needs to change components collects the entities in the callback and changes them after `forEach` returns.
+
+### Order: `SystemScheduler`
+
+`SystemScheduler` runs systems in the order they were added with `add()`. The order never changes, so every `run(components, elapsed)` calls the systems in the same sequence. A system added later sees what the earlier ones did, including the entities they destroyed. `add()` must not be called from inside a system, and a null system throws `NullSystemException`.
+
 ## Game loop: time
 
 The simulation runs at a fixed rate, `SIMULATION_TICKS_PER_SECOND` (60), whatever the rendering rate (`TimeConstants.hpp`).
@@ -76,7 +101,7 @@ The loop the client and the server will write looks like this:
 const std::size_t ticks = timestep.consumeTicks();
 for (std::size_t tick = 0; tick < ticks; ++tick) {
   timers.advance(rtype::engine::SIMULATION_TICK_DURATION);
-  // systems run here, once their story is done
+  systems.run(components, rtype::engine::SIMULATION_TICK_DURATION);
 }
 ```
 
@@ -94,6 +119,8 @@ There is no event bus in the code yet. This page will describe it, its folder an
 | Change how components are stored | `src/engine/Components/ComponentStorage.hpp`, `EntityIndexMap/` |
 | Change how entities are created or recycled | `src/engine/EntityRegistry/` |
 | Change the simulation rate | `SIMULATION_TICKS_PER_SECOND` in `src/engine/Time/TimeConstants.hpp` |
+| Write a behavior that walks components | A class implementing `ISystem` in `src/engine/Systems/ISystem.hpp`, added to a `SystemScheduler` |
+| Change the order systems run in | The order of the `SystemScheduler::add()` calls |
 | Run something after a delay | `TimerScheduler` in `src/engine/Time/TimerScheduler/` |
 | Add an engine error | `src/engine/Exceptions/EngineException.hpp` |
 | Write a test that depends on time | `tests/SimulatedClock.hpp`, `tests/FixedTimestepTest.cpp` |

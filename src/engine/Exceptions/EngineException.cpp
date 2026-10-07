@@ -23,4 +23,13 @@ DeadEntityException::DeadEntityException()
     : EngineException(
           "A component cannot be added to an entity that is not alive") {}
 
+ComponentChangeDuringIterationException::
+    ComponentChangeDuringIterationException()
+    : EngineException(
+          "Components cannot be added or removed while a query is visiting "
+          "components") {}
+
+NullSystemException::NullSystemException()
+    : EngineException("A null system cannot be added to the scheduler") {}
+
 }  // namespace rtype::engine
