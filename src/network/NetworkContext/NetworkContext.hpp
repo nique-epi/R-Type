@@ -1,5 +1,6 @@
 #pragma once
 
+#include <functional>
 #include <memory>
 
 namespace asio {
@@ -28,7 +29,18 @@ class NetworkContext {
    * @brief Runs the event loop until it has no work left or stop() is called.
    */
   void run();
+
+  /**
+   * @brief Stops run() as soon as possible. Safe from any thread.
+   */
   void stop();
+
+  /**
+   * @brief Queues @p task to run on the thread that runs run(), then
+   *        returns at once. Safe from any thread. A task still queued when
+   *        the context is destroyed is destroyed without running.
+   */
+  void post(std::function<void()> task);
 
   /**
    * @brief The event loop itself, for the classes of the network module and
