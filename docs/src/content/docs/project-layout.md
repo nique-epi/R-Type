@@ -46,7 +46,7 @@ The cases where people hesitate:
 | A queue between two threads | `src/engine/Concurrency` | the client and the server both need it, and it knows nothing about R-Type |
 | Finding an entity from its network id | `src/engine/NetworkIds` | `rtype_network` may not know entities |
 | The heartbeat sent to the master | `src/server/MasterLink` | only the server sends it; the message format lives in `src/network/Master` |
-| A new protocol message | `src/network/Protocol` | one struct per message, its encoding next to it, then a line in the protocol RFC |
+| A new protocol message | `src/network/Protocol` | one struct per message, its encoding next to it, then a row in [Protocol](/R-Type/protocol/#messages) |
 | A fake transport that loses datagrams | `tests/doubles` | test doubles are never built into a program |
 
 ## The libraries
@@ -88,7 +88,7 @@ src/game/
 └── Events/           collision, entity destroyed, player left...
 ```
 
-`World` and `Components` exist; the movement system is being written.
+`World`, `Components` and the movement system (`Systems/MovementSystem/`) exist; the other systems and folders are not written yet.
 
 ### Network
 
@@ -236,7 +236,6 @@ A few files predate these conventions. Each move is a `refactor` pull request th
 |---|---|
 | `src/game/World.cpp` | `src/game/World/` |
 | `src/network/NetworkContext.cpp` | `src/network/NetworkContext/` |
-| `src/client/Window/GameWindow.cpp`, target `rtype_client_window` | `src/client/Window/GameWindow/`, target `rtype_client_game_window` |
 | `src/engine/Components/ComponentStorage.hpp` | `src/engine/Components/ComponentStorage/` |
 | `tests/*.cpp`, `tests/SimulatedClock.hpp` | `tests/<owner>/<Module>/`, `tests/doubles/` |
 
