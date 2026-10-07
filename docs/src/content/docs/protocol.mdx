@@ -73,8 +73,8 @@ A datagram is a 22-byte header followed by one or more messages. The header, byt
 Each message is a type (`u8`), the size of its payload in bytes (`u16`, the 3 bytes of type and size excluded), then the payload. A sender of version 0 puts one message per datagram; a receiver accepts several.
 
 - `protocolId` and `version` stay at offsets 0 and 4 in every future version, so a receiver tells which version sent a datagram from its first 5 bytes.
-- `sessionToken` is drawn at random by the server when it accepts a connection, never 0. The server writes it in every datagram it sends to that client, and the client copies it into every datagram it sends afterward. The server drops and counts a datagram from an accepted client that carries another token, so nobody can steer a ship by forging the address of its player. A `ConnectionRequest` carries 0, since the client has no token yet: it never keeps a session alive, and it only gets a player slot with a valid cookie (see [Connection](#connection)).
-- `sequence` starts at 0 and grows by 1 for each datagram a side sends to the other, wrapping from 65535 to 0. Version 0 receivers may ignore it.
+- `sessionToken` is drawn at random by the server when it accepts a connection, never 0. The server writes it in every datagram it sends to that client, and the client copies it into every datagram it sends afterward. Within a session, each side drops and counts a datagram that carries another token, so nobody can steer a ship, or feed a client false states, by forging an address. A `ConnectionRequest` carries 0, since the client has no token yet: it never keeps a session alive, and it only gets a player slot with a valid cookie (see [Connection](#connection)).
+- `sequence` counts the datagrams a side sends to the other: one counter per peer, starting at 0 with the first datagram to that peer, growing by 1 and wrapping from 65535 to 0. Within a session, a receiver drops a datagram that is not newer than the newest one it has accepted from that peer, so a late or duplicated datagram never undoes a newer one. Newer means ahead by 1 to 32767 modulo 65536 (serial number arithmetic, RFC 1982), so the comparison survives the wrap. Datagrams sent before a session exists (`ConnectionChallenge`, `ConnectionRefused`) carry 0 and are not compared.
 - `flags`, `acknowledgedSequence` and `acknowledgementBits` are written as 0 and ignored in version 0.
 
 The header reserves the fields of the second part of the project now, so dropping duplicates and guaranteeing messages later moves no field of any datagram. It costs 17 bytes per datagram more than a 5-byte header: about 11 kbit/s per client at 60 inputs and 20 states per second.
@@ -93,11 +93,12 @@ A received datagram goes through these checks in order. No buffer is sized from 
 | `flags` is 0 | dropped |
 | The message sizes add up exactly to the end of the datagram | dropped |
 | The sender is known, or the datagram holds a `ConnectionRequest` | dropped |
-| On the server, `sessionToken` is the token of the sender, or 0 in a `ConnectionRequest` | dropped and counted |
+| Within a session, `sessionToken` is the token of the session (a `ConnectionRequest` may carry 0) | dropped and counted |
+| Within a session, `sequence` is newer than the newest one accepted from that peer | dropped |
 | The message type is listed below | that message is skipped, the next one is read |
 | The payload has the size its type requires and every value is in range | that message is dropped |
 
-The server never sends an unknown sender more bytes than the datagram it answers, so a forged source address cannot turn it into an amplifier: a `ConnectionRequest` holds at least 35 bytes, and every answer to it at most 33 (`ConnectionChallenge`). A client that receives a datagram of another version decodes nothing in it, and reports both version numbers to the player: its own, and the one at offset 4.
+The token is checked before the sequence, so a forged datagram never moves the counter. The server never sends an unknown sender more bytes than the datagram it answers, so a forged source address cannot turn it into an amplifier: a `ConnectionRequest` holds at least 35 bytes, and every answer to it at most 33 (`ConnectionChallenge`). A client that receives a datagram of another version decodes nothing in it, and reports both version numbers to the player: its own, and the one at offset 4.
 
 ## Messages
 
@@ -252,7 +253,7 @@ In each phase the server repeats one message, and the client shows the screen of
 | Game in progress | `WorldState`, 20 per second | the game |
 | Game ended | `GameEnded`, every 500 ms | the end screen |
 
-Each side sends a `Heartbeat` after 1 s without sending anything else; any datagram proves its sender is alive. The server closes a session after 5 s without a datagram carrying its token, removes the ship and sends `PlayerLeft` (`TimedOut`) to the others. The client shows that the connection is lost after 5 s without a datagram from the server. A `Disconnection` frees the place at once, and the others get `PlayerLeft` (`Left`).
+Each side sends a `Heartbeat` after 1 s without sending anything else; any datagram that passes the checks above proves its sender is alive. The server closes a session after 5 s without a datagram carrying its token, removes the ship and sends `PlayerLeft` (`TimedOut`) to the others. The client shows that the connection is lost after 5 s without a datagram from the server. A `Disconnection` frees the place at once, and the others get `PlayerLeft` (`Left`).
 
 ## Losses
 
@@ -281,7 +282,7 @@ The rates and delays on this page (60 inputs and 20 states per second, 500 ms, 9
 
 The second part of the project changes the protocol as follows:
 
-- Duplicate and late datagrams are dropped through `sequence`: nothing changes on the wire.
+- Each side measures the loss rate of the other from the gaps in `sequence`: nothing changes on the wire.
 - Guaranteed messages use `flags`, `acknowledgedSequence` and `acknowledgementBits` and replace the three copies: same layout, new meaning, so `version` becomes 1.
 - Several messages share a datagram: receivers of version 0 already accept it.
 - `PlayerInput` repeats the inputs not yet confirmed, `WorldState` confirms the last input applied to each player, and states are sent as differences from the last one received: these payloads change in version 1.
