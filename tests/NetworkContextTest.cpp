@@ -1,4 +1,5 @@
 #include <gtest/gtest.h>
+#include <asio/io_context.hpp>
 #include "NetworkContext.hpp"
 
 /**

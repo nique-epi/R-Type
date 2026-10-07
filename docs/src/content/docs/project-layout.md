@@ -16,7 +16,7 @@ The repository builds three programs on four libraries. Programs link libraries,
 | Target | Holds | Never links |
 |---|---|---|
 | `r-type_client` | what the player sees, hears and presses | server or master code |
-| `r-type_server` | the lobby, the games running in parallel, the link with the master | SFML |
+| `r-type_server` | the lobby, the games running in parallel, the link with the master | SFML, Asio |
 | `r-type_master` | the list of game servers, their status, administration, the HTTP API | SFML, `rtype_game` |
 | `rtype_game` | what happens during a match | SFML, Asio, `rtype_network` |
 | `rtype_network` | everything that crosses the wire | SFML, `rtype_engine`, `rtype_game` |
