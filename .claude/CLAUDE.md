@@ -107,6 +107,7 @@ Paths below are relative to `.claude/rules/`.
 - `fix/reasoning/fix-reasoning-check-code-state-before-scoping.md`
 - `fix/reasoning/fix-reasoning-check-the-delivered-artifact-not-its-footprint.md`
 - `fix/reasoning/fix-reasoning-convention-from-a-single-sample.md`
+- `fix/reasoning/fix-reasoning-count-a-delay-on-the-timeline.md`
 - `fix/reasoning/fix-reasoning-delegated-invariant-must-be-computed.md`
 - `fix/reasoning/fix-reasoning-evidence-that-does-not-discriminate.md`
 - `fix/reasoning/fix-reasoning-last-received-is-not-newest-over-udp.md`
