@@ -6,18 +6,10 @@
 
 namespace rtype::client {
 
-/**
- * @brief The game in progress; for now, the playfield background alone.
- *
- * OPTIONS_KEY puts the options screen over the game, which goes on running and
- * stays drawn behind it.
- */
+/** @brief The game in progress, which puts the options over itself when the
+ * options key is released. */
 class GameScreen : public IScreen {
  public:
-  /**
-   * @param screens Stack the screen lives in, which must outlive it.
-   * @param optionsScreen Builds the screen OPTIONS_KEY puts over the game.
-   */
   GameScreen(ScreenStack& screens, ScreenFactory optionsScreen);
 
   void handleEvent(const sf::Event& event) override;
