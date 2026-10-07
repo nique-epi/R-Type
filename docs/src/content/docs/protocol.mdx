@@ -13,7 +13,7 @@ The client and the server talk over UDP in the binary format described on this p
 
 - Every message of the game travels over UDP; no TCP connection is opened.
 - The server listens on one port. The client sends from any port, and the server answers to the address and port the datagram came from.
-- A datagram carries at most 1200 bytes of UDP payload. Every IPv6 link carries packets of 1280 bytes or more (RFC 8200, section 5), and 1280 minus the 40-byte IPv6 header and the 8-byte UDP header leaves 1232; QUIC relies on 1200 for the same reason, keeping room for IPv6 extension headers (RFC 9000, section 14). So IP never fragments a datagram of this protocol, on any path.
+- A datagram carries at most 1200 bytes of UDP payload. Every IPv6 link carries packets of 1280 bytes or more (RFC 8200, section 5); minus the 40-byte IPv6 header and the 8-byte UDP header, that leaves 1232 bytes, so 1200 keeps room for 32 bytes of IPv6 extension headers. QUIC relies on the same figure and expects it to pass on all IPv6 paths and on modern IPv4 paths (RFC 9000, section 14). A path with a smaller MTU, such as some VPNs and tunnels, may still fragment or drop a datagram; version 0 does not detect it.
 - A datagram is read on its own: no message is split across two datagrams.
 
 ## Encoding
@@ -73,7 +73,7 @@ A datagram is a 22-byte header followed by one or more messages. The header, byt
 Each message is a type (`u8`), the size of its payload in bytes (`u16`, the 3 bytes of type and size excluded), then the payload. A sender of version 0 puts one message per datagram; a receiver accepts several.
 
 - `protocolId` and `version` stay at offsets 0 and 4 in every future version, so a receiver tells which version sent a datagram from its first 5 bytes.
-- `sessionToken` is drawn at random by the server when it accepts a connection, never 0. The server writes it in every datagram it sends to that client, and the client copies it into every datagram it sends afterwards. The server drops and counts a datagram from an accepted client that carries another token, so nobody can steer a ship by forging the address of its player. The only exception is a `ConnectionRequest`, which carries 0 while the client has not received its token: the answer goes to the address of the player, never to whoever forged it.
+- `sessionToken` is drawn at random by the server when it accepts a connection, never 0. The server writes it in every datagram it sends to that client, and the client copies it into every datagram it sends afterward. The server drops and counts a datagram from an accepted client that carries another token, so nobody can steer a ship by forging the address of its player. The only exception is a `ConnectionRequest`, which carries 0 while the client has not received its token: the answer goes to the address of the player, never to whoever forged it.
 - `sequence` starts at 0 and grows by 1 for each datagram a side sends to the other, wrapping from 65535 to 0. Version 0 receivers may ignore it.
 - `flags`, `acknowledgedSequence` and `acknowledgementBits` are written as 0 and ignored in version 0.
 
@@ -89,7 +89,7 @@ A received datagram goes through these checks in order. No buffer is sized from 
 |---|---|
 | The datagram holds 25 to 1200 bytes | dropped |
 | `protocolId` is `RTYP` | dropped |
-| `version` is 0 | dropped; the server answers an unknown sender with `ConnectionRefused` (`IncompatibleVersion`) |
+| `version` is 0 | dropped; the server answers an unknown sender with `ConnectionRefused` (`IncompatibleVersion`) if the datagram holds at least 26 bytes |
 | `flags` is 0 | dropped |
 | The message sizes add up exactly to the end of the datagram | dropped |
 | The sender is known, or the datagram holds a `ConnectionRequest` | dropped |
