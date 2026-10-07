@@ -25,8 +25,8 @@ OptionsScreen::OptionsScreen(ScreenStack& screens, GameWindow& window,
 }
 
 void OptionsScreen::handleEvent(const sf::Event& event) {
-  const auto* pressed = event.getIf<sf::Event::KeyPressed>();
-  if (pressed != nullptr && pressed->code == OPTIONS_KEY) {
+  const auto* released = event.getIf<sf::Event::KeyReleased>();
+  if (released != nullptr && released->code == OPTIONS_KEY) {
     screens_->pop();
     return;
   }
