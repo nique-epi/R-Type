@@ -140,3 +140,60 @@ TEST(FixedTimestep, ZeroTickDurationIsRejected) {
   EXPECT_THROW(FixedTimestep(clock, Duration::zero()),
                rtype::engine::InvalidTickDurationException);
 }
+
+/**
+ * Given a fresh timestep
+ * When it is asked when the next tick is due
+ * Then the next tick is one whole tick away
+ */
+TEST(FixedTimestep, FirstTickIsOneTickAway) {
+  const SimulatedClock clock;
+  const FixedTimestep timestep(clock, SHORT_TICK_DURATION);
+
+  EXPECT_EQ(timestep.timeUntilNextTick(), SHORT_TICK_DURATION);
+}
+
+/**
+ * Given a timestep polled after one tick and a half
+ * When it is asked when the next tick is due
+ * Then the half tick kept is subtracted from the wait
+ */
+TEST(FixedTimestep, NextTickWaitSubtractsTheRemainder) {
+  SimulatedClock clock;
+  FixedTimestep timestep(clock, SHORT_TICK_DURATION);
+  clock.advance(SHORT_TICK_DURATION + HALF_SHORT_TICK);
+  timestep.consumeTicks();
+
+  EXPECT_EQ(timestep.timeUntilNextTick(), HALF_SHORT_TICK);
+}
+
+/**
+ * Given a timestep polled exactly when a tick was due
+ * When it is asked when the next tick is due
+ * Then the next tick is one whole tick away, never zero
+ */
+TEST(FixedTimestep, NextTickIsOneTickAwayRightAfterATickBoundary) {
+  SimulatedClock clock;
+  FixedTimestep timestep(clock, SHORT_TICK_DURATION);
+  clock.advance(SHORT_TICK_DURATION);
+  timestep.consumeTicks();
+
+  EXPECT_EQ(timestep.timeUntilNextTick(), SHORT_TICK_DURATION);
+}
+
+/**
+ * Given a timestep whose stall was longer than the maximum, so its excess was
+ * dropped
+ * When it is asked when the next tick is due
+ * Then the next tick is one whole tick away
+ */
+TEST(FixedTimestep, NextTickIsOneTickAwayAfterADroppedStall) {
+  SimulatedClock clock;
+  FixedTimestep timestep(clock, SHORT_TICK_DURATION);
+  clock.advance(SHORT_TICK_DURATION *
+                    static_cast<Duration::rep>(MAXIMUM_TICKS_PER_ADVANCE + 1) +
+                HALF_SHORT_TICK);
+  timestep.consumeTicks();
+
+  EXPECT_EQ(timestep.timeUntilNextTick(), SHORT_TICK_DURATION);
+}

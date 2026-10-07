@@ -29,4 +29,8 @@ std::size_t FixedTimestep::consumeTicks() {
   return ticks;
 }
 
+Duration FixedTimestep::timeUntilNextTick() const {
+  return tickDuration_ - accumulated_;
+}
+
 }  // namespace rtype::engine
