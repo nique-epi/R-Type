@@ -46,6 +46,9 @@ std::string assetLoadingMessage(std::string_view assetFolder,
 ClientException::ClientException(const std::string& message)
     : std::runtime_error(message) {}
 
+FontNotLoadedException::FontNotLoadedException(const std::string& file)
+    : ClientException("The font file could not be loaded: " + file) {}
+
 UnknownExecutablePathException::UnknownExecutablePathException()
     : ClientException(
           "The system did not tell where the client executable is, so its "

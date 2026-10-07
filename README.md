@@ -2,7 +2,7 @@
 
 A networked multiplayer remake of the R-Type shoot'em up, built on a custom C++ game engine.
 
-The client opens an empty window, and the server exits right after starting: it does not listen on the network yet.
+The client opens an empty window. The server listens for UDP datagrams on port 4242 and logs each one at the `debug` level; it does not answer them yet.
 
 The code is split into engine, game and network libraries; see [the architecture decision](docs/src/content/docs/architecture.md).
 
