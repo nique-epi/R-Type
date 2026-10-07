@@ -16,7 +16,7 @@ The repository builds three programs on four libraries. Programs link libraries,
 | Target | Holds | Never links |
 |---|---|---|
 | `r-type_client` | what the player sees, hears and presses | server or master code |
-| `r-type_server` | the lobby, the games running in parallel, the link with the master | SFML |
+| `r-type_server` | the lobby, the games running in parallel, the link with the master | SFML, Asio |
 | `r-type_master` | the list of game servers, their status, administration, the HTTP API | SFML, `rtype_game` |
 | `rtype_game` | what happens during a match | SFML, Asio, `rtype_network` |
 | `rtype_network` | everything that crosses the wire | SFML, `rtype_engine`, `rtype_game` |
@@ -96,18 +96,20 @@ src/game/
 
 ```
 src/network/
+├── NetworkContext/   the Asio event loop
 ├── Transport/        UDP socket, lag and loss simulator
-├── Serialization/    byte reader and writer, every read bounded
+├── Serialization/    bit reader and writer, every read bounded
 ├── Protocol/         one struct per message, encoding, dispatch by type
 ├── Handshake/        challenge, rate limit, version check
 ├── Sessions/         session token, sequence numbers, timeouts
 ├── Reliability/      acknowledgements, ordered channel, fragments
 ├── Snapshots/        history and delta encoding of the world state
 ├── Statistics/       bytes and packets counted per direction
-└── Master/           messages and client of the master
+├── Master/           messages and client of the master
+└── Exceptions/
 ```
 
-The Asio event loop (`NetworkContext`), `Exceptions` and `Serialization` exist; the other folders are being written. The [Network](/R-Type/network/) page describes what exists.
+`NetworkContext`, `Transport` (the UDP socket, not the simulator), `Serialization` and `Exceptions` exist; see [Network](/R-Type/network/).
 
 ## The programs
 
@@ -150,7 +152,9 @@ src/client/
 └── Prediction/       own ship predicted, other ships interpolated
 ```
 
-Only `Window` exists today.
+Only `Window` and `Rendering` exist today.
+
+`Rendering` draws every entity that has a `Position` and a `Sprite` (an asset id and a layer), from the background layer to the interface layer. `RenderSystem` reads these two components and nothing else, and draws through `IDrawSurface`; only `SfmlDrawSurface` knows SFML, and it finds textures through `ITextureSource`. The system is not wired into the frame loop yet.
 
 ### Master
 
@@ -233,7 +237,6 @@ A few files predate these conventions. Each move is a `refactor` pull request th
 | Today | Target |
 |---|---|
 | `src/game/World.cpp` | `src/game/World/` |
-| `src/network/NetworkContext.cpp` | `src/network/NetworkContext/` |
 | `src/engine/Components/ComponentStorage.hpp` | `src/engine/Components/ComponentStorage/` |
 | `tests/*.cpp`, `tests/SimulatedClock.hpp` | `tests/<owner>/<Module>/`, `tests/doubles/` |
 

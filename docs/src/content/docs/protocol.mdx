@@ -7,7 +7,7 @@ sidebar:
 
 import ByteLayout from '../../components/ByteLayout.astro';
 
-The client and the server talk over UDP in the binary format described on this page, byte by byte, so each side can be written without reading the code of the other. Version 0 is the contract for the first part of the project. The encoding of integers and strings is implemented in `src/network/Serialization` (see [Network](/R-Type/network/#serialization-bytewriter-and-bytereader)); the messages and the datagram header are not: `src/network/Protocol`, where they will live, does not exist yet (see [Project layout](/R-Type/project-layout/#network)).
+The client and the server talk over UDP in the binary format described on this page, byte by byte, so each side can be written without reading the code of the other. Version 0 is the contract for the first part of the project. Two parts are in the code so far: the transport limit, since the socket in `src/network/Transport` drops a datagram over 1200 bytes (see [Network](/R-Type/network/)), and the encoding of integers and strings in `src/network/Serialization` (see [Network](/R-Type/network/#serialization-bytewriter-and-bytereader)). The messages and the datagram header are not: `src/network/Protocol`, where they will live, does not exist yet (see [Project layout](/R-Type/project-layout/#network)).
 
 ## Transport
 
