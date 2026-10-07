@@ -96,6 +96,7 @@ src/game/
 
 ```
 src/network/
+├── NetworkContext/   the Asio event loop
 ├── Transport/        UDP socket, lag and loss simulator
 ├── Serialization/    bit reader and writer, every read bounded
 ├── Protocol/         one struct per message, encoding, dispatch by type
@@ -104,10 +105,11 @@ src/network/
 ├── Reliability/      acknowledgements, ordered channel, fragments
 ├── Snapshots/        history and delta encoding of the world state
 ├── Statistics/       bytes and packets counted per direction
-└── Master/           messages and client of the master
+├── Master/           messages and client of the master
+└── Exceptions/
 ```
 
-Only the Asio event loop exists today (`NetworkContext`).
+`NetworkContext`, `Transport` (the UDP socket, not the simulator) and `Exceptions` exist; see [Network](/R-Type/network/).
 
 ## The programs
 
