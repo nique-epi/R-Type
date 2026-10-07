@@ -8,38 +8,36 @@
 
 namespace rtype::client {
 
-/** @brief Builds a screen when the stack applies the change that needs it; a
- * factory that builds nothing changes nothing. */
+/** @brief Builds a screen when the stack applies the change that needs it. */
 using ScreenFactory = std::function<std::unique_ptr<IScreen>()>;
 
-/**
- * @brief The screens of the client, the active one on top.
- *
- * push(), pop() and replaceAll() only ask for a change; applyPendingChanges()
- * applies them, in the order they were asked for. A screen may therefore ask
- * to leave the stack while it handles an event, and stays alive until that
- * call. A screen is built only when its change is applied, once the screens
- * that change removes are destroyed.
- */
+/** @brief The screens of the client, the active one on top, changed only when
+ * the asked changes are applied. */
 class ScreenStack {
  public:
-  /** @brief Asks for a screen to be put over the others, which stay below
-   * it. */
+  ScreenStack() = default;
+  ~ScreenStack() = default;
+
+  ScreenStack(const ScreenStack&) = delete;
+  ScreenStack& operator=(const ScreenStack&) = delete;
+  ScreenStack(ScreenStack&&) = delete;
+  ScreenStack& operator=(ScreenStack&&) = delete;
+
+  /** @brief Asks for a screen to be put over the others. */
   void push(ScreenFactory factory);
 
-  /** @brief Asks for the screen on top to be removed; nothing happens if the
-   * stack is empty by then. */
+  /** @brief Asks for the screen on top to be removed. */
   void pop();
 
-  /** @brief Asks for every screen to be destroyed, from the top down, then for
-   * the new one to be built as the only one. */
+  /** @brief Asks for every screen to be destroyed, top first, before the new
+   * one is built. */
   void replaceAll(ScreenFactory factory);
 
-  /** @brief Applies the changes asked for so far; the changes asked for while
-   * they are applied wait for the next call. */
+  /** @brief Applies the changes asked for so far, in order; those asked
+   * meanwhile wait for the next call. */
   void applyPendingChanges();
 
-  /** @brief Gives the event to the screen on top only. */
+  /** @brief Gives the event to the screen on top. */
   void handleEvent(const sf::Event& event);
 
   /** @brief Updates every screen, from the bottom up. */
@@ -65,8 +63,8 @@ class ScreenStack {
   void apply(const Change& change);
   void build(const ScreenFactory& factory);
 
-  std::vector<std::unique_ptr<IScreen>> screens_;
   std::vector<Change> pendingChanges_;
+  std::vector<std::unique_ptr<IScreen>> screens_;
 };
 
 }  // namespace rtype::client
