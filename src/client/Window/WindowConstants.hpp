@@ -57,13 +57,7 @@ constexpr float WINDOW_SIZE_BUTTONS_GAP = 16.0F;
 constexpr unsigned int WINDOW_SIZE_LABEL_CHARACTER_SIZE = 30;
 constexpr const char* WINDOW_SIZE_SEPARATOR = " x ";
 
-/**
- * @brief Font of the button labels, as a path from the folder the client is
- * launched from.
- *
- * Provisional: the client only finds it when launched from the root of the
- * repository, until assets are located whatever the launch folder.
- */
-constexpr const char* WINDOW_SIZE_LABEL_FONT_FILE = "assets/fonts/tuffy.ttf";
+/** @brief Asset id of the font of the button labels. */
+constexpr const char* WINDOW_SIZE_LABEL_FONT_ID = "fonts/tuffy.ttf";
 
 }  // namespace rtype::client

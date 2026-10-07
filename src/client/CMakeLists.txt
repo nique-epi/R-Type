@@ -13,11 +13,10 @@ target_link_libraries(r-type_client
     rtype_client_rendering
     rtype_client_window
     rtype_client_game_window
-    rtype_client_asset_library
+    rtype_client_asset_loading_step
     rtype_game
     rtype_logging
     rtype_network
-    SFML::Audio
 )
 
 rtype_enable_warnings(r-type_client)

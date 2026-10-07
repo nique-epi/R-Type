@@ -17,25 +17,16 @@ namespace rtype::client {
  * @brief Row of buttons, one per size of WINDOW_SIZES, drawn at the top-left
  * corner of the playfield and labelled with the size they give.
  *
- * The labels refer to the font this object owns, so it can be neither copied
- * nor moved.
+ * The labels refer to the font given at construction, which must outlive this
+ * object.
  *
  * Provisional: the buttons stand in for the options menu until that one
  * exists.
  */
 class WindowSizeButtons {
  public:
-  /**
-   * @throws FontNotLoadedException when the font of the labels cannot be
-   * loaded.
-   */
-  WindowSizeButtons();
-  ~WindowSizeButtons() = default;
-
-  WindowSizeButtons(const WindowSizeButtons&) = delete;
-  WindowSizeButtons& operator=(const WindowSizeButtons&) = delete;
-  WindowSizeButtons(WindowSizeButtons&&) = delete;
-  WindowSizeButtons& operator=(WindowSizeButtons&&) = delete;
+  /** @brief Builds the buttons, their labels written with the given font. */
+  explicit WindowSizeButtons(const sf::Font& labelFont);
 
   /**
    * @brief Colors each button after the state of its size: selected,
@@ -61,7 +52,6 @@ class WindowSizeButtons {
   [[nodiscard]] static Colors colorsOf(std::size_t index,
                                        const WindowSizeSelection& selection);
 
-  sf::Font font_;
   std::vector<sf::RectangleShape> buttons_;
   std::vector<sf::Text> labels_;
 };

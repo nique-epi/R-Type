@@ -22,15 +22,6 @@ class ClientException : public std::runtime_error {
   explicit ClientException(const std::string& message);
 };
 
-/**
- * @brief A font file could not be opened, or does not hold a font.
- */
-class FontNotLoadedException : public ClientException {
- public:
-  /** @param file Path of the font file, as it was given to the loader. */
-  explicit FontNotLoadedException(const std::string& file);
-};
-
 /** @brief The system did not tell where the running executable is. */
 class UnknownExecutablePathException : public ClientException {
  public:
