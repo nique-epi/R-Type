@@ -20,6 +20,12 @@ trigger: always_on
 2. When the issue lists items that already exist in the code, say so in a table (what the issue asks / state / in this change), never by repeating the issue's list as the scope.
 3. Reread test: could a reader believe the change creates something it does not touch? If yes, rewrite.
 
+### A question or an explanation to the user defines its terms
+
+1. Before asking the user to choose, define every term the options rely on, in plain words, with one example taken from the project (an event is "a struct that says a missile touched a Bydo").
+2. An analogy is checked against what the reader will infer from it (a delay, a cost, a risk). If it suggests a false value, state the real value next to it.
+3. A question the user dismisses without answering signals terms they did not understand: explain first, then ask again.
+
 ## Example
 
 - ❌ **Before (wrong)**: "`ClientRegistry::find` returns `end()` for the IPv6-mapped endpoint (ClientRegistry.cpp:31). I normalize in `UdpServer`…"

@@ -26,3 +26,28 @@ The context paraphrased the issue instead of stating the change. The check of th
 
 - ❌ **Before (wrong)**: "The issue asks for the base components (position, velocity, collision box, entity type) and a movement system." followed later by "Position, Velocity and CollisionBox already exist."
 - ✅ **After (right)**: "**This change adds two things: the `EntityType` component and the `MovementSystem`.**" followed by a table: position, velocity, collision box: already done, untouched; entity type: added; movement system: added.
+
+## Update (2026-10-07) — A question or an explanation to the user defines its terms
+
+### Context
+
+Planning the engine event bus required three design choices from the user: when subscribers are called, when an event published during delivery is delivered, and what the change delivers while the real subscribers do not exist yet.
+
+### Mistake
+
+The three questions were asked with "bus", "subscriber", "dispatch" and "forEach" left undefined. The user dismissed them three times, then asked what a bus is, what "the engine may not depend on the game" means, and what a subscriber is. One explanation compared deferred delivery to "a letter read at a fixed time"; the user understood that the player would see events late, while the fixed time is the end of the same tick, 60 times per second.
+
+### Root cause
+
+The terms were familiar from the code I had just read, so I wrote the questions for a reader who had read it too. The analogy was chosen for the idea of waiting, without checking how long a reader would imagine the wait to be.
+
+### Rule
+
+1. Before asking the user to choose, define every term the options rely on, in plain words, with one example taken from the project.
+2. An analogy is checked against what the reader will infer from it (a delay, a cost, a risk). If it suggests a false value, state the real value next to it.
+3. A question the user dismisses without answering signals terms they did not understand: explain first, then ask again.
+
+### Example
+
+- ❌ **Before (wrong)**: "Deferred delivery (recommended): `publish()` queues the event; `dispatch()` delivers it, called by the loop after `systems.run()`." asked to a user who never saw the words "bus" or "subscriber" defined.
+- ✅ **After (right)**: a short glossary (event, bus, publish, subscriber, delivery, queue, `dispatch()`), one worked example from the game (a missile touches a Bydo, step by step), then the question, stating that both options send the announcement in the same tick.
