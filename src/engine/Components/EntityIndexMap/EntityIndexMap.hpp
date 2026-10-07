@@ -37,6 +37,12 @@ class EntityIndexMap {
   /** @returns The number of entity indices registered. */
   std::size_t size() const;
 
+  /**
+   * @returns The entity index registered at the position, which must be lower
+   * than size().
+   */
+  std::uint32_t entityIndexAt(std::size_t position) const;
+
  private:
   static constexpr std::size_t NO_POSITION =
       std::numeric_limits<std::size_t>::max();

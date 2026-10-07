@@ -4,6 +4,7 @@ compile_commands.json
 Testing/
 /r-type_server
 /r-type_client
+*.log
 /Debug/
 /Release/
 /RelWithDebInfo/

@@ -34,6 +34,13 @@ class EntityRegistry {
   bool isAlive(Entity entity) const;
 
   /**
+   * @returns The entity currently using the slot of entityIndex.
+   * The slot must hold an alive entity, for instance because a component is
+   * attached to that index: a free slot is not told apart from an alive one.
+   */
+  Entity entityAt(std::uint32_t entityIndex) const;
+
+  /**
    * @returns The number of alive entities.
    */
   std::size_t size() const;

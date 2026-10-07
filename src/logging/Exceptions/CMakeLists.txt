@@ -1,0 +1,5 @@
+add_library(rtype_logging_exceptions STATIC LoggingException.cpp)
+
+target_include_directories(rtype_logging_exceptions PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+
+rtype_enable_warnings(rtype_logging_exceptions)
