@@ -156,6 +156,8 @@ Only `Window` and `Rendering` exist today.
 
 `Rendering` draws every entity that has a `Position` and a `Sprite` (an asset id and a layer), from the background layer to the interface layer. `RenderSystem` reads these two components and nothing else, and draws through `IDrawSurface`; only `SfmlDrawSurface` knows SFML, and it finds textures through `ITextureSource`. The system is not wired into the frame loop yet.
 
+`Rendering/Background` draws the scrolling starfield behind the playfield, and the frame loop already draws it. It is described in [Client](/R-Type/client/#scrolling-background-scrollingbackground).
+
 ### Master
 
 `src/master` builds `r-type_master`, the directory of game servers: it records their heartbeats, computes their status, runs administration and serves the web frontend. Game servers send a heartbeat every 5 seconds and receive admin commands in the reply. Like the other programs, it has `Application/` and `LaunchOptions/`.
