@@ -4,6 +4,7 @@
 #include <cstdint>
 #include "EngineException.hpp"
 #include "FixedTimestep.hpp"
+#include "FixedTimestepTestConstants.hpp"
 #include "SimulatedClock.hpp"
 #include "TimeConstants.hpp"
 
@@ -15,22 +16,15 @@ using rtype::engine::SIMULATION_TICKS_PER_SECOND;
 
 namespace {
 
-constexpr std::int64_t NANOSECONDS_PER_SECOND = 1'000'000'000;
-constexpr double SPEED_UNITS_PER_SECOND = 120.0;
-// The tick length is a whole number of nanoseconds, so 60 ticks fall 0.4
-// parts per million short of one second.
-constexpr double POSITION_TOLERANCE_UNITS = 1e-4;
-constexpr std::size_t RESULT_ALIGNMENT = 16;
-constexpr Duration SHORT_TICK_DURATION(100);
-constexpr Duration HALF_SHORT_TICK(SHORT_TICK_DURATION / 2);
-
 struct alignas(RESULT_ALIGNMENT) SimulationResult {
   std::size_t ticks = 0;
   double position = 0.0;
 };
 
-// Renders one simulated second at the given frame rate. Frame lengths are
-// whole nanoseconds that add up to exactly one second.
+/**
+ * @brief Renders one simulated second at the given frame rate. Frame lengths
+ * are whole nanoseconds that add up to exactly one second.
+ */
 SimulationResult simulateOneSecond(std::int64_t framesPerSecond) {
   SimulatedClock clock;
   FixedTimestep timestep(clock, SIMULATION_TICK_DURATION);
