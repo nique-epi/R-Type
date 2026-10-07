@@ -12,6 +12,12 @@ trigger: always_on
 3. **Any assumed API behavior is checked in the docs or headers** before being asserted; a homemade doc comment does not count as a source (see `fix-process-instrument-before-reasoning-docs-are-truth.md`).
 4. **When a diagnosis goes in circles** (two re-reads concluding "it's correct" against an "it doesn't work"), stop re-reading the wiring and check that the **final building block** produces its effect.
 
+### A claim that code does NOT reach a resource covers the whole construction path
+
+1. **Before writing that a call never touches a resource** (OpenGL context, audio device, display, network, file), read every constructor it runs: the class, **its base classes** and its members, not only the method body. In SFML, `sf::Texture` derives from `GlResource`, whose constructor creates the shared OpenGL context.
+2. **Prefer running it in the target environment** to reading it: a test on the Linux CI, which has no display and no audio device, settles the question; a green run on a desktop machine does not.
+3. **Until it has run there, the claim is "not verified"**, in the plan, the pull request and the test design alike.
+
 ## Example
 
 - ❌ **Before (wrong)**: "the shooting sound already exists, `SoundSystem` handles `ShootEvent`" → the sound never plays: `SoundSystem` is not in the list of executed systems.
