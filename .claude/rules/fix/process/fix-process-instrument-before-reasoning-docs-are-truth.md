@@ -33,7 +33,15 @@ An assumption written in a comment becomes a fact for every following session.
 
 When two primitives exist, choose the one whose **shape** rules out the class of bug. A failed lookup returns an empty `std::optional` or an `end()` iterator, never a plausible neighbor (index 0, default entity).
 
+### 6. A guarantee taken from a source keeps the source's scope
+
+1. **Copy the qualifiers with the claim**: "expected", "on modern IPv4 paths", "for compliant implementations", "by default". A source that says "should" or "is expected to" never becomes "always" or "never" in my text.
+2. **Before writing "never", "always", "on any path", "in every case"**, find the sentence of the source that says it. If none does, the word goes, and the case the source leaves open is written down ("a path with a smaller MTU may still fragment it").
+3. **Reread the cited section for its limits**, not only for the figure I came for: the exceptions are usually in the next paragraph.
+
 ## Example
 
 - ❌ **Before (wrong)**: "the client doesn't see the other players, it must be the interpolation" → three fixes to the interpolation.
 - ✅ **After (right)**: a log when the snapshot is sent (tick, entity count) and one when it is received (tick, entity count) → the client receives 0 entities → the server serializes before adding the players → targeted fix.
+- ❌ **Before (wrong)**: RFC 9000 says 1200-byte datagrams are "expected" to pass on "modern IPv4 and all IPv6" paths → the page says "IP never fragments a datagram of this protocol, on any path".
+- ✅ **After (right)**: "QUIC relies on the same figure and expects it to pass on all IPv6 paths and on modern IPv4 paths; a path with a smaller MTU may still fragment or drop one of this protocol's datagrams." (RFC 9000's ban on IP fragmentation binds QUIC senders, not this protocol.)
