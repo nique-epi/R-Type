@@ -1,4 +1,5 @@
 find_package(GTest CONFIG REQUIRED)
+find_package(SFML 3 COMPONENTS Graphics Audio CONFIG REQUIRED)
 
 include(GoogleTest)
 
@@ -38,4 +39,4 @@ rtype_add_test(NAME game_tests SOURCES EntityTypeTest.cpp MovementSystemTest.cpp
 rtype_add_test(NAME network_tests SOURCES NetworkContextTest.cpp UdpSocketFixture.cpp UdpSocketTest.cpp ByteWriterTest.cpp ByteReaderTest.cpp SerializationRoundTripTest.cpp ByteSequence.cpp LIBS rtype_network rtype_network_asio)
 rtype_add_test(NAME logging_tests SOURCES LoggerTest.cpp LogLaunchOptionsTest.cpp JournalFile.cpp LIBS rtype_logging)
 rtype_add_test(NAME client_rendering_tests SOURCES RenderSystemTest.cpp LIBS rtype_client_render_system)
-rtype_add_test(NAME client_tests SOURCES PlayfieldViewportTest.cpp WindowSizeSelectionTest.cpp LIBS rtype_client_playfield_viewport rtype_client_window_size_selection rtype_game)
+rtype_add_test(NAME client_tests SOURCES PlayfieldViewportTest.cpp WindowSizeSelectionTest.cpp client/Platform/ExecutablePathTest.cpp client/Assets/TemporaryFolder.cpp client/Assets/SilentSound.cpp client/Assets/AssetIdsTest.cpp client/Assets/AssetFolderTest.cpp client/Assets/AssetLibraryTest.cpp client/Assets/AssetLoadingStepTest.cpp LIBS rtype_client_playfield_viewport rtype_client_window_size_selection rtype_game rtype_client_asset_loading_step GTest::gmock)
