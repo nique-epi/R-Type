@@ -109,7 +109,7 @@ src/network/
 └── Exceptions/
 ```
 
-`NetworkContext`, `Transport` (the UDP socket, not the simulator) and `Exceptions` exist; see [Network](/R-Type/network/).
+`NetworkContext`, `Transport` (the UDP socket, not the simulator), `Serialization` and `Exceptions` exist; see [Network](/R-Type/network/).
 
 ## The programs
 

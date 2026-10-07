@@ -16,6 +16,7 @@ target_include_directories(rtype_network_constants INTERFACE ${CMAKE_CURRENT_SOU
 
 add_subdirectory(Exceptions)
 add_subdirectory(NetworkContext)
+add_subdirectory(Serialization)
 add_subdirectory(Transport)
 
 add_library(rtype_network INTERFACE)
@@ -27,6 +28,7 @@ target_link_libraries(rtype_network
     rtype_network_constants
     rtype_network_exceptions
     rtype_network_context
+    rtype_network_serialization
     rtype_network_transport
     rtype_network_udp_socket
 )
