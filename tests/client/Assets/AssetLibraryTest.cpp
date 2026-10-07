@@ -34,7 +34,7 @@ constexpr const char* CORRUPT_CONTENT = "neither an image, a font nor a sound";
 constexpr std::uint64_t SHORT_SOUND_SAMPLES = 100;
 constexpr std::uint64_t LONG_SOUND_SAMPLES = 200;
 
-class UnreadableAssetOfEachKind : public ::testing::TestWithParam<AssetKind> {};
+class UnreadableSoundOrFont : public ::testing::TestWithParam<AssetKind> {};
 
 }  // namespace
 
@@ -133,11 +133,11 @@ TEST(AssetLibrary, RejectsAnIdThatLeavesTheFolder) {
 }
 
 /**
- * Given a file that holds no texture, sound or font
+ * Given a file that holds no sound or font
  * When it is loaded as one of them
  * Then it is reported unreadable
  */
-TEST_P(UnreadableAssetOfEachKind, IsReportedUnreadable) {
+TEST_P(UnreadableSoundOrFont, IsReportedUnreadable) {
   const TemporaryFolder assets;
   assets.write(CORRUPT_ID, CORRUPT_CONTENT);
   AssetLibrary library{assets.path()};
@@ -146,9 +146,8 @@ TEST_P(UnreadableAssetOfEachKind, IsReportedUnreadable) {
             AssetLoadResult::UnreadableFile);
 }
 
-INSTANTIATE_TEST_SUITE_P(LoadedKinds, UnreadableAssetOfEachKind,
-                         ::testing::Values(AssetKind::Texture, AssetKind::Sound,
-                                           AssetKind::Font));
+INSTANTIATE_TEST_SUITE_P(KindsLoadedWithoutADisplay, UnreadableSoundOrFont,
+                         ::testing::Values(AssetKind::Sound, AssetKind::Font));
 
 /**
  * Given a music file that holds no music
