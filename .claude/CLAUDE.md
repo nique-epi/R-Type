@@ -45,7 +45,7 @@ Paths below are relative to `.claude/rules/`.
 | Writing C++ | `architecture/`, `code-style/` |
 | Writing a test | `code-style/code-style-tests-given-when-then.md`, `fix/process/fix-process-green-test-locking-a-defect-and-overly-deterministic-fake.md` |
 | Touching the network | security section of `core/code-review.md`, `fix/reasoning/fix-reasoning-an-exception-to-a-check-is-read-as-the-forger.md`, `fix/reasoning/fix-reasoning-last-received-is-not-newest-over-udp.md` |
-| Creating a branch | `fix/process/fix-process-branch-before-first-commit.md`, `fix/execution/fix-execution-checkout-b-starts-from-head-not-main.md` |
+| Creating a branch | `fix/process/fix-process-branch-before-first-commit.md`, `fix/execution/fix-execution-checkout-b-starts-from-head-not-main.md`, `fix/process/fix-process-reread-rules-after-switching-branch.md` |
 | Committing | `core/commit.md`, `fix/process/fix-process-no-co-author-trailer.md`, `fix/execution/fix-execution-check-the-index-before-committing.md` |
 | Finishing a feature | the `document-feature` skill (`.claude/skills/document-feature/SKILL.md`) |
 | Opening a PR | `fix/format/fix-format-pull-requests-in-english.md`, `fix/format/fix-format-pr-links-its-linear-issue.md`, `fix/process/fix-process-pr-always-opened-as-draft.md`, the `document-feature` skill if the feature is not documented yet |
@@ -93,8 +93,8 @@ Paths below are relative to `.claude/rules/`.
 - `fix/process/fix-process-no-co-author-trailer.md`
 - `fix/process/fix-process-plan-mode-writes-only-the-plan.md`
 - `fix/process/fix-process-pr-always-opened-as-draft.md`
-- `fix/process/fix-process-reread-rules-after-switching-branch.md`
 - `fix/process/fix-process-relay-agent-report-separating-verified-facts.md`
+- `fix/process/fix-process-reread-rules-after-switching-branch.md`
 - `fix/process/fix-process-resolve-mechanical-conflicts-escalate-big-ones.md`
 - `fix/process/fix-process-rework-preexisting-inconsistencies.md`
 - `fix/process/fix-process-verification-tooling-stays-on-my-side.md`
