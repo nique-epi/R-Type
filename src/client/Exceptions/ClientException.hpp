@@ -22,4 +22,13 @@ class FontNotLoadedException : public ClientException {
   explicit FontNotLoadedException(const std::string& file);
 };
 
+/**
+ * @brief A render texture could not be created on the graphics card.
+ */
+class RenderTextureNotCreatedException : public ClientException {
+ public:
+  /** @param width,height Size asked for, in pixels. */
+  RenderTextureNotCreatedException(unsigned int width, unsigned int height);
+};
+
 }  // namespace rtype::client
