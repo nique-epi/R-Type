@@ -71,4 +71,20 @@ class NullSystemException : public EngineException {
   NullSystemException();
 };
 
+/**
+ * @brief Every network identifier was already handed out.
+ */
+class NetworkIdExhaustedException : public EngineException {
+ public:
+  NetworkIdExhaustedException();
+};
+
+/**
+ * @brief The reserved network identifier 0 was used for an entity.
+ */
+class InvalidNetworkIdException : public EngineException {
+ public:
+  InvalidNetworkIdException();
+};
+
 }  // namespace rtype::engine

@@ -32,4 +32,10 @@ ComponentChangeDuringIterationException::
 NullSystemException::NullSystemException()
     : EngineException("A null system cannot be added to the scheduler") {}
 
+NetworkIdExhaustedException::NetworkIdExhaustedException()
+    : EngineException("Every network identifier was already handed out") {}
+
+InvalidNetworkIdException::InvalidNetworkIdException()
+    : EngineException("The network identifier 0 is reserved") {}
+
 }  // namespace rtype::engine

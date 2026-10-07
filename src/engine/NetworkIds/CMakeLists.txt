@@ -1,0 +1,6 @@
+add_library(rtype_engine_network_id_constants INTERFACE)
+
+target_include_directories(rtype_engine_network_id_constants INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
+
+add_subdirectory(NetworkIdAllocator)
+add_subdirectory(NetworkEntityTable)
