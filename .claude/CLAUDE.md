@@ -91,6 +91,7 @@ Paths below are relative to `.claude/rules/`.
 - `fix/process/fix-process-green-test-locking-a-defect-and-overly-deterministic-fake.md`
 - `fix/process/fix-process-instrument-before-reasoning-docs-are-truth.md`
 - `fix/process/fix-process-no-co-author-trailer.md`
+- `fix/process/fix-process-plan-mode-writes-only-the-plan.md`
 - `fix/process/fix-process-pr-always-opened-as-draft.md`
 - `fix/process/fix-process-relay-agent-report-separating-verified-facts.md`
 - `fix/process/fix-process-resolve-mechanical-conflicts-escalate-big-ones.md`
