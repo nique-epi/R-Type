@@ -20,3 +20,17 @@ A row, item or box that restates a rule carries its conditions; after editing ei
 
 - ❌ **Before (wrong)**: "dropped; the server answers an unknown sender with `ConnectionRefused` (`IncompatibleVersion`)".
 - ✅ **After (right)**: "dropped; the server answers an unknown sender with `ConnectionRefused` (`IncompatibleVersion`) if the datagram holds at least 26 bytes".
+
+## Update (2026-10-07) — The clauses of one rule are checked against each other
+
+### Mistake
+
+The first version of this rule said in clause 1 that a summary carries the conditions of its rule, and in clause 3 that it may say "see below" instead. The two clauses contradicted each other, in a rule about summaries contradicting their rules. The pull request review flagged it.
+
+### Root cause
+
+Clause 3 was added as an alternative without going back to clause 1 to make room for it.
+
+### Rule
+
+A summary either carries the conditions or points to the rule that states them; the clauses of one rule are checked against each other like a summary against its rule, and a clause that allows an exception to an earlier one is named as such in the earlier clause.

@@ -9,7 +9,7 @@ trigger: always_on
 
 1. **A rule of the form "the last X received wins"** (screen to show, ready state, phase, position) **needs an ordering key the receiver compares**: a sequence number, a tick, a revision. Without it, a late datagram undoes a newer one.
 2. **Walk a late duplicate through every state rule before writing it**: an older copy of each message arriving after the newer one. Write what the receiver shows or does then.
-3. **A wrapping counter is compared with serial number arithmetic** (RFC 1982): newer means ahead by 1 to half the range, never a plain `>`.
+3. **A wrapping counter is compared with serial number arithmetic** (RFC 1982), never a plain `>`: newer means ahead by at least 1 and by less than half the range, 1 to 32767 for 16 bits. Exactly half the range (32768) is undefined in RFC 1982, so it is never newer.
 4. **The ordering check runs after the authenticity check**, so a forged datagram cannot move the counter and make every genuine one look old.
 5. **Repetition is not ordering**: a message repeated every 500 ms corrects a loss, not a reordering; both properties are stated separately.
 
