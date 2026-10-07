@@ -67,7 +67,7 @@ src/engine/
 └── Exceptions/
 ```
 
-`EntityRegistry`, `Components`, `Systems`, `Events`, `Time` and `Exceptions` exist; `Concurrency` and `NetworkIds` are not written yet.
+`EntityRegistry`, `Components`, `Systems`, `Events`, `Time`, `Concurrency` and `Exceptions` exist; `NetworkIds` is not written yet.
 
 ### Logging
 

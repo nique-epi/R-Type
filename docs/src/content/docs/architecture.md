@@ -62,6 +62,14 @@ Delivery is deferred. `publish()` queues the event, `dispatch()` delivers the qu
 
 Alternative considered: calling the subscribers inside `publish()`. It needs no queue and no `dispatch()` call, but every subscriber would run inside the publishing system's `forEach` and could not add or remove a component.
 
+## Queues between threads
+
+Threads must never share game state: a thread hands data to another through a `BoundedQueue` (`rtype_engine`), and the receiving thread drains it when it is ready, so the thread that runs the game never waits for the network. A queue has a fixed room: when it is full, the oldest message is discarded and counted. The newest input of a player matters more than an old one, and a client that floods the server cannot make the queue grow. A flood still pushes the other senders' messages out of a full queue, so unwanted datagrams must be filtered on the network thread, before the queue.
+
+Alternative considered: a lock-free queue for one writer and one reader. It avoids the mutex, but its writer cannot discard the oldest message without moving the reader's position, which only the reader may do. A `push()` and a `drainInto()` take about 20 ns together when no other thread holds the lock (measured on an Apple Silicon laptop), so a few hundred messages per second cost a few microseconds per second.
+
+Alternative considered: making the writer wait while the queue is full. Nothing is discarded by the queue, but the network thread stops receiving while the game is late, and the system then drops the datagrams that keep arriving, without counting them.
+
 ## Time
 
 The simulation advances at a fixed rate (`SIMULATION_TICKS_PER_SECOND`, 60), whatever the rendering rate. `FixedTimestep` (`rtype_engine`) turns the time read from an `IClock` into a whole number of ticks to simulate; the remainder is kept for the next call, and a stall longer than `MAXIMUM_TICKS_PER_ADVANCE` ticks is dropped rather than caught up. Speeds are expressed in units per second and multiplied by the tick duration: `MovementSystem` (`rtype_game`) does it for every entity that has a `Position` and a `Velocity`. Tests drive a simulated clock, so the result is the same at 30, 60 and 144 frames per second.
@@ -83,7 +91,7 @@ Game logic uses one logical frame, the same on the server and on the client, and
 
 ## Consequences
 
-- `EntityRegistry`, `ComponentRegistry`, `ISystem`, `SystemScheduler` and `EventBus` exist today; the loop that calls the scheduler and the bus is added by a later story.
+- `EntityRegistry`, `ComponentRegistry`, `ISystem`, `SystemScheduler`, `EventBus` and `BoundedQueue` exist today; the loop that calls the scheduler and the bus is added by a later story.
 - Any new target declares its links explicitly; a link that breaks the table above fails the configure step.
 
 ## Validation
