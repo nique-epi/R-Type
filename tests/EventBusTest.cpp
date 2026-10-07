@@ -6,75 +6,21 @@
 #include "Entity.hpp"
 #include "EntityRegistry.hpp"
 #include "EventBus.hpp"
-#include "ISystem.hpp"
+#include "EventBusFixtures.hpp"
+#include "EventBusTestConstants.hpp"
 #include "SubscriptionHandle.hpp"
 #include "SystemScheduler.hpp"
 #include "TimeConstants.hpp"
 
 using rtype::engine::ComponentRegistry;
 using rtype::engine::DeadEntityException;
-using rtype::engine::Duration;
 using rtype::engine::EmptyEventCallbackException;
 using rtype::engine::Entity;
 using rtype::engine::EntityRegistry;
 using rtype::engine::EventBus;
-using rtype::engine::ISystem;
 using rtype::engine::SIMULATION_TICK_DURATION;
 using rtype::engine::SubscriptionHandle;
 using rtype::engine::SystemScheduler;
-
-namespace {
-
-struct Collision {
-  Entity first;
-  Entity second;
-
-  bool operator==(const Collision&) const = default;
-};
-
-struct EntityDestroyed {
-  Entity entity;
-};
-
-struct Health {
-  int points;
-};
-
-struct Explosion {
-  Entity source;
-};
-
-constexpr Entity FIRST_ENTITY{.index = 1, .generation = 0};
-constexpr Entity SECOND_ENTITY{.index = 2, .generation = 0};
-constexpr Entity THIRD_ENTITY{.index = 3, .generation = 0};
-constexpr int FIRST_LABEL = 1;
-constexpr int SECOND_LABEL = 2;
-constexpr int THIRD_LABEL = 3;
-constexpr int FULL_HEALTH = 100;
-constexpr int MISSILE_DAMAGE = 1;
-
-/**
- * @brief Publishes, during its forEach, a Collision between the missile and
- * every entity that has a Health, like a collision system would.
- */
-class ContactSystem final : public ISystem {
- public:
-  ContactSystem(EventBus& events, Entity missile)
-      : events_(&events), missile_(missile) {}
-
-  void update(ComponentRegistry& components,
-              [[maybe_unused]] Duration elapsed) override {
-    components.forEach<Health, Health>([this](Entity target, Health&, Health&) {
-      events_->publish(Collision{.first = missile_, .second = target});
-    });
-  }
-
- private:
-  EventBus* events_;
-  Entity missile_;
-};
-
-}  // namespace
 
 /**
  * Given a subscriber to Collision
