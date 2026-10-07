@@ -11,7 +11,7 @@ This page tells you where to look when you need to change something. It describe
 |---|---|---|
 | Window and frame loop | Available | `src/client/Window/` |
 | Assets folder and asset ids | Available | `src/client/Assets/`, `assets/README.md` |
-| Asset loading | Available; nothing calls it yet | `src/client/Assets/AssetLibrary/`, `src/client/Assets/AssetLoadingStep/` |
+| Asset loading | Available; used at launch for the font of the window size buttons | `src/client/Assets/AssetLibrary/`, `src/client/Assets/AssetLoadingStep/` |
 | Path of the running executable | Available | `src/client/Platform/` |
 | Screens and the loading screen | Not yet written | — |
 | Sprites, sounds and music of the game | Not yet written | — |
