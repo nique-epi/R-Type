@@ -1,14 +1,21 @@
 find_package(asio CONFIG REQUIRED)
 
-add_library(rtype_network STATIC NetworkContext.cpp)
+add_library(rtype_network_asio INTERFACE)
 
-target_include_directories(rtype_network PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_link_libraries(rtype_network_asio INTERFACE asio::asio)
 
-target_link_libraries(rtype_network PUBLIC asio::asio)
-
-target_compile_definitions(rtype_network
-  PUBLIC
+target_compile_definitions(rtype_network_asio
+  INTERFACE
     $<$<PLATFORM_ID:Windows>:_WIN32_WINNT=0x0A00>
 )
 
-rtype_enable_warnings(rtype_network)
+add_subdirectory(NetworkContext)
+
+add_library(rtype_network INTERFACE)
+
+target_include_directories(rtype_network INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
+
+target_link_libraries(rtype_network
+  INTERFACE
+    rtype_network_context
+)
