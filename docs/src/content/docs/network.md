@@ -20,6 +20,8 @@ This page tells you where to look when you need to change something. It describe
 
 `NetworkContext` owns the Asio event loop. `run()` blocks and runs every network operation, and every socket handler, on the thread that called it. It returns when the loop has no work left or `stop()` is called; a socket that is receiving always has work, so a server returns only on `stop()`.
 
+`stop()` and `post(task)` may be called from any thread. `post()` queues a function to run on the thread that runs `run()`: this is how another thread gets a datagram sent, since a socket may only be used on that thread. A task still queued when the context is destroyed is destroyed without running.
+
 Asio is linked privately to the network targets, so the headers other modules include never include it, and `r-type_server` fails to build if it tries. A class that needs Asio lives in `src/network` and links `rtype_network_asio`, which also defines `ASIO_NO_DEPRECATED` and, on Windows, `_WIN32_WINNT`.
 
 ## Sockets: `UdpSocket`
@@ -32,6 +34,7 @@ Asio is linked privately to the network targets, so the headers other modules in
 - `send(destination, payload)` copies the payload and returns at once. More than `MAX_DATAGRAM_SIZE` bytes throws `DatagramTooLargeException` and sends nothing. A failed send is logged, and UDP never tells whether a datagram arrived.
 - An error while receiving is logged and the socket keeps receiving. On Windows, a datagram sent to a port nobody listens on makes a later receive fail with "connection refused"; it is logged at the `debug` level.
 - A socket is not thread-safe: use it and destroy it on the thread that runs its `NetworkContext`. Once it is destroyed, its handler is never called again, even for a datagram already received.
+- `IncomingDatagram` and `OutgoingDatagram` (`src/network/Transport/`) hold a copy of a datagram's bytes with its sender, or with its destination, for code that keeps a datagram after the handler returns or hands it to another thread.
 
 An echo server, which sends every datagram back to its sender:
 
@@ -48,7 +51,7 @@ socket.startReceiving([&socket](const rtype::network::Endpoint& sender,
 network.run();
 ```
 
-`r-type_server` opens such a socket on `DEFAULT_SERVER_PORT` (4242), on every IPv4 interface, and only logs each datagram at the `debug` level: nothing decodes or answers them yet.
+`r-type_server` opens such a socket on `DEFAULT_SERVER_PORT` (4242), on every IPv4 interface, and hands each datagram to its simulation thread, which only logs it at the `debug` level: nothing decodes or answers them yet (see [Server](/R-Type/server/)).
 
 ## Serialization: `ByteWriter` and `ByteReader`
 
