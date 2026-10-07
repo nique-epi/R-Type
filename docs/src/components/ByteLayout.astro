@@ -1,0 +1,200 @@
+---
+/**
+ * Draws a byte layout as rows of boxes, one box per field.
+ *
+ * A box grows with the size of its field in bytes but never gets narrower
+ * than its name, so one-byte fields stay readable at the width of the page.
+ * Offsets count from the first field of the first row. On a narrow screen the
+ * boxes of a row stack.
+ */
+type Tone = 'blue' | 'gray' | 'green' | 'purple' | 'orange';
+
+interface Field {
+  name: string;
+  bytes: number;
+  tone: Tone;
+}
+
+interface Row {
+  fields: Field[];
+  note?: string;
+}
+
+interface Props {
+  /** What the layout shows, read by screen readers instead of the boxes. */
+  label: string;
+  rows: Row[];
+}
+
+const { label, rows } = Astro.props;
+
+const rowBytes = (row: Row) =>
+  row.fields.reduce((total, field) => total + field.bytes, 0);
+const widestRowBytes = Math.max(...rows.map(rowBytes));
+
+let offset = 0;
+const placedRows = rows.map((row) => ({
+  note: row.note,
+  // Every row uses the scale of the widest one, so a byte has the same
+  // width in all rows.
+  width: `${(100 * rowBytes(row)) / widestRowBytes}%`,
+  columns: row.fields
+    .map((field) => `minmax(min-content, ${field.bytes}fr)`)
+    .join(' '),
+  fields: row.fields.map((field) => {
+    const start = offset;
+    offset += field.bytes;
+    // A zero-width space between the words of a camelCase name lets the
+    // name wrap there, never in the middle of a word.
+    const breakableName = field.name.replace(/([a-z])([A-Z])/g, '$1​$2');
+    return { ...field, start, breakableName };
+  }),
+}));
+---
+
+<figure class="byte-layout not-content" role="img" aria-label={label}>
+  {
+    placedRows.map((row) => (
+      <div class="row">
+        <div
+          class="fields"
+          style={`--columns: ${row.columns}; --width: ${row.width}`}
+        >
+          {row.fields.map((field) => (
+            <div class={`field ${field.tone}`}>
+              <span class="offset">{field.start}</span>
+              <span class="name">{field.breakableName}</span>
+              <span class="size">
+                {field.bytes} {field.bytes === 1 ? 'byte' : 'bytes'}
+              </span>
+            </div>
+          ))}
+        </div>
+        {row.note && <p class="note">{row.note}</p>}
+      </div>
+    ))
+  }
+</figure>
+
+<style>
+  .byte-layout {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin: 1.5rem 0;
+  }
+
+  .fields {
+    display: grid;
+    grid-template-columns: var(--columns);
+    gap: 0.25rem;
+    width: var(--width);
+    min-width: min-content;
+  }
+
+  .field {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.125rem;
+    min-height: 4.5rem;
+    padding: 1.25rem 0.5rem 0.5rem;
+    border: 2px dashed var(--border);
+    border-radius: 0.25rem;
+    background: var(--fill);
+    color: var(--text);
+    text-align: center;
+  }
+
+  .offset {
+    position: absolute;
+    top: 0.25rem;
+    left: 0.375rem;
+    font-size: var(--sl-text-xs);
+    opacity: 0.8;
+  }
+
+  .name {
+    font-family: var(--sl-font-system-mono);
+    font-size: var(--sl-text-sm);
+    font-weight: 600;
+  }
+
+  .size {
+    font-size: var(--sl-text-xs);
+  }
+
+  .note {
+    margin: 0.25rem 0 0;
+    font-size: var(--sl-text-sm);
+    color: var(--sl-color-gray-3);
+  }
+
+  /*
+   * The colors of the protocol board in FigJam: a pastel fill and a dashed
+   * border of the same hue. The dark theme keeps the border and darkens the
+   * fill.
+   */
+  .field {
+    --text: hsl(0, 0%, 95%);
+  }
+
+  .blue {
+    --fill: hsl(206, 55%, 20%);
+    --border: #3dadff;
+  }
+
+  .green {
+    --fill: hsl(130, 35%, 18%);
+    --border: #66d575;
+  }
+
+  .purple {
+    --fill: hsl(259, 40%, 24%);
+    --border: #874fff;
+  }
+
+  .orange {
+    --fill: hsl(28, 50%, 20%);
+    --border: #ff9e42;
+  }
+
+  .gray {
+    --fill: hsl(224, 10%, 23%);
+    --border: #8f8f8f;
+  }
+
+  :global([data-theme='light']) .field {
+    --text: #1e1e1e;
+  }
+
+  :global([data-theme='light']) .blue {
+    --fill: #d6ecff;
+  }
+
+  :global([data-theme='light']) .green {
+    --fill: #dbf6e0;
+  }
+
+  :global([data-theme='light']) .purple {
+    --fill: #e9dfff;
+  }
+
+  :global([data-theme='light']) .orange {
+    --fill: #ffe6d1;
+  }
+
+  :global([data-theme='light']) .gray {
+    --fill: #ececf1;
+    --border: #b3b3b3;
+  }
+
+  @media (max-width: 36rem) {
+    .fields {
+      grid-template-columns: 1fr;
+      width: 100%;
+    }
+  }
+</style>
