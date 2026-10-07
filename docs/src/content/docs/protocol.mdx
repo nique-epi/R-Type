@@ -73,7 +73,7 @@ A datagram is a 22-byte header followed by one or more messages. The header, byt
 Each message is a type (`u8`), the size of its payload in bytes (`u16`, the 3 bytes of type and size excluded), then the payload. A sender of version 0 puts one message per datagram; a receiver accepts several.
 
 - `protocolId` and `version` stay at offsets 0 and 4 in every future version, so a receiver tells which version sent a datagram from its first 5 bytes.
-- `sessionToken` is drawn at random by the server when it accepts a connection, never 0. The server writes it in every datagram it sends to that client, and the client copies it into every datagram it sends afterward. The server drops and counts a datagram from an accepted client that carries another token, so nobody can steer a ship by forging the address of its player. The only exception is a `ConnectionRequest`, which carries 0 while the client has not received its token: the answer goes to the address of the player, never to whoever forged it.
+- `sessionToken` is drawn at random by the server when it accepts a connection, never 0. The server writes it in every datagram it sends to that client, and the client copies it into every datagram it sends afterward. The server drops and counts a datagram from an accepted client that carries another token, so nobody can steer a ship by forging the address of its player. A `ConnectionRequest` carries 0, since the client has no token yet: it never keeps a session alive, and it only gets a player slot with a valid cookie (see [Connection](#connection)).
 - `sequence` starts at 0 and grows by 1 for each datagram a side sends to the other, wrapping from 65535 to 0. Version 0 receivers may ignore it.
 - `flags`, `acknowledgedSequence` and `acknowledgementBits` are written as 0 and ignored in version 0.
 
@@ -97,7 +97,7 @@ A received datagram goes through these checks in order. No buffer is sized from 
 | The message type is listed below | that message is skipped, the next one is read |
 | The payload has the size its type requires and every value is in range | that message is dropped |
 
-The server never sends an unknown sender more bytes than the datagram it answers, so a forged source address cannot turn it into an amplifier: a `ConnectionRequest` holds at least 27 bytes and its answer 26. A client that receives a datagram of another version decodes nothing in it, and reports both version numbers to the player: its own, and the one at offset 4.
+The server never sends an unknown sender more bytes than the datagram it answers, so a forged source address cannot turn it into an amplifier: a `ConnectionRequest` holds at least 35 bytes, and every answer to it at most 33 (`ConnectionChallenge`). A client that receives a datagram of another version decodes nothing in it, and reports both version numbers to the player: its own, and the one at offset 4.
 
 ## Messages
 
@@ -107,7 +107,7 @@ The type identifies a message in both directions: `Disconnection` and `Heartbeat
 
 | Type | Message | Payload | Sent |
 |---|---|---|---|
-| 1 | `ConnectionRequest` | `nickname` `string` (1 to 16 bytes) | every 500 ms until an answer; the client gives up after 5 s |
+| 1 | `ConnectionRequest` | `cookie` `u64` (0 until the server gives one), `nickname` `string` (1 to 16 bytes) | every 500 ms until an answer; the client gives up after 5 s |
 | 4 | `Disconnection` | none | when the player closes the client, three times 50 ms apart |
 | 5 | `Heartbeat` | none | after 1 s without sending anything else |
 | 6 | `ReadyState` | `ready` `bool` | when the player changes it, and again while `LobbyState` shows another value |
@@ -129,10 +129,15 @@ The type identifies a message in both directions: `Disconnection` and `Heartbeat
 | 13 | `GameEvent` | `eventNumber` `u16`, `kind` `u8`, `playerNumber` `u8`, `entityId` `u32` | see [Game events](#game-events), three times 50 ms apart |
 | 14 | `PlayerLeft` | `playerNumber` `u8`, `reason` `u8`: 1 `Left`, 2 `TimedOut` | to the other players, when one leaves or times out, three times 50 ms apart |
 | 15 | `GameEnded` | `playerCount` `u8`, then per player `playerNumber` `u8`, `score` `u32` | when no player has a life left, then every 500 ms until the server waits for players again |
+| 16 | `ConnectionChallenge` | `cookie` `u64` | in answer to a request without a valid cookie |
 
 ### Connection
 
-A player keeps the number given by `ConnectionAccepted` until it leaves; the number also picks the color of the player, so no color travels. The nickname travels only in `ConnectionRequest` and `LobbyState`, never during a game. Its limit is 16 bytes, not 16 characters: a letter without accent takes 1 byte, an accented letter 2 and some symbols up to 4, so each accent leaves room for one letter less. The text field of the client counts bytes and refuses a character that would not fit whole; the server drops a request whose nickname is empty, longer than 16 bytes or not valid UTF-8. The server answers a `ConnectionRequest` from a sender it already accepted with the same `ConnectionAccepted` again, same number and same token.
+A connection takes two round trips, so that a forged address never gets a player slot. The client sends `ConnectionRequest` with `cookie` 0; the server answers `ConnectionChallenge` with a cookie and keeps nothing. The client sends its request again with that cookie, and only then does the server give a slot and a token. The cookie only reaches the real owner of the address, so whoever forges the address cannot send it back. A request with a wrong or expired cookie gets a new challenge; a refusal (`GameFull`, `GameInProgress`, `IncompatibleVersion`) may be sent at once, since it reserves nothing.
+
+How the server computes the cookie is its own business, as long as it keeps nothing per request and nobody can guess it: a keyed hash of the address, the port and the current 10-second window, with a secret drawn when the server starts, accepted during its window and the next one, does both.
+
+A player keeps the number given by `ConnectionAccepted` until it leaves; the number also picks the color of the player, so no color travels. The nickname travels only in `ConnectionRequest` and `LobbyState`, never during a game. Its limit is 16 bytes, not 16 characters: a letter without accent takes 1 byte, an accented letter 2 and some symbols up to 4, so each accent leaves room for one letter less. The text field of the client counts bytes and refuses a character that would not fit whole; the server drops a request whose nickname is empty, longer than 16 bytes or not valid UTF-8. The server answers a `ConnectionRequest` with a valid cookie from a sender it already accepted with the same `ConnectionAccepted` again, same number and same token.
 
 ### Inputs
 
@@ -222,10 +227,12 @@ The messages of one session, from the connection to the end of a game:
 ```mermaid
 sequenceDiagram
   accTitle: Messages of one session
-  accDescr: The client asks to connect and is accepted. The server repeats the lobby state until every player is ready, then starts the game. During the game the client sends its inputs and the server sends world states and events. When no player has a life left the server repeats the end of the game, then the lobby state again.
+  accDescr: The client asks to connect, receives a challenge, asks again with the cookie and is accepted. The server repeats the lobby state until every player is ready, then starts the game. During the game the client sends its inputs and the server sends world states and events. When no player has a life left the server repeats the end of the game, then the lobby state again.
   participant C as Client
   participant S as Server
-  C->>S: ConnectionRequest
+  C->>S: ConnectionRequest (cookie 0)
+  S->>C: ConnectionChallenge (cookie)
+  C->>S: ConnectionRequest (cookie)
   S->>C: ConnectionAccepted
   S->>C: LobbyState (repeated)
   C->>S: ReadyState
@@ -245,7 +252,7 @@ In each phase the server repeats one message, and the client shows the screen of
 | Game in progress | `WorldState`, 20 per second | the game |
 | Game ended | `GameEnded`, every 500 ms | the end screen |
 
-Each side sends a `Heartbeat` after 1 s without sending anything else; any datagram proves its sender is alive. The server closes a session after 5 s without a datagram from it, removes the ship and sends `PlayerLeft` (`TimedOut`) to the others. The client shows that the connection is lost after 5 s without a datagram from the server. A `Disconnection` frees the place at once, and the others get `PlayerLeft` (`Left`).
+Each side sends a `Heartbeat` after 1 s without sending anything else; any datagram proves its sender is alive. The server closes a session after 5 s without a datagram carrying its token, removes the ship and sends `PlayerLeft` (`TimedOut`) to the others. The client shows that the connection is lost after 5 s without a datagram from the server. A `Disconnection` frees the place at once, and the others get `PlayerLeft` (`Left`).
 
 ## Losses
 
@@ -268,7 +275,7 @@ Nothing is guaranteed in version 0: a lost message is never resent on request. T
 | all three copies of `EntityDestroyed` | the entity is removed once no `WorldState` has listed it for 900 ms, without explosion | 900 ms |
 | all three copies of `GameEvent` or `PlayerLeft` | not corrected: the sound, effect or message on screen is missed; lives, scores and players stay right through the state messages | — |
 
-The rates and delays on this page (60 inputs and 20 states per second, 500 ms, 900 ms, 1 s, 5 s) are **provisional**: they will be revised once measured on a real network. Code must name each of them as a constant and never repeat the number.
+The rates and delays on this page (60 inputs and 20 states per second, 500 ms, 900 ms, 1 s, 5 s, the 10-second cookie window) are **provisional**: they will be revised once measured on a real network. Code must name each of them as a constant and never repeat the number.
 
 ## Version 1
 
