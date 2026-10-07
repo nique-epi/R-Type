@@ -34,6 +34,7 @@ endfunction()
 
 rtype_add_test(NAME harness_tests SOURCES HarnessTest.cpp)
 rtype_add_test(NAME engine_tests SOURCES ComponentQueryTest.cpp ComponentTest.cpp EntityIndexMapTest.cpp EntityRegistryTest.cpp FixedTimestepTest.cpp SystemSchedulerTest.cpp TimerSchedulerTest.cpp LIBS rtype_engine)
-rtype_add_test(NAME game_tests SOURCES WorldTest.cpp PlayfieldTest.cpp LIBS rtype_game)
+rtype_add_test(NAME game_tests SOURCES EntityTypeTest.cpp MovementSystemTest.cpp WorldTest.cpp LIBS rtype_game)
 rtype_add_test(NAME network_tests SOURCES NetworkContextTest.cpp ByteWriterTest.cpp ByteReaderTest.cpp SerializationRoundTripTest.cpp ByteSequence.cpp LIBS rtype_network)
 rtype_add_test(NAME logging_tests SOURCES LoggerTest.cpp LogLaunchOptionsTest.cpp JournalFile.cpp LIBS rtype_logging)
+rtype_add_test(NAME client_tests SOURCES PlayfieldViewportTest.cpp WindowSizeSelectionTest.cpp LIBS rtype_client_playfield_viewport rtype_client_window_size_selection rtype_game)

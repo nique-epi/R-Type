@@ -32,7 +32,7 @@ The client and the server will each own one loop. The engine provides the buildi
 
 ## ECS: entities and components
 
-An **entity** is only a handle, `Entity { index, generation }` (`Entity.hpp`). It carries no data. A **component** is a plain struct attached to an entity by type, for example `Position`, `Velocity` and `CollisionBox` in `src/game/Components/`.
+An **entity** is only a handle, `Entity { index, generation }` (`Entity.hpp`). It carries no data. A **component** is a plain struct or enum attached to an entity by type, for example `Position`, `Velocity`, `CollisionBox` and `EntityType` in `src/game/Components/`. `EntityType` says what an entity is: `Player`, `Enemy`, `PlayerMissile` or `EnemyMissile`. A missile records the side that fired it, because the rules must tell a player missile, which may only hit enemies, from an enemy missile, which may only hit players.
 
 ### Entities: `EntityRegistry`
 
@@ -65,6 +65,8 @@ components.destroy(ship);
 ## Systems and queries
 
 A **system** is one behavior of the game: a class that implements `ISystem` (`src/engine/Systems/ISystem.hpp`) and reads or updates components in `update(components, elapsed)`.
+
+`MovementSystem` (`rtype_game`, `src/game/Systems/MovementSystem/`) is the first system of the game. It moves every entity that has a `Position` and a `Velocity` by the velocity, in units per second, multiplied by `elapsed`, so the distance depends on simulation time and never on the frame rate. An entity without a `Velocity` stays in place, and nothing keeps an entity inside the playfield. No loop runs it yet.
 
 ### Queries: `ComponentRegistry::forEach`
 
@@ -105,7 +107,7 @@ for (std::size_t tick = 0; tick < ticks; ++tick) {
 }
 ```
 
-The loop itself does not exist yet: today only the pieces above are in `rtype_engine`, and `GameWindow` (`src/client/Window/`) does not use them.
+The loop itself does not exist yet: today only the pieces above are in `rtype_engine`, and `GameWindow` (`src/client/Window/GameWindow/`) does not use them.
 
 ## Event bus
 
@@ -120,6 +122,7 @@ There is no event bus in the code yet. This page will describe it, its folder an
 | Change how entities are created or recycled | `src/engine/EntityRegistry/` |
 | Change the simulation rate | `SIMULATION_TICKS_PER_SECOND` in `src/engine/Time/TimeConstants.hpp` |
 | Write a behavior that walks components | A class implementing `ISystem` in `src/engine/Systems/ISystem.hpp`, added to a `SystemScheduler` |
+| Change how entities move | `MovementSystem` in `src/game/Systems/MovementSystem/` |
 | Change the order systems run in | The order of the `SystemScheduler::add()` calls |
 | Run something after a delay | `TimerScheduler` in `src/engine/Time/TimerScheduler/` |
 | Add an engine error | `src/engine/Exceptions/EngineException.hpp` |
