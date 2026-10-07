@@ -13,7 +13,7 @@ The client renders with SFML, the server talks over the network with Asio, and b
 The code is split into three libraries with one-way dependencies, and the game objects are organized as an **ECS** (Entity Component System).
 
 ```
-r-type_client -> rtype_client_window -> SFML
+r-type_client -> rtype_client_game_window -> SFML
       |-> rtype_game    -> rtype_engine
       '-> rtype_network -> Asio
 
@@ -65,11 +65,13 @@ The simulation advances at a fixed rate (`SIMULATION_TICKS_PER_SECOND`, 60), wha
 Game logic uses one logical frame, the same on the server and on the client, and never a window size in pixels.
 
 - The playfield is `PLAYFIELD_WIDTH` × `PLAYFIELD_HEIGHT` logical units, defined once in `rtype_game` (`PlayfieldConstants.hpp`).
-- These dimensions are **provisional**: 800 × 600, the current size of the client window. They will be revised once the proportions of the game are decided. Code must read the constants and never assume they match the window.
+- These dimensions are 1920 × 1080: the playfield has the proportions of a 16:9 screen. Code must read the constants and never assume they match the window.
 - The origin is the top-left corner, x grows to the right and y grows downwards.
 - `Position` is the center of an entity, `Velocity` is in units per second, `CollisionBox` is a size centered on the position.
 - SFML puts the origin of a sprite at its top-left corner by default, so the client must set it to the center of each sprite.
-- The client is the only place that knows pixels: it must scale the playfield to its window.
+- The client is the only place that knows pixels. `GameWindow` draws through a view that always covers the whole playfield, and `fitPlayfieldInWindow` (`src/client/Window/PlayfieldViewport/`) picks the largest centered rectangle of the window with the proportions of the playfield; the rest stays black. Resizing the window changes that rectangle only, never a logical position or a speed.
+- The window cannot be resized by dragging its border. The player picks one of five sizes with the proportions of the playfield (`WINDOW_SIZES` in `src/client/Window/WindowConstants.hpp`: 960 × 540, 1280 × 720, 1600 × 900, 1920 × 1080, 2560 × 1440), so no black bar shows. `WindowSizeSelection` only offers the sizes strictly smaller than the desktop and opens the window at the largest of them. The black bars remain as a safety net for the cases where the system gives the window another shape.
+- The size is picked with a row of buttons at the top-left corner of the playfield (`WindowSizeButtons`), each labelled with the size it gives. The button of a size too large for the desktop is dimmed and ignores clicks. **These buttons are provisional**: they will move into the options menu when it exists. Their font, `assets/fonts/tuffy.ttf` (Tuffy, public domain), is loaded from a path relative to the launch folder, so the client must be launched from the root of the repository until the resource manager locates assets.
 
 ## Consequences
 

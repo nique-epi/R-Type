@@ -234,7 +234,6 @@ A few files predate these conventions. Each move is a `refactor` pull request th
 |---|---|
 | `src/game/World.cpp` | `src/game/World/` |
 | `src/network/NetworkContext.cpp` | `src/network/NetworkContext/` |
-| `src/client/Window/GameWindow.cpp`, target `rtype_client_window` | `src/client/Window/GameWindow/`, target `rtype_client_game_window` |
 | `src/engine/Components/ComponentStorage.hpp` | `src/engine/Components/ComponentStorage/` |
 | `tests/*.cpp`, `tests/SimulatedClock.hpp` | `tests/<owner>/<Module>/`, `tests/doubles/` |
 

@@ -107,7 +107,7 @@ for (std::size_t tick = 0; tick < ticks; ++tick) {
 }
 ```
 
-The loop itself does not exist yet: today only the pieces above are in `rtype_engine`, and `GameWindow` (`src/client/Window/`) does not use them.
+The loop itself does not exist yet: today only the pieces above are in `rtype_engine`, and `GameWindow` (`src/client/Window/GameWindow/`) does not use them.
 
 ## Event bus
 

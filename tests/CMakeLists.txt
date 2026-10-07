@@ -37,3 +37,4 @@ rtype_add_test(NAME engine_tests SOURCES ComponentQueryTest.cpp ComponentTest.cp
 rtype_add_test(NAME game_tests SOURCES EntityTypeTest.cpp MovementSystemTest.cpp WorldTest.cpp LIBS rtype_game)
 rtype_add_test(NAME network_tests SOURCES NetworkContextTest.cpp LIBS rtype_network)
 rtype_add_test(NAME logging_tests SOURCES LoggerTest.cpp LogLaunchOptionsTest.cpp JournalFile.cpp LIBS rtype_logging)
+rtype_add_test(NAME client_tests SOURCES PlayfieldViewportTest.cpp WindowSizeSelectionTest.cpp LIBS rtype_client_playfield_viewport rtype_client_window_size_selection rtype_game)
