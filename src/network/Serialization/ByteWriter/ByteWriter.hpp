@@ -31,8 +31,6 @@ class ByteWriter {
   [[nodiscard]] const std::vector<std::byte>& bytes() const;
 
  private:
-  void writeUnsigned(std::uint64_t value, std::size_t byteCount);
-
   std::vector<std::byte> bytes_;
 };
 

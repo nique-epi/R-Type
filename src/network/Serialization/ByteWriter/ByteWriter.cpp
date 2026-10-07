@@ -14,20 +14,38 @@ static_assert(sizeof(float) == UINT32_WIRE_SIZE &&
                   std::numeric_limits<float>::is_iec559,
               "float must be IEEE-754 binary32 to be sent as is");
 
+namespace {
+
+/**
+ * @brief Appends an unsigned integer to a buffer, most significant byte
+ * first. The number of bytes is the size of the integer type, so it cannot
+ * disagree with the value.
+ */
+template <typename UnsignedInteger>
+void appendBigEndian(std::vector<std::byte>& buffer, UnsignedInteger value) {
+  for (std::size_t index = sizeof(UnsignedInteger); index > 0; --index) {
+    const std::size_t shift = (index - 1) * BITS_PER_BYTE;
+    const auto widened = static_cast<std::uint64_t>(value);
+    buffer.push_back(static_cast<std::byte>((widened >> shift) & BYTE_MASK));
+  }
+}
+
+}  // namespace
+
 void ByteWriter::writeUint8(std::uint8_t value) {
-  writeUnsigned(value, UINT8_WIRE_SIZE);
+  appendBigEndian(bytes_, value);
 }
 
 void ByteWriter::writeUint16(std::uint16_t value) {
-  writeUnsigned(value, UINT16_WIRE_SIZE);
+  appendBigEndian(bytes_, value);
 }
 
 void ByteWriter::writeUint32(std::uint32_t value) {
-  writeUnsigned(value, UINT32_WIRE_SIZE);
+  appendBigEndian(bytes_, value);
 }
 
 void ByteWriter::writeUint64(std::uint64_t value) {
-  writeUnsigned(value, UINT64_WIRE_SIZE);
+  appendBigEndian(bytes_, value);
 }
 
 void ByteWriter::writeInt8(std::int8_t value) {
@@ -61,12 +79,5 @@ void ByteWriter::writeString(std::string_view value) {
 }
 
 const std::vector<std::byte>& ByteWriter::bytes() const { return bytes_; }
-
-void ByteWriter::writeUnsigned(std::uint64_t value, std::size_t byteCount) {
-  for (std::size_t index = byteCount; index > 0; --index) {
-    const std::size_t shift = (index - 1) * BITS_PER_BYTE;
-    bytes_.push_back(static_cast<std::byte>((value >> shift) & BYTE_MASK));
-  }
-}
 
 }  // namespace rtype::network
