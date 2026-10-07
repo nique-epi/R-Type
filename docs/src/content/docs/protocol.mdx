@@ -5,6 +5,8 @@ sidebar:
   label: Protocol
 ---
 
+import ByteLayout from '../../components/ByteLayout.astro';
+
 The client and the server talk over UDP in the binary format described on this page, byte by byte, so each side can be written without reading the code of the other. Version 0 is the contract for the first part of the project. No code implements it yet: `src/network/Serialization` and `src/network/Protocol`, where it will live, do not exist yet (see [Project layout](/R-Type/project-layout/#network)).
 
 ## Transport
@@ -35,7 +37,28 @@ A position is in logical units, in the frame described in [Architecture](/R-Type
 
 ## Datagram
 
-A datagram is a 22-byte header followed by one or more messages.
+A datagram is a 22-byte header followed by one or more messages. The header, byte by byte: the blue fields are used in version 0, the gray ones are written as 0 until the second part of the project.
+
+<ByteLayout
+  label="The 22-byte header: protocolId on bytes 0 to 3, version on byte 4, flags on byte 5, sessionToken on bytes 6 to 13, sequence on bytes 14 and 15, acknowledgedSequence on bytes 16 and 17, acknowledgementBits on bytes 18 to 21."
+  rows={[
+    {
+      fields: [
+        { name: 'protocolId', bytes: 4, tone: 'blue' },
+        { name: 'version', bytes: 1, tone: 'blue' },
+        { name: 'flags', bytes: 1, tone: 'gray' },
+        { name: 'sessionToken', bytes: 8, tone: 'blue' },
+      ],
+    },
+    {
+      fields: [
+        { name: 'sequence', bytes: 2, tone: 'blue' },
+        { name: 'acknowledgedSequence', bytes: 2, tone: 'gray' },
+        { name: 'acknowledgementBits', bytes: 4, tone: 'gray' },
+      ],
+    },
+  ]}
+/>
 
 | Offset | Size | Field | In version 0 |
 |---|---|---|---|
@@ -117,7 +140,41 @@ A player keeps the number given by `ConnectionAccepted` until it leaves; the num
 
 ### World state
 
-`WorldState` lists every player and every entity of the game, in full each time.
+`WorldState` lists every player and every entity of the game, in full each time. The payload of a state with one player and one entity, byte by byte:
+
+<ByteLayout
+  label="A WorldState with one player and one entity: tick on bytes 0 to 3, playerCount on byte 4, the player on bytes 5 to 15 (playerNumber, shipEntityId, lives, score, invulnerable), entityCount on byte 16, the entity on bytes 17 to 25 (entityId, entityType, x, y)."
+  rows={[
+    {
+      fields: [
+        { name: 'tick', bytes: 4, tone: 'purple' },
+        { name: 'playerCount', bytes: 1, tone: 'gray' },
+      ],
+    },
+    {
+      fields: [
+        { name: 'playerNumber', bytes: 1, tone: 'blue' },
+        { name: 'shipEntityId', bytes: 4, tone: 'blue' },
+        { name: 'lives', bytes: 1, tone: 'blue' },
+        { name: 'score', bytes: 4, tone: 'blue' },
+        { name: 'invulnerable', bytes: 1, tone: 'blue' },
+      ],
+      note: 'One player, repeated playerCount times.',
+    },
+    {
+      fields: [{ name: 'entityCount', bytes: 1, tone: 'gray' }],
+    },
+    {
+      fields: [
+        { name: 'entityId', bytes: 4, tone: 'green' },
+        { name: 'entityType', bytes: 1, tone: 'green' },
+        { name: 'x', bytes: 2, tone: 'green' },
+        { name: 'y', bytes: 2, tone: 'green' },
+      ],
+      note: 'One entity, repeated entityCount times.',
+    },
+  ]}
+/>
 
 | Field | Type |
 |---|---|
