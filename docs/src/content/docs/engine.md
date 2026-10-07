@@ -3,7 +3,7 @@ title: Engine
 description: What the engine does, how its parts fit together and where to find them in the code.
 ---
 
-The engine is the generic part of the game: it stores game objects, advances time at a fixed rate and runs delayed work. It knows nothing about R-Type, SFML or sockets. The rules of the game live in `rtype_game`, which is built on top of it (see [Architecture](/R-Type/architecture/)).
+The engine is the generic part of the game: it stores game objects, advances time at a fixed rate, runs delayed work and carries events from the code that announces them to the code that reacts to them. It knows nothing about R-Type, SFML or sockets. The rules of the game live in `rtype_game`, which is built on top of it (see [Architecture](/R-Type/architecture/)).
 
 This page tells you where to look when you need to change something. It describes what exists today and says plainly what does not exist yet.
 
@@ -14,7 +14,7 @@ This page tells you where to look when you need to change something. It describe
 | Fixed timestep and timers | Available | `src/engine/Time/` |
 | Systems and queries | Available | `src/engine/Systems/`, `ComponentRegistry::forEach` |
 | Game loop | Not yet written: the pieces exist, nothing assembles them | — |
-| Event bus | Not yet written | — |
+| Event bus | Available | `src/engine/Events/` |
 
 ## How the parts fit together
 
@@ -97,21 +97,47 @@ The simulation runs at a fixed rate, `SIMULATION_TICKS_PER_SECOND` (60), whateve
 - `FixedTimestep` turns the time read from an `IClock` into a whole number of ticks to simulate. The remainder is kept for the next call. A stall longer than `MAXIMUM_TICKS_PER_ADVANCE` ticks is dropped instead of being caught up.
 - `TimerScheduler` runs a callback after a delay (`scheduleOnce`) or at a regular interval (`scheduleRepeating`), and cancels it through the `TimerHandle` it returned. It never reads a clock: the caller passes `SIMULATION_TICK_DURATION` to `advance()` once per tick.
 
-The loop the client and the server will write looks like this:
+The loop the client and the server will write looks like this; the events published by the systems are delivered at the end of the same tick (see [Event bus](#event-bus-eventbus)):
 
 ```cpp
 const std::size_t ticks = timestep.consumeTicks();
 for (std::size_t tick = 0; tick < ticks; ++tick) {
   timers.advance(rtype::engine::SIMULATION_TICK_DURATION);
   systems.run(components, rtype::engine::SIMULATION_TICK_DURATION);
+  events.dispatch();
 }
 ```
 
 The loop itself does not exist yet: today only the pieces above are in `rtype_engine`, and `GameWindow` (`src/client/Window/GameWindow/`) does not use them.
 
-## Event bus
+## Event bus: `EventBus`
 
-There is no event bus in the code yet. This page will describe it, its folder and its classes when the story that adds it is merged. Until then, nothing in the engine publishes or subscribes to events.
+`EventBus` (`src/engine/Events/EventBus/`) lets one part of the game announce that something happened without knowing who reacts. An **event** is a copyable struct, for example a collision between two entities, and its type is its kind. Code subscribes a callback to one event type with `subscribe<Event>(callback)` and announces an event with `publish(event)`. The code that publishes and the code that subscribes include the bus and the event struct, never each other.
+
+`publish()` only queues the event. `dispatch()` delivers the queue: events in the order they were published, each one to the subscribers of its type in the order they subscribed. The loop must call `dispatch()` once per tick, after the systems, so a subscriber runs outside any `forEach` and may add and remove components, and what it does still happens in the tick the event was published. The reasoning is in [Architecture](/R-Type/architecture/#events).
+
+```cpp
+struct Collision {
+  rtype::engine::Entity first;
+  rtype::engine::Entity second;
+};
+
+events.subscribe<Collision>([&components](const Collision& collision) {
+  components.destroy(collision.second);
+});
+
+events.publish(Collision{.first = missile, .second = bydo});
+events.dispatch();
+```
+
+- An event published by a subscriber during `dispatch()` is delivered by that same `dispatch()`, so a chain such as collision, damage and destruction ends in the tick it started. A subscriber that publishes the event it receives makes `dispatch()` run forever.
+- An event that has no subscriber when it is delivered is dropped.
+- `subscribe()` returns a `SubscriptionHandle`; `unsubscribe(handle)` stops the calls, even for events already queued. Code that lives shorter than the bus, such as a client screen, must unsubscribe before it is destroyed.
+- A callback subscribed during a delivery receives the next events, not the one being delivered. `dispatch()` must not be called from a subscriber, and an empty callback throws `EmptyEventCallbackException`.
+- When a subscriber throws, the exception leaves `dispatch()` and the events not delivered yet wait for the next `dispatch()`.
+- The bus is not thread-safe: each thread that runs a game or a frame loop owns its own bus.
+
+No event type exists yet: each one is added with the code that publishes it.
 
 ## Where to intervene
 
@@ -125,6 +151,7 @@ There is no event bus in the code yet. This page will describe it, its folder an
 | Change how entities move | `MovementSystem` in `src/game/Systems/MovementSystem/` |
 | Change the order systems run in | The order of the `SystemScheduler::add()` calls |
 | Run something after a delay | `TimerScheduler` in `src/engine/Time/TimerScheduler/` |
+| Announce that something happened, or react to it | `EventBus` in `src/engine/Events/EventBus/`: `publish` the event, `subscribe<Event>` to it |
 | Add an engine error | `src/engine/Exceptions/EngineException.hpp` |
 | Write a test that depends on time | `tests/SimulatedClock.hpp`, `tests/FixedTimestepTest.cpp` |
 
