@@ -134,7 +134,7 @@ Only `main.cpp` exists today.
 
 ### Client
 
-`src/client` builds `r-type_client`: what the player sees, hears and presses. The frame loop never waits: the network and HTTP threads hand their results over through queues.
+`src/client` builds `r-type_client`: what the player sees, hears and presses. The frame loop never waits: the network and HTTP threads will hand their results over through queues.
 
 ```
 src/client/
@@ -142,7 +142,7 @@ src/client/
 ├── Window/           the SFML window
 ├── Assets/           assets found by id, loaded at launch or entering a game
 ├── Platform/         what differs between Windows, macOS and Linux
-├── Screens/          home, server list, lobby, game, end, options...
+├── Screens/          loading, home, server list, lobby, game, end, options...
 ├── Widgets/          buttons, text fields, lists
 ├── Rendering/        sprites, starfield, HUD, effects, lagometer
 ├── Audio/            sounds and music
