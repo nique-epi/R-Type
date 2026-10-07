@@ -153,3 +153,25 @@ TEST(LoadingScreen, MissingFileStopsTheLoadingWithItsPath) {
               ThrowsMessage<AssetLoadingException>(HasSubstr(
                   genericText(assets.path() / "sounds" / "shot.wav"))));
 }
+
+/**
+ * Given a loading screen that gave way to the game
+ * When the game leaves the stack
+ * Then the stack is empty, the loading screen being gone
+ */
+TEST(LoadingScreen, LeavesTheStackOnceTheGameIsShown) {
+  const TemporaryFolder assets;
+  AssetLibrary library{assets.path()};
+  const AssetList nothing{};
+  std::vector<JournalEntry> journal;
+  ScreenStack screens;
+  screens.replaceAll(loadingScreen(screens, library, nothing, journal));
+  screens.applyPendingChanges();
+  screens.update();
+  screens.applyPendingChanges();
+
+  screens.pop();
+  screens.applyPendingChanges();
+
+  EXPECT_TRUE(screens.isEmpty());
+}
