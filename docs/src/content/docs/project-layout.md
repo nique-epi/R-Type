@@ -97,7 +97,7 @@ src/game/
 ```
 src/network/
 ├── Transport/        UDP socket, lag and loss simulator
-├── Serialization/    bit reader and writer, every read bounded
+├── Serialization/    byte reader and writer, every read bounded
 ├── Protocol/         one struct per message, encoding, dispatch by type
 ├── Handshake/        challenge, rate limit, version check
 ├── Sessions/         session token, sequence numbers, timeouts
@@ -107,7 +107,7 @@ src/network/
 └── Master/           messages and client of the master
 ```
 
-Only the Asio event loop exists today (`NetworkContext`).
+The Asio event loop (`NetworkContext`), `Exceptions` and `Serialization` exist; the other folders are being written. The [Network](/R-Type/network/) page describes what exists.
 
 ## The programs
 
