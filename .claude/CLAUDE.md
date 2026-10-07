@@ -44,7 +44,7 @@ Paths below are relative to `.claude/rules/`.
 |---|---|
 | Writing C++ | `architecture/`, `code-style/` |
 | Writing a test | `code-style/code-style-tests-given-when-then.md`, `fix/process/fix-process-green-test-locking-a-defect-and-overly-deterministic-fake.md` |
-| Touching the network | security section of `core/code-review.md`, `fix/reasoning/fix-reasoning-an-exception-to-a-check-is-read-as-the-forger.md` |
+| Touching the network | security section of `core/code-review.md`, `fix/reasoning/fix-reasoning-an-exception-to-a-check-is-read-as-the-forger.md`, `fix/reasoning/fix-reasoning-last-received-is-not-newest-over-udp.md` |
 | Creating a branch | `fix/process/fix-process-branch-before-first-commit.md`, `fix/execution/fix-execution-checkout-b-starts-from-head-not-main.md` |
 | Committing | `core/commit.md`, `fix/process/fix-process-no-co-author-trailer.md`, `fix/execution/fix-execution-check-the-index-before-committing.md` |
 | Finishing a feature | the `document-feature` skill (`.claude/skills/document-feature/SKILL.md`) |
@@ -109,6 +109,7 @@ Paths below are relative to `.claude/rules/`.
 - `fix/reasoning/fix-reasoning-convention-from-a-single-sample.md`
 - `fix/reasoning/fix-reasoning-delegated-invariant-must-be-computed.md`
 - `fix/reasoning/fix-reasoning-evidence-that-does-not-discriminate.md`
+- `fix/reasoning/fix-reasoning-last-received-is-not-newest-over-udp.md`
 - `fix/reasoning/fix-reasoning-name-the-axis-when-neutral-here-beneficial-there.md`
 - `fix/reasoning/fix-reasoning-never-assume-unread-file-content.md`
 - `fix/reasoning/fix-reasoning-present-code-is-not-behavior.md`
