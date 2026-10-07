@@ -150,7 +150,9 @@ src/client/
 └── Prediction/       own ship predicted, other ships interpolated
 ```
 
-Only `Window` exists today.
+Only `Window` and `Rendering` exist today.
+
+`Rendering` draws every entity that has a `Position` and a `Sprite` (an asset id and a layer), from the background layer to the interface layer. `RenderSystem` reads these two components and nothing else, and draws through `IDrawSurface`; only `SfmlDrawSurface` knows SFML, and it finds textures through `ITextureSource`. The system is not wired into the frame loop yet.
 
 ### Master
 
