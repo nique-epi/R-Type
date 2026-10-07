@@ -140,7 +140,7 @@ Only `main.cpp` exists today.
 src/client/
 ├── Application/      frame loop and screen stack
 ├── Window/           the SFML window
-├── Assets/           assets found by id, loaded per screen in a loading step
+├── Assets/           assets found by id, loaded at launch or entering a game
 ├── Platform/         what differs between Windows, macOS and Linux
 ├── Screens/          home, server list, lobby, game, end, options...
 ├── Widgets/          buttons, text fields, lists
@@ -153,7 +153,7 @@ src/client/
 └── Prediction/       own ship predicted, other ships interpolated
 ```
 
-`Window`, `Rendering`, `Assets` and `Platform` exist today.
+`Application`, `Window`, `Screens` (loading, game and options), `Rendering`, `Assets` and `Platform` exist today.
 
 `Rendering` draws every entity that has a `Position` and a `Sprite` (an asset id and a layer), from the background layer to the interface layer. `RenderSystem` reads these two components and nothing else, and draws through `IDrawSurface`; only `SfmlDrawSurface` knows SFML, and it finds textures through `ITextureSource`. The system is not wired into the frame loop yet.
 
