@@ -8,14 +8,14 @@
 namespace rtype::engine {
 
 FixedTimestep::FixedTimestep(const IClock& clock, Duration tickDuration)
-    : clock_(clock), tickDuration_(tickDuration), previousTime_(clock.now()) {
+    : clock_(&clock), tickDuration_(tickDuration), previousTime_(clock.now()) {
   if (tickDuration <= Duration::zero()) {
     throw InvalidTickDurationException();
   }
 }
 
 std::size_t FixedTimestep::consumeTicks() {
-  const Duration currentTime = clock_.now();
+  const Duration currentTime = clock_->now();
   accumulated_ += currentTime - previousTime_;
   previousTime_ = currentTime;
 

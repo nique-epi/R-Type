@@ -27,7 +27,7 @@ class FixedTimestep {
   [[nodiscard]] Duration timeUntilNextTick() const;
 
  private:
-  const IClock& clock_;
+  const IClock* clock_;
   Duration tickDuration_;
   Duration previousTime_;
   Duration accumulated_{};
