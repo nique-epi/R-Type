@@ -12,6 +12,12 @@ trigger: always_on
 3. **State the validated version in the report**: "build green" means nothing; "build green under AppleClang 17 and CMake 4.1, Linux/Windows CI to be confirmed" is a result. Untested parity is stated as a residual risk.
 4. **The library headers used are the ones installed by vcpkg**, not those of a system install of another version (Homebrew, apt).
 
+### Read the latest stable release on the official source too, and say how it differs
+
+1. **Before relying on a library API in a plan**, read it on the library's official source (its repository at the release tag, its official documentation) for **both** the pinned version and the latest stable release, and state the two version numbers.
+2. **Compare what the plan uses between the two**: say whether it is identical, and list what differs. A tag of the official repository is a source; memory is not.
+3. **A newer release is information, never a mandate**: no pinned version, baseline or submodule is changed unless the user asks for it.
+
 ## Example
 
 - ❌ **Before (wrong)**: using a CMake command introduced after 3.28 because it works with the local CMake → failure on a teammate's machine at the minimum required version.

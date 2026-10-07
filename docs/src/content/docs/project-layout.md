@@ -152,7 +152,9 @@ src/client/
 └── Prediction/       own ship predicted, other ships interpolated
 ```
 
-Only `Window` exists today.
+Only `Window` and `Rendering` exist today.
+
+`Rendering` draws every entity that has a `Position` and a `Sprite` (an asset id and a layer), from the background layer to the interface layer. `RenderSystem` reads these two components and nothing else, and draws through `IDrawSurface`; only `SfmlDrawSurface` knows SFML, and it finds textures through `ITextureSource`. The system is not wired into the frame loop yet.
 
 ### Master
 
@@ -235,7 +237,6 @@ A few files predate these conventions. Each move is a `refactor` pull request th
 | Today | Target |
 |---|---|
 | `src/game/World.cpp` | `src/game/World/` |
-| `src/client/Window/GameWindow.cpp`, target `rtype_client_window` | `src/client/Window/GameWindow/`, target `rtype_client_game_window` |
 | `src/engine/Components/ComponentStorage.hpp` | `src/engine/Components/ComponentStorage/` |
 | `tests/*.cpp`, `tests/SimulatedClock.hpp` | `tests/<owner>/<Module>/`, `tests/doubles/` |
 

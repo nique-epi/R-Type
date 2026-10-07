@@ -1,0 +1,7 @@
+add_library(rtype_client_window_size_selection STATIC WindowSizeSelection.cpp)
+
+target_include_directories(rtype_client_window_size_selection PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+
+target_link_libraries(rtype_client_window_size_selection PUBLIC rtype_client_window)
+
+rtype_enable_warnings(rtype_client_window_size_selection)
