@@ -1,5 +1,6 @@
 find_package(SFML 3 COMPONENTS Graphics Window System Audio CONFIG REQUIRED)
 
+add_subdirectory(Rendering)
 add_subdirectory(Window)
 
 add_executable(r-type_client main.cpp)
