@@ -1,4 +1,4 @@
-#include <windows.h>
+#include <windows.h>  // NOLINT(misc-include-cleaner)
 #include <filesystem>
 #include <optional>
 #include <string>
@@ -9,6 +9,7 @@ namespace rtype::client {
 
 std::optional<std::filesystem::path> executablePath() {
   std::wstring reported(MAXIMUM_WINDOWS_PATH_LENGTH, L'\0');
+  // NOLINTNEXTLINE(misc-include-cleaner)
   const DWORD length = GetModuleFileNameW(nullptr, reported.data(),
                                           static_cast<DWORD>(reported.size()));
   if (length == 0 || length == reported.size()) {
