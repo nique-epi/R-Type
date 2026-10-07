@@ -62,7 +62,7 @@ AssetLoadingException::AssetLoadingException(std::string_view assetFolder,
 
 AssetNotLoadedException::AssetNotLoadedException(std::string_view assetId)
     : ClientException("Asset \"" + std::string(assetId) +
-                      "\" is not loaded: list it in the assets of the screen "
-                      "that uses it") {}
+                      "\" is not loaded: list it in the interface assets or "
+                      "in the assets of a game") {}
 
 }  // namespace rtype::client

@@ -38,12 +38,24 @@ AssetLoadResult loadInto(AssetsById<Asset>& assets, std::string_view assetId,
   return AssetLoadResult::Loaded;
 }
 
+bool isNamedIn(const std::vector<std::string>& assetIds,
+               std::string_view assetId) {
+  return std::ranges::find(assetIds, assetId) != assetIds.end();
+}
+
 template <typename Asset>
 void keepOnly(AssetsById<Asset>& assets,
-              const std::vector<std::string>& keptIds) {
-  std::erase_if(assets, [&keptIds](const auto& entry) {
-    return std::ranges::find(keptIds, entry.first) == keptIds.end();
+              const std::vector<std::string>& keptIds,
+              const std::vector<std::string>& permanentIds) {
+  std::erase_if(assets, [&keptIds, &permanentIds](const auto& entry) {
+    return !isNamedIn(keptIds, entry.first) &&
+           !isNamedIn(permanentIds, entry.first);
   });
+}
+
+void appendAll(std::vector<std::string>& assetIds,
+               const std::vector<std::string>& addedIds) {
+  assetIds.insert(assetIds.end(), addedIds.begin(), addedIds.end());
 }
 
 template <typename Asset>
@@ -85,11 +97,32 @@ AssetLoadResult AssetLibrary::load(AssetKind kind, std::string_view assetId) {
   return AssetLoadResult::UnreadableFile;
 }
 
+bool AssetLibrary::isLoaded(AssetKind kind, std::string_view assetId) const {
+  switch (kind) {
+    case AssetKind::Texture:
+      return textures_.contains(assetId);
+    case AssetKind::Sound:
+      return sounds_.contains(assetId);
+    case AssetKind::Font:
+      return fonts_.contains(assetId);
+    case AssetKind::Music:
+      return musicFiles_.contains(assetId);
+  }
+  return false;
+}
+
+void AssetLibrary::keepPermanently(const AssetList& permanent) {
+  appendAll(permanent_.textures, permanent.textures);
+  appendAll(permanent_.sounds, permanent.sounds);
+  appendAll(permanent_.fonts, permanent.fonts);
+  appendAll(permanent_.music, permanent.music);
+}
+
 void AssetLibrary::releaseAllExcept(const AssetList& kept) {
-  keepOnly(textures_, kept.textures);
-  keepOnly(sounds_, kept.sounds);
-  keepOnly(fonts_, kept.fonts);
-  keepOnly(musicFiles_, kept.music);
+  keepOnly(textures_, kept.textures, permanent_.textures);
+  keepOnly(sounds_, kept.sounds, permanent_.sounds);
+  keepOnly(fonts_, kept.fonts, permanent_.fonts);
+  keepOnly(musicFiles_, kept.music, permanent_.music);
 }
 
 const sf::Texture& AssetLibrary::texture(std::string_view assetId) const {
