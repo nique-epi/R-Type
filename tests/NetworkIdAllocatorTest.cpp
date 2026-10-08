@@ -10,8 +10,12 @@
 using rtype::engine::NetworkIdAllocator;
 using rtype::engine::NetworkIdExhaustedException;
 
+namespace {
+
 constexpr std::uint32_t FIRST_NETWORK_ID = 1;
 constexpr int MANY_ALLOCATIONS = 1000;
+
+}  // namespace
 
 /**
  * Given a new allocator
@@ -55,11 +59,13 @@ TEST(NetworkIdAllocator, LastIdentifierIsTheLargestValue) {
 
 /**
  * Given an allocator that gave every identifier
- * When another one is requested
- * Then it throws instead of wrapping around to the reserved identifier
+ * When another one is requested, twice
+ * Then it throws each time instead of wrapping around to an identifier
+ * already given
  */
-TEST(NetworkIdAllocator, ExhaustionThrows) {
+TEST(NetworkIdAllocator, ExhaustionKeepsThrowing) {
   NetworkIdAllocator allocator(std::numeric_limits<std::uint32_t>::max());
 
+  EXPECT_THROW(allocator.allocate(), NetworkIdExhaustedException);
   EXPECT_THROW(allocator.allocate(), NetworkIdExhaustedException);
 }

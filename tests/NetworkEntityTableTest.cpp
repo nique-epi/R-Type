@@ -7,10 +7,14 @@
 using rtype::engine::Entity;
 using rtype::engine::NetworkEntityTable;
 
+namespace {
+
 constexpr std::uint32_t BOUND_ID = 7;
 constexpr std::uint32_t UNKNOWN_ID = 8;
 constexpr Entity FIRST_ENTITY{.index = 3, .generation = 1};
 constexpr Entity SECOND_ENTITY{.index = 4, .generation = 1};
+
+}  // namespace
 
 /**
  * Given a table where an identifier is bound to an entity
