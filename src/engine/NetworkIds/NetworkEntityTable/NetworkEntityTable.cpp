@@ -2,7 +2,6 @@
 #include <cstddef>
 #include <cstdint>
 #include <optional>
-#include "EngineException.hpp"
 #include "Entity.hpp"
 #include "NetworkIdConstants.hpp"
 
@@ -10,7 +9,7 @@ namespace rtype::engine {
 
 bool NetworkEntityTable::bind(std::uint32_t networkId, engine::Entity entity) {
   if (networkId == NO_NETWORK_ID) {
-    throw InvalidNetworkIdException();
+    return false;
   }
   return entityByNetworkId_.try_emplace(networkId, entity).second;
 }

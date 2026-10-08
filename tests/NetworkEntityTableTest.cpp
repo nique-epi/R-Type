@@ -1,12 +1,10 @@
 #include <gtest/gtest.h>
 #include <cstdint>
-#include "EngineException.hpp"
 #include "Entity.hpp"
 #include "NetworkEntityTable.hpp"
 #include "NetworkIdConstants.hpp"
 
 using rtype::engine::Entity;
-using rtype::engine::InvalidNetworkIdException;
 using rtype::engine::NetworkEntityTable;
 
 constexpr std::uint32_t BOUND_ID = 7;
@@ -72,12 +70,12 @@ TEST(NetworkEntityTable, UnboundIdentifierIsForgotten) {
 /**
  * Given an empty table
  * When the reserved identifier is bound
- * Then it throws and nothing is stored
+ * Then bind reports false, nothing is stored and nothing is thrown
  */
-TEST(NetworkEntityTable, ReservedIdentifierCannotBeBound) {
+TEST(NetworkEntityTable, ReservedIdentifierIsNotBound) {
   NetworkEntityTable table;
 
-  EXPECT_THROW(table.bind(rtype::engine::NO_NETWORK_ID, FIRST_ENTITY),
-               InvalidNetworkIdException);
+  EXPECT_FALSE(table.bind(rtype::engine::NO_NETWORK_ID, FIRST_ENTITY));
   EXPECT_EQ(table.size(), 0U);
+  EXPECT_FALSE(table.find(rtype::engine::NO_NETWORK_ID).has_value());
 }

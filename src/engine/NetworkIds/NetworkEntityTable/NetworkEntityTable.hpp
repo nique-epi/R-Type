@@ -17,9 +17,9 @@ class NetworkEntityTable {
  public:
   /**
    * @brief Associates the network identifier with the local entity.
-   * @returns true when bound; false when the identifier was already bound, in
-   * which case the existing association is kept.
-   * @throws InvalidNetworkIdException when networkId is NO_NETWORK_ID.
+   * @returns true when bound; false when nothing changed, because the
+   * identifier was already bound (the existing association is kept) or is
+   * NO_NETWORK_ID.
    */
   bool bind(std::uint32_t networkId, engine::Entity entity);
 

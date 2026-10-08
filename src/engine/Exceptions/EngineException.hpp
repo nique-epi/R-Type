@@ -79,12 +79,4 @@ class NetworkIdExhaustedException : public EngineException {
   NetworkIdExhaustedException();
 };
 
-/**
- * @brief The reserved network identifier 0 was used for an entity.
- */
-class InvalidNetworkIdException : public EngineException {
- public:
-  InvalidNetworkIdException();
-};
-
 }  // namespace rtype::engine
