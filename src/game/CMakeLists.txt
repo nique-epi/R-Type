@@ -1,4 +1,5 @@
 add_subdirectory(Components)
+add_subdirectory(Events)
 add_subdirectory(Systems)
 
 add_library(rtype_game STATIC World.cpp)
@@ -9,6 +10,7 @@ target_link_libraries(rtype_game
   PUBLIC
     rtype_engine
     rtype_game_components
+    rtype_game_events
     rtype_game_movement_system
 )
 
