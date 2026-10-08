@@ -69,15 +69,26 @@ An entity handle is local: the server and each client have different `Entity` va
 
 - `NetworkIdAllocator` (server) hands out 1, 2, 3 and so on. An identifier is never given twice, so it is unique during the whole game, even after its entity is destroyed. After 4294967295 identifiers, `allocate()` throws `NetworkIdExhaustedException` instead of wrapping around to a used identifier.
 - `NetworkIdentity` (`src/game/Components/`) is the component that carries the identifier on a server entity, so the code that builds a world state can read it.
-- `NetworkEntityTable` (client) finds the local entity of an identifier. `find()` returns an empty `std::optional` for an unknown identifier, so a message about an entity the client does not have is ignored without any special case. `bind()` returns false and keeps the first entity when the identifier is already bound, and throws `InvalidNetworkIdException` for 0. The table does not know whether an entity is alive: whoever destroys an entity unbinds its identifier.
+- `NetworkEntityTable` (client) finds the local entity of an identifier. `find()` returns an empty `std::optional` for an unknown identifier. What the client does then depends on the message: a `WorldState` creates the entity, an `EntityDestroyed` is ignored (see [Protocol](/R-Type/protocol/#world-state)). `bind()` returns false and changes nothing when the identifier is already bound, in which case the first entity is kept, and for the reserved 0, so a corrupt identifier read from the network never throws. The table does not know whether an entity is alive: whoever destroys an entity unbinds its identifier.
 
 Nothing creates identifiers or fills the table yet: `World` does not use them until the world state is replicated.
 
+On the server, with `entities` and `components` from the example above:
+
 ```cpp
 rtype::engine::NetworkIdAllocator allocator;
+
+rtype::engine::Entity ship = entities.create();
+components.add(ship, rtype::game::NetworkIdentity{
+                          .networkId = allocator.allocate()});  // 1
+```
+
+On the client, with `networkId` read from a message:
+
+```cpp
 rtype::engine::NetworkEntityTable table;
 
-const std::uint32_t networkId = allocator.allocate();  // 1
+rtype::engine::Entity localEntity = entities.create();
 table.bind(networkId, localEntity);
 
 if (const auto entity = table.find(networkId)) {
