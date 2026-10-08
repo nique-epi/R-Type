@@ -86,7 +86,7 @@ src/game/
 ├── Systems/          movement, collisions, damage, shooting, score, lives
 ├── Spawning/         creates ships, enemies, missiles, bonuses
 ├── Waves/            when and which enemies appear
-└── Events/           collision, entity destroyed, player left...
+└── Events/           entity destroyed, player left...
 ```
 
 `World`, `Components` and the movement system (`Systems/MovementSystem/`) exist; the other systems and folders are not written yet.
