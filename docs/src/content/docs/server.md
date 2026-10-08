@@ -38,7 +38,7 @@ Every `TICKS_PER_LATENESS_REPORT` ticks (600, so every ten seconds), the loop lo
 
 How late a tick starts depends on how precisely the system wakes a sleeping thread:
 
-- On Windows, a sleeping thread only wakes on a tick of the system clock: according to the documentation of `Sleep`, a sleep longer than one clock tick but shorter than two lasts anywhere between one and two of them, and MSVC's `sleep_until` calls `Sleep`. While it runs, the loop holds a `FineTimerResolution` (`src/server/Platform/`), which asks Windows for clock ticks of `FINE_TIMER_RESOLUTION_MILLISECONDS` (1 ms).
+- On Windows, a sleeping thread only wakes on a tick of the system clock: according to the documentation of `Sleep`, a sleep longer than one clock tick but shorter than two lasts anywhere between one and two of them, and MSVC's `sleep_until` calls `Sleep`. While it runs, the loop holds a `FineTimerResolution` (`src/server/Platform/`), which asks Windows for clock ticks of `FINE_TIMER_RESOLUTION_MILLISECONDS` (1 ms). If Windows refuses, the loop logs a warning and runs anyway.
 - On macOS, a wake-up is delayed in proportion to the length of the sleep (timer coalescing). Measured on an Apple Silicon laptop, ticks start 4.4 ms late on average and at most 8.3 ms late, with no client as with four clients sending 60 datagrams per second each; 600 ticks still run every ten seconds.
 - On Linux and Windows, the lateness is not measured yet.
 
