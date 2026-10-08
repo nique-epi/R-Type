@@ -61,13 +61,14 @@ src/engine/
 ├── Components/       stores components by type
 ├── Systems/          runs systems in a fixed order
 ├── Events/           typed event bus
+├── Collision/        rectangle overlap test and the collision event
 ├── Time/             fixed timestep, clocks, timers
 ├── Concurrency/      queues between threads
 ├── NetworkIds/       entity to network id, and back
 └── Exceptions/
 ```
 
-`EntityRegistry`, `Components`, `Systems`, `Events`, `Time` and `Exceptions` exist; `Concurrency` and `NetworkIds` are not written yet.
+`EntityRegistry`, `Components`, `Systems`, `Events`, `Collision`, `Time` and `Exceptions` exist; `Concurrency` and `NetworkIds` are not written yet.
 
 ### Logging
 
