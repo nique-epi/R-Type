@@ -48,6 +48,7 @@ class TickLoop {
    * @brief Runs the due ticks, then sleeps until the next one is due, until
    * @p stop is requested; a request is seen when the current sleep ends. Every
    * TICKS_PER_LATENESS_REPORT ticks, logs their lateness at the debug level.
+   * Logs a warning when the system refuses a FineTimerResolution.
    *
    * It sleeps in real time, so the clock must follow real time.
    */

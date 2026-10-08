@@ -46,6 +46,11 @@ std::size_t TickLoop::runDueTicks() {
 
 void TickLoop::run(const std::stop_token& stop) {
   const FineTimerResolution fineTimers;
+  if (!fineTimers.isGranted()) {
+    logger_.warn("the system refused a timer resolution of ",
+                 FINE_TIMER_RESOLUTION_MILLISECONDS,
+                 " ms: ticks will start late, some of them in pairs");
+  }
   while (!stop.stop_requested()) {
     runDueTicks();
     if (lateness_.tickCount >= TICKS_PER_LATENESS_REPORT) {
