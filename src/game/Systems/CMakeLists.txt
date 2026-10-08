@@ -1,2 +1,3 @@
 add_subdirectory(MovementSystem)
 add_subdirectory(CollisionSystem)
+add_subdirectory(CollisionRules)
