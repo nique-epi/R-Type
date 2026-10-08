@@ -89,7 +89,7 @@ src/game/
 └── Events/           entity destroyed, player left...
 ```
 
-`World`, `Components` and the movement system (`Systems/MovementSystem/`) exist; the other systems and folders are not written yet.
+`World`, `Components`, `Events`, the movement system (`Systems/MovementSystem/`) and the collision classes (`Systems/CollisionSystem/`, `Systems/CollisionRules/`) exist; the other systems and folders are not written yet. See [Server and game](/R-Type/server/).
 
 ### Network
 

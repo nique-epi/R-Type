@@ -15,7 +15,7 @@ This page tells you where to look when you need to change something. It describe
 | Systems and queries | Available | `src/engine/Systems/`, `ComponentRegistry::forEach` |
 | Game loop | Not yet written: the pieces exist, nothing assembles them | — |
 | Event bus | Available | `src/engine/Events/` |
-| Collisions | Available: the overlap test and the event; no system detects collisions yet | `src/engine/Collision/` |
+| Collisions | Available: the overlap test and the event; the system that detects them is in the game | `src/engine/Collision/` |
 
 ## How the parts fit together
 
@@ -143,7 +143,7 @@ The engine defines one event type, `Collision` (see below). The game defines the
 - `overlaps(first, second)` is true when the interiors of the two rectangles intersect. Two rectangles that only touch along an edge or at a corner do not overlap, and a rectangle with no area overlaps another one only if it lies strictly inside it. The answer does not depend on the order of the arguments. The function is `constexpr`.
 - `Collision` is the event `{first, second}`, two `Entity` handles. The order carries no meaning: a subscriber must accept the pair `(a, b)` as well as `(b, a)`.
 
-No system walks the entities and publishes `Collision` yet. Which pairs matter (a player missile and a Bydo, for example) is decided by the game in a subscriber, never by the engine.
+The engine has no system that walks the entities: it cannot read `Position` or `CollisionBox`. `CollisionSystem` in the game builds the `Bounds` and publishes `Collision`, and which pairs matter (a player missile and a Bydo, for example) is decided by the game in a subscriber, never by the engine: see [Server and game](/R-Type/server/#collisions).
 
 ## Where to intervene
 
