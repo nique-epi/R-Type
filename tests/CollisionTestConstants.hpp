@@ -38,3 +38,9 @@ constexpr float EMPTY_SIDE = 0.0F;
  * @brief Distance from the center of the starting square to one of its edges.
  */
 constexpr float EDGE_OFFSET = 5.0F;
+
+/**
+ * @brief Distance between two square centers that puts the squares far from
+ * each other, on one axis.
+ */
+constexpr float FAR_DISTANCE = 100.0F;
