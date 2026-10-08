@@ -22,7 +22,8 @@ class NetworkIdAllocator {
   /**
    * @returns The next identifier: 1 the first time, then one more each time.
    * Never NO_NETWORK_ID.
-   * @throws NetworkIdExhaustedException once 4294967295 identifiers were given.
+   * @throws NetworkIdExhaustedException once the identifier 4294967295 was
+   * given.
    */
   std::uint32_t allocate();
 

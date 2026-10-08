@@ -21,14 +21,13 @@ class NetworkEntityTable {
    * identifier was already bound (the existing association is kept) or is
    * NO_NETWORK_ID.
    */
-  bool bind(std::uint32_t networkId, engine::Entity entity);
+  bool bind(std::uint32_t networkId, Entity entity);
 
   /**
    * @returns The local entity, or an empty optional when the identifier is
    * unknown.
    */
-  [[nodiscard]] std::optional<engine::Entity> find(
-      std::uint32_t networkId) const;
+  [[nodiscard]] std::optional<Entity> find(std::uint32_t networkId) const;
 
   /**
    * @returns true when an association was removed; false when the identifier
@@ -40,7 +39,7 @@ class NetworkEntityTable {
   [[nodiscard]] std::size_t size() const;
 
  private:
-  std::unordered_map<std::uint32_t, engine::Entity> entityByNetworkId_;
+  std::unordered_map<std::uint32_t, Entity> entityByNetworkId_;
 };
 
 }  // namespace rtype::engine
