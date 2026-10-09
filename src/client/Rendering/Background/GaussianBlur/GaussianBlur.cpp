@@ -10,6 +10,7 @@
 #include <string>
 #include "BackgroundConstants.hpp"
 #include "ClientException.hpp"
+#include "HaloShader.hpp"
 
 namespace rtype::client {
 

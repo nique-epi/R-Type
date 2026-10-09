@@ -143,7 +143,7 @@ On a Retina Mac, SFML 3 renders every window at its size in points, not in scree
 | Change a color of the sky | `src/client/Rendering/Background/BackgroundColors.hpp` |
 | Change how often sky events appear, or how many at once | `SHORTEST_SKY_EVENT_GAP`, `LONGEST_SKY_EVENT_GAP`, `MAXIMUM_SKY_EVENTS` in `src/client/Rendering/Background/SkyEvents/SkyEventConstants.hpp` |
 | Add a kind of sky event | A class implementing `ISkyEvent` in `src/client/Rendering/Background/SkyEvents/`, a value of `SkyEventKind`, a weight in `SKY_EVENT_WEIGHTS`, a case in `SkyEventScheduler::createEvent` |
-| Change the halo | `HALO_STANDARD_DEVIATION`, `HALO_TINT` and `HALO_FRAGMENT_SHADER` in `BackgroundConstants.hpp`, `GaussianBlur/` |
+| Change the halo | `HALO_STANDARD_DEVIATION` in `BackgroundConstants.hpp`, `HALO_TINT` in `BackgroundColors.hpp`, the blur shader in `HaloShader.hpp`, `GaussianBlur/` |
 | Change how the sky is enlarged | `ScrollingBackground::draw`, `IntegerScale/` |
 | Change the window or the frame loop | `src/client/Window/GameWindow/` |
 | Add a client error | `src/client/Exceptions/ClientException.hpp` |

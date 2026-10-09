@@ -148,37 +148,6 @@ constexpr float HALO_KERNEL_DEVIATIONS = 3.0F;
 constexpr int HALO_KERNEL_RADIUS =
     static_cast<int>(HALO_KERNEL_DEVIATIONS * HALO_STANDARD_DEVIATION);
 
-/**
- * @brief Fragment shader of one blur pass along `direction`, one texel long.
- * It is compiled after HALO_KERNEL_RADIUS_DEFINITION and HALO_KERNEL_RADIUS.
- */
-constexpr std::string_view HALO_KERNEL_RADIUS_DEFINITION =
-    "#define KERNEL_RADIUS ";
-constexpr std::string_view HALO_SOURCE_UNIFORM = "source";
-constexpr std::string_view HALO_DIRECTION_UNIFORM = "direction";
-constexpr std::string_view HALO_DEVIATION_UNIFORM = "standardDeviation";
-constexpr std::string_view HALO_FRAGMENT_SHADER = R"glsl(
-uniform sampler2D source;
-uniform vec2 direction;
-uniform float standardDeviation;
-
-void main()
-{
-    vec4 sum = vec4(0.0);
-    float weightSum = 0.0;
-    for (int offset = -KERNEL_RADIUS; offset <= KERNEL_RADIUS; ++offset)
-    {
-        float pixelOffset = float(offset);
-        float weight = exp(-(pixelOffset * pixelOffset)
-                           / (2.0 * standardDeviation * standardDeviation));
-        sum += texture2D(source, gl_TexCoord[0].xy + direction * pixelOffset)
-               * weight;
-        weightSum += weight;
-    }
-    gl_FragColor = gl_Color * (sum / weightSum);
-}
-)glsl";
-
 constexpr std::string_view BACKGROUND_LOG_MODULE_NAME = "Background";
 
 }  // namespace rtype::client
