@@ -71,4 +71,12 @@ class NullSystemException : public EngineException {
   NullSystemException();
 };
 
+/**
+ * @brief An event subscription was made with an empty callback.
+ */
+class EmptyEventCallbackException : public EngineException {
+ public:
+  EmptyEventCallbackException();
+};
+
 }  // namespace rtype::engine

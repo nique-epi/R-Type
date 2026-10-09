@@ -54,6 +54,14 @@ Destroying an entity inside a `forEach` is postponed until the outermost `forEac
 
 Alternative considered: a numeric priority on each system, sorted by the scheduler. It lets a system be placed without touching the others, but the order then lives in numbers scattered across classes and two systems can tie. A single list of `add()` calls is the one place that says what runs after what.
 
+## Events
+
+A system tells the rest of the game what happened through `EventBus` rather than by calling it: it publishes a typed event, and every callback subscribed to that type is called. A generic collision system in `rtype_engine` can therefore report a hit to the rules in `rtype_game`, which the engine may not link.
+
+Delivery is deferred. `publish()` queues the event, `dispatch()` delivers the queue, and the loop must call `dispatch()` once per tick, after the systems. A system publishes from inside a `forEach`, where adding or removing a component is refused, so a subscriber called at that moment could not spawn an explosion; called after the systems, it can. Events published during `dispatch()` are delivered by the same `dispatch()`, so a collision, the damage it causes and the destruction that follows are all handled in the tick they happened.
+
+Alternative considered: calling the subscribers inside `publish()`. It needs no queue and no `dispatch()` call, but every subscriber would run inside the publishing system's `forEach` and could not add or remove a component.
+
 ## Time
 
 The simulation advances at a fixed rate (`SIMULATION_TICKS_PER_SECOND`, 60), whatever the rendering rate. `FixedTimestep` (`rtype_engine`) turns the time read from an `IClock` into a whole number of ticks to simulate; the remainder is kept for the next call, and a stall longer than `MAXIMUM_TICKS_PER_ADVANCE` ticks is dropped rather than caught up. Speeds are expressed in units per second and multiplied by the tick duration: `MovementSystem` (`rtype_game`) does it for every entity that has a `Position` and a `Velocity`. Tests drive a simulated clock, so the result is the same at 30, 60 and 144 frames per second.
@@ -71,11 +79,11 @@ Game logic uses one logical frame, the same on the server and on the client, and
 - SFML puts the origin of a sprite at its top-left corner by default, so the client must set it to the center of each sprite.
 - The client is the only place that knows pixels. `GameWindow` draws through a view that always covers the whole playfield, and `fitPlayfieldInWindow` (`src/client/Window/PlayfieldViewport/`) picks the largest centered rectangle of the window with the proportions of the playfield; the rest stays black. Resizing the window changes that rectangle only, never a logical position or a speed.
 - The window cannot be resized by dragging its border. The player picks one of five sizes with the proportions of the playfield (`WINDOW_SIZES` in `src/client/Window/WindowConstants.hpp`: 960 × 540, 1280 × 720, 1600 × 900, 1920 × 1080, 2560 × 1440), so no black bar shows. `WindowSizeSelection` only offers the sizes strictly smaller than the desktop and opens the window at the largest of them. The black bars remain as a safety net for the cases where the system gives the window another shape.
-- The size is picked with a row of buttons at the top-left corner of the playfield (`WindowSizeButtons`), each labelled with the size it gives. The button of a size too large for the desktop is dimmed and ignores clicks. **These buttons are provisional**: they will move into the options menu when it exists. Their font, `assets/fonts/tuffy.ttf` (Tuffy, public domain), is loaded from a path relative to the launch folder, so the client must be launched from the root of the repository until the resource manager locates assets.
+- The size is picked with a row of buttons at the top-left corner of the playfield (`WindowSizeButtons`), each labelled with the size it gives. The button of a size too large for the desktop is dimmed and ignores clicks. **These buttons are provisional**: they will move into the options menu when it exists. Their font, `assets/fonts/tuffy.ttf` (Tuffy, public domain), is loaded at launch through the asset library, which finds `assets/` whatever folder the client is launched from (see [Client](/R-Type/client/#assets-the-folder-and-the-ids)).
 
 ## Consequences
 
-- `EntityRegistry`, `ComponentRegistry`, `ISystem` and `SystemScheduler` exist today; the loop that calls the scheduler is added by a later story.
+- `EntityRegistry`, `ComponentRegistry`, `ISystem`, `SystemScheduler` and `EventBus` exist today; the loop that calls the scheduler and the bus is added by a later story.
 - Any new target declares its links explicitly; a link that breaks the table above fails the configure step.
 
 ## Validation

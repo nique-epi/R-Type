@@ -3,6 +3,7 @@ add_subdirectory(Time)
 add_subdirectory(EntityRegistry)
 add_subdirectory(Components)
 add_subdirectory(Systems)
+add_subdirectory(Events)
 
 add_library(rtype_engine INTERFACE)
 
@@ -21,4 +22,6 @@ target_link_libraries(rtype_engine
     rtype_engine_component_registry
     rtype_engine_systems
     rtype_engine_system_scheduler
+    rtype_engine_events
+    rtype_engine_event_bus
 )

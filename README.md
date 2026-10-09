@@ -30,6 +30,8 @@ cmake --workflow --preset build
 
 The first configure builds every dependency and takes a few minutes. The `r-type_server` and `r-type_client` binaries are written at the repository root, or in `Release/` with the Visual Studio generator.
 
+The client reads its files from `assets/`, next to its executable or in the folder above it, wherever it is launched from. It stops with exit code 1, naming both folders, when it finds neither.
+
 If the repository was cloned without its submodules, run `git submodule update --init` first.
 
 ## Tests

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <SFML/Graphics/Font.hpp>
 #include <SFML/Graphics/RenderWindow.hpp>
 #include <SFML/System/Vector2.hpp>
 #include "PixelSize.hpp"
@@ -35,10 +36,13 @@ namespace rtype::client {
 class GameWindow {
  public:
   /**
+   * @brief Opens the window; its buttons are labelled with the given font,
+   * which must outlive the window.
+   *
    * @throws RenderTextureNotCreatedException when the background cannot get
    * its render textures.
    */
-  GameWindow();
+  explicit GameWindow(const sf::Font& windowSizeLabelFont);
 
   /**
    * @brief Runs the frame loop until the window is closed.

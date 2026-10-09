@@ -8,7 +8,6 @@ target_link_libraries(rtype_client_window_size_buttons
     rtype_client_window_size_selection
   PRIVATE
     rtype_client_window
-    rtype_client_exceptions
 )
 
 rtype_enable_warnings(rtype_client_window_size_buttons)

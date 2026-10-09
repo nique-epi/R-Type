@@ -1,4 +1,5 @@
 #include "GameWindow.hpp"
+#include <SFML/Graphics/Font.hpp>
 #include <SFML/Graphics/Rect.hpp>
 #include <SFML/Graphics/View.hpp>
 #include <SFML/System/Vector2.hpp>
@@ -23,12 +24,13 @@ PixelSize GameWindow::desktopSize() {
   return {.width = size.x, .height = size.y};
 }
 
-GameWindow::GameWindow()
+GameWindow::GameWindow(const sf::Font& windowSizeLabelFont)
     : windowSizeSelection_(desktopSize()),
       window_(sf::VideoMode({windowSizeSelection_.selected().width,
                              windowSizeSelection_.selected().height}),
               WINDOW_TITLE, sf::Style::Titlebar | sf::Style::Close),
-      background_(std::random_device{}()) {
+      background_(std::random_device{}()),
+      windowSizeButtons_(windowSizeLabelFont) {
   window_.setFramerateLimit(FRAMES_PER_SECOND_LIMIT);
   applySelectedWindowSize();
 }

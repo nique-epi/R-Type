@@ -151,7 +151,7 @@ jobs:
         if: steps.select.outputs.found == 'true'
         env:
           VCPKG_SSL_REVOKE_BEST_EFFORT: '1'
-        run: cmake --preset test -G Ninja
+        run: cmake --preset test -G Ninja -DCMAKE_CXX_SCAN_FOR_MODULES=OFF
 
       - name: Run clang-tidy
         if: steps.select.outputs.found == 'true'

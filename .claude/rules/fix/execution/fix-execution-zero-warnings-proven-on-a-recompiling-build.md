@@ -27,6 +27,13 @@ trigger: always_on
 3. **Calibrate the proxy on a known case first**, as `fix-reasoning-validate-the-instrument-before-reporting-a-count.md` requires: it must show the conversion that already failed on the CI, and stop showing it once fixed. The proxy does not replace the Windows job; it only narrows what is left to find there.
 4. **A failing MSVC job hides the files that depend on the failed target**: MSBuild stops building them, so the log lists only what was compiled before the failure. Fix the first error, then expect that the next push may reveal more.
 
+### A red proof runs on a binary rebuilt from the faulty source
+
+1. **Swapping a source file and rebuilding in a loop is not enough**: `make` compares timestamps to the second, so a file copied less than a second after the previous build is seen as up to date and the old binary runs.
+2. **Before each build of a variant, delete the object file of the swapped source** (`rm -f build/<path>/CMakeFiles/<target>.dir/<File>.cpp.o`), never touch the sources to force it.
+3. **Read the build log of each variant before its test result**: it must contain the `Building CXX object` line of the swapped file. A variant without that line is not a result; rerun it.
+4. **Rebuild the restored original the same way** and run its tests green: the last binary left in `build/` must be the real code.
+
 ## Example
 
 - ❌ **Before (wrong)**: green build → second `cmake --build build | grep -c warning` → `0` (nothing recompiled) → "zero warnings".

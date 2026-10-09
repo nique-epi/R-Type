@@ -1,4 +1,5 @@
 #include "WindowSizeButtons.hpp"
+#include <SFML/Graphics/Font.hpp>
 #include <SFML/Graphics/Rect.hpp>
 #include <SFML/Graphics/RectangleShape.hpp>
 #include <SFML/Graphics/RenderTarget.hpp>
@@ -7,7 +8,6 @@
 #include <cstddef>
 #include <optional>
 #include <string>
-#include "ClientException.hpp"
 #include "PixelSize.hpp"
 #include "WindowColors.hpp"
 #include "WindowConstants.hpp"
@@ -15,10 +15,7 @@
 
 namespace rtype::client {
 
-WindowSizeButtons::WindowSizeButtons() {
-  if (!font_.openFromFile(WINDOW_SIZE_LABEL_FONT_FILE)) {
-    throw FontNotLoadedException(WINDOW_SIZE_LABEL_FONT_FILE);
-  }
+WindowSizeButtons::WindowSizeButtons(const sf::Font& labelFont) {
   buttons_.reserve(WINDOW_SIZES.size());
   labels_.reserve(WINDOW_SIZES.size());
   float left = WINDOW_SIZE_BUTTONS_MARGIN;
@@ -27,7 +24,7 @@ WindowSizeButtons::WindowSizeButtons() {
         sf::Vector2f(WINDOW_SIZE_BUTTON_WIDTH, WINDOW_SIZE_BUTTON_HEIGHT));
     button.setPosition({left, WINDOW_SIZE_BUTTONS_MARGIN});
 
-    sf::Text& label = labels_.emplace_back(font_,
+    sf::Text& label = labels_.emplace_back(labelFont,
                                            std::to_string(size.width) +
                                                WINDOW_SIZE_SEPARATOR +
                                                std::to_string(size.height),
