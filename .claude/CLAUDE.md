@@ -86,6 +86,7 @@ Paths below are relative to `.claude/rules/`.
 **Process — `fix/process/`**
 - `fix/process/fix-process-ask-what-is-observed-before-building-a-protocol.md`
 - `fix/process/fix-process-branch-before-first-commit.md`
+- `fix/process/fix-process-defect-injection-on-an-isolated-copy.md`
 - `fix/process/fix-process-do-not-over-engineer-step-back.md`
 - `fix/process/fix-process-follow-ci-after-opening-a-pr.md`
 - `fix/process/fix-process-green-test-locking-a-defect-and-overly-deterministic-fake.md`
