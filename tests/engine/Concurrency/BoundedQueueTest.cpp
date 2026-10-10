@@ -29,6 +29,24 @@ void pushAll(BoundedQueue<int>& queue, const std::vector<int>& messages) {
   }
 }
 
+/**
+ * @brief A message whose move constructor and move assignment may throw.
+ */
+struct MessageWithThrowingMove {
+  MessageWithThrowingMove() = default;
+  MessageWithThrowingMove(const MessageWithThrowingMove&) = default;
+  MessageWithThrowingMove& operator=(const MessageWithThrowingMove&) = default;
+  // NOLINTNEXTLINE(performance-noexcept-move-constructor)
+  MessageWithThrowingMove(MessageWithThrowingMove&&) noexcept(false) = default;
+  // NOLINTNEXTLINE(performance-noexcept-move-constructor)
+  MessageWithThrowingMove& operator=(MessageWithThrowingMove&&) noexcept(
+      false) = default;
+  ~MessageWithThrowingMove() = default;
+};
+
+template <typename Message>
+constexpr bool isAcceptedMessage = requires { typename BoundedQueue<Message>; };
+
 std::vector<int> drained(BoundedQueue<int>& queue) {
   std::vector<int> messages;
   queue.drainInto(messages);
@@ -133,8 +151,7 @@ TEST(BoundedQueue, CountsNothingWhileThereIsRoom) {
 /**
  * Given a queue that discarded one message, then was drained
  * When it is filled again, then drained
- * Then the new messages come out in the order they were pushed, and only the
- * first discard is counted
+ * Then the new messages come out in the order they were pushed
  */
 TEST(BoundedQueue, KeepsTheOrderAfterDiscardingAndDraining) {
   BoundedQueue<int> queue{SMALL_CAPACITY};
@@ -146,7 +163,35 @@ TEST(BoundedQueue, KeepsTheOrderAfterDiscardingAndDraining) {
   pushAll(queue, secondRound);
 
   EXPECT_EQ(drained(queue), secondRound);
+}
+
+/**
+ * Given a queue that discarded one message
+ * When it is drained, then filled again without overflowing
+ * Then the discard is still counted, and only once
+ */
+TEST(BoundedQueue, DrainingKeepsTheDiscardCount) {
+  BoundedQueue<int> queue{SMALL_CAPACITY};
+  pushAll(queue, numbered(1, SMALL_CAPACITY + 1));
+  drained(queue);
+
+  pushAll(queue, numbered(SECOND_ROUND_FIRST_MESSAGE, SMALL_CAPACITY));
+
   EXPECT_EQ(queue.discardedCount(), 1U);
+}
+
+/**
+ * Given a queue with room for a single message
+ * When three messages are pushed, then drained
+ * Then only the newest comes out
+ */
+TEST(BoundedQueue, KeepsOnlyTheNewestMessageWithRoomForOne) {
+  BoundedQueue<int> queue{SINGLE_MESSAGE_CAPACITY};
+  const std::vector<int> messages = numbered(1, SMALL_CAPACITY);
+
+  pushAll(queue, messages);
+
+  EXPECT_EQ(drained(queue), (std::vector<int>{messages.back()}));
 }
 
 /**
@@ -163,6 +208,16 @@ TEST(BoundedQueue, CarriesMessagesThatCannotBeCopied) {
 
   ASSERT_EQ(messages.size(), 1U);
   EXPECT_EQ(*messages.front(), CARRIED_VALUE);
+}
+
+/**
+ * Given a message type whose move may throw
+ * When a queue of that type is named
+ * Then the queue refuses it at compile time
+ */
+TEST(BoundedQueue, RefusesMessagesWhoseMoveMayThrow) {
+  EXPECT_FALSE(isAcceptedMessage<MessageWithThrowingMove>);
+  EXPECT_TRUE(isAcceptedMessage<int>);
 }
 
 /**

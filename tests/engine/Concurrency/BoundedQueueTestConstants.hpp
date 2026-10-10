@@ -8,6 +8,11 @@
 constexpr std::size_t SMALL_CAPACITY = 3;
 
 /**
+ * @brief Room of the smallest queue that can exist.
+ */
+constexpr std::size_t SINGLE_MESSAGE_CAPACITY = 1;
+
+/**
  * @brief How many messages an overfilled queue receives beyond its room.
  */
 constexpr std::size_t EXTRA_MESSAGE_COUNT = 2;
