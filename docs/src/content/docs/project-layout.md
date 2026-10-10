@@ -134,15 +134,15 @@ Only `main.cpp` exists today.
 
 ### Client
 
-`src/client` builds `r-type_client`: what the player sees, hears and presses. The frame loop never waits: the network and HTTP threads hand their results over through queues.
+`src/client` builds `r-type_client`: what the player sees, hears and presses. The frame loop never waits: the network and HTTP threads will hand their results over through queues.
 
 ```
 src/client/
 ├── Application/      frame loop and screen stack
 ├── Window/           the SFML window
-├── Assets/           assets found by id, loaded per screen in a loading step
+├── Assets/           assets found by id, loaded at launch or entering a game
 ├── Platform/         what differs between Windows, macOS and Linux
-├── Screens/          home, server list, lobby, game, end, options...
+├── Screens/          loading, home, server list, lobby, game, end, options...
 ├── Widgets/          buttons, text fields, lists
 ├── Rendering/        sprites, starfield, HUD, effects, lagometer
 ├── Audio/            sounds and music
@@ -153,7 +153,7 @@ src/client/
 └── Prediction/       own ship predicted, other ships interpolated
 ```
 
-`Window`, `Rendering`, `Assets` and `Platform` exist today.
+`Application`, `Window`, `Screens` (loading, game and options), `Rendering`, `Assets` and `Platform` exist today.
 
 `Rendering` draws every entity that has a `Position` and a `Sprite` (an asset id and a layer), from the background layer to the interface layer. `RenderSystem` reads these two components and nothing else, and draws through `IDrawSurface`; only `SfmlDrawSurface` knows SFML, and it finds textures through `ITextureSource`. The system is not wired into the frame loop yet.
 

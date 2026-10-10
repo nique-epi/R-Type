@@ -11,13 +11,14 @@
 
 namespace rtype::client {
 
-/** @brief Loads the assets of the next screen one file per call, after
- * releasing the loaded assets that screen does not list. */
+/** @brief Loads an asset list one file per call, after releasing the loaded
+ * assets the list does not name; an asset already loaded is neither read again
+ * nor counted. */
 class AssetLoadingStep {
  public:
-  /** @brief Releases the assets the next screen does not list, so the previous
-   * screen must already be destroyed. */
-  AssetLoadingStep(AssetLibrary& library, const AssetList& nextScreenAssets);
+  /** @brief Releases the loaded assets the list does not name, except the
+   * permanent ones, so whatever still uses them must already be destroyed. */
+  AssetLoadingStep(AssetLibrary& library, const AssetList& assets);
 
   /** @brief Loads the next asset, then throws AssetLoadingException after the
    * last one if any asset could not be loaded. */

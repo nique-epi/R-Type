@@ -3,20 +3,35 @@ title: Client
 description: What the client does, how its parts fit together and where to find them in the code.
 ---
 
-The client, `r-type_client` (`src/client/`), shows the game, plays its sounds and reads the player's input; the server decides what happens in the match (see [Architecture](/R-Type/architecture/)). Today it opens a window, finds its assets folder at launch, can load the assets of a screen and draws a scrolling starfield behind the playfield. The screens themselves do not exist yet.
+The client, `r-type_client` (`src/client/`), shows the game, plays its sounds and reads the player's input; the server decides what happens in the match (see [Architecture](/R-Type/architecture/)). Today it finds its assets folder, loads the assets of its interface, opens a window and runs its screens over a scrolling starfield: a loading screen, the game screen, which shows no entity yet, and an options screen. It does not talk to the server yet.
 
 This page tells you where to look when you need to change something. It describes what exists today and says plainly what does not exist yet.
 
 | Part | State | Where |
 |---|---|---|
-| Window and frame loop | Available | `src/client/Window/` |
+| Window | Available | `src/client/Window/` |
+| Frame loop and screen stack | Available | `src/client/Application/` |
+| Screens | Available: loading, game and options; the menus are not written yet | `src/client/Screens/` |
 | Assets folder and asset ids | Available | `src/client/Assets/`, `assets/README.md` |
-| Asset loading | Available; used at launch for the font of the window size buttons | `src/client/Assets/AssetLibrary/`, `src/client/Assets/AssetLoadingStep/` |
+| Asset loading | Available; used at launch for the interface assets, and by the loading screen | `src/client/Assets/AssetLibrary/`, `src/client/Assets/AssetLoadingStep/` |
 | Path of the running executable | Available | `src/client/Platform/` |
-| Drawing entities | Available; not called by the frame loop yet | `src/client/Rendering/RenderSystem/`, `src/client/Rendering/SfmlDrawSurface/` |
-| Scrolling background | Available; drawn by the frame loop | `src/client/Rendering/Background/` |
-| Screens and the loading screen | Not yet written | — |
+| Drawing entities | Available; not called by the game screen yet | `src/client/Rendering/RenderSystem/`, `src/client/Rendering/SfmlDrawSurface/` |
+| Scrolling background | Available; drawn by the frame loop under every screen | `src/client/Rendering/Background/` |
 | Sprites, sounds and music of the game | Not yet written | — |
+
+## Frame loop and screens: `Application`, `ScreenStack`
+
+`Application` (`src/client/Application/Application/`) opens the window, `GameWindow`, and runs the frame loop until the window is closed or no screen is left. A screen implements `IScreen` (`src/client/Screens/`): `handleEvent()`, `update()` and `draw()`, in playfield units. Screens live in a `ScreenStack` (`src/client/Application/ScreenStack/`). Each frame, the window events go to the screen on top only, then every screen is updated and drawn from the bottom up, so a screen pushed over the game leaves the game running and visible behind it. `GameWindow` handles closing and resizing itself and never passes those events on.
+
+`push()`, `pop()` and `replaceAll()` only ask for a change; the loop applies the changes after each event and after the update, in the order they were asked for. A screen may therefore pop itself while it handles an event, and the next event already reaches the new screen on top. A screen is given as a `ScreenFactory` and built when its change is applied: `replaceAll()` destroys every screen, from the top down, before building the new one. The loading screen releases assets when it is built, so it is always entered through `replaceAll()`, never pushed over a screen that still draws them.
+
+| Screen | Shows | Leaves the stack when |
+|---|---|---|
+| `LoadingScreen` | a progress bar; one file is loaded per frame | every file is loaded: it replaces every screen with the next one |
+| `GameScreen` | nothing yet over the scrolling background; releasing `OPTIONS_KEY` (Escape) pushes the options over it | not yet: the end of a game is not written |
+| `OptionsScreen` | the window size buttons, on a translucent layer over the game | `OPTIONS_KEY` is released again |
+
+The options screen is **provisional**: it stands in for the options menu. The frame loop draws the scrolling background under every screen, the loading screen and the options included; this is **provisional** too, since the starfield will probably become the background of the game screen alone. At launch the client enters a game straight away: the loading screen loads `gameAssets()`, then gives way to the game screen. A file the loading screen cannot load stops the client with exit code 1, naming every such file. The options react to the release of `OPTIONS_KEY`, not to its press: the system repeats the press of a held key, which would open and close them again and again.
 
 ## Assets: the folder and the ids
 
@@ -24,47 +39,39 @@ Every file the client reads at run time sits in `assets/`, at the root of the re
 
 Code names a file by its **asset id**: its path in `assets/`, with `/` between folders, for example `sprites/player_ship.png`. Every folder and file name of an id starts with a lowercase letter or a digit, then holds only `a-z`, digits, `_`, `-` and `.`; `isValidAssetId()` checks it. An id is therefore spelled the same on every system and never names a file outside `assets/`, and a later mod folder can replace a file by holding the same path. Ids are written once, as named constants.
 
-## Assets: loading per screen
+## Assets: loading
 
-`AssetLibrary` (`rtype_client_asset_library`) owns every loaded asset. `load(kind, id)` reads a texture, a sound or a font the first time only, and only locates a music file, which is streamed while it plays. It never throws: it returns an `AssetLoadResult` (`Loaded`, `InvalidId`, `MissingFile`, `UnreadableFile`). Its lookups, `texture()`, `sound()`, `font()` and `musicFile()`, never read the disk; an id that is not loaded throws `AssetNotLoadedException`. A reference stays valid until its asset is released, so a sprite, which keeps a reference to its texture, must be gone before its texture is released.
+`AssetLibrary` (`rtype_client_asset_library`) owns every loaded asset. `load(kind, id)` reads a texture, a sound or a font the first time only, and only locates a music file, which is streamed while it plays. It never throws: it returns an `AssetLoadResult` (`Loaded`, `InvalidId`, `MissingFile`, `UnreadableFile`). Its lookups, `texture()`, `sound()`, `font()` and `musicFile()`, never read the disk; an id that is not loaded throws `AssetNotLoadedException`. `keepPermanently()` makes assets permanent: no release drops them. A reference stays valid until its asset is released, so a sprite, which keeps a reference to its texture, must be gone before its texture is released.
 
-`AssetLoadingStep` (`rtype_client_asset_loading_step`) loads the `AssetList` of the next screen. It is built once the previous screen is destroyed: it releases every loaded asset the list does not name, keeps the ones both screens use, then `loadNext()` loads one asset per call, so a loading screen can be drawn between two files. After the last asset, it throws one `AssetLoadingException` naming every invalid id, missing file and unreadable file.
+`AssetLoadingStep` (`rtype_client_asset_loading_step`) loads an `AssetList`. When it is created, it releases every loaded asset the list does not name, except the permanent ones, so whatever still uses them must already be destroyed; the assets already loaded are neither read again nor counted. Then `loadNext()` loads one asset per call, so a loading screen can be drawn between two files. After the last asset, if any could not be loaded, it throws one `AssetLoadingException` naming every invalid id, missing file and unreadable file.
 
-```cpp
-rtype::client::AssetLoadingStep loading(
-    assets, rtype::client::AssetList{.textures = {PLAYER_SHIP_TEXTURE},
-                                     .sounds = {SHOT_SOUND}});
-while (!loading.isFinished()) {
-  loading.loadNext();
-  drawLoadingScreen(loading.processedCount(), loading.assetCount());
-}
-const sf::Texture& ship = assets.texture(PLAYER_SHIP_TEXTURE);
-```
+Assets are loaded at two moments only, both declared in `src/client/Screens/ScreenAssets.hpp` and listed in `ScreenAssets.cpp`:
 
-`PLAYER_SHIP_TEXTURE`, `SHOT_SOUND` and `drawLoadingScreen` stand for an id constant and a loading screen that do not exist yet.
+- at launch, before the window opens, `loadInterfaceAssets()` loads `interfaceAssets()`, the assets of the interface, which any screen may use at any time, in a game or outside one (today the font of the options screen, `INTERFACE_FONT_ID`, `fonts/tuffy.ttf`), and makes them permanent, so changing screen outside a game never reads a file;
+- when the player enters a game, the loading screen loads `gameAssets()`, one file per frame, after releasing what a previous game used and this one does not. `gameAssets()` is empty today, since the game has no sprite yet: the loading screen finishes at its first frame and is never seen.
 
 ### What a loading step does
 
-The caller creates the step, then calls `loadNext()` once per frame until `isFinished()`, drawing the progress in between. Today the caller is `main`, which runs one step at launch, before the window opens, for the font of the window size buttons. Once screens exist, the screen stack will run one step at every screen change.
+The loading screen creates the step, then calls `loadNext()` once per frame until `isFinished()`, drawing the progress in between. At launch, `loadInterfaceAssets()` runs a step to its end at once, before the window opens.
 
 ```mermaid
 sequenceDiagram
-  accTitle: Loading the assets of the next screen
-  accDescr: The caller creates a loading step with the asset list of the next screen. The step asks the asset library to release what the list does not name. Then, once per frame, the caller asks the step for the next asset; the step asks the library to load it, the library reads the file with SFML unless it is already loaded, and returns how it went. After the last asset the step is finished, or throws one error naming every problem.
-  participant Caller
+  accTitle: Loading the assets of a game
+  accDescr: The loading screen creates a loading step with the asset list of the game. The step asks the asset library to release what the list does not name, except the permanent assets. Then, once per frame, the loading screen asks the step for the next asset of the list that was not loaded when the step was created; the step asks the library to load it, the library reads the file with SFML, and returns how it went. After the last asset the step is finished, or throws one error naming every problem.
+  participant Screen as LoadingScreen
   participant Step as AssetLoadingStep
   participant Library as AssetLibrary
   participant Sfml as SFML
-  Caller->>Step: create(list)
-  Step->>Library: release unlisted
+  Screen->>Step: create(list)
+  Step->>Library: release unlisted, not permanent
   loop once per frame
-    Caller->>Step: loadNext()
+    Screen->>Step: loadNext()
     Step->>Library: load(kind, id)
     Library->>Sfml: read file
     Sfml-->>Library: asset
     Library-->>Step: result
   end
-  Step-->>Caller: done, or error
+  Step-->>Screen: done, or error
 ```
 
 ## Assets in the game: from an entity to the screen
@@ -81,16 +88,16 @@ flowchart TB
   Source -. "not written yet" .-> Library[AssetLibrary]
 ```
 
-Two links do not exist yet: no `ITextureSource` reads from `AssetLibrary`, and the frame loop does not call `RenderSystem`. Once they do, showing a new image takes four steps:
+Two links do not exist yet: no `ITextureSource` reads from `AssetLibrary`, and the game screen does not call `RenderSystem`. Once they do, showing a new image takes four steps:
 
 1. Put the file in `assets/sprites/`, named after the asset id rule.
 2. Write its id once, as a named constant.
-3. List the id in the `AssetList` of every screen that draws it.
+3. List the id in `gameAssets()`.
 4. Give the entity a `Sprite` with that id and its layer.
 
 ## Scrolling background: `ScrollingBackground`
 
-`ScrollingBackground` (`rtype_client_scrolling_background`) fills the playfield behind everything else: three layers of stars drifting left at different speeds, a ringed planet, and random sky events. `GameWindow` moves it every frame by the real time elapsed since the previous frame, read from `engine::SystemClock`, so its speed does not depend on the frame rate. A frame longer than `MAXIMUM_BACKGROUND_STEP` (50 ms) moves it by 50 ms only, so the sky does not jump after a stall. A star that leaves on the left comes back on the right at a new height, so the sky never shows a seam.
+`ScrollingBackground` (`rtype_client_scrolling_background`) fills the playfield behind everything else: three layers of stars drifting left at different speeds, a ringed planet, and random sky events. `Application`, the frame loop, moves it every frame by the real time elapsed since the previous frame, read from `engine::SystemClock`, so its speed does not depend on the frame rate, and draws it before the screens. A frame longer than `MAXIMUM_BACKGROUND_STEP` (50 ms) moves it by 50 ms only, so the sky does not jump after a stall. A star that leaves on the left comes back on the right at a new height, so the sky never shows a seam.
 
 The sky is cosmetic and local to each client: it is not made of entities, nothing of it crosses the network, and each client draws a different sky (the seed comes from `std::random_device`).
 
@@ -100,7 +107,7 @@ background.advance(now - previousFrameTime);
 background.draw(window);
 ```
 
-`draw()` expects a target whose view shows the playfield in its logical units, as `GameWindow` sets it up.
+`draw()` expects a target whose view shows the playfield in its logical units, as the render target of `GameWindow` is set up.
 
 ### What the sky holds
 
@@ -132,10 +139,11 @@ On a Retina Mac, SFML 3 renders every window at its size in points, not in scree
 
 | You want to… | Look at |
 |---|---|
-| Add an asset | A file in `assets/sprites/`, `sounds/`, `music/` or `fonts/`, and its id in the asset list of the screen that uses it |
+| Add an asset | A file in `assets/sprites/`, `sounds/`, `music/` or `fonts/`, and its id in `gameAssets()`, or in `interfaceAssets()` when a screen may use it outside a game, menus and overlays included (`src/client/Screens/ScreenAssets.cpp`) |
 | Change the asset id rule | `isValidAssetId()` in `src/client/Assets/AssetIds.cpp`, `ASSET_ID_PUNCTUATION` in `AssetConstants.hpp`, and `assets/README.md` |
 | Change where the client looks for `assets/` | `findAssetFolder()` in `src/client/Assets/AssetFolder.cpp` |
-| Show a new image in the game | `assets/sprites/`, the `AssetList` of the screen, a `Sprite` component on the entity |
+| Show a new image in the game | `assets/sprites/`, `gameAssets()`, a `Sprite` component on the entity |
+| Add a screen | A class implementing `IScreen` in its own folder under `src/client/Screens/`, with its `CMakeLists.txt` target; `add_subdirectory` in `src/client/Screens/CMakeLists.txt`; the factory that builds it in `Application`, and the link in `src/client/Application/Application/CMakeLists.txt` |
 | Load a new kind of asset | `AssetKind`, `AssetList` and `AssetLibrary::load()` |
 | Change what happens when an asset cannot be loaded | `AssetLoadingStep::loadNext()` and `AssetLoadingException` in `src/client/Exceptions/ClientException.hpp` |
 | Read something only one system provides | A declaration in `src/client/Platform/`, one source file per system, chosen in its `CMakeLists.txt` |
@@ -145,7 +153,7 @@ On a Retina Mac, SFML 3 renders every window at its size in points, not in scree
 | Add a kind of sky event | A class implementing `ISkyEvent` in `src/client/Rendering/Background/SkyEvents/`, a value of `SkyEventKind`, a weight in `SKY_EVENT_WEIGHTS`, a case in `SkyEventScheduler::createEvent` |
 | Change the halo | `HALO_STANDARD_DEVIATION` in `BackgroundConstants.hpp`, `HALO_TINT` in `BackgroundColors.hpp`, the blur shader in `HaloShader.hpp`, `GaussianBlur/` |
 | Change how the sky is enlarged | `ScrollingBackground::draw`, `IntegerScale/` |
-| Change the window or the frame loop | `src/client/Window/GameWindow/` |
+| Change the window, or when the background moves and is drawn | `src/client/Window/GameWindow/`, `Application::advanceBackground()` and `Application::render()` in `src/client/Application/Application/` |
 | Add a client error | `src/client/Exceptions/ClientException.hpp` |
 
 Each folder has its own `CMakeLists.txt` declaring one library; `src/client/Rendering/CMakeLists.txt` adds `Background/`.

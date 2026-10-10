@@ -17,9 +17,9 @@ Every folder and file name of an id starts with a lowercase letter `a-z` or a di
 
 ## When files are loaded
 
-Assets are loaded by a loading step that receives the ids the next screen needs. It first releases the loaded assets that screen does not list, then loads the missing ones one file at a time, so that a loading screen can be drawn between two files. An asset already loaded is never read again.
+The assets of the interface, which any screen may use at any time, in a game or outside one, are loaded once at launch and never released. The assets of a game are loaded by the loading screen when the player enters it: it first releases the loaded assets the game does not list, except the interface ones, then loads the missing ones one file per frame, drawing its progress between two files. An asset already loaded is never read again.
 
-When an id breaks the rule, or its file is missing or cannot be read, the client stops after the step and names every one of them. Music is only located: its file is read while it plays.
+When an id breaks the rule, or its file is missing or cannot be read, the client stops once every file of the list was tried, and names every one of them. Music is only located: its file is read while it plays.
 
 ## How the client finds this folder
 
