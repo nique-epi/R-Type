@@ -1,10 +1,12 @@
 #pragma once
 
 #include <SFML/Graphics/Font.hpp>
-#include <SFML/Graphics/RectangleShape.hpp>
 #include <SFML/Graphics/RenderWindow.hpp>
 #include <SFML/System/Vector2.hpp>
 #include "PixelSize.hpp"
+#include "ScrollingBackground.hpp"
+#include "SystemClock.hpp"
+#include "TimeConstants.hpp"
 #include "WindowSizeButtons.hpp"
 #include "WindowSizeSelection.hpp"
 
@@ -13,10 +15,10 @@ namespace rtype::client {
 /**
  * @brief Client window and its frame loop.
  *
- * The loop never waits on the network: it only polls window events, draws and
- * presents, at most FRAMES_PER_SECOND_LIMIT times per second. Network
- * reception is meant to run on its own thread and hand its messages over
- * through a queue the loop drains each frame.
+ * The loop never waits on the network: it only polls window events, moves the
+ * background, draws and presents, at most FRAMES_PER_SECOND_LIMIT times per
+ * second. Network reception is meant to run on its own thread and hand its
+ * messages over through a queue the loop drains each frame.
  *
  * The window cannot be resized by dragging its border. The player picks one of
  * the sizes of WINDOW_SIZES with the buttons drawn in the playfield; the
@@ -26,11 +28,20 @@ namespace rtype::client {
  * Should the system still give the window another shape, the whole playfield
  * stays visible: drawing is done in the logical units of the playfield, scaled
  * without distortion, and what the playfield does not cover stays black.
+ *
+ * The scrolling background fills the playfield behind everything else. It
+ * moves by the real time elapsed since the previous frame, so its speed does
+ * not depend on the frame rate.
  */
 class GameWindow {
  public:
-  /** @brief Opens the window; its buttons are labelled with the given font,
-   * which must outlive the window. */
+  /**
+   * @brief Opens the window; its buttons are labelled with the given font,
+   * which must outlive the window.
+   *
+   * @throws RenderTextureNotCreatedException when the background cannot get
+   * its render textures.
+   */
   explicit GameWindow(const sf::Font& windowSizeLabelFont);
 
   /**
@@ -40,6 +51,10 @@ class GameWindow {
 
  private:
   void handleEvents();
+
+  /** @brief Moves the background by the time since the previous frame. */
+  void advanceBackground();
+
   void render();
 
   /**
@@ -72,8 +87,10 @@ class GameWindow {
 
   WindowSizeSelection windowSizeSelection_;
   sf::RenderWindow window_;
-  sf::RectangleShape playfieldBackground_;
+  ScrollingBackground background_;
   WindowSizeButtons windowSizeButtons_;
+  engine::SystemClock clock_;
+  engine::Duration previousFrameTime_{};
 };
 
 }  // namespace rtype::client

@@ -1,0 +1,7 @@
+add_library(rtype_client_random_range STATIC RandomRange.cpp)
+
+target_include_directories(rtype_client_random_range PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+
+target_link_libraries(rtype_client_random_range PUBLIC SFML::System)
+
+rtype_enable_warnings(rtype_client_random_range)
