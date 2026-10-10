@@ -60,6 +60,18 @@ constexpr int TICKS_BEFORE_STOP = 3;
 constexpr int MISSED_TICK_COUNT = 3;
 
 /**
+ * @brief Ticks due at once in the lateness tests: the first one late, the
+ * second less so.
+ */
+constexpr int TICKS_DUE_TOGETHER = 2;
+
+/**
+ * @brief Length of a stall, in ticks, far longer than the ticks a loop
+ * catches up, so its excess is dropped.
+ */
+constexpr int STALL_TICK_COUNT = 60;
+
+/**
  * @brief How long a test waits for a thread to start or stop; only a failing
  * test waits that long.
  */

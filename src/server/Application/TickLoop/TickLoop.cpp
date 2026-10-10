@@ -27,17 +27,15 @@ TickLoop::TickLoop(const engine::IClock& clock, std::function<void()> tick)
     : clock_(&clock),
       timestep_(clock, engine::SIMULATION_TICK_DURATION),
       tick_(std::move(tick)),
-      nextTickDue_(clock.now() + timestep_.timeUntilNextTick()),
       logger_(std::string{SIMULATION_LOGGER_NAME}) {}
 
 std::size_t TickLoop::runDueTicks() {
+  const engine::Duration firstDue = timestep_.nextTickTime();
   const std::size_t dueTicks = timestep_.consumeTicks();
-  nextTickDue_ = clock_->now() + timestep_.timeUntilNextTick();
   for (std::size_t tickIndex = 0; tickIndex < dueTicks; ++tickIndex) {
-    const auto ticksBeforeNext =
-        static_cast<engine::Duration::rep>(dueTicks - tickIndex);
     const engine::Duration due =
-        nextTickDue_ - engine::SIMULATION_TICK_DURATION * ticksBeforeNext;
+        firstDue + engine::SIMULATION_TICK_DURATION *
+                       static_cast<engine::Duration::rep>(tickIndex);
     record(clock_->now() - due);
     tick_();
   }
@@ -53,10 +51,11 @@ void TickLoop::run(const std::stop_token& stop) {
   }
   while (!stop.stop_requested()) {
     runDueTicks();
-    if (lateness_.tickCount >= TICKS_PER_LATENESS_REPORT) {
+    if (lateness_.tickCount >= TICKS_PER_REPORT) {
       reportLateness();
     }
-    const engine::Duration untilNextTick = nextTickDue_ - clock_->now();
+    const engine::Duration untilNextTick =
+        timestep_.nextTickTime() - clock_->now();
     if (untilNextTick > engine::Duration::zero()) {
       std::this_thread::sleep_for(untilNextTick);
     }

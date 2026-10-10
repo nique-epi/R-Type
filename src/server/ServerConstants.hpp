@@ -33,15 +33,16 @@ constexpr std::size_t INCOMING_DATAGRAM_QUEUE_CAPACITY = 256;
 constexpr std::size_t OUTGOING_DATAGRAM_QUEUE_CAPACITY = 256;
 
 /**
- * @brief Seconds between two reports of how late the ticks started.
+ * @brief Seconds between two reports on the simulation: how late its ticks
+ * started, and how many received datagrams were discarded.
  */
-constexpr std::size_t LATENESS_REPORT_SECONDS = 10;
+constexpr std::size_t REPORT_SECONDS = 10;
 
 /**
- * @brief Ticks between two reports of how late the ticks started.
+ * @brief Ticks between two reports on the simulation.
  */
-constexpr std::size_t TICKS_PER_LATENESS_REPORT =
-    LATENESS_REPORT_SECONDS * engine::SIMULATION_TICKS_PER_SECOND;
+constexpr std::size_t TICKS_PER_REPORT =
+    REPORT_SECONDS * engine::SIMULATION_TICKS_PER_SECOND;
 
 /**
  * @brief Timer resolution, in milliseconds, the server asks Windows for while

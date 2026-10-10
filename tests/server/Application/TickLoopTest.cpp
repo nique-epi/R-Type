@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 #include <atomic>
 #include <chrono>
+#include <cstddef>
 #include <future>
 #include <stop_token>
 #include <thread>
@@ -72,12 +73,12 @@ TEST(TickLoop, TickStartedWhenDueIsNotLate) {
 TEST(TickLoop, MeasuresHowLateEachTickStartedAfterItWasDue) {
   SimulatedClock clock;
   TickLoop loop{clock, [] {}};
-  clock.advance(SIMULATION_TICK_DURATION * 2 + HALF_TICK);
+  clock.advance(SIMULATION_TICK_DURATION * TICKS_DUE_TOGETHER + HALF_TICK);
   loop.runDueTicks();
 
   const TickLoop::Lateness lateness = loop.takeLateness();
 
-  EXPECT_EQ(lateness.tickCount, 2U);
+  EXPECT_EQ(lateness.tickCount, static_cast<std::size_t>(TICKS_DUE_TOGETHER));
   EXPECT_EQ(lateness.maximum, SIMULATION_TICK_DURATION + HALF_TICK);
   EXPECT_EQ(lateness.total, SIMULATION_TICK_DURATION + HALF_TICK + HALF_TICK);
 }
@@ -90,12 +91,31 @@ TEST(TickLoop, MeasuresHowLateEachTickStartedAfterItWasDue) {
 TEST(TickLoop, CountsTheTimeEarlierTicksTookInTheLateness) {
   SimulatedClock clock;
   TickLoop loop{clock, [&clock] { clock.advance(HALF_TICK); }};
-  clock.advance(SIMULATION_TICK_DURATION * 2);
+  clock.advance(SIMULATION_TICK_DURATION * TICKS_DUE_TOGETHER);
   loop.runDueTicks();
 
   const TickLoop::Lateness lateness = loop.takeLateness();
 
   EXPECT_EQ(lateness.total, SIMULATION_TICK_DURATION + HALF_TICK);
+}
+
+/**
+ * Given a loop first run sixty ticks and a half after it was created, so the
+ * excess of the stall is dropped
+ * When its lateness is taken
+ * Then the first tick run started late by the whole stall, minus the one tick
+ * it waited for anyway
+ */
+TEST(TickLoop, ReportsTheWholeStallWhenItsExcessIsDropped) {
+  SimulatedClock clock;
+  TickLoop loop{clock, [] {}};
+  clock.advance(SIMULATION_TICK_DURATION * STALL_TICK_COUNT + HALF_TICK);
+  loop.runDueTicks();
+
+  const TickLoop::Lateness lateness = loop.takeLateness();
+
+  EXPECT_EQ(lateness.maximum,
+            SIMULATION_TICK_DURATION * (STALL_TICK_COUNT - 1) + HALF_TICK);
 }
 
 /**

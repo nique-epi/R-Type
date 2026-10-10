@@ -17,7 +17,8 @@ namespace rtype::server {
  * A FixedTimestep counts the ticks on the given clock: after a late wake-up the
  * missed ticks run back to back, and a stall longer than
  * MAXIMUM_TICKS_PER_ADVANCE ticks drops the excess. Each tick is measured: how
- * long after it was due it started.
+ * long after it was due it started. After a dropped stall, the ticks run are
+ * measured from when the first of them was due, so the whole stall shows.
  */
 class TickLoop {
  public:
@@ -47,7 +48,7 @@ class TickLoop {
   /**
    * @brief Runs the due ticks, then sleeps until the next one is due, until
    * @p stop is requested; a request is seen when the current sleep ends. Every
-   * TICKS_PER_LATENESS_REPORT ticks, logs their lateness at the debug level.
+   * TICKS_PER_REPORT ticks, logs their lateness at the debug level.
    * Logs a warning when the system refuses a FineTimerResolution.
    *
    * It sleeps in real time, so the clock must follow real time.
@@ -67,7 +68,6 @@ class TickLoop {
   const engine::IClock* clock_;
   engine::FixedTimestep timestep_;
   std::function<void()> tick_;
-  engine::Duration nextTickDue_;
   Lateness lateness_{};
   logging::Logger logger_;
 };

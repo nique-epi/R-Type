@@ -20,11 +20,11 @@ class FixedTimestep {
   std::size_t consumeTicks();
 
   /**
-   * @return time left before the next tick is due, as of the previous
-   * consumeTicks() call, or of the construction: more than zero, and at most
-   * one tick duration.
+   * @return the time of the clock at which the next tick is due, from the
+   * clock reading of the previous consumeTicks() call, or of the construction:
+   * later than that reading by more than zero and at most one tick duration.
    */
-  [[nodiscard]] Duration timeUntilNextTick() const;
+  [[nodiscard]] Duration nextTickTime() const;
 
  private:
   const IClock* clock_;

@@ -150,13 +150,13 @@ TEST(FixedTimestep, FirstTickIsOneTickAway) {
   const SimulatedClock clock;
   const FixedTimestep timestep(clock, SHORT_TICK_DURATION);
 
-  EXPECT_EQ(timestep.timeUntilNextTick(), SHORT_TICK_DURATION);
+  EXPECT_EQ(timestep.nextTickTime(), clock.now() + SHORT_TICK_DURATION);
 }
 
 /**
  * Given a timestep polled after one tick and a half
  * When it is asked when the next tick is due
- * Then the half tick kept is subtracted from the wait
+ * Then the half tick already kept shortens the wait to half a tick
  */
 TEST(FixedTimestep, NextTickWaitSubtractsTheRemainder) {
   SimulatedClock clock;
@@ -164,7 +164,7 @@ TEST(FixedTimestep, NextTickWaitSubtractsTheRemainder) {
   clock.advance(SHORT_TICK_DURATION + HALF_SHORT_TICK);
   timestep.consumeTicks();
 
-  EXPECT_EQ(timestep.timeUntilNextTick(), HALF_SHORT_TICK);
+  EXPECT_EQ(timestep.nextTickTime(), clock.now() + HALF_SHORT_TICK);
 }
 
 /**
@@ -178,7 +178,7 @@ TEST(FixedTimestep, NextTickIsOneTickAwayRightAfterATickBoundary) {
   clock.advance(SHORT_TICK_DURATION);
   timestep.consumeTicks();
 
-  EXPECT_EQ(timestep.timeUntilNextTick(), SHORT_TICK_DURATION);
+  EXPECT_EQ(timestep.nextTickTime(), clock.now() + SHORT_TICK_DURATION);
 }
 
 /**
@@ -195,5 +195,5 @@ TEST(FixedTimestep, NextTickIsOneTickAwayAfterADroppedStall) {
                 HALF_SHORT_TICK);
   timestep.consumeTicks();
 
-  EXPECT_EQ(timestep.timeUntilNextTick(), SHORT_TICK_DURATION);
+  EXPECT_EQ(timestep.nextTickTime(), clock.now() + SHORT_TICK_DURATION);
 }
