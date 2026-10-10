@@ -11,6 +11,7 @@
 
 using rtype::engine::BoundedQueue;
 using rtype::engine::InvalidQueueCapacityException;
+using rtype::engine::QueueableMessage;
 
 namespace {
 
@@ -43,9 +44,6 @@ struct MessageWithThrowingMove {
       false) = default;
   ~MessageWithThrowingMove() = default;
 };
-
-template <typename Message>
-constexpr bool isAcceptedMessage = requires { typename BoundedQueue<Message>; };
 
 std::vector<int> drained(BoundedQueue<int>& queue) {
   std::vector<int> messages;
@@ -212,12 +210,12 @@ TEST(BoundedQueue, CarriesMessagesThatCannotBeCopied) {
 
 /**
  * Given a message type whose move may throw
- * When a queue of that type is named
- * Then the queue refuses it at compile time
+ * When it is checked against what a queue requires of its messages
+ * Then it is refused, so a queue of that type does not compile
  */
 TEST(BoundedQueue, RefusesMessagesWhoseMoveMayThrow) {
-  EXPECT_FALSE(isAcceptedMessage<MessageWithThrowingMove>);
-  EXPECT_TRUE(isAcceptedMessage<int>);
+  EXPECT_FALSE(QueueableMessage<MessageWithThrowingMove>);
+  EXPECT_TRUE(QueueableMessage<int>);
 }
 
 /**

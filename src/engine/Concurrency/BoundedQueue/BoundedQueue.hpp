@@ -11,19 +11,26 @@
 namespace rtype::engine {
 
 /**
+ * @brief What a BoundedQueue requires of its messages: a default value for its
+ * empty slots, and moves that never throw, so a call that fails leaves the
+ * queue as it was.
+ */
+template <typename Message>
+concept QueueableMessage =
+    std::default_initializable<Message> && std::movable<Message> &&
+    std::is_nothrow_move_constructible_v<Message> &&
+    std::is_nothrow_move_assignable_v<Message>;
+
+/**
  * @brief Hands messages from one thread to another: the reader never waits for
  * a message to arrive, only for the short locked section of the other thread.
  *
  * Every call is safe from any thread. The capacity is reserved once, at
  * construction: push() never allocates beyond moving the message in. A full
  * queue discards its oldest message to make room for the new one, and counts
- * it. Moving a message must not throw, so a call that fails leaves the queue as
- * it was.
+ * it.
  */
-template <typename Message>
-  requires std::default_initializable<Message> && std::movable<Message> &&
-           std::is_nothrow_move_constructible_v<Message> &&
-           std::is_nothrow_move_assignable_v<Message>
+template <QueueableMessage Message>
 class BoundedQueue {
  public:
   /**
