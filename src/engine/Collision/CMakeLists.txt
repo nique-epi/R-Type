@@ -1,0 +1,5 @@
+add_library(rtype_engine_collision INTERFACE)
+
+target_include_directories(rtype_engine_collision INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
+
+target_link_libraries(rtype_engine_collision INTERFACE rtype_engine_entity_registry)
