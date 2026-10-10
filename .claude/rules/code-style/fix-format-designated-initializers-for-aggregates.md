@@ -11,7 +11,6 @@ Why: `modernize-use-designated-initializers` is enabled in `.clang-tidy` with wa
 ## Rule
 
 1. Build an aggregate that has two or more members with designated initializers, in declaration order: `Type{.first = a, .second = b}`.
-2. This applies to the code shown in an implementation plan too: the plan is validated on code that passes the gates.
 
 ## Example
 
