@@ -9,7 +9,7 @@ Why: the CI `Clang-tidy` job treats warnings as errors; a local failure put down
 
 ## Rule
 
-1. **Before every `git push`** of C++ changes, run `clang-tidy` on the changed `.cpp` files and require exit code 0 with no `error:` on them. Capture the output in a file, read the code first (see `fix-execution-zsh-pipestatus.md`).
+1. **Before every `git push`** of C++ changes, run `clang-tidy` on the changed `.cpp` files and require exit code 0 with no `error:` on them. Capture the output in a file, read the code first (see `fix-execution-zsh-pipestatus.md`). A file the local machine cannot compile is the exception: see the last subsection.
 2. **A failing local `tidy` is never "the environment" until proven.** The `cmake --build build --target tidy` target fails on macOS because the system headers are not found, and the missing headers hide or distort findings. Pass the SDK explicitly:
    ```bash
    SDK=$(xcrun --show-sdk-path)
@@ -32,13 +32,13 @@ Why: the CI `Clang-tidy` job treats warnings as errors; a local failure put down
 
 A platform file such as `FineTimerResolutionWindows.cpp` is linted only by the CI job of its platform (`Clang-tidy (Windows-only files)`). Since no local run can catch its findings, they are prevented while it is written. A file that compiles locally is never one of them: a local tidy failure on it still follows point 2.
 
-1. **Before writing it**, read the "Return value" section of every system or C function it calls, and decide what the program does when the call fails. A result ignored on purpose is cast to `void`, with the reason in the doc comment of the class or function.
+1. **Before writing it**, read the "Return value" section of every system or C function it calls, and decide what the program does when the call fails. A result is ignored on purpose only with a cast to `void` that every check listing the function allows (point 2); otherwise the result is used. The reason goes in the doc comment of the class or function.
 2. **Before pushing it**, read how the checks that police ignored results see each function it calls:
    ```bash
    clang-tidy --checks='-*,cert-err33-c,bugprone-unused-return-value' --dump-config
    ```
-   Match every called function against their `CheckedFunctions` patterns, and read their `AllowCastToVoid`. A pattern without an end anchor matches more than it names: `^::time` matches `::timeBeginPeriod` and `::timeEndPeriod`.
-3. **The CI is its verifier**: push, say in the report that this file is linted by the CI only, and follow the platform job until it is green, as `fix-process-follow-ci-after-opening-a-pr.md` requires. This is the exception named in point 4 of the first list.
+   Run it with the clang-tidy version the CI job prints (20 today). Match every called function against their `CheckedFunctions` patterns, and read their `AllowCastToVoid`: in clang-tidy 20, `cert-err33-c` allows the cast and `bugprone-unused-return-value` does not. A pattern without an end anchor matches more than it names: `^::time` matches `::timeBeginPeriod` and `::timeEndPeriod`.
+3. **The CI is its verifier**: push, say in the report that this file is linted by the CI only, and follow the platform job until it is green, as `fix-process-follow-ci-after-opening-a-pr.md` requires. This is the exception named in points 1 and 4 of the first list. The CI only runs on a pull request, so the user's go to publish the branch or open the pull request is still asked first.
 
 ## Example
 
