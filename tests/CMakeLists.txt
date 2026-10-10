@@ -3,8 +3,10 @@ find_package(SFML 3 COMPONENTS Graphics Audio CONFIG REQUIRED)
 
 include(GoogleTest)
 
+set(RTYPE_THREAD_TEST_TIMEOUT_SECONDS 60)
+
 function(rtype_add_test)
-  set(oneValueArgs NAME)
+  set(oneValueArgs NAME TIMEOUT)
   set(multiValueArgs SOURCES LIBS)
   cmake_parse_arguments(ARG "" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
@@ -30,11 +32,15 @@ function(rtype_add_test)
 
   rtype_enable_warnings(${ARG_NAME})
 
-  gtest_discover_tests(${ARG_NAME})
+  if(ARG_TIMEOUT)
+    gtest_discover_tests(${ARG_NAME} PROPERTIES TIMEOUT ${ARG_TIMEOUT})
+  else()
+    gtest_discover_tests(${ARG_NAME})
+  endif()
 endfunction()
 
 rtype_add_test(NAME harness_tests SOURCES HarnessTest.cpp)
-rtype_add_test(NAME engine_tests SOURCES ComponentQueryTest.cpp ComponentTest.cpp EntityIndexMapTest.cpp EntityRegistryTest.cpp EventBusFixtures.cpp EventBusTest.cpp FixedTimestepTest.cpp SystemSchedulerTest.cpp TimerSchedulerTest.cpp BoundedQueueTest.cpp LIBS rtype_engine)
+rtype_add_test(NAME engine_tests SOURCES ComponentQueryTest.cpp ComponentTest.cpp EntityIndexMapTest.cpp EntityRegistryTest.cpp EventBusFixtures.cpp EventBusTest.cpp FixedTimestepTest.cpp SystemSchedulerTest.cpp TimerSchedulerTest.cpp engine/Concurrency/BoundedQueueTest.cpp LIBS rtype_engine TIMEOUT ${RTYPE_THREAD_TEST_TIMEOUT_SECONDS})
 rtype_add_test(NAME game_tests SOURCES EntityTypeTest.cpp MovementSystemTest.cpp WorldTest.cpp LIBS rtype_game)
 rtype_add_test(NAME network_tests SOURCES NetworkContextTest.cpp UdpSocketFixture.cpp UdpSocketTest.cpp ByteWriterTest.cpp ByteReaderTest.cpp SerializationRoundTripTest.cpp ByteSequence.cpp LIBS rtype_network rtype_network_asio)
 rtype_add_test(NAME server_tests SOURCES server/Application/TickLoopTest.cpp server/Application/DatagramRelayTest.cpp server/Application/ServerApplicationTest.cpp doubles/RecordingDatagramSocket.cpp LIBS rtype_server_application rtype_engine rtype_network_constants)
