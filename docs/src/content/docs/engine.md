@@ -146,7 +146,7 @@ No event type exists yet: each one is added with the code that publishes it.
 
 - `push(message)` adds the message after the others. The room, given to the constructor, is reserved once; when the queue is full, its oldest message is discarded to make room, and `discardedCount()` counts it. A room of 0 throws `InvalidQueueCapacityException`.
 - `drainInto(destination)` moves every waiting message, oldest first, to the end of a `std::vector`, and leaves the queue empty. It makes room in the vector before moving anything, so when memory runs out the queue is left as it was. With nothing waiting it returns at once, so a game loop drains once per tick and carries on whatever arrived. Clearing and reusing the same vector every tick avoids allocating it again.
-- A message must be default-constructible, and moving it must not throw: a queue of a type whose move may throw does not compile. The queue moves messages in and out and never copies them, so a message can own its bytes.
+- A message must satisfy `QueueableMessage`: it is default-constructible, and moving it never throws. A queue of another type does not compile. The queue moves messages in and out and never copies them, so a message can own its bytes.
 
 ## Where to intervene
 
