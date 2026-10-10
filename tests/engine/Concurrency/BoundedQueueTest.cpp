@@ -4,6 +4,7 @@
 #include <memory>
 #include <stop_token>
 #include <thread>
+#include <utility>
 #include <vector>
 #include "BoundedQueue.hpp"
 #include "BoundedQueueTestConstants.hpp"
@@ -34,14 +35,20 @@ void pushAll(BoundedQueue<int>& queue, const std::vector<int>& messages) {
  * @brief A message whose move constructor and move assignment may throw.
  */
 struct MessageWithThrowingMove {
+  int value{0};
+
   MessageWithThrowingMove() = default;
   MessageWithThrowingMove(const MessageWithThrowingMove&) = default;
   MessageWithThrowingMove& operator=(const MessageWithThrowingMove&) = default;
   // NOLINTNEXTLINE(performance-noexcept-move-constructor)
-  MessageWithThrowingMove(MessageWithThrowingMove&&) noexcept(false) = default;
+  MessageWithThrowingMove(MessageWithThrowingMove&& other) noexcept(false)
+      : value(std::move(other).value) {}
   // NOLINTNEXTLINE(performance-noexcept-move-constructor)
-  MessageWithThrowingMove& operator=(MessageWithThrowingMove&&) noexcept(
-      false) = default;
+  MessageWithThrowingMove& operator=(MessageWithThrowingMove&& other) noexcept(
+      false) {
+    value = std::move(other).value;
+    return *this;
+  }
   ~MessageWithThrowingMove() = default;
 };
 
