@@ -3,7 +3,7 @@ title: Engine
 description: What the engine does, how its parts fit together and where to find them in the code.
 ---
 
-The engine is the generic part of the game: it stores game objects, advances time at a fixed rate, runs delayed work and carries events from the code that announces them to the code that reacts to them. It knows nothing about R-Type, SFML or sockets. The rules of the game live in `rtype_game`, which is built on top of it (see [Architecture](/R-Type/architecture/)).
+The engine is the generic part of the game: it stores game objects, advances time at a fixed rate, runs delayed work, carries events from the code that announces them to the code that reacts to them, and hands messages from one thread to another. It knows nothing about R-Type, SFML or sockets. The rules of the game live in `rtype_game`, which is built on top of it (see [Architecture](/R-Type/architecture/)).
 
 This page tells you where to look when you need to change something. It describes what exists today and says plainly what does not exist yet.
 
@@ -15,6 +15,7 @@ This page tells you where to look when you need to change something. It describe
 | Systems and queries | Available | `src/engine/Systems/`, `ComponentRegistry::forEach` |
 | Game loop | Not yet written: the pieces exist, nothing assembles them | — |
 | Event bus | Available | `src/engine/Events/` |
+| Queues between threads | Available | `src/engine/Concurrency/` |
 
 ## How the parts fit together
 
@@ -139,6 +140,14 @@ events.dispatch();
 
 No event type exists yet: each one is added with the code that publishes it.
 
+## Queues between threads: `BoundedQueue`
+
+`BoundedQueue<Message>` (`src/engine/Concurrency/BoundedQueue/`) hands messages from one thread to another, for example the datagrams the network thread receives to the thread that runs the game. Every method may be called from any thread. None of them waits for a message to arrive; a call only waits while another thread holds the queue's lock for one push or one drain. The reasoning is in [Architecture](/R-Type/architecture/#queues-between-threads).
+
+- `push(message)` adds the message after the others. The room, given to the constructor, is reserved once; when the queue is full, its oldest message is discarded to make room, and `discardedCount()` counts it. A room of 0 throws `InvalidQueueCapacityException`.
+- `drainInto(destination)` moves every waiting message, oldest first, to the end of a `std::vector`, and leaves the queue empty. It makes room in the vector before moving anything, so when memory runs out the queue is left as it was. With nothing waiting it returns at once, so a game loop drains once per tick and carries on whatever arrived. Clearing and reusing the same vector every tick avoids allocating it again.
+- A message must satisfy `QueueableMessage`: it is default-constructible, and moving it never throws. A queue of another type does not compile. The queue moves messages in and out and never copies them, so a message can own its bytes.
+
 ## Where to intervene
 
 | You want to… | Look at |
@@ -152,6 +161,7 @@ No event type exists yet: each one is added with the code that publishes it.
 | Change the order systems run in | The order of the `SystemScheduler::add()` calls |
 | Run something after a delay | `TimerScheduler` in `src/engine/Time/TimerScheduler/` |
 | Announce that something happened, or react to it | `EventBus` in `src/engine/Events/EventBus/`: `publish` the event, `subscribe<Event>` to it |
+| Hand data from one thread to another | `BoundedQueue` in `src/engine/Concurrency/BoundedQueue/` |
 | Add an engine error | `src/engine/Exceptions/EngineException.hpp` |
 | Write a test that depends on time | `tests/SimulatedClock.hpp`, `tests/FixedTimestepTest.cpp` |
 

@@ -35,4 +35,7 @@ NullSystemException::NullSystemException()
 EmptyEventCallbackException::EmptyEventCallbackException()
     : EngineException("An empty callback cannot subscribe to events") {}
 
+InvalidQueueCapacityException::InvalidQueueCapacityException()
+    : EngineException("A bounded queue must hold at least one message") {}
+
 }  // namespace rtype::engine
