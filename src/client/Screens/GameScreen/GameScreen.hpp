@@ -1,13 +1,13 @@
 #pragma once
 
-#include <SFML/Graphics/RectangleShape.hpp>
 #include "IScreen.hpp"
 #include "ScreenStack.hpp"
 
 namespace rtype::client {
 
 /**
- * @brief The game in progress; for now, the playfield background alone.
+ * @brief The game in progress; for now it draws nothing over the scrolling
+ * background, which the frame loop draws under every screen.
  *
  * Releasing OPTIONS_KEY puts the options screen over the game, which goes on
  * running and stays drawn behind it. The release, not the press: the system
@@ -30,7 +30,6 @@ class GameScreen : public IScreen {
  private:
   ScreenStack* screens_;
   ScreenFactory optionsScreen_;
-  sf::RectangleShape playfieldBackground_;
 };
 
 }  // namespace rtype::client

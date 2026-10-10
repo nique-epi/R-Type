@@ -2,7 +2,7 @@
 
 A networked multiplayer remake of the R-Type shoot'em up, built on a custom C++ game engine.
 
-The client opens a window showing an empty playfield; Escape opens the window size options. The server listens for UDP datagrams on port 4242 and logs each one at the `debug` level; it does not answer them yet.
+The client opens a window showing a scrolling starfield; Escape opens the window size options. The server listens for UDP datagrams on port 4242 and logs each one at the `debug` level; it does not answer them yet.
 
 The code is split into engine, game and network libraries; see [the architecture decision](docs/src/content/docs/architecture.md).
 

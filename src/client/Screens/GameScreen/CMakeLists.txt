@@ -8,7 +8,6 @@ target_link_libraries(rtype_client_game_screen
     SFML::Graphics
   PRIVATE
     rtype_client_screens
-    rtype_game
 )
 
 rtype_enable_warnings(rtype_client_game_screen)

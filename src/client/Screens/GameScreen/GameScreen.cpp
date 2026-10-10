@@ -2,19 +2,13 @@
 #include <SFML/Graphics/RenderTarget.hpp>
 #include <SFML/Window/Event.hpp>
 #include <utility>
-#include "PlayfieldConstants.hpp"
-#include "ScreenColors.hpp"
 #include "ScreenConstants.hpp"
 #include "ScreenStack.hpp"
 
 namespace rtype::client {
 
 GameScreen::GameScreen(ScreenStack& screens, ScreenFactory optionsScreen)
-    : screens_(&screens),
-      optionsScreen_(std::move(optionsScreen)),
-      playfieldBackground_({game::PLAYFIELD_WIDTH, game::PLAYFIELD_HEIGHT}) {
-  playfieldBackground_.setFillColor(PLAYFIELD_BACKGROUND_COLOR);
-}
+    : screens_(&screens), optionsScreen_(std::move(optionsScreen)) {}
 
 void GameScreen::handleEvent(const sf::Event& event) {
   const auto* released = event.getIf<sf::Event::KeyReleased>();
@@ -25,8 +19,6 @@ void GameScreen::handleEvent(const sf::Event& event) {
 
 void GameScreen::update() {}
 
-void GameScreen::draw(sf::RenderTarget& target) const {
-  target.draw(playfieldBackground_);
-}
+void GameScreen::draw([[maybe_unused]] sf::RenderTarget& target) const {}
 
 }  // namespace rtype::client

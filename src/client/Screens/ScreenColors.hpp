@@ -5,15 +5,6 @@
 namespace rtype::client {
 
 /**
- * @brief Color filling the playfield during a game, so it stands out from the
- * black bars.
- *
- * Provisional: it stands in for the scrolling background until that one
- * exists.
- */
-constexpr sf::Color PLAYFIELD_BACKGROUND_COLOR(10, 12, 40);
-
-/**
  * @brief Colors of the progress bar of the loading screen: its border, and the
  * part already loaded.
  */
