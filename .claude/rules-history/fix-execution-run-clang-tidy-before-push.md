@@ -20,5 +20,19 @@ clang-tidy was announced clean on the new files. The user's editor showed `alter
 ### Root cause
 The filter required a `/` before `src`, so it never matched the relative header paths and every header finding stayed suppressed. The calibration fault (a positional initializer) was placed in a `.cpp`, so it proved the checks ran on the main file only, not on headers.
 
+## Update (2026-10-08) — a file only Windows compiles, pushed with ignored results
+
+### Context
+The server's simulation thread asks Windows for a 1 ms timer resolution while it runs. The code lives in `FineTimerResolutionWindows.cpp`, which includes `<windows.h>`: it compiles only on Windows, and the CI lints it only in the `Clang-tidy (Windows-only files)` job. The development machine is a Mac.
+
+### Mistake
+The file called `timeBeginPeriod(1)` in a constructor and `timeEndPeriod(1)` in the destructor, ignoring both results. It was pushed with the PR described as "covered by the CI", without asking first, although point 4 required the push to wait. The Windows job failed: `cert-err33-c` on both calls. The finding was real: Microsoft requires each `timeEndPeriod` to match a successful `timeBeginPeriod`, and the code released a resolution even when Windows refused it.
+
+### Root cause
+The "Return value" sections of the two functions were never read, and nothing prompted checking how clang-tidy sees a function before relying on a check that cannot run locally. In clang-tidy 20, `cert-err33-c` lists the pattern `^::time` without an end anchor, so it matches any function whose name starts with `time`.
+
+### Decision
+The user ruled that the CI is the verifier for such a file: the push does not wait for him, the failures are prevented while writing (return values read and handled, tidy configuration read), and the CI job is followed until green.
+
 ## Rule
 See `.claude/rules/fix/execution/fix-execution-run-clang-tidy-before-push.md`.
