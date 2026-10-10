@@ -19,8 +19,15 @@ class FixedTimestep {
   /** @return number of ticks to simulate since the previous call. */
   std::size_t consumeTicks();
 
+  /**
+   * @return the time of the clock at which the next tick is due, from the
+   * clock reading of the previous consumeTicks() call, or of the construction:
+   * later than that reading by more than zero and at most one tick duration.
+   */
+  [[nodiscard]] Duration nextTickTime() const;
+
  private:
-  const IClock& clock_;
+  const IClock* clock_;
   Duration tickDuration_;
   Duration previousTime_;
   Duration accumulated_{};

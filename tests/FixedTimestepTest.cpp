@@ -4,6 +4,7 @@
 #include <cstdint>
 #include "EngineException.hpp"
 #include "FixedTimestep.hpp"
+#include "FixedTimestepTestConstants.hpp"
 #include "SimulatedClock.hpp"
 #include "TimeConstants.hpp"
 
@@ -15,22 +16,15 @@ using rtype::engine::SIMULATION_TICKS_PER_SECOND;
 
 namespace {
 
-constexpr std::int64_t NANOSECONDS_PER_SECOND = 1'000'000'000;
-constexpr double SPEED_UNITS_PER_SECOND = 120.0;
-// The tick length is a whole number of nanoseconds, so 60 ticks fall 0.4
-// parts per million short of one second.
-constexpr double POSITION_TOLERANCE_UNITS = 1e-4;
-constexpr std::size_t RESULT_ALIGNMENT = 16;
-constexpr Duration SHORT_TICK_DURATION(100);
-constexpr Duration HALF_SHORT_TICK(SHORT_TICK_DURATION / 2);
-
 struct alignas(RESULT_ALIGNMENT) SimulationResult {
   std::size_t ticks = 0;
   double position = 0.0;
 };
 
-// Renders one simulated second at the given frame rate. Frame lengths are
-// whole nanoseconds that add up to exactly one second.
+/**
+ * @brief Renders one simulated second at the given frame rate. Frame lengths
+ * are whole nanoseconds that add up to exactly one second.
+ */
 SimulationResult simulateOneSecond(std::int64_t framesPerSecond) {
   SimulatedClock clock;
   FixedTimestep timestep(clock, SIMULATION_TICK_DURATION);
@@ -145,4 +139,61 @@ TEST(FixedTimestep, ZeroTickDurationIsRejected) {
 
   EXPECT_THROW(FixedTimestep(clock, Duration::zero()),
                rtype::engine::InvalidTickDurationException);
+}
+
+/**
+ * Given a fresh timestep
+ * When it is asked when the next tick is due
+ * Then the next tick is one whole tick away
+ */
+TEST(FixedTimestep, FirstTickIsOneTickAway) {
+  const SimulatedClock clock;
+  const FixedTimestep timestep(clock, SHORT_TICK_DURATION);
+
+  EXPECT_EQ(timestep.nextTickTime(), clock.now() + SHORT_TICK_DURATION);
+}
+
+/**
+ * Given a timestep polled after one tick and a half
+ * When it is asked when the next tick is due
+ * Then the half tick already kept shortens the wait to half a tick
+ */
+TEST(FixedTimestep, NextTickWaitSubtractsTheRemainder) {
+  SimulatedClock clock;
+  FixedTimestep timestep(clock, SHORT_TICK_DURATION);
+  clock.advance(SHORT_TICK_DURATION + HALF_SHORT_TICK);
+  timestep.consumeTicks();
+
+  EXPECT_EQ(timestep.nextTickTime(), clock.now() + HALF_SHORT_TICK);
+}
+
+/**
+ * Given a timestep polled exactly when a tick was due
+ * When it is asked when the next tick is due
+ * Then the next tick is one whole tick away, never zero
+ */
+TEST(FixedTimestep, NextTickIsOneTickAwayRightAfterATickBoundary) {
+  SimulatedClock clock;
+  FixedTimestep timestep(clock, SHORT_TICK_DURATION);
+  clock.advance(SHORT_TICK_DURATION);
+  timestep.consumeTicks();
+
+  EXPECT_EQ(timestep.nextTickTime(), clock.now() + SHORT_TICK_DURATION);
+}
+
+/**
+ * Given a timestep whose stall was longer than the maximum, so its excess was
+ * dropped
+ * When it is asked when the next tick is due
+ * Then the next tick is one whole tick away
+ */
+TEST(FixedTimestep, NextTickIsOneTickAwayAfterADroppedStall) {
+  SimulatedClock clock;
+  FixedTimestep timestep(clock, SHORT_TICK_DURATION);
+  clock.advance(SHORT_TICK_DURATION *
+                    static_cast<Duration::rep>(MAXIMUM_TICKS_PER_ADVANCE + 1) +
+                HALF_SHORT_TICK);
+  timestep.consumeTicks();
+
+  EXPECT_EQ(timestep.nextTickTime(), clock.now() + SHORT_TICK_DURATION);
 }
