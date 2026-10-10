@@ -120,6 +120,7 @@ src/network/
 ```
 src/server/
 ├── Application/      starts and stops the threads
+├── Platform/         what differs between Windows, macOS and Linux
 ├── LaunchOptions/    port, name, limits, master address
 ├── Lobby/            players not in a game: list, create, join, chat
 ├── Instances/        one GameInstance per game, each on its thread
@@ -130,7 +131,7 @@ src/server/
 └── Storage/          this server's SQLite file: leaderboard, statistics
 ```
 
-`Application` exists today: the network thread and the simulation thread (see [Server](/R-Type/server/)). So does `Platform`, which holds what differs between Windows, Linux and macOS.
+`Application` and `Platform` exist today: the network thread and the simulation thread (see [Server](/R-Type/server/)), and the timer resolution the server asks Windows for.
 
 ### Client
 

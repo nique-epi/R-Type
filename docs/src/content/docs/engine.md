@@ -22,14 +22,14 @@ This page tells you where to look when you need to change something. It describe
 ```mermaid
 flowchart LR
   Clock[IClock] --> Step[FixedTimestep]
-  Step -- "ticks to simulate" --> Loop["game loop (to write)"]
+  Step -- "ticks to simulate" --> Loop["tick loop"]
   Loop -- "once per tick" --> Timers[TimerScheduler]
   Loop -- "once per tick" --> Systems[SystemScheduler]
   Systems --> Components[ComponentRegistry]
   Components --> Entities[EntityRegistry]
 ```
 
-The client and the server will each own one loop. The engine provides the building blocks; the loop itself is added by a later story.
+The engine provides the building blocks and no loop of its own. The server runs its ticks in `TickLoop` (see [Server](/R-Type/server/#tick-loop-tickloop)); the client runs no tick yet.
 
 ## ECS: entities and components
 
@@ -95,7 +95,7 @@ components.forEach<rtype::game::Position, rtype::game::Velocity>(
 The simulation runs at a fixed rate, `SIMULATION_TICKS_PER_SECOND` (60), whatever the rendering rate (`TimeConstants.hpp`).
 
 - `IClock` is the source of time. `SystemClock` reads the real clock; tests use `tests/SimulatedClock.hpp`, so a test never waits and gives the same result at any frame rate.
-- `FixedTimestep` turns the time read from an `IClock` into a whole number of ticks to simulate. The remainder is kept for the next call. A stall longer than `MAXIMUM_TICKS_PER_ADVANCE` ticks is dropped instead of being caught up. `timeUntilNextTick()` says how long until the next tick is due, as of the last `consumeTicks()`: more than zero, and at most one tick.
+- `FixedTimestep` turns the time read from an `IClock` into a whole number of ticks to simulate. The remainder is kept for the next call. A stall longer than `MAXIMUM_TICKS_PER_ADVANCE` ticks is dropped instead of being caught up. `nextTickTime()` gives the time of the clock at which the next tick is due, as of the last `consumeTicks()`: later than that call by more than zero and at most one tick, so a loop can sleep until then.
 - `TimerScheduler` runs a callback after a delay (`scheduleOnce`) or at a regular interval (`scheduleRepeating`), and cancels it through the `TimerHandle` it returned. It never reads a clock: the caller passes `SIMULATION_TICK_DURATION` to `advance()` once per tick.
 
 The loop the client and the server will write looks like this; the events published by the systems are delivered at the end of the same tick (see [Event bus](#event-bus-eventbus)):
