@@ -1,6 +1,8 @@
 #pragma once
 
 #include <cstddef>
+#include <functional>
+#include <span>
 #include <vector>
 #include "BoundedQueue.hpp"
 #include "DatagramRelay.hpp"
@@ -10,30 +12,39 @@
 #include "NetworkContext.hpp"
 #include "OutgoingDatagram.hpp"
 #include "SystemClock.hpp"
-#include "TickLoop.hpp"
 #include "UdpSocket.hpp"
-#include "World.hpp"
 
 namespace rtype::server {
 
 /**
  * @brief The server's two threads: the network thread receives and sends the
- * datagrams, the simulation thread advances the game at a fixed rate. They only
+ * datagrams, the simulation thread runs a tick at a fixed rate. They only
  * exchange datagrams through two BoundedQueue, so the simulation never waits
  * for a client.
  *
  * Each tick, the simulation thread drains every datagram received since the
- * previous tick, then asks the network thread to send what it queued.
+ * previous tick, hands them to the tick handler, then asks the network thread
+ * to send what was queued.
  */
 class ServerApplication {
  public:
   /**
+   * @brief Called once per tick, on the simulation thread, with the datagrams
+   * received since the previous tick, oldest first; often none. An exception
+   * it throws stops the server and leaves run().
+   */
+  using TickHandler =
+      std::function<void(std::span<const network::IncomingDatagram>)>;
+
+  /**
    * @brief Opens the UDP socket on @p localEndpoint; port 0 lets the system
    * pick a free port.
+   * @param handleTick Must not be empty.
    * @throws InvalidAddressException when the address is not an IP address.
    * @throws SocketOpenException when the system refuses the port.
    */
-  explicit ServerApplication(const network::Endpoint& localEndpoint);
+  ServerApplication(const network::Endpoint& localEndpoint,
+                    TickHandler handleTick);
 
   ServerApplication(const ServerApplication&) = delete;
   ServerApplication& operator=(const ServerApplication&) = delete;
@@ -42,9 +53,9 @@ class ServerApplication {
   ~ServerApplication() = default;
 
   /**
-   * @brief Runs the network on the calling thread and the simulation on a
-   * thread of its own, until stop() is called or either thread fails, then
-   * waits for both. Call it once.
+   * @brief Runs the network on the calling thread and the ticks on a thread of
+   * their own, until stop() is called or either thread fails, then waits for
+   * both. The first tick is due one tick after the call. Call it once.
    * @throws The error that stopped either thread.
    */
   void run();
@@ -71,8 +82,7 @@ class ServerApplication {
   engine::BoundedQueue<network::IncomingDatagram> incoming_;
   engine::BoundedQueue<network::OutgoingDatagram> outgoing_;
   DatagramRelay relay_;
-  game::World world_;
-  TickLoop simulation_;
+  TickHandler handleTick_;
   std::vector<network::IncomingDatagram> received_;
   std::size_t reportedDiscardCount_{0};
 };
