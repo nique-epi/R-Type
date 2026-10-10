@@ -56,12 +56,19 @@ void ServerApplication::simulateTick() {
 }
 
 void ServerApplication::reportDiscardedDatagrams() {
+  ++ticksSinceDiscardReport_;
+  if (ticksSinceDiscardReport_ < TICKS_PER_REPORT) {
+    return;
+  }
+  ticksSinceDiscardReport_ = 0;
   const std::size_t discardCount = incoming_.discardedCount();
   if (discardCount == reportedDiscardCount_) {
     return;
   }
   logger_.warn(discardCount - reportedDiscardCount_,
-               " received datagrams discarded: the simulation fell behind");
+               " received datagrams discarded in the last ", REPORT_SECONDS,
+               " s: more than ", INCOMING_DATAGRAM_QUEUE_CAPACITY,
+               " arrived between two ticks");
   reportedDiscardCount_ = discardCount;
 }
 

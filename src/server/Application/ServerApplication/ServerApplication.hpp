@@ -84,6 +84,7 @@ class ServerApplication {
   DatagramRelay relay_;
   TickHandler handleTick_;
   std::vector<network::IncomingDatagram> received_;
+  std::size_t ticksSinceDiscardReport_{0};
   std::size_t reportedDiscardCount_{0};
 };
 
