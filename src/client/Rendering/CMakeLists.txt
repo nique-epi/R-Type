@@ -6,6 +6,7 @@ target_link_libraries(rtype_client_rendering_interfaces INTERFACE rtype_game_com
 
 add_subdirectory(RenderSystem)
 add_subdirectory(SfmlDrawSurface)
+add_subdirectory(Background)
 
 add_library(rtype_client_rendering INTERFACE)
 

@@ -109,7 +109,7 @@ for (std::size_t tick = 0; tick < ticks; ++tick) {
 }
 ```
 
-The server runs ticks at this rate on its simulation thread, in `TickLoop` (see [Server](/R-Type/server/#tick-loop-tickloop)), but no tick runs timers, systems or events yet. `GameWindow` (`src/client/Window/GameWindow/`) does not use these pieces.
+The server runs ticks at this rate on its simulation thread, in `TickLoop` (see [Server](/R-Type/server/#tick-loop-tickloop)), but no tick runs timers, systems or events yet. `GameWindow` (`src/client/Window/GameWindow/`) only reads `SystemClock` to move the scrolling background by the real time of each frame (see [Client](/R-Type/client/#scrolling-background-scrollingbackground)); it runs no tick.
 
 ## Event bus: `EventBus`
 
