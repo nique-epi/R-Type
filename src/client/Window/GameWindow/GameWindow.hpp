@@ -25,17 +25,25 @@ namespace rtype::client {
  */
 class GameWindow {
  public:
-  /** @brief Opens the window at the selected size, centered on the
-   * desktop. */
+  /** @brief Opens the window at the selected size, centered on the desktop,
+   * showing at most FRAMES_PER_SECOND_LIMIT frames per second. */
   GameWindow();
 
   [[nodiscard]] bool isOpen() const;
 
-  /** @brief The next event a screen may react to, once the window has
-   * handled closing and resizing itself. */
+  /**
+   * @brief The next event a screen may react to.
+   *
+   * The window handles closing and resizing itself and never returns those
+   * events: closing closes the window, resizing keeps the whole playfield in
+   * view.
+   *
+   * @returns The event, or an empty optional once no event is left or the
+   * window is closed.
+   */
   [[nodiscard]] std::optional<sf::Event> pollScreenEvent();
 
-  /** @brief Clears the window to black. */
+  /** @brief Clears the window to black before a frame is drawn. */
   void clear();
 
   /** @brief Where a frame is drawn, in playfield units. */
@@ -46,11 +54,18 @@ class GameWindow {
 
   [[nodiscard]] const WindowSizeSelection& windowSizeSelection() const;
 
-  /** @brief Gives the window the size at this index of WINDOW_SIZES, or
-   * returns false when that size is not available. */
+  /**
+   * @brief Gives the window the size at this index of WINDOW_SIZES, centered
+   * on the desktop.
+   *
+   * @returns false, changing nothing, when that size is not available.
+   */
   bool selectWindowSize(std::size_t index);
 
-  /** @brief The point of the playfield under a pixel of the window. */
+  /**
+   * @param pixel Position in the window, in pixels.
+   * @returns The point of the playfield under that pixel, in playfield units.
+   */
   [[nodiscard]] sf::Vector2f playfieldPointAt(sf::Vector2i pixel) const;
 
  private:

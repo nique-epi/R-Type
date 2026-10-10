@@ -11,8 +11,10 @@ constexpr const char* INTERFACE_FONT_ID = "fonts/tuffy.ttf";
  * them. */
 constexpr sf::Keyboard::Key OPTIONS_KEY = sf::Keyboard::Key::Escape;
 
-/** @brief Size and border thickness of the progress bar of the loading screen,
- * in playfield units. */
+/**
+ * @brief Size of the progress bar of the loading screen, centered in the
+ * playfield, and thickness of its border, in playfield units.
+ */
 constexpr float LOADING_BAR_WIDTH = 960.0F;
 constexpr float LOADING_BAR_HEIGHT = 24.0F;
 constexpr float LOADING_BAR_OUTLINE_THICKNESS = 3.0F;
