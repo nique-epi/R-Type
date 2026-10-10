@@ -9,11 +9,12 @@
 #include <SFML/Window/WindowEnums.hpp>
 #include <cstddef>
 #include <optional>
+#include <random>
 #include "PixelPosition.hpp"
 #include "PixelSize.hpp"
 #include "PlayfieldConstants.hpp"
 #include "PlayfieldViewport.hpp"
-#include "WindowColors.hpp"
+#include "TimeConstants.hpp"
 #include "WindowConstants.hpp"
 
 namespace rtype::client {
@@ -28,16 +29,17 @@ GameWindow::GameWindow(const sf::Font& windowSizeLabelFont)
       window_(sf::VideoMode({windowSizeSelection_.selected().width,
                              windowSizeSelection_.selected().height}),
               WINDOW_TITLE, sf::Style::Titlebar | sf::Style::Close),
-      playfieldBackground_({game::PLAYFIELD_WIDTH, game::PLAYFIELD_HEIGHT}),
+      background_(std::random_device{}()),
       windowSizeButtons_(windowSizeLabelFont) {
   window_.setFramerateLimit(FRAMES_PER_SECOND_LIMIT);
-  playfieldBackground_.setFillColor(PLAYFIELD_BACKGROUND_COLOR);
   applySelectedWindowSize();
 }
 
 void GameWindow::run() {
+  previousFrameTime_ = clock_.now();
   while (window_.isOpen()) {
     handleEvents();
+    advanceBackground();
     render();
   }
 }
@@ -57,9 +59,15 @@ void GameWindow::handleEvents() {
   }
 }
 
+void GameWindow::advanceBackground() {
+  const engine::Duration now = clock_.now();
+  background_.advance(now - previousFrameTime_);
+  previousFrameTime_ = now;
+}
+
 void GameWindow::render() {
   window_.clear();
-  window_.draw(playfieldBackground_);
+  background_.draw(window_);
   windowSizeButtons_.draw(window_);
   window_.display();
 }

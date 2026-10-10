@@ -1,0 +1,7 @@
+add_library(rtype_client_tail_gradient STATIC TailGradient.cpp)
+
+target_include_directories(rtype_client_tail_gradient PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+
+target_link_libraries(rtype_client_tail_gradient PUBLIC rtype_client_background)
+
+rtype_enable_warnings(rtype_client_tail_gradient)

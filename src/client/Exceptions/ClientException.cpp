@@ -65,4 +65,9 @@ AssetNotLoadedException::AssetNotLoadedException(std::string_view assetId)
                       "\" is not loaded: list it in the assets of the screen "
                       "that uses it") {}
 
+RenderTextureNotCreatedException::RenderTextureNotCreatedException(
+    unsigned int width, unsigned int height)
+    : ClientException("A render texture could not be created, size " +
+                      std::to_string(width) + " x " + std::to_string(height)) {}
+
 }  // namespace rtype::client

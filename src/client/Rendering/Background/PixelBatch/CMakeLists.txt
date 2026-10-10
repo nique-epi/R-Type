@@ -1,0 +1,7 @@
+add_library(rtype_client_pixel_batch STATIC PixelBatch.cpp)
+
+target_include_directories(rtype_client_pixel_batch PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+
+target_link_libraries(rtype_client_pixel_batch PUBLIC rtype_client_background)
+
+rtype_enable_warnings(rtype_client_pixel_batch)

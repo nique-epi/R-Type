@@ -109,7 +109,7 @@ for (std::size_t tick = 0; tick < ticks; ++tick) {
 }
 ```
 
-The loop itself does not exist yet: today only the pieces above are in `rtype_engine`, and `GameWindow` (`src/client/Window/GameWindow/`) does not use them.
+The loop itself does not exist yet: today only the pieces above are in `rtype_engine`. `GameWindow` (`src/client/Window/GameWindow/`) only reads `SystemClock` to move the scrolling background by the real time of each frame (see [Client](/R-Type/client/#scrolling-background-scrollingbackground)); it runs no tick.
 
 ## Event bus: `EventBus`
 
