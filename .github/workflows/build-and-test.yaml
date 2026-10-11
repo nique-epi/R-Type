@@ -81,7 +81,7 @@ jobs:
           if [ -z "$BASE_SHA" ]; then
             lint_everything
           elif git diff --name-only "$BASE_SHA"...HEAD \
-              | grep -qE '\.hpp$|^\.clang-tidy$|CMakeLists\.txt$|^CMakePresets\.json$|^vcpkg\.json$'; then
+              | grep -qE '\.hpp$|^\.clang-tidy$|CMakeLists\.txt$|^CMakePresets\.json$|^vcpkg\.json$|^\.github/workflows/build-and-test\.yaml$'; then
             lint_everything
           else
             git diff --name-only -z --diff-filter=ACMR "$BASE_SHA"...HEAD -- 'src/*.cpp' 'tests/*.cpp' \
