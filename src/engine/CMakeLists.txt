@@ -4,7 +4,6 @@ add_subdirectory(EntityRegistry)
 add_subdirectory(Components)
 add_subdirectory(Systems)
 add_subdirectory(Events)
-add_subdirectory(Concurrency)
 
 add_library(rtype_engine INTERFACE)
 
@@ -25,5 +24,4 @@ target_link_libraries(rtype_engine
     rtype_engine_system_scheduler
     rtype_engine_events
     rtype_engine_event_bus
-    rtype_engine_bounded_queue
 )

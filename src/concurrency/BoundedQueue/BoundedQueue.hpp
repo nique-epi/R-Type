@@ -6,9 +6,9 @@
 #include <type_traits>
 #include <utility>
 #include <vector>
-#include "EngineException.hpp"
+#include "ConcurrencyException.hpp"
 
-namespace rtype::engine {
+namespace rtype::concurrency {
 
 /**
  * @brief What a BoundedQueue requires of its messages: a default value for its
@@ -86,4 +86,4 @@ class BoundedQueue {
   std::size_t discardedCount_{0};
 };
 
-}  // namespace rtype::engine
+}  // namespace rtype::concurrency
