@@ -5,6 +5,7 @@ add_subdirectory(Platform)
 add_subdirectory(Assets)
 add_subdirectory(Rendering)
 add_subdirectory(Window)
+add_subdirectory(Connection)
 
 add_executable(r-type_client main.cpp)
 
