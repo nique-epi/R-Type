@@ -79,12 +79,4 @@ class EmptyEventCallbackException : public EngineException {
   EmptyEventCallbackException();
 };
 
-/**
- * @brief A bounded queue was created with no room for any message.
- */
-class InvalidQueueCapacityException : public EngineException {
- public:
-  InvalidQueueCapacityException();
-};
-
 }  // namespace rtype::engine

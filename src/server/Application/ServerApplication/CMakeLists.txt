@@ -4,7 +4,7 @@ target_include_directories(rtype_server_application PUBLIC ${CMAKE_CURRENT_SOURC
 
 target_link_libraries(rtype_server_application
   PUBLIC
-    rtype_engine_bounded_queue
+    rtype_concurrency_bounded_queue
     rtype_engine_system_clock
     rtype_logging
     rtype_network_context

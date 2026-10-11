@@ -12,7 +12,7 @@
 #include "RecordingDatagramSocket.hpp"
 #include "ServerTestConstants.hpp"
 
-using rtype::engine::BoundedQueue;
+using rtype::concurrency::BoundedQueue;
 using rtype::network::Endpoint;
 using rtype::network::IncomingDatagram;
 using rtype::network::OutgoingDatagram;

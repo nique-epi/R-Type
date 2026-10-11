@@ -18,8 +18,8 @@ namespace rtype::server {
 class DatagramRelay {
  public:
   DatagramRelay(network::IDatagramSocket& socket,
-                engine::BoundedQueue<network::IncomingDatagram>& incoming,
-                engine::BoundedQueue<network::OutgoingDatagram>& outgoing);
+                concurrency::BoundedQueue<network::IncomingDatagram>& incoming,
+                concurrency::BoundedQueue<network::OutgoingDatagram>& outgoing);
 
   /**
    * @brief From now on, copies every datagram the socket receives, with its
@@ -36,8 +36,8 @@ class DatagramRelay {
 
  private:
   network::IDatagramSocket* socket_;
-  engine::BoundedQueue<network::IncomingDatagram>* incoming_;
-  engine::BoundedQueue<network::OutgoingDatagram>* outgoing_;
+  concurrency::BoundedQueue<network::IncomingDatagram>* incoming_;
+  concurrency::BoundedQueue<network::OutgoingDatagram>* outgoing_;
   std::vector<network::OutgoingDatagram> sending_;
 };
 

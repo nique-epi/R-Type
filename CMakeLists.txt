@@ -74,6 +74,7 @@ rtype_forbid_links(rtype_engine "SFML::" "asio::" "rtype_game" "rtype_network" "
 rtype_forbid_links(rtype_game "SFML::" "asio::" "rtype_network" "rtype_client")
 rtype_forbid_links(rtype_network "SFML::" "rtype_game" "rtype_engine" "rtype_client")
 rtype_forbid_links(rtype_logging "SFML::" "asio::" "rtype_engine" "rtype_game" "rtype_network" "rtype_client")
+rtype_forbid_links(rtype_concurrency "SFML::" "asio::" "rtype_engine" "rtype_game" "rtype_network" "rtype_client")
 rtype_forbid_links(r-type_server "SFML::" "asio::" "rtype_network_asio" "rtype_client")
 rtype_forbid_links(rtype_server_application "SFML::" "asio::" "rtype_network_asio" "rtype_client")
 rtype_forbid_links(rtype_server_tick_loop "SFML::" "asio::" "rtype_network_asio" "rtype_client")

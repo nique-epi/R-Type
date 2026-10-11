@@ -11,7 +11,7 @@ Most folders below do not exist yet. Each section says which ones do; the story 
 
 ## Who may link what
 
-The repository builds three programs on four libraries. Programs link libraries, never the reverse. Between libraries, the only links are `rtype_game` to `rtype_engine`, and any library to `rtype_logging`.
+The repository builds three programs on five libraries. Programs link libraries, never the reverse. Between libraries, the only links are `rtype_game` to `rtype_engine`, and any library to `rtype_logging` and `rtype_concurrency`.
 
 | Target | Holds | Never links |
 |---|---|---|
@@ -22,8 +22,9 @@ The repository builds three programs on four libraries. Programs link libraries,
 | `rtype_network` | everything that crosses the wire | SFML, `rtype_engine`, `rtype_game` |
 | `rtype_engine` | the building blocks any game needs | SFML, Asio, `rtype_game`, `rtype_network` |
 | `rtype_logging` | log lines; every other target may link it | anything else |
+| `rtype_concurrency` | queues between threads; every other target may link it | anything but `rtype_logging` |
 
-`rtype_logging` stands alone because `rtype_network` may not link `rtype_engine` and both write logs. A forbidden link fails the CMake configure step (`rtype_forbid_links` in the root `CMakeLists.txt`).
+`rtype_logging` and `rtype_concurrency` stand alone because `rtype_network` may not link `rtype_engine`, and code on both sides of that line writes logs and hands data from one thread to another. A forbidden link fails the CMake configure step (`rtype_forbid_links` in the root `CMakeLists.txt`).
 
 ## Where does a new class go?
 
@@ -43,7 +44,7 @@ The cases where people hesitate:
 |---|---|---|
 | Moving the ship from the player's input | `src/game/ShipControl` | the server runs it, and the client runs the same code to predict its own ship |
 | Damage after a collision | `src/game/Systems` | it is a rule of the match, even though only the server runs it |
-| A queue between two threads | `src/engine/Concurrency` | the client and the server both need it, and it knows nothing about R-Type |
+| A queue between two threads | `src/concurrency` | the client, the server and `rtype_network` all need it, and `rtype_network` may not link `rtype_engine` |
 | Finding an entity from its network id | `src/engine/NetworkIds` | `rtype_network` may not know entities |
 | The heartbeat sent to the master | `src/server/MasterLink` | only the server sends it; the message format lives in `src/network/Master` |
 | A new protocol message | `src/network/Protocol` | one struct per message, its encoding next to it, then a row in [Protocol](/R-Type/protocol/#messages) |
@@ -62,16 +63,19 @@ src/engine/
 ├── Systems/          runs systems in a fixed order
 ├── Events/           typed event bus
 ├── Time/             fixed timestep, clocks, timers
-├── Concurrency/      queues between threads
 ├── NetworkIds/       entity to network id, and back
 └── Exceptions/
 ```
 
-`EntityRegistry`, `Components`, `Systems`, `Events`, `Time`, `Concurrency` and `Exceptions` exist; `NetworkIds` is not written yet.
+`EntityRegistry`, `Components`, `Systems`, `Events`, `Time` and `Exceptions` exist; `NetworkIds` is not written yet.
 
 ### Logging
 
 `src/logging` builds `rtype_logging`: one `Logger` per module, writing timestamped lines to the terminal and to a file, with the level chosen at launch. It links nothing else of the repository. It is being written, with `Logger/` and `LogLaunchOptions/`.
+
+### Concurrency
+
+`src/concurrency` builds `rtype_concurrency`: what threads use to hand data to each other (see [Concurrency](/R-Type/concurrency/)). **Never** an R-Type word, SFML or Asio. Like `rtype_logging`, it links nothing else of the repository, so `rtype_network` can use it as well as the engine and the programs. `BoundedQueue/` and `Exceptions/` exist.
 
 ### Game
 
@@ -178,7 +182,7 @@ Each module splits its classes into a controller (HTTP in and out), a service (t
 
 ### Tests, web frontend, assets
 
-- **`tests/`** mirrors `src/`: the test of `src/game/Waves/WaveDirector` is `tests/game/Waves/WaveDirectorTest.cpp`, built into `game_tests`, one executable per library or program. Test doubles (fake clock, lossy transport) go in `tests/doubles/`; load-test bots in `tests/tools/`, never shipped. Today the older tests sit at the root of `tests/`; `tests/client/`, `tests/engine/Concurrency/` and `tests/server/` already follow this layout, and `tests/doubles/` holds a socket that records instead of sending.
+- **`tests/`** mirrors `src/`: the test of `src/game/Waves/WaveDirector` is `tests/game/Waves/WaveDirectorTest.cpp`, built into `game_tests`, one executable per library or program. Test doubles (fake clock, lossy transport) go in `tests/doubles/`; load-test bots in `tests/tools/`, never shipped. Today the older tests sit at the root of `tests/`; `tests/client/`, `tests/concurrency/` and `tests/server/` already follow this layout, and `tests/doubles/` holds a socket that records instead of sending.
 - **`web/`** is the React frontend served by the master: `src/api/` (one function per route), `src/pages/`, `src/components/`.
 - **`assets/`** holds the files read at run time: `sprites/`, `sounds/`, `music/` and `fonts/` for the client, `waves/` for the server.
 

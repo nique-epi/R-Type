@@ -79,8 +79,8 @@ class ServerApplication {
   engine::SystemClock clock_;
   network::NetworkContext network_;
   network::UdpSocket socket_;
-  engine::BoundedQueue<network::IncomingDatagram> incoming_;
-  engine::BoundedQueue<network::OutgoingDatagram> outgoing_;
+  concurrency::BoundedQueue<network::IncomingDatagram> incoming_;
+  concurrency::BoundedQueue<network::OutgoingDatagram> outgoing_;
   DatagramRelay relay_;
   TickHandler handleTick_;
   std::vector<network::IncomingDatagram> received_;

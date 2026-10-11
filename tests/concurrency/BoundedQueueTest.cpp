@@ -8,11 +8,11 @@
 #include <vector>
 #include "BoundedQueue.hpp"
 #include "BoundedQueueTestConstants.hpp"
-#include "EngineException.hpp"
+#include "ConcurrencyException.hpp"
 
-using rtype::engine::BoundedQueue;
-using rtype::engine::InvalidQueueCapacityException;
-using rtype::engine::QueueableMessage;
+using rtype::concurrency::BoundedQueue;
+using rtype::concurrency::InvalidQueueCapacityException;
+using rtype::concurrency::QueueableMessage;
 
 namespace {
 

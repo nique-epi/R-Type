@@ -11,8 +11,8 @@ namespace rtype::server {
 
 DatagramRelay::DatagramRelay(
     network::IDatagramSocket& socket,
-    engine::BoundedQueue<network::IncomingDatagram>& incoming,
-    engine::BoundedQueue<network::OutgoingDatagram>& outgoing)
+    concurrency::BoundedQueue<network::IncomingDatagram>& incoming,
+    concurrency::BoundedQueue<network::OutgoingDatagram>& outgoing)
     : socket_(&socket), incoming_(&incoming), outgoing_(&outgoing) {}
 
 void DatagramRelay::startReceiving() {
