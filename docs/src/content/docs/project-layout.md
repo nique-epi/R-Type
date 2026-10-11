@@ -158,7 +158,7 @@ src/client/
 └── Prediction/       own ship predicted, other ships interpolated
 ```
 
-`Window`, `Rendering`, `Assets` and `Platform` exist today.
+`Window`, `Rendering`, `Assets`, `Platform` and `Connection` exist today. `Connection` only holds the network thread, which nothing starts yet (see [Client](/R-Type/client/#network-networkthread)).
 
 `Rendering` draws every entity that has a `Position` and a `Sprite` (an asset id and a layer), from the background layer to the interface layer. `RenderSystem` reads these two components and nothing else, and draws through `IDrawSurface`; only `SfmlDrawSurface` knows SFML, and it finds textures through `ITextureSource`. The system is not wired into the frame loop yet.
 
