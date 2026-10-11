@@ -101,7 +101,7 @@ src/game/
 ```
 src/network/
 ├── NetworkContext/   the Asio event loop
-├── Transport/        UDP socket, lag and loss simulator
+├── Transport/        UDP socket, relay to queues, lag and loss simulator
 ├── Serialization/    bit reader and writer, every read bounded
 ├── Protocol/         one struct per message, encoding, dispatch by type
 ├── Handshake/        challenge, rate limit, version check
@@ -113,7 +113,7 @@ src/network/
 └── Exceptions/
 ```
 
-`NetworkContext`, `Transport` (the UDP socket, not the simulator), `Serialization` and `Exceptions` exist; see [Network](/R-Type/network/).
+`NetworkContext`, `Transport` (the UDP socket and the relay to queues, not the simulator), `Serialization` and `Exceptions` exist; see [Network](/R-Type/network/).
 
 ## The programs
 

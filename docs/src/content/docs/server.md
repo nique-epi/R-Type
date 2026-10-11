@@ -18,7 +18,7 @@ This page tells you where to look when you need to change something. It describe
 
 `ServerApplication` (`src/server/Application/ServerApplication/`) runs the server on two threads, which never share game state:
 
-- The **network thread**, the one that calls `run()`, runs the `NetworkContext`. `DatagramRelay` copies every datagram received, with its sender, into the incoming `BoundedQueue`, and sends what was left in the outgoing one. It is the only thread that touches the socket.
+- The **network thread**, the one that calls `run()`, runs the `NetworkContext`. `DatagramRelay` (`rtype_network`, see [Network](/R-Type/network/#socket-to-queues-datagramrelay)) copies every datagram received, with its sender, into the incoming `BoundedQueue`, and sends what was left in the outgoing one. It is the only thread that touches the socket.
 - The **simulation thread** runs `SIMULATION_TICKS_PER_SECOND` (60) ticks per second. Each tick drains the incoming queue and hands what arrived, often nothing, to the tick handler given to the constructor, so a slow or silent player never holds the game up. At the end of the tick it asks the network thread, through `NetworkContext::post()`, to send the outgoing queue.
 
 The tick handler is where the game plugs in. Today `src/server/main.cpp` gives one that logs each datagram at the `debug` level: nothing decodes or answers them yet, and nothing fills the outgoing queue.
