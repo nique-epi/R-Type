@@ -8,9 +8,9 @@ target_link_libraries(rtype_server_application
     rtype_engine_system_clock
     rtype_logging
     rtype_network_context
+    rtype_network_datagram_relay
     rtype_network_transport
     rtype_network_udp_socket
-    rtype_server_datagram_relay
     rtype_server_tick_loop
   PRIVATE
     rtype_server_constants

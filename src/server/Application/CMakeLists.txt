@@ -1,3 +1,2 @@
 add_subdirectory(TickLoop)
-add_subdirectory(DatagramRelay)
 add_subdirectory(ServerApplication)

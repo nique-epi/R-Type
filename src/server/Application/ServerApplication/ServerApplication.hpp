@@ -81,7 +81,7 @@ class ServerApplication {
   network::UdpSocket socket_;
   concurrency::BoundedQueue<network::IncomingDatagram> incoming_;
   concurrency::BoundedQueue<network::OutgoingDatagram> outgoing_;
-  DatagramRelay relay_;
+  network::DatagramRelay relay_;
   TickHandler handleTick_;
   std::vector<network::IncomingDatagram> received_;
   std::size_t ticksSinceDiscardReport_{0};

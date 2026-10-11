@@ -6,17 +6,17 @@
 #include <vector>
 #include "BoundedQueue.hpp"
 #include "DatagramRelay.hpp"
+#include "DatagramRelayTestConstants.hpp"
 #include "Endpoint.hpp"
 #include "IncomingDatagram.hpp"
 #include "OutgoingDatagram.hpp"
 #include "RecordingDatagramSocket.hpp"
-#include "ServerTestConstants.hpp"
 
 using rtype::concurrency::BoundedQueue;
+using rtype::network::DatagramRelay;
 using rtype::network::Endpoint;
 using rtype::network::IncomingDatagram;
 using rtype::network::OutgoingDatagram;
-using rtype::server::DatagramRelay;
 
 namespace {
 

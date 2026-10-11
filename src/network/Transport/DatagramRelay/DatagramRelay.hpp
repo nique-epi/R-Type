@@ -6,20 +6,20 @@
 #include "IncomingDatagram.hpp"
 #include "OutgoingDatagram.hpp"
 
-namespace rtype::server {
+namespace rtype::network {
 
 /**
- * @brief Moves datagrams between a socket and the two queues the simulation
- * thread drains and fills.
+ * @brief Moves datagrams between a socket and the two queues another thread
+ * drains and fills, such as the simulation thread of the server.
  *
  * Every call must run on the thread that runs the socket's NetworkContext, or
  * before that thread starts. The socket and the queues must outlive the relay.
  */
 class DatagramRelay {
  public:
-  DatagramRelay(network::IDatagramSocket& socket,
-                concurrency::BoundedQueue<network::IncomingDatagram>& incoming,
-                concurrency::BoundedQueue<network::OutgoingDatagram>& outgoing);
+  DatagramRelay(IDatagramSocket& socket,
+                concurrency::BoundedQueue<IncomingDatagram>& incoming,
+                concurrency::BoundedQueue<OutgoingDatagram>& outgoing);
 
   /**
    * @brief From now on, copies every datagram the socket receives, with its
@@ -35,10 +35,10 @@ class DatagramRelay {
   void sendWaiting();
 
  private:
-  network::IDatagramSocket* socket_;
-  concurrency::BoundedQueue<network::IncomingDatagram>* incoming_;
-  concurrency::BoundedQueue<network::OutgoingDatagram>* outgoing_;
-  std::vector<network::OutgoingDatagram> sending_;
+  IDatagramSocket* socket_;
+  concurrency::BoundedQueue<IncomingDatagram>* incoming_;
+  concurrency::BoundedQueue<OutgoingDatagram>* outgoing_;
+  std::vector<OutgoingDatagram> sending_;
 };
 
-}  // namespace rtype::server
+}  // namespace rtype::network

@@ -111,7 +111,8 @@ TEST(ServerApplication, HandsEachReceivedDatagramToTheTick) {
   const std::jthread runner{[&server] { server.run(); }};
   rtype::network::NetworkContext clientContext;
   rtype::network::UdpSocket client{clientContext, loopbackOnPort(ANY_PORT)};
-  const std::vector<std::byte> payload(RELAY_PAYLOAD_SIZE, RECEIVED_BYTE);
+  const std::vector<std::byte> payload(CLIENT_PAYLOAD_SIZE,
+                                       CLIENT_PAYLOAD_BYTE);
 
   client.send(loopbackOnPort(server.localEndpoint().port), payload);
   clientContext.run();
