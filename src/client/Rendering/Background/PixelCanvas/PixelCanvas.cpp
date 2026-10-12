@@ -19,7 +19,7 @@ PixelCanvas::PixelCanvas() {
 
 sf::RenderTexture& PixelCanvas::canvas() { return canvas_; }
 
-void PixelCanvas::show(sf::RenderTarget& target) {
+void PixelCanvas::show(sf::RenderTarget& target) const {
   const unsigned int factor =
       integerScaleFactor(target.getViewport(target.getView()).size);
   matchEnlargedPicture(factor);
@@ -38,7 +38,7 @@ void PixelCanvas::show(sf::RenderTarget& target) {
   target.draw(picture, premultipliedAlpha);
 }
 
-void PixelCanvas::matchEnlargedPicture(unsigned int factor) {
+void PixelCanvas::matchEnlargedPicture(unsigned int factor) const {
   if (factor == enlargedPictureFactor_) {
     return;
   }

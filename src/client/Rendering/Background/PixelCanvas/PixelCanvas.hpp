@@ -37,22 +37,25 @@ class PixelCanvas {
    * expects such colors (one, one minus source alpha): the default alpha
    * blend would multiply them a second time and darken the edges.
    *
+   * It leaves the picture unchanged and only refreshes the enlarged copy it
+   * keeps for the next frames, so a const draw may call it.
+   *
    * @param target Target whose view shows the playfield in its logical units.
    * @throws RenderTextureNotCreatedException when the enlarged picture cannot
    * get a render texture of the size the target needs.
    */
-  void show(sf::RenderTarget& target);
+  void show(sf::RenderTarget& target) const;
 
  private:
   /**
    * @brief Gives the enlarged picture the size of the canvas times the factor,
    * when it does not have it yet.
    */
-  void matchEnlargedPicture(unsigned int factor);
+  void matchEnlargedPicture(unsigned int factor) const;
 
   sf::RenderTexture canvas_;
-  sf::RenderTexture enlargedPicture_;
-  unsigned int enlargedPictureFactor_ = 0;
+  mutable sf::RenderTexture enlargedPicture_;
+  mutable unsigned int enlargedPictureFactor_ = 0;
 };
 
 }  // namespace rtype::client
