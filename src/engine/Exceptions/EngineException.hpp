@@ -72,6 +72,14 @@ class NullSystemException : public EngineException {
 };
 
 /**
+ * @brief An event subscription was made with an empty callback.
+ */
+class EmptyEventCallbackException : public EngineException {
+ public:
+  EmptyEventCallbackException();
+};
+
+/**
  * @brief Every network identifier was already handed out.
  */
 class NetworkIdExhaustedException : public EngineException {

@@ -45,10 +45,10 @@ Paths below are relative to `.claude/rules/`.
 | Writing C++ | `architecture/`, `code-style/` |
 | Writing a test | `code-style/code-style-tests-given-when-then.md`, `fix/process/fix-process-green-test-locking-a-defect-and-overly-deterministic-fake.md` |
 | Touching the network | security section of `core/code-review.md`, `fix/reasoning/fix-reasoning-an-exception-to-a-check-is-read-as-the-forger.md`, `fix/reasoning/fix-reasoning-last-received-is-not-newest-over-udp.md` |
-| Creating a branch | `fix/process/fix-process-branch-before-first-commit.md`, `fix/execution/fix-execution-checkout-b-starts-from-head-not-main.md` |
+| Creating a branch | `fix/process/fix-process-branch-before-first-commit.md`, `fix/execution/fix-execution-checkout-b-starts-from-head-not-main.md`, `fix/process/fix-process-reread-rules-after-switching-branch.md` |
 | Committing | `core/commit.md`, `fix/process/fix-process-no-co-author-trailer.md`, `fix/execution/fix-execution-check-the-index-before-committing.md` |
 | Finishing a feature | the `document-feature` skill (`.claude/skills/document-feature/SKILL.md`) |
-| Opening a PR | `fix/format/fix-format-pull-requests-in-english.md`, `fix/process/fix-process-pr-always-opened-as-draft.md`, the `document-feature` skill if the feature is not documented yet |
+| Opening a PR | `fix/format/fix-format-pull-requests-in-english.md`, `fix/format/fix-format-pr-links-its-linear-issue.md`, `fix/process/fix-process-pr-always-opened-as-draft.md`, the `document-feature` skill if the feature is not documented yet |
 | Reviewing | `core/code-review.md` |
 | Announcing a green gate | `fix/execution/fix-execution-zsh-pipestatus.md`, `fix/execution/fix-execution-zero-warnings-proven-on-a-recompiling-build.md`, `fix/execution/fix-execution-run-clang-tidy-before-push.md` |
 | Writing a documentation page or a diagram | `fix/format/fix-format-schematic-diagrams-and-map-level-pages.md`, `fix/format/fix-format-context-before-the-deliverable.md`, the `document-feature` skill |
@@ -86,13 +86,17 @@ Paths below are relative to `.claude/rules/`.
 **Process — `fix/process/`**
 - `fix/process/fix-process-ask-what-is-observed-before-building-a-protocol.md`
 - `fix/process/fix-process-branch-before-first-commit.md`
+- `fix/process/fix-process-defect-injection-on-an-isolated-copy.md`
 - `fix/process/fix-process-do-not-over-engineer-step-back.md`
 - `fix/process/fix-process-follow-ci-after-opening-a-pr.md`
 - `fix/process/fix-process-green-test-locking-a-defect-and-overly-deterministic-fake.md`
 - `fix/process/fix-process-instrument-before-reasoning-docs-are-truth.md`
 - `fix/process/fix-process-no-co-author-trailer.md`
+- `fix/process/fix-process-plan-mode-writes-only-the-plan.md`
 - `fix/process/fix-process-pr-always-opened-as-draft.md`
+- `fix/process/fix-process-read-the-project-map-before-placing-a-folder.md`
 - `fix/process/fix-process-relay-agent-report-separating-verified-facts.md`
+- `fix/process/fix-process-reread-rules-after-switching-branch.md`
 - `fix/process/fix-process-resolve-mechanical-conflicts-escalate-big-ones.md`
 - `fix/process/fix-process-rework-preexisting-inconsistencies.md`
 - `fix/process/fix-process-verification-tooling-stays-on-my-side.md`
@@ -107,6 +111,7 @@ Paths below are relative to `.claude/rules/`.
 - `fix/reasoning/fix-reasoning-check-code-state-before-scoping.md`
 - `fix/reasoning/fix-reasoning-check-the-delivered-artifact-not-its-footprint.md`
 - `fix/reasoning/fix-reasoning-convention-from-a-single-sample.md`
+- `fix/reasoning/fix-reasoning-count-a-delay-on-the-timeline.md`
 - `fix/reasoning/fix-reasoning-delegated-invariant-must-be-computed.md`
 - `fix/reasoning/fix-reasoning-evidence-that-does-not-discriminate.md`
 - `fix/reasoning/fix-reasoning-last-received-is-not-newest-over-udp.md`
@@ -141,6 +146,7 @@ Paths below are relative to `.claude/rules/`.
 - `fix/format/fix-format-context-before-the-deliverable.md`
 - `fix/format/fix-format-no-tool-call-artifacts-in-written-files.md`
 - `fix/format/fix-format-plan-shows-all-code-and-explains-it.md`
+- `fix/format/fix-format-pr-links-its-linear-issue.md`
 - `fix/format/fix-format-pull-requests-in-english.md`
 - `fix/format/fix-format-schematic-diagrams-and-map-level-pages.md`
 

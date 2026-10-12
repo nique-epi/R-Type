@@ -3,7 +3,7 @@ title: Engine
 description: What the engine does, how its parts fit together and where to find them in the code.
 ---
 
-The engine is the generic part of the game: it stores game objects, advances time at a fixed rate and runs delayed work. It knows nothing about R-Type, SFML or sockets. The rules of the game live in `rtype_game`, which is built on top of it (see [Architecture](/R-Type/architecture/)).
+The engine is the generic part of the game: it stores game objects, advances time at a fixed rate, runs delayed work, and carries events from the code that announces them to the code that reacts to them. It knows nothing about R-Type, SFML or sockets. The rules of the game live in `rtype_game`, which is built on top of it (see [Architecture](/R-Type/architecture/)).
 
 This page tells you where to look when you need to change something. It describes what exists today and says plainly what does not exist yet.
 
@@ -15,7 +15,8 @@ This page tells you where to look when you need to change something. It describe
 | Network identifiers | Available | `src/engine/NetworkIds/` |
 | Systems and queries | Available | `src/engine/Systems/`, `ComponentRegistry::forEach` |
 | Game loop | Not yet written: the pieces exist, nothing assembles them | — |
-| Event bus | Not yet written | — |
+| Event bus | Available | `src/engine/Events/` |
+| Collisions | Available: the overlap test and the event; the system that detects them is in the game | `src/engine/Collision/` |
 
 ## How the parts fit together
 
@@ -131,21 +132,52 @@ The simulation runs at a fixed rate, `SIMULATION_TICKS_PER_SECOND` (60), whateve
 - `FixedTimestep` turns the time read from an `IClock` into a whole number of ticks to simulate. The remainder is kept for the next call. A stall longer than `MAXIMUM_TICKS_PER_ADVANCE` ticks is dropped instead of being caught up.
 - `TimerScheduler` runs a callback after a delay (`scheduleOnce`) or at a regular interval (`scheduleRepeating`), and cancels it through the `TimerHandle` it returned. It never reads a clock: the caller passes `SIMULATION_TICK_DURATION` to `advance()` once per tick.
 
-The loop the client and the server will write looks like this:
+The loop the client and the server will write looks like this; the events published by the systems are delivered at the end of the same tick (see [Event bus](#event-bus-eventbus)):
 
 ```cpp
 const std::size_t ticks = timestep.consumeTicks();
 for (std::size_t tick = 0; tick < ticks; ++tick) {
   timers.advance(rtype::engine::SIMULATION_TICK_DURATION);
   systems.run(components, rtype::engine::SIMULATION_TICK_DURATION);
+  events.dispatch();
 }
 ```
 
-The loop itself does not exist yet: today only the pieces above are in `rtype_engine`, and `GameWindow` (`src/client/Window/`) does not use them.
+The loop itself does not exist yet: today only the pieces above are in `rtype_engine`. The client frame loop, `Application` (`src/client/Application/`), only reads `SystemClock` to move the scrolling background by the real time of each frame (see [Client](/R-Type/client/#scrolling-background-scrollingbackground)); it runs no tick.
 
-## Event bus
+## Event bus: `EventBus`
 
-There is no event bus in the code yet. This page will describe it, its folder and its classes when the story that adds it is merged. Until then, nothing in the engine publishes or subscribes to events.
+`EventBus` (`src/engine/Events/EventBus/`) lets one part of the game announce that something happened without knowing who reacts. An **event** is a copyable struct, for example a collision between two entities, and its type is its kind. Code subscribes a callback to one event type with `subscribe<Event>(callback)` and announces an event with `publish(event)`. The code that publishes and the code that subscribes include the bus and the event struct, never each other.
+
+`publish()` only queues the event. `dispatch()` delivers the queue: events in the order they were published, each one to the subscribers of its type in the order they subscribed. The loop must call `dispatch()` once per tick, after the systems, so a subscriber runs outside any `forEach` and may add and remove components, and what it does still happens in the tick the event was published. The reasoning is in [Architecture](/R-Type/architecture/#events).
+
+```cpp
+events.subscribe<rtype::engine::Collision>([&components](const rtype::engine::Collision& collision) {
+  components.destroy(collision.second);
+});
+
+events.publish(rtype::engine::Collision{.first = missile, .second = bydo});
+events.dispatch();
+```
+
+- An event published by a subscriber during `dispatch()` is delivered by that same `dispatch()`, so a chain such as collision, damage and destruction ends in the tick it started. A subscriber that publishes the event it receives makes `dispatch()` run forever.
+- An event that has no subscriber when it is delivered is dropped.
+- `subscribe()` returns a `SubscriptionHandle`; `unsubscribe(handle)` stops the calls, even for events already queued. Code that lives shorter than the bus, such as a client screen, must unsubscribe before it is destroyed.
+- A callback subscribed during a delivery receives the next events, not the one being delivered. `dispatch()` must not be called from a subscriber, and an empty callback throws `EmptyEventCallbackException`.
+- When a subscriber throws, the exception leaves `dispatch()` and the events not delivered yet wait for the next `dispatch()`.
+- The bus is not thread-safe: each thread that runs a game or a frame loop owns its own bus.
+
+The engine defines one event type, `Collision` (see below). The game defines the others, each one added with the code that publishes it.
+
+## Collisions: `Bounds`, `overlaps` and `Collision`
+
+`src/engine/Collision/` holds what any game needs to tell that two things touch, and nothing about what touching means. It is headers only.
+
+- `Bounds` is an axis-aligned rectangle given by its center (`centerX`, `centerY`) and its size (`width`, `height`), in the caller's units. The engine does not read `Position` or `CollisionBox`, which belong to `rtype_game`: the game builds a `Bounds` from them.
+- `overlaps(first, second)` is true when the interiors of the two rectangles intersect. Two rectangles that only touch along an edge or at a corner do not overlap, and a rectangle with no area overlaps another one only if it lies strictly inside it. The answer does not depend on the order of the arguments. The function is `constexpr`.
+- `Collision` is the event `{first, second}`, two `Entity` handles. The order carries no meaning: a subscriber must accept the pair `(a, b)` as well as `(b, a)`.
+
+The engine has no system that walks the entities: it cannot read `Position` or `CollisionBox`. `CollisionSystem` in the game builds the `Bounds` and publishes `Collision`, and which pairs matter (a player missile and a Bydo, for example) is decided by the game in a subscriber, never by the engine: see [Server and game](/R-Type/server/#collisions).
 
 ## Where to intervene
 
@@ -160,6 +192,9 @@ There is no event bus in the code yet. This page will describe it, its folder an
 | Change the order systems run in | The order of the `SystemScheduler::add()` calls |
 | Change how network identifiers are given or looked up | `src/engine/NetworkIds/` |
 | Run something after a delay | `TimerScheduler` in `src/engine/Time/TimerScheduler/` |
+| Test whether two rectangles touch, or react to a contact | `overlaps` and `Collision` in `src/engine/Collision/`; the pairs that matter belong to `src/game/` |
+| Announce that something happened, or react to it | `EventBus` in `src/engine/Events/EventBus/`: `publish` the event, `subscribe<Event>` to it |
+| Hand data from one thread to another | `BoundedQueue`, in its own library: see [Concurrency](/R-Type/concurrency/) |
 | Add an engine error | `src/engine/Exceptions/EngineException.hpp` |
 | Write a test that depends on time | `tests/SimulatedClock.hpp`, `tests/FixedTimestepTest.cpp` |
 

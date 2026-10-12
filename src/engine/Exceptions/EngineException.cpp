@@ -32,6 +32,9 @@ ComponentChangeDuringIterationException::
 NullSystemException::NullSystemException()
     : EngineException("A null system cannot be added to the scheduler") {}
 
+EmptyEventCallbackException::EmptyEventCallbackException()
+    : EngineException("An empty callback cannot subscribe to events") {}
+
 NetworkIdExhaustedException::NetworkIdExhaustedException()
     : EngineException("Every network identifier was already handed out") {}
 

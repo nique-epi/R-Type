@@ -2,7 +2,7 @@
 
 A networked multiplayer remake of the R-Type shoot'em up, built on a custom C++ game engine.
 
-The client opens an empty window, and the server exits right after starting: it does not listen on the network yet.
+The client opens a window showing a scrolling starfield; Escape opens the window size options. The server listens for UDP datagrams on port 4242 and logs each one at the `debug` level; it does not answer them yet.
 
 The code is split into engine, game and network libraries; see [the architecture decision](docs/src/content/docs/architecture.md).
 
@@ -29,6 +29,8 @@ cmake --workflow --preset build
 ```
 
 The first configure builds every dependency and takes a few minutes. The `r-type_server` and `r-type_client` binaries are written at the repository root, or in `Release/` with the Visual Studio generator.
+
+The client reads its files from `assets/`, next to its executable or in the folder above it, wherever it is launched from. It stops with exit code 1, naming both folders, when it finds neither.
 
 If the repository was cloned without its submodules, run `git submodule update --init` first.
 

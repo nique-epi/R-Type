@@ -1,0 +1,7 @@
+add_library(rtype_network_context STATIC NetworkContext.cpp)
+
+target_include_directories(rtype_network_context PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+
+target_link_libraries(rtype_network_context PRIVATE rtype_network_asio)
+
+rtype_enable_warnings(rtype_network_context)

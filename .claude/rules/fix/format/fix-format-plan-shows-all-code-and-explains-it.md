@@ -19,6 +19,12 @@ Why: the user validates the plan on the code they will read, not on a descriptio
 3. **The on-screen check is a procedure for the user.** The plan does not include driving the game client or a window to observe it: it delivers a table *action → expected on screen → expected in the logs*, and the PR waits for the user's validation. The agent keeps the build, `format-check`, `tidy` and the unit tests. Exception: the user explicitly asks the agent to run and observe the game.
 4. **An API behavior the code relies on is cited with its source** (headers installed by vcpkg, official documentation of the pinned version), in the plan as in the code.
 
+### The code of a plan went through the tools, and a prediction is called a prediction
+
+1. **Code shown in a plan is formatted by `clang-format`, not wrapped by hand**: write it to a scratch file, run `clang-format --assume-filename=<its future path>` on it, and paste the result. A line wrapped by counting columns is not a formatted line.
+2. **Say which `clang-format` produced it** (`clang-format --version`), and whether it is the version the CI runs.
+3. **"These tests will fail without the fix" is a prediction until it is run.** Write it as one in the plan, then report the measured list, including the tests that did not behave as predicted and why.
+
 ## Example
 
 - ❌ **Before (wrong)**: "add `isReady()` to `Lobby`" with no code, a "Why" made of six technical bullets, and a section "check by launching two clients".

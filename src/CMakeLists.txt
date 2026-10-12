@@ -1,4 +1,5 @@
 add_subdirectory(logging)
+add_subdirectory(concurrency)
 add_subdirectory(engine)
 add_subdirectory(game)
 add_subdirectory(network)

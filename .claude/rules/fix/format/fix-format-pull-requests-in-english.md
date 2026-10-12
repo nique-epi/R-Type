@@ -10,7 +10,7 @@ trigger: always_on
 1. **Every pull request is written in English**: title, whole description, section headings, tables, lists, and **every comment posted on the PR** (review, reply, follow-up). No mixing of languages in one document. The language of the conversation has no bearing on what is written in the repository.
 2. **The title follows Conventional Commits**, like commits (see `commit.md`).
 3. **The description follows the structure of the repository's PRs**, all sections, in order:
-   `## Summary` (with `Closes #` if an issue exists) · `## Changes` · `## Type of Change` · `## Testing` · `## Checklist`.
+   `## Summary` (with `Closes RTY-<n>` for its Linear issue, see `fix-format-pr-links-its-linear-issue.md`) · `## Changes` · `## Type of Change` · `## Testing` · `## Checklist`.
    - If `.github/PULL_REQUEST_TEMPLATE.md` exists, **it is the reference**: read it before opening or editing the PR.
    - Otherwise, mirror the last merged PR (`gh pr view <n> --json body`).
    - The `Type of Change` and `Checklist` boxes are ticked **honestly**: only what is true and verified.
@@ -35,7 +35,7 @@ trigger: always_on
   ## Summary
   Adds the packet reader that turns a received datagram into a typed message.
 
-  Closes #
+  Closes RTY-<n>
 
   ## Changes
   - ...

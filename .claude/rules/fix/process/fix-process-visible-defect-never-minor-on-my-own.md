@@ -14,6 +14,12 @@ Why: technical severity ("it's one line") is not product severity ("the screen l
 3. **A question about scope ("do we have to do it here?") is a request for analysis, not a mandate to cut.** I answer with the consequences of each branch, not with a choice.
 4. **Before accepting a residual defect, look for the design that does not produce it.** If the conflict comes from two rules I set myself (network cost vs correctness), report it as a design conflict to solve.
 
+### A missing resource is not a licence to downgrade what was asked
+
+1. **When what the user asked for needs something the repository lacks** (a font, an image, a sound, a library), find it or ask for it **before coding**. Look first at what is already on disk under a licence that allows it (the assets shipped with a dependency's sources), then at the open issues that will provide it.
+2. **Never deliver a degraded variant and announce it afterwards** ("buttons without labels because there is no font"): the user reads the result on screen before the explanation.
+3. **A control that cannot act says why on screen**, or is not shown: a dimmed box with no text reads as a bug.
+
 ### The residual defects are listed from the source, every one of them
 
 1. **Before presenting a residual defect and its fix, derive the affected items from the complete source** (the losses table, the message list, the state table), never from the items just discussed. Walk every row and ask "does this one lose the same thing?".

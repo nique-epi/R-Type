@@ -1,0 +1,10 @@
+add_library(rtype_client_asset_loading_step STATIC AssetLoadingStep.cpp)
+
+target_include_directories(rtype_client_asset_loading_step PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+
+target_link_libraries(rtype_client_asset_loading_step
+  PUBLIC
+    rtype_client_asset_library
+)
+
+rtype_enable_warnings(rtype_client_asset_loading_step)
