@@ -3,22 +3,24 @@
 #include <utility>
 #include <vector>
 #include "IScreen.hpp"
+#include "ScreenId.hpp"
 
 namespace rtype::client {
 
-void ScreenStack::push(ScreenFactory factory) {
-  pendingChanges_.push_back(
-      Change{.kind = ChangeKind::Push, .factory = std::move(factory)});
+ScreenStack::ScreenStack(ScreenFactory factory)
+    : factory_(std::move(factory)) {}
+
+void ScreenStack::push(ScreenId screen) {
+  pendingChanges_.push_back(Change{.kind = ChangeKind::Push, .screen = screen});
 }
 
 void ScreenStack::pop() {
-  pendingChanges_.push_back(
-      Change{.kind = ChangeKind::Pop, .factory = nullptr});
+  pendingChanges_.push_back(Change{.kind = ChangeKind::Pop});
 }
 
-void ScreenStack::replaceAll(ScreenFactory factory) {
+void ScreenStack::replaceAll(ScreenId screen) {
   pendingChanges_.push_back(
-      Change{.kind = ChangeKind::ReplaceAll, .factory = std::move(factory)});
+      Change{.kind = ChangeKind::ReplaceAll, .screen = screen});
 }
 
 void ScreenStack::applyPendingChanges() {
@@ -31,7 +33,7 @@ void ScreenStack::applyPendingChanges() {
 void ScreenStack::apply(const Change& change) {
   switch (change.kind) {
     case ChangeKind::Push:
-      build(change.factory);
+      build(change.screen);
       return;
     case ChangeKind::Pop:
       if (!screens_.empty()) {
@@ -42,18 +44,18 @@ void ScreenStack::apply(const Change& change) {
       while (!screens_.empty()) {
         screens_.pop_back();
       }
-      build(change.factory);
+      build(change.screen);
       return;
   }
 }
 
-void ScreenStack::build(const ScreenFactory& factory) {
-  if (factory == nullptr) {
+void ScreenStack::build(ScreenId screen) {
+  if (factory_ == nullptr) {
     return;
   }
-  std::unique_ptr<IScreen> screen = factory();
-  if (screen != nullptr) {
-    screens_.push_back(std::move(screen));
+  std::unique_ptr<IScreen> built = factory_(screen);
+  if (built != nullptr) {
+    screens_.push_back(std::move(built));
   }
 }
 

@@ -1,33 +1,55 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include <SFML/Window/Keyboard.hpp>
+#include <functional>
 #include <memory>
+#include <utility>
 #include <vector>
 #include "BlankRenderTarget.hpp"
 #include "KeyPress.hpp"
 #include "RecordingScreen.hpp"
+#include "ScreenId.hpp"
 #include "ScreenStack.hpp"
 
-using rtype::client::ScreenFactory;
+using rtype::client::ScreenId;
 using rtype::client::ScreenStack;
 using ::testing::ElementsAre;
 using ::testing::IsEmpty;
 
 namespace {
 
-constexpr const char* GAME = "game";
-constexpr const char* OPTIONS = "options";
-constexpr const char* NEXT = "next";
 constexpr sf::Keyboard::Key ANY_KEY = sf::Keyboard::Key::A;
 
-ScreenFactory screenRemovingItselfOnEvent(ScreenStack& screens,
-                                          std::vector<JournalEntry>& journal) {
-  return [&screens, &journal] {
-    auto screen = std::make_unique<RecordingScreen>(GAME, journal);
-    screen->runOnEvent([&screens] { screens.pop(); });
-    return screen;
-  };
-}
+/** @brief A stack whose factory builds a recording screen for every
+ * identifier, after letting the test act on the game screen it builds. */
+class ScreenStackTest : public ::testing::Test {
+ protected:
+  void showOptionsOverTheGame() {
+    screens_.push(ScreenId::Game);
+    screens_.push(ScreenId::Options);
+    screens_.applyPendingChanges();
+    journal_.clear();
+  }
+
+  ScreenStack& screens() { return screens_; }
+
+  std::vector<JournalEntry>& journal() { return journal_; }
+
+  void onGameBuilt(std::function<void(RecordingScreen&)> action) {
+    onGameBuilt_ = std::move(action);
+  }
+
+ private:
+  std::vector<JournalEntry> journal_;
+  std::function<void(RecordingScreen&)> onGameBuilt_;
+  ScreenStack screens_{[this](ScreenId screen) {
+    auto built = std::make_unique<RecordingScreen>(screen, journal_);
+    if (screen == ScreenId::Game && onGameBuilt_ != nullptr) {
+      onGameBuilt_(*built);
+    }
+    return built;
+  }};
+};
 
 }  // namespace
 
@@ -36,18 +58,13 @@ ScreenFactory screenRemovingItselfOnEvent(ScreenStack& screens,
  * When an event arrives
  * Then only the options receive it
  */
-TEST(ScreenStack, EventsReachOnlyTheScreenOnTop) {
-  std::vector<JournalEntry> journal;
-  ScreenStack screens;
-  screens.push(recordingScreen(GAME, journal));
-  screens.push(recordingScreen(OPTIONS, journal));
-  screens.applyPendingChanges();
-  journal.clear();
+TEST_F(ScreenStackTest, EventsReachOnlyTheScreenOnTop) {
+  showOptionsOverTheGame();
 
-  screens.handleEvent(keyPress(ANY_KEY));
+  screens().handleEvent(keyPress(ANY_KEY));
 
-  EXPECT_THAT(journal,
-              ElementsAre(JournalEntry{.screen = OPTIONS,
+  EXPECT_THAT(journal(),
+              ElementsAre(JournalEntry{.screen = ScreenId::Options,
                                        .call = ScreenCall::HandleEvent}));
 }
 
@@ -56,20 +73,15 @@ TEST(ScreenStack, EventsReachOnlyTheScreenOnTop) {
  * When a frame is updated
  * Then the game is updated too, so it keeps running behind the options
  */
-TEST(ScreenStack, EveryScreenIsUpdatedFromTheBottomUp) {
-  std::vector<JournalEntry> journal;
-  ScreenStack screens;
-  screens.push(recordingScreen(GAME, journal));
-  screens.push(recordingScreen(OPTIONS, journal));
-  screens.applyPendingChanges();
-  journal.clear();
+TEST_F(ScreenStackTest, EveryScreenIsUpdatedFromTheBottomUp) {
+  showOptionsOverTheGame();
 
-  screens.update();
+  screens().update();
 
-  EXPECT_THAT(
-      journal,
-      ElementsAre(JournalEntry{.screen = GAME, .call = ScreenCall::Update},
-                  JournalEntry{.screen = OPTIONS, .call = ScreenCall::Update}));
+  EXPECT_THAT(journal(), ElementsAre(JournalEntry{.screen = ScreenId::Game,
+                                                  .call = ScreenCall::Update},
+                                     JournalEntry{.screen = ScreenId::Options,
+                                                  .call = ScreenCall::Update}));
 }
 
 /**
@@ -77,21 +89,17 @@ TEST(ScreenStack, EveryScreenIsUpdatedFromTheBottomUp) {
  * When a frame is drawn
  * Then the game is drawn first and the options over it
  */
-TEST(ScreenStack, EveryScreenIsDrawnFromTheBottomUp) {
-  std::vector<JournalEntry> journal;
-  ScreenStack screens;
+TEST_F(ScreenStackTest, EveryScreenIsDrawnFromTheBottomUp) {
   BlankRenderTarget target;
-  screens.push(recordingScreen(GAME, journal));
-  screens.push(recordingScreen(OPTIONS, journal));
-  screens.applyPendingChanges();
-  journal.clear();
+  showOptionsOverTheGame();
 
-  screens.draw(target);
+  screens().draw(target);
 
   EXPECT_THAT(
-      journal,
-      ElementsAre(JournalEntry{.screen = GAME, .call = ScreenCall::Draw},
-                  JournalEntry{.screen = OPTIONS, .call = ScreenCall::Draw}));
+      journal(),
+      ElementsAre(
+          JournalEntry{.screen = ScreenId::Game, .call = ScreenCall::Draw},
+          JournalEntry{.screen = ScreenId::Options, .call = ScreenCall::Draw}));
 }
 
 /**
@@ -99,20 +107,17 @@ TEST(ScreenStack, EveryScreenIsDrawnFromTheBottomUp) {
  * When the options are popped and an event arrives
  * Then the game receives it
  */
-TEST(ScreenStack, PoppingGivesTheEventsBackToTheScreenBelow) {
-  std::vector<JournalEntry> journal;
-  ScreenStack screens;
-  screens.push(recordingScreen(GAME, journal));
-  screens.push(recordingScreen(OPTIONS, journal));
-  screens.applyPendingChanges();
-  screens.pop();
-  screens.applyPendingChanges();
-  journal.clear();
+TEST_F(ScreenStackTest, PoppingGivesTheEventsBackToTheScreenBelow) {
+  showOptionsOverTheGame();
+  screens().pop();
+  screens().applyPendingChanges();
+  journal().clear();
 
-  screens.handleEvent(keyPress(ANY_KEY));
+  screens().handleEvent(keyPress(ANY_KEY));
 
-  EXPECT_THAT(journal, ElementsAre(JournalEntry{
-                           .screen = GAME, .call = ScreenCall::HandleEvent}));
+  EXPECT_THAT(journal(),
+              ElementsAre(JournalEntry{.screen = ScreenId::Game,
+                                       .call = ScreenCall::HandleEvent}));
 }
 
 /**
@@ -120,14 +125,12 @@ TEST(ScreenStack, PoppingGivesTheEventsBackToTheScreenBelow) {
  * When an event arrives
  * Then the screen is neither built nor given the event
  */
-TEST(ScreenStack, AskedChangeWaitsUntilApplied) {
-  std::vector<JournalEntry> journal;
-  ScreenStack screens;
-  screens.push(recordingScreen(GAME, journal));
+TEST_F(ScreenStackTest, AskedChangeWaitsUntilApplied) {
+  screens().push(ScreenId::Game);
 
-  screens.handleEvent(keyPress(ANY_KEY));
+  screens().handleEvent(keyPress(ANY_KEY));
 
-  EXPECT_THAT(journal, IsEmpty());
+  EXPECT_THAT(journal(), IsEmpty());
 }
 
 /**
@@ -135,41 +138,39 @@ TEST(ScreenStack, AskedChangeWaitsUntilApplied) {
  * When it handles an event
  * Then it is still alive once its handling returns
  */
-TEST(ScreenStack, ScreenAskingToLeaveStaysAliveWhileHandlingAnEvent) {
-  std::vector<JournalEntry> journal;
-  ScreenStack screens;
-  screens.push(screenRemovingItselfOnEvent(screens, journal));
-  screens.applyPendingChanges();
-  journal.clear();
+TEST_F(ScreenStackTest, ScreenAskingToLeaveStaysAliveWhileHandlingAnEvent) {
+  onGameBuilt([this](RecordingScreen& game) {
+    game.runOnEvent([this] { screens().pop(); });
+  });
+  screens().push(ScreenId::Game);
+  screens().applyPendingChanges();
+  journal().clear();
 
-  screens.handleEvent(keyPress(ANY_KEY));
+  screens().handleEvent(keyPress(ANY_KEY));
 
-  EXPECT_THAT(journal, ElementsAre(JournalEntry{
-                           .screen = GAME, .call = ScreenCall::HandleEvent}));
+  EXPECT_THAT(journal(),
+              ElementsAre(JournalEntry{.screen = ScreenId::Game,
+                                       .call = ScreenCall::HandleEvent}));
 }
 
 /**
  * Given the options pushed over the game
- * When every screen is replaced by a new one
- * Then the options then the game are destroyed before the new one is built
+ * When every screen is replaced by a new game
+ * Then the options then the game are destroyed before the new game is built
  */
-TEST(ScreenStack, ReplacingDestroysEveryScreenBeforeBuildingTheNewOne) {
-  std::vector<JournalEntry> journal;
-  ScreenStack screens;
-  screens.push(recordingScreen(GAME, journal));
-  screens.push(recordingScreen(OPTIONS, journal));
-  screens.applyPendingChanges();
-  journal.clear();
+TEST_F(ScreenStackTest, ReplacingDestroysEveryScreenBeforeBuildingTheNewOne) {
+  showOptionsOverTheGame();
 
-  screens.replaceAll(recordingScreen(NEXT, journal));
-  screens.applyPendingChanges();
+  screens().replaceAll(ScreenId::Game);
+  screens().applyPendingChanges();
 
   EXPECT_THAT(
-      journal,
+      journal(),
       ElementsAre(
-          JournalEntry{.screen = OPTIONS, .call = ScreenCall::Destroyed},
-          JournalEntry{.screen = GAME, .call = ScreenCall::Destroyed},
-          JournalEntry{.screen = NEXT, .call = ScreenCall::Built}));
+          JournalEntry{.screen = ScreenId::Options,
+                       .call = ScreenCall::Destroyed},
+          JournalEntry{.screen = ScreenId::Game, .call = ScreenCall::Destroyed},
+          JournalEntry{.screen = ScreenId::Game, .call = ScreenCall::Built}));
 }
 
 /**
@@ -177,15 +178,13 @@ TEST(ScreenStack, ReplacingDestroysEveryScreenBeforeBuildingTheNewOne) {
  * When the changes are applied
  * Then they are applied in that order and the stack is empty
  */
-TEST(ScreenStack, ChangesAreAppliedInTheOrderAskedFor) {
-  std::vector<JournalEntry> journal;
-  ScreenStack screens;
-  screens.push(recordingScreen(GAME, journal));
-  screens.pop();
+TEST_F(ScreenStackTest, ChangesAreAppliedInTheOrderAskedFor) {
+  screens().push(ScreenId::Game);
+  screens().pop();
 
-  screens.applyPendingChanges();
+  screens().applyPendingChanges();
 
-  EXPECT_TRUE(screens.isEmpty());
+  EXPECT_TRUE(screens().isEmpty());
 }
 
 /**
@@ -193,34 +192,31 @@ TEST(ScreenStack, ChangesAreAppliedInTheOrderAskedFor) {
  * When a pop is applied
  * Then the stack stays empty
  */
-TEST(ScreenStack, PoppingAnEmptyStackLeavesItEmpty) {
-  ScreenStack screens;
-  screens.pop();
+TEST_F(ScreenStackTest, PoppingAnEmptyStackLeavesItEmpty) {
+  screens().pop();
 
-  screens.applyPendingChanges();
+  screens().applyPendingChanges();
 
-  EXPECT_TRUE(screens.isEmpty());
+  EXPECT_TRUE(screens().isEmpty());
 }
 
 /**
- * Given a screen whose building asks for the options to be pushed
+ * Given a game screen whose building asks for the options to be pushed
  * When the changes are applied once and an event arrives
- * Then the options are not built yet and the screen receives the event
+ * Then the options are not built yet and the game receives the event
  */
-TEST(ScreenStack, ChangeAskedWhileApplyingWaitsForTheNextApply) {
-  std::vector<JournalEntry> journal;
-  ScreenStack screens;
-  screens.push([&screens, &journal] {
-    screens.push(recordingScreen(OPTIONS, journal));
-    return std::make_unique<RecordingScreen>(GAME, journal);
+TEST_F(ScreenStackTest, ChangeAskedWhileApplyingWaitsForTheNextApply) {
+  onGameBuilt([this]([[maybe_unused]] RecordingScreen& game) {
+    screens().push(ScreenId::Options);
   });
-  screens.applyPendingChanges();
+  screens().push(ScreenId::Game);
+  screens().applyPendingChanges();
 
-  screens.handleEvent(keyPress(ANY_KEY));
+  screens().handleEvent(keyPress(ANY_KEY));
 
-  EXPECT_THAT(
-      journal,
-      ElementsAre(
-          JournalEntry{.screen = GAME, .call = ScreenCall::Built},
-          JournalEntry{.screen = GAME, .call = ScreenCall::HandleEvent}));
+  EXPECT_THAT(journal(),
+              ElementsAre(JournalEntry{.screen = ScreenId::Game,
+                                       .call = ScreenCall::Built},
+                          JournalEntry{.screen = ScreenId::Game,
+                                       .call = ScreenCall::HandleEvent}));
 }

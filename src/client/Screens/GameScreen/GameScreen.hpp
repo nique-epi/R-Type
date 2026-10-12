@@ -17,11 +17,10 @@ namespace rtype::client {
 class GameScreen : public IScreen {
  public:
   /**
-   * @param screens Stack the screen lives in, which must outlive it.
-   * @param optionsScreen Builds the screen put over the game when OPTIONS_KEY
-   * is released.
+   * @param screens Stack the screen lives in, which must outlive it; the
+   * options are pushed on it when OPTIONS_KEY is released.
    */
-  GameScreen(ScreenStack& screens, ScreenFactory optionsScreen);
+  explicit GameScreen(ScreenStack& screens);
 
   void handleEvent(const sf::Event& event) override;
   void update() override;
@@ -29,7 +28,6 @@ class GameScreen : public IScreen {
 
  private:
   ScreenStack* screens_;
-  ScreenFactory optionsScreen_;
 };
 
 }  // namespace rtype::client

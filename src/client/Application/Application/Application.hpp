@@ -1,6 +1,9 @@
 #pragma once
 
+#include <memory>
 #include "GameWindow.hpp"
+#include "IScreen.hpp"
+#include "ScreenId.hpp"
 #include "ScreenStack.hpp"
 #include "ScrollingBackground.hpp"
 #include "SystemClock.hpp"
@@ -28,8 +31,9 @@ class AssetLibrary;
  * thread and hand its messages over through a queue a screen drains each
  * frame.
  *
- * The client starts by entering a game: the loading screen loads gameAssets(),
- * then gives way to the game screen.
+ * Screens are asked for by identifier; createScreen() is the one place that
+ * builds them, with one case per ScreenId. The client starts by entering the
+ * game.
  */
 class Application {
  public:
@@ -65,9 +69,18 @@ class Application {
 
   void render();
 
-  [[nodiscard]] ScreenFactory gameLoadingScreen();
-  [[nodiscard]] ScreenFactory gameScreen();
-  [[nodiscard]] ScreenFactory optionsScreen();
+  /** @brief Builds the screen of an identifier: the list of every screen of
+   * the client. */
+  [[nodiscard]] std::unique_ptr<IScreen> createScreen(ScreenId screen);
+
+  /**
+   * @brief The loading screen of gameAssets() while some are not loaded, the
+   * game screen once they all are.
+   *
+   * Builds the game screen only after releasing the assets of a previous game
+   * that gameAssets() does not name, as the loading screen does.
+   */
+  [[nodiscard]] std::unique_ptr<IScreen> gameScreen();
 
   AssetLibrary* assets_;
   GameWindow window_;

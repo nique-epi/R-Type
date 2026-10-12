@@ -5,18 +5,22 @@
 #include <random>
 #include "AssetLibrary.hpp"
 #include "GameScreen.hpp"
+#include "IScreen.hpp"
 #include "LoadingScreen.hpp"
 #include "OptionsScreen.hpp"
 #include "ScreenAssets.hpp"
 #include "ScreenConstants.hpp"
+#include "ScreenId.hpp"
 #include "ScreenStack.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::client {
 
 Application::Application(AssetLibrary& assets)
-    : assets_(&assets), background_(std::random_device{}()) {
-  screens_.replaceAll(gameLoadingScreen());
+    : assets_(&assets),
+      background_(std::random_device{}()),
+      screens_([this](ScreenId screen) { return createScreen(screen); }) {
+  screens_.replaceAll(ScreenId::Game);
   screens_.applyPendingChanges();
 }
 
@@ -51,24 +55,24 @@ void Application::render() {
   window_.display();
 }
 
-ScreenFactory Application::gameLoadingScreen() {
-  return [this] {
+std::unique_ptr<IScreen> Application::createScreen(ScreenId screen) {
+  switch (screen) {
+    case ScreenId::Game:
+      return gameScreen();
+    case ScreenId::Options:
+      return std::make_unique<OptionsScreen>(screens_, window_,
+                                             assets_->font(INTERFACE_FONT_ID));
+  }
+  return nullptr;
+}
+
+std::unique_ptr<IScreen> Application::gameScreen() {
+  if (!assets_->isLoaded(gameAssets())) {
     return std::make_unique<LoadingScreen>(screens_, *assets_, gameAssets(),
-                                           gameScreen());
-  };
-}
-
-ScreenFactory Application::gameScreen() {
-  return [this] {
-    return std::make_unique<GameScreen>(screens_, optionsScreen());
-  };
-}
-
-ScreenFactory Application::optionsScreen() {
-  return [this] {
-    return std::make_unique<OptionsScreen>(screens_, window_,
-                                           assets_->font(INTERFACE_FONT_ID));
-  };
+                                           ScreenId::Game);
+  }
+  assets_->releaseAllExcept(gameAssets());
+  return std::make_unique<GameScreen>(screens_);
 }
 
 }  // namespace rtype::client

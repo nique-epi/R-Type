@@ -4,13 +4,13 @@
 #include <SFML/Graphics/RenderTarget.hpp>
 #include <SFML/System/Vector2.hpp>
 #include <SFML/Window/Event.hpp>
-#include <utility>
 #include "AssetLibrary.hpp"
 #include "AssetList.hpp"
 #include "AssetLoadingStep.hpp"
 #include "PlayfieldConstants.hpp"
 #include "ScreenColors.hpp"
 #include "ScreenConstants.hpp"
+#include "ScreenId.hpp"
 #include "ScreenStack.hpp"
 
 namespace rtype::client {
@@ -32,10 +32,10 @@ float loadedFraction(const AssetLoadingStep& loading) {
 }  // namespace
 
 LoadingScreen::LoadingScreen(ScreenStack& screens, AssetLibrary& library,
-                             const AssetList& assets, ScreenFactory nextScreen)
+                             const AssetList& assets, ScreenId nextScreen)
     : screens_(&screens),
       loading_(library, assets),
-      nextScreen_(std::move(nextScreen)),
+      nextScreen_(nextScreen),
       barOutline_({LOADING_BAR_WIDTH, LOADING_BAR_HEIGHT}) {
   const sf::Vector2f barTopLeft =
       centerOf({game::PLAYFIELD_WIDTH, game::PLAYFIELD_HEIGHT}) -
@@ -56,8 +56,9 @@ void LoadingScreen::update() {
     loading_.loadNext();
     showProgress();
   }
-  if (loading_.isFinished() && nextScreen_ != nullptr) {
-    screens_->replaceAll(std::exchange(nextScreen_, nullptr));
+  if (loading_.isFinished() && !nextScreenAsked_) {
+    screens_->replaceAll(nextScreen_);
+    nextScreenAsked_ = true;
   }
 }
 

@@ -2,14 +2,24 @@
 #include <SFML/Graphics/RenderTarget.hpp>
 #include <SFML/Window/Event.hpp>
 #include <functional>
-#include <memory>
 #include <ostream>
-#include <string>
 #include <utility>
 #include <vector>
-#include "ScreenStack.hpp"
+#include "ScreenId.hpp"
+
+using rtype::client::ScreenId;
 
 namespace {
+
+const char* nameOf(ScreenId screen) {
+  switch (screen) {
+    case ScreenId::Game:
+      return "game";
+    case ScreenId::Options:
+      return "options";
+  }
+  return "unknown screen";
+}
 
 const char* nameOf(ScreenCall call) {
   switch (call) {
@@ -30,12 +40,12 @@ const char* nameOf(ScreenCall call) {
 }  // namespace
 
 void PrintTo(const JournalEntry& entry, std::ostream* output) {
-  *output << entry.screen << ' ' << nameOf(entry.call);
+  *output << nameOf(entry.screen) << ' ' << nameOf(entry.call);
 }
 
-RecordingScreen::RecordingScreen(std::string name,
+RecordingScreen::RecordingScreen(ScreenId screen,
                                  std::vector<JournalEntry>& journal)
-    : name_(std::move(name)), journal_(&journal) {
+    : screen_(screen), journal_(&journal) {
   write(ScreenCall::Built);
 }
 
@@ -59,12 +69,5 @@ void RecordingScreen::draw([[maybe_unused]] sf::RenderTarget& target) const {
 }
 
 void RecordingScreen::write(ScreenCall call) const {
-  journal_->push_back(JournalEntry{.screen = name_, .call = call});
-}
-
-rtype::client::ScreenFactory recordingScreen(
-    std::string name, std::vector<JournalEntry>& journal) {
-  return [name = std::move(name), &journal] {
-    return std::make_unique<RecordingScreen>(name, journal);
-  };
+  journal_->push_back(JournalEntry{.screen = screen_, .call = call});
 }

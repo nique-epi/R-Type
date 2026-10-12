@@ -4,31 +4,50 @@
 #include <memory>
 #include <vector>
 #include "GameScreen.hpp"
+#include "IScreen.hpp"
 #include "KeyPress.hpp"
 #include "RecordingScreen.hpp"
 #include "ScreenConstants.hpp"
+#include "ScreenId.hpp"
 #include "ScreenStack.hpp"
 
 using rtype::client::GameScreen;
+using rtype::client::IScreen;
 using rtype::client::OPTIONS_KEY;
-using rtype::client::ScreenFactory;
+using rtype::client::ScreenId;
 using rtype::client::ScreenStack;
 using ::testing::ElementsAre;
 using ::testing::IsEmpty;
 
 namespace {
 
-constexpr const char* OPTIONS = "options";
 constexpr sf::Keyboard::Key OTHER_KEY = sf::Keyboard::Key::Space;
 constexpr int KEY_REPEATS = 3;
 
-ScreenFactory gameScreen(ScreenStack& screens,
-                         std::vector<JournalEntry>& journal) {
-  return [&screens, &journal] {
-    return std::make_unique<GameScreen>(screens,
-                                        recordingScreen(OPTIONS, journal));
-  };
-}
+/** @brief The real game screen alone in a stack whose other screens are
+ * recording doubles. */
+class GameScreenTest : public ::testing::Test {
+ protected:
+  void SetUp() override {
+    screens_.push(ScreenId::Game);
+    screens_.applyPendingChanges();
+  }
+
+  ScreenStack& screens() { return screens_; }
+
+  [[nodiscard]] const std::vector<JournalEntry>& journal() const {
+    return journal_;
+  }
+
+ private:
+  std::vector<JournalEntry> journal_;
+  ScreenStack screens_{[this](ScreenId screen) -> std::unique_ptr<IScreen> {
+    if (screen == ScreenId::Game) {
+      return std::make_unique<GameScreen>(screens_);
+    }
+    return std::make_unique<RecordingScreen>(screen, journal_);
+  }};
+};
 
 }  // namespace
 
@@ -37,17 +56,12 @@ ScreenFactory gameScreen(ScreenStack& screens,
  * When the player releases the options key
  * Then the options screen is built
  */
-TEST(GameScreen, ReleasingTheOptionsKeyOpensTheOptions) {
-  std::vector<JournalEntry> journal;
-  ScreenStack screens;
-  screens.push(gameScreen(screens, journal));
-  screens.applyPendingChanges();
+TEST_F(GameScreenTest, ReleasingTheOptionsKeyOpensTheOptions) {
+  screens().handleEvent(keyRelease(OPTIONS_KEY));
+  screens().applyPendingChanges();
 
-  screens.handleEvent(keyRelease(OPTIONS_KEY));
-  screens.applyPendingChanges();
-
-  EXPECT_THAT(journal, ElementsAre(JournalEntry{.screen = OPTIONS,
-                                                .call = ScreenCall::Built}));
+  EXPECT_THAT(journal(), ElementsAre(JournalEntry{.screen = ScreenId::Options,
+                                                  .call = ScreenCall::Built}));
 }
 
 /**
@@ -55,18 +69,14 @@ TEST(GameScreen, ReleasingTheOptionsKeyOpensTheOptions) {
  * When the options leave the stack
  * Then the game is still there
  */
-TEST(GameScreen, OptionsOpenOverTheGame) {
-  std::vector<JournalEntry> journal;
-  ScreenStack screens;
-  screens.push(gameScreen(screens, journal));
-  screens.applyPendingChanges();
-  screens.handleEvent(keyRelease(OPTIONS_KEY));
-  screens.applyPendingChanges();
+TEST_F(GameScreenTest, OptionsOpenOverTheGame) {
+  screens().handleEvent(keyRelease(OPTIONS_KEY));
+  screens().applyPendingChanges();
 
-  screens.pop();
-  screens.applyPendingChanges();
+  screens().pop();
+  screens().applyPendingChanges();
 
-  EXPECT_FALSE(screens.isEmpty());
+  EXPECT_FALSE(screens().isEmpty());
 }
 
 /**
@@ -74,18 +84,13 @@ TEST(GameScreen, OptionsOpenOverTheGame) {
  * When the player holds the options key down, the system repeating its press
  * Then no options screen is built
  */
-TEST(GameScreen, HoldingTheOptionsKeyLeavesTheOptionsClosed) {
-  std::vector<JournalEntry> journal;
-  ScreenStack screens;
-  screens.push(gameScreen(screens, journal));
-  screens.applyPendingChanges();
-
+TEST_F(GameScreenTest, HoldingTheOptionsKeyLeavesTheOptionsClosed) {
   for (int repeat = 0; repeat < KEY_REPEATS; ++repeat) {
-    screens.handleEvent(keyPress(OPTIONS_KEY));
-    screens.applyPendingChanges();
+    screens().handleEvent(keyPress(OPTIONS_KEY));
+    screens().applyPendingChanges();
   }
 
-  EXPECT_THAT(journal, IsEmpty());
+  EXPECT_THAT(journal(), IsEmpty());
 }
 
 /**
@@ -93,14 +98,9 @@ TEST(GameScreen, HoldingTheOptionsKeyLeavesTheOptionsClosed) {
  * When the player releases another key
  * Then no options screen is built
  */
-TEST(GameScreen, OtherKeysLeaveTheOptionsClosed) {
-  std::vector<JournalEntry> journal;
-  ScreenStack screens;
-  screens.push(gameScreen(screens, journal));
-  screens.applyPendingChanges();
+TEST_F(GameScreenTest, OtherKeysLeaveTheOptionsClosed) {
+  screens().handleEvent(keyRelease(OTHER_KEY));
+  screens().applyPendingChanges();
 
-  screens.handleEvent(keyRelease(OTHER_KEY));
-  screens.applyPendingChanges();
-
-  EXPECT_THAT(journal, IsEmpty());
+  EXPECT_THAT(journal(), IsEmpty());
 }

@@ -3,10 +3,9 @@
 #include <cstdint>
 #include <functional>
 #include <ostream>
-#include <string>
 #include <vector>
 #include "IScreen.hpp"
-#include "ScreenStack.hpp"
+#include "ScreenId.hpp"
 
 /** @brief What happened to a screen double. */
 enum class ScreenCall : std::uint8_t {
@@ -20,7 +19,7 @@ enum class ScreenCall : std::uint8_t {
 /** @brief One line of a screen journal: which screen, and what happened to
  * it. */
 struct JournalEntry {
-  std::string screen;
+  rtype::client::ScreenId screen;
   ScreenCall call;
 
   bool operator==(const JournalEntry& other) const = default;
@@ -30,10 +29,12 @@ struct JournalEntry {
 void PrintTo(const JournalEntry& entry, std::ostream* output);
 
 /** @brief Screen double that writes every call it receives, its building and
- * its destruction in a journal shared with the test. */
+ * its destruction in a journal shared with the test, under the identifier it
+ * stands for. */
 class RecordingScreen : public rtype::client::IScreen {
  public:
-  RecordingScreen(std::string name, std::vector<JournalEntry>& journal);
+  RecordingScreen(rtype::client::ScreenId screen,
+                  std::vector<JournalEntry>& journal);
   ~RecordingScreen() override;
 
   RecordingScreen(const RecordingScreen&) = delete;
@@ -52,12 +53,7 @@ class RecordingScreen : public rtype::client::IScreen {
  private:
   void write(ScreenCall call) const;
 
-  std::string name_;
+  rtype::client::ScreenId screen_;
   std::vector<JournalEntry>* journal_;
   std::function<void()> onEvent_;
 };
-
-/** @brief Builds a recording screen with this name, writing in this
- * journal. */
-rtype::client::ScreenFactory recordingScreen(
-    std::string name, std::vector<JournalEntry>& journal);

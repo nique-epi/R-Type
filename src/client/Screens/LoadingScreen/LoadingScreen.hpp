@@ -5,18 +5,20 @@
 #include "AssetList.hpp"
 #include "AssetLoadingStep.hpp"
 #include "IScreen.hpp"
+#include "ScreenId.hpp"
 #include "ScreenStack.hpp"
 
 namespace rtype::client {
 
 /**
- * @brief Loads the assets of a game one file per frame, showing the progress,
- * then gives way to the game.
+ * @brief Loads the assets of a screen one file per frame, showing the
+ * progress, then gives way to that screen.
  *
  * Drawn between two files, it keeps the window responsive however many files
  * there are. Once every file is loaded, it asks the stack to replace every
- * screen with the next one; with nothing to load, that happens at its first
- * frame and it is never seen.
+ * screen with the next one, by its identifier; the factory of that identifier
+ * then finds its assets loaded and builds the screen itself. With nothing to
+ * load, that happens at its first frame and it is never seen.
  */
 class LoadingScreen : public IScreen {
  public:
@@ -29,10 +31,10 @@ class LoadingScreen : public IScreen {
    * @param library Library the assets are loaded into, which must outlive the
    * screen.
    * @param assets Assets the next screen needs.
-   * @param nextScreen Builds the screen shown once every asset is loaded.
+   * @param nextScreen Screen shown once every asset is loaded.
    */
   LoadingScreen(ScreenStack& screens, AssetLibrary& library,
-                const AssetList& assets, ScreenFactory nextScreen);
+                const AssetList& assets, ScreenId nextScreen);
 
   /** @brief Ignores every event: nothing can be done while a game loads. */
   void handleEvent(const sf::Event& event) override;
@@ -53,7 +55,8 @@ class LoadingScreen : public IScreen {
 
   ScreenStack* screens_;
   AssetLoadingStep loading_;
-  ScreenFactory nextScreen_;
+  ScreenId nextScreen_;
+  bool nextScreenAsked_ = false;
   sf::RectangleShape barOutline_;
   sf::RectangleShape barFill_;
 };

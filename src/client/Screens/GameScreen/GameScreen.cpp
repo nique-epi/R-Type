@@ -1,19 +1,18 @@
 #include "GameScreen.hpp"
 #include <SFML/Graphics/RenderTarget.hpp>
 #include <SFML/Window/Event.hpp>
-#include <utility>
 #include "ScreenConstants.hpp"
+#include "ScreenId.hpp"
 #include "ScreenStack.hpp"
 
 namespace rtype::client {
 
-GameScreen::GameScreen(ScreenStack& screens, ScreenFactory optionsScreen)
-    : screens_(&screens), optionsScreen_(std::move(optionsScreen)) {}
+GameScreen::GameScreen(ScreenStack& screens) : screens_(&screens) {}
 
 void GameScreen::handleEvent(const sf::Event& event) {
   const auto* released = event.getIf<sf::Event::KeyReleased>();
   if (released != nullptr && released->code == OPTIONS_KEY) {
-    screens_->push(optionsScreen_);
+    screens_->push(ScreenId::Options);
   }
 }
 
