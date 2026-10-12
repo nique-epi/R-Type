@@ -3,7 +3,7 @@ title: Engine
 description: What the engine does, how its parts fit together and where to find them in the code.
 ---
 
-The engine is the generic part of the game: it stores game objects, advances time at a fixed rate, runs delayed work and carries events from the code that announces them to the code that reacts to them. It knows nothing about R-Type, SFML or sockets. The rules of the game live in `rtype_game`, which is built on top of it (see [Architecture](/R-Type/architecture/)).
+The engine is the generic part of the game: it stores game objects, advances time at a fixed rate, runs delayed work, and carries events from the code that announces them to the code that reacts to them. It knows nothing about R-Type, SFML or sockets. The rules of the game live in `rtype_game`, which is built on top of it (see [Architecture](/R-Type/architecture/)).
 
 This page tells you where to look when you need to change something. It describes what exists today and says plainly what does not exist yet.
 
@@ -159,6 +159,7 @@ The engine has no system that walks the entities: it cannot read `Position` or `
 | Run something after a delay | `TimerScheduler` in `src/engine/Time/TimerScheduler/` |
 | Test whether two rectangles touch, or react to a contact | `overlaps` and `Collision` in `src/engine/Collision/`; the pairs that matter belong to `src/game/` |
 | Announce that something happened, or react to it | `EventBus` in `src/engine/Events/EventBus/`: `publish` the event, `subscribe<Event>` to it |
+| Hand data from one thread to another | `BoundedQueue`, in its own library: see [Concurrency](/R-Type/concurrency/) |
 | Add an engine error | `src/engine/Exceptions/EngineException.hpp` |
 | Write a test that depends on time | `tests/SimulatedClock.hpp`, `tests/FixedTimestepTest.cpp` |
 
