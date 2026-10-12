@@ -26,11 +26,19 @@ class FixedTimestep {
    */
   [[nodiscard]] Duration nextTickTime() const;
 
+  /**
+   * @return the time the previous consumeTicks() call dropped instead of
+   * catching it up: zero unless more than MAXIMUM_TICKS_PER_ADVANCE ticks were
+   * due, otherwise all the time past those ticks, remainder included.
+   */
+  [[nodiscard]] Duration droppedTime() const;
+
  private:
   const IClock* clock_;
   Duration tickDuration_;
   Duration previousTime_;
   Duration accumulated_{};
+  Duration droppedTime_{};
 };
 
 }  // namespace rtype::engine

@@ -197,3 +197,58 @@ TEST(FixedTimestep, NextTickIsOneTickAwayAfterADroppedStall) {
 
   EXPECT_EQ(timestep.nextTickTime(), clock.now() + SHORT_TICK_DURATION);
 }
+
+/**
+ * Given a timestep not polled for the maximum number of ticks it catches up,
+ * plus half a tick
+ * When it is polled
+ * Then nothing is dropped: the half tick is kept for the next tick
+ */
+TEST(FixedTimestep, DropsNothingWhenTheMaximumIsCaughtUp) {
+  SimulatedClock clock;
+  FixedTimestep timestep(clock, SHORT_TICK_DURATION);
+  clock.advance(SHORT_TICK_DURATION *
+                    static_cast<Duration::rep>(MAXIMUM_TICKS_PER_ADVANCE) +
+                HALF_SHORT_TICK);
+
+  timestep.consumeTicks();
+
+  EXPECT_EQ(timestep.droppedTime(), Duration::zero());
+}
+
+/**
+ * Given a timestep not polled for the maximum number of ticks it catches up,
+ * plus one tick and a half
+ * When it is polled
+ * Then the tick and a half past the maximum is reported dropped
+ */
+TEST(FixedTimestep, ReportsTheTimeAStallDropped) {
+  SimulatedClock clock;
+  FixedTimestep timestep(clock, SHORT_TICK_DURATION);
+  clock.advance(SHORT_TICK_DURATION *
+                    static_cast<Duration::rep>(MAXIMUM_TICKS_PER_ADVANCE + 1) +
+                HALF_SHORT_TICK);
+
+  timestep.consumeTicks();
+
+  EXPECT_EQ(timestep.droppedTime(), SHORT_TICK_DURATION + HALF_SHORT_TICK);
+}
+
+/**
+ * Given a timestep that dropped the excess of a stall
+ * When it is polled again one tick later
+ * Then it reports nothing dropped
+ */
+TEST(FixedTimestep, ReportsNothingDroppedOnceTheStallIsOver) {
+  SimulatedClock clock;
+  FixedTimestep timestep(clock, SHORT_TICK_DURATION);
+  clock.advance(SHORT_TICK_DURATION *
+                    static_cast<Duration::rep>(MAXIMUM_TICKS_PER_ADVANCE + 1) +
+                HALF_SHORT_TICK);
+  timestep.consumeTicks();
+  clock.advance(SHORT_TICK_DURATION);
+
+  timestep.consumeTicks();
+
+  EXPECT_EQ(timestep.droppedTime(), Duration::zero());
+}
