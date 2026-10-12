@@ -10,6 +10,9 @@
 /**
  * @brief A socket with no network behind it: the test hands it the datagrams
  * it "receives", and reads back every datagram it was asked to send.
+ *
+ * Like the real socket, send() refuses a datagram larger than
+ * MAX_DATAGRAM_SIZE with DatagramTooLargeException and records nothing.
  */
 class RecordingDatagramSocket final : public rtype::network::IDatagramSocket {
  public:
@@ -25,7 +28,7 @@ class RecordingDatagramSocket final : public rtype::network::IDatagramSocket {
   void receive(const rtype::network::Endpoint& sender,
                std::span<const std::byte> payload);
 
-  /** @returns Every datagram send() was called with, in call order. */
+  /** @returns Every datagram send() accepted, in call order. */
   [[nodiscard]] const std::vector<rtype::network::OutgoingDatagram>& sent()
       const;
 

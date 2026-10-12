@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <string_view>
+#include "NetworkConstants.hpp"
 
 /**
  * @brief Room of the queues the relay tests use.
@@ -39,3 +40,10 @@ constexpr std::byte OVERWRITTEN_BYTE{0x00};
  * @brief Number of payload bytes the relay tests send and receive.
  */
 constexpr std::size_t RELAY_PAYLOAD_SIZE = 3;
+
+/**
+ * @brief One byte more than a socket sends in one datagram: the smallest
+ * payload a socket refuses.
+ */
+constexpr std::size_t REFUSED_PAYLOAD_SIZE =
+    rtype::network::MAX_DATAGRAM_SIZE + 1;
