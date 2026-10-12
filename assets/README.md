@@ -24,3 +24,24 @@ When an id breaks the rule, or its file is missing or cannot be read, the client
 ## How the client finds this folder
 
 The client looks for `assets/` next to its executable, then in the folder above it, where the Visual Studio generator writes `Release/` and `Debug/`. The folder it was launched from does not matter.
+
+## Where the files come from
+
+| File | What it holds | Source |
+|---|---|---|
+| `fonts/tuffy.ttf` | Tuffy, the font of the interface | Public domain |
+| `sprites/entities.png` | The sprite sheet of a match: four player ships, the Bydo, the bonus Bydo, the player missile and the enemy missile | Drawn for this project (proposal 3a); not taken from the sprite set shipped with the subject |
+
+## The entity sheet
+
+`sprites/entities.png` is 66 × 140 pixels and holds every sprite at its native size: one pixel of the sheet is one pixel of the background grid, which covers 4 × 4 logical units of the playfield. Each entity holds one row with its two animation frames, 2 pixels apart; rows are 2 pixels apart too, and everything outside the frames is transparent.
+
+| Entity | Native size | Frame time |
+|---|---|---|
+| Player ship, 4 colors, one row each | 32 × 16 | 80 ms |
+| Bydo | 24 × 24 | 250 ms |
+| Bonus Bydo | 24 × 24 | 200 ms |
+| Player missile | 16 × 6 | 60 ms |
+| Enemy missile | 8 × 8 | 120 ms |
+
+Nothing animates the frames yet: the client shows the first frame of each entity. The rectangle of each entity type is written once, in `src/client/Rendering/EntitySpriteConstants.hpp`.

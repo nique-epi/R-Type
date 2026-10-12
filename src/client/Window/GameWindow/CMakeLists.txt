@@ -5,11 +5,15 @@ target_include_directories(rtype_client_game_window PUBLIC ${CMAKE_CURRENT_SOURC
 target_link_libraries(rtype_client_game_window
   PUBLIC
     SFML::Graphics
+    rtype_client_pixel_canvas
+    rtype_client_render_system
+    rtype_client_sfml_draw_surface
     rtype_client_scrolling_background
     rtype_client_window_size_buttons
     rtype_client_window_size_selection
     rtype_engine_system_clock
   PRIVATE
+    rtype_client_entity_sprites
     rtype_client_window
     rtype_client_playfield_viewport
     rtype_game

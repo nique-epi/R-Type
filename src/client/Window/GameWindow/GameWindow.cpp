@@ -1,6 +1,8 @@
 #include "GameWindow.hpp"
+#include <SFML/Graphics/Color.hpp>
 #include <SFML/Graphics/Font.hpp>
 #include <SFML/Graphics/Rect.hpp>
+#include <SFML/Graphics/RenderTexture.hpp>
 #include <SFML/Graphics/View.hpp>
 #include <SFML/System/Vector2.hpp>
 #include <SFML/Window/Event.hpp>
@@ -10,10 +12,12 @@
 #include <cstddef>
 #include <optional>
 #include <random>
+#include "ITextureSource.hpp"
 #include "PixelPosition.hpp"
 #include "PixelSize.hpp"
 #include "PlayfieldConstants.hpp"
 #include "PlayfieldViewport.hpp"
+#include "SpriteShowcase.hpp"
 #include "TimeConstants.hpp"
 #include "WindowConstants.hpp"
 
@@ -24,15 +28,18 @@ PixelSize GameWindow::desktopSize() {
   return {.width = size.x, .height = size.y};
 }
 
-GameWindow::GameWindow(const sf::Font& windowSizeLabelFont)
+GameWindow::GameWindow(const sf::Font& windowSizeLabelFont,
+                       const ITextureSource& textures)
     : windowSizeSelection_(desktopSize()),
       window_(sf::VideoMode({windowSizeSelection_.selected().width,
                              windowSizeSelection_.selected().height}),
               WINDOW_TITLE, sf::Style::Titlebar | sf::Style::Close),
       background_(std::random_device{}()),
-      windowSizeButtons_(windowSizeLabelFont) {
+      windowSizeButtons_(windowSizeLabelFont),
+      entitySurface_(entityCanvas_.canvas(), textures) {
   window_.setFramerateLimit(FRAMES_PER_SECOND_LIMIT);
   applySelectedWindowSize();
+  spawnSpriteShowcase(entities_, components_);
 }
 
 void GameWindow::run() {
@@ -68,8 +75,17 @@ void GameWindow::advanceBackground() {
 void GameWindow::render() {
   window_.clear();
   background_.draw(window_);
+  drawEntities();
   windowSizeButtons_.draw(window_);
   window_.display();
+}
+
+void GameWindow::drawEntities() {
+  sf::RenderTexture& canvas = entityCanvas_.canvas();
+  canvas.clear(sf::Color::Transparent);
+  renderSystem_.render(components_, entitySurface_);
+  canvas.display();
+  entityCanvas_.show(window_);
 }
 
 void GameWindow::showWholePlayfield(sf::Vector2u windowSize) {

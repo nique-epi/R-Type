@@ -96,6 +96,11 @@ const sf::Texture& AssetLibrary::texture(std::string_view assetId) const {
   return loadedAsset(textures_, assetId);
 }
 
+const sf::Texture* AssetLibrary::findTexture(std::string_view assetId) const {
+  const auto found = textures_.find(assetId);
+  return found == textures_.end() ? nullptr : &found->second;
+}
+
 const sf::SoundBuffer& AssetLibrary::sound(std::string_view assetId) const {
   return loadedAsset(sounds_, assetId);
 }

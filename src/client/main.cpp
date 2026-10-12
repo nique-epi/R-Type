@@ -5,6 +5,8 @@
 #include "AssetLibrary.hpp"
 #include "AssetList.hpp"
 #include "AssetLoadingStep.hpp"
+#include "AssetTextureSource.hpp"
+#include "EntitySpriteConstants.hpp"
 #include "GameWindow.hpp"
 #include "LogLaunchOptions.hpp"
 #include "Logger.hpp"
@@ -21,12 +23,14 @@ int main(int argumentCount, char** arguments) {
     logger.info("assets folder: ", rtype::client::genericText(assets.folder()));
     rtype::client::AssetLoadingStep startupLoading(
         assets, rtype::client::AssetList{
+                    .textures = {rtype::client::ENTITY_SHEET_ID},
                     .fonts = {rtype::client::WINDOW_SIZE_LABEL_FONT_ID}});
     while (!startupLoading.isFinished()) {
       startupLoading.loadNext();
     }
+    const rtype::client::AssetTextureSource textures(assets);
     rtype::client::GameWindow gameWindow(
-        assets.font(rtype::client::WINDOW_SIZE_LABEL_FONT_ID));
+        assets.font(rtype::client::WINDOW_SIZE_LABEL_FONT_ID), textures);
     gameWindow.run();
     logger.info("client stopped");
   } catch (const std::exception& error) {

@@ -2,12 +2,17 @@
 
 #include <array>
 #include <cstdint>
-#include <string>
 #include <vector>
 #include "ComponentRegistry.hpp"
 #include "IDrawSurface.hpp"
 #include "Position.hpp"
 #include "RenderingConstants.hpp"
+
+namespace rtype::game {
+
+struct Sprite;
+
+}  // namespace rtype::game
 
 namespace rtype::client {
 
@@ -31,7 +36,7 @@ class RenderSystem {
   struct DrawCall {
     std::uint32_t entityIndex;
     game::Position position;
-    const std::string* assetId;
+    const game::Sprite* sprite;
   };
 
   std::array<std::vector<DrawCall>, LAYER_COUNT> drawCallsByLayer_;

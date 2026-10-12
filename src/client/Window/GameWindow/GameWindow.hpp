@@ -3,8 +3,14 @@
 #include <SFML/Graphics/Font.hpp>
 #include <SFML/Graphics/RenderWindow.hpp>
 #include <SFML/System/Vector2.hpp>
+#include "ComponentRegistry.hpp"
+#include "EntityRegistry.hpp"
+#include "ITextureSource.hpp"
+#include "PixelCanvas.hpp"
 #include "PixelSize.hpp"
+#include "RenderSystem.hpp"
 #include "ScrollingBackground.hpp"
+#include "SfmlDrawSurface.hpp"
 #include "SystemClock.hpp"
 #include "TimeConstants.hpp"
 #include "WindowSizeButtons.hpp"
@@ -32,17 +38,25 @@ namespace rtype::client {
  * The scrolling background fills the playfield behind everything else. It
  * moves by the real time elapsed since the previous frame, so its speed does
  * not depend on the frame rate.
+ *
+ * Entities are painted on their own PixelCanvas, laid in front of the
+ * background and behind the buttons, so their pixels match the pixels of the
+ * sky. They come from the window's own registry; until the client creates the
+ * entities the server announces, that registry holds the provisional sprite
+ * showcase.
  */
 class GameWindow {
  public:
   /**
-   * @brief Opens the window; its buttons are labelled with the given font,
-   * which must outlive the window.
+   * @brief Opens the window; its buttons are labelled with the given font and
+   * its entities are drawn with the given textures, which must both outlive
+   * the window.
    *
-   * @throws RenderTextureNotCreatedException when the background cannot get
-   * its render textures.
+   * @throws RenderTextureNotCreatedException when the background or the
+   * entity canvas cannot get its render textures.
    */
-  explicit GameWindow(const sf::Font& windowSizeLabelFont);
+  GameWindow(const sf::Font& windowSizeLabelFont,
+             const ITextureSource& textures);
 
   /**
    * @brief Runs the frame loop until the window is closed.
@@ -56,6 +70,10 @@ class GameWindow {
   void advanceBackground();
 
   void render();
+
+  /** @brief Paints the entities on their canvas, then lays it over the
+   * background. */
+  void drawEntities();
 
   /**
    * @brief Makes the window show the whole playfield, undistorted and
@@ -89,6 +107,11 @@ class GameWindow {
   sf::RenderWindow window_;
   ScrollingBackground background_;
   WindowSizeButtons windowSizeButtons_;
+  engine::EntityRegistry entities_;
+  engine::ComponentRegistry components_{entities_};
+  RenderSystem renderSystem_;
+  PixelCanvas entityCanvas_;
+  SfmlDrawSurface entitySurface_;
   engine::SystemClock clock_;
   engine::Duration previousFrameTime_{};
 };

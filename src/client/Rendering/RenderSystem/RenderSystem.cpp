@@ -23,12 +23,13 @@ void RenderSystem::render(engine::ComponentRegistry& components,
         }
         drawCallsByLayer_[layerIndex].push_back({.entityIndex = entity.index,
                                                  .position = position,
-                                                 .assetId = &sprite.assetId});
+                                                 .sprite = &sprite});
       });
   for (auto& drawCalls : drawCallsByLayer_) {
     std::ranges::sort(drawCalls, {}, &DrawCall::entityIndex);
     for (const DrawCall& drawCall : drawCalls) {
-      surface.draw(*drawCall.assetId, drawCall.position);
+      surface.draw(drawCall.sprite->assetId, drawCall.sprite->frame,
+                   drawCall.position);
     }
   }
 }

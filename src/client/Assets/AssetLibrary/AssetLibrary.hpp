@@ -43,6 +43,11 @@ class AssetLibrary {
   void releaseAllExcept(const AssetList& kept);
 
   [[nodiscard]] const sf::Texture& texture(std::string_view assetId) const;
+
+  /** @returns The texture, or nullptr when the id names no loaded texture;
+   * unlike texture(), it never throws. */
+  [[nodiscard]] const sf::Texture* findTexture(std::string_view assetId) const;
+
   [[nodiscard]] const sf::SoundBuffer& sound(std::string_view assetId) const;
   [[nodiscard]] const sf::Font& font(std::string_view assetId) const;
   [[nodiscard]] const std::filesystem::path& musicFile(

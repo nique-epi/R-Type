@@ -182,6 +182,32 @@ TEST(AssetLibrary, TextureThatIsNotLoadedIsNamed) {
 
 /**
  * Given a library where nothing is loaded
+ * When a texture is looked for without throwing
+ * Then none is found
+ */
+TEST(AssetLibrary, FindsNoTextureThatIsNotLoaded) {
+  const TemporaryFolder assets;
+  const AssetLibrary library{assets.path()};
+
+  EXPECT_EQ(library.findTexture(PLAYER_SHIP_ID), nullptr);
+}
+
+/**
+ * Given a texture whose file is missing
+ * When it is loaded, then looked for without throwing
+ * Then none is found: a failed load leaves nothing behind
+ */
+TEST(AssetLibrary, FindsNoTextureWhoseLoadFailed) {
+  const TemporaryFolder assets;
+  AssetLibrary library{assets.path()};
+  ASSERT_EQ(library.load(AssetKind::Texture, PLAYER_SHIP_ID),
+            AssetLoadResult::MissingFile);
+
+  EXPECT_EQ(library.findTexture(PLAYER_SHIP_ID), nullptr);
+}
+
+/**
+ * Given a library where nothing is loaded
  * When a font is asked for
  * Then the error names the asset that is not loaded
  */
