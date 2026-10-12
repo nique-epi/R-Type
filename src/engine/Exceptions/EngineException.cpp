@@ -35,4 +35,7 @@ NullSystemException::NullSystemException()
 EmptyEventCallbackException::EmptyEventCallbackException()
     : EngineException("An empty callback cannot subscribe to events") {}
 
+NetworkIdExhaustedException::NetworkIdExhaustedException()
+    : EngineException("Every network identifier was already handed out") {}
+
 }  // namespace rtype::engine
