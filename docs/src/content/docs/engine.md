@@ -161,6 +161,6 @@ The engine has no system that walks the entities: it cannot read `Position` or `
 | Announce that something happened, or react to it | `EventBus` in `src/engine/Events/EventBus/`: `publish` the event, `subscribe<Event>` to it |
 | Hand data from one thread to another | `BoundedQueue`, in its own library: see [Concurrency](/R-Type/concurrency/) |
 | Add an engine error | `src/engine/Exceptions/EngineException.hpp` |
-| Write a test that depends on time | `tests/SimulatedClock.hpp`, `tests/FixedTimestepTest.cpp` |
+| Write a test that depends on time | `tests/SimulatedClock.hpp`, `tests/engine/Time/FixedTimestepTest.cpp` |
 
 Each folder has its own `CMakeLists.txt` declaring one library, linked into `rtype_engine` by `src/engine/CMakeLists.txt`.
