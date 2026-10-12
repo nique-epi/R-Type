@@ -81,7 +81,7 @@ jobs:
           if [ -z "$BASE_SHA" ]; then
             lint_everything
           elif git diff --name-only "$BASE_SHA"...HEAD \
-              | grep -qE '\.hpp$|^\.clang-tidy$|CMakeLists\.txt$|^CMakePresets\.json$|^vcpkg\.json$'; then
+              | grep -qE '\.hpp$|^\.clang-tidy$|CMakeLists\.txt$|^CMakePresets\.json$|^vcpkg\.json$|^\.github/workflows/build-and-test\.yaml$'; then
             lint_everything
           else
             git diff --name-only -z --diff-filter=ACMR "$BASE_SHA"...HEAD -- 'src/*.cpp' 'tests/*.cpp' \
@@ -103,7 +103,15 @@ jobs:
             echo "No C++ file to lint."
             exit 0
           fi
-          xargs -0 -a "$RUNNER_TEMP/files-to-lint" clang-tidy-20 -p build --quiet
+          echo "Running $(nproc) clang-tidy processes at a time."
+          output="$RUNNER_TEMP/clang-tidy-output"
+          mkdir "$output"
+          status=0
+          xargs -0 -n 1 -P "$(nproc)" -a "$RUNNER_TEMP/files-to-lint" \
+            sh -c 'clang-tidy-20 -p build --quiet "$1" > "$0/$(printf %s "$1" | tr / _).txt" 2>&1' "$output" \
+            || status=$?
+          cat "$output"/*.txt
+          exit "$status"
 
   tidy-windows:
     name: Clang-tidy (Windows-only files)
