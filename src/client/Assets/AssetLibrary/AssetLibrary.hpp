@@ -41,6 +41,10 @@ class AssetLibrary {
 
   [[nodiscard]] bool isLoaded(AssetKind kind, std::string_view assetId) const;
 
+  /** @brief Tells whether every asset the list names is loaded; an empty list
+   * is. */
+  [[nodiscard]] bool isLoaded(const AssetList& assets) const;
+
   /** @brief Makes the listed assets permanent: no release drops them, whether
    * they are loaded yet or not. */
   void keepPermanently(const AssetList& permanent);

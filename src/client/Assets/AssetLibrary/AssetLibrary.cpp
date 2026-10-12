@@ -44,6 +44,14 @@ bool isNamedIn(const std::vector<std::string>& assetIds,
 }
 
 template <typename Asset>
+bool holdsEvery(const AssetsById<Asset>& assets,
+                const std::vector<std::string>& assetIds) {
+  return std::ranges::all_of(assetIds, [&assets](const std::string& assetId) {
+    return assets.contains(assetId);
+  });
+}
+
+template <typename Asset>
 void keepOnly(AssetsById<Asset>& assets,
               const std::vector<std::string>& keptIds,
               const std::vector<std::string>& permanentIds) {
@@ -109,6 +117,13 @@ bool AssetLibrary::isLoaded(AssetKind kind, std::string_view assetId) const {
       return musicFiles_.contains(assetId);
   }
   return false;
+}
+
+bool AssetLibrary::isLoaded(const AssetList& assets) const {
+  return holdsEvery(textures_, assets.textures) &&
+         holdsEvery(sounds_, assets.sounds) &&
+         holdsEvery(fonts_, assets.fonts) &&
+         holdsEvery(musicFiles_, assets.music);
 }
 
 void AssetLibrary::keepPermanently(const AssetList& permanent) {
