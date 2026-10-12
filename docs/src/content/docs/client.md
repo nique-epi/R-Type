@@ -3,7 +3,7 @@ title: Client
 description: What the client does, how its parts fit together and where to find them in the code.
 ---
 
-The client, `r-type_client` (`src/client/`), shows the game, plays its sounds and reads the player's input; the server decides what happens in the match (see [Architecture](/R-Type/architecture/)). Today it opens a window, finds its assets folder at launch, can load the assets of a screen and draws a scrolling starfield behind the playfield. The screens themselves do not exist yet.
+The client, `r-type_client` (`src/client/`), shows the game, plays its sounds and reads the player's input; the server decides what happens in the match (see [Architecture](/R-Type/architecture/)). Today it opens a window, finds its assets folder at launch, can load the assets of a screen and draws a scrolling starfield behind the playfield and reads the arrow keys and space bar as player actions. The screens themselves do not exist yet.
 
 This page tells you where to look when you need to change something. It describes what exists today and says plainly what does not exist yet.
 
@@ -15,6 +15,7 @@ This page tells you where to look when you need to change something. It describe
 | Path of the running executable | Available | `src/client/Platform/` |
 | Drawing entities | Available; not called by the frame loop yet | `src/client/Rendering/RenderSystem/`, `src/client/Rendering/SfmlDrawSurface/` |
 | Scrolling background | Available; drawn by the frame loop | `src/client/Rendering/Background/` |
+| Player commands | Available; read from the window, not sent to the server yet | `src/client/Input/` |
 | Screens and the loading screen | Not yet written | — |
 | Sprites, sounds and music of the game | Not yet written | — |
 
@@ -124,6 +125,21 @@ On a Retina Mac, SFML 3 renders every window at its size in points, not in scree
 
 `Starfield`, which moves and paints the sky, and the sky events paint through `IPixelSurface` and never touch the graphics card, so `client_background_tests` runs them on the CI. `PixelBatch` turns the painted pixels into one `sf::VertexArray` of points. Only `GaussianBlur` and `ScrollingBackground` need OpenGL; they are checked on screen.
 
+## Player commands: `PlayerCommands`
+
+The game never sees keys, only **actions**. `PlayerAction` (`src/client/Input/`) has five values, and each one is its bit in the `actions` byte of `PlayerInput` (see [Protocol](/R-Type/protocol/#inputs)): 0 up, 1 down, 2 left, 3 right, 4 shoot. `ActionSet` (`rtype_client_action_set`) holds the actions held at a moment, and `bits()` returns that byte: 0 when nothing is held, never a bit above 4.
+
+`KeyBindings` (`rtype_client_key_bindings`) is the only place that knows which key does what: the four arrows move and the space bar shoots; any other key does nothing. The table is fixed today; remapping will replace it without touching what reads actions.
+
+`PlayerCommands` (`rtype_client_player_commands`) applies the key and focus events of the window to an `ActionSet`. While the window has no focus it ignores keys, and losing the focus releases everything: the release of a key held at that moment goes to another window, so it would stay held for good. A key still held when the focus comes back counts only once it is pressed again. Left and right held together give both bits; the receiver decides.
+
+```cpp
+const ActionSet held = gameWindow.playerActions();
+const std::uint8_t actions = held.bits();
+```
+
+`GameWindow::playerActions()` is the only way out. Nothing reads it yet: there is no player ship on the client and no `PlayerInput` is sent. The window logs `actions held: <byte>` at trace level each time the byte changes.
+
 ## Platform: the executable path
 
 `executablePath()` (`src/client/Platform/`) returns the path of the running executable, or nothing when the system does not tell. Each system has its own source file, `ExecutablePathLinux.cpp`, `ExecutablePathMacOs.cpp` and `ExecutablePathWindows.cpp`, and CMake builds only the one that matches.
@@ -145,6 +161,8 @@ On a Retina Mac, SFML 3 renders every window at its size in points, not in scree
 | Add a kind of sky event | A class implementing `ISkyEvent` in `src/client/Rendering/Background/SkyEvents/`, a value of `SkyEventKind`, a weight in `SKY_EVENT_WEIGHTS`, a case in `SkyEventScheduler::createEvent` |
 | Change the halo | `HALO_STANDARD_DEVIATION` in `BackgroundConstants.hpp`, `HALO_TINT` in `BackgroundColors.hpp`, the blur shader in `HaloShader.hpp`, `GaussianBlur/` |
 | Change how the sky is enlarged | `ScrollingBackground::draw`, `IntegerScale/` |
+| Change which key does what | `KeyBindings::actionFor()` in `src/client/Input/KeyBindings/` |
+| Add a player action | `PlayerAction`, its bit in the protocol, and `KeyBindings::actionFor()` |
 | Change the window or the frame loop | `src/client/Window/GameWindow/` |
 | Add a client error | `src/client/Exceptions/ClientException.hpp` |
 
