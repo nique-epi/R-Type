@@ -68,7 +68,7 @@ src/engine/
 └── Exceptions/
 ```
 
-`EntityRegistry`, `Components`, `Systems`, `Events`, `Collision`, `Time` and `Exceptions` exist; `NetworkIds` is not written yet.
+`EntityRegistry`, `Components`, `Systems`, `Events`, `Collision`, `Time`, `NetworkIds` and `Exceptions` exist.
 
 ### Logging
 
@@ -158,11 +158,13 @@ src/client/
 └── Prediction/       own ship predicted, other ships interpolated
 ```
 
-`Application`, `Window`, `Screens` (loading, game and options), `Rendering`, `Assets` and `Platform` exist today.
+`Application`, `Window`, `Screens` (loading, game and options), `Rendering`, `Assets`, `Platform` and `Input` exist today. `Input` holds the keys and the held actions only: gamepad, remapping and the player input message are not written yet.
 
 `Rendering` draws every entity that has a `Position` and a `Sprite` (an asset id, the rectangle of it to show and a layer), from the background layer to the interface layer; the game screen draws them through its `EntityLayer`. `RenderSystem` reads these two components and nothing else, and draws through `IDrawSurface`; only `SfmlDrawSurface` knows SFML: it paints on the pixel grid of the background and finds textures through `ITextureSource`, which `AssetTextureSource` reads from the asset library. `spriteOf` is the single table that gives each entity type its sprite. It is described in [Client](/R-Type/client/#entity-sprites-spriteof).
 
 `Rendering/Background` draws the scrolling starfield behind the playfield, and the frame loop already draws it. It also holds `PixelCanvas`, the picture of the background's size that the sky and the entities are painted on. It is described in [Client](/R-Type/client/#scrolling-background-scrollingbackground).
+
+`Input` turns key and focus events into the set of actions the player holds. It is described in [Client](/R-Type/client/#player-commands-playercommands).
 
 ### Master
 

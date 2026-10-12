@@ -40,7 +40,7 @@ function(rtype_add_test)
 endfunction()
 
 rtype_add_test(NAME harness_tests SOURCES HarnessTest.cpp)
-rtype_add_test(NAME engine_tests SOURCES CollisionTest.cpp ComponentQueryTest.cpp ComponentTest.cpp EntityIndexMapTest.cpp EntityRegistryTest.cpp EventBusFixtures.cpp EventBusTest.cpp FixedTimestepTest.cpp SystemSchedulerTest.cpp TimerSchedulerTest.cpp LIBS rtype_engine TIMEOUT ${RTYPE_THREAD_TEST_TIMEOUT_SECONDS})
+rtype_add_test(NAME engine_tests SOURCES CollisionTest.cpp ComponentQueryTest.cpp ComponentTest.cpp EntityIndexMapTest.cpp EntityRegistryTest.cpp EventBusFixtures.cpp EventBusTest.cpp FixedTimestepTest.cpp NetworkEntityTableTest.cpp NetworkIdAllocatorTest.cpp SystemSchedulerTest.cpp TimerSchedulerTest.cpp LIBS rtype_engine TIMEOUT ${RTYPE_THREAD_TEST_TIMEOUT_SECONDS})
 rtype_add_test(NAME concurrency_tests SOURCES concurrency/BoundedQueueTest.cpp LIBS rtype_concurrency TIMEOUT ${RTYPE_THREAD_TEST_TIMEOUT_SECONDS})
 rtype_add_test(NAME game_tests SOURCES CollisionRulesTest.cpp CollisionScene.cpp CollisionSystemTest.cpp EntityTypeTest.cpp MovementSystemTest.cpp WorldTest.cpp LIBS rtype_game)
 rtype_add_test(NAME network_tests SOURCES NetworkContextTest.cpp UdpSocketFixture.cpp UdpSocketTest.cpp ByteWriterTest.cpp ByteReaderTest.cpp SerializationRoundTripTest.cpp ByteSequence.cpp LIBS rtype_network rtype_network_asio)
@@ -52,3 +52,4 @@ rtype_add_test(NAME client_screen_tests SOURCES client/Application/ScreenStackTe
 target_include_directories(client_screen_tests PRIVATE client/Assets client/Screens)
 target_compile_definitions(client_screen_tests PRIVATE RTYPE_ASSETS_FOLDER="${CMAKE_SOURCE_DIR}/assets")
 rtype_add_test(NAME client_background_tests SOURCES client/Rendering/Background/RecordingPixelSurface.cpp client/Rendering/Background/PixelBatchTest.cpp client/Rendering/Background/PlanetImageTest.cpp client/Rendering/Background/TailGradientTest.cpp client/Rendering/Background/SkyEventTest.cpp client/Rendering/Background/SkyEventSchedulerTest.cpp client/Rendering/Background/StarfieldTest.cpp client/Rendering/Background/IntegerScaleTest.cpp LIBS rtype_client_starfield rtype_client_sky_event_scheduler rtype_client_shooting_star rtype_client_flare rtype_client_asteroid rtype_client_comet rtype_client_planet_image rtype_client_pixel_batch rtype_client_integer_scale)
+rtype_add_test(NAME client_input_tests SOURCES client/Input/KeyBindingsTest.cpp client/Input/ActionSetTest.cpp client/Input/PlayerCommandsTest.cpp LIBS rtype_client_player_commands)

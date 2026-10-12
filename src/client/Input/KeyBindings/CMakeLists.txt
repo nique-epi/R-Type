@@ -1,0 +1,7 @@
+add_library(rtype_client_key_bindings STATIC KeyBindings.cpp)
+
+target_include_directories(rtype_client_key_bindings PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+
+target_link_libraries(rtype_client_key_bindings PUBLIC SFML::Window rtype_client_input)
+
+rtype_enable_warnings(rtype_client_key_bindings)

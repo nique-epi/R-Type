@@ -4,9 +4,11 @@ target_include_directories(rtype_client_game_screen PUBLIC ${CMAKE_CURRENT_SOURC
 
 target_link_libraries(rtype_client_game_screen
   PUBLIC
+    rtype_client_player_commands
     rtype_client_rendering_interfaces
     rtype_client_screens
     rtype_engine
+    rtype_logging
     SFML::Graphics
   PRIVATE
     rtype_client_entity_sprites

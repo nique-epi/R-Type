@@ -79,4 +79,12 @@ class EmptyEventCallbackException : public EngineException {
   EmptyEventCallbackException();
 };
 
+/**
+ * @brief Every network identifier was already handed out.
+ */
+class NetworkIdExhaustedException : public EngineException {
+ public:
+  NetworkIdExhaustedException();
+};
+
 }  // namespace rtype::engine
