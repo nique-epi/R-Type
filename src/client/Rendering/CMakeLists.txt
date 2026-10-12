@@ -19,6 +19,7 @@ rtype_enable_warnings(rtype_client_entity_sprites)
 add_subdirectory(RenderSystem)
 add_subdirectory(SfmlDrawSurface)
 add_subdirectory(AssetTextureSource)
+add_subdirectory(EntityLayer)
 add_subdirectory(Background)
 
 add_library(rtype_client_rendering INTERFACE)
@@ -29,5 +30,6 @@ target_link_libraries(rtype_client_rendering
     rtype_client_render_system
     rtype_client_sfml_draw_surface
     rtype_client_asset_texture_source
+    rtype_client_entity_layer
     rtype_client_entity_sprites
 )

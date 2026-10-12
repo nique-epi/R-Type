@@ -10,6 +10,7 @@ target_link_libraries(rtype_client_application
     rtype_client_scrolling_background
     rtype_engine_system_clock
   PRIVATE
+    rtype_client_entity_layer
     rtype_client_game_screen
     rtype_client_loading_screen
     rtype_client_options_screen
