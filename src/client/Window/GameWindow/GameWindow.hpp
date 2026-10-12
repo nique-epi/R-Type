@@ -3,7 +3,11 @@
 #include <SFML/Graphics/Font.hpp>
 #include <SFML/Graphics/RenderWindow.hpp>
 #include <SFML/System/Vector2.hpp>
+#include <cstdint>
+#include "ActionSet.hpp"
+#include "Logger.hpp"
 #include "PixelSize.hpp"
+#include "PlayerCommands.hpp"
 #include "ScrollingBackground.hpp"
 #include "SystemClock.hpp"
 #include "TimeConstants.hpp"
@@ -32,6 +36,10 @@ namespace rtype::client {
  * The scrolling background fills the playfield behind everything else. It
  * moves by the real time elapsed since the previous frame, so its speed does
  * not depend on the frame rate.
+ *
+ * Key and focus events feed the player commands: playerActions() tells what
+ * the player holds right now, and nothing while the window has no focus. The
+ * actions held are logged each time they change.
  */
 class GameWindow {
  public:
@@ -49,11 +57,17 @@ class GameWindow {
    */
   void run();
 
+  /** @returns The actions the player holds right now. */
+  [[nodiscard]] ActionSet playerActions() const;
+
  private:
   void handleEvents();
 
   /** @brief Moves the background by the time since the previous frame. */
   void advanceBackground();
+
+  /** @brief Logs the held actions when they differ from the last logged. */
+  void logHeldActions();
 
   void render();
 
@@ -91,6 +105,9 @@ class GameWindow {
   WindowSizeButtons windowSizeButtons_;
   engine::SystemClock clock_;
   engine::Duration previousFrameTime_{};
+  PlayerCommands playerCommands_;
+  logging::Logger logger_{"Window"};
+  std::uint8_t loggedActions_{0};
 };
 
 }  // namespace rtype::client

@@ -8,8 +8,10 @@
 #include <SFML/Window/VideoMode.hpp>
 #include <SFML/Window/WindowEnums.hpp>
 #include <cstddef>
+#include <cstdint>
 #include <optional>
 #include <random>
+#include "ActionSet.hpp"
 #include "PixelPosition.hpp"
 #include "PixelSize.hpp"
 #include "PlayfieldConstants.hpp"
@@ -30,7 +32,8 @@ GameWindow::GameWindow(const sf::Font& windowSizeLabelFont)
                              windowSizeSelection_.selected().height}),
               WINDOW_TITLE, sf::Style::Titlebar | sf::Style::Close),
       background_(std::random_device{}()),
-      windowSizeButtons_(windowSizeLabelFont) {
+      windowSizeButtons_(windowSizeLabelFont),
+      playerCommands_(window_.hasFocus()) {
   window_.setFramerateLimit(FRAMES_PER_SECOND_LIMIT);
   applySelectedWindowSize();
 }
@@ -39,6 +42,7 @@ void GameWindow::run() {
   previousFrameTime_ = clock_.now();
   while (window_.isOpen()) {
     handleEvents();
+    logHeldActions();
     advanceBackground();
     render();
   }
@@ -55,7 +59,27 @@ void GameWindow::handleEvents() {
       if (pressed->button == sf::Mouse::Button::Left) {
         selectWindowSizeAt(pressed->position);
       }
+    } else if (const auto* keyPressed =
+                   windowEvent->getIf<sf::Event::KeyPressed>()) {
+      playerCommands_.keyPressed(keyPressed->code);
+    } else if (const auto* keyReleased =
+                   windowEvent->getIf<sf::Event::KeyReleased>()) {
+      playerCommands_.keyReleased(keyReleased->code);
+    } else if (windowEvent->is<sf::Event::FocusLost>()) {
+      playerCommands_.focusLost();
+    } else if (windowEvent->is<sf::Event::FocusGained>()) {
+      playerCommands_.focusGained();
     }
+  }
+}
+
+ActionSet GameWindow::playerActions() const { return playerCommands_.held(); }
+
+void GameWindow::logHeldActions() {
+  const std::uint8_t held = playerCommands_.held().bits();
+  if (held != loggedActions_) {
+    logger_.trace("actions held: ", static_cast<unsigned int>(held));
+    loggedActions_ = held;
   }
 }
 
