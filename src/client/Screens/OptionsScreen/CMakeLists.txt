@@ -4,12 +4,11 @@ target_include_directories(rtype_client_options_screen PUBLIC ${CMAKE_CURRENT_SO
 
 target_link_libraries(rtype_client_options_screen
   PUBLIC
-    rtype_client_screen_stack
+    rtype_client_screens
     rtype_client_window_size_buttons
     SFML::Graphics
   PRIVATE
     rtype_client_game_window
-    rtype_client_screens
     rtype_game
 )
 

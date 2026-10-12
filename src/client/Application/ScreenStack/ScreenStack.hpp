@@ -5,6 +5,7 @@
 #include <memory>
 #include <vector>
 #include "IScreen.hpp"
+#include "IScreenNavigator.hpp"
 #include "ScreenId.hpp"
 
 namespace rtype::client {
@@ -22,31 +23,25 @@ using ScreenFactory = std::function<std::unique_ptr<IScreen>(ScreenId)>;
  * event, and stays alive until that call. A screen is built only when its
  * change is applied, once the screens that change removes are destroyed.
  *
- * Screens keep a pointer to their stack, so it can be neither copied nor
- * moved.
+ * Screens see the stack only as an IScreenNavigator: they can ask for
+ * changes, while applying them, updating, drawing and handing out events stay
+ * with the frame loop. They keep a pointer to it, so it can be neither copied
+ * nor moved.
  */
-class ScreenStack {
+class ScreenStack : public IScreenNavigator {
  public:
   /** @param factory Builds every screen the stack is asked for. */
   explicit ScreenStack(ScreenFactory factory);
-  ~ScreenStack() = default;
+  ~ScreenStack() override = default;
 
   ScreenStack(const ScreenStack&) = delete;
   ScreenStack& operator=(const ScreenStack&) = delete;
   ScreenStack(ScreenStack&&) = delete;
   ScreenStack& operator=(ScreenStack&&) = delete;
 
-  /** @brief Asks for a screen to be put over the others, which stay below
-   * it. */
-  void push(ScreenId screen);
-
-  /** @brief Asks for the screen on top to be removed, whichever screen asks;
-   * nothing happens if the stack is empty by then. */
-  void pop();
-
-  /** @brief Asks for every screen to be destroyed, from the top down, then for
-   * the given one to be built as the only one. */
-  void replaceAll(ScreenId screen);
+  void push(ScreenId screen) override;
+  void pop() override;
+  void replaceAll(ScreenId screen) override;
 
   /** @brief Applies the changes asked for so far; the changes asked for while
    * they are applied wait for the next call. */

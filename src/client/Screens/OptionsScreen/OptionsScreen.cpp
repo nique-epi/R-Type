@@ -7,16 +7,16 @@
 #include <cstddef>
 #include <optional>
 #include "GameWindow.hpp"
+#include "IScreenNavigator.hpp"
 #include "PlayfieldConstants.hpp"
 #include "ScreenColors.hpp"
 #include "ScreenConstants.hpp"
-#include "ScreenStack.hpp"
 
 namespace rtype::client {
 
-OptionsScreen::OptionsScreen(ScreenStack& screens, GameWindow& window,
+OptionsScreen::OptionsScreen(IScreenNavigator& navigator, GameWindow& window,
                              const sf::Font& labelFont)
-    : screens_(&screens),
+    : navigator_(&navigator),
       window_(&window),
       backdrop_({game::PLAYFIELD_WIDTH, game::PLAYFIELD_HEIGHT}),
       windowSizeButtons_(labelFont) {
@@ -27,7 +27,7 @@ OptionsScreen::OptionsScreen(ScreenStack& screens, GameWindow& window,
 void OptionsScreen::handleEvent(const sf::Event& event) {
   const auto* released = event.getIf<sf::Event::KeyReleased>();
   if (released != nullptr && released->code == OPTIONS_KEY) {
-    screens_->pop();
+    navigator_->pop();
     return;
   }
   const auto* clicked = event.getIf<sf::Event::MouseButtonPressed>();

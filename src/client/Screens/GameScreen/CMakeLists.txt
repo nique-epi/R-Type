@@ -4,10 +4,8 @@ target_include_directories(rtype_client_game_screen PUBLIC ${CMAKE_CURRENT_SOURC
 
 target_link_libraries(rtype_client_game_screen
   PUBLIC
-    rtype_client_screen_stack
-    SFML::Graphics
-  PRIVATE
     rtype_client_screens
+    SFML::Graphics
 )
 
 rtype_enable_warnings(rtype_client_game_screen)

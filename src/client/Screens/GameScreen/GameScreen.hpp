@@ -1,7 +1,7 @@
 #pragma once
 
 #include "IScreen.hpp"
-#include "ScreenStack.hpp"
+#include "IScreenNavigator.hpp"
 
 namespace rtype::client {
 
@@ -17,17 +17,17 @@ namespace rtype::client {
 class GameScreen : public IScreen {
  public:
   /**
-   * @param screens Stack the screen lives in, which must outlive it; the
-   * options are pushed on it when OPTIONS_KEY is released.
+   * @param navigator Screens the game lives among, which must outlive it;
+   * the options are pushed over the game when OPTIONS_KEY is released.
    */
-  explicit GameScreen(ScreenStack& screens);
+  explicit GameScreen(IScreenNavigator& navigator);
 
   void handleEvent(const sf::Event& event) override;
   void update() override;
   void draw(sf::RenderTarget& target) const override;
 
  private:
-  ScreenStack* screens_;
+  IScreenNavigator* navigator_;
 };
 
 }  // namespace rtype::client

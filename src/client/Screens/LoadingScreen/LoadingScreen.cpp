@@ -7,11 +7,11 @@
 #include "AssetLibrary.hpp"
 #include "AssetList.hpp"
 #include "AssetLoadingStep.hpp"
+#include "IScreenNavigator.hpp"
 #include "PlayfieldConstants.hpp"
 #include "ScreenColors.hpp"
 #include "ScreenConstants.hpp"
 #include "ScreenId.hpp"
-#include "ScreenStack.hpp"
 
 namespace rtype::client {
 
@@ -31,9 +31,9 @@ float loadedFraction(const AssetLoadingStep& loading) {
 
 }  // namespace
 
-LoadingScreen::LoadingScreen(ScreenStack& screens, AssetLibrary& library,
+LoadingScreen::LoadingScreen(IScreenNavigator& navigator, AssetLibrary& library,
                              const AssetList& assets, ScreenId nextScreen)
-    : screens_(&screens),
+    : navigator_(&navigator),
       loading_(library, assets),
       nextScreen_(nextScreen),
       barOutline_({LOADING_BAR_WIDTH, LOADING_BAR_HEIGHT}) {
@@ -57,7 +57,7 @@ void LoadingScreen::update() {
     showProgress();
   }
   if (loading_.isFinished() && !nextScreenAsked_) {
-    screens_->replaceAll(nextScreen_);
+    navigator_->replaceAll(nextScreen_);
     nextScreenAsked_ = true;
   }
 }

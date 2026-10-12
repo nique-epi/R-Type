@@ -5,8 +5,8 @@
 #include "AssetList.hpp"
 #include "AssetLoadingStep.hpp"
 #include "IScreen.hpp"
+#include "IScreenNavigator.hpp"
 #include "ScreenId.hpp"
-#include "ScreenStack.hpp"
 
 namespace rtype::client {
 
@@ -27,13 +27,14 @@ class LoadingScreen : public IScreen {
    * permanent ones: build it once the screens that used them are destroyed,
    * as ScreenStack::replaceAll() does.
    *
-   * @param screens Stack the screen lives in, which must outlive it.
+   * @param navigator Screens the loading screen lives among, which must
+   * outlive it.
    * @param library Library the assets are loaded into, which must outlive the
    * screen.
    * @param assets Assets the next screen needs.
    * @param nextScreen Screen shown once every asset is loaded.
    */
-  LoadingScreen(ScreenStack& screens, AssetLibrary& library,
+  LoadingScreen(IScreenNavigator& navigator, AssetLibrary& library,
                 const AssetList& assets, ScreenId nextScreen);
 
   /** @brief Ignores every event: nothing can be done while a game loads. */
@@ -53,7 +54,7 @@ class LoadingScreen : public IScreen {
  private:
   void showProgress();
 
-  ScreenStack* screens_;
+  IScreenNavigator* navigator_;
   AssetLoadingStep loading_;
   ScreenId nextScreen_;
   bool nextScreenAsked_ = false;

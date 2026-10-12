@@ -4,7 +4,7 @@
 #include <SFML/Graphics/RectangleShape.hpp>
 #include <SFML/System/Vector2.hpp>
 #include "IScreen.hpp"
-#include "ScreenStack.hpp"
+#include "IScreenNavigator.hpp"
 #include "WindowSizeButtons.hpp"
 
 namespace rtype::client {
@@ -22,12 +22,13 @@ class GameWindow;
 class OptionsScreen : public IScreen {
  public:
   /**
-   * @param screens Stack the screen lives in, which must outlive it.
+   * @param navigator Screens the options live among, which must outlive
+   * them.
    * @param window Window whose size the buttons select, which must outlive
    * the screen.
    * @param labelFont Font of the button labels, which must outlive the screen.
    */
-  OptionsScreen(ScreenStack& screens, GameWindow& window,
+  OptionsScreen(IScreenNavigator& navigator, GameWindow& window,
                 const sf::Font& labelFont);
 
   void handleEvent(const sf::Event& event) override;
@@ -43,7 +44,7 @@ class OptionsScreen : public IScreen {
    */
   void selectWindowSizeAt(sf::Vector2i pixel);
 
-  ScreenStack* screens_;
+  IScreenNavigator* navigator_;
   GameWindow* window_;
   sf::RectangleShape backdrop_;
   WindowSizeButtons windowSizeButtons_;
