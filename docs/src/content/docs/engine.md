@@ -12,6 +12,7 @@ This page tells you where to look when you need to change something. It describe
 | Entities | Available | `src/engine/EntityRegistry/`, `src/engine/Entity.hpp` |
 | Components | Available | `src/engine/Components/` |
 | Fixed timestep and timers | Available | `src/engine/Time/` |
+| Network identifiers | Available | `src/engine/NetworkIds/` |
 | Systems and queries | Available | `src/engine/Systems/`, `ComponentRegistry::forEach` |
 | Game loop | Not yet written: the pieces exist, nothing assembles them | — |
 | Event bus | Available | `src/engine/Events/` |
@@ -63,6 +64,39 @@ if (auto* position = components.get<rtype::game::Position>(ship)) {
 components.destroy(ship);
 ```
 
+## Network identifiers
+
+An entity handle is local: the server and each client have different `Entity` values for the same ship. What they share is a **network identifier**, a `std::uint32_t` that the server gives to an entity and that the protocol carries as `entityId`. `NO_NETWORK_ID` (0, `NetworkIdConstants.hpp`) is reserved and never given to an entity.
+
+- `NetworkIdAllocator` (server) hands out 1, 2, 3 and so on. An identifier is never given twice, so it is unique during the whole game, even after its entity is destroyed. After 4294967295 identifiers, `allocate()` throws `NetworkIdExhaustedException` instead of wrapping around to a used identifier.
+- `NetworkIdentity` (`src/game/Components/`) is the component that carries the identifier on a server entity, so the code that builds a world state can read it.
+- `NetworkEntityTable` (client) finds the local entity of an identifier. `find()` returns an empty `std::optional` for an unknown identifier. What the client does then depends on the message: a `WorldState` creates the entity, an `EntityDestroyed` is ignored (see [Protocol](/R-Type/protocol/#world-state)). `bind()` returns false and changes nothing when the identifier is already bound, in which case the first entity is kept, and for the reserved 0, so a corrupt identifier read from the network never throws. The table does not know whether an entity is alive: whoever destroys an entity unbinds its identifier.
+
+Nothing creates identifiers or fills the table yet: `World` does not use them until the world state is replicated.
+
+On the server, with `entities` and `components` from the example above:
+
+```cpp
+rtype::engine::NetworkIdAllocator allocator;
+
+rtype::engine::Entity ship = entities.create();
+components.add(ship, rtype::game::NetworkIdentity{
+                          .networkId = allocator.allocate()});  // 1
+```
+
+On the client, with `networkId` read from a message:
+
+```cpp
+rtype::engine::NetworkEntityTable table;
+
+rtype::engine::Entity localEntity = entities.create();
+table.bind(networkId, localEntity);
+
+if (const auto entity = table.find(networkId)) {
+  // the entity the server named
+}
+```
+
 ## Systems and queries
 
 A **system** is one behavior of the game: a class that implements `ISystem` (`src/engine/Systems/ISystem.hpp`) and reads or updates components in `update(components, elapsed)`.
@@ -109,7 +143,7 @@ for (std::size_t tick = 0; tick < ticks; ++tick) {
 }
 ```
 
-The loop itself does not exist yet: today only the pieces above are in `rtype_engine`. `GameWindow` (`src/client/Window/GameWindow/`) only reads `SystemClock` to move the scrolling background by the real time of each frame (see [Client](/R-Type/client/#scrolling-background-scrollingbackground)); it runs no tick.
+The loop itself does not exist yet: today only the pieces above are in `rtype_engine`. The client frame loop, `Application` (`src/client/Application/`), only reads `SystemClock` to move the scrolling background by the real time of each frame (see [Client](/R-Type/client/#scrolling-background-scrollingbackground)); it runs no tick.
 
 ## Event bus: `EventBus`
 
@@ -156,6 +190,7 @@ The engine has no system that walks the entities: it cannot read `Position` or `
 | Write a behavior that walks components | A class implementing `ISystem` in `src/engine/Systems/ISystem.hpp`, added to a `SystemScheduler` |
 | Change how entities move | `MovementSystem` in `src/game/Systems/MovementSystem/` |
 | Change the order systems run in | The order of the `SystemScheduler::add()` calls |
+| Change how network identifiers are given or looked up | `src/engine/NetworkIds/` |
 | Run something after a delay | `TimerScheduler` in `src/engine/Time/TimerScheduler/` |
 | Test whether two rectangles touch, or react to a contact | `overlaps` and `Collision` in `src/engine/Collision/`; the pairs that matter belong to `src/game/` |
 | Announce that something happened, or react to it | `EventBus` in `src/engine/Events/EventBus/`: `publish` the event, `subscribe<Event>` to it |

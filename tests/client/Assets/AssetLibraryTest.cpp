@@ -182,6 +182,32 @@ TEST(AssetLibrary, TextureThatIsNotLoadedIsNamed) {
 
 /**
  * Given a library where nothing is loaded
+ * When a texture is looked for without throwing
+ * Then none is found
+ */
+TEST(AssetLibrary, FindsNoTextureThatIsNotLoaded) {
+  const TemporaryFolder assets;
+  const AssetLibrary library{assets.path()};
+
+  EXPECT_EQ(library.findTexture(PLAYER_SHIP_ID), nullptr);
+}
+
+/**
+ * Given a texture whose file is missing
+ * When it is loaded, then looked for without throwing
+ * Then none is found: a failed load leaves nothing behind
+ */
+TEST(AssetLibrary, FindsNoTextureWhoseLoadFailed) {
+  const TemporaryFolder assets;
+  AssetLibrary library{assets.path()};
+  ASSERT_EQ(library.load(AssetKind::Texture, PLAYER_SHIP_ID),
+            AssetLoadResult::MissingFile);
+
+  EXPECT_EQ(library.findTexture(PLAYER_SHIP_ID), nullptr);
+}
+
+/**
+ * Given a library where nothing is loaded
  * When a font is asked for
  * Then the error names the asset that is not loaded
  */
@@ -229,4 +255,111 @@ TEST(AssetLibrary, ReleaseDropsTheOtherAssets) {
 
   EXPECT_THROW(static_cast<void>(library.sound(EXPLOSION_SOUND_ID)),
                AssetNotLoadedException);
+}
+
+/**
+ * Given a sound file that was never loaded
+ * When the library is asked whether that sound is loaded
+ * Then it answers no
+ */
+TEST(AssetLibrary, AssetNeverLoadedIsNotLoaded) {
+  const TemporaryFolder assets;
+  writeSilentSound(assets.path() / SHOT_SOUND_ID, SHORT_SOUND_SAMPLES);
+  const AssetLibrary library{assets.path()};
+
+  EXPECT_FALSE(library.isLoaded(AssetKind::Sound, SHOT_SOUND_ID));
+}
+
+/**
+ * Given a loaded sound
+ * When the library is asked whether that sound is loaded
+ * Then it answers yes
+ */
+TEST(AssetLibrary, LoadedAssetIsLoaded) {
+  const TemporaryFolder assets;
+  writeSilentSound(assets.path() / SHOT_SOUND_ID, SHORT_SOUND_SAMPLES);
+  AssetLibrary library{assets.path()};
+  static_cast<void>(library.load(AssetKind::Sound, SHOT_SOUND_ID));
+
+  EXPECT_TRUE(library.isLoaded(AssetKind::Sound, SHOT_SOUND_ID));
+}
+
+/**
+ * Given a loaded sound made permanent
+ * When every asset is released
+ * Then the sound is still the same buffer
+ */
+TEST(AssetLibrary, ReleaseKeepsPermanentAssets) {
+  const TemporaryFolder assets;
+  writeSilentSound(assets.path() / SHOT_SOUND_ID, SHORT_SOUND_SAMPLES);
+  AssetLibrary library{assets.path()};
+  static_cast<void>(library.load(AssetKind::Sound, SHOT_SOUND_ID));
+  const sf::SoundBuffer* shotBeforeRelease = &library.sound(SHOT_SOUND_ID);
+  library.keepPermanently(AssetList{.sounds = {SHOT_SOUND_ID}});
+
+  library.releaseAllExcept(AssetList{});
+
+  EXPECT_EQ(&library.sound(SHOT_SOUND_ID), shotBeforeRelease);
+}
+
+/**
+ * Given a sound made permanent before it was loaded, then loaded
+ * When every asset is released
+ * Then the sound is still loaded
+ */
+TEST(AssetLibrary, PermanenceAppliesToAssetsLoadedLater) {
+  const TemporaryFolder assets;
+  writeSilentSound(assets.path() / SHOT_SOUND_ID, SHORT_SOUND_SAMPLES);
+  AssetLibrary library{assets.path()};
+  library.keepPermanently(AssetList{.sounds = {SHOT_SOUND_ID}});
+  static_cast<void>(library.load(AssetKind::Sound, SHOT_SOUND_ID));
+
+  library.releaseAllExcept(AssetList{});
+
+  EXPECT_TRUE(library.isLoaded(AssetKind::Sound, SHOT_SOUND_ID));
+}
+
+/**
+ * Given a library with nothing loaded
+ * When it is asked whether an empty list is loaded
+ * Then it answers yes, since there is nothing to load
+ */
+TEST(AssetLibrary, EmptyListIsLoaded) {
+  const TemporaryFolder assets;
+  const AssetLibrary library{assets.path()};
+
+  EXPECT_TRUE(library.isLoaded(AssetList{}));
+}
+
+/**
+ * Given two sounds of which only one is loaded
+ * When the library is asked whether the list of both is loaded
+ * Then it answers no
+ */
+TEST(AssetLibrary, ListIsNotLoadedWhileOneAssetIsMissing) {
+  const TemporaryFolder assets;
+  writeSilentSound(assets.path() / SHOT_SOUND_ID, SHORT_SOUND_SAMPLES);
+  writeSilentSound(assets.path() / EXPLOSION_SOUND_ID, LONG_SOUND_SAMPLES);
+  AssetLibrary library{assets.path()};
+  static_cast<void>(library.load(AssetKind::Sound, SHOT_SOUND_ID));
+
+  EXPECT_FALSE(library.isLoaded(
+      AssetList{.sounds = {SHOT_SOUND_ID, EXPLOSION_SOUND_ID}}));
+}
+
+/**
+ * Given two loaded sounds
+ * When the library is asked whether the list of both is loaded
+ * Then it answers yes
+ */
+TEST(AssetLibrary, ListIsLoadedOnceEveryAssetIs) {
+  const TemporaryFolder assets;
+  writeSilentSound(assets.path() / SHOT_SOUND_ID, SHORT_SOUND_SAMPLES);
+  writeSilentSound(assets.path() / EXPLOSION_SOUND_ID, LONG_SOUND_SAMPLES);
+  AssetLibrary library{assets.path()};
+  static_cast<void>(library.load(AssetKind::Sound, SHOT_SOUND_ID));
+  static_cast<void>(library.load(AssetKind::Sound, EXPLOSION_SOUND_ID));
+
+  EXPECT_TRUE(library.isLoaded(
+      AssetList{.sounds = {SHOT_SOUND_ID, EXPLOSION_SOUND_ID}}));
 }

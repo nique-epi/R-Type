@@ -5,7 +5,8 @@
 
 namespace rtype::client {
 
-/** @brief The asset ids a screen needs, by kind. */
+/** @brief Asset ids by kind: the assets of the interface, or those of a
+ * game. */
 struct AssetList {
   // NOLINTBEGIN(readability-redundant-member-init)
   std::vector<std::string> textures{};

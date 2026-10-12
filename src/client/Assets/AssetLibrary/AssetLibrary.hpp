@@ -19,7 +19,7 @@ template <typename Asset>
 using AssetsById = std::map<std::string, Asset, std::less<>>;
 
 /** @brief The loaded assets of an assets folder, each loaded once and found by
- * id without reading the disk again. */
+ * id without reading the disk again; the permanent ones are never released. */
 class AssetLibrary {
  public:
   explicit AssetLibrary(std::filesystem::path folder);
@@ -39,10 +39,26 @@ class AssetLibrary {
    * since it is streamed when it plays. */
   [[nodiscard]] AssetLoadResult load(AssetKind kind, std::string_view assetId);
 
-  /** @brief Releases every loaded asset the list does not name. */
+  [[nodiscard]] bool isLoaded(AssetKind kind, std::string_view assetId) const;
+
+  /** @brief Tells whether every asset the list names is loaded; an empty list
+   * is. */
+  [[nodiscard]] bool isLoaded(const AssetList& assets) const;
+
+  /** @brief Makes the listed assets permanent: no release drops them, whether
+   * they are loaded yet or not. */
+  void keepPermanently(const AssetList& permanent);
+
+  /** @brief Releases every loaded asset that is neither in the list nor
+   * permanent. */
   void releaseAllExcept(const AssetList& kept);
 
   [[nodiscard]] const sf::Texture& texture(std::string_view assetId) const;
+
+  /** @returns The texture, or nullptr when the id names no loaded texture;
+   * unlike texture(), it never throws. */
+  [[nodiscard]] const sf::Texture* findTexture(std::string_view assetId) const;
+
   [[nodiscard]] const sf::SoundBuffer& sound(std::string_view assetId) const;
   [[nodiscard]] const sf::Font& font(std::string_view assetId) const;
   [[nodiscard]] const std::filesystem::path& musicFile(
@@ -54,6 +70,7 @@ class AssetLibrary {
   AssetsById<sf::SoundBuffer> sounds_;
   AssetsById<sf::Font> fonts_;
   AssetsById<std::filesystem::path> musicFiles_;
+  AssetList permanent_;
 };
 
 }  // namespace rtype::client

@@ -68,7 +68,7 @@ src/engine/
 └── Exceptions/
 ```
 
-`EntityRegistry`, `Components`, `Systems`, `Events`, `Collision`, `Time` and `Exceptions` exist; `NetworkIds` is not written yet.
+`EntityRegistry`, `Components`, `Systems`, `Events`, `Collision`, `Time`, `NetworkIds` and `Exceptions` exist.
 
 ### Logging
 
@@ -139,15 +139,15 @@ Only `main.cpp` exists today.
 
 ### Client
 
-`src/client` builds `r-type_client`: what the player sees, hears and presses. The frame loop never waits: the network and HTTP threads hand their results over through queues.
+`src/client` builds `r-type_client`: what the player sees, hears and presses. The frame loop never waits: the network and HTTP threads will hand their results over through queues.
 
 ```
 src/client/
 ├── Application/      frame loop and screen stack
 ├── Window/           the SFML window
-├── Assets/           assets found by id, loaded per screen in a loading step
+├── Assets/           assets found by id, loaded at launch or entering a game
 ├── Platform/         what differs between Windows, macOS and Linux
-├── Screens/          home, server list, lobby, game, end, options...
+├── Screens/          loading, home, server list, lobby, game, end, options...
 ├── Widgets/          buttons, text fields, lists
 ├── Rendering/        sprites, starfield, HUD, effects, lagometer
 ├── Audio/            sounds and music
@@ -158,11 +158,13 @@ src/client/
 └── Prediction/       own ship predicted, other ships interpolated
 ```
 
-`Window`, `Rendering`, `Assets` and `Platform` exist today.
+`Application`, `Window`, `Screens` (loading, game and options), `Rendering`, `Assets`, `Platform` and `Input` exist today. `Input` holds the keys and the held actions only: gamepad, remapping and the player input message are not written yet.
 
-`Rendering` draws every entity that has a `Position` and a `Sprite` (an asset id and a layer), from the background layer to the interface layer. `RenderSystem` reads these two components and nothing else, and draws through `IDrawSurface`; only `SfmlDrawSurface` knows SFML, and it finds textures through `ITextureSource`. The system is not wired into the frame loop yet.
+`Rendering` draws every entity that has a `Position` and a `Sprite` (an asset id, the rectangle of it to show and a layer), from the background layer to the interface layer; the game screen draws them through its `EntityLayer`. `RenderSystem` reads these two components and nothing else, and draws through `IDrawSurface`; only `SfmlDrawSurface` knows SFML: it paints on the pixel grid of the background and finds textures through `ITextureSource`, which `AssetTextureSource` reads from the asset library. `spriteOf` is the single table that gives each entity type its sprite. It is described in [Client](/R-Type/client/#entity-sprites-spriteof).
 
-`Rendering/Background` draws the scrolling starfield behind the playfield, and the frame loop already draws it. It is described in [Client](/R-Type/client/#scrolling-background-scrollingbackground).
+`Rendering/Background` draws the scrolling starfield behind the playfield, and the frame loop already draws it. It also holds `PixelCanvas`, the picture of the background's size that the sky and the entities are painted on. It is described in [Client](/R-Type/client/#scrolling-background-scrollingbackground).
+
+`Input` turns key and focus events into the set of actions the player holds. It is described in [Client](/R-Type/client/#player-commands-playercommands).
 
 ### Master
 
