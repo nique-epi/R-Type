@@ -32,6 +32,9 @@ TickLoop::TickLoop(const engine::IClock& clock, std::function<void()> tick)
 std::size_t TickLoop::runDueTicks() {
   const engine::Duration firstDue = timestep_.nextTickTime();
   const std::size_t dueTicks = timestep_.consumeTicks();
+  if (timestep_.droppedTime() > engine::Duration::zero()) {
+    recordStall(timestep_.droppedTime());
+  }
   for (std::size_t tickIndex = 0; tickIndex < dueTicks; ++tickIndex) {
     const engine::Duration due =
         firstDue + engine::SIMULATION_TICK_DURATION *
@@ -53,6 +56,7 @@ void TickLoop::run(const std::stop_token& stop) {
     runDueTicks();
     if (lateness_.tickCount >= TICKS_PER_REPORT) {
       reportLateness();
+      reportStalls();
     }
     const engine::Duration untilNextTick =
         timestep_.nextTickTime() - clock_->now();
@@ -66,10 +70,20 @@ TickLoop::Lateness TickLoop::takeLateness() {
   return std::exchange(lateness_, Lateness{});
 }
 
+TickLoop::Stalls TickLoop::takeStalls() {
+  return std::exchange(stalls_, Stalls{});
+}
+
 void TickLoop::record(engine::Duration lateness) {
   ++lateness_.tickCount;
   lateness_.total += lateness;
   lateness_.maximum = std::max(lateness_.maximum, lateness);
+}
+
+void TickLoop::recordStall(engine::Duration droppedTime) {
+  ++stalls_.count;
+  stalls_.totalDropped += droppedTime;
+  stalls_.longestDropped = std::max(stalls_.longestDropped, droppedTime);
 }
 
 void TickLoop::reportLateness() {
@@ -79,6 +93,17 @@ void TickLoop::reportLateness() {
   logger_.debug(lateness.tickCount, " ticks started on average ",
                 inMilliseconds(average), " ms late, at most ",
                 inMilliseconds(lateness.maximum), " ms");
+}
+
+void TickLoop::reportStalls() {
+  const Stalls stalls = takeStalls();
+  if (stalls.count == 0) {
+    return;
+  }
+  logger_.warn("stalls since the previous report: ", stalls.count,
+               ", game time dropped: ", inMilliseconds(stalls.totalDropped),
+               " ms, the longest: ", inMilliseconds(stalls.longestDropped),
+               " ms; the game froze instead of catching up");
 }
 
 }  // namespace rtype::server

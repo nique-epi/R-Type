@@ -45,6 +45,19 @@ constexpr int TICKS_DUE_TOGETHER = 2;
 constexpr int STALL_TICK_COUNT = 60;
 
 /**
+ * @brief Length of a second stall, in ticks, shorter than STALL_TICK_COUNT but
+ * still longer than the ticks a loop catches up.
+ */
+constexpr int SHORTER_STALL_TICK_COUNT = 10;
+
+/**
+ * @brief Ticks a loop runs after a stall before it drops the rest:
+ * MAXIMUM_TICKS_PER_ADVANCE, as a count to multiply a tick duration by.
+ */
+constexpr int CAUGHT_UP_TICK_COUNT =
+    static_cast<int>(rtype::engine::MAXIMUM_TICKS_PER_ADVANCE);
+
+/**
  * @brief How long a test waits for a thread to start or stop; only a failing
  * test waits that long.
  */

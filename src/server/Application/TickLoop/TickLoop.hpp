@@ -16,9 +16,11 @@ namespace rtype::server {
  *
  * A FixedTimestep counts the ticks on the given clock: after a late wake-up the
  * missed ticks run back to back, and a stall longer than
- * MAXIMUM_TICKS_PER_ADVANCE ticks drops the excess. Each tick is measured: how
- * long after it was due it started. After a dropped stall, the ticks run are
- * measured from when the first of them was due, so the whole stall shows.
+ * MAXIMUM_TICKS_PER_ADVANCE ticks drops the excess, so the game freezes during
+ * the stall instead of catching it up. Each tick is measured: how long after
+ * it was due it started. After a dropped stall, the ticks run are measured
+ * from when the first of them was due, so the whole stall shows. Every stall
+ * that drops game time is recorded.
  */
 class TickLoop {
  public:
@@ -30,6 +32,16 @@ class TickLoop {
     std::size_t tickCount;
     engine::Duration maximum;
     engine::Duration total;
+  };
+
+  /**
+   * @brief The stalls long enough to drop game time: how many, and the game
+   * time they dropped instead of catching it up.
+   */
+  struct Stalls {
+    std::size_t count;
+    engine::Duration longestDropped;
+    engine::Duration totalDropped;
   };
 
   /**
@@ -48,8 +60,9 @@ class TickLoop {
   /**
    * @brief Runs the due ticks, then sleeps until the next one is due, until
    * @p stop is requested; a request is seen when the current sleep ends. Every
-   * TICKS_PER_REPORT ticks, logs their lateness at the debug level.
-   * Logs a warning when the system refuses a FineTimerResolution.
+   * TICKS_PER_REPORT ticks, logs their lateness at the debug level and, when
+   * stalls dropped game time since the previous report, a warning with that
+   * time. Logs a warning when the system refuses a FineTimerResolution.
    *
    * It sleeps in real time, so the clock must follow real time.
    */
@@ -61,14 +74,23 @@ class TickLoop {
    */
   Lateness takeLateness();
 
+  /**
+   * @returns The stalls that dropped game time since the previous call, then
+   * starts recording again.
+   */
+  Stalls takeStalls();
+
  private:
   void record(engine::Duration lateness);
+  void recordStall(engine::Duration droppedTime);
   void reportLateness();
+  void reportStalls();
 
   const engine::IClock* clock_;
   engine::FixedTimestep timestep_;
   std::function<void()> tick_;
   Lateness lateness_{};
+  Stalls stalls_{};
   logging::Logger logger_;
 };
 
