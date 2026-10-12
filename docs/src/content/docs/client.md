@@ -3,7 +3,7 @@ title: Client
 description: What the client does, how its parts fit together and where to find them in the code.
 ---
 
-The client, `r-type_client` (`src/client/`), shows the game, plays its sounds and reads the player's input; the server decides what happens in the match (see [Architecture](/R-Type/architecture/)). Today it finds its assets folder, loads the assets of its interface, opens a window and runs its screens over a scrolling starfield: a loading screen, the game screen, which shows no entity yet, and an options screen. The game screen reads the arrow keys and the space bar as player actions. It does not talk to the server yet.
+The client, `r-type_client` (`src/client/`), shows the game, plays its sounds and reads the player's input; the server decides what happens in the match (see [Architecture](/R-Type/architecture/)). Today it finds its assets folder, loads the assets of its interface, opens a window and runs its screens over a scrolling starfield: a loading screen, the game screen, which draws its entities from one sprite sheet (for now a provisional showcase), and an options screen. The game screen reads the arrow keys and the space bar as player actions. It does not talk to the server yet.
 
 This page tells you where to look when you need to change something. It describes what exists today and says plainly what does not exist yet.
 
@@ -15,10 +15,11 @@ This page tells you where to look when you need to change something. It describe
 | Assets folder and asset ids | Available | `src/client/Assets/`, `assets/README.md` |
 | Asset loading | Available; used at launch for the interface assets, and by the loading screen | `src/client/Assets/AssetLibrary/`, `src/client/Assets/AssetLoadingStep/` |
 | Path of the running executable | Available | `src/client/Platform/` |
-| Drawing entities | Available; not called by the game screen yet | `src/client/Rendering/RenderSystem/`, `src/client/Rendering/SfmlDrawSurface/` |
+| Drawing entities | Available; drawn by the game screen | `src/client/Rendering/EntityLayer/`, `src/client/Rendering/RenderSystem/`, `src/client/Rendering/SfmlDrawSurface/`, `src/client/Rendering/AssetTextureSource/` |
+| Sprites of the ships, Bydos and missiles | Available; first animation frame only | `assets/sprites/entities.png`, `src/client/Rendering/EntitySprites.cpp` |
 | Scrolling background | Available; drawn by the frame loop under every screen | `src/client/Rendering/Background/` |
 | Player commands | Available; read by the game screen, not sent to the server yet | `src/client/Input/` |
-| Sprites, sounds and music of the game | Not yet written | — |
+| Sounds and music of the game | Not yet written | — |
 
 ## Frame loop and screens: `Application`, `ScreenStack`
 
@@ -29,7 +30,7 @@ Screens are asked for by identifier: `push()` and `replaceAll()` take a `ScreenI
 | Screen | Shows | Leaves the stack when |
 |---|---|---|
 | `LoadingScreen` | a progress bar; one file is loaded per frame | every file is loaded: it asks again, with `replaceAll()`, for the screen it loads for, which `createScreen()` now builds itself |
-| `GameScreen` | nothing yet over the scrolling background; releasing `OPTIONS_KEY` (Escape) pushes the options over it | not yet: the end of a game is not written |
+| `GameScreen` | its entities, over the scrolling background (today the provisional sprite showcase); releasing `OPTIONS_KEY` (Escape) pushes the options over it | not yet: the end of a game is not written |
 | `OptionsScreen` | the window size buttons, on a translucent layer over the game | `OPTIONS_KEY` is released again |
 
 The options screen is **provisional**: it stands in for the options menu. The frame loop draws the scrolling background under every screen, the loading screen and the options included; this is **provisional** too, since the starfield will probably become the background of the game screen alone. At launch the client enters a game straight away, with `replaceAll(ScreenId::Game)`: the loading screen of `gameAssets()` while some are not loaded, then the game screen. A file the loading screen cannot load stops the client with exit code 1, naming every such file. The options react to the release of `OPTIONS_KEY`, not to its press: the system repeats the press of a held key, which would open and close them again and again.
@@ -49,7 +50,7 @@ Code names a file by its **asset id**: its path in `assets/`, with `/` between f
 Assets are loaded at two moments only, both declared in `src/client/Screens/ScreenAssets.hpp` and listed in `ScreenAssets.cpp`:
 
 - at launch, before the window opens, `loadInterfaceAssets()` loads `interfaceAssets()`, the assets of the interface, which any screen may use at any time, in a game or outside one (today the font of the options screen, `INTERFACE_FONT_ID`, `fonts/tuffy.ttf`), and makes them permanent, so changing screen outside a game never reads a file;
-- when the player enters a game (`ScreenId::Game`), the loading screen loads `gameAssets()`, one file per frame, after releasing what a previous game used and this one does not. When they are all loaded already, the game screen is built at once, after the same release. `gameAssets()` is empty today, since the game has no sprite yet: the game screen is built at once and the loading screen is never seen.
+- when the player enters a game (`ScreenId::Game`), the loading screen loads `gameAssets()`, one file per frame, after releasing what a previous game used and this one does not. When they are all loaded already, the game screen is built at once, after the same release. Today `gameAssets()` holds the entity sheet (`ENTITY_SHEET_ID`) alone: at launch the loading screen reads it in its first update and the game screen replaces it before that frame is drawn, so the loading screen is never seen.
 
 ### What a loading step does
 
@@ -77,24 +78,45 @@ sequenceDiagram
 
 ## Assets in the game: from an entity to the screen
 
-The engine knows nothing about assets, and the game only names them: an entity that is drawn carries a `Sprite` component (`rtype_game`) holding an asset id and a layer, so the server can say what an entity looks like without SFML. Each frame, `RenderSystem` (`src/client/Rendering/`) walks the entities that have a `Position` and a `Sprite`, layer by layer, and asks an `IDrawSurface` to draw each asset id at its position. `SfmlDrawSurface` turns the id into a texture through `ITextureSource`; an id with no texture is skipped and logged once.
+The engine knows nothing about assets, and the game only names them: an entity that is drawn carries a `Sprite` component (`rtype_game`) holding an asset id, the rectangle of that image to show (`SpriteFrame`, in pixels of the image) and a layer. Each frame, `RenderSystem` (`src/client/Rendering/`) walks the entities that have a `Position` and a `Sprite`, layer by layer, and asks an `IDrawSurface` to draw each rectangle at its position. `SfmlDrawSurface` finds the texture through `ITextureSource`, which `AssetTextureSource` reads from the `AssetLibrary` without loading anything; an id with no loaded texture is skipped and logged once.
+
+`SfmlDrawSurface` paints on a `PixelCanvas`, the pixel grid of the sky (see [How it is drawn](#how-it-is-drawn)): a position becomes a pixel of the canvas, which covers `BACKGROUND_PIXEL_SIZE` (4) logical units, and each rectangle lands on whole pixels, so a sprite is copied pixel for pixel and its pixels match the stars at every window size. An entity therefore moves on screen by whole background pixels, 4 logical units at a time.
+
+The canvas belongs to `EntityLayer` (`src/client/Rendering/EntityLayer/`), behind the `IEntityLayer` interface. The game screen owns the entities of the game, which appear and disappear with it, and an entity layer. It paints the layer at construction and in every `update()`: the layer clears its canvas to transparent, lets `RenderSystem` paint on it, and ends the picture. In `draw()` it only lays the layer, since `draw()` is const; the entities sit over the background and under any screen pushed over the game. `GameScreen` sees only `IEntityLayer`, so `client_screen_tests` gives it a recording double and needs no graphics card.
 
 ```mermaid
 flowchart TB
-  accTitle: From an entity to the screen
-  accDescr: The Sprite component of an entity names an asset id. RenderSystem passes the id to SfmlDrawSurface, which asks an ITextureSource for the texture. The asset library is meant to be that source, but the link is not written yet.
-  Entity["Sprite component"] --> Render[RenderSystem]
+  accTitle: From the game screen to the screen
+  accDescr: The game screen asks its entity layer to paint its entities. The layer runs RenderSystem, which passes each sprite to SfmlDrawSurface; the surface finds the texture through AssetTextureSource, reading the asset library, and paints the rectangle on the pixel canvas, which the layer lays over the sky.
+  Game[GameScreen] --> Layer[EntityLayer]
+  Layer --> Render[RenderSystem]
   Render --> Surface[SfmlDrawSurface]
-  Surface --> Source[ITextureSource]
-  Source -. "not written yet" .-> Library[AssetLibrary]
+  Surface --> Source[AssetTextureSource]
+  Source --> Library[AssetLibrary]
+  Surface --> Canvas[PixelCanvas]
 ```
 
-Two links do not exist yet: no `ITextureSource` reads from `AssetLibrary`, and the game screen does not call `RenderSystem`. Once they do, showing a new image takes four steps:
+Showing a new image takes four steps:
 
-1. Put the file in `assets/sprites/`, named after the asset id rule.
-2. Write its id once, as a named constant.
-3. List the id in `gameAssets()`.
-4. Give the entity a `Sprite` with that id and its layer.
+1. Draw it at its native size into `assets/sprites/entities.png`, or put a new file in `assets/sprites/`, named after the asset id rule.
+2. Write its rectangle once, as a named constant (`EntitySpriteConstants.hpp` for the entity sheet), and the id of a new file too.
+3. List the id in `gameAssets()` (`src/client/Screens/ScreenAssets.cpp`), which already names the entity sheet.
+4. Give the entity a `Sprite` with that id, rectangle and layer: for an entity type, a case in `spriteOf`.
+
+## Entity sprites: `spriteOf`
+
+`spriteOf(type)` (`rtype_client_entity_sprites`) is the single table that gives each `EntityType` its `Sprite`: the entity sheet `sprites/entities.png` (`ENTITY_SHEET_ID`), the rectangle of the type, and the `Entities` layer. A value outside `EntityType` gets no sprite, never a neighbor's. The code that will create the entities the server announces calls it once per new entity; turning the type number of the protocol into an `EntityType` belongs to that code.
+
+| Type | Sprite | Native size, in pixels | On the playfield, in logical units |
+|---|---|---|---|
+| `Player` | the ship of the first player color | 32 × 16 | 128 × 64 |
+| `Enemy` | the Bydo | 24 × 24 | 96 × 96 |
+| `PlayerMissile` | the player missile | 16 × 6 | 64 × 24 |
+| `EnemyMissile` | the enemy missile | 8 × 8 | 32 × 32 |
+
+The sheet and where it comes from are described in `assets/README.md`. Not yet done: the four players share the first ship color, though the sheet holds four; the bonus Bydo has no entity type; only the first of the two animation frames is shown. `client_rendering_tests` checks the table against the shipped sheet with `sf::Image`, which needs no graphics card: every rectangle lies inside the sheet, shows a visible pixel, cuts no sprite and overlaps no other type.
+
+The entities on screen today are a **provisional** showcase: `spawnSpriteShowcase` (`src/client/Rendering/SpriteShowcase.hpp`) puts a player ship, a player missile, an enemy missile and a Bydo across the middle of the playfield when the game screen is built. It will be removed once the client creates the entities the server announces.
 
 ## Scrolling background: `ScrollingBackground`
 
@@ -122,15 +144,15 @@ The planet drifts at `PLANET_SPEED` (1.8 background pixels per second), drawn in
 
 ### How it is drawn
 
-The sky is painted at `BACKGROUND_SIZE`, 480 × 270 background pixels; a background pixel covers `BACKGROUND_PIXEL_SIZE` (4) logical units. It is enlarged without smoothing by the largest whole factor that fits the playfield on screen (`integerScaleFactor`: 3 in a 1600 × 900 window), then smoothed over the remainder only, so its pixels stay square and equal at every window size.
+The sky is painted on a `PixelCanvas` (`rtype_client_pixel_canvas`) of `BACKGROUND_SIZE`, 480 × 270 background pixels; a background pixel covers `BACKGROUND_PIXEL_SIZE` (4) logical units. A canvas is enlarged without smoothing by the largest whole factor that fits the playfield on screen (`integerScaleFactor`: 3 in a 1600 × 900 window), then smoothed over the remainder only, so its pixels stay square and equal at every window size. The entities are painted on a second `PixelCanvas`, laid over the sky. A canvas holds only opaque and fully transparent pixels, so it is laid with a premultiplied alpha blend: the smoothed edges of a sprite do not darken.
 
-A halo is added on top: the sky blurred by a Gaussian of `HALO_STANDARD_DEVIATION` (3 background pixels), added at 70 % opacity (`HALO_TINT`). On a machine without shaders, or whose driver does not compile the halo shader, the sky is drawn without halo and the reason is logged once by the `Background` module. A render texture that cannot be created raises `RenderTextureNotCreatedException`.
+A halo is added on top of the sky: the sky blurred by a Gaussian of `HALO_STANDARD_DEVIATION` (3 background pixels), added at 70 % opacity (`HALO_TINT`). It comes from the sky only, so the sprites get none. On a machine without shaders, or whose driver does not compile the halo shader, the sky is drawn without halo and the reason is logged once by the `Background` module. A render texture that cannot be created raises `RenderTextureNotCreatedException`.
 
 On a Retina Mac, SFML 3 renders every window at its size in points, not in screen pixels, and macOS scales the image up, so the whole client looks softer there than on other screens.
 
 ### Tested without a screen
 
-`Starfield`, which moves and paints the sky, and the sky events paint through `IPixelSurface` and never touch the graphics card, so `client_background_tests` runs them on the CI. `PixelBatch` turns the painted pixels into one `sf::VertexArray` of points. Only `GaussianBlur` and `ScrollingBackground` need OpenGL; they are checked on screen.
+`Starfield`, which moves and paints the sky, and the sky events paint through `IPixelSurface` and never touch the graphics card, so `client_background_tests` runs them on the CI. `PixelBatch` turns the painted pixels into one `sf::VertexArray` of points. Only `GaussianBlur`, `PixelCanvas`, `ScrollingBackground` and the drawing of entities (`EntityLayer`, `SfmlDrawSurface`, `AssetTextureSource`) need OpenGL, since a texture cannot exist without it; they are checked on screen.
 
 ## Player commands: `PlayerCommands`
 
@@ -158,7 +180,11 @@ const std::uint8_t actions = held.bits();
 | Add an asset | A file in `assets/sprites/`, `sounds/`, `music/` or `fonts/`, and its id in `gameAssets()`, or in `interfaceAssets()` when a screen may use it outside a game, menus and overlays included (`src/client/Screens/ScreenAssets.cpp`) |
 | Change the asset id rule | `isValidAssetId()` in `src/client/Assets/AssetIds.cpp`, `ASSET_ID_PUNCTUATION` in `AssetConstants.hpp`, and `assets/README.md` |
 | Change where the client looks for `assets/` | `findAssetFolder()` in `src/client/Assets/AssetFolder.cpp` |
-| Show a new image in the game | `assets/sprites/`, `gameAssets()`, a `Sprite` component on the entity |
+| Show a new image in the game | `assets/sprites/`, its rectangle in `src/client/Rendering/EntitySpriteConstants.hpp`, `gameAssets()`, `spriteOf` in `src/client/Rendering/EntitySprites.cpp` |
+| Change how an entity type looks | `spriteOf` in `src/client/Rendering/EntitySprites.cpp`, the rectangles in `EntitySpriteConstants.hpp`, `assets/sprites/entities.png` |
+| Change how entities are placed on the pixel grid | `SfmlDrawSurface::draw` in `src/client/Rendering/SfmlDrawSurface/` |
+| Change when the entities are painted and laid | `GameScreen::update()` and `GameScreen::draw()` in `src/client/Screens/GameScreen/`, `EntityLayer` in `src/client/Rendering/EntityLayer/` |
+| Remove the sprite showcase | `SpriteShowcase.hpp`, `SpriteShowcase.cpp` and `SpriteShowcaseConstants.hpp` in `src/client/Rendering/`, the call in the constructor of `GameScreen` |
 | Add a screen | A value of `ScreenId` (`src/client/Screens/ScreenId.hpp`) and its case in `Application::createScreen()`; a class implementing `IScreen` in its own folder under `src/client/Screens/`, taking an `IScreenNavigator` if it opens or closes screens, with its `CMakeLists.txt` target and `add_subdirectory` in `src/client/Screens/CMakeLists.txt`; the link in `src/client/Application/Application/CMakeLists.txt` |
 | Open a screen from another | `push(ScreenId::…)` to put it over the current one, `replaceAll(ScreenId::…)` to replace every screen with it |
 | Load a new kind of asset | `AssetKind`, `AssetList` and `AssetLibrary::load()` |
@@ -169,10 +195,10 @@ const std::uint8_t actions = held.bits();
 | Change how often sky events appear, or how many at once | `SHORTEST_SKY_EVENT_GAP`, `LONGEST_SKY_EVENT_GAP`, `MAXIMUM_SKY_EVENTS` in `src/client/Rendering/Background/SkyEvents/SkyEventConstants.hpp` |
 | Add a kind of sky event | A class implementing `ISkyEvent` in `src/client/Rendering/Background/SkyEvents/`, a value of `SkyEventKind`, a weight in `SKY_EVENT_WEIGHTS`, a case in `SkyEventScheduler::createEvent` |
 | Change the halo | `HALO_STANDARD_DEVIATION` in `BackgroundConstants.hpp`, `HALO_TINT` in `BackgroundColors.hpp`, the blur shader in `HaloShader.hpp`, `GaussianBlur/` |
-| Change how the sky is enlarged | `ScrollingBackground::draw`, `IntegerScale/` |
+| Change how the sky and the entities are enlarged | `PixelCanvas::show` in `src/client/Rendering/Background/PixelCanvas/`, `IntegerScale/` |
 | Change which key does what | `KeyBindings::actionFor()` in `src/client/Input/KeyBindings/` |
 | Add a player action | `PlayerAction`, its bit in the protocol, and `KeyBindings::actionFor()` |
 | Change the window, or when the background moves and is drawn | `src/client/Window/GameWindow/`, `Application::advanceBackground()` and `Application::render()` in `src/client/Application/Application/` |
 | Add a client error | `src/client/Exceptions/ClientException.hpp` |
 
-Each folder has its own `CMakeLists.txt` declaring one library; `src/client/Rendering/CMakeLists.txt` adds `Background/`.
+Each folder has its own `CMakeLists.txt` declaring one library; `src/client/Rendering/CMakeLists.txt` declares `rtype_client_entity_sprites` for the table and the showcase, and adds `RenderSystem/`, `SfmlDrawSurface/`, `AssetTextureSource/`, `EntityLayer/` and `Background/`.

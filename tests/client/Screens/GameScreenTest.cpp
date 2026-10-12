@@ -5,21 +5,29 @@
 #include <cstdint>
 #include <memory>
 #include <vector>
+#include "BlankRenderTarget.hpp"
+#include "ComponentRegistry.hpp"
 #include "GameScreen.hpp"
+#include "IEntityLayer.hpp"
 #include "IScreen.hpp"
 #include "IScreenNavigator.hpp"
 #include "KeyPress.hpp"
+#include "RecordingEntityLayer.hpp"
 #include "RecordingScreen.hpp"
 #include "ScreenConstants.hpp"
 #include "ScreenId.hpp"
 #include "ScreenStack.hpp"
+#include "SpriteShowcaseConstants.hpp"
 
 using rtype::client::GameScreen;
+using rtype::client::IEntityLayer;
 using rtype::client::IScreen;
 using rtype::client::IScreenNavigator;
 using rtype::client::OPTIONS_KEY;
 using rtype::client::ScreenId;
 using rtype::client::ScreenStack;
+using rtype::client::SPRITE_SHOWCASE;
+using rtype::engine::ComponentRegistry;
 using ::testing::ElementsAre;
 using ::testing::IsEmpty;
 
@@ -27,6 +35,9 @@ namespace {
 
 constexpr sf::Keyboard::Key OTHER_KEY = sf::Keyboard::Key::Space;
 constexpr int KEY_REPEATS = 3;
+constexpr int PAINTS_AT_CONSTRUCTION = 1;
+constexpr int PAINTS_AFTER_ONE_UPDATE = 2;
+constexpr int SHOWS_AFTER_ONE_DRAW = 1;
 constexpr std::uint8_t NOTHING_HELD = 0;
 constexpr std::uint8_t UP_BIT = 0b00001;
 constexpr std::uint8_t SHOOT_BIT = 0b10000;
@@ -40,8 +51,16 @@ class IgnoringNavigator : public IScreenNavigator {
   void replaceAll([[maybe_unused]] ScreenId screen) override {}
 };
 
+/** @brief An entity layer that ignores every request, for a game screen whose
+ * drawing the test does not read. */
+class IgnoringEntityLayer : public IEntityLayer {
+ public:
+  void paint([[maybe_unused]] ComponentRegistry& components) override {}
+  void show([[maybe_unused]] sf::RenderTarget& target) const override {}
+};
+
 /** @brief The real game screen alone in a stack whose other screens are
- * recording doubles. */
+ * recording doubles, with a recording entity layer. */
 class GameScreenTest : public ::testing::Test {
  protected:
   void SetUp() override {
@@ -55,11 +74,17 @@ class GameScreenTest : public ::testing::Test {
     return journal_;
   }
 
+  [[nodiscard]] const EntityLayerRecord& layerRecord() const {
+    return layerRecord_;
+  }
+
  private:
   std::vector<JournalEntry> journal_;
+  EntityLayerRecord layerRecord_;
   ScreenStack screens_{[this](ScreenId screen) -> std::unique_ptr<IScreen> {
     if (screen == ScreenId::Game) {
-      return std::make_unique<GameScreen>(screens_);
+      return std::make_unique<GameScreen>(
+          screens_, std::make_unique<RecordingEntityLayer>(layerRecord_));
     }
     return std::make_unique<RecordingScreen>(screen, journal_);
   }};
@@ -122,13 +147,48 @@ TEST_F(GameScreenTest, OtherKeysLeaveTheOptionsClosed) {
 }
 
 /**
+ * Given a game screen just built
+ * When nothing has updated it yet
+ * Then its entity layer is already painted with every entity of the showcase
+ */
+TEST_F(GameScreenTest, ANewGameIsPaintedBeforeItsFirstUpdate) {
+  EXPECT_EQ(layerRecord().paintCount, PAINTS_AT_CONSTRUCTION);
+  EXPECT_EQ(layerRecord().spritesAtLastPaint, SPRITE_SHOWCASE.size());
+}
+
+/**
+ * Given the game alone in the stack
+ * When the screens are updated
+ * Then the entity layer is painted again
+ */
+TEST_F(GameScreenTest, EachUpdateRepaintsTheEntityLayer) {
+  screens().update();
+
+  EXPECT_EQ(layerRecord().paintCount, PAINTS_AFTER_ONE_UPDATE);
+}
+
+/**
+ * Given the game alone in the stack
+ * When the screens are drawn on a target
+ * Then the entity layer is laid on that target
+ */
+TEST_F(GameScreenTest, DrawingLaysTheEntityLayerOnTheTarget) {
+  BlankRenderTarget target;
+
+  screens().draw(target);
+
+  EXPECT_EQ(layerRecord().showCount, SHOWS_AFTER_ONE_DRAW);
+  EXPECT_EQ(layerRecord().lastShowTarget, &target);
+}
+
+/**
  * Given the game screen
  * When the player presses up and space
  * Then both actions are held
  */
 TEST(GameScreenActionsTest, PressedKeysBecomeHeldActions) {
   IgnoringNavigator navigator;
-  GameScreen game(navigator);
+  GameScreen game(navigator, std::make_unique<IgnoringEntityLayer>());
 
   game.handleEvent(keyPress(sf::Keyboard::Key::Up));
   game.handleEvent(keyPress(sf::Keyboard::Key::Space));
@@ -143,7 +203,7 @@ TEST(GameScreenActionsTest, PressedKeysBecomeHeldActions) {
  */
 TEST(GameScreenActionsTest, ReleasedKeyIsNoLongerHeld) {
   IgnoringNavigator navigator;
-  GameScreen game(navigator);
+  GameScreen game(navigator, std::make_unique<IgnoringEntityLayer>());
   game.handleEvent(keyPress(sf::Keyboard::Key::Up));
 
   game.handleEvent(keyRelease(sf::Keyboard::Key::Up));
@@ -158,7 +218,7 @@ TEST(GameScreenActionsTest, ReleasedKeyIsNoLongerHeld) {
  */
 TEST(GameScreenActionsTest, LosingFocusReleasesTheHeldActions) {
   IgnoringNavigator navigator;
-  GameScreen game(navigator);
+  GameScreen game(navigator, std::make_unique<IgnoringEntityLayer>());
   game.handleEvent(keyPress(sf::Keyboard::Key::Up));
 
   game.handleEvent(sf::Event{sf::Event::FocusLost{}});
@@ -173,7 +233,7 @@ TEST(GameScreenActionsTest, LosingFocusReleasesTheHeldActions) {
  */
 TEST(GameScreenActionsTest, KeysPressedWithoutFocusAreIgnored) {
   IgnoringNavigator navigator;
-  GameScreen game(navigator);
+  GameScreen game(navigator, std::make_unique<IgnoringEntityLayer>());
   game.handleEvent(sf::Event{sf::Event::FocusLost{}});
 
   game.handleEvent(keyPress(sf::Keyboard::Key::Up));
@@ -188,7 +248,7 @@ TEST(GameScreenActionsTest, KeysPressedWithoutFocusAreIgnored) {
  */
 TEST(GameScreenActionsTest, KeysPressedAfterFocusGainedCount) {
   IgnoringNavigator navigator;
-  GameScreen game(navigator);
+  GameScreen game(navigator, std::make_unique<IgnoringEntityLayer>());
   game.handleEvent(sf::Event{sf::Event::FocusLost{}});
   game.handleEvent(sf::Event{sf::Event::FocusGained{}});
 
