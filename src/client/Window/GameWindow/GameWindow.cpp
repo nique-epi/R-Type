@@ -1,25 +1,19 @@
 #include "GameWindow.hpp"
-#include <SFML/Graphics/Color.hpp>
-#include <SFML/Graphics/Font.hpp>
 #include <SFML/Graphics/Rect.hpp>
-#include <SFML/Graphics/RenderTexture.hpp>
+#include <SFML/Graphics/RenderTarget.hpp>
 #include <SFML/Graphics/View.hpp>
 #include <SFML/System/Vector2.hpp>
 #include <SFML/Window/Event.hpp>
-#include <SFML/Window/Mouse.hpp>
 #include <SFML/Window/VideoMode.hpp>
 #include <SFML/Window/WindowEnums.hpp>
 #include <cstddef>
 #include <optional>
-#include <random>
-#include "ITextureSource.hpp"
 #include "PixelPosition.hpp"
 #include "PixelSize.hpp"
 #include "PlayfieldConstants.hpp"
 #include "PlayfieldViewport.hpp"
-#include "SpriteShowcase.hpp"
-#include "TimeConstants.hpp"
 #include "WindowConstants.hpp"
+#include "WindowSizeSelection.hpp"
 
 namespace rtype::client {
 
@@ -28,64 +22,52 @@ PixelSize GameWindow::desktopSize() {
   return {.width = size.x, .height = size.y};
 }
 
-GameWindow::GameWindow(const sf::Font& windowSizeLabelFont,
-                       const ITextureSource& textures)
+GameWindow::GameWindow()
     : windowSizeSelection_(desktopSize()),
       window_(sf::VideoMode({windowSizeSelection_.selected().width,
                              windowSizeSelection_.selected().height}),
-              WINDOW_TITLE, sf::Style::Titlebar | sf::Style::Close),
-      background_(std::random_device{}()),
-      windowSizeButtons_(windowSizeLabelFont),
-      entitySurface_(entityCanvas_.canvas(), textures) {
+              WINDOW_TITLE, sf::Style::Titlebar | sf::Style::Close) {
   window_.setFramerateLimit(FRAMES_PER_SECOND_LIMIT);
   applySelectedWindowSize();
-  spawnSpriteShowcase(entities_, components_);
 }
 
-void GameWindow::run() {
-  previousFrameTime_ = clock_.now();
-  while (window_.isOpen()) {
-    handleEvents();
-    advanceBackground();
-    render();
-  }
-}
+bool GameWindow::isOpen() const { return window_.isOpen(); }
 
-void GameWindow::handleEvents() {
-  while (const std::optional windowEvent = window_.pollEvent()) {
+std::optional<sf::Event> GameWindow::pollScreenEvent() {
+  while (std::optional<sf::Event> windowEvent = window_.pollEvent()) {
     if (windowEvent->is<sf::Event::Closed>()) {
       window_.close();
-    } else if (const auto* resized = windowEvent->getIf<sf::Event::Resized>()) {
+      return std::nullopt;
+    }
+    if (const auto* resized = windowEvent->getIf<sf::Event::Resized>()) {
       showWholePlayfield(resized->size);
-    } else if (const auto* pressed =
-                   windowEvent->getIf<sf::Event::MouseButtonPressed>()) {
-      if (pressed->button == sf::Mouse::Button::Left) {
-        selectWindowSizeAt(pressed->position);
-      }
+    } else {
+      return windowEvent;
     }
   }
+  return std::nullopt;
 }
 
-void GameWindow::advanceBackground() {
-  const engine::Duration now = clock_.now();
-  background_.advance(now - previousFrameTime_);
-  previousFrameTime_ = now;
+void GameWindow::clear() { window_.clear(); }
+
+sf::RenderTarget& GameWindow::renderTarget() { return window_; }
+
+void GameWindow::display() { window_.display(); }
+
+const WindowSizeSelection& GameWindow::windowSizeSelection() const {
+  return windowSizeSelection_;
 }
 
-void GameWindow::render() {
-  window_.clear();
-  background_.draw(window_);
-  drawEntities();
-  windowSizeButtons_.draw(window_);
-  window_.display();
+bool GameWindow::selectWindowSize(std::size_t index) {
+  if (!windowSizeSelection_.select(index)) {
+    return false;
+  }
+  applySelectedWindowSize();
+  return true;
 }
 
-void GameWindow::drawEntities() {
-  sf::RenderTexture& canvas = entityCanvas_.canvas();
-  canvas.clear(sf::Color::Transparent);
-  renderSystem_.render(components_, entitySurface_);
-  canvas.display();
-  entityCanvas_.show(window_);
+sf::Vector2f GameWindow::playfieldPointAt(sf::Vector2i pixel) const {
+  return window_.mapPixelToCoords(pixel);
 }
 
 void GameWindow::showWholePlayfield(sf::Vector2u windowSize) {
@@ -104,15 +86,6 @@ void GameWindow::applySelectedWindowSize() {
   window_.setSize({size.width, size.height});
   window_.setPosition({position.x, position.y});
   showWholePlayfield(window_.getSize());
-  windowSizeButtons_.showState(windowSizeSelection_);
-}
-
-void GameWindow::selectWindowSizeAt(sf::Vector2i pixel) {
-  const std::optional<std::size_t> index =
-      windowSizeButtons_.indexAt(window_.mapPixelToCoords(pixel));
-  if (index.has_value() && windowSizeSelection_.select(*index)) {
-    applySelectedWindowSize();
-  }
 }
 
 }  // namespace rtype::client

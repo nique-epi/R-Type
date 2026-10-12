@@ -5,15 +5,15 @@ add_subdirectory(Platform)
 add_subdirectory(Assets)
 add_subdirectory(Rendering)
 add_subdirectory(Window)
+add_subdirectory(Screens)
+add_subdirectory(Application)
 
 add_executable(r-type_client main.cpp)
 
 target_link_libraries(r-type_client
   PRIVATE
+    rtype_client_application
     rtype_client_rendering
-    rtype_client_window
-    rtype_client_game_window
-    rtype_client_asset_loading_step
     rtype_game
     rtype_logging
     rtype_network

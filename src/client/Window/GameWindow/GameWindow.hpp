@@ -1,80 +1,74 @@
 #pragma once
 
-#include <SFML/Graphics/Font.hpp>
+#include <SFML/Graphics/RenderTarget.hpp>
 #include <SFML/Graphics/RenderWindow.hpp>
 #include <SFML/System/Vector2.hpp>
-#include "ComponentRegistry.hpp"
-#include "EntityRegistry.hpp"
-#include "ITextureSource.hpp"
-#include "PixelCanvas.hpp"
+#include <SFML/Window/Event.hpp>
+#include <cstddef>
+#include <optional>
 #include "PixelSize.hpp"
-#include "RenderSystem.hpp"
-#include "ScrollingBackground.hpp"
-#include "SfmlDrawSurface.hpp"
-#include "SystemClock.hpp"
-#include "TimeConstants.hpp"
-#include "WindowSizeButtons.hpp"
 #include "WindowSizeSelection.hpp"
 
 namespace rtype::client {
 
 /**
- * @brief Client window and its frame loop.
- *
- * The loop never waits on the network: it only polls window events, moves the
- * background, draws and presents, at most FRAMES_PER_SECOND_LIMIT times per
- * second. Network reception is meant to run on its own thread and hand its
- * messages over through a queue the loop drains each frame.
+ * @brief Client window, which always shows the whole playfield.
  *
  * The window cannot be resized by dragging its border. The player picks one of
- * the sizes of WINDOW_SIZES with the buttons drawn in the playfield; the
- * window opens at the largest one that fits the desktop. Every size has the
- * proportions of the playfield, so the playfield fills the window.
+ * the sizes of WINDOW_SIZES; the window opens at the largest one that fits the
+ * desktop. Every size has the proportions of the playfield, so the playfield
+ * fills the window.
  *
  * Should the system still give the window another shape, the whole playfield
  * stays visible: drawing is done in the logical units of the playfield, scaled
  * without distortion, and what the playfield does not cover stays black.
- *
- * The scrolling background fills the playfield behind everything else. It
- * moves by the real time elapsed since the previous frame, so its speed does
- * not depend on the frame rate.
- *
- * Entities are painted on their own PixelCanvas, laid in front of the
- * background and behind the buttons, so their pixels match the pixels of the
- * sky. They come from the window's own registry; until the client creates the
- * entities the server announces, that registry holds the provisional sprite
- * showcase.
  */
 class GameWindow {
  public:
-  /**
-   * @brief Opens the window; its buttons are labelled with the given font and
-   * its entities are drawn with the given textures, which must both outlive
-   * the window.
-   *
-   * @throws RenderTextureNotCreatedException when the background or the
-   * entity canvas cannot get its render textures.
-   */
-  GameWindow(const sf::Font& windowSizeLabelFont,
-             const ITextureSource& textures);
+  /** @brief Opens the window at the selected size, centered on the desktop,
+   * showing at most FRAMES_PER_SECOND_LIMIT frames per second. */
+  GameWindow();
+
+  [[nodiscard]] bool isOpen() const;
 
   /**
-   * @brief Runs the frame loop until the window is closed.
+   * @brief The next event a screen may react to.
+   *
+   * The window handles closing and resizing itself and never returns those
+   * events: closing closes the window, resizing keeps the whole playfield in
+   * view.
+   *
+   * @returns The event, or an empty optional once no event is left or the
+   * window is closed.
    */
-  void run();
+  [[nodiscard]] std::optional<sf::Event> pollScreenEvent();
+
+  /** @brief Clears the window to black before a frame is drawn. */
+  void clear();
+
+  /** @brief Where a frame is drawn, in playfield units. */
+  [[nodiscard]] sf::RenderTarget& renderTarget();
+
+  /** @brief Shows what was drawn since clear(). */
+  void display();
+
+  [[nodiscard]] const WindowSizeSelection& windowSizeSelection() const;
+
+  /**
+   * @brief Gives the window the size at this index of WINDOW_SIZES, centered
+   * on the desktop.
+   *
+   * @returns false, changing nothing, when that size is not available.
+   */
+  bool selectWindowSize(std::size_t index);
+
+  /**
+   * @param pixel Position in the window, in pixels.
+   * @returns The point of the playfield under that pixel, in playfield units.
+   */
+  [[nodiscard]] sf::Vector2f playfieldPointAt(sf::Vector2i pixel) const;
 
  private:
-  void handleEvents();
-
-  /** @brief Moves the background by the time since the previous frame. */
-  void advanceBackground();
-
-  void render();
-
-  /** @brief Paints the entities on their canvas, then lays it over the
-   * background. */
-  void drawEntities();
-
   /**
    * @brief Makes the window show the whole playfield, undistorted and
    * centered.
@@ -86,34 +80,15 @@ class GameWindow {
    */
   void showWholePlayfield(sf::Vector2u windowSize);
 
-  /**
-   * @brief Gives the window the selected size, centers it on the desktop
-   * and shows the size on the buttons.
-   */
+  /** @brief Gives the window the selected size and centers it on the
+   * desktop. */
   void applySelectedWindowSize();
-
-  /**
-   * @brief Selects the size whose button is under a click, when that size is
-   * available.
-   *
-   * @param pixel Position of the click in the window, in pixels.
-   */
-  void selectWindowSizeAt(sf::Vector2i pixel);
 
   /** @returns The size of the desktop the window opens on. */
   [[nodiscard]] static PixelSize desktopSize();
 
   WindowSizeSelection windowSizeSelection_;
   sf::RenderWindow window_;
-  ScrollingBackground background_;
-  WindowSizeButtons windowSizeButtons_;
-  engine::EntityRegistry entities_;
-  engine::ComponentRegistry components_{entities_};
-  RenderSystem renderSystem_;
-  PixelCanvas entityCanvas_;
-  SfmlDrawSurface entitySurface_;
-  engine::SystemClock clock_;
-  engine::Duration previousFrameTime_{};
 };
 
 }  // namespace rtype::client

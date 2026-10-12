@@ -14,10 +14,12 @@ namespace rtype::client {
 namespace {
 
 template <typename Pending>
-void appendPending(std::vector<Pending>& pending, AssetKind kind,
-                   const std::vector<std::string>& assetIds) {
+void appendPending(std::vector<Pending>& pending, const AssetLibrary& library,
+                   AssetKind kind, const std::vector<std::string>& assetIds) {
   for (const std::string& assetId : assetIds) {
-    pending.push_back(Pending{.kind = kind, .assetId = assetId});
+    if (!library.isLoaded(kind, assetId)) {
+      pending.push_back(Pending{.kind = kind, .assetId = assetId});
+    }
   }
 }
 
@@ -29,13 +31,13 @@ bool hasProblems(const AssetProblems& problems) {
 }  // namespace
 
 AssetLoadingStep::AssetLoadingStep(AssetLibrary& library,
-                                   const AssetList& nextScreenAssets)
+                                   const AssetList& assets)
     : library_(&library) {
-  library_->releaseAllExcept(nextScreenAssets);
-  appendPending(pending_, AssetKind::Texture, nextScreenAssets.textures);
-  appendPending(pending_, AssetKind::Sound, nextScreenAssets.sounds);
-  appendPending(pending_, AssetKind::Font, nextScreenAssets.fonts);
-  appendPending(pending_, AssetKind::Music, nextScreenAssets.music);
+  library_->releaseAllExcept(assets);
+  appendPending(pending_, *library_, AssetKind::Texture, assets.textures);
+  appendPending(pending_, *library_, AssetKind::Sound, assets.sounds);
+  appendPending(pending_, *library_, AssetKind::Font, assets.fonts);
+  appendPending(pending_, *library_, AssetKind::Music, assets.music);
 }
 
 void AssetLoadingStep::loadNext() {
