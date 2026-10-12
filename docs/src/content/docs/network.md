@@ -56,7 +56,7 @@ network.run();
 
 ## Socket to queues: `DatagramRelay`
 
-`DatagramRelay` (`src/network/Transport/DatagramRelay/`) connects an `IDatagramSocket` to two `BoundedQueue` (see [Concurrency](/R-Type/concurrency/)), so another thread exchanges datagrams with the network without touching the socket. Its calls run on the thread that runs the socket's `NetworkContext`, or before that thread starts; the socket and the queues must outlive it.
+`DatagramRelay` (`src/network/Transport/DatagramRelay/`) connects an `IDatagramSocket` to two `BoundedQueue` (see [Concurrency](/R-Type/concurrency/)), so another thread exchanges datagrams with the network without touching the socket. Its calls run on the thread that runs the socket's `NetworkContext`, or before that thread starts. The socket and the outgoing queue must outlive it. The incoming queue must live longer still: `startReceiving()` gives the socket a handler that writes to it, and the socket keeps that handler until it is destroyed, so the incoming queue stays alive until the socket is destroyed, or until no thread will run its `NetworkContext` again. `ServerApplication` respects it: its queues are destroyed after `run()` has returned, when no thread runs its context any more.
 
 - `startReceiving()` copies every datagram the socket receives, with its sender, into the incoming queue as an `IncomingDatagram`.
 - `sendWaiting()` sends every `OutgoingDatagram` waiting in the outgoing queue, oldest first. A datagram the socket refuses, too large or for an address that is not an IP address, throws, and the ones after it are not sent.

@@ -5,6 +5,8 @@
 #include <vector>
 #include "Endpoint.hpp"
 #include "IDatagramSocket.hpp"
+#include "NetworkConstants.hpp"
+#include "NetworkException.hpp"
 #include "OutgoingDatagram.hpp"
 
 void RecordingDatagramSocket::startReceiving(
@@ -14,6 +16,9 @@ void RecordingDatagramSocket::startReceiving(
 
 void RecordingDatagramSocket::send(const rtype::network::Endpoint& destination,
                                    std::span<const std::byte> payload) {
+  if (payload.size() > rtype::network::MAX_DATAGRAM_SIZE) {
+    throw rtype::network::DatagramTooLargeException(payload.size());
+  }
   sent_.push_back(rtype::network::OutgoingDatagram{
       .destination = destination, .payload = {payload.begin(), payload.end()}});
 }

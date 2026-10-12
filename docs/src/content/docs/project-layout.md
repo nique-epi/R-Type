@@ -62,12 +62,13 @@ src/engine/
 ├── Components/       stores components by type
 ├── Systems/          runs systems in a fixed order
 ├── Events/           typed event bus
+├── Collision/        rectangle overlap test and the collision event
 ├── Time/             fixed timestep, clocks, timers
 ├── NetworkIds/       entity to network id, and back
 └── Exceptions/
 ```
 
-`EntityRegistry`, `Components`, `Systems`, `Events`, `Time` and `Exceptions` exist; `NetworkIds` is not written yet.
+`EntityRegistry`, `Components`, `Systems`, `Events`, `Collision`, `Time`, `NetworkIds` and `Exceptions` exist.
 
 ### Logging
 
@@ -89,10 +90,10 @@ src/game/
 ├── Systems/          movement, collisions, damage, shooting, score, lives
 ├── Spawning/         creates ships, enemies, missiles, bonuses
 ├── Waves/            when and which enemies appear
-└── Events/           collision, entity destroyed, player left...
+└── Events/           entity destroyed, player left...
 ```
 
-`World`, `Components` and the movement system (`Systems/MovementSystem/`) exist; the other systems and folders are not written yet.
+`World`, `Components`, `Events`, the movement system (`Systems/MovementSystem/`) and the collision classes (`Systems/CollisionSystem/`, `Systems/CollisionRules/`) exist; the other systems and folders are not written yet. See [Server and game](/R-Type/server/).
 
 ### Network
 
@@ -139,15 +140,15 @@ src/server/
 
 ### Client
 
-`src/client` builds `r-type_client`: what the player sees, hears and presses. The frame loop never waits: the network and HTTP threads hand their results over through queues.
+`src/client` builds `r-type_client`: what the player sees, hears and presses. The frame loop never waits: the network and HTTP threads will hand their results over through queues.
 
 ```
 src/client/
 ├── Application/      frame loop and screen stack
 ├── Window/           the SFML window
-├── Assets/           assets found by id, loaded per screen in a loading step
+├── Assets/           assets found by id, loaded at launch or entering a game
 ├── Platform/         what differs between Windows, macOS and Linux
-├── Screens/          home, server list, lobby, game, end, options...
+├── Screens/          loading, home, server list, lobby, game, end, options...
 ├── Widgets/          buttons, text fields, lists
 ├── Rendering/        sprites, starfield, HUD, effects, lagometer
 ├── Audio/            sounds and music
@@ -158,11 +159,13 @@ src/client/
 └── Prediction/       own ship predicted, other ships interpolated
 ```
 
-`Window`, `Rendering`, `Assets`, `Platform` and `Connection` exist today. `Connection` only holds the network thread, which nothing starts yet (see [Client](/R-Type/client/#network-networkthread)).
+`Application`, `Window`, `Screens` (loading, game and options), `Rendering`, `Assets`, `Platform`, `Input` and `Connection` exist today. `Input` holds the keys and the held actions only: gamepad, remapping and the player input message are not written yet. `Connection` only holds the network thread, which nothing starts yet (see [Client](/R-Type/client/#network-networkthread)).
 
 `Rendering` draws every entity that has a `Position` and a `Sprite` (an asset id and a layer), from the background layer to the interface layer. `RenderSystem` reads these two components and nothing else, and draws through `IDrawSurface`; only `SfmlDrawSurface` knows SFML, and it finds textures through `ITextureSource`. The system is not wired into the frame loop yet.
 
 `Rendering/Background` draws the scrolling starfield behind the playfield, and the frame loop already draws it. It is described in [Client](/R-Type/client/#scrolling-background-scrollingbackground).
+
+`Input` turns key and focus events into the set of actions the player holds. It is described in [Client](/R-Type/client/#player-commands-playercommands).
 
 ### Master
 
@@ -182,7 +185,7 @@ Each module splits its classes into a controller (HTTP in and out), a service (t
 
 ### Tests, web frontend, assets
 
-- **`tests/`** mirrors `src/`: the test of `src/game/Waves/WaveDirector` is `tests/game/Waves/WaveDirectorTest.cpp`, built into `game_tests`, one executable per library or program. Test doubles (fake clock, lossy transport) go in `tests/doubles/`; load-test bots in `tests/tools/`, never shipped. Today the older tests sit at the root of `tests/`; `tests/client/`, `tests/concurrency/` and `tests/server/` already follow this layout, and `tests/doubles/` holds a socket that records instead of sending.
+- **`tests/`** mirrors `src/`: the test of `src/game/Waves/WaveDirector` is `tests/game/Waves/WaveDirectorTest.cpp`, built into `game_tests`, one executable per library or program. Test doubles (fake clock, lossy transport) go in `tests/doubles/`; load-test bots in `tests/tools/`, never shipped. Today the older tests sit at the root of `tests/`; `tests/client/`, `tests/concurrency/`, `tests/engine/`, `tests/network/` and `tests/server/` already follow this layout, and `tests/doubles/` holds a socket that records instead of sending.
 - **`web/`** is the React frontend served by the master: `src/api/` (one function per route), `src/pages/`, `src/components/`.
 - **`assets/`** holds the files read at run time: `sprites/`, `sounds/`, `music/` and `fonts/` for the client, `waves/` for the server.
 

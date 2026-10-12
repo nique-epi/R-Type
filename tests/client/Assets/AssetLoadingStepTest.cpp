@@ -38,7 +38,7 @@ constexpr std::size_t TWO_ASSETS = 2;
 }  // namespace
 
 /**
- * Given a next screen that lists no asset
+ * Given an empty asset list
  * When its loading step starts
  * Then the step is already finished
  */
@@ -52,7 +52,7 @@ TEST(AssetLoadingStep, EmptyListIsFinishedAtOnce) {
 }
 
 /**
- * Given a next screen that lists two sounds
+ * Given a list of two sounds
  * When the step loads once
  * Then exactly one of them is processed and the step goes on
  */
@@ -72,7 +72,7 @@ TEST(AssetLoadingStep, LoadsOneAssetPerCall) {
 }
 
 /**
- * Given a next screen that lists two sounds
+ * Given a list of two sounds
  * When the step loads twice
  * Then it is finished and both sounds are loaded
  */
@@ -109,11 +109,11 @@ TEST(AssetLoadingStep, LoadingAfterTheEndDoesNothing) {
 }
 
 /**
- * Given a sound loaded for the previous screen
- * When a step starts for a next screen that does not list it
+ * Given a sound loaded for a previous game
+ * When a step starts for a list that does not name it
  * Then the sound is released
  */
-TEST(AssetLoadingStep, ReleasesWhatTheNextScreenDoesNotList) {
+TEST(AssetLoadingStep, ReleasesWhatTheListDoesNotName) {
   const TemporaryFolder assets;
   writeSilentSound(assets.path() / SHOT_SOUND_ID, SOUND_SAMPLE_COUNT);
   AssetLibrary library{assets.path()};
@@ -127,11 +127,11 @@ TEST(AssetLoadingStep, ReleasesWhatTheNextScreenDoesNotList) {
 }
 
 /**
- * Given a sound loaded for the previous screen
- * When the next screen lists it too and its step finishes
+ * Given a sound loaded for a previous game
+ * When the next list names it too and its step finishes
  * Then the sound is the same buffer, it was not loaded again
  */
-TEST(AssetLoadingStep, KeepsWhatBothScreensUse) {
+TEST(AssetLoadingStep, KeepsWhatTheListNamesAgain) {
   const TemporaryFolder assets;
   writeSilentSound(assets.path() / SHOT_SOUND_ID, SOUND_SAMPLE_COUNT);
   AssetLibrary library{assets.path()};
@@ -145,8 +145,8 @@ TEST(AssetLoadingStep, KeepsWhatBothScreensUse) {
 }
 
 /**
- * Given a next screen listing a badly named id, a missing texture, an
- * unreadable sound and a valid sound
+ * Given a list holding a badly named id, a missing texture, an unreadable
+ * sound and a valid sound
  * When the step loads every asset
  * Then the last load reports all three problems in one error
  */
@@ -168,4 +168,40 @@ TEST(AssetLoadingStep, ReportsEveryProblemAfterTheLastAsset) {
           HasSubstr(BADLY_NAMED_ID),
           HasSubstr(genericText(assets.path() / "sprites" / "player_ship.png")),
           HasSubstr(genericText(assets.path() / "sounds" / "corrupt.wav")))));
+}
+
+/**
+ * Given a sound already loaded and a list naming it and another sound
+ * When the step starts
+ * Then only the other sound counts as an asset to load
+ */
+TEST(AssetLoadingStep, AssetsAlreadyLoadedAreNotCounted) {
+  const TemporaryFolder assets;
+  writeSilentSound(assets.path() / SHOT_SOUND_ID, SOUND_SAMPLE_COUNT);
+  writeSilentSound(assets.path() / EXPLOSION_SOUND_ID, SOUND_SAMPLE_COUNT);
+  AssetLibrary library{assets.path()};
+  static_cast<void>(library.load(AssetKind::Sound, SHOT_SOUND_ID));
+
+  const AssetLoadingStep step(
+      library, AssetList{.sounds = {SHOT_SOUND_ID, EXPLOSION_SOUND_ID}});
+
+  EXPECT_EQ(step.assetCount(), ONE_ASSET);
+}
+
+/**
+ * Given a loaded sound made permanent
+ * When a step starts for a list that does not name it
+ * Then the sound is still loaded
+ */
+TEST(AssetLoadingStep, KeepsPermanentAssetsItDoesNotName) {
+  const TemporaryFolder assets;
+  writeSilentSound(assets.path() / SHOT_SOUND_ID, SOUND_SAMPLE_COUNT);
+  AssetLibrary library{assets.path()};
+  static_cast<void>(library.load(AssetKind::Sound, SHOT_SOUND_ID));
+  library.keepPermanently(AssetList{.sounds = {SHOT_SOUND_ID}});
+
+  const AssetLoadingStep step(library,
+                              AssetList{.sounds = {EXPLOSION_SOUND_ID}});
+
+  EXPECT_TRUE(library.isLoaded(AssetKind::Sound, SHOT_SOUND_ID));
 }

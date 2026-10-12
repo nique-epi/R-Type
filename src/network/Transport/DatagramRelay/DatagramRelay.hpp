@@ -13,7 +13,11 @@ namespace rtype::network {
  * drains and fills, such as the simulation thread of the server.
  *
  * Every call must run on the thread that runs the socket's NetworkContext, or
- * before that thread starts. The socket and the queues must outlive the relay.
+ * before that thread starts. The socket and the outgoing queue must outlive the
+ * relay. The incoming queue must live longer still: startReceiving() gives the
+ * socket a handler that writes to it, and the socket keeps that handler until
+ * it is destroyed. Keep the incoming queue alive until the socket is
+ * destroyed, or until no thread will run the socket's NetworkContext again.
  */
 class DatagramRelay {
  public:

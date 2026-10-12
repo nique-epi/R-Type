@@ -9,6 +9,7 @@
 #include "DatagramRelayTestConstants.hpp"
 #include "Endpoint.hpp"
 #include "IncomingDatagram.hpp"
+#include "NetworkException.hpp"
 #include "OutgoingDatagram.hpp"
 #include "RecordingDatagramSocket.hpp"
 
@@ -127,4 +128,24 @@ TEST(DatagramRelay, NeverSendsADatagramTwice) {
   setup.relay.sendWaiting();
 
   EXPECT_EQ(setup.socket.sent(), (std::vector<OutgoingDatagram>{datagram}));
+}
+
+/**
+ * Given a datagram one byte larger than MAX_DATAGRAM_SIZE waiting in the
+ * outgoing queue, before a datagram the socket accepts
+ * When the relay sends what is waiting
+ * Then it throws DatagramTooLargeException before sending the datagram after it
+ */
+TEST(DatagramRelay, StopsAtTheFirstDatagramTheSocketRefuses) {
+  RelayUnderTest setup;
+  setup.outgoing.push(OutgoingDatagram{
+      .destination = peerOnPort(PEER_PORT),
+      .payload = std::vector<std::byte>(REFUSED_PAYLOAD_SIZE)});
+  setup.outgoing.push(OutgoingDatagram{
+      .destination = peerOnPort(OTHER_PEER_PORT), .payload = receivedBytes()});
+
+  EXPECT_THROW(setup.relay.sendWaiting(),
+               rtype::network::DatagramTooLargeException);
+
+  EXPECT_TRUE(setup.socket.sent().empty());
 }

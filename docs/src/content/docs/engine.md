@@ -12,9 +12,11 @@ This page tells you where to look when you need to change something. It describe
 | Entities | Available | `src/engine/EntityRegistry/`, `src/engine/Entity.hpp` |
 | Components | Available | `src/engine/Components/` |
 | Fixed timestep and timers | Available | `src/engine/Time/` |
+| Network identifiers | Available | `src/engine/NetworkIds/` |
 | Systems and queries | Available | `src/engine/Systems/`, `ComponentRegistry::forEach` |
 | Game loop | Server only: ticks run at a fixed rate, no system runs in them yet | `src/server/Application/TickLoop/` |
 | Event bus | Available | `src/engine/Events/` |
+| Collisions | Available: the overlap test and the event; the system that detects them is in the game | `src/engine/Collision/` |
 
 ## How the parts fit together
 
@@ -62,6 +64,39 @@ if (auto* position = components.get<rtype::game::Position>(ship)) {
 components.destroy(ship);
 ```
 
+## Network identifiers
+
+An entity handle is local: the server and each client have different `Entity` values for the same ship. What they share is a **network identifier**, a `std::uint32_t` that the server gives to an entity and that the protocol carries as `entityId`. `NO_NETWORK_ID` (0, `NetworkIdConstants.hpp`) is reserved and never given to an entity.
+
+- `NetworkIdAllocator` (server) hands out 1, 2, 3 and so on. An identifier is never given twice, so it is unique during the whole game, even after its entity is destroyed. After 4294967295 identifiers, `allocate()` throws `NetworkIdExhaustedException` instead of wrapping around to a used identifier.
+- `NetworkIdentity` (`src/game/Components/`) is the component that carries the identifier on a server entity, so the code that builds a world state can read it.
+- `NetworkEntityTable` (client) finds the local entity of an identifier. `find()` returns an empty `std::optional` for an unknown identifier. What the client does then depends on the message: a `WorldState` creates the entity, an `EntityDestroyed` is ignored (see [Protocol](/R-Type/protocol/#world-state)). `bind()` returns false and changes nothing when the identifier is already bound, in which case the first entity is kept, and for the reserved 0, so a corrupt identifier read from the network never throws. The table does not know whether an entity is alive: whoever destroys an entity unbinds its identifier.
+
+Nothing creates identifiers or fills the table yet: `World` does not use them until the world state is replicated.
+
+On the server, with `entities` and `components` from the example above:
+
+```cpp
+rtype::engine::NetworkIdAllocator allocator;
+
+rtype::engine::Entity ship = entities.create();
+components.add(ship, rtype::game::NetworkIdentity{
+                          .networkId = allocator.allocate()});  // 1
+```
+
+On the client, with `networkId` read from a message:
+
+```cpp
+rtype::engine::NetworkEntityTable table;
+
+rtype::engine::Entity localEntity = entities.create();
+table.bind(networkId, localEntity);
+
+if (const auto entity = table.find(networkId)) {
+  // the entity the server named
+}
+```
+
 ## Systems and queries
 
 A **system** is one behavior of the game: a class that implements `ISystem` (`src/engine/Systems/ISystem.hpp`) and reads or updates components in `update(components, elapsed)`.
@@ -94,7 +129,7 @@ components.forEach<rtype::game::Position, rtype::game::Velocity>(
 The simulation runs at a fixed rate, `SIMULATION_TICKS_PER_SECOND` (60), whatever the rendering rate (`TimeConstants.hpp`).
 
 - `IClock` is the source of time. `SystemClock` reads the real clock; tests use `tests/SimulatedClock.hpp`, so a test never waits and gives the same result at any frame rate.
-- `FixedTimestep` turns the time read from an `IClock` into a whole number of ticks to simulate. The remainder is kept for the next call. A stall longer than `MAXIMUM_TICKS_PER_ADVANCE` ticks is dropped instead of being caught up. `nextTickTime()` gives the time of the clock at which the next tick is due, as of the last `consumeTicks()`: later than that call by more than zero and at most one tick, so a loop can sleep until then.
+- `FixedTimestep` turns the time read from an `IClock` into a whole number of ticks to simulate. The remainder is kept for the next call. A stall longer than `MAXIMUM_TICKS_PER_ADVANCE` ticks is dropped instead of being caught up. `nextTickTime()` gives the time of the clock at which the next tick is due, as of the last `consumeTicks()`: later than that call by more than zero and at most one tick, so a loop can sleep until then. `droppedTime()` gives the time the last `consumeTicks()` dropped, zero when it caught everything up, so a loop can report the stall.
 - `TimerScheduler` runs a callback after a delay (`scheduleOnce`) or at a regular interval (`scheduleRepeating`), and cancels it through the `TimerHandle` it returned. It never reads a clock: the caller passes `SIMULATION_TICK_DURATION` to `advance()` once per tick.
 
 The loop the client and the server will write looks like this; the events published by the systems are delivered at the end of the same tick (see [Event bus](#event-bus-eventbus)):
@@ -108,7 +143,7 @@ for (std::size_t tick = 0; tick < ticks; ++tick) {
 }
 ```
 
-The server runs ticks at this rate on its simulation thread, in `TickLoop` (see [Server](/R-Type/server/#tick-loop-tickloop)), but no tick runs timers, systems or events yet. `GameWindow` (`src/client/Window/GameWindow/`) only reads `SystemClock` to move the scrolling background by the real time of each frame (see [Client](/R-Type/client/#scrolling-background-scrollingbackground)); it runs no tick.
+The server runs ticks at this rate on its simulation thread, in `TickLoop` (see [Server](/R-Type/server/#tick-loop-tickloop)), but no tick runs timers, systems or events yet. The client frame loop, `Application` (`src/client/Application/`), only reads `SystemClock` to move the scrolling background by the real time of each frame (see [Client](/R-Type/client/#scrolling-background-scrollingbackground)); it runs no tick.
 
 ## Event bus: `EventBus`
 
@@ -117,16 +152,11 @@ The server runs ticks at this rate on its simulation thread, in `TickLoop` (see 
 `publish()` only queues the event. `dispatch()` delivers the queue: events in the order they were published, each one to the subscribers of its type in the order they subscribed. The loop must call `dispatch()` once per tick, after the systems, so a subscriber runs outside any `forEach` and may add and remove components, and what it does still happens in the tick the event was published. The reasoning is in [Architecture](/R-Type/architecture/#events).
 
 ```cpp
-struct Collision {
-  rtype::engine::Entity first;
-  rtype::engine::Entity second;
-};
-
-events.subscribe<Collision>([&components](const Collision& collision) {
+events.subscribe<rtype::engine::Collision>([&components](const rtype::engine::Collision& collision) {
   components.destroy(collision.second);
 });
 
-events.publish(Collision{.first = missile, .second = bydo});
+events.publish(rtype::engine::Collision{.first = missile, .second = bydo});
 events.dispatch();
 ```
 
@@ -137,7 +167,17 @@ events.dispatch();
 - When a subscriber throws, the exception leaves `dispatch()` and the events not delivered yet wait for the next `dispatch()`.
 - The bus is not thread-safe: each thread that runs a game or a frame loop owns its own bus.
 
-No event type exists yet: each one is added with the code that publishes it.
+The engine defines one event type, `Collision` (see below). The game defines the others, each one added with the code that publishes it.
+
+## Collisions: `Bounds`, `overlaps` and `Collision`
+
+`src/engine/Collision/` holds what any game needs to tell that two things touch, and nothing about what touching means. It is headers only.
+
+- `Bounds` is an axis-aligned rectangle given by its center (`centerX`, `centerY`) and its size (`width`, `height`), in the caller's units. The engine does not read `Position` or `CollisionBox`, which belong to `rtype_game`: the game builds a `Bounds` from them.
+- `overlaps(first, second)` is true when the interiors of the two rectangles intersect. Two rectangles that only touch along an edge or at a corner do not overlap, and a rectangle with no area overlaps another one only if it lies strictly inside it. The answer does not depend on the order of the arguments. The function is `constexpr`.
+- `Collision` is the event `{first, second}`, two `Entity` handles. The order carries no meaning: a subscriber must accept the pair `(a, b)` as well as `(b, a)`.
+
+The engine has no system that walks the entities: it cannot read `Position` or `CollisionBox`. `CollisionSystem` in the game builds the `Bounds` and publishes `Collision`, and which pairs matter (a player missile and a Bydo, for example) is decided by the game in a subscriber, never by the engine: see [Server and game](/R-Type/server/#collisions).
 
 ## Where to intervene
 
@@ -150,10 +190,12 @@ No event type exists yet: each one is added with the code that publishes it.
 | Write a behavior that walks components | A class implementing `ISystem` in `src/engine/Systems/ISystem.hpp`, added to a `SystemScheduler` |
 | Change how entities move | `MovementSystem` in `src/game/Systems/MovementSystem/` |
 | Change the order systems run in | The order of the `SystemScheduler::add()` calls |
+| Change how network identifiers are given or looked up | `src/engine/NetworkIds/` |
 | Run something after a delay | `TimerScheduler` in `src/engine/Time/TimerScheduler/` |
+| Test whether two rectangles touch, or react to a contact | `overlaps` and `Collision` in `src/engine/Collision/`; the pairs that matter belong to `src/game/` |
 | Announce that something happened, or react to it | `EventBus` in `src/engine/Events/EventBus/`: `publish` the event, `subscribe<Event>` to it |
 | Hand data from one thread to another | `BoundedQueue`, in its own library: see [Concurrency](/R-Type/concurrency/) |
 | Add an engine error | `src/engine/Exceptions/EngineException.hpp` |
-| Write a test that depends on time | `tests/SimulatedClock.hpp`, `tests/FixedTimestepTest.cpp` |
+| Write a test that depends on time | `tests/SimulatedClock.hpp`, `tests/engine/Time/FixedTimestepTest.cpp` |
 
 Each folder has its own `CMakeLists.txt` declaring one library, linked into `rtype_engine` by `src/engine/CMakeLists.txt`.

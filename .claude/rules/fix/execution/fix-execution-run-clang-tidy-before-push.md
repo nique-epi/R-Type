@@ -38,7 +38,7 @@ A platform file such as `FineTimerResolutionWindows.cpp` is linted only by the C
    clang-tidy --checks='-*,cert-err33-c,bugprone-unused-return-value' --dump-config
    ```
    Run it with the clang-tidy version the CI job prints (20 today). Match every called function against their `CheckedFunctions` patterns, and read their `AllowCastToVoid`: in clang-tidy 20, `cert-err33-c` allows the cast and `bugprone-unused-return-value` does not. A pattern without an end anchor matches more than it names: `^::time` matches `::timeBeginPeriod` and `::timeEndPeriod`.
-3. **The CI is its verifier**: push, say in the report that this file is linted by the CI only, and follow the platform job until it is green, as `fix-process-follow-ci-after-opening-a-pr.md` requires. This is the exception named in points 1 and 4 of the first list. The CI only runs on a pull request, so the user's go to publish the branch or open the pull request is still asked first.
+3. **The CI is its verifier**: push, say in the report that this file is linted by the CI only, and follow the platform job until it is green, as `fix-process-follow-ci-after-opening-a-pr.md` requires. This is the exception named in points 1 and 4 of the first list. The CI runs on pull requests and on pushes to `main`, never on a feature branch pushed alone, so the user's go to publish the branch or open the pull request is still asked first.
 
 ## Example
 
