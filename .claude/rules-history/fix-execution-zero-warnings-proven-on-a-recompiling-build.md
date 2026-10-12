@@ -51,3 +51,17 @@ The loop relied on `make` noticing the copied file. The copy happened less than 
 
 - ❌ **Before (wrong)**: `for fault in …; do cp "$fault.cpp" src/…/MovementSystem.cpp; cmake --build build --target game_tests; build/tests/game_tests; done` → the fourth run tests the third binary.
 - ✅ **After (right)**: the same loop with `rm -f <object file>` before each build and `grep -c "Building CXX object …MovementSystem.cpp.o"` equal to 1 in each log before reading the tests.
+
+## Update (2026-10-08) — The restored original was not rebuilt
+
+### Context
+
+The asset library tests of the client screen stack work were proven red by four mutations, each applied to `AssetLibrary.cpp` or `AssetLoadingStep.cpp`, built, tested, then restored with `git checkout -- <file>`.
+
+### Mistake
+
+Point 4 of the red proof section was not applied: the restored original was not rebuilt by deleting its object file. The last restore happened in the same second as the mutated build, so the next build compiled nothing and four loading screen tests failed on the mutated library.
+
+### Root cause
+
+The section existed on disk but not in the session's context, loaded from an older branch. See `fix-process-reread-rules-after-switching-branch.md`; this rule's prescription is unchanged.

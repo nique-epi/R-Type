@@ -57,7 +57,4 @@ constexpr float WINDOW_SIZE_BUTTONS_GAP = 16.0F;
 constexpr unsigned int WINDOW_SIZE_LABEL_CHARACTER_SIZE = 30;
 constexpr const char* WINDOW_SIZE_SEPARATOR = " x ";
 
-/** @brief Asset id of the font of the button labels. */
-constexpr const char* WINDOW_SIZE_LABEL_FONT_ID = "fonts/tuffy.ttf";
-
 }  // namespace rtype::client
