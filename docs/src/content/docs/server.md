@@ -35,10 +35,20 @@ Anyone can send a datagram, so the tick handler must drop and count a datagram i
 The queues hold `INCOMING_DATAGRAM_QUEUE_CAPACITY` and `OUTGOING_DATAGRAM_QUEUE_CAPACITY` (256) datagrams each (`src/server/ServerConstants.hpp`). These sizes are **provisional**: about one second of the inputs of four players, they will be revised with the rates of the protocol. Code must read the constants.
 
 - When more datagrams arrive between two ticks than the incoming queue holds, the oldest are discarded. Every `TICKS_PER_REPORT` ticks (600, so every ten seconds), the server logs a warning with how many were discarded, if any.
-- Nothing filters the senders yet: one sender flooding the port pushes the other senders' datagrams out of the incoming queue.
+- Nothing filters the senders yet: one sender flooding the port pushes the other senders' datagrams out of the incoming queue (see [Flood protection](#flood-protection)).
 - The outgoing queue also discards its oldest datagram when full, but nothing reports it yet.
 
 `stop()` makes `run()` return, from any thread: the network thread stops at once, the simulation thread when its current sleep ends, about one tick later. An exception thrown on either thread, by the tick handler for instance, stops both, and `run()` rethrows it.
+
+### Flood protection
+
+The room of the incoming queue protects the server's memory, not the players: one sender flooding port 4242 pushes everyone else's datagrams out of it. A plain Python loop on the loopback address sends about 3 800 datagrams per tick (measured on an Apple Silicon laptop), about fifteen times the room of the queue. Other engines protect the players in three layers; the server must have them once sessions exist, and **none is written yet**:
+
+1. **Sort on the network thread, before the queue.** A datagram whose sender has no session and that is not a `ConnectionRequest` must be dropped there, and connection requests must be limited per address, in a table of fixed size so that forged addresses cannot make it grow. Quake 3 ignores such datagrams and answers at most 10 status, information or remote console requests per second from one address; Unreal limits how many datagrams of senders without a connection it processes each frame.
+2. **One queue per session**, so a flooding client only fills its own. Valve's GameNetworkingSockets keeps one per connection, of 1 000 messages by default.
+3. **One input per player and per tick.** The protocol already requires it: the server must apply the newest `PlayerInput` of each player at every tick and ignore older ones (see [Protocol](/R-Type/protocol/#inputs)).
+
+The shared queue stays as the last safety net. It discards its oldest datagram, where GameNetworkingSockets refuses the newest, because only the newest input of a player counts. Why threads only talk through queues is explained in [Architecture](/R-Type/architecture/#queues-between-threads).
 
 ## Tick loop: `TickLoop`
 
