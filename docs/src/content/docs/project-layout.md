@@ -61,13 +61,14 @@ src/engine/
 ├── Components/       stores components by type
 ├── Systems/          runs systems in a fixed order
 ├── Events/           typed event bus
+├── Collision/        rectangle overlap test and the collision event
 ├── Time/             fixed timestep, clocks, timers
 ├── Concurrency/      queues between threads
 ├── NetworkIds/       entity to network id, and back
 └── Exceptions/
 ```
 
-`EntityRegistry`, `Components`, `Systems`, `Events`, `Time` and `Exceptions` exist; `Concurrency` and `NetworkIds` are not written yet.
+`EntityRegistry`, `Components`, `Systems`, `Events`, `Collision`, `Time` and `Exceptions` exist; `Concurrency` and `NetworkIds` are not written yet.
 
 ### Logging
 
@@ -85,10 +86,10 @@ src/game/
 ├── Systems/          movement, collisions, damage, shooting, score, lives
 ├── Spawning/         creates ships, enemies, missiles, bonuses
 ├── Waves/            when and which enemies appear
-└── Events/           collision, entity destroyed, player left...
+└── Events/           entity destroyed, player left...
 ```
 
-`World`, `Components` and the movement system (`Systems/MovementSystem/`) exist; the other systems and folders are not written yet.
+`World`, `Components`, `Events`, the movement system (`Systems/MovementSystem/`) and the collision classes (`Systems/CollisionSystem/`, `Systems/CollisionRules/`) exist; the other systems and folders are not written yet. See [Server and game](/R-Type/server/).
 
 ### Network
 

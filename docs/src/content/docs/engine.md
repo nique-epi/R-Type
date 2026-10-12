@@ -15,6 +15,7 @@ This page tells you where to look when you need to change something. It describe
 | Systems and queries | Available | `src/engine/Systems/`, `ComponentRegistry::forEach` |
 | Game loop | Not yet written: the pieces exist, nothing assembles them | — |
 | Event bus | Available | `src/engine/Events/` |
+| Collisions | Available: the overlap test and the event; the system that detects them is in the game | `src/engine/Collision/` |
 
 ## How the parts fit together
 
@@ -117,16 +118,11 @@ The loop itself does not exist yet: today only the pieces above are in `rtype_en
 `publish()` only queues the event. `dispatch()` delivers the queue: events in the order they were published, each one to the subscribers of its type in the order they subscribed. The loop must call `dispatch()` once per tick, after the systems, so a subscriber runs outside any `forEach` and may add and remove components, and what it does still happens in the tick the event was published. The reasoning is in [Architecture](/R-Type/architecture/#events).
 
 ```cpp
-struct Collision {
-  rtype::engine::Entity first;
-  rtype::engine::Entity second;
-};
-
-events.subscribe<Collision>([&components](const Collision& collision) {
+events.subscribe<rtype::engine::Collision>([&components](const rtype::engine::Collision& collision) {
   components.destroy(collision.second);
 });
 
-events.publish(Collision{.first = missile, .second = bydo});
+events.publish(rtype::engine::Collision{.first = missile, .second = bydo});
 events.dispatch();
 ```
 
@@ -137,7 +133,17 @@ events.dispatch();
 - When a subscriber throws, the exception leaves `dispatch()` and the events not delivered yet wait for the next `dispatch()`.
 - The bus is not thread-safe: each thread that runs a game or a frame loop owns its own bus.
 
-No event type exists yet: each one is added with the code that publishes it.
+The engine defines one event type, `Collision` (see below). The game defines the others, each one added with the code that publishes it.
+
+## Collisions: `Bounds`, `overlaps` and `Collision`
+
+`src/engine/Collision/` holds what any game needs to tell that two things touch, and nothing about what touching means. It is headers only.
+
+- `Bounds` is an axis-aligned rectangle given by its center (`centerX`, `centerY`) and its size (`width`, `height`), in the caller's units. The engine does not read `Position` or `CollisionBox`, which belong to `rtype_game`: the game builds a `Bounds` from them.
+- `overlaps(first, second)` is true when the interiors of the two rectangles intersect. Two rectangles that only touch along an edge or at a corner do not overlap, and a rectangle with no area overlaps another one only if it lies strictly inside it. The answer does not depend on the order of the arguments. The function is `constexpr`.
+- `Collision` is the event `{first, second}`, two `Entity` handles. The order carries no meaning: a subscriber must accept the pair `(a, b)` as well as `(b, a)`.
+
+The engine has no system that walks the entities: it cannot read `Position` or `CollisionBox`. `CollisionSystem` in the game builds the `Bounds` and publishes `Collision`, and which pairs matter (a player missile and a Bydo, for example) is decided by the game in a subscriber, never by the engine: see [Server and game](/R-Type/server/#collisions).
 
 ## Where to intervene
 
@@ -151,6 +157,7 @@ No event type exists yet: each one is added with the code that publishes it.
 | Change how entities move | `MovementSystem` in `src/game/Systems/MovementSystem/` |
 | Change the order systems run in | The order of the `SystemScheduler::add()` calls |
 | Run something after a delay | `TimerScheduler` in `src/engine/Time/TimerScheduler/` |
+| Test whether two rectangles touch, or react to a contact | `overlaps` and `Collision` in `src/engine/Collision/`; the pairs that matter belong to `src/game/` |
 | Announce that something happened, or react to it | `EventBus` in `src/engine/Events/EventBus/`: `publish` the event, `subscribe<Event>` to it |
 | Add an engine error | `src/engine/Exceptions/EngineException.hpp` |
 | Write a test that depends on time | `tests/SimulatedClock.hpp`, `tests/FixedTimestepTest.cpp` |
