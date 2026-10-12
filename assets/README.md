@@ -44,4 +44,4 @@ The client looks for `assets/` next to its executable, then in the folder above 
 | Player missile | 16 × 6 | 60 ms |
 | Enemy missile | 8 × 8 | 120 ms |
 
-Nothing animates the frames yet: the client shows the first frame of each entity. The rectangle of each entity type is written once, in `src/client/Rendering/EntitySpriteConstants.hpp`.
+Nothing animates the frames yet: the client shows the first frame of each entity. The rectangle of each entity type is written once, in `src/client/Rendering/EntitySpriteConstants.hpp`. The sheet is one of the assets of a game, listed in `gameAssets()`, so the loading screen reads it when the player enters a game.

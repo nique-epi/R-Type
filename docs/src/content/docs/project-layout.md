@@ -160,7 +160,7 @@ src/client/
 
 `Application`, `Window`, `Screens` (loading, game and options), `Rendering`, `Assets` and `Platform` exist today.
 
-`Rendering` draws every entity that has a `Position` and a `Sprite` (an asset id, the rectangle of it to show and a layer), from the background layer to the interface layer, and the frame loop draws them. `RenderSystem` reads these two components and nothing else, and draws through `IDrawSurface`; only `SfmlDrawSurface` knows SFML: it paints on the pixel grid of the background and finds textures through `ITextureSource`, which `AssetTextureSource` reads from the asset library. `spriteOf` is the single table that gives each entity type its sprite. It is described in [Client](/R-Type/client/#entity-sprites-spriteof).
+`Rendering` draws every entity that has a `Position` and a `Sprite` (an asset id, the rectangle of it to show and a layer), from the background layer to the interface layer; the game screen draws them through its `EntityLayer`. `RenderSystem` reads these two components and nothing else, and draws through `IDrawSurface`; only `SfmlDrawSurface` knows SFML: it paints on the pixel grid of the background and finds textures through `ITextureSource`, which `AssetTextureSource` reads from the asset library. `spriteOf` is the single table that gives each entity type its sprite. It is described in [Client](/R-Type/client/#entity-sprites-spriteof).
 
 `Rendering/Background` draws the scrolling starfield behind the playfield, and the frame loop already draws it. It also holds `PixelCanvas`, the picture of the background's size that the sky and the entities are painted on. It is described in [Client](/R-Type/client/#scrolling-background-scrollingbackground).
 
