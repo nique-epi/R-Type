@@ -118,6 +118,7 @@ Paths below are relative to `.claude/rules/`.
 - `fix/reasoning/fix-reasoning-name-the-axis-when-neutral-here-beneficial-there.md`
 - `fix/reasoning/fix-reasoning-never-assume-unread-file-content.md`
 - `fix/reasoning/fix-reasoning-present-code-is-not-behavior.md`
+- `fix/reasoning/fix-reasoning-recheck-a-conclusion-after-the-design-changed.md`
 - `fix/reasoning/fix-reasoning-use-measurements-to-falsify-before-coding.md`
 - `fix/reasoning/fix-reasoning-validate-the-instrument-before-reporting-a-count.md`
 - `fix/reasoning/fix-reasoning-verify-the-premise-before-fixing-downstream.md`
