@@ -1,0 +1,7 @@
+add_library(rtype_client_screen_stack STATIC ScreenStack.cpp)
+
+target_include_directories(rtype_client_screen_stack PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+
+target_link_libraries(rtype_client_screen_stack PUBLIC rtype_client_screens)
+
+rtype_enable_warnings(rtype_client_screen_stack)

@@ -1,76 +1,74 @@
 #pragma once
 
-#include <SFML/Graphics/Font.hpp>
+#include <SFML/Graphics/RenderTarget.hpp>
 #include <SFML/Graphics/RenderWindow.hpp>
 #include <SFML/System/Vector2.hpp>
-#include <cstdint>
-#include "ActionSet.hpp"
-#include "Logger.hpp"
+#include <SFML/Window/Event.hpp>
+#include <cstddef>
+#include <optional>
 #include "PixelSize.hpp"
-#include "PlayerCommands.hpp"
-#include "ScrollingBackground.hpp"
-#include "SystemClock.hpp"
-#include "TimeConstants.hpp"
-#include "WindowSizeButtons.hpp"
 #include "WindowSizeSelection.hpp"
 
 namespace rtype::client {
 
 /**
- * @brief Client window and its frame loop.
- *
- * The loop never waits on the network: it only polls window events, moves the
- * background, draws and presents, at most FRAMES_PER_SECOND_LIMIT times per
- * second. Network reception is meant to run on its own thread and hand its
- * messages over through a queue the loop drains each frame.
+ * @brief Client window, which always shows the whole playfield.
  *
  * The window cannot be resized by dragging its border. The player picks one of
- * the sizes of WINDOW_SIZES with the buttons drawn in the playfield; the
- * window opens at the largest one that fits the desktop. Every size has the
- * proportions of the playfield, so the playfield fills the window.
+ * the sizes of WINDOW_SIZES; the window opens at the largest one that fits the
+ * desktop. Every size has the proportions of the playfield, so the playfield
+ * fills the window.
  *
  * Should the system still give the window another shape, the whole playfield
  * stays visible: drawing is done in the logical units of the playfield, scaled
  * without distortion, and what the playfield does not cover stays black.
- *
- * The scrolling background fills the playfield behind everything else. It
- * moves by the real time elapsed since the previous frame, so its speed does
- * not depend on the frame rate.
- *
- * Key and focus events feed the player commands: playerActions() tells what
- * the player holds right now, and nothing while the window has no focus. The
- * actions held are logged each time they change.
  */
 class GameWindow {
  public:
+  /** @brief Opens the window at the selected size, centered on the desktop,
+   * showing at most FRAMES_PER_SECOND_LIMIT frames per second. */
+  GameWindow();
+
+  [[nodiscard]] bool isOpen() const;
+
   /**
-   * @brief Opens the window; its buttons are labelled with the given font,
-   * which must outlive the window.
+   * @brief The next event a screen may react to.
    *
-   * @throws RenderTextureNotCreatedException when the background cannot get
-   * its render textures.
+   * The window handles closing and resizing itself and never returns those
+   * events: closing closes the window, resizing keeps the whole playfield in
+   * view.
+   *
+   * @returns The event, or an empty optional once no event is left or the
+   * window is closed.
    */
-  explicit GameWindow(const sf::Font& windowSizeLabelFont);
+  [[nodiscard]] std::optional<sf::Event> pollScreenEvent();
+
+  /** @brief Clears the window to black before a frame is drawn. */
+  void clear();
+
+  /** @brief Where a frame is drawn, in playfield units. */
+  [[nodiscard]] sf::RenderTarget& renderTarget();
+
+  /** @brief Shows what was drawn since clear(). */
+  void display();
+
+  [[nodiscard]] const WindowSizeSelection& windowSizeSelection() const;
 
   /**
-   * @brief Runs the frame loop until the window is closed.
+   * @brief Gives the window the size at this index of WINDOW_SIZES, centered
+   * on the desktop.
+   *
+   * @returns false, changing nothing, when that size is not available.
    */
-  void run();
+  bool selectWindowSize(std::size_t index);
 
-  /** @returns The actions the player holds right now. */
-  [[nodiscard]] ActionSet playerActions() const;
+  /**
+   * @param pixel Position in the window, in pixels.
+   * @returns The point of the playfield under that pixel, in playfield units.
+   */
+  [[nodiscard]] sf::Vector2f playfieldPointAt(sf::Vector2i pixel) const;
 
  private:
-  void handleEvents();
-
-  /** @brief Moves the background by the time since the previous frame. */
-  void advanceBackground();
-
-  /** @brief Logs the held actions when they differ from the last logged. */
-  void logHeldActions();
-
-  void render();
-
   /**
    * @brief Makes the window show the whole playfield, undistorted and
    * centered.
@@ -82,32 +80,15 @@ class GameWindow {
    */
   void showWholePlayfield(sf::Vector2u windowSize);
 
-  /**
-   * @brief Gives the window the selected size, centers it on the desktop
-   * and shows the size on the buttons.
-   */
+  /** @brief Gives the window the selected size and centers it on the
+   * desktop. */
   void applySelectedWindowSize();
-
-  /**
-   * @brief Selects the size whose button is under a click, when that size is
-   * available.
-   *
-   * @param pixel Position of the click in the window, in pixels.
-   */
-  void selectWindowSizeAt(sf::Vector2i pixel);
 
   /** @returns The size of the desktop the window opens on. */
   [[nodiscard]] static PixelSize desktopSize();
 
   WindowSizeSelection windowSizeSelection_;
   sf::RenderWindow window_;
-  ScrollingBackground background_;
-  WindowSizeButtons windowSizeButtons_;
-  engine::SystemClock clock_;
-  engine::Duration previousFrameTime_{};
-  PlayerCommands playerCommands_;
-  logging::Logger logger_{"Window"};
-  std::uint8_t loggedActions_{0};
 };
 
 }  // namespace rtype::client
