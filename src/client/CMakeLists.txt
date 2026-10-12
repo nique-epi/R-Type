@@ -3,6 +3,7 @@ find_package(SFML 3 COMPONENTS Graphics Window System Audio CONFIG REQUIRED)
 add_subdirectory(Exceptions)
 add_subdirectory(Platform)
 add_subdirectory(Assets)
+add_subdirectory(Input)
 add_subdirectory(Rendering)
 add_subdirectory(Window)
 
