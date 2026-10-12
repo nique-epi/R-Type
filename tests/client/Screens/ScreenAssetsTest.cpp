@@ -1,15 +1,19 @@
+#include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include <filesystem>
 #include "AssetLibrary.hpp"
 #include "AssetLoadingStep.hpp"
+#include "EntitySpriteConstants.hpp"
 #include "ScreenAssets.hpp"
 #include "ScreenConstants.hpp"
 
 using rtype::client::AssetLibrary;
 using rtype::client::AssetLoadingStep;
+using rtype::client::ENTITY_SHEET_ID;
 using rtype::client::gameAssets;
 using rtype::client::INTERFACE_FONT_ID;
 using rtype::client::loadInterfaceAssets;
+using ::testing::Contains;
 
 namespace {
 
@@ -42,4 +46,13 @@ TEST(ScreenAssets, EnteringAGameKeepsTheInterfaceFont) {
   const AssetLoadingStep gameLoading(library, gameAssets());
 
   EXPECT_NO_THROW(static_cast<void>(library.font(INTERFACE_FONT_ID)));
+}
+
+/**
+ * Given the assets a game needs
+ * When its textures are listed
+ * Then they hold the entity sheet the entity table draws from
+ */
+TEST(ScreenAssets, AGameLoadsTheEntitySheet) {
+  EXPECT_THAT(gameAssets().textures, Contains(ENTITY_SHEET_ID));
 }

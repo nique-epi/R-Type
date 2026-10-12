@@ -4,6 +4,7 @@
 #include <optional>
 #include <random>
 #include "AssetLibrary.hpp"
+#include "EntityLayer.hpp"
 #include "GameScreen.hpp"
 #include "IScreen.hpp"
 #include "LoadingScreen.hpp"
@@ -72,7 +73,8 @@ std::unique_ptr<IScreen> Application::gameScreen() {
                                            ScreenId::Game);
   }
   assets_->releaseAllExcept(gameAssets());
-  return std::make_unique<GameScreen>(screens_);
+  return std::make_unique<GameScreen>(screens_,
+                                      std::make_unique<EntityLayer>(*assets_));
 }
 
 }  // namespace rtype::client

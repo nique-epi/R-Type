@@ -10,10 +10,13 @@
 #include "Layer.hpp"
 #include "Position.hpp"
 #include "RenderSystem.hpp"
+#include "RenderingConstants.hpp"
 #include "Sprite.hpp"
+#include "SpriteFrame.hpp"
 #include "Velocity.hpp"
 
 using rtype::client::IDrawSurface;
+using rtype::client::LAYER_COUNT;
 using rtype::client::RenderSystem;
 using rtype::engine::ComponentRegistry;
 using rtype::engine::Entity;
@@ -22,19 +25,23 @@ using rtype::game::CollisionBox;
 using rtype::game::Layer;
 using rtype::game::Position;
 using rtype::game::Sprite;
+using rtype::game::SpriteFrame;
 using rtype::game::Velocity;
 
 namespace {
 
 struct DrawnImage {
   std::string assetId;
+  SpriteFrame frame;
   Position center;
 };
 
 class RecordingSurface : public IDrawSurface {
  public:
-  void draw(std::string_view assetId, Position center) override {
-    drawn_.push_back({.assetId = std::string(assetId), .center = center});
+  void draw(std::string_view assetId, SpriteFrame frame,
+            Position center) override {
+    drawn_.push_back(
+        {.assetId = std::string(assetId), .frame = frame, .center = center});
   }
 
   [[nodiscard]] const std::vector<DrawnImage>& drawn() const { return drawn_; }
@@ -60,14 +67,27 @@ constexpr float SHIP_X = 40.0F;
 constexpr float SHIP_Y = 25.0F;
 constexpr float SPEED = 5.0F;
 constexpr float BOX_SIZE = 9.0F;
+constexpr SpriteFrame WHOLE_IMAGE{
+    .left = 0, .top = 0, .width = 16, .height = 16};
+constexpr SpriteFrame SHEET_CELL{
+    .left = 40, .top = 72, .width = 24, .height = 8};
+constexpr auto FIRST_VALUE_AFTER_THE_LAST_LAYER =
+    static_cast<Layer>(LAYER_COUNT);
 
 class Scene {
  public:
   Entity spawn(const std::string& assetId, Layer layer) {
     const Entity entity = entities_.create();
-    components_.add(entity, Position{.x = SPAWN_X, .y = SPAWN_Y});
-    components_.add(entity, Sprite{.assetId = assetId, .layer = layer});
+    addPositionAndSprite(entity, assetId, layer);
     return entity;
+  }
+
+  void addPositionAndSprite(Entity entity, const std::string& assetId,
+                            Layer layer) {
+    components_.add(entity, Position{.x = SPAWN_X, .y = SPAWN_Y});
+    components_.add(
+        entity,
+        Sprite{.assetId = assetId, .frame = WHOLE_IMAGE, .layer = layer});
   }
 
   void render() { system_.render(components_, surface_); }
@@ -153,8 +173,9 @@ TEST(RenderSystem, SkipsEntitiesMissingPositionOrSprite) {
   const Entity withoutSprite = scene.entities().create();
   scene.components().add(withoutSprite, Position{.x = 0.0F, .y = 0.0F});
   const Entity withoutPosition = scene.entities().create();
-  scene.components().add(withoutPosition,
-                         Sprite{.assetId = "ghost", .layer = Layer::Entities});
+  scene.components().add(withoutPosition, Sprite{.assetId = "ghost",
+                                                 .frame = WHOLE_IMAGE,
+                                                 .layer = Layer::Entities});
 
   scene.render();
 
@@ -228,4 +249,56 @@ TEST(RenderSystem, EachFrameDrawsTheSameSequence) {
   scene.render();
 
   EXPECT_EQ(scene.surface().assetIds(), firstFrame);
+}
+
+/**
+ * Given two entities of one layer whose components were added from the higher
+ * index to the lower
+ * When a frame is rendered
+ * Then the one with the lower entity index is still drawn first
+ */
+TEST(RenderSystem, DrawingOrderDoesNotFollowTheOrderComponentsWereAdded) {
+  Scene scene;
+  const Entity first = scene.entities().create();
+  const Entity second = scene.entities().create();
+  ASSERT_LT(first.index, second.index);
+  scene.addPositionAndSprite(second, "second", Layer::Entities);
+  scene.addPositionAndSprite(first, "first", Layer::Entities);
+
+  scene.render();
+
+  EXPECT_EQ(scene.surface().assetIds(),
+            (std::vector<std::string>{"first", "second"}));
+}
+
+/**
+ * Given an entity whose sprite shows one rectangle of its image
+ * When a frame is rendered
+ * Then the surface is asked to show that rectangle
+ */
+TEST(RenderSystem, ShowsTheRectangleTheSpriteNames) {
+  Scene scene;
+  const Entity entity = scene.spawn("sheet", Layer::Entities);
+  scene.components().get<Sprite>(entity)->frame = SHEET_CELL;
+
+  scene.render();
+
+  ASSERT_EQ(scene.surface().drawn().size(), 1U);
+  EXPECT_EQ(scene.surface().drawn()[0].frame, SHEET_CELL);
+}
+
+/**
+ * Given an entity whose layer is past the last drawing layer, and an entity in
+ * the entities layer
+ * When a frame is rendered
+ * Then only the entity of a drawing layer is drawn
+ */
+TEST(RenderSystem, SkipsASpriteWhoseLayerIsNotADrawingLayer) {
+  Scene scene;
+  scene.spawn("lost", FIRST_VALUE_AFTER_THE_LAST_LAYER);
+  scene.spawn("kept", Layer::Entities);
+
+  scene.render();
+
+  EXPECT_EQ(scene.surface().assetIds(), (std::vector<std::string>{"kept"}));
 }
