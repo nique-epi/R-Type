@@ -32,6 +32,11 @@ class ServerApplication {
    * @brief Called once per tick, on the simulation thread, with the datagrams
    * received since the previous tick, oldest first; often none. An exception
    * it throws stops the server and leaves run().
+   *
+   * Anyone can send a datagram, so the handler must drop and count a datagram
+   * it cannot decode, and never let an exception caused by a datagram's
+   * content escape: one truncated datagram would otherwise stop the server
+   * for every player.
    */
   using TickHandler =
       std::function<void(std::span<const network::IncomingDatagram>)>;

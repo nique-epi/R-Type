@@ -30,6 +30,8 @@ This page tells you where to look when you need to change something. It describe
 
 The tick handler is where the game plugs in. Today `src/server/main.cpp` gives one that logs each datagram at the `debug` level: nothing decodes or answers them yet, and nothing fills the outgoing queue.
 
+Anyone can send a datagram, so the tick handler must drop and count a datagram it cannot decode, and never let an exception caused by a datagram's content escape: an exception stops the server (see below), so one truncated datagram would stop it for every player. `ByteReader`, for instance, throws `BufferUnderflowException` when a datagram is shorter than what it reads.
+
 The queues hold `INCOMING_DATAGRAM_QUEUE_CAPACITY` and `OUTGOING_DATAGRAM_QUEUE_CAPACITY` (256) datagrams each (`src/server/ServerConstants.hpp`). These sizes are **provisional**: about one second of the inputs of four players, they will be revised with the rates of the protocol. Code must read the constants.
 
 - When more datagrams arrive between two ticks than the incoming queue holds, the oldest are discarded. Every `TICKS_PER_REPORT` ticks (600, so every ten seconds), the server logs a warning with how many were discarded, if any.
