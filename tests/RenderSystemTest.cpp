@@ -69,9 +69,14 @@ class Scene {
  public:
   Entity spawn(const std::string& assetId, Layer layer) {
     const Entity entity = entities_.create();
+    addPositionAndSprite(entity, assetId, layer);
+    return entity;
+  }
+
+  void addPositionAndSprite(Entity entity, const std::string& assetId,
+                            Layer layer) {
     components_.add(entity, Position{.x = SPAWN_X, .y = SPAWN_Y});
     components_.add(entity, Sprite{.assetId = assetId, .layer = layer});
-    return entity;
   }
 
   void render() { system_.render(components_, surface_); }
@@ -232,6 +237,26 @@ TEST(RenderSystem, EachFrameDrawsTheSameSequence) {
   scene.render();
 
   EXPECT_EQ(scene.surface().assetIds(), firstFrame);
+}
+
+/**
+ * Given two entities of one layer whose components were added from the higher
+ * index to the lower
+ * When a frame is rendered
+ * Then the one with the lower entity index is still drawn first
+ */
+TEST(RenderSystem, DrawingOrderDoesNotFollowTheOrderComponentsWereAdded) {
+  Scene scene;
+  const Entity first = scene.entities().create();
+  const Entity second = scene.entities().create();
+  ASSERT_LT(first.index, second.index);
+  scene.addPositionAndSprite(second, "second", Layer::Entities);
+  scene.addPositionAndSprite(first, "first", Layer::Entities);
+
+  scene.render();
+
+  EXPECT_EQ(scene.surface().assetIds(),
+            (std::vector<std::string>{"first", "second"}));
 }
 
 /**
