@@ -10,10 +10,12 @@
 #include "Layer.hpp"
 #include "Position.hpp"
 #include "RenderSystem.hpp"
+#include "RenderingConstants.hpp"
 #include "Sprite.hpp"
 #include "Velocity.hpp"
 
 using rtype::client::IDrawSurface;
+using rtype::client::LAYER_COUNT;
 using rtype::client::RenderSystem;
 using rtype::engine::ComponentRegistry;
 using rtype::engine::Entity;
@@ -60,6 +62,8 @@ constexpr float SHIP_X = 40.0F;
 constexpr float SHIP_Y = 25.0F;
 constexpr float SPEED = 5.0F;
 constexpr float BOX_SIZE = 9.0F;
+constexpr auto FIRST_VALUE_AFTER_THE_LAST_LAYER =
+    static_cast<Layer>(LAYER_COUNT);
 
 class Scene {
  public:
@@ -228,4 +232,20 @@ TEST(RenderSystem, EachFrameDrawsTheSameSequence) {
   scene.render();
 
   EXPECT_EQ(scene.surface().assetIds(), firstFrame);
+}
+
+/**
+ * Given an entity whose layer is past the last drawing layer, and an entity in
+ * the entities layer
+ * When a frame is rendered
+ * Then only the entity of a drawing layer is drawn
+ */
+TEST(RenderSystem, SkipsASpriteWhoseLayerIsNotADrawingLayer) {
+  Scene scene;
+  scene.spawn("lost", FIRST_VALUE_AFTER_THE_LAST_LAYER);
+  scene.spawn("kept", Layer::Entities);
+
+  scene.render();
+
+  EXPECT_EQ(scene.surface().assetIds(), (std::vector<std::string>{"kept"}));
 }
