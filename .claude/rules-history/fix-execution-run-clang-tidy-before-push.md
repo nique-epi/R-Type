@@ -20,5 +20,16 @@ clang-tidy was announced clean on the new files. The user's editor showed `alter
 ### Root cause
 The filter required a `/` before `src`, so it never matched the relative header paths and every header finding stayed suppressed. The calibration fault (a positional initializer) was placed in a `.cpp`, so it proved the checks ran on the main file only, not on headers.
 
+## Update (2026-10-10) — a file that does not compile hides findings
+
+### Context
+The game sprites work (entity sprite table, pixel canvas, tests reading the shipped sheet) was linted with clang-tidy 21 from Homebrew and the Xcode SDK, on 14 changed `.cpp` files with header diagnostics on.
+
+### Mistake
+The first run listed findings in the new tests and they were fixed. The log also held 11 `Error while processing` lines: libc++ `<random>` did not compile because `INFINITY` was undeclared. That run was nearly taken as the verdict. A second run with `-DINFINITY=__builtin_inff()` had 0 files in error and reported 3 more `bugprone-unchecked-optional-access` findings (`sprite->assetId` after `ASSERT_TRUE(sprite.has_value())`), which the CI would have failed on.
+
+### Root cause
+The rule asked for exit code 0 and no `error:` on the changed files, but said nothing about files clang-tidy could not compile. A compile error leaves clang-tidy with a partial syntax tree, so the flow-sensitive checks miss code they would otherwise analyze.
+
 ## Rule
 See `.claude/rules/fix/execution/fix-execution-run-clang-tidy-before-push.md`.
