@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include "IClock.hpp"
+#include "TimeConstants.hpp"
 
 namespace rtype::engine {
 
