@@ -6,10 +6,10 @@ target_link_libraries(rtype_client_scrolling_background
   PUBLIC
     rtype_client_gaussian_blur
     rtype_client_pixel_batch
+    rtype_client_pixel_canvas
     rtype_client_starfield
   PRIVATE
-    rtype_client_exceptions
-    rtype_client_integer_scale
+    rtype_client_background
 )
 
 rtype_enable_warnings(rtype_client_scrolling_background)
