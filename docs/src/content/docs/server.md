@@ -1,9 +1,11 @@
 ---
-title: Server
-description: What the server does, how its threads fit together and where to find them in the code.
+title: Server and game
+description: What the server program and the game library do, how their parts fit together and where to find them in the code.
 ---
 
 The server, `r-type_server`, runs the game for the players connected to it: it receives their datagrams and advances the game at a fixed rate; sending the state back to them is not written yet. It never links SFML or Asio: it reaches the network through `rtype_network`, and its own libraries are checked for it at configure time (see [Project layout](/R-Type/project-layout/#who-may-link-what)).
+
+The game library, `rtype_game`, holds the rules of a match: what moves, what touches what and what that means. It is built on the engine (see [Engine](/R-Type/engine/)), and it knows nothing about sockets, SFML or the messages sent between the programs (see [Project layout](/R-Type/project-layout/#game)). The server runs all of it; the client will only run the part that predicts its own ship.
 
 This page tells you where to look when you need to change something. It describes what exists today and says plainly what does not exist yet.
 
@@ -13,6 +15,11 @@ This page tells you where to look when you need to change something. It describe
 | Timer resolution on Windows | Available | `src/server/Platform/` |
 | Filtering unwanted senders before the incoming queue | Not yet written | — |
 | Launch options, lobby, games, replication, master link | Not yet written | — |
+| Components (`Position`, `Velocity`, `CollisionBox`, `EntityType`, `Sprite`, `Layer`) | Available | `src/game/Components/` |
+| Movement | Available | `src/game/Systems/MovementSystem/` |
+| Collisions | Available: nothing runs them yet | `src/game/Systems/CollisionSystem/`, `src/game/Systems/CollisionRules/`, `src/game/Events/` |
+| Damage and destruction | Not yet written | — |
+| Spawning, waves, score, lives | Not yet written | — |
 
 ## Threads: `ServerApplication`
 
@@ -53,6 +60,51 @@ How late a tick starts depends on how precisely the system wakes a sleeping thre
 - On macOS, measured on an Apple Silicon laptop, a sleep wakes later the longer it is: 0.5 ms late on average for a 1 ms sleep, 5.6 ms for a 16.7 ms sleep. Timer coalescing, enabled on that machine, is the likely cause. Over several 30-second runs, ticks started 3.8 to 4.5 ms late on average and at most 9.1 ms late, with no client as with four clients sending 60 datagrams per second each, and 600 ticks still ran every ten seconds.
 - On Linux and Windows, the lateness is not measured yet.
 
+## Collisions
+
+A collision takes two steps, in two classes. The first finds what overlaps; the second decides which overlaps matter. Neither removes health nor destroys an entity: they only announce what happened, so the damage rules can react to it (see [Event bus](/R-Type/engine/#event-bus-eventbus)).
+
+### Detection: `CollisionSystem`
+
+`CollisionSystem` (`src/game/Systems/CollisionSystem/`, an `ISystem`) looks at every entity that has a `Position` and a `CollisionBox`. A `CollisionBox` is a size in logical units, centered on the `Position`. For each pair of boxes that overlap, it publishes one `Collision` (the engine event, see [Collisions](/R-Type/engine/#collisions-bounds-overlaps-and-collision)).
+
+- Each overlapping pair is published once per update. Which of the two entities comes first carries no meaning.
+- Boxes that only touch along an edge or at a corner do not overlap.
+- An entity without a `Position` or without a `CollisionBox` is never reported.
+- Every pair is tested, so the cost grows with the square of the number of boxes. The list of boxes is kept between updates, so a steady state allocates nothing.
+- `update()` only queues the events. The loop must call `EventBus::dispatch()` after the systems, and run `CollisionSystem` after `MovementSystem`, so the boxes are tested where the entities now are.
+
+### Rules: `CollisionRules`
+
+`CollisionRules` (`src/game/Systems/CollisionRules/`) subscribes to `Collision` when it is created and unsubscribes when it is destroyed. For each `Collision` it reads the `EntityType` of both entities, in whichever order they come, and publishes a game event for three pairs only:
+
+| Pair | Published |
+|---|---|
+| `PlayerMissile` and `Enemy` | `MissileHit{missile, target}`, the target being the enemy |
+| `EnemyMissile` and `Player` | `MissileHit{missile, target}`, the target being the player |
+| `Player` and `Enemy` | `ShipContact{player, enemy}` |
+
+Every other pair is ignored: a player missile does not hurt a player, two enemies do not hurt each other, two missiles do not stop each other. An entity without an `EntityType`, or destroyed between the moment the `Collision` was published and the moment it is delivered, is ignored too.
+
+The events are structs in `src/game/Events/`. `MissileHit` and `ShipContact` say that a contact happened; what it costs is left to the damage rules, which do not exist yet.
+
+```cpp
+rtype::engine::EventBus events;
+rtype::game::CollisionRules rules{events, components};
+
+scheduler.add(std::make_unique<rtype::game::MovementSystem>());
+scheduler.add(std::make_unique<rtype::game::CollisionSystem>(events));
+
+events.subscribe<rtype::game::MissileHit>([](const rtype::game::MissileHit& hit) {
+  // remove health from hit.target, destroy hit.missile
+});
+
+scheduler.run(components, SIMULATION_TICK_DURATION);
+events.dispatch();
+```
+
+The bus and the registry must outlive `CollisionRules`, and the bus must outlive `CollisionSystem`. The game loop that would create them does not exist yet: today only the tests build this chain.
+
 ## Where to intervene
 
 | You want to… | Look at |
@@ -64,5 +116,11 @@ How late a tick starts depends on how precisely the system wakes a sleeping thre
 | Write code that differs between Windows and the other systems | `src/server/Platform/`: a `Windows.cpp` file and a `Posix.cpp` file per class, chosen in its `CMakeLists.txt` |
 | Test code that uses a socket without the network | `tests/doubles/RecordingDatagramSocket.hpp` |
 | Test the whole server | `tests/server/Application/ServerApplicationTest.cpp`: a client on the loopback address, and a tick handler that records or throws |
+| Change which pairs of entities matter | `CollisionRules::publishIfRuleMatches` in `src/game/Systems/CollisionRules/CollisionRules.cpp` |
+| React to a hit or a contact | `subscribe<MissileHit>` or `subscribe<ShipContact>` on the `EventBus`; the structs are in `src/game/Events/` |
+| Change when two boxes count as overlapping | `overlaps` in `src/engine/Collision/Overlaps.hpp` |
+| Change how entities move | `MovementSystem` in `src/game/Systems/MovementSystem/` |
+| Add a component type | A new struct in `src/game/Components/` |
+| Write a test with entities that collide | `tests/CollisionScene.hpp` |
 
 Each folder holding sources has its own `CMakeLists.txt` declaring one library; `Application/` and `Platform/` only add their subfolders, and `r-type_server` links `rtype_server_application` in `src/server/CMakeLists.txt`.
