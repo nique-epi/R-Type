@@ -76,24 +76,23 @@ jobs:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
         run: |
           lint_everything() {
-            find src tests -name '*.cpp' -print0 > "$RUNNER_TEMP/files-to-lint"
+            find src tests \( -name '*.cpp' -o -name '*.hpp' \) -print0 > "$RUNNER_TEMP/files-to-lint"
           }
           if [ -z "$BASE_SHA" ]; then
             lint_everything
-          elif git diff --name-only "$BASE_SHA"...HEAD \
-              | grep -qE '\.hpp$|^\.clang-tidy$|CMakeLists\.txt$|^CMakePresets\.json$|^vcpkg\.json$|^\.github/workflows/build-and-test\.yaml$'; then
-            lint_everything
           else
-            git diff --name-only -z --diff-filter=ACMR "$BASE_SHA"...HEAD -- 'src/*.cpp' 'tests/*.cpp' \
+            git diff --name-only -z --diff-filter=ACMR "$BASE_SHA"...HEAD -- 'src/*.cpp' 'src/*.hpp' 'tests/*.cpp' 'tests/*.hpp' \
               > "$RUNNER_TEMP/files-to-lint"
           fi
           jq -r --arg root "$GITHUB_WORKSPACE/" '.[].file | ltrimstr($root)' build/compile_commands.json \
             | sort -u > "$RUNNER_TEMP/compiled-files"
           tr '\0' '\n' < "$RUNNER_TEMP/files-to-lint" | sort -u > "$RUNNER_TEMP/selected-files"
           echo "Files the Linux build does not compile, linted elsewhere:"
-          comm -23 "$RUNNER_TEMP/selected-files" "$RUNNER_TEMP/compiled-files"
-          comm -12 "$RUNNER_TEMP/selected-files" "$RUNNER_TEMP/compiled-files" \
-            | tr '\n' '\0' > "$RUNNER_TEMP/files-to-lint"
+          grep '\.cpp$' "$RUNNER_TEMP/selected-files" | comm -23 - "$RUNNER_TEMP/compiled-files" || true
+          {
+            grep -v '\.cpp$' "$RUNNER_TEMP/selected-files" || true
+            grep '\.cpp$' "$RUNNER_TEMP/selected-files" | comm -12 - "$RUNNER_TEMP/compiled-files" || true
+          } | tr '\n' '\0' > "$RUNNER_TEMP/files-to-lint"
           echo "Files to lint:"
           tr '\0' '\n' < "$RUNNER_TEMP/files-to-lint"
 
