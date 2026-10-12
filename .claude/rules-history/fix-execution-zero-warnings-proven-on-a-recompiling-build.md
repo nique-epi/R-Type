@@ -51,3 +51,28 @@ The loop relied on `make` noticing the copied file. The copy happened less than 
 
 - ❌ **Before (wrong)**: `for fault in …; do cp "$fault.cpp" src/…/MovementSystem.cpp; cmake --build build --target game_tests; build/tests/game_tests; done` → the fourth run tests the third binary.
 - ✅ **After (right)**: the same loop with `rm -f <object file>` before each build and `grep -c "Building CXX object …MovementSystem.cpp.o"` equal to 1 in each log before reading the tests.
+
+## Update (2026-10-12) — checking each commit of a branch with `git archive`
+
+### Context
+
+Before pushing the five commits of the game sprites branch, each intermediate commit and the merge with `main` were built and tested in an isolated copy: `git archive <commit>` extracted into the copy's tree, then `cmake --build` and `ctest` in the same build folder, one commit after the other.
+
+### Mistake
+
+The second and third commits each add a test, yet both reported 314 tests, like the first. The loop deleted no object file and read no `Building CXX object` line, so the stale binaries of the first commit were tested and reported as passing.
+
+### Root cause
+
+`git archive` gives every file the date of its commit. Those commits were a few minutes older than the objects just built for the first one, so `make` saw every source as up to date. The red proof rule already required deleting the objects and reading the build log, but the loop was written as a "build check", not as a red proof, and skipped both.
+
+### Rule
+
+1. `git archive <commit>` sets every extracted file to the date of that commit; a tree id gets the current time.
+2. To build one commit after another in the same build folder, use `cmake --build <dir> --clean-first` for each commit, and read the number of objects compiled in its log.
+3. Check the result against an expected count: a commit that adds a test must show one more test than the commit before it.
+
+### Example
+
+- ❌ **Before (wrong)**: `git archive 14a66e2 … | tar -x`, `cmake --build`, `ctest` → "314 passing", with the new test never compiled.
+- ✅ **After (right)**: the same with `--clean-first` → every object compiled, 315 passing for the commit that adds one test.
