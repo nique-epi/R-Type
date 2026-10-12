@@ -42,6 +42,8 @@ The queues hold `INCOMING_DATAGRAM_QUEUE_CAPACITY` and `OUTGOING_DATAGRAM_QUEUE_
 
 `TickLoop` (`src/server/Application/TickLoop/`) calls a function once per tick on the thread that runs it. It counts ticks with a `FixedTimestep` and sleeps until its `nextTickTime()`, so the average rate stays at 60 ticks per second: after a late wake-up the missed ticks run back to back, and a stall longer than `MAXIMUM_TICKS_PER_ADVANCE` (5) ticks drops the excess. `ServerApplication` creates it when `run()` starts, so the first tick is due one tick after the call.
 
+The limit is a choice for this game: during a longer stall the game freezes, then resumes where it stopped. Catching the whole stall up would play it in an instant, a second of enemy fire that nobody saw coming. Engines differ on it: a Quake 3 dedicated server catches up to 5 seconds, so that the clients' view of the server's clock stays right; Unity lets each game set its `maximumDeltaTime`.
+
 Every `TICKS_PER_REPORT` ticks, the loop logs at the `debug` level how late its ticks started, each compared with the moment it was due; a dropped stall shows in full. The journal is `r-type_server.log`; `--log-stderr` also prints it in the terminal (see [Logging](/R-Type/logging/#choosing-the-level-and-the-output-at-launch)):
 
 ```bash
@@ -53,6 +55,14 @@ After the time stamp, the line reads:
 ```
 [DEBUG] [Simulation] - 600 ticks started on average 4.43782 ms late, at most 8.32842 ms
 ```
+
+Every stall that drops game time is counted, and the same report then adds a warning, shown at the default level: how many stalls dropped game time since the previous report, how much in total, and the longest. Measured on a server paused for one second:
+
+```
+[WARN ] [Simulation] - stalls since the previous report: 1, game time dropped: 939.018 ms, the longest: 939.018 ms; the game froze instead of catching up
+```
+
+Repeated at every report, it means that the server keeps falling behind, for instance because its ticks take longer to run than the 16.7 ms each one stands for.
 
 How late a tick starts depends on how precisely the system wakes a sleeping thread:
 
@@ -113,6 +123,7 @@ The bus and the registry must outlive `CollisionRules`, and the bus must outlive
 | Change the size of the queues between threads | `INCOMING_DATAGRAM_QUEUE_CAPACITY` and `OUTGOING_DATAGRAM_QUEUE_CAPACITY` in `src/server/ServerConstants.hpp` |
 | Change the simulation rate | `SIMULATION_TICKS_PER_SECOND` in `src/engine/Time/TimeConstants.hpp` |
 | Change how often the simulation reports | `REPORT_SECONDS` in `src/server/ServerConstants.hpp` |
+| Change how many ticks the server catches up after a stall | `MAXIMUM_TICKS_PER_ADVANCE` in `src/engine/Time/TimeConstants.hpp`, read by every `FixedTimestep` |
 | Write code that differs between Windows and the other systems | `src/server/Platform/`: a `Windows.cpp` file and a `Posix.cpp` file per class, chosen in its `CMakeLists.txt` |
 | Test code that uses a socket without the network | `tests/doubles/RecordingDatagramSocket.hpp` |
 | Test the whole server | `tests/server/Application/ServerApplicationTest.cpp`: a client on the loopback address, and a tick handler that records or throws |
