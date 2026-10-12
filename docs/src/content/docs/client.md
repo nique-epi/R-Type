@@ -23,15 +23,15 @@ This page tells you where to look when you need to change something. It describe
 
 `Application` (`src/client/Application/Application/`) opens the window, `GameWindow`, and runs the frame loop until the window is closed or no screen is left. A screen implements `IScreen` (`src/client/Screens/`): `handleEvent()`, `update()` and `draw()`, in playfield units. Screens live in a `ScreenStack` (`src/client/Application/ScreenStack/`). Each frame, the window events go to the screen on top only, then every screen is updated and drawn from the bottom up, so a screen pushed over the game leaves the game running and visible behind it. `GameWindow` handles closing and resizing itself and never passes those events on.
 
-`push()`, `pop()` and `replaceAll()` only ask for a change; the loop applies the changes after each event and after the update, in the order they were asked for. A screen may therefore pop itself while it handles an event, and the next event already reaches the new screen on top. A screen is given as a `ScreenFactory` and built when its change is applied: `replaceAll()` destroys every screen, from the top down, before building the new one. The loading screen releases assets when it is built, so it is always entered through `replaceAll()`, never pushed over a screen that still draws them.
+Screens are asked for by identifier: `push()` and `replaceAll()` take a `ScreenId` (`src/client/Screens/ScreenId.hpp`), so a screen never builds the screens it opens. `Application::createScreen()` is the one list of every screen, a `switch` with one case per `ScreenId`; a value without a case does not compile. `push()`, `pop()` and `replaceAll()` only ask for a change; the loop applies the changes after each event and after the update, in the order they were asked for. A screen may therefore pop itself while it handles an event, and the next event already reaches the new screen on top. A screen is built when its change is applied: `replaceAll()` destroys every screen, from the top down, before building the new one. Building the game, or its loading screen, releases the assets of a previous game, so `ScreenId::Game` is always entered through `replaceAll()`, never pushed over a screen that still draws them.
 
 | Screen | Shows | Leaves the stack when |
 |---|---|---|
-| `LoadingScreen` | a progress bar; one file is loaded per frame | every file is loaded: it replaces every screen with the next one |
+| `LoadingScreen` | a progress bar; one file is loaded per frame | every file is loaded: it asks again, with `replaceAll()`, for the screen it loads for, which `createScreen()` now builds itself |
 | `GameScreen` | nothing yet over the scrolling background; releasing `OPTIONS_KEY` (Escape) pushes the options over it | not yet: the end of a game is not written |
 | `OptionsScreen` | the window size buttons, on a translucent layer over the game | `OPTIONS_KEY` is released again |
 
-The options screen is **provisional**: it stands in for the options menu. The frame loop draws the scrolling background under every screen, the loading screen and the options included; this is **provisional** too, since the starfield will probably become the background of the game screen alone. At launch the client enters a game straight away: the loading screen loads `gameAssets()`, then gives way to the game screen. A file the loading screen cannot load stops the client with exit code 1, naming every such file. The options react to the release of `OPTIONS_KEY`, not to its press: the system repeats the press of a held key, which would open and close them again and again.
+The options screen is **provisional**: it stands in for the options menu. The frame loop draws the scrolling background under every screen, the loading screen and the options included; this is **provisional** too, since the starfield will probably become the background of the game screen alone. At launch the client enters a game straight away, with `replaceAll(ScreenId::Game)`: the loading screen of `gameAssets()` while some are not loaded, then the game screen. A file the loading screen cannot load stops the client with exit code 1, naming every such file. The options react to the release of `OPTIONS_KEY`, not to its press: the system repeats the press of a held key, which would open and close them again and again.
 
 ## Assets: the folder and the ids
 
@@ -48,7 +48,7 @@ Code names a file by its **asset id**: its path in `assets/`, with `/` between f
 Assets are loaded at two moments only, both declared in `src/client/Screens/ScreenAssets.hpp` and listed in `ScreenAssets.cpp`:
 
 - at launch, before the window opens, `loadInterfaceAssets()` loads `interfaceAssets()`, the assets of the interface, which any screen may use at any time, in a game or outside one (today the font of the options screen, `INTERFACE_FONT_ID`, `fonts/tuffy.ttf`), and makes them permanent, so changing screen outside a game never reads a file;
-- when the player enters a game, the loading screen loads `gameAssets()`, one file per frame, after releasing what a previous game used and this one does not. `gameAssets()` is empty today, since the game has no sprite yet: the loading screen finishes at its first frame and is never seen.
+- when the player enters a game (`ScreenId::Game`), the loading screen loads `gameAssets()`, one file per frame, after releasing what a previous game used and this one does not. When they are all loaded already, the game screen is built at once, after the same release. `gameAssets()` is empty today, since the game has no sprite yet: the game screen is built at once and the loading screen is never seen.
 
 ### What a loading step does
 
@@ -143,7 +143,8 @@ On a Retina Mac, SFML 3 renders every window at its size in points, not in scree
 | Change the asset id rule | `isValidAssetId()` in `src/client/Assets/AssetIds.cpp`, `ASSET_ID_PUNCTUATION` in `AssetConstants.hpp`, and `assets/README.md` |
 | Change where the client looks for `assets/` | `findAssetFolder()` in `src/client/Assets/AssetFolder.cpp` |
 | Show a new image in the game | `assets/sprites/`, `gameAssets()`, a `Sprite` component on the entity |
-| Add a screen | A class implementing `IScreen` in its own folder under `src/client/Screens/`, with its `CMakeLists.txt` target; `add_subdirectory` in `src/client/Screens/CMakeLists.txt`; the factory that builds it in `Application`, and the link in `src/client/Application/Application/CMakeLists.txt` |
+| Add a screen | A value of `ScreenId` (`src/client/Screens/ScreenId.hpp`) and its case in `Application::createScreen()`; a class implementing `IScreen` in its own folder under `src/client/Screens/`, with its `CMakeLists.txt` target and `add_subdirectory` in `src/client/Screens/CMakeLists.txt`; the link in `src/client/Application/Application/CMakeLists.txt` |
+| Open a screen from another | `push(ScreenId::…)` to put it over the current one, `replaceAll(ScreenId::…)` to replace every screen with it |
 | Load a new kind of asset | `AssetKind`, `AssetList` and `AssetLibrary::load()` |
 | Change what happens when an asset cannot be loaded | `AssetLoadingStep::loadNext()` and `AssetLoadingException` in `src/client/Exceptions/ClientException.hpp` |
 | Read something only one system provides | A declaration in `src/client/Platform/`, one source file per system, chosen in its `CMakeLists.txt` |
