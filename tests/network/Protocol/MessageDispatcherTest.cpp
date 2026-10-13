@@ -50,30 +50,25 @@ MessageFrame frameOf(std::uint8_t type, const std::vector<std::byte>& payload) {
 }
 
 /**
- * Records the ReadyState messages a dispatcher hands over.
+ * The ReadyState messages a dispatcher handed over, with their origins.
  */
-class ReadyStateRecorder {
- public:
-  explicit ReadyStateRecorder(MessageDispatcher& dispatcher) {
-    dispatcher.registerHandler<ReadyState>(
-        [this](const MessageOrigin& origin, const ReadyState& message) {
-          origins_.push_back(origin);
-          messages_.push_back(message);
-        });
-  }
-
-  [[nodiscard]] const std::vector<ReadyState>& messages() const {
-    return messages_;
-  }
-
-  [[nodiscard]] const std::vector<MessageOrigin>& origins() const {
-    return origins_;
-  }
-
- private:
-  std::vector<ReadyState> messages_;
-  std::vector<MessageOrigin> origins_;
+struct ReadyStateRecord {
+  std::vector<ReadyState> messages;
+  std::vector<MessageOrigin> origins;
 };
+
+/**
+ * Registers the ReadyState handler of @p dispatcher, which appends each
+ * message and its origin to @p record; @p record must outlive the dispatches.
+ */
+void recordReadyStates(MessageDispatcher& dispatcher,
+                       ReadyStateRecord& record) {
+  dispatcher.registerHandler<ReadyState>(
+      [&record](const MessageOrigin& origin, const ReadyState& message) {
+        record.origins.push_back(origin);
+        record.messages.push_back(message);
+      });
+}
 
 /**
  * Given a handler for ReadyState
@@ -82,14 +77,15 @@ class ReadyStateRecorder {
  */
 TEST(MessageDispatcher, HandsAMessageToTheHandlerOfItsType) {
   MessageDispatcher dispatcher;
-  const ReadyStateRecorder recorder{dispatcher};
+  ReadyStateRecord record;
+  recordReadyStates(dispatcher, record);
   const auto ready = byteSequence({0x01});
   const std::vector frames{frameOf(MessageType::ReadyState, ready)};
 
   dispatcher.dispatch(someOrigin(), frames);
 
-  ASSERT_EQ(recorder.messages().size(), 1U);
-  EXPECT_TRUE(recorder.messages().front().ready);
+  ASSERT_EQ(record.messages.size(), 1U);
+  EXPECT_TRUE(record.messages.front().ready);
 }
 
 /**
@@ -99,15 +95,16 @@ TEST(MessageDispatcher, HandsAMessageToTheHandlerOfItsType) {
  */
 TEST(MessageDispatcher, PassesTheOriginWithTheMessage) {
   MessageDispatcher dispatcher;
-  const ReadyStateRecorder recorder{dispatcher};
+  ReadyStateRecord record;
+  recordReadyStates(dispatcher, record);
   const auto ready = byteSequence({0x01});
   const std::vector frames{frameOf(MessageType::ReadyState, ready)};
 
   dispatcher.dispatch(someOrigin(), frames);
 
-  ASSERT_EQ(recorder.origins().size(), 1U);
-  EXPECT_EQ(recorder.origins().front().sender, someOrigin().sender);
-  EXPECT_EQ(recorder.origins().front().header.sessionToken, SOME_SESSION_TOKEN);
+  ASSERT_EQ(record.origins.size(), 1U);
+  EXPECT_EQ(record.origins.front().sender, someOrigin().sender);
+  EXPECT_EQ(record.origins.front().header.sessionToken, SOME_SESSION_TOKEN);
 }
 
 /**
@@ -145,7 +142,8 @@ TEST(MessageDispatcher, HandsSeveralMessagesInOrder) {
  */
 TEST(MessageDispatcher, SkipsUnknownTypesThenHandlesTheNextMessage) {
   MessageDispatcher dispatcher;
-  const ReadyStateRecorder recorder{dispatcher};
+  ReadyStateRecord record;
+  recordReadyStates(dispatcher, record);
   const std::vector<std::byte> empty;
   const auto ready = byteSequence({0x01});
   const std::vector frames{frameOf(TYPE_BELOW_THE_FIRST, empty),
@@ -156,7 +154,7 @@ TEST(MessageDispatcher, SkipsUnknownTypesThenHandlesTheNextMessage) {
   dispatcher.dispatch(someOrigin(), frames);
 
   EXPECT_EQ(dispatcher.skippedMessageCount(), frames.size() - 1);
-  EXPECT_EQ(recorder.messages().size(), 1U);
+  EXPECT_EQ(record.messages.size(), 1U);
 }
 
 /**
@@ -182,7 +180,8 @@ TEST(MessageDispatcher, SkipsATypeOfTheProtocolThatHasNoHandler) {
  */
 TEST(MessageDispatcher, DropsAMalformedMessageThenHandlesTheNext) {
   MessageDispatcher dispatcher;
-  const ReadyStateRecorder recorder{dispatcher};
+  ReadyStateRecord record;
+  recordReadyStates(dispatcher, record);
   const auto invalid = byteSequence({0x02});
   const auto ready = byteSequence({0x01});
   const std::vector frames{frameOf(MessageType::ReadyState, invalid),
@@ -191,8 +190,8 @@ TEST(MessageDispatcher, DropsAMalformedMessageThenHandlesTheNext) {
   dispatcher.dispatch(someOrigin(), frames);
 
   EXPECT_EQ(dispatcher.malformedMessageCount(), 1U);
-  ASSERT_EQ(recorder.messages().size(), 1U);
-  EXPECT_TRUE(recorder.messages().front().ready);
+  ASSERT_EQ(record.messages.size(), 1U);
+  EXPECT_TRUE(record.messages.front().ready);
 }
 
 /**
@@ -307,7 +306,8 @@ TEST(MessageDispatcher, HandsAWorldStateToItsHandler) {
  */
 TEST(MessageDispatcher, RefusesASecondHandlerForTheSameType) {
   MessageDispatcher dispatcher;
-  const ReadyStateRecorder recorder{dispatcher};
+  ReadyStateRecord record;
+  recordReadyStates(dispatcher, record);
 
   EXPECT_THROW(dispatcher.registerHandler<ReadyState>(
                    [](const MessageOrigin&, const ReadyState&) {}),
@@ -333,11 +333,12 @@ TEST(MessageDispatcher, RefusesAnEmptyHandler) {
  */
 TEST(MessageDispatcher, DoesNothingForNoMessage) {
   MessageDispatcher dispatcher;
-  const ReadyStateRecorder recorder{dispatcher};
+  ReadyStateRecord record;
+  recordReadyStates(dispatcher, record);
 
   dispatcher.dispatch(someOrigin(), {});
 
-  EXPECT_TRUE(recorder.messages().empty());
+  EXPECT_TRUE(record.messages.empty());
   EXPECT_EQ(dispatcher.skippedMessageCount(), 0U);
   EXPECT_EQ(dispatcher.malformedMessageCount(), 0U);
 }
