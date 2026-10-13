@@ -32,9 +32,10 @@ class WorldStateCodec {
    * @brief Decodes the payload of one WorldState message.
    * @throws BufferUnderflowException when the payload is shorter than it
    * announces.
-   * @throws MalformedMessageException when it announces more than
-   * MAXIMUM_PLAYERS players, holds an unknown entity type, or has bytes left
-   * after the last entity.
+   * @throws TooManyPlayersException, a MalformedMessageException, when it
+   * announces more than MAXIMUM_PLAYERS players, before reading any.
+   * @throws MalformedMessageException when it holds an unknown entity type, a
+   * bool other than 0 or 1, or bytes left after the last entity.
    */
   [[nodiscard]] static WorldState decode(std::span<const std::byte> payload);
 

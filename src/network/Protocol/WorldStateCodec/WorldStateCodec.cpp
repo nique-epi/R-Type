@@ -51,11 +51,7 @@ std::vector<std::byte> encodePart(const WorldState& state,
 }
 
 std::vector<PlayerState> readPlayers(ByteReader& reader) {
-  const std::uint8_t playerCount = reader.readUint8();
-  if (playerCount > MAXIMUM_PLAYERS) {
-    throw MalformedMessageException("a world state lists " +
-                                    std::to_string(playerCount) + " players");
-  }
+  const std::uint8_t playerCount = readPlayerCount(reader);
   std::vector<PlayerState> players;
   players.reserve(playerCount);
   for (std::uint8_t index = 0; index < playerCount; ++index) {
