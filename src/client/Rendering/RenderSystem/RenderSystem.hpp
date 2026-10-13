@@ -2,12 +2,17 @@
 
 #include <array>
 #include <cstdint>
-#include <string>
 #include <vector>
 #include "ComponentRegistry.hpp"
 #include "IDrawSurface.hpp"
 #include "Position.hpp"
 #include "RenderingConstants.hpp"
+
+namespace rtype::game {
+
+struct Sprite;
+
+}  // namespace rtype::game
 
 namespace rtype::client {
 
@@ -17,7 +22,8 @@ namespace rtype::client {
  * It reads these two components and no other: whatever else an entity carries
  * (health, damage) is invisible to it. Inside a layer, entities are drawn by
  * ascending entity index, so the same registry always gives the same
- * sequence.
+ * sequence. An entity whose layer is not one of the drawing layers is not
+ * drawn.
  */
 class RenderSystem {
  public:
@@ -30,7 +36,7 @@ class RenderSystem {
   struct DrawCall {
     std::uint32_t entityIndex;
     game::Position position;
-    const std::string* assetId;
+    const game::Sprite* sprite;
   };
 
   std::array<std::vector<DrawCall>, LAYER_COUNT> drawCallsByLayer_;
