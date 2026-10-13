@@ -48,6 +48,18 @@ class AssetNotLoadedException : public ClientException {
   explicit AssetNotLoadedException(std::string_view assetId);
 };
 
+/** @brief An argument given at launch that is no option of the client. */
+class UnknownLaunchArgumentException : public ClientException {
+ public:
+  explicit UnknownLaunchArgumentException(const std::string& argument);
+};
+
+/** @brief A launch option that needs a value was the last argument. */
+class MissingLaunchOptionValueException : public ClientException {
+ public:
+  explicit MissingLaunchOptionValueException(const std::string& option);
+};
+
 /**
  * @brief A render texture could not be created on the graphics card.
  */

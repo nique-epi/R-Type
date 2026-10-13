@@ -65,6 +65,14 @@ AssetNotLoadedException::AssetNotLoadedException(std::string_view assetId)
                       "\" is not loaded: list it in the interface assets or "
                       "in the assets of a game") {}
 
+UnknownLaunchArgumentException::UnknownLaunchArgumentException(
+    const std::string& argument)
+    : ClientException("Unknown argument \"" + argument + "\"") {}
+
+MissingLaunchOptionValueException::MissingLaunchOptionValueException(
+    const std::string& option)
+    : ClientException("Missing value after the option " + option) {}
+
 RenderTextureNotCreatedException::RenderTextureNotCreatedException(
     unsigned int width, unsigned int height)
     : ClientException("A render texture could not be created, size " +
