@@ -65,9 +65,18 @@ The client and the server read the same options:
 
 The level can also come from the `RT_LOG_LEVEL` environment variable; `--log-level` wins over it. A value of `RT_LOG_LEVEL` that is not a level is ignored, while a `--log-level` that is not a level is an error.
 
-The last of `--log-file` and `--no-log-file` wins. With `--no-log-file` and no `--log-stderr`, nothing is written. Arguments that do not start with `--log-` or `--no-log-` are ignored; a `--log-` option that does not exist is an error, so a typo is never silent.
+The last of `--log-file` and `--no-log-file` wins. With `--no-log-file` and no `--log-stderr`, nothing is written. Arguments that do not start with `--log-` or `--no-log-` are left to the program, which rejects the ones it does not know either (see [Server](/R-Type/server/#launch-options-launchoptions) and [Client](/R-Type/client/#launch-options-launchoptions)); a `--log-` option that does not exist is an error, so a typo is never silent.
 
-The options are all read and checked before anything changes: with an invalid option, or a journal that cannot be opened, the program stops with a message and exit code 1.
+`LogLaunchOptions` reads and applies in two steps. `read()` checks every logging option, keeps the other arguments for `otherArguments()`, and touches nothing; `apply()` opens the journal and sets the level. A program reads its own options in between, so an invalid argument, or `--help`, stops it before any journal is created. With an invalid option, or a journal that cannot be opened, the program stops with a message and exit code 1. `LogLaunchOptions::usage()` writes the part of a program's `--help` that lists these options.
+
+```cpp
+const rtype::logging::LogLaunchOptions logOptions =
+    rtype::logging::LogLaunchOptions::readFromProcess(
+        argumentCount, arguments, rtype::logging::SERVER_LOG_FILE_NAME);
+const rtype::server::LaunchOptions launchOptions =
+    rtype::server::LaunchOptions::read(logOptions.otherArguments());
+logOptions.apply();
+```
 
 The journal is opened in append mode, so a second launch keeps the lines of the first, and it is flushed after every line, so it is complete even if the program crashes. `NO_COLOR` or `RT_LOG_NO_COLOR` turns the color of standard error off.
 

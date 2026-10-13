@@ -14,12 +14,29 @@ This page tells you where to look when you need to change something. It describe
 | Network thread and simulation thread | Available | `src/server/Application/` |
 | Timer resolution on Windows | Available | `src/server/Platform/` |
 | Filtering unwanted senders before the incoming queue | Not yet written | — |
-| Launch options, lobby, games, replication, master link | Not yet written | — |
+| Launch options | Available: the port and `--help` | `src/server/LaunchOptions/` |
+| Lobby, games, replication, master link | Not yet written | — |
 | Components (`Position`, `Velocity`, `CollisionBox`, `EntityType`, `Sprite`, `Layer`) | Available | `src/game/Components/` |
 | Movement | Available | `src/game/Systems/MovementSystem/` |
 | Collisions | Available: nothing runs them yet | `src/game/Systems/CollisionSystem/`, `src/game/Systems/CollisionRules/`, `src/game/Events/` |
 | Damage and destruction | Not yet written | — |
 | Spawning, waves, score, lives | Not yet written | — |
+
+## Launch options: `LaunchOptions`
+
+`LaunchOptions` (`src/server/LaunchOptions/`) reads what the server is told at launch. `main()` first reads the logging options (see [Logging](/R-Type/logging/#choosing-the-level-and-the-output-at-launch)), then hands the other arguments to `LaunchOptions::read()`:
+
+| Option | Effect |
+|---|---|
+| `-p <port>` | The UDP port to listen on, from 1 to 65535 (see [Network](/R-Type/network/#ports-and-addresses-written-as-text-portfromtext-ipv4addressfromtext)). Default: `DEFAULT_SERVER_PORT` (4242). |
+| `--help` | Prints the usage, the logging options included, on standard output, then exits with code 0 without starting anything or opening the journal. |
+
+- The server listens on every IPv4 interface (`ANY_IPV4_ADDRESS`) and takes no address: `-h`, the client's address option, is an unknown argument here. The last `-p` wins.
+- An unknown argument, a `-p` without a value or an invalid port stops the server before anything starts: it prints `r-type_server:`, the reason and how to see the usage on standard error, then exits with code 1.
+
+```bash
+./r-type_server -p 4243
+```
 
 ## Threads: `ServerApplication`
 
@@ -42,7 +59,7 @@ The queues hold `INCOMING_DATAGRAM_QUEUE_CAPACITY` and `OUTGOING_DATAGRAM_QUEUE_
 
 ### Flood protection
 
-The room of the incoming queue protects the server's memory, not the players: one sender flooding port 4242 pushes everyone else's datagrams out of it. A plain Python loop on the loopback address sends about 3 800 datagrams per tick (measured on an Apple Silicon laptop), about fifteen times the room of the queue. Other engines protect the players in three layers; the server must have them once sessions exist, and **none is written yet**:
+The room of the incoming queue protects the server's memory, not the players: one sender flooding the server's port pushes everyone else's datagrams out of it. A plain Python loop on the loopback address sends about 3 800 datagrams per tick (measured on an Apple Silicon laptop), about fifteen times the room of the queue. Other engines protect the players in three layers; the server must have them once sessions exist, and **none is written yet**:
 
 1. **Sort on the network thread, before the queue.** A datagram whose sender has no session and that is not a `ConnectionRequest` must be dropped there, and connection requests must be limited per address, in a table of fixed size so that forged addresses cannot make it grow. Quake 3 ignores such datagrams and answers at most 10 status, information or remote console requests per second from one address; Unreal limits how many datagrams of senders without a connection it processes each frame.
 2. **One queue per session**, so a flooding client only fills its own. Valve's GameNetworkingSockets keeps one per connection, of 1 000 messages by default.
@@ -132,6 +149,8 @@ The bus and the registry must outlive `CollisionRules`, and the bus must outlive
 | You want to… | Look at |
 |---|---|
 | Change what a tick does | The tick handler given to `ServerApplication` in `src/server/main.cpp` |
+| Add a launch option | `launchOptions` and `usage()` in `src/server/LaunchOptions/LaunchOptions.cpp`, its name in `src/server/ServerConstants.hpp` |
+| Change the port the server listens on by default | `DEFAULT_SERVER_PORT` in `src/network/NetworkConstants.hpp`, shared with the client |
 | Change the size of the queues between threads | `INCOMING_DATAGRAM_QUEUE_CAPACITY` and `OUTGOING_DATAGRAM_QUEUE_CAPACITY` in `src/server/ServerConstants.hpp` |
 | Change the simulation rate | `SIMULATION_TICKS_PER_SECOND` in `src/engine/Time/TimeConstants.hpp` |
 | Change how often the simulation reports | `REPORT_SECONDS` in `src/server/ServerConstants.hpp` |
@@ -146,4 +165,4 @@ The bus and the registry must outlive `CollisionRules`, and the bus must outlive
 | Add a component type | A new struct in `src/game/Components/` |
 | Write a test with entities that collide | `tests/CollisionScene.hpp` |
 
-Each folder holding sources has its own `CMakeLists.txt` declaring one library; `Application/` and `Platform/` only add their subfolders, and `r-type_server` links `rtype_server_application` in `src/server/CMakeLists.txt`.
+Each folder holding sources has its own `CMakeLists.txt` declaring one library; `Application/` and `Platform/` only add their subfolders, and `r-type_server` links `rtype_server_application` and `rtype_server_launch_options` in `src/server/CMakeLists.txt`.
