@@ -1,0 +1,5 @@
+add_library(rtype_client_connection INTERFACE)
+
+target_include_directories(rtype_client_connection INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
+
+add_subdirectory(NetworkThread)

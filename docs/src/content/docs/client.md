@@ -3,7 +3,7 @@ title: Client
 description: What the client does, how its parts fit together and where to find them in the code.
 ---
 
-The client, `r-type_client` (`src/client/`), shows the game, plays its sounds and reads the player's input; the server decides what happens in the match (see [Architecture](/R-Type/architecture/)). Today it finds its assets folder, loads the assets of its interface, opens a window and runs its screens over a scrolling starfield: a loading screen, the game screen, which draws its entities from one sprite sheet (for now a provisional showcase), and an options screen. The game screen reads the arrow keys and the space bar as player actions. It does not talk to the server yet.
+The client, `r-type_client` (`src/client/`), shows the game, plays its sounds and reads the player's input; the server decides what happens in the match (see [Architecture](/R-Type/architecture/)). Today it finds its assets folder, loads the assets of its interface, opens a window and runs its screens over a scrolling starfield: a loading screen, the game screen, which draws its entities from one sprite sheet (for now a provisional showcase), and an options screen. The game screen reads the arrow keys and the space bar as player actions. It does not talk to the server yet: it can send and receive datagrams on a thread of its own, but nothing starts that thread yet.
 
 This page tells you where to look when you need to change something. It describes what exists today and says plainly what does not exist yet.
 
@@ -19,6 +19,8 @@ This page tells you where to look when you need to change something. It describe
 | Sprites of the ships, Bydos and missiles | Available; first animation frame only | `assets/sprites/entities.png`, `src/client/Rendering/EntitySprites.cpp` |
 | Scrolling background | Available; drawn by the frame loop under every screen | `src/client/Rendering/Background/` |
 | Player commands | Available; read by the game screen, not sent to the server yet | `src/client/Input/` |
+| Network thread | Available; not started by the client yet | `src/client/Connection/NetworkThread/` |
+| Connection to a server, server address at launch | Not yet written | — |
 | Sounds and music of the game | Not yet written | — |
 
 ## Frame loop and screens: `Application`, `ScreenStack`
@@ -169,6 +171,20 @@ const std::uint8_t actions = held.bits();
 
 `GameScreen::playerActions()` is the only way out, since the window hands the key and focus events to the screen on top. Nothing reads it yet: there is no player ship on the client and no `PlayerInput` is sent. The game screen logs `actions held: <byte>` at trace level each time the byte changes. It assumes the window has the focus when it is built and learns otherwise from the focus events. Only the screen on top receives events, so the actions held when the options are opened over the game stay held until those keys are pressed or released again.
 
+## Network: `NetworkThread`
+
+`NetworkThread` (`rtype_client_network_thread`, `src/client/Connection/NetworkThread/`) runs the client's UDP socket on a thread of its own, so the frame loop never waits on the network. It is built from the same parts as the server: a `UdpSocket` on its `NetworkContext`, and a `DatagramRelay` between the socket and two `BoundedQueue` (see [Network](/R-Type/network/#socket-to-queues-datagramrelay)).
+
+- The constructor opens the socket on an `Endpoint` (port 0 lets the system pick a free port) and starts the thread. The destructor stops the thread and waits for it; a datagram not sent yet is lost.
+- The network thread copies every datagram received, with its sender, into the incoming queue. `drainReceived()` moves them, oldest first, to the end of a vector, and returns at once when nothing arrived: the frame loop is meant to call it once per frame.
+- `send()` puts an `OutgoingDatagram` in the outgoing queue, asks the network thread to send what waits there through `NetworkContext::post()`, and returns at once.
+- An exception on the network thread, such as a datagram of more than `MAX_DATAGRAM_SIZE` (1200) bytes, stops it, and every later `drainReceived()` throws it.
+- Every call is safe from any thread.
+
+The incoming queue holds `INCOMING_DATAGRAM_QUEUE_CAPACITY` (256) datagrams, nearly thirteen seconds of the 20 world states per second of the protocol; the outgoing queue holds `OUTGOING_DATAGRAM_QUEUE_CAPACITY` (64), about one second of the 60 inputs per second the client sends (`src/client/Connection/ConnectionConstants.hpp`). These sizes are **provisional**: they will be revised with the rates of the protocol, and code must read the constants. When a queue is full, its oldest datagram is discarded; nothing reports it yet.
+
+Nothing creates a `NetworkThread` yet: no message is encoded, and the client takes no server address at launch.
+
 ## Platform: the executable path
 
 `executablePath()` (`src/client/Platform/`) returns the path of the running executable, or nothing when the system does not tell. Each system has its own source file, `ExecutablePathLinux.cpp`, `ExecutablePathMacOs.cpp` and `ExecutablePathWindows.cpp`, and CMake builds only the one that matches.
@@ -199,6 +215,9 @@ const std::uint8_t actions = held.bits();
 | Change which key does what | `KeyBindings::actionFor()` in `src/client/Input/KeyBindings/` |
 | Add a player action | `PlayerAction`, its bit in the protocol, and `KeyBindings::actionFor()` |
 | Change the window, or when the background moves and is drawn | `src/client/Window/GameWindow/`, `Application::advanceBackground()` and `Application::render()` in `src/client/Application/Application/` |
+| Send or receive datagrams | `NetworkThread` in `src/client/Connection/NetworkThread/` |
+| Change how many datagrams wait between the frame loop and the network thread | `INCOMING_DATAGRAM_QUEUE_CAPACITY` and `OUTGOING_DATAGRAM_QUEUE_CAPACITY` in `src/client/Connection/ConnectionConstants.hpp` |
+| Test code that uses the network thread | `tests/client/Connection/NetworkThreadTest.cpp`: a peer socket on the loopback address |
 | Add a client error | `src/client/Exceptions/ClientException.hpp` |
 
 Each folder has its own `CMakeLists.txt` declaring one library; `src/client/Rendering/CMakeLists.txt` declares `rtype_client_entity_sprites` for the table and the showcase, and adds `RenderSystem/`, `SfmlDrawSurface/`, `AssetTextureSource/`, `EntityLayer/` and `Background/`.

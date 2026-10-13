@@ -8,6 +8,7 @@ add_subdirectory(Rendering)
 add_subdirectory(Window)
 add_subdirectory(Screens)
 add_subdirectory(Application)
+add_subdirectory(Connection)
 
 add_executable(r-type_client main.cpp)
 
