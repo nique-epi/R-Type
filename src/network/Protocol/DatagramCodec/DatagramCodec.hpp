@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstddef>
+#include <ranges>
 #include <span>
 #include <vector>
 #include "MessageFrame.hpp"
@@ -69,11 +70,13 @@ class DatagramCodec {
       std::span<const std::byte> datagram);
 
   /**
-   * @brief Refused at compile time: the payloads would point into a buffer
-   * destroyed at the end of the call.
+   * @brief Refused at compile time for a buffer destroyed at the end of the
+   * call, such as a temporary std::vector or std::array: the payloads would
+   * point into it.
    */
-  static std::vector<MessageFrame> splitMessages(
-      std::vector<std::byte>&& datagram) = delete;
+  template <std::ranges::range Buffer>
+    requires(!std::ranges::borrowed_range<Buffer>)
+  static std::vector<MessageFrame> splitMessages(Buffer&& datagram) = delete;
 };
 
 }  // namespace rtype::network

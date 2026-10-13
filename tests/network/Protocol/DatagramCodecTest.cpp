@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 #include <algorithm>
+#include <array>
 #include <cstddef>
 #include <cstdint>
 #include <span>
@@ -36,9 +37,17 @@ concept SplittableAs = requires(Buffer&& buffer) {
 
 static_assert(SplittableAs<std::vector<std::byte>&>,
               "a datagram kept by the caller can be split");
+static_assert(SplittableAs<const std::vector<std::byte>&>,
+              "a constant datagram kept by the caller can be split");
+static_assert(SplittableAs<std::span<const std::byte>>,
+              "a view of a datagram kept by the caller can be split");
 static_assert(!SplittableAs<std::vector<std::byte>>,
               "a temporary datagram cannot be split: its payloads would "
               "point into a destroyed buffer");
+static_assert(!SplittableAs<const std::vector<std::byte>>,
+              "a constant temporary datagram cannot be split either");
+static_assert(!SplittableAs<std::array<std::byte, EMPTY_MESSAGE_DATAGRAM_SIZE>>,
+              "a temporary array cannot be split either");
 
 /**
  * Given a default header
