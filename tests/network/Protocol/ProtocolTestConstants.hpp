@@ -52,7 +52,9 @@ constexpr auto WELL_FORMED_UTF8_AT_THE_EDGES = std::to_array<std::string_view>({
 /**
  * @brief Ill-formed UTF-8: an overlong two-byte and three-byte form, a
  * surrogate, a code point above U+10FFFF, a byte no sequence starts with, a
- * stray continuation byte and a sequence cut short.
+ * stray continuation byte, a sequence cut short, and a three-byte and a
+ * four-byte sequence whose last byte is a letter instead of a continuation
+ * byte.
  */
 constexpr auto ILL_FORMED_UTF8 = std::to_array<std::string_view>({
     "\xC0\x80",
@@ -62,6 +64,8 @@ constexpr auto ILL_FORMED_UTF8 = std::to_array<std::string_view>({
     "\xF5\x80\x80\x80",
     "\x80",
     "\xE2\x82",
+    "\xE1\x80\x41",
+    "\xF0\x90\x80\x41",
 });
 
 /**

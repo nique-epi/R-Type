@@ -211,7 +211,8 @@ TEST(WireTypes, AcceptsUtf8AtEveryEdgeOfTheTable) {
 
 /**
  * Given overlong forms, a surrogate, a code point above U+10FFFF, a byte no
- * sequence starts with, a stray continuation byte and a cut sequence
+ * sequence starts with, a stray continuation byte, a cut sequence, and
+ * sequences broken on their third or fourth byte
  * When each is checked
  * Then none is well-formed UTF-8
  */
