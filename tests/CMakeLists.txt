@@ -48,6 +48,8 @@ rtype_add_test(NAME network_tests SOURCES NetworkContextTest.cpp UdpSocketFixtur
 target_include_directories(network_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/doubles ${CMAKE_CURRENT_SOURCE_DIR}/network/Protocol)
 rtype_add_test(NAME server_tests SOURCES server/Application/TickLoopTest.cpp server/Application/ServerApplicationTest.cpp LIBS rtype_server_application rtype_engine rtype_network_constants TIMEOUT ${RTYPE_THREAD_TEST_TIMEOUT_SECONDS})
 target_include_directories(server_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/server)
+rtype_add_test(NAME server_replication_tests SOURCES server/Replication/WorldStateSenderTest.cpp server/Replication/WorldStateSenderFixture.cpp LIBS rtype_server_world_state_sender rtype_server_constants)
+target_include_directories(server_replication_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/server/Replication)
 rtype_add_test(NAME server_platform_tests SOURCES server/Platform/FineTimerResolutionTest.cpp LIBS rtype_server_fine_timer_resolution)
 rtype_add_test(NAME logging_tests SOURCES LoggerTest.cpp LogLaunchOptionsTest.cpp JournalFile.cpp LIBS rtype_logging)
 rtype_add_test(NAME client_rendering_tests SOURCES RenderSystemTest.cpp client/Rendering/EntitySpritesTest.cpp client/Rendering/SpriteShowcaseTest.cpp LIBS rtype_client_entity_sprites rtype_client_render_system SFML::Graphics GTest::gmock)
