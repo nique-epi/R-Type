@@ -1,6 +1,5 @@
 #include "WorldStateCodec.hpp"
 #include <algorithm>
-#include <cmath>
 #include <cstddef>
 #include <cstdint>
 #include <span>
@@ -10,22 +9,13 @@
 #include "ByteWriter.hpp"
 #include "NetworkException.hpp"
 #include "ProtocolConstants.hpp"
+#include "WireTypes.hpp"
 #include "WorldState.hpp"
 #include "WorldStateCodecConstants.hpp"
 
 namespace rtype::network {
 
 namespace {
-
-std::int16_t toWireCoordinate(float coordinate) {
-  const float steps = std::round(coordinate * WIRE_COORDINATE_STEPS_PER_UNIT);
-  return static_cast<std::int16_t>(
-      std::clamp(steps, MINIMUM_WIRE_STEPS, MAXIMUM_WIRE_STEPS));
-}
-
-float fromWireCoordinate(std::int16_t steps) {
-  return static_cast<float>(steps) / WIRE_COORDINATE_STEPS_PER_UNIT;
-}
 
 void writePlayers(ByteWriter& writer, const std::vector<PlayerState>& players) {
   writer.writeUint8(static_cast<std::uint8_t>(players.size()));
@@ -41,8 +31,8 @@ void writePlayers(ByteWriter& writer, const std::vector<PlayerState>& players) {
 void writeEntity(ByteWriter& writer, const EntityState& entity) {
   writer.writeUint32(entity.entityId);
   writer.writeUint8(static_cast<std::uint8_t>(entity.entityType));
-  writer.writeInt16(toWireCoordinate(entity.x));
-  writer.writeInt16(toWireCoordinate(entity.y));
+  writeCoordinate(writer, entity.x);
+  writeCoordinate(writer, entity.y);
 }
 
 std::vector<std::byte> encodePart(const WorldState& state,
@@ -89,8 +79,8 @@ WireEntityType readEntityType(ByteReader& reader) {
 EntityState readEntity(ByteReader& reader) {
   return EntityState{.entityId = reader.readUint32(),
                      .entityType = readEntityType(reader),
-                     .x = fromWireCoordinate(reader.readInt16()),
-                     .y = fromWireCoordinate(reader.readInt16())};
+                     .x = readCoordinate(reader),
+                     .y = readCoordinate(reader)};
 }
 
 std::vector<EntityState> readEntities(ByteReader& reader) {

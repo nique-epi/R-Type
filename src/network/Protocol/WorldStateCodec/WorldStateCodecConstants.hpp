@@ -29,13 +29,4 @@ constexpr std::uint8_t FIRST_WIRE_ENTITY_TYPE =
 constexpr std::uint8_t LAST_WIRE_ENTITY_TYPE =
     static_cast<std::uint8_t>(WireEntityType::EnemyMissile);
 
-/**
- * @brief The smallest and the largest count of eighths of a unit a wire
- * coordinate holds, that is -4096 and 4095.875 units.
- */
-constexpr float MINIMUM_WIRE_STEPS =
-    static_cast<float>(std::numeric_limits<std::int16_t>::min());
-constexpr float MAXIMUM_WIRE_STEPS =
-    static_cast<float>(std::numeric_limits<std::int16_t>::max());
-
 }  // namespace rtype::network
