@@ -10,15 +10,20 @@
 #include "JournalFile.hpp"
 #include "LogLaunchOptions.hpp"
 #include "Logger.hpp"
+#include "LoggingConstants.hpp"
 #include "LoggingException.hpp"
 
+using rtype::logging::FILE_OPTION;
 using rtype::logging::InvalidLogOptionException;
+using rtype::logging::LEVEL_OPTION;
 using rtype::logging::LogFileOpenException;
 using rtype::logging::Logger;
 using rtype::logging::LogLaunchOptions;
 using rtype::logging::LogLevel;
 using rtype::logging::LogOutput;
 using rtype::logging::MissingLogOptionValueException;
+using rtype::logging::NO_FILE_OPTION;
+using rtype::logging::STDERR_OPTION;
 using rtype::logging::UnknownLogLevelException;
 
 namespace {
@@ -302,4 +307,30 @@ TEST_F(LogLaunchOptionsTest, ProcessArgumentsLeaveTheProgramNameOut) {
   const Arguments otherArguments(options.otherArguments().begin(),
                                  options.otherArguments().end());
   EXPECT_EQ(otherArguments, (Arguments{"-p", "4243"}));
+}
+
+/**
+ * Given the logging options
+ * When their usage is built
+ * Then each option starts a line of it
+ */
+TEST(LogLaunchOptionsUsage, NamesEveryLoggingOption) {
+  const std::string usage = LogLaunchOptions::usage("unused.log");
+
+  for (const std::string_view option :
+       {LEVEL_OPTION, FILE_OPTION, NO_FILE_OPTION, STDERR_OPTION}) {
+    SCOPED_TRACE(option);
+    EXPECT_NE(usage.find("\n  " + std::string(option)), std::string::npos);
+  }
+}
+
+/**
+ * Given a default journal
+ * When the usage of the logging options is built
+ * Then it names that journal
+ */
+TEST(LogLaunchOptionsUsage, NamesTheDefaultJournal) {
+  const std::string usage = LogLaunchOptions::usage("r-type_server.log");
+
+  EXPECT_NE(usage.find("Default: r-type_server.log."), std::string::npos);
 }

@@ -2,6 +2,7 @@
 
 #include <optional>
 #include <span>
+#include <string>
 #include <string_view>
 #include <vector>
 #include "Logger.hpp"
@@ -57,6 +58,13 @@ class LogLaunchOptions {
    *          were given, for the program to read.
    */
   [[nodiscard]] std::span<const std::string_view> otherArguments() const;
+
+  /**
+   * @returns the part of a program's usage that describes the logging
+   *          options: each option on a line, its effect indented on the next.
+   * @param defaultFileName the journal used unless an option changes it.
+   */
+  [[nodiscard]] static std::string usage(std::string_view defaultFileName);
 
  private:
   LogLaunchOptions(std::optional<LogLevel> level, LogOutput output,

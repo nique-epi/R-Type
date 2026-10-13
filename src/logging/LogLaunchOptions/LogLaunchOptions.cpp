@@ -73,6 +73,15 @@ bool isLoggingOption(std::string_view argument) {
          argument.starts_with(NO_LOG_OPTION_PREFIX);
 }
 
+void appendUsageEntry(std::string& text, std::string_view option,
+                      std::string_view description) {
+  text += "  ";
+  text += option;
+  text += "\n      ";
+  text += description;
+  text += '\n';
+}
+
 std::string_view valueAfter(std::span<const std::string_view> arguments,
                             std::size_t& index) {
   const std::size_t valueIndex = index + 1;
@@ -130,6 +139,22 @@ void LogLaunchOptions::apply() const {
 
 std::span<const std::string_view> LogLaunchOptions::otherArguments() const {
   return otherArguments_;
+}
+
+std::string LogLaunchOptions::usage(std::string_view defaultFileName) {
+  std::string text = "Logging options:\n";
+  appendUsageEntry(text, std::string(LEVEL_OPTION) + " <name>",
+                   "Level: trace, debug, info, warn, error or silent. "
+                   "Default: " +
+                       std::string(LEVEL_ENVIRONMENT_VARIABLE) +
+                       " if it names a level, otherwise " +
+                       std::string(INFO_NAME) + ".");
+  appendUsageEntry(
+      text, std::string(FILE_OPTION) + " <path>",
+      "Journal to append to. Default: " + std::string(defaultFileName) + ".");
+  appendUsageEntry(text, NO_FILE_OPTION, "Write no journal.");
+  appendUsageEntry(text, STDERR_OPTION, "Also write to standard error.");
+  return text;
 }
 
 LogLaunchOptions::LogLaunchOptions(std::optional<LogLevel> level,
