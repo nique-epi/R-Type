@@ -3,7 +3,7 @@ title: Server and game
 description: What the server program and the game library do, how their parts fit together and where to find them in the code.
 ---
 
-The server, `r-type_server`, is meant to run the game for the players connected to it. Today it receives their datagrams and runs a tick at a fixed rate, but a tick only logs the datagrams received: nothing decodes them, advances the `World` or sends the state back yet. It never links SFML or Asio: it reaches the network through `rtype_network`, and its own libraries are checked for it at configure time (see [Project layout](/R-Type/project-layout/#who-may-link-what)).
+The server, `r-type_server`, is meant to run the game for the players connected to it. Today it receives their datagrams and runs a tick at a fixed rate, but a tick only logs the datagrams received and counts toward the next world state: nothing decodes them or advances the `World`, and no one is on the recipient list, so no state is sent yet. It never links SFML or Asio: it reaches the network through `rtype_network`, and its own libraries are checked for it at configure time (see [Project layout](/R-Type/project-layout/#who-may-link-what)).
 
 The game library, `rtype_game`, holds the rules of a match: what moves, what touches what and what that means. It is built on the engine (see [Engine](/R-Type/engine/)), and it knows nothing about sockets, SFML or the messages sent between the programs (see [Project layout](/R-Type/project-layout/#game)). The server runs all of it; the client will only run the part that predicts its own ship.
 
@@ -14,7 +14,8 @@ This page tells you where to look when you need to change something. It describe
 | Network thread and simulation thread | Available | `src/server/Application/` |
 | Timer resolution on Windows | Available | `src/server/Platform/` |
 | Filtering unwanted senders before the incoming queue | Not yet written | — |
-| Launch options, lobby, games, replication, master link | Not yet written | — |
+| World state sent at a fixed rate | Available: sends to no one yet, the list of recipients is empty | `src/server/Replication/` |
+| Launch options, lobby, games, master link | Not yet written | — |
 | Components (`Position`, `Velocity`, `CollisionBox`, `EntityType`, `Sprite`, `Layer`) | Available | `src/game/Components/` |
 | Movement | Available | `src/game/Systems/MovementSystem/` |
 | Collisions | Available: nothing runs them yet | `src/game/Systems/CollisionSystem/`, `src/game/Systems/CollisionRules/`, `src/game/Events/` |
@@ -28,7 +29,9 @@ This page tells you where to look when you need to change something. It describe
 - The **network thread**, the one that calls `run()`, runs the `NetworkContext`. `DatagramRelay` (`rtype_network`, see [Network](/R-Type/network/#socket-to-queues-datagramrelay)) copies every datagram received, with its sender, into the incoming `BoundedQueue`, and sends what was left in the outgoing one. It is the only thread that touches the socket.
 - The **simulation thread** runs `SIMULATION_TICKS_PER_SECOND` (60) ticks per second. Each tick drains the incoming queue and hands what arrived, often nothing, to the tick handler given to the constructor, so a slow or silent player never holds the game up. At the end of the tick it asks the network thread, through `NetworkContext::post()`, to send the outgoing queue.
 
-The tick handler is where the game plugs in. Today `src/server/main.cpp` gives one that logs each datagram at the `debug` level: nothing decodes or answers them yet, and nothing fills the outgoing queue.
+The tick handler is where the game plugs in. Today `src/server/main.cpp` gives one that logs each datagram at the `debug` level, then calls the `WorldStateSender`: nothing decodes or answers the datagrams, and the sender has no recipient, so nothing fills the outgoing queue yet.
+
+A tick handler puts a datagram in the outgoing queue with `queueDatagram()`, called from the handler itself, on the simulation thread. The datagram is sent at the end of the same tick.
 
 Anyone can send a datagram, so the tick handler must drop and count a datagram it cannot decode, and never let an exception caused by a datagram's content escape: an exception stops the server (see below), so one truncated datagram would stop it for every player. `ByteReader`, for instance, throws `BufferUnderflowException` when a datagram is shorter than what it reads.
 
@@ -82,6 +85,29 @@ How late a tick starts depends on how precisely the system wakes a sleeping thre
 - On macOS, measured on an Apple Silicon laptop, a sleep wakes later the longer it is: 0.5 ms late on average for a 1 ms sleep, 5.6 ms for a 16.7 ms sleep. Timer coalescing, enabled on that machine, is the likely cause. Over several 30-second runs, ticks started 3.8 to 4.5 ms late on average and at most 9.1 ms late, with no client as with four clients sending 60 datagrams per second each, and 600 ticks still ran every ten seconds.
 - On Linux and Windows, the lateness is not measured yet.
 
+## World state: `WorldStateSender`
+
+`WorldStateSender` (`src/server/Replication/WorldStateSender/`) sends the state of the game to the players, at a fixed rate. The tick handler calls `onTick(components, recipients)` once per tick, on the simulation thread. The sender counts the ticks, and every `TICKS_PER_WORLD_STATE` (3) of them, that is `WORLD_STATES_PER_SECOND` (20) times per second, it lists every entity that has a `NetworkIdentity`, a `Position` and an `EntityType`, has `WorldStateCodec` encode the list (see [Network](/R-Type/network/#world-state-worldstatecodec)), and hands one `OutgoingDatagram` per recipient and per payload to the function it was given. In `main.cpp` that function is `queueDatagram()`.
+
+- The `tick` of a state is the number of ticks the sender has counted, so the first state carries tick 3 and the client can tell which of two states is newer. The counter is 32 bits and is not made to wrap: it takes 2.27 years at 60 ticks per second.
+- `WORLD_STATES_PER_SECOND` is **provisional**: it will be revised once measured on a real network. It must divide the tick rate, and the build fails otherwise. Code must read the constants, `TICKS_PER_WORLD_STATE` for instance, and never repeat the 3.
+- Nothing is built when the list of recipients is empty. An entity without a network id, or without a type, is not listed.
+- The state lists no player yet: the game has no lives, score or player numbers. Nothing gives an entity a `NetworkIdentity` yet either, so the real server lists nothing until something spawns networked entities.
+- The datagrams hold the bare message payload, without the packet header, so no client could accept them yet.
+- A playfield larger than 2047 logical units in either direction fails the build, because a wire coordinate would no longer hold it (see [Protocol](/R-Type/protocol/#positions)).
+
+```cpp
+rtype::server::WorldStateSender worldStateSender{
+    [&server](rtype::network::OutgoingDatagram datagram) {
+      server.queueDatagram(std::move(datagram));
+    }};
+
+// once per tick, on the simulation thread
+worldStateSender.onTick(world.components(), recipients);
+```
+
+`World::components()` (`rtype_game`) is the `ComponentRegistry` of the world: a `World` owns its entities and their components, and cannot be copied or moved.
+
 ## Collisions
 
 A collision takes two steps, in two classes. The first finds what overlaps; the second decides which overlaps matter. Neither removes health nor destroys an entity: they only announce what happened, so the damage rules can react to it (see [Event bus](/R-Type/engine/#event-bus-eventbus)).
@@ -132,6 +158,9 @@ The bus and the registry must outlive `CollisionRules`, and the bus must outlive
 | You want to… | Look at |
 |---|---|
 | Change what a tick does | The tick handler given to `ServerApplication` in `src/server/main.cpp` |
+| Change how often the world state is sent | `WORLD_STATES_PER_SECOND` in `src/server/ServerConstants.hpp` |
+| Change what the world state lists | `WorldStateSender::capture` in `src/server/Replication/WorldStateSender/WorldStateSender.cpp` |
+| Send a datagram from the tick | `ServerApplication::queueDatagram()` |
 | Change the size of the queues between threads | `INCOMING_DATAGRAM_QUEUE_CAPACITY` and `OUTGOING_DATAGRAM_QUEUE_CAPACITY` in `src/server/ServerConstants.hpp` |
 | Change the simulation rate | `SIMULATION_TICKS_PER_SECOND` in `src/engine/Time/TimeConstants.hpp` |
 | Change how often the simulation reports | `REPORT_SECONDS` in `src/server/ServerConstants.hpp` |

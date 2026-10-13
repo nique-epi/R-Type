@@ -14,8 +14,8 @@ This page tells you where to look when you need to change something. It describe
 | Relay between a socket and the queues of another thread | Available | `src/network/Transport/DatagramRelay/` |
 | Lag and loss simulator | Not yet written | — |
 | Serialization | Available | `src/network/Serialization/` |
-| Protocol messages | Not yet written | — |
-| Handshake, sessions, reliability, snapshots, statistics | Not yet written | — |
+| Protocol messages | `WorldState` only; the others are not yet written | `src/network/Protocol/` |
+| Handshake, sessions, reliability, history of states, statistics | Not yet written | — |
 
 ## Event loop: `NetworkContext`
 
@@ -92,7 +92,26 @@ const auto decodedSequence = reader.readUint16();
 const auto decodedName = reader.readString();
 ```
 
-The `bool`, `position` and enumeration types of the protocol are not provided yet: the message code will build them on top of these calls.
+The `WorldState` codec below builds the `bool` and the position of the protocol on top of these calls; the other messages are not written yet.
+
+## World state: `WorldStateCodec`
+
+A `WorldState` (`src/network/Protocol/WorldState.hpp`) is the picture of the game at one server tick: the `tick`, the players, and every entity with its network id, a `WireEntityType` and its position in logical units. It is plain data and knows nothing of the game's components, so the server and the client each translate to and from their own. `WorldStateCodec` (`src/network/Protocol/WorldStateCodec/`) turns it into the payloads of the `WorldState` message and back; the byte layout is in [Protocol](/R-Type/protocol/#world-state).
+
+- `encode(state)` returns one payload per datagram. A payload holds at most 1175 bytes, the 1200 of `MAX_DATAGRAM_SIZE` less the 22-byte packet header and the 3-byte message prefix (`PACKET_HEADER_SIZE`, `MESSAGE_PREFIX_SIZE`), which is 125 entities next to 4 players. A state with more entities gives several payloads with the same tick, each with every player and a part of the entities, in order; a state without entities gives one payload. More than `MAXIMUM_PLAYERS` (4) players throws `TooManyPlayersException`.
+- A position is rounded to the nearest eighth of a unit and clamped to -4096 to 4095.875 units, the range of a wire coordinate.
+- `decode(payload)` throws `BufferUnderflowException` for a truncated payload, and `MalformedMessageException` for more than 4 players, an entity type outside 1 to 4, or bytes after the last entity. Whatever a payload announces, it makes the receiver allocate for at most 4 players and 255 entities. It accepts 0 players, where the protocol page says 1 to 4.
+- The payload is the body of the message only: the packet header and the message prefix are not written yet, so no datagram a client could accept leaves the server.
+
+```cpp
+for (const std::vector<std::byte>& payload :
+     rtype::network::WorldStateCodec::encode(state)) {
+  send(recipient, payload);
+}
+
+const rtype::network::WorldState received =
+    rtype::network::WorldStateCodec::decode(payload);
+```
 
 ## Where to intervene
 
@@ -105,6 +124,7 @@ The `bool`, `position` and enumeration types of the protocol are not provided ye
 | Write a class that needs Asio | A folder in `src/network` whose target links `rtype_network_asio` privately |
 | Change how an integer, a float or a string is encoded | `src/network/Serialization/ByteWriter/` and `ByteReader/`, then the [Protocol](/R-Type/protocol/#encoding) page |
 | Change the string length limit or the sizes | `src/network/Serialization/SerializationConstants.hpp` |
+| Change the layout or the limits of the world state | `src/network/Protocol/WorldStateCodec/`, the sizes in `src/network/Protocol/ProtocolConstants.hpp`, then the [Protocol](/R-Type/protocol/#world-state) page |
 | Add a network error | `src/network/Exceptions/NetworkException.hpp` |
 | Test code against a real socket | `tests/UdpSocketTest.cpp`: a plain Asio client on the loopback address |
 | Test code that uses a socket without the network | `tests/doubles/RecordingDatagramSocket.hpp`, as `tests/network/Transport/DatagramRelayTest.cpp` does |
