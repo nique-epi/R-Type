@@ -6,6 +6,7 @@
 #include <span>
 #include <string>
 #include <string_view>
+#include <utility>
 #include <vector>
 #include "Logger.hpp"
 #include "LoggingConstants.hpp"
@@ -84,12 +85,14 @@ std::string_view valueAfter(std::span<const std::string_view> arguments,
 
 }  // namespace
 
-void LogLaunchOptions::apply(std::span<const std::string_view> arguments,
-                             std::string_view defaultFileName) {
+LogLaunchOptions LogLaunchOptions::read(
+    std::span<const std::string_view> arguments,
+    std::string_view defaultFileName) {
   LaunchSettings settings{
       .level = std::nullopt,
       .output = LogOutput{.toStderr = false,
                           .filePath = std::filesystem::path(defaultFileName)}};
+  std::vector<std::string_view> otherArguments;
   for (std::size_t index = 0; index < arguments.size(); ++index) {
     const std::string_view argument = arguments[index];
     const std::optional<LaunchOption> option = findLaunchOption(argument);
@@ -100,22 +103,40 @@ void LogLaunchOptions::apply(std::span<const std::string_view> arguments,
       option->record(settings, value);
     } else if (isLoggingOption(argument)) {
       throw InvalidLogOptionException(std::string(argument));
+    } else {
+      otherArguments.push_back(argument);
     }
   }
-  Logger::setOutput(settings.output);
-  if (settings.level.has_value()) {
-    Logger::setLevel(*settings.level);
+  return LogLaunchOptions{settings.level, settings.output,
+                          std::move(otherArguments)};
+}
+
+LogLaunchOptions LogLaunchOptions::readFromProcess(
+    int argumentCount, const char* const* arguments,
+    std::string_view defaultFileName) {
+  std::vector<std::string_view> processArguments;
+  for (int index = 1; index < argumentCount; ++index) {
+    processArguments.emplace_back(arguments[index]);
+  }
+  return read(processArguments, defaultFileName);
+}
+
+void LogLaunchOptions::apply() const {
+  Logger::setOutput(output_);
+  if (level_.has_value()) {
+    Logger::setLevel(*level_);
   }
 }
 
-void LogLaunchOptions::applyFromProcess(int argumentCount,
-                                        const char* const* arguments,
-                                        std::string_view defaultFileName) {
-  std::vector<std::string_view> options;
-  for (int index = 1; index < argumentCount; ++index) {
-    options.emplace_back(arguments[index]);
-  }
-  apply(options, defaultFileName);
+std::span<const std::string_view> LogLaunchOptions::otherArguments() const {
+  return otherArguments_;
 }
+
+LogLaunchOptions::LogLaunchOptions(std::optional<LogLevel> level,
+                                   LogOutput output,
+                                   std::vector<std::string_view> otherArguments)
+    : level_(level),
+      output_(std::move(output)),
+      otherArguments_(std::move(otherArguments)) {}
 
 }  // namespace rtype::logging

@@ -14,8 +14,9 @@
 
 int main(int argumentCount, char** arguments) {
   try {
-    rtype::logging::LogLaunchOptions::applyFromProcess(
-        argumentCount, arguments, rtype::logging::SERVER_LOG_FILE_NAME);
+    rtype::logging::LogLaunchOptions::readFromProcess(
+        argumentCount, arguments, rtype::logging::SERVER_LOG_FILE_NAME)
+        .apply();
     const rtype::logging::Logger logger{
         std::string{rtype::server::SERVER_LOGGER_NAME}};
     logger.info("server starting");

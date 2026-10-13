@@ -11,8 +11,9 @@
 
 int main(int argumentCount, char** arguments) {
   try {
-    rtype::logging::LogLaunchOptions::applyFromProcess(
-        argumentCount, arguments, rtype::logging::CLIENT_LOG_FILE_NAME);
+    rtype::logging::LogLaunchOptions::readFromProcess(
+        argumentCount, arguments, rtype::logging::CLIENT_LOG_FILE_NAME)
+        .apply();
     const rtype::logging::Logger logger{"Client"};
     logger.info("client starting");
     rtype::client::AssetLibrary assets{rtype::client::locateAssetFolder()};
