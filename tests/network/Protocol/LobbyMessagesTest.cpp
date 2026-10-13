@@ -23,6 +23,7 @@ using testing::byteSequence;
 using testing::LARGEST_LOBBY_DATAGRAM_SIZE;
 using testing::LAST_PLAYER_NUMBER;
 using testing::ONE_BYTE_NICKNAME;
+using testing::PLAYER_NUMBER_ABOVE_THE_LAST;
 using testing::SIXTEEN_BYTE_NICKNAME;
 using testing::SOME_SCORE_OF_DISTINCT_BYTES;
 
@@ -364,7 +365,8 @@ TEST(GameEnded, RefusesToReadTheSamePlayerTwice) {
  * Then an InvalidFieldValueException is raised
  */
 TEST(GameEnded, RefusesToWriteAPlayerNumberOutsideOneToFour) {
-  const GameEnded ended{.players = {{.playerNumber = 5, .score = 0}}};
+  const GameEnded ended{
+      .players = {{.playerNumber = PLAYER_NUMBER_ABOVE_THE_LAST, .score = 0}}};
 
   EXPECT_THROW((void)encodeMessage(ended), InvalidFieldValueException);
 }

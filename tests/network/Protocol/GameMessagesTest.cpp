@@ -11,6 +11,7 @@
 #include "NetworkException.hpp"
 #include "PlayerInput.hpp"
 #include "PlayerLeft.hpp"
+#include "ProtocolConstants.hpp"
 #include "ProtocolTestConstants.hpp"
 #include "WorldState.hpp"
 #include "WorldStateCodec.hpp"
@@ -322,7 +323,7 @@ TEST(GameEvent, EncodesEveryFieldInOrder) {
 TEST(GameEvent, DecodesWhatItEncoded) {
   const GameEvent event{.eventNumber = SOME_EVENT_NUMBER,
                         .kind = GameEventKind::EntityDamaged,
-                        .playerNumber = 0,
+                        .playerNumber = NO_PLAYER_NUMBER,
                         .entityId = EXAMPLE_ENTITY_ID};
 
   EXPECT_EQ(decodeMessage<GameEvent>(encodeMessage(event)), event);
