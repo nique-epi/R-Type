@@ -76,6 +76,14 @@ class MalformedMessageException : public NetworkException {
 };
 
 /**
+ * @brief A bool on the wire holds a byte other than 0 or 1.
+ */
+class InvalidBoolException : public MalformedMessageException {
+ public:
+  explicit InvalidBoolException(std::uint8_t value);
+};
+
+/**
  * @brief A world state to send lists more players than a game has.
  */
 class TooManyPlayersException : public NetworkException {

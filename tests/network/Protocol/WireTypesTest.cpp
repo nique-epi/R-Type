@@ -2,6 +2,7 @@
 #include "ByteReader.hpp"
 #include "ByteSequence.hpp"
 #include "ByteWriter.hpp"
+#include "NetworkException.hpp"
 #include "ProtocolTestConstants.hpp"
 #include "WireTypes.hpp"
 #include "WorldStateFixtures.hpp"
@@ -18,6 +19,71 @@ using testing::MINUS_ONE_UNIT;
 using testing::NEAREST_EIGHTH_OF_UNROUNDED_X;
 using testing::SMALLEST_WIRE_COORDINATE;
 using testing::UNROUNDED_X;
+
+/**
+ * Given the value true
+ * When it is written
+ * Then the wire holds the byte 01
+ */
+TEST(WireTypes, WritesTrueAsOne) {
+  ByteWriter writer;
+
+  writeBool(writer, true);
+
+  EXPECT_EQ(writer.bytes(), byteSequence({0x01}));
+}
+
+/**
+ * Given the value false
+ * When it is written
+ * Then the wire holds the byte 00
+ */
+TEST(WireTypes, WritesFalseAsZero) {
+  ByteWriter writer;
+
+  writeBool(writer, false);
+
+  EXPECT_EQ(writer.bytes(), byteSequence({0x00}));
+}
+
+/**
+ * Given the byte 01
+ * When a bool is read
+ * Then it is true
+ */
+TEST(WireTypes, ReadsOneAsTrue) {
+  const auto buffer = byteSequence({0x01});
+  ByteReader reader(buffer);
+
+  EXPECT_TRUE(readBool(reader));
+}
+
+/**
+ * Given the byte 00
+ * When a bool is read
+ * Then it is false
+ */
+TEST(WireTypes, ReadsZeroAsFalse) {
+  const auto buffer = byteSequence({0x00});
+  ByteReader reader(buffer);
+
+  EXPECT_FALSE(readBool(reader));
+}
+
+/**
+ * Given the byte 02, the first after 1, and the byte FF, the last a byte holds
+ * When each is read as a bool
+ * Then each is refused, since a bool on the wire is 0 or 1
+ */
+TEST(WireTypes, RejectsABoolOtherThanZeroOrOne) {
+  const auto two = byteSequence({0x02});
+  const auto largest = byteSequence({0xFF});
+  ByteReader twoReader(two);
+  ByteReader largestReader(largest);
+
+  EXPECT_THROW((void)readBool(twoReader), InvalidBoolException);
+  EXPECT_THROW((void)readBool(largestReader), InvalidBoolException);
+}
 
 /**
  * Given the coordinate 50.5 units

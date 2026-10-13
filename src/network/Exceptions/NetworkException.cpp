@@ -42,6 +42,10 @@ StringTooLongException::StringTooLongException(std::size_t length,
 MalformedMessageException::MalformedMessageException(const std::string& reason)
     : NetworkException("Malformed message: " + reason) {}
 
+InvalidBoolException::InvalidBoolException(std::uint8_t value)
+    : MalformedMessageException("a bool holds " + std::to_string(value) +
+                                ", where only 0 and 1 are valid") {}
+
 TooManyPlayersException::TooManyPlayersException(std::size_t playerCount,
                                                  std::size_t maximumCount)
     : NetworkException("A world state lists at most " +

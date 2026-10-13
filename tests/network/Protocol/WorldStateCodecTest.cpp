@@ -244,3 +244,16 @@ TEST(WorldStateCodec, RefusesAnUnknownEntityType) {
       (void)WorldStateCodec::decode(withType(ENTITY_TYPE_ABOVE_THE_LAST)),
       MalformedMessageException);
 }
+
+/**
+ * Given the payload of the protocol page whose invulnerable byte is 2
+ * When it is decoded
+ * Then it is refused, since a bool on the wire is 0 or 1
+ */
+TEST(WorldStateCodec, RefusesAnInvulnerableFlagOtherThanZeroOrOne) {
+  EXPECT_THROW((void)WorldStateCodec::decode(byteSequence(
+                   {0x00, 0x00, 0x00, 0x03, 0x01, 0x01, 0x00, 0x00, 0x00,
+                    0x07, 0x03, 0x00, 0x00, 0x00, 0x64, 0x02, 0x01, 0x00,
+                    0x00, 0x00, 0x09, 0x01, 0x03, 0x20, 0x01, 0x94})),
+               MalformedMessageException);
+}

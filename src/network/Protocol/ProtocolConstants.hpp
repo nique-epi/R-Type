@@ -48,6 +48,12 @@ constexpr std::size_t WORLD_STATE_FIXED_SIZE =
     UINT32_WIRE_SIZE + UINT8_WIRE_SIZE + UINT8_WIRE_SIZE;
 
 /**
+ * @brief The bytes a bool is sent as; any other byte is invalid.
+ */
+constexpr std::uint8_t WIRE_FALSE = 0;
+constexpr std::uint8_t WIRE_TRUE = 1;
+
+/**
  * @brief Wire steps in one logical unit: a coordinate is sent in eighths of a
  * unit.
  */

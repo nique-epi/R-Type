@@ -4,9 +4,22 @@
 #include <cstdint>
 #include "ByteReader.hpp"
 #include "ByteWriter.hpp"
+#include "NetworkException.hpp"
 #include "ProtocolConstants.hpp"
 
 namespace rtype::network {
+
+void writeBool(ByteWriter& writer, bool value) {
+  writer.writeUint8(value ? WIRE_TRUE : WIRE_FALSE);
+}
+
+bool readBool(ByteReader& reader) {
+  const std::uint8_t value = reader.readUint8();
+  if (value != WIRE_FALSE && value != WIRE_TRUE) {
+    throw InvalidBoolException(value);
+  }
+  return value == WIRE_TRUE;
+}
 
 void writeCoordinate(ByteWriter& writer, float coordinate) {
   const float steps = std::round(coordinate * WIRE_COORDINATE_STEPS_PER_UNIT);

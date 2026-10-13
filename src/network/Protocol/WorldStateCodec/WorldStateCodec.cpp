@@ -24,7 +24,7 @@ void writePlayers(ByteWriter& writer, const std::vector<PlayerState>& players) {
     writer.writeUint32(player.shipEntityId);
     writer.writeUint8(player.lives);
     writer.writeUint32(player.score);
-    writer.writeUint8(player.invulnerable ? 1 : 0);
+    writeBool(writer, player.invulnerable);
   }
 }
 
@@ -62,7 +62,7 @@ std::vector<PlayerState> readPlayers(ByteReader& reader) {
                                   .shipEntityId = reader.readUint32(),
                                   .lives = reader.readUint8(),
                                   .score = reader.readUint32(),
-                                  .invulnerable = reader.readUint8() != 0});
+                                  .invulnerable = readBool(reader)});
   }
   return players;
 }
