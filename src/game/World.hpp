@@ -21,7 +21,7 @@ class World {
   ~World() = default;
 
   engine::Entity spawnPlayer();
-  std::size_t entityCount() const;
+  [[nodiscard]] std::size_t entityCount() const;
 
   /**
    * @returns The components of the entities of this world.
