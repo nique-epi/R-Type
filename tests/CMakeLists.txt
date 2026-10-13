@@ -49,6 +49,7 @@ target_include_directories(network_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/dou
 rtype_add_test(NAME server_tests SOURCES server/Application/TickLoopTest.cpp server/Application/ServerApplicationTest.cpp LIBS rtype_server_application rtype_engine rtype_network_constants TIMEOUT ${RTYPE_THREAD_TEST_TIMEOUT_SECONDS})
 target_include_directories(server_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/server)
 rtype_add_test(NAME server_platform_tests SOURCES server/Platform/FineTimerResolutionTest.cpp LIBS rtype_server_fine_timer_resolution)
+rtype_add_test(NAME server_launch_options_tests SOURCES server/LaunchOptions/LaunchOptionsTest.cpp LIBS rtype_server_launch_options rtype_server_constants rtype_network_constants rtype_logging)
 rtype_add_test(NAME logging_tests SOURCES LoggerTest.cpp LogLaunchOptionsTest.cpp JournalFile.cpp LIBS rtype_logging)
 rtype_add_test(NAME client_rendering_tests SOURCES RenderSystemTest.cpp client/Rendering/EntitySpritesTest.cpp client/Rendering/SpriteShowcaseTest.cpp LIBS rtype_client_entity_sprites rtype_client_render_system SFML::Graphics GTest::gmock)
 target_compile_definitions(client_rendering_tests PRIVATE RTYPE_SOURCE_ASSETS_FOLDER="${PROJECT_SOURCE_DIR}/assets")
