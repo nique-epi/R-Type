@@ -24,6 +24,24 @@ class InvalidAddressException : public NetworkException {
 };
 
 /**
+ * @brief A text that should hold a port, from LOWEST_PORT to HIGHEST_PORT
+ *        in decimal digits, and does not.
+ */
+class InvalidPortException : public NetworkException {
+ public:
+  explicit InvalidPortException(const std::string& text);
+};
+
+/**
+ * @brief A text that should hold an IPv4 address, four decimal numbers from
+ *        0 to 255 separated by dots, and does not.
+ */
+class InvalidIpv4AddressException : public NetworkException {
+ public:
+  explicit InvalidIpv4AddressException(const std::string& text);
+};
+
+/**
  * @brief The system refused to open a socket or to bind it to its address
  *        and port, for example because the port is already taken.
  */

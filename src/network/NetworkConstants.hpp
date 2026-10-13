@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <limits>
 #include <string_view>
 
 namespace rtype::network {
@@ -31,9 +32,42 @@ constexpr std::size_t RECEIVE_BUFFER_SIZE = MAX_DATAGRAM_SIZE + 1;
 constexpr std::uint16_t DEFAULT_SERVER_PORT = 4242;
 
 /**
+ * @brief Lowest port a program may be given at launch. Port 0 asks the system
+ * for any free port, which the players could not know.
+ */
+constexpr std::uint16_t LOWEST_PORT = 1;
+
+/**
+ * @brief Highest port a UDP datagram can name.
+ */
+constexpr std::uint16_t HIGHEST_PORT =
+    std::numeric_limits<std::uint16_t>::max();
+
+/**
  * @brief Address that binds a socket to every IPv4 interface of the machine.
  */
 constexpr std::string_view ANY_IPV4_ADDRESS = "0.0.0.0";
+
+/**
+ * @brief Address of the machine itself, over IPv4.
+ */
+constexpr std::string_view LOOPBACK_IPV4_ADDRESS = "127.0.0.1";
+
+/**
+ * @brief Number of decimal numbers in an IPv4 address written as text.
+ */
+constexpr std::size_t IPV4_ADDRESS_PART_COUNT = 4;
+
+/**
+ * @brief Largest value of one of the four numbers of an IPv4 address.
+ */
+constexpr unsigned int IPV4_ADDRESS_PART_MAXIMUM =
+    std::numeric_limits<std::uint8_t>::max();
+
+/**
+ * @brief Character between the numbers of an IPv4 address written as text.
+ */
+constexpr char IPV4_ADDRESS_SEPARATOR = '.';
 
 /**
  * @brief Module name the network classes write their log lines under.

@@ -44,7 +44,7 @@ rtype_add_test(NAME engine_tests SOURCES CollisionTest.cpp ComponentQueryTest.cp
 target_include_directories(engine_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 rtype_add_test(NAME concurrency_tests SOURCES concurrency/BoundedQueueTest.cpp LIBS rtype_concurrency TIMEOUT ${RTYPE_THREAD_TEST_TIMEOUT_SECONDS})
 rtype_add_test(NAME game_tests SOURCES CollisionRulesTest.cpp CollisionScene.cpp CollisionSystemTest.cpp EntityTypeTest.cpp MovementSystemTest.cpp WorldTest.cpp LIBS rtype_game)
-rtype_add_test(NAME network_tests SOURCES NetworkContextTest.cpp UdpSocketFixture.cpp UdpSocketTest.cpp ByteWriterTest.cpp ByteReaderTest.cpp SerializationRoundTripTest.cpp ByteSequence.cpp network/Transport/DatagramRelayTest.cpp doubles/RecordingDatagramSocket.cpp LIBS rtype_network rtype_network_asio)
+rtype_add_test(NAME network_tests SOURCES NetworkContextTest.cpp UdpSocketFixture.cpp UdpSocketTest.cpp ByteWriterTest.cpp ByteReaderTest.cpp SerializationRoundTripTest.cpp ByteSequence.cpp network/Transport/DatagramRelayTest.cpp network/Transport/EndpointTextTest.cpp doubles/RecordingDatagramSocket.cpp LIBS rtype_network rtype_network_asio)
 target_include_directories(network_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/doubles)
 rtype_add_test(NAME server_tests SOURCES server/Application/TickLoopTest.cpp server/Application/ServerApplicationTest.cpp LIBS rtype_server_application rtype_engine rtype_network_constants TIMEOUT ${RTYPE_THREAD_TEST_TIMEOUT_SECONDS})
 target_include_directories(server_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/server)
