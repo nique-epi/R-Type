@@ -23,16 +23,17 @@ namespace rtype::network {
  * call where it is handled.
  *
  * A message whose type has no handler is skipped, and so is a message whose
- * payload the protocol does not allow; each is counted and logged at the
- * debug level, and the next message is handled. No exception caused by the
- * content of a message leaves dispatch(), so one forged datagram cannot stop
- * the program. An exception thrown by a handler does leave it: it is a fault
- * of the program, not of the datagram.
+ * payload its reader refuses; each is counted and logged at the debug level,
+ * and the next message is handled. No exception caused by the content of a
+ * message leaves dispatch(), so one forged message cannot stop the program. An
+ * exception thrown by a handler does leave it: it is a fault of the program,
+ * not of the datagram.
  *
- * Each message is handled on its own. A handler that answers a sender it does
- * not know yet must answer at most once per datagram, whatever the number of
- * messages in it, or a forged address would make the server send more bytes
- * than it received.
+ * Each message is handled on its own, and a handler cannot tell which
+ * messages shared a datagram. A sender the server does not know yet must be
+ * answered at most once per datagram, or a forged address would make the
+ * server send more bytes than it received: the code that receives must
+ * enforce it before dispatching.
  *
  * Not thread-safe: register the handlers, then dispatch, on one thread.
  */

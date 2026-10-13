@@ -109,9 +109,9 @@ Reading the header and splitting the messages are two calls because a receiver c
 
 Each message of the protocol page is a struct of the same name (`ConnectionRequest`, `ReadyState`, `PlayerInput`…), plain data that holds its `MessageType` in `TYPE`. Next to it, `encodePayload(writer, message)` writes its payload, and `decodeMessage<Message>(payload)` reads one. The fifteen messages other than `WorldState` live in `Messages/`, one header each; `WorldState` keeps its codec (below), and `decodeMessage<WorldState>` reads one of its payloads.
 
-- Every value is checked as the protocol page lists it: a `bool` is 0 or 1, an enumeration holds a listed value, a player number is 1 to 4 and appears once in a list, a nickname is 1 to 16 bytes of UTF-8, no action bit above the five actions is set, no entity id is 0, and the player or the entity a `GameEvent` names matches its kind. A count is checked before anything is sized from it, and a byte left after the last field refuses the message.
+- Every value of these fifteen messages is checked as the protocol page lists it: a `bool` is 0 or 1, an enumeration holds a listed value, a player number is 1 to 4 and appears once in a list, a nickname is 1 to 16 bytes of UTF-8, no action bit above the five actions is set, no entity id is 0, and the player or the entity a `GameEvent` names matches its kind. A count is checked before anything is sized from it, and a byte left after the last field refuses the message.
 - Writing runs the same checks before the first byte, so a refused message leaves the writer untouched, and whatever was read can be written back: a nickname accepted from a `ConnectionRequest` never makes a `LobbyState` throw.
-- A refused message throws an exception derived from `MalformedMessageException`, or `BufferUnderflowException` for a payload cut short.
+- Reading a refused message throws an exception derived from `MalformedMessageException`, or `BufferUnderflowException` for a payload cut short. Writing one throws the same exceptions, except for a coordinate that is NaN, which throws `InvalidCoordinateException`.
 
 Adding a message takes a struct with its `TYPE` and its two functions in `Messages/`, its value in `MessageType`, and its row on the protocol page; nothing that receives datagrams changes.
 
@@ -130,8 +130,8 @@ const std::vector<std::byte> datagram = rtype::network::DatagramCodec::encode(
 
 - `registerHandler<ReadyState>(handler)` registers the one handler of a type; a second one throws `DuplicateMessageHandlerException`.
 - `dispatch(origin, messages)` reads each payload, then calls its handler, in order. A message whose type has no handler, which includes the type bytes no message has, is skipped; a message whose payload is refused is dropped. Both are counted (`skippedMessageCount()`, `malformedMessageCount()`) and logged at the `debug` level with the sender, and the next message is handled.
-- No exception caused by the content of a datagram leaves `dispatch()`, so one forged datagram cannot stop the server. An exception thrown by a handler does: it is a fault of the program.
-- A handler that answers a sender it does not know yet must answer at most once per datagram: ninety 13-byte `ConnectionRequest` fit in one datagram, and an answer to each would send more bytes than were received.
+- No exception caused by the content of a message leaves `dispatch()`, so one forged message cannot stop the server. An exception thrown by a handler does: it is a fault of the program.
+- A sender it does not know yet must be answered at most once per datagram: ninety 13-byte `ConnectionRequest` fit in one datagram, and an answer to each would send more bytes than were received. A handler cannot tell which messages shared a datagram, so the code that receives must enforce it before dispatching.
 - It is not thread-safe. Nothing calls it yet: the server and the client do not decode what they receive (see [Server](/R-Type/server/)).
 
 ```cpp
@@ -148,7 +148,7 @@ dispatcher.dispatch(
     rtype::network::DatagramCodec::splitMessages(received.payload));
 ```
 
-`lobby` stands for the code that will handle the waiting room; `received` is an `IncomingDatagram`.
+`lobby` stands for the code that will handle the waiting room; `received` is an `IncomingDatagram`. `decodeHeader` and `splitMessages` throw `MalformedDatagramException` for bytes that are not a header followed by whole messages: the code that receives must catch it and drop the datagram, or one forged datagram would stop the server.
 
 ## World state: `WorldStateCodec`
 
@@ -156,7 +156,7 @@ A `WorldState` (`src/network/Protocol/WorldState.hpp`) is the picture of the gam
 
 - `encode(state)` returns one payload per datagram. A payload holds at most 1175 bytes, the 1200 of `MAX_DATAGRAM_SIZE` less the 22-byte packet header and the 3-byte message prefix (`PACKET_HEADER_SIZE`, `MESSAGE_PREFIX_SIZE`), which is 125 entities next to 4 players. A state with more entities gives several payloads with the same tick, each with every player and a part of the entities, in order; a state without entities gives one payload. More than `MAXIMUM_PLAYERS` (4) players throws `TooManyPlayersException`.
 - A position is rounded to the nearest eighth of a unit and clamped to -4096 to 4095.875 units, the range of a wire coordinate.
-- `decode(payload)` throws `BufferUnderflowException` for a truncated payload, and `MalformedMessageException` for more than 4 players, an `invulnerable` byte other than 0 or 1, an entity type outside 1 to 4, or bytes after the last entity. Whatever a payload announces, it makes the receiver allocate for at most 4 players and 255 entities. It accepts 0 players, where the protocol page says 1 to 4.
+- `decode(payload)` throws `BufferUnderflowException` for a truncated payload, and `MalformedMessageException` for more than 4 players, an `invulnerable` byte other than 0 or 1, an entity type outside 1 to 4, or bytes after the last entity. Whatever a payload announces, it makes the receiver allocate for at most 4 players and 255 entities. It checks neither the player numbers nor the entity ids: 0 players, a player number outside 1 to 4 or listed twice, and an entity id of 0 pass, where the protocol page forbids them. An unknown entity type refuses the whole state, where the page says to skip that entity.
 - `WorldStateSender` still sends the payload alone. `DatagramCodec::encode(header, MessageType::WorldState, payload)` would add the packet header and the message prefix, but the session token and the sequence it needs come with sessions, which do not exist yet, so no datagram a client could accept leaves the server.
 
 ```cpp
