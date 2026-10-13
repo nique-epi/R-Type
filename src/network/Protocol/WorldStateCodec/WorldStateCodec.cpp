@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <span>
 #include <string>
+#include <type_traits>
 #include <vector>
 #include "ByteReader.hpp"
 #include "ByteWriter.hpp"
@@ -132,6 +133,11 @@ WorldState WorldStateCodec::decode(std::span<const std::byte> payload) {
                                     " byte(s) after the last entity");
   }
   return state;
+}
+
+WorldState decodePayload(std::span<const std::byte> payload,
+                         [[maybe_unused]] std::type_identity<WorldState> type) {
+  return WorldStateCodec::decode(payload);
 }
 
 }  // namespace rtype::network

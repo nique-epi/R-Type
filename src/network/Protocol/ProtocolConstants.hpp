@@ -62,6 +62,25 @@ constexpr std::size_t MAXIMUM_PLAYERS = 4;
 constexpr std::uint8_t FIRST_PLAYER_NUMBER = 1;
 
 /**
+ * @brief The player number of a GameEvent that names no player.
+ */
+constexpr std::uint8_t NO_PLAYER_NUMBER = 0;
+
+/**
+ * @brief The entity id of a GameEvent that names no entity; no entity ever
+ * has it.
+ */
+constexpr std::uint32_t NO_ENTITY_ID = 0;
+
+/**
+ * @brief The actions a PlayerInput carries, one bit each from bit 0: up,
+ * down, left, right, shoot. The bits above them are 0.
+ */
+constexpr std::size_t PLAYER_ACTION_COUNT = 5;
+constexpr auto PLAYER_ACTION_BITS =
+    static_cast<std::uint8_t>((1U << PLAYER_ACTION_COUNT) - 1);
+
+/**
  * @brief Bytes of a player in a WorldState: playerNumber, shipEntityId, lives,
  * score and invulnerable.
  */

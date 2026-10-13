@@ -4,10 +4,15 @@ add_library(rtype_network_messages STATIC
   ConnectionRefused.cpp
   ConnectionRequest.cpp
   Disconnection.cpp
+  EntityDestroyed.cpp
+  EntitySpawned.cpp
   GameEnded.cpp
+  GameEvent.cpp
   GameStarted.cpp
   Heartbeat.cpp
   LobbyState.cpp
+  PlayerInput.cpp
+  PlayerLeft.cpp
   ReadyState.cpp
 )
 

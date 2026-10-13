@@ -140,4 +140,28 @@ constexpr std::uint32_t SOME_SCORE_OF_DISTINCT_BYTES = 0x01020304;
  */
 constexpr std::size_t LARGEST_LOBBY_DATAGRAM_SIZE = 102;
 
+/**
+ * @brief An input number and an event number whose bytes all differ.
+ */
+constexpr std::uint32_t SOME_INPUT_NUMBER = 0x01020304;
+constexpr std::uint16_t SOME_EVENT_NUMBER = 0x0102;
+
+/**
+ * @brief Actions of a PlayerInput: up and shoot (bits 0 and 4), and all five
+ * actions at once.
+ */
+constexpr std::uint8_t UP_AND_SHOOT = 0x11;
+constexpr std::uint8_t EVERY_ACTION = 0x1F;
+
+/**
+ * @brief The first bit above the five actions, which must stay 0.
+ */
+constexpr std::uint8_t FIRST_BIT_ABOVE_THE_ACTIONS = 0x20;
+
+/**
+ * @brief The number of a player who is not the first, for messages naming
+ * one.
+ */
+constexpr std::uint8_t SECOND_PLAYER_NUMBER = 2;
+
 }  // namespace rtype::network::testing
