@@ -1,0 +1,2 @@
+add_subdirectory(TickLoop)
+add_subdirectory(ServerApplication)
