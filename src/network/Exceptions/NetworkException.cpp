@@ -68,10 +68,15 @@ InvalidFieldValueException::InvalidFieldValueException(std::string_view field,
 InvalidCoordinateException::InvalidCoordinateException()
     : NetworkException("A coordinate to send is not a number") {}
 
+DuplicatePlayerNumberException::DuplicatePlayerNumberException(
+    std::uint8_t playerNumber)
+    : MalformedMessageException(
+          "player number " + std::to_string(playerNumber) + " appears twice") {}
+
 TooManyPlayersException::TooManyPlayersException(std::size_t playerCount,
                                                  std::size_t maximumCount)
-    : NetworkException("A world state lists at most " +
-                       std::to_string(maximumCount) + " players, not " +
-                       std::to_string(playerCount)) {}
+    : MalformedMessageException(
+          "a message lists at most " + std::to_string(maximumCount) +
+          " players, not " + std::to_string(playerCount)) {}
 
 }  // namespace rtype::network

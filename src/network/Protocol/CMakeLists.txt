@@ -9,7 +9,6 @@ add_library(rtype_network_wire_types STATIC WireTypes.cpp)
 target_link_libraries(rtype_network_wire_types
   PUBLIC
     rtype_network_protocol
-  PRIVATE
     rtype_network_exceptions
 )
 

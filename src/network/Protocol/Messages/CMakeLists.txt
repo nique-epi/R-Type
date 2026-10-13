@@ -4,7 +4,11 @@ add_library(rtype_network_messages STATIC
   ConnectionRefused.cpp
   ConnectionRequest.cpp
   Disconnection.cpp
+  GameEnded.cpp
+  GameStarted.cpp
   Heartbeat.cpp
+  LobbyState.cpp
+  ReadyState.cpp
 )
 
 target_include_directories(rtype_network_messages PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})

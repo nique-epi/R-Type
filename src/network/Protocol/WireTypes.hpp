@@ -1,9 +1,13 @@
 #pragma once
 
+#include <array>
 #include <cstdint>
+#include <span>
 #include <string_view>
 #include "ByteReader.hpp"
 #include "ByteWriter.hpp"
+#include "NetworkException.hpp"
+#include "ProtocolConstants.hpp"
 
 namespace rtype::network {
 
@@ -67,5 +71,37 @@ void requireValidPlayerNumber(std::uint8_t playerNumber);
  * @throws TrailingBytesException when bytes remain in @p reader.
  */
 void requireFullyRead(const ByteReader& reader);
+
+/**
+ * @brief Reads the number of players a message announces, and checks it
+ * before anything is sized from it.
+ * @throws TooManyPlayersException when it is above MAXIMUM_PLAYERS.
+ * @throws BufferUnderflowException when no byte remains.
+ */
+[[nodiscard]] std::uint8_t readPlayerCount(ByteReader& reader);
+
+/**
+ * @brief Checks the players a message lists: at most MAXIMUM_PLAYERS, each
+ * with a player number of a game, and no number twice. Player is a struct with
+ * a playerNumber field.
+ * @throws TooManyPlayersException when there are more than MAXIMUM_PLAYERS.
+ * @throws InvalidFieldValueException when a number is not FIRST_PLAYER_NUMBER
+ * to MAXIMUM_PLAYERS.
+ * @throws DuplicatePlayerNumberException when a number appears twice.
+ */
+template <typename Player>
+void requireValidPlayers(std::span<const Player> players) {
+  if (players.size() > MAXIMUM_PLAYERS) {
+    throw TooManyPlayersException(players.size(), MAXIMUM_PLAYERS);
+  }
+  std::array<bool, MAXIMUM_PLAYERS + 1> listed{};
+  for (const Player& player : players) {
+    requireValidPlayerNumber(player.playerNumber);
+    if (listed.at(player.playerNumber)) {
+      throw DuplicatePlayerNumberException(player.playerNumber);
+    }
+    listed.at(player.playerNumber) = true;
+  }
+}
 
 }  // namespace rtype::network

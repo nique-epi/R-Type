@@ -130,9 +130,19 @@ class InvalidCoordinateException : public NetworkException {
 };
 
 /**
- * @brief A world state to send lists more players than a game has.
+ * @brief The same player number appears twice in the players of a message,
+ * read from a payload or about to be written into one.
  */
-class TooManyPlayersException : public NetworkException {
+class DuplicatePlayerNumberException : public MalformedMessageException {
+ public:
+  explicit DuplicatePlayerNumberException(std::uint8_t playerNumber);
+};
+
+/**
+ * @brief A message lists more players than a game has, read from a payload or
+ * about to be written into one.
+ */
+class TooManyPlayersException : public MalformedMessageException {
  public:
   TooManyPlayersException(std::size_t playerCount, std::size_t maximumCount);
 };

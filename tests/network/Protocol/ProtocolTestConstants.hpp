@@ -129,4 +129,15 @@ constexpr std::uint8_t REFUSAL_REASON_ABOVE_THE_LAST = 4;
 constexpr std::size_t SMALLEST_REQUEST_DATAGRAM_SIZE_ON_THE_PAGE = 35;
 constexpr std::size_t CHALLENGE_DATAGRAM_SIZE_ON_THE_PAGE = 33;
 
+/**
+ * @brief A score whose bytes all differ, so a test sees each at its offset.
+ */
+constexpr std::uint32_t SOME_SCORE_OF_DISTINCT_BYTES = 0x01020304;
+
+/**
+ * @brief The size of the largest LobbyState datagram: the header, the prefix,
+ * the player count, and four players of 1 + 1 + 1 + 16 bytes.
+ */
+constexpr std::size_t LARGEST_LOBBY_DATAGRAM_SIZE = 102;
+
 }  // namespace rtype::network::testing

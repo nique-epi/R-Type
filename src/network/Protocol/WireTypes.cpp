@@ -114,4 +114,12 @@ void requireFullyRead(const ByteReader& reader) {
   }
 }
 
+std::uint8_t readPlayerCount(ByteReader& reader) {
+  const std::uint8_t playerCount = reader.readUint8();
+  if (playerCount > MAXIMUM_PLAYERS) {
+    throw TooManyPlayersException(playerCount, MAXIMUM_PLAYERS);
+  }
+  return playerCount;
+}
+
 }  // namespace rtype::network
