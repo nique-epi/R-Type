@@ -76,6 +76,16 @@ class MalformedMessageException : public NetworkException {
 };
 
 /**
+ * @brief Received bytes that are not a packet header followed by whole
+ * messages: shorter than the header, without any message, or with message
+ * sizes that do not add up to the end of the datagram.
+ */
+class MalformedDatagramException : public NetworkException {
+ public:
+  explicit MalformedDatagramException(std::size_t datagramSize);
+};
+
+/**
  * @brief A bool on the wire holds a byte other than 0 or 1.
  */
 class InvalidBoolException : public MalformedMessageException {

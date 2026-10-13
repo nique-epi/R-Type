@@ -1,0 +1,67 @@
+#pragma once
+
+#include <cstddef>
+#include <span>
+#include <vector>
+#include "MessageFrame.hpp"
+#include "MessageType.hpp"
+#include "PacketHeader.hpp"
+
+namespace rtype::network {
+
+/**
+ * @brief Turns a header and a message into the bytes of one datagram, and a
+ * received datagram back into its header and its messages.
+ *
+ * A datagram is the PACKET_HEADER_SIZE bytes of the header, then one or more
+ * messages; each message is its type byte, the size of its payload on two
+ * bytes, then the payload. Reading the header and splitting the messages are
+ * two calls, because a receiver checks the version before it trusts the rest:
+ * a datagram of another version gives its header even when its messages
+ * cannot be split.
+ */
+class DatagramCodec {
+ public:
+  /**
+   * @brief Encodes one datagram holding @p header and a single message of
+   * type @p type with @p payload.
+   * @throws DatagramTooLargeException when the datagram would hold more than
+   * MAX_DATAGRAM_SIZE bytes, that is a payload over MESSAGE_PAYLOAD_LIMIT.
+   */
+  [[nodiscard]] static std::vector<std::byte> encode(
+      const PacketHeader& header, MessageType type,
+      std::span<const std::byte> payload);
+
+  /**
+   * @brief Reads the header at the start of @p datagram without judging its
+   * fields: checking the protocol id, the version and the flags is left to
+   * the caller.
+   * @throws MalformedDatagramException when @p datagram is shorter than
+   * PACKET_HEADER_SIZE.
+   */
+  [[nodiscard]] static PacketHeader decodeHeader(
+      std::span<const std::byte> datagram);
+
+  /**
+   * @brief Splits the messages that follow the header of @p datagram, in
+   * order.
+   *
+   * Every size is checked before anything is returned: either the sizes add
+   * up exactly to the end of the datagram, or no message is returned. The
+   * payloads are views into @p datagram.
+   * @throws MalformedDatagramException when @p datagram is shorter than the
+   * header, holds no message, has a size running past its end, or has bytes
+   * left after its last message.
+   */
+  [[nodiscard]] static std::vector<MessageFrame> splitMessages(
+      std::span<const std::byte> datagram);
+
+  /**
+   * @brief Refused at compile time: the payloads would point into a buffer
+   * destroyed at the end of the call.
+   */
+  static std::vector<MessageFrame> splitMessages(
+      std::vector<std::byte>&& datagram) = delete;
+};
+
+}  // namespace rtype::network

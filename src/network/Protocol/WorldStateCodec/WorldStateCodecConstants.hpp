@@ -3,18 +3,15 @@
 #include <cstddef>
 #include <cstdint>
 #include <limits>
-#include "NetworkConstants.hpp"
 #include "ProtocolConstants.hpp"
 #include "WorldState.hpp"
 
 namespace rtype::network {
 
 /**
- * @brief Bytes a WorldState payload may hold: a datagram, less the packet
- * header and the message prefix that go around it.
+ * @brief Bytes a WorldState payload may hold: as many as any message.
  */
-constexpr std::size_t WORLD_STATE_PAYLOAD_LIMIT =
-    MAX_DATAGRAM_SIZE - PACKET_HEADER_SIZE - MESSAGE_PREFIX_SIZE;
+constexpr std::size_t WORLD_STATE_PAYLOAD_LIMIT = MESSAGE_PAYLOAD_LIMIT;
 
 static_assert((WORLD_STATE_PAYLOAD_LIMIT - WORLD_STATE_FIXED_SIZE) /
                       ENTITY_STATE_WIRE_SIZE <=

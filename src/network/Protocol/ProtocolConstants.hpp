@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <limits>
+#include "NetworkConstants.hpp"
 #include "SerializationConstants.hpp"
 
 namespace rtype::network {
@@ -10,16 +11,44 @@ namespace rtype::network {
 constexpr std::size_t INT16_WIRE_SIZE = sizeof(std::int16_t);
 
 /**
+ * @brief The first four bytes of every datagram, "RTYP" in ASCII.
+ */
+constexpr std::uint32_t PROTOCOL_ID = 0x52545950;
+
+/**
+ * @brief The version of the protocol this code speaks.
+ */
+constexpr std::uint8_t PROTOCOL_VERSION = 0;
+
+/**
  * @brief Bytes of the packet header every datagram starts with, see the
- * Packet header section of the protocol page.
+ * Datagram section of the protocol page.
  */
 constexpr std::size_t PACKET_HEADER_SIZE = 22;
+
+static_assert(PACKET_HEADER_SIZE == UINT32_WIRE_SIZE + UINT8_WIRE_SIZE +
+                                        UINT8_WIRE_SIZE + UINT64_WIRE_SIZE +
+                                        UINT16_WIRE_SIZE + UINT16_WIRE_SIZE +
+                                        UINT32_WIRE_SIZE,
+              "the header is protocolId, version, flags, sessionToken, "
+              "sequence, acknowledgedSequence and acknowledgementBits");
 
 /**
  * @brief Bytes before the payload of each message: its type (one byte) and its
  * payload size (two bytes).
  */
 constexpr std::size_t MESSAGE_PREFIX_SIZE = UINT8_WIRE_SIZE + UINT16_WIRE_SIZE;
+
+/**
+ * @brief The most bytes the payload of one message holds: a datagram, less
+ * the packet header and the message prefix that go around it.
+ */
+constexpr std::size_t MESSAGE_PAYLOAD_LIMIT =
+    MAX_DATAGRAM_SIZE - PACKET_HEADER_SIZE - MESSAGE_PREFIX_SIZE;
+
+static_assert(MESSAGE_PAYLOAD_LIMIT <=
+                  std::numeric_limits<std::uint16_t>::max(),
+              "the size of a payload is sent on two bytes");
 
 /**
  * @brief Players a game holds, so the most a WorldState lists.

@@ -16,3 +16,4 @@ target_link_libraries(rtype_network_wire_types
 rtype_enable_warnings(rtype_network_wire_types)
 
 add_subdirectory(WorldStateCodec)
+add_subdirectory(DatagramCodec)

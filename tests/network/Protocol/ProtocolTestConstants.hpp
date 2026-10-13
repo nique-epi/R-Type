@@ -1,6 +1,8 @@
 #pragma once
 
 #include <array>
+#include <cstddef>
+#include <cstdint>
 #include <string_view>
 
 namespace rtype::network::testing {
@@ -61,5 +63,44 @@ constexpr auto ILL_FORMED_UTF8 = std::to_array<std::string_view>({
     "\x80",
     "\xE2\x82",
 });
+
+/**
+ * @brief A session token and a sequence whose bytes all differ, so a test sees
+ * each byte at its offset.
+ */
+constexpr std::uint64_t SOME_SESSION_TOKEN = 0x0102030405060708;
+constexpr std::uint16_t SOME_SEQUENCE = 0x0A0B;
+
+/**
+ * @brief Values for the header fields version 0 leaves at 0, all different,
+ * so a round trip shows each one at its place.
+ */
+constexpr std::uint8_t SOME_OTHER_VERSION = 1;
+constexpr std::uint8_t SOME_FLAGS = 0x0C;
+constexpr std::uint16_t SOME_ACKNOWLEDGED_SEQUENCE = 0x0D0E;
+constexpr std::uint32_t SOME_ACKNOWLEDGEMENT_BITS = 0x0F101112;
+
+/**
+ * @brief The 22 bytes of a default header: RTYP, version 0, then zeros.
+ */
+constexpr auto DEFAULT_HEADER_BYTES = std::to_array<std::uint8_t>(
+    {0x52, 0x54, 0x59, 0x50, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00});
+
+/**
+ * @brief The offset of the version byte in a datagram.
+ */
+constexpr std::size_t VERSION_OFFSET = 4;
+
+/**
+ * @brief The size of a datagram holding one message with an empty payload:
+ * the 22-byte header and the 3-byte message prefix.
+ */
+constexpr std::size_t EMPTY_MESSAGE_DATAGRAM_SIZE = 25;
+
+/**
+ * @brief The size of every datagram a version 0 sender may send at most.
+ */
+constexpr std::size_t LARGEST_DATAGRAM_SIZE = 1200;
 
 }  // namespace rtype::network::testing

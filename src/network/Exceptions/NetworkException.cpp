@@ -42,6 +42,10 @@ StringTooLongException::StringTooLongException(std::size_t length,
 MalformedMessageException::MalformedMessageException(const std::string& reason)
     : NetworkException("Malformed message: " + reason) {}
 
+MalformedDatagramException::MalformedDatagramException(std::size_t datagramSize)
+    : NetworkException("A datagram of " + std::to_string(datagramSize) +
+                       " bytes is not a header followed by whole messages") {}
+
 InvalidBoolException::InvalidBoolException(std::uint8_t value)
     : MalformedMessageException("a bool holds " + std::to_string(value) +
                                 ", where only 0 and 1 are valid") {}
