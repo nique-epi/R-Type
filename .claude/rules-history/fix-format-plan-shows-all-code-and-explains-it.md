@@ -27,3 +27,7 @@ A plan was treated as a summary of intent rather than as the code review that pr
 ## Update (2026-10-06) — plan code formatted by the tool, predictions measured
 
 The plan for scaling the playfield to the client window showed its C++ wrapped by hand. Two statements of `GameWindow.cpp` were wrapped differently from what `clang-format` produces, so the approved code failed `format-check` as written and had to be reformatted after approval. The same plan stated that inverting the ratio comparison would turn four tests red; run, it turned three red. The fourth only checks that the rectangle keeps the proportions of the playfield, which stays true when the rectangle overflows the window, and the overflow is what another test catches. Both were stated as facts in a document the user approves.
+
+## Update (2026-10-13) — a usage example for each new feature
+
+The plan for sending the world state at a fixed frequency showed every new class, constant and message with its code and a symbol-by-symbol reading, but not one line showing a caller. The user could not tell, from the plan, how a reader would use the codec, the sender or the client filter, and asked for an example of use for each new feature, and for the rule to say so. The template gained a "How it is used" step after "What it does", and a new item requires the example for every new feature, even a constant or a message, with the name of the code that calls it today.
