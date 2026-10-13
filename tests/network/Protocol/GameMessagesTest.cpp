@@ -1,5 +1,4 @@
 #include <gtest/gtest.h>
-#include <cstddef>
 #include <limits>
 #include <vector>
 #include "ByteSequence.hpp"
