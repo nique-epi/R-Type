@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include "IClock.hpp"
+#include "TimeConstants.hpp"
 
 namespace rtype::engine {
 
@@ -19,11 +20,26 @@ class FixedTimestep {
   /** @return number of ticks to simulate since the previous call. */
   std::size_t consumeTicks();
 
+  /**
+   * @return the time of the clock at which the next tick is due, from the
+   * clock reading of the previous consumeTicks() call, or of the construction:
+   * later than that reading by more than zero and at most one tick duration.
+   */
+  [[nodiscard]] Duration nextTickTime() const;
+
+  /**
+   * @return the time the previous consumeTicks() call dropped instead of
+   * catching it up: zero unless more than MAXIMUM_TICKS_PER_ADVANCE ticks were
+   * due, otherwise all the time past those ticks, remainder included.
+   */
+  [[nodiscard]] Duration droppedTime() const;
+
  private:
-  const IClock& clock_;
+  const IClock* clock_;
   Duration tickDuration_;
   Duration previousTime_;
   Duration accumulated_{};
+  Duration droppedTime_{};
 };
 
 }  // namespace rtype::engine

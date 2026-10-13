@@ -3,7 +3,7 @@ title: Network
 description: What the network library does, how its parts fit together and where to find them in the code.
 ---
 
-The network library, `rtype_network`, carries datagrams between the programs. Today it opens UDP sockets, sends datagrams and hands over the ones it receives, with their sender. It knows nothing about entities or the rules of the game, and it is the only library that includes Asio: the client and the server use it through classes that never name an Asio type (see [Project layout](/R-Type/project-layout/#network)). It also turns the values of a datagram into bytes and back, one field at a time. What the datagrams contain is described in [Protocol](/R-Type/protocol/).
+The network library, `rtype_network`, carries datagrams between the programs. Today it opens UDP sockets, sends datagrams and hands over the ones it receives, with their sender, through queues when another thread uses them. It knows nothing about entities or the rules of the game, and it is the only library that includes Asio: the client and the server use it through classes that never name an Asio type (see [Project layout](/R-Type/project-layout/#network)). It also turns the values of a datagram into bytes and back, one field at a time. What the datagrams contain is described in [Protocol](/R-Type/protocol/).
 
 This page tells you where to look when you need to change something. It describes what exists today and says plainly what does not exist yet.
 
@@ -11,6 +11,7 @@ This page tells you where to look when you need to change something. It describe
 |---|---|---|
 | Event loop | Available | `src/network/NetworkContext/` |
 | UDP socket | Available | `src/network/Transport/` |
+| Relay between a socket and the queues of another thread | Available | `src/network/Transport/DatagramRelay/` |
 | Lag and loss simulator | Not yet written | — |
 | Serialization | Available | `src/network/Serialization/` |
 | Protocol messages | Not yet written | — |
@@ -19,6 +20,8 @@ This page tells you where to look when you need to change something. It describe
 ## Event loop: `NetworkContext`
 
 `NetworkContext` owns the Asio event loop. `run()` blocks and runs every network operation, and every socket handler, on the thread that called it. It returns when the loop has no work left or `stop()` is called; a socket that is receiving always has work, so a server returns only on `stop()`.
+
+`stop()` and `post(task)` may be called from any thread. `post()` queues a function to run on the thread that runs `run()`: this is how another thread gets a datagram sent, since a socket may only be used on that thread. A task still queued when the context is destroyed is destroyed without running.
 
 Asio is linked privately to the network targets, so the headers other modules include never include it, and `r-type_server` fails to build if it tries. A class that needs Asio lives in `src/network` and links `rtype_network_asio`, which also defines `ASIO_NO_DEPRECATED` and, on Windows, `_WIN32_WINNT`.
 
@@ -32,6 +35,7 @@ Asio is linked privately to the network targets, so the headers other modules in
 - `send(destination, payload)` copies the payload and returns at once. More than `MAX_DATAGRAM_SIZE` bytes throws `DatagramTooLargeException` and sends nothing. A failed send is logged, and UDP never tells whether a datagram arrived.
 - An error while receiving is logged and the socket keeps receiving. On Windows, a datagram sent to a port nobody listens on makes a later receive fail with "connection refused"; it is logged at the `debug` level.
 - A socket is not thread-safe: use it and destroy it on the thread that runs its `NetworkContext`. Once it is destroyed, its handler is never called again, even for a datagram already received.
+- `IncomingDatagram` and `OutgoingDatagram` (`src/network/Transport/`) hold a copy of a datagram's bytes with its sender, or with its destination, for code that keeps a datagram after the handler returns or hands it to another thread.
 
 An echo server, which sends every datagram back to its sender:
 
@@ -48,7 +52,17 @@ socket.startReceiving([&socket](const rtype::network::Endpoint& sender,
 network.run();
 ```
 
-`r-type_server` opens such a socket on `DEFAULT_SERVER_PORT` (4242), on every IPv4 interface, and only logs each datagram at the `debug` level: nothing decodes or answers them yet.
+`r-type_server` opens such a socket on `DEFAULT_SERVER_PORT` (4242), on every IPv4 interface, and hands each datagram to its simulation thread, which only logs it at the `debug` level: nothing decodes or answers them yet (see [Server](/R-Type/server/)). The client runs its socket on a thread of its own, `NetworkThread`, described in [Client](/R-Type/client/#network-networkthread).
+
+## Socket to queues: `DatagramRelay`
+
+`DatagramRelay` (`src/network/Transport/DatagramRelay/`) connects an `IDatagramSocket` to two `BoundedQueue` (see [Concurrency](/R-Type/concurrency/)), so another thread exchanges datagrams with the network without touching the socket. Its calls run on the thread that runs the socket's `NetworkContext`, or before that thread starts. The socket and the outgoing queue must outlive it. The incoming queue must live longer still: `startReceiving()` gives the socket a handler that writes to it, and the socket keeps that handler until it is destroyed, so the incoming queue stays alive until the socket is destroyed, or until no thread will run its `NetworkContext` again. `ServerApplication` respects it: its queues are destroyed after `run()` has returned, when no thread runs its context any more. So does the client's `NetworkThread`: its destructor stops the context and joins the thread before its queues are destroyed.
+
+- `startReceiving()` copies every datagram the socket receives, with its sender, into the incoming queue as an `IncomingDatagram`.
+- `sendWaiting()` sends every `OutgoingDatagram` waiting in the outgoing queue, oldest first. A datagram the socket refuses, too large or for an address that is not an IP address, throws, and the ones after it are not sent.
+- The other thread drains the incoming queue and pushes to the outgoing one; to get what it pushed sent, it hands `sendWaiting()` to the network thread with `NetworkContext::post()`.
+
+The server runs one between its network thread and its simulation thread (see [Server](/R-Type/server/)).
 
 ## Serialization: `ByteWriter` and `ByteReader`
 
@@ -87,10 +101,12 @@ The `bool`, `position` and enumeration types of the protocol are not provided ye
 | Change the largest datagram | `MAX_DATAGRAM_SIZE` in `src/network/NetworkConstants.hpp`, and the Transport section of [Protocol](/R-Type/protocol/#transport) |
 | Change the port the server listens on by default | `DEFAULT_SERVER_PORT` in `src/network/NetworkConstants.hpp` |
 | Change how datagrams are received or sent | `src/network/Transport/UdpSocket/` |
+| Change how datagrams go between the socket and the queues | `src/network/Transport/DatagramRelay/` |
 | Write a class that needs Asio | A folder in `src/network` whose target links `rtype_network_asio` privately |
 | Change how an integer, a float or a string is encoded | `src/network/Serialization/ByteWriter/` and `ByteReader/`, then the [Protocol](/R-Type/protocol/#encoding) page |
 | Change the string length limit or the sizes | `src/network/Serialization/SerializationConstants.hpp` |
 | Add a network error | `src/network/Exceptions/NetworkException.hpp` |
 | Test code against a real socket | `tests/UdpSocketTest.cpp`: a plain Asio client on the loopback address |
+| Test code that uses a socket without the network | `tests/doubles/RecordingDatagramSocket.hpp`, as `tests/network/Transport/DatagramRelayTest.cpp` does |
 
 Each folder has its own `CMakeLists.txt` declaring one library, linked into `rtype_network` by `src/network/CMakeLists.txt`.
