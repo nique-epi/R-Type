@@ -6,6 +6,7 @@
 #include <thread>
 #include <utility>
 #include "Endpoint.hpp"
+#include "OutgoingDatagram.hpp"
 #include "ServerConstants.hpp"
 #include "TickLoop.hpp"
 
@@ -42,6 +43,10 @@ void ServerApplication::run() {
 }
 
 void ServerApplication::stop() { network_.stop(); }
+
+void ServerApplication::queueDatagram(network::OutgoingDatagram datagram) {
+  outgoing_.push(std::move(datagram));
+}
 
 network::Endpoint ServerApplication::localEndpoint() const {
   return socket_.localEndpoint();

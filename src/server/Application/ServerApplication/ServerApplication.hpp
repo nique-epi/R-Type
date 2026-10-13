@@ -72,6 +72,14 @@ class ServerApplication {
   void stop();
 
   /**
+   * @brief Queues a datagram for the network thread to send at the end of the
+   * current tick. Call it from the tick handler, which runs on the simulation
+   * thread. When more than OUTGOING_DATAGRAM_QUEUE_CAPACITY wait, the oldest
+   * is discarded.
+   */
+  void queueDatagram(network::OutgoingDatagram datagram);
+
+  /**
    * @returns The address and port the socket is bound to.
    */
   [[nodiscard]] network::Endpoint localEndpoint() const;
