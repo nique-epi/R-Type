@@ -4,6 +4,7 @@
 #include <span>
 #include <vector>
 #include "MessageFrame.hpp"
+#include "MessagePayload.hpp"
 #include "MessageType.hpp"
 #include "PacketHeader.hpp"
 
@@ -31,6 +32,17 @@ class DatagramCodec {
   [[nodiscard]] static std::vector<std::byte> encode(
       const PacketHeader& header, MessageType type,
       std::span<const std::byte> payload);
+
+  /**
+   * @brief Encodes one datagram holding @p header and @p message.
+   * @throws What encodeMessage() throws for @p message, before anything is
+   * encoded.
+   */
+  template <EncodableMessage Message>
+  [[nodiscard]] static std::vector<std::byte> encode(const PacketHeader& header,
+                                                     const Message& message) {
+    return encode(header, Message::TYPE, encodeMessage(message));
+  }
 
   /**
    * @brief Reads the header at the start of @p datagram without judging its

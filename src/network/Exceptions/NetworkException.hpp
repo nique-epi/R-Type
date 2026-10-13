@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <stdexcept>
 #include <string>
+#include <string_view>
 
 namespace rtype::network {
 
@@ -91,6 +92,33 @@ class MalformedDatagramException : public NetworkException {
 class InvalidBoolException : public MalformedMessageException {
  public:
   explicit InvalidBoolException(std::uint8_t value);
+};
+
+/**
+ * @brief Bytes left in a payload after the last field of its message.
+ */
+class TrailingBytesException : public MalformedMessageException {
+ public:
+  explicit TrailingBytesException(std::size_t count);
+};
+
+/**
+ * @brief A nickname that is empty, longer than the protocol allows, or not
+ * UTF-8, read from a payload or about to be written into one.
+ */
+class InvalidNicknameException : public MalformedMessageException {
+ public:
+  explicit InvalidNicknameException(std::size_t size);
+};
+
+/**
+ * @brief A field holds a value the protocol page does not list for it, read
+ * from a payload or about to be written into one. The field is named as on
+ * the protocol page.
+ */
+class InvalidFieldValueException : public MalformedMessageException {
+ public:
+  InvalidFieldValueException(std::string_view field, std::uint64_t value);
 };
 
 /**

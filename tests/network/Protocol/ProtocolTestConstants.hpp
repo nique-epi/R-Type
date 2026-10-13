@@ -103,4 +103,30 @@ constexpr std::size_t EMPTY_MESSAGE_DATAGRAM_SIZE = 25;
  */
 constexpr std::size_t LARGEST_DATAGRAM_SIZE = 1200;
 
+/**
+ * @brief A cookie whose bytes all differ, so a test sees each at its offset.
+ */
+constexpr std::uint64_t SOME_COOKIE = 0x0102030405060708;
+
+/**
+ * @brief The last player number of a game, and the numbers just outside the
+ * range 1 to 4.
+ */
+constexpr std::uint8_t LAST_PLAYER_NUMBER = 4;
+constexpr std::uint8_t PLAYER_NUMBER_BELOW_THE_FIRST = 0;
+constexpr std::uint8_t PLAYER_NUMBER_ABOVE_THE_LAST = 5;
+
+/**
+ * @brief Refusal reasons just outside the values 1 to 3 of the protocol page.
+ */
+constexpr std::uint8_t REFUSAL_REASON_BELOW_THE_FIRST = 0;
+constexpr std::uint8_t REFUSAL_REASON_ABOVE_THE_LAST = 4;
+
+/**
+ * @brief The sizes the protocol page gives for the smallest ConnectionRequest
+ * datagram and for a ConnectionChallenge datagram.
+ */
+constexpr std::size_t SMALLEST_REQUEST_DATAGRAM_SIZE_ON_THE_PAGE = 35;
+constexpr std::size_t CHALLENGE_DATAGRAM_SIZE_ON_THE_PAGE = 33;
+
 }  // namespace rtype::network::testing

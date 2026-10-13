@@ -96,4 +96,22 @@ bool isValidNickname(std::string_view nickname) {
          nickname.size() <= MAXIMUM_NICKNAME_SIZE && isValidUtf8(nickname);
 }
 
+void requireValidNickname(std::string_view nickname) {
+  if (!isValidNickname(nickname)) {
+    throw InvalidNicknameException(nickname.size());
+  }
+}
+
+void requireValidPlayerNumber(std::uint8_t playerNumber) {
+  if (playerNumber < FIRST_PLAYER_NUMBER || playerNumber > MAXIMUM_PLAYERS) {
+    throw InvalidFieldValueException("playerNumber", playerNumber);
+  }
+}
+
+void requireFullyRead(const ByteReader& reader) {
+  if (reader.remaining() != 0) {
+    throw TrailingBytesException(reader.remaining());
+  }
+}
+
 }  // namespace rtype::network

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <string_view>
 #include "ByteReader.hpp"
 #include "ByteWriter.hpp"
@@ -46,5 +47,25 @@ float readCoordinate(ByteReader& reader);
  * MINIMUM_NICKNAME_SIZE to MAXIMUM_NICKNAME_SIZE bytes of well-formed UTF-8.
  */
 [[nodiscard]] bool isValidNickname(std::string_view nickname);
+
+/**
+ * @brief Checks that @p nickname is one the protocol accepts, see
+ * isValidNickname().
+ * @throws InvalidNicknameException when it is not.
+ */
+void requireValidNickname(std::string_view nickname);
+
+/**
+ * @brief Checks that @p playerNumber is the number of a player of a game,
+ * FIRST_PLAYER_NUMBER to MAXIMUM_PLAYERS.
+ * @throws InvalidFieldValueException naming playerNumber when it is not.
+ */
+void requireValidPlayerNumber(std::uint8_t playerNumber);
+
+/**
+ * @brief Checks that a payload was read to its end.
+ * @throws TrailingBytesException when bytes remain in @p reader.
+ */
+void requireFullyRead(const ByteReader& reader);
 
 }  // namespace rtype::network

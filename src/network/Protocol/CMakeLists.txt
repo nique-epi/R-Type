@@ -17,3 +17,4 @@ rtype_enable_warnings(rtype_network_wire_types)
 
 add_subdirectory(WorldStateCodec)
 add_subdirectory(DatagramCodec)
+add_subdirectory(Messages)

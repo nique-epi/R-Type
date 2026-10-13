@@ -56,6 +56,12 @@ static_assert(MESSAGE_PAYLOAD_LIMIT <=
 constexpr std::size_t MAXIMUM_PLAYERS = 4;
 
 /**
+ * @brief The number of the first player of a game; the last is
+ * MAXIMUM_PLAYERS.
+ */
+constexpr std::uint8_t FIRST_PLAYER_NUMBER = 1;
+
+/**
  * @brief Bytes of a player in a WorldState: playerNumber, shipEntityId, lives,
  * score and invulnerable.
  */
@@ -82,6 +88,27 @@ constexpr std::size_t WORLD_STATE_FIXED_SIZE =
  */
 constexpr std::size_t MINIMUM_NICKNAME_SIZE = 1;
 constexpr std::size_t MAXIMUM_NICKNAME_SIZE = 16;
+
+/**
+ * @brief The size of the smallest datagram holding a ConnectionRequest: a
+ * cookie and a nickname of one byte.
+ */
+constexpr std::size_t SMALLEST_CONNECTION_REQUEST_DATAGRAM_SIZE =
+    PACKET_HEADER_SIZE + MESSAGE_PREFIX_SIZE + UINT64_WIRE_SIZE +
+    SHORT_STRING_PREFIX_SIZE + MINIMUM_NICKNAME_SIZE;
+
+/**
+ * @brief The size of the largest datagram the server sends a sender it does
+ * not know yet: a ConnectionChallenge and its cookie. ConnectionRefused and
+ * ConnectionAccepted carry one byte.
+ */
+constexpr std::size_t LARGEST_CONNECTION_ANSWER_DATAGRAM_SIZE =
+    PACKET_HEADER_SIZE + MESSAGE_PREFIX_SIZE + UINT64_WIRE_SIZE;
+
+static_assert(LARGEST_CONNECTION_ANSWER_DATAGRAM_SIZE <=
+                  SMALLEST_CONNECTION_REQUEST_DATAGRAM_SIZE,
+              "the server never sends a sender it does not know more bytes "
+              "than the request it answers");
 
 /**
  * @brief The bytes a bool is sent as; any other byte is invalid.

@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <stdexcept>
 #include <string>
+#include <string_view>
 #include "NetworkConstants.hpp"
 
 namespace rtype::network {
@@ -49,6 +50,20 @@ MalformedDatagramException::MalformedDatagramException(std::size_t datagramSize)
 InvalidBoolException::InvalidBoolException(std::uint8_t value)
     : MalformedMessageException("a bool holds " + std::to_string(value) +
                                 ", where only 0 and 1 are valid") {}
+
+TrailingBytesException::TrailingBytesException(std::size_t count)
+    : MalformedMessageException(std::to_string(count) +
+                                " byte(s) left after the last field") {}
+
+InvalidNicknameException::InvalidNicknameException(std::size_t size)
+    : MalformedMessageException("a nickname of " + std::to_string(size) +
+                                " byte(s) is empty, too long or not UTF-8") {}
+
+InvalidFieldValueException::InvalidFieldValueException(std::string_view field,
+                                                       std::uint64_t value)
+    : MalformedMessageException(std::string{field} + " holds " +
+                                std::to_string(value) +
+                                ", a value the protocol does not allow") {}
 
 InvalidCoordinateException::InvalidCoordinateException()
     : NetworkException("A coordinate to send is not a number") {}
