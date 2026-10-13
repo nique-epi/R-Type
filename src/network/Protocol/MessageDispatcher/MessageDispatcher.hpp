@@ -48,25 +48,30 @@ class MessageDispatcher {
    * type is written explicitly: registerHandler<ReadyState>(...).
    * @throws EmptyMessageHandlerException when @p handler is empty.
    * @throws DuplicateMessageHandlerException when Message already has a
-   * handler: a type has one handler.
+   * handler: a type has one handler. Whatever it throws, the handlers already
+   * registered are unchanged.
    */
   template <DecodableMessage Message>
   void registerHandler(Handler<Message> handler) {
     if (!handler) {
       throw EmptyMessageHandlerException();
     }
-    Route& route = routes_.at(static_cast<std::uint8_t>(Message::TYPE));
-    if (route.decode) {
+    Route& slot = routes_.at(static_cast<std::uint8_t>(Message::TYPE));
+    if (slot.decode) {
       throw DuplicateMessageHandlerException(
           static_cast<std::uint8_t>(Message::TYPE));
     }
-    route.decode = [](std::span<const std::byte> payload) {
-      return std::any{decodeMessage<Message>(payload)};
-    };
-    route.handle = [typedHandler = std::move(handler)](
-                       const MessageOrigin& origin, const std::any& message) {
-      typedHandler(origin, std::any_cast<const Message&>(message));
-    };
+    Route route{.decode =
+                    [](std::span<const std::byte> payload) {
+                      return std::any{decodeMessage<Message>(payload)};
+                    },
+                .handle =
+                    [typedHandler = std::move(handler)](
+                        const MessageOrigin& origin, const std::any& message) {
+                      typedHandler(origin,
+                                   std::any_cast<const Message&>(message));
+                    }};
+    slot = std::move(route);
   }
 
   /**
