@@ -46,6 +46,9 @@ InvalidBoolException::InvalidBoolException(std::uint8_t value)
     : MalformedMessageException("a bool holds " + std::to_string(value) +
                                 ", where only 0 and 1 are valid") {}
 
+InvalidCoordinateException::InvalidCoordinateException()
+    : NetworkException("A coordinate to send is not a number") {}
+
 TooManyPlayersException::TooManyPlayersException(std::size_t playerCount,
                                                  std::size_t maximumCount)
     : NetworkException("A world state lists at most " +

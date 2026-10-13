@@ -1,4 +1,5 @@
 #include <gtest/gtest.h>
+#include <limits>
 #include "ByteReader.hpp"
 #include "ByteSequence.hpp"
 #include "ByteWriter.hpp"
@@ -160,6 +161,32 @@ TEST(WireTypes, ClampsACoordinateBelowTheRange) {
   ByteReader reader(writer.bytes());
 
   EXPECT_EQ(readCoordinate(reader), SMALLEST_WIRE_COORDINATE);
+}
+
+/**
+ * Given a coordinate that is not a number
+ * When it is written
+ * Then an InvalidCoordinateException is raised
+ */
+TEST(WireTypes, RefusesACoordinateThatIsNotANumber) {
+  ByteWriter writer;
+
+  EXPECT_THROW(writeCoordinate(writer, std::numeric_limits<float>::quiet_NaN()),
+               InvalidCoordinateException);
+}
+
+/**
+ * Given a coordinate that is not a number
+ * When writing it is refused
+ * Then nothing was added to the buffer
+ */
+TEST(WireTypes, RefusedCoordinateWritesNothing) {
+  ByteWriter writer;
+
+  EXPECT_THROW(writeCoordinate(writer, std::numeric_limits<float>::quiet_NaN()),
+               InvalidCoordinateException);
+
+  EXPECT_TRUE(writer.bytes().empty());
 }
 
 }  // namespace

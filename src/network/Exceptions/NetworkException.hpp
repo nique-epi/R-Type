@@ -84,6 +84,14 @@ class InvalidBoolException : public MalformedMessageException {
 };
 
 /**
+ * @brief A coordinate to send is not a number, so it has no place on the wire.
+ */
+class InvalidCoordinateException : public NetworkException {
+ public:
+  InvalidCoordinateException();
+};
+
+/**
  * @brief A world state to send lists more players than a game has.
  */
 class TooManyPlayersException : public NetworkException {

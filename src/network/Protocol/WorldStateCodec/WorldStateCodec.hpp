@@ -23,6 +23,7 @@ class WorldStateCodec {
    * entities gives one payload.
    * @throws TooManyPlayersException when the state lists more than
    * MAXIMUM_PLAYERS players.
+   * @throws InvalidCoordinateException when an entity coordinate is NaN.
    */
   [[nodiscard]] static std::vector<std::vector<std::byte>> encode(
       const WorldState& state);

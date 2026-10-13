@@ -22,6 +22,8 @@ bool readBool(ByteReader& reader);
  * @brief Writes a coordinate in logical units the way the protocol sends it: a
  * signed 16-bit count of eighths of a unit, rounded to the nearest eighth and
  * clamped to -4096 to 4095.875 units.
+ * @throws InvalidCoordinateException when @p coordinate is NaN; nothing is
+ * written then.
  */
 void writeCoordinate(ByteWriter& writer, float coordinate);
 
