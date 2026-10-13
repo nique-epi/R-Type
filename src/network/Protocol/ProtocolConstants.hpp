@@ -21,6 +21,13 @@ constexpr std::uint32_t PROTOCOL_ID = 0x52545950;
 constexpr std::uint8_t PROTOCOL_VERSION = 0;
 
 /**
+ * @brief The values a message type byte can hold, so the size of a table
+ * indexed by it.
+ */
+constexpr std::size_t MESSAGE_TYPE_COUNT =
+    std::numeric_limits<std::uint8_t>::max() + 1;
+
+/**
  * @brief Bytes of the packet header every datagram starts with, see the
  * Datagram section of the protocol page.
  */

@@ -147,4 +147,21 @@ class TooManyPlayersException : public MalformedMessageException {
   TooManyPlayersException(std::size_t playerCount, std::size_t maximumCount);
 };
 
+/**
+ * @brief A message handler was registered empty.
+ */
+class EmptyMessageHandlerException : public NetworkException {
+ public:
+  EmptyMessageHandlerException();
+};
+
+/**
+ * @brief A second handler was registered for a message type that already has
+ * one.
+ */
+class DuplicateMessageHandlerException : public NetworkException {
+ public:
+  explicit DuplicateMessageHandlerException(std::uint8_t messageType);
+};
+
 }  // namespace rtype::network

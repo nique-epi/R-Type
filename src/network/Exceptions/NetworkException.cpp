@@ -79,4 +79,12 @@ TooManyPlayersException::TooManyPlayersException(std::size_t playerCount,
           "a message lists at most " + std::to_string(maximumCount) +
           " players, not " + std::to_string(playerCount)) {}
 
+EmptyMessageHandlerException::EmptyMessageHandlerException()
+    : NetworkException("A message handler must not be empty") {}
+
+DuplicateMessageHandlerException::DuplicateMessageHandlerException(
+    std::uint8_t messageType)
+    : NetworkException("Message type " + std::to_string(messageType) +
+                       " already has a handler") {}
+
 }  // namespace rtype::network

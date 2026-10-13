@@ -164,4 +164,17 @@ constexpr std::uint8_t FIRST_BIT_ABOVE_THE_ACTIONS = 0x20;
  */
 constexpr std::uint8_t SECOND_PLAYER_NUMBER = 2;
 
+/**
+ * @brief The port a test message is said to come from.
+ */
+constexpr std::uint16_t SOME_SENDER_PORT = 50000;
+
+/**
+ * @brief Message type bytes no message has: the byte before the first type,
+ * the byte after the last, and the largest byte.
+ */
+constexpr std::uint8_t TYPE_BELOW_THE_FIRST = 0;
+constexpr std::uint8_t TYPE_ABOVE_THE_LAST = 17;
+constexpr std::uint8_t LARGEST_TYPE_BYTE = 255;
+
 }  // namespace rtype::network::testing
