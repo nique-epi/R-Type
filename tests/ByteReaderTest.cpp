@@ -1,6 +1,8 @@
 #include <gtest/gtest.h>
+#include <algorithm>
 #include <cstddef>
 #include <cstdint>
+#include <span>
 #include <vector>
 #include "ByteReader.hpp"
 #include "ByteSequence.hpp"
@@ -15,6 +17,8 @@ constexpr std::uint32_t EXPECTED_UINT32 = 0x01020304;
 constexpr std::uint16_t EXPECTED_UINT16 = 0xABCD;
 constexpr std::int16_t EXPECTED_NEGATIVE_INT16 = -2;
 constexpr float EXPECTED_FLOAT_ONE = 1.0F;
+constexpr std::size_t BYTES_TO_VIEW = 2;
+constexpr std::size_t ONE_BYTE_MORE_THAN_THE_BUFFER = 3;
 
 /**
  * Given the bytes 01 02 03 04
@@ -227,6 +231,75 @@ TEST(ByteReader, UnderflowIsCaughtAsNetworkException) {
   ByteReader reader(buffer);
 
   EXPECT_THROW(reader.readUint8(), NetworkException);
+}
+
+/**
+ * Given the bytes 01 02 03
+ * When two bytes are read as a view
+ * Then the view holds 01 02 and one byte remains
+ */
+TEST(ByteReader, ReadsBytesAsAViewOfTheBuffer) {
+  const auto buffer = byteSequence({0x01, 0x02, 0x03});
+  ByteReader reader(buffer);
+
+  const std::span<const std::byte> bytes = reader.readBytes(BYTES_TO_VIEW);
+
+  EXPECT_TRUE(std::ranges::equal(bytes, byteSequence({0x01, 0x02})));
+  EXPECT_EQ(reader.remaining(), 1U);
+}
+
+/**
+ * Given the bytes 01 02 03
+ * When two bytes are read as a view
+ * Then the view points into the buffer, not into a copy
+ */
+TEST(ByteReader, ViewOfBytesPointsIntoTheBuffer) {
+  const auto buffer = byteSequence({0x01, 0x02, 0x03});
+  ByteReader reader(buffer);
+
+  const std::span<const std::byte> bytes = reader.readBytes(BYTES_TO_VIEW);
+
+  EXPECT_EQ(bytes.data(), buffer.data());
+}
+
+/**
+ * Given an empty buffer
+ * When zero bytes are read as a view
+ * Then the view is empty and nothing is raised
+ */
+TEST(ByteReader, ReadsZeroBytesFromAnEmptyBuffer) {
+  const std::vector<std::byte> buffer;
+  ByteReader reader(buffer);
+
+  EXPECT_TRUE(reader.readBytes(0).empty());
+}
+
+/**
+ * Given a buffer of two bytes
+ * When three bytes are read as a view
+ * Then a BufferUnderflowException is raised
+ */
+TEST(ByteReader, RejectsBytesBeyondTheBuffer) {
+  const auto buffer = byteSequence({0x01, 0x02});
+  ByteReader reader(buffer);
+
+  EXPECT_THROW(reader.readBytes(ONE_BYTE_MORE_THAN_THE_BUFFER),
+               BufferUnderflowException);
+}
+
+/**
+ * Given a buffer of two bytes
+ * When a read of three bytes as a view is rejected
+ * Then the position has not moved
+ */
+TEST(ByteReader, RejectedBytesReadDoesNotMovePosition) {
+  const auto buffer = byteSequence({0x01, 0x02});
+  ByteReader reader(buffer);
+
+  EXPECT_THROW(reader.readBytes(ONE_BYTE_MORE_THAN_THE_BUFFER),
+               BufferUnderflowException);
+
+  EXPECT_EQ(reader.remaining(), buffer.size());
 }
 
 }  // namespace
