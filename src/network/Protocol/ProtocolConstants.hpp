@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <limits>
+#include <string_view>
 #include "NetworkConstants.hpp"
 #include "SerializationConstants.hpp"
 
@@ -135,6 +136,17 @@ static_assert(LARGEST_CONNECTION_ANSWER_DATAGRAM_SIZE <=
                   SMALLEST_CONNECTION_REQUEST_DATAGRAM_SIZE,
               "the server never sends a sender it does not know more bytes "
               "than the request it answers");
+
+/**
+ * @brief The names of the fields a refused message is reported by, as the
+ * protocol page writes them.
+ */
+constexpr std::string_view PLAYER_NUMBER_FIELD = "playerNumber";
+constexpr std::string_view ENTITY_ID_FIELD = "entityId";
+constexpr std::string_view ENTITY_TYPE_FIELD = "entityType";
+constexpr std::string_view REASON_FIELD = "reason";
+constexpr std::string_view KIND_FIELD = "kind";
+constexpr std::string_view ACTIONS_FIELD = "actions";
 
 /**
  * @brief The bytes a bool is sent as; any other byte is invalid.

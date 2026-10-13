@@ -17,7 +17,7 @@ void validate(const PlayerInput& message) {
   const auto unlistedBits = static_cast<std::uint8_t>(
       message.actions & static_cast<std::uint8_t>(~PLAYER_ACTION_BITS));
   if (unlistedBits != 0) {
-    throw InvalidFieldValueException("actions", message.actions);
+    throw InvalidFieldValueException(ACTIONS_FIELD, message.actions);
   }
 }
 

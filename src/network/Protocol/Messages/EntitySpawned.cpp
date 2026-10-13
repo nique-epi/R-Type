@@ -28,11 +28,11 @@ bool isListed(WireEntityType entityType) {
 
 void validate(const EntitySpawned& message) {
   if (message.entityId == NO_ENTITY_ID) {
-    throw InvalidFieldValueException("entityId", message.entityId);
+    throw InvalidFieldValueException(ENTITY_ID_FIELD, message.entityId);
   }
   if (!isListed(message.entityType)) {
     throw InvalidFieldValueException(
-        "entityType", static_cast<std::uint8_t>(message.entityType));
+        ENTITY_TYPE_FIELD, static_cast<std::uint8_t>(message.entityType));
   }
   if (std::isnan(message.x) || std::isnan(message.y)) {
     throw InvalidCoordinateException();

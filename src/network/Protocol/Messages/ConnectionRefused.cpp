@@ -6,6 +6,7 @@
 #include "ByteReader.hpp"
 #include "ByteWriter.hpp"
 #include "NetworkException.hpp"
+#include "ProtocolConstants.hpp"
 #include "WireTypes.hpp"
 
 namespace rtype::network {
@@ -24,7 +25,7 @@ bool isListed(RefusalReason reason) {
 
 void validate(const ConnectionRefused& message) {
   if (!isListed(message.reason)) {
-    throw InvalidFieldValueException("reason",
+    throw InvalidFieldValueException(REASON_FIELD,
                                      static_cast<std::uint8_t>(message.reason));
   }
 }

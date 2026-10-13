@@ -15,17 +15,17 @@ namespace {
 
 void requireEntityWithoutPlayer(const GameEvent& message) {
   if (message.playerNumber != NO_PLAYER_NUMBER) {
-    throw InvalidFieldValueException("playerNumber", message.playerNumber);
+    throw InvalidFieldValueException(PLAYER_NUMBER_FIELD, message.playerNumber);
   }
   if (message.entityId == NO_ENTITY_ID) {
-    throw InvalidFieldValueException("entityId", message.entityId);
+    throw InvalidFieldValueException(ENTITY_ID_FIELD, message.entityId);
   }
 }
 
 void requirePlayerWithoutEntity(const GameEvent& message) {
   requireValidPlayerNumber(message.playerNumber);
   if (message.entityId != NO_ENTITY_ID) {
-    throw InvalidFieldValueException("entityId", message.entityId);
+    throw InvalidFieldValueException(ENTITY_ID_FIELD, message.entityId);
   }
 }
 
@@ -39,7 +39,7 @@ void validate(const GameEvent& message) {
       requirePlayerWithoutEntity(message);
       return;
   }
-  throw InvalidFieldValueException("kind",
+  throw InvalidFieldValueException(KIND_FIELD,
                                    static_cast<std::uint8_t>(message.kind));
 }
 

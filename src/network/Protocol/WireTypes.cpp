@@ -104,7 +104,7 @@ void requireValidNickname(std::string_view nickname) {
 
 void requireValidPlayerNumber(std::uint8_t playerNumber) {
   if (playerNumber < FIRST_PLAYER_NUMBER || playerNumber > MAXIMUM_PLAYERS) {
-    throw InvalidFieldValueException("playerNumber", playerNumber);
+    throw InvalidFieldValueException(PLAYER_NUMBER_FIELD, playerNumber);
   }
 }
 

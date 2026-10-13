@@ -24,10 +24,10 @@ bool isListed(DestructionReason reason) {
 
 void validate(const EntityDestroyed& message) {
   if (message.entityId == NO_ENTITY_ID) {
-    throw InvalidFieldValueException("entityId", message.entityId);
+    throw InvalidFieldValueException(ENTITY_ID_FIELD, message.entityId);
   }
   if (!isListed(message.reason)) {
-    throw InvalidFieldValueException("reason",
+    throw InvalidFieldValueException(REASON_FIELD,
                                      static_cast<std::uint8_t>(message.reason));
   }
 }
