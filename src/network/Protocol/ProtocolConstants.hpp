@@ -48,6 +48,13 @@ constexpr std::size_t WORLD_STATE_FIXED_SIZE =
     UINT32_WIRE_SIZE + UINT8_WIRE_SIZE + UINT8_WIRE_SIZE;
 
 /**
+ * @brief The sizes, in bytes, a nickname may have. A letter without accent
+ * takes one byte, an accented letter two.
+ */
+constexpr std::size_t MINIMUM_NICKNAME_SIZE = 1;
+constexpr std::size_t MAXIMUM_NICKNAME_SIZE = 16;
+
+/**
  * @brief The bytes a bool is sent as; any other byte is invalid.
  */
 constexpr std::uint8_t WIRE_FALSE = 0;

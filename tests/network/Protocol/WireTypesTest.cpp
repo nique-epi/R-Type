@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 #include <limits>
+#include <string_view>
 #include "ByteReader.hpp"
 #include "ByteSequence.hpp"
 #include "ByteWriter.hpp"
@@ -11,15 +12,22 @@
 namespace rtype::network {
 namespace {
 
+using testing::ACCENTED_LETTER;
 using testing::BEYOND_RANGE_X;
 using testing::BEYOND_RANGE_Y;
 using testing::byteSequence;
 using testing::EXAMPLE_Y;
+using testing::FOUR_ROCKETS;
+using testing::ILL_FORMED_UTF8;
 using testing::LARGEST_WIRE_COORDINATE;
 using testing::MINUS_ONE_UNIT;
 using testing::NEAREST_EIGHTH_OF_UNROUNDED_X;
+using testing::ONE_BYTE_NICKNAME;
+using testing::SEVENTEEN_BYTE_NICKNAME;
+using testing::SIXTEEN_BYTE_NICKNAME;
 using testing::SMALLEST_WIRE_COORDINATE;
 using testing::UNROUNDED_X;
+using testing::WELL_FORMED_UTF8_AT_THE_EDGES;
 
 /**
  * Given the value true
@@ -187,6 +195,91 @@ TEST(WireTypes, RefusedCoordinateWritesNothing) {
                InvalidCoordinateException);
 
   EXPECT_TRUE(writer.bytes().empty());
+}
+
+/**
+ * Given characters at every edge of the table of RFC 3629
+ * When each is checked
+ * Then each is well-formed UTF-8
+ */
+TEST(WireTypes, AcceptsUtf8AtEveryEdgeOfTheTable) {
+  for (const std::string_view text : WELL_FORMED_UTF8_AT_THE_EDGES) {
+    SCOPED_TRACE(::testing::PrintToString(text));
+    EXPECT_TRUE(isValidUtf8(text));
+  }
+}
+
+/**
+ * Given overlong forms, a surrogate, a code point above U+10FFFF, a byte no
+ * sequence starts with, a stray continuation byte and a cut sequence
+ * When each is checked
+ * Then none is well-formed UTF-8
+ */
+TEST(WireTypes, RejectsIllFormedUtf8) {
+  for (const std::string_view text : ILL_FORMED_UTF8) {
+    SCOPED_TRACE(::testing::PrintToString(text));
+    EXPECT_FALSE(isValidUtf8(text));
+  }
+}
+
+/**
+ * Given an empty text
+ * When it is checked
+ * Then it is well-formed UTF-8
+ */
+TEST(WireTypes, AcceptsAnEmptyTextAsUtf8) { EXPECT_TRUE(isValidUtf8({})); }
+
+/**
+ * Given nicknames of 1 and 16 bytes
+ * When each is checked
+ * Then each is accepted
+ */
+TEST(WireTypes, AcceptsNicknamesOfOneToSixteenBytes) {
+  EXPECT_TRUE(isValidNickname(ONE_BYTE_NICKNAME));
+  EXPECT_TRUE(isValidNickname(SIXTEEN_BYTE_NICKNAME));
+}
+
+/**
+ * Given four characters of four bytes each, sixteen bytes in all
+ * When the nickname is checked
+ * Then it is accepted, since the limit counts bytes
+ */
+TEST(WireTypes, AcceptsSixteenBytesOfFourByteCharacters) {
+  EXPECT_TRUE(isValidNickname(FOUR_ROCKETS));
+}
+
+/**
+ * Given an accented letter, two bytes of UTF-8
+ * When the nickname is checked
+ * Then it is accepted
+ */
+TEST(WireTypes, AcceptsAnAccentedNickname) {
+  EXPECT_TRUE(isValidNickname(ACCENTED_LETTER));
+}
+
+/**
+ * Given an empty nickname
+ * When it is checked
+ * Then it is refused
+ */
+TEST(WireTypes, RejectsAnEmptyNickname) { EXPECT_FALSE(isValidNickname({})); }
+
+/**
+ * Given a nickname of 17 bytes
+ * When it is checked
+ * Then it is refused
+ */
+TEST(WireTypes, RejectsANicknameOfSeventeenBytes) {
+  EXPECT_FALSE(isValidNickname(SEVENTEEN_BYTE_NICKNAME));
+}
+
+/**
+ * Given a nickname of a size the protocol accepts that is not UTF-8
+ * When it is checked
+ * Then it is refused
+ */
+TEST(WireTypes, RejectsANicknameThatIsNotUtf8) {
+  EXPECT_FALSE(isValidNickname(ILL_FORMED_UTF8.front()));
 }
 
 }  // namespace

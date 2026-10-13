@@ -1,5 +1,6 @@
 #pragma once
 
+#include <string_view>
 #include "ByteReader.hpp"
 #include "ByteWriter.hpp"
 
@@ -32,5 +33,18 @@ void writeCoordinate(ByteWriter& writer, float coordinate);
  * @throws BufferUnderflowException when fewer than two bytes remain.
  */
 float readCoordinate(ByteReader& reader);
+
+/**
+ * @returns Whether @p text is well-formed UTF-8 as RFC 3629 defines it: no
+ * overlong form, no surrogate, nothing above U+10FFFF, no stray continuation
+ * byte and no sequence cut short. An empty text is well-formed.
+ */
+[[nodiscard]] bool isValidUtf8(std::string_view text);
+
+/**
+ * @returns Whether @p nickname is a nickname the protocol accepts:
+ * MINIMUM_NICKNAME_SIZE to MAXIMUM_NICKNAME_SIZE bytes of well-formed UTF-8.
+ */
+[[nodiscard]] bool isValidNickname(std::string_view nickname);
 
 }  // namespace rtype::network
