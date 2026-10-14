@@ -19,6 +19,7 @@ rtype_enable_warnings(rtype_client_entity_sprites)
 add_subdirectory(RenderSystem)
 add_subdirectory(SfmlDrawSurface)
 add_subdirectory(AssetTextureSource)
+add_subdirectory(PixelCanvas)
 add_subdirectory(EntityLayer)
 add_subdirectory(Background)
 
