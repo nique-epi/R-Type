@@ -58,7 +58,7 @@ class ComponentRegistry {
   /** @returns true when the entity is alive and carries a component of type T.
    */
   template <typename T>
-  bool has(Entity entity) const {
+  [[nodiscard]] bool has(Entity entity) const {
     const ComponentStorage<T>* storage = findStorage<T>();
     return storage != nullptr && entities_.isAlive(entity) &&
            storage->find(entity.index) != nullptr;
@@ -131,7 +131,7 @@ class ComponentRegistry {
     ComponentRegistry& registry_;
   };
 
-  bool isPendingDestruction(std::uint32_t entityIndex) const;
+  [[nodiscard]] bool isPendingDestruction(std::uint32_t entityIndex) const;
   void destroyNow(Entity entity);
   void flushPendingDestructions();
 
