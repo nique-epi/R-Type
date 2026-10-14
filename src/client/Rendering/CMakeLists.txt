@@ -26,6 +26,7 @@ add_subdirectory(SfmlDrawSurface)
 add_subdirectory(AssetTextureSource)
 add_subdirectory(PixelCanvas)
 add_subdirectory(InterfaceCanvas)
+add_subdirectory(Squadron)
 add_subdirectory(EntityLayer)
 add_subdirectory(Background)
 
