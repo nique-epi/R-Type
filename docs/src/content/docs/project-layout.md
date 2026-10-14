@@ -65,10 +65,11 @@ src/engine/
 ├── Collision/        rectangle overlap test and the collision event
 ├── Time/             fixed timestep, clocks, timers
 ├── NetworkIds/       entity to network id, and back
+├── LaunchArguments/  options read at launch, usage and errors
 └── Exceptions/
 ```
 
-`EntityRegistry`, `Components`, `Systems`, `Events`, `Collision`, `Time`, `NetworkIds` and `Exceptions` exist.
+`EntityRegistry`, `Components`, `Systems`, `Events`, `Collision`, `Time`, `NetworkIds`, `LaunchArguments` and `Exceptions` exist.
 
 ### Logging
 

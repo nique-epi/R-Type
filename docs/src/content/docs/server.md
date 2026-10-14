@@ -24,7 +24,7 @@ This page tells you where to look when you need to change something. It describe
 
 ## Launch options: `LaunchOptions`
 
-`LaunchOptions` (`src/server/LaunchOptions/`) reads what the server is told at launch. `main()` first reads the logging options (see [Logging](/R-Type/logging/#choosing-the-level-and-the-output-at-launch)), then hands the other arguments to `LaunchOptions::read()`:
+`LaunchOptions` (`src/server/LaunchOptions/`) reads what the server is told at launch. `main()` first reads the logging options (see [Logging](/R-Type/logging/#choosing-the-level-and-the-output-at-launch)), then hands the other arguments to `LaunchOptions::read()`, which reads them with the engine's `readLaunchArguments` (see [Engine](/R-Type/engine/#launch-arguments-readlauncharguments)):
 
 | Option | Effect |
 |---|---|
@@ -149,7 +149,7 @@ The bus and the registry must outlive `CollisionRules`, and the bus must outlive
 | You want to… | Look at |
 |---|---|
 | Change what a tick does | The tick handler given to `ServerApplication` in `src/server/main.cpp` |
-| Add a launch option | `launchOptions` and `usage()` in `src/server/LaunchOptions/LaunchOptions.cpp`, its name in `src/server/ServerConstants.hpp` |
+| Add a launch option | The options listed in `LaunchOptions::read()` and `usage()`, in `src/server/LaunchOptions/LaunchOptions.cpp`; a name the client uses too goes in `src/engine/LaunchArguments/LaunchArgumentsConstants.hpp` |
 | Change the port the server listens on by default | `DEFAULT_SERVER_PORT` in `src/network/NetworkConstants.hpp`, shared with the client |
 | Change the size of the queues between threads | `INCOMING_DATAGRAM_QUEUE_CAPACITY` and `OUTGOING_DATAGRAM_QUEUE_CAPACITY` in `src/server/ServerConstants.hpp` |
 | Change the simulation rate | `SIMULATION_TICKS_PER_SECOND` in `src/engine/Time/TimeConstants.hpp` |
