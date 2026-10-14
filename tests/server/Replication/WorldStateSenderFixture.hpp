@@ -12,7 +12,6 @@
 #include "Position.hpp"
 #include "WorldState.hpp"
 #include "WorldStateSender.hpp"
-#include "WorldStateSenderTestConstants.hpp"
 
 namespace rtype::server::testing {
 

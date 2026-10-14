@@ -28,6 +28,12 @@ Why: the CI `Clang-tidy` job treats warnings as errors; a local failure put down
 3. **A filter I wrote myself is tested before trusted**: a regular expression such as `.*/src/game/.*` does not match the relative path `src/game/Position.hpp`.
 4. **Say what the CI covers**: the CI `Clang-tidy` job runs without a header filter, so header findings never fail it; they still show in the editor. Report them with their origin (new file or pre-existing) instead of announcing the headers clean.
 
+### A file that does not compile for clang-tidy hides findings
+
+1. **Count the `Error while processing` lines of the log before reading its findings.** Each one names a file clang-tidy could not compile; it was analyzed in part only, so its list of findings is a lower bound, never a verdict.
+2. **Remove the compile error, then rerun until the count is 0.** On macOS, Homebrew LLVM 21 with the Xcode SDK fails on `INFINITY` in libc++ `<random>`; neutralize it with `'--extra-arg=-DINFINITY=__builtin_inff()'` (quoted for zsh) instead of dropping the files.
+3. **Report the gate on the run with 0 errors**, and say which workaround it used.
+
 ### A file the local machine cannot compile
 
 A platform file such as `FineTimerResolutionWindows.cpp` is linted only by the CI job of its platform (`Clang-tidy (Windows-only files)`). Since no local run can catch its findings, they are prevented while it is written. A file that compiles locally is never one of them: a local tidy failure on it still follows point 2.
@@ -44,5 +50,7 @@ A platform file such as `FineTimerResolutionWindows.cpp` is linted only by the C
 
 - ❌ **Before (wrong)**: local `tidy` fails on missing system headers → "environment issue, the CI will cover it" → push → the CI reports 12 real errors.
 - ✅ **After (right)**: run `clang-tidy` with the SDK flags on the four changed files → 12 findings reproduced → fix → exit 0 → push.
+- ❌ **Before (wrong)**: 11 of 14 files end in `Error while processing` (`INFINITY`), the findings of that run are fixed and the files are about to be called clean.
+- ✅ **After (right)**: rerun with `-DINFINITY=__builtin_inff()` → 0 files in error → 3 more `bugprone-unchecked-optional-access` findings in the new tests → fixed.
 - ❌ **Before (wrong)**: `FineTimerResolutionWindows.cpp` pushed with the results of `timeBeginPeriod` and `timeEndPeriod` ignored → the Windows `Clang-tidy` job fails on `cert-err33-c`, and the code released a resolution Windows may have refused.
 - ✅ **After (right)**: both "Return value" sections read → the release only follows a granted request, its result cast to `void` with the reason → `--dump-config` shows `^::time` in `cert-err33-c` and `AllowCastToVoid: true` → push, report the file as linted by the CI only, follow the Windows job until green.
