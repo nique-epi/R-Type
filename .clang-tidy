@@ -24,3 +24,5 @@ WarningsAsErrors: '*'
 
 CheckOptions:
   misc-non-private-member-variables-in-classes.IgnoreClassesWithAllMemberVariablesBeingPublic: true
+  cppcoreguidelines-special-member-functions.AllowSoleDefaultDtor: true
+  hicpp-special-member-functions.AllowSoleDefaultDtor: true
