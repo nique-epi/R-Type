@@ -4,16 +4,17 @@
 #include <cstdint>
 #include <vector>
 #include "EntityType.hpp"
+#include "ProtocolConstants.hpp"
 #include "ServerConstants.hpp"
 #include "TimeConstants.hpp"
 #include "WorldState.hpp"
 #include "WorldStateSenderFixture.hpp"
+#include "WorldStateSenderTestConstants.hpp"
 
 using rtype::game::EntityType;
 using rtype::network::EntityState;
 using rtype::network::WireEntityType;
 using rtype::server::testing::client;
-using rtype::server::testing::DATAGRAM_PAYLOAD_LIMIT;
 using rtype::server::testing::ENEMY_MISSILE_NETWORK_ID;
 using rtype::server::testing::ENEMY_MISSILE_POSITION;
 using rtype::server::testing::ENEMY_NETWORK_ID;
@@ -29,7 +30,7 @@ using rtype::server::testing::SECOND_CLIENT_PORT;
 using rtype::server::testing::SHIP_NETWORK_ID;
 using rtype::server::testing::SHIP_POSITION;
 using rtype::server::testing::UNTYPED_NETWORK_ID;
-using rtype::server::testing::WorldStateSenderTest;
+using rtype::server::testing::WorldStateSenderFixture;
 
 /**
  * Given a world with one networked ship and one recipient
@@ -37,7 +38,7 @@ using rtype::server::testing::WorldStateSenderTest;
  * Then WORLD_STATES_PER_SECOND states are sent, with the ticks
  * TICKS_PER_WORLD_STATE, 2 times that, and so on
  */
-TEST_F(WorldStateSenderTest, SendsTheStatesPerSecondOfTheConstant) {
+TEST_F(WorldStateSenderFixture, SendsTheStatesPerSecondOfTheConstant) {
   addNetworkedEntity(EntityType::Player, SHIP_POSITION, SHIP_NETWORK_ID);
 
   runTicks(rtype::engine::SIMULATION_TICKS_PER_SECOND,
@@ -55,7 +56,7 @@ TEST_F(WorldStateSenderTest, SendsTheStatesPerSecondOfTheConstant) {
  * When fewer ticks than TICKS_PER_WORLD_STATE run
  * Then nothing is sent
  */
-TEST_F(WorldStateSenderTest, SendsNothingBeforeTheFirstStateIsDue) {
+TEST_F(WorldStateSenderFixture, SendsNothingBeforeTheFirstStateIsDue) {
   addNetworkedEntity(EntityType::Player, SHIP_POSITION, SHIP_NETWORK_ID);
 
   runTicks(rtype::server::TICKS_PER_WORLD_STATE - 1,
@@ -69,7 +70,7 @@ TEST_F(WorldStateSenderTest, SendsNothingBeforeTheFirstStateIsDue) {
  * When a second of ticks runs
  * Then nothing is sent
  */
-TEST_F(WorldStateSenderTest, SendsNothingWithoutRecipients) {
+TEST_F(WorldStateSenderFixture, SendsNothingWithoutRecipients) {
   addNetworkedEntity(EntityType::Player, SHIP_POSITION, SHIP_NETWORK_ID);
 
   runTicks(rtype::engine::SIMULATION_TICKS_PER_SECOND, {});
@@ -82,7 +83,7 @@ TEST_F(WorldStateSenderTest, SendsNothingWithoutRecipients) {
  * When the first state is due
  * Then each gets the same payload, one datagram each
  */
-TEST_F(WorldStateSenderTest, SendsTheStateToEveryRecipient) {
+TEST_F(WorldStateSenderFixture, SendsTheStateToEveryRecipient) {
   addNetworkedEntity(EntityType::Player, SHIP_POSITION, SHIP_NETWORK_ID);
 
   runTicks(rtype::server::TICKS_PER_WORLD_STATE,
@@ -99,7 +100,7 @@ TEST_F(WorldStateSenderTest, SendsTheStateToEveryRecipient) {
  * When the first state is due
  * Then it lists each under its network id, its wire type and its position
  */
-TEST_F(WorldStateSenderTest, ListsEachEntityUnderItsWireType) {
+TEST_F(WorldStateSenderFixture, ListsEachEntityUnderItsWireType) {
   addNetworkedEntity(EntityType::Player, PLAYER_POSITION, PLAYER_NETWORK_ID);
   addNetworkedEntity(EntityType::Enemy, ENEMY_POSITION, ENEMY_NETWORK_ID);
   addNetworkedEntity(EntityType::PlayerMissile, PLAYER_MISSILE_POSITION,
@@ -128,7 +129,7 @@ TEST_F(WorldStateSenderTest, ListsEachEntityUnderItsWireType) {
  * When the first state is due
  * Then only the ship is listed, because the others cannot be named or typed
  */
-TEST_F(WorldStateSenderTest, ListsOnlyEntitiesThatCanBeNamedAndTyped) {
+TEST_F(WorldStateSenderFixture, ListsOnlyEntitiesThatCanBeNamedAndTyped) {
   addNetworkedEntity(EntityType::Player, SHIP_POSITION, SHIP_NETWORK_ID);
   addEntityWithoutNetworkId(EntityType::Player, PLAYER_POSITION);
   addEntityWithoutType(ENEMY_POSITION, UNTYPED_NETWORK_ID);
@@ -147,7 +148,7 @@ TEST_F(WorldStateSenderTest, ListsOnlyEntitiesThatCanBeNamedAndTyped) {
  * Then several datagrams are sent to the recipient, all with the same tick,
  * none above the payload limit, and together they list every entity once
  */
-TEST_F(WorldStateSenderTest, SplitsABigStateIntoDatagramsOfTheSameTick) {
+TEST_F(WorldStateSenderFixture, SplitsABigStateIntoDatagramsOfTheSameTick) {
   for (std::size_t index = 0; index < MANY_ENTITIES; ++index) {
     addNetworkedEntity(EntityType::Enemy, SHIP_POSITION,
                        static_cast<std::uint32_t>(index + 1));
@@ -158,7 +159,8 @@ TEST_F(WorldStateSenderTest, SplitsABigStateIntoDatagramsOfTheSameTick) {
   ASSERT_GT(sentDatagrams().size(), 1U);
   std::size_t listed = 0;
   for (std::size_t index = 0; index < sentDatagrams().size(); ++index) {
-    EXPECT_LE(sentDatagrams()[index].payload.size(), DATAGRAM_PAYLOAD_LIMIT);
+    EXPECT_LE(sentDatagrams()[index].payload.size(),
+              rtype::network::WORLD_STATE_PAYLOAD_LIMIT);
     EXPECT_EQ(decodedState(index).tick, rtype::server::TICKS_PER_WORLD_STATE);
     listed += decodedState(index).entities.size();
   }

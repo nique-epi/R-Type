@@ -12,12 +12,12 @@ add_executable(r-type_server main.cpp)
 
 target_link_libraries(r-type_server
   PRIVATE
-    rtype_game
     rtype_logging
     rtype_network_constants
     rtype_server_application
     rtype_server_constants
     rtype_server_world_state_sender
+    rtype_game
 )
 
 rtype_enable_warnings(r-type_server)

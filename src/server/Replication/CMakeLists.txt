@@ -1,1 +1,5 @@
+add_library(rtype_server_replication_constants INTERFACE)
+
+target_include_directories(rtype_server_replication_constants INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
+
 add_subdirectory(WorldStateSender)

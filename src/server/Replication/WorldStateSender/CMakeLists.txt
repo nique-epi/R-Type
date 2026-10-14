@@ -10,6 +10,7 @@ target_link_libraries(rtype_server_world_state_sender
     rtype_network_world_state_codec
   PRIVATE
     rtype_server_constants
+    rtype_server_replication_constants
 )
 
 rtype_enable_warnings(rtype_server_world_state_sender)
