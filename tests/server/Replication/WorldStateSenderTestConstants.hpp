@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <limits>
 #include "Position.hpp"
 
 namespace rtype::server::testing {
@@ -36,6 +37,15 @@ constexpr game::Position ENEMY_MISSILE_POSITION{.x = 13.0F, .y = 23.0F};
  * @brief The network id of an entity that has no type.
  */
 constexpr std::uint32_t UNTYPED_NETWORK_ID = 99;
+
+/**
+ * @brief Positions a game bug could give an entity: a coordinate that is not a
+ * number, and one that is infinite.
+ */
+constexpr game::Position NOT_A_NUMBER_POSITION{
+    .x = std::numeric_limits<float>::quiet_NaN(), .y = 0.0F};
+constexpr game::Position INFINITE_POSITION{
+    .x = 0.0F, .y = std::numeric_limits<float>::infinity()};
 
 /**
  * @brief More entities than one datagram holds.

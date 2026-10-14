@@ -92,6 +92,7 @@ How late a tick starts depends on how precisely the system wakes a sleeping thre
 - The `tick` of a state is the number of ticks the sender has counted, so the first state carries tick 3 and the client can tell which of two states is newer. The counter is 32 bits and is not made to wrap: it takes 2.27 years at 60 ticks per second.
 - `WORLD_STATES_PER_SECOND` is **provisional**: it will be revised once measured on a real network. It must divide the tick rate, and the build fails otherwise. Code must read the constants, `TICKS_PER_WORLD_STATE` for instance, and never repeat the 3.
 - Nothing is built when the list of recipients is empty. An entity without a network id, or without a type, is not listed.
+- An entity whose position is not a finite number (NaN or infinite), which only a game bug can produce, is left out of the state instead of stopping the server. A warning under the `Replication` module gives how many entities were left out, each time that number changes, so a stuck entity is reported once rather than 20 times per second.
 - The state lists no player yet: the game has no lives, score or player numbers. Nothing gives an entity a `NetworkIdentity` yet either, so the real server lists nothing until something spawns networked entities.
 - The datagrams hold the bare message payload, without the packet header, so no client could accept them yet.
 - A playfield larger than 2047 logical units in either direction fails the build, because a wire coordinate would no longer hold it (see [Protocol](/R-Type/protocol/#positions)).

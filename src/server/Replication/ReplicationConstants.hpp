@@ -1,6 +1,13 @@
 #pragma once
 
+#include <string_view>
+
 namespace rtype::server {
+
+/**
+ * @brief Module name the replication classes write their log lines under.
+ */
+constexpr std::string_view REPLICATION_LOGGER_NAME = "Replication";
 
 /**
  * @brief The largest playfield size for which the range of a wire coordinate
