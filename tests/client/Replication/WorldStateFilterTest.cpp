@@ -34,6 +34,19 @@ TEST(WorldStateFilter, AcceptsANewerState) {
 }
 
 /**
+ * Given a filter that applied a tick, then a newer one
+ * When the first tick arrives again
+ * Then it is refused: the newer tick became the reference
+ */
+TEST(WorldStateFilter, RemembersTheNewestTickAccepted) {
+  WorldStateFilter filter;
+  EXPECT_TRUE(filter.accept(APPLIED_TICK));
+  EXPECT_TRUE(filter.accept(NEWER_TICK));
+
+  EXPECT_FALSE(filter.accept(APPLIED_TICK));
+}
+
+/**
  * Given a filter that applied a tick
  * When the same tick arrives again, as another part of the same state
  * Then it is accepted
