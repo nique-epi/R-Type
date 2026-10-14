@@ -53,4 +53,13 @@ StringTooLongException::StringTooLongException(std::size_t length,
                        " byte(s) exceeds the maximum of " +
                        std::to_string(maximumLength)) {}
 
+MalformedMessageException::MalformedMessageException(const std::string& reason)
+    : NetworkException("Malformed message: " + reason) {}
+
+TooManyPlayersException::TooManyPlayersException(std::size_t playerCount,
+                                                 std::size_t maximumCount)
+    : NetworkException("A world state lists at most " +
+                       std::to_string(maximumCount) + " players, not " +
+                       std::to_string(playerCount)) {}
+
 }  // namespace rtype::network

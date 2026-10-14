@@ -7,7 +7,7 @@ sidebar:
 
 import ByteLayout from '../../components/ByteLayout.astro';
 
-The client and the server talk over UDP in the binary format described on this page, byte by byte, so each side can be written without reading the code of the other. Version 0 is the contract for the first part of the project. Two parts are in the code so far: the transport limit, since the socket in `src/network/Transport` drops a datagram over 1200 bytes (see [Network](/R-Type/network/)), and the encoding of integers and strings in `src/network/Serialization` (see [Network](/R-Type/network/#serialization-bytewriter-and-bytereader)). The messages and the datagram header are not: `src/network/Protocol`, where they will live, does not exist yet (see [Project layout](/R-Type/project-layout/#network)).
+The client and the server talk over UDP in the binary format described on this page, byte by byte, so each side can be written without reading the code of the other. Version 0 is the contract for the first part of the project. Two parts are in the code so far: the transport limit, since the socket in `src/network/Transport` drops a datagram over 1200 bytes (see [Network](/R-Type/network/)), and the encoding of integers and strings in `src/network/Serialization` (see [Network](/R-Type/network/#serialization-bytewriter-and-bytereader)). The messages and the datagram header are not, except the `WorldState` message, which is in `src/network/Protocol` (see [Network](/R-Type/network/#world-state-worldstatecodec) and [Project layout](/R-Type/project-layout/#network)).
 
 ## Transport
 
@@ -33,7 +33,7 @@ Each field is written and read one at a time, never copied from memory as a stru
 A position is in logical units, in the frame described in [Architecture](/R-Type/architecture/#coordinate-system). Each coordinate is rounded to the nearest eighth of a unit: 8 on the wire is 1 unit, -8 is -1 unit. The range is -4096 to 4095.875 units and the rounding error is at most 0.0625 unit; every multiple of an eighth survives the round trip through a `float` exactly.
 
 - The range holds the playfield plus one playfield size beyond each edge as long as `PLAYFIELD_WIDTH` and `PLAYFIELD_HEIGHT` stay at or below 2047 units. The code must check this at compile time, so enlarging the playfield breaks the build instead of sending positions to the opposite edge.
-- The server must destroy an entity before it leaves the range: a coordinate outside it is a bug, never clamped to the edge.
+- The server must destroy an entity before it leaves the range: a coordinate outside it is a bug. As a last resort, so that a coordinate never wraps to the opposite edge, the encoder clamps it to the nearest end of the range; this hides nothing from the server, which must still not let an entity get there.
 
 ## Datagram
 
@@ -192,7 +192,7 @@ A player keeps the number given by `ConnectionAccepted` until it leaves; the num
 
 An entity takes 9 bytes, so one datagram holds up to 125 entities with 4 players. When the entities do not fit, the server sends several `WorldState` with the same `tick`, each in its own datagram, each with every player and a part of the entities. The client:
 
-- ignores a `WorldState` whose `tick` is lower than the last one applied; an equal `tick` is another part of the same state;
+- ignores a `WorldState` whose `tick` is lower than the last one applied; an equal `tick` is another part of the same state. The `tick` is compared as a plain 32-bit integer, without wrap-around: it takes 2.27 years at 60 ticks per second to reach 2³². The sender checks come first, so a forged datagram cannot raise the last `tick` applied;
 - creates an entity it does not know, from its type, with its appearance effect (the shot sound of a missile, for instance);
 - removes an entity that no `WorldState` has listed for 900 ms, so a ghost never stays a full second.
 
@@ -207,7 +207,7 @@ An `EntityDestroyed` naming an entity the client does not know, and an `EntitySp
 | 3 | `Bydo` |
 | 4 | `EnemyMissile` |
 
-An entity of unknown type is skipped. New kinds of entities are added to this table as the game gets them.
+An entity of unknown type is skipped: it is left out of the state, and the other entities of the same `WorldState` are read. An entity takes 9 bytes whatever its type, so the next one starts where it should. New kinds of entities are added to this table as the game gets them.
 
 ### Game events
 

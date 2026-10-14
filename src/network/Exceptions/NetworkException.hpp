@@ -84,4 +84,21 @@ class StringTooLongException : public NetworkException {
   StringTooLongException(std::size_t length, std::size_t maximumLength);
 };
 
+/**
+ * @brief Bytes that cannot be a message: an announced count out of range, an
+ * unknown value, or bytes left after the message.
+ */
+class MalformedMessageException : public NetworkException {
+ public:
+  explicit MalformedMessageException(const std::string& reason);
+};
+
+/**
+ * @brief A world state to send lists more players than a game has.
+ */
+class TooManyPlayersException : public NetworkException {
+ public:
+  TooManyPlayersException(std::size_t playerCount, std::size_t maximumCount);
+};
+
 }  // namespace rtype::network

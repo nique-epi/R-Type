@@ -20,6 +20,7 @@ This page tells you where to look when you need to change something. It describe
 | Scrolling background | Available; drawn by the frame loop under every screen | `src/client/Rendering/Background/` |
 | Player commands | Available; read by the game screen, not sent to the server yet | `src/client/Input/` |
 | Network thread | Available; not started by the client yet | `src/client/Connection/NetworkThread/` |
+| Ignoring an old world state | Available; nothing receives states yet | `src/client/Replication/WorldStateFilter/` |
 | Server address and port at launch | Available; logged, not used yet | `src/client/LaunchOptions/` |
 | Connection to a server | Not yet written | — |
 | Sounds and music of the game | Not yet written | — |
@@ -208,10 +209,28 @@ Nothing creates a `NetworkThread` yet: no message is encoded, and the server add
 
 `executablePath()` (`src/client/Platform/`) returns the path of the running executable, or nothing when the system does not tell. Each system has its own source file, `ExecutablePathLinux.cpp`, `ExecutablePathMacOs.cpp` and `ExecutablePathWindows.cpp`, and CMake builds only the one that matches.
 
+## World state: `WorldStateFilter`
+
+UDP may deliver a datagram sent earlier after one sent later, and applying the old one would move entities backwards. `WorldStateFilter` (`src/client/Replication/WorldStateFilter/`) remembers the highest `tick` it has accepted. `accept(tick)` returns `false` when `tick` is lower than that, and the state must be dropped; otherwise it returns `true` and remembers the tick. An equal tick is accepted, because it is another part of the same state (see [Protocol](/R-Type/protocol/#world-state)).
+
+- The first state is always accepted, and a refused state does not lower the remembered tick.
+- Ticks are compared as plain integers, with no wrap-around: a 32-bit tick lasts 2.27 years at 60 ticks per second.
+- Call it only for datagrams that passed the checks on the sender, otherwise a forged datagram could raise the remembered tick and make every real state look old. Those checks are not written yet.
+- Nothing receives states or applies positions yet: only the tests call `accept()`.
+
+```cpp
+const rtype::network::WorldState state =
+    rtype::network::WorldStateCodec::decode(datagram.payload);
+if (!worldStateFilter.accept(state.tick)) {
+  return;
+}
+```
+
 ## Where to intervene
 
 | You want to… | Look at |
 |---|---|
+| Change which world states the client ignores | `WorldStateFilter::accept` in `src/client/Replication/WorldStateFilter/` |
 | Add an asset | A file in `assets/sprites/`, `sounds/`, `music/` or `fonts/`, and its id in `gameAssets()`, or in `interfaceAssets()` when a screen may use it outside a game, menus and overlays included (`src/client/Screens/ScreenAssets.cpp`) |
 | Change the asset id rule | `isValidAssetId()` in `src/client/Assets/AssetIds.cpp`, `ASSET_ID_PUNCTUATION` in `AssetConstants.hpp`, and `assets/README.md` |
 | Change where the client looks for `assets/` | `findAssetFolder()` in `src/client/Assets/AssetFolder.cpp` |

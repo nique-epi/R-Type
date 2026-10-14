@@ -51,6 +51,23 @@ constexpr std::size_t TICKS_PER_REPORT =
     REPORT_SECONDS * engine::SIMULATION_TICKS_PER_SECOND;
 
 /**
+ * @brief States of the world the server sends per second. Provisional, see the
+ * protocol page.
+ */
+constexpr std::size_t WORLD_STATES_PER_SECOND = 20;
+
+static_assert(engine::SIMULATION_TICKS_PER_SECOND % WORLD_STATES_PER_SECOND ==
+                  0,
+              "the state rate must divide the tick rate: a state is sent every "
+              "whole number of ticks");
+
+/**
+ * @brief Simulation ticks between two states of the world.
+ */
+constexpr std::size_t TICKS_PER_WORLD_STATE =
+    engine::SIMULATION_TICKS_PER_SECOND / WORLD_STATES_PER_SECOND;
+
+/**
  * @brief Timer resolution, in milliseconds, the server asks Windows for while
  * the simulation runs, so a sleeping thread wakes close to its deadline.
  */
