@@ -45,5 +45,16 @@ The first run listed findings in the new tests and they were fixed. The log also
 ### Root cause
 The rule asked for exit code 0 and no `error:` on the changed files, but said nothing about files clang-tidy could not compile. A compile error leaves clang-tidy with a partial syntax tree, so the flow-sensitive checks miss code they would otherwise analyze.
 
+## Update (2026-10-14): an include libc++ counts as used, the CI does not
+
+### Context
+The typed messages pull request was linted locally with clang-tidy 20 from Homebrew and the macOS SDK, on every changed `.cpp` with header diagnostics on: exit 0, no finding.
+
+### Mistake
+The CI `Clang-tidy` job failed on one finding: `tests/network/Protocol/GameMessagesTest.cpp` included `<cstddef>` without naming `std::byte` or `std::size_t`. The local run had not reported it, and the branch had been pushed on that run alone.
+
+### Root cause
+`misc-include-cleaner` decides whether an include is used from the declarations of the standard library it reads. The local run reads libc++, the CI reads the libstdc++ of GCC on Ubuntu; they spread the same symbols over different internal headers. The rule asked for a clean local run, which cannot tell what the CI's standard library will say.
+
 ## Rule
 See `.claude/rules/fix/execution/fix-execution-run-clang-tidy-before-push.md`.
