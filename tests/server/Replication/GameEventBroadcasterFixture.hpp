@@ -19,7 +19,8 @@ namespace rtype::server::testing {
 /**
  * @brief A broadcaster on a real event bus and a real timer scheduler, with
  * two clients, and the datagrams it sent, in order. Each header it is asked
- * for gets the next sequence number, so a test can tell the datagrams apart.
+ * for carries the port of its recipient as session token and the next sequence
+ * number, so a test can tell the datagrams and their recipients apart.
  */
 class GameEventBroadcasterFixture : public ::testing::Test {
  public:

@@ -12,6 +12,7 @@
 #include "GameEventConstants.hpp"
 #include "GameEventTestConstants.hpp"
 #include "NetworkException.hpp"
+#include "PacketHeader.hpp"
 #include "PlayerHit.hpp"
 #include "WorldState.hpp"
 
@@ -124,22 +125,24 @@ TEST_F(GameEventBroadcasterFixture, SendsNothingWithoutAClient) {
 /**
  * Given two clients
  * When a spawn is published
- * Then each of the two datagrams carries the header asked for it, so they do
- * not share a sequence number
+ * Then each of the two datagrams carries the header asked for its own
+ * recipient, and the two do not share a sequence number
  */
-TEST_F(GameEventBroadcasterFixture, GivesEachDatagramItsOwnSequenceNumber) {
+TEST_F(GameEventBroadcasterFixture, AsksForTheHeaderOfEachDatagramRecipient) {
   publishAndDispatch(game::EntitySpawn{.networkId = MONSTER_NETWORK_ID,
                                        .type = game::EntityType::Enemy,
                                        .x = MONSTER_X,
                                        .y = MONSTER_Y});
 
   ASSERT_EQ(sentDatagrams().size(), 2U);
-  EXPECT_EQ(network::DatagramCodec::decodeHeader(sentDatagrams().at(0).payload)
-                .sequence,
-            1U);
-  EXPECT_EQ(network::DatagramCodec::decodeHeader(sentDatagrams().at(1).payload)
-                .sequence,
-            2U);
+  const network::PacketHeader first =
+      network::DatagramCodec::decodeHeader(sentDatagrams().at(0).payload);
+  const network::PacketHeader second =
+      network::DatagramCodec::decodeHeader(sentDatagrams().at(1).payload);
+  EXPECT_EQ(first.sessionToken, FIRST_CLIENT_PORT);
+  EXPECT_EQ(second.sessionToken, SECOND_CLIENT_PORT);
+  EXPECT_EQ(first.sequence, 1U);
+  EXPECT_EQ(second.sequence, 2U);
 }
 
 /**

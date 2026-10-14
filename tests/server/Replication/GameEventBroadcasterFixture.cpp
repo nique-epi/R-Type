@@ -13,8 +13,9 @@ GameEventBroadcasterFixture::GameEventBroadcasterFixture()
     : recipients_{firstClient(), secondClient()},
       broadcaster_(
           events_, timers_, recipients_,
-          [this](const network::Endpoint&) {
+          [this](const network::Endpoint& recipient) {
             network::PacketHeader header;
+            header.sessionToken = recipient.port;
             header.sequence = nextSequence_++;
             return header;
           },
