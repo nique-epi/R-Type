@@ -4,6 +4,7 @@
 #include <string>
 #include "Endpoint.hpp"
 #include "IncomingDatagram.hpp"
+#include "LaunchArguments.hpp"
 #include "LaunchOptions.hpp"
 #include "LogLaunchOptions.hpp"
 #include "Logger.hpp"
@@ -69,7 +70,8 @@ int main(int argumentCount, char** arguments) {
     }
     return runServer(logOptions, launchOptions);
   } catch (const std::exception& error) {
-    std::cerr << rtype::server::LaunchOptions::usageError(error.what());
+    std::cerr << rtype::engine::launchErrorText(rtype::server::PROGRAM_NAME,
+                                                error.what());
     return 1;
   }
 }

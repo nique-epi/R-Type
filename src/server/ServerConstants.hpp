@@ -14,16 +14,6 @@ namespace rtype::server {
 constexpr std::string_view PROGRAM_NAME = "r-type_server";
 
 /**
- * @brief Launch option followed by the UDP port to listen on.
- */
-constexpr std::string_view PORT_OPTION = "-p";
-
-/**
- * @brief Launch option that prints the usage and starts nothing.
- */
-constexpr std::string_view HELP_OPTION = "--help";
-
-/**
  * @brief Module name the server writes its log lines under.
  */
 constexpr std::string_view SERVER_LOGGER_NAME = "Server";

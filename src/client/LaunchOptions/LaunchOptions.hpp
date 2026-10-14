@@ -22,9 +22,9 @@ class LaunchOptions {
    * Without `-h` the address is DEFAULT_SERVER_ADDRESS, without `-p` the
    * port is DEFAULT_SERVER_PORT. The last of each option wins.
    *
-   * @throws UnknownLaunchArgumentException for any other argument.
-   * @throws MissingLaunchOptionValueException when `-h` or `-p` is the last
-   *         argument.
+   * @throws engine::UnknownLaunchArgumentException for any other argument.
+   * @throws engine::MissingLaunchOptionValueException when `-h` or `-p` is
+   *         the last argument.
    * @throws network::InvalidIpv4AddressException when the value of `-h` is
    *         not an IPv4 address written as four numbers: the server only
    *         listens over IPv4, and host names are not resolved.
@@ -39,12 +39,6 @@ class LaunchOptions {
    *          ones included, with its default.
    */
   [[nodiscard]] static std::string usage();
-
-  /**
-   * @returns what the client prints when it cannot read its arguments: its
-   *          name and @p message on one line, then how to see the usage.
-   */
-  [[nodiscard]] static std::string usageError(std::string_view message);
 
   /** @returns the address and the port of the server to join. */
   [[nodiscard]] const network::Endpoint& serverEndpoint() const;

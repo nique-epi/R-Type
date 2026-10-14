@@ -2,21 +2,21 @@
 #include <string>
 #include <string_view>
 #include <vector>
+#include "EngineException.hpp"
+#include "LaunchArgumentsConstants.hpp"
 #include "LaunchOptions.hpp"
 #include "LaunchOptionsTestConstants.hpp"
 #include "LoggingConstants.hpp"
 #include "NetworkConstants.hpp"
 #include "NetworkException.hpp"
-#include "ServerConstants.hpp"
-#include "ServerException.hpp"
 
+using rtype::engine::HELP_OPTION;
+using rtype::engine::MissingLaunchOptionValueException;
+using rtype::engine::PORT_OPTION;
+using rtype::engine::UnknownLaunchArgumentException;
 using rtype::network::DEFAULT_SERVER_PORT;
 using rtype::network::InvalidPortException;
-using rtype::server::HELP_OPTION;
 using rtype::server::LaunchOptions;
-using rtype::server::MissingLaunchOptionValueException;
-using rtype::server::PORT_OPTION;
-using rtype::server::UnknownLaunchArgumentException;
 
 namespace {
 
@@ -158,14 +158,4 @@ TEST(ServerLaunchOptions, UsageNamesEveryOption) {
  */
 TEST(ServerLaunchOptions, UsageGivesTheDefaultPort) {
   EXPECT_NE(LaunchOptions::usage().find(DEFAULT_PORT_LINE), std::string::npos);
-}
-
-/**
- * Given the message of an argument the server cannot read
- * When the error to print is built
- * Then it names the server and the message, then tells how to see the usage
- */
-TEST(ServerLaunchOptions, UsageErrorTellsHowToSeeTheUsage) {
-  EXPECT_EQ(LaunchOptions::usageError(ERROR_MESSAGE),
-            USAGE_ERROR_OF_ERROR_MESSAGE);
 }

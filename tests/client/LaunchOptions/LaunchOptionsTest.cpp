@@ -3,8 +3,9 @@
 #include <string_view>
 #include <vector>
 #include "ClientConstants.hpp"
-#include "ClientException.hpp"
 #include "Endpoint.hpp"
+#include "EngineException.hpp"
+#include "LaunchArgumentsConstants.hpp"
 #include "LaunchOptions.hpp"
 #include "LaunchOptionsTestConstants.hpp"
 #include "LoggingConstants.hpp"
@@ -13,11 +14,11 @@
 
 using rtype::client::ADDRESS_OPTION;
 using rtype::client::DEFAULT_SERVER_ADDRESS;
-using rtype::client::HELP_OPTION;
 using rtype::client::LaunchOptions;
-using rtype::client::MissingLaunchOptionValueException;
-using rtype::client::PORT_OPTION;
-using rtype::client::UnknownLaunchArgumentException;
+using rtype::engine::HELP_OPTION;
+using rtype::engine::MissingLaunchOptionValueException;
+using rtype::engine::PORT_OPTION;
+using rtype::engine::UnknownLaunchArgumentException;
 using rtype::network::DEFAULT_SERVER_PORT;
 using rtype::network::Endpoint;
 using rtype::network::InvalidIpv4AddressException;
@@ -231,14 +232,4 @@ TEST(ClientLaunchOptions, UsageGivesTheDefaultAddress) {
  */
 TEST(ClientLaunchOptions, UsageGivesTheDefaultPort) {
   EXPECT_NE(LaunchOptions::usage().find(DEFAULT_PORT_LINE), std::string::npos);
-}
-
-/**
- * Given the message of an argument the client cannot read
- * When the error to print is built
- * Then it names the client and the message, then tells how to see the usage
- */
-TEST(ClientLaunchOptions, UsageErrorTellsHowToSeeTheUsage) {
-  EXPECT_EQ(LaunchOptions::usageError(ERROR_MESSAGE),
-            USAGE_ERROR_OF_ERROR_MESSAGE);
 }

@@ -49,18 +49,6 @@ constexpr std::string_view NOT_A_PORT_ARGUMENT = "abc";
 constexpr std::string_view UNKNOWN_OPTION = "-x";
 
 /**
- * @brief An error message handed to usageError().
- */
-constexpr std::string_view ERROR_MESSAGE = "Unknown argument \"-x\"";
-
-/**
- * @brief What usageError() returns for ERROR_MESSAGE.
- */
-constexpr std::string_view USAGE_ERROR_OF_ERROR_MESSAGE =
-    "r-type_client: Unknown argument \"-x\"\n"
-    "Run r-type_client --help to see the options.\n";
-
-/**
  * @brief The line of the usage that gives the default address.
  */
 constexpr std::string_view DEFAULT_ADDRESS_LINE =

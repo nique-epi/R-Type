@@ -17,16 +17,6 @@ constexpr std::string_view PROGRAM_NAME = "r-type_client";
 constexpr std::string_view ADDRESS_OPTION = "-h";
 
 /**
- * @brief Launch option followed by the UDP port of the server to join.
- */
-constexpr std::string_view PORT_OPTION = "-p";
-
-/**
- * @brief Launch option that prints the usage and starts nothing.
- */
-constexpr std::string_view HELP_OPTION = "--help";
-
-/**
  * @brief Address of the server to join when none is given at launch: a
  * server on the same machine.
  */

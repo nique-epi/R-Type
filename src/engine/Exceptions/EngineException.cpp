@@ -38,4 +38,12 @@ EmptyEventCallbackException::EmptyEventCallbackException()
 NetworkIdExhaustedException::NetworkIdExhaustedException()
     : EngineException("Every network identifier was already handed out") {}
 
+UnknownLaunchArgumentException::UnknownLaunchArgumentException(
+    const std::string& argument)
+    : EngineException("Unknown argument \"" + argument + "\"") {}
+
+MissingLaunchOptionValueException::MissingLaunchOptionValueException(
+    const std::string& option)
+    : EngineException("Missing value after the option " + option) {}
+
 }  // namespace rtype::engine

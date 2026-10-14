@@ -6,6 +6,7 @@
 #include "AssetIds.hpp"
 #include "AssetLibrary.hpp"
 #include "ClientConstants.hpp"
+#include "LaunchArguments.hpp"
 #include "LaunchOptions.hpp"
 #include "LogLaunchOptions.hpp"
 #include "Logger.hpp"
@@ -60,7 +61,8 @@ int main(int argumentCount, char** arguments) {
     }
     return runClient(logOptions, launchOptions);
   } catch (const std::exception& error) {
-    std::cerr << rtype::client::LaunchOptions::usageError(error.what());
+    std::cerr << rtype::engine::launchErrorText(rtype::client::PROGRAM_NAME,
+                                                error.what());
     return 1;
   }
 }

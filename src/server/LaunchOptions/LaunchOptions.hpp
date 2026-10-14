@@ -19,9 +19,10 @@ class LaunchOptions {
    *
    * Without `-p` the port is DEFAULT_SERVER_PORT. The last `-p` wins.
    *
-   * @throws UnknownLaunchArgumentException for any other argument, `-h`
-   *         included: the server takes no address.
-   * @throws MissingLaunchOptionValueException when `-p` is the last argument.
+   * @throws engine::UnknownLaunchArgumentException for any other argument,
+   *         `-h` included: the server takes no address.
+   * @throws engine::MissingLaunchOptionValueException when `-p` is the last
+   *         argument.
    * @throws network::InvalidPortException when the value of `-p` is not a
    *         port from LOWEST_PORT to HIGHEST_PORT.
    */
@@ -33,12 +34,6 @@ class LaunchOptions {
    *          ones included, with its default.
    */
   [[nodiscard]] static std::string usage();
-
-  /**
-   * @returns what the server prints when it cannot read its arguments: its
-   *          name and @p message on one line, then how to see the usage.
-   */
-  [[nodiscard]] static std::string usageError(std::string_view message);
 
   /** @returns the UDP port to listen on. */
   [[nodiscard]] std::uint16_t port() const;
