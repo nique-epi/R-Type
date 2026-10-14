@@ -7,6 +7,7 @@
 #include "IScreen.hpp"
 #include "IScreenNavigator.hpp"
 #include "ScreenId.hpp"
+#include "TimeConstants.hpp"
 
 namespace rtype::client {
 
@@ -50,8 +51,9 @@ class ScreenStack : public IScreenNavigator {
   /** @brief Gives the event to the screen on top only. */
   void handleEvent(const sf::Event& event);
 
-  /** @brief Updates every screen, from the bottom up. */
-  void update();
+  /** @brief Updates every screen, from the bottom up, by the time since the
+   * previous frame. */
+  void update(engine::Duration elapsed);
 
   /** @brief Draws every screen, from the bottom up. */
   void draw(sf::RenderTarget& target) const;

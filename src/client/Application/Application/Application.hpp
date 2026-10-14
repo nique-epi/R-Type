@@ -23,9 +23,9 @@ class AssetLibrary;
  * applied after each event and after the update, so the next event already
  * reaches the new screen on top.
  *
- * The background moves by the real time elapsed since the previous frame, so
- * its speed does not depend on the frame rate. It is drawn under every screen
- * for now, the loading screen and the options included.
+ * The background and every screen move by the real time elapsed since the
+ * previous frame, so their speed does not depend on the frame rate. It is drawn
+ * under every screen for now, the loading screen and the options included.
  *
  * The loop never waits on the network: reception is meant to run on its own
  * thread and hand its messages over through a queue a screen drains each
@@ -64,8 +64,9 @@ class Application {
  private:
   void handleEvents();
 
-  /** @brief Moves the background by the time since the previous frame. */
-  void advanceBackground();
+  /** @returns The real time since the previous frame, which the background
+   * and every screen move by. */
+  [[nodiscard]] engine::Duration measureFrame();
 
   void render();
 

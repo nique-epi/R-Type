@@ -4,6 +4,7 @@
 #include <vector>
 #include "IScreen.hpp"
 #include "ScreenId.hpp"
+#include "TimeConstants.hpp"
 
 namespace rtype::client {
 
@@ -65,9 +66,9 @@ void ScreenStack::handleEvent(const sf::Event& event) {
   }
 }
 
-void ScreenStack::update() {
+void ScreenStack::update(engine::Duration elapsed) {
   for (const std::unique_ptr<IScreen>& screen : screens_) {
-    screen->update();
+    screen->update(elapsed);
   }
 }
 

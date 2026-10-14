@@ -10,6 +10,7 @@
 #include "IScreenNavigator.hpp"
 #include "Logger.hpp"
 #include "PlayerCommands.hpp"
+#include "TimeConstants.hpp"
 
 namespace rtype::client {
 
@@ -47,7 +48,7 @@ class GameScreen : public IScreen {
              std::unique_ptr<IEntityLayer> entityLayer);
 
   void handleEvent(const sf::Event& event) override;
-  void update() override;
+  void update(engine::Duration elapsed) override;
   void draw(sf::RenderTarget& target) const override;
 
   /** @returns The actions the player holds right now. */

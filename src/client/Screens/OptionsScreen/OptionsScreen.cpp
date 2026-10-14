@@ -11,6 +11,7 @@
 #include "PlayfieldConstants.hpp"
 #include "ScreenColors.hpp"
 #include "ScreenConstants.hpp"
+#include "TimeConstants.hpp"
 
 namespace rtype::client {
 
@@ -36,7 +37,7 @@ void OptionsScreen::handleEvent(const sf::Event& event) {
   }
 }
 
-void OptionsScreen::update() {}
+void OptionsScreen::update([[maybe_unused]] engine::Duration elapsed) {}
 
 void OptionsScreen::draw(sf::RenderTarget& target) const {
   target.draw(backdrop_);

@@ -29,8 +29,9 @@ void Application::run() {
   previousFrameTime_ = clock_.now();
   while (window_.isOpen() && !screens_.isEmpty()) {
     handleEvents();
-    advanceBackground();
-    screens_.update();
+    const engine::Duration elapsed = measureFrame();
+    background_.advance(elapsed);
+    screens_.update(elapsed);
     screens_.applyPendingChanges();
     render();
   }
@@ -43,10 +44,11 @@ void Application::handleEvents() {
   }
 }
 
-void Application::advanceBackground() {
+engine::Duration Application::measureFrame() {
   const engine::Duration now = clock_.now();
-  background_.advance(now - previousFrameTime_);
+  const engine::Duration elapsed = now - previousFrameTime_;
   previousFrameTime_ = now;
+  return elapsed;
 }
 
 void Application::render() {

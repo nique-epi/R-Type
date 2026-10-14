@@ -17,6 +17,7 @@
 #include "ScreenConstants.hpp"
 #include "ScreenId.hpp"
 #include "ScreenStack.hpp"
+#include "ScreenTestConstants.hpp"
 #include "SpriteShowcaseConstants.hpp"
 
 using rtype::client::GameScreen;
@@ -162,7 +163,7 @@ TEST_F(GameScreenTest, ANewGameIsPaintedBeforeItsFirstUpdate) {
  * Then the entity layer is painted again
  */
 TEST_F(GameScreenTest, EachUpdateRepaintsTheEntityLayer) {
-  screens().update();
+  screens().update(ONE_FRAME);
 
   EXPECT_EQ(layerRecord().paintCount, PAINTS_AFTER_ONE_UPDATE);
 }

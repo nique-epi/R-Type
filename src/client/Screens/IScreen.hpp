@@ -1,5 +1,7 @@
 #pragma once
 
+#include "TimeConstants.hpp"
+
 namespace sf {
 class Event;
 class RenderTarget;
@@ -22,8 +24,13 @@ class IScreen {
    * and resizing. */
   virtual void handleEvent(const sf::Event& event) = 0;
 
-  /** @brief Advances the screen by one frame. */
-  virtual void update() = 0;
+  /**
+   * @brief Advances the screen by one frame.
+   *
+   * @param elapsed Real time since the previous frame, the same for every
+   * screen and for the scrolling background.
+   */
+  virtual void update(engine::Duration elapsed) = 0;
 
   /** @brief Draws the screen, in playfield units. */
   virtual void draw(sf::RenderTarget& target) const = 0;

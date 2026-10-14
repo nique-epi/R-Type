@@ -6,6 +6,7 @@
 #include <vector>
 #include "IScreen.hpp"
 #include "ScreenId.hpp"
+#include "TimeConstants.hpp"
 
 /** @brief What happened to a screen double. */
 enum class ScreenCall : std::uint8_t {
@@ -47,8 +48,11 @@ class RecordingScreen : public rtype::client::IScreen {
   void runOnEvent(std::function<void()> action);
 
   void handleEvent(const sf::Event& event) override;
-  void update() override;
+  void update(rtype::engine::Duration elapsed) override;
   void draw(sf::RenderTarget& target) const override;
+
+  /** @returns The time given to the last update, zero before any. */
+  [[nodiscard]] rtype::engine::Duration lastElapsed() const;
 
  private:
   void write(ScreenCall call) const;
@@ -56,4 +60,5 @@ class RecordingScreen : public rtype::client::IScreen {
   rtype::client::ScreenId screen_;
   std::vector<JournalEntry>* journal_;
   std::function<void()> onEvent_;
+  rtype::engine::Duration lastElapsed_{};
 };

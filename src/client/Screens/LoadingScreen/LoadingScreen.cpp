@@ -12,6 +12,7 @@
 #include "ScreenColors.hpp"
 #include "ScreenConstants.hpp"
 #include "ScreenId.hpp"
+#include "TimeConstants.hpp"
 
 namespace rtype::client {
 
@@ -51,7 +52,7 @@ LoadingScreen::LoadingScreen(IScreenNavigator& navigator, AssetLibrary& library,
 
 void LoadingScreen::handleEvent([[maybe_unused]] const sf::Event& event) {}
 
-void LoadingScreen::update() {
+void LoadingScreen::update([[maybe_unused]] engine::Duration elapsed) {
   if (!loading_.isFinished()) {
     loading_.loadNext();
     showProgress();

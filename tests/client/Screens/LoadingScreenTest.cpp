@@ -14,6 +14,7 @@
 #include "RecordingScreen.hpp"
 #include "ScreenId.hpp"
 #include "ScreenStack.hpp"
+#include "ScreenTestConstants.hpp"
 #include "SilentSound.hpp"
 #include "TemporaryFolder.hpp"
 
@@ -53,7 +54,7 @@ class LoadingScreenTest : public ::testing::Test {
   }
 
   void runFrame() {
-    screens_.update();
+    screens_.update(ONE_FRAME);
     screens_.applyPendingChanges();
   }
 
@@ -98,7 +99,7 @@ TEST_F(LoadingScreenTest, ReadsOneFilePerFrame) {
   loadTwoSounds();
   showLoadingScreenOf(ScreenId::Game);
 
-  screens().update();
+  screens().update(ONE_FRAME);
 
   EXPECT_NE(library().isLoaded(AssetKind::Sound, SHOT_SOUND_ID),
             library().isLoaded(AssetKind::Sound, EXPLOSION_SOUND_ID));
@@ -186,7 +187,7 @@ TEST_F(LoadingScreenTest, MissingFileStopsTheLoadingWithItsPath) {
   loadOnly(AssetList{.sounds = {SHOT_SOUND_ID}});
   showLoadingScreenOf(ScreenId::Game);
 
-  EXPECT_THAT([this] { screens().update(); },
+  EXPECT_THAT([this] { screens().update(ONE_FRAME); },
               ThrowsMessage<AssetLoadingException>(
                   HasSubstr(genericText(folder() / "sounds" / "shot.wav"))));
 }

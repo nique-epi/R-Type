@@ -5,6 +5,7 @@
 #include <SFML/System/Vector2.hpp>
 #include "IScreen.hpp"
 #include "IScreenNavigator.hpp"
+#include "TimeConstants.hpp"
 #include "WindowSizeButtons.hpp"
 
 namespace rtype::client {
@@ -32,7 +33,7 @@ class OptionsScreen : public IScreen {
                 const sf::Font& labelFont);
 
   void handleEvent(const sf::Event& event) override;
-  void update() override;
+  void update(engine::Duration elapsed) override;
   void draw(sf::RenderTarget& target) const override;
 
  private:

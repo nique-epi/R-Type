@@ -6,6 +6,7 @@
 #include <utility>
 #include <vector>
 #include "ScreenId.hpp"
+#include "TimeConstants.hpp"
 
 using rtype::client::ScreenId;
 
@@ -62,10 +63,17 @@ void RecordingScreen::handleEvent([[maybe_unused]] const sf::Event& event) {
   }
 }
 
-void RecordingScreen::update() { write(ScreenCall::Update); }
+void RecordingScreen::update(rtype::engine::Duration elapsed) {
+  lastElapsed_ = elapsed;
+  write(ScreenCall::Update);
+}
 
 void RecordingScreen::draw([[maybe_unused]] sf::RenderTarget& target) const {
   write(ScreenCall::Draw);
+}
+
+rtype::engine::Duration RecordingScreen::lastElapsed() const {
+  return lastElapsed_;
 }
 
 void RecordingScreen::write(ScreenCall call) const {

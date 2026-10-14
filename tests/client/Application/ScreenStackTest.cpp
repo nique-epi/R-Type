@@ -10,6 +10,7 @@
 #include "RecordingScreen.hpp"
 #include "ScreenId.hpp"
 #include "ScreenStack.hpp"
+#include "ScreenTestConstants.hpp"
 
 using rtype::client::ScreenId;
 using rtype::client::ScreenStack;
@@ -76,7 +77,7 @@ TEST_F(ScreenStackTest, EventsReachOnlyTheScreenOnTop) {
 TEST_F(ScreenStackTest, EveryScreenIsUpdatedFromTheBottomUp) {
   showOptionsOverTheGame();
 
-  screens().update();
+  screens().update(ONE_FRAME);
 
   EXPECT_THAT(journal(), ElementsAre(JournalEntry{.screen = ScreenId::Game,
                                                   .call = ScreenCall::Update},
@@ -219,4 +220,20 @@ TEST_F(ScreenStackTest, ChangeAskedWhileApplyingWaitsForTheNextApply) {
                                        .call = ScreenCall::Built},
                           JournalEntry{.screen = ScreenId::Game,
                                        .call = ScreenCall::HandleEvent}));
+}
+
+/**
+ * Given the options pushed over the game
+ * When a frame of 16 milliseconds is updated
+ * Then the game, below, is updated by those 16 milliseconds
+ */
+TEST_F(ScreenStackTest, EveryScreenIsUpdatedByTheTimeOfTheFrame) {
+  RecordingScreen* game = nullptr;
+  onGameBuilt([&game](RecordingScreen& built) { game = &built; });
+  showOptionsOverTheGame();
+
+  screens().update(ONE_FRAME);
+
+  ASSERT_NE(game, nullptr);
+  EXPECT_EQ(game->lastElapsed(), ONE_FRAME);
 }
