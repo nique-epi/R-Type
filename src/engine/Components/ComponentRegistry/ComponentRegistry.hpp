@@ -87,10 +87,11 @@ class ComponentRegistry {
    *
    * Entities are visited in no particular order, each at most once. The
    * references given to the callback are only valid during that call. Entities
-   * destroyed during the visit are no longer visited.
+   * destroyed during the visit are no longer visited. The callback is copied
+   * once, then called for every entity.
    */
   template <typename First, typename Second, typename Callback>
-  void forEach(Callback&& callback) {
+  void forEach(Callback callback) {
     ComponentStorage<First>* storage = findStorage<First>();
     if (storage == nullptr) {
       return;
