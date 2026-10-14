@@ -32,11 +32,13 @@ class WorldStateCodec {
    * @throws BufferUnderflowException when the payload is shorter than it
    * announces.
    * @throws MalformedMessageException when it announces more than
-   * MAXIMUM_PLAYERS players, holds an unknown entity type, or has bytes left
-   * after the last entity.
+   * MAXIMUM_PLAYERS players, holds a boolean other than 0 and 1 or an entity of
+   * id 0, or has bytes left after the last entity. An entity of unknown type is
+   * left out of the state: the others are decoded.
    */
   [[nodiscard]] static WorldState decode(std::span<const std::byte> payload);
 
+ private:
   /**
    * @returns How many entities one payload holds, next to @p playerCount
    * players, so that the datagram stays within MAX_DATAGRAM_SIZE once the

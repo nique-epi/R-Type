@@ -3,6 +3,7 @@
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
+#include <optional>
 #include <span>
 #include <string>
 #include <vector>
@@ -11,7 +12,6 @@
 #include "NetworkException.hpp"
 #include "ProtocolConstants.hpp"
 #include "WorldState.hpp"
-#include "WorldStateCodecConstants.hpp"
 
 namespace rtype::network {
 
@@ -34,7 +34,7 @@ void writePlayers(ByteWriter& writer, const std::vector<PlayerState>& players) {
     writer.writeUint32(player.shipEntityId);
     writer.writeUint8(player.lives);
     writer.writeUint32(player.score);
-    writer.writeUint8(player.invulnerable ? 1 : 0);
+    writer.writeUint8(player.invulnerable ? TRUE_WIRE_VALUE : FALSE_WIRE_VALUE);
   }
 }
 
@@ -59,6 +59,14 @@ std::vector<std::byte> encodePart(const WorldState& state,
   return writer.bytes();
 }
 
+bool readBoolean(ByteReader& reader) {
+  const std::uint8_t value = reader.readUint8();
+  if (value != FALSE_WIRE_VALUE && value != TRUE_WIRE_VALUE) {
+    throw MalformedMessageException("a boolean holds " + std::to_string(value));
+  }
+  return value == TRUE_WIRE_VALUE;
+}
+
 std::vector<PlayerState> readPlayers(ByteReader& reader) {
   const std::uint8_t playerCount = reader.readUint8();
   if (playerCount > MAXIMUM_PLAYERS) {
@@ -72,25 +80,34 @@ std::vector<PlayerState> readPlayers(ByteReader& reader) {
                                   .shipEntityId = reader.readUint32(),
                                   .lives = reader.readUint8(),
                                   .score = reader.readUint32(),
-                                  .invulnerable = reader.readUint8() != 0});
+                                  .invulnerable = readBoolean(reader)});
   }
   return players;
 }
 
-WireEntityType readEntityType(ByteReader& reader) {
-  const std::uint8_t type = reader.readUint8();
+std::optional<WireEntityType> toKnownEntityType(std::uint8_t type) {
   if (type < FIRST_WIRE_ENTITY_TYPE || type > LAST_WIRE_ENTITY_TYPE) {
-    throw MalformedMessageException("unknown entity type " +
-                                    std::to_string(type));
+    return std::nullopt;
   }
   return static_cast<WireEntityType>(type);
 }
 
-EntityState readEntity(ByteReader& reader) {
-  return EntityState{.entityId = reader.readUint32(),
-                     .entityType = readEntityType(reader),
-                     .x = fromWireCoordinate(reader.readInt16()),
-                     .y = fromWireCoordinate(reader.readInt16())};
+std::optional<EntityState> readEntity(ByteReader& reader) {
+  const std::uint32_t entityId = reader.readUint32();
+  const std::optional<WireEntityType> type =
+      toKnownEntityType(reader.readUint8());
+  const float horizontal = fromWireCoordinate(reader.readInt16());
+  const float vertical = fromWireCoordinate(reader.readInt16());
+  if (entityId == NO_ENTITY_ID) {
+    throw MalformedMessageException("an entity has the id 0");
+  }
+  if (!type.has_value()) {
+    return std::nullopt;
+  }
+  return EntityState{.entityId = entityId,
+                     .entityType = *type,
+                     .x = horizontal,
+                     .y = vertical};
 }
 
 std::vector<EntityState> readEntities(ByteReader& reader) {
@@ -98,7 +115,10 @@ std::vector<EntityState> readEntities(ByteReader& reader) {
   std::vector<EntityState> entities;
   entities.reserve(entityCount);
   for (std::uint8_t index = 0; index < entityCount; ++index) {
-    entities.push_back(readEntity(reader));
+    const std::optional<EntityState> entity = readEntity(reader);
+    if (entity.has_value()) {
+      entities.push_back(*entity);
+    }
   }
   return entities;
 }

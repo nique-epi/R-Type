@@ -12,6 +12,7 @@ using rtype::network::BufferUnderflowException;
 using rtype::network::EntityState;
 using rtype::network::MalformedMessageException;
 using rtype::network::TooManyPlayersException;
+using rtype::network::WireEntityType;
 using rtype::network::WorldState;
 using rtype::network::WorldStateCodec;
 using rtype::network::testing::BEYOND_RANGE_X;
@@ -24,10 +25,14 @@ using rtype::network::testing::ENTITY_TYPE_BELOW_THE_FIRST;
 using rtype::network::testing::EXAMPLE_ENTITY_ID;
 using rtype::network::testing::FEW_ENTITIES;
 using rtype::network::testing::fourPlayers;
+using rtype::network::testing::invulnerablePlayer;
 using rtype::network::testing::LARGEST_WIRE_COORDINATE;
+using rtype::network::testing::LAST_ENTITY_TYPE;
 using rtype::network::testing::LATE_TICK;
 using rtype::network::testing::NEAREST_EIGHTH_OF_UNROUNDED_X;
 using rtype::network::testing::NEAREST_EIGHTH_OF_UNROUNDED_Y;
+using rtype::network::testing::NO_ENTITY_ID_BYTE;
+using rtype::network::testing::NOT_A_BOOLEAN;
 using rtype::network::testing::NUMBER_OF_A_FIFTH_PLAYER;
 using rtype::network::testing::oneShipState;
 using rtype::network::testing::SMALLEST_WIRE_COORDINATE;
@@ -227,20 +232,75 @@ TEST(WorldStateCodec, RefusesAnnouncedEntitiesBeyondThePayload) {
 }
 
 /**
- * Given an entity type of 0, and another of 5, which no entity has
- * When each payload is decoded
- * Then each is refused
+ * Given a payload with an entity of a type the wire does not know, between two
+ * known entities
+ * When it is decoded
+ * Then the two known entities are in the state and the unknown one is left out
  */
-TEST(WorldStateCodec, RefusesAnUnknownEntityType) {
+TEST(WorldStateCodec, SkipsAnEntityOfUnknownType) {
   const auto withType = [](unsigned int type) {
-    return byteSequence(
-        {0, 0, 0, 1, 0, 1, 0, 0, 0, EXAMPLE_ENTITY_ID, type, 0, 0, 0, 0});
+    return byteSequence({0, 0, 0,    1, 0, 3, 0, 0, 0, 1, 3, 0, 0, 0, 0, 0, 0,
+                         0, 2, type, 0, 0, 0, 0, 0, 0, 0, 3, 3, 0, 0, 0, 0});
   };
 
+  for (const unsigned int unknown :
+       {ENTITY_TYPE_BELOW_THE_FIRST, ENTITY_TYPE_ABOVE_THE_LAST}) {
+    const WorldState decoded = WorldStateCodec::decode(withType(unknown));
+
+    ASSERT_EQ(decoded.entities.size(), 2U) << "type " << unknown;
+    EXPECT_EQ(decoded.entities.front().entityId, 1U);
+    EXPECT_EQ(decoded.entities.back().entityId, 3U);
+  }
+}
+
+/**
+ * Given a payload with an entity of the last type the wire knows, the enemy
+ * missile
+ * When it is decoded
+ * Then the entity is in the state, with that type
+ */
+TEST(WorldStateCodec, DecodesAnEnemyMissile) {
+  const WorldState decoded = WorldStateCodec::decode(
+      byteSequence({0, 0, 0, 1, 0, 1, 0, 0, 0, EXAMPLE_ENTITY_ID,
+                    LAST_ENTITY_TYPE, 0, 0, 0, 0}));
+
+  ASSERT_EQ(decoded.entities.size(), 1U);
+  EXPECT_EQ(decoded.entities.front().entityType, WireEntityType::EnemyMissile);
+}
+
+/**
+ * Given an invulnerable player
+ * When the state is encoded then decoded
+ * Then the player is still invulnerable
+ */
+TEST(WorldStateCodec, KeepsAPlayerInvulnerable) {
+  const WorldState state{
+      .tick = SOME_TICK, .players = {invulnerablePlayer()}, .entities = {}};
+
+  EXPECT_EQ(WorldStateCodec::decode(WorldStateCodec::encode(state).front()),
+            state);
+}
+
+/**
+ * Given a player whose boolean byte is neither 0 nor 1
+ * When the payload is decoded
+ * Then it is refused
+ */
+TEST(WorldStateCodec, RefusesABooleanThatIsNeitherZeroNorOne) {
   EXPECT_THROW(
-      (void)WorldStateCodec::decode(withType(ENTITY_TYPE_BELOW_THE_FIRST)),
+      (void)WorldStateCodec::decode(byteSequence(
+          {0, 0, 0, 1, 1, 1, 0, 0, 0, 7, 3, 0, 0, 0, 100, NOT_A_BOOLEAN, 0})),
       MalformedMessageException);
+}
+
+/**
+ * Given an entity whose id is 0, the id no entity has
+ * When the payload is decoded
+ * Then it is refused
+ */
+TEST(WorldStateCodec, RefusesAnEntityWithoutAnId) {
   EXPECT_THROW(
-      (void)WorldStateCodec::decode(withType(ENTITY_TYPE_ABOVE_THE_LAST)),
+      (void)WorldStateCodec::decode(byteSequence(
+          {0, 0, 0, 1, 0, 1, 0, 0, 0, NO_ENTITY_ID_BYTE, 3, 0, 0, 0, 0})),
       MalformedMessageException);
 }

@@ -31,6 +31,14 @@ std::vector<EntityState> someEntities(std::size_t count) {
   return entities;
 }
 
+PlayerState invulnerablePlayer() {
+  return PlayerState{.playerNumber = EXAMPLE_PLAYER_NUMBER,
+                     .shipEntityId = EXAMPLE_PLAYER_SHIP_ID,
+                     .lives = SOME_LIVES,
+                     .score = SOME_SCORE,
+                     .invulnerable = true};
+}
+
 WorldState oneShipState() {
   return WorldState{
       .tick = SOME_TICK,

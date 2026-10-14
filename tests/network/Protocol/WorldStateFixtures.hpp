@@ -13,7 +13,7 @@ namespace rtype::network::testing {
 constexpr std::uint32_t SOME_TICK = 3;
 
 /**
- * @brief The largest tick a 32-bit counter holds, less a few ticks.
+ * @brief A tick late in a long game, far above the first ones.
  */
 constexpr std::uint32_t LATE_TICK = 4000000000U;
 
@@ -61,10 +61,10 @@ constexpr std::uint8_t NUMBER_OF_A_FIFTH_PLAYER = 5;
  * @brief Coordinates that are not a multiple of an eighth of a unit, and the
  * nearest eighth of each.
  */
-constexpr float UNROUNDED_X = 0.1F;
-constexpr float UNROUNDED_Y = -0.3F;
-constexpr float NEAREST_EIGHTH_OF_UNROUNDED_X = 0.125F;
-constexpr float NEAREST_EIGHTH_OF_UNROUNDED_Y = -0.25F;
+constexpr float UNROUNDED_X = 0.3F;
+constexpr float UNROUNDED_Y = -0.1F;
+constexpr float NEAREST_EIGHTH_OF_UNROUNDED_X = 0.25F;
+constexpr float NEAREST_EIGHTH_OF_UNROUNDED_Y = -0.125F;
 
 /**
  * @brief Coordinates beyond the range of the wire, and the ends of that range.
@@ -82,6 +82,19 @@ constexpr unsigned int ENTITY_TYPE_BELOW_THE_FIRST = 0;
 constexpr unsigned int ENTITY_TYPE_ABOVE_THE_LAST = 5;
 
 /**
+ * @brief The value of the last entity type, EnemyMissile, the upper bound of
+ * the types the wire knows.
+ */
+constexpr unsigned int LAST_ENTITY_TYPE = 4;
+
+/**
+ * @brief A byte that is neither 0 nor 1, where a boolean is expected, and the
+ * id no entity has.
+ */
+constexpr unsigned int NOT_A_BOOLEAN = 2;
+constexpr unsigned int NO_ENTITY_ID_BYTE = 0;
+
+/**
  * @returns A player with the given number, SOME_LIVES lives and SOME_SCORE
  * points.
  */
@@ -97,6 +110,11 @@ std::vector<PlayerState> fourPlayers();
  * y = SOME_ENTITY_Y.
  */
 std::vector<EntityState> someEntities(std::size_t count);
+
+/**
+ * @returns One player of number 1, invulnerable.
+ */
+PlayerState invulnerablePlayer();
 
 /**
  * @returns The state of the protocol page: one player and one ship at
