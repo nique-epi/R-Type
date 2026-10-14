@@ -34,6 +34,12 @@ trigger: always_on
 3. **Read the build log of each variant before its test result**: it must contain the `Building CXX object` line of the swapped file. A variant without that line is not a result; rerun it.
 4. **Rebuild the restored original the same way** and run its tests green: the last binary left in `build/` must be the real code.
 
+### Checking each commit of a branch: `git archive` gives the files the commit's date
+
+1. **`git archive <commit>` sets every extracted file to the date of that commit**, which is older than objects built a minute ago from a later commit: `make` then keeps the stale objects. (Given a tree id instead of a commit, it uses the current time.)
+2. **To build one commit after another in the same build folder, use `cmake --build <dir> --clean-first`** for each commit, and read the number of objects compiled in its log.
+3. **Check the result against an expected count**: a commit that adds a test must show one more test than the commit before it. Equal counts mean the build did not see the change.
+
 ## Example
 
 - ❌ **Before (wrong)**: green build → second `cmake --build build | grep -c warning` → `0` (nothing recompiled) → "zero warnings".
