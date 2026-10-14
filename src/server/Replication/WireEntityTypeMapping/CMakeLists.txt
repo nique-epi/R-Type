@@ -1,0 +1,11 @@
+add_library(rtype_server_wire_entity_type_mapping STATIC WireEntityTypeMapping.cpp)
+
+target_include_directories(rtype_server_wire_entity_type_mapping PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+
+target_link_libraries(rtype_server_wire_entity_type_mapping
+  PUBLIC
+    rtype_game_components
+    rtype_network_world_state_codec
+)
+
+rtype_enable_warnings(rtype_server_wire_entity_type_mapping)
