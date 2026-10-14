@@ -34,6 +34,17 @@ The "Return value" sections of the two functions were never read, and nothing pr
 ### Decision
 The user ruled that the CI is the verifier for such a file: the push does not wait for him, the failures are prevented while writing (return values read and handled, tidy configuration read), and the CI job is followed until green.
 
+## Update (2026-10-10) — a file that does not compile hides findings
+
+### Context
+The game sprites work (entity sprite table, pixel canvas, tests reading the shipped sheet) was linted with clang-tidy 21 from Homebrew and the Xcode SDK, on 14 changed `.cpp` files with header diagnostics on.
+
+### Mistake
+The first run listed findings in the new tests and they were fixed. The log also held 11 `Error while processing` lines: libc++ `<random>` did not compile because `INFINITY` was undeclared. That run was nearly taken as the verdict. A second run with `-DINFINITY=__builtin_inff()` had 0 files in error and reported 3 more `bugprone-unchecked-optional-access` findings (`sprite->assetId` after `ASSERT_TRUE(sprite.has_value())`), which the CI would have failed on.
+
+### Root cause
+The rule asked for exit code 0 and no `error:` on the changed files, but said nothing about files clang-tidy could not compile. A compile error leaves clang-tidy with a partial syntax tree, so the flow-sensitive checks miss code they would otherwise analyze.
+
 ## Update (2026-10-14) — a header only fails when it is the main file
 
 ### Context
