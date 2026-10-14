@@ -4,28 +4,46 @@
 #include <SFML/Window/Keyboard.hpp>
 #include <cstdint>
 #include <memory>
+#include <vector>
+#include "BackgroundConstants.hpp"
 #include "BlankRenderTarget.hpp"
+#include "IScreen.hpp"
 #include "KeyPress.hpp"
 #include "MotionPreference.hpp"
 #include "PointerEvents.hpp"
+#include "QuitConfirmationScreen.hpp"
 #include "RecordingInterfaceCanvas.hpp"
 #include "RecordingNavigator.hpp"
+#include "RecordingScreen.hpp"
 #include "ScreenConstants.hpp"
 #include "ScreenId.hpp"
+#include "ScreenStack.hpp"
 #include "TitleScreen.hpp"
 #include "WidgetConstants.hpp"
 
+using rtype::client::BACKGROUND_PIXEL_SIZE;
+using rtype::client::IScreen;
 using rtype::client::LOGO_ID;
 using rtype::client::MotionPreference;
 using rtype::client::PRESS_DURATION;
+using rtype::client::QuitConfirmationScreen;
 using rtype::client::ScreenId;
+using rtype::client::ScreenStack;
 using rtype::client::TitleScreen;
 using ::testing::ElementsAre;
+using ::testing::IsEmpty;
 
 namespace {
 
 constexpr std::uint32_t ANY_SEED = 7;
 constexpr sf::Vector2i LOGO_TOP_LEFT(24, 36);
+
+/**
+ * @brief The middle of the bar of PLAY on the mockup, whose bar lies at
+ * (24, 110) and is 160 x 20 pixels large, in logical units of the playfield.
+ */
+constexpr sf::Vector2i PLAY_BAR_MIDDLE =
+    sf::Vector2i(104, 120) * static_cast<int>(BACKGROUND_PIXEL_SIZE);
 
 /** @brief A title screen alone, with a recording navigator and canvas. */
 class TitleScreenTest : public ::testing::Test {
@@ -51,6 +69,77 @@ class TitleScreenTest : public ::testing::Test {
   TitleScreen title_{navigator_,
                      std::make_unique<RecordingInterfaceCanvas>(canvas_),
                      samePlayfieldPoint, MotionPreference::Full, ANY_SEED};
+};
+
+/**
+ * @brief The title screen alone in a stack, with the screens it opens to put
+ * over it: the real quit confirmation, and a recording screen that hides the
+ * screens below for the options, since OptionsScreen needs a real window. The
+ * title and the dialog ask their own recording navigators, so what they ask
+ * for is written down and never applied.
+ */
+class TitleInTheStackTest : public ::testing::Test {
+ protected:
+  TitleInTheStackTest() {
+    screens_.replaceAll(ScreenId::Title);
+    screens_.applyPendingChanges();
+  }
+
+  [[nodiscard]] const RecordingNavigator& titleNavigator() const {
+    return titleNavigator_;
+  }
+
+  [[nodiscard]] const InterfaceCanvasRecord& titleCanvas() const {
+    return titleCanvas_;
+  }
+
+  ScreenStack& screens() { return screens_; }
+
+  /** @brief Puts a screen over the title. */
+  void open(ScreenId screen) {
+    screens_.push(screen);
+    screens_.applyPendingChanges();
+  }
+
+  /** @brief Closes the screen on top. */
+  void closeTheScreenOnTop() {
+    screens_.pop();
+    screens_.applyPendingChanges();
+  }
+
+  /** @brief Presses and releases the left button at a pixel of the window,
+   * then lets the press last. */
+  void click(sf::Vector2i position) {
+    screens_.handleEvent(leftPress(position));
+    screens_.handleEvent(leftRelease(position));
+    screens_.update(PRESS_DURATION);
+  }
+
+ private:
+  std::unique_ptr<IScreen> build(ScreenId screen) {
+    if (screen == ScreenId::Title) {
+      return std::make_unique<TitleScreen>(
+          titleNavigator_,
+          std::make_unique<RecordingInterfaceCanvas>(titleCanvas_),
+          samePlayfieldPoint, MotionPreference::Full, ANY_SEED);
+    }
+    if (screen == ScreenId::QuitConfirmation) {
+      return std::make_unique<QuitConfirmationScreen>(
+          dialogNavigator_,
+          std::make_unique<RecordingInterfaceCanvas>(dialogCanvas_),
+          samePlayfieldPoint);
+    }
+    auto options = std::make_unique<RecordingScreen>(screen, journal_);
+    options->setHidesScreensBelow(true);
+    return options;
+  }
+
+  RecordingNavigator titleNavigator_;
+  InterfaceCanvasRecord titleCanvas_;
+  RecordingNavigator dialogNavigator_;
+  InterfaceCanvasRecord dialogCanvas_;
+  std::vector<JournalEntry> journal_;
+  ScreenStack screens_{[this](ScreenId screen) { return build(screen); }};
 };
 
 }  // namespace
@@ -134,4 +223,63 @@ TEST_F(TitleScreenTest, DrawingLaysItsPicture) {
   title().draw(target);
 
   EXPECT_EQ(canvas().showCount, 1);
+}
+
+/**
+ * Given the options over the title
+ * When a frame is drawn
+ * Then the picture of the title is not laid
+ */
+TEST_F(TitleInTheStackTest, TheOptionsHideTheTitle) {
+  BlankRenderTarget target;
+  open(ScreenId::Options);
+
+  screens().draw(target);
+
+  EXPECT_EQ(titleCanvas().showCount, 0);
+}
+
+/**
+ * Given the quit confirmation over the title
+ * When a frame is drawn
+ * Then the picture of the title is laid under the dialog, once
+ */
+TEST_F(TitleInTheStackTest, TheQuitConfirmationLeavesTheTitleShown) {
+  BlankRenderTarget target;
+  open(ScreenId::QuitConfirmation);
+
+  screens().draw(target);
+
+  EXPECT_EQ(titleCanvas().showCount, 1);
+}
+
+/**
+ * Given the options over the title
+ * When the left button is pressed and released where the bar of PLAY lies on
+ * the title, and the press lasts
+ * Then the title asks for nothing
+ */
+TEST_F(TitleInTheStackTest, AClickInTheOptionsNeverPressesAButtonOfTheTitle) {
+  open(ScreenId::Options);
+
+  click(PLAY_BAR_MIDDLE);
+
+  EXPECT_THAT(titleNavigator().calls(), IsEmpty());
+}
+
+/**
+ * Given the options opened over the title, then closed
+ * When the left button is pressed and released on the bar of PLAY, and the
+ * press lasts
+ * Then the title asks for the game
+ */
+TEST_F(TitleInTheStackTest, OnceTheOptionsAreClosedAClickReachesTheTitle) {
+  open(ScreenId::Options);
+  closeTheScreenOnTop();
+
+  click(PLAY_BAR_MIDDLE);
+
+  EXPECT_THAT(titleNavigator().calls(),
+              ElementsAre(NavigatorCall{.request = NavigatorRequest::ReplaceAll,
+                                        .screen = ScreenId::Game}));
 }

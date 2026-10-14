@@ -36,6 +36,8 @@ void QuitConfirmationScreen::draw(sf::RenderTarget& target) const {
   canvas_->show(target);
 }
 
+bool QuitConfirmationScreen::hidesScreensBelow() const { return false; }
+
 Menu QuitConfirmationScreen::buildMenu(IScreenNavigator& navigator) {
   return MenuBuilder(MenuFrame::Dialog)
       .heading(CONFIRM_HEADING)

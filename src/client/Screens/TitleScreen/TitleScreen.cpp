@@ -45,6 +45,8 @@ void TitleScreen::draw(sf::RenderTarget& target) const {
   canvas_->show(target);
 }
 
+bool TitleScreen::hidesScreensBelow() const { return true; }
+
 Menu TitleScreen::buildMenu(IScreenNavigator& navigator) {
   return MenuBuilder(MenuFrame::Page)
       .version(GAME_VERSION_TEXT)

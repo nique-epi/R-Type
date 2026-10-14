@@ -50,6 +50,7 @@ class GameScreen : public IScreen {
   void handleEvent(const sf::Event& event) override;
   void update(engine::Duration elapsed) override;
   void draw(sf::RenderTarget& target) const override;
+  [[nodiscard]] bool hidesScreensBelow() const override;
 
   /** @returns The actions the player holds right now. */
   [[nodiscard]] ActionSet playerActions() const;

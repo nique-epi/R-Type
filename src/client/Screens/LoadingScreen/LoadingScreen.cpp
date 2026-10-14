@@ -68,6 +68,8 @@ void LoadingScreen::draw(sf::RenderTarget& target) const {
   target.draw(barFill_);
 }
 
+bool LoadingScreen::hidesScreensBelow() const { return true; }
+
 void LoadingScreen::showProgress() {
   barFill_.setSize(
       {LOADING_BAR_WIDTH * loadedFraction(loading_), LOADING_BAR_HEIGHT});

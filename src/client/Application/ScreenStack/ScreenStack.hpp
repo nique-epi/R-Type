@@ -57,7 +57,8 @@ class ScreenStack : public IScreenNavigator {
    * previous frame. */
   void update(engine::Duration elapsed);
 
-  /** @brief Draws every screen, from the bottom up. */
+  /** @brief Draws the screens from the bottom up, starting at the topmost
+   * screen that hides the screens below. */
   void draw(sf::RenderTarget& target) const;
 
   [[nodiscard]] bool isEmpty() const;
@@ -78,6 +79,11 @@ class ScreenStack : public IScreenNavigator {
   void apply(const Change& change);
   void build(ScreenId screen);
   void destroyAll();
+
+  /** @returns The topmost screen that hides the screens below, the bottom
+   * screen when none does, or the end of an empty stack. */
+  [[nodiscard]] std::vector<std::unique_ptr<IScreen>>::const_iterator
+  firstDrawnScreen() const;
 
   ScreenFactory factory_;
   std::vector<Change> pendingChanges_;

@@ -47,9 +47,13 @@ class RecordingScreen : public rtype::client::IScreen {
    * event is written down. */
   void runOnEvent(std::function<void()> action);
 
+  /** @brief Sets what hidesScreensBelow() answers, false at first. */
+  void setHidesScreensBelow(bool hides);
+
   void handleEvent(const sf::Event& event) override;
   void update(rtype::engine::Duration elapsed) override;
   void draw(sf::RenderTarget& target) const override;
+  [[nodiscard]] bool hidesScreensBelow() const override;
 
   /** @returns The time given to the last update, zero before any. */
   [[nodiscard]] rtype::engine::Duration lastElapsed() const;
@@ -61,4 +65,5 @@ class RecordingScreen : public rtype::client::IScreen {
   std::vector<JournalEntry>* journal_;
   std::function<void()> onEvent_;
   rtype::engine::Duration lastElapsed_{};
+  bool hidesScreensBelow_ = false;
 };

@@ -60,6 +60,10 @@ void RecordingScreen::runOnEvent(std::function<void()> action) {
   onEvent_ = std::move(action);
 }
 
+void RecordingScreen::setHidesScreensBelow(bool hides) {
+  hidesScreensBelow_ = hides;
+}
+
 void RecordingScreen::handleEvent([[maybe_unused]] const sf::Event& event) {
   write(ScreenCall::HandleEvent);
   if (onEvent_ != nullptr) {
@@ -75,6 +79,8 @@ void RecordingScreen::update(rtype::engine::Duration elapsed) {
 void RecordingScreen::draw([[maybe_unused]] sf::RenderTarget& target) const {
   write(ScreenCall::Draw);
 }
+
+bool RecordingScreen::hidesScreensBelow() const { return hidesScreensBelow_; }
 
 rtype::engine::Duration RecordingScreen::lastElapsed() const {
   return lastElapsed_;

@@ -44,6 +44,8 @@ void OptionsScreen::draw(sf::RenderTarget& target) const {
   windowSizeButtons_.draw(target);
 }
 
+bool OptionsScreen::hidesScreensBelow() const { return false; }
+
 void OptionsScreen::selectWindowSizeAt(sf::Vector2i pixel) {
   const std::optional<std::size_t> index =
       windowSizeButtons_.indexAt(window_->playfieldPointAt(pixel));

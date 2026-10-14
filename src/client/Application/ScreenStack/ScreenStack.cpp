@@ -1,5 +1,8 @@
 #include "ScreenStack.hpp"
+#include <algorithm>
+#include <iterator>
 #include <memory>
+#include <ranges>
 #include <utility>
 #include <vector>
 #include "IScreen.hpp"
@@ -84,9 +87,22 @@ void ScreenStack::update(engine::Duration elapsed) {
 }
 
 void ScreenStack::draw(sf::RenderTarget& target) const {
-  for (const std::unique_ptr<IScreen>& screen : screens_) {
-    screen->draw(target);
+  for (auto screen = firstDrawnScreen(); screen != screens_.end(); ++screen) {
+    (*screen)->draw(target);
   }
+}
+
+std::vector<std::unique_ptr<IScreen>>::const_iterator
+ScreenStack::firstDrawnScreen() const {
+  const auto topmostHiding =
+      std::ranges::find_if(screens_ | std::views::reverse,
+                           [](const std::unique_ptr<IScreen>& screen) {
+                             return screen->hidesScreensBelow();
+                           });
+  if (topmostHiding == screens_.rend()) {
+    return screens_.begin();
+  }
+  return std::prev(topmostHiding.base());
 }
 
 bool ScreenStack::isEmpty() const { return screens_.empty(); }

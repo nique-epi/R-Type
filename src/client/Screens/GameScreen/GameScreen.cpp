@@ -52,4 +52,6 @@ void GameScreen::draw(sf::RenderTarget& target) const {
   entityLayer_->show(target);
 }
 
+bool GameScreen::hidesScreensBelow() const { return true; }
+
 }  // namespace rtype::client
