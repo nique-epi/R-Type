@@ -12,6 +12,7 @@
 #include "IncomingDatagram.hpp"
 #include "NetworkContext.hpp"
 #include "NetworkTestConstants.hpp"
+#include "OutgoingDatagram.hpp"
 #include "ServerApplication.hpp"
 #include "ServerTestConstants.hpp"
 #include "TimeConstants.hpp"
@@ -139,4 +140,49 @@ TEST(ServerApplication, RethrowsWhatTheTickThrew) {
       }};
 
   EXPECT_THROW(server.run(), TickFailure);
+}
+
+/**
+ * Given a running server whose tick handler queues one datagram for a client
+ * When the client listens on its socket
+ * Then the client receives that datagram's bytes from the server's address
+ */
+TEST(ServerApplication, SendsTheDatagramsTheTickQueued) {
+  rtype::network::NetworkContext clientContext;
+  rtype::network::UdpSocket client{clientContext, loopbackOnPort(ANY_PORT)};
+  const std::vector<std::byte> payload(CLIENT_PAYLOAD_SIZE,
+                                       CLIENT_PAYLOAD_BYTE);
+  std::promise<std::vector<std::byte>> arrived;
+  std::future<std::vector<std::byte>> received = arrived.get_future();
+  std::atomic<bool> delivered{false};
+  client.startReceiving([&arrived, &delivered, &clientContext](
+                            [[maybe_unused]] const Endpoint& sender,
+                            std::span<const std::byte> bytes) {
+    if (!delivered.exchange(true)) {
+      arrived.set_value(std::vector<std::byte>(bytes.begin(), bytes.end()));
+      clientContext.stop();
+    }
+  });
+  std::atomic<bool> queued{false};
+  ServerApplication* serverPointer = nullptr;
+  ServerApplication server{
+      loopbackOnPort(ANY_PORT),
+      [&](std::span<const IncomingDatagram> datagrams) {
+        static_cast<void>(datagrams);
+        if (!queued.exchange(true)) {
+          serverPointer->queueDatagram(rtype::network::OutgoingDatagram{
+              .destination = loopbackOnPort(client.localEndpoint().port),
+              .payload = payload});
+        }
+      }};
+  serverPointer = &server;
+  const std::jthread serverRunner{[&server] { server.run(); }};
+  const std::jthread clientRunner{[&clientContext] { clientContext.run(); }};
+
+  const std::future_status status = received.wait_for(THREAD_TIMEOUT);
+  server.stop();
+  clientContext.stop();
+
+  ASSERT_EQ(status, std::future_status::ready);
+  EXPECT_EQ(received.get(), payload);
 }
