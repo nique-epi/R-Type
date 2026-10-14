@@ -11,3 +11,4 @@ target_link_libraries(rtype_server_replication_constants
 add_subdirectory(WireEntityTypeMapping)
 add_subdirectory(WorldStateSender)
 add_subdirectory(GameEventEncoder)
+add_subdirectory(GameEventBroadcaster)
