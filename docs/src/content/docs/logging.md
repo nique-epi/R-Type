@@ -75,6 +75,10 @@ const rtype::logging::LogLaunchOptions logOptions =
         argumentCount, arguments, rtype::logging::SERVER_LOG_FILE_NAME);
 const rtype::server::LaunchOptions launchOptions =
     rtype::server::LaunchOptions::read(logOptions.otherArguments());
+if (launchOptions.helpRequested()) {
+  std::cout << rtype::server::LaunchOptions::usage();
+  return 0;
+}
 logOptions.apply();
 ```
 
