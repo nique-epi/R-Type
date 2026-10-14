@@ -8,10 +8,7 @@
 namespace rtype::client {
 
 EntityLayer::EntityLayer(const AssetLibrary& library)
-    : textures_(library), surface_(canvas_.canvas(), textures_) {
-  canvas_.canvas().clear(sf::Color::Transparent);
-  canvas_.canvas().display();
-}
+    : textures_(library), surface_(canvas_.canvas(), textures_) {}
 
 void EntityLayer::paint(engine::ComponentRegistry& components) {
   sf::RenderTexture& canvas = canvas_.canvas();
