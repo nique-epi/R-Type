@@ -22,8 +22,7 @@ void loadAtOnce(AssetLibrary& library, const AssetList& assets) {
 }  // namespace
 
 AssetList interfaceAssets() {
-  return AssetList{
-      .fonts = {INTERFACE_FONT_ID, REGULAR_FONT_ID, SMALL_FONT_ID}};
+  return AssetList{.fonts = {REGULAR_FONT_ID, SMALL_FONT_ID}};
 }
 
 AssetList titleAssets() {

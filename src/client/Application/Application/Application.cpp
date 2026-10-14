@@ -18,7 +18,6 @@
 #include "QuitConfirmationScreen.hpp"
 #include "ReducedMotion.hpp"
 #include "ScreenAssets.hpp"
-#include "ScreenConstants.hpp"
 #include "ScreenId.hpp"
 #include "ScreenStack.hpp"
 #include "TimeConstants.hpp"
@@ -74,8 +73,8 @@ std::unique_ptr<IScreen> Application::createScreen(ScreenId screen) {
     case ScreenId::Game:
       return gameScreen();
     case ScreenId::Options:
-      return std::make_unique<OptionsScreen>(screens_, window_,
-                                             assets_->font(INTERFACE_FONT_ID));
+      return std::make_unique<OptionsScreen>(
+          screens_, window_, interfaceCanvas(), playfieldMapping());
     case ScreenId::QuitConfirmation:
       return std::make_unique<QuitConfirmationScreen>(
           screens_, interfaceCanvas(), playfieldMapping());

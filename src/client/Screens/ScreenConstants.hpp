@@ -2,15 +2,13 @@
 
 #include <SFML/System/Vector2.hpp>
 #include <SFML/Window/Keyboard.hpp>
+#include "WidgetConstants.hpp"
 
 namespace rtype::client {
 
-/** @brief Asset id of the font the screens write with. */
-constexpr const char* INTERFACE_FONT_ID = "fonts/tuffy.ttf";
-
-/** @brief Key whose release opens the options during a game, and closes
- * them. */
-constexpr sf::Keyboard::Key OPTIONS_KEY = sf::Keyboard::Key::Escape;
+/** @brief Key whose release opens the options during a game: the key that
+ * closes every menu, so the same key opens and closes them. */
+constexpr sf::Keyboard::Key OPTIONS_KEY = MENU_CANCEL_KEY;
 
 /** @brief Asset id of the logo of the title screen, and its size in
  * pixels. */
@@ -36,6 +34,11 @@ constexpr const char* CONFIRM_HEADING = "CONFIRM";
 constexpr const char* QUIT_QUESTION = "ARE YOU SURE YOU WANT TO QUIT?";
 constexpr const char* NO_LABEL = "NO";
 constexpr const char* YES_LABEL = "YES";
+
+/** @brief Heading of the options, and what joins the width and the height of
+ * a window size on its bar. */
+constexpr const char* SETTINGS_HEADING = "SETTINGS";
+constexpr const char* WINDOW_SIZE_SEPARATOR = " X ";
 
 /**
  * @brief Size of the progress bar of the loading screen, centered in the

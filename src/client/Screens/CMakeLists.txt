@@ -10,6 +10,7 @@ target_link_libraries(rtype_client_screens
   PUBLIC
     rtype_client_assets
     rtype_client_screen_interfaces
+    rtype_client_widgets
     SFML::Graphics
   PRIVATE
     rtype_client_asset_loading_step

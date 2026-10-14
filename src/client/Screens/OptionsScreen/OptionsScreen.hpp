@@ -1,36 +1,43 @@
 #pragma once
 
-#include <SFML/Graphics/Font.hpp>
-#include <SFML/Graphics/RectangleShape.hpp>
-#include <SFML/System/Vector2.hpp>
+#include <memory>
+#include "IInterfaceCanvas.hpp"
 #include "IScreen.hpp"
 #include "IScreenNavigator.hpp"
+#include "Menu.hpp"
+#include "PlayfieldMapping.hpp"
 #include "TimeConstants.hpp"
-#include "WindowSizeButtons.hpp"
 
 namespace rtype::client {
 
 class GameWindow;
 
 /**
- * @brief Options laid over the game: the window size buttons, on a
- * translucent layer that leaves the game visible behind.
+ * @brief Options pushed over the title or the game, which they hide: the sky,
+ * a bar per size of WINDOW_SIZES, then BACK. The game goes on running behind
+ * them.
  *
- * Releasing OPTIONS_KEY closes it and gives the events back to the game.
+ * A size too large for the desktop is a disabled bar; the size of the window
+ * has a filled check box, the others an empty one. The size lives in
+ * GameWindow, which outlives the screen: the bars are set from it at each
+ * update. BACK, or MENU_CANCEL_KEY, closes the options and gives the events
+ * back to the screen below.
  *
  * Provisional: it stands in for the options menu until that one exists.
  */
 class OptionsScreen : public IScreen {
  public:
   /**
-   * @param navigator Screens the options live among, which must outlive
-   * them.
-   * @param window Window whose size the buttons select, which must outlive
+   * @param navigator Screens the options live among, which must outlive them.
+   * @param window Window whose size the options select, which must outlive
    * the screen.
-   * @param labelFont Font of the button labels, which must outlive the screen.
+   * @param canvas Picture the options are painted on, never null.
+   * @param playfieldPointAt Gives the point of the playfield under a pixel of
+   * the window.
    */
   OptionsScreen(IScreenNavigator& navigator, GameWindow& window,
-                const sf::Font& labelFont);
+                std::unique_ptr<IInterfaceCanvas> canvas,
+                PlayfieldMapping playfieldPointAt);
 
   void handleEvent(const sf::Event& event) override;
   void update(engine::Duration elapsed) override;
@@ -38,18 +45,19 @@ class OptionsScreen : public IScreen {
   [[nodiscard]] bool hidesScreensBelow() const override;
 
  private:
-  /**
-   * @brief Gives the window the size whose button is under a click, when that
-   * size is available.
-   *
-   * @param pixel Position of the click in the window, in pixels.
-   */
-  void selectWindowSizeAt(sf::Vector2i pixel);
+  [[nodiscard]] static Menu buildMenu(IScreenNavigator& navigator,
+                                      GameWindow& window);
 
-  IScreenNavigator* navigator_;
+  /** @brief Disables the bars of the sizes too large for the desktop, and
+   * checks the size of the window. */
+  void showWindowSizes();
+
+  void repaint();
+
   GameWindow* window_;
-  sf::RectangleShape backdrop_;
-  WindowSizeButtons windowSizeButtons_;
+  std::unique_ptr<IInterfaceCanvas> canvas_;
+  PlayfieldMapping playfieldPointAt_;
+  Menu menu_;
 };
 
 }  // namespace rtype::client

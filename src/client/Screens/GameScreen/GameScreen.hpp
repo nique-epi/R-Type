@@ -25,7 +25,7 @@ namespace rtype::client {
  * the server announces, the screen holds the provisional sprite showcase.
  *
  * Releasing OPTIONS_KEY puts the options screen over the game, which goes on
- * running and stays drawn behind it. The release, not the press: the system
+ * running behind it, hidden. The release, not the press: the system
  * repeats the press of a held key, which would open and close the options
  * again and again.
  *

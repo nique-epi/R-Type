@@ -1,57 +1,91 @@
 #include "OptionsScreen.hpp"
-#include <SFML/Graphics/Font.hpp>
 #include <SFML/Graphics/RenderTarget.hpp>
-#include <SFML/System/Vector2.hpp>
 #include <SFML/Window/Event.hpp>
-#include <SFML/Window/Mouse.hpp>
 #include <cstddef>
-#include <optional>
+#include <memory>
+#include <string>
+#include <utility>
+#include "CheckMark.hpp"
 #include "GameWindow.hpp"
+#include "IInterfaceCanvas.hpp"
 #include "IScreenNavigator.hpp"
-#include "PlayfieldConstants.hpp"
-#include "ScreenColors.hpp"
+#include "Menu.hpp"
+#include "MenuBuilder.hpp"
+#include "MenuFrame.hpp"
+#include "PixelSize.hpp"
+#include "PlayfieldMapping.hpp"
 #include "ScreenConstants.hpp"
 #include "TimeConstants.hpp"
+#include "WindowConstants.hpp"
+#include "WindowSizeSelection.hpp"
 
 namespace rtype::client {
 
+namespace {
+
+/** @returns The label of the bar of a window size, such as "1920 X 1080". */
+std::string windowSizeLabel(PixelSize size) {
+  return std::to_string(size.width) + WINDOW_SIZE_SEPARATOR +
+         std::to_string(size.height);
+}
+
+}  // namespace
+
 OptionsScreen::OptionsScreen(IScreenNavigator& navigator, GameWindow& window,
-                             const sf::Font& labelFont)
-    : navigator_(&navigator),
-      window_(&window),
-      backdrop_({game::PLAYFIELD_WIDTH, game::PLAYFIELD_HEIGHT}),
-      windowSizeButtons_(labelFont) {
-  backdrop_.setFillColor(OPTIONS_BACKDROP_COLOR);
-  windowSizeButtons_.showState(window_->windowSizeSelection());
+                             std::unique_ptr<IInterfaceCanvas> canvas,
+                             PlayfieldMapping playfieldPointAt)
+    : window_(&window),
+      canvas_(std::move(canvas)),
+      playfieldPointAt_(std::move(playfieldPointAt)),
+      menu_(buildMenu(navigator, window)) {
+  showWindowSizes();
+  repaint();
 }
 
 void OptionsScreen::handleEvent(const sf::Event& event) {
-  const auto* released = event.getIf<sf::Event::KeyReleased>();
-  if (released != nullptr && released->code == OPTIONS_KEY) {
-    navigator_->pop();
-    return;
-  }
-  const auto* clicked = event.getIf<sf::Event::MouseButtonPressed>();
-  if (clicked != nullptr && clicked->button == sf::Mouse::Button::Left) {
-    selectWindowSizeAt(clicked->position);
-  }
+  menu_.handleEvent(event, playfieldPointAt_);
 }
 
-void OptionsScreen::update([[maybe_unused]] engine::Duration elapsed) {}
+void OptionsScreen::update(engine::Duration elapsed) {
+  menu_.advance(elapsed);
+  showWindowSizes();
+  repaint();
+}
 
 void OptionsScreen::draw(sf::RenderTarget& target) const {
-  target.draw(backdrop_);
-  windowSizeButtons_.draw(target);
+  canvas_->show(target);
 }
 
-bool OptionsScreen::hidesScreensBelow() const { return false; }
+bool OptionsScreen::hidesScreensBelow() const { return true; }
 
-void OptionsScreen::selectWindowSizeAt(sf::Vector2i pixel) {
-  const std::optional<std::size_t> index =
-      windowSizeButtons_.indexAt(window_->playfieldPointAt(pixel));
-  if (index.has_value() && window_->selectWindowSize(*index)) {
-    windowSizeButtons_.showState(window_->windowSizeSelection());
+Menu OptionsScreen::buildMenu(IScreenNavigator& navigator, GameWindow& window) {
+  MenuBuilder builder(MenuFrame::Page);
+  builder.heading(SETTINGS_HEADING);
+  for (std::size_t sizeIndex = 0; sizeIndex < WINDOW_SIZES.size();
+       ++sizeIndex) {
+    builder.button(
+        {.label = windowSizeLabel(WINDOW_SIZES[sizeIndex])},
+        [&window, sizeIndex] { window.selectWindowSize(sizeIndex); });
   }
+  builder.backButton(navigator);
+  return builder.build();
+}
+
+void OptionsScreen::showWindowSizes() {
+  const WindowSizeSelection& selection = window_->windowSizeSelection();
+  for (std::size_t sizeIndex = 0; sizeIndex < WINDOW_SIZES.size();
+       ++sizeIndex) {
+    menu_.setEnabled(sizeIndex, selection.isAvailable(sizeIndex));
+    menu_.setMark(sizeIndex, sizeIndex == selection.selectedIndex()
+                                 ? CheckMark::Checked
+                                 : CheckMark::Unchecked);
+  }
+}
+
+void OptionsScreen::repaint() {
+  canvas_->clear();
+  menu_.paint(*canvas_);
+  canvas_->display();
 }
 
 }  // namespace rtype::client

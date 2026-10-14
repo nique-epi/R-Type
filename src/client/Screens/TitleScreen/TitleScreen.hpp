@@ -18,11 +18,11 @@ namespace rtype::client {
  * over the scrolling background, and the squadron flying in on the right.
  *
  * PLAY asks for the game in place of every screen; SETTINGS puts the options
- * over the title; QUIT, or MENU_CANCEL_KEY, puts the quit confirmation over
- * it. The title keeps its selection under those screens, and its squadron goes
- * on moving. The menu and the squadron are painted at each update and laid at
- * each draw; they are painted once when the screen is built, so its first
- * frame already shows them.
+ * over the title, which hide it; QUIT, or MENU_CANCEL_KEY, puts the quit
+ * confirmation over it, which dims it. The title keeps its selection under
+ * those screens, and its squadron goes on moving. The menu and the squadron are
+ * painted at each update and laid at each draw; they are painted once when the
+ * screen is built, so its first frame already shows them.
  */
 class TitleScreen : public IScreen {
  public:

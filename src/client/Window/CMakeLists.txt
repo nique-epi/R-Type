@@ -4,5 +4,4 @@ target_include_directories(rtype_client_window INTERFACE ${CMAKE_CURRENT_SOURCE_
 
 add_subdirectory(PlayfieldViewport)
 add_subdirectory(WindowSizeSelection)
-add_subdirectory(WindowSizeButtons)
 add_subdirectory(GameWindow)
