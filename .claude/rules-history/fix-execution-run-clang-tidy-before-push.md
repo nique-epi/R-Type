@@ -58,3 +58,6 @@ The rule said the CI runs without a header filter, so header findings never fail
 
 ## Rule
 See `.claude/rules/fix/execution/fix-execution-run-clang-tidy-before-push.md`.
+
+## Update (2026-10-14) — headers are linted by the CI
+The point saying the CI never lints headers was wrong since #64: `main` has failed `Clang-tidy` since `d15aff0`, 35 errors in headers no pull request had touched since. Point 4 was rewritten and point 5 added: a header lint needs the include folders of every compiled file.
