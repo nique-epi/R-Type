@@ -237,3 +237,35 @@ TEST_F(ScreenStackTest, EveryScreenIsUpdatedByTheTimeOfTheFrame) {
   ASSERT_NE(game, nullptr);
   EXPECT_EQ(game->lastElapsed(), ONE_FRAME);
 }
+
+/**
+ * Given the options pushed over the game
+ * When every screen is asked to close
+ * Then the options are destroyed, then the game
+ */
+TEST_F(ScreenStackTest, CloseAllDestroysEveryScreenFromTheTopDown) {
+  showOptionsOverTheGame();
+
+  screens().closeAll();
+  screens().applyPendingChanges();
+
+  EXPECT_THAT(journal(),
+              ElementsAre(JournalEntry{.screen = ScreenId::Options,
+                                       .call = ScreenCall::Destroyed},
+                          JournalEntry{.screen = ScreenId::Game,
+                                       .call = ScreenCall::Destroyed}));
+}
+
+/**
+ * Given the options pushed over the game
+ * When every screen is asked to close
+ * Then no screen is left, which stops the frame loop
+ */
+TEST_F(ScreenStackTest, CloseAllLeavesNoScreen) {
+  showOptionsOverTheGame();
+
+  screens().closeAll();
+  screens().applyPendingChanges();
+
+  EXPECT_TRUE(screens().isEmpty());
+}

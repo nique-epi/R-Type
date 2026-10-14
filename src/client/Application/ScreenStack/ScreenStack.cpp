@@ -24,6 +24,10 @@ void ScreenStack::replaceAll(ScreenId screen) {
       Change{.kind = ChangeKind::ReplaceAll, .screen = screen});
 }
 
+void ScreenStack::closeAll() {
+  pendingChanges_.push_back(Change{.kind = ChangeKind::CloseAll});
+}
+
 void ScreenStack::applyPendingChanges() {
   const std::vector<Change> changes = std::exchange(pendingChanges_, {});
   for (const Change& change : changes) {
@@ -42,10 +46,11 @@ void ScreenStack::apply(const Change& change) {
       }
       return;
     case ChangeKind::ReplaceAll:
-      while (!screens_.empty()) {
-        screens_.pop_back();
-      }
+      destroyAll();
       build(change.screen);
+      return;
+    case ChangeKind::CloseAll:
+      destroyAll();
       return;
   }
 }
@@ -57,6 +62,12 @@ void ScreenStack::build(ScreenId screen) {
   std::unique_ptr<IScreen> built = factory_(screen);
   if (built != nullptr) {
     screens_.push_back(std::move(built));
+  }
+}
+
+void ScreenStack::destroyAll() {
+  while (!screens_.empty()) {
+    screens_.pop_back();
   }
 }
 

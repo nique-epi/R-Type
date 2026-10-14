@@ -18,11 +18,12 @@ using ScreenFactory = std::function<std::unique_ptr<IScreen>(ScreenId)>;
 /**
  * @brief The screens of the client, the active one on top.
  *
- * Screens are asked for by identifier: push(), pop() and replaceAll() only ask
- * for a change; applyPendingChanges() applies them, in the order they were
- * asked for. A screen may therefore ask to leave the stack while it handles an
- * event, and stays alive until that call. A screen is built only when its
- * change is applied, once the screens that change removes are destroyed.
+ * Screens are asked for by identifier: push(), pop(), replaceAll() and
+ * closeAll() only ask for a change; applyPendingChanges() applies them, in the
+ * order they were asked for. A screen may therefore ask to leave the stack
+ * while it handles an event, and stays alive until that call. A screen is built
+ * only when its change is applied, once the screens that change removes are
+ * destroyed.
  *
  * Screens see the stack only as an IScreenNavigator: they can ask for
  * changes, while applying them, updating, drawing and handing out events stay
@@ -43,6 +44,7 @@ class ScreenStack : public IScreenNavigator {
   void push(ScreenId screen) override;
   void pop() override;
   void replaceAll(ScreenId screen) override;
+  void closeAll() override;
 
   /** @brief Applies the changes asked for so far; the changes asked for while
    * they are applied wait for the next call. */
@@ -65,6 +67,7 @@ class ScreenStack : public IScreenNavigator {
     Push,
     Pop,
     ReplaceAll,
+    CloseAll,
   };
 
   struct Change {
@@ -74,6 +77,7 @@ class ScreenStack : public IScreenNavigator {
 
   void apply(const Change& change);
   void build(ScreenId screen);
+  void destroyAll();
 
   ScreenFactory factory_;
   std::vector<Change> pendingChanges_;

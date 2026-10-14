@@ -10,9 +10,9 @@
 #include "GameScreen.hpp"
 #include "IEntityLayer.hpp"
 #include "IScreen.hpp"
-#include "IScreenNavigator.hpp"
 #include "KeyPress.hpp"
 #include "RecordingEntityLayer.hpp"
+#include "RecordingNavigator.hpp"
 #include "RecordingScreen.hpp"
 #include "ScreenConstants.hpp"
 #include "ScreenId.hpp"
@@ -23,7 +23,6 @@
 using rtype::client::GameScreen;
 using rtype::client::IEntityLayer;
 using rtype::client::IScreen;
-using rtype::client::IScreenNavigator;
 using rtype::client::OPTIONS_KEY;
 using rtype::client::ScreenId;
 using rtype::client::ScreenStack;
@@ -42,15 +41,6 @@ constexpr int SHOWS_AFTER_ONE_DRAW = 1;
 constexpr std::uint8_t NOTHING_HELD = 0;
 constexpr std::uint8_t UP_BIT = 0b00001;
 constexpr std::uint8_t SHOOT_BIT = 0b10000;
-
-/** @brief A navigator that ignores every request, for a game screen built
- * outside a stack. */
-class IgnoringNavigator : public IScreenNavigator {
- public:
-  void push([[maybe_unused]] ScreenId screen) override {}
-  void pop() override {}
-  void replaceAll([[maybe_unused]] ScreenId screen) override {}
-};
 
 /** @brief An entity layer that ignores every request, for a game screen whose
  * drawing the test does not read. */
@@ -188,7 +178,7 @@ TEST_F(GameScreenTest, DrawingLaysTheEntityLayerOnTheTarget) {
  * Then both actions are held
  */
 TEST(GameScreenActionsTest, PressedKeysBecomeHeldActions) {
-  IgnoringNavigator navigator;
+  RecordingNavigator navigator;
   GameScreen game(navigator, std::make_unique<IgnoringEntityLayer>());
 
   game.handleEvent(keyPress(sf::Keyboard::Key::Up));
@@ -203,7 +193,7 @@ TEST(GameScreenActionsTest, PressedKeysBecomeHeldActions) {
  * Then nothing is held
  */
 TEST(GameScreenActionsTest, ReleasedKeyIsNoLongerHeld) {
-  IgnoringNavigator navigator;
+  RecordingNavigator navigator;
   GameScreen game(navigator, std::make_unique<IgnoringEntityLayer>());
   game.handleEvent(keyPress(sf::Keyboard::Key::Up));
 
@@ -218,7 +208,7 @@ TEST(GameScreenActionsTest, ReleasedKeyIsNoLongerHeld) {
  * Then nothing is held
  */
 TEST(GameScreenActionsTest, LosingFocusReleasesTheHeldActions) {
-  IgnoringNavigator navigator;
+  RecordingNavigator navigator;
   GameScreen game(navigator, std::make_unique<IgnoringEntityLayer>());
   game.handleEvent(keyPress(sf::Keyboard::Key::Up));
 
@@ -233,7 +223,7 @@ TEST(GameScreenActionsTest, LosingFocusReleasesTheHeldActions) {
  * Then nothing is held
  */
 TEST(GameScreenActionsTest, KeysPressedWithoutFocusAreIgnored) {
-  IgnoringNavigator navigator;
+  RecordingNavigator navigator;
   GameScreen game(navigator, std::make_unique<IgnoringEntityLayer>());
   game.handleEvent(sf::Event{sf::Event::FocusLost{}});
 
@@ -248,7 +238,7 @@ TEST(GameScreenActionsTest, KeysPressedWithoutFocusAreIgnored) {
  * Then up is held
  */
 TEST(GameScreenActionsTest, KeysPressedAfterFocusGainedCount) {
-  IgnoringNavigator navigator;
+  RecordingNavigator navigator;
   GameScreen game(navigator, std::make_unique<IgnoringEntityLayer>());
   game.handleEvent(sf::Event{sf::Event::FocusLost{}});
   game.handleEvent(sf::Event{sf::Event::FocusGained{}});
