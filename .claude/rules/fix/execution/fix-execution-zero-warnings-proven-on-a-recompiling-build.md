@@ -33,6 +33,7 @@ trigger: always_on
 2. **Before each build of a variant, delete the object file of the swapped source** (`rm -f build/<path>/CMakeFiles/<target>.dir/<File>.cpp.o`), never touch the sources to force it.
 3. **Read the build log of each variant before its test result**: it must contain the `Building CXX object` line of the swapped file. A variant without that line is not a result; rerun it.
 4. **Rebuild the restored original the same way** and run its tests green: the last binary left in `build/` must be the real code.
+5. **When variants follow one another in the same build folder, delete before each build the objects of every source swapped so far in the run**, not only those of the current variant. The source of the previous variant was restored less than a second earlier, so `make` keeps its faulty object: the new variant runs with both defects, and a test may turn red because of the previous one.
 
 ### Checking each commit of a branch: `git archive` gives the files the commit's date
 
@@ -44,3 +45,5 @@ trigger: always_on
 
 - ❌ **Before (wrong)**: green build → second `cmake --build build | grep -c warning` → `0` (nothing recompiled) → "zero warnings".
 - ✅ **After (right)**: log of the build following the edit → empty `grep -E "warning|error"` → "zero warnings under AppleClang; GCC and MSVC checked by the PR's CI".
+- ❌ **Before (wrong)**: 21 variants in a row, each deleting only its own object: variant 21 also fails the two tests of variant 20, whose restored source kept its faulty object.
+- ✅ **After (right)**: before each build, the objects of every source the run has swapped are deleted; variant 21 fails its own test only.

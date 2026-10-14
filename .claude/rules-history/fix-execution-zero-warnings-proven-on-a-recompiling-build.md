@@ -90,3 +90,17 @@ The second and third commits each add a test, yet both reported 314 tests, like 
 
 - ❌ **Before (wrong)**: `git archive 14a66e2 … | tar -x`, `cmake --build`, `ctest` → "314 passing", with the new test never compiled.
 - ✅ **After (right)**: the same with `--clean-first` → every object compiled, 315 passing for the commit that adds one test.
+
+## Update (2026-10-14): chained variants keep the object of the previous one
+
+### Context
+
+The typed messages pull request was checked with 21 red proofs on an isolated copy of the sources: for each variant a source was swapped, its object deleted, the network tests rebuilt and run, then the source restored.
+
+### Mistake
+
+Variant 21 (a second handler accepted) failed its own test and also the two tests of variant 20 (skipped messages not counted). The source of variant 20 had been restored less than a second before the build of variant 21, which deleted only its own object, so the faulty object of variant 20 was linked again. The whole series was rerun with every swapped object deleted before each build: variant 21 then failed its own test only, and every variant stayed red.
+
+### Root cause
+
+Point 2 of the red proof section deletes the object of the swapped source, and point 4 rebuilds the restored original at the end. Between two variants the restored source of the previous one was rebuilt by nobody, which neither point covers.
