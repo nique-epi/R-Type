@@ -137,7 +137,7 @@ src/server/
 └── Storage/          this server's SQLite file: leaderboard, statistics
 ```
 
-`Application`, `Replication` (the world state sender only), `Platform` and `LaunchOptions` exist today: the network thread and the simulation thread, the world state sent at a fixed rate (see [Server](/R-Type/server/)), the timer resolution the server asks Windows for, and the port read at launch.
+`Application`, `Replication` (the world state sender, and the encoder and broadcaster of the game events), `Platform` and `LaunchOptions` exist today: the network thread and the simulation thread, the world state and the game events sent to the clients (see [Server](/R-Type/server/)), the timer resolution the server asks Windows for, and the port read at launch.
 
 ### Client
 
