@@ -52,15 +52,15 @@ bool hasValidContinuation(std::string_view sequence,
 }  // namespace
 
 void writeBool(ByteWriter& writer, bool value) {
-  writer.writeUint8(value ? WIRE_TRUE : WIRE_FALSE);
+  writer.writeUint8(value ? TRUE_WIRE_VALUE : FALSE_WIRE_VALUE);
 }
 
 bool readBool(ByteReader& reader) {
   const std::uint8_t value = reader.readUint8();
-  if (value != WIRE_FALSE && value != WIRE_TRUE) {
+  if (value != FALSE_WIRE_VALUE && value != TRUE_WIRE_VALUE) {
     throw InvalidBoolException(value);
   }
-  return value == WIRE_TRUE;
+  return value == TRUE_WIRE_VALUE;
 }
 
 void writeCoordinate(ByteWriter& writer, float coordinate) {

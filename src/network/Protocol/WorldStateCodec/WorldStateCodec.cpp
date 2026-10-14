@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>
+#include <optional>
 #include <span>
 #include <string>
 #include <type_traits>
@@ -12,7 +13,6 @@
 #include "ProtocolConstants.hpp"
 #include "WireTypes.hpp"
 #include "WorldState.hpp"
-#include "WorldStateCodecConstants.hpp"
 
 namespace rtype::network {
 
@@ -64,20 +64,29 @@ std::vector<PlayerState> readPlayers(ByteReader& reader) {
   return players;
 }
 
-WireEntityType readEntityType(ByteReader& reader) {
-  const std::uint8_t type = reader.readUint8();
+std::optional<WireEntityType> toKnownEntityType(std::uint8_t type) {
   if (type < FIRST_WIRE_ENTITY_TYPE || type > LAST_WIRE_ENTITY_TYPE) {
-    throw MalformedMessageException("unknown entity type " +
-                                    std::to_string(type));
+    return std::nullopt;
   }
   return static_cast<WireEntityType>(type);
 }
 
-EntityState readEntity(ByteReader& reader) {
-  return EntityState{.entityId = reader.readUint32(),
-                     .entityType = readEntityType(reader),
-                     .x = readCoordinate(reader),
-                     .y = readCoordinate(reader)};
+std::optional<EntityState> readEntity(ByteReader& reader) {
+  const std::uint32_t entityId = reader.readUint32();
+  const std::optional<WireEntityType> type =
+      toKnownEntityType(reader.readUint8());
+  const float horizontal = readCoordinate(reader);
+  const float vertical = readCoordinate(reader);
+  if (entityId == NO_ENTITY_ID) {
+    throw InvalidFieldValueException(ENTITY_ID_FIELD, entityId);
+  }
+  if (!type.has_value()) {
+    return std::nullopt;
+  }
+  return EntityState{.entityId = entityId,
+                     .entityType = *type,
+                     .x = horizontal,
+                     .y = vertical};
 }
 
 std::vector<EntityState> readEntities(ByteReader& reader) {
@@ -85,7 +94,10 @@ std::vector<EntityState> readEntities(ByteReader& reader) {
   std::vector<EntityState> entities;
   entities.reserve(entityCount);
   for (std::uint8_t index = 0; index < entityCount; ++index) {
-    entities.push_back(readEntity(reader));
+    const std::optional<EntityState> entity = readEntity(reader);
+    if (entity.has_value()) {
+      entities.push_back(*entity);
+    }
   }
   return entities;
 }

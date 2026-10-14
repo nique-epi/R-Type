@@ -1,6 +1,5 @@
 #include "WorldStateSender.hpp"
 #include <cstddef>
-#include <cstdint>
 #include <span>
 #include <utility>
 #include <vector>
@@ -10,16 +9,20 @@
 #include "EntityType.hpp"
 #include "NetworkIdentity.hpp"
 #include "OutgoingDatagram.hpp"
+#include "PlayfieldConstants.hpp"
 #include "Position.hpp"
+#include "ReplicationConstants.hpp"
 #include "ServerConstants.hpp"
 #include "WorldState.hpp"
 #include "WorldStateCodec.hpp"
-// NOLINTNEXTLINE(misc-include-cleaner)
-#include "WorldStateSenderConstants.hpp"
 
 namespace rtype::server {
 
 namespace {
+
+static_assert(game::PLAYFIELD_WIDTH <= LARGEST_PLAYFIELD_SIZE_ON_THE_WIRE &&
+                  game::PLAYFIELD_HEIGHT <= LARGEST_PLAYFIELD_SIZE_ON_THE_WIRE,
+              "a larger playfield no longer fits a wire coordinate");
 
 network::WireEntityType toWireEntityType(game::EntityType type) {
   switch (type) {
@@ -54,8 +57,6 @@ void WorldStateSender::onTick(engine::ComponentRegistry& components,
     }
   }
 }
-
-std::uint32_t WorldStateSender::currentTick() const { return tick_; }
 
 network::WorldState WorldStateSender::capture(
     engine::ComponentRegistry& components) const {

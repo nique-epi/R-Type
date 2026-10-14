@@ -34,11 +34,13 @@ class WorldStateCodec {
    * announces.
    * @throws TooManyPlayersException, a MalformedMessageException, when it
    * announces more than MAXIMUM_PLAYERS players, before reading any.
-   * @throws MalformedMessageException when it holds an unknown entity type, a
-   * bool other than 0 or 1, or bytes left after the last entity.
+   * @throws MalformedMessageException when it holds a boolean other than 0 and
+   * 1 or an entity of id 0, or has bytes left after the last entity. An entity
+   * of unknown type is left out of the state: the others are decoded.
    */
   [[nodiscard]] static WorldState decode(std::span<const std::byte> payload);
 
+ private:
   /**
    * @returns How many entities one payload holds, next to @p playerCount
    * players, so that the datagram stays within MAX_DATAGRAM_SIZE once the

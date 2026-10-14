@@ -12,14 +12,14 @@
 namespace rtype::network {
 
 /**
- * @brief Writes @p value as one byte, WIRE_TRUE or WIRE_FALSE.
+ * @brief Writes @p value as one byte, TRUE_WIRE_VALUE or FALSE_WIRE_VALUE.
  */
 void writeBool(ByteWriter& writer, bool value);
 
 /**
  * @brief Reads a bool written by writeBool().
- * @throws InvalidBoolException when the byte is neither WIRE_FALSE nor
- * WIRE_TRUE.
+ * @throws InvalidBoolException when the byte is neither FALSE_WIRE_VALUE nor
+ * TRUE_WIRE_VALUE.
  * @throws BufferUnderflowException when no byte remains.
  */
 bool readBool(ByteReader& reader);

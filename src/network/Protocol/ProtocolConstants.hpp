@@ -6,6 +6,7 @@
 #include <string_view>
 #include "NetworkConstants.hpp"
 #include "SerializationConstants.hpp"
+#include "WorldState.hpp"
 
 namespace rtype::network {
 
@@ -27,6 +28,13 @@ constexpr std::uint8_t PROTOCOL_VERSION = 0;
  */
 constexpr std::size_t MESSAGE_TYPE_COUNT =
     std::numeric_limits<std::uint8_t>::max() + 1;
+
+/**
+ * @brief The two values a boolean takes on the wire; any other byte is
+ * invalid.
+ */
+constexpr std::uint8_t FALSE_WIRE_VALUE = 0;
+constexpr std::uint8_t TRUE_WIRE_VALUE = 1;
 
 /**
  * @brief Bytes of the packet header every datagram starts with, see the
@@ -75,8 +83,8 @@ constexpr std::uint8_t FIRST_PLAYER_NUMBER = 1;
 constexpr std::uint8_t NO_PLAYER_NUMBER = 0;
 
 /**
- * @brief The entity id of a GameEvent that names no entity; no entity ever
- * has it.
+ * @brief The entity id no entity has: a GameEvent that names no entity
+ * carries it.
  */
 constexpr std::uint32_t NO_ENTITY_ID = 0;
 
@@ -149,16 +157,28 @@ constexpr std::string_view KIND_FIELD = "kind";
 constexpr std::string_view ACTIONS_FIELD = "actions";
 
 /**
- * @brief The bytes a bool is sent as; any other byte is invalid.
- */
-constexpr std::uint8_t WIRE_FALSE = 0;
-constexpr std::uint8_t WIRE_TRUE = 1;
-
-/**
  * @brief Wire steps in one logical unit: a coordinate is sent in eighths of a
  * unit.
  */
 constexpr float WIRE_COORDINATE_STEPS_PER_UNIT = 8.0F;
+
+/**
+ * @brief Bytes a WorldState payload may hold: as many as any message.
+ */
+constexpr std::size_t WORLD_STATE_PAYLOAD_LIMIT = MESSAGE_PAYLOAD_LIMIT;
+
+static_assert((WORLD_STATE_PAYLOAD_LIMIT - WORLD_STATE_FIXED_SIZE) /
+                      ENTITY_STATE_WIRE_SIZE <=
+                  std::numeric_limits<std::uint8_t>::max(),
+              "entityCount is one byte: it must hold what a datagram fits");
+
+/**
+ * @brief The smallest and the largest value of an entity type on the wire.
+ */
+constexpr std::uint8_t FIRST_WIRE_ENTITY_TYPE =
+    static_cast<std::uint8_t>(WireEntityType::PlayerShip);
+constexpr std::uint8_t LAST_WIRE_ENTITY_TYPE =
+    static_cast<std::uint8_t>(WireEntityType::EnemyMissile);
 
 /**
  * @brief The smallest and the largest count of eighths of a unit a wire

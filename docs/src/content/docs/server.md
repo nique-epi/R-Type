@@ -97,14 +97,20 @@ How late a tick starts depends on how precisely the system wakes a sleeping thre
 - A playfield larger than 2047 logical units in either direction fails the build, because a wire coordinate would no longer hold it (see [Protocol](/R-Type/protocol/#positions)).
 
 ```cpp
+rtype::server::ServerApplication* serverPointer = nullptr;
 rtype::server::WorldStateSender worldStateSender{
-    [&server](rtype::network::OutgoingDatagram datagram) {
-      server.queueDatagram(std::move(datagram));
+    [&serverPointer](rtype::network::OutgoingDatagram datagram) {
+      serverPointer->queueDatagram(std::move(datagram));
     }};
-
-// once per tick, on the simulation thread
-worldStateSender.onTick(world.components(), recipients);
+rtype::server::ServerApplication server{
+    endpoint, [&worldStateSender, &world,
+               &recipients](std::span<const rtype::network::IncomingDatagram>) {
+      worldStateSender.onTick(world.components(), recipients);
+    }};
+serverPointer = &server;
 ```
+
+The sender is built before the server, whose tick handler captures it, and sends through the server, so a pointer set once the server exists closes the loop; it is set before `run()` starts the simulation thread.
 
 `World::components()` (`rtype_game`) is the `ComponentRegistry` of the world: a `World` owns its entities and their components, and cannot be copied or moved.
 

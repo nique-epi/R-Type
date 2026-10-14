@@ -1,7 +1,5 @@
 #pragma once
 
-#include "PlayfieldConstants.hpp"
-
 namespace rtype::server {
 
 /**
@@ -10,9 +8,5 @@ namespace rtype::server {
  * each edge, see the Position section of the protocol page.
  */
 constexpr float LARGEST_PLAYFIELD_SIZE_ON_THE_WIRE = 2047.0F;
-
-static_assert(game::PLAYFIELD_WIDTH <= LARGEST_PLAYFIELD_SIZE_ON_THE_WIRE &&
-                  game::PLAYFIELD_HEIGHT <= LARGEST_PLAYFIELD_SIZE_ON_THE_WIRE,
-              "a larger playfield no longer fits a wire coordinate");
 
 }  // namespace rtype::server

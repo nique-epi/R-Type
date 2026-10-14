@@ -39,12 +39,6 @@ class WorldStateSender {
   void onTick(engine::ComponentRegistry& components,
               std::span<const network::Endpoint> recipients);
 
-  /**
-   * @returns The number of ticks counted, which is the tick of the last state
-   * sent or due.
-   */
-  [[nodiscard]] std::uint32_t currentTick() const;
-
  private:
   [[nodiscard]] network::WorldState capture(
       engine::ComponentRegistry& components) const;
