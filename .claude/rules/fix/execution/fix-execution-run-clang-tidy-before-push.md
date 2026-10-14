@@ -26,7 +26,14 @@ Why: the CI `Clang-tidy` job treats warnings as errors; a local failure put down
 1. **A `.hpp` I create or edit is linted with header diagnostics enabled**: `--header-filter='.*'`. Without it clang-tidy hides every finding located in a header, and "exit 0" says nothing about the header.
 2. **Prove the header was covered**: run the same command once on a deliberate fault placed *in the header's kind of code* (or on an existing header known to raise a finding) and see it reported. A calibration fault placed in the `.cpp` does not validate header coverage.
 3. **A filter I wrote myself is tested before trusted**: a regular expression such as `.*/src/game/.*` does not match the relative path `src/game/Position.hpp`.
-4. **Say what the CI covers**: the CI `Clang-tidy` job runs without a header filter, so header findings never fail it; they still show in the editor. Report them with their origin (new file or pre-existing) instead of announcing the headers clean.
+4. **The CI lints every changed `.hpp` as a main file**: its file list holds the `.cpp` and the `.hpp` the pull request changes (`git diff --name-only`), and it runs `clang-tidy -p build <file>` on each. A header finding therefore fails the CI, and some checks (`misc-include-cleaner` on an include the header itself does not use) only report when the header is the main file, never through the `.cpp` that includes it.
+5. **Run the same command on each changed file**, headers included, before the push:
+   ```bash
+   for file in $(git diff --name-only origin/main...HEAD | grep -E '^(src|tests)/.*\.(cpp|hpp)$'); do
+     clang-tidy -p build --quiet <SDK flags of point 2 of the first list> "$file" > /tmp/one.log 2>&1 || echo "$file"
+   done
+   ```
+   A file printed is a failing file. Linting the headers through their `.cpp` with `--header-filter` does not replace it.
 
 ### A file the local machine cannot compile
 
