@@ -4,7 +4,6 @@
 #include <cstdint>
 #include <optional>
 #include <span>
-#include <string>
 #include <type_traits>
 #include <vector>
 #include "ByteReader.hpp"
@@ -136,10 +135,8 @@ WorldState WorldStateCodec::decode(std::span<const std::byte> payload) {
   WorldState state{.tick = reader.readUint32(),
                    .players = readPlayers(reader),
                    .entities = readEntities(reader)};
-  if (reader.remaining() != 0) {
-    throw MalformedMessageException(std::to_string(reader.remaining()) +
-                                    " byte(s) after the last entity");
-  }
+  requireFullyRead(reader);
+  requireValidPlayers(std::span<const PlayerState>{state.players});
   return state;
 }
 

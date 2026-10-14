@@ -95,6 +95,12 @@ constexpr unsigned int NOT_A_BOOLEAN = 2;
 constexpr unsigned int NO_ENTITY_ID_BYTE = 0;
 
 /**
+ * @brief Player numbers just outside the players 1 to 4 of a game.
+ */
+constexpr unsigned int PLAYER_NUMBER_BYTE_BELOW_THE_FIRST = 0;
+constexpr unsigned int PLAYER_NUMBER_BYTE_ABOVE_THE_LAST = 5;
+
+/**
  * @returns A player with the given number, SOME_LIVES lives and SOME_SCORE
  * points.
  */
