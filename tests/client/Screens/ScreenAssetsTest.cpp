@@ -1,5 +1,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include <SFML/Graphics/Image.hpp>
+#include <SFML/System/Vector2.hpp>
 #include <filesystem>
 #include "AssetLibrary.hpp"
 #include "AssetLoadingStep.hpp"
@@ -13,7 +15,11 @@ using rtype::client::ENTITY_SHEET_ID;
 using rtype::client::gameAssets;
 using rtype::client::INTERFACE_FONT_ID;
 using rtype::client::loadInterfaceAssets;
+using rtype::client::LOGO_ID;
+using rtype::client::LOGO_SIZE;
+using rtype::client::titleAssets;
 using ::testing::Contains;
+using ::testing::UnorderedElementsAre;
 
 namespace {
 
@@ -55,4 +61,27 @@ TEST(ScreenAssets, EnteringAGameKeepsTheInterfaceFont) {
  */
 TEST(ScreenAssets, AGameLoadsTheEntitySheet) {
   EXPECT_THAT(gameAssets().textures, Contains(ENTITY_SHEET_ID));
+}
+
+/**
+ * Given the assets of the title screen
+ * When their textures are listed
+ * Then they hold the logo and the entity sheet the squadron is drawn from
+ */
+TEST(ScreenAssets, TheTitleLoadsItsLogoAndTheEntitySheet) {
+  EXPECT_THAT(titleAssets().textures,
+              UnorderedElementsAre(LOGO_ID, ENTITY_SHEET_ID));
+}
+
+/**
+ * Given the logo file of the repository
+ * When it is read
+ * Then it has the size the title screen lays it out with
+ */
+TEST(ScreenAssets, TheLogoFileHasTheSizeTheTitleLaysOut) {
+  sf::Image logo;
+
+  ASSERT_TRUE(logo.loadFromFile(repositoryAssets() / LOGO_ID));
+
+  EXPECT_EQ(sf::Vector2i(logo.getSize()), LOGO_SIZE);
 }

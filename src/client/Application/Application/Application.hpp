@@ -1,8 +1,11 @@
 #pragma once
 
 #include <memory>
+#include "AssetList.hpp"
 #include "GameWindow.hpp"
+#include "IInterfaceCanvas.hpp"
 #include "IScreen.hpp"
+#include "PlayfieldMapping.hpp"
 #include "ScreenId.hpp"
 #include "ScreenStack.hpp"
 #include "ScrollingBackground.hpp"
@@ -32,8 +35,8 @@ class AssetLibrary;
  * frame.
  *
  * Screens are asked for by identifier; createScreen() is the one place that
- * builds them, with one case per ScreenId. The client starts by entering the
- * game.
+ * builds them, with one case per ScreenId. The client starts on the title
+ * screen.
  */
 class Application {
  public:
@@ -74,14 +77,31 @@ class Application {
    * the client. */
   [[nodiscard]] std::unique_ptr<IScreen> createScreen(ScreenId screen);
 
-  /**
-   * @brief The loading screen of gameAssets() while some are not loaded, the
-   * game screen once they all are.
-   *
-   * Builds the game screen only after releasing the assets of a previous game
-   * that gameAssets() does not name, as the loading screen does.
-   */
+  /** @brief The loading screen of titleAssets() while some are not loaded,
+   * the title screen once they all are; its squadron is still when the system
+   * asks for less motion. */
+  [[nodiscard]] std::unique_ptr<IScreen> titleScreen();
+
+  /** @brief The loading screen of gameAssets() while some are not loaded, the
+   * game screen once they all are. */
   [[nodiscard]] std::unique_ptr<IScreen> gameScreen();
+
+  /**
+   * @brief The loading screen of a list while some of its assets are not
+   * loaded; nothing once they all are, after releasing the loaded assets the
+   * list does not name, as the loading screen does.
+   *
+   * @param screen Screen the loading screen gives way to.
+   */
+  [[nodiscard]] std::unique_ptr<IScreen> loadingScreenUnlessLoaded(
+      const AssetList& assets, ScreenId screen);
+
+  /** @brief A new picture for a menu, written with the fonts of the asset
+   * library. */
+  [[nodiscard]] std::unique_ptr<IInterfaceCanvas> interfaceCanvas() const;
+
+  /** @brief Gives the point of the playfield under a pixel of the window. */
+  [[nodiscard]] PlayfieldMapping playfieldMapping() const;
 
   AssetLibrary* assets_;
   GameWindow window_;

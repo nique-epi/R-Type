@@ -14,10 +14,14 @@ namespace {
 
 const char* nameOf(ScreenId screen) {
   switch (screen) {
+    case ScreenId::Title:
+      return "title";
     case ScreenId::Game:
       return "game";
     case ScreenId::Options:
       return "options";
+    case ScreenId::QuitConfirmation:
+      return "quit confirmation";
   }
   return "unknown screen";
 }
