@@ -1,4 +1,6 @@
 #include "WireEntityTypeMapping.hpp"
+#include "EntityType.hpp"
+#include "WorldState.hpp"
 
 namespace rtype::server {
 
