@@ -7,6 +7,7 @@ target_link_libraries(rtype_client_menu
     rtype_client_button
     rtype_client_label
     rtype_client_widgets
+    rtype_client_window
   PRIVATE
     rtype_client_chamfered_box
 )

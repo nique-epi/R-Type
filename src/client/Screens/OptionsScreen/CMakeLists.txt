@@ -7,11 +7,11 @@ target_link_libraries(rtype_client_options_screen
     rtype_client_menu
     rtype_client_rendering_interfaces
     rtype_client_screens
+    rtype_client_window
     SFML::Graphics
   PRIVATE
     rtype_client_game_window
     rtype_client_menu_builder
-    rtype_client_window
 )
 
 rtype_enable_warnings(rtype_client_options_screen)
