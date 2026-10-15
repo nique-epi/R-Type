@@ -3,7 +3,7 @@ title: Client
 description: What the client does, how its parts fit together and where to find them in the code.
 ---
 
-The client, `r-type_client` (`src/client/`), shows the game, plays its sounds and reads the player's input; the server decides what happens in the match (see [Architecture](/R-Type/architecture/)). Today it finds its assets folder, loads the assets of its interface, opens a window and runs its screens over a scrolling starfield: the title screen it opens on, a loading screen, the game screen, which draws its entities from one sprite sheet (for now a provisional showcase), an options screen and a quit confirmation, the menus all built from the same widgets. The game screen reads the arrow keys and the space bar as player actions. It does not talk to the server yet: it reads the server's address and port at launch, and can send and receive datagrams on a thread of its own, but nothing starts that thread yet.
+The client, `r-type_client` (`src/client/`), shows the game, plays its sounds and reads the player's input; the server decides what happens in the match (see [Architecture](/R-Type/architecture/)). Today it finds its assets folder, loads the assets of its interface, opens a window and runs its screens over a scrolling starfield: the title screen it opens on, a connection screen, a loading screen, the game screen, which draws its entities from one sprite sheet (for now a provisional showcase), an options screen and a quit confirmation, the menus all built from the same widgets. The game screen reads the arrow keys and the space bar as player actions. It does not talk to the server yet: it reads the server's address and port and the player's nickname at launch and shows them on its connection screen, and it can send and receive datagrams on a thread of its own, but nothing starts that thread yet; a provisional stand-in accepts every connection at once without contacting any server.
 
 This page tells you where to look when you need to change something. It describes what exists today and says plainly what does not exist yet.
 
@@ -11,8 +11,9 @@ This page tells you where to look when you need to change something. It describe
 |---|---|---|
 | Window | Available | `src/client/Window/` |
 | Frame loop and screen stack | Available | `src/client/Application/` |
-| Screens | Available: title, loading, game, options and quit confirmation | `src/client/Screens/` |
-| Menu widgets and their builder | Available; used by the title, the options and the quit confirmation | `src/client/Widgets/` |
+| Screens | Available: title, connection, loading, game, options and quit confirmation | `src/client/Screens/` |
+| Menu widgets and their builder | Available; used by the title, the connection screen, the options and the quit confirmation | `src/client/Widgets/` |
+| Text field | Available; used by the connection screen | `src/client/Widgets/TextField/` |
 | Assets folder and asset ids | Available | `src/client/Assets/`, `assets/README.md` |
 | Asset loading | Available; used at launch for the interface assets, and by the loading screen | `src/client/Assets/AssetLibrary/`, `src/client/Assets/AssetLoadingStep/` |
 | Path of the running executable, the reduced motion setting of the system | Available | `src/client/Platform/` |
@@ -24,25 +25,26 @@ This page tells you where to look when you need to change something. It describe
 | Player commands | Available; read by the game screen, not sent to the server yet | `src/client/Input/` |
 | Network thread | Available; not started by the client yet | `src/client/Connection/NetworkThread/` |
 | Ignoring an old world state | Available; nothing receives states yet | `src/client/Replication/WorldStateFilter/` |
-| Server address and port at launch | Available; logged, not used yet | `src/client/LaunchOptions/` |
-| Connection to a server | Not yet written | — |
+| Server address, port and nickname at launch | Available; they fill the connection screen | `src/client/LaunchOptions/` |
+| Connection to a server | Not yet written; a provisional stand-in accepts every attempt at once | `src/client/Connection/` |
 | Sounds and music of the game | Not yet written | — |
 
 ## Frame loop and screens: `Application`, `ScreenStack`
 
-`Application` (`src/client/Application/Application/`) opens the window, `GameWindow`, and runs the frame loop until the window is closed or no screen is left. A screen implements `IScreen` (`src/client/Screens/`): `handleEvent()`, `update(elapsed)`, `draw()`, in playfield units, and `hidesScreensBelow()`; `elapsed` is the real time since the previous frame, the same for every screen and for the scrolling background. Screens live in a `ScreenStack` (`src/client/Application/ScreenStack/`). Each frame, the window events go to the screen on top only, then every screen is updated, so a screen pushed over the game leaves the game running behind it. Screens are drawn from the bottom up, starting at the topmost screen whose `hidesScreensBelow()` is true: the screens under it are updated but not drawn, and they receive no event, so a click on the options never reaches a button of the title. The title, the loading screen, the game and the options hide the screens below; the quit confirmation does not, so the title shows through its dimmed layer. `GameWindow` handles closing and resizing itself and never passes those events on.
+`Application` (`src/client/Application/Application/`) opens the window, `GameWindow`, and runs the frame loop until the window is closed or no screen is left. A screen implements `IScreen` (`src/client/Screens/`): `handleEvent()`, `update(elapsed)`, `draw()`, in playfield units, and `hidesScreensBelow()`; `elapsed` is the real time since the previous frame, the same for every screen and for the scrolling background. Screens live in a `ScreenStack` (`src/client/Application/ScreenStack/`). Each frame, the window events go to the screen on top only, then every screen is updated, so a screen pushed over the game leaves the game running behind it. Screens are drawn from the bottom up, starting at the topmost screen whose `hidesScreensBelow()` is true: the screens under it are updated but not drawn, and they receive no event, so a click on the options never reaches a button of the title. The title, the connection screen, the loading screen, the game and the options hide the screens below; the quit confirmation does not, so the title shows through its dimmed layer. `GameWindow` handles closing and resizing itself and never passes those events on.
 
 Screens are asked for by identifier: `push()` and `replaceAll()` take a `ScreenId` (`src/client/Screens/ScreenId.hpp`), so a screen never builds the screens it opens. `Application::createScreen()` is the one list of every screen, a `switch` with one case per `ScreenId`; a value without a case does not compile. `push()`, `pop()`, `replaceAll()` and `closeAll()` only ask for a change; the loop applies the changes after each event and after the update, in the order they were asked for. A screen may therefore pop itself while it handles an event, and the next event already reaches the new screen on top. A screen sees the stack only as an `IScreenNavigator` (`src/client/Screens/IScreenNavigator.hpp`), which holds `push()`, `pop()`, `replaceAll()` and `closeAll()` and nothing else: applying the changes, updating, drawing and handing out events stay with the frame loop, so no screen can break this order. A screen is built when its change is applied: `replaceAll()` destroys every screen, from the top down, before building the new one; `closeAll()` destroys them all and builds none, so the frame loop stops and the client closes. Building the game, or its loading screen, releases the assets of a previous game, so `ScreenId::Game` is always entered through `replaceAll()`, never pushed over a screen that still draws them.
 
 | Screen | Shows | Leaves the stack when |
 |---|---|---|
-| `TitleScreen` | the logo, PLAY, SETTINGS and QUIT, and the squadron, over the scrolling background | PLAY asks `replaceAll(ScreenId::Game)` |
+| `TitleScreen` | the logo, PLAY, SETTINGS and QUIT, and the squadron, over the scrolling background; PLAY pushes the connection screen over it | the connection screen asks `replaceAll(ScreenId::Game)` |
+| `ConnectionScreen` | over the title, which it hides: a form centered on the picture, DIRECT CONNECT, the fields ADDRESS, PORT and PILOT, CONNECT and BACK, then a status line | BACK or Escape drops the attempt and closes it; once the server has accepted the player for `ACCEPTED_STATUS_DURATION` (1 s), it asks `replaceAll(ScreenId::Game)` |
 | `LoadingScreen` | a progress bar; one file is loaded per frame | every file is loaded: it asks again, with `replaceAll()`, for the screen it loads for, which `createScreen()` now builds itself |
 | `GameScreen` | its entities, over the scrolling background (today the provisional sprite showcase); releasing `OPTIONS_KEY` (Escape) pushes the options over it | not yet: the end of a game is not written |
 | `OptionsScreen` | over the title or the game, which it hides (the game goes on running): the SETTINGS page, one bar per window size, a filled check box on the size of the window, the bar of a size too large for the desktop disabled, then BACK | BACK or Escape (`MENU_CANCEL_KEY`) closes it |
 | `QuitConfirmationScreen` | over the title, still drawn under a dimmed layer, a panel: ARE YOU SURE YOU WANT TO QUIT?, NO selected | NO or Escape closes it; YES asks `closeAll()`, which closes the client |
 
-The options screen is **provisional**: it stands in for the options menu. The frame loop draws the scrolling background under every screen, the loading screen and the options included, even when they hide the screens below; this is **provisional** too, since the starfield will probably become the background of the game screen alone. At launch the client opens on the title screen, with `replaceAll(ScreenId::Title)`; PLAY asks for the game with `replaceAll(ScreenId::Game)`: the loading screen of `gameAssets()` while some are not loaded, then the game screen. A file the loading screen cannot load stops the client with exit code 1, naming every such file. The game opens the options on the release of `OPTIONS_KEY`, not on its press: the system repeats the press of a held key, which would open and close them again and again. Menus act on releases for the same reason (see [Menus](#menus-menubuilder-menu)).
+The options screen is **provisional**: it stands in for the options menu. The frame loop draws the scrolling background under every screen, the loading screen and the options included, even when they hide the screens below; this is **provisional** too, since the starfield will probably become the background of the game screen alone. At launch the client opens on the title screen, with `replaceAll(ScreenId::Title)`; PLAY pushes the connection screen, which asks for the game with `replaceAll(ScreenId::Game)` once a connection is accepted: the loading screen of `gameAssets()` while some are not loaded, then the game screen. A file the loading screen cannot load stops the client with exit code 1, naming every such file. The game opens the options on the release of `OPTIONS_KEY`, not on its press: the system repeats the press of a held key, which would open and close them again and again. Menus act on releases for the same reason (see [Menus](#menus-menubuilder-menu)).
 
 ## Assets: the folder and the ids
 
@@ -179,21 +181,41 @@ return MenuBuilder(MenuBuilder::Frame::Dialog)
 
 | Frame | Layout |
 |---|---|
-| `Page` | a column against the left side of the safe margin (`SAFE_MARGIN`, 24 pixels): version, logo or heading, subtitle, a rule, the bars (`BUTTON_SIZE`, 160 × 20, `BUTTON_GAP` 8 apart), then the description of the selected bar; an illustration against the right side of the margin, a footer in the bottom-right corner |
+| `Page` | a column against the left side of the safe margin (`SAFE_MARGIN`, 24 pixels): version, logo or heading, subtitle, a rule, the bars (`BUTTON_SIZE`, 160 × 20, `BUTTON_GAP` 8 apart; a text field is `FIELD_SIZE`, 208 × 26), then the description of the selected bar; an illustration against the right side of the margin, a footer in the bottom-right corner |
 | `Dialog` | a panel (`DIALOG_SIZE`, 272 × 96) centered over a dimmed layer (`DIM_LAYER_COLOR`, the sky at 72 % opacity): heading, message, then the bars in a centered row |
+| `Form` | a panel `FORM_WIDTH` (240) wide, as tall as its parts, centered over the sky: heading, the text fields one under the other (`FIELD_SIZE`, 208 × 26, `SPACE_BETWEEN_FIELDS` 4 apart), the bars in a centered row (`FORM_BUTTON_SIZE`, 80 × 20), then the description of the selected bar in small print and, `SPACE_BELOW_DESCRIPTION` (8) pixels under it, the status line; the pointer selects a bar only by clicking it |
 
-Positions are in pixels of the 480 × 270 grid of the sky, one pixel covering 4 logical units, and repeat those of the mockup of the title screen (`WidgetConstants.hpp`). `backButton(navigator)` adds the one BACK button of the client, cancel button of its menu, which closes the screen on top.
+Positions are in pixels of the 480 × 270 grid of the sky, one pixel covering 4 logical units (`WidgetConstants.hpp`). Those of a page and a dialog repeat the mockup of the title screen; those of a form repeat the picture of the connection screen the team chose, where the panel is 240 × 194 at (120, 38). `backButton(navigator)` adds the one BACK button of the client, cancel button of its menu, which closes the screen on top.
 
 ### Keys and pointer
 
 `Menu` holds the logic every menu shares; `client_interface_tests` checks it without a screen.
 
-- The arrows (down and right to the next bar, up and left to the previous one) and Tab (Shift+Tab goes back) move the selection, wrapping around and skipping disabled bars; the pointer selects the enabled bar it moves over.
+- The arrows (down and right to the next bar, up and left to the previous one) and Tab (Shift+Tab goes back) move the selection, wrapping around and skipping disabled bars. On a page or a dialog, the pointer selects the enabled bar it moves over; on a form it selects a bar only by clicking it, so the field the player types into never changes under a passing pointer (`Menu::Content::selectsOnHover`).
 - Enter, or the left mouse button on a bar, presses it; once released (over the same bar for the mouse), the bar is activated as soon as it has looked pressed for `PRESS_DURATION` (140 ms).
 - Escape selects the cancel button and activates it at once.
 - A release counts only when the menu saw the press, so the release of the key that opened a screen does nothing on it; losing the focus drops a press not released yet.
+- On a text field, the characters typed and Backspace (`FIELD_ERASE_KEY`) go to the field while no bar is pressed; every other key keeps its meaning, so Enter runs the action of the field. The left mouse button selects a field without pressing it, so a click on a field never runs its action.
 
 The selected bar fills with blue and its label turns dark, a change of fill that reads without color; a pressed bar drops its label by one pixel. An action must not destroy its own menu: screens ask for changes through their `IScreenNavigator`, which applies them later.
+
+### Text fields: `TextField`
+
+`TextField` (`rtype_client_text_field`, `src/client/Widgets/TextField/`) is text the player types: UTF-8, at most a number of bytes, and only the characters it accepts. A typed character goes at the end when the field accepts it and all its bytes fit, so the text never ends with half a character; erasing removes the last character whole; the caret stays at the end. `Characters::Printable` accepts Basic Latin from the space to the tilde and Latin-1 Supplement (U+00A0 to U+00FF), which both pixel fonts draw, 8 pixels wide in the regular font; `Digits` and `DigitsAndDots` narrow it to a port and an IPv4 address. No field ever holds a control character, such as the ones Enter, Tab and Backspace type along with their key. A field starts with a text typed through the same rules, so the characters it refuses are left out. `client_interface_tests` checks it without a screen.
+
+A menu holds a field as one of its bars, drawn as the field: its label in small print, then a box sunk into the panel (`FIELD_BOX_SIZE`, 208 × 16, dark inside, its top and left sides in shade) holding the text. While the field is selected, its label and the four sides of its box turn cyan and a caret one pixel wide (`FIELD_CARET_SIZE`, 1 × 10) follows the text. A click on the label or the box selects the field. `textField()` adds one, and `Menu::fieldText()` reads it back by the order of its bar:
+
+```cpp
+MenuBuilder(MenuBuilder::Frame::Form)
+    .textField({.label = PORT_LABEL, .description = PORT_DESCRIPTION},
+               TextField(std::to_string(server.port), PORT_FIELD_SIZE,
+                         TextField::Characters::Digits),
+               connectAction)
+```
+
+A box shows `FIELD_CHARACTER_CAPACITY` (24) characters with the caret after them; nothing cuts a longer text, so a screen keeps the size of each of its fields, in bytes, within it, as `ConnectionScreenConstants.hpp` checks at compile time.
+
+`Menu::setStatus()` sets a line written in gold (`STATUS_STYLE`) under the description of a form, empty for none; a page and a dialog write none.
 
 ### How a menu is drawn: `InterfaceCanvas`
 
@@ -202,6 +224,14 @@ A menu paints through `IInterfaceCanvas` (`src/client/Rendering/`): rectangles, 
 ### The squadron: `Squadron`
 
 `Squadron` (`src/client/Rendering/Squadron/`) plays on the right of the title screen, in the area its menu reserves. A line grows from the middle of the box, the box opens by 0.45 s, SQUADRON is written letter by letter, and the four ships, one per player color, fly in through the left edge and reach their places by 1.79 s. The formation then drifts in a figure eight of 14 × 10 pixels without leaving the box, and a random ship fires every 1.6 to 3 s. It plays again each time the title screen is built. When the system asks for less motion (`systemPrefersReducedMotion()`, read when the title is built), the box is open, the ships are at rest and none fires. The timings are in `SquadronConstants.hpp`.
+
+## Connection screen: `ConnectionScreen`, `IServerConnection`
+
+`ConnectionScreen` (`src/client/Screens/ConnectionScreen/`) shows the address, the port and the nickname given at launch in three fields, then CONNECT and BACK. Enter on a field or on CONNECT checks the fields before any attempt, and names the one to fix on the status line: `INVALID ADDRESS` for an address that is not four numbers (`ipv4AddressFromText`), `INVALID PORT` outside 1 to 65535 (`portFromText`), `ENTER A CALLSIGN` for an empty nickname. Otherwise it drops the attempt in progress and starts a new one. At each update the status line shows how the attempt stands: `CONNECTING...`, `CONNECTED AS PLAYER <n>`, `REFUSED: GAME FULL`, `REFUSED: GAME IN PROGRESS`, `REFUSED: OTHER VERSION` or `SERVER UNREACHABLE`. Once the server has accepted the player for `ACCEPTED_STATUS_DURATION` (1 s), the screen asks for the game, once; the lobby does not exist yet. Building the screen drops any earlier attempt, so reopening it never jumps to the game. Its texts and sizes are in `src/client/Screens/ConnectionScreenConstants.hpp`.
+
+The screen drives an `IServerConnection` (`src/client/Connection/`): `connect(server, nickname)`, `cancel()` and `status()`, a `ConnectionStatus` whose `Phase` is `Idle`, `Connecting`, `Accepted` (with the player number), `Refused` (with its `network::RefusalReason`) or `Unreachable`. `Application` owns it, so it outlives every screen.
+
+The connection behind it is **provisional**: `StandInServerConnection` (`src/client/Connection/StandInServerConnection/`) contacts no server and accepts every attempt at once as player 1, so PLAY still leads to the local game; the screen then says `CONNECTED AS PLAYER 1` though no server took part, and the journal shows `stand-in connection: <address> port <port> not contacted, accepted at once as player 1` at the `warn` level for each attempt. It is replaced, in the constructor of `Application`, by the class that sends `ConnectionRequest`, sends it again until an answer comes and reads that answer (see [Protocol](/R-Type/protocol/#connection)); nothing else names it. Until then, `CONNECTING...`, the refusals and `SERVER UNREACHABLE` only appear in `client_screen_tests`.
 
 ## Player commands: `PlayerCommands`
 
@@ -220,20 +250,22 @@ const std::uint8_t actions = held.bits();
 
 ## Launch options: `LaunchOptions`
 
-`LaunchOptions` (`src/client/LaunchOptions/`) reads the address and the port of the server, given at launch, from the arguments the logging options left (see [Logging](/R-Type/logging/#choosing-the-level-and-the-output-at-launch)), with the engine's `readLaunchArguments` (see [Engine](/R-Type/engine/#launch-arguments-readlauncharguments)):
+`LaunchOptions` (`src/client/LaunchOptions/`) reads the address and the port of the server and the nickname of the player, given at launch, from the arguments the logging options left (see [Logging](/R-Type/logging/#choosing-the-level-and-the-output-at-launch)), with the engine's `readLaunchArguments` (see [Engine](/R-Type/engine/#launch-arguments-readlauncharguments)):
 
 | Option | Effect |
 |---|---|
 | `-h <address>` | The IPv4 address of the server, four numbers such as `127.0.0.1` (see [Network](/R-Type/network/#ports-and-addresses-written-as-text-portfromtext-ipv4addressfromtext)). Default: `DEFAULT_SERVER_ADDRESS` (`127.0.0.1`), a server on the same machine. |
 | `-p <port>` | The UDP port of the server, from 1 to 65535. Default: `DEFAULT_SERVER_PORT` (4242). |
+| `-n <nickname>` | The nickname of the player, 1 to 16 bytes of UTF-8 (`MAXIMUM_NICKNAME_SIZE`, see [Protocol](/R-Type/protocol/#connection)). Default: `DEFAULT_NICKNAME` (`PILOT`). The connection screen leaves out the characters its field refuses. |
 | `--help` | Prints the usage, the logging options included, on standard output, then exits with code 0 without opening the window or the journal. |
 
 - A host name such as `localhost` is refused, not resolved: a resolution can block for seconds, so it must run on the network thread once the connection exists. An IPv6 address is refused too, since the server only listens over IPv4.
-- The last of each option wins. An unknown argument, an option without its value, an invalid address or an invalid port stops the client before the window opens: it prints `r-type_client:`, the reason and how to see the usage on standard error, then exits with code 1.
-- Nothing joins the server yet: `main()` logs `server: <address> port <port>` at the `info` level, and `LaunchOptions::serverEndpoint()` goes nowhere else.
+- The last of each option wins. An unknown argument, an option without its value, an invalid address, an invalid port or an invalid nickname (`InvalidNicknameOptionException`) stops the client before the window opens: it prints `r-type_client:`, the reason and how to see the usage on standard error, then exits with code 1.
+- `main()` logs `server: <address> port <port>` at the `info` level and hands the server and the nickname to `Application`, which starts the connection screen with them. Nothing joins the server yet (see [Connection screen](#connection-screen-connectionscreen-iserverconnection)).
+- On Windows, the arguments are not passed in UTF-8, so a nickname with an accent may be refused at launch; it can be typed on the connection screen instead.
 
 ```bash
-./r-type_client -h 192.168.1.20 -p 4243
+./r-type_client -h 192.168.1.20 -p 4243 -n ACE
 ```
 
 ## Network: `NetworkThread`
@@ -248,7 +280,7 @@ const std::uint8_t actions = held.bits();
 
 The incoming queue holds `INCOMING_DATAGRAM_QUEUE_CAPACITY` (256) datagrams, nearly thirteen seconds of the 20 world states per second of the protocol; the outgoing queue holds `OUTGOING_DATAGRAM_QUEUE_CAPACITY` (64), about one second of the 60 inputs per second the client sends (`src/client/Connection/ConnectionConstants.hpp`). These sizes are **provisional**: they will be revised with the rates of the protocol, and code must read the constants. When a queue is full, its oldest datagram is discarded; nothing reports it yet.
 
-Nothing creates a `NetworkThread` yet: no message is encoded, and the server address read at launch is only logged (see [Launch options](#launch-options-launchoptions)).
+Nothing creates a `NetworkThread` yet: the connection screen goes through a stand-in that contacts no server (see [Connection screen](#connection-screen-connectionscreen-iserverconnection)).
 
 ## Platform: the executable path
 
@@ -286,11 +318,15 @@ if (!worldStateFilter.accept(state.tick)) {
 | Change how entities are placed on the pixel grid | `SfmlDrawSurface::draw` in `src/client/Rendering/SfmlDrawSurface/` |
 | Change when the entities are painted and laid | `GameScreen::update()` and `GameScreen::draw()` in `src/client/Screens/GameScreen/`, `EntityLayer` in `src/client/Rendering/EntityLayer/` |
 | Remove the sprite showcase | `SpriteShowcase.hpp`, `SpriteShowcase.cpp` and `SpriteShowcaseConstants.hpp` in `src/client/Rendering/`, the call in the constructor of `GameScreen` |
-| Add a screen | A value of `ScreenId` (`src/client/Screens/ScreenId.hpp`) and its case in `Application::createScreen()`; a class implementing `IScreen` in its own folder under `src/client/Screens/`, whose `hidesScreensBelow()` says whether the screens under it stay drawn, taking an `IScreenNavigator` if it opens or closes screens, with its `CMakeLists.txt` target and `add_subdirectory` in `src/client/Screens/CMakeLists.txt`; the link in `src/client/Application/Application/CMakeLists.txt` |
+| Add a screen | A value of `ScreenId` (`src/client/Screens/ScreenId.hpp`) and its case in `Application::createScreen()` and in `nameOf()` of `tests/client/Screens/RecordingScreen.cpp`; a class implementing `IScreen` in its own folder under `src/client/Screens/`, whose `hidesScreensBelow()` says whether the screens under it stay drawn, taking an `IScreenNavigator` if it opens or closes screens, with its `CMakeLists.txt` target and `add_subdirectory` in `src/client/Screens/CMakeLists.txt`; the link in `src/client/Application/Application/CMakeLists.txt` |
 | Add a menu | A screen that builds a `Menu` with `MenuBuilder` (`src/client/Widgets/`), as `QuitConfirmationScreen` does |
-| Change where the parts of the menus go | `MenuBuilder::placeColumn()` and `placeDialog()`, `src/client/Widgets/WidgetConstants.hpp` |
+| Add a text field to a menu | `MenuBuilder::textField()` with a `TextField` (`src/client/Widgets/TextField/`), then `Menu::fieldText()`, as `ConnectionScreen` does |
+| Change the characters a field accepts | `TextField::Characters` and `TextField::accepts()`; the ranges in `src/client/Widgets/WidgetConstants.hpp` |
+| Replace the stand-in connection | the class that joins a server implements `IServerConnection` (`src/client/Connection/`); build it in place of `StandInServerConnection` in the constructor of `Application`, then delete `StandInServerConnection/` |
+| Change the texts, sizes or checks of the connection screen | `src/client/Screens/ConnectionScreenConstants.hpp`, `ConnectionScreen::connect()` |
+| Change where the parts of the menus go | `MenuBuilder::placeColumn()`, `placeDialog()` and `placeForm()`, `src/client/Widgets/WidgetConstants.hpp` |
 | Change how a bar looks | `Button::lookOf()`, `src/client/Widgets/WidgetColors.hpp` |
-| Change the keys of the menus, or how long a press shows | `MENU_NEXT_KEYS`, `MENU_PREVIOUS_KEYS`, `MENU_TAB_KEY`, `MENU_CONFIRM_KEY`, `MENU_CANCEL_KEY`, `PRESS_DURATION` in `WidgetConstants.hpp` |
+| Change the keys of the menus, or how long a press shows | `MENU_NEXT_KEYS`, `MENU_PREVIOUS_KEYS`, `MENU_TAB_KEY`, `MENU_CONFIRM_KEY`, `MENU_CANCEL_KEY`, `FIELD_ERASE_KEY`, `PRESS_DURATION` in `WidgetConstants.hpp` |
 | Change the texts of the title screen or of the quit confirmation | `src/client/Screens/ScreenConstants.hpp` |
 | Change the squadron | `src/client/Rendering/SquadronConstants.hpp` |
 | Close the client from a screen | `closeAll()` of its `IScreenNavigator` |
@@ -308,6 +344,7 @@ if (!worldStateFilter.accept(state.tick)) {
 | Add a player action | `PlayerAction`, its bit in the protocol, and `KeyBindings::actionFor()` |
 | Change the window, or when the background moves and is drawn | `src/client/Window/GameWindow/`, `Application::measureFrame()` and `Application::render()` in `src/client/Application/Application/` |
 | Change the default server address or port | `DEFAULT_SERVER_ADDRESS` in `src/client/ClientConstants.hpp`, `DEFAULT_SERVER_PORT` in `src/network/NetworkConstants.hpp` |
+| Change the default nickname | `DEFAULT_NICKNAME` in `src/client/ClientConstants.hpp` |
 | Add a launch option | The options listed in `LaunchOptions::read()` and `usage()`, in `src/client/LaunchOptions/LaunchOptions.cpp`; its name in `src/client/ClientConstants.hpp`, or in `src/engine/LaunchArguments/LaunchArgumentsConstants.hpp` when the server uses it too |
 | Send or receive datagrams | `NetworkThread` in `src/client/Connection/NetworkThread/` |
 | Change how many datagrams wait between the frame loop and the network thread | `INCOMING_DATAGRAM_QUEUE_CAPACITY` and `OUTGOING_DATAGRAM_QUEUE_CAPACITY` in `src/client/Connection/ConnectionConstants.hpp` |
