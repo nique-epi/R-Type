@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <stdexcept>
 #include <string>
+#include <string_view>
 #include "NetworkConstants.hpp"
 
 namespace rtype::network {
@@ -56,10 +57,48 @@ StringTooLongException::StringTooLongException(std::size_t length,
 MalformedMessageException::MalformedMessageException(const std::string& reason)
     : NetworkException("Malformed message: " + reason) {}
 
+MalformedDatagramException::MalformedDatagramException(std::size_t datagramSize)
+    : NetworkException("A datagram of " + std::to_string(datagramSize) +
+                       " bytes is not a header followed by whole messages") {}
+
+InvalidBoolException::InvalidBoolException(std::uint8_t value)
+    : MalformedMessageException("a bool holds " + std::to_string(value) +
+                                ", where only 0 and 1 are valid") {}
+
+TrailingBytesException::TrailingBytesException(std::size_t count)
+    : MalformedMessageException(std::to_string(count) +
+                                " byte(s) left after the last field") {}
+
+InvalidNicknameException::InvalidNicknameException(std::size_t size)
+    : MalformedMessageException("a nickname of " + std::to_string(size) +
+                                " byte(s) is empty, too long or not UTF-8") {}
+
+InvalidFieldValueException::InvalidFieldValueException(std::string_view field,
+                                                       std::uint64_t value)
+    : MalformedMessageException(std::string{field} + " holds " +
+                                std::to_string(value) +
+                                ", a value the protocol does not allow") {}
+
+InvalidCoordinateException::InvalidCoordinateException()
+    : NetworkException("A coordinate to send is not a number") {}
+
+DuplicatePlayerNumberException::DuplicatePlayerNumberException(
+    std::uint8_t playerNumber)
+    : MalformedMessageException(
+          "player number " + std::to_string(playerNumber) + " appears twice") {}
+
 TooManyPlayersException::TooManyPlayersException(std::size_t playerCount,
                                                  std::size_t maximumCount)
-    : NetworkException("A world state lists at most " +
-                       std::to_string(maximumCount) + " players, not " +
-                       std::to_string(playerCount)) {}
+    : MalformedMessageException(
+          "a message lists at most " + std::to_string(maximumCount) +
+          " players, not " + std::to_string(playerCount)) {}
+
+EmptyMessageHandlerException::EmptyMessageHandlerException()
+    : NetworkException("A message handler must not be empty") {}
+
+DuplicateMessageHandlerException::DuplicateMessageHandlerException(
+    std::uint8_t messageType)
+    : NetworkException("Message type " + std::to_string(messageType) +
+                       " already has a handler") {}
 
 }  // namespace rtype::network

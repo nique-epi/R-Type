@@ -21,7 +21,9 @@ using rtype::server::testing::ENEMY_NETWORK_ID;
 using rtype::server::testing::ENEMY_POSITION;
 using rtype::server::testing::expectedEntity;
 using rtype::server::testing::FIRST_CLIENT_PORT;
+using rtype::server::testing::INFINITE_POSITION;
 using rtype::server::testing::MANY_ENTITIES;
+using rtype::server::testing::NOT_A_NUMBER_POSITION;
 using rtype::server::testing::PLAYER_MISSILE_NETWORK_ID;
 using rtype::server::testing::PLAYER_MISSILE_POSITION;
 using rtype::server::testing::PLAYER_NETWORK_ID;
@@ -165,4 +167,39 @@ TEST_F(WorldStateSenderFixture, SplitsABigStateIntoDatagramsOfTheSameTick) {
     listed += decodedState(index).entities.size();
   }
   EXPECT_EQ(listed, MANY_ENTITIES);
+}
+
+/**
+ * Given a ship, and a Bydo whose position is not a number after a game bug
+ * When the first state is due
+ * Then the state is sent and lists the ship only: the server keeps running
+ */
+TEST_F(WorldStateSenderFixture, LeavesOutAnEntityWhosePositionIsNotANumber) {
+  addNetworkedEntity(EntityType::Player, SHIP_POSITION, SHIP_NETWORK_ID);
+  addNetworkedEntity(EntityType::Enemy, NOT_A_NUMBER_POSITION,
+                     ENEMY_NETWORK_ID);
+
+  runTicks(rtype::server::TICKS_PER_WORLD_STATE, {client(FIRST_CLIENT_PORT)});
+
+  ASSERT_EQ(sentDatagrams().size(), 1U);
+  EXPECT_EQ(decodedState(0).entities,
+            std::vector{expectedEntity(
+                SHIP_NETWORK_ID, WireEntityType::PlayerShip, SHIP_POSITION)});
+}
+
+/**
+ * Given a ship, and a Bydo whose position is infinite after a game bug
+ * When the first state is due
+ * Then the state is sent and lists the ship only
+ */
+TEST_F(WorldStateSenderFixture, LeavesOutAnEntityWhosePositionIsInfinite) {
+  addNetworkedEntity(EntityType::Player, SHIP_POSITION, SHIP_NETWORK_ID);
+  addNetworkedEntity(EntityType::Enemy, INFINITE_POSITION, ENEMY_NETWORK_ID);
+
+  runTicks(rtype::server::TICKS_PER_WORLD_STATE, {client(FIRST_CLIENT_PORT)});
+
+  ASSERT_EQ(sentDatagrams().size(), 1U);
+  EXPECT_EQ(decodedState(0).entities,
+            std::vector{expectedEntity(
+                SHIP_NETWORK_ID, WireEntityType::PlayerShip, SHIP_POSITION)});
 }

@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <limits>
+#include <span>
 #include <string_view>
 #include <vector>
 #include "NetworkException.hpp"
@@ -76,6 +77,10 @@ void ByteWriter::writeString(std::string_view value) {
   for (const char character : value) {
     bytes_.push_back(static_cast<std::byte>(character));
   }
+}
+
+void ByteWriter::writeBytes(std::span<const std::byte> bytes) {
+  bytes_.insert(bytes_.end(), bytes.begin(), bytes.end());
 }
 
 const std::vector<std::byte>& ByteWriter::bytes() const { return bytes_; }

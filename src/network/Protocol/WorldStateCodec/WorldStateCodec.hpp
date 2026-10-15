@@ -23,6 +23,7 @@ class WorldStateCodec {
    * entities gives one payload.
    * @throws TooManyPlayersException when the state lists more than
    * MAXIMUM_PLAYERS players.
+   * @throws InvalidCoordinateException when an entity coordinate is NaN.
    */
   [[nodiscard]] static std::vector<std::vector<std::byte>> encode(
       const WorldState& state);
@@ -31,10 +32,13 @@ class WorldStateCodec {
    * @brief Decodes the payload of one WorldState message.
    * @throws BufferUnderflowException when the payload is shorter than it
    * announces.
-   * @throws MalformedMessageException when it announces more than
-   * MAXIMUM_PLAYERS players, holds a boolean other than 0 and 1 or an entity of
-   * id 0, or has bytes left after the last entity. An entity of unknown type is
-   * left out of the state: the others are decoded.
+   * @throws TooManyPlayersException, a MalformedMessageException, when it
+   * announces more than MAXIMUM_PLAYERS players, before reading any.
+   * @throws MalformedMessageException when it holds a boolean other than 0 and
+   * 1, an entity of id 0, a player number outside FIRST_PLAYER_NUMBER to
+   * MAXIMUM_PLAYERS or listed twice, or bytes after the last entity. An entity
+   * of unknown type is left out of the state: the others are decoded. A state
+   * without players is accepted.
    */
   [[nodiscard]] static WorldState decode(std::span<const std::byte> payload);
 

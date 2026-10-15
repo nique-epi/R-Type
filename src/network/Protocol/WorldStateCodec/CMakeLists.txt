@@ -6,6 +6,7 @@ target_link_libraries(rtype_network_world_state_codec
   PUBLIC
     rtype_network_protocol
   PRIVATE
+    rtype_network_wire_types
     rtype_network_byte_writer
     rtype_network_byte_reader
     rtype_network_exceptions

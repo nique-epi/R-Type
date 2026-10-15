@@ -29,6 +29,16 @@ class ByteReader {
   float readFloat();
   std::string readString();
 
+  /**
+   * @brief Returns a view of the next @p count bytes and moves past them.
+   *
+   * The view points into the buffer the reader was given, so it is valid as
+   * long as that buffer is.
+   * @throws BufferUnderflowException when fewer than @p count bytes remain;
+   * the position is then unchanged.
+   */
+  std::span<const std::byte> readBytes(std::size_t count);
+
   [[nodiscard]] std::size_t remaining() const;
 
  private:

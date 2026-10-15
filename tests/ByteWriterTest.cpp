@@ -170,5 +170,33 @@ TEST(ByteWriter, StringErrorIsCaughtAsNetworkException) {
                NetworkException);
 }
 
+/**
+ * Given a writer that already holds one byte
+ * When the bytes 01 02 are written as they are
+ * Then they follow the earlier byte, without a length prefix
+ */
+TEST(ByteWriter, AppendsRawBytesAfterEarlierValues) {
+  ByteWriter writer;
+  writer.writeUint8(EARLIER_BYTE);
+
+  writer.writeBytes(byteSequence({0x01, 0x02}));
+
+  EXPECT_EQ(writer.bytes(), byteSequence({0x07, 0x01, 0x02}));
+}
+
+/**
+ * Given a writer that already holds one byte
+ * When no bytes are written as they are
+ * Then the buffer is unchanged
+ */
+TEST(ByteWriter, AppendsNothingForNoRawBytes) {
+  ByteWriter writer;
+  writer.writeUint8(EARLIER_BYTE);
+
+  writer.writeBytes({});
+
+  EXPECT_EQ(writer.bytes(), byteSequence({0x07}));
+}
+
 }  // namespace
 }  // namespace rtype::network

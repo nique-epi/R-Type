@@ -59,6 +59,13 @@ std::string ByteReader::readString() {
   return value;
 }
 
+std::span<const std::byte> ByteReader::readBytes(std::size_t count) {
+  requireAvailable(count);
+  const std::span<const std::byte> bytes = buffer_.subspan(position_, count);
+  position_ += count;
+  return bytes;
+}
+
 std::size_t ByteReader::remaining() const { return buffer_.size() - position_; }
 
 void ByteReader::requireAvailable(std::size_t byteCount) const {

@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <span>
 #include <string_view>
 #include <vector>
 
@@ -27,6 +28,11 @@ class ByteWriter {
   void writeInt64(std::int64_t value);
   void writeFloat(float value);
   void writeString(std::string_view value);
+
+  /**
+   * @brief Appends @p bytes as they are, without a length prefix.
+   */
+  void writeBytes(std::span<const std::byte> bytes);
 
   [[nodiscard]] const std::vector<std::byte>& bytes() const;
 

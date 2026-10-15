@@ -115,7 +115,7 @@ src/network/
 └── Exceptions/
 ```
 
-`NetworkContext`, `Transport` (the UDP socket and the relay to queues, not the simulator), `Serialization`, `Exceptions` and `Protocol` (the `WorldState` message only) exist; see [Network](/R-Type/network/).
+`NetworkContext`, `Transport` (the UDP socket and the relay to queues, not the simulator), `Serialization`, `Exceptions` and `Protocol` (the datagram header, every message of version 0 and the dispatch by type) exist; see [Network](/R-Type/network/).
 
 ## The programs
 

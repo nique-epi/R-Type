@@ -9,7 +9,9 @@
 #include "WorldStateFixtures.hpp"
 
 using rtype::network::BufferUnderflowException;
+using rtype::network::DuplicatePlayerNumberException;
 using rtype::network::EntityState;
+using rtype::network::InvalidFieldValueException;
 using rtype::network::MalformedMessageException;
 using rtype::network::TooManyPlayersException;
 using rtype::network::WireEntityType;
@@ -23,6 +25,7 @@ using rtype::network::testing::ENTITIES_FITTING_WITH_FOUR_PLAYERS;
 using rtype::network::testing::ENTITY_TYPE_ABOVE_THE_LAST;
 using rtype::network::testing::ENTITY_TYPE_BELOW_THE_FIRST;
 using rtype::network::testing::EXAMPLE_ENTITY_ID;
+using rtype::network::testing::EXAMPLE_PLAYER_SHIP_ID;
 using rtype::network::testing::FEW_ENTITIES;
 using rtype::network::testing::fourPlayers;
 using rtype::network::testing::invulnerablePlayer;
@@ -35,7 +38,11 @@ using rtype::network::testing::NO_ENTITY_ID_BYTE;
 using rtype::network::testing::NOT_A_BOOLEAN;
 using rtype::network::testing::NUMBER_OF_A_FIFTH_PLAYER;
 using rtype::network::testing::oneShipState;
+using rtype::network::testing::PLAYER_NUMBER_BYTE_ABOVE_THE_LAST;
+using rtype::network::testing::PLAYER_NUMBER_BYTE_BELOW_THE_FIRST;
 using rtype::network::testing::SMALLEST_WIRE_COORDINATE;
+using rtype::network::testing::SOME_LIVES;
+using rtype::network::testing::SOME_SCORE;
 using rtype::network::testing::SOME_TICK;
 using rtype::network::testing::someEntities;
 using rtype::network::testing::somePlayer;
@@ -303,4 +310,52 @@ TEST(WorldStateCodec, RefusesAnEntityWithoutAnId) {
       (void)WorldStateCodec::decode(byteSequence(
           {0, 0, 0, 1, 0, 1, 0, 0, 0, NO_ENTITY_ID_BYTE, 3, 0, 0, 0, 0})),
       MalformedMessageException);
+}
+
+/**
+ * Given a state whose one player has the number 0, and another whose player
+ * has the number 5
+ * When each payload is decoded
+ * Then each is refused, since a player number is 1 to 4
+ */
+TEST(WorldStateCodec, RefusesAPlayerNumberOutsideOneToFour) {
+  const auto withNumber = [](unsigned int number) {
+    return byteSequence({0, 0, 0, 1, 1, number, 0, 0, 0, EXAMPLE_PLAYER_SHIP_ID,
+                         SOME_LIVES, 0, 0, 0, SOME_SCORE, 0, 0});
+  };
+
+  EXPECT_THROW((void)WorldStateCodec::decode(
+                   withNumber(PLAYER_NUMBER_BYTE_BELOW_THE_FIRST)),
+               InvalidFieldValueException);
+  EXPECT_THROW((void)WorldStateCodec::decode(
+                   withNumber(PLAYER_NUMBER_BYTE_ABOVE_THE_LAST)),
+               InvalidFieldValueException);
+}
+
+/**
+ * Given a state that lists player 1 twice
+ * When the payload is decoded
+ * Then it is refused
+ */
+TEST(WorldStateCodec, RefusesTheSamePlayerTwice) {
+  const auto payload = byteSequence(
+      {0, 0, 0, 1,          2, 1, 0, 0, 0, EXAMPLE_PLAYER_SHIP_ID, SOME_LIVES,
+       0, 0, 0, SOME_SCORE, 0, 1, 0, 0, 0, EXAMPLE_PLAYER_SHIP_ID, SOME_LIVES,
+       0, 0, 0, SOME_SCORE, 0, 0});
+
+  EXPECT_THROW((void)WorldStateCodec::decode(payload),
+               DuplicatePlayerNumberException);
+}
+
+/**
+ * Given a whole state followed by one more byte
+ * When the payload is decoded
+ * Then a TrailingBytesException is raised, as for every other message
+ */
+TEST(WorldStateCodec, ReportsBytesAfterTheLastEntityAsTrailingBytes) {
+  auto payload = WorldStateCodec::encode(oneShipState()).front();
+  payload.push_back(std::byte{0});
+
+  EXPECT_THROW((void)WorldStateCodec::decode(payload),
+               rtype::network::TrailingBytesException);
 }

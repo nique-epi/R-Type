@@ -6,6 +6,7 @@ target_link_libraries(rtype_server_world_state_sender
   PUBLIC
     rtype_engine
     rtype_game
+    rtype_logging
     rtype_network_transport
     rtype_network_world_state_codec
   PRIVATE

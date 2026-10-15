@@ -1,7 +1,11 @@
 #pragma once
 
+#include <cstddef>
 #include <cstdint>
+#include <span>
+#include <type_traits>
 #include <vector>
+#include "MessageType.hpp"
 
 namespace rtype::network {
 
@@ -50,11 +54,22 @@ struct EntityState {
  * holds every player and a part of the entities.
  */
 struct WorldState {
+  static constexpr MessageType TYPE = MessageType::WorldState;
+
   std::uint32_t tick;
   std::vector<PlayerState> players;
   std::vector<EntityState> entities;
 
   bool operator==(const WorldState&) const = default;
 };
+
+/**
+ * @brief Reads one WorldState payload, as WorldStateCodec::decode() does. A
+ * state too big for one datagram is written by WorldStateCodec::encode(),
+ * which gives several payloads, so there is no encodePayload() for it.
+ * @throws What WorldStateCodec::decode() throws.
+ */
+[[nodiscard]] WorldState decodePayload(std::span<const std::byte> payload,
+                                       std::type_identity<WorldState> type);
 
 }  // namespace rtype::network

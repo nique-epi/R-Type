@@ -30,7 +30,11 @@ target_link_libraries(rtype_network
     rtype_network_exceptions
     rtype_network_context
     rtype_network_serialization
+    rtype_network_wire_types
     rtype_network_world_state_codec
+    rtype_network_datagram_codec
+    rtype_network_messages
+    rtype_network_message_dispatcher
     rtype_network_transport
     rtype_network_udp_socket
     rtype_network_datagram_relay

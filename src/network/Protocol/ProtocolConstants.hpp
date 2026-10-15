@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <limits>
+#include <string_view>
 #include "NetworkConstants.hpp"
 #include "SerializationConstants.hpp"
 #include "WorldState.hpp"
@@ -12,21 +13,41 @@ namespace rtype::network {
 constexpr std::size_t INT16_WIRE_SIZE = sizeof(std::int16_t);
 
 /**
- * @brief The two values a boolean takes on the wire.
+ * @brief The first four bytes of every datagram, "RTYP" in ASCII.
+ */
+constexpr std::uint32_t PROTOCOL_ID = 0x52545950;
+
+/**
+ * @brief The version of the protocol this code speaks.
+ */
+constexpr std::uint8_t PROTOCOL_VERSION = 0;
+
+/**
+ * @brief The values a message type byte can hold, so the size of a table
+ * indexed by it.
+ */
+constexpr std::size_t MESSAGE_TYPE_COUNT =
+    std::numeric_limits<std::uint8_t>::max() + 1;
+
+/**
+ * @brief The two values a boolean takes on the wire; any other byte is
+ * invalid.
  */
 constexpr std::uint8_t FALSE_WIRE_VALUE = 0;
 constexpr std::uint8_t TRUE_WIRE_VALUE = 1;
 
 /**
- * @brief The entity id no entity has.
- */
-constexpr std::uint32_t NO_ENTITY_ID = 0;
-
-/**
  * @brief Bytes of the packet header every datagram starts with, see the
- * Packet header section of the protocol page.
+ * Datagram section of the protocol page.
  */
 constexpr std::size_t PACKET_HEADER_SIZE = 22;
+
+static_assert(PACKET_HEADER_SIZE == UINT32_WIRE_SIZE + UINT8_WIRE_SIZE +
+                                        UINT8_WIRE_SIZE + UINT64_WIRE_SIZE +
+                                        UINT16_WIRE_SIZE + UINT16_WIRE_SIZE +
+                                        UINT32_WIRE_SIZE,
+              "the header is protocolId, version, flags, sessionToken, "
+              "sequence, acknowledgedSequence and acknowledgementBits");
 
 /**
  * @brief Bytes before the payload of each message: its type (one byte) and its
@@ -35,9 +56,45 @@ constexpr std::size_t PACKET_HEADER_SIZE = 22;
 constexpr std::size_t MESSAGE_PREFIX_SIZE = UINT8_WIRE_SIZE + UINT16_WIRE_SIZE;
 
 /**
+ * @brief The most bytes the payload of one message holds: a datagram, less
+ * the packet header and the message prefix that go around it.
+ */
+constexpr std::size_t MESSAGE_PAYLOAD_LIMIT =
+    MAX_DATAGRAM_SIZE - PACKET_HEADER_SIZE - MESSAGE_PREFIX_SIZE;
+
+static_assert(MESSAGE_PAYLOAD_LIMIT <=
+                  std::numeric_limits<std::uint16_t>::max(),
+              "the size of a payload is sent on two bytes");
+
+/**
  * @brief Players a game holds, so the most a WorldState lists.
  */
 constexpr std::size_t MAXIMUM_PLAYERS = 4;
+
+/**
+ * @brief The number of the first player of a game; the last is
+ * MAXIMUM_PLAYERS.
+ */
+constexpr std::uint8_t FIRST_PLAYER_NUMBER = 1;
+
+/**
+ * @brief The player number of a GameEvent that names no player.
+ */
+constexpr std::uint8_t NO_PLAYER_NUMBER = 0;
+
+/**
+ * @brief The entity id no entity has: a GameEvent that names no entity
+ * carries it.
+ */
+constexpr std::uint32_t NO_ENTITY_ID = 0;
+
+/**
+ * @brief The actions a PlayerInput carries, one bit each from bit 0: up,
+ * down, left, right, shoot. The bits above them are 0.
+ */
+constexpr std::size_t PLAYER_ACTION_COUNT = 5;
+constexpr auto PLAYER_ACTION_BITS =
+    static_cast<std::uint8_t>((1U << PLAYER_ACTION_COUNT) - 1);
 
 /**
  * @brief Bytes of a player in a WorldState: playerNumber, shipEntityId, lives,
@@ -61,17 +118,54 @@ constexpr std::size_t WORLD_STATE_FIXED_SIZE =
     UINT32_WIRE_SIZE + UINT8_WIRE_SIZE + UINT8_WIRE_SIZE;
 
 /**
+ * @brief The sizes, in bytes, a nickname may have. A letter without accent
+ * takes one byte, an accented letter two.
+ */
+constexpr std::size_t MINIMUM_NICKNAME_SIZE = 1;
+constexpr std::size_t MAXIMUM_NICKNAME_SIZE = 16;
+
+/**
+ * @brief The size of the smallest datagram holding a ConnectionRequest: a
+ * cookie and a nickname of one byte.
+ */
+constexpr std::size_t SMALLEST_CONNECTION_REQUEST_DATAGRAM_SIZE =
+    PACKET_HEADER_SIZE + MESSAGE_PREFIX_SIZE + UINT64_WIRE_SIZE +
+    SHORT_STRING_PREFIX_SIZE + MINIMUM_NICKNAME_SIZE;
+
+/**
+ * @brief The size of the largest datagram the server sends a sender it does
+ * not know yet: a ConnectionChallenge and its cookie. ConnectionRefused and
+ * ConnectionAccepted carry one byte.
+ */
+constexpr std::size_t LARGEST_CONNECTION_ANSWER_DATAGRAM_SIZE =
+    PACKET_HEADER_SIZE + MESSAGE_PREFIX_SIZE + UINT64_WIRE_SIZE;
+
+static_assert(LARGEST_CONNECTION_ANSWER_DATAGRAM_SIZE <=
+                  SMALLEST_CONNECTION_REQUEST_DATAGRAM_SIZE,
+              "the server never sends a sender it does not know more bytes "
+              "than the request it answers");
+
+/**
+ * @brief The names of the fields a refused message is reported by, as the
+ * protocol page writes them.
+ */
+constexpr std::string_view PLAYER_NUMBER_FIELD = "playerNumber";
+constexpr std::string_view ENTITY_ID_FIELD = "entityId";
+constexpr std::string_view ENTITY_TYPE_FIELD = "entityType";
+constexpr std::string_view REASON_FIELD = "reason";
+constexpr std::string_view KIND_FIELD = "kind";
+constexpr std::string_view ACTIONS_FIELD = "actions";
+
+/**
  * @brief Wire steps in one logical unit: a coordinate is sent in eighths of a
  * unit.
  */
 constexpr float WIRE_COORDINATE_STEPS_PER_UNIT = 8.0F;
 
 /**
- * @brief Bytes a WorldState payload may hold: a datagram, less the packet
- * header and the message prefix that go around it.
+ * @brief Bytes a WorldState payload may hold: as many as any message.
  */
-constexpr std::size_t WORLD_STATE_PAYLOAD_LIMIT =
-    MAX_DATAGRAM_SIZE - PACKET_HEADER_SIZE - MESSAGE_PREFIX_SIZE;
+constexpr std::size_t WORLD_STATE_PAYLOAD_LIMIT = MESSAGE_PAYLOAD_LIMIT;
 
 static_assert((WORLD_STATE_PAYLOAD_LIMIT - WORLD_STATE_FIXED_SIZE) /
                       ENTITY_STATE_WIRE_SIZE <=

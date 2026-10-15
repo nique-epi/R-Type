@@ -1,31 +1,21 @@
 #include "WorldStateCodec.hpp"
 #include <algorithm>
-#include <cmath>
 #include <cstddef>
 #include <cstdint>
 #include <optional>
 #include <span>
-#include <string>
+#include <type_traits>
 #include <vector>
 #include "ByteReader.hpp"
 #include "ByteWriter.hpp"
 #include "NetworkException.hpp"
 #include "ProtocolConstants.hpp"
+#include "WireTypes.hpp"
 #include "WorldState.hpp"
 
 namespace rtype::network {
 
 namespace {
-
-std::int16_t toWireCoordinate(float coordinate) {
-  const float steps = std::round(coordinate * WIRE_COORDINATE_STEPS_PER_UNIT);
-  return static_cast<std::int16_t>(
-      std::clamp(steps, MINIMUM_WIRE_STEPS, MAXIMUM_WIRE_STEPS));
-}
-
-float fromWireCoordinate(std::int16_t steps) {
-  return static_cast<float>(steps) / WIRE_COORDINATE_STEPS_PER_UNIT;
-}
 
 void writePlayers(ByteWriter& writer, const std::vector<PlayerState>& players) {
   writer.writeUint8(static_cast<std::uint8_t>(players.size()));
@@ -34,15 +24,15 @@ void writePlayers(ByteWriter& writer, const std::vector<PlayerState>& players) {
     writer.writeUint32(player.shipEntityId);
     writer.writeUint8(player.lives);
     writer.writeUint32(player.score);
-    writer.writeUint8(player.invulnerable ? TRUE_WIRE_VALUE : FALSE_WIRE_VALUE);
+    writeBool(writer, player.invulnerable);
   }
 }
 
 void writeEntity(ByteWriter& writer, const EntityState& entity) {
   writer.writeUint32(entity.entityId);
   writer.writeUint8(static_cast<std::uint8_t>(entity.entityType));
-  writer.writeInt16(toWireCoordinate(entity.x));
-  writer.writeInt16(toWireCoordinate(entity.y));
+  writeCoordinate(writer, entity.x);
+  writeCoordinate(writer, entity.y);
 }
 
 std::vector<std::byte> encodePart(const WorldState& state,
@@ -59,20 +49,8 @@ std::vector<std::byte> encodePart(const WorldState& state,
   return writer.bytes();
 }
 
-bool readBoolean(ByteReader& reader) {
-  const std::uint8_t value = reader.readUint8();
-  if (value != FALSE_WIRE_VALUE && value != TRUE_WIRE_VALUE) {
-    throw MalformedMessageException("a boolean holds " + std::to_string(value));
-  }
-  return value == TRUE_WIRE_VALUE;
-}
-
 std::vector<PlayerState> readPlayers(ByteReader& reader) {
-  const std::uint8_t playerCount = reader.readUint8();
-  if (playerCount > MAXIMUM_PLAYERS) {
-    throw MalformedMessageException("a world state lists " +
-                                    std::to_string(playerCount) + " players");
-  }
+  const std::uint8_t playerCount = readPlayerCount(reader);
   std::vector<PlayerState> players;
   players.reserve(playerCount);
   for (std::uint8_t index = 0; index < playerCount; ++index) {
@@ -80,7 +58,7 @@ std::vector<PlayerState> readPlayers(ByteReader& reader) {
                                   .shipEntityId = reader.readUint32(),
                                   .lives = reader.readUint8(),
                                   .score = reader.readUint32(),
-                                  .invulnerable = readBoolean(reader)});
+                                  .invulnerable = readBool(reader)});
   }
   return players;
 }
@@ -96,10 +74,10 @@ std::optional<EntityState> readEntity(ByteReader& reader) {
   const std::uint32_t entityId = reader.readUint32();
   const std::optional<WireEntityType> type =
       toKnownEntityType(reader.readUint8());
-  const float horizontal = fromWireCoordinate(reader.readInt16());
-  const float vertical = fromWireCoordinate(reader.readInt16());
+  const float horizontal = readCoordinate(reader);
+  const float vertical = readCoordinate(reader);
   if (entityId == NO_ENTITY_ID) {
-    throw MalformedMessageException("an entity has the id 0");
+    throw InvalidFieldValueException(ENTITY_ID_FIELD, entityId);
   }
   if (!type.has_value()) {
     return std::nullopt;
@@ -157,11 +135,14 @@ WorldState WorldStateCodec::decode(std::span<const std::byte> payload) {
   WorldState state{.tick = reader.readUint32(),
                    .players = readPlayers(reader),
                    .entities = readEntities(reader)};
-  if (reader.remaining() != 0) {
-    throw MalformedMessageException(std::to_string(reader.remaining()) +
-                                    " byte(s) after the last entity");
-  }
+  requireFullyRead(reader);
+  requireValidPlayers(std::span<const PlayerState>{state.players});
   return state;
+}
+
+WorldState decodePayload(std::span<const std::byte> payload,
+                         [[maybe_unused]] std::type_identity<WorldState> type) {
+  return WorldStateCodec::decode(payload);
 }
 
 }  // namespace rtype::network
