@@ -165,10 +165,10 @@ On a Retina Mac, SFML 3 renders every window at its size in points, not in scree
 
 ## Menus: `MenuBuilder`, `Menu`
 
-Every menu is made of the widgets of `src/client/Widgets/`: `Label`, a line of text, and `Button`, a label and the action it runs. A screen never places them. It tells a `MenuBuilder` what its menu holds, step by step, and `build()` places every part with the layout of its `MenuFrame`, then hands them to a `Menu`, which the screen keeps. The quit confirmation, in `QuitConfirmationScreen::buildMenu()`:
+Every menu is made of the widgets of `src/client/Widgets/`: `Label`, a line of text, `Button`, a label and the action it runs, and `ChamferedBox`, the shape with cut corners of every bar and panel. Each widget is a class in its own folder, with the types it owns nested in it (`Button::State`, `Button::Text`, `Menu::Content`, `MenuBuilder::Frame`); the `Widgets/` folder itself only holds the constants, colors and styles they share. A screen never places them. It tells a `MenuBuilder` what its menu holds, step by step, and `build()` places every part with the layout of its frame, then hands them to a `Menu`, which the screen keeps. The quit confirmation, in `QuitConfirmationScreen::buildMenu()`:
 
 ```cpp
-return MenuBuilder(MenuFrame::Dialog)
+return MenuBuilder(MenuBuilder::Frame::Dialog)
     .heading(CONFIRM_HEADING)
     .message(QUIT_QUESTION)
     .cancelButton({.label = NO_LABEL}, [&navigator] { navigator.pop(); })

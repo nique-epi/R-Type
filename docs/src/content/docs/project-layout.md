@@ -148,8 +148,8 @@ src/client/
 ├── Window/           the SFML window
 ├── Assets/           assets found by id, loaded at launch or entering a game
 ├── Platform/         what differs between Windows, macOS and Linux
-├── Screens/          loading, home, server list, lobby, game, end, options...
-├── Widgets/          buttons, text fields, lists
+├── Screens/          title, loading, server list, lobby, game, end, options...
+├── Widgets/          labels, buttons, menus, text fields, lists
 ├── Rendering/        sprites, starfield, HUD, effects, lagometer
 ├── Audio/            sounds and music
 ├── Input/            keyboard and gamepad to player input, remapping
@@ -163,9 +163,9 @@ src/client/
 
 `Rendering` draws every entity that has a `Position` and a `Sprite` (an asset id, the rectangle of it to show and a layer), from the background layer to the interface layer; the game screen draws them through its `EntityLayer`. `RenderSystem` reads these two components and nothing else, and draws through `IDrawSurface`; only `SfmlDrawSurface` knows SFML: it paints on the pixel grid of the background and finds textures through `ITextureSource`, which `AssetTextureSource` reads from the asset library. `spriteOf` is the single table that gives each entity type its sprite. It is described in [Client](/R-Type/client/#entity-sprites-spriteof).
 
-`Rendering/Background` draws the scrolling starfield behind the playfield, and the frame loop already draws it. `Rendering/PixelCanvas` is the picture of the background's size that the sky and the entities are painted on. It is described in [Client](/R-Type/client/#scrolling-background-scrollingbackground).
+`Rendering/Background` draws the scrolling starfield behind the playfield, and the frame loop already draws it. `Rendering/PixelCanvas` is the picture of the background's size that the sky, the entities and the menus are painted on. It is described in [Client](/R-Type/client/#scrolling-background-scrollingbackground).
 
-`Widgets` holds the labels, buttons and menus every menu is built from, placed by `MenuBuilder`; text fields and lists are not written yet. `Rendering/InterfaceCanvas` is the picture a menu is painted on, `Rendering/Squadron` the animation of the title screen. They are described in [Client](/R-Type/client/#menus-menubuilder-menu).
+`Widgets` holds the labels, buttons and menus every menu is built from, placed by `MenuBuilder`; text fields and lists are not written yet. Each widget is a class in its own folder (`Label/`, `Button/`, `Menu/`, `MenuBuilder/`, `ChamferedBox/`), with the types it owns nested in it; `Widgets/` itself only holds the constants, colors and styles they share. `Rendering/InterfaceCanvas` is the picture a menu is painted on, `Rendering/Squadron` the animation of the title screen. They are described in [Client](/R-Type/client/#menus-menubuilder-menu).
 
 `Input` turns key and focus events into the set of actions the player holds. It is described in [Client](/R-Type/client/#player-commands-playercommands).
 
