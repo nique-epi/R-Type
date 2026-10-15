@@ -18,7 +18,8 @@ class EntityIndexMap {
    * @returns The position of the entity index, or an empty optional when
    * absent.
    */
-  std::optional<std::size_t> find(std::uint32_t entityIndex) const;
+  [[nodiscard]] std::optional<std::size_t> find(
+      std::uint32_t entityIndex) const;
 
   /**
    * @brief Registers the entity index at position size().
@@ -35,13 +36,13 @@ class EntityIndexMap {
   std::optional<std::size_t> erase(std::uint32_t entityIndex);
 
   /** @returns The number of entity indices registered. */
-  std::size_t size() const;
+  [[nodiscard]] std::size_t size() const;
 
   /**
    * @returns The entity index registered at the position, which must be lower
    * than size().
    */
-  std::uint32_t entityIndexAt(std::size_t position) const;
+  [[nodiscard]] std::uint32_t entityIndexAt(std::size_t position) const;
 
  private:
   static constexpr std::size_t NO_POSITION =

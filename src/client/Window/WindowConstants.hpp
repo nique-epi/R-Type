@@ -40,21 +40,4 @@ constexpr float WHOLE_WINDOW = 1.0F;
  */
 constexpr float BAR_SHARE_PER_SIDE = 0.5F;
 
-/**
- * @brief Layout of the buttons that select a window size, in playfield units.
- *
- * The buttons sit in a row from the top-left corner of the playfield. Each one
- * is labelled with the size it gives, its width and height joined by the
- * separator.
- *
- * Provisional: the buttons stand in for the options menu until that one
- * exists.
- */
-constexpr float WINDOW_SIZE_BUTTON_WIDTH = 230.0F;
-constexpr float WINDOW_SIZE_BUTTON_HEIGHT = 60.0F;
-constexpr float WINDOW_SIZE_BUTTONS_MARGIN = 24.0F;
-constexpr float WINDOW_SIZE_BUTTONS_GAP = 16.0F;
-constexpr unsigned int WINDOW_SIZE_LABEL_CHARACTER_SIZE = 30;
-constexpr const char* WINDOW_SIZE_SEPARATOR = " x ";
-
 }  // namespace rtype::client

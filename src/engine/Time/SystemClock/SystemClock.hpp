@@ -1,6 +1,7 @@
 #pragma once
 
 #include "IClock.hpp"
+#include "TimeConstants.hpp"
 
 namespace rtype::engine {
 
@@ -9,7 +10,7 @@ namespace rtype::engine {
  */
 class SystemClock final : public IClock {
  public:
-  Duration now() const override;
+  [[nodiscard]] Duration now() const override;
 };
 
 }  // namespace rtype::engine

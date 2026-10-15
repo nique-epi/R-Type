@@ -1,9 +1,13 @@
 #include "ScreenStack.hpp"
+#include <algorithm>
+#include <iterator>
 #include <memory>
+#include <ranges>
 #include <utility>
 #include <vector>
 #include "IScreen.hpp"
 #include "ScreenId.hpp"
+#include "TimeConstants.hpp"
 
 namespace rtype::client {
 
@@ -21,6 +25,10 @@ void ScreenStack::pop() {
 void ScreenStack::replaceAll(ScreenId screen) {
   pendingChanges_.push_back(
       Change{.kind = ChangeKind::ReplaceAll, .screen = screen});
+}
+
+void ScreenStack::closeAll() {
+  pendingChanges_.push_back(Change{.kind = ChangeKind::CloseAll});
 }
 
 void ScreenStack::applyPendingChanges() {
@@ -41,10 +49,11 @@ void ScreenStack::apply(const Change& change) {
       }
       return;
     case ChangeKind::ReplaceAll:
-      while (!screens_.empty()) {
-        screens_.pop_back();
-      }
+      destroyAll();
       build(change.screen);
+      return;
+    case ChangeKind::CloseAll:
+      destroyAll();
       return;
   }
 }
@@ -59,22 +68,41 @@ void ScreenStack::build(ScreenId screen) {
   }
 }
 
+void ScreenStack::destroyAll() {
+  while (!screens_.empty()) {
+    screens_.pop_back();
+  }
+}
+
 void ScreenStack::handleEvent(const sf::Event& event) {
   if (!screens_.empty()) {
     screens_.back()->handleEvent(event);
   }
 }
 
-void ScreenStack::update() {
+void ScreenStack::update(engine::Duration elapsed) {
   for (const std::unique_ptr<IScreen>& screen : screens_) {
-    screen->update();
+    screen->update(elapsed);
   }
 }
 
 void ScreenStack::draw(sf::RenderTarget& target) const {
-  for (const std::unique_ptr<IScreen>& screen : screens_) {
-    screen->draw(target);
+  for (auto screen = firstDrawnScreen(); screen != screens_.end(); ++screen) {
+    (*screen)->draw(target);
   }
+}
+
+std::vector<std::unique_ptr<IScreen>>::const_iterator
+ScreenStack::firstDrawnScreen() const {
+  const auto topmostHiding =
+      std::ranges::find_if(screens_ | std::views::reverse,
+                           [](const std::unique_ptr<IScreen>& screen) {
+                             return screen->hidesScreensBelow();
+                           });
+  if (topmostHiding == screens_.rend()) {
+    return screens_.begin();
+  }
+  return std::prev(topmostHiding.base());
 }
 
 bool ScreenStack::isEmpty() const { return screens_.empty(); }

@@ -7,6 +7,7 @@
 #include "IScreen.hpp"
 #include "IScreenNavigator.hpp"
 #include "ScreenId.hpp"
+#include "TimeConstants.hpp"
 
 namespace rtype::client {
 
@@ -47,9 +48,10 @@ class LoadingScreen : public IScreen {
    * @throws AssetLoadingException after the last file, naming every asset that
    * could not be loaded.
    */
-  void update() override;
+  void update(engine::Duration elapsed) override;
 
   void draw(sf::RenderTarget& target) const override;
+  [[nodiscard]] bool hidesScreensBelow() const override;
 
  private:
   void showProgress();

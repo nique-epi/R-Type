@@ -105,9 +105,18 @@ jobs:
           echo "Running $(nproc) clang-tidy processes at a time."
           output="$RUNNER_TEMP/clang-tidy-output"
           mkdir "$output"
+          # A header has no compile command of its own: clang-tidy borrows the one of a
+          # neighbouring file, whose include folders may miss the ones the header needs.
+          # Headers are therefore linted with the include folders of every compiled file.
+          jq -r '.[].command' build/compile_commands.json \
+            | grep -oE -- '-(I|isystem) ?[^ ]+' \
+            | sed -E 's/^-(I|isystem) /-\1/; s/^/--extra-arg=/' \
+            | sort -u > "$RUNNER_TEMP/header-include-arguments"
+          export HEADER_INCLUDE_ARGUMENTS="$RUNNER_TEMP/header-include-arguments"
           status=0
           xargs -0 -n 1 -P "$(nproc)" -a "$RUNNER_TEMP/files-to-lint" \
-            sh -c 'clang-tidy-20 -p build --quiet "$1" > "$0/$(printf %s "$1" | tr / _).txt" 2>&1' "$output" \
+            sh -c 'case "$1" in *.hpp) set -- "$1" $(cat "$HEADER_INCLUDE_ARGUMENTS") ;; esac
+                   clang-tidy-20 -p build --quiet "$@" > "$0/$(printf %s "$1" | tr / _).txt" 2>&1' "$output" \
             || status=$?
           cat "$output"/*.txt
           exit "$status"

@@ -6,7 +6,7 @@ namespace rtype::client {
 
 /**
  * @brief What a screen may ask of the screens around it: open one, close the
- * one on top, or replace them all.
+ * one on top, replace them all, or close them all.
  *
  * A request only takes effect once the frame loop applies it, between two
  * events, so a screen may ask to leave while it handles an event. Screens get
@@ -28,6 +28,10 @@ class IScreenNavigator {
   /** @brief Asks for every screen to be destroyed, from the top down, then for
    * the given one to be built as the only one. */
   virtual void replaceAll(ScreenId screen) = 0;
+
+  /** @brief Asks for every screen to be destroyed, from the top down; with no
+   * screen left, the frame loop stops and the client closes. */
+  virtual void closeAll() = 0;
 };
 
 }  // namespace rtype::client
