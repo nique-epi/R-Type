@@ -5,7 +5,6 @@
 #include <deque>
 #include <functional>
 #include <typeindex>
-#include <typeinfo>
 #include <utility>
 #include <vector>
 #include "EngineException.hpp"

@@ -48,7 +48,7 @@ class TimerScheduler {
   void advance(Duration elapsed);
 
   /** @return number of pending timers. */
-  std::size_t size() const;
+  [[nodiscard]] std::size_t size() const;
 
  private:
   struct Timer {

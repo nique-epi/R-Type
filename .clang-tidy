@@ -17,10 +17,13 @@ Checks: '*,
          -portability-avoid-pragma-once,
          -llvm-header-guard,
          -modernize-use-trailing-return-type,
-         -llvm-include-order'
+         -llvm-include-order,
+         -cppcoreguidelines-avoid-const-or-ref-data-members'
 
 # Treat warnings as errors so the CI fails on bad code
 WarningsAsErrors: '*'
 
 CheckOptions:
+  cppcoreguidelines-special-member-functions.AllowSoleDefaultDtor: true
+  hicpp-special-member-functions.AllowSoleDefaultDtor: true
   misc-non-private-member-variables-in-classes.IgnoreClassesWithAllMemberVariablesBeingPublic: true

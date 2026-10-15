@@ -31,19 +31,19 @@ class EntityRegistry {
    * @returns true only for an entity returned by create() and not destroyed
    * since.
    */
-  bool isAlive(Entity entity) const;
+  [[nodiscard]] bool isAlive(Entity entity) const;
 
   /**
    * @returns The entity currently using the slot of entityIndex.
    * The slot must hold an alive entity, for instance because a component is
    * attached to that index: a free slot is not told apart from an alive one.
    */
-  Entity entityAt(std::uint32_t entityIndex) const;
+  [[nodiscard]] Entity entityAt(std::uint32_t entityIndex) const;
 
   /**
    * @returns The number of alive entities.
    */
-  std::size_t size() const;
+  [[nodiscard]] std::size_t size() const;
 
  private:
   std::vector<std::uint32_t> generations_;

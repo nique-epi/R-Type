@@ -34,6 +34,7 @@ Why: the CI `Clang-tidy` job treats warnings as errors; a local failure put down
    done
    ```
    A file printed is a failing file. Linting the headers through their `.cpp` with `--header-filter` does not replace it.
+6. **A header borrows the compile command of a neighbouring file**: it has none of its own, so an include folder only a distant target carries is missing and clang-tidy reports `file not found`. On a push to `main` the CI lints every header, and it adds the include folders of every compiled file to header runs; do the same locally with `--extra-arg=-I<folder>` before calling such an error a defect.
 
 ### A file that does not compile for clang-tidy hides findings
 
