@@ -7,10 +7,11 @@
 #include <cstddef>
 #include <cstdint>
 #include <optional>
-#include "ButtonState.hpp"
-#include "CheckMark.hpp"
+#include <string>
+#include <vector>
+#include "Button.hpp"
 #include "IInterfaceCanvas.hpp"
-#include "MenuContent.hpp"
+#include "Label.hpp"
 #include "PlayfieldMapping.hpp"
 #include "TimeConstants.hpp"
 
@@ -37,8 +38,39 @@ namespace rtype::client {
  */
 class Menu {
  public:
+  /** @brief An image of a menu, such as the logo: the texture it shows whole,
+   * and where. */
+  struct Picture {
+    std::string assetId;
+    sf::IntRect area;
+  };
+
+  /**
+   * @brief Everything a menu shows, already placed in pixels of the interface
+   * picture: built by MenuBuilder, never by a screen.
+   */
+  struct Content {
+    /** @brief Whether the screens below are dimmed first. */
+    bool dimmed = false;
+    /** @brief The panel of a dialog. */
+    std::optional<sf::IntRect> panel;
+    /** @brief The logo of a page. */
+    std::optional<Picture> picture;
+    /** @brief The rule under the header of a page. */
+    std::optional<sf::IntRect> rule;
+    std::vector<Label> labels;
+    /** @brief The buttons, in the order they are selected. */
+    std::vector<Button> buttons;
+    /** @brief The button MENU_CANCEL_KEY activates. */
+    std::optional<std::size_t> cancelButton;
+    /** @brief Where the description of the selected button is written. */
+    sf::Vector2i descriptionAnchor;
+    /** @brief The area a screen paints its own picture in. */
+    std::optional<sf::IntRect> illustration;
+  };
+
   /** @brief Selects the first enabled button, if any. */
-  explicit Menu(MenuContent content);
+  explicit Menu(Content content);
 
   /**
    * @param playfieldPointAt Gives the point of the playfield under a pixel of
@@ -67,7 +99,7 @@ class Menu {
 
   /** @brief Gives a button its check box, by its order in the menu; an order
    * outside the menu changes nothing. */
-  void setMark(std::size_t button, CheckMark mark);
+  void setMark(std::size_t button, Button::CheckMark mark);
 
   /** @returns The order of the selected button, or nothing when no button is
    * enabled. */
@@ -108,9 +140,9 @@ class Menu {
   void selectNeighbour(Direction direction);
   [[nodiscard]] std::optional<std::size_t> enabledButtonAt(
       sf::Vector2i pixel) const;
-  [[nodiscard]] ButtonState stateOf(std::size_t button) const;
+  [[nodiscard]] Button::State stateOf(std::size_t button) const;
 
-  MenuContent content_;
+  Content content_;
   std::optional<std::size_t> selected_;
   std::optional<Press> press_;
   bool cancelPressed_ = false;

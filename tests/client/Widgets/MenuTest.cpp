@@ -12,7 +12,6 @@
 #include "KeyPress.hpp"
 #include "Menu.hpp"
 #include "MenuBuilder.hpp"
-#include "MenuFrame.hpp"
 #include "PointerEvents.hpp"
 #include "RecordingInterfaceCanvas.hpp"
 #include "TimeConstants.hpp"
@@ -23,7 +22,6 @@ using rtype::client::BACKGROUND_PIXEL_SIZE;
 using rtype::client::BUTTON_TEXT_OFFSET;
 using rtype::client::Menu;
 using rtype::client::MenuBuilder;
-using rtype::client::MenuFrame;
 using rtype::client::PRESS_DURATION;
 using rtype::client::PRESSED_BAR_TEXT_COLOR;
 using rtype::engine::Duration;
@@ -78,7 +76,7 @@ class MenuTest : public ::testing::Test {
  private:
   std::vector<std::string> activated_;
   Menu menu_ =
-      MenuBuilder(MenuFrame::Page)
+      MenuBuilder(MenuBuilder::Frame::Page)
           .button({.label = "A"}, [this] { activated_.emplace_back("A"); })
           .button({.label = "B"}, [this] { activated_.emplace_back("B"); })
           .cancelButton({.label = "C"},
@@ -303,7 +301,7 @@ TEST_F(MenuTest, EscapeReleasedWithoutItsPressDoesNothing) {
  */
 TEST(Menu, EscapeWithoutCancelButtonDoesNothing) {
   bool activated = false;
-  Menu menu = MenuBuilder(MenuFrame::Page)
+  Menu menu = MenuBuilder(MenuBuilder::Frame::Page)
                   .button({.label = "A"}, [&activated] { activated = true; })
                   .build();
 
@@ -437,7 +435,7 @@ TEST_F(MenuTest, APressedButtonIsPaintedPressed) {
  * Then no button is selected, and nothing breaks
  */
 TEST(Menu, AMenuWithoutButtonsIgnoresEveryInput) {
-  Menu menu = MenuBuilder(MenuFrame::Page).build();
+  Menu menu = MenuBuilder(MenuBuilder::Frame::Page).build();
 
   menu.handleEvent(keyPress(sf::Keyboard::Key::Down), samePlayfieldPoint);
   menu.handleEvent(keyPress(ENTER), samePlayfieldPoint);

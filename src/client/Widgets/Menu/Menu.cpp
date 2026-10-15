@@ -11,14 +11,12 @@
 #include <optional>
 #include <utility>
 #include "BackgroundConstants.hpp"
-#include "ButtonState.hpp"
+#include "Button.hpp"
 #include "ChamferedBox.hpp"
-#include "CheckMark.hpp"
 #include "IInterfaceCanvas.hpp"
 #include "InterfaceColors.hpp"
 #include "InterfaceConstants.hpp"
 #include "Label.hpp"
-#include "MenuContent.hpp"
 #include "PlayfieldMapping.hpp"
 #include "TimeConstants.hpp"
 #include "WidgetColors.hpp"
@@ -48,7 +46,7 @@ bool isOneOf(sf::Keyboard::Key key,
 
 }  // namespace
 
-Menu::Menu(MenuContent content) : content_(std::move(content)) {
+Menu::Menu(Content content) : content_(std::move(content)) {
   selectNeighbour(Direction::Next);
 }
 
@@ -131,7 +129,7 @@ void Menu::setEnabled(std::size_t button, bool enabled) {
   }
 }
 
-void Menu::setMark(std::size_t button, CheckMark mark) {
+void Menu::setMark(std::size_t button, Button::CheckMark mark) {
   if (button < content_.buttons.size()) {
     content_.buttons[button].setMark(mark);
   }
@@ -260,17 +258,17 @@ std::optional<std::size_t> Menu::enabledButtonAt(sf::Vector2i pixel) const {
   return std::nullopt;
 }
 
-ButtonState Menu::stateOf(std::size_t button) const {
+Button::State Menu::stateOf(std::size_t button) const {
   if (!content_.buttons[button].isEnabled()) {
-    return ButtonState::Disabled;
+    return Button::State::Disabled;
   }
   if (press_.has_value() && press_->button == button) {
-    return ButtonState::Pressed;
+    return Button::State::Pressed;
   }
   if (selected_ == button) {
-    return ButtonState::Selected;
+    return Button::State::Selected;
   }
-  return ButtonState::Idle;
+  return Button::State::Idle;
 }
 
 }  // namespace rtype::client

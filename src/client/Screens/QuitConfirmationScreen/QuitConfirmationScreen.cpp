@@ -7,7 +7,6 @@
 #include "IScreenNavigator.hpp"
 #include "Menu.hpp"
 #include "MenuBuilder.hpp"
-#include "MenuFrame.hpp"
 #include "PlayfieldMapping.hpp"
 #include "ScreenConstants.hpp"
 #include "TimeConstants.hpp"
@@ -39,7 +38,7 @@ void QuitConfirmationScreen::draw(sf::RenderTarget& target) const {
 bool QuitConfirmationScreen::hidesScreensBelow() const { return false; }
 
 Menu QuitConfirmationScreen::buildMenu(IScreenNavigator& navigator) {
-  return MenuBuilder(MenuFrame::Dialog)
+  return MenuBuilder(MenuBuilder::Frame::Dialog)
       .heading(CONFIRM_HEADING)
       .message(QUIT_QUESTION)
       .cancelButton({.label = NO_LABEL}, [&navigator] { navigator.pop(); })

@@ -4,18 +4,16 @@
 #include <functional>
 #include <string>
 #include <utility>
-#include "ButtonText.hpp"
+#include "Button.hpp"
 #include "IScreenNavigator.hpp"
 #include "InterfaceConstants.hpp"
 #include "Menu.hpp"
-#include "MenuContent.hpp"
-#include "MenuFrame.hpp"
 #include "WidgetConstants.hpp"
 #include "WidgetStyles.hpp"
 
 namespace rtype::client {
 
-MenuBuilder::MenuBuilder(MenuFrame frame) : frame_(frame) {}
+MenuBuilder::MenuBuilder(Frame frame) : frame_(frame) {}
 
 MenuBuilder& MenuBuilder::version(std::string text) {
   version_ = std::move(text);
@@ -23,7 +21,7 @@ MenuBuilder& MenuBuilder::version(std::string text) {
 }
 
 MenuBuilder& MenuBuilder::logo(std::string assetId, sf::Vector2i size) {
-  logo_ = MenuPicture{.assetId = std::move(assetId), .area = {{0, 0}, size}};
+  logo_ = Menu::Picture{.assetId = std::move(assetId), .area = {{0, 0}, size}};
   return *this;
 }
 
@@ -42,13 +40,13 @@ MenuBuilder& MenuBuilder::message(std::string text) {
   return *this;
 }
 
-MenuBuilder& MenuBuilder::button(ButtonText text,
+MenuBuilder& MenuBuilder::button(Button::Text text,
                                  std::function<void()> action) {
   buttons_.push_back({.text = std::move(text), .action = std::move(action)});
   return *this;
 }
 
-MenuBuilder& MenuBuilder::cancelButton(ButtonText text,
+MenuBuilder& MenuBuilder::cancelButton(Button::Text text,
                                        std::function<void()> action) {
   cancelButton_ = buttons_.size();
   return button(std::move(text), std::move(action));
@@ -69,21 +67,21 @@ MenuBuilder& MenuBuilder::footer(std::string text) {
 }
 
 Menu MenuBuilder::build() {
-  MenuContent content;
+  Menu::Content content;
   content.cancelButton = cancelButton_;
   switch (frame_) {
-    case MenuFrame::Dialog:
+    case Frame::Dialog:
       content.dimmed = true;
       placeDialog(content);
       break;
-    case MenuFrame::Page:
+    case Frame::Page:
       placeColumn(content);
       break;
   }
   return Menu(std::move(content));
 }
 
-void MenuBuilder::placeColumn(MenuContent& content) {
+void MenuBuilder::placeColumn(Menu::Content& content) {
   const int left = SAFE_MARGIN;
   int top = SAFE_MARGIN;
   if (version_.has_value()) {
@@ -126,7 +124,7 @@ void MenuBuilder::placeColumn(MenuContent& content) {
   }
 }
 
-void MenuBuilder::placeDialog(MenuContent& content) {
+void MenuBuilder::placeDialog(Menu::Content& content) {
   const sf::Vector2i panelTopLeft =
       (INTERFACE_AREA.size - DIALOG_SIZE) / SIDES_PER_AXIS;
   content.panel = sf::IntRect(panelTopLeft, DIALOG_SIZE);

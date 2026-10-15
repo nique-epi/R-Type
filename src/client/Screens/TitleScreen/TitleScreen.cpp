@@ -10,7 +10,6 @@
 #include "IScreenNavigator.hpp"
 #include "Menu.hpp"
 #include "MenuBuilder.hpp"
-#include "MenuFrame.hpp"
 #include "MotionPreference.hpp"
 #include "PlayfieldMapping.hpp"
 #include "ScreenConstants.hpp"
@@ -48,7 +47,7 @@ void TitleScreen::draw(sf::RenderTarget& target) const {
 bool TitleScreen::hidesScreensBelow() const { return true; }
 
 Menu TitleScreen::buildMenu(IScreenNavigator& navigator) {
-  return MenuBuilder(MenuFrame::Page)
+  return MenuBuilder(MenuBuilder::Frame::Page)
       .version(GAME_VERSION_TEXT)
       .logo(LOGO_ID, LOGO_SIZE)
       .subtitle(TITLE_SUBTITLE)

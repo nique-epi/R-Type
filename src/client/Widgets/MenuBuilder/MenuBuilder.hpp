@@ -2,15 +2,14 @@
 
 #include <SFML/System/Vector2.hpp>
 #include <cstddef>
+#include <cstdint>
 #include <functional>
 #include <optional>
 #include <string>
 #include <vector>
-#include "ButtonText.hpp"
+#include "Button.hpp"
 #include "IScreenNavigator.hpp"
 #include "Menu.hpp"
-#include "MenuContent.hpp"
-#include "MenuFrame.hpp"
 
 namespace rtype::client {
 
@@ -32,7 +31,17 @@ namespace rtype::client {
  */
 class MenuBuilder {
  public:
-  explicit MenuBuilder(MenuFrame frame);
+  /**
+   * @brief How a menu is laid out: a page is a column against the left side of
+   * the safe margin; a dialog is a panel centered over the dimmed screens
+   * below.
+   */
+  enum class Frame : std::uint8_t {
+    Page,
+    Dialog,
+  };
+
+  explicit MenuBuilder(Frame frame);
 
   /** @brief Small line at the top of a page, such as the version of the
    * game. */
@@ -52,11 +61,11 @@ class MenuBuilder {
   MenuBuilder& message(std::string text);
 
   /** @brief Adds a button after the previous ones. */
-  MenuBuilder& button(ButtonText text, std::function<void()> action);
+  MenuBuilder& button(Button::Text text, std::function<void()> action);
 
   /** @brief Adds a button that MENU_CANCEL_KEY activates too; the last one
    * asked for is the cancel button. */
-  MenuBuilder& cancelButton(ButtonText text, std::function<void()> action);
+  MenuBuilder& cancelButton(Button::Text text, std::function<void()> action);
 
   /**
    * @brief Adds BACK, cancel button that closes the screen on top.
@@ -79,16 +88,16 @@ class MenuBuilder {
  private:
   /** @brief A button asked for, not placed yet. */
   struct PendingButton {
-    ButtonText text;
+    Button::Text text;
     std::function<void()> action;
   };
 
-  void placeColumn(MenuContent& content);
-  void placeDialog(MenuContent& content);
+  void placeColumn(Menu::Content& content);
+  void placeDialog(Menu::Content& content);
 
-  MenuFrame frame_;
+  Frame frame_;
   std::optional<std::string> version_;
-  std::optional<MenuPicture> logo_;
+  std::optional<Menu::Picture> logo_;
   std::optional<std::string> heading_;
   std::optional<std::string> subtitle_;
   std::optional<std::string> message_;

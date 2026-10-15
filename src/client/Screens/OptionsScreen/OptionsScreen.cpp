@@ -5,13 +5,12 @@
 #include <memory>
 #include <string>
 #include <utility>
-#include "CheckMark.hpp"
+#include "Button.hpp"
 #include "GameWindow.hpp"
 #include "IInterfaceCanvas.hpp"
 #include "IScreenNavigator.hpp"
 #include "Menu.hpp"
 #include "MenuBuilder.hpp"
-#include "MenuFrame.hpp"
 #include "PixelSize.hpp"
 #include "PlayfieldMapping.hpp"
 #include "ScreenConstants.hpp"
@@ -59,7 +58,7 @@ void OptionsScreen::draw(sf::RenderTarget& target) const {
 bool OptionsScreen::hidesScreensBelow() const { return true; }
 
 Menu OptionsScreen::buildMenu(IScreenNavigator& navigator, GameWindow& window) {
-  MenuBuilder builder(MenuFrame::Page);
+  MenuBuilder builder(MenuBuilder::Frame::Page);
   builder.heading(SETTINGS_HEADING);
   for (std::size_t sizeIndex = 0; sizeIndex < WINDOW_SIZES.size();
        ++sizeIndex) {
@@ -77,8 +76,8 @@ void OptionsScreen::showWindowSizes() {
        ++sizeIndex) {
     menu_.setEnabled(sizeIndex, selection.isAvailable(sizeIndex));
     menu_.setMark(sizeIndex, sizeIndex == selection.selectedIndex()
-                                 ? CheckMark::Checked
-                                 : CheckMark::Unchecked);
+                                 ? Button::CheckMark::Checked
+                                 : Button::CheckMark::Unchecked);
   }
 }
 

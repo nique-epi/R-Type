@@ -10,7 +10,6 @@
 #include "KeyPress.hpp"
 #include "Menu.hpp"
 #include "MenuBuilder.hpp"
-#include "MenuFrame.hpp"
 #include "RecordingInterfaceCanvas.hpp"
 #include "RecordingNavigator.hpp"
 #include "TextStyle.hpp"
@@ -20,7 +19,6 @@ using rtype::client::DIM_LAYER_COLOR;
 using rtype::client::INTERFACE_AREA;
 using rtype::client::Menu;
 using rtype::client::MenuBuilder;
-using rtype::client::MenuFrame;
 using rtype::client::RULE_COLOR;
 using rtype::client::TextAlignment;
 using ::testing::Contains;
@@ -34,7 +32,7 @@ constexpr sf::Vector2i SQUADRON_SIZE(168, 144);
 
 /** @brief The menu of the title screen of the mockup, without actions. */
 Menu titleMenu() {
-  return MenuBuilder(MenuFrame::Page)
+  return MenuBuilder(MenuBuilder::Frame::Page)
       .version("VER")
       .logo("logo.png", LOGO_SIZE)
       .subtitle("SUBTITLE")
@@ -48,7 +46,7 @@ Menu titleMenu() {
 
 /** @brief The quit confirmation of the mockup, without actions. */
 Menu confirmation() {
-  return MenuBuilder(MenuFrame::Dialog)
+  return MenuBuilder(MenuBuilder::Frame::Dialog)
       .heading("CONFIRM")
       .message("QUESTION")
       .cancelButton({.label = "NO"}, [] {})
@@ -210,8 +208,8 @@ TEST(MenuBuilder, DialogCentersItsButtonsInARow) {
  * Then it writes its heading and no bar label
  */
 TEST(MenuBuilder, DialogWithoutButtonsWritesOnlyItsTexts) {
-  const InterfaceCanvasRecord painted =
-      paintingOf(MenuBuilder(MenuFrame::Dialog).heading("CONFIRM").build());
+  const InterfaceCanvasRecord painted = paintingOf(
+      MenuBuilder(MenuBuilder::Frame::Dialog).heading("CONFIRM").build());
 
   ASSERT_EQ(painted.writings.size(), 1U);
   EXPECT_EQ(painted.writings.front().text, "CONFIRM");
@@ -224,7 +222,8 @@ TEST(MenuBuilder, DialogWithoutButtonsWritesOnlyItsTexts) {
  */
 TEST(MenuBuilder, BackButtonClosesTheScreenOnTop) {
   RecordingNavigator navigator;
-  Menu menu = MenuBuilder(MenuFrame::Page).backButton(navigator).build();
+  Menu menu =
+      MenuBuilder(MenuBuilder::Frame::Page).backButton(navigator).build();
 
   menu.handleEvent(keyPress(sf::Keyboard::Key::Escape), {});
   menu.handleEvent(keyRelease(sf::Keyboard::Key::Escape), {});
@@ -242,8 +241,8 @@ TEST(MenuBuilder, BackButtonClosesTheScreenOnTop) {
 TEST(MenuBuilder, BackButtonIsLabelledBack) {
   RecordingNavigator navigator;
 
-  const InterfaceCanvasRecord painted =
-      paintingOf(MenuBuilder(MenuFrame::Page).backButton(navigator).build());
+  const InterfaceCanvasRecord painted = paintingOf(
+      MenuBuilder(MenuBuilder::Frame::Page).backButton(navigator).build());
 
   EXPECT_NE(writingOf(painted, "BACK"), nullptr);
 }

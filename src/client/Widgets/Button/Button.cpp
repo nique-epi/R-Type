@@ -5,10 +5,7 @@
 #include <functional>
 #include <string>
 #include <utility>
-#include "ButtonState.hpp"
-#include "ButtonText.hpp"
 #include "ChamferedBox.hpp"
-#include "CheckMark.hpp"
 #include "IInterfaceCanvas.hpp"
 #include "InterfaceConstants.hpp"
 #include "TextStyle.hpp"
@@ -17,7 +14,7 @@
 
 namespace rtype::client {
 
-Button::Button(ButtonText text, sf::IntRect area, std::function<void()> action)
+Button::Button(Text text, sf::IntRect area, std::function<void()> action)
     : text_(std::move(text)), area_(area), action_(std::move(action)) {}
 
 bool Button::isEnabled() const { return enabled_; }
@@ -38,7 +35,7 @@ void Button::activate() const {
   }
 }
 
-void Button::paint(IInterfaceCanvas& canvas, ButtonState state) const {
+void Button::paint(IInterfaceCanvas& canvas, State state) const {
   const Look look = lookOf(state);
   paintChamferedBox(canvas, area_, look.bar);
   sf::Vector2i labelAnchor =
@@ -51,24 +48,24 @@ void Button::paint(IInterfaceCanvas& canvas, ButtonState state) const {
                {.font = TextFont::Regular, .color = look.text});
 }
 
-Button::Look Button::lookOf(ButtonState state) {
+Button::Look Button::lookOf(State state) {
   switch (state) {
-    case ButtonState::Selected:
+    case State::Selected:
       return {.bar = {.border = SELECTED_BAR_BORDER_COLOR,
                       .inside = SELECTED_BAR_INSIDE_COLOR},
               .text = SELECTED_BAR_TEXT_COLOR,
               .textDrop = 0};
-    case ButtonState::Pressed:
+    case State::Pressed:
       return {.bar = {.border = SELECTED_BAR_BORDER_COLOR,
                       .inside = PRESSED_BAR_INSIDE_COLOR},
               .text = PRESSED_BAR_TEXT_COLOR,
               .textDrop = PRESSED_TEXT_DROP};
-    case ButtonState::Disabled:
+    case State::Disabled:
       return {.bar = {.border = DISABLED_BAR_BORDER_COLOR,
                       .inside = BAR_INSIDE_COLOR},
               .text = DISABLED_BAR_TEXT_COLOR,
               .textDrop = 0};
-    case ButtonState::Idle:
+    case State::Idle:
       break;
   }
   return {.bar = {.border = BAR_BORDER_COLOR, .inside = BAR_INSIDE_COLOR},
