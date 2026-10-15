@@ -11,11 +11,17 @@ namespace rtype::client {
  * screen; a value without a case does not compile with -Wswitch.
  */
 enum class ScreenId : std::uint8_t {
+  /** @brief The screen the client opens on, entered through replaceAll()
+   * only: building it releases the assets the title does not use. */
+  Title,
   /** @brief The game in progress, entered through replaceAll() only:
    * building it releases the assets of a previous game. */
   Game,
-  /** @brief The options, pushed over the game. */
+  /** @brief The options, pushed over the title or the game. */
   Options,
+  /** @brief The question asked before closing the client, pushed over the
+   * title. */
+  QuitConfirmation,
 };
 
 }  // namespace rtype::client

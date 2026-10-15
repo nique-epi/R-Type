@@ -10,6 +10,7 @@
 #include "ScreenConstants.hpp"
 #include "ScreenId.hpp"
 #include "SpriteShowcase.hpp"
+#include "TimeConstants.hpp"
 
 namespace rtype::client {
 
@@ -36,7 +37,7 @@ void GameScreen::handleEvent(const sf::Event& event) {
   }
 }
 
-void GameScreen::update() {
+void GameScreen::update([[maybe_unused]] engine::Duration elapsed) {
   const std::uint8_t held = playerCommands_.held().bits();
   if (held != loggedActions_) {
     logger_.trace("actions held: ", static_cast<unsigned int>(held));
@@ -50,5 +51,7 @@ ActionSet GameScreen::playerActions() const { return playerCommands_.held(); }
 void GameScreen::draw(sf::RenderTarget& target) const {
   entityLayer_->show(target);
 }
+
+bool GameScreen::hidesScreensBelow() const { return true; }
 
 }  // namespace rtype::client

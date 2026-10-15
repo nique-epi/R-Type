@@ -28,4 +28,17 @@ constexpr game::SpriteFrame PLAYER_MISSILE_FRAME{
 constexpr game::SpriteFrame ENEMY_MISSILE_FRAME{
     .left = 0, .top = 132, .width = 8, .height = 8};
 
+/** @brief Pixels between two frames of a row of the entity sheet, and between
+ * two rows. */
+constexpr int SPRITE_SPACING = 2;
+
+/**
+ * @brief Each entity of the sheet alternates between its two frames, side by
+ * side in its row; the frame times of the player ship and of the player
+ * missile, in seconds, as listed in assets/README.md.
+ */
+constexpr int SPRITE_FRAME_COUNT = 2;
+constexpr float PLAYER_SHIP_FRAME_TIME = 0.08F;
+constexpr float PLAYER_MISSILE_FRAME_TIME = 0.06F;
+
 }  // namespace rtype::client

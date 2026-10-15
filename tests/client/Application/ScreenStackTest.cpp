@@ -3,6 +3,7 @@
 #include <SFML/Window/Keyboard.hpp>
 #include <functional>
 #include <memory>
+#include <set>
 #include <utility>
 #include <vector>
 #include "BlankRenderTarget.hpp"
@@ -10,6 +11,7 @@
 #include "RecordingScreen.hpp"
 #include "ScreenId.hpp"
 #include "ScreenStack.hpp"
+#include "ScreenTestConstants.hpp"
 
 using rtype::client::ScreenId;
 using rtype::client::ScreenStack;
@@ -21,7 +23,8 @@ namespace {
 constexpr sf::Keyboard::Key ANY_KEY = sf::Keyboard::Key::A;
 
 /** @brief A stack whose factory builds a recording screen for every
- * identifier, after letting the test act on the game screen it builds. */
+ * identifier, after letting the test act on the game screen it builds; the
+ * screens leave the screens below drawn unless the test says otherwise. */
 class ScreenStackTest : public ::testing::Test {
  protected:
   void showOptionsOverTheGame() {
@@ -39,11 +42,17 @@ class ScreenStackTest : public ::testing::Test {
     onGameBuilt_ = std::move(action);
   }
 
+  /** @brief Makes the screens built from now on for this identifier hide the
+   * screens below. */
+  void hideTheScreensBelow(ScreenId screen) { hidingScreens_.insert(screen); }
+
  private:
   std::vector<JournalEntry> journal_;
   std::function<void(RecordingScreen&)> onGameBuilt_;
+  std::set<ScreenId> hidingScreens_;
   ScreenStack screens_{[this](ScreenId screen) {
     auto built = std::make_unique<RecordingScreen>(screen, journal_);
+    built->setHidesScreensBelow(hidingScreens_.contains(screen));
     if (screen == ScreenId::Game && onGameBuilt_ != nullptr) {
       onGameBuilt_(*built);
     }
@@ -76,7 +85,7 @@ TEST_F(ScreenStackTest, EventsReachOnlyTheScreenOnTop) {
 TEST_F(ScreenStackTest, EveryScreenIsUpdatedFromTheBottomUp) {
   showOptionsOverTheGame();
 
-  screens().update();
+  screens().update(ONE_FRAME);
 
   EXPECT_THAT(journal(), ElementsAre(JournalEntry{.screen = ScreenId::Game,
                                                   .call = ScreenCall::Update},
@@ -85,7 +94,7 @@ TEST_F(ScreenStackTest, EveryScreenIsUpdatedFromTheBottomUp) {
 }
 
 /**
- * Given the options pushed over the game
+ * Given options that leave the screens below drawn, pushed over the game
  * When a frame is drawn
  * Then the game is drawn first and the options over it
  */
@@ -219,4 +228,139 @@ TEST_F(ScreenStackTest, ChangeAskedWhileApplyingWaitsForTheNextApply) {
                                        .call = ScreenCall::Built},
                           JournalEntry{.screen = ScreenId::Game,
                                        .call = ScreenCall::HandleEvent}));
+}
+
+/**
+ * Given the options pushed over the game
+ * When a frame of 16 milliseconds is updated
+ * Then the game, below, is updated by those 16 milliseconds
+ */
+TEST_F(ScreenStackTest, EveryScreenIsUpdatedByTheTimeOfTheFrame) {
+  RecordingScreen* game = nullptr;
+  onGameBuilt([&game](RecordingScreen& built) { game = &built; });
+  showOptionsOverTheGame();
+
+  screens().update(ONE_FRAME);
+
+  ASSERT_NE(game, nullptr);
+  EXPECT_EQ(game->lastElapsed(), ONE_FRAME);
+}
+
+/**
+ * Given the options pushed over the game
+ * When every screen is asked to close
+ * Then the options are destroyed, then the game
+ */
+TEST_F(ScreenStackTest, CloseAllDestroysEveryScreenFromTheTopDown) {
+  showOptionsOverTheGame();
+
+  screens().closeAll();
+  screens().applyPendingChanges();
+
+  EXPECT_THAT(journal(),
+              ElementsAre(JournalEntry{.screen = ScreenId::Options,
+                                       .call = ScreenCall::Destroyed},
+                          JournalEntry{.screen = ScreenId::Game,
+                                       .call = ScreenCall::Destroyed}));
+}
+
+/**
+ * Given the options pushed over the game
+ * When every screen is asked to close
+ * Then no screen is left, which stops the frame loop
+ */
+TEST_F(ScreenStackTest, CloseAllLeavesNoScreen) {
+  showOptionsOverTheGame();
+
+  screens().closeAll();
+  screens().applyPendingChanges();
+
+  EXPECT_TRUE(screens().isEmpty());
+}
+
+/**
+ * Given options that hide the screens below, pushed over the game
+ * When a frame is drawn
+ * Then only the options are drawn
+ */
+TEST_F(ScreenStackTest, AScreenThatHidesTheScreensBelowLeavesThemUndrawn) {
+  BlankRenderTarget target;
+  hideTheScreensBelow(ScreenId::Options);
+  showOptionsOverTheGame();
+
+  screens().draw(target);
+
+  EXPECT_THAT(journal(), ElementsAre(JournalEntry{.screen = ScreenId::Options,
+                                                  .call = ScreenCall::Draw}));
+}
+
+/**
+ * Given options that hide the screens below, pushed over the game
+ * When a frame is updated
+ * Then the game is updated too, so it keeps running behind the options
+ */
+TEST_F(ScreenStackTest, AHiddenScreenIsStillUpdated) {
+  hideTheScreensBelow(ScreenId::Options);
+  showOptionsOverTheGame();
+
+  screens().update(ONE_FRAME);
+
+  EXPECT_THAT(journal(), ElementsAre(JournalEntry{.screen = ScreenId::Game,
+                                                  .call = ScreenCall::Update},
+                                     JournalEntry{.screen = ScreenId::Options,
+                                                  .call = ScreenCall::Update}));
+}
+
+/**
+ * Given the game, options that hide it, and the quit confirmation, which
+ * leaves the screens below drawn, pushed over the options
+ * When a frame is drawn
+ * Then the options are drawn, then the quit confirmation, and not the game
+ */
+TEST_F(ScreenStackTest, DrawingStartsAtTheTopmostScreenThatHidesTheOthers) {
+  BlankRenderTarget target;
+  hideTheScreensBelow(ScreenId::Options);
+  showOptionsOverTheGame();
+  screens().push(ScreenId::QuitConfirmation);
+  screens().applyPendingChanges();
+  journal().clear();
+
+  screens().draw(target);
+
+  EXPECT_THAT(journal(),
+              ElementsAre(JournalEntry{.screen = ScreenId::Options,
+                                       .call = ScreenCall::Draw},
+                          JournalEntry{.screen = ScreenId::QuitConfirmation,
+                                       .call = ScreenCall::Draw}));
+}
+
+/**
+ * Given a game that hides the screens below, alone in the stack
+ * When a frame is drawn
+ * Then the game is drawn
+ */
+TEST_F(ScreenStackTest, ALoneScreenThatHidesTheScreensBelowIsDrawn) {
+  BlankRenderTarget target;
+  hideTheScreensBelow(ScreenId::Game);
+  screens().push(ScreenId::Game);
+  screens().applyPendingChanges();
+  journal().clear();
+
+  screens().draw(target);
+
+  EXPECT_THAT(journal(), ElementsAre(JournalEntry{.screen = ScreenId::Game,
+                                                  .call = ScreenCall::Draw}));
+}
+
+/**
+ * Given an empty stack
+ * When a frame is drawn
+ * Then nothing is drawn, and nothing breaks
+ */
+TEST_F(ScreenStackTest, DrawingAnEmptyStackDrawsNothing) {
+  BlankRenderTarget target;
+
+  screens().draw(target);
+
+  EXPECT_THAT(journal(), IsEmpty());
 }

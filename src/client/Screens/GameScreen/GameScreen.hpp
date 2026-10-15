@@ -10,6 +10,7 @@
 #include "IScreenNavigator.hpp"
 #include "Logger.hpp"
 #include "PlayerCommands.hpp"
+#include "TimeConstants.hpp"
 
 namespace rtype::client {
 
@@ -24,7 +25,7 @@ namespace rtype::client {
  * the server announces, the screen holds the provisional sprite showcase.
  *
  * Releasing OPTIONS_KEY puts the options screen over the game, which goes on
- * running and stays drawn behind it. The release, not the press: the system
+ * running behind it, hidden. The release, not the press: the system
  * repeats the press of a held key, which would open and close the options
  * again and again.
  *
@@ -47,8 +48,9 @@ class GameScreen : public IScreen {
              std::unique_ptr<IEntityLayer> entityLayer);
 
   void handleEvent(const sf::Event& event) override;
-  void update() override;
+  void update(engine::Duration elapsed) override;
   void draw(sf::RenderTarget& target) const override;
+  [[nodiscard]] bool hidesScreensBelow() const override;
 
   /** @returns The actions the player holds right now. */
   [[nodiscard]] ActionSet playerActions() const;

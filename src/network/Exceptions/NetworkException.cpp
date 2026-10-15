@@ -14,6 +14,20 @@ NetworkException::NetworkException(const std::string& message)
 InvalidAddressException::InvalidAddressException(const std::string& address)
     : NetworkException("Not an IP address: " + address) {}
 
+InvalidPortException::InvalidPortException(const std::string& text)
+    : NetworkException(
+          "Invalid port \"" + text + "\": expected a number from " +
+          std::to_string(LOWEST_PORT) + " to " + std::to_string(HIGHEST_PORT)) {
+}
+
+InvalidIpv4AddressException::InvalidIpv4AddressException(
+    const std::string& text)
+    : NetworkException("Invalid IPv4 address \"" + text +
+                       "\": expected four numbers from 0 to " +
+                       std::to_string(IPV4_ADDRESS_PART_MAXIMUM) +
+                       " separated by dots, such as " +
+                       std::string(LOOPBACK_IPV4_ADDRESS)) {}
+
 SocketOpenException::SocketOpenException(const std::string& address,
                                          std::uint16_t port,
                                          const std::string& reason)

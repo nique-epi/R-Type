@@ -6,6 +6,7 @@ target_link_libraries(rtype_server_constants INTERFACE rtype_engine_time)
 
 add_subdirectory(Platform)
 add_subdirectory(Application)
+add_subdirectory(LaunchOptions)
 add_subdirectory(Replication)
 
 add_executable(r-type_server main.cpp)
@@ -16,6 +17,7 @@ target_link_libraries(r-type_server
     rtype_network_constants
     rtype_server_application
     rtype_server_constants
+    rtype_server_launch_options
     rtype_server_world_state_sender
     rtype_game
 )

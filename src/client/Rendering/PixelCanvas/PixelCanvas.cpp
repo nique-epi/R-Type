@@ -1,5 +1,6 @@
 #include "PixelCanvas.hpp"
 #include <SFML/Graphics/BlendMode.hpp>
+#include <SFML/Graphics/Color.hpp>
 #include <SFML/Graphics/RenderTarget.hpp>
 #include <SFML/Graphics/RenderTexture.hpp>
 #include <SFML/Graphics/Sprite.hpp>
@@ -15,6 +16,8 @@ PixelCanvas::PixelCanvas() {
     throw RenderTextureNotCreatedException(BACKGROUND_SIZE.x,
                                            BACKGROUND_SIZE.y);
   }
+  canvas_.clear(sf::Color::Transparent);
+  canvas_.display();
 }
 
 sf::RenderTexture& PixelCanvas::canvas() { return canvas_; }

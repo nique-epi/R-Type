@@ -8,6 +8,12 @@
 namespace rtype::server {
 
 /**
+ * @brief Name of the server program, at the start of its usage and of the
+ * errors it prints about its arguments.
+ */
+constexpr std::string_view PROGRAM_NAME = "r-type_server";
+
+/**
  * @brief Module name the server writes its log lines under.
  */
 constexpr std::string_view SERVER_LOGGER_NAME = "Server";
