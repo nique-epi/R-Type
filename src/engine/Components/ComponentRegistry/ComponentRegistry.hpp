@@ -58,7 +58,7 @@ class ComponentRegistry {
   /** @returns true when the entity is alive and carries a component of type T.
    */
   template <typename T>
-  bool has(Entity entity) const {
+  [[nodiscard]] bool has(Entity entity) const {
     const ComponentStorage<T>* storage = findStorage<T>();
     return storage != nullptr && entities_.isAlive(entity) &&
            storage->find(entity.index) != nullptr;
@@ -87,10 +87,11 @@ class ComponentRegistry {
    *
    * Entities are visited in no particular order, each at most once. The
    * references given to the callback are only valid during that call. Entities
-   * destroyed during the visit are no longer visited.
+   * destroyed during the visit are no longer visited. The callback is copied
+   * once, then called for every entity.
    */
   template <typename First, typename Second, typename Callback>
-  void forEach(Callback&& callback) {
+  void forEach(Callback callback) {
     ComponentStorage<First>* storage = findStorage<First>();
     if (storage == nullptr) {
       return;
@@ -131,7 +132,7 @@ class ComponentRegistry {
     ComponentRegistry& registry_;
   };
 
-  bool isPendingDestruction(std::uint32_t entityIndex) const;
+  [[nodiscard]] bool isPendingDestruction(std::uint32_t entityIndex) const;
   void destroyNow(Entity entity);
   void flushPendingDestructions();
 

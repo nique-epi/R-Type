@@ -8,3 +8,6 @@
 
 /** @brief The window event of a key being released, with no modifier held. */
 [[nodiscard]] sf::Event keyRelease(sf::Keyboard::Key key);
+
+/** @brief The window event of a key being pressed with Shift held. */
+[[nodiscard]] sf::Event shiftedKeyPress(sf::Keyboard::Key key);

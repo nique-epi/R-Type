@@ -33,6 +33,7 @@ int runClient(const rtype::logging::LogLaunchOptions& logOptions,
     rtype::client::AssetLibrary assets{rtype::client::locateAssetFolder()};
     logger.info("assets folder: ", rtype::client::genericText(assets.folder()));
     rtype::client::loadInterfaceAssets(assets);
+    rtype::client::loadTitleAssets(assets);
     rtype::client::Application application{assets};
     application.run();
     logger.info("client stopped");

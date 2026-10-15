@@ -42,13 +42,13 @@ class ComponentStorage final : public IComponentStorage {
   }
 
   /** @returns The number of components stored. */
-  std::size_t size() const { return entityIndexMap_.size(); }
+  [[nodiscard]] std::size_t size() const { return entityIndexMap_.size(); }
 
   /**
    * @returns The entity index owning the component at the position, which must
    * be lower than size().
    */
-  std::uint32_t entityIndexAt(std::size_t position) const {
+  [[nodiscard]] std::uint32_t entityIndexAt(std::size_t position) const {
     return entityIndexMap_.entityIndexAt(position);
   }
 

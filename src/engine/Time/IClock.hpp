@@ -10,7 +10,7 @@ namespace rtype::engine {
 class IClock {
  public:
   virtual ~IClock() = default;
-  virtual Duration now() const = 0;
+  [[nodiscard]] virtual Duration now() const = 0;
 };
 
 }  // namespace rtype::engine

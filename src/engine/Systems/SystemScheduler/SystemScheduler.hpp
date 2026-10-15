@@ -28,7 +28,7 @@ class SystemScheduler {
   void run(ComponentRegistry& components, Duration elapsed);
 
   /** @returns The number of systems added. */
-  std::size_t size() const;
+  [[nodiscard]] std::size_t size() const;
 
  private:
   std::vector<std::unique_ptr<ISystem>> systems_;
