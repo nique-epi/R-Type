@@ -11,3 +11,6 @@
 
 /** @brief The window event of a key being pressed with Shift held. */
 [[nodiscard]] sf::Event shiftedKeyPress(sf::Keyboard::Key key);
+
+/** @brief The window event of a character typed on the keyboard. */
+[[nodiscard]] sf::Event typedCharacter(char32_t character);

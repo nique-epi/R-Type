@@ -95,6 +95,24 @@ constexpr sf::Keyboard::Key MENU_TAB_KEY = sf::Keyboard::Key::Tab;
 constexpr sf::Keyboard::Key MENU_CONFIRM_KEY = sf::Keyboard::Key::Enter;
 constexpr sf::Keyboard::Key MENU_CANCEL_KEY = sf::Keyboard::Key::Escape;
 
+/** @brief Key that erases the last character of the selected text field. */
+constexpr sf::Keyboard::Key FIELD_ERASE_KEY = sf::Keyboard::Key::Backspace;
+
+/**
+ * @brief The characters a text field may hold: Basic Latin from the space to
+ * the tilde, and Latin-1 Supplement from the no-break space to U+00FF. Both
+ * interface fonts draw each of them, one em wide in the regular font (read from
+ * their files); no control character is among them.
+ */
+constexpr char32_t FIRST_PRINTABLE_BASIC_LATIN = U' ';
+constexpr char32_t LAST_PRINTABLE_BASIC_LATIN = U'~';
+constexpr char32_t FIRST_PRINTABLE_LATIN1_SUPPLEMENT = U'\xA0';
+constexpr char32_t LAST_PRINTABLE_LATIN1_SUPPLEMENT = U'\xFF';
+
+/** @brief The decimal digits. */
+constexpr char32_t FIRST_DIGIT = U'0';
+constexpr char32_t LAST_DIGIT = U'9';
+
 /** @brief Label of the button that closes a menu, the same in every menu. */
 constexpr const char* BACK_LABEL = "BACK";
 
