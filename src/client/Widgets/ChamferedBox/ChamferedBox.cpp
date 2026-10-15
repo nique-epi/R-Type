@@ -32,13 +32,15 @@ void fillCutArea(IInterfaceCanvas& canvas, sf::IntRect area, int cutRows,
 
 }  // namespace
 
-void paintChamferedBox(IInterfaceCanvas& canvas, sf::IntRect area,
-                       ChamferedBoxColors colors) {
-  fillCutArea(canvas, area, CHAMFER_ROWS, colors.border);
+ChamferedBox::ChamferedBox(sf::IntRect area, Colors colors)
+    : area_(area), colors_(colors) {}
+
+void ChamferedBox::paint(IInterfaceCanvas& canvas) const {
+  fillCutArea(canvas, area_, CHAMFER_ROWS, colors_.border);
   const sf::Vector2i border(BORDER_THICKNESS, BORDER_THICKNESS);
   fillCutArea(canvas,
-              {area.position + border, area.size - (border * SIDES_PER_AXIS)},
-              CHAMFER_ROWS - BORDER_THICKNESS, colors.inside);
+              {area_.position + border, area_.size - (border * SIDES_PER_AXIS)},
+              CHAMFER_ROWS - BORDER_THICKNESS, colors_.inside);
 }
 
 }  // namespace rtype::client

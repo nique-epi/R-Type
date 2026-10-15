@@ -7,6 +7,8 @@ target_link_libraries(rtype_client_menu
     rtype_client_button
     rtype_client_label
     rtype_client_widgets
+  PRIVATE
+    rtype_client_chamfered_box
 )
 
 rtype_enable_warnings(rtype_client_menu)

@@ -75,7 +75,7 @@ class Button {
   /** @brief Colors of a bar and of its label in one state, and how far the
    * label drops. */
   struct Look {
-    ChamferedBoxColors bar;
+    ChamferedBox::Colors bar;
     sf::Color text;
     int textDrop{};
   };

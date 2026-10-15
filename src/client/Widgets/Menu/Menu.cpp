@@ -85,9 +85,9 @@ void Menu::paint(IInterfaceCanvas& canvas) const {
     canvas.fill(INTERFACE_AREA, DIM_LAYER_COLOR);
   }
   if (content_.panel.has_value()) {
-    paintChamferedBox(
-        canvas, *content_.panel,
-        {.border = PANEL_BORDER_COLOR, .inside = PANEL_INSIDE_COLOR});
+    ChamferedBox(*content_.panel,
+                 {.border = PANEL_BORDER_COLOR, .inside = PANEL_INSIDE_COLOR})
+        .paint(canvas);
   }
   if (content_.rule.has_value()) {
     canvas.fill(*content_.rule, RULE_COLOR);

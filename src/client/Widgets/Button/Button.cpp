@@ -37,7 +37,7 @@ void Button::activate() const {
 
 void Button::paint(IInterfaceCanvas& canvas, State state) const {
   const Look look = lookOf(state);
-  paintChamferedBox(canvas, area_, look.bar);
+  ChamferedBox(area_, look.bar).paint(canvas);
   sf::Vector2i labelAnchor =
       area_.position + BUTTON_TEXT_OFFSET + sf::Vector2i(0, look.textDrop);
   if (mark_ != CheckMark::None) {
