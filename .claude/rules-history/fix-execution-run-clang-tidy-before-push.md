@@ -56,6 +56,17 @@ The header included a constants header it did not use. The CI `Clang-tidy` job f
 ### Root cause
 The rule said the CI runs without a header filter, so header findings never fail it. The CI in fact lints each changed `.hpp` as a main file. `misc-include-cleaner` judges an include against the uses inside the file being linted; through a `.cpp` that includes the header, the include looks used.
 
+## Update (2026-10-14): an include libc++ counts as used, the CI does not
+
+### Context
+The typed messages pull request was linted locally with clang-tidy 20 from Homebrew and the macOS SDK, on every changed `.cpp` with header diagnostics on: exit 0, no finding.
+
+### Mistake
+The CI `Clang-tidy` job failed on one finding: `tests/network/Protocol/GameMessagesTest.cpp` included `<cstddef>` without naming `std::byte` or `std::size_t`. The local run had not reported it, and the branch had been pushed on that run alone.
+
+### Root cause
+`misc-include-cleaner` decides whether an include is used from the declarations of the standard library it reads. The local run reads libc++, the CI reads the libstdc++ of GCC on Ubuntu; they spread the same symbols over different internal headers. The rule asked for a clean local run, which cannot tell what the CI's standard library will say.
+
 ## Rule
 See `.claude/rules/fix/execution/fix-execution-run-clang-tidy-before-push.md`.
 
