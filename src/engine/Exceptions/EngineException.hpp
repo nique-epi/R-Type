@@ -87,4 +87,20 @@ class NetworkIdExhaustedException : public EngineException {
   NetworkIdExhaustedException();
 };
 
+/**
+ * @brief An argument given at launch that is no option of the program.
+ */
+class UnknownLaunchArgumentException : public EngineException {
+ public:
+  explicit UnknownLaunchArgumentException(const std::string& argument);
+};
+
+/**
+ * @brief A launch option that needs a value was the last argument.
+ */
+class MissingLaunchOptionValueException : public EngineException {
+ public:
+  explicit MissingLaunchOptionValueException(const std::string& option);
+};
+
 }  // namespace rtype::engine

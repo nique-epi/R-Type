@@ -11,6 +11,7 @@ This page tells you where to look when you need to change something. It describe
 |---|---|---|
 | Event loop | Available | `src/network/NetworkContext/` |
 | UDP socket | Available | `src/network/Transport/` |
+| Ports and addresses written as text | Available | `src/network/Transport/EndpointText.hpp` |
 | Relay between a socket and the queues of another thread | Available | `src/network/Transport/DatagramRelay/` |
 | Lag and loss simulator | Not yet written | — |
 | Serialization | Available | `src/network/Serialization/` |
@@ -52,7 +53,16 @@ socket.startReceiving([&socket](const rtype::network::Endpoint& sender,
 network.run();
 ```
 
-`r-type_server` opens such a socket on `DEFAULT_SERVER_PORT` (4242), on every IPv4 interface, and hands each datagram to its simulation thread, which only logs it at the `debug` level: nothing decodes or answers them yet (see [Server](/R-Type/server/)). The client runs its socket on a thread of its own, `NetworkThread`, described in [Client](/R-Type/client/#network-networkthread).
+`r-type_server` opens such a socket on the port given at launch, `DEFAULT_SERVER_PORT` (4242) by default, on every IPv4 interface, and hands each datagram to its simulation thread, which only logs it at the `debug` level: nothing decodes or answers them yet (see [Server](/R-Type/server/)). The client runs its socket on a thread of its own, `NetworkThread`, described in [Client](/R-Type/client/#network-networkthread).
+
+## Ports and addresses written as text: `portFromText`, `ipv4AddressFromText`
+
+`EndpointText.hpp` (`src/network/Transport/`) turns what a person types into the parts of an `Endpoint`, with the same rule on every system. The client and the server read their launch options with it.
+
+- `portFromText()` accepts decimal digits only, from `LOWEST_PORT` (1) to `HIGHEST_PORT` (65535): no sign, no space, nothing after the digits. Port 0, which asks the system for any free port, is refused: the players could not know it. Anything else throws `InvalidPortException`.
+- `ipv4AddressFromText()` accepts four decimal numbers from 0 to 255 separated by dots, such as `LOOPBACK_IPV4_ADDRESS` (`127.0.0.1`), and returns the text unchanged. A number may not start with 0 unless it is 0. A host name, an IPv6 address or anything else throws `InvalidIpv4AddressException`.
+
+They do not ask Asio, which hands the text to the system: `inet_pton` on Linux and macOS, `WSAStringToAddress` on Windows, whose documentation lets the text carry a port. On macOS, `inet_pton` reads `01` as 1 while `inet_aton` reads a leading 0 as octal, so a text with one could name two addresses.
 
 ## Socket to queues: `DatagramRelay`
 
@@ -119,6 +129,7 @@ const rtype::network::WorldState received =
 |---|---|
 | Change the largest datagram | `MAX_DATAGRAM_SIZE` in `src/network/NetworkConstants.hpp`, and the Transport section of [Protocol](/R-Type/protocol/#transport) |
 | Change the port the server listens on by default | `DEFAULT_SERVER_PORT` in `src/network/NetworkConstants.hpp` |
+| Change which ports or addresses a program accepts at launch | `portFromText()` and `ipv4AddressFromText()` in `src/network/Transport/EndpointText.cpp`, `LOWEST_PORT` in `NetworkConstants.hpp` |
 | Change how datagrams are received or sent | `src/network/Transport/UdpSocket/` |
 | Change how datagrams go between the socket and the queues | `src/network/Transport/DatagramRelay/` |
 | Write a class that needs Asio | A folder in `src/network` whose target links `rtype_network_asio` privately |

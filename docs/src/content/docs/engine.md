@@ -3,7 +3,7 @@ title: Engine
 description: What the engine does, how its parts fit together and where to find them in the code.
 ---
 
-The engine is the generic part of the game: it stores game objects, advances time at a fixed rate, runs delayed work, and carries events from the code that announces them to the code that reacts to them. It knows nothing about R-Type, SFML or sockets. The rules of the game live in `rtype_game`, which is built on top of it (see [Architecture](/R-Type/architecture/)).
+The engine is the generic part of the game: it stores game objects, advances time at a fixed rate, runs delayed work, carries events from the code that announces them to the code that reacts to them, and reads the options a program is given at launch. It knows nothing about R-Type, SFML or sockets. The rules of the game live in `rtype_game`, which is built on top of it (see [Architecture](/R-Type/architecture/)).
 
 This page tells you where to look when you need to change something. It describes what exists today and says plainly what does not exist yet.
 
@@ -17,6 +17,7 @@ This page tells you where to look when you need to change something. It describe
 | Game loop | Server only: ticks run at a fixed rate, no system runs in them yet | `src/server/Application/TickLoop/` |
 | Event bus | Available | `src/engine/Events/` |
 | Collisions | Available: the overlap test and the event; the system that detects them is in the game | `src/engine/Collision/` |
+| Launch arguments | Available; used by the server and the client | `src/engine/LaunchArguments/` |
 
 ## How the parts fit together
 
@@ -179,6 +180,27 @@ The engine defines one event type, `Collision` (see below). The game defines the
 
 The engine has no system that walks the entities: it cannot read `Position` or `CollisionBox`. `CollisionSystem` in the game builds the `Bounds` and publishes `Collision`, and which pairs matter (a player missile and a Bydo, for example) is decided by the game in a subscriber, never by the engine: see [Server and game](/R-Type/server/#collisions).
 
+## Launch arguments: `readLaunchArguments`
+
+`src/engine/LaunchArguments/` (`rtype_engine_launch_arguments`) reads the options a program is given at launch. The server and the client both use it, each with its own options (see [Server](/R-Type/server/#launch-options-launchoptions) and [Client](/R-Type/client/#launch-options-launchoptions)).
+
+- A program describes each option as a `LaunchOption`: its `name`, whether it `takesValue`, and a `record` called with the value, or with an empty view for an option that takes none. A record may throw to refuse its value, as the programs do through `portFromText()`.
+- `readLaunchArguments(arguments, options)` reads the arguments in order. The argument after an option that takes a value is always that value, even when it looks like an option. An option given twice is recorded twice, so the last one wins. An argument that names no option throws `UnknownLaunchArgumentException`; an option that takes a value, given last, throws `MissingLaunchOptionValueException`.
+- `usageHeader()`, `usageEntry()` and `launchErrorText()` write the usage and the launch error the same way for every program. `PORT_OPTION` (`-p`) and `HELP_OPTION` (`--help`) are the names the server and the client share.
+
+The logging options do not go through it: `rtype_logging` links nothing else of the repository, so `LogLaunchOptions` reads its own and leaves the other arguments to the program (see [Logging](/R-Type/logging/#choosing-the-level-and-the-output-at-launch)).
+
+```cpp
+std::uint16_t port = rtype::network::DEFAULT_SERVER_PORT;
+const std::array options{rtype::engine::LaunchOption{
+    .name = rtype::engine::PORT_OPTION,
+    .takesValue = true,
+    .record = [&port](std::string_view value) {
+      port = rtype::network::portFromText(value);
+    }}};
+rtype::engine::readLaunchArguments(logOptions.otherArguments(), options);
+```
+
 ## Where to intervene
 
 | You want to… | Look at |
@@ -195,6 +217,7 @@ The engine has no system that walks the entities: it cannot read `Position` or `
 | Test whether two rectangles touch, or react to a contact | `overlaps` and `Collision` in `src/engine/Collision/`; the pairs that matter belong to `src/game/` |
 | Announce that something happened, or react to it | `EventBus` in `src/engine/Events/EventBus/`: `publish` the event, `subscribe<Event>` to it |
 | Hand data from one thread to another | `BoundedQueue`, in its own library: see [Concurrency](/R-Type/concurrency/) |
+| Change how the launch options are read, or how the usage and the launch errors read | `src/engine/LaunchArguments/`; each program's own options are in its `LaunchOptions` |
 | Add an engine error | `src/engine/Exceptions/EngineException.hpp` |
 | Write a test that depends on time | `tests/SimulatedClock.hpp`, `tests/engine/Time/FixedTimestepTest.cpp` |
 

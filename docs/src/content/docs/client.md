@@ -3,7 +3,7 @@ title: Client
 description: What the client does, how its parts fit together and where to find them in the code.
 ---
 
-The client, `r-type_client` (`src/client/`), shows the game, plays its sounds and reads the player's input; the server decides what happens in the match (see [Architecture](/R-Type/architecture/)). Today it finds its assets folder, loads the assets of its interface, opens a window and runs its screens over a scrolling starfield: the title screen it opens on, a loading screen, the game screen, which draws its entities from one sprite sheet (for now a provisional showcase), an options screen and a quit confirmation, the menus all built from the same widgets. The game screen reads the arrow keys and the space bar as player actions. It does not talk to the server yet: it can send and receive datagrams on a thread of its own, but nothing starts that thread yet.
+The client, `r-type_client` (`src/client/`), shows the game, plays its sounds and reads the player's input; the server decides what happens in the match (see [Architecture](/R-Type/architecture/)). Today it finds its assets folder, loads the assets of its interface, opens a window and runs its screens over a scrolling starfield: the title screen it opens on, a loading screen, the game screen, which draws its entities from one sprite sheet (for now a provisional showcase), an options screen and a quit confirmation, the menus all built from the same widgets. The game screen reads the arrow keys and the space bar as player actions. It does not talk to the server yet: it reads the server's address and port at launch, and can send and receive datagrams on a thread of its own, but nothing starts that thread yet.
 
 This page tells you where to look when you need to change something. It describes what exists today and says plainly what does not exist yet.
 
@@ -24,7 +24,8 @@ This page tells you where to look when you need to change something. It describe
 | Player commands | Available; read by the game screen, not sent to the server yet | `src/client/Input/` |
 | Network thread | Available; not started by the client yet | `src/client/Connection/NetworkThread/` |
 | Ignoring an old world state | Available; nothing receives states yet | `src/client/Replication/WorldStateFilter/` |
-| Connection to a server, server address at launch | Not yet written | — |
+| Server address and port at launch | Available; logged, not used yet | `src/client/LaunchOptions/` |
+| Connection to a server | Not yet written | — |
 | Sounds and music of the game | Not yet written | — |
 
 ## Frame loop and screens: `Application`, `ScreenStack`
@@ -217,6 +218,24 @@ const std::uint8_t actions = held.bits();
 
 `GameScreen::playerActions()` is the only way out, since the window hands the key and focus events to the screen on top. Nothing reads it yet: there is no player ship on the client and no `PlayerInput` is sent. The game screen logs `actions held: <byte>` at trace level each time the byte changes. It assumes the window has the focus when it is built and learns otherwise from the focus events. Only the screen on top receives events, so the actions held when the options are opened over the game stay held until those keys are pressed or released again.
 
+## Launch options: `LaunchOptions`
+
+`LaunchOptions` (`src/client/LaunchOptions/`) reads the address and the port of the server, given at launch, from the arguments the logging options left (see [Logging](/R-Type/logging/#choosing-the-level-and-the-output-at-launch)), with the engine's `readLaunchArguments` (see [Engine](/R-Type/engine/#launch-arguments-readlauncharguments)):
+
+| Option | Effect |
+|---|---|
+| `-h <address>` | The IPv4 address of the server, four numbers such as `127.0.0.1` (see [Network](/R-Type/network/#ports-and-addresses-written-as-text-portfromtext-ipv4addressfromtext)). Default: `DEFAULT_SERVER_ADDRESS` (`127.0.0.1`), a server on the same machine. |
+| `-p <port>` | The UDP port of the server, from 1 to 65535. Default: `DEFAULT_SERVER_PORT` (4242). |
+| `--help` | Prints the usage, the logging options included, on standard output, then exits with code 0 without opening the window or the journal. |
+
+- A host name such as `localhost` is refused, not resolved: a resolution can block for seconds, so it must run on the network thread once the connection exists. An IPv6 address is refused too, since the server only listens over IPv4.
+- The last of each option wins. An unknown argument, an option without its value, an invalid address or an invalid port stops the client before the window opens: it prints `r-type_client:`, the reason and how to see the usage on standard error, then exits with code 1.
+- Nothing joins the server yet: `main()` logs `server: <address> port <port>` at the `info` level, and `LaunchOptions::serverEndpoint()` goes nowhere else.
+
+```bash
+./r-type_client -h 192.168.1.20 -p 4243
+```
+
 ## Network: `NetworkThread`
 
 `NetworkThread` (`rtype_client_network_thread`, `src/client/Connection/NetworkThread/`) runs the client's UDP socket on a thread of its own, so the frame loop never waits on the network. It is built from the same parts as the server: a `UdpSocket` on its `NetworkContext`, and a `DatagramRelay` between the socket and two `BoundedQueue` (see [Network](/R-Type/network/#socket-to-queues-datagramrelay)).
@@ -229,7 +248,7 @@ const std::uint8_t actions = held.bits();
 
 The incoming queue holds `INCOMING_DATAGRAM_QUEUE_CAPACITY` (256) datagrams, nearly thirteen seconds of the 20 world states per second of the protocol; the outgoing queue holds `OUTGOING_DATAGRAM_QUEUE_CAPACITY` (64), about one second of the 60 inputs per second the client sends (`src/client/Connection/ConnectionConstants.hpp`). These sizes are **provisional**: they will be revised with the rates of the protocol, and code must read the constants. When a queue is full, its oldest datagram is discarded; nothing reports it yet.
 
-Nothing creates a `NetworkThread` yet: no message is encoded, and the client takes no server address at launch.
+Nothing creates a `NetworkThread` yet: no message is encoded, and the server address read at launch is only logged (see [Launch options](#launch-options-launchoptions)).
 
 ## Platform: the executable path
 
@@ -288,6 +307,8 @@ if (!worldStateFilter.accept(state.tick)) {
 | Change which key does what | `KeyBindings::actionFor()` in `src/client/Input/KeyBindings/` |
 | Add a player action | `PlayerAction`, its bit in the protocol, and `KeyBindings::actionFor()` |
 | Change the window, or when the background moves and is drawn | `src/client/Window/GameWindow/`, `Application::measureFrame()` and `Application::render()` in `src/client/Application/Application/` |
+| Change the default server address or port | `DEFAULT_SERVER_ADDRESS` in `src/client/ClientConstants.hpp`, `DEFAULT_SERVER_PORT` in `src/network/NetworkConstants.hpp` |
+| Add a launch option | The options listed in `LaunchOptions::read()` and `usage()`, in `src/client/LaunchOptions/LaunchOptions.cpp`; its name in `src/client/ClientConstants.hpp`, or in `src/engine/LaunchArguments/LaunchArgumentsConstants.hpp` when the server uses it too |
 | Send or receive datagrams | `NetworkThread` in `src/client/Connection/NetworkThread/` |
 | Change how many datagrams wait between the frame loop and the network thread | `INCOMING_DATAGRAM_QUEUE_CAPACITY` and `OUTGOING_DATAGRAM_QUEUE_CAPACITY` in `src/client/Connection/ConnectionConstants.hpp` |
 | Test code that uses the network thread | `tests/client/Connection/NetworkThreadTest.cpp`: a peer socket on the loopback address |
