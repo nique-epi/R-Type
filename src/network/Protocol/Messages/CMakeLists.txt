@@ -1,31 +1,36 @@
-add_library(rtype_network_messages STATIC
-  ConnectionAccepted.cpp
-  ConnectionChallenge.cpp
-  ConnectionRefused.cpp
-  ConnectionRequest.cpp
-  Disconnection.cpp
-  EntityDestroyed.cpp
-  EntitySpawned.cpp
-  GameEnded.cpp
-  GameEvent.cpp
-  GameStarted.cpp
-  Heartbeat.cpp
-  LobbyState.cpp
-  PlayerInput.cpp
-  PlayerLeft.cpp
-  ReadyState.cpp
-)
+add_subdirectory(ConnectionAccepted)
+add_subdirectory(ConnectionChallenge)
+add_subdirectory(ConnectionRefused)
+add_subdirectory(ConnectionRequest)
+add_subdirectory(Disconnection)
+add_subdirectory(EntityDestroyed)
+add_subdirectory(EntitySpawned)
+add_subdirectory(GameEnded)
+add_subdirectory(GameEvent)
+add_subdirectory(GameStarted)
+add_subdirectory(Heartbeat)
+add_subdirectory(LobbyState)
+add_subdirectory(PlayerInput)
+add_subdirectory(PlayerLeft)
+add_subdirectory(ReadyState)
 
-target_include_directories(rtype_network_messages PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+add_library(rtype_network_messages INTERFACE)
 
 target_link_libraries(rtype_network_messages
-  PUBLIC
-    rtype_network_protocol
-  PRIVATE
-    rtype_network_wire_types
-    rtype_network_byte_writer
-    rtype_network_byte_reader
-    rtype_network_exceptions
+  INTERFACE
+    rtype_network_connection_accepted
+    rtype_network_connection_challenge
+    rtype_network_connection_refused
+    rtype_network_connection_request
+    rtype_network_disconnection
+    rtype_network_entity_destroyed
+    rtype_network_entity_spawned
+    rtype_network_game_ended
+    rtype_network_game_event
+    rtype_network_game_started
+    rtype_network_heartbeat
+    rtype_network_lobby_state
+    rtype_network_player_input
+    rtype_network_player_left
+    rtype_network_ready_state
 )
-
-rtype_enable_warnings(rtype_network_messages)

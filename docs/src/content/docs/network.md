@@ -107,13 +107,13 @@ Reading the header and splitting the messages are two calls because a receiver c
 
 ## Messages: `src/network/Protocol/Messages/`
 
-Each message of the protocol page is a struct of the same name (`ConnectionRequest`, `ReadyState`, `PlayerInput`…), plain data that holds its `MessageType` in `TYPE`. Next to it, `encodePayload(writer, message)` writes its payload, and `decodeMessage<Message>(payload)` reads one. The fifteen messages other than `WorldState` live in `Messages/`, one header each; `WorldState` keeps its codec (below), and `decodeMessage<WorldState>` reads one of its payloads.
+Each message of the protocol page is a struct of the same name (`ConnectionRequest`, `ReadyState`, `PlayerInput`…), plain data that holds its `MessageType` in `TYPE`. Next to it, `encodePayload(writer, message)` writes its payload, and `decodeMessage<Message>(payload)` reads one. The fifteen messages other than `WorldState` live in `Messages/`, one folder and one library each (`Messages/LobbyState/`, target `rtype_network_lobby_state`), gathered by `rtype_network_messages`; `WorldState` keeps its codec (below), and `decodeMessage<WorldState>` reads one of its payloads.
 
 - Every value of these fifteen messages is checked as the protocol page lists it: a `bool` is 0 or 1, an enumeration holds a listed value, a player number is 1 to 4 and appears once in a list, a nickname is 1 to 16 bytes of UTF-8, no action bit above the five actions is set, no entity id is 0, and the player or the entity a `GameEvent` names matches its kind. A count is checked before anything is sized from it, and a byte left after the last field refuses the message.
 - Writing runs the same checks before the first byte, so a refused message leaves the writer untouched, and whatever was read can be written back: a nickname accepted from a `ConnectionRequest` never makes a `LobbyState` throw.
 - Reading a refused message throws an exception derived from `MalformedMessageException`, or `BufferUnderflowException` for a payload cut short. Writing one throws the same exceptions, except for a coordinate that is NaN, which throws `InvalidCoordinateException`; `WorldStateSender` leaves such an entity out before encoding (see [Server](/R-Type/server/#world-state-worldstatesender)).
 
-Adding a message takes a struct with its `TYPE` and its two functions in `Messages/`, its value in `MessageType`, and its row on the protocol page; nothing that receives datagrams changes.
+Adding a message takes a folder of `Messages/` holding its struct, with its `TYPE` and its two functions, and its library, listed in `Messages/CMakeLists.txt`; then its value in `MessageType` and its row on the protocol page. Nothing that receives datagrams changes.
 
 ```cpp
 rtype::network::PacketHeader header;
