@@ -2,7 +2,8 @@ add_library(rtype_client_window INTERFACE)
 
 target_include_directories(rtype_client_window INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
 
+target_link_libraries(rtype_client_window INTERFACE SFML::System)
+
 add_subdirectory(PlayfieldViewport)
 add_subdirectory(WindowSizeSelection)
-add_subdirectory(WindowSizeButtons)
 add_subdirectory(GameWindow)

@@ -2,7 +2,12 @@ add_library(rtype_client_rendering_interfaces INTERFACE)
 
 target_include_directories(rtype_client_rendering_interfaces INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
 
-target_link_libraries(rtype_client_rendering_interfaces INTERFACE rtype_game_components)
+target_link_libraries(rtype_client_rendering_interfaces
+  INTERFACE
+    rtype_client_background
+    rtype_game_components
+    SFML::Graphics
+)
 
 add_library(rtype_client_entity_sprites STATIC EntitySprites.cpp SpriteShowcase.cpp)
 
@@ -19,6 +24,9 @@ rtype_enable_warnings(rtype_client_entity_sprites)
 add_subdirectory(RenderSystem)
 add_subdirectory(SfmlDrawSurface)
 add_subdirectory(AssetTextureSource)
+add_subdirectory(PixelCanvas)
+add_subdirectory(InterfaceCanvas)
+add_subdirectory(Squadron)
 add_subdirectory(EntityLayer)
 add_subdirectory(Background)
 

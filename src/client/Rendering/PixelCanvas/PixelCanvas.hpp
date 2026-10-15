@@ -17,6 +17,8 @@ namespace rtype::client {
 class PixelCanvas {
  public:
   /**
+   * @brief Starts with a transparent picture, ready to be laid.
+   *
    * @throws RenderTextureNotCreatedException when the canvas cannot get its
    * render texture.
    */
@@ -31,11 +33,13 @@ class PixelCanvas {
   /**
    * @brief Lays the picture over the whole playfield.
    *
-   * The picture holds only opaque pixels and transparent black ones, so its
-   * colors are already multiplied by their alpha, and so are the colors the
-   * smoothing mixes at its edges. It is therefore laid with the blend that
-   * expects such colors (one, one minus source alpha): the default alpha
-   * blend would multiply them a second time and darken the edges.
+   * Painting with the default alpha blend on a canvas cleared to transparent
+   * black stores colors already multiplied by their alpha, whether a pixel is
+   * opaque, transparent or translucent like the dimmed layer of a dialog,
+   * and so are the colors the smoothing mixes at its edges. It is therefore
+   * laid with the blend that expects such colors (one, one minus source alpha):
+   * the default alpha blend would multiply them a second time and darken the
+   * edges.
    *
    * It leaves the picture unchanged and only refreshes the enlarged copy it
    * keeps for the next frames, so a const draw may call it.
