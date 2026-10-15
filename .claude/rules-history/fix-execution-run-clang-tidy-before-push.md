@@ -45,5 +45,16 @@ The first run listed findings in the new tests and they were fixed. The log also
 ### Root cause
 The rule asked for exit code 0 and no `error:` on the changed files, but said nothing about files clang-tidy could not compile. A compile error leaves clang-tidy with a partial syntax tree, so the flow-sensitive checks miss code they would otherwise analyze.
 
+## Update (2026-10-14) — a header only fails when it is the main file
+
+### Context
+A pull request added a test fixture header, `WorldStateSenderFixture.hpp`, and the local `clang-tidy` of the changed `.cpp` files, with a header filter on the new folders, exited 0.
+
+### Mistake
+The header included a constants header it did not use. The CI `Clang-tidy` job failed with `misc-include-cleaner` ("included header ... is not used directly") on the header, announced as passing locally.
+
+### Root cause
+The rule said the CI runs without a header filter, so header findings never fail it. The CI in fact lints each changed `.hpp` as a main file. `misc-include-cleaner` judges an include against the uses inside the file being linted; through a `.cpp` that includes the header, the include looks used.
+
 ## Rule
 See `.claude/rules/fix/execution/fix-execution-run-clang-tidy-before-push.md`.
