@@ -17,7 +17,7 @@ enum class NavigatorRequest : std::uint8_t {
 
 /** @brief One request, with the screen it names, if any. */
 struct NavigatorCall {
-  NavigatorRequest request;
+  NavigatorRequest request{};
   std::optional<rtype::client::ScreenId> screen;
 
   bool operator==(const NavigatorCall& other) const = default;
