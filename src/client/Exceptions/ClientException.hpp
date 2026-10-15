@@ -57,4 +57,15 @@ class RenderTextureNotCreatedException : public ClientException {
   RenderTextureNotCreatedException(unsigned int width, unsigned int height);
 };
 
+/**
+ * @brief The nickname given at launch is not one the protocol accepts: an
+ * error of the arguments, unlike network::InvalidNicknameException, which
+ * reports a malformed message.
+ */
+class InvalidNicknameOptionException : public ClientException {
+ public:
+  /** @param nickname The value given after NICKNAME_OPTION. */
+  explicit InvalidNicknameOptionException(std::string_view nickname);
+};
+
 }  // namespace rtype::client

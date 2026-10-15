@@ -5,6 +5,7 @@
 #include <string_view>
 #include <utility>
 #include "ClientConstants.hpp"
+#include "ClientException.hpp"
 #include "Endpoint.hpp"
 #include "EndpointText.hpp"
 #include "LaunchArguments.hpp"
@@ -13,6 +14,8 @@
 #include "LogLaunchOptions.hpp"
 #include "LoggingConstants.hpp"
 #include "NetworkConstants.hpp"
+#include "ProtocolConstants.hpp"
+#include "WireTypes.hpp"
 
 namespace rtype::client {
 
@@ -20,7 +23,7 @@ LaunchOptions LaunchOptions::read(std::span<const std::string_view> arguments) {
   LaunchOptions options{
       network::Endpoint{.address = std::string(DEFAULT_SERVER_ADDRESS),
                         .port = network::DEFAULT_SERVER_PORT},
-      false};
+      std::string(DEFAULT_NICKNAME), false};
   const std::array launchOptions{
       engine::LaunchOption{.name = ADDRESS_OPTION,
                            .takesValue = true,
@@ -35,6 +38,16 @@ LaunchOptions LaunchOptions::read(std::span<const std::string_view> arguments) {
                                [&options](std::string_view port) {
                                  options.serverEndpoint_.port =
                                      network::portFromText(port);
+                               }},
+      engine::LaunchOption{.name = NICKNAME_OPTION,
+                           .takesValue = true,
+                           .record =
+                               [&options](std::string_view nickname) {
+                                 if (!network::isValidNickname(nickname)) {
+                                   throw InvalidNicknameOptionException(
+                                       nickname);
+                                 }
+                                 options.nickname_ = std::string(nickname);
                                }},
       engine::LaunchOption{
           .name = engine::HELP_OPTION,
@@ -60,6 +73,12 @@ std::string LaunchOptions::usage() {
       "UDP port of the server, from " + std::to_string(network::LOWEST_PORT) +
           " to " + std::to_string(network::HIGHEST_PORT) +
           ". Default: " + std::to_string(network::DEFAULT_SERVER_PORT) + ".");
+  text += engine::usageEntry(
+      std::string(NICKNAME_OPTION) + " <nickname>",
+      "Callsign of the player, " +
+          std::to_string(network::MINIMUM_NICKNAME_SIZE) + " to " +
+          std::to_string(network::MAXIMUM_NICKNAME_SIZE) +
+          " bytes of UTF-8. Default: " + std::string(DEFAULT_NICKNAME) + ".");
   text += engine::usageEntry(engine::HELP_OPTION,
                              "Print this help and open no window.");
   text += '\n';
@@ -71,11 +90,14 @@ const network::Endpoint& LaunchOptions::serverEndpoint() const {
   return serverEndpoint_;
 }
 
+const std::string& LaunchOptions::nickname() const { return nickname_; }
+
 bool LaunchOptions::helpRequested() const { return helpRequested_; }
 
 LaunchOptions::LaunchOptions(network::Endpoint serverEndpoint,
-                             bool helpRequested)
+                             std::string nickname, bool helpRequested)
     : serverEndpoint_(std::move(serverEndpoint)),
+      nickname_(std::move(nickname)),
       helpRequested_(helpRequested) {}
 
 }  // namespace rtype::client

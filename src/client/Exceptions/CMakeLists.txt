@@ -2,4 +2,6 @@ add_library(rtype_client_exceptions STATIC ClientException.cpp)
 
 target_include_directories(rtype_client_exceptions PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
+target_link_libraries(rtype_client_exceptions PRIVATE rtype_network_protocol)
+
 rtype_enable_warnings(rtype_client_exceptions)
