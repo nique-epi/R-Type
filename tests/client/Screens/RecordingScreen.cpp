@@ -22,6 +22,8 @@ const char* nameOf(ScreenId screen) {
       return "options";
     case ScreenId::QuitConfirmation:
       return "quit confirmation";
+    case ScreenId::Connection:
+      return "connection";
   }
   return "unknown screen";
 }

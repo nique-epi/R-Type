@@ -1,10 +1,13 @@
 #pragma once
 
 #include <memory>
+#include <string>
 #include "AssetList.hpp"
+#include "Endpoint.hpp"
 #include "GameWindow.hpp"
 #include "IInterfaceCanvas.hpp"
 #include "IScreen.hpp"
+#include "IServerConnection.hpp"
 #include "PlayfieldMapping.hpp"
 #include "ScreenId.hpp"
 #include "ScreenStack.hpp"
@@ -34,6 +37,9 @@ class AssetLibrary;
  * thread and hand its messages over through a queue a screen drains each
  * frame.
  *
+ * It owns the connection to a server, which outlives every screen; for now a
+ * StandInServerConnection, which talks to no server.
+ *
  * Screens are asked for by identifier; createScreen() is the one place that
  * builds them, with one case per ScreenId. The client starts on the title
  * screen.
@@ -43,10 +49,13 @@ class Application {
   /**
    * @param assets Library holding the interface assets, loaded and permanent;
    * it must outlive the application.
+   * @param server Address and port the connection screen starts with.
+   * @param nickname Nickname the connection screen starts with.
    * @throws RenderTextureNotCreatedException when the background cannot get
    * its render textures.
    */
-  explicit Application(AssetLibrary& assets);
+  Application(AssetLibrary& assets, network::Endpoint server,
+              std::string nickname);
 
   Application(const Application&) = delete;
   Application& operator=(const Application&) = delete;
@@ -108,6 +117,14 @@ class Application {
   ScrollingBackground background_;
   engine::SystemClock clock_;
   engine::Duration previousFrameTime_{};
+  /**
+   * @brief The connection the connection screen drives, declared before the
+   * screens so it outlives them. Provisional: a StandInServerConnection, which
+   * talks to no server.
+   */
+  std::unique_ptr<IServerConnection> connection_;
+  network::Endpoint server_;
+  std::string nickname_;
   ScreenStack screens_;
 };
 

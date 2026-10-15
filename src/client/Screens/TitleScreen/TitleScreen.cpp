@@ -52,7 +52,7 @@ Menu TitleScreen::buildMenu(IScreenNavigator& navigator) {
       .logo(LOGO_ID, LOGO_SIZE)
       .subtitle(TITLE_SUBTITLE)
       .button({.label = PLAY_LABEL, .description = PLAY_DESCRIPTION},
-              [&navigator] { navigator.replaceAll(ScreenId::Game); })
+              [&navigator] { navigator.push(ScreenId::Connection); })
       .button({.label = SETTINGS_LABEL, .description = SETTINGS_DESCRIPTION},
               [&navigator] { navigator.push(ScreenId::Options); })
       .cancelButton(

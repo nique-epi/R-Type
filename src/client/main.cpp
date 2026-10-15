@@ -34,7 +34,8 @@ int runClient(const rtype::logging::LogLaunchOptions& logOptions,
     logger.info("assets folder: ", rtype::client::genericText(assets.folder()));
     rtype::client::loadInterfaceAssets(assets);
     rtype::client::loadTitleAssets(assets);
-    rtype::client::Application application{assets};
+    rtype::client::Application application{
+        assets, launchOptions.serverEndpoint(), launchOptions.nickname()};
     application.run();
     logger.info("client stopped");
   } catch (const std::exception& error) {

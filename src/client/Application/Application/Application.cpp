@@ -4,8 +4,12 @@
 #include <memory>
 #include <optional>
 #include <random>
+#include <string>
+#include <utility>
 #include "AssetLibrary.hpp"
 #include "AssetList.hpp"
+#include "ConnectionScreen.hpp"
+#include "Endpoint.hpp"
 #include "EntityLayer.hpp"
 #include "GameScreen.hpp"
 #include "IInterfaceCanvas.hpp"
@@ -20,14 +24,19 @@
 #include "ScreenAssets.hpp"
 #include "ScreenId.hpp"
 #include "ScreenStack.hpp"
+#include "StandInServerConnection.hpp"
 #include "TimeConstants.hpp"
 #include "TitleScreen.hpp"
 
 namespace rtype::client {
 
-Application::Application(AssetLibrary& assets)
+Application::Application(AssetLibrary& assets, network::Endpoint server,
+                         std::string nickname)
     : assets_(&assets),
       background_(std::random_device{}()),
+      connection_(std::make_unique<StandInServerConnection>()),
+      server_(std::move(server)),
+      nickname_(std::move(nickname)),
       screens_([this](ScreenId screen) { return createScreen(screen); }) {
   screens_.replaceAll(ScreenId::Title);
   screens_.applyPendingChanges();
@@ -78,6 +87,10 @@ std::unique_ptr<IScreen> Application::createScreen(ScreenId screen) {
     case ScreenId::QuitConfirmation:
       return std::make_unique<QuitConfirmationScreen>(
           screens_, interfaceCanvas(), playfieldMapping());
+    case ScreenId::Connection:
+      return std::make_unique<ConnectionScreen>(
+          screens_, *connection_, interfaceCanvas(), playfieldMapping(),
+          server_, nickname_);
   }
   return nullptr;
 }
