@@ -104,6 +104,7 @@ Paths below are relative to `.claude/rules/`.
 
 **Reasoning — `fix/reasoning/`**
 - `fix/reasoning/fix-reasoning-a-guard-after-the-write-is-only-an-alarm.md`
+- `fix/reasoning/fix-reasoning-a-sanitizer-sees-only-what-leaves-the-allocation.md`
 - `fix/reasoning/fix-reasoning-a-sequence-asserts-its-starting-state.md`
 - `fix/reasoning/fix-reasoning-an-error-type-is-not-a-diagnosis.md`
 - `fix/reasoning/fix-reasoning-an-exception-to-a-check-is-read-as-the-forger.md`
@@ -118,6 +119,7 @@ Paths below are relative to `.claude/rules/`.
 - `fix/reasoning/fix-reasoning-name-the-axis-when-neutral-here-beneficial-there.md`
 - `fix/reasoning/fix-reasoning-never-assume-unread-file-content.md`
 - `fix/reasoning/fix-reasoning-present-code-is-not-behavior.md`
+- `fix/reasoning/fix-reasoning-recheck-a-conclusion-after-the-design-changed.md`
 - `fix/reasoning/fix-reasoning-use-measurements-to-falsify-before-coding.md`
 - `fix/reasoning/fix-reasoning-validate-the-instrument-before-reporting-a-count.md`
 - `fix/reasoning/fix-reasoning-verify-the-premise-before-fixing-downstream.md`

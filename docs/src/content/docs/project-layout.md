@@ -114,7 +114,7 @@ src/network/
 └── Exceptions/
 ```
 
-`NetworkContext`, `Transport` (the UDP socket and the relay to queues, not the simulator), `Serialization` and `Exceptions` exist; see [Network](/R-Type/network/).
+`NetworkContext`, `Transport` (the UDP socket and the relay to queues, not the simulator), `Serialization`, `Exceptions` and `Protocol` (the `WorldState` message only) exist; see [Network](/R-Type/network/).
 
 ## The programs
 
@@ -136,7 +136,7 @@ src/server/
 └── Storage/          this server's SQLite file: leaderboard, statistics
 ```
 
-`Application` and `Platform` exist today: the network thread and the simulation thread (see [Server](/R-Type/server/)), and the timer resolution the server asks Windows for.
+`Application`, `Replication` (the world state sender only) and `Platform` exist today: the network thread and the simulation thread, the world state sent at a fixed rate (see [Server](/R-Type/server/)), and the timer resolution the server asks Windows for.
 
 ### Client
 
@@ -159,7 +159,7 @@ src/client/
 └── Prediction/       own ship predicted, other ships interpolated
 ```
 
-`Application`, `Window`, `Screens` (title, loading, game, options and quit confirmation), `Widgets`, `Rendering`, `Assets`, `Platform`, `Input` and `Connection` exist today. `Input` holds the keys and the held actions only: gamepad, remapping and the player input message are not written yet. `Connection` only holds the network thread, which nothing starts yet (see [Client](/R-Type/client/#network-networkthread)).
+`Application`, `Window`, `Screens` (title, loading, game, options and quit confirmation), `Widgets`, `Rendering`, `Assets`, `Platform`, `Input`, `Connection` and `Replication` (the filter that ignores an old world state only) exist today. `Input` holds the keys and the held actions only: gamepad, remapping and the player input message are not written yet. `Connection` only holds the network thread, which nothing starts yet (see [Client](/R-Type/client/#network-networkthread)).
 
 `Rendering` draws every entity that has a `Position` and a `Sprite` (an asset id, the rectangle of it to show and a layer), from the background layer to the interface layer; the game screen draws them through its `EntityLayer`. `RenderSystem` reads these two components and nothing else, and draws through `IDrawSurface`; only `SfmlDrawSurface` knows SFML: it paints on the pixel grid of the background and finds textures through `ITextureSource`, which `AssetTextureSource` reads from the asset library. `spriteOf` is the single table that gives each entity type its sprite. It is described in [Client](/R-Type/client/#entity-sprites-spriteof).
 

@@ -23,6 +23,7 @@ This page tells you where to look when you need to change something. It describe
 | Squadron of the title screen | Available | `src/client/Rendering/Squadron/` |
 | Player commands | Available; read by the game screen, not sent to the server yet | `src/client/Input/` |
 | Network thread | Available; not started by the client yet | `src/client/Connection/NetworkThread/` |
+| Ignoring an old world state | Available; nothing receives states yet | `src/client/Replication/WorldStateFilter/` |
 | Connection to a server, server address at launch | Not yet written | — |
 | Sounds and music of the game | Not yet written | — |
 
@@ -236,10 +237,28 @@ Nothing creates a `NetworkThread` yet: no message is encoded, and the client tak
 
 `systemPrefersReducedMotion()`, in the same folder and the same way, tells whether the player asked the system for less motion: "Reduce motion" on macOS (read from AppKit), "Show animations in Windows" turned off on Windows (`SPI_GETCLIENTAREAANIMATION`), the GNOME setting `enable-animations` turned off on Linux (read with `gsettings`). A setting the system does not give counts as no request. No test reads it: its answer depends on the machine.
 
+## World state: `WorldStateFilter`
+
+UDP may deliver a datagram sent earlier after one sent later, and applying the old one would move entities backwards. `WorldStateFilter` (`src/client/Replication/WorldStateFilter/`) remembers the highest `tick` it has accepted. `accept(tick)` returns `false` when `tick` is lower than that, and the state must be dropped; otherwise it returns `true` and remembers the tick. An equal tick is accepted, because it is another part of the same state (see [Protocol](/R-Type/protocol/#world-state)).
+
+- The first state is always accepted, and a refused state does not lower the remembered tick.
+- Ticks are compared as plain integers, with no wrap-around: a 32-bit tick lasts 2.27 years at 60 ticks per second.
+- Call it only for datagrams that passed the checks on the sender, otherwise a forged datagram could raise the remembered tick and make every real state look old. Those checks are not written yet.
+- Nothing receives states or applies positions yet: only the tests call `accept()`.
+
+```cpp
+const rtype::network::WorldState state =
+    rtype::network::WorldStateCodec::decode(datagram.payload);
+if (!worldStateFilter.accept(state.tick)) {
+  return;
+}
+```
+
 ## Where to intervene
 
 | You want to… | Look at |
 |---|---|
+| Change which world states the client ignores | `WorldStateFilter::accept` in `src/client/Replication/WorldStateFilter/` |
 | Add an asset | A file in `assets/sprites/`, `sounds/`, `music/` or `fonts/`, and its id in `gameAssets()`, in `titleAssets()` for the title screen, or in `interfaceAssets()` for a font any screen may use (`src/client/Screens/ScreenAssets.cpp`); `client_screen_tests` loads `interfaceAssets()` for real, and the CI cannot create a texture |
 | Change the asset id rule | `isValidAssetId()` in `src/client/Assets/AssetIds.cpp`, `ASSET_ID_PUNCTUATION` in `AssetConstants.hpp`, and `assets/README.md` |
 | Change where the client looks for `assets/` | `findAssetFolder()` in `src/client/Assets/AssetFolder.cpp` |
