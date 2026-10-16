@@ -10,7 +10,18 @@ target_link_libraries(rtype_client_widgets
     SFML::Window
 )
 
+add_library(rtype_client_widget_text STATIC WidgetText.cpp)
+
+target_link_libraries(rtype_client_widget_text PUBLIC rtype_client_widgets)
+
+rtype_enable_warnings(rtype_client_widget_text)
+
 add_subdirectory(ChamferedBox)
+add_subdirectory(Outline)
+add_subdirectory(SunkBox)
+add_subdirectory(CheckBox)
+add_subdirectory(KeyCap)
+add_subdirectory(TabStrip)
 add_subdirectory(Label)
 add_subdirectory(TextField)
 add_subdirectory(Button)

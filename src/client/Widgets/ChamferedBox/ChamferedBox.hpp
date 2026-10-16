@@ -2,6 +2,7 @@
 
 #include <SFML/Graphics/Color.hpp>
 #include <SFML/Graphics/Rect.hpp>
+#include <cstdint>
 #include "IInterfaceCanvas.hpp"
 
 namespace rtype::client {
@@ -13,7 +14,8 @@ namespace rtype::client {
  * The outer shape, cut over CHAMFER_ROWS rows, is painted in the border color;
  * the inside, BORDER_THICKNESS in and cut one row less, over it, which leaves a
  * border along the cuts too. The area must be at least SIDES_PER_AXIS times
- * CHAMFER_ROWS tall.
+ * CHAMFER_ROWS tall. A box open at the bottom has only its top-left corner cut
+ * and no bottom border, as a tab that opens into the panel under it.
  */
 class ChamferedBox {
  public:
@@ -24,14 +26,24 @@ class ChamferedBox {
     sf::Color inside;
   };
 
-  /** @param area Where the box lies, in pixels of the interface picture. */
+  /** @brief Its edges: closed, or open at the bottom. */
+  enum class Shape : std::uint8_t {
+    Closed,
+    OpenBottom,
+  };
+
+  /** @brief A closed box.
+   * @param area Where the box lies, in pixels of the interface picture. */
   ChamferedBox(sf::IntRect area, Colors colors);
+
+  ChamferedBox(sf::IntRect area, Colors colors, Shape shape);
 
   void paint(IInterfaceCanvas& canvas) const;
 
  private:
   sf::IntRect area_;
   Colors colors_;
+  Shape shape_ = Shape::Closed;
 };
 
 }  // namespace rtype::client
