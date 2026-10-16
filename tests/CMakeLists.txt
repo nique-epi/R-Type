@@ -50,7 +50,7 @@ rtype_add_test(NAME server_tests SOURCES server/Application/TickLoopTest.cpp ser
 target_include_directories(server_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/server)
 rtype_add_test(NAME server_replication_tests SOURCES server/Replication/WorldStateSenderTest.cpp server/Replication/WorldStateSenderFixture.cpp LIBS rtype_server_world_state_sender rtype_server_constants)
 target_include_directories(server_replication_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/server/Replication)
-rtype_add_test(NAME client_replication_tests SOURCES client/Replication/WorldStateFilterTest.cpp LIBS rtype_client_world_state_filter)
+rtype_add_test(NAME client_replication_tests SOURCES client/Replication/WorldStateFilterTest.cpp client/Replication/EntityReplicatorTest.cpp client/Replication/EntityReplicatorFixture.cpp LIBS rtype_client_entity_replicator rtype_client_entity_sprites rtype_identifiers GTest::gmock)
 target_include_directories(client_replication_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/client/Replication)
 rtype_add_test(NAME server_platform_tests SOURCES server/Platform/FineTimerResolutionTest.cpp LIBS rtype_server_fine_timer_resolution)
 rtype_add_test(NAME server_launch_options_tests SOURCES server/LaunchOptions/LaunchOptionsTest.cpp LIBS rtype_server_launch_options rtype_server_constants rtype_network_constants rtype_logging)
