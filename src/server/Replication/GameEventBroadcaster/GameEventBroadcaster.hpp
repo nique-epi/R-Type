@@ -11,7 +11,6 @@
 #include "GameEventEncoder.hpp"
 #include "Logger.hpp"
 #include "MessageType.hpp"
-#include "NetworkException.hpp"
 #include "OutgoingDatagram.hpp"
 #include "PacketHeader.hpp"
 #include "TimerScheduler.hpp"
@@ -60,25 +59,11 @@ class GameEventBroadcaster {
 
  private:
   template <typename Event>
-  void subscribeTo(engine::EventBus& events, std::string_view eventName) {
-    events.subscribe<Event>([this, eventName](const Event& event) {
-      const std::optional<EncodedMessage> message = tryEncode(event, eventName);
-      if (message.has_value()) {
-        broadcast(*message);
-      }
-    });
-  }
+  void subscribeTo(engine::EventBus& events, std::string_view eventName);
 
   template <typename Event>
   std::optional<EncodedMessage> tryEncode(const Event& event,
-                                          std::string_view eventName) {
-    try {
-      return encoder_.encode(event);
-    } catch (const network::NetworkException& error) {
-      logger_.warn("game event ", eventName, " not sent: ", error.what());
-      return std::nullopt;
-    }
-  }
+                                          std::string_view eventName);
 
   void broadcast(const EncodedMessage& message);
   void sendCopy(const std::vector<network::Endpoint>& recipients,

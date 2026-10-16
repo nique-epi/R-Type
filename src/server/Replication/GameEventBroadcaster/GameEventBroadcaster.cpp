@@ -1,7 +1,9 @@
 #include "GameEventBroadcaster.hpp"
 #include <cstddef>
 #include <functional>
+#include <optional>
 #include <string>
+#include <string_view>
 #include <utility>
 #include <vector>
 #include "DatagramCodec.hpp"
@@ -13,6 +15,7 @@
 #include "EventBus.hpp"
 #include "GameEventConstants.hpp"
 #include "MessageType.hpp"
+#include "NetworkException.hpp"
 #include "OutgoingDatagram.hpp"
 #include "PacketHeader.hpp"
 #include "PlayerElimination.hpp"
@@ -22,6 +25,28 @@
 #include "TimerScheduler.hpp"
 
 namespace rtype::server {
+
+template <typename Event>
+void GameEventBroadcaster::subscribeTo(engine::EventBus& events,
+                                       std::string_view eventName) {
+  events.subscribe<Event>([this, eventName](const Event& event) {
+    const std::optional<EncodedMessage> message = tryEncode(event, eventName);
+    if (message.has_value()) {
+      broadcast(*message);
+    }
+  });
+}
+
+template <typename Event>
+std::optional<EncodedMessage> GameEventBroadcaster::tryEncode(
+    const Event& event, std::string_view eventName) {
+  try {
+    return encoder_.encode(event);
+  } catch (const network::NetworkException& error) {
+    logger_.warn("game event ", eventName, " not sent: ", error.what());
+    return std::nullopt;
+  }
+}
 
 GameEventBroadcaster::GameEventBroadcaster(
     engine::EventBus& events, engine::TimerScheduler& timers,
