@@ -144,7 +144,7 @@ The game announces what the players must see or hear by publishing an event on t
 - The copies go to the clients there were when the event was published: a client that joins after it never receives a copy.
 - The timers advance by one tick at a time, so a copy leaves on the first tick that reaches its delay, up to one tick (`SIMULATION_TICK_DURATION`, 16.7 ms) after it.
 - `REPEATED_MESSAGE_COPIES` and `REPEATED_MESSAGE_INTERVAL` are **provisional**, like the protocol rates they follow. Code must read the constants and never repeat 3 or 50.
-- An event naming the entity id 0, which no entity has, makes `dispatch()` throw `InvalidFieldValueException`: the publisher has a bug.
+- An event the protocol refuses is skipped: a position that is not a number, the entity id 0 (which no entity has), or a player number outside 1 to 4. The broadcaster logs a warning with the name of the event, sends nothing, schedules no copy, and does not use an event number, so the next event goes out and the server keeps running. Only the encoding is protected: a fault in the sending still stops the tick.
 - The broadcaster must outlive the last `dispatch()` of the bus and the last `advance()` of the timers, because both call back into it.
 - Nothing is built when the list of recipients is empty. In `main.cpp` it is empty and nothing publishes the events yet, so no datagram leaves. The header function returns a default header, with no session, until the server has sessions; it is never called while there is no recipient.
 
