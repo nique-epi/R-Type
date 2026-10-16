@@ -47,3 +47,49 @@ See the core file, subsection "The value of an option and a separator are quoted
 
 - ❌ `grep -rn FIELD_SIZE src --include=*.cpp; echo =====; grep …`.
 - ✅ `grep -rn FIELD_SIZE src --include='*.cpp'; echo '-----'; grep …`.
+
+## Update (2026-10-16) — the same option value, a third time
+
+### Context
+
+Options menu of the client, in plan mode: looking up the readers of a constant across the client sources before writing the plan.
+
+### Mistake
+
+`grep -rn … --include=*.cpp` was sent unquoted again: zsh printed `no matches found: --include=*.cpp` and the search did not run, the exact case the previous update had added to the core.
+
+### Root cause
+
+The prescription asked to reread each unquoted word before sending; under time pressure the `--include` form was typed from habit, so a reminder to quote it does not hold. The construct itself carries the risk.
+
+### Rule
+
+See the core file, subsection "A search by file kind uses `git grep` with quoted pathspecs, never `grep --include`".
+
+### Example
+
+- ❌ `grep -rn WINDOW_SIZE_SEPARATOR src --include=*.cpp`.
+- ✅ `git grep -n 'WINDOW_SIZE_SEPARATOR' -- '*.cpp' '*.hpp'`.
+
+## Update (2026-10-16) — a bare separator of equals signs, again
+
+### Context
+
+Options menu of the client, implementation: reading the heads of two test files to wire a shared helper.
+
+### Mistake
+
+The command chained `sed …; echo =====; sed …`: zsh printed `==== not found` and every command after the separator was skipped, the case the 2026-10-15 update already covered.
+
+### Root cause
+
+The prescription asks to quote the separator, which depends on remembering it at each command; the `=` itself is what zsh expands.
+
+### Rule
+
+See the core file, subsection "A separator is made of dashes only".
+
+### Example
+
+- ❌ `sed -n 1,58p a.cpp && echo ===== && sed -n 1,35p b.cpp`.
+- ✅ `sed -n 1,58p a.cpp && echo '-----' && sed -n 1,35p b.cpp`.
