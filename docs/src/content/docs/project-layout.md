@@ -115,7 +115,7 @@ src/network/
 └── Exceptions/
 ```
 
-`NetworkContext`, `Transport` (the UDP socket and the relay to queues, not the simulator), `Serialization`, `Exceptions` and `Protocol` (the datagram header, every message of version 0 and the dispatch by type) exist; see [Network](/R-Type/network/).
+`NetworkContext`, `Transport` (the UDP socket and the relay to queues, not the simulator), `Serialization`, `Exceptions`, `Protocol` (the datagram header, every message of version 0 and the dispatch by type) and `Handshake` (the connection cookies; no rate limit or version answer yet) exist; see [Network](/R-Type/network/).
 
 ## The programs
 
@@ -137,7 +137,7 @@ src/server/
 └── Storage/          this server's SQLite file: leaderboard, statistics
 ```
 
-`Application`, `Replication` (the world state sender only), `Platform` and `LaunchOptions` exist today: the network thread and the simulation thread, the world state sent at a fixed rate (see [Server](/R-Type/server/)), the timer resolution the server asks Windows for, and the port read at launch.
+`Application`, `Replication` (the world state sender only), `Platform`, `LaunchOptions`, `Lobby` (the answers to connection requests only) and `Instances` (the players of the one game only, no `GameInstance` yet) exist today: the network thread and the simulation thread, the world state sent at a fixed rate (see [Server](/R-Type/server/)), the timer resolution the server asks Windows for, the port read at launch, and the players let in.
 
 ### Client
 
@@ -161,7 +161,7 @@ src/client/
 └── Prediction/       own ship predicted, other ships interpolated
 ```
 
-`Application`, `Window`, `Screens` (title, connection, loading, game, options and quit confirmation), `Widgets`, `Rendering`, `Assets`, `Platform`, `Input`, `Connection`, `Replication` (the filter that ignores an old world state only) and `LaunchOptions` exist today. `Input` holds the keys and the held actions only: gamepad, remapping and the player input message are not written yet. `Connection` holds the network thread, which nothing starts yet (see [Client](/R-Type/client/#network-networkthread)), and the connection the connection screen drives, for now a provisional stand-in that contacts no server (see [Client](/R-Type/client/#connection-screen-connectionscreen-iserverconnection)).
+`Application`, `Window`, `Screens` (title, connection, loading, game, options and quit confirmation), `Widgets`, `Rendering`, `Assets`, `Platform`, `Input`, `Connection`, `Replication` (the filter that ignores an old world state only) and `LaunchOptions` exist today. `Input` holds the keys and the held actions only: gamepad, remapping and the player input message are not written yet. `Connection` holds the network thread the client opens at launch (see [Client](/R-Type/client/#network-networkthread)) and the connection to a server the connection screen drives (see [Client](/R-Type/client/#joining-a-server-serverconnection)).
 
 `Rendering` draws every entity that has a `Position` and a `Sprite` (an asset id, the rectangle of it to show and a layer), from the background layer to the interface layer; the game screen draws them through its `EntityLayer`. `RenderSystem` reads these two components and nothing else, and draws through `IDrawSurface`; only `SfmlDrawSurface` knows SFML: it paints on the pixel grid of the background and finds textures through `ITextureSource`, which `AssetTextureSource` reads from the asset library. `spriteOf` is the single table that gives each entity type its sprite. It is described in [Client](/R-Type/client/#entity-sprites-spriteof).
 
@@ -189,7 +189,7 @@ Each module splits its classes into a controller (HTTP in and out), a service (t
 
 ### Tests, web frontend, assets
 
-- **`tests/`** mirrors `src/`: the test of `src/game/Waves/WaveDirector` is `tests/game/Waves/WaveDirectorTest.cpp`, built into `game_tests`, one executable per library or program. Test doubles (fake clock, lossy transport) go in `tests/doubles/`; load-test bots in `tests/tools/`, never shipped. Today the older tests sit at the root of `tests/`; `tests/client/`, `tests/concurrency/`, `tests/engine/`, `tests/network/` and `tests/server/` already follow this layout, and `tests/doubles/` holds a socket that records instead of sending and a connection to a server that records what a screen asks.
+- **`tests/`** mirrors `src/`: the test of `src/game/Waves/WaveDirector` is `tests/game/Waves/WaveDirectorTest.cpp`, built into `game_tests`, one executable per library or program. Test doubles (fake clock, lossy transport) go in `tests/doubles/`; load-test bots in `tests/tools/`, never shipped. Today the older tests sit at the root of `tests/`; `tests/client/`, `tests/concurrency/`, `tests/engine/`, `tests/network/` and `tests/server/` already follow this layout, and `tests/doubles/` holds a socket that records instead of sending, a datagram link that records what is sent and hands over what a test delivers, and a connection to a server that records what a screen asks.
 - **`web/`** is the React frontend served by the master: `src/api/` (one function per route), `src/pages/`, `src/components/`.
 - **`assets/`** holds the files read at run time: `sprites/`, `sounds/`, `music/` and `fonts/` for the client, `waves/` for the server.
 
