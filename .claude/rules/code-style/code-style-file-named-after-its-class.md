@@ -16,6 +16,7 @@ The file name must be mechanically derivable from the class name, and vice versa
 - The `I` prefix of interfaces is part of the name: `ISystem.hpp`.
 - A file with no class (free functions, constants) takes the `PascalCase` name of the concept it groups: `NetworkConstants.hpp`.
 - A test file is named after what it tests, with a `Test` suffix: `PacketReaderTest.cpp`.
+- A test file holds the tests of **one** class or one free-function header. The suites of several classes are never grouped under a name `src/` does not have, however small or alike the classes are: `OutlineTest.cpp`, `CheckBoxTest.cpp` and `KeyCapTest.cpp`, not `DrawingPiecesTest.cpp`. A helper the files share goes in a test helper file (`litPixelsOf()` in `RecordingInterfaceCanvas.hpp`).
 - Exception: `main.cpp` entry points.
 - An existing file that breaks the convention is renamed as soon as it is touched.
 
