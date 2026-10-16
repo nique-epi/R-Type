@@ -108,3 +108,22 @@ Variant 21 (a second handler accepted) failed its own test and also the two test
 ### Root cause
 
 Point 2 of the red proof section deletes the object of the swapped source, and point 4 rebuilds the restored original at the end. Between two variants the restored source of the previous one was rebuilt by nobody, which neither point covers.
+
+## Update (2026-10-17) — `--clean-first` keeps a stale configuration
+
+### Context
+
+The options menu was cut into seven commits, the first one only removing `rtype_game` from the libraries `r-type_client` lists, to end the `ld: warning: ignoring duplicate libraries: '../game/librtype_game.a'` of `main`. Each commit was extracted with `git archive` into an isolated copy and built with `cmake --build build --clean-first`.
+
+### Mistake
+
+The first commit still printed the duplicate warning, which disappeared at the next commit, whose changes did not touch the client's links. A configure forced on each commit showed the real lines: `librtype_game.a` twice on `main` (listed by the client, then reached through its libraries), once after the first commit. The build of the first commit had used the configuration generated for `main`.
+
+### Root cause
+
+`--clean-first` deletes the objects, not the generated build system; CMake reruns its configuration only when a `CMakeLists.txt` is newer than what it generated, and `git archive` gives every file the commit's date, older than the configuration made a minute before. A commit that changes only a link therefore kept the previous commit's link lines. The later commits added test targets, which forced a configure, so only the first one showed the problem.
+
+### Rule (added)
+
+4. **`--clean-first` rebuilds the objects, never the configuration**: CMake reruns only when a `CMakeLists.txt` is newer than the files it generated, and a commit's date is older. Run `cmake -S <copy> -B <dir>` before building each commit, or a commit that only changes a link is built with the link lines of the commit before it.
+5. **A link or warning result of a commit is read on its own link line** (`build/<…>/link.txt`), counting the library by its file name, since the same file can be spelled through two relative paths.

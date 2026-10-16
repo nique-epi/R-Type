@@ -42,6 +42,8 @@ trigger: always_on
 1. **`git archive <commit>` sets every extracted file to the date of that commit**, which is older than objects built a minute ago from a later commit: `make` then keeps the stale objects. (Given a tree id instead of a commit, it uses the current time.)
 2. **To build one commit after another in the same build folder, use `cmake --build <dir> --clean-first`** for each commit, and read the number of objects compiled in its log.
 3. **Check the result against an expected count**: a commit that adds a test must show one more test than the commit before it. Equal counts mean the build did not see the change.
+4. **`--clean-first` rebuilds the objects, never the configuration**: CMake reruns only when a `CMakeLists.txt` is newer than the files it generated, and a commit's date is older. Run `cmake -S <copy> -B <dir>` before building each commit, or a commit that only changes a link is built with the link lines of the commit before it.
+5. **A link or warning result of a commit is read on its own link line** (`build/<…>/link.txt`), counting the library by its file name, since the same file can be spelled through two relative paths.
 
 ## Example
 
