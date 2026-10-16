@@ -11,7 +11,20 @@ trigger: always_on
 2. **Never start an unquoted word with `=`**: for a separator, `echo '-----'`.
 3. **`no matches found` or `<word> not found` in zsh means the command did NOT run.** Do not read its empty output as a result: fix the quoting and rerun.
 
+### An intended glob that may match nothing
+
+1. **A glob meant to match "every file of a folder, if any"** (cleaning an output folder before a run, collecting logs) fails in zsh on an empty folder and stops the whole `&&` chain. Use `find <dir> -name '<pattern>' -delete` (or `-print0 | xargs -0`), or the zsh qualifier `(N)`: `rm -f -- "$dir"/*.txt(N)`.
+2. **A run whose first command failed has no result**: when a chain prints `no matches found`, every later output line (an empty list, a missing file) is ignored and the chain is rerun.
+
+### The value of an option and a separator are quoted like any other word
+
+1. **A glob in the value of an option is still a glob**: `--include=*.cpp` is expanded, finds no file named so, and the line stops. Write `--include='*.cpp'`.
+2. **A separator between two outputs is always a quoted literal**: `echo '-----'`. A bare `echo =====` stops the line too, so every command written after it in the same call never runs.
+3. **Before sending a command, read each unquoted word that holds `=`, `*`, `?` or `[`** and quote it unless it is an intended glob.
+
 ## Example
 
 - ❌ **Before (wrong)**: `gh api repos/nique-epi/R-Type/pulls?state=all --jq .[].title; echo =====` → `no matches found`, then `===== not found`: nothing runs.
 - ✅ **After (right)**: `gh api 'repos/nique-epi/R-Type/pulls?state=all' --jq '.[].title'; echo '-----'`.
+- ❌ **Before (wrong)**: `mkdir -p "$S/tidy" && rm -f "$S/tidy"/*.txt && git diff --name-only … > "$S/tidy/files.txt"` on a new folder → `no matches found`, nothing ran, then "files with nonzero exit:" printed empty.
+- ✅ **After (right)**: `find "$S/tidy" -name '*.txt' -delete && …`, and the empty output of the failed run never read as "no failure".
