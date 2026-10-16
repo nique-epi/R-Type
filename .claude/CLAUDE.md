@@ -71,6 +71,7 @@ Paths below are relative to `.claude/rules/`.
 - `architecture/fix-architecture-magic-values-as-named-constants.md`
 
 **Build architecture — `fix/architecture/` (loaded every session)**
+- `fix/architecture/fix-architecture-a-link-never-points-back-at-a-folder-that-links-it.md`
 - `fix/architecture/fix-architecture-one-cmakelists-per-folder.md`
 
 **Code style — `code-style/` (loaded when a C++ file is read)**
