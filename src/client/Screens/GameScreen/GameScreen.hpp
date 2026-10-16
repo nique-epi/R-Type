@@ -8,6 +8,7 @@
 #include "IEntityLayer.hpp"
 #include "IScreen.hpp"
 #include "IScreenNavigator.hpp"
+#include "KeyBindings.hpp"
 #include "Logger.hpp"
 #include "PlayerCommands.hpp"
 #include "TimeConstants.hpp"
@@ -24,18 +25,18 @@ namespace rtype::client {
  * so the first frame already shows them. Until the client creates the entities
  * the server announces, the screen holds the provisional sprite showcase.
  *
- * Releasing OPTIONS_KEY puts the options screen over the game, which goes on
- * running behind it, hidden. The release, not the press: the system
- * repeats the press of a held key, which would open and close the options
- * again and again.
+ * Releasing OPTIONS_KEY releases every action held, then puts the options
+ * screen over the game, which goes on running behind it, hidden. The release,
+ * not the press: the system repeats the press of a held key, which would open
+ * and close the options again and again.
  *
- * Key and focus events feed the player commands: playerActions() tells what
- * the player holds right now, and nothing while the window has no focus. The
- * screen assumes the window has the focus when it is built, and learns
- * otherwise from the focus events; only the screen on top receives events, so
- * the actions held when another screen is put over the game stay held until
- * the player presses or releases those keys again. The actions held are
- * logged each time they change.
+ * Key and focus events feed the player commands, by the place of the keys on
+ * the keyboard and through the keys the player chose: playerActions() tells
+ * what the player holds right now, and nothing while the window has no focus.
+ * The screen assumes the window has the focus when it is built, and learns
+ * otherwise from the focus events; only the screen on top receives events,
+ * which is why opening the options releases what is held. The actions held
+ * are logged each time they change.
  */
 class GameScreen : public IScreen {
  public:
@@ -43,9 +44,11 @@ class GameScreen : public IScreen {
    * @param navigator Screens the game lives among, which must outlive it;
    * the options are pushed over the game when OPTIONS_KEY is released.
    * @param entityLayer Picture the entities are painted on, never null.
+   * @param keys Keys of the controls, which must outlive the screen.
    */
   GameScreen(IScreenNavigator& navigator,
-             std::unique_ptr<IEntityLayer> entityLayer);
+             std::unique_ptr<IEntityLayer> entityLayer,
+             const KeyBindings& keys);
 
   void handleEvent(const sf::Event& event) override;
   void update(engine::Duration elapsed) override;
@@ -60,7 +63,7 @@ class GameScreen : public IScreen {
   std::unique_ptr<IEntityLayer> entityLayer_;
   engine::EntityRegistry entities_;
   engine::ComponentRegistry components_{entities_};
-  PlayerCommands playerCommands_{true};
+  PlayerCommands playerCommands_;
   logging::Logger logger_{"GameScreen"};
   std::uint8_t loggedActions_{0};
 };

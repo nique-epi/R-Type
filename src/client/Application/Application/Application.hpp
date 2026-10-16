@@ -8,6 +8,7 @@
 #include "IInterfaceCanvas.hpp"
 #include "IScreen.hpp"
 #include "IServerConnection.hpp"
+#include "KeyBindings.hpp"
 #include "PlayfieldMapping.hpp"
 #include "ScreenId.hpp"
 #include "ScreenStack.hpp"
@@ -113,6 +114,9 @@ class Application {
   [[nodiscard]] PlayfieldMapping playfieldMapping() const;
 
   AssetLibrary* assets_;
+  /** @brief Keys of the controls, declared before the screens, which read
+   * them. */
+  KeyBindings keys_;
   GameWindow window_;
   ScrollingBackground background_;
   engine::SystemClock clock_;

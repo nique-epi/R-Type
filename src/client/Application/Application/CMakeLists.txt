@@ -7,6 +7,7 @@ target_link_libraries(rtype_client_application
     rtype_client_asset_library
     rtype_client_connection
     rtype_client_game_window
+    rtype_client_key_bindings
     rtype_client_rendering_interfaces
     rtype_client_window
     rtype_client_screen_stack

@@ -1,10 +1,14 @@
 #include <gtest/gtest.h>
 #include <SFML/Window/Keyboard.hpp>
 #include <cstdint>
+#include "BoundAction.hpp"
+#include "KeyBindings.hpp"
 #include "PlayerCommands.hpp"
 
+using rtype::client::BoundAction;
+using rtype::client::KeyBindings;
 using rtype::client::PlayerCommands;
-using Key = sf::Keyboard::Key;
+using Scan = sf::Keyboard::Scan;
 
 namespace {
 
@@ -21,9 +25,10 @@ constexpr std::uint8_t SHOOT_BIT = 0b10000;
  * Then both actions are held
  */
 TEST(PlayerCommandsTest, PressedKeysAreHeld) {
-  PlayerCommands commands(true);
-  commands.keyPressed(Key::Up);
-  commands.keyPressed(Key::Space);
+  const KeyBindings keys;
+  PlayerCommands commands(true, keys);
+  commands.keyPressed(Scan::Up);
+  commands.keyPressed(Scan::Space);
   EXPECT_EQ(commands.held().bits(), UP_BIT | SHOOT_BIT);
 }
 
@@ -33,10 +38,11 @@ TEST(PlayerCommandsTest, PressedKeysAreHeld) {
  * Then only shoot is held
  */
 TEST(PlayerCommandsTest, ReleasedKeyIsNoLongerHeld) {
-  PlayerCommands commands(true);
-  commands.keyPressed(Key::Up);
-  commands.keyPressed(Key::Space);
-  commands.keyReleased(Key::Up);
+  const KeyBindings keys;
+  PlayerCommands commands(true, keys);
+  commands.keyPressed(Scan::Up);
+  commands.keyPressed(Scan::Space);
+  commands.keyReleased(Scan::Up);
   EXPECT_EQ(commands.held().bits(), SHOOT_BIT);
 }
 
@@ -46,9 +52,10 @@ TEST(PlayerCommandsTest, ReleasedKeyIsNoLongerHeld) {
  * Then right is still the only action held
  */
 TEST(PlayerCommandsTest, RepeatedPressChangesNothing) {
-  PlayerCommands commands(true);
-  commands.keyPressed(Key::Right);
-  commands.keyPressed(Key::Right);
+  const KeyBindings keys;
+  PlayerCommands commands(true, keys);
+  commands.keyPressed(Scan::Right);
+  commands.keyPressed(Scan::Right);
   EXPECT_EQ(commands.held().bits(), RIGHT_BIT);
 }
 
@@ -58,9 +65,10 @@ TEST(PlayerCommandsTest, RepeatedPressChangesNothing) {
  * Then right is still the only action held
  */
 TEST(PlayerCommandsTest, UnboundKeyChangesNothing) {
-  PlayerCommands commands(true);
-  commands.keyPressed(Key::Right);
-  commands.keyPressed(Key::A);
+  const KeyBindings keys;
+  PlayerCommands commands(true, keys);
+  commands.keyPressed(Scan::Right);
+  commands.keyPressed(Scan::A);
   EXPECT_EQ(commands.held().bits(), RIGHT_BIT);
 }
 
@@ -70,9 +78,10 @@ TEST(PlayerCommandsTest, UnboundKeyChangesNothing) {
  * Then nothing is held
  */
 TEST(PlayerCommandsTest, LosingFocusReleasesEverything) {
-  PlayerCommands commands(true);
-  commands.keyPressed(Key::Left);
-  commands.keyPressed(Key::Space);
+  const KeyBindings keys;
+  PlayerCommands commands(true, keys);
+  commands.keyPressed(Scan::Left);
+  commands.keyPressed(Scan::Space);
   commands.focusLost();
   EXPECT_EQ(commands.held().bits(), NOTHING_HELD);
 }
@@ -83,10 +92,11 @@ TEST(PlayerCommandsTest, LosingFocusReleasesEverything) {
  * Then nothing is held
  */
 TEST(PlayerCommandsTest, RegainingFocusDoesNotRestoreHeldKeys) {
-  PlayerCommands commands(true);
-  commands.keyPressed(Key::Left);
+  const KeyBindings keys;
+  PlayerCommands commands(true, keys);
+  commands.keyPressed(Scan::Left);
   commands.focusLost();
-  commands.keyReleased(Key::Left);
+  commands.keyReleased(Scan::Left);
   commands.focusGained();
   EXPECT_EQ(commands.held().bits(), NOTHING_HELD);
 }
@@ -97,8 +107,9 @@ TEST(PlayerCommandsTest, RegainingFocusDoesNotRestoreHeldKeys) {
  * Then nothing is held
  */
 TEST(PlayerCommandsTest, KeyPressedWithoutFocusIsIgnored) {
-  PlayerCommands commands(false);
-  commands.keyPressed(Key::Up);
+  const KeyBindings keys;
+  PlayerCommands commands(false, keys);
+  commands.keyPressed(Scan::Up);
   EXPECT_EQ(commands.held().bits(), NOTHING_HELD);
 }
 
@@ -108,9 +119,10 @@ TEST(PlayerCommandsTest, KeyPressedWithoutFocusIsIgnored) {
  * Then up is held
  */
 TEST(PlayerCommandsTest, KeyPressedAfterFocusGainedCounts) {
-  PlayerCommands commands(false);
+  const KeyBindings keys;
+  PlayerCommands commands(false, keys);
   commands.focusGained();
-  commands.keyPressed(Key::Up);
+  commands.keyPressed(Scan::Up);
   EXPECT_EQ(commands.held().bits(), UP_BIT);
 }
 
@@ -120,7 +132,35 @@ TEST(PlayerCommandsTest, KeyPressedAfterFocusGainedCounts) {
  * Then nothing is held
  */
 TEST(PlayerCommandsTest, ReleasingAKeyNeverPressedChangesNothing) {
-  PlayerCommands commands(true);
-  commands.keyReleased(Key::Down);
+  const KeyBindings keys;
+  PlayerCommands commands(true, keys);
+  commands.keyReleased(Scan::Down);
   EXPECT_EQ(commands.held().bits(), NOTHING_HELD);
+}
+
+/**
+ * Given move up moved to W
+ * When W is pressed
+ * Then up is held
+ */
+TEST(PlayerCommandsTest, AMovedKeyHoldsItsAction) {
+  KeyBindings keys;
+  keys.bind(BoundAction::MoveUp, Scan::W);
+  PlayerCommands commands(true, keys);
+  commands.keyPressed(Scan::W);
+  EXPECT_EQ(commands.held().bits(), UP_BIT);
+}
+
+/**
+ * Given up and shoot held
+ * When every action is released at once, as when the options open
+ * Then nothing is held
+ */
+TEST(PlayerCommandsTest, ReleasingAllDropsEveryAction) {
+  const KeyBindings keys;
+  PlayerCommands commands(true, keys);
+  commands.keyPressed(Scan::Up);
+  commands.keyPressed(Scan::Space);
+  commands.releaseAll();
+  EXPECT_EQ(commands.held().bits(), 0U);
 }

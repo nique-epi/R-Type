@@ -7,17 +7,18 @@
 
 namespace rtype::client {
 
-PlayerCommands::PlayerCommands(bool focused) : focused_(focused) {}
+PlayerCommands::PlayerCommands(bool focused, const KeyBindings& bindings)
+    : bindings_(&bindings), focused_(focused) {}
 
-void PlayerCommands::keyPressed(sf::Keyboard::Key key) {
-  const std::optional<PlayerAction> action = KeyBindings::actionFor(key);
+void PlayerCommands::keyPressed(sf::Keyboard::Scancode key) {
+  const std::optional<PlayerAction> action = bindings_->playerActionFor(key);
   if (focused_ && action.has_value()) {
     held_.add(*action);
   }
 }
 
-void PlayerCommands::keyReleased(sf::Keyboard::Key key) {
-  const std::optional<PlayerAction> action = KeyBindings::actionFor(key);
+void PlayerCommands::keyReleased(sf::Keyboard::Scancode key) {
+  const std::optional<PlayerAction> action = bindings_->playerActionFor(key);
   if (focused_ && action.has_value()) {
     held_.remove(*action);
   }
@@ -25,10 +26,12 @@ void PlayerCommands::keyReleased(sf::Keyboard::Key key) {
 
 void PlayerCommands::focusLost() {
   focused_ = false;
-  held_.clear();
+  releaseAll();
 }
 
 void PlayerCommands::focusGained() { focused_ = true; }
+
+void PlayerCommands::releaseAll() { held_.clear(); }
 
 ActionSet PlayerCommands::held() const { return held_; }
 

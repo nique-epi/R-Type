@@ -115,8 +115,8 @@ std::unique_ptr<IScreen> Application::gameScreen() {
   if (loading != nullptr) {
     return loading;
   }
-  return std::make_unique<GameScreen>(screens_,
-                                      std::make_unique<EntityLayer>(*assets_));
+  return std::make_unique<GameScreen>(
+      screens_, std::make_unique<EntityLayer>(*assets_), keys_);
 }
 
 std::unique_ptr<IScreen> Application::loadingScreenUnlessLoaded(
