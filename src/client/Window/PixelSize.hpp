@@ -9,6 +9,8 @@ namespace rtype::client {
 struct PixelSize {
   unsigned int width;
   unsigned int height;
+
+  bool operator==(const PixelSize& other) const = default;
 };
 
 }  // namespace rtype::client

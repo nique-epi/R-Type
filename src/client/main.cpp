@@ -1,5 +1,7 @@
 #include <exception>
+#include <filesystem>
 #include <iostream>
+#include <optional>
 #include <string>
 #include "Application.hpp"
 #include "AssetFolder.hpp"
@@ -12,8 +14,28 @@
 #include "Logger.hpp"
 #include "LoggingConstants.hpp"
 #include "ScreenAssets.hpp"
+#include "SettingsConstants.hpp"
+#include "SettingsFolder.hpp"
 
 namespace {
+
+/**
+ * @returns The file the settings are kept in, logged, or nothing when the
+ * system tells no settings folder, which is logged too.
+ */
+std::optional<std::filesystem::path> settingsFile(
+    const rtype::logging::Logger& logger) {
+  const std::optional<std::filesystem::path> folder =
+      rtype::client::settingsFolder();
+  if (!folder.has_value()) {
+    logger.warn("no settings folder, the settings last for this launch only");
+    return std::nullopt;
+  }
+  logger.info(
+      "settings file: ",
+      rtype::client::genericText(*folder / rtype::client::SETTINGS_FILE_NAME));
+  return *folder / rtype::client::SETTINGS_FILE_NAME;
+}
 
 /**
  * @brief Applies the logging options, logs the server given at launch, then
@@ -35,7 +57,8 @@ int runClient(const rtype::logging::LogLaunchOptions& logOptions,
     rtype::client::loadInterfaceAssets(assets);
     rtype::client::loadTitleAssets(assets);
     rtype::client::Application application{
-        assets, launchOptions.serverEndpoint(), launchOptions.nickname()};
+        assets, launchOptions.serverEndpoint(), launchOptions.nickname(),
+        settingsFile(logger)};
     application.run();
     logger.info("client stopped");
   } catch (const std::exception& error) {

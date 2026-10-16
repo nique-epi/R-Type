@@ -1,6 +1,7 @@
 #include "Application.hpp"
 #include <SFML/System/Vector2.hpp>
 #include <SFML/Window/Event.hpp>
+#include <filesystem>
 #include <memory>
 #include <optional>
 #include <random>
@@ -18,21 +19,39 @@
 #include "LoadingScreen.hpp"
 #include "MotionPreference.hpp"
 #include "OptionsScreen.hpp"
+#include "PlayerSettings.hpp"
 #include "PlayfieldMapping.hpp"
 #include "QuitConfirmationScreen.hpp"
 #include "ReducedMotion.hpp"
 #include "ScreenAssets.hpp"
 #include "ScreenId.hpp"
 #include "ScreenStack.hpp"
+#include "SettingsFile.hpp"
 #include "StandInServerConnection.hpp"
 #include "TimeConstants.hpp"
 #include "TitleScreen.hpp"
 
 namespace rtype::client {
 
+namespace {
+
+/** @returns The settings of a first launch, flashes reduced when the system
+ * asks for less motion. */
+PlayerSettings firstLaunchSettings() {
+  PlayerSettings settings;
+  settings.reduceFlashes = systemPrefersReducedMotion();
+  return settings;
+}
+
+}  // namespace
+
 Application::Application(AssetLibrary& assets, network::Endpoint server,
-                         std::string nickname)
+                         std::string nickname,
+                         std::optional<std::filesystem::path> settingsFile)
     : assets_(&assets),
+      settingsFile_(std::move(settingsFile)),
+      settings_(settingsFile_.load(firstLaunchSettings())),
+      window_(settings_.windowSize),
       background_(std::random_device{}()),
       connection_(std::make_unique<StandInServerConnection>()),
       server_(std::move(server)),
@@ -116,7 +135,7 @@ std::unique_ptr<IScreen> Application::gameScreen() {
     return loading;
   }
   return std::make_unique<GameScreen>(
-      screens_, std::make_unique<EntityLayer>(*assets_), keys_);
+      screens_, std::make_unique<EntityLayer>(*assets_), settings_.keys);
 }
 
 std::unique_ptr<IScreen> Application::loadingScreenUnlessLoaded(

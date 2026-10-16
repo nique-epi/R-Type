@@ -40,4 +40,7 @@ constexpr float WHOLE_WINDOW = 1.0F;
  */
 constexpr float BAR_SHARE_PER_SIDE = 0.5F;
 
+/** @brief What joins the width and the height of a window size in a text. */
+constexpr const char* WINDOW_SIZE_TEXT_SEPARATOR = " X ";
+
 }  // namespace rtype::client

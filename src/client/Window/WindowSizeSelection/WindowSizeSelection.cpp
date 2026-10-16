@@ -29,6 +29,15 @@ bool WindowSizeSelection::select(std::size_t index) {
   return true;
 }
 
+bool WindowSizeSelection::selectSize(PixelSize size) {
+  for (std::size_t index = 0; index < WINDOW_SIZES.size(); ++index) {
+    if (WINDOW_SIZES[index] == size) {
+      return select(index);
+    }
+  }
+  return false;
+}
+
 std::size_t WindowSizeSelection::selectedIndex() const {
   return selectedIndex_;
 }

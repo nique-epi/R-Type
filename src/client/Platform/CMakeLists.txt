@@ -1,9 +1,9 @@
 if(WIN32)
-  set(RTYPE_PLATFORM_SOURCES ExecutablePathWindows.cpp ReducedMotionWindows.cpp)
+  set(RTYPE_PLATFORM_SOURCES ExecutablePathWindows.cpp ReducedMotionWindows.cpp SettingsFolderWindows.cpp)
 elseif(APPLE)
-  set(RTYPE_PLATFORM_SOURCES ExecutablePathMacOs.cpp ReducedMotionMacOs.cpp)
+  set(RTYPE_PLATFORM_SOURCES ExecutablePathMacOs.cpp ReducedMotionMacOs.cpp SettingsFolderMacOs.cpp)
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
-  set(RTYPE_PLATFORM_SOURCES ExecutablePathLinux.cpp ReducedMotionLinux.cpp)
+  set(RTYPE_PLATFORM_SOURCES ExecutablePathLinux.cpp ReducedMotionLinux.cpp SettingsFolderLinux.cpp)
 else()
   message(FATAL_ERROR "The client reads the system on Windows, macOS and Linux only")
 endif()
@@ -20,6 +20,10 @@ target_compile_definitions(rtype_client_platform
 
 if(APPLE)
   target_link_libraries(rtype_client_platform PRIVATE "-framework AppKit" objc)
+endif()
+
+if(WIN32)
+  target_link_libraries(rtype_client_platform PRIVATE shell32 ole32 uuid)
 endif()
 
 rtype_enable_warnings(rtype_client_platform)

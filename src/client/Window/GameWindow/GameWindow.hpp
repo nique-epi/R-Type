@@ -6,6 +6,7 @@
 #include <SFML/Window/Event.hpp>
 #include <cstddef>
 #include <optional>
+#include "ISizableWindow.hpp"
 #include "PixelSize.hpp"
 #include "WindowSizeSelection.hpp"
 
@@ -16,18 +17,21 @@ namespace rtype::client {
  *
  * The window cannot be resized by dragging its border. The player picks one of
  * the sizes of WINDOW_SIZES; the window opens at the largest one that fits the
- * desktop. Every size has the proportions of the playfield, so the playfield
- * fills the window.
+ * desktop, or at the size the player saved when it still fits. Every size has
+ * the proportions of the playfield, so the playfield fills the window.
  *
  * Should the system still give the window another shape, the whole playfield
  * stays visible: drawing is done in the logical units of the playfield, scaled
  * without distortion, and what the playfield does not cover stays black.
  */
-class GameWindow {
+class GameWindow : public ISizableWindow {
  public:
-  /** @brief Opens the window at the selected size, centered on the desktop,
-   * showing at most FRAMES_PER_SECOND_LIMIT frames per second. */
-  GameWindow();
+  /**
+   * @brief Opens the window at the preferred size when it is available, at
+   * the largest available one otherwise, centered on the desktop, showing at
+   * most FRAMES_PER_SECOND_LIMIT frames per second.
+   */
+  explicit GameWindow(std::optional<PixelSize> preferredSize);
 
   [[nodiscard]] bool isOpen() const;
 
@@ -52,7 +56,7 @@ class GameWindow {
   /** @brief Shows what was drawn since clear(). */
   void display();
 
-  [[nodiscard]] const WindowSizeSelection& windowSizeSelection() const;
+  [[nodiscard]] const WindowSizeSelection& windowSizeSelection() const override;
 
   /**
    * @brief Gives the window the size at this index of WINDOW_SIZES, centered
@@ -60,7 +64,7 @@ class GameWindow {
    *
    * @returns false, changing nothing, when that size is not available.
    */
-  bool selectWindowSize(std::size_t index);
+  bool selectWindowSize(std::size_t index) override;
 
   /**
    * @param pixel Position in the window, in pixels.
@@ -86,6 +90,11 @@ class GameWindow {
 
   /** @returns The size of the desktop the window opens on. */
   [[nodiscard]] static PixelSize desktopSize();
+
+  /** @returns The sizes of the desktop, the preferred one selected when it is
+   * available. */
+  [[nodiscard]] static WindowSizeSelection initialSelection(
+      std::optional<PixelSize> preferredSize);
 
   WindowSizeSelection windowSizeSelection_;
   sf::RenderWindow window_;
