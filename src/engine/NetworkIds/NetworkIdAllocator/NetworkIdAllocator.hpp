@@ -1,7 +1,7 @@
 #pragma once
 
 #include <cstdint>
-#include "NetworkIdConstants.hpp"
+#include "EntityIdConstants.hpp"
 
 namespace rtype::engine {
 
@@ -21,14 +21,14 @@ class NetworkIdAllocator {
 
   /**
    * @returns The next identifier: 1 the first time, then one more each time.
-   * Never NO_NETWORK_ID.
+   * Never NO_ENTITY_ID.
    * @throws NetworkIdExhaustedException once the identifier 4294967295 was
    * given.
    */
   std::uint32_t allocate();
 
  private:
-  std::uint32_t lastAllocated_{NO_NETWORK_ID};
+  std::uint32_t lastAllocated_{identifiers::NO_ENTITY_ID};
 };
 
 }  // namespace rtype::engine

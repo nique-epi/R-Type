@@ -4,8 +4,8 @@
 #include <limits>
 #include <set>
 #include "EngineException.hpp"
+#include "EntityIdConstants.hpp"
 #include "NetworkIdAllocator.hpp"
-#include "NetworkIdConstants.hpp"
 
 using rtype::engine::NetworkIdAllocator;
 using rtype::engine::NetworkIdExhaustedException;
@@ -42,7 +42,7 @@ TEST(NetworkIdAllocator, IdentifiersAreUniqueAndNeverReserved) {
   }
 
   EXPECT_EQ(seen.size(), static_cast<std::size_t>(MANY_ALLOCATIONS));
-  EXPECT_EQ(seen.count(rtype::engine::NO_NETWORK_ID), 0U);
+  EXPECT_EQ(seen.count(rtype::identifiers::NO_ENTITY_ID), 0U);
 }
 
 /**
