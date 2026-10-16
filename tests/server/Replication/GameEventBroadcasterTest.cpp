@@ -29,7 +29,7 @@ TEST_F(GameEventBroadcasterFixture, SendsASpawnOnceToEachClient) {
                                        .type = game::EntityType::Enemy,
                                        .x = MONSTER_X,
                                        .y = MONSTER_Y});
-  advanceTimers(ONE_SECOND);
+  advanceTimers(ALL_COPIES_SENT);
 
   const std::vector<network::EntitySpawned> expected{
       {.entityId = MONSTER_NETWORK_ID,
@@ -59,7 +59,7 @@ TEST_F(GameEventBroadcasterFixture, RepeatsADestructionThreeTimes) {
   EXPECT_EQ(receivedBy<network::EntityDestroyed>(firstClient()).size(), 2U);
 
   advanceTimers(ONE_INTERVAL);
-  advanceTimers(ONE_SECOND);
+  advanceTimers(ALL_COPIES_SENT);
   const std::vector<network::EntityDestroyed> expectedCopies(
       REPEATED_MESSAGE_COPIES,
       network::EntityDestroyed{.entityId = MONSTER_NETWORK_ID,
@@ -77,7 +77,7 @@ TEST_F(GameEventBroadcasterFixture, RepeatsADestructionThreeTimes) {
  */
 TEST_F(GameEventBroadcasterFixture, RepeatsAGameEventWithTheSameNumber) {
   publishAndDispatch(game::PlayerHit{.playerNumber = SECOND_PLAYER_NUMBER});
-  advanceTimers(ONE_SECOND);
+  advanceTimers(ALL_COPIES_SENT);
 
   const std::vector<network::GameEvent> expected(
       REPEATED_MESSAGE_COPIES,
@@ -102,7 +102,7 @@ TEST_F(GameEventBroadcasterFixture, SendsTheCopiesOnlyToTheClientsOfTheEvent) {
                               .cause = game::DestructionCause::Killed});
 
   setRecipients({firstClient(), secondClient()});
-  advanceTimers(ONE_SECOND);
+  advanceTimers(ALL_COPIES_SENT);
 
   EXPECT_EQ(receivedBy<network::EntityDestroyed>(firstClient()).size(),
             REPEATED_MESSAGE_COPIES);
@@ -117,7 +117,7 @@ TEST_F(GameEventBroadcasterFixture, SendsTheCopiesOnlyToTheClientsOfTheEvent) {
 TEST_F(GameEventBroadcasterFixture, SendsNothingWithoutAClient) {
   setRecipients({});
   publishAndDispatch(game::PlayerHit{.playerNumber = SECOND_PLAYER_NUMBER});
-  advanceTimers(ONE_SECOND);
+  advanceTimers(ALL_COPIES_SENT);
 
   EXPECT_TRUE(sentDatagrams().empty());
 }
@@ -157,7 +157,7 @@ TEST_F(GameEventBroadcasterFixture, SkipsASpawnWhoseCoordinateIsNotANumber) {
                                            .type = game::EntityType::Enemy,
                                            .x = NOT_A_NUMBER,
                                            .y = MONSTER_Y}));
-  advanceTimers(ONE_SECOND);
+  advanceTimers(ALL_COPIES_SENT);
   EXPECT_TRUE(sentDatagrams().empty());
 
   publishAndDispatch(game::EntitySpawn{.networkId = MONSTER_NETWORK_ID,
@@ -180,7 +180,7 @@ TEST_F(GameEventBroadcasterFixture,
        SkipsAnEventWithoutAnEntityIdAndKeepsItsNumber) {
   EXPECT_NO_THROW(publishAndDispatch(
       game::EntityDamage{.networkId = UNASSIGNED_NETWORK_ID}));
-  advanceTimers(ONE_SECOND);
+  advanceTimers(ALL_COPIES_SENT);
   EXPECT_TRUE(sentDatagrams().empty());
 
   publishAndDispatch(game::PlayerHit{.playerNumber = SECOND_PLAYER_NUMBER});
@@ -202,12 +202,12 @@ TEST_F(GameEventBroadcasterFixture,
 TEST_F(GameEventBroadcasterFixture, SkipsAPlayerEventOfAPlayerOutsideTheGame) {
   EXPECT_NO_THROW(publishAndDispatch(
       game::PlayerHit{.playerNumber = PLAYER_NUMBER_OUTSIDE_THE_GAME}));
-  advanceTimers(ONE_SECOND);
+  advanceTimers(ALL_COPIES_SENT);
   EXPECT_TRUE(sentDatagrams().empty());
 
   publishAndDispatch(
       game::PlayerElimination{.playerNumber = SECOND_PLAYER_NUMBER});
-  advanceTimers(ONE_SECOND);
+  advanceTimers(ALL_COPIES_SENT);
 
   EXPECT_EQ(receivedBy<network::GameEvent>(firstClient()).size(),
             REPEATED_MESSAGE_COPIES);

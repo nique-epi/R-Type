@@ -4,6 +4,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <limits>
+#include "GameEventConstants.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::server::testing {
@@ -15,18 +16,23 @@ constexpr float MONSTER_X = 100.0F;
 constexpr float MONSTER_Y = 50.0F;
 constexpr std::uint8_t SECOND_PLAYER_NUMBER = 2;
 
+static_assert(REPEATED_MESSAGE_INTERVAL > std::chrono::milliseconds(1),
+              "the tests stop one millisecond short of an interval");
+
 /**
  * @brief Just short of one interval: a copy due at the interval is not sent
  * yet.
  */
 constexpr engine::Duration JUST_BEFORE_ONE_INTERVAL =
-    std::chrono::milliseconds(49);
-constexpr engine::Duration ONE_INTERVAL = std::chrono::milliseconds(50);
+    REPEATED_MESSAGE_INTERVAL - std::chrono::milliseconds(1);
+constexpr engine::Duration ONE_INTERVAL = REPEATED_MESSAGE_INTERVAL;
 
 /**
  * @brief Long enough for every copy to be sent, and for none to be left.
  */
-constexpr engine::Duration ONE_SECOND = std::chrono::seconds(1);
+constexpr engine::Duration ALL_COPIES_SENT =
+    REPEATED_MESSAGE_INTERVAL *
+    static_cast<engine::Duration::rep>(REPEATED_MESSAGE_COPIES);
 
 /**
  * @brief The largest event number: the next one wraps to 0.
