@@ -91,6 +91,10 @@ The second and third commits each add a test, yet both reported 314 tests, like 
 - ❌ **Before (wrong)**: `git archive 14a66e2 … | tar -x`, `cmake --build`, `ctest` → "314 passing", with the new test never compiled.
 - ✅ **After (right)**: the same with `--clean-first` → every object compiled, 315 passing for the commit that adds one test.
 
+## Update (2026-10-13) — a swapped header has several objects
+
+Red proofs of the menu widgets, on the isolated copy. One variant set `PRESSED_TEXT_DROP` to 0 in `WidgetConstants.hpp`. The script deleted the objects of `Menu.cpp` and `MenuBuilder.cpp`, not the one of `Button.cpp`, which is the file that reads the constant; it read "5 recompiled" as proof. `Button.cpp.o` kept the old value while `MenuTest.cpp.o` got the new one: the variant showed no red test, and `APressedButtonIsPaintedPressed` turned red in the next three variants, where nothing related had changed. Rerun with every dependent object deleted (found with `grep -rln PRESSED_TEXT_DROP`), then the copy was rebuilt with `--clean-first` and ran 549/549. Points 6 and 7 were added.
+
 ## Update (2026-10-14): chained variants keep the object of the previous one
 
 ### Context

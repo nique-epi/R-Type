@@ -34,6 +34,8 @@ trigger: always_on
 3. **Read the build log of each variant before its test result**: it must contain the `Building CXX object` line of the swapped file. A variant without that line is not a result; rerun it.
 4. **Rebuild the restored original the same way** and run its tests green: the last binary left in `build/` must be the real code.
 5. **When variants follow one another in the same build folder, delete before each build the objects of every source swapped so far in the run**, not only those of the current variant. The source of the previous variant was restored less than a second earlier, so `make` keeps its faulty object: the new variant runs with both defects, and a test may turn red because of the previous one.
+6. **A swapped header has as many objects as files that include it**: list every `.cpp` that uses the changed symbol (`grep -rln <symbol> src tests`), tests included, delete each of their objects, and check that the log holds a `Building CXX object` line for each. Counting "some files were recompiled" is not the check: a dependent left out keeps the old value, and the binary mixes both versions.
+7. **A test that turns red in the variants after its own is the symptom of a stale object**: stop, rebuild the copy with `--clean-first`, and rerun the variant whose result was mixed.
 
 ### Checking each commit of a branch: `git archive` gives the files the commit's date
 

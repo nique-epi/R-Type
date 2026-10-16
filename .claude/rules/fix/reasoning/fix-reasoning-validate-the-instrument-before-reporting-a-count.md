@@ -20,6 +20,11 @@ Before reporting a **count, total or list** produced by a homemade filter (`grep
 2. **Regex-based static analysis does not see every use** (macros, templates, calls through function pointers, registration by name): a search for "unused" is a lower bound of usage. The reliable measurement is the **build** and the **tests** after deletion.
 3. Commit before a mass deletion.
 
+### A parser of test results is validated on every shape of test name
+
+1. **Before trusting a script that reads which tests failed**, feed it a known failure of each name shape the suite holds: a plain `Suite.Test`, a fixture, and a value-parameterized test, whose CTest name carries the printed parameter (spaces, quotes, parentheses). A pattern such as `(\S+)` silently skips the last kind.
+2. **When the script reports "no test red", read the raw log before believing it**: a variant that turns nothing red is either a gap in the tests or a gap in the parser, and only the log tells which.
+
 ## Example
 
 - ❌ **Before (wrong)**: `grep -rn "void on[A-Z]" src | wc -l` → "12 handlers"; handlers declared over two lines and lambdas were never seen.
