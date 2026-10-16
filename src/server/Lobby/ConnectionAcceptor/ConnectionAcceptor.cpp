@@ -28,13 +28,6 @@ namespace rtype::server {
 
 namespace {
 
-bool speaksThisProtocol(const network::PacketHeader& header) {
-  const network::PacketHeader thisProtocol;
-  return header.protocolId == thisProtocol.protocolId &&
-         header.version == thisProtocol.version &&
-         header.flags == thisProtocol.flags;
-}
-
 /**
  * @returns The first ConnectionRequest of @p datagram, or nothing when the
  * datagram is not of this protocol, does not split into messages, holds no
@@ -43,7 +36,8 @@ bool speaksThisProtocol(const network::PacketHeader& header) {
 std::optional<network::ConnectionRequest> firstConnectionRequest(
     std::span<const std::byte> datagram) {
   try {
-    if (!speaksThisProtocol(network::DatagramCodec::decodeHeader(datagram))) {
+    if (!network::DatagramCodec::speaksThisProtocol(
+            network::DatagramCodec::decodeHeader(datagram))) {
       return std::nullopt;
     }
     for (const network::MessageFrame& frame :
