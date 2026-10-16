@@ -67,7 +67,7 @@ components.destroy(ship);
 
 ## Network identifiers
 
-An entity handle is local: the server and each client have different `Entity` values for the same ship. What they share is a **network identifier**, a `std::uint32_t` that the server gives to an entity and that the protocol carries as `entityId`. `NO_NETWORK_ID` (0, `NetworkIdConstants.hpp`) is reserved and never given to an entity.
+An entity handle is local: the server and each client have different `Entity` values for the same ship. What they share is a **network identifier**, a `std::uint32_t` that the server gives to an entity and that the protocol carries as `entityId`. `NO_ENTITY_ID` (0, `src/identifiers/EntityIdConstants.hpp`) is reserved and never given to an entity; the protocol reads the same constant, from `rtype_identifiers` (see [Project layout](/R-Type/project-layout/#identifiers)).
 
 - `NetworkIdAllocator` (server) hands out 1, 2, 3 and so on. An identifier is never given twice, so it is unique during the whole game, even after its entity is destroyed. After 4294967295 identifiers, `allocate()` throws `NetworkIdExhaustedException` instead of wrapping around to a used identifier.
 - `NetworkIdentity` (`src/game/Components/`) is the component that carries the identifier on a server entity, so the code that builds a world state can read it.
