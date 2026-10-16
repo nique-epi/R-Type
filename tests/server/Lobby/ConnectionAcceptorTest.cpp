@@ -277,6 +277,23 @@ TEST_F(ConnectionAcceptorTest, AcceptsAConnectedPlayerDuringItsGame) {
 }
 
 /**
+ * Given a connected player and a game that started since
+ * When the player sends a request without a cookie
+ * Then it gets a challenge, not a refusal: it already has its place
+ */
+TEST_F(ConnectionAcceptorTest,
+       ChallengesAConnectedPlayerWithoutCookieDuringItsGame) {
+  connect(playerEndpoint(0));
+  acceptor().setGameInProgress(true);
+
+  receive(playerEndpoint(0), requestDatagram(0));
+
+  EXPECT_EQ(
+      messageTypeOf(lastAnswer()),
+      static_cast<std::uint8_t>(network::MessageType::ConnectionChallenge));
+}
+
+/**
  * Given a sender that got a challenge
  * When it sends a request with another cookie
  * Then it gets a new challenge and takes no place

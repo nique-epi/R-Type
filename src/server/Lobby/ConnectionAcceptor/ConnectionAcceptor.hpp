@@ -30,8 +30,9 @@ namespace rtype::server {
  * ignored, so an unknown sender gets nothing but answers to its requests. A
  * request is answered as follows, in this order:
  *
- * - from a connected player, with a valid cookie: the same ConnectionAccepted
- *   again, same number and same session token;
+ * - from a connected player: the same ConnectionAccepted again, same number
+ *   and same session token, when the cookie is valid; a ConnectionChallenge
+ *   otherwise, even while a game is in progress;
  * - while a game is in progress: ConnectionRefused (GameInProgress);
  * - when MAXIMUM_PLAYERS players are connected: ConnectionRefused (GameFull);
  * - without a valid cookie: a ConnectionChallenge, and nothing is kept;
