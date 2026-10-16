@@ -5,6 +5,8 @@ target_include_directories(rtype_server_game_event_broadcaster PUBLIC ${CMAKE_CU
 target_link_libraries(rtype_server_game_event_broadcaster
   PUBLIC
     rtype_engine
+    rtype_logging
+    rtype_network_exceptions
     rtype_network_transport
     rtype_server_game_event_encoder
     rtype_server_replication_constants

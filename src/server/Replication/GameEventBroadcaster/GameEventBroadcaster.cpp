@@ -1,6 +1,7 @@
 #include "GameEventBroadcaster.hpp"
 #include <cstddef>
 #include <functional>
+#include <string>
 #include <utility>
 #include <vector>
 #include "DatagramCodec.hpp"
@@ -16,6 +17,7 @@
 #include "PacketHeader.hpp"
 #include "PlayerElimination.hpp"
 #include "PlayerHit.hpp"
+#include "ReplicationConstants.hpp"
 #include "TimeConstants.hpp"
 #include "TimerScheduler.hpp"
 
@@ -29,12 +31,13 @@ GameEventBroadcaster::GameEventBroadcaster(
     : timers_(timers),
       recipients_(recipients),
       headerFor_(std::move(headerFor)),
-      send_(std::move(send)) {
-  subscribeTo<game::EntitySpawn>(events);
-  subscribeTo<game::EntityDestruction>(events);
-  subscribeTo<game::EntityDamage>(events);
-  subscribeTo<game::PlayerHit>(events);
-  subscribeTo<game::PlayerElimination>(events);
+      send_(std::move(send)),
+      logger_(std::string{REPLICATION_LOGGER_NAME}) {
+  subscribeTo<game::EntitySpawn>(events, ENTITY_SPAWN_EVENT_NAME);
+  subscribeTo<game::EntityDestruction>(events, ENTITY_DESTRUCTION_EVENT_NAME);
+  subscribeTo<game::EntityDamage>(events, ENTITY_DAMAGE_EVENT_NAME);
+  subscribeTo<game::PlayerHit>(events, PLAYER_HIT_EVENT_NAME);
+  subscribeTo<game::PlayerElimination>(events, PLAYER_ELIMINATION_EVENT_NAME);
 }
 
 void GameEventBroadcaster::broadcast(const EncodedMessage& message) {

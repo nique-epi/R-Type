@@ -3,6 +3,7 @@
 #include <chrono>
 #include <cstddef>
 #include <cstdint>
+#include <limits>
 #include "TimeConstants.hpp"
 
 namespace rtype::server::testing {
@@ -38,5 +39,13 @@ constexpr std::uint16_t LARGEST_EVENT_NUMBER = 65535;
  */
 constexpr std::size_t EVENTS_PAST_THE_WRAP =
     std::size_t{LARGEST_EVENT_NUMBER} + 2;
+
+/**
+ * @brief Values the protocol refuses: a coordinate that is not a number, the
+ * network id no entity has, and a player number outside 1 to 4.
+ */
+constexpr float NOT_A_NUMBER = std::numeric_limits<float>::quiet_NaN();
+constexpr std::uint32_t UNASSIGNED_NETWORK_ID = 0;
+constexpr std::uint8_t PLAYER_NUMBER_OUTSIDE_THE_GAME = 0;
 
 }  // namespace rtype::server::testing

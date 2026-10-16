@@ -11,8 +11,8 @@
 #include "GameEventBroadcasterFixture.hpp"
 #include "GameEventConstants.hpp"
 #include "GameEventTestConstants.hpp"
-#include "NetworkException.hpp"
 #include "PacketHeader.hpp"
+#include "PlayerElimination.hpp"
 #include "PlayerHit.hpp"
 #include "WorldState.hpp"
 
@@ -147,14 +147,72 @@ TEST_F(GameEventBroadcasterFixture, AsksForTheHeaderOfEachDatagramRecipient) {
 
 /**
  * Given two clients
- * When an event naming the entity id 0 is published
- * Then dispatching throws and nothing is sent
+ * When a spawn whose position is not a number is published, then a valid spawn
+ * Then dispatching does not throw, the first spawn sends nothing, and the
+ * second reaches both clients
  */
-TEST_F(GameEventBroadcasterFixture, SendsNothingForAnEventWithoutAnEntityId) {
-  publish(game::EntityDamage{.networkId = 0});
-
-  EXPECT_THROW(dispatch(), network::InvalidFieldValueException);
+TEST_F(GameEventBroadcasterFixture, SkipsASpawnWhoseCoordinateIsNotANumber) {
+  EXPECT_NO_THROW(
+      publishAndDispatch(game::EntitySpawn{.networkId = MONSTER_NETWORK_ID,
+                                           .type = game::EntityType::Enemy,
+                                           .x = NOT_A_NUMBER,
+                                           .y = MONSTER_Y}));
+  advanceTimers(ONE_SECOND);
   EXPECT_TRUE(sentDatagrams().empty());
+
+  publishAndDispatch(game::EntitySpawn{.networkId = MONSTER_NETWORK_ID,
+                                       .type = game::EntityType::Enemy,
+                                       .x = MONSTER_X,
+                                       .y = MONSTER_Y});
+
+  EXPECT_EQ(receivedBy<network::EntitySpawned>(firstClient()).size(), 1U);
+  EXPECT_EQ(receivedBy<network::EntitySpawned>(secondClient()).size(), 1U);
+}
+
+/**
+ * Given two clients
+ * When an entity damage naming the network id 0 is published, then a player
+ * hit
+ * Then dispatching does not throw, no copy of the damage is ever sent, and the
+ * player hit carries the first event number
+ */
+TEST_F(GameEventBroadcasterFixture,
+       SkipsAnEventWithoutAnEntityIdAndKeepsItsNumber) {
+  EXPECT_NO_THROW(publishAndDispatch(
+      game::EntityDamage{.networkId = UNASSIGNED_NETWORK_ID}));
+  advanceTimers(ONE_SECOND);
+  EXPECT_TRUE(sentDatagrams().empty());
+
+  publishAndDispatch(game::PlayerHit{.playerNumber = SECOND_PLAYER_NUMBER});
+
+  const std::vector<network::GameEvent> received =
+      receivedBy<network::GameEvent>(firstClient());
+  ASSERT_EQ(received.size(), 1U);
+  EXPECT_EQ(received.front().eventNumber, FIRST_EVENT_NUMBER);
+  EXPECT_EQ(received.front().kind, network::GameEventKind::PlayerHit);
+}
+
+/**
+ * Given two clients
+ * When a player hit for a player outside the game is published, then a player
+ * elimination for a player of the game
+ * Then dispatching does not throw, the hit sends nothing, and the elimination
+ * reaches both clients
+ */
+TEST_F(GameEventBroadcasterFixture, SkipsAPlayerEventOfAPlayerOutsideTheGame) {
+  EXPECT_NO_THROW(publishAndDispatch(
+      game::PlayerHit{.playerNumber = PLAYER_NUMBER_OUTSIDE_THE_GAME}));
+  advanceTimers(ONE_SECOND);
+  EXPECT_TRUE(sentDatagrams().empty());
+
+  publishAndDispatch(
+      game::PlayerElimination{.playerNumber = SECOND_PLAYER_NUMBER});
+  advanceTimers(ONE_SECOND);
+
+  EXPECT_EQ(receivedBy<network::GameEvent>(firstClient()).size(),
+            REPEATED_MESSAGE_COPIES);
+  EXPECT_EQ(receivedBy<network::GameEvent>(secondClient()).size(),
+            REPEATED_MESSAGE_COPIES);
 }
 
 }  // namespace rtype::server::testing

@@ -3,6 +3,7 @@
 #include <chrono>
 #include <cstddef>
 #include <cstdint>
+#include <string_view>
 #include "TimeConstants.hpp"
 
 namespace rtype::server {
@@ -31,5 +32,15 @@ constexpr std::size_t REPEATED_MESSAGE_COPIES = 3;
  */
 constexpr engine::Duration REPEATED_MESSAGE_INTERVAL =
     std::chrono::milliseconds(50);
+
+/**
+ * @brief The names the broadcaster gives the events in the warning it logs
+ * when it skips one.
+ */
+constexpr std::string_view ENTITY_SPAWN_EVENT_NAME = "EntitySpawn";
+constexpr std::string_view ENTITY_DESTRUCTION_EVENT_NAME = "EntityDestruction";
+constexpr std::string_view ENTITY_DAMAGE_EVENT_NAME = "EntityDamage";
+constexpr std::string_view PLAYER_HIT_EVENT_NAME = "PlayerHit";
+constexpr std::string_view PLAYER_ELIMINATION_EVENT_NAME = "PlayerElimination";
 
 }  // namespace rtype::server

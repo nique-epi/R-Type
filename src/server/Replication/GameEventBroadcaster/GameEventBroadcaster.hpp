@@ -2,12 +2,16 @@
 
 #include <cstddef>
 #include <functional>
+#include <optional>
+#include <string_view>
 #include <vector>
 #include "EncodedMessage.hpp"
 #include "Endpoint.hpp"
 #include "EventBus.hpp"
 #include "GameEventEncoder.hpp"
+#include "Logger.hpp"
 #include "MessageType.hpp"
+#include "NetworkException.hpp"
 #include "OutgoingDatagram.hpp"
 #include "PacketHeader.hpp"
 #include "TimerScheduler.hpp"
@@ -21,6 +25,11 @@ namespace rtype::server {
  * The copies after the first are sent REPEATED_MESSAGE_INTERVAL apart, to the
  * recipients there were when the event was published. Nothing is sent or
  * scheduled when there is no recipient.
+ *
+ * An event the encoder refuses (a position that is not a number, an entity id
+ * of 0, a player number outside 1 to 4) is skipped and logged as a warning:
+ * nothing is sent, no copy is scheduled, and the next event goes out. It never
+ * stops the tick, which would stop the server for every player.
  *
  * The broadcaster must outlive the last dispatch() of the event bus and the
  * last advance() of the timer scheduler: both call back into it.
@@ -51,9 +60,24 @@ class GameEventBroadcaster {
 
  private:
   template <typename Event>
-  void subscribeTo(engine::EventBus& events) {
-    events.subscribe<Event>(
-        [this](const Event& event) { broadcast(encoder_.encode(event)); });
+  void subscribeTo(engine::EventBus& events, std::string_view eventName) {
+    events.subscribe<Event>([this, eventName](const Event& event) {
+      const std::optional<EncodedMessage> message = tryEncode(event, eventName);
+      if (message.has_value()) {
+        broadcast(*message);
+      }
+    });
+  }
+
+  template <typename Event>
+  std::optional<EncodedMessage> tryEncode(const Event& event,
+                                          std::string_view eventName) {
+    try {
+      return encoder_.encode(event);
+    } catch (const network::NetworkException& error) {
+      logger_.warn("game event ", eventName, " not sent: ", error.what());
+      return std::nullopt;
+    }
   }
 
   void broadcast(const EncodedMessage& message);
@@ -66,6 +90,7 @@ class GameEventBroadcaster {
   std::function<network::PacketHeader(const network::Endpoint&)> headerFor_;
   std::function<void(network::OutgoingDatagram)> send_;
   GameEventEncoder encoder_;
+  logging::Logger logger_;
 };
 
 }  // namespace rtype::server
