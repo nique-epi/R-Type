@@ -82,6 +82,7 @@ Paths below are relative to `.claude/rules/`.
 - `code-style/code-style-tests-given-when-then.md`
 - `code-style/fix-format-designated-initializers-for-aggregates.md`
 - `code-style/fix-format-name-after-data-not-process.md`
+- `code-style/fix-reasoning-a-pointer-into-a-temporary-dies-with-it.md`
 
 **Process — `fix/process/`**
 - `fix/process/fix-process-a-screen-without-mockup-is-validated-as-a-picture.md`
