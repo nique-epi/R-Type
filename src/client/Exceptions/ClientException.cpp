@@ -3,6 +3,7 @@
 #include <string>
 #include <string_view>
 #include <vector>
+#include "ProtocolConstants.hpp"
 
 namespace rtype::client {
 
@@ -69,5 +70,12 @@ RenderTextureNotCreatedException::RenderTextureNotCreatedException(
     unsigned int width, unsigned int height)
     : ClientException("A render texture could not be created, size " +
                       std::to_string(width) + " x " + std::to_string(height)) {}
+
+InvalidNicknameOptionException::InvalidNicknameOptionException(
+    std::string_view nickname)
+    : ClientException(
+          "Invalid nickname \"" + std::string(nickname) + "\": expected " +
+          std::to_string(network::MINIMUM_NICKNAME_SIZE) + " to " +
+          std::to_string(network::MAXIMUM_NICKNAME_SIZE) + " bytes of UTF-8") {}
 
 }  // namespace rtype::client

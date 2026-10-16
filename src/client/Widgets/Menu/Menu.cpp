@@ -9,6 +9,8 @@
 #include <cmath>
 #include <cstddef>
 #include <optional>
+#include <string>
+#include <string_view>
 #include <utility>
 #include "BackgroundConstants.hpp"
 #include "Button.hpp"
@@ -18,6 +20,7 @@
 #include "InterfaceConstants.hpp"
 #include "Label.hpp"
 #include "PlayfieldMapping.hpp"
+#include "TextField.hpp"
 #include "TimeConstants.hpp"
 #include "WidgetColors.hpp"
 #include "WidgetConstants.hpp"
@@ -52,6 +55,10 @@ Menu::Menu(Content content) : content_(std::move(content)) {
 
 void Menu::handleEvent(const sf::Event& event,
                        const PlayfieldMapping& playfieldPointAt) {
+  TextField* field = selectedField();
+  if (field != nullptr && !press_.has_value() && field->handleEvent(event)) {
+    return;
+  }
   if (const auto* pressed = event.getIf<sf::Event::KeyPressed>()) {
     keyPressed(*pressed);
   } else if (const auto* released = event.getIf<sf::Event::KeyReleased>()) {
@@ -106,8 +113,22 @@ void Menu::paint(IInterfaceCanvas& canvas) const {
   if (selected_.has_value() &&
       !content_.buttons[*selected_].description().empty()) {
     canvas.write(content_.buttons[*selected_].description(),
-                 content_.descriptionAnchor, PAGE_LINE_STYLE);
+                 content_.descriptionAnchor, content_.descriptionStyle);
   }
+  if (content_.statusAnchor.has_value() && !status_.empty()) {
+    canvas.write(status_, *content_.statusAnchor, STATUS_STYLE);
+  }
+}
+
+void Menu::setStatus(std::string text) { status_ = std::move(text); }
+
+std::string_view Menu::fieldText(std::size_t button) const {
+  if (button >= content_.buttons.size()) {
+    return {};
+  }
+  const TextField* field = content_.buttons[button].field();
+  return field == nullptr ? std::string_view()
+                          : std::string_view(field->text());
 }
 
 void Menu::setEnabled(std::size_t button, bool enabled) {
@@ -174,7 +195,7 @@ void Menu::keyReleased(sf::Keyboard::Key key) {
 }
 
 void Menu::pointerMoved(sf::Vector2i pixel) {
-  if (press_.has_value()) {
+  if (press_.has_value() || !content_.selectsOnHover) {
     return;
   }
   const std::optional<std::size_t> button = enabledButtonAt(pixel);
@@ -188,8 +209,11 @@ void Menu::pointerPressed(sf::Vector2i pixel) {
     return;
   }
   const std::optional<std::size_t> button = enabledButtonAt(pixel);
-  if (button.has_value()) {
-    selected_ = button;
+  if (!button.has_value()) {
+    return;
+  }
+  selected_ = button;
+  if (content_.buttons[*button].field() == nullptr) {
     press_ = Press{.button = *button, .source = PressSource::Pointer};
   }
 }
@@ -269,6 +293,10 @@ Button::State Menu::stateOf(std::size_t button) const {
     return Button::State::Selected;
   }
   return Button::State::Idle;
+}
+
+TextField* Menu::selectedField() {
+  return selected_.has_value() ? content_.buttons[*selected_].field() : nullptr;
 }
 
 }  // namespace rtype::client

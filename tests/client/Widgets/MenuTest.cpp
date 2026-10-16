@@ -1,19 +1,22 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include <SFML/Graphics/Rect.hpp>
 #include <SFML/System/Vector2.hpp>
 #include <SFML/Window/Event.hpp>
 #include <SFML/Window/Keyboard.hpp>
-#include <chrono>
 #include <cstddef>
 #include <optional>
 #include <string>
 #include <vector>
 #include "BackgroundConstants.hpp"
+#include "InterfaceConstants.hpp"
 #include "KeyPress.hpp"
 #include "Menu.hpp"
 #include "MenuBuilder.hpp"
 #include "PointerEvents.hpp"
 #include "RecordingInterfaceCanvas.hpp"
+#include "ScreenTestConstants.hpp"
+#include "TextField.hpp"
 #include "TimeConstants.hpp"
 #include "WidgetColors.hpp"
 #include "WidgetConstants.hpp"
@@ -24,9 +27,14 @@ using rtype::client::Menu;
 using rtype::client::MenuBuilder;
 using rtype::client::PRESS_DURATION;
 using rtype::client::PRESSED_BAR_TEXT_COLOR;
+using rtype::client::TEXT_LINE_HEIGHT;
+using rtype::client::TextField;
 using rtype::engine::Duration;
+using ::testing::Contains;
 using ::testing::ElementsAre;
+using ::testing::Field;
 using ::testing::IsEmpty;
+using ::testing::Not;
 
 namespace {
 
@@ -35,12 +43,29 @@ constexpr std::size_t SECOND = 1;
 constexpr std::size_t LAST = 2;
 constexpr sf::Keyboard::Key ENTER = sf::Keyboard::Key::Enter;
 constexpr sf::Keyboard::Key ESCAPE = sf::Keyboard::Key::Escape;
-constexpr Duration ONE_TICK = std::chrono::nanoseconds(1);
 constexpr Duration JUST_BEFORE_DUE = PRESS_DURATION - ONE_TICK;
 constexpr int INTERFACE_PIXEL = static_cast<int>(BACKGROUND_PIXEL_SIZE);
 constexpr sf::Vector2i ONE_UNIT_LEFT(-1, 0);
 constexpr sf::Vector2i ONE_PIXEL_LOWER(0, 1);
 constexpr sf::Vector2i INSIDE_A_BAR(4, 4);
+
+/** @returns What a menu paints. */
+InterfaceCanvasRecord paintingOf(const Menu& menu) {
+  InterfaceCanvasRecord record;
+  RecordingInterfaceCanvas canvas(record);
+  menu.paint(canvas);
+  return record;
+}
+
+/** @returns The point of the playfield at the top-left corner of the bar of a
+ * menu whose line reads so, read from what the menu paints. */
+sf::Vector2i barCornerOf(const Menu& menu, const std::string& line) {
+  const InterfaceCanvasRecord record = paintingOf(menu);
+  const RecordedWriting* writing = writingOf(record, line);
+  return writing == nullptr
+             ? sf::Vector2i()
+             : (writing->anchor - BUTTON_TEXT_OFFSET) * INTERFACE_PIXEL;
+}
 
 /** @brief A page of three buttons, A, B and C, C being the cancel button;
  * their actions write their label in a journal. */
@@ -62,15 +87,9 @@ class MenuTest : public ::testing::Test {
   }
 
   /** @returns The point of the playfield at the top-left corner of the bar
-   * labelled so, read from what the menu paints. */
+   * labelled so. */
   sf::Vector2i barCorner(const std::string& label) {
-    InterfaceCanvasRecord record;
-    RecordingInterfaceCanvas canvas(record);
-    menu_.paint(canvas);
-    const RecordedWriting* writing = writingOf(record, label);
-    return writing == nullptr
-               ? sf::Vector2i()
-               : (writing->anchor - BUTTON_TEXT_OFFSET) * INTERFACE_PIXEL;
+    return barCornerOf(menu_, label);
   }
 
  private:
@@ -418,10 +437,8 @@ TEST_F(MenuTest, LosingTheFocusDropsAHeldPress) {
 TEST_F(MenuTest, APressedButtonIsPaintedPressed) {
   const sf::Vector2i atRest = barCorner("A") / INTERFACE_PIXEL;
   send(keyPress(ENTER));
-  InterfaceCanvasRecord record;
-  RecordingInterfaceCanvas canvas(record);
 
-  menu().paint(canvas);
+  const InterfaceCanvasRecord record = paintingOf(menu());
 
   const RecordedWriting* label = writingOf(record, "A");
   ASSERT_NE(label, nullptr);
@@ -446,4 +463,326 @@ TEST(Menu, AMenuWithoutButtonsIgnoresEveryInput) {
   menu.advance(PRESS_DURATION);
 
   EXPECT_EQ(menu.selectedButton(), std::nullopt);
+}
+
+namespace {
+
+constexpr std::size_t FIELD = 0;
+constexpr std::size_t BUTTON_AFTER_THE_FIELD = 1;
+constexpr std::size_t FOUR_BYTES = 4;
+
+/** @brief Width of every character of the regular font, in pixels, read from
+ * its file. */
+constexpr int CHARACTER_WIDTH = 8;
+
+/**
+ * @brief The caret the team chose: one pixel wide, and taller than a line of
+ * text by a pixel above and below it.
+ */
+constexpr sf::Vector2i THIN_CARET_SIZE(1, 10);
+constexpr sf::Vector2i ONE_PIXEL_HIGHER(0, -1);
+
+/** @brief Characters of the texts the field holds in the tests. */
+constexpr int CHARACTERS_OF_AB = 2;
+constexpr int CHARACTERS_OF_AB_AND_E_ACUTE = 3;
+
+/** @brief The letter e with an acute accent, one character of two bytes, and
+ * the text AB followed by it, in UTF-8. */
+constexpr char32_t E_ACUTE = U'\xE9';
+constexpr const char* AB_AND_E_ACUTE = "AB\xC3\xA9";
+
+/** @returns Where the caret lies after a text of so many characters written
+ * at an anchor. */
+sf::IntRect caretAfter(sf::Vector2i textAnchor, int characters) {
+  return {textAnchor + sf::Vector2i(characters * CHARACTER_WIDTH, 0) +
+              ONE_PIXEL_HIGHER,
+          THIN_CARET_SIZE};
+}
+
+/**
+ * @brief A form whose first bar is a field of four bytes, NAME, starting with
+ * AB, then a button, OK; their actions write their label in a journal.
+ */
+class MenuWithAFieldTest : public ::testing::Test {
+ protected:
+  Menu& menu() { return menu_; }
+
+  [[nodiscard]] const std::vector<std::string>& activated() const {
+    return activated_;
+  }
+
+  void send(const sf::Event& event) {
+    menu_.handleEvent(event, samePlayfieldPoint);
+  }
+
+  /** @returns What the menu paints. */
+  [[nodiscard]] InterfaceCanvasRecord painting() const {
+    return paintingOf(menu_);
+  }
+
+  /** @returns The point of the playfield one pixel inside the line written
+   * with this text, read from what the menu paints. */
+  [[nodiscard]] sf::Vector2i pointOn(const std::string& text) const {
+    const InterfaceCanvasRecord record = painting();
+    const RecordedWriting* writing = writingOf(record, text);
+    return writing == nullptr
+               ? sf::Vector2i()
+               : (writing->anchor * INTERFACE_PIXEL) + INSIDE_A_BAR;
+  }
+
+ private:
+  std::vector<std::string> activated_;
+  Menu menu_ =
+      MenuBuilder(MenuBuilder::Frame::Form)
+          .textField(
+              {.label = "NAME", .description = "> TYPE A NAME"},
+              TextField("AB", FOUR_BYTES, TextField::Characters::Printable),
+              [this] { activated_.emplace_back("NAME"); })
+          .button({.label = "OK"}, [this] { activated_.emplace_back("OK"); })
+          .build();
+};
+
+}  // namespace
+
+/**
+ * Given a form whose field, holding AB, is selected
+ * When C is typed
+ * Then the field holds ABC
+ */
+TEST_F(MenuWithAFieldTest, ACharacterTypedGoesToTheSelectedField) {
+  send(typedCharacter(U'C'));
+
+  EXPECT_EQ(menu().fieldText(FIELD), "ABC");
+}
+
+/**
+ * Given a form whose button after the field is selected
+ * When C is typed
+ * Then the field still holds AB
+ */
+TEST_F(MenuWithAFieldTest, ACharacterTypedOnAButtonGoesNowhere) {
+  send(keyPress(sf::Keyboard::Key::Down));
+
+  send(typedCharacter(U'C'));
+
+  EXPECT_EQ(menu().fieldText(FIELD), "AB");
+}
+
+/**
+ * Given a form whose field, holding AB, is selected
+ * When Backspace is pressed
+ * Then the field holds A
+ */
+TEST_F(MenuWithAFieldTest, BackspaceErasesFromTheSelectedField) {
+  send(keyPress(sf::Keyboard::Key::Backspace));
+
+  EXPECT_EQ(menu().fieldText(FIELD), "A");
+}
+
+/**
+ * Given a form whose field is selected and pressed with Enter
+ * When C is typed before the press ends
+ * Then the field still holds AB: every input waits while a bar is pressed
+ */
+TEST_F(MenuWithAFieldTest, TypingWaitsWhileTheFieldIsPressed) {
+  send(keyPress(ENTER));
+
+  send(typedCharacter(U'C'));
+
+  EXPECT_EQ(menu().fieldText(FIELD), "AB");
+}
+
+/**
+ * Given a form whose field is selected
+ * When Enter is pressed and released, and the press lasts
+ * Then the action of the field runs
+ */
+TEST_F(MenuWithAFieldTest, EnterOnAFieldRunsItsAction) {
+  send(keyPress(ENTER));
+  send(keyRelease(ENTER));
+
+  menu().advance(PRESS_DURATION);
+
+  EXPECT_THAT(activated(), ElementsAre("NAME"));
+}
+
+/**
+ * Given a form whose button after the field is selected
+ * When the left button is pressed and released on the text of the field
+ * Then the field is selected
+ */
+TEST_F(MenuWithAFieldTest, AClickOnAFieldSelectsIt) {
+  send(keyPress(sf::Keyboard::Key::Down));
+  const sf::Vector2i field = pointOn("AB");
+
+  send(leftPress(field));
+  send(leftRelease(field));
+
+  EXPECT_EQ(menu().selectedButton(), FIELD);
+}
+
+/**
+ * Given a form whose button after the field is selected
+ * When the field is clicked, then a press duration goes by
+ * Then no action runs
+ */
+TEST_F(MenuWithAFieldTest, AClickOnAFieldRunsNothing) {
+  send(keyPress(sf::Keyboard::Key::Down));
+  const sf::Vector2i field = pointOn("AB");
+
+  send(leftPress(field));
+  send(leftRelease(field));
+  menu().advance(PRESS_DURATION);
+
+  EXPECT_THAT(activated(), IsEmpty());
+}
+
+/**
+ * Given a form whose button after the field is selected
+ * When the left button is pressed and released on the label of the field
+ * Then the field is selected, as a click in its box would
+ */
+TEST_F(MenuWithAFieldTest, AClickOnTheLabelOfAFieldSelectsIt) {
+  send(keyPress(sf::Keyboard::Key::Down));
+  const sf::Vector2i label = pointOn("NAME");
+
+  send(leftPress(label));
+  send(leftRelease(label));
+
+  EXPECT_EQ(menu().selectedButton(), FIELD);
+}
+
+/**
+ * Given a form whose field is selected
+ * When the pointer moves over the button after it
+ * Then the field stays selected: a form selects on a click only
+ */
+TEST_F(MenuWithAFieldTest, ThePointerPassingOverAButtonKeepsTheField) {
+  const sf::Vector2i button = pointOn("OK");
+
+  send(pointerMove(button));
+
+  EXPECT_EQ(menu().selectedButton(), FIELD);
+}
+
+/**
+ * Given a form whose field is selected
+ * When the left button is pressed and released on the button after it, and
+ * the press lasts
+ * Then the action of that button runs
+ */
+TEST_F(MenuWithAFieldTest, AClickOnAButtonOfAFormRunsIt) {
+  const sf::Vector2i button = pointOn("OK");
+
+  send(leftPress(button));
+  send(leftRelease(button));
+  menu().advance(PRESS_DURATION);
+
+  EXPECT_THAT(activated(), ElementsAre("OK"));
+}
+
+/**
+ * Given a form whose field, holding AB, is selected
+ * When the menu is painted
+ * Then a caret one pixel wide stands right after the text
+ */
+TEST_F(MenuWithAFieldTest, TheSelectedFieldShowsAThinCaretAfterItsText) {
+  const InterfaceCanvasRecord record = painting();
+
+  const RecordedWriting* text = writingOf(record, "AB");
+  ASSERT_NE(text, nullptr);
+  EXPECT_THAT(record.fills,
+              Contains(Field(&RecordedFill::area,
+                             caretAfter(text->anchor, CHARACTERS_OF_AB))));
+}
+
+/**
+ * Given a form whose button after the field is selected
+ * When the menu is painted
+ * Then no caret is painted
+ */
+TEST_F(MenuWithAFieldTest, AFieldNotSelectedShowsNoCaret) {
+  send(keyPress(sf::Keyboard::Key::Down));
+
+  EXPECT_THAT(painting().fills,
+              Not(Contains(Field(&RecordedFill::area,
+                                 Field(&sf::IntRect::size, THIN_CARET_SIZE)))));
+}
+
+/**
+ * Given a form whose field, holding AB, is selected
+ * When an e with an acute accent, one character of two bytes, is typed
+ * Then the caret stands three characters after the start of the text, not
+ * four
+ */
+TEST_F(MenuWithAFieldTest, TheCaretCountsCharactersNotBytes) {
+  send(typedCharacter(E_ACUTE));
+
+  const InterfaceCanvasRecord record = painting();
+
+  const RecordedWriting* text = writingOf(record, AB_AND_E_ACUTE);
+  ASSERT_NE(text, nullptr);
+  EXPECT_THAT(
+      record.fills,
+      Contains(Field(&RecordedFill::area,
+                     caretAfter(text->anchor, CHARACTERS_OF_AB_AND_E_ACUTE))));
+}
+
+/**
+ * Given a form with a field and a button
+ * When the text of the button is read
+ * Then it has none
+ */
+TEST_F(MenuWithAFieldTest, AButtonHasNoText) {
+  EXPECT_EQ(menu().fieldText(BUTTON_AFTER_THE_FIELD), "");
+}
+
+/**
+ * Given a form whose field is selected, and its description written
+ * When a status line is set and the menu painted
+ * Then it is written in line with the description, below it and clear of it
+ */
+TEST_F(MenuWithAFieldTest, TheStatusLineLiesBelowTheDescription) {
+  menu().setStatus("WAIT");
+
+  const InterfaceCanvasRecord record = painting();
+
+  const RecordedWriting* description = writingOf(record, "> TYPE A NAME");
+  const RecordedWriting* status = writingOf(record, "WAIT");
+  ASSERT_NE(description, nullptr);
+  ASSERT_NE(status, nullptr);
+  EXPECT_EQ(status->anchor.x, description->anchor.x);
+  EXPECT_GE(status->anchor.y, description->anchor.y + TEXT_LINE_HEIGHT);
+}
+
+/**
+ * Given a dialog
+ * When a status line is set and the dialog painted
+ * Then no status line is written: only a form has one
+ */
+TEST(MenuStatus, ADialogWritesNoStatusLine) {
+  Menu dialog = MenuBuilder(MenuBuilder::Frame::Dialog)
+                    .button({.label = "OK"}, [] {})
+                    .build();
+  dialog.setStatus("WAIT");
+
+  const InterfaceCanvasRecord record = paintingOf(dialog);
+
+  EXPECT_EQ(writingOf(record, "WAIT"), nullptr);
+}
+
+/**
+ * Given a page
+ * When a status line is set and the page painted
+ * Then no status line is written: only a form has one
+ */
+TEST(MenuStatus, APageWritesNoStatusLine) {
+  Menu page = MenuBuilder(MenuBuilder::Frame::Page)
+                  .button({.label = "OK"}, [] {})
+                  .build();
+  page.setStatus("WAIT");
+
+  const InterfaceCanvasRecord record = paintingOf(page);
+
+  EXPECT_EQ(writingOf(record, "WAIT"), nullptr);
 }

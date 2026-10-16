@@ -24,6 +24,16 @@ constexpr std::string_view DEFAULT_SERVER_ADDRESS =
     network::LOOPBACK_IPV4_ADDRESS;
 
 /**
+ * @brief Launch option followed by the nickname of the player.
+ */
+constexpr std::string_view NICKNAME_OPTION = "-n";
+
+/**
+ * @brief Nickname of the player when none is given at launch.
+ */
+constexpr std::string_view DEFAULT_NICKNAME = "PILOT";
+
+/**
  * @brief Module name the client writes the log lines of its launch under.
  */
 constexpr std::string_view CLIENT_LOGGER_NAME = "Client";

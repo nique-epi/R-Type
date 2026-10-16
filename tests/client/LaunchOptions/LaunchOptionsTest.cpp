@@ -3,6 +3,7 @@
 #include <string_view>
 #include <vector>
 #include "ClientConstants.hpp"
+#include "ClientException.hpp"
 #include "Endpoint.hpp"
 #include "EngineException.hpp"
 #include "LaunchArgumentsConstants.hpp"
@@ -14,7 +15,9 @@
 
 using rtype::client::ADDRESS_OPTION;
 using rtype::client::DEFAULT_SERVER_ADDRESS;
+using rtype::client::InvalidNicknameOptionException;
 using rtype::client::LaunchOptions;
+using rtype::client::NICKNAME_OPTION;
 using rtype::engine::HELP_OPTION;
 using rtype::engine::MissingLaunchOptionValueException;
 using rtype::engine::PORT_OPTION;
@@ -207,9 +210,9 @@ TEST(ClientLaunchOptions, UsageNamesEveryOption) {
   const std::string usage = LaunchOptions::usage();
 
   for (const std::string_view option :
-       {ADDRESS_OPTION, PORT_OPTION, HELP_OPTION, rtype::logging::LEVEL_OPTION,
-        rtype::logging::FILE_OPTION, rtype::logging::NO_FILE_OPTION,
-        rtype::logging::STDERR_OPTION}) {
+       {ADDRESS_OPTION, PORT_OPTION, NICKNAME_OPTION, HELP_OPTION,
+        rtype::logging::LEVEL_OPTION, rtype::logging::FILE_OPTION,
+        rtype::logging::NO_FILE_OPTION, rtype::logging::STDERR_OPTION}) {
     SCOPED_TRACE(option);
     EXPECT_NE(usage.find("\n  " + std::string(option)), std::string::npos);
   }
@@ -232,4 +235,72 @@ TEST(ClientLaunchOptions, UsageGivesTheDefaultAddress) {
  */
 TEST(ClientLaunchOptions, UsageGivesTheDefaultPort) {
   EXPECT_NE(LaunchOptions::usage().find(DEFAULT_PORT_LINE), std::string::npos);
+}
+
+/**
+ * Given no argument
+ * When the launch options are read
+ * Then the nickname is the one of a player who gives none
+ */
+TEST(ClientLaunchOptions, NoArgumentGivesTheDefaultNickname) {
+  const LaunchOptions options = LaunchOptions::read(Arguments{});
+
+  EXPECT_EQ(options.nickname(), NICKNAME_WHEN_NONE_IS_GIVEN);
+}
+
+/**
+ * Given the nickname option and a nickname
+ * When the launch options are read
+ * Then the nickname is that one
+ */
+TEST(ClientLaunchOptions, NicknameOptionSetsTheNickname) {
+  const LaunchOptions options =
+      LaunchOptions::read(Arguments{NICKNAME_OPTION, NICKNAME_ARGUMENT});
+
+  EXPECT_EQ(options.nickname(), NICKNAME_ARGUMENT);
+}
+
+/**
+ * Given the nickname option twice
+ * When the launch options are read
+ * Then the last nickname wins
+ */
+TEST(ClientLaunchOptions, LastNicknameOptionWins) {
+  const LaunchOptions options =
+      LaunchOptions::read(Arguments{NICKNAME_OPTION, NICKNAME_ARGUMENT,
+                                    NICKNAME_OPTION, OTHER_NICKNAME_ARGUMENT});
+
+  EXPECT_EQ(options.nickname(), OTHER_NICKNAME_ARGUMENT);
+}
+
+/**
+ * Given the nickname option and a nickname of 17 bytes
+ * When the launch options are read
+ * Then the nickname is rejected
+ */
+TEST(ClientLaunchOptions, SeventeenByteNicknameIsRejected) {
+  EXPECT_THROW(static_cast<void>(LaunchOptions::read(
+                   Arguments{NICKNAME_OPTION, SEVENTEEN_BYTE_NICKNAME})),
+               InvalidNicknameOptionException);
+}
+
+/**
+ * Given the nickname option as the last argument
+ * When the launch options are read
+ * Then the missing nickname is reported
+ */
+TEST(ClientLaunchOptions, NicknameOptionWithoutValueIsRejected) {
+  EXPECT_THROW(
+      static_cast<void>(LaunchOptions::read(Arguments{NICKNAME_OPTION})),
+      MissingLaunchOptionValueException);
+}
+
+/**
+ * Given the default nickname
+ * When the usage is built
+ * Then it gives the size of a nickname and the default one
+ */
+TEST(ClientLaunchOptions, UsageGivesTheDefaultNickname) {
+  EXPECT_NE(LaunchOptions::usage().find(DEFAULT_NICKNAME_LINE),
+            std::string::npos);
 }

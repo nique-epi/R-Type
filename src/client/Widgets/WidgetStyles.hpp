@@ -21,6 +21,15 @@ constexpr TextStyle FOOTER_STYLE{.font = TextFont::Small,
                                  .outlined = true,
                                  .alignment = TextAlignment::Right};
 
+/**
+ * @brief Description of the selected bar of a form, in small print, then its
+ * status line: both inside its panel, so not outlined.
+ */
+constexpr TextStyle FORM_DESCRIPTION_STYLE{.font = TextFont::Small,
+                                           .color = FORM_DESCRIPTION_COLOR};
+constexpr TextStyle STATUS_STYLE{.font = TextFont::Regular,
+                                 .color = STATUS_TEXT_COLOR};
+
 /** @brief Title and question of a dialog, inside its panel, so not
  * outlined. */
 constexpr TextStyle DIALOG_HEADING_STYLE{.font = TextFont::Regular,

@@ -60,3 +60,29 @@ constexpr std::string_view DEFAULT_ADDRESS_LINE =
  */
 constexpr std::string_view DEFAULT_PORT_LINE =
     "UDP port of the server, from 1 to 65535. Default: 4242.";
+
+/**
+ * @brief A nickname given after `-n`.
+ */
+constexpr std::string_view NICKNAME_ARGUMENT = "ACE";
+
+/**
+ * @brief A second nickname given after `-n`.
+ */
+constexpr std::string_view OTHER_NICKNAME_ARGUMENT = "BLUE";
+
+/**
+ * @brief The nickname of a player who gives none, as the team chose it.
+ */
+constexpr std::string_view NICKNAME_WHEN_NONE_IS_GIVEN = "PILOT";
+
+/**
+ * @brief Seventeen letters: one byte more than the longest nickname.
+ */
+constexpr std::string_view SEVENTEEN_BYTE_NICKNAME = "ABCDEFGHIJKLMNOPQ";
+
+/**
+ * @brief The line of the usage that gives the default nickname.
+ */
+constexpr std::string_view DEFAULT_NICKNAME_LINE =
+    "Callsign of the player, 1 to 16 bytes of UTF-8. Default: PILOT.";

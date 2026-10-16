@@ -43,10 +43,10 @@ If the repository was cloned without its submodules, run `git submodule update -
 The server listens on UDP port 4243 of every IPv4 interface; without `-p`, on port 4242.
 
 ```bash
-./r-type_client -h 192.168.1.20 -p 4243
+./r-type_client -h 192.168.1.20 -p 4243 -n ACE
 ```
 
-The client is given the IPv4 address and the port of the server, `127.0.0.1` and 4242 by default. It does not join the server yet: it only logs them.
+The client is given the IPv4 address and the port of the server, `127.0.0.1` and 4242 by default, and the nickname of the player, `PILOT` by default; its connection screen starts with them. It does not join the server yet: a provisional stand-in accepts every connection at once.
 
 `--help` prints the options of either program. An invalid argument stops it with a message and exit code 1.
 

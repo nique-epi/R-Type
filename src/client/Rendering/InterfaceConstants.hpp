@@ -33,6 +33,14 @@ constexpr unsigned int TEXT_CHARACTER_SIZE = 8;
 constexpr int TEXT_LINE_HEIGHT = static_cast<int>(TEXT_CHARACTER_SIZE);
 
 /**
+ * @brief Width of every character a text field accepts in the regular font, in
+ * pixels: Press Start 2P gives each of them an advance of one em (1000 units
+ * for 1000 units per em, read from the font file), drawn at
+ * TEXT_CHARACTER_SIZE.
+ */
+constexpr int REGULAR_FONT_ADVANCE = static_cast<int>(TEXT_CHARACTER_SIZE);
+
+/**
  * @brief Row of the baseline of each font below the top of its line, where
  * the browser placed it in the mockup for a line as tall as the font.
  */

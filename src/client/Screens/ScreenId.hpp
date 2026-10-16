@@ -22,6 +22,11 @@ enum class ScreenId : std::uint8_t {
   /** @brief The question asked before closing the client, pushed over the
    * title. */
   QuitConfirmation,
+  /**
+   * @brief The server to join and the nickname to join it with, then how the
+   * attempt stands, pushed over the title.
+   */
+  Connection,
 };
 
 }  // namespace rtype::client

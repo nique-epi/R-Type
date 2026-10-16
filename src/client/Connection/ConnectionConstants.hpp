@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstddef>
+#include <string_view>
 
 namespace rtype::client {
 
@@ -21,5 +22,8 @@ constexpr std::size_t INCOMING_DATAGRAM_QUEUE_CAPACITY = 256;
  * far more than waits before the network thread sends it.
  */
 constexpr std::size_t OUTGOING_DATAGRAM_QUEUE_CAPACITY = 64;
+
+/** @brief Module name the connection to a server writes its log lines under. */
+constexpr std::string_view CONNECTION_LOGGER_NAME = "Connection";
 
 }  // namespace rtype::client

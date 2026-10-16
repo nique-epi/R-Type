@@ -10,6 +10,7 @@
 #include "Button.hpp"
 #include "IScreenNavigator.hpp"
 #include "Menu.hpp"
+#include "TextField.hpp"
 
 namespace rtype::client {
 
@@ -19,12 +20,16 @@ namespace rtype::client {
  * holds, never where.
  *
  * A page is a column against the left side of the safe margin: the version, the
- * logo, the heading, the subtitle, a rule, the buttons, then the line
- * describing the selected button; its illustration sits against the right side
- * of the margin, its footer in the bottom-right corner. A dialog is a panel
- * centered on the picture: its heading, its message, then its buttons in a
- * centered row. Whatever the order of the calls, the parts are laid in this
- * order; a part the frame does not show is left out.
+ * logo, the heading, the subtitle, a rule, the buttons and the fields, then the
+ * line describing the selected bar and the status line under it; its
+ * illustration sits against the right side of the margin, its footer in the
+ * bottom-right corner. A dialog is a panel centered on the picture: its
+ * heading, its message, then its buttons in a centered row. A form is a panel
+ * centered on the picture too: its heading, its fields one under the other,
+ * its buttons in a centered row, then the line describing the selected bar
+ * and the status line under it; the pointer selects one of its bars only by
+ * clicking it. Whatever the order of the calls, the parts are
+ * laid in this order; a part the frame does not show is left out.
  *
  * The cancel button is the one MENU_CANCEL_KEY activates; backButton() adds
  * the one button that closes the screen on top, the same in every menu.
@@ -34,11 +39,12 @@ class MenuBuilder {
   /**
    * @brief How a menu is laid out: a page is a column against the left side of
    * the safe margin; a dialog is a panel centered over the dimmed screens
-   * below.
+   * below; a form is a panel centered over the sky, that the player fills in.
    */
   enum class Frame : std::uint8_t {
     Page,
     Dialog,
+    Form,
   };
 
   explicit MenuBuilder(Frame frame);
@@ -63,6 +69,14 @@ class MenuBuilder {
   /** @brief Adds a button after the previous ones. */
   MenuBuilder& button(Button::Text text, std::function<void()> action);
 
+  /**
+   * @brief Adds a text field after the previous bars, FIELD_SIZE large: in the
+   * column of a form, or of a page. MENU_CONFIRM_KEY runs its action, as on a
+   * button. A dialog, which asks a question, must hold buttons only.
+   */
+  MenuBuilder& textField(Button::Text text, TextField field,
+                         std::function<void()> action);
+
   /** @brief Adds a button that MENU_CANCEL_KEY activates too; the last one
    * asked for is the cancel button. */
   MenuBuilder& cancelButton(Button::Text text, std::function<void()> action);
@@ -86,14 +100,17 @@ class MenuBuilder {
   [[nodiscard]] Menu build();
 
  private:
-  /** @brief A button asked for, not placed yet. */
+  /** @brief A bar asked for, not placed yet: a button, or a field when it holds
+   * one. */
   struct PendingButton {
     Button::Text text;
     std::function<void()> action;
+    std::optional<TextField> field;
   };
 
   void placeColumn(Menu::Content& content);
   void placeDialog(Menu::Content& content);
+  void placeForm(Menu::Content& content);
 
   Frame frame_;
   std::optional<std::string> version_;

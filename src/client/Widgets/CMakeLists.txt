@@ -12,6 +12,7 @@ target_link_libraries(rtype_client_widgets
 
 add_subdirectory(ChamferedBox)
 add_subdirectory(Label)
+add_subdirectory(TextField)
 add_subdirectory(Button)
 add_subdirectory(Menu)
 add_subdirectory(MenuBuilder)

@@ -19,6 +19,7 @@ target_link_libraries(rtype_client_screens
 
 rtype_enable_warnings(rtype_client_screens)
 
+add_subdirectory(ConnectionScreen)
 add_subdirectory(GameScreen)
 add_subdirectory(LoadingScreen)
 add_subdirectory(OptionsScreen)

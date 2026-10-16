@@ -158,14 +158,14 @@ TEST_F(TitleScreenTest, TheFirstFrameAlreadyShowsTheLogo) {
 /**
  * Given the title screen, PLAY selected
  * When Enter is pressed and released, and the press lasts
- * Then the game is asked for in place of every screen
+ * Then the connection screen is asked for over the title
  */
-TEST_F(TitleScreenTest, PlayAsksForTheGame) {
+TEST_F(TitleScreenTest, PlayOpensTheConnectionScreen) {
   choose(sf::Keyboard::Key::Enter);
 
   EXPECT_THAT(navigator().calls(),
-              ElementsAre(NavigatorCall{.request = NavigatorRequest::ReplaceAll,
-                                        .screen = ScreenId::Game}));
+              ElementsAre(NavigatorCall{.request = NavigatorRequest::Push,
+                                        .screen = ScreenId::Connection}));
 }
 
 /**
@@ -271,7 +271,7 @@ TEST_F(TitleInTheStackTest, AClickInTheOptionsNeverPressesAButtonOfTheTitle) {
  * Given the options opened over the title, then closed
  * When the left button is pressed and released on the bar of PLAY, and the
  * press lasts
- * Then the title asks for the game
+ * Then the title asks for the connection screen
  */
 TEST_F(TitleInTheStackTest, OnceTheOptionsAreClosedAClickReachesTheTitle) {
   open(ScreenId::Options);
@@ -280,6 +280,6 @@ TEST_F(TitleInTheStackTest, OnceTheOptionsAreClosedAClickReachesTheTitle) {
   click(PLAY_BAR_MIDDLE);
 
   EXPECT_THAT(titleNavigator().calls(),
-              ElementsAre(NavigatorCall{.request = NavigatorRequest::ReplaceAll,
-                                        .screen = ScreenId::Game}));
+              ElementsAre(NavigatorCall{.request = NavigatorRequest::Push,
+                                        .screen = ScreenId::Connection}));
 }
