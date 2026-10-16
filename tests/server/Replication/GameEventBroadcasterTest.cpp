@@ -1,6 +1,9 @@
 #include <gtest/gtest.h>
+#include <cstddef>
+#include <cstdint>
 #include <vector>
 #include "DatagramCodec.hpp"
+#include "Endpoint.hpp"
 #include "EntityDamage.hpp"
 #include "EntityDestroyed.hpp"
 #include "EntityDestruction.hpp"
@@ -11,6 +14,7 @@
 #include "GameEventBroadcasterFixture.hpp"
 #include "GameEventConstants.hpp"
 #include "GameEventTestConstants.hpp"
+#include "OutgoingDatagram.hpp"
 #include "PacketHeader.hpp"
 #include "PlayerElimination.hpp"
 #include "PlayerHit.hpp"
@@ -87,6 +91,34 @@ TEST_F(GameEventBroadcasterFixture, RepeatsAGameEventWithTheSameNumber) {
                          .entityId = 0});
   EXPECT_EQ(receivedBy<network::GameEvent>(firstClient()), expected);
   EXPECT_EQ(receivedBy<network::GameEvent>(secondClient()), expected);
+}
+
+/**
+ * Given two clients
+ * When a destruction is published and every copy comes due
+ * Then, for each client, the sequence number of each copy is greater than the
+ * one of the copy before
+ */
+TEST_F(GameEventBroadcasterFixture, GivesEachCopyANewerSequenceNumber) {
+  publishAndDispatch(
+      game::EntityDestruction{.networkId = MONSTER_NETWORK_ID,
+                              .cause = game::DestructionCause::Killed});
+  advanceTimers(ALL_COPIES_SENT);
+
+  const std::vector<network::Endpoint> clients{firstClient(), secondClient()};
+  for (const network::Endpoint& client : clients) {
+    std::vector<std::uint16_t> sequences;
+    for (const network::OutgoingDatagram& datagram : sentDatagrams()) {
+      if (datagram.destination == client) {
+        sequences.push_back(
+            network::DatagramCodec::decodeHeader(datagram.payload).sequence);
+      }
+    }
+    ASSERT_EQ(sequences.size(), REPEATED_MESSAGE_COPIES);
+    for (std::size_t copy = 1; copy < sequences.size(); ++copy) {
+      EXPECT_GT(sequences.at(copy), sequences.at(copy - 1));
+    }
+  }
 }
 
 /**
