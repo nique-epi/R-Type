@@ -22,7 +22,7 @@ namespace rtype::server {
  * GameEventEncoder writes, each one as many times as it asks.
  *
  * The copies after the first are sent REPEATED_MESSAGE_INTERVAL apart, to the
- * recipients there were when the event was published. Nothing is sent or
+ * recipients there were when the bus delivered the event. Nothing is sent or
  * scheduled when there is no recipient.
  *
  * An event the encoder refuses (a position that is not a number, an entity id

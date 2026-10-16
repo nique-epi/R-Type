@@ -135,18 +135,18 @@ The sender is built before the server, whose tick handler captures it, and sends
 
 ## Game events: `GameEventEncoder` and `GameEventBroadcaster`
 
-The game announces what the players must see or hear by publishing an event on the `EventBus`; the server turns it into a message and sends it to every client. Five events exist in `src/game/Events/`: `EntitySpawn`, `EntityDestruction` (`Killed` or `Removed`), `EntityDamage`, `PlayerHit` and `PlayerElimination`. They carry a network id or a player number, never an `Entity`: whoever publishes reads the id from the `NetworkIdentity` before the entity is destroyed.
+The game announces what the players must see or hear by publishing an event on the `EventBus`; the server turns it into a message and sends it to every client. The server broadcasts five of the events in `src/game/Events/`: `EntitySpawn`, `EntityDestruction` (`Killed` or `Removed`), `EntityDamage`, `PlayerHit` and `PlayerElimination`. They carry a network id or a player number, never an `Entity`: whoever publishes reads the id from the `NetworkIdentity` before the entity is destroyed.
 
 `GameEventEncoder` (`src/server/Replication/GameEventEncoder/`) writes an event as the message of the protocol (see [Protocol](/R-Type/protocol/#game-events)) and says how many times to send it. An `EntitySpawn` becomes an `EntitySpawned`, sent once, because the next world state creates the entity anyway. An `EntityDestruction` becomes an `EntityDestroyed`, and the other three become a `GameEvent` of kind `EntityDamaged`, `PlayerHit` or `PlayerEliminated`; these are sent `REPEATED_MESSAGE_COPIES` (3) times. The encoder numbers the `GameEvent`s from `FIRST_EVENT_NUMBER` (1), wrapping from 65535 to 0, and an event it refuses uses no number.
 
 `GameEventBroadcaster` (`src/server/Replication/GameEventBroadcaster/`) subscribes to the five events and sends each message to every recipient, in a datagram whose header comes from the function it was given for that recipient. The first copy leaves when the bus delivers the event; the others leave `REPEATED_MESSAGE_INTERVAL` (50 ms) and twice that later, through the `TimerScheduler`.
 
-- The copies go to the clients there were when the event was published: a client that joins after it never receives a copy.
+- The copies go to the clients there were when the bus delivered the event: a client that joins after the delivery never receives a copy.
 - The timers advance by one tick at a time, so a copy leaves on the first tick that reaches its delay, up to one tick (`SIMULATION_TICK_DURATION`, 16.7 ms) after it.
 - `REPEATED_MESSAGE_COPIES` and `REPEATED_MESSAGE_INTERVAL` are **provisional**, like the protocol rates they follow. Code must read the constants and never repeat 3 or 50.
 - An event the protocol refuses is skipped: a position that is not a number, the entity id 0 (which no entity has), or a player number outside 1 to 4. The broadcaster logs a warning with the name of the event, sends nothing, schedules no copy, and does not use an event number, so the next event goes out and the server keeps running. Only the encoding is protected: a fault in the sending still stops the tick.
 - The broadcaster must outlive the last `dispatch()` of the bus and the last `advance()` of the timers, because both call back into it.
-- Nothing is built when the list of recipients is empty. In `main.cpp` it is empty and nothing publishes the events yet, so no datagram leaves. The header function returns a default header, with no session, until the server has sessions; it is never called while there is no recipient.
+- Nothing is sent or scheduled when the list of recipients is empty, but the encoder still runs, so a `GameEvent` still uses an event number. In `main.cpp` the list is empty and nothing publishes the events yet, so no datagram leaves. The header function returns a default header, with no session, until the server has sessions; it is never called while there is no recipient.
 
 ```cpp
 rtype::engine::EventBus events;
