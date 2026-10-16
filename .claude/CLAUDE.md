@@ -84,6 +84,7 @@ Paths below are relative to `.claude/rules/`.
 - `code-style/fix-format-name-after-data-not-process.md`
 
 **Process — `fix/process/`**
+- `fix/process/fix-process-a-screen-without-mockup-is-validated-as-a-picture.md`
 - `fix/process/fix-process-ask-what-is-observed-before-building-a-protocol.md`
 - `fix/process/fix-process-branch-before-first-commit.md`
 - `fix/process/fix-process-defect-injection-on-an-isolated-copy.md`
