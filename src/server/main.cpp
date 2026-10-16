@@ -1,5 +1,6 @@
 #include <exception>
 #include <iostream>
+#include <memory>
 #include <span>
 #include <string>
 #include <utility>
@@ -49,12 +50,13 @@ int runServer(const rtype::logging::LogLaunchOptions& logOptions,
           serverPointer->queueDatagram(std::move(datagram));
         };
     rtype::server::WorldStateSender worldStateSender{send};
-    const rtype::server::GameEventBroadcaster gameEventBroadcaster{
-        events, timers, recipients,
-        [](const rtype::network::Endpoint&) {
-          return rtype::network::PacketHeader{};
-        },
-        send};
+    const auto gameEventBroadcaster =
+        std::make_unique<rtype::server::GameEventBroadcaster>(
+            events, timers, recipients,
+            [](const rtype::network::Endpoint&) {
+              return rtype::network::PacketHeader{};
+            },
+            send);
     rtype::server::ServerApplication server{
         rtype::network::Endpoint{
             .address = std::string{rtype::network::ANY_IPV4_ADDRESS},
