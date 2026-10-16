@@ -3,6 +3,7 @@
 #include <string>
 #include "CookieIssuer.hpp"
 #include "Endpoint.hpp"
+#include "HandshakeConstants.hpp"
 #include "HandshakeTestConstants.hpp"
 #include "SipHash.hpp"
 
@@ -14,6 +15,7 @@ using testing::END_OF_THE_NEXT_WINDOW;
 using testing::OTHER_KEY_BYTE;
 using testing::OTHER_SENDER_ADDRESS;
 using testing::OTHER_SENDER_PORT;
+using testing::PROTOCOL_COOKIE_WINDOW;
 using testing::SENDER_ADDRESS;
 using testing::SENDER_PORT;
 using testing::START_OF_A_WINDOW;
@@ -22,6 +24,15 @@ using testing::TWO_WINDOWS_LATER;
 
 Endpoint sender() {
   return Endpoint{.address = std::string{SENDER_ADDRESS}, .port = SENDER_PORT};
+}
+
+/**
+ * Given the cookie window of the protocol page
+ * When the window the issuer uses is read
+ * Then it lasts 10 s
+ */
+TEST(CookieIssuer, UsesTheWindowOfTheProtocolPage) {
+  EXPECT_EQ(COOKIE_WINDOW_DURATION, PROTOCOL_COOKIE_WINDOW);
 }
 
 /**

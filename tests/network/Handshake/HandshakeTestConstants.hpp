@@ -48,6 +48,11 @@ constexpr std::uint16_t SENDER_PORT = 50000;
 constexpr std::uint16_t OTHER_SENDER_PORT = 50001;
 
 /**
+ * @brief The cookie window the protocol page gives: 10 s.
+ */
+constexpr std::chrono::seconds PROTOCOL_COOKIE_WINDOW{10};
+
+/**
  * @brief Moments inside cookie windows: the start of a window, its last
  * nanosecond, the start of the next one, and the start of the one after.
  */

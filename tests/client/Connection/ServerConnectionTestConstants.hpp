@@ -34,6 +34,13 @@ constexpr std::uint64_t SESSION_TOKEN = 0x0123456789abcdef;
 constexpr std::uint8_t NEXT_PROTOCOL_VERSION = 1;
 
 /**
+ * @brief The delays the protocol page gives an attempt: a request every
+ * 500 ms while the server does not answer, and 5 s before giving up.
+ */
+constexpr std::chrono::milliseconds PROTOCOL_REQUEST_INTERVAL{500};
+constexpr std::chrono::seconds PROTOCOL_ATTEMPT_TIMEOUT{5};
+
+/**
  * @brief The shortest step of time a test takes.
  */
 constexpr std::chrono::nanoseconds ONE_NANOSECOND{1};

@@ -30,6 +30,8 @@ using testing::NEXT_PROTOCOL_VERSION;
 using testing::NICKNAME;
 using testing::ONE_NANOSECOND;
 using testing::OTHER_SENDER_PORT;
+using testing::PROTOCOL_ATTEMPT_TIMEOUT;
+using testing::PROTOCOL_REQUEST_INTERVAL;
 using testing::SERVER_ADDRESS;
 using testing::SERVER_PORT;
 using testing::SESSION_TOKEN;
@@ -96,6 +98,16 @@ class ServerConnectionTest : public ::testing::Test {
   RecordingDatagramLink link_;
   ServerConnection connection_{link_};
 };
+
+/**
+ * Given the delays of the protocol page
+ * When the connection's request interval and timeout are read
+ * Then they are 500 ms and 5 s
+ */
+TEST(ServerConnectionDelays, AreThoseOfTheProtocolPage) {
+  EXPECT_EQ(CONNECTION_REQUEST_INTERVAL, PROTOCOL_REQUEST_INTERVAL);
+  EXPECT_EQ(CONNECTION_ATTEMPT_TIMEOUT, PROTOCOL_ATTEMPT_TIMEOUT);
+}
 
 /**
  * Given a connection that never started an attempt
