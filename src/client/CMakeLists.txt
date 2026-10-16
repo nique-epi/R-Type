@@ -27,7 +27,6 @@ target_link_libraries(r-type_client
     rtype_client_constants
     rtype_client_launch_options
     rtype_client_rendering
-    rtype_game
     rtype_logging
     rtype_network
 )
