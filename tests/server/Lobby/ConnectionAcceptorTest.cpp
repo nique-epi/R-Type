@@ -1,13 +1,11 @@
 #include <gtest/gtest.h>
 #include <cstddef>
 #include <cstdint>
-#include <optional>
 #include <span>
 #include <string>
 #include <utility>
 #include <vector>
 #include "ByteWriter.hpp"
-#include "ConnectedPlayer.hpp"
 #include "ConnectionAccepted.hpp"
 #include "ConnectionAcceptor.hpp"
 #include "ConnectionChallenge.hpp"
