@@ -44,7 +44,7 @@ class AssetLibrary;
  * It owns the connection to a server, which outlives every screen; for now a
  * StandInServerConnection, which talks to no server. It owns the player's
  * settings too, read from the settings file at launch: the window opens at the
- * size they hold and the game reads their keys.
+ * size they hold, the game reads their keys, the options change and save them.
  *
  * Screens are asked for by identifier; createScreen() is the one place that
  * builds them, with one case per ScreenId. The client starts on the title
@@ -103,6 +103,10 @@ class Application {
   /** @brief The loading screen of gameAssets() while some are not loaded, the
    * game screen once they all are. */
   [[nodiscard]] std::unique_ptr<IScreen> gameScreen();
+
+  /** @brief The options, over the title for ScreenId::Options, over a game
+   * for ScreenId::GameOptions. */
+  [[nodiscard]] std::unique_ptr<IScreen> optionsScreen(ScreenId screen);
 
   /**
    * @brief The loading screen of a list while some of its assets are not

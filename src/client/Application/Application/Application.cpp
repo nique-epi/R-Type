@@ -17,6 +17,7 @@
 #include "IScreen.hpp"
 #include "InterfaceCanvas.hpp"
 #include "LoadingScreen.hpp"
+#include "LocalizedKeyName.hpp"
 #include "MotionPreference.hpp"
 #include "OptionsScreen.hpp"
 #include "PlayerSettings.hpp"
@@ -101,8 +102,8 @@ std::unique_ptr<IScreen> Application::createScreen(ScreenId screen) {
     case ScreenId::Game:
       return gameScreen();
     case ScreenId::Options:
-      return std::make_unique<OptionsScreen>(
-          screens_, window_, interfaceCanvas(), playfieldMapping());
+    case ScreenId::GameOptions:
+      return optionsScreen(screen);
     case ScreenId::QuitConfirmation:
       return std::make_unique<QuitConfirmationScreen>(
           screens_, interfaceCanvas(), playfieldMapping());
@@ -136,6 +137,15 @@ std::unique_ptr<IScreen> Application::gameScreen() {
   }
   return std::make_unique<GameScreen>(
       screens_, std::make_unique<EntityLayer>(*assets_), settings_.keys);
+}
+
+std::unique_ptr<IScreen> Application::optionsScreen(ScreenId screen) {
+  const OptionsScreen::Place place = screen == ScreenId::GameOptions
+                                         ? OptionsScreen::Place::OverGame
+                                         : OptionsScreen::Place::OverTitle;
+  return std::make_unique<OptionsScreen>(
+      screens_, place, settings_, settingsFile_, window_, localizedKeyName,
+      interfaceCanvas(), playfieldMapping());
 }
 
 std::unique_ptr<IScreen> Application::loadingScreenUnlessLoaded(

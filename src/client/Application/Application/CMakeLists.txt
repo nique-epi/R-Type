@@ -20,6 +20,7 @@ target_link_libraries(rtype_client_application
     rtype_client_game_screen
     rtype_client_interface_canvas
     rtype_client_loading_screen
+    rtype_client_localized_key_name
     rtype_client_options_screen
     rtype_client_quit_confirmation_screen
     rtype_client_screens

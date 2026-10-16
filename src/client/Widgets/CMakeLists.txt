@@ -16,6 +16,19 @@ target_link_libraries(rtype_client_widget_text PUBLIC rtype_client_widgets)
 
 rtype_enable_warnings(rtype_client_widget_text)
 
+add_library(rtype_client_window_size_chart STATIC WindowSizeChart.cpp)
+
+target_link_libraries(rtype_client_window_size_chart
+  PUBLIC
+    rtype_client_widgets
+    rtype_client_window_size_selection
+  PRIVATE
+    rtype_client_outline
+    rtype_client_window_size_text
+)
+
+rtype_enable_warnings(rtype_client_window_size_chart)
+
 add_subdirectory(ChamferedBox)
 add_subdirectory(Outline)
 add_subdirectory(SunkBox)

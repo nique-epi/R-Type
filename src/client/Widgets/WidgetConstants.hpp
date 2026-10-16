@@ -45,13 +45,11 @@ constexpr sf::Vector2i BUTTON_TEXT_OFFSET(12, 6);
 constexpr int PRESSED_TEXT_DROP = 1;
 
 /**
- * @brief Check box of a button that is one choice among others: a square at
- * the start of its label, standing on the baseline, its inside filled but for
- * a margin when the choice is the current one, then a gap before the label.
+ * @brief Check box of a choice among others: a square, its inside filled but
+ * for a margin when the choice is the current one.
  */
 constexpr int CHECK_BOX_SIZE = 7;
 constexpr int CHECK_MARK_MARGIN = 2;
-constexpr int CHECK_BOX_GAP = 4;
 
 /**
  * @brief Corners cut off the bars and panels: rows of the outer cut, and

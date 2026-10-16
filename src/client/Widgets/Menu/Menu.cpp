@@ -5,14 +5,15 @@
 #include <SFML/Window/Keyboard.hpp>
 #include <SFML/Window/Mouse.hpp>
 #include <algorithm>
-#include <array>
 #include <cmath>
 #include <cstddef>
 #include <optional>
+#include <span>
 #include <string>
 #include <string_view>
 #include <utility>
 #include "BackgroundConstants.hpp"
+#include "BarState.hpp"
 #include "Button.hpp"
 #include "ChamferedBox.hpp"
 #include "IInterfaceCanvas.hpp"
@@ -20,11 +21,11 @@
 #include "InterfaceConstants.hpp"
 #include "Label.hpp"
 #include "PlayfieldMapping.hpp"
+#include "RowControl.hpp"
 #include "TextField.hpp"
 #include "TimeConstants.hpp"
 #include "WidgetColors.hpp"
 #include "WidgetConstants.hpp"
-#include "WidgetStyles.hpp"
 
 namespace rtype::client {
 
@@ -41,9 +42,7 @@ sf::Vector2i interfacePixelAt(sf::Vector2f playfieldPoint) {
 }
 
 /** @returns Whether the key is one of the list. */
-template <std::size_t KeyCount>
-bool isOneOf(sf::Keyboard::Key key,
-             const std::array<sf::Keyboard::Key, KeyCount>& keys) {
+bool isOneOf(sf::Keyboard::Key key, std::span<const sf::Keyboard::Key> keys) {
   return std::ranges::find(keys, key) != keys.end();
 }
 
@@ -55,6 +54,14 @@ Menu::Menu(Content content) : content_(std::move(content)) {
 
 void Menu::handleEvent(const sf::Event& event,
                        const PlayfieldMapping& playfieldPointAt) {
+  const std::optional<std::size_t> holder = rowHoldingInput();
+  if (holder.has_value()) {
+    routeToControl(content_.buttons[*holder], event, playfieldPointAt);
+    if (event.is<sf::Event::FocusLost>()) {
+      focusLost();
+    }
+    return;
+  }
   TextField* field = selectedField();
   if (field != nullptr && !press_.has_value() && field->handleEvent(event)) {
     return;
@@ -96,6 +103,9 @@ void Menu::paint(IInterfaceCanvas& canvas) const {
                  {.border = PANEL_BORDER_COLOR, .inside = PANEL_INSIDE_COLOR})
         .paint(canvas);
   }
+  if (content_.tabs.has_value()) {
+    content_.tabs->paint(canvas);
+  }
   if (content_.rule.has_value()) {
     canvas.fill(*content_.rule, RULE_COLOR);
   }
@@ -116,7 +126,10 @@ void Menu::paint(IInterfaceCanvas& canvas) const {
                  content_.descriptionAnchor, content_.descriptionStyle);
   }
   if (content_.statusAnchor.has_value() && !status_.empty()) {
-    canvas.write(status_, *content_.statusAnchor, STATUS_STYLE);
+    canvas.write(status_, *content_.statusAnchor, content_.statusStyle);
+  }
+  for (const Button& button : content_.buttons) {
+    button.paintOverlay(canvas);
   }
 }
 
@@ -142,6 +155,10 @@ void Menu::setEnabled(std::size_t button, bool enabled) {
     }
     return;
   }
+  RowControl* const control = content_.buttons[button].control();
+  if (control != nullptr) {
+    control->cancelInput();
+  }
   if (press_.has_value() && press_->button == button) {
     press_.reset();
   }
@@ -150,9 +167,9 @@ void Menu::setEnabled(std::size_t button, bool enabled) {
   }
 }
 
-void Menu::setMark(std::size_t button, Button::CheckMark mark) {
+void Menu::setDescription(std::size_t button, std::string description) {
   if (button < content_.buttons.size()) {
-    content_.buttons[button].setMark(mark);
+    content_.buttons[button].setDescription(std::move(description));
   }
 }
 
@@ -166,16 +183,28 @@ void Menu::keyPressed(const sf::Event::KeyPressed& key) {
   if (press_.has_value()) {
     return;
   }
+  if (content_.tabs.has_value() && key.scancode == PREVIOUS_TAB_KEY) {
+    openTab(content_.tabs->previousTab());
+    return;
+  }
+  if (content_.tabs.has_value() && key.scancode == NEXT_TAB_KEY) {
+    openTab(content_.tabs->nextTab());
+    return;
+  }
+  if (key.code != MENU_CONFIRM_KEY && key.code != MENU_CANCEL_KEY &&
+      offerToSelectedControl(key)) {
+    return;
+  }
   if (key.code == MENU_CONFIRM_KEY) {
-    if (selected_.has_value()) {
+    if (selected_.has_value() && content_.buttons[*selected_].isActivatable()) {
       press_ = Press{.button = *selected_, .source = PressSource::Keyboard};
     }
   } else if (key.code == MENU_CANCEL_KEY) {
     cancelPressed_ = true;
-  } else if (isOneOf(key.code, MENU_NEXT_KEYS) ||
+  } else if (isOneOf(key.code, content_.nextKeys) ||
              (key.code == MENU_TAB_KEY && !key.shift)) {
     selectNeighbour(Direction::Next);
-  } else if (isOneOf(key.code, MENU_PREVIOUS_KEYS) ||
+  } else if (isOneOf(key.code, content_.previousKeys) ||
              (key.code == MENU_TAB_KEY && key.shift)) {
     selectNeighbour(Direction::Previous);
   }
@@ -208,12 +237,25 @@ void Menu::pointerPressed(sf::Vector2i pixel) {
   if (press_.has_value()) {
     return;
   }
+  if (content_.tabs.has_value()) {
+    const std::optional<std::size_t> tab = content_.tabs->tabOpenedAt(pixel);
+    if (tab.has_value()) {
+      openTab(*tab);
+      return;
+    }
+  }
   const std::optional<std::size_t> button = enabledButtonAt(pixel);
   if (!button.has_value()) {
     return;
   }
   selected_ = button;
-  if (content_.buttons[*button].field() == nullptr) {
+  Button& pressed = content_.buttons[*button];
+  RowControl* const control = pressed.control();
+  if (control != nullptr &&
+      control->pointerPressed(pixel, pressed.controlArea())) {
+    return;
+  }
+  if (pressed.field() == nullptr && pressed.isActivatable()) {
     press_ = Press{.button = *button, .source = PressSource::Pointer};
   }
 }
@@ -282,17 +324,73 @@ std::optional<std::size_t> Menu::enabledButtonAt(sf::Vector2i pixel) const {
   return std::nullopt;
 }
 
-Button::State Menu::stateOf(std::size_t button) const {
+void Menu::routeToControl(Button& row, const sf::Event& event,
+                          const PlayfieldMapping& playfieldPointAt) {
+  RowControl* const control = row.control();
+  if (control == nullptr) {
+    return;
+  }
+  const sf::IntRect area = row.controlArea();
+  if (const auto* pressed = event.getIf<sf::Event::KeyPressed>()) {
+    control->keyPressed(*pressed);
+  } else if (const auto* released = event.getIf<sf::Event::KeyReleased>()) {
+    control->keyReleased(*released);
+  } else if (const auto* moved = event.getIf<sf::Event::MouseMoved>()) {
+    control->pointerMoved(interfacePixelAt(playfieldPointAt(moved->position)),
+                          area);
+  } else if (const auto* clicked =
+                 event.getIf<sf::Event::MouseButtonPressed>()) {
+    if (clicked->button == sf::Mouse::Button::Left) {
+      control->pointerPressed(
+          interfacePixelAt(playfieldPointAt(clicked->position)), area);
+    }
+  } else if (const auto* unclicked =
+                 event.getIf<sf::Event::MouseButtonReleased>()) {
+    if (unclicked->button == sf::Mouse::Button::Left) {
+      control->pointerReleased(
+          interfacePixelAt(playfieldPointAt(unclicked->position)), area);
+    }
+  } else if (event.is<sf::Event::FocusLost>()) {
+    control->cancelInput();
+  }
+}
+
+bool Menu::offerToSelectedControl(const sf::Event::KeyPressed& key) {
+  if (!selected_.has_value()) {
+    return false;
+  }
+  RowControl* const control = content_.buttons[*selected_].control();
+  return control != nullptr && control->keyPressed(key);
+}
+
+void Menu::openTab(std::size_t tab) const {
+  if (content_.openTab != nullptr) {
+    content_.openTab(tab);
+  }
+}
+
+std::optional<std::size_t> Menu::rowHoldingInput() const {
+  if (press_.has_value() || !selected_.has_value()) {
+    return std::nullopt;
+  }
+  const RowControl* const control = content_.buttons[*selected_].control();
+  if (control == nullptr || !control->holdsInput()) {
+    return std::nullopt;
+  }
+  return selected_;
+}
+
+BarState Menu::stateOf(std::size_t button) const {
   if (!content_.buttons[button].isEnabled()) {
-    return Button::State::Disabled;
+    return BarState::Disabled;
   }
   if (press_.has_value() && press_->button == button) {
-    return Button::State::Pressed;
+    return BarState::Pressed;
   }
   if (selected_ == button) {
-    return Button::State::Selected;
+    return BarState::Selected;
   }
-  return Button::State::Idle;
+  return BarState::Idle;
 }
 
 TextField* Menu::selectedField() {

@@ -25,10 +25,10 @@ namespace rtype::client {
  * so the first frame already shows them. Until the client creates the entities
  * the server announces, the screen holds the provisional sprite showcase.
  *
- * Releasing OPTIONS_KEY releases every action held, then puts the options
- * screen over the game, which goes on running behind it, hidden. The release,
- * not the press: the system repeats the press of a held key, which would open
- * and close the options again and again.
+ * Releasing OPTIONS_KEY releases every action held, then puts the options over
+ * the game, which goes on running behind them, dimmed. The release, not the
+ * press: the system repeats the press of a held key, which would open and
+ * close the options again and again.
  *
  * Key and focus events feed the player commands, by the place of the keys on
  * the keyboard and through the keys the player chose: playerActions() tells

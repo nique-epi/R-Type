@@ -4,12 +4,15 @@
 #include <cstddef>
 #include <cstdint>
 #include <functional>
+#include <memory>
 #include <optional>
 #include <string>
 #include <vector>
 #include "Button.hpp"
 #include "IScreenNavigator.hpp"
 #include "Menu.hpp"
+#include "RowControl.hpp"
+#include "TabStrip.hpp"
 #include "TextField.hpp"
 
 namespace rtype::client {
@@ -31,6 +34,13 @@ namespace rtype::client {
  * clicking it. Whatever the order of the calls, the parts are
  * laid in this order; a part the frame does not show is left out.
  *
+ * A tabbed panel is the heading and its rule as on a page, its tabs under the
+ * rule, the panel of its rows under the tabs, then its bars in a row under the
+ * panel and the line describing the selected bar or row on their right. Its
+ * illustration sits in the panel under the rows, its notice in the top-right
+ * corner, its status line at the end of the rule. Left and right step the
+ * value of the selected row.
+ *
  * The cancel button is the one MENU_CANCEL_KEY activates; backButton() adds
  * the one button that closes the screen on top, the same in every menu.
  */
@@ -39,12 +49,14 @@ class MenuBuilder {
   /**
    * @brief How a menu is laid out: a page is a column against the left side of
    * the safe margin; a dialog is a panel centered over the dimmed screens
-   * below; a form is a panel centered over the sky, that the player fills in.
+   * below; a form is a panel centered over the sky, that the player fills in;
+   * a tabbed panel is a panel of rows under tabs, each row setting a value.
    */
   enum class Frame : std::uint8_t {
     Page,
     Dialog,
     Form,
+    TabbedPanel,
   };
 
   explicit MenuBuilder(Frame frame);
@@ -95,6 +107,30 @@ class MenuBuilder {
   /** @brief Small line in the bottom-right corner of a page. */
   MenuBuilder& footer(std::string text);
 
+  /** @brief Adds a row to a tabbed panel, after the previous ones: its label
+   * on the left, its control on the right. Only a tabbed panel holds rows. */
+  MenuBuilder& row(Button::Text text, std::unique_ptr<RowControl> control);
+
+  /**
+   * @brief Puts tabs over the rows of a tabbed panel.
+   *
+   * @param openTab Order of the tab this menu shows.
+   * @param keys Names written on the keycaps of PREVIOUS_TAB_KEY and
+   * NEXT_TAB_KEY.
+   * @param openTabAt Run with the order of a tab a click or one of those keys
+   * asks for.
+   */
+  MenuBuilder& tabs(std::vector<std::string> labels, std::size_t openTab,
+                    TabStrip::KeyNames keys,
+                    std::function<void(std::size_t)> openTabAt);
+
+  /** @brief Dims the screens below first, as when the menu opens over a game
+   * that goes on. */
+  MenuBuilder& dimScreensBelow();
+
+  /** @brief Small line in the top-right corner of a tabbed panel. */
+  MenuBuilder& notice(std::string text);
+
   /** @brief Places every part and hands them to a menu; call it once, since
    * the actions move into the menu. */
   [[nodiscard]] Menu build();
@@ -106,11 +142,13 @@ class MenuBuilder {
     Button::Text text;
     std::function<void()> action;
     std::optional<TextField> field;
+    std::unique_ptr<RowControl> control;
   };
 
   void placeColumn(Menu::Content& content);
   void placeDialog(Menu::Content& content);
   void placeForm(Menu::Content& content);
+  void placeTabbedPanel(Menu::Content& content);
 
   Frame frame_;
   std::optional<std::string> version_;
@@ -122,6 +160,10 @@ class MenuBuilder {
   std::optional<std::size_t> cancelButton_;
   std::optional<sf::Vector2i> illustration_;
   std::optional<std::string> footer_;
+  std::optional<TabStrip> tabStrip_;
+  std::function<void(std::size_t)> tabOpener_;
+  bool dimmed_ = false;
+  std::optional<std::string> notice_;
 };
 
 }  // namespace rtype::client

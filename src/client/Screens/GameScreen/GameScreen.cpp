@@ -29,7 +29,7 @@ void GameScreen::handleEvent(const sf::Event& event) {
   const auto* released = event.getIf<sf::Event::KeyReleased>();
   if (released != nullptr && released->code == OPTIONS_KEY) {
     playerCommands_.releaseAll();
-    navigator_->push(ScreenId::Options);
+    navigator_->push(ScreenId::GameOptions);
   }
   if (const auto* keyPressed = event.getIf<sf::Event::KeyPressed>()) {
     playerCommands_.keyPressed(keyPressed->scancode);

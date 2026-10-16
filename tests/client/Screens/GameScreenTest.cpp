@@ -98,8 +98,9 @@ TEST_F(GameScreenTest, ReleasingTheOptionsKeyOpensTheOptions) {
   screens().handleEvent(keyRelease(OPTIONS_KEY));
   screens().applyPendingChanges();
 
-  EXPECT_THAT(journal(), ElementsAre(JournalEntry{.screen = ScreenId::Options,
-                                                  .call = ScreenCall::Built}));
+  EXPECT_THAT(journal(),
+              ElementsAre(JournalEntry{.screen = ScreenId::GameOptions,
+                                       .call = ScreenCall::Built}));
 }
 
 /**
