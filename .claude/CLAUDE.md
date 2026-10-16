@@ -47,7 +47,7 @@ Paths below are relative to `.claude/rules/`.
 | Touching the network | security section of `core/code-review.md`, `fix/reasoning/fix-reasoning-an-exception-to-a-check-is-read-as-the-forger.md`, `fix/reasoning/fix-reasoning-last-received-is-not-newest-over-udp.md` |
 | Creating a branch | `fix/process/fix-process-branch-before-first-commit.md`, `fix/execution/fix-execution-checkout-b-starts-from-head-not-main.md`, `fix/process/fix-process-reread-rules-after-switching-branch.md` |
 | Committing | `core/commit.md`, `fix/process/fix-process-no-co-author-trailer.md`, `fix/execution/fix-execution-check-the-index-before-committing.md` |
-| Finishing a feature | the `document-feature` skill (`.claude/skills/document-feature/SKILL.md`) |
+| Finishing a feature | the `document-feature` skill (`.claude/skills/document-feature/SKILL.md`), `fix/process/fix-process-grep-every-page-for-what-the-feature-replaced.md` |
 | Opening a PR | `fix/format/fix-format-pull-requests-in-english.md`, `fix/format/fix-format-pr-links-its-linear-issue.md`, `fix/process/fix-process-pr-always-opened-as-draft.md`, the `document-feature` skill if the feature is not documented yet |
 | Reviewing | `core/code-review.md` |
 | Announcing a green gate | `fix/execution/fix-execution-zsh-pipestatus.md`, `fix/execution/fix-execution-zero-warnings-proven-on-a-recompiling-build.md`, `fix/execution/fix-execution-run-clang-tidy-before-push.md` |
@@ -93,6 +93,7 @@ Paths below are relative to `.claude/rules/`.
 - `fix/process/fix-process-do-not-over-engineer-step-back.md`
 - `fix/process/fix-process-follow-ci-after-opening-a-pr.md`
 - `fix/process/fix-process-green-test-locking-a-defect-and-overly-deterministic-fake.md`
+- `fix/process/fix-process-grep-every-page-for-what-the-feature-replaced.md`
 - `fix/process/fix-process-instrument-before-reasoning-docs-are-truth.md`
 - `fix/process/fix-process-no-co-author-trailer.md`
 - `fix/process/fix-process-plan-mode-writes-only-the-plan.md`
