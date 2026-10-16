@@ -7,6 +7,7 @@
 #include "BoundedQueue.hpp"
 #include "DatagramRelay.hpp"
 #include "Endpoint.hpp"
+#include "IDatagramLink.hpp"
 #include "IncomingDatagram.hpp"
 #include "NetworkContext.hpp"
 #include "OutgoingDatagram.hpp"
@@ -27,7 +28,7 @@ namespace rtype::client {
  * An exception on the network thread, such as a datagram it cannot send,
  * stops that thread; drainReceived() then throws it.
  */
-class NetworkThread {
+class NetworkThread : public IDatagramLink {
  public:
   /**
    * @brief Opens the socket on @p localEndpoint, starts receiving, then starts
@@ -41,7 +42,7 @@ class NetworkThread {
    * @brief Stops the network thread and waits for it. A datagram handed to
    * send() and not sent yet is lost.
    */
-  ~NetworkThread();
+  ~NetworkThread() override;
 
   NetworkThread(const NetworkThread&) = delete;
   NetworkThread& operator=(const NetworkThread&) = delete;
@@ -56,7 +57,7 @@ class NetworkThread {
    * is discarded. A datagram the network thread cannot send stops it: more
    * than MAX_DATAGRAM_SIZE bytes, or a destination that is not an IP address.
    */
-  void send(network::OutgoingDatagram datagram);
+  void send(network::OutgoingDatagram datagram) override;
 
   /**
    * @brief Moves every datagram received since the previous call, oldest
@@ -68,7 +69,8 @@ class NetworkThread {
    * @throws The error that stopped the network thread, on every call once it
    * stopped; nothing is moved then.
    */
-  void drainReceived(std::vector<network::IncomingDatagram>& destination);
+  void drainReceived(
+      std::vector<network::IncomingDatagram>& destination) override;
 
   /**
    * @returns The address and port the socket is bound to: when it was opened
