@@ -10,16 +10,18 @@
 #include <vector>
 #include "Endpoint.hpp"
 #include "IncomingDatagram.hpp"
+#include "NetworkConstants.hpp"
 #include "NetworkContext.hpp"
-#include "NetworkTestConstants.hpp"
 #include "OutgoingDatagram.hpp"
 #include "ServerApplication.hpp"
 #include "ServerTestConstants.hpp"
 #include "TimeConstants.hpp"
 #include "UdpSocket.hpp"
 
+using rtype::network::ANY_PORT;
 using rtype::network::Endpoint;
 using rtype::network::IncomingDatagram;
+using rtype::network::LOOPBACK_IPV4_ADDRESS;
 using rtype::server::ServerApplication;
 
 namespace {
@@ -30,7 +32,7 @@ namespace {
 class TickFailure final : public std::exception {};
 
 Endpoint loopbackOnPort(std::uint16_t port) {
-  return Endpoint{.address = std::string{LOOPBACK_ADDRESS}, .port = port};
+  return Endpoint{.address = std::string{LOOPBACK_IPV4_ADDRESS}, .port = port};
 }
 
 ServerApplication::TickHandler ignoringDatagrams() {

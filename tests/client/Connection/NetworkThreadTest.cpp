@@ -9,6 +9,7 @@
 #include <vector>
 #include "Endpoint.hpp"
 #include "IncomingDatagram.hpp"
+#include "NetworkConstants.hpp"
 #include "NetworkContext.hpp"
 #include "NetworkException.hpp"
 #include "NetworkTestConstants.hpp"
@@ -18,8 +19,10 @@
 #include "UdpSocket.hpp"
 
 using rtype::client::NetworkThread;
+using rtype::network::ANY_PORT;
 using rtype::network::Endpoint;
 using rtype::network::IncomingDatagram;
+using rtype::network::LOOPBACK_IPV4_ADDRESS;
 using rtype::network::NetworkContext;
 using rtype::network::OutgoingDatagram;
 using rtype::network::UdpSocket;
@@ -27,7 +30,7 @@ using rtype::network::UdpSocket;
 namespace {
 
 Endpoint loopbackOnPort(std::uint16_t port) {
-  return Endpoint{.address = std::string{LOOPBACK_ADDRESS}, .port = port};
+  return Endpoint{.address = std::string{LOOPBACK_IPV4_ADDRESS}, .port = port};
 }
 
 std::vector<std::byte> exchangedBytes() {

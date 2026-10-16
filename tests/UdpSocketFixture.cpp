@@ -20,15 +20,17 @@
 #include "NetworkTestConstants.hpp"
 #include "UdpSocket.hpp"
 
+using rtype::network::ANY_PORT;
 using rtype::network::DatagramHandler;
 using rtype::network::Endpoint;
+using rtype::network::LOOPBACK_IPV4_ADDRESS;
 using rtype::network::NetworkContext;
 using rtype::network::UdpSocket;
 
 NetworkContext& UdpSocketFixture::context() { return context_; }
 
 Endpoint UdpSocketFixture::loopbackOnPort(std::uint16_t port) {
-  return Endpoint{.address = std::string{LOOPBACK_ADDRESS}, .port = port};
+  return Endpoint{.address = std::string{LOOPBACK_IPV4_ADDRESS}, .port = port};
 }
 
 std::vector<std::byte> UdpSocketFixture::makePayload(std::size_t size) {
@@ -70,7 +72,8 @@ asio::ip::udp::socket UdpSocketFixture::openClient() {
   return asio::ip::udp::socket{
       context_.ioContext(),
       asio::ip::udp::endpoint{
-          asio::ip::make_address(std::string{LOOPBACK_ADDRESS}), ANY_PORT}};
+          asio::ip::make_address(std::string{LOOPBACK_IPV4_ADDRESS}),
+          ANY_PORT}};
 }
 
 void UdpSocketFixture::sendFromClient(asio::ip::udp::socket& client,
@@ -79,7 +82,7 @@ void UdpSocketFixture::sendFromClient(asio::ip::udp::socket& client,
   client.send_to(
       asio::buffer(payload.data(), payload.size()),
       asio::ip::udp::endpoint{
-          asio::ip::make_address(std::string{LOOPBACK_ADDRESS}), port});
+          asio::ip::make_address(std::string{LOOPBACK_IPV4_ADDRESS}), port});
 }
 
 std::optional<std::vector<std::byte>> UdpSocketFixture::receiveOnClient(

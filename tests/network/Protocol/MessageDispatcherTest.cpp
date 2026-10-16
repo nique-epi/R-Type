@@ -12,8 +12,8 @@
 #include "MessageFrame.hpp"
 #include "MessageOrigin.hpp"
 #include "MessageType.hpp"
+#include "NetworkConstants.hpp"
 #include "NetworkException.hpp"
-#include "NetworkTestConstants.hpp"
 #include "ProtocolFixtures.hpp"
 #include "ProtocolTestConstants.hpp"
 #include "ReadyState.hpp"
@@ -35,7 +35,7 @@ using testing::TYPE_BELOW_THE_FIRST;
 
 MessageOrigin someOrigin() {
   return MessageOrigin{
-      .sender = Endpoint{.address = std::string{LOOPBACK_ADDRESS},
+      .sender = Endpoint{.address = std::string{LOOPBACK_IPV4_ADDRESS},
                          .port = SOME_SENDER_PORT},
       .header = someSessionHeader()};
 }
