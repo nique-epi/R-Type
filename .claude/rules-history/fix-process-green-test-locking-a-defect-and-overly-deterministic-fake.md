@@ -24,3 +24,26 @@ See the core file, subsection "The expected value is not the constant under test
 
 - ❌ `EXPECT_EQ(label->anchor, atRest + BUTTON_TEXT_OFFSET + sf::Vector2i(0, PRESSED_TEXT_DROP));`
 - ✅ `constexpr sf::Vector2i ONE_PIXEL_LOWER(0, 1);` then `EXPECT_EQ(label->anchor, atRest + BUTTON_TEXT_OFFSET + ONE_PIXEL_LOWER);` — the red proof turns it red.
+
+## Update (2026-10-17) — two inputs, one assertion at the end
+
+### Context
+
+Options menu of the client (RTY-106), red proofs on an isolated copy.
+
+### Mistake
+
+`TheTabKeysAreReadByTheirPlace` tapped the key at the place of Q (printing A on AZERTY), then the key printing Q (at the place of A), and asserted only that the last tab had been asked for once. The variant that reads the tab keys by the character they print stayed green: it ignored the first tap and opened the tab on the second, the same end state.
+
+### Root cause
+
+The test checked the sum of two inputs whose effects swap between the right and the wrong code, so both readings produce one opening of the same tab.
+
+### Rule
+
+See the core file, subsection "One input per test when the faulty code reaches the same end state".
+
+### Example
+
+- ❌ `tap(Key::A, Scan::Q); tap(Key::Q, Scan::A); EXPECT_EQ(opened(), std::vector{LAST_TAB});`.
+- ✅ Two tests: `tap(Key::A, Scan::Q)` asks for the last tab; `tap(Key::Q, Scan::A)` asks for none. The variant turns both red.
