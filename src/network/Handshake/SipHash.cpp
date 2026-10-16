@@ -11,10 +11,10 @@ namespace rtype::network {
 namespace {
 
 struct SipHashState {
-  std::uint64_t v0;
-  std::uint64_t v1;
-  std::uint64_t v2;
-  std::uint64_t v3;
+  std::uint64_t v0{};
+  std::uint64_t v1{};
+  std::uint64_t v2{};
+  std::uint64_t v3{};
 };
 
 void sipRound(SipHashState& state) {
