@@ -1,7 +1,8 @@
 #pragma once
 
-#include <cstddef>
+#include <vector>
 #include "IEntityLayer.hpp"
+#include "SpriteFrame.hpp"
 
 namespace sf {
 class RenderTarget;
@@ -11,7 +12,7 @@ class RenderTarget;
  * screen owns the layer. */
 struct EntityLayerRecord {
   int paintCount = 0;
-  std::size_t spritesAtLastPaint = 0;
+  std::vector<rtype::game::SpriteFrame> framesAtLastPaint;
   int showCount = 0;
   const sf::RenderTarget* lastShowTarget = nullptr;
 };

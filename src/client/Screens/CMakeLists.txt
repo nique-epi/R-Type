@@ -14,6 +14,7 @@ target_link_libraries(rtype_client_screens
     SFML::Graphics
   PRIVATE
     rtype_client_asset_loading_step
+    rtype_client_effect_interfaces
     rtype_client_rendering_interfaces
 )
 

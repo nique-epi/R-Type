@@ -2,6 +2,7 @@
 #include "AssetLibrary.hpp"
 #include "AssetList.hpp"
 #include "AssetLoadingStep.hpp"
+#include "EffectConstants.hpp"
 #include "EntitySpriteConstants.hpp"
 #include "InterfaceConstants.hpp"
 #include "ScreenConstants.hpp"
@@ -29,7 +30,9 @@ AssetList titleAssets() {
   return AssetList{.textures = {LOGO_ID, ENTITY_SHEET_ID}};
 }
 
-AssetList gameAssets() { return AssetList{.textures = {ENTITY_SHEET_ID}}; }
+AssetList gameAssets() {
+  return AssetList{.textures = {ENTITY_SHEET_ID, EFFECT_SHEET_ID}};
+}
 
 void loadInterfaceAssets(AssetLibrary& library) {
   loadAtOnce(library, interfaceAssets());

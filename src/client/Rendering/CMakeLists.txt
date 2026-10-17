@@ -10,7 +10,7 @@ target_link_libraries(rtype_client_rendering_interfaces
     SFML::Graphics
 )
 
-add_library(rtype_client_entity_sprites STATIC EntitySprites.cpp SpriteShowcase.cpp)
+add_library(rtype_client_entity_sprites STATIC EntitySprites.cpp)
 
 target_link_libraries(rtype_client_entity_sprites
   PUBLIC
@@ -43,6 +43,8 @@ add_subdirectory(PixelCanvas)
 add_subdirectory(InterfaceCanvas)
 add_subdirectory(Squadron)
 add_subdirectory(EntityLayer)
+add_subdirectory(Effects)
+add_subdirectory(SpriteShowcase)
 add_subdirectory(Background)
 
 add_library(rtype_client_rendering INTERFACE)
