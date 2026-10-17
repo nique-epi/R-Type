@@ -146,6 +146,19 @@ TEST_F(DatagramSorterTest, DropsATruncatedDatagram) {
 }
 
 /**
+ * Given an admitted player
+ * When bytes shorter than a header arrive from the player
+ * Then they reach no queue, and nothing is thrown
+ */
+TEST_F(DatagramSorterTest, DropsBytesShorterThanAHeader) {
+  admit(player());
+  const std::vector<std::byte> bytes(CLIENT_PAYLOAD_SIZE, CLIENT_PAYLOAD_BYTE);
+
+  EXPECT_NO_THROW(sort(player(), bytes));
+  EXPECT_TRUE(drainPlayers().empty());
+}
+
+/**
  * Given an admitted player whose datagram waits in the player queue
  * When strangers then flood the server with ten times more requests than the
  * request queue holds

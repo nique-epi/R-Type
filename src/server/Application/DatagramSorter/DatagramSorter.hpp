@@ -23,8 +23,9 @@ namespace rtype::server {
  * - nowhere otherwise.
  *
  * Every other datagram is dropped. The sorter reads the header and the type
- * of each message, never a payload, so its cost per datagram stays close to
- * that of the copy into a queue. Not thread-safe: call it on the network
+ * of each message, never a payload, and throws nothing on a malformed
+ * datagram, so its cost per datagram stays close to that of the copy into a
+ * queue, whatever the datagram holds. Not thread-safe: call it on the network
  * thread only.
  */
 class DatagramSorter {
@@ -56,6 +57,10 @@ class DatagramSorter {
   void admit(const network::Endpoint& player);
 
  private:
+  /** @returns The queue @p datagram goes to, or null when it is dropped. */
+  [[nodiscard]] concurrency::BoundedQueue<network::IncomingDatagram>*
+  destinationOf(const network::Endpoint& sender,
+                std::span<const std::byte> datagram) const;
   [[nodiscard]] bool isAdmitted(const network::Endpoint& sender) const;
 
   Destinations destinations_;

@@ -8,7 +8,6 @@ target_link_libraries(rtype_server_datagram_sorter
     rtype_network_transport
   PRIVATE
     rtype_network_datagram_codec
-    rtype_network_exceptions
 )
 
 rtype_enable_warnings(rtype_server_datagram_sorter)
