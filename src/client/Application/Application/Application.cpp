@@ -19,6 +19,7 @@
 #include "LoadingScreen.hpp"
 #include "LocalizedKeyName.hpp"
 #include "MotionPreference.hpp"
+#include "NetworkConstants.hpp"
 #include "OptionsScreen.hpp"
 #include "PlayerSettings.hpp"
 #include "PlayfieldMapping.hpp"
@@ -28,7 +29,6 @@
 #include "ScreenId.hpp"
 #include "ScreenStack.hpp"
 #include "SettingsFile.hpp"
-#include "StandInServerConnection.hpp"
 #include "TimeConstants.hpp"
 #include "TitleScreen.hpp"
 
@@ -54,7 +54,10 @@ Application::Application(AssetLibrary& assets, network::Endpoint server,
       settings_(settingsFile_.load(firstLaunchSettings())),
       window_(settings_.windowSize),
       background_(std::random_device{}()),
-      connection_(std::make_unique<StandInServerConnection>()),
+      network_(
+          network::Endpoint{.address = std::string{network::ANY_IPV4_ADDRESS},
+                            .port = network::ANY_PORT}),
+      connection_(network_),
       server_(std::move(server)),
       nickname_(std::move(nickname)),
       screens_([this](ScreenId screen) { return createScreen(screen); }) {
@@ -67,6 +70,7 @@ void Application::run() {
   while (window_.isOpen() && !screens_.isEmpty()) {
     handleEvents();
     const engine::Duration elapsed = measureFrame();
+    connection_.update(elapsed);
     background_.advance(elapsed);
     screens_.update(elapsed);
     screens_.applyPendingChanges();
@@ -109,8 +113,8 @@ std::unique_ptr<IScreen> Application::createScreen(ScreenId screen) {
           screens_, interfaceCanvas(), playfieldMapping());
     case ScreenId::Connection:
       return std::make_unique<ConnectionScreen>(
-          screens_, *connection_, interfaceCanvas(), playfieldMapping(),
-          server_, nickname_);
+          screens_, connection_, interfaceCanvas(), playfieldMapping(), server_,
+          nickname_);
   }
   return nullptr;
 }

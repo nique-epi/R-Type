@@ -26,6 +26,7 @@ using testing::LARGEST_DATAGRAM_SIZE;
 using testing::SOME_ACKNOWLEDGED_SEQUENCE;
 using testing::SOME_ACKNOWLEDGEMENT_BITS;
 using testing::SOME_FLAGS;
+using testing::SOME_OTHER_PROTOCOL_ID;
 using testing::SOME_OTHER_VERSION;
 using testing::someSessionHeader;
 using testing::VERSION_OFFSET;
@@ -146,6 +147,51 @@ TEST(DatagramCodec, DecodesTheHeaderOfAnotherVersion) {
   datagram[VERSION_OFFSET] = std::byte{SOME_OTHER_VERSION};
 
   EXPECT_EQ(DatagramCodec::decodeHeader(datagram).version, SOME_OTHER_VERSION);
+}
+
+/**
+ * Given the default header
+ * When it is checked
+ * Then it speaks this protocol
+ */
+TEST(DatagramCodec, SaysTheDefaultHeaderSpeaksThisProtocol) {
+  EXPECT_TRUE(DatagramCodec::speaksThisProtocol(PacketHeader{}));
+}
+
+/**
+ * Given a header of another version
+ * When it is checked
+ * Then it does not speak this protocol
+ */
+TEST(DatagramCodec, SaysAnotherVersionDoesNotSpeakThisProtocol) {
+  PacketHeader header;
+  header.version = SOME_OTHER_VERSION;
+
+  EXPECT_FALSE(DatagramCodec::speaksThisProtocol(header));
+}
+
+/**
+ * Given a header whose protocol id is not RTYP
+ * When it is checked
+ * Then it does not speak this protocol
+ */
+TEST(DatagramCodec, SaysAnotherProtocolIdDoesNotSpeakThisProtocol) {
+  PacketHeader header;
+  header.protocolId = SOME_OTHER_PROTOCOL_ID;
+
+  EXPECT_FALSE(DatagramCodec::speaksThisProtocol(header));
+}
+
+/**
+ * Given a header with a flag set, which version 0 never sets
+ * When it is checked
+ * Then it does not speak this protocol
+ */
+TEST(DatagramCodec, SaysAHeaderWithFlagsDoesNotSpeakThisProtocol) {
+  PacketHeader header;
+  header.flags = SOME_FLAGS;
+
+  EXPECT_FALSE(DatagramCodec::speaksThisProtocol(header));
 }
 
 /**

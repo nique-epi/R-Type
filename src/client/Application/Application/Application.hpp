@@ -9,12 +9,13 @@
 #include "GameWindow.hpp"
 #include "IInterfaceCanvas.hpp"
 #include "IScreen.hpp"
-#include "IServerConnection.hpp"
+#include "NetworkThread.hpp"
 #include "PlayerSettings.hpp"
 #include "PlayfieldMapping.hpp"
 #include "ScreenId.hpp"
 #include "ScreenStack.hpp"
 #include "ScrollingBackground.hpp"
+#include "ServerConnection.hpp"
 #include "SettingsFile.hpp"
 #include "SystemClock.hpp"
 #include "TimeConstants.hpp"
@@ -27,8 +28,9 @@ class AssetLibrary;
  * @brief The client once its interface assets are loaded: opens the window
  * and runs the frame loop over the screens.
  *
- * Each frame, the window events go to the screen on top, the scrolling
- * background and every screen are updated, then the background is drawn and
+ * Each frame, the window events go to the screen on top, the connection to a
+ * server reads what arrived and sends what is due, the scrolling background
+ * and every screen are updated, then the background is drawn and
  * every screen over it, from the bottom up. The changes the screens ask for are
  * applied after each event and after the update, so the next event already
  * reaches the new screen on top.
@@ -37,14 +39,14 @@ class AssetLibrary;
  * previous frame, so their speed does not depend on the frame rate. It is drawn
  * under every screen for now, the loading screen and the options included.
  *
- * The loop never waits on the network: reception is meant to run on its own
- * thread and hand its messages over through a queue a screen drains each
- * frame.
+ * The loop never waits on the network: the socket runs on a NetworkThread,
+ * opened on every IPv4 interface on a port the system picks, and hands its
+ * datagrams over through a queue the connection drains each frame.
  *
- * It owns the connection to a server, which outlives every screen; for now a
- * StandInServerConnection, which talks to no server. It owns the player's
- * settings too, read from the settings file at launch: the window opens at the
- * size they hold, the game reads their keys, the options change and save them.
+ * It owns the connection to a server, which outlives every screen. It owns
+ * the player's settings too, read from the settings file at launch: the window
+ * opens at the size they hold, the game reads their keys, the options change
+ * and save them.
  *
  * Screens are asked for by identifier; createScreen() is the one place that
  * builds them, with one case per ScreenId. The client starts on the title
@@ -61,6 +63,7 @@ class Application {
    * nothing to keep them for this launch only.
    * @throws RenderTextureNotCreatedException when the background cannot get
    * its render textures.
+   * @throws SocketOpenException when the system refuses to open the socket.
    */
   Application(AssetLibrary& assets, network::Endpoint server,
               std::string nickname,
@@ -138,11 +141,12 @@ class Application {
   engine::SystemClock clock_;
   engine::Duration previousFrameTime_{};
   /**
-   * @brief The connection the connection screen drives, declared before the
-   * screens so it outlives them. Provisional: a StandInServerConnection, which
-   * talks to no server.
+   * @brief The socket and the connection the connection screen drives,
+   * declared before the screens so they outlive them, the socket first since
+   * the connection sends through it.
    */
-  std::unique_ptr<IServerConnection> connection_;
+  NetworkThread network_;
+  ServerConnection connection_;
   network::Endpoint server_;
   std::string nickname_;
   ScreenStack screens_;

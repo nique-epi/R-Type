@@ -60,6 +60,13 @@ PacketHeader DatagramCodec::decodeHeader(std::span<const std::byte> datagram) {
                       .acknowledgementBits = reader.readUint32()};
 }
 
+bool DatagramCodec::speaksThisProtocol(const PacketHeader& header) {
+  const PacketHeader thisProtocol;
+  return header.protocolId == thisProtocol.protocolId &&
+         header.version == thisProtocol.version &&
+         header.flags == thisProtocol.flags;
+}
+
 std::vector<MessageFrame> DatagramCodec::splitMessages(
     std::span<const std::byte> datagram) {
   requireHeader(datagram);
