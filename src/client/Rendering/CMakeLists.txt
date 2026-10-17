@@ -21,6 +21,17 @@ target_link_libraries(rtype_client_entity_sprites
 
 rtype_enable_warnings(rtype_client_entity_sprites)
 
+add_library(rtype_client_fragment_shader STATIC FragmentShader.cpp)
+
+target_link_libraries(rtype_client_fragment_shader
+  PUBLIC
+    rtype_client_rendering_interfaces
+  PRIVATE
+    rtype_logging
+)
+
+rtype_enable_warnings(rtype_client_fragment_shader)
+
 add_subdirectory(RenderSystem)
 add_subdirectory(SfmlDrawSurface)
 add_subdirectory(AssetTextureSource)

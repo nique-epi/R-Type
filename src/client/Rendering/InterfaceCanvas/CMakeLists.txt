@@ -11,6 +11,7 @@ target_link_libraries(rtype_client_interface_canvas
     SFML::Graphics
   PRIVATE
     rtype_client_asset_library
+    rtype_client_fragment_shader
 )
 
 rtype_enable_warnings(rtype_client_interface_canvas)
