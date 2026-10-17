@@ -1,10 +1,12 @@
 #include "ServerApplication.hpp"
 #include <cstddef>
 #include <exception>
+#include <span>
 #include <stop_token>
 #include <string>
 #include <thread>
 #include <utility>
+#include "DatagramSorter.hpp"
 #include "Endpoint.hpp"
 #include "OutgoingDatagram.hpp"
 #include "ServerConstants.hpp"
@@ -17,12 +19,18 @@ ServerApplication::ServerApplication(const network::Endpoint& localEndpoint,
     : logger_(std::string{SERVER_LOGGER_NAME}),
       socket_(network_, localEndpoint),
       incoming_(INCOMING_DATAGRAM_QUEUE_CAPACITY),
+      connectionRequests_(CONNECTION_REQUEST_QUEUE_CAPACITY),
       outgoing_(OUTGOING_DATAGRAM_QUEUE_CAPACITY),
+      sorter_(DatagramSorter::Destinations{
+          .players = &incoming_, .connectionRequests = &connectionRequests_}),
       relay_(socket_, incoming_, outgoing_),
       handleTick_(std::move(handleTick)) {}
 
 void ServerApplication::run() {
-  relay_.startReceiving();
+  socket_.startReceiving([this](const network::Endpoint& sender,
+                                std::span<const std::byte> datagram) {
+    sorter_.sort(sender, datagram);
+  });
   TickLoop simulation{clock_, [this] { simulateTick(); }};
   std::exception_ptr simulationError;
   {
@@ -44,6 +52,10 @@ void ServerApplication::run() {
 
 void ServerApplication::stop() { network_.stop(); }
 
+void ServerApplication::admit(const network::Endpoint& player) {
+  network_.post([this, admitted = player] { sorter_.admit(admitted); });
+}
+
 void ServerApplication::queueDatagram(network::OutgoingDatagram datagram) {
   outgoing_.push(std::move(datagram));
 }
@@ -55,7 +67,10 @@ network::Endpoint ServerApplication::localEndpoint() const {
 void ServerApplication::simulateTick() {
   received_.clear();
   incoming_.drainInto(received_);
-  handleTick_(received_);
+  receivedRequests_.clear();
+  connectionRequests_.drainInto(receivedRequests_);
+  handleTick_(ReceivedDatagrams{.players = received_,
+                                .connectionRequests = receivedRequests_});
   reportDiscardedDatagrams();
   network_.post([this] { relay_.sendWaiting(); });
 }
@@ -67,14 +82,21 @@ void ServerApplication::reportDiscardedDatagrams() {
   }
   ticksSinceDiscardReport_ = 0;
   const std::size_t discardCount = incoming_.discardedCount();
-  if (discardCount == reportedDiscardCount_) {
-    return;
+  if (discardCount != reportedDiscardCount_) {
+    logger_.warn(discardCount - reportedDiscardCount_,
+                 " datagrams of players discarded in the last ", REPORT_SECONDS,
+                 " s: more than ", INCOMING_DATAGRAM_QUEUE_CAPACITY,
+                 " arrived between two ticks");
+    reportedDiscardCount_ = discardCount;
   }
-  logger_.warn(discardCount - reportedDiscardCount_,
-               " received datagrams discarded in the last ", REPORT_SECONDS,
-               " s: more than ", INCOMING_DATAGRAM_QUEUE_CAPACITY,
-               " arrived between two ticks");
-  reportedDiscardCount_ = discardCount;
+  const std::size_t requestDiscardCount = connectionRequests_.discardedCount();
+  if (requestDiscardCount != reportedRequestDiscardCount_) {
+    logger_.warn(requestDiscardCount - reportedRequestDiscardCount_,
+                 " connection requests discarded in the last ", REPORT_SECONDS,
+                 " s: more than ", CONNECTION_REQUEST_QUEUE_CAPACITY,
+                 " arrived between two ticks");
+    reportedRequestDiscardCount_ = requestDiscardCount;
+  }
 }
 
 }  // namespace rtype::server
