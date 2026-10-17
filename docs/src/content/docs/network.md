@@ -54,7 +54,7 @@ socket.startReceiving([&socket](const rtype::network::Endpoint& sender,
 network.run();
 ```
 
-`r-type_server` opens such a socket on the port given at launch, `DEFAULT_SERVER_PORT` (4242) by default, on every IPv4 interface, and hands each datagram to its simulation thread, which answers the connection requests and reads nothing else yet (see [Server](/R-Type/server/#letting-players-in-connectionacceptor-playerroster)). The client runs its socket on a thread of its own, `NetworkThread`, described in [Client](/R-Type/client/#network-networkthread).
+`r-type_server` opens such a socket on the port given at launch, `DEFAULT_SERVER_PORT` (4242) by default, on every IPv4 interface, sorts each datagram on its network thread, and hands the datagrams of admitted players and the connection requests to its simulation thread, which answers the requests and reads nothing else yet (see [Server](/R-Type/server/#sorting-the-datagrams-datagramsorter)). The client runs its socket on a thread of its own, `NetworkThread`, described in [Client](/R-Type/client/#network-networkthread).
 
 ## Ports and addresses written as text: `portFromText`, `ipv4AddressFromText`
 
@@ -73,7 +73,7 @@ They do not ask Asio, which hands the text to the system: `inet_pton` on Linux a
 - `sendWaiting()` sends every `OutgoingDatagram` waiting in the outgoing queue, oldest first. A datagram the socket refuses, too large or for an address that is not an IP address, throws, and the ones after it are not sent.
 - The other thread drains the incoming queue and pushes to the outgoing one; to get what it pushed sent, it hands `sendWaiting()` to the network thread with `NetworkContext::post()`.
 
-The server runs one between its network thread and its simulation thread (see [Server](/R-Type/server/)).
+The server only sends through one: it receives through its own `DatagramSorter`, which splits the datagrams between two queues (see [Server](/R-Type/server/#sorting-the-datagrams-datagramsorter)).
 
 ## Serialization: `ByteWriter` and `ByteReader`
 
