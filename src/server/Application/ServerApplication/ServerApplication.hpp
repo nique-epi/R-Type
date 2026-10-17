@@ -127,6 +127,7 @@ class ServerApplication {
   std::size_t ticksSinceDiscardReport_{0};
   std::size_t reportedDiscardCount_{0};
   std::size_t reportedRequestDiscardCount_{0};
+  std::size_t reportedDroppedCount_{0};
 };
 
 }  // namespace rtype::server

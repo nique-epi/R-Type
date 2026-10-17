@@ -1,5 +1,6 @@
 #pragma once
 
+#include <atomic>
 #include <cstddef>
 #include <span>
 #include <vector>
@@ -25,8 +26,8 @@ namespace rtype::server {
  * Every other datagram is dropped. The sorter reads the header and the type
  * of each message, never a payload, and throws nothing on a malformed
  * datagram, so its cost per datagram stays close to that of the copy into a
- * queue, whatever the datagram holds. Not thread-safe: call it on the network
- * thread only.
+ * queue, whatever the datagram holds. Not thread-safe, except droppedCount():
+ * call the rest on the network thread only.
  */
 class DatagramSorter {
  public:
@@ -56,6 +57,12 @@ class DatagramSorter {
    */
   void admit(const network::Endpoint& player);
 
+  /**
+   * @returns How many datagrams sort() dropped since the sorter was built.
+   * Call it from any thread.
+   */
+  [[nodiscard]] std::size_t droppedCount() const;
+
  private:
   /** @returns The queue @p datagram goes to, or null when it is dropped. */
   [[nodiscard]] concurrency::BoundedQueue<network::IncomingDatagram>*
@@ -65,6 +72,7 @@ class DatagramSorter {
 
   Destinations destinations_;
   std::vector<network::Endpoint> admitted_;
+  std::atomic<std::size_t> droppedCount_{0};
 };
 
 }  // namespace rtype::server

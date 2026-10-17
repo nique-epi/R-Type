@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 #include <cstddef>
 #include <string>
+#include <utility>
 #include <vector>
 #include "BoundedQueue.hpp"
 #include "DatagramSorter.hpp"
@@ -36,6 +37,10 @@ class DatagramSorterTest : public ::testing::Test {
   }
 
   void admit(const Endpoint& endpoint) { sorter_.admit(endpoint); }
+
+  [[nodiscard]] std::size_t droppedCount() const {
+    return sorter_.droppedCount();
+  }
 
   [[nodiscard]] std::vector<IncomingDatagram> drainPlayers() {
     std::vector<IncomingDatagram> drained;
@@ -156,6 +161,35 @@ TEST_F(DatagramSorterTest, DropsBytesShorterThanAHeader) {
 
   EXPECT_NO_THROW(sort(player(), bytes));
   EXPECT_TRUE(drainPlayers().empty());
+}
+
+/**
+ * Given an admitted player
+ * When a stranger's ReadyState, then a truncated datagram, bytes shorter than
+ * a header and a datagram of another version from the player arrive, then a
+ * request and a datagram of the player
+ * Then the sorter counts the four datagrams it dropped, and only those
+ */
+TEST_F(DatagramSorterTest, CountsEveryDatagramItDrops) {
+  admit(player());
+  std::vector<std::byte> truncated = readyDatagram();
+  truncated.pop_back();
+  rtype::network::PacketHeader otherVersion;
+  otherVersion.version = NEXT_PROTOCOL_VERSION;
+  const std::vector<std::pair<Endpoint, std::vector<std::byte>>> dropped{
+      {stranger(), readyDatagram()},
+      {player(), truncated},
+      {player(),
+       std::vector<std::byte>(CLIENT_PAYLOAD_SIZE, CLIENT_PAYLOAD_BYTE)},
+      {player(), readyDatagram(otherVersion)}};
+
+  for (const auto& [sender, datagram] : dropped) {
+    sort(sender, datagram);
+  }
+  sort(stranger(), requestDatagram());
+  sort(player(), readyDatagram());
+
+  EXPECT_EQ(droppedCount(), dropped.size());
 }
 
 /**

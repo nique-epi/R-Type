@@ -97,6 +97,15 @@ void ServerApplication::reportDiscardedDatagrams() {
                  " arrived between two ticks");
     reportedRequestDiscardCount_ = requestDiscardCount;
   }
+  const std::size_t droppedCount = sorter_.droppedCount();
+  if (droppedCount != reportedDroppedCount_) {
+    logger_.warn(droppedCount - reportedDroppedCount_,
+                 " datagrams dropped before any queue in the last ",
+                 REPORT_SECONDS,
+                 " s: not of this protocol and version, malformed, or from a "
+                 "sender that was not admitted");
+    reportedDroppedCount_ = droppedCount;
+  }
 }
 
 }  // namespace rtype::server

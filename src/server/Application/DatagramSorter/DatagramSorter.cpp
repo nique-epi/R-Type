@@ -1,5 +1,6 @@
 #include "DatagramSorter.hpp"
 #include <algorithm>
+#include <atomic>
 #include <cstddef>
 #include <optional>
 #include <span>
@@ -19,16 +20,22 @@ void DatagramSorter::sort(const network::Endpoint& sender,
                           std::span<const std::byte> datagram) {
   concurrency::BoundedQueue<network::IncomingDatagram>* const destination =
       destinationOf(sender, datagram);
-  if (destination != nullptr) {
-    destination->push(network::IncomingDatagram{
-        .sender = sender, .payload = {datagram.begin(), datagram.end()}});
+  if (destination == nullptr) {
+    droppedCount_.fetch_add(1, std::memory_order_relaxed);
+    return;
   }
+  destination->push(network::IncomingDatagram{
+      .sender = sender, .payload = {datagram.begin(), datagram.end()}});
 }
 
 void DatagramSorter::admit(const network::Endpoint& player) {
   if (!isAdmitted(player)) {
     admitted_.push_back(player);
   }
+}
+
+std::size_t DatagramSorter::droppedCount() const {
+  return droppedCount_.load(std::memory_order_relaxed);
 }
 
 concurrency::BoundedQueue<network::IncomingDatagram>*
