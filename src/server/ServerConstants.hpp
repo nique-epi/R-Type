@@ -24,13 +24,25 @@ constexpr std::string_view SERVER_LOGGER_NAME = "Server";
 constexpr std::string_view SIMULATION_LOGGER_NAME = "Simulation";
 
 /**
- * @brief Room of the queue of received datagrams waiting for the simulation
- * thread.
+ * @brief Room of the queue of the datagrams of admitted players waiting for the
+ * simulation thread.
  *
  * Provisional: about one second of the inputs of four players sending 60 per
  * second, far more than the simulation thread lets pile up between two ticks.
  */
 constexpr std::size_t INCOMING_DATAGRAM_QUEUE_CAPACITY = 256;
+
+/**
+ * @brief Room of the queue of connection requests waiting for the simulation
+ * thread, so the most requests a tick answers.
+ *
+ * Provisional: a client sends at most two requests in one tick (the one sent
+ * again every 500 ms and the answer to a challenge), so 16 is eight clients
+ * joining at once, about 9 microseconds of answers per tick. Above that, the
+ * oldest are discarded and the clients send again; a limit per address does
+ * not exist yet.
+ */
+constexpr std::size_t CONNECTION_REQUEST_QUEUE_CAPACITY = 16;
 
 /**
  * @brief Room of the queue of datagrams the simulation thread leaves for the
