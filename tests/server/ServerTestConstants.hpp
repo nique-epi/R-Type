@@ -4,7 +4,6 @@
 #include <cstddef>
 #include <cstdint>
 #include <string_view>
-#include "ProtocolConstants.hpp"
 #include "ServerConstants.hpp"
 #include "TimeConstants.hpp"
 
@@ -74,11 +73,6 @@ constexpr std::chrono::seconds THREAD_TIMEOUT{5};
 constexpr int SERVER_RUN_TICKS = 3;
 
 /**
- * @brief The nickname of the connection requests the server tests send.
- */
-constexpr std::string_view REQUEST_NICKNAME = "Nolan";
-
-/**
  * @brief Senders of the sorting tests: an admitted player and a stranger.
  */
 constexpr std::string_view SORTED_SENDER_ADDRESS = "192.0.2.40";
@@ -90,9 +84,3 @@ constexpr std::uint16_t STRANGER_PORT = 41001;
  */
 constexpr std::size_t FLOODING_REQUEST_COUNT =
     10 * rtype::server::CONNECTION_REQUEST_QUEUE_CAPACITY;
-
-/**
- * @brief A protocol version this server does not speak.
- */
-constexpr std::uint8_t NEXT_PROTOCOL_VERSION =
-    rtype::network::PROTOCOL_VERSION + 1;

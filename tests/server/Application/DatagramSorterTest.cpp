@@ -10,12 +10,14 @@
 #include "PacketHeader.hpp"
 #include "ServerConstants.hpp"
 #include "ServerDatagrams.hpp"
+#include "ServerLobbyTestConstants.hpp"
 #include "ServerTestConstants.hpp"
 
 using rtype::concurrency::BoundedQueue;
 using rtype::network::Endpoint;
 using rtype::network::IncomingDatagram;
 using rtype::server::DatagramSorter;
+using rtype::server::testing::NEXT_PROTOCOL_VERSION;
 
 namespace {
 

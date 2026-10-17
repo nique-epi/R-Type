@@ -22,6 +22,7 @@
 #include "PlayerRoster.hpp"
 #include "ProtocolConstants.hpp"
 #include "ReadyState.hpp"
+#include "ServerDatagrams.hpp"
 #include "ServerLobbyTestConstants.hpp"
 #include "TimeConstants.hpp"
 
@@ -33,21 +34,12 @@ using testing::FIVE_PLAYER_PORTS;
 using testing::NEXT_PROTOCOL_VERSION;
 using testing::OTHER_PROTOCOL_ID;
 using testing::PLAYER_ADDRESS;
-using testing::PLAYER_NICKNAME;
 using testing::REQUEST_TIME;
 using testing::SHORTEST_NICKNAME;
 
 network::Endpoint playerEndpoint(std::size_t player) {
   return network::Endpoint{.address = std::string{PLAYER_ADDRESS},
                            .port = FIVE_PLAYER_PORTS.at(player)};
-}
-
-/** @returns The bytes of a datagram holding a ConnectionRequest. */
-std::vector<std::byte> requestDatagram(std::uint64_t cookie,
-                                       network::PacketHeader header = {}) {
-  return network::DatagramCodec::encode(
-      header, network::ConnectionRequest{
-                  .cookie = cookie, .nickname = std::string{PLAYER_NICKNAME}});
 }
 
 /** @returns The type of the only message of @p datagram. */
