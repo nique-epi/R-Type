@@ -35,6 +35,7 @@ rtype_enable_warnings(rtype_client_fragment_shader)
 
 add_subdirectory(Animation)
 add_subdirectory(AnimationSystem)
+add_subdirectory(HitFlashSystem)
 add_subdirectory(RenderSystem)
 add_subdirectory(SfmlDrawSurface)
 add_subdirectory(AssetTextureSource)

@@ -1,10 +1,12 @@
 #include <gtest/gtest.h>
+#include <chrono>
 #include <string>
 #include <vector>
 #include "CollisionBox.hpp"
 #include "ComponentRegistry.hpp"
 #include "Entity.hpp"
 #include "EntityRegistry.hpp"
+#include "HitFlash.hpp"
 #include "Layer.hpp"
 #include "Position.hpp"
 #include "RecordingDrawSurface.hpp"
@@ -12,11 +14,16 @@
 #include "RenderingConstants.hpp"
 #include "Sprite.hpp"
 #include "SpriteFrame.hpp"
+#include "SpriteTone.hpp"
+#include "TimeConstants.hpp"
 #include "Velocity.hpp"
 
+using rtype::client::HitFlash;
 using rtype::client::LAYER_COUNT;
 using rtype::client::RenderSystem;
+using rtype::client::SpriteTone;
 using rtype::engine::ComponentRegistry;
+using rtype::engine::Duration;
 using rtype::engine::Entity;
 using rtype::engine::EntityRegistry;
 using rtype::game::CollisionBox;
@@ -28,6 +35,7 @@ using rtype::game::Velocity;
 
 namespace {
 
+constexpr Duration FLASH_TIME = std::chrono::milliseconds(60);
 constexpr float SPAWN_X = 1.0F;
 constexpr float SPAWN_Y = 2.0F;
 constexpr float SHIP_X = 40.0F;
@@ -268,4 +276,53 @@ TEST(RenderSystem, SkipsASpriteWhoseLayerIsNotADrawingLayer) {
   scene.render();
 
   EXPECT_EQ(scene.surface().assetIds(), (std::vector<std::string>{"kept"}));
+}
+
+/**
+ * Given an entity that carries no hit flash
+ * When a frame is rendered
+ * Then it is drawn in the colors of its sheet
+ */
+TEST(RenderSystem, AnEntityWithoutHitFlashIsDrawnInItsOwnColors) {
+  Scene scene;
+  scene.spawn("ship", Layer::Entities);
+
+  scene.render();
+
+  ASSERT_EQ(scene.surface().drawn().size(), 1U);
+  EXPECT_EQ(scene.surface().drawn().front().tone, SpriteTone::Normal);
+}
+
+/**
+ * Given an entity flashed white
+ * When a frame is rendered
+ * Then it is drawn with the flash tone
+ */
+TEST(RenderSystem, AFlashedEntityIsDrawnWithTheFlashTone) {
+  Scene scene;
+  const Entity hit = scene.spawn("bydo", Layer::Entities);
+  scene.components().add(
+      hit, HitFlash{.tone = SpriteTone::Flash, .remaining = FLASH_TIME});
+
+  scene.render();
+
+  ASSERT_EQ(scene.surface().drawn().size(), 1U);
+  EXPECT_EQ(scene.surface().drawn().front().tone, SpriteTone::Flash);
+}
+
+/**
+ * Given an entity shaded, as a hit when the player reduced flashes
+ * When a frame is rendered
+ * Then it is drawn with the shade tone, the one its hit flash carries
+ */
+TEST(RenderSystem, AShadedEntityIsDrawnWithTheShadeTone) {
+  Scene scene;
+  const Entity hit = scene.spawn("bydo", Layer::Entities);
+  scene.components().add(
+      hit, HitFlash{.tone = SpriteTone::Shade, .remaining = FLASH_TIME});
+
+  scene.render();
+
+  ASSERT_EQ(scene.surface().drawn().size(), 1U);
+  EXPECT_EQ(scene.surface().drawn().front().tone, SpriteTone::Shade);
 }

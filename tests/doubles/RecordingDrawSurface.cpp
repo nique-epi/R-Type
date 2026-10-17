@@ -4,12 +4,16 @@
 #include <vector>
 #include "Position.hpp"
 #include "SpriteFrame.hpp"
+#include "SpriteTone.hpp"
 
 void RecordingDrawSurface::draw(std::string_view assetId,
                                 rtype::game::SpriteFrame frame,
-                                rtype::game::Position center) {
-  drawn_.push_back(
-      {.assetId = std::string(assetId), .frame = frame, .center = center});
+                                rtype::game::Position center,
+                                rtype::client::SpriteTone tone) {
+  drawn_.push_back({.assetId = std::string(assetId),
+                    .frame = frame,
+                    .center = center,
+                    .tone = tone});
 }
 
 const std::vector<DrawnImage>& RecordingDrawSurface::drawn() const {
