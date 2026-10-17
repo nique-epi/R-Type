@@ -401,7 +401,7 @@ UDP may deliver a datagram sent earlier after one sent later, and applying the o
 
 - The first state is always accepted, and a refused state does not lower the remembered tick.
 - Ticks are compared as plain integers, with no wrap-around: a 32-bit tick lasts 2.27 years at 60 ticks per second.
-- Call it only for datagrams that passed the checks on the sender, otherwise a forged datagram could raise the remembered tick and make every real state look old. Those checks are not written yet.
+- Call it only for datagrams that passed the checks on the sender, otherwise a forged datagram could raise the remembered tick and make every real state look old. `ServerConnection` checks the sender address, the protocol id, the version and the flags of a datagram, but not its session token yet, so a datagram forged with the server's address still passes.
 - `EntityReplicator` calls it for every `WorldState` it is given (see below); nothing in the client gives it states yet.
 
 ```cpp
@@ -423,7 +423,7 @@ if (!worldStateFilter.accept(state.tick)) {
 
 It binds the network id of each entity it creates in a `NetworkEntityTable`, so its entities must be destroyed through it. One replicator serves one game, because the ticks start again with each game. It is not thread-safe: the frame loop calls it, with messages whose sender passed the checks.
 
-It does not yet remove an entity that no `WorldState` has listed for 900 ms (see [Protocol](/R-Type/protocol/#losses)): until then, an entity whose three `EntityDestroyed` were all lost stays on screen. It does not read the players of a `WorldState`, and plays no appearance or explosion effect. Nothing in the client calls it yet; the connection to a server will register it on the client's `MessageDispatcher`, once per message type:
+It does not yet remove an entity that no `WorldState` has listed for 900 ms (see [Protocol](/R-Type/protocol/#losses)): until then, an entity whose three `EntityDestroyed` were all lost stays on screen. It does not read the players of a `WorldState`, and plays no appearance or explosion effect. Nothing in the client calls it yet: `ServerConnection` reads nothing the server sends after the acceptance (see [Joining a server](#joining-a-server-serverconnection)). It is meant to be registered on the `MessageDispatcher` of the connection, once per message type:
 
 ```cpp
 rtype::client::EntityReplicator replicator{entities, components};
