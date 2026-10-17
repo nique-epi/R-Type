@@ -15,7 +15,7 @@
 #include "BackgroundConstants.hpp"
 #include "BarState.hpp"
 #include "Button.hpp"
-#include "ChamferedBox.hpp"
+#include "CutCornerBox.hpp"
 #include "IInterfaceCanvas.hpp"
 #include "InterfaceColors.hpp"
 #include "InterfaceConstants.hpp"
@@ -99,7 +99,7 @@ void Menu::paint(IInterfaceCanvas& canvas) const {
     canvas.fill(INTERFACE_AREA, DIM_LAYER_COLOR);
   }
   if (content_.panel.has_value()) {
-    ChamferedBox(*content_.panel,
+    CutCornerBox(*content_.panel,
                  {.border = PANEL_BORDER_COLOR, .inside = PANEL_INSIDE_COLOR})
         .paint(canvas);
   }

@@ -29,7 +29,7 @@ target_link_libraries(rtype_client_window_size_chart
 
 rtype_enable_warnings(rtype_client_window_size_chart)
 
-add_subdirectory(ChamferedBox)
+add_subdirectory(CutCornerBox)
 add_subdirectory(Outline)
 add_subdirectory(SunkBox)
 add_subdirectory(CheckBox)

@@ -6,7 +6,7 @@ target_link_libraries(rtype_client_dropdown
   PUBLIC
     rtype_client_row_control
   PRIVATE
-    rtype_client_chamfered_box
+    rtype_client_cut_corner_box
     rtype_client_check_box
     rtype_client_sunk_box
 )

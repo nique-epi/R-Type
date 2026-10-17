@@ -1,4 +1,4 @@
-#include "ChamferedBox.hpp"
+#include "CutCornerBox.hpp"
 #include <SFML/Graphics/Color.hpp>
 #include <SFML/Graphics/Rect.hpp>
 #include <SFML/System/Vector2.hpp>
@@ -15,8 +15,8 @@ namespace {
  * next row one pixel less, and the same from its last row on the right.
  */
 void fillCutArea(IInterfaceCanvas& canvas, sf::IntRect area, int cutRows,
-                 ChamferedBox::Shape shape, sf::Color color) {
-  const bool closed = shape == ChamferedBox::Shape::Closed;
+                 CutCornerBox::Shape shape, sf::Color color) {
+  const bool closed = shape == CutCornerBox::Shape::Closed;
   const int bottomRow = area.position.y + area.size.y - 1;
   for (int row = 0; row < cutRows; ++row) {
     const int cut = cutRows - row;
@@ -36,20 +36,20 @@ void fillCutArea(IInterfaceCanvas& canvas, sf::IntRect area, int cutRows,
 
 }  // namespace
 
-ChamferedBox::ChamferedBox(sf::IntRect area, Colors colors)
+CutCornerBox::CutCornerBox(sf::IntRect area, Colors colors)
     : area_(area), colors_(colors) {}
 
-ChamferedBox::ChamferedBox(sf::IntRect area, Colors colors, Shape shape)
+CutCornerBox::CutCornerBox(sf::IntRect area, Colors colors, Shape shape)
     : area_(area), colors_(colors), shape_(shape) {}
 
-void ChamferedBox::paint(IInterfaceCanvas& canvas) const {
-  fillCutArea(canvas, area_, CHAMFER_ROWS, shape_, colors_.border);
+void CutCornerBox::paint(IInterfaceCanvas& canvas) const {
+  fillCutArea(canvas, area_, CORNER_CUT_ROWS, shape_, colors_.border);
   const int bottomBorder = shape_ == Shape::Closed ? BORDER_THICKNESS : 0;
   const sf::IntRect inside(
       area_.position + sf::Vector2i(BORDER_THICKNESS, BORDER_THICKNESS),
       {area_.size.x - (SIDES_PER_AXIS * BORDER_THICKNESS),
        area_.size.y - BORDER_THICKNESS - bottomBorder});
-  fillCutArea(canvas, inside, CHAMFER_ROWS - BORDER_THICKNESS, shape_,
+  fillCutArea(canvas, inside, CORNER_CUT_ROWS - BORDER_THICKNESS, shape_,
               colors_.inside);
 }
 

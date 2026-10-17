@@ -55,7 +55,7 @@ constexpr int CHECK_MARK_MARGIN = 2;
  * @brief Corners cut off the bars and panels: rows of the outer cut, and
  * thickness of the border, the inside being cut one row less.
  */
-constexpr int CHAMFER_ROWS = 4;
+constexpr int CORNER_CUT_ROWS = 4;
 constexpr int BORDER_THICKNESS = 1;
 
 /** @brief Row of the top of the illustration of a page, against the right

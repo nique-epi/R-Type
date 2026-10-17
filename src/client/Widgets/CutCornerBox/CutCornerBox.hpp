@@ -11,13 +11,13 @@ namespace rtype::client {
  * @brief A box whose top-left and bottom-right corners are cut in steps of one
  * pixel: the shape of every bar and panel of the menus.
  *
- * The outer shape, cut over CHAMFER_ROWS rows, is painted in the border color;
- * the inside, BORDER_THICKNESS in and cut one row less, over it, which leaves a
- * border along the cuts too. The area must be at least SIDES_PER_AXIS times
- * CHAMFER_ROWS tall. A box open at the bottom has only its top-left corner cut
- * and no bottom border, as a tab that opens into the panel under it.
+ * The outer shape, cut over CORNER_CUT_ROWS rows, is painted in the border
+ * color; the inside, BORDER_THICKNESS in and cut one row less, over it, which
+ * leaves a border along the cuts too. The area must be at least SIDES_PER_AXIS
+ * times CORNER_CUT_ROWS tall. A box open at the bottom has only its top-left
+ * corner cut and no bottom border, as a tab that opens into the panel under it.
  */
-class ChamferedBox {
+class CutCornerBox {
  public:
   /** @brief Colors of the box: its border, BORDER_THICKNESS thick, and its
    * inside. */
@@ -34,9 +34,9 @@ class ChamferedBox {
 
   /** @brief A closed box.
    * @param area Where the box lies, in pixels of the interface picture. */
-  ChamferedBox(sf::IntRect area, Colors colors);
+  CutCornerBox(sf::IntRect area, Colors colors);
 
-  ChamferedBox(sf::IntRect area, Colors colors, Shape shape);
+  CutCornerBox(sf::IntRect area, Colors colors, Shape shape);
 
   void paint(IInterfaceCanvas& canvas) const;
 

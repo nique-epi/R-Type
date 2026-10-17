@@ -8,7 +8,7 @@
 #include <optional>
 #include <string>
 #include "BarState.hpp"
-#include "ChamferedBox.hpp"
+#include "CutCornerBox.hpp"
 #include "IInterfaceCanvas.hpp"
 #include "RowControl.hpp"
 #include "SunkBox.hpp"
@@ -100,7 +100,7 @@ class Button {
   /** @brief Colors of a bar and of its label in one state, and how far the
    * label drops. */
   struct Look {
-    ChamferedBox::Colors bar;
+    CutCornerBox::Colors bar;
     sf::Color text;
     int textDrop{};
   };

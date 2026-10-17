@@ -8,7 +8,7 @@
 #include <string>
 #include <utility>
 #include "BarState.hpp"
-#include "ChamferedBox.hpp"
+#include "CutCornerBox.hpp"
 #include "IInterfaceCanvas.hpp"
 #include "InterfaceConstants.hpp"
 #include "RowControl.hpp"
@@ -89,7 +89,7 @@ void Button::paint(IInterfaceCanvas& canvas, BarState state) const {
     return;
   }
   const Look look = lookOf(state);
-  ChamferedBox(area_, look.bar).paint(canvas);
+  CutCornerBox(area_, look.bar).paint(canvas);
   canvas.write(
       text_.label,
       area_.position + BUTTON_TEXT_OFFSET + sf::Vector2i(0, look.textDrop),
@@ -105,7 +105,7 @@ void Button::paintOverlay(IInterfaceCanvas& canvas) const {
 void Button::paintRow(IInterfaceCanvas& canvas, BarState state) const {
   const Look look = lookOf(state);
   if (state == BarState::Selected || state == BarState::Pressed) {
-    ChamferedBox(area_, look.bar).paint(canvas);
+    CutCornerBox(area_, look.bar).paint(canvas);
   }
   canvas.write(
       text_.label,

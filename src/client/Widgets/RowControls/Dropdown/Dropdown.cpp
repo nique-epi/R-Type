@@ -10,9 +10,9 @@
 #include <utility>
 #include <vector>
 #include "BarState.hpp"
-#include "ChamferedBox.hpp"
 #include "CheckBox.hpp"
 #include "CheckMark.hpp"
+#include "CutCornerBox.hpp"
 #include "IInterfaceCanvas.hpp"
 #include "RowControlConstants.hpp"
 #include "SunkBox.hpp"
@@ -50,7 +50,7 @@ void Dropdown::paintOverlay(IInterfaceCanvas& canvas, sf::IntRect area) const {
   if (!open_) {
     return;
   }
-  ChamferedBox(listArea(area),
+  CutCornerBox(listArea(area),
                {.border = LIST_BORDER_COLOR, .inside = LIST_INSIDE_COLOR})
       .paint(canvas);
   for (std::size_t choice = 0; choice < choices_.size(); ++choice) {

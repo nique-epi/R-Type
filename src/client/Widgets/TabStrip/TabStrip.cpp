@@ -6,7 +6,7 @@
 #include <string>
 #include <utility>
 #include <vector>
-#include "ChamferedBox.hpp"
+#include "CutCornerBox.hpp"
 #include "IInterfaceCanvas.hpp"
 #include "KeyCap.hpp"
 #include "TextStyle.hpp"
@@ -86,10 +86,10 @@ void TabStrip::paintTab(IInterfaceCanvas& canvas, std::size_t tab) const {
   if (open) {
     area.size.y += BORDER_THICKNESS;
   }
-  ChamferedBox(area,
+  CutCornerBox(area,
                {.border = open ? OPEN_TAB_BORDER_COLOR : TAB_BORDER_COLOR,
                 .inside = TAB_INSIDE_COLOR},
-               ChamferedBox::Shape::OpenBottom)
+               CutCornerBox::Shape::OpenBottom)
       .paint(canvas);
   const std::string& label = labels_[tab];
   canvas.write(label,
