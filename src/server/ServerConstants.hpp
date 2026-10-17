@@ -36,11 +36,13 @@ constexpr std::size_t INCOMING_DATAGRAM_QUEUE_CAPACITY = 256;
  * @brief Room of the queue of connection requests waiting for the simulation
  * thread, so the most requests a tick answers.
  *
- * Provisional: a client sends at most two requests in one tick (the one sent
- * again every 500 ms and the answer to a challenge), so 16 is eight clients
- * joining at once, about 9 microseconds of answers per tick. Above that, the
- * oldest are discarded and the clients send again; a limit per address does
- * not exist yet.
+ * Provisional: while the simulation keeps its pace, a client sends at most two
+ * requests in one tick (the one sent again every 500 ms and the answer to a
+ * challenge), so 16 is eight clients joining at once, about 9 microseconds of
+ * answers per tick. After a stall, a client answers every challenge sent for
+ * its waiting requests, up to 10 in one tick before it gives up at 5 s. Above
+ * the room, the oldest are discarded and the clients send again; a limit per
+ * address does not exist yet.
  */
 constexpr std::size_t CONNECTION_REQUEST_QUEUE_CAPACITY = 16;
 

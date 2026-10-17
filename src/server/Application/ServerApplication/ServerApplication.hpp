@@ -26,7 +26,9 @@ namespace rtype::server {
  * The network thread sorts each datagram as it arrives (see DatagramSorter):
  * the datagrams of admitted players go to one queue, connection requests to a
  * smaller one, and every other datagram is dropped there, so a flood of
- * requests or of strangers never pushes a player's datagram out of its queue.
+ * requests, or of datagrams from senders that were not admitted, cannot push a
+ * player's datagram out of its queue; a sender using the address and port of
+ * an admitted player still can, until the session token is checked.
  * Each tick, the simulation thread drains both queues, hands what they held
  * to the tick handler, then asks the network thread to send what was queued.
  * The DatagramRelay only sends.

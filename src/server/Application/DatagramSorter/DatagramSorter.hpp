@@ -12,8 +12,10 @@ namespace rtype::server {
 
 /**
  * @brief Sorts each datagram the network thread receives before any queue
- * holds it, so that a flood of strangers never pushes the datagrams of the
- * players out of their queue.
+ * holds it, so that a flood from senders that were not admitted cannot push
+ * the datagrams of the players out of their queue. A sender that uses the
+ * address and port of an admitted player still reaches that queue: the
+ * session token is not checked yet, and the players share one queue.
  *
  * A datagram whose header is of this protocol and version, with no flag set,
  * and whose messages add up to its end, goes:
