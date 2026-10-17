@@ -99,15 +99,22 @@ class ConnectionAcceptorTest : public ::testing::Test {
 
   [[nodiscard]] PlayerRoster& roster() { return roster_; }
 
+  [[nodiscard]] const std::vector<network::Endpoint>& admitted() const {
+    return admitted_;
+  }
+
   [[nodiscard]] ConnectionAcceptor& acceptor() { return acceptor_; }
 
  private:
   PlayerRoster roster_;
   std::vector<network::OutgoingDatagram> answers_;
-  ConnectionAcceptor acceptor_{roster_,
-                               [this](network::OutgoingDatagram datagram) {
-                                 answers_.push_back(std::move(datagram));
-                               }};
+  std::vector<network::Endpoint> admitted_;
+  ConnectionAcceptor acceptor_{
+      roster_,
+      [this](network::OutgoingDatagram datagram) {
+        answers_.push_back(std::move(datagram));
+      },
+      [this](const network::Endpoint& player) { admitted_.push_back(player); }};
 };
 
 /**
@@ -164,6 +171,41 @@ TEST_F(ConnectionAcceptorTest, AcceptsARequestCarryingItsCookie) {
   EXPECT_NE(
       network::DatagramCodec::decodeHeader(lastAnswer().payload).sessionToken,
       0);
+}
+
+/**
+ * Given a sender that got a challenge
+ * When it sends its request again with the cookie of the challenge
+ * Then its address is announced as admitted, once
+ */
+TEST_F(ConnectionAcceptorTest, AnnouncesTheAddressOfANewPlayer) {
+  connect(playerEndpoint(0));
+
+  EXPECT_EQ(admitted(), (std::vector<network::Endpoint>{playerEndpoint(0)}));
+}
+
+/**
+ * Given an acceptor with nobody connected
+ * When a sender is challenged
+ * Then nobody is announced as admitted
+ */
+TEST_F(ConnectionAcceptorTest, AnnouncesNobodyForAChallenge) {
+  receive(playerEndpoint(0), requestDatagram(0));
+
+  EXPECT_TRUE(admitted().empty());
+}
+
+/**
+ * Given a connected player
+ * When it is accepted again
+ * Then it is not announced a second time
+ */
+TEST_F(ConnectionAcceptorTest, AnnouncesAPlayerAcceptedAgainOnlyOnce) {
+  connect(playerEndpoint(0));
+
+  connect(playerEndpoint(0));
+
+  EXPECT_EQ(admitted().size(), 1);
 }
 
 /**
