@@ -193,6 +193,10 @@ constexpr sf::Vector2i ROWS_PANEL_TOP_LEFT(SAFE_MARGIN,
                                            TAB_STRIP_TOP_LEFT.y + TAB_HEIGHT);
 constexpr sf::Vector2i ROWS_PANEL_SIZE(TAB_STRIP_WIDTH, 150);
 constexpr int ROWS_PANEL_PADDING = 4;
+constexpr sf::Vector2i FIRST_ROW_TOP_LEFT(ROWS_PANEL_TOP_LEFT.x +
+                                              ROWS_PANEL_PADDING,
+                                          ROWS_PANEL_TOP_LEFT.y +
+                                              ROWS_PANEL_PADDING);
 constexpr sf::Vector2i ROW_SIZE(ROWS_PANEL_SIZE.x -
                                     (SIDES_PER_AXIS * ROWS_PANEL_PADDING),
                                 16);

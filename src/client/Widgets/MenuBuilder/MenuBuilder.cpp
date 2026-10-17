@@ -260,6 +260,13 @@ void MenuBuilder::placeForm(Menu::Content& content) {
 }
 
 void MenuBuilder::placeTabbedPanel(Menu::Content& content) {
+  placePanelHeader(content);
+  placeRowsPanel(content);
+  const PanelCursor end = placeRowsAndBars(content);
+  placeDescriptionAndIllustration(content, end);
+}
+
+void MenuBuilder::placePanelHeader(Menu::Content& content) {
   const int left = SAFE_MARGIN;
   if (heading_.has_value()) {
     content.labels.emplace_back(
@@ -276,33 +283,45 @@ void MenuBuilder::placeTabbedPanel(Menu::Content& content) {
         sf::Vector2i(INTERFACE_AREA.size.x - SAFE_MARGIN, SAFE_MARGIN),
         NOTICE_STYLE);
   }
+}
+
+void MenuBuilder::placeRowsPanel(Menu::Content& content) {
   content.panel = sf::IntRect(ROWS_PANEL_TOP_LEFT, ROWS_PANEL_SIZE);
   content.tabs = std::move(tabStrip_);
   content.openTab = std::move(tabOpener_);
   content.nextKeys = PANEL_NEXT_KEYS;
   content.previousKeys = PANEL_PREVIOUS_KEYS;
-  const int rowLeft = ROWS_PANEL_TOP_LEFT.x + ROWS_PANEL_PADDING;
-  int rowTop = ROWS_PANEL_TOP_LEFT.y + ROWS_PANEL_PADDING;
-  int barLeft = left;
+}
+
+MenuBuilder::PanelCursor MenuBuilder::placeRowsAndBars(Menu::Content& content) {
+  PanelCursor cursor{.rowTop = FIRST_ROW_TOP_LEFT.y, .barLeft = SAFE_MARGIN};
   for (PendingButton& pending : buttons_) {
     if (pending.control != nullptr) {
-      content.buttons.emplace_back(std::move(pending.text),
-                                   sf::IntRect({rowLeft, rowTop}, ROW_SIZE),
-                                   std::move(pending.control));
-      rowTop += ROW_SIZE.y + ROW_GAP;
+      content.buttons.emplace_back(
+          std::move(pending.text),
+          sf::IntRect({FIRST_ROW_TOP_LEFT.x, cursor.rowTop}, ROW_SIZE),
+          std::move(pending.control));
+      cursor.rowTop += ROW_SIZE.y + ROW_GAP;
     } else {
       content.buttons.emplace_back(
           std::move(pending.text),
-          sf::IntRect({barLeft, PANEL_BARS_TOP}, PANEL_BAR_SIZE),
+          sf::IntRect({cursor.barLeft, PANEL_BARS_TOP}, PANEL_BAR_SIZE),
           std::move(pending.action), std::move(pending.field));
-      barLeft += PANEL_BAR_SIZE.x + SPACE_BESIDE_PANEL_BARS;
+      cursor.barLeft += PANEL_BAR_SIZE.x + SPACE_BESIDE_PANEL_BARS;
     }
   }
-  content.descriptionAnchor = {barLeft, PANEL_BARS_TOP + BUTTON_TEXT_OFFSET.y};
+  return cursor;
+}
+
+void MenuBuilder::placeDescriptionAndIllustration(Menu::Content& content,
+                                                  PanelCursor end) {
+  content.descriptionAnchor = {end.barLeft,
+                               PANEL_BARS_TOP + BUTTON_TEXT_OFFSET.y};
   if (illustration_.has_value()) {
-    content.illustration = sf::IntRect(
-        {rowLeft + ROW_PADDING, rowTop + SPACE_ABOVE_PANEL_ILLUSTRATION},
-        *illustration_);
+    content.illustration =
+        sf::IntRect({FIRST_ROW_TOP_LEFT.x + ROW_PADDING,
+                     end.rowTop + SPACE_ABOVE_PANEL_ILLUSTRATION},
+                    *illustration_);
   }
 }
 

@@ -145,10 +145,36 @@ class MenuBuilder {
     std::unique_ptr<RowControl> control;
   };
 
+  /** @brief Where the next row and the next bar of a tabbed panel go: rows
+   * down its panel, bars rightwards under it. */
+  struct PanelCursor {
+    int rowTop{};
+    int barLeft{};
+  };
+
   void placeColumn(Menu::Content& content);
   void placeDialog(Menu::Content& content);
   void placeForm(Menu::Content& content);
   void placeTabbedPanel(Menu::Content& content);
+
+  /** @brief The heading of a tabbed panel and its rule, the status line at
+   * the end of the rule, and the notice in the top-right corner. */
+  void placePanelHeader(Menu::Content& content);
+
+  /** @brief The panel of rows, the tabs over it, and the keys that move from
+   * row to row. */
+  void placeRowsPanel(Menu::Content& content);
+
+  /**
+   * @brief Places the rows down the panel and the bars in a row under it, in
+   * the order they were asked for.
+   * @returns Where the next row and the next bar would go.
+   */
+  [[nodiscard]] PanelCursor placeRowsAndBars(Menu::Content& content);
+
+  /** @brief The description right of the last bar, and the illustration under
+   * the last row. */
+  void placeDescriptionAndIllustration(Menu::Content& content, PanelCursor end);
 
   Frame frame_;
   std::optional<std::string> version_;
