@@ -221,6 +221,8 @@ A `GameEvent` drives sounds and effects on the client, never a game rule. `event
 
 An `EntityDamaged` naming an entity the client does not know changes nothing. The explosion of a ship that is hit comes from its `EntityDestroyed` (`Killed`).
 
+A shot has no event of its own: a missile appears through the `EntitySpawned` of a `PlayerMissile` or an `EnemyMissile`.
+
 ## A session
 
 The messages of one session, from the connection to the end of a game:

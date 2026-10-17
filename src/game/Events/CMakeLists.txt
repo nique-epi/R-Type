@@ -2,4 +2,8 @@ add_library(rtype_game_events INTERFACE)
 
 target_include_directories(rtype_game_events INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
 
-target_link_libraries(rtype_game_events INTERFACE rtype_engine_entity_registry)
+target_link_libraries(rtype_game_events
+  INTERFACE
+    rtype_engine_entity_registry
+    rtype_game_components
+)

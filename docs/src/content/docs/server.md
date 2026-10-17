@@ -15,6 +15,7 @@ This page tells you where to look when you need to change something. It describe
 | Timer resolution on Windows | Available | `src/server/Platform/` |
 | Filtering unwanted senders before the incoming queue | Not yet written | — |
 | World state sent at a fixed rate | Available: sends to no one yet, the list of recipients is empty | `src/server/Replication/` |
+| Game events sent to the clients | Available: sends to no one yet, and nothing publishes the events | `src/server/Replication/`, `src/game/Events/` |
 | Launch options | Available: the port and `--help` | `src/server/LaunchOptions/` |
 | Lobby, games, master link | Not yet written | — |
 | Components (`Position`, `Velocity`, `CollisionBox`, `EntityType`, `Sprite`, `Layer`) | Available | `src/game/Components/` |
@@ -46,7 +47,7 @@ This page tells you where to look when you need to change something. It describe
 - The **network thread**, the one that calls `run()`, runs the `NetworkContext`. `DatagramRelay` (`rtype_network`, see [Network](/R-Type/network/#socket-to-queues-datagramrelay)) copies every datagram received, with its sender, into the incoming `BoundedQueue`, and sends what was left in the outgoing one. It is the only thread that touches the socket.
 - The **simulation thread** runs `SIMULATION_TICKS_PER_SECOND` (60) ticks per second. Each tick drains the incoming queue and hands what arrived, often nothing, to the tick handler given to the constructor, so a slow or silent player never holds the game up. At the end of the tick it asks the network thread, through `NetworkContext::post()`, to send the outgoing queue.
 
-The tick handler is where the game plugs in. Today `src/server/main.cpp` gives one that logs each datagram at the `debug` level, then calls the `WorldStateSender`: nothing decodes or answers the datagrams, and the sender has no recipient, so nothing fills the outgoing queue yet.
+The tick handler is where the game plugs in. Today `src/server/main.cpp` gives one that logs each datagram at the `debug` level, advances the timers by one tick, calls the `WorldStateSender`, then delivers the events of the `EventBus`: nothing decodes or answers the datagrams, and the list of recipients is empty, so nothing fills the outgoing queue yet.
 
 A tick handler puts a datagram in the outgoing queue with `queueDatagram()`, called from the handler itself, on the simulation thread. The datagram is sent at the end of the same tick.
 
@@ -132,6 +133,36 @@ The sender is built before the server, whose tick handler captures it, and sends
 
 `World::components()` (`rtype_game`) is the `ComponentRegistry` of the world: a `World` owns its entities and their components, and cannot be copied or moved.
 
+## Game events: `GameEventEncoder` and `GameEventBroadcaster`
+
+The game announces what the players must see or hear by publishing an event on the `EventBus`; the server turns it into a message and sends it to every client. The server broadcasts five of the events in `src/game/Events/`: `EntitySpawn`, `EntityDestruction` (`Killed` or `Removed`), `EntityDamage`, `PlayerHit` and `PlayerElimination`. They carry a network id or a player number, never an `Entity`: whoever publishes reads the id from the `NetworkIdentity` before the entity is destroyed.
+
+`GameEventEncoder` (`src/server/Replication/GameEventEncoder/`) writes an event as the message of the protocol (see [Protocol](/R-Type/protocol/#game-events)) and says how many times to send it. An `EntitySpawn` becomes an `EntitySpawned`, sent once, because the next world state creates the entity anyway. An `EntityDestruction` becomes an `EntityDestroyed`, and the other three become a `GameEvent` of kind `EntityDamaged`, `PlayerHit` or `PlayerEliminated`; these are sent `REPEATED_MESSAGE_COPIES` (3) times. The encoder numbers the `GameEvent`s from `FIRST_EVENT_NUMBER` (1), wrapping from 65535 to 0, and an event it refuses uses no number.
+
+`GameEventBroadcaster` (`src/server/Replication/GameEventBroadcaster/`) subscribes to the five events and sends each message to every recipient, in a datagram whose header comes from the function it was given for that recipient. The first copy leaves when the bus delivers the event; the others leave `REPEATED_MESSAGE_INTERVAL` (50 ms) and twice that later, through the `TimerScheduler`.
+
+- The copies go to the clients there were when the bus delivered the event: a client that joins after the delivery never receives a copy.
+- The timers advance by one tick at a time, so a copy leaves on the first tick that reaches its delay, up to one tick (`SIMULATION_TICK_DURATION`, 16.7 ms) after it.
+- `REPEATED_MESSAGE_COPIES` and `REPEATED_MESSAGE_INTERVAL` are **provisional**, like the protocol rates they follow. Code must read the constants and never repeat 3 or 50.
+- An event the protocol refuses is skipped: a position that is not a number, the entity id 0 (which no entity has), or a player number outside 1 to 4. The broadcaster logs a warning with the name of the event, sends nothing, schedules no copy, and does not use an event number, so the next event goes out and the server keeps running. Only the encoding is protected: a fault in the sending still stops the tick.
+- The broadcaster must outlive the last `dispatch()` of the bus and the last `advance()` of the timers, because both call back into it.
+- Nothing is sent or scheduled when the list of recipients is empty, but the encoder still runs, so a `GameEvent` still uses an event number. In `main.cpp` the list is empty and nothing publishes the events yet, so no datagram leaves. The header function returns a default header, with no session, until the server has sessions; it is never called while there is no recipient.
+
+```cpp
+rtype::engine::EventBus events;
+rtype::engine::TimerScheduler timers;
+rtype::server::GameEventBroadcaster broadcaster{
+    events, timers, recipients,
+    [](const rtype::network::Endpoint&) {
+      return rtype::network::PacketHeader{};
+    },
+    send};
+
+events.publish(rtype::game::PlayerHit{.playerNumber = 2});
+timers.advance(rtype::engine::SIMULATION_TICK_DURATION);
+events.dispatch();
+```
+
 ## Collisions
 
 A collision takes two steps, in two classes. The first finds what overlaps; the second decides which overlaps matter. Neither removes health nor destroys an entity: they only announce what happened, so the damage rules can react to it (see [Event bus](/R-Type/engine/#event-bus-eventbus)).
@@ -175,7 +206,7 @@ scheduler.run(components, SIMULATION_TICK_DURATION);
 events.dispatch();
 ```
 
-The bus and the registry must outlive `CollisionRules`, and the bus must outlive `CollisionSystem`. The game loop that would create them does not exist yet: today only the tests build this chain.
+The bus and the registry must outlive `CollisionRules`, and the bus must outlive `CollisionSystem`. `main.cpp` creates a bus and delivers its events every tick, but nothing adds `CollisionSystem` or `CollisionRules` to it yet: today only the tests build this chain.
 
 ## Where to intervene
 
@@ -185,6 +216,9 @@ The bus and the registry must outlive `CollisionRules`, and the bus must outlive
 | Add a launch option | The options listed in `LaunchOptions::read()` and `usage()`, in `src/server/LaunchOptions/LaunchOptions.cpp`; a name the client uses too goes in `src/engine/LaunchArguments/LaunchArgumentsConstants.hpp` |
 | Change the port the server listens on by default | `DEFAULT_SERVER_PORT` in `src/network/NetworkConstants.hpp`, shared with the client |
 | Change how often the world state is sent | `WORLD_STATES_PER_SECOND` in `src/server/ServerConstants.hpp` |
+| Announce something to every client | Publish one of the events of `src/game/Events/` on the `EventBus`; `GameEventBroadcaster` sends it |
+| Send a new kind of event | A struct in `src/game/Events/`, an `encode` overload in `GameEventEncoder`, a `subscribeTo` line in the `GameEventBroadcaster` constructor |
+| Change how often an event is sent, or how far apart | `REPEATED_MESSAGE_COPIES` and `REPEATED_MESSAGE_INTERVAL` in `src/server/Replication/GameEventConstants.hpp` |
 | Change what the world state lists | `WorldStateSender::capture` in `src/server/Replication/WorldStateSender/WorldStateSender.cpp` |
 | Send a datagram from the tick | `ServerApplication::queueDatagram()` |
 | Change the size of the queues between threads | `INCOMING_DATAGRAM_QUEUE_CAPACITY` and `OUTGOING_DATAGRAM_QUEUE_CAPACITY` in `src/server/ServerConstants.hpp` |
