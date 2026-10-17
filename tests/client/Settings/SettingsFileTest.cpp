@@ -143,7 +143,7 @@ TEST(SettingsFileTest, AFileOneByteLargerIsIgnored) {
 TEST(SettingsFileTest, TheCreatedFolderBelongsToItsOwnerOnly) {
 #ifdef _WIN32
   GTEST_SKIP() << "Windows folders have no POSIX permissions";
-#endif
+#else
   const TemporaryFolder folder;
   SettingsFile file(folder.path() / "r-type" / "settings.ini");
   ASSERT_TRUE(file.save(PlayerSettings{}));
@@ -152,4 +152,5 @@ TEST(SettingsFileTest, TheCreatedFolderBelongsToItsOwnerOnly) {
   EXPECT_EQ(
       std::filesystem::status(folder.path() / "r-type").permissions() & others,
       std::filesystem::perms::none);
+#endif
 }
