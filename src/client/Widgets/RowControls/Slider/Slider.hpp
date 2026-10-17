@@ -1,9 +1,12 @@
 #pragma once
 
+#include <SFML/Graphics/Color.hpp>
 #include <SFML/Graphics/Rect.hpp>
 #include <SFML/System/Vector2.hpp>
 #include <SFML/Window/Event.hpp>
+#include <SFML/Window/Keyboard.hpp>
 #include <functional>
+#include <optional>
 #include <string>
 #include "BarState.hpp"
 #include "IInterfaceCanvas.hpp"
@@ -54,6 +57,36 @@ class Slider : public RowControl {
   void cancelInput() override;
 
  private:
+  /** @brief Colors of the part of the track up to the thumb, and of the
+   * inside of the thumb. */
+  struct Look {
+    sf::Color fill;
+    sf::Color thumb;
+  };
+
+  /** @returns The look of the slider on a row in that state: the track's own
+   * color while dimmed, lit on the selected row. */
+  [[nodiscard]] static Look lookOf(BarState row, bool dimmed);
+
+  /** @brief Paints the groove, the whole track in it, then the part of the
+   * track up to the thumb in the fill color. */
+  static void paintTrack(IInterfaceCanvas& canvas, sf::IntRect groove,
+                         int thumbCenter, sf::Color fill);
+
+  /** @brief Paints the thumb centered on a pixel of the groove: its outline,
+   * then its inside. */
+  static void paintThumb(IInterfaceCanvas& canvas, sf::IntRect groove,
+                         int thumbCenter, sf::Color inside);
+
+  /** @brief Writes the value against the right side of the area, in the
+   * color of the label of the row. */
+  static void writeValue(IInterfaceCanvas& canvas, sf::IntRect area,
+                         BarState row, const std::string& text);
+
+  /** @returns The value a key moves the slider to, before it is kept within
+   * the range, or nothing for a key the slider leaves to the menu. */
+  [[nodiscard]] std::optional<int> valueAfter(sf::Keyboard::Key key) const;
+
   /** @brief Writes a value, kept within the range; writes nothing when the
    * value does not change. */
   void moveTo(int value) const;
