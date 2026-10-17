@@ -5,6 +5,7 @@
 #include <type_traits>
 #include "ByteReader.hpp"
 #include "ByteWriter.hpp"
+#include "EntityIdConstants.hpp"
 #include "NetworkException.hpp"
 #include "ProtocolConstants.hpp"
 #include "WireTypes.hpp"
@@ -17,14 +18,14 @@ void requireEntityWithoutPlayer(const GameEvent& message) {
   if (message.playerNumber != NO_PLAYER_NUMBER) {
     throw InvalidFieldValueException(PLAYER_NUMBER_FIELD, message.playerNumber);
   }
-  if (message.entityId == NO_ENTITY_ID) {
+  if (message.entityId == identifiers::NO_ENTITY_ID) {
     throw InvalidFieldValueException(ENTITY_ID_FIELD, message.entityId);
   }
 }
 
 void requirePlayerWithoutEntity(const GameEvent& message) {
   requireValidPlayerNumber(message.playerNumber);
-  if (message.entityId != NO_ENTITY_ID) {
+  if (message.entityId != identifiers::NO_ENTITY_ID) {
     throw InvalidFieldValueException(ENTITY_ID_FIELD, message.entityId);
   }
 }

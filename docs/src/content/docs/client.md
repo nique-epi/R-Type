@@ -3,7 +3,7 @@ title: Client
 description: What the client does, how its parts fit together and where to find them in the code.
 ---
 
-The client, `r-type_client` (`src/client/`), shows the game, plays its sounds and reads the player's input; the server decides what happens in the match (see [Architecture](/R-Type/architecture/)). Today it finds its assets folder, loads the assets of its interface, opens a window and runs its screens over a scrolling starfield: the title screen it opens on, a connection screen, a loading screen, the game screen, which draws its entities from one sprite sheet (for now a provisional showcase), an options screen and a quit confirmation, the menus all built from the same widgets. The game screen reads the player's actions through the keys the player chose, the arrows and the space bar at first; the options change them, with the volumes, the window size and the accessibility settings, and save them in a file for the next launch. It does not talk to the server yet: it reads the server's address and port and the player's nickname at launch and shows them on its connection screen, and it can send and receive datagrams on a thread of its own, but nothing starts that thread yet; a provisional stand-in accepts every connection at once without contacting any server.
+The client, `r-type_client` (`src/client/`), shows the game, plays its sounds and reads the player's input; the server decides what happens in the match (see [Architecture](/R-Type/architecture/)). Today it finds its assets folder, loads the assets of its interface, opens a window and runs its screens over a scrolling starfield: the title screen it opens on, a connection screen, a loading screen, the game screen, which draws its entities from one sprite sheet (for now a provisional showcase), an options screen and a quit confirmation, the menus all built from the same widgets. The game screen reads the player's actions through the keys the player chose, the arrows and the space bar at first; the options change them, with the volumes, the window size and the accessibility settings, and save them in a file for the next launch. It does not talk to the server yet: it reads the server's address and port and the player's nickname at launch and shows them on its connection screen; it can send and receive datagrams on a thread of its own and apply the entities the server announces, but nothing starts that thread or feeds those entities yet; a provisional stand-in accepts every connection at once without contacting any server.
 
 This page tells you where to look when you need to change something. It describes what exists today and says plainly what does not exist yet.
 
@@ -27,7 +27,8 @@ This page tells you where to look when you need to change something. It describe
 | Player commands | Available; read by the game screen, not sent to the server yet | `src/client/Input/` |
 | Key remapping | Available; set in the options, read by the game screen | `src/client/Input/` |
 | Network thread | Available; not started by the client yet | `src/client/Connection/NetworkThread/` |
-| Ignoring an old world state | Available; nothing receives states yet | `src/client/Replication/WorldStateFilter/` |
+| Ignoring an old world state | Available; used by `EntityReplicator` | `src/client/Replication/WorldStateFilter/` |
+| Applying the entities the server announces | Available; nothing in the client calls it yet | `src/client/Replication/EntityReplicator/` |
 | Server address, port and nickname at launch | Available; they fill the connection screen | `src/client/LaunchOptions/` |
 | Connection to a server | Not yet written; a provisional stand-in accepts every attempt at once | `src/client/Connection/` |
 | Sounds and music of the game | Not yet written | — |
@@ -120,7 +121,7 @@ Showing a new image takes four steps:
 
 ## Entity sprites: `spriteOf`
 
-`spriteOf(type)` (`rtype_client_entity_sprites`) is the single table that gives each `EntityType` its `Sprite`: the entity sheet `sprites/entities.png` (`ENTITY_SHEET_ID`), the rectangle of the type, and the `Entities` layer. A value outside `EntityType` gets no sprite, never a neighbor's. The code that will create the entities the server announces calls it once per new entity; turning the type number of the protocol into an `EntityType` belongs to that code.
+`spriteOf(type)` (`rtype_client_entity_sprites`) is the single table that gives each `EntityType` its `Sprite`: the entity sheet `sprites/entities.png` (`ENTITY_SHEET_ID`), the rectangle of the type, and the `Entities` layer. A value outside `EntityType` gets no sprite, never a neighbor's. `EntityReplicator` calls it once per entity it creates, after turning the type number of the protocol into an `EntityType` (see [Entities from the server](#entities-from-the-server-entityreplicator)).
 
 | Type | Sprite | Native size, in pixels | On the playfield, in logical units |
 |---|---|---|---|
@@ -389,7 +390,7 @@ UDP may deliver a datagram sent earlier after one sent later, and applying the o
 - The first state is always accepted, and a refused state does not lower the remembered tick.
 - Ticks are compared as plain integers, with no wrap-around: a 32-bit tick lasts 2.27 years at 60 ticks per second.
 - Call it only for datagrams that passed the checks on the sender, otherwise a forged datagram could raise the remembered tick and make every real state look old. Those checks are not written yet.
-- Nothing receives states or applies positions yet: only the tests call `accept()`.
+- `EntityReplicator` calls it for every `WorldState` it is given (see below); nothing in the client gives it states yet.
 
 ```cpp
 const rtype::network::WorldState state =
@@ -399,11 +400,35 @@ if (!worldStateFilter.accept(state.tick)) {
 }
 ```
 
+## Entities from the server: `EntityReplicator`
+
+`EntityReplicator` (`rtype_client_entity_replicator`, `src/client/Replication/EntityReplicator/`) applies the entities the server announces to the registries of the game screen, so rendering only draws what the registries hold. It runs no rule of the game: where an entity is and when it disappears come from the server.
+
+- `apply(EntitySpawned)` creates the entity, unless the client already has it. A created entity gets a `Position`, in logical units, and the `Sprite` that `spriteOf` gives its type, and nothing else.
+- `apply(WorldState)` moves every entity the state lists and creates those the client does not have, as after a lost `EntitySpawned`. A state older than the newest one applied is ignored (`WorldStateFilter`); an equal tick is another part of the same state and is applied.
+- `apply(EntityDestroyed)` destroys the entity it names; an id the client does not have changes nothing, so the later copies do nothing. An entity destroyed, then listed by a `WorldState` that arrives late, is created again, as the protocol asks; the next copy of the `EntityDestroyed` removes it.
+- A message naming `NO_ENTITY_ID` or a type outside `WireEntityType` creates nothing.
+
+It binds the network id of each entity it creates in a `NetworkEntityTable`, so its entities must be destroyed through it. One replicator serves one game, because the ticks start again with each game. It is not thread-safe: the frame loop calls it, with messages whose sender passed the checks.
+
+It does not yet remove an entity that no `WorldState` has listed for 900 ms (see [Protocol](/R-Type/protocol/#losses)): until then, an entity whose three `EntityDestroyed` were all lost stays on screen. It does not read the players of a `WorldState`, and plays no appearance or explosion effect. Nothing in the client calls it yet; the connection to a server will register it on the client's `MessageDispatcher`, once per message type:
+
+```cpp
+rtype::client::EntityReplicator replicator{entities, components};
+dispatcher.registerHandler<rtype::network::WorldState>(
+    [&replicator](const rtype::network::MessageOrigin&,
+                  const rtype::network::WorldState& state) {
+      replicator.apply(state);
+    });
+```
+
 ## Where to intervene
 
 | You want to… | Look at |
 |---|---|
 | Change which world states the client ignores | `WorldStateFilter::accept` in `src/client/Replication/WorldStateFilter/` |
+| Change how the client applies the entities the server announces | `EntityReplicator` in `src/client/Replication/EntityReplicator/` |
+| Add an entity type to the protocol | `entityTypeOf` in `src/client/Replication/EntityReplicator/EntityReplicator.cpp` and `toWireEntityType` on the server, then `spriteOf` for its look |
 | Add an asset | A file in `assets/sprites/`, `sounds/`, `music/` or `fonts/`, and its id in `gameAssets()`, in `titleAssets()` for the title screen, or in `interfaceAssets()` for a font any screen may use (`src/client/Screens/ScreenAssets.cpp`); `client_screen_tests` loads `interfaceAssets()` for real, and the CI cannot create a texture |
 | Change the asset id rule | `isValidAssetId()` in `src/client/Assets/AssetIds.cpp`, `ASSET_ID_PUNCTUATION` in `AssetConstants.hpp`, and `assets/README.md` |
 | Change where the client looks for `assets/` | `findAssetFolder()` in `src/client/Assets/AssetFolder.cpp` |

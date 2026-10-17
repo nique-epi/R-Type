@@ -5,7 +5,7 @@ target_include_directories(rtype_engine_network_entity_table PUBLIC ${CMAKE_CURR
 target_link_libraries(rtype_engine_network_entity_table
   PUBLIC
     rtype_engine_entity_registry
-    rtype_engine_network_id_constants
+    rtype_identifiers
     rtype_engine_exceptions
 )
 

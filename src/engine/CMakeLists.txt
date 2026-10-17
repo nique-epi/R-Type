@@ -28,7 +28,6 @@ target_link_libraries(rtype_engine
     rtype_engine_events
     rtype_engine_event_bus
     rtype_engine_collision
-    rtype_engine_network_id_constants
     rtype_engine_network_id_allocator
     rtype_engine_network_entity_table
     rtype_engine_launch_arguments
