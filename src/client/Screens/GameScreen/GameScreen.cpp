@@ -7,6 +7,7 @@
 #include "ActionSet.hpp"
 #include "IEntityLayer.hpp"
 #include "IScreenNavigator.hpp"
+#include "KeyBindings.hpp"
 #include "ScreenConstants.hpp"
 #include "ScreenId.hpp"
 #include "SpriteShowcase.hpp"
@@ -15,8 +16,11 @@
 namespace rtype::client {
 
 GameScreen::GameScreen(IScreenNavigator& navigator,
-                       std::unique_ptr<IEntityLayer> entityLayer)
-    : navigator_(&navigator), entityLayer_(std::move(entityLayer)) {
+                       std::unique_ptr<IEntityLayer> entityLayer,
+                       const KeyBindings& keys)
+    : navigator_(&navigator),
+      entityLayer_(std::move(entityLayer)),
+      playerCommands_(true, keys) {
   spawnSpriteShowcase(entities_, components_);
   entityLayer_->paint(components_);
 }
@@ -24,12 +28,13 @@ GameScreen::GameScreen(IScreenNavigator& navigator,
 void GameScreen::handleEvent(const sf::Event& event) {
   const auto* released = event.getIf<sf::Event::KeyReleased>();
   if (released != nullptr && released->code == OPTIONS_KEY) {
-    navigator_->push(ScreenId::Options);
+    playerCommands_.releaseAll();
+    navigator_->push(ScreenId::GameOptions);
   }
   if (const auto* keyPressed = event.getIf<sf::Event::KeyPressed>()) {
-    playerCommands_.keyPressed(keyPressed->code);
+    playerCommands_.keyPressed(keyPressed->scancode);
   } else if (released != nullptr) {
-    playerCommands_.keyReleased(released->code);
+    playerCommands_.keyReleased(released->scancode);
   } else if (event.is<sf::Event::FocusLost>()) {
     playerCommands_.focusLost();
   } else if (event.is<sf::Event::FocusGained>()) {

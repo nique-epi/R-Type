@@ -6,10 +6,12 @@
 #include <memory>
 #include <vector>
 #include "BlankRenderTarget.hpp"
+#include "BoundAction.hpp"
 #include "ComponentRegistry.hpp"
 #include "GameScreen.hpp"
 #include "IEntityLayer.hpp"
 #include "IScreen.hpp"
+#include "KeyBindings.hpp"
 #include "KeyPress.hpp"
 #include "RecordingEntityLayer.hpp"
 #include "RecordingNavigator.hpp"
@@ -20,9 +22,11 @@
 #include "ScreenTestConstants.hpp"
 #include "SpriteShowcaseConstants.hpp"
 
+using rtype::client::BoundAction;
 using rtype::client::GameScreen;
 using rtype::client::IEntityLayer;
 using rtype::client::IScreen;
+using rtype::client::KeyBindings;
 using rtype::client::OPTIONS_KEY;
 using rtype::client::ScreenId;
 using rtype::client::ScreenStack;
@@ -72,10 +76,12 @@ class GameScreenTest : public ::testing::Test {
  private:
   std::vector<JournalEntry> journal_;
   EntityLayerRecord layerRecord_;
+  KeyBindings keys_;
   ScreenStack screens_{[this](ScreenId screen) -> std::unique_ptr<IScreen> {
     if (screen == ScreenId::Game) {
       return std::make_unique<GameScreen>(
-          screens_, std::make_unique<RecordingEntityLayer>(layerRecord_));
+          screens_, std::make_unique<RecordingEntityLayer>(layerRecord_),
+          keys_);
     }
     return std::make_unique<RecordingScreen>(screen, journal_);
   }};
@@ -92,8 +98,9 @@ TEST_F(GameScreenTest, ReleasingTheOptionsKeyOpensTheOptions) {
   screens().handleEvent(keyRelease(OPTIONS_KEY));
   screens().applyPendingChanges();
 
-  EXPECT_THAT(journal(), ElementsAre(JournalEntry{.screen = ScreenId::Options,
-                                                  .call = ScreenCall::Built}));
+  EXPECT_THAT(journal(),
+              ElementsAre(JournalEntry{.screen = ScreenId::GameOptions,
+                                       .call = ScreenCall::Built}));
 }
 
 /**
@@ -179,10 +186,12 @@ TEST_F(GameScreenTest, DrawingLaysTheEntityLayerOnTheTarget) {
  */
 TEST(GameScreenActionsTest, PressedKeysBecomeHeldActions) {
   RecordingNavigator navigator;
-  GameScreen game(navigator, std::make_unique<IgnoringEntityLayer>());
+  const KeyBindings keys;
+  GameScreen game(navigator, std::make_unique<IgnoringEntityLayer>(), keys);
 
-  game.handleEvent(keyPress(sf::Keyboard::Key::Up));
-  game.handleEvent(keyPress(sf::Keyboard::Key::Space));
+  game.handleEvent(keyPress(sf::Keyboard::Key::Up, sf::Keyboard::Scan::Up));
+  game.handleEvent(
+      keyPress(sf::Keyboard::Key::Space, sf::Keyboard::Scan::Space));
 
   EXPECT_EQ(game.playerActions().bits(), UP_BIT | SHOOT_BIT);
 }
@@ -194,10 +203,11 @@ TEST(GameScreenActionsTest, PressedKeysBecomeHeldActions) {
  */
 TEST(GameScreenActionsTest, ReleasedKeyIsNoLongerHeld) {
   RecordingNavigator navigator;
-  GameScreen game(navigator, std::make_unique<IgnoringEntityLayer>());
-  game.handleEvent(keyPress(sf::Keyboard::Key::Up));
+  const KeyBindings keys;
+  GameScreen game(navigator, std::make_unique<IgnoringEntityLayer>(), keys);
+  game.handleEvent(keyPress(sf::Keyboard::Key::Up, sf::Keyboard::Scan::Up));
 
-  game.handleEvent(keyRelease(sf::Keyboard::Key::Up));
+  game.handleEvent(keyRelease(sf::Keyboard::Key::Up, sf::Keyboard::Scan::Up));
 
   EXPECT_EQ(game.playerActions().bits(), NOTHING_HELD);
 }
@@ -209,8 +219,9 @@ TEST(GameScreenActionsTest, ReleasedKeyIsNoLongerHeld) {
  */
 TEST(GameScreenActionsTest, LosingFocusReleasesTheHeldActions) {
   RecordingNavigator navigator;
-  GameScreen game(navigator, std::make_unique<IgnoringEntityLayer>());
-  game.handleEvent(keyPress(sf::Keyboard::Key::Up));
+  const KeyBindings keys;
+  GameScreen game(navigator, std::make_unique<IgnoringEntityLayer>(), keys);
+  game.handleEvent(keyPress(sf::Keyboard::Key::Up, sf::Keyboard::Scan::Up));
 
   game.handleEvent(sf::Event{sf::Event::FocusLost{}});
 
@@ -224,10 +235,11 @@ TEST(GameScreenActionsTest, LosingFocusReleasesTheHeldActions) {
  */
 TEST(GameScreenActionsTest, KeysPressedWithoutFocusAreIgnored) {
   RecordingNavigator navigator;
-  GameScreen game(navigator, std::make_unique<IgnoringEntityLayer>());
+  const KeyBindings keys;
+  GameScreen game(navigator, std::make_unique<IgnoringEntityLayer>(), keys);
   game.handleEvent(sf::Event{sf::Event::FocusLost{}});
 
-  game.handleEvent(keyPress(sf::Keyboard::Key::Up));
+  game.handleEvent(keyPress(sf::Keyboard::Key::Up, sf::Keyboard::Scan::Up));
 
   EXPECT_EQ(game.playerActions().bits(), NOTHING_HELD);
 }
@@ -239,11 +251,40 @@ TEST(GameScreenActionsTest, KeysPressedWithoutFocusAreIgnored) {
  */
 TEST(GameScreenActionsTest, KeysPressedAfterFocusGainedCount) {
   RecordingNavigator navigator;
-  GameScreen game(navigator, std::make_unique<IgnoringEntityLayer>());
+  const KeyBindings keys;
+  GameScreen game(navigator, std::make_unique<IgnoringEntityLayer>(), keys);
   game.handleEvent(sf::Event{sf::Event::FocusLost{}});
   game.handleEvent(sf::Event{sf::Event::FocusGained{}});
 
-  game.handleEvent(keyPress(sf::Keyboard::Key::Up));
+  game.handleEvent(keyPress(sf::Keyboard::Key::Up, sf::Keyboard::Scan::Up));
 
+  EXPECT_EQ(game.playerActions().bits(), UP_BIT);
+}
+
+/**
+ * Given up held in the game
+ * When the options key is released
+ * Then nothing is held any more
+ */
+TEST(GameScreenActionsTest, OpeningTheOptionsReleasesTheHeldActions) {
+  RecordingNavigator navigator;
+  const KeyBindings keys;
+  GameScreen game(navigator, std::make_unique<IgnoringEntityLayer>(), keys);
+  game.handleEvent(keyPress(sf::Keyboard::Key::Up, sf::Keyboard::Scan::Up));
+  game.handleEvent(keyRelease(OPTIONS_KEY, sf::Keyboard::Scan::Escape));
+  EXPECT_EQ(game.playerActions().bits(), 0U);
+}
+
+/**
+ * Given move up moved to W in the options
+ * When W is pressed in the game
+ * Then up is held
+ */
+TEST(GameScreenActionsTest, AKeyChangedInTheOptionsMovesTheShip) {
+  RecordingNavigator navigator;
+  KeyBindings keys;
+  keys.bind(BoundAction::MoveUp, sf::Keyboard::Scan::W);
+  GameScreen game(navigator, std::make_unique<IgnoringEntityLayer>(), keys);
+  game.handleEvent(keyPress(sf::Keyboard::Key::W, sf::Keyboard::Scan::W));
   EXPECT_EQ(game.playerActions().bits(), UP_BIT);
 }

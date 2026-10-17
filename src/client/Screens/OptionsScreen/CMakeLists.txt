@@ -4,14 +4,24 @@ target_include_directories(rtype_client_options_screen PUBLIC ${CMAKE_CURRENT_SO
 
 target_link_libraries(rtype_client_options_screen
   PUBLIC
+    rtype_client_key_names
     rtype_client_menu
+    rtype_client_menu_builder
     rtype_client_rendering_interfaces
     rtype_client_screens
+    rtype_client_settings
     rtype_client_window
+    rtype_client_window_size_selection
     SFML::Graphics
   PRIVATE
-    rtype_client_game_window
-    rtype_client_menu_builder
+    rtype_client_choice_selector
+    rtype_client_dropdown
+    rtype_client_key_slot
+    rtype_client_link_text
+    rtype_client_slider
+    rtype_client_switch
+    rtype_client_window_size_chart
+    rtype_client_window_size_text
 )
 
 rtype_enable_warnings(rtype_client_options_screen)

@@ -22,8 +22,17 @@ PixelSize GameWindow::desktopSize() {
   return {.width = size.x, .height = size.y};
 }
 
-GameWindow::GameWindow()
-    : windowSizeSelection_(desktopSize()),
+WindowSizeSelection GameWindow::initialSelection(
+    std::optional<PixelSize> preferredSize) {
+  WindowSizeSelection selection(desktopSize());
+  if (preferredSize.has_value()) {
+    selection.selectSize(*preferredSize);
+  }
+  return selection;
+}
+
+GameWindow::GameWindow(std::optional<PixelSize> preferredSize)
+    : windowSizeSelection_(initialSelection(preferredSize)),
       window_(sf::VideoMode({windowSizeSelection_.selected().width,
                              windowSizeSelection_.selected().height}),
               WINDOW_TITLE, sf::Style::Titlebar | sf::Style::Close) {

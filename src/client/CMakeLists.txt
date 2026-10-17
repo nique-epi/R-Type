@@ -13,6 +13,7 @@ add_subdirectory(Input)
 add_subdirectory(Rendering)
 add_subdirectory(Replication)
 add_subdirectory(Window)
+add_subdirectory(Settings)
 add_subdirectory(Widgets)
 add_subdirectory(Screens)
 add_subdirectory(Application)
@@ -27,7 +28,6 @@ target_link_libraries(r-type_client
     rtype_client_constants
     rtype_client_launch_options
     rtype_client_rendering
-    rtype_game
     rtype_logging
     rtype_network
 )
