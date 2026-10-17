@@ -4,6 +4,12 @@ target_include_directories(rtype_client_window INTERFACE ${CMAKE_CURRENT_SOURCE_
 
 target_link_libraries(rtype_client_window INTERFACE SFML::System)
 
+add_library(rtype_client_window_size_text STATIC WindowSizeText.cpp)
+
+target_link_libraries(rtype_client_window_size_text PUBLIC rtype_client_window)
+
+rtype_enable_warnings(rtype_client_window_size_text)
+
 add_subdirectory(PlayfieldViewport)
 add_subdirectory(WindowSizeSelection)
 add_subdirectory(GameWindow)

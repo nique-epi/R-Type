@@ -10,9 +10,34 @@ target_link_libraries(rtype_client_widgets
     SFML::Window
 )
 
-add_subdirectory(ChamferedBox)
+add_library(rtype_client_widget_text STATIC WidgetText.cpp)
+
+target_link_libraries(rtype_client_widget_text PUBLIC rtype_client_widgets)
+
+rtype_enable_warnings(rtype_client_widget_text)
+
+add_library(rtype_client_window_size_chart STATIC WindowSizeChart.cpp)
+
+target_link_libraries(rtype_client_window_size_chart
+  PUBLIC
+    rtype_client_widgets
+    rtype_client_window_size_selection
+  PRIVATE
+    rtype_client_outline
+    rtype_client_window_size_text
+)
+
+rtype_enable_warnings(rtype_client_window_size_chart)
+
+add_subdirectory(CutCornerBox)
+add_subdirectory(Outline)
+add_subdirectory(SunkBox)
+add_subdirectory(CheckBox)
+add_subdirectory(KeyCap)
+add_subdirectory(TabStrip)
 add_subdirectory(Label)
 add_subdirectory(TextField)
+add_subdirectory(RowControls)
 add_subdirectory(Button)
 add_subdirectory(Menu)
 add_subdirectory(MenuBuilder)

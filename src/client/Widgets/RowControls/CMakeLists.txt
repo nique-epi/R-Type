@@ -1,0 +1,14 @@
+add_library(rtype_client_row_control STATIC RowControl.cpp)
+
+target_include_directories(rtype_client_row_control PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+
+target_link_libraries(rtype_client_row_control PUBLIC rtype_client_widgets)
+
+rtype_enable_warnings(rtype_client_row_control)
+
+add_subdirectory(Slider)
+add_subdirectory(Switch)
+add_subdirectory(ChoiceSelector)
+add_subdirectory(Dropdown)
+add_subdirectory(KeySlot)
+add_subdirectory(LinkText)

@@ -4,15 +4,19 @@
 #include <SFML/System/Vector2.hpp>
 #include <SFML/Window/Keyboard.hpp>
 #include <cstddef>
+#include <memory>
 #include <optional>
 #include <string_view>
+#include <vector>
 #include "InterfaceColors.hpp"
 #include "InterfaceConstants.hpp"
 #include "KeyPress.hpp"
 #include "Menu.hpp"
 #include "MenuBuilder.hpp"
+#include "MenuPainting.hpp"
 #include "RecordingInterfaceCanvas.hpp"
 #include "RecordingNavigator.hpp"
+#include "RecordingRowControl.hpp"
 #include "TextField.hpp"
 #include "TextStyle.hpp"
 #include "WidgetColors.hpp"
@@ -86,14 +90,6 @@ Menu connectionForm() {
       .button({.label = "CONNECT"}, [] {})
       .cancelButton({.label = "BACK"}, [] {})
       .build();
-}
-
-/** @returns What a menu paints. */
-InterfaceCanvasRecord paintingOf(const Menu& menu) {
-  InterfaceCanvasRecord record;
-  RecordingInterfaceCanvas canvas(record);
-  menu.paint(canvas);
-  return record;
 }
 
 /** @returns Where the line with this text was anchored, or nothing. */
@@ -418,4 +414,96 @@ TEST(MenuBuilder, BackButtonIsLabelledBack) {
       MenuBuilder(MenuBuilder::Frame::Page).backButton(navigator).build());
 
   EXPECT_NE(writingOf(painted, "BACK"), nullptr);
+}
+
+namespace {
+
+/** @brief Size of the chart of window sizes on the picture of the options. */
+constexpr sf::Vector2i CHART_SIZE(128, 72);
+
+/** @brief A tabbed panel of the options, without actions: one row, a chart
+ * under it, BACK, over a game. */
+Menu displayTab(RowControlRecord& record) {
+  return MenuBuilder(MenuBuilder::Frame::TabbedPanel)
+      .heading("SETTINGS")
+      .tabs({"SOUND", "CONTROLS", "DISPLAY", "ACCESS"}, 2,
+            {.previous = "Q", .next = "E"}, [](std::size_t) {})
+      .row({.label = "WINDOW SIZE", .description = "> SIZES"},
+           std::make_unique<RecordingRowControl>(
+               record, std::vector<sf::Keyboard::Key>{}, true))
+      .illustration(CHART_SIZE)
+      .cancelButton({.label = "BACK"}, [] {})
+      .notice("THE GAME GOES ON")
+      .dimScreensBelow()
+      .build();
+}
+
+}  // namespace
+
+/**
+ * Given the DISPLAY tab of the options
+ * When it is painted
+ * Then its row label is at (36, 74), 8 and 4 pixels into the first row of
+ * the panel, as on the picture
+ */
+TEST(MenuBuilder, TheRowsOfATabbedPanelLieInItsPanel) {
+  RowControlRecord record;
+  const InterfaceCanvasRecord painting = paintingOf(displayTab(record));
+  const RecordedWriting* label = writingOf(painting, "WINDOW SIZE");
+  ASSERT_NE(label, nullptr);
+  EXPECT_EQ(label->anchor, sf::Vector2i(36, 74));
+}
+
+/**
+ * Given the DISPLAY tab
+ * When it is painted
+ * Then BACK is written at (36, 230), on its bar at (24, 224) under the panel
+ */
+TEST(MenuBuilder, TheBarsOfATabbedPanelLieUnderItsPanel) {
+  RowControlRecord record;
+  const InterfaceCanvasRecord painting = paintingOf(displayTab(record));
+  const RecordedWriting* back = writingOf(painting, "BACK");
+  ASSERT_NE(back, nullptr);
+  EXPECT_EQ(back->anchor, sf::Vector2i(36, 230));
+}
+
+/**
+ * Given the DISPLAY tab, its row selected
+ * When it is painted
+ * Then the description of the row is written at (112, 230), right of BACK
+ */
+TEST(MenuBuilder, TheDescriptionOfATabbedPanelIsBesideItsBars) {
+  RowControlRecord record;
+  const InterfaceCanvasRecord painting = paintingOf(displayTab(record));
+  const RecordedWriting* description = writingOf(painting, "> SIZES");
+  ASSERT_NE(description, nullptr);
+  EXPECT_EQ(description->anchor, sf::Vector2i(112, 230));
+}
+
+/**
+ * Given the DISPLAY tab, its single row and its chart
+ * When its illustration area is read
+ * Then the chart lies at (36, 98), 128 by 72, under the row
+ */
+TEST(MenuBuilder, TheIllustrationOfATabbedPanelLiesUnderItsRows) {
+  RowControlRecord record;
+  EXPECT_EQ(displayTab(record).illustrationArea(),
+            sf::IntRect({36, 98}, {128, 72}));
+}
+
+/**
+ * Given the DISPLAY tab opened over a game
+ * When it is painted
+ * Then its notice is right-aligned at (456, 24), and the screens below are
+ * dimmed first
+ */
+TEST(MenuBuilder, ATabbedPanelOverAGameSaysSoAndDimsIt) {
+  RowControlRecord record;
+  const InterfaceCanvasRecord painting = paintingOf(displayTab(record));
+  const RecordedWriting* notice = writingOf(painting, "THE GAME GOES ON");
+  ASSERT_NE(notice, nullptr);
+  EXPECT_EQ(notice->anchor, sf::Vector2i(456, 24));
+  EXPECT_EQ(notice->style.alignment, TextAlignment::Right);
+  ASSERT_FALSE(painting.fills.empty());
+  EXPECT_EQ(painting.fills.front().color, DIM_LAYER_COLOR);
 }

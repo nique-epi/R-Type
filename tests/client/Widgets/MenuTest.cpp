@@ -5,23 +5,25 @@
 #include <SFML/Window/Event.hpp>
 #include <SFML/Window/Keyboard.hpp>
 #include <cstddef>
+#include <memory>
 #include <optional>
 #include <string>
 #include <vector>
-#include "BackgroundConstants.hpp"
 #include "InterfaceConstants.hpp"
 #include "KeyPress.hpp"
 #include "Menu.hpp"
 #include "MenuBuilder.hpp"
+#include "MenuPainting.hpp"
 #include "PointerEvents.hpp"
 #include "RecordingInterfaceCanvas.hpp"
+#include "RecordingRowControl.hpp"
 #include "ScreenTestConstants.hpp"
 #include "TextField.hpp"
+#include "TextStyle.hpp"
 #include "TimeConstants.hpp"
 #include "WidgetColors.hpp"
 #include "WidgetConstants.hpp"
 
-using rtype::client::BACKGROUND_PIXEL_SIZE;
 using rtype::client::BUTTON_TEXT_OFFSET;
 using rtype::client::Menu;
 using rtype::client::MenuBuilder;
@@ -29,6 +31,7 @@ using rtype::client::PRESS_DURATION;
 using rtype::client::PRESSED_BAR_TEXT_COLOR;
 using rtype::client::TEXT_LINE_HEIGHT;
 using rtype::client::TextField;
+using rtype::client::TextFont;
 using rtype::engine::Duration;
 using ::testing::Contains;
 using ::testing::ElementsAre;
@@ -44,18 +47,9 @@ constexpr std::size_t LAST = 2;
 constexpr sf::Keyboard::Key ENTER = sf::Keyboard::Key::Enter;
 constexpr sf::Keyboard::Key ESCAPE = sf::Keyboard::Key::Escape;
 constexpr Duration JUST_BEFORE_DUE = PRESS_DURATION - ONE_TICK;
-constexpr int INTERFACE_PIXEL = static_cast<int>(BACKGROUND_PIXEL_SIZE);
 constexpr sf::Vector2i ONE_UNIT_LEFT(-1, 0);
 constexpr sf::Vector2i ONE_PIXEL_LOWER(0, 1);
 constexpr sf::Vector2i INSIDE_A_BAR(4, 4);
-
-/** @returns What a menu paints. */
-InterfaceCanvasRecord paintingOf(const Menu& menu) {
-  InterfaceCanvasRecord record;
-  RecordingInterfaceCanvas canvas(record);
-  menu.paint(canvas);
-  return record;
-}
 
 /** @returns The point of the playfield at the top-left corner of the bar of a
  * menu whose line reads so, read from what the menu paints. */
@@ -785,4 +779,189 @@ TEST(MenuStatus, APageWritesNoStatusLine) {
   const InterfaceCanvasRecord record = paintingOf(page);
 
   EXPECT_EQ(writingOf(record, "WAIT"), nullptr);
+}
+
+namespace {
+
+constexpr std::size_t SECOND_TAB = 1;
+constexpr std::size_t LAST_TAB = 2;
+constexpr std::size_t LINK_ROW = 1;
+
+/** @brief A tabbed panel of three tabs: a row whose control steps on Left
+ * and Right, a row whose control can be activated, then BACK. */
+class TabbedPanelMenuTest : public ::testing::Test {
+ protected:
+  void send(const sf::Event& event) {
+    menu_.handleEvent(event, samePlayfieldPoint);
+  }
+
+  void tap(sf::Keyboard::Key key,
+           sf::Keyboard::Scancode scancode = sf::Keyboard::Scan::Unknown) {
+    send(keyPress(key, scancode));
+    send(keyRelease(key, scancode));
+    menu_.advance(PRESS_DURATION);
+  }
+
+  Menu& menu() { return menu_; }
+  RowControlRecord& steps() { return steps_; }
+  RowControlRecord& link() { return link_; }
+  [[nodiscard]] const std::vector<std::size_t>& opened() const {
+    return opened_;
+  }
+  [[nodiscard]] int backs() const { return backs_; }
+
+ private:
+  RowControlRecord steps_;
+  RowControlRecord link_;
+  std::vector<std::size_t> opened_;
+  int backs_ = 0;
+  Menu menu_ =
+      MenuBuilder(MenuBuilder::Frame::TabbedPanel)
+          .heading("SETTINGS")
+          .tabs({"A", "B", "C"}, 0, {.previous = "Q", .next = "E"},
+                [this](std::size_t tab) { opened_.push_back(tab); })
+          .row({.label = "STEPS"}, std::make_unique<RecordingRowControl>(
+                                       steps_,
+                                       std::vector{sf::Keyboard::Key::Left,
+                                                   sf::Keyboard::Key::Right},
+                                       false))
+          .row({.label = "LINK"},
+               std::make_unique<RecordingRowControl>(
+                   link_, std::vector<sf::Keyboard::Key>{}, true))
+          .cancelButton({.label = "BACK"}, [this] { ++backs_; })
+          .build();
+};
+
+}  // namespace
+
+/**
+ * Given the row that steps selected
+ * When Right is tapped
+ * Then its control gets Right, and the selection stays on it
+ */
+TEST_F(TabbedPanelMenuTest, RightGoesToTheControlOfTheSelectedRow) {
+  tap(sf::Keyboard::Key::Right);
+  EXPECT_EQ(steps().keys, std::vector{sf::Keyboard::Key::Right});
+  EXPECT_EQ(menu().selectedButton(), 0U);
+}
+
+/**
+ * Given the link row selected, whose control does not use Right
+ * When Right is tapped
+ * Then the selection stays on it: in a tabbed panel, Right steps a value
+ */
+TEST_F(TabbedPanelMenuTest, ARightLeftUnusedDoesNothing) {
+  tap(sf::Keyboard::Key::Down);
+  tap(sf::Keyboard::Key::Right);
+  EXPECT_EQ(menu().selectedButton(), LINK_ROW);
+}
+
+/**
+ * Given the row that steps selected, which cannot be activated
+ * When Enter is tapped and the press time passes
+ * Then nothing is activated
+ */
+TEST_F(TabbedPanelMenuTest, EnterOnARowThatCannotBeActivatedDoesNothing) {
+  tap(sf::Keyboard::Key::Enter);
+  EXPECT_EQ(steps().activations, 0);
+}
+
+/**
+ * Given the link row selected
+ * When Enter is tapped and the press time passes
+ * Then its control is activated once
+ */
+TEST_F(TabbedPanelMenuTest, EnterActivatesTheControlOfALinkRow) {
+  tap(sf::Keyboard::Key::Down);
+  tap(sf::Keyboard::Key::Enter);
+  EXPECT_EQ(link().activations, 1);
+}
+
+/**
+ * Given the first tab open
+ * When the key at the place of E is tapped
+ * Then the second tab is asked for
+ */
+TEST_F(TabbedPanelMenuTest, TheKeyAtThePlaceOfEOpensTheNextTab) {
+  tap(sf::Keyboard::Key::E, sf::Keyboard::Scan::E);
+  EXPECT_EQ(opened(), std::vector{SECOND_TAB});
+}
+
+/**
+ * Given an AZERTY keyboard, whose key at the place of Q prints A
+ * When that key is tapped
+ * Then the last tab is asked for: the key is read by its place
+ */
+TEST_F(TabbedPanelMenuTest, TheKeyAtThePlaceOfQOpensThePreviousTab) {
+  tap(sf::Keyboard::Key::A, sf::Keyboard::Scan::Q);
+  EXPECT_EQ(opened(), std::vector{LAST_TAB});
+}
+
+/**
+ * Given an AZERTY keyboard, whose key printing Q sits at the place of A
+ * When that key is tapped
+ * Then no tab is asked for: the character a key prints does not count
+ */
+TEST_F(TabbedPanelMenuTest, TheKeyPrintingQElsewhereOpensNoTab) {
+  tap(sf::Keyboard::Key::Q, sf::Keyboard::Scan::A);
+  EXPECT_TRUE(opened().empty());
+}
+
+/**
+ * Given the control of the selected row holding the input
+ * When Down, the key at the place of E, then Escape are tapped
+ * Then all three reach the control, the selection stays, no tab opens and
+ * BACK is not activated
+ */
+TEST_F(TabbedPanelMenuTest, AControlHoldingTheInputGetsEveryKey) {
+  steps().holding = true;
+  tap(sf::Keyboard::Key::Down);
+  tap(sf::Keyboard::Key::E, sf::Keyboard::Scan::E);
+  tap(sf::Keyboard::Key::Escape);
+  EXPECT_EQ(steps().keys,
+            (std::vector{sf::Keyboard::Key::Down, sf::Keyboard::Key::E,
+                         sf::Keyboard::Key::Escape}));
+  EXPECT_EQ(menu().selectedButton(), 0U);
+  EXPECT_TRUE(opened().empty());
+  EXPECT_EQ(backs(), 0);
+}
+
+/**
+ * Given the control of the selected row holding the input
+ * When the window loses the focus
+ * Then the control is told to drop it
+ */
+TEST_F(TabbedPanelMenuTest, LosingTheFocusDropsTheInputHeld) {
+  steps().holding = true;
+  send(sf::Event::FocusLost{});
+  EXPECT_EQ(steps().cancels, 1);
+  EXPECT_FALSE(steps().holding);
+}
+
+/**
+ * Given the first tab open
+ * When the pointer clicks the label of the second tab
+ * Then the second tab is asked for
+ */
+TEST_F(TabbedPanelMenuTest, AClickOnATabOpensIt) {
+  const InterfaceCanvasRecord painting = paintingOf(menu());
+  const RecordedWriting* label = writingOf(painting, "B");
+  ASSERT_NE(label, nullptr);
+  send(leftPress(label->anchor * INTERFACE_PIXEL));
+  EXPECT_EQ(opened(), std::vector{SECOND_TAB});
+}
+
+/**
+ * Given a status set on the panel
+ * When it is painted
+ * Then the status is stamped at (270, 36), the end of the rule on the
+ * picture, in small print
+ */
+TEST_F(TabbedPanelMenuTest, TheStatusIsStampedAtTheEndOfTheRule) {
+  menu().setStatus("SAVED");
+  const InterfaceCanvasRecord painting = paintingOf(menu());
+  const RecordedWriting* stamp = writingOf(painting, "SAVED");
+  ASSERT_NE(stamp, nullptr);
+  EXPECT_EQ(stamp->anchor, sf::Vector2i(270, 36));
+  EXPECT_EQ(stamp->style.font, TextFont::Small);
 }

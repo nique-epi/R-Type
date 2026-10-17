@@ -74,9 +74,9 @@ class TitleScreenTest : public ::testing::Test {
 /**
  * @brief The title screen alone in a stack, with the screens it opens to put
  * over it: the real quit confirmation, and a recording screen that hides the
- * screens below for the options, since OptionsScreen needs a real window. The
- * title and the dialog ask their own recording navigators, so what they ask
- * for is written down and never applied.
+ * screens below for the options, which OptionsScreenTest covers. The title and
+ * the dialog ask their own recording navigators, so what they ask for is
+ * written down and never applied.
  */
 class TitleInTheStackTest : public ::testing::Test {
  protected:

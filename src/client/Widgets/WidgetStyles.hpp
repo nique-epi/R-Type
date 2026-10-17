@@ -37,4 +37,16 @@ constexpr TextStyle DIALOG_HEADING_STYLE{.font = TextFont::Regular,
 constexpr TextStyle DIALOG_MESSAGE_STYLE{.font = TextFont::Regular,
                                          .color = DIALOG_MESSAGE_COLOR};
 
+/** @brief A notice in the top-right corner of a tabbed panel, such as the game
+ * going on behind the options: small print in gold, outlined. */
+constexpr TextStyle NOTICE_STYLE{.font = TextFont::Small,
+                                 .color = STATUS_TEXT_COLOR,
+                                 .outlined = true,
+                                 .alignment = TextAlignment::Right};
+
+/** @brief A word stamped at the end of the rule of a tabbed panel, such as
+ * SAVED: small print in gold, outlined, on the sky. */
+constexpr TextStyle STAMP_STYLE{
+    .font = TextFont::Small, .color = STATUS_TEXT_COLOR, .outlined = true};
+
 }  // namespace rtype::client
