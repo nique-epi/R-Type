@@ -1,21 +1,19 @@
 #include <gtest/gtest.h>
 #include <string>
-#include <string_view>
 #include <vector>
 #include "CollisionBox.hpp"
 #include "ComponentRegistry.hpp"
 #include "Entity.hpp"
 #include "EntityRegistry.hpp"
-#include "IDrawSurface.hpp"
 #include "Layer.hpp"
 #include "Position.hpp"
+#include "RecordingDrawSurface.hpp"
 #include "RenderSystem.hpp"
 #include "RenderingConstants.hpp"
 #include "Sprite.hpp"
 #include "SpriteFrame.hpp"
 #include "Velocity.hpp"
 
-using rtype::client::IDrawSurface;
 using rtype::client::LAYER_COUNT;
 using rtype::client::RenderSystem;
 using rtype::engine::ComponentRegistry;
@@ -29,37 +27,6 @@ using rtype::game::SpriteFrame;
 using rtype::game::Velocity;
 
 namespace {
-
-struct DrawnImage {
-  std::string assetId;
-  SpriteFrame frame;
-  Position center;
-};
-
-class RecordingSurface : public IDrawSurface {
- public:
-  void draw(std::string_view assetId, SpriteFrame frame,
-            Position center) override {
-    drawn_.push_back(
-        {.assetId = std::string(assetId), .frame = frame, .center = center});
-  }
-
-  [[nodiscard]] const std::vector<DrawnImage>& drawn() const { return drawn_; }
-
-  [[nodiscard]] std::vector<std::string> assetIds() const {
-    std::vector<std::string> ids;
-    ids.reserve(drawn_.size());
-    for (const DrawnImage& image : drawn_) {
-      ids.push_back(image.assetId);
-    }
-    return ids;
-  }
-
-  void forget() { drawn_.clear(); }
-
- private:
-  std::vector<DrawnImage> drawn_;
-};
 
 constexpr float SPAWN_X = 1.0F;
 constexpr float SPAWN_Y = 2.0F;
@@ -93,14 +60,14 @@ class Scene {
   void render() { system_.render(components_, surface_); }
 
   [[nodiscard]] ComponentRegistry& components() { return components_; }
-  [[nodiscard]] RecordingSurface& surface() { return surface_; }
+  [[nodiscard]] RecordingDrawSurface& surface() { return surface_; }
   [[nodiscard]] EntityRegistry& entities() { return entities_; }
 
  private:
   EntityRegistry entities_;
   ComponentRegistry components_{entities_};
   RenderSystem system_;
-  RecordingSurface surface_;
+  RecordingDrawSurface surface_;
 };
 
 std::vector<std::string> allLayersInOrder() {
