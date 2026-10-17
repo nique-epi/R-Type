@@ -127,3 +127,22 @@ The first commit still printed the duplicate warning, which disappeared at the n
 
 4. **`--clean-first` rebuilds the objects, never the configuration**: CMake reruns only when a `CMakeLists.txt` is newer than the files it generated, and a commit's date is older. Run `cmake -S <copy> -B <dir>` before building each commit, or a commit that only changes a link is built with the link lines of the commit before it.
 5. **A link or warning result of a commit is read on its own link line** (`build/<…>/link.txt`), counting the library by its file name, since the same file can be spelled through two relative paths.
+
+## Update (2026-10-17) — code after a Windows-only skip
+
+### Context
+
+Options menu (#78). `SettingsFileTest.TheCreatedFolderBelongsToItsOwnerOnly` checks that the settings folder a save creates belongs to its owner only, which Windows folders cannot express, so the test was written to skip there: `#ifdef _WIN32`, `GTEST_SKIP() << …;`, `#endif`, then the body.
+
+### Mistake
+
+The Windows job of the pull request failed: `SettingsFileTest.cpp(147,1): warning C4702: unreachable code`, four times, made an error by `C2220`, so `client_settings_tests` did not build and no test of the job ran. The build was green with AppleClang, zero warnings, and the Linux job was green.
+
+### Root cause
+
+`GTEST_SKIP()` returns from the test, so on Windows every statement after the `#endif` is dead code. MSVC's `/W4` reports it; Clang and GCC with the project's flags do not, and on macOS and Linux the `_WIN32` branch is not compiled at all, so no local check could see it. The rule on MSVC only covered conversions inside the standard library.
+
+### Rule (added)
+
+1. **A body that leaves early on one platform puts the rest in the `#else` branch**: `#ifdef _WIN32` then `GTEST_SKIP()`, `return` or `throw`, `#else` the rest, `#endif`. MSVC compiles with `/W4`, which reports the code after the exit as unreachable (`C4702`), and `/WX` makes it an error. Clang and GCC, with `-Wall -Wextra -Wpedantic`, never warn on it, and they do not even compile the `_WIN32` branch, so no local build can show it.
+2. **Before pushing an `#ifdef` that exits on one platform, read what follows its `#endif` in the same body**: any statement there is unreachable on that platform.
