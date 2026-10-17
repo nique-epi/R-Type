@@ -4,6 +4,7 @@ target_include_directories(rtype_client_rendering_interfaces INTERFACE ${CMAKE_C
 
 target_link_libraries(rtype_client_rendering_interfaces
   INTERFACE
+    rtype_client_animation
     rtype_client_background
     rtype_game_components
     SFML::Graphics
@@ -32,6 +33,8 @@ target_link_libraries(rtype_client_fragment_shader
 
 rtype_enable_warnings(rtype_client_fragment_shader)
 
+add_subdirectory(Animation)
+add_subdirectory(AnimationSystem)
 add_subdirectory(RenderSystem)
 add_subdirectory(SfmlDrawSurface)
 add_subdirectory(AssetTextureSource)
