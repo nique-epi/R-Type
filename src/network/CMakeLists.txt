@@ -19,6 +19,7 @@ add_subdirectory(NetworkContext)
 add_subdirectory(Serialization)
 add_subdirectory(Protocol)
 add_subdirectory(Transport)
+add_subdirectory(Handshake)
 
 add_library(rtype_network INTERFACE)
 
@@ -38,4 +39,6 @@ target_link_libraries(rtype_network
     rtype_network_transport
     rtype_network_udp_socket
     rtype_network_datagram_relay
+    rtype_network_handshake
+    rtype_network_cookie_issuer
 )

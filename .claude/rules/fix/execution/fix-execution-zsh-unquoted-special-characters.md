@@ -22,6 +22,15 @@ trigger: always_on
 2. **A separator between two outputs is always a quoted literal**: `echo '-----'`. A bare `echo =====` stops the line too, so every command written after it in the same call never runs.
 3. **Before sending a command, read each unquoted word that holds `=`, `*`, `?` or `[`** and quote it unless it is an intended glob.
 
+### A search by file kind uses `git grep` with quoted pathspecs, never `grep --include`
+
+1. **To search a kind of file, write `git grep -n '<pattern>' -- '*.cpp' '*.hpp'`**, not `grep -rn <pattern> --include=…`: the pathspecs are separate quoted words, so no option ever carries a glob. `git grep` searches tracked files only; add `--untracked` for files not added yet.
+2. **When `grep -r` is unavoidable** (a folder outside the repository), filter afterwards instead: `grep -rn '<pattern>' <dir> | grep -E '\.(cpp|hpp):'`.
+
+### A separator is made of dashes only
+
+1. **Separate two outputs with `echo '-----'` and nothing else**: dashes are never expanded by zsh, so the separator works even when the quotes are forgotten. A separator of `=` signs is never typed, quoted or not.
+
 ## Example
 
 - ❌ **Before (wrong)**: `gh api repos/nique-epi/R-Type/pulls?state=all --jq .[].title; echo =====` → `no matches found`, then `===== not found`: nothing runs.

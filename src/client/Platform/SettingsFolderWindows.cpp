@@ -1,6 +1,6 @@
 // clang-format off
-#include <windows.h>  // NOLINT(misc-include-cleaner)
-#include <shlobj.h>   // NOLINT(misc-include-cleaner)
+#include <windows.h>
+#include <shlobj.h>
 // clang-format on
 #include <filesystem>
 #include <memory>
@@ -12,7 +12,6 @@ namespace rtype::client {
 
 std::optional<std::filesystem::path> settingsFolder() {
   PWSTR reported = nullptr;
-  // NOLINTNEXTLINE(misc-include-cleaner)
   const HRESULT result =
       SHGetKnownFolderPath(FOLDERID_LocalAppData, 0, nullptr, &reported);
   const std::unique_ptr<wchar_t, decltype(&CoTaskMemFree)> owned(

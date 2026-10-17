@@ -23,6 +23,11 @@ Why: an assertion copied from the output turns the current behavior into the spe
 2. **A constant that only configures the behavior under test** (the places of a formation, when the test checks that the ships reach their places) may be read by the test: what it checks is the behavior, and another test pins the values when the requirement fixes them.
 3. **A red proof that changes a constant is the check**: if no test turns red, the value is not pinned anywhere.
 
+### One input per test when the faulty code reaches the same end state
+
+1. **Before asserting only the end of a sequence of inputs**, play the sequence on the faulty reading: if it reaches the same end state through another input (the wrong key opens the tab the right key would have opened), the test cannot fail. Assert after each input, or give each input its own test.
+2. **The red proof is the check**: a variant that leaves such a test green means the test is split, never that the variant is dropped.
+
 ## Example
 
 - ❌ **Before (wrong)**:

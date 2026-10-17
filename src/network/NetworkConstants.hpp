@@ -44,6 +44,11 @@ constexpr std::uint16_t HIGHEST_PORT =
     std::numeric_limits<std::uint16_t>::max();
 
 /**
+ * @brief Port that lets the system pick a free port when a socket is opened.
+ */
+constexpr std::uint16_t ANY_PORT = 0;
+
+/**
  * @brief Address that binds a socket to every IPv4 interface of the machine.
  */
 constexpr std::string_view ANY_IPV4_ADDRESS = "0.0.0.0";

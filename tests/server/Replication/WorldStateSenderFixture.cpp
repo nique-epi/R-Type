@@ -7,8 +7,8 @@
 #include "Endpoint.hpp"
 #include "Entity.hpp"
 #include "EntityType.hpp"
+#include "NetworkConstants.hpp"
 #include "NetworkIdentity.hpp"
-#include "NetworkTestConstants.hpp"
 #include "OutgoingDatagram.hpp"
 #include "Position.hpp"
 #include "WorldState.hpp"
@@ -17,8 +17,8 @@
 namespace rtype::server::testing {
 
 network::Endpoint client(std::uint16_t port) {
-  return network::Endpoint{.address = std::string{LOOPBACK_ADDRESS},
-                           .port = port};
+  return network::Endpoint{
+      .address = std::string{network::LOOPBACK_IPV4_ADDRESS}, .port = port};
 }
 
 network::EntityState expectedEntity(std::uint32_t networkId,
