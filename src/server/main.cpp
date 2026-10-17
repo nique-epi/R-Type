@@ -1,6 +1,5 @@
 #include <exception>
 #include <iostream>
-#include <span>
 #include <string>
 #include <utility>
 #include <vector>
@@ -46,21 +45,26 @@ int runServer(const rtype::logging::LogLaunchOptions& logOptions,
         };
     rtype::server::WorldStateSender worldStateSender{queueDatagram};
     rtype::server::PlayerRoster roster;
-    rtype::server::ConnectionAcceptor connectionAcceptor{roster, queueDatagram};
+    rtype::server::ConnectionAcceptor connectionAcceptor{
+        roster, queueDatagram,
+        [&serverPointer](const rtype::network::Endpoint& player) {
+          serverPointer->admit(player);
+        }};
     const rtype::engine::SystemClock clock;
     rtype::server::ServerApplication server{
         rtype::network::Endpoint{
             .address = std::string{rtype::network::ANY_IPV4_ADDRESS},
             .port = launchOptions.port()},
         [&logger, &world, &worldStateSender, &connectionAcceptor, &clock,
-         &recipients](
-            std::span<const rtype::network::IncomingDatagram> datagrams) {
-          for (const rtype::network::IncomingDatagram& datagram : datagrams) {
+         &recipients](const rtype::server::ServerApplication::ReceivedDatagrams&
+                          received) {
+          for (const rtype::network::IncomingDatagram& datagram :
+               received.players) {
             logger.debug("received ", datagram.payload.size(), " bytes from ",
                          datagram.sender.address, " port ",
                          datagram.sender.port);
           }
-          connectionAcceptor.receive(datagrams, clock.now());
+          connectionAcceptor.receive(received.connectionRequests, clock.now());
           worldStateSender.onTick(world.components(), recipients);
         }};
     serverPointer = &server;
