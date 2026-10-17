@@ -80,7 +80,9 @@ constexpr std::uint16_t PLAYER_PORT = 41000;
 constexpr std::uint16_t STRANGER_PORT = 41001;
 
 /**
- * @brief A flood of connection requests: ten times what their queue holds.
+ * @brief A flood of connection requests: twice what the player queue holds,
+ * so that requests sent to the player queue would push a player's datagram
+ * out of it.
  */
 constexpr std::size_t FLOODING_REQUEST_COUNT =
-    10 * rtype::server::CONNECTION_REQUEST_QUEUE_CAPACITY;
+    2 * rtype::server::INCOMING_DATAGRAM_QUEUE_CAPACITY;

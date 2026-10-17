@@ -18,6 +18,8 @@ using rtype::network::Endpoint;
 using rtype::network::IncomingDatagram;
 using rtype::server::DatagramSorter;
 using rtype::server::testing::NEXT_PROTOCOL_VERSION;
+using rtype::server::testing::ONE_FLAG_SET;
+using rtype::server::testing::OTHER_PROTOCOL_ID;
 
 namespace {
 
@@ -136,6 +138,52 @@ TEST_F(DatagramSorterTest, DropsADatagramOfAnotherVersion) {
   sort(player(), readyDatagram(header));
 
   EXPECT_TRUE(drainPlayers().empty());
+  EXPECT_TRUE(drainRequests().empty());
+}
+
+/**
+ * Given a sorter that admitted nobody
+ * When a stranger sends a connection request of another protocol version
+ * Then the request reaches no queue
+ */
+TEST_F(DatagramSorterTest, DropsAStrangersRequestOfAnotherVersion) {
+  rtype::network::PacketHeader header;
+  header.version = NEXT_PROTOCOL_VERSION;
+
+  sort(stranger(), requestDatagram(header));
+
+  EXPECT_TRUE(drainRequests().empty());
+  EXPECT_TRUE(drainPlayers().empty());
+}
+
+/**
+ * Given a sorter that admitted nobody
+ * When a stranger sends a connection request of another protocol id
+ * Then the request reaches no queue
+ */
+TEST_F(DatagramSorterTest, DropsAStrangersRequestOfAnotherProtocol) {
+  rtype::network::PacketHeader header;
+  header.protocolId = OTHER_PROTOCOL_ID;
+
+  sort(stranger(), requestDatagram(header));
+
+  EXPECT_TRUE(drainRequests().empty());
+  EXPECT_TRUE(drainPlayers().empty());
+}
+
+/**
+ * Given a sorter that admitted nobody
+ * When a stranger sends a connection request with a flag set
+ * Then the request reaches no queue
+ */
+TEST_F(DatagramSorterTest, DropsAStrangersRequestWithAFlagSet) {
+  rtype::network::PacketHeader header;
+  header.flags = ONE_FLAG_SET;
+
+  sort(stranger(), requestDatagram(header));
+
+  EXPECT_TRUE(drainRequests().empty());
+  EXPECT_TRUE(drainPlayers().empty());
 }
 
 /**
@@ -196,8 +244,8 @@ TEST_F(DatagramSorterTest, CountsEveryDatagramItDrops) {
 
 /**
  * Given an admitted player whose datagram waits in the player queue
- * When strangers then flood the server with ten times more requests than the
- * request queue holds
+ * When strangers then flood the server with twice more requests than the
+ * player queue holds
  * Then the player's datagram is still the one in the player queue, and the
  * request queue holds no more than its room
  */
@@ -221,7 +269,7 @@ TEST_F(DatagramSorterTest, KeepsAPlayersDatagramThroughAFloodOfRequests) {
  * When the player sends one datagram
  * Then the player queue holds it once
  */
-TEST_F(DatagramSorterTest, AdmitsAPlayerOnceWhenAdmittedAgain) {
+TEST_F(DatagramSorterTest, GivesAPlayerAdmittedTwiceEachDatagramOnce) {
   admit(player());
   admit(player());
 
