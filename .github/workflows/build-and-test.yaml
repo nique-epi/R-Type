@@ -86,6 +86,9 @@ jobs:
           }
           if [ -z "$BASE_SHA" ]; then
             lint_everything
+          elif ! git diff --quiet "$BASE_SHA"...HEAD -- .clang-tidy .github/workflows/build-and-test.yaml; then
+            echo "The pull request changes .clang-tidy or this workflow: every file is linted."
+            lint_everything
           else
             git diff --name-only -z --diff-filter=ACMR "$BASE_SHA"...HEAD -- 'src/*.cpp' 'src/*.hpp' 'tests/*.cpp' 'tests/*.hpp' \
               > "$RUNNER_TEMP/files-to-lint"
