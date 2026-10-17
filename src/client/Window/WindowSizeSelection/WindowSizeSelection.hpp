@@ -33,6 +33,13 @@ class WindowSizeSelection {
    */
   bool select(std::size_t index);
 
+  /**
+   * @brief Makes this size the selected one, when it is one of WINDOW_SIZES
+   * and is available.
+   * @returns false, leaving the selection unchanged, otherwise.
+   */
+  bool selectSize(PixelSize size);
+
   [[nodiscard]] std::size_t selectedIndex() const;
   [[nodiscard]] PixelSize selected() const;
 

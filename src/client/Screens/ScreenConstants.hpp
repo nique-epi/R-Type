@@ -35,11 +35,6 @@ constexpr const char* QUIT_QUESTION = "ARE YOU SURE YOU WANT TO QUIT?";
 constexpr const char* NO_LABEL = "NO";
 constexpr const char* YES_LABEL = "YES";
 
-/** @brief Heading of the options, and what joins the width and the height of
- * a window size on its bar. */
-constexpr const char* SETTINGS_HEADING = "SETTINGS";
-constexpr const char* WINDOW_SIZE_SEPARATOR = " X ";
-
 /**
  * @brief Size of the progress bar of the loading screen, centered in the
  * playfield, and thickness of its border, in playfield units.

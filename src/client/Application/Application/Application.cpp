@@ -1,6 +1,7 @@
 #include "Application.hpp"
 #include <SFML/System/Vector2.hpp>
 #include <SFML/Window/Event.hpp>
+#include <filesystem>
 #include <memory>
 #include <optional>
 #include <random>
@@ -16,23 +17,42 @@
 #include "IScreen.hpp"
 #include "InterfaceCanvas.hpp"
 #include "LoadingScreen.hpp"
+#include "LocalizedKeyName.hpp"
 #include "MotionPreference.hpp"
 #include "NetworkConstants.hpp"
 #include "OptionsScreen.hpp"
+#include "PlayerSettings.hpp"
 #include "PlayfieldMapping.hpp"
 #include "QuitConfirmationScreen.hpp"
 #include "ReducedMotion.hpp"
 #include "ScreenAssets.hpp"
 #include "ScreenId.hpp"
 #include "ScreenStack.hpp"
+#include "SettingsFile.hpp"
 #include "TimeConstants.hpp"
 #include "TitleScreen.hpp"
 
 namespace rtype::client {
 
+namespace {
+
+/** @returns The settings of a first launch, flashes reduced when the system
+ * asks for less motion. */
+PlayerSettings firstLaunchSettings() {
+  PlayerSettings settings;
+  settings.reduceFlashes = systemPrefersReducedMotion();
+  return settings;
+}
+
+}  // namespace
+
 Application::Application(AssetLibrary& assets, network::Endpoint server,
-                         std::string nickname)
+                         std::string nickname,
+                         std::optional<std::filesystem::path> settingsFile)
     : assets_(&assets),
+      settingsFile_(std::move(settingsFile)),
+      settings_(settingsFile_.load(firstLaunchSettings())),
+      window_(settings_.windowSize),
       background_(std::random_device{}()),
       network_(
           network::Endpoint{.address = std::string{network::ANY_IPV4_ADDRESS},
@@ -86,8 +106,8 @@ std::unique_ptr<IScreen> Application::createScreen(ScreenId screen) {
     case ScreenId::Game:
       return gameScreen();
     case ScreenId::Options:
-      return std::make_unique<OptionsScreen>(
-          screens_, window_, interfaceCanvas(), playfieldMapping());
+    case ScreenId::GameOptions:
+      return optionsScreen(screen);
     case ScreenId::QuitConfirmation:
       return std::make_unique<QuitConfirmationScreen>(
           screens_, interfaceCanvas(), playfieldMapping());
@@ -119,8 +139,17 @@ std::unique_ptr<IScreen> Application::gameScreen() {
   if (loading != nullptr) {
     return loading;
   }
-  return std::make_unique<GameScreen>(screens_,
-                                      std::make_unique<EntityLayer>(*assets_));
+  return std::make_unique<GameScreen>(
+      screens_, std::make_unique<EntityLayer>(*assets_), settings_.keys);
+}
+
+std::unique_ptr<IScreen> Application::optionsScreen(ScreenId screen) {
+  const OptionsScreen::Place place = screen == ScreenId::GameOptions
+                                         ? OptionsScreen::Place::OverGame
+                                         : OptionsScreen::Place::OverTitle;
+  return std::make_unique<OptionsScreen>(
+      screens_, place, settings_, settingsFile_, window_, localizedKeyName,
+      interfaceCanvas(), playfieldMapping());
 }
 
 std::unique_ptr<IScreen> Application::loadingScreenUnlessLoaded(

@@ -17,8 +17,11 @@ enum class ScreenId : std::uint8_t {
   /** @brief The game in progress, entered through replaceAll() only:
    * building it releases the assets of a previous game. */
   Game,
-  /** @brief The options, pushed over the title or the game. */
+  /** @brief The options, pushed over the title, which they hide. */
   Options,
+  /** @brief The options, pushed over a game, which goes on behind them,
+   * dimmed. */
+  GameOptions,
   /** @brief The question asked before closing the client, pushed over the
    * title. */
   QuitConfirmation,

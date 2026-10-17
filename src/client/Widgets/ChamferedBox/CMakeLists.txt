@@ -1,7 +1,0 @@
-add_library(rtype_client_chamfered_box STATIC ChamferedBox.cpp)
-
-target_include_directories(rtype_client_chamfered_box PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
-
-target_link_libraries(rtype_client_chamfered_box PUBLIC rtype_client_widgets)
-
-rtype_enable_warnings(rtype_client_chamfered_box)

@@ -185,3 +185,27 @@ TEST(WindowSizeSelection, WindowLargerThanTheDesktopStartsAtItsCorner) {
   EXPECT_EQ(position.x, 0);
   EXPECT_EQ(position.y, 0);
 }
+
+/**
+ * Given a 2000 x 1100 desktop, 1920 x 1080 selected
+ * When 1280 x 720 is asked for by its size
+ * Then it is selected
+ */
+TEST(WindowSizeSelectionTest, AnAvailableSizeIsSelectedBySize) {
+  WindowSizeSelection selection(ROOMY_DESKTOP);
+  EXPECT_TRUE(selection.selectSize(PixelSize{.width = 1280, .height = 720}));
+  EXPECT_EQ(selection.selected(), (PixelSize{.width = 1280, .height = 720}));
+}
+
+/**
+ * Given a 2000 x 1100 desktop
+ * When a size that is not in the list, then one too large, are asked for
+ * Then neither changes the selection
+ */
+TEST(WindowSizeSelectionTest, ASizeNotOfferedChangesNothing) {
+  WindowSizeSelection selection(ROOMY_DESKTOP);
+  const PixelSize before = selection.selected();
+  EXPECT_FALSE(selection.selectSize(PixelSize{.width = 1000, .height = 500}));
+  EXPECT_FALSE(selection.selectSize(PixelSize{.width = 2560, .height = 1440}));
+  EXPECT_EQ(selection.selected(), before);
+}

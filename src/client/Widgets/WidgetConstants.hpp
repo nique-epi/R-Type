@@ -45,19 +45,17 @@ constexpr sf::Vector2i BUTTON_TEXT_OFFSET(12, 6);
 constexpr int PRESSED_TEXT_DROP = 1;
 
 /**
- * @brief Check box of a button that is one choice among others: a square at
- * the start of its label, standing on the baseline, its inside filled but for
- * a margin when the choice is the current one, then a gap before the label.
+ * @brief Check box of a choice among others: a square, its inside filled but
+ * for a margin when the choice is the current one.
  */
 constexpr int CHECK_BOX_SIZE = 7;
 constexpr int CHECK_MARK_MARGIN = 2;
-constexpr int CHECK_BOX_GAP = 4;
 
 /**
  * @brief Corners cut off the bars and panels: rows of the outer cut, and
  * thickness of the border, the inside being cut one row less.
  */
-constexpr int CHAMFER_ROWS = 4;
+constexpr int CORNER_CUT_ROWS = 4;
 constexpr int BORDER_THICKNESS = 1;
 
 /** @brief Row of the top of the illustration of a page, against the right
@@ -110,6 +108,11 @@ constexpr std::array MENU_NEXT_KEYS{sf::Keyboard::Key::Down,
                                     sf::Keyboard::Key::Right};
 constexpr std::array MENU_PREVIOUS_KEYS{sf::Keyboard::Key::Up,
                                         sf::Keyboard::Key::Left};
+
+/** @brief The next and previous rows of a tabbed panel, whose rows keep Left
+ * and Right to step their values. */
+constexpr std::array PANEL_NEXT_KEYS{sf::Keyboard::Key::Down};
+constexpr std::array PANEL_PREVIOUS_KEYS{sf::Keyboard::Key::Up};
 constexpr sf::Keyboard::Key MENU_TAB_KEY = sf::Keyboard::Key::Tab;
 constexpr sf::Keyboard::Key MENU_CONFIRM_KEY = sf::Keyboard::Key::Enter;
 constexpr sf::Keyboard::Key MENU_CANCEL_KEY = sf::Keyboard::Key::Escape;
@@ -169,5 +172,67 @@ constexpr int SPACE_BELOW_DESCRIPTION = BUTTON_GAP;
 
 /** @brief Label of the button that closes a menu, the same in every menu. */
 constexpr const char* BACK_LABEL = "BACK";
+
+/**
+ * @brief Tabbed panel: the heading and its rule as on a page, a strip of tabs
+ * under the rule, the panel of rows right under the tabs, the bars in a row
+ * BUTTON_GAP under the panel, the description of the selected row on their
+ * right. In pixels, as on the picture of the options the team chose.
+ */
+constexpr sf::Vector2i TAB_STRIP_TOP_LEFT(SAFE_MARGIN,
+                                          SAFE_MARGIN + TEXT_LINE_HEIGHT +
+                                              SPACE_BELOW_HEADING +
+                                              RULE_SIZE.y + SPACE_BELOW_RULE);
+constexpr int TAB_STRIP_WIDTH =
+    INTERFACE_AREA.size.x - (SIDES_PER_AXIS * SAFE_MARGIN);
+constexpr int TAB_HEIGHT = 16;
+constexpr int TAB_GAP = 4;
+constexpr int TAB_LABEL_TOP = 5;
+constexpr int TAB_KEY_CAP_TOP = 2;
+constexpr sf::Vector2i ROWS_PANEL_TOP_LEFT(SAFE_MARGIN,
+                                           TAB_STRIP_TOP_LEFT.y + TAB_HEIGHT);
+constexpr sf::Vector2i ROWS_PANEL_SIZE(TAB_STRIP_WIDTH, 150);
+constexpr int ROWS_PANEL_PADDING = 4;
+constexpr sf::Vector2i FIRST_ROW_TOP_LEFT(ROWS_PANEL_TOP_LEFT.x +
+                                              ROWS_PANEL_PADDING,
+                                          ROWS_PANEL_TOP_LEFT.y +
+                                              ROWS_PANEL_PADDING);
+constexpr sf::Vector2i ROW_SIZE(ROWS_PANEL_SIZE.x -
+                                    (SIDES_PER_AXIS * ROWS_PANEL_PADDING),
+                                16);
+constexpr int ROW_GAP = 2;
+constexpr sf::Vector2i ROW_LABEL_OFFSET(8, 4);
+constexpr int ROW_PADDING = 8;
+constexpr int ROW_CONTROL_TOP = 2;
+constexpr int PANEL_BARS_TOP =
+    ROWS_PANEL_TOP_LEFT.y + ROWS_PANEL_SIZE.y + BUTTON_GAP;
+constexpr int SPACE_BESIDE_PANEL_BARS = 8;
+constexpr int SPACE_ABOVE_PANEL_ILLUSTRATION = 10;
+
+/** @brief Every control of a row: its height, the gap between its parts, the
+ * row of its text. */
+constexpr int CONTROL_HEIGHT = 12;
+constexpr int CONTROL_GAP = 4;
+constexpr int CONTROL_TEXT_TOP = 2;
+
+/** @brief Physical keys of the previous and next tab of a tabbed panel. */
+constexpr sf::Keyboard::Scancode PREVIOUS_TAB_KEY = sf::Keyboard::Scan::Q;
+constexpr sf::Keyboard::Scancode NEXT_TAB_KEY = sf::Keyboard::Scan::E;
+
+/**
+ * @brief Keycap: the name KEY_CAP_PADDING in, at least KEY_CAP_MINIMUM_WIDTH
+ * wide, a lit side KEY_CAP_SIDE_THICKNESS thick at the bottom.
+ */
+constexpr int KEY_CAP_PADDING = 3;
+constexpr int KEY_CAP_MINIMUM_WIDTH = 14;
+constexpr int KEY_CAP_SIDE_THICKNESS = 2;
+
+/** @brief A dashed outline lights one pixel in DASH_PERIOD. */
+constexpr int DASH_PERIOD = 2;
+
+/** @brief The bars under the rows of a tabbed panel, as large as the bars of
+ * a form; and where SAVED is written, from the right end of the rule. */
+constexpr sf::Vector2i PANEL_BAR_SIZE = FORM_BUTTON_SIZE;
+constexpr sf::Vector2i RULE_STAMP_OFFSET(6, -4);
 
 }  // namespace rtype::client

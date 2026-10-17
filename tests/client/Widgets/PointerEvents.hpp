@@ -2,6 +2,12 @@
 
 #include <SFML/System/Vector2.hpp>
 #include <SFML/Window/Event.hpp>
+#include "BackgroundConstants.hpp"
+
+/** @brief Pixels of the window per pixel of the interface picture, read with
+ * samePlayfieldPoint. */
+constexpr int INTERFACE_PIXEL =
+    static_cast<int>(rtype::client::BACKGROUND_PIXEL_SIZE);
 
 /**
  * @brief Reads a pixel of the window as the point of the playfield with the
