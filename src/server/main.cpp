@@ -45,7 +45,11 @@ int runServer(const rtype::logging::LogLaunchOptions& logOptions,
         };
     rtype::server::WorldStateSender worldStateSender{queueDatagram};
     rtype::server::PlayerRoster roster;
-    rtype::server::ConnectionAcceptor connectionAcceptor{roster, queueDatagram};
+    rtype::server::ConnectionAcceptor connectionAcceptor{
+        roster, queueDatagram,
+        [&serverPointer](const rtype::network::Endpoint& player) {
+          serverPointer->admit(player);
+        }};
     const rtype::engine::SystemClock clock;
     rtype::server::ServerApplication server{
         rtype::network::Endpoint{
