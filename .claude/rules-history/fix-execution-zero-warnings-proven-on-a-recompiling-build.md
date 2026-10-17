@@ -108,3 +108,41 @@ Variant 21 (a second handler accepted) failed its own test and also the two test
 ### Root cause
 
 Point 2 of the red proof section deletes the object of the swapped source, and point 4 rebuilds the restored original at the end. Between two variants the restored source of the previous one was rebuilt by nobody, which neither point covers.
+
+## Update (2026-10-17) — `--clean-first` keeps a stale configuration
+
+### Context
+
+The options menu was cut into seven commits, the first one only removing `rtype_game` from the libraries `r-type_client` lists, to end the `ld: warning: ignoring duplicate libraries: '../game/librtype_game.a'` of `main`. Each commit was extracted with `git archive` into an isolated copy and built with `cmake --build build --clean-first`.
+
+### Mistake
+
+The first commit still printed the duplicate warning, which disappeared at the next commit, whose changes did not touch the client's links. A configure forced on each commit showed the real lines: `librtype_game.a` twice on `main` (listed by the client, then reached through its libraries), once after the first commit. The build of the first commit had used the configuration generated for `main`.
+
+### Root cause
+
+`--clean-first` deletes the objects, not the generated build system; CMake reruns its configuration only when a `CMakeLists.txt` is newer than what it generated, and `git archive` gives every file the commit's date, older than the configuration made a minute before. A commit that changes only a link therefore kept the previous commit's link lines. The later commits added test targets, which forced a configure, so only the first one showed the problem.
+
+### Rule (added)
+
+4. **`--clean-first` rebuilds the objects, never the configuration**: CMake reruns only when a `CMakeLists.txt` is newer than the files it generated, and a commit's date is older. Run `cmake -S <copy> -B <dir>` before building each commit, or a commit that only changes a link is built with the link lines of the commit before it.
+5. **A link or warning result of a commit is read on its own link line** (`build/<…>/link.txt`), counting the library by its file name, since the same file can be spelled through two relative paths.
+
+## Update (2026-10-17) — code after a Windows-only skip
+
+### Context
+
+Options menu (#78). `SettingsFileTest.TheCreatedFolderBelongsToItsOwnerOnly` checks that the settings folder a save creates belongs to its owner only, which Windows folders cannot express, so the test was written to skip there: `#ifdef _WIN32`, `GTEST_SKIP() << …;`, `#endif`, then the body.
+
+### Mistake
+
+The Windows job of the pull request failed: `SettingsFileTest.cpp(147,1): warning C4702: unreachable code`, four times, made an error by `C2220`, so `client_settings_tests` did not build and no test of the job ran. The build was green with AppleClang, zero warnings, and the Linux job was green.
+
+### Root cause
+
+`GTEST_SKIP()` returns from the test, so on Windows every statement after the `#endif` is dead code. MSVC's `/W4` reports it; Clang and GCC with the project's flags do not, and on macOS and Linux the `_WIN32` branch is not compiled at all, so no local check could see it. The rule on MSVC only covered conversions inside the standard library.
+
+### Rule (added)
+
+1. **A body that leaves early on one platform puts the rest in the `#else` branch**: `#ifdef _WIN32` then `GTEST_SKIP()`, `return` or `throw`, `#else` the rest, `#endif`. MSVC compiles with `/W4`, which reports the code after the exit as unreachable (`C4702`), and `/WX` makes it an error. Clang and GCC, with `-Wall -Wextra -Wpedantic`, never warn on it, and they do not even compile the `_WIN32` branch, so no local build can show it.
+2. **Before pushing an `#ifdef` that exits on one platform, read what follows its `#endif` in the same body**: any statement there is unreachable on that platform.

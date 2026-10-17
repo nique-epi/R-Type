@@ -27,6 +27,11 @@ trigger: always_on
 3. **Calibrate the proxy on a known case first**, as `fix-reasoning-validate-the-instrument-before-reporting-a-count.md` requires: it must show the conversion that already failed on the CI, and stop showing it once fixed. The proxy does not replace the Windows job; it only narrows what is left to find there.
 4. **A failing MSVC job hides the files that depend on the failed target**: MSBuild stops building them, so the log lists only what was compiled before the failure. Fix the first error, then expect that the next push may reveal more.
 
+### Code after one platform's early exit is unreachable for MSVC
+
+1. **A body that leaves early on one platform puts the rest in the `#else` branch**: `#ifdef _WIN32` then `GTEST_SKIP()`, `return` or `throw`, `#else` the rest, `#endif`. MSVC compiles with `/W4`, which reports the code after the exit as unreachable (`C4702`), and `/WX` makes it an error. Clang and GCC, with `-Wall -Wextra -Wpedantic`, never warn on it, and they do not even compile the `_WIN32` branch, so no local build can show it.
+2. **Before pushing an `#ifdef` that exits on one platform, read what follows its `#endif` in the same body**: any statement there is unreachable on that platform.
+
 ### A red proof runs on a binary rebuilt from the faulty source
 
 1. **Swapping a source file and rebuilding in a loop is not enough**: `make` compares timestamps to the second, so a file copied less than a second after the previous build is seen as up to date and the old binary runs.
@@ -42,6 +47,8 @@ trigger: always_on
 1. **`git archive <commit>` sets every extracted file to the date of that commit**, which is older than objects built a minute ago from a later commit: `make` then keeps the stale objects. (Given a tree id instead of a commit, it uses the current time.)
 2. **To build one commit after another in the same build folder, use `cmake --build <dir> --clean-first`** for each commit, and read the number of objects compiled in its log.
 3. **Check the result against an expected count**: a commit that adds a test must show one more test than the commit before it. Equal counts mean the build did not see the change.
+4. **`--clean-first` rebuilds the objects, never the configuration**: CMake reruns only when a `CMakeLists.txt` is newer than the files it generated, and a commit's date is older. Run `cmake -S <copy> -B <dir>` before building each commit, or a commit that only changes a link is built with the link lines of the commit before it.
+5. **A link or warning result of a commit is read on its own link line** (`build/<…>/link.txt`), counting the library by its file name, since the same file can be spelled through two relative paths.
 
 ## Example
 

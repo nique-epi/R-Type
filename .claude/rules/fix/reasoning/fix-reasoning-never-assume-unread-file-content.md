@@ -11,6 +11,11 @@ trigger: always_on
 2. **Check the real stack in the project files** before applying general knowledge: SFML version (3, not 2), Asio (standalone, not Boost.Asio), C++ standard (20), `CMakeLists.txt` options. Follow the real code; only borrow from general knowledge what is verified compatible.
 3. **Never batch a fallible call** (glob with no match, command with a non-zero exit code) **with writes** (`Write`, `Edit`, `rm`, `git commit`) in the same block. Separate reconnaissance from writing.
 
+### A design document describes the rendering it read, not the one it expects
+
+1. **Before writing how the client draws** (scaling, blending, fonts, timings) in a page, a design system, a mockup or a plan, open the function that does it (`integerScaleFactor`, `PixelCanvas::show`, `InterfaceCanvas`) and write its behavior with its name.
+2. **A round example is checked against every row of the table it comes from**: "×2 at 960 × 540, ×4 at 1920 × 1080" says nothing of 1280, 1600 and 2560 in `WINDOW_SIZES`, which are not multiples of 480.
+
 ## Example
 
 - ❌ **Before (wrong)**: reading `EntityRegistry.hpp` fails → I go on assuming a `getComponent<T>(entity)` method and code against it.
