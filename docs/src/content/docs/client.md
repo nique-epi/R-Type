@@ -3,7 +3,7 @@ title: Client
 description: What the client does, how its parts fit together and where to find them in the code.
 ---
 
-The client, `r-type_client` (`src/client/`), shows the game, plays its sounds and reads the player's input; the server decides what happens in the match (see [Architecture](/R-Type/architecture/)). Today it finds its assets folder, loads the assets of its interface, opens a window and runs its screens over a scrolling starfield: the title screen it opens on, a connection screen, a loading screen, the game screen, which draws its entities from one sprite sheet (for now a provisional showcase), an options screen and a quit confirmation, the menus all built from the same widgets. The game screen reads the player's actions through the keys the player chose, the arrows and the space bar at first; the options change them, with the volumes, the window size and the accessibility settings, and save them in a file for the next launch. It does not talk to the server yet: it reads the server's address and port and the player's nickname at launch and shows them on its connection screen, and it can send and receive datagrams on a thread of its own, but nothing starts that thread yet; a provisional stand-in accepts every connection at once without contacting any server.
+The client, `r-type_client` (`src/client/`), shows the game, plays its sounds and reads the player's input; the server decides what happens in the match (see [Architecture](/R-Type/architecture/)). Today it finds its assets folder, loads the assets of its interface, opens a window and runs its screens over a scrolling starfield: the title screen it opens on, a connection screen, a loading screen, the game screen, which draws its entities from one sprite sheet (for now a provisional showcase), an options screen and a quit confirmation, the menus all built from the same widgets. The game screen reads the player's actions through the keys the player chose, the arrows and the space bar at first; the options change them, with the volumes, the window size and the accessibility settings, and save them in a file for the next launch. It reads the server's address and port and the player's nickname at launch, shows them on its connection screen, and joins the server from there: it sends the connection request of the protocol, on a network thread opened at launch, until the server accepts or refuses it. Once accepted, it opens the local game: nothing the server sends after the acceptance is read yet.
 
 This page tells you where to look when you need to change something. It describes what exists today and says plainly what does not exist yet.
 
@@ -26,10 +26,10 @@ This page tells you where to look when you need to change something. It describe
 | Squadron of the title screen | Available | `src/client/Rendering/Squadron/` |
 | Player commands | Available; read by the game screen, not sent to the server yet | `src/client/Input/` |
 | Key remapping | Available; set in the options, read by the game screen | `src/client/Input/` |
-| Network thread | Available; not started by the client yet | `src/client/Connection/NetworkThread/` |
+| Network thread | Available; opened at launch | `src/client/Connection/NetworkThread/` |
 | Ignoring an old world state | Available; nothing receives states yet | `src/client/Replication/WorldStateFilter/` |
 | Server address, port and nickname at launch | Available; they fill the connection screen | `src/client/LaunchOptions/` |
-| Connection to a server | Not yet written; a provisional stand-in accepts every attempt at once | `src/client/Connection/` |
+| Joining a server | Available: request, challenge, acceptance or refusal; nothing is read after the acceptance yet | `src/client/Connection/ServerConnection/` |
 | Sounds and music of the game | Not yet written | — |
 
 ## Frame loop and screens: `Application`, `ScreenStack`
@@ -266,7 +266,19 @@ A menu paints through `IInterfaceCanvas` (`src/client/Rendering/`): rectangles, 
 
 The screen drives an `IServerConnection` (`src/client/Connection/`): `connect(server, nickname)`, `cancel()` and `status()`, a `ConnectionStatus` whose `Phase` is `Idle`, `Connecting`, `Accepted` (with the player number), `Refused` (with its `network::RefusalReason`) or `Unreachable`. `Application` owns it, so it outlives every screen.
 
-The connection behind it is **provisional**: `StandInServerConnection` (`src/client/Connection/StandInServerConnection/`) contacts no server and accepts every attempt at once as player 1, so PLAY still leads to the local game; the screen then says `CONNECTED AS PLAYER 1` though no server took part, and the journal shows `stand-in connection: <address> port <port> not contacted, accepted at once as player 1` at the `warn` level for each attempt. It is replaced, in the constructor of `Application`, by the class that sends `ConnectionRequest`, sends it again until an answer comes and reads that answer (see [Protocol](/R-Type/protocol/#connection)); nothing else names it. Until then, `CONNECTING...`, the refusals and `SERVER UNREACHABLE` only appear in `client_screen_tests`.
+The connection behind it is a `ServerConnection` (see [Joining a server](#joining-a-server-serverconnection)), so PLAY leads to the game only through a running server: without one, the screen shows `SERVER UNREACHABLE` after `CONNECTION_ATTEMPT_TIMEOUT` (5 s).
+
+## Joining a server: `ServerConnection`
+
+`ServerConnection` (`rtype_client_server_connection`, `src/client/Connection/ServerConnection/`) implements `IServerConnection` with the connection of the protocol (see [Protocol](/R-Type/protocol/#connection)). `Application` owns it and calls `update(elapsed)` once per frame, before the screens: it reads what arrived and sends what is due, so the frame loop never waits on the server.
+
+- `connect()` sends a `ConnectionRequest` without a cookie at once, and drops the answers left from an earlier attempt. While nothing answers, the request goes out again every `CONNECTION_REQUEST_INTERVAL` (500 ms).
+- A `ConnectionChallenge` is answered at once with the request carrying its cookie; every later request carries it too.
+- A `ConnectionAccepted` gives `Accepted` and the player number; a `ConnectionRefused` gives `Refused` and its reason. Either ends the attempt, and nothing more is sent.
+- With neither, `CONNECTION_ATTEMPT_TIMEOUT` (5 s) after `connect()`, the attempt gives up as `Unreachable`; a challenge does not restart that delay, so a server that only challenges never holds the screen.
+- Only datagrams from the server being contacted, of this protocol and version, and whose message sizes add up, are read; any other is ignored. `cancel()` stops the attempt where it stands.
+
+It sends and receives through an `IDatagramLink` (`src/client/Connection/`): `NetworkThread` in the client, `RecordingDatagramLink` (`tests/doubles/`) in the tests. The session token of the acceptance is not kept yet: nothing is sent after it. Both delays are **provisional**, like every delay of the protocol page: code must read the constants of `src/client/Connection/ConnectionConstants.hpp`.
 
 ## Options: `OptionsScreen`
 
@@ -353,7 +365,7 @@ const std::uint8_t actions = held.bits();
 
 - A host name such as `localhost` is refused, not resolved: a resolution can block for seconds, so it must run on the network thread once the connection exists. An IPv6 address is refused too, since the server only listens over IPv4.
 - The last of each option wins. An unknown argument, an option without its value, an invalid address, an invalid port or an invalid nickname (`InvalidNicknameOptionException`) stops the client before the window opens: it prints `r-type_client:`, the reason and how to see the usage on standard error, then exits with code 1.
-- `main()` logs `server: <address> port <port>` at the `info` level and hands the server and the nickname to `Application`, which starts the connection screen with them. Nothing joins the server yet (see [Connection screen](#connection-screen-connectionscreen-iserverconnection)).
+- `main()` logs `server: <address> port <port>` at the `info` level and hands the server and the nickname to `Application`, which starts the connection screen with them. CONNECT on that screen joins the server (see [Joining a server](#joining-a-server-serverconnection)).
 - On Windows, the arguments are not passed in UTF-8, so a nickname with an accent may be refused at launch; it can be typed on the connection screen instead.
 
 ```bash
@@ -365,14 +377,14 @@ const std::uint8_t actions = held.bits();
 `NetworkThread` (`rtype_client_network_thread`, `src/client/Connection/NetworkThread/`) runs the client's UDP socket on a thread of its own, so the frame loop never waits on the network. It is built from the same parts as the server: a `UdpSocket` on its `NetworkContext`, and a `DatagramRelay` between the socket and two `BoundedQueue` (see [Network](/R-Type/network/#socket-to-queues-datagramrelay)).
 
 - The constructor opens the socket on an `Endpoint` (port 0 lets the system pick a free port) and starts the thread. The destructor stops the thread and waits for it; a datagram not sent yet is lost.
-- The network thread copies every datagram received, with its sender, into the incoming queue. `drainReceived()` moves them, oldest first, to the end of a vector, and returns at once when nothing arrived: the frame loop is meant to call it once per frame.
+- The network thread copies every datagram received, with its sender, into the incoming queue. `drainReceived()` moves them, oldest first, to the end of a vector, and returns at once when nothing arrived: `ServerConnection::update()` calls it once per frame.
 - `send()` puts an `OutgoingDatagram` in the outgoing queue, asks the network thread to send what waits there through `NetworkContext::post()`, and returns at once.
 - An exception on the network thread, such as a datagram of more than `MAX_DATAGRAM_SIZE` (1200) bytes, stops it, and every later `drainReceived()` throws it.
 - Every call is safe from any thread.
 
 The incoming queue holds `INCOMING_DATAGRAM_QUEUE_CAPACITY` (256) datagrams, nearly thirteen seconds of the 20 world states per second of the protocol; the outgoing queue holds `OUTGOING_DATAGRAM_QUEUE_CAPACITY` (64), about one second of the 60 inputs per second the client sends (`src/client/Connection/ConnectionConstants.hpp`). These sizes are **provisional**: they will be revised with the rates of the protocol, and code must read the constants. When a queue is full, its oldest datagram is discarded; nothing reports it yet.
 
-Nothing creates a `NetworkThread` yet: the connection screen goes through a stand-in that contacts no server (see [Connection screen](#connection-screen-connectionscreen-iserverconnection)).
+`Application` opens one at launch, on every IPv4 interface (`ANY_IPV4_ADDRESS`) and a port the system picks (`ANY_PORT`), and the connection to a server sends and receives through it, as an `IDatagramLink` (see [Joining a server](#joining-a-server-serverconnection)). A socket the system refuses to open stops the client: `main()` logs and prints `client stopped:` with the reason, and exits with code 1.
 
 ## Platform: the executable path
 
@@ -416,7 +428,7 @@ if (!worldStateFilter.accept(state.tick)) {
 | Add a menu | A screen that builds a `Menu` with `MenuBuilder` (`src/client/Widgets/`), as `QuitConfirmationScreen` does |
 | Add a text field to a menu | `MenuBuilder::textField()` with a `TextField` (`src/client/Widgets/TextField/`), then `Menu::fieldText()`, as `ConnectionScreen` does |
 | Change the characters a field accepts | `TextField::Characters` and `TextField::accepts()`; the ranges in `src/client/Widgets/WidgetConstants.hpp` |
-| Replace the stand-in connection | the class that joins a server implements `IServerConnection` (`src/client/Connection/`); build it in place of `StandInServerConnection` in the constructor of `Application`, then delete `StandInServerConnection/` |
+| Change how the client joins a server | `ServerConnection` in `src/client/Connection/ServerConnection/`; `CONNECTION_REQUEST_INTERVAL` and `CONNECTION_ATTEMPT_TIMEOUT` in `src/client/Connection/ConnectionConstants.hpp` |
 | Change the texts, sizes or checks of the connection screen | `src/client/Screens/ConnectionScreenConstants.hpp`, `ConnectionScreen::connect()` |
 | Change where the parts of the menus go | `MenuBuilder::placeColumn()`, `placeDialog()`, `placeForm()` and `placeTabbedPanel()`, `src/client/Widgets/WidgetConstants.hpp` |
 | Add a control to a row | A class deriving from `RowControl` in its own folder under `src/client/Widgets/RowControls/`, its sizes in `RowControlConstants.hpp`, added with `MenuBuilder::row()` |
@@ -447,6 +459,7 @@ if (!worldStateFilter.accept(state.tick)) {
 | Send or receive datagrams | `NetworkThread` in `src/client/Connection/NetworkThread/` |
 | Change how many datagrams wait between the frame loop and the network thread | `INCOMING_DATAGRAM_QUEUE_CAPACITY` and `OUTGOING_DATAGRAM_QUEUE_CAPACITY` in `src/client/Connection/ConnectionConstants.hpp` |
 | Test code that uses the network thread | `tests/client/Connection/NetworkThreadTest.cpp`: a peer socket on the loopback address |
+| Test code that sends and receives without the network | `tests/doubles/RecordingDatagramLink.hpp`, as `tests/client/Connection/ServerConnectionTest.cpp` does |
 | Add a client error | `src/client/Exceptions/ClientException.hpp` |
 
 Each folder has its own `CMakeLists.txt` declaring one library; `src/client/Rendering/CMakeLists.txt` declares `rtype_client_entity_sprites` for the table and the showcase, and adds `RenderSystem/`, `SfmlDrawSurface/`, `AssetTextureSource/`, `PixelCanvas/`, `InterfaceCanvas/`, `Squadron/`, `EntityLayer/` and `Background/`.

@@ -12,6 +12,7 @@
 #include "UdpSocket.hpp"
 #include "UdpSocketFixture.hpp"
 
+using rtype::network::ANY_PORT;
 using rtype::network::DatagramTooLargeException;
 using rtype::network::Endpoint;
 using rtype::network::InvalidAddressException;

@@ -9,4 +9,4 @@ target_link_libraries(rtype_client_connection
 )
 
 add_subdirectory(NetworkThread)
-add_subdirectory(StandInServerConnection)
+add_subdirectory(ServerConnection)

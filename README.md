@@ -46,7 +46,7 @@ The server listens on UDP port 4243 of every IPv4 interface; without `-p`, on po
 ./r-type_client -h 192.168.1.20 -p 4243 -n ACE
 ```
 
-The client is given the IPv4 address and the port of the server, `127.0.0.1` and 4242 by default, and the nickname of the player, `PILOT` by default; its connection screen starts with them. It does not join the server yet: a provisional stand-in accepts every connection at once.
+The client is given the IPv4 address and the port of the server, `127.0.0.1` and 4242 by default, and the nickname of the player, `PILOT` by default; its connection screen starts with them. CONNECT on that screen joins the server, so start the server first: without one, the screen shows `SERVER UNREACHABLE` after 5 seconds.
 
 `--help` prints the options of either program. An invalid argument stops it with a message and exit code 1.
 

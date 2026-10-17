@@ -4,13 +4,12 @@ target_include_directories(rtype_client_network_thread PUBLIC ${CMAKE_CURRENT_SO
 
 target_link_libraries(rtype_client_network_thread
   PUBLIC
+    rtype_client_connection
     rtype_concurrency_bounded_queue
     rtype_network_context
     rtype_network_datagram_relay
     rtype_network_transport
     rtype_network_udp_socket
-  PRIVATE
-    rtype_client_connection
 )
 
 rtype_enable_warnings(rtype_client_network_thread)

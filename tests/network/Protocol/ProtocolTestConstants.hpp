@@ -80,6 +80,7 @@ constexpr std::uint16_t SOME_SEQUENCE = 0x0A0B;
  * so a round trip shows each one at its place.
  */
 constexpr std::uint8_t SOME_OTHER_VERSION = 1;
+constexpr std::uint32_t SOME_OTHER_PROTOCOL_ID = 0x52545951;
 constexpr std::uint8_t SOME_FLAGS = 0x0C;
 constexpr std::uint16_t SOME_ACKNOWLEDGED_SEQUENCE = 0x0D0E;
 constexpr std::uint32_t SOME_ACKNOWLEDGEMENT_BITS = 0x0F101112;

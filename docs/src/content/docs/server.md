@@ -3,7 +3,7 @@ title: Server and game
 description: What the server program and the game library do, how their parts fit together and where to find them in the code.
 ---
 
-The server, `r-type_server`, is meant to run the game for the players connected to it. Today it receives their datagrams and runs a tick at a fixed rate, but a tick only logs the datagrams received and counts toward the next world state: nothing decodes them or advances the `World`, and no one is on the recipient list, so no state is sent yet. It never links SFML or Asio: it reaches the network through `rtype_network`, and its own libraries are checked for it at configure time (see [Project layout](/R-Type/project-layout/#who-may-link-what)).
+The server, `r-type_server`, is meant to run the game for the players connected to it. Today it receives their datagrams, runs a tick at a fixed rate and lets up to four players in: each tick answers the connection requests received. Nothing else a client sends is read yet, nothing advances the `World`, and no one is on the recipient list of the world state, so no state is sent yet. It never links SFML or Asio: it reaches the network through `rtype_network`, and its own libraries are checked for it at configure time (see [Project layout](/R-Type/project-layout/#who-may-link-what)).
 
 The game library, `rtype_game`, holds the rules of a match: what moves, what touches what and what that means. It is built on the engine (see [Engine](/R-Type/engine/)), and it knows nothing about sockets, SFML or the messages sent between the programs (see [Project layout](/R-Type/project-layout/#game)). The server runs all of it; the client will only run the part that predicts its own ship.
 
@@ -16,7 +16,8 @@ This page tells you where to look when you need to change something. It describe
 | Filtering unwanted senders before the incoming queue | Not yet written | — |
 | World state sent at a fixed rate | Available: sends to no one yet, the list of recipients is empty | `src/server/Replication/` |
 | Launch options | Available: the port and `--help` | `src/server/LaunchOptions/` |
-| Lobby, games, master link | Not yet written | — |
+| Letting players in: challenge, acceptance or refusal | Available; nothing tells it a game is in progress yet | `src/server/Lobby/`, `src/server/Instances/` |
+| Lobby state, games, master link | Not yet written | — |
 | Components (`Position`, `Velocity`, `CollisionBox`, `EntityType`, `Sprite`, `Layer`) | Available | `src/game/Components/` |
 | Movement | Available | `src/game/Systems/MovementSystem/` |
 | Collisions | Available: nothing runs them yet | `src/game/Systems/CollisionSystem/`, `src/game/Systems/CollisionRules/`, `src/game/Events/` |
@@ -46,7 +47,7 @@ This page tells you where to look when you need to change something. It describe
 - The **network thread**, the one that calls `run()`, runs the `NetworkContext`. `DatagramRelay` (`rtype_network`, see [Network](/R-Type/network/#socket-to-queues-datagramrelay)) copies every datagram received, with its sender, into the incoming `BoundedQueue`, and sends what was left in the outgoing one. It is the only thread that touches the socket.
 - The **simulation thread** runs `SIMULATION_TICKS_PER_SECOND` (60) ticks per second. Each tick drains the incoming queue and hands what arrived, often nothing, to the tick handler given to the constructor, so a slow or silent player never holds the game up. At the end of the tick it asks the network thread, through `NetworkContext::post()`, to send the outgoing queue.
 
-The tick handler is where the game plugs in. Today `src/server/main.cpp` gives one that logs each datagram at the `debug` level, then calls the `WorldStateSender`: nothing decodes or answers the datagrams, and the sender has no recipient, so nothing fills the outgoing queue yet.
+The tick handler is where the game plugs in. Today `src/server/main.cpp` gives one that logs each datagram at the `debug` level, hands them to the `ConnectionAcceptor`, which answers the connection requests (see [Letting players in](#letting-players-in-connectionacceptor-playerroster)), then calls the `WorldStateSender`, which has no recipient yet.
 
 A tick handler puts a datagram in the outgoing queue with `queueDatagram()`, called from the handler itself, on the simulation thread. The datagram is sent at the end of the same tick.
 
@@ -64,7 +65,7 @@ The queues hold `INCOMING_DATAGRAM_QUEUE_CAPACITY` and `OUTGOING_DATAGRAM_QUEUE_
 
 The room of the incoming queue protects the server's memory, not the players: one sender flooding the server's port pushes everyone else's datagrams out of it. A plain Python loop on the loopback address sends about 3 800 datagrams per tick (measured on an Apple Silicon laptop), about fifteen times the room of the queue. Other engines protect the players in three layers; the server must have them once sessions exist, and **none is written yet**:
 
-1. **Sort on the network thread, before the queue.** A datagram whose sender has no session and that is not a `ConnectionRequest` must be dropped there, and connection requests must be limited per address, in a table of fixed size so that forged addresses cannot make it grow. Quake 3 ignores such datagrams and answers at most 10 status, information or remote console requests per second from one address; Unreal limits how many datagrams of senders without a connection it processes each frame.
+1. **Sort on the network thread, before the queue.** A datagram whose sender has no session and that is not a `ConnectionRequest` must be dropped there (today the `ConnectionAcceptor` ignores it on the simulation thread, after the queue), and connection requests must be limited per address, in a table of fixed size so that forged addresses cannot make it grow. Quake 3 ignores such datagrams and answers at most 10 status, information or remote console requests per second from one address; Unreal limits how many datagrams of senders without a connection it processes each frame.
 2. **One queue per session**, so a flooding client only fills its own. Valve's GameNetworkingSockets keeps one per connection, of 1 000 messages by default.
 3. **One input per player and per tick.** The protocol already requires it: the server must apply the newest `PlayerInput` of each player at every tick and ignore older ones (see [Protocol](/R-Type/protocol/#inputs)).
 
@@ -132,6 +133,25 @@ The sender is built before the server, whose tick handler captures it, and sends
 
 `World::components()` (`rtype_game`) is the `ComponentRegistry` of the world: a `World` owns its entities and their components, and cannot be copied or moved.
 
+## Letting players in: `ConnectionAcceptor`, `PlayerRoster`
+
+`ConnectionAcceptor` (`src/server/Lobby/ConnectionAcceptor/`) answers the connection requests of each tick, as the [Protocol](/R-Type/protocol/#connection) describes, and `PlayerRoster` (`src/server/Instances/PlayerRoster/`) holds the players it let in: at most `MAXIMUM_PLAYERS` (4), each a `ConnectedPlayer` with its number, nickname, address and port, session token and next sequence. A new player takes the lowest free number, so the first four are 1 to 4 in the order they joined.
+
+A datagram is read only when its header is of this protocol and version and its message sizes add up; only its first `ConnectionRequest` is answered, so one datagram never gets more than one answer, and every other message is ignored. A request is answered by the first row that applies:
+
+| The request comes… | Answer |
+|---|---|
+| from a connected player | the same `ConnectionAccepted` again (same number, same token) with a valid cookie; a `ConnectionChallenge` without one, even during a game |
+| while a game is in progress | `ConnectionRefused` (`GameInProgress`) |
+| when four players are connected | `ConnectionRefused` (`GameFull`) |
+| without a valid cookie | `ConnectionChallenge`, and nothing is kept |
+| with a valid cookie | a place in the roster, a session token drawn at random (never 0), and `ConnectionAccepted` |
+
+- A refusal reserves nothing, so it goes before the cookie is checked. The cookies come from a `CookieIssuer` whose key is drawn when the acceptor is built (see [Network](/R-Type/network/#connection-cookies-cookieissuer)).
+- An acceptance carries the session token and the next sequence of that player, 0 for the first. Challenges and refusals carry token 0 and sequence 0, as every datagram sent before a session.
+- Nothing caused by the content of a datagram makes it throw. Each new player is logged at the `info` level under `Lobby`, as `player <n> joined from <address> port <port>`; challenges and refusals at the `debug` level.
+- `setGameInProgress(bool)` turns the `GameInProgress` refusal on and off; nothing calls it yet, since games have no lifecycle. No player ever leaves the roster yet either: heartbeats and departures do not exist.
+
 ## Collisions
 
 A collision takes two steps, in two classes. The first finds what overlaps; the second decides which overlaps matter. Neither removes health nor destroys an entity: they only announce what happened, so the damage rules can react to it (see [Event bus](/R-Type/engine/#event-bus-eventbus)).
@@ -187,6 +207,8 @@ The bus and the registry must outlive `CollisionRules`, and the bus must outlive
 | Change how often the world state is sent | `WORLD_STATES_PER_SECOND` in `src/server/ServerConstants.hpp` |
 | Change what the world state lists | `WorldStateSender::capture` in `src/server/Replication/WorldStateSender/WorldStateSender.cpp` |
 | Send a datagram from the tick | `ServerApplication::queueDatagram()` |
+| Change how a connection request is answered | `ConnectionAcceptor::answer` in `src/server/Lobby/ConnectionAcceptor/ConnectionAcceptor.cpp` |
+| Change how players get their number, or what the server keeps of them | `PlayerRoster` in `src/server/Instances/PlayerRoster/`, `ConnectedPlayer` in `src/server/Instances/ConnectedPlayer.hpp` |
 | Change the size of the queues between threads | `INCOMING_DATAGRAM_QUEUE_CAPACITY` and `OUTGOING_DATAGRAM_QUEUE_CAPACITY` in `src/server/ServerConstants.hpp` |
 | Change the simulation rate | `SIMULATION_TICKS_PER_SECOND` in `src/engine/Time/TimeConstants.hpp` |
 | Change how often the simulation reports | `REPORT_SECONDS` in `src/server/ServerConstants.hpp` |
@@ -201,4 +223,4 @@ The bus and the registry must outlive `CollisionRules`, and the bus must outlive
 | Add a component type | A new struct in `src/game/Components/` |
 | Write a test with entities that collide | `tests/CollisionScene.hpp` |
 
-Each folder holding sources has its own `CMakeLists.txt` declaring one library; `Application/` and `Platform/` only add their subfolders, `Replication/` declares its constants and adds `WorldStateSender/`, and `r-type_server` links `rtype_server_application`, `rtype_server_launch_options` and `rtype_server_world_state_sender` in `src/server/CMakeLists.txt`.
+Each folder holding sources has its own `CMakeLists.txt` declaring one library; `Application/` and `Platform/` only add their subfolders, `Replication/` declares its constants and adds `WorldStateSender/`, `Lobby/` declares its constants and adds `ConnectionAcceptor/`, `Instances/` declares `ConnectedPlayer` and adds `PlayerRoster/`, and `r-type_server` links `rtype_server_application`, `rtype_server_connection_acceptor`, `rtype_server_launch_options`, `rtype_server_player_roster` and `rtype_server_world_state_sender` in `src/server/CMakeLists.txt`.
