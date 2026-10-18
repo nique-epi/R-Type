@@ -33,6 +33,7 @@ The client looks for `assets/` next to its executable, then in the folder above 
 | `fonts/silkscreen/silkscreen.ttf` | Silkscreen, the small pixel font of the menus: version, copyright | SIL Open Font License 1.1, copyright 2001 The Silkscreen Project Authors, license in `fonts/silkscreen/OFL.txt`; from `google/fonts` (`ofl/silkscreen`) |
 | `sprites/logo.png` | The logo of the title screen, 210 × 42 pixels | Drawn for this project (main menu mockup 1c v4) |
 | `sprites/entities.png` | The sprite sheet of a match: four player ships, the Bydo, the bonus Bydo, the player missile and the enemy missile | Drawn for this project (proposal 3a); not taken from the sprite set shipped with the subject |
+| `sprites/effects.png` | The effects of a match: the explosions of the Bydo and of the ship, the impact of a missile and the muzzle flashes of both missiles, each with its version without flash | Drawn for this project (animation proposal, options C), generated from the drafts of the proposal; not taken from the sprite set shipped with the subject |
 
 ## The entity sheet
 
@@ -46,4 +47,18 @@ The client looks for `assets/` next to its executable, then in the folder above 
 | Player missile | 16 × 6 | 60 ms |
 | Enemy missile | 8 × 8 | 120 ms |
 
-Only the squadron of the title screen animates the frames; the game shows the first frame of each entity. The rectangle of each entity type is written once, in `src/client/Rendering/EntitySpriteConstants.hpp`. The sheet is listed in `titleAssets()`, for the squadron of the title screen, and in `gameAssets()`.
+The game and the squadron of the title screen show the two frames in turn, each for the frame time above. The rectangle, the frames and the animation of each entity type are written once, in `src/client/Rendering/EntitySpriteConstants.hpp`. The sheet is listed in `titleAssets()`, for the squadron of the title screen, and in `gameAssets()`.
+
+## The effect sheet
+
+`sprites/effects.png` is 418 × 234 pixels, laid out like the entity sheet: native size, one row per effect, frames and rows 2 pixels apart, transparent outside the frames. Each effect has two rows of as many frames: the standard one, then the one played when the player turns REDUCE FLASHES on, which shows no white.
+
+| Effect | Frames | Frame size | Frame time | Top of the standard row, then of the row without flash |
+|---|---|---|---|---|
+| Bydo explosion: the Bydo turns lilac, becomes a blob, then bursts into purple drops | 6 | 48 × 48 | 70 ms | 0, 50 |
+| Ship explosion: three fireballs, each starting 120 ms after the previous one | 10 | 40 × 36 | 60 ms | 100, 138 |
+| Impact of a missile | 3 | 10 × 10 | 50 ms | 176, 188 |
+| Muzzle flash of a player missile, cyan | 2 | 7 × 7 | 50 ms | 200, 209 |
+| Muzzle flash of an enemy missile, orange | 2 | 7 × 7 | 50 ms | 218, 227 |
+
+Without flash, the Bydo explosion starts on the Bydo in its own colors instead of its lilac silhouette, the fireballs and the impact turn their white to yellow, and a muzzle flash shows its smaller frame twice. The sheet was generated from the drafts of the animation proposal, the same drawings at the same size; the ship explosion lays its three fireballs on each frame, so the client plays one animation for it. The rows are written once, in `src/client/Rendering/Effects/EffectConstants.hpp`, each computed under the previous one, and `client_animation_tests` checks them against the shipped sheet: every frame lies inside it, shows a visible pixel, cuts no drawing and overlaps no other, and no frame without flash shows the white of the explosions (`#fffbe8`). The sheet is listed in `gameAssets()` only.

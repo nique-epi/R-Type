@@ -3,7 +3,7 @@ title: Client
 description: What the client does, how its parts fit together and where to find them in the code.
 ---
 
-The client, `r-type_client` (`src/client/`), shows the game, plays its sounds and reads the player's input; the server decides what happens in the match (see [Architecture](/R-Type/architecture/)). Today it finds its assets folder, loads the assets of its interface, opens a window and runs its screens over a scrolling starfield: the title screen it opens on, a connection screen, a loading screen, the game screen, which draws its entities from one sprite sheet (for now a provisional showcase), an options screen and a quit confirmation, the menus all built from the same widgets. The game screen reads the player's actions through the keys the player chose, the arrows and the space bar at first; the options change them, with the volumes, the window size and the accessibility settings, and save them in a file for the next launch. It reads the server's address and port and the player's nickname at launch, shows them on its connection screen, and joins the server from there: it sends the connection request of the protocol, on a network thread opened at launch, until the server accepts or refuses it. Once accepted, it opens the local game: nothing the server sends after the acceptance is read yet, so the entities the server announces, which the client can apply, never reach it.
+The client, `r-type_client` (`src/client/`), shows the game, plays its sounds and reads the player's input; the server decides what happens in the match (see [Architecture](/R-Type/architecture/)). Today it finds its assets folder, loads the assets of its interface, opens a window and runs its screens over a scrolling starfield: the title screen it opens on, a connection screen, a loading screen, the game screen, which draws its entities from one sprite sheet, animated, and their explosions and flashes from another (for now a provisional showcase), an options screen and a quit confirmation, the menus all built from the same widgets. The game screen reads the player's actions through the keys the player chose, the arrows and the space bar at first; the options change them, with the volumes, the window size and the accessibility settings, and save them in a file for the next launch. It reads the server's address and port and the player's nickname at launch, shows them on its connection screen, and joins the server from there: it sends the connection request of the protocol, on a network thread opened at launch, until the server accepts or refuses it. Once accepted, it opens the local game: nothing the server sends after the acceptance is read yet, so the entities the server announces, which the client can apply, never reach it.
 
 This page tells you where to look when you need to change something. It describes what exists today and says plainly what does not exist yet.
 
@@ -18,9 +18,11 @@ This page tells you where to look when you need to change something. It describe
 | Assets folder and asset ids | Available | `src/client/Assets/`, `assets/README.md` |
 | Asset loading | Available; used at launch for the interface assets, and by the loading screen | `src/client/Assets/AssetLibrary/`, `src/client/Assets/AssetLoadingStep/` |
 | Path of the running executable, the reduced motion setting of the system, the settings folder | Available | `src/client/Platform/` |
-| Player settings and their file | Available; the volumes, the color mode, the flashes, the sound cues and auto-fire are saved, but nothing reads them yet | `src/client/Settings/` |
+| Player settings and their file | Available; the game reads the flashes setting; the volumes, the color mode, the sound cues and auto-fire are saved, but nothing reads them yet | `src/client/Settings/` |
 | Drawing entities | Available; drawn by the game screen | `src/client/Rendering/EntityLayer/`, `src/client/Rendering/RenderSystem/`, `src/client/Rendering/SfmlDrawSurface/`, `src/client/Rendering/AssetTextureSource/` |
-| Sprites of the ships, Bydos and missiles | Available; first animation frame only | `assets/sprites/entities.png`, `src/client/Rendering/EntitySprites.cpp` |
+| Sprites of the ships, Bydos and missiles | Available, animated | `assets/sprites/entities.png`, `src/client/Rendering/EntitySprites.cpp` |
+| Animations | Available; played by the game screen | `src/client/Rendering/Animation/`, `src/client/Rendering/AnimationSystem/` |
+| Explosions, impacts, muzzle flashes and hit flashes | Available; played by the provisional showcase only, since nothing from the server starts them yet | `assets/sprites/effects.png`, `src/client/Rendering/Effects/`, `src/client/Rendering/HitFlashSystem/` |
 | Scrolling background | Available; drawn by the frame loop under every screen | `src/client/Rendering/Background/` |
 | Pictures of the menus, pixel fonts | Available | `src/client/Rendering/InterfaceCanvas/`, `assets/fonts/` |
 | Squadron of the title screen | Available | `src/client/Rendering/Squadron/` |
@@ -44,7 +46,7 @@ Screens are asked for by identifier: `push()` and `replaceAll()` take a `ScreenI
 | `TitleScreen` | the logo, PLAY, SETTINGS and QUIT, and the squadron, over the scrolling background; PLAY pushes the connection screen over it | the connection screen asks `replaceAll(ScreenId::Game)` |
 | `ConnectionScreen` | over the title, which it hides: a form centered on the picture, DIRECT CONNECT, the fields ADDRESS, PORT and PILOT, CONNECT and BACK, then a status line | BACK or Escape drops the attempt and closes it; once the server has accepted the player for `ACCEPTED_STATUS_DURATION` (1 s), it asks `replaceAll(ScreenId::Game)` |
 | `LoadingScreen` | a progress bar; one file is loaded per frame | every file is loaded: it asks again, with `replaceAll()`, for the screen it loads for, which `createScreen()` now builds itself |
-| `GameScreen` | its entities, over the scrolling background (today the provisional sprite showcase); releasing `OPTIONS_KEY` (Escape) releases what the player holds and pushes the options over it (`ScreenId::GameOptions`) | not yet: the end of a game is not written |
+| `GameScreen` | its entities, animated, and their effects, over the scrolling background (today the provisional sprite showcase); releasing `OPTIONS_KEY` (Escape) releases what the player holds and pushes the options over it (`ScreenId::GameOptions`) | not yet: the end of a game is not written |
 | `OptionsScreen` | over the title, which it hides (`ScreenId::Options`), or over the game, which goes on running behind it, dimmed (`ScreenId::GameOptions`): SETTINGS, the tabs SOUND, CONTROLS, DISPLAY and ACCESS, a panel of rows, then BACK (see [Options](/R-Type/client/#options-optionsscreen)) | BACK, or Escape (`MENU_CANCEL_KEY`) once no list is open and no key is awaited, closes it |
 | `QuitConfirmationScreen` | over the title, still drawn under a dimmed layer, a panel: ARE YOU SURE YOU WANT TO QUIT?, NO selected | NO or Escape closes it; YES asks `closeAll()`, which closes the client |
 
@@ -66,7 +68,7 @@ Assets are loaded at three moments only, all declared in `src/client/Screens/Scr
 
 - at launch, before the window opens, `loadInterfaceAssets()` loads `interfaceAssets()`, the assets of the interface, which any screen may use at any time, in a game or outside one (today the two pixel fonts of the menus, `REGULAR_FONT_ID` and `SMALL_FONT_ID`), and makes them permanent, so changing screen outside a game never reads a font;
 - right after, still before the window opens, `loadTitleAssets()` loads `titleAssets()`: the logo (`LOGO_ID`, `sprites/logo.png`) and the entity sheet the squadron is drawn from, so the first frame already shows the title. They are not permanent: entering a game releases the logo, and a title screen built later goes through the loading screen of `titleAssets()` when one is missing;
-- when the player enters a game (`ScreenId::Game`), the loading screen loads `gameAssets()`, one file per frame, after releasing what a previous game used and this one does not. When they are all loaded already, the game screen is built at once, after the same release. Today `gameAssets()` holds the entity sheet (`ENTITY_SHEET_ID`) alone, which the title already loaded: PLAY builds the game screen at once, and the loading screen is never seen.
+- when the player enters a game (`ScreenId::Game`), the loading screen loads `gameAssets()`, one file per frame, after releasing what a previous game used and this one does not. When they are all loaded already, the game screen is built at once, after the same release. Today `gameAssets()` holds the entity sheet (`ENTITY_SHEET_ID`), which the title already loaded, and the effect sheet (`EFFECT_SHEET_ID`), which it does not. The connection screen asks for the game during its update, so the loading screen is built after the update of that frame and drawn once, its bar empty; in the next frame it loads the effect sheet, and the game screen replaces it before the draw. Entering a game therefore shows the loading screen for one frame.
 
 ### What a loading step does
 
@@ -94,11 +96,11 @@ sequenceDiagram
 
 ## Assets in the game: from an entity to the screen
 
-The engine knows nothing about assets, and the game only names them: an entity that is drawn carries a `Sprite` component (`rtype_game`) holding an asset id, the rectangle of that image to show (`SpriteFrame`, in pixels of the image) and a layer. Each frame, `RenderSystem` (`src/client/Rendering/`) walks the entities that have a `Position` and a `Sprite`, layer by layer, and asks an `IDrawSurface` to draw each rectangle at its position. `SfmlDrawSurface` finds the texture through `ITextureSource`, which `AssetTextureSource` reads from the `AssetLibrary` without loading anything; an id with no loaded texture is skipped and logged once.
+The engine knows nothing about assets, and the game only names them: an entity that is drawn carries a `Sprite` component (`rtype_game`) holding an asset id, the rectangle of that image to show (`SpriteFrame`, in pixels of the image) and a layer. Each frame, `RenderSystem` (`src/client/Rendering/`) walks the entities that have a `Position` and a `Sprite`, layer by layer, and asks an `IDrawSurface` to draw each rectangle at its position, with the tone of its `HitFlash` when it has one (see [Hit flash](#hit-flash-hitflash-hitflashsystem)). `SfmlDrawSurface` finds the texture through `ITextureSource`, which `AssetTextureSource` reads from the `AssetLibrary` without loading anything; an id with no loaded texture is skipped and logged once.
 
 `SfmlDrawSurface` paints on a `PixelCanvas`, the pixel grid of the sky (see [How it is drawn](#how-it-is-drawn)): a position becomes a pixel of the canvas, which covers `BACKGROUND_PIXEL_SIZE` (4) logical units, and each rectangle lands on whole pixels, so a sprite is copied pixel for pixel and its pixels match the stars at every window size. An entity therefore moves on screen by whole background pixels, 4 logical units at a time.
 
-The canvas belongs to `EntityLayer` (`src/client/Rendering/EntityLayer/`), behind the `IEntityLayer` interface. The game screen owns the entities of the game, which appear and disappear with it, and an entity layer. It paints the layer at construction and in every `update()`: the layer clears its canvas to transparent, lets `RenderSystem` paint on it, and ends the picture. In `draw()` it only lays the layer, since `draw()` is const; the entities sit over the background and under any screen pushed over the game. `GameScreen` sees only `IEntityLayer`, so `client_screen_tests` gives it a recording double and needs no graphics card.
+The canvas belongs to `EntityLayer` (`src/client/Rendering/EntityLayer/`), behind the `IEntityLayer` interface. The game screen owns the entities of the game, which appear and disappear with it, and an entity layer. It paints the layer at construction and at the end of every `update()`, once the animations and effects of the frame have moved (see [Animations](#animations-animation-animationsystem)): the layer clears its canvas to transparent, lets `RenderSystem` paint on it, and ends the picture. In `draw()` it only lays the layer, since `draw()` is const; the entities sit over the background and under any screen pushed over the game. `GameScreen` sees only `IEntityLayer`, so `client_screen_tests` gives it a recording double and needs no graphics card.
 
 ```mermaid
 flowchart TB
@@ -116,23 +118,72 @@ Showing a new image takes four steps:
 
 1. Draw it at its native size into `assets/sprites/entities.png`, or put a new file in `assets/sprites/`, named after the asset id rule.
 2. Write its rectangle once, as a named constant (`EntitySpriteConstants.hpp` for the entity sheet), and the id of a new file too.
-3. List the id in `gameAssets()` (`src/client/Screens/ScreenAssets.cpp`), which already names the entity sheet.
-4. Give the entity a `Sprite` with that id, rectangle and layer: for an entity type, a case in `spriteOf`.
+3. List the id in `gameAssets()` (`src/client/Screens/ScreenAssets.cpp`), which already names the entity and effect sheets.
+4. Give the entity a `Sprite` with that id, rectangle and layer: for an entity type, a case in `spriteOf`, and one in `animationOf` for its frames.
 
-## Entity sprites: `spriteOf`
+## Entity sprites: `spriteOf`, `animationOf`
 
 `spriteOf(type)` (`rtype_client_entity_sprites`) is the single table that gives each `EntityType` its `Sprite`: the entity sheet `sprites/entities.png` (`ENTITY_SHEET_ID`), the rectangle of the type, and the `Entities` layer. A value outside `EntityType` gets no sprite, never a neighbor's. `EntityReplicator` calls it once per entity it creates, after turning the type number of the protocol into an `EntityType` (see [Entities from the server](#entities-from-the-server-entityreplicator)).
 
-| Type | Sprite | Native size, in pixels | On the playfield, in logical units |
-|---|---|---|---|
-| `Player` | the ship of the first player color | 32 × 16 | 128 × 64 |
-| `Enemy` | the Bydo | 24 × 24 | 96 × 96 |
-| `PlayerMissile` | the player missile | 16 × 6 | 64 × 24 |
-| `EnemyMissile` | the enemy missile | 8 × 8 | 32 × 32 |
+| Type | Sprite | Native size, in pixels | On the playfield, in logical units | Frame time |
+|---|---|---|---|---|
+| `Player` | the ship of the first player color | 32 × 16 | 128 × 64 | 80 ms |
+| `Enemy` | the Bydo | 24 × 24 | 96 × 96 | 250 ms |
+| `PlayerMissile` | the player missile | 16 × 6 | 64 × 24 | 60 ms |
+| `EnemyMissile` | the enemy missile | 8 × 8 | 32 × 32 | 120 ms |
 
-The sheet and where it comes from are described in `assets/README.md`. Not yet done: the four players share the first ship color, though the sheet holds four; the bonus Bydo has no entity type; only the first of the two animation frames is shown. `client_rendering_tests` checks the table against the shipped sheet with `sf::Image`, which needs no graphics card: every rectangle lies inside the sheet, shows a visible pixel, cuts no sprite and overlaps no other type.
+`animationOf(type, networkId)` (same library) gives each type its animation from the same table: the two frames of its row of the sheet, in a loop, each shown for the frame time above (see [Animations](#animations-animation-animationsystem)). The loop of an entity starts at an offset taken from its network id, the fractional part of `networkId × LOOP_START_SPREAD` (φ − 1, about 0.618) of one cycle, so Bydos created in the same tick, whose ids follow each other, do not pulse together. The offset is 0 for id 0 and always less than one cycle. Code that creates an entity of a type gives it both, as the showcase does: the `SpriteAnimation` of `animationOf`, and the `Sprite` of `spriteOf` set to the frame that animation starts on, so the first draw already shows it.
 
-The entities on screen today are a **provisional** showcase: `spawnSpriteShowcase` (`src/client/Rendering/SpriteShowcase.hpp`) puts a player ship, a player missile, an enemy missile and a Bydo across the middle of the playfield when the game screen is built. It will be removed once the client creates the entities the server announces.
+The sheet and where it comes from are described in `assets/README.md`. Not yet done: the four players share the first ship color, though the sheet holds four; the bonus Bydo has no entity type. `client_rendering_tests` checks the table against the shipped sheet with `sf::Image`, which needs no graphics card: every rectangle lies inside the sheet, shows a visible pixel, cuts no sprite and overlaps no other type, and every frame of every animation lies inside the sheet, shows a visible pixel and cuts no sprite.
+
+The entities on screen today are a **provisional** showcase: `SpriteShowcase` (`src/client/Rendering/SpriteShowcase/`), owned by the game screen, puts a player ship, a player missile, an enemy missile and three Bydos across the middle of the playfield, with the network ids 1 to 6, all animated, and plays every effect in a loop of `SHOWCASE_LOOP` (4 s). Both missiles flash as if just fired at 0.2 s; an impact bursts on the left side of the first Bydo, which flashes, at 0.7 s and 1.3 s; that Bydo explodes and disappears at 2 s, the ship at 2.6 s; both come back at 3.6 s. A step plays when the time crosses it: a frame that crosses the end of the loop plays the steps of both loops in order, and one long frame plays one loop at most. The steps are `SHOWCASE_TIMELINE`, in `src/client/Rendering/SpriteShowcaseConstants.hpp`. The showcase will be removed once the client creates the entities the server announces.
+
+## Animations and effects
+
+Every animation of the client is data, played by the time elapsed and never by the number of frames drawn; an effect (an explosion, an impact, a muzzle flash) is an entity of its own whose animation plays once. Rendering knows nothing of the server or of the settings: the game screen hands it the time of each frame and the player's flash setting.
+
+### Animations: `Animation`, `AnimationSystem`
+
+An `Animation` (`rtype_client_animation`, `src/client/Rendering/Animation/`) holds the rectangles of a sheet shown in turn (`frames`), how long each one shows (`frameDuration`) and what follows the last one (`Playback::Loop` starts again, `Playback::Once` stays on it). `frameAt(elapsed)` gives the frame due after a time: frame ⌊elapsed ÷ frameDuration⌋, taken modulo the number of frames for a loop and capped at the last one for an animation played once. It counts in whole nanoseconds (`engine::Duration`), so the same frame shows at the same moment at 60 or at 10 frames per second, and one long frame lands on the frame due at its end. An animation without frames, or whose frames last no time, shows nothing. `hasEnded(elapsed)` is true once the last frame of an animation played once has shown for `frameDuration`; a loop never ends.
+
+Animations are constants, next to the rectangles they show: `EntitySpriteConstants.hpp` for the entities, `EffectConstants.hpp` for the effects. Their frames are built by `framesInRow()` (`SheetRow.hpp`) from the first frame of a row and the spacing of the sheet:
+
+```cpp
+constexpr std::array BYDO_FRAMES =
+    framesInRow<SPRITE_FRAME_COUNT>(BYDO_FRAME, SPRITE_SPACING);
+constexpr Animation BYDO_ANIMATION{.frames = BYDO_FRAMES,
+                                   .frameDuration = BYDO_FRAME_TIME,
+                                   .playback = Animation::Playback::Loop};
+```
+
+An entity plays an animation through a `SpriteAnimation` component: the animation and the time since it started. `AnimationSystem` (`src/client/Rendering/AnimationSystem/`), an `ISystem`, adds the time of each step to it and writes the frame due into the `Sprite` of the entity. An entity whose animation played once has ended is destroyed, which is how an effect removes itself; the destruction waits until the walk over the components ends (see [Engine](/R-Type/engine/#changing-entities-during-a-query)).
+
+The game screen runs `AnimationSystem`, then `HitFlashSystem`, through a `SystemScheduler` (see [Engine](/R-Type/engine/#order-systemscheduler)) at the start of every `update()`, with the real time of the frame; then the showcase plays its steps, whose new effects start on their first frame; then the entity layer is painted. An effect born in a frame is therefore drawn at least once, however long the frame: a muzzle flash of 100 ms born in a frame of 500 ms, after the window was dragged, is still seen. `client_animation_tests` checks the animations, the effects and the showcase without a screen.
+
+### Effects: `EffectSpawner`
+
+`EffectSpawner` (`rtype_client_effect_spawner`, `src/client/Rendering/Effects/EffectSpawner/`) starts the effects of a match. An effect is an entity in the `Effects` layer, in front of the entities, centered on the position given, drawn from the effect sheet (`sprites/effects.png`, `EFFECT_SHEET_ID`) and played once:
+
+| Call | For | Plays |
+|---|---|---|
+| `playExplosion(type, center)` | `Player` | three fireballs, 600 ms |
+| `playExplosion(type, center)` | `Enemy` | the Bydo bursting into purple drops, 420 ms |
+| `playExplosion(type, center)` | `PlayerMissile`, `EnemyMissile` | an impact, 150 ms |
+| `playAppearance(type, center)` | `PlayerMissile`, `EnemyMissile` | a muzzle flash, cyan or orange, 100 ms |
+| `playAppearance(type, center)` | `Player`, `Enemy` | nothing |
+| `flashHit(entity)` | an alive entity with a `Sprite` | the entity drawn white for `HIT_FLASH_DURATION` (60 ms); a second hit starts it over |
+
+A value outside `EntityType` plays nothing, and `flashHit` leaves alone an entity that is dead or has no `Sprite`. Every call adds components, so none may be made during a `forEach`. The rows, frames and durations are in `src/client/Rendering/Effects/EffectConstants.hpp`, and the sheet is described in `assets/README.md`. Today only the showcase calls the spawner: the client reads nothing the server sends after the acceptance, so no `EntityDestroyed`, `EntitySpawned` or `GameEvent` starts an effect yet.
+
+### Hit flash: `HitFlash`, `HitFlashSystem`
+
+An entity hit carries a `HitFlash` component: the `SpriteTone` it is drawn with (`Flash`, or `Shade` when the player reduced flashes) and the time left. `RenderSystem` hands the tone to `IDrawSurface::draw()`, `SpriteTone::Normal` for an entity without one. `HitFlashSystem` (`src/client/Rendering/HitFlashSystem/`) counts the time down and removes the component once it reaches zero, so the next draw shows the entity in its own colors.
+
+`SfmlDrawSurface` draws a flash with a shader (`FLASH_FRAGMENT_SHADER`, in `FlashShader.hpp`) that paints every visible pixel of the sprite in `FLASH_COLOR` (`#fffbe8`, the white of the explosions) and keeps its transparency: SFML only multiplies a sprite by a color, which darkens it and never whitens it. On a machine without shaders, or whose driver does not compile this one, a flash is drawn twice, the second time added onto the first (`sf::BlendAdd`), which brightens the sprite, and the reason is logged once. A shade multiplies the sprite by `SHADE_TINT` (200, 130, 150), which darkens it toward red. Both colors are in `SpriteToneColors.hpp`.
+
+### Reduced flashes: `FlashPreference`
+
+The game screen reads REDUCE FLASHES (`PlayerSettings::reduceFlashes`) at every update and hands it to the spawner as a `FlashPreference`, `Full` or `Reduced`: a change made in the options during a game applies to the next effect, and an effect already playing keeps its version. While it is `Reduced`, each effect plays its version without flash, a row of the effect sheet as long as the standard one that shows no white, and a hit shades the entity instead of whitening it. `Rendering/` never reads the settings: the preference is all it gets, as `MotionPreference` is for the squadron.
 
 ## Scrolling background: `ScrollingBackground`
 
@@ -259,7 +310,7 @@ A menu paints through `IInterfaceCanvas` (`src/client/Rendering/`): rectangles, 
 
 ### The squadron: `Squadron`
 
-`Squadron` (`src/client/Rendering/Squadron/`) plays on the right of the title screen, in the area its menu reserves. A line grows from the middle of the box, the box opens by 0.45 s, SQUADRON is written letter by letter, and the four ships, one per player color, fly in through the left edge and reach their places by 1.79 s. The formation then drifts in a figure eight of 14 × 10 pixels without leaving the box, and a random ship fires every 1.6 to 3 s. It plays again each time the title screen is built. When the system asks for less motion (`systemPrefersReducedMotion()`, read when the title is built), the box is open, the ships are at rest and none fires. The timings are in `SquadronConstants.hpp`.
+`Squadron` (`src/client/Rendering/Squadron/`) plays on the right of the title screen, in the area its menu reserves. A line grows from the middle of the box, the box opens by 0.45 s, SQUADRON is written letter by letter, and the four ships, one per player color, fly in through the left edge and reach their places by 1.79 s. The formation then drifts in a figure eight of 14 × 10 pixels without leaving the box, and a random ship fires every 1.6 to 3 s. The flames of the ships and the missiles play the animations of the game (`PLAYER_SHIP_ANIMATION`, `PLAYER_MISSILE_ANIMATION`). It plays again each time the title screen is built. When the system asks for less motion (`systemPrefersReducedMotion()`, read when the title is built), the box is open, the ships are at rest and none fires. The timings are in `SquadronConstants.hpp`.
 
 ## Connection screen: `ConnectionScreen`, `IServerConnection`
 
@@ -296,7 +347,7 @@ Every row reads and writes the `PlayerSettings` that `Application` owns (see [Se
 
 The description of the selected row follows its state: the keys of an open list, `> PRESS THE NEW KEY. ESC CANCELS` while a key is awaited, `> THIS KEY CANNOT BE BOUND` after a key that cannot be bound, `> SAME KEY AS SHOOT: CHANGE ONE` when two actions share a key, `> SOUND MUTED: SEE MUTE ALL` on a muted volume, and the sizes too large for the desktop, which the list shows dashed and never takes. Every description fits right of BACK, 43 characters at most.
 
-The volumes, MUTE ALL, the color mode, REDUCE FLASHES, SOUND CUES, AUTO-FIRE and the READY key are saved and shown, but nothing reads them yet: there is no audio, no color palette, no flash or sound cue, no auto-fire and no lobby. Their descriptions end with `(COMING SOON)`.
+REDUCE FLASHES is read by the game: its effects show no white and a hit shades the entity instead of whitening it (see [Reduced flashes](#reduced-flashes-flashpreference)). The volumes, MUTE ALL, the color mode, SOUND CUES, AUTO-FIRE and the READY key are saved and shown, but nothing reads them yet: there is no audio, no color palette, no sound cue, no auto-fire and no lobby. Their descriptions end with `(COMING SOON)`.
 
 Over the title (`ScreenId::Options`) the options hide it. Over a game (`ScreenId::GameOptions`) the game goes on running, dimmed under them, and THE GAME GOES ON is written in the top-right corner. The texts are in `src/client/Screens/OptionsScreenConstants.hpp`. The screen takes the window as an `ISizableWindow` (`src/client/Window/`) and saves through an `ISettingsStorage` (`src/client/Settings/`), so `client_screen_tests` checks it with a fake window and a recording storage from `tests/doubles/`.
 
@@ -444,11 +495,15 @@ dispatcher.registerHandler<rtype::network::WorldState>(
 | Add an asset | A file in `assets/sprites/`, `sounds/`, `music/` or `fonts/`, and its id in `gameAssets()`, in `titleAssets()` for the title screen, or in `interfaceAssets()` for a font any screen may use (`src/client/Screens/ScreenAssets.cpp`); `client_screen_tests` loads `interfaceAssets()` for real, and the CI cannot create a texture |
 | Change the asset id rule | `isValidAssetId()` in `src/client/Assets/AssetIds.cpp`, `ASSET_ID_PUNCTUATION` in `AssetConstants.hpp`, and `assets/README.md` |
 | Change where the client looks for `assets/` | `findAssetFolder()` in `src/client/Assets/AssetFolder.cpp` |
-| Show a new image in the game | `assets/sprites/`, its rectangle in `src/client/Rendering/EntitySpriteConstants.hpp`, `gameAssets()`, `spriteOf` in `src/client/Rendering/EntitySprites.cpp` |
-| Change how an entity type looks | `spriteOf` in `src/client/Rendering/EntitySprites.cpp`, the rectangles in `EntitySpriteConstants.hpp`, `assets/sprites/entities.png` |
+| Show a new image in the game | `assets/sprites/`, its rectangle in `src/client/Rendering/EntitySpriteConstants.hpp`, `gameAssets()`, `spriteOf` and `animationOf` in `src/client/Rendering/EntitySprites.cpp` |
+| Change how an entity type looks or animates | `spriteOf` and `animationOf` in `src/client/Rendering/EntitySprites.cpp`, the rectangles, frame times and animations in `EntitySpriteConstants.hpp`, `assets/sprites/entities.png` |
+| Change an effect, its frames or its length | `src/client/Rendering/Effects/EffectConstants.hpp`, `assets/sprites/effects.png` (see `assets/README.md`) |
+| Add an effect | Its two rows in `assets/sprites/effects.png`, standard and without flash; its frames and `EffectAnimations` in `EffectConstants.hpp`; a method or a case in `EffectSpawner` (`src/client/Rendering/Effects/EffectSpawner/`) |
+| Change how a hit looks | `FLASH_COLOR` and `SHADE_TINT` in `src/client/Rendering/SpriteToneColors.hpp`, `FlashShader.hpp`, `HIT_FLASH_DURATION` in `EffectConstants.hpp`, `SfmlDrawSurface::drawFlash()` |
+| Run a system in the game screen each frame | `systems_.add()` in the constructor of `GameScreen` (`src/client/Screens/GameScreen/`), and its library in that folder's `CMakeLists.txt` |
 | Change how entities are placed on the pixel grid | `SfmlDrawSurface::draw` in `src/client/Rendering/SfmlDrawSurface/` |
 | Change when the entities are painted and laid | `GameScreen::update()` and `GameScreen::draw()` in `src/client/Screens/GameScreen/`, `EntityLayer` in `src/client/Rendering/EntityLayer/` |
-| Remove the sprite showcase | `SpriteShowcase.hpp`, `SpriteShowcase.cpp` and `SpriteShowcaseConstants.hpp` in `src/client/Rendering/`, the call in the constructor of `GameScreen` |
+| Remove the sprite showcase | `src/client/Rendering/SpriteShowcase/`, `SpriteShowcaseConstants.hpp` in `src/client/Rendering/`, the `showcase_` member of `GameScreen` and its call in `GameScreen::update()` |
 | Add a screen | A value of `ScreenId` (`src/client/Screens/ScreenId.hpp`) and its case in `Application::createScreen()` and in `nameOf()` of `tests/client/Screens/RecordingScreen.cpp`; a class implementing `IScreen` in its own folder under `src/client/Screens/`, whose `hidesScreensBelow()` says whether the screens under it stay drawn, taking an `IScreenNavigator` if it opens or closes screens, with its `CMakeLists.txt` target and `add_subdirectory` in `src/client/Screens/CMakeLists.txt`; the link in `src/client/Application/Application/CMakeLists.txt` |
 | Add a menu | A screen that builds a `Menu` with `MenuBuilder` (`src/client/Widgets/`), as `QuitConfirmationScreen` does |
 | Add a text field to a menu | `MenuBuilder::textField()` with a `TextField` (`src/client/Widgets/TextField/`), then `Menu::fieldText()`, as `ConnectionScreen` does |
@@ -487,4 +542,4 @@ dispatcher.registerHandler<rtype::network::WorldState>(
 | Test code that sends and receives without the network | `tests/doubles/RecordingDatagramLink.hpp`, as `tests/client/Connection/ServerConnectionTest.cpp` does |
 | Add a client error | `src/client/Exceptions/ClientException.hpp` |
 
-Each folder has its own `CMakeLists.txt` declaring one library; `src/client/Rendering/CMakeLists.txt` declares `rtype_client_entity_sprites` for the table and the showcase, and adds `RenderSystem/`, `SfmlDrawSurface/`, `AssetTextureSource/`, `PixelCanvas/`, `InterfaceCanvas/`, `Squadron/`, `EntityLayer/` and `Background/`.
+Each folder has its own `CMakeLists.txt` declaring one library; `src/client/Rendering/CMakeLists.txt` declares `rtype_client_entity_sprites` for the table and `rtype_client_fragment_shader` (`loadFragmentShader()`, which compiles the shaders of the menus and of the hit flash and logs why one cannot be used), and adds `Animation/`, `AnimationSystem/`, `HitFlashSystem/`, `RenderSystem/`, `SfmlDrawSurface/`, `AssetTextureSource/`, `PixelCanvas/`, `InterfaceCanvas/`, `Squadron/`, `EntityLayer/`, `Effects/`, `SpriteShowcase/` and `Background/`.

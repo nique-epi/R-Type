@@ -16,10 +16,10 @@
 #include <optional>
 #include <string>
 #include <string_view>
-#include <utility>
 #include "AssetLibrary.hpp"
 #include "BackgroundConstants.hpp"
 #include "CrispTextShader.hpp"
+#include "FragmentShader.hpp"
 #include "InterfaceColors.hpp"
 #include "InterfaceConstants.hpp"
 #include "TextStyle.hpp"
@@ -32,9 +32,8 @@ InterfaceCanvas::InterfaceCanvas(const AssetLibrary& library)
                    .baselineRow = REGULAR_FONT_BASELINE_ROW},
       smallFont_{.font = &library.font(SMALL_FONT_ID),
                  .baselineRow = SMALL_FONT_BASELINE_ROW},
-      logger_(std::string(INTERFACE_LOG_MODULE_NAME)) {
-  loadCrispText();
-}
+      logger_(std::string(INTERFACE_LOG_MODULE_NAME)),
+      crispText_(loadFragmentShader(CRISP_TEXT_SHADER, logger_)) {}
 
 void InterfaceCanvas::clear() {
   canvas_.canvas().clear(sf::Color::Transparent);
@@ -116,23 +115,6 @@ const InterfaceCanvas::LoadedFont& InterfaceCanvas::loadedFontOf(
       break;
   }
   return regularFont_;
-}
-
-void InterfaceCanvas::loadCrispText() {
-  if (!sf::Shader::isAvailable()) {
-    logger_.warn("shaders are not available: text is drawn smoothed");
-    return;
-  }
-  sf::Shader shader;
-  if (!shader.loadFromMemory(CRISP_TEXT_FRAGMENT_SHADER,
-                             sf::Shader::Type::Fragment)) {
-    logger_.error(
-        "the crisp text shader did not compile: text is drawn smoothed");
-    return;
-  }
-  shader.setUniform(std::string(CRISP_TEXT_GLYPHS_UNIFORM),
-                    sf::Shader::CurrentTexture);
-  crispText_ = std::move(shader);
 }
 
 }  // namespace rtype::client
