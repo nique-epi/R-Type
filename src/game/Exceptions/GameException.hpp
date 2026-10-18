@@ -22,4 +22,13 @@ class InvalidPlayerNumberException : public GameException {
   InvalidPlayerNumberException();
 };
 
+/**
+ * @brief A random draw outside 0 up to, but not including, 1 was given where a
+ * unit draw is expected.
+ */
+class InvalidRandomUnitException : public GameException {
+ public:
+  InvalidRandomUnitException();
+};
+
 }  // namespace rtype::game
