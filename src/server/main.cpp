@@ -6,7 +6,6 @@
 #include "ConnectedPlayer.hpp"
 #include "ConnectionAcceptor.hpp"
 #include "Endpoint.hpp"
-#include "IncomingDatagram.hpp"
 #include "LaunchArguments.hpp"
 #include "LaunchOptions.hpp"
 #include "LogLaunchOptions.hpp"
@@ -14,6 +13,7 @@
 #include "LoggingConstants.hpp"
 #include "NetworkConstants.hpp"
 #include "OutgoingDatagram.hpp"
+#include "PlayerInputReceiver.hpp"
 #include "PlayerRoster.hpp"
 #include "ServerApplication.hpp"
 #include "ServerConstants.hpp"
@@ -46,6 +46,7 @@ int runServer(const rtype::logging::LogLaunchOptions& logOptions,
         };
     rtype::server::WorldStateSender worldStateSender{queueDatagram};
     rtype::server::PlayerRoster roster;
+    rtype::server::PlayerInputReceiver playerInputReceiver{roster};
     rtype::server::ShipSpawnAnnouncer shipSpawnAnnouncer{world, roster,
                                                          queueDatagram};
     rtype::server::ConnectionAcceptor connectionAcceptor{
@@ -61,15 +62,11 @@ int runServer(const rtype::logging::LogLaunchOptions& logOptions,
         rtype::network::Endpoint{
             .address = std::string{rtype::network::ANY_IPV4_ADDRESS},
             .port = launchOptions.port()},
-        [&logger, &world, &worldStateSender, &connectionAcceptor, &clock,
+        [&world, &worldStateSender, &playerInputReceiver, &connectionAcceptor,
+         &clock,
          &recipients](const rtype::server::ServerApplication::ReceivedDatagrams&
                           received) {
-          for (const rtype::network::IncomingDatagram& datagram :
-               received.players) {
-            logger.debug("received ", datagram.payload.size(), " bytes from ",
-                         datagram.sender.address, " port ",
-                         datagram.sender.port);
-          }
+          playerInputReceiver.receive(received.players);
           connectionAcceptor.receive(received.connectionRequests, clock.now());
           worldStateSender.onTick(world.components(), recipients);
         }};

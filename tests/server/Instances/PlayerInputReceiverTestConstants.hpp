@@ -1,0 +1,64 @@
+#pragma once
+
+#include <array>
+#include <cstddef>
+#include <cstdint>
+#include <limits>
+#include "ProtocolConstants.hpp"
+#include "ServerLobbyTestConstants.hpp"
+
+namespace rtype::server::testing {
+
+/**
+ * @brief Actions a test player holds, one bit each where the Inputs section of
+ * the protocol page puts them: bit 0 up, bit 1 down, bit 2 left, bit 4 shoot.
+ */
+constexpr std::uint8_t HOLDS_UP = 0x01;
+constexpr std::uint8_t HOLDS_DOWN = 0x02;
+constexpr std::uint8_t HOLDS_LEFT = 0x04;
+constexpr std::uint8_t HOLDS_SHOOT = 0x10;
+
+/**
+ * @brief An actions byte with bit 5 set, which no PlayerInput may hold.
+ */
+constexpr std::uint8_t UNLISTED_ACTION = 0x20;
+
+/**
+ * @brief The two players of the receiver tests, as indexes into
+ * FIVE_PLAYER_PORTS, each with its own session token, and a sender of the
+ * same address that is not a player.
+ */
+constexpr std::size_t FIRST_PLAYER = 0;
+constexpr std::size_t SECOND_PLAYER = 1;
+constexpr std::array PLAYER_SESSION_TOKENS{SESSION_TOKEN, OTHER_SESSION_TOKEN};
+constexpr std::size_t STRANGER = network::MAXIMUM_PLAYERS;
+
+/**
+ * @brief Places in the order the datagrams were sent through the test
+ * network, the first one sent being 0.
+ */
+constexpr std::size_t FIRST_SENT = 0;
+constexpr std::size_t SECOND_SENT = 1;
+constexpr std::size_t THIRD_SENT = 2;
+constexpr std::size_t FOURTH_SENT = 3;
+
+/**
+ * @brief The highest number an input can carry: an input numbered so is newer
+ * than any other.
+ */
+constexpr std::uint32_t LARGEST_INPUT_NUMBER =
+    std::numeric_limits<std::uint32_t>::max();
+
+/**
+ * @brief The shuffled deliveries: how many inputs the player sends, how many
+ * orders are drawn, and how many datagrams each tick receives.
+ */
+constexpr std::uint32_t SHUFFLED_INPUT_COUNT = 30;
+constexpr std::uint32_t SHUFFLE_SEED_COUNT = 20;
+constexpr std::size_t DATAGRAMS_PER_TICK = 4;
+
+static_assert(SHUFFLED_INPUT_COUNT <= network::PLAYER_ACTION_BITS + 1U,
+              "each shuffled input holds actions no other input holds, so "
+              "the actions kept tell which input was kept");
+
+}  // namespace rtype::server::testing

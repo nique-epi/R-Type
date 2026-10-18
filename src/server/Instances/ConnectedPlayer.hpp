@@ -1,9 +1,11 @@
 #pragma once
 
 #include <cstdint>
+#include <optional>
 #include <string>
 #include "Endpoint.hpp"
 #include "EntityIdConstants.hpp"
+#include "PlayerInput.hpp"
 
 namespace rtype::server {
 
@@ -30,6 +32,10 @@ struct ConnectedPlayer {
   /** @brief The network id of the ship of the player, NO_ENTITY_ID while it
    * has none. */
   std::uint32_t shipEntityId{identifiers::NO_ENTITY_ID};
+  /** @brief The PlayerInput with the highest inputNumber the player sent
+   * during the session, to apply at every tick until a newer one arrives;
+   * empty until the first one arrives. PlayerInputReceiver keeps it. */
+  std::optional<network::PlayerInput> newestInput{std::nullopt};
 };
 
 }  // namespace rtype::server

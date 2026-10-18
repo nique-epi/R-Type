@@ -6,6 +6,7 @@
 #include "ConnectionRequest.hpp"
 #include "DatagramCodec.hpp"
 #include "PacketHeader.hpp"
+#include "PlayerInput.hpp"
 #include "ReadyState.hpp"
 #include "ServerLobbyTestConstants.hpp"
 
@@ -27,4 +28,10 @@ std::vector<std::byte> readyDatagram(
     const rtype::network::PacketHeader& header) {
   return rtype::network::DatagramCodec::encode(
       header, rtype::network::ReadyState{.ready = true});
+}
+
+std::vector<std::byte> inputDatagram(
+    const rtype::network::PlayerInput& input,
+    const rtype::network::PacketHeader& header) {
+  return rtype::network::DatagramCodec::encode(header, input);
 }

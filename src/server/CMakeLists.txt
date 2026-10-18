@@ -21,6 +21,7 @@ target_link_libraries(r-type_server
     rtype_server_connection_acceptor
     rtype_server_constants
     rtype_server_launch_options
+    rtype_server_player_input_receiver
     rtype_server_ship_spawn_announcer
     rtype_server_world_state_sender
 )
