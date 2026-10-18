@@ -83,12 +83,6 @@ constexpr std::uint8_t FIRST_PLAYER_NUMBER = 1;
 constexpr std::uint8_t NO_PLAYER_NUMBER = 0;
 
 /**
- * @brief The entity id no entity has: a GameEvent that names no entity
- * carries it.
- */
-constexpr std::uint32_t NO_ENTITY_ID = 0;
-
-/**
  * @brief The actions a PlayerInput carries, one bit each from bit 0: up,
  * down, left, right, shoot. The bits above them are 0.
  */

@@ -19,7 +19,7 @@ class NetworkEntityTable {
    * @brief Associates the network identifier with the local entity.
    * @returns true when bound; false when nothing changed, because the
    * identifier was already bound (the existing association is kept) or is
-   * NO_NETWORK_ID.
+   * NO_ENTITY_ID.
    */
   bool bind(std::uint32_t networkId, Entity entity);
 

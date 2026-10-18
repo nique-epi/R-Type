@@ -3,12 +3,12 @@
 #include <cstdint>
 #include <optional>
 #include "Entity.hpp"
-#include "NetworkIdConstants.hpp"
+#include "EntityIdConstants.hpp"
 
 namespace rtype::engine {
 
 bool NetworkEntityTable::bind(std::uint32_t networkId, Entity entity) {
-  if (networkId == NO_NETWORK_ID) {
+  if (networkId == identifiers::NO_ENTITY_ID) {
     return false;
   }
   return entityByNetworkId_.try_emplace(networkId, entity).second;

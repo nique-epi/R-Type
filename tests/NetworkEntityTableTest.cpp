@@ -1,8 +1,8 @@
 #include <gtest/gtest.h>
 #include <cstdint>
 #include "Entity.hpp"
+#include "EntityIdConstants.hpp"
 #include "NetworkEntityTable.hpp"
-#include "NetworkIdConstants.hpp"
 
 using rtype::engine::Entity;
 using rtype::engine::NetworkEntityTable;
@@ -38,7 +38,7 @@ TEST(NetworkEntityTable, UnknownIdentifierGivesNothing) {
   table.bind(BOUND_ID, FIRST_ENTITY);
 
   EXPECT_FALSE(table.find(UNKNOWN_ID).has_value());
-  EXPECT_FALSE(table.find(rtype::engine::NO_NETWORK_ID).has_value());
+  EXPECT_FALSE(table.find(rtype::identifiers::NO_ENTITY_ID).has_value());
 }
 
 /**
@@ -79,7 +79,7 @@ TEST(NetworkEntityTable, UnboundIdentifierIsForgotten) {
 TEST(NetworkEntityTable, ReservedIdentifierIsNotBound) {
   NetworkEntityTable table;
 
-  EXPECT_FALSE(table.bind(rtype::engine::NO_NETWORK_ID, FIRST_ENTITY));
+  EXPECT_FALSE(table.bind(rtype::identifiers::NO_ENTITY_ID, FIRST_ENTITY));
   EXPECT_EQ(table.size(), 0U);
-  EXPECT_FALSE(table.find(rtype::engine::NO_NETWORK_ID).has_value());
+  EXPECT_FALSE(table.find(rtype::identifiers::NO_ENTITY_ID).has_value());
 }
