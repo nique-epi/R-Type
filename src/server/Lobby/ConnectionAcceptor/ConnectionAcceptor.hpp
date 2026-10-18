@@ -37,7 +37,8 @@ namespace rtype::server {
  * - when MAXIMUM_PLAYERS players are connected: ConnectionRefused (GameFull);
  * - without a valid cookie: a ConnectionChallenge, and nothing is kept;
  * - with a valid cookie: a place in the roster, a session token drawn at
- *   random, and a ConnectionAccepted that carries both.
+ *   random, and a ConnectionAccepted that carries both; the new player is
+ *   announced to admit once.
  *
  * A refusal reserves nothing, so it is sent before the cookie is checked.
  * Nothing caused by the content of a datagram makes it throw.
@@ -50,6 +51,12 @@ class ConnectionAcceptor {
   using Send = std::function<void(network::OutgoingDatagram)>;
 
   /**
+   * @brief What the acceptor calls once for each sender it gives a place, so
+   * the datagrams of that player reach the game from then on.
+   */
+  using Admit = std::function<void(const network::Endpoint&)>;
+
+  /**
    * @brief What the acceptor calls once for each player it lets in, after it
    * sent the acceptance.
    */
@@ -58,10 +65,11 @@ class ConnectionAcceptor {
   /**
    * @param roster The players of the game; it must outlive the acceptor.
    * @param send Must not be empty.
+   * @param admit Must not be empty.
    * @param onPlayerJoined Called when a player takes a place in the roster,
    * not when an acceptance is repeated; empty to call nothing.
    */
-  ConnectionAcceptor(PlayerRoster& roster, Send send,
+  ConnectionAcceptor(PlayerRoster& roster, Send send, Admit admit,
                      OnPlayerJoined onPlayerJoined = {});
 
   /**
@@ -92,6 +100,7 @@ class ConnectionAcceptor {
 
   PlayerRoster* roster_;
   Send send_;
+  Admit admit_;
   OnPlayerJoined onPlayerJoined_;
   network::CookieIssuer cookies_;
   std::random_device random_;
