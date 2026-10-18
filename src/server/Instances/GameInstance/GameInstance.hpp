@@ -5,6 +5,7 @@
 #include <functional>
 #include <memory>
 #include <span>
+#include "BydoSpawner.hpp"
 #include "ConnectedPlayer.hpp"
 #include "Endpoint.hpp"
 #include "GameState.hpp"
@@ -31,6 +32,11 @@ namespace rtype::server {
  * FINISHED_STATE_TICKS ticks. Coming back to WaitingForPlayers builds a new
  * world: every player gets a new ship, is no longer ready, and the tick is 0.
  * The players stay connected.
+ *
+ * While the game is in progress, a Bydo appears every BYDO_SPAWN_INTERVAL
+ * (see BydoSpawner). Each world starts its random draws from a seed of its own,
+ * the seed of the game plus the number of worlds built before it, so the seed
+ * of the game is enough to replay every world of a session.
  *
  * A datagram of the players is read only when its header carries this
  * protocol and version with no flag set, its messages add up to its end, its
@@ -65,8 +71,10 @@ class GameInstance {
 
   /**
    * @param send Must not be empty.
+   * @param seed Where the random draws of the game start from; logged by the
+   * spawner each time a world is built.
    */
-  explicit GameInstance(Send send);
+  GameInstance(Send send, std::uint32_t seed);
 
   GameInstance(const GameInstance&) = delete;
   GameInstance& operator=(const GameInstance&) = delete;
@@ -110,8 +118,8 @@ class GameInstance {
   /**
    * @brief Runs one tick: applies the ReadyState and keeps the newest
    * PlayerInput among @p datagrams, oldest first, then moves the game along its
-   * states and counts the tick while it is in progress. Nothing caused by the
-   * content of a datagram makes it throw.
+   * states and, while it is in progress, counts the tick and lets the Bydos
+   * appear. Nothing caused by the content of a datagram makes it throw.
    */
   void onTick(std::span<const network::IncomingDatagram> datagrams);
 
@@ -135,8 +143,11 @@ class GameInstance {
   std::unique_ptr<game::World> world_;
   PlayerRoster roster_;
   std::unique_ptr<ShipSpawnAnnouncer> shipSpawnAnnouncer_;
+  std::unique_ptr<BydoSpawner> bydoSpawner_;
   network::MessageDispatcher dispatcher_;
   GameState state_{GameState::WaitingForPlayers};
+  std::uint32_t seed_;
+  std::uint32_t worldsBuilt_{0};
   std::uint32_t tick_{0};
   std::size_t finishedTicks_{0};
   std::size_t foreignTokenCount_{0};

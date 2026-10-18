@@ -1,6 +1,8 @@
+#include <cstdint>
 #include <exception>
 #include <iostream>
 #include <memory>
+#include <random>
 #include <string>
 #include <utility>
 #include <vector>
@@ -59,8 +61,10 @@ int runServer(const rtype::logging::LogLaunchOptions& logOptions,
             },
             queueDatagram);
     std::vector<std::unique_ptr<rtype::server::GameInstance>> games;
+    const std::uint32_t seed =
+        launchOptions.seed().value_or(std::random_device{}());
     games.push_back(
-        std::make_unique<rtype::server::GameInstance>(queueDatagram));
+        std::make_unique<rtype::server::GameInstance>(queueDatagram, seed));
     rtype::server::GameInstance& joinableGame = *games.front();
     rtype::server::ConnectionAcceptor connectionAcceptor{
         joinableGame.roster(), queueDatagram,

@@ -31,6 +31,7 @@
 #include "ServerConstants.hpp"
 #include "ServerDatagrams.hpp"
 #include "ServerLobbyTestConstants.hpp"
+#include "Spawning/BydoSpawnerTestConstants.hpp"
 #include "UnreliableNetwork.hpp"
 
 namespace rtype::server {
@@ -63,6 +64,8 @@ using testing::STRANGER;
 using testing::THIRD_SENT;
 using testing::THIRD_SEQUENCE;
 using testing::UNLISTED_ACTION;
+
+constexpr std::uint32_t SOME_SEED = 7;
 
 network::Endpoint playerEndpoint(std::size_t player) {
   return network::Endpoint{.address = std::string{testing::PLAYER_ADDRESS},
@@ -136,8 +139,9 @@ class GameInstanceTest : public ::testing::Test {
  private:
   std::vector<network::OutgoingDatagram> sent_;
   GameInstance game_{[this](network::OutgoingDatagram datagram) {
-    sent_.push_back(std::move(datagram));
-  }};
+                       sent_.push_back(std::move(datagram));
+                     },
+                     SOME_SEED};
   std::vector<network::IncomingDatagram> incoming_;
 };
 
@@ -514,6 +518,71 @@ TEST_F(GameInstanceTest, StartsASecondGame) {
   tick();
 
   EXPECT_EQ(game().state(), GameState::InProgress);
+}
+
+/**
+ * Given a game that waits for a player who is not ready
+ * When as many ticks as an interval of Bydos pass
+ * Then the world holds the ship only: no Bydo appears before the game starts
+ */
+TEST_F(GameInstanceTest, NoBydoAppearsWhileWaitingForPlayers) {
+  join(FIRST_PLAYER);
+
+  runTicks(testing::TICKS_PER_BYDO_INTERVAL);
+
+  EXPECT_EQ(game().world().entityCount(), 1U);
+}
+
+/**
+ * Given a game just started with one player
+ * When one tick less than an interval passes, then one more
+ * Then no Bydo is in the world, and then one is, next to the ship
+ */
+TEST_F(GameInstanceTest, ABydoAppearsOnceTheGameRunsForAnInterval) {
+  startGameWithOnePlayer();
+
+  runTicks(testing::TICKS_PER_BYDO_INTERVAL - 1);
+  EXPECT_EQ(game().world().entityCount(), 1U);
+  tick();
+
+  EXPECT_EQ(game().world().entityCount(), 2U);
+}
+
+/**
+ * Given a finished game, which had run half an interval
+ * When it waits for players again, starts again, and runs one tick less than
+ * an interval
+ * Then no Bydo is in the new world: the timer started again from zero
+ */
+TEST_F(GameInstanceTest, ANewGameStartsTheBydoTimerOver) {
+  startGameWithOnePlayer();
+  runTicks(testing::TICKS_PER_BYDO_INTERVAL / 2);
+  game().finish();
+  runTicks(FINISHED_STATE_TICKS);
+  ASSERT_EQ(game().state(), GameState::WaitingForPlayers);
+  sendReady(
+      {.player = FIRST_PLAYER, .ready = true, .sequence = SECOND_SEQUENCE});
+  tick();
+  ASSERT_EQ(game().state(), GameState::InProgress);
+
+  runTicks(testing::TICKS_PER_BYDO_INTERVAL - 1);
+
+  EXPECT_EQ(game().world().entityCount(), 1U);
+}
+
+/**
+ * Given a finished game that has run for several intervals
+ * When ticks run while it is finished
+ * Then no Bydo appears
+ */
+TEST_F(GameInstanceTest, NoBydoAppearsWhileFinished) {
+  startGameWithOnePlayer();
+  game().finish();
+  const std::size_t entitiesBefore = game().world().entityCount();
+
+  runTicks(2 * testing::TICKS_PER_BYDO_INTERVAL);
+
+  EXPECT_EQ(game().world().entityCount(), entitiesBefore);
 }
 
 /**
