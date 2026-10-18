@@ -1,6 +1,8 @@
 #pragma once
 
+#include <bitset>
 #include <cstddef>
+#include <optional>
 #include <ranges>
 #include <span>
 #include <vector>
@@ -8,6 +10,7 @@
 #include "MessagePayload.hpp"
 #include "MessageType.hpp"
 #include "PacketHeader.hpp"
+#include "ProtocolConstants.hpp"
 
 namespace rtype::network {
 
@@ -24,6 +27,9 @@ namespace rtype::network {
  */
 class DatagramCodec {
  public:
+  /** @brief The message types a datagram holds, one bit per type value. */
+  using MessageTypes = std::bitset<MESSAGE_TYPE_COUNT>;
+
   /**
    * @brief Encodes one datagram holding @p header and a single message of
    * type @p type with @p payload.
@@ -74,6 +80,17 @@ class DatagramCodec {
    * left after its last message.
    */
   [[nodiscard]] static std::vector<MessageFrame> splitMessages(
+      std::span<const std::byte> datagram);
+
+  /**
+   * @brief Reads the type of each message that follows the header of
+   * @p datagram, with the checks of splitMessages(), but throws and allocates
+   * nothing: a receiver can sort a datagram from anyone for the cost of
+   * reading its message prefixes.
+   * @returns The types it holds, or nothing when splitMessages() would throw
+   * for it.
+   */
+  [[nodiscard]] static std::optional<MessageTypes> messageTypes(
       std::span<const std::byte> datagram);
 
   /**

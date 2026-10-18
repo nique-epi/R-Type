@@ -1,2 +1,3 @@
 add_subdirectory(TickLoop)
+add_subdirectory(DatagramSorter)
 add_subdirectory(ServerApplication)

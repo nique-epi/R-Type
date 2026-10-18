@@ -10,7 +10,9 @@ namespace rtype::network {
 
 /**
  * @brief Moves datagrams between a socket and the two queues another thread
- * drains and fills, such as the simulation thread of the server.
+ * drains and fills, such as the frame loop of the client. A program that
+ * sorts what it receives before queueing it, as the server does, only calls
+ * sendWaiting().
  *
  * Every call must run on the thread that runs the socket's NetworkContext, or
  * before that thread starts. The socket and the outgoing queue must outlive the
