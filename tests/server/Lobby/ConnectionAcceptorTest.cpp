@@ -6,6 +6,7 @@
 #include <utility>
 #include <vector>
 #include "ByteWriter.hpp"
+#include "ConnectedPlayer.hpp"
 #include "ConnectionAccepted.hpp"
 #include "ConnectionAcceptor.hpp"
 #include "ConnectionChallenge.hpp"
@@ -101,14 +102,47 @@ class ConnectionAcceptorTest : public ::testing::Test {
 
   [[nodiscard]] ConnectionAcceptor& acceptor() { return acceptor_; }
 
+  /** @returns The numbers of the players the acceptor reported as joined. */
+  [[nodiscard]] const std::vector<std::uint8_t>& joinedPlayers() const {
+    return joinedPlayers_;
+  }
+
  private:
   PlayerRoster roster_;
   std::vector<network::OutgoingDatagram> answers_;
+  std::vector<std::uint8_t> joinedPlayers_;
   ConnectionAcceptor acceptor_{roster_,
                                [this](network::OutgoingDatagram datagram) {
                                  answers_.push_back(std::move(datagram));
+                               },
+                               [this](ConnectedPlayer& player) {
+                                 joinedPlayers_.push_back(player.playerNumber);
                                }};
 };
+
+/**
+ * Given an acceptor with nobody connected
+ * When a sender goes through the challenge, then repeats its request
+ * Then the acceptor reports the player as joined once, not at the repeat
+ */
+TEST_F(ConnectionAcceptorTest, ReportsAJoinedPlayerOnlyOnce) {
+  const std::uint64_t cookie = challengeCookie(playerEndpoint(0));
+  receive(playerEndpoint(0), requestDatagram(cookie));
+  receive(playerEndpoint(0), requestDatagram(cookie));
+
+  EXPECT_EQ(joinedPlayers(), (std::vector<std::uint8_t>{1}));
+}
+
+/**
+ * Given an acceptor with nobody connected
+ * When a sender requests a connection without a cookie
+ * Then no player is reported as joined: a challenge reserves nothing
+ */
+TEST_F(ConnectionAcceptorTest, ReportsNobodyForAChallengedSender) {
+  receive(playerEndpoint(0), requestDatagram(0));
+
+  EXPECT_TRUE(joinedPlayers().empty());
+}
 
 /**
  * Given an acceptor with nobody connected

@@ -50,10 +50,19 @@ class ConnectionAcceptor {
   using Send = std::function<void(network::OutgoingDatagram)>;
 
   /**
+   * @brief What the acceptor calls once for each player it lets in, after it
+   * sent the acceptance.
+   */
+  using OnPlayerJoined = std::function<void(ConnectedPlayer&)>;
+
+  /**
    * @param roster The players of the game; it must outlive the acceptor.
    * @param send Must not be empty.
+   * @param onPlayerJoined Called when a player takes a place in the roster,
+   * not when an acceptance is repeated; empty to call nothing.
    */
-  ConnectionAcceptor(PlayerRoster& roster, Send send);
+  ConnectionAcceptor(PlayerRoster& roster, Send send,
+                     OnPlayerJoined onPlayerJoined = {});
 
   /**
    * @brief Answers the requests among @p datagrams, oldest first.
@@ -83,6 +92,7 @@ class ConnectionAcceptor {
 
   PlayerRoster* roster_;
   Send send_;
+  OnPlayerJoined onPlayerJoined_;
   network::CookieIssuer cookies_;
   std::random_device random_;
   bool gameInProgress_{false};

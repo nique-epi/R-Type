@@ -1,5 +1,7 @@
 add_subdirectory(Components)
 add_subdirectory(Events)
+add_subdirectory(Exceptions)
+add_subdirectory(Spawning)
 add_subdirectory(Systems)
 
 add_library(rtype_game STATIC World.cpp)

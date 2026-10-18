@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 #include <cstddef>
 #include <string>
+#include <vector>
 #include "ConnectedPlayer.hpp"
 #include "Endpoint.hpp"
 #include "PlayerRoster.hpp"
@@ -54,6 +55,34 @@ TEST(PlayerRoster, NumbersThePlayersInTheOrderTheyJoin) {
     ASSERT_NE(added, nullptr);
     EXPECT_EQ(added->playerNumber, network::FIRST_PLAYER_NUMBER + player);
   }
+}
+
+/**
+ * Given an empty roster
+ * When the connected players are listed
+ * Then the list is empty
+ */
+TEST(PlayerRoster, ListsNobodyWhenEmpty) {
+  PlayerRoster roster;
+
+  EXPECT_TRUE(roster.connected().empty());
+}
+
+/**
+ * Given a roster with three players
+ * When the connected players are listed
+ * Then the three are listed in the order of their numbers
+ */
+TEST(PlayerRoster, ListsTheConnectedPlayersInOrderOfTheirNumbers) {
+  PlayerRoster roster;
+  addPlayers(roster, 3);
+
+  const std::vector<ConnectedPlayer*> players = roster.connected();
+
+  ASSERT_EQ(players.size(), 3U);
+  EXPECT_EQ(players.at(0)->playerNumber, 1);
+  EXPECT_EQ(players.at(1)->playerNumber, 2);
+  EXPECT_EQ(players.at(2)->playerNumber, 3);
 }
 
 /**

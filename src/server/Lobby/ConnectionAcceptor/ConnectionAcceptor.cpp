@@ -56,9 +56,11 @@ std::optional<network::ConnectionRequest> firstConnectionRequest(
 
 }  // namespace
 
-ConnectionAcceptor::ConnectionAcceptor(PlayerRoster& roster, Send send)
+ConnectionAcceptor::ConnectionAcceptor(PlayerRoster& roster, Send send,
+                                       OnPlayerJoined onPlayerJoined)
     : roster_(&roster),
       send_(std::move(send)),
+      onPlayerJoined_(std::move(onPlayerJoined)),
       logger_(std::string{LOBBY_LOGGER_NAME}) {}
 
 void ConnectionAcceptor::receive(
@@ -105,6 +107,9 @@ void ConnectionAcceptor::answer(const network::Endpoint& sender,
   logger_.info("player ", static_cast<unsigned int>(joined->playerNumber),
                " joined from ", sender.address, " port ", sender.port);
   accept(*joined);
+  if (onPlayerJoined_) {
+    onPlayerJoined_(*joined);
+  }
 }
 
 void ConnectionAcceptor::accept(ConnectedPlayer& player) {
