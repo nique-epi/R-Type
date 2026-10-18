@@ -10,6 +10,7 @@
 #include "EntityIdConstants.hpp"
 #include "GameInstance.hpp"
 #include "GameInstanceConstants.hpp"
+#include "GameInstanceTestConstants.hpp"
 #include "GameState.hpp"
 #include "IncomingDatagram.hpp"
 #include "OutgoingDatagram.hpp"
@@ -22,14 +23,14 @@
 namespace rtype::server {
 namespace {
 
-constexpr std::size_t FIRST_PLAYER = 0;
-constexpr std::size_t SECOND_PLAYER = 1;
-constexpr std::size_t FOURTH_PLAYER = 3;
-constexpr std::uint16_t FIRST_SEQUENCE = 1;
-constexpr std::uint16_t SECOND_SEQUENCE = 2;
-constexpr std::uint16_t THIRD_SEQUENCE = 3;
-constexpr std::uint16_t FOURTH_SEQUENCE = 4;
-constexpr std::size_t SOME_TICKS = 3;
+using testing::FIRST_PLAYER;
+using testing::FIRST_SEQUENCE;
+using testing::FOURTH_PLAYER;
+using testing::FOURTH_SEQUENCE;
+using testing::SECOND_PLAYER;
+using testing::SECOND_SEQUENCE;
+using testing::SOME_TICKS;
+using testing::THIRD_SEQUENCE;
 
 network::Endpoint playerEndpoint(std::size_t player) {
   return network::Endpoint{.address = std::string{testing::PLAYER_ADDRESS},
