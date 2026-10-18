@@ -20,8 +20,12 @@ const char* nameOf(ScreenId screen) {
       return "game";
     case ScreenId::Options:
       return "options";
+    case ScreenId::GameOptions:
+      return "game options";
     case ScreenId::QuitConfirmation:
       return "quit confirmation";
+    case ScreenId::Connection:
+      return "connection";
   }
   return "unknown screen";
 }

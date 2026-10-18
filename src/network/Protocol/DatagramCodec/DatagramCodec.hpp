@@ -56,6 +56,13 @@ class DatagramCodec {
       std::span<const std::byte> datagram);
 
   /**
+   * @returns Whether @p header carries the protocol id and the version this
+   * code speaks, with no flag set: the first checks of a received datagram,
+   * before anything else in it is trusted.
+   */
+  [[nodiscard]] static bool speaksThisProtocol(const PacketHeader& header);
+
+  /**
    * @brief Splits the messages that follow the header of @p datagram, in
    * order.
    *

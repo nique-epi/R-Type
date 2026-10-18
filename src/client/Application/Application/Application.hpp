@@ -1,14 +1,22 @@
 #pragma once
 
+#include <filesystem>
 #include <memory>
+#include <optional>
+#include <string>
 #include "AssetList.hpp"
+#include "Endpoint.hpp"
 #include "GameWindow.hpp"
 #include "IInterfaceCanvas.hpp"
 #include "IScreen.hpp"
+#include "NetworkThread.hpp"
+#include "PlayerSettings.hpp"
 #include "PlayfieldMapping.hpp"
 #include "ScreenId.hpp"
 #include "ScreenStack.hpp"
 #include "ScrollingBackground.hpp"
+#include "ServerConnection.hpp"
+#include "SettingsFile.hpp"
 #include "SystemClock.hpp"
 #include "TimeConstants.hpp"
 
@@ -20,8 +28,9 @@ class AssetLibrary;
  * @brief The client once its interface assets are loaded: opens the window
  * and runs the frame loop over the screens.
  *
- * Each frame, the window events go to the screen on top, the scrolling
- * background and every screen are updated, then the background is drawn and
+ * Each frame, the window events go to the screen on top, the connection to a
+ * server reads what arrived and sends what is due, the scrolling background
+ * and every screen are updated, then the background is drawn and
  * every screen over it, from the bottom up. The changes the screens ask for are
  * applied after each event and after the update, so the next event already
  * reaches the new screen on top.
@@ -30,9 +39,14 @@ class AssetLibrary;
  * previous frame, so their speed does not depend on the frame rate. It is drawn
  * under every screen for now, the loading screen and the options included.
  *
- * The loop never waits on the network: reception is meant to run on its own
- * thread and hand its messages over through a queue a screen drains each
- * frame.
+ * The loop never waits on the network: the socket runs on a NetworkThread,
+ * opened on every IPv4 interface on a port the system picks, and hands its
+ * datagrams over through a queue the connection drains each frame.
+ *
+ * It owns the connection to a server, which outlives every screen. It owns
+ * the player's settings too, read from the settings file at launch: the window
+ * opens at the size they hold, the game reads their keys, the options change
+ * and save them.
  *
  * Screens are asked for by identifier; createScreen() is the one place that
  * builds them, with one case per ScreenId. The client starts on the title
@@ -43,10 +57,17 @@ class Application {
   /**
    * @param assets Library holding the interface assets, loaded and permanent;
    * it must outlive the application.
+   * @param server Address and port the connection screen starts with.
+   * @param nickname Nickname the connection screen starts with.
+   * @param settingsFile File the settings are read from and saved to, or
+   * nothing to keep them for this launch only.
    * @throws RenderTextureNotCreatedException when the background cannot get
    * its render textures.
+   * @throws SocketOpenException when the system refuses to open the socket.
    */
-  explicit Application(AssetLibrary& assets);
+  Application(AssetLibrary& assets, network::Endpoint server,
+              std::string nickname,
+              std::optional<std::filesystem::path> settingsFile);
 
   Application(const Application&) = delete;
   Application& operator=(const Application&) = delete;
@@ -86,6 +107,10 @@ class Application {
    * game screen once they all are. */
   [[nodiscard]] std::unique_ptr<IScreen> gameScreen();
 
+  /** @brief The options, over the title for ScreenId::Options, over a game
+   * for ScreenId::GameOptions. */
+  [[nodiscard]] std::unique_ptr<IScreen> optionsScreen(ScreenId screen);
+
   /**
    * @brief The loading screen of a list while some of its assets are not
    * loaded; nothing once they all are, after releasing the loaded assets the
@@ -104,10 +129,26 @@ class Application {
   [[nodiscard]] PlayfieldMapping playfieldMapping() const;
 
   AssetLibrary* assets_;
+  /**
+   * @brief The settings file and what it held at launch, declared before the
+   * window, which opens at the saved size, and before the screens, which read
+   * and change them.
+   */
+  SettingsFile settingsFile_;
+  PlayerSettings settings_;
   GameWindow window_;
   ScrollingBackground background_;
   engine::SystemClock clock_;
   engine::Duration previousFrameTime_{};
+  /**
+   * @brief The socket and the connection the connection screen drives,
+   * declared before the screens so they outlive them, the socket first since
+   * the connection sends through it.
+   */
+  NetworkThread network_;
+  ServerConnection connection_;
+  network::Endpoint server_;
+  std::string nickname_;
   ScreenStack screens_;
 };
 

@@ -3,8 +3,10 @@
 #include <SFML/Graphics/Rect.hpp>
 #include <SFML/System/Vector2.hpp>
 #include <algorithm>
+#include <set>
 #include <string>
 #include <string_view>
+#include <utility>
 #include "TextStyle.hpp"
 
 RecordingInterfaceCanvas::RecordingInterfaceCanvas(
@@ -49,4 +51,17 @@ const RecordedWriting* writingOf(const InterfaceCanvasRecord& record,
   const auto found =
       std::ranges::find(record.writings, text, &RecordedWriting::text);
   return found == record.writings.end() ? nullptr : &*found;
+}
+
+std::set<std::pair<int, int>> litPixelsOf(const InterfaceCanvasRecord& record) {
+  std::set<std::pair<int, int>> pixels;
+  for (const RecordedFill& fill : record.fills) {
+    for (int row = 0; row < fill.area.size.y; ++row) {
+      for (int column = 0; column < fill.area.size.x; ++column) {
+        pixels.emplace(fill.area.position.x + column,
+                       fill.area.position.y + row);
+      }
+    }
+  }
+  return pixels;
 }

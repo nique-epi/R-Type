@@ -2,7 +2,7 @@
 
 A networked multiplayer remake of the R-Type shoot'em up, built on a custom C++ game engine.
 
-The client opens on its title screen, over a scrolling starfield: PLAY enters a game, SETTINGS opens the window size options, QUIT asks before closing the client; Escape during a game opens the options. The server listens for UDP datagrams on port 4242, or on the port given at launch, and logs each one at the `debug` level; it does not answer them yet.
+The client opens on its title screen, over a scrolling starfield: PLAY opens the connection screen, then the game, SETTINGS opens the options (sound, keys, window size, accessibility), QUIT asks before closing the client; Escape during a game opens the options over it. The server listens for UDP datagrams on port 4242, or on the port given at launch, and logs each one at the `debug` level; it does not answer them yet.
 
 The code is split into engine, game and network libraries; see [the architecture decision](docs/src/content/docs/architecture.md).
 
@@ -43,10 +43,10 @@ If the repository was cloned without its submodules, run `git submodule update -
 The server listens on UDP port 4243 of every IPv4 interface; without `-p`, on port 4242.
 
 ```bash
-./r-type_client -h 192.168.1.20 -p 4243
+./r-type_client -h 192.168.1.20 -p 4243 -n ACE
 ```
 
-The client is given the IPv4 address and the port of the server, `127.0.0.1` and 4242 by default. It does not join the server yet: it only logs them.
+The client is given the IPv4 address and the port of the server, `127.0.0.1` and 4242 by default, and the nickname of the player, `PILOT` by default; its connection screen starts with them. CONNECT on that screen joins the server, so start the server first: without one, the screen shows `SERVER UNREACHABLE` after 5 seconds.
 
 `--help` prints the options of either program. An invalid argument stops it with a message and exit code 1.
 
@@ -72,6 +72,8 @@ The client and the server write a timestamped journal, `r-type_server.log` or `r
 | `--log-stderr` | Also write to standard error |
 
 The build option `-DLOG_LEVEL=<name>` removes the calls below a level from the binaries. See [the logging page](docs/src/content/docs/logging.md).
+
+The client keeps the player's settings in `settings.ini`: in `$XDG_CONFIG_HOME/r-type` (or `~/.config/r-type`) on Linux, `~/Library/Application Support/R-Type` on macOS, `%LOCALAPPDATA%\R-Type` on Windows. Its path is logged at launch; deleting it brings back the settings of a first launch.
 
 ## Code style
 

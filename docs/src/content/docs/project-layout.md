@@ -115,7 +115,7 @@ src/network/
 └── Exceptions/
 ```
 
-`NetworkContext`, `Transport` (the UDP socket and the relay to queues, not the simulator), `Serialization`, `Exceptions` and `Protocol` (the datagram header, every message of version 0 and the dispatch by type) exist; see [Network](/R-Type/network/).
+`NetworkContext`, `Transport` (the UDP socket and the relay to queues, not the simulator), `Serialization`, `Exceptions`, `Protocol` (the datagram header, every message of version 0 and the dispatch by type) and `Handshake` (the connection cookies; no rate limit or version answer yet) exist; see [Network](/R-Type/network/).
 
 ## The programs
 
@@ -137,7 +137,7 @@ src/server/
 └── Storage/          this server's SQLite file: leaderboard, statistics
 ```
 
-`Application`, `Replication` (the world state sender, and the encoder and broadcaster of the game events), `Platform` and `LaunchOptions` exist today: the network thread and the simulation thread, the world state and the game events sent to the clients (see [Server](/R-Type/server/)), the timer resolution the server asks Windows for, and the port read at launch.
+`Application`, `Replication` (the world state sender, and the encoder and broadcaster of the game events), `Platform`, `LaunchOptions`, `Lobby` (the answers to connection requests only) and `Instances` (the players of the one game only, no `GameInstance` yet) exist today: the network thread and the simulation thread, the world state and the game events sent to the clients (see [Server](/R-Type/server/)), the timer resolution the server asks Windows for, the port read at launch, and the players let in.
 
 ### Client
 
@@ -149,7 +149,7 @@ src/client/
 ├── Window/           the SFML window
 ├── Assets/           assets found by id, loaded at launch or entering a game
 ├── Platform/         what differs between Windows, macOS and Linux
-├── LaunchOptions/    server address and port
+├── LaunchOptions/    server address, port and nickname
 ├── Screens/          title, loading, server list, lobby, game, end, options...
 ├── Widgets/          labels, buttons, menus, text fields, lists
 ├── Rendering/        sprites, starfield, HUD, effects, lagometer
@@ -161,13 +161,13 @@ src/client/
 └── Prediction/       own ship predicted, other ships interpolated
 ```
 
-`Application`, `Window`, `Screens` (title, loading, game, options and quit confirmation), `Widgets`, `Rendering`, `Assets`, `Platform`, `Input`, `Connection`, `Replication` (the filter that ignores an old world state only) and `LaunchOptions` exist today. `Input` holds the keys and the held actions only: gamepad, remapping and the player input message are not written yet. `Connection` only holds the network thread, which nothing starts yet (see [Client](/R-Type/client/#network-networkthread)).
+`Application`, `Window`, `Screens` (title, connection, loading, game, options and quit confirmation), `Widgets`, `Rendering`, `Assets`, `Platform`, `Input`, `Settings`, `Connection`, `Replication` (the filter that ignores an old world state only) and `LaunchOptions` exist today. `Input` holds the keys, their remapping and the held actions: gamepad and the player input message are not written yet. `Settings` holds what the player sets and the file it is saved in; the volumes and the accessibility settings are saved, but nothing reads them yet (see [Client](/R-Type/client/#settings-playersettings-settingsfile)). `Connection` holds the network thread the client opens at launch (see [Client](/R-Type/client/#network-networkthread)) and the connection to a server the connection screen drives (see [Client](/R-Type/client/#joining-a-server-serverconnection)).
 
 `Rendering` draws every entity that has a `Position` and a `Sprite` (an asset id, the rectangle of it to show and a layer), from the background layer to the interface layer; the game screen draws them through its `EntityLayer`. `RenderSystem` reads these two components and nothing else, and draws through `IDrawSurface`; only `SfmlDrawSurface` knows SFML: it paints on the pixel grid of the background and finds textures through `ITextureSource`, which `AssetTextureSource` reads from the asset library. `spriteOf` is the single table that gives each entity type its sprite. It is described in [Client](/R-Type/client/#entity-sprites-spriteof).
 
 `Rendering/Background` draws the scrolling starfield behind the playfield, and the frame loop already draws it. `Rendering/PixelCanvas` is the picture of the background's size that the sky, the entities and the menus are painted on. It is described in [Client](/R-Type/client/#scrolling-background-scrollingbackground).
 
-`Widgets` holds the labels, buttons and menus every menu is built from, placed by `MenuBuilder`; text fields and lists are not written yet. Each widget is a class in its own folder (`Label/`, `Button/`, `Menu/`, `MenuBuilder/`, `ChamferedBox/`), with the types it owns nested in it; `Widgets/` itself only holds the constants, colors and styles they share. `Rendering/InterfaceCanvas` is the picture a menu is painted on, `Rendering/Squadron` the animation of the title screen. They are described in [Client](/R-Type/client/#menus-menubuilder-menu).
+`Widgets` holds the labels, buttons, text fields and menus every menu is built from, placed by `MenuBuilder`, and the pieces they are drawn with; lists of items are not written yet. Each widget is a class in its own folder (`Label/`, `Button/`, `TextField/`, `Menu/`, `MenuBuilder/`, `CutCornerBox/`, `SunkBox/`, `Outline/`, `CheckBox/`, `KeyCap/`, `TabStrip/`), with the types it owns nested in it; `Widgets/` itself holds the constants, colors and styles they share, the few types and functions every widget uses (`BarState`, `CheckMark`, the text helpers of `WidgetText.hpp`) and `paintWindowSizeChart()`, the chart of the window sizes drawn beside their list in the options. `Widgets/RowControls/` holds the controls of a row of a tabbed panel: the abstract `RowControl`, its constants, and one folder per control (`Slider/`, `Switch/`, `ChoiceSelector/`, `Dropdown/`, `KeySlot/`, `LinkText/`). `Rendering/InterfaceCanvas` is the picture a menu is painted on, `Rendering/Squadron` the animation of the title screen. They are described in [Client](/R-Type/client/#menus-menubuilder-menu).
 
 `Input` turns key and focus events into the set of actions the player holds. It is described in [Client](/R-Type/client/#player-commands-playercommands).
 
@@ -189,7 +189,7 @@ Each module splits its classes into a controller (HTTP in and out), a service (t
 
 ### Tests, web frontend, assets
 
-- **`tests/`** mirrors `src/`: the test of `src/game/Waves/WaveDirector` is `tests/game/Waves/WaveDirectorTest.cpp`, built into `game_tests`, one executable per library or program. Test doubles (fake clock, lossy transport) go in `tests/doubles/`; load-test bots in `tests/tools/`, never shipped. Today the older tests sit at the root of `tests/`; `tests/client/`, `tests/concurrency/`, `tests/engine/`, `tests/network/` and `tests/server/` already follow this layout, and `tests/doubles/` holds a socket that records instead of sending.
+- **`tests/`** mirrors `src/`: the test of `src/game/Waves/WaveDirector` is `tests/game/Waves/WaveDirectorTest.cpp`, built into `game_tests`, one executable per library or program. Test doubles (fake clock, lossy transport) go in `tests/doubles/`; load-test bots in `tests/tools/`, never shipped. Today the older tests sit at the root of `tests/`; `tests/client/`, `tests/concurrency/`, `tests/engine/`, `tests/network/` and `tests/server/` already follow this layout, and `tests/doubles/` holds a socket that records instead of sending, a datagram link that records what is sent and hands over what a test delivers, a connection to a server that records what a screen asks, a settings storage that records each save and a window on a desktop of a given size.
 - **`web/`** is the React frontend served by the master: `src/api/` (one function per route), `src/pages/`, `src/components/`.
 - **`assets/`** holds the files read at run time: `sprites/`, `sounds/`, `music/` and `fonts/` for the client, `waves/` for the server.
 

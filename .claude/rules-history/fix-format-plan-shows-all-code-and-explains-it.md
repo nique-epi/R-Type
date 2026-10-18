@@ -31,3 +31,21 @@ The plan for scaling the playfield to the client window showed its C++ wrapped b
 ## Update (2026-10-13) — a usage example for each new feature
 
 The plan for sending the world state at a fixed frequency showed every new class, constant and message with its code and a symbol-by-symbol reading, but not one line showing a caller. The user could not tell, from the plan, how a reader would use the codec, the sender or the client filter, and asked for an example of use for each new feature, and for the rule to say so. The template gained a "How it is used" step after "What it does", and a new item requires the example for every new feature, even a constant or a message, with the name of the code that calls it today.
+
+## Update (2026-10-17) — a scratch file given as an argument takes the default style
+
+### Context
+
+Cutting the options menu into commits: eight intermediate versions of C++ files were written in the scratchpad, and each was checked with `clang-format --style=file --assume-filename=<its repository path> <scratch file> | diff -q - <scratch file>`.
+
+### Mistake
+
+Every file was reported as needing a format, including one where only an identifier had changed. Calibrated on known cases, the same command run through standard input reported a file of the repository as formatted and a badly spaced line as not; through standard input, six of the eight files were formatted and two needed it.
+
+### Root cause
+
+With a file argument, clang-format looks for `.clang-format` from that file's own folder; `--assume-filename` only applies to standard input. A scratch file outside the repository therefore got the default LLVM style. The rule said to "run clang-format --assume-filename on" a scratch file, which reads as passing it as an argument.
+
+### Rule (added)
+
+Feed the scratch file on standard input, from the repository root: `clang-format --style=file --assume-filename=<its future path> < <scratch file>`. Given as an argument, a file outside the repository is formatted with the style found from its own folder, which is clang-format's default, not the project's.

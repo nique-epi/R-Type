@@ -1,0 +1,50 @@
+#pragma once
+
+#include <array>
+#include <cstdint>
+#include <optional>
+#include <string>
+#include "ConnectedPlayer.hpp"
+#include "Endpoint.hpp"
+#include "ProtocolConstants.hpp"
+
+namespace rtype::server {
+
+/**
+ * @brief The players connected to the game, at most MAXIMUM_PLAYERS, each
+ * known by the address and port it sends from.
+ *
+ * A new player takes the lowest number no connected player has, so the first
+ * players are numbered FIRST_PLAYER_NUMBER to MAXIMUM_PLAYERS in the order
+ * they joined. A player keeps its number until it leaves.
+ */
+class PlayerRoster {
+ public:
+  /**
+   * @returns The player connected from @p endpoint, or nullptr when none is.
+   * The player stays at that address as long as the roster lives.
+   */
+  [[nodiscard]] ConnectedPlayer* find(const network::Endpoint& endpoint);
+
+  /** @returns Whether MAXIMUM_PLAYERS players are connected. */
+  [[nodiscard]] bool isFull() const;
+
+  /**
+   * @brief Connects a player sending from @p endpoint, under the lowest free
+   * number, its first datagram to send being sequence 0.
+   *
+   * @param nickname 1 to MAXIMUM_NICKNAME_SIZE bytes of UTF-8.
+   * @param sessionToken Never 0.
+   * @returns The player connected from @p endpoint: the new one, or the one
+   * that already was, unchanged. nullptr when the roster is full and
+   * @p endpoint is not in it. The player stays at that address as long as the
+   * roster lives.
+   */
+  ConnectedPlayer* add(const network::Endpoint& endpoint, std::string nickname,
+                       std::uint64_t sessionToken);
+
+ private:
+  std::array<std::optional<ConnectedPlayer>, network::MAXIMUM_PLAYERS> seats_;
+};
+
+}  // namespace rtype::server

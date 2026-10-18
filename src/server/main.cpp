@@ -5,6 +5,7 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include "ConnectionAcceptor.hpp"
 #include "Endpoint.hpp"
 #include "EventBus.hpp"
 #include "GameEventBroadcaster.hpp"
@@ -17,8 +18,10 @@
 #include "NetworkConstants.hpp"
 #include "OutgoingDatagram.hpp"
 #include "PacketHeader.hpp"
+#include "PlayerRoster.hpp"
 #include "ServerApplication.hpp"
 #include "ServerConstants.hpp"
+#include "SystemClock.hpp"
 #include "TimeConstants.hpp"
 #include "TimerScheduler.hpp"
 #include "World.hpp"
@@ -45,29 +48,34 @@ int runServer(const rtype::logging::LogLaunchOptions& logOptions,
     rtype::engine::EventBus events;
     rtype::engine::TimerScheduler timers;
     rtype::server::ServerApplication* serverPointer = nullptr;
-    const auto send =
+    const auto queueDatagram =
         [&serverPointer](rtype::network::OutgoingDatagram datagram) {
           serverPointer->queueDatagram(std::move(datagram));
         };
-    rtype::server::WorldStateSender worldStateSender{send};
+    rtype::server::WorldStateSender worldStateSender{queueDatagram};
     const auto gameEventBroadcaster =
         std::make_unique<rtype::server::GameEventBroadcaster>(
             events, timers, recipients,
             [](const rtype::network::Endpoint&) {
               return rtype::network::PacketHeader{};
             },
-            send);
+            queueDatagram);
+    rtype::server::PlayerRoster roster;
+    rtype::server::ConnectionAcceptor connectionAcceptor{roster, queueDatagram};
+    const rtype::engine::SystemClock clock;
     rtype::server::ServerApplication server{
         rtype::network::Endpoint{
             .address = std::string{rtype::network::ANY_IPV4_ADDRESS},
             .port = launchOptions.port()},
-        [&logger, &world, &worldStateSender, &recipients, &events,
+        [&logger, &world, &worldStateSender, &connectionAcceptor, &clock,
+         &recipients, &events,
          &timers](std::span<const rtype::network::IncomingDatagram> datagrams) {
           for (const rtype::network::IncomingDatagram& datagram : datagrams) {
             logger.debug("received ", datagram.payload.size(), " bytes from ",
                          datagram.sender.address, " port ",
                          datagram.sender.port);
           }
+          connectionAcceptor.receive(datagrams, clock.now());
           timers.advance(rtype::engine::SIMULATION_TICK_DURATION);
           worldStateSender.onTick(world.components(), recipients);
           events.dispatch();

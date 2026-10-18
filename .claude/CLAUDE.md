@@ -47,7 +47,7 @@ Paths below are relative to `.claude/rules/`.
 | Touching the network | security section of `core/code-review.md`, `fix/reasoning/fix-reasoning-an-exception-to-a-check-is-read-as-the-forger.md`, `fix/reasoning/fix-reasoning-last-received-is-not-newest-over-udp.md` |
 | Creating a branch | `fix/process/fix-process-branch-before-first-commit.md`, `fix/execution/fix-execution-checkout-b-starts-from-head-not-main.md`, `fix/process/fix-process-reread-rules-after-switching-branch.md` |
 | Committing | `core/commit.md`, `fix/process/fix-process-no-co-author-trailer.md`, `fix/execution/fix-execution-check-the-index-before-committing.md` |
-| Finishing a feature | the `document-feature` skill (`.claude/skills/document-feature/SKILL.md`) |
+| Finishing a feature | the `document-feature` skill (`.claude/skills/document-feature/SKILL.md`), `fix/process/fix-process-grep-every-page-for-what-the-feature-replaced.md` |
 | Opening a PR | `fix/format/fix-format-pull-requests-in-english.md`, `fix/format/fix-format-pr-links-its-linear-issue.md`, `fix/process/fix-process-pr-always-opened-as-draft.md`, the `document-feature` skill if the feature is not documented yet |
 | Reviewing | `core/code-review.md` |
 | Announcing a green gate | `fix/execution/fix-execution-zsh-pipestatus.md`, `fix/execution/fix-execution-zero-warnings-proven-on-a-recompiling-build.md`, `fix/execution/fix-execution-run-clang-tidy-before-push.md` |
@@ -71,6 +71,7 @@ Paths below are relative to `.claude/rules/`.
 - `architecture/fix-architecture-magic-values-as-named-constants.md`
 
 **Build architecture — `fix/architecture/` (loaded every session)**
+- `fix/architecture/fix-architecture-a-link-never-points-back-at-a-folder-that-links-it.md`
 - `fix/architecture/fix-architecture-one-cmakelists-per-folder.md`
 
 **Code style — `code-style/` (loaded when a C++ file is read)**
@@ -82,14 +83,17 @@ Paths below are relative to `.claude/rules/`.
 - `code-style/code-style-tests-given-when-then.md`
 - `code-style/fix-format-designated-initializers-for-aggregates.md`
 - `code-style/fix-format-name-after-data-not-process.md`
+- `code-style/fix-reasoning-a-pointer-into-a-temporary-dies-with-it.md`
 
 **Process — `fix/process/`**
+- `fix/process/fix-process-a-screen-without-mockup-is-validated-as-a-picture.md`
 - `fix/process/fix-process-ask-what-is-observed-before-building-a-protocol.md`
 - `fix/process/fix-process-branch-before-first-commit.md`
 - `fix/process/fix-process-defect-injection-on-an-isolated-copy.md`
 - `fix/process/fix-process-do-not-over-engineer-step-back.md`
 - `fix/process/fix-process-follow-ci-after-opening-a-pr.md`
 - `fix/process/fix-process-green-test-locking-a-defect-and-overly-deterministic-fake.md`
+- `fix/process/fix-process-grep-every-page-for-what-the-feature-replaced.md`
 - `fix/process/fix-process-instrument-before-reasoning-docs-are-truth.md`
 - `fix/process/fix-process-no-co-author-trailer.md`
 - `fix/process/fix-process-plan-mode-writes-only-the-plan.md`
@@ -125,6 +129,9 @@ Paths below are relative to `.claude/rules/`.
 - `fix/reasoning/fix-reasoning-verify-the-premise-before-fixing-downstream.md`
 
 **Execution (shell, git, build) — `fix/execution/`**
+- `fix/execution/fix-execution-a-split-commit-carries-its-own-links.md`
+- `fix/execution/fix-execution-a-static-library-reached-twice-on-the-link-line.md`
+- `fix/execution/fix-execution-browser-global-names-are-window-properties.md`
 - `fix/execution/fix-execution-check-the-index-before-committing.md`
 - `fix/execution/fix-execution-checkout-b-starts-from-head-not-main.md`
 - `fix/execution/fix-execution-edit-script-validates-anchors-before-writing.md`

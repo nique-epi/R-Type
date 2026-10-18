@@ -21,11 +21,32 @@ constexpr TextStyle FOOTER_STYLE{.font = TextFont::Small,
                                  .outlined = true,
                                  .alignment = TextAlignment::Right};
 
+/**
+ * @brief Description of the selected bar of a form, in small print, then its
+ * status line: both inside its panel, so not outlined.
+ */
+constexpr TextStyle FORM_DESCRIPTION_STYLE{.font = TextFont::Small,
+                                           .color = FORM_DESCRIPTION_COLOR};
+constexpr TextStyle STATUS_STYLE{.font = TextFont::Regular,
+                                 .color = STATUS_TEXT_COLOR};
+
 /** @brief Title and question of a dialog, inside its panel, so not
  * outlined. */
 constexpr TextStyle DIALOG_HEADING_STYLE{.font = TextFont::Regular,
                                          .color = DIALOG_HEADING_COLOR};
 constexpr TextStyle DIALOG_MESSAGE_STYLE{.font = TextFont::Regular,
                                          .color = DIALOG_MESSAGE_COLOR};
+
+/** @brief A notice in the top-right corner of a tabbed panel, such as the game
+ * going on behind the options: small print in gold, outlined. */
+constexpr TextStyle NOTICE_STYLE{.font = TextFont::Small,
+                                 .color = STATUS_TEXT_COLOR,
+                                 .outlined = true,
+                                 .alignment = TextAlignment::Right};
+
+/** @brief A word stamped at the end of the rule of a tabbed panel, such as
+ * SAVED: small print in gold, outlined, on the sky. */
+constexpr TextStyle STAMP_STYLE{
+    .font = TextFont::Small, .color = STATUS_TEXT_COLOR, .outlined = true};
 
 }  // namespace rtype::client

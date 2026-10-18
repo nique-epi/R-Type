@@ -1,0 +1,50 @@
+#pragma once
+
+#include <array>
+#include <chrono>
+#include <cstdint>
+#include <string_view>
+#include "HandshakeConstants.hpp"
+#include "ProtocolConstants.hpp"
+
+namespace rtype::server::testing {
+
+/**
+ * @brief Address the test players send from, and one port per player: one
+ * more than a game holds.
+ */
+constexpr std::string_view PLAYER_ADDRESS = "192.0.2.20";
+constexpr std::array<std::uint16_t, network::MAXIMUM_PLAYERS + 1>
+    FIVE_PLAYER_PORTS{40001, 40002, 40003, 40004, 40005};
+
+/**
+ * @brief A nickname the protocol accepts.
+ */
+constexpr std::string_view PLAYER_NICKNAME = "Nolan";
+
+/**
+ * @brief The shortest nickname the protocol accepts: one byte.
+ */
+constexpr std::string_view SHORTEST_NICKNAME = "A";
+
+/**
+ * @brief Two session tokens a roster may be given.
+ */
+constexpr std::uint64_t SESSION_TOKEN = 0x0123456789abcdef;
+constexpr std::uint64_t OTHER_SESSION_TOKEN = 0xfedcba9876543210;
+
+/**
+ * @brief When the test requests arrive, and a time at which a cookie issued
+ * then has expired: two cookie windows later.
+ */
+constexpr std::chrono::nanoseconds REQUEST_TIME = std::chrono::seconds{100};
+constexpr std::chrono::nanoseconds COOKIE_EXPIRED_TIME =
+    REQUEST_TIME + (2 * network::COOKIE_WINDOW_DURATION);
+
+/**
+ * @brief A protocol id and a version this server does not speak.
+ */
+constexpr std::uint32_t OTHER_PROTOCOL_ID = network::PROTOCOL_ID + 1;
+constexpr std::uint8_t NEXT_PROTOCOL_VERSION = network::PROTOCOL_VERSION + 1;
+
+}  // namespace rtype::server::testing

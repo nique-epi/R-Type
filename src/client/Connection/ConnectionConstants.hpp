@@ -1,6 +1,8 @@
 #pragma once
 
+#include <chrono>
 #include <cstddef>
+#include <string_view>
 
 namespace rtype::client {
 
@@ -21,5 +23,21 @@ constexpr std::size_t INCOMING_DATAGRAM_QUEUE_CAPACITY = 256;
  * far more than waits before the network thread sends it.
  */
 constexpr std::size_t OUTGOING_DATAGRAM_QUEUE_CAPACITY = 64;
+
+/**
+ * @brief Time between two ConnectionRequest of an attempt while the server
+ * has not answered. Provisional, see the protocol page.
+ */
+constexpr std::chrono::milliseconds CONNECTION_REQUEST_INTERVAL{500};
+
+/**
+ * @brief Time after the start of an attempt at which it gives up, when the
+ * server has neither accepted nor refused it. Provisional, see the protocol
+ * page.
+ */
+constexpr std::chrono::seconds CONNECTION_ATTEMPT_TIMEOUT{5};
+
+/** @brief Module name the connection to a server writes its log lines under. */
+constexpr std::string_view CONNECTION_LOGGER_NAME = "Connection";
 
 }  // namespace rtype::client

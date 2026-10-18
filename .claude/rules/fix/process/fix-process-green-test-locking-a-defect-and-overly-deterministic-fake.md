@@ -17,6 +17,17 @@ Why: an assertion copied from the output turns the current behavior into the spe
 6. **Write the test, watch it fail on the faulty code, then keep it.** A test added on already-fixed code does not prove it catches anything.
 7. **Review corollary**: in a test diff, look for assertions describing internal mechanics rather than a fact observable by the player or the protocol.
 
+### The expected value is not the constant under test
+
+1. **When a requirement fixes a value** (a mockup position, "one pixel lower", a packet size), the test writes that value from the requirement, as a literal or a test constant named after it (`ONE_PIXEL_LOWER`), never by reading the constant the code under test reads (`PRESSED_TEXT_DROP`). An expected value computed from that constant follows it when it is wrong, and the test stays green.
+2. **A constant that only configures the behavior under test** (the places of a formation, when the test checks that the ships reach their places) may be read by the test: what it checks is the behavior, and another test pins the values when the requirement fixes them.
+3. **A red proof that changes a constant is the check**: if no test turns red, the value is not pinned anywhere.
+
+### One input per test when the faulty code reaches the same end state
+
+1. **Before asserting only the end of a sequence of inputs**, play the sequence on the faulty reading: if it reaches the same end state through another input (the wrong key opens the tab the right key would have opened), the test cannot fail. Assert after each input, or give each input its own test.
+2. **The red proof is the check**: a variant that leaves such a test green means the test is split, never that the variant is dropped.
+
 ## Example
 
 - ❌ **Before (wrong)**:

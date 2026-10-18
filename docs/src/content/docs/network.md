@@ -15,8 +15,9 @@ This page tells you where to look when you need to change something. It describe
 | Relay between a socket and the queues of another thread | Available | `src/network/Transport/DatagramRelay/` |
 | Lag and loss simulator | Not yet written | — |
 | Serialization | Available | `src/network/Serialization/` |
-| Protocol messages, datagram header, dispatch by type | Available: nothing calls the dispatch yet | `src/network/Protocol/` |
-| Handshake, sessions, reliability, history of states, statistics | Not yet written | — |
+| Protocol messages, datagram header, dispatch by type | Available | `src/network/Protocol/` |
+| Connection cookies | Available | `src/network/Handshake/` |
+| Rate limit of the requests, sessions, reliability, history of states, statistics | Not yet written | — |
 
 ## Event loop: `NetworkContext`
 
@@ -30,7 +31,7 @@ Asio is linked privately to the network targets, so the headers other modules in
 
 `UdpSocket` (`src/network/Transport/UdpSocket/`) implements `IDatagramSocket`. It opens a UDP socket on an `Endpoint`, sends datagrams and hands every datagram received to a handler. None of its calls blocks. Code that only sends and receives can take an `IDatagramSocket&`, so a lag and loss simulator or a test double can stand in for the real socket.
 
-- An `Endpoint` is an IP address written as text, `"127.0.0.1"` or `"::1"`, and a port. Host names are never resolved: `"localhost"` throws `InvalidAddressException`. Port 0 lets the system pick a free port, which `localEndpoint()` returns. A port already taken throws `SocketOpenException`.
+- An `Endpoint` is an IP address written as text, `"127.0.0.1"` or `"::1"`, and a port. Host names are never resolved: `"localhost"` throws `InvalidAddressException`. Port 0 (`ANY_PORT`) lets the system pick a free port, which `localEndpoint()` returns. A port already taken throws `SocketOpenException`.
 - `startReceiving(handler)` is called once; a second call throws `ReceivingAlreadyStartedException`. The handler gets the sender and a `std::span` of the bytes, valid only during the call. It must not throw: an exception leaves `run()` and the socket stops receiving.
 - A datagram larger than `MAX_DATAGRAM_SIZE` (1200 bytes) never reaches the handler. The socket receives into `RECEIVE_BUFFER_SIZE` (1201) bytes, so a datagram cut down to the buffer by the system is told apart from one of exactly 1200 bytes. An empty datagram arrives as an empty span: checking sizes is the job of the code that decodes it.
 - `send(destination, payload)` copies the payload and returns at once. More than `MAX_DATAGRAM_SIZE` bytes throws `DatagramTooLargeException` and sends nothing. A failed send is logged, and UDP never tells whether a datagram arrived.
@@ -53,7 +54,7 @@ socket.startReceiving([&socket](const rtype::network::Endpoint& sender,
 network.run();
 ```
 
-`r-type_server` opens such a socket on the port given at launch, `DEFAULT_SERVER_PORT` (4242) by default, on every IPv4 interface, and hands each datagram to its simulation thread, which only logs it at the `debug` level: nothing decodes or answers them yet (see [Server](/R-Type/server/)). The client runs its socket on a thread of its own, `NetworkThread`, described in [Client](/R-Type/client/#network-networkthread).
+`r-type_server` opens such a socket on the port given at launch, `DEFAULT_SERVER_PORT` (4242) by default, on every IPv4 interface, and hands each datagram to its simulation thread, which answers the connection requests and reads nothing else yet (see [Server](/R-Type/server/#letting-players-in-connectionacceptor-playerroster)). The client runs its socket on a thread of its own, `NetworkThread`, described in [Client](/R-Type/client/#network-networkthread).
 
 ## Ports and addresses written as text: `portFromText`, `ipv4AddressFromText`
 
@@ -113,7 +114,7 @@ const auto decodedName = reader.readString();
 - `decodeHeader(datagram)` reads the header without judging it, so a datagram of another version still gives its version. Fewer than 22 bytes throws `MalformedDatagramException`.
 - `splitMessages(datagram)` returns the `MessageFrame`s that follow the header: the type byte as it arrived, and a view of the payload into the datagram. Either the sizes add up exactly to the end of the datagram, or it throws `MalformedDatagramException` and returns nothing: a datagram without a message, with a size running past its end, or with bytes after its last message is refused whole. Calling it on a temporary buffer does not compile.
 
-Reading the header and splitting the messages are two calls because a receiver checks the version before it trusts the rest. Checking `protocolId`, `version`, `flags`, the session token and the sequence, in the order of [Receiving a datagram](/R-Type/protocol/#receiving-a-datagram), is left to the code that receives, which is not written yet.
+Reading the header and splitting the messages are two calls because a receiver checks the version before it trusts the rest. `speaksThisProtocol(header)` is that check: `protocolId`, `version` and `flags` are those of this code. The server's `ConnectionAcceptor` and the client's `ServerConnection` call it before splitting; the session token and the sequence of [Receiving a datagram](/R-Type/protocol/#receiving-a-datagram) are not checked yet.
 
 ## Messages: `src/network/Protocol/Messages/`
 
@@ -142,7 +143,7 @@ const std::vector<std::byte> datagram = rtype::network::DatagramCodec::encode(
 - `dispatch(origin, messages)` reads each payload, then calls its handler, in order. A message whose type has no handler, which includes the type bytes no message has, is skipped; a message whose payload is refused is dropped. Both are counted (`skippedMessageCount()`, `malformedMessageCount()`) and logged at the `debug` level with the sender, and the next message is handled.
 - No exception caused by the content of a message leaves `dispatch()`, so one forged message cannot stop the server. An exception thrown by a handler does: it is a fault of the program.
 - A sender it does not know yet must be answered at most once per datagram: ninety 13-byte `ConnectionRequest` fit in one datagram, and an answer to each would send more bytes than were received. A handler cannot tell which messages shared a datagram, so the code that receives must enforce it before dispatching.
-- It is not thread-safe. Nothing calls it yet: the server and the client do not decode what they receive (see [Server](/R-Type/server/)).
+- It is not thread-safe. The client's `ServerConnection` hands it the datagrams of the server it contacts; the server does not use it yet, since its `ConnectionAcceptor` reads the first `ConnectionRequest` of each datagram itself, which keeps it to one answer per datagram.
 
 ```cpp
 rtype::network::MessageDispatcher dispatcher;
@@ -159,6 +160,16 @@ dispatcher.dispatch(
 ```
 
 `lobby` stands for the code that will handle the waiting room; `received` is an `IncomingDatagram`. `decodeHeader` and `splitMessages` throw `MalformedDatagramException` for bytes that are not a header followed by whole messages: the code that receives must catch it and drop the datagram, or one forged datagram would stop the server.
+
+## Connection cookies: `CookieIssuer`
+
+`CookieIssuer` (`rtype_network_cookie_issuer`, `src/network/Handshake/CookieIssuer/`) issues the cookie of a `ConnectionChallenge` and recognizes it when the sender sends it back, so the server gives a place only to the owner of an address and keeps nothing per request (see [Protocol](/R-Type/protocol/#connection)).
+
+- `issue(sender, now)` is the SipHash-2-4 (`sipHash()`, `src/network/Handshake/SipHash.hpp`), under a secret key, of the sender's address, its port and the number of the cookie window: the time divided by `COOKIE_WINDOW_DURATION` (10 s). Without the key, nobody can compute it.
+- `isValid(cookie, sender, now)` accepts the cookie of that sender in the window of `now` and in the one before it, so a cookie stays valid at least 10 s and less than 20 s after it was issued, depending on when in its window that was, and a challenge answered just before a window ends still works. 0, the cookie of a request that has none yet, is never valid.
+- The default constructor draws the key from `std::random_device`; another constructor takes the key, for tests. `now` is any monotonic time, the same origin for every call.
+
+`sipHash()` follows the reference implementation of Aumasson and Bernstein, and its tests check the reference vectors. The window duration is **provisional**, like every delay of the protocol page: code must read `COOKIE_WINDOW_DURATION` (`HandshakeConstants.hpp`).
 
 ## World state: `WorldStateCodec`
 
@@ -196,6 +207,7 @@ const rtype::network::WorldState received =
 | Change the datagram header or how messages are framed | `src/network/Protocol/DatagramCodec/` and `PacketHeader.hpp`, then the [Protocol](/R-Type/protocol/#datagram) page |
 | Change how a `bool`, a position or a nickname is checked | `src/network/Protocol/WireTypes.hpp`, and `Utf8Constants.hpp` for UTF-8 |
 | Handle a received message | `registerHandler<Message>()` on a `MessageDispatcher` |
+| Change how a connection cookie is computed, or how long it lives | `CookieIssuer` in `src/network/Handshake/CookieIssuer/`, `COOKIE_WINDOW_DURATION` in `src/network/Handshake/HandshakeConstants.hpp` |
 | Add a network error | `src/network/Exceptions/NetworkException.hpp` |
 | Test code against a real socket | `tests/UdpSocketTest.cpp`: a plain Asio client on the loopback address |
 | Test code that uses a socket without the network | `tests/doubles/RecordingDatagramSocket.hpp`, as `tests/network/Transport/DatagramRelayTest.cpp` does |

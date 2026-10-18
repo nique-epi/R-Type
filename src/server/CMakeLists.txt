@@ -8,6 +8,8 @@ add_subdirectory(Platform)
 add_subdirectory(Application)
 add_subdirectory(LaunchOptions)
 add_subdirectory(Replication)
+add_subdirectory(Instances)
+add_subdirectory(Lobby)
 
 add_executable(r-type_server main.cpp)
 
@@ -16,9 +18,11 @@ target_link_libraries(r-type_server
     rtype_logging
     rtype_network_constants
     rtype_server_application
+    rtype_server_connection_acceptor
     rtype_server_constants
     rtype_server_game_event_broadcaster
     rtype_server_launch_options
+    rtype_server_player_roster
     rtype_server_world_state_sender
     rtype_game
 )

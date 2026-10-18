@@ -2,25 +2,13 @@
 
 #include <chrono>
 #include <cstddef>
-#include <cstdint>
 #include <string_view>
 #include "NetworkConstants.hpp"
-
-/**
- * @brief Address of the machine itself: a test never opens a port to the
- *        network.
- */
-constexpr std::string_view LOOPBACK_ADDRESS = "127.0.0.1";
 
 /**
  * @brief A name, not an address: sockets never resolve one.
  */
 constexpr std::string_view HOST_NAME = "localhost";
-
-/**
- * @brief Port that lets the system pick a free port.
- */
-constexpr std::uint16_t ANY_PORT = 0;
 
 /**
  * @brief How long a test waits for a datagram; only a failing test waits that

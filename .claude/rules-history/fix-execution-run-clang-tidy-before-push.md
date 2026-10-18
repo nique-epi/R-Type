@@ -67,8 +67,37 @@ The CI `Clang-tidy` job failed on one finding: `tests/network/Protocol/GameMessa
 ### Root cause
 `misc-include-cleaner` decides whether an include is used from the declarations of the standard library it reads. The local run reads libc++, the CI reads the libstdc++ of GCC on Ubuntu; they spread the same symbols over different internal headers. The rule asked for a clean local run, which cannot tell what the CI's standard library will say.
 
+## Update (2026-10-15) — a finding only the CI's clang-tidy reports
+
+### Context
+Pull request #69 (title screen and menu widgets). Every changed `.cpp` and `.hpp` was linted locally as a main file, with the SDK flags and `-DINFINITY=__builtin_inff()`, before the push.
+
+### Mistake
+The CI `Clang-tidy` job failed on one finding the local run never reported: `tests/client/Screens/RecordingNavigator.hpp:19`, "constructor does not initialize these fields: request" (`cppcoreguidelines-pro-type-member-init`) on `struct NavigatorCall { NavigatorRequest request; std::optional<ScreenId> screen; }`. Running the local clang-tidy 21.1.8 on that header alone again gave exit 0 and no finding.
+
+### Root cause
+The local toolchain (clang-tidy 21, libc++) differs from the CI's (clang-tidy 20, libstdc++); which of the two makes the difference was not measured. Linting locally cannot prove a member-init check silent on the CI.
+
+### What was done
+`request{}` given as default member initializer; the rule now asks for a default initializer on every data member of a new struct or class.
+
 ## Rule
 See `.claude/rules/fix/execution/fix-execution-run-clang-tidy-before-push.md`.
 
 ## Update (2026-10-14) — headers are linted by the CI
 The point saying the CI never lints headers was wrong since #64: `main` has failed `Clang-tidy` since `d15aff0`, 35 errors in headers no pull request had touched since. Point 4 was rewritten and point 5 added: a header lint needs the include folders of every compiled file.
+
+## Update (2026-10-15) — a configuration that does not parse checks nothing
+
+### Context
+Connection screen branch, started from `main` after the merge of the title screen pull request (#69) and of "make Clang-tidy pass on main again" (#72). Both had added `cppcoreguidelines-special-member-functions.AllowSoleDefaultDtor` and `hicpp-special-member-functions.AllowSoleDefaultDtor` to `.clang-tidy`; the merge kept both copies.
+
+### Mistake
+The 43 changed files were linted with Homebrew clang-tidy 21: exit 0 on all but one header, which needed absolute `-I` folders; "clang-tidy clean" was written in `.context/context.md`. The header calibration that followed reported nothing for a planted unused `#include <vector>`. Every log began with `.clang-tidy:30:3: error: duplicated mapping key` and `Error parsing .clang-tidy: Invalid argument`: clang-tidy had run its default checks only. The CI `Clang-tidy` job on `main` (clang-tidy 20) printed the same error 1278 times and passed.
+
+### Root cause
+The rule asked for exit 0 and for a calibration, but not for the calibration to come before the verdict, nor for the log to be read for a configuration error that does not change the exit code.
+
+### What was done
+A deduplicated copy of the configuration passed with `--config-file` reported the planted fault; the 43 files were linted again with it. The broken configuration on `main` was reported to the user, its fix left to a separate branch.
+

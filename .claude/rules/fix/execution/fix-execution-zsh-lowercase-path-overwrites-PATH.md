@@ -10,6 +10,16 @@ trigger: always_on
 1. **Never name a shell variable `path`, `cdpath`, `fpath`, `manpath`, `module_path`, `watch`, `psvar`** in zsh. Use `file`, `dir`, `target`, `source_file`…
 2. **When several basic commands suddenly become "command not found"**, do not diagnose the machine: first look for an assignment of `path` (or an `export PATH=` without `$PATH`) in the preceding call.
 
+### Read-only special parameters stop the line
+
+1. **Never name a loop or `read` variable after a zsh special parameter**: `read -r status file` fails with `read-only variable: status`, `read -r options rest` with `attempt to set slice of associative array`, and either failure stops the whole command line, so nothing written after it runs. `pipestatus` and `argv` are accepted but overwrite what the shell keeps there. Use `state`, `code`, `entry`.
+2. **A check whose output stops early is no result**: when a chain prints `read-only variable`, every line it did not print is missing, never "nothing to report"; fix the name and rerun.
+
+### A variable derived from a file path is still never `path`
+
+1. **A name that says "the path of this file" is the trap**: when a loop derives one path from another (`relative=${file#*/}`, the path inside a commit folder, a path without its prefix), name it `relative`, `target`, `source_file` or `inside`, never `path`. The assignment runs at the first iteration and every later command of the loop fails.
+2. **Before sending a command that holds a loop or an assignment, read the name on the left of each `=` and of each `for … in`** against the list of point 1 of the rule. This check is made on the command text, not remembered.
+
 ## Example
 
 - ❌ **Before (wrong)**: `for path in $(git ls-files '*.hpp'); do clang-format -i "$path"; done` → `command not found: clang-format` from the first iteration.

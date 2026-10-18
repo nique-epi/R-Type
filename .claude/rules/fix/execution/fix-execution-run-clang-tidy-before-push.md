@@ -48,6 +48,12 @@ Why: the CI `Clang-tidy` job treats warnings as errors; a local failure put down
 2. **Before pushing, match each `#include` of a changed file against what the file names.** A standard header stays only if the file names a symbol it declares (`<cstddef>` for `std::byte` or `std::size_t`, `<cstdint>` for `std::uint8_t`); a header whose symbol the file names is included directly, never reached through another one.
 3. **An include the CI reports is fixed in the file**, never put down to the environment: the CI verdict is the one that gates the merge.
 
+### A configuration clang-tidy cannot read checks nothing
+
+1. **Before reading any verdict, count the `Error parsing` lines of the log.** When `.clang-tidy` does not parse (a duplicated key after a merge is enough), clang-tidy prints the error, falls back to its default checks and still exits 0: every file looks clean. One such line voids the run, locally and on the CI.
+2. **A clean run proves nothing until the calibration fault is reported by that same command**, configuration included. Calibrate before writing "clean" anywhere, a report or `.context/context.md` included.
+3. **After a merge that touches `.clang-tidy`**, run `clang-tidy --dump-config` once and read it for `Error parsing` before pushing.
+
 ### A file the local machine cannot compile
 
 A platform file such as `FineTimerResolutionWindows.cpp` is linted only by the CI job of its platform (`Clang-tidy (Windows-only files)`). Since no local run can catch its findings, they are prevented while it is written. A file that compiles locally is never one of them: a local tidy failure on it still follows point 2.
@@ -60,7 +66,16 @@ A platform file such as `FineTimerResolutionWindows.cpp` is linted only by the C
    Run it with the clang-tidy version the CI job prints (20 today). Match every called function against their `CheckedFunctions` patterns, and read their `AllowCastToVoid`: in clang-tidy 20, `cert-err33-c` allows the cast and `bugprone-unused-return-value` does not. A pattern without an end anchor matches more than it names: `^::time` matches `::timeBeginPeriod` and `::timeEndPeriod`.
 3. **The CI is its verifier**: push, say in the report that this file is linted by the CI only, and follow the platform job until it is green, as `fix-process-follow-ci-after-opening-a-pr.md` requires. This is the exception named in points 1 and 4 of the first list. The CI runs on pull requests and on pushes to `main`, never on a feature branch pushed alone, so the user's go to publish the branch or open the pull request is still asked first.
 
+### A finding the local clang-tidy does not report
+
+1. **The local run is not the CI's toolchain**: Homebrew clang-tidy 21 on libc++ here, clang-tidy 20 on libstdc++ on the CI. A file can be clean locally and fail on the CI: `cppcoreguidelines-pro-type-member-init` on `struct NavigatorCall { NavigatorRequest request; std::optional<ScreenId> screen; }` was reported by the CI only.
+2. **Give every data member of a built-in or enum type (`int`, `bool`, a pointer, an `enum class`) of a new struct or class a default member initializer** (`NavigatorRequest request{};`), so the member-init checks have nothing to report on either toolchain. Designated initializers still work on such an aggregate. A member of class type (`std::string`, `std::optional`) initializes itself: a `{}` on it is reported by `readability-redundant-member-init`.
+3. **When the CI reports what the local run did not**, fix it from the CI log (`gh api repos/<owner>/<repo>/actions/jobs/<job id>/logs` when `gh run view --log-failed` prints nothing), say in the report that the local run could not see it, and follow the job until it is green.
+
 ## Example
+
+- ❌ **Before (wrong)**: 43 changed files linted, exit 0 everywhere, "clang-tidy clean" written in the context; every log started with `Error parsing .clang-tidy: Invalid argument` (two option keys twice), so only the default checks ran, and the CI had run the same way since the merge that doubled the keys.
+- ✅ **After (right)**: a fault planted in a header of the isolated copy is not reported → `Error parsing` found in the log → a deduplicated copy of the config, passed with `--config-file`, reports the fault → the 43 files are linted again with it, 3 real findings fixed, and the broken config on `main` reported.
 
 - ❌ **Before (wrong)**: `GameMessagesTest.cpp` includes `<cstddef>` and names neither `std::byte` nor `std::size_t`; the local tidy (libc++) exits 0, the branch is pushed, and the CI `Clang-tidy` job fails on `included header cstddef is not used directly`.
 - ✅ **After (right)**: before the push, the includes of each changed file are matched against the symbols it names; `<cstddef>` goes, and the CI passes.
@@ -71,3 +86,5 @@ A platform file such as `FineTimerResolutionWindows.cpp` is linted only by the C
 - ✅ **After (right)**: rerun with `-DINFINITY=__builtin_inff()` → 0 files in error → 3 more `bugprone-unchecked-optional-access` findings in the new tests → fixed.
 - ❌ **Before (wrong)**: `FineTimerResolutionWindows.cpp` pushed with the results of `timeBeginPeriod` and `timeEndPeriod` ignored → the Windows `Clang-tidy` job fails on `cert-err33-c`, and the code released a resolution Windows may have refused.
 - ✅ **After (right)**: both "Return value" sections read → the release only follows a granted request, its result cast to `void` with the reason → `--dump-config` shows `^::time` in `cert-err33-c` and `AllowCastToVoid: true` → push, report the file as linted by the CI only, follow the Windows job until green.
+- ❌ **Before (wrong)**: `RecordingNavigator.hpp` linted locally as a main file, exit 0, pushed → the CI fails on `pro-type-member-init` for `NavigatorCall::request`.
+- ✅ **After (right)**: every member of the new struct has a default initializer (`request{}`) before the push, whatever the local run says.

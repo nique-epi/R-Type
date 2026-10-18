@@ -3,8 +3,10 @@
 #include <SFML/Graphics/Color.hpp>
 #include <SFML/Graphics/Rect.hpp>
 #include <SFML/System/Vector2.hpp>
+#include <set>
 #include <string>
 #include <string_view>
+#include <utility>
 #include <vector>
 #include "IInterfaceCanvas.hpp"
 #include "TextStyle.hpp"
@@ -73,3 +75,7 @@ class RecordingInterfaceCanvas : public rtype::client::IInterfaceCanvas {
  * nullptr. */
 [[nodiscard]] const RecordedWriting* writingOf(
     const InterfaceCanvasRecord& record, std::string_view text);
+
+/** @returns Every pixel the fills of a record light, as (column, row). */
+[[nodiscard]] std::set<std::pair<int, int>> litPixelsOf(
+    const InterfaceCanvasRecord& record);
