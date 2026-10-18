@@ -14,6 +14,12 @@ namespace rtype::server {
 constexpr std::string_view PROGRAM_NAME = "r-type_server";
 
 /**
+ * @brief Launch option followed by the seed the random draws of the games start
+ * from, a whole number from 0 to 4294967295.
+ */
+constexpr std::string_view SEED_OPTION = "--seed";
+
+/**
  * @brief Module name the server writes its log lines under.
  */
 constexpr std::string_view SERVER_LOGGER_NAME = "Server";

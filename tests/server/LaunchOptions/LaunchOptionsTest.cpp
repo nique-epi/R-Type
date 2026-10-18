@@ -9,14 +9,17 @@
 #include "LoggingConstants.hpp"
 #include "NetworkConstants.hpp"
 #include "NetworkException.hpp"
+#include "ServerConstants.hpp"
 
 using rtype::engine::HELP_OPTION;
+using rtype::engine::InvalidLaunchOptionValueException;
 using rtype::engine::MissingLaunchOptionValueException;
 using rtype::engine::PORT_OPTION;
 using rtype::engine::UnknownLaunchArgumentException;
 using rtype::network::DEFAULT_SERVER_PORT;
 using rtype::network::InvalidPortException;
 using rtype::server::LaunchOptions;
+using rtype::server::SEED_OPTION;
 
 namespace {
 
@@ -143,7 +146,7 @@ TEST(ServerLaunchOptions, UsageNamesEveryOption) {
   const std::string usage = LaunchOptions::usage();
 
   for (const std::string_view option :
-       {PORT_OPTION, HELP_OPTION, rtype::logging::LEVEL_OPTION,
+       {PORT_OPTION, SEED_OPTION, HELP_OPTION, rtype::logging::LEVEL_OPTION,
         rtype::logging::FILE_OPTION, rtype::logging::NO_FILE_OPTION,
         rtype::logging::STDERR_OPTION}) {
     SCOPED_TRACE(option);
@@ -158,4 +161,78 @@ TEST(ServerLaunchOptions, UsageNamesEveryOption) {
  */
 TEST(ServerLaunchOptions, UsageGivesTheDefaultPort) {
   EXPECT_NE(LaunchOptions::usage().find(DEFAULT_PORT_LINE), std::string::npos);
+}
+
+/**
+ * Given no argument
+ * When the launch options are read
+ * Then no seed is given, so the server draws one
+ */
+TEST(ServerLaunchOptions, NoArgumentGivesNoSeed) {
+  const LaunchOptions options = LaunchOptions::read(Arguments{});
+
+  EXPECT_FALSE(options.seed().has_value());
+}
+
+/**
+ * Given the seed option and a seed
+ * When the launch options are read
+ * Then the seed is that number
+ */
+TEST(ServerLaunchOptions, SeedOptionSetsTheSeed) {
+  const LaunchOptions options =
+      LaunchOptions::read(Arguments{SEED_OPTION, SEED_ARGUMENT});
+
+  EXPECT_EQ(options.seed(), SEED_OF_SEED_ARGUMENT);
+}
+
+/**
+ * Given the seed option twice
+ * When the launch options are read
+ * Then the last seed wins
+ */
+TEST(ServerLaunchOptions, LastSeedOptionWins) {
+  const LaunchOptions options = LaunchOptions::read(
+      Arguments{SEED_OPTION, SEED_ARGUMENT, SEED_OPTION, OTHER_SEED_ARGUMENT});
+
+  EXPECT_EQ(options.seed(), SEED_OF_OTHER_SEED_ARGUMENT);
+}
+
+/**
+ * Given the seeds 0 and 4294967295, the two ends of the range
+ * When the launch options are read
+ * Then both are accepted
+ */
+TEST(ServerLaunchOptions, SeedAcceptsBothEndsOfTheRange) {
+  EXPECT_EQ(
+      LaunchOptions::read(Arguments{SEED_OPTION, LOWEST_SEED_ARGUMENT}).seed(),
+      0U);
+  EXPECT_EQ(
+      LaunchOptions::read(Arguments{SEED_OPTION, HIGHEST_SEED_ARGUMENT}).seed(),
+      HIGHEST_SEED);
+}
+
+/**
+ * Given a seed one above the range, a negative one, an empty one and a text
+ * Then each is rejected
+ */
+TEST(ServerLaunchOptions, InvalidSeedIsRejected) {
+  for (const std::string_view seed :
+       {TOO_HIGH_SEED_ARGUMENT, NEGATIVE_SEED_ARGUMENT, EMPTY_SEED_ARGUMENT,
+        NOT_A_PORT_ARGUMENT}) {
+    EXPECT_THROW(
+        static_cast<void>(LaunchOptions::read(Arguments{SEED_OPTION, seed})),
+        InvalidLaunchOptionValueException)
+        << seed;
+  }
+}
+
+/**
+ * Given the seed option as the last argument
+ * When the launch options are read
+ * Then the missing seed is reported
+ */
+TEST(ServerLaunchOptions, SeedOptionWithoutValueIsRejected) {
+  EXPECT_THROW(static_cast<void>(LaunchOptions::read(Arguments{SEED_OPTION})),
+               MissingLaunchOptionValueException);
 }
