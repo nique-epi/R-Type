@@ -41,7 +41,7 @@ The pattern was a prefix, not a whole path, and the check of the copy compared o
 
 ### Rule
 
-Each exclusion pattern matches a whole path (`^vcpkg$`, `^docs/`), and the root of the copy is compared with the root of `git ls-files` before configuring.
+Each exclusion pattern matches a whole path (`^vcpkg$`, `^docs/`), and the root of the copy is compared, before configuring, with the root entries of the same tracked-and-untracked list it was made from (`git ls-files --cached --others --exclude-standard`): a plain `git ls-files` lists tracked paths only.
 
 ### Example
 
