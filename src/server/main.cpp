@@ -68,8 +68,9 @@ int runServer(const rtype::logging::LogLaunchOptions& logOptions,
     rtype::server::GameInstance& joinableGame = *games.front();
     rtype::server::ConnectionAcceptor connectionAcceptor{
         joinableGame.roster(), queueDatagram,
-        [&serverPointer](const rtype::network::Endpoint& player) {
-          serverPointer->admit(player);
+        [&serverPointer](const rtype::network::Endpoint& player,
+                         std::uint64_t sessionToken) {
+          serverPointer->admit(player, sessionToken);
         },
         [&joinableGame](rtype::server::ConnectedPlayer& player) {
           joinableGame.onPlayerJoined(player);

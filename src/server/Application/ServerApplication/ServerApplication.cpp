@@ -1,5 +1,6 @@
 #include "ServerApplication.hpp"
 #include <cstddef>
+#include <cstdint>
 #include <exception>
 #include <span>
 #include <stop_token>
@@ -52,8 +53,11 @@ void ServerApplication::run() {
 
 void ServerApplication::stop() { network_.stop(); }
 
-void ServerApplication::admit(const network::Endpoint& player) {
-  network_.post([this, admitted = player] { sorter_.admit(admitted); });
+void ServerApplication::admit(const network::Endpoint& player,
+                              std::uint64_t sessionToken) {
+  network_.post([this, admitted = player, sessionToken] {
+    sorter_.admit(admitted, sessionToken);
+  });
 }
 
 void ServerApplication::queueDatagram(network::OutgoingDatagram datagram) {
@@ -105,6 +109,14 @@ void ServerApplication::reportDiscardedDatagrams() {
                  " s: not of this protocol and version, malformed, or from a "
                  "sender that was not admitted");
     reportedDroppedCount_ = droppedCount;
+  }
+  const std::size_t wrongTokenCount = sorter_.wrongTokenCount();
+  if (wrongTokenCount != reportedWrongTokenCount_) {
+    logger_.warn(wrongTokenCount - reportedWrongTokenCount_,
+                 " datagrams dropped in the last ", REPORT_SECONDS,
+                 " s: sent from the address of a player with another session "
+                 "token");
+    reportedWrongTokenCount_ = wrongTokenCount;
   }
 }
 

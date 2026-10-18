@@ -51,10 +51,12 @@ class ConnectionAcceptor {
   using Send = std::function<void(network::OutgoingDatagram)>;
 
   /**
-   * @brief What the acceptor calls once for each sender it gives a place, so
-   * the datagrams of that player reach the game from then on.
+   * @brief What the acceptor calls once for each sender it gives a place, with
+   * the session token it drew, so the datagrams of that player carrying that
+   * token reach the game from then on.
    */
-  using Admit = std::function<void(const network::Endpoint&)>;
+  using Admit = std::function<void(const network::Endpoint& player,
+                                   std::uint64_t sessionToken)>;
 
   /**
    * @brief What the acceptor calls once for each player it lets in, after it

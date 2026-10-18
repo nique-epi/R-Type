@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 #include <cstddef>
+#include <cstdint>
 #include <string>
 #include <utility>
 #include <vector>
@@ -8,6 +9,7 @@
 #include "Endpoint.hpp"
 #include "IncomingDatagram.hpp"
 #include "PacketHeader.hpp"
+#include "ProtocolConstants.hpp"
 #include "ServerConstants.hpp"
 #include "ServerDatagrams.hpp"
 #include "ServerLobbyTestConstants.hpp"
@@ -16,10 +18,13 @@
 using rtype::concurrency::BoundedQueue;
 using rtype::network::Endpoint;
 using rtype::network::IncomingDatagram;
+using rtype::network::NO_SESSION_TOKEN;
 using rtype::server::DatagramSorter;
 using rtype::server::testing::NEXT_PROTOCOL_VERSION;
 using rtype::server::testing::ONE_FLAG_SET;
 using rtype::server::testing::OTHER_PROTOCOL_ID;
+using rtype::server::testing::OTHER_SESSION_TOKEN;
+using rtype::server::testing::SESSION_TOKEN;
 
 namespace {
 
@@ -33,6 +38,19 @@ Endpoint stranger() {
                   .port = STRANGER_PORT};
 }
 
+/** @returns A header carrying @p sessionToken, as an admitted player sends. */
+rtype::network::PacketHeader playerHeader(
+    std::uint64_t sessionToken = SESSION_TOKEN) {
+  rtype::network::PacketHeader header;
+  header.sessionToken = sessionToken;
+  return header;
+}
+
+/** @returns A ReadyState carrying @p sessionToken. */
+std::vector<std::byte> playerReady(std::uint64_t sessionToken = SESSION_TOKEN) {
+  return readyDatagram(playerHeader(sessionToken));
+}
+
 /** @brief A sorter in front of two queues of the server's sizes. */
 class DatagramSorterTest : public ::testing::Test {
  protected:
@@ -40,10 +58,17 @@ class DatagramSorterTest : public ::testing::Test {
     sorter_.sort(sender, datagram);
   }
 
-  void admit(const Endpoint& endpoint) { sorter_.admit(endpoint); }
+  void admit(const Endpoint& endpoint,
+             std::uint64_t sessionToken = SESSION_TOKEN) {
+    sorter_.admit(endpoint, sessionToken);
+  }
 
   [[nodiscard]] std::size_t droppedCount() const {
     return sorter_.droppedCount();
+  }
+
+  [[nodiscard]] std::size_t wrongTokenCount() const {
+    return sorter_.wrongTokenCount();
   }
 
   [[nodiscard]] std::vector<IncomingDatagram> drainPlayers() {
@@ -104,11 +129,11 @@ TEST_F(DatagramSorterTest, DropsAStrangersOtherDatagram) {
 TEST_F(DatagramSorterTest, SendsAPlayersDatagramToThePlayerQueue) {
   admit(player());
 
-  sort(player(), readyDatagram());
+  sort(player(), playerReady());
 
   EXPECT_EQ(drainPlayers(),
             (std::vector<IncomingDatagram>{
-                {.sender = player(), .payload = readyDatagram()}}));
+                {.sender = player(), .payload = playerReady()}}));
 }
 
 /**
@@ -132,7 +157,7 @@ TEST_F(DatagramSorterTest, SendsAPlayersRequestToTheRequestQueue) {
  */
 TEST_F(DatagramSorterTest, DropsADatagramOfAnotherVersion) {
   admit(player());
-  rtype::network::PacketHeader header;
+  rtype::network::PacketHeader header = playerHeader();
   header.version = NEXT_PROTOCOL_VERSION;
 
   sort(player(), readyDatagram(header));
@@ -193,7 +218,7 @@ TEST_F(DatagramSorterTest, DropsAStrangersRequestWithAFlagSet) {
  */
 TEST_F(DatagramSorterTest, DropsATruncatedDatagram) {
   admit(player());
-  std::vector<std::byte> datagram = readyDatagram();
+  std::vector<std::byte> datagram = playerReady();
   datagram.pop_back();
 
   EXPECT_NO_THROW(sort(player(), datagram));
@@ -222,9 +247,9 @@ TEST_F(DatagramSorterTest, DropsBytesShorterThanAHeader) {
  */
 TEST_F(DatagramSorterTest, CountsEveryDatagramItDrops) {
   admit(player());
-  std::vector<std::byte> truncated = readyDatagram();
+  std::vector<std::byte> truncated = playerReady();
   truncated.pop_back();
-  rtype::network::PacketHeader otherVersion;
+  rtype::network::PacketHeader otherVersion = playerHeader();
   otherVersion.version = NEXT_PROTOCOL_VERSION;
   const std::vector<std::pair<Endpoint, std::vector<std::byte>>> dropped{
       {stranger(), readyDatagram()},
@@ -237,7 +262,7 @@ TEST_F(DatagramSorterTest, CountsEveryDatagramItDrops) {
     sort(sender, datagram);
   }
   sort(stranger(), requestDatagram());
-  sort(player(), readyDatagram());
+  sort(player(), playerReady());
 
   EXPECT_EQ(droppedCount(), dropped.size());
 }
@@ -251,7 +276,7 @@ TEST_F(DatagramSorterTest, CountsEveryDatagramItDrops) {
  */
 TEST_F(DatagramSorterTest, KeepsAPlayersDatagramThroughAFloodOfRequests) {
   admit(player());
-  sort(player(), readyDatagram());
+  sort(player(), playerReady());
 
   for (std::size_t request = 0; request < FLOODING_REQUEST_COUNT; ++request) {
     sort(stranger(), requestDatagram());
@@ -259,7 +284,7 @@ TEST_F(DatagramSorterTest, KeepsAPlayersDatagramThroughAFloodOfRequests) {
 
   EXPECT_EQ(drainPlayers(),
             (std::vector<IncomingDatagram>{
-                {.sender = player(), .payload = readyDatagram()}}));
+                {.sender = player(), .payload = playerReady()}}));
   EXPECT_EQ(drainRequests().size(),
             rtype::server::CONNECTION_REQUEST_QUEUE_CAPACITY);
 }
@@ -273,7 +298,82 @@ TEST_F(DatagramSorterTest, GivesAPlayerAdmittedTwiceEachDatagramOnce) {
   admit(player());
   admit(player());
 
-  sort(player(), readyDatagram());
+  sort(player(), playerReady());
 
   EXPECT_EQ(drainPlayers().size(), 1);
+}
+
+/**
+ * Given an admitted player
+ * When a datagram from its address carries another session token
+ * Then it reaches no queue, and it is counted as a wrong token only
+ */
+TEST_F(DatagramSorterTest, DropsAPlayersDatagramWithAnotherToken) {
+  admit(player());
+
+  sort(player(), playerReady(OTHER_SESSION_TOKEN));
+
+  EXPECT_TRUE(drainPlayers().empty());
+  EXPECT_EQ(wrongTokenCount(), 1);
+  EXPECT_EQ(droppedCount(), 0);
+}
+
+/**
+ * Given an admitted player
+ * When a datagram from its address carries no session token
+ * Then it reaches no queue, and it is counted as a wrong token
+ */
+TEST_F(DatagramSorterTest, DropsAPlayersDatagramWithoutToken) {
+  admit(player());
+
+  sort(player(), playerReady(NO_SESSION_TOKEN));
+
+  EXPECT_TRUE(drainPlayers().empty());
+  EXPECT_EQ(wrongTokenCount(), 1);
+}
+
+/**
+ * Given an admitted player
+ * When it sends a connection request carrying its session token
+ * Then the request goes to the request queue
+ */
+TEST_F(DatagramSorterTest, SendsAPlayersRequestWithItsTokenToTheRequestQueue) {
+  admit(player());
+
+  sort(player(), requestDatagram(playerHeader()));
+
+  EXPECT_EQ(drainRequests().size(), 1);
+}
+
+/**
+ * Given an admitted player
+ * When a connection request from its address carries another session token
+ * Then the request reaches no queue, and it is counted as a wrong token
+ */
+TEST_F(DatagramSorterTest, DropsAPlayersRequestWithAnotherToken) {
+  admit(player());
+
+  sort(player(), requestDatagram(playerHeader(OTHER_SESSION_TOKEN)));
+
+  EXPECT_TRUE(drainRequests().empty());
+  EXPECT_EQ(wrongTokenCount(), 1);
+}
+
+/**
+ * Given a player admitted with a token, then again with another one
+ * When datagrams carrying each token arrive from it
+ * Then only the one carrying the newer token reaches the player queue
+ */
+TEST_F(DatagramSorterTest, KeepsOnlyTheNewerTokenOfAPlayerAdmittedAgain) {
+  admit(player(), SESSION_TOKEN);
+  admit(player(), OTHER_SESSION_TOKEN);
+
+  sort(player(), playerReady(SESSION_TOKEN));
+  sort(player(), playerReady(OTHER_SESSION_TOKEN));
+
+  EXPECT_EQ(
+      drainPlayers(),
+      (std::vector<IncomingDatagram>{
+          {.sender = player(), .payload = playerReady(OTHER_SESSION_TOKEN)}}));
+  EXPECT_EQ(wrongTokenCount(), 1);
 }
