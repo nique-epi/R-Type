@@ -1,3 +1,4 @@
+#include <cstdint>
 #include <exception>
 #include <iostream>
 #include <string>
@@ -39,6 +40,7 @@ int runServer(const rtype::logging::LogLaunchOptions& logOptions,
     logger.info("server starting");
     rtype::game::World world;
     const std::vector<rtype::network::Endpoint> recipients;
+    std::uint32_t tick = 0;
     rtype::server::ServerApplication* serverPointer = nullptr;
     const auto queueDatagram =
         [&serverPointer](rtype::network::OutgoingDatagram datagram) {
@@ -62,8 +64,9 @@ int runServer(const rtype::logging::LogLaunchOptions& logOptions,
             .address = std::string{rtype::network::ANY_IPV4_ADDRESS},
             .port = launchOptions.port()},
         [&logger, &world, &worldStateSender, &connectionAcceptor, &clock,
-         &recipients](const rtype::server::ServerApplication::ReceivedDatagrams&
-                          received) {
+         &recipients, &tick](
+            const rtype::server::ServerApplication::ReceivedDatagrams&
+                received) {
           for (const rtype::network::IncomingDatagram& datagram :
                received.players) {
             logger.debug("received ", datagram.payload.size(), " bytes from ",
@@ -71,7 +74,7 @@ int runServer(const rtype::logging::LogLaunchOptions& logOptions,
                          datagram.sender.port);
           }
           connectionAcceptor.receive(received.connectionRequests, clock.now());
-          worldStateSender.onTick(world.components(), recipients);
+          worldStateSender.onTick(++tick, world.components(), recipients);
         }};
     serverPointer = &server;
     logger.info("listening on UDP port ", server.localEndpoint().port);
