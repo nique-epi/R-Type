@@ -32,6 +32,7 @@ target_link_libraries(rtype_network
     rtype_network_context
     rtype_network_serialization
     rtype_network_wire_types
+    rtype_network_sequence_order
     rtype_network_world_state_codec
     rtype_network_datagram_codec
     rtype_network_messages

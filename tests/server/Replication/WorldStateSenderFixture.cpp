@@ -61,7 +61,8 @@ void WorldStateSenderFixture::addEntityWithoutType(game::Position position,
 void WorldStateSenderFixture::runTicks(
     std::size_t count, const std::vector<network::Endpoint>& recipients) {
   for (std::size_t index = 0; index < count; ++index) {
-    sender_.onTick(components_, recipients);
+    ++tick_;
+    sender_.onTick(tick_, components_, recipients);
   }
 }
 
