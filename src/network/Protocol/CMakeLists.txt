@@ -19,6 +19,12 @@ target_link_libraries(rtype_network_wire_types
 
 rtype_enable_warnings(rtype_network_wire_types)
 
+add_library(rtype_network_sequence_order STATIC SequenceOrder.cpp)
+
+target_include_directories(rtype_network_sequence_order PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+
+rtype_enable_warnings(rtype_network_sequence_order)
+
 add_subdirectory(WorldStateCodec)
 add_subdirectory(DatagramCodec)
 add_subdirectory(Messages)
