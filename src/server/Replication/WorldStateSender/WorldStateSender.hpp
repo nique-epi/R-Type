@@ -13,8 +13,8 @@
 namespace rtype::server {
 
 /**
- * @brief Counts the simulation ticks and, every TICKS_PER_WORLD_STATE of them,
- * sends the state of the world to every recipient.
+ * @brief Sends the state of the world to every recipient on the ticks that
+ * are a multiple of TICKS_PER_WORLD_STATE.
  *
  * The state lists every entity that has a NetworkIdentity, a Position and an
  * EntityType, each under its network id. It is sent as several datagrams, with
@@ -38,20 +38,22 @@ class WorldStateSender {
   explicit WorldStateSender(Send send);
 
   /**
-   * @brief Counts one more tick and, when it is one that carries a state,
-   * sends the state to @p recipients. Call it once per tick, on the
-   * simulation thread.
+   * @brief Sends the state to @p recipients when @p tick is one that carries a
+   * state. Call it once per tick, on the simulation thread.
+   *
+   * @param tick The tick of the game being simulated, counted by the game from
+   * its start; it is the tick the state carries.
    */
-  void onTick(engine::ComponentRegistry& components,
+  void onTick(std::uint32_t tick, engine::ComponentRegistry& components,
               std::span<const network::Endpoint> recipients);
 
  private:
-  [[nodiscard]] network::WorldState capture(
-      engine::ComponentRegistry& components, std::size_t& leftOutCount) const;
+  [[nodiscard]] static network::WorldState capture(
+      std::uint32_t tick, engine::ComponentRegistry& components,
+      std::size_t& leftOutCount);
   void reportLeftOut(std::size_t leftOutCount);
 
   Send send_;
-  std::uint32_t tick_{0};
   std::size_t reportedLeftOutCount_{0};
   logging::Logger logger_;
 };

@@ -32,6 +32,12 @@ struct ConnectedPlayer {
   /** @brief The network id of the ship of the player, NO_ENTITY_ID while it
    * has none. */
   std::uint32_t shipEntityId{identifiers::NO_ENTITY_ID};
+  /** @brief Whether the player declared itself ready to start; cleared when the
+   * game waits for players again. */
+  bool ready{false};
+  /** @brief The sequence of the newest datagram accepted from the player for
+   * the messages that need an order, nothing before the first. */
+  std::optional<std::uint16_t> newestReceivedSequence;
   /** @brief The PlayerInput with the highest inputNumber the player sent
    * during the session, to apply at every tick until a newer one arrives;
    * empty until the first one arrives. PlayerInputReceiver keeps it. */

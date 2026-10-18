@@ -253,6 +253,8 @@ In each phase the server repeats one message, and the client shows the screen of
 | Game in progress | `WorldState`, 20 per second | the game |
 | Game ended | `GameEnded`, every 500 ms | the end screen |
 
+The server takes a `ReadyState` into account only in the first phase, from a connected player, with the same checks as every datagram: the session token, then the `sequence`. The game starts when at least one player is connected and every connected player is ready.
+
 Each side sends a `Heartbeat` after 1 s without sending anything else; any datagram that passes the checks above proves its sender is alive. The server closes a session after 5 s without a datagram carrying its token, removes the ship and sends `PlayerLeft` (`TimedOut`) to the others. The client shows that the connection is lost after 5 s without a datagram from the server. A `Disconnection` frees the place at once, and the others get `PlayerLeft` (`Left`).
 
 ## Losses
