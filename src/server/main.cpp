@@ -1,9 +1,9 @@
 #include <exception>
 #include <iostream>
-#include <span>
 #include <string>
 #include <utility>
 #include <vector>
+#include "ConnectedPlayer.hpp"
 #include "ConnectionAcceptor.hpp"
 #include "Endpoint.hpp"
 #include "IncomingDatagram.hpp"
@@ -17,6 +17,7 @@
 #include "PlayerRoster.hpp"
 #include "ServerApplication.hpp"
 #include "ServerConstants.hpp"
+#include "ShipSpawnAnnouncer.hpp"
 #include "SystemClock.hpp"
 #include "World.hpp"
 #include "WorldStateSender.hpp"
@@ -37,7 +38,6 @@ int runServer(const rtype::logging::LogLaunchOptions& logOptions,
         std::string{rtype::server::SERVER_LOGGER_NAME}};
     logger.info("server starting");
     rtype::game::World world;
-    world.spawnPlayer();
     const std::vector<rtype::network::Endpoint> recipients;
     rtype::server::ServerApplication* serverPointer = nullptr;
     const auto queueDatagram =
@@ -46,21 +46,31 @@ int runServer(const rtype::logging::LogLaunchOptions& logOptions,
         };
     rtype::server::WorldStateSender worldStateSender{queueDatagram};
     rtype::server::PlayerRoster roster;
-    rtype::server::ConnectionAcceptor connectionAcceptor{roster, queueDatagram};
+    rtype::server::ShipSpawnAnnouncer shipSpawnAnnouncer{world, roster,
+                                                         queueDatagram};
+    rtype::server::ConnectionAcceptor connectionAcceptor{
+        roster, queueDatagram,
+        [&serverPointer](const rtype::network::Endpoint& player) {
+          serverPointer->admit(player);
+        },
+        [&shipSpawnAnnouncer](rtype::server::ConnectedPlayer& player) {
+          shipSpawnAnnouncer.onPlayerJoined(player);
+        }};
     const rtype::engine::SystemClock clock;
     rtype::server::ServerApplication server{
         rtype::network::Endpoint{
             .address = std::string{rtype::network::ANY_IPV4_ADDRESS},
             .port = launchOptions.port()},
         [&logger, &world, &worldStateSender, &connectionAcceptor, &clock,
-         &recipients](
-            std::span<const rtype::network::IncomingDatagram> datagrams) {
-          for (const rtype::network::IncomingDatagram& datagram : datagrams) {
+         &recipients](const rtype::server::ServerApplication::ReceivedDatagrams&
+                          received) {
+          for (const rtype::network::IncomingDatagram& datagram :
+               received.players) {
             logger.debug("received ", datagram.payload.size(), " bytes from ",
                          datagram.sender.address, " port ",
                          datagram.sender.port);
           }
-          connectionAcceptor.receive(datagrams, clock.now());
+          connectionAcceptor.receive(received.connectionRequests, clock.now());
           worldStateSender.onTick(world.components(), recipients);
         }};
     serverPointer = &server;

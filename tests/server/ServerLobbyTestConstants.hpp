@@ -47,4 +47,9 @@ constexpr std::chrono::nanoseconds COOKIE_EXPIRED_TIME =
 constexpr std::uint32_t OTHER_PROTOCOL_ID = network::PROTOCOL_ID + 1;
 constexpr std::uint8_t NEXT_PROTOCOL_VERSION = network::PROTOCOL_VERSION + 1;
 
+/**
+ * @brief A flags byte with one flag set; version 0 of the protocol sets none.
+ */
+constexpr std::uint8_t ONE_FLAG_SET = 0x01;
+
 }  // namespace rtype::server::testing

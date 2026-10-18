@@ -5,6 +5,7 @@
 #include <type_traits>
 #include "ByteReader.hpp"
 #include "ByteWriter.hpp"
+#include "EntityIdConstants.hpp"
 #include "NetworkException.hpp"
 #include "ProtocolConstants.hpp"
 #include "WireTypes.hpp"
@@ -23,7 +24,7 @@ bool isListed(DestructionReason reason) {
 }
 
 void validate(const EntityDestroyed& message) {
-  if (message.entityId == NO_ENTITY_ID) {
+  if (message.entityId == identifiers::NO_ENTITY_ID) {
     throw InvalidFieldValueException(ENTITY_ID_FIELD, message.entityId);
   }
   if (!isListed(message.reason)) {

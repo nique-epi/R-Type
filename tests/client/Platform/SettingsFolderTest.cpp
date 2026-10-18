@@ -28,26 +28,23 @@ namespace {
  * then puts back what they held. */
 class LinuxSettingsFolderTest : public ::testing::Test {
  protected:
-  LinuxSettingsFolderTest()
-      : configuration_(read("XDG_CONFIG_HOME")), home_(read("HOME")) {}
+  void SetUp() override {
+    configuration_ = read("XDG_CONFIG_HOME");
+    home_ = read("HOME");
+  }
 
-  ~LinuxSettingsFolderTest() override {
+  void TearDown() override {
     restore("XDG_CONFIG_HOME", configuration_);
     restore("HOME", home_);
   }
 
-  LinuxSettingsFolderTest(const LinuxSettingsFolderTest&) = delete;
-  LinuxSettingsFolderTest& operator=(const LinuxSettingsFolderTest&) = delete;
-  LinuxSettingsFolderTest(LinuxSettingsFolderTest&&) = delete;
-  LinuxSettingsFolderTest& operator=(LinuxSettingsFolderTest&&) = delete;
-
   static void set(const char* variable, const char* value) {
-    // NOLINTNEXTLINE(concurrency-mt-unsafe)
+    // NOLINTNEXTLINE(concurrency-mt-unsafe,misc-include-cleaner)
     ::setenv(variable, value, 1);
   }
 
   static void unset(const char* variable) {
-    // NOLINTNEXTLINE(concurrency-mt-unsafe)
+    // NOLINTNEXTLINE(concurrency-mt-unsafe,misc-include-cleaner)
     ::unsetenv(variable);
   }
 

@@ -2,6 +2,6 @@ add_library(rtype_server_instances INTERFACE)
 
 target_include_directories(rtype_server_instances INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
 
-target_link_libraries(rtype_server_instances INTERFACE rtype_network_transport)
+target_link_libraries(rtype_server_instances INTERFACE rtype_network_transport rtype_identifiers)
 
 add_subdirectory(PlayerRoster)

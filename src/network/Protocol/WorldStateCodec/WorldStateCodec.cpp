@@ -8,6 +8,7 @@
 #include <vector>
 #include "ByteReader.hpp"
 #include "ByteWriter.hpp"
+#include "EntityIdConstants.hpp"
 #include "NetworkException.hpp"
 #include "ProtocolConstants.hpp"
 #include "WireTypes.hpp"
@@ -76,7 +77,7 @@ std::optional<EntityState> readEntity(ByteReader& reader) {
       toKnownEntityType(reader.readUint8());
   const float horizontal = readCoordinate(reader);
   const float vertical = readCoordinate(reader);
-  if (entityId == NO_ENTITY_ID) {
+  if (entityId == identifiers::NO_ENTITY_ID) {
     throw InvalidFieldValueException(ENTITY_ID_FIELD, entityId);
   }
   if (!type.has_value()) {

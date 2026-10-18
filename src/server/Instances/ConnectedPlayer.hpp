@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <string>
 #include "Endpoint.hpp"
+#include "EntityIdConstants.hpp"
 
 namespace rtype::server {
 
@@ -26,6 +27,9 @@ struct ConnectedPlayer {
   /** @brief Sequence of the next datagram sent to the player: 0 for the first
    * one, then one more each time, wrapping from 65535 to 0. */
   std::uint16_t nextSequence{};
+  /** @brief The network id of the ship of the player, NO_ENTITY_ID while it
+   * has none. */
+  std::uint32_t shipEntityId{identifiers::NO_ENTITY_ID};
 };
 
 }  // namespace rtype::server

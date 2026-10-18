@@ -1,6 +1,8 @@
 #include "DatagramCodec.hpp"
+#include <concepts>
 #include <cstddef>
 #include <cstdint>
+#include <optional>
 #include <span>
 #include <vector>
 #include "ByteReader.hpp"
@@ -29,6 +31,35 @@ void requireHeader(std::span<const std::byte> datagram) {
   if (datagram.size() < PACKET_HEADER_SIZE) {
     throw MalformedDatagramException(datagram.size());
   }
+}
+
+/**
+ * @brief Hands each message after the header of @p datagram to @p onMessage,
+ * in order, checking every size before reading what it announces, so nothing
+ * it calls throws.
+ * @returns Whether the datagram holds a header and at least one message, and
+ * its sizes add up exactly to its end. When it is false, @p onMessage may
+ * already have seen the messages before the faulty one.
+ */
+template <std::invocable<const MessageFrame&> OnMessage>
+bool readMessages(std::span<const std::byte> datagram, OnMessage onMessage) {
+  if (datagram.size() <= PACKET_HEADER_SIZE) {
+    return false;
+  }
+  ByteReader reader{datagram.subspan(PACKET_HEADER_SIZE)};
+  while (reader.remaining() > 0) {
+    if (reader.remaining() < MESSAGE_PREFIX_SIZE) {
+      return false;
+    }
+    const std::uint8_t type = reader.readUint8();
+    const std::uint16_t payloadSize = reader.readUint16();
+    if (payloadSize > reader.remaining()) {
+      return false;
+    }
+    onMessage(
+        MessageFrame{.type = type, .payload = reader.readBytes(payloadSize)});
+  }
+  return true;
 }
 
 }  // namespace
@@ -69,25 +100,24 @@ bool DatagramCodec::speaksThisProtocol(const PacketHeader& header) {
 
 std::vector<MessageFrame> DatagramCodec::splitMessages(
     std::span<const std::byte> datagram) {
-  requireHeader(datagram);
-  ByteReader reader{datagram.subspan(PACKET_HEADER_SIZE)};
   std::vector<MessageFrame> messages;
-  while (reader.remaining() > 0) {
-    if (reader.remaining() < MESSAGE_PREFIX_SIZE) {
-      throw MalformedDatagramException(datagram.size());
-    }
-    const std::uint8_t type = reader.readUint8();
-    const std::uint16_t payloadSize = reader.readUint16();
-    if (payloadSize > reader.remaining()) {
-      throw MalformedDatagramException(datagram.size());
-    }
-    messages.push_back(
-        MessageFrame{.type = type, .payload = reader.readBytes(payloadSize)});
-  }
-  if (messages.empty()) {
+  if (!readMessages(datagram, [&messages](const MessageFrame& message) {
+        messages.push_back(message);
+      })) {
     throw MalformedDatagramException(datagram.size());
   }
   return messages;
+}
+
+std::optional<DatagramCodec::MessageTypes> DatagramCodec::messageTypes(
+    std::span<const std::byte> datagram) {
+  MessageTypes types;
+  if (!readMessages(datagram, [&types](const MessageFrame& message) {
+        types.set(message.type);
+      })) {
+    return std::nullopt;
+  }
+  return types;
 }
 
 }  // namespace rtype::network

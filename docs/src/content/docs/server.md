@@ -13,7 +13,7 @@ This page tells you where to look when you need to change something. It describe
 |---|---|---|
 | Network thread and simulation thread | Available | `src/server/Application/` |
 | Timer resolution on Windows | Available | `src/server/Platform/` |
-| Filtering unwanted senders before the incoming queue | Not yet written | — |
+| Sorting the datagrams before the queues | Available; no limit per address yet | `src/server/Application/DatagramSorter/` |
 | World state sent at a fixed rate | Available: sends to no one yet, the list of recipients is empty | `src/server/Replication/` |
 | Launch options | Available: the port and `--help` | `src/server/LaunchOptions/` |
 | Letting players in: challenge, acceptance or refusal | Available; nothing tells it a game is in progress yet | `src/server/Lobby/`, `src/server/Instances/` |
@@ -22,7 +22,8 @@ This page tells you where to look when you need to change something. It describe
 | Movement | Available | `src/game/Systems/MovementSystem/` |
 | Collisions | Available: nothing runs them yet | `src/game/Systems/CollisionSystem/`, `src/game/Systems/CollisionRules/`, `src/game/Events/` |
 | Damage and destruction | Not yet written | — |
-| Spawning, waves, score, lives | Not yet written | — |
+| Ship of each player, created when the player joins and announced to the others | Available | `src/game/Spawning/`, `src/server/Replication/ShipSpawnAnnouncer/` |
+| Enemies, waves, score, lives | Not yet written | — |
 
 ## Launch options: `LaunchOptions`
 
@@ -44,32 +45,48 @@ This page tells you where to look when you need to change something. It describe
 
 `ServerApplication` (`src/server/Application/ServerApplication/`) runs the server on two threads, which never share game state:
 
-- The **network thread**, the one that calls `run()`, runs the `NetworkContext`. `DatagramRelay` (`rtype_network`, see [Network](/R-Type/network/#socket-to-queues-datagramrelay)) copies every datagram received, with its sender, into the incoming `BoundedQueue`, and sends what was left in the outgoing one. It is the only thread that touches the socket.
-- The **simulation thread** runs `SIMULATION_TICKS_PER_SECOND` (60) ticks per second. Each tick drains the incoming queue and hands what arrived, often nothing, to the tick handler given to the constructor, so a slow or silent player never holds the game up. At the end of the tick it asks the network thread, through `NetworkContext::post()`, to send the outgoing queue.
+- The **network thread**, the one that calls `run()`, runs the `NetworkContext`. A `DatagramSorter` sorts every datagram as it arrives: the datagrams of admitted players go to the player queue, connection requests to the request queue, and the rest is dropped there (see [Sorting the datagrams](#sorting-the-datagrams-datagramsorter)). `DatagramRelay` (`rtype_network`, see [Network](/R-Type/network/#socket-to-queues-datagramrelay)) sends what was left in the outgoing queue. It is the only thread that touches the socket.
+- The **simulation thread** runs `SIMULATION_TICKS_PER_SECOND` (60) ticks per second. Each tick drains the player queue and the request queue and hands what arrived, often nothing, to the tick handler given to the constructor, as a `ReceivedDatagrams` (`players`, `connectionRequests`), so a slow or silent player never holds the game up. At the end of the tick it asks the network thread, through `NetworkContext::post()`, to send the outgoing queue.
 
-The tick handler is where the game plugs in. Today `src/server/main.cpp` gives one that logs each datagram at the `debug` level, hands them to the `ConnectionAcceptor`, which answers the connection requests (see [Letting players in](#letting-players-in-connectionacceptor-playerroster)), then calls the `WorldStateSender`, which has no recipient yet.
+The tick handler is where the game plugs in. Today `src/server/main.cpp` gives one that logs each datagram of a player at the `debug` level, hands the connection requests to the `ConnectionAcceptor`, which answers them and gives each new player a ship (see [Letting players in](#letting-players-in-connectionacceptor-playerroster) and [Player ships](#player-ships-shipspawnannouncer)), then calls the `WorldStateSender`, which has no recipient yet.
 
 A tick handler puts a datagram in the outgoing queue with `queueDatagram()`, called from the handler itself, on the simulation thread. The datagram is sent at the end of the same tick.
 
-Anyone can send a datagram, so the tick handler must drop and count a datagram it cannot decode, and never let an exception caused by a datagram's content escape: an exception stops the server (see below), so one truncated datagram would stop it for every player. `ByteReader`, for instance, throws `BufferUnderflowException` when a datagram is shorter than what it reads.
+The sorter only lets through datagrams of this protocol whose message sizes add up, but anyone can still send a connection request, and the payloads are read by the tick, so the tick handler must drop and count a datagram it cannot decode, and never let an exception caused by a datagram's content escape: an exception stops the server (see below), so one truncated datagram would stop it for every player. `ByteReader`, for instance, throws `BufferUnderflowException` when a datagram is shorter than what it reads.
 
-The queues hold `INCOMING_DATAGRAM_QUEUE_CAPACITY` and `OUTGOING_DATAGRAM_QUEUE_CAPACITY` (256) datagrams each (`src/server/ServerConstants.hpp`). These sizes are **provisional**: about one second of the inputs of four players, they will be revised with the rates of the protocol. Code must read the constants.
+The player queue and the outgoing queue hold `INCOMING_DATAGRAM_QUEUE_CAPACITY` and `OUTGOING_DATAGRAM_QUEUE_CAPACITY` (256) datagrams each, about one second of the inputs of four players; the request queue holds `CONNECTION_REQUEST_QUEUE_CAPACITY` (16) (`src/server/ServerConstants.hpp`). These sizes are **provisional**: they will be revised with the rates of the protocol. Code must read the constants.
 
-- When more datagrams arrive between two ticks than the incoming queue holds, the oldest are discarded. Every `TICKS_PER_REPORT` ticks (600, so every ten seconds), the server logs a warning with how many were discarded, if any.
-- Nothing filters the senders yet: one sender flooding the port pushes the other senders' datagrams out of the incoming queue (see [Flood protection](#flood-protection)).
+- When more datagrams arrive between two ticks than the player queue or the request queue holds, the oldest are discarded. Every `TICKS_PER_REPORT` ticks (600, so every ten seconds), the server logs one warning per queue with how many were discarded, if any, and one with how many datagrams the sorter dropped before any queue (see below). The sender of a dropped datagram is not logged yet.
+- A flood of connection requests, or of datagrams from strangers, never pushes a player's datagram out of its queue. It still delays the requests of new players: nothing limits the requests of one address yet (see [Flood protection](#flood-protection)).
 - The outgoing queue also discards its oldest datagram when full, but nothing reports it yet.
 
 `stop()` makes `run()` return, from any thread: the network thread stops at once, the simulation thread when its current sleep ends, about one tick later. An exception thrown on either thread, by the tick handler for instance, stops both, and `run()` rethrows it.
 
+### Sorting the datagrams: `DatagramSorter`
+
+`DatagramSorter` (`src/server/Application/DatagramSorter/`) decides, on the network thread, which queue each received datagram goes to, before any queue holds it. It reads the header and the type of each message, never a payload.
+
+| The datagram… | Goes to |
+|---|---|
+| is not of this protocol and version, has a flag set, or its message sizes do not add up | nowhere: dropped |
+| holds a `ConnectionRequest`, whoever sent it | the request queue, where the `ConnectionAcceptor` answers it (see [Letting players in](#letting-players-in-connectionacceptor-playerroster)) |
+| comes from an admitted player | the player queue |
+| anything else | nowhere: dropped |
+
+- A player is admitted by `ServerApplication::admit(endpoint)`, which the acceptor calls once for each sender it gives a place to. It may be called from any thread: it posts the admission to the network thread, so a datagram the player sends before that is dropped like a stranger's. No player is ever forgotten yet: nobody leaves the game.
+- The `PlayerRoster` and the `ConnectionAcceptor` run in the tick, on the simulation thread; the network thread only keeps the address and port of each admitted player.
+- Each datagram the sorter drops is counted (`droppedCount()`, readable from any thread), and the server reports the count every ten seconds with the discards of its queues.
+- Measured on an Apple Silicon laptop (Apple M4 Pro, `-O2`): sorting a datagram costs about 20 ns when it is dropped, 2 to 20 ns when it is malformed, and 50 to 60 ns when it is queued, copy included, so a flood of 3 800 datagrams per tick costs the network thread about 0.2 ms of every 16.7 ms, whatever the datagrams hold. A malformed datagram is found without throwing (`DatagramCodec::messageTypes`): an exception costs about 4 µs, so a flood of malformed datagrams would otherwise take about 14 ms of every tick. Answering a request costs about 0.45 µs, or 0.55 µs with a wrong cookie; the request queue keeps that under 9 µs per tick.
+
 ### Flood protection
 
-The room of the incoming queue protects the server's memory, not the players: one sender flooding the server's port pushes everyone else's datagrams out of it. A plain Python loop on the loopback address sends about 3 800 datagrams per tick (measured on an Apple Silicon laptop), about fifteen times the room of the queue. Other engines protect the players in three layers; the server must have them once sessions exist, and **none is written yet**:
+The room of the player queue protects the server's memory; the sorter protects the players from the senders that were not admitted: one of them flooding the server's port with connection requests or with anything else no longer pushes the players' datagrams out. A sender that uses the address and port of an admitted player, that player itself or someone forging them, still can: the session token is not checked yet, and the players share one queue (layer 2 below). A plain Python loop on the loopback address sends about 3 800 datagrams per tick (measured on an Apple Silicon laptop), about fifteen times the room of the queue. Other engines protect the players in three layers; the server must have them once sessions exist, and only the first is written, in part:
 
-1. **Sort on the network thread, before the queue.** A datagram whose sender has no session and that is not a `ConnectionRequest` must be dropped there (today the `ConnectionAcceptor` ignores it on the simulation thread, after the queue), and connection requests must be limited per address, in a table of fixed size so that forged addresses cannot make it grow. Quake 3 ignores such datagrams and answers at most 10 status, information or remote console requests per second from one address; Unreal limits how many datagrams of senders without a connection it processes each frame.
+1. **Sort on the network thread, before the queue.** Written: `DatagramSorter` drops there every datagram that is neither from an admitted player nor a `ConnectionRequest`, and the requests have their own queue. Not written: a limit on the requests of each address, in a table of fixed size so that forged addresses cannot make it grow. Quake 3 ignores such datagrams and answers at most 10 status, information or remote console requests per second from one address; Unreal limits how many datagrams of senders without a connection it processes each frame.
 2. **One queue per session**, so a flooding client only fills its own. Valve's GameNetworkingSockets keeps one per connection, of 1 000 messages by default.
 3. **One input per player and per tick.** The protocol already requires it: the server must apply the newest `PlayerInput` of each player at every tick and ignore older ones (see [Protocol](/R-Type/protocol/#inputs)).
 
-The shared queue stays as the last safety net. It discards its oldest datagram, where GameNetworkingSockets refuses the newest, because only the newest input of a player counts. Why threads only talk through queues is explained in [Architecture](/R-Type/architecture/#queues-between-threads).
+The player queue stays as the last safety net. It discards its oldest datagram, where GameNetworkingSockets refuses the newest, because only the newest input of a player counts. Why threads only talk through queues is explained in [Architecture](/R-Type/architecture/#queues-between-threads).
 
 ## Tick loop: `TickLoop`
 
@@ -111,7 +128,7 @@ How late a tick starts depends on how precisely the system wakes a sleeping thre
 - `WORLD_STATES_PER_SECOND` is **provisional**: it will be revised once measured on a real network. It must divide the tick rate, and the build fails otherwise. Code must read the constants, `TICKS_PER_WORLD_STATE` for instance, and never repeat the 3.
 - Nothing is built when the list of recipients is empty. An entity without a network id, or without a type, is not listed.
 - An entity whose position is not a finite number (NaN or infinite), which only a game bug can produce, is left out of the state instead of stopping the server. A warning under the `Replication` module gives how many entities were left out, each time that number changes, so a stuck entity is reported once rather than 20 times per second.
-- The state lists no player yet: the game has no lives, score or player numbers. Nothing gives an entity a `NetworkIdentity` yet either, so the real server lists nothing until something spawns networked entities.
+- The state lists no player yet: the game has no lives, score or player numbers. The ship of each player has a `NetworkIdentity` (see [Player ships](#player-ships-shipspawnannouncer)), so it is listed, but the list of recipients is still empty in `main.cpp`, so no state is sent.
 - The datagrams hold the bare message payload, without the packet header, so no client could accept them yet.
 - A playfield larger than 2047 logical units in either direction fails the build, because a wire coordinate would no longer hold it (see [Protocol](/R-Type/protocol/#positions)).
 
@@ -122,8 +139,9 @@ rtype::server::WorldStateSender worldStateSender{
       serverPointer->queueDatagram(std::move(datagram));
     }};
 rtype::server::ServerApplication server{
-    endpoint, [&worldStateSender, &world,
-               &recipients](std::span<const rtype::network::IncomingDatagram>) {
+    endpoint,
+    [&worldStateSender, &world, &recipients](
+        const rtype::server::ServerApplication::ReceivedDatagrams&) {
       worldStateSender.onTick(world.components(), recipients);
     }};
 serverPointer = &server;
@@ -135,7 +153,7 @@ The sender is built before the server, whose tick handler captures it, and sends
 
 ## Letting players in: `ConnectionAcceptor`, `PlayerRoster`
 
-`ConnectionAcceptor` (`src/server/Lobby/ConnectionAcceptor/`) answers the connection requests of each tick, as the [Protocol](/R-Type/protocol/#connection) describes, and `PlayerRoster` (`src/server/Instances/PlayerRoster/`) holds the players it let in: at most `MAXIMUM_PLAYERS` (4), each a `ConnectedPlayer` with its number, nickname, address and port, session token and next sequence. A new player takes the lowest free number, so the first four are 1 to 4 in the order they joined.
+`ConnectionAcceptor` (`src/server/Lobby/ConnectionAcceptor/`) answers the connection requests the sorter set aside for each tick, at most `CONNECTION_REQUEST_QUEUE_CAPACITY` (16), as the [Protocol](/R-Type/protocol/#connection) describes, and `PlayerRoster` (`src/server/Instances/PlayerRoster/`) holds the players it let in: at most `MAXIMUM_PLAYERS` (4), each a `ConnectedPlayer` with its number, nickname, address and port, session token, next sequence and ship id. A new player takes the lowest free number, so the first four are 1 to 4 in the order they joined.
 
 A datagram is read only when its header is of this protocol and version and its message sizes add up; only its first `ConnectionRequest` is answered, so one datagram never gets more than one answer, and every other message is ignored. A request is answered by the first row that applies:
 
@@ -149,8 +167,37 @@ A datagram is read only when its header is of this protocol and version and its 
 
 - A refusal reserves nothing, so it goes before the cookie is checked. The cookies come from a `CookieIssuer` whose key is drawn when the acceptor is built (see [Network](/R-Type/network/#connection-cookies-cookieissuer)).
 - An acceptance carries the session token and the next sequence of that player, 0 for the first. Challenges and refusals carry token 0 and sequence 0, as every datagram sent before a session.
+- Besides the function that admits a sender, the acceptor takes an optional one it calls once for each player it lets in, after it sent the acceptance, and not again when an acceptance is repeated. `main.cpp` gives it the `ShipSpawnAnnouncer`.
 - Nothing caused by the content of a datagram makes it throw. Each new player is logged at the `info` level under `Lobby`, as `player <n> joined from <address> port <port>`; challenges and refusals at the `debug` level.
+- Each new player is announced once to the function given to the acceptor, which `main.cpp` hands to `ServerApplication::admit()`, so the datagrams of that player reach the tick from then on.
 - `setGameInProgress(bool)` turns the `GameInProgress` refusal on and off; nothing calls it yet, since games have no lifecycle. No player ever leaves the roster yet either: heartbeats and departures do not exist.
+
+## Player ships: `ShipSpawnAnnouncer`
+
+A player gets a ship the moment the `ConnectionAcceptor` lets them in. `ShipSpawnAnnouncer` (`src/server/Replication/ShipSpawnAnnouncer/`) creates it with `World::spawnPlayer(position)` (`rtype_game`), which gives the entity a `Position`, an `EntityType::Player` and a `NetworkIdentity` from the world's `NetworkIdAllocator`, and returns that network id. The id is kept in `ConnectedPlayer::shipEntityId` (`NO_ENTITY_ID` while the player has no ship).
+
+`shipStartPosition(playerNumber, playerCount)` (`src/game/Spawning/`) says where the ship appears: at `SHIP_START_X_RATIO` (0.1) of the playfield width, so x is 192, and on a row of its own. The height is cut into `playerCount + 1` equal parts and player n takes the n-th cut, so with four players the rows are 216, 432, 648 and 864 logical units, each pair 216 apart. A number that is 0 or above `playerCount` throws `InvalidPlayerNumberException`.
+
+The announcer then sends an `EntitySpawned` (`PlayerShip`, the position of the ship) in its own datagram, carrying the session token and the next sequence of the recipient:
+
+- the new ship goes to every connected player, the new one included;
+- the new player also gets one for each ship already in the game, so it sees the others. The position sent is the one the ship has in the world at that moment.
+- A player who already has a ship gets no second one, and nothing is sent.
+- A lost `EntitySpawned` is recovered from the world state (see [Protocol](/R-Type/protocol/#world-state)), which is not sent to anyone yet.
+- Nothing removes a ship when a player leaves: the server does not handle leaving yet.
+
+```cpp
+rtype::server::ShipSpawnAnnouncer shipSpawnAnnouncer{world, roster,
+                                                     queueDatagram};
+rtype::server::ConnectionAcceptor connectionAcceptor{
+    roster, queueDatagram,
+    [&serverPointer](const rtype::network::Endpoint& player) {
+      serverPointer->admit(player);
+    },
+    [&shipSpawnAnnouncer](rtype::server::ConnectedPlayer& player) {
+      shipSpawnAnnouncer.onPlayerJoined(player);
+    }};
+```
 
 ## Collisions
 
@@ -202,12 +249,16 @@ The bus and the registry must outlive `CollisionRules`, and the bus must outlive
 | You want to… | Look at |
 |---|---|
 | Change what a tick does | The tick handler given to `ServerApplication` in `src/server/main.cpp` |
+| Change which datagrams reach the tick | `DatagramSorter::sort` in `src/server/Application/DatagramSorter/DatagramSorter.cpp` |
+| Change how many connection requests a tick answers | `CONNECTION_REQUEST_QUEUE_CAPACITY` in `src/server/ServerConstants.hpp` |
 | Add a launch option | The options listed in `LaunchOptions::read()` and `usage()`, in `src/server/LaunchOptions/LaunchOptions.cpp`; a name the client uses too goes in `src/engine/LaunchArguments/LaunchArgumentsConstants.hpp` |
 | Change the port the server listens on by default | `DEFAULT_SERVER_PORT` in `src/network/NetworkConstants.hpp`, shared with the client |
 | Change how often the world state is sent | `WORLD_STATES_PER_SECOND` in `src/server/ServerConstants.hpp` |
 | Change what the world state lists | `WorldStateSender::capture` in `src/server/Replication/WorldStateSender/WorldStateSender.cpp` |
 | Send a datagram from the tick | `ServerApplication::queueDatagram()` |
 | Change how a connection request is answered | `ConnectionAcceptor::answer` in `src/server/Lobby/ConnectionAcceptor/ConnectionAcceptor.cpp` |
+| Change where a ship appears | `shipStartPosition` and `SHIP_START_X_RATIO` in `src/game/Spawning/` |
+| Change who is told about a new ship | `ShipSpawnAnnouncer` in `src/server/Replication/ShipSpawnAnnouncer/` |
 | Change how players get their number, or what the server keeps of them | `PlayerRoster` in `src/server/Instances/PlayerRoster/`, `ConnectedPlayer` in `src/server/Instances/ConnectedPlayer.hpp` |
 | Change the size of the queues between threads | `INCOMING_DATAGRAM_QUEUE_CAPACITY` and `OUTGOING_DATAGRAM_QUEUE_CAPACITY` in `src/server/ServerConstants.hpp` |
 | Change the simulation rate | `SIMULATION_TICKS_PER_SECOND` in `src/engine/Time/TimeConstants.hpp` |
@@ -223,4 +274,4 @@ The bus and the registry must outlive `CollisionRules`, and the bus must outlive
 | Add a component type | A new struct in `src/game/Components/` |
 | Write a test with entities that collide | `tests/CollisionScene.hpp` |
 
-Each folder holding sources has its own `CMakeLists.txt` declaring one library; `Application/` and `Platform/` only add their subfolders, `Replication/` declares its constants and adds `WorldStateSender/`, `Lobby/` declares its constants and adds `ConnectionAcceptor/`, `Instances/` declares `ConnectedPlayer` and adds `PlayerRoster/`, and `r-type_server` links `rtype_server_application`, `rtype_server_connection_acceptor`, `rtype_server_launch_options`, `rtype_server_player_roster` and `rtype_server_world_state_sender` in `src/server/CMakeLists.txt`.
+Each folder holding sources has its own `CMakeLists.txt` declaring one library; `Application/` and `Platform/` only add their subfolders, `Replication/` declares its constants and adds `WorldStateSender/` and `ShipSpawnAnnouncer/`, `Lobby/` declares its constants and adds `ConnectionAcceptor/`, `Instances/` declares `ConnectedPlayer` and adds `PlayerRoster/`, and `r-type_server` links `rtype_server_application`, `rtype_server_connection_acceptor`, `rtype_server_launch_options`, `rtype_server_ship_spawn_announcer` and `rtype_server_world_state_sender` in `src/server/CMakeLists.txt`.
