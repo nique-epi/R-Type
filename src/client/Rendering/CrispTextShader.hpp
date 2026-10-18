@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string_view>
+#include "FragmentShader.hpp"
 
 namespace rtype::client {
 
@@ -31,5 +32,14 @@ void main()
     gl_FragColor = vec4(gl_Color.rgb, gl_Color.a * covered);
 }
 )glsl";
+
+/** @brief The crisp text shader, and what the log says when text is drawn
+ * without it. */
+constexpr FragmentShaderDescription CRISP_TEXT_SHADER{
+    .source = CRISP_TEXT_FRAGMENT_SHADER,
+    .textureUniform = CRISP_TEXT_GLYPHS_UNIFORM,
+    .unavailableMessage = "shaders are not available: text is drawn smoothed",
+    .notCompiledMessage =
+        "the crisp text shader did not compile: text is drawn smoothed"};
 
 }  // namespace rtype::client

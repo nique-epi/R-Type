@@ -140,7 +140,7 @@ std::unique_ptr<IScreen> Application::gameScreen() {
     return loading;
   }
   return std::make_unique<GameScreen>(
-      screens_, std::make_unique<EntityLayer>(*assets_), settings_.keys);
+      screens_, std::make_unique<EntityLayer>(*assets_), settings_);
 }
 
 std::unique_ptr<IScreen> Application::optionsScreen(ScreenId screen) {

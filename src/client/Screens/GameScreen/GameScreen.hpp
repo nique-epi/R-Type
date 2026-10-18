@@ -4,26 +4,33 @@
 #include <memory>
 #include "ActionSet.hpp"
 #include "ComponentRegistry.hpp"
+#include "EffectSpawner.hpp"
 #include "EntityRegistry.hpp"
 #include "IEntityLayer.hpp"
 #include "IScreen.hpp"
 #include "IScreenNavigator.hpp"
-#include "KeyBindings.hpp"
 #include "Logger.hpp"
 #include "PlayerCommands.hpp"
+#include "SpriteShowcase.hpp"
+#include "SystemScheduler.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::client {
+
+struct PlayerSettings;
 
 /**
  * @brief The game in progress: its entities, drawn over the scrolling
  * background, which the frame loop draws under every screen.
  *
  * The screen owns the entities of the game, which appear and disappear with
- * it. Since draw() is const, each update repaints them on the entity layer and
- * each draw only lays that layer; the layer is painted once at construction,
- * so the first frame already shows them. Until the client creates the entities
- * the server announces, the screen holds the provisional sprite showcase.
+ * it, and the systems that animate them. Each update moves every animation and
+ * every hit flash forward by the time elapsed, then plays the showcase, whose
+ * new effects show their first frame, then repaints the entities on the entity
+ * layer; since draw() is const, each draw only lays that layer. The layer is
+ * painted once at construction, so the first frame already shows them. Until
+ * the client creates the entities the server announces, the screen holds the
+ * provisional sprite showcase, which plays every effect in a loop.
  *
  * Releasing OPTIONS_KEY releases every action held, then puts the options over
  * the game, which goes on running behind them, dimmed. The release, not the
@@ -44,11 +51,13 @@ class GameScreen : public IScreen {
    * @param navigator Screens the game lives among, which must outlive it;
    * the options are pushed over the game when OPTIONS_KEY is released.
    * @param entityLayer Picture the entities are painted on, never null.
-   * @param keys Keys of the controls, which must outlive the screen.
+   * @param settings Settings of the player, which must outlive the screen:
+   * the keys of the controls, and whether effects reduce their flashes, read
+   * at each update.
    */
   GameScreen(IScreenNavigator& navigator,
              std::unique_ptr<IEntityLayer> entityLayer,
-             const KeyBindings& keys);
+             const PlayerSettings& settings);
 
   void handleEvent(const sf::Event& event) override;
   void update(engine::Duration elapsed) override;
@@ -61,8 +70,12 @@ class GameScreen : public IScreen {
  private:
   IScreenNavigator* navigator_;
   std::unique_ptr<IEntityLayer> entityLayer_;
+  const PlayerSettings* settings_;
   engine::EntityRegistry entities_;
   engine::ComponentRegistry components_{entities_};
+  EffectSpawner effects_{entities_, components_};
+  SpriteShowcase showcase_{entities_, components_, effects_};
+  engine::SystemScheduler systems_;
   PlayerCommands playerCommands_;
   logging::Logger logger_{"GameScreen"};
   std::uint8_t loggedActions_{0};

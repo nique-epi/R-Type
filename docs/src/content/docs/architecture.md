@@ -91,7 +91,7 @@ Game logic uses one logical frame, the same on the server and on the client, and
 
 ## Consequences
 
-- `EntityRegistry`, `ComponentRegistry`, `ISystem`, `SystemScheduler`, `EventBus` and `BoundedQueue` exist today; the loop that calls the scheduler and the bus is added by a later story.
+- `EntityRegistry`, `ComponentRegistry`, `ISystem`, `SystemScheduler`, `EventBus` and `BoundedQueue` exist today. The game screen of the client calls a scheduler once per frame to play its animations; the tick loop of the server calls neither the scheduler nor the bus yet.
 - Any new target declares its links explicitly; a link that breaks the table above fails the configure step.
 
 ## Validation

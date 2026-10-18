@@ -1,34 +1,36 @@
 #include <gtest/gtest.h>
 #include <SFML/Graphics/Image.hpp>
-#include <SFML/System/Vector2.hpp>
+#include <array>
+#include <chrono>
 #include <cstddef>
 #include <cstdint>
-#include <filesystem>
 #include <optional>
 #include <utility>
+#include <vector>
 #include "AllEntityTypes.hpp"
+#include "Animation.hpp"
 #include "EntitySpriteConstants.hpp"
 #include "EntitySprites.hpp"
 #include "EntityType.hpp"
 #include "Layer.hpp"
+#include "SheetPixels.hpp"
 #include "Sprite.hpp"
+#include "SpriteAnimation.hpp"
 #include "SpriteFrame.hpp"
+#include "TimeConstants.hpp"
 
+using rtype::client::Animation;
+using rtype::client::animationOf;
 using rtype::client::ENTITY_SHEET_ID;
+using rtype::client::SpriteAnimation;
 using rtype::client::spriteOf;
+using rtype::engine::Duration;
 using rtype::game::EntityType;
 using rtype::game::Layer;
 using rtype::game::Sprite;
 using rtype::game::SpriteFrame;
 
 namespace {
-
-constexpr auto FIRST_VALUE_AFTER_THE_LAST_TYPE = static_cast<EntityType>(
-    static_cast<std::uint8_t>(EntityType::EnemyMissile) + 1);
-
-constexpr const char* SOURCE_ASSETS_FOLDER = RTYPE_SOURCE_ASSETS_FOLDER;
-
-constexpr std::uint8_t TRANSPARENT_ALPHA = 0;
 
 /** @brief Stands for the frame of a type without a sprite: it lies nowhere on
  * the sheet, and EveryEntityTypeHasASpriteOfTheEntitySheet names the type. */
@@ -39,62 +41,38 @@ SpriteFrame frameOf(EntityType type) {
   return sprite.has_value() ? sprite->frame : NO_FRAME;
 }
 
-sf::Image shippedEntitySheet() {
-  return sf::Image(std::filesystem::path(SOURCE_ASSETS_FOLDER) /
-                   ENTITY_SHEET_ID);
-}
+/** @brief Frame times of the entities, as listed in assets/README.md. */
+constexpr Duration SHIP_FRAME_TIME_LISTED = std::chrono::milliseconds(80);
+constexpr Duration BYDO_FRAME_TIME_LISTED = std::chrono::milliseconds(250);
+constexpr Duration PLAYER_MISSILE_FRAME_TIME_LISTED =
+    std::chrono::milliseconds(60);
+constexpr Duration ENEMY_MISSILE_FRAME_TIME_LISTED =
+    std::chrono::milliseconds(120);
 
-bool overlap(SpriteFrame first, SpriteFrame second) {
-  return first.left < second.left + second.width &&
-         second.left < first.left + first.width &&
-         first.top < second.top + second.height &&
-         second.top < first.top + first.height;
-}
+/** @brief Network ids checked for their loop start, from 0 included. */
+constexpr std::uint32_t CHECKED_NETWORK_IDS = 10000;
 
-bool liesInside(SpriteFrame frame, sf::Vector2u imageSize) {
-  return frame.left >= 0 && frame.top >= 0 && frame.width > 0 &&
-         frame.height > 0 &&
-         std::cmp_less_equal(frame.left + frame.width, imageSize.x) &&
-         std::cmp_less_equal(frame.top + frame.height, imageSize.y);
-}
+/** @brief Two network ids that follow each other, as the server gives two
+ * Bydos of a wave. */
+constexpr std::uint32_t FIRST_BYDO_ID = 1;
+constexpr std::uint32_t NEXT_BYDO_ID = 2;
 
-bool isVisible(const sf::Image& image, int column, int row) {
-  const sf::Vector2u size = image.getSize();
-  if (column < 0 || row < 0 || std::cmp_greater_equal(column, size.x) ||
-      std::cmp_greater_equal(row, size.y)) {
-    return false;
-  }
-  const sf::Vector2u pixel{static_cast<unsigned int>(column),
-                           static_cast<unsigned int>(row)};
-  return image.getPixel(pixel).a != TRANSPARENT_ALPHA;
-}
-
-bool showsAVisiblePixel(const sf::Image& image, SpriteFrame frame) {
-  for (int row = frame.top; row < frame.top + frame.height; ++row) {
-    for (int column = frame.left; column < frame.left + frame.width; ++column) {
-      if (isVisible(image, column, row)) {
-        return true;
-      }
+/** @returns Every frame of the animations of every entity type. */
+std::vector<SpriteFrame> everyAnimationFrame() {
+  std::vector<SpriteFrame> frames;
+  for (const EntityType type : ALL_ENTITY_TYPES) {
+    const std::optional<SpriteAnimation> animation = animationOf(type, 0);
+    if (animation.has_value()) {
+      frames.insert(frames.end(), animation->animation.frames.begin(),
+                    animation->animation.frames.end());
     }
   }
-  return false;
+  return frames;
 }
 
-bool hasAVisiblePixelAround(const sf::Image& image, SpriteFrame frame) {
-  const int right = frame.left + frame.width;
-  const int bottom = frame.top + frame.height;
-  for (int row = frame.top; row < bottom; ++row) {
-    if (isVisible(image, frame.left - 1, row) || isVisible(image, right, row)) {
-      return true;
-    }
-  }
-  for (int column = frame.left; column < right; ++column) {
-    if (isVisible(image, column, frame.top - 1) ||
-        isVisible(image, column, bottom)) {
-      return true;
-    }
-  }
-  return false;
+/** @returns The frame an animation shows where it starts. */
+SpriteFrame startFrameOf(const SpriteAnimation& animation) {
+  return animation.animation.frameAt(animation.elapsed).value_or(NO_FRAME);
 }
 
 }  // namespace
@@ -165,7 +143,7 @@ TEST(EntitySprites, NoTwoEntityTypesShareAnyPartOfTheSheet) {
  * Then the rectangle lies inside the sheet and shows at least one visible pixel
  */
 TEST(EntitySprites, EveryRectangleShowsPartOfTheShippedSheet) {
-  const sf::Image sheet = shippedEntitySheet();
+  const sf::Image sheet = shippedSheet(ENTITY_SHEET_ID);
   for (const EntityType type : ALL_ENTITY_TYPES) {
     SCOPED_TRACE(static_cast<int>(type));
     const SpriteFrame frame = frameOf(type);
@@ -182,10 +160,142 @@ TEST(EntitySprites, EveryRectangleShowsPartOfTheShippedSheet) {
  * the sprite reaches the edge of its cell nor shows a neighbor
  */
 TEST(EntitySprites, NoRectangleCutsItsSprite) {
-  const sf::Image sheet = shippedEntitySheet();
+  const sf::Image sheet = shippedSheet(ENTITY_SHEET_ID);
   for (const EntityType type : ALL_ENTITY_TYPES) {
     SCOPED_TRACE(static_cast<int>(type));
 
     EXPECT_FALSE(hasAVisiblePixelAround(sheet, frameOf(type)));
   }
+}
+
+/**
+ * Given every entity type the server can announce
+ * When its animation is looked up
+ * Then it has one, in a loop
+ */
+TEST(EntitySprites, EveryEntityTypeHasALoopingAnimation) {
+  for (const EntityType type : ALL_ENTITY_TYPES) {
+    SCOPED_TRACE(static_cast<int>(type));
+
+    const std::optional<SpriteAnimation> animation = animationOf(type, 0);
+
+    ASSERT_TRUE(animation.has_value());
+    EXPECT_EQ(animation.value_or(SpriteAnimation{}).animation.playback,
+              Animation::Playback::Loop);
+  }
+}
+
+/**
+ * Given every entity type
+ * When its animation is looked up for network id 0, which starts at once
+ * Then it shows the frame of the sprite of the type
+ */
+TEST(EntitySprites, AnAnimationStartsFromTheFrameOfItsSprite) {
+  for (const EntityType type : ALL_ENTITY_TYPES) {
+    SCOPED_TRACE(static_cast<int>(type));
+    const std::optional<SpriteAnimation> animation = animationOf(type, 0);
+    ASSERT_TRUE(animation.has_value());
+
+    EXPECT_EQ(startFrameOf(animation.value_or(SpriteAnimation{})),
+              frameOf(type));
+  }
+}
+
+/**
+ * Given the entity sheet shipped in assets/
+ * When every frame of every entity animation is laid on it
+ * Then each lies inside the sheet and shows at least one visible pixel
+ */
+TEST(EntitySprites, EveryAnimationFrameShowsPartOfTheShippedSheet) {
+  const sf::Image sheet = shippedSheet(ENTITY_SHEET_ID);
+  for (const SpriteFrame& frame : everyAnimationFrame()) {
+    SCOPED_TRACE(frame.top);
+    SCOPED_TRACE(frame.left);
+
+    ASSERT_TRUE(liesInside(frame, sheet.getSize()));
+    EXPECT_TRUE(showsAVisiblePixel(sheet, frame));
+  }
+}
+
+/**
+ * Given the entity sheet shipped in assets/
+ * When the pixels just outside every frame of every entity animation are read
+ * Then they are all transparent, so no frame cuts its sprite
+ */
+TEST(EntitySprites, NoAnimationFrameCutsItsSprite) {
+  const sf::Image sheet = shippedSheet(ENTITY_SHEET_ID);
+  for (const SpriteFrame& frame : everyAnimationFrame()) {
+    SCOPED_TRACE(frame.top);
+    SCOPED_TRACE(frame.left);
+
+    EXPECT_FALSE(hasAVisiblePixelAround(sheet, frame));
+  }
+}
+
+/**
+ * Given every entity type
+ * When the frame time of its animation is read
+ * Then it is the one assets/README.md lists for it
+ */
+TEST(EntitySprites, EntityFramesLastWhatTheSheetReadmeLists) {
+  const std::array<std::pair<EntityType, Duration>, 4> listed{{
+      {EntityType::Player, SHIP_FRAME_TIME_LISTED},
+      {EntityType::Enemy, BYDO_FRAME_TIME_LISTED},
+      {EntityType::PlayerMissile, PLAYER_MISSILE_FRAME_TIME_LISTED},
+      {EntityType::EnemyMissile, ENEMY_MISSILE_FRAME_TIME_LISTED},
+  }};
+  for (const auto& [type, frameTime] : listed) {
+    SCOPED_TRACE(static_cast<int>(type));
+    const std::optional<SpriteAnimation> animation = animationOf(type, 0);
+    ASSERT_TRUE(animation.has_value());
+
+    EXPECT_EQ(animation.value_or(SpriteAnimation{}).animation.frameDuration,
+              frameTime);
+  }
+}
+
+/**
+ * Given two Bydos whose network ids follow each other, as in one wave
+ * When their animations start
+ * Then they show different frames, so the wave does not pulse as one block
+ */
+TEST(EntitySprites, BydosWithNeighbouringIdsShowDifferentFrames) {
+  const std::optional<SpriteAnimation> first =
+      animationOf(EntityType::Enemy, FIRST_BYDO_ID);
+  const std::optional<SpriteAnimation> next =
+      animationOf(EntityType::Enemy, NEXT_BYDO_ID);
+  ASSERT_TRUE(first.has_value());
+  ASSERT_TRUE(next.has_value());
+
+  EXPECT_NE(startFrameOf(first.value_or(SpriteAnimation{})),
+            startFrameOf(next.value_or(SpriteAnimation{})));
+}
+
+/**
+ * Given every entity type and every network id from 0 to 9999
+ * When the animation is looked up
+ * Then it starts at an offset of zero or more and less than one cycle
+ */
+TEST(EntitySprites, AStartOffsetStaysWithinOneCycle) {
+  for (const EntityType type : ALL_ENTITY_TYPES) {
+    for (std::uint32_t networkId = 0; networkId < CHECKED_NETWORK_IDS;
+         ++networkId) {
+      const std::optional<SpriteAnimation> animation =
+          animationOf(type, networkId);
+      ASSERT_TRUE(animation.has_value());
+      const SpriteAnimation started = animation.value_or(SpriteAnimation{});
+
+      ASSERT_GE(started.elapsed, Duration::zero());
+      ASSERT_LT(started.elapsed, started.animation.cycle());
+    }
+  }
+}
+
+/**
+ * Given a value past the last entity type, as a corrupted type would carry
+ * When its animation is looked up
+ * Then there is none
+ */
+TEST(EntitySprites, AValueOutsideTheEntityTypesHasNoAnimation) {
+  EXPECT_FALSE(animationOf(FIRST_VALUE_AFTER_THE_LAST_TYPE, 0).has_value());
 }
