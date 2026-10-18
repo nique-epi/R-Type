@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <memory>
+#include <string>
 #include "ActionSet.hpp"
 #include "ComponentRegistry.hpp"
 #include "EntityRegistry.hpp"
@@ -11,6 +12,7 @@
 #include "KeyBindings.hpp"
 #include "Logger.hpp"
 #include "PlayerCommands.hpp"
+#include "ScreenConstants.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::client {
@@ -64,7 +66,7 @@ class GameScreen : public IScreen {
   engine::EntityRegistry entities_;
   engine::ComponentRegistry components_{entities_};
   PlayerCommands playerCommands_;
-  logging::Logger logger_{"GameScreen"};
+  logging::Logger logger_{std::string{GAME_SCREEN_LOGGER_NAME}};
   std::uint8_t loggedActions_{0};
 };
 
