@@ -1,13 +1,14 @@
 #include "GameScreen.hpp"
 #include <SFML/Graphics/RenderTarget.hpp>
 #include <SFML/Window/Event.hpp>
-#include <cstdint>
 #include <memory>
 #include <utility>
 #include "ActionSet.hpp"
 #include "IEntityLayer.hpp"
+#include "IPlayerInputLink.hpp"
 #include "IScreenNavigator.hpp"
 #include "KeyBindings.hpp"
+#include "PlayerInputPacer.hpp"
 #include "ScreenConstants.hpp"
 #include "ScreenId.hpp"
 #include "SpriteShowcase.hpp"
@@ -17,10 +18,11 @@ namespace rtype::client {
 
 GameScreen::GameScreen(IScreenNavigator& navigator,
                        std::unique_ptr<IEntityLayer> entityLayer,
-                       const KeyBindings& keys)
+                       const KeyBindings& keys, IPlayerInputLink& inputs)
     : navigator_(&navigator),
       entityLayer_(std::move(entityLayer)),
-      playerCommands_(true, keys) {
+      playerCommands_(true, keys),
+      inputs_(&inputs) {
   spawnSpriteShowcase(entities_, components_);
   entityLayer_->paint(components_);
 }
@@ -42,11 +44,14 @@ void GameScreen::handleEvent(const sf::Event& event) {
   }
 }
 
-void GameScreen::update([[maybe_unused]] engine::Duration elapsed) {
-  const std::uint8_t held = playerCommands_.held().bits();
-  if (held != loggedActions_) {
-    logger_.trace("actions held: ", static_cast<unsigned int>(held));
-    loggedActions_ = held;
+void GameScreen::update(engine::Duration elapsed) {
+  const ActionSet held = playerCommands_.held();
+  if (inputPacer_.advance(elapsed)) {
+    inputs_->sendPlayerInput(held);
+  }
+  if (held.bits() != loggedActions_) {
+    logger_.trace("actions held: ", static_cast<unsigned int>(held.bits()));
+    loggedActions_ = held.bits();
   }
   entityLayer_->paint(components_);
 }

@@ -43,10 +43,11 @@ class AssetLibrary;
  * opened on every IPv4 interface on a port the system picks, and hands its
  * datagrams over through a queue the connection drains each frame.
  *
- * It owns the connection to a server, which outlives every screen. It owns
- * the player's settings too, read from the settings file at launch: the window
- * opens at the size they hold, the game reads their keys, the options change
- * and save them.
+ * It owns the connection to a server, which outlives every screen: the
+ * connection screen drives it, and the game sends its inputs through it. It
+ * owns the player's settings too, read from the settings file at launch: the
+ * window opens at the size they hold, the game reads their keys, the options
+ * change and save them.
  *
  * Screens are asked for by identifier; createScreen() is the one place that
  * builds them, with one case per ScreenId. The client starts on the title

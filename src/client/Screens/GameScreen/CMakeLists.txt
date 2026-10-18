@@ -4,7 +4,9 @@ target_include_directories(rtype_client_game_screen PUBLIC ${CMAKE_CURRENT_SOURC
 
 target_link_libraries(rtype_client_game_screen
   PUBLIC
+    rtype_client_connection
     rtype_client_player_commands
+    rtype_client_player_input_pacer
     rtype_client_rendering_interfaces
     rtype_client_screens
     rtype_engine

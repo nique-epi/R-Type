@@ -7,11 +7,13 @@
 #include "ComponentRegistry.hpp"
 #include "EntityRegistry.hpp"
 #include "IEntityLayer.hpp"
+#include "IPlayerInputLink.hpp"
 #include "IScreen.hpp"
 #include "IScreenNavigator.hpp"
 #include "KeyBindings.hpp"
 #include "Logger.hpp"
 #include "PlayerCommands.hpp"
+#include "PlayerInputPacer.hpp"
 #include "ScreenConstants.hpp"
 #include "TimeConstants.hpp"
 
@@ -39,6 +41,10 @@ namespace rtype::client {
  * otherwise from the focus events; only the screen on top receives events,
  * which is why opening the options releases what is held. The actions held
  * are logged each time they change.
+ *
+ * Each update sends the actions held to the server when the PlayerInputPacer
+ * says an input is due, the first update included. The game goes on behind the
+ * options, so it keeps sending them there, with nothing held.
  */
 class GameScreen : public IScreen {
  public:
@@ -47,10 +53,12 @@ class GameScreen : public IScreen {
    * the options are pushed over the game when OPTIONS_KEY is released.
    * @param entityLayer Picture the entities are painted on, never null.
    * @param keys Keys of the controls, which must outlive the screen.
+   * @param inputs Where the actions held go to the server, which must outlive
+   * the screen.
    */
   GameScreen(IScreenNavigator& navigator,
-             std::unique_ptr<IEntityLayer> entityLayer,
-             const KeyBindings& keys);
+             std::unique_ptr<IEntityLayer> entityLayer, const KeyBindings& keys,
+             IPlayerInputLink& inputs);
 
   void handleEvent(const sf::Event& event) override;
   void update(engine::Duration elapsed) override;
@@ -66,6 +74,8 @@ class GameScreen : public IScreen {
   engine::EntityRegistry entities_;
   engine::ComponentRegistry components_{entities_};
   PlayerCommands playerCommands_;
+  IPlayerInputLink* inputs_;
+  PlayerInputPacer inputPacer_;
   logging::Logger logger_{std::string{GAME_SCREEN_LOGGER_NAME}};
   std::uint8_t loggedActions_{0};
 };
