@@ -31,7 +31,7 @@ flowchart LR
   Components --> Entities[EntityRegistry]
 ```
 
-The engine provides the building blocks and no loop of its own. The server runs its ticks in `TickLoop` (see [Server](/R-Type/server/#tick-loop-tickloop)); the client runs no tick yet.
+The engine provides the building blocks and no loop of its own. The server runs its ticks in `TickLoop` (see [Server](/R-Type/server/#tick-loop-tickloop)); the client runs no tick yet, but its game screen runs a `SystemScheduler` once per frame, with the real time of the frame, to play its animations (see [Client](/R-Type/client/#animations-animation-animationsystem)).
 
 ## ECS: entities and components
 
@@ -144,7 +144,7 @@ for (std::size_t tick = 0; tick < ticks; ++tick) {
 }
 ```
 
-The server runs ticks at this rate on its simulation thread, in `TickLoop` (see [Server](/R-Type/server/#tick-loop-tickloop)), but no tick runs timers, systems or events yet. The client frame loop, `Application` (`src/client/Application/`), only reads `SystemClock` to move the scrolling background by the real time of each frame (see [Client](/R-Type/client/#scrolling-background-scrollingbackground)); it runs no tick.
+The server runs ticks at this rate on its simulation thread, in `TickLoop` (see [Server](/R-Type/server/#tick-loop-tickloop)), but no tick runs timers, systems or events yet. The client frame loop, `Application` (`src/client/Application/`), reads `SystemClock` and hands the real time of each frame to the scrolling background (see [Client](/R-Type/client/#scrolling-background-scrollingbackground)) and to the screens; it runs no tick. The game screen runs its systems, which play the animations, once per frame with that real time, not at a fixed step (see [Client](/R-Type/client/#animations-animation-animationsystem)).
 
 ## Event bus: `EventBus`
 

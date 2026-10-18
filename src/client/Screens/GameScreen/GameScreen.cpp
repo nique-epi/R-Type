@@ -4,26 +4,40 @@
 #include <memory>
 #include <utility>
 #include "ActionSet.hpp"
+#include "AnimationSystem.hpp"
+#include "FlashPreference.hpp"
+#include "HitFlashSystem.hpp"
 #include "IEntityLayer.hpp"
 #include "IPlayerInputLink.hpp"
 #include "IScreenNavigator.hpp"
-#include "KeyBindings.hpp"
 #include "PlayerInputPacer.hpp"
+#include "PlayerSettings.hpp"
 #include "ScreenConstants.hpp"
 #include "ScreenId.hpp"
-#include "SpriteShowcase.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::client {
 
+namespace {
+
+/** @returns The flash preference the settings of the player hold. */
+FlashPreference flashPreferenceOf(const PlayerSettings& settings) {
+  return settings.reduceFlashes ? FlashPreference::Reduced
+                                : FlashPreference::Full;
+}
+
+}  // namespace
+
 GameScreen::GameScreen(IScreenNavigator& navigator,
                        std::unique_ptr<IEntityLayer> entityLayer,
-                       const KeyBindings& keys, IPlayerInputLink& inputs)
+                       const PlayerSettings& settings, IPlayerInputLink& inputs)
     : navigator_(&navigator),
       entityLayer_(std::move(entityLayer)),
-      playerCommands_(true, keys),
+      settings_(&settings),
+      playerCommands_(true, settings.keys),
       inputs_(&inputs) {
-  spawnSpriteShowcase(entities_, components_);
+  systems_.add(std::make_unique<AnimationSystem>());
+  systems_.add(std::make_unique<HitFlashSystem>());
   entityLayer_->paint(components_);
 }
 
@@ -53,6 +67,9 @@ void GameScreen::update(engine::Duration elapsed) {
     logger_.trace("actions held: ", static_cast<unsigned int>(held.bits()));
     loggedActions_ = held.bits();
   }
+  systems_.run(components_, elapsed);
+  effects_.setFlashPreference(flashPreferenceOf(*settings_));
+  showcase_.advance(elapsed);
   entityLayer_->paint(components_);
 }
 

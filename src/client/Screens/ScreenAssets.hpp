@@ -15,7 +15,7 @@ class AssetLibrary;
 [[nodiscard]] AssetList titleAssets();
 
 /** @brief The assets a game needs, loaded by the loading screen when the
- * player enters it. */
+ * player enters it: the entity sheet and the effect sheet. */
 [[nodiscard]] AssetList gameAssets();
 
 /**

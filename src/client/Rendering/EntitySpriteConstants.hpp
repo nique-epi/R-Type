@@ -1,6 +1,13 @@
 #pragma once
 
+#include <array>
+#include <chrono>
+#include <cstddef>
+#include <numbers>
+#include "Animation.hpp"
+#include "SheetRow.hpp"
 #include "SpriteFrame.hpp"
+#include "TimeConstants.hpp"
 
 namespace rtype::client {
 
@@ -16,8 +23,8 @@ constexpr const char* ENTITY_SHEET_ID = "sprites/entities.png";
 /**
  * @brief Rectangles of the entity sheet, in pixels of the sheet.
  *
- * Each is the first of the two animation frames of its entity. The player ship
- * is the first of the four player colors.
+ * Each is the first frame of its entity. The player ship is the first of the
+ * four player colors.
  */
 constexpr game::SpriteFrame PLAYER_SHIP_FRAME{
     .left = 0, .top = 0, .width = 32, .height = 16};
@@ -28,17 +35,57 @@ constexpr game::SpriteFrame PLAYER_MISSILE_FRAME{
 constexpr game::SpriteFrame ENEMY_MISSILE_FRAME{
     .left = 0, .top = 132, .width = 8, .height = 8};
 
-/** @brief Pixels between two frames of a row of the entity sheet, and between
- * two rows. */
+/** @brief Pixels between two frames of a row of a sprite sheet, the entity
+ * sheet or the effect sheet, and between two rows. */
 constexpr int SPRITE_SPACING = 2;
 
+/** @brief Each entity of the sheet has this many frames, side by side in its
+ * row. */
+constexpr std::size_t SPRITE_FRAME_COUNT = 2;
+
+/** @brief How long each frame of an entity shows, as listed in
+ * assets/README.md. */
+constexpr engine::Duration PLAYER_SHIP_FRAME_TIME =
+    std::chrono::milliseconds(80);
+constexpr engine::Duration BYDO_FRAME_TIME = std::chrono::milliseconds(250);
+constexpr engine::Duration PLAYER_MISSILE_FRAME_TIME =
+    std::chrono::milliseconds(60);
+constexpr engine::Duration ENEMY_MISSILE_FRAME_TIME =
+    std::chrono::milliseconds(120);
+
+/** @brief The frames of each entity, along its row of the sheet. */
+constexpr std::array PLAYER_SHIP_FRAMES =
+    framesInRow<SPRITE_FRAME_COUNT>(PLAYER_SHIP_FRAME, SPRITE_SPACING);
+constexpr std::array BYDO_FRAMES =
+    framesInRow<SPRITE_FRAME_COUNT>(BYDO_FRAME, SPRITE_SPACING);
+constexpr std::array PLAYER_MISSILE_FRAMES =
+    framesInRow<SPRITE_FRAME_COUNT>(PLAYER_MISSILE_FRAME, SPRITE_SPACING);
+constexpr std::array ENEMY_MISSILE_FRAMES =
+    framesInRow<SPRITE_FRAME_COUNT>(ENEMY_MISSILE_FRAME, SPRITE_SPACING);
+
+/** @brief The animation of each entity type: its frames, in a loop. */
+constexpr Animation PLAYER_SHIP_ANIMATION{
+    .frames = PLAYER_SHIP_FRAMES,
+    .frameDuration = PLAYER_SHIP_FRAME_TIME,
+    .playback = Animation::Playback::Loop};
+constexpr Animation BYDO_ANIMATION{.frames = BYDO_FRAMES,
+                                   .frameDuration = BYDO_FRAME_TIME,
+                                   .playback = Animation::Playback::Loop};
+constexpr Animation PLAYER_MISSILE_ANIMATION{
+    .frames = PLAYER_MISSILE_FRAMES,
+    .frameDuration = PLAYER_MISSILE_FRAME_TIME,
+    .playback = Animation::Playback::Loop};
+constexpr Animation ENEMY_MISSILE_ANIMATION{
+    .frames = ENEMY_MISSILE_FRAMES,
+    .frameDuration = ENEMY_MISSILE_FRAME_TIME,
+    .playback = Animation::Playback::Loop};
+
 /**
- * @brief Each entity of the sheet alternates between its two frames, side by
- * side in its row; the frame times of the player ship and of the player
- * missile, in seconds, as listed in assets/README.md.
+ * @brief Share of a cycle between the loop starts of two entities whose
+ * network ids follow each other: the fractional part of the golden ratio,
+ * which spreads any run of ids over the whole cycle, so Bydos created in the
+ * same tick still pulse out of step.
  */
-constexpr int SPRITE_FRAME_COUNT = 2;
-constexpr float PLAYER_SHIP_FRAME_TIME = 0.08F;
-constexpr float PLAYER_MISSILE_FRAME_TIME = 0.06F;
+constexpr double LOOP_START_SPREAD = std::numbers::phi - 1.0;
 
 }  // namespace rtype::client

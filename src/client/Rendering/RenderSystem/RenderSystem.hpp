@@ -7,6 +7,7 @@
 #include "IDrawSurface.hpp"
 #include "Position.hpp"
 #include "RenderingConstants.hpp"
+#include "SpriteTone.hpp"
 
 namespace rtype::game {
 
@@ -19,11 +20,11 @@ namespace rtype::client {
 /**
  * @brief Draws every entity that has a Position and a Sprite, layer by layer.
  *
- * It reads these two components and no other: whatever else an entity carries
- * (health, damage) is invisible to it. Inside a layer, entities are drawn by
- * ascending entity index, so the same registry always gives the same
- * sequence. An entity whose layer is not one of the drawing layers is not
- * drawn.
+ * It reads these two components, and the HitFlash of an entity for the tone it
+ * is drawn with; whatever else an entity carries (health, damage) is invisible
+ * to it. Inside a layer, entities are drawn by ascending entity index, so the
+ * same registry always gives the same sequence. An entity whose layer is not
+ * one of the drawing layers is not drawn.
  */
 class RenderSystem {
  public:
@@ -34,9 +35,10 @@ class RenderSystem {
 
  private:
   struct DrawCall {
-    std::uint32_t entityIndex;
-    game::Position position;
-    const game::Sprite* sprite;
+    std::uint32_t entityIndex{};
+    game::Position position{};
+    const game::Sprite* sprite{};
+    SpriteTone tone{};
   };
 
   std::array<std::vector<DrawCall>, LAYER_COUNT> drawCallsByLayer_;

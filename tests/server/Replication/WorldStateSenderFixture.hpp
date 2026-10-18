@@ -56,7 +56,8 @@ class WorldStateSenderFixture : public ::testing::Test {
   void addEntityWithoutType(game::Position position, std::uint32_t networkId);
 
   /**
-   * @brief Calls the sender's onTick @p count times with @p recipients.
+   * @brief Calls the sender's onTick @p count times with @p recipients, the
+   * tick counting up from the last call.
    */
   void runTicks(std::size_t count,
                 const std::vector<network::Endpoint>& recipients);
@@ -77,6 +78,7 @@ class WorldStateSenderFixture : public ::testing::Test {
   engine::ComponentRegistry components_{entities_};
   std::vector<network::OutgoingDatagram> sent_;
   WorldStateSender sender_;
+  std::uint32_t tick_{0};
 };
 
 }  // namespace rtype::server::testing
