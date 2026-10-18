@@ -40,8 +40,8 @@ struct ConnectedPlayer {
   std::optional<std::uint16_t> newestReceivedSequence;
   /** @brief The PlayerInput with the highest inputNumber the player sent
    * during the session, to apply at every tick until a newer one arrives;
-   * empty until the first one arrives. PlayerInputReceiver keeps it. */
-  std::optional<network::PlayerInput> newestInput{std::nullopt};
+   * empty until the first one arrives. GameInstance keeps it. */
+  std::optional<network::PlayerInput> newestInput;
 };
 
 }  // namespace rtype::server

@@ -6,11 +6,14 @@
 #include <memory>
 #include <span>
 #include "ConnectedPlayer.hpp"
+#include "Endpoint.hpp"
 #include "GameState.hpp"
 #include "IncomingDatagram.hpp"
+#include "Logger.hpp"
 #include "MessageDispatcher.hpp"
 #include "MessageOrigin.hpp"
 #include "OutgoingDatagram.hpp"
+#include "PlayerInput.hpp"
 #include "PlayerRoster.hpp"
 #include "ReadyState.hpp"
 #include "ShipSpawnAnnouncer.hpp"
@@ -29,10 +32,24 @@ namespace rtype::server {
  * world: every player gets a new ship, is no longer ready, and the tick is 0.
  * The players stay connected.
  *
- * A ReadyState counts only while the game waits for players, from a connected
- * player whose session token the datagram carries, and only when its sequence
- * is newer than the newest one accepted from that player, so a late copy never
- * undoes a newer one.
+ * A datagram of the players is read only when its header carries this
+ * protocol and version with no flag set, its messages add up to its end, its
+ * sender is in the roster, and it carries the session token of that player. A
+ * datagram with another token is dropped and counted: whoever forges the
+ * address of a player could otherwise say ready in its place, or send an input
+ * numbered 4294967295, above every input the player will ever send, and hold
+ * the ship of that player on the forged keys for the rest of the session.
+ *
+ * A ReadyState counts only while the game waits for players, and only when its
+ * sequence is newer than the newest one accepted from that player, so a late
+ * copy never undoes a newer one.
+ *
+ * A PlayerInput is kept in ConnectedPlayer::newestInput when its inputNumber is
+ * higher than the one kept, whatever the state of the game, so an input that
+ * arrives late or twice changes nothing. inputNumber is compared as a plain
+ * number: a session sending 60 inputs per second would take more than 800 days
+ * to wrap it. The input kept outlives a new world, since the client numbers its
+ * inputs for the whole session.
  *
  * Not thread-safe: use it from the simulation thread only.
  */
@@ -75,6 +92,12 @@ class GameInstance {
   [[nodiscard]] game::World& world();
 
   /**
+   * @returns How many datagrams of the players were dropped because they carry
+   * another session token than the one of the player they come from.
+   */
+  [[nodiscard]] std::size_t foreignTokenCount() const;
+
+  /**
    * @brief Gives @p player, who just took a place in roster(), a ship in the
    * world and announces it to the players.
    * @throws NetworkIdExhaustedException when every network id was given.
@@ -82,9 +105,10 @@ class GameInstance {
   void onPlayerJoined(ConnectedPlayer& player);
 
   /**
-   * @brief Runs one tick: applies the ReadyState among @p datagrams, then
-   * moves the game along its states and counts the tick while it is in
-   * progress. Nothing caused by the content of a datagram makes it throw.
+   * @brief Runs one tick: applies the ReadyState and keeps the newest
+   * PlayerInput among @p datagrams, oldest first, then moves the game along its
+   * states and counts the tick while it is in progress. Nothing caused by the
+   * content of a datagram makes it throw.
    */
   void onTick(std::span<const network::IncomingDatagram> datagrams);
 
@@ -94,9 +118,12 @@ class GameInstance {
   void finish();
 
  private:
-  void readReadyStates(std::span<const network::IncomingDatagram> datagrams);
+  void readPlayerDatagram(const network::IncomingDatagram& datagram);
+  void dropForeignToken(const network::Endpoint& sender);
   void applyReadyState(const network::MessageOrigin& origin,
                        const network::ReadyState& message);
+  void keepIfNewer(const network::MessageOrigin& origin,
+                   const network::PlayerInput& input);
   [[nodiscard]] bool everyPlayerIsReady();
   void startNewWorld();
 
@@ -108,6 +135,8 @@ class GameInstance {
   GameState state_{GameState::WaitingForPlayers};
   std::uint32_t tick_{0};
   std::size_t finishedTicks_{0};
+  std::size_t foreignTokenCount_{0};
+  logging::Logger logger_;
 };
 
 }  // namespace rtype::server

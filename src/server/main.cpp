@@ -9,7 +9,6 @@
 #include "Endpoint.hpp"
 #include "GameInstance.hpp"
 #include "GameState.hpp"
-#include "IncomingDatagram.hpp"
 #include "LaunchArguments.hpp"
 #include "LaunchOptions.hpp"
 #include "LogLaunchOptions.hpp"
@@ -62,16 +61,9 @@ int runServer(const rtype::logging::LogLaunchOptions& logOptions,
         rtype::network::Endpoint{
             .address = std::string{rtype::network::ANY_IPV4_ADDRESS},
             .port = launchOptions.port()},
-        [&logger, &games, &joinableGame, &worldStateSender, &connectionAcceptor,
-         &clock,
+        [&games, &joinableGame, &worldStateSender, &connectionAcceptor, &clock,
          &recipients](const rtype::server::ServerApplication::ReceivedDatagrams&
                           received) {
-          for (const rtype::network::IncomingDatagram& datagram :
-               received.players) {
-            logger.debug("received ", datagram.payload.size(), " bytes from ",
-                         datagram.sender.address, " port ",
-                         datagram.sender.port);
-          }
           for (const std::unique_ptr<rtype::server::GameInstance>& game :
                games) {
             game->onTick(received.players);

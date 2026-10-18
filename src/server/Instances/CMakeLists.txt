@@ -6,4 +6,3 @@ target_link_libraries(rtype_server_instances INTERFACE rtype_network_transport r
 
 add_subdirectory(PlayerRoster)
 add_subdirectory(GameInstance)
-add_subdirectory(PlayerInputReceiver)
