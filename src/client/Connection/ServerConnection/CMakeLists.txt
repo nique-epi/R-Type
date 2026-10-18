@@ -15,6 +15,7 @@ target_link_libraries(rtype_client_server_connection
     rtype_network_connection_request
     rtype_network_datagram_codec
     rtype_network_exceptions
+    rtype_network_player_input
 )
 
 rtype_enable_warnings(rtype_client_server_connection)

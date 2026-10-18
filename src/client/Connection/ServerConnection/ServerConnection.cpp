@@ -1,6 +1,7 @@
 #include "ServerConnection.hpp"
 #include <string>
 #include <string_view>
+#include "ActionSet.hpp"
 #include "ConnectionAccepted.hpp"
 #include "ConnectionChallenge.hpp"
 #include "ConnectionConstants.hpp"
@@ -15,6 +16,8 @@
 #include "NetworkException.hpp"
 #include "OutgoingDatagram.hpp"
 #include "PacketHeader.hpp"
+#include "PlayerInput.hpp"
+#include "ProtocolConstants.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::client {
@@ -32,7 +35,9 @@ void ServerConnection::connect(const network::Endpoint& server,
   server_ = server;
   nickname_ = nickname;
   cookie_ = 0;
+  sessionToken_ = 0;
   nextSequence_ = 0;
+  nextInputNumber_ = network::FIRST_INPUT_NUMBER;
   sinceConnect_ = engine::Duration::zero();
   sendRequest();
   status_ = {.phase = ConnectionStatus::Phase::Connecting};
@@ -64,6 +69,18 @@ void ServerConnection::update(engine::Duration elapsed) {
   }
 }
 
+void ServerConnection::sendPlayerInput(ActionSet held) {
+  if (status_.phase != ConnectionStatus::Phase::Accepted) {
+    return;
+  }
+  link_->send(network::OutgoingDatagram{
+      .destination = server_,
+      .payload = network::DatagramCodec::encode(
+          nextHeader(), network::PlayerInput{.inputNumber = nextInputNumber_,
+                                             .actions = held.bits()})});
+  ++nextInputNumber_;
+}
+
 void ServerConnection::registerAnswers() {
   dispatcher_.registerHandler<network::ConnectionChallenge>(
       [this](const network::MessageOrigin&,
@@ -74,9 +91,10 @@ void ServerConnection::registerAnswers() {
         }
       });
   dispatcher_.registerHandler<network::ConnectionAccepted>(
-      [this](const network::MessageOrigin&,
+      [this](const network::MessageOrigin& origin,
              const network::ConnectionAccepted& accepted) {
         if (isConnecting()) {
+          sessionToken_ = origin.header.sessionToken;
           status_ = {.phase = ConnectionStatus::Phase::Accepted,
                      .playerNumber = accepted.playerNumber};
           logger_.info("accepted as player ",
@@ -114,15 +132,20 @@ void ServerConnection::receive(const network::IncomingDatagram& datagram) {
 }
 
 void ServerConnection::sendRequest() {
-  network::PacketHeader header;
-  header.sequence = nextSequence_;
   link_->send(network::OutgoingDatagram{
       .destination = server_,
       .payload = network::DatagramCodec::encode(
-          header, network::ConnectionRequest{.cookie = cookie_,
-                                             .nickname = nickname_})});
-  ++nextSequence_;
+          nextHeader(), network::ConnectionRequest{.cookie = cookie_,
+                                                   .nickname = nickname_})});
   sinceRequest_ = engine::Duration::zero();
+}
+
+network::PacketHeader ServerConnection::nextHeader() {
+  network::PacketHeader header;
+  header.sessionToken = sessionToken_;
+  header.sequence = nextSequence_;
+  ++nextSequence_;
+  return header;
 }
 
 bool ServerConnection::isConnecting() const {

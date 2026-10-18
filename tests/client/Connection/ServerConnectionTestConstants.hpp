@@ -41,6 +41,13 @@ constexpr std::chrono::milliseconds PROTOCOL_REQUEST_INTERVAL{500};
 constexpr std::chrono::seconds PROTOCOL_ATTEMPT_TIMEOUT{5};
 
 /**
+ * @brief What the protocol page says of the inputs: the first one is numbered
+ * 1, and up is bit 0 of the actions.
+ */
+constexpr std::uint32_t PROTOCOL_FIRST_INPUT_NUMBER = 1;
+constexpr std::uint8_t PROTOCOL_UP_ACTION_BIT = 0b00001;
+
+/**
  * @brief The shortest step of time a test takes.
  */
 constexpr std::chrono::nanoseconds ONE_NANOSECOND{1};
