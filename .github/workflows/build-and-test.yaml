@@ -27,9 +27,13 @@ jobs:
             | xargs -0 clang-format-20 --dry-run -Werror
 
   tidy:
-    name: Clang-tidy
+    name: Clang-tidy (${{ matrix.shard }}/${{ strategy.job-total }})
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4]
     steps:
       - uses: actions/checkout@v5
         with:
@@ -74,11 +78,16 @@ jobs:
       - name: Select the files to lint
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          SHARD: ${{ matrix.shard }}
+          SHARD_COUNT: ${{ strategy.job-total }}
         run: |
           lint_everything() {
             find src tests \( -name '*.cpp' -o -name '*.hpp' \) -print0 > "$RUNNER_TEMP/files-to-lint"
           }
           if [ -z "$BASE_SHA" ]; then
+            lint_everything
+          elif ! git diff --quiet "$BASE_SHA"...HEAD -- .clang-tidy .github/workflows/build-and-test.yaml; then
+            echo "The pull request changes .clang-tidy or this workflow: every file is linted."
             lint_everything
           else
             git diff --name-only -z --diff-filter=ACMR "$BASE_SHA"...HEAD -- 'src/*.cpp' 'src/*.hpp' 'tests/*.cpp' 'tests/*.hpp' \
@@ -92,8 +101,9 @@ jobs:
           {
             grep -v '\.cpp$' "$RUNNER_TEMP/selected-files" || true
             grep '\.cpp$' "$RUNNER_TEMP/selected-files" | comm -12 - "$RUNNER_TEMP/compiled-files" || true
-          } | tr '\n' '\0' > "$RUNNER_TEMP/files-to-lint"
-          echo "Files to lint:"
+          } | awk -v shard="$SHARD" -v count="$SHARD_COUNT" '(NR - 1) % count == shard - 1' \
+            | tr '\n' '\0' > "$RUNNER_TEMP/files-to-lint"
+          echo "Files to lint in shard $SHARD of $SHARD_COUNT:"
           tr '\0' '\n' < "$RUNNER_TEMP/files-to-lint"
 
       - name: Run clang-tidy
