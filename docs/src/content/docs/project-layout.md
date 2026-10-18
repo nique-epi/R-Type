@@ -100,7 +100,7 @@ src/game/
 └── Events/           entity destroyed, player left...
 ```
 
-`World`, `Components`, `Events`, the movement system (`Systems/MovementSystem/`) and the collision classes (`Systems/CollisionSystem/`, `Systems/CollisionRules/`) exist; the other systems and folders are not written yet. See [Server and game](/R-Type/server/).
+`World`, `Components`, `Events`, `Spawning` (the start position of a player's ship only), the movement system (`Systems/MovementSystem/`) and the collision classes (`Systems/CollisionSystem/`, `Systems/CollisionRules/`) exist; the other systems and folders are not written yet. See [Server and game](/R-Type/server/).
 
 ### Network
 
@@ -143,7 +143,7 @@ src/server/
 └── Storage/          this server's SQLite file: leaderboard, statistics
 ```
 
-`Application`, `Replication` (the world state sender only), `Platform`, `LaunchOptions`, `Lobby` (the answers to connection requests only) and `Instances` (the players of the one game only, no `GameInstance` yet) exist today: the network thread and the simulation thread, the world state sent at a fixed rate (see [Server](/R-Type/server/)), the timer resolution the server asks Windows for, the port read at launch, and the players let in.
+`Application`, `Replication` (the world state sender and the announcement of the ship of each new player), `Platform`, `LaunchOptions`, `Lobby` (the answers to connection requests only) and `Instances` (the players of the one game only, no `GameInstance` yet) exist today: the network thread and the simulation thread, the world state sent at a fixed rate (see [Server](/R-Type/server/)), the timer resolution the server asks Windows for, the port read at launch, and the players let in.
 
 ### Client
 

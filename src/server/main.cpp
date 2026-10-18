@@ -3,6 +3,7 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include "ConnectedPlayer.hpp"
 #include "ConnectionAcceptor.hpp"
 #include "Endpoint.hpp"
 #include "IncomingDatagram.hpp"
@@ -16,6 +17,7 @@
 #include "PlayerRoster.hpp"
 #include "ServerApplication.hpp"
 #include "ServerConstants.hpp"
+#include "ShipSpawnAnnouncer.hpp"
 #include "SystemClock.hpp"
 #include "World.hpp"
 #include "WorldStateSender.hpp"
@@ -36,7 +38,6 @@ int runServer(const rtype::logging::LogLaunchOptions& logOptions,
         std::string{rtype::server::SERVER_LOGGER_NAME}};
     logger.info("server starting");
     rtype::game::World world;
-    world.spawnPlayer();
     const std::vector<rtype::network::Endpoint> recipients;
     rtype::server::ServerApplication* serverPointer = nullptr;
     const auto queueDatagram =
@@ -45,10 +46,15 @@ int runServer(const rtype::logging::LogLaunchOptions& logOptions,
         };
     rtype::server::WorldStateSender worldStateSender{queueDatagram};
     rtype::server::PlayerRoster roster;
+    rtype::server::ShipSpawnAnnouncer shipSpawnAnnouncer{world, roster,
+                                                         queueDatagram};
     rtype::server::ConnectionAcceptor connectionAcceptor{
         roster, queueDatagram,
         [&serverPointer](const rtype::network::Endpoint& player) {
           serverPointer->admit(player);
+        },
+        [&shipSpawnAnnouncer](rtype::server::ConnectedPlayer& player) {
+          shipSpawnAnnouncer.onPlayerJoined(player);
         }};
     const rtype::engine::SystemClock clock;
     rtype::server::ServerApplication server{

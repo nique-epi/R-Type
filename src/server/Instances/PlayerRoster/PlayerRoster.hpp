@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <optional>
 #include <string>
+#include <vector>
 #include "ConnectedPlayer.hpp"
 #include "Endpoint.hpp"
 #include "ProtocolConstants.hpp"
@@ -25,6 +26,12 @@ class PlayerRoster {
    * The player stays at that address as long as the roster lives.
    */
   [[nodiscard]] ConnectedPlayer* find(const network::Endpoint& endpoint);
+
+  /**
+   * @returns The connected players, in order of their number. They stay at
+   * their addresses as long as the roster lives.
+   */
+  [[nodiscard]] std::vector<ConnectedPlayer*> connected();
 
   /** @returns Whether MAXIMUM_PLAYERS players are connected. */
   [[nodiscard]] bool isFull() const;
