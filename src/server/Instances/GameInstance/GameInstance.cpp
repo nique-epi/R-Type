@@ -23,6 +23,7 @@
 #include "PlayerRoster.hpp"
 #include "ReadyState.hpp"
 #include "SequenceOrder.hpp"
+#include "ServerConstants.hpp"
 #include "World.hpp"
 
 namespace rtype::server {
@@ -103,6 +104,7 @@ void GameInstance::onTick(
       }
       break;
   }
+  advanceLogWindow();
 }
 
 void GameInstance::finish() {
@@ -140,8 +142,23 @@ void GameInstance::readPlayerDatagram(
 
 void GameInstance::dropForeignToken(const network::Endpoint& sender) {
   ++foreignTokenCount_;
+  ++foreignTokensSinceLastLine_;
+  if (foreignTokenLoggedInWindow_) {
+    return;
+  }
   logger_.debug("dropped a datagram from ", sender.address, " port ",
-                sender.port, ": it carries another session token");
+                sender.port, " that carries another session token (",
+                foreignTokensSinceLastLine_, " since the previous line)");
+  foreignTokenLoggedInWindow_ = true;
+  foreignTokensSinceLastLine_ = 0;
+}
+
+void GameInstance::advanceLogWindow() {
+  ++ticksInLogWindow_;
+  if (ticksInLogWindow_ >= TICKS_PER_REPORT) {
+    ticksInLogWindow_ = 0;
+    foreignTokenLoggedInWindow_ = false;
+  }
 }
 
 void GameInstance::applyReadyState(const network::MessageOrigin& origin,

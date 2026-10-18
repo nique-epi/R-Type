@@ -38,7 +38,10 @@ namespace rtype::server {
  * datagram with another token is dropped and counted: whoever forges the
  * address of a player could otherwise say ready in its place, or send an input
  * numbered 4294967295, above every input the player will ever send, and hold
- * the ship of that player on the forged keys for the rest of the session.
+ * the ship of that player on the forged keys for the rest of the session. Such
+ * a drop is logged with its sender at most once per TICKS_PER_REPORT ticks,
+ * with the number dropped since the previous line, so a flood of forged
+ * datagrams cannot flood the log.
  *
  * A ReadyState counts only while the game waits for players, and only when its
  * sequence is newer than the newest one accepted from that player, so a late
@@ -120,6 +123,7 @@ class GameInstance {
  private:
   void readPlayerDatagram(const network::IncomingDatagram& datagram);
   void dropForeignToken(const network::Endpoint& sender);
+  void advanceLogWindow();
   void applyReadyState(const network::MessageOrigin& origin,
                        const network::ReadyState& message);
   void keepIfNewer(const network::MessageOrigin& origin,
@@ -136,6 +140,9 @@ class GameInstance {
   std::uint32_t tick_{0};
   std::size_t finishedTicks_{0};
   std::size_t foreignTokenCount_{0};
+  std::size_t foreignTokensSinceLastLine_{0};
+  std::size_t ticksInLogWindow_{0};
+  bool foreignTokenLoggedInWindow_{false};
   logging::Logger logger_;
 };
 
