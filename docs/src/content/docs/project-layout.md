@@ -100,7 +100,7 @@ src/game/
 └── Events/           entity destroyed, player left...
 ```
 
-`World`, `Components`, `Events`, `Spawning` (the start position of a player's ship only), the movement system (`Systems/MovementSystem/`) and the collision classes (`Systems/CollisionSystem/`, `Systems/CollisionRules/`) exist; the other systems and folders are not written yet. See [Server and game](/R-Type/server/).
+`World`, `Components`, `Events`, `Spawning` (the start position of a player's ship and the position of a new Bydo only), the movement system (`Systems/MovementSystem/`) and the collision classes (`Systems/CollisionSystem/`, `Systems/CollisionRules/`) exist; the other systems and folders are not written yet. See [Server and game](/R-Type/server/).
 
 ### Network
 
@@ -137,13 +137,14 @@ src/server/
 ├── Lobby/            players not in a game: list, create, join, chat
 ├── Instances/        one GameInstance per game, each on its thread
 ├── Replication/      world to snapshots and game events
+├── Spawning/         when and where the enemies of a game appear
 ├── MasterLink/       registration and heartbeat
 ├── AdminConsole/     kick and close a game from the terminal
 ├── Metrics/          tick time and traffic, sent in the heartbeat
 └── Storage/          this server's SQLite file: leaderboard, statistics
 ```
 
-`Application`, `Replication` (the world state sender, the announcement of the ship of each new player, and the encoder and broadcaster of the game events), `Platform`, `LaunchOptions`, `Lobby` (the answers to connection requests only) and `Instances` (one `GameInstance` for now, run on the simulation thread like the rest) exist today: the network thread and the simulation thread, the world state and the game events sent to the clients (see [Server](/R-Type/server/)), the timer resolution the server asks Windows for, the port read at launch, the players let in, and a game with its states, its ready rule and the newest input of each player.
+`Application`, `Replication` (the world state sender, the announcement of the ship of each new player, and the encoder and broadcaster of the game events), `Platform`, `LaunchOptions`, `Lobby` (the answers to connection requests only), `Spawning` (the Bydo spawner) and `Instances` (one `GameInstance` for now, run on the simulation thread like the rest) exist today: the network thread and the simulation thread, the world state and the game events sent to the clients (see [Server](/R-Type/server/)), the timer resolution the server asks Windows for, the port and seed read at launch, the players let in, the Bydos appearing, and a game with its states, its ready rule and the newest input of each player.
 
 ### Client
 
