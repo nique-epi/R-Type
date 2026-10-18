@@ -8,6 +8,7 @@ add_subdirectory(Platform)
 add_subdirectory(Application)
 add_subdirectory(LaunchOptions)
 add_subdirectory(Replication)
+add_subdirectory(Spawning)
 add_subdirectory(Instances)
 add_subdirectory(Lobby)
 

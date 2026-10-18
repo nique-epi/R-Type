@@ -1,10 +1,9 @@
 #pragma once
 
 #include <cstdint>
-#include <functional>
 #include <optional>
 #include "ConnectedPlayer.hpp"
-#include "OutgoingDatagram.hpp"
+#include "EntitySpawnSender.hpp"
 #include "PlayerRoster.hpp"
 #include "Position.hpp"
 #include "World.hpp"
@@ -27,7 +26,7 @@ class ShipSpawnAnnouncer {
   /**
    * @brief What the announcer calls for each datagram to send.
    */
-  using Send = std::function<void(network::OutgoingDatagram)>;
+  using Send = SendDatagram;
 
   /**
    * @param world The world the ships are created in; it must outlive the
