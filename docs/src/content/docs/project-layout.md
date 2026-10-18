@@ -143,7 +143,7 @@ src/server/
 └── Storage/          this server's SQLite file: leaderboard, statistics
 ```
 
-`Application`, `Replication` (the world state sender and the announcement of the ship of each new player), `Platform`, `LaunchOptions`, `Lobby` (the answers to connection requests only) and `Instances` (one `GameInstance` for now, run on the simulation thread like the rest) exist today: the network thread and the simulation thread, the world state sent at a fixed rate (see [Server](/R-Type/server/)), the timer resolution the server asks Windows for, the port read at launch, the players let in, and a game with its states and its ready rule.
+`Application`, `Replication` (the world state sender and the announcement of the ship of each new player), `Platform`, `LaunchOptions`, `Lobby` (the answers to connection requests only) and `Instances` (one `GameInstance` for now, run on the simulation thread like the rest) exist today: the network thread and the simulation thread, the world state sent at a fixed rate (see [Server](/R-Type/server/)), the timer resolution the server asks Windows for, the port read at launch, the players let in, and a game with its states, its ready rule and the newest input of each player.
 
 ### Client
 

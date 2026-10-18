@@ -54,7 +54,7 @@ socket.startReceiving([&socket](const rtype::network::Endpoint& sender,
 network.run();
 ```
 
-`r-type_server` opens such a socket on the port given at launch, `DEFAULT_SERVER_PORT` (4242) by default, on every IPv4 interface, sorts each datagram on its network thread, and hands the datagrams of admitted players and the connection requests to its simulation thread, which answers the requests, reads the `ReadyState` of the players and nothing else yet (see [Server](/R-Type/server/#sorting-the-datagrams-datagramsorter)). The client runs its socket on a thread of its own, `NetworkThread`, described in [Client](/R-Type/client/#network-networkthread).
+`r-type_server` opens such a socket on the port given at launch, `DEFAULT_SERVER_PORT` (4242) by default, on every IPv4 interface, sorts each datagram on its network thread, and hands the datagrams of admitted players and the connection requests to its simulation thread, which answers the requests, reads the `ReadyState` and the `PlayerInput` of the players and nothing else yet (see [Server](/R-Type/server/#sorting-the-datagrams-datagramsorter)). The client runs its socket on a thread of its own, `NetworkThread`, described in [Client](/R-Type/client/#network-networkthread).
 
 ## Ports and addresses written as text: `portFromText`, `ipv4AddressFromText`
 
@@ -114,7 +114,7 @@ const auto decodedName = reader.readString();
 - `decodeHeader(datagram)` reads the header without judging it, so a datagram of another version still gives its version. Fewer than 22 bytes throws `MalformedDatagramException`.
 - `splitMessages(datagram)` returns the `MessageFrame`s that follow the header: the type byte as it arrived, and a view of the payload into the datagram. Either the sizes add up exactly to the end of the datagram, or it throws `MalformedDatagramException` and returns nothing: a datagram without a message, with a size running past its end, or with bytes after its last message is refused whole. Calling it on a temporary buffer does not compile.
 
-Reading the header and splitting the messages are two calls because a receiver checks the version before it trusts the rest. `speaksThisProtocol(header)` is that check: `protocolId`, `version` and `flags` are those of this code. The server's `ConnectionAcceptor` and `PlayerInputReceiver` and the client's `ServerConnection` call it before splitting. Of the checks of [Receiving a datagram](/R-Type/protocol/#receiving-a-datagram) that follow, only the session token is checked, by the server's `PlayerInputReceiver` on the datagrams of its players (see [Server](/R-Type/server/#player-inputs-playerinputreceiver)); the sequence is not checked yet.
+Reading the header and splitting the messages are two calls because a receiver checks the version before it trusts the rest. `speaksThisProtocol(header)` is that check: `protocolId`, `version` and `flags` are those of this code. The server's `ConnectionAcceptor` and `GameInstance` and the client's `ServerConnection` call it before splitting. Of the checks of [Receiving a datagram](/R-Type/protocol/#receiving-a-datagram) that follow, the server's `GameInstance` checks the session token of every datagram of its players, and the sequence of those holding a `ReadyState` (see [Server](/R-Type/server/#a-game-gameinstance)); the client checks neither yet.
 
 ## Messages: `src/network/Protocol/Messages/`
 
@@ -143,7 +143,7 @@ const std::vector<std::byte> datagram = rtype::network::DatagramCodec::encode(
 - `dispatch(origin, messages)` reads each payload, then calls its handler, in order. A message whose type has no handler, which includes the type bytes no message has, is skipped; a message whose payload is refused is dropped. Both are counted (`skippedMessageCount()`, `malformedMessageCount()`) and logged at the `debug` level with the sender, and the next message is handled.
 - No exception caused by the content of a message leaves `dispatch()`, so one forged message cannot stop the server. An exception thrown by a handler does: it is a fault of the program.
 - A sender it does not know yet must be answered at most once per datagram: ninety 13-byte `ConnectionRequest` fit in one datagram, and an answer to each would send more bytes than were received. A handler cannot tell which messages shared a datagram, so the code that receives must enforce it before dispatching.
-- It is not thread-safe. The client's `ServerConnection` hands it the datagrams of the server it contacts, and the server's `PlayerInputReceiver` the datagrams of its players; the server's `ConnectionAcceptor` does not use it, since it reads the first `ConnectionRequest` of each datagram itself, which keeps it to one answer per datagram.
+- It is not thread-safe. The client's `ServerConnection` hands it the datagrams of the server it contacts, and each server `GameInstance` the datagrams of its players; the server's `ConnectionAcceptor` does not use it, since it reads the first `ConnectionRequest` of each datagram itself, which keeps it to one answer per datagram.
 
 ```cpp
 rtype::network::MessageDispatcher dispatcher;

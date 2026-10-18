@@ -3,7 +3,7 @@ title: Server and game
 description: What the server program and the game library do, how their parts fit together and where to find them in the code.
 ---
 
-The server, `r-type_server`, is meant to run the game for the players connected to it. Today it receives their datagrams, runs a tick at a fixed rate, lets up to four players in and keeps one game that starts when they are all ready: each tick answers the connection requests received and reads the `ReadyState` of the players. Nothing else a client sends is read yet, nothing advances the `World`, and no one is on the recipient list of the world state, so no state is sent yet. It never links SFML or Asio: it reaches the network through `rtype_network`, and its own libraries are checked for it at configure time (see [Project layout](/R-Type/project-layout/#who-may-link-what)).
+The server, `r-type_server`, is meant to run the game for the players connected to it. Today it receives their datagrams, runs a tick at a fixed rate, lets up to four players in and keeps one game that starts when they are all ready: each tick answers the connection requests received and reads the `ReadyState` and the inputs of the players. Nothing else a client sends is read yet, nothing applies the inputs or advances the `World`, and no one is on the recipient list of the world state, so no state is sent yet. It never links SFML or Asio: it reaches the network through `rtype_network`, and its own libraries are checked for it at configure time (see [Project layout](/R-Type/project-layout/#who-may-link-what)).
 
 The game library, `rtype_game`, holds the rules of a match: what moves, what touches what and what that means. It is built on the engine (see [Engine](/R-Type/engine/)), and it knows nothing about sockets, SFML or the messages sent between the programs (see [Project layout](/R-Type/project-layout/#game)). The server runs all of it; the client will only run the part that predicts its own ship.
 
@@ -18,6 +18,7 @@ This page tells you where to look when you need to change something. It describe
 | Launch options | Available: the port and `--help` | `src/server/LaunchOptions/` |
 | Letting players in: challenge, acceptance or refusal | Available; refuses with `GameInProgress` while the game is not waiting for players | `src/server/Lobby/`, `src/server/Instances/` |
 | A game: states, ready rule, new world between two games | Available: one game, nothing ends it yet | `src/server/Instances/GameInstance/` |
+| Newest input of each player, session token checked | Available; nothing applies it to the ship yet | `src/server/Instances/GameInstance/` |
 | Lobby state messages, several games, master link | Not yet written | — |
 | Components (`Position`, `Velocity`, `CollisionBox`, `EntityType`, `Sprite`, `Layer`) | Available | `src/game/Components/` |
 | Movement | Available | `src/game/Systems/MovementSystem/` |
@@ -49,7 +50,7 @@ This page tells you where to look when you need to change something. It describe
 - The **network thread**, the one that calls `run()`, runs the `NetworkContext`. A `DatagramSorter` sorts every datagram as it arrives: the datagrams of admitted players go to the player queue, connection requests to the request queue, and the rest is dropped there (see [Sorting the datagrams](#sorting-the-datagrams-datagramsorter)). `DatagramRelay` (`rtype_network`, see [Network](/R-Type/network/#socket-to-queues-datagramrelay)) sends what was left in the outgoing queue. It is the only thread that touches the socket.
 - The **simulation thread** runs `SIMULATION_TICKS_PER_SECOND` (60) ticks per second. Each tick drains the player queue and the request queue and hands what arrived, often nothing, to the tick handler given to the constructor, as a `ReceivedDatagrams` (`players`, `connectionRequests`), so a slow or silent player never holds the game up. At the end of the tick it asks the network thread, through `NetworkContext::post()`, to send the outgoing queue.
 
-The tick handler is where the game plugs in. Today `src/server/main.cpp` gives one that logs each datagram of a player at the `debug` level, gives those datagrams to each game of its list, which reads the `ReadyState` among them and moves along its states (see [A game](#a-game-gameinstance)), hands the connection requests to the `ConnectionAcceptor`, which answers them and gives each new player a ship in the first game (see [Letting players in](#letting-players-in-connectionacceptor-playerroster) and [Player ships](#player-ships-shipspawnannouncer)), then calls the `WorldStateSender` while that game is in progress, which has no recipient yet.
+The tick handler is where the game plugs in. Today `src/server/main.cpp` gives one that gives the datagrams of the players to each game of its list, which reads the `ReadyState` and the inputs among them and moves along its states (see [A game](#a-game-gameinstance) and [Player inputs](#player-inputs)), hands the connection requests to the `ConnectionAcceptor`, which answers them and gives each new player a ship in the first game (see [Letting players in](#letting-players-in-connectionacceptor-playerroster) and [Player ships](#player-ships-shipspawnannouncer)), then calls the `WorldStateSender` while that game is in progress, which has no recipient yet.
 
 A tick handler puts a datagram in the outgoing queue with `queueDatagram()`, called from the handler itself, on the simulation thread. The datagram is sent at the end of the same tick.
 
@@ -81,11 +82,11 @@ The player queue and the outgoing queue hold `INCOMING_DATAGRAM_QUEUE_CAPACITY` 
 
 ### Flood protection
 
-The room of the player queue protects the server's memory; the sorter protects the players from the senders that were not admitted: one of them flooding the server's port with connection requests or with anything else no longer pushes the players' datagrams out. A sender that uses the address and port of an admitted player, that player itself or someone forging them, still can: the session token is only checked in the tick, after the queue (see [Player inputs](#player-inputs-playerinputreceiver)), and the players share one queue (layer 2 below). A plain Python loop on the loopback address sends about 3 800 datagrams per tick (measured on an Apple Silicon laptop), about fifteen times the room of the queue. Other engines protect the players in three layers; the server must have them once sessions exist, and the first and the third are written, in part:
+The room of the player queue protects the server's memory; the sorter protects the players from the senders that were not admitted: one of them flooding the server's port with connection requests or with anything else no longer pushes the players' datagrams out. A sender that uses the address and port of an admitted player, that player itself or someone forging them, still can: the session token is only checked in the tick, after the queue (see [A game](#a-game-gameinstance)), and the players share one queue (layer 2 below). A plain Python loop on the loopback address sends about 3 800 datagrams per tick (measured on an Apple Silicon laptop), about fifteen times the room of the queue. Other engines protect the players in three layers; the server must have them once sessions exist, and the first and the third are written, in part:
 
 1. **Sort on the network thread, before the queue.** Written: `DatagramSorter` drops there every datagram that is neither from an admitted player nor a `ConnectionRequest`, and the requests have their own queue. Not written: a limit on the requests of each address, in a table of fixed size so that forged addresses cannot make it grow. Quake 3 ignores such datagrams and answers at most 10 status, information or remote console requests per second from one address; Unreal limits how many datagrams of senders without a connection it processes each frame.
 2. **One queue per session**, so a flooding client only fills its own. Valve's GameNetworkingSockets keeps one per connection, of 1 000 messages by default.
-3. **One input per player and per tick.** The protocol requires it (see [Protocol](/R-Type/protocol/#inputs)). Written: `PlayerInputReceiver` keeps only the newest `PlayerInput` of each player and ignores older ones (see [Player inputs](#player-inputs-playerinputreceiver)). Not written: applying it at every tick.
+3. **One input per player and per tick.** The protocol requires it (see [Protocol](/R-Type/protocol/#inputs)). Written: each `GameInstance` keeps only the newest `PlayerInput` of each of its players and ignores older ones (see [Player inputs](#player-inputs)). Not written: applying it at every tick.
 
 The player queue stays as the last safety net. It discards its oldest datagram, where GameNetworkingSockets refuses the newest, because only the newest input of a player counts. Why threads only talk through queues is explained in [Architecture](/R-Type/architecture/#queues-between-threads).
 
@@ -185,7 +186,8 @@ A datagram is read only when its header is of this protocol and version and its 
 | `Finished` | refuses new connections | `WaitingForPlayers` after `FINISHED_STATE_TICKS` (300) ticks, `FINISHED_STATE_SECONDS` (5) seconds |
 
 - Going back to `WaitingForPlayers` builds a new `World`: the tick is 0, the players stay connected, none is ready any more, and each gets a new ship, announced again. Network ids start again at 1 in the new world, so the announced ids are the ones of the previous game.
-- A `ReadyState` counts only while the game waits for players, from a connected player whose session token the datagram carries, and with a sequence newer than the newest one accepted from that player (`isNewerSequence`, 1 to 32767 ahead, wrapping from 65535 to 0; exactly 32768 ahead is never newer). A late copy therefore never undoes a newer one. Anything else is ignored.
+- `onTick` reads a datagram only when its header is of this protocol and version, its message sizes add up, its sender is a player of the game and it carries the session token of that player. A datagram with another token is dropped whatever it holds, counted (`foreignTokenCount()`) and logged at the `debug` level under `Instances`, so a sender that forges the address of a player can neither say ready nor steer in its place.
+- A `ReadyState` counts only while the game waits for players, and with a sequence newer than the newest one accepted from that player (`isNewerSequence`, 1 to 32767 ahead, wrapping from 65535 to 0; exactly 32768 ahead is never newer). A late copy therefore never undoes a newer one. Anything else is ignored.
 - `finish()` ends the game in progress and does nothing in another state. Nothing calls it yet: no rule of the game decides that a game is over, so no game ends today.
 - The server does not send `LobbyState`, `GameStarted` or `GameEnded` yet.
 
@@ -225,32 +227,16 @@ rtype::server::ConnectionAcceptor connectionAcceptor{
     }};
 ```
 
-## Player inputs: `PlayerInputReceiver`
+## Player inputs
 
-`PlayerInputReceiver` (`src/server/Instances/PlayerInputReceiver/`) reads the datagrams of the players each tick and keeps, in `ConnectedPlayer::newestInput`, the `PlayerInput` with the highest `inputNumber` each player sent, as the [Protocol](/R-Type/protocol/#inputs) requires. The field is empty until the first input arrives. Nothing applies the input to the ship yet: the tick that does will read it through `PlayerRoster::connected()`.
+Each `GameInstance` keeps, in `ConnectedPlayer::newestInput`, the `PlayerInput` with the highest `inputNumber` each of its players sent, as the [Protocol](/R-Type/protocol/#inputs) requires. It reads them in `onTick`, through the same dispatcher and after the same checks as the `ReadyState` (see [A game](#a-game-gameinstance)), so each datagram is decoded once. The field is empty until the first input arrives. Nothing applies the input to the ship yet: the tick that does will read it through `PlayerRoster::connected()`.
 
-| The datagram… | Effect |
-|---|---|
-| is not of this protocol and version, has a flag set, or its message sizes do not add up | ignored |
-| comes from a sender that is not in the roster | ignored |
-| carries another session token than the one of its player | ignored and counted (`foreignTokenCount()`) |
-| anything else | each `PlayerInput` it holds replaces the input kept if its number is higher; any other message is skipped |
-
-- An input that is older, a duplicate, or numbered like the one kept changes nothing, so a datagram that arrives late or twice never undoes a newer input. Each player is compared with its own inputs only.
-- The token check stops a sender that forges the address and port of a player: one forged input numbered 4294967295 would otherwise stay above every input the player sends for the rest of the session. It runs in the tick, after the player queue, so a forged datagram still takes room in the queue (see [Flood protection](#flood-protection)). The sequence is not checked yet.
+- An input that is older, a duplicate, or numbered like the one kept changes nothing, so a datagram that arrives late or twice never undoes a newer input. Each player is compared with its own inputs only. Inputs are ordered by their `inputNumber`, not by the sequence of their datagram.
+- Inputs are kept in every state of the game, and the input kept outlives a new world: the client numbers its inputs for the whole session, so its next input stays newer. Applying them only while the game is in progress is left to the code that moves the ships.
+- The token check stops a sender that forges the address and port of a player: one forged input numbered 4294967295 would otherwise stay above every input the player sends for the rest of the session. It runs in the tick, after the player queue, so a forged datagram still takes room in the queue (see [Flood protection](#flood-protection)).
 - `inputNumber` is compared as a plain number: at 60 inputs per second, it would take more than 800 days to wrap.
 - A client that connects again from the same address and port gets back the same place and token, but numbers its inputs from 1 again: they would be ignored until they pass the input kept. No path of the client leads there today; when players can leave, leaving must forget the input kept.
-- Each time the actions kept for a player change, it logs `player <n> holds actions <byte>` at the `debug` level under `Instances`; a datagram with another token is logged at the `debug` level too.
-
-```cpp
-rtype::server::PlayerRoster roster;
-rtype::server::PlayerInputReceiver playerInputReceiver{roster};
-const auto handleTick =
-    [&playerInputReceiver](
-        const rtype::server::ServerApplication::ReceivedDatagrams& received) {
-      playerInputReceiver.receive(received.players);
-    };
-```
+- Each time the actions kept for a player change, the game logs `player <n> holds actions <byte>` at the `debug` level under `Instances`.
 
 ## Collisions
 
@@ -315,8 +301,9 @@ The bus and the registry must outlive `CollisionRules`, and the bus must outlive
 | Change when a game starts or ends, or what is reset between two games | `GameInstance::onTick` and `startNewWorld` in `src/server/Instances/GameInstance/GameInstance.cpp` |
 | Change how long a game stays finished | `FINISHED_STATE_SECONDS` in `src/server/Instances/GameInstanceConstants.hpp` |
 | Change how players get their number, or what the server keeps of them | `PlayerRoster` in `src/server/Instances/PlayerRoster/`, `ConnectedPlayer` in `src/server/Instances/ConnectedPlayer.hpp` |
-| Read the input a player holds | `ConnectedPlayer::newestInput`, kept by `PlayerInputReceiver` |
-| Change which input of a player the server keeps | `isNewer` in `src/server/Instances/PlayerInputReceiver/PlayerInputReceiver.cpp` |
+| Read the input a player holds | `ConnectedPlayer::newestInput`, kept by its `GameInstance` |
+| Change which input of a player the server keeps | `isNewer` in `src/server/Instances/GameInstance/GameInstance.cpp` |
+| Change which datagrams of the players a game reads | `GameInstance::readPlayerDatagram` in `src/server/Instances/GameInstance/GameInstance.cpp` |
 | Change the size of the queues between threads | `INCOMING_DATAGRAM_QUEUE_CAPACITY` and `OUTGOING_DATAGRAM_QUEUE_CAPACITY` in `src/server/ServerConstants.hpp` |
 | Change the simulation rate | `SIMULATION_TICKS_PER_SECOND` in `src/engine/Time/TimeConstants.hpp` |
 | Change how often the simulation reports | `REPORT_SECONDS` in `src/server/ServerConstants.hpp` |
