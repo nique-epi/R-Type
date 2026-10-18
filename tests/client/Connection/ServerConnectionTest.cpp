@@ -33,6 +33,7 @@ using testing::NEXT_PROTOCOL_VERSION;
 using testing::NICKNAME;
 using testing::ONE_NANOSECOND;
 using testing::OTHER_SENDER_PORT;
+using testing::OTHER_SESSION_TOKEN;
 using testing::PROTOCOL_ATTEMPT_TIMEOUT;
 using testing::PROTOCOL_FIRST_INPUT_NUMBER;
 using testing::PROTOCOL_REQUEST_INTERVAL;
@@ -264,6 +265,48 @@ TEST_F(ServerConnectionTest, IsAcceptedWithThePlayerNumberOfTheServer) {
   EXPECT_EQ(connection().status(),
             (ConnectionStatus{.phase = Phase::Accepted,
                               .playerNumber = ACCEPTED_PLAYER_NUMBER}));
+}
+
+/**
+ * Given an attempt the server accepted with a session token
+ * When a datagram of the server then carries another token
+ * Then it is dropped and counted
+ */
+TEST_F(ServerConnectionTest, CountsADatagramWithAnotherTokenOnceAccepted) {
+  connect();
+  network::PacketHeader accepted;
+  accepted.sessionToken = SESSION_TOKEN;
+  deliver(network::ConnectionAccepted{.playerNumber = ACCEPTED_PLAYER_NUMBER},
+          server(), accepted);
+  update();
+  network::PacketHeader forged;
+  forged.sessionToken = OTHER_SESSION_TOKEN;
+
+  deliver(network::ConnectionAccepted{.playerNumber = ACCEPTED_PLAYER_NUMBER},
+          server(), forged);
+  update();
+
+  EXPECT_EQ(connection().wrongTokenCount(), 1);
+}
+
+/**
+ * Given an attempt the server accepted with a session token
+ * When a datagram of the server then carries the same token
+ * Then nothing is counted, the acceptance included
+ */
+TEST_F(ServerConnectionTest, CountsNothingForTheTokenOfTheAcceptance) {
+  connect();
+  network::PacketHeader header;
+  header.sessionToken = SESSION_TOKEN;
+  deliver(network::ConnectionAccepted{.playerNumber = ACCEPTED_PLAYER_NUMBER},
+          server(), header);
+  update();
+
+  deliver(network::ConnectionAccepted{.playerNumber = ACCEPTED_PLAYER_NUMBER},
+          server(), header);
+  update();
+
+  EXPECT_EQ(connection().wrongTokenCount(), 0);
 }
 
 /**

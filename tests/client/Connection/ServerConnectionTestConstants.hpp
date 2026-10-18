@@ -35,6 +35,12 @@ constexpr std::uint64_t SESSION_TOKEN = 0x0123456789abcdef;
 constexpr std::uint8_t NEXT_PROTOCOL_VERSION = 1;
 
 /**
+ * @brief Another session token, as a datagram forging the address of the
+ * server would carry.
+ */
+constexpr std::uint64_t OTHER_SESSION_TOKEN = 0xfedcba9876543210;
+
+/**
  * @brief The delays the protocol page gives an attempt: a request every
  * 500 ms while the server does not answer, and 5 s before giving up.
  */

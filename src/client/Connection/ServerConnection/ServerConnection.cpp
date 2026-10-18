@@ -1,4 +1,5 @@
 #include "ServerConnection.hpp"
+#include <cstddef>
 #include <string>
 #include <string_view>
 #include "ActionSet.hpp"
@@ -35,7 +36,7 @@ void ServerConnection::connect(const network::Endpoint& server,
   server_ = server;
   nickname_ = nickname;
   cookie_ = 0;
-  sessionToken_ = 0;
+  sessionToken_ = network::NO_SESSION_TOKEN;
   nextSequence_ = 0;
   nextInputNumber_ = network::FIRST_INPUT_NUMBER;
   sinceConnect_ = engine::Duration::zero();
@@ -123,6 +124,10 @@ void ServerConnection::receive(const network::IncomingDatagram& datagram) {
     if (!network::DatagramCodec::speaksThisProtocol(header)) {
       return;
     }
+    if (isAccepted() && header.sessionToken != sessionToken_) {
+      ++wrongTokenCount_;
+      return;
+    }
     dispatcher_.dispatch(
         {.sender = datagram.sender, .header = header},
         network::DatagramCodec::splitMessages(datagram.payload));
@@ -148,8 +153,16 @@ network::PacketHeader ServerConnection::nextHeader() {
   return header;
 }
 
+std::size_t ServerConnection::wrongTokenCount() const {
+  return wrongTokenCount_;
+}
+
 bool ServerConnection::isConnecting() const {
   return status_.phase == ConnectionStatus::Phase::Connecting;
+}
+
+bool ServerConnection::isAccepted() const {
+  return status_.phase == ConnectionStatus::Phase::Accepted;
 }
 
 }  // namespace rtype::client
