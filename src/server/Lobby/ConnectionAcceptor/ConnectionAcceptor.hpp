@@ -2,17 +2,23 @@
 
 #include <cstdint>
 #include <functional>
+#include <optional>
 #include <random>
 #include <span>
+#include <string>
+#include <string_view>
 #include "ConnectedPlayer.hpp"
 #include "ConnectionRefused.hpp"
 #include "ConnectionRequest.hpp"
 #include "CookieIssuer.hpp"
 #include "Endpoint.hpp"
 #include "IncomingDatagram.hpp"
+#include "LobbyConstants.hpp"
 #include "Logger.hpp"
+#include "NetworkConstants.hpp"
 #include "OutgoingDatagram.hpp"
 #include "PlayerRoster.hpp"
+#include "ThrottledLog.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::server {
@@ -28,6 +34,9 @@ namespace rtype::server {
  * answer, whoever sent it, and an unknown sender never gets more bytes than it
  * sent (LARGEST_CONNECTION_ANSWER_DATAGRAM_SIZE). Every other message is
  * ignored, so an unknown sender gets nothing but answers to its requests. A
+ * datagram that is not read, or whose first request its reader refuses, gets
+ * no answer; it is logged at the debug level with its sender and why, at most
+ * once per REJECTION_LINE_INTERVAL (see ThrottledLog). A
  * request is answered as follows, in this order:
  *
  * - from a connected player: the same ConnectionAccepted again, same number
@@ -91,6 +100,14 @@ class ConnectionAcceptor {
   void setGameInProgress(bool inProgress);
 
  private:
+  /**
+   * @returns The first ConnectionRequest of @p datagram, or nothing when the
+   * datagram is dropped, which is then logged.
+   */
+  [[nodiscard]] std::optional<network::ConnectionRequest> readRequest(
+      const network::IncomingDatagram& datagram, engine::Duration now);
+  void drop(const network::Endpoint& sender, std::string_view reason,
+            engine::Duration now);
   void answer(const network::Endpoint& sender,
               const network::ConnectionRequest& request, engine::Duration now);
   void accept(ConnectedPlayer& player);
@@ -108,6 +125,8 @@ class ConnectionAcceptor {
   std::random_device random_;
   bool gameInProgress_{false};
   logging::Logger logger_;
+  logging::ThrottledLog dropLog_{std::string{LOBBY_LOGGER_NAME},
+                                 network::REJECTION_LINE_INTERVAL};
 };
 
 }  // namespace rtype::server

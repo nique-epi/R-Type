@@ -12,6 +12,7 @@
 #include "ByteWriter.hpp"
 #include "ConnectedPlayer.hpp"
 #include "DatagramCodec.hpp"
+#include "DebugJournal.hpp"
 #include "EntityDestruction.hpp"
 #include "EntityIdConstants.hpp"
 #include "EventBus.hpp"
@@ -42,6 +43,7 @@ namespace {
 constexpr std::size_t INTERVALS_OF_BYDOS = 10;
 
 using testing::DATAGRAMS_PER_TICK;
+using testing::DROPPED_DATAGRAM_LINE_TEXT;
 using testing::FIRST_PLAYER;
 using testing::FIRST_SENT;
 using testing::FIRST_SEQUENCE;
@@ -67,6 +69,7 @@ using testing::SOME_TICKS;
 using testing::STRANGER;
 using testing::THIRD_SENT;
 using testing::THIRD_SEQUENCE;
+using testing::TICKS_PER_REJECTION_LINE;
 using testing::UNLISTED_ACTION;
 
 constexpr std::uint32_t SOME_SEED = 7;
@@ -1199,6 +1202,100 @@ TEST_F(GameInstanceInputTest, KeepsTheInputAcrossANewWorld) {
 
   ASSERT_EQ(game().state(), GameState::WaitingForPlayers);
   EXPECT_EQ(heldActions(FIRST_PLAYER), HOLDS_UP);
+}
+
+/** @brief The input fixture, with the log written to a journal the test reads.
+ */
+class GameInstanceLogTest : public GameInstanceInputTest {
+ protected:
+  /** @brief An input from an address that is not a player's arrives. */
+  void queueStrangersInput() {
+    queue(network::IncomingDatagram{
+        .sender = playerEndpoint(STRANGER),
+        .payload = inputDatagram(
+            network::PlayerInput{.inputNumber = network::FIRST_INPUT_NUMBER,
+                                 .actions = HOLDS_UP},
+            sessionHeader(FIRST_PLAYER))});
+  }
+
+  /** @returns The lines of the journal about a datagram dropped. */
+  [[nodiscard]] std::vector<std::string> dropLines() const {
+    return journal_.linesHolding(DROPPED_DATAGRAM_LINE_TEXT);
+  }
+
+ private:
+  DebugJournal journal_;
+};
+
+/**
+ * Given a game with two players
+ * When an input arrives from an address and port that is not one of theirs
+ * Then the journal holds a line about the datagram dropped that names that
+ * address and port
+ */
+TEST_F(GameInstanceLogTest, LogsADatagramFromAStrangerWithItsSender) {
+  queueStrangersInput();
+
+  tick();
+
+  const std::vector<std::string> lines = dropLines();
+  ASSERT_EQ(lines.size(), 1U);
+  EXPECT_NE(lines.front().find(senderText(playerEndpoint(STRANGER))),
+            std::string::npos);
+}
+
+/**
+ * Given a game with two players
+ * When the first player's input arrives under the next protocol version
+ * Then the journal holds a line about the datagram dropped that names the
+ * address and port of that player
+ */
+TEST_F(GameInstanceLogTest, LogsADatagramOfAnotherVersionWithItsSender) {
+  network::PacketHeader header = sessionHeader(FIRST_PLAYER);
+  header.version = NEXT_PROTOCOL_VERSION;
+  send(FIRST_PLAYER, HOLDS_UP, header);
+
+  deliver({FIRST_SENT});
+
+  const std::vector<std::string> lines = dropLines();
+  ASSERT_EQ(lines.size(), 1U);
+  EXPECT_NE(lines.front().find(senderText(playerEndpoint(FIRST_PLAYER))),
+            std::string::npos);
+}
+
+/**
+ * Given a stranger's input dropped and logged on the first tick
+ * When another one arrives on the last tick before REJECTION_LINE_INTERVAL
+ * of ticks has run
+ * Then the journal still holds one line about them
+ */
+TEST_F(GameInstanceLogTest, WritesNoSecondLineBeforeTheIntervalOfTicksIsOver) {
+  queueStrangersInput();
+  tick();
+  runTicks(TICKS_PER_REJECTION_LINE - 2);
+
+  queueStrangersInput();
+  tick();
+
+  EXPECT_EQ(dropLines().size(), 1U);
+}
+
+/**
+ * Given a stranger's input dropped and logged on the first tick
+ * When another one arrives on the tick at which REJECTION_LINE_INTERVAL of
+ * ticks has run
+ * Then the journal holds a second line: a whole interval of ticks is exactly
+ * that interval of time
+ */
+TEST_F(GameInstanceLogTest, WritesTheNextLineOnceTheIntervalOfTicksIsOver) {
+  queueStrangersInput();
+  tick();
+  runTicks(TICKS_PER_REJECTION_LINE - 1);
+
+  queueStrangersInput();
+  tick();
+
+  EXPECT_EQ(dropLines().size(), 2U);
 }
 
 /** @brief The input fixture, once for each seed of a shuffled delivery. */

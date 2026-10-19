@@ -2,6 +2,7 @@
 
 #include <array>
 #include <chrono>
+#include <cstddef>
 #include <cstdint>
 #include <string_view>
 #include "HandshakeConstants.hpp"
@@ -51,5 +52,13 @@ constexpr std::uint8_t NEXT_PROTOCOL_VERSION = network::PROTOCOL_VERSION + 1;
  * @brief A flags byte with one flag set; version 0 of the protocol sets none.
  */
 constexpr std::uint8_t ONE_FLAG_SET = 0x01;
+
+/**
+ * @brief Words of every log line about a datagram the server drops, which tell
+ * those lines apart from the others, and how many datagrams a test has dropped
+ * at once to check that they share one line.
+ */
+constexpr std::string_view DROPPED_DATAGRAM_LINE_TEXT = "dropped a datagram";
+constexpr std::size_t DROPPED_TOGETHER_COUNT = 3;
 
 }  // namespace rtype::server::testing

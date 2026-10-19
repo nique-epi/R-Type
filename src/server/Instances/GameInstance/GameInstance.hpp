@@ -1,10 +1,12 @@
 #pragma once
 
+#include <chrono>
 #include <cstddef>
 #include <cstdint>
 #include <functional>
 #include <memory>
 #include <span>
+#include <string_view>
 #include "BydoSpawner.hpp"
 #include "ConnectedPlayer.hpp"
 #include "Endpoint.hpp"
@@ -22,6 +24,7 @@
 #include "ReadyState.hpp"
 #include "ShipSpawnAnnouncer.hpp"
 #include "SystemScheduler.hpp"
+#include "ThrottledLog.hpp"
 #include "World.hpp"
 #include "WorldStateSender.hpp"
 
@@ -63,7 +66,11 @@ namespace rtype::server {
  * another token before any queue holds it. Whoever forges the address of a
  * player could otherwise say ready in its place, or send an input numbered
  * 4294967295, above every input the player will ever send, and hold the ship
- * of that player on the forged keys for the rest of the session.
+ * of that player on the forged keys for the rest of the session. A datagram
+ * that is not read is logged with its sender and why at the debug level, at
+ * most once per REJECTION_LINE_INTERVAL of ticks run, with the number dropped
+ * since the previous line (see ThrottledLog), so a flood of them cannot flood
+ * the log.
  *
  * A ReadyState counts only while the game waits for players, and only when its
  * sequence is newer than the newest one accepted from that player, so a late
@@ -152,6 +159,14 @@ class GameInstance {
 
  private:
   void readPlayerDatagram(const network::IncomingDatagram& datagram);
+  void drop(const network::Endpoint& sender, std::string_view reason);
+
+  /**
+   * @returns The time the ticks run since the game was built stand for, the
+   * clock of its log lines.
+   */
+  [[nodiscard]] std::chrono::nanoseconds timeRun() const;
+
   void applyReadyState(const network::MessageOrigin& origin,
                        const network::ReadyState& message);
   void keepIfNewer(const network::MessageOrigin& origin,
@@ -178,6 +193,8 @@ class GameInstance {
   std::uint32_t worldsBuilt_{0};
   std::uint32_t tick_{0};
   std::size_t finishedTicks_{0};
+  std::uint64_t ticksRun_{0};
+  logging::ThrottledLog rejectionLog_;
   logging::Logger logger_;
 };
 

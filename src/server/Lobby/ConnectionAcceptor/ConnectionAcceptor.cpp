@@ -6,6 +6,7 @@
 #include <random>
 #include <span>
 #include <string>
+#include <string_view>
 #include <utility>
 #include "ConnectedPlayer.hpp"
 #include "ConnectionAccepted.hpp"
@@ -31,26 +32,22 @@ namespace {
 
 /**
  * @returns The first ConnectionRequest of @p datagram, or nothing when the
- * datagram is not of this protocol, does not split into messages, holds no
- * request, or when its first request is refused by its reader.
+ * datagram is not of this protocol or holds no request.
+ * @throws A NetworkException when the datagram is shorter than a header, its
+ * messages do not split, or its first request is refused by its reader.
  */
 std::optional<network::ConnectionRequest> firstConnectionRequest(
     std::span<const std::byte> datagram) {
-  try {
-    if (!network::DatagramCodec::speaksThisProtocol(
-            network::DatagramCodec::decodeHeader(datagram))) {
-      return std::nullopt;
-    }
-    for (const network::MessageFrame& frame :
-         network::DatagramCodec::splitMessages(datagram)) {
-      if (frame.type ==
-          static_cast<std::uint8_t>(network::ConnectionRequest::TYPE)) {
-        return network::decodeMessage<network::ConnectionRequest>(
-            frame.payload);
-      }
-    }
-  } catch (const network::NetworkException&) {
+  if (!network::DatagramCodec::speaksThisProtocol(
+          network::DatagramCodec::decodeHeader(datagram))) {
     return std::nullopt;
+  }
+  for (const network::MessageFrame& frame :
+       network::DatagramCodec::splitMessages(datagram)) {
+    if (frame.type ==
+        static_cast<std::uint8_t>(network::ConnectionRequest::TYPE)) {
+      return network::decodeMessage<network::ConnectionRequest>(frame.payload);
+    }
   }
   return std::nullopt;
 }
@@ -71,7 +68,7 @@ void ConnectionAcceptor::receive(
     engine::Duration now) {
   for (const network::IncomingDatagram& datagram : datagrams) {
     if (const std::optional<network::ConnectionRequest> request =
-            firstConnectionRequest(datagram.payload)) {
+            readRequest(datagram, now)) {
       answer(datagram.sender, *request, now);
     }
   }
@@ -79,6 +76,30 @@ void ConnectionAcceptor::receive(
 
 void ConnectionAcceptor::setGameInProgress(bool inProgress) {
   gameInProgress_ = inProgress;
+}
+
+std::optional<network::ConnectionRequest> ConnectionAcceptor::readRequest(
+    const network::IncomingDatagram& datagram, engine::Duration now) {
+  std::optional<network::ConnectionRequest> request;
+  try {
+    request = firstConnectionRequest(datagram.payload);
+  } catch (const network::NetworkException& error) {
+    drop(datagram.sender, error.what(), now);
+    return std::nullopt;
+  }
+  if (!request.has_value()) {
+    drop(datagram.sender,
+         "its header is not of this protocol and version, or it holds no "
+         "connection request",
+         now);
+  }
+  return request;
+}
+
+void ConnectionAcceptor::drop(const network::Endpoint& sender,
+                              std::string_view reason, engine::Duration now) {
+  dropLog_.debug(now, "dropped a datagram from ", sender.address, " port ",
+                 sender.port, ": ", reason);
 }
 
 void ConnectionAcceptor::answer(const network::Endpoint& sender,

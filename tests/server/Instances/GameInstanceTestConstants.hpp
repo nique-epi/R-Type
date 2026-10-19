@@ -4,8 +4,10 @@
 #include <cstddef>
 #include <cstdint>
 #include <limits>
+#include "NetworkConstants.hpp"
 #include "ProtocolConstants.hpp"
 #include "ServerLobbyTestConstants.hpp"
+#include "TimeConstants.hpp"
 
 namespace rtype::server::testing {
 
@@ -76,6 +78,14 @@ constexpr std::uint32_t LARGEST_INPUT_NUMBER =
 constexpr std::uint32_t SHUFFLED_INPUT_COUNT = 30;
 constexpr std::uint32_t SHUFFLE_SEED_COUNT = 20;
 constexpr std::size_t DATAGRAMS_PER_TICK = 4;
+
+/**
+ * @brief Ticks that run in REJECTION_LINE_INTERVAL, the shortest time between
+ * two lines about the datagrams a game drops.
+ */
+constexpr std::size_t TICKS_PER_REJECTION_LINE =
+    static_cast<std::size_t>(network::REJECTION_LINE_INTERVAL.count()) *
+    engine::SIMULATION_TICKS_PER_SECOND;
 
 static_assert(SHUFFLED_INPUT_COUNT <= network::PLAYER_ACTION_BITS + 1U,
               "each shuffled input holds actions no other input holds, so "

@@ -6,14 +6,19 @@
 #include <mutex>
 #include <optional>
 #include <span>
+#include <string>
+#include <string_view>
 #include <utility>
 #include "BoundedQueue.hpp"
 #include "DatagramCodec.hpp"
 #include "Endpoint.hpp"
+#include "IClock.hpp"
 #include "IncomingDatagram.hpp"
 #include "MessageType.hpp"
+#include "NetworkConstants.hpp"
 #include "PacketHeader.hpp"
 #include "ProtocolConstants.hpp"
+#include "ServerConstants.hpp"
 
 namespace rtype::server {
 
@@ -38,25 +43,30 @@ void pushCopy(concurrency::BoundedQueue<network::IncomingDatagram>& queue,
 
 }  // namespace
 
-DatagramSorter::DatagramSorter(Destinations destinations)
-    : destinations_(destinations) {}
+DatagramSorter::DatagramSorter(Destinations destinations,
+                               const engine::IClock& clock)
+    : destinations_(destinations),
+      clock_(&clock),
+      dropLog_(std::string{SERVER_LOGGER_NAME},
+               network::REJECTION_LINE_INTERVAL) {}
 
 void DatagramSorter::sort(const network::Endpoint& sender,
                           std::span<const std::byte> datagram) {
   if (datagram.size() < network::PACKET_HEADER_SIZE) {
-    drop();
+    drop(sender, "it is shorter than the packet header");
     return;
   }
   const network::PacketHeader header =
       network::DatagramCodec::decodeHeader(datagram);
   if (!network::DatagramCodec::speaksThisProtocol(header)) {
-    drop();
+    drop(sender,
+         "its header is not of this protocol and version, or has a flag set");
     return;
   }
   const std::optional<network::DatagramCodec::MessageTypes> types =
       network::DatagramCodec::messageTypes(datagram);
   if (!types.has_value()) {
-    drop();
+    drop(sender, "the sizes of its messages do not add up to its end");
     return;
   }
   const bool holdsRequest = types->test(
@@ -72,7 +82,8 @@ void DatagramSorter::sort(const network::Endpoint& sender,
   } else if (player != nullptr) {
     pushCopy(*destinations_.players, sender, datagram);
   } else {
-    drop();
+    drop(sender,
+         "its sender was not admitted, and it holds no connection request");
   }
 }
 
@@ -108,11 +119,18 @@ const DatagramSorter::AdmittedPlayer* DatagramSorter::findAdmitted(
   return admitted == admitted_.end() ? nullptr : &*admitted;
 }
 
-void DatagramSorter::drop() {
+void DatagramSorter::drop(const network::Endpoint& sender,
+                          std::string_view reason) {
   droppedCount_.fetch_add(1, std::memory_order_relaxed);
+  dropLog_.debug(clock_->now(), "dropped a datagram from ", sender.address,
+                 " port ", sender.port, ": ", reason);
 }
 
 void DatagramSorter::dropWrongToken(const network::Endpoint& sender) {
+  dropLog_.debug(clock_->now(), "dropped a datagram from ", sender.address,
+                 " port ", sender.port,
+                 ": it carries another session token than the player of "
+                 "that address");
   const std::scoped_lock lock{wrongTokenSenderMutex_};
   if (!wrongTokenSender_.has_value()) {
     wrongTokenSender_ = sender;
