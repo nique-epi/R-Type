@@ -1,6 +1,6 @@
 ---
 title: 'Network protocol: version 0'
-description: The datagrams the client and the server exchange over UDP, byte by byte, and what each side does when one is lost.
+description: The datagrams the client and the server exchange over UDP, byte by byte, and what each side does when one is lost or cannot be read.
 sidebar:
   label: Protocol
 ---
@@ -258,6 +258,65 @@ In each phase the server repeats one message, and the client shows the screen of
 The server takes a `ReadyState` into account only in the first phase, from a connected player, with the same checks as every datagram: the session token, then the `sequence`. The game starts when at least one player is connected and every connected player is ready.
 
 Each side sends a `Heartbeat` after 1 s without sending anything else; any datagram that passes the checks above proves its sender is alive. The server closes a session after 5 s without a datagram carrying its token, removes the ship and sends `PlayerLeft` (`TimedOut`) to the others. The client shows that the connection is lost after 5 s without a datagram from the server. A `Disconnection` frees the place at once, and the others get `PlayerLeft` (`Left`).
+
+## Errors
+
+This section gathers what each side does when something goes wrong, from a datagram it cannot read to a peer that disappears. Most rules are stated in the sections above, which the tables link to; the rest are stated here. Three rules hold for every case:
+
+- Nothing in a datagram stops a program or closes a session: an error ends with a datagram or a message dropped, never with a crash.
+- A dropped datagram or message gets no answer, with one exception: the server answers a datagram of another version from an unknown sender with `ConnectionRefused` (`IncompatibleVersion`), under the size condition of [Receiving a datagram](#receiving-a-datagram).
+- A dropped datagram or message changes nothing in the session or the game: at most, the receiver logs it and counts it.
+
+### A datagram or a message that cannot be read
+
+| The receiver gets | It | It sends back |
+|---|---|---|
+| A datagram that fails one of the first checks of [Receiving a datagram](#receiving-a-datagram): size, `protocolId`, `flags`, message sizes | drops the datagram | nothing |
+| A datagram of another `version` | drops the datagram; a client tells the player both version numbers, its own and the one at offset 4 | from the server to an unknown sender, `ConnectionRefused` (`IncompatibleVersion`), under the size condition of [Receiving a datagram](#receiving-a-datagram); otherwise nothing |
+| A datagram from an unknown sender that holds no `ConnectionRequest` | drops the datagram | nothing |
+| Within a session, another `sessionToken`, or a `sequence` that is not newer | drops the datagram; a wrong token is counted | nothing |
+| A message of an unknown type | skips that message and reads the next one | nothing |
+| A message of a type that only the other side receives, such as `ConnectionAccepted` reaching the server or `PlayerInput` reaching a client | skips that message, as if its type were unknown | nothing |
+| A payload of the wrong size, or a value out of range: a `bool` other than 0 or 1, an enumeration value not listed, a bit 5 to 7 set in `actions`, a nickname that is empty, longer than 16 bytes or not UTF-8 | drops that message; the other messages of the datagram are read | nothing, even to a `ConnectionRequest` dropped this way |
+| An entity of an unknown type in a `WorldState` | skips that entity and reads the next one (see [World state](#world-state)) | nothing |
+
+### A message at the wrong moment
+
+A message that is valid but means nothing in the current state of its receiver changes nothing and gets no answer.
+
+| The receiver gets | Because | It |
+|---|---|---|
+| `ConnectionChallenge`, `ConnectionAccepted` or `ConnectionRefused`, on a client that is not connecting | the attempt was already accepted, refused or given up | ignores it |
+| `ConnectionRequest` from a player already accepted | its acceptance was lost | answers it as [Connection](#connection) says: the same `ConnectionAccepted` with a valid cookie, a `ConnectionChallenge` without one |
+| `ReadyState` while no game waits for players | the game has started or ended | ignores it (see [A session](#a-session)) |
+| `PlayerInput` while no game runs | the player holds keys before the start | keeps it as the newest input of that player, like any other (see [Inputs](#inputs)) |
+| `WorldState` with a `tick` lower than the last one applied | it arrived late | ignores it (see [World state](#world-state)) |
+| `EntitySpawned` naming an entity the client has; `EntityDestroyed` or `EntityDamaged` naming one it does not have | a copy, or a `WorldState` came first | changes nothing |
+| A second copy of a `GameEvent` (same `eventNumber`), or a `PlayerLeft` naming a player the client no longer lists | the message is sent three times (see [Losses](#losses)) | ignores it |
+
+### Joining fails
+
+| What happens | The client | The player is told |
+|---|---|---|
+| No answer within 5 s of the first request: no server at that address, a firewall, or every request or answer lost | stops sending requests | that the server is unreachable |
+| `ConnectionChallenge`, because the cookie is missing, wrong or expired | sends the request again with that cookie; the 5 s are not restarted | nothing yet: the attempt goes on |
+| `ConnectionRefused` (`GameFull`) | stops sending requests | that the game is full |
+| `ConnectionRefused` (`GameInProgress`) | stops sending requests | that a game is in progress |
+| `ConnectionRefused` (`IncompatibleVersion`) | stops sending requests | both version numbers |
+| A request the server drops, such as one with an invalid nickname | gets no answer, so it ends as unreachable after 5 s | that the server is unreachable |
+
+### A peer disappears
+
+| What happens | Who notices, and how | What follows |
+|---|---|---|
+| The player closes the client | the server, from the `Disconnection`, sent three times | the place is freed at once; the other players get `PlayerLeft` (`Left`) |
+| The client crashes, is killed or loses the network | the server, after 5 s without a datagram carrying the token of that player | the session closes and the ship is removed; the other players get `PlayerLeft` (`TimedOut`) |
+| The server shuts down | each client, from the `Disconnection`, sent three times | the client closes the session at once and tells the player that the server closed it |
+| The server crashes, is killed or loses the network | each client, after 5 s without a datagram from the server | the client closes the session and tells the player that the connection is lost |
+
+A player that comes back after its session closed connects again from the first request, as an unknown sender, and gets a new session token.
+
+Of the cases above, the programs do not handle yet: `Heartbeat`, `Disconnection` and the 5-second timeouts, so no session ever closes; the `IncompatibleVersion` answer, which the server does not send, while the client, which shows the refusal, does not show the two version numbers, and drops a datagram of another version without telling the player.
 
 ## Losses
 
