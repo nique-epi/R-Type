@@ -46,4 +46,9 @@ MissingLaunchOptionValueException::MissingLaunchOptionValueException(
     const std::string& option)
     : EngineException("Missing value after the option " + option) {}
 
+InvalidLaunchOptionValueException::InvalidLaunchOptionValueException(
+    const std::string& option, const std::string& value)
+    : EngineException("Invalid value \"" + value + "\" after the option " +
+                      option) {}
+
 }  // namespace rtype::engine

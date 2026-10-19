@@ -51,8 +51,10 @@ bool changesActions(const network::PlayerInput& input,
 
 }  // namespace
 
-GameInstance::GameInstance(Send send)
-    : send_(std::move(send)), logger_(std::string{INSTANCES_LOGGER_NAME}) {
+GameInstance::GameInstance(Send send, std::uint32_t seed)
+    : send_(std::move(send)),
+      seed_(seed),
+      logger_(std::string{INSTANCES_LOGGER_NAME}) {
   dispatcher_.registerHandler<network::ReadyState>(
       [this](const network::MessageOrigin& origin,
              const network::ReadyState& message) {
@@ -95,6 +97,7 @@ void GameInstance::onTick(
       break;
     case GameState::InProgress:
       ++tick_;
+      bydoSpawner_->onTick();
       break;
     case GameState::Finished:
       ++finishedTicks_;
@@ -201,6 +204,9 @@ void GameInstance::startNewWorld() {
   world_ = std::make_unique<game::World>();
   shipSpawnAnnouncer_ =
       std::make_unique<ShipSpawnAnnouncer>(*world_, roster_, send_);
+  bydoSpawner_ = std::make_unique<BydoSpawner>(*world_, roster_, send_,
+                                               seed_ + worldsBuilt_);
+  ++worldsBuilt_;
   tick_ = 0;
   finishedTicks_ = 0;
   for (ConnectedPlayer* const player : roster_.connected()) {

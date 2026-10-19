@@ -18,6 +18,15 @@ std::uint32_t World::spawnPlayer(Position position) {
   return networkId;
 }
 
+std::uint32_t World::spawnBydo(Position position) {
+  const std::uint32_t networkId = networkIds_.allocate();
+  const engine::Entity bydo = registry_.create();
+  components_.add(bydo, position);
+  components_.add(bydo, EntityType::Enemy);
+  components_.add(bydo, NetworkIdentity{.networkId = networkId});
+  return networkId;
+}
+
 std::size_t World::entityCount() const { return registry_.size(); }
 
 engine::ComponentRegistry& World::components() { return components_; }

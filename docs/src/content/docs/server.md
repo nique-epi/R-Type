@@ -16,7 +16,7 @@ This page tells you where to look when you need to change something. It describe
 | Sorting the datagrams before the queues | Available; no limit per address yet | `src/server/Application/DatagramSorter/` |
 | World state sent at a fixed rate | Available: sends to no one yet, the list of recipients is empty | `src/server/Replication/` |
 | Game events sent to the clients | Available: sends to no one yet, and nothing publishes the events | `src/server/Replication/`, `src/game/Events/` |
-| Launch options | Available: the port and `--help` | `src/server/LaunchOptions/` |
+| Launch options | Available: the port, the seed and `--help` | `src/server/LaunchOptions/` |
 | Letting players in: challenge, acceptance or refusal | Available; refuses with `GameInProgress` while the game is not waiting for players | `src/server/Lobby/`, `src/server/Instances/` |
 | A game: states, ready rule, new world between two games | Available: one game, nothing ends it yet | `src/server/Instances/GameInstance/` |
 | Newest input of each player, session token checked | Available; nothing applies it to the ship yet | `src/server/Instances/GameInstance/` |
@@ -26,7 +26,8 @@ This page tells you where to look when you need to change something. It describe
 | Collisions | Available: nothing runs them yet | `src/game/Systems/CollisionSystem/`, `src/game/Systems/CollisionRules/`, `src/game/Events/` |
 | Damage and destruction | Not yet written | — |
 | Ship of each player, created when the player joins and announced to the others | Available | `src/game/Spawning/`, `src/server/Replication/ShipSpawnAnnouncer/` |
-| Enemies, waves, score, lives | Not yet written | — |
+| Bydos appearing off screen at random heights, on a timer | Available; they do not move yet | `src/game/Spawning/BydoSpawnPosition.*`, `src/server/Spawning/` |
+| Waves, score, lives | Not yet written | — |
 
 ## Launch options: `LaunchOptions`
 
@@ -35,10 +36,11 @@ This page tells you where to look when you need to change something. It describe
 | Option | Effect |
 |---|---|
 | `-p <port>` | The UDP port to listen on, from 1 to 65535 (see [Network](/R-Type/network/#ports-and-addresses-written-as-text-portfromtext-ipv4addressfromtext)). Default: `DEFAULT_SERVER_PORT` (4242). |
+| `--seed <seed>` | The number the random draws of the games start from, a whole number from 0 to 4294967295. Default: drawn at random. See [Bydos](#bydos-bydospawner). |
 | `--help` | Prints the usage, the logging options included, on standard output, then exits with code 0 without starting anything or opening the journal. |
 
-- The server listens on every IPv4 interface (`ANY_IPV4_ADDRESS`) and takes no address: `-h`, the client's address option, is an unknown argument here. The last `-p` wins.
-- An unknown argument, a `-p` without a value or an invalid port stops the server before anything starts: it prints `r-type_server:`, the reason and how to see the usage on standard error, then exits with code 1.
+- The server listens on every IPv4 interface (`ANY_IPV4_ADDRESS`) and takes no address: `-h`, the client's address option, is an unknown argument here. The last `-p` wins, and so does the last `--seed`.
+- An unknown argument, a `-p` or `--seed` without a value, an invalid port or a seed that is not a whole number from 0 to 4294967295 stops the server before anything starts: it prints `r-type_server:`, the reason and how to see the usage on standard error, then exits with code 1.
 
 ```bash
 ./r-type_server -p 4243
@@ -183,7 +185,7 @@ A datagram is read only when its header is of this protocol and version and its 
 | State (`GameState`) | The game… | It goes to… |
 |---|---|---|
 | `WaitingForPlayers` | takes `ReadyState` and lets players in | `InProgress` on the tick when at least one player is connected and every connected player is ready |
-| `InProgress` | counts one tick per `onTick`; refuses new connections | `Finished` when `finish()` is called |
+| `InProgress` | counts one tick per `onTick` and lets the Bydos appear; refuses new connections | `Finished` when `finish()` is called |
 | `Finished` | refuses new connections | `WaitingForPlayers` after `FINISHED_STATE_TICKS` (300) ticks, `FINISHED_STATE_SECONDS` (5) seconds |
 
 - Going back to `WaitingForPlayers` builds a new `World`: the tick is 0, the players stay connected, none is ready any more, and each gets a new ship, announced again. Network ids start again at 1 in the new world, so the announced ids are the ones of the previous game.
@@ -269,6 +271,19 @@ timers.advance(rtype::engine::SIMULATION_TICK_DURATION);
 events.dispatch();
 ```
 
+## Bydos: `BydoSpawner`
+
+`BydoSpawner` (`src/server/Spawning/BydoSpawner/`) makes a Bydo appear in the `World` every `BYDO_SPAWN_INTERVAL` (2 seconds, **provisional** until the waves set the pace) of simulation time. A `GameInstance` builds one with each world and ticks it only while the game is `InProgress`, so nothing appears while the game waits for players or is finished, and the timer starts again from zero with every new game. Time is counted in whole ticks of `SIMULATION_TICK_DURATION`, which is 16 666 666 ns, so the first Bydo of a game appears on the 121st tick, not the 120th.
+
+- `bydoSpawnPosition(randomUnit)` (`src/game/Spawning/`) says where: `BYDO_SPAWN_MARGIN` (64 logical units) past the right edge of the playfield, so the Bydo is off screen, and at a height from `BYDO_SPAWN_VERTICAL_MARGIN` (64) to `PLAYFIELD_HEIGHT` minus that margin. A draw of 0 gives the highest row; a draw from 0 up to, but not including, 1 is accepted, anything else (1 included, or not a number) throws `InvalidRandomUnitException`. Both margins are **provisional**: they are half a Bydo until its size is fixed.
+- `World::spawnBydo(position)` gives the entity a `Position`, `EntityType::Enemy` and a `NetworkIdentity`. It has no `Velocity` and no `CollisionBox`: a Bydo stays where it appears until the movement of the Bydos is written.
+- Every connected player is sent an `EntitySpawned` (`Bydo`, the position), in its own datagram, like the ship of a player. Both use `sendEntitySpawned` (`src/server/Replication/EntitySpawnSender/`). With no player connected, the Bydo appears and nothing is sent. When every network id was given, the spawn is skipped and a warning is logged.
+- The generator is a `std::mt19937` started from a seed. The spawner logs it at the `info` level when it is built (`Bydo spawning starts from the seed 42`), so the same seed gives the same heights in the same order. `GameInstance` gives each world the seed of the game plus the number of worlds built before it, so one seed replays every game of a session; without `--seed`, the server draws it from `std::random_device`.
+
+```bash
+./r-type_server --seed 42
+```
+
 ## Collisions
 
 A collision takes two steps, in two classes. The first finds what overlaps; the second decides which overlaps matter. Neither removes health nor destroys an entity: they only announce what happened, so the damage rules can react to it (see [Event bus](/R-Type/engine/#event-bus-eventbus)).
@@ -331,6 +346,9 @@ The bus and the registry must outlive `CollisionRules`, and the bus must outlive
 | Send a datagram from the tick | `ServerApplication::queueDatagram()` |
 | Change how a connection request is answered | `ConnectionAcceptor::answer` in `src/server/Lobby/ConnectionAcceptor/ConnectionAcceptor.cpp` |
 | Change where a ship appears | `shipStartPosition` and `SHIP_START_X_RATIO` in `src/game/Spawning/` |
+| Change how often a Bydo appears | `BYDO_SPAWN_INTERVAL` in `src/server/Spawning/BydoSpawnerConstants.hpp` |
+| Change where a Bydo appears | `bydoSpawnPosition` and the margins in `src/game/Spawning/` |
+| Replay a game | Start the server with the seed found in its log: `--seed <seed>` |
 | Change who is told about a new ship | `ShipSpawnAnnouncer` in `src/server/Replication/ShipSpawnAnnouncer/` |
 | Change when a game starts or ends, or what is reset between two games | `GameInstance::onTick` and `startNewWorld` in `src/server/Instances/GameInstance/GameInstance.cpp` |
 | Change how long a game stays finished | `FINISHED_STATE_SECONDS` in `src/server/Instances/GameInstanceConstants.hpp` |

@@ -75,3 +75,51 @@ TEST(World, SpawnedPlayerIsANetworkedShipAtItsPosition) {
           });
   EXPECT_TRUE(found);
 }
+
+/**
+ * Given an empty world
+ * When a Bydo is spawned at a position
+ * Then it is an enemy at that position, under the network id returned
+ */
+TEST(World, SpawnedBydoIsAnEnemyAtItsPosition) {
+  rtype::game::World world;
+
+  const std::uint32_t networkId =
+      world.spawnBydo(rtype::game::Position{.x = SOME_X, .y = SOME_Y});
+
+  EXPECT_EQ(world.entityCount(), 1U);
+  EXPECT_NE(networkId, rtype::identifiers::NO_ENTITY_ID);
+  bool found = false;
+  world.components()
+      .forEach<rtype::game::NetworkIdentity, rtype::game::Position>(
+          [&world, &found, networkId](
+              rtype::engine::Entity entity,
+              const rtype::game::NetworkIdentity& identity,
+              const rtype::game::Position& position) {
+            found = true;
+            EXPECT_EQ(identity.networkId, networkId);
+            EXPECT_EQ(position.x, SOME_X);
+            EXPECT_EQ(position.y, SOME_Y);
+            const auto* type =
+                world.components().get<rtype::game::EntityType>(entity);
+            ASSERT_NE(type, nullptr);
+            EXPECT_EQ(*type, rtype::game::EntityType::Enemy);
+          });
+  EXPECT_TRUE(found);
+}
+
+/**
+ * Given a world with a player and a Bydo
+ * When their network ids are compared
+ * Then they differ, so the clients can tell the two entities apart
+ */
+TEST(World, ABydoAndAPlayerGetDistinctNetworkIds) {
+  rtype::game::World world;
+
+  const std::uint32_t player =
+      world.spawnPlayer(rtype::game::Position{.x = SOME_X, .y = SOME_Y});
+  const std::uint32_t bydo =
+      world.spawnBydo(rtype::game::Position{.x = SOME_X, .y = SOME_Y});
+
+  EXPECT_NE(player, bydo);
+}

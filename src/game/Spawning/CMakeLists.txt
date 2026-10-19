@@ -1,4 +1,4 @@
-add_library(rtype_game_spawning STATIC ShipStartPosition.cpp)
+add_library(rtype_game_spawning STATIC ShipStartPosition.cpp BydoSpawnPosition.cpp)
 
 target_include_directories(rtype_game_spawning PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 

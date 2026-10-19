@@ -43,6 +43,12 @@ If the repository was cloned without its submodules, run `git submodule update -
 The server listens on UDP port 4243 of every IPv4 interface; without `-p`, on port 4242.
 
 ```bash
+./r-type_server --seed 42
+```
+
+The Bydos appear at heights drawn from the seed; without `--seed` the server draws one, and the journal records it (`Bydo spawning starts from the seed ...`) so the same game can be replayed.
+
+```bash
 ./r-type_client -h 192.168.1.20 -p 4243 -n ACE
 ```
 

@@ -3,13 +3,11 @@
 #include <optional>
 #include <utility>
 #include "ConnectedPlayer.hpp"
-#include "DatagramCodec.hpp"
 #include "Entity.hpp"
 #include "EntityIdConstants.hpp"
+#include "EntitySpawnSender.hpp"
 #include "EntitySpawned.hpp"
 #include "NetworkIdentity.hpp"
-#include "OutgoingDatagram.hpp"
-#include "PacketHeader.hpp"
 #include "PlayerRoster.hpp"
 #include "Position.hpp"
 #include "ProtocolConstants.hpp"
@@ -43,18 +41,12 @@ void ShipSpawnAnnouncer::announce(ConnectedPlayer& recipient,
   if (!position.has_value()) {
     return;
   }
-  network::PacketHeader header;
-  header.sessionToken = recipient.sessionToken;
-  header.sequence = recipient.nextSequence;
-  ++recipient.nextSequence;
-  send_(network::OutgoingDatagram{
-      .destination = recipient.endpoint,
-      .payload = network::DatagramCodec::encode(
-          header, network::EntitySpawned{
-                      .entityId = owner.shipEntityId,
-                      .entityType = network::WireEntityType::PlayerShip,
-                      .x = position->x,
-                      .y = position->y})});
+  sendEntitySpawned(
+      send_, recipient,
+      network::EntitySpawned{.entityId = owner.shipEntityId,
+                             .entityType = network::WireEntityType::PlayerShip,
+                             .x = position->x,
+                             .y = position->y});
 }
 
 std::optional<game::Position> ShipSpawnAnnouncer::positionOf(
