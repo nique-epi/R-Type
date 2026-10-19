@@ -3,8 +3,7 @@
 #include <cstddef>
 #include <string>
 #include <vector>
-#include "JournalFile.hpp"
-#include "Logger.hpp"
+#include "DebugJournal.hpp"
 #include "ThrottledLog.hpp"
 #include "ThrottledLogTestConstants.hpp"
 
@@ -26,31 +25,18 @@ std::string countEnding(std::size_t count) {
   return " (" + std::to_string(count) + " since the previous line)";
 }
 
-/**
- * @brief A throttled log at the debug level, written to a journal the test
- * reads. The level is restored after the test, and the journal puts the log
- * back on standard error.
- */
+/** @brief A throttled log, with the log written to a journal the test reads. */
 class ThrottledLogTest : public ::testing::Test {
  protected:
-  void SetUp() override {
-    savedLevel_ = Logger::level();
-    Logger::setLevel(LogLevel::Debug);
-    Logger::setOutput(
-        LogOutput{.toStderr = false, .filePath = journal_.path()});
-  }
-
-  void TearDown() override { Logger::setLevel(savedLevel_); }
-
   void eventAt(std::chrono::nanoseconds now) { log_.debug(now, EVENT_TEXT); }
 
+  /** @returns The lines the throttled log wrote, oldest first. */
   [[nodiscard]] std::vector<std::string> lines() const {
-    return journal_.lines();
+    return journal_.linesHolding(EVENT_TEXT);
   }
 
  private:
-  JournalFile journal_;
-  LogLevel savedLevel_{LogLevel::Info};
+  DebugJournal journal_;
   ThrottledLog log_{std::string{THROTTLED_MODULE}, THROTTLED_INTERVAL};
 };
 

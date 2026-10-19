@@ -6,10 +6,9 @@
 #include "ByteSequence.hpp"
 #include "ConnectionAccepted.hpp"
 #include "ConnectionRequest.hpp"
+#include "DebugJournal.hpp"
 #include "Endpoint.hpp"
 #include "Heartbeat.hpp"
-#include "JournalFile.hpp"
-#include "Logger.hpp"
 #include "MessageDispatcher.hpp"
 #include "MessageFrame.hpp"
 #include "MessageOrigin.hpp"
@@ -348,36 +347,16 @@ TEST(MessageDispatcher, DoesNothingForNoMessage) {
   EXPECT_EQ(dispatcher.malformedMessageCount(), 0U);
 }
 
-/**
- * @brief Dispatcher tests that read the log: the debug level, written to a
- * journal the test reads. The level is restored after the test, and the
- * journal puts the log back on standard error.
- */
+/** @brief Dispatcher tests that read the log the dispatcher writes. */
 class MessageDispatcherLogTest : public ::testing::Test {
  protected:
-  void SetUp() override {
-    savedLevel_ = logging::Logger::level();
-    logging::Logger::setLevel(logging::LogLevel::Debug);
-    logging::Logger::setOutput(
-        logging::LogOutput{.toStderr = false, .filePath = journal_.path()});
-  }
-
-  void TearDown() override { logging::Logger::setLevel(savedLevel_); }
-
   /** @returns The lines of the journal about a rejected message. */
   [[nodiscard]] std::vector<std::string> rejectionLines() const {
-    std::vector<std::string> found;
-    for (const std::string& line : journal_.lines()) {
-      if (line.find(REJECTED_MESSAGE_LINE_TEXT) != std::string::npos) {
-        found.push_back(line);
-      }
-    }
-    return found;
+    return journal_.linesHolding(REJECTED_MESSAGE_LINE_TEXT);
   }
 
  private:
-  JournalFile journal_;
-  logging::LogLevel savedLevel_{logging::LogLevel::Info};
+  DebugJournal journal_;
 };
 
 /**

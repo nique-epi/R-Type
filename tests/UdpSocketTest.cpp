@@ -5,9 +5,8 @@
 #include <string>
 #include <thread>
 #include <vector>
+#include "DebugJournal.hpp"
 #include "Endpoint.hpp"
-#include "JournalFile.hpp"
-#include "Logger.hpp"
 #include "NetworkConstants.hpp"
 #include "NetworkException.hpp"
 #include "NetworkTestConstants.hpp"
@@ -245,36 +244,16 @@ TEST_F(UdpSocketFixture, RefusesToOpenOnAPortAlreadyTaken) {
   EXPECT_THROW(openSocketOn(first.localEndpoint()), SocketOpenException);
 }
 
-/**
- * @brief Socket tests that read the log: the debug level, written to a journal
- * the test reads. The level is restored after the test, and the journal puts
- * the log back on standard error.
- */
+/** @brief Socket tests that read the log the socket writes. */
 class UdpSocketLogTest : public UdpSocketFixture {
  protected:
-  void SetUp() override {
-    savedLevel_ = rtype::logging::Logger::level();
-    rtype::logging::Logger::setLevel(rtype::logging::LogLevel::Debug);
-    rtype::logging::Logger::setOutput(rtype::logging::LogOutput{
-        .toStderr = false, .filePath = journal_.path()});
-  }
-
-  void TearDown() override { rtype::logging::Logger::setLevel(savedLevel_); }
-
   /** @returns The lines of the journal about a datagram too large. */
   [[nodiscard]] std::vector<std::string> oversizedDatagramLines() const {
-    std::vector<std::string> found;
-    for (const std::string& line : journal_.lines()) {
-      if (line.find(OVERSIZED_DATAGRAM_LINE_TEXT) != std::string::npos) {
-        found.push_back(line);
-      }
-    }
-    return found;
+    return journal_.linesHolding(OVERSIZED_DATAGRAM_LINE_TEXT);
   }
 
  private:
-  JournalFile journal_;
-  rtype::logging::LogLevel savedLevel_{rtype::logging::LogLevel::Info};
+  DebugJournal journal_;
 };
 
 /**
