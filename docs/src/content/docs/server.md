@@ -15,16 +15,16 @@ This page tells you where to look when you need to change something. It describe
 | Timer resolution on Windows | Available | `src/server/Platform/` |
 | Sorting the datagrams before the queues | Available; no limit per address yet | `src/server/Application/DatagramSorter/` |
 | World state sent at a fixed rate | Available: sends to no one yet, the list of recipients is empty | `src/server/Replication/` |
-| Game events sent to the clients | Available: sends to no one yet, and nothing publishes the events | `src/server/Replication/`, `src/game/Events/` |
+| Game events sent to the clients | Available: sends to no one yet, and only the tests publish the events | `src/server/Replication/`, `src/game/Events/` |
 | Launch options | Available: the port, the seed and `--help` | `src/server/LaunchOptions/` |
 | Letting players in: challenge, acceptance or refusal | Available; refuses with `GameInProgress` while the game is not waiting for players | `src/server/Lobby/`, `src/server/Instances/` |
 | A game: states, ready rule, new world between two games | Available: one game, nothing ends it yet | `src/server/Instances/GameInstance/` |
 | Newest input of each player, session token checked | Available; nothing applies it to the ship yet | `src/server/Instances/GameInstance/` |
 | Lobby state messages, several games, master link | Not yet written | — |
-| Components (`Position`, `Velocity`, `CollisionBox`, `EntityType`, `Sprite`, `Layer`) | Available | `src/game/Components/` |
+| Components (`Position`, `Velocity`, `CollisionBox`, `Health`, `EntityType`, `Sprite`, `Layer`) | Available | `src/game/Components/` |
 | Movement | Available | `src/game/Systems/MovementSystem/` |
 | Collisions | Available: nothing runs them yet | `src/game/Systems/CollisionSystem/`, `src/game/Systems/CollisionRules/`, `src/game/Events/` |
-| Damage and destruction | Not yet written | — |
+| Damage and destruction | Available: nothing runs it yet; players take no damage yet | `src/game/Systems/DamageRules/` |
 | Ship of each player, created when the player joins and announced to the others | Available | `src/game/Spawning/`, `src/server/Replication/ShipSpawnAnnouncer/` |
 | Bydos appearing off screen at random heights, on a timer | Available; they do not move yet | `src/game/Spawning/BydoSpawnPosition.*`, `src/server/Spawning/` |
 | Waves, score, lives | Not yet written | — |
@@ -254,7 +254,7 @@ The game announces what the players must see or hear by publishing an event on t
 - `REPEATED_MESSAGE_COPIES` and `REPEATED_MESSAGE_INTERVAL` are **provisional**, like the protocol rates they follow. Code must read the constants and never repeat 3 or 50.
 - An event the protocol refuses is skipped: a position that is not a number, the entity id 0 (which no entity has), or a player number outside 1 to 4. The broadcaster logs a warning with the name of the event, sends nothing, schedules no copy, and does not use an event number, so the next event goes out and the server keeps running. Only the encoding is protected: a fault in the sending still stops the tick.
 - The broadcaster must outlive the last `dispatch()` of the bus and the last `advance()` of the timers, because both call back into it.
-- Nothing is sent or scheduled when the list of recipients is empty, but the encoder still runs, so a `GameEvent` still uses an event number. In `main.cpp` the list is empty and nothing publishes the events yet, so no datagram leaves. The header function returns a default header, token 0 and sequence 0: neither it nor the list of recipients reads the `PlayerRoster` yet, which holds the session token and the next sequence of each player. It is never called while there is no recipient.
+- Nothing is sent or scheduled when the list of recipients is empty, but the encoder still runs, so a `GameEvent` still uses an event number. In `main.cpp` the list is empty and nothing publishes the events yet (`DamageRules` publishes two of them, but is not run), so no datagram leaves. The header function returns a default header, token 0 and sequence 0: neither it nor the list of recipients reads the `PlayerRoster` yet, which holds the session token and the next sequence of each player. It is never called while there is no recipient.
 
 ```cpp
 rtype::engine::EventBus events;
@@ -276,7 +276,7 @@ events.dispatch();
 `BydoSpawner` (`src/server/Spawning/BydoSpawner/`) makes a Bydo appear in the `World` every `BYDO_SPAWN_INTERVAL` (2 seconds, **provisional** until the waves set the pace) of simulation time. A `GameInstance` builds one with each world and ticks it only while the game is `InProgress`, so nothing appears while the game waits for players or is finished, and the timer starts again from zero with every new game. Time is counted in whole ticks of `SIMULATION_TICK_DURATION`, which is 16 666 666 ns, so the first Bydo of a game appears on the 121st tick, not the 120th.
 
 - `bydoSpawnPosition(randomUnit)` (`src/game/Spawning/`) says where: `BYDO_SPAWN_MARGIN` (64 logical units) past the right edge of the playfield, so the Bydo is off screen, and at a height from `BYDO_SPAWN_VERTICAL_MARGIN` (64) to `PLAYFIELD_HEIGHT` minus that margin. A draw of 0 gives the highest row; a draw from 0 up to, but not including, 1 is accepted, anything else (1 included, or not a number) throws `InvalidRandomUnitException`. Both margins are **provisional**: they are half a Bydo until its size is fixed.
-- `World::spawnBydo(position)` gives the entity a `Position`, `EntityType::Enemy` and a `NetworkIdentity`. It has no `Velocity` and no `CollisionBox`: a Bydo stays where it appears until the movement of the Bydos is written.
+- `World::spawnBydo(position)` gives the entity a `Position`, `EntityType::Enemy`, `Health` and a `NetworkIdentity`. It has no `Velocity` and no `CollisionBox`: a Bydo stays where it appears until the movement of the Bydos is written.
 - Every connected player is sent an `EntitySpawned` (`Bydo`, the position), in its own datagram, like the ship of a player. Both use `sendEntitySpawned` (`src/server/Replication/EntitySpawnSender/`). With no player connected, the Bydo appears and nothing is sent. When every network id was given, the spawn is skipped and a warning is logged.
 - The generator is a `std::mt19937` started from a seed. The spawner logs it at the `info` level when it is built (`Bydo spawning starts from the seed 42`), so the same seed gives the same heights in the same order. `GameInstance` gives each world the seed of the game plus the number of worlds built before it, so one seed replays every game of a session; without `--seed`, the server draws it from `std::random_device`.
 
@@ -310,7 +310,7 @@ A collision takes two steps, in two classes. The first finds what overlaps; the 
 
 Every other pair is ignored: a player missile does not hurt a player, two enemies do not hurt each other, two missiles do not stop each other. An entity without an `EntityType`, or destroyed between the moment the `Collision` was published and the moment it is delivered, is ignored too.
 
-The events are structs in `src/game/Events/`. `MissileHit` and `ShipContact` say that a contact happened; what it costs is left to the damage rules, which do not exist yet.
+The events are structs in `src/game/Events/`. `MissileHit` and `ShipContact` say that a contact happened; what it costs is decided by [`DamageRules`](#damage-damagerules).
 
 ```cpp
 rtype::engine::EventBus events;
@@ -329,6 +329,26 @@ events.dispatch();
 
 The bus and the registry must outlive `CollisionRules`, and the bus must outlive `CollisionSystem`. `main.cpp` creates a bus and delivers its events every tick, but nothing adds `CollisionSystem` or `CollisionRules` to it yet: today only the tests build this chain.
 
+## Damage: `DamageRules`
+
+`DamageRules` (`src/game/Systems/DamageRules/`) decides what a `MissileHit` costs. It subscribes to `MissileHit` when it is created and unsubscribes when it is destroyed. For each hit, in this order:
+
+1. The missile is destroyed and announced with an `EntityDestruction` whose cause is `Removed`, so the clients show nothing.
+2. If the target has a `Health`, it loses `MISSILE_DAMAGE` (1) points. While it has points left it is announced with an `EntityDamage`. At 0 or less it is destroyed and announced with an `EntityDestruction` whose cause is `Killed`, which the client shows as an explosion.
+3. A target without `Health` is not hurt: the missile still disappears.
+
+- A Bydo has `Health` of `BYDO_HEALTH` (3) when `World::spawnBydo` creates it, so three missiles destroy it. Both values are **provisional** until gameplay tunes them. Code must read the constants and never assume 1 or 3.
+- The ship of a player has no `Health`: what a hit costs a player belongs to the lives of the players, which do not exist yet. A `ShipContact` is not handled either.
+- Network ids are read from the `NetworkIdentity` before the entity is destroyed. A hit naming an entity that is already gone, or that has no `NetworkIdentity`, is ignored, so two missiles that reach the same Bydo in one `dispatch()` kill it once, and the second missile is left alone.
+- The bus and the registry must outlive `DamageRules`. It publishes while the bus delivers, so its events reach `GameEventBroadcaster` in the same tick.
+- Nothing builds it in `main.cpp` yet, and nothing spawns a missile: today only the tests run this chain.
+
+```cpp
+rtype::engine::EventBus events;
+rtype::game::CollisionRules collisionRules{events, world.components()};
+rtype::game::DamageRules damageRules{events, world.components()};
+```
+
 ## Where to intervene
 
 | You want to… | Look at |
@@ -342,6 +362,8 @@ The bus and the registry must outlive `CollisionRules`, and the bus must outlive
 | Announce something to every client | Publish one of the events of `src/game/Events/` on the `EventBus`; `GameEventBroadcaster` sends it |
 | Send a new kind of event | A struct in `src/game/Events/`, an `encode` overload in `GameEventEncoder`, a `subscribeTo` line in the `GameEventBroadcaster` constructor |
 | Change how often an event is sent, or how far apart | `REPEATED_MESSAGE_COPIES` and `REPEATED_MESSAGE_INTERVAL` in `src/server/Replication/GameEventConstants.hpp` |
+| Change the health of a Bydo, or the damage of a missile | `BYDO_HEALTH` in `src/game/Components/HealthConstants.hpp`, `MISSILE_DAMAGE` in `src/game/Systems/DamageRules/DamageConstants.hpp` |
+| Change what a hit does | `DamageRules::onMissileHit` in `src/game/Systems/DamageRules/DamageRules.cpp` |
 | Change what the world state lists | `WorldStateSender::capture` in `src/server/Replication/WorldStateSender/WorldStateSender.cpp` |
 | Send a datagram from the tick | `ServerApplication::queueDatagram()` |
 | Change how a connection request is answered | `ConnectionAcceptor::answer` in `src/server/Lobby/ConnectionAcceptor/ConnectionAcceptor.cpp` |
