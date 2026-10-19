@@ -1,5 +1,6 @@
 #include "ServerConnection.hpp"
 #include <algorithm>
+#include <cstddef>
 #include <cstdint>
 #include <optional>
 #include <span>
@@ -199,6 +200,7 @@ bool ServerConnection::passesSessionChecks(
     return true;
   }
   if (header.sessionToken != sessionToken_) {
+    ++wrongTokenCount_;
     return false;
   }
   if (!network::isNewerSequence(header.sequence, newestReceivedSequence_)) {
@@ -280,7 +282,7 @@ void ServerConnection::repeatDeparture(engine::Duration elapsed) {
 }
 
 void ServerConnection::forgetSession() {
-  sessionToken_ = 0;
+  sessionToken_ = network::NO_SESSION_TOKEN;
   newestReceivedSequence_ = 0;
   lobbyPlayers_.clear();
   requestedReady_.reset();
@@ -299,6 +301,10 @@ network::PacketHeader ServerConnection::headerOf(std::uint64_t token,
   header.sequence = sequence;
   ++sequence;
   return header;
+}
+
+std::size_t ServerConnection::wrongTokenCount() const {
+  return wrongTokenCount_;
 }
 
 bool ServerConnection::isConnecting() const {

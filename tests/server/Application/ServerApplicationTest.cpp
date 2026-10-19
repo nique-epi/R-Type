@@ -13,8 +13,10 @@
 #include "NetworkConstants.hpp"
 #include "NetworkContext.hpp"
 #include "OutgoingDatagram.hpp"
+#include "PacketHeader.hpp"
 #include "ServerApplication.hpp"
 #include "ServerDatagrams.hpp"
+#include "ServerLobbyTestConstants.hpp"
 #include "ServerTestConstants.hpp"
 #include "TimeConstants.hpp"
 #include "UdpSocket.hpp"
@@ -24,6 +26,7 @@ using rtype::network::Endpoint;
 using rtype::network::IncomingDatagram;
 using rtype::network::LOOPBACK_IPV4_ADDRESS;
 using rtype::server::ServerApplication;
+using rtype::server::testing::SESSION_TOKEN;
 
 namespace {
 
@@ -34,6 +37,14 @@ class TickFailure final : public std::exception {};
 
 Endpoint loopbackOnPort(std::uint16_t port) {
   return Endpoint{.address = std::string{LOOPBACK_IPV4_ADDRESS}, .port = port};
+}
+
+/** @returns A ReadyState carrying SESSION_TOKEN, as an admitted player sends.
+ */
+std::vector<std::byte> playerReady() {
+  rtype::network::PacketHeader header;
+  header.sessionToken = SESSION_TOKEN;
+  return readyDatagram(header);
 }
 
 ServerApplication::TickHandler ignoringDatagrams() {
@@ -149,10 +160,10 @@ TEST(ServerApplication, HandsAnAdmittedPlayersDatagramToTheTick) {
       }};
   rtype::network::NetworkContext clientContext;
   rtype::network::UdpSocket client{clientContext, loopbackOnPort(ANY_PORT)};
-  server.admit(loopbackOnPort(client.localEndpoint().port));
+  server.admit(loopbackOnPort(client.localEndpoint().port), SESSION_TOKEN);
   const std::jthread runner{[&server] { server.run(); }};
 
-  client.send(loopbackOnPort(server.localEndpoint().port), readyDatagram());
+  client.send(loopbackOnPort(server.localEndpoint().port), playerReady());
   clientContext.run();
   const std::future_status status = received.wait_for(THREAD_TIMEOUT);
   server.stop();
@@ -161,7 +172,7 @@ TEST(ServerApplication, HandsAnAdmittedPlayersDatagramToTheTick) {
   EXPECT_EQ(
       received.get(),
       (IncomingDatagram{.sender = loopbackOnPort(client.localEndpoint().port),
-                        .payload = readyDatagram()}));
+                        .payload = playerReady()}));
 }
 
 /**
@@ -183,7 +194,8 @@ TEST(ServerApplication, HandsTheTickTheDatagramOfAPlayerItAdmitted) {
       [&](const ServerApplication::ReceivedDatagrams& datagrams) {
         if (!datagrams.connectionRequests.empty() &&
             !admissionDone.exchange(true)) {
-          serverPointer->admit(datagrams.connectionRequests.front().sender);
+          serverPointer->admit(datagrams.connectionRequests.front().sender,
+                               SESSION_TOKEN);
           admission.set_value();
         }
         if (!datagrams.players.empty() && !delivered.exchange(true)) {
@@ -205,7 +217,7 @@ TEST(ServerApplication, HandsTheTickTheDatagramOfAPlayerItAdmitted) {
   });
   const std::future_status admissionStatus = admitted.wait_for(THREAD_TIMEOUT);
   clientContext.post([&client, &serverEndpoint] {
-    client.send(serverEndpoint, readyDatagram());
+    client.send(serverEndpoint, playerReady());
   });
   const std::future_status status = received.wait_for(THREAD_TIMEOUT);
   server.stop();
@@ -216,7 +228,7 @@ TEST(ServerApplication, HandsTheTickTheDatagramOfAPlayerItAdmitted) {
   EXPECT_EQ(
       received.get(),
       (IncomingDatagram{.sender = loopbackOnPort(client.localEndpoint().port),
-                        .payload = readyDatagram()}));
+                        .payload = playerReady()}));
 }
 
 /**

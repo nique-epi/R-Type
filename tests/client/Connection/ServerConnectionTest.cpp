@@ -344,6 +344,48 @@ TEST_F(ServerConnectionTest, IsAcceptedWithThePlayerNumberOfTheServer) {
 }
 
 /**
+ * Given an attempt the server accepted with a session token
+ * When a datagram of the server then carries another token
+ * Then it is dropped and counted
+ */
+TEST_F(ServerConnectionTest, CountsADatagramWithAnotherTokenOnceAccepted) {
+  connect();
+  network::PacketHeader accepted;
+  accepted.sessionToken = SESSION_TOKEN;
+  deliver(network::ConnectionAccepted{.playerNumber = ACCEPTED_PLAYER_NUMBER},
+          server(), accepted);
+  update();
+  network::PacketHeader forged;
+  forged.sessionToken = OTHER_SESSION_TOKEN;
+
+  deliver(network::ConnectionAccepted{.playerNumber = ACCEPTED_PLAYER_NUMBER},
+          server(), forged);
+  update();
+
+  EXPECT_EQ(connection().wrongTokenCount(), 1);
+}
+
+/**
+ * Given an attempt the server accepted with a session token
+ * When a datagram of the server then carries the same token
+ * Then nothing is counted, the acceptance included
+ */
+TEST_F(ServerConnectionTest, CountsNothingForTheTokenOfTheAcceptance) {
+  connect();
+  network::PacketHeader header;
+  header.sessionToken = SESSION_TOKEN;
+  deliver(network::ConnectionAccepted{.playerNumber = ACCEPTED_PLAYER_NUMBER},
+          server(), header);
+  update();
+
+  deliver(network::ConnectionAccepted{.playerNumber = ACCEPTED_PLAYER_NUMBER},
+          server(), header);
+  update();
+
+  EXPECT_EQ(connection().wrongTokenCount(), 0);
+}
+
+/**
  * Given an attempt in progress
  * When the server refuses it because the game is full
  * Then the status says refused because the game is full

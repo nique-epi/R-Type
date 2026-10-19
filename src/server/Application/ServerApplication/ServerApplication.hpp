@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstddef>
+#include <cstdint>
 #include <functional>
 #include <span>
 #include <vector>
@@ -25,10 +26,11 @@ namespace rtype::server {
  *
  * The network thread sorts each datagram as it arrives (see DatagramSorter):
  * the datagrams of admitted players go to one queue, connection requests to a
- * smaller one, and every other datagram is dropped there, so a flood of
- * requests, or of datagrams from senders that were not admitted, cannot push a
- * player's datagram out of its queue; a sender using the address and port of
- * an admitted player still can, until the session token is checked.
+ * smaller one, and every other datagram is dropped there, as is a datagram from
+ * the address of a player that does not carry its session token. So a flood
+ * of requests, or of datagrams from senders that were not admitted or that
+ * forge the address of a player, cannot push a player's datagram out of its
+ * queue; a player flooding with its own token still can.
  * Each tick, the simulation thread drains both queues, hands what they held
  * to the tick handler, then asks the network thread to send what was queued.
  * The DatagramRelay only sends.
@@ -40,10 +42,12 @@ class ServerApplication {
    * often nothing.
    */
   struct ReceivedDatagrams {
-    /** @brief The datagrams of the players admitted with admit(). */
+    /** @brief The datagrams of the players admitted with admit(), each
+     * carrying the session token of its player. */
     std::span<const network::IncomingDatagram> players;
-    /** @brief The datagrams holding a ConnectionRequest, whoever sent them:
-     * at most CONNECTION_REQUEST_QUEUE_CAPACITY. */
+    /** @brief The datagrams holding a ConnectionRequest, from strangers or
+     * from players with their token or none: at most
+     * CONNECTION_REQUEST_QUEUE_CAPACITY. */
     std::span<const network::IncomingDatagram> connectionRequests;
   };
 
@@ -98,12 +102,13 @@ class ServerApplication {
   void queueDatagram(network::OutgoingDatagram datagram);
 
   /**
-   * @brief From now on, the datagrams @p player sends reach the tick handler
-   * in ReceivedDatagrams::players. Call it from any thread, once the player
+   * @brief From now on, the datagrams @p player sends with @p sessionToken
+   * reach the tick handler in ReceivedDatagrams::players, and those it sends
+   * with another token are dropped. Call it from any thread, once the player
    * holds a place; it takes effect on the network thread shortly after, and a
    * datagram it receives before that is dropped like a stranger's.
    */
-  void admit(const network::Endpoint& player);
+  void admit(const network::Endpoint& player, std::uint64_t sessionToken);
 
   /**
    * @returns The address and port the socket is bound to.
@@ -130,6 +135,7 @@ class ServerApplication {
   std::size_t reportedDiscardCount_{0};
   std::size_t reportedRequestDiscardCount_{0};
   std::size_t reportedDroppedCount_{0};
+  std::size_t reportedWrongTokenCount_{0};
 };
 
 }  // namespace rtype::server

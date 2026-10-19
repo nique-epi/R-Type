@@ -1,6 +1,8 @@
 #include "ServerApplication.hpp"
 #include <cstddef>
+#include <cstdint>
 #include <exception>
+#include <optional>
 #include <span>
 #include <stop_token>
 #include <string>
@@ -13,6 +15,22 @@
 #include "TickLoop.hpp"
 
 namespace rtype::server {
+
+namespace {
+
+/**
+ * @returns The end of the report line that names @p sender, or nothing when
+ * there is no sender to name.
+ */
+std::string firstSenderText(const std::optional<network::Endpoint>& sender) {
+  if (!sender.has_value()) {
+    return {};
+  }
+  return ", the first from " + sender->address + " port " +
+         std::to_string(sender->port);
+}
+
+}  // namespace
 
 ServerApplication::ServerApplication(const network::Endpoint& localEndpoint,
                                      TickHandler handleTick)
@@ -52,8 +70,11 @@ void ServerApplication::run() {
 
 void ServerApplication::stop() { network_.stop(); }
 
-void ServerApplication::admit(const network::Endpoint& player) {
-  network_.post([this, admitted = player] { sorter_.admit(admitted); });
+void ServerApplication::admit(const network::Endpoint& player,
+                              std::uint64_t sessionToken) {
+  network_.post([this, admitted = player, sessionToken] {
+    sorter_.admit(admitted, sessionToken);
+  });
 }
 
 void ServerApplication::queueDatagram(network::OutgoingDatagram datagram) {
@@ -105,6 +126,15 @@ void ServerApplication::reportDiscardedDatagrams() {
                  " s: not of this protocol and version, malformed, or from a "
                  "sender that was not admitted");
     reportedDroppedCount_ = droppedCount;
+  }
+  const std::size_t wrongTokenCount = sorter_.wrongTokenCount();
+  if (wrongTokenCount != reportedWrongTokenCount_) {
+    logger_.warn(wrongTokenCount - reportedWrongTokenCount_,
+                 " datagrams dropped in the last ", REPORT_SECONDS,
+                 " s: sent from the address of a player with another session "
+                 "token",
+                 firstSenderText(sorter_.takeWrongTokenSender()));
+    reportedWrongTokenCount_ = wrongTokenCount;
   }
 }
 

@@ -342,7 +342,7 @@ The server sends the room each time it changes, and at least every 500 ms, then 
 
 Once accepted, the connection holds the session (see [Protocol](/R-Type/protocol/#receiving-a-datagram)):
 
-- It keeps the session token of the acceptance and writes it, with the next sequence, into every datagram it sends: requests, ready states, inputs and departures take their sequence from one counter, which starts at 0. Of the server's datagrams it reads only those that carry that token, then only those newer than the newest one read (`isNewerSequence`, 1 to 32767 ahead), in that order: a forged datagram never moves the counter, and a late `LobbyState` never undoes a newer one.
+- It keeps the session token of the acceptance and writes it, with the next sequence, into every datagram it sends: requests, ready states, inputs and departures take their sequence from one counter, which starts at 0. Of the server's datagrams it reads only those that carry that token, dropping and counting the others (`wrongTokenCount()`), then only those newer than the newest one read (`isNewerSequence`, 1 to 32767 ahead), in that order: a forged datagram never moves the counter, and a late `LobbyState` never undoes a newer one.
 - `lobbyPlayers()` lists the players of the newest `LobbyState`; until the first one, the accepted player alone, not ready.
 - `setReady(ready)` sends a `ReadyState` at once, then again every `READY_STATE_INTERVAL` (500 ms) while the waiting room shows another value for the player; `requestedReady()` returns the value last asked for.
 - A `GameStarted`, or a `WorldState` when the `GameStarted` was lost, sets `gameStarted()`, once per session, and forgets the ready state asked for.

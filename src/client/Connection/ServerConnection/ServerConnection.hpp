@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstddef>
 #include <cstdint>
 #include <optional>
 #include <span>
@@ -54,6 +55,9 @@ namespace rtype::client {
  *
  * Only datagrams from the server being contacted, of this protocol and version
  * and whose messages add up to their end, are read; any other is ignored.
+ * Once accepted, the connection keeps the session token the acceptance
+ * carries, and drops and counts any later datagram of the server that carries
+ * another one.
  *
  * update() reads what arrived and sends what is due, once per frame;
  * sendPlayerInput() sends at once. Call both on the thread of the frame loop.
@@ -92,6 +96,13 @@ class ServerConnection : public IServerConnection, public IPlayerInputLink {
 
   void sendPlayerInput(ActionSet held) override;
 
+  /**
+   * @returns How many datagrams of the server were dropped since the
+   * connection was built because they came after an acceptance with another
+   * session token than the one it carried.
+   */
+  [[nodiscard]] std::size_t wrongTokenCount() const;
+
  private:
   /** @brief The copies of a Disconnection still due to a server the player
    * left, sent with the token and the sequences of the session left. */
@@ -109,7 +120,8 @@ class ServerConnection : public IServerConnection, public IPlayerInputLink {
 
   /**
    * @returns Whether a datagram of the server may be read: always before the
-   * acceptance; then only with the token of the session, and newer than the
+   * acceptance; then only with the token of the session, a datagram with
+   * another token being counted by wrongTokenCount(), and newer than the
    * newest one read, which it becomes.
    */
   [[nodiscard]] bool passesSessionChecks(const network::PacketHeader& header);
@@ -156,7 +168,8 @@ class ServerConnection : public IServerConnection, public IPlayerInputLink {
   network::Endpoint server_;
   std::string nickname_;
   std::uint64_t cookie_{0};
-  std::uint64_t sessionToken_{0};
+  std::uint64_t sessionToken_{network::NO_SESSION_TOKEN};
+  std::size_t wrongTokenCount_{0};
   std::uint16_t nextSequence_{0};
   std::uint16_t newestReceivedSequence_{0};
   std::uint32_t nextInputNumber_{network::FIRST_INPUT_NUMBER};
