@@ -70,7 +70,7 @@ constexpr const char* MISSING_NICKNAME_STATUS = "ENTER A CALLSIGN";
 
 /**
  * @brief How long the connection screen shows that the server accepted the
- * player, before it asks for the game.
+ * player, before it opens the waiting room.
  */
 constexpr engine::Duration ACCEPTED_STATUS_DURATION = std::chrono::seconds(1);
 

@@ -37,12 +37,21 @@ constexpr int SPACE_BELOW_RULE = 9;
 constexpr sf::Vector2i BUTTON_SIZE(160, 20);
 constexpr int BUTTON_GAP = 8;
 
+/** @returns How wide @p count bars of @p barSize are side by side, @p gap
+ * apart, in pixels. */
+constexpr int barRowWidth(int count, sf::Vector2i barSize, int gap) {
+  return (count * barSize.x) + ((count - 1) * gap);
+}
+
 /**
  * @brief Where the label of a bar starts, from its top-left corner, and how
  * many pixels it drops while the bar is pressed.
  */
 constexpr sf::Vector2i BUTTON_TEXT_OFFSET(12, 6);
 constexpr int PRESSED_TEXT_DROP = 1;
+static_assert(BUTTON_TEXT_OFFSET.y ==
+                  (BUTTON_SIZE.y - TEXT_LINE_HEIGHT) / SIDES_PER_AXIS,
+              "the label of a bar stands on its middle row");
 
 /**
  * @brief Check box of a choice among others: a square, its inside filled but
@@ -116,6 +125,10 @@ constexpr std::array PANEL_PREVIOUS_KEYS{sf::Keyboard::Key::Up};
 constexpr sf::Keyboard::Key MENU_TAB_KEY = sf::Keyboard::Key::Tab;
 constexpr sf::Keyboard::Key MENU_CONFIRM_KEY = sf::Keyboard::Key::Enter;
 constexpr sf::Keyboard::Key MENU_CANCEL_KEY = sf::Keyboard::Key::Escape;
+
+/** @brief Name written on the keycap of MENU_CANCEL_KEY, which no key of the
+ * bindings names: it cannot be bound. */
+constexpr const char* CANCEL_KEY_NAME = "ESC";
 
 /**
  * @brief Text field: its label in small print, then, FIELD_LABEL_GAP lower, a
@@ -227,6 +240,19 @@ constexpr int KEY_CAP_PADDING = 3;
 constexpr int KEY_CAP_MINIMUM_WIDTH = 14;
 constexpr int KEY_CAP_SIDE_THICKNESS = 2;
 
+/**
+ * @brief A bar may show the keycap of its key at its right end, this far in
+ * from its right side; the name on the keycap stands on the row of the label.
+ */
+constexpr int BAR_KEY_CAP_INSET = 4;
+
+/**
+ * @brief A chip: a bar as tall as a tab, as wide as its label, its keycap and
+ * CHIP_KEY_CAP_GAP between them, such as BACK in the corner of a room.
+ */
+constexpr int CHIP_HEIGHT = TAB_HEIGHT;
+constexpr int CHIP_KEY_CAP_GAP = 4;
+
 /** @brief A dashed outline lights one pixel in DASH_PERIOD. */
 constexpr int DASH_PERIOD = 2;
 
@@ -234,5 +260,15 @@ constexpr int DASH_PERIOD = 2;
  * a form; and where SAVED is written, from the right end of the rule. */
 constexpr sf::Vector2i PANEL_BAR_SIZE = FORM_BUTTON_SIZE;
 constexpr sf::Vector2i RULE_STAMP_OFFSET(6, -4);
+
+/**
+ * @brief Room: the heading and a rule across the safe margin; the
+ * illustration as wide, where the tabs of a tabbed panel start; the bars
+ * SPACE_ABOVE_ROOM_BARS under it, the status line BUTTON_GAP under them. In
+ * pixels, as on the picture of the waiting room the team chose.
+ */
+constexpr sf::Vector2i ROOM_RULE_SIZE(TAB_STRIP_WIDTH, RULE_SIZE.y);
+constexpr int ROOM_ILLUSTRATION_TOP = TAB_STRIP_TOP_LEFT.y;
+constexpr int SPACE_ABOVE_ROOM_BARS = 12;
 
 }  // namespace rtype::client

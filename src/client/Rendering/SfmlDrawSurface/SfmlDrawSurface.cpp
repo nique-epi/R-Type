@@ -10,6 +10,7 @@
 #include <string>
 #include <string_view>
 #include "BackgroundConstants.hpp"
+#include "EntitySprites.hpp"
 #include "FlashShader.hpp"
 #include "FragmentShader.hpp"
 #include "ITextureSource.hpp"
@@ -38,8 +39,7 @@ void SfmlDrawSurface::draw(std::string_view assetId, game::SpriteFrame frame,
     }
     return;
   }
-  const sf::IntRect shownRectangle({frame.left, frame.top},
-                                   {frame.width, frame.height});
+  const sf::IntRect shownRectangle = rectangleOf(frame);
   const sf::Vector2f centerPixel =
       sf::Vector2f(center.x, center.y) / BACKGROUND_PIXEL_SIZE;
   const sf::Vector2i topLeftPixel =

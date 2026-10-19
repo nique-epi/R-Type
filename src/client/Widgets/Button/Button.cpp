@@ -11,6 +11,7 @@
 #include "CutCornerBox.hpp"
 #include "IInterfaceCanvas.hpp"
 #include "InterfaceConstants.hpp"
+#include "KeyCap.hpp"
 #include "RowControl.hpp"
 #include "SunkBox.hpp"
 #include "TextField.hpp"
@@ -38,6 +39,8 @@ void Button::setEnabled(bool enabled) { enabled_ = enabled; }
 void Button::setDescription(std::string description) {
   text_.description = std::move(description);
 }
+
+void Button::setLabel(std::string label) { text_.label = std::move(label); }
 
 bool Button::contains(sf::Vector2i pixel) const {
   return area_.contains(pixel);
@@ -90,10 +93,22 @@ void Button::paint(IInterfaceCanvas& canvas, BarState state) const {
   }
   const Look look = lookOf(state);
   CutCornerBox(area_, look.bar).paint(canvas);
-  canvas.write(
-      text_.label,
-      area_.position + BUTTON_TEXT_OFFSET + sf::Vector2i(0, look.textDrop),
-      {.font = TextFont::Regular, .color = look.text});
+  const int textTop = centeredTextTop(area_) + look.textDrop;
+  canvas.write(text_.label, {area_.position.x + BUTTON_TEXT_OFFSET.x, textTop},
+               {.font = TextFont::Regular, .color = look.text});
+  if (!text_.keyName.empty()) {
+    paintKeyCap(canvas, state, textTop);
+  }
+}
+
+void Button::paintKeyCap(IInterfaceCanvas& canvas, BarState state,
+                         int textTop) const {
+  const bool lit = state == BarState::Selected || state == BarState::Pressed;
+  const KeyCap keyCap(text_.keyName,
+                      lit ? KeyCap::Edge::Selected : KeyCap::Edge::Plain);
+  keyCap.paint(canvas, {area_.position.x + area_.size.x - BAR_KEY_CAP_INSET -
+                            keyCap.width(),
+                        textTop - CONTROL_TEXT_TOP});
 }
 
 void Button::paintOverlay(IInterfaceCanvas& canvas) const {

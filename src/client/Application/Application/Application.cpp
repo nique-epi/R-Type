@@ -17,6 +17,7 @@
 #include "IScreen.hpp"
 #include "InterfaceCanvas.hpp"
 #include "LoadingScreen.hpp"
+#include "LobbyScreen.hpp"
 #include "LocalizedKeyName.hpp"
 #include "MotionPreference.hpp"
 #include "NetworkConstants.hpp"
@@ -42,6 +43,13 @@ PlayerSettings firstLaunchSettings() {
   PlayerSettings settings;
   settings.reduceFlashes = systemPrefersReducedMotion();
   return settings;
+}
+
+/** @returns Reduced when the system asks for less motion, Full otherwise;
+ * read each time a screen that moves is built. */
+MotionPreference motionPreference() {
+  return systemPrefersReducedMotion() ? MotionPreference::Reduced
+                                      : MotionPreference::Full;
 }
 
 }  // namespace
@@ -115,6 +123,10 @@ std::unique_ptr<IScreen> Application::createScreen(ScreenId screen) {
       return std::make_unique<ConnectionScreen>(
           screens_, connection_, interfaceCanvas(), playfieldMapping(), server_,
           nickname_);
+    case ScreenId::Lobby:
+      return std::make_unique<LobbyScreen>(
+          screens_, connection_, interfaceCanvas(), playfieldMapping(),
+          settings_.keys, localizedKeyName, motionPreference());
   }
   return nullptr;
 }
@@ -125,11 +137,8 @@ std::unique_ptr<IScreen> Application::titleScreen() {
   if (loading != nullptr) {
     return loading;
   }
-  const MotionPreference motion = systemPrefersReducedMotion()
-                                      ? MotionPreference::Reduced
-                                      : MotionPreference::Full;
   return std::make_unique<TitleScreen>(screens_, interfaceCanvas(),
-                                       playfieldMapping(), motion,
+                                       playfieldMapping(), motionPreference(),
                                        std::random_device{}());
 }
 

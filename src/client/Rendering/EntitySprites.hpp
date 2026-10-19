@@ -1,10 +1,12 @@
 #pragma once
 
+#include <SFML/Graphics/Rect.hpp>
 #include <cstdint>
 #include <optional>
 #include "EntityType.hpp"
 #include "Sprite.hpp"
 #include "SpriteAnimation.hpp"
+#include "SpriteFrame.hpp"
 
 namespace rtype::client {
 
@@ -31,5 +33,15 @@ namespace rtype::client {
  */
 [[nodiscard]] std::optional<SpriteAnimation> animationOf(
     game::EntityType type, std::uint32_t networkId);
+
+/** @returns The rectangle of a frame of a sheet, as SFML takes it. */
+[[nodiscard]] sf::IntRect rectangleOf(game::SpriteFrame frame);
+
+/**
+ * @returns A frame of the ship of the first player color, moved down the
+ * entity sheet to the row of another color, 0 to PLAYER_COLOR_COUNT - 1.
+ */
+[[nodiscard]] game::SpriteFrame inPlayerColorRow(game::SpriteFrame frame,
+                                                 int color);
 
 }  // namespace rtype::client

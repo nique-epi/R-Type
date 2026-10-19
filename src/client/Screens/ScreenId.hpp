@@ -30,6 +30,11 @@ enum class ScreenId : std::uint8_t {
    * attempt stands, pushed over the title.
    */
   Connection,
+  /**
+   * @brief The players of the server joined and whether each is ready, pushed
+   * over the connection screen once the server accepted the player.
+   */
+  Lobby,
 };
 
 }  // namespace rtype::client

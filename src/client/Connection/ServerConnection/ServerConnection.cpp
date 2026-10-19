@@ -1,4 +1,8 @@
 #include "ServerConnection.hpp"
+#include <algorithm>
+#include <cstdint>
+#include <optional>
+#include <span>
 #include <string>
 #include <string_view>
 #include "ConnectionAccepted.hpp"
@@ -8,25 +12,32 @@
 #include "ConnectionRequest.hpp"
 #include "ConnectionStatus.hpp"
 #include "DatagramCodec.hpp"
+#include "Disconnection.hpp"
 #include "Endpoint.hpp"
+#include "GameStarted.hpp"
 #include "IDatagramLink.hpp"
 #include "IncomingDatagram.hpp"
+#include "LobbyState.hpp"
 #include "MessageOrigin.hpp"
 #include "NetworkException.hpp"
 #include "OutgoingDatagram.hpp"
 #include "PacketHeader.hpp"
+#include "ReadyState.hpp"
+#include "SequenceOrder.hpp"
 #include "TimeConstants.hpp"
+#include "WorldState.hpp"
 
 namespace rtype::client {
 
 ServerConnection::ServerConnection(IDatagramLink& link)
     : link_(&link), logger_(std::string{CONNECTION_LOGGER_NAME}) {
   registerAnswers();
+  registerSessionMessages();
 }
 
 void ServerConnection::connect(const network::Endpoint& server,
                                std::string_view nickname) {
-  status_ = {};
+  cancel();
   received_.clear();
   link_->drainReceived(received_);
   server_ = server;
@@ -39,15 +50,44 @@ void ServerConnection::connect(const network::Endpoint& server,
   logger_.info("connecting to ", server_.address, " port ", server_.port);
 }
 
-void ServerConnection::cancel() { status_ = {}; }
+void ServerConnection::cancel() {
+  if (isAccepted()) {
+    leave();
+  }
+  status_ = {};
+  forgetSession();
+}
 
 ConnectionStatus ServerConnection::status() const { return status_; }
+
+std::span<const network::LobbyPlayer> ServerConnection::lobbyPlayers() const {
+  return lobbyPlayers_;
+}
+
+void ServerConnection::setReady(bool ready) {
+  if (!isAccepted() || gameStarted_) {
+    return;
+  }
+  requestedReady_ = ready;
+  sendReadyState(ready);
+}
+
+std::optional<bool> ServerConnection::requestedReady() const {
+  return requestedReady_;
+}
+
+bool ServerConnection::gameStarted() const { return gameStarted_; }
 
 void ServerConnection::update(engine::Duration elapsed) {
   received_.clear();
   link_->drainReceived(received_);
   for (const network::IncomingDatagram& datagram : received_) {
     receive(datagram);
+  }
+  repeatDeparture(elapsed);
+  if (isAccepted()) {
+    repeatReadyState(elapsed);
+    return;
   }
   if (!isConnecting()) {
     return;
@@ -74,11 +114,17 @@ void ServerConnection::registerAnswers() {
         }
       });
   dispatcher_.registerHandler<network::ConnectionAccepted>(
-      [this](const network::MessageOrigin&,
+      [this](const network::MessageOrigin& origin,
              const network::ConnectionAccepted& accepted) {
         if (isConnecting()) {
           status_ = {.phase = ConnectionStatus::Phase::Accepted,
                      .playerNumber = accepted.playerNumber};
+          sessionToken_ = origin.header.sessionToken;
+          newestReceivedSequence_ = origin.header.sequence;
+          lobbyPlayers_ = {
+              network::LobbyPlayer{.playerNumber = accepted.playerNumber,
+                                   .ready = false,
+                                   .nickname = nickname_}};
           logger_.info("accepted as player ",
                        static_cast<unsigned int>(accepted.playerNumber));
         }
@@ -95,6 +141,23 @@ void ServerConnection::registerAnswers() {
       });
 }
 
+void ServerConnection::registerSessionMessages() {
+  dispatcher_.registerHandler<network::LobbyState>(
+      [this](const network::MessageOrigin&, const network::LobbyState& lobby) {
+        if (isAccepted()) {
+          lobbyPlayers_ = lobby.players;
+        }
+      });
+  dispatcher_.registerHandler<network::GameStarted>(
+      [this](const network::MessageOrigin&, const network::GameStarted&) {
+        startGame();
+      });
+  dispatcher_.registerHandler<network::WorldState>(
+      [this](const network::MessageOrigin&, const network::WorldState&) {
+        startGame();
+      });
+}
+
 void ServerConnection::receive(const network::IncomingDatagram& datagram) {
   if (datagram.sender != server_) {
     return;
@@ -102,7 +165,8 @@ void ServerConnection::receive(const network::IncomingDatagram& datagram) {
   try {
     const network::PacketHeader header =
         network::DatagramCodec::decodeHeader(datagram.payload);
-    if (!network::DatagramCodec::speaksThisProtocol(header)) {
+    if (!network::DatagramCodec::speaksThisProtocol(header) ||
+        !passesSessionChecks(header)) {
       return;
     }
     dispatcher_.dispatch(
@@ -113,20 +177,126 @@ void ServerConnection::receive(const network::IncomingDatagram& datagram) {
   }
 }
 
+bool ServerConnection::passesSessionChecks(
+    const network::PacketHeader& header) {
+  if (!isAccepted()) {
+    return true;
+  }
+  if (header.sessionToken != sessionToken_) {
+    return false;
+  }
+  if (!network::isNewerSequence(header.sequence, newestReceivedSequence_)) {
+    return false;
+  }
+  newestReceivedSequence_ = header.sequence;
+  return true;
+}
+
+void ServerConnection::startGame() {
+  if (isAccepted() && !gameStarted_) {
+    gameStarted_ = true;
+    requestedReady_.reset();
+    logger_.info("the game started");
+  }
+}
+
 void ServerConnection::sendRequest() {
-  network::PacketHeader header;
-  header.sequence = nextSequence_;
   link_->send(network::OutgoingDatagram{
       .destination = server_,
       .payload = network::DatagramCodec::encode(
-          header, network::ConnectionRequest{.cookie = cookie_,
-                                             .nickname = nickname_})});
-  ++nextSequence_;
+          nextHeader(), network::ConnectionRequest{.cookie = cookie_,
+                                                   .nickname = nickname_})});
   sinceRequest_ = engine::Duration::zero();
+}
+
+void ServerConnection::sendReadyState(bool ready) {
+  link_->send(network::OutgoingDatagram{
+      .destination = server_,
+      .payload = network::DatagramCodec::encode(
+          nextHeader(), network::ReadyState{.ready = ready})});
+  sinceReadyState_ = engine::Duration::zero();
+}
+
+void ServerConnection::repeatReadyState(engine::Duration elapsed) {
+  if (!requestedReady_.has_value() || roomShowsReady(*requestedReady_)) {
+    return;
+  }
+  sinceReadyState_ += elapsed;
+  if (sinceReadyState_ >= READY_STATE_INTERVAL) {
+    sendReadyState(*requestedReady_);
+  }
+}
+
+void ServerConnection::leave() {
+  departure_ = Departure{.server = server_,
+                         .sessionToken = sessionToken_,
+                         .nextSequence = nextSequence_,
+                         .copiesLeft = DISCONNECTION_COPY_COUNT,
+                         .sinceCopy = engine::Duration::zero()};
+  sendDepartureCopy();
+  logger_.info("left ", server_.address, " port ", server_.port);
+}
+
+void ServerConnection::sendDepartureCopy() {
+  if (!departure_.has_value()) {
+    return;
+  }
+  link_->send(network::OutgoingDatagram{
+      .destination = departure_->server,
+      .payload = network::DatagramCodec::encode(
+          headerOf(departure_->sessionToken, departure_->nextSequence),
+          network::Disconnection{})});
+  --departure_->copiesLeft;
+  departure_->sinceCopy = engine::Duration::zero();
+  if (departure_->copiesLeft <= 0) {
+    departure_.reset();
+  }
+}
+
+void ServerConnection::repeatDeparture(engine::Duration elapsed) {
+  if (!departure_.has_value()) {
+    return;
+  }
+  departure_->sinceCopy += elapsed;
+  if (departure_->sinceCopy >= DISCONNECTION_COPY_INTERVAL) {
+    sendDepartureCopy();
+  }
+}
+
+void ServerConnection::forgetSession() {
+  sessionToken_ = 0;
+  newestReceivedSequence_ = 0;
+  lobbyPlayers_.clear();
+  requestedReady_.reset();
+  sinceReadyState_ = engine::Duration::zero();
+  gameStarted_ = false;
+}
+
+network::PacketHeader ServerConnection::nextHeader() {
+  return headerOf(sessionToken_, nextSequence_);
+}
+
+network::PacketHeader ServerConnection::headerOf(std::uint64_t token,
+                                                 std::uint16_t& sequence) {
+  network::PacketHeader header;
+  header.sessionToken = token;
+  header.sequence = sequence;
+  ++sequence;
+  return header;
 }
 
 bool ServerConnection::isConnecting() const {
   return status_.phase == ConnectionStatus::Phase::Connecting;
+}
+
+bool ServerConnection::isAccepted() const {
+  return status_.phase == ConnectionStatus::Phase::Accepted;
+}
+
+bool ServerConnection::roomShowsReady(bool ready) const {
+  const auto own = std::ranges::find(lobbyPlayers_, status_.playerNumber,
+                                     &network::LobbyPlayer::playerNumber);
+  return own != lobbyPlayers_.end() && own->ready == ready;
 }
 
 }  // namespace rtype::client

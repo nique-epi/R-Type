@@ -35,24 +35,30 @@ class IInterfaceCanvas {
    * @brief Writes one line of text, on whole pixels.
    *
    * @param text UTF-8 text.
-   * @param anchor Top-left corner of the line, or its top-right corner with
-   * TextAlignment::Right.
+   * @param anchor Top-left corner of the line, its top-right corner with
+   * TextAlignment::Right, or the middle of its top edge with
+   * TextAlignment::Center.
    */
   virtual void write(std::string_view text, sf::Vector2i anchor,
                      TextStyle style) = 0;
 
   /**
-   * @brief Copies a rectangle of a loaded texture pixel for pixel, cutting off
-   * whatever falls outside visibleArea.
+   * @brief Copies a rectangle of a loaded texture, each of its pixels made a
+   * square of scale × scale pixels, cutting off whatever falls outside
+   * visibleArea.
    *
    * @param assetId Id of the texture; an id with no loaded texture paints
    * nothing.
    * @param source Rectangle of the texture, in pixels of the texture.
    * @param topLeft Where the top-left pixel of source lands.
+   * @param scale Whole factor each pixel of the texture is enlarged by,
+   * NATIVE_SCALE for a copy pixel for pixel; a pixel of the texture that
+   * visibleArea cuts is left out whole.
    * @param visibleArea The only pixels the copy may paint.
    */
   virtual void drawImage(std::string_view assetId, sf::IntRect source,
-                         sf::Vector2i topLeft, sf::IntRect visibleArea) = 0;
+                         sf::Vector2i topLeft, int scale,
+                         sf::IntRect visibleArea) = 0;
 
   /** @brief Ends the picture started by clear(): show() lays it until the
    * next display(). */

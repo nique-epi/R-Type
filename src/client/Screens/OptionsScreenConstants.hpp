@@ -63,8 +63,6 @@ constexpr const char* RESET_TEXT = "RESET";
 constexpr std::array<std::string_view, BOUND_ACTION_COUNT> BOUND_ACTION_LABELS{
     "MOVE UP", "MOVE DOWN", "MOVE LEFT", "MOVE RIGHT", "SHOOT", "READY"};
 constexpr const char* KEY_DESCRIPTION = "> ENTER, THEN THE NEW KEY";
-constexpr const char* READY_KEY_DESCRIPTION =
-    "> ENTER, THEN THE NEW KEY (COMING SOON)";
 constexpr const char* LISTENING_DESCRIPTION =
     "> PRESS THE NEW KEY. ESC CANCELS";
 constexpr const char* REFUSED_KEY_DESCRIPTION = "> THIS KEY CANNOT BE BOUND";

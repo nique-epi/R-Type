@@ -14,7 +14,12 @@ target_link_libraries(rtype_client_server_connection
     rtype_network_connection_challenge
     rtype_network_connection_request
     rtype_network_datagram_codec
+    rtype_network_disconnection
     rtype_network_exceptions
+    rtype_network_game_started
+    rtype_network_ready_state
+    rtype_network_sequence_order
+    rtype_network_world_state_codec
 )
 
 rtype_enable_warnings(rtype_client_server_connection)

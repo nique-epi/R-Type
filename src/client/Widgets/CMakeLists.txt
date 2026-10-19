@@ -29,6 +29,20 @@ target_link_libraries(rtype_client_window_size_chart
 
 rtype_enable_warnings(rtype_client_window_size_chart)
 
+add_library(rtype_client_hangar_bay STATIC HangarBay.cpp)
+
+target_link_libraries(rtype_client_hangar_bay
+  PUBLIC
+    rtype_client_widgets
+  PRIVATE
+    rtype_client_cut_corner_box
+    rtype_client_entity_sprites
+    rtype_client_sunk_box
+    rtype_client_widget_text
+)
+
+rtype_enable_warnings(rtype_client_hangar_bay)
+
 add_subdirectory(CutCornerBox)
 add_subdirectory(Outline)
 add_subdirectory(SunkBox)

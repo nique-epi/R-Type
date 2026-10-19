@@ -61,7 +61,8 @@ class InterfaceCanvas : public IInterfaceCanvas {
   void write(std::string_view text, sf::Vector2i anchor,
              TextStyle style) override;
   void drawImage(std::string_view assetId, sf::IntRect source,
-                 sf::Vector2i topLeft, sf::IntRect visibleArea) override;
+                 sf::Vector2i topLeft, int scale,
+                 sf::IntRect visibleArea) override;
   void display() override;
   void show(sf::RenderTarget& target) const override;
 

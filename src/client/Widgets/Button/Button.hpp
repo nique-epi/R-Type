@@ -32,6 +32,12 @@ namespace rtype::client {
  * right, ROW_PADDING in from the sides; at rest it shows its label alone, and
  * looks like a bar only while selected or pressed. Its control decides whether
  * MENU_CONFIRM_KEY presses it, and what activating it does.
+ *
+ * A bar may show a keycap at its right end, BAR_KEY_CAP_INSET in: the key
+ * that presses it from anywhere on its screen, which the screen reads itself;
+ * the bar only shows it. Its label and the name on the
+ * keycap stand on the middle row of the bar, whatever its height, and both
+ * drop by PRESSED_TEXT_DROP while it is pressed.
  */
 class Button {
  public:
@@ -43,6 +49,10 @@ class Button {
     std::string label;
     // NOLINTNEXTLINE(readability-redundant-member-init)
     std::string description{};
+    /** @brief Name of the key shown on a keycap at the right end of the bar;
+     * empty for none. */
+    // NOLINTNEXTLINE(readability-redundant-member-init)
+    std::string keyName{};
   };
 
   /**
@@ -65,6 +75,7 @@ class Button {
   [[nodiscard]] bool isEnabled() const;
   void setEnabled(bool enabled);
   void setDescription(std::string description);
+  void setLabel(std::string label);
 
   /** @returns Whether a pixel of the interface picture lies on the bar. */
   [[nodiscard]] bool contains(sf::Vector2i pixel) const;
@@ -125,6 +136,9 @@ class Button {
   /** @brief Paints the bar as a row: a bar while selected or pressed, the
    * label, then the control. */
   void paintRow(IInterfaceCanvas& canvas, BarState state) const;
+
+  /** @brief Paints the keycap of keyName, its name on the row @p textTop. */
+  void paintKeyCap(IInterfaceCanvas& canvas, BarState state, int textTop) const;
 
   Text text_;
   sf::IntRect area_;

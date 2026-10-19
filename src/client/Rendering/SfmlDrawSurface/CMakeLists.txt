@@ -9,6 +9,7 @@ target_link_libraries(rtype_client_sfml_draw_surface
     SFML::Graphics
   PRIVATE
     rtype_client_background
+    rtype_client_entity_sprites
     rtype_client_fragment_shader
     rtype_client_pixel_rounding
 )

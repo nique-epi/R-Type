@@ -3,6 +3,7 @@
 #include <SFML/Graphics/Color.hpp>
 #include <SFML/Graphics/Rect.hpp>
 #include <SFML/System/Vector2.hpp>
+#include <optional>
 #include <set>
 #include <string>
 #include <string_view>
@@ -35,6 +36,7 @@ struct RecordedImage {
   std::string assetId;
   sf::IntRect source;
   sf::Vector2i topLeft;
+  int scale{};
   sf::IntRect visibleArea;
 };
 
@@ -63,7 +65,8 @@ class RecordingInterfaceCanvas : public rtype::client::IInterfaceCanvas {
   void write(std::string_view text, sf::Vector2i anchor,
              rtype::client::TextStyle style) override;
   void drawImage(std::string_view assetId, sf::IntRect source,
-                 sf::Vector2i topLeft, sf::IntRect visibleArea) override;
+                 sf::Vector2i topLeft, int scale,
+                 sf::IntRect visibleArea) override;
   void display() override;
   void show(sf::RenderTarget& target) const override;
 
@@ -74,6 +77,11 @@ class RecordingInterfaceCanvas : public rtype::client::IInterfaceCanvas {
 /** @returns The first line written with this text since the last clear(), or
  * nullptr. */
 [[nodiscard]] const RecordedWriting* writingOf(
+    const InterfaceCanvasRecord& record, std::string_view text);
+
+/** @returns Where the first line written with this text since the last
+ * clear() was anchored, or nothing. */
+[[nodiscard]] std::optional<sf::Vector2i> anchorOf(
     const InterfaceCanvasRecord& record, std::string_view text);
 
 /** @returns Every pixel the fills of a record light, as (column, row). */

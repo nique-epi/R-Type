@@ -1,5 +1,6 @@
 #pragma once
 
+#include <SFML/Graphics/Rect.hpp>
 #include <SFML/System/Vector2.hpp>
 #include <cstddef>
 #include <cstdint>
@@ -41,6 +42,12 @@ namespace rtype::client {
  * corner, its status line at the end of the rule. Left and right step the
  * value of the selected row.
  *
+ * A room is the heading and a rule across the safe margin, an illustration as
+ * wide under the rule, its bars centered in a row under the illustration with
+ * the status line centered under them, and its cancel button as a chip in the
+ * bottom-right corner of the safe margin, showing the keycap of
+ * MENU_CANCEL_KEY. A room writes no description: one given is left out.
+ *
  * The cancel button is the one MENU_CANCEL_KEY activates; backButton() adds
  * the one button that closes the screen on top, the same in every menu.
  */
@@ -50,13 +57,15 @@ class MenuBuilder {
    * @brief How a menu is laid out: a page is a column against the left side of
    * the safe margin; a dialog is a panel centered over the dimmed screens
    * below; a form is a panel centered over the sky, that the player fills in;
-   * a tabbed panel is a panel of rows under tabs, each row setting a value.
+   * a tabbed panel is a panel of rows under tabs, each row setting a value; a
+   * room is a picture across the screen with its bars centered under it.
    */
   enum class Frame : std::uint8_t {
     Page,
     Dialog,
     Form,
     TabbedPanel,
+    Room,
   };
 
   explicit MenuBuilder(Frame frame);
@@ -156,6 +165,16 @@ class MenuBuilder {
   void placeDialog(Menu::Content& content);
   void placeForm(Menu::Content& content);
   void placeTabbedPanel(Menu::Content& content);
+  void placeRoom(Menu::Content& content);
+
+  /** @returns Where the chip of a room lies: as wide as its label and its
+   * keycap need, against the bottom-right corner of the safe margin. */
+  [[nodiscard]] static sf::IntRect chipArea(const Button::Text& text);
+
+  /** @brief Places the heading against the top-left corner of the safe
+   * margin and, under it, a rule of @p ruleSize.
+   * @returns The top of the rule. */
+  int placeHeadingAndRule(Menu::Content& content, sf::Vector2i ruleSize);
 
   /** @brief The heading of a tabbed panel and its rule, the status line at
    * the end of the rule, and the notice in the top-right corner. */

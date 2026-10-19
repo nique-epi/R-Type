@@ -12,12 +12,14 @@
 #include "Button.hpp"
 #include "IScreenNavigator.hpp"
 #include "InterfaceConstants.hpp"
+#include "KeyCap.hpp"
 #include "Menu.hpp"
 #include "RowControl.hpp"
 #include "TabStrip.hpp"
 #include "TextField.hpp"
 #include "WidgetConstants.hpp"
 #include "WidgetStyles.hpp"
+#include "WidgetText.hpp"
 
 namespace rtype::client {
 
@@ -132,6 +134,9 @@ Menu MenuBuilder::build() {
     case Frame::TabbedPanel:
       placeTabbedPanel(content);
       break;
+    case Frame::Room:
+      placeRoom(content);
+      break;
   }
   return Menu(std::move(content));
 }
@@ -169,7 +174,7 @@ void MenuBuilder::placeColumn(Menu::Content& content) {
         std::move(pending.action), std::move(pending.field));
     top += size.y + BUTTON_GAP;
   }
-  content.descriptionAnchor = {left, top};
+  content.descriptionAnchor = sf::Vector2i(left, top);
   const int right = INTERFACE_AREA.size.x - SAFE_MARGIN;
   if (illustration_.has_value()) {
     content.illustration = sf::IntRect(
@@ -197,7 +202,7 @@ void MenuBuilder::placeDialog(Menu::Content& content) {
   }
   const int count = static_cast<int>(buttons_.size());
   const int rowWidth =
-      (count * DIALOG_BUTTON_SIZE.x) + ((count - 1) * DIALOG_BUTTON_GAP);
+      barRowWidth(count, DIALOG_BUTTON_SIZE, DIALOG_BUTTON_GAP);
   int left = panelTopLeft.x + ((DIALOG_SIZE.x - rowWidth) / SIDES_PER_AXIS);
   for (PendingButton& pending : buttons_) {
     content.buttons.emplace_back(
@@ -235,8 +240,8 @@ void MenuBuilder::placeForm(Menu::Content& content) {
                                 DIALOG_HEADING_STYLE);
   }
   const int left = panelTopLeft.x + FORM_HEADING_OFFSET.x;
-  const int rowWidth = (buttonCount * FORM_BUTTON_SIZE.x) +
-                       ((buttonCount - 1) * FORM_BUTTON_GAP);
+  const int rowWidth =
+      barRowWidth(buttonCount, FORM_BUTTON_SIZE, FORM_BUTTON_GAP);
   int fieldTop = panelTopLeft.y + fieldsTop;
   int buttonLeft = panelTopLeft.x + ((FORM_WIDTH - rowWidth) / SIDES_PER_AXIS);
   for (PendingButton& pending : buttons_) {
@@ -253,7 +258,8 @@ void MenuBuilder::placeForm(Menu::Content& content) {
                                  std::move(pending.action),
                                  std::move(pending.field));
   }
-  content.descriptionAnchor = {left, panelTopLeft.y + descriptionTop};
+  content.descriptionAnchor =
+      sf::Vector2i(left, panelTopLeft.y + descriptionTop);
   content.descriptionStyle = FORM_DESCRIPTION_STYLE;
   content.selectsOnHover = false;
   content.statusAnchor = sf::Vector2i(left, panelTopLeft.y + statusTop);
@@ -266,16 +272,22 @@ void MenuBuilder::placeTabbedPanel(Menu::Content& content) {
   placeDescriptionAndIllustration(content, end);
 }
 
-void MenuBuilder::placePanelHeader(Menu::Content& content) {
-  const int left = SAFE_MARGIN;
+int MenuBuilder::placeHeadingAndRule(Menu::Content& content,
+                                     sf::Vector2i ruleSize) {
   if (heading_.has_value()) {
-    content.labels.emplace_back(
-        std::move(*heading_), sf::Vector2i(left, SAFE_MARGIN), PAGE_LINE_STYLE);
+    content.labels.emplace_back(std::move(*heading_),
+                                sf::Vector2i(SAFE_MARGIN, SAFE_MARGIN),
+                                PAGE_LINE_STYLE);
   }
   const int ruleTop = SAFE_MARGIN + TEXT_LINE_HEIGHT + SPACE_BELOW_HEADING;
-  content.rule = sf::IntRect({left, ruleTop}, RULE_SIZE);
+  content.rule = sf::IntRect({SAFE_MARGIN, ruleTop}, ruleSize);
+  return ruleTop;
+}
+
+void MenuBuilder::placePanelHeader(Menu::Content& content) {
+  const int ruleTop = placeHeadingAndRule(content, RULE_SIZE);
   content.statusAnchor =
-      sf::Vector2i(left + RULE_SIZE.x, ruleTop) + RULE_STAMP_OFFSET;
+      sf::Vector2i(SAFE_MARGIN + RULE_SIZE.x, ruleTop) + RULE_STAMP_OFFSET;
   content.statusStyle = STAMP_STYLE;
   if (notice_.has_value()) {
     content.labels.emplace_back(
@@ -315,14 +327,55 @@ MenuBuilder::PanelCursor MenuBuilder::placeRowsAndBars(Menu::Content& content) {
 
 void MenuBuilder::placeDescriptionAndIllustration(Menu::Content& content,
                                                   PanelCursor end) {
-  content.descriptionAnchor = {end.barLeft,
-                               PANEL_BARS_TOP + BUTTON_TEXT_OFFSET.y};
+  content.descriptionAnchor =
+      sf::Vector2i(end.barLeft, PANEL_BARS_TOP + BUTTON_TEXT_OFFSET.y);
   if (illustration_.has_value()) {
     content.illustration =
         sf::IntRect({FIRST_ROW_TOP_LEFT.x + ROW_PADDING,
                      end.rowTop + SPACE_ABOVE_PANEL_ILLUSTRATION},
                     *illustration_);
   }
+}
+
+void MenuBuilder::placeRoom(Menu::Content& content) {
+  placeHeadingAndRule(content, ROOM_RULE_SIZE);
+  int barsTop = ROOM_ILLUSTRATION_TOP;
+  if (illustration_.has_value()) {
+    content.illustration =
+        sf::IntRect({SAFE_MARGIN, ROOM_ILLUSTRATION_TOP}, *illustration_);
+    barsTop += illustration_->y + SPACE_ABOVE_ROOM_BARS;
+  }
+  const int barCount =
+      static_cast<int>(buttons_.size()) - (cancelButton_.has_value() ? 1 : 0);
+  const int rowWidth = barRowWidth(barCount, BUTTON_SIZE, BUTTON_GAP);
+  int barLeft = (INTERFACE_AREA.size.x - rowWidth) / SIDES_PER_AXIS;
+  for (std::size_t index = 0; index < buttons_.size(); ++index) {
+    PendingButton& pending = buttons_[index];
+    sf::IntRect area;
+    if (cancelButton_ == index) {
+      pending.text.keyName = CANCEL_KEY_NAME;
+      area = chipArea(pending.text);
+    } else {
+      area = sf::IntRect({barLeft, barsTop}, BUTTON_SIZE);
+      barLeft += BUTTON_SIZE.x + BUTTON_GAP;
+    }
+    content.buttons.emplace_back(std::move(pending.text), area,
+                                 std::move(pending.action),
+                                 std::move(pending.field));
+  }
+  content.statusAnchor = sf::Vector2i(INTERFACE_AREA.size.x / SIDES_PER_AXIS,
+                                      barsTop + BUTTON_SIZE.y + BUTTON_GAP);
+  content.statusStyle = ROOM_STATUS_STYLE;
+}
+
+sf::IntRect MenuBuilder::chipArea(const Button::Text& text) {
+  const int width =
+      BUTTON_TEXT_OFFSET.x + regularTextWidth(text.label) + CHIP_KEY_CAP_GAP +
+      KeyCap(text.keyName, KeyCap::Edge::Plain).width() + BAR_KEY_CAP_INSET;
+  const sf::Vector2i bottomRight =
+      INTERFACE_AREA.size - sf::Vector2i(SAFE_MARGIN, SAFE_MARGIN);
+  return {{bottomRight.x - width, bottomRight.y - CHIP_HEIGHT},
+          {width, CHIP_HEIGHT}};
 }
 
 }  // namespace rtype::client

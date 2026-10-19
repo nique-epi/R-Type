@@ -1,5 +1,9 @@
+#include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include <algorithm>
 #include <cstddef>
+#include <cstdint>
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
@@ -10,28 +14,46 @@
 #include "ConnectionRequest.hpp"
 #include "ConnectionStatus.hpp"
 #include "DatagramCodec.hpp"
+#include "Disconnection.hpp"
 #include "Endpoint.hpp"
+#include "GameStarted.hpp"
 #include "IncomingDatagram.hpp"
+#include "LobbyState.hpp"
 #include "MessageFrame.hpp"
 #include "MessagePayload.hpp"
+#include "MessageType.hpp"
 #include "OutgoingDatagram.hpp"
 #include "PacketHeader.hpp"
+#include "ReadyState.hpp"
 #include "RecordingDatagramLink.hpp"
 #include "ServerConnection.hpp"
 #include "ServerConnectionTestConstants.hpp"
 #include "TimeConstants.hpp"
+#include "WorldState.hpp"
+#include "WorldStateCodec.hpp"
 
 namespace rtype::client {
 namespace {
 
+using testing::ACCEPTANCE_SEQUENCE;
 using testing::ACCEPTED_PLAYER_NUMBER;
 using testing::CHALLENGE_COOKIE;
+using ::testing::ElementsAre;
+using ::testing::ElementsAreArray;
+using testing::FIRST_SEQUENCE;
 using testing::NEXT_PROTOCOL_VERSION;
 using testing::NICKNAME;
 using testing::ONE_NANOSECOND;
+using testing::OTHER_NICKNAME;
+using testing::OTHER_PLAYER_NUMBER;
 using testing::OTHER_SENDER_PORT;
+using testing::OTHER_SESSION_TOKEN;
 using testing::PROTOCOL_ATTEMPT_TIMEOUT;
+using testing::PROTOCOL_DISCONNECTION_COPY_COUNT;
+using testing::PROTOCOL_DISCONNECTION_COPY_INTERVAL;
+using testing::PROTOCOL_READY_STATE_INTERVAL;
 using testing::PROTOCOL_REQUEST_INTERVAL;
+using testing::SECOND_SEQUENCE;
 using testing::SERVER_ADDRESS;
 using testing::SERVER_PORT;
 using testing::SESSION_TOKEN;
@@ -48,14 +70,24 @@ network::Endpoint otherSender() {
                            .port = OTHER_SENDER_PORT};
 }
 
-/** @returns The request @p datagram holds, its only message. */
-network::ConnectionRequest requestOf(
-    const network::OutgoingDatagram& datagram) {
+/** @returns The message of type Message that @p datagram holds, its only
+ * one. */
+template <typename Message>
+Message onlyMessageOf(const network::OutgoingDatagram& datagram) {
   const std::vector<network::MessageFrame> frames =
       network::DatagramCodec::splitMessages(datagram.payload);
   EXPECT_EQ(frames.size(), 1);
-  return network::decodeMessage<network::ConnectionRequest>(
-      frames.front().payload);
+  EXPECT_EQ(frames.front().type, static_cast<std::uint8_t>(Message::TYPE));
+  return network::decodeMessage<Message>(frames.front().payload);
+}
+
+/** @returns Whether @p datagram holds a message of type Message first. */
+template <typename Message>
+bool holds(const network::OutgoingDatagram& datagram) {
+  const std::vector<network::MessageFrame> frames =
+      network::DatagramCodec::splitMessages(datagram.payload);
+  return !frames.empty() &&
+         frames.front().type == static_cast<std::uint8_t>(Message::TYPE);
 }
 
 /** @brief A connection whose datagrams go through a recording link. */
@@ -91,7 +123,52 @@ class ServerConnectionTest : public ::testing::Test {
   }
 
   [[nodiscard]] network::ConnectionRequest lastRequest() const {
-    return requestOf(link_.sent().back());
+    return onlyMessageOf<network::ConnectionRequest>(link_.sent().back());
+  }
+
+  /** @brief Has the server accept the attempt as ACCEPTED_PLAYER_NUMBER,
+   * with SESSION_TOKEN. */
+  void accept() {
+    connect();
+    deliverInSession(
+        network::ConnectionAccepted{.playerNumber = ACCEPTED_PLAYER_NUMBER},
+        ACCEPTANCE_SEQUENCE);
+    update();
+  }
+
+  /** @brief Delivers @p message in a datagram of the server carrying this
+   * sequence and SESSION_TOKEN. */
+  template <typename Message>
+  void deliverInSession(const Message& message, std::uint16_t sequence) {
+    deliver(message, server(), sessionHeader(sequence));
+  }
+
+  /** @brief Delivers a WorldState of tick 1 with nobody in it, in a datagram
+   * of the session carrying this sequence. */
+  void deliverWorldStateInSession(std::uint16_t sequence) {
+    const std::vector<std::vector<std::byte>> payloads =
+        network::WorldStateCodec::encode(
+            network::WorldState{.tick = 1, .players = {}, .entities = {}});
+    deliverBytes(network::DatagramCodec::encode(
+        sessionHeader(sequence), network::MessageType::WorldState,
+        payloads.front()));
+  }
+
+  /** @returns How many datagrams sent so far hold a message of type
+   * Message. */
+  template <typename Message>
+  [[nodiscard]] std::size_t sentCountOf() const {
+    return static_cast<std::size_t>(
+        std::ranges::count_if(link_.sent(), holds<Message>));
+  }
+
+  /** @returns A header of the server carrying this sequence and
+   * SESSION_TOKEN. */
+  static network::PacketHeader sessionHeader(std::uint16_t sequence) {
+    network::PacketHeader header;
+    header.sessionToken = SESSION_TOKEN;
+    header.sequence = sequence;
+    return header;
   }
 
  private:
@@ -413,6 +490,293 @@ TEST_F(ServerConnectionTest, StartsANewAttemptWithoutStaleAnswers) {
 
   EXPECT_EQ(phase(), Phase::Connecting);
   EXPECT_EQ(lastRequest().cookie, 0);
+}
+
+/**
+ * Given the repetitions of the protocol page
+ * When the connection's ReadyState interval and Disconnection copies are read
+ * Then they are 500 ms, three copies, and 50 ms
+ */
+TEST(ServerConnectionDelays, SessionRepetitionsAreThoseOfTheProtocolPage) {
+  EXPECT_EQ(READY_STATE_INTERVAL, PROTOCOL_READY_STATE_INTERVAL);
+  EXPECT_EQ(DISCONNECTION_COPY_COUNT, PROTOCOL_DISCONNECTION_COPY_COUNT);
+  EXPECT_EQ(DISCONNECTION_COPY_INTERVAL, PROTOCOL_DISCONNECTION_COPY_INTERVAL);
+}
+
+/**
+ * Given an attempt the server just accepted as player 3
+ * When the waiting room is read before any LobbyState
+ * Then it holds player 3 alone, not ready, with the nickname it connected with
+ */
+TEST_F(ServerConnectionTest, TheRoomHoldsThePlayerAloneOnceAccepted) {
+  accept();
+
+  EXPECT_THAT(
+      connection().lobbyPlayers(),
+      ElementsAre(network::LobbyPlayer{.playerNumber = ACCEPTED_PLAYER_NUMBER,
+                                       .ready = false,
+                                       .nickname = std::string{NICKNAME}}));
+}
+
+/**
+ * Given a session the server opened with its token
+ * When the player asks to be ready
+ * Then a ReadyState saying ready goes at once, carrying the token
+ */
+TEST_F(ServerConnectionTest, SendsReadyStateAtOnceWithTheSessionToken) {
+  accept();
+
+  connection().setReady(true);
+
+  ASSERT_TRUE(holds<network::ReadyState>(sent().back()));
+  EXPECT_EQ(onlyMessageOf<network::ReadyState>(sent().back()),
+            network::ReadyState{.ready = true});
+  EXPECT_EQ(
+      network::DatagramCodec::decodeHeader(sent().back().payload).sessionToken,
+      SESSION_TOKEN);
+}
+
+/**
+ * Given an attempt the server has not answered
+ * When the player asks to be ready
+ * Then nothing is sent and nothing is asked
+ */
+TEST_F(ServerConnectionTest, IgnoresReadyBeforeTheAcceptance) {
+  connect();
+
+  connection().setReady(true);
+
+  EXPECT_EQ(sentCountOf<network::ReadyState>(), 0U);
+  EXPECT_EQ(connection().requestedReady(), std::nullopt);
+}
+
+/**
+ * Given a player who asked to be ready, whom the room still shows not ready
+ * When one interval minus one nanosecond passes
+ * Then the ReadyState is not sent again yet
+ */
+TEST_F(ServerConnectionTest, WaitsOneIntervalBeforeSendingReadyStateAgain) {
+  accept();
+  connection().setReady(true);
+
+  update(READY_STATE_INTERVAL - ONE_NANOSECOND);
+
+  EXPECT_EQ(sentCountOf<network::ReadyState>(), 1U);
+}
+
+/**
+ * Given a player who asked to be ready, whom the room still shows not ready
+ * When one interval passes
+ * Then the ReadyState is sent again, since UDP may have lost it
+ */
+TEST_F(ServerConnectionTest, SendsReadyStateAgainWhileTheRoomShowsOther) {
+  accept();
+  connection().setReady(true);
+
+  update(READY_STATE_INTERVAL);
+
+  EXPECT_EQ(sentCountOf<network::ReadyState>(), 2U);
+}
+
+/**
+ * Given a player who asked to be ready
+ * When a LobbyState shows the player ready, then two intervals pass
+ * Then the ReadyState is not sent again
+ */
+TEST_F(ServerConnectionTest, StopsSendingReadyStateOnceTheRoomShowsIt) {
+  accept();
+  connection().setReady(true);
+  deliverInSession(
+      network::LobbyState{.players = {{.playerNumber = ACCEPTED_PLAYER_NUMBER,
+                                       .ready = true,
+                                       .nickname = std::string{NICKNAME}}}},
+      FIRST_SEQUENCE);
+  update();
+
+  update(2 * READY_STATE_INTERVAL);
+
+  EXPECT_EQ(sentCountOf<network::ReadyState>(), 1U);
+}
+
+/**
+ * Given a session
+ * When the server sends a LobbyState listing two players
+ * Then the waiting room is those two players
+ */
+TEST_F(ServerConnectionTest, KeepsTheLobbyStateOfTheSession) {
+  accept();
+  const network::LobbyState lobby{
+      .players = {{.playerNumber = OTHER_PLAYER_NUMBER,
+                   .ready = true,
+                   .nickname = std::string{OTHER_NICKNAME}},
+                  {.playerNumber = ACCEPTED_PLAYER_NUMBER,
+                   .ready = false,
+                   .nickname = std::string{NICKNAME}}}};
+  deliverInSession(lobby, FIRST_SEQUENCE);
+
+  update();
+
+  EXPECT_THAT(connection().lobbyPlayers(), ElementsAreArray(lobby.players));
+}
+
+/**
+ * Given a session
+ * When a LobbyState arrives with another token
+ * Then the waiting room still holds the player alone
+ */
+TEST_F(ServerConnectionTest, IgnoresALobbyStateWithAnotherToken) {
+  accept();
+  network::PacketHeader forged = sessionHeader(FIRST_SEQUENCE);
+  forged.sessionToken = OTHER_SESSION_TOKEN;
+  deliver(network::LobbyState{.players = {{.playerNumber = OTHER_PLAYER_NUMBER,
+                                           .ready = true,
+                                           .nickname =
+                                               std::string{OTHER_NICKNAME}}}},
+          server(), forged);
+
+  update();
+
+  ASSERT_EQ(connection().lobbyPlayers().size(), 1U);
+  EXPECT_EQ(connection().lobbyPlayers().front().playerNumber,
+            ACCEPTED_PLAYER_NUMBER);
+}
+
+/**
+ * Given a session that read the LobbyState of sequence 2
+ * When the LobbyState of sequence 1 arrives late
+ * Then the waiting room is still the one of sequence 2
+ */
+TEST_F(ServerConnectionTest, IgnoresALateLobbyState) {
+  accept();
+  const network::LobbyState newer{
+      .players = {{.playerNumber = ACCEPTED_PLAYER_NUMBER,
+                   .ready = true,
+                   .nickname = std::string{NICKNAME}}}};
+  const network::LobbyState older{
+      .players = {{.playerNumber = ACCEPTED_PLAYER_NUMBER,
+                   .ready = false,
+                   .nickname = std::string{NICKNAME}}}};
+  deliverInSession(newer, SECOND_SEQUENCE);
+  deliverInSession(older, FIRST_SEQUENCE);
+
+  update();
+
+  EXPECT_THAT(connection().lobbyPlayers(), ElementsAreArray(newer.players));
+}
+
+/**
+ * Given a session
+ * When the server announces the start of the game
+ * Then the connection says the game started
+ */
+TEST_F(ServerConnectionTest, LearnsThatTheGameStarted) {
+  accept();
+  deliverInSession(network::GameStarted{}, FIRST_SEQUENCE);
+
+  update();
+
+  EXPECT_TRUE(connection().gameStarted());
+}
+
+/**
+ * Given a session whose GameStarted was lost
+ * When the first WorldState arrives
+ * Then the connection says the game started
+ */
+TEST_F(ServerConnectionTest, AWorldStateStartsTheGameWhenGameStartedWasLost) {
+  accept();
+  deliverWorldStateInSession(FIRST_SEQUENCE);
+
+  update();
+
+  EXPECT_TRUE(connection().gameStarted());
+}
+
+/**
+ * Given a player who asked to be ready
+ * When the game starts and an interval passes
+ * Then the request is forgotten and no ReadyState goes out again
+ */
+TEST_F(ServerConnectionTest, ForgetsTheReadyRequestOnceTheGameStarted) {
+  accept();
+  connection().setReady(true);
+  deliverInSession(network::GameStarted{}, FIRST_SEQUENCE);
+  update();
+
+  update(READY_STATE_INTERVAL);
+
+  EXPECT_EQ(connection().requestedReady(), std::nullopt);
+  EXPECT_EQ(sentCountOf<network::ReadyState>(), 1U);
+}
+
+/**
+ * Given a session
+ * When the player leaves it, then time passes, step by step
+ * Then a Disconnection goes at once, then every 50 ms, three in all
+ */
+TEST_F(ServerConnectionTest, LeavingSendsThreeDisconnections50MsApart) {
+  accept();
+
+  connection().cancel();
+  EXPECT_EQ(sentCountOf<network::Disconnection>(), 1U);
+  update(DISCONNECTION_COPY_INTERVAL - ONE_NANOSECOND);
+  EXPECT_EQ(sentCountOf<network::Disconnection>(), 1U);
+  update(ONE_NANOSECOND);
+  EXPECT_EQ(sentCountOf<network::Disconnection>(), 2U);
+  update(DISCONNECTION_COPY_INTERVAL);
+  EXPECT_EQ(sentCountOf<network::Disconnection>(), 3U);
+  update(DISCONNECTION_COPY_INTERVAL);
+  EXPECT_EQ(sentCountOf<network::Disconnection>(), 3U);
+}
+
+/**
+ * Given a session
+ * When the player leaves it
+ * Then the Disconnection goes to that server, with the token of the session
+ */
+TEST_F(ServerConnectionTest, TheDisconnectionCarriesTheTokenOfTheSession) {
+  accept();
+
+  connection().cancel();
+
+  ASSERT_TRUE(holds<network::Disconnection>(sent().back()));
+  EXPECT_EQ(sent().back().destination, server());
+  EXPECT_EQ(
+      network::DatagramCodec::decodeHeader(sent().back().payload).sessionToken,
+      SESSION_TOKEN);
+}
+
+/**
+ * Given a session with a room, a request and a started game
+ * When the player leaves it
+ * Then the room, the request and the start are forgotten
+ */
+TEST_F(ServerConnectionTest, LeavingForgetsTheSession) {
+  accept();
+  connection().setReady(true);
+  deliverInSession(network::GameStarted{}, FIRST_SEQUENCE);
+  update();
+
+  connection().cancel();
+
+  EXPECT_TRUE(connection().lobbyPlayers().empty());
+  EXPECT_EQ(connection().requestedReady(), std::nullopt);
+  EXPECT_FALSE(connection().gameStarted());
+}
+
+/**
+ * Given a session
+ * When the client connects again
+ * Then a Disconnection to the session left goes before the new request
+ */
+TEST_F(ServerConnectionTest, ConnectingAgainLeavesTheSessionFirst) {
+  accept();
+
+  connect();
+
+  ASSERT_GE(sent().size(), 2U);
+  EXPECT_TRUE(holds<network::Disconnection>(sent().at(sent().size() - 2)));
+  EXPECT_TRUE(holds<network::ConnectionRequest>(sent().back()));
 }
 
 }  // namespace

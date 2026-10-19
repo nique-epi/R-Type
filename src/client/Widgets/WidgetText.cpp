@@ -20,6 +20,10 @@ int centeredTextLeft(sf::IntRect box, std::string_view text) {
          ((box.size.x - regularTextWidth(text)) / SIDES_PER_AXIS);
 }
 
+int centeredTextTop(sf::IntRect box) {
+  return box.position.y + ((box.size.y - TEXT_LINE_HEIGHT) / SIDES_PER_AXIS);
+}
+
 sf::Color barTextColor(BarState state) {
   switch (state) {
     case BarState::Selected:
