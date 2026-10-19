@@ -3,7 +3,7 @@ title: Server and game
 description: What the server program and the game library do, how their parts fit together and where to find them in the code.
 ---
 
-The server, `r-type_server`, is meant to run the game for the players connected to it. Today it receives their datagrams, runs a tick at a fixed rate, lets up to four players in and keeps one game that starts when they are all ready: each tick answers the connection requests received and reads the `ReadyState` and the inputs of the players. Nothing else a client sends is read yet, nothing applies the inputs or advances the `World`, and no one is on the recipient list of the world state, so no state is sent yet. It never links SFML or Asio: it reaches the network through `rtype_network`, and its own libraries are checked for it at configure time (see [Project layout](/R-Type/project-layout/#who-may-link-what)).
+The server, `r-type_server`, is meant to run the game for the players connected to it. Today it receives their datagrams, runs a tick at a fixed rate, lets up to four players in and keeps one game that starts when they are all ready: each tick answers the connection requests received and reads the `ReadyState` and the inputs of the players. The game tells its players the waiting room, the start of the game and the world state, each datagram under the session token and the next sequence of its player. Nothing else a client sends is read yet, and nothing applies the inputs to the ships yet. It never links SFML or Asio: it reaches the network through `rtype_network`, and its own libraries are checked for it at configure time (see [Project layout](/R-Type/project-layout/#who-may-link-what)).
 
 The game library, `rtype_game`, holds the rules of a match: what moves, what touches what and what that means. It is built on the engine (see [Engine](/R-Type/engine/)), and it knows nothing about sockets, SFML or the messages sent between the programs (see [Project layout](/R-Type/project-layout/#game)). The server runs all of it; the client will only run the part that predicts its own ship.
 
@@ -14,13 +14,15 @@ This page tells you where to look when you need to change something. It describe
 | Network thread and simulation thread | Available | `src/server/Application/` |
 | Timer resolution on Windows | Available | `src/server/Platform/` |
 | Sorting the datagrams before the queues, session token checked | Available; no limit per address yet | `src/server/Application/DatagramSorter/` |
-| World state sent at a fixed rate | Available: sends to no one yet, the list of recipients is empty | `src/server/Replication/` |
-| Game events sent to the clients | Available: sends to no one yet; the only event a running system publishes is the removal of a Bydo that leaves the playfield | `src/server/Replication/`, `src/game/Events/` |
+| World state sent at a fixed rate to the players of the game | Available | `src/server/Replication/WorldStateSender/`, `src/server/Instances/GameInstance/` |
+| One header for every datagram to a player: session token and next sequence | Available | `src/server/Replication/SessionDatagram.hpp` |
+| Game events sent to the players | Available: the only event a running system publishes is the removal of a Bydo that leaves the playfield | `src/server/Replication/`, `src/game/Events/` |
 | Launch options | Available: the port, the seed and `--help` | `src/server/LaunchOptions/` |
 | Letting players in: challenge, acceptance or refusal | Available; refuses with `GameInProgress` while the game is not waiting for players | `src/server/Lobby/`, `src/server/Instances/` |
 | A game: states, ready rule, new world between two games | Available: one game, nothing ends it yet | `src/server/Instances/GameInstance/` |
 | Newest input of each player | Available; nothing applies it to the ship yet | `src/server/Instances/GameInstance/` |
-| Lobby state messages, several games, master link | Not yet written | — |
+| Waiting room and start of the game sent to the players (`LobbyState`, `GameStarted`) | Available | `src/server/Replication/LobbyStateAnnouncer/`, `src/server/Instances/GameInstance/` |
+| End of a game sent to the players (`GameEnded`), several games, master link | Not yet written | — |
 | Components (`Position`, `Velocity`, `CollisionBox`, `Health`, `EntityType`, `Sprite`, `Layer`) | Available | `src/game/Components/` |
 | Movement, run by each game tick | Available | `src/game/Systems/MovementSystem/`, `src/server/Instances/GameInstance/` |
 | Movement patterns, and removal of what leaves the playfield | Available for the Bydos | `src/game/Systems/PatternSystem/`, `src/game/Systems/PlayfieldExitSystem/` |
@@ -54,7 +56,7 @@ This page tells you where to look when you need to change something. It describe
 - The **network thread**, the one that calls `run()`, runs the `NetworkContext`. A `DatagramSorter` sorts every datagram as it arrives: the datagrams of admitted players that carry their session token go to the player queue, connection requests to the request queue, and the rest is dropped there (see [Sorting the datagrams](#sorting-the-datagrams-datagramsorter)). `DatagramRelay` (`rtype_network`, see [Network](/R-Type/network/#socket-to-queues-datagramrelay)) sends what was left in the outgoing queue. It is the only thread that touches the socket.
 - The **simulation thread** runs `SIMULATION_TICKS_PER_SECOND` (60) ticks per second. Each tick drains the player queue and the request queue and hands what arrived, often nothing, to the tick handler given to the constructor, as a `ReceivedDatagrams` (`players`, `connectionRequests`), so a slow or silent player never holds the game up. At the end of the tick it asks the network thread, through `NetworkContext::post()`, to send the outgoing queue.
 
-The tick handler is where the game plugs in. Today `src/server/main.cpp` gives one that gives the datagrams of the players to each game of its list, which reads the `ReadyState` and the inputs among them and moves along its states (see [A game](#a-game-gameinstance) and [Player inputs](#player-inputs)), hands the connection requests to the `ConnectionAcceptor`, which answers them and gives each new player a ship in the first game (see [Letting players in](#letting-players-in-connectionacceptor-playerroster) and [Player ships](#player-ships-shipspawnannouncer)), advances the timers by one tick, calls the `WorldStateSender` while that game is in progress, then delivers the events of the `EventBus`. Neither the sender nor the event broadcaster has a recipient yet.
+The tick handler is where the game plugs in. Today `src/server/main.cpp` gives one that gives the datagrams of the players to each game of its list, which reads the `ReadyState` and the inputs among them, moves along its states and tells its players the room, the start and the world state (see [A game](#a-game-gameinstance) and [Player inputs](#player-inputs)), hands the connection requests to the `ConnectionAcceptor`, which answers them and gives each new player a ship in the first game (see [Letting players in](#letting-players-in-connectionacceptor-playerroster) and [Player ships](#player-ships-shipspawnannouncer)), advances the timers by one tick, then delivers the events of the `EventBus`, which the broadcaster sends to the players who joined (see [Game events](#game-events-gameeventencoder-and-gameeventbroadcaster)).
 
 A tick handler puts a datagram in the outgoing queue with `queueDatagram()`, called from the handler itself, on the simulation thread. The datagram is sent at the end of the same tick.
 
@@ -129,33 +131,22 @@ How late a tick starts depends on how precisely the system wakes a sleeping thre
 
 ## World state: `WorldStateSender`
 
-`WorldStateSender` (`src/server/Replication/WorldStateSender/`) sends the state of the game to the players, at a fixed rate. The tick handler calls `onTick(tick, components, recipients)` once per tick of a game in progress, on the simulation thread, with the tick the game counts (see [A game](#a-game-gameinstance)). Every `TICKS_PER_WORLD_STATE` (3) ticks, that is `WORLD_STATES_PER_SECOND` (20) times per second, it lists every entity that has a `NetworkIdentity`, a `Position` and an `EntityType`, has `WorldStateCodec` encode the list (see [Network](/R-Type/network/#world-state-worldstatecodec)), and hands one `OutgoingDatagram` per recipient and per payload to the function it was given. In `main.cpp` that function is `queueDatagram()`.
+`WorldStateSender` (`src/server/Replication/WorldStateSender/`) sends the state of the game to its players, at a fixed rate. Each `GameInstance` builds one with its `PlayerRoster` and calls `onTick(tick, components)` on the tick that starts the game and on every tick of the game, on the simulation thread, with the tick the game counts (see [A game](#a-game-gameinstance)). Every `TICKS_PER_WORLD_STATE` (3) ticks, that is `WORLD_STATES_PER_SECOND` (20) times per second, it lists every entity that has a `NetworkIdentity`, a `Position` and an `EntityType`, has `WorldStateCodec` encode the list (see [Network](/R-Type/network/#world-state-worldstatecodec)), and hands one `OutgoingDatagram` per connected player and per payload to the function it was given, each starting with the header of that player (see [Session headers](#session-headers-sessiondatagram)). In `main.cpp` that function is `queueDatagram()`.
 
-- The `tick` of a state is the tick given to `onTick`, so the first state of a game carries tick 3 and the client can tell which of two states is newer. The game's counter is 32 bits and is not made to wrap: it takes 2.27 years at 60 ticks per second. It starts again at 0 with each game.
+- The `tick` of a state is the tick given to `onTick`, so the client can tell which of two states is newer. The first state of a game carries tick 0 and leaves in the tick that starts the game, right after `GameStarted`. The game's counter is 32 bits and is not made to wrap: it takes 2.27 years at 60 ticks per second. It starts again at 0 with each game.
 - `WORLD_STATES_PER_SECOND` is **provisional**: it will be revised once measured on a real network. It must divide the tick rate, and the build fails otherwise. Code must read the constants, `TICKS_PER_WORLD_STATE` for instance, and never repeat the 3.
-- Nothing is built when the list of recipients is empty. An entity without a network id, or without a type, is not listed.
+- Nothing is built when no player is connected. An entity without a network id, or without a type, is not listed.
 - An entity whose position is not a finite number (NaN or infinite), which only a game bug can produce, is left out of the state instead of stopping the server. A warning under the `Replication` module gives how many entities were left out, each time that number changes, so a stuck entity is reported once rather than 20 times per second.
-- The state lists no player yet: the game has no lives, score or player numbers. The ship of each player has a `NetworkIdentity` (see [Player ships](#player-ships-shipspawnannouncer)), so it is listed, but the list of recipients is still empty in `main.cpp`, so no state is sent.
-- The datagrams hold the bare message payload, without the packet header, so no client could accept them yet.
+- The state lists no player yet: the game has no lives, score or player numbers. The ship of each player has a `NetworkIdentity` (see [Player ships](#player-ships-shipspawnannouncer)), so it is listed.
+- A state split into several datagrams takes one sequence per datagram, so the client reads every part.
 - A playfield larger than 2047 logical units in either direction fails the build, because a wire coordinate would no longer hold it (see [Protocol](/R-Type/protocol/#positions)).
 
 ```cpp
-rtype::server::ServerApplication* serverPointer = nullptr;
-rtype::server::WorldStateSender worldStateSender{
-    [&serverPointer](rtype::network::OutgoingDatagram datagram) {
-      serverPointer->queueDatagram(std::move(datagram));
-    }};
-rtype::server::ServerApplication server{
-    endpoint,
-    [&worldStateSender, &game, &recipients](
-        const rtype::server::ServerApplication::ReceivedDatagrams&) {
-      worldStateSender.onTick(game.tick(), game.world().components(),
-                              recipients);
-    }};
-serverPointer = &server;
+rtype::server::WorldStateSender worldStateSender{roster, send};
+worldStateSender.onTick(tick, world.components());
 ```
 
-The sender is built before the server, whose tick handler captures it, and sends through the server, so a pointer set once the server exists closes the loop; it is set before `run()` starts the simulation thread.
+`GameInstance` builds the sender once, with its roster, which lives as long as the game, and hands it the components of the current world at each call: a new world replaces the old one between two games.
 
 `World::components()` (`rtype_game`) is the `ComponentRegistry` of the world: a `World` owns its entities and their components, and cannot be copied or moved.
 
@@ -174,11 +165,25 @@ A datagram is read only when its header is of this protocol and version and its 
 | with a valid cookie | a place in the roster, a session token drawn at random (never 0), and `ConnectionAccepted` |
 
 - A refusal reserves nothing, so it goes before the cookie is checked. The cookies come from a `CookieIssuer` whose key is drawn when the acceptor is built (see [Network](/R-Type/network/#connection-cookies-cookieissuer)).
-- An acceptance carries the session token and the next sequence of that player, 0 for the first. Challenges and refusals carry token 0 and sequence 0, as every datagram sent before a session.
+- An acceptance carries the session token and the next sequence of that player, 0 for the first (see [Session headers](#session-headers-sessiondatagram)). Challenges and refusals carry token 0 and sequence 0, as every datagram sent before a session.
 - Besides the function that admits a sender, the acceptor takes an optional one it calls once for each player it lets in, after it sent the acceptance, and not again when an acceptance is repeated. `main.cpp` gives it the first `GameInstance`, which gives the player a ship.
 - Nothing caused by the content of a datagram makes it throw. Each new player is logged at the `info` level under `Lobby`, as `player <n> joined from <address> port <port>`; challenges and refusals at the `debug` level.
 - Each new player is announced once to the function given to the acceptor, which `main.cpp` hands to `ServerApplication::admit()`, so the datagrams of that player reach the tick from then on.
 - `setGameInProgress(bool)` turns the `GameInProgress` refusal on and off. The tick handler sets it before the requests are read, to whether the first game is in any state other than waiting for players, so a request that arrives in the tick where the game starts is already refused. No player ever leaves the roster yet: heartbeats and departures do not exist.
+
+## Session headers: `SessionDatagram`
+
+Every datagram the server sends a connected player starts with the session token and the next sequence of that player, whatever its message, because the client drops a datagram that carries another token or that is not newer than the newest one it read (see [Protocol](/R-Type/protocol/#datagram)). The free functions of `SessionDatagram.hpp` (`src/server/Replication/`) are the one place that reads and moves `ConnectedPlayer::nextSequence`. They take the server's `ConnectedPlayer`, so they live in the server, next to the senders that call them, rather than with the session checks of `rtype_network`:
+
+- `nextSessionHeader(player)` gives the header and moves the sequence on by one, wrapping from 65535 to 0.
+- `sessionDatagram(player, message)` builds the datagram to the address of the player; an overload takes a message type and a payload already encoded, as the world state needs.
+- `sessionHeaderFor(roster, endpoint)` gives the header of the player who sends from that address, or a header without session (token 0, sequence 0) when no player does.
+
+The acceptance, the `EntitySpawned` of ships and Bydos, the waiting room, `GameStarted`, the world state and the game events all go through them, so the sequences a player receives grow by one from its acceptance, across every kind of message.
+
+```cpp
+send(rtype::server::sessionDatagram(player, rtype::network::GameStarted{}));
+```
 
 ## A game: `GameInstance`
 
@@ -186,15 +191,16 @@ A datagram is read only when its header is of this protocol and version and its 
 
 | State (`GameState`) | The game… | It goes to… |
 |---|---|---|
-| `WaitingForPlayers` | takes `ReadyState` and lets players in | `InProgress` on the tick when at least one player is connected and every connected player is ready |
-| `InProgress` | counts one tick per `onTick`, runs the systems of the world and lets the Bydos appear; refuses new connections | `Finished` when `finish()` is called |
+| `WaitingForPlayers` | takes `ReadyState`, lets players in and sends them the room (see [Waiting room](#waiting-room-lobbystateannouncer)) | `InProgress` on the tick when at least one player is connected and every connected player is ready, which sends every connected player `GameStarted` |
+| `InProgress` | counts one tick per `onTick`, runs the systems of the world, lets the Bydos appear and sends the world state; refuses new connections | `Finished` when `finish()` is called |
 | `Finished` | refuses new connections | `WaitingForPlayers` after `FINISHED_STATE_TICKS` (300) ticks, `FINISHED_STATE_SECONDS` (5) seconds |
 
 - Going back to `WaitingForPlayers` builds a new `World`: the tick is 0, the players stay connected, none is ready any more, and each gets a new ship, announced again. Network ids start again at 1 in the new world, so the announced ids are the ones of the previous game.
 - `onTick` reads a datagram only when its header is of this protocol and version, its message sizes add up and its sender is a player of the game. It does not check the session token: the sorter already dropped, on the network thread, every datagram from the address of a player that does not carry its token (see [Sorting the datagrams](#sorting-the-datagrams-datagramsorter)), so a sender that forges the address of a player can neither say ready nor steer in its place.
 - A `ReadyState` counts only while the game waits for players, and with a sequence newer than the newest one accepted from that player (`isNewerSequence`, 1 to 32767 ahead, wrapping from 65535 to 0; exactly 32768 ahead is never newer). A late copy therefore never undoes a newer one. Anything else is ignored.
 - `finish()` ends the game in progress and does nothing in another state. Nothing calls it yet: no rule of the game decides that a game is over, so no game ends today.
-- The server does not send `LobbyState`, `GameStarted` or `GameEnded` yet.
+- The tick that starts the game sends every connected player `GameStarted`, then the world state of tick 0, so `GameStarted` always leaves first and a lost one is corrected by that world state. The game logs `game started, players connected: <n>` at the `info` level under `Instances`.
+- `GameEnded` is not sent yet.
 
 ```cpp
 for (const auto& game : games) {
@@ -204,6 +210,15 @@ connectionAcceptor.setGameInProgress(
     joinableGame.state() != rtype::server::GameState::WaitingForPlayers);
 connectionAcceptor.receive(received.connectionRequests, clock.now());
 ```
+
+## Waiting room: `LobbyStateAnnouncer`
+
+`LobbyStateAnnouncer` (`src/server/Replication/LobbyStateAnnouncer/`) tells the players of a game who is in the waiting room and who is ready, as a `LobbyState` (see [Protocol](/R-Type/protocol/#a-session)). `GameInstance` calls `onWaitingTick()` on every tick it waits for players, and builds a new announcer with each new world, so the room goes out at the first tick of every wait.
+
+- The room lists every connected player, in order of number, with its ready state and its nickname, read from the `PlayerRoster` at each tick.
+- It is sent to every connected player as soon as it differs from the room sent last: in the tick a `ReadyState` changes it, and in the tick after a player joins, since `main.cpp` answers the connection requests after the games ticked. When that `ReadyState` makes every player ready, the game starts in the same tick and sends `GameStarted` instead.
+- An unchanged room is sent again `TICKS_PER_LOBBY_STATE` (30) ticks after the last send. `LOBBY_STATE_INTERVAL` (500 ms) is **provisional**, like the protocol rate it follows; `TICKS_PER_LOBBY_STATE` is that interval in whole ticks, rounded down, so 30 ticks are 499.99998 ms, while adding up tick durations until 500 ms would wait 31 ticks, 516.7 ms. Code must read the constants (`src/server/ServerConstants.hpp`) and never repeat 500 or 30.
+- Nothing is sent while the game is in progress or finished, and a room without players reaches no one.
 
 ## Player ships: `ShipSpawnAnnouncer`
 
@@ -216,7 +231,7 @@ The announcer then sends an `EntitySpawned` (`PlayerShip`, the position of the s
 - the new ship goes to every connected player, the new one included;
 - the new player also gets one for each ship already in the game, so it sees the others. The position sent is the one the ship has in the world at that moment.
 - A player who already has a ship gets no second one, and nothing is sent.
-- A lost `EntitySpawned` is recovered from the world state (see [Protocol](/R-Type/protocol/#world-state)), which is not sent to anyone yet.
+- A lost `EntitySpawned` is recovered from the world state (see [Protocol](/R-Type/protocol/#world-state)).
 - Nothing removes a ship when a player leaves: the server does not handle leaving yet.
 
 ```cpp
@@ -256,15 +271,18 @@ The game announces what the players must see or hear by publishing an event on t
 - `REPEATED_MESSAGE_COPIES` and `REPEATED_MESSAGE_INTERVAL` are **provisional**, like the protocol rates they follow. Code must read the constants and never repeat 3 or 50.
 - An event the protocol refuses is skipped: a position that is not a number, the entity id 0 (which no entity has), or a player number outside 1 to 4. The broadcaster logs a warning with the name of the event, sends nothing, schedules no copy, and does not use an event number, so the next event goes out and the server keeps running. Only the encoding is protected: a fault in the sending still stops the tick.
 - The broadcaster must outlive the last `dispatch()` of the bus and the last `advance()` of the timers, because both call back into it.
-- Nothing is sent or scheduled when the list of recipients is empty, but the encoder still runs, so a `GameEvent` still uses an event number. In `main.cpp` the list is empty, so no datagram leaves, although `PlayfieldExitSystem` already publishes an `EntityDestruction` when a Bydo leaves the playfield (`DamageRules` publishes two more, but is not run). The header function returns a default header, token 0 and sequence 0: neither it nor the list of recipients reads the `PlayerRoster` yet, which holds the session token and the next sequence of each player. It is never called while there is no recipient.
+- Nothing is sent or scheduled when the list of recipients is empty, but the encoder still runs, so a `GameEvent` still uses an event number.
+- In `main.cpp` the list holds the address of every player who joined the game, added when the acceptor lets the player in, and the header function is `GameInstance::nextSessionHeaderFor`, which reads the roster of that game through `sessionHeaderFor` (see [Session headers](#session-headers-sessiondatagram)), so each copy carries the token and the next sequence of its player. No player leaves the roster yet; when players can leave, leaving must also take them out of that list.
+- `PlayfieldExitSystem` publishes an `EntityDestruction` when a Bydo leaves the playfield, so the players get its `EntityDestroyed`. `DamageRules` publishes two more events, but is not run.
 
 ```cpp
 rtype::engine::EventBus events;
 rtype::engine::TimerScheduler timers;
+std::vector<rtype::network::Endpoint> recipients;
 rtype::server::GameEventBroadcaster broadcaster{
     events, timers, recipients,
-    [](const rtype::network::Endpoint&) {
-      return rtype::network::PacketHeader{};
+    [&game](const rtype::network::Endpoint& recipient) {
+      return game.nextSessionHeaderFor(recipient);
     },
     send};
 
@@ -279,7 +297,7 @@ events.dispatch();
 
 - `bydoSpawnPosition(randomUnit)` (`src/game/Spawning/`) says where: `BYDO_SPAWN_MARGIN` (64 logical units) past the right edge of the playfield, so the Bydo is off screen, and at a height from `BYDO_SPAWN_VERTICAL_MARGIN` (64) to `PLAYFIELD_HEIGHT` minus that margin. A draw of 0 gives the highest row; a draw from 0 up to, but not including, 1 is accepted, anything else (1 included, or not a number) throws `InvalidRandomUnitException`. Both margins are **provisional**: they are half a Bydo until its size is fixed.
 - `World::spawnBydo(position, kind)` gives the entity a `Position`, a `Velocity` of `-BYDO_SPEED` (240 units per second, **provisional**, to the left), a `MovementPattern`, `EntityType::Enemy`, `Health` and a `NetworkIdentity`. It has no `CollisionBox` yet. The spawner alternates the two `BydoKind`s, `Drifter` then `Weaver`, starting with the `Drifter`, and draws nothing for it, so a seed still gives the same heights. See [Bydo movement](#bydo-movement-patternsystem-and-playfieldexitsystem).
-- Every connected player is sent an `EntitySpawned` (`Bydo`, the position), in its own datagram, like the ship of a player. Both use `sendEntitySpawned` (`src/server/Replication/EntitySpawnSender/`). With no player connected, the Bydo appears and nothing is sent. When every network id was given, the spawn is skipped and a warning is logged.
+- Every connected player is sent an `EntitySpawned` (`Bydo`, the position), in its own datagram, like the ship of a player. Both use `sendEntitySpawned` (`src/server/Replication/EntitySpawnSender.hpp`). With no player connected, the Bydo appears and nothing is sent. When every network id was given, the spawn is skipped and a warning is logged.
 - The generator is a `std::mt19937` started from a seed. The spawner logs it at the `info` level when it is built (`Bydo spawning starts from the seed 42`), so the same seed gives the same heights in the same order. `GameInstance` gives each world the seed of the game plus the number of worlds built before it, so one seed replays every game of a session; without `--seed`, the server draws it from `std::random_device`.
 
 ```bash
@@ -295,7 +313,7 @@ Each tick of a game in progress, `GameInstance` runs three systems of the world,
 - `patternShapeOf(kind)` (`src/game/Spawning/BydoKind/`) says which shape a kind follows: the `Drifter` goes `Straight`, the `Weaver` follows a `Wave`.
 - `PlayfieldExitSystem` (`src/game/Systems/PlayfieldExitSystem/`) destroys an entity of type `Enemy` that has a `NetworkIdentity` once its `Position` is more than `BYDO_EXIT_MARGIN` (64 logical units, **provisional**) beyond the left edge, and publishes an `EntityDestruction` with the cause `Removed` under its network id. A Bydo exactly at the margin is still in. A ship is never removed by leaving. It takes the `EventBus` of the server, which `GameInstance` receives at construction and which must outlive it.
 - A Bydo crosses the playfield in about 8.5 seconds, so about four or five Bydos are in transit at the pace of `BYDO_SPAWN_INTERVAL`.
-- **Not done yet:** the broadcaster has no recipients in `main.cpp`, so the clients are not told that a Bydo was removed, and a client keeps an entity until it receives that message.
+- The players are sent an `EntityDestroyed` (`Removed`) for each Bydo removed, `REPEATED_MESSAGE_COPIES` (3) times (see [Game events](#game-events-gameeventencoder-and-gameeventbroadcaster)).
 
 ## Collisions
 
@@ -372,6 +390,9 @@ rtype::game::DamageRules damageRules{events, world.components()};
 | Add a launch option | The options listed in `LaunchOptions::read()` and `usage()`, in `src/server/LaunchOptions/LaunchOptions.cpp`; a name the client uses too goes in `src/engine/LaunchArguments/LaunchArgumentsConstants.hpp` |
 | Change the port the server listens on by default | `DEFAULT_SERVER_PORT` in `src/network/NetworkConstants.hpp`, shared with the client |
 | Change how often the world state is sent | `WORLD_STATES_PER_SECOND` in `src/server/ServerConstants.hpp` |
+| Change how often an unchanged waiting room is sent again | `LOBBY_STATE_INTERVAL` in `src/server/ServerConstants.hpp` |
+| Change what the waiting room lists | `roomOf` in `src/server/Replication/LobbyStateAnnouncer/LobbyStateAnnouncer.cpp` |
+| Send a datagram to a player during a session | `sessionDatagram` in `src/server/Replication/SessionDatagram.hpp`, then the send function of the game |
 | Announce something to every client | Publish one of the events of `src/game/Events/` on the `EventBus`; `GameEventBroadcaster` sends it |
 | Send a new kind of event | A struct in `src/game/Events/`, an `encode` overload in `GameEventEncoder`, a `subscribeTo` line in the `GameEventBroadcaster` constructor |
 | Change how often an event is sent, or how far apart | `REPEATED_MESSAGE_COPIES` and `REPEATED_MESSAGE_INTERVAL` in `src/server/Replication/GameEventConstants.hpp` |
@@ -388,7 +409,7 @@ rtype::game::DamageRules damageRules{events, world.components()};
 | Change when a Bydo leaves the playfield | `BYDO_EXIT_MARGIN` in `src/game/Spawning/SpawningConstants.hpp`, `PlayfieldExitSystem` |
 | Replay a game | Start the server with the seed found in its log: `--seed <seed>` |
 | Change who is told about a new ship | `ShipSpawnAnnouncer` in `src/server/Replication/ShipSpawnAnnouncer/` |
-| Change when a game starts or ends, or what is reset between two games | `GameInstance::onTick` and `startNewWorld` in `src/server/Instances/GameInstance/GameInstance.cpp` |
+| Change when a game starts or ends, what the players are told at the start, or what is reset between two games | `GameInstance::onTick`, `startGame` and `startNewWorld` in `src/server/Instances/GameInstance/GameInstance.cpp` |
 | Change how long a game stays finished | `FINISHED_STATE_SECONDS` in `src/server/Instances/GameInstanceConstants.hpp` |
 | Change how players get their number, or what the server keeps of them | `PlayerRoster` in `src/server/Instances/PlayerRoster/`, `ConnectedPlayer` in `src/server/Instances/ConnectedPlayer.hpp` |
 | Read the input a player holds | `ConnectedPlayer::newestInput`, kept by its `GameInstance` |
@@ -409,4 +430,4 @@ rtype::game::DamageRules damageRules{events, world.components()};
 | Add a component type | A new struct in `src/game/Components/` |
 | Write a test with entities that collide | `tests/CollisionScene.hpp` |
 
-Each folder holding sources has its own `CMakeLists.txt` declaring one library; `Application/` and `Platform/` only add their subfolders, `Replication/` declares its constants and adds `WorldStateSender/` and `ShipSpawnAnnouncer/`, `Lobby/` declares its constants and adds `ConnectionAcceptor/`, `Instances/` declares `ConnectedPlayer`, `GameState` and the game constants and adds `PlayerRoster/` and `GameInstance/`, and `r-type_server` links `rtype_server_application`, `rtype_server_connection_acceptor`, `rtype_server_game_instance`, `rtype_server_launch_options` and `rtype_server_world_state_sender` in `src/server/CMakeLists.txt`.
+Each folder holding sources has its own `CMakeLists.txt` declaring one library; `Application/` and `Platform/` only add their subfolders, `Replication/` declares its constants and the session header (`rtype_server_session_datagram`), and adds one folder per sender (`WorldStateSender/`, `LobbyStateAnnouncer/`, `ShipSpawnAnnouncer/`, the event encoder and broadcaster…), `Lobby/` declares its constants and adds `ConnectionAcceptor/`, `Instances/` declares `ConnectedPlayer`, `GameState` and the game constants and adds `PlayerRoster/` and `GameInstance/`, and `r-type_server` links `rtype_server_application`, `rtype_server_connection_acceptor`, `rtype_server_game_event_broadcaster`, `rtype_server_game_instance` and `rtype_server_launch_options` in `src/server/CMakeLists.txt`.

@@ -9,8 +9,10 @@
 #include <vector>
 #include "ConnectedPlayer.hpp"
 #include "DatagramCodec.hpp"
+#include "Endpoint.hpp"
 #include "EntityIdConstants.hpp"
 #include "GameInstanceConstants.hpp"
+#include "GameStarted.hpp"
 #include "GameState.hpp"
 #include "IncomingDatagram.hpp"
 #include "MessageFrame.hpp"
@@ -24,6 +26,7 @@
 #include "PlayfieldExitSystem.hpp"
 #include "ReadyState.hpp"
 #include "SequenceOrder.hpp"
+#include "SessionDatagram.hpp"
 #include "TimeConstants.hpp"
 #include "World.hpp"
 
@@ -55,6 +58,7 @@ bool changesActions(const network::PlayerInput& input,
 GameInstance::GameInstance(Send send, std::uint32_t seed,
                            engine::EventBus& events)
     : send_(std::move(send)),
+      worldStateSender_(roster_, send_),
       seed_(seed),
       logger_(std::string{INSTANCES_LOGGER_NAME}) {
   systems_.add(std::make_unique<game::PatternSystem>());
@@ -81,6 +85,11 @@ PlayerRoster& GameInstance::roster() { return roster_; }
 
 game::World& GameInstance::world() { return *world_; }
 
+network::PacketHeader GameInstance::nextSessionHeaderFor(
+    const network::Endpoint& player) {
+  return sessionHeaderFor(roster_, player);
+}
+
 void GameInstance::onPlayerJoined(ConnectedPlayer& player) {
   shipSpawnAnnouncer_->onPlayerJoined(player);
 }
@@ -93,7 +102,9 @@ void GameInstance::onTick(
   switch (state_) {
     case GameState::WaitingForPlayers:
       if (everyPlayerIsReady()) {
-        state_ = GameState::InProgress;
+        startGame();
+      } else {
+        lobbyStateAnnouncer_->onWaitingTick();
       }
       break;
     case GameState::InProgress:
@@ -108,6 +119,9 @@ void GameInstance::onTick(
         state_ = GameState::WaitingForPlayers;
       }
       break;
+  }
+  if (state_ == GameState::InProgress) {
+    worldStateSender_.onTick(tick_, world_->components());
   }
 }
 
@@ -176,12 +190,22 @@ bool GameInstance::everyPlayerIsReady() {
          });
 }
 
+void GameInstance::startGame() {
+  state_ = GameState::InProgress;
+  const std::vector<ConnectedPlayer*> players = roster_.connected();
+  for (ConnectedPlayer* const player : players) {
+    send_(sessionDatagram(*player, network::GameStarted{}));
+  }
+  logger_.info("game started, players connected: ", players.size());
+}
+
 void GameInstance::startNewWorld() {
   world_ = std::make_unique<game::World>();
   shipSpawnAnnouncer_ =
       std::make_unique<ShipSpawnAnnouncer>(*world_, roster_, send_);
   bydoSpawner_ = std::make_unique<BydoSpawner>(*world_, roster_, send_,
                                                seed_ + worldsBuilt_);
+  lobbyStateAnnouncer_ = std::make_unique<LobbyStateAnnouncer>(roster_, send_);
   ++worldsBuilt_;
   tick_ = 0;
   finishedTicks_ = 0;
