@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstddef>
 #include <cstdint>
 #include <string>
 #include <string_view>
@@ -41,6 +42,9 @@ namespace rtype::client {
  *
  * Only datagrams from the server being contacted, of this protocol and version
  * and whose messages add up to their end, are read; any other is ignored.
+ * Once accepted, the connection keeps the session token the acceptance
+ * carries, and drops and counts any later datagram of the server that carries
+ * another one.
  *
  * update() reads what arrived and sends the requests that are due, once per
  * frame; sendPlayerInput() sends at once. Call both on the thread of the frame
@@ -74,6 +78,13 @@ class ServerConnection : public IServerConnection, public IPlayerInputLink {
 
   void sendPlayerInput(ActionSet held) override;
 
+  /**
+   * @returns How many datagrams of the server were dropped since the
+   * connection was built because they came after an acceptance with another
+   * session token than the one it carried.
+   */
+  [[nodiscard]] std::size_t wrongTokenCount() const;
+
  private:
   void registerAnswers();
   void receive(const network::IncomingDatagram& datagram);
@@ -84,6 +95,7 @@ class ServerConnection : public IServerConnection, public IPlayerInputLink {
   [[nodiscard]] network::PacketHeader nextHeader();
 
   [[nodiscard]] bool isConnecting() const;
+  [[nodiscard]] bool isAccepted() const;
 
   IDatagramLink* link_;
   network::MessageDispatcher dispatcher_;
@@ -91,7 +103,8 @@ class ServerConnection : public IServerConnection, public IPlayerInputLink {
   network::Endpoint server_;
   std::string nickname_;
   std::uint64_t cookie_{0};
-  std::uint64_t sessionToken_{0};
+  std::uint64_t sessionToken_{network::NO_SESSION_TOKEN};
+  std::size_t wrongTokenCount_{0};
   std::uint16_t nextSequence_{0};
   std::uint32_t nextInputNumber_{network::FIRST_INPUT_NUMBER};
   engine::Duration sinceRequest_{};

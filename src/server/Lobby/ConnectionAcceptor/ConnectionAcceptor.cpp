@@ -109,7 +109,7 @@ void ConnectionAcceptor::answer(const network::Endpoint& sender,
       roster_->add(sender, request.nickname, drawSessionToken());
   logger_.info("player ", static_cast<unsigned int>(joined->playerNumber),
                " joined from ", sender.address, " port ", sender.port);
-  admit_(joined->endpoint);
+  admit_(joined->endpoint, joined->sessionToken);
   accept(*joined);
   if (onPlayerJoined_) {
     onPlayerJoined_(*joined);

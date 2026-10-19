@@ -17,7 +17,7 @@ struct PacketHeader {
   std::uint32_t protocolId{PROTOCOL_ID};
   std::uint8_t version{PROTOCOL_VERSION};
   std::uint8_t flags{0};
-  std::uint64_t sessionToken{0};
+  std::uint64_t sessionToken{NO_SESSION_TOKEN};
   std::uint16_t sequence{0};
   std::uint16_t acknowledgedSequence{0};
   std::uint32_t acknowledgementBits{0};

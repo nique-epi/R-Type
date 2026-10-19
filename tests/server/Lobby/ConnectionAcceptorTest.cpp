@@ -92,7 +92,8 @@ class ConnectionAcceptorTest : public ::testing::Test {
 
   [[nodiscard]] PlayerRoster& roster() { return roster_; }
 
-  [[nodiscard]] const std::vector<network::Endpoint>& admitted() const {
+  [[nodiscard]] const std::vector<std::pair<network::Endpoint, std::uint64_t>>&
+  admitted() const {
     return admitted_;
   }
 
@@ -106,14 +107,16 @@ class ConnectionAcceptorTest : public ::testing::Test {
  private:
   PlayerRoster roster_;
   std::vector<network::OutgoingDatagram> answers_;
-  std::vector<network::Endpoint> admitted_;
+  std::vector<std::pair<network::Endpoint, std::uint64_t>> admitted_;
   std::vector<std::uint8_t> joinedPlayers_;
   ConnectionAcceptor acceptor_{
       roster_,
       [this](network::OutgoingDatagram datagram) {
         answers_.push_back(std::move(datagram));
       },
-      [this](const network::Endpoint& player) { admitted_.push_back(player); },
+      [this](const network::Endpoint& player, std::uint64_t sessionToken) {
+        admitted_.emplace_back(player, sessionToken);
+      },
       [this](ConnectedPlayer& player) {
         joinedPlayers_.push_back(player.playerNumber);
       }};
@@ -202,12 +205,17 @@ TEST_F(ConnectionAcceptorTest, AcceptsARequestCarryingItsCookie) {
 /**
  * Given a sender that got a challenge
  * When it sends its request again with the cookie of the challenge
- * Then its address is announced as admitted, once
+ * Then its address is announced as admitted, once, with the session token its
+ * acceptance carries
  */
-TEST_F(ConnectionAcceptorTest, AnnouncesTheAddressOfANewPlayer) {
+TEST_F(ConnectionAcceptorTest, AnnouncesTheAddressAndTokenOfANewPlayer) {
   connect(playerEndpoint(0));
 
-  EXPECT_EQ(admitted(), (std::vector<network::Endpoint>{playerEndpoint(0)}));
+  const std::uint64_t acceptedToken =
+      network::DatagramCodec::decodeHeader(lastAnswer().payload).sessionToken;
+  EXPECT_EQ(admitted(),
+            (std::vector<std::pair<network::Endpoint, std::uint64_t>>{
+                {playerEndpoint(0), acceptedToken}}));
 }
 
 /**

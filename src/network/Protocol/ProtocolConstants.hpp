@@ -23,6 +23,12 @@ constexpr std::uint32_t PROTOCOL_ID = 0x52545950;
 constexpr std::uint8_t PROTOCOL_VERSION = 0;
 
 /**
+ * @brief The session token of a datagram sent before the connection is
+ * accepted, such as a ConnectionRequest. The server never draws it.
+ */
+constexpr std::uint64_t NO_SESSION_TOKEN = 0;
+
+/**
  * @brief The values a message type byte can hold, so the size of a table
  * indexed by it.
  */

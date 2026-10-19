@@ -56,15 +56,14 @@ namespace rtype::server {
  * world of a session.
  *
  * A datagram of the players is read only when its header carries this
- * protocol and version with no flag set, its messages add up to its end, its
- * sender is in the roster, and it carries the session token of that player. A
- * datagram with another token is dropped and counted: whoever forges the
- * address of a player could otherwise say ready in its place, or send an input
- * numbered 4294967295, above every input the player will ever send, and hold
- * the ship of that player on the forged keys for the rest of the session. Such
- * a drop is logged with its sender at most once per TICKS_PER_REPORT ticks,
- * with the number dropped since the previous line, so a flood of forged
- * datagrams cannot flood the log.
+ * protocol and version with no flag set, its messages add up to its end, and
+ * its sender is in the roster. Its session token is not checked here: the
+ * datagrams onTick() receives are those the DatagramSorter of the network
+ * thread kept, and it drops one from the address of a player that carries
+ * another token before any queue holds it. Whoever forges the address of a
+ * player could otherwise say ready in its place, or send an input numbered
+ * 4294967295, above every input the player will ever send, and hold the ship
+ * of that player on the forged keys for the rest of the session.
  *
  * A ReadyState counts only while the game waits for players, and only when its
  * sequence is newer than the newest one accepted from that player, so a late
@@ -122,12 +121,6 @@ class GameInstance {
   [[nodiscard]] game::World& world();
 
   /**
-   * @returns How many datagrams of the players were dropped because they carry
-   * another session token than the one of the player they come from.
-   */
-  [[nodiscard]] std::size_t foreignTokenCount() const;
-
-  /**
    * @returns The header of the next datagram to the player of the game who
    * sends from @p player, as sessionHeaderFor() gives it: the session token
    * and the next sequence of that player, which then moves on by one, or a
@@ -159,8 +152,6 @@ class GameInstance {
 
  private:
   void readPlayerDatagram(const network::IncomingDatagram& datagram);
-  void dropForeignToken(const network::Endpoint& sender);
-  void advanceLogWindow();
   void applyReadyState(const network::MessageOrigin& origin,
                        const network::ReadyState& message);
   void keepIfNewer(const network::MessageOrigin& origin,
@@ -187,10 +178,6 @@ class GameInstance {
   std::uint32_t worldsBuilt_{0};
   std::uint32_t tick_{0};
   std::size_t finishedTicks_{0};
-  std::size_t foreignTokenCount_{0};
-  std::size_t foreignTokensSinceLastLine_{0};
-  std::size_t ticksInLogWindow_{0};
-  bool foreignTokenLoggedInWindow_{false};
   logging::Logger logger_;
 };
 
