@@ -21,8 +21,6 @@
 #include "GameInstanceTestConstants.hpp"
 #include "GameState.hpp"
 #include "IncomingDatagram.hpp"
-#include "JournalFile.hpp"
-#include "Logger.hpp"
 #include "MessageType.hpp"
 #include "OutgoingDatagram.hpp"
 #include "PacketHeader.hpp"
@@ -30,7 +28,6 @@
 #include "PlayerRoster.hpp"
 #include "ProtocolConstants.hpp"
 #include "ReadyState.hpp"
-#include "ServerConstants.hpp"
 #include "ServerDatagrams.hpp"
 #include "ServerLobbyTestConstants.hpp"
 #include "Spawning/BydoSpawnerTestConstants.hpp"
@@ -45,8 +42,6 @@ using testing::DATAGRAMS_PER_TICK;
 using testing::FIRST_PLAYER;
 using testing::FIRST_SENT;
 using testing::FIRST_SEQUENCE;
-using testing::FOREIGN_TOKEN_LINE_TEXT;
-using testing::FORGED_DATAGRAMS_PER_TICK;
 using testing::FOURTH_PLAYER;
 using testing::FOURTH_SENT;
 using testing::FOURTH_SEQUENCE;
@@ -62,7 +57,6 @@ using testing::SECOND_SENT;
 using testing::SECOND_SEQUENCE;
 using testing::SHUFFLE_SEED_COUNT;
 using testing::SHUFFLED_INPUT_COUNT;
-using testing::SINCE_THE_PREVIOUS_LINE_TEXT;
 using testing::SOME_TICKS;
 using testing::STRANGER;
 using testing::THIRD_SENT;
@@ -286,23 +280,6 @@ TEST_F(GameInstanceTest, IgnoresAReadyStateFromAnUnknownSender) {
   tick();
 
   EXPECT_EQ(game().state(), GameState::WaitingForPlayers);
-}
-
-/**
- * Given a connected player
- * When a ReadyState from its address carries another session token
- * Then the player stays not ready
- */
-TEST_F(GameInstanceTest, IgnoresAReadyStateWithAnotherSessionToken) {
-  const ConnectedPlayer& player = join(FIRST_PLAYER);
-  sendReady({.player = FIRST_PLAYER,
-             .ready = true,
-             .sequence = FIRST_SEQUENCE,
-             .sessionToken = testing::OTHER_SESSION_TOKEN});
-
-  tick();
-
-  EXPECT_FALSE(player.ready);
 }
 
 /**
@@ -858,41 +835,6 @@ TEST_F(GameInstanceInputTest, KeepsTheInputsOfEachPlayerApart) {
 }
 
 /**
- * Given a player who sent up, then a datagram from the address of that player
- * carrying the session token of the other player and an input numbered
- * LARGEST_INPUT_NUMBER holding down, then shoot
- * When one tick receives the three
- * Then the player holds shoot: the forged input does not lock the ship
- */
-TEST_F(GameInstanceInputTest, IgnoresAnInputCarryingAnotherSessionToken) {
-  send(FIRST_PLAYER, HOLDS_UP);
-  sendDatagram(
-      FIRST_PLAYER,
-      inputDatagram(network::PlayerInput{.inputNumber = LARGEST_INPUT_NUMBER,
-                                         .actions = HOLDS_DOWN},
-                    sessionHeader(SECOND_PLAYER)));
-  send(FIRST_PLAYER, HOLDS_SHOOT);
-
-  deliver({FIRST_SENT, SECOND_SENT, THIRD_SENT});
-
-  EXPECT_EQ(heldActions(FIRST_PLAYER), HOLDS_SHOOT);
-}
-
-/**
- * Given a datagram from the address of a player carrying the session token of
- * another player
- * When a tick reads it
- * Then it is counted as a datagram with another token
- */
-TEST_F(GameInstanceInputTest, CountsADatagramCarryingAnotherSessionToken) {
-  send(FIRST_PLAYER, HOLDS_UP, sessionHeader(SECOND_PLAYER));
-
-  deliver({FIRST_SENT});
-
-  EXPECT_EQ(game().foreignTokenCount(), 1U);
-}
-
-/**
  * Given a sender that is not in the roster, using the address of the players
  * and the session token of the first player
  * When a tick reads its input
@@ -1002,102 +944,6 @@ TEST_F(GameInstanceInputTest, KeepsTheInputAcrossANewWorld) {
 
   ASSERT_EQ(game().state(), GameState::WaitingForPlayers);
   EXPECT_EQ(heldActions(FIRST_PLAYER), HOLDS_UP);
-}
-
-/**
- * @returns The end of the line about a datagram dropped for another session
- * token, when @p count were dropped since the previous line.
- */
-std::string sinceThePreviousLine(std::size_t count) {
-  return "(" + std::to_string(count) +
-         std::string{SINCE_THE_PREVIOUS_LINE_TEXT};
-}
-
-/**
- * @brief The input fixture with the log at the debug level, written to a
- * journal the test reads. The level is restored after the test, and the
- * journal puts the log back on standard error.
- */
-class GameInstanceLogTest : public GameInstanceInputTest {
- protected:
-  void SetUp() override {
-    savedLevel_ = logging::Logger::level();
-    logging::Logger::setLevel(logging::LogLevel::Debug);
-    logging::Logger::setOutput(
-        logging::LogOutput{.toStderr = false, .filePath = journal_.path()});
-  }
-
-  void TearDown() override { logging::Logger::setLevel(savedLevel_); }
-
-  /**
-   * @brief @p count datagrams from the address of the first player, each
-   * carrying the session token of the second, arrive in one tick.
-   */
-  void deliverForgedDatagrams(std::size_t count) {
-    for (std::size_t index = 0; index < count; ++index) {
-      queue(network::IncomingDatagram{
-          .sender = playerEndpoint(FIRST_PLAYER),
-          .payload = inputDatagram(
-              network::PlayerInput{.inputNumber = LARGEST_INPUT_NUMBER,
-                                   .actions = HOLDS_DOWN},
-              sessionHeader(SECOND_PLAYER))});
-    }
-    tick();
-  }
-
-  /**
-   * @returns The lines of the journal about a datagram dropped for another
-   * session token.
-   */
-  [[nodiscard]] std::vector<std::string> foreignTokenLines() const {
-    std::vector<std::string> found;
-    for (const std::string& line : journal_.lines()) {
-      if (line.find(FOREIGN_TOKEN_LINE_TEXT) != std::string::npos) {
-        found.push_back(line);
-      }
-    }
-    return found;
-  }
-
- private:
-  JournalFile journal_;
-  logging::LogLevel savedLevel_{logging::LogLevel::Info};
-};
-
-/**
- * Given forged datagrams that arrived on the first tick of a reporting window
- * When more arrive on the last tick of that window
- * Then the journal holds one line about them: the drops are logged at a
- * bounded rate, even though each one is counted
- */
-TEST_F(GameInstanceLogTest, LogsTheForeignTokensOncePerReportingWindow) {
-  deliverForgedDatagrams(FORGED_DATAGRAMS_PER_TICK);
-  runTicks(TICKS_PER_REPORT - 2);
-
-  deliverForgedDatagrams(FORGED_DATAGRAMS_PER_TICK);
-
-  EXPECT_EQ(foreignTokenLines().size(), 1U);
-}
-
-/**
- * Given forged datagrams logged on the first tick of a reporting window, then
- * dropped without a line on its last tick
- * When one more arrives on the first tick of the next window
- * Then a second line reports it, with every drop since the first line, this
- * one included
- */
-TEST_F(GameInstanceLogTest, CountsTheDropsSinceThePreviousLine) {
-  deliverForgedDatagrams(FORGED_DATAGRAMS_PER_TICK);
-  runTicks(TICKS_PER_REPORT - 2);
-  deliverForgedDatagrams(FORGED_DATAGRAMS_PER_TICK);
-
-  deliverForgedDatagrams(1);
-
-  const std::vector<std::string> lines = foreignTokenLines();
-  ASSERT_EQ(lines.size(), 2U);
-  EXPECT_NE(
-      lines.back().find(sinceThePreviousLine(2 * FORGED_DATAGRAMS_PER_TICK)),
-      std::string::npos);
 }
 
 /** @brief The input fixture, once for each seed of a shuffled delivery. */

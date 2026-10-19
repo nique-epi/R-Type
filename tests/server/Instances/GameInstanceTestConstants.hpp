@@ -4,7 +4,6 @@
 #include <cstddef>
 #include <cstdint>
 #include <limits>
-#include <string_view>
 #include "ProtocolConstants.hpp"
 #include "ServerLobbyTestConstants.hpp"
 
@@ -77,17 +76,6 @@ constexpr std::uint32_t LARGEST_INPUT_NUMBER =
 constexpr std::uint32_t SHUFFLED_INPUT_COUNT = 30;
 constexpr std::uint32_t SHUFFLE_SEED_COUNT = 20;
 constexpr std::size_t DATAGRAMS_PER_TICK = 4;
-
-/**
- * @brief Forged datagrams the log tests send in one tick, and the texts of the
- * log line about a datagram dropped for another session token: what tells it
- * apart, and how it ends with the number dropped since the previous line.
- */
-constexpr std::size_t FORGED_DATAGRAMS_PER_TICK = 3;
-constexpr std::string_view FOREIGN_TOKEN_LINE_TEXT =
-    "carries another session token";
-constexpr std::string_view SINCE_THE_PREVIOUS_LINE_TEXT =
-    " since the previous line)";
 
 static_assert(SHUFFLED_INPUT_COUNT <= network::PLAYER_ACTION_BITS + 1U,
               "each shuffled input holds actions no other input holds, so "

@@ -1,6 +1,5 @@
 #include "GameInstance.hpp"
 #include <algorithm>
-#include <cstddef>
 #include <cstdint>
 #include <memory>
 #include <optional>
@@ -10,7 +9,6 @@
 #include <vector>
 #include "ConnectedPlayer.hpp"
 #include "DatagramCodec.hpp"
-#include "Endpoint.hpp"
 #include "EntityIdConstants.hpp"
 #include "GameInstanceConstants.hpp"
 #include "GameState.hpp"
@@ -26,7 +24,6 @@
 #include "PlayfieldExitSystem.hpp"
 #include "ReadyState.hpp"
 #include "SequenceOrder.hpp"
-#include "ServerConstants.hpp"
 #include "TimeConstants.hpp"
 #include "World.hpp"
 
@@ -84,10 +81,6 @@ PlayerRoster& GameInstance::roster() { return roster_; }
 
 game::World& GameInstance::world() { return *world_; }
 
-std::size_t GameInstance::foreignTokenCount() const {
-  return foreignTokenCount_;
-}
-
 void GameInstance::onPlayerJoined(ConnectedPlayer& player) {
   shipSpawnAnnouncer_->onPlayerJoined(player);
 }
@@ -116,7 +109,6 @@ void GameInstance::onTick(
       }
       break;
   }
-  advanceLogWindow();
 }
 
 void GameInstance::finish() {
@@ -140,36 +132,11 @@ void GameInstance::readPlayerDatagram(
     if (player == nullptr) {
       return;
     }
-    if (header.sessionToken != player->sessionToken) {
-      dropForeignToken(datagram.sender);
-      return;
-    }
     dispatcher_.dispatch(
         network::MessageOrigin{.sender = datagram.sender, .header = header},
         messages);
   } catch (const network::NetworkException&) {
     return;
-  }
-}
-
-void GameInstance::dropForeignToken(const network::Endpoint& sender) {
-  ++foreignTokenCount_;
-  ++foreignTokensSinceLastLine_;
-  if (foreignTokenLoggedInWindow_) {
-    return;
-  }
-  logger_.debug("dropped a datagram from ", sender.address, " port ",
-                sender.port, " that carries another session token (",
-                foreignTokensSinceLastLine_, " since the previous line)");
-  foreignTokenLoggedInWindow_ = true;
-  foreignTokensSinceLastLine_ = 0;
-}
-
-void GameInstance::advanceLogWindow() {
-  ++ticksInLogWindow_;
-  if (ticksInLogWindow_ >= TICKS_PER_REPORT) {
-    ticksInLogWindow_ = 0;
-    foreignTokenLoggedInWindow_ = false;
   }
 }
 
