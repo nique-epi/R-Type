@@ -16,6 +16,7 @@
 #include "Position.hpp"
 #include "ReplicationConstants.hpp"
 #include "ServerConstants.hpp"
+#include "WireEntityTypeMapping.hpp"
 #include "WorldState.hpp"
 #include "WorldStateCodec.hpp"
 
@@ -26,20 +27,6 @@ namespace {
 static_assert(game::PLAYFIELD_WIDTH <= LARGEST_PLAYFIELD_SIZE_ON_THE_WIRE &&
                   game::PLAYFIELD_HEIGHT <= LARGEST_PLAYFIELD_SIZE_ON_THE_WIRE,
               "a larger playfield no longer fits a wire coordinate");
-
-network::WireEntityType toWireEntityType(game::EntityType type) {
-  switch (type) {
-    case game::EntityType::Player:
-      return network::WireEntityType::PlayerShip;
-    case game::EntityType::Enemy:
-      return network::WireEntityType::Bydo;
-    case game::EntityType::PlayerMissile:
-      return network::WireEntityType::PlayerMissile;
-    case game::EntityType::EnemyMissile:
-      return network::WireEntityType::EnemyMissile;
-  }
-  return network::WireEntityType::PlayerShip;
-}
 
 }  // namespace
 
