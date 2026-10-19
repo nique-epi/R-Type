@@ -5,8 +5,6 @@ target_include_directories(rtype_client_lobby_screen PUBLIC ${CMAKE_CURRENT_SOUR
 target_link_libraries(rtype_client_lobby_screen
   PUBLIC
     rtype_client_connection
-    rtype_client_input
-    rtype_client_key_bindings
     rtype_client_menu
     rtype_client_rendering_interfaces
     rtype_client_screens

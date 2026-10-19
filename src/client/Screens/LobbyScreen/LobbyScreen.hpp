@@ -2,14 +2,13 @@
 
 #include <SFML/Graphics/Rect.hpp>
 #include <SFML/Window/Keyboard.hpp>
+#include <functional>
 #include <memory>
 #include <string>
 #include "IInterfaceCanvas.hpp"
 #include "IScreen.hpp"
 #include "IScreenNavigator.hpp"
 #include "IServerConnection.hpp"
-#include "KeyBindings.hpp"
-#include "KeyNames.hpp"
 #include "LobbyState.hpp"
 #include "Menu.hpp"
 #include "MotionPreference.hpp"
@@ -43,24 +42,32 @@ struct HangarBay;
  */
 class LobbyScreen : public IScreen {
  public:
+  /** @brief The key bound to BoundAction::Ready, and the name its keycap
+   * shows. */
+  struct ReadyKey {
+    sf::Keyboard::Scancode key{};
+    std::string name;
+  };
+
+  /** @brief What a waiting room is built from, but the canvas it owns. */
+  struct Parts {
+    /** @brief Screens the waiting room lives among, which must outlive it. */
+    std::reference_wrapper<IScreenNavigator> navigator;
+    /** @brief Session the waiting room reads and drives, which must outlive
+     * it. */
+    std::reference_wrapper<IServerConnection> connection;
+    /** @brief Gives the point of the playfield under a pixel of the window. */
+    PlayfieldMapping playfieldPointAt;
+    ReadyKey readyKey;
+    /** @brief Whether the ships and the beacons may move. */
+    MotionPreference motion{};
+  };
+
   /**
-   * @param navigator Screens the waiting room lives among, which must outlive
-   * it.
-   * @param connection Session the waiting room reads and drives, which must
-   * outlive the screen.
-   * @param canvas Picture the waiting room is painted on, never null.
-   * @param playfieldPointAt Gives the point of the playfield under a pixel of
-   * the window.
-   * @param keys Bindings of the player: the key of BoundAction::Ready is read
-   * once, when the screen is built.
-   * @param keyNaming Gives the name the keycap of READY shows; used while the
-   * screen is built only.
-   * @param motion Whether the ships and the beacons may move.
+   * @param canvas Picture the waiting room is painted on, never null: the
+   * screen owns it, so it comes apart from the parts it borrows.
    */
-  LobbyScreen(IScreenNavigator& navigator, IServerConnection& connection,
-              std::unique_ptr<IInterfaceCanvas> canvas,
-              PlayfieldMapping playfieldPointAt, const KeyBindings& keys,
-              const KeyNaming& keyNaming, MotionPreference motion);
+  LobbyScreen(Parts parts, std::unique_ptr<IInterfaceCanvas> canvas);
 
   /** @brief The actions of the menu point at the screen, so it never moves. */
   LobbyScreen(const LobbyScreen&) = delete;

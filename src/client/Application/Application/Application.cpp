@@ -1,6 +1,7 @@
 #include "Application.hpp"
 #include <SFML/System/Vector2.hpp>
 #include <SFML/Window/Event.hpp>
+#include <SFML/Window/Keyboard.hpp>
 #include <filesystem>
 #include <memory>
 #include <optional>
@@ -9,6 +10,7 @@
 #include <utility>
 #include "AssetLibrary.hpp"
 #include "AssetList.hpp"
+#include "BoundAction.hpp"
 #include "ConnectionScreen.hpp"
 #include "Endpoint.hpp"
 #include "EntityLayer.hpp"
@@ -124,9 +126,7 @@ std::unique_ptr<IScreen> Application::createScreen(ScreenId screen) {
           screens_, connection_, interfaceCanvas(), playfieldMapping(), server_,
           nickname_);
     case ScreenId::Lobby:
-      return std::make_unique<LobbyScreen>(
-          screens_, connection_, interfaceCanvas(), playfieldMapping(),
-          settings_.keys, localizedKeyName, motionPreference());
+      return lobbyScreen();
   }
   return nullptr;
 }
@@ -160,6 +160,19 @@ std::unique_ptr<IScreen> Application::optionsScreen(ScreenId screen) {
   return std::make_unique<OptionsScreen>(
       screens_, place, settings_, settingsFile_, window_, localizedKeyName,
       interfaceCanvas(), playfieldMapping());
+}
+
+std::unique_ptr<IScreen> Application::lobbyScreen() {
+  const sf::Keyboard::Scancode readyKey =
+      settings_.keys.keyOf(BoundAction::Ready);
+  return std::make_unique<LobbyScreen>(
+      LobbyScreen::Parts{
+          .navigator = screens_,
+          .connection = connection_,
+          .playfieldPointAt = playfieldMapping(),
+          .readyKey = {.key = readyKey, .name = localizedKeyName(readyKey)},
+          .motion = motionPreference()},
+      interfaceCanvas());
 }
 
 std::unique_ptr<IScreen> Application::loadingScreenUnlessLoaded(

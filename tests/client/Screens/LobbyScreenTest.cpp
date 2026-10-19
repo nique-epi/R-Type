@@ -13,7 +13,6 @@
 #include <vector>
 #include "BackgroundColors.hpp"
 #include "ConnectionStatus.hpp"
-#include "KeyBindings.hpp"
 #include "KeyPress.hpp"
 #include "LobbyScreen.hpp"
 #include "LobbyState.hpp"
@@ -27,7 +26,6 @@
 #include "WidgetConstants.hpp"
 
 using rtype::client::ConnectionStatus;
-using rtype::client::KeyBindings;
 using rtype::client::LobbyScreen;
 using rtype::client::MotionPreference;
 using rtype::client::PRESS_DURATION;
@@ -59,10 +57,10 @@ constexpr sf::IntRect FIRST_BAY_CELL_INSIDE({33, 137}, {84, 14});
 constexpr sf::Vector2i BACK_CHIP_MIDDLE =
     sf::Vector2i(415, 238) * INTERFACE_PIXEL;
 
-/** @brief The name the keycap of READY shows in these tests. */
-std::string readyKeyName([[maybe_unused]] sf::Keyboard::Scancode key) {
-  return "R";
-}
+/** @brief The key READY is bound to in these tests, and the name its keycap
+ * shows. */
+constexpr sf::Keyboard::Scancode READY_KEY = sf::Keyboard::Scan::R;
+constexpr const char* READY_KEY_NAME = "R";
 
 LobbyPlayer pilot(std::uint8_t number, const char* nickname, bool ready) {
   return {.playerNumber = number, .ready = ready, .nickname = nickname};
@@ -80,7 +78,8 @@ const ServerConnectionCall ASK_NOT_READY{
     .ready = false};
 
 /** @brief A waiting room alone, the local player accepted as player 1, with
- * a recording navigator, connection and canvas, and the default keys. */
+ * a recording navigator, connection and canvas, and READY bound to
+ * READY_KEY. */
 class LobbyScreenTest : public ::testing::Test {
  protected:
   LobbyScreenTest() {
@@ -122,13 +121,13 @@ class LobbyScreenTest : public ::testing::Test {
   RecordingNavigator navigator_;
   RecordingServerConnection connection_;
   InterfaceCanvasRecord canvas_;
-  LobbyScreen screen_{navigator_,
-                      connection_,
-                      std::make_unique<RecordingInterfaceCanvas>(canvas_),
-                      samePlayfieldPoint,
-                      KeyBindings{},
-                      readyKeyName,
-                      MotionPreference::Full};
+  LobbyScreen screen_{
+      LobbyScreen::Parts{.navigator = navigator_,
+                         .connection = connection_,
+                         .playfieldPointAt = samePlayfieldPoint,
+                         .readyKey = {.key = READY_KEY, .name = READY_KEY_NAME},
+                         .motion = MotionPreference::Full},
+      std::make_unique<RecordingInterfaceCanvas>(canvas_)};
 };
 
 }  // namespace
@@ -249,7 +248,7 @@ TEST_F(LobbyScreenTest, EveryListedPilotReadyLaunches) {
 TEST_F(LobbyScreenTest, TheReadyKeyAsksToBeReady) {
   list({pilot(OWN_NUMBER, OWN_NICKNAME, false)});
 
-  tap(sf::Keyboard::Key::R, sf::Keyboard::Scan::R);
+  tap(sf::Keyboard::Key::R, READY_KEY);
 
   EXPECT_THAT(readyRequests(), ElementsAre(ASK_READY));
 }
@@ -263,7 +262,7 @@ TEST_F(LobbyScreenTest, TheReadyKeyAsksNotToBeReadyOnceAsked) {
   list({pilot(OWN_NUMBER, OWN_NICKNAME, false)});
   connection().setRequestedReady(true);
 
-  tap(sf::Keyboard::Key::R, sf::Keyboard::Scan::R);
+  tap(sf::Keyboard::Key::R, READY_KEY);
 
   EXPECT_THAT(readyRequests(), ElementsAre(ASK_NOT_READY));
 }
@@ -276,8 +275,8 @@ TEST_F(LobbyScreenTest, TheReadyKeyAsksNotToBeReadyOnceAsked) {
 TEST_F(LobbyScreenTest, HoldingTheReadyKeyAsksOnce) {
   list({pilot(OWN_NUMBER, OWN_NICKNAME, false)});
 
-  screen().handleEvent(keyPress(sf::Keyboard::Key::R, sf::Keyboard::Scan::R));
-  screen().handleEvent(keyPress(sf::Keyboard::Key::R, sf::Keyboard::Scan::R));
+  screen().handleEvent(keyPress(sf::Keyboard::Key::R, READY_KEY));
+  screen().handleEvent(keyPress(sf::Keyboard::Key::R, READY_KEY));
 
   EXPECT_THAT(readyRequests(), ElementsAre(ASK_READY));
 }

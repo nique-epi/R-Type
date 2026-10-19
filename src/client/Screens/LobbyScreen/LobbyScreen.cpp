@@ -11,19 +11,15 @@
 #include <span>
 #include <string>
 #include <utility>
-#include "BoundAction.hpp"
 #include "HangarBay.hpp"
 #include "HangarBayConstants.hpp"
 #include "IInterfaceCanvas.hpp"
 #include "IScreenNavigator.hpp"
 #include "IServerConnection.hpp"
-#include "KeyBindings.hpp"
-#include "KeyNames.hpp"
 #include "LobbyScreenConstants.hpp"
 #include "LobbyState.hpp"
 #include "Menu.hpp"
 #include "MenuBuilder.hpp"
-#include "MotionPreference.hpp"
 #include "PlayfieldMapping.hpp"
 #include "ProtocolConstants.hpp"
 #include "ScreenId.hpp"
@@ -91,19 +87,14 @@ sf::Vector2i bayTopLeft(sf::IntRect area, int slot) {
 
 }  // namespace
 
-LobbyScreen::LobbyScreen(IScreenNavigator& navigator,
-                         IServerConnection& connection,
-                         std::unique_ptr<IInterfaceCanvas> canvas,
-                         PlayfieldMapping playfieldPointAt,
-                         const KeyBindings& keys, const KeyNaming& keyNaming,
-                         MotionPreference motion)
-    : navigator_(&navigator),
-      connection_(&connection),
+LobbyScreen::LobbyScreen(Parts parts, std::unique_ptr<IInterfaceCanvas> canvas)
+    : navigator_(&parts.navigator.get()),
+      connection_(&parts.connection.get()),
       canvas_(std::move(canvas)),
-      playfieldPointAt_(std::move(playfieldPointAt)),
-      readyKey_(keys.keyOf(BoundAction::Ready)),
-      motion_(motion),
-      menu_(buildMenu(keyNaming(readyKey_))) {
+      playfieldPointAt_(std::move(parts.playfieldPointAt)),
+      readyKey_(parts.readyKey.key),
+      motion_(parts.motion),
+      menu_(buildMenu(std::move(parts.readyKey.name))) {
   repaint();
 }
 
