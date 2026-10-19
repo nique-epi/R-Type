@@ -10,7 +10,9 @@
 #include <utility>
 #include <vector>
 #include "IInterfaceCanvas.hpp"
+#include "ImagePlacement.hpp"
 #include "TextStyle.hpp"
+#include "TextureArea.hpp"
 
 namespace sf {
 class RenderTarget;
@@ -64,8 +66,8 @@ class RecordingInterfaceCanvas : public rtype::client::IInterfaceCanvas {
   void fill(sf::IntRect area, sf::Color color) override;
   void write(std::string_view text, sf::Vector2i anchor,
              rtype::client::TextStyle style) override;
-  void drawImage(std::string_view assetId, sf::IntRect source,
-                 sf::Vector2i topLeft, int scale,
+  void drawImage(rtype::client::TextureArea image,
+                 rtype::client::ImagePlacement placement,
                  sf::IntRect visibleArea) override;
   void display() override;
   void show(sf::RenderTarget& target) const override;

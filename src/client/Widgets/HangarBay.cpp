@@ -12,11 +12,13 @@
 #include "EntitySprites.hpp"
 #include "HangarBayConstants.hpp"
 #include "IInterfaceCanvas.hpp"
+#include "ImagePlacement.hpp"
 #include "InterfaceColors.hpp"
 #include "MotionPreference.hpp"
 #include "SpriteFrame.hpp"
 #include "SunkBox.hpp"
 #include "TextStyle.hpp"
+#include "TextureArea.hpp"
 #include "TimeConstants.hpp"
 #include "WidgetColors.hpp"
 #include "WidgetConstants.hpp"
@@ -142,8 +144,10 @@ void paintShip(IInterfaceCanvas& canvas, sf::Vector2i topLeft,
   const sf::Vector2i shipTopLeft(
       topLeft.x + ((HANGAR_BAY_SIZE.x - shipWidth) / SIDES_PER_AXIS),
       topLeft.y + BAY_SHIP_TOP);
-  canvas.drawImage(ENTITY_SHEET_ID, rectangleOf(frame), shipTopLeft,
-                   BAY_SHIP_SCALE, {topLeft, HANGAR_BAY_SIZE});
+  canvas.drawImage(
+      TextureArea{.assetId = ENTITY_SHEET_ID, .rectangle = rectangleOf(frame)},
+      ImagePlacement{.topLeft = shipTopLeft, .scale = BAY_SHIP_SCALE},
+      {topLeft, HANGAR_BAY_SIZE});
 }
 
 /** @brief Writes a line of small print centered on the row of the nickname:

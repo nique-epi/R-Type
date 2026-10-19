@@ -17,12 +17,14 @@
 #include "Button.hpp"
 #include "CutCornerBox.hpp"
 #include "IInterfaceCanvas.hpp"
+#include "ImagePlacement.hpp"
 #include "InterfaceColors.hpp"
 #include "InterfaceConstants.hpp"
 #include "Label.hpp"
 #include "PlayfieldMapping.hpp"
 #include "RowControl.hpp"
 #include "TextField.hpp"
+#include "TextureArea.hpp"
 #include "TimeConstants.hpp"
 #include "WidgetColors.hpp"
 #include "WidgetConstants.hpp"
@@ -111,8 +113,10 @@ void Menu::paint(IInterfaceCanvas& canvas) const {
   }
   if (content_.picture.has_value()) {
     canvas.drawImage(
-        content_.picture->assetId, {{0, 0}, content_.picture->area.size},
-        content_.picture->area.position, NATIVE_SCALE, INTERFACE_AREA);
+        TextureArea{.assetId = content_.picture->assetId,
+                    .rectangle = {{0, 0}, content_.picture->area.size}},
+        ImagePlacement{.topLeft = content_.picture->area.position},
+        INTERFACE_AREA);
   }
   for (const Label& label : content_.labels) {
     label.paint(canvas);

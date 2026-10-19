@@ -14,13 +14,14 @@
 #include "EntitySpriteConstants.hpp"
 #include "EntitySprites.hpp"
 #include "IInterfaceCanvas.hpp"
+#include "ImagePlacement.hpp"
 #include "InterfaceColors.hpp"
-#include "InterfaceConstants.hpp"
 #include "MotionPreference.hpp"
 #include "RandomRange.hpp"
 #include "RenderingConstants.hpp"
 #include "SpriteFrame.hpp"
 #include "SquadronConstants.hpp"
+#include "TextureArea.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::client {
@@ -154,18 +155,21 @@ void Squadron::paint(IInterfaceCanvas& canvas, sf::Vector2i topLeft) const {
       rectangleOf(PLAYER_MISSILE_ANIMATION.frameAt(elapsed_).value_or(
           PLAYER_MISSILE_FRAME));
   for (const sf::Vector2f missile : missiles_) {
-    canvas.drawImage(ENTITY_SHEET_ID, missileFrame,
-                     box.position + sf::Vector2i(roundHalfUp(missile.x),
-                                                 roundHalfUp(missile.y)),
-                     NATIVE_SCALE, box);
+    const sf::Vector2i missileTopLeft =
+        box.position +
+        sf::Vector2i(roundHalfUp(missile.x), roundHalfUp(missile.y));
+    canvas.drawImage(
+        TextureArea{.assetId = ENTITY_SHEET_ID, .rectangle = missileFrame},
+        ImagePlacement{.topLeft = missileTopLeft}, box);
   }
   const game::SpriteFrame shipFrame =
       PLAYER_SHIP_ANIMATION.frameAt(elapsed_).value_or(PLAYER_SHIP_FRAME);
   for (const ShipPlacement& placement : placements(time)) {
     canvas.drawImage(
-        ENTITY_SHEET_ID,
-        rectangleOf(inPlayerColorRow(shipFrame, placement.ship->color)),
-        box.position + placement.topLeft, NATIVE_SCALE, box);
+        TextureArea{.assetId = ENTITY_SHEET_ID,
+                    .rectangle = rectangleOf(
+                        inPlayerColorRow(shipFrame, placement.ship->color))},
+        ImagePlacement{.topLeft = box.position + placement.topLeft}, box);
   }
 }
 

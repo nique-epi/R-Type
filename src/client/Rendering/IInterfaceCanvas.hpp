@@ -4,7 +4,9 @@
 #include <SFML/Graphics/Rect.hpp>
 #include <SFML/System/Vector2.hpp>
 #include <string_view>
+#include "ImagePlacement.hpp"
 #include "TextStyle.hpp"
+#include "TextureArea.hpp"
 
 namespace sf {
 class RenderTarget;
@@ -44,20 +46,15 @@ class IInterfaceCanvas {
 
   /**
    * @brief Copies a rectangle of a loaded texture, each of its pixels made a
-   * square of scale × scale pixels, cutting off whatever falls outside
-   * visibleArea.
+   * square of placement.scale × placement.scale pixels, cutting off whatever
+   * falls outside visibleArea: a pixel of the texture that visibleArea cuts is
+   * left out whole.
    *
-   * @param assetId Id of the texture; an id with no loaded texture paints
-   * nothing.
-   * @param source Rectangle of the texture, in pixels of the texture.
-   * @param topLeft Where the top-left pixel of source lands.
-   * @param scale Whole factor each pixel of the texture is enlarged by,
-   * NATIVE_SCALE for a copy pixel for pixel; a pixel of the texture that
-   * visibleArea cuts is left out whole.
+   * @param image The texture and its rectangle.
+   * @param placement Where the copy lands, and how many times it is enlarged.
    * @param visibleArea The only pixels the copy may paint.
    */
-  virtual void drawImage(std::string_view assetId, sf::IntRect source,
-                         sf::Vector2i topLeft, int scale,
+  virtual void drawImage(TextureArea image, ImagePlacement placement,
                          sf::IntRect visibleArea) = 0;
 
   /** @brief Ends the picture started by clear(): show() lays it until the
