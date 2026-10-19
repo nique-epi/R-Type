@@ -11,16 +11,19 @@
 #include "EventBus.hpp"
 #include "GameState.hpp"
 #include "IncomingDatagram.hpp"
+#include "LobbyStateAnnouncer.hpp"
 #include "Logger.hpp"
 #include "MessageDispatcher.hpp"
 #include "MessageOrigin.hpp"
 #include "OutgoingDatagram.hpp"
+#include "PacketHeader.hpp"
 #include "PlayerInput.hpp"
 #include "PlayerRoster.hpp"
 #include "ReadyState.hpp"
 #include "ShipSpawnAnnouncer.hpp"
 #include "SystemScheduler.hpp"
 #include "World.hpp"
+#include "WorldStateSender.hpp"
 
 namespace rtype::server {
 
@@ -34,6 +37,15 @@ namespace rtype::server {
  * FINISHED_STATE_TICKS ticks. Coming back to WaitingForPlayers builds a new
  * world: every player gets a new ship, is no longer ready, and the tick is 0.
  * The players stay connected.
+ *
+ * The game tells its players where it stands, as the A session section of the
+ * protocol page describes. While it waits for players, a LobbyStateAnnouncer
+ * sends them the room; a new one comes with each new world, so the room goes
+ * out at the first tick of every wait. The tick that starts the game sends
+ * every connected player GameStarted, then, on that tick and every tick of the
+ * game, the WorldStateSender sends them the world, from tick 0: GameStarted
+ * always leaves before the first WorldState. Every datagram to a player
+ * carries its session token and its next sequence (see nextSessionHeader).
  *
  * While the game is in progress, each tick first runs the systems of the world
  * (PatternSystem, MovementSystem, then PlayfieldExitSystem, which removes a
@@ -116,6 +128,15 @@ class GameInstance {
   [[nodiscard]] std::size_t foreignTokenCount() const;
 
   /**
+   * @returns The header of the next datagram to the player of the game who
+   * sends from @p player, as sessionHeaderFor() gives it: the session token
+   * and the next sequence of that player, which then moves on by one, or a
+   * header without session when no player of the game sends from there.
+   */
+  [[nodiscard]] network::PacketHeader nextSessionHeaderFor(
+      const network::Endpoint& player);
+
+  /**
    * @brief Gives @p player, who just took a place in roster(), a ship in the
    * world and announces it to the players.
    * @throws NetworkIdExhaustedException when every network id was given.
@@ -125,8 +146,9 @@ class GameInstance {
   /**
    * @brief Runs one tick: applies the ReadyState and keeps the newest
    * PlayerInput among @p datagrams, oldest first, then moves the game along its
-   * states and, while it is in progress, counts the tick and lets the Bydos
-   * appear. Nothing caused by the content of a datagram makes it throw.
+   * states. While it waits, the players are told the room; while it is in
+   * progress, the tick is counted, the systems run, the Bydos appear and the
+   * world is sent. Nothing caused by the content of a datagram makes it throw.
    */
   void onTick(std::span<const network::IncomingDatagram> datagrams);
 
@@ -144,6 +166,11 @@ class GameInstance {
   void keepIfNewer(const network::MessageOrigin& origin,
                    const network::PlayerInput& input);
   [[nodiscard]] bool everyPlayerIsReady();
+
+  /** @brief Moves the game to InProgress and sends every connected player
+   * GameStarted. */
+  void startGame();
+
   void startNewWorld();
 
   Send send_;
@@ -152,6 +179,8 @@ class GameInstance {
   PlayerRoster roster_;
   std::unique_ptr<ShipSpawnAnnouncer> shipSpawnAnnouncer_;
   std::unique_ptr<BydoSpawner> bydoSpawner_;
+  std::unique_ptr<LobbyStateAnnouncer> lobbyStateAnnouncer_;
+  WorldStateSender worldStateSender_;
   network::MessageDispatcher dispatcher_;
   GameState state_{GameState::WaitingForPlayers};
   std::uint32_t seed_;

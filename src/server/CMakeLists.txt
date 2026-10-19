@@ -24,7 +24,6 @@ target_link_libraries(r-type_server
     rtype_server_game_event_broadcaster
     rtype_server_game_instance
     rtype_server_launch_options
-    rtype_server_world_state_sender
 )
 
 rtype_enable_warnings(r-type_server)
