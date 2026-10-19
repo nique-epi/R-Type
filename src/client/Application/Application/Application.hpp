@@ -112,6 +112,10 @@ class Application {
    * for ScreenId::GameOptions. */
   [[nodiscard]] std::unique_ptr<IScreen> optionsScreen(ScreenId screen);
 
+  /** @brief The waiting room, its READY key read from the bindings of the
+   * player when it is built. */
+  [[nodiscard]] std::unique_ptr<IScreen> lobbyScreen();
+
   /**
    * @brief The loading screen of a list while some of its assets are not
    * loaded; nothing once they all are, after releasing the loaded assets the

@@ -97,8 +97,9 @@ class Menu {
     /** @brief The button MENU_CANCEL_KEY activates. */
     std::optional<std::size_t> cancelButton;
     /** @brief Where the description of the selected button is written, and
-     * how: outlined on the sky of a page, in small print inside a form. */
-    sf::Vector2i descriptionAnchor;
+     * how: outlined on the sky of a page, in small print inside a form;
+     * nowhere in a dialog or a room. */
+    std::optional<sf::Vector2i> descriptionAnchor;
     TextStyle descriptionStyle = PAGE_LINE_STYLE;
     /** @brief Where the status line is written: under the description of a
      * form, nowhere on a page or a dialog. */
@@ -160,6 +161,10 @@ class Menu {
   /** @brief Gives a button the line written while it is selected, by its
    * order in the menu; an order outside the menu changes nothing. */
   void setDescription(std::size_t button, std::string description);
+
+  /** @brief Gives a button another label, by its order in the menu; an order
+   * outside the menu changes nothing. */
+  void setLabel(std::size_t button, std::string label);
 
   /** @returns The order of the selected button, or nothing when no button is
    * enabled. */

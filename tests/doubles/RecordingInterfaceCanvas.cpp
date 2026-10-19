@@ -3,11 +3,14 @@
 #include <SFML/Graphics/Rect.hpp>
 #include <SFML/System/Vector2.hpp>
 #include <algorithm>
+#include <optional>
 #include <set>
 #include <string>
 #include <string_view>
 #include <utility>
+#include "ImagePlacement.hpp"
 #include "TextStyle.hpp"
+#include "TextureArea.hpp"
 
 RecordingInterfaceCanvas::RecordingInterfaceCanvas(
     InterfaceCanvasRecord& record)
@@ -29,13 +32,13 @@ void RecordingInterfaceCanvas::write(std::string_view text, sf::Vector2i anchor,
       {.text = std::string(text), .anchor = anchor, .style = style});
 }
 
-void RecordingInterfaceCanvas::drawImage(std::string_view assetId,
-                                         sf::IntRect source,
-                                         sf::Vector2i topLeft,
-                                         sf::IntRect visibleArea) {
-  record_->images.push_back({.assetId = std::string(assetId),
-                             .source = source,
-                             .topLeft = topLeft,
+void RecordingInterfaceCanvas::drawImage(
+    rtype::client::TextureArea image, rtype::client::ImagePlacement placement,
+    sf::IntRect visibleArea) {
+  record_->images.push_back({.assetId = std::string(image.assetId),
+                             .source = image.rectangle,
+                             .topLeft = placement.topLeft,
+                             .scale = placement.scale,
                              .visibleArea = visibleArea});
 }
 
@@ -51,6 +54,13 @@ const RecordedWriting* writingOf(const InterfaceCanvasRecord& record,
   const auto found =
       std::ranges::find(record.writings, text, &RecordedWriting::text);
   return found == record.writings.end() ? nullptr : &*found;
+}
+
+std::optional<sf::Vector2i> anchorOf(const InterfaceCanvasRecord& record,
+                                     std::string_view text) {
+  const RecordedWriting* writing = writingOf(record, text);
+  return writing == nullptr ? std::nullopt
+                            : std::optional<sf::Vector2i>(writing->anchor);
 }
 
 std::set<std::pair<int, int>> litPixelsOf(const InterfaceCanvasRecord& record) {

@@ -32,6 +32,9 @@ constexpr unsigned int TEXT_CHARACTER_SIZE = 8;
 /** @brief Height of a line of text, in pixels: as tall as the fonts. */
 constexpr int TEXT_LINE_HEIGHT = static_cast<int>(TEXT_CHARACTER_SIZE);
 
+/** @brief Scale of an image drawImage() copies pixel for pixel. */
+constexpr int NATIVE_SCALE = 1;
+
 /**
  * @brief Width of every character a text field accepts in the regular font, in
  * pixels: Press Start 2P gives each of them an advance of one em (1000 units

@@ -15,6 +15,10 @@ namespace rtype::client {
  * box, in pixels. */
 [[nodiscard]] int centeredTextLeft(sf::IntRect box, std::string_view text);
 
+/** @returns The top of a line of text centered in a box: its middle row, in
+ * pixels. */
+[[nodiscard]] int centeredTextTop(sf::IntRect box);
+
 /** @returns The color of the label of a bar in a state, also the color of
  * text laid on a row outside any box. */
 [[nodiscard]] sf::Color barTextColor(BarState state);

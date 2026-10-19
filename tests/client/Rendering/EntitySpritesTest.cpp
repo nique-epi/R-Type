@@ -1,7 +1,6 @@
 #include <gtest/gtest.h>
 #include <SFML/Graphics/Image.hpp>
 #include <array>
-#include <chrono>
 #include <cstddef>
 #include <cstdint>
 #include <optional>
@@ -10,6 +9,7 @@
 #include "AllEntityTypes.hpp"
 #include "Animation.hpp"
 #include "EntitySpriteConstants.hpp"
+#include "EntitySpriteTestConstants.hpp"
 #include "EntitySprites.hpp"
 #include "EntityType.hpp"
 #include "Layer.hpp"
@@ -40,14 +40,6 @@ SpriteFrame frameOf(EntityType type) {
   const std::optional<Sprite> sprite = spriteOf(type);
   return sprite.has_value() ? sprite->frame : NO_FRAME;
 }
-
-/** @brief Frame times of the entities, as listed in assets/README.md. */
-constexpr Duration SHIP_FRAME_TIME_LISTED = std::chrono::milliseconds(80);
-constexpr Duration BYDO_FRAME_TIME_LISTED = std::chrono::milliseconds(250);
-constexpr Duration PLAYER_MISSILE_FRAME_TIME_LISTED =
-    std::chrono::milliseconds(60);
-constexpr Duration ENEMY_MISSILE_FRAME_TIME_LISTED =
-    std::chrono::milliseconds(120);
 
 /** @brief Network ids checked for their loop start, from 0 included. */
 constexpr std::uint32_t CHECKED_NETWORK_IDS = 10000;

@@ -12,10 +12,12 @@ enum class TextFont : std::uint8_t {
   Small,
 };
 
-/** @brief Which top corner of its line a text is anchored by. */
+/** @brief Which point of the top edge of its line a text is anchored by. */
 enum class TextAlignment : std::uint8_t {
   Left,
   Right,
+  /** @brief The middle of the top edge, rounded down to a whole pixel. */
+  Center,
 };
 
 /**

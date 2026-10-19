@@ -8,6 +8,7 @@
 #include <optional>
 #include <string_view>
 #include <vector>
+#include "BackgroundColors.hpp"
 #include "InterfaceColors.hpp"
 #include "InterfaceConstants.hpp"
 #include "KeyPress.hpp"
@@ -26,6 +27,7 @@ using rtype::client::INTERFACE_AREA;
 using rtype::client::Menu;
 using rtype::client::MenuBuilder;
 using rtype::client::RULE_COLOR;
+using rtype::client::STAR_GOLD;
 using rtype::client::TextAlignment;
 using rtype::client::TextField;
 using rtype::client::TextFont;
@@ -92,12 +94,19 @@ Menu connectionForm() {
       .build();
 }
 
-/** @returns Where the line with this text was anchored, or nothing. */
-std::optional<sf::Vector2i> anchorOf(const InterfaceCanvasRecord& record,
-                                     std::string_view text) {
-  const RecordedWriting* writing = writingOf(record, text);
-  return writing == nullptr ? std::nullopt
-                            : std::optional<sf::Vector2i>(writing->anchor);
+/** @brief Size of the four bays of the waiting room the team chose. */
+constexpr sf::Vector2i BAYS_SIZE(432, 112);
+
+/** @brief The waiting room of the picture the team chose, without actions:
+ * its heading, its bays, READY with the R key, then BACK. */
+Menu waitingRoom() {
+  return MenuBuilder(MenuBuilder::Frame::Room)
+      .heading("ROOM")
+      .illustration(BAYS_SIZE)
+      .button({.label = "READY", .description = "> READY", .keyName = "R"},
+              [] {})
+      .cancelButton({.label = "BACK"}, [] {})
+      .build();
 }
 
 }  // namespace
@@ -506,4 +515,106 @@ TEST(MenuBuilder, ATabbedPanelOverAGameSaysSoAndDimsIt) {
   EXPECT_EQ(notice->style.alignment, TextAlignment::Right);
   ASSERT_FALSE(painting.fills.empty());
   EXPECT_EQ(painting.fills.front().color, DIM_LAYER_COLOR);
+}
+
+/**
+ * Given the waiting room of the mockup
+ * When it is painted
+ * Then a rule 432 pixels wide lies at row 40, across the safe margin
+ */
+TEST(MenuBuilder, RoomDrawsARuleAcrossTheSafeMargin) {
+  const InterfaceCanvasRecord painted = paintingOf(waitingRoom());
+
+  EXPECT_THAT(painted.fills, Contains(RecordedFill{.area = {{24, 40}, {432, 1}},
+                                                   .color = RULE_COLOR}));
+}
+
+/**
+ * Given the waiting room of the mockup
+ * When it is built
+ * Then its illustration starts at row 50, against the left side of the margin
+ */
+TEST(MenuBuilder, RoomReservesItsIllustrationUnderTheRule) {
+  EXPECT_EQ(waitingRoom().illustrationArea(), sf::IntRect({24, 50}, BAYS_SIZE));
+}
+
+/**
+ * Given the waiting room of the mockup
+ * When it is painted
+ * Then READY is a bar centered on the picture, 12 rows under the
+ * illustration: its label at (172, 180)
+ */
+TEST(MenuBuilder, RoomCentersItsBarUnderTheIllustration) {
+  const InterfaceCanvasRecord painted = paintingOf(waitingRoom());
+
+  EXPECT_EQ(anchorOf(painted, "READY"), sf::Vector2i(172, 180));
+}
+
+/**
+ * Given a bar of the room showing the R key
+ * When it is painted
+ * Then R is written on a keycap 4 pixels from the right end of the bar, on
+ * the row of the label
+ */
+TEST(MenuBuilder, ABarWritesItsKeyOnTheRowOfItsLabel) {
+  const InterfaceCanvasRecord painted = paintingOf(waitingRoom());
+
+  EXPECT_EQ(anchorOf(painted, "R"), sf::Vector2i(305, 180));
+}
+
+/**
+ * Given the waiting room of the mockup
+ * When it is painted
+ * Then BACK is a chip 82 by 16 against the bottom-right corner of the margin,
+ * its label and the name of its key on the same row
+ */
+TEST(MenuBuilder, RoomPutsBackAsAChipInTheBottomRightCorner) {
+  const InterfaceCanvasRecord painted = paintingOf(waitingRoom());
+
+  EXPECT_EQ(anchorOf(painted, "BACK"), sf::Vector2i(386, 234));
+  EXPECT_EQ(anchorOf(painted, "ESC"), sf::Vector2i(425, 234));
+}
+
+/**
+ * Given the waiting room of the mockup with a status line
+ * When it is painted
+ * Then the line is centered on column 240, row 202, in gold
+ */
+TEST(MenuBuilder, RoomCentersItsStatusUnderItsBar) {
+  Menu room = waitingRoom();
+  room.setStatus("STATUS");
+
+  const InterfaceCanvasRecord painted = paintingOf(room);
+
+  const RecordedWriting* status = writingOf(painted, "STATUS");
+  ASSERT_NE(status, nullptr);
+  EXPECT_EQ(status->anchor, sf::Vector2i(240, 202));
+  EXPECT_EQ(status->style.alignment, TextAlignment::Center);
+  EXPECT_EQ(status->style.color, STAR_GOLD);
+}
+
+/**
+ * Given a room whose bar was given a description
+ * When it is painted, the bar selected
+ * Then the description is not written
+ */
+TEST(MenuBuilder, RoomLeavesDescriptionsOut) {
+  const InterfaceCanvasRecord painted = paintingOf(waitingRoom());
+
+  EXPECT_EQ(writingOf(painted, "> READY"), nullptr);
+}
+
+/**
+ * Given the waiting room of the mockup
+ * When its bar is given another label
+ * Then the new label is written in place of the old one
+ */
+TEST(MenuBuilder, ABarCanBeRelabelled) {
+  Menu room = waitingRoom();
+
+  room.setLabel(0, "CANCEL READY");
+
+  const InterfaceCanvasRecord painted = paintingOf(room);
+  EXPECT_EQ(anchorOf(painted, "CANCEL READY"), sf::Vector2i(172, 180));
+  EXPECT_EQ(writingOf(painted, "READY"), nullptr);
 }

@@ -17,12 +17,14 @@
 #include "Button.hpp"
 #include "CutCornerBox.hpp"
 #include "IInterfaceCanvas.hpp"
+#include "ImagePlacement.hpp"
 #include "InterfaceColors.hpp"
 #include "InterfaceConstants.hpp"
 #include "Label.hpp"
 #include "PlayfieldMapping.hpp"
 #include "RowControl.hpp"
 #include "TextField.hpp"
+#include "TextureArea.hpp"
 #include "TimeConstants.hpp"
 #include "WidgetColors.hpp"
 #include "WidgetConstants.hpp"
@@ -110,9 +112,11 @@ void Menu::paint(IInterfaceCanvas& canvas) const {
     canvas.fill(*content_.rule, RULE_COLOR);
   }
   if (content_.picture.has_value()) {
-    canvas.drawImage(content_.picture->assetId,
-                     {{0, 0}, content_.picture->area.size},
-                     content_.picture->area.position, INTERFACE_AREA);
+    canvas.drawImage(
+        TextureArea{.assetId = content_.picture->assetId,
+                    .rectangle = {{0, 0}, content_.picture->area.size}},
+        ImagePlacement{.topLeft = content_.picture->area.position},
+        INTERFACE_AREA);
   }
   for (const Label& label : content_.labels) {
     label.paint(canvas);
@@ -120,10 +124,10 @@ void Menu::paint(IInterfaceCanvas& canvas) const {
   for (std::size_t button = 0; button < content_.buttons.size(); ++button) {
     content_.buttons[button].paint(canvas, stateOf(button));
   }
-  if (selected_.has_value() &&
+  if (selected_.has_value() && content_.descriptionAnchor.has_value() &&
       !content_.buttons[*selected_].description().empty()) {
     canvas.write(content_.buttons[*selected_].description(),
-                 content_.descriptionAnchor, content_.descriptionStyle);
+                 *content_.descriptionAnchor, content_.descriptionStyle);
   }
   if (content_.statusAnchor.has_value() && !status_.empty()) {
     canvas.write(status_, *content_.statusAnchor, content_.statusStyle);
@@ -170,6 +174,12 @@ void Menu::setEnabled(std::size_t button, bool enabled) {
 void Menu::setDescription(std::size_t button, std::string description) {
   if (button < content_.buttons.size()) {
     content_.buttons[button].setDescription(std::move(description));
+  }
+}
+
+void Menu::setLabel(std::size_t button, std::string label) {
+  if (button < content_.buttons.size()) {
+    content_.buttons[button].setLabel(std::move(label));
   }
 }
 

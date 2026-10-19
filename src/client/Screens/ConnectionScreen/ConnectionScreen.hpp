@@ -27,9 +27,9 @@ namespace rtype::client {
  * status line, and the attempt in progress is dropped without a new one.
  * Otherwise a new attempt replaces it. At each update the status line shows the
  * status of the connection; once the server has accepted the player for
- * ACCEPTED_STATUS_DURATION, the screen asks for the game in place of every
- * screen, once. BACK, or MENU_CANCEL_KEY, drops the attempt and closes the
- * screen.
+ * ACCEPTED_STATUS_DURATION, the screen opens the waiting room over itself,
+ * once per attempt. BACK, or MENU_CANCEL_KEY, drops the attempt and closes
+ * the screen.
  */
 class ConnectionScreen : public IScreen {
  public:
@@ -72,8 +72,8 @@ class ConnectionScreen : public IScreen {
   /** @brief Drops the attempt, then asks for the screen to be closed. */
   void leave();
 
-  /** @brief Asks for the game once the server has accepted the player for
-   * ACCEPTED_STATUS_DURATION. */
+  /** @brief Opens the waiting room once the server has accepted the player
+   * for ACCEPTED_STATUS_DURATION. */
   void followConnection(const ConnectionStatus& status,
                         engine::Duration elapsed);
 
@@ -82,7 +82,8 @@ class ConnectionScreen : public IScreen {
   [[nodiscard]] std::string statusLine(const ConnectionStatus& status) const;
 
   /** @brief Paints the menu, its status line telling how the attempt stands,
-   * read once per update so the line and the request for the game agree. */
+   * read once per update so the line and the opening of the waiting room
+   * agree. */
   void repaint(const ConnectionStatus& status);
 
   IScreenNavigator* navigator_{};
@@ -91,7 +92,7 @@ class ConnectionScreen : public IScreen {
   PlayfieldMapping playfieldPointAt_;
   std::string_view fieldProblem_;
   engine::Duration acceptedFor_{};
-  bool gameAsked_ = false;
+  bool lobbyAsked_ = false;
   Menu menu_;
 };
 

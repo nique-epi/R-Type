@@ -1,6 +1,7 @@
 #include "Application.hpp"
 #include <SFML/System/Vector2.hpp>
 #include <SFML/Window/Event.hpp>
+#include <SFML/Window/Keyboard.hpp>
 #include <filesystem>
 #include <memory>
 #include <optional>
@@ -9,6 +10,7 @@
 #include <utility>
 #include "AssetLibrary.hpp"
 #include "AssetList.hpp"
+#include "BoundAction.hpp"
 #include "ConnectionScreen.hpp"
 #include "Endpoint.hpp"
 #include "EntityLayer.hpp"
@@ -17,6 +19,7 @@
 #include "IScreen.hpp"
 #include "InterfaceCanvas.hpp"
 #include "LoadingScreen.hpp"
+#include "LobbyScreen.hpp"
 #include "LocalizedKeyName.hpp"
 #include "MotionPreference.hpp"
 #include "NetworkConstants.hpp"
@@ -42,6 +45,13 @@ PlayerSettings firstLaunchSettings() {
   PlayerSettings settings;
   settings.reduceFlashes = systemPrefersReducedMotion();
   return settings;
+}
+
+/** @returns Reduced when the system asks for less motion, Full otherwise;
+ * read each time a screen that moves is built. */
+MotionPreference motionPreference() {
+  return systemPrefersReducedMotion() ? MotionPreference::Reduced
+                                      : MotionPreference::Full;
 }
 
 }  // namespace
@@ -115,6 +125,8 @@ std::unique_ptr<IScreen> Application::createScreen(ScreenId screen) {
       return std::make_unique<ConnectionScreen>(
           screens_, connection_, interfaceCanvas(), playfieldMapping(), server_,
           nickname_);
+    case ScreenId::Lobby:
+      return lobbyScreen();
   }
   return nullptr;
 }
@@ -125,11 +137,8 @@ std::unique_ptr<IScreen> Application::titleScreen() {
   if (loading != nullptr) {
     return loading;
   }
-  const MotionPreference motion = systemPrefersReducedMotion()
-                                      ? MotionPreference::Reduced
-                                      : MotionPreference::Full;
   return std::make_unique<TitleScreen>(screens_, interfaceCanvas(),
-                                       playfieldMapping(), motion,
+                                       playfieldMapping(), motionPreference(),
                                        std::random_device{}());
 }
 
@@ -151,6 +160,19 @@ std::unique_ptr<IScreen> Application::optionsScreen(ScreenId screen) {
   return std::make_unique<OptionsScreen>(
       screens_, place, settings_, settingsFile_, window_, localizedKeyName,
       interfaceCanvas(), playfieldMapping());
+}
+
+std::unique_ptr<IScreen> Application::lobbyScreen() {
+  const sf::Keyboard::Scancode readyKey =
+      settings_.keys.keyOf(BoundAction::Ready);
+  return std::make_unique<LobbyScreen>(
+      LobbyScreen::Parts{
+          .navigator = screens_,
+          .connection = connection_,
+          .playfieldPointAt = playfieldMapping(),
+          .readyKey = {.key = readyKey, .name = localizedKeyName(readyKey)},
+          .motion = motionPreference()},
+      interfaceCanvas());
 }
 
 std::unique_ptr<IScreen> Application::loadingScreenUnlessLoaded(

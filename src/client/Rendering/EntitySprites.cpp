@@ -1,4 +1,5 @@
 #include "EntitySprites.hpp"
+#include <SFML/Graphics/Rect.hpp>
 #include <chrono>
 #include <cmath>
 #include <cstdint>
@@ -9,6 +10,7 @@
 #include "Layer.hpp"
 #include "Sprite.hpp"
 #include "SpriteAnimation.hpp"
+#include "SpriteFrame.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::client {
@@ -62,6 +64,16 @@ std::optional<SpriteAnimation> animationOf(game::EntityType type,
     return std::nullopt;
   }
   return startedAt(*animation, networkId);
+}
+
+sf::IntRect rectangleOf(game::SpriteFrame frame) {
+  return {{frame.left, frame.top}, {frame.width, frame.height}};
+}
+
+game::SpriteFrame inPlayerColorRow(game::SpriteFrame frame, int color) {
+  frame.top = PLAYER_SHIP_FRAME.top +
+              (color * (PLAYER_SHIP_FRAME.height + SPRITE_SPACING));
+  return frame;
 }
 
 }  // namespace rtype::client

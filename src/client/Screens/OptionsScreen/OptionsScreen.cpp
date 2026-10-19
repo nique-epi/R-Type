@@ -387,7 +387,7 @@ std::string OptionsScreen::keyDescription(std::size_t row) const {
     text += CONFLICT_DESCRIPTION_END;
     return text;
   }
-  return action == BoundAction::Ready ? READY_KEY_DESCRIPTION : KEY_DESCRIPTION;
+  return KEY_DESCRIPTION;
 }
 
 std::string OptionsScreen::windowSizeDescription() const {

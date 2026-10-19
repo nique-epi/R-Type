@@ -25,6 +25,17 @@ The working tree and `build/` were treated as private instruments, while they ar
 - ❌ **Before (wrong)**: 35 variants injected into the user's checkout; the user builds meanwhile; 11 variants lost, a client binary possibly built with a defect.
 - ✅ **After (right)**: variants run in `<scratchpad>/red-proofs/` with its own build directory; the user's tree is never written.
 
+## Update (2026-10-17) — a sync that broke the copy's vcpkg tool
+
+### Context
+The isolated copy of the client animations was synced from the tree before the clang-tidy fixes were rebuilt.
+
+### Mistake
+The sync (`rsync -a --delete`) included `vcpkg/`. The sandbox refused to write inside `vcpkg/downloads/tools/cmake-4.4.0-osx/…/CMake.app` (`Operation not permitted`), so the copy kept a CMake without its binary. The copy built until a `CMakeLists.txt` changed; its configure then failed with "expected this path to exist after extracting cmake". Copying the folder again failed the same way.
+
+### Root cause
+The sync copied a folder the copy never needs to change, and its errors were read as noise because the build that followed passed.
+
 ## Update (2026-10-18) — A path left out of the copy is named whole
 
 ### Context
@@ -47,3 +58,17 @@ Each exclusion pattern matches a whole path (`^vcpkg$`, `^docs/`), and the root 
 
 - ❌ **Before (wrong)**: `grep -v -E '^(vcpkg|docs/)'` → `vcpkg.json` missing, configure fails on `asio`.
 - ✅ **After (right)**: `grep -v -E '^(vcpkg$|docs/)'`, root of the copy compared with the repository's root before configuring.
+
+## Update (2026-10-19) — a sync that deleted the copy's vcpkg link
+
+### Context
+The isolated copy of the waiting room had its `vcpkg` as a symbolic link to the tree's submodule, and was resynced after three files were formatted.
+
+### Mistake
+The sync excluded `/vcpkg/`, with a trailing slash. In the copy, `vcpkg` is a link, not a folder, so the pattern did not match it and `--delete` removed it. The next `format-check` reconfigured the copy and failed: "include could not find requested file: …/ci-copy/vcpkg/scripts/buildsystems/vcpkg.cmake".
+
+### Root cause
+The exclude pattern of the rule was written for a copy holding no `vcpkg` at all; a pattern ending in `/` matches folders only.
+
+### Rule
+When the copy's `vcpkg` is a link, exclude it as `--exclude=/vcpkg`, and check `ls -l <copy>/vcpkg` after the sync.

@@ -47,6 +47,25 @@ constexpr std::uint64_t OTHER_SESSION_TOKEN = 0xfedcba9876543210;
 constexpr std::chrono::milliseconds PROTOCOL_REQUEST_INTERVAL{500};
 constexpr std::chrono::seconds PROTOCOL_ATTEMPT_TIMEOUT{5};
 
+/** @brief Sequences of the server's datagrams in a session: the acceptance,
+ * then two more in the order they were sent. */
+constexpr std::uint16_t ACCEPTANCE_SEQUENCE = 0;
+constexpr std::uint16_t FIRST_SEQUENCE = 1;
+constexpr std::uint16_t SECOND_SEQUENCE = 2;
+
+/** @brief Another player of the waiting room. */
+constexpr std::uint8_t OTHER_PLAYER_NUMBER = 1;
+constexpr std::string_view OTHER_NICKNAME = "ACE";
+
+/**
+ * @brief The repetitions the protocol page gives a session: a ReadyState every
+ * 500 ms while the waiting room shows another value, a Disconnection three
+ * times, 50 ms apart.
+ */
+constexpr std::chrono::milliseconds PROTOCOL_READY_STATE_INTERVAL{500};
+constexpr int PROTOCOL_DISCONNECTION_COPY_COUNT = 3;
+constexpr std::chrono::milliseconds PROTOCOL_DISCONNECTION_COPY_INTERVAL{50};
+
 /**
  * @brief What the protocol page says of the inputs: the first one is numbered
  * 1, and up is bit 0 of the actions.

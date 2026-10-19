@@ -10,6 +10,7 @@ target_link_libraries(rtype_client_button
     rtype_client_text_field
     rtype_client_widgets
   PRIVATE
+    rtype_client_key_cap
     rtype_client_widget_text
 )
 

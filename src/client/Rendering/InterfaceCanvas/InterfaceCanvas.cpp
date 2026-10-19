@@ -20,9 +20,12 @@
 #include "BackgroundConstants.hpp"
 #include "CrispTextShader.hpp"
 #include "FragmentShader.hpp"
+#include "ImagePlacement.hpp"
 #include "InterfaceColors.hpp"
 #include "InterfaceConstants.hpp"
+#include "RenderingConstants.hpp"
 #include "TextStyle.hpp"
+#include "TextureArea.hpp"
 
 namespace rtype::client {
 
@@ -58,9 +61,11 @@ void InterfaceCanvas::write(std::string_view text, sf::Vector2i anchor,
                 TEXT_CHARACTER_SIZE);
   sf::Vector2i position(anchor.x, anchor.y + font.baselineRow -
                                       static_cast<int>(TEXT_CHARACTER_SIZE));
-  if (style.alignment == TextAlignment::Right) {
-    position.x -= static_cast<int>(
-        std::round(line.findCharacterPos(line.getString().getSize()).x));
+  if (style.alignment != TextAlignment::Left) {
+    const float width = line.findCharacterPos(line.getString().getSize()).x;
+    position.x -= style.alignment == TextAlignment::Right
+                      ? static_cast<int>(std::round(width))
+                      : static_cast<int>(std::floor(width * HALF));
   }
   const sf::RenderStates states(crispText_.has_value() ? &*crispText_
                                                        : nullptr);
@@ -78,25 +83,36 @@ void InterfaceCanvas::write(std::string_view text, sf::Vector2i anchor,
   canvas_.canvas().draw(line, states);
 }
 
-void InterfaceCanvas::drawImage(std::string_view assetId, sf::IntRect source,
-                                sf::Vector2i topLeft, sf::IntRect visibleArea) {
-  const sf::Texture* texture = textures_.texture(assetId);
+void InterfaceCanvas::drawImage(TextureArea image, ImagePlacement placement,
+                                sf::IntRect visibleArea) {
+  const sf::Texture* texture = textures_.texture(image.assetId);
   if (texture == nullptr) {
-    if (!reportedMissingIds_.contains(assetId)) {
-      reportedMissingIds_.emplace(assetId);
-      logger_.warn("no texture for asset id ", assetId);
+    if (!reportedMissingIds_.contains(image.assetId)) {
+      reportedMissingIds_.emplace(image.assetId);
+      logger_.warn("no texture for asset id ", image.assetId);
     }
     return;
   }
+  const sf::Vector2i topLeft = placement.topLeft;
+  const int scale = placement.scale;
   const std::optional<sf::IntRect> shown =
-      sf::IntRect(topLeft, source.size).findIntersection(visibleArea);
+      sf::IntRect(topLeft, image.rectangle.size * scale)
+          .findIntersection(visibleArea);
   if (!shown.has_value()) {
     return;
   }
-  sf::Sprite sprite(
-      *texture,
-      sf::IntRect(source.position + (shown->position - topLeft), shown->size));
-  sprite.setPosition(sf::Vector2f(shown->position));
+  const sf::Vector2i firstPixel =
+      (shown->position - topLeft + sf::Vector2i(scale - 1, scale - 1)) / scale;
+  const sf::Vector2i endPixel =
+      (shown->position + shown->size - topLeft) / scale;
+  const sf::Vector2i shownPixels = endPixel - firstPixel;
+  if (shownPixels.x <= 0 || shownPixels.y <= 0) {
+    return;
+  }
+  sf::Sprite sprite(*texture, sf::IntRect(image.rectangle.position + firstPixel,
+                                          shownPixels));
+  sprite.setPosition(sf::Vector2f(topLeft + (firstPixel * scale)));
+  sprite.setScale({static_cast<float>(scale), static_cast<float>(scale)});
   canvas_.canvas().draw(sprite);
 }
 

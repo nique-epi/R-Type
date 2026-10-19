@@ -43,3 +43,14 @@ The rule names `path` among the forbidden names, and it was still typed: the var
 
 1. **A name that says "the path of this file" is the trap**: when a loop derives one path from another (`relative=${file#*/}`, the path inside a commit folder, a path without its prefix), name it `relative`, `target`, `source_file` or `inside`, never `path`. The assignment runs at the first iteration and every later command of the loop fails.
 2. **Before sending a command that holds a loop or an assignment, read the name on the left of each `=` and of each `for … in`** against the list of point 1 of the rule. This check is made on the command text, not remembered.
+
+## Update (2026-10-18) — `path` again, in a staging loop
+
+### Context
+Splitting the client animations into commits, intermediate file contents were staged with `git hash-object` and `git update-index --cacheinfo` in a loop over their paths.
+
+### Mistake
+The loop variable was named `path`. Its first assignment replaced `PATH`, so every `git` and `tail` of the call failed with `command not found`. Only the `git rm --cached` placed before the loop had run, which left three deletions alone in the index.
+
+### Root cause
+The loop staged paths rather than reading files, and the name was chosen from what the loop held. The check on the left of each `for … in` that the rule asks for was not made.

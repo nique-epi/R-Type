@@ -15,6 +15,7 @@ trigger: always_on
 
 1. **A glob meant to match "every file of a folder, if any"** (cleaning an output folder before a run, collecting logs) fails in zsh on an empty folder and stops the whole `&&` chain. Use `find <dir> -name '<pattern>' -delete` (or `-print0 | xargs -0`), or the zsh qualifier `(N)`: `rm -f -- "$dir"/*.txt(N)`.
 2. **A run whose first command failed has no result**: when a chain prints `no matches found`, every later output line (an empty list, a missing file) is ignored and the chain is rerun.
+3. **A glob by extension is written from a listing, never from habit**: list the folder first (`ls .github/workflows/`), since `.yaml` and `.yml`, `.hpp` and `.h` both exist. A loop over `*.yml` in a folder of `.yaml` files stops the line before its first command.
 
 ### The value of an option and a separator are quoted like any other word
 

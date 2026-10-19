@@ -93,3 +93,17 @@ See the core file, subsection "A separator is made of dashes only".
 
 - ❌ `sed -n 1,58p a.cpp && echo ===== && sed -n 1,35p b.cpp`.
 - ✅ `sed -n 1,58p a.cpp && echo '-----' && sed -n 1,35p b.cpp`.
+
+## Update (2026-10-19) — a glob written with the wrong extension
+
+### Context
+After opening the waiting room pull request, the workflow triggers were to be read to know whether the CI runs on a draft.
+
+### Mistake
+The command looped over `.github/workflows/*.yml`; the folder holds `build-and-test.yaml` and `docs.yaml`. zsh printed `no matches found` and stopped the line, so neither the triggers nor the checks were read.
+
+### Root cause
+The extension was written from habit, without listing the folder.
+
+### Rule
+A glob by extension is written from a listing of the folder, never from habit.

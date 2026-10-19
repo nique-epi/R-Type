@@ -1,6 +1,7 @@
 #pragma once
 
 #include <SFML/Graphics/Color.hpp>
+#include <array>
 #include <cstdint>
 #include "BackgroundColors.hpp"
 
@@ -21,6 +22,13 @@ constexpr sf::Color EDGE_BLUE(31, 163, 201);
  * on the sky, so a star, the planet or a comet behind never touches a letter.
  */
 constexpr sf::Color INK(10, 11, 26);
+
+/** @brief Main color of the ship of each player color, in the order of the
+ * rows of the entity sheet, read from the file: what the interface paints in
+ * the color of a player. */
+constexpr std::array PLAYER_SHIP_COLORS{
+    sf::Color(31, 163, 201), sf::Color(217, 74, 140), sf::Color(126, 194, 58),
+    sf::Color(224, 154, 42)};
 
 /** @brief Layer a dialog lays over the screens below: the sky at 72 %
  * opacity. */

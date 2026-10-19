@@ -49,4 +49,11 @@ constexpr TextStyle NOTICE_STYLE{.font = TextFont::Small,
 constexpr TextStyle STAMP_STYLE{
     .font = TextFont::Small, .color = STATUS_TEXT_COLOR, .outlined = true};
 
+/** @brief The status line of a room, under its bars: gold, outlined on the
+ * sky, centered. */
+constexpr TextStyle ROOM_STATUS_STYLE{.font = TextFont::Regular,
+                                      .color = STATUS_TEXT_COLOR,
+                                      .outlined = true,
+                                      .alignment = TextAlignment::Center};
+
 }  // namespace rtype::client

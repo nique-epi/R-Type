@@ -101,6 +101,7 @@ Menu ConnectionScreen::buildMenu(const network::Endpoint& server,
 void ConnectionScreen::connect() {
   connection_->cancel();
   acceptedFor_ = engine::Duration::zero();
+  lobbyAsked_ = false;
   try {
     const network::Endpoint server{
         .address = network::ipv4AddressFromText(menu_.fieldText(ADDRESS_ENTRY)),
@@ -131,9 +132,9 @@ void ConnectionScreen::followConnection(const ConnectionStatus& status,
     return;
   }
   acceptedFor_ += elapsed;
-  if (!gameAsked_ && acceptedFor_ >= ACCEPTED_STATUS_DURATION) {
-    gameAsked_ = true;
-    navigator_->replaceAll(ScreenId::Game);
+  if (!lobbyAsked_ && acceptedFor_ >= ACCEPTED_STATUS_DURATION) {
+    lobbyAsked_ = true;
+    navigator_->push(ScreenId::Lobby);
   }
 }
 

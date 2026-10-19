@@ -68,6 +68,8 @@ Paths below are relative to `.claude/rules/`.
 - `architecture/architecture-hpp-declarations-cpp-definitions.md`
 - `architecture/architecture-one-folder-per-concrete-class.md`
 - `architecture/architecture-pure-virtual-interfaces.md`
+- `architecture/fix-architecture-at-most-three-parameters.md`
+- `architecture/fix-architecture-inherit-interfaces-compose-implementations.md`
 - `architecture/fix-architecture-magic-values-as-named-constants.md`
 
 **Build architecture — `fix/architecture/` (loaded every session)**
@@ -86,6 +88,7 @@ Paths below are relative to `.claude/rules/`.
 - `code-style/fix-reasoning-a-pointer-into-a-temporary-dies-with-it.md`
 
 **Process — `fix/process/`**
+- `fix/process/fix-process-a-model-is-called-not-copied.md`
 - `fix/process/fix-process-a-screen-without-mockup-is-validated-as-a-picture.md`
 - `fix/process/fix-process-ask-what-is-observed-before-building-a-protocol.md`
 - `fix/process/fix-process-branch-before-first-commit.md`
@@ -134,6 +137,7 @@ Paths below are relative to `.claude/rules/`.
 - `fix/execution/fix-execution-browser-global-names-are-window-properties.md`
 - `fix/execution/fix-execution-check-the-index-before-committing.md`
 - `fix/execution/fix-execution-checkout-b-starts-from-head-not-main.md`
+- `fix/execution/fix-execution-clang-format-only-on-cpp-files.md`
 - `fix/execution/fix-execution-edit-script-validates-anchors-before-writing.md`
 - `fix/execution/fix-execution-git-check-branch-before-writing-history.md`
 - `fix/execution/fix-execution-gcc-warns-when-a-designated-initializer-skips-a-member-without-default.md`
@@ -152,6 +156,7 @@ Paths below are relative to `.claude/rules/`.
 - `fix/execution/fix-execution-zsh-word-splitting.md`
 
 **Format — `fix/format/`**
+- `fix/format/fix-format-a-count-on-screen-names-what-it-counts.md`
 - `fix/format/fix-format-a-summary-keeps-the-conditions-of-its-rule.md`
 - `fix/format/fix-format-context-before-the-deliverable.md`
 - `fix/format/fix-format-no-tool-call-artifacts-in-written-files.md`

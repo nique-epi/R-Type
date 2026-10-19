@@ -20,7 +20,14 @@ trigger: always_on
 1. **A name that says "the path of this file" is the trap**: when a loop derives one path from another (`relative=${file#*/}`, the path inside a commit folder, a path without its prefix), name it `relative`, `target`, `source_file` or `inside`, never `path`. The assignment runs at the first iteration and every later command of the loop fails.
 2. **Before sending a command that holds a loop or an assignment, read the name on the left of each `=` and of each `for … in`** against the list of point 1 of the rule. This check is made on the command text, not remembered.
 
+### A loop over files names its variable `file`, whatever the files are
+
+1. **Every `for` loop over paths uses the name `file`**, even when each item is staged, hashed or copied rather than read: the name is fixed in advance, so it is never chosen from what the loop holds.
+2. **`command not found` for `git`, `tail` or any basic tool inside a loop is this bug**: stop, read the index or the files the loop was writing (`git diff --cached --name-status`), and rerun with `file`.
+
 ## Example
 
 - ❌ **Before (wrong)**: `for path in $(git ls-files '*.hpp'); do clang-format -i "$path"; done` → `command not found: clang-format` from the first iteration.
 - ✅ **After (right)**: `git ls-files -z '*.hpp' | xargs -0 clang-format -i`, or a loop over `file`.
+- ❌ **Before (wrong)**: `for path in tests/CMakeLists.txt …; do sha=$(git hash-object -w …); git update-index --add --cacheinfo …; done` → `command not found: git` six times; only the `git rm --cached` written before the loop reached the index.
+- ✅ **After (right)**: `for file in …; do …; done`, after reading the index left by the failed call.

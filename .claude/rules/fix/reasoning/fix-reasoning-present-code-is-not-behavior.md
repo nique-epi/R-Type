@@ -12,6 +12,11 @@ trigger: always_on
 3. **Any assumed API behavior is checked in the docs or headers** before being asserted; a homemade doc comment does not count as a source (see `fix-process-instrument-before-reasoning-docs-are-truth.md`).
 4. **When a diagnosis goes in circles** (two re-reads concluding "it's correct" against an "it doesn't work"), stop re-reading the wiring and check that the **final building block** produces its effect.
 
+### A send is followed to its recipients
+
+1. **Before saying a program sends a message**, read the call site of the code that sends it and the list of recipients it is given there. A sender handed an empty list, or a list nothing fills, sends nothing.
+2. **A sentence about the shape of what is sent** ("without a header", "every 50 ms") **is never a proof that it is sent**: check the sending happens first, then describe its shape.
+
 ## Example
 
 - ❌ **Before (wrong)**: "the shooting sound already exists, `SoundSystem` handles `ShootEvent`" → the sound never plays: `SoundSystem` is not in the list of executed systems.

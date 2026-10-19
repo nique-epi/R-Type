@@ -72,6 +72,8 @@ The server receives data from **untrusted** clients over the network.
 |---|---|
 | No method body in a `.hpp` (except templates, `constexpr`, `= default`/`= delete`) | `architecture-hpp-declarations-cpp-definitions.md` |
 | Interfaces: only `= 0` methods + `= default` virtual destructor | `architecture-pure-virtual-interfaces.md` |
+| Inheritance only from interfaces; code reused by holding an object, never by inheriting it | `fix-architecture-inherit-interfaces-compose-implementations.md` |
+| At most three parameters per function written or changed (`readability-function-size`, `ParameterThreshold: 3`) | `fix-architecture-at-most-three-parameters.md` |
 | Domain errors as custom per-module exceptions, never raw `throw std::…` | `architecture-custom-exceptions-per-module.md` |
 | Naming: no `k` prefix, no abbreviations, trailing `member_`, file = class | `code-style/` |
 | Comments in English, outside function bodies, no ticket references | `code-style-comments-english-outside-bodies-no-tickets.md` |

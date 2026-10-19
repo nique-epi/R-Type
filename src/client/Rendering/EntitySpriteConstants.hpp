@@ -39,6 +39,10 @@ constexpr game::SpriteFrame ENEMY_MISSILE_FRAME{
  * sheet or the effect sheet, and between two rows. */
 constexpr int SPRITE_SPACING = 2;
 
+/** @brief Colors of ship the entity sheet holds, one row each from
+ * PLAYER_SHIP_FRAME down. */
+constexpr int PLAYER_COLOR_COUNT = 4;
+
 /** @brief Each entity of the sheet has this many frames, side by side in its
  * row. */
 constexpr std::size_t SPRITE_FRAME_COUNT = 2;

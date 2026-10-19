@@ -13,9 +13,11 @@
 #include <string_view>
 #include "AssetTextureSource.hpp"
 #include "IInterfaceCanvas.hpp"
+#include "ImagePlacement.hpp"
 #include "Logger.hpp"
 #include "PixelCanvas.hpp"
 #include "TextStyle.hpp"
+#include "TextureArea.hpp"
 
 namespace rtype::client {
 
@@ -60,8 +62,8 @@ class InterfaceCanvas : public IInterfaceCanvas {
   void fill(sf::IntRect area, sf::Color color) override;
   void write(std::string_view text, sf::Vector2i anchor,
              TextStyle style) override;
-  void drawImage(std::string_view assetId, sf::IntRect source,
-                 sf::Vector2i topLeft, sf::IntRect visibleArea) override;
+  void drawImage(TextureArea image, ImagePlacement placement,
+                 sf::IntRect visibleArea) override;
   void display() override;
   void show(sf::RenderTarget& target) const override;
 

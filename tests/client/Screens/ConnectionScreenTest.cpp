@@ -317,7 +317,7 @@ TEST_F(ConnectionScreenTest, AnUnreachableServerIsShown) {
  * When frames go by up to one tick before the acceptance showed long enough
  * Then the screen asks for nothing yet
  */
-TEST_F(ConnectionScreenTest, TheGameWaitsUntilTheAcceptanceShowed) {
+TEST_F(ConnectionScreenTest, TheWaitingRoomWaitsUntilTheAcceptanceShowed) {
   showAccepted();
 
   screen().update(ACCEPTED_STATUS_DURATION - ONE_FRAME - ONE_TICK);
@@ -328,30 +328,50 @@ TEST_F(ConnectionScreenTest, TheGameWaitsUntilTheAcceptanceShowed) {
 /**
  * Given an attempt the server has just accepted
  * When frames go by until the acceptance showed long enough
- * Then the screen asks for the game in place of every screen
+ * Then the screen opens the waiting room over itself
  */
-TEST_F(ConnectionScreenTest, TheGameIsAskedOnceTheAcceptanceShowed) {
+TEST_F(ConnectionScreenTest, TheWaitingRoomOpensOnceTheAcceptanceShowed) {
   showAccepted();
 
   screen().update(ACCEPTED_STATUS_DURATION - ONE_FRAME);
 
   EXPECT_THAT(navigator().calls(),
-              ElementsAre(NavigatorCall{.request = NavigatorRequest::ReplaceAll,
-                                        .screen = ScreenId::Game}));
+              ElementsAre(NavigatorCall{.request = NavigatorRequest::Push,
+                                        .screen = ScreenId::Lobby}));
 }
 
 /**
- * Given the game already asked for after an acceptance
+ * Given the waiting room already opened after an acceptance
  * When more frames go by
- * Then the game is asked for once only
+ * Then the waiting room is opened once only
  */
-TEST_F(ConnectionScreenTest, TheGameIsAskedOnce) {
+TEST_F(ConnectionScreenTest, TheWaitingRoomOpensOnce) {
   showAccepted();
   screen().update(ACCEPTED_STATUS_DURATION);
 
   screen().update(ONE_FRAME);
 
   EXPECT_EQ(navigator().calls().size(), 1U);
+}
+
+/**
+ * Given the waiting room opened, then left, which drops the attempt
+ * When the player connects again and the server accepts again
+ * Then the waiting room opens a second time
+ */
+TEST_F(ConnectionScreenTest, AnotherAttemptOpensTheWaitingRoomAgain) {
+  showAccepted();
+  screen().update(ACCEPTED_STATUS_DURATION);
+  connection().cancel();
+  screen().update(ONE_FRAME);
+
+  choose(sf::Keyboard::Key::Enter);
+  showAccepted();
+  screen().update(ACCEPTED_STATUS_DURATION);
+
+  const NavigatorCall openLobby{.request = NavigatorRequest::Push,
+                                .screen = ScreenId::Lobby};
+  EXPECT_THAT(navigator().calls(), ElementsAre(openLobby, openLobby));
 }
 
 /**
