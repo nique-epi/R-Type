@@ -5,6 +5,7 @@
 #include <span>
 #include <string>
 #include <string_view>
+#include "ActionSet.hpp"
 #include "ConnectionAccepted.hpp"
 #include "ConnectionChallenge.hpp"
 #include "ConnectionConstants.hpp"
@@ -22,6 +23,8 @@
 #include "NetworkException.hpp"
 #include "OutgoingDatagram.hpp"
 #include "PacketHeader.hpp"
+#include "PlayerInput.hpp"
+#include "ProtocolConstants.hpp"
 #include "ReadyState.hpp"
 #include "SequenceOrder.hpp"
 #include "TimeConstants.hpp"
@@ -44,6 +47,7 @@ void ServerConnection::connect(const network::Endpoint& server,
   nickname_ = nickname;
   cookie_ = 0;
   nextSequence_ = 0;
+  nextInputNumber_ = network::FIRST_INPUT_NUMBER;
   sinceConnect_ = engine::Duration::zero();
   sendRequest();
   status_ = {.phase = ConnectionStatus::Phase::Connecting};
@@ -102,6 +106,18 @@ void ServerConnection::update(engine::Duration elapsed) {
   if (sinceRequest_ >= CONNECTION_REQUEST_INTERVAL) {
     sendRequest();
   }
+}
+
+void ServerConnection::sendPlayerInput(ActionSet held) {
+  if (status_.phase != ConnectionStatus::Phase::Accepted) {
+    return;
+  }
+  link_->send(network::OutgoingDatagram{
+      .destination = server_,
+      .payload = network::DatagramCodec::encode(
+          nextHeader(), network::PlayerInput{.inputNumber = nextInputNumber_,
+                                             .actions = held.bits()})});
+  ++nextInputNumber_;
 }
 
 void ServerConnection::registerAnswers() {

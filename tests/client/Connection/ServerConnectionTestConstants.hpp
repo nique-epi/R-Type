@@ -1,6 +1,7 @@
 #pragma once
 
 #include <chrono>
+#include <cstddef>
 #include <cstdint>
 #include <string_view>
 
@@ -61,6 +62,24 @@ constexpr std::string_view OTHER_NICKNAME = "ACE";
 constexpr std::chrono::milliseconds PROTOCOL_READY_STATE_INTERVAL{500};
 constexpr int PROTOCOL_DISCONNECTION_COPY_COUNT = 3;
 constexpr std::chrono::milliseconds PROTOCOL_DISCONNECTION_COPY_INTERVAL{50};
+
+/**
+ * @brief What the protocol page says of the inputs: the first one is numbered
+ * 1, and up is bit 0 of the actions.
+ */
+constexpr std::uint32_t PROTOCOL_FIRST_INPUT_NUMBER = 1;
+constexpr std::uint8_t PROTOCOL_UP_ACTION_BIT = 0b00001;
+
+/**
+ * @brief The rate of the inputs the protocol page gives: 60 per second.
+ */
+constexpr std::size_t PROTOCOL_INPUTS_PER_SECOND = 60;
+
+/**
+ * @brief How many intervals between two inputs a stall of the frame loop lasts
+ * in the tests.
+ */
+constexpr int INTERVALS_OF_A_STALL = 3;
 
 /**
  * @brief The shortest step of time a test takes.

@@ -102,7 +102,7 @@ if (const auto entity = table.find(networkId)) {
 
 A **system** is one behavior of the game: a class that implements `ISystem` (`src/engine/Systems/ISystem.hpp`) and reads or updates components in `update(components, elapsed)`.
 
-`MovementSystem` (`rtype_game`, `src/game/Systems/MovementSystem/`) is the first system of the game. It moves every entity that has a `Position` and a `Velocity` by the velocity, in units per second, multiplied by `elapsed`, so the distance depends on simulation time and never on the frame rate. An entity without a `Velocity` stays in place, and nothing keeps an entity inside the playfield. No loop runs it yet.
+`MovementSystem` (`rtype_game`, `src/game/Systems/MovementSystem/`) is the first system of the game. It moves every entity that has a `Position` and a `Velocity` by the velocity, in units per second, multiplied by `elapsed`, so the distance depends on simulation time and never on the frame rate. An entity without a `Velocity` stays in place, and nothing keeps an entity inside the playfield. The server runs it on every tick of a game in progress (see [Bydo movement](/R-Type/server/#bydo-movement-patternsystem-and-playfieldexitsystem)).
 
 ### Queries: `ComponentRegistry::forEach`
 
@@ -144,7 +144,7 @@ for (std::size_t tick = 0; tick < ticks; ++tick) {
 }
 ```
 
-The server runs ticks at this rate on its simulation thread, in `TickLoop` (see [Server](/R-Type/server/#tick-loop-tickloop)), but no tick runs timers, systems or events yet. The client frame loop, `Application` (`src/client/Application/`), reads `SystemClock` and hands the real time of each frame to the scrolling background (see [Client](/R-Type/client/#scrolling-background-scrollingbackground)) and to the screens; it runs no tick. The game screen runs its systems, which play the animations, once per frame with that real time, not at a fixed step (see [Client](/R-Type/client/#animations-animation-animationsystem)).
+The server runs ticks at this rate on its simulation thread, in `TickLoop` (see [Server](/R-Type/server/#tick-loop-tickloop)), but its tick only advances the timers and delivers the events of the bus: no tick runs systems yet. The client frame loop, `Application` (`src/client/Application/`), reads `SystemClock` and hands the real time of each frame to the scrolling background (see [Client](/R-Type/client/#scrolling-background-scrollingbackground)) and to the screens; it runs no tick. The game screen runs its systems, which play the animations, once per frame with that real time, not at a fixed step (see [Client](/R-Type/client/#animations-animation-animationsystem)).
 
 ## Event bus: `EventBus`
 

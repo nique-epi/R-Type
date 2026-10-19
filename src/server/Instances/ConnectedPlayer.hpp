@@ -5,6 +5,7 @@
 #include <string>
 #include "Endpoint.hpp"
 #include "EntityIdConstants.hpp"
+#include "PlayerInput.hpp"
 
 namespace rtype::server {
 
@@ -37,6 +38,10 @@ struct ConnectedPlayer {
   /** @brief The sequence of the newest datagram accepted from the player for
    * the messages that need an order, nothing before the first. */
   std::optional<std::uint16_t> newestReceivedSequence;
+  /** @brief The PlayerInput with the highest inputNumber the player sent
+   * during the session, to apply at every tick until a newer one arrives;
+   * empty until the first one arrives. GameInstance keeps it. */
+  std::optional<network::PlayerInput> newestInput;
 };
 
 }  // namespace rtype::server

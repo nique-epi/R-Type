@@ -22,6 +22,7 @@
 #include "OutgoingDatagram.hpp"
 #include "PacketHeader.hpp"
 #include "PlayerRoster.hpp"
+#include "SessionDatagram.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::server {
@@ -116,15 +117,8 @@ void ConnectionAcceptor::answer(const network::Endpoint& sender,
 }
 
 void ConnectionAcceptor::accept(ConnectedPlayer& player) {
-  network::PacketHeader header;
-  header.sessionToken = player.sessionToken;
-  header.sequence = player.nextSequence;
-  ++player.nextSequence;
-  send_(network::OutgoingDatagram{
-      .destination = player.endpoint,
-      .payload = network::DatagramCodec::encode(
-          header,
-          network::ConnectionAccepted{.playerNumber = player.playerNumber})});
+  send_(sessionDatagram(player, network::ConnectionAccepted{
+                                    .playerNumber = player.playerNumber}));
 }
 
 void ConnectionAcceptor::challenge(const network::Endpoint& sender,

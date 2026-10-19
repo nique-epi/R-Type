@@ -6,50 +6,59 @@
 #include <string>
 #include <string_view>
 #include <vector>
+#include "ActionSet.hpp"
 #include "ConnectionStatus.hpp"
 #include "Endpoint.hpp"
 #include "IDatagramLink.hpp"
+#include "IPlayerInputLink.hpp"
 #include "IServerConnection.hpp"
 #include "IncomingDatagram.hpp"
 #include "LobbyState.hpp"
 #include "Logger.hpp"
 #include "MessageDispatcher.hpp"
 #include "PacketHeader.hpp"
+#include "ProtocolConstants.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::client {
 
 /**
  * @brief The attempt of the client to join a server, as the Connection section
- * of the protocol page describes, then the session the server opens.
+ * of the protocol page describes, then the session the server opens, and
+ * the inputs of the game it sends there.
  *
  * connect() sends a ConnectionRequest without a cookie at once; while the
  * server does not answer, the request goes out again every
  * CONNECTION_REQUEST_INTERVAL. A ConnectionChallenge is answered at once with
  * the request carrying its cookie, and every later request carries it too. A
- * ConnectionAccepted or a ConnectionRefused ends the attempt. An attempt that
- * got neither within CONNECTION_ATTEMPT_TIMEOUT of connect() gives up as
- * Unreachable: a challenge does not restart that delay.
+ * ConnectionAccepted or a ConnectionRefused ends the attempt, and no request is
+ * sent any more. An attempt that got neither within CONNECTION_ATTEMPT_TIMEOUT
+ * of connect() gives up as Unreachable: a challenge does not restart that
+ * delay.
  *
  * Once accepted, the connection keeps the session token of the acceptance and
- * writes it into every datagram it sends. Of the datagrams of the server, it
+ * writes it into every datagram it sends; every datagram takes its sequence
+ * from the same counter, which starts at 0. Of the datagrams of the server, it
  * reads only those that carry that token, then only those newer than the
  * newest one it read, so a late LobbyState never undoes a newer one. It keeps
  * the players of the newest LobbyState, and learns that the game started from
  * a GameStarted, or from a WorldState when the GameStarted was lost. setReady()
  * sends a ReadyState at once, then again every READY_STATE_INTERVAL while the
- * waiting room shows another value. Leaving the session, through cancel() or
- * connect(), sends a Disconnection DISCONNECTION_COPY_COUNT times,
+ * waiting room shows another value. While the attempt is Accepted,
+ * sendPlayerInput() sends the inputs of the game, numbered from
+ * FIRST_INPUT_NUMBER; otherwise it sends nothing. Leaving the session, through
+ * cancel() or connect(), sends a Disconnection DISCONNECTION_COPY_COUNT times,
  * DISCONNECTION_COPY_INTERVAL apart, with the token and the sequences of the
- * session left.
+ * session left; connect() then starts a new session: sequence 0, token 0 and
+ * inputs from FIRST_INPUT_NUMBER again.
  *
  * Only datagrams from the server being contacted, of this protocol and version
  * and whose messages add up to their end, are read; any other is ignored.
  *
- * update() reads what arrived and sends what is due: call it once per frame,
- * on the thread of the frame loop.
+ * update() reads what arrived and sends what is due, once per frame;
+ * sendPlayerInput() sends at once. Call both on the thread of the frame loop.
  */
-class ServerConnection : public IServerConnection {
+class ServerConnection : public IServerConnection, public IPlayerInputLink {
  public:
   /**
    * @param link Where the datagrams go and come from; it must outlive the
@@ -80,6 +89,8 @@ class ServerConnection : public IServerConnection {
    * @param elapsed Time since the previous call, or since connect().
    */
   void update(engine::Duration elapsed);
+
+  void sendPlayerInput(ActionSet held) override;
 
  private:
   /** @brief The copies of a Disconnection still due to a server the player
@@ -148,6 +159,7 @@ class ServerConnection : public IServerConnection {
   std::uint64_t sessionToken_{0};
   std::uint16_t nextSequence_{0};
   std::uint16_t newestReceivedSequence_{0};
+  std::uint32_t nextInputNumber_{network::FIRST_INPUT_NUMBER};
   engine::Duration sinceRequest_{};
   engine::Duration sinceConnect_{};
   engine::Duration sinceReadyState_{};

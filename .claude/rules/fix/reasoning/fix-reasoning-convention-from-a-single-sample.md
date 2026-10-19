@@ -13,7 +13,15 @@ trigger: always_on
 4. **Never write an unmeasured coverage claim.** "Derived from the history" requires having read the history; otherwise write what you actually read.
 5. Neighbors: `fix-reasoning-never-assume-unread-file-content.md` covers "I did not read"; `fix-reasoning-delegated-invariant-must-be-computed.md` covers "I read but paraphrased wrong"; this one covers **"I read ONE case and generalized it"**.
 
+### The neighbour folder is not the sample: the written rule and the repository count first
+
+1. **Before giving a new file the layout of the file next to it** (its own folder, a target of its own, a name), read the written rule that governs that layout (`.claude/rules/architecture/`, the project map) and apply it. A neighbour that departs from the rule is a pre-existing inconsistency to report, never the model to copy.
+2. **When no rule decides, count across the repository, not the folder next door.** A layout repeated by two neighbours can be the minority everywhere else: list every instance of the kind (for example every free-function header with a `.cpp`) and follow the majority, or ask.
+3. **Write in the plan which rule or count placed each new file**, so the reader can check the placement against its source.
+
 ## Example
 
 - ❌ **Before (wrong)**: one commit has a `feat(server): …` scope → I make a scope mandatory on every commit.
 - ✅ **After (right)**: `git log --format=%s -20` → most have no scope → the scope stays optional, and the exception is understood as such.
+- ❌ **Before (wrong)**: `SessionDatagram.{hpp,cpp}`, a free-function header, given a folder of its own (`Replication/SessionDatagram/`) because `EntitySpawnSender/` next to it has one, while `architecture-one-folder-per-concrete-class.md` point 3 keeps free-function headers in their parent folder, where the placement review counted 13 of the repository's 19 such headers.
+- ✅ **After (right)**: `src/server/Replication/SessionDatagram.{hpp,cpp}`, its target declared by `Replication/CMakeLists.txt` like `rtype_game_spawning` in `src/game/Spawning/`; `EntitySpawnSender`, touched by the same change, moved the same way; `WireEntityTypeMapping/`, untouched, reported.

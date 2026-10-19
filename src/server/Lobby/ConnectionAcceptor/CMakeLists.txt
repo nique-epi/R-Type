@@ -17,6 +17,7 @@ target_link_libraries(rtype_server_connection_acceptor
     rtype_network_datagram_codec
     rtype_network_exceptions
     rtype_server_lobby_constants
+    rtype_server_session_datagram
 )
 
 rtype_enable_warnings(rtype_server_connection_acceptor)

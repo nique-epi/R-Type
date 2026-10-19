@@ -36,6 +36,29 @@ The sync (`rsync -a --delete`) included `vcpkg/`. The sandbox refused to write i
 ### Root cause
 The sync copied a folder the copy never needs to change, and its errors were read as noise because the build that followed passed.
 
+## Update (2026-10-18) — A path left out of the copy is named whole
+
+### Context
+
+Server half of the player inputs (branch `feat/keep-newest-player-input`). Before the red proofs of `PlayerInputReceiver`, the sources were copied to `<scratchpad>/red-proofs/source/` with `git ls-files -z --cached --others --exclude-standard | grep -z -v -E '^(vcpkg|docs/)' | rsync --files-from=-`, and the worktree's `vcpkg` submodule was linked in.
+
+### Mistake
+
+`^(vcpkg|docs/)` was meant to leave out the submodule entry `vcpkg`, but it also matched `vcpkg.json`, the manifest of the dependencies. `diff -rq` on `src/` and `tests/` said the copy was identical, so the configure was started; it failed on `Could not find a package configuration file provided by "asio"`, because vcpkg had no manifest and installed nothing. Measuring the copy before the first variant caught it: no variant had run.
+
+### Root cause
+
+The pattern was a prefix, not a whole path, and the check of the copy compared only the folders that hold code, not the root files the build reads.
+
+### Rule
+
+Each exclusion pattern matches a whole path (`^vcpkg$`, `^docs/`), and the root of the copy is compared, before configuring, with the root entries of the same tracked-and-untracked list it was made from (`git ls-files --cached --others --exclude-standard`): a plain `git ls-files` lists tracked paths only.
+
+### Example
+
+- ❌ **Before (wrong)**: `grep -v -E '^(vcpkg|docs/)'` → `vcpkg.json` missing, configure fails on `asio`.
+- ✅ **After (right)**: `grep -v -E '^(vcpkg$|docs/)'`, root of the copy compared with the repository's root before configuring.
+
 ## Update (2026-10-19) — a sync that deleted the copy's vcpkg link
 
 ### Context

@@ -328,7 +328,7 @@ The connection behind it is a `ServerConnection` (see [Joining a server](#joinin
 
 READY, or the key of `BoundAction::Ready` (R at first) from anywhere on the screen, asks the server to set the player ready, then not ready once asked: the connection sends a value, never a toggle, and a key held down asks once. The bar then reads CANCEL READY, and the cell of the local player turns gold, reading READY or CANCEL..., until the server lists the value asked for. The status line names who is not ready (`2 PILOTS NOT READY`, `ACE IS NOT READY`, `YOU ARE NOT READY`) or says `ALL READY: LAUNCHING`. It never counts the open bays: a game starts as soon as every listed pilot is ready, however many they are. BACK, a chip in the bottom-right corner, or Escape leaves the server and closes the screen. Once the connection learns that the game started, the screen asks `replaceAll(ScreenId::Game)`, once. The texts are in `src/client/Screens/LobbyScreenConstants.hpp`, the sizes and colors of a bay in `src/client/Widgets/HangarBayConstants.hpp`.
 
-Today's server sends neither `LobbyState` nor `GameStarted`, and no world state either, since its list of recipients is empty (see [Server](/R-Type/server/#world-state-worldstatesender)): against it, the waiting room lists the local player alone, READY stays in gold, and the screen never leaves the room, even once the server started its game.
+The server sends the room each time it changes, and at least every 500 ms, then `GameStarted` in the tick every connected player is ready (see [Server](/R-Type/server/#waiting-room-lobbystateannouncer)), so the screens of all the players leave the room together.
 
 ## Joining a server: `ServerConnection`
 
@@ -342,13 +342,24 @@ Today's server sends neither `LobbyState` nor `GameStarted`, and no world state 
 
 Once accepted, the connection holds the session (see [Protocol](/R-Type/protocol/#receiving-a-datagram)):
 
-- It keeps the session token of the acceptance and writes it, with the next sequence, into every datagram it sends. Of the server's datagrams it reads only those that carry that token, then only those newer than the newest one read (`isNewerSequence`, 1 to 32767 ahead), in that order: a forged datagram never moves the counter, and a late `LobbyState` never undoes a newer one.
+- It keeps the session token of the acceptance and writes it, with the next sequence, into every datagram it sends: requests, ready states, inputs and departures take their sequence from one counter, which starts at 0. Of the server's datagrams it reads only those that carry that token, then only those newer than the newest one read (`isNewerSequence`, 1 to 32767 ahead), in that order: a forged datagram never moves the counter, and a late `LobbyState` never undoes a newer one.
 - `lobbyPlayers()` lists the players of the newest `LobbyState`; until the first one, the accepted player alone, not ready.
 - `setReady(ready)` sends a `ReadyState` at once, then again every `READY_STATE_INTERVAL` (500 ms) while the waiting room shows another value for the player; `requestedReady()` returns the value last asked for.
 - A `GameStarted`, or a `WorldState` when the `GameStarted` was lost, sets `gameStarted()`, once per session, and forgets the ready state asked for.
-- Leaving the session, through `cancel()` or `connect()`, sends a `Disconnection` `DISCONNECTION_COPY_COUNT` (3) times, `DISCONNECTION_COPY_INTERVAL` (50 ms) apart, with the token of the session left, and forgets the waiting room, the request and the start.
+- Leaving the session, through `cancel()` or `connect()`, sends a `Disconnection` `DISCONNECTION_COPY_COUNT` (3) times, `DISCONNECTION_COPY_INTERVAL` (50 ms) apart, with the token of the session left, and forgets the waiting room, the request and the start; `connect()` then starts a new session, with sequence 0, token 0 and inputs numbered from `FIRST_INPUT_NUMBER` (1) again.
 
 It sends and receives through an `IDatagramLink` (`src/client/Connection/`): `NetworkThread` in the client, `RecordingDatagramLink` (`tests/doubles/`) in the tests. It sends no `Heartbeat` yet, and closing the client sends no `Disconnection`. The delays are **provisional**, like every delay of the protocol page: code must read the constants of `src/client/Connection/ConnectionConstants.hpp`.
+
+## Inputs to the server: `PlayerInputPacer`, `IPlayerInputLink`
+
+The game screen sends the actions the player holds to the server through an `IPlayerInputLink` (`src/client/Connection/`): `ServerConnection` in the client, which `Application` hands to the game screen, and `RecordingPlayerInputLink` (`tests/doubles/`) in the tests.
+
+- Each `GameScreen::update()` asks `PlayerInputPacer` (`rtype_client_player_input_pacer`, `src/client/Connection/PlayerInputPacer/`) whether an input is due, and if so sends `playerActions()`. The first update sends at once, then one input goes out every `PLAYER_INPUT_INTERVAL`, a sixtieth of a second (`PLAYER_INPUTS_PER_SECOND`, 60).
+- The time a frame lasts beyond the interval counts toward the next input, so frames of 16 or 17 ms still send 60 inputs per second. Never two in one frame: below 60 frames per second the client sends one input per frame, and a stall of the frame loop sends one input, not a burst.
+- `ServerConnection::sendPlayerInput()` sends a `PlayerInput` numbered after the previous one, a 30-byte datagram carrying the session token, only while the attempt is `Accepted`; otherwise it sends nothing.
+- The game goes on behind the options, so it keeps sending them there, with nothing held.
+
+The rate is **provisional**, like every rate of the protocol page: code must read `PLAYER_INPUTS_PER_SECOND` and `PLAYER_INPUT_INTERVAL` in `src/client/Connection/ConnectionConstants.hpp`. The server receives these inputs but reads none of them yet.
 
 ## Options: `OptionsScreen`
 
@@ -420,7 +431,7 @@ const ActionSet held = gameScreen.playerActions();
 const std::uint8_t actions = held.bits();
 ```
 
-`GameScreen::playerActions()` is the only way out, since the window hands the key and focus events to the screen on top. Nothing reads it yet: there is no player ship on the client and no `PlayerInput` is sent. The game screen logs `actions held: <byte>` at trace level each time the byte changes. It assumes the window has the focus when it is built and learns otherwise from the focus events. Only the screen on top receives events, so opening the options releases every action held (`PlayerCommands::releaseAll()`): a key changed in the options would otherwise never release its action.
+`GameScreen::playerActions()` is the only way out, since the window hands the key and focus events to the screen on top. The game screen sends it to the server at each input due (see [Inputs to the server](#inputs-to-the-server-playerinputpacer-iplayerinputlink)); there is no player ship on the client yet. The game screen logs `actions held: <byte>` at trace level each time the byte changes. It assumes the window has the focus when it is built and learns otherwise from the focus events. Only the screen on top receives events, so opening the options releases every action held (`PlayerCommands::releaseAll()`): a key changed in the options would otherwise never release its action.
 
 ## Launch options: `LaunchOptions`
 
@@ -527,6 +538,8 @@ dispatcher.registerHandler<rtype::network::WorldState>(
 | Add a text field to a menu | `MenuBuilder::textField()` with a `TextField` (`src/client/Widgets/TextField/`), then `Menu::fieldText()`, as `ConnectionScreen` does |
 | Change the characters a field accepts | `TextField::Characters` and `TextField::accepts()`; the ranges in `src/client/Widgets/WidgetConstants.hpp` |
 | Change how the client joins a server, or how it holds the session | `ServerConnection` in `src/client/Connection/ServerConnection/`; `CONNECTION_REQUEST_INTERVAL`, `CONNECTION_ATTEMPT_TIMEOUT`, `READY_STATE_INTERVAL`, `DISCONNECTION_COPY_COUNT` and `DISCONNECTION_COPY_INTERVAL` in `src/client/Connection/ConnectionConstants.hpp` |
+| Change how often the client sends its inputs | `PLAYER_INPUTS_PER_SECOND` in `src/client/Connection/ConnectionConstants.hpp`, `PlayerInputPacer` in `src/client/Connection/PlayerInputPacer/` |
+| Change what an input carries | `ServerConnection::sendPlayerInput()` in `src/client/Connection/ServerConnection/`, `GameScreen::update()` in `src/client/Screens/GameScreen/` |
 | Change the texts, sizes or checks of the connection screen | `src/client/Screens/ConnectionScreenConstants.hpp`, `ConnectionScreen::connect()` |
 | Change the texts or the status line of the waiting room | `src/client/Screens/LobbyScreenConstants.hpp`, `statusLine()` in `src/client/Screens/LobbyScreen/LobbyScreen.cpp` |
 | Change how a bay of the waiting room looks | `src/client/Widgets/HangarBayConstants.hpp`, `paintHangarBay()` in `src/client/Widgets/HangarBay.cpp` |

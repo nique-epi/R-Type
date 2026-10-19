@@ -44,3 +44,22 @@ constexpr std::string_view ADDRESS_OPTION = "-h";
  */
 constexpr std::string_view DEFAULT_PORT_LINE =
     "UDP port to listen on, from 1 to 65535. Default: 4242.";
+
+/**
+ * @brief Seeds given after `--seed`, and the numbers they name.
+ */
+constexpr std::string_view SEED_ARGUMENT = "1234";
+constexpr std::uint32_t SEED_OF_SEED_ARGUMENT = 1234;
+constexpr std::string_view OTHER_SEED_ARGUMENT = "5678";
+constexpr std::uint32_t SEED_OF_OTHER_SEED_ARGUMENT = 5678;
+constexpr std::string_view LOWEST_SEED_ARGUMENT = "0";
+constexpr std::string_view HIGHEST_SEED_ARGUMENT = "4294967295";
+constexpr std::uint32_t HIGHEST_SEED = 4294967295U;
+
+/**
+ * @brief Values after `--seed` that are not seeds: one above the highest, a
+ * negative number, nothing.
+ */
+constexpr std::string_view TOO_HIGH_SEED_ARGUMENT = "4294967296";
+constexpr std::string_view NEGATIVE_SEED_ARGUMENT = "-1";
+constexpr std::string_view EMPTY_SEED_ARGUMENT{};

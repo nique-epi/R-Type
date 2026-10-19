@@ -54,7 +54,8 @@ ConnectedPlayer* PlayerRoster::add(const network::Endpoint& endpoint,
                           .endpoint = endpoint,
                           .sessionToken = sessionToken,
                           .nextSequence = 0,
-                          .newestReceivedSequence = std::nullopt});
+                          .newestReceivedSequence = std::nullopt,
+                          .newestInput = std::nullopt});
     }
   }
   return nullptr;

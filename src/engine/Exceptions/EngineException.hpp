@@ -103,4 +103,13 @@ class MissingLaunchOptionValueException : public EngineException {
   explicit MissingLaunchOptionValueException(const std::string& option);
 };
 
+/**
+ * @brief The value given after a launch option is not one the option accepts.
+ */
+class InvalidLaunchOptionValueException : public EngineException {
+ public:
+  InvalidLaunchOptionValueException(const std::string& option,
+                                    const std::string& value);
+};
+
 }  // namespace rtype::engine

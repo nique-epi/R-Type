@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <optional>
 #include <span>
 #include <string>
 #include <string_view>
@@ -17,7 +18,8 @@ class LaunchOptions {
    * @brief Reads `-p <port>` and `--help` from @p arguments, the arguments
    * the logging options left (see logging::LogLaunchOptions).
    *
-   * Without `-p` the port is DEFAULT_SERVER_PORT. The last `-p` wins.
+   * Without `-p` the port is DEFAULT_SERVER_PORT. The last `-p` wins, and so
+   * does the last `--seed`.
    *
    * @throws engine::UnknownLaunchArgumentException for any other argument,
    *         `-h` included: the server takes no address.
@@ -25,6 +27,8 @@ class LaunchOptions {
    *         argument.
    * @throws network::InvalidPortException when the value of `-p` is not a
    *         port from LOWEST_PORT to HIGHEST_PORT.
+   * @throws engine::InvalidLaunchOptionValueException when the value of
+   *         `--seed` is not a whole number from 0 to 4294967295.
    */
   [[nodiscard]] static LaunchOptions read(
       std::span<const std::string_view> arguments);
@@ -39,6 +43,12 @@ class LaunchOptions {
   [[nodiscard]] std::uint16_t port() const;
 
   /**
+   * @returns the seed given after `--seed`, nothing when it was not given: the
+   * server then draws one.
+   */
+  [[nodiscard]] std::optional<std::uint32_t> seed() const;
+
+  /**
    * @returns whether `--help` was given: the server then prints its usage
    *          and starts nothing.
    */
@@ -49,6 +59,7 @@ class LaunchOptions {
 
   std::uint16_t port_;
   bool helpRequested_;
+  std::optional<std::uint32_t> seed_;
 };
 
 }  // namespace rtype::server

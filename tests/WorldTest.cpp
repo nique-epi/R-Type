@@ -1,17 +1,23 @@
 #include <gtest/gtest.h>
+#include <cstddef>
 #include <cstdint>
+#include "BydoKind.hpp"
 #include "ComponentRegistry.hpp"
 #include "Entity.hpp"
 #include "EntityIdConstants.hpp"
 #include "EntityType.hpp"
+#include "Health.hpp"
+#include "MovementPattern.hpp"
 #include "NetworkIdentity.hpp"
 #include "Position.hpp"
+#include "Velocity.hpp"
 #include "World.hpp"
 
 namespace {
 
 constexpr float SOME_X = 3.0F;
 constexpr float SOME_Y = 4.0F;
+constexpr int THREE_HEALTH_POINTS = 3;
 
 }  // namespace
 
@@ -74,4 +80,131 @@ TEST(World, SpawnedPlayerIsANetworkedShipAtItsPosition) {
             EXPECT_EQ(*type, rtype::game::EntityType::Player);
           });
   EXPECT_TRUE(found);
+}
+
+/**
+ * Given an empty world
+ * When a Bydo is spawned at a position
+ * Then it is an enemy at that position, under the network id returned
+ */
+TEST(World, SpawnedBydoIsAnEnemyAtItsPosition) {
+  rtype::game::World world;
+
+  const std::uint32_t networkId =
+      world.spawnBydo(rtype::game::Position{.x = SOME_X, .y = SOME_Y},
+                      rtype::game::BydoKind::Drifter);
+
+  EXPECT_EQ(world.entityCount(), 1U);
+  EXPECT_NE(networkId, rtype::identifiers::NO_ENTITY_ID);
+  bool found = false;
+  world.components()
+      .forEach<rtype::game::NetworkIdentity, rtype::game::Position>(
+          [&world, &found, networkId](
+              rtype::engine::Entity entity,
+              const rtype::game::NetworkIdentity& identity,
+              const rtype::game::Position& position) {
+            found = true;
+            EXPECT_EQ(identity.networkId, networkId);
+            EXPECT_EQ(position.x, SOME_X);
+            EXPECT_EQ(position.y, SOME_Y);
+            const auto* type =
+                world.components().get<rtype::game::EntityType>(entity);
+            ASSERT_NE(type, nullptr);
+            EXPECT_EQ(*type, rtype::game::EntityType::Enemy);
+          });
+  EXPECT_TRUE(found);
+}
+
+/**
+ * Given a world with a player and a Bydo
+ * When their network ids are compared
+ * Then they differ, so the clients can tell the two entities apart
+ */
+TEST(World, ABydoAndAPlayerGetDistinctNetworkIds) {
+  rtype::game::World world;
+
+  const std::uint32_t player =
+      world.spawnPlayer(rtype::game::Position{.x = SOME_X, .y = SOME_Y});
+  const std::uint32_t bydo =
+      world.spawnBydo(rtype::game::Position{.x = SOME_X, .y = SOME_Y},
+                      rtype::game::BydoKind::Drifter);
+
+  EXPECT_NE(player, bydo);
+}
+
+/**
+ * Given an empty world
+ * When a Drifter and a Weaver are spawned on the row at height SOME_Y
+ * Then both move left at 240 units per second, the Drifter goes straight, the
+ * Weaver follows a wave, and both start from that row
+ */
+TEST(World, SpawnedBydosMoveLeftAlongThePatternOfTheirKind) {
+  rtype::game::World world;
+  static_cast<void>(
+      world.spawnBydo(rtype::game::Position{.x = SOME_X, .y = SOME_Y},
+                      rtype::game::BydoKind::Drifter));
+  static_cast<void>(
+      world.spawnBydo(rtype::game::Position{.x = SOME_X, .y = SOME_Y},
+                      rtype::game::BydoKind::Weaver));
+
+  std::size_t straight = 0;
+  std::size_t waves = 0;
+  world.components()
+      .forEach<rtype::game::MovementPattern, rtype::game::Velocity>(
+          [&straight, &waves](rtype::engine::Entity,
+                              const rtype::game::MovementPattern& pattern,
+                              const rtype::game::Velocity& velocity) {
+            EXPECT_EQ(velocity.x, -240.0F);
+            EXPECT_EQ(velocity.y, 0.0F);
+            EXPECT_EQ(pattern.originY, SOME_Y);
+            EXPECT_EQ(pattern.ageSeconds, 0.0F);
+            straight += pattern.shape == rtype::game::PatternShape::Straight;
+            waves += pattern.shape == rtype::game::PatternShape::Wave;
+          });
+  EXPECT_EQ(straight, 1U);
+  EXPECT_EQ(waves, 1U);
+}
+
+/**
+ * Given an empty world
+ * When a Bydo is spawned
+ * Then it has three health points
+ */
+TEST(World, SpawnedBydoHasThreeHealthPoints) {
+  rtype::game::World world;
+
+  static_cast<void>(
+      world.spawnBydo(rtype::game::Position{.x = SOME_X, .y = SOME_Y},
+                      rtype::game::BydoKind::Drifter));
+
+  int bydosWithHealth = 0;
+  world.components().forEach<rtype::game::EntityType, rtype::game::Health>(
+      [&bydosWithHealth](rtype::engine::Entity /*entity*/,
+                         const rtype::game::EntityType& type,
+                         const rtype::game::Health& health) {
+        ++bydosWithHealth;
+        EXPECT_EQ(type, rtype::game::EntityType::Enemy);
+        EXPECT_EQ(health.points, THREE_HEALTH_POINTS);
+      });
+  EXPECT_EQ(bydosWithHealth, 1);
+}
+
+/**
+ * Given an empty world
+ * When the ship of a player is spawned
+ * Then it has no health: a hit costs a player a life, not health points
+ */
+TEST(World, SpawnedShipHasNoHealth) {
+  rtype::game::World world;
+
+  world.spawnPlayer(rtype::game::Position{.x = SOME_X, .y = SOME_Y});
+
+  int shipsWithHealth = 0;
+  world.components().forEach<rtype::game::EntityType, rtype::game::Health>(
+      [&shipsWithHealth](rtype::engine::Entity /*entity*/,
+                         const rtype::game::EntityType& /*type*/,
+                         const rtype::game::Health& /*health*/) {
+        ++shipsWithHealth;
+      });
+  EXPECT_EQ(shipsWithHealth, 0);
 }
