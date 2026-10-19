@@ -102,7 +102,7 @@ if (const auto entity = table.find(networkId)) {
 
 A **system** is one behavior of the game: a class that implements `ISystem` (`src/engine/Systems/ISystem.hpp`) and reads or updates components in `update(components, elapsed)`.
 
-`MovementSystem` (`rtype_game`, `src/game/Systems/MovementSystem/`) is the first system of the game. It moves every entity that has a `Position` and a `Velocity` by the velocity, in units per second, multiplied by `elapsed`, so the distance depends on simulation time and never on the frame rate. An entity without a `Velocity` stays in place, and nothing keeps an entity inside the playfield. No loop runs it yet.
+`MovementSystem` (`rtype_game`, `src/game/Systems/MovementSystem/`) is the first system of the game. It moves every entity that has a `Position` and a `Velocity` by the velocity, in units per second, multiplied by `elapsed`, so the distance depends on simulation time and never on the frame rate. An entity without a `Velocity` stays in place, and nothing keeps an entity inside the playfield. The server runs it on every tick of a game in progress (see [Bydo movement](/R-Type/server/#bydo-movement-patternsystem-and-playfieldexitsystem)).
 
 ### Queries: `ComponentRegistry::forEach`
 

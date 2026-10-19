@@ -15,18 +15,19 @@ This page tells you where to look when you need to change something. It describe
 | Timer resolution on Windows | Available | `src/server/Platform/` |
 | Sorting the datagrams before the queues | Available; no limit per address yet | `src/server/Application/DatagramSorter/` |
 | World state sent at a fixed rate | Available: sends to no one yet, the list of recipients is empty | `src/server/Replication/` |
-| Game events sent to the clients | Available: sends to no one yet, and nothing publishes the events | `src/server/Replication/`, `src/game/Events/` |
+| Game events sent to the clients | Available: sends to no one yet; only the removal of a Bydo that leaves the playfield is published | `src/server/Replication/`, `src/game/Events/` |
 | Launch options | Available: the port, the seed and `--help` | `src/server/LaunchOptions/` |
 | Letting players in: challenge, acceptance or refusal | Available; refuses with `GameInProgress` while the game is not waiting for players | `src/server/Lobby/`, `src/server/Instances/` |
 | A game: states, ready rule, new world between two games | Available: one game, nothing ends it yet | `src/server/Instances/GameInstance/` |
 | Newest input of each player, session token checked | Available; nothing applies it to the ship yet | `src/server/Instances/GameInstance/` |
 | Lobby state messages, several games, master link | Not yet written | — |
 | Components (`Position`, `Velocity`, `CollisionBox`, `EntityType`, `Sprite`, `Layer`) | Available | `src/game/Components/` |
-| Movement | Available | `src/game/Systems/MovementSystem/` |
+| Movement, run by each game tick | Available | `src/game/Systems/MovementSystem/`, `src/server/Instances/GameInstance/` |
+| Movement patterns, and removal of what leaves the playfield | Available for the Bydos | `src/game/Systems/PatternSystem/`, `src/game/Systems/PlayfieldExitSystem/` |
 | Collisions | Available: nothing runs them yet | `src/game/Systems/CollisionSystem/`, `src/game/Systems/CollisionRules/`, `src/game/Events/` |
 | Damage and destruction | Not yet written | — |
 | Ship of each player, created when the player joins and announced to the others | Available | `src/game/Spawning/`, `src/server/Replication/ShipSpawnAnnouncer/` |
-| Bydos appearing off screen at random heights, on a timer | Available; they do not move yet | `src/game/Spawning/BydoSpawnPosition.*`, `src/server/Spawning/` |
+| Bydos appearing off screen at random heights, on a timer, then moving left | Available | `src/game/Spawning/BydoSpawnPosition.*`, `src/server/Spawning/` |
 | Waves, score, lives | Not yet written | — |
 
 ## Launch options: `LaunchOptions`
@@ -185,7 +186,7 @@ A datagram is read only when its header is of this protocol and version and its 
 | State (`GameState`) | The game… | It goes to… |
 |---|---|---|
 | `WaitingForPlayers` | takes `ReadyState` and lets players in | `InProgress` on the tick when at least one player is connected and every connected player is ready |
-| `InProgress` | counts one tick per `onTick` and lets the Bydos appear; refuses new connections | `Finished` when `finish()` is called |
+| `InProgress` | counts one tick per `onTick`, runs the systems of the world and lets the Bydos appear; refuses new connections | `Finished` when `finish()` is called |
 | `Finished` | refuses new connections | `WaitingForPlayers` after `FINISHED_STATE_TICKS` (300) ticks, `FINISHED_STATE_SECONDS` (5) seconds |
 
 - Going back to `WaitingForPlayers` builds a new `World`: the tick is 0, the players stay connected, none is ready any more, and each gets a new ship, announced again. Network ids start again at 1 in the new world, so the announced ids are the ones of the previous game.
@@ -254,7 +255,7 @@ The game announces what the players must see or hear by publishing an event on t
 - `REPEATED_MESSAGE_COPIES` and `REPEATED_MESSAGE_INTERVAL` are **provisional**, like the protocol rates they follow. Code must read the constants and never repeat 3 or 50.
 - An event the protocol refuses is skipped: a position that is not a number, the entity id 0 (which no entity has), or a player number outside 1 to 4. The broadcaster logs a warning with the name of the event, sends nothing, schedules no copy, and does not use an event number, so the next event goes out and the server keeps running. Only the encoding is protected: a fault in the sending still stops the tick.
 - The broadcaster must outlive the last `dispatch()` of the bus and the last `advance()` of the timers, because both call back into it.
-- Nothing is sent or scheduled when the list of recipients is empty, but the encoder still runs, so a `GameEvent` still uses an event number. In `main.cpp` the list is empty and nothing publishes the events yet, so no datagram leaves. The header function returns a default header, token 0 and sequence 0: neither it nor the list of recipients reads the `PlayerRoster` yet, which holds the session token and the next sequence of each player. It is never called while there is no recipient.
+- Nothing is sent or scheduled when the list of recipients is empty, but the encoder still runs, so a `GameEvent` still uses an event number. In `main.cpp` the list is empty, so no datagram leaves, although `PlayfieldExitSystem` already publishes an `EntityDestruction` when a Bydo leaves the playfield. The header function returns a default header, token 0 and sequence 0: neither it nor the list of recipients reads the `PlayerRoster` yet, which holds the session token and the next sequence of each player. It is never called while there is no recipient.
 
 ```cpp
 rtype::engine::EventBus events;
@@ -276,13 +277,24 @@ events.dispatch();
 `BydoSpawner` (`src/server/Spawning/BydoSpawner/`) makes a Bydo appear in the `World` every `BYDO_SPAWN_INTERVAL` (2 seconds, **provisional** until the waves set the pace) of simulation time. A `GameInstance` builds one with each world and ticks it only while the game is `InProgress`, so nothing appears while the game waits for players or is finished, and the timer starts again from zero with every new game. Time is counted in whole ticks of `SIMULATION_TICK_DURATION`, which is 16 666 666 ns, so the first Bydo of a game appears on the 121st tick, not the 120th.
 
 - `bydoSpawnPosition(randomUnit)` (`src/game/Spawning/`) says where: `BYDO_SPAWN_MARGIN` (64 logical units) past the right edge of the playfield, so the Bydo is off screen, and at a height from `BYDO_SPAWN_VERTICAL_MARGIN` (64) to `PLAYFIELD_HEIGHT` minus that margin. A draw of 0 gives the highest row; a draw from 0 up to, but not including, 1 is accepted, anything else (1 included, or not a number) throws `InvalidRandomUnitException`. Both margins are **provisional**: they are half a Bydo until its size is fixed.
-- `World::spawnBydo(position)` gives the entity a `Position`, `EntityType::Enemy` and a `NetworkIdentity`. It has no `Velocity` and no `CollisionBox`: a Bydo stays where it appears until the movement of the Bydos is written.
+- `World::spawnBydo(position, kind)` gives the entity a `Position`, a `Velocity` of `-BYDO_SPEED` (240 units per second, **provisional**, to the left), a `MovementPattern`, `EntityType::Enemy` and a `NetworkIdentity`. It has no `CollisionBox` yet. The spawner alternates the two `BydoKind`s, `Drifter` then `Weaver`, starting with the `Drifter`, and draws nothing for it, so a seed still gives the same heights. See [Bydo movement](#bydo-movement-patternsystem-and-playfieldexitsystem).
 - Every connected player is sent an `EntitySpawned` (`Bydo`, the position), in its own datagram, like the ship of a player. Both use `sendEntitySpawned` (`src/server/Replication/EntitySpawnSender/`). With no player connected, the Bydo appears and nothing is sent. When every network id was given, the spawn is skipped and a warning is logged.
 - The generator is a `std::mt19937` started from a seed. The spawner logs it at the `info` level when it is built (`Bydo spawning starts from the seed 42`), so the same seed gives the same heights in the same order. `GameInstance` gives each world the seed of the game plus the number of worlds built before it, so one seed replays every game of a session; without `--seed`, the server draws it from `std::random_device`.
 
 ```bash
 ./r-type_server --seed 42
 ```
+
+## Bydo movement: `PatternSystem` and `PlayfieldExitSystem`
+
+Each tick of a game in progress, `GameInstance` runs three systems of the world, in this order, before the Bydos appear: `PatternSystem`, `MovementSystem`, then `PlayfieldExitSystem`. It runs them with `SIMULATION_TICK_DURATION`, and the scheduler is built once per game, so it survives the new worlds.
+
+- A Bydo moves left at `BYDO_SPEED` through its `Velocity`, which `MovementSystem` applies. Its `MovementPattern` holds a `PatternShape`, the row it appeared on (`originY`) and its age in seconds.
+- `PatternSystem` (`src/game/Systems/PatternSystem/`) sets the height of every entity that has a `MovementPattern`. `Straight` keeps the row. `Wave` puts the entity at `originY + WAVE_AMPLITUDE * sin(2 * pi * age / WAVE_PERIOD_SECONDS)`, with an amplitude of 48 units and a period of 2 seconds, both **provisional**. The height is computed from the age, never added up tick by tick, so it does not depend on how the time is cut into steps. The amplitude stays under `BYDO_SPAWN_VERTICAL_MARGIN`, checked at compile time, so a Bydo on a wave never leaves the height of the playfield.
+- `patternShapeOf(kind)` (`src/game/Spawning/BydoKind/`) says which shape a kind follows: the `Drifter` goes `Straight`, the `Weaver` follows a `Wave`.
+- `PlayfieldExitSystem` (`src/game/Systems/PlayfieldExitSystem/`) destroys an entity of type `Enemy` that has a `NetworkIdentity` once its `Position` is more than `BYDO_EXIT_MARGIN` (64 logical units, **provisional**) beyond the left edge, and publishes an `EntityDestruction` with the cause `Removed` under its network id. A Bydo exactly at the margin is still in. A ship is never removed by leaving. It takes the `EventBus` of the server, which `GameInstance` receives at construction and which must outlive it.
+- A Bydo crosses the playfield in about 8.5 seconds, so about four or five Bydos are in transit at the pace of `BYDO_SPAWN_INTERVAL`.
+- **Not done yet:** the broadcaster has no recipients in `main.cpp`, so the clients are not told that a Bydo was removed, and a client keeps an entity until it receives that message.
 
 ## Collisions
 
@@ -348,6 +360,9 @@ The bus and the registry must outlive `CollisionRules`, and the bus must outlive
 | Change where a ship appears | `shipStartPosition` and `SHIP_START_X_RATIO` in `src/game/Spawning/` |
 | Change how often a Bydo appears | `BYDO_SPAWN_INTERVAL` in `src/server/Spawning/BydoSpawnerConstants.hpp` |
 | Change where a Bydo appears | `bydoSpawnPosition` and the margins in `src/game/Spawning/` |
+| Change how fast a Bydo moves, or the height and period of a wave | `BYDO_SPEED`, `WAVE_AMPLITUDE`, `WAVE_PERIOD_SECONDS` in `src/game/Systems/PatternSystem/PatternConstants.hpp` |
+| Change which pattern a kind of Bydo follows | `patternShapeOf` in `src/game/Spawning/BydoKind/BydoKind.cpp` |
+| Change when a Bydo leaves the playfield | `BYDO_EXIT_MARGIN` in `src/game/Spawning/SpawningConstants.hpp`, `PlayfieldExitSystem` |
 | Replay a game | Start the server with the seed found in its log: `--seed <seed>` |
 | Change who is told about a new ship | `ShipSpawnAnnouncer` in `src/server/Replication/ShipSpawnAnnouncer/` |
 | Change when a game starts or ends, or what is reset between two games | `GameInstance::onTick` and `startNewWorld` in `src/server/Instances/GameInstance/GameInstance.cpp` |
