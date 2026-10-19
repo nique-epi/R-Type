@@ -3,6 +3,7 @@
 #include <chrono>
 #include <cstddef>
 #include <string_view>
+#include "TimeConstants.hpp"
 
 namespace rtype::client {
 
@@ -36,6 +37,17 @@ constexpr std::chrono::milliseconds CONNECTION_REQUEST_INTERVAL{500};
  * page.
  */
 constexpr std::chrono::seconds CONNECTION_ATTEMPT_TIMEOUT{5};
+
+/**
+ * @brief PlayerInput the game sends per second, one per frame at most.
+ * Provisional, see the protocol page.
+ */
+constexpr std::size_t PLAYER_INPUTS_PER_SECOND = 60;
+
+/** @brief Time between two PlayerInput of the game. */
+constexpr engine::Duration PLAYER_INPUT_INTERVAL =
+    std::chrono::duration_cast<engine::Duration>(std::chrono::seconds(1)) /
+    PLAYER_INPUTS_PER_SECOND;
 
 /** @brief Module name the connection to a server writes its log lines under. */
 constexpr std::string_view CONNECTION_LOGGER_NAME = "Connection";

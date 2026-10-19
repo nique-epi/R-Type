@@ -326,11 +326,23 @@ The connection behind it is a `ServerConnection` (see [Joining a server](#joinin
 
 - `connect()` sends a `ConnectionRequest` without a cookie at once, and drops the answers left from an earlier attempt. While nothing answers, the request goes out again every `CONNECTION_REQUEST_INTERVAL` (500 ms).
 - A `ConnectionChallenge` is answered at once with the request carrying its cookie; every later request carries it too.
-- A `ConnectionAccepted` gives `Accepted` and the player number; a `ConnectionRefused` gives `Refused` and its reason. Either ends the attempt, and nothing more is sent.
+- A `ConnectionAccepted` gives `Accepted` and the player number; a `ConnectionRefused` gives `Refused` and its reason. Either ends the attempt: no request is sent any more.
+- The session token in the header of the `ConnectionAccepted` is kept, and every datagram sent after it carries it. Requests and inputs take their sequence from one counter, which starts at 0; `connect()` starts a new session, with sequence 0, token 0 and inputs numbered from `FIRST_INPUT_NUMBER` (1) again.
 - With neither, `CONNECTION_ATTEMPT_TIMEOUT` (5 s) after `connect()`, the attempt gives up as `Unreachable`; a challenge does not restart that delay, so a server that only challenges never holds the screen.
 - Only datagrams from the server being contacted, of this protocol and version, and whose message sizes add up, are read; any other is ignored. `cancel()` stops the attempt where it stands.
 
-It sends and receives through an `IDatagramLink` (`src/client/Connection/`): `NetworkThread` in the client, `RecordingDatagramLink` (`tests/doubles/`) in the tests. The session token of the acceptance is not kept yet: nothing is sent after it. Both delays are **provisional**, like every delay of the protocol page: code must read the constants of `src/client/Connection/ConnectionConstants.hpp`.
+It sends and receives through an `IDatagramLink` (`src/client/Connection/`): `NetworkThread` in the client, `RecordingDatagramLink` (`tests/doubles/`) in the tests. Both delays are **provisional**, like every delay of the protocol page: code must read the constants of `src/client/Connection/ConnectionConstants.hpp`.
+
+## Inputs to the server: `PlayerInputPacer`, `IPlayerInputLink`
+
+The game screen sends the actions the player holds to the server through an `IPlayerInputLink` (`src/client/Connection/`): `ServerConnection` in the client, which `Application` hands to the game screen, and `RecordingPlayerInputLink` (`tests/doubles/`) in the tests.
+
+- Each `GameScreen::update()` asks `PlayerInputPacer` (`rtype_client_player_input_pacer`, `src/client/Connection/PlayerInputPacer/`) whether an input is due, and if so sends `playerActions()`. The first update sends at once, then one input goes out every `PLAYER_INPUT_INTERVAL`, a sixtieth of a second (`PLAYER_INPUTS_PER_SECOND`, 60).
+- The time a frame lasts beyond the interval counts toward the next input, so frames of 16 or 17 ms still send 60 inputs per second. Never two in one frame: below 60 frames per second the client sends one input per frame, and a stall of the frame loop sends one input, not a burst.
+- `ServerConnection::sendPlayerInput()` sends a `PlayerInput` numbered after the previous one, a 30-byte datagram carrying the session token, only while the attempt is `Accepted`; otherwise it sends nothing.
+- The game goes on behind the options, so it keeps sending them there, with nothing held.
+
+The rate is **provisional**, like every rate of the protocol page: code must read `PLAYER_INPUTS_PER_SECOND` and `PLAYER_INPUT_INTERVAL` in `src/client/Connection/ConnectionConstants.hpp`. The server receives these inputs but reads none of them yet.
 
 ## Options: `OptionsScreen`
 
@@ -402,7 +414,7 @@ const ActionSet held = gameScreen.playerActions();
 const std::uint8_t actions = held.bits();
 ```
 
-`GameScreen::playerActions()` is the only way out, since the window hands the key and focus events to the screen on top. Nothing reads it yet: there is no player ship on the client and no `PlayerInput` is sent. The game screen logs `actions held: <byte>` at trace level each time the byte changes. It assumes the window has the focus when it is built and learns otherwise from the focus events. Only the screen on top receives events, so opening the options releases every action held (`PlayerCommands::releaseAll()`): a key changed in the options would otherwise never release its action.
+`GameScreen::playerActions()` is the only way out, since the window hands the key and focus events to the screen on top. The game screen sends it to the server at each input due (see [Inputs to the server](#inputs-to-the-server-playerinputpacer-iplayerinputlink)); there is no player ship on the client yet. The game screen logs `actions held: <byte>` at trace level each time the byte changes. It assumes the window has the focus when it is built and learns otherwise from the focus events. Only the screen on top receives events, so opening the options releases every action held (`PlayerCommands::releaseAll()`): a key changed in the options would otherwise never release its action.
 
 ## Launch options: `LaunchOptions`
 
@@ -509,6 +521,8 @@ dispatcher.registerHandler<rtype::network::WorldState>(
 | Add a text field to a menu | `MenuBuilder::textField()` with a `TextField` (`src/client/Widgets/TextField/`), then `Menu::fieldText()`, as `ConnectionScreen` does |
 | Change the characters a field accepts | `TextField::Characters` and `TextField::accepts()`; the ranges in `src/client/Widgets/WidgetConstants.hpp` |
 | Change how the client joins a server | `ServerConnection` in `src/client/Connection/ServerConnection/`; `CONNECTION_REQUEST_INTERVAL` and `CONNECTION_ATTEMPT_TIMEOUT` in `src/client/Connection/ConnectionConstants.hpp` |
+| Change how often the client sends its inputs | `PLAYER_INPUTS_PER_SECOND` in `src/client/Connection/ConnectionConstants.hpp`, `PlayerInputPacer` in `src/client/Connection/PlayerInputPacer/` |
+| Change what an input carries | `ServerConnection::sendPlayerInput()` in `src/client/Connection/ServerConnection/`, `GameScreen::update()` in `src/client/Screens/GameScreen/` |
 | Change the texts, sizes or checks of the connection screen | `src/client/Screens/ConnectionScreenConstants.hpp`, `ConnectionScreen::connect()` |
 | Change where the parts of the menus go | `MenuBuilder::placeColumn()`, `placeDialog()`, `placeForm()` and `placeTabbedPanel()`, `src/client/Widgets/WidgetConstants.hpp` |
 | Add a control to a row | A class deriving from `RowControl` in its own folder under `src/client/Widgets/RowControls/`, its sizes in `RowControlConstants.hpp`, added with `MenuBuilder::row()` |

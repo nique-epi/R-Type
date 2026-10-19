@@ -91,6 +91,12 @@ constexpr auto PLAYER_ACTION_BITS =
     static_cast<std::uint8_t>((1U << PLAYER_ACTION_COUNT) - 1);
 
 /**
+ * @brief The inputNumber of the first PlayerInput of a session; each next one
+ * is one more.
+ */
+constexpr std::uint32_t FIRST_INPUT_NUMBER = 1;
+
+/**
  * @brief Bytes of a player in a WorldState: playerNumber, shipEntityId, lives,
  * score and invulnerable.
  */
