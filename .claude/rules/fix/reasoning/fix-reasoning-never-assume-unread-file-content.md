@@ -16,7 +16,14 @@ trigger: always_on
 1. **Before writing how the client draws** (scaling, blending, fonts, timings) in a page, a design system, a mockup or a plan, open the function that does it (`integerScaleFactor`, `PixelCanvas::show`, `InterfaceCanvas`) and write its behavior with its name.
 2. **A round example is checked against every row of the table it comes from**: "×2 at 960 × 540, ×4 at 1920 × 1080" says nothing of 1280, 1600 and 2560 in `WINDOW_SIZES`, which are not multiples of 480.
 
+### A clang-tidy check is cited only after reading `.clang-tidy`
+
+1. **Before naming a check as what enforces or forbids something** (in a rule, a plan, a doc comment or a pull request), read its line in `.clang-tidy`: the `Checks` list starts from `*` and turns checks off by name, so a check that exists in clang-tidy may be off in this repository.
+2. **When the check is off, say so next to the guideline it stands for**, and cite the guideline instead: "Core Guidelines C.12; `.clang-tidy` turns its check off".
+
 ## Example
 
 - ❌ **Before (wrong)**: reading `EntityRegistry.hpp` fails → I go on assuming a `getComponent<T>(entity)` method and code against it.
 - ✅ **After (right)**: the read fails → `git ls-files | grep -i registry` → read the real file → I see `get<T>(entity)` returning a `std::optional` → I code against reality.
+- ❌ **Before (wrong)**: the parameter rule said a struct holds no reference member "(`cppcoreguidelines-avoid-const-or-ref-data-members`)", from a note of an earlier session; `.clang-tidy` turns that check off.
+- ✅ **After (right)**: read `.clang-tidy` → the check is off → the rule cites Core Guidelines C.12 and says nothing checks it.
