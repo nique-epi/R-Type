@@ -2,9 +2,13 @@
 
 #include <SFML/System/Vector2.hpp>
 #include <SFML/Window/Keyboard.hpp>
+#include <string_view>
 #include "WidgetConstants.hpp"
 
 namespace rtype::client {
+
+/** @brief Module name the game screen writes its log lines under. */
+constexpr std::string_view GAME_SCREEN_LOGGER_NAME = "GameScreen";
 
 /** @brief Key whose release opens the options during a game: the key that
  * closes every menu, so the same key opens and closes them. */

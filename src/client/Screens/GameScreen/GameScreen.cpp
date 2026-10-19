@@ -1,7 +1,6 @@
 #include "GameScreen.hpp"
 #include <SFML/Graphics/RenderTarget.hpp>
 #include <SFML/Window/Event.hpp>
-#include <cstdint>
 #include <memory>
 #include <utility>
 #include "ActionSet.hpp"
@@ -9,7 +8,9 @@
 #include "FlashPreference.hpp"
 #include "HitFlashSystem.hpp"
 #include "IEntityLayer.hpp"
+#include "IPlayerInputLink.hpp"
 #include "IScreenNavigator.hpp"
+#include "PlayerInputPacer.hpp"
 #include "PlayerSettings.hpp"
 #include "ScreenConstants.hpp"
 #include "ScreenId.hpp"
@@ -29,11 +30,12 @@ FlashPreference flashPreferenceOf(const PlayerSettings& settings) {
 
 GameScreen::GameScreen(IScreenNavigator& navigator,
                        std::unique_ptr<IEntityLayer> entityLayer,
-                       const PlayerSettings& settings)
+                       const PlayerSettings& settings, IPlayerInputLink& inputs)
     : navigator_(&navigator),
       entityLayer_(std::move(entityLayer)),
       settings_(&settings),
-      playerCommands_(true, settings.keys) {
+      playerCommands_(true, settings.keys),
+      inputs_(&inputs) {
   systems_.add(std::make_unique<AnimationSystem>());
   systems_.add(std::make_unique<HitFlashSystem>());
   entityLayer_->paint(components_);
@@ -57,10 +59,13 @@ void GameScreen::handleEvent(const sf::Event& event) {
 }
 
 void GameScreen::update(engine::Duration elapsed) {
-  const std::uint8_t held = playerCommands_.held().bits();
-  if (held != loggedActions_) {
-    logger_.trace("actions held: ", static_cast<unsigned int>(held));
-    loggedActions_ = held;
+  const ActionSet held = playerCommands_.held();
+  if (inputPacer_.advance(elapsed)) {
+    inputs_->sendPlayerInput(held);
+  }
+  if (held.bits() != loggedActions_) {
+    logger_.trace("actions held: ", static_cast<unsigned int>(held.bits()));
+    loggedActions_ = held.bits();
   }
   systems_.run(components_, elapsed);
   effects_.setFlashPreference(flashPreferenceOf(*settings_));

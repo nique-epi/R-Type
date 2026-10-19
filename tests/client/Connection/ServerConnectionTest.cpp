@@ -3,6 +3,7 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include "ActionSet.hpp"
 #include "ConnectionAccepted.hpp"
 #include "ConnectionChallenge.hpp"
 #include "ConnectionConstants.hpp"
@@ -16,6 +17,8 @@
 #include "MessagePayload.hpp"
 #include "OutgoingDatagram.hpp"
 #include "PacketHeader.hpp"
+#include "PlayerAction.hpp"
+#include "PlayerInput.hpp"
 #include "RecordingDatagramLink.hpp"
 #include "ServerConnection.hpp"
 #include "ServerConnectionTestConstants.hpp"
@@ -31,7 +34,9 @@ using testing::NICKNAME;
 using testing::ONE_NANOSECOND;
 using testing::OTHER_SENDER_PORT;
 using testing::PROTOCOL_ATTEMPT_TIMEOUT;
+using testing::PROTOCOL_FIRST_INPUT_NUMBER;
 using testing::PROTOCOL_REQUEST_INTERVAL;
+using testing::PROTOCOL_UP_ACTION_BIT;
 using testing::SERVER_ADDRESS;
 using testing::SERVER_PORT;
 using testing::SESSION_TOKEN;
@@ -58,6 +63,21 @@ network::ConnectionRequest requestOf(
       frames.front().payload);
 }
 
+/** @returns The input @p datagram holds, its only message. */
+network::PlayerInput inputOf(const network::OutgoingDatagram& datagram) {
+  const std::vector<network::MessageFrame> frames =
+      network::DatagramCodec::splitMessages(datagram.payload);
+  EXPECT_EQ(frames.size(), 1);
+  return network::decodeMessage<network::PlayerInput>(frames.front().payload);
+}
+
+/** @returns The actions of a player who holds up only. */
+ActionSet upHeld() {
+  ActionSet held;
+  held.add(PlayerAction::Up);
+  return held;
+}
+
 /** @brief A connection whose datagrams go through a recording link. */
 class ServerConnectionTest : public ::testing::Test {
  protected:
@@ -82,6 +102,17 @@ class ServerConnectionTest : public ::testing::Test {
     connection_.update(elapsed);
   }
 
+  /** @brief Connects, then has the server accept the attempt, its acceptance
+   * carrying SESSION_TOKEN. */
+  void connectAndGetAccepted() {
+    connect();
+    network::PacketHeader header;
+    header.sessionToken = SESSION_TOKEN;
+    deliver(network::ConnectionAccepted{.playerNumber = ACCEPTED_PLAYER_NUMBER},
+            server(), header);
+    update();
+  }
+
   [[nodiscard]] Phase phase() const { return connection_.status().phase; }
 
   [[nodiscard]] ServerConnection& connection() { return connection_; }
@@ -92,6 +123,14 @@ class ServerConnectionTest : public ::testing::Test {
 
   [[nodiscard]] network::ConnectionRequest lastRequest() const {
     return requestOf(link_.sent().back());
+  }
+
+  [[nodiscard]] network::PlayerInput lastInput() const {
+    return inputOf(link_.sent().back());
+  }
+
+  [[nodiscard]] network::PacketHeader lastHeader() const {
+    return network::DatagramCodec::decodeHeader(link_.sent().back().payload);
   }
 
  private:
@@ -413,6 +452,135 @@ TEST_F(ServerConnectionTest, StartsANewAttemptWithoutStaleAnswers) {
 
   EXPECT_EQ(phase(), Phase::Connecting);
   EXPECT_EQ(lastRequest().cookie, 0);
+}
+
+/**
+ * Given an attempt the server has not answered yet
+ * When the game sends an input
+ * Then nothing is sent but the request
+ */
+TEST_F(ServerConnectionTest, SendsNoInputBeforeTheServerAccepts) {
+  connect();
+
+  connection().sendPlayerInput(upHeld());
+
+  EXPECT_EQ(sent().size(), 1);
+}
+
+/**
+ * Given an attempt the server accepted
+ * When the game sends an input with up held
+ * Then the server gets a PlayerInput numbered 1 with only the bit of up
+ */
+TEST_F(ServerConnectionTest, SendsTheFirstInputOnceAccepted) {
+  connectAndGetAccepted();
+
+  connection().sendPlayerInput(upHeld());
+
+  ASSERT_EQ(sent().size(), 2);
+  EXPECT_EQ(sent().back().destination, server());
+  EXPECT_EQ(lastInput(),
+            (network::PlayerInput{.inputNumber = PROTOCOL_FIRST_INPUT_NUMBER,
+                                  .actions = PROTOCOL_UP_ACTION_BIT}));
+}
+
+/**
+ * Given an attempt the server accepted with a session token
+ * When the game sends an input
+ * Then the header of the input carries that token
+ */
+TEST_F(ServerConnectionTest, InputsCarryTheSessionTokenOfTheAcceptance) {
+  connectAndGetAccepted();
+
+  connection().sendPlayerInput(upHeld());
+
+  EXPECT_EQ(lastHeader().sessionToken, SESSION_TOKEN);
+}
+
+/**
+ * Given an attempt the server accepted, which sent its first input
+ * When the game sends another input
+ * Then that input is numbered 2
+ */
+TEST_F(ServerConnectionTest, NumbersEachInputAfterThePreviousOne) {
+  connectAndGetAccepted();
+  connection().sendPlayerInput(upHeld());
+
+  connection().sendPlayerInput(upHeld());
+
+  EXPECT_EQ(lastInput().inputNumber, PROTOCOL_FIRST_INPUT_NUMBER + 1);
+}
+
+/**
+ * Given an attempt accepted after one request, sequence 0
+ * When the game sends an input
+ * Then the input carries sequence 1: requests and inputs share one counter
+ */
+TEST_F(ServerConnectionTest, InputsTakeTheSequenceAfterTheRequests) {
+  connectAndGetAccepted();
+
+  connection().sendPlayerInput(upHeld());
+
+  EXPECT_EQ(lastHeader().sequence, 1);
+}
+
+/**
+ * Given an attempt the server accepted with a session token
+ * When the client connects again
+ * Then the new request carries token 0, as every request does
+ */
+TEST_F(ServerConnectionTest, ANewAttemptDropsTheTokenOfTheOldSession) {
+  connectAndGetAccepted();
+
+  connect();
+
+  EXPECT_EQ(lastHeader().sessionToken, 0);
+}
+
+/**
+ * Given a session that sent two inputs
+ * When the client connects again, is accepted, and the game sends an input
+ * Then that input is numbered 1: a new session numbers its inputs from 1
+ */
+TEST_F(ServerConnectionTest, ANewSessionNumbersItsInputsFromOne) {
+  connectAndGetAccepted();
+  connection().sendPlayerInput(upHeld());
+  connection().sendPlayerInput(upHeld());
+  connectAndGetAccepted();
+
+  connection().sendPlayerInput(upHeld());
+
+  EXPECT_EQ(lastInput().inputNumber, PROTOCOL_FIRST_INPUT_NUMBER);
+}
+
+/**
+ * Given an attempt the server refused
+ * When the game sends an input
+ * Then nothing is sent but the request
+ */
+TEST_F(ServerConnectionTest, SendsNoInputOnceRefused) {
+  connect();
+  deliver(
+      network::ConnectionRefused{.reason = network::RefusalReason::GameFull});
+  update();
+
+  connection().sendPlayerInput(upHeld());
+
+  EXPECT_EQ(sent().size(), 1);
+}
+
+/**
+ * Given an attempt the server accepted, then cancelled
+ * When the game sends an input
+ * Then nothing is sent but the request
+ */
+TEST_F(ServerConnectionTest, SendsNoInputOnceCancelled) {
+  connectAndGetAccepted();
+  connection().cancel();
+
+  connection().sendPlayerInput(upHeld());
+
+  EXPECT_EQ(sent().size(), 1);
 }
 
 }  // namespace

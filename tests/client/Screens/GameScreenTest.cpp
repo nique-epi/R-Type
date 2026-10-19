@@ -9,6 +9,7 @@
 #include "BlankRenderTarget.hpp"
 #include "BoundAction.hpp"
 #include "ComponentRegistry.hpp"
+#include "ConnectionConstants.hpp"
 #include "EffectConstants.hpp"
 #include "GameScreen.hpp"
 #include "IEntityLayer.hpp"
@@ -17,6 +18,7 @@
 #include "PlayerSettings.hpp"
 #include "RecordingEntityLayer.hpp"
 #include "RecordingNavigator.hpp"
+#include "RecordingPlayerInputLink.hpp"
 #include "RecordingScreen.hpp"
 #include "ScreenConstants.hpp"
 #include "ScreenId.hpp"
@@ -31,6 +33,7 @@ using rtype::client::GameScreen;
 using rtype::client::IEntityLayer;
 using rtype::client::IScreen;
 using rtype::client::OPTIONS_KEY;
+using rtype::client::PLAYER_INPUT_INTERVAL;
 using rtype::client::PLAYER_MUZZLE_FLASH_WITHOUT_FLASH_FRAME;
 using rtype::client::PlayerSettings;
 using rtype::client::ScreenId;
@@ -90,11 +93,12 @@ class GameScreenTest : public ::testing::Test {
   std::vector<JournalEntry> journal_;
   EntityLayerRecord layerRecord_;
   PlayerSettings settings_;
+  RecordingPlayerInputLink inputs_;
   ScreenStack screens_{[this](ScreenId screen) -> std::unique_ptr<IScreen> {
     if (screen == ScreenId::Game) {
       return std::make_unique<GameScreen>(
           screens_, std::make_unique<RecordingEntityLayer>(layerRecord_),
-          settings_);
+          settings_, inputs_);
     }
     return std::make_unique<RecordingScreen>(screen, journal_);
   }};
@@ -259,7 +263,9 @@ TEST_F(GameScreenTest, ReducingFlashesDuringTheGameAppliesToTheNextEffect) {
 TEST(GameScreenActionsTest, PressedKeysBecomeHeldActions) {
   RecordingNavigator navigator;
   const PlayerSettings settings;
-  GameScreen game(navigator, std::make_unique<IgnoringEntityLayer>(), settings);
+  RecordingPlayerInputLink inputs;
+  GameScreen game(navigator, std::make_unique<IgnoringEntityLayer>(), settings,
+                  inputs);
 
   game.handleEvent(keyPress(sf::Keyboard::Key::Up, sf::Keyboard::Scan::Up));
   game.handleEvent(
@@ -276,7 +282,9 @@ TEST(GameScreenActionsTest, PressedKeysBecomeHeldActions) {
 TEST(GameScreenActionsTest, ReleasedKeyIsNoLongerHeld) {
   RecordingNavigator navigator;
   const PlayerSettings settings;
-  GameScreen game(navigator, std::make_unique<IgnoringEntityLayer>(), settings);
+  RecordingPlayerInputLink inputs;
+  GameScreen game(navigator, std::make_unique<IgnoringEntityLayer>(), settings,
+                  inputs);
   game.handleEvent(keyPress(sf::Keyboard::Key::Up, sf::Keyboard::Scan::Up));
 
   game.handleEvent(keyRelease(sf::Keyboard::Key::Up, sf::Keyboard::Scan::Up));
@@ -292,7 +300,9 @@ TEST(GameScreenActionsTest, ReleasedKeyIsNoLongerHeld) {
 TEST(GameScreenActionsTest, LosingFocusReleasesTheHeldActions) {
   RecordingNavigator navigator;
   const PlayerSettings settings;
-  GameScreen game(navigator, std::make_unique<IgnoringEntityLayer>(), settings);
+  RecordingPlayerInputLink inputs;
+  GameScreen game(navigator, std::make_unique<IgnoringEntityLayer>(), settings,
+                  inputs);
   game.handleEvent(keyPress(sf::Keyboard::Key::Up, sf::Keyboard::Scan::Up));
 
   game.handleEvent(sf::Event{sf::Event::FocusLost{}});
@@ -308,7 +318,9 @@ TEST(GameScreenActionsTest, LosingFocusReleasesTheHeldActions) {
 TEST(GameScreenActionsTest, KeysPressedWithoutFocusAreIgnored) {
   RecordingNavigator navigator;
   const PlayerSettings settings;
-  GameScreen game(navigator, std::make_unique<IgnoringEntityLayer>(), settings);
+  RecordingPlayerInputLink inputs;
+  GameScreen game(navigator, std::make_unique<IgnoringEntityLayer>(), settings,
+                  inputs);
   game.handleEvent(sf::Event{sf::Event::FocusLost{}});
 
   game.handleEvent(keyPress(sf::Keyboard::Key::Up, sf::Keyboard::Scan::Up));
@@ -324,7 +336,9 @@ TEST(GameScreenActionsTest, KeysPressedWithoutFocusAreIgnored) {
 TEST(GameScreenActionsTest, KeysPressedAfterFocusGainedCount) {
   RecordingNavigator navigator;
   const PlayerSettings settings;
-  GameScreen game(navigator, std::make_unique<IgnoringEntityLayer>(), settings);
+  RecordingPlayerInputLink inputs;
+  GameScreen game(navigator, std::make_unique<IgnoringEntityLayer>(), settings,
+                  inputs);
   game.handleEvent(sf::Event{sf::Event::FocusLost{}});
   game.handleEvent(sf::Event{sf::Event::FocusGained{}});
 
@@ -341,10 +355,14 @@ TEST(GameScreenActionsTest, KeysPressedAfterFocusGainedCount) {
 TEST(GameScreenActionsTest, OpeningTheOptionsReleasesTheHeldActions) {
   RecordingNavigator navigator;
   const PlayerSettings settings;
-  GameScreen game(navigator, std::make_unique<IgnoringEntityLayer>(), settings);
+  RecordingPlayerInputLink inputs;
+  GameScreen game(navigator, std::make_unique<IgnoringEntityLayer>(), settings,
+                  inputs);
   game.handleEvent(keyPress(sf::Keyboard::Key::Up, sf::Keyboard::Scan::Up));
+
   game.handleEvent(keyRelease(OPTIONS_KEY, sf::Keyboard::Scan::Escape));
-  EXPECT_EQ(game.playerActions().bits(), 0U);
+
+  EXPECT_EQ(game.playerActions().bits(), NOTHING_HELD);
 }
 
 /**
@@ -356,7 +374,67 @@ TEST(GameScreenActionsTest, AKeyChangedInTheOptionsMovesTheShip) {
   RecordingNavigator navigator;
   PlayerSettings settings;
   settings.keys.bind(BoundAction::MoveUp, sf::Keyboard::Scan::W);
-  GameScreen game(navigator, std::make_unique<IgnoringEntityLayer>(), settings);
+  RecordingPlayerInputLink inputs;
+  GameScreen game(navigator, std::make_unique<IgnoringEntityLayer>(), settings,
+                  inputs);
+
   game.handleEvent(keyPress(sf::Keyboard::Key::W, sf::Keyboard::Scan::W));
+
   EXPECT_EQ(game.playerActions().bits(), UP_BIT);
+}
+
+/**
+ * Given the game with up held
+ * When its first frame is updated
+ * Then an input holding up is sent at once
+ */
+TEST(GameScreenInputsTest, TheFirstUpdateSendsTheActionsHeld) {
+  RecordingNavigator navigator;
+  const PlayerSettings settings;
+  RecordingPlayerInputLink inputs;
+  GameScreen game(navigator, std::make_unique<IgnoringEntityLayer>(), settings,
+                  inputs);
+  game.handleEvent(keyPress(sf::Keyboard::Key::Up, sf::Keyboard::Scan::Up));
+
+  game.update(ONE_FRAME);
+
+  EXPECT_THAT(inputs.sentActions(), ElementsAre(UP_BIT));
+}
+
+/**
+ * Given the game after a first update of 16 ms, which sent an input
+ * When an update of one nanosecond follows, still within the first interval
+ * Then no other input is sent: inputs follow the time, not the updates
+ */
+TEST(GameScreenInputsTest, AnUpdateWithinTheIntervalSendsNothingMore) {
+  ASSERT_LT(ONE_FRAME + ONE_TICK, PLAYER_INPUT_INTERVAL);
+  RecordingNavigator navigator;
+  const PlayerSettings settings;
+  RecordingPlayerInputLink inputs;
+  GameScreen game(navigator, std::make_unique<IgnoringEntityLayer>(), settings,
+                  inputs);
+  game.update(ONE_FRAME);
+
+  game.update(ONE_TICK);
+
+  EXPECT_EQ(inputs.sentActions().size(), 1);
+}
+
+/**
+ * Given the game with up held, and the options just opened over it
+ * When the game is updated behind them
+ * Then it sends an input with nothing held
+ */
+TEST(GameScreenInputsTest, BehindTheOptionsItSendsNothingHeld) {
+  RecordingNavigator navigator;
+  const PlayerSettings settings;
+  RecordingPlayerInputLink inputs;
+  GameScreen game(navigator, std::make_unique<IgnoringEntityLayer>(), settings,
+                  inputs);
+  game.handleEvent(keyPress(sf::Keyboard::Key::Up, sf::Keyboard::Scan::Up));
+  game.handleEvent(keyRelease(OPTIONS_KEY, sf::Keyboard::Scan::Escape));
+
+  game.update(ONE_FRAME);
+
+  EXPECT_THAT(inputs.sentActions(), ElementsAre(NOTHING_HELD));
 }
