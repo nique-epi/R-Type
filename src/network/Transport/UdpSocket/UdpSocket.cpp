@@ -5,6 +5,7 @@
 #include <asio/io_context.hpp>
 #include <asio/ip/address.hpp>
 #include <asio/ip/udp.hpp>
+#include <chrono>
 #include <cstddef>
 #include <memory>
 #include <span>
@@ -18,6 +19,7 @@
 #include "NetworkConstants.hpp"
 #include "NetworkContext.hpp"
 #include "NetworkException.hpp"
+#include "ThrottledLog.hpp"
 
 namespace rtype::network {
 
@@ -74,6 +76,8 @@ struct UdpSocket::Implementation
   DatagramHandler handler;
   bool receiving{false};
   logging::Logger logger{std::string{NETWORK_LOGGER_NAME}};
+  logging::ThrottledLog rejectionLog{std::string{NETWORK_LOGGER_NAME},
+                                     REJECTION_LINE_INTERVAL};
 };
 
 UdpSocket::Implementation::Implementation(asio::io_context& ioContext)
@@ -98,9 +102,10 @@ void UdpSocket::Implementation::handleReceived(const std::error_code& error,
   } else if (error) {
     logger.warn("receiving failed, still listening: ", error.message());
   } else if (byteCount > MAX_DATAGRAM_SIZE) {
-    logger.debug("dropped a datagram larger than ", MAX_DATAGRAM_SIZE,
-                 " bytes from ", sender.address().to_string(), " port ",
-                 sender.port());
+    rejectionLog.debug(std::chrono::steady_clock::now().time_since_epoch(),
+                       "dropped a datagram larger than ", MAX_DATAGRAM_SIZE,
+                       " bytes from ", sender.address().to_string(), " port ",
+                       sender.port());
   } else {
     handler(toEndpoint(sender),
             std::span<const std::byte>{receiveBuffer}.first(byteCount));

@@ -8,9 +8,12 @@
 #include "ConnectionRequest.hpp"
 #include "Endpoint.hpp"
 #include "Heartbeat.hpp"
+#include "JournalFile.hpp"
+#include "Logger.hpp"
 #include "MessageDispatcher.hpp"
 #include "MessageFrame.hpp"
 #include "MessageOrigin.hpp"
+#include "MessagePayload.hpp"
 #include "MessageType.hpp"
 #include "NetworkConstants.hpp"
 #include "NetworkException.hpp"
@@ -27,6 +30,8 @@ namespace {
 using testing::byteSequence;
 using testing::LARGEST_TYPE_BYTE;
 using testing::oneShipState;
+using testing::REJECTED_MESSAGE_COUNT;
+using testing::REJECTED_MESSAGE_LINE_TEXT;
 using testing::SOME_SENDER_PORT;
 using testing::SOME_SESSION_TOKEN;
 using testing::someSessionHeader;
@@ -341,6 +346,77 @@ TEST(MessageDispatcher, DoesNothingForNoMessage) {
   EXPECT_TRUE(record.messages.empty());
   EXPECT_EQ(dispatcher.skippedMessageCount(), 0U);
   EXPECT_EQ(dispatcher.malformedMessageCount(), 0U);
+}
+
+/**
+ * @brief Dispatcher tests that read the log: the debug level, written to a
+ * journal the test reads. The level is restored after the test, and the
+ * journal puts the log back on standard error.
+ */
+class MessageDispatcherLogTest : public ::testing::Test {
+ protected:
+  void SetUp() override {
+    savedLevel_ = logging::Logger::level();
+    logging::Logger::setLevel(logging::LogLevel::Debug);
+    logging::Logger::setOutput(
+        logging::LogOutput{.toStderr = false, .filePath = journal_.path()});
+  }
+
+  void TearDown() override { logging::Logger::setLevel(savedLevel_); }
+
+  /** @returns The lines of the journal about a rejected message. */
+  [[nodiscard]] std::vector<std::string> rejectionLines() const {
+    std::vector<std::string> found;
+    for (const std::string& line : journal_.lines()) {
+      if (line.find(REJECTED_MESSAGE_LINE_TEXT) != std::string::npos) {
+        found.push_back(line);
+      }
+    }
+    return found;
+  }
+
+ private:
+  JournalFile journal_;
+  logging::LogLevel savedLevel_{logging::LogLevel::Info};
+};
+
+/**
+ * Given a dispatcher without any handler
+ * When a Heartbeat arrives from a sender
+ * Then the journal holds a line about it that names the address and the port
+ * of that sender
+ */
+TEST_F(MessageDispatcherLogTest, LogsASkippedMessageWithItsSender) {
+  MessageDispatcher dispatcher;
+  const std::vector<std::byte> payload = encodeMessage(Heartbeat{});
+  const std::vector frames{frameOf(MessageType::Heartbeat, payload)};
+
+  dispatcher.dispatch(someOrigin(), frames);
+
+  const std::vector<std::string> lines = rejectionLines();
+  ASSERT_EQ(lines.size(), 1U);
+  EXPECT_NE(lines.front().find("from " + std::string{LOOPBACK_IPV4_ADDRESS} +
+                               " port " + std::to_string(SOME_SENDER_PORT)),
+            std::string::npos);
+}
+
+/**
+ * Given a handler for ReadyState
+ * When REJECTED_MESSAGE_COUNT ReadyState messages holding 02 arrive at once
+ * Then the journal holds one line about them, not one per message: whoever
+ * floods the dispatcher cannot flood the log
+ */
+TEST_F(MessageDispatcherLogTest, WritesOneLineForMessagesRejectedTogether) {
+  MessageDispatcher dispatcher;
+  ReadyStateRecord record;
+  recordReadyStates(dispatcher, record);
+  const auto invalid = byteSequence({0x02});
+  const std::vector<MessageFrame> frames(
+      REJECTED_MESSAGE_COUNT, frameOf(MessageType::ReadyState, invalid));
+
+  dispatcher.dispatch(someOrigin(), frames);
+
+  EXPECT_EQ(rejectionLines().size(), 1U);
 }
 
 }  // namespace

@@ -7,12 +7,12 @@
 #include <functional>
 #include <span>
 #include <utility>
-#include "Logger.hpp"
 #include "MessageFrame.hpp"
 #include "MessageOrigin.hpp"
 #include "MessagePayload.hpp"
 #include "NetworkException.hpp"
 #include "ProtocolConstants.hpp"
+#include "ThrottledLog.hpp"
 
 namespace rtype::network {
 
@@ -23,7 +23,8 @@ namespace rtype::network {
  * call where it is handled.
  *
  * A message whose type has no handler is skipped, and so is a message whose
- * payload its reader refuses; each is counted and logged at the debug level,
+ * payload its reader refuses; each is counted, then logged at the debug level
+ * with its sender at most once per REJECTION_LINE_INTERVAL (see ThrottledLog),
  * and the next message is handled. No exception caused by the content of a
  * message leaves dispatch(), so one forged message cannot stop the program. An
  * exception thrown by a handler does leave it: it is a fault of the program,
@@ -115,7 +116,7 @@ class MessageDispatcher {
   std::array<Route, MESSAGE_TYPE_COUNT> routes_;
   std::size_t skippedMessageCount_{0};
   std::size_t malformedMessageCount_{0};
-  logging::Logger logger_;
+  logging::ThrottledLog rejectionLog_;
 };
 
 }  // namespace rtype::network

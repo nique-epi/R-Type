@@ -182,4 +182,16 @@ constexpr std::uint8_t TYPE_BELOW_THE_FIRST = 0;
 constexpr std::uint8_t TYPE_ABOVE_THE_LAST = 17;
 constexpr std::uint8_t LARGEST_TYPE_BYTE = 255;
 
+/**
+ * @brief How many messages a test has a dispatcher reject at once, to check
+ * that they share one log line.
+ */
+constexpr std::size_t REJECTED_MESSAGE_COUNT = 3;
+
+/**
+ * @brief Words of every log line about a message a dispatcher rejects, which
+ * tell those lines apart from the others.
+ */
+constexpr std::string_view REJECTED_MESSAGE_LINE_TEXT = "a message of type";
+
 }  // namespace rtype::network::testing

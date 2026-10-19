@@ -6,6 +6,8 @@
 #include <thread>
 #include <vector>
 #include "Endpoint.hpp"
+#include "JournalFile.hpp"
+#include "Logger.hpp"
 #include "NetworkConstants.hpp"
 #include "NetworkException.hpp"
 #include "NetworkTestConstants.hpp"
@@ -16,6 +18,7 @@ using rtype::network::ANY_PORT;
 using rtype::network::DatagramTooLargeException;
 using rtype::network::Endpoint;
 using rtype::network::InvalidAddressException;
+using rtype::network::LOOPBACK_IPV4_ADDRESS;
 using rtype::network::MAX_DATAGRAM_SIZE;
 using rtype::network::ReceivingAlreadyStartedException;
 using rtype::network::SocketOpenException;
@@ -240,4 +243,87 @@ TEST_F(UdpSocketFixture, RefusesToOpenOnAPortAlreadyTaken) {
   const UdpSocket first{context(), loopbackOnPort(ANY_PORT)};
 
   EXPECT_THROW(openSocketOn(first.localEndpoint()), SocketOpenException);
+}
+
+/**
+ * @brief Socket tests that read the log: the debug level, written to a journal
+ * the test reads. The level is restored after the test, and the journal puts
+ * the log back on standard error.
+ */
+class UdpSocketLogTest : public UdpSocketFixture {
+ protected:
+  void SetUp() override {
+    savedLevel_ = rtype::logging::Logger::level();
+    rtype::logging::Logger::setLevel(rtype::logging::LogLevel::Debug);
+    rtype::logging::Logger::setOutput(rtype::logging::LogOutput{
+        .toStderr = false, .filePath = journal_.path()});
+  }
+
+  void TearDown() override { rtype::logging::Logger::setLevel(savedLevel_); }
+
+  /** @returns The lines of the journal about a datagram too large. */
+  [[nodiscard]] std::vector<std::string> oversizedDatagramLines() const {
+    std::vector<std::string> found;
+    for (const std::string& line : journal_.lines()) {
+      if (line.find(OVERSIZED_DATAGRAM_LINE_TEXT) != std::string::npos) {
+        found.push_back(line);
+      }
+    }
+    return found;
+  }
+
+ private:
+  JournalFile journal_;
+  rtype::logging::LogLevel savedLevel_{rtype::logging::LogLevel::Info};
+};
+
+/**
+ * Given a server socket receiving datagrams
+ * When a client sends it a datagram one byte over MAX_DATAGRAM_SIZE, then a
+ *      small one
+ * Then the journal holds a line about the large one that names the address
+ *      and the port of the client
+ */
+TEST_F(UdpSocketLogTest, LogsADatagramTooLargeWithItsSender) {
+  UdpSocket server{context(), loopbackOnPort(ANY_PORT)};
+  std::vector<ReceivedDatagram> received;
+  server.startReceiving(recordInto(received));
+  auto client = openClient();
+
+  sendFromClient(client, server.localEndpoint().port,
+                 makePayload(MAX_DATAGRAM_SIZE + 1));
+  sendFromClient(client, server.localEndpoint().port,
+                 makePayload(SMALL_PAYLOAD_SIZE));
+
+  ASSERT_TRUE(runUntil([&received] { return !received.empty(); }));
+  const std::vector<std::string> lines = oversizedDatagramLines();
+  ASSERT_EQ(lines.size(), 1U);
+  EXPECT_NE(lines.front().find("from " + std::string{LOOPBACK_IPV4_ADDRESS} +
+                               " port " +
+                               std::to_string(received.front().sender.port)),
+            std::string::npos);
+}
+
+/**
+ * Given a server socket receiving datagrams
+ * When a client sends it OVERSIZED_DATAGRAM_COUNT datagrams over
+ *      MAX_DATAGRAM_SIZE, then a small one
+ * Then the journal holds one line about them, not one per datagram: whoever
+ *      floods the socket cannot flood the log
+ */
+TEST_F(UdpSocketLogTest, WritesOneLineForDatagramsTooLargeSentTogether) {
+  UdpSocket server{context(), loopbackOnPort(ANY_PORT)};
+  std::vector<ReceivedDatagram> received;
+  server.startReceiving(recordInto(received));
+  auto client = openClient();
+
+  for (std::size_t sent = 0; sent < OVERSIZED_DATAGRAM_COUNT; ++sent) {
+    sendFromClient(client, server.localEndpoint().port,
+                   makePayload(MAX_DATAGRAM_SIZE + 1));
+  }
+  sendFromClient(client, server.localEndpoint().port,
+                 makePayload(SMALL_PAYLOAD_SIZE));
+
+  ASSERT_TRUE(runUntil([&received] { return !received.empty(); }));
+  EXPECT_EQ(oversizedDatagramLines().size(), 1U);
 }

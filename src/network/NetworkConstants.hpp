@@ -1,5 +1,6 @@
 #pragma once
 
+#include <chrono>
 #include <cstddef>
 #include <cstdint>
 #include <limits>
@@ -78,5 +79,13 @@ constexpr char IPV4_ADDRESS_SEPARATOR = '.';
  * @brief Module name the network classes write their log lines under.
  */
 constexpr std::string_view NETWORK_LOGGER_NAME = "Network";
+
+/**
+ * @brief Shortest time between two log lines about the received bytes one
+ * part of a program rejects, such as a datagram too large or a message no
+ * handler reads: anyone can send them, so a flood of them writes one line per
+ * interval, which says how many were rejected since the previous one.
+ */
+constexpr std::chrono::seconds REJECTION_LINE_INTERVAL{10};
 
 }  // namespace rtype::network
