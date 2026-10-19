@@ -189,16 +189,19 @@ void LobbyScreen::paintBays() {
   if (!area.has_value()) {
     return;
   }
+  const BayMotion motion{.elapsed = elapsed_, .preference = motion_};
   for (int slot = 0; slot < LOBBY_BAY_COUNT; ++slot) {
-    paintHangarBay(*canvas_, bayTopLeft(*area, slot), bayOf(slot), elapsed_,
-                   motion_);
+    paintHangarBay(*canvas_, bayOf(*area, slot), motion);
   }
 }
 
-HangarBay LobbyScreen::bayOf(int slot) const {
+HangarBay LobbyScreen::bayOf(sf::IntRect area, int slot) const {
   const auto number =
       static_cast<std::uint8_t>(network::FIRST_PLAYER_NUMBER + slot);
-  HangarBay bay{.playerNumber = number, .color = slot, .pilot = std::nullopt};
+  HangarBay bay{.topLeft = bayTopLeft(area, slot),
+                .playerNumber = number,
+                .color = slot,
+                .pilot = std::nullopt};
   const network::LobbyPlayer* player =
       playerNumbered(connection_->lobbyPlayers(), number);
   if (player != nullptr) {

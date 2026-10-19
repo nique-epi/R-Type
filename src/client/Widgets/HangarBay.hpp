@@ -26,12 +26,26 @@ struct BayPilot {
   bool isLocalPlayer = false;
 };
 
-/** @brief One bay of the waiting room: its player number, the color of its
- * ship, 0 to PLAYER_COLOR_COUNT - 1, and its pilot, none while it is open. */
+/** @brief One bay of the waiting room: where it lies, its player number, the
+ * color of its ship, 0 to PLAYER_COLOR_COUNT - 1, and its pilot, none while
+ * it is open. */
 struct HangarBay {
+  /** @brief Top-left corner of the bay, in pixels of the interface picture. */
+  sf::Vector2i topLeft;
   int playerNumber{};
   int color{};
   std::optional<BayPilot> pilot;
+};
+
+/** @brief How far the animations of the bays have run, and whether they may
+ * move at all. */
+struct BayMotion {
+  /** @brief Time since the bays started showing: the time of the ships and of
+   * the beacons. */
+  engine::Duration elapsed{};
+  /** @brief With MotionPreference::Reduced, every ship shows its first frame
+   * and no beacon lights. */
+  MotionPreference preference{};
 };
 
 /**
@@ -45,17 +59,8 @@ struct HangarBay {
  *
  * Without one: its number, docking clamps around a row of beacons lit one
  * after the other, then OPEN BAY.
- *
- * With MotionPreference::Reduced, every ship shows its first frame and no
- * beacon lights.
- *
- * @param topLeft Top-left corner of the bay, in pixels of the interface
- * picture.
- * @param elapsed Time since the bays started showing: the time of the ships
- * and of the beacons.
  */
-void paintHangarBay(IInterfaceCanvas& canvas, sf::Vector2i topLeft,
-                    const HangarBay& bay, engine::Duration elapsed,
-                    MotionPreference motion);
+void paintHangarBay(IInterfaceCanvas& canvas, const HangarBay& bay,
+                    BayMotion motion);
 
 }  // namespace rtype::client

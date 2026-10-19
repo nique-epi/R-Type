@@ -16,6 +16,7 @@
 #include "TextStyle.hpp"
 #include "TimeConstants.hpp"
 
+using rtype::client::BayMotion;
 using rtype::client::BayPilot;
 using rtype::client::BayReadiness;
 using rtype::client::DEEP_BLUE;
@@ -57,10 +58,12 @@ constexpr sf::Vector2i BEACON_SQUARE(2, 2);
 
 constexpr const char* NICKNAME = "CAPTAIN_STARDUST";
 
-/** @returns The bay of player 3, with a pilot in this state, or open. */
+/** @returns The bay of player 3 at BAY_TOP_LEFT, with a pilot in this state,
+ * or open. */
 HangarBay bayOf(std::optional<BayReadiness> readiness,
                 bool isLocalPlayer = false) {
-  HangarBay bay{.playerNumber = THIRD_PLAYER,
+  HangarBay bay{.topLeft = BAY_TOP_LEFT,
+                .playerNumber = THIRD_PLAYER,
                 .color = THIRD_COLOR,
                 .pilot = std::nullopt};
   if (readiness.has_value()) {
@@ -71,13 +74,15 @@ HangarBay bayOf(std::optional<BayReadiness> readiness,
   return bay;
 }
 
-/** @returns What painting the bay at BAY_TOP_LEFT asks of a canvas. */
+/** @returns What painting a bay asks of a canvas, its animations run for
+ * @p elapsed. */
 InterfaceCanvasRecord bayPaintingOf(const HangarBay& bay,
                                     rtype::engine::Duration elapsed,
                                     MotionPreference motion) {
   InterfaceCanvasRecord record;
   RecordingInterfaceCanvas canvas(record);
-  rtype::client::paintHangarBay(canvas, BAY_TOP_LEFT, bay, elapsed, motion);
+  rtype::client::paintHangarBay(
+      canvas, bay, BayMotion{.elapsed = elapsed, .preference = motion});
   return record;
 }
 

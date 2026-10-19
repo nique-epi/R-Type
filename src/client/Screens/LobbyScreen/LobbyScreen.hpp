@@ -1,5 +1,6 @@
 #pragma once
 
+#include <SFML/Graphics/Rect.hpp>
 #include <SFML/Window/Keyboard.hpp>
 #include <memory>
 #include <string>
@@ -95,10 +96,10 @@ class LobbyScreen : public IScreen {
    * illustration area of the menu. */
   void paintBays();
 
-  /** @returns The bay of a slot, 0 to LOBBY_BAY_COUNT - 1: its player number,
-   * the color of its ship, and the pilot the server lists with that number,
-   * none while the bay is open. */
-  [[nodiscard]] HangarBay bayOf(int slot) const;
+  /** @returns The bay of a slot, 0 to LOBBY_BAY_COUNT - 1: where it lies in
+   * the area of the bays, its player number, the color of its ship, and the
+   * pilot the server lists with that number, none while the bay is open. */
+  [[nodiscard]] HangarBay bayOf(sf::IntRect area, int slot) const;
 
   /** @returns The pilot of a bay as the server lists it; for the local player,
    * the ready state asked for shows while the server lists another. */
