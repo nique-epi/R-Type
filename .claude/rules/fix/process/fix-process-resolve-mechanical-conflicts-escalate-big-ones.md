@@ -38,6 +38,11 @@ In that case: do not resolve, leave the merge in progress (or `git merge --abort
 - **Never commit a file still containing `<<<<<<<`**: `git diff --check` and `grep -rn '^<<<<<<<'` before committing.
 - **Report the outcome**: how many conflicts, in which files, resolved how.
 
+### A union reads the lines around the block
+
+1. **Before joining both sides of a block, read the line just above and just below it.** When both sides start inside a shared opening (`/**`, `{`, a list) or end before a shared closing (`}`, `*/`), each side holds half of an item: the union must put the closing and the opening back between them (`}`, a blank line, `/**`).
+2. **A union is checked by compiling the file**, never by the absence of markers: a missing `}` leaves no marker and turns every following test into a local class.
+
 ## Example
 
 - ❌ **Forbidden**: `git checkout --ours src/server/CMakeLists.txt` to get rid of the markers → the sources added by the other branch disappear from the build.
