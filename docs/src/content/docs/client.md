@@ -328,6 +328,7 @@ The connection behind it is a `ServerConnection` (see [Joining a server](#joinin
 - A `ConnectionChallenge` is answered at once with the request carrying its cookie; every later request carries it too.
 - A `ConnectionAccepted` gives `Accepted` and the player number; a `ConnectionRefused` gives `Refused` and its reason. Either ends the attempt: no request is sent any more.
 - The session token in the header of the `ConnectionAccepted` is kept, and every datagram sent after it carries it. Requests and inputs take their sequence from one counter, which starts at 0; `connect()` starts a new session, with sequence 0, token 0 and inputs numbered from `FIRST_INPUT_NUMBER` (1) again.
+- Once accepted, a datagram of the server that carries another session token is dropped and counted (`wrongTokenCount()`), so a datagram forged with the address and port of the server is read only if it carries the token.
 - With neither, `CONNECTION_ATTEMPT_TIMEOUT` (5 s) after `connect()`, the attempt gives up as `Unreachable`; a challenge does not restart that delay, so a server that only challenges never holds the screen.
 - Only datagrams from the server being contacted, of this protocol and version, and whose message sizes add up, are read; any other is ignored. `cancel()` stops the attempt where it stands.
 
@@ -464,7 +465,7 @@ UDP may deliver a datagram sent earlier after one sent later, and applying the o
 
 - The first state is always accepted, and a refused state does not lower the remembered tick.
 - Ticks are compared as plain integers, with no wrap-around: a 32-bit tick lasts 2.27 years at 60 ticks per second.
-- Call it only for datagrams that passed the checks on the sender, otherwise a forged datagram could raise the remembered tick and make every real state look old. `ServerConnection` checks the sender address, the protocol id, the version and the flags of a datagram, but not its session token yet, so a datagram forged with the server's address still passes.
+- Call it only for datagrams that passed the checks on the sender, otherwise a forged datagram could raise the remembered tick and make every real state look old. `ServerConnection` checks the sender address, the protocol id, the version and the flags of a datagram and, once accepted, its session token, so a datagram forged with the server's address passes only with the token.
 - `EntityReplicator` calls it for every `WorldState` it is given (see below); nothing in the client gives it states yet.
 
 ```cpp
