@@ -12,6 +12,7 @@ target_link_libraries(rtype_server_world_state_sender
   PRIVATE
     rtype_server_constants
     rtype_server_replication_constants
+    rtype_server_wire_entity_type_mapping
 )
 
 rtype_enable_warnings(rtype_server_world_state_sender)
