@@ -100,7 +100,7 @@ src/game/
 └── Events/           entity destroyed, player left...
 ```
 
-`World`, `Components`, `Events`, `Spawning` (the start position of a player's ship, the position of a new Bydo and the kinds of Bydo), the systems for movement (`Systems/MovementSystem/`), movement patterns (`Systems/PatternSystem/`) and leaving the playfield (`Systems/PlayfieldExitSystem/`), and the collision classes (`Systems/CollisionSystem/`, `Systems/CollisionRules/`) exist; the other systems and folders are not written yet. See [Server and game](/R-Type/server/).
+`World`, `Components`, `Events`, `Spawning` (the start position of a player's ship, the position of a new Bydo and the kinds of Bydo), the systems for movement (`Systems/MovementSystem/`), movement patterns (`Systems/PatternSystem/`) and leaving the playfield (`Systems/PlayfieldExitSystem/`), the collision classes (`Systems/CollisionSystem/`, `Systems/CollisionRules/`) and the damage rules (`Systems/DamageRules/`) exist; the other systems and folders are not written yet. See [Server and game](/R-Type/server/).
 
 ### Network
 

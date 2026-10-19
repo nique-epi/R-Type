@@ -5,6 +5,8 @@
 #include "ComponentRegistry.hpp"
 #include "Entity.hpp"
 #include "EntityType.hpp"
+#include "Health.hpp"
+#include "HealthConstants.hpp"
 #include "MovementPattern.hpp"
 #include "NetworkIdentity.hpp"
 #include "PatternConstants.hpp"
@@ -31,6 +33,7 @@ std::uint32_t World::spawnBydo(Position position, BydoKind kind) {
                                         .originY = position.y,
                                         .ageSeconds = 0.0F});
   components_.add(bydo, EntityType::Enemy);
+  components_.add(bydo, Health{.points = BYDO_HEALTH});
   components_.add(bydo, NetworkIdentity{.networkId = networkId});
   return networkId;
 }
