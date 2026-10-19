@@ -73,11 +73,13 @@ constexpr std::chrono::seconds THREAD_TIMEOUT{5};
 constexpr int SERVER_RUN_TICKS = 3;
 
 /**
- * @brief Senders of the sorting tests: an admitted player and a stranger.
+ * @brief Senders of the sorting tests: an admitted player, a stranger, and a
+ * second player for the tests that need two.
  */
 constexpr std::string_view SORTED_SENDER_ADDRESS = "192.0.2.40";
 constexpr std::uint16_t PLAYER_PORT = 41000;
 constexpr std::uint16_t STRANGER_PORT = 41001;
+constexpr std::uint16_t SECOND_PLAYER_PORT = 41002;
 
 /**
  * @brief A flood of connection requests: twice what the player queue holds,

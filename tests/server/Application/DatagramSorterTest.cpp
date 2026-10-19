@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 #include <cstddef>
 #include <cstdint>
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
@@ -38,6 +39,11 @@ Endpoint stranger() {
                   .port = STRANGER_PORT};
 }
 
+Endpoint secondPlayer() {
+  return Endpoint{.address = std::string{SORTED_SENDER_ADDRESS},
+                  .port = SECOND_PLAYER_PORT};
+}
+
 /** @returns A header carrying @p sessionToken, as an admitted player sends. */
 rtype::network::PacketHeader playerHeader(
     std::uint64_t sessionToken = SESSION_TOKEN) {
@@ -69,6 +75,10 @@ class DatagramSorterTest : public ::testing::Test {
 
   [[nodiscard]] std::size_t wrongTokenCount() const {
     return sorter_.wrongTokenCount();
+  }
+
+  [[nodiscard]] std::optional<Endpoint> takeWrongTokenSender() {
+    return sorter_.takeWrongTokenSender();
   }
 
   [[nodiscard]] std::vector<IncomingDatagram> drainPlayers() {
@@ -376,4 +386,50 @@ TEST_F(DatagramSorterTest, KeepsOnlyTheNewerTokenOfAPlayerAdmittedAgain) {
       (std::vector<IncomingDatagram>{
           {.sender = player(), .payload = playerReady(OTHER_SESSION_TOKEN)}}));
   EXPECT_EQ(wrongTokenCount(), 1);
+}
+
+/**
+ * Given two admitted players
+ * When a datagram with another session token comes from the address of each,
+ * the first player's first
+ * Then the sorter names the first player as the sender
+ */
+TEST_F(DatagramSorterTest, NamesTheFirstSenderWithAnotherToken) {
+  admit(player());
+  admit(secondPlayer());
+
+  sort(player(), playerReady(OTHER_SESSION_TOKEN));
+  sort(secondPlayer(), playerReady(OTHER_SESSION_TOKEN));
+
+  EXPECT_EQ(takeWrongTokenSender(), player());
+}
+
+/**
+ * Given two admitted players, and the sender of a datagram with another token
+ * from the first already taken
+ * When a datagram with another token comes from the second
+ * Then the sorter names the second: each take starts afresh
+ */
+TEST_F(DatagramSorterTest, NamesTheFirstSenderSinceThePreviousTake) {
+  admit(player());
+  admit(secondPlayer());
+  sort(player(), playerReady(OTHER_SESSION_TOKEN));
+  ASSERT_EQ(takeWrongTokenSender(), player());
+
+  sort(secondPlayer(), playerReady(OTHER_SESSION_TOKEN));
+
+  EXPECT_EQ(takeWrongTokenSender(), secondPlayer());
+}
+
+/**
+ * Given an admitted player
+ * When a stranger sends a datagram, which is dropped
+ * Then the sorter names no sender: only a wrong session token is named
+ */
+TEST_F(DatagramSorterTest, NamesNoSenderForAnotherDrop) {
+  admit(player());
+
+  sort(stranger(), playerReady(OTHER_SESSION_TOKEN));
+
+  EXPECT_EQ(takeWrongTokenSender(), std::nullopt);
 }

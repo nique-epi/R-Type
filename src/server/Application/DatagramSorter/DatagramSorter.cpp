@@ -3,8 +3,10 @@
 #include <atomic>
 #include <cstddef>
 #include <cstdint>
+#include <mutex>
 #include <optional>
 #include <span>
+#include <utility>
 #include "BoundedQueue.hpp"
 #include "DatagramCodec.hpp"
 #include "Endpoint.hpp"
@@ -62,7 +64,7 @@ void DatagramSorter::sort(const network::Endpoint& sender,
   const AdmittedPlayer* const player = findAdmitted(sender);
   if (player != nullptr &&
       !carriesSessionToken(header, player->sessionToken, holdsRequest)) {
-    wrongTokenCount_.fetch_add(1, std::memory_order_relaxed);
+    dropWrongToken(sender);
     return;
   }
   if (holdsRequest) {
@@ -94,6 +96,11 @@ std::size_t DatagramSorter::wrongTokenCount() const {
   return wrongTokenCount_.load(std::memory_order_relaxed);
 }
 
+std::optional<network::Endpoint> DatagramSorter::takeWrongTokenSender() {
+  const std::scoped_lock lock{wrongTokenSenderMutex_};
+  return std::exchange(wrongTokenSender_, std::nullopt);
+}
+
 const DatagramSorter::AdmittedPlayer* DatagramSorter::findAdmitted(
     const network::Endpoint& sender) const {
   const auto admitted =
@@ -103,6 +110,14 @@ const DatagramSorter::AdmittedPlayer* DatagramSorter::findAdmitted(
 
 void DatagramSorter::drop() {
   droppedCount_.fetch_add(1, std::memory_order_relaxed);
+}
+
+void DatagramSorter::dropWrongToken(const network::Endpoint& sender) {
+  const std::scoped_lock lock{wrongTokenSenderMutex_};
+  if (!wrongTokenSender_.has_value()) {
+    wrongTokenSender_ = sender;
+  }
+  wrongTokenCount_.fetch_add(1, std::memory_order_relaxed);
 }
 
 }  // namespace rtype::server

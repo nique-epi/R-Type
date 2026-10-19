@@ -2,6 +2,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <exception>
+#include <optional>
 #include <span>
 #include <stop_token>
 #include <string>
@@ -14,6 +15,22 @@
 #include "TickLoop.hpp"
 
 namespace rtype::server {
+
+namespace {
+
+/**
+ * @returns The end of the report line that names @p sender, or nothing when
+ * there is no sender to name.
+ */
+std::string firstSenderText(const std::optional<network::Endpoint>& sender) {
+  if (!sender.has_value()) {
+    return {};
+  }
+  return ", the first from " + sender->address + " port " +
+         std::to_string(sender->port);
+}
+
+}  // namespace
 
 ServerApplication::ServerApplication(const network::Endpoint& localEndpoint,
                                      TickHandler handleTick)
@@ -115,7 +132,8 @@ void ServerApplication::reportDiscardedDatagrams() {
     logger_.warn(wrongTokenCount - reportedWrongTokenCount_,
                  " datagrams dropped in the last ", REPORT_SECONDS,
                  " s: sent from the address of a player with another session "
-                 "token");
+                 "token",
+                 firstSenderText(sorter_.takeWrongTokenSender()));
     reportedWrongTokenCount_ = wrongTokenCount;
   }
 }
