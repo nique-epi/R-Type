@@ -17,13 +17,17 @@
 #include "IncomingDatagram.hpp"
 #include "MessageFrame.hpp"
 #include "MessageOrigin.hpp"
+#include "MovementSystem.hpp"
 #include "NetworkException.hpp"
 #include "PacketHeader.hpp"
+#include "PatternSystem.hpp"
 #include "PlayerInput.hpp"
 #include "PlayerRoster.hpp"
+#include "PlayfieldExitSystem.hpp"
 #include "ReadyState.hpp"
 #include "SequenceOrder.hpp"
 #include "ServerConstants.hpp"
+#include "TimeConstants.hpp"
 #include "World.hpp"
 
 namespace rtype::server {
@@ -51,10 +55,14 @@ bool changesActions(const network::PlayerInput& input,
 
 }  // namespace
 
-GameInstance::GameInstance(Send send, std::uint32_t seed)
+GameInstance::GameInstance(Send send, std::uint32_t seed,
+                           engine::EventBus& events)
     : send_(std::move(send)),
       seed_(seed),
       logger_(std::string{INSTANCES_LOGGER_NAME}) {
+  systems_.add(std::make_unique<game::PatternSystem>());
+  systems_.add(std::make_unique<game::MovementSystem>());
+  systems_.add(std::make_unique<game::PlayfieldExitSystem>(events));
   dispatcher_.registerHandler<network::ReadyState>(
       [this](const network::MessageOrigin& origin,
              const network::ReadyState& message) {
@@ -97,6 +105,7 @@ void GameInstance::onTick(
       break;
     case GameState::InProgress:
       ++tick_;
+      systems_.run(world_->components(), engine::SIMULATION_TICK_DURATION);
       bydoSpawner_->onTick();
       break;
     case GameState::Finished:

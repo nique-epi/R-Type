@@ -1,11 +1,15 @@
 #include <gtest/gtest.h>
+#include <cstddef>
 #include <cstdint>
+#include "BydoKind.hpp"
 #include "ComponentRegistry.hpp"
 #include "Entity.hpp"
 #include "EntityIdConstants.hpp"
 #include "EntityType.hpp"
+#include "MovementPattern.hpp"
 #include "NetworkIdentity.hpp"
 #include "Position.hpp"
+#include "Velocity.hpp"
 #include "World.hpp"
 
 namespace {
@@ -85,7 +89,8 @@ TEST(World, SpawnedBydoIsAnEnemyAtItsPosition) {
   rtype::game::World world;
 
   const std::uint32_t networkId =
-      world.spawnBydo(rtype::game::Position{.x = SOME_X, .y = SOME_Y});
+      world.spawnBydo(rtype::game::Position{.x = SOME_X, .y = SOME_Y},
+                      rtype::game::BydoKind::Drifter);
 
   EXPECT_EQ(world.entityCount(), 1U);
   EXPECT_NE(networkId, rtype::identifiers::NO_ENTITY_ID);
@@ -119,7 +124,41 @@ TEST(World, ABydoAndAPlayerGetDistinctNetworkIds) {
   const std::uint32_t player =
       world.spawnPlayer(rtype::game::Position{.x = SOME_X, .y = SOME_Y});
   const std::uint32_t bydo =
-      world.spawnBydo(rtype::game::Position{.x = SOME_X, .y = SOME_Y});
+      world.spawnBydo(rtype::game::Position{.x = SOME_X, .y = SOME_Y},
+                      rtype::game::BydoKind::Drifter);
 
   EXPECT_NE(player, bydo);
+}
+
+/**
+ * Given an empty world
+ * When a Drifter and a Weaver are spawned on the row at height SOME_Y
+ * Then both move left at 240 units per second, the Drifter goes straight, the
+ * Weaver follows a wave, and both start from that row
+ */
+TEST(World, SpawnedBydosMoveLeftAlongThePatternOfTheirKind) {
+  rtype::game::World world;
+  static_cast<void>(
+      world.spawnBydo(rtype::game::Position{.x = SOME_X, .y = SOME_Y},
+                      rtype::game::BydoKind::Drifter));
+  static_cast<void>(
+      world.spawnBydo(rtype::game::Position{.x = SOME_X, .y = SOME_Y},
+                      rtype::game::BydoKind::Weaver));
+
+  std::size_t straight = 0;
+  std::size_t waves = 0;
+  world.components()
+      .forEach<rtype::game::MovementPattern, rtype::game::Velocity>(
+          [&straight, &waves](rtype::engine::Entity,
+                              const rtype::game::MovementPattern& pattern,
+                              const rtype::game::Velocity& velocity) {
+            EXPECT_EQ(velocity.x, -240.0F);
+            EXPECT_EQ(velocity.y, 0.0F);
+            EXPECT_EQ(pattern.originY, SOME_Y);
+            EXPECT_EQ(pattern.ageSeconds, 0.0F);
+            straight += pattern.shape == rtype::game::PatternShape::Straight;
+            waves += pattern.shape == rtype::game::PatternShape::Wave;
+          });
+  EXPECT_EQ(straight, 1U);
+  EXPECT_EQ(waves, 1U);
 }

@@ -13,7 +13,9 @@
 #include "ConnectedPlayer.hpp"
 #include "DatagramCodec.hpp"
 #include "Endpoint.hpp"
+#include "EntityDestruction.hpp"
 #include "EntityIdConstants.hpp"
+#include "EventBus.hpp"
 #include "GameInstance.hpp"
 #include "GameInstanceConstants.hpp"
 #include "GameInstanceTestConstants.hpp"
@@ -36,6 +38,8 @@
 
 namespace rtype::server {
 namespace {
+
+constexpr std::size_t INTERVALS_OF_BYDOS = 10;
 
 using testing::DATAGRAMS_PER_TICK;
 using testing::FIRST_PLAYER;
@@ -135,13 +139,15 @@ class GameInstanceTest : public ::testing::Test {
   }
 
   [[nodiscard]] GameInstance& game() { return game_; }
+  [[nodiscard]] engine::EventBus& events() { return events_; }
 
  private:
   std::vector<network::OutgoingDatagram> sent_;
+  engine::EventBus events_;
   GameInstance game_{[this](network::OutgoingDatagram datagram) {
                        sent_.push_back(std::move(datagram));
                      },
-                     SOME_SEED};
+                     SOME_SEED, events_};
   std::vector<network::IncomingDatagram> incoming_;
 };
 
@@ -583,6 +589,28 @@ TEST_F(GameInstanceTest, NoBydoAppearsWhileFinished) {
   runTicks(2 * testing::TICKS_PER_BYDO_INTERVAL);
 
   EXPECT_EQ(game().world().entityCount(), entitiesBefore);
+}
+
+/**
+ * Given a game in progress for ten intervals of Bydos (about 20 seconds), a
+ * Bydo taking about 8.5 seconds to cross the playfield
+ * When the events are dispatched
+ * Then the first five Bydos are gone, five removals were announced, and the
+ * world holds the ship and the last five Bydos
+ */
+TEST_F(GameInstanceTest, ABydoThatLeavesOnTheLeftDoesNotStayInTheWorld) {
+  std::size_t removals = 0;
+  events().subscribe<game::EntityDestruction>(
+      [&removals](const game::EntityDestruction& event) {
+        removals += event.cause == game::DestructionCause::Removed;
+      });
+  startGameWithOnePlayer();
+
+  runTicks(INTERVALS_OF_BYDOS * testing::TICKS_PER_BYDO_INTERVAL);
+  events().dispatch();
+
+  EXPECT_EQ(removals, 5U);
+  EXPECT_EQ(game().world().entityCount(), 6U);
 }
 
 /**
