@@ -44,6 +44,14 @@ constexpr std::string_view ANSI_GREEN = "\x1b[32m";
 constexpr std::string_view ANSI_YELLOW = "\x1b[33m";
 constexpr std::string_view ANSI_RED = "\x1b[31m";
 
+/**
+ * @brief What a ThrottledLog writes after the text of a line, around the number
+ * of events the line stands for: "dropped a datagram (3 since the previous
+ * line)".
+ */
+constexpr std::string_view EVENT_COUNT_OPENING = " (";
+constexpr std::string_view EVENT_COUNT_CLOSING = " since the previous line)";
+
 constexpr const char* TIMESTAMP_FORMAT = "%Y-%m-%dT%H:%M:%S";
 constexpr int MILLISECOND_DIGITS = 3;
 constexpr int DURATION_DECIMALS = 3;
