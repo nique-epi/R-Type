@@ -4,15 +4,19 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include "DatagramCodec.hpp"
 #include "Endpoint.hpp"
 #include "Entity.hpp"
 #include "EntityType.hpp"
 #include "NetworkConstants.hpp"
 #include "NetworkIdentity.hpp"
 #include "OutgoingDatagram.hpp"
+#include "PacketHeader.hpp"
+#include "PlayerRoster.hpp"
 #include "Position.hpp"
+#include "SentDatagrams.hpp"
+#include "ServerLobbyTestConstants.hpp"
 #include "WorldState.hpp"
-#include "WorldStateCodec.hpp"
 
 namespace rtype::server::testing {
 
@@ -31,9 +35,14 @@ network::EntityState expectedEntity(std::uint32_t networkId,
 }
 
 WorldStateSenderFixture::WorldStateSenderFixture()
-    : sender_([this](network::OutgoingDatagram datagram) {
+    : sender_(roster_, [this](network::OutgoingDatagram datagram) {
         sent_.push_back(std::move(datagram));
       }) {}
+
+void WorldStateSenderFixture::connect(std::uint16_t port,
+                                      std::uint64_t sessionToken) {
+  roster_.add(client(port), std::string{PLAYER_NICKNAME}, sessionToken);
+}
 
 void WorldStateSenderFixture::addNetworkedEntity(game::EntityType type,
                                                  game::Position position,
@@ -58,17 +67,21 @@ void WorldStateSenderFixture::addEntityWithoutType(game::Position position,
   components_.add(entity, position);
 }
 
-void WorldStateSenderFixture::runTicks(
-    std::size_t count, const std::vector<network::Endpoint>& recipients) {
+void WorldStateSenderFixture::runTicks(std::size_t count) {
   for (std::size_t index = 0; index < count; ++index) {
     ++tick_;
-    sender_.onTick(tick_, components_, recipients);
+    sender_.onTick(tick_, components_);
   }
 }
 
 network::WorldState WorldStateSenderFixture::decodedState(
     std::size_t sentIndex) const {
-  return network::WorldStateCodec::decode(sent_.at(sentIndex).payload);
+  return onlyMessageIn<network::WorldState>(sent_.at(sentIndex));
+}
+
+network::PacketHeader WorldStateSenderFixture::headerOf(
+    std::size_t sentIndex) const {
+  return network::DatagramCodec::decodeHeader(sent_.at(sentIndex).payload);
 }
 
 const std::vector<network::OutgoingDatagram>&

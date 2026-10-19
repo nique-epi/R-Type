@@ -26,8 +26,6 @@
 #include "SystemClock.hpp"
 #include "TimeConstants.hpp"
 #include "TimerScheduler.hpp"
-#include "World.hpp"
-#include "WorldStateSender.hpp"
 
 namespace {
 
@@ -52,7 +50,6 @@ int runServer(const rtype::logging::LogLaunchOptions& logOptions,
         [&serverPointer](rtype::network::OutgoingDatagram datagram) {
           serverPointer->queueDatagram(std::move(datagram));
         };
-    rtype::server::WorldStateSender worldStateSender{queueDatagram};
     const auto gameEventBroadcaster =
         std::make_unique<rtype::server::GameEventBroadcaster>(
             events, timers, recipients,
@@ -79,8 +76,7 @@ int runServer(const rtype::logging::LogLaunchOptions& logOptions,
         rtype::network::Endpoint{
             .address = std::string{rtype::network::ANY_IPV4_ADDRESS},
             .port = launchOptions.port()},
-        [&games, &joinableGame, &worldStateSender, &connectionAcceptor, &clock,
-         &recipients, &events,
+        [&games, &joinableGame, &connectionAcceptor, &clock, &events,
          &timers](const rtype::server::ServerApplication::ReceivedDatagrams&
                       received) {
           for (const std::unique_ptr<rtype::server::GameInstance>& game :
@@ -92,11 +88,6 @@ int runServer(const rtype::logging::LogLaunchOptions& logOptions,
               rtype::server::GameState::WaitingForPlayers);
           connectionAcceptor.receive(received.connectionRequests, clock.now());
           timers.advance(rtype::engine::SIMULATION_TICK_DURATION);
-          if (joinableGame.state() == rtype::server::GameState::InProgress) {
-            worldStateSender.onTick(joinableGame.tick(),
-                                    joinableGame.world().components(),
-                                    recipients);
-          }
           events.dispatch();
         }};
     serverPointer = &server;

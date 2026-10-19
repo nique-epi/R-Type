@@ -12,7 +12,6 @@
 #include "ByteWriter.hpp"
 #include "ConnectedPlayer.hpp"
 #include "DatagramCodec.hpp"
-#include "Endpoint.hpp"
 #include "EntityDestruction.hpp"
 #include "EntityIdConstants.hpp"
 #include "EventBus.hpp"
@@ -22,6 +21,7 @@
 #include "GameState.hpp"
 #include "IncomingDatagram.hpp"
 #include "JournalFile.hpp"
+#include "LobbyState.hpp"
 #include "Logger.hpp"
 #include "MessageType.hpp"
 #include "OutgoingDatagram.hpp"
@@ -30,11 +30,13 @@
 #include "PlayerRoster.hpp"
 #include "ProtocolConstants.hpp"
 #include "ReadyState.hpp"
+#include "SentDatagrams.hpp"
 #include "ServerConstants.hpp"
 #include "ServerDatagrams.hpp"
 #include "ServerLobbyTestConstants.hpp"
 #include "Spawning/BydoSpawnerTestConstants.hpp"
 #include "UnreliableNetwork.hpp"
+#include "WorldState.hpp"
 
 namespace rtype::server {
 namespace {
@@ -56,7 +58,10 @@ using testing::HOLDS_SHOOT;
 using testing::HOLDS_UP;
 using testing::LARGEST_INPUT_NUMBER;
 using testing::NEXT_PROTOCOL_VERSION;
+using testing::onlyMessageIn;
+using testing::onlyMessageTypeOf;
 using testing::PLAYER_SESSION_TOKENS;
+using testing::playerEndpoint;
 using testing::SECOND_PLAYER;
 using testing::SECOND_SENT;
 using testing::SECOND_SEQUENCE;
@@ -71,11 +76,6 @@ using testing::UNLISTED_ACTION;
 
 constexpr std::uint32_t SOME_SEED = 7;
 
-network::Endpoint playerEndpoint(std::size_t player) {
-  return network::Endpoint{.address = std::string{testing::PLAYER_ADDRESS},
-                           .port = testing::FIVE_PLAYER_PORTS.at(player)};
-}
-
 /** @brief A ReadyState sent by a player, with the header it travels under. */
 struct SentReadyState {
   std::size_t player{};
@@ -83,6 +83,40 @@ struct SentReadyState {
   std::uint16_t sequence{};
   std::uint64_t sessionToken{testing::SESSION_TOKEN};
 };
+
+/** @returns The type of the only message of each of @p datagrams, in order. */
+std::vector<network::MessageType> messageTypesOf(
+    const std::vector<network::OutgoingDatagram>& datagrams) {
+  std::vector<network::MessageType> types;
+  types.reserve(datagrams.size());
+  for (const network::OutgoingDatagram& datagram : datagrams) {
+    types.push_back(onlyMessageTypeOf(datagram));
+  }
+  return types;
+}
+
+/** @returns Those of @p datagrams whose only message is of type @p type, in
+ * order. */
+std::vector<network::OutgoingDatagram> ofType(
+    network::MessageType type,
+    const std::vector<network::OutgoingDatagram>& datagrams) {
+  std::vector<network::OutgoingDatagram> kept;
+  for (const network::OutgoingDatagram& datagram : datagrams) {
+    if (onlyMessageTypeOf(datagram) == type) {
+      kept.push_back(datagram);
+    }
+  }
+  return kept;
+}
+
+/** @returns The room of a game whose only player, the first, is not ready. */
+network::LobbyState roomOfTheFirstPlayerNotReady() {
+  return network::LobbyState{
+      .players = {network::LobbyPlayer{
+          .playerNumber = network::FIRST_PLAYER_NUMBER,
+          .ready = false,
+          .nickname = std::string{testing::PLAYER_NICKNAME}}}};
+}
 
 /** @brief A game whose datagrams are recorded and whose input is queued. */
 class GameInstanceTest : public ::testing::Test {
@@ -136,6 +170,12 @@ class GameInstanceTest : public ::testing::Test {
         {.player = FIRST_PLAYER, .ready = true, .sequence = FIRST_SEQUENCE});
     tick();
     ASSERT_EQ(game().state(), GameState::InProgress);
+  }
+
+  /** @returns The datagrams sent to the player at @p index, oldest first. */
+  [[nodiscard]] std::vector<network::OutgoingDatagram> sentTo(
+      std::size_t index) const {
+    return testing::sentTo(sent_, playerEndpoint(index));
   }
 
   [[nodiscard]] GameInstance& game() { return game_; }
@@ -611,6 +651,203 @@ TEST_F(GameInstanceTest, ABydoThatLeavesOnTheLeftDoesNotStayInTheWorld) {
 
   EXPECT_EQ(removals, 5U);
   EXPECT_EQ(game().world().entityCount(), 6U);
+}
+
+/**
+ * Given one connected player who is not ready
+ * When a tick runs
+ * Then the player is sent the room, which lists it, not ready, under its
+ * nickname
+ */
+TEST_F(GameInstanceTest, SendsTheRoomToAWaitingPlayer) {
+  join(FIRST_PLAYER);
+
+  tick();
+
+  const std::vector<network::OutgoingDatagram> rooms =
+      ofType(network::MessageType::LobbyState, sentTo(FIRST_PLAYER));
+  ASSERT_EQ(rooms.size(), 1U);
+  EXPECT_EQ(onlyMessageIn<network::LobbyState>(rooms.front()),
+            roomOfTheFirstPlayerNotReady());
+}
+
+/**
+ * Given one connected player, sent the EntitySpawned of its ship
+ * When the player says ready and the tick runs
+ * Then the player is sent GameStarted, then a WorldState
+ */
+TEST_F(GameInstanceTest, SendsGameStartedBeforeTheFirstWorldState) {
+  join(FIRST_PLAYER);
+  sendReady(
+      {.player = FIRST_PLAYER, .ready = true, .sequence = FIRST_SEQUENCE});
+
+  tick();
+
+  EXPECT_EQ(messageTypesOf(sentTo(FIRST_PLAYER)),
+            (std::vector{network::MessageType::EntitySpawned,
+                         network::MessageType::GameStarted,
+                         network::MessageType::WorldState}));
+}
+
+/**
+ * Given a game just started by its only player
+ * When TICKS_PER_WORLD_STATE more ticks run
+ * Then the player was sent the WorldState of tick 0 and of tick
+ * TICKS_PER_WORLD_STATE, each starting with a header DatagramCodec reads,
+ * carrying its session token
+ */
+TEST_F(GameInstanceTest, SendsTheWorldStatesUnderTheTokenOfThePlayer) {
+  startGameWithOnePlayer();
+
+  runTicks(TICKS_PER_WORLD_STATE);
+
+  const std::vector<network::OutgoingDatagram> states =
+      ofType(network::MessageType::WorldState, sentTo(FIRST_PLAYER));
+  ASSERT_EQ(states.size(), 2U);
+  EXPECT_EQ(onlyMessageIn<network::WorldState>(states.at(0)).tick, 0U);
+  EXPECT_EQ(onlyMessageIn<network::WorldState>(states.at(1)).tick,
+            TICKS_PER_WORLD_STATE);
+  for (const network::OutgoingDatagram& state : states) {
+    EXPECT_EQ(network::DatagramCodec::decodeHeader(state.payload).sessionToken,
+              testing::SESSION_TOKEN);
+  }
+}
+
+/**
+ * Given one connected player, sent the EntitySpawned of its ship
+ * When it waits one tick, says ready, and the game runs until its second
+ * WorldState
+ * Then the datagrams it was sent, whatever their message, carry the sequences
+ * 0, 1, 2… in the order they were sent, so the client reads every one
+ */
+TEST_F(GameInstanceTest, NumbersEveryDatagramToAPlayerFromOneCounter) {
+  join(FIRST_PLAYER);
+  tick();
+  sendReady(
+      {.player = FIRST_PLAYER, .ready = true, .sequence = FIRST_SEQUENCE});
+  tick();
+  runTicks(TICKS_PER_WORLD_STATE);
+
+  const std::vector<network::OutgoingDatagram> toPlayer = sentTo(FIRST_PLAYER);
+  ASSERT_EQ(
+      messageTypesOf(toPlayer),
+      (std::vector{
+          network::MessageType::EntitySpawned, network::MessageType::LobbyState,
+          network::MessageType::GameStarted, network::MessageType::WorldState,
+          network::MessageType::WorldState}));
+  for (std::size_t index = 0; index < toPlayer.size(); ++index) {
+    EXPECT_EQ(network::DatagramCodec::decodeHeader(toPlayer.at(index).payload)
+                  .sequence,
+              static_cast<std::uint16_t>(index));
+  }
+}
+
+/**
+ * Given two connected players with their own session tokens
+ * When both say ready and the tick runs
+ * Then each is sent one GameStarted, under its own token
+ */
+TEST_F(GameInstanceTest, TellsEveryPlayerThatTheGameStarted) {
+  join(FIRST_PLAYER, testing::SESSION_TOKEN);
+  join(SECOND_PLAYER, testing::OTHER_SESSION_TOKEN);
+  sendReady({.player = FIRST_PLAYER,
+             .ready = true,
+             .sequence = FIRST_SEQUENCE,
+             .sessionToken = testing::SESSION_TOKEN});
+  sendReady({.player = SECOND_PLAYER,
+             .ready = true,
+             .sequence = FIRST_SEQUENCE,
+             .sessionToken = testing::OTHER_SESSION_TOKEN});
+
+  tick();
+
+  const std::vector<network::OutgoingDatagram> toFirst =
+      ofType(network::MessageType::GameStarted, sentTo(FIRST_PLAYER));
+  const std::vector<network::OutgoingDatagram> toSecond =
+      ofType(network::MessageType::GameStarted, sentTo(SECOND_PLAYER));
+  ASSERT_EQ(toFirst.size(), 1U);
+  ASSERT_EQ(toSecond.size(), 1U);
+  EXPECT_EQ(network::DatagramCodec::decodeHeader(toFirst.front().payload)
+                .sessionToken,
+            testing::SESSION_TOKEN);
+  EXPECT_EQ(network::DatagramCodec::decodeHeader(toSecond.front().payload)
+                .sessionToken,
+            testing::OTHER_SESSION_TOKEN);
+}
+
+/**
+ * Given two connected players
+ * When only the first says ready and the tick runs
+ * Then neither is sent GameStarted or a WorldState
+ */
+TEST_F(GameInstanceTest, AnnouncesNoStartWhileAPlayerIsNotReady) {
+  join(FIRST_PLAYER);
+  join(SECOND_PLAYER);
+  sendReady(
+      {.player = FIRST_PLAYER, .ready = true, .sequence = FIRST_SEQUENCE});
+
+  tick();
+
+  for (const std::size_t player : {FIRST_PLAYER, SECOND_PLAYER}) {
+    const std::vector<network::OutgoingDatagram> toPlayer = sentTo(player);
+    EXPECT_TRUE(ofType(network::MessageType::GameStarted, toPlayer).empty());
+    EXPECT_TRUE(ofType(network::MessageType::WorldState, toPlayer).empty());
+  }
+}
+
+/**
+ * Given one connected player who is not ready
+ * When TICKS_PER_WORLD_STATE ticks run
+ * Then the player is sent no WorldState
+ */
+TEST_F(GameInstanceTest, SendsNoWorldStateWhileWaiting) {
+  join(FIRST_PLAYER);
+
+  runTicks(TICKS_PER_WORLD_STATE);
+
+  EXPECT_TRUE(
+      ofType(network::MessageType::WorldState, sentTo(FIRST_PLAYER)).empty());
+}
+
+/**
+ * Given a game just started by its only player
+ * When more ticks run than between two repeats of the room
+ * Then the player is sent no room during the game
+ */
+TEST_F(GameInstanceTest, SendsNoRoomDuringTheGame) {
+  startGameWithOnePlayer();
+
+  runTicks(TICKS_PER_LOBBY_STATE + 1);
+
+  EXPECT_TRUE(
+      ofType(network::MessageType::LobbyState, sentTo(FIRST_PLAYER)).empty());
+}
+
+/**
+ * Given a player who was sent the room, then played a game that finished and
+ * ran its finished duration, so the game waits for players again
+ * When the first tick of the new wait runs
+ * Then the player is sent the room at once, showing it not ready
+ */
+TEST_F(GameInstanceTest, SendsTheRoomAtOnceWhenTheGameWaitsAgain) {
+  join(FIRST_PLAYER);
+  tick();
+  sendReady(
+      {.player = FIRST_PLAYER, .ready = true, .sequence = FIRST_SEQUENCE});
+  tick();
+  game().finish();
+  runTicks(FINISHED_STATE_TICKS);
+  ASSERT_EQ(game().state(), GameState::WaitingForPlayers);
+  const std::size_t roomsBefore =
+      ofType(network::MessageType::LobbyState, sentTo(FIRST_PLAYER)).size();
+
+  tick();
+
+  const std::vector<network::OutgoingDatagram> rooms =
+      ofType(network::MessageType::LobbyState, sentTo(FIRST_PLAYER));
+  ASSERT_EQ(rooms.size(), roomsBefore + 1);
+  EXPECT_EQ(onlyMessageIn<network::LobbyState>(rooms.back()),
+            roomOfTheFirstPlayerNotReady());
 }
 
 /**

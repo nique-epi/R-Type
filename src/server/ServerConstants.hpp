@@ -1,5 +1,6 @@
 #pragma once
 
+#include <chrono>
 #include <cstddef>
 #include <cstdint>
 #include <string_view>
@@ -86,6 +87,26 @@ static_assert(engine::SIMULATION_TICKS_PER_SECOND % WORLD_STATES_PER_SECOND ==
  */
 constexpr std::size_t TICKS_PER_WORLD_STATE =
     engine::SIMULATION_TICKS_PER_SECOND / WORLD_STATES_PER_SECOND;
+
+/**
+ * @brief The longest time between two LobbyState sent to the players while
+ * the game waits for them. Provisional, see the protocol page.
+ */
+constexpr engine::Duration LOBBY_STATE_INTERVAL =
+    std::chrono::milliseconds(500);
+
+/**
+ * @brief Simulation ticks between two LobbyState that show the same room:
+ * LOBBY_STATE_INTERVAL in whole ticks, rounded down, so two of them are never
+ * further apart than the interval. At 60 ticks per second it is 30 ticks,
+ * 499.99998 ms; adding up tick durations until they reach the interval would
+ * take 31 ticks, 516.7 ms.
+ */
+constexpr std::size_t TICKS_PER_LOBBY_STATE = static_cast<std::size_t>(
+    LOBBY_STATE_INTERVAL / engine::SIMULATION_TICK_DURATION);
+
+static_assert(TICKS_PER_LOBBY_STATE >= 1,
+              "LOBBY_STATE_INTERVAL must last at least one simulation tick");
 
 /**
  * @brief Timer resolution, in milliseconds, the server asks Windows for while
