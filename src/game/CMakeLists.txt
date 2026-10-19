@@ -16,6 +16,7 @@ target_link_libraries(rtype_game
     rtype_game_movement_system
     rtype_game_collision_system
     rtype_game_collision_rules
+    rtype_game_damage_rules
 )
 
 rtype_enable_warnings(rtype_game)
