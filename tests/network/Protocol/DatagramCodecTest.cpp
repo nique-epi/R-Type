@@ -3,7 +3,9 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include <optional>
 #include <span>
+#include <string>
 #include <utility>
 #include <vector>
 #include "ByteSequence.hpp"
@@ -396,6 +398,67 @@ TEST(DatagramCodec, SplitsWhatItEncoded) {
             static_cast<std::uint8_t>(MessageType::PlayerInput));
   EXPECT_TRUE(std::ranges::equal(messages.front().payload, payload));
 }
+
+/**
+ * Given a datagram holding a Heartbeat then a ReadyState
+ * When its message types are read
+ * Then those two types are set, and no other
+ */
+TEST(DatagramCodec, ReadsTheTypesOfEveryMessage) {
+  const auto datagram = datagramOf({0x05, 0x00, 0x00, 0x06, 0x00, 0x01, 0x01});
+  DatagramCodec::MessageTypes expected;
+  expected.set(static_cast<std::size_t>(MessageType::Heartbeat));
+  expected.set(static_cast<std::size_t>(MessageType::ReadyState));
+
+  EXPECT_EQ(DatagramCodec::messageTypes(datagram), expected);
+}
+
+/** @brief Bytes splitMessages() refuses, named after their fault. */
+struct MalformedDatagram {
+  const char* fault;
+  std::vector<std::byte> bytes;
+};
+
+std::vector<std::byte> headerOneByteShort() {
+  auto bytes = defaultHeaderBytes();
+  bytes.pop_back();
+  return bytes;
+}
+
+class DatagramCodecMalformedDatagram
+    : public ::testing::TestWithParam<MalformedDatagram> {};
+
+/**
+ * Given bytes splitMessages() refuses
+ * When their message types are read
+ * Then there are none, and nothing is thrown
+ */
+TEST_P(DatagramCodecMalformedDatagram, HasNoMessageTypes) {
+  ASSERT_THROW((void)DatagramCodec::splitMessages(GetParam().bytes),
+               MalformedDatagramException);
+
+  EXPECT_EQ(DatagramCodec::messageTypes(GetParam().bytes), std::nullopt);
+}
+
+INSTANTIATE_TEST_SUITE_P(
+    EveryFaultOfSplitMessages, DatagramCodecMalformedDatagram,
+    ::testing::Values(
+        MalformedDatagram{.fault = "HeaderOneByteShort",
+                          .bytes = headerOneByteShort()},
+        MalformedDatagram{.fault = "HeaderAlone",
+                          .bytes = defaultHeaderBytes()},
+        MalformedDatagram{.fault = "PrefixCutShort",
+                          .bytes = datagramOf({0x05, 0x00})},
+        MalformedDatagram{.fault = "SizePastTheEnd",
+                          .bytes = datagramOf({0x06, 0x00, 0x02, 0x01})},
+        MalformedDatagram{.fault = "BytesAfterTheLastMessage",
+                          .bytes = datagramOf({0x06, 0x00, 0x01, 0x01, 0x00})},
+        MalformedDatagram{
+            .fault = "SecondMessageCutShort",
+            .bytes = datagramOf({0x06, 0x00, 0x01, 0x01, 0x06, 0x00, 0x01})}),
+    [](const ::testing::TestParamInfo<MalformedDatagram>& info) {
+      return std::string{info.param.fault};
+    });
 
 }  // namespace
 }  // namespace rtype::network

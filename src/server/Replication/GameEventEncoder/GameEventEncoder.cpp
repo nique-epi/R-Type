@@ -7,6 +7,7 @@
 #include "EntityDamage.hpp"
 #include "EntityDestroyed.hpp"
 #include "EntityDestruction.hpp"
+#include "EntityIdConstants.hpp"
 #include "EntitySpawn.hpp"
 #include "EntitySpawned.hpp"
 #include "GameEvent.hpp"
@@ -59,12 +60,12 @@ EncodedMessage GameEventEncoder::encode(const game::EntityDamage& event) {
 
 EncodedMessage GameEventEncoder::encode(const game::PlayerHit& event) {
   return encodeGameEvent(network::GameEventKind::PlayerHit, event.playerNumber,
-                         network::NO_ENTITY_ID);
+                         identifiers::NO_ENTITY_ID);
 }
 
 EncodedMessage GameEventEncoder::encode(const game::PlayerElimination& event) {
   return encodeGameEvent(network::GameEventKind::PlayerEliminated,
-                         event.playerNumber, network::NO_ENTITY_ID);
+                         event.playerNumber, identifiers::NO_ENTITY_ID);
 }
 
 EncodedMessage GameEventEncoder::encodeGameEvent(network::GameEventKind kind,

@@ -75,10 +75,6 @@ class InterfaceCanvas : public IInterfaceCanvas {
 
   [[nodiscard]] const LoadedFont& loadedFontOf(TextFont font) const;
 
-  /** @brief Compiles CRISP_TEXT_FRAGMENT_SHADER, when shaders are
-   * available. */
-  void loadCrispText();
-
   AssetTextureSource textures_;
   LoadedFont regularFont_;
   LoadedFont smallFont_;

@@ -2,6 +2,9 @@
 
 #include <chrono>
 #include <cstddef>
+#include <cstdint>
+#include <string_view>
+#include "ServerConstants.hpp"
 #include "TimeConstants.hpp"
 
 /**
@@ -68,3 +71,18 @@ constexpr std::chrono::seconds THREAD_TIMEOUT{5};
  * most likely started.
  */
 constexpr int SERVER_RUN_TICKS = 3;
+
+/**
+ * @brief Senders of the sorting tests: an admitted player and a stranger.
+ */
+constexpr std::string_view SORTED_SENDER_ADDRESS = "192.0.2.40";
+constexpr std::uint16_t PLAYER_PORT = 41000;
+constexpr std::uint16_t STRANGER_PORT = 41001;
+
+/**
+ * @brief A flood of connection requests: twice what the player queue holds,
+ * so that requests sent to the player queue would push a player's datagram
+ * out of it.
+ */
+constexpr std::size_t FLOODING_REQUEST_COUNT =
+    2 * rtype::server::INCOMING_DATAGRAM_QUEUE_CAPACITY;

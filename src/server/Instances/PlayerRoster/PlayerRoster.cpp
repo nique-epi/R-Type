@@ -5,6 +5,7 @@
 #include <optional>
 #include <string>
 #include <utility>
+#include <vector>
 #include "ConnectedPlayer.hpp"
 #include "Endpoint.hpp"
 #include "ProtocolConstants.hpp"
@@ -18,6 +19,16 @@ ConnectedPlayer* PlayerRoster::find(const network::Endpoint& endpoint) {
     }
   }
   return nullptr;
+}
+
+std::vector<ConnectedPlayer*> PlayerRoster::connected() {
+  std::vector<ConnectedPlayer*> players;
+  for (std::optional<ConnectedPlayer>& seat : seats_) {
+    if (seat.has_value()) {
+      players.push_back(&seat.value());
+    }
+  }
+  return players;
 }
 
 bool PlayerRoster::isFull() const {
@@ -42,7 +53,8 @@ ConnectedPlayer* PlayerRoster::add(const network::Endpoint& endpoint,
                           .nickname = std::move(nickname),
                           .endpoint = endpoint,
                           .sessionToken = sessionToken,
-                          .nextSequence = 0});
+                          .nextSequence = 0,
+                          .newestReceivedSequence = std::nullopt});
     }
   }
   return nullptr;

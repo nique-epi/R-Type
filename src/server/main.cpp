@@ -1,14 +1,16 @@
 #include <exception>
 #include <iostream>
 #include <memory>
-#include <span>
 #include <string>
 #include <utility>
 #include <vector>
+#include "ConnectedPlayer.hpp"
 #include "ConnectionAcceptor.hpp"
 #include "Endpoint.hpp"
 #include "EventBus.hpp"
 #include "GameEventBroadcaster.hpp"
+#include "GameInstance.hpp"
+#include "GameState.hpp"
 #include "IncomingDatagram.hpp"
 #include "LaunchArguments.hpp"
 #include "LaunchOptions.hpp"
@@ -18,7 +20,6 @@
 #include "NetworkConstants.hpp"
 #include "OutgoingDatagram.hpp"
 #include "PacketHeader.hpp"
-#include "PlayerRoster.hpp"
 #include "ServerApplication.hpp"
 #include "ServerConstants.hpp"
 #include "SystemClock.hpp"
@@ -42,8 +43,6 @@ int runServer(const rtype::logging::LogLaunchOptions& logOptions,
     const rtype::logging::Logger logger{
         std::string{rtype::server::SERVER_LOGGER_NAME}};
     logger.info("server starting");
-    rtype::game::World world;
-    world.spawnPlayer();
     const std::vector<rtype::network::Endpoint> recipients;
     rtype::engine::EventBus events;
     rtype::engine::TimerScheduler timers;
@@ -60,24 +59,47 @@ int runServer(const rtype::logging::LogLaunchOptions& logOptions,
               return rtype::network::PacketHeader{};
             },
             queueDatagram);
-    rtype::server::PlayerRoster roster;
-    rtype::server::ConnectionAcceptor connectionAcceptor{roster, queueDatagram};
+    std::vector<std::unique_ptr<rtype::server::GameInstance>> games;
+    games.push_back(
+        std::make_unique<rtype::server::GameInstance>(queueDatagram));
+    rtype::server::GameInstance& joinableGame = *games.front();
+    rtype::server::ConnectionAcceptor connectionAcceptor{
+        joinableGame.roster(), queueDatagram,
+        [&serverPointer](const rtype::network::Endpoint& player) {
+          serverPointer->admit(player);
+        },
+        [&joinableGame](rtype::server::ConnectedPlayer& player) {
+          joinableGame.onPlayerJoined(player);
+        }};
     const rtype::engine::SystemClock clock;
     rtype::server::ServerApplication server{
         rtype::network::Endpoint{
             .address = std::string{rtype::network::ANY_IPV4_ADDRESS},
             .port = launchOptions.port()},
-        [&logger, &world, &worldStateSender, &connectionAcceptor, &clock,
-         &recipients, &events,
-         &timers](std::span<const rtype::network::IncomingDatagram> datagrams) {
-          for (const rtype::network::IncomingDatagram& datagram : datagrams) {
+        [&logger, &games, &joinableGame, &worldStateSender, &connectionAcceptor,
+         &clock, &recipients, &events,
+         &timers](const rtype::server::ServerApplication::ReceivedDatagrams&
+                      received) {
+          for (const rtype::network::IncomingDatagram& datagram :
+               received.players) {
             logger.debug("received ", datagram.payload.size(), " bytes from ",
                          datagram.sender.address, " port ",
                          datagram.sender.port);
           }
-          connectionAcceptor.receive(datagrams, clock.now());
+          for (const std::unique_ptr<rtype::server::GameInstance>& game :
+               games) {
+            game->onTick(received.players);
+          }
+          connectionAcceptor.setGameInProgress(
+              joinableGame.state() !=
+              rtype::server::GameState::WaitingForPlayers);
+          connectionAcceptor.receive(received.connectionRequests, clock.now());
           timers.advance(rtype::engine::SIMULATION_TICK_DURATION);
-          worldStateSender.onTick(world.components(), recipients);
+          if (joinableGame.state() == rtype::server::GameState::InProgress) {
+            worldStateSender.onTick(joinableGame.tick(),
+                                    joinableGame.world().components(),
+                                    recipients);
+          }
           events.dispatch();
         }};
     serverPointer = &server;

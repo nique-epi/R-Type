@@ -11,7 +11,7 @@ Most folders below do not exist yet. Each section says which ones do; the story 
 
 ## Who may link what
 
-The repository builds three programs on five libraries. Programs link libraries, never the reverse. Between libraries, the only links are `rtype_game` to `rtype_engine`, and any library to `rtype_logging` and `rtype_concurrency`.
+The repository builds three programs on six libraries. Programs link libraries, never the reverse. Between libraries, the only links are `rtype_game` to `rtype_engine`, and any library to `rtype_logging`, `rtype_concurrency` and `rtype_identifiers`.
 
 | Target | Holds | Never links |
 |---|---|---|
@@ -23,8 +23,9 @@ The repository builds three programs on five libraries. Programs link libraries,
 | `rtype_engine` | the building blocks any game needs | SFML, Asio, `rtype_game`, `rtype_network` |
 | `rtype_logging` | log lines; every other target may link it | anything else |
 | `rtype_concurrency` | queues between threads; every other target may link it | anything but `rtype_logging` |
+| `rtype_identifiers` | the values the engine and the wire must agree on; every other target may link it | anything else |
 
-`rtype_logging` and `rtype_concurrency` stand alone because `rtype_network` may not link `rtype_engine`, and code on both sides of that line writes logs and hands data from one thread to another. A forbidden link fails the CMake configure step (`rtype_forbid_links` in the root `CMakeLists.txt`).
+`rtype_logging`, `rtype_concurrency` and `rtype_identifiers` stand alone because `rtype_network` may not link `rtype_engine`, and code on both sides of that line writes logs, hands data from one thread to another and names entities by the same ids. A forbidden link fails the CMake configure step (`rtype_forbid_links` in the root `CMakeLists.txt`).
 
 ## Where does a new class go?
 
@@ -46,6 +47,7 @@ The cases where people hesitate:
 | Damage after a collision | `src/game/Systems` | it is a rule of the match, even though only the server runs it |
 | A queue between two threads | `src/concurrency` | the client, the server and `rtype_network` all need it, and `rtype_network` may not link `rtype_engine` |
 | Finding an entity from its network id | `src/engine/NetworkIds` | `rtype_network` may not know entities |
+| The entity id no entity has | `src/identifiers` | the engine hands out entity ids and the protocol carries them, and `rtype_network` may not link `rtype_engine` |
 | The heartbeat sent to the master | `src/server/MasterLink` | only the server sends it; the message format lives in `src/network/Master` |
 | A new protocol message | `src/network/Protocol` | one struct per message, its encoding next to it, then a row in [Protocol](/R-Type/protocol/#messages) |
 | A fake transport that loses datagrams | `tests/doubles` | test doubles are never built into a program |
@@ -79,6 +81,10 @@ src/engine/
 
 `src/concurrency` builds `rtype_concurrency`: what threads use to hand data to each other (see [Concurrency](/R-Type/concurrency/)). **Never** an R-Type word, SFML or Asio. Like `rtype_logging`, it links nothing else of the repository, so `rtype_network` can use it as well as the engine and the programs. `BoundedQueue/` and `Exceptions/` exist.
 
+### Identifiers
+
+`src/identifiers` builds `rtype_identifiers`: the values the engine and the wire must agree on. **Never** code: it holds constants only, so it stays a header-only target that links nothing else of the repository. The engine, which hands out entity ids, and `rtype_network`, which carries them, read the same value from it. `EntityIdConstants.hpp` exists, with `NO_ENTITY_ID` (0), the entity id no entity has (see [Engine](/R-Type/engine/#network-identifiers)).
+
 ### Game
 
 `src/game` builds `rtype_game`, the rules of a match: what moves, what collides, what dies, what scores. The server runs all of it; the client only runs `ShipControl`, to predict its own ship. **Never** SFML, Asio or a network message.
@@ -94,7 +100,7 @@ src/game/
 └── Events/           entity destroyed, player left...
 ```
 
-`World`, `Components`, `Events`, the movement system (`Systems/MovementSystem/`) and the collision classes (`Systems/CollisionSystem/`, `Systems/CollisionRules/`) exist; the other systems and folders are not written yet. See [Server and game](/R-Type/server/).
+`World`, `Components`, `Events`, `Spawning` (the start position of a player's ship only), the movement system (`Systems/MovementSystem/`) and the collision classes (`Systems/CollisionSystem/`, `Systems/CollisionRules/`) exist; the other systems and folders are not written yet. See [Server and game](/R-Type/server/).
 
 ### Network
 
@@ -137,7 +143,7 @@ src/server/
 └── Storage/          this server's SQLite file: leaderboard, statistics
 ```
 
-`Application`, `Replication` (the world state sender, and the encoder and broadcaster of the game events), `Platform`, `LaunchOptions`, `Lobby` (the answers to connection requests only) and `Instances` (the players of the one game only, no `GameInstance` yet) exist today: the network thread and the simulation thread, the world state and the game events sent to the clients (see [Server](/R-Type/server/)), the timer resolution the server asks Windows for, the port read at launch, and the players let in.
+`Application`, `Replication` (the world state sender, the announcement of the ship of each new player, and the encoder and broadcaster of the game events), `Platform`, `LaunchOptions`, `Lobby` (the answers to connection requests only) and `Instances` (one `GameInstance` for now, run on the simulation thread like the rest) exist today: the network thread and the simulation thread, the world state and the game events sent to the clients (see [Server](/R-Type/server/)), the timer resolution the server asks Windows for, the port read at launch, the players let in, and a game with its states and its ready rule.
 
 ### Client
 
@@ -161,9 +167,11 @@ src/client/
 └── Prediction/       own ship predicted, other ships interpolated
 ```
 
-`Application`, `Window`, `Screens` (title, connection, loading, game, options and quit confirmation), `Widgets`, `Rendering`, `Assets`, `Platform`, `Input`, `Settings`, `Connection`, `Replication` (the filter that ignores an old world state only) and `LaunchOptions` exist today. `Input` holds the keys, their remapping and the held actions: gamepad and the player input message are not written yet. `Settings` holds what the player sets and the file it is saved in; the volumes and the accessibility settings are saved, but nothing reads them yet (see [Client](/R-Type/client/#settings-playersettings-settingsfile)). `Connection` holds the network thread the client opens at launch (see [Client](/R-Type/client/#network-networkthread)) and the connection to a server the connection screen drives (see [Client](/R-Type/client/#joining-a-server-serverconnection)).
+`Application`, `Window`, `Screens` (title, connection, loading, game, options and quit confirmation), `Widgets`, `Rendering`, `Assets`, `Platform`, `Input`, `Settings`, `Connection`, `Replication` (the filter that ignores an old world state, and `EntityReplicator`, which applies the entities the server announces but which nothing calls yet, see [Client](/R-Type/client/#entities-from-the-server-entityreplicator)) and `LaunchOptions` exist today. `Input` holds the keys, their remapping and the held actions: gamepad and the player input message are not written yet. `Settings` holds what the player sets and the file it is saved in; the game reads the flashes setting, and the volumes and the other accessibility settings are saved, but nothing reads them yet (see [Client](/R-Type/client/#settings-playersettings-settingsfile)). `Connection` holds the network thread the client opens at launch (see [Client](/R-Type/client/#network-networkthread)) and the connection to a server the connection screen drives (see [Client](/R-Type/client/#joining-a-server-serverconnection)).
 
-`Rendering` draws every entity that has a `Position` and a `Sprite` (an asset id, the rectangle of it to show and a layer), from the background layer to the interface layer; the game screen draws them through its `EntityLayer`. `RenderSystem` reads these two components and nothing else, and draws through `IDrawSurface`; only `SfmlDrawSurface` knows SFML: it paints on the pixel grid of the background and finds textures through `ITextureSource`, which `AssetTextureSource` reads from the asset library. `spriteOf` is the single table that gives each entity type its sprite. It is described in [Client](/R-Type/client/#entity-sprites-spriteof).
+`Rendering` draws every entity that has a `Position` and a `Sprite` (an asset id, the rectangle of it to show and a layer), from the background layer to the interface layer; the game screen draws them through its `EntityLayer`. `RenderSystem` reads these two components, and the `HitFlash` of an entity hit for the tone it is drawn with, and draws through `IDrawSurface`; only `SfmlDrawSurface` knows SFML: it paints on the pixel grid of the background and finds textures through `ITextureSource`, which `AssetTextureSource` reads from the asset library. `spriteOf` and `animationOf` are the single table that gives each entity type its sprite and its animation. It is described in [Client](/R-Type/client/#entity-sprites-spriteof-animationof).
+
+`Rendering/Animation` and `Rendering/AnimationSystem` play the animations, described as data, by the time elapsed. `Rendering/Effects` holds the rows of the effect sheet and `EffectSpawner`, which starts the explosions, impacts, muzzle flashes and hit flashes; `Rendering/HitFlashSystem` ends the hit flashes; `Rendering/SpriteShowcase` is the provisional showcase of the game screen. They are described in [Client](/R-Type/client/#animations-and-effects).
 
 `Rendering/Background` draws the scrolling starfield behind the playfield, and the frame loop already draws it. `Rendering/PixelCanvas` is the picture of the background's size that the sky, the entities and the menus are painted on. It is described in [Client](/R-Type/client/#scrolling-background-scrollingbackground).
 
@@ -189,7 +197,7 @@ Each module splits its classes into a controller (HTTP in and out), a service (t
 
 ### Tests, web frontend, assets
 
-- **`tests/`** mirrors `src/`: the test of `src/game/Waves/WaveDirector` is `tests/game/Waves/WaveDirectorTest.cpp`, built into `game_tests`, one executable per library or program. Test doubles (fake clock, lossy transport) go in `tests/doubles/`; load-test bots in `tests/tools/`, never shipped. Today the older tests sit at the root of `tests/`; `tests/client/`, `tests/concurrency/`, `tests/engine/`, `tests/network/` and `tests/server/` already follow this layout, and `tests/doubles/` holds a socket that records instead of sending, a datagram link that records what is sent and hands over what a test delivers, a connection to a server that records what a screen asks, a settings storage that records each save and a window on a desktop of a given size.
+- **`tests/`** mirrors `src/`: the test of `src/game/Waves/WaveDirector` is `tests/game/Waves/WaveDirectorTest.cpp`, built into `game_tests`, one executable per library or program. Test doubles (fake clock, lossy transport) go in `tests/doubles/`; load-test bots in `tests/tools/`, never shipped. Today the older tests sit at the root of `tests/`; `tests/client/`, `tests/concurrency/`, `tests/engine/`, `tests/network/` and `tests/server/` already follow this layout, and `tests/doubles/` holds a socket that records instead of sending, a datagram link that records what is sent and hands over what a test delivers, a connection to a server that records what a screen asks, a settings storage that records each save, a window on a desktop of a given size, a draw surface that records each rectangle it is asked to draw and an entity layer that records what it paints.
 - **`web/`** is the React frontend served by the master: `src/api/` (one function per route), `src/pages/`, `src/components/`.
 - **`assets/`** holds the files read at run time: `sprites/`, `sounds/`, `music/` and `fonts/` for the client, `waves/` for the server.
 

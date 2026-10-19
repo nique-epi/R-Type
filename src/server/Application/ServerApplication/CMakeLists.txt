@@ -11,6 +11,7 @@ target_link_libraries(rtype_server_application
     rtype_network_datagram_relay
     rtype_network_transport
     rtype_network_udp_socket
+    rtype_server_datagram_sorter
     rtype_server_tick_loop
   PRIVATE
     rtype_server_constants

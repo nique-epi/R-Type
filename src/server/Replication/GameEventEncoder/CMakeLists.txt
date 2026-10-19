@@ -5,6 +5,7 @@ target_include_directories(rtype_server_game_event_encoder PUBLIC ${CMAKE_CURREN
 target_link_libraries(rtype_server_game_event_encoder
   PUBLIC
     rtype_game_events
+    rtype_identifiers
     rtype_network_messages
     rtype_server_replication_constants
   PRIVATE

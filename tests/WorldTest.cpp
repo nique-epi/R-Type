@@ -1,6 +1,10 @@
 #include <gtest/gtest.h>
+#include <cstdint>
 #include "ComponentRegistry.hpp"
 #include "Entity.hpp"
+#include "EntityIdConstants.hpp"
+#include "EntityType.hpp"
+#include "NetworkIdentity.hpp"
 #include "Position.hpp"
 #include "World.hpp"
 
@@ -13,31 +17,61 @@ constexpr float SOME_Y = 4.0F;
 
 /**
  * Given an empty world
- * When a player is spawned
+ * When a player is spawned at a position
  * Then the world holds one entity
  */
 TEST(World, SpawnedPlayerIsCounted) {
   rtype::game::World world;
 
-  world.spawnPlayer();
+  world.spawnPlayer(rtype::game::Position{.x = SOME_X, .y = SOME_Y});
 
   EXPECT_EQ(world.entityCount(), 1U);
 }
 
 /**
- * Given a world with a spawned player
- * When a component is added to it through components() and read back
- * Then the component is there, so the world's components belong to its entities
+ * Given an empty world
+ * When two players are spawned
+ * Then they get two different network ids, none of them NO_ENTITY_ID
  */
-TEST(World, OwnsTheComponentsOfItsEntities) {
+TEST(World, SpawnedPlayersGetDistinctNetworkIds) {
   rtype::game::World world;
-  const rtype::engine::Entity player = world.spawnPlayer();
 
-  world.components().add(player,
-                         rtype::game::Position{.x = SOME_X, .y = SOME_Y});
+  const std::uint32_t first =
+      world.spawnPlayer(rtype::game::Position{.x = SOME_X, .y = SOME_Y});
+  const std::uint32_t second =
+      world.spawnPlayer(rtype::game::Position{.x = SOME_X, .y = SOME_Y});
 
-  const rtype::game::Position* position =
-      world.components().get<rtype::game::Position>(player);
-  ASSERT_NE(position, nullptr);
-  EXPECT_EQ(position->x, SOME_X);
+  EXPECT_NE(first, rtype::identifiers::NO_ENTITY_ID);
+  EXPECT_NE(second, rtype::identifiers::NO_ENTITY_ID);
+  EXPECT_NE(first, second);
+}
+
+/**
+ * Given a world
+ * When a player is spawned at a position
+ * Then the ship has that position, the player type and the network id returned
+ */
+TEST(World, SpawnedPlayerIsANetworkedShipAtItsPosition) {
+  rtype::game::World world;
+
+  const std::uint32_t networkId =
+      world.spawnPlayer(rtype::game::Position{.x = SOME_X, .y = SOME_Y});
+
+  bool found = false;
+  world.components()
+      .forEach<rtype::game::NetworkIdentity, rtype::game::Position>(
+          [&world, &found, networkId](
+              rtype::engine::Entity entity,
+              const rtype::game::NetworkIdentity& identity,
+              const rtype::game::Position& position) {
+            found = true;
+            EXPECT_EQ(identity.networkId, networkId);
+            EXPECT_EQ(position.x, SOME_X);
+            EXPECT_EQ(position.y, SOME_Y);
+            const auto* type =
+                world.components().get<rtype::game::EntityType>(entity);
+            ASSERT_NE(type, nullptr);
+            EXPECT_EQ(*type, rtype::game::EntityType::Player);
+          });
+  EXPECT_TRUE(found);
 }

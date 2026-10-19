@@ -9,6 +9,7 @@
 #include <random>
 #include <string_view>
 #include <vector>
+#include "Animation.hpp"
 #include "BackgroundConstants.hpp"
 #include "EntitySpriteConstants.hpp"
 #include "IInterfaceCanvas.hpp"
@@ -50,22 +51,22 @@ float smoothStep(float share) {
   return clamped * clamped * (1.0F + left + left);
 }
 
-/** @returns Which frame of a two-frame animation shows at a moment. */
-int frameAt(float time, float frameTime) {
-  return static_cast<int>(std::floor(time / frameTime)) % SPRITE_FRAME_COUNT;
-}
-
-/** @returns A frame of a row of the entity sheet, whose first frame has the
- * size of the given one. */
-sf::IntRect sheetFrame(game::SpriteFrame first, int frame, int top) {
-  return {{first.left + (frame * (first.width + SPRITE_SPACING)), top},
-          {first.width, first.height}};
-}
-
 /** @returns The row of the entity sheet of a player color. */
 int playerShipRow(int color) {
   return PLAYER_SHIP_FRAME.top +
          (color * (PLAYER_SHIP_FRAME.height + SPRITE_SPACING));
+}
+
+/** @returns The rectangle of a frame of a sheet. */
+sf::IntRect rectangleOf(game::SpriteFrame frame) {
+  return {{frame.left, frame.top}, {frame.width, frame.height}};
+}
+
+/** @returns A frame of the first player color, moved to the row of the
+ * sheet of another color. */
+game::SpriteFrame inColorRow(game::SpriteFrame frame, int color) {
+  frame.top = playerShipRow(color);
+  return frame;
 }
 
 /**
@@ -166,19 +167,19 @@ void Squadron::paint(IInterfaceCanvas& canvas, sf::Vector2i topLeft) const {
   paintFrame(canvas, box, time);
   paintTitle(canvas, box, time);
   const sf::IntRect missileFrame =
-      sheetFrame(PLAYER_MISSILE_FRAME, frameAt(time, PLAYER_MISSILE_FRAME_TIME),
-                 PLAYER_MISSILE_FRAME.top);
+      rectangleOf(PLAYER_MISSILE_ANIMATION.frameAt(elapsed_).value_or(
+          PLAYER_MISSILE_FRAME));
   for (const sf::Vector2f missile : missiles_) {
     canvas.drawImage(ENTITY_SHEET_ID, missileFrame,
                      box.position + sf::Vector2i(roundHalfUp(missile.x),
                                                  roundHalfUp(missile.y)),
                      box);
   }
-  const int shipFrame = frameAt(time, PLAYER_SHIP_FRAME_TIME);
+  const game::SpriteFrame shipFrame =
+      PLAYER_SHIP_ANIMATION.frameAt(elapsed_).value_or(PLAYER_SHIP_FRAME);
   for (const ShipPlacement& placement : placements(time)) {
     canvas.drawImage(ENTITY_SHEET_ID,
-                     sheetFrame(PLAYER_SHIP_FRAME, shipFrame,
-                                playerShipRow(placement.ship->color)),
+                     rectangleOf(inColorRow(shipFrame, placement.ship->color)),
                      box.position + placement.topLeft, box);
   }
 }

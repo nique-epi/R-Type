@@ -1,0 +1,90 @@
+#include "SheetPixels.hpp"
+#include <SFML/Graphics/Color.hpp>
+#include <SFML/Graphics/Image.hpp>
+#include <SFML/System/Vector2.hpp>
+#include <cstdint>
+#include <filesystem>
+#include <string_view>
+#include <utility>
+#include "SpriteFrame.hpp"
+
+using rtype::game::SpriteFrame;
+
+namespace {
+
+constexpr const char* SOURCE_ASSETS_FOLDER = RTYPE_SOURCE_ASSETS_FOLDER;
+
+constexpr std::uint8_t TRANSPARENT_ALPHA = 0;
+
+bool isVisible(const sf::Image& image, int column, int row) {
+  const sf::Vector2u size = image.getSize();
+  if (column < 0 || row < 0 || std::cmp_greater_equal(column, size.x) ||
+      std::cmp_greater_equal(row, size.y)) {
+    return false;
+  }
+  const sf::Vector2u pixel{static_cast<unsigned int>(column),
+                           static_cast<unsigned int>(row)};
+  return image.getPixel(pixel).a != TRANSPARENT_ALPHA;
+}
+
+}  // namespace
+
+sf::Image shippedSheet(std::string_view assetId) {
+  return sf::Image(std::filesystem::path(SOURCE_ASSETS_FOLDER) /
+                   std::filesystem::path(assetId));
+}
+
+bool overlap(SpriteFrame first, SpriteFrame second) {
+  return first.left < second.left + second.width &&
+         second.left < first.left + first.width &&
+         first.top < second.top + second.height &&
+         second.top < first.top + first.height;
+}
+
+bool liesInside(SpriteFrame frame, sf::Vector2u imageSize) {
+  return frame.left >= 0 && frame.top >= 0 && frame.width > 0 &&
+         frame.height > 0 &&
+         std::cmp_less_equal(frame.left + frame.width, imageSize.x) &&
+         std::cmp_less_equal(frame.top + frame.height, imageSize.y);
+}
+
+bool showsAVisiblePixel(const sf::Image& image, SpriteFrame frame) {
+  for (int row = frame.top; row < frame.top + frame.height; ++row) {
+    for (int column = frame.left; column < frame.left + frame.width; ++column) {
+      if (isVisible(image, column, row)) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+bool hasAVisiblePixelAround(const sf::Image& image, SpriteFrame frame) {
+  const int right = frame.left + frame.width;
+  const int bottom = frame.top + frame.height;
+  for (int row = frame.top; row < bottom; ++row) {
+    if (isVisible(image, frame.left - 1, row) || isVisible(image, right, row)) {
+      return true;
+    }
+  }
+  for (int column = frame.left; column < right; ++column) {
+    if (isVisible(image, column, frame.top - 1) ||
+        isVisible(image, column, bottom)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+bool showsColor(const sf::Image& image, SpriteFrame frame, sf::Color color) {
+  for (int row = frame.top; row < frame.top + frame.height; ++row) {
+    for (int column = frame.left; column < frame.left + frame.width; ++column) {
+      if (isVisible(image, column, row) &&
+          image.getPixel({static_cast<unsigned int>(column),
+                          static_cast<unsigned int>(row)}) == color) {
+        return true;
+      }
+    }
+  }
+  return false;
+}

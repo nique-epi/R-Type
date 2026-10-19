@@ -2,17 +2,19 @@
 #include <gtest/gtest.h>
 #include <SFML/Window/Event.hpp>
 #include <SFML/Window/Keyboard.hpp>
+#include <chrono>
 #include <cstdint>
 #include <memory>
 #include <vector>
 #include "BlankRenderTarget.hpp"
 #include "BoundAction.hpp"
 #include "ComponentRegistry.hpp"
+#include "EffectConstants.hpp"
 #include "GameScreen.hpp"
 #include "IEntityLayer.hpp"
 #include "IScreen.hpp"
-#include "KeyBindings.hpp"
 #include "KeyPress.hpp"
+#include "PlayerSettings.hpp"
 #include "RecordingEntityLayer.hpp"
 #include "RecordingNavigator.hpp"
 #include "RecordingScreen.hpp"
@@ -20,18 +22,25 @@
 #include "ScreenId.hpp"
 #include "ScreenStack.hpp"
 #include "ScreenTestConstants.hpp"
+#include "ShowcaseTestConstants.hpp"
 #include "SpriteShowcaseConstants.hpp"
+#include "TimeConstants.hpp"
 
 using rtype::client::BoundAction;
 using rtype::client::GameScreen;
 using rtype::client::IEntityLayer;
 using rtype::client::IScreen;
-using rtype::client::KeyBindings;
 using rtype::client::OPTIONS_KEY;
+using rtype::client::PLAYER_MUZZLE_FLASH_WITHOUT_FLASH_FRAME;
+using rtype::client::PlayerSettings;
 using rtype::client::ScreenId;
 using rtype::client::ScreenStack;
+using rtype::client::SHOWCASE_LOOP;
+using rtype::client::SHOWCASE_SHOTS_AT;
 using rtype::client::SPRITE_SHOWCASE;
 using rtype::engine::ComponentRegistry;
+using rtype::engine::Duration;
+using ::testing::Contains;
 using ::testing::ElementsAre;
 using ::testing::IsEmpty;
 
@@ -45,6 +54,8 @@ constexpr int SHOWS_AFTER_ONE_DRAW = 1;
 constexpr std::uint8_t NOTHING_HELD = 0;
 constexpr std::uint8_t UP_BIT = 0b00001;
 constexpr std::uint8_t SHOOT_BIT = 0b10000;
+constexpr Duration BEFORE_THE_SHOTS = std::chrono::milliseconds(150);
+constexpr Duration LONG_FRAME = std::chrono::milliseconds(500);
 
 /** @brief An entity layer that ignores every request, for a game screen whose
  * drawing the test does not read. */
@@ -73,15 +84,17 @@ class GameScreenTest : public ::testing::Test {
     return layerRecord_;
   }
 
+  PlayerSettings& settings() { return settings_; }
+
  private:
   std::vector<JournalEntry> journal_;
   EntityLayerRecord layerRecord_;
-  KeyBindings keys_;
+  PlayerSettings settings_;
   ScreenStack screens_{[this](ScreenId screen) -> std::unique_ptr<IScreen> {
     if (screen == ScreenId::Game) {
       return std::make_unique<GameScreen>(
           screens_, std::make_unique<RecordingEntityLayer>(layerRecord_),
-          keys_);
+          settings_);
     }
     return std::make_unique<RecordingScreen>(screen, journal_);
   }};
@@ -151,7 +164,7 @@ TEST_F(GameScreenTest, OtherKeysLeaveTheOptionsClosed) {
  */
 TEST_F(GameScreenTest, ANewGameIsPaintedBeforeItsFirstUpdate) {
   EXPECT_EQ(layerRecord().paintCount, PAINTS_AT_CONSTRUCTION);
-  EXPECT_EQ(layerRecord().spritesAtLastPaint, SPRITE_SHOWCASE.size());
+  EXPECT_EQ(layerRecord().framesAtLastPaint.size(), SPRITE_SHOWCASE.size());
 }
 
 /**
@@ -180,14 +193,73 @@ TEST_F(GameScreenTest, DrawingLaysTheEntityLayerOnTheTarget) {
 }
 
 /**
+ * Given the game alone in the stack, its showcase about to fire
+ * When the screens are updated frame by frame past the shots
+ * Then the two muzzle flashes are painted with the showcase entities
+ */
+TEST_F(GameScreenTest, TheShotsOfTheShowcaseArePainted) {
+  for (Duration played{}; played <= SHOWCASE_SHOTS_AT; played += ONE_FRAME) {
+    screens().update(ONE_FRAME);
+  }
+
+  EXPECT_EQ(layerRecord().framesAtLastPaint.size(),
+            SPRITE_SHOWCASE.size() + MUZZLE_FLASHES_PER_SHOT);
+}
+
+/**
+ * Given the game alone in the stack
+ * When it plays one whole loop of the showcase, frame by frame
+ * Then every effect of the loop has ended, and only the showcase is painted
+ */
+TEST_F(GameScreenTest, EveryEffectEndsWithinALoopOfTheShowcase) {
+  for (Duration played{}; played < SHOWCASE_LOOP; played += ONE_FRAME) {
+    screens().update(ONE_FRAME);
+  }
+
+  EXPECT_EQ(layerRecord().framesAtLastPaint.size(), SPRITE_SHOWCASE.size());
+}
+
+/**
+ * Given the game 150 ms into the showcase, its shots due at 200 ms
+ * When one long frame of 500 ms comes, as after the window was dragged
+ * Then the muzzle flashes born in that frame are painted once, though they
+ * last 100 ms
+ */
+TEST_F(GameScreenTest, AnEffectBornInALongFrameIsPaintedOnce) {
+  screens().update(BEFORE_THE_SHOTS);
+
+  screens().update(LONG_FRAME);
+
+  EXPECT_EQ(layerRecord().framesAtLastPaint.size(),
+            SPRITE_SHOWCASE.size() + MUZZLE_FLASHES_PER_SHOT);
+}
+
+/**
+ * Given the game running, and the player who turns REDUCE FLASHES on in the
+ * options
+ * When the showcase fires its missiles
+ * Then the player muzzle flash shows its version without flash
+ */
+TEST_F(GameScreenTest, ReducingFlashesDuringTheGameAppliesToTheNextEffect) {
+  settings().reduceFlashes = true;
+
+  for (Duration played{}; played <= SHOWCASE_SHOTS_AT; played += ONE_FRAME) {
+    screens().update(ONE_FRAME);
+  }
+
+  EXPECT_THAT(layerRecord().framesAtLastPaint,
+              Contains(PLAYER_MUZZLE_FLASH_WITHOUT_FLASH_FRAME));
+}
+
+/**
  * Given the game screen
  * When the player presses up and space
  * Then both actions are held
  */
 TEST(GameScreenActionsTest, PressedKeysBecomeHeldActions) {
   RecordingNavigator navigator;
-  const KeyBindings keys;
-  GameScreen game(navigator, std::make_unique<IgnoringEntityLayer>(), keys);
+  const PlayerSettings settings;
+  GameScreen game(navigator, std::make_unique<IgnoringEntityLayer>(), settings);
 
   game.handleEvent(keyPress(sf::Keyboard::Key::Up, sf::Keyboard::Scan::Up));
   game.handleEvent(
@@ -203,8 +275,8 @@ TEST(GameScreenActionsTest, PressedKeysBecomeHeldActions) {
  */
 TEST(GameScreenActionsTest, ReleasedKeyIsNoLongerHeld) {
   RecordingNavigator navigator;
-  const KeyBindings keys;
-  GameScreen game(navigator, std::make_unique<IgnoringEntityLayer>(), keys);
+  const PlayerSettings settings;
+  GameScreen game(navigator, std::make_unique<IgnoringEntityLayer>(), settings);
   game.handleEvent(keyPress(sf::Keyboard::Key::Up, sf::Keyboard::Scan::Up));
 
   game.handleEvent(keyRelease(sf::Keyboard::Key::Up, sf::Keyboard::Scan::Up));
@@ -219,8 +291,8 @@ TEST(GameScreenActionsTest, ReleasedKeyIsNoLongerHeld) {
  */
 TEST(GameScreenActionsTest, LosingFocusReleasesTheHeldActions) {
   RecordingNavigator navigator;
-  const KeyBindings keys;
-  GameScreen game(navigator, std::make_unique<IgnoringEntityLayer>(), keys);
+  const PlayerSettings settings;
+  GameScreen game(navigator, std::make_unique<IgnoringEntityLayer>(), settings);
   game.handleEvent(keyPress(sf::Keyboard::Key::Up, sf::Keyboard::Scan::Up));
 
   game.handleEvent(sf::Event{sf::Event::FocusLost{}});
@@ -235,8 +307,8 @@ TEST(GameScreenActionsTest, LosingFocusReleasesTheHeldActions) {
  */
 TEST(GameScreenActionsTest, KeysPressedWithoutFocusAreIgnored) {
   RecordingNavigator navigator;
-  const KeyBindings keys;
-  GameScreen game(navigator, std::make_unique<IgnoringEntityLayer>(), keys);
+  const PlayerSettings settings;
+  GameScreen game(navigator, std::make_unique<IgnoringEntityLayer>(), settings);
   game.handleEvent(sf::Event{sf::Event::FocusLost{}});
 
   game.handleEvent(keyPress(sf::Keyboard::Key::Up, sf::Keyboard::Scan::Up));
@@ -251,8 +323,8 @@ TEST(GameScreenActionsTest, KeysPressedWithoutFocusAreIgnored) {
  */
 TEST(GameScreenActionsTest, KeysPressedAfterFocusGainedCount) {
   RecordingNavigator navigator;
-  const KeyBindings keys;
-  GameScreen game(navigator, std::make_unique<IgnoringEntityLayer>(), keys);
+  const PlayerSettings settings;
+  GameScreen game(navigator, std::make_unique<IgnoringEntityLayer>(), settings);
   game.handleEvent(sf::Event{sf::Event::FocusLost{}});
   game.handleEvent(sf::Event{sf::Event::FocusGained{}});
 
@@ -268,8 +340,8 @@ TEST(GameScreenActionsTest, KeysPressedAfterFocusGainedCount) {
  */
 TEST(GameScreenActionsTest, OpeningTheOptionsReleasesTheHeldActions) {
   RecordingNavigator navigator;
-  const KeyBindings keys;
-  GameScreen game(navigator, std::make_unique<IgnoringEntityLayer>(), keys);
+  const PlayerSettings settings;
+  GameScreen game(navigator, std::make_unique<IgnoringEntityLayer>(), settings);
   game.handleEvent(keyPress(sf::Keyboard::Key::Up, sf::Keyboard::Scan::Up));
   game.handleEvent(keyRelease(OPTIONS_KEY, sf::Keyboard::Scan::Escape));
   EXPECT_EQ(game.playerActions().bits(), 0U);
@@ -282,9 +354,9 @@ TEST(GameScreenActionsTest, OpeningTheOptionsReleasesTheHeldActions) {
  */
 TEST(GameScreenActionsTest, AKeyChangedInTheOptionsMovesTheShip) {
   RecordingNavigator navigator;
-  KeyBindings keys;
-  keys.bind(BoundAction::MoveUp, sf::Keyboard::Scan::W);
-  GameScreen game(navigator, std::make_unique<IgnoringEntityLayer>(), keys);
+  PlayerSettings settings;
+  settings.keys.bind(BoundAction::MoveUp, sf::Keyboard::Scan::W);
+  GameScreen game(navigator, std::make_unique<IgnoringEntityLayer>(), settings);
   game.handleEvent(keyPress(sf::Keyboard::Key::W, sf::Keyboard::Scan::W));
   EXPECT_EQ(game.playerActions().bits(), UP_BIT);
 }

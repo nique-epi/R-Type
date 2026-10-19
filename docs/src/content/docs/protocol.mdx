@@ -7,7 +7,7 @@ sidebar:
 
 import ByteLayout from '../../components/ByteLayout.astro';
 
-The client and the server talk over UDP in the binary format described on this page, byte by byte, so each side can be written without reading the code of the other. Version 0 is the contract for the first part of the project. The code follows it in `src/network`: the socket in `Transport` drops a datagram over 1200 bytes (see [Network](/R-Type/network/)), `Serialization` encodes integers and strings, and `Protocol` holds the datagram header and every message of this page, each checked as listed here, except that a `WorldState` without players is accepted while the game has none (see [Network](/R-Type/network/#world-state-worldstatecodec)). The programs apply part of the checks of [Receiving a datagram](#receiving-a-datagram) today: both drop a datagram whose header is not of this protocol and version or whose message sizes do not add up, the server reads nothing but connection requests and answers them as [Connection](#connection) describes, and the client reads only the server it contacts. The session token, the sequence and the `IncompatibleVersion` answer are not checked or sent yet.
+The client and the server talk over UDP in the binary format described on this page, byte by byte, so each side can be written without reading the code of the other. Version 0 is the contract for the first part of the project. The code follows it in `src/network`: the socket in `Transport` drops a datagram over 1200 bytes (see [Network](/R-Type/network/)), `Serialization` encodes integers and strings, and `Protocol` holds the datagram header and every message of this page, each checked as listed here, except that a `WorldState` without players is accepted while the game has none (see [Network](/R-Type/network/#world-state-worldstatecodec)). The programs apply part of the checks of [Receiving a datagram](#receiving-a-datagram) today: both drop a datagram whose header is not of this protocol and version or whose message sizes do not add up, the server drops on its network thread every datagram that is neither a connection request nor from a player it admitted, and answers the requests as [Connection](#connection) describes, and the client reads only the server it contacts. The session token, the sequence and the `IncompatibleVersion` answer are not checked or sent yet.
 
 ## Transport
 
@@ -125,7 +125,7 @@ The type identifies a message in both directions: `Disconnection` and `Heartbeat
 | 7 | `LobbyState` | `playerCount` `u8`, then per player `playerNumber` `u8`, `ready` `bool`, `nickname` `string` | on every change, and at least every 500 ms while no game runs |
 | 8 | `GameStarted` | none | when every connected player is ready |
 | 10 | `WorldState` | see [World state](#world-state) | 20 times per second during a game |
-| 11 | `EntitySpawned` | `entityId` `u32`, `entityType` `u8`, `position` | when an entity appears |
+| 11 | `EntitySpawned` | `entityId` `u32`, `entityType` `u8`, `position` | when an entity appears; the ship of a player, when the player is accepted |
 | 12 | `EntityDestroyed` | `entityId` `u32`, `reason` `u8`: 1 `Killed` (explosion), 2 `Removed` (no effect) | when an entity disappears, three times 50 ms apart |
 | 13 | `GameEvent` | `eventNumber` `u16`, `kind` `u8`, `playerNumber` `u8`, `entityId` `u32` | see [Game events](#game-events), three times 50 ms apart |
 | 14 | `PlayerLeft` | `playerNumber` `u8`, `reason` `u8`: 1 `Left`, 2 `TimedOut` | to the other players, when one leaves or times out, three times 50 ms apart |
@@ -254,6 +254,8 @@ In each phase the server repeats one message, and the client shows the screen of
 | Waiting for players | `LobbyState`, every 500 ms | the lobby |
 | Game in progress | `WorldState`, 20 per second | the game |
 | Game ended | `GameEnded`, every 500 ms | the end screen |
+
+The server takes a `ReadyState` into account only in the first phase, from a connected player, with the same checks as every datagram: the session token, then the `sequence`. The game starts when at least one player is connected and every connected player is ready.
 
 Each side sends a `Heartbeat` after 1 s without sending anything else; any datagram that passes the checks above proves its sender is alive. The server closes a session after 5 s without a datagram carrying its token, removes the ship and sends `PlayerLeft` (`TimedOut`) to the others. The client shows that the connection is lost after 5 s without a datagram from the server. A `Disconnection` frees the place at once, and the others get `PlayerLeft` (`Left`).
 

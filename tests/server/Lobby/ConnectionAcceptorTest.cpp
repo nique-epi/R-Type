@@ -6,6 +6,7 @@
 #include <utility>
 #include <vector>
 #include "ByteWriter.hpp"
+#include "ConnectedPlayer.hpp"
 #include "ConnectionAccepted.hpp"
 #include "ConnectionAcceptor.hpp"
 #include "ConnectionChallenge.hpp"
@@ -22,6 +23,7 @@
 #include "PlayerRoster.hpp"
 #include "ProtocolConstants.hpp"
 #include "ReadyState.hpp"
+#include "ServerDatagrams.hpp"
 #include "ServerLobbyTestConstants.hpp"
 #include "TimeConstants.hpp"
 
@@ -33,21 +35,12 @@ using testing::FIVE_PLAYER_PORTS;
 using testing::NEXT_PROTOCOL_VERSION;
 using testing::OTHER_PROTOCOL_ID;
 using testing::PLAYER_ADDRESS;
-using testing::PLAYER_NICKNAME;
 using testing::REQUEST_TIME;
 using testing::SHORTEST_NICKNAME;
 
 network::Endpoint playerEndpoint(std::size_t player) {
   return network::Endpoint{.address = std::string{PLAYER_ADDRESS},
                            .port = FIVE_PLAYER_PORTS.at(player)};
-}
-
-/** @returns The bytes of a datagram holding a ConnectionRequest. */
-std::vector<std::byte> requestDatagram(std::uint64_t cookie,
-                                       network::PacketHeader header = {}) {
-  return network::DatagramCodec::encode(
-      header, network::ConnectionRequest{
-                  .cookie = cookie, .nickname = std::string{PLAYER_NICKNAME}});
 }
 
 /** @returns The type of the only message of @p datagram. */
@@ -99,16 +92,56 @@ class ConnectionAcceptorTest : public ::testing::Test {
 
   [[nodiscard]] PlayerRoster& roster() { return roster_; }
 
+  [[nodiscard]] const std::vector<network::Endpoint>& admitted() const {
+    return admitted_;
+  }
+
   [[nodiscard]] ConnectionAcceptor& acceptor() { return acceptor_; }
+
+  /** @returns The numbers of the players the acceptor reported as joined. */
+  [[nodiscard]] const std::vector<std::uint8_t>& joinedPlayers() const {
+    return joinedPlayers_;
+  }
 
  private:
   PlayerRoster roster_;
   std::vector<network::OutgoingDatagram> answers_;
-  ConnectionAcceptor acceptor_{roster_,
-                               [this](network::OutgoingDatagram datagram) {
-                                 answers_.push_back(std::move(datagram));
-                               }};
+  std::vector<network::Endpoint> admitted_;
+  std::vector<std::uint8_t> joinedPlayers_;
+  ConnectionAcceptor acceptor_{
+      roster_,
+      [this](network::OutgoingDatagram datagram) {
+        answers_.push_back(std::move(datagram));
+      },
+      [this](const network::Endpoint& player) { admitted_.push_back(player); },
+      [this](ConnectedPlayer& player) {
+        joinedPlayers_.push_back(player.playerNumber);
+      }};
 };
+
+/**
+ * Given an acceptor with nobody connected
+ * When a sender goes through the challenge, then repeats its request
+ * Then the acceptor reports the player as joined once, not at the repeat
+ */
+TEST_F(ConnectionAcceptorTest, ReportsAJoinedPlayerOnlyOnce) {
+  const std::uint64_t cookie = challengeCookie(playerEndpoint(0));
+  receive(playerEndpoint(0), requestDatagram(cookie));
+  receive(playerEndpoint(0), requestDatagram(cookie));
+
+  EXPECT_EQ(joinedPlayers(), (std::vector<std::uint8_t>{1}));
+}
+
+/**
+ * Given an acceptor with nobody connected
+ * When a sender requests a connection without a cookie
+ * Then no player is reported as joined: a challenge reserves nothing
+ */
+TEST_F(ConnectionAcceptorTest, ReportsNobodyForAChallengedSender) {
+  receive(playerEndpoint(0), requestDatagram(0));
+
+  EXPECT_TRUE(joinedPlayers().empty());
+}
 
 /**
  * Given an acceptor with nobody connected
@@ -164,6 +197,41 @@ TEST_F(ConnectionAcceptorTest, AcceptsARequestCarryingItsCookie) {
   EXPECT_NE(
       network::DatagramCodec::decodeHeader(lastAnswer().payload).sessionToken,
       0);
+}
+
+/**
+ * Given a sender that got a challenge
+ * When it sends its request again with the cookie of the challenge
+ * Then its address is announced as admitted, once
+ */
+TEST_F(ConnectionAcceptorTest, AnnouncesTheAddressOfANewPlayer) {
+  connect(playerEndpoint(0));
+
+  EXPECT_EQ(admitted(), (std::vector<network::Endpoint>{playerEndpoint(0)}));
+}
+
+/**
+ * Given an acceptor with nobody connected
+ * When a sender is challenged
+ * Then nobody is announced as admitted
+ */
+TEST_F(ConnectionAcceptorTest, AnnouncesNobodyForAChallenge) {
+  receive(playerEndpoint(0), requestDatagram(0));
+
+  EXPECT_TRUE(admitted().empty());
+}
+
+/**
+ * Given a connected player
+ * When it is accepted again
+ * Then it is not announced a second time
+ */
+TEST_F(ConnectionAcceptorTest, AnnouncesAPlayerAcceptedAgainOnlyOnce) {
+  connect(playerEndpoint(0));
+
+  connect(playerEndpoint(0));
+
+  EXPECT_EQ(admitted().size(), 1);
 }
 
 /**

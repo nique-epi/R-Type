@@ -1,1 +1,2 @@
 add_subdirectory(WorldStateFilter)
+add_subdirectory(EntityReplicator)

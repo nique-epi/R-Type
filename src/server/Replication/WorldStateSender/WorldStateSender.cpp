@@ -1,6 +1,7 @@
 #include "WorldStateSender.hpp"
 #include <cmath>
 #include <cstddef>
+#include <cstdint>
 #include <span>
 #include <string>
 #include <utility>
@@ -32,14 +33,14 @@ static_assert(game::PLAYFIELD_WIDTH <= LARGEST_PLAYFIELD_SIZE_ON_THE_WIRE &&
 WorldStateSender::WorldStateSender(Send send)
     : send_(std::move(send)), logger_(std::string{REPLICATION_LOGGER_NAME}) {}
 
-void WorldStateSender::onTick(engine::ComponentRegistry& components,
+void WorldStateSender::onTick(std::uint32_t tick,
+                              engine::ComponentRegistry& components,
                               std::span<const network::Endpoint> recipients) {
-  ++tick_;
-  if (tick_ % TICKS_PER_WORLD_STATE != 0 || recipients.empty()) {
+  if (tick % TICKS_PER_WORLD_STATE != 0 || recipients.empty()) {
     return;
   }
   std::size_t leftOutCount = 0;
-  const network::WorldState state = capture(components, leftOutCount);
+  const network::WorldState state = capture(tick, components, leftOutCount);
   reportLeftOut(leftOutCount);
   const std::vector<std::vector<std::byte>> payloads =
       network::WorldStateCodec::encode(state);
@@ -52,8 +53,9 @@ void WorldStateSender::onTick(engine::ComponentRegistry& components,
 }
 
 network::WorldState WorldStateSender::capture(
-    engine::ComponentRegistry& components, std::size_t& leftOutCount) const {
-  network::WorldState state{.tick = tick_, .players = {}, .entities = {}};
+    std::uint32_t tick, engine::ComponentRegistry& components,
+    std::size_t& leftOutCount) {
+  network::WorldState state{.tick = tick, .players = {}, .entities = {}};
   components.forEach<game::NetworkIdentity, game::Position>(
       [&components, &state, &leftOutCount](
           engine::Entity entity, const game::NetworkIdentity& identity,

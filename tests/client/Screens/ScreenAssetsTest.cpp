@@ -5,6 +5,7 @@
 #include <filesystem>
 #include "AssetLibrary.hpp"
 #include "AssetLoadingStep.hpp"
+#include "EffectConstants.hpp"
 #include "EntitySpriteConstants.hpp"
 #include "InterfaceConstants.hpp"
 #include "ScreenAssets.hpp"
@@ -12,6 +13,7 @@
 
 using rtype::client::AssetLibrary;
 using rtype::client::AssetLoadingStep;
+using rtype::client::EFFECT_SHEET_ID;
 using rtype::client::ENTITY_SHEET_ID;
 using rtype::client::gameAssets;
 using rtype::client::loadInterfaceAssets;
@@ -65,6 +67,15 @@ TEST(ScreenAssets, EnteringAGameKeepsTheInterfaceFonts) {
  */
 TEST(ScreenAssets, AGameLoadsTheEntitySheet) {
   EXPECT_THAT(gameAssets().textures, Contains(ENTITY_SHEET_ID));
+}
+
+/**
+ * Given the assets a game needs
+ * When its textures are listed
+ * Then they hold the effect sheet the explosions are drawn from
+ */
+TEST(ScreenAssets, AGameLoadsTheEffectSheet) {
+  EXPECT_THAT(gameAssets().textures, Contains(EFFECT_SHEET_ID));
 }
 
 /**

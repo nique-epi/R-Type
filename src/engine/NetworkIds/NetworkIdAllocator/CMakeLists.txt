@@ -4,7 +4,7 @@ target_include_directories(rtype_engine_network_id_allocator PUBLIC ${CMAKE_CURR
 
 target_link_libraries(rtype_engine_network_id_allocator
   PUBLIC
-    rtype_engine_network_id_constants
+    rtype_identifiers
     rtype_engine_exceptions
 )
 
