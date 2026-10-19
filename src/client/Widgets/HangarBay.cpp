@@ -6,6 +6,7 @@
 #include <initializer_list>
 #include <optional>
 #include <string>
+#include <string_view>
 #include "CutCornerBox.hpp"
 #include "EntitySpriteConstants.hpp"
 #include "EntitySprites.hpp"
@@ -56,104 +57,174 @@ CellLook cellLookOf(BayReadiness readiness) {
           .text = OTHER_CELL_TEXT_COLOR};
 }
 
-/** @returns The left of a line centered on the middle column of a bay. */
-int middleOf(sf::Vector2i topLeft) {
-  return topLeft.x + (HANGAR_BAY_SIZE.x / SIDES_PER_AXIS);
+/** @returns A rectangle given from the top-left corner of a bay, placed on
+ * the bay at @p topLeft. */
+sf::IntRect onBay(sf::Vector2i topLeft, sf::IntRect area) {
+  return {topLeft + area.position, area.size};
 }
 
-/** @returns The frame of the ship of a pilot, in its color row: its engines
- * running while it is ready and the interface may move, its first frame
- * otherwise. */
-game::SpriteFrame shipFrameOf(const HangarBay& bay, const BayPilot& pilot,
+/** @returns The inside of a box, less its border on every side. */
+sf::IntRect insideOf(sf::IntRect box) {
+  const sf::Vector2i border(BORDER_THICKNESS, BORDER_THICKNESS);
+  return {box.position + border, box.size - (border * SIDES_PER_AXIS)};
+}
+
+/** @returns The anchor of a line centered on the middle column of a bay, on
+ * row @p top of the bay. */
+sf::Vector2i middleAnchor(sf::Vector2i topLeft, int top) {
+  return {topLeft.x + (HANGAR_BAY_SIZE.x / SIDES_PER_AXIS), topLeft.y + top};
+}
+
+/** @returns The frame of the ship of a color: its engines running while the
+ * pilot is ready and the interface may move, its first frame otherwise. */
+game::SpriteFrame shipFrameOf(int color, BayReadiness readiness,
                               engine::Duration elapsed,
                               MotionPreference motion) {
-  game::SpriteFrame frame = PLAYER_SHIP_FRAME;
-  if (motion == MotionPreference::Full &&
-      pilot.readiness == BayReadiness::Ready) {
-    frame = PLAYER_SHIP_ANIMATION.frameAt(elapsed).value_or(PLAYER_SHIP_FRAME);
+  const bool enginesRun =
+      motion == MotionPreference::Full && readiness == BayReadiness::Ready;
+  const game::SpriteFrame frame =
+      enginesRun
+          ? PLAYER_SHIP_ANIMATION.frameAt(elapsed).value_or(PLAYER_SHIP_FRAME)
+          : PLAYER_SHIP_FRAME;
+  return inPlayerColorRow(frame, color);
+}
+
+/** @returns The beacon lit at @p elapsed, from left to right for BEACON_STEP
+ * each; none while the interface may not move. */
+std::optional<int> litBeaconAt(engine::Duration elapsed,
+                               MotionPreference motion) {
+  if (motion != MotionPreference::Full) {
+    return std::nullopt;
   }
-  return inPlayerColorRow(frame, bay.color);
+  return static_cast<int>((elapsed / BEACON_STEP) % BEACON_COUNT);
+}
+
+/** @brief Paints the frame of a bay: lit while a pilot holds it, off while it
+ * is open. */
+void paintFrame(IInterfaceCanvas& canvas, sf::Vector2i topLeft, bool open) {
+  CutCornerBox({topLeft, HANGAR_BAY_SIZE},
+               {.border = open ? DISABLED_BAR_BORDER_COLOR : BAR_BORDER_COLOR,
+                .inside = PANEL_INSIDE_COLOR})
+      .paint(canvas);
+}
+
+/** @brief Writes the player number of a bay in its top-left corner, dim while
+ * the bay is open. */
+void paintPlayerNumber(IInterfaceCanvas& canvas, sf::Vector2i topLeft,
+                       int playerNumber, bool open) {
+  canvas.write(PLAYER_NUMBER_PREFIX + std::to_string(playerNumber),
+               topLeft + BAY_NUMBER_OFFSET,
+               {.font = TextFont::Regular,
+                .color = open ? FIELD_TEXT_COLOR : PAGE_TEXT_COLOR});
+}
+
+/** @brief Writes YOU at the end of the row of the player number. */
+void paintLocalPlayerTag(IInterfaceCanvas& canvas, sf::Vector2i topLeft) {
+  const sf::Vector2i tagEnd(topLeft.x + HANGAR_BAY_SIZE.x - BAY_NUMBER_OFFSET.x,
+                            topLeft.y + BAY_NUMBER_OFFSET.y);
+  canvas.write(LOCAL_PLAYER_TAG, tagEnd,
+               {.font = TextFont::Regular,
+                .color = PAGE_TEXT_COLOR,
+                .alignment = TextAlignment::Right});
+}
+
+/** @brief Paints the band of the ship color under the row of the number. */
+void paintColorBand(IInterfaceCanvas& canvas, sf::Vector2i topLeft, int color) {
+  canvas.fill(onBay(topLeft, BAY_COLOR_BAND),
+              PLAYER_SHIP_COLORS[static_cast<std::size_t>(color)]);
+}
+
+/** @brief Draws a ship frame BAY_SHIP_SCALE times its size, centered on the
+ * bay and cut to it. */
+void paintShip(IInterfaceCanvas& canvas, sf::Vector2i topLeft,
+               game::SpriteFrame frame) {
+  const int shipWidth = frame.width * BAY_SHIP_SCALE;
+  const sf::Vector2i shipTopLeft(
+      topLeft.x + ((HANGAR_BAY_SIZE.x - shipWidth) / SIDES_PER_AXIS),
+      topLeft.y + BAY_SHIP_TOP);
+  canvas.drawImage(ENTITY_SHEET_ID, rectangleOf(frame), shipTopLeft,
+                   BAY_SHIP_SCALE, {topLeft, HANGAR_BAY_SIZE});
+}
+
+/** @brief Writes a line of small print centered on the row of the nickname:
+ * the nickname of a pilot, or OPEN BAY. */
+void paintNicknameRow(IInterfaceCanvas& canvas, sf::Vector2i topLeft,
+                      std::string_view text, sf::Color color) {
+  canvas.write(text, middleAnchor(topLeft, BAY_NICKNAME_TOP),
+               {.font = TextFont::Small,
+                .color = color,
+                .alignment = TextAlignment::Center});
 }
 
 /** @brief Paints the cell of a pilot: a sunk box, its fill, its word on the
  * middle row. */
 void paintCell(IInterfaceCanvas& canvas, sf::Vector2i topLeft,
                BayReadiness readiness) {
-  const sf::IntRect cell(topLeft + BAY_STATE_CELL.position,
-                         BAY_STATE_CELL.size);
-  SunkBox(cell, SunkBox::Sides::Shaded).paint(canvas);
+  const sf::IntRect cell = onBay(topLeft, BAY_STATE_CELL);
   const CellLook look = cellLookOf(readiness);
+  SunkBox(cell, SunkBox::Sides::Shaded).paint(canvas);
   if (look.fill.has_value()) {
-    const sf::Vector2i border(BORDER_THICKNESS, BORDER_THICKNESS);
-    canvas.fill({cell.position + border, cell.size - (border * SIDES_PER_AXIS)},
-                *look.fill);
+    canvas.fill(insideOf(cell), *look.fill);
   }
   canvas.write(look.word,
                {centeredTextLeft(cell, look.word), centeredTextTop(cell)},
                {.font = TextFont::Regular, .color = look.text});
 }
 
-/** @brief Paints the tag of the local player, the band, the ship, the
- * nickname and the cell of a pilot. */
-void paintPilot(IInterfaceCanvas& canvas, sf::Vector2i topLeft,
-                const HangarBay& bay, const BayPilot& pilot,
-                engine::Duration elapsed, MotionPreference motion) {
-  if (pilot.isLocalPlayer) {
-    canvas.write(LOCAL_PLAYER_TAG,
-                 {topLeft.x + HANGAR_BAY_SIZE.x - BAY_NUMBER_OFFSET.x,
-                  topLeft.y + BAY_NUMBER_OFFSET.y},
-                 {.font = TextFont::Regular,
-                  .color = PAGE_TEXT_COLOR,
-                  .alignment = TextAlignment::Right});
+/** @brief Paints the docking clamps of an open bay: a stroke down each side
+ * of the beacons, and an arm at each end of a stroke, pointing inwards. */
+void paintClamps(IInterfaceCanvas& canvas, sf::Vector2i topLeft) {
+  const int leftArmLeft = LEFT_CLAMP_COLUMN;
+  const int rightArmLeft =
+      RIGHT_CLAMP_COLUMN + BORDER_THICKNESS - CLAMP_ARM_LENGTH;
+  const int bottomArmTop = CLAMP_TOP + CLAMP_HEIGHT - BORDER_THICKNESS;
+  for (const int column : {LEFT_CLAMP_COLUMN, RIGHT_CLAMP_COLUMN}) {
+    canvas.fill(
+        onBay(topLeft, {{column, CLAMP_TOP}, {BORDER_THICKNESS, CLAMP_HEIGHT}}),
+        CLAMP_COLOR);
   }
-  canvas.fill({topLeft + BAY_COLOR_BAND.position, BAY_COLOR_BAND.size},
-              PLAYER_SHIP_COLORS[static_cast<std::size_t>(bay.color)]);
-  const game::SpriteFrame frame = shipFrameOf(bay, pilot, elapsed, motion);
-  const int shipWidth = frame.width * BAY_SHIP_SCALE;
-  canvas.drawImage(
-      ENTITY_SHEET_ID, rectangleOf(frame),
-      {topLeft.x + ((HANGAR_BAY_SIZE.x - shipWidth) / SIDES_PER_AXIS),
-       topLeft.y + BAY_SHIP_TOP},
-      BAY_SHIP_SCALE, {topLeft, HANGAR_BAY_SIZE});
-  canvas.write(pilot.nickname,
-               {middleOf(topLeft), topLeft.y + BAY_NICKNAME_TOP},
-               {.font = TextFont::Small,
-                .color = DIALOG_MESSAGE_COLOR,
-                .alignment = TextAlignment::Center});
+  for (const int armTop : {CLAMP_TOP, bottomArmTop}) {
+    for (const int armLeft : {leftArmLeft, rightArmLeft}) {
+      canvas.fill(onBay(topLeft, {{armLeft, armTop},
+                                  {CLAMP_ARM_LENGTH, BORDER_THICKNESS}}),
+                  CLAMP_COLOR);
+    }
+  }
+}
+
+/** @brief Paints the row of beacons of an open bay: @p lit in cyan, the
+ * others off. */
+void paintBeacons(IInterfaceCanvas& canvas, sf::Vector2i topLeft,
+                  std::optional<int> lit) {
+  for (int beacon = 0; beacon < BEACON_COUNT; ++beacon) {
+    const sf::Vector2i position =
+        FIRST_BEACON + sf::Vector2i(beacon * BEACON_SPACING, 0);
+    canvas.fill(onBay(topLeft, {position, {BEACON_SIZE, BEACON_SIZE}}),
+                beacon == lit ? BEACON_LIT_COLOR : BEACON_OFF_COLOR);
+  }
+}
+
+/** @brief Paints a bay a pilot holds: YOU for the local player, the band and
+ * the ship of its color, its nickname and its cell. */
+void paintPilot(IInterfaceCanvas& canvas, sf::Vector2i topLeft, int color,
+                const BayPilot& pilot, engine::Duration elapsed,
+                MotionPreference motion) {
+  if (pilot.isLocalPlayer) {
+    paintLocalPlayerTag(canvas, topLeft);
+  }
+  paintColorBand(canvas, topLeft, color);
+  paintShip(canvas, topLeft,
+            shipFrameOf(color, pilot.readiness, elapsed, motion));
+  paintNicknameRow(canvas, topLeft, pilot.nickname, DIALOG_MESSAGE_COLOR);
   paintCell(canvas, topLeft, pilot.readiness);
 }
 
-/** @brief Paints the clamps and the beacons of an open bay, one beacon lit
- * while the interface may move. */
-void paintBeacons(IInterfaceCanvas& canvas, sf::Vector2i topLeft,
+/** @brief Paints a bay nobody holds: its clamps, its beacons and OPEN BAY. */
+void paintOpenBay(IInterfaceCanvas& canvas, sf::Vector2i topLeft,
                   engine::Duration elapsed, MotionPreference motion) {
-  for (const int column : {LEFT_CLAMP_COLUMN, RIGHT_CLAMP_COLUMN}) {
-    canvas.fill({{topLeft.x + column, topLeft.y + CLAMP_TOP},
-                 {BORDER_THICKNESS, CLAMP_HEIGHT}},
-                CLAMP_COLOR);
-  }
-  for (const int row :
-       {CLAMP_TOP, CLAMP_TOP + CLAMP_HEIGHT - BORDER_THICKNESS}) {
-    canvas.fill({{topLeft.x + LEFT_CLAMP_COLUMN, topLeft.y + row},
-                 {CLAMP_ARM_LENGTH, BORDER_THICKNESS}},
-                CLAMP_COLOR);
-    canvas.fill(
-        {{topLeft.x + RIGHT_CLAMP_COLUMN - CLAMP_ARM_LENGTH + BORDER_THICKNESS,
-          topLeft.y + row},
-         {CLAMP_ARM_LENGTH, BORDER_THICKNESS}},
-        CLAMP_COLOR);
-  }
-  const std::optional<int> lit =
-      motion == MotionPreference::Full
-          ? std::optional<int>(
-                static_cast<int>((elapsed / BEACON_STEP) % BEACON_COUNT))
-          : std::nullopt;
-  for (int beacon = 0; beacon < BEACON_COUNT; ++beacon) {
-    canvas.fill({{topLeft.x + FIRST_BEACON.x + (beacon * BEACON_SPACING),
-                  topLeft.y + FIRST_BEACON.y},
-                 {BEACON_SIZE, BEACON_SIZE}},
-                beacon == lit ? BEACON_LIT_COLOR : BEACON_OFF_COLOR);
-  }
+  paintClamps(canvas, topLeft);
+  paintBeacons(canvas, topLeft, litBeaconAt(elapsed, motion));
+  paintNicknameRow(canvas, topLeft, OPEN_BAY_TEXT, FIELD_TEXT_COLOR);
 }
 
 }  // namespace
@@ -162,23 +233,13 @@ void paintHangarBay(IInterfaceCanvas& canvas, sf::Vector2i topLeft,
                     const HangarBay& bay, engine::Duration elapsed,
                     MotionPreference motion) {
   const bool open = !bay.pilot.has_value();
-  CutCornerBox({topLeft, HANGAR_BAY_SIZE},
-               {.border = open ? DISABLED_BAR_BORDER_COLOR : BAR_BORDER_COLOR,
-                .inside = PANEL_INSIDE_COLOR})
-      .paint(canvas);
-  canvas.write(PLAYER_NUMBER_PREFIX + std::to_string(bay.playerNumber),
-               topLeft + BAY_NUMBER_OFFSET,
-               {.font = TextFont::Regular,
-                .color = open ? FIELD_TEXT_COLOR : PAGE_TEXT_COLOR});
+  paintFrame(canvas, topLeft, open);
+  paintPlayerNumber(canvas, topLeft, bay.playerNumber, open);
   if (bay.pilot.has_value()) {
-    paintPilot(canvas, topLeft, bay, *bay.pilot, elapsed, motion);
-    return;
+    paintPilot(canvas, topLeft, bay.color, *bay.pilot, elapsed, motion);
+  } else {
+    paintOpenBay(canvas, topLeft, elapsed, motion);
   }
-  paintBeacons(canvas, topLeft, elapsed, motion);
-  canvas.write(OPEN_BAY_TEXT, {middleOf(topLeft), topLeft.y + BAY_NICKNAME_TOP},
-               {.font = TextFont::Small,
-                .color = FIELD_TEXT_COLOR,
-                .alignment = TextAlignment::Center});
 }
 
 }  // namespace rtype::client
