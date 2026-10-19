@@ -4,6 +4,8 @@ target_include_directories(rtype_server_game_instance PUBLIC ${CMAKE_CURRENT_SOU
 
 target_link_libraries(rtype_server_game_instance
   PUBLIC
+    rtype_engine_event_bus
+    rtype_engine_systems
     rtype_engine_time
     rtype_game
     rtype_network_datagram_codec

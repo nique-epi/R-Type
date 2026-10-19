@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include "BydoKind.hpp"
 #include "ComponentRegistry.hpp"
 #include "EntityRegistry.hpp"
 #include "NetworkIdAllocator.hpp"
@@ -32,13 +33,14 @@ class World {
   std::uint32_t spawnPlayer(Position position);
 
   /**
-   * @brief Creates a Bydo at @p position, with the Position, the
+   * @brief Creates a Bydo of @p kind at @p position, with the Position, the
    * EntityType::Enemy and the NetworkIdentity that make it a networked entity.
-   * It has no Velocity: it stays where it is until something moves it.
+   * It moves left at BYDO_SPEED, and follows the pattern of its kind around the
+   * row it appeared on: MovementSystem and PatternSystem move it.
    * @returns The network id the Bydo was given, never NO_ENTITY_ID.
    * @throws NetworkIdExhaustedException when every network id was given.
    */
-  std::uint32_t spawnBydo(Position position);
+  std::uint32_t spawnBydo(Position position, BydoKind kind);
   [[nodiscard]] std::size_t entityCount() const;
 
   /**

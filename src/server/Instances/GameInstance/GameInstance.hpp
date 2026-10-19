@@ -8,6 +8,7 @@
 #include "BydoSpawner.hpp"
 #include "ConnectedPlayer.hpp"
 #include "Endpoint.hpp"
+#include "EventBus.hpp"
 #include "GameState.hpp"
 #include "IncomingDatagram.hpp"
 #include "Logger.hpp"
@@ -18,6 +19,7 @@
 #include "PlayerRoster.hpp"
 #include "ReadyState.hpp"
 #include "ShipSpawnAnnouncer.hpp"
+#include "SystemScheduler.hpp"
 #include "World.hpp"
 
 namespace rtype::server {
@@ -33,10 +35,13 @@ namespace rtype::server {
  * world: every player gets a new ship, is no longer ready, and the tick is 0.
  * The players stay connected.
  *
- * While the game is in progress, a Bydo appears every BYDO_SPAWN_INTERVAL
- * (see BydoSpawner). Each world starts its random draws from a seed of its own,
- * the seed of the game plus the number of worlds built before it, so the seed
- * of the game is enough to replay every world of a session.
+ * While the game is in progress, each tick first runs the systems of the world
+ * (PatternSystem, MovementSystem, then PlayfieldExitSystem, which removes a
+ * Bydo that left on the left and announces it on the event bus), then lets a
+ * Bydo appear every BYDO_SPAWN_INTERVAL (see BydoSpawner). Each world starts
+ * its random draws from a seed of its own, the seed of the game plus the number
+ * of worlds built before it, so the seed of the game is enough to replay every
+ * world of a session.
  *
  * A datagram of the players is read only when its header carries this
  * protocol and version with no flag set, its messages add up to its end, its
@@ -73,8 +78,10 @@ class GameInstance {
    * @param send Must not be empty.
    * @param seed Where the random draws of the game start from; logged by the
    * spawner each time a world is built.
+   * @param events Where the game publishes what happens in the world, such as
+   * a Bydo leaving the playfield; it must outlive the game.
    */
-  GameInstance(Send send, std::uint32_t seed);
+  GameInstance(Send send, std::uint32_t seed, engine::EventBus& events);
 
   GameInstance(const GameInstance&) = delete;
   GameInstance& operator=(const GameInstance&) = delete;
@@ -141,6 +148,7 @@ class GameInstance {
 
   Send send_;
   std::unique_ptr<game::World> world_;
+  engine::SystemScheduler systems_;
   PlayerRoster roster_;
   std::unique_ptr<ShipSpawnAnnouncer> shipSpawnAnnouncer_;
   std::unique_ptr<BydoSpawner> bydoSpawner_;

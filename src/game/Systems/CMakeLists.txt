@@ -1,4 +1,6 @@
 add_subdirectory(MovementSystem)
+add_subdirectory(PatternSystem)
+add_subdirectory(PlayfieldExitSystem)
 add_subdirectory(CollisionSystem)
 add_subdirectory(CollisionRules)
 add_subdirectory(DamageRules)

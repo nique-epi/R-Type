@@ -9,11 +9,14 @@
 #include "BydoSpawnerTestConstants.hpp"
 #include "DatagramCodec.hpp"
 #include "Endpoint.hpp"
+#include "Entity.hpp"
 #include "EntitySpawned.hpp"
+#include "EntityType.hpp"
 #include "JournalFile.hpp"
 #include "Logger.hpp"
 #include "MessageFrame.hpp"
 #include "MessagePayload.hpp"
+#include "MovementPattern.hpp"
 #include "OutgoingDatagram.hpp"
 #include "PlayerRoster.hpp"
 #include "PlayfieldConstants.hpp"
@@ -227,6 +230,30 @@ TEST_F(BydoSpawnerTest, TheSeedIsLogged) {
   const std::vector<std::string> lines = journal.lines();
   ASSERT_EQ(lines.size(), 1U);
   EXPECT_NE(lines.front().find(std::to_string(SOME_SEED)), std::string::npos);
+}
+
+/**
+ * Given a spawner and a player
+ * When three intervals have passed
+ * Then two Bydos go straight and one follows a wave: the kinds alternate,
+ * starting with the one that goes straight
+ */
+TEST_F(BydoSpawnerTest, KindsAlternateStartingWithTheOneThatGoesStraight) {
+  connect(FIRST_PLAYER);
+  BydoSpawner spawner = makeSpawner(SOME_SEED);
+
+  tick(spawner, 3 * testing::TICKS_PER_BYDO_INTERVAL);
+
+  std::size_t straight = 0;
+  std::size_t waves = 0;
+  world().components().forEach<game::MovementPattern, game::EntityType>(
+      [&straight, &waves](engine::Entity, const game::MovementPattern& pattern,
+                          const game::EntityType&) {
+        straight += pattern.shape == game::PatternShape::Straight;
+        waves += pattern.shape == game::PatternShape::Wave;
+      });
+  EXPECT_EQ(straight, 2U);
+  EXPECT_EQ(waves, 1U);
 }
 
 }  // namespace

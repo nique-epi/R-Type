@@ -15,7 +15,10 @@ namespace rtype::server {
  * simulation time, and tells the players about each one.
  *
  * A Bydo appears off screen past the right edge, at a height drawn from a
- * random generator (see game::bydoSpawnPosition). The generator starts from
+ * random generator (see game::bydoSpawnPosition). The kinds of Bydo alternate,
+ * starting with the Drifter, which goes straight; the Weaver follows a wave.
+ * The kind uses no random draw, so a seed still gives the same heights.
+ * The generator starts from
  * the seed given at construction, which is logged, so the same seed gives the
  * same heights in the same order. Every connected player is sent an
  * EntitySpawned for the Bydo, as the Entities section of the protocol page
@@ -50,6 +53,7 @@ class BydoSpawner {
   SendDatagram send_;
   logging::Logger logger_;
   std::mt19937 random_;
+  std::uint32_t spawnedCount_{0};
   engine::TimerScheduler timers_;
 };
 
