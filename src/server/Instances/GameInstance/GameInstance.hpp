@@ -16,6 +16,7 @@
 #include "MessageDispatcher.hpp"
 #include "MessageOrigin.hpp"
 #include "OutgoingDatagram.hpp"
+#include "PacketHeader.hpp"
 #include "PlayerInput.hpp"
 #include "PlayerRoster.hpp"
 #include "ReadyState.hpp"
@@ -125,6 +126,15 @@ class GameInstance {
    * another session token than the one of the player they come from.
    */
   [[nodiscard]] std::size_t foreignTokenCount() const;
+
+  /**
+   * @returns The header of the next datagram to the player of the game who
+   * sends from @p player, as sessionHeaderFor() gives it: the session token
+   * and the next sequence of that player, which then moves on by one, or a
+   * header without session when no player of the game sends from there.
+   */
+  [[nodiscard]] network::PacketHeader nextSessionHeaderFor(
+      const network::Endpoint& player);
 
   /**
    * @brief Gives @p player, who just took a place in roster(), a ship in the

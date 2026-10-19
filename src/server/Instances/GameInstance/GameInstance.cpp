@@ -91,6 +91,11 @@ std::size_t GameInstance::foreignTokenCount() const {
   return foreignTokenCount_;
 }
 
+network::PacketHeader GameInstance::nextSessionHeaderFor(
+    const network::Endpoint& player) {
+  return sessionHeaderFor(roster_, player);
+}
+
 void GameInstance::onPlayerJoined(ConnectedPlayer& player) {
   shipSpawnAnnouncer_->onPlayerJoined(player);
 }

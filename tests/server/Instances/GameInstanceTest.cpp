@@ -654,6 +654,23 @@ TEST_F(GameInstanceTest, ABydoThatLeavesOnTheLeftDoesNotStayInTheWorld) {
 }
 
 /**
+ * Given one connected player, sent the EntitySpawned of its ship
+ * When the header of the next datagram to its address is asked for
+ * Then it carries the session token of the player and its next sequence, 1,
+ * which then moves on by one
+ */
+TEST_F(GameInstanceTest, GivesTheNextSessionHeaderOfAPlayer) {
+  const ConnectedPlayer& player = join(FIRST_PLAYER);
+
+  const network::PacketHeader header =
+      game().nextSessionHeaderFor(playerEndpoint(FIRST_PLAYER));
+
+  EXPECT_EQ(header.sessionToken, testing::SESSION_TOKEN);
+  EXPECT_EQ(header.sequence, 1);
+  EXPECT_EQ(player.nextSequence, 2);
+}
+
+/**
  * Given one connected player who is not ready
  * When a tick runs
  * Then the player is sent the room, which lists it, not ready, under its
