@@ -82,6 +82,13 @@ std::string pilotCount(std::size_t count) {
          (count == 1 ? ONE_PILOT_TEXT : SEVERAL_PILOTS_TEXT);
 }
 
+/** @returns Where the bay of a slot starts: the bays stand side by side from
+ * the left of the area, HANGAR_BAY_GAP apart. */
+sf::Vector2i bayTopLeft(sf::IntRect area, int slot) {
+  return area.position +
+         sf::Vector2i(slot * (HANGAR_BAY_SIZE.x + HANGAR_BAY_GAP), 0);
+}
+
 }  // namespace
 
 LobbyScreen::LobbyScreen(IScreenNavigator& navigator,
@@ -171,38 +178,43 @@ void LobbyScreen::repaint() {
   menu_.setStatus(statusLine(players, ownNumber));
   canvas_->clear();
   menu_.paint(*canvas_);
-  paintBays(players, ownNumber);
+  paintBays();
   canvas_->write(pilotCount(players.size()), PILOT_COUNT_ANCHOR,
                  PILOT_COUNT_STYLE);
   canvas_->display();
 }
 
-void LobbyScreen::paintBays(std::span<const network::LobbyPlayer> players,
-                            std::uint8_t ownNumber) {
+void LobbyScreen::paintBays() {
   const std::optional<sf::IntRect> area = menu_.illustrationArea();
   if (!area.has_value()) {
     return;
   }
-  const std::optional<bool> requested = connection_->requestedReady();
   for (int slot = 0; slot < LOBBY_BAY_COUNT; ++slot) {
-    const auto number =
-        static_cast<std::uint8_t>(network::FIRST_PLAYER_NUMBER + slot);
-    HangarBay bay{.playerNumber = number, .color = slot, .pilot = std::nullopt};
-    if (const network::LobbyPlayer* player = playerNumbered(players, number);
-        player != nullptr) {
-      const bool isLocalPlayer = number == ownNumber;
-      bay.pilot = BayPilot{
-          .nickname = player->nickname,
-          .readiness = readinessOf(
-              *player, isLocalPlayer ? requested : std::optional<bool>()),
-          .isLocalPlayer = isLocalPlayer};
-    }
-    paintHangarBay(
-        *canvas_,
-        area->position +
-            sf::Vector2i(slot * (HANGAR_BAY_SIZE.x + HANGAR_BAY_GAP), 0),
-        bay, elapsed_, motion_);
+    paintHangarBay(*canvas_, bayTopLeft(*area, slot), bayOf(slot), elapsed_,
+                   motion_);
   }
+}
+
+HangarBay LobbyScreen::bayOf(int slot) const {
+  const auto number =
+      static_cast<std::uint8_t>(network::FIRST_PLAYER_NUMBER + slot);
+  HangarBay bay{.playerNumber = number, .color = slot, .pilot = std::nullopt};
+  const network::LobbyPlayer* player =
+      playerNumbered(connection_->lobbyPlayers(), number);
+  if (player != nullptr) {
+    bay.pilot = pilotOf(*player);
+  }
+  return bay;
+}
+
+BayPilot LobbyScreen::pilotOf(const network::LobbyPlayer& player) const {
+  const bool isLocalPlayer =
+      player.playerNumber == connection_->status().playerNumber;
+  const std::optional<bool> requested =
+      isLocalPlayer ? connection_->requestedReady() : std::nullopt;
+  return {.nickname = player.nickname,
+          .readiness = readinessOf(player, requested),
+          .isLocalPlayer = isLocalPlayer};
 }
 
 }  // namespace rtype::client

@@ -1,9 +1,7 @@
 #pragma once
 
 #include <SFML/Window/Keyboard.hpp>
-#include <cstdint>
 #include <memory>
-#include <span>
 #include <string>
 #include "IInterfaceCanvas.hpp"
 #include "IScreen.hpp"
@@ -18,6 +16,9 @@
 #include "TimeConstants.hpp"
 
 namespace rtype::client {
+
+struct BayPilot;
+struct HangarBay;
 
 /**
  * @brief The waiting room, pushed over the connection screen once the server
@@ -90,8 +91,18 @@ class LobbyScreen : public IScreen {
    * connection once per update. */
   void repaint();
 
-  void paintBays(std::span<const network::LobbyPlayer> players,
-                 std::uint8_t ownNumber);
+  /** @brief Paints one bay per player number, side by side in the
+   * illustration area of the menu. */
+  void paintBays();
+
+  /** @returns The bay of a slot, 0 to LOBBY_BAY_COUNT - 1: its player number,
+   * the color of its ship, and the pilot the server lists with that number,
+   * none while the bay is open. */
+  [[nodiscard]] HangarBay bayOf(int slot) const;
+
+  /** @returns The pilot of a bay as the server lists it; for the local player,
+   * the ready state asked for shows while the server lists another. */
+  [[nodiscard]] BayPilot pilotOf(const network::LobbyPlayer& player) const;
 
   IScreenNavigator* navigator_{};
   IServerConnection* connection_{};
