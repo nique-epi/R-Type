@@ -17,6 +17,7 @@ target_link_libraries(rtype_server_game_instance
     rtype_identifiers
     rtype_network_exceptions
     rtype_network_sequence_order
+    rtype_server_constants
 )
 
 rtype_enable_warnings(rtype_server_game_instance)

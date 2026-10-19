@@ -15,7 +15,14 @@ Why: red proofs rewrote sources of the user's working tree while the user built 
 4. **After any mutation run, prove the tree is back**: compare each touched file with its reference (the approved code, `git diff`), not just the exit code of the restore.
 5. **A build directory reconfigured or rebuilt by someone else during a run** (`CMakeCache.txt`, binaries at the root changing) invalidates the run from that point: tell the user first that their binary may hold an injected defect, rebuild it from the restored sources, then rerun the affected variants on the isolated copy.
 
+### A path left out of the copy is named whole
+
+1. **Each pattern that leaves a path out of the copy matches the whole path**: `^vcpkg$` for the submodule entry, `^docs/` for a folder, never a bare prefix such as `^vcpkg`, which also drops `vcpkg.json` and every root file that starts the same way.
+2. **Before configuring the copy, compare its root with the repository's**: take the root entries of the same tracked-and-untracked list the copy was made from (`git ls-files --cached --others --exclude-standard`), less the paths left out on purpose; each one must be in the copy. A plain `git ls-files` lists tracked paths only, so an untracked root file missing from the copy would pass. A missing manifest shows up later as a dependency CMake cannot find, never as a missing file.
+
 ## Example
 
 - ❌ **Before (wrong)**: 35 variants injected one by one into `src/client/Background/` of the user's checkout; the user runs `cmake --workflow --preset build` meanwhile, `build/` switches to Release, 11 variants fail with "No rule to make target", and `r-type_client` is rebuilt while a defect is in place.
 - ✅ **After (right)**: copy the sources to `<scratchpad>/red-proofs/`, configure the test preset there with its own build directory, check it is green, run the variants there; the user's tree and `build/` are never written.
+- ❌ **Before (wrong)**: `git ls-files … | grep -v -E '^(vcpkg|docs/)'` to leave the submodule out of the copy → `vcpkg.json` is dropped too, the configure of the copy fails on `Could not find a package configuration file provided by "asio"`.
+- ✅ **After (right)**: `grep -v -E '^(vcpkg$|docs/)'`, then the root of the copy compared with the root entries of `git ls-files --cached --others --exclude-standard` before configuring.

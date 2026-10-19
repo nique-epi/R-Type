@@ -1,31 +1,67 @@
 #include "GameInstance.hpp"
 #include <algorithm>
+#include <cstddef>
 #include <cstdint>
 #include <memory>
+#include <optional>
 #include <span>
+#include <string>
 #include <utility>
 #include <vector>
 #include "ConnectedPlayer.hpp"
 #include "DatagramCodec.hpp"
+#include "Endpoint.hpp"
 #include "EntityIdConstants.hpp"
 #include "GameInstanceConstants.hpp"
 #include "GameState.hpp"
 #include "IncomingDatagram.hpp"
+#include "MessageFrame.hpp"
 #include "MessageOrigin.hpp"
 #include "NetworkException.hpp"
 #include "PacketHeader.hpp"
+#include "PlayerInput.hpp"
 #include "PlayerRoster.hpp"
 #include "ReadyState.hpp"
 #include "SequenceOrder.hpp"
+#include "ServerConstants.hpp"
 #include "World.hpp"
 
 namespace rtype::server {
 
-GameInstance::GameInstance(Send send) : send_(std::move(send)) {
+namespace {
+
+/**
+ * @returns Whether @p input is newer than @p newest: no input was kept yet, or
+ * its number is higher. An input numbered like the one kept is not newer: it
+ * is that input again, or one the player did not send.
+ */
+bool isNewer(const network::PlayerInput& input,
+             const std::optional<network::PlayerInput>& newest) {
+  return !newest.has_value() || input.inputNumber > newest->inputNumber;
+}
+
+/**
+ * @returns Whether @p input holds other actions than @p newest, or no input
+ * was kept yet.
+ */
+bool changesActions(const network::PlayerInput& input,
+                    const std::optional<network::PlayerInput>& newest) {
+  return !newest.has_value() || input.actions != newest->actions;
+}
+
+}  // namespace
+
+GameInstance::GameInstance(Send send)
+    : send_(std::move(send)), logger_(std::string{INSTANCES_LOGGER_NAME}) {
   dispatcher_.registerHandler<network::ReadyState>(
       [this](const network::MessageOrigin& origin,
              const network::ReadyState& message) {
         applyReadyState(origin, message);
+      });
+  dispatcher_.registerHandler<network::PlayerInput>(
+      [this](const network::MessageOrigin& origin,
+             const network::PlayerInput& input) {
+        keepIfNewer(origin, input);
       });
   startNewWorld();
 }
@@ -38,13 +74,19 @@ PlayerRoster& GameInstance::roster() { return roster_; }
 
 game::World& GameInstance::world() { return *world_; }
 
+std::size_t GameInstance::foreignTokenCount() const {
+  return foreignTokenCount_;
+}
+
 void GameInstance::onPlayerJoined(ConnectedPlayer& player) {
   shipSpawnAnnouncer_->onPlayerJoined(player);
 }
 
 void GameInstance::onTick(
     std::span<const network::IncomingDatagram> datagrams) {
-  readReadyStates(datagrams);
+  for (const network::IncomingDatagram& datagram : datagrams) {
+    readPlayerDatagram(datagram);
+  }
   switch (state_) {
     case GameState::WaitingForPlayers:
       if (everyPlayerIsReady()) {
@@ -62,6 +104,7 @@ void GameInstance::onTick(
       }
       break;
   }
+  advanceLogWindow();
 }
 
 void GameInstance::finish() {
@@ -71,29 +114,57 @@ void GameInstance::finish() {
   }
 }
 
-void GameInstance::readReadyStates(
-    std::span<const network::IncomingDatagram> datagrams) {
-  for (const network::IncomingDatagram& datagram : datagrams) {
-    try {
-      const network::PacketHeader header =
-          network::DatagramCodec::decodeHeader(datagram.payload);
-      if (!network::DatagramCodec::speaksThisProtocol(header)) {
-        continue;
-      }
-      dispatcher_.dispatch(
-          network::MessageOrigin{.sender = datagram.sender, .header = header},
-          network::DatagramCodec::splitMessages(datagram.payload));
-    } catch (const network::NetworkException&) {
-      continue;
+void GameInstance::readPlayerDatagram(
+    const network::IncomingDatagram& datagram) {
+  try {
+    const network::PacketHeader header =
+        network::DatagramCodec::decodeHeader(datagram.payload);
+    if (!network::DatagramCodec::speaksThisProtocol(header)) {
+      return;
     }
+    const std::vector<network::MessageFrame> messages =
+        network::DatagramCodec::splitMessages(datagram.payload);
+    const ConnectedPlayer* const player = roster_.find(datagram.sender);
+    if (player == nullptr) {
+      return;
+    }
+    if (header.sessionToken != player->sessionToken) {
+      dropForeignToken(datagram.sender);
+      return;
+    }
+    dispatcher_.dispatch(
+        network::MessageOrigin{.sender = datagram.sender, .header = header},
+        messages);
+  } catch (const network::NetworkException&) {
+    return;
+  }
+}
+
+void GameInstance::dropForeignToken(const network::Endpoint& sender) {
+  ++foreignTokenCount_;
+  ++foreignTokensSinceLastLine_;
+  if (foreignTokenLoggedInWindow_) {
+    return;
+  }
+  logger_.debug("dropped a datagram from ", sender.address, " port ",
+                sender.port, " that carries another session token (",
+                foreignTokensSinceLastLine_, " since the previous line)");
+  foreignTokenLoggedInWindow_ = true;
+  foreignTokensSinceLastLine_ = 0;
+}
+
+void GameInstance::advanceLogWindow() {
+  ++ticksInLogWindow_;
+  if (ticksInLogWindow_ >= TICKS_PER_REPORT) {
+    ticksInLogWindow_ = 0;
+    foreignTokenLoggedInWindow_ = false;
   }
 }
 
 void GameInstance::applyReadyState(const network::MessageOrigin& origin,
                                    const network::ReadyState& message) {
   ConnectedPlayer* const player = roster_.find(origin.sender);
-  if (state_ != GameState::WaitingForPlayers || player == nullptr ||
-      origin.header.sessionToken != player->sessionToken) {
+  if (state_ != GameState::WaitingForPlayers || player == nullptr) {
     return;
   }
   if (player->newestReceivedSequence.has_value() &&
@@ -103,6 +174,19 @@ void GameInstance::applyReadyState(const network::MessageOrigin& origin,
   }
   player->newestReceivedSequence = origin.header.sequence;
   player->ready = message.ready;
+}
+
+void GameInstance::keepIfNewer(const network::MessageOrigin& origin,
+                               const network::PlayerInput& input) {
+  ConnectedPlayer* const player = roster_.find(origin.sender);
+  if (player == nullptr || !isNewer(input, player->newestInput)) {
+    return;
+  }
+  if (changesActions(input, player->newestInput)) {
+    logger_.debug("player ", static_cast<unsigned int>(player->playerNumber),
+                  " holds actions ", static_cast<unsigned int>(input.actions));
+  }
+  player->newestInput = input;
 }
 
 bool GameInstance::everyPlayerIsReady() {
