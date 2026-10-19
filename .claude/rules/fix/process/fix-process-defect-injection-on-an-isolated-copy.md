@@ -15,7 +15,16 @@ Why: red proofs rewrote sources of the user's working tree while the user built 
 4. **After any mutation run, prove the tree is back**: compare each touched file with its reference (the approved code, `git diff`), not just the exit code of the restore.
 5. **A build directory reconfigured or rebuilt by someone else during a run** (`CMakeCache.txt`, binaries at the root changing) invalidates the run from that point: tell the user first that their binary may hold an injected defect, rebuild it from the restored sources, then rerun the affected variants on the isolated copy.
 
+### The copy is synced without the dependency folders
+
+1. **Sync the copy with `rsync -a --delete`, excluding `/build/` and `/vcpkg/`**: the sandbox cannot write inside the `.app` bundle of the CMake that vcpkg downloaded, so a sync that includes `vcpkg/` leaves that tool broken in the copy, and its next configure fails with "expected this path to exist after extracting cmake".
+2. **When the copy's vcpkg tool is broken**, reconfigure the copy with `-DVCPKG_MANIFEST_INSTALL=OFF`: it reuses the packages already in its `build/vcpkg_installed/`, and nothing in the user's tree is touched.
+3. **After every sync, compare the copy with the tree** (`diff -rq`, excluding `build`, `vcpkg` and `.git`): it prints nothing before the first variant.
+4. **When the copy's `vcpkg` is a symbolic link to the tree's, exclude it as `--exclude=/vcpkg`, without the trailing slash**: a pattern ending in `/` matches folders only, so `--delete` removes the link, and the next configure fails on a missing `vcpkg/scripts/buildsystems/vcpkg.cmake`. Check `ls -l <copy>/vcpkg` after the sync.
+
 ## Example
 
 - ❌ **Before (wrong)**: 35 variants injected one by one into `src/client/Background/` of the user's checkout; the user runs `cmake --workflow --preset build` meanwhile, `build/` switches to Release, 11 variants fail with "No rule to make target", and `r-type_client` is rebuilt while a defect is in place.
 - ✅ **After (right)**: copy the sources to `<scratchpad>/red-proofs/`, configure the test preset there with its own build directory, check it is green, run the variants there; the user's tree and `build/` are never written.
+- ❌ **Before (wrong)**: `rsync -a --delete` of the whole tree into the copy, `vcpkg/` included → "Operation not permitted" inside `CMake.app`, then the copy's configure fails when a `CMakeLists.txt` changes.
+- ✅ **After (right)**: the sync excludes `/vcpkg/`; the broken copy is reconfigured with `-DVCPKG_MANIFEST_INSTALL=OFF`, then built and tested green before the variants.

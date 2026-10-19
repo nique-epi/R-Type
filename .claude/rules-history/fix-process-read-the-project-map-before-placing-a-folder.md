@@ -47,3 +47,14 @@ The neighbours were taken as the convention, while the map, the written rule, sa
 
 - ❌ **Before (wrong)**: `RecordingRowControl`, a `RowControl` subclass recording the keys that reach it, written in `tests/client/Widgets/` because `RecordingInterfaceCanvas` sits in `tests/client/Rendering/`.
 - ✅ **After (right)**: `tests/doubles/RecordingRowControl.{hpp,cpp}`, next to `RecordingSettingsStorage`; the doubles left in `tests/client/` reported.
+
+## Update (2026-10-17) — A test one folder too high
+
+### Context
+The client animations added `src/client/Rendering/Effects/`: `EffectConstants.hpp` and the class folder `EffectSpawner/`.
+
+### Mistake
+Their tests were written in `tests/client/Rendering/`, next to the other rendering tests. The placement review found that `project-layout.md:194` has `tests/` mirror `src/`, and that the tests of the nested folders `Rendering/Background/` and `Widgets/RowControls/` already mirror them.
+
+### Root cause
+The plan placed each test file by its neighbouring tests, never next to the folder of the code it tests.

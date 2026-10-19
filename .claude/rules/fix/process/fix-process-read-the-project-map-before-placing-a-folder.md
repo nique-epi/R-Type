@@ -19,9 +19,16 @@ Why: a plan put the starfield in a new `src/client/Background/` while `project-l
 2. **A test helper that only builds values** (`KeyPress`, `PointerEvents`, `MenuPainting`) stays next to the tests that use it.
 3. **Decide which of the two a new test file is before creating it**, and say it in the plan's tree.
 
+### A test file mirrors the folder of its source, nested modules included
+
+1. **The test of a class or a header of `src/<path>/` goes in `tests/<path>/`, every level of the path included**: the tests of `src/client/Rendering/Effects/` go in `tests/client/Rendering/Effects/`, as those of `Rendering/Background/` sit in `tests/client/Rendering/Background/`. A helper shared with the tests of the parent folder stays there and is reached through the include folders of the test target.
+2. **Write, next to each test file of the plan's tree, the source folder it tests**, and check that the two paths match.
+
 ## Example
 
 - ❌ **Before (wrong)**: plan with `src/client/Background/`, approved and coded; `project-layout.md` said `Rendering/  sprites, starfield, HUD, effects, lagometer`.
 - ✅ **After (right)**: `grep -n -i starfield docs/src/content/docs/*.md` → the map puts it in `Rendering/` → the plan writes `src/client/Rendering/Background/` and quotes the map line.
 - ❌ **Before (wrong)**: `RecordingRowControl`, a `RowControl` subclass recording the keys that reach it, written in `tests/client/Widgets/` because `RecordingInterfaceCanvas` sits in `tests/client/Rendering/`.
 - ✅ **After (right)**: `tests/doubles/RecordingRowControl.{hpp,cpp}`, next to `RecordingSettingsStorage`; the doubles left in `tests/client/` reported.
+- ❌ **Before (wrong)**: `EffectSpawnerTest.cpp` and `EffectConstantsTest.cpp` written in `tests/client/Rendering/`, next to the other rendering tests, while they test `src/client/Rendering/Effects/`.
+- ✅ **After (right)**: both in `tests/client/Rendering/Effects/`; `SheetPixels.hpp`, shared with `EntitySpritesTest.cpp`, stays in `tests/client/Rendering/`, added to the include folders of `client_animation_tests`.
