@@ -4,6 +4,7 @@
 #include "Entity.hpp"
 #include "EntityIdConstants.hpp"
 #include "EntityType.hpp"
+#include "Health.hpp"
 #include "NetworkIdentity.hpp"
 #include "Position.hpp"
 #include "World.hpp"
@@ -12,6 +13,7 @@ namespace {
 
 constexpr float SOME_X = 3.0F;
 constexpr float SOME_Y = 4.0F;
+constexpr int THREE_HEALTH_POINTS = 3;
 
 }  // namespace
 
@@ -122,4 +124,46 @@ TEST(World, ABydoAndAPlayerGetDistinctNetworkIds) {
       world.spawnBydo(rtype::game::Position{.x = SOME_X, .y = SOME_Y});
 
   EXPECT_NE(player, bydo);
+}
+
+/**
+ * Given an empty world
+ * When a Bydo is spawned
+ * Then it has three health points
+ */
+TEST(World, SpawnedBydoHasThreeHealthPoints) {
+  rtype::game::World world;
+
+  world.spawnBydo(rtype::game::Position{.x = SOME_X, .y = SOME_Y});
+
+  int bydosWithHealth = 0;
+  world.components().forEach<rtype::game::EntityType, rtype::game::Health>(
+      [&bydosWithHealth](rtype::engine::Entity /*entity*/,
+                         const rtype::game::EntityType& type,
+                         const rtype::game::Health& health) {
+        ++bydosWithHealth;
+        EXPECT_EQ(type, rtype::game::EntityType::Enemy);
+        EXPECT_EQ(health.points, THREE_HEALTH_POINTS);
+      });
+  EXPECT_EQ(bydosWithHealth, 1);
+}
+
+/**
+ * Given an empty world
+ * When the ship of a player is spawned
+ * Then it has no health: a hit costs a player a life, not health points
+ */
+TEST(World, SpawnedShipHasNoHealth) {
+  rtype::game::World world;
+
+  world.spawnPlayer(rtype::game::Position{.x = SOME_X, .y = SOME_Y});
+
+  int shipsWithHealth = 0;
+  world.components().forEach<rtype::game::EntityType, rtype::game::Health>(
+      [&shipsWithHealth](rtype::engine::Entity /*entity*/,
+                         const rtype::game::EntityType& /*type*/,
+                         const rtype::game::Health& /*health*/) {
+        ++shipsWithHealth;
+      });
+  EXPECT_EQ(shipsWithHealth, 0);
 }
