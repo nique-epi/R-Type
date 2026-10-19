@@ -1,4 +1,6 @@
 #include "BydoSpawner.hpp"
+#include <algorithm>
+#include <cmath>
 #include <cstdint>
 #include <random>
 #include <string>
@@ -34,7 +36,9 @@ void BydoSpawner::onTick() {
 
 void BydoSpawner::spawnOne() {
   std::uniform_real_distribution<float> unitDraw{0.0F, 1.0F};
-  const game::Position position = game::bydoSpawnPosition(unitDraw(random_));
+  const float highestDraw = std::nextafter(1.0F, 0.0F);
+  const game::Position position =
+      game::bydoSpawnPosition(std::min(unitDraw(random_), highestDraw));
   std::uint32_t networkId = 0;
   try {
     networkId = world_->spawnBydo(position);
