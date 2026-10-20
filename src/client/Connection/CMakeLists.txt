@@ -7,7 +7,10 @@ target_link_libraries(rtype_client_connection
     rtype_client_action_set
     rtype_engine_time
     rtype_network_connection_refused
+    rtype_network_entity_destroyed
+    rtype_network_entity_spawned
     rtype_network_lobby_state
+    rtype_network_protocol
     rtype_network_transport
 )
 

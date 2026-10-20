@@ -10,7 +10,9 @@
 #include "ActionSet.hpp"
 #include "ConnectionStatus.hpp"
 #include "Endpoint.hpp"
+#include "EntityMessage.hpp"
 #include "IDatagramLink.hpp"
+#include "IEntityMessageSource.hpp"
 #include "IPlayerInputLink.hpp"
 #include "IServerConnection.hpp"
 #include "IncomingDatagram.hpp"
@@ -53,6 +55,12 @@ namespace rtype::client {
  * session left; connect() then starts a new session: sequence 0, token 0 and
  * inputs from FIRST_INPUT_NUMBER again.
  *
+ * From the start of the game, it keeps the EntitySpawned, WorldState and
+ * EntityDestroyed of the server, in the order they arrived, until
+ * drainEntityMessages() hands them over; leaving the session drops those not
+ * handed over. The game screen drains them every frame, behind the options
+ * too, so they never pile up for longer than the loading of the game.
+ *
  * Only datagrams from the server being contacted, of this protocol and version
  * and whose messages add up to their end, are read; any other is ignored.
  * Once accepted, the connection keeps the session token the acceptance
@@ -60,9 +68,12 @@ namespace rtype::client {
  * another one.
  *
  * update() reads what arrived and sends what is due, once per frame;
- * sendPlayerInput() sends at once. Call both on the thread of the frame loop.
+ * sendPlayerInput() sends at once; drainEntityMessages() hands over what
+ * update() kept. Call them all on the thread of the frame loop.
  */
-class ServerConnection : public IServerConnection, public IPlayerInputLink {
+class ServerConnection : public IServerConnection,
+                         public IPlayerInputLink,
+                         public IEntityMessageSource {
  public:
   /**
    * @param link Where the datagrams go and come from; it must outlive the
@@ -95,6 +106,8 @@ class ServerConnection : public IServerConnection, public IPlayerInputLink {
   void update(engine::Duration elapsed);
 
   void sendPlayerInput(ActionSet held) override;
+
+  void drainEntityMessages(std::vector<EntityMessage>& destination) override;
 
   /**
    * @returns How many datagrams of the server were dropped since the
@@ -130,6 +143,11 @@ class ServerConnection : public IServerConnection, public IPlayerInputLink {
    * ready state asked for, which belonged to the waiting room. */
   void startGame();
 
+  /** @brief Keeps an entity message of the server until the next drain, once
+   * the game started; before, nothing is kept, since the first WorldState of
+   * the game lists every entity anyway. */
+  void keepEntityMessage(EntityMessage message);
+
   void sendRequest();
   void sendReadyState(bool ready);
 
@@ -144,7 +162,8 @@ class ServerConnection : public IServerConnection, public IPlayerInputLink {
   void repeatDeparture(engine::Duration elapsed);
 
   /** @brief Forgets the token, the sequences, the waiting room, the ready
-   * state asked for and the start of the game. */
+   * state asked for, the start of the game and the entity messages not handed
+   * over. */
   void forgetSession();
 
   /** @returns A header carrying the token of the session, 0 before it, and
@@ -182,6 +201,7 @@ class ServerConnection : public IServerConnection, public IPlayerInputLink {
   bool gameStarted_ = false;
   std::optional<Departure> departure_;
   std::vector<network::IncomingDatagram> received_;
+  std::vector<EntityMessage> entityMessages_;
 };
 
 }  // namespace rtype::client

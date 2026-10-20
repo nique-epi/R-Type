@@ -48,10 +48,12 @@ constexpr std::chrono::milliseconds PROTOCOL_REQUEST_INTERVAL{500};
 constexpr std::chrono::seconds PROTOCOL_ATTEMPT_TIMEOUT{5};
 
 /** @brief Sequences of the server's datagrams in a session: the acceptance,
- * then two more in the order they were sent. */
+ * then four more in the order they were sent. */
 constexpr std::uint16_t ACCEPTANCE_SEQUENCE = 0;
 constexpr std::uint16_t FIRST_SEQUENCE = 1;
 constexpr std::uint16_t SECOND_SEQUENCE = 2;
+constexpr std::uint16_t THIRD_SEQUENCE = 3;
+constexpr std::uint16_t FOURTH_SEQUENCE = 4;
 
 /** @brief Another player of the waiting room. */
 constexpr std::uint8_t OTHER_PLAYER_NUMBER = 1;

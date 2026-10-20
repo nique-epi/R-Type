@@ -1,5 +1,6 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include "EntityAnnouncements.hpp"
 #include "EntityIdConstants.hpp"
 #include "EntityReplicatorFixture.hpp"
 #include "EntityReplicatorTestConstants.hpp"
@@ -10,12 +11,12 @@
 using rtype::client::testing::APPLIED_TICK;
 using rtype::client::testing::BYDO_ID;
 using rtype::client::testing::BYDO_POSITION;
-using rtype::client::testing::destroyed;
 using rtype::client::testing::drawnAs;
 using rtype::client::testing::ENEMY_MISSILE_ID;
 using rtype::client::testing::ENEMY_MISSILE_POSITION;
 using rtype::client::testing::EntityReplicatorFixture;
 using rtype::client::testing::FIRST_POSITION;
+using rtype::client::testing::killed;
 using rtype::client::testing::listed;
 using rtype::client::testing::OLDER_TICK;
 using rtype::client::testing::PLAYER_MISSILE_ID;
@@ -197,7 +198,7 @@ TEST_F(EntityReplicatorFixture, DestroysTheEntityAnEntityDestroyedNames) {
   replicator().apply(
       spawned(SHIP_ID, WireEntityType::PlayerShip, FIRST_POSITION));
 
-  replicator().apply(destroyed(SHIP_ID));
+  replicator().apply(killed(SHIP_ID));
 
   EXPECT_EQ(entityCount(), 0U);
 }
@@ -213,7 +214,7 @@ TEST_F(EntityReplicatorFixture,
   replicator().apply(
       spawned(SHIP_ID, WireEntityType::PlayerShip, FIRST_POSITION));
 
-  replicator().apply(destroyed(UNANNOUNCED_ID));
+  replicator().apply(killed(UNANNOUNCED_ID));
 
   EXPECT_THAT(drawnEntities(),
               ElementsAre(drawnAs(EntityType::Player, FIRST_POSITION)));
@@ -228,7 +229,7 @@ TEST_F(EntityReplicatorFixture,
 TEST_F(EntityReplicatorFixture, RecreatesADestroyedEntityALateStateLists) {
   replicator().apply(
       spawned(SHIP_ID, WireEntityType::PlayerShip, FIRST_POSITION));
-  replicator().apply(destroyed(SHIP_ID));
+  replicator().apply(killed(SHIP_ID));
 
   replicator().apply(stateListing(
       APPLIED_TICK,

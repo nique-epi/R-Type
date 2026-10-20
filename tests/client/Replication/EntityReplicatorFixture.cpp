@@ -1,18 +1,13 @@
 #include "EntityReplicatorFixture.hpp"
 #include <cstddef>
-#include <cstdint>
 #include <ostream>
-#include <utility>
 #include <vector>
 #include "Entity.hpp"
-#include "EntityDestroyed.hpp"
 #include "EntityReplicator.hpp"
-#include "EntitySpawned.hpp"
 #include "EntitySprites.hpp"
 #include "EntityType.hpp"
 #include "Position.hpp"
 #include "Sprite.hpp"
-#include "WorldState.hpp"
 
 namespace rtype::client::testing {
 
@@ -29,35 +24,6 @@ DrawnEntity drawnAs(game::EntityType type, game::Position position) {
                      .assetId = sprite.assetId,
                      .frame = sprite.frame,
                      .layer = sprite.layer};
-}
-
-network::EntitySpawned spawned(std::uint32_t entityId,
-                               network::WireEntityType type,
-                               game::Position position) {
-  return network::EntitySpawned{.entityId = entityId,
-                                .entityType = type,
-                                .x = position.x,
-                                .y = position.y};
-}
-
-network::EntityState listed(std::uint32_t entityId,
-                            network::WireEntityType type,
-                            game::Position position) {
-  return network::EntityState{.entityId = entityId,
-                              .entityType = type,
-                              .x = position.x,
-                              .y = position.y};
-}
-
-network::WorldState stateListing(std::uint32_t tick,
-                                 std::vector<network::EntityState> entities) {
-  return network::WorldState{
-      .tick = tick, .players = {}, .entities = std::move(entities)};
-}
-
-network::EntityDestroyed destroyed(std::uint32_t entityId) {
-  return network::EntityDestroyed{.entityId = entityId,
-                                  .reason = network::DestructionReason::Killed};
 }
 
 EntityReplicator& EntityReplicatorFixture::replicator() { return replicator_; }

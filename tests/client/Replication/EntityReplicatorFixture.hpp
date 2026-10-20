@@ -2,20 +2,16 @@
 
 #include <gtest/gtest.h>
 #include <cstddef>
-#include <cstdint>
 #include <ostream>
 #include <string>
 #include <vector>
 #include "ComponentRegistry.hpp"
-#include "EntityDestroyed.hpp"
 #include "EntityRegistry.hpp"
 #include "EntityReplicator.hpp"
-#include "EntitySpawned.hpp"
 #include "EntityType.hpp"
 #include "Layer.hpp"
 #include "Position.hpp"
 #include "SpriteFrame.hpp"
-#include "WorldState.hpp"
 
 namespace rtype::client::testing {
 
@@ -43,31 +39,6 @@ void PrintTo(const DrawnEntity& entity, std::ostream* output);
  * sprite spriteOf() gives the type.
  */
 DrawnEntity drawnAs(game::EntityType type, game::Position position);
-
-/**
- * @returns An EntitySpawned announcing the entity.
- */
-network::EntitySpawned spawned(std::uint32_t entityId,
-                               network::WireEntityType type,
-                               game::Position position);
-
-/**
- * @returns The entity a WorldState lists.
- */
-network::EntityState listed(std::uint32_t entityId,
-                            network::WireEntityType type,
-                            game::Position position);
-
-/**
- * @returns A WorldState of tick @p tick listing @p entities, and no player.
- */
-network::WorldState stateListing(std::uint32_t tick,
-                                 std::vector<network::EntityState> entities);
-
-/**
- * @returns An EntityDestroyed naming the entity, killed.
- */
-network::EntityDestroyed destroyed(std::uint32_t entityId);
 
 /**
  * @brief The registries of a game screen and the replicator that fills them.
