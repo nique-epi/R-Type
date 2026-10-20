@@ -44,7 +44,6 @@ add_subdirectory(InterfaceCanvas)
 add_subdirectory(Squadron)
 add_subdirectory(EntityLayer)
 add_subdirectory(Effects)
-add_subdirectory(SpriteShowcase)
 add_subdirectory(Background)
 
 add_library(rtype_client_rendering INTERFACE)

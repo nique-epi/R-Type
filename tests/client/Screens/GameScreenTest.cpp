@@ -3,6 +3,7 @@
 #include <SFML/Window/Event.hpp>
 #include <SFML/Window/Keyboard.hpp>
 #include <chrono>
+#include <cstddef>
 #include <cstdint>
 #include <memory>
 #include <vector>
@@ -11,6 +12,10 @@
 #include "ComponentRegistry.hpp"
 #include "ConnectionConstants.hpp"
 #include "EffectConstants.hpp"
+#include "EffectLengths.hpp"
+#include "EntityAnnouncements.hpp"
+#include "EntityReplicatorTestConstants.hpp"
+#include "FakeEntityMessageSource.hpp"
 #include "GameScreen.hpp"
 #include "IEntityLayer.hpp"
 #include "IScreen.hpp"
@@ -24,25 +29,37 @@
 #include "ScreenId.hpp"
 #include "ScreenStack.hpp"
 #include "ScreenTestConstants.hpp"
-#include "ShowcaseTestConstants.hpp"
-#include "SpriteShowcaseConstants.hpp"
 #include "TimeConstants.hpp"
+#include "WorldState.hpp"
+#include "WorldStateFilterTestConstants.hpp"
 
 using rtype::client::BoundAction;
+using rtype::client::BYDO_EXPLOSION_FRAME;
 using rtype::client::GameScreen;
 using rtype::client::IEntityLayer;
 using rtype::client::IScreen;
 using rtype::client::OPTIONS_KEY;
 using rtype::client::PLAYER_INPUT_INTERVAL;
+using rtype::client::PLAYER_MUZZLE_FLASH_FRAME;
 using rtype::client::PLAYER_MUZZLE_FLASH_WITHOUT_FLASH_FRAME;
 using rtype::client::PlayerSettings;
 using rtype::client::ScreenId;
 using rtype::client::ScreenStack;
-using rtype::client::SHOWCASE_LOOP;
-using rtype::client::SHOWCASE_SHOTS_AT;
-using rtype::client::SPRITE_SHOWCASE;
+using rtype::client::testing::APPLIED_TICK;
+using rtype::client::testing::BYDO_ID;
+using rtype::client::testing::BYDO_POSITION;
+using rtype::client::testing::FIRST_POSITION;
+using rtype::client::testing::killed;
+using rtype::client::testing::listed;
+using rtype::client::testing::PLAYER_MISSILE_ID;
+using rtype::client::testing::removed;
+using rtype::client::testing::SHIP_ID;
+using rtype::client::testing::SHIP_POSITION;
+using rtype::client::testing::spawned;
+using rtype::client::testing::stateListing;
 using rtype::engine::ComponentRegistry;
 using rtype::engine::Duration;
+using rtype::network::WireEntityType;
 using ::testing::Contains;
 using ::testing::ElementsAre;
 using ::testing::IsEmpty;
@@ -54,10 +71,11 @@ constexpr int KEY_REPEATS = 3;
 constexpr int PAINTS_AT_CONSTRUCTION = 1;
 constexpr int PAINTS_AFTER_ONE_UPDATE = 2;
 constexpr int SHOWS_AFTER_ONE_DRAW = 1;
+constexpr std::size_t ENTITIES_LISTED = 2;
+constexpr std::size_t ENTITIES_LEFT_AFTER_ONE_REMOVAL = 1;
 constexpr std::uint8_t NOTHING_HELD = 0;
 constexpr std::uint8_t UP_BIT = 0b00001;
 constexpr std::uint8_t SHOOT_BIT = 0b10000;
-constexpr Duration BEFORE_THE_SHOTS = std::chrono::milliseconds(150);
 constexpr Duration LONG_FRAME = std::chrono::milliseconds(500);
 
 /** @brief An entity layer that ignores every request, for a game screen whose
@@ -68,8 +86,25 @@ class IgnoringEntityLayer : public IEntityLayer {
   void show([[maybe_unused]] sf::RenderTarget& target) const override {}
 };
 
+/** @brief What a game screen alone is built from, every part a double. */
+struct LoneGameParts {
+  RecordingNavigator navigator;
+  PlayerSettings settings;
+  RecordingPlayerInputLink inputs;
+  FakeEntityMessageSource entityMessages;
+
+  /** @returns The parts of a game screen, borrowing these doubles. */
+  [[nodiscard]] GameScreen::Parts parts() {
+    return GameScreen::Parts{.navigator = navigator,
+                             .settings = settings,
+                             .inputs = inputs,
+                             .entityMessages = entityMessages};
+  }
+};
+
 /** @brief The real game screen alone in a stack whose other screens are
- * recording doubles, with a recording entity layer. */
+ * recording doubles, with a recording entity layer and a source of entity
+ * messages the test fills. */
 class GameScreenTest : public ::testing::Test {
  protected:
   void SetUp() override {
@@ -89,16 +124,22 @@ class GameScreenTest : public ::testing::Test {
 
   PlayerSettings& settings() { return settings_; }
 
+  FakeEntityMessageSource& entityMessages() { return entityMessages_; }
+
  private:
   std::vector<JournalEntry> journal_;
   EntityLayerRecord layerRecord_;
   PlayerSettings settings_;
   RecordingPlayerInputLink inputs_;
+  FakeEntityMessageSource entityMessages_;
   ScreenStack screens_{[this](ScreenId screen) -> std::unique_ptr<IScreen> {
     if (screen == ScreenId::Game) {
       return std::make_unique<GameScreen>(
-          screens_, std::make_unique<RecordingEntityLayer>(layerRecord_),
-          settings_, inputs_);
+          GameScreen::Parts{.navigator = screens_,
+                            .settings = settings_,
+                            .inputs = inputs_,
+                            .entityMessages = entityMessages_},
+          std::make_unique<RecordingEntityLayer>(layerRecord_));
     }
     return std::make_unique<RecordingScreen>(screen, journal_);
   }};
@@ -164,11 +205,12 @@ TEST_F(GameScreenTest, OtherKeysLeaveTheOptionsClosed) {
 /**
  * Given a game screen just built
  * When nothing has updated it yet
- * Then its entity layer is already painted with every entity of the showcase
+ * Then its entity layer is already painted, empty until the server announces
+ * an entity
  */
 TEST_F(GameScreenTest, ANewGameIsPaintedBeforeItsFirstUpdate) {
   EXPECT_EQ(layerRecord().paintCount, PAINTS_AT_CONSTRUCTION);
-  EXPECT_EQ(layerRecord().framesAtLastPaint.size(), SPRITE_SHOWCASE.size());
+  EXPECT_THAT(layerRecord().framesAtLastPaint, IsEmpty());
 }
 
 /**
@@ -197,59 +239,99 @@ TEST_F(GameScreenTest, DrawingLaysTheEntityLayerOnTheTarget) {
 }
 
 /**
- * Given the game alone in the stack, its showcase about to fire
- * When the screens are updated frame by frame past the shots
- * Then the two muzzle flashes are painted with the showcase entities
+ * Given the game alone in the stack, and a WorldState of the server listing a
+ * ship and a Bydo
+ * When the screens are updated
+ * Then both entities are painted
  */
-TEST_F(GameScreenTest, TheShotsOfTheShowcaseArePainted) {
-  for (Duration played{}; played <= SHOWCASE_SHOTS_AT; played += ONE_FRAME) {
-    screens().update(ONE_FRAME);
-  }
+TEST_F(GameScreenTest, TheEntitiesAWorldStateListsArePainted) {
+  entityMessages().queue(stateListing(
+      APPLIED_TICK, {listed(SHIP_ID, WireEntityType::PlayerShip, SHIP_POSITION),
+                     listed(BYDO_ID, WireEntityType::Bydo, BYDO_POSITION)}));
+
+  screens().update(ONE_FRAME);
+
+  EXPECT_EQ(layerRecord().framesAtLastPaint.size(), ENTITIES_LISTED);
+}
+
+/**
+ * Given the game with a ship and a Bydo the server announced
+ * When the server removes the Bydo
+ * Then only the ship is painted
+ */
+TEST_F(GameScreenTest, AnEntityTheServerRemovesIsNoLongerPainted) {
+  entityMessages().queue(
+      spawned(SHIP_ID, WireEntityType::PlayerShip, SHIP_POSITION));
+  entityMessages().queue(spawned(BYDO_ID, WireEntityType::Bydo, BYDO_POSITION));
+  screens().update(ONE_FRAME);
+
+  entityMessages().queue(removed(BYDO_ID));
+  screens().update(ONE_FRAME);
 
   EXPECT_EQ(layerRecord().framesAtLastPaint.size(),
-            SPRITE_SHOWCASE.size() + MUZZLE_FLASHES_PER_SHOT);
+            ENTITIES_LEFT_AFTER_ONE_REMOVAL);
 }
 
 /**
- * Given the game alone in the stack
- * When it plays one whole loop of the showcase, frame by frame
- * Then every effect of the loop has ended, and only the showcase is painted
+ * Given the game with a Bydo the server announced
+ * When the server says the Bydo was killed
+ * Then the Bydo is gone and its explosion is painted
  */
-TEST_F(GameScreenTest, EveryEffectEndsWithinALoopOfTheShowcase) {
-  for (Duration played{}; played < SHOWCASE_LOOP; played += ONE_FRAME) {
+TEST_F(GameScreenTest, AKilledEntityLeavesItsExplosion) {
+  entityMessages().queue(spawned(BYDO_ID, WireEntityType::Bydo, BYDO_POSITION));
+  entityMessages().queue(killed(BYDO_ID));
+
+  screens().update(ONE_FRAME);
+
+  EXPECT_THAT(layerRecord().framesAtLastPaint,
+              ElementsAre(BYDO_EXPLOSION_FRAME));
+}
+
+/**
+ * Given the explosion of a killed Bydo, just painted
+ * When the game plays its length, frame by frame
+ * Then the explosion has ended and nothing is painted
+ */
+TEST_F(GameScreenTest, AnExplosionEndsAfterItsLength) {
+  entityMessages().queue(spawned(BYDO_ID, WireEntityType::Bydo, BYDO_POSITION));
+  entityMessages().queue(killed(BYDO_ID));
+  screens().update(ONE_FRAME);
+
+  for (Duration played{}; played < BYDO_EXPLOSION_LENGTH; played += ONE_FRAME) {
     screens().update(ONE_FRAME);
   }
 
-  EXPECT_EQ(layerRecord().framesAtLastPaint.size(), SPRITE_SHOWCASE.size());
+  EXPECT_THAT(layerRecord().framesAtLastPaint, IsEmpty());
 }
 
 /**
- * Given the game 150 ms into the showcase, its shots due at 200 ms
- * When one long frame of 500 ms comes, as after the window was dragged
- * Then the muzzle flashes born in that frame are painted once, though they
- * last 100 ms
+ * Given a player missile the server announced
+ * When the next update is one long frame of 500 ms, as after the window was
+ * dragged
+ * Then the muzzle flash born in that frame is painted, though it lasts 100 ms
  */
 TEST_F(GameScreenTest, AnEffectBornInALongFrameIsPaintedOnce) {
-  screens().update(BEFORE_THE_SHOTS);
+  entityMessages().queue(spawned(
+      PLAYER_MISSILE_ID, WireEntityType::PlayerMissile, FIRST_POSITION));
 
   screens().update(LONG_FRAME);
 
-  EXPECT_EQ(layerRecord().framesAtLastPaint.size(),
-            SPRITE_SHOWCASE.size() + MUZZLE_FLASHES_PER_SHOT);
+  EXPECT_THAT(layerRecord().framesAtLastPaint,
+              Contains(PLAYER_MUZZLE_FLASH_FRAME));
 }
 
 /**
  * Given the game running, and the player who turns REDUCE FLASHES on in the
  * options
- * When the showcase fires its missiles
- * Then the player muzzle flash shows its version without flash
+ * When the server announces a player missile
+ * Then its muzzle flash shows its version without flash
  */
 TEST_F(GameScreenTest, ReducingFlashesDuringTheGameAppliesToTheNextEffect) {
   settings().reduceFlashes = true;
+  entityMessages().queue(spawned(
+      PLAYER_MISSILE_ID, WireEntityType::PlayerMissile, FIRST_POSITION));
 
-  for (Duration played{}; played <= SHOWCASE_SHOTS_AT; played += ONE_FRAME) {
-    screens().update(ONE_FRAME);
-  }
+  screens().update(ONE_FRAME);
 
   EXPECT_THAT(layerRecord().framesAtLastPaint,
               Contains(PLAYER_MUZZLE_FLASH_WITHOUT_FLASH_FRAME));
@@ -261,11 +343,8 @@ TEST_F(GameScreenTest, ReducingFlashesDuringTheGameAppliesToTheNextEffect) {
  * Then both actions are held
  */
 TEST(GameScreenActionsTest, PressedKeysBecomeHeldActions) {
-  RecordingNavigator navigator;
-  const PlayerSettings settings;
-  RecordingPlayerInputLink inputs;
-  GameScreen game(navigator, std::make_unique<IgnoringEntityLayer>(), settings,
-                  inputs);
+  LoneGameParts doubles;
+  GameScreen game(doubles.parts(), std::make_unique<IgnoringEntityLayer>());
 
   game.handleEvent(keyPress(sf::Keyboard::Key::Up, sf::Keyboard::Scan::Up));
   game.handleEvent(
@@ -280,11 +359,8 @@ TEST(GameScreenActionsTest, PressedKeysBecomeHeldActions) {
  * Then nothing is held
  */
 TEST(GameScreenActionsTest, ReleasedKeyIsNoLongerHeld) {
-  RecordingNavigator navigator;
-  const PlayerSettings settings;
-  RecordingPlayerInputLink inputs;
-  GameScreen game(navigator, std::make_unique<IgnoringEntityLayer>(), settings,
-                  inputs);
+  LoneGameParts doubles;
+  GameScreen game(doubles.parts(), std::make_unique<IgnoringEntityLayer>());
   game.handleEvent(keyPress(sf::Keyboard::Key::Up, sf::Keyboard::Scan::Up));
 
   game.handleEvent(keyRelease(sf::Keyboard::Key::Up, sf::Keyboard::Scan::Up));
@@ -298,11 +374,8 @@ TEST(GameScreenActionsTest, ReleasedKeyIsNoLongerHeld) {
  * Then nothing is held
  */
 TEST(GameScreenActionsTest, LosingFocusReleasesTheHeldActions) {
-  RecordingNavigator navigator;
-  const PlayerSettings settings;
-  RecordingPlayerInputLink inputs;
-  GameScreen game(navigator, std::make_unique<IgnoringEntityLayer>(), settings,
-                  inputs);
+  LoneGameParts doubles;
+  GameScreen game(doubles.parts(), std::make_unique<IgnoringEntityLayer>());
   game.handleEvent(keyPress(sf::Keyboard::Key::Up, sf::Keyboard::Scan::Up));
 
   game.handleEvent(sf::Event{sf::Event::FocusLost{}});
@@ -316,11 +389,8 @@ TEST(GameScreenActionsTest, LosingFocusReleasesTheHeldActions) {
  * Then nothing is held
  */
 TEST(GameScreenActionsTest, KeysPressedWithoutFocusAreIgnored) {
-  RecordingNavigator navigator;
-  const PlayerSettings settings;
-  RecordingPlayerInputLink inputs;
-  GameScreen game(navigator, std::make_unique<IgnoringEntityLayer>(), settings,
-                  inputs);
+  LoneGameParts doubles;
+  GameScreen game(doubles.parts(), std::make_unique<IgnoringEntityLayer>());
   game.handleEvent(sf::Event{sf::Event::FocusLost{}});
 
   game.handleEvent(keyPress(sf::Keyboard::Key::Up, sf::Keyboard::Scan::Up));
@@ -334,11 +404,8 @@ TEST(GameScreenActionsTest, KeysPressedWithoutFocusAreIgnored) {
  * Then up is held
  */
 TEST(GameScreenActionsTest, KeysPressedAfterFocusGainedCount) {
-  RecordingNavigator navigator;
-  const PlayerSettings settings;
-  RecordingPlayerInputLink inputs;
-  GameScreen game(navigator, std::make_unique<IgnoringEntityLayer>(), settings,
-                  inputs);
+  LoneGameParts doubles;
+  GameScreen game(doubles.parts(), std::make_unique<IgnoringEntityLayer>());
   game.handleEvent(sf::Event{sf::Event::FocusLost{}});
   game.handleEvent(sf::Event{sf::Event::FocusGained{}});
 
@@ -353,11 +420,8 @@ TEST(GameScreenActionsTest, KeysPressedAfterFocusGainedCount) {
  * Then nothing is held any more
  */
 TEST(GameScreenActionsTest, OpeningTheOptionsReleasesTheHeldActions) {
-  RecordingNavigator navigator;
-  const PlayerSettings settings;
-  RecordingPlayerInputLink inputs;
-  GameScreen game(navigator, std::make_unique<IgnoringEntityLayer>(), settings,
-                  inputs);
+  LoneGameParts doubles;
+  GameScreen game(doubles.parts(), std::make_unique<IgnoringEntityLayer>());
   game.handleEvent(keyPress(sf::Keyboard::Key::Up, sf::Keyboard::Scan::Up));
 
   game.handleEvent(keyRelease(OPTIONS_KEY, sf::Keyboard::Scan::Escape));
@@ -371,12 +435,9 @@ TEST(GameScreenActionsTest, OpeningTheOptionsReleasesTheHeldActions) {
  * Then up is held
  */
 TEST(GameScreenActionsTest, AKeyChangedInTheOptionsMovesTheShip) {
-  RecordingNavigator navigator;
-  PlayerSettings settings;
-  settings.keys.bind(BoundAction::MoveUp, sf::Keyboard::Scan::W);
-  RecordingPlayerInputLink inputs;
-  GameScreen game(navigator, std::make_unique<IgnoringEntityLayer>(), settings,
-                  inputs);
+  LoneGameParts doubles;
+  doubles.settings.keys.bind(BoundAction::MoveUp, sf::Keyboard::Scan::W);
+  GameScreen game(doubles.parts(), std::make_unique<IgnoringEntityLayer>());
 
   game.handleEvent(keyPress(sf::Keyboard::Key::W, sf::Keyboard::Scan::W));
 
@@ -389,16 +450,13 @@ TEST(GameScreenActionsTest, AKeyChangedInTheOptionsMovesTheShip) {
  * Then an input holding up is sent at once
  */
 TEST(GameScreenInputsTest, TheFirstUpdateSendsTheActionsHeld) {
-  RecordingNavigator navigator;
-  const PlayerSettings settings;
-  RecordingPlayerInputLink inputs;
-  GameScreen game(navigator, std::make_unique<IgnoringEntityLayer>(), settings,
-                  inputs);
+  LoneGameParts doubles;
+  GameScreen game(doubles.parts(), std::make_unique<IgnoringEntityLayer>());
   game.handleEvent(keyPress(sf::Keyboard::Key::Up, sf::Keyboard::Scan::Up));
 
   game.update(ONE_FRAME);
 
-  EXPECT_THAT(inputs.sentActions(), ElementsAre(UP_BIT));
+  EXPECT_THAT(doubles.inputs.sentActions(), ElementsAre(UP_BIT));
 }
 
 /**
@@ -408,16 +466,13 @@ TEST(GameScreenInputsTest, TheFirstUpdateSendsTheActionsHeld) {
  */
 TEST(GameScreenInputsTest, AnUpdateWithinTheIntervalSendsNothingMore) {
   ASSERT_LT(ONE_FRAME + ONE_TICK, PLAYER_INPUT_INTERVAL);
-  RecordingNavigator navigator;
-  const PlayerSettings settings;
-  RecordingPlayerInputLink inputs;
-  GameScreen game(navigator, std::make_unique<IgnoringEntityLayer>(), settings,
-                  inputs);
+  LoneGameParts doubles;
+  GameScreen game(doubles.parts(), std::make_unique<IgnoringEntityLayer>());
   game.update(ONE_FRAME);
 
   game.update(ONE_TICK);
 
-  EXPECT_EQ(inputs.sentActions().size(), 1);
+  EXPECT_EQ(doubles.inputs.sentActions().size(), 1);
 }
 
 /**
@@ -426,15 +481,12 @@ TEST(GameScreenInputsTest, AnUpdateWithinTheIntervalSendsNothingMore) {
  * Then it sends an input with nothing held
  */
 TEST(GameScreenInputsTest, BehindTheOptionsItSendsNothingHeld) {
-  RecordingNavigator navigator;
-  const PlayerSettings settings;
-  RecordingPlayerInputLink inputs;
-  GameScreen game(navigator, std::make_unique<IgnoringEntityLayer>(), settings,
-                  inputs);
+  LoneGameParts doubles;
+  GameScreen game(doubles.parts(), std::make_unique<IgnoringEntityLayer>());
   game.handleEvent(keyPress(sf::Keyboard::Key::Up, sf::Keyboard::Scan::Up));
   game.handleEvent(keyRelease(OPTIONS_KEY, sf::Keyboard::Scan::Escape));
 
   game.update(ONE_FRAME);
 
-  EXPECT_THAT(inputs.sentActions(), ElementsAre(NOTHING_HELD));
+  EXPECT_THAT(doubles.inputs.sentActions(), ElementsAre(NOTHING_HELD));
 }
