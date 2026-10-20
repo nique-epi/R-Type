@@ -212,7 +212,8 @@ TEST(ClientLaunchOptions, UsageNamesEveryOption) {
   for (const std::string_view option :
        {ADDRESS_OPTION, PORT_OPTION, NICKNAME_OPTION, HELP_OPTION,
         rtype::logging::LEVEL_OPTION, rtype::logging::FILE_OPTION,
-        rtype::logging::NO_FILE_OPTION, rtype::logging::STDERR_OPTION}) {
+        rtype::logging::NO_FILE_OPTION, rtype::logging::STDERR_OPTION,
+        rtype::logging::NO_STDERR_OPTION}) {
     SCOPED_TRACE(option);
     EXPECT_NE(usage.find("\n  " + std::string(option)), std::string::npos);
   }

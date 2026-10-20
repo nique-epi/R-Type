@@ -19,13 +19,14 @@ namespace rtype::logging {
 class LogLaunchOptions {
  public:
   /**
-   * @brief Reads `--log-level <name>`, `--log-file <path>`, `--no-log-file`
-   *        and `--log-stderr` from @p arguments.
+   * @brief Reads `--log-level <name>`, `--log-file <path>`, `--no-log-file`,
+   *        `--log-stderr` and `--no-log-stderr` from @p arguments.
    *
    * Without options the journal is @p defaultFileName and standard error is
-   * off. The last of `--log-file` and `--no-log-file` wins. Arguments that do
-   * not start with `--log-` or `--no-log-` are kept for the program, see
-   * otherArguments().
+   * on, so a program launched from a terminal shows its lines there. The last
+   * of `--log-file` and `--no-log-file` wins, and so does the last of
+   * `--log-stderr` and `--no-log-stderr`. Arguments that do not start with
+   * `--log-` or `--no-log-` are kept for the program, see otherArguments().
    *
    * @param arguments the arguments after the program name. The options keep
    *        views on these strings: they must outlive the options.
@@ -46,10 +47,13 @@ class LogLaunchOptions {
       std::string_view defaultFileName);
 
   /**
-   * @brief Configures the Logger with the options read.
+   * @brief Configures the Logger with the options read, then writes at the
+   *        info level, under the module LOGGING_LOGGER_NAME, the absolute path
+   *        of the journal, or that there is none.
    *
    * @throws LogFileOpenException when the journal cannot be opened. The level
-   *         and the output of the Logger are then unchanged.
+   *         and the output of the Logger are then unchanged, and nothing is
+   *         written.
    */
   void apply() const;
 

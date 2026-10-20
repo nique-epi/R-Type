@@ -6,6 +6,7 @@
 #include <span>
 #include <string>
 #include <string_view>
+#include <system_error>
 #include <utility>
 #include <vector>
 #include "Logger.hpp"
@@ -48,6 +49,11 @@ void recordStderr(LaunchSettings& settings,
   settings.output.toStderr = true;
 }
 
+void recordNoStderr(LaunchSettings& settings,
+                    [[maybe_unused]] std::string_view value) {
+  settings.output.toStderr = false;
+}
+
 constexpr std::array launchOptions{
     LaunchOption{
         .name = LEVEL_OPTION, .takesValue = true, .record = recordLevel},
@@ -57,6 +63,9 @@ constexpr std::array launchOptions{
         .name = NO_FILE_OPTION, .takesValue = false, .record = recordNoFile},
     LaunchOption{
         .name = STDERR_OPTION, .takesValue = false, .record = recordStderr},
+    LaunchOption{.name = NO_STDERR_OPTION,
+                 .takesValue = false,
+                 .record = recordNoStderr},
 };
 
 std::optional<LaunchOption> findLaunchOption(std::string_view argument) {
@@ -92,6 +101,34 @@ std::string_view valueAfter(std::span<const std::string_view> arguments,
   return arguments[valueIndex];
 }
 
+/**
+ * @returns @p journal made absolute from the current directory, or @p journal
+ * itself when the current directory cannot be read.
+ */
+std::filesystem::path absoluteJournalPath(
+    const std::filesystem::path& journal) {
+  std::error_code error;
+  std::filesystem::path absolute = std::filesystem::absolute(journal, error);
+  if (error) {
+    return journal;
+  }
+  return absolute;
+}
+
+/**
+ * @brief Writes, at the info level, where the journal of @p output is, or
+ * that there is none, so a reader of either output knows where the other
+ * lines go.
+ */
+void announceJournal(const LogOutput& output) {
+  const Logger logger{std::string{LOGGING_LOGGER_NAME}};
+  if (!output.filePath.has_value()) {
+    logger.info("no journal file");
+    return;
+  }
+  logger.info("journal: ", absoluteJournalPath(*output.filePath).string());
+}
+
 }  // namespace
 
 LogLaunchOptions LogLaunchOptions::read(
@@ -99,7 +136,7 @@ LogLaunchOptions LogLaunchOptions::read(
     std::string_view defaultFileName) {
   LaunchSettings settings{
       .level = std::nullopt,
-      .output = LogOutput{.toStderr = false,
+      .output = LogOutput{.toStderr = true,
                           .filePath = std::filesystem::path(defaultFileName)}};
   std::vector<std::string_view> otherArguments;
   for (std::size_t index = 0; index < arguments.size(); ++index) {
@@ -135,6 +172,7 @@ void LogLaunchOptions::apply() const {
   if (level_.has_value()) {
     Logger::setLevel(*level_);
   }
+  announceJournal(output_);
 }
 
 std::span<const std::string_view> LogLaunchOptions::otherArguments() const {
@@ -153,7 +191,9 @@ std::string LogLaunchOptions::usage(std::string_view defaultFileName) {
       text, std::string(FILE_OPTION) + " <path>",
       "Journal to append to. Default: " + std::string(defaultFileName) + ".");
   appendUsageEntry(text, NO_FILE_OPTION, "Write no journal.");
-  appendUsageEntry(text, STDERR_OPTION, "Also write to standard error.");
+  appendUsageEntry(text, STDERR_OPTION,
+                   "Write to standard error too. This is the default.");
+  appendUsageEntry(text, NO_STDERR_OPTION, "Write nothing to standard error.");
   return text;
 }
 
