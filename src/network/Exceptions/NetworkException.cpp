@@ -71,7 +71,8 @@ TrailingBytesException::TrailingBytesException(std::size_t count)
 
 InvalidNicknameException::InvalidNicknameException(std::size_t size)
     : MalformedMessageException("a nickname of " + std::to_string(size) +
-                                " byte(s) is empty, too long or not UTF-8") {}
+                                " byte(s) is empty, too long, not UTF-8 or "
+                                "holds a control character") {}
 
 InvalidFieldValueException::InvalidFieldValueException(std::string_view field,
                                                        std::uint64_t value)

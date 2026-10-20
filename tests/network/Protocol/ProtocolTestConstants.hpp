@@ -33,6 +33,18 @@ constexpr std::string_view FOUR_ROCKETS =
 constexpr std::string_view ACCENTED_LETTER = "\xC3\xA9";
 
 /**
+ * @brief Nicknames holding a line feed, and one character at each edge of the
+ * control characters a nickname may not hold or just past it: U+0000, U+001F,
+ * the space U+0020, the tilde U+007E and the delete character U+007F.
+ */
+constexpr std::string_view NICKNAME_WITH_LINE_FEED = "Ace\nBoss";
+constexpr std::array NICKNAME_WITH_NULL_BYTES{'P', 'i', 'l', 'o', 't', '\0'};
+constexpr std::string_view NICKNAME_WITH_UNIT_SEPARATOR = "Pilot\x1F";
+constexpr std::string_view NICKNAME_WITH_SPACE = "Ace Pilot";
+constexpr std::string_view NICKNAME_WITH_TILDE = "Ace~Pilot";
+constexpr std::string_view NICKNAME_WITH_DELETE = "Pilot\x7F";
+
+/**
  * @brief Well-formed UTF-8 at the edges of the table of RFC 3629: the last
  * one-byte character, the first and last two-byte ones, the first three-byte
  * one, the last before the surrogates, the first after them, the first

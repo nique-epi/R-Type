@@ -48,7 +48,9 @@ float readCoordinate(ByteReader& reader);
 
 /**
  * @returns Whether @p nickname is a nickname the protocol accepts:
- * MINIMUM_NICKNAME_SIZE to MAXIMUM_NICKNAME_SIZE bytes of well-formed UTF-8.
+ * MINIMUM_NICKNAME_SIZE to MAXIMUM_NICKNAME_SIZE bytes of well-formed UTF-8,
+ * holding no control character (a byte below SPACE_BYTE, or DELETE_BYTE), so
+ * a nickname written in a log line cannot start a line of its own.
  */
 [[nodiscard]] bool isValidNickname(std::string_view nickname);
 

@@ -131,6 +131,15 @@ constexpr std::size_t MINIMUM_NICKNAME_SIZE = 1;
 constexpr std::size_t MAXIMUM_NICKNAME_SIZE = 16;
 
 /**
+ * @brief The control characters a nickname may not hold are the bytes below
+ * SPACE_BYTE, U+0000 to U+001F, and DELETE_BYTE, U+007F. In UTF-8 each of them
+ * is one byte of its own value, and every byte of a longer sequence is 0x80 or
+ * above, so reading the bytes finds exactly these characters.
+ */
+constexpr std::uint8_t SPACE_BYTE = 0x20;
+constexpr std::uint8_t DELETE_BYTE = 0x7F;
+
+/**
  * @brief The size of the smallest datagram holding a ConnectionRequest: a
  * cookie and a nickname of one byte.
  */

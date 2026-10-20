@@ -24,6 +24,7 @@
 #include "PacketHeader.hpp"
 #include "PlayerRoster.hpp"
 #include "ProtocolConstants.hpp"
+#include "ProtocolTestConstants.hpp"
 #include "ReadyState.hpp"
 #include "ServerDatagrams.hpp"
 #include "ServerLobbyTestConstants.hpp"
@@ -481,6 +482,27 @@ TEST_F(ConnectionAcceptorTest, IgnoresATruncatedDatagram) {
 TEST_F(ConnectionAcceptorTest, IgnoresARequestWithAnInvalidNickname) {
   EXPECT_NO_THROW(receive(playerEndpoint(0), emptyNicknameRequestDatagram()));
   EXPECT_TRUE(answers().empty());
+}
+
+/**
+ * Given a sender that got the challenge, and its request carrying the cookie
+ * of that challenge and a nickname holding a line feed
+ * When the acceptor receives the request
+ * Then it gets no other answer and takes no place: written in the log of the
+ * server, that nickname would start a line of its own
+ */
+TEST_F(ConnectionAcceptorTest, IgnoresARequestWhoseNicknameHoldsALineFeed) {
+  network::ByteWriter payload;
+  payload.writeUint64(challengeCookie(playerEndpoint(0)));
+  payload.writeString(network::testing::NICKNAME_WITH_LINE_FEED);
+
+  receive(playerEndpoint(0),
+          network::DatagramCodec::encode(
+              network::PacketHeader{}, network::MessageType::ConnectionRequest,
+              payload.bytes()));
+
+  EXPECT_EQ(answers().size(), 1U);
+  EXPECT_EQ(roster().find(playerEndpoint(0)), nullptr);
 }
 
 /**

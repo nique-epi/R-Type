@@ -23,6 +23,7 @@ using testing::byteSequence;
 using testing::CHALLENGE_DATAGRAM_SIZE_ON_THE_PAGE;
 using testing::FOUR_ROCKETS;
 using testing::LAST_PLAYER_NUMBER;
+using testing::NICKNAME_WITH_LINE_FEED;
 using testing::ONE_BYTE_NICKNAME;
 using testing::PLAYER_NUMBER_ABOVE_THE_LAST;
 using testing::REFUSAL_REASON_ABOVE_THE_LAST;
@@ -128,6 +129,20 @@ TEST(ConnectionRequest, RefusesToReadASeventeenByteNickname) {
   ByteWriter writer;
   writer.writeUint64(SOME_COOKIE);
   writer.writeString(SEVENTEEN_BYTE_NICKNAME);
+
+  EXPECT_THROW((void)decodeMessage<ConnectionRequest>(writer.bytes()),
+               InvalidNicknameException);
+}
+
+/**
+ * Given a payload whose nickname holds a line feed
+ * When it is decoded
+ * Then an InvalidNicknameException is raised
+ */
+TEST(ConnectionRequest, RefusesToReadANicknameHoldingALineFeed) {
+  ByteWriter writer;
+  writer.writeUint64(SOME_COOKIE);
+  writer.writeString(NICKNAME_WITH_LINE_FEED);
 
   EXPECT_THROW((void)decodeMessage<ConnectionRequest>(writer.bytes()),
                InvalidNicknameException);
