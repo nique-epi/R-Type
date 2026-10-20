@@ -3,6 +3,7 @@
 #include <SFML/Graphics/Rect.hpp>
 #include <cstdint>
 #include <optional>
+#include "AnimatedSprite.hpp"
 #include "EntityType.hpp"
 #include "Sprite.hpp"
 #include "SpriteAnimation.hpp"
@@ -32,6 +33,16 @@ namespace rtype::client {
  * value outside EntityType.
  */
 [[nodiscard]] std::optional<SpriteAnimation> animationOf(
+    game::EntityType type, std::uint32_t networkId);
+
+/**
+ * @brief What code that creates an entity gives it: the animation of
+ * animationOf(), and the sprite of spriteOf() showing the frame that animation
+ * starts on, so the first draw of the entity is already right.
+ *
+ * @returns Both, or nothing for a value outside EntityType.
+ */
+[[nodiscard]] std::optional<AnimatedSprite> animatedSpriteOf(
     game::EntityType type, std::uint32_t networkId);
 
 /** @returns The rectangle of a frame of a sheet, as SFML takes it. */

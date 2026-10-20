@@ -7,6 +7,7 @@
 #include <utility>
 #include <vector>
 #include "AllEntityTypes.hpp"
+#include "AnimatedSprite.hpp"
 #include "Animation.hpp"
 #include "EntitySpriteConstants.hpp"
 #include "EntitySpriteTestConstants.hpp"
@@ -19,6 +20,8 @@
 #include "SpriteFrame.hpp"
 #include "TimeConstants.hpp"
 
+using rtype::client::AnimatedSprite;
+using rtype::client::animatedSpriteOf;
 using rtype::client::Animation;
 using rtype::client::animationOf;
 using rtype::client::ENTITY_SHEET_ID;
@@ -290,4 +293,58 @@ TEST(EntitySprites, AStartOffsetStaysWithinOneCycle) {
  */
 TEST(EntitySprites, AValueOutsideTheEntityTypesHasNoAnimation) {
   EXPECT_FALSE(animationOf(FIRST_VALUE_AFTER_THE_LAST_TYPE, 0).has_value());
+}
+
+/**
+ * Given every entity type and every network id from 0 to 9999
+ * When the look of a new entity is looked up
+ * Then its sprite shows the frame its animation starts on
+ */
+TEST(EntitySprites, ANewEntityShowsTheFrameItsAnimationStartsOn) {
+  for (const EntityType type : ALL_ENTITY_TYPES) {
+    for (std::uint32_t networkId = 0; networkId < CHECKED_NETWORK_IDS;
+         ++networkId) {
+      const std::optional<AnimatedSprite> look =
+          animatedSpriteOf(type, networkId);
+      ASSERT_TRUE(look.has_value());
+      const AnimatedSprite started = look.value_or(AnimatedSprite{});
+
+      ASSERT_EQ(started.sprite.frame, startFrameOf(started.animation));
+    }
+  }
+}
+
+/**
+ * Given every entity type and every network id from 0 to 9999
+ * When the look of a new entity is looked up
+ * Then it plays the animation animationOf() gives, from the same offset
+ */
+TEST(EntitySprites, ANewEntityPlaysTheAnimationOfItsTypeAndId) {
+  for (const EntityType type : ALL_ENTITY_TYPES) {
+    for (std::uint32_t networkId = 0; networkId < CHECKED_NETWORK_IDS;
+         ++networkId) {
+      const std::optional<AnimatedSprite> look =
+          animatedSpriteOf(type, networkId);
+      const std::optional<SpriteAnimation> animation =
+          animationOf(type, networkId);
+      ASSERT_TRUE(look.has_value());
+      ASSERT_TRUE(animation.has_value());
+      const SpriteAnimation played = look.value_or(AnimatedSprite{}).animation;
+      const SpriteAnimation expected = animation.value_or(SpriteAnimation{});
+
+      ASSERT_EQ(played.animation.frames.data(),
+                expected.animation.frames.data());
+      ASSERT_EQ(played.elapsed, expected.elapsed);
+    }
+  }
+}
+
+/**
+ * Given a value past the last entity type, as a corrupted type would carry
+ * When the look of a new entity of it is looked up
+ * Then there is none
+ */
+TEST(EntitySprites, AValueOutsideTheEntityTypesHasNoLook) {
+  EXPECT_FALSE(
+      animatedSpriteOf(FIRST_VALUE_AFTER_THE_LAST_TYPE, 0).has_value());
 }

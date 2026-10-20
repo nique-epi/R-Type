@@ -1,5 +1,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include "AllEntityTypes.hpp"
+#include "EffectConstants.hpp"
 #include "EntityAnnouncements.hpp"
 #include "EntityIdConstants.hpp"
 #include "EntityReplicatorFixture.hpp"
@@ -8,10 +10,14 @@
 #include "WorldState.hpp"
 #include "WorldStateFilterTestConstants.hpp"
 
+using rtype::client::BYDO_EXPLOSION_FRAME;
+using rtype::client::ENEMY_MUZZLE_FLASH_FRAME;
+using rtype::client::PLAYER_MUZZLE_FLASH_FRAME;
 using rtype::client::testing::APPLIED_TICK;
 using rtype::client::testing::BYDO_ID;
 using rtype::client::testing::BYDO_POSITION;
 using rtype::client::testing::drawnAs;
+using rtype::client::testing::effectAt;
 using rtype::client::testing::ENEMY_MISSILE_ID;
 using rtype::client::testing::ENEMY_MISSILE_POSITION;
 using rtype::client::testing::EntityReplicatorFixture;
@@ -21,6 +27,7 @@ using rtype::client::testing::listed;
 using rtype::client::testing::OLDER_TICK;
 using rtype::client::testing::PLAYER_MISSILE_ID;
 using rtype::client::testing::PLAYER_MISSILE_POSITION;
+using rtype::client::testing::removed;
 using rtype::client::testing::SECOND_POSITION;
 using rtype::client::testing::SHIP_ID;
 using rtype::client::testing::SHIP_POSITION;
@@ -33,6 +40,7 @@ using rtype::game::EntityType;
 using rtype::identifiers::NO_ENTITY_ID;
 using rtype::network::WireEntityType;
 using ::testing::ElementsAre;
+using ::testing::IsEmpty;
 using ::testing::UnorderedElementsAre;
 
 /**
@@ -45,7 +53,7 @@ TEST_F(EntityReplicatorFixture, DrawsASpawnedEntityWhereTheServerPutsIt) {
   replicator().apply(spawned(BYDO_ID, WireEntityType::Bydo, FIRST_POSITION));
 
   EXPECT_THAT(drawnEntities(),
-              ElementsAre(drawnAs(EntityType::Enemy, FIRST_POSITION)));
+              ElementsAre(drawnAs(EntityType::Enemy, BYDO_ID, FIRST_POSITION)));
 }
 
 /**
@@ -56,20 +64,16 @@ TEST_F(EntityReplicatorFixture, DrawsASpawnedEntityWhereTheServerPutsIt) {
  * PlayerMissile, Bydo an Enemy, EnemyMissile an EnemyMissile
  */
 TEST_F(EntityReplicatorFixture, GivesEachTypeOfTheProtocolItsSprite) {
-  replicator().apply(
-      spawned(SHIP_ID, WireEntityType::PlayerShip, SHIP_POSITION));
-  replicator().apply(spawned(PLAYER_MISSILE_ID, WireEntityType::PlayerMissile,
-                             PLAYER_MISSILE_POSITION));
-  replicator().apply(spawned(BYDO_ID, WireEntityType::Bydo, BYDO_POSITION));
-  replicator().apply(spawned(ENEMY_MISSILE_ID, WireEntityType::EnemyMissile,
-                             ENEMY_MISSILE_POSITION));
+  announceOneOfEachType();
 
-  EXPECT_THAT(drawnEntities(),
-              UnorderedElementsAre(
-                  drawnAs(EntityType::Player, SHIP_POSITION),
-                  drawnAs(EntityType::PlayerMissile, PLAYER_MISSILE_POSITION),
-                  drawnAs(EntityType::Enemy, BYDO_POSITION),
-                  drawnAs(EntityType::EnemyMissile, ENEMY_MISSILE_POSITION)));
+  EXPECT_THAT(
+      drawnEntities(),
+      UnorderedElementsAre(drawnAs(EntityType::Player, SHIP_ID, SHIP_POSITION),
+                           drawnAs(EntityType::PlayerMissile, PLAYER_MISSILE_ID,
+                                   PLAYER_MISSILE_POSITION),
+                           drawnAs(EntityType::Enemy, BYDO_ID, BYDO_POSITION),
+                           drawnAs(EntityType::EnemyMissile, ENEMY_MISSILE_ID,
+                                   ENEMY_MISSILE_POSITION)));
 }
 
 /**
@@ -84,8 +88,8 @@ TEST_F(EntityReplicatorFixture, IgnoresASpawnNamingAnEntityItHas) {
   replicator().apply(
       spawned(SHIP_ID, WireEntityType::PlayerShip, SECOND_POSITION));
 
-  EXPECT_THAT(drawnEntities(),
-              ElementsAre(drawnAs(EntityType::Player, FIRST_POSITION)));
+  EXPECT_THAT(drawnEntities(), ElementsAre(drawnAs(EntityType::Player, SHIP_ID,
+                                                   FIRST_POSITION)));
 }
 
 /**
@@ -98,8 +102,8 @@ TEST_F(EntityReplicatorFixture, CreatesAnEntityAStateListsAndItDoesNotHave) {
       APPLIED_TICK,
       {listed(SHIP_ID, WireEntityType::PlayerShip, FIRST_POSITION)}));
 
-  EXPECT_THAT(drawnEntities(),
-              ElementsAre(drawnAs(EntityType::Player, FIRST_POSITION)));
+  EXPECT_THAT(drawnEntities(), ElementsAre(drawnAs(EntityType::Player, SHIP_ID,
+                                                   FIRST_POSITION)));
 }
 
 /**
@@ -115,8 +119,8 @@ TEST_F(EntityReplicatorFixture, MovesAnEntityItHasWhereAStatePutsIt) {
       APPLIED_TICK,
       {listed(SHIP_ID, WireEntityType::PlayerShip, SECOND_POSITION)}));
 
-  EXPECT_THAT(drawnEntities(),
-              ElementsAre(drawnAs(EntityType::Player, SECOND_POSITION)));
+  EXPECT_THAT(drawnEntities(), ElementsAre(drawnAs(EntityType::Player, SHIP_ID,
+                                                   SECOND_POSITION)));
 }
 
 /**
@@ -133,8 +137,8 @@ TEST_F(EntityReplicatorFixture, DoesNotMoveAnEntityBackForAnOlderState) {
       OLDER_TICK,
       {listed(SHIP_ID, WireEntityType::PlayerShip, FIRST_POSITION)}));
 
-  EXPECT_THAT(drawnEntities(),
-              ElementsAre(drawnAs(EntityType::Player, SECOND_POSITION)));
+  EXPECT_THAT(drawnEntities(), ElementsAre(drawnAs(EntityType::Player, SHIP_ID,
+                                                   SECOND_POSITION)));
 }
 
 /**
@@ -150,8 +154,8 @@ TEST_F(EntityReplicatorFixture, CreatesNothingForAnOlderState) {
   replicator().apply(stateListing(
       OLDER_TICK, {listed(BYDO_ID, WireEntityType::Bydo, SECOND_POSITION)}));
 
-  EXPECT_THAT(drawnEntities(),
-              ElementsAre(drawnAs(EntityType::Player, FIRST_POSITION)));
+  EXPECT_THAT(drawnEntities(), ElementsAre(drawnAs(EntityType::Player, SHIP_ID,
+                                                   FIRST_POSITION)));
 }
 
 /**
@@ -168,10 +172,10 @@ TEST_F(EntityReplicatorFixture, AppliesEveryPartOfAStateSentInSeveralParts) {
   replicator().apply(stateListing(
       APPLIED_TICK, {listed(BYDO_ID, WireEntityType::Bydo, SECOND_POSITION)}));
 
-  EXPECT_THAT(
-      drawnEntities(),
-      UnorderedElementsAre(drawnAs(EntityType::Player, FIRST_POSITION),
-                           drawnAs(EntityType::Enemy, SECOND_POSITION)));
+  EXPECT_THAT(drawnEntities(),
+              UnorderedElementsAre(
+                  drawnAs(EntityType::Player, SHIP_ID, FIRST_POSITION),
+                  drawnAs(EntityType::Enemy, BYDO_ID, SECOND_POSITION)));
 }
 
 /**
@@ -185,20 +189,20 @@ TEST_F(EntityReplicatorFixture, CreatesAnEntityListedTwiceInOneStateOnce) {
       {listed(SHIP_ID, WireEntityType::PlayerShip, FIRST_POSITION),
        listed(SHIP_ID, WireEntityType::PlayerShip, SECOND_POSITION)}));
 
-  EXPECT_THAT(drawnEntities(),
-              ElementsAre(drawnAs(EntityType::Player, SECOND_POSITION)));
+  EXPECT_THAT(drawnEntities(), ElementsAre(drawnAs(EntityType::Player, SHIP_ID,
+                                                   SECOND_POSITION)));
 }
 
 /**
  * Given a ship the client has
- * When an EntityDestroyed names it
+ * When an EntityDestroyed names it, removed
  * Then the entity no longer exists in the registry
  */
 TEST_F(EntityReplicatorFixture, DestroysTheEntityAnEntityDestroyedNames) {
   replicator().apply(
       spawned(SHIP_ID, WireEntityType::PlayerShip, FIRST_POSITION));
 
-  replicator().apply(killed(SHIP_ID));
+  replicator().apply(removed(SHIP_ID));
 
   EXPECT_EQ(entityCount(), 0U);
 }
@@ -216,8 +220,8 @@ TEST_F(EntityReplicatorFixture,
 
   replicator().apply(killed(UNANNOUNCED_ID));
 
-  EXPECT_THAT(drawnEntities(),
-              ElementsAre(drawnAs(EntityType::Player, FIRST_POSITION)));
+  EXPECT_THAT(drawnEntities(), ElementsAre(drawnAs(EntityType::Player, SHIP_ID,
+                                                   FIRST_POSITION)));
 }
 
 /**
@@ -235,8 +239,8 @@ TEST_F(EntityReplicatorFixture, RecreatesADestroyedEntityALateStateLists) {
       APPLIED_TICK,
       {listed(SHIP_ID, WireEntityType::PlayerShip, SECOND_POSITION)}));
 
-  EXPECT_THAT(drawnEntities(),
-              ElementsAre(drawnAs(EntityType::Player, SECOND_POSITION)));
+  EXPECT_THAT(drawnEntities(), ElementsAre(drawnAs(EntityType::Player, SHIP_ID,
+                                                   SECOND_POSITION)));
 }
 
 /**
@@ -264,4 +268,117 @@ TEST_F(EntityReplicatorFixture, CreatesNothingForATypeOutsideTheProtocol) {
       spawned(BYDO_ID, WIRE_TYPE_AFTER_THE_LAST, FIRST_POSITION));
 
   EXPECT_EQ(entityCount(), 0U);
+}
+
+/**
+ * Given a replicator that has applied nothing
+ * When one entity of each type of the protocol is announced
+ * Then every one of them plays an animation
+ */
+TEST_F(EntityReplicatorFixture, AnimatesEveryEntityItCreates) {
+  announceOneOfEachType();
+
+  EXPECT_EQ(animatedEntityCount(), ALL_ENTITY_TYPES.size());
+}
+
+/**
+ * Given a Bydo the client has, moved by a WorldState
+ * When an EntityDestroyed says it was killed
+ * Then the explosion of a Bydo starts where the Bydo stood last
+ */
+TEST_F(EntityReplicatorFixture, AKilledEntityLeavesItsExplosionWhereItStood) {
+  replicator().apply(spawned(BYDO_ID, WireEntityType::Bydo, FIRST_POSITION));
+  replicator().apply(stateListing(
+      APPLIED_TICK, {listed(BYDO_ID, WireEntityType::Bydo, SECOND_POSITION)}));
+
+  replicator().apply(killed(BYDO_ID));
+
+  EXPECT_THAT(drawnEffects(),
+              ElementsAre(effectAt(BYDO_EXPLOSION_FRAME, SECOND_POSITION)));
+}
+
+/**
+ * Given a Bydo the client has
+ * When an EntityDestroyed says it was removed, as past the left edge
+ * Then no effect starts: a removal shows nothing
+ */
+TEST_F(EntityReplicatorFixture, ARemovedEntityLeavesNoEffect) {
+  replicator().apply(spawned(BYDO_ID, WireEntityType::Bydo, FIRST_POSITION));
+
+  replicator().apply(removed(BYDO_ID));
+
+  EXPECT_THAT(drawnEffects(), IsEmpty());
+}
+
+/**
+ * Given a Bydo destroyed by the first copy of an EntityDestroyed saying it was
+ * killed
+ * When the second copy arrives
+ * Then one explosion plays, not two
+ */
+TEST_F(EntityReplicatorFixture, ALaterCopyOfAKillPlaysNoSecondExplosion) {
+  replicator().apply(spawned(BYDO_ID, WireEntityType::Bydo, FIRST_POSITION));
+  replicator().apply(killed(BYDO_ID));
+
+  replicator().apply(killed(BYDO_ID));
+
+  EXPECT_THAT(drawnEffects(),
+              ElementsAre(effectAt(BYDO_EXPLOSION_FRAME, FIRST_POSITION)));
+}
+
+/**
+ * Given a replicator that has applied nothing
+ * When an EntitySpawned announces a player missile
+ * Then the muzzle flash of a player missile starts where it appears
+ */
+TEST_F(EntityReplicatorFixture, AMissileItCreatesShowsItsMuzzleFlash) {
+  replicator().apply(spawned(PLAYER_MISSILE_ID, WireEntityType::PlayerMissile,
+                             FIRST_POSITION));
+
+  EXPECT_THAT(drawnEffects(),
+              ElementsAre(effectAt(PLAYER_MUZZLE_FLASH_FRAME, FIRST_POSITION)));
+}
+
+/**
+ * Given a replicator that has applied nothing, as after a lost EntitySpawned
+ * When a WorldState lists an enemy missile
+ * Then the muzzle flash of an enemy missile starts where it is created, as the
+ * protocol page asks
+ */
+TEST_F(EntityReplicatorFixture, AMissileAStateCreatesShowsItsMuzzleFlashToo) {
+  replicator().apply(stateListing(
+      APPLIED_TICK, {listed(ENEMY_MISSILE_ID, WireEntityType::EnemyMissile,
+                            FIRST_POSITION)}));
+
+  EXPECT_THAT(drawnEffects(),
+              ElementsAre(effectAt(ENEMY_MUZZLE_FLASH_FRAME, FIRST_POSITION)));
+}
+
+/**
+ * Given a player missile the client has
+ * When a later copy of its EntitySpawned arrives
+ * Then one muzzle flash plays, not two
+ */
+TEST_F(EntityReplicatorFixture, ALaterCopyOfASpawnPlaysNoSecondFlash) {
+  replicator().apply(spawned(PLAYER_MISSILE_ID, WireEntityType::PlayerMissile,
+                             FIRST_POSITION));
+
+  replicator().apply(spawned(PLAYER_MISSILE_ID, WireEntityType::PlayerMissile,
+                             FIRST_POSITION));
+
+  EXPECT_THAT(drawnEffects(),
+              ElementsAre(effectAt(PLAYER_MUZZLE_FLASH_FRAME, FIRST_POSITION)));
+}
+
+/**
+ * Given a replicator that has applied nothing
+ * When a ship and a Bydo are announced
+ * Then no effect starts: a ship and a Bydo appear without one
+ */
+TEST_F(EntityReplicatorFixture, AShipAndABydoAppearWithoutEffect) {
+  replicator().apply(
+      spawned(SHIP_ID, WireEntityType::PlayerShip, SHIP_POSITION));
+  replicator().apply(spawned(BYDO_ID, WireEntityType::Bydo, BYDO_POSITION));
+
+  EXPECT_THAT(drawnEffects(), IsEmpty());
 }
