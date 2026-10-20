@@ -3,7 +3,7 @@ title: Client
 description: What the client does, how its parts fit together and where to find them in the code.
 ---
 
-The client, `r-type_client` (`src/client/`), shows the game, plays its sounds and reads the player's input; the server decides what happens in the match (see [Architecture](/R-Type/architecture/)). Today it finds its assets folder, loads the assets of its interface, opens a window and runs its screens over a scrolling starfield: the title screen it opens on, a connection screen, a waiting room, a loading screen, the game screen, which draws its entities from one sprite sheet, animated, and their explosions and flashes from another (for now a provisional showcase), an options screen and a quit confirmation, the menus all built from the same widgets. The game screen reads the player's actions through the keys the player chose, the arrows and the space bar at first; the options change them, with the volumes, the window size and the accessibility settings, and save them in a file for the next launch. It reads the server's address and port and the player's nickname at launch, shows them on its connection screen, and joins the server from there: it sends the connection request of the protocol, on a network thread opened at launch, until the server accepts or refuses it. Once accepted, it opens a waiting room that lists the players of the server and where the player says it is ready, then the local game when the server announces its start; the entities the server announces, which the client can apply, never reach it yet.
+The client, `r-type_client` (`src/client/`), shows the game, plays its sounds and reads the player's input; the server decides what happens in the match (see [Architecture](/R-Type/architecture/)). Today it finds its assets folder, loads the assets of its interface, opens a window and runs its screens over a scrolling starfield: the title screen it opens on, a connection screen, a waiting room, a loading screen, the game screen, which draws the entities the server announces from one sprite sheet, animated, and their explosions and flashes from another, an options screen and a quit confirmation, the menus all built from the same widgets. The game screen reads the player's actions through the keys the player chose, the arrows and the space bar at first; the options change them, with the volumes, the window size and the accessibility settings, and save them in a file for the next launch. It reads the server's address and port and the player's nickname at launch, shows them on its connection screen, and joins the server from there: it sends the connection request of the protocol, on a network thread opened at launch, until the server accepts or refuses it. Once accepted, it opens a waiting room that lists the players of the server and where the player says it is ready, then the game when the server announces its start, where the ships and Bydos appear, move and disappear as the server says.
 
 This page tells you where to look when you need to change something. It describes what exists today and says plainly what does not exist yet.
 
@@ -22,17 +22,17 @@ This page tells you where to look when you need to change something. It describe
 | Drawing entities | Available; drawn by the game screen | `src/client/Rendering/EntityLayer/`, `src/client/Rendering/RenderSystem/`, `src/client/Rendering/SfmlDrawSurface/`, `src/client/Rendering/AssetTextureSource/` |
 | Sprites of the ships, Bydos and missiles | Available, animated | `assets/sprites/entities.png`, `src/client/Rendering/EntitySprites.cpp` |
 | Animations | Available; played by the game screen | `src/client/Rendering/Animation/`, `src/client/Rendering/AnimationSystem/` |
-| Explosions, impacts, muzzle flashes and hit flashes | Available; played by the provisional showcase only, since nothing from the server starts them yet | `assets/sprites/effects.png`, `src/client/Rendering/Effects/`, `src/client/Rendering/HitFlashSystem/` |
+| Explosions, impacts, muzzle flashes and hit flashes | Available; an explosion when the server says an entity was killed, a muzzle flash when a missile appears; nothing starts a hit flash yet | `assets/sprites/effects.png`, `src/client/Rendering/Effects/`, `src/client/Rendering/HitFlashSystem/` |
 | Scrolling background | Available; drawn by the frame loop under every screen | `src/client/Rendering/Background/` |
 | Pictures of the menus, pixel fonts | Available | `src/client/Rendering/InterfaceCanvas/`, `assets/fonts/` |
 | Squadron of the title screen | Available | `src/client/Rendering/Squadron/` |
-| Player commands | Available; read by the game screen, not sent to the server yet | `src/client/Input/` |
+| Player commands | Available; read by the game screen, which sends them to the server | `src/client/Input/` |
 | Key remapping | Available; set in the options, read by the game screen and the waiting room | `src/client/Input/` |
 | Network thread | Available; opened at launch | `src/client/Connection/NetworkThread/` |
 | Ignoring an old world state | Available; used by `EntityReplicator` | `src/client/Replication/WorldStateFilter/` |
-| Applying the entities the server announces | Available; nothing in the client calls it yet | `src/client/Replication/EntityReplicator/` |
+| Applying the entities the server announces | Available; used by the game screen | `src/client/Replication/EntityReplicator/` |
 | Server address, port and nickname at launch | Available; they fill the connection screen | `src/client/LaunchOptions/` |
-| Joining a server | Available: request, challenge, acceptance or refusal, then the waiting room, the ready state, the start of the game and leaving; the entities of a game are not read yet | `src/client/Connection/ServerConnection/` |
+| Joining a server | Available: request, challenge, acceptance or refusal, then the waiting room, the ready state, the start of the game, the entity messages of the game and leaving | `src/client/Connection/ServerConnection/` |
 | Sounds and music of the game | Not yet written | — |
 
 ## Frame loop and screens: `Application`, `ScreenStack`
@@ -47,7 +47,7 @@ Screens are asked for by identifier: `push()` and `replaceAll()` take a `ScreenI
 | `ConnectionScreen` | over the title, which it hides: a form centered on the picture, DIRECT CONNECT, the fields ADDRESS, PORT and PILOT, CONNECT and BACK, then a status line | BACK or Escape drops the attempt and closes it; once the server has accepted the player for `ACCEPTED_STATUS_DURATION` (1 s), it pushes the waiting room over it (`ScreenId::Lobby`), and leaves with it when the game starts |
 | `LobbyScreen` | over the connection screen, which it hides: WAITING ROOM, the number of pilots, a bay per player number, READY and the status line, BACK in the corner (see [Waiting room](#waiting-room-lobbyscreen)) | BACK or Escape leaves the server and closes it; once the connection learns that the game started, it asks `replaceAll(ScreenId::Game)` |
 | `LoadingScreen` | a progress bar; one file is loaded per frame | every file is loaded: it asks again, with `replaceAll()`, for the screen it loads for, which `createScreen()` now builds itself |
-| `GameScreen` | its entities, animated, and their effects, over the scrolling background (today the provisional sprite showcase); releasing `OPTIONS_KEY` (Escape) releases what the player holds and pushes the options over it (`ScreenId::GameOptions`) | not yet: the end of a game is not written |
+| `GameScreen` | the entities the server announces, animated, and their effects, over the scrolling background; releasing `OPTIONS_KEY` (Escape) releases what the player holds and pushes the options over it (`ScreenId::GameOptions`) | not yet: the end of a game is not written |
 | `OptionsScreen` | over the title, which it hides (`ScreenId::Options`), or over the game, which goes on running behind it, dimmed (`ScreenId::GameOptions`): SETTINGS, the tabs SOUND, CONTROLS, DISPLAY and ACCESS, a panel of rows, then BACK (see [Options](/R-Type/client/#options-optionsscreen)) | BACK, or Escape (`MENU_CANCEL_KEY`) once no list is open and no key is awaited, closes it |
 | `QuitConfirmationScreen` | over the title, still drawn under a dimmed layer, a panel: ARE YOU SURE YOU WANT TO QUIT?, NO selected | NO or Escape closes it; YES asks `closeAll()`, which closes the client |
 
@@ -124,7 +124,7 @@ Showing a new image takes four steps:
 
 ## Entity sprites: `spriteOf`, `animationOf`
 
-`spriteOf(type)` (`rtype_client_entity_sprites`) is the single table that gives each `EntityType` its `Sprite`: the entity sheet `sprites/entities.png` (`ENTITY_SHEET_ID`), the rectangle of the type, and the `Entities` layer. A value outside `EntityType` gets no sprite, never a neighbor's. Next to it, `rectangleOf(frame)` gives the rectangle of a frame as SFML takes it, and `inPlayerColorRow(frame, color)` moves a frame of the first ship down to the row of another player color, 0 to `PLAYER_COLOR_COUNT` − 1 (3): the squadron of the title and the bays of the waiting room draw the four ships with it. `EntityReplicator` calls it once per entity it creates, after turning the type number of the protocol into an `EntityType` (see [Entities from the server](#entities-from-the-server-entityreplicator)).
+`spriteOf(type)` (`rtype_client_entity_sprites`) is the single table that gives each `EntityType` its `Sprite`: the entity sheet `sprites/entities.png` (`ENTITY_SHEET_ID`), the rectangle of the type, and the `Entities` layer. A value outside `EntityType` gets no sprite, never a neighbor's. Next to it, `rectangleOf(frame)` gives the rectangle of a frame as SFML takes it, and `inPlayerColorRow(frame, color)` moves a frame of the first ship down to the row of another player color, 0 to `PLAYER_COLOR_COUNT` − 1 (3): the squadron of the title and the bays of the waiting room draw the four ships with it. `EntityReplicator` calls `animatedSpriteOf` (below) once per entity it creates, after turning the type number of the protocol into an `EntityType` (see [Entities from the server](#entities-from-the-server-entityreplicator)).
 
 | Type | Sprite | Native size, in pixels | On the playfield, in logical units | Frame time |
 |---|---|---|---|---|
@@ -133,11 +133,9 @@ Showing a new image takes four steps:
 | `PlayerMissile` | the player missile | 16 × 6 | 64 × 24 | 60 ms |
 | `EnemyMissile` | the enemy missile | 8 × 8 | 32 × 32 | 120 ms |
 
-`animationOf(type, networkId)` (same library) gives each type its animation from the same table: the two frames of its row of the sheet, in a loop, each shown for the frame time above (see [Animations](#animations-animation-animationsystem)). The loop of an entity starts at an offset taken from its network id, the fractional part of `networkId × LOOP_START_SPREAD` (φ − 1, about 0.618) of one cycle, so Bydos created in the same tick, whose ids follow each other, do not pulse together. The offset is 0 for id 0 and always less than one cycle. Code that creates an entity of a type gives it both, as the showcase does: the `SpriteAnimation` of `animationOf`, and the `Sprite` of `spriteOf` set to the frame that animation starts on, so the first draw already shows it.
+`animationOf(type, networkId)` (same library) gives each type its animation from the same table: the two frames of its row of the sheet, in a loop, each shown for the frame time above (see [Animations](#animations-animation-animationsystem)). The loop of an entity starts at an offset taken from its network id, the fractional part of `networkId × LOOP_START_SPREAD` (φ − 1, about 0.618) of one cycle, so Bydos created in the same tick, whose ids follow each other, do not pulse together. The offset is 0 for id 0 and always less than one cycle. Code that creates an entity of a type gives it both, and `animatedSpriteOf(type, networkId)` (same library) hands them over together as an `AnimatedSprite` (`src/client/Rendering/AnimatedSprite.hpp`): the `SpriteAnimation` of `animationOf`, and the `Sprite` of `spriteOf` set to the frame that animation starts on, so the first draw already shows it. `EntityReplicator` calls it for every entity it creates.
 
 The sheet and where it comes from are described in `assets/README.md`. Not yet done: the four players share the first ship color, though the sheet holds four; the bonus Bydo has no entity type. `client_rendering_tests` checks the table against the shipped sheet with `sf::Image`, which needs no graphics card: every rectangle lies inside the sheet, shows a visible pixel, cuts no sprite and overlaps no other type, and every frame of every animation lies inside the sheet, shows a visible pixel and cuts no sprite.
-
-The entities on screen today are a **provisional** showcase: `SpriteShowcase` (`src/client/Rendering/SpriteShowcase/`), owned by the game screen, puts a player ship, a player missile, an enemy missile and three Bydos across the middle of the playfield, with the network ids 1 to 6, all animated, and plays every effect in a loop of `SHOWCASE_LOOP` (4 s). Both missiles flash as if just fired at 0.2 s; an impact bursts on the left side of the first Bydo, which flashes, at 0.7 s and 1.3 s; that Bydo explodes and disappears at 2 s, the ship at 2.6 s; both come back at 3.6 s. A step plays when the time crosses it: a frame that crosses the end of the loop plays the steps of both loops in order, and one long frame plays one loop at most. The steps are `SHOWCASE_TIMELINE`, in `src/client/Rendering/SpriteShowcaseConstants.hpp`. The showcase will be removed once the client creates the entities the server announces.
 
 ## Animations and effects
 
@@ -159,7 +157,7 @@ constexpr Animation BYDO_ANIMATION{.frames = BYDO_FRAMES,
 
 An entity plays an animation through a `SpriteAnimation` component: the animation and the time since it started. `AnimationSystem` (`src/client/Rendering/AnimationSystem/`), an `ISystem`, adds the time of each step to it and writes the frame due into the `Sprite` of the entity. An entity whose animation played once has ended is destroyed, which is how an effect removes itself; the destruction waits until the walk over the components ends (see [Engine](/R-Type/engine/#changing-entities-during-a-query)).
 
-The game screen runs `AnimationSystem`, then `HitFlashSystem`, through a `SystemScheduler` (see [Engine](/R-Type/engine/#order-systemscheduler)) at the start of every `update()`, with the real time of the frame; then the showcase plays its steps, whose new effects start on their first frame; then the entity layer is painted. An effect born in a frame is therefore drawn at least once, however long the frame: a muzzle flash of 100 ms born in a frame of 500 ms, after the window was dragged, is still seen. `client_animation_tests` checks the animations, the effects and the showcase without a screen.
+The game screen runs `AnimationSystem`, then `HitFlashSystem`, through a `SystemScheduler` (see [Engine](/R-Type/engine/#order-systemscheduler)) at the start of every `update()`, with the real time of the frame; then it applies the entity messages of the server (see [Entities from the server](#entities-from-the-server-entityreplicator)), whose new effects start on their first frame; then the entity layer is painted. An effect born in a frame is therefore drawn at least once, however long the frame: a muzzle flash of 100 ms born in a frame of 500 ms, after the window was dragged, is still seen. `client_animation_tests` checks the animations and the effects without a screen.
 
 ### Effects: `EffectSpawner`
 
@@ -174,7 +172,7 @@ The game screen runs `AnimationSystem`, then `HitFlashSystem`, through a `System
 | `playAppearance(type, center)` | `Player`, `Enemy` | nothing |
 | `flashHit(entity)` | an alive entity with a `Sprite` | the entity drawn white for `HIT_FLASH_DURATION` (60 ms); a second hit starts it over |
 
-A value outside `EntityType` plays nothing, and `flashHit` leaves alone an entity that is dead or has no `Sprite`. Every call adds components, so none may be made during a `forEach`. The rows, frames and durations are in `src/client/Rendering/Effects/EffectConstants.hpp`, and the sheet is described in `assets/README.md`. Today only the showcase calls the spawner: the client reads no `EntityDestroyed`, `EntitySpawned` or `GameEvent` from the server yet, so none starts an effect.
+A value outside `EntityType` plays nothing, and `flashHit` leaves alone an entity that is dead or has no `Sprite`. Every call adds components, so none may be made during a `forEach`. The rows, frames and durations are in `src/client/Rendering/Effects/EffectConstants.hpp`, and the sheet is described in `assets/README.md`. `EntityReplicator` calls `playAppearance` for every entity it creates and `playExplosion` for an entity the server destroys as killed (see [Entities from the server](#entities-from-the-server-entityreplicator)). Nothing calls `flashHit` yet: the client does not read `GameEvent`.
 
 ### Hit flash: `HitFlash`, `HitFlashSystem`
 
@@ -346,7 +344,8 @@ Once accepted, the connection holds the session (see [Protocol](/R-Type/protocol
 - `lobbyPlayers()` lists the players of the newest `LobbyState`; until the first one, the accepted player alone, not ready.
 - `setReady(ready)` sends a `ReadyState` at once, then again every `READY_STATE_INTERVAL` (500 ms) while the waiting room shows another value for the player; `requestedReady()` returns the value last asked for.
 - A `GameStarted`, or a `WorldState` when the `GameStarted` was lost, sets `gameStarted()`, once per session, and forgets the ready state asked for.
-- Leaving the session, through `cancel()` or `connect()`, sends a `Disconnection` `DISCONNECTION_COPY_COUNT` (3) times, `DISCONNECTION_COPY_INTERVAL` (50 ms) apart, with the token of the session left, and forgets the waiting room, the request and the start; `connect()` then starts a new session, with sequence 0, token 0 and inputs numbered from `FIRST_INPUT_NUMBER` (1) again.
+- From the start of the game, it keeps every `EntitySpawned`, `WorldState` and `EntityDestroyed`, in the order they arrived, until `drainEntityMessages()` hands them to the game screen (see [Entities from the server](#entities-from-the-server-entityreplicator)). Before the start it keeps none, since the first `WorldState` of the game lists every entity. The game screen drains them every frame, behind the options too, so they wait no longer than the loading of the game.
+- Leaving the session, through `cancel()` or `connect()`, sends a `Disconnection` `DISCONNECTION_COPY_COUNT` (3) times, `DISCONNECTION_COPY_INTERVAL` (50 ms) apart, with the token of the session left, and forgets the waiting room, the request, the start and the entity messages not handed over; `connect()` then starts a new session, with sequence 0, token 0 and inputs numbered from `FIRST_INPUT_NUMBER` (1) again.
 
 It sends and receives through an `IDatagramLink` (`src/client/Connection/`): `NetworkThread` in the client, `RecordingDatagramLink` (`tests/doubles/`) in the tests. It sends no `Heartbeat` yet, and closing the client sends no `Disconnection`. The delays are **provisional**, like every delay of the protocol page: code must read the constants of `src/client/Connection/ConnectionConstants.hpp`.
 
@@ -482,7 +481,7 @@ UDP may deliver a datagram sent earlier after one sent later, and applying the o
 - The first state is always accepted, and a refused state does not lower the remembered tick.
 - Ticks are compared as plain integers, with no wrap-around: a 32-bit tick lasts 2.27 years at 60 ticks per second.
 - Call it only for datagrams that passed the checks on the sender, otherwise a forged datagram could raise the remembered tick and make every real state look old. `ServerConnection` checks the sender address, the protocol id, the version and the flags of a datagram, then, within a session, its token, so a datagram forged with the server's address but without the token never reaches it.
-- `EntityReplicator` calls it for every `WorldState` it is given (see below); nothing in the client gives it states yet.
+- `EntityReplicator` calls it for every `WorldState` the game screen hands it (see below).
 
 ```cpp
 const rtype::network::WorldState state =
@@ -496,30 +495,37 @@ if (!worldStateFilter.accept(state.tick)) {
 
 `EntityReplicator` (`rtype_client_entity_replicator`, `src/client/Replication/EntityReplicator/`) applies the entities the server announces to the registries of the game screen, so rendering only draws what the registries hold. It runs no rule of the game: where an entity is and when it disappears come from the server.
 
-- `apply(EntitySpawned)` creates the entity, unless the client already has it. A created entity gets a `Position`, in logical units, and the `Sprite` that `spriteOf` gives its type, and nothing else.
+- `apply(EntitySpawned)` creates the entity, unless the client already has it. A created entity gets a `Position`, in logical units, its `EntityType`, and the `Sprite` and `SpriteAnimation` that `animatedSpriteOf` gives its type and its network id, the sprite showing the frame the animation starts on, so its first draw is already right (see [Entity sprites](#entity-sprites-spriteof-animationof)).
 - `apply(WorldState)` moves every entity the state lists and creates those the client does not have, as after a lost `EntitySpawned`. A state older than the newest one applied is ignored (`WorldStateFilter`); an equal tick is another part of the same state and is applied.
-- `apply(EntityDestroyed)` destroys the entity it names; an id the client does not have changes nothing, so the later copies do nothing. An entity destroyed, then listed by a `WorldState` that arrives late, is created again, as the protocol asks; the next copy of the `EntityDestroyed` removes it.
+- `apply(EntityDestroyed)` destroys the entity it names; an id the client does not have changes nothing, so the later copies do nothing. `Killed` plays the explosion of its type where the entity stood; `Removed`, a Bydo past the left edge for instance, shows nothing. An entity destroyed, then listed by a `WorldState` that arrives late, is created again, as the protocol asks; the next copy of the `EntityDestroyed` removes it.
+- Every entity it creates plays its appearance (see [Effects](#effects-effectspawner)): the muzzle flash of a missile, nothing for a ship or a Bydo, also for an entity a `WorldState` creates after a lost `EntitySpawned`, as the protocol asks. A later copy of a message plays nothing again: it names an entity the client already has, or no longer has.
 - A message naming `NO_ENTITY_ID` or a type outside `WireEntityType` creates nothing.
 
-It binds the network id of each entity it creates in a `NetworkEntityTable`, so its entities must be destroyed through it. One replicator serves one game, because the ticks start again with each game. It is not thread-safe: the frame loop calls it, with messages whose sender passed the checks.
+It binds the network id of each entity it creates in a `NetworkEntityTable`, so its entities must be destroyed through it. One replicator serves one game, because the ticks start again with each game. It is not thread-safe: the frame loop calls it, outside any `forEach`, since every call may add components, and only with messages whose sender passed the checks.
 
-It does not yet remove an entity that no `WorldState` has listed for 900 ms (see [Protocol](/R-Type/protocol/#losses)): until then, an entity whose three `EntityDestroyed` were all lost stays on screen. It does not read the players of a `WorldState`, and plays no appearance or explosion effect. Nothing in the client calls it yet: `ServerConnection` reads a `WorldState` only to learn that the game started (see [Joining a server](#joining-a-server-serverconnection)). It is meant to be registered on the `MessageDispatcher` of the connection, once per message type; a type takes one handler, so the replicator will take over the one of `WorldState`:
+It does not yet remove an entity that no `WorldState` has listed for 900 ms (see [Protocol](/R-Type/protocol/#losses)): until then, an entity whose three `EntityDestroyed` were all lost stays on screen. It does not read the players of a `WorldState`, and starts no hit flash: the client does not read `GameEvent`.
+
+The game screen owns one replicator, built on its registries and its `EffectSpawner`, so each game starts with a new one. It takes the messages from an `IEntityMessageSource` (`src/client/Connection/`): `ServerConnection` in the client, which `Application` hands to the game screen with its inputs, and `FakeEntityMessageSource` (`tests/doubles/`) in the tests. An `EntityMessage` (`EntityMessage.hpp`) holds one `EntitySpawned`, `WorldState` or `EntityDestroyed`. The messages keep the order they arrived in, since a `WorldState` applied after an `EntityDestroyed` it predates would bring the entity back. Each `GameScreen::update()` hands them over after the systems and before the paint, so a new effect is drawn on its first frame:
 
 ```cpp
-rtype::client::EntityReplicator replicator{entities, components};
-dispatcher.registerHandler<rtype::network::WorldState>(
-    [&replicator](const rtype::network::MessageOrigin&,
-                  const rtype::network::WorldState& state) {
-      replicator.apply(state);
-    });
+entityMessageSource_->drainEntityMessages(receivedEntityMessages_);
+for (const EntityMessage& message : receivedEntityMessages_) {
+  std::visit([this](const auto& announced) { replicator_.apply(announced); },
+             message);
+}
+receivedEntityMessages_.clear();
 ```
+
+`client_replication_tests` checks the replicator, `client_connection_tests` what the connection keeps and hands over, and `client_screen_tests` the game screen fed by `FakeEntityMessageSource`.
 
 ## Where to intervene
 
 | You want to… | Look at |
 |---|---|
 | Change which world states the client ignores | `WorldStateFilter::accept` in `src/client/Replication/WorldStateFilter/` |
-| Change how the client applies the entities the server announces | `EntityReplicator` in `src/client/Replication/EntityReplicator/` |
+| Change how the client applies the entities the server announces, or the effects they play | `EntityReplicator` in `src/client/Replication/EntityReplicator/` |
+| Hand the game screen another message of the server | its type in `EntityMessage` (`src/client/Connection/EntityMessage.hpp`), its handler in `ServerConnection::registerSessionMessages()`, an `apply()` in `EntityReplicator` |
+| Test the game screen with entities of the server | `FakeEntityMessageSource` in `tests/doubles/`, as `tests/client/Screens/GameScreenTest.cpp` does |
 | Add an entity type to the protocol | `entityTypeOf` in `src/client/Replication/EntityReplicator/EntityReplicator.cpp` and `toWireEntityType` on the server, then `spriteOf` for its look |
 | Add an asset | A file in `assets/sprites/`, `sounds/`, `music/` or `fonts/`, and its id in `gameAssets()`, in `titleAssets()` for the title screen, or in `interfaceAssets()` for a font any screen may use (`src/client/Screens/ScreenAssets.cpp`); `client_screen_tests` loads `interfaceAssets()` for real, and the CI cannot create a texture |
 | Change the asset id rule | `isValidAssetId()` in `src/client/Assets/AssetIds.cpp`, `ASSET_ID_PUNCTUATION` in `AssetConstants.hpp`, and `assets/README.md` |
@@ -532,7 +538,6 @@ dispatcher.registerHandler<rtype::network::WorldState>(
 | Run a system in the game screen each frame | `systems_.add()` in the constructor of `GameScreen` (`src/client/Screens/GameScreen/`), and its library in that folder's `CMakeLists.txt` |
 | Change how entities are placed on the pixel grid | `SfmlDrawSurface::draw` in `src/client/Rendering/SfmlDrawSurface/` |
 | Change when the entities are painted and laid | `GameScreen::update()` and `GameScreen::draw()` in `src/client/Screens/GameScreen/`, `EntityLayer` in `src/client/Rendering/EntityLayer/` |
-| Remove the sprite showcase | `src/client/Rendering/SpriteShowcase/`, `SpriteShowcaseConstants.hpp` in `src/client/Rendering/`, the `showcase_` member of `GameScreen` and its call in `GameScreen::update()` |
 | Add a screen | A value of `ScreenId` (`src/client/Screens/ScreenId.hpp`) and its case in `Application::createScreen()` and in `nameOf()` of `tests/client/Screens/RecordingScreen.cpp`; a class implementing `IScreen` in its own folder under `src/client/Screens/`, whose `hidesScreensBelow()` says whether the screens under it stay drawn, taking an `IScreenNavigator` if it opens or closes screens, with its `CMakeLists.txt` target and `add_subdirectory` in `src/client/Screens/CMakeLists.txt`; the link in `src/client/Application/Application/CMakeLists.txt` |
 | Add a menu | A screen that builds a `Menu` with `MenuBuilder` (`src/client/Widgets/`), as `QuitConfirmationScreen` does |
 | Add a text field to a menu | `MenuBuilder::textField()` with a `TextField` (`src/client/Widgets/TextField/`), then `Menu::fieldText()`, as `ConnectionScreen` does |
@@ -575,4 +580,4 @@ dispatcher.registerHandler<rtype::network::WorldState>(
 | Test code that sends and receives without the network | `tests/doubles/RecordingDatagramLink.hpp`, as `tests/client/Connection/ServerConnectionTest.cpp` does |
 | Add a client error | `src/client/Exceptions/ClientException.hpp` |
 
-Each folder has its own `CMakeLists.txt` declaring one library; `src/client/Rendering/CMakeLists.txt` declares `rtype_client_entity_sprites` for the table and `rtype_client_fragment_shader` (`loadFragmentShader()`, which compiles the shaders of the menus and of the hit flash and logs why one cannot be used), and adds `Animation/`, `AnimationSystem/`, `HitFlashSystem/`, `RenderSystem/`, `SfmlDrawSurface/`, `AssetTextureSource/`, `PixelCanvas/`, `InterfaceCanvas/`, `Squadron/`, `EntityLayer/`, `Effects/`, `SpriteShowcase/` and `Background/`.
+Each folder has its own `CMakeLists.txt` declaring one library; `src/client/Rendering/CMakeLists.txt` declares `rtype_client_entity_sprites` for the table and `rtype_client_fragment_shader` (`loadFragmentShader()`, which compiles the shaders of the menus and of the hit flash and logs why one cannot be used), and adds `Animation/`, `AnimationSystem/`, `HitFlashSystem/`, `RenderSystem/`, `SfmlDrawSurface/`, `AssetTextureSource/`, `PixelCanvas/`, `InterfaceCanvas/`, `Squadron/`, `EntityLayer/`, `Effects/` and `Background/`.
