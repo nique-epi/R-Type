@@ -52,6 +52,30 @@ The arguments of a call are written one after the other; any type that can be wr
 
 The default level is `info`.
 
+## Repeated events: `ThrottledLog`
+
+Some events repeat as fast as someone on the network causes them, such as a datagram the server drops: one line each would let anyone flood the journal. `ThrottledLog` (`src/logging/ThrottledLog/`, in `rtype_logging`) writes such an event at the `debug` level at most once per interval.
+
+- The first event gets a line. The next line goes to the first event at least one interval after the previous line, so two lines are never closer than the interval, whatever the rate.
+- Every event is counted, and each line ends with how many happened since the previous line, this one included, so the events without a line still show.
+- The caller gives the time of each event, from any fixed origin that never goes back: the steady clock, the server's `IClock`, or the ticks a game ran. A test passes the time it wants.
+- It is not thread-safe: use one per thread.
+
+```cpp
+rtype::logging::ThrottledLog dropLog{"Server",
+                                     rtype::network::REJECTION_LINE_INTERVAL};
+dropLog.debug(clock.now(), "dropped a datagram from ", sender.address, " port ",
+              sender.port, ": ", reason);
+```
+
+A line then reads, for example:
+
+```
+[2026-10-20T09:12:04.118Z] [DEBUG] [Server] - dropped a datagram from 192.0.2.40 port 41001: its sender was not admitted, and it holds no connection request (12 since the previous line)
+```
+
+The parts of the network and of the server that drop what they receive use it with `REJECTION_LINE_INTERVAL` (10 s, `src/network/NetworkConstants.hpp`): see [Network](/R-Type/network/#dispatch-messagedispatcher) and [Server](/R-Type/server/#sorting-the-datagrams-datagramsorter).
+
 ## Choosing the level and the output at launch
 
 The client and the server read the same options:
