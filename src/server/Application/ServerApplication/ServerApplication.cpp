@@ -39,8 +39,10 @@ ServerApplication::ServerApplication(const network::Endpoint& localEndpoint,
       incoming_(INCOMING_DATAGRAM_QUEUE_CAPACITY),
       connectionRequests_(CONNECTION_REQUEST_QUEUE_CAPACITY),
       outgoing_(OUTGOING_DATAGRAM_QUEUE_CAPACITY),
-      sorter_(DatagramSorter::Destinations{
-          .players = &incoming_, .connectionRequests = &connectionRequests_}),
+      sorter_(DatagramSorter::Destinations{.players = &incoming_,
+                                           .connectionRequests =
+                                               &connectionRequests_},
+              clock_),
       relay_(socket_, incoming_, outgoing_),
       handleTick_(std::move(handleTick)) {}
 

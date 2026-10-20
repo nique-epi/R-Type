@@ -22,6 +22,12 @@ using testing::ILL_FORMED_UTF8;
 using testing::LARGEST_WIRE_COORDINATE;
 using testing::MINUS_ONE_UNIT;
 using testing::NEAREST_EIGHTH_OF_UNROUNDED_X;
+using testing::NICKNAME_WITH_DELETE;
+using testing::NICKNAME_WITH_LINE_FEED;
+using testing::NICKNAME_WITH_NULL_BYTES;
+using testing::NICKNAME_WITH_SPACE;
+using testing::NICKNAME_WITH_TILDE;
+using testing::NICKNAME_WITH_UNIT_SEPARATOR;
 using testing::ONE_BYTE_NICKNAME;
 using testing::SEVENTEEN_BYTE_NICKNAME;
 using testing::SIXTEEN_BYTE_NICKNAME;
@@ -281,6 +287,62 @@ TEST(WireTypes, RejectsANicknameOfSeventeenBytes) {
  */
 TEST(WireTypes, RejectsANicknameThatIsNotUtf8) {
   EXPECT_FALSE(isValidNickname(ILL_FORMED_UTF8.front()));
+}
+
+/**
+ * Given a nickname holding a line feed, U+000A
+ * When it is checked
+ * Then it is refused: written in a log line, it would start a line of its own
+ */
+TEST(WireTypes, RejectsANicknameHoldingALineFeed) {
+  EXPECT_FALSE(isValidNickname(NICKNAME_WITH_LINE_FEED));
+}
+
+/**
+ * Given a nickname holding U+0000, the first control character
+ * When it is checked
+ * Then it is refused
+ */
+TEST(WireTypes, RejectsANicknameHoldingTheNullCharacter) {
+  EXPECT_FALSE(isValidNickname(std::string_view{
+      NICKNAME_WITH_NULL_BYTES.data(), NICKNAME_WITH_NULL_BYTES.size()}));
+}
+
+/**
+ * Given a nickname holding U+001F, the last control character before the
+ * space
+ * When it is checked
+ * Then it is refused
+ */
+TEST(WireTypes, RejectsANicknameHoldingTheLastControlCharacterBeforeSpace) {
+  EXPECT_FALSE(isValidNickname(NICKNAME_WITH_UNIT_SEPARATOR));
+}
+
+/**
+ * Given a nickname holding a space, U+0020, just above the control characters
+ * When it is checked
+ * Then it is accepted
+ */
+TEST(WireTypes, AcceptsANicknameHoldingASpace) {
+  EXPECT_TRUE(isValidNickname(NICKNAME_WITH_SPACE));
+}
+
+/**
+ * Given a nickname holding a tilde, U+007E, just below the delete character
+ * When it is checked
+ * Then it is accepted
+ */
+TEST(WireTypes, AcceptsANicknameHoldingATilde) {
+  EXPECT_TRUE(isValidNickname(NICKNAME_WITH_TILDE));
+}
+
+/**
+ * Given a nickname holding the delete character, U+007F
+ * When it is checked
+ * Then it is refused
+ */
+TEST(WireTypes, RejectsANicknameHoldingTheDeleteCharacter) {
+  EXPECT_FALSE(isValidNickname(NICKNAME_WITH_DELETE));
 }
 
 }  // namespace

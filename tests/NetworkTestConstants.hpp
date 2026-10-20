@@ -32,3 +32,16 @@ constexpr std::size_t SMALL_PAYLOAD_SIZE = 16;
  */
 constexpr std::size_t OVERSIZED_PAYLOAD_SIZE =
     2 * rtype::network::MAX_DATAGRAM_SIZE;
+
+/**
+ * @brief How many datagrams too large a test sends at once, to check that
+ * they share one log line.
+ */
+constexpr std::size_t OVERSIZED_DATAGRAM_COUNT = 3;
+
+/**
+ * @brief Words of every log line about a datagram too large, which tell those
+ * lines apart from the others.
+ */
+constexpr std::string_view OVERSIZED_DATAGRAM_LINE_TEXT =
+    "dropped a datagram larger than";

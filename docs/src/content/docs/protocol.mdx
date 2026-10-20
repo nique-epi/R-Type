@@ -138,7 +138,7 @@ A connection takes two round trips, so that a forged address never gets a player
 
 How the server computes the cookie is its own business, as long as it keeps nothing per request and nobody can guess it: a keyed hash of the address, the port and the current 10-second window, with a secret drawn when the server starts, accepted during its window and the next one, does both.
 
-A player keeps the number given by `ConnectionAccepted` until it leaves; the number also picks the color of the player, so no color travels. The nickname travels only in `ConnectionRequest` and `LobbyState`, never during a game. Its limit is 16 bytes, not 16 characters: a letter without accent takes 1 byte, an accented letter 2 and some symbols up to 4, so each accent leaves room for one letter less. The text field of the client counts bytes and refuses a character that would not fit whole; the server drops a request whose nickname is empty, longer than 16 bytes or not valid UTF-8. The server answers a `ConnectionRequest` with a valid cookie from a sender it already accepted with the same `ConnectionAccepted` again, same number and same token.
+A player keeps the number given by `ConnectionAccepted` until it leaves; the number also picks the color of the player, so no color travels. The nickname travels only in `ConnectionRequest` and `LobbyState`, never during a game. Its limit is 16 bytes, not 16 characters: a letter without accent takes 1 byte, an accented letter 2 and some symbols up to 4, so each accent leaves room for one letter less. The text field of the client counts bytes and refuses a character that would not fit whole; the server drops a request whose nickname is empty, longer than 16 bytes, not valid UTF-8 or holds a control character, U+0000 to U+001F or U+007F, so a nickname can never start a line of its own in a log. The server answers a `ConnectionRequest` with a valid cookie from a sender it already accepted with the same `ConnectionAccepted` again, same number and same token.
 
 ### Inputs
 
@@ -277,7 +277,7 @@ This section gathers what each side does when something goes wrong, from a datag
 | Within a session, another `sessionToken`, or a `sequence` that is not newer | drops the datagram; a wrong token is counted | nothing |
 | A message of an unknown type | skips that message and reads the next one | nothing |
 | A message of a type that only the other side receives, such as `ConnectionAccepted` reaching the server or `PlayerInput` reaching a client | skips that message, as if its type were unknown | nothing |
-| A payload of the wrong size, or a value out of range: a `bool` other than 0 or 1, an enumeration value not listed, a bit 5 to 7 set in `actions`, a nickname that is empty, longer than 16 bytes or not UTF-8 | drops that message; the other messages of the datagram are read | nothing, even to a `ConnectionRequest` dropped this way |
+| A payload of the wrong size, or a value out of range: a `bool` other than 0 or 1, an enumeration value not listed, a bit 5 to 7 set in `actions`, a nickname that is empty, longer than 16 bytes, not UTF-8 or holding a control character (U+0000 to U+001F, U+007F) | drops that message; the other messages of the datagram are read | nothing, even to a `ConnectionRequest` dropped this way |
 | An entity of an unknown type in a `WorldState` | skips that entity and reads the next one (see [World state](#world-state)) | nothing |
 
 ### A message at the wrong moment

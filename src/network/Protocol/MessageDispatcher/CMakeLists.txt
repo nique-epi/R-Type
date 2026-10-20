@@ -6,6 +6,7 @@ target_link_libraries(rtype_network_message_dispatcher
   PUBLIC
     rtype_network_protocol
     rtype_network_exceptions
+    rtype_network_constants
     rtype_logging
 )
 

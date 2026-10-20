@@ -5,9 +5,13 @@ target_include_directories(rtype_server_datagram_sorter PUBLIC ${CMAKE_CURRENT_S
 target_link_libraries(rtype_server_datagram_sorter
   PUBLIC
     rtype_concurrency_bounded_queue
+    rtype_engine_time
+    rtype_logging
     rtype_network_transport
   PRIVATE
+    rtype_network_constants
     rtype_network_datagram_codec
+    rtype_server_constants
 )
 
 rtype_enable_warnings(rtype_server_datagram_sorter)

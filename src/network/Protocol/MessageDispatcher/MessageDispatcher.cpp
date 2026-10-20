@@ -1,5 +1,6 @@
 #include "MessageDispatcher.hpp"
 #include <any>
+#include <chrono>
 #include <cstddef>
 #include <cstdint>
 #include <span>
@@ -12,7 +13,8 @@
 namespace rtype::network {
 
 MessageDispatcher::MessageDispatcher()
-    : logger_(std::string{NETWORK_LOGGER_NAME}) {}
+    : rejectionLog_(std::string{NETWORK_LOGGER_NAME}, REJECTION_LINE_INTERVAL) {
+}
 
 void MessageDispatcher::dispatch(const MessageOrigin& origin,
                                  std::span<const MessageFrame> messages) {
@@ -49,18 +51,21 @@ void MessageDispatcher::dispatchOne(const MessageOrigin& origin,
 void MessageDispatcher::skipUnhandled(const MessageOrigin& origin,
                                       std::uint8_t type) {
   ++skippedMessageCount_;
-  logger_.debug("skipped a message of type ", static_cast<unsigned int>(type),
-                " from ", origin.sender.address, " port ", origin.sender.port,
-                ": no handler for that type");
+  rejectionLog_.debug(std::chrono::steady_clock::now().time_since_epoch(),
+                      "skipped a message of type ",
+                      static_cast<unsigned int>(type), " from ",
+                      origin.sender.address, " port ", origin.sender.port,
+                      ": no handler for that type");
 }
 
 void MessageDispatcher::dropMalformed(const MessageOrigin& origin,
                                       std::uint8_t type,
                                       const NetworkException& error) {
   ++malformedMessageCount_;
-  logger_.debug("dropped a message of type ", static_cast<unsigned int>(type),
-                " from ", origin.sender.address, " port ", origin.sender.port,
-                ": ", error.what());
+  rejectionLog_.debug(
+      std::chrono::steady_clock::now().time_since_epoch(),
+      "dropped a message of type ", static_cast<unsigned int>(type), " from ",
+      origin.sender.address, " port ", origin.sender.port, ": ", error.what());
 }
 
 }  // namespace rtype::network

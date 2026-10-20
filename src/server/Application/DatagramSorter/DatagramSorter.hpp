@@ -6,10 +6,13 @@
 #include <mutex>
 #include <optional>
 #include <span>
+#include <string_view>
 #include <vector>
 #include "BoundedQueue.hpp"
 #include "Endpoint.hpp"
+#include "IClock.hpp"
 #include "IncomingDatagram.hpp"
+#include "ThrottledLog.hpp"
 
 namespace rtype::server {
 
@@ -32,10 +35,13 @@ namespace rtype::server {
  * - to the player queue when its sender was admitted;
  * - nowhere otherwise.
  *
- * Every other datagram is dropped. The sorter reads the header and the
- * type of each message, never a payload, and throws nothing on a malformed
- * datagram, so its cost per datagram stays close to that of the copy into a
- * queue, whatever the datagram holds. Not thread-safe, except droppedCount(),
+ * Every other datagram is dropped. Besides the counts the server reports,
+ * each drop is logged at the debug level with its sender and why, at most
+ * once per REJECTION_LINE_INTERVAL (see ThrottledLog). The sorter reads the
+ * header and the type of each message, never a payload, throws nothing on a
+ * malformed datagram, and reads the clock only to drop one, so its cost per
+ * datagram stays close to that of the copy into a queue, whatever the
+ * datagram holds. Not thread-safe, except droppedCount(),
  * wrongTokenCount() and takeWrongTokenSender(): call the rest on the network
  * thread only.
  */
@@ -50,8 +56,12 @@ class DatagramSorter {
     concurrency::BoundedQueue<network::IncomingDatagram>* connectionRequests{};
   };
 
-  /** @param destinations Neither queue may be null. */
-  explicit DatagramSorter(Destinations destinations);
+  /**
+   * @param destinations Neither queue may be null.
+   * @param clock The time of the lines about the datagrams dropped; it must
+   * outlive the sorter.
+   */
+  DatagramSorter(Destinations destinations, const engine::IClock& clock);
 
   /**
    * @brief Puts a copy of @p datagram, sent by @p sender, in the queue it
@@ -99,15 +109,17 @@ class DatagramSorter {
 
   [[nodiscard]] const AdmittedPlayer* findAdmitted(
       const network::Endpoint& sender) const;
-  void drop();
+  void drop(const network::Endpoint& sender, std::string_view reason);
   void dropWrongToken(const network::Endpoint& sender);
 
   Destinations destinations_;
+  const engine::IClock* clock_;
   std::vector<AdmittedPlayer> admitted_;
   std::atomic<std::size_t> droppedCount_{0};
   std::atomic<std::size_t> wrongTokenCount_{0};
   std::mutex wrongTokenSenderMutex_;
   std::optional<network::Endpoint> wrongTokenSender_;
+  logging::ThrottledLog dropLog_;
 };
 
 }  // namespace rtype::server

@@ -121,8 +121,9 @@ class TrailingBytesException : public MalformedMessageException {
 };
 
 /**
- * @brief A nickname that is empty, longer than the protocol allows, or not
- * UTF-8, read from a payload or about to be written into one.
+ * @brief A nickname that is empty, longer than the protocol allows, not UTF-8,
+ * or holding a control character, read from a payload or about to be written
+ * into one.
  */
 class InvalidNicknameException : public MalformedMessageException {
  public:

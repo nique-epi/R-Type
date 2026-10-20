@@ -7,20 +7,26 @@
 #include <vector>
 #include "BoundedQueue.hpp"
 #include "DatagramSorter.hpp"
+#include "DebugJournal.hpp"
 #include "Endpoint.hpp"
 #include "IncomingDatagram.hpp"
+#include "NetworkConstants.hpp"
 #include "PacketHeader.hpp"
 #include "ProtocolConstants.hpp"
 #include "ServerConstants.hpp"
 #include "ServerDatagrams.hpp"
 #include "ServerLobbyTestConstants.hpp"
 #include "ServerTestConstants.hpp"
+#include "SimulatedClock.hpp"
+#include "TimeConstants.hpp"
 
 using rtype::concurrency::BoundedQueue;
 using rtype::network::Endpoint;
 using rtype::network::IncomingDatagram;
 using rtype::network::NO_SESSION_TOKEN;
 using rtype::server::DatagramSorter;
+using rtype::server::testing::DROPPED_DATAGRAM_LINE_TEXT;
+using rtype::server::testing::DROPPED_TOGETHER_COUNT;
 using rtype::server::testing::NEXT_PROTOCOL_VERSION;
 using rtype::server::testing::ONE_FLAG_SET;
 using rtype::server::testing::OTHER_PROTOCOL_ID;
@@ -69,6 +75,10 @@ class DatagramSorterTest : public ::testing::Test {
     sorter_.admit(endpoint, sessionToken);
   }
 
+  void advanceClock(rtype::engine::Duration elapsed) {
+    clock_.advance(elapsed);
+  }
+
   [[nodiscard]] std::size_t droppedCount() const {
     return sorter_.droppedCount();
   }
@@ -98,8 +108,23 @@ class DatagramSorterTest : public ::testing::Test {
       rtype::server::INCOMING_DATAGRAM_QUEUE_CAPACITY};
   BoundedQueue<IncomingDatagram> connectionRequests_{
       rtype::server::CONNECTION_REQUEST_QUEUE_CAPACITY};
-  DatagramSorter sorter_{DatagramSorter::Destinations{
-      .players = &players_, .connectionRequests = &connectionRequests_}};
+  SimulatedClock clock_;
+  DatagramSorter sorter_{
+      DatagramSorter::Destinations{.players = &players_,
+                                   .connectionRequests = &connectionRequests_},
+      clock_};
+};
+
+/** @brief The sorter, with the log written to a journal the test reads. */
+class DatagramSorterLogTest : public DatagramSorterTest {
+ protected:
+  /** @returns The lines of the journal about a datagram dropped. */
+  [[nodiscard]] std::vector<std::string> dropLines() const {
+    return journal_.linesHolding(DROPPED_DATAGRAM_LINE_TEXT);
+  }
+
+ private:
+  DebugJournal journal_;
 };
 
 }  // namespace
@@ -432,4 +457,80 @@ TEST_F(DatagramSorterTest, NamesNoSenderForAnotherDrop) {
   sort(stranger(), playerReady(OTHER_SESSION_TOKEN));
 
   EXPECT_EQ(takeWrongTokenSender(), std::nullopt);
+}
+
+/**
+ * Given a sorter that admitted nobody
+ * When a stranger sends a ReadyState
+ * Then the journal holds a line about the datagram dropped that names the
+ * address and the port of the stranger
+ */
+TEST_F(DatagramSorterLogTest, LogsADroppedDatagramWithItsSender) {
+  sort(stranger(), playerReady());
+
+  const std::vector<std::string> lines = dropLines();
+  ASSERT_EQ(lines.size(), 1U);
+  EXPECT_NE(lines.front().find(senderText(stranger())), std::string::npos);
+}
+
+/**
+ * Given an admitted player
+ * When a datagram arrives from the address of the player with another session
+ * token
+ * Then the journal holds a line about the datagram dropped that names that
+ * address and port
+ */
+TEST_F(DatagramSorterLogTest, LogsADatagramWithAnotherTokenWithItsSender) {
+  admit(player());
+
+  sort(player(), playerReady(OTHER_SESSION_TOKEN));
+
+  const std::vector<std::string> lines = dropLines();
+  ASSERT_EQ(lines.size(), 1U);
+  EXPECT_NE(lines.front().find(senderText(player())), std::string::npos);
+}
+
+/**
+ * Given an admitted player
+ * When the player sends a ReadyState and a stranger a connection request
+ * Then the journal holds no line about a datagram dropped: both went to a
+ * queue
+ */
+TEST_F(DatagramSorterLogTest, LogsNothingForTheDatagramsItQueues) {
+  admit(player());
+
+  sort(player(), playerReady());
+  sort(stranger(), requestDatagram());
+
+  EXPECT_TRUE(dropLines().empty());
+}
+
+/**
+ * Given a sorter that admitted nobody
+ * When a stranger sends DROPPED_TOGETHER_COUNT ReadyState at the same time
+ * Then the journal holds one line about them, not one per datagram: whoever
+ * floods the server cannot flood the log
+ */
+TEST_F(DatagramSorterLogTest, WritesOneLineForDatagramsDroppedTogether) {
+  for (std::size_t sent = 0; sent < DROPPED_TOGETHER_COUNT; ++sent) {
+    sort(stranger(), playerReady());
+  }
+
+  EXPECT_EQ(dropLines().size(), 1U);
+}
+
+/**
+ * Given a sorter that logged a datagram it dropped
+ * When the clock it was given moves on by REJECTION_LINE_INTERVAL and a
+ * stranger's datagram is dropped again
+ * Then the journal holds a second line: the interval is measured on that
+ * clock
+ */
+TEST_F(DatagramSorterLogTest, WritesTheNextLineOnceTheIntervalIsOver) {
+  sort(stranger(), playerReady());
+
+  advanceClock(rtype::network::REJECTION_LINE_INTERVAL);
+  sort(stranger(), playerReady());
+
+  EXPECT_EQ(dropLines().size(), 2U);
 }

@@ -1,10 +1,13 @@
 #include "GameInstance.hpp"
 #include <algorithm>
+#include <chrono>
 #include <cstdint>
 #include <memory>
 #include <optional>
+#include <ratio>
 #include <span>
 #include <string>
+#include <string_view>
 #include <utility>
 #include <vector>
 #include "ConnectedPlayer.hpp"
@@ -18,6 +21,7 @@
 #include "MessageFrame.hpp"
 #include "MessageOrigin.hpp"
 #include "MovementSystem.hpp"
+#include "NetworkConstants.hpp"
 #include "NetworkException.hpp"
 #include "PacketHeader.hpp"
 #include "PatternSystem.hpp"
@@ -33,6 +37,14 @@
 namespace rtype::server {
 
 namespace {
+
+/**
+ * @brief A count of simulation ticks, as a duration: converted to nanoseconds,
+ * a whole number of seconds of ticks gives exactly that many seconds.
+ */
+using SimulationTicks = std::chrono::duration<
+    std::uint64_t, std::ratio<1, static_cast<std::intmax_t>(
+                                     engine::SIMULATION_TICKS_PER_SECOND)>>;
 
 /**
  * @returns Whether @p input is newer than @p newest: no input was kept yet, or
@@ -60,6 +72,8 @@ GameInstance::GameInstance(Send send, std::uint32_t seed,
     : send_(std::move(send)),
       worldStateSender_(roster_, send_),
       seed_(seed),
+      rejectionLog_(std::string{INSTANCES_LOGGER_NAME},
+                    network::REJECTION_LINE_INTERVAL),
       logger_(std::string{INSTANCES_LOGGER_NAME}) {
   systems_.add(std::make_unique<game::PatternSystem>());
   systems_.add(std::make_unique<game::MovementSystem>());
@@ -123,6 +137,7 @@ void GameInstance::onTick(
   if (state_ == GameState::InProgress) {
     worldStateSender_.onTick(tick_, world_->components());
   }
+  ++ticksRun_;
 }
 
 void GameInstance::finish() {
@@ -134,24 +149,38 @@ void GameInstance::finish() {
 
 void GameInstance::readPlayerDatagram(
     const network::IncomingDatagram& datagram) {
+  network::PacketHeader header;
+  std::vector<network::MessageFrame> messages;
   try {
-    const network::PacketHeader header =
-        network::DatagramCodec::decodeHeader(datagram.payload);
+    header = network::DatagramCodec::decodeHeader(datagram.payload);
     if (!network::DatagramCodec::speaksThisProtocol(header)) {
+      drop(datagram.sender,
+           "its header is not of this protocol and version, or has a flag set");
       return;
     }
-    const std::vector<network::MessageFrame> messages =
-        network::DatagramCodec::splitMessages(datagram.payload);
-    const ConnectedPlayer* const player = roster_.find(datagram.sender);
-    if (player == nullptr) {
-      return;
-    }
-    dispatcher_.dispatch(
-        network::MessageOrigin{.sender = datagram.sender, .header = header},
-        messages);
-  } catch (const network::NetworkException&) {
+    messages = network::DatagramCodec::splitMessages(datagram.payload);
+  } catch (const network::NetworkException& error) {
+    drop(datagram.sender, error.what());
     return;
   }
+  if (roster_.find(datagram.sender) == nullptr) {
+    drop(datagram.sender, "its sender is not a player of this game");
+    return;
+  }
+  dispatcher_.dispatch(
+      network::MessageOrigin{.sender = datagram.sender, .header = header},
+      messages);
+}
+
+void GameInstance::drop(const network::Endpoint& sender,
+                        std::string_view reason) {
+  rejectionLog_.debug(timeRun(), "dropped a datagram from ", sender.address,
+                      " port ", sender.port, ": ", reason);
+}
+
+std::chrono::nanoseconds GameInstance::timeRun() const {
+  return std::chrono::duration_cast<std::chrono::nanoseconds>(
+      SimulationTicks{ticksRun_});
 }
 
 void GameInstance::applyReadyState(const network::MessageOrigin& origin,

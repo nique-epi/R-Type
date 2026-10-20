@@ -22,6 +22,11 @@ std::uint8_t toByte(char character) {
   return static_cast<std::uint8_t>(character);
 }
 
+bool isControlCharacter(char character) {
+  const std::uint8_t byte = toByte(character);
+  return byte < SPACE_BYTE || byte == DELETE_BYTE;
+}
+
 std::optional<Utf8SequenceRule> ruleStartingWith(std::uint8_t lead) {
   for (const Utf8SequenceRule& rule : UTF8_SEQUENCE_RULES) {
     if (contains(rule.lead, lead)) {
@@ -93,7 +98,8 @@ bool isValidUtf8(std::string_view text) {
 
 bool isValidNickname(std::string_view nickname) {
   return nickname.size() >= MINIMUM_NICKNAME_SIZE &&
-         nickname.size() <= MAXIMUM_NICKNAME_SIZE && isValidUtf8(nickname);
+         nickname.size() <= MAXIMUM_NICKNAME_SIZE && isValidUtf8(nickname) &&
+         std::ranges::none_of(nickname, isControlCharacter);
 }
 
 void requireValidNickname(std::string_view nickname) {

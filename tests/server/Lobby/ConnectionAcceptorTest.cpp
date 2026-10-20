@@ -13,15 +13,18 @@
 #include "ConnectionRefused.hpp"
 #include "ConnectionRequest.hpp"
 #include "DatagramCodec.hpp"
+#include "DebugJournal.hpp"
 #include "Endpoint.hpp"
 #include "IncomingDatagram.hpp"
 #include "MessageFrame.hpp"
 #include "MessagePayload.hpp"
 #include "MessageType.hpp"
+#include "NetworkConstants.hpp"
 #include "OutgoingDatagram.hpp"
 #include "PacketHeader.hpp"
 #include "PlayerRoster.hpp"
 #include "ProtocolConstants.hpp"
+#include "ProtocolTestConstants.hpp"
 #include "ReadyState.hpp"
 #include "ServerDatagrams.hpp"
 #include "ServerLobbyTestConstants.hpp"
@@ -31,6 +34,8 @@ namespace rtype::server {
 namespace {
 
 using testing::COOKIE_EXPIRED_TIME;
+using testing::DROPPED_DATAGRAM_LINE_TEXT;
+using testing::DROPPED_TOGETHER_COUNT;
 using testing::FIVE_PLAYER_PORTS;
 using testing::NEXT_PROTOCOL_VERSION;
 using testing::OTHER_PROTOCOL_ID;
@@ -41,6 +46,19 @@ using testing::SHORTEST_NICKNAME;
 network::Endpoint playerEndpoint(std::size_t player) {
   return network::Endpoint{.address = std::string{PLAYER_ADDRESS},
                            .port = FIVE_PLAYER_PORTS.at(player)};
+}
+
+/**
+ * @returns A datagram holding a ConnectionRequest whose nickname is empty,
+ * which its reader refuses.
+ */
+std::vector<std::byte> emptyNicknameRequestDatagram() {
+  network::ByteWriter payload;
+  payload.writeUint64(0);
+  payload.writeString("");
+  return network::DatagramCodec::encode(network::PacketHeader{},
+                                        network::MessageType::ConnectionRequest,
+                                        payload.bytes());
 }
 
 /** @returns The type of the only message of @p datagram. */
@@ -462,16 +480,29 @@ TEST_F(ConnectionAcceptorTest, IgnoresATruncatedDatagram) {
  * Then it gets no answer, and nothing is thrown
  */
 TEST_F(ConnectionAcceptorTest, IgnoresARequestWithAnInvalidNickname) {
-  network::ByteWriter payload;
-  payload.writeUint64(0);
-  payload.writeString("");
-
-  EXPECT_NO_THROW(receive(
-      playerEndpoint(0),
-      network::DatagramCodec::encode(network::PacketHeader{},
-                                     network::MessageType::ConnectionRequest,
-                                     payload.bytes())));
+  EXPECT_NO_THROW(receive(playerEndpoint(0), emptyNicknameRequestDatagram()));
   EXPECT_TRUE(answers().empty());
+}
+
+/**
+ * Given a sender that got the challenge, and its request carrying the cookie
+ * of that challenge and a nickname holding a line feed
+ * When the acceptor receives the request
+ * Then it gets no other answer and takes no place: written in the log of the
+ * server, that nickname would start a line of its own
+ */
+TEST_F(ConnectionAcceptorTest, IgnoresARequestWhoseNicknameHoldsALineFeed) {
+  network::ByteWriter payload;
+  payload.writeUint64(challengeCookie(playerEndpoint(0)));
+  payload.writeString(network::testing::NICKNAME_WITH_LINE_FEED);
+
+  receive(playerEndpoint(0),
+          network::DatagramCodec::encode(
+              network::PacketHeader{}, network::MessageType::ConnectionRequest,
+              payload.bytes()));
+
+  EXPECT_EQ(answers().size(), 1U);
+  EXPECT_EQ(roster().find(playerEndpoint(0)), nullptr);
 }
 
 /**
@@ -500,6 +531,74 @@ TEST_F(ConnectionAcceptorTest, IgnoresADatagramOfAnotherProtocol) {
   receive(playerEndpoint(0), requestDatagram(0, header));
 
   EXPECT_TRUE(answers().empty());
+}
+
+/** @brief The acceptor, with the log written to a journal the test reads. */
+class ConnectionAcceptorLogTest : public ConnectionAcceptorTest {
+ protected:
+  /** @returns The lines of the journal about a datagram dropped. */
+  [[nodiscard]] std::vector<std::string> dropLines() const {
+    return journal_.linesHolding(DROPPED_DATAGRAM_LINE_TEXT);
+  }
+
+ private:
+  DebugJournal journal_;
+};
+
+/**
+ * Given a request whose nickname is empty
+ * When the acceptor receives it
+ * Then the journal holds a line about the datagram dropped that names the
+ * address and the port of its sender
+ */
+TEST_F(ConnectionAcceptorLogTest, LogsARefusedRequestWithItsSender) {
+  receive(playerEndpoint(0), emptyNicknameRequestDatagram());
+
+  const std::vector<std::string> lines = dropLines();
+  ASSERT_EQ(lines.size(), 1U);
+  EXPECT_NE(lines.front().find(senderText(playerEndpoint(0))),
+            std::string::npos);
+}
+
+/**
+ * Given a request without a cookie
+ * When the acceptor receives it and challenges its sender
+ * Then the journal holds no line about a datagram dropped
+ */
+TEST_F(ConnectionAcceptorLogTest, LogsNothingForARequestItAnswers) {
+  receive(playerEndpoint(0), requestDatagram(0));
+
+  ASSERT_EQ(answers().size(), 1U);
+  EXPECT_TRUE(dropLines().empty());
+}
+
+/**
+ * Given DROPPED_TOGETHER_COUNT requests whose nickname is empty
+ * When the acceptor receives them at the same time
+ * Then the journal holds one line about them, not one per datagram: whoever
+ * floods the server cannot flood the log
+ */
+TEST_F(ConnectionAcceptorLogTest, WritesOneLineForRequestsDroppedTogether) {
+  for (std::size_t sent = 0; sent < DROPPED_TOGETHER_COUNT; ++sent) {
+    receive(playerEndpoint(0), emptyNicknameRequestDatagram());
+  }
+
+  EXPECT_EQ(dropLines().size(), 1U);
+}
+
+/**
+ * Given an acceptor that logged a request it refused
+ * When another one arrives REJECTION_LINE_INTERVAL later
+ * Then the journal holds a second line: the interval is measured on the time
+ * the acceptor is given
+ */
+TEST_F(ConnectionAcceptorLogTest, WritesTheNextLineOnceTheIntervalIsOver) {
+  receive(playerEndpoint(0), emptyNicknameRequestDatagram());
+
+  receive(playerEndpoint(0), emptyNicknameRequestDatagram(),
+          REQUEST_TIME + network::REJECTION_LINE_INTERVAL);
+
+  EXPECT_EQ(dropLines().size(), 2U);
 }
 
 }  // namespace
