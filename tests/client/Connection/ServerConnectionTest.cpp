@@ -40,6 +40,7 @@
 #include "ServerConnection.hpp"
 #include "ServerConnectionTestConstants.hpp"
 #include "TimeConstants.hpp"
+#include "TimeTestConstants.hpp"
 #include "WorldState.hpp"
 #include "WorldStateCodec.hpp"
 #include "WorldStateFilterTestConstants.hpp"
@@ -61,7 +62,6 @@ using testing::killed;
 using testing::listed;
 using testing::NEXT_PROTOCOL_VERSION;
 using testing::NICKNAME;
-using testing::ONE_NANOSECOND;
 using testing::OTHER_NICKNAME;
 using testing::OTHER_PLAYER_NUMBER;
 using testing::OTHER_SENDER_PORT;

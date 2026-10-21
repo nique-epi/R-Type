@@ -2,6 +2,7 @@
 #include <chrono>
 #include <cstddef>
 #include "TimeConstants.hpp"
+#include "TimeTestConstants.hpp"
 
 namespace {
 
@@ -18,8 +19,6 @@ constexpr std::chrono::seconds ONE_SECOND{1};
 constexpr std::size_t TICKS_IN_ONE_SECOND = 60;
 constexpr std::chrono::seconds FIVE_SECONDS{5};
 constexpr std::size_t TICKS_IN_FIVE_SECONDS = 300;
-
-constexpr std::chrono::nanoseconds ONE_NANOSECOND{1};
 
 }  // namespace
 

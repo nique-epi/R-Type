@@ -93,9 +93,4 @@ constexpr std::size_t PROTOCOL_INPUTS_PER_SECOND = 60;
  */
 constexpr int INTERVALS_OF_A_STALL = 3;
 
-/**
- * @brief The shortest step of time a test takes.
- */
-constexpr std::chrono::nanoseconds ONE_NANOSECOND{1};
-
 }  // namespace rtype::client::testing
