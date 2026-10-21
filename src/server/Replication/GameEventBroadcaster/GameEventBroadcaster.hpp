@@ -42,9 +42,10 @@ class GameEventBroadcaster {
     std::reference_wrapper<engine::EventBus> events;
     /** @brief Runs the later copies. */
     std::reference_wrapper<engine::TimerScheduler> timers;
-    /** @brief The clients of the game, kept up to date by whoever owns the
-     * list. Must outlive the broadcaster. */
-    std::reference_wrapper<const std::vector<network::Endpoint>> recipients;
+    /** @brief Gives the clients of the game when the bus delivers an event;
+     * the later copies of that event go to the same clients. Must not be
+     * empty. */
+    std::function<std::vector<network::Endpoint>()> recipients;
     /** @brief Gives the header of the next datagram for a recipient: its
      * session token and its next sequence number. Must not be empty. */
     std::function<network::PacketHeader(const network::Endpoint&)> headerFor;
@@ -74,7 +75,7 @@ class GameEventBroadcaster {
                 const std::vector<std::byte>& payload) const;
 
   engine::TimerScheduler& timers_;
-  const std::vector<network::Endpoint>& recipients_;
+  std::function<std::vector<network::Endpoint>()> recipients_;
   std::function<network::PacketHeader(const network::Endpoint&)> headerFor_;
   std::function<void(network::OutgoingDatagram)> send_;
   GameEventEncoder encoder_;

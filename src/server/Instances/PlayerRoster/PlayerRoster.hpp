@@ -41,6 +41,10 @@ class PlayerRoster {
    */
   [[nodiscard]] std::vector<ConnectedPlayer*> connected();
 
+  /** @returns The address and port of each connected player, in order of
+   * their number. */
+  [[nodiscard]] std::vector<network::Endpoint> endpoints() const;
+
   /** @returns Whether MAXIMUM_PLAYERS players are connected. */
   [[nodiscard]] bool isFull() const;
 

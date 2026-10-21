@@ -221,7 +221,7 @@ A client that crashes, is killed or loses the network sends nothing more, and no
 2. a `PlayerDeparture` (`TimedOut`) is published, which the others get as `PlayerLeft`, three times (see [Game events](#game-events-gameeventencoder-and-gameeventbroadcaster));
 3. the seat and the number are freed, so a client killed and started again, which comes back from another port, takes a free seat instead of a fifth one.
 
-`takeDepartedPlayers()` hands each departed player over once. `main.cpp` then calls `ServerApplication::forget()` and takes the address out of the recipients of the game events, so the next events go to the others only (see [Game events](#game-events-gameeventencoder-and-gameeventbroadcaster)). The game logs `player <n> timed out: nothing received from <address> port <port> for 5 s` at the `info` level under `Instances`.
+`takeDepartedPlayers()` hands each departed player over once. `main.cpp` then calls `ServerApplication::forget()`. The game events go to the players of the roster, so the next ones reach the others only (see [Game events](#game-events-gameeventencoder-and-gameeventbroadcaster)). The game logs `player <n> timed out: nothing received from <address> port <port> for 5 s` at the `info` level under `Instances`.
 
 - The game counts the ticks it runs, not the time that passes: during a stall of the server, the datagrams wait in the player queue and are read at the next tick, so a stall closes no session.
 - The rest of the tick runs without the player: a waiting room whose other players are all ready starts the game in that tick, and the world state of that tick no longer lists the ship.
@@ -293,18 +293,17 @@ The game announces what the players must see or hear by publishing an event on t
 - An event the protocol refuses is skipped: a position that is not a number, the entity id 0 (which no entity has), or a player number outside 1 to 4. The broadcaster logs a warning with the name of the event, sends nothing, schedules no copy, and does not use an event number, so the next event goes out and the server keeps running. Only the encoding is protected: a fault in the sending still stops the tick.
 - The broadcaster must outlive the last `dispatch()` of the bus and the last `advance()` of the timers, because both call back into it.
 - Nothing is sent or scheduled when the list of recipients is empty, but the encoder still runs, so a `GameEvent` still uses an event number.
-- In `main.cpp` the list holds the address of every player who joined the game, added when the acceptor lets the player in, and the header function is `GameInstance::nextSessionHeaderFor`, which reads the roster of that game through `sessionHeaderFor` (see [Session headers](#session-headers-sessiondatagram)), so each copy carries the token and the next sequence of its player. When the session of a player closes, `main.cpp` takes its address out of that list in the same tick, before the bus delivers the events of that tick, so the others alone get its departure. A copy of an earlier event still goes to that address, under a header without session, which its client drops.
+- In `main.cpp` the recipients are the players in the roster of the game when the bus delivers the event (`PlayerRoster::endpoints()`), and the header function is `GameInstance::nextSessionHeaderFor`, which reads the same roster through `sessionHeaderFor` (see [Session headers](#session-headers-sessiondatagram)), so each copy carries the token and the next sequence of its player. A player whose session closes in a tick leaves the roster before the bus delivers the events of that tick, so the others alone get its departure. A copy of an earlier event still goes to its address, under a header without session, which its client drops.
 - `PlayfieldExitSystem` publishes an `EntityDestruction` when a Bydo leaves the playfield, so the players get its `EntityDestroyed`. `DamageRules` publishes two more events, but is not run.
 
 ```cpp
 rtype::engine::EventBus events;
 rtype::engine::TimerScheduler timers;
-std::vector<rtype::network::Endpoint> recipients;
 rtype::server::GameEventBroadcaster broadcaster{
     rtype::server::GameEventBroadcaster::Wiring{
         .events = events,
         .timers = timers,
-        .recipients = recipients,
+        .recipients = [&game] { return game.roster().endpoints(); },
         .headerFor =
             [&game](const rtype::network::Endpoint& recipient) {
               return game.nextSessionHeaderFor(recipient);

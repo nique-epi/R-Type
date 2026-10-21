@@ -14,7 +14,7 @@ GameEventBroadcasterFixture::GameEventBroadcasterFixture()
       broadcaster_(GameEventBroadcaster::Wiring{
           .events = events_,
           .timers = timers_,
-          .recipients = recipients_,
+          .recipients = [this] { return recipients_; },
           .headerFor =
               [this](const network::Endpoint& recipient) {
                 network::PacketHeader header;

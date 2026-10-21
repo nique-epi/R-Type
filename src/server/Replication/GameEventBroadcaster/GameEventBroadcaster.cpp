@@ -50,7 +50,7 @@ std::optional<EncodedMessage> GameEventBroadcaster::tryEncode(
 
 GameEventBroadcaster::GameEventBroadcaster(Wiring wiring)
     : timers_(wiring.timers.get()),
-      recipients_(wiring.recipients.get()),
+      recipients_(std::move(wiring.recipients)),
       headerFor_(std::move(wiring.headerFor)),
       send_(std::move(wiring.send)),
       logger_(std::string{REPLICATION_LOGGER_NAME}) {
@@ -64,15 +64,16 @@ GameEventBroadcaster::GameEventBroadcaster(Wiring wiring)
 }
 
 void GameEventBroadcaster::broadcast(const EncodedMessage& message) {
-  if (recipients_.empty()) {
+  const std::vector<network::Endpoint> recipients = recipients_();
+  if (recipients.empty()) {
     return;
   }
-  sendCopy(recipients_, message.type, message.payload);
+  sendCopy(recipients, message.type, message.payload);
   for (std::size_t copy = 1; copy < message.copies; ++copy) {
     timers_.scheduleOnce(
         REPEATED_MESSAGE_INTERVAL * static_cast<engine::Duration::rep>(copy),
-        [this, recipients = recipients_, type = message.type,
-         payload = message.payload]() { sendCopy(recipients, type, payload); });
+        [this, clients = recipients, type = message.type,
+         payload = message.payload]() { sendCopy(clients, type, payload); });
   }
 }
 

@@ -284,5 +284,19 @@ TEST(PlayerRoster, RemovesNobodyForASenderNotConnected) {
   EXPECT_EQ(roster.connected().size(), 2);
 }
 
+/**
+ * Given a roster of three players whose second was removed
+ * When the addresses of the players are listed
+ * Then the first and the third are listed, in order of their numbers
+ */
+TEST(PlayerRoster, ListsTheAddressesOfTheConnectedPlayersInOrder) {
+  PlayerRoster roster;
+  addPlayers(roster, 3);
+  static_cast<void>(roster.remove(playerEndpoint(1)));
+
+  EXPECT_EQ(roster.endpoints(),
+            (std::vector{playerEndpoint(0), playerEndpoint(2)}));
+}
+
 }  // namespace
 }  // namespace rtype::server

@@ -41,6 +41,17 @@ std::vector<ConnectedPlayer*> PlayerRoster::connected() {
   return players;
 }
 
+std::vector<network::Endpoint> PlayerRoster::endpoints() const {
+  std::vector<network::Endpoint> players;
+  players.reserve(seats_.size());
+  for (const std::optional<ConnectedPlayer>& seat : seats_) {
+    if (seat.has_value()) {
+      players.push_back(seat->endpoint);
+    }
+  }
+  return players;
+}
+
 bool PlayerRoster::isFull() const {
   return std::ranges::all_of(seats_,
                              [](const std::optional<ConnectedPlayer>& seat) {
