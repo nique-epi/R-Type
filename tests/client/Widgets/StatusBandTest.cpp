@@ -73,7 +73,9 @@ constexpr std::uint8_t PAST_THE_LAST_PLAYER = 5;
 constexpr std::uint32_t SCORE = 12400;
 constexpr std::uint32_t NINE_DIGIT_SCORE = 123456789;
 constexpr const char* LARGEST_SHOWN_SCORE_TEXT = "9999999";
+constexpr std::uint8_t TWO_LIVES = 2;
 constexpr std::uint8_t THREE_LIVES = 3;
+constexpr std::uint8_t FOUR_LIVES = 4;
 constexpr std::uint8_t FIVE_LIVES = 5;
 constexpr std::uint8_t LAST_LIFE = 1;
 constexpr std::uint8_t NO_LIFE = 0;
@@ -350,6 +352,38 @@ TEST(StatusBand, LivesTakeTheColorOfThePilot) {
       bandPaintingOf({flying(PLAYER_THREE, THREE_LIVES)});
 
   EXPECT_EQ(imagesOf(record, THIRD_LIFE_SOURCE).size(), LIVES_SHOWN_AT_MOST);
+}
+
+/**
+ * Given player 1 with 2 lives, one under the limit of three slots
+ * When the band is painted
+ * Then two ships fill the first two slots and a lost life the third
+ */
+TEST(StatusBand, TwoLivesShowTwoShipsAndOneLostLife) {
+  const InterfaceCanvasRecord record =
+      bandPaintingOf({flying(PLAYER_ONE, TWO_LIVES)});
+
+  const std::vector<RecordedImage> ships = imagesOf(record, FIRST_LIFE_SOURCE);
+  const std::vector<RecordedImage> lost = imagesOf(record, LOST_LIFE_SOURCE);
+  ASSERT_EQ(ships.size(), 2U);
+  ASSERT_EQ(lost.size(), 1U);
+  EXPECT_EQ(ships.front().topLeft, FIRST_LIVES.at(0));
+  EXPECT_EQ(ships.back().topLeft, FIRST_LIVES.at(1));
+  EXPECT_EQ(lost.front().topLeft, FIRST_LIVES.at(2));
+}
+
+/**
+ * Given player 1 with 4 lives, one over the limit of three slots
+ * When the band is painted
+ * Then one ship is drawn, followed by x4, and no life is shown lost
+ */
+TEST(StatusBand, FourLivesShowOneShipAndACount) {
+  const InterfaceCanvasRecord record =
+      bandPaintingOf({flying(PLAYER_ONE, FOUR_LIVES)});
+
+  EXPECT_EQ(imagesOf(record, FIRST_LIFE_SOURCE).size(), 1U);
+  EXPECT_EQ(anchorOf(record, "x4"), FIRST_LIVES_COUNT);
+  EXPECT_THAT(imagesOf(record, LOST_LIFE_SOURCE), IsEmpty());
 }
 
 /**

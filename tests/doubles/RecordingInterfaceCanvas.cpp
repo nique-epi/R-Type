@@ -9,6 +9,7 @@
 #include <string>
 #include <string_view>
 #include <utility>
+#include "DrawJournal.hpp"
 #include "ImagePlacement.hpp"
 #include "InterfaceConstants.hpp"
 #include "TextStyle.hpp"
@@ -65,6 +66,9 @@ void RecordingInterfaceCanvas::display() { ++record_->displayCount; }
 void RecordingInterfaceCanvas::show(
     [[maybe_unused]] sf::RenderTarget& target) const {
   ++record_->showCount;
+  if (record_->drawJournal != nullptr) {
+    record_->drawJournal->laid.emplace_back(INTERFACE_CANVAS_LAID);
+  }
 }
 
 const RecordedWriting* writingOf(const InterfaceCanvasRecord& record,

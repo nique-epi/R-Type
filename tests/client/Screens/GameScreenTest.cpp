@@ -12,6 +12,7 @@
 #include "ComponentRegistry.hpp"
 #include "ConnectionConstants.hpp"
 #include "ConnectionStatus.hpp"
+#include "DrawJournal.hpp"
 #include "EffectConstants.hpp"
 #include "EffectLengths.hpp"
 #include "EntityAnnouncements.hpp"
@@ -161,6 +162,8 @@ class GameScreenTest : public ::testing::Test {
  protected:
   void SetUp() override {
     seatThreePilots(connection_);
+    layerRecord_.drawJournal = &drawJournal_;
+    statusCanvas_.drawJournal = &drawJournal_;
     screens_.push(ScreenId::Game);
     screens_.applyPendingChanges();
   }
@@ -183,6 +186,8 @@ class GameScreenTest : public ::testing::Test {
     return statusCanvas_;
   }
 
+  [[nodiscard]] const DrawJournal& drawJournal() const { return drawJournal_; }
+
  private:
   std::vector<JournalEntry> journal_;
   EntityLayerRecord layerRecord_;
@@ -191,6 +196,7 @@ class GameScreenTest : public ::testing::Test {
   FakeEntityMessageSource entityMessages_;
   RecordingServerConnection connection_;
   InterfaceCanvasRecord statusCanvas_;
+  DrawJournal drawJournal_;
   ScreenStack screens_{[this](ScreenId screen) -> std::unique_ptr<IScreen> {
     if (screen == ScreenId::Game) {
       return std::make_unique<GameScreen>(
@@ -431,6 +437,20 @@ TEST_F(GameScreenTest, DrawingLaysTheStatusBand) {
   screens().draw(target);
 
   EXPECT_EQ(statusCanvas().showCount, SHOWS_AFTER_ONE_DRAW);
+}
+
+/**
+ * Given the game alone in the stack
+ * When it is drawn
+ * Then the status band is laid after the entities, so no entity covers it
+ */
+TEST_F(GameScreenTest, TheStatusBandIsLaidOverTheEntities) {
+  BlankRenderTarget target;
+
+  screens().draw(target);
+
+  EXPECT_THAT(drawJournal().laid,
+              ElementsAre(ENTITY_LAYER_LAID, INTERFACE_CANVAS_LAID));
 }
 
 /**

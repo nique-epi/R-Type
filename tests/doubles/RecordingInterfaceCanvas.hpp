@@ -9,6 +9,7 @@
 #include <string_view>
 #include <utility>
 #include <vector>
+#include "DrawJournal.hpp"
 #include "IInterfaceCanvas.hpp"
 #include "ImagePlacement.hpp"
 #include "TextStyle.hpp"
@@ -61,6 +62,9 @@ struct InterfaceCanvasRecord {
   std::vector<RecordedSmoothImage> smoothImages;
   int displayCount = 0;
   int showCount = 0;
+  /** @brief Where the canvas writes INTERFACE_CANVAS_LAID each time it is
+   * shown, when a test shares one with other doubles. */
+  DrawJournal* drawJournal = nullptr;
 };
 
 /** @brief Advance a recording canvas gives each character of small print:
