@@ -16,8 +16,10 @@
 #include "GameEventTestConstants.hpp"
 #include "OutgoingDatagram.hpp"
 #include "PacketHeader.hpp"
+#include "PlayerDeparture.hpp"
 #include "PlayerElimination.hpp"
 #include "PlayerHit.hpp"
+#include "PlayerLeft.hpp"
 #include "WorldState.hpp"
 
 namespace rtype::server::testing {
@@ -245,6 +247,39 @@ TEST_F(GameEventBroadcasterFixture, SkipsAPlayerEventOfAPlayerOutsideTheGame) {
             REPEATED_MESSAGE_COPIES);
   EXPECT_EQ(receivedBy<network::GameEvent>(secondClient()).size(),
             REPEATED_MESSAGE_COPIES);
+}
+
+/**
+ * Given two clients
+ * When a player that timed out is published and every copy comes due
+ * Then each client gets three identical PlayerLeft naming that player
+ */
+TEST_F(GameEventBroadcasterFixture, RepeatsADepartureThreeTimes) {
+  publishAndDispatch(
+      game::PlayerDeparture{.playerNumber = SECOND_PLAYER_NUMBER,
+                            .cause = game::DepartureCause::TimedOut});
+  advanceTimers(ALL_COPIES_SENT);
+
+  const std::vector<network::PlayerLeft> expected(
+      REPEATED_MESSAGE_COPIES,
+      network::PlayerLeft{.playerNumber = SECOND_PLAYER_NUMBER,
+                          .reason = network::DepartureReason::TimedOut});
+  EXPECT_EQ(receivedBy<network::PlayerLeft>(firstClient()), expected);
+  EXPECT_EQ(receivedBy<network::PlayerLeft>(secondClient()), expected);
+}
+
+/**
+ * Given two clients
+ * When the departure of a player outside the game is published
+ * Then dispatching does not throw and nothing is sent
+ */
+TEST_F(GameEventBroadcasterFixture, SkipsTheDepartureOfAPlayerOutsideTheGame) {
+  EXPECT_NO_THROW(publishAndDispatch(
+      game::PlayerDeparture{.playerNumber = PLAYER_NUMBER_OUTSIDE_THE_GAME,
+                            .cause = game::DepartureCause::TimedOut}));
+  advanceTimers(ALL_COPIES_SENT);
+
+  EXPECT_TRUE(sentDatagrams().empty());
 }
 
 }  // namespace rtype::server::testing

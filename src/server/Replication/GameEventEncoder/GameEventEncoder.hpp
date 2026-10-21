@@ -7,6 +7,7 @@
 #include "EntitySpawn.hpp"
 #include "GameEvent.hpp"
 #include "GameEventConstants.hpp"
+#include "PlayerDeparture.hpp"
 #include "PlayerElimination.hpp"
 #include "PlayerHit.hpp"
 
@@ -50,6 +51,13 @@ class GameEventEncoder {
    * sent REPEATED_MESSAGE_COPIES times.
    */
   [[nodiscard]] EncodedMessage encode(const game::PlayerElimination& event);
+
+  /**
+   * @returns A PlayerLeft with the number of the player and why it left, sent
+   * REPEATED_MESSAGE_COPIES times.
+   */
+  [[nodiscard]] static EncodedMessage encode(
+      const game::PlayerDeparture& event);
 
  private:
   [[nodiscard]] EncodedMessage encodeGameEvent(network::GameEventKind kind,

@@ -18,6 +18,7 @@
 #include "NetworkException.hpp"
 #include "OutgoingDatagram.hpp"
 #include "PacketHeader.hpp"
+#include "PlayerDeparture.hpp"
 #include "PlayerElimination.hpp"
 #include "PlayerHit.hpp"
 #include "ReplicationConstants.hpp"
@@ -63,6 +64,7 @@ GameEventBroadcaster::GameEventBroadcaster(
   subscribeTo<game::EntityDamage>(events, ENTITY_DAMAGE_EVENT_NAME);
   subscribeTo<game::PlayerHit>(events, PLAYER_HIT_EVENT_NAME);
   subscribeTo<game::PlayerElimination>(events, PLAYER_ELIMINATION_EVENT_NAME);
+  subscribeTo<game::PlayerDeparture>(events, PLAYER_DEPARTURE_EVENT_NAME);
 }
 
 void GameEventBroadcaster::broadcast(const EncodedMessage& message) {

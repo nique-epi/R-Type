@@ -16,8 +16,10 @@
 #include "MessagePayload.hpp"
 #include "MessageType.hpp"
 #include "NetworkException.hpp"
+#include "PlayerDeparture.hpp"
 #include "PlayerElimination.hpp"
 #include "PlayerHit.hpp"
+#include "PlayerLeft.hpp"
 #include "WorldState.hpp"
 
 namespace rtype::server::testing {
@@ -106,6 +108,32 @@ TEST(GameEventEncoderTest, EncodesEachKindOfGameEventWithItsFields) {
                           .kind = network::GameEventKind::PlayerEliminated,
                           .playerNumber = SECOND_PLAYER_NUMBER,
                           .entityId = 0}));
+}
+
+/**
+ * Given an encoder
+ * When a player that left and a player that timed out are encoded
+ * Then the messages are PlayerLeft with the number of the player and the
+ * reason Left and the reason TimedOut, each sent three times
+ */
+TEST(GameEventEncoderTest, EncodesADepartureWithItsReason) {
+  const EncodedMessage left = GameEventEncoder::encode(
+      game::PlayerDeparture{.playerNumber = SECOND_PLAYER_NUMBER,
+                            .cause = game::DepartureCause::Left});
+  const EncodedMessage timedOut = GameEventEncoder::encode(
+      game::PlayerDeparture{.playerNumber = SECOND_PLAYER_NUMBER,
+                            .cause = game::DepartureCause::TimedOut});
+
+  EXPECT_EQ(left.type, network::MessageType::PlayerLeft);
+  EXPECT_EQ(left.copies, REPEATED_MESSAGE_COPIES);
+  EXPECT_EQ(timedOut.copies, REPEATED_MESSAGE_COPIES);
+  EXPECT_EQ(network::decodeMessage<network::PlayerLeft>(left.payload),
+            (network::PlayerLeft{.playerNumber = SECOND_PLAYER_NUMBER,
+                                 .reason = network::DepartureReason::Left}));
+  EXPECT_EQ(
+      network::decodeMessage<network::PlayerLeft>(timedOut.payload),
+      (network::PlayerLeft{.playerNumber = SECOND_PLAYER_NUMBER,
+                           .reason = network::DepartureReason::TimedOut}));
 }
 
 /**
