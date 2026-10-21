@@ -23,18 +23,31 @@ constexpr sf::Color EDGE_BLUE(31, 163, 201);
  */
 constexpr sf::Color INK(10, 11, 26);
 
-/** @brief Main color of the ship of each player color, in the order of the
- * rows of the entity sheet, read from the file: what the interface paints in
- * the color of a player. */
-constexpr std::array PLAYER_SHIP_COLORS{
-    sf::Color(31, 163, 201), sf::Color(217, 74, 140), sf::Color(126, 194, 58),
-    sf::Color(224, 154, 42)};
+/** @brief Main color of the ship of each player color, read from the rows
+ * of the entity sheet: blue for player 1, pink for player 2, green for player
+ * 3, orange for player 4. */
+constexpr sf::Color PLAYER_BLUE(31, 163, 201);
+constexpr sf::Color PLAYER_PINK(217, 74, 140);
+constexpr sf::Color PLAYER_GREEN(126, 194, 58);
+constexpr sf::Color PLAYER_ORANGE(224, 154, 42);
 
-/** @brief Light shade of the ship of each player color, in the same order,
- * read from the file: the nickname of a player written on the sky. */
-constexpr std::array PLAYER_LIGHT_COLORS{
-    sf::Color(127, 230, 255), sf::Color(255, 163, 207),
-    sf::Color(210, 255, 138), sf::Color(255, 211, 138)};
+/** @brief The main colors of the ships, in the order of the rows of the entity
+ * sheet: what the interface paints in the color of a player. */
+constexpr std::array PLAYER_SHIP_COLORS{PLAYER_BLUE, PLAYER_PINK, PLAYER_GREEN,
+                                        PLAYER_ORANGE};
+
+/** @brief Light shade of the ship of each player color, read from the same
+ * rows. */
+constexpr sf::Color PLAYER_LIGHT_BLUE(127, 230, 255);
+constexpr sf::Color PLAYER_LIGHT_PINK(255, 163, 207);
+constexpr sf::Color PLAYER_LIGHT_GREEN(210, 255, 138);
+constexpr sf::Color PLAYER_LIGHT_ORANGE(255, 211, 138);
+
+/** @brief The light shades, in the same order: the nickname of a player
+ * written on the sky. */
+constexpr std::array PLAYER_LIGHT_COLORS{PLAYER_LIGHT_BLUE, PLAYER_LIGHT_PINK,
+                                         PLAYER_LIGHT_GREEN,
+                                         PLAYER_LIGHT_ORANGE};
 
 /** @brief Light orange of the enemy missile: the warnings of the status band,
  * LAST LIFE and OUT, always written as words. */
