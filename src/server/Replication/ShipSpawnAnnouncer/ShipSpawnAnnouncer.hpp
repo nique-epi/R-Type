@@ -1,11 +1,8 @@
 #pragma once
 
-#include <cstdint>
-#include <optional>
 #include "ConnectedPlayer.hpp"
 #include "EntitySpawnSender.hpp"
 #include "PlayerRoster.hpp"
-#include "Position.hpp"
 #include "World.hpp"
 
 namespace rtype::server {
@@ -46,11 +43,6 @@ class ShipSpawnAnnouncer {
  private:
   /** @brief Sends @p recipient the EntitySpawned of the ship of @p owner. */
   void announce(ConnectedPlayer& recipient, const ConnectedPlayer& owner);
-
-  /** @returns Where the entity named @p networkId is, nothing when no entity
-   * has that id. */
-  [[nodiscard]] std::optional<game::Position> positionOf(
-      std::uint32_t networkId) const;
 
   game::World* world_;
   PlayerRoster* roster_;
