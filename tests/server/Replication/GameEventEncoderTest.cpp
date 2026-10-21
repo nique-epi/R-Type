@@ -61,8 +61,8 @@ TEST(GameEventEncoderTest, EncodesAKillAndARemovalWithTheirReason) {
                               .cause = game::DestructionCause::Removed});
 
   EXPECT_EQ(kill.type, network::MessageType::EntityDestroyed);
-  EXPECT_EQ(kill.copies, REPEATED_MESSAGE_COPIES);
-  EXPECT_EQ(removal.copies, REPEATED_MESSAGE_COPIES);
+  EXPECT_EQ(kill.copies, PROTOCOL_REPEATED_MESSAGE_COPIES);
+  EXPECT_EQ(removal.copies, PROTOCOL_REPEATED_MESSAGE_COPIES);
   EXPECT_EQ(
       network::decodeMessage<network::EntityDestroyed>(kill.payload),
       (network::EntityDestroyed{.entityId = MONSTER_NETWORK_ID,
@@ -91,7 +91,7 @@ TEST(GameEventEncoderTest, EncodesEachKindOfGameEventWithItsFields) {
       game::PlayerElimination{.playerNumber = SECOND_PLAYER_NUMBER});
 
   EXPECT_EQ(damaged.type, network::MessageType::GameEvent);
-  EXPECT_EQ(damaged.copies, REPEATED_MESSAGE_COPIES);
+  EXPECT_EQ(damaged.copies, PROTOCOL_REPEATED_MESSAGE_COPIES);
   EXPECT_EQ(network::decodeMessage<network::GameEvent>(damaged.payload),
             (network::GameEvent{.eventNumber = FIRST_EVENT_NUMBER,
                                 .kind = network::GameEventKind::EntityDamaged,
@@ -125,8 +125,8 @@ TEST(GameEventEncoderTest, EncodesADepartureWithItsReason) {
                             .cause = game::DepartureCause::TimedOut});
 
   EXPECT_EQ(left.type, network::MessageType::PlayerLeft);
-  EXPECT_EQ(left.copies, REPEATED_MESSAGE_COPIES);
-  EXPECT_EQ(timedOut.copies, REPEATED_MESSAGE_COPIES);
+  EXPECT_EQ(left.copies, PROTOCOL_REPEATED_MESSAGE_COPIES);
+  EXPECT_EQ(timedOut.copies, PROTOCOL_REPEATED_MESSAGE_COPIES);
   EXPECT_EQ(network::decodeMessage<network::PlayerLeft>(left.payload),
             (network::PlayerLeft{.playerNumber = SECOND_PLAYER_NUMBER,
                                  .reason = network::DepartureReason::Left}));

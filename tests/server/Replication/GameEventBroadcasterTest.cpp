@@ -67,7 +67,7 @@ TEST_F(GameEventBroadcasterFixture, RepeatsADestructionThreeTimes) {
   advanceTimers(ONE_INTERVAL);
   advanceTimers(ALL_COPIES_SENT);
   const std::vector<network::EntityDestroyed> expectedCopies(
-      REPEATED_MESSAGE_COPIES,
+      PROTOCOL_REPEATED_MESSAGE_COPIES,
       network::EntityDestroyed{.entityId = MONSTER_NETWORK_ID,
                                .reason = network::DestructionReason::Killed});
   EXPECT_EQ(receivedBy<network::EntityDestroyed>(firstClient()),
@@ -86,7 +86,7 @@ TEST_F(GameEventBroadcasterFixture, RepeatsAGameEventWithTheSameNumber) {
   advanceTimers(ALL_COPIES_SENT);
 
   const std::vector<network::GameEvent> expected(
-      REPEATED_MESSAGE_COPIES,
+      PROTOCOL_REPEATED_MESSAGE_COPIES,
       network::GameEvent{.eventNumber = FIRST_EVENT_NUMBER,
                          .kind = network::GameEventKind::PlayerHit,
                          .playerNumber = SECOND_PLAYER_NUMBER,
@@ -116,7 +116,7 @@ TEST_F(GameEventBroadcasterFixture, GivesEachCopyANewerSequenceNumber) {
             network::DatagramCodec::decodeHeader(datagram.payload).sequence);
       }
     }
-    ASSERT_EQ(sequences.size(), REPEATED_MESSAGE_COPIES);
+    ASSERT_EQ(sequences.size(), PROTOCOL_REPEATED_MESSAGE_COPIES);
     for (std::size_t copy = 1; copy < sequences.size(); ++copy) {
       EXPECT_GT(sequences.at(copy), sequences.at(copy - 1));
     }
@@ -139,7 +139,7 @@ TEST_F(GameEventBroadcasterFixture, SendsTheCopiesOnlyToTheClientsOfTheEvent) {
   advanceTimers(ALL_COPIES_SENT);
 
   EXPECT_EQ(receivedBy<network::EntityDestroyed>(firstClient()).size(),
-            REPEATED_MESSAGE_COPIES);
+            PROTOCOL_REPEATED_MESSAGE_COPIES);
   EXPECT_TRUE(receivedBy<network::EntityDestroyed>(secondClient()).empty());
 }
 
@@ -244,9 +244,9 @@ TEST_F(GameEventBroadcasterFixture, SkipsAPlayerEventOfAPlayerOutsideTheGame) {
   advanceTimers(ALL_COPIES_SENT);
 
   EXPECT_EQ(receivedBy<network::GameEvent>(firstClient()).size(),
-            REPEATED_MESSAGE_COPIES);
+            PROTOCOL_REPEATED_MESSAGE_COPIES);
   EXPECT_EQ(receivedBy<network::GameEvent>(secondClient()).size(),
-            REPEATED_MESSAGE_COPIES);
+            PROTOCOL_REPEATED_MESSAGE_COPIES);
 }
 
 /**
@@ -261,7 +261,7 @@ TEST_F(GameEventBroadcasterFixture, RepeatsADepartureThreeTimes) {
   advanceTimers(ALL_COPIES_SENT);
 
   const std::vector<network::PlayerLeft> expected(
-      REPEATED_MESSAGE_COPIES,
+      PROTOCOL_REPEATED_MESSAGE_COPIES,
       network::PlayerLeft{.playerNumber = SECOND_PLAYER_NUMBER,
                           .reason = network::DepartureReason::TimedOut});
   EXPECT_EQ(receivedBy<network::PlayerLeft>(firstClient()), expected);
