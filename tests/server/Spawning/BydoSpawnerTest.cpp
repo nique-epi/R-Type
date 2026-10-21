@@ -135,7 +135,7 @@ TEST_F(BydoSpawnerTest, ABydoAppearsOffScreenWhenTheIntervalPasses) {
   EXPECT_GT(spawned.x, game::PLAYFIELD_WIDTH);
   EXPECT_GE(spawned.y, game::BYDO_SPAWN_VERTICAL_MARGIN);
   EXPECT_LE(spawned.y,
-            game::PLAYFIELD_HEIGHT - game::BYDO_SPAWN_VERTICAL_MARGIN);
+            game::PLAY_AREA_HEIGHT - game::BYDO_SPAWN_VERTICAL_MARGIN);
 }
 
 /**

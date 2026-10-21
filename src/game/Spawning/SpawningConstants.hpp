@@ -27,8 +27,9 @@ constexpr float BYDO_SPAWN_MARGIN = 64.0F;
 constexpr float BYDO_EXIT_MARGIN = 64.0F;
 
 /**
- * @brief How far from the top and from the bottom of the playfield the center
- * of a new Bydo stays, in logical units, so its whole height is on screen.
+ * @brief How far from the top of the playfield and from the status band along
+ * its bottom the center of a new Bydo stays, in logical units, so its whole
+ * height is in the area of play.
  *
  * Provisional: it is half a Bydo height, 64 units, until the size of a Bydo is
  * fixed.
