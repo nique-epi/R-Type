@@ -11,6 +11,7 @@
 #include "NetworkIdentity.hpp"
 #include "PatternConstants.hpp"
 #include "Position.hpp"
+#include "ScoreValue.hpp"
 #include "Velocity.hpp"
 
 namespace rtype::game {
@@ -34,6 +35,7 @@ std::uint32_t World::spawnBydo(Position position, BydoKind kind) {
                                         .ageSeconds = 0.0F});
   components_.add(bydo, EntityType::Enemy);
   components_.add(bydo, Health{.points = BYDO_HEALTH});
+  components_.add(bydo, ScoreValue{.points = pointsOf(kind)});
   components_.add(bydo, NetworkIdentity{.networkId = networkId});
   return networkId;
 }

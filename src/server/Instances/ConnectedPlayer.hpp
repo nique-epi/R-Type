@@ -32,6 +32,9 @@ struct ConnectedPlayer {
   /** @brief The network id of the ship of the player, NO_ENTITY_ID while it
    * has none. */
   std::uint32_t shipEntityId{identifiers::NO_ENTITY_ID};
+  /** @brief The points the player earned in the current game; back to 0 when a
+   * new world is built. */
+  std::uint32_t score{0};
   /** @brief Whether the player declared itself ready to start; cleared when the
    * game waits for players again. */
   bool ready{false};

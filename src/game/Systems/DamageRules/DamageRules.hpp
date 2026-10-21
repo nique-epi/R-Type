@@ -22,8 +22,10 @@ struct MissileHit;
  * Removed. A target with Health loses MISSILE_DAMAGE points: it is announced
  * with an EntityDamage while it has points left, and destroyed with an
  * EntityDestruction Killed when it has none. A target without Health is not
- * hurt. A hit naming an entity that is gone or has no NetworkIdentity is
- * ignored, so two missiles reaching the same target in one dispatch never
+ * hurt. When the missile has a MissileOwner and the target that dies has a
+ * ScoreValue above 0, an EnemyKilled follows the destruction, naming the owner
+ * and the points. A hit naming an entity that is gone or has no NetworkIdentity
+ * is ignored, so two missiles reaching the same target in one dispatch never
  * destroy it twice. The bus and the registry must outlive this object.
  */
 class DamageRules {

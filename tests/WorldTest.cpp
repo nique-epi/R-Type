@@ -2,6 +2,7 @@
 #include <cstddef>
 #include <cstdint>
 #include "BydoKind.hpp"
+#include "BydoPointsConstants.hpp"
 #include "ComponentRegistry.hpp"
 #include "Entity.hpp"
 #include "EntityIdConstants.hpp"
@@ -10,6 +11,7 @@
 #include "MovementPattern.hpp"
 #include "NetworkIdentity.hpp"
 #include "Position.hpp"
+#include "ScoreValue.hpp"
 #include "Velocity.hpp"
 #include "World.hpp"
 
@@ -207,4 +209,33 @@ TEST(World, SpawnedShipHasNoHealth) {
         ++shipsWithHealth;
       });
   EXPECT_EQ(shipsWithHealth, 0);
+}
+
+/**
+ * Given an empty world
+ * When a Drifter and a Weaver are spawned
+ * Then each is worth the points of its kind
+ */
+TEST(World, SpawnedBydoIsWorthThePointsOfItsKind) {
+  rtype::game::World world;
+  const rtype::game::Position position{.x = SOME_X, .y = SOME_Y};
+
+  const std::uint32_t drifterId =
+      world.spawnBydo(position, rtype::game::BydoKind::Drifter);
+  const std::uint32_t weaverId =
+      world.spawnBydo(position, rtype::game::BydoKind::Weaver);
+
+  std::uint32_t drifterPoints = 0;
+  std::uint32_t weaverPoints = 0;
+  world.components()
+      .forEach<rtype::game::NetworkIdentity, rtype::game::ScoreValue>(
+          [&](rtype::engine::Entity,
+              const rtype::game::NetworkIdentity& identity,
+              const rtype::game::ScoreValue& score) {
+            (identity.networkId == drifterId ? drifterPoints : weaverPoints) =
+                score.points;
+          });
+  EXPECT_EQ(drifterPoints, rtype::game::DRIFTER_POINTS);
+  EXPECT_EQ(weaverPoints, rtype::game::WEAVER_POINTS);
+  EXPECT_NE(drifterId, weaverId);
 }

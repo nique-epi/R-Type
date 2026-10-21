@@ -22,6 +22,7 @@
 #include "PlayerInput.hpp"
 #include "PlayerRoster.hpp"
 #include "ReadyState.hpp"
+#include "ScoreKeeper.hpp"
 #include "ShipSpawnAnnouncer.hpp"
 #include "SystemScheduler.hpp"
 #include "ThrottledLog.hpp"
@@ -82,6 +83,10 @@ namespace rtype::server {
  * number: a session sending 60 inputs per second would take more than 800 days
  * to wrap it. The input kept outlives a new world, since the client numbers its
  * inputs for the whole session.
+ *
+ * A ScoreKeeper adds the points of each EnemyKilled published on the event bus
+ * to the score of the player it names; every score goes back to 0 with each
+ * new world.
  *
  * Not thread-safe: use it from the simulation thread only.
  */
@@ -186,6 +191,7 @@ class GameInstance {
   std::unique_ptr<ShipSpawnAnnouncer> shipSpawnAnnouncer_;
   std::unique_ptr<BydoSpawner> bydoSpawner_;
   std::unique_ptr<LobbyStateAnnouncer> lobbyStateAnnouncer_;
+  ScoreKeeper scoreKeeper_;
   WorldStateSender worldStateSender_;
   network::MessageDispatcher dispatcher_;
   GameState state_{GameState::WaitingForPlayers};

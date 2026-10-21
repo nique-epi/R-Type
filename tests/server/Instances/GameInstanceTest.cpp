@@ -13,6 +13,7 @@
 #include "ConnectedPlayer.hpp"
 #include "DatagramCodec.hpp"
 #include "DebugJournal.hpp"
+#include "EnemyKilled.hpp"
 #include "EntityDestruction.hpp"
 #include "EntityIdConstants.hpp"
 #include "EventBus.hpp"
@@ -73,6 +74,7 @@ using testing::TICKS_PER_REJECTION_LINE;
 using testing::UNLISTED_ACTION;
 
 constexpr std::uint32_t SOME_SEED = 7;
+constexpr std::uint32_t SOME_POINTS = 100;
 
 /** @brief A ReadyState sent by a player, with the header it travels under. */
 struct SentReadyState {
@@ -494,6 +496,40 @@ TEST_F(GameInstanceTest, ResetsTheWorldBetweenTwoGames) {
 
   EXPECT_EQ(game().world().entityCount(), 2);
   EXPECT_EQ(game().tick(), 0);
+}
+
+/**
+ * Given a game in progress whose player killed an enemy and a game that
+ * finished
+ * When the game waits for players again
+ * Then the player's score is back to 0
+ */
+TEST_F(GameInstanceTest, ResetsTheScoreBetweenTwoGames) {
+  startGameWithOnePlayer();
+  events().publish(game::EnemyKilled{
+      .playerNumber = network::FIRST_PLAYER_NUMBER, .points = SOME_POINTS});
+  events().dispatch();
+  ASSERT_EQ(game().roster().connected().front()->score, SOME_POINTS);
+  game().finish();
+
+  runTicks(FINISHED_STATE_TICKS);
+
+  EXPECT_EQ(game().roster().connected().front()->score, 0U);
+}
+
+/**
+ * Given a game in progress
+ * When an enemy is killed by the first player
+ * Then the score of that player grows by the points of the enemy
+ */
+TEST_F(GameInstanceTest, CreditsTheKillOfAnEnemyToThePlayerWhoFired) {
+  startGameWithOnePlayer();
+
+  events().publish(game::EnemyKilled{
+      .playerNumber = network::FIRST_PLAYER_NUMBER, .points = SOME_POINTS});
+  events().dispatch();
+
+  EXPECT_EQ(game().roster().connected().front()->score, SOME_POINTS);
 }
 
 /**

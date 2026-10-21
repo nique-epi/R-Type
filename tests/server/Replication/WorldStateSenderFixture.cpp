@@ -4,6 +4,7 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include "ConnectedPlayer.hpp"
 #include "DatagramCodec.hpp"
 #include "Endpoint.hpp"
 #include "Entity.hpp"
@@ -39,9 +40,9 @@ WorldStateSenderFixture::WorldStateSenderFixture()
         sent_.push_back(std::move(datagram));
       }) {}
 
-void WorldStateSenderFixture::connect(std::uint16_t port,
-                                      std::uint64_t sessionToken) {
-  roster_.add(client(port), std::string{PLAYER_NICKNAME}, sessionToken);
+ConnectedPlayer& WorldStateSenderFixture::connect(std::uint16_t port,
+                                                  std::uint64_t sessionToken) {
+  return *roster_.add(client(port), std::string{PLAYER_NICKNAME}, sessionToken);
 }
 
 void WorldStateSenderFixture::addNetworkedEntity(game::EntityType type,

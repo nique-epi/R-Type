@@ -3,7 +3,9 @@
 #include <cstddef>
 #include <cstdint>
 #include <functional>
+#include <vector>
 #include "ComponentRegistry.hpp"
+#include "ConnectedPlayer.hpp"
 #include "Logger.hpp"
 #include "OutgoingDatagram.hpp"
 #include "PlayerRoster.hpp"
@@ -15,7 +17,8 @@ namespace rtype::server {
  * @brief Sends the state of the world to every connected player of a game,
  * on the ticks that are a multiple of TICKS_PER_WORLD_STATE.
  *
- * The state lists every entity that has a NetworkIdentity, a Position and an
+ * The state lists every connected player with the score the player earned,
+ * then every entity that has a NetworkIdentity, a Position and an
  * EntityType, each under its network id. It is sent as several datagrams, with
  * the same tick, when the entities do not fit one. Each datagram starts with
  * the packet header of its player: its session token and its next sequence
@@ -50,6 +53,8 @@ class WorldStateSender {
   void onTick(std::uint32_t tick, engine::ComponentRegistry& components);
 
  private:
+  [[nodiscard]] static std::vector<network::PlayerState> playerStatesOf(
+      const std::vector<ConnectedPlayer*>& players);
   [[nodiscard]] static network::WorldState capture(
       std::uint32_t tick, engine::ComponentRegistry& components,
       std::size_t& leftOutCount);

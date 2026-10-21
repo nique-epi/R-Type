@@ -28,6 +28,14 @@ class PlayerRoster {
   [[nodiscard]] ConnectedPlayer* find(const network::Endpoint& endpoint);
 
   /**
+   * @returns The player connected under @p playerNumber, or nullptr when none
+   * is, including when @p playerNumber is outside FIRST_PLAYER_NUMBER to
+   * MAXIMUM_PLAYERS. The player stays at that address as long as the roster
+   * lives.
+   */
+  [[nodiscard]] ConnectedPlayer* findByNumber(std::uint8_t playerNumber);
+
+  /**
    * @returns The connected players, in order of their number. They stay at
    * their addresses as long as the roster lives.
    */

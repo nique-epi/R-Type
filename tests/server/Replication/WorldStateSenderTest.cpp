@@ -3,8 +3,10 @@
 #include <cstddef>
 #include <cstdint>
 #include <vector>
+#include "ConnectedPlayer.hpp"
 #include "EntityType.hpp"
 #include "NetworkConstants.hpp"
+#include "ReplicationConstants.hpp"
 #include "ServerConstants.hpp"
 #include "ServerLobbyTestConstants.hpp"
 #include "TimeConstants.hpp"
@@ -14,6 +16,7 @@
 
 using rtype::game::EntityType;
 using rtype::network::EntityState;
+using rtype::network::PlayerState;
 using rtype::network::WireEntityType;
 using rtype::server::testing::client;
 using rtype::server::testing::ENEMY_MISSILE_NETWORK_ID;
@@ -22,6 +25,8 @@ using rtype::server::testing::ENEMY_NETWORK_ID;
 using rtype::server::testing::ENEMY_POSITION;
 using rtype::server::testing::expectedEntity;
 using rtype::server::testing::FIRST_CLIENT_PORT;
+using rtype::server::testing::FIRST_SCORE;
+using rtype::server::testing::FIRST_SHIP_ID;
 using rtype::server::testing::INFINITE_POSITION;
 using rtype::server::testing::MANY_ENTITIES;
 using rtype::server::testing::NOT_A_NUMBER_POSITION;
@@ -31,6 +36,8 @@ using rtype::server::testing::PLAYER_MISSILE_POSITION;
 using rtype::server::testing::PLAYER_NETWORK_ID;
 using rtype::server::testing::PLAYER_POSITION;
 using rtype::server::testing::SECOND_CLIENT_PORT;
+using rtype::server::testing::SECOND_SCORE;
+using rtype::server::testing::SECOND_SHIP_ID;
 using rtype::server::testing::SESSION_TOKEN;
 using rtype::server::testing::SHIP_NETWORK_ID;
 using rtype::server::testing::SHIP_POSITION;
@@ -254,4 +261,53 @@ TEST_F(WorldStateSenderFixture, LeavesOutAnEntityWhosePositionIsInfinite) {
   EXPECT_EQ(decodedState(0).entities,
             std::vector{expectedEntity(
                 SHIP_NETWORK_ID, WireEntityType::PlayerShip, SHIP_POSITION)});
+}
+
+/**
+ * Given two connected players who earned different scores
+ * When the first state is due
+ * Then the state lists both, each under its number with its own ship and
+ * score, and every player receives the same list
+ */
+TEST_F(WorldStateSenderFixture, ListsEveryPlayerWithItsOwnScore) {
+  rtype::server::ConnectedPlayer& first =
+      connect(FIRST_CLIENT_PORT, SESSION_TOKEN);
+  rtype::server::ConnectedPlayer& second =
+      connect(SECOND_CLIENT_PORT, OTHER_SESSION_TOKEN);
+  first.shipEntityId = FIRST_SHIP_ID;
+  first.score = FIRST_SCORE;
+  second.shipEntityId = SECOND_SHIP_ID;
+  second.score = SECOND_SCORE;
+
+  runTicks(rtype::server::TICKS_PER_WORLD_STATE);
+
+  ASSERT_EQ(sentDatagrams().size(), 2U);
+  const std::vector<PlayerState> expected{
+      PlayerState{.playerNumber = first.playerNumber,
+                  .shipEntityId = FIRST_SHIP_ID,
+                  .lives = rtype::server::PLAYER_LIVES_UNTRACKED,
+                  .score = FIRST_SCORE,
+                  .invulnerable = false},
+      PlayerState{.playerNumber = second.playerNumber,
+                  .shipEntityId = SECOND_SHIP_ID,
+                  .lives = rtype::server::PLAYER_LIVES_UNTRACKED,
+                  .score = SECOND_SCORE,
+                  .invulnerable = false}};
+  EXPECT_EQ(decodedState(0).players, expected);
+  EXPECT_EQ(decodedState(1).players, expected);
+}
+
+/**
+ * Given a player who has not scored
+ * When the first state is due
+ * Then the state lists the player with a score of 0
+ */
+TEST_F(WorldStateSenderFixture, ListsAPlayerWhoHasNotScoredWithZero) {
+  connect(FIRST_CLIENT_PORT, SESSION_TOKEN);
+
+  runTicks(rtype::server::TICKS_PER_WORLD_STATE);
+
+  ASSERT_EQ(sentDatagrams().size(), 1U);
+  ASSERT_EQ(decodedState(0).players.size(), 1U);
+  EXPECT_EQ(decodedState(0).players.front().score, 0U);
 }
