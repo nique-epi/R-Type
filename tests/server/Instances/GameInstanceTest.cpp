@@ -573,6 +573,7 @@ TEST_F(GameInstanceTest, ResetsTheScoreBetweenTwoGames) {
 
   runTicks(FINISHED_STATE_TICKS);
 
+  ASSERT_EQ(game().roster().connected().size(), 1U);
   EXPECT_EQ(game().roster().connected().front()->score, 0U);
 }
 
@@ -597,7 +598,7 @@ TEST_F(GameInstanceTest, CreditsTheKillOfAnEnemyToThePlayerWhoFired) {
  * Then every player is connected, not ready, and has a ship
  */
 TEST_F(GameInstanceTest, KeepsThePlayersConnectedButNotReadyForTheNextGame) {
-  const ConnectedPlayer& player = join(FIRST_PLAYER);
+  join(FIRST_PLAYER);
   sendReady(
       {.player = FIRST_PLAYER, .ready = true, .sequence = FIRST_SEQUENCE});
   tick();
@@ -605,9 +606,12 @@ TEST_F(GameInstanceTest, KeepsThePlayersConnectedButNotReadyForTheNextGame) {
 
   runTicks(FINISHED_STATE_TICKS);
 
-  EXPECT_EQ(game().roster().connected().size(), 1);
-  EXPECT_FALSE(player.ready);
-  EXPECT_NE(player.shipEntityId, identifiers::NO_ENTITY_ID);
+  ASSERT_EQ(game().roster().connected().size(), 1);
+  const ConnectedPlayer* const player =
+      game().roster().find(playerEndpoint(FIRST_PLAYER));
+  ASSERT_NE(player, nullptr);
+  EXPECT_FALSE(player->ready);
+  EXPECT_NE(player->shipEntityId, identifiers::NO_ENTITY_ID);
 }
 
 /**
