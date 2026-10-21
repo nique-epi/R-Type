@@ -234,3 +234,21 @@ TEST(ShipControl, StaysAgainstTheEdgeItIsPushedAgainst) {
   EXPECT_FLOAT_EQ(arrival.x, onTheEdge.x);
   EXPECT_FLOAT_EQ(arrival.y, onTheEdge.y);
 }
+
+/**
+ * Given a ship whose center is past the right edge and above the top edge, and
+ * whose player holds nothing
+ * When a tick passes
+ * Then the ship is brought back with its sides on those two edges: the
+ * position given is always inside the playfield
+ */
+TEST(ShipControl, BringsBackAShipThatWasNotInsideThePlayfield) {
+  const Position outside{.x = PLAYFIELD_WIDTH + NEAR_AN_EDGE,
+                         .y = -NEAR_AN_EDGE};
+
+  const Position arrival =
+      shipPositionAfter(outside, ShipDirections{}, SIMULATION_TICK_DURATION);
+
+  EXPECT_FLOAT_EQ(arrival.x, RIGHT_EDGE_STOP_X);
+  EXPECT_FLOAT_EQ(arrival.y, TOP_EDGE_STOP_Y);
+}
