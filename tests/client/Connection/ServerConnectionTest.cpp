@@ -1175,7 +1175,7 @@ TEST_F(ServerConnectionTest, TheHeartbeatTakesTheSequenceAfterTheRequest) {
  * When the interval minus one nanosecond passes after that input
  * Then no Heartbeat is sent: the delay counts from the last datagram sent
  */
-TEST_F(ServerConnectionTest, AnyDatagramSentRestartsTheHeartbeatDelay) {
+TEST_F(ServerConnectionTest, AnInputSentRestartsTheHeartbeatDelay) {
   accept();
   update(PROTOCOL_HEARTBEAT_INTERVAL / 2);
   connection().sendPlayerInput(upHeld());
@@ -1183,6 +1183,21 @@ TEST_F(ServerConnectionTest, AnyDatagramSentRestartsTheHeartbeatDelay) {
   update(PROTOCOL_HEARTBEAT_INTERVAL - ONE_NANOSECOND);
 
   EXPECT_EQ(sentCountOf<network::Heartbeat>(), 0U);
+}
+
+/**
+ * Given a session that just sent a Heartbeat after an interval of silence
+ * When the interval minus one nanosecond passes
+ * Then no second Heartbeat is sent: a Heartbeat starts its own delay over
+ */
+TEST_F(ServerConnectionTest, AHeartbeatStartsItsOwnDelayOver) {
+  accept();
+  update(PROTOCOL_HEARTBEAT_INTERVAL);
+  ASSERT_EQ(sentCountOf<network::Heartbeat>(), 1U);
+
+  update(PROTOCOL_HEARTBEAT_INTERVAL - ONE_NANOSECOND);
+
+  EXPECT_EQ(sentCountOf<network::Heartbeat>(), 1U);
 }
 
 /**
