@@ -26,6 +26,11 @@
  */
 [[nodiscard]] std::string senderText(const rtype::network::Endpoint& sender);
 
+/** @returns A datagram holding a Heartbeat, which says only that its sender
+ * is still there. */
+[[nodiscard]] std::vector<std::byte> heartbeatDatagram(
+    const rtype::network::PacketHeader& header = {});
+
 /** @returns A datagram holding @p input. */
 [[nodiscard]] std::vector<std::byte> inputDatagram(
     const rtype::network::PlayerInput& input,

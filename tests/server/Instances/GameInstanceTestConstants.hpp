@@ -4,6 +4,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <limits>
+#include <string_view>
 #include "NetworkConstants.hpp"
 #include "ProtocolConstants.hpp"
 #include "ServerLobbyTestConstants.hpp"
@@ -17,7 +18,20 @@ namespace rtype::server::testing {
  */
 constexpr std::size_t FIRST_PLAYER = 0;
 constexpr std::size_t SECOND_PLAYER = 1;
+constexpr std::size_t THIRD_PLAYER = 2;
 constexpr std::size_t FOURTH_PLAYER = 3;
+
+/**
+ * @brief The 5 s the protocol page gives the server before it closes the
+ * session of a player it hears nothing from, at 60 ticks per second.
+ */
+constexpr std::size_t PROTOCOL_SESSION_TIMEOUT_TICKS = 300;
+
+/**
+ * @brief What the line about the second player timing out holds.
+ */
+constexpr std::string_view SECOND_PLAYER_TIMED_OUT_LINE_TEXT =
+    "player 2 timed out";
 
 /**
  * @brief Sequences of the datagrams a test player sends, in the order it sends

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstddef>
 #include <cstdint>
 #include <optional>
 #include <string>
@@ -45,6 +46,9 @@ struct ConnectedPlayer {
    * during the session, to apply at every tick until a newer one arrives;
    * empty until the first one arrives. GameInstance keeps it. */
   std::optional<network::PlayerInput> newestInput;
+  /** @brief Ticks the game ran since it last read a datagram of the player;
+   * the session of the player closes once it reaches SESSION_TIMEOUT_TICKS. */
+  std::size_t ticksSinceReceived{0};
 };
 
 }  // namespace rtype::server

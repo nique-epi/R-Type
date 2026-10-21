@@ -78,12 +78,18 @@ int runServer(const rtype::logging::LogLaunchOptions& logOptions,
         rtype::network::Endpoint{
             .address = std::string{rtype::network::ANY_IPV4_ADDRESS},
             .port = launchOptions.port()},
-        [&games, &joinableGame, &connectionAcceptor, &clock, &events,
-         &timers](const rtype::server::ServerApplication::ReceivedDatagrams&
-                      received) {
+        [&games, &joinableGame, &connectionAcceptor, &clock, &events, &timers,
+         &serverPointer, &eventRecipients](
+            const rtype::server::ServerApplication::ReceivedDatagrams&
+                received) {
           for (const std::unique_ptr<rtype::server::GameInstance>& game :
                games) {
             game->onTick(received.players);
+            for (const rtype::server::ConnectedPlayer& departed :
+                 game->takeDepartedPlayers()) {
+              serverPointer->forget(departed.endpoint, departed.sessionToken);
+              std::erase(eventRecipients, departed.endpoint);
+            }
           }
           connectionAcceptor.setGameInProgress(
               joinableGame.state() !=

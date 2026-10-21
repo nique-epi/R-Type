@@ -13,10 +13,13 @@
 #include "ConnectedPlayer.hpp"
 #include "DatagramCodec.hpp"
 #include "Endpoint.hpp"
+#include "EntityDestruction.hpp"
 #include "EntityIdConstants.hpp"
+#include "EventBus.hpp"
 #include "GameInstanceConstants.hpp"
 #include "GameStarted.hpp"
 #include "GameState.hpp"
+#include "Heartbeat.hpp"
 #include "IncomingDatagram.hpp"
 #include "MessageFrame.hpp"
 #include "MessageOrigin.hpp"
@@ -25,9 +28,11 @@
 #include "NetworkException.hpp"
 #include "PacketHeader.hpp"
 #include "PatternSystem.hpp"
+#include "PlayerDeparture.hpp"
 #include "PlayerInput.hpp"
 #include "PlayerRoster.hpp"
 #include "PlayfieldExitSystem.hpp"
+#include "ProtocolConstants.hpp"
 #include "ReadyState.hpp"
 #include "SequenceOrder.hpp"
 #include "SessionDatagram.hpp"
@@ -70,6 +75,7 @@ bool changesActions(const network::PlayerInput& input,
 GameInstance::GameInstance(Send send, std::uint32_t seed,
                            engine::EventBus& events)
     : send_(std::move(send)),
+      events_(events),
       scoreKeeper_(events, roster_),
       worldStateSender_(roster_, send_),
       seed_(seed),
@@ -89,6 +95,9 @@ GameInstance::GameInstance(Send send, std::uint32_t seed,
              const network::PlayerInput& input) {
         keepIfNewer(origin, input);
       });
+  dispatcher_.registerHandler<network::Heartbeat>(
+      [](const network::MessageOrigin& /*origin*/,
+         const network::Heartbeat& /*heartbeat*/) {});
   startNewWorld();
 }
 
@@ -114,6 +123,7 @@ void GameInstance::onTick(
   for (const network::IncomingDatagram& datagram : datagrams) {
     readPlayerDatagram(datagram);
   }
+  closeSilentSessions();
   switch (state_) {
     case GameState::WaitingForPlayers:
       if (everyPlayerIsReady()) {
@@ -141,6 +151,10 @@ void GameInstance::onTick(
   ++ticksRun_;
 }
 
+std::vector<ConnectedPlayer> GameInstance::takeDepartedPlayers() {
+  return std::exchange(departedPlayers_, {});
+}
+
 void GameInstance::finish() {
   if (state_ == GameState::InProgress) {
     state_ = GameState::Finished;
@@ -164,10 +178,12 @@ void GameInstance::readPlayerDatagram(
     drop(datagram.sender, error.what());
     return;
   }
-  if (roster_.find(datagram.sender) == nullptr) {
+  ConnectedPlayer* const player = roster_.find(datagram.sender);
+  if (player == nullptr) {
     drop(datagram.sender, "its sender is not a player of this game");
     return;
   }
+  player->ticksSinceReceived = 0;
   dispatcher_.dispatch(
       network::MessageOrigin{.sender = datagram.sender, .header = header},
       messages);
@@ -218,6 +234,43 @@ bool GameInstance::everyPlayerIsReady() {
          std::ranges::all_of(players, [](const ConnectedPlayer* player) {
            return player->ready;
          });
+}
+
+void GameInstance::closeSilentSessions() {
+  for (ConnectedPlayer* const player : roster_.connected()) {
+    if (player->ticksSinceReceived >= SESSION_TIMEOUT_TICKS) {
+      closeSession(player->endpoint);
+    } else {
+      ++player->ticksSinceReceived;
+    }
+  }
+}
+
+void GameInstance::closeSession(const network::Endpoint& player) {
+  std::optional<ConnectedPlayer> departed = roster_.remove(player);
+  if (!departed.has_value()) {
+    return;
+  }
+  if (world_->removePlayer(departed->shipEntityId)) {
+    announceShipRemoval(departed->shipEntityId);
+  }
+  announceTimeout(*departed);
+  departedPlayers_.push_back(std::move(*departed));
+}
+
+void GameInstance::announceShipRemoval(std::uint32_t shipEntityId) {
+  events_.publish(game::EntityDestruction{
+      .networkId = shipEntityId, .cause = game::DestructionCause::Removed});
+}
+
+void GameInstance::announceTimeout(const ConnectedPlayer& player) {
+  logger_.info("player ", static_cast<unsigned int>(player.playerNumber),
+               " timed out: nothing received from ", player.endpoint.address,
+               " port ", player.endpoint.port, " for ",
+               network::SESSION_TIMEOUT.count(), " s");
+  events_.publish(
+      game::PlayerDeparture{.playerNumber = player.playerNumber,
+                            .cause = game::DepartureCause::TimedOut});
 }
 
 void GameInstance::startGame() {

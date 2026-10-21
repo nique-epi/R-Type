@@ -111,6 +111,12 @@ constexpr std::uint32_t FIRST_INPUT_NUMBER = 1;
 constexpr std::chrono::seconds HEARTBEAT_INTERVAL{1};
 
 /**
+ * @brief The longest a side of a session waits for a datagram of its peer
+ * before it takes the peer for gone. Provisional, see the protocol page.
+ */
+constexpr std::chrono::seconds SESSION_TIMEOUT{5};
+
+/**
  * @brief Bytes of a player in a WorldState: playerNumber, shipEntityId, lives,
  * score and invulnerable.
  */
