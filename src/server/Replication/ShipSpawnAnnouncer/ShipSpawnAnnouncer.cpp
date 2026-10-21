@@ -1,4 +1,5 @@
 #include "ShipSpawnAnnouncer.hpp"
+#include <cstdint>
 #include <optional>
 #include <utility>
 #include "ConnectedPlayer.hpp"
@@ -13,6 +14,21 @@
 #include "WorldState.hpp"
 
 namespace rtype::server {
+
+namespace {
+
+/** @returns The EntitySpawned that announces the ship @p shipId at
+ * @p position. */
+network::EntitySpawned shipSpawnAt(std::uint32_t shipId,
+                                   const game::Position& position) {
+  return network::EntitySpawned{
+      .entityId = shipId,
+      .entityType = network::WireEntityType::PlayerShip,
+      .x = position.x,
+      .y = position.y};
+}
+
+}  // namespace
 
 ShipSpawnAnnouncer::ShipSpawnAnnouncer(game::World& world, PlayerRoster& roster,
                                        Send send)
@@ -39,11 +55,7 @@ std::optional<network::EntitySpawned> ShipSpawnAnnouncer::shipSpawnOf(
   if (position == nullptr) {
     return std::nullopt;
   }
-  return network::EntitySpawned{
-      .entityId = owner.shipEntityId,
-      .entityType = network::WireEntityType::PlayerShip,
-      .x = position->x,
-      .y = position->y};
+  return shipSpawnAt(owner.shipEntityId, *position);
 }
 
 void ShipSpawnAnnouncer::announce(ConnectedPlayer& recipient,
