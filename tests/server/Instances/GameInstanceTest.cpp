@@ -1,12 +1,15 @@
 #include <gtest/gtest.h>
 #include <algorithm>
 #include <array>
+#include <chrono>
 #include <cstddef>
 #include <cstdint>
 #include <initializer_list>
 #include <optional>
+#include <ostream>
 #include <span>
 #include <string>
+#include <string_view>
 #include <utility>
 #include <vector>
 #include "ByteWriter.hpp"
@@ -1409,6 +1412,69 @@ TEST_F(GameInstanceMovementTest, MovesNoShipWhileFinished) {
   EXPECT_FLOAT_EQ(arrival.x, start.x);
   EXPECT_FLOAT_EQ(arrival.y, start.y);
 }
+
+/** @brief An arrow a player holds alone, named after it, as its bit of the
+ * actions byte, and which way it moves a ship along each axis: -1, 0 or 1. */
+struct HeldArrow {
+  std::string_view name;
+  std::uint8_t actions{};
+  float towardsX{};
+  float towardsY{};
+};
+
+/** @brief Prints an arrow by its name, so the name of each test says which
+ * arrow it holds. */
+void PrintTo(const HeldArrow& arrow, std::ostream* output) {
+  *output << arrow.name;
+}
+
+/** @brief The movement fixture, run once for each arrow. */
+class GameInstanceArrowTest : public GameInstanceMovementTest,
+                              public ::testing::WithParamInterface<HeldArrow> {
+};
+
+/**
+ * Given a game in progress whose first player holds one arrow
+ * When the tick that reads the input runs
+ * Then the ship of that player has moved along the axis of the arrow, the way
+ * it points, as far as SHIP_SPEED goes in one tick, and not along the other
+ * axis
+ */
+TEST_P(GameInstanceArrowTest, MovesTheShipTheWayOfTheArrowHeld) {
+  const HeldArrow arrow = GetParam();
+  startGame();
+  const game::Position start = shipPositionOf(FIRST_PLAYER);
+  send(FIRST_PLAYER, arrow.actions);
+
+  deliver({FIRST_SENT});
+
+  const float oneTick =
+      game::SHIP_SPEED *
+      std::chrono::duration<float>(engine::SIMULATION_TICK_DURATION).count();
+  const game::Position arrival = shipPositionOf(FIRST_PLAYER);
+  EXPECT_NEAR(arrival.x, start.x + (oneTick * arrow.towardsX),
+              POSITION_TOLERANCE);
+  EXPECT_NEAR(arrival.y, start.y + (oneTick * arrow.towardsY),
+              POSITION_TOLERANCE);
+}
+
+INSTANTIATE_TEST_SUITE_P(EachArrow, GameInstanceArrowTest,
+                         ::testing::Values(HeldArrow{.name = "Up",
+                                                     .actions = HOLDS_UP,
+                                                     .towardsX = 0.0F,
+                                                     .towardsY = -1.0F},
+                                           HeldArrow{.name = "Down",
+                                                     .actions = HOLDS_DOWN,
+                                                     .towardsX = 0.0F,
+                                                     .towardsY = 1.0F},
+                                           HeldArrow{.name = "Left",
+                                                     .actions = HOLDS_LEFT,
+                                                     .towardsX = -1.0F,
+                                                     .towardsY = 0.0F},
+                                           HeldArrow{.name = "Right",
+                                                     .actions = HOLDS_RIGHT,
+                                                     .towardsX = 1.0F,
+                                                     .towardsY = 0.0F}));
 
 /** @brief The input fixture, with the log written to a journal the test reads.
  */
