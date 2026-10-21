@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Entity.hpp"
+#include "EntityType.hpp"
 #include "NetworkEntityTable.hpp"
 #include "Position.hpp"
 #include "WorldStateFilter.hpp"
@@ -24,6 +25,7 @@ struct WorldState;
 namespace rtype::client {
 
 class EffectSpawner;
+struct AnimatedSprite;
 
 /**
  * @brief Applies the entities the server announces to the registries of the
@@ -102,6 +104,14 @@ class EntityReplicator {
    * anything is created.
    */
   void create(const network::EntityState& announced);
+
+  /**
+   * @returns A new entity at @p position, with its type and the sprite and
+   * animation of @p look: the components rendering and animation read. Its id
+   * is bound by the caller.
+   */
+  engine::Entity addEntity(game::EntityType type, game::Position position,
+                           AnimatedSprite look);
 
   /**
    * @brief Puts the entity at the position; does nothing for an entity

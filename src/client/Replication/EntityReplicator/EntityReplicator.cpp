@@ -38,6 +38,28 @@ std::optional<game::EntityType> entityTypeOf(network::WireEntityType wireType) {
   return std::nullopt;
 }
 
+/**
+ * @returns The game type of the entity a message announces, or nothing when
+ * the client must not create it: the id NO_ENTITY_ID, or a type outside
+ * WireEntityType.
+ */
+std::optional<game::EntityType> creatableTypeOf(
+    const network::EntityState& announced) {
+  if (announced.entityId == identifiers::NO_ENTITY_ID) {
+    return std::nullopt;
+  }
+  return entityTypeOf(announced.entityType);
+}
+
+/** @returns The entity an EntitySpawned announces, as a WorldState lists
+ * it. */
+network::EntityState announcedBy(const network::EntitySpawned& message) {
+  return network::EntityState{.entityId = message.entityId,
+                              .entityType = message.entityType,
+                              .x = message.x,
+                              .y = message.y};
+}
+
 }  // namespace
 
 EntityReplicator::EntityReplicator(engine::EntityRegistry& entities,
@@ -49,10 +71,7 @@ void EntityReplicator::apply(const network::EntitySpawned& message) {
   if (entityByNetworkId_.find(message.entityId).has_value()) {
     return;
   }
-  create(network::EntityState{.entityId = message.entityId,
-                              .entityType = message.entityType,
-                              .x = message.x,
-                              .y = message.y});
+  create(announcedBy(message));
 }
 
 void EntityReplicator::apply(const network::WorldState& state) {
@@ -84,11 +103,7 @@ void EntityReplicator::apply(const network::EntityDestroyed& message) {
 }
 
 void EntityReplicator::create(const network::EntityState& announced) {
-  if (announced.entityId == identifiers::NO_ENTITY_ID) {
-    return;
-  }
-  const std::optional<game::EntityType> type =
-      entityTypeOf(announced.entityType);
+  const std::optional<game::EntityType> type = creatableTypeOf(announced);
   if (!type.has_value()) {
     return;
   }
@@ -98,13 +113,20 @@ void EntityReplicator::create(const network::EntityState& announced) {
     return;
   }
   const game::Position position{.x = announced.x, .y = announced.y};
+  entityByNetworkId_.bind(announced.entityId,
+                          addEntity(*type, position, std::move(*look)));
+  effects_->playAppearance(*type, position);
+}
+
+engine::Entity EntityReplicator::addEntity(game::EntityType type,
+                                           game::Position position,
+                                           AnimatedSprite look) {
   const engine::Entity entity = entities_->create();
   components_->add(entity, position);
-  components_->add(entity, *type);
-  components_->add(entity, std::move(look->sprite));
-  components_->add(entity, look->animation);
-  entityByNetworkId_.bind(announced.entityId, entity);
-  effects_->playAppearance(*type, position);
+  components_->add(entity, type);
+  components_->add(entity, std::move(look.sprite));
+  components_->add(entity, look.animation);
+  return entity;
 }
 
 void EntityReplicator::move(engine::Entity entity, game::Position position) {
