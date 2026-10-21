@@ -32,7 +32,7 @@ ConnectedPlayer* PlayerRoster::findByNumber(std::uint8_t playerNumber) {
 
 std::vector<ConnectedPlayer*> PlayerRoster::connected() {
   std::vector<ConnectedPlayer*> players;
-  players.reserve(seats_.size());
+  players.reserve(occupiedSeatCount());
   for (std::optional<ConnectedPlayer>& seat : seats_) {
     if (seat.has_value()) {
       players.push_back(&seat.value());
@@ -43,13 +43,20 @@ std::vector<ConnectedPlayer*> PlayerRoster::connected() {
 
 std::vector<network::Endpoint> PlayerRoster::endpoints() const {
   std::vector<network::Endpoint> players;
-  players.reserve(seats_.size());
+  players.reserve(occupiedSeatCount());
   for (const std::optional<ConnectedPlayer>& seat : seats_) {
     if (seat.has_value()) {
       players.push_back(seat->endpoint);
     }
   }
   return players;
+}
+
+std::size_t PlayerRoster::occupiedSeatCount() const {
+  return static_cast<std::size_t>(std::ranges::count_if(
+      seats_, [](const std::optional<ConnectedPlayer>& seat) {
+        return seat.has_value();
+      }));
 }
 
 bool PlayerRoster::isFull() const {

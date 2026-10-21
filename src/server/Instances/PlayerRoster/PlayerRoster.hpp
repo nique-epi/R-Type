@@ -1,6 +1,7 @@
 #pragma once
 
 #include <array>
+#include <cstddef>
 #include <cstdint>
 #include <optional>
 #include <string>
@@ -71,6 +72,10 @@ class PlayerRoster {
   std::optional<ConnectedPlayer> remove(const network::Endpoint& endpoint);
 
  private:
+  /** @returns How many seats hold a player, so a list of the players reserves
+   * nothing while the roster is empty. */
+  [[nodiscard]] std::size_t occupiedSeatCount() const;
+
   std::array<std::optional<ConnectedPlayer>, network::MAXIMUM_PLAYERS> seats_;
 };
 
