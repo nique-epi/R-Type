@@ -62,6 +62,7 @@ using testing::onlyMessageIn;
 using testing::onlyMessageTypeOf;
 using testing::PLAYER_SESSION_TOKENS;
 using testing::playerEndpoint;
+using testing::PROTOCOL_HEARTBEAT_TICKS;
 using testing::PROTOCOL_SESSION_TIMEOUT_TICKS;
 using testing::SECOND_PLAYER;
 using testing::SECOND_SENT;
@@ -1149,6 +1150,105 @@ TEST_F(GameInstanceTest, GivesTheNumberOfAPlayerWhoTimedOutToTheNextOne) {
   const ConnectedPlayer& next = join(THIRD_PLAYER);
 
   EXPECT_EQ(next.playerNumber, network::FIRST_PLAYER_NUMBER + 1);
+}
+
+/**
+ * Given a game that one player started, then finished, which sends that
+ * player nothing while it stays finished
+ * When one second of ticks less one runs
+ * Then the player is sent no Heartbeat yet
+ */
+TEST_F(GameInstanceTest, WaitsASecondWithoutDatagramBeforeAHeartbeat) {
+  startGameWithOnePlayer();
+  game().finish();
+
+  runTicks(PROTOCOL_HEARTBEAT_TICKS - 1);
+
+  EXPECT_TRUE(
+      ofType(network::MessageType::Heartbeat, sentTo(FIRST_PLAYER)).empty());
+}
+
+/**
+ * Given a game that one player started, then finished, which sends that
+ * player nothing while it stays finished
+ * When one second of ticks runs
+ * Then the player is sent one Heartbeat, so its client knows the server is
+ * still there
+ */
+TEST_F(GameInstanceTest, SendsAHeartbeatAfterASecondWithoutDatagram) {
+  startGameWithOnePlayer();
+  game().finish();
+
+  runTicks(PROTOCOL_HEARTBEAT_TICKS);
+
+  EXPECT_EQ(
+      ofType(network::MessageType::Heartbeat, sentTo(FIRST_PLAYER)).size(), 1U);
+}
+
+/**
+ * Given a finished game, which sends its player nothing else
+ * When the Heartbeat goes out
+ * Then it carries the session token of the player and the sequence after the
+ * datagram sent before it
+ */
+TEST_F(GameInstanceTest, SendsTheHeartbeatUnderTheSessionOfThePlayer) {
+  startGameWithOnePlayer();
+  game().finish();
+  const std::uint16_t sequenceBefore =
+      network::DatagramCodec::decodeHeader(sentTo(FIRST_PLAYER).back().payload)
+          .sequence;
+
+  runTicks(PROTOCOL_HEARTBEAT_TICKS);
+
+  const network::PacketHeader header =
+      network::DatagramCodec::decodeHeader(sentTo(FIRST_PLAYER).back().payload);
+  EXPECT_EQ(header.sessionToken, testing::SESSION_TOKEN);
+  EXPECT_EQ(header.sequence, sequenceBefore + 1);
+}
+
+/**
+ * Given a finished game, which sends its player nothing else
+ * When three seconds of ticks run
+ * Then the player is sent a Heartbeat every second, three in all
+ */
+TEST_F(GameInstanceTest, SendsAHeartbeatEverySecondWhileNothingElseGoesOut) {
+  startGameWithOnePlayer();
+  game().finish();
+
+  runTicks(3 * PROTOCOL_HEARTBEAT_TICKS);
+
+  EXPECT_EQ(
+      ofType(network::MessageType::Heartbeat, sentTo(FIRST_PLAYER)).size(), 3U);
+}
+
+/**
+ * Given a game in progress, which sends its player the world state 20 times
+ * per second
+ * When two seconds of ticks run
+ * Then no Heartbeat is sent: the world states already prove the server is
+ * there
+ */
+TEST_F(GameInstanceTest, SendsNoHeartbeatWhileTheWorldStateGoesOut) {
+  startGameWithOnePlayer();
+
+  runTicks(2 * PROTOCOL_HEARTBEAT_TICKS);
+
+  EXPECT_TRUE(
+      ofType(network::MessageType::Heartbeat, sentTo(FIRST_PLAYER)).empty());
+}
+
+/**
+ * Given a waiting room, which sends its player the room every 500 ms
+ * When two seconds of ticks run
+ * Then no Heartbeat is sent
+ */
+TEST_F(GameInstanceTest, SendsNoHeartbeatWhileTheRoomGoesOut) {
+  join(FIRST_PLAYER);
+
+  runTicks(2 * PROTOCOL_HEARTBEAT_TICKS);
+
+  EXPECT_TRUE(
+      ofType(network::MessageType::Heartbeat, sentTo(FIRST_PLAYER)).empty());
 }
 
 /**

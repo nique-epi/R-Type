@@ -74,6 +74,10 @@ namespace rtype::server {
  * since the previous line (see ThrottledLog), so a flood of them cannot flood
  * the log.
  *
+ * A player the server sent nothing for TICKS_PER_HEARTBEAT ticks, whatever
+ * sent it, is sent a Heartbeat at the end of the tick, so its client knows the
+ * server is still there in a state that repeats no message.
+ *
  * A player is heard from each time the game reads one of its datagrams,
  * whatever it holds, a Heartbeat included. A player the game has not heard
  * from for SESSION_TIMEOUT_TICKS ticks crashed or lost the network: its session
@@ -167,8 +171,9 @@ class GameInstance {
    * player not heard from for SESSION_TIMEOUT_TICKS ticks, then moves the game
    * along its states. While it waits, the players are told the room; while it
    * is in progress, the tick is counted, the systems run, the Bydos appear and
-   * the world is sent. Nothing caused by the content of a datagram makes it
-   * throw.
+   * the world is sent. Last, a player sent nothing for TICKS_PER_HEARTBEAT
+   * ticks is sent a Heartbeat. Nothing caused by the content of a datagram
+   * makes it throw.
    */
   void onTick(std::span<const network::IncomingDatagram> datagrams);
 
@@ -218,6 +223,11 @@ class GameInstance {
   /** @brief Logs that @p player timed out and publishes its PlayerDeparture
    * (TimedOut). */
   void announceTimeout(const ConnectedPlayer& player);
+
+  /** @brief Sends a Heartbeat to every player sent nothing for
+   * TICKS_PER_HEARTBEAT ticks, then counts the tick that ends for every
+   * player. */
+  void sendHeartbeats();
 
   /** @brief Moves the game to InProgress and sends every connected player
    * GameStarted. */

@@ -28,6 +28,12 @@ constexpr std::size_t FOURTH_PLAYER = 3;
 constexpr std::size_t PROTOCOL_SESSION_TIMEOUT_TICKS = 300;
 
 /**
+ * @brief The 1 s of the protocol page after which a side sends a Heartbeat
+ * when it sent nothing else, at 60 ticks per second.
+ */
+constexpr std::size_t PROTOCOL_HEARTBEAT_TICKS = 60;
+
+/**
  * @brief What the line about the second player timing out holds.
  */
 constexpr std::string_view SECOND_PLAYER_TIMED_OUT_LINE_TEXT =

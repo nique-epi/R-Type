@@ -31,6 +31,16 @@ static_assert(SESSION_TIMEOUT_TICKS >= 1,
               "SESSION_TIMEOUT must last at least one simulation tick");
 
 /**
+ * @brief HEARTBEAT_INTERVAL in whole simulation ticks, rounded down: 60 ticks
+ * at 60 per second.
+ */
+constexpr std::size_t TICKS_PER_HEARTBEAT = static_cast<std::size_t>(
+    network::HEARTBEAT_INTERVAL / engine::SIMULATION_TICK_DURATION);
+
+static_assert(TICKS_PER_HEARTBEAT >= 1,
+              "HEARTBEAT_INTERVAL must last at least one simulation tick");
+
+/**
  * @brief Module name the games write their log lines under.
  */
 constexpr std::string_view INSTANCES_LOGGER_NAME = "Instances";

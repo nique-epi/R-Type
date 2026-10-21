@@ -49,6 +49,10 @@ struct ConnectedPlayer {
   /** @brief Ticks the game ran since it last read a datagram of the player;
    * the session of the player closes once it reaches SESSION_TIMEOUT_TICKS. */
   std::size_t ticksSinceReceived{0};
+  /** @brief Ticks that ended since the server last sent the player a datagram;
+   * a Heartbeat goes out once it reaches TICKS_PER_HEARTBEAT.
+   * nextSessionHeader() sets it back to 0. */
+  std::size_t ticksSinceSent{0};
 };
 
 }  // namespace rtype::server

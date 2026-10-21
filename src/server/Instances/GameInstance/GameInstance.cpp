@@ -148,6 +148,7 @@ void GameInstance::onTick(
   if (state_ == GameState::InProgress) {
     worldStateSender_.onTick(tick_, world_->components());
   }
+  sendHeartbeats();
   ++ticksRun_;
 }
 
@@ -271,6 +272,15 @@ void GameInstance::announceTimeout(const ConnectedPlayer& player) {
   events_.publish(
       game::PlayerDeparture{.playerNumber = player.playerNumber,
                             .cause = game::DepartureCause::TimedOut});
+}
+
+void GameInstance::sendHeartbeats() {
+  for (ConnectedPlayer* const player : roster_.connected()) {
+    if (player->ticksSinceSent >= TICKS_PER_HEARTBEAT) {
+      send_(sessionDatagram(*player, network::Heartbeat{}));
+    }
+    ++player->ticksSinceSent;
+  }
 }
 
 void GameInstance::startGame() {
