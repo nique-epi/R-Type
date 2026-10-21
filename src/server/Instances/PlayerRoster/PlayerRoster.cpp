@@ -70,4 +70,14 @@ ConnectedPlayer* PlayerRoster::add(const network::Endpoint& endpoint,
   return nullptr;
 }
 
+std::optional<ConnectedPlayer> PlayerRoster::remove(
+    const network::Endpoint& endpoint) {
+  for (std::optional<ConnectedPlayer>& seat : seats_) {
+    if (seat.has_value() && seat->endpoint == endpoint) {
+      return std::exchange(seat, std::nullopt);
+    }
+  }
+  return std::nullopt;
+}
+
 }  // namespace rtype::server

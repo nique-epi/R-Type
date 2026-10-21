@@ -1,5 +1,7 @@
 #include <gtest/gtest.h>
 #include <cstddef>
+#include <cstdint>
+#include <optional>
 #include <string>
 #include <vector>
 #include "ConnectedPlayer.hpp"
@@ -182,6 +184,104 @@ TEST(PlayerRoster, FindsAPlayerByItsNumberOnly) {
   EXPECT_EQ(roster.findByNumber(network::FIRST_PLAYER_NUMBER + 2), nullptr);
   EXPECT_EQ(roster.findByNumber(network::NO_PLAYER_NUMBER), nullptr);
   EXPECT_EQ(roster.findByNumber(network::MAXIMUM_PLAYERS + 1), nullptr);
+}
+
+/**
+ * Given an empty roster
+ * When a sender is removed
+ * Then nobody is removed
+ */
+TEST(PlayerRoster, RemovesNobodyWhenEmpty) {
+  PlayerRoster roster;
+
+  EXPECT_FALSE(roster.remove(playerEndpoint(0)).has_value());
+}
+
+/**
+ * Given a roster with three players
+ * When the second is removed
+ * Then it comes back as it was, numbered 2
+ */
+TEST(PlayerRoster, HandsBackTheRemovedPlayer) {
+  PlayerRoster roster;
+  addPlayers(roster, 3);
+
+  const std::optional<ConnectedPlayer> removed =
+      roster.remove(playerEndpoint(1));
+
+  ASSERT_TRUE(removed.has_value());
+  const ConnectedPlayer player = removed.value_or(ConnectedPlayer{});
+  EXPECT_EQ(player.endpoint, playerEndpoint(1));
+  EXPECT_EQ(player.playerNumber, network::FIRST_PLAYER_NUMBER + 1);
+}
+
+/**
+ * Given a roster with three players
+ * When the second is removed
+ * Then it is no longer found, and the others are still listed
+ */
+TEST(PlayerRoster, NoLongerListsARemovedPlayer) {
+  PlayerRoster roster;
+  addPlayers(roster, 3);
+
+  static_cast<void>(roster.remove(playerEndpoint(1)));
+
+  EXPECT_EQ(roster.find(playerEndpoint(1)), nullptr);
+  std::vector<std::uint8_t> numbers;
+  for (const ConnectedPlayer* const player : roster.connected()) {
+    numbers.push_back(player->playerNumber);
+  }
+  EXPECT_EQ(numbers,
+            (std::vector<std::uint8_t>{network::FIRST_PLAYER_NUMBER,
+                                       network::FIRST_PLAYER_NUMBER + 2}));
+}
+
+/**
+ * Given a full roster
+ * When one player is removed
+ * Then the roster is no longer full
+ */
+TEST(PlayerRoster, IsNotFullOnceAPlayerIsRemoved) {
+  PlayerRoster roster;
+  addPlayers(roster, network::MAXIMUM_PLAYERS);
+
+  static_cast<void>(roster.remove(playerEndpoint(1)));
+
+  EXPECT_FALSE(roster.isFull());
+}
+
+/**
+ * Given a full roster whose second player was removed
+ * When a fifth sender joins
+ * Then it takes the number the removed player had, 2
+ */
+TEST(PlayerRoster, GivesTheNumberOfARemovedPlayerToTheNextOne) {
+  PlayerRoster roster;
+  addPlayers(roster, network::MAXIMUM_PLAYERS);
+  static_cast<void>(roster.remove(playerEndpoint(1)));
+
+  const ConnectedPlayer* const joined =
+      roster.add(playerEndpoint(network::MAXIMUM_PLAYERS),
+                 std::string{PLAYER_NICKNAME}, OTHER_SESSION_TOKEN);
+
+  ASSERT_NE(joined, nullptr);
+  EXPECT_EQ(joined->playerNumber, network::FIRST_PLAYER_NUMBER + 1);
+}
+
+/**
+ * Given a roster with two players
+ * When a sender that is not connected is removed
+ * Then nobody is removed and both players are still listed
+ */
+TEST(PlayerRoster, RemovesNobodyForASenderNotConnected) {
+  PlayerRoster roster;
+  addPlayers(roster, 2);
+
+  const std::optional<ConnectedPlayer> removed =
+      roster.remove(playerEndpoint(network::MAXIMUM_PLAYERS));
+
+  EXPECT_FALSE(removed.has_value());
+  EXPECT_EQ(roster.connected().size(), 2);
 }
 
 }  // namespace
