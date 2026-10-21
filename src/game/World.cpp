@@ -29,25 +29,14 @@ std::uint32_t World::spawnPlayer(Position position) {
 }
 
 bool World::removePlayer(std::uint32_t shipNetworkId) {
-  const std::optional<engine::Entity> ship = playerShipCarrying(shipNetworkId);
+  const std::optional<engine::Entity> ship =
+      shipByNetworkId_.find(shipNetworkId);
   if (!ship.has_value()) {
     return false;
   }
+  shipByNetworkId_.unbind(shipNetworkId);
   components_.destroy(*ship);
   return true;
-}
-
-std::optional<engine::Entity> World::playerShipCarrying(
-    std::uint32_t networkId) {
-  std::optional<engine::Entity> ship;
-  components_.forEach<NetworkIdentity, EntityType>(
-      [&ship, networkId](engine::Entity entity, const NetworkIdentity& identity,
-                         const EntityType& type) {
-        if (type == EntityType::Player && identity.networkId == networkId) {
-          ship = entity;
-        }
-      });
-  return ship;
 }
 
 std::uint32_t World::spawnBydo(Position position, BydoKind kind) {

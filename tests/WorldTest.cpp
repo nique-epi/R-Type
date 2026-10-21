@@ -176,6 +176,22 @@ TEST(World, RemovesOnlyTheShipItIsGiven) {
 }
 
 /**
+ * Given a world whose only ship was removed
+ * When the same network id is removed again
+ * Then nothing is removed: the id no longer names a ship
+ */
+TEST(World, RemovesAShipOnlyOnce) {
+  rtype::game::World world;
+  const std::uint32_t ship =
+      world.spawnPlayer(rtype::game::Position{.x = SOME_X, .y = SOME_Y});
+  ASSERT_TRUE(world.removePlayer(ship));
+
+  const bool removedAgain = world.removePlayer(ship);
+
+  EXPECT_FALSE(removedAgain);
+}
+
+/**
  * Given a world holding the ship of a player
  * When the id no entity has is removed
  * Then nothing is removed and the ship stays
