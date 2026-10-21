@@ -33,6 +33,12 @@ network::WorldState stateListing(std::uint32_t tick,
       .tick = tick, .players = {}, .entities = std::move(entities)};
 }
 
+network::WorldState stateListingPlayers(
+    std::uint32_t tick, std::vector<network::PlayerState> players) {
+  return network::WorldState{
+      .tick = tick, .players = std::move(players), .entities = {}};
+}
+
 network::EntityDestroyed killed(std::uint32_t entityId) {
   return network::EntityDestroyed{.entityId = entityId,
                                   .reason = network::DestructionReason::Killed};

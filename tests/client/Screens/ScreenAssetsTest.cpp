@@ -7,6 +7,7 @@
 #include "AssetLoadingStep.hpp"
 #include "EffectConstants.hpp"
 #include "EntitySpriteConstants.hpp"
+#include "HudSpriteConstants.hpp"
 #include "InterfaceConstants.hpp"
 #include "ScreenAssets.hpp"
 #include "ScreenConstants.hpp"
@@ -16,9 +17,11 @@ using rtype::client::AssetLoadingStep;
 using rtype::client::EFFECT_SHEET_ID;
 using rtype::client::ENTITY_SHEET_ID;
 using rtype::client::gameAssets;
+using rtype::client::HUD_SHEET_ID;
 using rtype::client::loadInterfaceAssets;
 using rtype::client::LOGO_ID;
 using rtype::client::LOGO_SIZE;
+using rtype::client::PLUG_ICON_ID;
 using rtype::client::REGULAR_FONT_ID;
 using rtype::client::SMALL_FONT_ID;
 using rtype::client::titleAssets;
@@ -76,6 +79,24 @@ TEST(ScreenAssets, AGameLoadsTheEntitySheet) {
  */
 TEST(ScreenAssets, AGameLoadsTheEffectSheet) {
   EXPECT_THAT(gameAssets().textures, Contains(EFFECT_SHEET_ID));
+}
+
+/**
+ * Given the assets a game needs
+ * When its textures are listed
+ * Then they hold the HUD sheet the status band is drawn from
+ */
+TEST(ScreenAssets, AGameLoadsTheHudSheet) {
+  EXPECT_THAT(gameAssets().textures, Contains(HUD_SHEET_ID));
+}
+
+/**
+ * Given the assets a game needs
+ * When its textures are listed
+ * Then they hold the plug icon of a pilot whose signal is lost
+ */
+TEST(ScreenAssets, AGameLoadsThePlugIcon) {
+  EXPECT_THAT(gameAssets().textures, Contains(PLUG_ICON_ID));
 }
 
 /**

@@ -43,6 +43,22 @@ target_link_libraries(rtype_client_hangar_bay
 
 rtype_enable_warnings(rtype_client_hangar_bay)
 
+add_library(rtype_client_status_band STATIC StatusBand.cpp)
+
+target_link_libraries(rtype_client_status_band
+  PUBLIC
+    rtype_client_replication_interfaces
+    rtype_client_widgets
+  PRIVATE
+    rtype_client_cut_corner_box
+    rtype_client_entity_sprites
+    rtype_client_outline
+    rtype_client_widget_text
+    rtype_network_protocol
+)
+
+rtype_enable_warnings(rtype_client_status_band)
+
 add_subdirectory(CutCornerBox)
 add_subdirectory(Outline)
 add_subdirectory(SunkBox)

@@ -11,6 +11,8 @@
 #include "BoundAction.hpp"
 #include "ComponentRegistry.hpp"
 #include "ConnectionConstants.hpp"
+#include "ConnectionStatus.hpp"
+#include "DrawJournal.hpp"
 #include "EffectConstants.hpp"
 #include "EffectLengths.hpp"
 #include "EntityAnnouncements.hpp"
@@ -20,11 +22,14 @@
 #include "IEntityLayer.hpp"
 #include "IScreen.hpp"
 #include "KeyPress.hpp"
+#include "LobbyState.hpp"
 #include "PlayerSettings.hpp"
 #include "RecordingEntityLayer.hpp"
+#include "RecordingInterfaceCanvas.hpp"
 #include "RecordingNavigator.hpp"
 #include "RecordingPlayerInputLink.hpp"
 #include "RecordingScreen.hpp"
+#include "RecordingServerConnection.hpp"
 #include "ScreenConstants.hpp"
 #include "ScreenId.hpp"
 #include "ScreenStack.hpp"
@@ -35,6 +40,7 @@
 
 using rtype::client::BoundAction;
 using rtype::client::BYDO_EXPLOSION_FRAME;
+using rtype::client::ConnectionStatus;
 using rtype::client::GameScreen;
 using rtype::client::IEntityLayer;
 using rtype::client::IScreen;
@@ -57,9 +63,13 @@ using rtype::client::testing::SHIP_ID;
 using rtype::client::testing::SHIP_POSITION;
 using rtype::client::testing::spawned;
 using rtype::client::testing::stateListing;
+using rtype::client::testing::stateListingPlayers;
 using rtype::engine::ComponentRegistry;
 using rtype::engine::Duration;
+using rtype::network::LobbyPlayer;
+using rtype::network::PlayerState;
 using rtype::network::WireEntityType;
+using rtype::network::WorldState;
 using ::testing::Contains;
 using ::testing::ElementsAre;
 using ::testing::IsEmpty;
@@ -77,6 +87,37 @@ constexpr std::uint8_t NOTHING_HELD = 0;
 constexpr std::uint8_t UP_BIT = 0b00001;
 constexpr std::uint8_t SHOOT_BIT = 0b10000;
 constexpr Duration LONG_FRAME = std::chrono::milliseconds(500);
+constexpr std::uint8_t FIRST_PILOT = 1;
+constexpr std::uint8_t SECOND_PILOT = 2;
+constexpr std::uint8_t THIRD_PILOT = 3;
+constexpr std::uint8_t LOCAL_NUMBER = SECOND_PILOT;
+constexpr std::uint8_t PILOT_LIVES = 3;
+constexpr std::uint32_t PILOT_SCORE = 12400;
+constexpr int DISPLAYS_AT_CONSTRUCTION = 1;
+
+/** @brief Accepts a connection as player 2, NOVA, of a waiting room where ACE
+ * is player 1 and KAI player 3, none ready. */
+void seatThreePilots(RecordingServerConnection& connection) {
+  connection.setStatus({.phase = ConnectionStatus::Phase::Accepted,
+                        .playerNumber = LOCAL_NUMBER});
+  connection.setLobbyPlayers(
+      {LobbyPlayer{
+           .playerNumber = FIRST_PILOT, .ready = false, .nickname = "ACE"},
+       LobbyPlayer{
+           .playerNumber = SECOND_PILOT, .ready = false, .nickname = "NOVA"},
+       LobbyPlayer{
+           .playerNumber = THIRD_PILOT, .ready = false, .nickname = "KAI"}});
+}
+
+/** @returns A world state of that tick listing the first pilot with its
+ * score and lives, and no entity. */
+WorldState stateScoringTheFirstPilot(std::uint32_t tick) {
+  return stateListingPlayers(tick, {PlayerState{.playerNumber = FIRST_PILOT,
+                                                .shipEntityId = SHIP_ID,
+                                                .lives = PILOT_LIVES,
+                                                .score = PILOT_SCORE,
+                                                .invulnerable = false}});
+}
 
 /** @brief An entity layer that ignores every request, for a game screen whose
  * drawing the test does not read. */
@@ -86,28 +127,43 @@ class IgnoringEntityLayer : public IEntityLayer {
   void show([[maybe_unused]] sf::RenderTarget& target) const override {}
 };
 
-/** @brief What a game screen alone is built from, every part a double. */
+/** @brief What a game screen alone is built from, every part a double, the
+ * connection accepted as player 2 of a waiting room of three. */
 struct LoneGameParts {
+  LoneGameParts() { seatThreePilots(connection); }
+
   RecordingNavigator navigator;
   PlayerSettings settings;
   RecordingPlayerInputLink inputs;
   FakeEntityMessageSource entityMessages;
+  RecordingServerConnection connection;
+  InterfaceCanvasRecord statusCanvas;
 
   /** @returns The parts of a game screen, borrowing these doubles. */
   [[nodiscard]] GameScreen::Parts parts() {
     return GameScreen::Parts{.navigator = navigator,
                              .settings = settings,
                              .inputs = inputs,
-                             .entityMessages = entityMessages};
+                             .entityMessages = entityMessages,
+                             .connection = connection};
+  }
+
+  /** @returns A status canvas recording into statusCanvas. */
+  [[nodiscard]] std::unique_ptr<RecordingInterfaceCanvas> statusCanvasDouble() {
+    return std::make_unique<RecordingInterfaceCanvas>(statusCanvas);
   }
 };
 
 /** @brief The real game screen alone in a stack whose other screens are
- * recording doubles, with a recording entity layer and a source of entity
- * messages the test fills. */
+ * recording doubles, with a recording entity layer, a recording status
+ * canvas, a source of entity messages the test fills, and a connection
+ * accepted as player 2 of a waiting room of three. */
 class GameScreenTest : public ::testing::Test {
  protected:
   void SetUp() override {
+    seatThreePilots(connection_);
+    layerRecord_.drawJournal = &drawJournal_;
+    statusCanvas_.drawJournal = &drawJournal_;
     screens_.push(ScreenId::Game);
     screens_.applyPendingChanges();
   }
@@ -126,20 +182,31 @@ class GameScreenTest : public ::testing::Test {
 
   FakeEntityMessageSource& entityMessages() { return entityMessages_; }
 
+  [[nodiscard]] const InterfaceCanvasRecord& statusCanvas() const {
+    return statusCanvas_;
+  }
+
+  [[nodiscard]] const DrawJournal& drawJournal() const { return drawJournal_; }
+
  private:
   std::vector<JournalEntry> journal_;
   EntityLayerRecord layerRecord_;
   PlayerSettings settings_;
   RecordingPlayerInputLink inputs_;
   FakeEntityMessageSource entityMessages_;
+  RecordingServerConnection connection_;
+  InterfaceCanvasRecord statusCanvas_;
+  DrawJournal drawJournal_;
   ScreenStack screens_{[this](ScreenId screen) -> std::unique_ptr<IScreen> {
     if (screen == ScreenId::Game) {
       return std::make_unique<GameScreen>(
           GameScreen::Parts{.navigator = screens_,
                             .settings = settings_,
                             .inputs = inputs_,
-                            .entityMessages = entityMessages_},
-          std::make_unique<RecordingEntityLayer>(layerRecord_));
+                            .entityMessages = entityMessages_,
+                            .connection = connection_},
+          std::make_unique<RecordingEntityLayer>(layerRecord_),
+          std::make_unique<RecordingInterfaceCanvas>(statusCanvas_));
     }
     return std::make_unique<RecordingScreen>(screen, journal_);
   }};
@@ -338,13 +405,89 @@ TEST_F(GameScreenTest, ReducingFlashesDuringTheGameAppliesToTheNextEffect) {
 }
 
 /**
+ * Given a game started from a waiting room where ACE is player 1, NOVA player
+ * 2 and KAI player 3
+ * When the game is built
+ * Then the status band is titled ACE, NOVA and KAI, and no bay by its number
+ */
+TEST_F(GameScreenTest, TheStatusBandShowsThePilotsOfTheWaitingRoom) {
+  EXPECT_NE(writingOf(statusCanvas(), "ACE"), nullptr);
+  EXPECT_NE(writingOf(statusCanvas(), "NOVA"), nullptr);
+  EXPECT_NE(writingOf(statusCanvas(), "KAI"), nullptr);
+  EXPECT_EQ(writingOf(statusCanvas(), "P1"), nullptr);
+}
+
+/**
+ * Given a game where this client is player 2
+ * When the game is built
+ * Then the status band says YOU
+ */
+TEST_F(GameScreenTest, TheStatusBandTagsTheLocalPlayer) {
+  EXPECT_NE(writingOf(statusCanvas(), "YOU"), nullptr);
+}
+
+/**
+ * Given the game alone in the stack
+ * When it is drawn once
+ * Then the status band is laid once
+ */
+TEST_F(GameScreenTest, DrawingLaysTheStatusBand) {
+  BlankRenderTarget target;
+
+  screens().draw(target);
+
+  EXPECT_EQ(statusCanvas().showCount, SHOWS_AFTER_ONE_DRAW);
+}
+
+/**
+ * Given the game alone in the stack
+ * When it is drawn
+ * Then the status band is laid after the entities, so no entity covers it
+ */
+TEST_F(GameScreenTest, TheStatusBandIsLaidOverTheEntities) {
+  BlankRenderTarget target;
+
+  screens().draw(target);
+
+  EXPECT_THAT(drawJournal().laid,
+              ElementsAre(ENTITY_LAYER_LAID, INTERFACE_CANVAS_LAID));
+}
+
+/**
+ * Given the game
+ * When a world state gives player 1 12400 points and a frame passes
+ * Then the status band shows 12400
+ */
+TEST_F(GameScreenTest, AWorldStateRepaintsTheStatusBand) {
+  entityMessages().queue(stateScoringTheFirstPilot(APPLIED_TICK));
+
+  screens().update(ONE_FRAME);
+
+  EXPECT_NE(writingOf(statusCanvas(), "12400"), nullptr);
+}
+
+/**
+ * Given the game
+ * When a world state that lists no player arrives and a frame passes
+ * Then the status band is not painted again
+ */
+TEST_F(GameScreenTest, AStateThatChangesNoPilotDoesNotRepaint) {
+  entityMessages().queue(stateListing(APPLIED_TICK, {}));
+
+  screens().update(ONE_FRAME);
+
+  EXPECT_EQ(statusCanvas().displayCount, DISPLAYS_AT_CONSTRUCTION);
+}
+
+/**
  * Given the game screen
  * When the player presses up and space
  * Then both actions are held
  */
 TEST(GameScreenActionsTest, PressedKeysBecomeHeldActions) {
   LoneGameParts doubles;
-  GameScreen game(doubles.parts(), std::make_unique<IgnoringEntityLayer>());
+  GameScreen game(doubles.parts(), std::make_unique<IgnoringEntityLayer>(),
+                  doubles.statusCanvasDouble());
 
   game.handleEvent(keyPress(sf::Keyboard::Key::Up, sf::Keyboard::Scan::Up));
   game.handleEvent(
@@ -360,7 +503,8 @@ TEST(GameScreenActionsTest, PressedKeysBecomeHeldActions) {
  */
 TEST(GameScreenActionsTest, ReleasedKeyIsNoLongerHeld) {
   LoneGameParts doubles;
-  GameScreen game(doubles.parts(), std::make_unique<IgnoringEntityLayer>());
+  GameScreen game(doubles.parts(), std::make_unique<IgnoringEntityLayer>(),
+                  doubles.statusCanvasDouble());
   game.handleEvent(keyPress(sf::Keyboard::Key::Up, sf::Keyboard::Scan::Up));
 
   game.handleEvent(keyRelease(sf::Keyboard::Key::Up, sf::Keyboard::Scan::Up));
@@ -375,7 +519,8 @@ TEST(GameScreenActionsTest, ReleasedKeyIsNoLongerHeld) {
  */
 TEST(GameScreenActionsTest, LosingFocusReleasesTheHeldActions) {
   LoneGameParts doubles;
-  GameScreen game(doubles.parts(), std::make_unique<IgnoringEntityLayer>());
+  GameScreen game(doubles.parts(), std::make_unique<IgnoringEntityLayer>(),
+                  doubles.statusCanvasDouble());
   game.handleEvent(keyPress(sf::Keyboard::Key::Up, sf::Keyboard::Scan::Up));
 
   game.handleEvent(sf::Event{sf::Event::FocusLost{}});
@@ -390,7 +535,8 @@ TEST(GameScreenActionsTest, LosingFocusReleasesTheHeldActions) {
  */
 TEST(GameScreenActionsTest, KeysPressedWithoutFocusAreIgnored) {
   LoneGameParts doubles;
-  GameScreen game(doubles.parts(), std::make_unique<IgnoringEntityLayer>());
+  GameScreen game(doubles.parts(), std::make_unique<IgnoringEntityLayer>(),
+                  doubles.statusCanvasDouble());
   game.handleEvent(sf::Event{sf::Event::FocusLost{}});
 
   game.handleEvent(keyPress(sf::Keyboard::Key::Up, sf::Keyboard::Scan::Up));
@@ -405,7 +551,8 @@ TEST(GameScreenActionsTest, KeysPressedWithoutFocusAreIgnored) {
  */
 TEST(GameScreenActionsTest, KeysPressedAfterFocusGainedCount) {
   LoneGameParts doubles;
-  GameScreen game(doubles.parts(), std::make_unique<IgnoringEntityLayer>());
+  GameScreen game(doubles.parts(), std::make_unique<IgnoringEntityLayer>(),
+                  doubles.statusCanvasDouble());
   game.handleEvent(sf::Event{sf::Event::FocusLost{}});
   game.handleEvent(sf::Event{sf::Event::FocusGained{}});
 
@@ -421,7 +568,8 @@ TEST(GameScreenActionsTest, KeysPressedAfterFocusGainedCount) {
  */
 TEST(GameScreenActionsTest, OpeningTheOptionsReleasesTheHeldActions) {
   LoneGameParts doubles;
-  GameScreen game(doubles.parts(), std::make_unique<IgnoringEntityLayer>());
+  GameScreen game(doubles.parts(), std::make_unique<IgnoringEntityLayer>(),
+                  doubles.statusCanvasDouble());
   game.handleEvent(keyPress(sf::Keyboard::Key::Up, sf::Keyboard::Scan::Up));
 
   game.handleEvent(keyRelease(OPTIONS_KEY, sf::Keyboard::Scan::Escape));
@@ -437,7 +585,8 @@ TEST(GameScreenActionsTest, OpeningTheOptionsReleasesTheHeldActions) {
 TEST(GameScreenActionsTest, AKeyChangedInTheOptionsMovesTheShip) {
   LoneGameParts doubles;
   doubles.settings.keys.bind(BoundAction::MoveUp, sf::Keyboard::Scan::W);
-  GameScreen game(doubles.parts(), std::make_unique<IgnoringEntityLayer>());
+  GameScreen game(doubles.parts(), std::make_unique<IgnoringEntityLayer>(),
+                  doubles.statusCanvasDouble());
 
   game.handleEvent(keyPress(sf::Keyboard::Key::W, sf::Keyboard::Scan::W));
 
@@ -451,7 +600,8 @@ TEST(GameScreenActionsTest, AKeyChangedInTheOptionsMovesTheShip) {
  */
 TEST(GameScreenInputsTest, TheFirstUpdateSendsTheActionsHeld) {
   LoneGameParts doubles;
-  GameScreen game(doubles.parts(), std::make_unique<IgnoringEntityLayer>());
+  GameScreen game(doubles.parts(), std::make_unique<IgnoringEntityLayer>(),
+                  doubles.statusCanvasDouble());
   game.handleEvent(keyPress(sf::Keyboard::Key::Up, sf::Keyboard::Scan::Up));
 
   game.update(ONE_FRAME);
@@ -467,7 +617,8 @@ TEST(GameScreenInputsTest, TheFirstUpdateSendsTheActionsHeld) {
 TEST(GameScreenInputsTest, AnUpdateWithinTheIntervalSendsNothingMore) {
   ASSERT_LT(ONE_FRAME + ONE_TICK, PLAYER_INPUT_INTERVAL);
   LoneGameParts doubles;
-  GameScreen game(doubles.parts(), std::make_unique<IgnoringEntityLayer>());
+  GameScreen game(doubles.parts(), std::make_unique<IgnoringEntityLayer>(),
+                  doubles.statusCanvasDouble());
   game.update(ONE_FRAME);
 
   game.update(ONE_TICK);
@@ -482,7 +633,8 @@ TEST(GameScreenInputsTest, AnUpdateWithinTheIntervalSendsNothingMore) {
  */
 TEST(GameScreenInputsTest, BehindTheOptionsItSendsNothingHeld) {
   LoneGameParts doubles;
-  GameScreen game(doubles.parts(), std::make_unique<IgnoringEntityLayer>());
+  GameScreen game(doubles.parts(), std::make_unique<IgnoringEntityLayer>(),
+                  doubles.statusCanvasDouble());
   game.handleEvent(keyPress(sf::Keyboard::Key::Up, sf::Keyboard::Scan::Up));
   game.handleEvent(keyRelease(OPTIONS_KEY, sf::Keyboard::Scan::Escape));
 

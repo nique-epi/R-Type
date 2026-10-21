@@ -133,9 +133,8 @@ TEST_F(BydoSpawnerTest, ABydoAppearsOffScreenWhenTheIntervalPasses) {
   const network::EntitySpawned spawned = spawnedIn(sent().front());
   EXPECT_EQ(spawned.entityType, network::WireEntityType::Bydo);
   EXPECT_GT(spawned.x, game::PLAYFIELD_WIDTH);
-  EXPECT_GE(spawned.y, game::BYDO_SPAWN_VERTICAL_MARGIN);
-  EXPECT_LE(spawned.y,
-            game::PLAYFIELD_HEIGHT - game::BYDO_SPAWN_VERTICAL_MARGIN);
+  EXPECT_GE(spawned.y, game::BYDO_ROW_MARGIN);
+  EXPECT_LE(spawned.y, game::PLAY_AREA_HEIGHT - game::BYDO_ROW_MARGIN);
 }
 
 /**

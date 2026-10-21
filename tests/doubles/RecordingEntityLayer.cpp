@@ -3,6 +3,7 @@
 #include <utility>
 #include <vector>
 #include "ComponentRegistry.hpp"
+#include "DrawJournal.hpp"
 #include "Entity.hpp"
 #include "Position.hpp"
 #include "Sprite.hpp"
@@ -30,4 +31,7 @@ void RecordingEntityLayer::paint(ComponentRegistry& components) {
 void RecordingEntityLayer::show(sf::RenderTarget& target) const {
   ++record_->showCount;
   record_->lastShowTarget = &target;
+  if (record_->drawJournal != nullptr) {
+    record_->drawJournal->laid.emplace_back(ENTITY_LAYER_LAID);
+  }
 }
