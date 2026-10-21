@@ -19,6 +19,8 @@
 #include "LobbyState.hpp"
 #include "Logger.hpp"
 #include "MessageDispatcher.hpp"
+#include "MessagePayload.hpp"
+#include "MessageType.hpp"
 #include "PacketHeader.hpp"
 #include "ProtocolConstants.hpp"
 #include "TimeConstants.hpp"
@@ -187,6 +189,22 @@ class ServerConnection : public IServerConnection,
    * state asked for, the start of the game and the entity messages not handed
    * over. */
   void forgetSession();
+
+  /** @brief Sends the server one datagram holding @p payload as a message of
+   * type @p type, under nextHeader(): every datagram to the server goes
+   * through here, so each one starts the delay before the next Heartbeat
+   * over. */
+  void sendToServer(network::MessageType type,
+                    std::span<const std::byte> payload);
+
+  /** @brief Sends the server one datagram holding @p message, as the overload
+   * above does.
+   * @throws What encodeMessage() throws for @p message, before anything is
+   * sent or any sequence is used. */
+  template <network::EncodableMessage Message>
+  void sendToServer(const Message& message) {
+    sendToServer(Message::TYPE, network::encodeMessage(message));
+  }
 
   /** @returns A header carrying the token of the session, 0 before it, and
    * the next sequence, which it uses up. Every datagram to the server takes
