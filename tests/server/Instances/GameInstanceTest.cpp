@@ -81,6 +81,7 @@ using testing::THIRD_SENT;
 using testing::THIRD_SEQUENCE;
 using testing::TICKS_PER_REJECTION_LINE;
 using testing::UNLISTED_ACTION;
+using testing::WIRE_COORDINATE_TOLERANCE;
 
 constexpr std::uint32_t SOME_SEED = 7;
 constexpr std::uint32_t SOME_POINTS = 100;
@@ -116,6 +117,18 @@ std::vector<network::OutgoingDatagram> ofType(
     }
   }
   return kept;
+}
+
+/** @returns The entity of @p state whose id is @p entityId, or nothing when the
+ * state does not list it. */
+std::optional<network::EntityState> entityOf(const network::WorldState& state,
+                                             std::uint32_t entityId) {
+  for (const network::EntityState& entity : state.entities) {
+    if (entity.entityId == entityId) {
+      return entity;
+    }
+  }
+  return std::nullopt;
 }
 
 /** @returns The room of a game whose only player, the first, is not ready. */
@@ -1273,17 +1286,23 @@ class GameInstanceMovementTest : public GameInstanceInputTest {
     ASSERT_EQ(game().state(), GameState::InProgress);
   }
 
-  /** @returns Where the ship of @p player is; the origin, after a failure, when
-   * it has none. */
-  [[nodiscard]] game::Position shipPositionOf(std::size_t player) {
+  /** @returns The network id of the ship of @p player; NO_ENTITY_ID, after a
+   * failure, when the player is not in the roster. */
+  [[nodiscard]] std::uint32_t shipIdOf(std::size_t player) {
     const ConnectedPlayer* const connected =
         game().roster().find(playerEndpoint(player));
     if (connected == nullptr) {
       ADD_FAILURE() << "player " << player << " is not in the roster";
-      return game::Position{.x = 0.0F, .y = 0.0F};
+      return identifiers::NO_ENTITY_ID;
     }
+    return connected->shipEntityId;
+  }
+
+  /** @returns Where the ship of @p player is; the origin, after a failure, when
+   * it has none. */
+  [[nodiscard]] game::Position shipPositionOf(std::size_t player) {
     const game::Position* const ship =
-        game().world().shipPositionOf(connected->shipEntityId);
+        game().world().shipPositionOf(shipIdOf(player));
     if (ship == nullptr) {
       ADD_FAILURE() << "player " << player << " has no ship";
       return game::Position{.x = 0.0F, .y = 0.0F};
@@ -1411,6 +1430,35 @@ TEST_F(GameInstanceMovementTest, MovesNoShipWhileFinished) {
   const game::Position arrival = shipPositionOf(FIRST_PLAYER);
   EXPECT_FLOAT_EQ(arrival.x, start.x);
   EXPECT_FLOAT_EQ(arrival.y, start.y);
+}
+
+/**
+ * Given a game in progress whose first player holds right
+ * When the ticks run up to the first WorldState sent after the input
+ * Then that WorldState places the ship where the world has it at the end of
+ * that tick: the ships move before the state is sent, not a tick later
+ */
+TEST_F(GameInstanceMovementTest, SendsTheShipWhereItMovedInTheSameTick) {
+  startGame();
+  const game::Position start = shipPositionOf(FIRST_PLAYER);
+  send(FIRST_PLAYER, HOLDS_RIGHT);
+
+  deliver({FIRST_SENT});
+  runTicks(TICKS_PER_WORLD_STATE - 1);
+
+  const game::Position moved = shipPositionOf(FIRST_PLAYER);
+  ASSERT_NE(moved.x, start.x);
+  const std::vector<network::OutgoingDatagram> states =
+      ofType(network::MessageType::WorldState, sentTo(FIRST_PLAYER));
+  ASSERT_EQ(states.size(), 2U);
+  const auto state = onlyMessageIn<network::WorldState>(states.back());
+  ASSERT_EQ(state.tick, TICKS_PER_WORLD_STATE);
+  const std::optional<network::EntityState> ship =
+      entityOf(state, shipIdOf(FIRST_PLAYER));
+  ASSERT_TRUE(ship.has_value());
+  const network::EntityState sent = ship.value_or(network::EntityState{});
+  EXPECT_NEAR(sent.x, moved.x, WIRE_COORDINATE_TOLERANCE);
+  EXPECT_NEAR(sent.y, moved.y, WIRE_COORDINATE_TOLERANCE);
 }
 
 /** @brief An arrow a player holds alone, named after it, as its bit of the

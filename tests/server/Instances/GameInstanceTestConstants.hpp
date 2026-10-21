@@ -93,4 +93,11 @@ static_assert(SHUFFLED_INPUT_COUNT <= network::PLAYER_ACTION_BITS + 1U,
               "each shuffled input holds actions no other input holds, so "
               "the actions kept tell which input was kept");
 
+/**
+ * @brief How far a coordinate read from a WorldState may be from the position
+ * it was sent for: a coordinate travels in steps of an eighth of a unit.
+ */
+constexpr float WIRE_COORDINATE_TOLERANCE =
+    1.0F / network::WIRE_COORDINATE_STEPS_PER_UNIT;
+
 }  // namespace rtype::server::testing
