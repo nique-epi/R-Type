@@ -1,5 +1,6 @@
 #pragma once
 
+#include "CollisionConstants.hpp"
 #include "PlayfieldConstants.hpp"
 #include "Position.hpp"
 #include "ShipControlConstants.hpp"
@@ -8,8 +9,8 @@ namespace rtype::game::testing {
 
 /** @brief The middle of the playfield, where a test ship starts when it must
  * meet no edge. */
-constexpr Position PLAYFIELD_CENTER{.x = PLAYFIELD_WIDTH / 2.0F,
-                                    .y = PLAYFIELD_HEIGHT / 2.0F};
+constexpr Position PLAYFIELD_CENTER{.x = PLAYFIELD_WIDTH * engine::HALF,
+                                    .y = PLAYFIELD_HEIGHT * engine::HALF};
 
 /** @brief How far from the edge it heads for a test ship starts, in logical
  * units. */
@@ -25,10 +26,12 @@ constexpr float POSITION_TOLERANCE = 0.01F;
  * @brief Where the center of a ship stops against each edge of the playfield:
  * half a ship away from it, so the whole ship stays on screen.
  */
-constexpr float LEFT_EDGE_STOP_X = SHIP_WIDTH / 2.0F;
-constexpr float RIGHT_EDGE_STOP_X = PLAYFIELD_WIDTH - (SHIP_WIDTH / 2.0F);
-constexpr float TOP_EDGE_STOP_Y = SHIP_HEIGHT / 2.0F;
-constexpr float BOTTOM_EDGE_STOP_Y = PLAYFIELD_HEIGHT - (SHIP_HEIGHT / 2.0F);
+constexpr float LEFT_EDGE_STOP_X = SHIP_WIDTH * engine::HALF;
+constexpr float RIGHT_EDGE_STOP_X =
+    PLAYFIELD_WIDTH - (SHIP_WIDTH * engine::HALF);
+constexpr float TOP_EDGE_STOP_Y = SHIP_HEIGHT * engine::HALF;
+constexpr float BOTTOM_EDGE_STOP_Y =
+    PLAYFIELD_HEIGHT - (SHIP_HEIGHT * engine::HALF);
 
 static_assert(SHIP_SPEED < PLAYFIELD_CENTER.y - TOP_EDGE_STOP_Y,
               "a second of movement from PLAYFIELD_CENTER meets no edge, so a "

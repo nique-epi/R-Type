@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <chrono>
 #include <numbers>
+#include "CollisionConstants.hpp"
 #include "PlayfieldConstants.hpp"
 #include "Position.hpp"
 #include "ShipControlConstants.hpp"
@@ -35,8 +36,8 @@ float speedPerAxis(bool diagonal) {
 /** @returns @p ship moved the least needed for the whole ship to be inside the
  * playfield. */
 Position keptInsidePlayfield(Position ship) {
-  const float halfWidth = SHIP_WIDTH / 2.0F;
-  const float halfHeight = SHIP_HEIGHT / 2.0F;
+  const float halfWidth = SHIP_WIDTH * engine::HALF;
+  const float halfHeight = SHIP_HEIGHT * engine::HALF;
   return Position{
       .x = std::clamp(ship.x, halfWidth, PLAYFIELD_WIDTH - halfWidth),
       .y = std::clamp(ship.y, halfHeight, PLAYFIELD_HEIGHT - halfHeight)};
