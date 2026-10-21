@@ -9,6 +9,7 @@
 #include <string>
 #include <string_view>
 #include <utility>
+#include <vector>
 #include "BoundedQueue.hpp"
 #include "DatagramCodec.hpp"
 #include "Endpoint.hpp"
@@ -97,6 +98,14 @@ void DatagramSorter::admit(const network::Endpoint& player,
   }
   admitted_.push_back(
       AdmittedPlayer{.endpoint = player, .sessionToken = sessionToken});
+}
+
+void DatagramSorter::forget(const network::Endpoint& player,
+                            std::uint64_t sessionToken) {
+  std::erase_if(admitted_, [&player,
+                            sessionToken](const AdmittedPlayer& admitted) {
+    return admitted.endpoint == player && admitted.sessionToken == sessionToken;
+  });
 }
 
 std::size_t DatagramSorter::droppedCount() const {
