@@ -77,6 +77,10 @@ class InterfaceCanvas : public IInterfaceCanvas {
 
   [[nodiscard]] const LoadedFont& loadedFontOf(TextFont font) const;
 
+  /** @returns The loaded texture of an id, or nullptr once the log says it is
+   * missing; a missing id is reported once. */
+  [[nodiscard]] const sf::Texture* foundTexture(std::string_view assetId);
+
   AssetTextureSource textures_;
   LoadedFont regularFont_;
   LoadedFont smallFont_;

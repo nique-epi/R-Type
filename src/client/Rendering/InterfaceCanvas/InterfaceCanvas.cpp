@@ -29,6 +29,35 @@
 
 namespace rtype::client {
 
+namespace {
+
+/** @returns The pixels of an image that its copy, enlarged and placed as
+ * asked, shows whole inside the visible area, from the top-left corner of
+ * the image; nothing when it shows none. */
+std::optional<sf::IntRect> visiblePixelsOf(TextureArea image,
+                                           ImagePlacement placement,
+                                           sf::IntRect visibleArea) {
+  const sf::Vector2i topLeft = placement.topLeft;
+  const int scale = placement.scale;
+  const std::optional<sf::IntRect> shown =
+      sf::IntRect(topLeft, image.rectangle.size * scale)
+          .findIntersection(visibleArea);
+  if (!shown.has_value()) {
+    return std::nullopt;
+  }
+  const sf::Vector2i firstPixel =
+      (shown->position - topLeft + sf::Vector2i(scale - 1, scale - 1)) / scale;
+  const sf::Vector2i endPixel =
+      (shown->position + shown->size - topLeft) / scale;
+  const sf::Vector2i shownPixels = endPixel - firstPixel;
+  if (shownPixels.x <= 0 || shownPixels.y <= 0) {
+    return std::nullopt;
+  }
+  return sf::IntRect(firstPixel, shownPixels);
+}
+
+}  // namespace
+
 InterfaceCanvas::InterfaceCanvas(const AssetLibrary& library)
     : textures_(library),
       regularFont_{.font = &library.font(REGULAR_FONT_ID),
@@ -85,34 +114,19 @@ void InterfaceCanvas::write(std::string_view text, sf::Vector2i anchor,
 
 void InterfaceCanvas::drawImage(TextureArea image, ImagePlacement placement,
                                 sf::IntRect visibleArea) {
-  const sf::Texture* texture = textures_.texture(image.assetId);
-  if (texture == nullptr) {
-    if (!reportedMissingIds_.contains(image.assetId)) {
-      reportedMissingIds_.emplace(image.assetId);
-      logger_.warn("no texture for asset id ", image.assetId);
-    }
+  const sf::Texture* texture = foundTexture(image.assetId);
+  const std::optional<sf::IntRect> visible =
+      visiblePixelsOf(image, placement, visibleArea);
+  if (texture == nullptr || !visible.has_value()) {
     return;
   }
-  const sf::Vector2i topLeft = placement.topLeft;
-  const int scale = placement.scale;
-  const std::optional<sf::IntRect> shown =
-      sf::IntRect(topLeft, image.rectangle.size * scale)
-          .findIntersection(visibleArea);
-  if (!shown.has_value()) {
-    return;
-  }
-  const sf::Vector2i firstPixel =
-      (shown->position - topLeft + sf::Vector2i(scale - 1, scale - 1)) / scale;
-  const sf::Vector2i endPixel =
-      (shown->position + shown->size - topLeft) / scale;
-  const sf::Vector2i shownPixels = endPixel - firstPixel;
-  if (shownPixels.x <= 0 || shownPixels.y <= 0) {
-    return;
-  }
-  sf::Sprite sprite(*texture, sf::IntRect(image.rectangle.position + firstPixel,
-                                          shownPixels));
-  sprite.setPosition(sf::Vector2f(topLeft + (firstPixel * scale)));
-  sprite.setScale({static_cast<float>(scale), static_cast<float>(scale)});
+  const auto scale = static_cast<float>(placement.scale);
+  sf::Sprite sprite(
+      *texture,
+      sf::IntRect(image.rectangle.position + visible->position, visible->size));
+  sprite.setPosition(
+      sf::Vector2f(placement.topLeft + (visible->position * placement.scale)));
+  sprite.setScale({scale, scale});
   canvas_.canvas().draw(sprite);
 }
 
@@ -131,6 +145,15 @@ const InterfaceCanvas::LoadedFont& InterfaceCanvas::loadedFontOf(
       break;
   }
   return regularFont_;
+}
+
+const sf::Texture* InterfaceCanvas::foundTexture(std::string_view assetId) {
+  const sf::Texture* texture = textures_.texture(assetId);
+  if (texture == nullptr && !reportedMissingIds_.contains(assetId)) {
+    reportedMissingIds_.emplace(assetId);
+    logger_.warn("no texture for asset id ", assetId);
+  }
+  return texture;
 }
 
 }  // namespace rtype::client
