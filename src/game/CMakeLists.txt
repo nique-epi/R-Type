@@ -1,6 +1,7 @@
 add_subdirectory(Components)
 add_subdirectory(Events)
 add_subdirectory(Exceptions)
+add_subdirectory(ShipControl)
 add_subdirectory(Spawning)
 add_subdirectory(Systems)
 
