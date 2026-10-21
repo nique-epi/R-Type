@@ -205,21 +205,23 @@ send(rtype::server::sessionDatagram(player, rtype::network::GameStarted{}));
 - `GameEnded` is not sent yet.
 
 ```cpp
-for (const auto& game : games) {
+for (const std::unique_ptr<rtype::server::GameInstance>& game :
+     parts.games.get()) {
   game->onTick(received.players);
+  forgetDepartedPlayers(*game, server);
 }
-connectionAcceptor.setGameInProgress(
-    joinableGame.state() != rtype::server::GameState::WaitingForPlayers);
-connectionAcceptor.receive(received.connectionRequests, clock.now());
+answerConnectionRequests(parts, received.connectionRequests);
 ```
+
+`runTick()` in `src/server/main.cpp` runs these steps; `answerConnectionRequests()` first tells the acceptor whether the first game is in progress, then hands it the requests.
 
 ## Silent players: heartbeats and timeouts
 
 A client that crashes, is killed or loses the network sends nothing more, and nothing in UDP says so. Each `GameInstance` therefore counts, for each of its players, the ticks since it last read one of its datagrams (`ConnectedPlayer::ticksSinceReceived`). Any datagram the game reads counts: an input, a `ReadyState`, or the `Heartbeat` a client sends after `HEARTBEAT_INTERVAL` (1 s) without sending anything else (see [Client](/R-Type/client/#joining-a-server-serverconnection)). When the count reaches `SESSION_TIMEOUT_TICKS` (300 ticks, the `SESSION_TIMEOUT` of 5 s), the session closes in that tick, after the datagrams are read and before the game moves along its states:
 
-1. the ship leaves the world (`World::removePlayer`) and is published as an `EntityDestruction` (`Removed`), so the clients make it disappear without an explosion;
-2. a `PlayerDeparture` (`TimedOut`) is published, which the others get as `PlayerLeft`, three times (see [Game events](#game-events-gameeventencoder-and-gameeventbroadcaster));
-3. the seat and the number are freed, so a client killed and started again, which comes back from another port, takes a free seat instead of a fifth one.
+1. the seat and the number are freed (`PlayerRoster::remove`), so a client killed and started again, which comes back from another port, takes a free seat instead of a fifth one; the steps below read the copy of the player the roster hands back;
+2. the ship leaves the world (`World::removePlayer`) and, when the world held it, is published as an `EntityDestruction` (`Removed`), so the clients make it disappear without an explosion;
+3. a `PlayerDeparture` (`TimedOut`) is published, which the others get as `PlayerLeft`, three times (see [Game events](#game-events-gameeventencoder-and-gameeventbroadcaster)). No client reads `PlayerLeft` yet: it skips it as a message without handler, so no player is told on screen (see [Protocol](/R-Type/protocol/#a-peer-disappears)).
 
 `takeDepartedPlayers()` hands each departed player over once. `main.cpp` then calls `ServerApplication::forget()`. The game events go to the players of the roster, so the next ones reach the others only (see [Game events](#game-events-gameeventencoder-and-gameeventbroadcaster)). The game logs `player <n> timed out: nothing received from <address> port <port> for 5 s` at the `info` level under `Instances`.
 

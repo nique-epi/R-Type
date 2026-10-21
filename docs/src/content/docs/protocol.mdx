@@ -316,7 +316,7 @@ A message that is valid but means nothing in the current state of its receiver c
 
 A player that comes back after its session closed connects again from the first request, as an unknown sender, and gets a new session token.
 
-Of the cases above, the programs do not handle yet: `Disconnection`, which the server neither reads nor sends, so a player who leaves times out 5 s later and the others get `PlayerLeft` (`TimedOut`) instead of (`Left`); the 5-second timeout of the client, which never shows that the connection is lost; the `IncompatibleVersion` answer, which the server does not send, while the client, which shows the refusal, does not show the two version numbers, and drops a datagram of another version without telling the player.
+Of the cases above, the programs do not handle yet: the `PlayerLeft` a client receives, which it skips as a message it has no handler for, so no player is told on screen that another one left; `Disconnection`, which the server neither reads nor sends, so a player who leaves times out 5 s later and the others get `PlayerLeft` (`TimedOut`) instead of (`Left`); the 5-second timeout of the client, which never shows that the connection is lost; the `IncompatibleVersion` answer, which the server does not send, while the client, which shows the refusal, does not show the two version numbers, and drops a datagram of another version without telling the player.
 
 ## Losses
 
