@@ -142,7 +142,7 @@ A player keeps the number given by `ConnectionAccepted` until it leaves; the num
 
 ### Inputs
 
-`actions` holds one bit per action, bit 0 being the least significant: 0 up, 1 down, 2 left, 3 right, 4 shoot. Bits 5 to 7 are 0, otherwise the message is invalid. A `PlayerInput` is sent even when no key is held (`actions` is 0). `inputNumber` starts at 1 and grows by 1 for each `PlayerInput` sent. The server keeps, for each player, the input with the highest `inputNumber`, applies it at every tick until a newer one arrives, and ignores an older one that arrives late.
+`actions` holds one bit per action, bit 0 being the least significant: 0 up, 1 down, 2 left, 3 right, 4 shoot. Bits 5 to 7 are 0, otherwise the message is invalid. A `PlayerInput` is sent even when no key is held (`actions` is 0). `inputNumber` starts at 1 and grows by 1 for each `PlayerInput` sent. The server keeps, for each player, the input with the highest `inputNumber`, applies it at every tick of a game in progress until a newer one arrives, and ignores an older one that arrives late.
 
 ### World state
 
