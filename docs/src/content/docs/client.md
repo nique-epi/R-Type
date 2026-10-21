@@ -430,7 +430,7 @@ const ActionSet held = gameScreen.playerActions();
 const std::uint8_t actions = held.bits();
 ```
 
-`GameScreen::playerActions()` is the only way out, since the window hands the key and focus events to the screen on top. The game screen sends it to the server at each input due (see [Inputs to the server](#inputs-to-the-server-playerinputpacer-iplayerinputlink)); there is no player ship on the client yet. The game screen logs `actions held: <byte>` at trace level each time the byte changes. It assumes the window has the focus when it is built and learns otherwise from the focus events. Only the screen on top receives events, so opening the options releases every action held (`PlayerCommands::releaseAll()`): a key changed in the options would otherwise never release its action.
+`GameScreen::playerActions()` is the only way out, since the window hands the key and focus events to the screen on top. The game screen sends it to the server at each input due (see [Inputs to the server](#inputs-to-the-server-playerinputpacer-iplayerinputlink)); the client does not move the player's ship itself yet: it shows it where the world state of the server puts it. The game screen logs `actions held: <byte>` at trace level each time the byte changes. It assumes the window has the focus when it is built and learns otherwise from the focus events. Only the screen on top receives events, so opening the options releases every action held (`PlayerCommands::releaseAll()`): a key changed in the options would otherwise never release its action.
 
 ## Launch options: `LaunchOptions`
 

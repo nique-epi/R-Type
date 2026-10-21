@@ -102,7 +102,7 @@ if (const auto entity = table.find(networkId)) {
 
 A **system** is one behavior of the game: a class that implements `ISystem` (`src/engine/Systems/ISystem.hpp`) and reads or updates components in `update(components, elapsed)`.
 
-`MovementSystem` (`rtype_game`, `src/game/Systems/MovementSystem/`) is the first system of the game. It moves every entity that has a `Position` and a `Velocity` by the velocity, in units per second, multiplied by `elapsed`, so the distance depends on simulation time and never on the frame rate. An entity without a `Velocity` stays in place, and nothing keeps an entity inside the playfield. The server runs it on every tick of a game in progress (see [Bydo movement](/R-Type/server/#bydo-movement-patternsystem-and-playfieldexitsystem)).
+`MovementSystem` (`rtype_game`, `src/game/Systems/MovementSystem/`) is the first system of the game. It moves every entity that has a `Position` and a `Velocity` by the velocity, in units per second, multiplied by `elapsed`, so the distance depends on simulation time and never on the frame rate. It leaves an entity without a `Velocity` where it is, and keeps no entity inside the playfield: the ships have no `Velocity`, and `ShipControl` moves them and keeps them on screen (see [Moving the ships](/R-Type/server/#moving-the-ships-shipcontrol)). The server runs it on every tick of a game in progress (see [Bydo movement](/R-Type/server/#bydo-movement-patternsystem-and-playfieldexitsystem)).
 
 ### Queries: `ComponentRegistry::forEach`
 
@@ -210,7 +210,7 @@ rtype::engine::readLaunchArguments(logOptions.otherArguments(), options);
 | Change how entities are created or recycled | `src/engine/EntityRegistry/` |
 | Change the simulation rate | `SIMULATION_TICKS_PER_SECOND` in `src/engine/Time/TimeConstants.hpp` |
 | Write a behavior that walks components | A class implementing `ISystem` in `src/engine/Systems/ISystem.hpp`, added to a `SystemScheduler` |
-| Change how entities move | `MovementSystem` in `src/game/Systems/MovementSystem/` |
+| Change how entities move | `MovementSystem` in `src/game/Systems/MovementSystem/`; the ships move through `ShipControl` in `src/game/ShipControl/` instead |
 | Change the order systems run in | The order of the `SystemScheduler::add()` calls |
 | Change how network identifiers are given or looked up | `src/engine/NetworkIds/` |
 | Run something after a delay | `TimerScheduler` in `src/engine/Time/TimerScheduler/` |

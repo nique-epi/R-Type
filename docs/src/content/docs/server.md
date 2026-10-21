@@ -20,7 +20,7 @@ This page tells you where to look when you need to change something. It describe
 | Launch options | Available: the port, the seed and `--help` | `src/server/LaunchOptions/` |
 | Letting players in: challenge, acceptance or refusal | Available; refuses with `GameInProgress` while the game is not waiting for players | `src/server/Lobby/`, `src/server/Instances/` |
 | A game: states, ready rule, new world between two games | Available: one game, nothing ends it yet | `src/server/Instances/GameInstance/` |
-| Newest input of each player, applied to its ship at each tick of a game | Available; the shoot action is not read yet | `src/server/Instances/GameInstance/` |
+| Newest input of each player, applied to its ship at each tick of a game in progress | Available; the shoot action is not read yet | `src/server/Instances/GameInstance/` |
 | Waiting room and start of the game sent to the players (`LobbyState`, `GameStarted`) | Available | `src/server/Replication/LobbyStateAnnouncer/`, `src/server/Instances/GameInstance/` |
 | End of a game sent to the players (`GameEnded`), several games, master link | Not yet written | — |
 | Components (`Position`, `Velocity`, `CollisionBox`, `Health`, `EntityType`, `Sprite`, `Layer`) | Available | `src/game/Components/` |
@@ -449,7 +449,7 @@ rtype::game::DamageRules damageRules{events, world.components()};
 | Change which pairs of entities matter | `CollisionRules::publishIfRuleMatches` in `src/game/Systems/CollisionRules/CollisionRules.cpp` |
 | React to a hit or a contact | `subscribe<MissileHit>` or `subscribe<ShipContact>` on the `EventBus`; the structs are in `src/game/Events/` |
 | Change when two boxes count as overlapping | `overlaps` in `src/engine/Collision/Overlaps.hpp` |
-| Change how entities move | `MovementSystem` in `src/game/Systems/MovementSystem/`; the ships move through `ShipControl` instead |
+| Change how entities move | `MovementSystem` in `src/game/Systems/MovementSystem/`; the ships move through `ShipControl` in `src/game/ShipControl/` instead |
 | Add a component type | A new struct in `src/game/Components/` |
 | Write a test with entities that collide | `tests/CollisionScene.hpp` |
 

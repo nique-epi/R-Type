@@ -22,9 +22,11 @@ struct ShipDirections {
  *
  * The ship moves at SHIP_SPEED towards the directions held, as fast along a
  * diagonal as along a straight line, and stops where its side meets an edge of
- * the playfield, so the whole ship stays on screen: the position returned is
- * always inside, even for a ship that was not. A ship that holds nothing, or
- * only opposite directions, does not move.
+ * the playfield, so the whole ship stays on screen. A ship inside the
+ * playfield that holds nothing, or only opposite directions, does not move.
+ * The position returned is always inside, even for a ship that started outside:
+ * where the ship would go is moved the least needed for the whole ship to be
+ * inside.
  *
  * The server runs it for each ship at every tick of a game in progress. The
  * client is meant to run it to predict its own ship, and does not yet.
