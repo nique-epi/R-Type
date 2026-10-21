@@ -49,7 +49,10 @@ namespace rtype::client {
  * sends a ReadyState at once, then again every READY_STATE_INTERVAL while the
  * waiting room shows another value. While the attempt is Accepted,
  * sendPlayerInput() sends the inputs of the game, numbered from
- * FIRST_INPUT_NUMBER; otherwise it sends nothing. Leaving the session, through
+ * FIRST_INPUT_NUMBER; otherwise it sends nothing. While the attempt is
+ * Accepted, a Heartbeat goes out once HEARTBEAT_INTERVAL passed without any
+ * other datagram to the server, so the server knows the player is still there
+ * while nothing else is due. Leaving the session, through
  * cancel() or connect(), sends a Disconnection DISCONNECTION_COPY_COUNT times,
  * DISCONNECTION_COPY_INTERVAL apart, with the token and the sequences of the
  * session left; connect() then starts a new session: sequence 0, token 0 and
@@ -99,7 +102,8 @@ class ServerConnection : public IServerConnection,
   /**
    * @brief Reads the datagrams received since the previous call, then sends
    * what is due: the request of an attempt, or its end; a ReadyState the
-   * waiting room does not show yet; a copy of a Disconnection.
+   * waiting room does not show yet; a copy of a Disconnection; a Heartbeat
+   * once HEARTBEAT_INTERVAL passed in a session without sending anything.
    *
    * @param elapsed Time since the previous call, or since connect().
    */
@@ -155,6 +159,10 @@ class ServerConnection : public IServerConnection,
    * the waiting room shows another value than the one asked for. */
   void repeatReadyState(engine::Duration elapsed);
 
+  /** @brief Sends a Heartbeat once HEARTBEAT_INTERVAL passed since the last
+   * datagram to the server. */
+  void sendHeartbeatWhenSilent();
+
   /** @brief Leaves the session: the first copy of the Disconnection goes at
    * once, the others in the next updates. */
   void leave();
@@ -167,7 +175,9 @@ class ServerConnection : public IServerConnection,
   void forgetSession();
 
   /** @returns A header carrying the token of the session, 0 before it, and
-   * the next sequence, which it uses up. */
+   * the next sequence, which it uses up. Every datagram to the server takes
+   * its header here, so the delay before the next Heartbeat starts again from
+   * it. */
   [[nodiscard]] network::PacketHeader nextHeader();
 
   /** @returns A header carrying @p token and @p sequence, which then moves on
@@ -195,6 +205,7 @@ class ServerConnection : public IServerConnection,
   engine::Duration sinceRequest_{};
   engine::Duration sinceConnect_{};
   engine::Duration sinceReadyState_{};
+  engine::Duration sinceSent_{};
   ConnectionStatus status_;
   std::vector<network::LobbyPlayer> lobbyPlayers_;
   std::optional<bool> requestedReady_;

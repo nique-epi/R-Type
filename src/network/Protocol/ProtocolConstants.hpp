@@ -1,5 +1,6 @@
 #pragma once
 
+#include <chrono>
 #include <cstddef>
 #include <cstdint>
 #include <limits>
@@ -101,6 +102,13 @@ constexpr auto PLAYER_ACTION_BITS =
  * is one more.
  */
 constexpr std::uint32_t FIRST_INPUT_NUMBER = 1;
+
+/**
+ * @brief The longest time either side of a session lets pass without sending
+ * its peer anything: once it passed, a Heartbeat goes out, so the peer knows
+ * the sender is still there. Provisional, see the protocol page.
+ */
+constexpr std::chrono::seconds HEARTBEAT_INTERVAL{1};
 
 /**
  * @brief Bytes of a player in a WorldState: playerNumber, shipEntityId, lives,

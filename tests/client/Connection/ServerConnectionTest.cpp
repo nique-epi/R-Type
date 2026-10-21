@@ -23,6 +23,7 @@
 #include "EntityReplicatorTestConstants.hpp"
 #include "EntitySpawned.hpp"
 #include "GameStarted.hpp"
+#include "Heartbeat.hpp"
 #include "IncomingDatagram.hpp"
 #include "LobbyState.hpp"
 #include "MessageFrame.hpp"
@@ -67,6 +68,7 @@ using testing::PROTOCOL_ATTEMPT_TIMEOUT;
 using testing::PROTOCOL_DISCONNECTION_COPY_COUNT;
 using testing::PROTOCOL_DISCONNECTION_COPY_INTERVAL;
 using testing::PROTOCOL_FIRST_INPUT_NUMBER;
+using testing::PROTOCOL_HEARTBEAT_INTERVAL;
 using testing::PROTOCOL_READY_STATE_INTERVAL;
 using testing::PROTOCOL_REQUEST_INTERVAL;
 using testing::PROTOCOL_UP_ACTION_BIT;
@@ -432,14 +434,14 @@ TEST_F(ServerConnectionTest, IsRefusedWithTheReasonOfTheServer) {
  * When two more intervals pass
  * Then no request is sent again
  */
-TEST_F(ServerConnectionTest, SendsNothingOnceAccepted) {
+TEST_F(ServerConnectionTest, SendsNoRequestOnceAccepted) {
   connect();
   deliver(network::ConnectionAccepted{.playerNumber = ACCEPTED_PLAYER_NUMBER});
   update();
 
   update(2 * CONNECTION_REQUEST_INTERVAL);
 
-  EXPECT_EQ(sent().size(), 1);
+  EXPECT_EQ(sentCountOf<network::ConnectionRequest>(), 1U);
 }
 
 /**
@@ -1109,6 +1111,122 @@ TEST_F(ServerConnectionTest, LeavingDropsTheEntityMessagesNotHandedOver) {
   connection().cancel();
 
   EXPECT_THAT(drainedEntityMessages(), IsEmpty());
+}
+
+/**
+ * Given a session the server opened
+ * When the heartbeat interval minus one nanosecond passes without sending
+ * Then no Heartbeat is sent yet
+ */
+TEST_F(ServerConnectionTest, WaitsOneIntervalBeforeTheFirstHeartbeat) {
+  accept();
+
+  update(PROTOCOL_HEARTBEAT_INTERVAL - ONE_NANOSECOND);
+
+  EXPECT_EQ(sentCountOf<network::Heartbeat>(), 0U);
+}
+
+/**
+ * Given a session the server opened
+ * When the heartbeat interval passes without sending anything
+ * Then a Heartbeat goes to the server, so it knows the player is still there
+ */
+TEST_F(ServerConnectionTest, SendsAHeartbeatAfterAnIntervalWithoutSending) {
+  accept();
+
+  update(PROTOCOL_HEARTBEAT_INTERVAL);
+
+  ASSERT_EQ(sentCountOf<network::Heartbeat>(), 1U);
+  EXPECT_EQ(sent().back().destination, server());
+}
+
+/**
+ * Given a session the server opened with its token
+ * When a Heartbeat goes out
+ * Then it carries that token
+ */
+TEST_F(ServerConnectionTest, TheHeartbeatCarriesTheTokenOfTheSession) {
+  accept();
+
+  update(PROTOCOL_HEARTBEAT_INTERVAL);
+
+  ASSERT_TRUE(holds<network::Heartbeat>(sent().back()));
+  EXPECT_EQ(lastHeader().sessionToken, SESSION_TOKEN);
+}
+
+/**
+ * Given a session accepted after one request, sequence 0
+ * When a Heartbeat goes out
+ * Then it carries sequence 1: it takes the counter of every other datagram
+ */
+TEST_F(ServerConnectionTest, TheHeartbeatTakesTheSequenceAfterTheRequest) {
+  accept();
+
+  update(PROTOCOL_HEARTBEAT_INTERVAL);
+
+  ASSERT_TRUE(holds<network::Heartbeat>(sent().back()));
+  EXPECT_EQ(lastHeader().sequence, 1);
+}
+
+/**
+ * Given a session in which half an interval passed, then an input went out
+ * When the interval minus one nanosecond passes after that input
+ * Then no Heartbeat is sent: the delay counts from the last datagram sent
+ */
+TEST_F(ServerConnectionTest, AnyDatagramSentRestartsTheHeartbeatDelay) {
+  accept();
+  update(PROTOCOL_HEARTBEAT_INTERVAL / 2);
+  connection().sendPlayerInput(upHeld());
+
+  update(PROTOCOL_HEARTBEAT_INTERVAL - ONE_NANOSECOND);
+
+  EXPECT_EQ(sentCountOf<network::Heartbeat>(), 0U);
+}
+
+/**
+ * Given a session in which nothing else is due
+ * When three intervals pass, one per update
+ * Then a Heartbeat goes out after each of them
+ */
+TEST_F(ServerConnectionTest, SendsAHeartbeatEveryIntervalWhileSilent) {
+  accept();
+
+  update(PROTOCOL_HEARTBEAT_INTERVAL);
+  update(PROTOCOL_HEARTBEAT_INTERVAL);
+  update(PROTOCOL_HEARTBEAT_INTERVAL);
+
+  EXPECT_EQ(sentCountOf<network::Heartbeat>(), 3U);
+}
+
+/**
+ * Given an attempt the server refused
+ * When the heartbeat interval passes
+ * Then no Heartbeat is sent: there is no session
+ */
+TEST_F(ServerConnectionTest, SendsNoHeartbeatOnceRefused) {
+  connect();
+  deliver(
+      network::ConnectionRefused{.reason = network::RefusalReason::GameFull});
+  update();
+
+  update(PROTOCOL_HEARTBEAT_INTERVAL);
+
+  EXPECT_EQ(sentCountOf<network::Heartbeat>(), 0U);
+}
+
+/**
+ * Given a session the player left
+ * When the heartbeat interval passes twice
+ * Then no Heartbeat is sent to the session left
+ */
+TEST_F(ServerConnectionTest, SendsNoHeartbeatOnceCancelled) {
+  accept();
+  connection().cancel();
+
+  update(PROTOCOL_HEARTBEAT_INTERVAL);
+  update(PROTOCOL_HEARTBEAT_INTERVAL);
+
+  EXPECT_EQ(sentCountOf<network::Heartbeat>(), 0U);
 }
 
 }  // namespace

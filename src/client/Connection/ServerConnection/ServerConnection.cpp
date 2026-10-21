@@ -23,6 +23,7 @@
 #include "EntityMessage.hpp"
 #include "EntitySpawned.hpp"
 #include "GameStarted.hpp"
+#include "Heartbeat.hpp"
 #include "IDatagramLink.hpp"
 #include "IncomingDatagram.hpp"
 #include "LobbyState.hpp"
@@ -97,7 +98,9 @@ void ServerConnection::update(engine::Duration elapsed) {
   }
   repeatDeparture(elapsed);
   if (isAccepted()) {
+    sinceSent_ += elapsed;
     repeatReadyState(elapsed);
+    sendHeartbeatWhenSilent();
     return;
   }
   if (!isConnecting()) {
@@ -274,6 +277,16 @@ void ServerConnection::repeatReadyState(engine::Duration elapsed) {
   }
 }
 
+void ServerConnection::sendHeartbeatWhenSilent() {
+  if (sinceSent_ < network::HEARTBEAT_INTERVAL) {
+    return;
+  }
+  link_->send(network::OutgoingDatagram{
+      .destination = server_,
+      .payload =
+          network::DatagramCodec::encode(nextHeader(), network::Heartbeat{})});
+}
+
 void ServerConnection::leave() {
   departure_ = Departure{.server = server_,
                          .sessionToken = sessionToken_,
@@ -321,6 +334,7 @@ void ServerConnection::forgetSession() {
 }
 
 network::PacketHeader ServerConnection::nextHeader() {
+  sinceSent_ = engine::Duration::zero();
   return headerOf(sessionToken_, nextSequence_);
 }
 
