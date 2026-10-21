@@ -45,6 +45,14 @@ struct LifeRow {
   int count{};
 };
 
+/** @brief The lives of a pilot to draw: where they start, the index of the
+ * player color, and how many lives the pilot has left. */
+struct LifeCount {
+  sf::Vector2i topLeft;
+  std::size_t color{};
+  int lives{};
+};
+
 /** @returns The color of a pilot, 0 to PLAYER_COLOR_COUNT - 1: its number
  * less FIRST_PLAYER_NUMBER. */
 int colorOf(const PilotStatus& pilot) {
@@ -231,35 +239,36 @@ void paintLifeRow(IInterfaceCanvas& canvas, LifeRow row) {
   }
 }
 
-/** @brief Paints the lives a flying pilot has left, from @p topLeft: as ships
- * of its color up to STATUS_LIFE_ICON_LIMIT, one ship and their count past it,
- * nothing while they are unknown. */
-void paintLivesLeft(IInterfaceCanvas& canvas, const PilotStatus& pilot,
-                    sf::Vector2i topLeft) {
-  const game::SpriteFrame life = LIFE_ROW[colorIndexOf(pilot)];
-  const int lives = pilot.lives.value_or(0);
-  if (lives <= STATUS_LIFE_ICON_LIMIT) {
-    paintLifeRow(canvas, {.topLeft = topLeft, .frame = life, .count = lives});
+/** @brief Paints a count of lives from its top-left corner: up to
+ * STATUS_LIFE_ICON_LIMIT, a ship of the player color for each life left, then
+ * a lost life for each of the others, so the slots stay the same whatever the
+ * count; past the limit, one ship and the count. */
+void paintLifeCount(IInterfaceCanvas& canvas, LifeCount count) {
+  const game::SpriteFrame life = LIFE_ROW[count.color];
+  if (count.lives > STATUS_LIFE_ICON_LIMIT) {
+    paintLifeRow(canvas, {.topLeft = count.topLeft, .frame = life, .count = 1});
+    canvas.write(LIVES_COUNT_PREFIX + std::to_string(count.lives),
+                 count.topLeft + STATUS_LIVES_COUNT_OFFSET,
+                 {.font = TextFont::Regular, .color = SCORE_COLOR});
     return;
   }
-  paintLifeRow(canvas, {.topLeft = topLeft, .frame = life, .count = 1});
-  canvas.write(LIVES_COUNT_PREFIX + std::to_string(lives),
-               topLeft + STATUS_LIVES_COUNT_OFFSET,
-               {.font = TextFont::Regular, .color = SCORE_COLOR});
+  paintLifeRow(canvas,
+               {.topLeft = count.topLeft, .frame = life, .count = count.lives});
+  paintLifeRow(canvas,
+               {.topLeft = count.topLeft +
+                           sf::Vector2i(count.lives * STATUS_LIFE_STEP, 0),
+                .frame = LOST_LIFE_FRAME,
+                .count = STATUS_LIFE_ICON_LIMIT - count.lives});
 }
 
-/** @brief Paints the left of the second row of a pilot: STATUS_LIFE_ICON_LIMIT
- * lives lost once it has none left, the unplugged plug once its signal is
- * lost, nothing once it left, otherwise the lives it has left. */
+/** @brief Paints the left of the second row of a pilot: the unplugged plug
+ * once its signal is lost, nothing once it left or while its lives are
+ * unknown, otherwise its count of lives, every life lost once it has none
+ * left. */
 void paintLives(IInterfaceCanvas& canvas, const PilotStatus& pilot,
                 sf::Vector2i bay) {
   const sf::Vector2i topLeft = bay + STATUS_LIVES_TOP_LEFT;
   switch (pilot.state) {
-    case PilotState::OutOfLives:
-      paintLifeRow(canvas, {.topLeft = topLeft,
-                            .frame = LOST_LIFE_FRAME,
-                            .count = STATUS_LIFE_ICON_LIMIT});
-      return;
     case PilotState::SignalLost:
       canvas.drawSmoothImage(PLUG_ICON_ID, {topLeft, STATUS_ICON_SIZE},
                              GONE_TEXT_COLOR);
@@ -268,9 +277,14 @@ void paintLives(IInterfaceCanvas& canvas, const PilotStatus& pilot,
       return;
     case PilotState::Flying:
     case PilotState::Respawning:
+    case PilotState::OutOfLives:
       break;
   }
-  paintLivesLeft(canvas, pilot, topLeft);
+  if (pilot.lives.has_value()) {
+    paintLifeCount(canvas, {.topLeft = topLeft,
+                            .color = colorIndexOf(pilot),
+                            .lives = *pilot.lives});
+  }
 }
 
 /** @brief Writes, dimmed, the zeros that make a score of @p digits

@@ -304,7 +304,8 @@ TEST(StatusBand, ALongerScoreShowsEveryDigit) {
 /**
  * Given player 1 with 3 lives
  * When the band is painted
- * Then three ships of its color stand 17 pixels apart on the second row
+ * Then three ships of its color stand 17 pixels apart on the second row, and
+ * no life is shown lost
  */
 TEST(StatusBand, LivesShowOneShipEachUpToThree) {
   const InterfaceCanvasRecord record =
@@ -315,6 +316,26 @@ TEST(StatusBand, LivesShowOneShipEachUpToThree) {
   for (std::size_t life = 0; life < lives.size(); ++life) {
     EXPECT_EQ(lives[life].topLeft, FIRST_LIVES.at(life));
   }
+  EXPECT_THAT(imagesOf(record, LOST_LIFE_SOURCE), IsEmpty());
+}
+
+/**
+ * Given player 1, a teammate, down to 1 life
+ * When the band is painted
+ * Then its ship stands in the first slot and the two lives it lost in the
+ * other two, so the slots stay the ones an empty row shows
+ */
+TEST(StatusBand, LostLivesStayInTheirSlotsAsLostLives) {
+  const InterfaceCanvasRecord record =
+      bandPaintingOf({flying(PLAYER_ONE, LAST_LIFE)});
+
+  const std::vector<RecordedImage> ships = imagesOf(record, FIRST_LIFE_SOURCE);
+  const std::vector<RecordedImage> lost = imagesOf(record, LOST_LIFE_SOURCE);
+  ASSERT_EQ(ships.size(), 1U);
+  ASSERT_EQ(lost.size(), 2U);
+  EXPECT_EQ(ships.front().topLeft, FIRST_LIVES.at(0));
+  EXPECT_EQ(lost.front().topLeft, FIRST_LIVES.at(1));
+  EXPECT_EQ(lost.back().topLeft, FIRST_LIVES.at(2));
 }
 
 /**
@@ -332,7 +353,7 @@ TEST(StatusBand, LivesTakeTheColorOfThePilot) {
 /**
  * Given player 1 with 5 lives
  * When the band is painted
- * Then one ship is drawn, followed by x5
+ * Then one ship is drawn, followed by x5, and no life is shown lost
  */
 TEST(StatusBand, MoreThanThreeLivesShowOneShipAndACount) {
   const InterfaceCanvasRecord record =
@@ -340,18 +361,21 @@ TEST(StatusBand, MoreThanThreeLivesShowOneShipAndACount) {
 
   EXPECT_EQ(imagesOf(record, FIRST_LIFE_SOURCE).size(), 1U);
   EXPECT_EQ(anchorOf(record, "x5"), FIRST_LIVES_COUNT);
+  EXPECT_THAT(imagesOf(record, LOST_LIFE_SOURCE), IsEmpty());
 }
 
 /**
  * Given player 1 whose lives the server has not listed yet
  * When the band is painted
- * Then no ship is drawn
+ * Then no ship and no lost life are drawn, so it does not read as a pilot
+ * out of lives
  */
 TEST(StatusBand, UnknownLivesShowNoShip) {
   const InterfaceCanvasRecord record =
       bandPaintingOf({flying(PLAYER_ONE, std::nullopt)});
 
   EXPECT_THAT(imagesOf(record, FIRST_LIFE_SOURCE), IsEmpty());
+  EXPECT_THAT(imagesOf(record, LOST_LIFE_SOURCE), IsEmpty());
 }
 
 /**

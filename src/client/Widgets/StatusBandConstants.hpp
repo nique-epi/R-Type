@@ -76,7 +76,8 @@ constexpr sf::IntRect STATUS_LOCAL_FRAME({1, 0}, {116, 24});
 constexpr int STATUS_SCORE_DIGITS = 7;
 constexpr char LEADING_ZERO = '0';
 
-/** @brief Most lives shown as ships; past it, one ship and its count. */
+/** @brief Slots of lives of a bay: a ship for each life left, a lost life
+ * for each of the others; past it, one ship and the count. */
 constexpr int STATUS_LIFE_ICON_LIMIT = 3;
 
 /** @brief Lives of a pilot on its last life, which the band warns of. */

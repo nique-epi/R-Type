@@ -16,9 +16,9 @@ namespace rtype::client {
  * LOST once it left, OUT, LAST LIFE, RESPAWN, then YOU for the local player.
  * The nickname keeps the room the word leaves, cut at a whole character; a
  * pilot the waiting room never named shows P and its number. On its second
- * row, its lives as small ships of its color, or one ship and its count past
- * STATUS_LIFE_ICON_LIMIT, nothing while they are unknown,
- * STATUS_LIFE_ICON_LIMIT lives lost once it has none, the unplugged plug,
+ * row, STATUS_LIFE_ICON_LIMIT slots of lives, a small ship of its color for
+ * each life left and a lost life for each of the others, or one ship and the
+ * count past the limit, nothing while they are unknown, the unplugged plug,
  * smoothed, once its signal is lost; then its score on STATUS_SCORE_DIGITS
  * digits, the leading zeros dimmed. A gone pilot keeps its score, dimmed with
  * its chip and its name. The bay of the local player is framed in white.
