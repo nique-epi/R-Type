@@ -1,2 +1,7 @@
+add_library(rtype_client_replication_interfaces INTERFACE)
+
+target_include_directories(rtype_client_replication_interfaces INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
+
 add_subdirectory(WorldStateFilter)
 add_subdirectory(EntityReplicator)
+add_subdirectory(ScoreBoard)

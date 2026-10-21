@@ -13,12 +13,15 @@
 #include "EntityReplicator.hpp"
 #include "IEntityLayer.hpp"
 #include "IEntityMessageSource.hpp"
+#include "IInterfaceCanvas.hpp"
 #include "IPlayerInputLink.hpp"
 #include "IScreen.hpp"
 #include "IScreenNavigator.hpp"
+#include "IServerConnection.hpp"
 #include "Logger.hpp"
 #include "PlayerCommands.hpp"
 #include "PlayerInputPacer.hpp"
+#include "ScoreBoard.hpp"
 #include "ScreenConstants.hpp"
 #include "SystemScheduler.hpp"
 #include "TimeConstants.hpp"
@@ -42,6 +45,11 @@ struct PlayerSettings;
  * replicator and the effects point at the registries of the screen, so it
  * never moves.
  *
+ * The status band of the players lies over the entities: it is painted when
+ * the screen is built, from the waiting room the game started from, then
+ * again whenever a world state changes a pilot (see ScoreBoard), never at
+ * every frame.
+ *
  * Releasing OPTIONS_KEY releases every action held, then puts the options over
  * the game, which goes on running behind them, dimmed. The release, not the
  * press: the system repeats the press of a held key, which would open and
@@ -62,7 +70,7 @@ struct PlayerSettings;
  */
 class GameScreen : public IScreen {
  public:
-  /** @brief What a game screen is built from, but the entity layer it owns. */
+  /** @brief What a game screen is built from, but the pictures it owns. */
   struct Parts {
     /** @brief Screens the game lives among, which must outlive it; the
      * options are pushed over the game when OPTIONS_KEY is released. */
@@ -77,13 +85,18 @@ class GameScreen : public IScreen {
     /** @brief Where the entity messages of the server come from, which must
      * outlive the screen. */
     std::reference_wrapper<IEntityMessageSource> entityMessages;
+    /** @brief The session the game started in: its waiting room and the
+     * number of this client, read when the screen is built. */
+    std::reference_wrapper<const IServerConnection> connection;
   };
 
   /**
-   * @param entityLayer Picture the entities are painted on, never null: the
-   * screen owns it, so it comes apart from the parts it borrows.
+   * @param entityLayer Picture the entities are painted on, never null.
+   * @param statusCanvas Picture the status band is painted on, never null.
+   * The screen owns both, so they come apart from the parts it borrows.
    */
-  GameScreen(Parts parts, std::unique_ptr<IEntityLayer> entityLayer);
+  GameScreen(Parts parts, std::unique_ptr<IEntityLayer> entityLayer,
+             std::unique_ptr<IInterfaceCanvas> statusCanvas);
 
   GameScreen(const GameScreen&) = delete;
   GameScreen& operator=(const GameScreen&) = delete;
@@ -101,11 +114,21 @@ class GameScreen : public IScreen {
 
  private:
   /** @brief Hands the replicator every entity message the server sent since
-   * the previous update, in the order they arrived. */
+   * the previous update, in the order they arrived, and the score board every
+   * world state among them. */
   void applyEntityMessages();
+
+  /** @brief Repaints the status band when a pilot changed since it was last
+   * painted. */
+  void repaintStatusWhenChanged();
+
+  /** @brief Paints the status band from the score board, and keeps the
+   * revision painted. */
+  void repaintStatus();
 
   IScreenNavigator* navigator_;
   std::unique_ptr<IEntityLayer> entityLayer_;
+  std::unique_ptr<IInterfaceCanvas> statusCanvas_;
   const PlayerSettings* settings_;
   engine::EntityRegistry entities_;
   engine::ComponentRegistry components_{entities_};
@@ -116,6 +139,8 @@ class GameScreen : public IScreen {
   IPlayerInputLink* inputs_;
   IEntityMessageSource* entityMessageSource_;
   std::vector<EntityMessage> receivedEntityMessages_;
+  ScoreBoard scoreBoard_;
+  std::uint32_t paintedStatusRevision_{};
   PlayerInputPacer inputPacer_;
   logging::Logger logger_{std::string{GAME_SCREEN_LOGGER_NAME}};
   std::uint8_t loggedActions_{0};

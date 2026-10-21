@@ -5,7 +5,6 @@
 #include <cstddef>
 #include <initializer_list>
 #include <optional>
-#include <string>
 #include <string_view>
 #include "CutCornerBox.hpp"
 #include "EntitySpriteConstants.hpp"
@@ -120,7 +119,7 @@ void paintFrame(IInterfaceCanvas& canvas, const HangarBay& bay) {
  * the bay is open. */
 void paintPlayerNumber(IInterfaceCanvas& canvas, const HangarBay& bay) {
   const bool open = !bay.pilot.has_value();
-  canvas.write(PLAYER_NUMBER_PREFIX + std::to_string(bay.playerNumber),
+  canvas.write(playerNumberLabel(bay.playerNumber),
                bay.topLeft + BAY_NUMBER_OFFSET,
                {.font = TextFont::Regular,
                 .color = open ? FIELD_TEXT_COLOR : PAGE_TEXT_COLOR});

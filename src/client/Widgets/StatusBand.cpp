@@ -1,0 +1,333 @@
+#include "StatusBand.hpp"
+#include <SFML/Graphics/Color.hpp>
+#include <SFML/Graphics/Rect.hpp>
+#include <SFML/System/Utf.hpp>
+#include <SFML/System/Vector2.hpp>
+#include <cstddef>
+#include <optional>
+#include <span>
+#include <string>
+#include <string_view>
+#include "CutCornerBox.hpp"
+#include "EntitySpriteConstants.hpp"
+#include "EntitySprites.hpp"
+#include "HudSpriteConstants.hpp"
+#include "IInterfaceCanvas.hpp"
+#include "ImagePlacement.hpp"
+#include "InterfaceColors.hpp"
+#include "InterfaceConstants.hpp"
+#include "Outline.hpp"
+#include "PilotStatus.hpp"
+#include "ProtocolConstants.hpp"
+#include "SpriteFrame.hpp"
+#include "StatusBandConstants.hpp"
+#include "TextStyle.hpp"
+#include "TextureArea.hpp"
+#include "WidgetConstants.hpp"
+#include "WidgetText.hpp"
+
+namespace rtype::client {
+
+namespace {
+
+/** @brief The word of the first row of a bay, in its font and color. */
+struct StatusWord {
+  const char* text{};
+  TextFont font{};
+  sf::Color color;
+};
+
+/** @brief A row of the same life, count times, from its first top-left
+ * corner. */
+struct LifeRow {
+  sf::Vector2i topLeft;
+  game::SpriteFrame frame{};
+  int count{};
+};
+
+/** @returns The color of a pilot, 0 to PLAYER_COLOR_COUNT - 1: its number
+ * less FIRST_PLAYER_NUMBER. */
+int colorOf(const PilotStatus& pilot) {
+  return pilot.playerNumber - network::FIRST_PLAYER_NUMBER;
+}
+
+/** @returns The color of a pilot as an index of the tables of player
+ * colors; only for a pilot that has a bay. */
+std::size_t colorIndexOf(const PilotStatus& pilot) {
+  return static_cast<std::size_t>(colorOf(pilot));
+}
+
+/** @returns Whether a pilot's number has a bay, one per player color. */
+bool hasBay(const PilotStatus& pilot) {
+  return colorOf(pilot) >= 0 && colorOf(pilot) < PLAYER_COLOR_COUNT;
+}
+
+/** @returns Whether a pilot is gone from the game: out of lives, left, or
+ * dropped. */
+bool isGone(const PilotStatus& pilot) {
+  return pilot.state == PilotState::OutOfLives ||
+         pilot.state == PilotState::Left ||
+         pilot.state == PilotState::SignalLost;
+}
+
+/** @returns The left column of a bay, 0 to PLAYER_COLOR_COUNT - 1 from the
+ * left. */
+int bayLeft(int bay) {
+  return STATUS_BAY_INSET + (bay * (STATUS_BAY_WIDTH + STATUS_BAY_GAP));
+}
+
+/** @returns The top-left corner of the bay of a pilot. */
+sf::Vector2i bayOf(const PilotStatus& pilot) {
+  return {bayLeft(colorOf(pilot)), STATUS_BAND_AREA.position.y};
+}
+
+/** @returns The word of a pilot gone from the game: LEFT, SIGNAL LOST or
+ * OUT; nothing for a pilot still flying. */
+std::optional<StatusWord> goneWordOf(PilotState state) {
+  switch (state) {
+    case PilotState::Left:
+      return StatusWord{.text = LEFT_GAME_TEXT,
+                        .font = TextFont::Small,
+                        .color = GONE_TEXT_COLOR};
+    case PilotState::SignalLost:
+      return StatusWord{.text = SIGNAL_LOST_TEXT,
+                        .font = TextFont::Small,
+                        .color = GONE_TEXT_COLOR};
+    case PilotState::OutOfLives:
+      return StatusWord{.text = OUT_TEXT,
+                        .font = TextFont::Regular,
+                        .color = WARNING_TEXT_COLOR};
+    case PilotState::Flying:
+    case PilotState::Respawning:
+      break;
+  }
+  return std::nullopt;
+}
+
+/** @returns The word of a pilot still flying, the first that applies: LAST
+ * LIFE, RESPAWN, then YOU; nothing for a teammate with lives to spare. */
+std::optional<StatusWord> flyingWordOf(const PilotStatus& pilot) {
+  if (pilot.lives == LAST_LIFE_COUNT) {
+    return StatusWord{.text = LAST_LIFE_TEXT,
+                      .font = TextFont::Small,
+                      .color = WARNING_TEXT_COLOR};
+  }
+  if (pilot.state == PilotState::Respawning) {
+    return StatusWord{.text = RESPAWN_TEXT,
+                      .font = TextFont::Small,
+                      .color = STATUS_LABEL_COLOR};
+  }
+  if (pilot.isLocalPlayer) {
+    return StatusWord{.text = LOCAL_PLAYER_TAG,
+                      .font = TextFont::Regular,
+                      .color = STATUS_LABEL_COLOR};
+  }
+  return std::nullopt;
+}
+
+/** @returns The word of a pilot: the one of a gone pilot, or of a flying
+ * one. */
+std::optional<StatusWord> statusWordOf(const PilotStatus& pilot) {
+  const std::optional<StatusWord> goneWord = goneWordOf(pilot.state);
+  return goneWord.has_value() ? goneWord : flyingWordOf(pilot);
+}
+
+/** @returns The name of a pilot: its nickname, or P and its number while the
+ * waiting room never named it. */
+std::string nameOf(const PilotStatus& pilot) {
+  if (pilot.nickname.empty()) {
+    return playerNumberLabel(pilot.playerNumber);
+  }
+  return pilot.nickname;
+}
+
+/** @returns The longest start of a name, in whole characters, that fits a
+ * width in the regular font, REGULAR_FONT_ADVANCE pixels each. */
+std::string fittedName(std::string_view name, int width) {
+  const int characters = width / REGULAR_FONT_ADVANCE;
+  std::string_view::const_iterator end = name.begin();
+  for (int kept = 0; kept < characters && end != name.end(); ++kept) {
+    end = sf::Utf8::next(end, name.end());
+  }
+  return {name.begin(), end};
+}
+
+/** @returns The room the first row of a bay leaves the name, in pixels: from
+ * STATUS_NAME_TOP_LEFT to STATUS_WORD_END, less the word and STATUS_WORD_GAP
+ * when there is one. */
+int nameRoom(const IInterfaceCanvas& canvas,
+             const std::optional<StatusWord>& word) {
+  const int row = STATUS_WORD_END.x - STATUS_NAME_TOP_LEFT.x;
+  if (!word.has_value()) {
+    return row;
+  }
+  return row - canvas.textWidth(word->text, word->font) - STATUS_WORD_GAP;
+}
+
+/** @brief Paints the panel of the band and the rules between its bays. */
+void paintPanel(IInterfaceCanvas& canvas) {
+  CutCornerBox(STATUS_BAND_AREA, {.border = STATUS_BAND_BORDER_COLOR,
+                                  .inside = STATUS_BAND_INSIDE_COLOR})
+      .paint(canvas);
+  for (int bay = 1; bay < PLAYER_COLOR_COUNT; ++bay) {
+    const int ruleLeft = bayLeft(bay) - STATUS_BAY_GAP;
+    canvas.fill({{ruleLeft, STATUS_BAND_AREA.position.y + STATUS_RULE_TOP},
+                 {BORDER_THICKNESS, STATUS_RULE_HEIGHT}},
+                STATUS_RULE_COLOR);
+  }
+}
+
+/** @brief Paints the chip of a pilot: its color and its marker; a gone
+ * pilot's chip is dimmed, its marker kept. */
+void paintChip(IInterfaceCanvas& canvas, const PilotStatus& pilot,
+               sf::Vector2i bay) {
+  const sf::IntRect chip(bay + STATUS_CHIP_TOP_LEFT, STATUS_CHIP_SIZE);
+  const std::size_t color = colorIndexOf(pilot);
+  canvas.fill(chip,
+              isGone(pilot) ? GONE_CHIP_COLOR : PLAYER_SHIP_COLORS[color]);
+  canvas.drawImage(
+      TextureArea{.assetId = HUD_SHEET_ID,
+                  .rectangle = rectangleOf(MARKER_FRAMES[color])},
+      ImagePlacement{.topLeft = chip.position + STATUS_MARKER_OFFSET}, chip);
+}
+
+/** @brief Writes a word against the right edge of the first row of a bay,
+ * SMALL_WORD_DROP lower in small print. */
+void paintWord(IInterfaceCanvas& canvas, const StatusWord& word,
+               sf::Vector2i bay) {
+  const int drop = word.font == TextFont::Small ? SMALL_WORD_DROP : 0;
+  canvas.write(word.text, bay + STATUS_WORD_END + sf::Vector2i(0, drop),
+               {.font = word.font,
+                .color = word.color,
+                .alignment = TextAlignment::Right});
+}
+
+/** @brief Writes the first row of a bay: the word of the pilot against the
+ * right edge, then its name from STATUS_NAME_TOP_LEFT, in the light shade of
+ * its color, cut to the room the word leaves. */
+void paintTitle(IInterfaceCanvas& canvas, const PilotStatus& pilot,
+                sf::Vector2i bay) {
+  const std::optional<StatusWord> word = statusWordOf(pilot);
+  if (word.has_value()) {
+    paintWord(canvas, *word, bay);
+  }
+  const std::size_t color = colorIndexOf(pilot);
+  canvas.write(
+      fittedName(nameOf(pilot), nameRoom(canvas, word)),
+      bay + STATUS_NAME_TOP_LEFT,
+      {.font = TextFont::Regular,
+       .color = isGone(pilot) ? GONE_TEXT_COLOR : PLAYER_LIGHT_COLORS[color]});
+}
+
+/** @brief Draws the same life count times, STATUS_LIFE_STEP apart. */
+void paintLifeRow(IInterfaceCanvas& canvas, LifeRow row) {
+  for (int life = 0; life < row.count; ++life) {
+    canvas.drawImage(
+        TextureArea{.assetId = HUD_SHEET_ID,
+                    .rectangle = rectangleOf(row.frame)},
+        ImagePlacement{.topLeft = row.topLeft +
+                                  sf::Vector2i(life * STATUS_LIFE_STEP, 0)},
+        STATUS_BAND_AREA);
+  }
+}
+
+/** @brief Paints the lives a flying pilot has left, from @p topLeft: as ships
+ * of its color up to STATUS_LIFE_ICON_LIMIT, one ship and their count past it,
+ * nothing while they are unknown. */
+void paintLivesLeft(IInterfaceCanvas& canvas, const PilotStatus& pilot,
+                    sf::Vector2i topLeft) {
+  const game::SpriteFrame life = LIFE_ROW[colorIndexOf(pilot)];
+  const int lives = pilot.lives.value_or(0);
+  if (lives <= STATUS_LIFE_ICON_LIMIT) {
+    paintLifeRow(canvas, {.topLeft = topLeft, .frame = life, .count = lives});
+    return;
+  }
+  paintLifeRow(canvas, {.topLeft = topLeft, .frame = life, .count = 1});
+  canvas.write(LIVES_COUNT_PREFIX + std::to_string(lives),
+               topLeft + STATUS_LIVES_COUNT_OFFSET,
+               {.font = TextFont::Regular, .color = SCORE_COLOR});
+}
+
+/** @brief Paints the left of the second row of a pilot: STATUS_LIFE_ICON_LIMIT
+ * lives lost once it has none left, the unplugged plug once its signal is
+ * lost, nothing once it left, otherwise the lives it has left. */
+void paintLives(IInterfaceCanvas& canvas, const PilotStatus& pilot,
+                sf::Vector2i bay) {
+  const sf::Vector2i topLeft = bay + STATUS_LIVES_TOP_LEFT;
+  switch (pilot.state) {
+    case PilotState::OutOfLives:
+      paintLifeRow(canvas, {.topLeft = topLeft,
+                            .frame = LOST_LIFE_FRAME,
+                            .count = STATUS_LIFE_ICON_LIMIT});
+      return;
+    case PilotState::SignalLost:
+      canvas.drawSmoothImage(PLUG_ICON_ID, {topLeft, STATUS_ICON_SIZE},
+                             GONE_TEXT_COLOR);
+      return;
+    case PilotState::Left:
+      return;
+    case PilotState::Flying:
+    case PilotState::Respawning:
+      break;
+  }
+  paintLivesLeft(canvas, pilot, topLeft);
+}
+
+/** @brief Writes, dimmed, the zeros that make a score of @p digits
+ * STATUS_SCORE_DIGITS long, ending where the score starts. */
+void paintLeadingZeros(IInterfaceCanvas& canvas, std::string_view digits,
+                       sf::Vector2i scoreEnd) {
+  const int missingDigits =
+      STATUS_SCORE_DIGITS - static_cast<int>(digits.size());
+  if (missingDigits <= 0) {
+    return;
+  }
+  canvas.write(
+      std::string(static_cast<std::size_t>(missingDigits), LEADING_ZERO),
+      {scoreEnd.x - regularTextWidth(digits), scoreEnd.y},
+      {.font = TextFont::Regular,
+       .color = LEADING_ZERO_COLOR,
+       .alignment = TextAlignment::Right});
+}
+
+/** @brief Writes the score of a pilot, its last digit at STATUS_SCORE_END,
+ * after the dimmed leading zeros that make it STATUS_SCORE_DIGITS long. */
+void paintScore(IInterfaceCanvas& canvas, const PilotStatus& pilot,
+                sf::Vector2i bay) {
+  const std::string digits = std::to_string(pilot.score);
+  const sf::Vector2i end = bay + STATUS_SCORE_END;
+  canvas.write(digits, end,
+               {.font = TextFont::Regular,
+                .color = isGone(pilot) ? GONE_TEXT_COLOR : SCORE_COLOR,
+                .alignment = TextAlignment::Right});
+  paintLeadingZeros(canvas, digits, end);
+}
+
+/** @brief Paints the bay of a pilot: its frame when it is the local player,
+ * its chip, name and word, then its lives and its score. */
+void paintBay(IInterfaceCanvas& canvas, const PilotStatus& pilot) {
+  const sf::Vector2i bay = bayOf(pilot);
+  if (pilot.isLocalPlayer) {
+    Outline({bay + STATUS_LOCAL_FRAME.position, STATUS_LOCAL_FRAME.size},
+            Outline::Line::Solid)
+        .paint(canvas, LOCAL_BAY_FRAME_COLOR);
+  }
+  paintChip(canvas, pilot, bay);
+  paintTitle(canvas, pilot, bay);
+  paintLives(canvas, pilot, bay);
+  paintScore(canvas, pilot, bay);
+}
+
+}  // namespace
+
+void paintStatusBand(IInterfaceCanvas& canvas,
+                     std::span<const PilotStatus> pilots) {
+  paintPanel(canvas);
+  for (const PilotStatus& pilot : pilots) {
+    if (hasBay(pilot)) {
+      paintBay(canvas, pilot);
+    }
+  }
+}
+
+}  // namespace rtype::client

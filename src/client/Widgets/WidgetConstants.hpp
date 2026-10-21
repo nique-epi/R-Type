@@ -183,6 +183,12 @@ constexpr char32_t LAST_DIGIT = U'9';
  */
 constexpr int SPACE_BELOW_DESCRIPTION = BUTTON_GAP;
 
+/** @brief How a player is named on screen, in the waiting room and in the
+ * status band: P and its number where no nickname is shown, and YOU for the
+ * local player. */
+constexpr const char* PLAYER_NUMBER_PREFIX = "P";
+constexpr const char* LOCAL_PLAYER_TAG = "YOU";
+
 /** @brief Label of the button that closes a menu, the same in every menu. */
 constexpr const char* BACK_LABEL = "BACK";
 

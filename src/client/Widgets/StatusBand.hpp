@@ -1,0 +1,32 @@
+#pragma once
+
+#include <span>
+#include "IInterfaceCanvas.hpp"
+#include "PilotStatus.hpp"
+
+namespace rtype::client {
+
+/**
+ * @brief Paints the status band over STATUS_BAND_AREA: an opaque panel cut at
+ * its corners, split by thin rules into one bay per player number.
+ *
+ * The bay of a pilot shows, on its first row, a chip of the pilot's color
+ * holding its marker, then its nickname in the light shade of its color, and
+ * against the right edge one word, the first that applies: LEFT or SIGNAL
+ * LOST once it left, OUT, LAST LIFE, RESPAWN, then YOU for the local player.
+ * The nickname keeps the room the word leaves, cut at a whole character; a
+ * pilot the waiting room never named shows P and its number. On its second
+ * row, its lives as small ships of its color, or one ship and its count past
+ * STATUS_LIFE_ICON_LIMIT, nothing while they are unknown,
+ * STATUS_LIFE_ICON_LIMIT lives lost once it has none, the unplugged plug,
+ * smoothed, once its signal is lost; then its score on STATUS_SCORE_DIGITS
+ * digits, the leading zeros dimmed. A gone pilot keeps its score, dimmed with
+ * its chip and its name. The bay of the local player is framed in white.
+ *
+ * A bay whose number has no pilot stays empty. A pilot whose number has no
+ * bay, outside FIRST_PLAYER_NUMBER to PLAYER_COLOR_COUNT, is not painted.
+ */
+void paintStatusBand(IInterfaceCanvas& canvas,
+                     std::span<const PilotStatus> pilots);
+
+}  // namespace rtype::client

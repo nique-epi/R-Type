@@ -152,8 +152,9 @@ std::unique_ptr<IScreen> Application::gameScreen() {
       GameScreen::Parts{.navigator = screens_,
                         .settings = settings_,
                         .inputs = connection_,
-                        .entityMessages = connection_},
-      std::make_unique<EntityLayer>(*assets_));
+                        .entityMessages = connection_,
+                        .connection = connection_},
+      std::make_unique<EntityLayer>(*assets_), interfaceCanvas());
 }
 
 std::unique_ptr<IScreen> Application::optionsScreen(ScreenId screen) {

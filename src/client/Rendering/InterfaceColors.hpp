@@ -30,6 +30,16 @@ constexpr std::array PLAYER_SHIP_COLORS{
     sf::Color(31, 163, 201), sf::Color(217, 74, 140), sf::Color(126, 194, 58),
     sf::Color(224, 154, 42)};
 
+/** @brief Light shade of the ship of each player color, in the same order,
+ * read from the file: the nickname of a player written on the sky. */
+constexpr std::array PLAYER_LIGHT_COLORS{
+    sf::Color(127, 230, 255), sf::Color(255, 163, 207),
+    sf::Color(210, 255, 138), sf::Color(255, 211, 138)};
+
+/** @brief Light orange of the enemy missile: the warnings of the status band,
+ * LAST LIFE and OUT, always written as words. */
+constexpr sf::Color WARNING_ORANGE(255, 179, 107);
+
 /** @brief Layer a dialog lays over the screens below: the sky at 72 %
  * opacity. */
 constexpr std::uint8_t DIM_LAYER_ALPHA = 184;
