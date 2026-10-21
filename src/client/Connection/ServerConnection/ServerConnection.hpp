@@ -46,7 +46,8 @@ namespace rtype::client {
  * from the same counter, which starts at 0. Of the datagrams of the server, it
  * reads only those that carry that token, then only those newer than the
  * newest one it read, so a late LobbyState never undoes a newer one. It keeps
- * the players of the newest LobbyState, and learns that the game started from
+ * the players of the newest LobbyState, reads a Heartbeat as nothing more than
+ * a datagram of the server, and learns that the game started from
  * a GameStarted, or from a WorldState when the GameStarted was lost. setReady()
  * sends a ReadyState at once, then again every READY_STATE_INTERVAL while the
  * waiting room shows another value. While the attempt is Accepted,

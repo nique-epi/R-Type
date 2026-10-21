@@ -45,3 +45,9 @@ constexpr std::size_t OVERSIZED_DATAGRAM_COUNT = 3;
  */
 constexpr std::string_view OVERSIZED_DATAGRAM_LINE_TEXT =
     "dropped a datagram larger than";
+
+/**
+ * @brief Words of every log line about a message a dispatcher read without a
+ * handler for its type.
+ */
+constexpr std::string_view SKIPPED_MESSAGE_LINE_TEXT = "skipped a message";

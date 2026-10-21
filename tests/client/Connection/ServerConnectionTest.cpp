@@ -15,6 +15,7 @@
 #include "ConnectionRequest.hpp"
 #include "ConnectionStatus.hpp"
 #include "DatagramCodec.hpp"
+#include "DebugJournal.hpp"
 #include "Disconnection.hpp"
 #include "Endpoint.hpp"
 #include "EntityAnnouncements.hpp"
@@ -29,6 +30,7 @@
 #include "MessageFrame.hpp"
 #include "MessagePayload.hpp"
 #include "MessageType.hpp"
+#include "NetworkTestConstants.hpp"
 #include "OutgoingDatagram.hpp"
 #include "PacketHeader.hpp"
 #include "PlayerAction.hpp"
@@ -1227,6 +1229,30 @@ TEST_F(ServerConnectionTest, SendsNoHeartbeatOnceCancelled) {
   update(PROTOCOL_HEARTBEAT_INTERVAL);
 
   EXPECT_EQ(sentCountOf<network::Heartbeat>(), 0U);
+}
+
+/** @brief The connection, with the log written to a journal the test reads. */
+class ServerConnectionLogTest : public ServerConnectionTest {
+ protected:
+  [[nodiscard]] const DebugJournal& journal() const { return journal_; }
+
+ private:
+  DebugJournal journal_;
+};
+
+/**
+ * Given a session the server opened
+ * When a Heartbeat of the server arrives
+ * Then the journal holds no line about a message without a handler: a
+ * Heartbeat only says that the server is still there
+ */
+TEST_F(ServerConnectionLogTest, ReadsAHeartbeatOfTheServerWithoutLoggingIt) {
+  accept();
+  deliverInSession(network::Heartbeat{}, FIRST_SEQUENCE);
+
+  update();
+
+  EXPECT_TRUE(journal().linesHolding(SKIPPED_MESSAGE_LINE_TEXT).empty());
 }
 
 }  // namespace

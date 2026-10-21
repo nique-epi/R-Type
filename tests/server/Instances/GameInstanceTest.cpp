@@ -24,6 +24,7 @@
 #include "IncomingDatagram.hpp"
 #include "LobbyState.hpp"
 #include "MessageType.hpp"
+#include "NetworkTestConstants.hpp"
 #include "OutgoingDatagram.hpp"
 #include "PacketHeader.hpp"
 #include "PlayerDeparture.hpp"
@@ -1714,8 +1715,7 @@ TEST_F(GameInstanceLogTest, WritesTheNextLineOnceTheIntervalOfTicksIsOver) {
 TEST_F(GameInstanceLogTest, ReadsAHeartbeatWithoutLoggingIt) {
   tick();
 
-  EXPECT_TRUE(
-      journal().linesHolding(testing::SKIPPED_MESSAGE_LINE_TEXT).empty());
+  EXPECT_TRUE(journal().linesHolding(SKIPPED_MESSAGE_LINE_TEXT).empty());
 }
 
 /**

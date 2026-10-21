@@ -181,6 +181,8 @@ void ServerConnection::registerAnswers() {
 }
 
 void ServerConnection::registerSessionMessages() {
+  dispatcher_.registerHandler<network::Heartbeat>(
+      [](const network::MessageOrigin&, const network::Heartbeat&) {});
   dispatcher_.registerHandler<network::LobbyState>(
       [this](const network::MessageOrigin&, const network::LobbyState& lobby) {
         if (isAccepted()) {

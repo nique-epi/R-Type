@@ -59,11 +59,6 @@ constexpr std::uint8_t ONE_FLAG_SET = 0x01;
  * at once to check that they share one line.
  */
 constexpr std::string_view DROPPED_DATAGRAM_LINE_TEXT = "dropped a datagram";
-
-/**
- * @brief What a line about a message read without a handler holds.
- */
-constexpr std::string_view SKIPPED_MESSAGE_LINE_TEXT = "skipped a message";
 constexpr std::size_t DROPPED_TOGETHER_COUNT = 3;
 
 }  // namespace rtype::server::testing
