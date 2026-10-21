@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 #include <cstddef>
 #include <cstdint>
+#include <vector>
 #include "BydoKind.hpp"
 #include "BydoPointsConstants.hpp"
 #include "ComponentRegistry.hpp"
@@ -131,6 +132,79 @@ TEST(World, ABydoAndAPlayerGetDistinctNetworkIds) {
                       rtype::game::BydoKind::Drifter);
 
   EXPECT_NE(player, bydo);
+}
+
+/**
+ * Given a world holding the ship of a player
+ * When that ship is removed by its network id
+ * Then the removal succeeds and the world holds no entity any more
+ */
+TEST(World, RemovedShipLeavesTheWorld) {
+  rtype::game::World world;
+  const std::uint32_t ship =
+      world.spawnPlayer(rtype::game::Position{.x = SOME_X, .y = SOME_Y});
+
+  const bool removed = world.removePlayer(ship);
+
+  EXPECT_TRUE(removed);
+  EXPECT_EQ(world.entityCount(), 0U);
+}
+
+/**
+ * Given a world holding the ships of two players
+ * When the first ship is removed
+ * Then the second ship is still in the world, with its network id
+ */
+TEST(World, RemovesOnlyTheShipItIsGiven) {
+  rtype::game::World world;
+  const std::uint32_t first =
+      world.spawnPlayer(rtype::game::Position{.x = SOME_X, .y = SOME_Y});
+  const std::uint32_t second =
+      world.spawnPlayer(rtype::game::Position{.x = SOME_X, .y = SOME_Y});
+
+  world.removePlayer(first);
+
+  std::vector<std::uint32_t> networkIds;
+  world.components()
+      .forEach<rtype::game::NetworkIdentity, rtype::game::EntityType>(
+          [&networkIds](rtype::engine::Entity /*entity*/,
+                        const rtype::game::NetworkIdentity& identity,
+                        const rtype::game::EntityType& /*type*/) {
+            networkIds.push_back(identity.networkId);
+          });
+  EXPECT_EQ(networkIds, std::vector<std::uint32_t>{second});
+}
+
+/**
+ * Given a world holding the ship of a player
+ * When the id no entity has is removed
+ * Then nothing is removed and the ship stays
+ */
+TEST(World, RemovesNothingForTheIdNoEntityHas) {
+  rtype::game::World world;
+  world.spawnPlayer(rtype::game::Position{.x = SOME_X, .y = SOME_Y});
+
+  const bool removed = world.removePlayer(rtype::identifiers::NO_ENTITY_ID);
+
+  EXPECT_FALSE(removed);
+  EXPECT_EQ(world.entityCount(), 1U);
+}
+
+/**
+ * Given a world holding a Bydo
+ * When the network id of that Bydo is removed as a ship
+ * Then nothing is removed: only the ship of a player leaves this way
+ */
+TEST(World, RemovesNoBydoAsAShip) {
+  rtype::game::World world;
+  const std::uint32_t bydo =
+      world.spawnBydo(rtype::game::Position{.x = SOME_X, .y = SOME_Y},
+                      rtype::game::BydoKind::Drifter);
+
+  const bool removed = world.removePlayer(bydo);
+
+  EXPECT_FALSE(removed);
+  EXPECT_EQ(world.entityCount(), 1U);
 }
 
 /**

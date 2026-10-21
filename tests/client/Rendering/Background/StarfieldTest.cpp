@@ -12,7 +12,7 @@
 #include "Star.hpp"
 #include "Starfield.hpp"
 #include "TimeConstants.hpp"
-#include "engine/Time/TimeTestConstants.hpp"
+#include "TimeTestConstants.hpp"
 
 using rtype::client::BACKGROUND_HEIGHT;
 using rtype::client::BACKGROUND_WIDTH;

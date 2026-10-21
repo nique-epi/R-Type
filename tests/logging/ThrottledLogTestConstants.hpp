@@ -21,11 +21,6 @@ constexpr std::chrono::nanoseconds HALF_INTERVAL = THROTTLED_INTERVAL / 2;
 constexpr std::chrono::nanoseconds FIRST_EVENT_TIME = std::chrono::seconds{3};
 
 /**
- * @brief The shortest step of time a throttled log tells apart.
- */
-constexpr std::chrono::nanoseconds ONE_NANOSECOND{1};
-
-/**
  * @brief The text each event of the tests writes, and how many events happen
  * between two lines when a test floods the log.
  */

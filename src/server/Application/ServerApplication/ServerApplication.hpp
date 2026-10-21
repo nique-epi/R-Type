@@ -111,6 +111,15 @@ class ServerApplication {
   void admit(const network::Endpoint& player, std::uint64_t sessionToken);
 
   /**
+   * @brief From now on, the datagrams @p player sends are dropped like a
+   * stranger's, unless it was admitted again with another token than
+   * @p sessionToken. Call it from any thread once the session of the player
+   * closed; it takes effect on the network thread shortly after, so a datagram
+   * it receives before that still reaches the tick handler.
+   */
+  void forget(const network::Endpoint& player, std::uint64_t sessionToken);
+
+  /**
    * @returns The address and port the socket is bound to.
    */
   [[nodiscard]] network::Endpoint localEndpoint() const;

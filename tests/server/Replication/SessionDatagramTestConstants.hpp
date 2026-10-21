@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstddef>
 #include <cstdint>
 #include <limits>
 
@@ -10,6 +11,11 @@ namespace rtype::server::testing {
  * session.
  */
 constexpr std::uint16_t SOME_NEXT_SEQUENCE = 7;
+
+/**
+ * @brief Ticks a player was sent nothing for, short of a Heartbeat.
+ */
+constexpr std::size_t SOME_TICKS_SINCE_SENT = 42;
 
 /**
  * @brief The last sequence before the counter of a session wraps to 0.

@@ -14,10 +14,13 @@
 #include "ConnectedPlayers.hpp"
 #include "DatagramCodec.hpp"
 #include "Endpoint.hpp"
+#include "EntityDestruction.hpp"
 #include "EntityIdConstants.hpp"
+#include "EventBus.hpp"
 #include "GameInstanceConstants.hpp"
 #include "GameStarted.hpp"
 #include "GameState.hpp"
+#include "Heartbeat.hpp"
 #include "IncomingDatagram.hpp"
 #include "MessageFrame.hpp"
 #include "MessageOrigin.hpp"
@@ -26,6 +29,7 @@
 #include "NetworkException.hpp"
 #include "PacketHeader.hpp"
 #include "PatternSystem.hpp"
+#include "PlayerDeparture.hpp"
 #include "PlayerInput.hpp"
 #include "PlayerRoster.hpp"
 #include "PlayfieldExitSystem.hpp"
@@ -121,6 +125,7 @@ void moveOneTick(const ShipMove& move) {
 GameInstance::GameInstance(Send send, std::uint32_t seed,
                            engine::EventBus& events)
     : send_(std::move(send)),
+      events_(events),
       scoreKeeper_(events, roster_),
       worldStateSender_(roster_, send_),
       seed_(seed),
@@ -140,6 +145,9 @@ GameInstance::GameInstance(Send send, std::uint32_t seed,
              const network::PlayerInput& input) {
         keepIfNewer(origin, input);
       });
+  dispatcher_.registerHandler<network::Heartbeat>(
+      [](const network::MessageOrigin& /*origin*/,
+         const network::Heartbeat& /*heartbeat*/) {});
   startNewWorld();
 }
 
@@ -165,6 +173,16 @@ void GameInstance::onTick(
   for (const network::IncomingDatagram& datagram : datagrams) {
     readPlayerDatagram(datagram);
   }
+  closeSilentSessions();
+  advanceState();
+  if (state_ == GameState::InProgress) {
+    worldStateSender_.onTick(tick_, world_->components());
+  }
+  sendHeartbeats();
+  ++ticksRun_;
+}
+
+void GameInstance::advanceState() {
   switch (state_) {
     case GameState::WaitingForPlayers:
       if (everyPlayerIsReady()) {
@@ -187,10 +205,10 @@ void GameInstance::onTick(
       }
       break;
   }
-  if (state_ == GameState::InProgress) {
-    worldStateSender_.onTick(tick_, world_->components());
-  }
-  ++ticksRun_;
+}
+
+std::vector<ConnectedPlayer> GameInstance::takeDepartedPlayers() {
+  return std::exchange(departedPlayers_, {});
 }
 
 void GameInstance::finish() {
@@ -202,6 +220,16 @@ void GameInstance::finish() {
 
 void GameInstance::readPlayerDatagram(
     const network::IncomingDatagram& datagram) {
+  const std::optional<PlayerDatagram> readable = playerDatagramOf(datagram);
+  if (!readable.has_value()) {
+    return;
+  }
+  readable->player->ticksSinceReceived = 0;
+  dispatcher_.dispatch(readable->origin, readable->messages);
+}
+
+std::optional<GameInstance::PlayerDatagram> GameInstance::playerDatagramOf(
+    const network::IncomingDatagram& datagram) {
   network::PacketHeader header;
   std::vector<network::MessageFrame> messages;
   try {
@@ -209,20 +237,23 @@ void GameInstance::readPlayerDatagram(
     if (!network::DatagramCodec::speaksThisProtocol(header)) {
       drop(datagram.sender,
            "its header is not of this protocol and version, or has a flag set");
-      return;
+      return std::nullopt;
     }
     messages = network::DatagramCodec::splitMessages(datagram.payload);
   } catch (const network::NetworkException& error) {
     drop(datagram.sender, error.what());
-    return;
+    return std::nullopt;
   }
-  if (roster_.find(datagram.sender) == nullptr) {
+  ConnectedPlayer* const player = roster_.find(datagram.sender);
+  if (player == nullptr) {
     drop(datagram.sender, "its sender is not a player of this game");
-    return;
+    return std::nullopt;
   }
-  dispatcher_.dispatch(
-      network::MessageOrigin{.sender = datagram.sender, .header = header},
-      messages);
+  return PlayerDatagram{
+      .player = player,
+      .origin =
+          network::MessageOrigin{.sender = datagram.sender, .header = header},
+      .messages = std::move(messages)};
 }
 
 void GameInstance::drop(const network::Endpoint& sender,
@@ -270,6 +301,60 @@ bool GameInstance::everyPlayerIsReady() {
          std::ranges::all_of(players, [](const ConnectedPlayer* player) {
            return player->ready;
          });
+}
+
+void GameInstance::closeSilentSessions() {
+  for (const network::Endpoint& player : countSilentTicks()) {
+    closeSession(player);
+  }
+}
+
+std::vector<network::Endpoint> GameInstance::countSilentTicks() {
+  std::vector<network::Endpoint> timedOut;
+  for (ConnectedPlayer* const player : roster_.connected()) {
+    if (player->ticksSinceReceived >= SESSION_TIMEOUT_TICKS) {
+      timedOut.push_back(player->endpoint);
+    } else {
+      ++player->ticksSinceReceived;
+    }
+  }
+  return timedOut;
+}
+
+void GameInstance::closeSession(const network::Endpoint& player) {
+  std::optional<ConnectedPlayer> departed = roster_.remove(player);
+  if (!departed.has_value()) {
+    return;
+  }
+  if (world_->removePlayer(departed->shipEntityId)) {
+    announceShipRemoval(departed->shipEntityId);
+  }
+  announceTimeout(*departed);
+  departedPlayers_.push_back(std::move(*departed));
+}
+
+void GameInstance::announceShipRemoval(std::uint32_t shipEntityId) {
+  events_.publish(game::EntityDestruction{
+      .networkId = shipEntityId, .cause = game::DestructionCause::Removed});
+}
+
+void GameInstance::announceTimeout(const ConnectedPlayer& player) {
+  logger_.info("player ", static_cast<unsigned int>(player.playerNumber),
+               " timed out: nothing received from ", player.endpoint.address,
+               " port ", player.endpoint.port, " for ",
+               network::SESSION_TIMEOUT.count(), " s");
+  events_.publish(
+      game::PlayerDeparture{.playerNumber = player.playerNumber,
+                            .cause = game::DepartureCause::TimedOut});
+}
+
+void GameInstance::sendHeartbeats() {
+  for (ConnectedPlayer* const player : roster_.connected()) {
+    if (player->ticksSinceSent >= TICKS_PER_HEARTBEAT) {
+      send_(sessionDatagram(*player, network::Heartbeat{}));
+    }
+    ++player->ticksSinceSent;
+  }
 }
 
 void GameInstance::startGame() {

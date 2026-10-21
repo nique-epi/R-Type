@@ -5,8 +5,10 @@
 #include <cstdint>
 #include <functional>
 #include <memory>
+#include <optional>
 #include <span>
 #include <string_view>
+#include <vector>
 #include "BydoSpawner.hpp"
 #include "ConnectedPlayer.hpp"
 #include "Endpoint.hpp"
@@ -16,6 +18,7 @@
 #include "LobbyStateAnnouncer.hpp"
 #include "Logger.hpp"
 #include "MessageDispatcher.hpp"
+#include "MessageFrame.hpp"
 #include "MessageOrigin.hpp"
 #include "OutgoingDatagram.hpp"
 #include "PacketHeader.hpp"
@@ -76,6 +79,21 @@ namespace rtype::server {
  * since the previous line (see ThrottledLog), so a flood of them cannot flood
  * the log.
  *
+ * A player the server sent nothing for TICKS_PER_HEARTBEAT ticks, whatever
+ * sent it, is sent a Heartbeat at the end of the tick, so its client knows the
+ * server is still there in a state that repeats no message.
+ *
+ * A player is heard from each time the game reads one of its datagrams,
+ * whatever it holds, a Heartbeat included. A player the game has not heard
+ * from for SESSION_TIMEOUT_TICKS ticks crashed or lost the network: its session
+ * closes at that tick, after the datagrams are read and before the game moves
+ * along its states, so the rest of the tick runs without it. Its ship leaves
+ * the world and is announced on the event bus as an EntityDestruction
+ * (Removed), a PlayerDeparture (TimedOut) follows, and its seat and number are
+ * free for the next player who joins. takeDepartedPlayers() hands the player
+ * over to whoever must forget it outside the game. A game counts the ticks it
+ * runs, so a stall of the server closes no session.
+ *
  * A ReadyState counts only while the game waits for players, and only when its
  * sequence is newer than the newest one accepted from that player, so a late
  * copy never undoes a newer one.
@@ -105,7 +123,8 @@ class GameInstance {
    * @param seed Where the random draws of the game start from; logged by the
    * spawner each time a world is built.
    * @param events Where the game publishes what happens in the world, such as
-   * a Bydo leaving the playfield; it must outlive the game.
+   * a Bydo leaving the playfield or a player leaving the game; it must outlive
+   * the game.
    */
   GameInstance(Send send, std::uint32_t seed, engine::EventBus& events);
 
@@ -153,13 +172,22 @@ class GameInstance {
 
   /**
    * @brief Runs one tick: applies the ReadyState and keeps the newest
-   * PlayerInput among @p datagrams, oldest first, then moves the game along its
-   * states. While it waits, the players are told the room; while it is in
-   * progress, the tick is counted, the ships move, the systems run, the Bydos
-   * appear and the world is sent. Nothing caused by the content of a datagram
-   * makes it throw.
+   * PlayerInput among @p datagrams, oldest first, closes the session of every
+   * player not heard from for SESSION_TIMEOUT_TICKS ticks, then moves the game
+   * along its states. While it waits, the players are told the room; while it
+   * is in progress, the tick is counted, the ships move, the systems run, the
+   * Bydos appear and the world is sent. Last, a player sent nothing for
+   * TICKS_PER_HEARTBEAT ticks is sent a Heartbeat. Nothing caused by the
+   * content of a datagram makes it throw.
    */
   void onTick(std::span<const network::IncomingDatagram> datagrams);
+
+  /**
+   * @returns The players whose session closed since the previous call, as they
+   * were when it closed, oldest first; the next call starts afresh. Whoever
+   * admitted their address or sends them events must forget them.
+   */
+  [[nodiscard]] std::vector<ConnectedPlayer> takeDepartedPlayers();
 
   /**
    * @brief Ends the game in progress. Does nothing in any other state.
@@ -167,8 +195,33 @@ class GameInstance {
   void finish();
 
  private:
+  /** @brief A datagram of a player of the game that passed every check of
+   * onTick(), with what reading it needs. */
+  struct PlayerDatagram {
+    ConnectedPlayer* player{};
+    network::MessageOrigin origin;
+    std::vector<network::MessageFrame> messages;
+  };
+
+  /** @brief Notes that the sender of @p datagram was heard from, then hands
+   * its messages to the dispatcher, when it passes the checks of
+   * playerDatagramOf(). */
   void readPlayerDatagram(const network::IncomingDatagram& datagram);
+
+  /**
+   * @returns @p datagram split into its messages, with the player who sent it,
+   * when its header is of this protocol and version, its messages add up and
+   * its sender is a player of the game; nothing otherwise, the datagram being
+   * dropped and logged.
+   */
+  [[nodiscard]] std::optional<PlayerDatagram> playerDatagramOf(
+      const network::IncomingDatagram& datagram);
+
   void drop(const network::Endpoint& sender, std::string_view reason);
+
+  /** @brief Moves the game along its states by one tick: the start of the
+   * game, its systems and its Bydos, or the end of the wait after it. */
+  void advanceState();
 
   /**
    * @returns The time the ticks run since the game was built stand for, the
@@ -186,6 +239,36 @@ class GameInstance {
    * what that input holds. */
   void moveShips();
 
+  /** @brief Closes the session of every player not heard from for
+   * SESSION_TIMEOUT_TICKS ticks, and counts one more tick of silence for the
+   * others. The players to close are listed first, then closed, so no seat is
+   * freed while the roster is being walked. */
+  void closeSilentSessions();
+
+  /** @returns The addresses of the players not heard from for
+   * SESSION_TIMEOUT_TICKS ticks; counts one more tick of silence for every
+   * other player. */
+  [[nodiscard]] std::vector<network::Endpoint> countSilentTicks();
+
+  /** @brief Frees the seat of the player sending from @p player, removes its
+   * ship and announces it, announces the departure, then keeps the player for
+   * takeDepartedPlayers(). Everything after the seat is freed reads the copy
+   * of the player the roster handed back. */
+  void closeSession(const network::Endpoint& player);
+
+  /** @brief Publishes the EntityDestruction (Removed) of a ship that left the
+   * world. */
+  void announceShipRemoval(std::uint32_t shipEntityId);
+
+  /** @brief Logs that @p player timed out and publishes its PlayerDeparture
+   * (TimedOut). */
+  void announceTimeout(const ConnectedPlayer& player);
+
+  /** @brief Sends a Heartbeat to every player sent nothing for
+   * TICKS_PER_HEARTBEAT ticks, then counts the tick that ends for every
+   * player. */
+  void sendHeartbeats();
+
   /** @brief Moves the game to InProgress and sends every connected player
    * GameStarted. */
   void startGame();
@@ -193,9 +276,11 @@ class GameInstance {
   void startNewWorld();
 
   Send send_;
+  engine::EventBus& events_;
   std::unique_ptr<game::World> world_;
   engine::SystemScheduler systems_;
   PlayerRoster roster_;
+  std::vector<ConnectedPlayer> departedPlayers_;
   std::unique_ptr<ShipSpawnAnnouncer> shipSpawnAnnouncer_;
   std::unique_ptr<BydoSpawner> bydoSpawner_;
   std::unique_ptr<LobbyStateAnnouncer> lobbyStateAnnouncer_;

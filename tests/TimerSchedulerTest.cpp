@@ -5,6 +5,7 @@
 #include "FixedTimestep.hpp"
 #include "SimulatedClock.hpp"
 #include "TimeConstants.hpp"
+#include "TimeTestConstants.hpp"
 #include "TimerHandle.hpp"
 #include "TimerScheduler.hpp"
 
@@ -21,7 +22,6 @@ namespace {
 
 constexpr Duration SHORT_DELAY(10'000'000);
 constexpr Duration LONG_DELAY(20'000'000);
-constexpr Duration ONE_NANOSECOND(1);
 constexpr Duration HALF_SECOND(500'000'000);
 constexpr int FRAMES_BEFORE_FIRST_FIRE = 24;
 constexpr int FRAMES_AFTER_SECOND_FIRE = 66;

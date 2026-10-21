@@ -5,6 +5,7 @@
 #include <optional>
 #include <string>
 #include <utility>
+#include <vector>
 #include "ConnectedPlayer.hpp"
 #include "ConnectedPlayers.hpp"
 #include "Endpoint.hpp"
@@ -40,6 +41,24 @@ ConnectedPlayers PlayerRoster::connected() {
   return players;
 }
 
+std::vector<network::Endpoint> PlayerRoster::endpoints() const {
+  std::vector<network::Endpoint> players;
+  players.reserve(occupiedSeatCount());
+  for (const std::optional<ConnectedPlayer>& seat : seats_) {
+    if (seat.has_value()) {
+      players.push_back(seat->endpoint);
+    }
+  }
+  return players;
+}
+
+std::size_t PlayerRoster::occupiedSeatCount() const {
+  return static_cast<std::size_t>(std::ranges::count_if(
+      seats_, [](const std::optional<ConnectedPlayer>& seat) {
+        return seat.has_value();
+      }));
+}
+
 bool PlayerRoster::isFull() const {
   return std::ranges::all_of(seats_,
                              [](const std::optional<ConnectedPlayer>& seat) {
@@ -68,6 +87,16 @@ ConnectedPlayer* PlayerRoster::add(const network::Endpoint& endpoint,
     }
   }
   return nullptr;
+}
+
+std::optional<ConnectedPlayer> PlayerRoster::remove(
+    const network::Endpoint& endpoint) {
+  for (std::optional<ConnectedPlayer>& seat : seats_) {
+    if (seat.has_value() && seat->endpoint == endpoint) {
+      return std::exchange(seat, std::nullopt);
+    }
+  }
+  return std::nullopt;
 }
 
 }  // namespace rtype::server

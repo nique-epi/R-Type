@@ -79,6 +79,13 @@ void ServerApplication::admit(const network::Endpoint& player,
   });
 }
 
+void ServerApplication::forget(const network::Endpoint& player,
+                               std::uint64_t sessionToken) {
+  network_.post([this, forgotten = player, sessionToken] {
+    sorter_.forget(forgotten, sessionToken);
+  });
+}
+
 void ServerApplication::queueDatagram(network::OutgoingDatagram datagram) {
   outgoing_.push(std::move(datagram));
 }

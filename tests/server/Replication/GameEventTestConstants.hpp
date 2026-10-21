@@ -28,6 +28,12 @@ constexpr engine::Duration JUST_BEFORE_ONE_INTERVAL =
 constexpr engine::Duration ONE_INTERVAL = REPEATED_MESSAGE_INTERVAL;
 
 /**
+ * @brief The copies of a message no state repeats that the protocol page
+ * sends: three.
+ */
+constexpr std::size_t PROTOCOL_REPEATED_MESSAGE_COPIES = 3;
+
+/**
  * @brief Long enough for every copy to be sent, and for none to be left.
  */
 constexpr engine::Duration ALL_COPIES_SENT =

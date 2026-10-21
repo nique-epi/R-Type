@@ -8,7 +8,7 @@
 #include "ShipControlConstants.hpp"
 #include "ShipControlTestConstants.hpp"
 #include "TimeConstants.hpp"
-#include "engine/Time/TimeTestConstants.hpp"
+#include "TimeTestConstants.hpp"
 
 using rtype::engine::SIMULATION_TICK_DURATION;
 using rtype::engine::testing::ONE_SECOND;

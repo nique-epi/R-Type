@@ -17,7 +17,7 @@
 #include "MessageType.hpp"
 #include "NetworkException.hpp"
 #include "OutgoingDatagram.hpp"
-#include "PacketHeader.hpp"
+#include "PlayerDeparture.hpp"
 #include "PlayerElimination.hpp"
 #include "PlayerHit.hpp"
 #include "ReplicationConstants.hpp"
@@ -48,33 +48,32 @@ std::optional<EncodedMessage> GameEventBroadcaster::tryEncode(
   }
 }
 
-GameEventBroadcaster::GameEventBroadcaster(
-    engine::EventBus& events, engine::TimerScheduler& timers,
-    const std::vector<network::Endpoint>& recipients,
-    std::function<network::PacketHeader(const network::Endpoint&)> headerFor,
-    std::function<void(network::OutgoingDatagram)> send)
-    : timers_(timers),
-      recipients_(recipients),
-      headerFor_(std::move(headerFor)),
-      send_(std::move(send)),
+GameEventBroadcaster::GameEventBroadcaster(Wiring wiring)
+    : timers_(wiring.timers.get()),
+      recipients_(std::move(wiring.recipients)),
+      headerFor_(std::move(wiring.headerFor)),
+      send_(std::move(wiring.send)),
       logger_(std::string{REPLICATION_LOGGER_NAME}) {
+  engine::EventBus& events = wiring.events.get();
   subscribeTo<game::EntitySpawn>(events, ENTITY_SPAWN_EVENT_NAME);
   subscribeTo<game::EntityDestruction>(events, ENTITY_DESTRUCTION_EVENT_NAME);
   subscribeTo<game::EntityDamage>(events, ENTITY_DAMAGE_EVENT_NAME);
   subscribeTo<game::PlayerHit>(events, PLAYER_HIT_EVENT_NAME);
   subscribeTo<game::PlayerElimination>(events, PLAYER_ELIMINATION_EVENT_NAME);
+  subscribeTo<game::PlayerDeparture>(events, PLAYER_DEPARTURE_EVENT_NAME);
 }
 
 void GameEventBroadcaster::broadcast(const EncodedMessage& message) {
-  if (recipients_.empty()) {
+  const std::vector<network::Endpoint> recipients = recipients_();
+  if (recipients.empty()) {
     return;
   }
-  sendCopy(recipients_, message.type, message.payload);
+  sendCopy(recipients, message.type, message.payload);
   for (std::size_t copy = 1; copy < message.copies; ++copy) {
     timers_.scheduleOnce(
         REPEATED_MESSAGE_INTERVAL * static_cast<engine::Duration::rep>(copy),
-        [this, recipients = recipients_, type = message.type,
-         payload = message.payload]() { sendCopy(recipients, type, payload); });
+        [this, clients = recipients, type = message.type,
+         payload = message.payload]() { sendCopy(clients, type, payload); });
   }
 }
 

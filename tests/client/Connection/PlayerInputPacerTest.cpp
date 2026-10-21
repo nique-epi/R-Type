@@ -4,12 +4,12 @@
 #include "PlayerInputPacer.hpp"
 #include "ServerConnectionTestConstants.hpp"
 #include "TimeConstants.hpp"
+#include "TimeTestConstants.hpp"
 
 namespace rtype::client {
 namespace {
 
 using testing::INTERVALS_OF_A_STALL;
-using testing::ONE_NANOSECOND;
 using testing::PROTOCOL_INPUTS_PER_SECOND;
 
 /** @returns A pacer whose first input, due at once, is already sent. */

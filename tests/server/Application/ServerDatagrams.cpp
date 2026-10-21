@@ -6,6 +6,7 @@
 #include "ConnectionRequest.hpp"
 #include "DatagramCodec.hpp"
 #include "Endpoint.hpp"
+#include "Heartbeat.hpp"
 #include "PacketHeader.hpp"
 #include "PlayerInput.hpp"
 #include "ReadyState.hpp"
@@ -33,6 +34,12 @@ std::vector<std::byte> readyDatagram(
     const rtype::network::PacketHeader& header) {
   return rtype::network::DatagramCodec::encode(
       header, rtype::network::ReadyState{.ready = true});
+}
+
+std::vector<std::byte> heartbeatDatagram(
+    const rtype::network::PacketHeader& header) {
+  return rtype::network::DatagramCodec::encode(header,
+                                               rtype::network::Heartbeat{});
 }
 
 std::vector<std::byte> inputDatagram(

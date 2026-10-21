@@ -13,8 +13,8 @@
 #include "SimulatedClock.hpp"
 #include "SystemScheduler.hpp"
 #include "TimeConstants.hpp"
+#include "TimeTestConstants.hpp"
 #include "Velocity.hpp"
-#include "engine/Time/TimeTestConstants.hpp"
 
 using rtype::engine::ComponentRegistry;
 using rtype::engine::Duration;
