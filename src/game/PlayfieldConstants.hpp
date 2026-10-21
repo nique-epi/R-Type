@@ -18,4 +18,17 @@ namespace rtype::game {
 constexpr float PLAYFIELD_WIDTH = 1920.0F;
 constexpr float PLAYFIELD_HEIGHT = 1080.0F;
 
+/**
+ * @brief Height of the band along the bottom of the playfield that every
+ * client covers with the status of the players, in logical units.
+ *
+ * Nothing of a match is placed there: whatever a player must see stays
+ * within PLAY_AREA_HEIGHT of the top edge.
+ */
+constexpr float STATUS_BAND_HEIGHT = 96.0F;
+
+/** @brief Height of the part of the playfield a match is played in, from its
+ * top edge: the playfield less the status band. */
+constexpr float PLAY_AREA_HEIGHT = PLAYFIELD_HEIGHT - STATUS_BAND_HEIGHT;
+
 }  // namespace rtype::game

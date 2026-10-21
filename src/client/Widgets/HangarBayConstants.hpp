@@ -51,10 +51,9 @@ constexpr int CLAMP_HEIGHT = 28;
 constexpr int CLAMP_ARM_LENGTH = 4;
 constexpr sf::Color CLAMP_COLOR = BLUE;
 
-/** @brief Texts of a bay: before the player number, the tag of the local
- * player, an open bay, and what the cell of a pilot says. */
-constexpr const char* PLAYER_NUMBER_PREFIX = "P";
-constexpr const char* LOCAL_PLAYER_TAG = "YOU";
+/** @brief Texts of a bay: an open bay, and what the cell of a pilot says.
+ * The player number and the tag of the local player are written as
+ * PLAYER_NUMBER_PREFIX and LOCAL_PLAYER_TAG say. */
 constexpr const char* OPEN_BAY_TEXT = "OPEN BAY";
 constexpr const char* READY_TEXT = "READY";
 constexpr const char* NOT_READY_TEXT = "NOT READY";

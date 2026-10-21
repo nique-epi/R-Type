@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include "DrawJournal.hpp"
 #include "IEntityLayer.hpp"
 #include "SpriteFrame.hpp"
 
@@ -15,6 +16,9 @@ struct EntityLayerRecord {
   std::vector<rtype::game::SpriteFrame> framesAtLastPaint;
   int showCount = 0;
   const sf::RenderTarget* lastShowTarget = nullptr;
+  /** @brief Where the layer writes ENTITY_LAYER_LAID each time it is shown,
+   * when a test shares one with other doubles. */
+  DrawJournal* drawJournal = nullptr;
 };
 
 /** @brief Entity layer double that writes down what it is asked; it needs no

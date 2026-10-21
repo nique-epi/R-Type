@@ -9,6 +9,7 @@
 #include <string_view>
 #include <utility>
 #include <vector>
+#include "DrawJournal.hpp"
 #include "IInterfaceCanvas.hpp"
 #include "ImagePlacement.hpp"
 #include "TextStyle.hpp"
@@ -42,17 +43,35 @@ struct RecordedImage {
   sf::IntRect visibleArea;
 };
 
+/** @brief A texture laid smoothed on a recording canvas. */
+struct RecordedSmoothImage {
+  std::string assetId;
+  sf::IntRect area;
+  sf::Color tint;
+};
+
 /**
  * @brief What a RecordingInterfaceCanvas was asked since its last clear(), and
- * how many times it was shown; the test keeps it, since the
- * screen owns the canvas.
+ * how many times it was displayed and shown, which clear() keeps; the test
+ * keeps it, since the screen owns the canvas.
  */
 struct InterfaceCanvasRecord {
   std::vector<RecordedFill> fills;
   std::vector<RecordedWriting> writings;
   std::vector<RecordedImage> images;
+  std::vector<RecordedSmoothImage> smoothImages;
+  int displayCount = 0;
   int showCount = 0;
+  /** @brief Where the canvas writes INTERFACE_CANVAS_LAID each time it is
+   * shown, when a test shares one with other doubles. */
+  DrawJournal* drawJournal = nullptr;
 };
+
+/** @brief Advance a recording canvas gives each character of small print:
+ * Silkscreen is proportional (3 to 7 pixels), so the double takes 6, the
+ * width of most of its capitals; the regular font keeps its real
+ * REGULAR_FONT_ADVANCE. */
+constexpr int RECORDED_SMALL_ADVANCE = 6;
 
 /** @brief Interface canvas double that writes down what it is asked; it needs
  * no graphics card. */
@@ -69,6 +88,10 @@ class RecordingInterfaceCanvas : public rtype::client::IInterfaceCanvas {
   void drawImage(rtype::client::TextureArea image,
                  rtype::client::ImagePlacement placement,
                  sf::IntRect visibleArea) override;
+  void drawSmoothImage(std::string_view assetId, sf::IntRect area,
+                       sf::Color tint) override;
+  [[nodiscard]] int textWidth(std::string_view text,
+                              rtype::client::TextFont font) const override;
   void display() override;
   void show(sf::RenderTarget& target) const override;
 

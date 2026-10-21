@@ -15,7 +15,8 @@ class AssetLibrary;
 [[nodiscard]] AssetList titleAssets();
 
 /** @brief The assets a game needs, loaded by the loading screen when the
- * player enters it: the entity sheet and the effect sheet. */
+ * player enters it: the entity sheet, the effect sheet, and the HUD sheet and
+ * the plug icon of the status band. */
 [[nodiscard]] AssetList gameAssets();
 
 /**

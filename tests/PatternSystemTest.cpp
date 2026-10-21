@@ -1,6 +1,8 @@
 #include <gtest/gtest.h>
 #include <chrono>
+#include <cmath>
 #include <cstddef>
+#include "BydoSpawnPosition.hpp"
 #include "ComponentRegistry.hpp"
 #include "Entity.hpp"
 #include "EntityRegistry.hpp"
@@ -28,6 +30,11 @@ constexpr float HEIGHT_TOLERANCE_UNITS = 1e-3F;
 constexpr Duration QUARTER_PERIOD = std::chrono::milliseconds(500);
 constexpr Duration HALF_PERIOD = std::chrono::seconds(1);
 constexpr std::size_t TICKS_IN_QUARTER_PERIOD = 30;
+
+/** @brief Where the center of a Bydo of the lowest row reaches at the bottom
+ * of its wave: half a Bydo (64 units) above the status band, which starts
+ * at 984 of the 1080 units of the playfield. */
+constexpr float LOWEST_WAVE_CENTER_Y = 920.0F;
 
 Entity addPatterned(EntityRegistry& entities, ComponentRegistry& components,
                     PatternShape shape) {
@@ -117,5 +124,28 @@ TEST(PatternSystem, WavePathDoesNotDependOnTheStep) {
 
   EXPECT_NEAR(manyStepsComponents.get<Position>(manySteps)->y,
               oneStepComponents.get<Position>(oneStep)->y,
+              HEIGHT_TOLERANCE_UNITS);
+}
+
+/**
+ * Given a Wave on the lowest row a Bydo may appear on
+ * When a quarter of the period has passed, at the bottom of the wave
+ * Then its center is at 920, so its whole height stays above the status band
+ */
+TEST(PatternSystem, AWaveOnTheLowestRowStaysAboveTheStatusBand) {
+  EntityRegistry entities;
+  ComponentRegistry components(entities);
+  const float lowestRow =
+      rtype::game::bydoSpawnPosition(std::nextafter(1.0F, 0.0F)).y;
+  const Entity entity = entities.create();
+  components.add(entity, Position{.x = SOME_X, .y = lowestRow});
+  components.add(entity, MovementPattern{.shape = PatternShape::Wave,
+                                         .originY = lowestRow,
+                                         .ageSeconds = 0.0F});
+  PatternSystem pattern;
+
+  pattern.update(components, QUARTER_PERIOD);
+
+  EXPECT_NEAR(components.get<Position>(entity)->y, LOWEST_WAVE_CENTER_Y,
               HEIGHT_TOLERANCE_UNITS);
 }

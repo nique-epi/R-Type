@@ -27,12 +27,29 @@ constexpr float BYDO_SPAWN_MARGIN = 64.0F;
 constexpr float BYDO_EXIT_MARGIN = 64.0F;
 
 /**
- * @brief How far from the top and from the bottom of the playfield the center
- * of a new Bydo stays, in logical units, so its whole height is on screen.
+ * @brief Half the height of a Bydo, in logical units: how far its center stays
+ * from an edge of the area of play for its whole height to be in it.
  *
- * Provisional: it is half a Bydo height, 64 units, until the size of a Bydo is
- * fixed.
+ * Provisional: 64 units, until the size of a Bydo is fixed.
  */
 constexpr float BYDO_SPAWN_VERTICAL_MARGIN = 64.0F;
+
+/**
+ * @brief How far above and below its row a Bydo may move on its pattern, in
+ * logical units; every pattern stays within it, which PatternConstants.hpp
+ * checks.
+ *
+ * Provisional, like the margins.
+ */
+constexpr float BYDO_PATTERN_ROOM = 48.0F;
+
+/**
+ * @brief How far from the top of the playfield and from the status band along
+ * its bottom the rows of new Bydos stay, in logical units: half a Bydo and the
+ * room of its pattern, so a Bydo stays in the area of play even at the top
+ * and the bottom of a wave.
+ */
+constexpr float BYDO_ROW_MARGIN =
+    BYDO_SPAWN_VERTICAL_MARGIN + BYDO_PATTERN_ROOM;
 
 }  // namespace rtype::game

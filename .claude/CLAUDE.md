@@ -158,6 +158,7 @@ Paths below are relative to `.claude/rules/`.
 
 **Format — `fix/format/`**
 - `fix/format/fix-format-a-count-on-screen-names-what-it-counts.md`
+- `fix/format/fix-format-a-lost-unit-looks-the-same-at-every-count.md`
 - `fix/format/fix-format-a-summary-keeps-the-conditions-of-its-rule.md`
 - `fix/format/fix-format-context-before-the-deliverable.md`
 - `fix/format/fix-format-no-tool-call-artifacts-in-written-files.md`

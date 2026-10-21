@@ -11,13 +11,16 @@
 #include "HitFlashSystem.hpp"
 #include "IEntityLayer.hpp"
 #include "IEntityMessageSource.hpp"
+#include "IInterfaceCanvas.hpp"
 #include "IPlayerInputLink.hpp"
 #include "IScreenNavigator.hpp"
 #include "PlayerInputPacer.hpp"
 #include "PlayerSettings.hpp"
 #include "ScreenConstants.hpp"
 #include "ScreenId.hpp"
+#include "StatusBand.hpp"
 #include "TimeConstants.hpp"
+#include "WorldState.hpp"
 
 namespace rtype::client {
 
@@ -31,16 +34,21 @@ FlashPreference flashPreferenceOf(const PlayerSettings& settings) {
 
 }  // namespace
 
-GameScreen::GameScreen(Parts parts, std::unique_ptr<IEntityLayer> entityLayer)
+GameScreen::GameScreen(Parts parts, std::unique_ptr<IEntityLayer> entityLayer,
+                       std::unique_ptr<IInterfaceCanvas> statusCanvas)
     : navigator_(&parts.navigator.get()),
       entityLayer_(std::move(entityLayer)),
+      statusCanvas_(std::move(statusCanvas)),
       settings_(&parts.settings.get()),
       playerCommands_(true, parts.settings.get().keys),
       inputs_(&parts.inputs.get()),
-      entityMessageSource_(&parts.entityMessages.get()) {
+      entityMessageSource_(&parts.entityMessages.get()),
+      scoreBoard_(parts.connection.get().lobbyPlayers(),
+                  parts.connection.get().status().playerNumber) {
   systems_.add(std::make_unique<AnimationSystem>());
   systems_.add(std::make_unique<HitFlashSystem>());
   entityLayer_->paint(components_);
+  repaintStatus();
 }
 
 void GameScreen::handleEvent(const sf::Event& event) {
@@ -73,6 +81,7 @@ void GameScreen::update(engine::Duration elapsed) {
   effects_.setFlashPreference(flashPreferenceOf(*settings_));
   applyEntityMessages();
   entityLayer_->paint(components_);
+  repaintStatusWhenChanged();
 }
 
 void GameScreen::applyEntityMessages() {
@@ -80,14 +89,31 @@ void GameScreen::applyEntityMessages() {
   for (const EntityMessage& message : receivedEntityMessages_) {
     std::visit([this](const auto& announced) { replicator_.apply(announced); },
                message);
+    if (const auto* state = std::get_if<network::WorldState>(&message)) {
+      scoreBoard_.apply(*state);
+    }
   }
   receivedEntityMessages_.clear();
+}
+
+void GameScreen::repaintStatusWhenChanged() {
+  if (scoreBoard_.revision() != paintedStatusRevision_) {
+    repaintStatus();
+  }
+}
+
+void GameScreen::repaintStatus() {
+  statusCanvas_->clear();
+  paintStatusBand(*statusCanvas_, scoreBoard_.pilots());
+  statusCanvas_->display();
+  paintedStatusRevision_ = scoreBoard_.revision();
 }
 
 ActionSet GameScreen::playerActions() const { return playerCommands_.held(); }
 
 void GameScreen::draw(sf::RenderTarget& target) const {
   entityLayer_->show(target);
+  statusCanvas_->show(target);
 }
 
 bool GameScreen::hidesScreensBelow() const { return true; }

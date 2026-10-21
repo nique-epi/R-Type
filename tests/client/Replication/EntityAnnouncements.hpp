@@ -30,6 +30,12 @@ network::WorldState stateListing(std::uint32_t tick,
                                  std::vector<network::EntityState> entities);
 
 /**
+ * @returns A WorldState of tick @p tick listing @p players, and no entity.
+ */
+network::WorldState stateListingPlayers(
+    std::uint32_t tick, std::vector<network::PlayerState> players);
+
+/**
  * @returns An EntityDestroyed naming the entity, killed: its explosion shows.
  */
 network::EntityDestroyed killed(std::uint32_t entityId);
