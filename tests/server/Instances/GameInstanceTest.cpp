@@ -4,6 +4,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <initializer_list>
+#include <memory>
 #include <optional>
 #include <span>
 #include <string>
@@ -13,10 +14,12 @@
 #include "ConnectedPlayer.hpp"
 #include "DatagramCodec.hpp"
 #include "DebugJournal.hpp"
+#include "Endpoint.hpp"
 #include "EnemyKilled.hpp"
 #include "EntityDestruction.hpp"
 #include "EntityIdConstants.hpp"
 #include "EventBus.hpp"
+#include "GameEventBroadcaster.hpp"
 #include "GameInstance.hpp"
 #include "GameInstanceConstants.hpp"
 #include "GameInstanceTestConstants.hpp"
@@ -29,14 +32,17 @@
 #include "PacketHeader.hpp"
 #include "PlayerDeparture.hpp"
 #include "PlayerInput.hpp"
+#include "PlayerLeft.hpp"
 #include "PlayerRoster.hpp"
 #include "ProtocolConstants.hpp"
 #include "ReadyState.hpp"
+#include "Replication/GameEventTestConstants.hpp"
 #include "SentDatagrams.hpp"
 #include "ServerConstants.hpp"
 #include "ServerDatagrams.hpp"
 #include "ServerLobbyTestConstants.hpp"
 #include "Spawning/BydoSpawnerTestConstants.hpp"
+#include "TimerScheduler.hpp"
 #include "UnreliableNetwork.hpp"
 #include "WorldState.hpp"
 
@@ -1125,6 +1131,56 @@ TEST_F(GameInstanceTest, TheOthersPlayOnWhenOneOfThreePlayersTimesOut) {
     EXPECT_EQ(std::ranges::count(listed, ships.at(THIRD_PLAYER)), 1);
     EXPECT_EQ(std::ranges::count(listed, ships.at(SECOND_PLAYER)), 0);
   }
+}
+
+/**
+ * Given three players, the second of whom goes silent, and the broadcaster of
+ * the game events wired to the roster as the server wires it
+ * When the timeout runs, the bus delivers the events and every copy comes due
+ * Then the first and the third player get three PlayerLeft naming player 2,
+ * timed out, and the second player gets none
+ */
+TEST_F(GameInstanceTest, TellsOnlyTheOthersThatAPlayerTimedOut) {
+  engine::TimerScheduler timers;
+  std::vector<network::OutgoingDatagram> eventDatagrams;
+  const auto broadcaster =
+      std::make_unique<GameEventBroadcaster>(GameEventBroadcaster::Wiring{
+          .events = events(),
+          .timers = timers,
+          .recipients = [this] { return game().roster().endpoints(); },
+          .headerFor =
+              [this](const network::Endpoint& recipient) {
+                return game().nextSessionHeaderFor(recipient);
+              },
+          .send =
+              [&eventDatagrams](network::OutgoingDatagram datagram) {
+                eventDatagrams.push_back(std::move(datagram));
+              }});
+  for (const std::size_t player : {FIRST_PLAYER, SECOND_PLAYER, THIRD_PLAYER}) {
+    join(player);
+  }
+
+  timeOut(SECOND_PLAYER);
+  events().dispatch();
+  timers.advance(testing::ALL_COPIES_SENT);
+
+  const std::vector expected(
+      testing::PROTOCOL_REPEATED_MESSAGE_COPIES,
+      network::PlayerLeft{.playerNumber = network::FIRST_PLAYER_NUMBER + 1,
+                          .reason = network::DepartureReason::TimedOut});
+  for (const std::size_t player : {FIRST_PLAYER, THIRD_PLAYER}) {
+    std::vector<network::PlayerLeft> received;
+    for (const network::OutgoingDatagram& datagram :
+         ofType(network::MessageType::PlayerLeft,
+                testing::sentTo(eventDatagrams, playerEndpoint(player)))) {
+      received.push_back(onlyMessageIn<network::PlayerLeft>(datagram));
+    }
+    EXPECT_EQ(received, expected);
+  }
+  EXPECT_TRUE(
+      ofType(network::MessageType::PlayerLeft,
+             testing::sentTo(eventDatagrams, playerEndpoint(SECOND_PLAYER)))
+          .empty());
 }
 
 /**
