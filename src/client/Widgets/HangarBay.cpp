@@ -138,7 +138,7 @@ void paintLocalPlayerTag(IInterfaceCanvas& canvas, sf::Vector2i topLeft) {
 /** @brief Paints the band of the ship color under the row of the number. */
 void paintColorBand(IInterfaceCanvas& canvas, sf::Vector2i topLeft, int color) {
   canvas.fill(onBay(topLeft, BAY_COLOR_BAND),
-              PLAYER_SHIP_COLORS[static_cast<std::size_t>(color)]);
+              PLAYER_COLORS[static_cast<std::size_t>(color)].ship);
 }
 
 /** @brief Draws a ship frame BAY_SHIP_SCALE times its size, centered on the

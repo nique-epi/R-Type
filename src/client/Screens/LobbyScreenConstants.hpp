@@ -31,7 +31,7 @@ constexpr sf::Vector2i LOBBY_BAYS_SIZE(barRowWidth(LOBBY_BAY_COUNT,
                                        HANGAR_BAY_SIZE.y);
 static_assert(LOBBY_BAYS_SIZE.x == ROOM_RULE_SIZE.x,
               "the bays fill the width of the rule");
-static_assert(PLAYER_SHIP_COLORS.size() ==
+static_assert(PLAYER_COLORS.size() ==
                   static_cast<std::size_t>(PLAYER_COLOR_COUNT),
               "every ship color of the entity sheet has its interface color");
 static_assert(LOBBY_BAY_COUNT <= PLAYER_COLOR_COUNT,

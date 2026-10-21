@@ -192,7 +192,7 @@ void paintChip(IInterfaceCanvas& canvas, const PilotStatus& pilot,
   const sf::IntRect chip(bay + STATUS_CHIP_TOP_LEFT, STATUS_CHIP_SIZE);
   const std::size_t color = colorIndexOf(pilot);
   canvas.fill(chip,
-              isGone(pilot) ? GONE_CHIP_COLOR : PLAYER_SHIP_COLORS[color]);
+              isGone(pilot) ? GONE_CHIP_COLOR : PLAYER_COLORS[color].ship);
   canvas.drawImage(
       TextureArea{.assetId = HUD_SHEET_ID,
                   .rectangle = rectangleOf(MARKER_FRAMES[color])},
@@ -224,7 +224,7 @@ void paintTitle(IInterfaceCanvas& canvas, const PilotStatus& pilot,
       fittedName(nameOf(pilot), nameRoom(canvas, word)),
       bay + STATUS_NAME_TOP_LEFT,
       {.font = TextFont::Regular,
-       .color = isGone(pilot) ? GONE_TEXT_COLOR : PLAYER_LIGHT_COLORS[color]});
+       .color = isGone(pilot) ? GONE_TEXT_COLOR : PLAYER_COLORS[color].light});
 }
 
 /** @brief Draws the same life count times, STATUS_LIFE_STEP apart. */

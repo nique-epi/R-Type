@@ -31,11 +31,6 @@ constexpr sf::Color PLAYER_PINK(217, 74, 140);
 constexpr sf::Color PLAYER_GREEN(126, 194, 58);
 constexpr sf::Color PLAYER_ORANGE(224, 154, 42);
 
-/** @brief The main colors of the ships, in the order of the rows of the entity
- * sheet: what the interface paints in the color of a player. */
-constexpr std::array PLAYER_SHIP_COLORS{PLAYER_BLUE, PLAYER_PINK, PLAYER_GREEN,
-                                        PLAYER_ORANGE};
-
 /** @brief Light shade of the ship of each player color, read from the same
  * rows. */
 constexpr sf::Color PLAYER_LIGHT_BLUE(127, 230, 255);
@@ -43,11 +38,21 @@ constexpr sf::Color PLAYER_LIGHT_PINK(255, 163, 207);
 constexpr sf::Color PLAYER_LIGHT_GREEN(210, 255, 138);
 constexpr sf::Color PLAYER_LIGHT_ORANGE(255, 211, 138);
 
-/** @brief The light shades, in the same order: the nickname of a player
- * written on the sky. */
-constexpr std::array PLAYER_LIGHT_COLORS{PLAYER_LIGHT_BLUE, PLAYER_LIGHT_PINK,
-                                         PLAYER_LIGHT_GREEN,
-                                         PLAYER_LIGHT_ORANGE};
+/** @brief The two shades of a player color: the main color of its ship, what
+ * the interface paints in the color of the player, and its light shade, the
+ * nickname of the player written on the sky. */
+struct PlayerColors {
+  sf::Color ship;
+  sf::Color light;
+};
+
+/** @brief The shades of each player color, in the order of the rows of the
+ * entity sheet: player 1 first. */
+constexpr std::array PLAYER_COLORS{
+    PlayerColors{.ship = PLAYER_BLUE, .light = PLAYER_LIGHT_BLUE},
+    PlayerColors{.ship = PLAYER_PINK, .light = PLAYER_LIGHT_PINK},
+    PlayerColors{.ship = PLAYER_GREEN, .light = PLAYER_LIGHT_GREEN},
+    PlayerColors{.ship = PLAYER_ORANGE, .light = PLAYER_LIGHT_ORANGE}};
 
 /** @brief Light orange of the enemy missile: the warnings of the status band,
  * LAST LIFE and OUT, always written as words. */
