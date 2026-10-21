@@ -16,6 +16,7 @@
 #include "MessageType.hpp"
 #include "NetworkConstants.hpp"
 #include "NetworkException.hpp"
+#include "NetworkTestConstants.hpp"
 #include "ProtocolFixtures.hpp"
 #include "ProtocolTestConstants.hpp"
 #include "ReadyState.hpp"
@@ -355,6 +356,8 @@ class MessageDispatcherLogTest : public ::testing::Test {
     return journal_.linesHolding(REJECTED_MESSAGE_LINE_TEXT);
   }
 
+  [[nodiscard]] const DebugJournal& journal() const { return journal_; }
+
  private:
   DebugJournal journal_;
 };
@@ -377,6 +380,22 @@ TEST_F(MessageDispatcherLogTest, LogsASkippedMessageWithItsSender) {
   EXPECT_NE(lines.front().find("from " + std::string{LOOPBACK_IPV4_ADDRESS} +
                                " port " + std::to_string(SOME_SENDER_PORT)),
             std::string::npos);
+}
+
+/**
+ * Given a dispatcher without any handler
+ * When a Heartbeat arrives
+ * Then the journal holds one line holding SKIPPED_MESSAGE_LINE_TEXT, the words
+ * the tests that expect no such line look for
+ */
+TEST_F(MessageDispatcherLogTest, WritesTheWordsOfASkippedMessage) {
+  MessageDispatcher dispatcher;
+  const std::vector<std::byte> payload = encodeMessage(Heartbeat{});
+  const std::vector frames{frameOf(MessageType::Heartbeat, payload)};
+
+  dispatcher.dispatch(someOrigin(), frames);
+
+  EXPECT_EQ(journal().linesHolding(SKIPPED_MESSAGE_LINE_TEXT).size(), 1U);
 }
 
 /**
