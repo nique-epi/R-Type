@@ -1706,6 +1706,19 @@ TEST_F(GameInstanceLogTest, WritesTheNextLineOnceTheIntervalOfTicksIsOver) {
 }
 
 /**
+ * Given a game with two players, who send a Heartbeat before every tick
+ * When a tick reads them
+ * Then the journal holds no line about a message without a handler: a
+ * Heartbeat is read, and says nothing more than that its sender is there
+ */
+TEST_F(GameInstanceLogTest, ReadsAHeartbeatWithoutLoggingIt) {
+  tick();
+
+  EXPECT_TRUE(
+      journal().linesHolding(testing::SKIPPED_MESSAGE_LINE_TEXT).empty());
+}
+
+/**
  * Given a game with two players, the second of whom goes silent
  * When the timeout runs
  * Then the journal holds one line saying that player 2 timed out
