@@ -56,7 +56,9 @@ constexpr int STATUS_RULE_HEIGHT = 16;
  * the lives from STATUS_LIVES_TOP_LEFT, STATUS_LIFE_STEP apart, or one life
  * and its count at STATUS_LIVES_COUNT_OFFSET, or the plug of a lost signal,
  * STATUS_ICON_SIZE; then the score, whose last digit ends at
- * STATUS_SCORE_END. The frame of the local player is STATUS_LOCAL_FRAME.
+ * STATUS_SCORE_END. The frame of the local player, STATUS_LOCAL_FRAME, stands
+ * STATUS_LOCAL_FRAME_INSET in from each side of the bay, as tall as the
+ * band.
  */
 constexpr sf::Vector2i STATUS_CHIP_TOP_LEFT(5, 3);
 constexpr sf::Vector2i STATUS_CHIP_SIZE(11, 10);
@@ -70,7 +72,11 @@ constexpr int STATUS_LIFE_STEP = 17;
 constexpr sf::Vector2i STATUS_LIVES_COUNT_OFFSET(18, 0);
 constexpr sf::Vector2i STATUS_ICON_SIZE(8, 8);
 constexpr sf::Vector2i STATUS_SCORE_END(112, 14);
-constexpr sf::IntRect STATUS_LOCAL_FRAME({1, 0}, {116, 24});
+constexpr int STATUS_LOCAL_FRAME_INSET = 1;
+constexpr sf::IntRect STATUS_LOCAL_FRAME(
+    {STATUS_LOCAL_FRAME_INSET, 0},
+    {STATUS_BAY_WIDTH - (SIDES_PER_AXIS * STATUS_LOCAL_FRAME_INSET),
+     STATUS_BAND_ROWS});
 
 /** @brief Digits of a score, leading zeros included, so a growing score never
  * moves. */

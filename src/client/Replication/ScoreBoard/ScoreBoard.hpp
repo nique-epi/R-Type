@@ -50,10 +50,7 @@ class ScoreBoard {
  private:
   /** @returns The pilot of a number, seated with nothing known yet when the
    * board had none; nullptr when the number is no player number. */
-  PilotStatus* seatOf(std::uint8_t playerNumber);
-
-  /** @returns The pilot of a number already seated, or nullptr. */
-  PilotStatus* seatedPilotOf(std::uint8_t playerNumber);
+  PilotStatus* seatedOrNewPilotOf(std::uint8_t playerNumber);
 
   /** @brief Seats a pilot with nothing known yet at the place of its number,
    * counting a revision.

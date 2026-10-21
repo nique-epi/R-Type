@@ -84,7 +84,7 @@ ScoreBoard::ScoreBoard(std::span<const network::LobbyPlayer> waitingRoom,
                        std::uint8_t localPlayerNumber)
     : localPlayerNumber_(localPlayerNumber) {
   for (const network::LobbyPlayer& player : waitingRoom) {
-    PilotStatus* pilot = seatOf(player.playerNumber);
+    PilotStatus* pilot = seatedOrNewPilotOf(player.playerNumber);
     if (pilot != nullptr) {
       pilot->nickname = player.nickname;
     }
@@ -96,7 +96,7 @@ void ScoreBoard::apply(const network::WorldState& state) {
     return;
   }
   for (const network::PlayerState& listed : state.players) {
-    PilotStatus* pilot = seatOf(listed.playerNumber);
+    PilotStatus* pilot = seatedOrNewPilotOf(listed.playerNumber);
     if (pilot != nullptr) {
       change(*pilot, listedVersionOf(*pilot, listed));
     }
@@ -104,7 +104,7 @@ void ScoreBoard::apply(const network::WorldState& state) {
 }
 
 void ScoreBoard::apply(const network::PlayerLeft& departure) {
-  PilotStatus* pilot = seatOf(departure.playerNumber);
+  PilotStatus* pilot = seatedOrNewPilotOf(departure.playerNumber);
   if (pilot != nullptr) {
     change(*pilot, departedVersionOf(*pilot, departure.reason));
   }
@@ -114,20 +114,13 @@ std::span<const PilotStatus> ScoreBoard::pilots() const { return pilots_; }
 
 std::uint32_t ScoreBoard::revision() const { return revision_; }
 
-PilotStatus* ScoreBoard::seatOf(std::uint8_t playerNumber) {
+PilotStatus* ScoreBoard::seatedOrNewPilotOf(std::uint8_t playerNumber) {
   if (!isPlayerNumber(playerNumber)) {
     return nullptr;
   }
-  if (seatedPilotOf(playerNumber) == nullptr) {
-    return &seat(playerNumber);
-  }
-  return seatedPilotOf(playerNumber);
-}
-
-PilotStatus* ScoreBoard::seatedPilotOf(std::uint8_t playerNumber) {
   const auto found =
       std::ranges::find(pilots_, playerNumber, &PilotStatus::playerNumber);
-  return found == pilots_.end() ? nullptr : &*found;
+  return found != pilots_.end() ? &*found : &seat(playerNumber);
 }
 
 PilotStatus& ScoreBoard::seat(std::uint8_t playerNumber) {
