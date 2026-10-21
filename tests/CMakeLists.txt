@@ -40,7 +40,7 @@ function(rtype_add_test)
 endfunction()
 
 rtype_add_test(NAME harness_tests SOURCES HarnessTest.cpp)
-rtype_add_test(NAME engine_tests SOURCES CollisionTest.cpp ComponentQueryTest.cpp ComponentTest.cpp EntityIndexMapTest.cpp EntityRegistryTest.cpp EventBusFixtures.cpp EventBusTest.cpp engine/Time/FixedTimestepTest.cpp engine/LaunchArguments/LaunchArgumentsTest.cpp NetworkEntityTableTest.cpp NetworkIdAllocatorTest.cpp SystemSchedulerTest.cpp TimerSchedulerTest.cpp LIBS rtype_engine TIMEOUT ${RTYPE_THREAD_TEST_TIMEOUT_SECONDS})
+rtype_add_test(NAME engine_tests SOURCES CollisionTest.cpp ComponentQueryTest.cpp ComponentTest.cpp EntityIndexMapTest.cpp EntityRegistryTest.cpp EventBusFixtures.cpp EventBusTest.cpp engine/Time/FixedTimestepTest.cpp engine/Time/TimeConstantsTest.cpp engine/LaunchArguments/LaunchArgumentsTest.cpp NetworkEntityTableTest.cpp NetworkIdAllocatorTest.cpp SystemSchedulerTest.cpp TimerSchedulerTest.cpp LIBS rtype_engine TIMEOUT ${RTYPE_THREAD_TEST_TIMEOUT_SECONDS})
 target_include_directories(engine_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 rtype_add_test(NAME concurrency_tests SOURCES concurrency/BoundedQueueTest.cpp LIBS rtype_concurrency TIMEOUT ${RTYPE_THREAD_TEST_TIMEOUT_SECONDS})
 rtype_add_test(NAME game_tests SOURCES BydoSpawnPositionTest.cpp CollisionRulesTest.cpp CollisionScene.cpp CollisionSystemTest.cpp DamageRulesTest.cpp EntityTypeTest.cpp MovementSystemTest.cpp PatternSystemTest.cpp PlayfieldExitSystemTest.cpp ShipStartPositionTest.cpp WorldTest.cpp LIBS rtype_game_spawning rtype_game_exceptions)

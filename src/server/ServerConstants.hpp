@@ -102,8 +102,8 @@ constexpr engine::Duration LOBBY_STATE_INTERVAL =
  * 499.99998 ms; adding up tick durations until they reach the interval would
  * take 31 ticks, 516.7 ms.
  */
-constexpr std::size_t TICKS_PER_LOBBY_STATE = static_cast<std::size_t>(
-    LOBBY_STATE_INTERVAL / engine::SIMULATION_TICK_DURATION);
+constexpr std::size_t TICKS_PER_LOBBY_STATE =
+    engine::wholeTicksIn(LOBBY_STATE_INTERVAL);
 
 static_assert(TICKS_PER_LOBBY_STATE >= 1,
               "LOBBY_STATE_INTERVAL must last at least one simulation tick");
