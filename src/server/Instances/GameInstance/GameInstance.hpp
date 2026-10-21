@@ -234,8 +234,14 @@ class GameInstance {
 
   /** @brief Closes the session of every player not heard from for
    * SESSION_TIMEOUT_TICKS ticks, and counts one more tick of silence for the
-   * others. */
+   * others. The players to close are listed first, then closed, so no seat is
+   * freed while the roster is being walked. */
   void closeSilentSessions();
+
+  /** @returns The addresses of the players not heard from for
+   * SESSION_TIMEOUT_TICKS ticks; counts one more tick of silence for every
+   * other player. */
+  [[nodiscard]] std::vector<network::Endpoint> countSilentTicks();
 
   /** @brief Frees the seat of the player sending from @p player, removes its
    * ship and announces it, announces the departure, then keeps the player for

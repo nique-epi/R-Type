@@ -253,13 +253,21 @@ bool GameInstance::everyPlayerIsReady() {
 }
 
 void GameInstance::closeSilentSessions() {
+  for (const network::Endpoint& player : countSilentTicks()) {
+    closeSession(player);
+  }
+}
+
+std::vector<network::Endpoint> GameInstance::countSilentTicks() {
+  std::vector<network::Endpoint> timedOut;
   for (ConnectedPlayer* const player : roster_.connected()) {
     if (player->ticksSinceReceived >= SESSION_TIMEOUT_TICKS) {
-      closeSession(player->endpoint);
+      timedOut.push_back(player->endpoint);
     } else {
       ++player->ticksSinceReceived;
     }
   }
+  return timedOut;
 }
 
 void GameInstance::closeSession(const network::Endpoint& player) {
