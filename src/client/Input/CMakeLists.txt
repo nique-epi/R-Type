@@ -2,7 +2,7 @@ add_library(rtype_client_input INTERFACE)
 
 target_include_directories(rtype_client_input INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
 
-target_link_libraries(rtype_client_input INTERFACE SFML::Window)
+target_link_libraries(rtype_client_input INTERFACE SFML::Window rtype_network_protocol)
 
 add_library(rtype_client_key_names STATIC KeyNames.cpp)
 
