@@ -30,7 +30,7 @@ This page tells you where to look when you need to change something. It describe
 | Collisions | Available: nothing runs them yet | `src/game/Systems/CollisionSystem/`, `src/game/Systems/CollisionRules/`, `src/game/Events/` |
 | Damage and destruction | Available: nothing runs it yet; players take no damage yet | `src/game/Systems/DamageRules/` |
 | Ship of each player, created when the player joins and announced to the others | Available | `src/game/Spawning/`, `src/server/Replication/ShipSpawnAnnouncer/` |
-| Ship control: where a ship goes from the directions its player holds, kept on screen | Available; the client does not predict its own ship yet | `src/game/ShipControl/`, `src/server/Instances/GameInstance/` |
+| Ship control: where a ship goes from the directions its player holds, kept above the status band | Available; the client does not predict its own ship yet | `src/game/ShipControl/`, `src/server/Instances/GameInstance/` |
 | Bydos appearing off screen at random heights above the status band of the clients, on a timer, then moving left | Available | `src/game/Spawning/BydoSpawnPosition.*`, `src/server/Spawning/` |
 | Score: points per Bydo kind, credited to the player who fired the missile, sent in the world state | Available: no missile is fired yet, so no kill happens in a game | `src/game/Spawning/BydoKind/`, `src/game/Systems/DamageRules/`, `src/server/Instances/ScoreKeeper/` |
 | Waves, lives | Not yet written | — |
@@ -288,7 +288,7 @@ Each `GameInstance` keeps, in `ConnectedPlayer::newestInput`, the `PlayerInput` 
 
 - A direction held alone moves the ship `SHIP_SPEED` (480 logical units per second) that way, 8 units per tick. x grows to the right and y downwards.
 - Two directions on two axes move it along the diagonal at `SHIP_SPEED` too: each axis gets `SHIP_SPEED` divided by the square root of 2, 339.4 units per second, so a diagonal is no faster than a straight line. Two opposite directions cancel out: up and down together move nothing, and up, down and right move right at full speed.
-- The ship stops where its side meets an edge: its center stays from 64 to 1856 in x and from 32 to 1048 in y, half of `SHIP_WIDTH` (128) and of `SHIP_HEIGHT` (64) away from each edge, so the whole ship stays on screen. A ship pushed along a diagonal against an edge slides along it at 339.4 units per second.
+- The ship stops where its side meets an edge of the play area, the playfield less the status band at its bottom (`PLAY_AREA_HEIGHT`, 984 units from the top edge): its center stays from 64 to 1856 in x and from 32 to 952 in y, half of `SHIP_WIDTH` (128) and of `SHIP_HEIGHT` (64) away from each edge, so the whole ship stays in sight. A ship pushed along a diagonal against an edge slides along it at 339.4 units per second.
 - `SHIP_WIDTH` and `SHIP_HEIGHT` are the size the client draws the ship at: 32 by 16 pixels of the entity sheet (`PLAYER_SHIP_FRAME`), each covering `BACKGROUND_PIXEL_SIZE` (4) logical units. A client test compares the two, so a new ship sprite comes with new constants.
 - `SHIP_SPEED` is **provisional**: it will be tuned once the game is played on screen. Code must read the constants (`src/game/ShipControl/ShipControlConstants.hpp`) and never repeat 480, 128 or 64.
 

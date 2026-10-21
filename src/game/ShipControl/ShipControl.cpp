@@ -34,13 +34,13 @@ float speedPerAxis(bool diagonal) {
 }
 
 /** @returns @p ship moved the least needed for the whole ship to be inside the
- * playfield. */
-Position keptInsidePlayfield(Position ship) {
+ * play area: the playfield above the status band. */
+Position keptInsidePlayArea(Position ship) {
   const float halfWidth = SHIP_WIDTH * engine::HALF;
   const float halfHeight = SHIP_HEIGHT * engine::HALF;
   return Position{
       .x = std::clamp(ship.x, halfWidth, PLAYFIELD_WIDTH - halfWidth),
-      .y = std::clamp(ship.y, halfHeight, PLAYFIELD_HEIGHT - halfHeight)};
+      .y = std::clamp(ship.y, halfHeight, PLAY_AREA_HEIGHT - halfHeight)};
 }
 
 }  // namespace
@@ -51,7 +51,7 @@ Position shipPositionAfter(Position from, ShipDirections held,
   const int vertical = verticalOf(held);
   const float distancePerAxis = speedPerAxis(horizontal != 0 && vertical != 0) *
                                 std::chrono::duration<float>(elapsed).count();
-  return keptInsidePlayfield(
+  return keptInsidePlayArea(
       Position{.x = from.x + (distancePerAxis * static_cast<float>(horizontal)),
                .y = from.y + (distancePerAxis * static_cast<float>(vertical))});
 }

@@ -15,7 +15,7 @@ constexpr float SHIP_SPEED = 480.0F;
 /**
  * @brief Size of a ship, in logical units: the size the client draws it at, 32
  * by 16 pixels of the entity sheet, each covering 4 logical units. A ship stays
- * whole inside the playfield, its center half this size away from every edge.
+ * whole inside the play area, its center half this size away from every edge.
  */
 constexpr float SHIP_WIDTH = 128.0F;
 constexpr float SHIP_HEIGHT = 64.0F;

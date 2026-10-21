@@ -1,4 +1,5 @@
 #include <gtest/gtest.h>
+#include <chrono>
 #include <cmath>
 #include <ostream>
 #include <string_view>
@@ -12,7 +13,7 @@
 
 using rtype::engine::SIMULATION_TICK_DURATION;
 using rtype::engine::testing::ONE_SECOND;
-using rtype::game::PLAYFIELD_HEIGHT;
+using rtype::game::PLAY_AREA_HEIGHT;
 using rtype::game::PLAYFIELD_WIDTH;
 using rtype::game::Position;
 using rtype::game::SHIP_SPEED;
@@ -21,10 +22,11 @@ using rtype::game::shipPositionAfter;
 using rtype::game::testing::BOTTOM_EDGE_STOP_Y;
 using rtype::game::testing::LEFT_EDGE_STOP_X;
 using rtype::game::testing::NEAR_AN_EDGE;
-using rtype::game::testing::PLAYFIELD_CENTER;
+using rtype::game::testing::PLAY_AREA_CENTER;
 using rtype::game::testing::POSITION_TOLERANCE;
 using rtype::game::testing::RIGHT_EDGE_STOP_X;
 using rtype::game::testing::TOP_EDGE_STOP_Y;
+using rtype::game::testing::UNOBSTRUCTED_MOVE_DURATION;
 
 namespace {
 
@@ -77,20 +79,24 @@ class ShipControlEdgeTest : public ::testing::TestWithParam<EdgeApproach> {};
 }  // namespace
 
 /**
- * Given a ship in the middle of the playfield whose player holds one direction
- * When a second passes
- * Then the ship has moved SHIP_SPEED that way, and not along the other axis
+ * Given a ship in the middle of the play area whose player holds one direction
+ * When UNOBSTRUCTED_MOVE_DURATION passes
+ * Then the ship has moved that way as far as SHIP_SPEED goes in that time, and
+ * not along the other axis
  */
 TEST_P(ShipControlDirectionTest, MovesAtTheShipSpeedTowardsTheDirectionHeld) {
   const HeldDirection direction = GetParam();
 
-  const Position arrival =
-      shipPositionAfter(PLAYFIELD_CENTER, direction.held, ONE_SECOND);
+  const Position arrival = shipPositionAfter(PLAY_AREA_CENTER, direction.held,
+                                             UNOBSTRUCTED_MOVE_DURATION);
 
+  const float distance =
+      SHIP_SPEED *
+      std::chrono::duration<float>(UNOBSTRUCTED_MOVE_DURATION).count();
   EXPECT_FLOAT_EQ(arrival.x,
-                  PLAYFIELD_CENTER.x + (SHIP_SPEED * direction.towardsX));
+                  PLAY_AREA_CENTER.x + (distance * direction.towardsX));
   EXPECT_FLOAT_EQ(arrival.y,
-                  PLAYFIELD_CENTER.y + (SHIP_SPEED * direction.towardsY));
+                  PLAY_AREA_CENTER.y + (distance * direction.towardsY));
 }
 
 INSTANTIATE_TEST_SUITE_P(EachDirection, ShipControlDirectionTest,
@@ -113,30 +119,30 @@ INSTANTIATE_TEST_SUITE_P(EachDirection, ShipControlDirectionTest,
                                                .towardsY = 0.0F}));
 
 /**
- * Given a ship in the middle of the playfield whose player holds nothing
+ * Given a ship in the middle of the play area whose player holds nothing
  * When a second passes
  * Then the ship is where it was
  */
 TEST(ShipControl, StaysStillWhenNothingIsHeld) {
   const Position arrival =
-      shipPositionAfter(PLAYFIELD_CENTER, ShipDirections{}, ONE_SECOND);
+      shipPositionAfter(PLAY_AREA_CENTER, ShipDirections{}, ONE_SECOND);
 
-  EXPECT_FLOAT_EQ(arrival.x, PLAYFIELD_CENTER.x);
-  EXPECT_FLOAT_EQ(arrival.y, PLAYFIELD_CENTER.y);
+  EXPECT_FLOAT_EQ(arrival.x, PLAY_AREA_CENTER.x);
+  EXPECT_FLOAT_EQ(arrival.y, PLAY_AREA_CENTER.y);
 }
 
 /**
- * Given a ship in the middle of the playfield whose player holds two opposite
+ * Given a ship in the middle of the play area whose player holds two opposite
  * directions
  * When a second passes
  * Then the ship is where it was: the two cancel out
  */
 TEST_P(ShipControlOppositesTest, StaysStillWhenOppositeDirectionsAreHeld) {
   const Position arrival =
-      shipPositionAfter(PLAYFIELD_CENTER, GetParam().held, ONE_SECOND);
+      shipPositionAfter(PLAY_AREA_CENTER, GetParam().held, ONE_SECOND);
 
-  EXPECT_FLOAT_EQ(arrival.x, PLAYFIELD_CENTER.x);
-  EXPECT_FLOAT_EQ(arrival.y, PLAYFIELD_CENTER.y);
+  EXPECT_FLOAT_EQ(arrival.x, PLAY_AREA_CENTER.x);
+  EXPECT_FLOAT_EQ(arrival.y, PLAY_AREA_CENTER.y);
 }
 
 INSTANTIATE_TEST_SUITE_P(
@@ -148,7 +154,7 @@ INSTANTIATE_TEST_SUITE_P(
                           .held = {.left = true, .right = true}}));
 
 /**
- * Given a ship in the middle of the playfield whose player holds up, down and
+ * Given a ship in the middle of the play area whose player holds up, down and
  * right
  * When a second passes
  * Then the ship has moved SHIP_SPEED to the right: up and down cancel out and
@@ -156,25 +162,25 @@ INSTANTIATE_TEST_SUITE_P(
  */
 TEST(ShipControl, MovesAtFullSpeedWhenOppositesLeaveAStraightLine) {
   const Position arrival = shipPositionAfter(
-      PLAYFIELD_CENTER, ShipDirections{.up = true, .down = true, .right = true},
+      PLAY_AREA_CENTER, ShipDirections{.up = true, .down = true, .right = true},
       ONE_SECOND);
 
-  EXPECT_FLOAT_EQ(arrival.x, PLAYFIELD_CENTER.x + SHIP_SPEED);
-  EXPECT_FLOAT_EQ(arrival.y, PLAYFIELD_CENTER.y);
+  EXPECT_FLOAT_EQ(arrival.x, PLAY_AREA_CENTER.x + SHIP_SPEED);
+  EXPECT_FLOAT_EQ(arrival.y, PLAY_AREA_CENTER.y);
 }
 
 /**
- * Given a ship in the middle of the playfield whose player holds up and right
+ * Given a ship in the middle of the play area whose player holds up and right
  * When a second passes
  * Then the ship has covered SHIP_SPEED, no more, as far towards the right as
  * upwards
  */
 TEST(ShipControl, IsNoFasterAlongADiagonalThanAlongAStraightLine) {
   const Position arrival = shipPositionAfter(
-      PLAYFIELD_CENTER, ShipDirections{.up = true, .right = true}, ONE_SECOND);
+      PLAY_AREA_CENTER, ShipDirections{.up = true, .right = true}, ONE_SECOND);
 
-  const float towardsRight = arrival.x - PLAYFIELD_CENTER.x;
-  const float upwards = PLAYFIELD_CENTER.y - arrival.y;
+  const float towardsRight = arrival.x - PLAY_AREA_CENTER.x;
+  const float upwards = PLAY_AREA_CENTER.y - arrival.y;
   EXPECT_NEAR(std::hypot(towardsRight, upwards), SHIP_SPEED,
               POSITION_TOLERANCE);
   EXPECT_GT(towardsRight, 0.0F);
@@ -185,7 +191,7 @@ TEST(ShipControl, IsNoFasterAlongADiagonalThanAlongAStraightLine) {
  * Given a ship NEAR_AN_EDGE from an edge whose player holds the direction of
  * that edge
  * When a second passes, long enough to take its center past the edge
- * Then the ship stops with its side on the edge: the whole ship stays on screen
+ * Then the ship stops with its side on the edge: the whole ship stays in sight
  */
 TEST_P(ShipControlEdgeTest, StopsWithItsSideOnTheEdge) {
   const EdgeApproach approach = GetParam();
@@ -203,22 +209,22 @@ INSTANTIATE_TEST_SUITE_P(
         EdgeApproach{.name = "RightEdge",
                      .held = {.right = true},
                      .from = {.x = PLAYFIELD_WIDTH - NEAR_AN_EDGE,
-                              .y = PLAYFIELD_CENTER.y},
-                     .stop = {.x = RIGHT_EDGE_STOP_X, .y = PLAYFIELD_CENTER.y}},
+                              .y = PLAY_AREA_CENTER.y},
+                     .stop = {.x = RIGHT_EDGE_STOP_X, .y = PLAY_AREA_CENTER.y}},
         EdgeApproach{.name = "LeftEdge",
                      .held = {.left = true},
-                     .from = {.x = NEAR_AN_EDGE, .y = PLAYFIELD_CENTER.y},
-                     .stop = {.x = LEFT_EDGE_STOP_X, .y = PLAYFIELD_CENTER.y}},
+                     .from = {.x = NEAR_AN_EDGE, .y = PLAY_AREA_CENTER.y},
+                     .stop = {.x = LEFT_EDGE_STOP_X, .y = PLAY_AREA_CENTER.y}},
         EdgeApproach{.name = "TopEdge",
                      .held = {.up = true},
-                     .from = {.x = PLAYFIELD_CENTER.x, .y = NEAR_AN_EDGE},
-                     .stop = {.x = PLAYFIELD_CENTER.x, .y = TOP_EDGE_STOP_Y}},
+                     .from = {.x = PLAY_AREA_CENTER.x, .y = NEAR_AN_EDGE},
+                     .stop = {.x = PLAY_AREA_CENTER.x, .y = TOP_EDGE_STOP_Y}},
         EdgeApproach{
             .name = "BottomEdge",
             .held = {.down = true},
-            .from = {.x = PLAYFIELD_CENTER.x,
-                     .y = PLAYFIELD_HEIGHT - NEAR_AN_EDGE},
-            .stop = {.x = PLAYFIELD_CENTER.x, .y = BOTTOM_EDGE_STOP_Y}}));
+            .from = {.x = PLAY_AREA_CENTER.x,
+                     .y = PLAY_AREA_HEIGHT - NEAR_AN_EDGE},
+            .stop = {.x = PLAY_AREA_CENTER.x, .y = BOTTOM_EDGE_STOP_Y}}));
 
 /**
  * Given a ship whose side is on the right edge and whose player holds right
@@ -226,7 +232,7 @@ INSTANTIATE_TEST_SUITE_P(
  * Then the ship has not moved: an edge holds a ship pushed against it
  */
 TEST(ShipControl, StaysAgainstTheEdgeItIsPushedAgainst) {
-  const Position onTheEdge{.x = RIGHT_EDGE_STOP_X, .y = PLAYFIELD_CENTER.y};
+  const Position onTheEdge{.x = RIGHT_EDGE_STOP_X, .y = PLAY_AREA_CENTER.y};
 
   const Position arrival = shipPositionAfter(
       onTheEdge, ShipDirections{.right = true}, SIMULATION_TICK_DURATION);

@@ -22,9 +22,10 @@ struct ShipDirections {
  *
  * The ship moves at SHIP_SPEED towards the directions held, as fast along a
  * diagonal as along a straight line, and stops where its side meets an edge of
- * the playfield, so the whole ship stays on screen. A ship inside the
- * playfield that holds nothing, or only opposite directions, does not move.
- * The position returned is always inside, even for a ship that started outside:
+ * the play area, the playfield less the status band at its bottom
+ * (PLAY_AREA_HEIGHT), so the whole ship stays in sight. A ship inside the play
+ * area that holds nothing, or only opposite directions, does not move. The
+ * position returned is always inside, even for a ship that started outside:
  * where the ship would go is moved the least needed for the whole ship to be
  * inside.
  *
