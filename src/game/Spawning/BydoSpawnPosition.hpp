@@ -9,9 +9,9 @@ namespace rtype::game {
  * it is off screen, at a height picked by @p randomUnit.
  *
  * @p randomUnit 0 gives the highest row and a value just under 1 the lowest;
- * the rows stay BYDO_SPAWN_VERTICAL_MARGIN away from the top of the playfield
- * and from the status band along its bottom, so the whole Bydo is inside the
- * area of play once it has come in.
+ * the rows stay BYDO_ROW_MARGIN away from the top of the playfield and from
+ * the status band along its bottom, so the whole Bydo stays inside the area
+ * of play once it has come in, even at the top and the bottom of a wave.
  *
  * @param randomUnit From 0 up to, but not including, 1.
  * @throws InvalidRandomUnitException when @p randomUnit is outside that range

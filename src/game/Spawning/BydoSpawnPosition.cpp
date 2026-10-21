@@ -11,10 +11,9 @@ Position bydoSpawnPosition(float randomUnit) {
   if (!isUnit) {
     throw InvalidRandomUnitException();
   }
-  const float rowsHeight =
-      PLAY_AREA_HEIGHT - (2.0F * BYDO_SPAWN_VERTICAL_MARGIN);
+  const float rowsHeight = PLAY_AREA_HEIGHT - (2.0F * BYDO_ROW_MARGIN);
   return Position{.x = PLAYFIELD_WIDTH + BYDO_SPAWN_MARGIN,
-                  .y = BYDO_SPAWN_VERTICAL_MARGIN + (rowsHeight * randomUnit)};
+                  .y = BYDO_ROW_MARGIN + (rowsHeight * randomUnit)};
 }
 
 }  // namespace rtype::game

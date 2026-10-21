@@ -14,8 +14,8 @@ constexpr float BYDO_SPEED = 240.0F;
 /**
  * @brief How far a Wave goes above and below its row, in logical units.
  *
- * Provisional. It stays under BYDO_SPAWN_VERTICAL_MARGIN so a Bydo on a wave
- * never leaves the height of the playfield.
+ * Provisional. It stays within BYDO_PATTERN_ROOM, the room every row keeps
+ * above and below it, so a Bydo on a wave stays in the area of play.
  */
 constexpr float WAVE_AMPLITUDE = 48.0F;
 
@@ -24,6 +24,7 @@ constexpr float WAVE_AMPLITUDE = 48.0F;
  */
 constexpr float WAVE_PERIOD_SECONDS = 2.0F;
 
-static_assert(WAVE_AMPLITUDE < BYDO_SPAWN_VERTICAL_MARGIN);
+static_assert(WAVE_AMPLITUDE <= BYDO_PATTERN_ROOM,
+              "a Bydo on a wave stays within the room its row keeps");
 
 }  // namespace rtype::game
