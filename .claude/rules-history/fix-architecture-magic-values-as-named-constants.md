@@ -15,3 +15,13 @@ Each new test file defined them again: `ONE_TICK` five times while `ScreenTestCo
 
 ### Root cause
 Each test file was written on its own, without searching the existing test headers or the other new files for the values it defined.
+
+## Update (2026-10-21) — colors of a table left as RGB triplets
+
+**Context.** The status band (RTY-151) added `PLAYER_LIGHT_COLORS` next to `PLAYER_SHIP_COLORS` in `src/client/Rendering/InterfaceColors.hpp`, both arrays of `sf::Color(r, g, b)`.
+
+**Mistake.** Each entry was a bare triplet; a reviewer asked on the pull request to replace them with named color constants, so a reader knows which color each code is.
+
+**Root cause.** The rule was read for single values; a literal inside a table, already given a name as a whole, did not look magic.
+
+**Addition to the rule.** Each entry of a table of values gets its own named constant, a color named after its hue, and the table lists the names; it applies to the files a change touches.

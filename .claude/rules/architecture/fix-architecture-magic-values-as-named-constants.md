@@ -21,6 +21,12 @@ Why: the repository's `.clang-tidy` disables `readability-magic-numbers`; this r
 1. **Before defining a constant in a test file** (a time step, a sentinel value, a length the specification fixes), search the tests for it: `git grep -n --untracked '<NAME> =' -- tests`. A constant a shared test header already holds (`ScreenTestConstants.hpp`, `AllEntityTypes.hpp`) is included, never defined again.
 2. **A value two test files need goes in a test header from the start**, next to the tests that use it, never copied into both.
 
+### Each entry of a table of values has its own name
+
+1. **A table of colors, sizes or ids is built from named constants, never from literals**: one constant per entry, named after what a reader sees or uses (`PLAYER_PINK`, not `PLAYER_COLOR_2`), then the table lists the names: `PLAYER_SHIP_COLORS{PLAYER_BLUE, PLAYER_PINK, …}`.
+2. **A color is named after its hue**, so a reader knows which color an RGB triplet is without decoding it.
+3. **Applies to every file a change touches**, entries already there included; untouched files are reported, not rewritten.
+
 ## Example
 
 - ❌ **Before (wrong)**:
@@ -48,3 +54,5 @@ Why: the repository's `.clang-tidy` disables `readability-magic-numbers`; this r
   ```
 - ❌ **Before (wrong)**: `ONE_TICK` defined in five new test files while `tests/client/Screens/ScreenTestConstants.hpp` held it; the frames and animations of the tests copied word for word into `AnimationTest.cpp` and `AnimationSystemTest.cpp`.
 - ✅ **After (right)**: the five files include `ScreenTestConstants.hpp`; the shared frames and animations live in `tests/client/Rendering/AnimationTestConstants.hpp`.
+- ❌ **Before (wrong)**: `PLAYER_LIGHT_COLORS{sf::Color(127, 230, 255), sf::Color(255, 163, 207), …}`: a review asked which color each triplet is.
+- ✅ **After (right)**: `PLAYER_LIGHT_BLUE(127, 230, 255)`, `PLAYER_LIGHT_PINK(255, 163, 207)`, … then `PLAYER_LIGHT_COLORS{PLAYER_LIGHT_BLUE, PLAYER_LIGHT_PINK, …}`.
