@@ -118,8 +118,7 @@ void ServerConnection::holdSession(engine::Duration elapsed) {
 void ServerConnection::continueAttempt(engine::Duration elapsed) {
   sinceConnect_ += elapsed;
   if (sinceConnect_ >= CONNECTION_ATTEMPT_TIMEOUT) {
-    status_ = {.phase = ConnectionStatus::Phase::Unreachable};
-    logger_.warn("no answer from ", server_.address, " port ", server_.port);
+    giveUp();
     return;
   }
   sinceRequest_ += elapsed;
@@ -208,6 +207,11 @@ void ServerConnection::registerSessionMessages() {
              const network::EntityDestroyed& destroyed) {
         keepEntityMessage(destroyed);
       });
+}
+
+void ServerConnection::giveUp() {
+  status_ = {.phase = ConnectionStatus::Phase::Unreachable};
+  logger_.warn("no answer from ", server_.address, " port ", server_.port);
 }
 
 void ServerConnection::receive(const network::IncomingDatagram& datagram) {

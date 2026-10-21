@@ -152,6 +152,10 @@ class ServerConnection : public IServerConnection,
    * CONNECTION_REQUEST_INTERVAL. */
   void continueAttempt(engine::Duration elapsed);
 
+  /** @brief Ends the attempt as Unreachable, and logs that the server never
+   * answered. */
+  void giveUp();
+
   /**
    * @returns Whether a datagram of the server may be read: always before the
    * acceptance; then only with the token of the session, a datagram with
