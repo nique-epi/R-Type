@@ -1,9 +1,9 @@
 #include "LobbyStateAnnouncer.hpp"
 #include <cstddef>
-#include <span>
 #include <utility>
 #include <vector>
 #include "ConnectedPlayer.hpp"
+#include "ConnectedPlayers.hpp"
 #include "LobbyState.hpp"
 #include "MessagePayload.hpp"
 #include "PlayerRoster.hpp"
@@ -18,7 +18,7 @@ namespace {
  * @returns The room @p players make: each of them, in the order given, with
  * its number, its ready state and its nickname.
  */
-network::LobbyState roomOf(std::span<ConnectedPlayer* const> players) {
+network::LobbyState roomOf(const ConnectedPlayers& players) {
   network::LobbyState room;
   room.players.reserve(players.size());
   for (const ConnectedPlayer* const player : players) {
@@ -36,7 +36,7 @@ LobbyStateAnnouncer::LobbyStateAnnouncer(PlayerRoster& roster, Send send)
     : roster_(&roster), send_(std::move(send)) {}
 
 void LobbyStateAnnouncer::onWaitingTick() {
-  const std::span<ConnectedPlayer* const> players = roster_->connected();
+  const ConnectedPlayers players = roster_->connected();
   network::LobbyState room = roomOf(players);
   ++ticksSinceLastSend_;
   if (room == lastSent_ && ticksSinceLastSend_ < TICKS_PER_LOBBY_STATE) {

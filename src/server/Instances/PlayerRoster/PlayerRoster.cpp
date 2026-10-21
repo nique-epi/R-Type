@@ -3,10 +3,10 @@
 #include <cstddef>
 #include <cstdint>
 #include <optional>
-#include <span>
 #include <string>
 #include <utility>
 #include "ConnectedPlayer.hpp"
+#include "ConnectedPlayers.hpp"
 #include "Endpoint.hpp"
 #include "ProtocolConstants.hpp"
 
@@ -30,8 +30,14 @@ ConnectedPlayer* PlayerRoster::findByNumber(std::uint8_t playerNumber) {
   return nullptr;
 }
 
-std::span<ConnectedPlayer* const> PlayerRoster::connected() {
-  return std::span<ConnectedPlayer* const>{connected_}.first(connectedCount_);
+ConnectedPlayers PlayerRoster::connected() {
+  ConnectedPlayers players;
+  for (std::optional<ConnectedPlayer>& seat : seats_) {
+    if (seat.has_value()) {
+      players.append(&seat.value());
+    }
+  }
+  return players;
 }
 
 bool PlayerRoster::isFull() const {
@@ -50,7 +56,7 @@ ConnectedPlayer* PlayerRoster::add(const network::Endpoint& endpoint,
   for (std::size_t seatIndex = 0; seatIndex < seats_.size(); ++seatIndex) {
     std::optional<ConnectedPlayer>& seat = seats_.at(seatIndex);
     if (!seat.has_value()) {
-      ConnectedPlayer& added = seat.emplace(
+      return &seat.emplace(
           ConnectedPlayer{.playerNumber = static_cast<std::uint8_t>(
                               network::FIRST_PLAYER_NUMBER + seatIndex),
                           .nickname = std::move(nickname),
@@ -59,21 +65,9 @@ ConnectedPlayer* PlayerRoster::add(const network::Endpoint& endpoint,
                           .nextSequence = 0,
                           .newestReceivedSequence = std::nullopt,
                           .newestInput = std::nullopt});
-      listConnected();
-      return &added;
     }
   }
   return nullptr;
-}
-
-void PlayerRoster::listConnected() {
-  connectedCount_ = 0;
-  for (std::optional<ConnectedPlayer>& seat : seats_) {
-    if (seat.has_value()) {
-      connected_.at(connectedCount_) = &seat.value();
-      ++connectedCount_;
-    }
-  }
 }
 
 }  // namespace rtype::server

@@ -1,8 +1,10 @@
 #include <gtest/gtest.h>
 #include <cstddef>
-#include <span>
+#include <cstdint>
 #include <string>
+#include <vector>
 #include "ConnectedPlayer.hpp"
+#include "ConnectedPlayers.hpp"
 #include "Endpoint.hpp"
 #include "PlayerRoster.hpp"
 #include "ProtocolConstants.hpp"
@@ -77,12 +79,13 @@ TEST(PlayerRoster, ListsTheConnectedPlayersInOrderOfTheirNumbers) {
   PlayerRoster roster;
   addPlayers(roster, 3);
 
-  const std::span<ConnectedPlayer* const> players = roster.connected();
+  const ConnectedPlayers players = roster.connected();
 
-  ASSERT_EQ(players.size(), 3U);
-  EXPECT_EQ(players[0]->playerNumber, 1);
-  EXPECT_EQ(players[1]->playerNumber, 2);
-  EXPECT_EQ(players[2]->playerNumber, 3);
+  std::vector<std::uint8_t> numbers;
+  for (const ConnectedPlayer* const player : players) {
+    numbers.push_back(player->playerNumber);
+  }
+  EXPECT_EQ(numbers, (std::vector<std::uint8_t>{1, 2, 3}));
 }
 
 /**

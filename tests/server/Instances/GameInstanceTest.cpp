@@ -512,15 +512,18 @@ TEST_F(GameInstanceTest, ResetsTheWorldBetweenTwoGames) {
  */
 TEST_F(GameInstanceTest, ResetsTheScoreBetweenTwoGames) {
   startGameWithOnePlayer();
+  const ConnectedPlayer* const player =
+      game().roster().findByNumber(network::FIRST_PLAYER_NUMBER);
+  ASSERT_NE(player, nullptr);
   events().publish(game::EnemyKilled{
       .playerNumber = network::FIRST_PLAYER_NUMBER, .points = SOME_POINTS});
   events().dispatch();
-  ASSERT_EQ(game().roster().connected().front()->score, SOME_POINTS);
+  ASSERT_EQ(player->score, SOME_POINTS);
   game().finish();
 
   runTicks(FINISHED_STATE_TICKS);
 
-  EXPECT_EQ(game().roster().connected().front()->score, 0U);
+  EXPECT_EQ(player->score, 0U);
 }
 
 /**
@@ -530,12 +533,15 @@ TEST_F(GameInstanceTest, ResetsTheScoreBetweenTwoGames) {
  */
 TEST_F(GameInstanceTest, CreditsTheKillOfAnEnemyToThePlayerWhoFired) {
   startGameWithOnePlayer();
+  const ConnectedPlayer* const player =
+      game().roster().findByNumber(network::FIRST_PLAYER_NUMBER);
+  ASSERT_NE(player, nullptr);
 
   events().publish(game::EnemyKilled{
       .playerNumber = network::FIRST_PLAYER_NUMBER, .points = SOME_POINTS});
   events().dispatch();
 
-  EXPECT_EQ(game().roster().connected().front()->score, SOME_POINTS);
+  EXPECT_EQ(player->score, SOME_POINTS);
 }
 
 /**

@@ -5,6 +5,7 @@ target_include_directories(rtype_server_player_roster PUBLIC ${CMAKE_CURRENT_SOU
 target_link_libraries(rtype_server_player_roster
   PUBLIC
     rtype_network_protocol
+    rtype_server_connected_players
     rtype_server_instances
 )
 

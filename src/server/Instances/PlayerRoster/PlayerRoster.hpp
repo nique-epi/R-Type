@@ -1,12 +1,11 @@
 #pragma once
 
 #include <array>
-#include <cstddef>
 #include <cstdint>
 #include <optional>
-#include <span>
 #include <string>
 #include "ConnectedPlayer.hpp"
+#include "ConnectedPlayers.hpp"
 #include "Endpoint.hpp"
 #include "ProtocolConstants.hpp"
 
@@ -22,13 +21,6 @@ namespace rtype::server {
  */
 class PlayerRoster {
  public:
-  PlayerRoster() = default;
-  PlayerRoster(const PlayerRoster&) = delete;
-  PlayerRoster& operator=(const PlayerRoster&) = delete;
-  PlayerRoster(PlayerRoster&&) = delete;
-  PlayerRoster& operator=(PlayerRoster&&) = delete;
-  ~PlayerRoster() = default;
-
   /**
    * @returns The player connected from @p endpoint, or nullptr when none is.
    * The player stays at that address as long as the roster lives.
@@ -45,11 +37,11 @@ class PlayerRoster {
 
   /**
    * @returns The connected players, in order of their number. They stay at
-   * their addresses as long as the roster lives. The list is kept by the roster
-   * and allocates nothing, so a tick may ask for it every time; it shows the
-   * players connected when it was asked for, so ask again after add().
+   * their addresses as long as the roster lives. The list is a copy that
+   * allocates nothing, so a tick may ask for it every time; a player joining or
+   * leaving afterwards leaves it as it was.
    */
-  [[nodiscard]] std::span<ConnectedPlayer* const> connected();
+  [[nodiscard]] ConnectedPlayers connected();
 
   /** @returns Whether MAXIMUM_PLAYERS players are connected. */
   [[nodiscard]] bool isFull() const;
@@ -69,12 +61,7 @@ class PlayerRoster {
                        std::uint64_t sessionToken);
 
  private:
-  /** @brief Lists in connected_ the players of seats_, in seat order. */
-  void listConnected();
-
   std::array<std::optional<ConnectedPlayer>, network::MAXIMUM_PLAYERS> seats_;
-  std::array<ConnectedPlayer*, network::MAXIMUM_PLAYERS> connected_{};
-  std::size_t connectedCount_{0};
 };
 
 }  // namespace rtype::server
