@@ -28,21 +28,26 @@
 #include "PacketHeader.hpp"
 #include "PlayerInput.hpp"
 #include "PlayerRoster.hpp"
+#include "Position.hpp"
 #include "ProtocolConstants.hpp"
 #include "ReadyState.hpp"
 #include "SentDatagrams.hpp"
 #include "ServerConstants.hpp"
 #include "ServerDatagrams.hpp"
 #include "ServerLobbyTestConstants.hpp"
+#include "ShipControlConstants.hpp"
 #include "Spawning/BydoSpawnerTestConstants.hpp"
+#include "TimeConstants.hpp"
 #include "UnreliableNetwork.hpp"
 #include "WorldState.hpp"
+#include "game/ShipControl/ShipControlTestConstants.hpp"
 
 namespace rtype::server {
 namespace {
 
 constexpr std::size_t INTERVALS_OF_BYDOS = 10;
 
+using game::testing::POSITION_TOLERANCE;
 using testing::DATAGRAMS_PER_TICK;
 using testing::DROPPED_DATAGRAM_LINE_TEXT;
 using testing::FIRST_PLAYER;
@@ -53,6 +58,7 @@ using testing::FOURTH_SENT;
 using testing::FOURTH_SEQUENCE;
 using testing::HOLDS_DOWN;
 using testing::HOLDS_LEFT;
+using testing::HOLDS_RIGHT;
 using testing::HOLDS_SHOOT;
 using testing::HOLDS_UP;
 using testing::LARGEST_INPUT_NUMBER;
@@ -1238,6 +1244,164 @@ TEST_F(GameInstanceInputTest, KeepsTheInputAcrossANewWorld) {
 
   ASSERT_EQ(game().state(), GameState::WaitingForPlayers);
   EXPECT_EQ(heldActions(FIRST_PLAYER), HOLDS_UP);
+}
+
+/**
+ * @brief The input fixture, with both players ready and a way to read where
+ * their ships are.
+ */
+class GameInstanceMovementTest : public GameInstanceInputTest {
+ protected:
+  /** @brief Both players say ready, then the tick that starts the game runs. */
+  void startGame() {
+    for (const std::size_t player : {FIRST_PLAYER, SECOND_PLAYER}) {
+      sendReady({.player = player,
+                 .ready = true,
+                 .sequence = FIRST_SEQUENCE,
+                 .sessionToken = PLAYER_SESSION_TOKENS.at(player)});
+    }
+    tick();
+    ASSERT_EQ(game().state(), GameState::InProgress);
+  }
+
+  /** @returns Where the ship of @p player is; the origin, after a failure, when
+   * it has none. */
+  [[nodiscard]] game::Position shipPositionOf(std::size_t player) {
+    const ConnectedPlayer* const connected =
+        game().roster().find(playerEndpoint(player));
+    if (connected == nullptr) {
+      ADD_FAILURE() << "player " << player << " is not in the roster";
+      return game::Position{.x = 0.0F, .y = 0.0F};
+    }
+    const game::Position* const ship =
+        game().world().shipPositionOf(connected->shipEntityId);
+    if (ship == nullptr) {
+      ADD_FAILURE() << "player " << player << " has no ship";
+      return game::Position{.x = 0.0F, .y = 0.0F};
+    }
+    return *ship;
+  }
+};
+
+/**
+ * Given a game in progress whose first player holds right
+ * When a second of ticks runs: the tick that reads the input, then
+ * SIMULATION_TICKS_PER_SECOND - 1 more
+ * Then the ship of that player has moved SHIP_SPEED to the right, on the same
+ * row
+ */
+TEST_F(GameInstanceMovementTest, MovesAShipAtTheShipSpeedWhileInProgress) {
+  startGame();
+  const game::Position start = shipPositionOf(FIRST_PLAYER);
+  send(FIRST_PLAYER, HOLDS_RIGHT);
+
+  deliver({FIRST_SENT});
+  runTicks(engine::SIMULATION_TICKS_PER_SECOND - 1);
+
+  const game::Position arrival = shipPositionOf(FIRST_PLAYER);
+  EXPECT_NEAR(arrival.x, start.x + game::SHIP_SPEED, POSITION_TOLERANCE);
+  EXPECT_FLOAT_EQ(arrival.y, start.y);
+}
+
+/**
+ * Given a game in progress whose first player holds right and whose second
+ * player holds down
+ * When a second of ticks runs
+ * Then each ship has moved SHIP_SPEED the way its own player holds
+ */
+TEST_F(GameInstanceMovementTest, MovesEachShipByTheInputOfItsOwnPlayer) {
+  startGame();
+  const game::Position firstStart = shipPositionOf(FIRST_PLAYER);
+  const game::Position secondStart = shipPositionOf(SECOND_PLAYER);
+  send(FIRST_PLAYER, HOLDS_RIGHT);
+  send(SECOND_PLAYER, HOLDS_DOWN);
+
+  deliver({FIRST_SENT, SECOND_SENT});
+  runTicks(engine::SIMULATION_TICKS_PER_SECOND - 1);
+
+  const game::Position firstArrival = shipPositionOf(FIRST_PLAYER);
+  const game::Position secondArrival = shipPositionOf(SECOND_PLAYER);
+  EXPECT_NEAR(firstArrival.x, firstStart.x + game::SHIP_SPEED,
+              POSITION_TOLERANCE);
+  EXPECT_FLOAT_EQ(firstArrival.y, firstStart.y);
+  EXPECT_FLOAT_EQ(secondArrival.x, secondStart.x);
+  EXPECT_NEAR(secondArrival.y, secondStart.y + game::SHIP_SPEED,
+              POSITION_TOLERANCE);
+}
+
+/**
+ * Given a game in progress whose first player holds right and whose second
+ * player sent no input
+ * When ticks run
+ * Then the ship of the second player stays where it appeared
+ */
+TEST_F(GameInstanceMovementTest, LeavesTheShipOfAPlayerWithoutInputWhereItIs) {
+  startGame();
+  const game::Position start = shipPositionOf(SECOND_PLAYER);
+  send(FIRST_PLAYER, HOLDS_RIGHT);
+
+  deliver({FIRST_SENT});
+  runTicks(SOME_TICKS);
+
+  const game::Position arrival = shipPositionOf(SECOND_PLAYER);
+  EXPECT_FLOAT_EQ(arrival.x, start.x);
+  EXPECT_FLOAT_EQ(arrival.y, start.y);
+}
+
+/**
+ * Given a game in progress whose first player holds shoot and nothing else
+ * When ticks run
+ * Then its ship stays where it appeared: shooting is not a direction
+ */
+TEST_F(GameInstanceMovementTest, DoesNotMoveAShipWhosePlayerOnlyShoots) {
+  startGame();
+  const game::Position start = shipPositionOf(FIRST_PLAYER);
+  send(FIRST_PLAYER, HOLDS_SHOOT);
+
+  deliver({FIRST_SENT});
+  runTicks(SOME_TICKS);
+
+  const game::Position arrival = shipPositionOf(FIRST_PLAYER);
+  EXPECT_FLOAT_EQ(arrival.x, start.x);
+  EXPECT_FLOAT_EQ(arrival.y, start.y);
+}
+
+/**
+ * Given a game waiting for players whose first player holds right
+ * When ticks run
+ * Then its ship stays where it appeared: ships move only while the game is in
+ * progress
+ */
+TEST_F(GameInstanceMovementTest, MovesNoShipWhileWaitingForPlayers) {
+  const game::Position start = shipPositionOf(FIRST_PLAYER);
+  send(FIRST_PLAYER, HOLDS_RIGHT);
+
+  deliver({FIRST_SENT});
+  runTicks(SOME_TICKS);
+
+  const game::Position arrival = shipPositionOf(FIRST_PLAYER);
+  EXPECT_FLOAT_EQ(arrival.x, start.x);
+  EXPECT_FLOAT_EQ(arrival.y, start.y);
+}
+
+/**
+ * Given a finished game whose first player holds right
+ * When fewer ticks run than the game stays finished
+ * Then its ship stays where the game left it
+ */
+TEST_F(GameInstanceMovementTest, MovesNoShipWhileFinished) {
+  startGame();
+  game().finish();
+  const game::Position start = shipPositionOf(FIRST_PLAYER);
+  send(FIRST_PLAYER, HOLDS_RIGHT);
+
+  deliver({FIRST_SENT});
+  runTicks(SOME_TICKS);
+
+  ASSERT_EQ(game().state(), GameState::Finished);
+  const game::Position arrival = shipPositionOf(FIRST_PLAYER);
+  EXPECT_FLOAT_EQ(arrival.x, start.x);
+  EXPECT_FLOAT_EQ(arrival.y, start.y);
 }
 
 /** @brief The input fixture, with the log written to a journal the test reads.

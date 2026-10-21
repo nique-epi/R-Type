@@ -54,7 +54,7 @@ rtype_add_test(NAME server_tests SOURCES server/Application/TickLoopTest.cpp ser
 target_include_directories(server_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/server)
 rtype_add_test(NAME server_instances_tests SOURCES server/Instances/PlayerRosterTest.cpp server/Instances/ScoreKeeperTest.cpp LIBS rtype_server_score_keeper rtype_network_handshake)
 target_include_directories(server_instances_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/server)
-rtype_add_test(NAME server_game_instance_tests SOURCES server/Instances/GameInstanceTest.cpp doubles/UnreliableNetwork.cpp JournalFile.cpp DebugJournal.cpp LIBS rtype_server_game_instance server_test_datagrams)
+rtype_add_test(NAME server_game_instance_tests SOURCES server/Instances/GameInstanceTest.cpp doubles/UnreliableNetwork.cpp JournalFile.cpp DebugJournal.cpp LIBS rtype_server_game_instance rtype_game_ship_control_constants server_test_datagrams)
 target_include_directories(server_game_instance_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/server ${CMAKE_CURRENT_SOURCE_DIR}/doubles)
 rtype_add_test(NAME server_lobby_tests SOURCES server/Lobby/ConnectionAcceptorTest.cpp JournalFile.cpp DebugJournal.cpp LIBS rtype_server_connection_acceptor rtype_network_connection_accepted rtype_network_connection_challenge rtype_network_connection_refused server_test_datagrams)
 target_include_directories(server_lobby_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/server ${CMAKE_CURRENT_SOURCE_DIR}/network/Protocol)

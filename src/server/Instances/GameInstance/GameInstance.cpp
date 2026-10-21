@@ -28,9 +28,12 @@
 #include "PlayerInput.hpp"
 #include "PlayerRoster.hpp"
 #include "PlayfieldExitSystem.hpp"
+#include "Position.hpp"
+#include "ProtocolConstants.hpp"
 #include "ReadyState.hpp"
 #include "SequenceOrder.hpp"
 #include "SessionDatagram.hpp"
+#include "ShipControl.hpp"
 #include "TimeConstants.hpp"
 #include "World.hpp"
 
@@ -63,6 +66,27 @@ bool isNewer(const network::PlayerInput& input,
 bool changesActions(const network::PlayerInput& input,
                     const std::optional<network::PlayerInput>& newest) {
   return !newest.has_value() || input.actions != newest->actions;
+}
+
+/**
+ * @returns Whether @p input holds the action at @p bitPosition of its actions
+ * byte.
+ */
+bool holdsActionAt(const network::PlayerInput& input,
+                   std::uint8_t bitPosition) {
+  const unsigned int mask = 1U << static_cast<unsigned int>(bitPosition);
+  return (static_cast<unsigned int>(input.actions) & mask) != 0U;
+}
+
+/**
+ * @returns The directions @p input holds for the ship; shooting is not one.
+ */
+game::ShipDirections directionsOf(const network::PlayerInput& input) {
+  return game::ShipDirections{
+      .up = holdsActionAt(input, network::UP_ACTION_BIT_POSITION),
+      .down = holdsActionAt(input, network::DOWN_ACTION_BIT_POSITION),
+      .left = holdsActionAt(input, network::LEFT_ACTION_BIT_POSITION),
+      .right = holdsActionAt(input, network::RIGHT_ACTION_BIT_POSITION)};
 }
 
 }  // namespace
@@ -124,6 +148,7 @@ void GameInstance::onTick(
       break;
     case GameState::InProgress:
       ++tick_;
+      moveShips();
       systems_.run(world_->components(), engine::SIMULATION_TICK_DURATION);
       bydoSpawner_->onTick();
       break;
@@ -227,6 +252,17 @@ void GameInstance::startGame() {
     send_(sessionDatagram(*player, network::GameStarted{}));
   }
   logger_.info("game started, players connected: ", players.size());
+}
+
+void GameInstance::moveShips() {
+  for (const ConnectedPlayer* const player : roster_.connected()) {
+    game::Position* const ship = world_->shipPositionOf(player->shipEntityId);
+    if (ship == nullptr || !player->newestInput.has_value()) {
+      continue;
+    }
+    *ship = game::shipPositionAfter(*ship, directionsOf(*player->newestInput),
+                                    engine::SIMULATION_TICK_DURATION);
+  }
 }
 
 void GameInstance::startNewWorld() {
