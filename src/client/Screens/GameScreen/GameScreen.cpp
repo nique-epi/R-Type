@@ -3,11 +3,14 @@
 #include <SFML/Window/Event.hpp>
 #include <memory>
 #include <utility>
+#include <variant>
 #include "ActionSet.hpp"
 #include "AnimationSystem.hpp"
+#include "EntityMessage.hpp"
 #include "FlashPreference.hpp"
 #include "HitFlashSystem.hpp"
 #include "IEntityLayer.hpp"
+#include "IEntityMessageSource.hpp"
 #include "IPlayerInputLink.hpp"
 #include "IScreenNavigator.hpp"
 #include "PlayerInputPacer.hpp"
@@ -28,14 +31,13 @@ FlashPreference flashPreferenceOf(const PlayerSettings& settings) {
 
 }  // namespace
 
-GameScreen::GameScreen(IScreenNavigator& navigator,
-                       std::unique_ptr<IEntityLayer> entityLayer,
-                       const PlayerSettings& settings, IPlayerInputLink& inputs)
-    : navigator_(&navigator),
+GameScreen::GameScreen(Parts parts, std::unique_ptr<IEntityLayer> entityLayer)
+    : navigator_(&parts.navigator.get()),
       entityLayer_(std::move(entityLayer)),
-      settings_(&settings),
-      playerCommands_(true, settings.keys),
-      inputs_(&inputs) {
+      settings_(&parts.settings.get()),
+      playerCommands_(true, parts.settings.get().keys),
+      inputs_(&parts.inputs.get()),
+      entityMessageSource_(&parts.entityMessages.get()) {
   systems_.add(std::make_unique<AnimationSystem>());
   systems_.add(std::make_unique<HitFlashSystem>());
   entityLayer_->paint(components_);
@@ -69,8 +71,17 @@ void GameScreen::update(engine::Duration elapsed) {
   }
   systems_.run(components_, elapsed);
   effects_.setFlashPreference(flashPreferenceOf(*settings_));
-  showcase_.advance(elapsed);
+  applyEntityMessages();
   entityLayer_->paint(components_);
+}
+
+void GameScreen::applyEntityMessages() {
+  entityMessageSource_->drainEntityMessages(receivedEntityMessages_);
+  for (const EntityMessage& message : receivedEntityMessages_) {
+    std::visit([this](const auto& announced) { replicator_.apply(announced); },
+               message);
+  }
+  receivedEntityMessages_.clear();
 }
 
 ActionSet GameScreen::playerActions() const { return playerCommands_.held(); }

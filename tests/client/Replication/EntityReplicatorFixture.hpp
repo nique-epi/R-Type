@@ -7,15 +7,13 @@
 #include <string>
 #include <vector>
 #include "ComponentRegistry.hpp"
-#include "EntityDestroyed.hpp"
+#include "EffectSpawner.hpp"
 #include "EntityRegistry.hpp"
 #include "EntityReplicator.hpp"
-#include "EntitySpawned.hpp"
 #include "EntityType.hpp"
 #include "Layer.hpp"
 #include "Position.hpp"
 #include "SpriteFrame.hpp"
-#include "WorldState.hpp"
 
 namespace rtype::client::testing {
 
@@ -39,38 +37,22 @@ struct DrawnEntity {
 void PrintTo(const DrawnEntity& entity, std::ostream* output);
 
 /**
- * @returns How an entity of @p type at @p position must be drawn: with the
- * sprite spriteOf() gives the type.
+ * @returns How an entity of @p type with the network id @p networkId, at
+ * @p position, must be drawn: with the sprite animatedSpriteOf() gives it.
  */
-DrawnEntity drawnAs(game::EntityType type, game::Position position);
+DrawnEntity drawnAs(game::EntityType type, std::uint32_t networkId,
+                    game::Position position);
 
 /**
- * @returns An EntitySpawned announcing the entity.
+ * @returns How an effect whose first frame is @p firstFrame, centered on
+ * @p position, must be drawn when it starts: from the effect sheet, in the
+ * Effects layer.
  */
-network::EntitySpawned spawned(std::uint32_t entityId,
-                               network::WireEntityType type,
-                               game::Position position);
+DrawnEntity effectAt(game::SpriteFrame firstFrame, game::Position position);
 
 /**
- * @returns The entity a WorldState lists.
- */
-network::EntityState listed(std::uint32_t entityId,
-                            network::WireEntityType type,
-                            game::Position position);
-
-/**
- * @returns A WorldState of tick @p tick listing @p entities, and no player.
- */
-network::WorldState stateListing(std::uint32_t tick,
-                                 std::vector<network::EntityState> entities);
-
-/**
- * @returns An EntityDestroyed naming the entity, killed.
- */
-network::EntityDestroyed destroyed(std::uint32_t entityId);
-
-/**
- * @brief The registries of a game screen and the replicator that fills them.
+ * @brief The registries of a game screen, the spawner of its effects, and the
+ * replicator that fills them.
  */
 class EntityReplicatorFixture : public ::testing::Test {
  protected:
@@ -80,20 +62,46 @@ class EntityReplicatorFixture : public ::testing::Test {
   EntityReplicator& replicator();
 
   /**
-   * @returns Every entity that has a Position and a Sprite, as RenderSystem
-   * would draw it, in no particular order.
+   * @brief Announces one entity of each type of the protocol, each with the
+   * id and the position its test constants give it: SHIP_ID at
+   * SHIP_POSITION, PLAYER_MISSILE_ID at PLAYER_MISSILE_POSITION, BYDO_ID at
+   * BYDO_POSITION, ENEMY_MISSILE_ID at ENEMY_MISSILE_POSITION.
+   */
+  void announceOneOfEachType();
+
+  /**
+   * @returns Every entity of the Entities layer, as RenderSystem would draw
+   * it, in no particular order: the ships, Bydos and missiles, not their
+   * effects.
    */
   [[nodiscard]] std::vector<DrawnEntity> drawnEntities();
 
   /**
-   * @returns How many entities are alive in the registry.
+   * @returns Every effect, in the Effects layer, as RenderSystem would draw
+   * it, in no particular order.
+   */
+  [[nodiscard]] std::vector<DrawnEntity> drawnEffects();
+
+  /**
+   * @returns How many entities of the Entities layer play an animation.
+   */
+  [[nodiscard]] std::size_t animatedEntityCount();
+
+  /**
+   * @returns How many entities are alive in the registry, effects included.
    */
   [[nodiscard]] std::size_t entityCount() const;
 
  private:
+  /**
+   * @returns Every entity of @p layer that has a Position and a Sprite.
+   */
+  [[nodiscard]] std::vector<DrawnEntity> drawnIn(game::Layer layer);
+
   engine::EntityRegistry entities_;
   engine::ComponentRegistry components_{entities_};
-  EntityReplicator replicator_{entities_, components_};
+  EffectSpawner effects_{entities_, components_};
+  EntityReplicator replicator_{entities_, components_, effects_};
 };
 
 }  // namespace rtype::client::testing

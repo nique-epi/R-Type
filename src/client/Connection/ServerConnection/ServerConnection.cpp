@@ -2,10 +2,13 @@
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>
+#include <iterator>
 #include <optional>
 #include <span>
 #include <string>
 #include <string_view>
+#include <utility>
+#include <vector>
 #include "ActionSet.hpp"
 #include "ConnectionAccepted.hpp"
 #include "ConnectionChallenge.hpp"
@@ -16,6 +19,9 @@
 #include "DatagramCodec.hpp"
 #include "Disconnection.hpp"
 #include "Endpoint.hpp"
+#include "EntityDestroyed.hpp"
+#include "EntityMessage.hpp"
+#include "EntitySpawned.hpp"
 #include "GameStarted.hpp"
 #include "IDatagramLink.hpp"
 #include "IncomingDatagram.hpp"
@@ -121,6 +127,12 @@ void ServerConnection::sendPlayerInput(ActionSet held) {
   ++nextInputNumber_;
 }
 
+void ServerConnection::drainEntityMessages(
+    std::vector<EntityMessage>& destination) {
+  std::ranges::move(entityMessages_, std::back_inserter(destination));
+  entityMessages_.clear();
+}
+
 void ServerConnection::registerAnswers() {
   dispatcher_.registerHandler<network::ConnectionChallenge>(
       [this](const network::MessageOrigin&,
@@ -170,8 +182,19 @@ void ServerConnection::registerSessionMessages() {
         startGame();
       });
   dispatcher_.registerHandler<network::WorldState>(
-      [this](const network::MessageOrigin&, const network::WorldState&) {
+      [this](const network::MessageOrigin&, const network::WorldState& state) {
         startGame();
+        keepEntityMessage(state);
+      });
+  dispatcher_.registerHandler<network::EntitySpawned>(
+      [this](const network::MessageOrigin&,
+             const network::EntitySpawned& spawned) {
+        keepEntityMessage(spawned);
+      });
+  dispatcher_.registerHandler<network::EntityDestroyed>(
+      [this](const network::MessageOrigin&,
+             const network::EntityDestroyed& destroyed) {
+        keepEntityMessage(destroyed);
       });
 }
 
@@ -215,6 +238,12 @@ void ServerConnection::startGame() {
     gameStarted_ = true;
     requestedReady_.reset();
     logger_.info("the game started");
+  }
+}
+
+void ServerConnection::keepEntityMessage(EntityMessage message) {
+  if (gameStarted_) {
+    entityMessages_.push_back(std::move(message));
   }
 }
 
@@ -288,6 +317,7 @@ void ServerConnection::forgetSession() {
   requestedReady_.reset();
   sinceReadyState_ = engine::Duration::zero();
   gameStarted_ = false;
+  entityMessages_.clear();
 }
 
 network::PacketHeader ServerConnection::nextHeader() {

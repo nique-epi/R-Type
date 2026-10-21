@@ -1,7 +1,9 @@
 #include "EntityReplicator.hpp"
 #include <optional>
 #include <utility>
+#include "AnimatedSprite.hpp"
 #include "ComponentRegistry.hpp"
+#include "EffectSpawner.hpp"
 #include "Entity.hpp"
 #include "EntityDestroyed.hpp"
 #include "EntityIdConstants.hpp"
@@ -10,7 +12,6 @@
 #include "EntitySprites.hpp"
 #include "EntityType.hpp"
 #include "Position.hpp"
-#include "Sprite.hpp"
 #include "WorldState.hpp"
 
 namespace rtype::client {
@@ -37,20 +38,40 @@ std::optional<game::EntityType> entityTypeOf(network::WireEntityType wireType) {
   return std::nullopt;
 }
 
+/**
+ * @returns The game type of the entity a message announces, or nothing when
+ * the client must not create it: the id NO_ENTITY_ID, or a type outside
+ * WireEntityType.
+ */
+std::optional<game::EntityType> creatableTypeOf(
+    const network::EntityState& announced) {
+  if (announced.entityId == identifiers::NO_ENTITY_ID) {
+    return std::nullopt;
+  }
+  return entityTypeOf(announced.entityType);
+}
+
+/** @returns The entity an EntitySpawned announces, as a WorldState lists
+ * it. */
+network::EntityState announcedBy(const network::EntitySpawned& message) {
+  return network::EntityState{.entityId = message.entityId,
+                              .entityType = message.entityType,
+                              .x = message.x,
+                              .y = message.y};
+}
+
 }  // namespace
 
 EntityReplicator::EntityReplicator(engine::EntityRegistry& entities,
-                                   engine::ComponentRegistry& components)
-    : entities_(&entities), components_(&components) {}
+                                   engine::ComponentRegistry& components,
+                                   EffectSpawner& effects)
+    : entities_(&entities), components_(&components), effects_(&effects) {}
 
 void EntityReplicator::apply(const network::EntitySpawned& message) {
   if (entityByNetworkId_.find(message.entityId).has_value()) {
     return;
   }
-  create(network::EntityState{.entityId = message.entityId,
-                              .entityType = message.entityType,
-                              .x = message.x,
-                              .y = message.y});
+  create(announcedBy(message));
 }
 
 void EntityReplicator::apply(const network::WorldState& state) {
@@ -74,33 +95,52 @@ void EntityReplicator::apply(const network::EntityDestroyed& message) {
   if (!known.has_value()) {
     return;
   }
+  if (message.reason == network::DestructionReason::Killed) {
+    explode(*known);
+  }
   components_->destroy(*known);
   entityByNetworkId_.unbind(message.entityId);
 }
 
 void EntityReplicator::create(const network::EntityState& announced) {
-  if (announced.entityId == identifiers::NO_ENTITY_ID) {
-    return;
-  }
-  const std::optional<game::EntityType> type =
-      entityTypeOf(announced.entityType);
+  const std::optional<game::EntityType> type = creatableTypeOf(announced);
   if (!type.has_value()) {
     return;
   }
-  std::optional<game::Sprite> sprite = spriteOf(*type);
-  if (!sprite.has_value()) {
+  std::optional<AnimatedSprite> look =
+      animatedSpriteOf(*type, announced.entityId);
+  if (!look.has_value()) {
     return;
   }
+  const game::Position position{.x = announced.x, .y = announced.y};
+  entityByNetworkId_.bind(announced.entityId,
+                          addEntity(*type, position, std::move(*look)));
+  effects_->playAppearance(*type, position);
+}
+
+engine::Entity EntityReplicator::addEntity(game::EntityType type,
+                                           game::Position position,
+                                           AnimatedSprite look) {
   const engine::Entity entity = entities_->create();
-  components_->add(entity, game::Position{.x = announced.x, .y = announced.y});
-  components_->add(entity, std::move(*sprite));
-  entityByNetworkId_.bind(announced.entityId, entity);
+  components_->add(entity, position);
+  components_->add(entity, type);
+  components_->add(entity, std::move(look.sprite));
+  components_->add(entity, look.animation);
+  return entity;
 }
 
 void EntityReplicator::move(engine::Entity entity, game::Position position) {
   auto* current = components_->get<game::Position>(entity);
   if (current != nullptr) {
     *current = position;
+  }
+}
+
+void EntityReplicator::explode(engine::Entity entity) {
+  const game::EntityType* type = components_->get<game::EntityType>(entity);
+  const game::Position* position = components_->get<game::Position>(entity);
+  if (type != nullptr && position != nullptr) {
+    effects_->playExplosion(*type, *position);
   }
 }
 

@@ -1,13 +1,18 @@
 #pragma once
 
 #include <cstdint>
+#include <functional>
 #include <memory>
 #include <string>
+#include <vector>
 #include "ActionSet.hpp"
 #include "ComponentRegistry.hpp"
 #include "EffectSpawner.hpp"
+#include "EntityMessage.hpp"
 #include "EntityRegistry.hpp"
+#include "EntityReplicator.hpp"
 #include "IEntityLayer.hpp"
+#include "IEntityMessageSource.hpp"
 #include "IPlayerInputLink.hpp"
 #include "IScreen.hpp"
 #include "IScreenNavigator.hpp"
@@ -15,7 +20,6 @@
 #include "PlayerCommands.hpp"
 #include "PlayerInputPacer.hpp"
 #include "ScreenConstants.hpp"
-#include "SpriteShowcase.hpp"
 #include "SystemScheduler.hpp"
 #include "TimeConstants.hpp"
 
@@ -28,13 +32,15 @@ struct PlayerSettings;
  * background, which the frame loop draws under every screen.
  *
  * The screen owns the entities of the game, which appear and disappear with
- * it, and the systems that animate them. Each update moves every animation and
- * every hit flash forward by the time elapsed, then plays the showcase, whose
- * new effects show their first frame, then repaints the entities on the entity
- * layer; since draw() is const, each draw only lays that layer. The layer is
- * painted once at construction, so the first frame already shows them. Until
- * the client creates the entities the server announces, the screen holds the
- * provisional sprite showcase, which plays every effect in a loop.
+ * it, the systems that animate them, and the EntityReplicator that applies to
+ * them what the server announces. Each update moves every animation and every
+ * hit flash forward by the time elapsed, then hands the replicator the entity
+ * messages the server sent since the previous update, whose new effects show
+ * their first frame, then repaints the entities on the entity layer; since
+ * draw() is const, each draw only lays that layer. The layer is painted once
+ * at construction, empty until the server announces an entity. The
+ * replicator and the effects point at the registries of the screen, so it
+ * never moves.
  *
  * Releasing OPTIONS_KEY releases every action held, then puts the options over
  * the game, which goes on running behind them, dimmed. The release, not the
@@ -51,23 +57,39 @@ struct PlayerSettings;
  *
  * Each update sends the actions held to the server when the PlayerInputPacer
  * says an input is due, the first update included. The game goes on behind the
- * options, so it keeps sending them there, with nothing held.
+ * options, so it keeps sending them there, with nothing held, and keeps
+ * applying what the server announces.
  */
 class GameScreen : public IScreen {
  public:
+  /** @brief What a game screen is built from, but the entity layer it owns. */
+  struct Parts {
+    /** @brief Screens the game lives among, which must outlive it; the
+     * options are pushed over the game when OPTIONS_KEY is released. */
+    std::reference_wrapper<IScreenNavigator> navigator;
+    /** @brief Settings of the player, which must outlive the screen: the keys
+     * of the controls, and whether effects reduce their flashes, read at each
+     * update. */
+    std::reference_wrapper<const PlayerSettings> settings;
+    /** @brief Where the actions held go to the server, which must outlive the
+     * screen. */
+    std::reference_wrapper<IPlayerInputLink> inputs;
+    /** @brief Where the entity messages of the server come from, which must
+     * outlive the screen. */
+    std::reference_wrapper<IEntityMessageSource> entityMessages;
+  };
+
   /**
-   * @param navigator Screens the game lives among, which must outlive it;
-   * the options are pushed over the game when OPTIONS_KEY is released.
-   * @param entityLayer Picture the entities are painted on, never null.
-   * @param settings Settings of the player, which must outlive the screen:
-   * the keys of the controls, and whether effects reduce their flashes, read
-   * at each update.
-   * @param inputs Where the actions held go to the server, which must outlive
-   * the screen.
+   * @param entityLayer Picture the entities are painted on, never null: the
+   * screen owns it, so it comes apart from the parts it borrows.
    */
-  GameScreen(IScreenNavigator& navigator,
-             std::unique_ptr<IEntityLayer> entityLayer,
-             const PlayerSettings& settings, IPlayerInputLink& inputs);
+  GameScreen(Parts parts, std::unique_ptr<IEntityLayer> entityLayer);
+
+  GameScreen(const GameScreen&) = delete;
+  GameScreen& operator=(const GameScreen&) = delete;
+  GameScreen(GameScreen&&) = delete;
+  GameScreen& operator=(GameScreen&&) = delete;
+  ~GameScreen() override = default;
 
   void handleEvent(const sf::Event& event) override;
   void update(engine::Duration elapsed) override;
@@ -78,16 +100,22 @@ class GameScreen : public IScreen {
   [[nodiscard]] ActionSet playerActions() const;
 
  private:
+  /** @brief Hands the replicator every entity message the server sent since
+   * the previous update, in the order they arrived. */
+  void applyEntityMessages();
+
   IScreenNavigator* navigator_;
   std::unique_ptr<IEntityLayer> entityLayer_;
   const PlayerSettings* settings_;
   engine::EntityRegistry entities_;
   engine::ComponentRegistry components_{entities_};
   EffectSpawner effects_{entities_, components_};
-  SpriteShowcase showcase_{entities_, components_, effects_};
+  EntityReplicator replicator_{entities_, components_, effects_};
   engine::SystemScheduler systems_;
   PlayerCommands playerCommands_;
   IPlayerInputLink* inputs_;
+  IEntityMessageSource* entityMessageSource_;
+  std::vector<EntityMessage> receivedEntityMessages_;
   PlayerInputPacer inputPacer_;
   logging::Logger logger_{std::string{GAME_SCREEN_LOGGER_NAME}};
   std::uint8_t loggedActions_{0};

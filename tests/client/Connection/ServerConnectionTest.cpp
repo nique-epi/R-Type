@@ -17,6 +17,11 @@
 #include "DatagramCodec.hpp"
 #include "Disconnection.hpp"
 #include "Endpoint.hpp"
+#include "EntityAnnouncements.hpp"
+#include "EntityDestroyed.hpp"
+#include "EntityMessage.hpp"
+#include "EntityReplicatorTestConstants.hpp"
+#include "EntitySpawned.hpp"
 #include "GameStarted.hpp"
 #include "IncomingDatagram.hpp"
 #include "LobbyState.hpp"
@@ -34,16 +39,23 @@
 #include "TimeConstants.hpp"
 #include "WorldState.hpp"
 #include "WorldStateCodec.hpp"
+#include "WorldStateFilterTestConstants.hpp"
 
 namespace rtype::client {
 namespace {
 
 using testing::ACCEPTANCE_SEQUENCE;
 using testing::ACCEPTED_PLAYER_NUMBER;
+using testing::APPLIED_TICK;
 using testing::CHALLENGE_COOKIE;
 using ::testing::ElementsAre;
 using ::testing::ElementsAreArray;
+using testing::FIRST_POSITION;
 using testing::FIRST_SEQUENCE;
+using testing::FOURTH_SEQUENCE;
+using ::testing::IsEmpty;
+using testing::killed;
+using testing::listed;
 using testing::NEXT_PROTOCOL_VERSION;
 using testing::NICKNAME;
 using testing::ONE_NANOSECOND;
@@ -58,10 +70,16 @@ using testing::PROTOCOL_FIRST_INPUT_NUMBER;
 using testing::PROTOCOL_READY_STATE_INTERVAL;
 using testing::PROTOCOL_REQUEST_INTERVAL;
 using testing::PROTOCOL_UP_ACTION_BIT;
+using testing::SECOND_POSITION;
 using testing::SECOND_SEQUENCE;
 using testing::SERVER_ADDRESS;
 using testing::SERVER_PORT;
 using testing::SESSION_TOKEN;
+using testing::SHIP_ID;
+using ::testing::SizeIs;
+using testing::spawned;
+using testing::stateListing;
+using testing::THIRD_SEQUENCE;
 
 using Phase = ConnectionStatus::Phase;
 
@@ -174,15 +192,22 @@ class ServerConnectionTest : public ::testing::Test {
     deliver(message, server(), sessionHeader(sequence));
   }
 
-  /** @brief Delivers a WorldState of tick 1 with nobody in it, in a datagram
-   * of the session carrying this sequence. */
-  void deliverWorldStateInSession(std::uint16_t sequence) {
+  /** @brief Delivers the first part of @p state in a datagram of the session
+   * carrying this sequence. */
+  void deliverWorldStateInSession(const network::WorldState& state,
+                                  std::uint16_t sequence) {
     const std::vector<std::vector<std::byte>> payloads =
-        network::WorldStateCodec::encode(
-            network::WorldState{.tick = 1, .players = {}, .entities = {}});
+        network::WorldStateCodec::encode(state);
     deliverBytes(network::DatagramCodec::encode(
         sessionHeader(sequence), network::MessageType::WorldState,
         payloads.front()));
+  }
+
+  /** @returns The entity messages the connection hands over now. */
+  [[nodiscard]] std::vector<EntityMessage> drainedEntityMessages() {
+    std::vector<EntityMessage> drained;
+    connection_.drainEntityMessages(drained);
+    return drained;
   }
 
   /** @returns How many datagrams sent so far hold a message of type
@@ -766,7 +791,7 @@ TEST_F(ServerConnectionTest, LearnsThatTheGameStarted) {
  */
 TEST_F(ServerConnectionTest, AWorldStateStartsTheGameWhenGameStartedWasLost) {
   accept();
-  deliverWorldStateInSession(FIRST_SEQUENCE);
+  deliverWorldStateInSession(stateListing(APPLIED_TICK, {}), FIRST_SEQUENCE);
 
   update();
 
@@ -988,6 +1013,102 @@ TEST_F(ServerConnectionTest, SendsNoInputOnceCancelled) {
   connection().sendPlayerInput(upHeld());
 
   EXPECT_EQ(sentCountOf<network::PlayerInput>(), 0U);
+}
+
+/**
+ * Given a game started in the session
+ * When an EntitySpawned, a WorldState and an EntityDestroyed arrive, in that
+ * order
+ * Then the connection hands over the three, in the order they arrived
+ */
+TEST_F(ServerConnectionTest, HandsOverTheEntityMessagesOfTheGameInOrder) {
+  accept();
+  deliverInSession(network::GameStarted{}, FIRST_SEQUENCE);
+  const network::EntitySpawned spawn =
+      spawned(SHIP_ID, network::WireEntityType::PlayerShip, FIRST_POSITION);
+  const network::WorldState state = stateListing(
+      APPLIED_TICK,
+      {listed(SHIP_ID, network::WireEntityType::PlayerShip, SECOND_POSITION)});
+  const network::EntityDestroyed kill = killed(SHIP_ID);
+  deliverInSession(spawn, SECOND_SEQUENCE);
+  deliverWorldStateInSession(state, THIRD_SEQUENCE);
+  deliverInSession(kill, FOURTH_SEQUENCE);
+
+  update();
+
+  EXPECT_THAT(drainedEntityMessages(),
+              ElementsAre(EntityMessage{spawn}, EntityMessage{state},
+                          EntityMessage{kill}));
+}
+
+/**
+ * Given a session whose game has not started
+ * When an EntitySpawned arrives, as for the ship of a player who joins
+ * Then the connection keeps nothing: the first WorldState of the game will
+ * list that ship
+ */
+TEST_F(ServerConnectionTest, KeepsNoEntityMessageBeforeTheGameStarts) {
+  accept();
+  deliverInSession(
+      spawned(SHIP_ID, network::WireEntityType::PlayerShip, FIRST_POSITION),
+      FIRST_SEQUENCE);
+
+  update();
+
+  EXPECT_THAT(drainedEntityMessages(), IsEmpty());
+}
+
+/**
+ * Given a session whose GameStarted was lost
+ * When the first WorldState arrives
+ * Then the connection hands it over: the state that starts the game is the
+ * first of the game
+ */
+TEST_F(ServerConnectionTest, HandsOverTheWorldStateThatStartsTheGame) {
+  accept();
+  const network::WorldState state = stateListing(
+      APPLIED_TICK,
+      {listed(SHIP_ID, network::WireEntityType::PlayerShip, FIRST_POSITION)});
+  deliverWorldStateInSession(state, FIRST_SEQUENCE);
+
+  update();
+
+  EXPECT_THAT(drainedEntityMessages(), ElementsAre(EntityMessage{state}));
+}
+
+/**
+ * Given a game started, and an EntitySpawned already handed over
+ * When the connection is drained again
+ * Then it hands over nothing
+ */
+TEST_F(ServerConnectionTest, HandsOverEachEntityMessageOnce) {
+  accept();
+  deliverInSession(network::GameStarted{}, FIRST_SEQUENCE);
+  deliverInSession(
+      spawned(SHIP_ID, network::WireEntityType::PlayerShip, FIRST_POSITION),
+      SECOND_SEQUENCE);
+  update();
+  ASSERT_THAT(drainedEntityMessages(), SizeIs(1));
+
+  EXPECT_THAT(drainedEntityMessages(), IsEmpty());
+}
+
+/**
+ * Given a game started, and an EntitySpawned not handed over yet
+ * When the player leaves the session
+ * Then the connection hands over nothing
+ */
+TEST_F(ServerConnectionTest, LeavingDropsTheEntityMessagesNotHandedOver) {
+  accept();
+  deliverInSession(network::GameStarted{}, FIRST_SEQUENCE);
+  deliverInSession(
+      spawned(SHIP_ID, network::WireEntityType::PlayerShip, FIRST_POSITION),
+      SECOND_SEQUENCE);
+  update();
+
+  connection().cancel();
+
+  EXPECT_THAT(drainedEntityMessages(), IsEmpty());
 }
 
 }  // namespace

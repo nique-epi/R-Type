@@ -4,6 +4,7 @@
 #include <cmath>
 #include <cstdint>
 #include <optional>
+#include "AnimatedSprite.hpp"
 #include "Animation.hpp"
 #include "EntitySpriteConstants.hpp"
 #include "EntityType.hpp"
@@ -45,6 +46,13 @@ SpriteAnimation startedAt(const Animation& animation, std::uint32_t networkId) {
           animation.cycle() * shareOfCycle)};
 }
 
+/** @returns The sprite of an entity showing @p frame of the entity sheet. */
+game::Sprite entitySpriteShowing(game::SpriteFrame frame) {
+  return game::Sprite{.assetId = ENTITY_SHEET_ID,
+                      .frame = frame,
+                      .layer = game::Layer::Entities};
+}
+
 }  // namespace
 
 std::optional<game::Sprite> spriteOf(game::EntityType type) {
@@ -52,9 +60,7 @@ std::optional<game::Sprite> spriteOf(game::EntityType type) {
   if (animation == nullptr) {
     return std::nullopt;
   }
-  return game::Sprite{.assetId = ENTITY_SHEET_ID,
-                      .frame = animation->frames.front(),
-                      .layer = game::Layer::Entities};
+  return entitySpriteShowing(animation->frames.front());
 }
 
 std::optional<SpriteAnimation> animationOf(game::EntityType type,
@@ -64,6 +70,19 @@ std::optional<SpriteAnimation> animationOf(game::EntityType type,
     return std::nullopt;
   }
   return startedAt(*animation, networkId);
+}
+
+std::optional<AnimatedSprite> animatedSpriteOf(game::EntityType type,
+                                               std::uint32_t networkId) {
+  const Animation* animation = entityAnimationOf(type);
+  if (animation == nullptr) {
+    return std::nullopt;
+  }
+  const SpriteAnimation started = startedAt(*animation, networkId);
+  return AnimatedSprite{
+      .sprite = entitySpriteShowing(started.animation.frameAt(started.elapsed)
+                                        .value_or(animation->frames.front())),
+      .animation = started};
 }
 
 sf::IntRect rectangleOf(game::SpriteFrame frame) {

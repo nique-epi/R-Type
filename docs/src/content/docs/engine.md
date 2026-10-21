@@ -73,7 +73,7 @@ An entity handle is local: the server and each client have different `Entity` va
 - `NetworkIdentity` (`src/game/Components/`) is the component that carries the identifier on a server entity, so the code that builds a world state can read it.
 - `NetworkEntityTable` (client) finds the local entity of an identifier. `find()` returns an empty `std::optional` for an unknown identifier. What the client does then depends on the message: a `WorldState` creates the entity, an `EntityDestroyed` is ignored (see [Protocol](/R-Type/protocol/#world-state)). `bind()` returns false and changes nothing when the identifier is already bound, in which case the first entity is kept, and for the reserved 0, so a corrupt identifier read from the network never throws. The table does not know whether an entity is alive: whoever destroys an entity unbinds its identifier.
 
-Nothing creates identifiers yet. On the client, `EntityReplicator` fills a table with the entities the server announces (see [Client](/R-Type/client/#entities-from-the-server-entityreplicator)), but nothing in the client calls it yet.
+On the server, `World` (`src/game/World.hpp`) gives one to every ship and Bydo it creates. On the client, the `EntityReplicator` of the game screen fills a table with the entities the server announces (see [Client](/R-Type/client/#entities-from-the-server-entityreplicator)).
 
 On the server, with `entities` and `components` from the example above:
 
