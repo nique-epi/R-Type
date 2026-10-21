@@ -3,7 +3,7 @@ title: Client
 description: What the client does, how its parts fit together and where to find them in the code.
 ---
 
-The client, `r-type_client` (`src/client/`), shows the game, plays its sounds and reads the player's input; the server decides what happens in the match (see [Architecture](/R-Type/architecture/)). Today it finds its assets folder, loads the assets of its interface, opens a window and runs its screens over a scrolling starfield: the title screen it opens on, a connection screen, a waiting room, a loading screen, the game screen, which draws the entities the server announces from one sprite sheet, animated, and their explosions and flashes from another, an options screen and a quit confirmation, the menus all built from the same widgets. The game screen reads the player's actions through the keys the player chose, the arrows and the space bar at first; the options change them, with the volumes, the window size and the accessibility settings, and save them in a file for the next launch. It reads the server's address and port and the player's nickname at launch, shows them on its connection screen, and joins the server from there: it sends the connection request of the protocol, on a network thread opened at launch, until the server accepts or refuses it. Once accepted, it opens a waiting room that lists the players of the server and where the player says it is ready, then the game when the server announces its start, where the ships and Bydos appear, move and disappear as the server says.
+The client, `r-type_client` (`src/client/`), shows the game, plays its sounds and reads the player's input; the server decides what happens in the match (see [Architecture](/R-Type/architecture/)). Today it finds its assets folder, loads the assets of its interface, opens a window and runs its screens over a scrolling starfield: the title screen it opens on, a connection screen, a waiting room, a loading screen, the game screen, which draws the entities the server announces from one sprite sheet, animated, and their explosions and flashes from another, an options screen and a quit confirmation, the menus all built from the same widgets. The game screen reads the player's actions through the keys the player chose, the arrows and the space bar at first; the options change them, with the volumes, the window size and the accessibility settings, and save them in a file for the next launch. It reads the server's address and port and the player's nickname at launch, shows them on its connection screen, and joins the server from there: it sends the connection request of the protocol, on a network thread opened at launch, until the server accepts or refuses it. Once accepted, it opens a waiting room that lists the players of the server and where the player says it is ready, then the game when the server announces its start, where the ships and Bydos appear, move and disappear as the server says, over a status band that shows the nickname, the lives and the score of each pilot.
 
 This page tells you where to look when you need to change something. It describes what exists today and says plainly what does not exist yet.
 
@@ -31,6 +31,7 @@ This page tells you where to look when you need to change something. It describe
 | Network thread | Available; opened at launch | `src/client/Connection/NetworkThread/` |
 | Ignoring an old world state | Available; used by `EntityReplicator` | `src/client/Replication/WorldStateFilter/` |
 | Applying the entities the server announces | Available; used by the game screen | `src/client/Replication/EntityReplicator/` |
+| Status band of the game: nickname, lives and score of each pilot | Available; the server sends the real score but counts no lives yet, and the client does not decode `PlayerLeft` | `src/client/Widgets/StatusBand.cpp`, `src/client/Replication/ScoreBoard/`, `assets/sprites/hud.png` |
 | Server address, port and nickname at launch | Available; they fill the connection screen | `src/client/LaunchOptions/` |
 | Joining a server | Available: request, challenge, acceptance or refusal, then the waiting room, the ready state, the start of the game, the entity messages of the game and leaving | `src/client/Connection/ServerConnection/` |
 | Sounds and music of the game | Not yet written | — |
@@ -69,7 +70,7 @@ Assets are loaded at three moments only, all declared in `src/client/Screens/Scr
 
 - at launch, before the window opens, `loadInterfaceAssets()` loads `interfaceAssets()`, the assets of the interface, which any screen may use at any time, in a game or outside one (today the two pixel fonts of the menus, `REGULAR_FONT_ID` and `SMALL_FONT_ID`), and makes them permanent, so changing screen outside a game never reads a font;
 - right after, still before the window opens, `loadTitleAssets()` loads `titleAssets()`: the logo (`LOGO_ID`, `sprites/logo.png`) and the entity sheet the squadron is drawn from, so the first frame already shows the title. They are not permanent: entering a game releases the logo, and a title screen built later goes through the loading screen of `titleAssets()` when one is missing;
-- when the player enters a game (`ScreenId::Game`), the loading screen loads `gameAssets()`, one file per frame, after releasing what a previous game used and this one does not. When they are all loaded already, the game screen is built at once, after the same release. Today `gameAssets()` holds the entity sheet (`ENTITY_SHEET_ID`), which the title already loaded, and the effect sheet (`EFFECT_SHEET_ID`), which it does not. The waiting room asks for the game during its update, so the loading screen is built after the update of that frame and drawn once, its bar empty; in the next frame it loads the effect sheet, and the game screen replaces it before the draw. Entering a game therefore shows the loading screen for one frame.
+- when the player enters a game (`ScreenId::Game`), the loading screen loads `gameAssets()`, one file per frame, after releasing what a previous game used and this one does not. When they are all loaded already, the game screen is built at once, after the same release. Today `gameAssets()` holds the entity sheet (`ENTITY_SHEET_ID`), which the title already loaded, and three files it does not: the effect sheet (`EFFECT_SHEET_ID`), and the HUD sheet (`HUD_SHEET_ID`) and the plug icon (`PLUG_ICON_ID`) of the status band. The waiting room asks for the game during its update, so the loading screen is built after the update of that frame and drawn once, its bar empty; in each of the next three frames it loads one file, and it is drawn after the first two; after the third, the game screen replaces it before the draw. Entering a game therefore shows the loading screen for three frames, 50 ms at `FRAMES_PER_SECOND_LIMIT` (60).
 
 ### What a loading step does
 
@@ -101,7 +102,7 @@ The engine knows nothing about assets, and the game only names them: an entity t
 
 `SfmlDrawSurface` paints on a `PixelCanvas`, the pixel grid of the sky (see [How it is drawn](#how-it-is-drawn)): a position becomes a pixel of the canvas, which covers `BACKGROUND_PIXEL_SIZE` (4) logical units, and each rectangle lands on whole pixels, so a sprite is copied pixel for pixel and its pixels match the stars at every window size. An entity therefore moves on screen by whole background pixels, 4 logical units at a time.
 
-The canvas belongs to `EntityLayer` (`src/client/Rendering/EntityLayer/`), behind the `IEntityLayer` interface. The game screen owns the entities of the game, which appear and disappear with it, and an entity layer. It paints the layer at construction and at the end of every `update()`, once the animations and effects of the frame have moved (see [Animations](#animations-animation-animationsystem)): the layer clears its canvas to transparent, lets `RenderSystem` paint on it, and ends the picture. In `draw()` it only lays the layer, since `draw()` is const; the entities sit over the background and under any screen pushed over the game. `GameScreen` sees only `IEntityLayer`, so `client_screen_tests` gives it a recording double and needs no graphics card.
+The canvas belongs to `EntityLayer` (`src/client/Rendering/EntityLayer/`), behind the `IEntityLayer` interface. The game screen owns the entities of the game, which appear and disappear with it, and an entity layer. It paints the layer at construction and at the end of every `update()`, once the animations and effects of the frame have moved (see [Animations](#animations-animation-animationsystem)): the layer clears its canvas to transparent, lets `RenderSystem` paint on it, and ends the picture. In `draw()` it only lays the layer, then the status band (see [Status band](#status-band-scoreboard-paintstatusband)), since `draw()` is const; the entities sit over the background and under any screen pushed over the game. `GameScreen` sees only `IEntityLayer`, so `client_screen_tests` gives it a recording double and needs no graphics card.
 
 ```mermaid
 flowchart TB
@@ -306,7 +307,7 @@ builder.row({.label = MUSIC_LABEL},
 
 ### How a menu is drawn: `InterfaceCanvas`
 
-A menu paints through `IInterfaceCanvas` (`src/client/Rendering/`): rectangles, lines of text anchored by their left end, their right end or their middle (`TextAlignment`), and rectangles of a loaded texture, each pixel enlarged a whole number of times (`NATIVE_SCALE`, 1, for none) and cut to a visible area; a pixel of the texture the area cuts is left out whole, so nothing is painted outside it. `InterfaceCanvas` paints them on a `PixelCanvas` of its own, so menus have the square, sharp pixels of the sky. Text uses two pixel fonts under the SIL Open Font License, at the 8 pixels they are drawn for: Press Start 2P (`REGULAR_FONT_ID`) and Silkscreen (`SMALL_FONT_ID`, the small print). SFML leaves partly covered pixels on Silkscreen at that size, so text goes through a shader (`CrispTextShader.hpp`) that lights a pixel only when at least half of it is covered. Without shaders, text is drawn smoothed and the reason is logged once. A screen owns its canvas behind the interface, so its tests give it a recording double.
+A menu paints through `IInterfaceCanvas` (`src/client/Rendering/`): rectangles, lines of text anchored by their left end, their right end or their middle (`TextAlignment`), and rectangles of a loaded texture, each pixel enlarged a whole number of times (`NATIVE_SCALE`, 1, for none) and cut to a visible area; a pixel of the texture the area cuts is left out whole, so nothing is painted outside it. `InterfaceCanvas` paints them on a `PixelCanvas` of its own, so menus have the square, sharp pixels of the sky. Text uses two pixel fonts under the SIL Open Font License, at the 8 pixels they are drawn for: Press Start 2P (`REGULAR_FONT_ID`) and Silkscreen (`SMALL_FONT_ID`, the small print). SFML leaves partly covered pixels on Silkscreen at that size, so text goes through a shader (`CrispTextShader.hpp`) that lights a pixel only when at least half of it is covered. Without shaders, text is drawn smoothed and the reason is logged once. A drawing whose curves must stay smooth, the plug of the status band, is laid with `drawSmoothImage()` instead: `InterfaceCanvas` lays it over the pixel picture when it shows it, stretched over its area at the resolution of the window from a smoothed copy of its texture with mipmaps, each pixel multiplied by a tint, so a white icon takes the tint. `textWidth()` gives the width of a line as `write()` places it, for text that must leave room to another, since Silkscreen is proportional. A screen owns its canvas behind the interface, so its tests give it a recording double.
 
 ### The squadron: `Squadron`
 
@@ -503,7 +504,7 @@ if (!worldStateFilter.accept(state.tick)) {
 
 It binds the network id of each entity it creates in a `NetworkEntityTable`, so its entities must be destroyed through it. One replicator serves one game, because the ticks start again with each game. It is not thread-safe: the frame loop calls it, outside any `forEach`, since every call may add components, and only with messages whose sender passed the checks.
 
-It does not yet remove an entity that no `WorldState` has listed for 900 ms (see [Protocol](/R-Type/protocol/#losses)): until then, an entity whose three `EntityDestroyed` were all lost stays on screen. It does not read the players of a `WorldState`, and starts no hit flash: the client does not read `GameEvent`.
+It does not yet remove an entity that no `WorldState` has listed for 900 ms (see [Protocol](/R-Type/protocol/#losses)): until then, an entity whose three `EntityDestroyed` were all lost stays on screen. It does not read the players of a `WorldState`, which the score board of the status band reads (see [Status band](#status-band-scoreboard-paintstatusband)), and starts no hit flash: the client does not read `GameEvent`.
 
 The game screen owns one replicator, built on its registries and its `EffectSpawner`, so each game starts with a new one. It takes the messages from an `IEntityMessageSource` (`src/client/Connection/`): `ServerConnection` in the client, which `Application` hands to the game screen with its inputs, and `FakeEntityMessageSource` (`tests/doubles/`) in the tests. An `EntityMessage` (`EntityMessage.hpp`) holds one `EntitySpawned`, `WorldState` or `EntityDestroyed`. The messages keep the order they arrived in, since a `WorldState` applied after an `EntityDestroyed` it predates would bring the entity back. Each `GameScreen::update()` hands them over after the systems and before the paint, so a new effect is drawn on its first frame:
 
@@ -512,11 +513,34 @@ entityMessageSource_->drainEntityMessages(receivedEntityMessages_);
 for (const EntityMessage& message : receivedEntityMessages_) {
   std::visit([this](const auto& announced) { replicator_.apply(announced); },
              message);
+  if (const auto* state = std::get_if<network::WorldState>(&message)) {
+    scoreBoard_.apply(*state);
+  }
 }
 receivedEntityMessages_.clear();
 ```
 
 `client_replication_tests` checks the replicator, `client_connection_tests` what the connection keeps and hands over, and `client_screen_tests` the game screen fed by `FakeEntityMessageSource`.
+
+## Status band: `ScoreBoard`, `paintStatusBand`
+
+The game screen lays a status band over the bottom `STATUS_BAND_ROWS` (24) rows of the interface picture, the `STATUS_BAND_HEIGHT` (96 logical units) the game leaves free (see [Architecture](/R-Type/architecture/#coordinate-system)): one bay per player number, 1 to 4, with the nickname, the lives and the score of its pilot. The screen paints it when it is built, then again in an update only when a pilot changed, so the 20 world states of a second repaint nothing while no score or life moves. Today every pilot shows the 3 lives the server sends until it counts them (`PLAYER_LIVES_UNTRACKED`), so no word but `YOU` appears.
+
+### What the server says: `ScoreBoard`
+
+`ScoreBoard` (`rtype_client_score_board`, `src/client/Replication/ScoreBoard/`) holds a `PilotStatus` per pilot (`src/client/Replication/PilotStatus.hpp`): its number, nickname, score, lives and `PilotState`.
+
+- It starts from the waiting room of the game (`IServerConnection::lobbyPlayers()`) and the number of the client: each pilot with its nickname, a score of 0 and no lives known.
+- `apply(WorldState)` sets the score and the lives of each player listed: no life left makes the pilot `OutOfLives`, an invulnerable ship `Respawning`. A state older than the newest applied is ignored, through its own `WorldStateFilter`.
+- `apply(PlayerLeft)` makes the pilot `Left` or `SignalLost`, and no later state brings it back. Nothing calls it yet: the client does not decode `PlayerLeft`, which the server does not send.
+- A number outside 1 to 4 is ignored, wherever it comes from.
+- `revision()` changes only when a pilot does.
+
+### How it is drawn: `paintStatusBand`
+
+`paintStatusBand(canvas, pilots)` (`rtype_client_status_band`, `src/client/Widgets/StatusBand.cpp`) paints the band on an `IInterfaceCanvas`. A bay shows a chip of the pilot's color holding its marker (triangle, square, circle, star), so a pilot is never told by color alone; its nickname in the light shade of its color, cut at a whole character to the room left by the word on its right; and that word, the first that applies: `LEFT` or `SIGNAL LOST`, `OUT`, `LAST LIFE`, `RESPAWN`, `YOU`. A pilot no waiting room named shows `P` and its number. Under them come up to three ships for the lives, or one ship and `x5`, the unplugged plug of Phosphor Icons once the signal is lost, and the score on 7 digits, its leading zeros dimmed. The bay of the local player is framed in white. Sizes, words and colors are in `StatusBandConstants.hpp`; the sprites are in `assets/sprites/hud.png`, their rectangles in `src/client/Rendering/HudSpriteConstants.hpp`.
+
+`client_replication_tests` checks the board, `client_status_band_tests` the band, and `client_screen_tests` the game screen that repaints it.
 
 ## Where to intervene
 
@@ -548,6 +572,9 @@ receivedEntityMessages_.clear();
 | Change the texts, sizes or checks of the connection screen | `src/client/Screens/ConnectionScreenConstants.hpp`, `ConnectionScreen::connect()` |
 | Change the texts or the status line of the waiting room | `src/client/Screens/LobbyScreenConstants.hpp`, `statusLine()` in `src/client/Screens/LobbyScreen/LobbyScreen.cpp` |
 | Change how a bay of the waiting room looks | `src/client/Widgets/HangarBayConstants.hpp`, `paintHangarBay()` in `src/client/Widgets/HangarBay.cpp` |
+| Change what the status band shows, or how it looks | `paintStatusBand()` in `src/client/Widgets/StatusBand.cpp`, its sizes, words and colors in `StatusBandConstants.hpp`, its sprites in `assets/sprites/hud.png` and `src/client/Rendering/HudSpriteConstants.hpp` |
+| Change how the client keeps the score and the lives of each pilot | `ScoreBoard` in `src/client/Replication/ScoreBoard/` |
+| Change the height kept for the status band | `STATUS_BAND_HEIGHT` in `src/game/PlayfieldConstants.hpp`, read by the client and by `bydoSpawnPosition` |
 | Change where the parts of the menus go | `MenuBuilder::placeColumn()`, `placeDialog()`, `placeForm()`, `placeTabbedPanel()` and `placeRoom()`, `src/client/Widgets/WidgetConstants.hpp` |
 | Add a control to a row | A class deriving from `RowControl` in its own folder under `src/client/Widgets/RowControls/`, its sizes in `RowControlConstants.hpp`, added with `MenuBuilder::row()` |
 | Change the rows, texts or tabs of the options | `src/client/Screens/OptionsScreenConstants.hpp`, `OptionsScreen::soundTab()`, `controlsTab()`, `displayTab()` and `accessTab()` in `src/client/Screens/OptionsScreen/` |
