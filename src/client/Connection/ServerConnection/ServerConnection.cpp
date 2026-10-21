@@ -91,21 +91,30 @@ std::optional<bool> ServerConnection::requestedReady() const {
 bool ServerConnection::gameStarted() const { return gameStarted_; }
 
 void ServerConnection::update(engine::Duration elapsed) {
+  readReceived();
+  repeatDeparture(elapsed);
+  if (isAccepted()) {
+    holdSession(elapsed);
+  } else if (isConnecting()) {
+    continueAttempt(elapsed);
+  }
+}
+
+void ServerConnection::readReceived() {
   received_.clear();
   link_->drainReceived(received_);
   for (const network::IncomingDatagram& datagram : received_) {
     receive(datagram);
   }
-  repeatDeparture(elapsed);
-  if (isAccepted()) {
-    sinceSent_ += elapsed;
-    repeatReadyState(elapsed);
-    sendHeartbeatWhenSilent();
-    return;
-  }
-  if (!isConnecting()) {
-    return;
-  }
+}
+
+void ServerConnection::holdSession(engine::Duration elapsed) {
+  sinceSent_ += elapsed;
+  repeatReadyState(elapsed);
+  sendHeartbeatWhenSilent();
+}
+
+void ServerConnection::continueAttempt(engine::Duration elapsed) {
   sinceConnect_ += elapsed;
   if (sinceConnect_ >= CONNECTION_ATTEMPT_TIMEOUT) {
     status_ = {.phase = ConnectionStatus::Phase::Unreachable};

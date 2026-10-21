@@ -133,7 +133,21 @@ class ServerConnection : public IServerConnection,
 
   void registerAnswers();
   void registerSessionMessages();
+
+  /** @brief Reads the datagrams the link received since the previous call. */
+  void readReceived();
   void receive(const network::IncomingDatagram& datagram);
+
+  /** @brief Sends what the session needs: the ReadyState the waiting room does
+   * not show yet, and a Heartbeat once HEARTBEAT_INTERVAL passed without
+   * sending. The elapsed time counts before either is sent, so a datagram sent
+   * now starts the next delay. */
+  void holdSession(engine::Duration elapsed);
+
+  /** @brief Gives the attempt up as Unreachable once CONNECTION_ATTEMPT_TIMEOUT
+   * passed since connect(), and otherwise sends the request again every
+   * CONNECTION_REQUEST_INTERVAL. */
+  void continueAttempt(engine::Duration elapsed);
 
   /**
    * @returns Whether a datagram of the server may be read: always before the
