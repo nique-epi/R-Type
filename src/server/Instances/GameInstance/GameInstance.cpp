@@ -90,6 +90,32 @@ game::ShipDirections directionsOf(const network::PlayerInput& input) {
       .right = holdsActionAt(input, network::RIGHT_ACTION_BIT_POSITION)};
 }
 
+/** @brief A ship to move this tick, and the directions its player holds. */
+struct ShipMove {
+  game::Position* ship{nullptr};
+  game::ShipDirections held;
+};
+
+/**
+ * @returns The ship of @p player in @p world and the directions its newest
+ * input holds; nothing when the player has no ship in that world or sent no
+ * input yet.
+ */
+std::optional<ShipMove> shipMoveOf(game::World& world,
+                                   const ConnectedPlayer& player) {
+  game::Position* const ship = world.shipPositionOf(player.shipEntityId);
+  if (ship == nullptr || !player.newestInput.has_value()) {
+    return std::nullopt;
+  }
+  return ShipMove{.ship = ship, .held = directionsOf(*player.newestInput)};
+}
+
+/** @brief Moves the ship of @p move by one tick of the directions it holds. */
+void moveOneTick(const ShipMove& move) {
+  *move.ship = game::shipPositionAfter(*move.ship, move.held,
+                                       engine::SIMULATION_TICK_DURATION);
+}
+
 }  // namespace
 
 GameInstance::GameInstance(Send send, std::uint32_t seed,
@@ -257,12 +283,10 @@ void GameInstance::startGame() {
 
 void GameInstance::moveShips() {
   for (const ConnectedPlayer* const player : roster_.connected()) {
-    game::Position* const ship = world_->shipPositionOf(player->shipEntityId);
-    if (ship == nullptr || !player->newestInput.has_value()) {
-      continue;
+    const std::optional<ShipMove> move = shipMoveOf(*world_, *player);
+    if (move.has_value()) {
+      moveOneTick(*move);
     }
-    *ship = game::shipPositionAfter(*ship, directionsOf(*player->newestInput),
-                                    engine::SIMULATION_TICK_DURATION);
   }
 }
 
