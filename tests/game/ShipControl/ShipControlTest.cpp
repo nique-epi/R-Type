@@ -8,8 +8,10 @@
 #include "ShipControlConstants.hpp"
 #include "ShipControlTestConstants.hpp"
 #include "TimeConstants.hpp"
+#include "engine/Time/TimeTestConstants.hpp"
 
 using rtype::engine::SIMULATION_TICK_DURATION;
+using rtype::engine::testing::ONE_SECOND;
 using rtype::game::PLAYFIELD_HEIGHT;
 using rtype::game::PLAYFIELD_WIDTH;
 using rtype::game::Position;
@@ -19,7 +21,6 @@ using rtype::game::shipPositionAfter;
 using rtype::game::testing::BOTTOM_EDGE_STOP_Y;
 using rtype::game::testing::LEFT_EDGE_STOP_X;
 using rtype::game::testing::NEAR_AN_EDGE;
-using rtype::game::testing::ONE_SECOND;
 using rtype::game::testing::PLAYFIELD_CENTER;
 using rtype::game::testing::POSITION_TOLERANCE;
 using rtype::game::testing::RIGHT_EDGE_STOP_X;

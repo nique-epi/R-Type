@@ -1,10 +1,8 @@
 #pragma once
 
-#include <chrono>
 #include "PlayfieldConstants.hpp"
 #include "Position.hpp"
 #include "ShipControlConstants.hpp"
-#include "TimeConstants.hpp"
 
 namespace rtype::game::testing {
 
@@ -12,8 +10,6 @@ namespace rtype::game::testing {
  * meet no edge. */
 constexpr Position PLAYFIELD_CENTER{.x = PLAYFIELD_WIDTH / 2.0F,
                                     .y = PLAYFIELD_HEIGHT / 2.0F};
-
-constexpr engine::Duration ONE_SECOND = std::chrono::seconds(1);
 
 /** @brief How far from the edge it heads for a test ship starts, in logical
  * units. */
