@@ -5,6 +5,7 @@ target_include_directories(rtype_server_connected_players PUBLIC ${CMAKE_CURRENT
 target_link_libraries(rtype_server_connected_players
   PUBLIC
     rtype_network_protocol
+  PRIVATE
     rtype_server_instances
 )
 

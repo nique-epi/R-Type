@@ -2,10 +2,11 @@
 
 #include <array>
 #include <cstddef>
-#include "ConnectedPlayer.hpp"
 #include "ProtocolConstants.hpp"
 
 namespace rtype::server {
+
+struct ConnectedPlayer;
 
 /**
  * @brief The players connected at one moment, in order of their number: at

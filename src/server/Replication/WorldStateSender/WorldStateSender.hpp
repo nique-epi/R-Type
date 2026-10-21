@@ -5,13 +5,14 @@
 #include <functional>
 #include <vector>
 #include "ComponentRegistry.hpp"
-#include "ConnectedPlayers.hpp"
 #include "Logger.hpp"
 #include "OutgoingDatagram.hpp"
 #include "PlayerRoster.hpp"
 #include "WorldState.hpp"
 
 namespace rtype::server {
+
+class ConnectedPlayers;
 
 /**
  * @brief Sends the state of the world to every connected player of a game,
