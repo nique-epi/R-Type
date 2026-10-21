@@ -1,13 +1,17 @@
 #include "DamageRules.hpp"
 #include <cstdint>
+#include <optional>
 #include "ComponentRegistry.hpp"
 #include "DamageConstants.hpp"
+#include "EnemyKilled.hpp"
 #include "EntityDamage.hpp"
 #include "EntityDestruction.hpp"
 #include "EventBus.hpp"
 #include "Health.hpp"
 #include "MissileHit.hpp"
+#include "MissileOwner.hpp"
 #include "NetworkIdentity.hpp"
+#include "ScoreValue.hpp"
 
 namespace rtype::game {
 
@@ -31,6 +35,11 @@ void DamageRules::onMissileHit(const MissileHit& hit) {
   const std::uint32_t missileId = missileIdentity->networkId;
   const std::uint32_t targetId = targetIdentity->networkId;
 
+  const MissileOwner* owner = components_.get<MissileOwner>(hit.missile);
+  const std::optional<std::uint8_t> shooter =
+      owner == nullptr ? std::nullopt
+                       : std::optional<std::uint8_t>{owner->playerNumber};
+
   components_.destroy(hit.missile);
   events_.publish(EntityDestruction{.networkId = missileId,
                                     .cause = DestructionCause::Removed});
@@ -44,9 +53,15 @@ void DamageRules::onMissileHit(const MissileHit& hit) {
     events_.publish(EntityDamage{.networkId = targetId});
     return;
   }
+  const ScoreValue* score = components_.get<ScoreValue>(hit.target);
+  const std::uint32_t points = score == nullptr ? 0 : score->points;
   components_.destroy(hit.target);
   events_.publish(EntityDestruction{.networkId = targetId,
                                     .cause = DestructionCause::Killed});
+  if (shooter.has_value() && points > 0) {
+    events_.publish(
+        EnemyKilled{.playerNumber = shooter.value(), .points = points});
+  }
 }
 
 }  // namespace rtype::game

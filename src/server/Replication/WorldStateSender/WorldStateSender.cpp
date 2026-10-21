@@ -45,7 +45,8 @@ void WorldStateSender::onTick(std::uint32_t tick,
     return;
   }
   std::size_t leftOutCount = 0;
-  const network::WorldState state = capture(tick, components, leftOutCount);
+  network::WorldState state = capture(tick, components, leftOutCount);
+  state.players = playerStatesOf(players);
   reportLeftOut(leftOutCount);
   const std::vector<std::vector<std::byte>> payloads =
       network::WorldStateCodec::encode(state);
@@ -54,6 +55,20 @@ void WorldStateSender::onTick(std::uint32_t tick,
       send_(sessionDatagram(*player, network::WorldState::TYPE, payload));
     }
   }
+}
+
+std::vector<network::PlayerState> WorldStateSender::playerStatesOf(
+    const std::vector<ConnectedPlayer*>& players) {
+  std::vector<network::PlayerState> states;
+  states.reserve(players.size());
+  for (const ConnectedPlayer* const player : players) {
+    states.push_back(network::PlayerState{.playerNumber = player->playerNumber,
+                                          .shipEntityId = player->shipEntityId,
+                                          .lives = PLAYER_LIVES_UNTRACKED,
+                                          .score = player->score,
+                                          .invulnerable = false});
+  }
+  return states;
 }
 
 network::WorldState WorldStateSender::capture(

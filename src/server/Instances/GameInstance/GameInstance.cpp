@@ -70,6 +70,7 @@ bool changesActions(const network::PlayerInput& input,
 GameInstance::GameInstance(Send send, std::uint32_t seed,
                            engine::EventBus& events)
     : send_(std::move(send)),
+      scoreKeeper_(events, roster_),
       worldStateSender_(roster_, send_),
       seed_(seed),
       rejectionLog_(std::string{INSTANCES_LOGGER_NAME},
@@ -240,6 +241,7 @@ void GameInstance::startNewWorld() {
   finishedTicks_ = 0;
   for (ConnectedPlayer* const player : roster_.connected()) {
     player->ready = false;
+    player->score = 0;
     player->shipEntityId = identifiers::NO_ENTITY_ID;
     shipSpawnAnnouncer_->onPlayerJoined(*player);
   }

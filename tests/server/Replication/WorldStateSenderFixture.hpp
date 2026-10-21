@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <vector>
 #include "ComponentRegistry.hpp"
+#include "ConnectedPlayer.hpp"
 #include "Endpoint.hpp"
 #include "EntityRegistry.hpp"
 #include "EntityType.hpp"
@@ -41,8 +42,9 @@ class WorldStateSenderFixture : public ::testing::Test {
   /**
    * @brief Connects a player who sends from the client on @p port, under
    * @p sessionToken.
+   * @returns The player, who stays in the roster.
    */
-  void connect(std::uint16_t port, std::uint64_t sessionToken);
+  ConnectedPlayer& connect(std::uint16_t port, std::uint64_t sessionToken);
 
   /**
    * @brief Adds an entity with a NetworkIdentity, a Position and an EntityType.

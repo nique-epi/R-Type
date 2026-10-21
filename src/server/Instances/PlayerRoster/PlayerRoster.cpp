@@ -21,6 +21,15 @@ ConnectedPlayer* PlayerRoster::find(const network::Endpoint& endpoint) {
   return nullptr;
 }
 
+ConnectedPlayer* PlayerRoster::findByNumber(std::uint8_t playerNumber) {
+  for (std::optional<ConnectedPlayer>& seat : seats_) {
+    if (seat.has_value() && seat->playerNumber == playerNumber) {
+      return &seat.value();
+    }
+  }
+  return nullptr;
+}
+
 std::vector<ConnectedPlayer*> PlayerRoster::connected() {
   std::vector<ConnectedPlayer*> players;
   for (std::optional<ConnectedPlayer>& seat : seats_) {

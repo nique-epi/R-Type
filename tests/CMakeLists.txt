@@ -52,7 +52,7 @@ target_link_libraries(server_test_datagrams PUBLIC GTest::gtest rtype_network_da
 rtype_enable_warnings(server_test_datagrams)
 rtype_add_test(NAME server_tests SOURCES server/Application/TickLoopTest.cpp server/Application/ServerApplicationTest.cpp server/Application/DatagramSorterTest.cpp JournalFile.cpp DebugJournal.cpp LIBS rtype_server_application rtype_engine rtype_network_constants server_test_datagrams TIMEOUT ${RTYPE_THREAD_TEST_TIMEOUT_SECONDS})
 target_include_directories(server_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/server)
-rtype_add_test(NAME server_instances_tests SOURCES server/Instances/PlayerRosterTest.cpp LIBS rtype_server_player_roster rtype_network_handshake)
+rtype_add_test(NAME server_instances_tests SOURCES server/Instances/PlayerRosterTest.cpp server/Instances/ScoreKeeperTest.cpp LIBS rtype_server_score_keeper rtype_network_handshake)
 target_include_directories(server_instances_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/server)
 rtype_add_test(NAME server_game_instance_tests SOURCES server/Instances/GameInstanceTest.cpp doubles/UnreliableNetwork.cpp JournalFile.cpp DebugJournal.cpp LIBS rtype_server_game_instance server_test_datagrams)
 target_include_directories(server_game_instance_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/server ${CMAKE_CURRENT_SOURCE_DIR}/doubles)

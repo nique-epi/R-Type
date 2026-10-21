@@ -159,5 +159,30 @@ TEST(PlayerRoster, FindsAPlayerWithWhatItJoinedWith) {
   EXPECT_EQ(found->nextSequence, 0);
 }
 
+/**
+ * Given a roster of two players and an empty one
+ * When a player is looked up by number
+ * Then the connected numbers find their player, and the number of nobody, 0 and
+ * a number above the maximum find nothing
+ */
+TEST(PlayerRoster, FindsAPlayerByItsNumberOnly) {
+  PlayerRoster roster;
+  EXPECT_EQ(roster.findByNumber(network::FIRST_PLAYER_NUMBER), nullptr);
+  addPlayers(roster, 2);
+
+  const ConnectedPlayer* const first =
+      roster.findByNumber(network::FIRST_PLAYER_NUMBER);
+  const ConnectedPlayer* const second =
+      roster.findByNumber(network::FIRST_PLAYER_NUMBER + 1);
+
+  ASSERT_NE(first, nullptr);
+  ASSERT_NE(second, nullptr);
+  EXPECT_EQ(first->endpoint, playerEndpoint(0));
+  EXPECT_EQ(second->endpoint, playerEndpoint(1));
+  EXPECT_EQ(roster.findByNumber(network::FIRST_PLAYER_NUMBER + 2), nullptr);
+  EXPECT_EQ(roster.findByNumber(network::NO_PLAYER_NUMBER), nullptr);
+  EXPECT_EQ(roster.findByNumber(network::MAXIMUM_PLAYERS + 1), nullptr);
+}
+
 }  // namespace
 }  // namespace rtype::server

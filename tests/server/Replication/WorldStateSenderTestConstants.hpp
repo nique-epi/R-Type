@@ -34,6 +34,15 @@ constexpr game::Position PLAYER_MISSILE_POSITION{.x = 12.0F, .y = 22.0F};
 constexpr game::Position ENEMY_MISSILE_POSITION{.x = 13.0F, .y = 23.0F};
 
 /**
+ * @brief The ships and the scores of the two players of the test that lists
+ * them.
+ */
+constexpr std::uint32_t FIRST_SHIP_ID = 11;
+constexpr std::uint32_t SECOND_SHIP_ID = 12;
+constexpr std::uint32_t FIRST_SCORE = 300;
+constexpr std::uint32_t SECOND_SCORE = 100;
+
+/**
  * @brief The network id of an entity that has no type.
  */
 constexpr std::uint32_t UNTYPED_NETWORK_ID = 99;

@@ -16,6 +16,7 @@ target_link_libraries(rtype_server_game_instance
     rtype_server_bydo_spawner
     rtype_server_lobby_state_announcer
     rtype_server_player_roster
+    rtype_server_score_keeper
     rtype_server_ship_spawn_announcer
     rtype_server_world_state_sender
   PRIVATE

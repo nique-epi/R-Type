@@ -4,23 +4,29 @@
 #include <vector>
 #include "CollisionScene.hpp"
 #include "DamageRules.hpp"
+#include "EnemyKilled.hpp"
 #include "Entity.hpp"
 #include "EntityDamage.hpp"
 #include "EntityDestruction.hpp"
 #include "EntityType.hpp"
 #include "Health.hpp"
 #include "MissileHit.hpp"
+#include "MissileOwner.hpp"
 #include "NetworkIdentity.hpp"
+#include "ScoreValue.hpp"
 
 using rtype::engine::Entity;
 using rtype::game::DamageRules;
 using rtype::game::DestructionCause;
+using rtype::game::EnemyKilled;
 using rtype::game::EntityDamage;
 using rtype::game::EntityDestruction;
 using rtype::game::EntityType;
 using rtype::game::Health;
 using rtype::game::MissileHit;
+using rtype::game::MissileOwner;
 using rtype::game::NetworkIdentity;
+using rtype::game::ScoreValue;
 
 namespace {
 
@@ -31,6 +37,10 @@ constexpr std::uint32_t OTHER_BYDO_ID = 22;
 constexpr std::uint32_t SHIP_ID = 31;
 constexpr int THREE_HEALTH_POINTS = 3;
 constexpr int ONE_HEALTH_POINT = 1;
+constexpr std::uint8_t SECOND_PLAYER_NUMBER = 2;
+constexpr MissileOwner FIRST_PLAYER{.playerNumber = 1};
+constexpr MissileOwner SECOND_PLAYER{.playerNumber = SECOND_PLAYER_NUMBER};
+constexpr std::uint32_t BYDO_POINTS = 200;
 
 using Announcement = std::variant<EntityDamage, EntityDestruction>;
 
@@ -42,6 +52,21 @@ struct DamageScene {
         [this](const EntityDestruction& destruction) {
           announced.emplace_back(destruction);
         });
+    scene.events.subscribe<EnemyKilled>(
+        [this](const EnemyKilled& kill) { kills.push_back(kill); });
+  }
+
+  Entity missileOf(std::uint32_t networkId, MissileOwner owner) {
+    const Entity entity = missile(networkId);
+    scene.components.add(entity, owner);
+    return entity;
+  }
+
+  Entity bydoWorth(std::uint32_t networkId, Health health,
+                   std::uint32_t points) {
+    const Entity entity = bydo(networkId, health);
+    scene.components.add(entity, ScoreValue{.points = points});
+    return entity;
   }
 
   Entity missile(std::uint32_t networkId) {
@@ -65,6 +90,7 @@ struct DamageScene {
   CollisionScene scene;
   DamageRules rules{scene.events, scene.components};
   std::vector<Announcement> announced;
+  std::vector<EnemyKilled> kills;
 };
 
 Announcement removed(std::uint32_t networkId) {
@@ -229,4 +255,93 @@ TEST(DamageRules, HitOnEntitiesThatAreNotNetworkedIsIgnored) {
   EXPECT_TRUE(damage.announced.empty());
   EXPECT_EQ(damage.scene.components.get<Health>(bydo)->points,
             THREE_HEALTH_POINTS);
+}
+
+/**
+ * Given a Bydo worth points with one health point and a missile of the second
+ * player
+ * When the missile hits the Bydo
+ * Then the second player is announced as having killed an enemy worth those
+ * points
+ */
+TEST(DamageRules, KillingABydoWithAPlayerMissileAnnouncesWhoEarnsWhat) {
+  DamageScene damage;
+  const Entity missile = damage.missileOf(MISSILE_ID, SECOND_PLAYER);
+  const Entity bydo = damage.bydoWorth(
+      BYDO_ID, Health{.points = ONE_HEALTH_POINT}, BYDO_POINTS);
+
+  damage.hit(missile, bydo);
+
+  const std::vector<EnemyKilled> expected{
+      EnemyKilled{.playerNumber = SECOND_PLAYER_NUMBER, .points = BYDO_POINTS}};
+  EXPECT_EQ(damage.kills, expected);
+}
+
+/**
+ * Given a Bydo worth points with three health points and a player missile
+ * When the missile hits the Bydo and leaves it alive
+ * Then nobody earns anything yet
+ */
+TEST(DamageRules, HitThatLeavesTheBydoAliveAnnouncesNoKill) {
+  DamageScene damage;
+  const Entity missile = damage.missileOf(MISSILE_ID, SECOND_PLAYER);
+  const Entity bydo = damage.bydoWorth(
+      BYDO_ID, Health{.points = THREE_HEALTH_POINTS}, BYDO_POINTS);
+
+  damage.hit(missile, bydo);
+
+  EXPECT_TRUE(damage.kills.empty());
+}
+
+/**
+ * Given a Bydo worth points with one health point and a missile without owner
+ * When the missile kills the Bydo
+ * Then no kill is announced
+ */
+TEST(DamageRules, KillWithAMissileWithoutOwnerAnnouncesNoKill) {
+  DamageScene damage;
+  const Entity missile = damage.missile(MISSILE_ID);
+  const Entity bydo = damage.bydoWorth(
+      BYDO_ID, Health{.points = ONE_HEALTH_POINT}, BYDO_POINTS);
+
+  damage.hit(missile, bydo);
+
+  EXPECT_TRUE(damage.kills.empty());
+}
+
+/**
+ * Given a Bydo worth no points with one health point and a player missile
+ * When the missile kills the Bydo
+ * Then no kill is announced
+ */
+TEST(DamageRules, KillOfATargetWorthNothingAnnouncesNoKill) {
+  DamageScene damage;
+  const Entity missile = damage.missileOf(MISSILE_ID, SECOND_PLAYER);
+  const Entity bydo = damage.bydo(BYDO_ID, Health{.points = ONE_HEALTH_POINT});
+
+  damage.hit(missile, bydo);
+
+  EXPECT_TRUE(damage.kills.empty());
+}
+
+/**
+ * Given two missiles of different players reaching a Bydo of one health point
+ * in the same dispatch
+ * When the hits are delivered
+ * Then only the first player earns the points, since the Bydo dies once
+ */
+TEST(DamageRules, TwoMissilesOnTheSameBydoCreditOnlyTheFirst) {
+  DamageScene damage;
+  const Entity first = damage.missileOf(MISSILE_ID, FIRST_PLAYER);
+  const Entity second = damage.missileOf(OTHER_MISSILE_ID, SECOND_PLAYER);
+  const Entity bydo = damage.bydoWorth(
+      BYDO_ID, Health{.points = ONE_HEALTH_POINT}, BYDO_POINTS);
+
+  damage.scene.events.publish(MissileHit{.missile = first, .target = bydo});
+  damage.scene.events.publish(MissileHit{.missile = second, .target = bydo});
+  damage.scene.events.dispatch();
+
+  const std::vector<EnemyKilled> expected{EnemyKilled{
+      .playerNumber = FIRST_PLAYER.playerNumber, .points = BYDO_POINTS}};
+  EXPECT_EQ(damage.kills, expected);
 }

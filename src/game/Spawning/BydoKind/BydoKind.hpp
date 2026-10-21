@@ -19,4 +19,9 @@ enum class BydoKind : std::uint8_t {
  */
 [[nodiscard]] PatternShape patternShapeOf(BydoKind kind);
 
+/**
+ * @returns The points the player who destroys a Bydo of @p kind earns.
+ */
+[[nodiscard]] std::uint32_t pointsOf(BydoKind kind);
+
 }  // namespace rtype::game
