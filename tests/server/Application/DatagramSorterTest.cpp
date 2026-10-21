@@ -75,6 +75,11 @@ class DatagramSorterTest : public ::testing::Test {
     sorter_.admit(endpoint, sessionToken);
   }
 
+  void forget(const Endpoint& endpoint,
+              std::uint64_t sessionToken = SESSION_TOKEN) {
+    sorter_.forget(endpoint, sessionToken);
+  }
+
   void advanceClock(rtype::engine::Duration elapsed) {
     clock_.advance(elapsed);
   }
@@ -411,6 +416,81 @@ TEST_F(DatagramSorterTest, KeepsOnlyTheNewerTokenOfAPlayerAdmittedAgain) {
       (std::vector<IncomingDatagram>{
           {.sender = player(), .payload = playerReady(OTHER_SESSION_TOKEN)}}));
   EXPECT_EQ(wrongTokenCount(), 1);
+}
+
+/**
+ * Given a player admitted, then forgotten with its token
+ * When it sends a datagram that is not a connection request
+ * Then the datagram reaches no queue, and it is counted like a stranger's
+ */
+TEST_F(DatagramSorterTest, DropsAForgottenPlayersDatagramLikeAStrangers) {
+  admit(player());
+  forget(player());
+
+  sort(player(), playerReady());
+
+  EXPECT_TRUE(drainPlayers().empty());
+  EXPECT_EQ(droppedCount(), 1);
+  EXPECT_EQ(wrongTokenCount(), 0);
+}
+
+/**
+ * Given a player admitted, then forgotten with its token
+ * When a connection request without token comes from its address
+ * Then the request goes to the request queue, as a stranger's does
+ */
+TEST_F(DatagramSorterTest, SendsAForgottenPlayersRequestToTheRequestQueue) {
+  admit(player());
+  forget(player());
+
+  sort(player(), requestDatagram());
+
+  EXPECT_EQ(drainRequests().size(), 1);
+}
+
+/**
+ * Given a player admitted with a token, then again with another one
+ * When the session of the first token is forgotten
+ * Then the datagrams carrying the newer token still reach the player queue
+ */
+TEST_F(DatagramSorterTest, KeepsTheNewerSessionWhenTheOlderIsForgotten) {
+  admit(player(), SESSION_TOKEN);
+  admit(player(), OTHER_SESSION_TOKEN);
+  forget(player(), SESSION_TOKEN);
+
+  sort(player(), playerReady(OTHER_SESSION_TOKEN));
+
+  EXPECT_EQ(drainPlayers().size(), 1);
+}
+
+/**
+ * Given two admitted players
+ * When the first is forgotten
+ * Then the datagrams of the second still reach the player queue
+ */
+TEST_F(DatagramSorterTest, ForgetsOnlyThePlayerItIsGiven) {
+  admit(player());
+  admit(secondPlayer());
+  forget(player());
+
+  sort(secondPlayer(), playerReady());
+
+  EXPECT_EQ(drainPlayers().size(), 1);
+}
+
+/**
+ * Given a player admitted, forgotten, then admitted again with a new token
+ * When it sends a datagram carrying the new token
+ * Then the datagram reaches the player queue
+ */
+TEST_F(DatagramSorterTest, AdmitsAForgottenPlayerAgain) {
+  admit(player(), SESSION_TOKEN);
+  forget(player(), SESSION_TOKEN);
+  admit(player(), OTHER_SESSION_TOKEN);
+
+  sort(player(), playerReady(OTHER_SESSION_TOKEN));
+
+  EXPECT_EQ(drainPlayers().size(), 1);
 }
 
 /**

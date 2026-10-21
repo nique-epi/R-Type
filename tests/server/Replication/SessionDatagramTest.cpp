@@ -28,6 +28,7 @@ using testing::PLAYER_NICKNAME;
 using testing::playerEndpoint;
 using testing::SESSION_TOKEN;
 using testing::SOME_NEXT_SEQUENCE;
+using testing::SOME_TICKS_SINCE_SENT;
 
 /** @brief A roster whose first player is connected under SESSION_TOKEN. */
 class SessionDatagramTest : public ::testing::Test {
@@ -40,6 +41,19 @@ class SessionDatagramTest : public ::testing::Test {
   ConnectedPlayer* firstPlayer_{roster_.add(
       playerEndpoint(0), std::string{PLAYER_NICKNAME}, SESSION_TOKEN)};
 };
+
+/**
+ * Given a player sent nothing for some ticks
+ * When the header of its next datagram is asked for
+ * Then the ticks since a datagram was sent to it start again from 0
+ */
+TEST_F(SessionDatagramTest, StartsTheTicksSinceSentOverForEachHeader) {
+  firstPlayer().ticksSinceSent = SOME_TICKS_SINCE_SENT;
+
+  static_cast<void>(nextSessionHeader(firstPlayer()));
+
+  EXPECT_EQ(firstPlayer().ticksSinceSent, 0U);
+}
 
 /**
  * Given a player whose next sequence is SOME_NEXT_SEQUENCE

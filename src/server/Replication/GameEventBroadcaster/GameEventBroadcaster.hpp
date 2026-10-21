@@ -35,21 +35,25 @@ namespace rtype::server {
  */
 class GameEventBroadcaster {
  public:
-  /**
-   * @param events Where the events are published; the broadcaster subscribes
-   * to it.
-   * @param timers Runs the later copies.
-   * @param recipients The clients of the game, kept up to date by whoever
-   * owns the list. Must outlive the broadcaster.
-   * @param headerFor Gives the header of the next datagram for a recipient:
-   * its session token and its next sequence number. Must not be empty.
-   * @param send Called for each datagram to send. Must not be empty.
-   */
-  GameEventBroadcaster(
-      engine::EventBus& events, engine::TimerScheduler& timers,
-      const std::vector<network::Endpoint>& recipients,
-      std::function<network::PacketHeader(const network::Endpoint&)> headerFor,
-      std::function<void(network::OutgoingDatagram)> send);
+  /** @brief What a broadcaster is built from. */
+  struct Wiring {
+    /** @brief Where the events are published; the broadcaster subscribes to
+     * it. */
+    std::reference_wrapper<engine::EventBus> events;
+    /** @brief Runs the later copies. */
+    std::reference_wrapper<engine::TimerScheduler> timers;
+    /** @brief Gives the clients of the game when the bus delivers an event;
+     * the later copies of that event go to the same clients. Must not be
+     * empty. */
+    std::function<std::vector<network::Endpoint>()> recipients;
+    /** @brief Gives the header of the next datagram for a recipient: its
+     * session token and its next sequence number. Must not be empty. */
+    std::function<network::PacketHeader(const network::Endpoint&)> headerFor;
+    /** @brief Called for each datagram to send. Must not be empty. */
+    std::function<void(network::OutgoingDatagram)> send;
+  };
+
+  explicit GameEventBroadcaster(Wiring wiring);
 
   GameEventBroadcaster(const GameEventBroadcaster&) = delete;
   GameEventBroadcaster& operator=(const GameEventBroadcaster&) = delete;
@@ -71,7 +75,7 @@ class GameEventBroadcaster {
                 const std::vector<std::byte>& payload) const;
 
   engine::TimerScheduler& timers_;
-  const std::vector<network::Endpoint>& recipients_;
+  std::function<std::vector<network::Endpoint>()> recipients_;
   std::function<network::PacketHeader(const network::Endpoint&)> headerFor_;
   std::function<void(network::OutgoingDatagram)> send_;
   GameEventEncoder encoder_;

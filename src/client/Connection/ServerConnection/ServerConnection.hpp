@@ -19,6 +19,8 @@
 #include "LobbyState.hpp"
 #include "Logger.hpp"
 #include "MessageDispatcher.hpp"
+#include "MessagePayload.hpp"
+#include "MessageType.hpp"
 #include "PacketHeader.hpp"
 #include "ProtocolConstants.hpp"
 #include "TimeConstants.hpp"
@@ -44,12 +46,16 @@ namespace rtype::client {
  * from the same counter, which starts at 0. Of the datagrams of the server, it
  * reads only those that carry that token, then only those newer than the
  * newest one it read, so a late LobbyState never undoes a newer one. It keeps
- * the players of the newest LobbyState, and learns that the game started from
+ * the players of the newest LobbyState, reads a Heartbeat as nothing more than
+ * a datagram of the server, and learns that the game started from
  * a GameStarted, or from a WorldState when the GameStarted was lost. setReady()
  * sends a ReadyState at once, then again every READY_STATE_INTERVAL while the
  * waiting room shows another value. While the attempt is Accepted,
  * sendPlayerInput() sends the inputs of the game, numbered from
- * FIRST_INPUT_NUMBER; otherwise it sends nothing. Leaving the session, through
+ * FIRST_INPUT_NUMBER; otherwise it sends nothing. While the attempt is
+ * Accepted, a Heartbeat goes out once HEARTBEAT_INTERVAL passed without any
+ * other datagram to the server, so the server knows the player is still there
+ * while nothing else is due. Leaving the session, through
  * cancel() or connect(), sends a Disconnection DISCONNECTION_COPY_COUNT times,
  * DISCONNECTION_COPY_INTERVAL apart, with the token and the sequences of the
  * session left; connect() then starts a new session: sequence 0, token 0 and
@@ -99,7 +105,8 @@ class ServerConnection : public IServerConnection,
   /**
    * @brief Reads the datagrams received since the previous call, then sends
    * what is due: the request of an attempt, or its end; a ReadyState the
-   * waiting room does not show yet; a copy of a Disconnection.
+   * waiting room does not show yet; a copy of a Disconnection; a Heartbeat
+   * once HEARTBEAT_INTERVAL passed in a session without sending anything.
    *
    * @param elapsed Time since the previous call, or since connect().
    */
@@ -129,7 +136,25 @@ class ServerConnection : public IServerConnection,
 
   void registerAnswers();
   void registerSessionMessages();
+
+  /** @brief Reads the datagrams the link received since the previous call. */
+  void readReceived();
   void receive(const network::IncomingDatagram& datagram);
+
+  /** @brief Sends what the session needs: the ReadyState the waiting room does
+   * not show yet, and a Heartbeat once HEARTBEAT_INTERVAL passed without
+   * sending. The elapsed time counts before either is sent, so a datagram sent
+   * now starts the next delay. */
+  void holdSession(engine::Duration elapsed);
+
+  /** @brief Gives the attempt up as Unreachable once CONNECTION_ATTEMPT_TIMEOUT
+   * passed since connect(), and otherwise sends the request again every
+   * CONNECTION_REQUEST_INTERVAL. */
+  void continueAttempt(engine::Duration elapsed);
+
+  /** @brief Ends the attempt as Unreachable, and logs that the server never
+   * answered. */
+  void giveUp();
 
   /**
    * @returns Whether a datagram of the server may be read: always before the
@@ -155,6 +180,10 @@ class ServerConnection : public IServerConnection,
    * the waiting room shows another value than the one asked for. */
   void repeatReadyState(engine::Duration elapsed);
 
+  /** @brief Sends a Heartbeat once HEARTBEAT_INTERVAL passed since the last
+   * datagram to the server. */
+  void sendHeartbeatWhenSilent();
+
   /** @brief Leaves the session: the first copy of the Disconnection goes at
    * once, the others in the next updates. */
   void leave();
@@ -166,8 +195,26 @@ class ServerConnection : public IServerConnection,
    * over. */
   void forgetSession();
 
+  /** @brief Sends the server one datagram holding @p payload as a message of
+   * type @p type, under nextHeader(): every datagram to the server goes
+   * through here, so each one starts the delay before the next Heartbeat
+   * over. */
+  void sendToServer(network::MessageType type,
+                    std::span<const std::byte> payload);
+
+  /** @brief Sends the server one datagram holding @p message, as the overload
+   * above does.
+   * @throws What encodeMessage() throws for @p message, before anything is
+   * sent or any sequence is used. */
+  template <network::EncodableMessage Message>
+  void sendToServer(const Message& message) {
+    sendToServer(Message::TYPE, network::encodeMessage(message));
+  }
+
   /** @returns A header carrying the token of the session, 0 before it, and
-   * the next sequence, which it uses up. */
+   * the next sequence, which it uses up. Every datagram to the server takes
+   * its header here, so the delay before the next Heartbeat starts again from
+   * it. */
   [[nodiscard]] network::PacketHeader nextHeader();
 
   /** @returns A header carrying @p token and @p sequence, which then moves on
@@ -195,6 +242,7 @@ class ServerConnection : public IServerConnection,
   engine::Duration sinceRequest_{};
   engine::Duration sinceConnect_{};
   engine::Duration sinceReadyState_{};
+  engine::Duration sinceSent_{};
   ConnectionStatus status_;
   std::vector<network::LobbyPlayer> lobbyPlayers_;
   std::optional<bool> requestedReady_;

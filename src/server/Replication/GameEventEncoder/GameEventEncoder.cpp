@@ -13,8 +13,10 @@
 #include "GameEvent.hpp"
 #include "GameEventConstants.hpp"
 #include "MessagePayload.hpp"
+#include "PlayerDeparture.hpp"
 #include "PlayerElimination.hpp"
 #include "PlayerHit.hpp"
+#include "PlayerLeft.hpp"
 #include "ProtocolConstants.hpp"
 #include "WireEntityTypeMapping.hpp"
 
@@ -30,6 +32,16 @@ network::DestructionReason toWireReason(game::DestructionCause cause) {
       return network::DestructionReason::Removed;
   }
   return network::DestructionReason::Removed;
+}
+
+network::DepartureReason toWireReason(game::DepartureCause cause) {
+  switch (cause) {
+    case game::DepartureCause::Left:
+      return network::DepartureReason::Left;
+    case game::DepartureCause::TimedOut:
+      return network::DepartureReason::TimedOut;
+  }
+  return network::DepartureReason::TimedOut;
 }
 
 }  // namespace
@@ -66,6 +78,14 @@ EncodedMessage GameEventEncoder::encode(const game::PlayerHit& event) {
 EncodedMessage GameEventEncoder::encode(const game::PlayerElimination& event) {
   return encodeGameEvent(network::GameEventKind::PlayerEliminated,
                          event.playerNumber, identifiers::NO_ENTITY_ID);
+}
+
+EncodedMessage GameEventEncoder::encode(const game::PlayerDeparture& event) {
+  const network::PlayerLeft message{.playerNumber = event.playerNumber,
+                                    .reason = toWireReason(event.cause)};
+  return EncodedMessage{.type = network::PlayerLeft::TYPE,
+                        .payload = network::encodeMessage(message),
+                        .copies = REPEATED_MESSAGE_COPIES};
 }
 
 EncodedMessage GameEventEncoder::encodeGameEvent(network::GameEventKind kind,

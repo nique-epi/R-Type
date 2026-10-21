@@ -16,6 +16,7 @@ network::PacketHeader nextSessionHeader(ConnectedPlayer& recipient) {
   header.sessionToken = recipient.sessionToken;
   header.sequence = recipient.nextSequence;
   ++recipient.nextSequence;
+  recipient.ticksSinceSent = 0;
   return header;
 }
 

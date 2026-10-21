@@ -6,6 +6,7 @@
 #include "DebugJournal.hpp"
 #include "ThrottledLog.hpp"
 #include "ThrottledLogTestConstants.hpp"
+#include "TimeTestConstants.hpp"
 
 namespace rtype::logging {
 namespace {
@@ -14,7 +15,6 @@ using testing::EVENT_TEXT;
 using testing::FIRST_EVENT_TIME;
 using testing::FLOODED_EVENT_COUNT;
 using testing::HALF_INTERVAL;
-using testing::ONE_NANOSECOND;
 using testing::THROTTLED_INTERVAL;
 using testing::THROTTLED_MODULE;
 

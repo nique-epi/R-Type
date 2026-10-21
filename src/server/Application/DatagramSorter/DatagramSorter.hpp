@@ -74,9 +74,18 @@ class DatagramSorter {
    * @brief From now on, the datagrams of @p player that carry
    * @p sessionToken go to the player queue. Admitting a player again keeps
    * one entry and replaces its token. The callers admit at most the players of
-   * the game, so the list stays as small as the game.
+   * the game, and forget each one that leaves, so the list stays as small as
+   * the game.
    */
   void admit(const network::Endpoint& player, std::uint64_t sessionToken);
+
+  /**
+   * @brief From now on, the datagrams of @p player are sorted like a
+   * stranger's, unless it was admitted again since with another token than
+   * @p sessionToken: forgetting a session that was replaced leaves the new one
+   * alone, whatever order the two calls come in.
+   */
+  void forget(const network::Endpoint& player, std::uint64_t sessionToken);
 
   /**
    * @returns How many datagrams sort() dropped since the sorter was built,

@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <exception>
+#include <functional>
 #include <future>
 #include <span>
 #include <string>
@@ -50,6 +51,59 @@ std::vector<std::byte> playerReady() {
 ServerApplication::TickHandler ignoringDatagrams() {
   return []([[maybe_unused]] const ServerApplication::ReceivedDatagrams&
                 received) {};
+}
+
+/** @brief What the ticks of a server were handed in
+ * sortReadyStateThenRequest().
+ */
+struct SortedReadyState {
+  bool requestReachedATick{};
+  bool readyStateReachedATick{};
+};
+
+/**
+ * @brief Runs a server on the loopback address, lets @p prepare admit or forget
+ * the address of a client before the server starts, then has that client send
+ * @p readyState, then a connection request.
+ * @returns Whether a tick was handed the request within THREAD_TIMEOUT, and
+ * whether any tick was handed @p readyState, among the datagrams of the players
+ * or the requests.
+ */
+SortedReadyState sortReadyStateThenRequest(
+    const std::function<void(ServerApplication&, const Endpoint&)>& prepare,
+    const std::vector<std::byte>& readyState) {
+  std::promise<void> requestArrived;
+  const std::future<void> arrived = requestArrived.get_future();
+  std::atomic<bool> delivered{false};
+  std::atomic<bool> readyStateSeen{false};
+  ServerApplication server{
+      loopbackOnPort(ANY_PORT),
+      [&](const ServerApplication::ReceivedDatagrams& datagrams) {
+        for (const auto* list :
+             {&datagrams.players, &datagrams.connectionRequests}) {
+          for (const IncomingDatagram& datagram : *list) {
+            if (datagram.payload == readyState) {
+              readyStateSeen = true;
+            }
+          }
+        }
+        if (!datagrams.connectionRequests.empty() &&
+            !delivered.exchange(true)) {
+          requestArrived.set_value();
+        }
+      }};
+  rtype::network::NetworkContext clientContext;
+  rtype::network::UdpSocket client{clientContext, loopbackOnPort(ANY_PORT)};
+  prepare(server, loopbackOnPort(client.localEndpoint().port));
+  const std::jthread runner{[&server] { server.run(); }};
+  client.send(loopbackOnPort(server.localEndpoint().port), readyState);
+  client.send(loopbackOnPort(server.localEndpoint().port), requestDatagram());
+  clientContext.run();
+  const std::future_status status = arrived.wait_for(THREAD_TIMEOUT);
+  server.stop();
+  return SortedReadyState{
+      .requestReachedATick = status == std::future_status::ready,
+      .readyStateReachedATick = readyStateSeen};
 }
 
 }  // namespace
@@ -238,38 +292,30 @@ TEST(ServerApplication, HandsTheTickTheDatagramOfAPlayerItAdmitted) {
  * Then the request reaches a tick, and no tick ever sees the ReadyState
  */
 TEST(ServerApplication, DropsAStrangersDatagramBeforeTheTick) {
-  std::promise<void> requestArrived;
-  const std::future<void> arrived = requestArrived.get_future();
-  std::atomic<bool> delivered{false};
-  std::atomic<bool> readyStateSeen{false};
-  ServerApplication server{
-      loopbackOnPort(ANY_PORT),
-      [&](const ServerApplication::ReceivedDatagrams& datagrams) {
-        for (const auto* list :
-             {&datagrams.players, &datagrams.connectionRequests}) {
-          for (const IncomingDatagram& datagram : *list) {
-            if (datagram.payload == readyDatagram()) {
-              readyStateSeen = true;
-            }
-          }
-        }
-        if (!datagrams.connectionRequests.empty() &&
-            !delivered.exchange(true)) {
-          requestArrived.set_value();
-        }
-      }};
-  const std::jthread runner{[&server] { server.run(); }};
-  rtype::network::NetworkContext clientContext;
-  rtype::network::UdpSocket client{clientContext, loopbackOnPort(ANY_PORT)};
+  const SortedReadyState sorted =
+      sortReadyStateThenRequest([]([[maybe_unused]] ServerApplication& server,
+                                   [[maybe_unused]] const Endpoint& client) {},
+                                readyDatagram());
 
-  client.send(loopbackOnPort(server.localEndpoint().port), readyDatagram());
-  client.send(loopbackOnPort(server.localEndpoint().port), requestDatagram());
-  clientContext.run();
-  const std::future_status status = arrived.wait_for(THREAD_TIMEOUT);
-  server.stop();
+  ASSERT_TRUE(sorted.requestReachedATick);
+  EXPECT_FALSE(sorted.readyStateReachedATick);
+}
 
-  ASSERT_EQ(status, std::future_status::ready);
-  EXPECT_FALSE(readyStateSeen);
+/**
+ * Given a server that admitted a client, then forgot it, before it started
+ * When the client sends a ReadyState, then a connection request
+ * Then the request reaches a tick, and no tick ever sees the ReadyState
+ */
+TEST(ServerApplication, DropsTheDatagramOfAForgottenPlayerBeforeTheTick) {
+  const SortedReadyState sorted = sortReadyStateThenRequest(
+      [](ServerApplication& server, const Endpoint& client) {
+        server.admit(client, SESSION_TOKEN);
+        server.forget(client, SESSION_TOKEN);
+      },
+      playerReady());
+
+  ASSERT_TRUE(sorted.requestReachedATick);
+  EXPECT_FALSE(sorted.readyStateReachedATick);
 }
 
 /**

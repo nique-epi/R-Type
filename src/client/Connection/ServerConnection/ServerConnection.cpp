@@ -23,10 +23,12 @@
 #include "EntityMessage.hpp"
 #include "EntitySpawned.hpp"
 #include "GameStarted.hpp"
+#include "Heartbeat.hpp"
 #include "IDatagramLink.hpp"
 #include "IncomingDatagram.hpp"
 #include "LobbyState.hpp"
 #include "MessageOrigin.hpp"
+#include "MessageType.hpp"
 #include "NetworkException.hpp"
 #include "OutgoingDatagram.hpp"
 #include "PacketHeader.hpp"
@@ -90,23 +92,33 @@ std::optional<bool> ServerConnection::requestedReady() const {
 bool ServerConnection::gameStarted() const { return gameStarted_; }
 
 void ServerConnection::update(engine::Duration elapsed) {
+  readReceived();
+  repeatDeparture(elapsed);
+  if (isAccepted()) {
+    holdSession(elapsed);
+  } else if (isConnecting()) {
+    continueAttempt(elapsed);
+  }
+}
+
+void ServerConnection::readReceived() {
   received_.clear();
   link_->drainReceived(received_);
   for (const network::IncomingDatagram& datagram : received_) {
     receive(datagram);
   }
-  repeatDeparture(elapsed);
-  if (isAccepted()) {
-    repeatReadyState(elapsed);
-    return;
-  }
-  if (!isConnecting()) {
-    return;
-  }
+}
+
+void ServerConnection::holdSession(engine::Duration elapsed) {
+  sinceSent_ += elapsed;
+  repeatReadyState(elapsed);
+  sendHeartbeatWhenSilent();
+}
+
+void ServerConnection::continueAttempt(engine::Duration elapsed) {
   sinceConnect_ += elapsed;
   if (sinceConnect_ >= CONNECTION_ATTEMPT_TIMEOUT) {
-    status_ = {.phase = ConnectionStatus::Phase::Unreachable};
-    logger_.warn("no answer from ", server_.address, " port ", server_.port);
+    giveUp();
     return;
   }
   sinceRequest_ += elapsed;
@@ -119,11 +131,8 @@ void ServerConnection::sendPlayerInput(ActionSet held) {
   if (status_.phase != ConnectionStatus::Phase::Accepted) {
     return;
   }
-  link_->send(network::OutgoingDatagram{
-      .destination = server_,
-      .payload = network::DatagramCodec::encode(
-          nextHeader(), network::PlayerInput{.inputNumber = nextInputNumber_,
-                                             .actions = held.bits()})});
+  sendToServer(network::PlayerInput{.inputNumber = nextInputNumber_,
+                                    .actions = held.bits()});
   ++nextInputNumber_;
 }
 
@@ -171,6 +180,8 @@ void ServerConnection::registerAnswers() {
 }
 
 void ServerConnection::registerSessionMessages() {
+  dispatcher_.registerHandler<network::Heartbeat>(
+      [](const network::MessageOrigin&, const network::Heartbeat&) {});
   dispatcher_.registerHandler<network::LobbyState>(
       [this](const network::MessageOrigin&, const network::LobbyState& lobby) {
         if (isAccepted()) {
@@ -196,6 +207,11 @@ void ServerConnection::registerSessionMessages() {
              const network::EntityDestroyed& destroyed) {
         keepEntityMessage(destroyed);
       });
+}
+
+void ServerConnection::giveUp() {
+  status_ = {.phase = ConnectionStatus::Phase::Unreachable};
+  logger_.warn("no answer from ", server_.address, " port ", server_.port);
 }
 
 void ServerConnection::receive(const network::IncomingDatagram& datagram) {
@@ -248,19 +264,13 @@ void ServerConnection::keepEntityMessage(EntityMessage message) {
 }
 
 void ServerConnection::sendRequest() {
-  link_->send(network::OutgoingDatagram{
-      .destination = server_,
-      .payload = network::DatagramCodec::encode(
-          nextHeader(), network::ConnectionRequest{.cookie = cookie_,
-                                                   .nickname = nickname_})});
+  sendToServer(
+      network::ConnectionRequest{.cookie = cookie_, .nickname = nickname_});
   sinceRequest_ = engine::Duration::zero();
 }
 
 void ServerConnection::sendReadyState(bool ready) {
-  link_->send(network::OutgoingDatagram{
-      .destination = server_,
-      .payload = network::DatagramCodec::encode(
-          nextHeader(), network::ReadyState{.ready = ready})});
+  sendToServer(network::ReadyState{.ready = ready});
   sinceReadyState_ = engine::Duration::zero();
 }
 
@@ -272,6 +282,13 @@ void ServerConnection::repeatReadyState(engine::Duration elapsed) {
   if (sinceReadyState_ >= READY_STATE_INTERVAL) {
     sendReadyState(*requestedReady_);
   }
+}
+
+void ServerConnection::sendHeartbeatWhenSilent() {
+  if (sinceSent_ < network::HEARTBEAT_INTERVAL) {
+    return;
+  }
+  sendToServer(network::Heartbeat{});
 }
 
 void ServerConnection::leave() {
@@ -320,7 +337,15 @@ void ServerConnection::forgetSession() {
   entityMessages_.clear();
 }
 
+void ServerConnection::sendToServer(network::MessageType type,
+                                    std::span<const std::byte> payload) {
+  link_->send(network::OutgoingDatagram{
+      .destination = server_,
+      .payload = network::DatagramCodec::encode(nextHeader(), type, payload)});
+}
+
 network::PacketHeader ServerConnection::nextHeader() {
+  sinceSent_ = engine::Duration::zero();
   return headerOf(sessionToken_, nextSequence_);
 }
 

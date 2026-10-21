@@ -4,6 +4,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <initializer_list>
+#include <memory>
 #include <optional>
 #include <span>
 #include <string>
@@ -13,10 +14,12 @@
 #include "ConnectedPlayer.hpp"
 #include "DatagramCodec.hpp"
 #include "DebugJournal.hpp"
+#include "Endpoint.hpp"
 #include "EnemyKilled.hpp"
 #include "EntityDestruction.hpp"
 #include "EntityIdConstants.hpp"
 #include "EventBus.hpp"
+#include "GameEventBroadcaster.hpp"
 #include "GameInstance.hpp"
 #include "GameInstanceConstants.hpp"
 #include "GameInstanceTestConstants.hpp"
@@ -24,17 +27,22 @@
 #include "IncomingDatagram.hpp"
 #include "LobbyState.hpp"
 #include "MessageType.hpp"
+#include "NetworkTestConstants.hpp"
 #include "OutgoingDatagram.hpp"
 #include "PacketHeader.hpp"
+#include "PlayerDeparture.hpp"
 #include "PlayerInput.hpp"
+#include "PlayerLeft.hpp"
 #include "PlayerRoster.hpp"
 #include "ProtocolConstants.hpp"
 #include "ReadyState.hpp"
+#include "Replication/GameEventTestConstants.hpp"
 #include "SentDatagrams.hpp"
 #include "ServerConstants.hpp"
 #include "ServerDatagrams.hpp"
 #include "ServerLobbyTestConstants.hpp"
 #include "Spawning/BydoSpawnerTestConstants.hpp"
+#include "TimerScheduler.hpp"
 #include "UnreliableNetwork.hpp"
 #include "WorldState.hpp"
 
@@ -61,6 +69,8 @@ using testing::onlyMessageIn;
 using testing::onlyMessageTypeOf;
 using testing::PLAYER_SESSION_TOKENS;
 using testing::playerEndpoint;
+using testing::PROTOCOL_HEARTBEAT_TICKS;
+using testing::PROTOCOL_SESSION_TIMEOUT_TICKS;
 using testing::SECOND_PLAYER;
 using testing::SECOND_SENT;
 using testing::SECOND_SEQUENCE;
@@ -68,6 +78,7 @@ using testing::SHUFFLE_SEED_COUNT;
 using testing::SHUFFLED_INPUT_COUNT;
 using testing::SOME_TICKS;
 using testing::STRANGER;
+using testing::THIRD_PLAYER;
 using testing::THIRD_SENT;
 using testing::THIRD_SEQUENCE;
 using testing::TICKS_PER_REJECTION_LINE;
@@ -118,7 +129,12 @@ network::LobbyState roomOfTheFirstPlayerNotReady() {
           .nickname = std::string{testing::PLAYER_NICKNAME}}}};
 }
 
-/** @brief A game whose datagrams are recorded and whose input is queued. */
+/**
+ * @brief A game whose datagrams are recorded and whose input is queued. Every
+ * player that joined sends a Heartbeat before each tick, as a client that is
+ * still there sends at least one datagram per second, until silence() stops
+ * it.
+ */
 class GameInstanceTest : public ::testing::Test {
  protected:
   /**
@@ -131,7 +147,19 @@ class GameInstanceTest : public ::testing::Test {
         playerEndpoint(index), std::string{testing::PLAYER_NICKNAME},
         sessionToken);
     game().onPlayerJoined(*player);
+    livePlayers_.push_back(
+        LivePlayer{.index = index, .sessionToken = sessionToken});
     return *player;
+  }
+
+  /**
+   * @brief The player at @p index sends nothing from now on, as a client that
+   * crashed or lost the network.
+   */
+  void silence(std::size_t index) {
+    std::erase_if(livePlayers_, [index](const LivePlayer& player) {
+      return player.index == index;
+    });
   }
 
   /** @brief Queues the ReadyState described by @p sent for the next tick. */
@@ -150,8 +178,15 @@ class GameInstanceTest : public ::testing::Test {
     incoming_.push_back(std::move(datagram));
   }
 
-  /** @brief Runs one tick with what was queued, then empties the queue. */
+  /** @brief Runs one tick with what was queued, then a Heartbeat from each
+   * player not silenced, then empties the queue. */
   void tick() {
+    for (const LivePlayer& player : livePlayers_) {
+      network::PacketHeader header;
+      header.sessionToken = player.sessionToken;
+      queue(network::IncomingDatagram{.sender = playerEndpoint(player.index),
+                                      .payload = heartbeatDatagram(header)});
+    }
     game().onTick(incoming_);
     incoming_.clear();
   }
@@ -162,14 +197,37 @@ class GameInstanceTest : public ::testing::Test {
     }
   }
 
-  /** @brief Connects one player, who says ready, and runs the tick that starts
-   * the game. */
-  void startGameWithOnePlayer() {
-    join(FIRST_PLAYER);
-    sendReady(
-        {.player = FIRST_PLAYER, .ready = true, .sequence = FIRST_SEQUENCE});
+  /** @brief Connects the players at @p indexes, who all say ready, and runs
+   * the tick that starts the game. */
+  void startGameWith(std::initializer_list<std::size_t> indexes) {
+    for (const std::size_t index : indexes) {
+      join(index);
+      sendReady({.player = index, .ready = true, .sequence = FIRST_SEQUENCE});
+    }
     tick();
     ASSERT_EQ(game().state(), GameState::InProgress);
+  }
+
+  /** @brief Connects one player, who says ready, and runs the tick that starts
+   * the game. */
+  void startGameWithOnePlayer() { startGameWith({FIRST_PLAYER}); }
+
+  /**
+   * @brief Silences the player at @p index, then runs ticks until its session
+   * closed: the timeout of the protocol and one tick more, which a player
+   * silenced right after it joined needs, since it was never heard in a tick.
+   */
+  void timeOut(std::size_t index) {
+    silence(index);
+    runTicks(PROTOCOL_SESSION_TIMEOUT_TICKS + 1);
+  }
+
+  /** @returns The network id of the ship of the player at @p index, or
+   * NO_ENTITY_ID when that player is not in the game. */
+  [[nodiscard]] std::uint32_t shipOf(std::size_t index) {
+    const ConnectedPlayer* const player =
+        game().roster().find(playerEndpoint(index));
+    return player == nullptr ? identifiers::NO_ENTITY_ID : player->shipEntityId;
   }
 
   /** @returns The datagrams sent to the player at @p index, oldest first. */
@@ -182,7 +240,14 @@ class GameInstanceTest : public ::testing::Test {
   [[nodiscard]] engine::EventBus& events() { return events_; }
 
  private:
+  /** @brief A player that sends a Heartbeat before each tick. */
+  struct LivePlayer {
+    std::size_t index{};
+    std::uint64_t sessionToken{};
+  };
+
   std::vector<network::OutgoingDatagram> sent_;
+  std::vector<LivePlayer> livePlayers_;
   engine::EventBus events_;
   GameInstance game_{[this](network::OutgoingDatagram datagram) {
                        sent_.push_back(std::move(datagram));
@@ -514,6 +579,7 @@ TEST_F(GameInstanceTest, ResetsTheScoreBetweenTwoGames) {
 
   runTicks(FINISHED_STATE_TICKS);
 
+  ASSERT_EQ(game().roster().connected().size(), 1U);
   EXPECT_EQ(game().roster().connected().front()->score, 0U);
 }
 
@@ -538,7 +604,7 @@ TEST_F(GameInstanceTest, CreditsTheKillOfAnEnemyToThePlayerWhoFired) {
  * Then every player is connected, not ready, and has a ship
  */
 TEST_F(GameInstanceTest, KeepsThePlayersConnectedButNotReadyForTheNextGame) {
-  const ConnectedPlayer& player = join(FIRST_PLAYER);
+  join(FIRST_PLAYER);
   sendReady(
       {.player = FIRST_PLAYER, .ready = true, .sequence = FIRST_SEQUENCE});
   tick();
@@ -546,9 +612,12 @@ TEST_F(GameInstanceTest, KeepsThePlayersConnectedButNotReadyForTheNextGame) {
 
   runTicks(FINISHED_STATE_TICKS);
 
-  EXPECT_EQ(game().roster().connected().size(), 1);
-  EXPECT_FALSE(player.ready);
-  EXPECT_NE(player.shipEntityId, identifiers::NO_ENTITY_ID);
+  ASSERT_EQ(game().roster().connected().size(), 1);
+  const ConnectedPlayer* const player =
+      game().roster().find(playerEndpoint(FIRST_PLAYER));
+  ASSERT_NE(player, nullptr);
+  EXPECT_FALSE(player->ready);
+  EXPECT_NE(player->shipEntityId, identifiers::NO_ENTITY_ID);
 }
 
 /**
@@ -900,6 +969,367 @@ network::PacketHeader sessionHeader(std::size_t player) {
   network::PacketHeader header;
   header.sessionToken = PLAYER_SESSION_TOKENS.at(player);
   return header;
+}
+
+/**
+ * Given a player heard from in a tick, then silent
+ * When the timeout of the protocol, less one tick, runs without a datagram
+ * Then the player is still in the game
+ */
+TEST_F(GameInstanceTest, KeepsAPlayerSilentForOneTickLessThanTheTimeout) {
+  join(FIRST_PLAYER);
+  tick();
+  silence(FIRST_PLAYER);
+
+  runTicks(PROTOCOL_SESSION_TIMEOUT_TICKS - 1);
+
+  EXPECT_NE(game().roster().find(playerEndpoint(FIRST_PLAYER)), nullptr);
+}
+
+/**
+ * Given a player heard from in a tick, then silent
+ * When the timeout of the protocol, 5 s of ticks, runs without a datagram
+ * Then the player is no longer in the game
+ */
+TEST_F(GameInstanceTest, ClosesTheSessionOfAPlayerSilentForTheTimeout) {
+  join(FIRST_PLAYER);
+  tick();
+  silence(FIRST_PLAYER);
+
+  runTicks(PROTOCOL_SESSION_TIMEOUT_TICKS);
+
+  EXPECT_EQ(game().roster().find(playerEndpoint(FIRST_PLAYER)), nullptr);
+}
+
+/**
+ * Given a player whose client sends a Heartbeat before every tick
+ * When twice the timeout runs
+ * Then the player is still in the game
+ */
+TEST_F(GameInstanceTest, KeepsAPlayerWhoSendsHeartbeats) {
+  join(FIRST_PLAYER);
+
+  runTicks(2 * PROTOCOL_SESSION_TIMEOUT_TICKS);
+
+  EXPECT_NE(game().roster().find(playerEndpoint(FIRST_PLAYER)), nullptr);
+}
+
+/**
+ * Given a player silent for the timeout less one tick
+ * When it sends a ReadyState, then stays silent for the timeout less one tick
+ * Then it is still in the game: any datagram it sends starts the delay over
+ */
+TEST_F(GameInstanceTest, AnyDatagramOfAPlayerStartsTheTimeoutOver) {
+  join(FIRST_PLAYER);
+  join(SECOND_PLAYER);
+  tick();
+  silence(FIRST_PLAYER);
+  runTicks(PROTOCOL_SESSION_TIMEOUT_TICKS - 1);
+  sendReady(
+      {.player = FIRST_PLAYER, .ready = true, .sequence = FIRST_SEQUENCE});
+  tick();
+
+  runTicks(PROTOCOL_SESSION_TIMEOUT_TICKS - 1);
+
+  EXPECT_NE(game().roster().find(playerEndpoint(FIRST_PLAYER)), nullptr);
+}
+
+/**
+ * Given two players, the second of whom goes silent
+ * When the timeout runs
+ * Then the ship of the second player leaves the world, announced as removed
+ * without an explosion, and the ship of the first stays
+ */
+TEST_F(GameInstanceTest, RemovesTheShipOfAPlayerWhoTimedOut) {
+  join(FIRST_PLAYER);
+  const std::uint32_t ship = join(SECOND_PLAYER).shipEntityId;
+  std::vector<game::EntityDestruction> destructions;
+  events().subscribe<game::EntityDestruction>(
+      [&destructions](const game::EntityDestruction& event) {
+        destructions.push_back(event);
+      });
+
+  timeOut(SECOND_PLAYER);
+  events().dispatch();
+
+  EXPECT_EQ(destructions,
+            (std::vector{game::EntityDestruction{
+                .networkId = ship, .cause = game::DestructionCause::Removed}}));
+  EXPECT_EQ(game().world().entityCount(), 1U);
+}
+
+/**
+ * Given two players, the second of whom goes silent
+ * When the timeout runs
+ * Then the departure of player 2 is announced once, as timed out
+ */
+TEST_F(GameInstanceTest, AnnouncesThePlayerWhoTimedOut) {
+  join(FIRST_PLAYER);
+  join(SECOND_PLAYER);
+  std::vector<game::PlayerDeparture> departures;
+  events().subscribe<game::PlayerDeparture>(
+      [&departures](const game::PlayerDeparture& event) {
+        departures.push_back(event);
+      });
+  silence(SECOND_PLAYER);
+
+  runTicks(2 * PROTOCOL_SESSION_TIMEOUT_TICKS);
+  events().dispatch();
+
+  EXPECT_EQ(departures, (std::vector{game::PlayerDeparture{
+                            .playerNumber = network::FIRST_PLAYER_NUMBER + 1,
+                            .cause = game::DepartureCause::TimedOut}}));
+}
+
+/**
+ * Given two players, the second of whom timed out
+ * When the departed players are taken twice
+ * Then the first take holds the second player, with its address and token,
+ * and the second take holds nobody
+ */
+TEST_F(GameInstanceTest, HandsOverThePlayerWhoTimedOutOnce) {
+  join(FIRST_PLAYER);
+  join(SECOND_PLAYER, testing::OTHER_SESSION_TOKEN);
+  timeOut(SECOND_PLAYER);
+
+  const std::vector<ConnectedPlayer> first = game().takeDepartedPlayers();
+  const std::vector<ConnectedPlayer> second = game().takeDepartedPlayers();
+
+  ASSERT_EQ(first.size(), 1U);
+  EXPECT_EQ(first.front().endpoint, playerEndpoint(SECOND_PLAYER));
+  EXPECT_EQ(first.front().sessionToken, testing::OTHER_SESSION_TOKEN);
+  EXPECT_TRUE(second.empty());
+}
+
+/**
+ * Given three players in a game in progress, the second of whom goes silent
+ * When the timeout runs, then one more world state goes out
+ * Then the game goes on, and that state reaches the two others without the
+ * ship of the second player
+ */
+TEST_F(GameInstanceTest, TheOthersPlayOnWhenOneOfThreePlayersTimesOut) {
+  startGameWith({FIRST_PLAYER, SECOND_PLAYER, THIRD_PLAYER});
+  const std::vector<std::uint32_t> ships{
+      shipOf(FIRST_PLAYER), shipOf(SECOND_PLAYER), shipOf(THIRD_PLAYER)};
+  timeOut(SECOND_PLAYER);
+  const std::size_t sentToTheFirst =
+      ofType(network::MessageType::WorldState, sentTo(FIRST_PLAYER)).size();
+
+  runTicks(TICKS_PER_WORLD_STATE);
+
+  EXPECT_EQ(game().state(), GameState::InProgress);
+  for (const std::size_t player : {FIRST_PLAYER, THIRD_PLAYER}) {
+    const std::vector<network::OutgoingDatagram> states =
+        ofType(network::MessageType::WorldState, sentTo(player));
+    ASSERT_EQ(states.size(), sentToTheFirst + 1);
+    std::vector<std::uint32_t> listed;
+    for (const network::EntityState& entity :
+         onlyMessageIn<network::WorldState>(states.back()).entities) {
+      listed.push_back(entity.entityId);
+    }
+    EXPECT_EQ(std::ranges::count(listed, ships.at(FIRST_PLAYER)), 1);
+    EXPECT_EQ(std::ranges::count(listed, ships.at(THIRD_PLAYER)), 1);
+    EXPECT_EQ(std::ranges::count(listed, ships.at(SECOND_PLAYER)), 0);
+  }
+}
+
+/**
+ * Given three players, the second of whom goes silent, and the broadcaster of
+ * the game events wired to the roster as the server wires it
+ * When the timeout runs, the bus delivers the events and every copy comes due
+ * Then the first and the third player get three PlayerLeft naming player 2,
+ * timed out, and the second player gets none
+ */
+TEST_F(GameInstanceTest, TellsOnlyTheOthersThatAPlayerTimedOut) {
+  engine::TimerScheduler timers;
+  std::vector<network::OutgoingDatagram> eventDatagrams;
+  const auto broadcaster =
+      std::make_unique<GameEventBroadcaster>(GameEventBroadcaster::Wiring{
+          .events = events(),
+          .timers = timers,
+          .recipients = [this] { return game().roster().endpoints(); },
+          .headerFor =
+              [this](const network::Endpoint& recipient) {
+                return game().nextSessionHeaderFor(recipient);
+              },
+          .send =
+              [&eventDatagrams](network::OutgoingDatagram datagram) {
+                eventDatagrams.push_back(std::move(datagram));
+              }});
+  for (const std::size_t player : {FIRST_PLAYER, SECOND_PLAYER, THIRD_PLAYER}) {
+    join(player);
+  }
+
+  timeOut(SECOND_PLAYER);
+  events().dispatch();
+  timers.advance(testing::ALL_COPIES_SENT);
+
+  const std::vector expected(
+      testing::PROTOCOL_REPEATED_MESSAGE_COPIES,
+      network::PlayerLeft{.playerNumber = network::FIRST_PLAYER_NUMBER + 1,
+                          .reason = network::DepartureReason::TimedOut});
+  for (const std::size_t player : {FIRST_PLAYER, THIRD_PLAYER}) {
+    std::vector<network::PlayerLeft> received;
+    for (const network::OutgoingDatagram& datagram :
+         ofType(network::MessageType::PlayerLeft,
+                testing::sentTo(eventDatagrams, playerEndpoint(player)))) {
+      received.push_back(onlyMessageIn<network::PlayerLeft>(datagram));
+    }
+    EXPECT_EQ(received, expected);
+  }
+  EXPECT_TRUE(
+      ofType(network::MessageType::PlayerLeft,
+             testing::sentTo(eventDatagrams, playerEndpoint(SECOND_PLAYER)))
+          .empty());
+}
+
+/**
+ * Given three players in a game in progress, the second of whom timed out
+ * When more world states go out
+ * Then none reaches the second player
+ */
+TEST_F(GameInstanceTest, SendsNothingToAPlayerWhoTimedOut) {
+  startGameWith({FIRST_PLAYER, SECOND_PLAYER, THIRD_PLAYER});
+  timeOut(SECOND_PLAYER);
+  const std::size_t sentBefore = sentTo(SECOND_PLAYER).size();
+
+  runTicks(PROTOCOL_SESSION_TIMEOUT_TICKS);
+
+  EXPECT_EQ(sentTo(SECOND_PLAYER).size(), sentBefore);
+}
+
+/**
+ * Given two players, the second of whom timed out
+ * When a client joins from another address
+ * Then it takes the number the second player had, 2
+ */
+TEST_F(GameInstanceTest, GivesTheNumberOfAPlayerWhoTimedOutToTheNextOne) {
+  join(FIRST_PLAYER);
+  join(SECOND_PLAYER);
+  timeOut(SECOND_PLAYER);
+
+  const ConnectedPlayer& next = join(THIRD_PLAYER);
+
+  EXPECT_EQ(next.playerNumber, network::FIRST_PLAYER_NUMBER + 1);
+}
+
+/**
+ * Given a game that one player started, then finished, which sends that
+ * player nothing while it stays finished
+ * When one second of ticks less one runs
+ * Then the player is sent no Heartbeat yet
+ */
+TEST_F(GameInstanceTest, WaitsASecondWithoutDatagramBeforeAHeartbeat) {
+  startGameWithOnePlayer();
+  game().finish();
+
+  runTicks(PROTOCOL_HEARTBEAT_TICKS - 1);
+
+  EXPECT_TRUE(
+      ofType(network::MessageType::Heartbeat, sentTo(FIRST_PLAYER)).empty());
+}
+
+/**
+ * Given a game that one player started, then finished, which sends that
+ * player nothing while it stays finished
+ * When one second of ticks runs
+ * Then the player is sent one Heartbeat, so its client knows the server is
+ * still there
+ */
+TEST_F(GameInstanceTest, SendsAHeartbeatAfterASecondWithoutDatagram) {
+  startGameWithOnePlayer();
+  game().finish();
+
+  runTicks(PROTOCOL_HEARTBEAT_TICKS);
+
+  EXPECT_EQ(
+      ofType(network::MessageType::Heartbeat, sentTo(FIRST_PLAYER)).size(), 1U);
+}
+
+/**
+ * Given a finished game, which sends its player nothing else
+ * When the Heartbeat goes out
+ * Then it carries the session token of the player and the sequence after the
+ * datagram sent before it
+ */
+TEST_F(GameInstanceTest, SendsTheHeartbeatUnderTheSessionOfThePlayer) {
+  startGameWithOnePlayer();
+  game().finish();
+  const std::uint16_t sequenceBefore =
+      network::DatagramCodec::decodeHeader(sentTo(FIRST_PLAYER).back().payload)
+          .sequence;
+
+  runTicks(PROTOCOL_HEARTBEAT_TICKS);
+
+  const network::PacketHeader header =
+      network::DatagramCodec::decodeHeader(sentTo(FIRST_PLAYER).back().payload);
+  EXPECT_EQ(header.sessionToken, testing::SESSION_TOKEN);
+  EXPECT_EQ(header.sequence, sequenceBefore + 1);
+}
+
+/**
+ * Given a finished game, which sends its player nothing else
+ * When three seconds of ticks run
+ * Then the player is sent a Heartbeat every second, three in all
+ */
+TEST_F(GameInstanceTest, SendsAHeartbeatEverySecondWhileNothingElseGoesOut) {
+  startGameWithOnePlayer();
+  game().finish();
+
+  runTicks(3 * PROTOCOL_HEARTBEAT_TICKS);
+
+  EXPECT_EQ(
+      ofType(network::MessageType::Heartbeat, sentTo(FIRST_PLAYER)).size(), 3U);
+}
+
+/**
+ * Given a game in progress, which sends its player the world state 20 times
+ * per second
+ * When two seconds of ticks run
+ * Then no Heartbeat is sent: the world states already prove the server is
+ * there
+ */
+TEST_F(GameInstanceTest, SendsNoHeartbeatWhileTheWorldStateGoesOut) {
+  startGameWithOnePlayer();
+
+  runTicks(2 * PROTOCOL_HEARTBEAT_TICKS);
+
+  EXPECT_TRUE(
+      ofType(network::MessageType::Heartbeat, sentTo(FIRST_PLAYER)).empty());
+}
+
+/**
+ * Given a waiting room, which sends its player the room every 500 ms
+ * When two seconds of ticks run
+ * Then no Heartbeat is sent
+ */
+TEST_F(GameInstanceTest, SendsNoHeartbeatWhileTheRoomGoesOut) {
+  join(FIRST_PLAYER);
+
+  runTicks(2 * PROTOCOL_HEARTBEAT_TICKS);
+
+  EXPECT_TRUE(
+      ofType(network::MessageType::Heartbeat, sentTo(FIRST_PLAYER)).empty());
+}
+
+/**
+ * Given a waiting room where the first player is ready and the second, not
+ * ready, goes silent
+ * When the timeout runs
+ * Then the game starts with the first player: every connected player is ready
+ */
+TEST_F(GameInstanceTest, StartsOnceThePlayerNotReadyTimedOut) {
+  join(FIRST_PLAYER);
+  join(SECOND_PLAYER);
+  sendReady(
+      {.player = FIRST_PLAYER, .ready = true, .sequence = FIRST_SEQUENCE});
+  tick();
+  ASSERT_EQ(game().state(), GameState::WaitingForPlayers);
+  silence(SECOND_PLAYER);
+
+  runTicks(PROTOCOL_SESSION_TIMEOUT_TICKS);
+
+  EXPECT_EQ(game().state(), GameState::InProgress);
 }
 
 /**
@@ -1259,6 +1689,8 @@ class GameInstanceLogTest : public GameInstanceInputTest {
     return journal_.linesHolding(DROPPED_DATAGRAM_LINE_TEXT);
   }
 
+  [[nodiscard]] const DebugJournal& journal() const { return journal_; }
+
  private:
   DebugJournal journal_;
 };
@@ -1332,6 +1764,31 @@ TEST_F(GameInstanceLogTest, WritesTheNextLineOnceTheIntervalOfTicksIsOver) {
   tick();
 
   EXPECT_EQ(dropLines().size(), 2U);
+}
+
+/**
+ * Given a game with two players, who send a Heartbeat before every tick
+ * When a tick reads them
+ * Then the journal holds no line about a message without a handler: a
+ * Heartbeat is read, and says nothing more than that its sender is there
+ */
+TEST_F(GameInstanceLogTest, ReadsAHeartbeatWithoutLoggingIt) {
+  tick();
+
+  EXPECT_TRUE(journal().linesHolding(SKIPPED_MESSAGE_LINE_TEXT).empty());
+}
+
+/**
+ * Given a game with two players, the second of whom goes silent
+ * When the timeout runs
+ * Then the journal holds one line saying that player 2 timed out
+ */
+TEST_F(GameInstanceLogTest, LogsThePlayerWhoTimedOut) {
+  timeOut(SECOND_PLAYER);
+
+  EXPECT_EQ(
+      journal().linesHolding(testing::SECOND_PLAYER_TIMED_OUT_LINE_TEXT).size(),
+      1U);
 }
 
 /** @brief The input fixture, once for each seed of a shuffled delivery. */

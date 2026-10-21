@@ -2,8 +2,10 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <optional>
 #include "BydoKind.hpp"
 #include "ComponentRegistry.hpp"
+#include "Entity.hpp"
 #include "EntityRegistry.hpp"
 #include "NetworkIdAllocator.hpp"
 #include "Position.hpp"
@@ -33,6 +35,14 @@ class World {
   std::uint32_t spawnPlayer(Position position);
 
   /**
+   * @brief Destroys the ship of a player, found by the network id
+   * spawnPlayer() gave it.
+   * @returns Whether a ship carried @p shipNetworkId. Nothing changes when
+   * none did, an entity of another type carrying that id included.
+   */
+  bool removePlayer(std::uint32_t shipNetworkId);
+
+  /**
    * @brief Creates a Bydo of @p kind at @p position, with the Position, the
    * EntityType::Enemy and the NetworkIdentity that make it a networked entity.
    * It moves left at BYDO_SPEED, and follows the pattern of its kind around the
@@ -49,6 +59,11 @@ class World {
   engine::ComponentRegistry& components();
 
  private:
+  /** @returns The ship of a player whose NetworkIdentity carries
+   * @p networkId, or nothing when no ship does. */
+  [[nodiscard]] std::optional<engine::Entity> playerShipCarrying(
+      std::uint32_t networkId);
+
   engine::EntityRegistry registry_;
   engine::ComponentRegistry components_{registry_};
   engine::NetworkIdAllocator networkIds_;
