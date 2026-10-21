@@ -120,7 +120,7 @@ Showing a new image takes four steps:
 
 1. Draw it at its native size into `assets/sprites/entities.png`, or put a new file in `assets/sprites/`, named after the asset id rule.
 2. Write its rectangle once, as a named constant (`EntitySpriteConstants.hpp` for the entity sheet), and the id of a new file too.
-3. List the id in `gameAssets()` (`src/client/Screens/ScreenAssets.cpp`), which already names the entity and effect sheets.
+3. List the id in `gameAssets()` (`src/client/Screens/ScreenAssets.cpp`), which already names the entity, effect and HUD sheets and the plug icon.
 4. Give the entity a `Sprite` with that id, rectangle and layer: for an entity type, a case in `spriteOf`, and one in `animationOf` for its frames.
 
 ## Entity sprites: `spriteOf`, `animationOf`
@@ -532,13 +532,13 @@ The game screen lays a status band over the bottom `STATUS_BAND_ROWS` (24) rows 
 
 - It starts from the waiting room of the game (`IServerConnection::lobbyPlayers()`) and the number of the client: each pilot with its nickname, a score of 0 and no lives known.
 - `apply(WorldState)` sets the score and the lives of each player listed: no life left makes the pilot `OutOfLives`, an invulnerable ship `Respawning`. A state older than the newest applied is ignored, through its own `WorldStateFilter`.
-- `apply(PlayerLeft)` makes the pilot `Left` or `SignalLost`, and no later state brings it back. Nothing calls it yet: the client does not decode `PlayerLeft`, which the server does not send.
+- `apply(PlayerLeft)` makes the pilot `Left` or `SignalLost`, and no later state brings it back. Nothing calls it yet: the client does not decode `PlayerLeft`.
 - A number outside 1 to 4 is ignored, wherever it comes from.
 - `revision()` changes only when a pilot does.
 
 ### How it is drawn: `paintStatusBand`
 
-`paintStatusBand(canvas, pilots)` (`rtype_client_status_band`, `src/client/Widgets/StatusBand.cpp`) paints the band on an `IInterfaceCanvas`. A bay shows a chip of the pilot's color holding its marker (triangle, square, circle, star), so a pilot is never told by color alone; its nickname in the light shade of its color, cut at a whole character to the room left by the word on its right; and that word, the first that applies: `LEFT` or `SIGNAL LOST`, `OUT`, `LAST LIFE`, `RESPAWN`, `YOU`. A pilot no waiting room named shows `P` and its number. Under them come three slots of lives, a ship of the player color for each life left and a lost life, a ghost in the shade of the far stars, for each life lost, so the slots look the same from three lives down to none; past three lives, one ship and `x5`; nothing while the lives are unknown; the unplugged plug of Phosphor Icons once the signal is lost. The score follows, on 7 digits, its leading zeros dimmed. The bay of the local player is framed in white. Sizes, words and colors are in `StatusBandConstants.hpp`; the sprites are in `assets/sprites/hud.png`, their rectangles in `src/client/Rendering/HudSpriteConstants.hpp`.
+`paintStatusBand(canvas, pilots)` (`rtype_client_status_band`, `src/client/Widgets/StatusBand.cpp`) paints the band on an `IInterfaceCanvas`. A bay shows a chip of the pilot's color holding its marker (triangle, square, circle, star), so a pilot is never told by color alone; its nickname in the light shade of its color, cut at a whole character to the room left by the word on its right; and that word, the first that applies: `LEFT` or `SIGNAL LOST`, `OUT`, `LAST LIFE`, `RESPAWN`, `YOU`. A pilot no waiting room named shows `P` and its number. Under them come three slots of lives, a ship of the player color for each life left and a lost life, a ghost in the shade of the far stars, for each of the other slots, so the slots look the same from three lives down to none; past three lives, one ship and `x` followed by the count; nothing while the lives are unknown; the unplugged plug of Phosphor Icons once the signal is lost. The score follows, on 7 digits, its leading zeros dimmed; a higher score stops at `LARGEST_SHOWN_SCORE` (9999999), so its digits never run over the lives. The bay of the local player is framed in white. Sizes, words and colors are in `StatusBandConstants.hpp`; the sprites are in `assets/sprites/hud.png`, their rectangles in `src/client/Rendering/HudSpriteConstants.hpp`.
 
 `client_replication_tests` checks the board, `client_status_band_tests` the band, and `client_screen_tests` the game screen that repaints it.
 
@@ -551,7 +551,7 @@ The game screen lays a status band over the bottom `STATUS_BAND_ROWS` (24) rows 
 | Hand the game screen another message of the server | its type in `EntityMessage` (`src/client/Connection/EntityMessage.hpp`), its handler in `ServerConnection::registerSessionMessages()`, an `apply()` in `EntityReplicator` |
 | Test the game screen with entities of the server | `FakeEntityMessageSource` in `tests/doubles/`, as `tests/client/Screens/GameScreenTest.cpp` does |
 | Add an entity type to the protocol | `entityTypeOf` in `src/client/Replication/EntityReplicator/EntityReplicator.cpp` and `toWireEntityType` on the server, then `spriteOf` for its look |
-| Add an asset | A file in `assets/sprites/`, `sounds/`, `music/` or `fonts/`, and its id in `gameAssets()`, in `titleAssets()` for the title screen, or in `interfaceAssets()` for a font any screen may use (`src/client/Screens/ScreenAssets.cpp`); `client_screen_tests` loads `interfaceAssets()` for real, and the CI cannot create a texture |
+| Add an asset | A file in `assets/sprites/`, `sounds/`, `music/` or `fonts/`, or in `assets/icons/<set>/` next to the license of the set, and its id in `gameAssets()`, in `titleAssets()` for the title screen, or in `interfaceAssets()` for a font any screen may use (`src/client/Screens/ScreenAssets.cpp`); `client_screen_tests` loads `interfaceAssets()` for real, and the CI cannot create a texture |
 | Change the asset id rule | `isValidAssetId()` in `src/client/Assets/AssetIds.cpp`, `ASSET_ID_PUNCTUATION` in `AssetConstants.hpp`, and `assets/README.md` |
 | Change where the client looks for `assets/` | `findAssetFolder()` in `src/client/Assets/AssetFolder.cpp` |
 | Show a new image in the game | `assets/sprites/`, its rectangle in `src/client/Rendering/EntitySpriteConstants.hpp`, `gameAssets()`, `spriteOf` and `animationOf` in `src/client/Rendering/EntitySprites.cpp` |
