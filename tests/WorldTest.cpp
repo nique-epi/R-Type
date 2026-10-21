@@ -16,6 +16,8 @@
 #include "World.hpp"
 #include "WorldTestConstants.hpp"
 
+using rtype::game::testing::OTHER_X;
+using rtype::game::testing::OTHER_Y;
 using rtype::game::testing::SOME_X;
 using rtype::game::testing::SOME_Y;
 using rtype::game::testing::THREE_HEALTH_POINTS;
@@ -235,4 +237,78 @@ TEST(World, SpawnedBydoIsWorthThePointsOfItsKind) {
   EXPECT_EQ(drifterPoints, rtype::game::DRIFTER_POINTS);
   EXPECT_EQ(weaverPoints, rtype::game::WEAVER_POINTS);
   EXPECT_NE(drifterId, weaverId);
+}
+
+/**
+ * Given a world where a ship was spawned at a position
+ * When the position of its network id is asked
+ * Then it is the position of that ship
+ */
+TEST(World, GivesThePositionOfAShipByItsNetworkId) {
+  rtype::game::World world;
+  const std::uint32_t ship =
+      world.spawnPlayer(rtype::game::Position{.x = SOME_X, .y = SOME_Y});
+
+  const rtype::game::Position* const position = world.shipPositionOf(ship);
+
+  ASSERT_NE(position, nullptr);
+  EXPECT_EQ(position->x, SOME_X);
+  EXPECT_EQ(position->y, SOME_Y);
+}
+
+/**
+ * Given a world where two ships were spawned at two positions
+ * When the position of the network id of the second is asked
+ * Then it is the position of the second ship, not of the first
+ */
+TEST(World, GivesEachShipItsOwnPosition) {
+  rtype::game::World world;
+  world.spawnPlayer(rtype::game::Position{.x = SOME_X, .y = SOME_Y});
+  const std::uint32_t second =
+      world.spawnPlayer(rtype::game::Position{.x = OTHER_X, .y = OTHER_Y});
+
+  const rtype::game::Position* const position = world.shipPositionOf(second);
+
+  ASSERT_NE(position, nullptr);
+  EXPECT_EQ(position->x, OTHER_X);
+  EXPECT_EQ(position->y, OTHER_Y);
+}
+
+/**
+ * Given a world where a Bydo was spawned
+ * When the ship position of its network id is asked
+ * Then there is none: a Bydo is not a ship
+ */
+TEST(World, GivesNoShipPositionForTheIdOfABydo) {
+  rtype::game::World world;
+  const std::uint32_t bydo =
+      world.spawnBydo(rtype::game::Position{.x = SOME_X, .y = SOME_Y},
+                      rtype::game::BydoKind::Drifter);
+
+  EXPECT_EQ(world.shipPositionOf(bydo), nullptr);
+}
+
+/**
+ * Given a world where one ship was spawned
+ * When the position of the next network id is asked
+ * Then there is none: no entity was given that id
+ */
+TEST(World, GivesNoShipPositionForAnIdItNeverGave) {
+  rtype::game::World world;
+  const std::uint32_t ship =
+      world.spawnPlayer(rtype::game::Position{.x = SOME_X, .y = SOME_Y});
+
+  EXPECT_EQ(world.shipPositionOf(ship + 1), nullptr);
+}
+
+/**
+ * Given a world where one ship was spawned
+ * When the position of NO_ENTITY_ID is asked
+ * Then there is none
+ */
+TEST(World, GivesNoShipPositionForNoEntityId) {
+  rtype::game::World world;
+  world.spawnPlayer(rtype::game::Position{.x = SOME_X, .y = SOME_Y});
+
+  EXPECT_EQ(world.shipPositionOf(rtype::identifiers::NO_ENTITY_ID), nullptr);
 }
