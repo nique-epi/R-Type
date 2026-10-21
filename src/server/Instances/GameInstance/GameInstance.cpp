@@ -124,6 +124,15 @@ void GameInstance::onTick(
     readPlayerDatagram(datagram);
   }
   closeSilentSessions();
+  advanceState();
+  if (state_ == GameState::InProgress) {
+    worldStateSender_.onTick(tick_, world_->components());
+  }
+  sendHeartbeats();
+  ++ticksRun_;
+}
+
+void GameInstance::advanceState() {
   switch (state_) {
     case GameState::WaitingForPlayers:
       if (everyPlayerIsReady()) {
@@ -145,11 +154,6 @@ void GameInstance::onTick(
       }
       break;
   }
-  if (state_ == GameState::InProgress) {
-    worldStateSender_.onTick(tick_, world_->components());
-  }
-  sendHeartbeats();
-  ++ticksRun_;
 }
 
 std::vector<ConnectedPlayer> GameInstance::takeDepartedPlayers() {
@@ -165,6 +169,16 @@ void GameInstance::finish() {
 
 void GameInstance::readPlayerDatagram(
     const network::IncomingDatagram& datagram) {
+  const std::optional<PlayerDatagram> readable = playerDatagramOf(datagram);
+  if (!readable.has_value()) {
+    return;
+  }
+  readable->player->ticksSinceReceived = 0;
+  dispatcher_.dispatch(readable->origin, readable->messages);
+}
+
+std::optional<GameInstance::PlayerDatagram> GameInstance::playerDatagramOf(
+    const network::IncomingDatagram& datagram) {
   network::PacketHeader header;
   std::vector<network::MessageFrame> messages;
   try {
@@ -172,22 +186,23 @@ void GameInstance::readPlayerDatagram(
     if (!network::DatagramCodec::speaksThisProtocol(header)) {
       drop(datagram.sender,
            "its header is not of this protocol and version, or has a flag set");
-      return;
+      return std::nullopt;
     }
     messages = network::DatagramCodec::splitMessages(datagram.payload);
   } catch (const network::NetworkException& error) {
     drop(datagram.sender, error.what());
-    return;
+    return std::nullopt;
   }
   ConnectedPlayer* const player = roster_.find(datagram.sender);
   if (player == nullptr) {
     drop(datagram.sender, "its sender is not a player of this game");
-    return;
+    return std::nullopt;
   }
-  player->ticksSinceReceived = 0;
-  dispatcher_.dispatch(
-      network::MessageOrigin{.sender = datagram.sender, .header = header},
-      messages);
+  return PlayerDatagram{
+      .player = player,
+      .origin =
+          network::MessageOrigin{.sender = datagram.sender, .header = header},
+      .messages = std::move(messages)};
 }
 
 void GameInstance::drop(const network::Endpoint& sender,

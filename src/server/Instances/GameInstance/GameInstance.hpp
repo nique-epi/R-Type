@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <functional>
 #include <memory>
+#include <optional>
 #include <span>
 #include <string_view>
 #include <vector>
@@ -17,6 +18,7 @@
 #include "LobbyStateAnnouncer.hpp"
 #include "Logger.hpp"
 #include "MessageDispatcher.hpp"
+#include "MessageFrame.hpp"
 #include "MessageOrigin.hpp"
 #include "OutgoingDatagram.hpp"
 #include "PacketHeader.hpp"
@@ -190,8 +192,33 @@ class GameInstance {
   void finish();
 
  private:
+  /** @brief A datagram of a player of the game that passed every check of
+   * onTick(), with what reading it needs. */
+  struct PlayerDatagram {
+    ConnectedPlayer* player{};
+    network::MessageOrigin origin;
+    std::vector<network::MessageFrame> messages;
+  };
+
+  /** @brief Notes that the sender of @p datagram was heard from, then hands
+   * its messages to the dispatcher, when it passes the checks of
+   * playerDatagramOf(). */
   void readPlayerDatagram(const network::IncomingDatagram& datagram);
+
+  /**
+   * @returns @p datagram split into its messages, with the player who sent it,
+   * when its header is of this protocol and version, its messages add up and
+   * its sender is a player of the game; nothing otherwise, the datagram being
+   * dropped and logged.
+   */
+  [[nodiscard]] std::optional<PlayerDatagram> playerDatagramOf(
+      const network::IncomingDatagram& datagram);
+
   void drop(const network::Endpoint& sender, std::string_view reason);
+
+  /** @brief Moves the game along its states by one tick: the start of the
+   * game, its systems and its Bydos, or the end of the wait after it. */
+  void advanceState();
 
   /**
    * @returns The time the ticks run since the game was built stand for, the

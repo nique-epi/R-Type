@@ -434,12 +434,12 @@ rtype::game::DamageRules damageRules{events, world.components()};
 | Change when a Bydo leaves the playfield | `BYDO_EXIT_MARGIN` in `src/game/Spawning/SpawningConstants.hpp`, `PlayfieldExitSystem` |
 | Replay a game | Start the server with the seed found in its log: `--seed <seed>` |
 | Change who is told about a new ship | `ShipSpawnAnnouncer` in `src/server/Replication/ShipSpawnAnnouncer/` |
-| Change when a game starts or ends, what the players are told at the start, or what is reset between two games | `GameInstance::onTick`, `startGame` and `startNewWorld` in `src/server/Instances/GameInstance/GameInstance.cpp` |
+| Change when a game starts or ends, what the players are told at the start, or what is reset between two games | `GameInstance::advanceState`, `startGame` and `startNewWorld` in `src/server/Instances/GameInstance/GameInstance.cpp` |
 | Change how long a game stays finished | `FINISHED_STATE_SECONDS` in `src/server/Instances/GameInstanceConstants.hpp` |
 | Change how players get their number, or what the server keeps of them | `PlayerRoster` in `src/server/Instances/PlayerRoster/`, `ConnectedPlayer` in `src/server/Instances/ConnectedPlayer.hpp` |
 | Read the input a player holds | `ConnectedPlayer::newestInput`, kept by its `GameInstance` |
 | Change which input of a player the server keeps | `isNewer` in `src/server/Instances/GameInstance/GameInstance.cpp` |
-| Change which datagrams of the players a game reads | `GameInstance::readPlayerDatagram` in `src/server/Instances/GameInstance/GameInstance.cpp` |
+| Change which datagrams of the players a game reads | `GameInstance::playerDatagramOf` in `src/server/Instances/GameInstance/GameInstance.cpp` |
 | Change how long a game waits for a silent player, or how often a side sends a heartbeat | `SESSION_TIMEOUT` and `HEARTBEAT_INTERVAL` in `src/network/Protocol/ProtocolConstants.hpp`, shared with the client |
 | Change what happens when the session of a player closes | `GameInstance::closeSession` in `src/server/Instances/GameInstance/GameInstance.cpp`, and the loop over `takeDepartedPlayers()` in `src/server/main.cpp` |
 | Change the size of the queues between threads | `INCOMING_DATAGRAM_QUEUE_CAPACITY` and `OUTGOING_DATAGRAM_QUEUE_CAPACITY` in `src/server/ServerConstants.hpp` |
