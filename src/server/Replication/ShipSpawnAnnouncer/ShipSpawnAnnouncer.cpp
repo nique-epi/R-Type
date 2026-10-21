@@ -1,4 +1,5 @@
 #include "ShipSpawnAnnouncer.hpp"
+#include <optional>
 #include <utility>
 #include "ConnectedPlayer.hpp"
 #include "EntityIdConstants.hpp"
@@ -31,19 +32,26 @@ void ShipSpawnAnnouncer::onPlayerJoined(ConnectedPlayer& player) {
   }
 }
 
-void ShipSpawnAnnouncer::announce(ConnectedPlayer& recipient,
-                                  const ConnectedPlayer& owner) {
+std::optional<network::EntitySpawned> ShipSpawnAnnouncer::shipSpawnOf(
+    const ConnectedPlayer& owner) const {
   const game::Position* const position =
       world_->shipPositionOf(owner.shipEntityId);
   if (position == nullptr) {
-    return;
+    return std::nullopt;
   }
-  sendEntitySpawned(
-      send_, recipient,
-      network::EntitySpawned{.entityId = owner.shipEntityId,
-                             .entityType = network::WireEntityType::PlayerShip,
-                             .x = position->x,
-                             .y = position->y});
+  return network::EntitySpawned{
+      .entityId = owner.shipEntityId,
+      .entityType = network::WireEntityType::PlayerShip,
+      .x = position->x,
+      .y = position->y};
+}
+
+void ShipSpawnAnnouncer::announce(ConnectedPlayer& recipient,
+                                  const ConnectedPlayer& owner) {
+  const std::optional<network::EntitySpawned> spawn = shipSpawnOf(owner);
+  if (spawn.has_value()) {
+    sendEntitySpawned(send_, recipient, *spawn);
+  }
 }
 
 }  // namespace rtype::server

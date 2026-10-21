@@ -1,7 +1,9 @@
 #pragma once
 
+#include <optional>
 #include "ConnectedPlayer.hpp"
 #include "EntitySpawnSender.hpp"
+#include "EntitySpawned.hpp"
 #include "PlayerRoster.hpp"
 #include "World.hpp"
 
@@ -41,7 +43,15 @@ class ShipSpawnAnnouncer {
   void onPlayerJoined(ConnectedPlayer& player);
 
  private:
-  /** @brief Sends @p recipient the EntitySpawned of the ship of @p owner. */
+  /**
+   * @returns The EntitySpawned of the ship of @p owner, at the position it has
+   * in the world, or nothing when @p owner has no ship there.
+   */
+  [[nodiscard]] std::optional<network::EntitySpawned> shipSpawnOf(
+      const ConnectedPlayer& owner) const;
+
+  /** @brief Sends @p recipient the EntitySpawned of the ship of @p owner, or
+   * nothing when @p owner has no ship in the world. */
   void announce(ConnectedPlayer& recipient, const ConnectedPlayer& owner);
 
   game::World* world_;
