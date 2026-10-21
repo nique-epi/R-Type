@@ -32,6 +32,7 @@ ConnectedPlayer* PlayerRoster::findByNumber(std::uint8_t playerNumber) {
 
 std::vector<ConnectedPlayer*> PlayerRoster::connected() {
   std::vector<ConnectedPlayer*> players;
+  players.reserve(seats_.size());
   for (std::optional<ConnectedPlayer>& seat : seats_) {
     if (seat.has_value()) {
       players.push_back(&seat.value());
