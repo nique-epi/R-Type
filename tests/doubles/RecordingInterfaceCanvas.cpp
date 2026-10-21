@@ -1,6 +1,7 @@
 #include "RecordingInterfaceCanvas.hpp"
 #include <SFML/Graphics/Color.hpp>
 #include <SFML/Graphics/Rect.hpp>
+#include <SFML/System/Utf.hpp>
 #include <SFML/System/Vector2.hpp>
 #include <algorithm>
 #include <optional>
@@ -9,6 +10,7 @@
 #include <string_view>
 #include <utility>
 #include "ImagePlacement.hpp"
+#include "InterfaceConstants.hpp"
 #include "TextStyle.hpp"
 #include "TextureArea.hpp"
 
@@ -20,6 +22,7 @@ void RecordingInterfaceCanvas::clear() {
   record_->fills.clear();
   record_->writings.clear();
   record_->images.clear();
+  record_->smoothImages.clear();
 }
 
 void RecordingInterfaceCanvas::fill(sf::IntRect area, sf::Color color) {
@@ -42,7 +45,22 @@ void RecordingInterfaceCanvas::drawImage(
                              .visibleArea = visibleArea});
 }
 
-void RecordingInterfaceCanvas::display() {}
+void RecordingInterfaceCanvas::drawSmoothImage(std::string_view assetId,
+                                               sf::IntRect area,
+                                               sf::Color tint) {
+  record_->smoothImages.push_back(
+      {.assetId = std::string(assetId), .area = area, .tint = tint});
+}
+
+int RecordingInterfaceCanvas::textWidth(std::string_view text,
+                                        rtype::client::TextFont font) const {
+  const int advance = font == rtype::client::TextFont::Regular
+                          ? rtype::client::REGULAR_FONT_ADVANCE
+                          : RECORDED_SMALL_ADVANCE;
+  return static_cast<int>(sf::Utf8::count(text.begin(), text.end())) * advance;
+}
+
+void RecordingInterfaceCanvas::display() { ++record_->displayCount; }
 
 void RecordingInterfaceCanvas::show(
     [[maybe_unused]] sf::RenderTarget& target) const {

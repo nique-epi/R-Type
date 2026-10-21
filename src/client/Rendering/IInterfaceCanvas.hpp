@@ -57,6 +57,24 @@ class IInterfaceCanvas {
   virtual void drawImage(TextureArea image, ImagePlacement placement,
                          sf::IntRect visibleArea) = 0;
 
+  /**
+   * @brief Lays a whole texture over the pixel picture, stretched over an area
+   * of it and smoothed at the resolution of the window rather than enlarged
+   * pixel by pixel: for a drawing whose curves must stay smooth, such as an
+   * icon. Each of its pixels is multiplied by @p tint, so a white drawing
+   * takes the tint.
+   *
+   * @param assetId A texture, loaded when the picture is painted.
+   * @param area Where it lands, in pixels of INTERFACE_AREA.
+   */
+  virtual void drawSmoothImage(std::string_view assetId, sf::IntRect area,
+                               sf::Color tint) = 0;
+
+  /** @returns How wide a line of UTF-8 text is in a font, in pixels, as
+   * write() places it. */
+  [[nodiscard]] virtual int textWidth(std::string_view text,
+                                      TextFont font) const = 0;
+
   /** @brief Ends the picture started by clear(): show() lays it until the
    * next display(). */
   virtual void display() = 0;
