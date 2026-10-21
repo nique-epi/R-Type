@@ -72,6 +72,7 @@ constexpr std::uint8_t NO_PLAYER = 0;
 constexpr std::uint8_t PAST_THE_LAST_PLAYER = 5;
 constexpr std::uint32_t SCORE = 12400;
 constexpr std::uint32_t NINE_DIGIT_SCORE = 123456789;
+constexpr const char* LARGEST_SHOWN_SCORE_TEXT = "9999999";
 constexpr std::uint8_t THREE_LIVES = 3;
 constexpr std::uint8_t FIVE_LIVES = 5;
 constexpr std::uint8_t LAST_LIFE = 1;
@@ -289,15 +290,16 @@ TEST(StatusBand, TheScoreIsPaddedToSevenDigits) {
 /**
  * Given player 1 with a score of nine digits
  * When the band is painted
- * Then every digit is written and no zero is added
+ * Then the score stops at the largest number of seven digits, 9999999, with no
+ * zero added, so it never runs over the lives
  */
-TEST(StatusBand, ALongerScoreShowsEveryDigit) {
+TEST(StatusBand, AScoreOverSevenDigitsStopsAtTheLargest) {
   PilotStatus pilot = flying(PLAYER_ONE, THREE_LIVES);
   pilot.score = NINE_DIGIT_SCORE;
 
   const InterfaceCanvasRecord record = bandPaintingOf({pilot});
 
-  EXPECT_NE(writingOf(record, "123456789"), nullptr);
+  EXPECT_EQ(anchorOf(record, LARGEST_SHOWN_SCORE_TEXT), FIRST_SCORE_END);
   EXPECT_EQ(record.writings.size(), NAME_AND_SCORE);
 }
 

@@ -20,8 +20,9 @@ namespace rtype::client {
  * each life left and a lost life for each of the others, or one ship and the
  * count past the limit, nothing while they are unknown, the unplugged plug,
  * smoothed, once its signal is lost; then its score on STATUS_SCORE_DIGITS
- * digits, the leading zeros dimmed. A gone pilot keeps its score, dimmed with
- * its chip and its name. The bay of the local player is framed in white.
+ * digits, the leading zeros dimmed, stopped at LARGEST_SHOWN_SCORE. A gone
+ * pilot keeps its score, dimmed with its chip and its name. The bay of the
+ * local player is framed in white.
  *
  * A bay whose number has no pilot stays empty. A pilot whose number has no
  * bay, outside FIRST_PLAYER_NUMBER to PLAYER_COLOR_COUNT, is not painted.

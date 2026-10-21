@@ -3,6 +3,7 @@
 #include <SFML/Graphics/Color.hpp>
 #include <SFML/Graphics/Rect.hpp>
 #include <SFML/System/Vector2.hpp>
+#include <cstdint>
 #include "BackgroundColors.hpp"
 #include "BackgroundConstants.hpp"
 #include "EntitySpriteConstants.hpp"
@@ -72,8 +73,26 @@ constexpr sf::Vector2i STATUS_SCORE_END(112, 14);
 constexpr sf::IntRect STATUS_LOCAL_FRAME({1, 0}, {116, 24});
 
 /** @brief Digits of a score, leading zeros included, so a growing score never
- * moves; a longer score shows all its digits. */
+ * moves. */
 constexpr int STATUS_SCORE_DIGITS = 7;
+
+/** @brief Base of the digits of a score. */
+constexpr std::uint32_t DECIMAL_BASE = 10;
+
+/** @returns The largest number written on @p digits decimal digits. */
+constexpr std::uint32_t largestNumberOn(int digits) {
+  std::uint32_t largest = 0;
+  for (int digit = 0; digit < digits; ++digit) {
+    largest = (largest * DECIMAL_BASE) + (DECIMAL_BASE - 1);
+  }
+  return largest;
+}
+
+/** @brief The largest score a bay shows, 9999999: a higher score stops there,
+ * as the counter of an arcade cabinet does, so its digits never run over the
+ * lives. */
+constexpr std::uint32_t LARGEST_SHOWN_SCORE =
+    largestNumberOn(STATUS_SCORE_DIGITS);
 constexpr char LEADING_ZERO = '0';
 
 /** @brief Slots of lives of a bay: a ship for each life left, a lost life

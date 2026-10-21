@@ -3,6 +3,7 @@
 #include <SFML/Graphics/Rect.hpp>
 #include <SFML/System/Utf.hpp>
 #include <SFML/System/Vector2.hpp>
+#include <algorithm>
 #include <cstddef>
 #include <optional>
 #include <span>
@@ -305,10 +306,12 @@ void paintLeadingZeros(IInterfaceCanvas& canvas, std::string_view digits,
 }
 
 /** @brief Writes the score of a pilot, its last digit at STATUS_SCORE_END,
- * after the dimmed leading zeros that make it STATUS_SCORE_DIGITS long. */
+ * after the dimmed leading zeros that make it STATUS_SCORE_DIGITS long; a
+ * higher score stops at LARGEST_SHOWN_SCORE. */
 void paintScore(IInterfaceCanvas& canvas, const PilotStatus& pilot,
                 sf::Vector2i bay) {
-  const std::string digits = std::to_string(pilot.score);
+  const std::string digits =
+      std::to_string(std::min(pilot.score, LARGEST_SHOWN_SCORE));
   const sf::Vector2i end = bay + STATUS_SCORE_END;
   canvas.write(digits, end,
                {.font = TextFont::Regular,
