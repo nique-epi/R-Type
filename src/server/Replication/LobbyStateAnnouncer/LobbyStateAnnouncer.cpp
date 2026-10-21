@@ -36,7 +36,7 @@ LobbyStateAnnouncer::LobbyStateAnnouncer(PlayerRoster& roster, Send send)
     : roster_(&roster), send_(std::move(send)) {}
 
 void LobbyStateAnnouncer::onWaitingTick() {
-  const std::vector<ConnectedPlayer*> players = roster_->connected();
+  const std::span<ConnectedPlayer* const> players = roster_->connected();
   network::LobbyState room = roomOf(players);
   ++ticksSinceLastSend_;
   if (room == lastSent_ && ticksSinceLastSend_ < TICKS_PER_LOBBY_STATE) {

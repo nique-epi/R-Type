@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <functional>
+#include <span>
 #include <vector>
 #include "ComponentRegistry.hpp"
 #include "ConnectedPlayer.hpp"
@@ -54,7 +55,7 @@ class WorldStateSender {
 
  private:
   [[nodiscard]] static std::vector<network::PlayerState> playerStatesOf(
-      const std::vector<ConnectedPlayer*>& players);
+      std::span<ConnectedPlayer* const> players);
   [[nodiscard]] static network::WorldState capture(
       std::uint32_t tick, engine::ComponentRegistry& components,
       std::size_t& leftOutCount);

@@ -213,7 +213,7 @@ void GameInstance::keepIfNewer(const network::MessageOrigin& origin,
 }
 
 bool GameInstance::everyPlayerIsReady() {
-  const std::vector<ConnectedPlayer*> players = roster_.connected();
+  const std::span<ConnectedPlayer* const> players = roster_.connected();
   return !players.empty() &&
          std::ranges::all_of(players, [](const ConnectedPlayer* player) {
            return player->ready;
@@ -222,7 +222,7 @@ bool GameInstance::everyPlayerIsReady() {
 
 void GameInstance::startGame() {
   state_ = GameState::InProgress;
-  const std::vector<ConnectedPlayer*> players = roster_.connected();
+  const std::span<ConnectedPlayer* const> players = roster_.connected();
   for (ConnectedPlayer* const player : players) {
     send_(sessionDatagram(*player, network::GameStarted{}));
   }
