@@ -17,7 +17,6 @@
 #include "MessageType.hpp"
 #include "NetworkException.hpp"
 #include "OutgoingDatagram.hpp"
-#include "PacketHeader.hpp"
 #include "PlayerDeparture.hpp"
 #include "PlayerElimination.hpp"
 #include "PlayerHit.hpp"
@@ -49,16 +48,13 @@ std::optional<EncodedMessage> GameEventBroadcaster::tryEncode(
   }
 }
 
-GameEventBroadcaster::GameEventBroadcaster(
-    engine::EventBus& events, engine::TimerScheduler& timers,
-    const std::vector<network::Endpoint>& recipients,
-    std::function<network::PacketHeader(const network::Endpoint&)> headerFor,
-    std::function<void(network::OutgoingDatagram)> send)
-    : timers_(timers),
-      recipients_(recipients),
-      headerFor_(std::move(headerFor)),
-      send_(std::move(send)),
+GameEventBroadcaster::GameEventBroadcaster(Wiring wiring)
+    : timers_(wiring.timers.get()),
+      recipients_(wiring.recipients.get()),
+      headerFor_(std::move(wiring.headerFor)),
+      send_(std::move(wiring.send)),
       logger_(std::string{REPLICATION_LOGGER_NAME}) {
+  engine::EventBus& events = wiring.events.get();
   subscribeTo<game::EntitySpawn>(events, ENTITY_SPAWN_EVENT_NAME);
   subscribeTo<game::EntityDestruction>(events, ENTITY_DESTRUCTION_EVENT_NAME);
   subscribeTo<game::EntityDamage>(events, ENTITY_DAMAGE_EVENT_NAME);

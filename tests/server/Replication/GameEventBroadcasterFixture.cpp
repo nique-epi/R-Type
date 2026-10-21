@@ -11,17 +11,21 @@ namespace rtype::server::testing {
 
 GameEventBroadcasterFixture::GameEventBroadcasterFixture()
     : recipients_{firstClient(), secondClient()},
-      broadcaster_(
-          events_, timers_, recipients_,
-          [this](const network::Endpoint& recipient) {
-            network::PacketHeader header;
-            header.sessionToken = recipient.port;
-            header.sequence = nextSequence_++;
-            return header;
-          },
-          [this](network::OutgoingDatagram datagram) {
-            sent_.push_back(std::move(datagram));
-          }) {}
+      broadcaster_(GameEventBroadcaster::Wiring{
+          .events = events_,
+          .timers = timers_,
+          .recipients = recipients_,
+          .headerFor =
+              [this](const network::Endpoint& recipient) {
+                network::PacketHeader header;
+                header.sessionToken = recipient.port;
+                header.sequence = nextSequence_++;
+                return header;
+              },
+          .send =
+              [this](network::OutgoingDatagram datagram) {
+                sent_.push_back(std::move(datagram));
+              }}) {}
 
 network::Endpoint GameEventBroadcasterFixture::firstClient() {
   return network::Endpoint{.address = "127.0.0.1", .port = FIRST_CLIENT_PORT};

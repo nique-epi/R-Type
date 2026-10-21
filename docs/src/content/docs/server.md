@@ -301,11 +301,15 @@ rtype::engine::EventBus events;
 rtype::engine::TimerScheduler timers;
 std::vector<rtype::network::Endpoint> recipients;
 rtype::server::GameEventBroadcaster broadcaster{
-    events, timers, recipients,
-    [&game](const rtype::network::Endpoint& recipient) {
-      return game.nextSessionHeaderFor(recipient);
-    },
-    send};
+    rtype::server::GameEventBroadcaster::Wiring{
+        .events = events,
+        .timers = timers,
+        .recipients = recipients,
+        .headerFor =
+            [&game](const rtype::network::Endpoint& recipient) {
+              return game.nextSessionHeaderFor(recipient);
+            },
+        .send = send}};
 
 events.publish(rtype::game::PlayerHit{.playerNumber = 2});
 timers.advance(rtype::engine::SIMULATION_TICK_DURATION);

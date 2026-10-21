@@ -57,11 +57,15 @@ int runServer(const rtype::logging::LogLaunchOptions& logOptions,
     std::vector<rtype::network::Endpoint> eventRecipients;
     const auto gameEventBroadcaster =
         std::make_unique<rtype::server::GameEventBroadcaster>(
-            events, timers, eventRecipients,
-            [&joinableGame](const rtype::network::Endpoint& recipient) {
-              return joinableGame.nextSessionHeaderFor(recipient);
-            },
-            queueDatagram);
+            rtype::server::GameEventBroadcaster::Wiring{
+                .events = events,
+                .timers = timers,
+                .recipients = eventRecipients,
+                .headerFor =
+                    [&joinableGame](const rtype::network::Endpoint& recipient) {
+                      return joinableGame.nextSessionHeaderFor(recipient);
+                    },
+                .send = queueDatagram});
     rtype::server::ConnectionAcceptor connectionAcceptor{
         joinableGame.roster(), queueDatagram,
         [&serverPointer](const rtype::network::Endpoint& player,
