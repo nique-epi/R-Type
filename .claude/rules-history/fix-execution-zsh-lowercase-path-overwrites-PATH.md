@@ -54,3 +54,13 @@ The loop variable was named `path`. Its first assignment replaced `PATH`, so eve
 
 ### Root cause
 The loop staged paths rather than reading files, and the name was chosen from what the loop held. The check on the left of each `for … in` that the rule asks for was not made.
+
+## Update (2026-10-21) — `widgets` is read-only too
+
+**Context.** A read-only audit session of the status band change grepped the CMake files and kept a list in a shell variable.
+
+**Mistake.** The variable was named `widgets`; zsh answered `read-only variable: widgets` and the command stopped.
+
+**Root cause.** `widgets` is the special associative array of the zsh line editor, read-only in a script; it was missing from the names the rule lists.
+
+**Addition to the rule.** `widgets` joins the read-only special parameters never used as a variable name.

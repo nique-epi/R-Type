@@ -27,6 +27,12 @@ Why: red proofs rewrote sources of the user's working tree while the user built 
 1. **Each pattern that leaves a path out of the copy matches the whole path**: `^vcpkg$` for the submodule entry, `^docs/` for a folder, never a bare prefix such as `^vcpkg`, which also drops `vcpkg.json` and every root file that starts the same way.
 2. **Before configuring the copy, compare its root with the repository's**: take the root entries of the same tracked-and-untracked list the copy was made from (`git ls-files --cached --others --exclude-standard`), less the paths left out on purpose; each one must be in the copy. A plain `git ls-files` lists tracked paths only, so an untracked root file missing from the copy would pass. A missing manifest shows up later as a dependency CMake cannot find, never as a missing file.
 
+### The copy is configured with the tree's SDK
+
+1. **On macOS, configure the copy with the `CMAKE_OSX_SYSROOT` of the tree's cache**: `-DCMAKE_OSX_SYSROOT="$(grep -E '^CMAKE_OSX_SYSROOT:' build/CMakeCache.txt | cut -d= -f2-)"`. A fresh configure may leave it empty; the compiler then gets no `-isysroot` and searches `/usr/local/include` before the `-isystem` folder of vcpkg, where an SFML 2 installed outside vcpkg is found first.
+2. **Before the first variant, compare the compile flags of one target in both builds** (`CXX_FLAGS` in `flags.make`): any difference other than the source path is a different environment, never a code defect.
+3. **An error inside a library header no change touched** (`no matching constructor for initialization of 'sf::Texture'`) **is read as the symptom of a wrong header first**: replay the compile with `-H` and read which file it opened.
+
 ## Example
 
 - ❌ **Before (wrong)**: 35 variants injected one by one into `src/client/Background/` of the user's checkout; the user runs `cmake --workflow --preset build` meanwhile, `build/` switches to Release, 11 variants fail with "No rule to make target", and `r-type_client` is rebuilt while a defect is in place.

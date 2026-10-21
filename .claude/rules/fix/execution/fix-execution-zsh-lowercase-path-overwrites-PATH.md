@@ -12,7 +12,7 @@ trigger: always_on
 
 ### Read-only special parameters stop the line
 
-1. **Never name a loop or `read` variable after a zsh special parameter**: `read -r status file` fails with `read-only variable: status`, `read -r options rest` with `attempt to set slice of associative array`, and either failure stops the whole command line, so nothing written after it runs. `pipestatus` and `argv` are accepted but overwrite what the shell keeps there. Use `state`, `code`, `entry`.
+1. **Never name a loop or `read` variable after a zsh special parameter**: `read -r status file` fails with `read-only variable: status`, `read -r options rest` with `attempt to set slice of associative array`, `widgets=…` (the widgets of the line editor) with `read-only variable: widgets`, and each failure stops the whole command line, so nothing written after it runs. `pipestatus` and `argv` are accepted but overwrite what the shell keeps there. Use `state`, `code`, `entry`.
 2. **A check whose output stops early is no result**: when a chain prints `read-only variable`, every line it did not print is missing, never "nothing to report"; fix the name and rerun.
 
 ### A variable derived from a file path is still never `path`

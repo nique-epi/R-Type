@@ -72,3 +72,17 @@ The exclude pattern of the rule was written for a copy holding no `vcpkg` at all
 
 ### Rule
 When the copy's `vcpkg` is a link, exclude it as `--exclude=/vcpkg`, and check `ls -l <copy>/vcpkg` after the sync.
+
+## Update (2026-10-21) — a copy configured without the SDK compiled against SFML 2
+
+### Context
+Before the red proofs of the status band, the isolated copy was configured with `cmake -S <copy> --preset test -DVCPKG_MANIFEST_INSTALL=OFF`, its `vcpkg_installed` copied from the tree.
+
+### Mistake
+The copy's build failed in `AssetLibrary.cpp`, a file the change does not touch: `no matching constructor for initialization of 'sf::Texture'`. The compiler had opened `/usr/local/include/SFML/Audio/SoundBuffer.hpp`, an SFML 2 installed outside vcpkg.
+
+### Root cause
+The tree's cache holds `CMAKE_OSX_SYSROOT` set to the Xcode SDK, so its compile lines carry `-isysroot`; the copy's fresh configure left it empty. Without `-isysroot`, Apple clang searches `/usr/local/include` before the `-isystem` folder of vcpkg.
+
+### Rule
+Configure the copy with the tree's `CMAKE_OSX_SYSROOT`, compare one target's `CXX_FLAGS` in both builds before the first variant, and read an error inside an untouched library header as a wrong header first.
