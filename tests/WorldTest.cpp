@@ -14,14 +14,11 @@
 #include "ScoreValue.hpp"
 #include "Velocity.hpp"
 #include "World.hpp"
+#include "WorldTestConstants.hpp"
 
-namespace {
-
-constexpr float SOME_X = 3.0F;
-constexpr float SOME_Y = 4.0F;
-constexpr int THREE_HEALTH_POINTS = 3;
-
-}  // namespace
+using rtype::game::testing::SOME_X;
+using rtype::game::testing::SOME_Y;
+using rtype::game::testing::THREE_HEALTH_POINTS;
 
 /**
  * Given an empty world
