@@ -362,6 +362,8 @@ std::size_t ServerConnection::wrongTokenCount() const {
   return wrongTokenCount_;
 }
 
+bool ServerConnection::isLeaving() const { return departure_.has_value(); }
+
 bool ServerConnection::isConnecting() const {
   return status_.phase == ConnectionStatus::Phase::Connecting;
 }

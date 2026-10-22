@@ -58,8 +58,9 @@ namespace rtype::client {
  * while nothing else is due. Leaving the session, through
  * cancel() or connect(), sends a Disconnection DISCONNECTION_COPY_COUNT times,
  * DISCONNECTION_COPY_INTERVAL apart, with the token and the sequences of the
- * session left; connect() then starts a new session: sequence 0, token 0 and
- * inputs from FIRST_INPUT_NUMBER again.
+ * session left, the first at once and the others from update(), while
+ * isLeaving() is true; connect() then starts a new session: sequence 0, token 0
+ * and inputs from FIRST_INPUT_NUMBER again.
  *
  * From the start of the game, it keeps the EntitySpawned, WorldState and
  * EntityDestroyed of the server, in the order they arrived, until
@@ -122,6 +123,13 @@ class ServerConnection : public IServerConnection,
    * session token than the one it carried.
    */
   [[nodiscard]] std::size_t wrongTokenCount() const;
+
+  /**
+   * @returns Whether copies of a Disconnection are still due to a server the
+   * player left: update() sends one each DISCONNECTION_COPY_INTERVAL until
+   * DISCONNECTION_COPY_COUNT went out.
+   */
+  [[nodiscard]] bool isLeaving() const;
 
  private:
   /** @brief The copies of a Disconnection still due to a server the player
