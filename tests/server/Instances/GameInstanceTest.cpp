@@ -184,6 +184,58 @@ class GameInstanceTest : public ::testing::Test {
     });
   }
 
+  /**
+   * @brief The player at @p index sends a Disconnection for the next tick,
+   * then nothing more, as a client that closes.
+   */
+  void leave(std::size_t index) {
+    silence(index);
+    queueDisconnectionFrom(index);
+  }
+
+  /** @brief Queues a Disconnection from the player at @p index for the next
+   * tick, as one of the copies its client sends. */
+  void queueDisconnectionFrom(std::size_t index) {
+    queue(network::IncomingDatagram{.sender = playerEndpoint(index),
+                                    .payload = disconnectionDatagram()});
+  }
+
+  /**
+   * @returns A broadcaster of the game events, wired to the roster as the
+   * server wires it, that runs its later copies on @p timers and puts each
+   * datagram in @p datagrams.
+   */
+  [[nodiscard]] std::unique_ptr<GameEventBroadcaster> eventBroadcaster(
+      engine::TimerScheduler& timers,
+      std::vector<network::OutgoingDatagram>& datagrams) {
+    return std::make_unique<GameEventBroadcaster>(GameEventBroadcaster::Wiring{
+        .events = events(),
+        .timers = timers,
+        .recipients = [this] { return game().roster().endpoints(); },
+        .headerFor =
+            [this](const network::Endpoint& recipient) {
+              return game().nextSessionHeaderFor(recipient);
+            },
+        .send =
+            [&datagrams](network::OutgoingDatagram datagram) {
+              datagrams.push_back(std::move(datagram));
+            }});
+  }
+
+  /** @returns The PlayerLeft that @p datagrams carry to the player at
+   * @p index, in the order they were sent. */
+  [[nodiscard]] static std::vector<network::PlayerLeft> playerLeftSentTo(
+      const std::vector<network::OutgoingDatagram>& datagrams,
+      std::size_t index) {
+    std::vector<network::PlayerLeft> received;
+    for (const network::OutgoingDatagram& datagram :
+         ofType(network::MessageType::PlayerLeft,
+                testing::sentTo(datagrams, playerEndpoint(index)))) {
+      received.push_back(onlyMessageIn<network::PlayerLeft>(datagram));
+    }
+    return received;
+  }
+
   /** @brief Queues the ReadyState described by @p sent for the next tick. */
   void sendReady(const SentReadyState& sent) {
     network::PacketHeader header;
@@ -1171,19 +1223,7 @@ TEST_F(GameInstanceTest, TheOthersPlayOnWhenOneOfThreePlayersTimesOut) {
 TEST_F(GameInstanceTest, TellsOnlyTheOthersThatAPlayerTimedOut) {
   engine::TimerScheduler timers;
   std::vector<network::OutgoingDatagram> eventDatagrams;
-  const auto broadcaster =
-      std::make_unique<GameEventBroadcaster>(GameEventBroadcaster::Wiring{
-          .events = events(),
-          .timers = timers,
-          .recipients = [this] { return game().roster().endpoints(); },
-          .headerFor =
-              [this](const network::Endpoint& recipient) {
-                return game().nextSessionHeaderFor(recipient);
-              },
-          .send =
-              [&eventDatagrams](network::OutgoingDatagram datagram) {
-                eventDatagrams.push_back(std::move(datagram));
-              }});
+  const auto broadcaster = eventBroadcaster(timers, eventDatagrams);
   for (const std::size_t player : {FIRST_PLAYER, SECOND_PLAYER, THIRD_PLAYER}) {
     join(player);
   }
@@ -1196,19 +1236,39 @@ TEST_F(GameInstanceTest, TellsOnlyTheOthersThatAPlayerTimedOut) {
       testing::PROTOCOL_REPEATED_MESSAGE_COPIES,
       network::PlayerLeft{.playerNumber = network::FIRST_PLAYER_NUMBER + 1,
                           .reason = network::DepartureReason::TimedOut});
-  for (const std::size_t player : {FIRST_PLAYER, THIRD_PLAYER}) {
-    std::vector<network::PlayerLeft> received;
-    for (const network::OutgoingDatagram& datagram :
-         ofType(network::MessageType::PlayerLeft,
-                testing::sentTo(eventDatagrams, playerEndpoint(player)))) {
-      received.push_back(onlyMessageIn<network::PlayerLeft>(datagram));
-    }
-    EXPECT_EQ(received, expected);
+  EXPECT_EQ(playerLeftSentTo(eventDatagrams, FIRST_PLAYER), expected);
+  EXPECT_EQ(playerLeftSentTo(eventDatagrams, THIRD_PLAYER), expected);
+  EXPECT_TRUE(playerLeftSentTo(eventDatagrams, SECOND_PLAYER).empty());
+}
+
+/**
+ * Given three players, and the broadcaster of the game events wired to the
+ * roster as the server wires it
+ * When the second sends a Disconnection, the bus delivers the events and every
+ * copy comes due
+ * Then the first and the third player get three PlayerLeft naming player 2,
+ * left, and the second player gets none
+ */
+TEST_F(GameInstanceTest, TellsOnlyTheOthersThatAPlayerLeft) {
+  engine::TimerScheduler timers;
+  std::vector<network::OutgoingDatagram> eventDatagrams;
+  const auto broadcaster = eventBroadcaster(timers, eventDatagrams);
+  for (const std::size_t player : {FIRST_PLAYER, SECOND_PLAYER, THIRD_PLAYER}) {
+    join(player);
   }
-  EXPECT_TRUE(
-      ofType(network::MessageType::PlayerLeft,
-             testing::sentTo(eventDatagrams, playerEndpoint(SECOND_PLAYER)))
-          .empty());
+
+  leave(SECOND_PLAYER);
+  tick();
+  events().dispatch();
+  timers.advance(testing::ALL_COPIES_SENT);
+
+  const std::vector expected(
+      testing::PROTOCOL_REPEATED_MESSAGE_COPIES,
+      network::PlayerLeft{.playerNumber = network::FIRST_PLAYER_NUMBER + 1,
+                          .reason = network::DepartureReason::Left});
+  EXPECT_EQ(playerLeftSentTo(eventDatagrams, FIRST_PLAYER), expected);
+  EXPECT_EQ(playerLeftSentTo(eventDatagrams, THIRD_PLAYER), expected);
+  EXPECT_TRUE(playerLeftSentTo(eventDatagrams, SECOND_PLAYER).empty());
 }
 
 /**
@@ -1239,6 +1299,111 @@ TEST_F(GameInstanceTest, GivesTheNumberOfAPlayerWhoTimedOutToTheNextOne) {
   const ConnectedPlayer& next = join(THIRD_PLAYER);
 
   EXPECT_EQ(next.playerNumber, network::FIRST_PLAYER_NUMBER + 1);
+}
+
+/**
+ * Given two players
+ * When the second sends a Disconnection
+ * Then it is no longer in the game once that tick ran, and the first one is
+ */
+TEST_F(GameInstanceTest, ClosesAtOnceTheSessionOfThePlayerWhoLeaves) {
+  join(FIRST_PLAYER);
+  join(SECOND_PLAYER);
+
+  leave(SECOND_PLAYER);
+  tick();
+
+  EXPECT_EQ(game().roster().find(playerEndpoint(SECOND_PLAYER)), nullptr);
+  EXPECT_NE(game().roster().find(playerEndpoint(FIRST_PLAYER)), nullptr);
+}
+
+/**
+ * Given two players
+ * When the second sends a Disconnection
+ * Then the ship of the second player leaves the world, announced as removed
+ * without an explosion, and the ship of the first stays
+ */
+TEST_F(GameInstanceTest, RemovesTheShipOfAPlayerWhoLeaves) {
+  join(FIRST_PLAYER);
+  const std::uint32_t ship = join(SECOND_PLAYER).shipEntityId;
+  std::vector<game::EntityDestruction> destructions;
+  events().subscribe<game::EntityDestruction>(
+      [&destructions](const game::EntityDestruction& event) {
+        destructions.push_back(event);
+      });
+
+  leave(SECOND_PLAYER);
+  tick();
+  events().dispatch();
+
+  EXPECT_EQ(destructions,
+            (std::vector{game::EntityDestruction{
+                .networkId = ship, .cause = game::DestructionCause::Removed}}));
+  EXPECT_EQ(game().world().entityCount(), 1U);
+}
+
+/**
+ * Given two players, the second of whom sends a Disconnection
+ * When its two later copies arrive, one in the same tick and one in the next,
+ * and the timeout runs
+ * Then the departure of player 2 is announced once, as left
+ */
+TEST_F(GameInstanceTest, AnnouncesOnceThatAPlayerLeft) {
+  join(FIRST_PLAYER);
+  join(SECOND_PLAYER);
+  std::vector<game::PlayerDeparture> departures;
+  events().subscribe<game::PlayerDeparture>(
+      [&departures](const game::PlayerDeparture& event) {
+        departures.push_back(event);
+      });
+
+  leave(SECOND_PLAYER);
+  queueDisconnectionFrom(SECOND_PLAYER);
+  tick();
+  queueDisconnectionFrom(SECOND_PLAYER);
+  tick();
+  runTicks(PROTOCOL_SESSION_TIMEOUT_TICKS + 1);
+  events().dispatch();
+
+  EXPECT_EQ(departures, (std::vector{game::PlayerDeparture{
+                            .playerNumber = network::FIRST_PLAYER_NUMBER + 1,
+                            .cause = game::DepartureCause::Left}}));
+}
+
+/**
+ * Given two players, the second of whom sent a Disconnection
+ * When the departed players are taken twice
+ * Then the first take holds the second player, with its address and token,
+ * and the second take holds nobody
+ */
+TEST_F(GameInstanceTest, HandsOverThePlayerWhoLeftOnce) {
+  join(FIRST_PLAYER);
+  join(SECOND_PLAYER, testing::OTHER_SESSION_TOKEN);
+  leave(SECOND_PLAYER);
+  tick();
+
+  const std::vector<ConnectedPlayer> first = game().takeDepartedPlayers();
+  const std::vector<ConnectedPlayer> second = game().takeDepartedPlayers();
+
+  ASSERT_EQ(first.size(), 1U);
+  EXPECT_EQ(first.front().endpoint, playerEndpoint(SECOND_PLAYER));
+  EXPECT_EQ(first.front().sessionToken, testing::OTHER_SESSION_TOKEN);
+  EXPECT_TRUE(second.empty());
+}
+
+/**
+ * Given three players in a game in progress
+ * When the second sends a Disconnection
+ * Then the game goes on for the two others
+ */
+TEST_F(GameInstanceTest, TheOthersPlayOnWhenAPlayerLeaves) {
+  startGameWith({FIRST_PLAYER, SECOND_PLAYER, THIRD_PLAYER});
+
+  leave(SECOND_PLAYER);
+  tick();
+
+  EXPECT_EQ(game().state(), GameState::InProgress);
+  EXPECT_EQ(game().roster().connected().size(), 2U);
 }
 
 /**
@@ -2073,6 +2238,27 @@ TEST_F(GameInstanceLogTest, LogsThePlayerWhoTimedOut) {
   EXPECT_EQ(
       journal().linesHolding(testing::SECOND_PLAYER_TIMED_OUT_LINE_TEXT).size(),
       1U);
+}
+
+/**
+ * Given a game with two players
+ * When the second sends a Disconnection
+ * Then the journal holds one line saying that player 2 left, which names its
+ * address and port, and none saying that it timed out
+ */
+TEST_F(GameInstanceLogTest, LogsThePlayerWhoLeftWithItsSender) {
+  leave(SECOND_PLAYER);
+  tick();
+  runTicks(PROTOCOL_SESSION_TIMEOUT_TICKS + 1);
+
+  const std::vector<std::string> lines =
+      journal().linesHolding(testing::SECOND_PLAYER_LEFT_LINE_TEXT);
+  ASSERT_EQ(lines.size(), 1U);
+  EXPECT_NE(lines.front().find(senderText(playerEndpoint(SECOND_PLAYER))),
+            std::string::npos);
+  EXPECT_TRUE(journal()
+                  .linesHolding(testing::SECOND_PLAYER_TIMED_OUT_LINE_TEXT)
+                  .empty());
 }
 
 /** @brief The input fixture, once for each seed of a shuffled delivery. */

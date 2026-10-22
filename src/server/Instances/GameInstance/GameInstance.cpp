@@ -13,6 +13,7 @@
 #include "ConnectedPlayer.hpp"
 #include "ConnectedPlayers.hpp"
 #include "DatagramCodec.hpp"
+#include "Disconnection.hpp"
 #include "Endpoint.hpp"
 #include "EntityDestruction.hpp"
 #include "EntityIdConstants.hpp"
@@ -148,6 +149,11 @@ GameInstance::GameInstance(Send send, std::uint32_t seed,
   dispatcher_.registerHandler<network::Heartbeat>(
       [](const network::MessageOrigin& /*origin*/,
          const network::Heartbeat& /*heartbeat*/) {});
+  dispatcher_.registerHandler<network::Disconnection>(
+      [this](const network::MessageOrigin& origin,
+             const network::Disconnection& /*disconnection*/) {
+        closeSession(origin.sender, game::DepartureCause::Left);
+      });
   startNewWorld();
 }
 
@@ -305,7 +311,7 @@ bool GameInstance::everyPlayerIsReady() {
 
 void GameInstance::closeSilentSessions() {
   for (const network::Endpoint& player : countSilentTicks()) {
-    closeSession(player);
+    closeSession(player, game::DepartureCause::TimedOut);
   }
 }
 
@@ -321,7 +327,8 @@ std::vector<network::Endpoint> GameInstance::countSilentTicks() {
   return timedOut;
 }
 
-void GameInstance::closeSession(const network::Endpoint& player) {
+void GameInstance::closeSession(const network::Endpoint& player,
+                                game::DepartureCause cause) {
   std::optional<ConnectedPlayer> departed = roster_.remove(player);
   if (!departed.has_value()) {
     return;
@@ -329,7 +336,7 @@ void GameInstance::closeSession(const network::Endpoint& player) {
   if (world_->removePlayer(departed->shipEntityId)) {
     announceShipRemoval(departed->shipEntityId);
   }
-  announceTimeout(*departed);
+  announceDeparture(*departed, cause);
   departedPlayers_.push_back(std::move(*departed));
 }
 
@@ -338,14 +345,24 @@ void GameInstance::announceShipRemoval(std::uint32_t shipEntityId) {
       .networkId = shipEntityId, .cause = game::DestructionCause::Removed});
 }
 
-void GameInstance::announceTimeout(const ConnectedPlayer& player) {
-  logger_.info("player ", static_cast<unsigned int>(player.playerNumber),
-               " timed out: nothing received from ", player.endpoint.address,
-               " port ", player.endpoint.port, " for ",
+void GameInstance::announceDeparture(const ConnectedPlayer& player,
+                                     game::DepartureCause cause) {
+  logDeparture(player, cause);
+  events_.publish(game::PlayerDeparture{.playerNumber = player.playerNumber,
+                                        .cause = cause});
+}
+
+void GameInstance::logDeparture(const ConnectedPlayer& player,
+                                game::DepartureCause cause) const {
+  const auto playerNumber = static_cast<unsigned int>(player.playerNumber);
+  if (cause == game::DepartureCause::Left) {
+    logger_.info("player ", playerNumber, " left from ",
+                 player.endpoint.address, " port ", player.endpoint.port);
+    return;
+  }
+  logger_.info("player ", playerNumber, " timed out: nothing received from ",
+               player.endpoint.address, " port ", player.endpoint.port, " for ",
                network::SESSION_TIMEOUT.count(), " s");
-  events_.publish(
-      game::PlayerDeparture{.playerNumber = player.playerNumber,
-                            .cause = game::DepartureCause::TimedOut});
 }
 
 void GameInstance::sendHeartbeats() {
