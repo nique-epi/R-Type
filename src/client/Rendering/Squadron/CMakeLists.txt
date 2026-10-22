@@ -7,6 +7,7 @@ target_link_libraries(rtype_client_squadron
     rtype_client_rendering_interfaces
     rtype_engine_time
   PRIVATE
+    rtype_client_easing
     rtype_client_entity_sprites
     rtype_client_random_range
 )

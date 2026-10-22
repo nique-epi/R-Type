@@ -10,7 +10,7 @@ namespace rtype::client {
 
 /** @returns 1 − (1 − progress)³, for @p progress clamped to 0 to 1: faster
  * first, then slower. A shockwave, a speed line, the end of the warp of the
- * sky. */
+ * sky, the flight of the ships of the title. */
 [[nodiscard]] float easeOutCubic(float progress);
 
 /** @returns The share of @p whole that @p part is, not clamped: the progress

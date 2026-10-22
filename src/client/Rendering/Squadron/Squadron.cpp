@@ -11,6 +11,7 @@
 #include <vector>
 #include "Animation.hpp"
 #include "BackgroundConstants.hpp"
+#include "Easing.hpp"
 #include "EntitySpriteConstants.hpp"
 #include "EntitySprites.hpp"
 #include "IInterfaceCanvas.hpp"
@@ -37,13 +38,6 @@ int roundHalfUp(float value) {
 /** @returns The value rounded to the nearest multiple of the step. */
 int stepped(float value, int step) {
   return roundHalfUp(value / static_cast<float>(step)) * step;
-}
-
-/** @returns How far a braking flight has gone, from 0 to 1, after a share of
- * its time from 0 to 1: 1 − (1 − share)³. */
-float easeOut(float share) {
-  const float left = 1.0F - share;
-  return 1.0F - (left * left * left);
 }
 
 /** @returns 0 before 0, 1 after 1, and an S-shaped ramp between:
@@ -193,7 +187,7 @@ std::vector<Squadron::ShipPlacement> Squadron::placements(float time) {
     }
     const float flight =
         std::min(1.0F, (time - ship.arrival) / SQUADRON_FLIGHT_TIME);
-    const float progress = easeOut(flight);
+    const float progress = easeOutCubic(flight);
     const int bob = roundHalfUp(
         SQUADRON_BOB * drift *
         std::sin((FULL_TURN * time / SQUADRON_BOB_PERIOD) + ship.bobPhase));
