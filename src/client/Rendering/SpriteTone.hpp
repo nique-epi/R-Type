@@ -14,6 +14,10 @@ enum class SpriteTone : std::uint8_t {
   /** @brief Every pixel multiplied by SHADE_TINT, so darker: a hit, when the
    * player reduced flashes. */
   Shade,
+  /** @brief One pixel in two, in a checkerboard aligned on the canvas, the
+   * others left out, or the whole sprite half transparent where the graphics
+   * card has no shaders: a ship that cannot be hit. */
+  Ghost,
 };
 
 }  // namespace rtype::client

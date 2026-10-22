@@ -1,5 +1,6 @@
 #pragma once
 
+#include <SFML/System/Vector2.hpp>
 #include <array>
 #include <chrono>
 #include <cstddef>
@@ -167,5 +168,93 @@ constexpr EffectAnimations ENEMY_MUZZLE_FLASH{
     .withoutFlash = {.frames = ENEMY_MUZZLE_FLASH_WITHOUT_FLASH_FRAMES,
                      .frameDuration = MUZZLE_FLASH_FRAME_TIME,
                      .playback = Animation::Playback::Once}};
+
+/**
+ * @brief How much longer the first frame of an explosion stays, which freezes
+ * the victim: 3 frames for a Bydo destroyed, 5 for the fifth kill of a chain,
+ * 6 for a ship, whose picture stays white meanwhile.
+ */
+constexpr engine::Duration KILL_HOLD = std::chrono::milliseconds(50);
+constexpr engine::Duration BIG_CATCH_HOLD = std::chrono::milliseconds(83);
+constexpr engine::Duration SHIP_DOWN_HOLD = std::chrono::milliseconds(100);
+
+/**
+ * @brief A frozen victim is drawn VIBRATION_OFFSET pixels of the canvas away,
+ * on the other side every VIBRATION_STEP, one frame, over the first half of
+ * its freeze.
+ */
+constexpr sf::Vector2i VIBRATION_OFFSET(1, 0);
+constexpr engine::Duration VIBRATION_STEP = engine::SIMULATION_TICK_DURATION;
+
+/**
+ * @brief A Bydo hit is drawn KNOCKBACK_OFFSET pixels of the canvas further
+ * along the shot for 3 frames, a ship hit as far the other way; a ship that
+ * fires is drawn RECOIL_OFFSET pixels away, backwards, for 2 frames.
+ */
+constexpr sf::Vector2i KNOCKBACK_OFFSET(1, 0);
+constexpr engine::Duration KNOCKBACK_DURATION = std::chrono::milliseconds(50);
+constexpr sf::Vector2i RECOIL_OFFSET(-1, 0);
+constexpr engine::Duration RECOIL_DURATION = std::chrono::milliseconds(33);
+
+/**
+ * @brief The figure of a gain rises POPUP_RISE_HEIGHT pixels of the canvas
+ * over POPUP_RISE, stays POPUP_HOLD, blinks POPUP_BLINK_COUNT times,
+ * POPUP_BLINK_STEP per state, and goes after POPUP_LIFE.
+ */
+constexpr engine::Duration POPUP_RISE = std::chrono::milliseconds(400);
+constexpr engine::Duration POPUP_HOLD = std::chrono::milliseconds(300);
+constexpr engine::Duration POPUP_BLINK_STEP = std::chrono::milliseconds(67);
+constexpr int POPUP_BLINK_COUNT = 2;
+constexpr int POPUP_RISE_HEIGHT = 8;
+constexpr engine::Duration POPUP_LIFE =
+    POPUP_RISE + POPUP_HOLD + (2 * POPUP_BLINK_COUNT * POPUP_BLINK_STEP);
+
+/** @brief Written before the points of a gain. */
+constexpr const char* GAIN_PREFIX = "+";
+
+/**
+ * @brief A ship arriving stays hidden on the first half of
+ * MATERIALIZE_DURATION, 16 frames, then shows row by row; its speed lines
+ * run as long, on the rows of the canvas SPEED_LINE_ROWS away from its
+ * center.
+ */
+constexpr engine::Duration MATERIALIZE_DURATION =
+    std::chrono::milliseconds(267);
+constexpr std::array SPEED_LINE_ROWS{-6, -2, 2, 6};
+
+/**
+ * @brief Most pixels of the canvas that may show FLASH_COLOR at once: 2.8 %
+ * of its 129 600 pixels, the share of a full screen that WCAG 2.3.1 takes for
+ * a quarter of a field of view of 10 degrees.
+ */
+constexpr int FLASH_AREA_MAXIMUM = 3600;
+
+/**
+ * @brief Pixels each effect turns FLASH_COLOR, counted in the sheets by the
+ * tests: the most a frame of the effect changes between its row and its row
+ * without flash, over the frames that change any (the first of a Bydo
+ * explosion and of a muzzle flash, the first SHIP_EXPLOSION_FLASH_FRAMES of a
+ * ship explosion, the first IMPACT_FLASH_FRAMES of an impact), and the
+ * largest frame of a Bydo and of a ship drawn as a silhouette.
+ */
+constexpr int BYDO_EXPLOSION_FLASH_AREA = 275;
+constexpr int SHIP_EXPLOSION_FLASH_AREA = 23;
+constexpr int SHIP_EXPLOSION_FLASH_FRAMES = 8;
+constexpr int IMPACT_FLASH_AREA = 6;
+constexpr int IMPACT_FLASH_FRAMES = 2;
+constexpr int MUZZLE_FLASH_AREA = 12;
+constexpr int BYDO_SILHOUETTE_AREA = 367;
+constexpr int SHIP_SILHOUETTE_AREA = 254;
+
+/**
+ * @brief Two kills less than KILL_CHAIN_WINDOW apart, by any pilot, are of
+ * the same chain; every BIG_CATCH_EVERY-th kill of a chain is a big catch.
+ */
+constexpr engine::Duration KILL_CHAIN_WINDOW = std::chrono::milliseconds(1000);
+constexpr int BIG_CATCH_EVERY = 5;
+
+/** @brief A kill and a gain of score noted less than GAIN_MATCH_WINDOW
+ * apart, three world states, make the figure of the gain. */
+constexpr engine::Duration GAIN_MATCH_WINDOW = std::chrono::milliseconds(150);
 
 }  // namespace rtype::client

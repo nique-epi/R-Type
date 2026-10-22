@@ -1,4 +1,5 @@
 #include "EntityReplicatorFixture.hpp"
+#include <SFML/Graphics/Color.hpp>
 #include <cstddef>
 #include <cstdint>
 #include <optional>
@@ -12,8 +13,14 @@
 #include "EntityReplicatorTestConstants.hpp"
 #include "EntitySprites.hpp"
 #include "EntityType.hpp"
+#include "HitFlash.hpp"
+#include "Invulnerability.hpp"
 #include "Layer.hpp"
+#include "Lifetime.hpp"
+#include "PilotShip.hpp"
 #include "Position.hpp"
+#include "Reveal.hpp"
+#include "SpeedLine.hpp"
 #include "Sprite.hpp"
 #include "SpriteAnimation.hpp"
 #include "SpriteFrame.hpp"
@@ -62,7 +69,21 @@ void EntityReplicatorFixture::announceOneOfEachType() {
 }
 
 std::vector<DrawnEntity> EntityReplicatorFixture::drawnEntities() {
-  return drawnIn(game::Layer::Entities);
+  std::vector<DrawnEntity> drawn;
+  components_.forEach<game::EntityType, game::Sprite>(
+      [this, &drawn](engine::Entity entity, const game::EntityType&,
+                     const game::Sprite& sprite) {
+        const game::Position* position =
+            components_.get<game::Position>(entity);
+        if (position != nullptr) {
+          drawn.push_back(DrawnEntity{.x = position->x,
+                                      .y = position->y,
+                                      .assetId = sprite.assetId,
+                                      .frame = sprite.frame,
+                                      .layer = sprite.layer});
+        }
+      });
+  return drawn;
 }
 
 std::vector<DrawnEntity> EntityReplicatorFixture::drawnEffects() {
@@ -71,12 +92,57 @@ std::vector<DrawnEntity> EntityReplicatorFixture::drawnEffects() {
 
 std::size_t EntityReplicatorFixture::animatedEntityCount() {
   std::size_t count = 0;
-  components_.forEach<game::Sprite, SpriteAnimation>(
-      [&count](engine::Entity, const game::Sprite& sprite,
-               const SpriteAnimation&) {
-        if (sprite.layer == game::Layer::Entities) {
-          ++count;
-        }
+  components_.forEach<game::EntityType, SpriteAnimation>(
+      [&count](engine::Entity, const game::EntityType&,
+               const SpriteAnimation&) { ++count; });
+  return count;
+}
+
+std::size_t EntityReplicatorFixture::announcedEntityCount() {
+  std::size_t count = 0;
+  components_.forEach<game::EntityType, game::EntityType>(
+      [&count](engine::Entity, const game::EntityType&,
+               const game::EntityType&) { ++count; });
+  return count;
+}
+
+std::optional<int> EntityReplicatorFixture::pilotColorOfThe(
+    game::EntityType type) {
+  const std::optional<engine::Entity> entity = onlyEntityOf(type);
+  const PilotShip* pilot =
+      entity.has_value() ? components_.get<PilotShip>(*entity) : nullptr;
+  return pilot != nullptr ? std::optional<int>(pilot->color) : std::nullopt;
+}
+
+bool EntityReplicatorFixture::isInvulnerable(game::EntityType type) {
+  const std::optional<engine::Entity> entity = onlyEntityOf(type);
+  return entity.has_value() && components_.has<Invulnerability>(*entity);
+}
+
+bool EntityReplicatorFixture::isFlashed(game::EntityType type) {
+  const std::optional<engine::Entity> entity = onlyEntityOf(type);
+  return entity.has_value() && components_.has<HitFlash>(*entity);
+}
+
+bool EntityReplicatorFixture::isArriving(game::EntityType type) {
+  const std::optional<engine::Entity> entity = onlyEntityOf(type);
+  return entity.has_value() && components_.has<Reveal>(*entity);
+}
+
+std::vector<sf::Color> EntityReplicatorFixture::speedLineColors() {
+  std::vector<sf::Color> colors;
+  components_.forEach<SpeedLine, game::Position>(
+      [&colors](engine::Entity, const SpeedLine& line, const game::Position&) {
+        colors.push_back(line.color);
+      });
+  return colors;
+}
+
+std::size_t EntityReplicatorFixture::frozenPictureCount() {
+  std::size_t count = 0;
+  components_.forEach<Lifetime, game::Sprite>(
+      [&count](engine::Entity, const Lifetime&, const game::Sprite&) {
+        ++count;
       });
   return count;
 }
@@ -99,6 +165,19 @@ std::vector<DrawnEntity> EntityReplicatorFixture::drawnIn(game::Layer layer) {
         }
       });
   return drawn;
+}
+
+std::optional<engine::Entity> EntityReplicatorFixture::onlyEntityOf(
+    game::EntityType type) {
+  std::optional<engine::Entity> found;
+  components_.forEach<game::EntityType, game::Position>(
+      [&found, type](engine::Entity entity, const game::EntityType& entityType,
+                     const game::Position&) {
+        if (entityType == type) {
+          found = entity;
+        }
+      });
+  return found;
 }
 
 }  // namespace rtype::client::testing

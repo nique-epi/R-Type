@@ -1,5 +1,8 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include <SFML/Graphics/Color.hpp>
+#include <cstdint>
+#include <vector>
 #include "AllEntityTypes.hpp"
 #include "EffectConstants.hpp"
 #include "EntityAnnouncements.hpp"
@@ -7,15 +10,18 @@
 #include "EntityReplicatorFixture.hpp"
 #include "EntityReplicatorTestConstants.hpp"
 #include "EntityType.hpp"
+#include "PilotTestConstants.hpp"
 #include "WorldState.hpp"
 #include "WorldStateFilterTestConstants.hpp"
 
 using rtype::client::BYDO_EXPLOSION_FRAME;
 using rtype::client::ENEMY_MUZZLE_FLASH_FRAME;
 using rtype::client::PLAYER_MUZZLE_FLASH_FRAME;
+using rtype::client::SHIP_EXPLOSION_FRAME;
 using rtype::client::testing::APPLIED_TICK;
 using rtype::client::testing::BYDO_ID;
 using rtype::client::testing::BYDO_POSITION;
+using rtype::client::testing::damaged;
 using rtype::client::testing::drawnAs;
 using rtype::client::testing::effectAt;
 using rtype::client::testing::ENEMY_MISSILE_ID;
@@ -24,24 +30,47 @@ using rtype::client::testing::EntityReplicatorFixture;
 using rtype::client::testing::FIRST_POSITION;
 using rtype::client::testing::killed;
 using rtype::client::testing::listed;
+using rtype::client::testing::NEWER_TICK;
 using rtype::client::testing::OLDER_TICK;
 using rtype::client::testing::PLAYER_MISSILE_ID;
 using rtype::client::testing::PLAYER_MISSILE_POSITION;
+using rtype::client::testing::playerFlying;
+using rtype::client::testing::playerHit;
 using rtype::client::testing::removed;
 using rtype::client::testing::SECOND_POSITION;
 using rtype::client::testing::SHIP_ID;
 using rtype::client::testing::SHIP_POSITION;
 using rtype::client::testing::spawned;
 using rtype::client::testing::stateListing;
+using rtype::client::testing::stateListingPlayers;
 using rtype::client::testing::UNANNOUNCED_ID;
 using rtype::client::testing::WIRE_TYPE_AFTER_THE_LAST;
 using rtype::client::testing::WIRE_TYPE_BEFORE_THE_FIRST;
 using rtype::game::EntityType;
 using rtype::identifiers::NO_ENTITY_ID;
+using rtype::network::PlayerState;
 using rtype::network::WireEntityType;
+using rtype::network::WorldState;
 using ::testing::ElementsAre;
 using ::testing::IsEmpty;
 using ::testing::UnorderedElementsAre;
+
+namespace {
+
+constexpr std::uint8_t SECOND_PLAYER_NUMBER = 2;
+constexpr std::uint8_t BEFORE_THE_FIRST_PLAYER = 0;
+constexpr std::uint8_t AFTER_THE_LAST_PLAYER = 5;
+constexpr std::uint16_t AN_EVENT_NUMBER = 7;
+
+/** @returns A player of the second pilot flying the ship, able or not to be
+ * hit. */
+PlayerState secondPilotFlying(bool invulnerable) {
+  PlayerState player = playerFlying(SECOND_PLAYER_NUMBER, SHIP_ID);
+  player.invulnerable = invulnerable;
+  return player;
+}
+
+}  // namespace
 
 /**
  * Given a replicator that has applied nothing
@@ -204,7 +233,7 @@ TEST_F(EntityReplicatorFixture, DestroysTheEntityAnEntityDestroyedNames) {
 
   replicator().apply(removed(SHIP_ID));
 
-  EXPECT_EQ(entityCount(), 0U);
+  EXPECT_EQ(announcedEntityCount(), 0U);
 }
 
 /**
@@ -381,4 +410,147 @@ TEST_F(EntityReplicatorFixture, AShipAndABydoAppearWithoutEffect) {
   replicator().apply(spawned(BYDO_ID, WireEntityType::Bydo, BYDO_POSITION));
 
   EXPECT_THAT(drawnEffects(), IsEmpty());
+}
+
+/**
+ * Given a ship the client has
+ * When a WorldState lists player 2 with that ship
+ * Then the ship is marked with the second pilot color
+ */
+TEST_F(EntityReplicatorFixture, MarksTheShipOfEachPlayerWithItsPilotColor) {
+  replicator().apply(
+      spawned(SHIP_ID, WireEntityType::PlayerShip, FIRST_POSITION));
+
+  replicator().apply(
+      stateListingPlayers(APPLIED_TICK, {secondPilotFlying(false)}));
+
+  EXPECT_EQ(pilotColorOfThe(EntityType::Player), SECOND_PILOT_COLOR);
+}
+
+/**
+ * Given a ship a state lists as invulnerable
+ * When a newer state lists it as vulnerable
+ * Then it shows it cannot be hit, then no longer
+ */
+TEST_F(EntityReplicatorFixture, FollowsTheInvulnerabilityTheServerSends) {
+  replicator().apply(
+      spawned(SHIP_ID, WireEntityType::PlayerShip, FIRST_POSITION));
+  replicator().apply(
+      stateListingPlayers(APPLIED_TICK, {secondPilotFlying(true)}));
+  const bool invulnerableFirst = isInvulnerable(EntityType::Player);
+
+  replicator().apply(
+      stateListingPlayers(NEWER_TICK, {secondPilotFlying(false)}));
+
+  EXPECT_TRUE(invulnerableFirst);
+  EXPECT_FALSE(isInvulnerable(EntityType::Player));
+}
+
+/**
+ * Given a ship a state lists as vulnerable
+ * When an older state arrives late, listing it invulnerable
+ * Then it stays vulnerable: an older state changes nothing
+ */
+TEST_F(EntityReplicatorFixture, AnOlderStateDoesNotChangeInvulnerability) {
+  replicator().apply(
+      spawned(SHIP_ID, WireEntityType::PlayerShip, FIRST_POSITION));
+  replicator().apply(
+      stateListingPlayers(APPLIED_TICK, {secondPilotFlying(false)}));
+
+  replicator().apply(
+      stateListingPlayers(OLDER_TICK, {secondPilotFlying(true)}));
+
+  EXPECT_FALSE(isInvulnerable(EntityType::Player));
+}
+
+/**
+ * Given a Bydo the client has
+ * When an EntityDamaged names it
+ * Then it flashes
+ */
+TEST_F(EntityReplicatorFixture, FlashesTheEntityAnEntityDamagedNames) {
+  replicator().apply(spawned(BYDO_ID, WireEntityType::Bydo, FIRST_POSITION));
+
+  replicator().apply(damaged(AN_EVENT_NUMBER, BYDO_ID));
+
+  EXPECT_TRUE(isFlashed(EntityType::Enemy));
+}
+
+/**
+ * Given a ship the client has, its player listed
+ * When a PlayerHit names that player
+ * Then nothing flashes: a ship goes down through its EntityDestroyed
+ */
+TEST_F(EntityReplicatorFixture, APlayerHitPlaysNothing) {
+  replicator().apply(
+      spawned(SHIP_ID, WireEntityType::PlayerShip, FIRST_POSITION));
+  replicator().apply(
+      stateListingPlayers(APPLIED_TICK, {secondPilotFlying(false)}));
+
+  replicator().apply(playerHit(AN_EVENT_NUMBER, SECOND_PLAYER_NUMBER));
+
+  EXPECT_FALSE(isFlashed(EntityType::Player));
+}
+
+/**
+ * Given a ship the client has
+ * When an EntityDestroyed says it was killed
+ * Then its fireballs start and its white picture stays: the whole of T4
+ */
+TEST_F(EntityReplicatorFixture, AKilledShipGoesDownWithItsWholeTier) {
+  replicator().apply(
+      spawned(SHIP_ID, WireEntityType::PlayerShip, FIRST_POSITION));
+
+  replicator().apply(killed(SHIP_ID));
+
+  EXPECT_THAT(drawnEffects(),
+              ElementsAre(effectAt(SHIP_EXPLOSION_FRAME, FIRST_POSITION)));
+  EXPECT_EQ(frozenPictureCount(), 1U);
+}
+
+/**
+ * Given a replicator that has applied nothing
+ * When a WorldState creates a ship and lists its player
+ * Then the ship arrives, behind speed lines in the light of its pilot
+ */
+TEST_F(EntityReplicatorFixture, AShipAStateCreatesArrivesInItsPilotColor) {
+  replicator().apply(
+      WorldState{.tick = APPLIED_TICK,
+                 .players = {secondPilotFlying(false)},
+                 .entities = {listed(SHIP_ID, WireEntityType::PlayerShip,
+                                     FIRST_POSITION)}});
+
+  EXPECT_TRUE(isArriving(EntityType::Player));
+  EXPECT_THAT(speedLineColors(),
+              ::testing::Contains(PINK_LIGHT_OF_THE_SECOND_PILOT));
+}
+
+/**
+ * Given a ship the client has
+ * When a WorldState lists the numbers just outside the players with it
+ * Then the ship gets no pilot color
+ */
+TEST_F(EntityReplicatorFixture, IgnoresAPlayerNumberOutsideThePlayers) {
+  replicator().apply(
+      spawned(SHIP_ID, WireEntityType::PlayerShip, FIRST_POSITION));
+
+  replicator().apply(stateListingPlayers(
+      APPLIED_TICK, {playerFlying(BEFORE_THE_FIRST_PLAYER, SHIP_ID),
+                     playerFlying(AFTER_THE_LAST_PLAYER, SHIP_ID)}));
+
+  EXPECT_FALSE(pilotColorOfThe(EntityType::Player).has_value());
+}
+
+/**
+ * Given a Bydo the client has
+ * When a WorldState names it as the ship of a player
+ * Then it gets no pilot color: only a ship is a pilot's
+ */
+TEST_F(EntityReplicatorFixture, IgnoresAShipIdThatNamesNoShip) {
+  replicator().apply(spawned(BYDO_ID, WireEntityType::Bydo, FIRST_POSITION));
+
+  replicator().apply(stateListingPlayers(
+      APPLIED_TICK, {playerFlying(SECOND_PLAYER_NUMBER, BYDO_ID)}));
+
+  EXPECT_FALSE(pilotColorOfThe(EntityType::Enemy).has_value());
 }

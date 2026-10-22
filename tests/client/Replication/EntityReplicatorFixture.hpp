@@ -1,13 +1,17 @@
 #pragma once
 
 #include <gtest/gtest.h>
+#include <SFML/Graphics/Color.hpp>
 #include <cstddef>
 #include <cstdint>
+#include <optional>
 #include <ostream>
 #include <string>
 #include <vector>
 #include "ComponentRegistry.hpp"
 #include "EffectSpawner.hpp"
+#include "Effects/EffectLengths.hpp"
+#include "Entity.hpp"
 #include "EntityRegistry.hpp"
 #include "EntityReplicator.hpp"
 #include "EntityType.hpp"
@@ -70,9 +74,9 @@ class EntityReplicatorFixture : public ::testing::Test {
   void announceOneOfEachType();
 
   /**
-   * @returns Every entity of the Entities layer, as RenderSystem would draw
-   * it, in no particular order: the ships, Bydos and missiles, not their
-   * effects.
+   * @returns Every entity the server announced, as RenderSystem would draw
+   * it, in no particular order, whatever its layer: the ships, Bydos and
+   * missiles, not their effects nor the white picture a ship leaves.
    */
   [[nodiscard]] std::vector<DrawnEntity> drawnEntities();
 
@@ -83,9 +87,33 @@ class EntityReplicatorFixture : public ::testing::Test {
   [[nodiscard]] std::vector<DrawnEntity> drawnEffects();
 
   /**
-   * @returns How many entities of the Entities layer play an animation.
+   * @returns How many entities the server announced play an animation.
    */
   [[nodiscard]] std::size_t animatedEntityCount();
+
+  /** @returns The pilot color of the only entity of that type, or nothing
+   * when it has none or there is no such entity. */
+  [[nodiscard]] std::optional<int> pilotColorOfThe(game::EntityType type);
+
+  /** @returns Whether the only entity of that type shows it cannot be hit. */
+  [[nodiscard]] bool isInvulnerable(game::EntityType type);
+
+  /** @returns Whether the only entity of that type is drawn hit. */
+  [[nodiscard]] bool isFlashed(game::EntityType type);
+
+  /** @returns Whether the only entity of that type is arriving, hidden or
+   * shown row by row. */
+  [[nodiscard]] bool isArriving(game::EntityType type);
+
+  /** @returns The colors of the speed lines, in no particular order. */
+  [[nodiscard]] std::vector<sf::Color> speedLineColors();
+
+  /** @returns How many white pictures of destroyed ships are left. */
+  [[nodiscard]] std::size_t frozenPictureCount();
+
+  /** @returns How many entities the server announced are alive: those with
+   * an EntityType, not their effects. */
+  [[nodiscard]] std::size_t announcedEntityCount();
 
   /**
    * @returns How many entities are alive in the registry, effects included.
@@ -98,9 +126,13 @@ class EntityReplicatorFixture : public ::testing::Test {
    */
   [[nodiscard]] std::vector<DrawnEntity> drawnIn(game::Layer layer);
 
+  /** @returns The only entity of that type, or nothing. */
+  [[nodiscard]] std::optional<engine::Entity> onlyEntityOf(
+      game::EntityType type);
+
   engine::EntityRegistry entities_;
   engine::ComponentRegistry components_{entities_};
-  EffectSpawner effects_{entities_, components_};
+  EffectSpawner effects_{entities_, components_, EFFECT_TEST_SEED};
   EntityReplicator replicator_{entities_, components_, effects_};
 };
 

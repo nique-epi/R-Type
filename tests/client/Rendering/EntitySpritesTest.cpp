@@ -89,19 +89,36 @@ TEST(EntitySprites, EveryEntityTypeHasASpriteOfTheEntitySheet) {
 }
 
 /**
- * Given every entity type
- * When each one is looked up in the entity table
- * Then each is drawn in the entities layer, in front of the background and
- * behind the effects
+ * Given each entity type
+ * When its sprite is asked for
+ * Then a Bydo is drawn behind the effects, a ship and its missiles in front
+ * of them, a missile of an enemy in front of everything of the playfield
  */
-TEST(EntitySprites, EntitiesAreDrawnInTheEntitiesLayer) {
+TEST(EntitySprites, EachTypeIsDrawnInTheLayerThatKeepsDangerInSight) {
+  EXPECT_EQ(spriteOf(EntityType::Enemy).value_or(Sprite{}).layer,
+            Layer::Enemies);
+  EXPECT_EQ(spriteOf(EntityType::Player).value_or(Sprite{}).layer,
+            Layer::Players);
+  EXPECT_EQ(spriteOf(EntityType::PlayerMissile).value_or(Sprite{}).layer,
+            Layer::Players);
+  EXPECT_EQ(spriteOf(EntityType::EnemyMissile).value_or(Sprite{}).layer,
+            Layer::EnemyMissiles);
+}
+
+/**
+ * Given every entity type
+ * When its animated sprite is asked for
+ * Then it is drawn in the same layer as its sprite
+ */
+TEST(EntitySprites, AnAnimatedSpriteIsDrawnInTheLayerOfItsType) {
   for (const EntityType type : ALL_ENTITY_TYPES) {
     SCOPED_TRACE(static_cast<int>(type));
 
-    const std::optional<Sprite> sprite = spriteOf(type);
+    const std::optional<AnimatedSprite> animated = animatedSpriteOf(type, 0);
 
-    ASSERT_TRUE(sprite.has_value());
-    EXPECT_EQ(sprite.value_or(Sprite{}).layer, Layer::Entities);
+    ASSERT_TRUE(animated.has_value());
+    EXPECT_EQ(animated.value_or(AnimatedSprite{}).sprite.layer,
+              spriteOf(type).value_or(Sprite{}).layer);
   }
 }
 

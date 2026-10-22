@@ -11,6 +11,7 @@
 #include "ConnectionStatus.hpp"
 #include "Endpoint.hpp"
 #include "EntityMessage.hpp"
+#include "GameEventHistory.hpp"
 #include "IDatagramLink.hpp"
 #include "IEntityMessageSource.hpp"
 #include "IPlayerInputLink.hpp"
@@ -62,10 +63,12 @@ namespace rtype::client {
  * inputs from FIRST_INPUT_NUMBER again.
  *
  * From the start of the game, it keeps the EntitySpawned, WorldState and
- * EntityDestroyed of the server, in the order they arrived, until
- * drainEntityMessages() hands them over; leaving the session drops those not
- * handed over. The game screen drains them every frame, behind the options
- * too, so they never pile up for longer than the loading of the game.
+ * EntityDestroyed of the server, and the first copy of each GameEvent (see
+ * GameEventHistory), in the order they arrived, until drainEntityMessages()
+ * hands them over; leaving the session drops those not handed over and
+ * forgets the events seen. The game screen drains them every frame, behind
+ * the options too, so they never pile up for longer than the loading of the
+ * game.
  *
  * Only datagrams from the server being contacted, of this protocol and version
  * and whose messages add up to their end, are read; any other is ignored.
@@ -250,6 +253,7 @@ class ServerConnection : public IServerConnection,
   std::optional<Departure> departure_;
   std::vector<network::IncomingDatagram> received_;
   std::vector<EntityMessage> entityMessages_;
+  GameEventHistory gameEvents_;
 };
 
 }  // namespace rtype::client

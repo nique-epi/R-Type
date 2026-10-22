@@ -5,6 +5,7 @@ target_include_directories(rtype_client_server_connection PUBLIC ${CMAKE_CURRENT
 target_link_libraries(rtype_client_server_connection
   PUBLIC
     rtype_client_connection
+    rtype_client_game_event_history
     rtype_engine_time
     rtype_logging
     rtype_network_message_dispatcher

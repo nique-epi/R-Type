@@ -11,6 +11,7 @@
 #include "EntityMessage.hpp"
 #include "EntityRegistry.hpp"
 #include "EntityReplicator.hpp"
+#include "FlashPreference.hpp"
 #include "IEntityLayer.hpp"
 #include "IEntityMessageSource.hpp"
 #include "IInterfaceCanvas.hpp"
@@ -18,7 +19,9 @@
 #include "IScreen.hpp"
 #include "IScreenNavigator.hpp"
 #include "IServerConnection.hpp"
+#include "ISky.hpp"
 #include "Logger.hpp"
+#include "MissionBanner.hpp"
 #include "PlayerCommands.hpp"
 #include "PlayerInputPacer.hpp"
 #include "ScoreBoard.hpp"
@@ -45,10 +48,17 @@ struct PlayerSettings;
  * replicator and the effects point at the registries of the screen, so it
  * never moves.
  *
+ * Each update also moves the effects on (see EffectSpawner), then sets the
+ * sky: the speed of its stars from the start of the game (see
+ * warpSpeedFactorAt(), 1 when the player reduced flashes), and the shake of
+ * the camera, which also shifts the entity layer, never the status band. The
+ * sky is put back at its speed and place when the screen goes.
+ *
  * The status band of the players lies over the entities: it is painted when
  * the screen is built, from the waiting room the game started from, then
- * again whenever a world state changes a pilot (see ScoreBoard), never at
- * every frame.
+ * again whenever a world state changes a pilot (see ScoreBoard) or the
+ * MISSION START banner changes (see missionBannerAt()), never at every frame
+ * otherwise.
  *
  * Releasing OPTIONS_KEY releases every action held, then puts the options over
  * the game, which goes on running behind them, dimmed. The release, not the
@@ -88,6 +98,10 @@ class GameScreen : public IScreen {
     /** @brief The session the game started in: its waiting room and the
      * number of this client, read when the screen is built. */
     std::reference_wrapper<const IServerConnection> connection;
+    /** @brief The sky behind the screens, which must outlive the screen: its
+     * stars speed up at the start of the game, and it shakes with the
+     * camera. */
+    std::reference_wrapper<ISky> sky;
   };
 
   /**
@@ -102,7 +116,7 @@ class GameScreen : public IScreen {
   GameScreen& operator=(const GameScreen&) = delete;
   GameScreen(GameScreen&&) = delete;
   GameScreen& operator=(GameScreen&&) = delete;
-  ~GameScreen() override = default;
+  ~GameScreen() override;
 
   void handleEvent(const sf::Event& event) override;
   void update(engine::Duration elapsed) override;
@@ -122,9 +136,15 @@ class GameScreen : public IScreen {
    * painted. */
   void repaintStatusWhenChanged();
 
-  /** @brief Paints the status band from the score board, and keeps the
-   * revision painted. */
+  /** @brief Paints the status band from the score board, and the banner of
+   * the start of the game over it, and keeps what was painted. */
   void repaintStatus();
+
+  /** @brief Sets the speed of the stars and the shake of the sky for the
+   * time since the start of the game. */
+  void moveSky();
+
+  [[nodiscard]] FlashPreference flashPreference() const;
 
   IScreenNavigator* navigator_;
   std::unique_ptr<IEntityLayer> entityLayer_;
@@ -132,7 +152,7 @@ class GameScreen : public IScreen {
   const PlayerSettings* settings_;
   engine::EntityRegistry entities_;
   engine::ComponentRegistry components_{entities_};
-  EffectSpawner effects_{entities_, components_};
+  EffectSpawner effects_;
   EntityReplicator replicator_{entities_, components_, effects_};
   engine::SystemScheduler systems_;
   PlayerCommands playerCommands_;
@@ -144,6 +164,8 @@ class GameScreen : public IScreen {
   PlayerInputPacer inputPacer_;
   logging::Logger logger_{std::string{GAME_SCREEN_LOGGER_NAME}};
   std::uint8_t loggedActions_{0};
+  ISky* sky_;
+  MissionBannerLook paintedBanner_;
 };
 
 }  // namespace rtype::client

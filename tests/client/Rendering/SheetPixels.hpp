@@ -28,3 +28,12 @@ bool hasAVisiblePixelAround(const sf::Image& image,
 /** @returns true when a pixel of the rectangle has exactly that color. */
 bool showsColor(const sf::Image& image, rtype::game::SpriteFrame frame,
                 sf::Color color);
+
+/** @returns How many pixels of @p frame differ from the pixel at the same
+ * place in @p other, a rectangle of the same size: what a version without
+ * flash changes. */
+int changedPixelCount(const sf::Image& image, rtype::game::SpriteFrame frame,
+                      rtype::game::SpriteFrame other);
+
+/** @returns How many pixels of the rectangle are not transparent. */
+int visiblePixelCount(const sf::Image& image, rtype::game::SpriteFrame frame);

@@ -34,6 +34,22 @@ const Animation* entityAnimationOf(game::EntityType type) {
   return nullptr;
 }
 
+/** @returns The layer an entity type is drawn in: a ship and the missile of a
+ * player in front of the effects, the missile of an enemy in front of
+ * everything of the playfield, a Bydo behind the effects. */
+game::Layer layerOf(game::EntityType type) {
+  switch (type) {
+    case game::EntityType::Player:
+    case game::EntityType::PlayerMissile:
+      return game::Layer::Players;
+    case game::EntityType::EnemyMissile:
+      return game::Layer::EnemyMissiles;
+    case game::EntityType::Enemy:
+      break;
+  }
+  return game::Layer::Enemies;
+}
+
 /** @returns The animation with its elapsed time set to the offset of a network
  * id: the fractional part of networkId times LOOP_START_SPREAD, as a share of
  * one cycle. */
@@ -46,11 +62,11 @@ SpriteAnimation startedAt(const Animation& animation, std::uint32_t networkId) {
           animation.cycle() * shareOfCycle)};
 }
 
-/** @returns The sprite of an entity showing @p frame of the entity sheet. */
-game::Sprite entitySpriteShowing(game::SpriteFrame frame) {
-  return game::Sprite{.assetId = ENTITY_SHEET_ID,
-                      .frame = frame,
-                      .layer = game::Layer::Entities};
+/** @returns The sprite of an entity showing @p frame of the entity sheet, in
+ * @p layer. */
+game::Sprite entitySpriteShowing(game::SpriteFrame frame, game::Layer layer) {
+  return game::Sprite{
+      .assetId = ENTITY_SHEET_ID, .frame = frame, .layer = layer};
 }
 
 }  // namespace
@@ -60,7 +76,7 @@ std::optional<game::Sprite> spriteOf(game::EntityType type) {
   if (animation == nullptr) {
     return std::nullopt;
   }
-  return entitySpriteShowing(animation->frames.front());
+  return entitySpriteShowing(animation->frames.front(), layerOf(type));
 }
 
 std::optional<SpriteAnimation> animationOf(game::EntityType type,
@@ -81,7 +97,8 @@ std::optional<AnimatedSprite> animatedSpriteOf(game::EntityType type,
   const SpriteAnimation started = startedAt(*animation, networkId);
   return AnimatedSprite{
       .sprite = entitySpriteShowing(started.animation.frameAt(started.elapsed)
-                                        .value_or(animation->frames.front())),
+                                        .value_or(animation->frames.front()),
+                                    layerOf(type)),
       .animation = started};
 }
 

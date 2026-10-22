@@ -5,6 +5,7 @@ target_include_directories(rtype_client_sfml_draw_surface PUBLIC ${CMAKE_CURRENT
 target_link_libraries(rtype_client_sfml_draw_surface
   PUBLIC
     rtype_client_rendering_interfaces
+    rtype_client_text_writer
     rtype_logging
     SFML::Graphics
   PRIVATE

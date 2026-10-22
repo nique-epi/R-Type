@@ -16,4 +16,8 @@ constexpr sf::Color FLASH_COLOR(255, 251, 232);
  */
 constexpr sf::Color SHADE_TINT(200, 130, 150);
 
+/** @brief Color a sprite is multiplied by when it should be drawn dithered
+ * and the graphics card has no shaders: half transparent. */
+constexpr sf::Color GHOST_FALLBACK_TINT(255, 255, 255, 128);
+
 }  // namespace rtype::client

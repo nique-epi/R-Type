@@ -35,10 +35,13 @@ struct Animation {
   Playback playback{};
 
   /**
-   * @param elapsed Time since the animation started, zero or more.
+   * @param elapsed Time since the animation started. A negative time shows
+   * the first frame: an effect started at minus a hold keeps its first frame
+   * that much longer.
    * @returns Frame floor(elapsed / frameDuration), taken modulo the number of
-   * frames for a loop and capped at the last frame for an animation played
-   * once; nothing when there is no frame or frameDuration is not positive.
+   * frames for a loop and capped between the first and the last frame for an
+   * animation played once; nothing when there is no frame or frameDuration is
+   * not positive.
    */
   [[nodiscard]] std::optional<game::SpriteFrame> frameAt(
       engine::Duration elapsed) const;

@@ -3,8 +3,12 @@
 #include <utility>
 #include <vector>
 #include "EntityDestroyed.hpp"
+#include "EntityIdConstants.hpp"
+#include "EntityReplicatorTestConstants.hpp"
 #include "EntitySpawned.hpp"
+#include "GameEvent.hpp"
 #include "Position.hpp"
+#include "ProtocolConstants.hpp"
 #include "WorldState.hpp"
 
 namespace rtype::client::testing {
@@ -47,6 +51,30 @@ network::EntityDestroyed killed(std::uint32_t entityId) {
 network::EntityDestroyed removed(std::uint32_t entityId) {
   return network::EntityDestroyed{
       .entityId = entityId, .reason = network::DestructionReason::Removed};
+}
+
+network::PlayerState playerFlying(std::uint8_t playerNumber,
+                                  std::uint32_t shipEntityId) {
+  return network::PlayerState{.playerNumber = playerNumber,
+                              .shipEntityId = shipEntityId,
+                              .lives = FLYING_PLAYER_LIVES,
+                              .score = 0,
+                              .invulnerable = false};
+}
+
+network::GameEvent damaged(std::uint16_t eventNumber, std::uint32_t entityId) {
+  return network::GameEvent{.eventNumber = eventNumber,
+                            .kind = network::GameEventKind::EntityDamaged,
+                            .playerNumber = network::NO_PLAYER_NUMBER,
+                            .entityId = entityId};
+}
+
+network::GameEvent playerHit(std::uint16_t eventNumber,
+                             std::uint8_t playerNumber) {
+  return network::GameEvent{.eventNumber = eventNumber,
+                            .kind = network::GameEventKind::PlayerHit,
+                            .playerNumber = playerNumber,
+                            .entityId = identifiers::NO_ENTITY_ID};
 }
 
 }  // namespace rtype::client::testing

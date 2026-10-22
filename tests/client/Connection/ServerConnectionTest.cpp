@@ -23,6 +23,7 @@
 #include "EntityMessage.hpp"
 #include "EntityReplicatorTestConstants.hpp"
 #include "EntitySpawned.hpp"
+#include "GameEvent.hpp"
 #include "GameStarted.hpp"
 #include "Heartbeat.hpp"
 #include "IncomingDatagram.hpp"
@@ -52,8 +53,10 @@ using testing::ACCEPTANCE_SEQUENCE;
 using testing::ACCEPTED_PLAYER_NUMBER;
 using testing::APPLIED_TICK;
 using testing::CHALLENGE_COOKIE;
+using testing::damaged;
 using ::testing::ElementsAre;
 using ::testing::ElementsAreArray;
+using testing::EVENT_NUMBER;
 using testing::FIRST_POSITION;
 using testing::FIRST_SEQUENCE;
 using testing::FOURTH_SEQUENCE;
@@ -1113,6 +1116,61 @@ TEST_F(ServerConnectionTest, LeavingDropsTheEntityMessagesNotHandedOver) {
   connection().cancel();
 
   EXPECT_THAT(drainedEntityMessages(), IsEmpty());
+}
+
+/**
+ * Given a game started in the session
+ * When the three copies of a GameEvent arrive, each in its own datagram
+ * Then the connection hands over one GameEvent
+ */
+TEST_F(ServerConnectionTest, KeepsTheFirstCopyOfAGameEventOnly) {
+  accept();
+  deliverInSession(network::GameStarted{}, FIRST_SEQUENCE);
+  const network::GameEvent event = damaged(EVENT_NUMBER, SHIP_ID);
+  deliverInSession(event, SECOND_SEQUENCE);
+  deliverInSession(event, THIRD_SEQUENCE);
+  deliverInSession(event, FOURTH_SEQUENCE);
+
+  update();
+
+  EXPECT_THAT(drainedEntityMessages(), ElementsAre(EntityMessage{event}));
+}
+
+/**
+ * Given a session whose game has not started
+ * When a GameEvent arrives
+ * Then the connection hands over nothing
+ */
+TEST_F(ServerConnectionTest, IgnoresAGameEventBeforeTheGame) {
+  accept();
+  deliverInSession(damaged(EVENT_NUMBER, SHIP_ID), FIRST_SEQUENCE);
+
+  update();
+
+  EXPECT_THAT(drainedEntityMessages(), IsEmpty());
+}
+
+/**
+ * Given a session that handed over an event, then was left, and a new
+ * session whose game started
+ * When an event of the same number arrives
+ * Then it is handed over: a new session numbers its events again
+ */
+TEST_F(ServerConnectionTest, ANewSessionForgetsTheEventsSeen) {
+  accept();
+  deliverInSession(network::GameStarted{}, FIRST_SEQUENCE);
+  const network::GameEvent event = damaged(EVENT_NUMBER, SHIP_ID);
+  deliverInSession(event, SECOND_SEQUENCE);
+  update();
+  ASSERT_THAT(drainedEntityMessages(), SizeIs(1));
+  connection().cancel();
+  accept();
+  deliverInSession(network::GameStarted{}, FIRST_SEQUENCE);
+  deliverInSession(event, SECOND_SEQUENCE);
+
+  update();
+
+  EXPECT_THAT(drainedEntityMessages(), ElementsAre(EntityMessage{event}));
 }
 
 /**

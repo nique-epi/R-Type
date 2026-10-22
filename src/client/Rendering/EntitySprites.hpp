@@ -14,8 +14,9 @@ namespace rtype::client {
 /**
  * @brief The single table that gives each entity type its look on screen.
  *
- * Every type is drawn from the entity sheet, in the entities layer. All four
- * players get the first ship color.
+ * Every type is drawn from the entity sheet, in the layer of its type:
+ * Enemies for a Bydo, Players for a ship and its missiles, EnemyMissiles for a
+ * missile of an enemy. All four players get the first ship color.
  *
  * @returns The sprite of the type, or nothing for a value outside EntityType.
  */

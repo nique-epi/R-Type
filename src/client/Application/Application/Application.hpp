@@ -142,6 +142,8 @@ class Application {
   SettingsFile settingsFile_;
   PlayerSettings settings_;
   GameWindow window_;
+  /** @brief The sky behind every screen, declared before the screens so it
+   * outlives the game screen, which speeds it up and shakes it. */
   ScrollingBackground background_;
   engine::SystemClock clock_;
   engine::Duration previousFrameTime_{};

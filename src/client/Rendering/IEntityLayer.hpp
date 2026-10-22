@@ -1,5 +1,7 @@
 #pragma once
 
+#include <SFML/System/Vector2.hpp>
+
 namespace sf {
 class RenderTarget;
 }  // namespace sf
@@ -21,9 +23,15 @@ class IEntityLayer {
  public:
   virtual ~IEntityLayer() = default;
 
-  /** @brief Repaints the layer with every entity that has a Position and a
-   * Sprite. */
-  virtual void paint(engine::ComponentRegistry& components) = 0;
+  /**
+   * @brief Repaints the layer with every entity that has a Position and a
+   * Sprite, and every pixel effect.
+   *
+   * @param offset How many pixels of the canvas everything is painted away
+   * from its place: the shake of the camera, (0, 0) at rest.
+   */
+  virtual void paint(engine::ComponentRegistry& components,
+                     sf::Vector2i offset) = 0;
 
   /**
    * @brief Lays the last painted picture over the playfield.

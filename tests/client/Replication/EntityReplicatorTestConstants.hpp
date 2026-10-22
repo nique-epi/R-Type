@@ -43,4 +43,8 @@ constexpr auto WIRE_TYPE_BEFORE_THE_FIRST =
 constexpr auto WIRE_TYPE_AFTER_THE_LAST =
     static_cast<network::WireEntityType>(network::LAST_WIRE_ENTITY_TYPE + 1);
 
+/** @brief The lives of a player flying, as a WorldState of the tests lists
+ * it. */
+constexpr std::uint8_t FLYING_PLAYER_LIVES = 3;
+
 }  // namespace rtype::client::testing

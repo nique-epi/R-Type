@@ -38,7 +38,7 @@ class FlashedScene {
     const Entity entity = entities_.create();
     components_.add(
         entity,
-        Sprite{.assetId = SHEET_ID, .frame = FRAME, .layer = Layer::Entities});
+        Sprite{.assetId = SHEET_ID, .frame = FRAME, .layer = Layer::Enemies});
     components_.add(
         entity, HitFlash{.tone = SpriteTone::Flash, .remaining = remaining});
     return entity;

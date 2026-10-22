@@ -1,5 +1,6 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include <SFML/System/Vector2.hpp>
 #include <SFML/Window/Event.hpp>
 #include <SFML/Window/Keyboard.hpp>
 #include <chrono>
@@ -30,6 +31,7 @@
 #include "RecordingPlayerInputLink.hpp"
 #include "RecordingScreen.hpp"
 #include "RecordingServerConnection.hpp"
+#include "RecordingSky.hpp"
 #include "ScreenConstants.hpp"
 #include "ScreenId.hpp"
 #include "ScreenStack.hpp"
@@ -94,6 +96,7 @@ constexpr std::uint8_t LOCAL_NUMBER = SECOND_PILOT;
 constexpr std::uint8_t PILOT_LIVES = 3;
 constexpr std::uint32_t PILOT_SCORE = 12400;
 constexpr int DISPLAYS_AT_CONSTRUCTION = 1;
+constexpr float WARP_TOLERANCE = 1e-4F;
 
 /** @brief Accepts a connection as player 2, NOVA, of a waiting room where ACE
  * is player 1 and KAI player 3, none ready. */
@@ -123,7 +126,8 @@ WorldState stateScoringTheFirstPilot(std::uint32_t tick) {
  * drawing the test does not read. */
 class IgnoringEntityLayer : public IEntityLayer {
  public:
-  void paint([[maybe_unused]] ComponentRegistry& components) override {}
+  void paint([[maybe_unused]] ComponentRegistry& components,
+             [[maybe_unused]] sf::Vector2i offset) override {}
   void show([[maybe_unused]] sf::RenderTarget& target) const override {}
 };
 
@@ -138,6 +142,7 @@ struct LoneGameParts {
   FakeEntityMessageSource entityMessages;
   RecordingServerConnection connection;
   InterfaceCanvasRecord statusCanvas;
+  RecordingSky sky;
 
   /** @returns The parts of a game screen, borrowing these doubles. */
   [[nodiscard]] GameScreen::Parts parts() {
@@ -145,7 +150,8 @@ struct LoneGameParts {
                              .settings = settings,
                              .inputs = inputs,
                              .entityMessages = entityMessages,
-                             .connection = connection};
+                             .connection = connection,
+                             .sky = sky};
   }
 
   /** @returns A status canvas recording into statusCanvas. */
@@ -180,6 +186,8 @@ class GameScreenTest : public ::testing::Test {
 
   PlayerSettings& settings() { return settings_; }
 
+  [[nodiscard]] const RecordingSky& sky() const { return sky_; }
+
   FakeEntityMessageSource& entityMessages() { return entityMessages_; }
 
   [[nodiscard]] const InterfaceCanvasRecord& statusCanvas() const {
@@ -197,6 +205,7 @@ class GameScreenTest : public ::testing::Test {
   RecordingServerConnection connection_;
   InterfaceCanvasRecord statusCanvas_;
   DrawJournal drawJournal_;
+  RecordingSky sky_;
   ScreenStack screens_{[this](ScreenId screen) -> std::unique_ptr<IScreen> {
     if (screen == ScreenId::Game) {
       return std::make_unique<GameScreen>(
@@ -204,7 +213,8 @@ class GameScreenTest : public ::testing::Test {
                             .settings = settings_,
                             .inputs = inputs_,
                             .entityMessages = entityMessages_,
-                            .connection = connection_},
+                            .connection = connection_,
+                            .sky = sky_},
           std::make_unique<RecordingEntityLayer>(layerRecord_),
           std::make_unique<RecordingInterfaceCanvas>(statusCanvas_));
     }
@@ -356,7 +366,7 @@ TEST_F(GameScreenTest, AKilledEntityLeavesItsExplosion) {
 
 /**
  * Given the explosion of a killed Bydo, just painted
- * When the game plays its length, frame by frame
+ * When the game plays its freeze and its length, frame by frame
  * Then the explosion has ended and nothing is painted
  */
 TEST_F(GameScreenTest, AnExplosionEndsAfterItsLength) {
@@ -364,7 +374,8 @@ TEST_F(GameScreenTest, AnExplosionEndsAfterItsLength) {
   entityMessages().queue(killed(BYDO_ID));
   screens().update(ONE_FRAME);
 
-  for (Duration played{}; played < BYDO_EXPLOSION_LENGTH; played += ONE_FRAME) {
+  for (Duration played{}; played < KILL_HOLD_LENGTH + BYDO_EXPLOSION_LENGTH;
+       played += ONE_FRAME) {
     screens().update(ONE_FRAME);
   }
 
@@ -641,4 +652,76 @@ TEST(GameScreenInputsTest, BehindTheOptionsItSendsNothingHeld) {
   game.update(ONE_FRAME);
 
   EXPECT_THAT(doubles.inputs.sentActions(), ElementsAre(NOTHING_HELD));
+}
+
+/**
+ * Given a game just started
+ * When 117 ms pass
+ * Then the stars of the sky go 12 times their speed
+ */
+TEST_F(GameScreenTest, TheStarsWarpAtTheStartOfTheGame) {
+  screens().update(WARP_TOP_TIME);
+
+  EXPECT_NEAR(sky().lastSpeedFactor(), TOP_WARP_SPEED, WARP_TOLERANCE);
+}
+
+/**
+ * Given a game just started
+ * When 600 ms pass
+ * Then the stars go their own speed again
+ */
+TEST_F(GameScreenTest, TheStarsSlowDownToTheirSpeed) {
+  screens().update(WARP_END_TIME);
+
+  EXPECT_NEAR(sky().lastSpeedFactor(), OWN_SPEED, WARP_TOLERANCE);
+}
+
+/**
+ * Given a player who reduced flashes
+ * When the game starts and 117 ms pass
+ * Then the stars keep their own speed
+ */
+TEST_F(GameScreenTest, WithFlashesReducedTheStarsDoNotWarp) {
+  settings().reduceFlashes = true;
+
+  screens().update(WARP_TOP_TIME);
+
+  EXPECT_EQ(sky().lastSpeedFactor(), OWN_SPEED);
+}
+
+/**
+ * Given a game whose stars warp
+ * When the game leaves the stack
+ * Then the sky goes its own speed, in its place
+ */
+TEST_F(GameScreenTest, LeavingTheGamePutsTheSkyBack) {
+  screens().update(WARP_TOP_TIME);
+
+  screens().pop();
+  screens().applyPendingChanges();
+
+  EXPECT_EQ(sky().lastSpeedFactor(), OWN_SPEED);
+  EXPECT_EQ(sky().lastOffset(), sf::Vector2i());
+}
+
+/**
+ * Given a game just started
+ * When 1 s passes
+ * Then the status canvas is written "M", the first letter of the banner
+ */
+TEST_F(GameScreenTest, TheBannerStartsAtOneSecond) {
+  screens().update(BANNER_START_TIME);
+
+  EXPECT_NE(writingOf(statusCanvas(), "M"), nullptr);
+}
+
+/**
+ * Given a game at rest, no trauma
+ * When a frame passes
+ * Then the entity layer is painted in its place
+ */
+TEST_F(GameScreenTest, TheEntitiesArePaintedInPlaceAtRest) {
+  screens().update(ONE_FRAME);
+
+  EXPECT_EQ(layerRecord().offsetAtLastPaint, sf::Vector2i());
 }

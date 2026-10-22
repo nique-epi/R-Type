@@ -2,37 +2,33 @@
 #include <SFML/Graphics/RenderTarget.hpp>
 #include <SFML/Window/Event.hpp>
 #include <memory>
+#include <random>
 #include <utility>
 #include <variant>
 #include "ActionSet.hpp"
 #include "AnimationSystem.hpp"
 #include "EntityMessage.hpp"
 #include "FlashPreference.hpp"
+#include "GroundEffectSystem.hpp"
 #include "HitFlashSystem.hpp"
 #include "IEntityLayer.hpp"
 #include "IEntityMessageSource.hpp"
 #include "IInterfaceCanvas.hpp"
 #include "IPlayerInputLink.hpp"
 #include "IScreenNavigator.hpp"
+#include "ISky.hpp"
+#include "MissionBanner.hpp"
+#include "MissionStart.hpp"
 #include "PlayerInputPacer.hpp"
 #include "PlayerSettings.hpp"
 #include "ScreenConstants.hpp"
 #include "ScreenId.hpp"
+#include "SpriteEffectSystem.hpp"
 #include "StatusBand.hpp"
 #include "TimeConstants.hpp"
 #include "WorldState.hpp"
 
 namespace rtype::client {
-
-namespace {
-
-/** @returns The flash preference the settings of the player hold. */
-FlashPreference flashPreferenceOf(const PlayerSettings& settings) {
-  return settings.reduceFlashes ? FlashPreference::Reduced
-                                : FlashPreference::Full;
-}
-
-}  // namespace
 
 GameScreen::GameScreen(Parts parts, std::unique_ptr<IEntityLayer> entityLayer,
                        std::unique_ptr<IInterfaceCanvas> statusCanvas)
@@ -40,15 +36,25 @@ GameScreen::GameScreen(Parts parts, std::unique_ptr<IEntityLayer> entityLayer,
       entityLayer_(std::move(entityLayer)),
       statusCanvas_(std::move(statusCanvas)),
       settings_(&parts.settings.get()),
+      effects_(entities_, components_, std::random_device{}()),
       playerCommands_(true, parts.settings.get().keys),
       inputs_(&parts.inputs.get()),
       entityMessageSource_(&parts.entityMessages.get()),
       scoreBoard_(parts.connection.get().lobbyPlayers(),
-                  parts.connection.get().status().playerNumber) {
+                  parts.connection.get().status().playerNumber),
+      sky_(&parts.sky.get()) {
   systems_.add(std::make_unique<AnimationSystem>());
   systems_.add(std::make_unique<HitFlashSystem>());
-  entityLayer_->paint(components_);
+  systems_.add(std::make_unique<SpriteEffectSystem>());
+  systems_.add(std::make_unique<GroundEffectSystem>());
+  moveSky();
+  entityLayer_->paint(components_, effects_.cameraOffset());
   repaintStatus();
+}
+
+GameScreen::~GameScreen() {
+  sky_->setSpeedFactor(1.0F);
+  sky_->setOffset({});
 }
 
 void GameScreen::handleEvent(const sf::Event& event) {
@@ -78,9 +84,11 @@ void GameScreen::update(engine::Duration elapsed) {
     loggedActions_ = held.bits();
   }
   systems_.run(components_, elapsed);
-  effects_.setFlashPreference(flashPreferenceOf(*settings_));
+  effects_.setFlashPreference(flashPreference());
+  effects_.advance(elapsed);
   applyEntityMessages();
-  entityLayer_->paint(components_);
+  moveSky();
+  entityLayer_->paint(components_, effects_.cameraOffset());
   repaintStatusWhenChanged();
 }
 
@@ -97,16 +105,32 @@ void GameScreen::applyEntityMessages() {
 }
 
 void GameScreen::repaintStatusWhenChanged() {
-  if (scoreBoard_.revision() != paintedStatusRevision_) {
+  if (scoreBoard_.revision() != paintedStatusRevision_ ||
+      missionBannerAt(effects_.sinceStart()) != paintedBanner_) {
     repaintStatus();
   }
 }
 
 void GameScreen::repaintStatus() {
+  const MissionBannerLook banner = missionBannerAt(effects_.sinceStart());
   statusCanvas_->clear();
   paintStatusBand(*statusCanvas_, scoreBoard_.pilots());
+  paintMissionBanner(*statusCanvas_, banner);
   statusCanvas_->display();
   paintedStatusRevision_ = scoreBoard_.revision();
+  paintedBanner_ = banner;
+}
+
+void GameScreen::moveSky() {
+  const bool flashes = flashPreference() == FlashPreference::Full;
+  sky_->setSpeedFactor(flashes ? warpSpeedFactorAt(effects_.sinceStart())
+                               : 1.0F);
+  sky_->setOffset(effects_.cameraOffset());
+}
+
+FlashPreference GameScreen::flashPreference() const {
+  return settings_->reduceFlashes ? FlashPreference::Reduced
+                                  : FlashPreference::Full;
 }
 
 ActionSet GameScreen::playerActions() const { return playerCommands_.held(); }

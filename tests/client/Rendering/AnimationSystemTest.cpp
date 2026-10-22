@@ -38,7 +38,7 @@ class AnimatedScene {
       : entity_(entities_.create()) {
     components_.add(
         entity_,
-        Sprite{.assetId = SHEET_ID, .frame = FIRST, .layer = Layer::Entities});
+        Sprite{.assetId = SHEET_ID, .frame = FIRST, .layer = Layer::Enemies});
     components_.add(entity_, animation);
   }
 

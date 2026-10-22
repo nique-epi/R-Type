@@ -153,7 +153,8 @@ std::unique_ptr<IScreen> Application::gameScreen() {
                         .settings = settings_,
                         .inputs = connection_,
                         .entityMessages = connection_,
-                        .connection = connection_},
+                        .connection = connection_,
+                        .sky = background_},
       std::make_unique<EntityLayer>(*assets_), interfaceCanvas());
 }
 

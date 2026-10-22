@@ -6,6 +6,7 @@ target_link_libraries(rtype_client_game_screen
   PUBLIC
     rtype_client_connection
     rtype_client_entity_replicator
+    rtype_client_mission_banner
     rtype_client_player_commands
     rtype_client_player_input_pacer
     rtype_client_rendering_interfaces
@@ -16,8 +17,11 @@ target_link_libraries(rtype_client_game_screen
     SFML::Graphics
   PRIVATE
     rtype_client_animation_system
+    rtype_client_ground_effect_system
     rtype_client_hit_flash_system
+    rtype_client_mission_start
     rtype_client_settings
+    rtype_client_sprite_effect_system
     rtype_client_status_band
 )
 

@@ -22,6 +22,8 @@
 #include "EntityDestroyed.hpp"
 #include "EntityMessage.hpp"
 #include "EntitySpawned.hpp"
+#include "GameEvent.hpp"
+#include "GameEventHistory.hpp"
 #include "GameStarted.hpp"
 #include "Heartbeat.hpp"
 #include "IDatagramLink.hpp"
@@ -92,6 +94,7 @@ std::optional<bool> ServerConnection::requestedReady() const {
 bool ServerConnection::gameStarted() const { return gameStarted_; }
 
 void ServerConnection::update(engine::Duration elapsed) {
+  gameEvents_.advance(elapsed);
   readReceived();
   repeatDeparture(elapsed);
   if (isAccepted()) {
@@ -206,6 +209,12 @@ void ServerConnection::registerSessionMessages() {
       [this](const network::MessageOrigin&,
              const network::EntityDestroyed& destroyed) {
         keepEntityMessage(destroyed);
+      });
+  dispatcher_.registerHandler<network::GameEvent>(
+      [this](const network::MessageOrigin&, const network::GameEvent& event) {
+        if (gameEvents_.isFirstCopy(event.eventNumber)) {
+          keepEntityMessage(event);
+        }
       });
 }
 
@@ -335,6 +344,7 @@ void ServerConnection::forgetSession() {
   sinceReadyState_ = engine::Duration::zero();
   gameStarted_ = false;
   entityMessages_.clear();
+  gameEvents_.forget();
 }
 
 void ServerConnection::sendToServer(network::MessageType type,
