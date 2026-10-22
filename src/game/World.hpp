@@ -2,11 +2,10 @@
 
 #include <cstddef>
 #include <cstdint>
-#include <optional>
 #include "BydoKind.hpp"
 #include "ComponentRegistry.hpp"
-#include "Entity.hpp"
 #include "EntityRegistry.hpp"
+#include "NetworkEntityTable.hpp"
 #include "NetworkIdAllocator.hpp"
 #include "Position.hpp"
 
@@ -15,6 +14,10 @@ namespace rtype::game {
 /**
  * @brief Game state shared by client and server. It knows neither sockets nor
  * the network protocol.
+ *
+ * The ship of each player is listed under its network id, so shipPositionOf()
+ * and removePlayer() find it without visiting the other entities;
+ * removePlayer() takes it out of that list.
  */
 class World {
  public:
@@ -58,15 +61,19 @@ class World {
    */
   engine::ComponentRegistry& components();
 
- private:
-  /** @returns The ship of a player whose NetworkIdentity carries
-   * @p networkId, or nothing when no ship does. */
-  [[nodiscard]] std::optional<engine::Entity> playerShipCarrying(
-      std::uint32_t networkId);
+  /**
+   * @returns The Position of the ship spawnPlayer gave @p shipId, or nullptr
+   * for any other id: the id of a Bydo, an id this world never gave,
+   * NO_ENTITY_ID. The pointer is invalidated by the next add or remove of a
+   * Position, like ComponentRegistry::get.
+   */
+  [[nodiscard]] Position* shipPositionOf(std::uint32_t shipId);
 
+ private:
   engine::EntityRegistry registry_;
   engine::ComponentRegistry components_{registry_};
   engine::NetworkIdAllocator networkIds_;
+  engine::NetworkEntityTable shipByNetworkId_;
 };
 
 }  // namespace rtype::game

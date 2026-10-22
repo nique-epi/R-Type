@@ -1,13 +1,16 @@
 #include <gtest/gtest.h>
 #include <algorithm>
 #include <array>
+#include <chrono>
 #include <cstddef>
 #include <cstdint>
 #include <initializer_list>
 #include <memory>
 #include <optional>
+#include <ostream>
 #include <span>
 #include <string>
+#include <string_view>
 #include <utility>
 #include <vector>
 #include "ByteWriter.hpp"
@@ -34,6 +37,7 @@
 #include "PlayerInput.hpp"
 #include "PlayerLeft.hpp"
 #include "PlayerRoster.hpp"
+#include "Position.hpp"
 #include "ProtocolConstants.hpp"
 #include "ReadyState.hpp"
 #include "Replication/GameEventTestConstants.hpp"
@@ -41,16 +45,20 @@
 #include "ServerConstants.hpp"
 #include "ServerDatagrams.hpp"
 #include "ServerLobbyTestConstants.hpp"
+#include "ShipControlConstants.hpp"
 #include "Spawning/BydoSpawnerTestConstants.hpp"
+#include "TimeConstants.hpp"
 #include "TimerScheduler.hpp"
 #include "UnreliableNetwork.hpp"
 #include "WorldState.hpp"
+#include "game/ShipControl/ShipControlTestConstants.hpp"
 
 namespace rtype::server {
 namespace {
 
 constexpr std::size_t INTERVALS_OF_BYDOS = 10;
 
+using game::testing::POSITION_TOLERANCE;
 using testing::DATAGRAMS_PER_TICK;
 using testing::DROPPED_DATAGRAM_LINE_TEXT;
 using testing::FIRST_PLAYER;
@@ -61,6 +69,7 @@ using testing::FOURTH_SENT;
 using testing::FOURTH_SEQUENCE;
 using testing::HOLDS_DOWN;
 using testing::HOLDS_LEFT;
+using testing::HOLDS_RIGHT;
 using testing::HOLDS_SHOOT;
 using testing::HOLDS_UP;
 using testing::LARGEST_INPUT_NUMBER;
@@ -83,6 +92,7 @@ using testing::THIRD_SENT;
 using testing::THIRD_SEQUENCE;
 using testing::TICKS_PER_REJECTION_LINE;
 using testing::UNLISTED_ACTION;
+using testing::WIRE_COORDINATE_TOLERANCE;
 
 constexpr std::uint32_t SOME_SEED = 7;
 constexpr std::uint32_t SOME_POINTS = 100;
@@ -118,6 +128,18 @@ std::vector<network::OutgoingDatagram> ofType(
     }
   }
   return kept;
+}
+
+/** @returns The entity of @p state whose id is @p entityId, or nothing when the
+ * state does not list it. */
+std::optional<network::EntityState> entityOf(const network::WorldState& state,
+                                             std::uint32_t entityId) {
+  for (const network::EntityState& entity : state.entities) {
+    if (entity.entityId == entityId) {
+      return entity;
+    }
+  }
+  return std::nullopt;
 }
 
 /** @returns The room of a game whose only player, the first, is not ready. */
@@ -571,16 +593,19 @@ TEST_F(GameInstanceTest, ResetsTheWorldBetweenTwoGames) {
  */
 TEST_F(GameInstanceTest, ResetsTheScoreBetweenTwoGames) {
   startGameWithOnePlayer();
+  const ConnectedPlayer* const player =
+      game().roster().findByNumber(network::FIRST_PLAYER_NUMBER);
+  ASSERT_NE(player, nullptr);
   events().publish(game::EnemyKilled{
       .playerNumber = network::FIRST_PLAYER_NUMBER, .points = SOME_POINTS});
   events().dispatch();
-  ASSERT_EQ(game().roster().connected().front()->score, SOME_POINTS);
+  ASSERT_EQ(player->score, SOME_POINTS);
   game().finish();
 
   runTicks(FINISHED_STATE_TICKS);
 
   ASSERT_EQ(game().roster().connected().size(), 1U);
-  EXPECT_EQ(game().roster().connected().front()->score, 0U);
+  EXPECT_EQ(player->score, 0U);
 }
 
 /**
@@ -590,12 +615,15 @@ TEST_F(GameInstanceTest, ResetsTheScoreBetweenTwoGames) {
  */
 TEST_F(GameInstanceTest, CreditsTheKillOfAnEnemyToThePlayerWhoFired) {
   startGameWithOnePlayer();
+  const ConnectedPlayer* const player =
+      game().roster().findByNumber(network::FIRST_PLAYER_NUMBER);
+  ASSERT_NE(player, nullptr);
 
   events().publish(game::EnemyKilled{
       .playerNumber = network::FIRST_PLAYER_NUMBER, .points = SOME_POINTS});
   events().dispatch();
 
-  EXPECT_EQ(game().roster().connected().front()->score, SOME_POINTS);
+  EXPECT_EQ(player->score, SOME_POINTS);
 }
 
 /**
@@ -1669,6 +1697,262 @@ TEST_F(GameInstanceInputTest, KeepsTheInputAcrossANewWorld) {
   ASSERT_EQ(game().state(), GameState::WaitingForPlayers);
   EXPECT_EQ(heldActions(FIRST_PLAYER), HOLDS_UP);
 }
+
+/**
+ * @brief The input fixture, with both players ready and a way to read where
+ * their ships are.
+ */
+class GameInstanceMovementTest : public GameInstanceInputTest {
+ protected:
+  /** @brief Both players say ready, then the tick that starts the game runs. */
+  void startGame() {
+    for (const std::size_t player : {FIRST_PLAYER, SECOND_PLAYER}) {
+      sendReady({.player = player,
+                 .ready = true,
+                 .sequence = FIRST_SEQUENCE,
+                 .sessionToken = PLAYER_SESSION_TOKENS.at(player)});
+    }
+    tick();
+    ASSERT_EQ(game().state(), GameState::InProgress);
+  }
+
+  /** @returns The network id of the ship of @p player; NO_ENTITY_ID, after a
+   * failure, when the player is not in the roster. */
+  [[nodiscard]] std::uint32_t shipIdOf(std::size_t player) {
+    const ConnectedPlayer* const connected =
+        game().roster().find(playerEndpoint(player));
+    if (connected == nullptr) {
+      ADD_FAILURE() << "player " << player << " is not in the roster";
+      return identifiers::NO_ENTITY_ID;
+    }
+    return connected->shipEntityId;
+  }
+
+  /** @returns Where the ship of @p player is; the origin, after a failure, when
+   * it has none. */
+  [[nodiscard]] game::Position shipPositionOf(std::size_t player) {
+    const game::Position* const ship =
+        game().world().shipPositionOf(shipIdOf(player));
+    if (ship == nullptr) {
+      ADD_FAILURE() << "player " << player << " has no ship";
+      return game::Position{.x = 0.0F, .y = 0.0F};
+    }
+    return *ship;
+  }
+};
+
+/**
+ * Given a game in progress whose first player holds right
+ * When a second of ticks runs: the tick that reads the input, then
+ * SIMULATION_TICKS_PER_SECOND - 1 more
+ * Then the ship of that player has moved SHIP_SPEED to the right, on the same
+ * row
+ */
+TEST_F(GameInstanceMovementTest, MovesAShipAtTheShipSpeedWhileInProgress) {
+  startGame();
+  const game::Position start = shipPositionOf(FIRST_PLAYER);
+  send(FIRST_PLAYER, HOLDS_RIGHT);
+
+  deliver({FIRST_SENT});
+  runTicks(engine::SIMULATION_TICKS_PER_SECOND - 1);
+
+  const game::Position arrival = shipPositionOf(FIRST_PLAYER);
+  EXPECT_NEAR(arrival.x, start.x + game::SHIP_SPEED, POSITION_TOLERANCE);
+  EXPECT_FLOAT_EQ(arrival.y, start.y);
+}
+
+/**
+ * Given a game in progress whose first player holds right and whose second
+ * player holds down
+ * When a second of ticks runs
+ * Then each ship has moved SHIP_SPEED the way its own player holds
+ */
+TEST_F(GameInstanceMovementTest, MovesEachShipByTheInputOfItsOwnPlayer) {
+  startGame();
+  const game::Position firstStart = shipPositionOf(FIRST_PLAYER);
+  const game::Position secondStart = shipPositionOf(SECOND_PLAYER);
+  send(FIRST_PLAYER, HOLDS_RIGHT);
+  send(SECOND_PLAYER, HOLDS_DOWN);
+
+  deliver({FIRST_SENT, SECOND_SENT});
+  runTicks(engine::SIMULATION_TICKS_PER_SECOND - 1);
+
+  const game::Position firstArrival = shipPositionOf(FIRST_PLAYER);
+  const game::Position secondArrival = shipPositionOf(SECOND_PLAYER);
+  EXPECT_NEAR(firstArrival.x, firstStart.x + game::SHIP_SPEED,
+              POSITION_TOLERANCE);
+  EXPECT_FLOAT_EQ(firstArrival.y, firstStart.y);
+  EXPECT_FLOAT_EQ(secondArrival.x, secondStart.x);
+  EXPECT_NEAR(secondArrival.y, secondStart.y + game::SHIP_SPEED,
+              POSITION_TOLERANCE);
+}
+
+/**
+ * Given a game in progress whose first player holds right and whose second
+ * player sent no input
+ * When ticks run
+ * Then the ship of the second player stays where it appeared
+ */
+TEST_F(GameInstanceMovementTest, LeavesTheShipOfAPlayerWithoutInputWhereItIs) {
+  startGame();
+  const game::Position start = shipPositionOf(SECOND_PLAYER);
+  send(FIRST_PLAYER, HOLDS_RIGHT);
+
+  deliver({FIRST_SENT});
+  runTicks(SOME_TICKS);
+
+  const game::Position arrival = shipPositionOf(SECOND_PLAYER);
+  EXPECT_FLOAT_EQ(arrival.x, start.x);
+  EXPECT_FLOAT_EQ(arrival.y, start.y);
+}
+
+/**
+ * Given a game in progress whose first player holds shoot and nothing else
+ * When ticks run
+ * Then its ship stays where it appeared: shooting is not a direction
+ */
+TEST_F(GameInstanceMovementTest, DoesNotMoveAShipWhosePlayerOnlyShoots) {
+  startGame();
+  const game::Position start = shipPositionOf(FIRST_PLAYER);
+  send(FIRST_PLAYER, HOLDS_SHOOT);
+
+  deliver({FIRST_SENT});
+  runTicks(SOME_TICKS);
+
+  const game::Position arrival = shipPositionOf(FIRST_PLAYER);
+  EXPECT_FLOAT_EQ(arrival.x, start.x);
+  EXPECT_FLOAT_EQ(arrival.y, start.y);
+}
+
+/**
+ * Given a game waiting for players whose first player holds right
+ * When ticks run
+ * Then its ship stays where it appeared: ships move only while the game is in
+ * progress
+ */
+TEST_F(GameInstanceMovementTest, MovesNoShipWhileWaitingForPlayers) {
+  const game::Position start = shipPositionOf(FIRST_PLAYER);
+  send(FIRST_PLAYER, HOLDS_RIGHT);
+
+  deliver({FIRST_SENT});
+  runTicks(SOME_TICKS);
+
+  const game::Position arrival = shipPositionOf(FIRST_PLAYER);
+  EXPECT_FLOAT_EQ(arrival.x, start.x);
+  EXPECT_FLOAT_EQ(arrival.y, start.y);
+}
+
+/**
+ * Given a finished game whose first player holds right
+ * When fewer ticks run than the game stays finished
+ * Then its ship stays where the game left it
+ */
+TEST_F(GameInstanceMovementTest, MovesNoShipWhileFinished) {
+  startGame();
+  game().finish();
+  const game::Position start = shipPositionOf(FIRST_PLAYER);
+  send(FIRST_PLAYER, HOLDS_RIGHT);
+
+  deliver({FIRST_SENT});
+  runTicks(SOME_TICKS);
+
+  ASSERT_EQ(game().state(), GameState::Finished);
+  const game::Position arrival = shipPositionOf(FIRST_PLAYER);
+  EXPECT_FLOAT_EQ(arrival.x, start.x);
+  EXPECT_FLOAT_EQ(arrival.y, start.y);
+}
+
+/**
+ * Given a game in progress whose first player holds right
+ * When the ticks run up to the first WorldState sent after the input
+ * Then that WorldState places the ship where the world has it at the end of
+ * that tick: the ships move before the state is sent, not a tick later
+ */
+TEST_F(GameInstanceMovementTest, SendsTheShipWhereItMovedInTheSameTick) {
+  startGame();
+  const game::Position start = shipPositionOf(FIRST_PLAYER);
+  send(FIRST_PLAYER, HOLDS_RIGHT);
+
+  deliver({FIRST_SENT});
+  runTicks(TICKS_PER_WORLD_STATE - 1);
+
+  const game::Position moved = shipPositionOf(FIRST_PLAYER);
+  ASSERT_NE(moved.x, start.x);
+  const std::vector<network::OutgoingDatagram> states =
+      ofType(network::MessageType::WorldState, sentTo(FIRST_PLAYER));
+  ASSERT_EQ(states.size(), 2U);
+  const auto state = onlyMessageIn<network::WorldState>(states.back());
+  ASSERT_EQ(state.tick, TICKS_PER_WORLD_STATE);
+  const std::optional<network::EntityState> ship =
+      entityOf(state, shipIdOf(FIRST_PLAYER));
+  ASSERT_TRUE(ship.has_value());
+  const network::EntityState sent = ship.value_or(network::EntityState{});
+  EXPECT_NEAR(sent.x, moved.x, WIRE_COORDINATE_TOLERANCE);
+  EXPECT_NEAR(sent.y, moved.y, WIRE_COORDINATE_TOLERANCE);
+}
+
+/** @brief An arrow a player holds alone, named after it, as its bit of the
+ * actions byte, and which way it moves a ship along each axis: -1, 0 or 1. */
+struct HeldArrow {
+  std::string_view name;
+  std::uint8_t actions{};
+  float towardsX{};
+  float towardsY{};
+};
+
+/** @brief Prints an arrow by its name, so the name of each test says which
+ * arrow it holds. */
+void PrintTo(const HeldArrow& arrow, std::ostream* output) {
+  *output << arrow.name;
+}
+
+/** @brief The movement fixture, run once for each arrow. */
+class GameInstanceArrowTest : public GameInstanceMovementTest,
+                              public ::testing::WithParamInterface<HeldArrow> {
+};
+
+/**
+ * Given a game in progress whose first player holds one arrow
+ * When the tick that reads the input runs
+ * Then the ship of that player has moved along the axis of the arrow, the way
+ * it points, as far as SHIP_SPEED goes in one tick, and not along the other
+ * axis
+ */
+TEST_P(GameInstanceArrowTest, MovesTheShipTheWayOfTheArrowHeld) {
+  const HeldArrow arrow = GetParam();
+  startGame();
+  const game::Position start = shipPositionOf(FIRST_PLAYER);
+  send(FIRST_PLAYER, arrow.actions);
+
+  deliver({FIRST_SENT});
+
+  const float oneTick =
+      game::SHIP_SPEED *
+      std::chrono::duration<float>(engine::SIMULATION_TICK_DURATION).count();
+  const game::Position arrival = shipPositionOf(FIRST_PLAYER);
+  EXPECT_NEAR(arrival.x, start.x + (oneTick * arrow.towardsX),
+              POSITION_TOLERANCE);
+  EXPECT_NEAR(arrival.y, start.y + (oneTick * arrow.towardsY),
+              POSITION_TOLERANCE);
+}
+
+INSTANTIATE_TEST_SUITE_P(EachArrow, GameInstanceArrowTest,
+                         ::testing::Values(HeldArrow{.name = "Up",
+                                                     .actions = HOLDS_UP,
+                                                     .towardsX = 0.0F,
+                                                     .towardsY = -1.0F},
+                                           HeldArrow{.name = "Down",
+                                                     .actions = HOLDS_DOWN,
+                                                     .towardsX = 0.0F,
+                                                     .towardsY = 1.0F},
+                                           HeldArrow{.name = "Left",
+                                                     .actions = HOLDS_LEFT,
+                                                     .towardsX = -1.0F,
+                                                     .towardsY = 0.0F},
+                                           HeldArrow{.name = "Right",
+                                                     .actions = HOLDS_RIGHT,
+                                                     .towardsX = 1.0F,
+                                                     .towardsY = 0.0F}));
 
 /** @brief The input fixture, with the log written to a journal the test reads.
  */

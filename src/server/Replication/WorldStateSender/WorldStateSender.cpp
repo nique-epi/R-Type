@@ -7,6 +7,7 @@
 #include <vector>
 #include "ComponentRegistry.hpp"
 #include "ConnectedPlayer.hpp"
+#include "ConnectedPlayers.hpp"
 #include "Entity.hpp"
 #include "EntityType.hpp"
 #include "NetworkIdentity.hpp"
@@ -40,7 +41,7 @@ void WorldStateSender::onTick(std::uint32_t tick,
   if (tick % TICKS_PER_WORLD_STATE != 0) {
     return;
   }
-  const std::vector<ConnectedPlayer*> players = roster_->connected();
+  const ConnectedPlayers players = roster_->connected();
   if (players.empty()) {
     return;
   }
@@ -58,7 +59,7 @@ void WorldStateSender::onTick(std::uint32_t tick,
 }
 
 std::vector<network::PlayerState> WorldStateSender::playerStatesOf(
-    const std::vector<ConnectedPlayer*>& players) {
+    const ConnectedPlayers& players) {
   std::vector<network::PlayerState> states;
   states.reserve(players.size());
   for (const ConnectedPlayer* const player : players) {

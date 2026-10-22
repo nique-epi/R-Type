@@ -9,7 +9,8 @@
 namespace rtype::engine {
 
 /**
- * @brief Finds the local entity of a network identifier, on the client.
+ * @brief Finds the local entity of a network identifier: on the client, the
+ * entities the server names; on the server, the ships of a World.
  * It does not know whether an entity is still alive: whoever destroys an
  * entity unbinds its identifier.
  */

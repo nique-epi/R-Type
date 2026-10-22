@@ -3,11 +3,9 @@
 #include <optional>
 #include <utility>
 #include "ConnectedPlayer.hpp"
-#include "Entity.hpp"
 #include "EntityIdConstants.hpp"
 #include "EntitySpawnSender.hpp"
 #include "EntitySpawned.hpp"
-#include "NetworkIdentity.hpp"
 #include "PlayerRoster.hpp"
 #include "Position.hpp"
 #include "ProtocolConstants.hpp"
@@ -16,6 +14,21 @@
 #include "WorldState.hpp"
 
 namespace rtype::server {
+
+namespace {
+
+/** @returns The EntitySpawned that announces the ship @p shipId at
+ * @p position. */
+network::EntitySpawned shipSpawnAt(std::uint32_t shipId,
+                                   const game::Position& position) {
+  return network::EntitySpawned{
+      .entityId = shipId,
+      .entityType = network::WireEntityType::PlayerShip,
+      .x = position.x,
+      .y = position.y};
+}
+
+}  // namespace
 
 ShipSpawnAnnouncer::ShipSpawnAnnouncer(game::World& world, PlayerRoster& roster,
                                        Send send)
@@ -35,32 +48,22 @@ void ShipSpawnAnnouncer::onPlayerJoined(ConnectedPlayer& player) {
   }
 }
 
-void ShipSpawnAnnouncer::announce(ConnectedPlayer& recipient,
-                                  const ConnectedPlayer& owner) {
-  const std::optional<game::Position> position = positionOf(owner.shipEntityId);
-  if (!position.has_value()) {
-    return;
+std::optional<network::EntitySpawned> ShipSpawnAnnouncer::shipSpawnOf(
+    const ConnectedPlayer& owner) const {
+  const game::Position* const position =
+      world_->shipPositionOf(owner.shipEntityId);
+  if (position == nullptr) {
+    return std::nullopt;
   }
-  sendEntitySpawned(
-      send_, recipient,
-      network::EntitySpawned{.entityId = owner.shipEntityId,
-                             .entityType = network::WireEntityType::PlayerShip,
-                             .x = position->x,
-                             .y = position->y});
+  return shipSpawnAt(owner.shipEntityId, *position);
 }
 
-std::optional<game::Position> ShipSpawnAnnouncer::positionOf(
-    std::uint32_t networkId) const {
-  std::optional<game::Position> found;
-  world_->components().forEach<game::NetworkIdentity, game::Position>(
-      [&found, networkId](engine::Entity /*entity*/,
-                          const game::NetworkIdentity& identity,
-                          const game::Position& position) {
-        if (identity.networkId == networkId) {
-          found = position;
-        }
-      });
-  return found;
+void ShipSpawnAnnouncer::announce(ConnectedPlayer& recipient,
+                                  const ConnectedPlayer& owner) {
+  const std::optional<network::EntitySpawned> spawn = shipSpawnOf(owner);
+  if (spawn.has_value()) {
+    sendEntitySpawned(send_, recipient, *spawn);
+  }
 }
 
 }  // namespace rtype::server

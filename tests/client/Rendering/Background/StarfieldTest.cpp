@@ -12,6 +12,7 @@
 #include "Star.hpp"
 #include "Starfield.hpp"
 #include "TimeConstants.hpp"
+#include "TimeTestConstants.hpp"
 
 using rtype::client::BACKGROUND_HEIGHT;
 using rtype::client::BACKGROUND_WIDTH;
@@ -31,13 +32,13 @@ using rtype::client::Starfield;
 using rtype::client::StarLayer;
 using rtype::client::StarTwinkleStep;
 using rtype::engine::Duration;
+using rtype::engine::testing::ONE_SECOND;
 
 namespace {
 
 constexpr std::uint32_t SEED = 2026;
 constexpr Duration SHORT_STEP = std::chrono::milliseconds(10);
 constexpr Duration HALF_MAXIMUM_STEP = MAXIMUM_BACKGROUND_STEP / 2;
-constexpr Duration ONE_SECOND = std::chrono::seconds(1);
 constexpr Duration ONE_MINUTE = std::chrono::minutes(1);
 constexpr Duration NEGATIVE_STEP = -std::chrono::milliseconds(10);
 constexpr Duration ONE_TWINKLE_STEP =

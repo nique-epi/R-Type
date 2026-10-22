@@ -71,9 +71,9 @@ An entity handle is local: the server and each client have different `Entity` va
 
 - `NetworkIdAllocator` (server) hands out 1, 2, 3 and so on. An identifier is never given twice, so it is unique during the whole game, even after its entity is destroyed. After 4294967295 identifiers, `allocate()` throws `NetworkIdExhaustedException` instead of wrapping around to a used identifier.
 - `NetworkIdentity` (`src/game/Components/`) is the component that carries the identifier on a server entity, so the code that builds a world state can read it.
-- `NetworkEntityTable` (client) finds the local entity of an identifier. `find()` returns an empty `std::optional` for an unknown identifier. What the client does then depends on the message: a `WorldState` creates the entity, an `EntityDestroyed` is ignored (see [Protocol](/R-Type/protocol/#world-state)). `bind()` returns false and changes nothing when the identifier is already bound, in which case the first entity is kept, and for the reserved 0, so a corrupt identifier read from the network never throws. The table does not know whether an entity is alive: whoever destroys an entity unbinds its identifier.
+- `NetworkEntityTable` (client, and the ships of the server's `World`) finds the local entity of an identifier. `find()` returns an empty `std::optional` for an unknown identifier. What the client does then depends on the message: a `WorldState` creates the entity, an `EntityDestroyed` is ignored (see [Protocol](/R-Type/protocol/#world-state)). `bind()` returns false and changes nothing when the identifier is already bound, in which case the first entity is kept, and for the reserved 0, so a corrupt identifier read from the network never throws. The table does not know whether an entity is alive: whoever destroys an entity unbinds its identifier.
 
-On the server, `World` (`src/game/World.hpp`) gives one to every ship and Bydo it creates. On the client, the `EntityReplicator` of the game screen fills a table with the entities the server announces (see [Client](/R-Type/client/#entities-from-the-server-entityreplicator)).
+On the server, `World` (`src/game/World.hpp`) gives one to every ship and Bydo it creates, and lists its ships in a `NetworkEntityTable` (see [Server and game](/R-Type/server/#moving-the-ships-shipcontrol)). On the client, the `EntityReplicator` of the game screen fills a table with the entities the server announces (see [Client](/R-Type/client/#entities-from-the-server-entityreplicator)).
 
 On the server, with `entities` and `components` from the example above:
 
@@ -102,7 +102,7 @@ if (const auto entity = table.find(networkId)) {
 
 A **system** is one behavior of the game: a class that implements `ISystem` (`src/engine/Systems/ISystem.hpp`) and reads or updates components in `update(components, elapsed)`.
 
-`MovementSystem` (`rtype_game`, `src/game/Systems/MovementSystem/`) is the first system of the game. It moves every entity that has a `Position` and a `Velocity` by the velocity, in units per second, multiplied by `elapsed`, so the distance depends on simulation time and never on the frame rate. An entity without a `Velocity` stays in place, and nothing keeps an entity inside the playfield. The server runs it on every tick of a game in progress (see [Bydo movement](/R-Type/server/#bydo-movement-patternsystem-and-playfieldexitsystem)).
+`MovementSystem` (`rtype_game`, `src/game/Systems/MovementSystem/`) is the first system of the game. It moves every entity that has a `Position` and a `Velocity` by the velocity, in units per second, multiplied by `elapsed`, so the distance depends on simulation time and never on the frame rate. It leaves an entity without a `Velocity` where it is, and keeps no entity inside the playfield: the ships have no `Velocity`, and `ShipControl` moves them and keeps them above the status band (see [Moving the ships](/R-Type/server/#moving-the-ships-shipcontrol)). The server runs it on every tick of a game in progress (see [Bydo movement](/R-Type/server/#bydo-movement-patternsystem-and-playfieldexitsystem)).
 
 ### Queries: `ComponentRegistry::forEach`
 
@@ -210,7 +210,7 @@ rtype::engine::readLaunchArguments(logOptions.otherArguments(), options);
 | Change how entities are created or recycled | `src/engine/EntityRegistry/` |
 | Change the simulation rate | `SIMULATION_TICKS_PER_SECOND` in `src/engine/Time/TimeConstants.hpp` |
 | Write a behavior that walks components | A class implementing `ISystem` in `src/engine/Systems/ISystem.hpp`, added to a `SystemScheduler` |
-| Change how entities move | `MovementSystem` in `src/game/Systems/MovementSystem/` |
+| Change how entities move | `MovementSystem` in `src/game/Systems/MovementSystem/`; the ships move through `ShipControl` in `src/game/ShipControl/` instead |
 | Change the order systems run in | The order of the `SystemScheduler::add()` calls |
 | Change how network identifiers are given or looked up | `src/engine/NetworkIds/` |
 | Run something after a delay | `TimerScheduler` in `src/engine/Time/TimerScheduler/` |

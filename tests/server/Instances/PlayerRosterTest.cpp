@@ -5,6 +5,7 @@
 #include <string>
 #include <vector>
 #include "ConnectedPlayer.hpp"
+#include "ConnectedPlayers.hpp"
 #include "Endpoint.hpp"
 #include "PlayerRoster.hpp"
 #include "ProtocolConstants.hpp"
@@ -79,12 +80,34 @@ TEST(PlayerRoster, ListsTheConnectedPlayersInOrderOfTheirNumbers) {
   PlayerRoster roster;
   addPlayers(roster, 3);
 
-  const std::vector<ConnectedPlayer*> players = roster.connected();
+  const ConnectedPlayers players = roster.connected();
 
-  ASSERT_EQ(players.size(), 3U);
-  EXPECT_EQ(players.at(0)->playerNumber, 1);
-  EXPECT_EQ(players.at(1)->playerNumber, 2);
-  EXPECT_EQ(players.at(2)->playerNumber, 3);
+  std::vector<std::uint8_t> numbers;
+  for (const ConnectedPlayer* const player : players) {
+    numbers.push_back(player->playerNumber);
+  }
+  EXPECT_EQ(numbers, (std::vector<std::uint8_t>{1, 2, 3}));
+}
+
+/**
+ * Given a roster with three players
+ * When a loop over the connected players removes each player it visits
+ * Then the loop visits the three players once each, in order of their
+ * numbers, and the roster is left empty
+ */
+TEST(PlayerRoster, LetsALoopOverItsPlayersRemoveThem) {
+  PlayerRoster roster;
+  addPlayers(roster, 3);
+
+  std::vector<std::uint8_t> visited;
+  for (const ConnectedPlayer* const player : roster.connected()) {
+    visited.push_back(player->playerNumber);
+    const network::Endpoint endpoint = player->endpoint;
+    static_cast<void>(roster.remove(endpoint));
+  }
+
+  EXPECT_EQ(visited, (std::vector<std::uint8_t>{1, 2, 3}));
+  EXPECT_TRUE(roster.connected().empty());
 }
 
 /**

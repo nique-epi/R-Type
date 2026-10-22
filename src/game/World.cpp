@@ -9,6 +9,7 @@
 #include "Health.hpp"
 #include "HealthConstants.hpp"
 #include "MovementPattern.hpp"
+#include "NetworkEntityTable.hpp"
 #include "NetworkIdentity.hpp"
 #include "PatternConstants.hpp"
 #include "Position.hpp"
@@ -23,29 +24,19 @@ std::uint32_t World::spawnPlayer(Position position) {
   components_.add(ship, position);
   components_.add(ship, EntityType::Player);
   components_.add(ship, NetworkIdentity{.networkId = networkId});
+  shipByNetworkId_.bind(networkId, ship);
   return networkId;
 }
 
 bool World::removePlayer(std::uint32_t shipNetworkId) {
-  const std::optional<engine::Entity> ship = playerShipCarrying(shipNetworkId);
+  const std::optional<engine::Entity> ship =
+      shipByNetworkId_.find(shipNetworkId);
   if (!ship.has_value()) {
     return false;
   }
+  shipByNetworkId_.unbind(shipNetworkId);
   components_.destroy(*ship);
   return true;
-}
-
-std::optional<engine::Entity> World::playerShipCarrying(
-    std::uint32_t networkId) {
-  std::optional<engine::Entity> ship;
-  components_.forEach<NetworkIdentity, EntityType>(
-      [&ship, networkId](engine::Entity entity, const NetworkIdentity& identity,
-                         const EntityType& type) {
-        if (type == EntityType::Player && identity.networkId == networkId) {
-          ship = entity;
-        }
-      });
-  return ship;
 }
 
 std::uint32_t World::spawnBydo(Position position, BydoKind kind) {
@@ -66,5 +57,13 @@ std::uint32_t World::spawnBydo(Position position, BydoKind kind) {
 std::size_t World::entityCount() const { return registry_.size(); }
 
 engine::ComponentRegistry& World::components() { return components_; }
+
+Position* World::shipPositionOf(std::uint32_t shipId) {
+  const std::optional<engine::Entity> ship = shipByNetworkId_.find(shipId);
+  if (!ship.has_value()) {
+    return nullptr;
+  }
+  return components_.get<Position>(*ship);
+}
 
 }  // namespace rtype::game

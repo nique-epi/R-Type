@@ -54,10 +54,13 @@ namespace rtype::server {
  * always leaves before the first WorldState. Every datagram to a player
  * carries its session token and its next sequence (see nextSessionHeader).
  *
- * While the game is in progress, each tick first runs the systems of the world
+ * While the game is in progress, each tick first moves the ship of every player
+ * who sent an input, by the directions its newest input holds (see
+ * game::shipPositionAfter), then runs the systems of the world
  * (PatternSystem, MovementSystem, then PlayfieldExitSystem, which removes a
  * Bydo that left on the left and announces it on the event bus), then lets a
- * Bydo appear every BYDO_SPAWN_INTERVAL (see BydoSpawner). Each world starts
+ * Bydo appear every BYDO_SPAWN_INTERVAL (see BydoSpawner). The ships move in
+ * no other state. Each world starts
  * its random draws from a seed of its own, the seed of the game plus the number
  * of worlds built before it, so the seed of the game is enough to replay every
  * world of a session.
@@ -172,10 +175,10 @@ class GameInstance {
    * PlayerInput among @p datagrams, oldest first, closes the session of every
    * player not heard from for SESSION_TIMEOUT_TICKS ticks, then moves the game
    * along its states. While it waits, the players are told the room; while it
-   * is in progress, the tick is counted, the systems run, the Bydos appear and
-   * the world is sent. Last, a player sent nothing for TICKS_PER_HEARTBEAT
-   * ticks is sent a Heartbeat. Nothing caused by the content of a datagram
-   * makes it throw.
+   * is in progress, the tick is counted, the ships move, the systems run, the
+   * Bydos appear and the world is sent. Last, a player sent nothing for
+   * TICKS_PER_HEARTBEAT ticks is sent a Heartbeat. Nothing caused by the
+   * content of a datagram makes it throw.
    */
   void onTick(std::span<const network::IncomingDatagram> datagrams);
 
@@ -231,6 +234,10 @@ class GameInstance {
   void keepIfNewer(const network::MessageOrigin& origin,
                    const network::PlayerInput& input);
   [[nodiscard]] bool everyPlayerIsReady();
+
+  /** @brief Moves the ship of every player who sent an input by one tick of
+   * what that input holds. */
+  void moveShips();
 
   /** @brief Closes the session of every player not heard from for
    * SESSION_TIMEOUT_TICKS ticks, and counts one more tick of silence for the

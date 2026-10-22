@@ -7,6 +7,7 @@
 #include <utility>
 #include <vector>
 #include "ConnectedPlayer.hpp"
+#include "ConnectedPlayers.hpp"
 #include "Endpoint.hpp"
 #include "ProtocolConstants.hpp"
 
@@ -30,12 +31,11 @@ ConnectedPlayer* PlayerRoster::findByNumber(std::uint8_t playerNumber) {
   return nullptr;
 }
 
-std::vector<ConnectedPlayer*> PlayerRoster::connected() {
-  std::vector<ConnectedPlayer*> players;
-  players.reserve(occupiedSeatCount());
+ConnectedPlayers PlayerRoster::connected() {
+  ConnectedPlayers players;
   for (std::optional<ConnectedPlayer>& seat : seats_) {
     if (seat.has_value()) {
-      players.push_back(&seat.value());
+      players.append(&seat.value());
     }
   }
   return players;

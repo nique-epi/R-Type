@@ -98,6 +98,16 @@ constexpr auto PLAYER_ACTION_BITS =
     static_cast<std::uint8_t>((1U << PLAYER_ACTION_COUNT) - 1);
 
 /**
+ * @brief Where each action sits in the actions byte of a PlayerInput, counted
+ * from bit 0, the least significant.
+ */
+constexpr std::uint8_t UP_ACTION_BIT_POSITION = 0;
+constexpr std::uint8_t DOWN_ACTION_BIT_POSITION = 1;
+constexpr std::uint8_t LEFT_ACTION_BIT_POSITION = 2;
+constexpr std::uint8_t RIGHT_ACTION_BIT_POSITION = 3;
+constexpr std::uint8_t SHOOT_ACTION_BIT_POSITION = 4;
+
+/**
  * @brief The inputNumber of the first PlayerInput of a session; each next one
  * is one more.
  */

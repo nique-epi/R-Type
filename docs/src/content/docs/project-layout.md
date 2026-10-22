@@ -43,7 +43,7 @@ The cases where people hesitate:
 
 | Code | Goes in | Because |
 |---|---|---|
-| Moving the ship from the player's input | `src/game/ShipControl` | the server runs it, and the client runs the same code to predict its own ship |
+| Moving the ship from the player's input | `src/game/ShipControl` | the server runs it, and the client will run the same code to predict its own ship |
 | Damage after a collision | `src/game/Systems` | it is a rule of the match, even though only the server runs it |
 | A queue between two threads | `src/concurrency` | the client, the server and `rtype_network` all need it, and `rtype_network` may not link `rtype_engine` |
 | Finding an entity from its network id | `src/engine/NetworkIds` | `rtype_network` may not know entities |
@@ -87,7 +87,7 @@ src/engine/
 
 ### Game
 
-`src/game` builds `rtype_game`, the rules of a match: what moves, what collides, what dies, what scores. The server runs all of it; the client only runs `ShipControl`, to predict its own ship. **Never** SFML, Asio or a network message.
+`src/game` builds `rtype_game`, the rules of a match: what moves, what collides, what dies, what scores. The server runs all of it; the client will only run `ShipControl`, to predict its own ship, and does not run it yet. **Never** SFML, Asio or a network message.
 
 ```
 src/game/
@@ -100,7 +100,7 @@ src/game/
 └── Events/           entity destroyed, player left...
 ```
 
-`World`, `Components`, `Events`, `Spawning` (the start position of a player's ship, the position of a new Bydo and the kinds of Bydo), the systems for movement (`Systems/MovementSystem/`), movement patterns (`Systems/PatternSystem/`) and leaving the playfield (`Systems/PlayfieldExitSystem/`), the collision classes (`Systems/CollisionSystem/`, `Systems/CollisionRules/`) and the damage rules (`Systems/DamageRules/`) exist; the other systems and folders are not written yet. See [Server and game](/R-Type/server/).
+`World`, `Components`, `Events`, `Spawning` (the start position of a player's ship, the position of a new Bydo and the kinds of Bydo), the systems for movement (`Systems/MovementSystem/`), movement patterns (`Systems/PatternSystem/`) and leaving the playfield (`Systems/PlayfieldExitSystem/`), the collision classes (`Systems/CollisionSystem/`, `Systems/CollisionRules/`), the damage rules (`Systems/DamageRules/`) and `ShipControl`, which the server runs and the client does not run yet, exist; the other systems and folders are not written yet. See [Server and game](/R-Type/server/).
 
 ### Network
 
@@ -144,7 +144,7 @@ src/server/
 └── Storage/          this server's SQLite file: leaderboard, statistics
 ```
 
-`Application`, `Replication` (the world state sender, the waiting room announcer, the session header of every datagram to a player, the announcement of the ship of each new player, and the encoder and broadcaster of the game events), `Platform`, `LaunchOptions`, `Lobby` (the answers to connection requests only), `Spawning` (the Bydo spawner) and `Instances` (one `GameInstance` for now, run on the simulation thread like the rest, which runs the systems of its world) exist today: the network thread and the simulation thread, the waiting room, the start of the game, the world state and the game events sent to the players (see [Server](/R-Type/server/)), the timer resolution the server asks Windows for, the port and seed read at launch, the players let in, the Bydos appearing and moving, and a game with its states, its ready rule and the newest input of each player.
+`Application`, `Replication` (the world state sender, the waiting room announcer, the session header of every datagram to a player, the announcement of the ship of each new player, and the encoder and broadcaster of the game events), `Platform`, `LaunchOptions`, `Lobby` (the answers to connection requests only), `Spawning` (the Bydo spawner) and `Instances` (one `GameInstance` for now, run on the simulation thread like the rest, which runs the systems of its world) exist today: the network thread and the simulation thread, the waiting room, the start of the game, the world state and the game events sent to the players (see [Server](/R-Type/server/)), the timer resolution the server asks Windows for, the port and seed read at launch, the players let in, the Bydos appearing and moving, and a game with its states, its ready rule and the newest input of each player, which moves its ship.
 
 ### Client
 
@@ -226,6 +226,8 @@ This follows our previous projects: shared code in libraries and one folder per 
 ## A key press, from one screen to another
 
 Player A holds the Up arrow and player B sees A's ship move. Each step happens in one place.
+
+This is the path the design aims for, and only its server half runs today. The inputs of client A reach its game, each tick of a game in progress moves the ships with `ShipControl` before the systems, and the world state goes to every player 20 times per second. Client A does not move its ship before the server answers and replays no input: `client/Prediction` does not exist yet. Both clients draw each ship where the newest world state puts it, without the 100 ms delay. `network/Sessions` and `network/Snapshots` do not exist either: the session token is checked by `DatagramSorter` and the sequence by `GameInstance`, both in `src/server/`, and the world state is written by `WorldStateCodec` in `network/Protocol`.
 
 ```mermaid
 sequenceDiagram

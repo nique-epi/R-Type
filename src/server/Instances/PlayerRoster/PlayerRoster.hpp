@@ -7,6 +7,7 @@
 #include <string>
 #include <vector>
 #include "ConnectedPlayer.hpp"
+#include "ConnectedPlayers.hpp"
 #include "Endpoint.hpp"
 #include "ProtocolConstants.hpp"
 
@@ -38,9 +39,11 @@ class PlayerRoster {
 
   /**
    * @returns The connected players, in order of their number. They stay at
-   * their addresses until they are removed.
+   * their addresses until they are removed. The list is a copy that
+   * allocates nothing, so a tick may ask for it every time; a player
+   * joining or leaving afterwards leaves it as it was.
    */
-  [[nodiscard]] std::vector<ConnectedPlayer*> connected();
+  [[nodiscard]] ConnectedPlayers connected();
 
   /** @returns The address and port of each connected player, in order of
    * their number. */

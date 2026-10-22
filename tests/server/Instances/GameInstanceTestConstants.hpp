@@ -56,11 +56,13 @@ constexpr std::size_t SOME_TICKS = 3;
 
 /**
  * @brief Actions a test player holds, one bit each where the Inputs section of
- * the protocol page puts them: bit 0 up, bit 1 down, bit 2 left, bit 4 shoot.
+ * the protocol page puts them: bit 0 up, bit 1 down, bit 2 left, bit 3 right,
+ * bit 4 shoot.
  */
 constexpr std::uint8_t HOLDS_UP = 0x01;
 constexpr std::uint8_t HOLDS_DOWN = 0x02;
 constexpr std::uint8_t HOLDS_LEFT = 0x04;
+constexpr std::uint8_t HOLDS_RIGHT = 0x08;
 constexpr std::uint8_t HOLDS_SHOOT = 0x10;
 
 /**
@@ -110,5 +112,12 @@ constexpr std::size_t TICKS_PER_REJECTION_LINE =
 static_assert(SHUFFLED_INPUT_COUNT <= network::PLAYER_ACTION_BITS + 1U,
               "each shuffled input holds actions no other input holds, so "
               "the actions kept tell which input was kept");
+
+/**
+ * @brief How far a coordinate read from a WorldState may be from the position
+ * it was sent for: a coordinate travels in steps of an eighth of a unit.
+ */
+constexpr float WIRE_COORDINATE_TOLERANCE =
+    1.0F / network::WIRE_COORDINATE_STEPS_PER_UNIT;
 
 }  // namespace rtype::server::testing

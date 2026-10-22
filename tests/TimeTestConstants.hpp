@@ -7,3 +7,11 @@
  * is still before that delay.
  */
 constexpr std::chrono::nanoseconds ONE_NANOSECOND{1};
+
+namespace rtype::engine::testing {
+
+/** @brief One second of simulation time, as an engine::Duration, for the tests
+ * that measure what moves or changes in that time. */
+constexpr std::chrono::nanoseconds ONE_SECOND = std::chrono::seconds(1);
+
+}  // namespace rtype::engine::testing

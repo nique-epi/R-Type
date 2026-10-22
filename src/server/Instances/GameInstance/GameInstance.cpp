@@ -11,6 +11,7 @@
 #include <utility>
 #include <vector>
 #include "ConnectedPlayer.hpp"
+#include "ConnectedPlayers.hpp"
 #include "DatagramCodec.hpp"
 #include "Endpoint.hpp"
 #include "EntityDestruction.hpp"
@@ -32,10 +33,12 @@
 #include "PlayerInput.hpp"
 #include "PlayerRoster.hpp"
 #include "PlayfieldExitSystem.hpp"
+#include "Position.hpp"
 #include "ProtocolConstants.hpp"
 #include "ReadyState.hpp"
 #include "SequenceOrder.hpp"
 #include "SessionDatagram.hpp"
+#include "ShipControl.hpp"
 #include "TimeConstants.hpp"
 #include "World.hpp"
 
@@ -68,6 +71,53 @@ bool isNewer(const network::PlayerInput& input,
 bool changesActions(const network::PlayerInput& input,
                     const std::optional<network::PlayerInput>& newest) {
   return !newest.has_value() || input.actions != newest->actions;
+}
+
+/**
+ * @returns Whether @p input holds the action at @p bitPosition of its actions
+ * byte.
+ */
+bool holdsActionAt(const network::PlayerInput& input,
+                   std::uint8_t bitPosition) {
+  const unsigned int mask = 1U << static_cast<unsigned int>(bitPosition);
+  return (static_cast<unsigned int>(input.actions) & mask) != 0U;
+}
+
+/**
+ * @returns The directions @p input holds for the ship; shooting is not one.
+ */
+game::ShipDirections directionsOf(const network::PlayerInput& input) {
+  return game::ShipDirections{
+      .up = holdsActionAt(input, network::UP_ACTION_BIT_POSITION),
+      .down = holdsActionAt(input, network::DOWN_ACTION_BIT_POSITION),
+      .left = holdsActionAt(input, network::LEFT_ACTION_BIT_POSITION),
+      .right = holdsActionAt(input, network::RIGHT_ACTION_BIT_POSITION)};
+}
+
+/** @brief A ship to move this tick, and the directions its player holds. */
+struct ShipMove {
+  game::Position* ship{nullptr};
+  game::ShipDirections held;
+};
+
+/**
+ * @returns The ship of @p player in @p world and the directions its newest
+ * input holds; nothing when the player has no ship in that world or sent no
+ * input yet.
+ */
+std::optional<ShipMove> shipMoveOf(game::World& world,
+                                   const ConnectedPlayer& player) {
+  game::Position* const ship = world.shipPositionOf(player.shipEntityId);
+  if (ship == nullptr || !player.newestInput.has_value()) {
+    return std::nullopt;
+  }
+  return ShipMove{.ship = ship, .held = directionsOf(*player.newestInput)};
+}
+
+/** @brief Moves the ship of @p move by one tick of the directions it holds. */
+void moveOneTick(const ShipMove& move) {
+  *move.ship = game::shipPositionAfter(*move.ship, move.held,
+                                       engine::SIMULATION_TICK_DURATION);
 }
 
 }  // namespace
@@ -143,6 +193,7 @@ void GameInstance::advanceState() {
       break;
     case GameState::InProgress:
       ++tick_;
+      moveShips();
       systems_.run(world_->components(), engine::SIMULATION_TICK_DURATION);
       bydoSpawner_->onTick();
       break;
@@ -245,7 +296,7 @@ void GameInstance::keepIfNewer(const network::MessageOrigin& origin,
 }
 
 bool GameInstance::everyPlayerIsReady() {
-  const std::vector<ConnectedPlayer*> players = roster_.connected();
+  const ConnectedPlayers players = roster_.connected();
   return !players.empty() &&
          std::ranges::all_of(players, [](const ConnectedPlayer* player) {
            return player->ready;
@@ -308,11 +359,20 @@ void GameInstance::sendHeartbeats() {
 
 void GameInstance::startGame() {
   state_ = GameState::InProgress;
-  const std::vector<ConnectedPlayer*> players = roster_.connected();
+  const ConnectedPlayers players = roster_.connected();
   for (ConnectedPlayer* const player : players) {
     send_(sessionDatagram(*player, network::GameStarted{}));
   }
   logger_.info("game started, players connected: ", players.size());
+}
+
+void GameInstance::moveShips() {
+  for (const ConnectedPlayer* const player : roster_.connected()) {
+    const std::optional<ShipMove> move = shipMoveOf(*world_, *player);
+    if (move.has_value()) {
+      moveOneTick(*move);
+    }
+  }
 }
 
 void GameInstance::startNewWorld() {

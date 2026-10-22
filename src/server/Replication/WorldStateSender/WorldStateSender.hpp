@@ -5,13 +5,14 @@
 #include <functional>
 #include <vector>
 #include "ComponentRegistry.hpp"
-#include "ConnectedPlayer.hpp"
 #include "Logger.hpp"
 #include "OutgoingDatagram.hpp"
 #include "PlayerRoster.hpp"
 #include "WorldState.hpp"
 
 namespace rtype::server {
+
+class ConnectedPlayers;
 
 /**
  * @brief Sends the state of the world to every connected player of a game,
@@ -54,7 +55,7 @@ class WorldStateSender {
 
  private:
   [[nodiscard]] static std::vector<network::PlayerState> playerStatesOf(
-      const std::vector<ConnectedPlayer*>& players);
+      const ConnectedPlayers& players);
   [[nodiscard]] static network::WorldState capture(
       std::uint32_t tick, engine::ComponentRegistry& components,
       std::size_t& leftOutCount);

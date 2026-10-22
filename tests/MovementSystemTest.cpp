@@ -13,6 +13,7 @@
 #include "SimulatedClock.hpp"
 #include "SystemScheduler.hpp"
 #include "TimeConstants.hpp"
+#include "TimeTestConstants.hpp"
 #include "Velocity.hpp"
 
 using rtype::engine::ComponentRegistry;
@@ -22,6 +23,7 @@ using rtype::engine::EntityRegistry;
 using rtype::engine::FixedTimestep;
 using rtype::engine::SIMULATION_TICK_DURATION;
 using rtype::engine::SystemScheduler;
+using rtype::engine::testing::ONE_SECOND;
 using rtype::game::MovementSystem;
 using rtype::game::PLAYFIELD_WIDTH;
 using rtype::game::Position;
@@ -34,7 +36,6 @@ constexpr float START_Y = 200.0F;
 constexpr float SPEED_X = 120.0F;
 constexpr float SPEED_Y = -60.0F;
 constexpr Duration HALF_SECOND = std::chrono::milliseconds(500);
-constexpr Duration ONE_SECOND = std::chrono::seconds(1);
 constexpr float HALF_SECOND_ARRIVAL_X = 160.0F;
 constexpr float HALF_SECOND_ARRIVAL_Y = 170.0F;
 constexpr std::int64_t NANOSECONDS_PER_SECOND = 1'000'000'000;

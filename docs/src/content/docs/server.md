@@ -3,7 +3,7 @@ title: Server and game
 description: What the server program and the game library do, how their parts fit together and where to find them in the code.
 ---
 
-The server, `r-type_server`, is meant to run the game for the players connected to it. Today it receives their datagrams, runs a tick at a fixed rate, lets up to four players in and keeps one game that starts when they are all ready: each tick answers the connection requests received and reads the `ReadyState` and the inputs of the players. Any datagram of a player proves it is still there, and a game closes the session of a player it hears nothing from for 5 seconds. The game tells its players the waiting room, the start of the game and the world state, each datagram under the session token and the next sequence of its player. Nothing else a client sends is read yet, its `Disconnection` included, and nothing applies the inputs to the ships yet. It never links SFML or Asio: it reaches the network through `rtype_network`, and its own libraries are checked for it at configure time (see [Project layout](/R-Type/project-layout/#who-may-link-what)).
+The server, `r-type_server`, is meant to run the game for the players connected to it. Today it receives their datagrams, runs a tick at a fixed rate, lets up to four players in and keeps one game that starts when they are all ready: each tick answers the connection requests received and reads the `ReadyState` and the inputs of the players. Any datagram of a player proves it is still there, and a game closes the session of a player it hears nothing from for 5 seconds. The game tells its players the waiting room, the start of the game and the world state, each datagram under the session token and the next sequence of its player. Each tick of a game in progress moves the ship of every player by the arrows its newest input holds; nothing else a client sends is read yet, its `Disconnection` included, so no one can shoot yet. It never links SFML or Asio: it reaches the network through `rtype_network`, and its own libraries are checked for it at configure time (see [Project layout](/R-Type/project-layout/#who-may-link-what)).
 
 The game library, `rtype_game`, holds the rules of a match: what moves, what touches what and what that means. It is built on the engine (see [Engine](/R-Type/engine/)), and it knows nothing about sockets, SFML or the messages sent between the programs (see [Project layout](/R-Type/project-layout/#game)). The server runs all of it; the client will only run the part that predicts its own ship.
 
@@ -20,7 +20,7 @@ This page tells you where to look when you need to change something. It describe
 | Launch options | Available: the port, the seed and `--help` | `src/server/LaunchOptions/` |
 | Letting players in: challenge, acceptance or refusal | Available; refuses with `GameInProgress` while the game is not waiting for players | `src/server/Lobby/`, `src/server/Instances/` |
 | A game: states, ready rule, new world between two games | Available: one game, nothing ends it yet | `src/server/Instances/GameInstance/` |
-| Newest input of each player | Available; nothing applies it to the ship yet | `src/server/Instances/GameInstance/` |
+| Newest input of each player, applied to its ship at each tick of a game in progress | Available; the shoot action is not read yet | `src/server/Instances/GameInstance/` |
 | Heartbeats, and the session of a silent player closed after 5 seconds | Available; a `Disconnection` does not close the session yet | `src/server/Instances/GameInstance/` |
 | Waiting room and start of the game sent to the players (`LobbyState`, `GameStarted`) | Available | `src/server/Replication/LobbyStateAnnouncer/`, `src/server/Instances/GameInstance/` |
 | End of a game sent to the players (`GameEnded`), several games, master link | Not yet written | — |
@@ -30,6 +30,7 @@ This page tells you where to look when you need to change something. It describe
 | Collisions | Available: nothing runs them yet | `src/game/Systems/CollisionSystem/`, `src/game/Systems/CollisionRules/`, `src/game/Events/` |
 | Damage and destruction | Available: nothing runs it yet; players take no damage yet | `src/game/Systems/DamageRules/` |
 | Ship of each player, created when the player joins and announced to the others | Available | `src/game/Spawning/`, `src/server/Replication/ShipSpawnAnnouncer/` |
+| Ship control: where a ship goes from the directions its player holds, kept above the status band | Available; the client does not predict its own ship yet | `src/game/ShipControl/`, `src/server/Instances/GameInstance/` |
 | Bydos appearing off screen at random heights above the status band of the clients, on a timer, then moving left | Available | `src/game/Spawning/BydoSpawnPosition.*`, `src/server/Spawning/` |
 | Score: points per Bydo kind, credited to the player who fired the missile, sent in the world state | Available: no missile is fired yet, so no kill happens in a game | `src/game/Spawning/BydoKind/`, `src/game/Systems/DamageRules/`, `src/server/Instances/ScoreKeeper/` |
 | Waves, lives | Not yet written | — |
@@ -95,7 +96,7 @@ The room of the player queue protects the server's memory; the sorter protects t
 
 1. **Sort on the network thread, before the queue.** Written: `DatagramSorter` drops there every datagram that is neither from an admitted player nor a `ConnectionRequest`, and every datagram from the address of a player without its session token; the requests have their own queue. Not written: a limit on the requests of each address, in a table of fixed size so that forged addresses cannot make it grow. Quake 3 ignores such datagrams and answers at most 10 status, information or remote console requests per second from one address; Unreal limits how many datagrams of senders without a connection it processes each frame.
 2. **One queue per session**, so a flooding client only fills its own. Valve's GameNetworkingSockets keeps one per connection, of 1 000 messages by default.
-3. **One input per player and per tick.** The protocol requires it (see [Protocol](/R-Type/protocol/#inputs)). Written: each `GameInstance` keeps only the newest `PlayerInput` of each of its players and ignores older ones (see [Player inputs](#player-inputs)). Not written: applying it at every tick.
+3. **One input per player and per tick.** The protocol requires it (see [Protocol](/R-Type/protocol/#inputs)). Written: each `GameInstance` keeps only the newest `PlayerInput` of each of its players and ignores older ones (see [Player inputs](#player-inputs)), then applies it to the ship of that player at each tick of a game in progress (see [Moving the ships](#moving-the-ships-shipcontrol)).
 
 The player queue stays as the last safety net. It discards its oldest datagram, where GameNetworkingSockets refuses the newest, because only the newest input of a player counts. Why threads only talk through queues is explained in [Architecture](/R-Type/architecture/#queues-between-threads).
 
@@ -194,7 +195,7 @@ send(rtype::server::sessionDatagram(player, rtype::network::GameStarted{}));
 | State (`GameState`) | The game… | It goes to… |
 |---|---|---|
 | `WaitingForPlayers` | takes `ReadyState`, lets players in and sends them the room (see [Waiting room](#waiting-room-lobbystateannouncer)) | `InProgress` on the tick when at least one player is connected and every connected player is ready, which sends every connected player `GameStarted` |
-| `InProgress` | counts one tick per `onTick`, runs the systems of the world, lets the Bydos appear and sends the world state; refuses new connections | `Finished` when `finish()` is called |
+| `InProgress` | counts one tick per `onTick`, moves the ships, runs the systems of the world, lets the Bydos appear and sends the world state; refuses new connections | `Finished` when `finish()` is called |
 | `Finished` | refuses new connections | `WaitingForPlayers` after `FINISHED_STATE_TICKS` (300) ticks, `FINISHED_STATE_SECONDS` (5) seconds |
 
 - Going back to `WaitingForPlayers` builds a new `World`: the tick is 0, the players stay connected, none is ready any more, and each gets a new ship, announced again. Network ids start again at 1 in the new world, so the announced ids are the ones of the previous game.
@@ -272,14 +273,32 @@ rtype::server::ConnectionAcceptor connectionAcceptor{
 
 ## Player inputs
 
-Each `GameInstance` keeps, in `ConnectedPlayer::newestInput`, the `PlayerInput` with the highest `inputNumber` each of its players sent, as the [Protocol](/R-Type/protocol/#inputs) requires. It reads them in `onTick`, through the same dispatcher and after the same checks as the `ReadyState` (see [A game](#a-game-gameinstance)), so each datagram is decoded once. The field is empty until the first input arrives. Nothing applies the input to the ship yet: the tick that does will read it through `PlayerRoster::connected()`.
+Each `GameInstance` keeps, in `ConnectedPlayer::newestInput`, the `PlayerInput` with the highest `inputNumber` each of its players sent, as the [Protocol](/R-Type/protocol/#inputs) requires. It reads them in `onTick`, through the same dispatcher and after the same checks as the `ReadyState` (see [A game](#a-game-gameinstance)), so each datagram is decoded once. The field is empty until the first input arrives. Each tick of a game in progress applies it to the ship of the player (see [Moving the ships](#moving-the-ships-shipcontrol)).
 
 - An input that is older, a duplicate, or numbered like the one kept changes nothing, so a datagram that arrives late or twice never undoes a newer input. Each player is compared with its own inputs only. Inputs are ordered by their `inputNumber`, not by the sequence of their datagram.
-- Inputs are kept in every state of the game, and the input kept outlives a new world: the client numbers its inputs for the whole session, so its next input stays newer. Applying them only while the game is in progress is left to the code that moves the ships.
+- Inputs are kept in every state of the game, and the input kept outlives a new world: the client numbers its inputs for the whole session, so its next input stays newer. An input moves the ship only while the game is in progress: one kept in the waiting room moves the ship from the tick after the one that starts the game.
 - The session token check of the sorter stops a sender that forges the address and port of a player: one forged input numbered 4294967295 would otherwise stay above every input the player sends for the rest of the session. It runs on the network thread, before the player queue, so a forged datagram takes no room in the queue either (see [Sorting the datagrams](#sorting-the-datagrams-datagramsorter)).
 - `inputNumber` is compared as a plain number: at 60 inputs per second, it would take more than 800 days to wrap.
 - A client that connects again from the same address and port gets back the same place and token, but numbers its inputs from 1 again: they would be ignored until they pass the input kept. No path of the client leads there today. A player whose session closed comes back as a new player, with no input kept.
 - Each time the actions kept for a player change, the game logs `player <n> holds actions <byte>` at the `debug` level under `Instances`.
+
+## Moving the ships: `ShipControl`
+
+`shipPositionAfter(from, held, elapsed)` (`src/game/ShipControl/`, `rtype_game_ship_control`) says where a ship centered on `from` is after `elapsed`, its player holding the `ShipDirections` `held` (up, down, left, right). It is a free function, not a system: a ship has no `Velocity`, so `MovementSystem` never moves it, and the client can run the same function to predict its own ship, which it does not do yet.
+
+- A direction held alone moves the ship `SHIP_SPEED` (480 logical units per second) that way, 8 units per tick. x grows to the right and y downwards.
+- Two directions on two axes move it along the diagonal at `SHIP_SPEED` too: each axis gets `SHIP_SPEED` divided by the square root of 2, 339.4 units per second, so a diagonal is no faster than a straight line. Two opposite directions cancel out: up and down together move nothing, and up, down and right move right at full speed.
+- The ship stops where its side meets an edge of the play area, the playfield less the status band at its bottom (`PLAY_AREA_HEIGHT`, 984 units from the top edge): its center stays from 64 to 1856 in x and from 32 to 952 in y, half of `SHIP_WIDTH` (128) and of `SHIP_HEIGHT` (64) away from each edge, so the whole ship stays in sight. A ship pushed along a diagonal against an edge slides along it at 339.4 units per second.
+- `SHIP_WIDTH` and `SHIP_HEIGHT` are the size the client draws the ship at: 32 by 16 pixels of the entity sheet (`PLAYER_SHIP_FRAME`), each covering `BACKGROUND_PIXEL_SIZE` (4) logical units. A client test compares the two, so a new ship sprite comes with new constants.
+- `SHIP_SPEED` is **provisional**: it will be tuned once the game is played on screen. Code must read the constants (`src/game/ShipControl/ShipControlConstants.hpp`) and never repeat 480, 128 or 64.
+
+Each tick of a game in progress, `GameInstance::moveShips()` moves the ship of every connected player who sent an input by one `SIMULATION_TICK_DURATION`, before the systems run. It reads the directions from the `actions` byte of the input with the bit positions the protocol names in `ProtocolConstants.hpp` (`UP_ACTION_BIT_POSITION` to `SHOOT_ACTION_BIT_POSITION`); the shoot bit is not a direction. A player who sent no input yet keeps its ship still, and the newest input keeps moving the ship until a newer one arrives. The ships do not move while the game waits for players or is finished. Each ship is found by its network id with `World::shipPositionOf(shipId)`, which looks it up in a table of the ships of the world instead of visiting every entity, and gives `nullptr` for any other id.
+
+```cpp
+const rtype::game::Position next = rtype::game::shipPositionAfter(
+    ship, rtype::game::ShipDirections{.up = true, .right = true},
+    rtype::engine::SIMULATION_TICK_DURATION);
+```
 
 ## Game events: `GameEventEncoder` and `GameEventBroadcaster`
 
@@ -332,7 +351,7 @@ events.dispatch();
 
 ## Bydo movement: `PatternSystem` and `PlayfieldExitSystem`
 
-Each tick of a game in progress, `GameInstance` runs three systems of the world, in this order, before the Bydos appear: `PatternSystem`, `MovementSystem`, then `PlayfieldExitSystem`. It runs them with `SIMULATION_TICK_DURATION`, and the scheduler is built once per game, so it survives the new worlds.
+Each tick of a game in progress, `GameInstance` moves the ships (see [Moving the ships](#moving-the-ships-shipcontrol)), then runs three systems of the world, in this order, before the Bydos appear: `PatternSystem`, `MovementSystem`, then `PlayfieldExitSystem`. It runs them with `SIMULATION_TICK_DURATION`, and the scheduler is built once per game, so it survives the new worlds.
 
 - A Bydo moves left at `BYDO_SPEED` through its `Velocity`, which `MovementSystem` applies. Its `MovementPattern` holds a `PatternShape`, the row it appeared on (`originY`) and its age in seconds.
 - `PatternSystem` (`src/game/Systems/PatternSystem/`) sets the height of every entity that has a `MovementPattern`. `Straight` keeps the row. `Wave` puts the entity at `originY + WAVE_AMPLITUDE * sin(2 * pi * age / WAVE_PERIOD_SECONDS)`, with an amplitude of 48 units and a period of 2 seconds, both **provisional**. The height is computed from the age, never added up tick by tick, so it does not depend on how the time is cut into steps. The amplitude stays within `BYDO_PATTERN_ROOM`, the room every row keeps above and below it, checked at compile time, so a Bydo on a wave stays in the area of play.
@@ -428,6 +447,9 @@ rtype::game::DamageRules damageRules{events, world.components()};
 | Send a datagram from the tick | `ServerApplication::queueDatagram()` |
 | Change how a connection request is answered | `ConnectionAcceptor::answer` in `src/server/Lobby/ConnectionAcceptor/ConnectionAcceptor.cpp` |
 | Change where a ship appears | `shipStartPosition` and `SHIP_START_X_RATIO` in `src/game/Spawning/` |
+| Change how fast a ship moves, or its size | `SHIP_SPEED`, `SHIP_WIDTH` and `SHIP_HEIGHT` in `src/game/ShipControl/ShipControlConstants.hpp`; a new size goes with a new `PLAYER_SHIP_FRAME` on the client, which a test compares |
+| Change how a ship moves from the directions held | `shipPositionAfter` in `src/game/ShipControl/ShipControl.cpp` |
+| Change which actions of an input move the ship | `directionsOf` in `src/server/Instances/GameInstance/GameInstance.cpp`, with the bit positions of `src/network/Protocol/ProtocolConstants.hpp` |
 | Change how often a Bydo appears | `BYDO_SPAWN_INTERVAL` in `src/server/Spawning/BydoSpawnerConstants.hpp` |
 | Change where a Bydo appears | `bydoSpawnPosition` and the margins in `src/game/Spawning/` |
 | Change how fast a Bydo moves, or the height and period of a wave | `BYDO_SPEED`, `WAVE_AMPLITUDE`, `WAVE_PERIOD_SECONDS` in `src/game/Systems/PatternSystem/PatternConstants.hpp` |
@@ -454,7 +476,7 @@ rtype::game::DamageRules damageRules{events, world.components()};
 | Change which pairs of entities matter | `CollisionRules::publishIfRuleMatches` in `src/game/Systems/CollisionRules/CollisionRules.cpp` |
 | React to a hit or a contact | `subscribe<MissileHit>` or `subscribe<ShipContact>` on the `EventBus`; the structs are in `src/game/Events/` |
 | Change when two boxes count as overlapping | `overlaps` in `src/engine/Collision/Overlaps.hpp` |
-| Change how entities move | `MovementSystem` in `src/game/Systems/MovementSystem/` |
+| Change how entities move | `MovementSystem` in `src/game/Systems/MovementSystem/`; the ships move through `ShipControl` in `src/game/ShipControl/` instead |
 | Add a component type | A new struct in `src/game/Components/` |
 | Write a test with entities that collide | `tests/CollisionScene.hpp` |
 
