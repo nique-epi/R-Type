@@ -1,16 +1,12 @@
 #pragma once
 
 #include <SFML/Graphics/Color.hpp>
-#include <SFML/Graphics/Font.hpp>
 #include <SFML/Graphics/Rect.hpp>
 #include <SFML/Graphics/RenderTarget.hpp>
-#include <SFML/Graphics/Shader.hpp>
-#include <SFML/Graphics/Text.hpp>
 #include <SFML/Graphics/Texture.hpp>
 #include <SFML/System/Vector2.hpp>
 #include <functional>
 #include <map>
-#include <optional>
 #include <set>
 #include <string>
 #include <string_view>
@@ -21,6 +17,7 @@
 #include "Logger.hpp"
 #include "PixelCanvas.hpp"
 #include "TextStyle.hpp"
+#include "TextWriter.hpp"
 #include "TextureArea.hpp"
 
 namespace rtype::client {
@@ -31,16 +28,9 @@ class AssetLibrary;
  * @brief An interface picture painted on its own PixelCanvas, so its pixels
  * are the pixels of the sky: square, equal and sharp at every window size.
  *
- * Text is written with the two pixel fonts at TEXT_CHARACTER_SIZE, the size
- * they are designed for, on whole pixels. A line is placed as the browser
- * places a line as tall as its font: its baseline sits
- * REGULAR_FONT_BASELINE_ROW or SMALL_FONT_BASELINE_ROW below the anchor, while
- * SFML puts the baseline of a text TEXT_CHARACTER_SIZE below its position. An
- * outlined line is first drawn in INK one pixel away in each of the eight
- * directions of CROSS_DIRECTIONS and DIAGONAL_DIRECTIONS. Text is drawn
- * through CRISP_TEXT_FRAGMENT_SHADER, so its pixels are either lit or
- * transparent; where shaders are missing or the shader does not compile, it
- * is drawn smoothed, and the reason is logged once.
+ * Text is written by a TextWriter: the two pixel fonts at
+ * TEXT_CHARACTER_SIZE, on whole pixels, outlined in INK when asked, through
+ * the crisp text shader (see TextWriter).
  *
  * A smooth image is not part of the pixel picture: display() keeps the list of
  * those drawn since clear(), and show() lays them over the picture, each
@@ -81,13 +71,6 @@ class InterfaceCanvas : public IInterfaceCanvas {
   void show(sf::RenderTarget& target) const override;
 
  private:
-  /** @brief A font of the interface, and the row of its baseline below the
-   * top of a line. */
-  struct LoadedFont {
-    const sf::Font* font{};
-    int baselineRow{};
-  };
-
   /** @brief A texture laid smoothed over the picture: its smoothed copy, the
    * area it covers, in pixels of the picture, and its tint. */
   struct SmoothImage {
@@ -95,11 +78,6 @@ class InterfaceCanvas : public IInterfaceCanvas {
     sf::IntRect area;
     sf::Color tint;
   };
-
-  [[nodiscard]] const LoadedFont& loadedFontOf(TextFont font) const;
-
-  /** @returns A line of text in a font, at TEXT_CHARACTER_SIZE, not placed. */
-  [[nodiscard]] sf::Text lineOf(std::string_view text, TextFont font) const;
 
   /** @returns The loaded texture of an id, or nullptr once the log says it is
    * missing; a missing id is reported once. */
@@ -121,12 +99,10 @@ class InterfaceCanvas : public IInterfaceCanvas {
   void showSmoothImages(sf::RenderTarget& target) const;
 
   AssetTextureSource textures_;
-  LoadedFont regularFont_;
-  LoadedFont smallFont_;
+  TextWriter writer_;
   PixelCanvas canvas_;
   logging::Logger logger_;
   std::set<std::string, std::less<>> reportedMissingIds_;
-  std::optional<sf::Shader> crispText_;
   std::map<std::string, sf::Texture, std::less<>> smoothTextures_;
   std::vector<SmoothImage> paintedSmoothImages_;
   std::vector<SmoothImage> shownSmoothImages_;

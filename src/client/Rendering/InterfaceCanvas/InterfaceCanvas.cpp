@@ -4,39 +4,26 @@
 #include <SFML/Graphics/Rect.hpp>
 #include <SFML/Graphics/RenderStates.hpp>
 #include <SFML/Graphics/RenderTarget.hpp>
-#include <SFML/Graphics/Shader.hpp>
 #include <SFML/Graphics/Sprite.hpp>
-#include <SFML/Graphics/Text.hpp>
 #include <SFML/Graphics/Texture.hpp>
 #include <SFML/Graphics/Vertex.hpp>
-#include <SFML/System/String.hpp>
 #include <SFML/System/Vector2.hpp>
 #include <array>
-#include <cmath>
 #include <optional>
 #include <string>
 #include <string_view>
 #include <vector>
 #include "AssetLibrary.hpp"
 #include "BackgroundConstants.hpp"
-#include "CrispTextShader.hpp"
-#include "FragmentShader.hpp"
 #include "ImagePlacement.hpp"
-#include "InterfaceColors.hpp"
 #include "InterfaceConstants.hpp"
-#include "RenderingConstants.hpp"
 #include "TextStyle.hpp"
+#include "TextWriter.hpp"
 #include "TextureArea.hpp"
 
 namespace rtype::client {
 
 namespace {
-
-/** @returns How wide a line is, in pixels: where a character after its last
- * would start. */
-float widthOf(const sf::Text& line) {
-  return line.findCharacterPos(line.getString().getSize()).x;
-}
 
 /** @returns The pixels of an image that its copy, enlarged and placed as
  * asked, shows whole inside the visible area, from the top-left corner of
@@ -67,12 +54,8 @@ std::optional<sf::IntRect> visiblePixelsOf(TextureArea image,
 
 InterfaceCanvas::InterfaceCanvas(const AssetLibrary& library)
     : textures_(library),
-      regularFont_{.font = &library.font(REGULAR_FONT_ID),
-                   .baselineRow = REGULAR_FONT_BASELINE_ROW},
-      smallFont_{.font = &library.font(SMALL_FONT_ID),
-                 .baselineRow = SMALL_FONT_BASELINE_ROW},
-      logger_(std::string(INTERFACE_LOG_MODULE_NAME)),
-      crispText_(loadFragmentShader(CRISP_TEXT_SHADER, logger_)) {}
+      writer_(library),
+      logger_(std::string(INTERFACE_LOG_MODULE_NAME)) {}
 
 void InterfaceCanvas::clear() {
   canvas_.canvas().clear(sf::Color::Transparent);
@@ -93,30 +76,9 @@ void InterfaceCanvas::fill(sf::IntRect area, sf::Color color) {
 
 void InterfaceCanvas::write(std::string_view text, sf::Vector2i anchor,
                             TextStyle style) {
-  const LoadedFont& font = loadedFontOf(style.font);
-  sf::Text line = lineOf(text, style.font);
-  sf::Vector2i position(anchor.x, anchor.y + font.baselineRow -
-                                      static_cast<int>(TEXT_CHARACTER_SIZE));
-  if (style.alignment != TextAlignment::Left) {
-    const float width = widthOf(line);
-    position.x -= style.alignment == TextAlignment::Right
-                      ? static_cast<int>(std::round(width))
-                      : static_cast<int>(std::floor(width * HALF));
-  }
-  const sf::RenderStates states(crispText_.has_value() ? &*crispText_
-                                                       : nullptr);
-  if (style.outlined) {
-    line.setFillColor(INK);
-    for (const auto& directions : {CROSS_DIRECTIONS, DIAGONAL_DIRECTIONS}) {
-      for (const sf::Vector2i offset : directions) {
-        line.setPosition(sf::Vector2f(position + offset));
-        canvas_.canvas().draw(line, states);
-      }
-    }
-  }
-  line.setFillColor(style.color);
-  line.setPosition(sf::Vector2f(position));
-  canvas_.canvas().draw(line, states);
+  writer_.write(
+      canvas_.canvas(),
+      TextWriter::Line{.text = text, .anchor = anchor, .style = style});
 }
 
 void InterfaceCanvas::drawImage(TextureArea image, ImagePlacement placement,
@@ -149,7 +111,7 @@ void InterfaceCanvas::drawSmoothImage(std::string_view assetId,
 }
 
 int InterfaceCanvas::textWidth(std::string_view text, TextFont font) const {
-  return static_cast<int>(std::round(widthOf(lineOf(text, font))));
+  return writer_.width(text, font);
 }
 
 void InterfaceCanvas::display() {
@@ -160,22 +122,6 @@ void InterfaceCanvas::display() {
 void InterfaceCanvas::show(sf::RenderTarget& target) const {
   canvas_.show(target);
   showSmoothImages(target);
-}
-
-const InterfaceCanvas::LoadedFont& InterfaceCanvas::loadedFontOf(
-    TextFont font) const {
-  switch (font) {
-    case TextFont::Small:
-      return smallFont_;
-    case TextFont::Regular:
-      break;
-  }
-  return regularFont_;
-}
-
-sf::Text InterfaceCanvas::lineOf(std::string_view text, TextFont font) const {
-  return {*loadedFontOf(font).font,
-          sf::String::fromUtf8(text.begin(), text.end()), TEXT_CHARACTER_SIZE};
 }
 
 const sf::Texture* InterfaceCanvas::foundTexture(std::string_view assetId) {
