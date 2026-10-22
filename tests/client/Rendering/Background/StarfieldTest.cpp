@@ -1,12 +1,15 @@
 #include <gtest/gtest.h>
 #include <SFML/Graphics/Color.hpp>
+#include <SFML/System/Vector2.hpp>
 #include <algorithm>
 #include <chrono>
+#include <cmath>
 #include <cstddef>
 #include <cstdint>
 #include <vector>
 #include "BackgroundColors.hpp"
 #include "BackgroundConstants.hpp"
+#include "ColoredPixel.hpp"
 #include "PlanetImage.hpp"
 #include "RecordingPixelSurface.hpp"
 #include "Star.hpp"
@@ -17,6 +20,7 @@
 using rtype::client::BACKGROUND_HEIGHT;
 using rtype::client::BACKGROUND_WIDTH;
 using rtype::client::BLUE;
+using rtype::client::ColoredPixel;
 using rtype::client::DEEP_BLUE;
 using rtype::client::MAXIMUM_BACKGROUND_STEP;
 using rtype::client::PALE_BLUE;
@@ -25,6 +29,7 @@ using rtype::client::PLANET_SPEED;
 using rtype::client::PlanetImage;
 using rtype::client::Star;
 using rtype::client::STAR_LAYERS;
+using rtype::client::STAR_STREAK_COLORS;
 using rtype::client::STAR_TWINKLE_CYCLE_STEPS;
 using rtype::client::STAR_WRAP_MARGIN;
 using rtype::client::StarDepth;
@@ -46,6 +51,11 @@ constexpr Duration ONE_TWINKLE_STEP =
 constexpr Duration HALF_TWINKLE_STEP = ONE_TWINKLE_STEP / 2;
 constexpr Duration LONGER_THAN_A_PLANET_CROSSING = std::chrono::seconds(260);
 constexpr float POSITION_TOLERANCE = 1e-3F;
+constexpr float TOP_WARP_FACTOR = 12.0F;
+constexpr float LAST_FACTOR_WITHOUT_STREAK = 1.5F;
+constexpr float FIRST_FACTOR_WITH_STREAKS = 1.6F;
+constexpr int NEAR_STREAK_AT_THE_TOP_WARP = 6;
+constexpr float FAR_FROM_THE_LEFT_EDGE = 40.0F;
 
 float seconds(Duration duration) {
   return std::chrono::duration<float>(duration).count();
@@ -73,6 +83,16 @@ void expectSameColumns(const Starfield& left, const Starfield& right) {
     EXPECT_NEAR(left.stars()[i].position.x, right.stars()[i].position.x,
                 POSITION_TOLERANCE);
   }
+}
+
+/** @returns How many pixels a starfield of SEED paints at that speed
+ * factor. */
+std::size_t plotCountAt(float speedFactor) {
+  Starfield starfield(SEED);
+  starfield.setSpeedFactor(speedFactor);
+  RecordingPixelSurface surface;
+  starfield.paint(surface);
+  return surface.plots().size();
 }
 
 }  // namespace
@@ -329,4 +349,76 @@ TEST(Starfield, FarStarTwinklesOneStepInEight) {
   }
 
   EXPECT_EQ(twinkles, 1);
+}
+
+/**
+ * Given two skies of the same seed, one going 12 times its speed
+ * When 50 ms pass for both
+ * Then each near star far from the left edge moved 12 times as far in the
+ * fast sky
+ */
+TEST(Starfield, ASpeedFactorMovesTheStarsThatManyTimesFaster) {
+  Starfield calm(SEED);
+  Starfield fast(SEED);
+  fast.setSpeedFactor(TOP_WARP_FACTOR);
+  const std::vector<Star> before = calm.stars();
+
+  calm.advance(MAXIMUM_BACKGROUND_STEP);
+  fast.advance(MAXIMUM_BACKGROUND_STEP);
+
+  for (std::size_t i = 0; i < before.size(); ++i) {
+    if (before[i].depth != StarDepth::Near ||
+        before[i].position.x < FAR_FROM_THE_LEFT_EDGE) {
+      continue;
+    }
+    SCOPED_TRACE(i);
+    const float calmStep = before[i].position.x - calm.stars()[i].position.x;
+    const float fastStep = before[i].position.x - fast.stars()[i].position.x;
+    EXPECT_NEAR(fastStep, TOP_WARP_FACTOR * calmStep, POSITION_TOLERANCE);
+  }
+}
+
+/**
+ * Given a sky going 12 times its speed
+ * When it is painted
+ * Then each near star has 6 pixels of streak at its right, the distance it
+ * covers in a sixtieth of a second
+ */
+TEST(Starfield, AFastStarIsDrawnWithItsStreak) {
+  Starfield starfield(SEED);
+  starfield.setSpeedFactor(TOP_WARP_FACTOR);
+  RecordingPixelSurface surface;
+
+  starfield.paint(surface);
+
+  const sf::Color streak =
+      STAR_STREAK_COLORS[static_cast<std::size_t>(StarDepth::Near)];
+  for (const Star& star : starfield.stars()) {
+    if (star.depth != StarDepth::Near) {
+      continue;
+    }
+    for (int column = 1; column <= NEAR_STREAK_AT_THE_TOP_WARP; ++column) {
+      const sf::Vector2i pixel(
+          static_cast<int>(std::lround(star.position.x)) + column,
+          static_cast<int>(std::lround(star.position.y)));
+      EXPECT_TRUE(std::ranges::any_of(
+          surface.plots(), [pixel, streak](const ColoredPixel& plot) {
+            return plot.position == pixel && plot.color == streak;
+          }));
+    }
+  }
+}
+
+/**
+ * Given the same sky painted at its own speed, at 1.5 and at 1.6 times its
+ * speed
+ * When the pixels painted are counted
+ * Then 1.5 paints as many as its own speed, and 1.6 more: the streaks start
+ * above 1.5
+ */
+TEST(Starfield, TheStreaksStartAboveOneAndAHalfTimesTheSpeed) {
+  const std::size_t calm = plotCountAt(1.0F);
+
+  EXPECT_EQ(plotCountAt(LAST_FACTOR_WITHOUT_STREAK), calm);
+  EXPECT_GT(plotCountAt(FIRST_FACTOR_WITH_STREAKS), calm);
 }

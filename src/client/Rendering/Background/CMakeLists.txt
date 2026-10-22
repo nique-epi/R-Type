@@ -9,6 +9,12 @@ target_link_libraries(rtype_client_background
     rtype_game
 )
 
+add_library(rtype_client_shifted_view STATIC ShiftedView.cpp)
+
+target_link_libraries(rtype_client_shifted_view PUBLIC rtype_client_background)
+
+rtype_enable_warnings(rtype_client_shifted_view)
+
 add_subdirectory(RandomRange)
 add_subdirectory(PixelRounding)
 add_subdirectory(PixelBatch)

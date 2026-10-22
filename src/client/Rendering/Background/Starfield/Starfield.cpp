@@ -2,6 +2,7 @@
 #include <SFML/System/Vector2.hpp>
 #include <algorithm>
 #include <chrono>
+#include <cmath>
 #include <cstddef>
 #include <cstdint>
 #include <random>
@@ -41,13 +42,17 @@ void Starfield::advance(engine::Duration elapsed) {
   const float seconds = std::chrono::duration<float>(step).count();
   elapsed_ += step;
   for (Star& star : stars_) {
-    moveStar(star, seconds);
+    moveStar(star, seconds * speedFactor_);
   }
   planetLeft_ -= PLANET_SPEED * seconds;
   if (planetLeft_ < -static_cast<float>(PLANET_IMAGE_SIZE.x)) {
     planetLeft_ = BACKGROUND_WIDTH + PLANET_REENTRY_MARGIN;
   }
   skyEvents_.advance(seconds);
+}
+
+void Starfield::setSpeedFactor(float factor) {
+  speedFactor_ = std::max(factor, 0.0F);
 }
 
 void Starfield::paint(IPixelSurface& surface) const {
@@ -57,12 +62,12 @@ void Starfield::paint(IPixelSurface& surface) const {
       std::ranges::upper_bound(stars_, StarDepth::Far, {}, &Star::depth);
   for (const Star& star :
        std::ranges::subrange(stars_.begin(), firstNearerStar)) {
-    paintStar(star, twinkleStep, surface);
+    paintMovingStar(star, twinkleStep, surface);
   }
   paintPlanet(surface);
   for (const Star& star :
        std::ranges::subrange(firstNearerStar, stars_.end())) {
-    paintStar(star, twinkleStep, surface);
+    paintMovingStar(star, twinkleStep, surface);
   }
   skyEvents_.paint(surface);
 }
@@ -85,6 +90,27 @@ void Starfield::paintPlanet(IPixelSurface& surface) const {
       {planetLeft_, BACKGROUND_HEIGHT * PLANET_TOP_SHARE_OF_HEIGHT});
   for (const ColoredPixel& pixel : planetImage_.pixels()) {
     surface.plot(topLeft + pixel.position, pixel.color);
+  }
+}
+
+void Starfield::paintMovingStar(const Star& star, std::int64_t twinkleStep,
+                                IPixelSurface& surface) const {
+  if (speedFactor_ > STREAK_SPEED_FACTOR) {
+    paintStreak(star, speedFactor_, surface);
+  }
+  paintStar(star, twinkleStep, surface);
+}
+
+void Starfield::paintStreak(const Star& star, float speedFactor,
+                            IPixelSurface& surface) {
+  const auto depth = static_cast<std::size_t>(star.depth);
+  const float frameSeconds =
+      std::chrono::duration<float>(engine::SIMULATION_TICK_DURATION).count();
+  const int length = static_cast<int>(
+      std::lround(STAR_LAYERS[depth].speed * speedFactor * frameSeconds));
+  const sf::Vector2i head = nearestPixel(star.position);
+  for (int column = 1; column <= length; ++column) {
+    surface.plot(head + sf::Vector2i(column, 0), STAR_STREAK_COLORS[depth]);
   }
 }
 

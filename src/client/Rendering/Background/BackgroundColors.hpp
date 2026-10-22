@@ -44,4 +44,8 @@ constexpr sf::Color COMET_GLOW_COLOR(111, 182, 214);
  */
 constexpr sf::Color HALO_TINT(255, 255, 255, 179);
 
+/** @brief Color of the streak behind a star of each depth, in the order of
+ * StarDepth: a shade darker than the star. */
+constexpr std::array STAR_STREAK_COLORS{DEEP_BLUE, BLUE, PALE_BLUE};
+
 }  // namespace rtype::client

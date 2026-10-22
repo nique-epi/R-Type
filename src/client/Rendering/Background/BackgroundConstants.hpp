@@ -150,4 +150,8 @@ constexpr int HALO_KERNEL_RADIUS =
 
 constexpr std::string_view BACKGROUND_LOG_MODULE_NAME = "Background";
 
+/** @brief A star moving more than STREAK_SPEED_FACTOR times its own speed is
+ * drawn with the streak it covers in one SIMULATION_TICK_DURATION. */
+constexpr float STREAK_SPEED_FACTOR = 1.5F;
+
 }  // namespace rtype::client
