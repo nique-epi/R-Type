@@ -87,6 +87,21 @@ bool holdsActionAt(const network::PlayerInput& input,
 /**
  * @returns The directions @p input holds for the ship; shooting is not one.
  */
+/**
+ * @returns The connected players of @p roster whose newest input holds shoot.
+ */
+ConnectedPlayers shootersIn(PlayerRoster& roster) {
+  ConnectedPlayers shooters;
+  for (ConnectedPlayer* const player : roster.connected()) {
+    if (player->newestInput.has_value() &&
+        holdsActionAt(*player->newestInput,
+                      network::SHOOT_ACTION_BIT_POSITION)) {
+      shooters.append(player);
+    }
+  }
+  return shooters;
+}
+
 game::ShipDirections directionsOf(const network::PlayerInput& input) {
   return game::ShipDirections{
       .up = holdsActionAt(input, network::UP_ACTION_BIT_POSITION),
@@ -202,6 +217,7 @@ void GameInstance::advanceState() {
       ++tick_;
       moveShips();
       systems_.run(world_->components(), engine::SIMULATION_TICK_DURATION);
+      missileLauncher_->onTick(shootersIn(roster_));
       bydoSpawner_->onTick();
       break;
     case GameState::Finished:
@@ -405,13 +421,18 @@ void GameInstance::moveShips() {
   }
 }
 
-void GameInstance::startNewWorld() {
+void GameInstance::buildWorld() {
   world_ = std::make_unique<game::World>();
   shipSpawnAnnouncer_ =
       std::make_unique<ShipSpawnAnnouncer>(*world_, roster_, send_);
   bydoSpawner_ = std::make_unique<BydoSpawner>(*world_, roster_, send_,
                                                seed_ + worldsBuilt_);
+  missileLauncher_ = std::make_unique<MissileLauncher>(*world_, roster_, send_);
   lobbyStateAnnouncer_ = std::make_unique<LobbyStateAnnouncer>(roster_, send_);
+}
+
+void GameInstance::startNewWorld() {
+  buildWorld();
   ++worldsBuilt_;
   tick_ = 0;
   finishedTicks_ = 0;
