@@ -65,6 +65,9 @@ constexpr std::uint16_t FOURTH_SEQUENCE = 4;
  */
 constexpr std::size_t SOME_TICKS = 3;
 
+/** @brief The seed the games of the tests start their random draws from. */
+constexpr std::uint32_t SOME_SEED = 7;
+
 /**
  * @brief Actions a test player holds, one bit each where the Inputs section of
  * the protocol page puts them: bit 0 up, bit 1 down, bit 2 left, bit 3 right,

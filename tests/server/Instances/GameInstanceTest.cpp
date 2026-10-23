@@ -5,9 +5,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <initializer_list>
-#include <memory>
 #include <optional>
-#include <ostream>
 #include <span>
 #include <string>
 #include <string_view>
@@ -17,14 +15,13 @@
 #include "ConnectedPlayer.hpp"
 #include "DatagramCodec.hpp"
 #include "DebugJournal.hpp"
-#include "Endpoint.hpp"
 #include "EnemyKilled.hpp"
 #include "EntityDestruction.hpp"
 #include "EntityIdConstants.hpp"
 #include "EventBus.hpp"
-#include "GameEventBroadcaster.hpp"
 #include "GameInstance.hpp"
 #include "GameInstanceConstants.hpp"
+#include "GameInstanceFixtures.hpp"
 #include "GameInstanceTestConstants.hpp"
 #include "GameState.hpp"
 #include "IncomingDatagram.hpp"
@@ -39,7 +36,6 @@
 #include "PlayerRoster.hpp"
 #include "Position.hpp"
 #include "ProtocolConstants.hpp"
-#include "ReadyState.hpp"
 #include "Replication/GameEventTestConstants.hpp"
 #include "SentDatagrams.hpp"
 #include "ServerConstants.hpp"
@@ -59,14 +55,19 @@ namespace {
 constexpr std::size_t INTERVALS_OF_BYDOS = 10;
 
 using game::testing::POSITION_TOLERANCE;
-using testing::DATAGRAMS_PER_TICK;
-using testing::DROPPED_DATAGRAM_LINE_TEXT;
 using testing::FIRST_PLAYER;
 using testing::FIRST_SENT;
 using testing::FIRST_SEQUENCE;
 using testing::FOURTH_PLAYER;
 using testing::FOURTH_SENT;
 using testing::FOURTH_SEQUENCE;
+using testing::GameInstanceArrowTest;
+using testing::GameInstanceInputShuffleTest;
+using testing::GameInstanceInputTest;
+using testing::GameInstanceLogTest;
+using testing::GameInstanceMovementTest;
+using testing::GameInstanceTest;
+using testing::HeldArrow;
 using testing::HOLDS_DOWN;
 using testing::HOLDS_LEFT;
 using testing::HOLDS_RIGHT;
@@ -74,6 +75,7 @@ using testing::HOLDS_SHOOT;
 using testing::HOLDS_UP;
 using testing::LARGEST_INPUT_NUMBER;
 using testing::NEXT_PROTOCOL_VERSION;
+using testing::ofType;
 using testing::onlyMessageIn;
 using testing::onlyMessageTypeOf;
 using testing::PLAYER_SESSION_TOKENS;
@@ -83,6 +85,7 @@ using testing::PROTOCOL_SESSION_TIMEOUT_TICKS;
 using testing::SECOND_PLAYER;
 using testing::SECOND_SENT;
 using testing::SECOND_SEQUENCE;
+using testing::sessionHeader;
 using testing::SHUFFLE_SEED_COUNT;
 using testing::SHUFFLED_INPUT_COUNT;
 using testing::SOME_TICKS;
@@ -94,16 +97,7 @@ using testing::TICKS_PER_REJECTION_LINE;
 using testing::UNLISTED_ACTION;
 using testing::WIRE_COORDINATE_TOLERANCE;
 
-constexpr std::uint32_t SOME_SEED = 7;
 constexpr std::uint32_t SOME_POINTS = 100;
-
-/** @brief A ReadyState sent by a player, with the header it travels under. */
-struct SentReadyState {
-  std::size_t player{};
-  bool ready{};
-  std::uint16_t sequence{};
-  std::uint64_t sessionToken{testing::SESSION_TOKEN};
-};
 
 /** @returns The type of the only message of each of @p datagrams, in order. */
 std::vector<network::MessageType> messageTypesOf(
@@ -114,20 +108,6 @@ std::vector<network::MessageType> messageTypesOf(
     types.push_back(onlyMessageTypeOf(datagram));
   }
   return types;
-}
-
-/** @returns Those of @p datagrams whose only message is of type @p type, in
- * order. */
-std::vector<network::OutgoingDatagram> ofType(
-    network::MessageType type,
-    const std::vector<network::OutgoingDatagram>& datagrams) {
-  std::vector<network::OutgoingDatagram> kept;
-  for (const network::OutgoingDatagram& datagram : datagrams) {
-    if (onlyMessageTypeOf(datagram) == type) {
-      kept.push_back(datagram);
-    }
-  }
-  return kept;
 }
 
 /** @returns The entity of @p state whose id is @p entityId, or nothing when the
@@ -150,185 +130,6 @@ network::LobbyState roomOfTheFirstPlayerNotReady() {
           .ready = false,
           .nickname = std::string{testing::PLAYER_NICKNAME}}}};
 }
-
-/**
- * @brief A game whose datagrams are recorded and whose input is queued. Every
- * player that joined sends a Heartbeat before each tick, as a client that is
- * still there sends at least one datagram per second, until silence() stops
- * it.
- */
-class GameInstanceTest : public ::testing::Test {
- protected:
-  /**
-   * @brief Connects the player number @p index + 1, under @p sessionToken, and
-   * hands it to the game.
-   */
-  ConnectedPlayer& join(std::size_t index,
-                        std::uint64_t sessionToken = testing::SESSION_TOKEN) {
-    ConnectedPlayer* const player = game().roster().add(
-        playerEndpoint(index), std::string{testing::PLAYER_NICKNAME},
-        sessionToken);
-    game().onPlayerJoined(*player);
-    livePlayers_.push_back(
-        LivePlayer{.index = index, .sessionToken = sessionToken});
-    return *player;
-  }
-
-  /**
-   * @brief The player at @p index sends nothing from now on, as a client that
-   * crashed or lost the network.
-   */
-  void silence(std::size_t index) {
-    std::erase_if(livePlayers_, [index](const LivePlayer& player) {
-      return player.index == index;
-    });
-  }
-
-  /**
-   * @brief The player at @p index sends a Disconnection for the next tick,
-   * then nothing more, as a client that closes.
-   */
-  void leave(std::size_t index) {
-    silence(index);
-    queueDisconnectionFrom(index);
-  }
-
-  /** @brief Queues a Disconnection from the player at @p index for the next
-   * tick, as one of the copies its client sends. */
-  void queueDisconnectionFrom(std::size_t index) {
-    queue(network::IncomingDatagram{.sender = playerEndpoint(index),
-                                    .payload = disconnectionDatagram()});
-  }
-
-  /**
-   * @returns A broadcaster of the game events, wired to the roster as the
-   * server wires it, that runs its later copies on @p timers and puts each
-   * datagram in @p datagrams.
-   */
-  [[nodiscard]] std::unique_ptr<GameEventBroadcaster> eventBroadcaster(
-      engine::TimerScheduler& timers,
-      std::vector<network::OutgoingDatagram>& datagrams) {
-    return std::make_unique<GameEventBroadcaster>(GameEventBroadcaster::Wiring{
-        .events = events(),
-        .timers = timers,
-        .recipients = [this] { return game().roster().endpoints(); },
-        .headerFor =
-            [this](const network::Endpoint& recipient) {
-              return game().nextSessionHeaderFor(recipient);
-            },
-        .send =
-            [&datagrams](network::OutgoingDatagram datagram) {
-              datagrams.push_back(std::move(datagram));
-            }});
-  }
-
-  /** @returns The PlayerLeft that @p datagrams carry to the player at
-   * @p index, in the order they were sent. */
-  [[nodiscard]] static std::vector<network::PlayerLeft> playerLeftSentTo(
-      const std::vector<network::OutgoingDatagram>& datagrams,
-      std::size_t index) {
-    std::vector<network::PlayerLeft> received;
-    for (const network::OutgoingDatagram& datagram :
-         ofType(network::MessageType::PlayerLeft,
-                testing::sentTo(datagrams, playerEndpoint(index)))) {
-      received.push_back(onlyMessageIn<network::PlayerLeft>(datagram));
-    }
-    return received;
-  }
-
-  /** @brief Queues the ReadyState described by @p sent for the next tick. */
-  void sendReady(const SentReadyState& sent) {
-    network::PacketHeader header;
-    header.sessionToken = sent.sessionToken;
-    header.sequence = sent.sequence;
-    queue(network::IncomingDatagram{
-        .sender = playerEndpoint(sent.player),
-        .payload = network::DatagramCodec::encode(
-            header, network::ReadyState{.ready = sent.ready})});
-  }
-
-  /** @brief Queues @p datagram for the next tick. */
-  void queue(network::IncomingDatagram datagram) {
-    incoming_.push_back(std::move(datagram));
-  }
-
-  /** @brief Runs one tick with what was queued, then a Heartbeat from each
-   * player not silenced, then empties the queue. */
-  void tick() {
-    for (const LivePlayer& player : livePlayers_) {
-      network::PacketHeader header;
-      header.sessionToken = player.sessionToken;
-      queue(network::IncomingDatagram{.sender = playerEndpoint(player.index),
-                                      .payload = heartbeatDatagram(header)});
-    }
-    game().onTick(incoming_);
-    incoming_.clear();
-  }
-
-  void runTicks(std::size_t count) {
-    for (std::size_t index = 0; index < count; ++index) {
-      tick();
-    }
-  }
-
-  /** @brief Connects the players at @p indexes, who all say ready, and runs
-   * the tick that starts the game. */
-  void startGameWith(std::initializer_list<std::size_t> indexes) {
-    for (const std::size_t index : indexes) {
-      join(index);
-      sendReady({.player = index, .ready = true, .sequence = FIRST_SEQUENCE});
-    }
-    tick();
-    ASSERT_EQ(game().state(), GameState::InProgress);
-  }
-
-  /** @brief Connects one player, who says ready, and runs the tick that starts
-   * the game. */
-  void startGameWithOnePlayer() { startGameWith({FIRST_PLAYER}); }
-
-  /**
-   * @brief Silences the player at @p index, then runs ticks until its session
-   * closed: the timeout of the protocol and one tick more, which a player
-   * silenced right after it joined needs, since it was never heard in a tick.
-   */
-  void timeOut(std::size_t index) {
-    silence(index);
-    runTicks(PROTOCOL_SESSION_TIMEOUT_TICKS + 1);
-  }
-
-  /** @returns The network id of the ship of the player at @p index, or
-   * NO_ENTITY_ID when that player is not in the game. */
-  [[nodiscard]] std::uint32_t shipOf(std::size_t index) {
-    const ConnectedPlayer* const player =
-        game().roster().find(playerEndpoint(index));
-    return player == nullptr ? identifiers::NO_ENTITY_ID : player->shipEntityId;
-  }
-
-  /** @returns The datagrams sent to the player at @p index, oldest first. */
-  [[nodiscard]] std::vector<network::OutgoingDatagram> sentTo(
-      std::size_t index) const {
-    return testing::sentTo(sent_, playerEndpoint(index));
-  }
-
-  [[nodiscard]] GameInstance& game() { return game_; }
-  [[nodiscard]] engine::EventBus& events() { return events_; }
-
- private:
-  /** @brief A player that sends a Heartbeat before each tick. */
-  struct LivePlayer {
-    std::size_t index{};
-    std::uint64_t sessionToken{};
-  };
-
-  std::vector<network::OutgoingDatagram> sent_;
-  std::vector<LivePlayer> livePlayers_;
-  engine::EventBus events_;
-  GameInstance game_{[this](network::OutgoingDatagram datagram) {
-                       sent_.push_back(std::move(datagram));
-                     },
-                     SOME_SEED, events_};
-  std::vector<network::IncomingDatagram> incoming_;
-};
 
 /**
  * Given a game that was just built
@@ -1099,13 +900,6 @@ std::vector<std::byte> inputPayload(const network::PlayerInput& input) {
   return payload.bytes();
 }
 
-/** @returns A header carrying the session token of @p player. */
-network::PacketHeader sessionHeader(std::size_t player) {
-  network::PacketHeader header;
-  header.sessionToken = PLAYER_SESSION_TOKENS.at(player);
-  return header;
-}
-
 /**
  * Given a player heard from in a tick, then silent
  * When the timeout of the protocol, less one tick, runs without a datagram
@@ -1581,108 +1375,6 @@ TEST_F(GameInstanceTest, StartsOnceThePlayerNotReadyTimedOut) {
 }
 
 /**
- * @brief A game with two players, each with its own session token, and the
- * network in between. Each player numbers its inputs from 1 in the order it
- * sends them, as a client does.
- */
-class GameInstanceInputTest : public GameInstanceTest {
- protected:
-  GameInstanceInputTest() {
-    for (const std::size_t player : {FIRST_PLAYER, SECOND_PLAYER}) {
-      join(player, PLAYER_SESSION_TOKENS.at(player));
-    }
-  }
-
-  /**
-   * @returns The datagram of the next input of @p player, holding @p actions,
-   * under @p header.
-   */
-  std::vector<std::byte> nextInputDatagram(
-      std::size_t player, std::uint8_t actions,
-      const network::PacketHeader& header) {
-    ++inputsSent_.at(player);
-    return inputDatagram(
-        network::PlayerInput{.inputNumber = inputsSent_.at(player),
-                             .actions = actions},
-        header);
-  }
-
-  /** @brief @p player sends its next input, holding @p actions. */
-  void send(std::size_t player, std::uint8_t actions) {
-    send(player, actions, sessionHeader(player));
-  }
-
-  /**
-   * @brief @p player sends its next input, holding @p actions, under
-   * @p header.
-   */
-  void send(std::size_t player, std::uint8_t actions,
-            const network::PacketHeader& header) {
-    sendDatagram(player, nextInputDatagram(player, actions, header));
-  }
-
-  /** @brief @p datagram leaves the address and port of @p player. */
-  void sendDatagram(std::size_t player, std::vector<std::byte> datagram) {
-    network_.send(network::IncomingDatagram{.sender = playerEndpoint(player),
-                                            .payload = std::move(datagram)});
-  }
-
-  /** @brief One tick reads the datagrams sent at @p sendIndexes. */
-  void deliver(std::initializer_list<std::size_t> sendIndexes) {
-    for (network::IncomingDatagram& arrival : network_.arrivals(sendIndexes)) {
-      queue(std::move(arrival));
-    }
-    tick();
-  }
-
-  /**
-   * @brief Ticks read @p arrivals in order, DATAGRAMS_PER_TICK at a time.
-   */
-  void deliverInTicks(std::span<const network::IncomingDatagram> arrivals) {
-    while (!arrivals.empty()) {
-      const std::size_t count = std::min(DATAGRAMS_PER_TICK, arrivals.size());
-      for (const network::IncomingDatagram& arrival : arrivals.first(count)) {
-        queue(arrival);
-      }
-      tick();
-      arrivals = arrivals.subspan(count);
-    }
-  }
-
-  /** @returns The number of the last input @p player sent. */
-  [[nodiscard]] std::uint32_t lastInputNumber(std::size_t player) const {
-    return inputsSent_.at(player);
-  }
-
-  /** @returns The input the game keeps for @p player, if any. */
-  [[nodiscard]] std::optional<network::PlayerInput> newestInputOf(
-      std::size_t player) {
-    const ConnectedPlayer* const connected =
-        game().roster().find(playerEndpoint(player));
-    if (connected == nullptr) {
-      ADD_FAILURE() << "player " << player << " is not in the roster";
-      return std::nullopt;
-    }
-    return connected->newestInput;
-  }
-
-  /** @returns The actions of the input the game keeps for @p player. */
-  [[nodiscard]] std::optional<std::uint8_t> heldActions(std::size_t player) {
-    const std::optional<network::PlayerInput> newest = newestInputOf(player);
-    if (!newest.has_value()) {
-      return std::nullopt;
-    }
-    return newest->actions;
-  }
-
-  [[nodiscard]] const UnreliableNetwork& network() const { return network_; }
-
- private:
-  UnreliableNetwork network_;
-  std::array<std::uint32_t, PLAYER_SESSION_TOKENS.size()> inputsSent_{};
-};
-
-/**
  * Given a player whose datagram holds a ReadyState and no input
  * When a tick reads it
  * Then no input is kept for the player
@@ -1919,49 +1611,6 @@ TEST_F(GameInstanceInputTest, KeepsTheInputAcrossANewWorld) {
 }
 
 /**
- * @brief The input fixture, with both players ready and a way to read where
- * their ships are.
- */
-class GameInstanceMovementTest : public GameInstanceInputTest {
- protected:
-  /** @brief Both players say ready, then the tick that starts the game runs. */
-  void startGame() {
-    for (const std::size_t player : {FIRST_PLAYER, SECOND_PLAYER}) {
-      sendReady({.player = player,
-                 .ready = true,
-                 .sequence = FIRST_SEQUENCE,
-                 .sessionToken = PLAYER_SESSION_TOKENS.at(player)});
-    }
-    tick();
-    ASSERT_EQ(game().state(), GameState::InProgress);
-  }
-
-  /** @returns The network id of the ship of @p player; NO_ENTITY_ID, after a
-   * failure, when the player is not in the roster. */
-  [[nodiscard]] std::uint32_t shipIdOf(std::size_t player) {
-    const ConnectedPlayer* const connected =
-        game().roster().find(playerEndpoint(player));
-    if (connected == nullptr) {
-      ADD_FAILURE() << "player " << player << " is not in the roster";
-      return identifiers::NO_ENTITY_ID;
-    }
-    return connected->shipEntityId;
-  }
-
-  /** @returns Where the ship of @p player is; the origin, after a failure, when
-   * it has none. */
-  [[nodiscard]] game::Position shipPositionOf(std::size_t player) {
-    const game::Position* const ship =
-        game().world().shipPositionOf(shipIdOf(player));
-    if (ship == nullptr) {
-      ADD_FAILURE() << "player " << player << " has no ship";
-      return game::Position{.x = 0.0F, .y = 0.0F};
-    }
-    return *ship;
-  }
-};
-
-/**
  * Given a game in progress whose first player holds right
  * When a second of ticks runs: the tick that reads the input, then
  * SIMULATION_TICKS_PER_SECOND - 1 more
@@ -2111,26 +1760,6 @@ TEST_F(GameInstanceMovementTest, SendsTheShipWhereItMovedInTheSameTick) {
   EXPECT_NEAR(sent.y, moved.y, WIRE_COORDINATE_TOLERANCE);
 }
 
-/** @brief An arrow a player holds alone, named after it, as its bit of the
- * actions byte, and which way it moves a ship along each axis: -1, 0 or 1. */
-struct HeldArrow {
-  std::string_view name;
-  std::uint8_t actions{};
-  float towardsX{};
-  float towardsY{};
-};
-
-/** @brief Prints an arrow by its name, so the name of each test says which
- * arrow it holds. */
-void PrintTo(const HeldArrow& arrow, std::ostream* output) {
-  *output << arrow.name;
-}
-
-/** @brief The movement fixture, run once for each arrow. */
-class GameInstanceArrowTest : public GameInstanceMovementTest,
-                              public ::testing::WithParamInterface<HeldArrow> {
-};
-
 /**
  * Given a game in progress whose first player holds one arrow
  * When the tick that reads the input runs
@@ -2173,31 +1802,6 @@ INSTANTIATE_TEST_SUITE_P(EachArrow, GameInstanceArrowTest,
                                                      .actions = HOLDS_RIGHT,
                                                      .towardsX = 1.0F,
                                                      .towardsY = 0.0F}));
-
-/** @brief The input fixture, with the log written to a journal the test reads.
- */
-class GameInstanceLogTest : public GameInstanceInputTest {
- protected:
-  /** @brief An input from an address that is not a player's arrives. */
-  void queueStrangersInput() {
-    queue(network::IncomingDatagram{
-        .sender = playerEndpoint(STRANGER),
-        .payload = inputDatagram(
-            network::PlayerInput{.inputNumber = network::FIRST_INPUT_NUMBER,
-                                 .actions = HOLDS_UP},
-            sessionHeader(FIRST_PLAYER))});
-  }
-
-  /** @returns The lines of the journal about a datagram dropped. */
-  [[nodiscard]] std::vector<std::string> dropLines() const {
-    return journal_.linesHolding(DROPPED_DATAGRAM_LINE_TEXT);
-  }
-
-  [[nodiscard]] const DebugJournal& journal() const { return journal_; }
-
- private:
-  DebugJournal journal_;
-};
 
 /**
  * Given a game with two players
@@ -2352,11 +1956,6 @@ TEST_F(GameInstanceLogTest, LogsNoFinishedGameForAnEmptyRoom) {
                   .linesHolding(testing::GAME_LEFT_BY_EVERY_PLAYER_LINE_TEXT)
                   .empty());
 }
-
-/** @brief The input fixture, once for each seed of a shuffled delivery. */
-class GameInstanceInputShuffleTest
-    : public GameInstanceInputTest,
-      public ::testing::WithParamInterface<std::uint32_t> {};
 
 /**
  * Given a player who sent SHUFFLED_INPUT_COUNT inputs, each holding other
