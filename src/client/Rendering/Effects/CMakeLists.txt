@@ -7,6 +7,7 @@ target_link_libraries(rtype_client_effect_interfaces
     rtype_client_camera_interfaces
     rtype_client_ground_effect_interfaces
     rtype_client_rendering_interfaces
+    rtype_client_sprite_look
 )
 
 add_subdirectory(Ground)

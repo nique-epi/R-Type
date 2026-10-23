@@ -4,7 +4,7 @@ target_include_directories(rtype_client_text_writer PUBLIC ${CMAKE_CURRENT_SOURC
 
 target_link_libraries(rtype_client_text_writer
   PUBLIC
-    rtype_client_rendering_interfaces
+    rtype_client_interface
     rtype_logging
     SFML::Graphics
   PRIVATE

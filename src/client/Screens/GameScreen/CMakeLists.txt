@@ -9,7 +9,7 @@ target_link_libraries(rtype_client_game_screen
     rtype_client_mission_banner
     rtype_client_player_commands
     rtype_client_player_input_pacer
-    rtype_client_rendering_interfaces
+    rtype_client_drawing
     rtype_client_score_board
     rtype_client_screens
     rtype_engine

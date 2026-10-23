@@ -5,7 +5,7 @@ target_include_directories(rtype_client_animation_system PUBLIC ${CMAKE_CURRENT_
 target_link_libraries(rtype_client_animation_system
   PUBLIC
     rtype_engine
-    rtype_client_rendering_interfaces
+    rtype_client_sprites
 )
 
 rtype_enable_warnings(rtype_client_animation_system)

@@ -8,7 +8,7 @@ target_link_libraries(rtype_client_entity_layer
     rtype_client_pixel_batch
     rtype_client_pixel_canvas
     rtype_client_render_system
-    rtype_client_rendering_interfaces
+    rtype_client_drawing
     rtype_client_sfml_draw_surface
     rtype_client_text_writer
   PRIVATE

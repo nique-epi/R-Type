@@ -5,7 +5,7 @@ target_include_directories(rtype_client_render_system PUBLIC ${CMAKE_CURRENT_SOU
 target_link_libraries(rtype_client_render_system
   PUBLIC
     rtype_engine
-    rtype_client_rendering_interfaces
+    rtype_client_drawing
 )
 
 rtype_enable_warnings(rtype_client_render_system)

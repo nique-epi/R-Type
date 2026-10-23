@@ -8,6 +8,7 @@ target_link_libraries(rtype_client_pixel_effects
     rtype_engine
   PRIVATE
     rtype_client_random_range
+    rtype_client_sprite_look
 )
 
 rtype_enable_warnings(rtype_client_pixel_effects)

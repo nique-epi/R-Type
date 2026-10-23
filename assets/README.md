@@ -50,7 +50,7 @@ The client looks for `assets/` next to its executable, then in the folder above 
 | Player missile | 16 × 6 | 60 ms |
 | Enemy missile | 8 × 8 | 120 ms |
 
-The game and the squadron of the title screen show the two frames in turn, each for the frame time above. The rectangle, the frames and the animation of each entity type are written once, in `src/client/Rendering/EntitySpriteConstants.hpp`. The sheet is listed in `titleAssets()`, for the squadron of the title screen, and in `gameAssets()`.
+The game and the squadron of the title screen show the two frames in turn, each for the frame time above. The rectangle, the frames and the animation of each entity type are written once, in `src/client/Rendering/Sprites/EntitySpriteConstants.hpp`. The sheet is listed in `titleAssets()`, for the squadron of the title screen, and in `gameAssets()`.
 
 ## The effect sheet
 
@@ -75,4 +75,4 @@ Without flash, the Bydo explosion starts on the Bydo in its own colors instead o
 | Lives: the ship of each player color, then a life lost, in the shade of the far stars | 5 | 16 × 8 | 0 |
 | Markers: triangle, square, circle and star, one per player color, so a player is never told by color alone | 4 | 7 × 7 | 10 |
 
-The rectangles are written once, in `src/client/Rendering/HudSpriteConstants.hpp`, with the id of the plug icon, which is drawn smoothed at the resolution of the window and tinted, not pixel for pixel. `client_rendering_tests` checks them against the shipped files: every frame lies inside the sheet, shows a visible pixel, cuts no drawing and overlaps no other, and every visible pixel of the icon is white. Both files are listed in `gameAssets()` only.
+The rectangles are written once, in `src/client/Rendering/Interface/HudSpriteConstants.hpp`, with the id of the plug icon, which is drawn smoothed at the resolution of the window and tinted, not pixel for pixel. `client_rendering_tests` checks them against the shipped files: every frame lies inside the sheet, shows a visible pixel, cuts no drawing and overlaps no other, and every visible pixel of the icon is white. Both files are listed in `gameAssets()` only.

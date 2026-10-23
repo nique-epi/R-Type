@@ -8,6 +8,7 @@ target_link_libraries(rtype_client_sprite_effect_system
     rtype_engine
   PRIVATE
     rtype_client_easing
+    rtype_client_sprite_look
 )
 
 rtype_enable_warnings(rtype_client_sprite_effect_system)

@@ -4,7 +4,7 @@ target_include_directories(rtype_client_widgets INTERFACE ${CMAKE_CURRENT_SOURCE
 
 target_link_libraries(rtype_client_widgets
   INTERFACE
-    rtype_client_rendering_interfaces
+    rtype_client_interface
     rtype_engine_time
     SFML::Graphics
     SFML::Window
