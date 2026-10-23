@@ -196,31 +196,14 @@ constexpr engine::Duration KNOCKBACK_DURATION = std::chrono::milliseconds(50);
 constexpr sf::Vector2i RECOIL_OFFSET(-1, 0);
 constexpr engine::Duration RECOIL_DURATION = std::chrono::milliseconds(33);
 
-/**
- * @brief The figure of a gain rises POPUP_RISE_HEIGHT pixels of the canvas
- * over POPUP_RISE, stays POPUP_HOLD, blinks POPUP_BLINK_COUNT times,
- * POPUP_BLINK_STEP per state, and goes after POPUP_LIFE.
- */
-constexpr engine::Duration POPUP_RISE = std::chrono::milliseconds(400);
-constexpr engine::Duration POPUP_HOLD = std::chrono::milliseconds(300);
-constexpr engine::Duration POPUP_BLINK_STEP = std::chrono::milliseconds(67);
-constexpr int POPUP_BLINK_COUNT = 2;
-constexpr int POPUP_RISE_HEIGHT = 8;
-constexpr engine::Duration POPUP_LIFE =
-    POPUP_RISE + POPUP_HOLD + (2 * POPUP_BLINK_COUNT * POPUP_BLINK_STEP);
-
 /** @brief Written before the points of a gain. */
 constexpr const char* GAIN_PREFIX = "+";
 
-/**
- * @brief A ship arriving stays hidden on the first half of
+/** @brief A ship arriving stays hidden on the first half of
  * MATERIALIZE_DURATION, 16 frames, then shows row by row; its speed lines
- * run as long, on the rows of the canvas SPEED_LINE_ROWS away from its
- * center.
- */
+ * live as long. */
 constexpr engine::Duration MATERIALIZE_DURATION =
     std::chrono::milliseconds(267);
-constexpr std::array SPEED_LINE_ROWS{-6, -2, 2, 6};
 
 /**
  * @brief Most pixels of the canvas that may show FLASH_COLOR at once: 2.8 %

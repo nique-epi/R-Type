@@ -4,7 +4,7 @@ target_include_directories(rtype_client_sprite_effect_system PUBLIC ${CMAKE_CURR
 
 target_link_libraries(rtype_client_sprite_effect_system
   PUBLIC
-    rtype_client_effect_interfaces
+    rtype_client_sprite_effect_interfaces
     rtype_engine
   PRIVATE
     rtype_client_easing

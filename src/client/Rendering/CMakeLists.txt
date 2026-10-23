@@ -33,6 +33,16 @@ target_link_libraries(rtype_client_fragment_shader
 
 rtype_enable_warnings(rtype_client_fragment_shader)
 
+add_library(rtype_client_easing STATIC Easing.cpp)
+
+target_link_libraries(rtype_client_easing
+  PUBLIC
+    rtype_client_rendering_interfaces
+    rtype_engine_time
+)
+
+rtype_enable_warnings(rtype_client_easing)
+
 add_subdirectory(Animation)
 add_subdirectory(AnimationSystem)
 add_subdirectory(HitFlashSystem)

@@ -1,7 +1,9 @@
 #pragma once
 
+#include <array>
 #include <cstddef>
 #include <numbers>
+#include "TimeConstants.hpp"
 
 namespace rtype::client {
 
@@ -35,5 +37,32 @@ constexpr float SPEED_LINE_TAIL_DELAY = 0.6F;
 constexpr float TOWARDS_RIGHT = 0.0F;
 constexpr float TOWARDS_LEFT = std::numbers::pi_v<float>;
 constexpr float ALL_AROUND = 2.0F * std::numbers::pi_v<float>;
+
+/** @brief Rows of the canvas, away from the center of a ship arriving, that
+ * its four speed lines run on. */
+constexpr std::array SPEED_LINE_ROWS{-6, -2, 2, 6};
+
+/**
+ * @brief The shape of a burst of particles: how many, how fast they leave,
+ * in logical units per second, how long they live on average and by which
+ * share of that it varies, how wide the cone they leave in, in radians, and
+ * whether they shrink. Where it bursts and where it aims are given then.
+ */
+struct Burst {
+  std::size_t count{};
+  float slowest{};
+  float fastest{};
+  engine::Duration life{};
+  float lifeSpread{};
+  float cone{};
+  bool shrinks = false;
+};
+
+/** @brief The shape of a shockwave: its last radius, in pixels of the
+ * canvas, and its life. */
+struct Ring {
+  int radius{};
+  engine::Duration life{};
+};
 
 }  // namespace rtype::client

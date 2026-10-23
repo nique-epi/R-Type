@@ -9,7 +9,9 @@ target_link_libraries(rtype_client_effect_spawner
     rtype_client_flash_budget
     rtype_client_gain_attribution
     rtype_client_kill_chain
+    rtype_client_mission_start_interfaces
     rtype_client_pixel_effects
+    rtype_client_sprite_effect_interfaces
     rtype_engine
 )
 

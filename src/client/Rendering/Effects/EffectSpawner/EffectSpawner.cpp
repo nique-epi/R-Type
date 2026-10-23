@@ -235,7 +235,8 @@ void EffectSpawner::playArrival(engine::Entity ship) {
   pixels_.speedLines({.shipCenter = center,
                       .light = lightOf(pilotColorOf(ship)),
                       .flashes = flashes(),
-                      .delay = delay});
+                      .delay = delay,
+                      .life = MATERIALIZE_DURATION});
 }
 
 void EffectSpawner::playHit(engine::Entity entity) {

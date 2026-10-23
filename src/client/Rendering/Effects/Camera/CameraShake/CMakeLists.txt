@@ -4,7 +4,7 @@ target_include_directories(rtype_client_camera_shake PUBLIC ${CMAKE_CURRENT_SOUR
 
 target_link_libraries(rtype_client_camera_shake
   PUBLIC
-    rtype_client_effect_interfaces
+    rtype_client_camera_interfaces
     rtype_engine_time
 )
 

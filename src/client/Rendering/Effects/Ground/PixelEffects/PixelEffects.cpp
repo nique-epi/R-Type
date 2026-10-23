@@ -7,8 +7,6 @@
 #include <cstdint>
 #include "BackgroundConstants.hpp"
 #include "ComponentRegistry.hpp"
-#include "EffectConstants.hpp"
-#include "EffectTiers.hpp"
 #include "Entity.hpp"
 #include "EntityRegistry.hpp"
 #include "GroundEffectConstants.hpp"
@@ -54,7 +52,7 @@ void PixelEffects::speedLines(const ArrivalLines& lines) {
     const bool white = lines.flashes && i % 2 == 0;
     components_->add(entity,
                      SpeedLine{.age = -lines.delay,
-                               .life = MATERIALIZE_DURATION,
+                               .life = lines.life,
                                .color = white ? FLASH_COLOR : lines.light});
   }
 }

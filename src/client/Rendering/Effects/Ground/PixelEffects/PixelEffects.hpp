@@ -5,8 +5,8 @@
 #include <cstdint>
 #include <random>
 #include <span>
-#include "EffectTiers.hpp"
 #include "Entity.hpp"
+#include "GroundEffectConstants.hpp"
 #include "Position.hpp"
 #include "TimeConstants.hpp"
 
@@ -53,13 +53,14 @@ class PixelEffects {
   };
 
   /** @brief The speed lines of a ship arriving: where it stands, the light
-   * shade of its pilot, whether every other line is FLASH_COLOR, and how
-   * long they wait. */
+   * shade of its pilot, whether every other line is FLASH_COLOR, how long
+   * they wait, and how long each then lives. */
   struct ArrivalLines {
     game::Position shipCenter{};
     sf::Color light;
     bool flashes = true;
     engine::Duration delay{};
+    engine::Duration life{};
   };
 
   /** @param seed Seed of the draws of the particles: std::random_device in
@@ -79,7 +80,7 @@ class PixelEffects {
   void wave(const Wave& wave);
 
   /** @brief Lays one speed line on each row of SPEED_LINE_ROWS, from the left
-   * edge to the ship, each living MATERIALIZE_DURATION. */
+   * edge to the ship, each living `lines.life`. */
   void speedLines(const ArrivalLines& lines);
 
  private:

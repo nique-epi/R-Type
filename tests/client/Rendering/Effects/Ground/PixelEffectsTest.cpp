@@ -11,9 +11,9 @@
 #include <vector>
 #include "ComponentRegistry.hpp"
 #include "EffectLengths.hpp"
-#include "EffectTiers.hpp"
 #include "Entity.hpp"
 #include "EntityRegistry.hpp"
+#include "GroundEffectConstants.hpp"
 #include "Particle.hpp"
 #include "PixelEffects.hpp"
 #include "Position.hpp"
