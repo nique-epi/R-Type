@@ -5,8 +5,11 @@
 #include "ShipControlConstants.hpp"
 
 using rtype::client::BACKGROUND_PIXEL_SIZE;
+using rtype::client::BYDO_FRAME;
 using rtype::client::PLAYER_MISSILE_FRAME;
 using rtype::client::PLAYER_SHIP_FRAME;
+using rtype::game::BYDO_HEIGHT;
+using rtype::game::BYDO_WIDTH;
 using rtype::game::PLAYER_MISSILE_HEIGHT;
 using rtype::game::PLAYER_MISSILE_WIDTH;
 using rtype::game::SHIP_HEIGHT;
@@ -40,4 +43,17 @@ TEST(EntitySpriteConstants, TheMissileDrawnIsTheMissileTheServerFlies) {
   EXPECT_FLOAT_EQ(
       static_cast<float>(PLAYER_MISSILE_FRAME.height) * BACKGROUND_PIXEL_SIZE,
       PLAYER_MISSILE_HEIGHT);
+}
+
+/**
+ * Given the first frame of a Bydo on the entity sheet
+ * When its size is measured in logical units, each pixel of the sheet covering
+ * BACKGROUND_PIXEL_SIZE
+ * Then it is the size of the box the server hits a Bydo with
+ */
+TEST(EntitySpriteConstants, TheBydoDrawnIsTheBydoTheServerHits) {
+  EXPECT_FLOAT_EQ(static_cast<float>(BYDO_FRAME.width) * BACKGROUND_PIXEL_SIZE,
+                  BYDO_WIDTH);
+  EXPECT_FLOAT_EQ(static_cast<float>(BYDO_FRAME.height) * BACKGROUND_PIXEL_SIZE,
+                  BYDO_HEIGHT);
 }

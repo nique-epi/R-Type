@@ -359,6 +359,27 @@ TEST(World, SpawnedBydoIsWorthThePointsOfItsKind) {
 }
 
 /**
+ * Given an empty world
+ * When a Bydo is spawned
+ * Then it collides with a box of the size of its sprite
+ */
+TEST(World, SpawnedBydoHasTheBoxOfItsSprite) {
+  rtype::game::World world;
+
+  const std::uint32_t networkId =
+      world.spawnBydo(rtype::game::Position{.x = SOME_X, .y = SOME_Y},
+                      rtype::game::BydoKind::Drifter);
+
+  const std::optional<rtype::game::CollisionBox> box =
+      componentOf<rtype::game::CollisionBox>(world, networkId);
+  ASSERT_TRUE(box.has_value());
+  const rtype::game::CollisionBox found =
+      box.value_or(rtype::game::CollisionBox{});
+  EXPECT_EQ(found.width, rtype::game::BYDO_WIDTH);
+  EXPECT_EQ(found.height, rtype::game::BYDO_HEIGHT);
+}
+
+/**
  * Given a world where a ship was spawned at a position
  * When the position of its network id is asked
  * Then it is the position of that ship

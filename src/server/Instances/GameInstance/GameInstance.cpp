@@ -10,8 +10,11 @@
 #include <string_view>
 #include <utility>
 #include <vector>
+#include "CollisionRules.hpp"
+#include "CollisionSystem.hpp"
 #include "ConnectedPlayer.hpp"
 #include "ConnectedPlayers.hpp"
+#include "DamageRules.hpp"
 #include "DatagramCodec.hpp"
 #include "Disconnection.hpp"
 #include "Endpoint.hpp"
@@ -151,6 +154,7 @@ GameInstance::GameInstance(Send send, std::uint32_t seed,
   systems_.add(std::make_unique<game::PatternSystem>());
   systems_.add(std::make_unique<game::MovementSystem>());
   systems_.add(std::make_unique<game::PlayfieldExitSystem>(events));
+  systems_.add(std::make_unique<game::CollisionSystem>(events));
   dispatcher_.registerHandler<network::ReadyState>(
       [this](const network::MessageOrigin& origin,
              const network::ReadyState& message) {
@@ -423,6 +427,10 @@ void GameInstance::moveShips() {
 
 void GameInstance::buildWorld() {
   world_ = std::make_unique<game::World>();
+  collisionRules_ =
+      std::make_unique<game::CollisionRules>(events_, world_->components());
+  damageRules_ =
+      std::make_unique<game::DamageRules>(events_, world_->components());
   shipSpawnAnnouncer_ =
       std::make_unique<ShipSpawnAnnouncer>(*world_, roster_, send_);
   bydoSpawner_ = std::make_unique<BydoSpawner>(*world_, roster_, send_,

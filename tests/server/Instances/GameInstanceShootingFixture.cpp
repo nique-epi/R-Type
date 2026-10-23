@@ -3,13 +3,17 @@
 #include <cstddef>
 #include <cstdint>
 #include <vector>
+#include "BydoKind.hpp"
 #include "EntityDestruction.hpp"
 #include "EntitySpawned.hpp"
 #include "GameInstanceFixtures.hpp"
+#include "GameInstanceTestConstants.hpp"
 #include "IncomingDatagram.hpp"
 #include "MessageType.hpp"
 #include "OutgoingDatagram.hpp"
+#include "Position.hpp"
 #include "SentDatagrams.hpp"
+#include "World.hpp"
 #include "WorldState.hpp"
 
 namespace rtype::server::testing {
@@ -53,6 +57,15 @@ bool GameInstanceShootingFixture::wasDestroyed(
   return std::ranges::count(destructions_,
                             game::EntityDestruction{.networkId = networkId,
                                                     .cause = cause}) == 1;
+}
+
+std::uint32_t GameInstanceShootingFixture::aimAtADrifter() {
+  const game::Position ship = shipPositionOf(FIRST_PLAYER);
+  const std::uint32_t drifter = game().world().spawnBydo(
+      game::Position{.x = ship.x + BYDO_DISTANCE_AHEAD, .y = ship.y},
+      game::BydoKind::Drifter);
+  holdForNextTick(FIRST_PLAYER, HOLDS_SHOOT);
+  return drifter;
 }
 
 }  // namespace rtype::server::testing

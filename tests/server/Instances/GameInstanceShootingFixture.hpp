@@ -39,6 +39,14 @@ class GameInstanceShootingFixture : public GameInstanceMovementTest {
   [[nodiscard]] bool wasDestroyed(std::uint32_t networkId,
                                   game::DestructionCause cause) const;
 
+  /**
+   * @brief Puts a Drifter BYDO_DISTANCE_AHEAD in front of the ship of the
+   * first player, on its row, and makes that player hold shoot from the next
+   * tick.
+   * @returns The network id of the Drifter.
+   */
+  std::uint32_t aimAtADrifter();
+
  private:
   std::vector<game::EntityDestruction> destructions_;
 };

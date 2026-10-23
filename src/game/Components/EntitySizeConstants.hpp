@@ -9,8 +9,12 @@ namespace rtype::game {
  * its sprite, so a new sprite comes with new sizes. The size of a ship is
  * SHIP_WIDTH and SHIP_HEIGHT, in ShipControlConstants.hpp.
  *
- * A missile of a player is 16 by 6 pixels of the sheet.
+ * A Bydo is 24 by 24 pixels of the sheet.
  */
+constexpr float BYDO_WIDTH = 96.0F;
+constexpr float BYDO_HEIGHT = 96.0F;
+
+/** @brief A missile of a player is 16 by 6 pixels of the sheet. */
 constexpr float PLAYER_MISSILE_WIDTH = 64.0F;
 constexpr float PLAYER_MISSILE_HEIGHT = 24.0F;
 

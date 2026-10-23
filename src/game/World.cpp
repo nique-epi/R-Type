@@ -51,6 +51,8 @@ std::uint32_t World::spawnBydo(Position position, BydoKind kind) {
   components_.add(bydo, MovementPattern{.shape = patternShapeOf(kind),
                                         .originY = position.y,
                                         .ageSeconds = 0.0F});
+  components_.add(bydo,
+                  CollisionBox{.width = BYDO_WIDTH, .height = BYDO_HEIGHT});
   components_.add(bydo, EntityType::Enemy);
   components_.add(bydo, Health{.points = BYDO_HEALTH});
   components_.add(bydo, ScoreValue{.points = pointsOf(kind)});

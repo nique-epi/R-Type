@@ -69,6 +69,13 @@ constexpr std::size_t SOME_TICKS = 3;
 constexpr std::uint32_t SOME_SEED = 7;
 
 /**
+ * @brief How far in front of a ship the shooting tests put a Drifter, in
+ * logical units: the missiles of the ship reach it within a second, and it
+ * would not touch the ship before the first Bydo of the spawner appears.
+ */
+constexpr float BYDO_DISTANCE_AHEAD = 600.0F;
+
+/**
  * @brief Actions a test player holds, one bit each where the Inputs section of
  * the protocol page puts them: bit 0 up, bit 1 down, bit 2 left, bit 3 right,
  * bit 4 shoot. A player who holds nothing sends 0.
