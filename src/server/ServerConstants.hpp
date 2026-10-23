@@ -26,6 +26,19 @@ constexpr std::string_view SEED_OPTION = "--seed";
 constexpr std::string_view SERVER_LOGGER_NAME = "Server";
 
 /**
+ * @brief Why the DatagramSorter drops a datagram, as its lines say; a header
+ * it does not speak is dropped for FOREIGN_HEADER_DROP_REASON.
+ */
+constexpr std::string_view SHORTER_THAN_HEADER_DROP_REASON =
+    "it is shorter than the packet header";
+constexpr std::string_view MESSAGE_SIZES_DROP_REASON =
+    "the sizes of its messages do not add up to its end";
+constexpr std::string_view STRANGER_DROP_REASON =
+    "its sender was not admitted, and it holds no connection request";
+constexpr std::string_view WRONG_TOKEN_DROP_REASON =
+    "it carries another session token than the player of that address";
+
+/**
  * @brief Module name the simulation thread writes its tick reports under.
  */
 constexpr std::string_view SIMULATION_LOGGER_NAME = "Simulation";

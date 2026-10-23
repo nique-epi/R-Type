@@ -88,8 +88,7 @@ void ConnectionAcceptor::receive(
 void ConnectionAcceptor::refuseAnotherVersion(
     const network::IncomingDatagram& datagram, engine::Duration now) {
   if (datagram.payload.size() < network::CONNECTION_REFUSED_DATAGRAM_SIZE) {
-    drop(datagram.sender,
-         "it is of another protocol version, and too short to answer", now);
+    drop(datagram.sender, SHORT_OTHER_VERSION_DROP_REASON, now);
     return;
   }
   refuse(datagram.sender, network::RefusalReason::IncompatibleVersion);
@@ -109,10 +108,7 @@ std::optional<network::ConnectionRequest> ConnectionAcceptor::readRequest(
     return std::nullopt;
   }
   if (!request.has_value()) {
-    drop(datagram.sender,
-         "its header is not of this protocol and version, or it holds no "
-         "connection request",
-         now);
+    drop(datagram.sender, NO_REQUEST_DROP_REASON, now);
   }
   return request;
 }
