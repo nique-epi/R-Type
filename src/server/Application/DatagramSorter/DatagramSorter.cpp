@@ -60,8 +60,7 @@ void DatagramSorter::sort(const network::Endpoint& sender,
   const network::PacketHeader header =
       network::DatagramCodec::decodeHeader(datagram);
   if (!network::DatagramCodec::speaksThisProtocol(header)) {
-    drop(sender,
-         "its header is not of this protocol and version, or has a flag set");
+    sortForeignHeader(sender, header, datagram);
     return;
   }
   const std::optional<network::DatagramCodec::MessageTypes> types =
@@ -86,6 +85,25 @@ void DatagramSorter::sort(const network::Endpoint& sender,
     drop(sender,
          "its sender was not admitted, and it holds no connection request");
   }
+}
+
+void DatagramSorter::sortForeignHeader(const network::Endpoint& sender,
+                                       const network::PacketHeader& header,
+                                       std::span<const std::byte> datagram) {
+  if (isRefusedForItsVersion(sender, header, datagram.size())) {
+    pushCopy(*destinations_.connectionRequests, sender, datagram);
+    return;
+  }
+  drop(sender,
+       "its header is not of this protocol and version, or has a flag set");
+}
+
+bool DatagramSorter::isRefusedForItsVersion(const network::Endpoint& sender,
+                                            const network::PacketHeader& header,
+                                            std::size_t datagramSize) const {
+  return network::DatagramCodec::speaksAnotherVersion(header) &&
+         findAdmitted(sender) == nullptr &&
+         datagramSize >= network::CONNECTION_REFUSED_DATAGRAM_SIZE;
 }
 
 void DatagramSorter::admit(const network::Endpoint& player,

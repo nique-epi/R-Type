@@ -23,6 +23,7 @@
 #include "OutgoingDatagram.hpp"
 #include "PacketHeader.hpp"
 #include "PlayerRoster.hpp"
+#include "ProtocolConstants.hpp"
 #include "SessionDatagram.hpp"
 #include "TimeConstants.hpp"
 
@@ -52,6 +53,14 @@ std::optional<network::ConnectionRequest> firstConnectionRequest(
   return std::nullopt;
 }
 
+/** @returns Whether @p datagram starts with a header of this protocol and
+ * another version. */
+bool isOfAnotherVersion(std::span<const std::byte> datagram) {
+  return datagram.size() >= network::PACKET_HEADER_SIZE &&
+         network::DatagramCodec::speaksAnotherVersion(
+             network::DatagramCodec::decodeHeader(datagram));
+}
+
 }  // namespace
 
 ConnectionAcceptor::ConnectionAcceptor(PlayerRoster& roster, Send send,
@@ -67,11 +76,23 @@ void ConnectionAcceptor::receive(
     std::span<const network::IncomingDatagram> datagrams,
     engine::Duration now) {
   for (const network::IncomingDatagram& datagram : datagrams) {
-    if (const std::optional<network::ConnectionRequest> request =
-            readRequest(datagram, now)) {
+    if (isOfAnotherVersion(datagram.payload)) {
+      refuseAnotherVersion(datagram, now);
+    } else if (const std::optional<network::ConnectionRequest> request =
+                   readRequest(datagram, now)) {
       answer(datagram.sender, *request, now);
     }
   }
+}
+
+void ConnectionAcceptor::refuseAnotherVersion(
+    const network::IncomingDatagram& datagram, engine::Duration now) {
+  if (datagram.payload.size() < network::CONNECTION_REFUSED_DATAGRAM_SIZE) {
+    drop(datagram.sender,
+         "it is of another protocol version, and too short to answer", now);
+    return;
+  }
+  refuse(datagram.sender, network::RefusalReason::IncompatibleVersion);
 }
 
 void ConnectionAcceptor::setGameInProgress(bool inProgress) {
