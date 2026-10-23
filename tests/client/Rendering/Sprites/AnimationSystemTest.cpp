@@ -1,64 +1,13 @@
 #include <gtest/gtest.h>
-#include <chrono>
-#include "AnimationSystem.hpp"
+#include "AnimatedScene.hpp"
+#include "AnimationSystemTestConstants.hpp"
 #include "AnimationTestConstants.hpp"
-#include "ComponentRegistry.hpp"
-#include "Entity.hpp"
-#include "EntityRegistry.hpp"
-#include "Layer.hpp"
 #include "ScreenTestConstants.hpp"
-#include "Sprite.hpp"
 #include "SpriteAnimation.hpp"
-#include "SpriteFrame.hpp"
 #include "TimeConstants.hpp"
 
-using rtype::client::AnimationSystem;
 using rtype::client::SpriteAnimation;
-using rtype::engine::ComponentRegistry;
 using rtype::engine::Duration;
-using rtype::engine::Entity;
-using rtype::engine::EntityRegistry;
-using rtype::game::Layer;
-using rtype::game::Sprite;
-using rtype::game::SpriteFrame;
-
-namespace {
-
-constexpr SpriteFrame NO_FRAME{.left = 0, .top = 0, .width = 0, .height = 0};
-constexpr Duration TWO_AND_A_HALF_FRAMES = std::chrono::milliseconds(250);
-constexpr Duration SMALL_STEP = std::chrono::milliseconds(10);
-constexpr int MANY_CYCLES = 10;
-constexpr const char* SHEET_ID = "sheet";
-
-/** @brief Registries holding one entity, showing FIRST and an animation, and
- * the system that plays it. */
-class AnimatedScene {
- public:
-  explicit AnimatedScene(const SpriteAnimation& animation)
-      : entity_(entities_.create()) {
-    components_.add(
-        entity_,
-        Sprite{.assetId = SHEET_ID, .frame = FIRST, .layer = Layer::Enemies});
-    components_.add(entity_, animation);
-  }
-
-  void play(Duration elapsed) { system_.update(components_, elapsed); }
-
-  [[nodiscard]] SpriteFrame shownFrame() {
-    const Sprite* sprite = components_.get<Sprite>(entity_);
-    return sprite != nullptr ? sprite->frame : NO_FRAME;
-  }
-
-  [[nodiscard]] bool isAlive() const { return entities_.isAlive(entity_); }
-
- private:
-  EntityRegistry entities_;
-  ComponentRegistry components_{entities_};
-  Entity entity_;
-  AnimationSystem system_;
-};
-
-}  // namespace
 
 /**
  * Given an entity showing the first frame of a loop of 100 ms frames

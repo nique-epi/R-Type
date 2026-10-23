@@ -55,6 +55,10 @@ constexpr rtype::engine::Duration WARP_END_TIME =
     std::chrono::milliseconds(600);
 constexpr float OWN_SPEED = 1.0F;
 constexpr float TOP_WARP_SPEED = 12.0F;
+
+/** @brief How far a speed factor of the warp may be from what it must be:
+ * the warp is computed in float. */
+constexpr float WARP_FACTOR_TOLERANCE = 1e-4F;
 constexpr rtype::engine::Duration BANNER_START_TIME = std::chrono::seconds(1);
 
 /** @brief Seed the tests give the draws of the particles. */
@@ -68,6 +72,13 @@ constexpr std::size_t SPARK_COUNT = 3;
 constexpr std::size_t MOST_PARTICLES = 192;
 constexpr int FLASH_PIXELS_ALLOWED = 3600;
 constexpr int KILLS_PER_BIG_CATCH = 5;
+
+/** @brief Two kills 100 ms apart: well inside a chain. */
+constexpr rtype::engine::Duration CLOSE_KILLS = std::chrono::milliseconds(100);
+
+/** @brief A score a pilot had, and the points a drifter gives when it dies. */
+constexpr std::uint32_t SCORE_BEFORE = 1000;
+constexpr std::uint32_t DRIFTER_POINTS = 100;
 
 /** @brief Logical units of the playfield in one pixel of the canvas. */
 constexpr float UNITS_PER_PIXEL = 4.0F;

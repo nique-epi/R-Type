@@ -1,32 +1,10 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
-#include <chrono>
-#include <vector>
-#include "EffectLengths.hpp"
-#include "KillChain.hpp"
+#include "EffectTestConstants.hpp"
+#include "KillChainFixtures.hpp"
 #include "ScreenTestConstants.hpp"
-#include "TimeConstants.hpp"
 
-using rtype::client::KillChain;
-using rtype::engine::Duration;
 using ::testing::ElementsAre;
-
-namespace {
-
-constexpr Duration CLOSE_KILLS = std::chrono::milliseconds(100);
-
-/** @returns Whether each of @p count kills, @p gap apart, is a big catch. */
-std::vector<bool> bigCatchesOf(int count, Duration gap) {
-  KillChain chain;
-  std::vector<bool> bigCatches;
-  for (int kill = 0; kill < count; ++kill) {
-    bigCatches.push_back(chain.noteKill());
-    chain.advance(gap);
-  }
-  return bigCatches;
-}
-
-}  // namespace
 
 /**
  * Given ten kills 100 ms apart

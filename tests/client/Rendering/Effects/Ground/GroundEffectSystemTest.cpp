@@ -1,63 +1,19 @@
 #include <gtest/gtest.h>
-#include <SFML/Graphics/Color.hpp>
-#include <array>
 #include <chrono>
 #include "ComponentRegistry.hpp"
-#include "EffectLengths.hpp"
+#include "EffectTestConstants.hpp"
 #include "Entity.hpp"
-#include "EntityRegistry.hpp"
-#include "GroundEffectSystem.hpp"
+#include "GroundEffectScene.hpp"
+#include "GroundEffectSystemTestConstants.hpp"
 #include "Particle.hpp"
 #include "Position.hpp"
 #include "ScreenTestConstants.hpp"
 #include "TimeConstants.hpp"
 
-using rtype::client::GroundEffectSystem;
 using rtype::client::Particle;
-using rtype::engine::ComponentRegistry;
 using rtype::engine::Duration;
 using rtype::engine::Entity;
-using rtype::engine::EntityRegistry;
 using rtype::game::Position;
-
-namespace {
-
-constexpr Position START{.x = 400.0F, .y = 200.0F};
-constexpr float SPEED = 600.0F;
-constexpr Duration SIXTIETH = std::chrono::nanoseconds(16'666'667);
-constexpr Duration THIRTIETH = std::chrono::nanoseconds(33'333'333);
-constexpr std::array RAMP{sf::Color::White};
-constexpr float SPEED_KEPT_PER_SIXTIETH = 0.9F;
-constexpr float SPEED_TOLERANCE = 1e-2F;
-
-class GroundEffectScene {
- public:
-  Entity addParticle(Duration age) {
-    const Entity entity = entities_.create();
-    components_.add(entity, START);
-    components_.add(entity, Particle{.velocity = {SPEED, 0.0F},
-                                     .age = age,
-                                     .life = A_PARTICLE_LIFE,
-                                     .colors = RAMP,
-                                     .shrinks = false});
-    return entity;
-  }
-
-  void run(Duration elapsed) { system_.update(components_, elapsed); }
-
-  ComponentRegistry& components() { return components_; }
-
-  [[nodiscard]] bool isAlive(Entity entity) const {
-    return entities_.isAlive(entity);
-  }
-
- private:
-  EntityRegistry entities_;
-  ComponentRegistry components_{entities_};
-  GroundEffectSystem system_;
-};
-
-}  // namespace
 
 /**
  * Given a particle waiting 100 ms

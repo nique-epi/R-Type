@@ -1,282 +1,56 @@
 #include <gtest/gtest.h>
 #include <SFML/Graphics/Color.hpp>
 #include <SFML/System/Vector2.hpp>
-#include <algorithm>
-#include <chrono>
 #include <cstddef>
-#include <cstdint>
 #include <optional>
 #include <vector>
 #include "AllEntityTypes.hpp"
-#include "Anchor.hpp"
-#include "AnimationSystem.hpp"
 #include "Caption.hpp"
 #include "ComponentRegistry.hpp"
 #include "EffectConstants.hpp"
-#include "EffectLengths.hpp"
+#include "EffectScene.hpp"
 #include "EffectSpawner.hpp"
+#include "EffectSpawnerFixtures.hpp"
+#include "EffectSpawnerTestConstants.hpp"
+#include "EffectTestConstants.hpp"
 #include "Entity.hpp"
 #include "EntityRegistry.hpp"
-#include "EntitySpriteConstants.hpp"
 #include "EntityType.hpp"
 #include "FlashPreference.hpp"
 #include "HitFlash.hpp"
-#include "HitFlashSystem.hpp"
-#include "Invulnerability.hpp"
 #include "Layer.hpp"
-#include "Lifetime.hpp"
-#include "Nudge.hpp"
 #include "Particle.hpp"
-#include "PilotShip.hpp"
 #include "PilotTestConstants.hpp"
 #include "Position.hpp"
-#include "Reveal.hpp"
 #include "ScreenTestConstants.hpp"
 #include "Shockwave.hpp"
 #include "SpeedLine.hpp"
 #include "Sprite.hpp"
-#include "SpriteAnimation.hpp"
-#include "SpriteEffectSystem.hpp"
-#include "SpriteFrame.hpp"
 #include "SpriteTone.hpp"
 #include "SpriteToneColorConstants.hpp"
 #include "TextStyle.hpp"
 #include "TimeConstants.hpp"
 
-using rtype::client::Anchor;
-using rtype::client::AnimationSystem;
 using rtype::client::BYDO_EXPLOSION_FRAME;
 using rtype::client::BYDO_EXPLOSION_WITHOUT_FLASH_FRAME;
 using rtype::client::Caption;
 using rtype::client::EFFECT_SHEET_ID;
-using rtype::client::EffectSpawner;
 using rtype::client::ENEMY_MUZZLE_FLASH_FRAME;
-using rtype::client::ENTITY_SHEET_ID;
 using rtype::client::FLASH_COLOR;
 using rtype::client::FlashPreference;
 using rtype::client::HitFlash;
-using rtype::client::HitFlashSystem;
 using rtype::client::IMPACT_FRAME;
-using rtype::client::Invulnerability;
-using rtype::client::Lifetime;
-using rtype::client::Nudge;
 using rtype::client::Particle;
-using rtype::client::PilotShip;
 using rtype::client::PLAYER_MUZZLE_FLASH_FRAME;
-using rtype::client::PLAYER_SHIP_FRAME;
-using rtype::client::Reveal;
 using rtype::client::SHIP_EXPLOSION_FRAME;
 using rtype::client::Shockwave;
 using rtype::client::SpeedLine;
-using rtype::client::SpriteAnimation;
-using rtype::client::SpriteEffectSystem;
 using rtype::client::SpriteTone;
 using rtype::client::TextFont;
-using rtype::engine::ComponentRegistry;
 using rtype::engine::Duration;
 using rtype::engine::Entity;
-using rtype::engine::EntityRegistry;
 using rtype::game::EntityType;
 using rtype::game::Layer;
-using rtype::game::Position;
-using rtype::game::Sprite;
-using rtype::game::SpriteFrame;
-
-namespace {
-
-constexpr Position WHERE_IT_DIED{.x = 640.0F, .y = 360.0F};
-constexpr SpriteFrame TARGET_FRAME{
-    .left = 0, .top = 0, .width = 24, .height = 24};
-constexpr Position SHIP_CENTER{.x = 400.0F, .y = 360.0F};
-constexpr Position AHEAD_OF_THE_SHIP{.x = 460.0F, .y = 360.0F};
-constexpr Duration CLOSE_KILLS = std::chrono::milliseconds(100);
-constexpr int BYDO_FLASHES_WITHIN_BUDGET = 13;
-constexpr std::uint32_t SCORE_BEFORE = 1000;
-constexpr std::uint32_t DRIFTER_POINTS = 100;
-constexpr std::size_t SPEED_LINE_COUNT = 4;
-
-/** @brief Registries with a spawner of effects, and the systems that play
- * them. */
-class EffectScene {
- public:
-  EffectSpawner& effects() { return effects_; }
-
-  void play(Duration elapsed) { animations_.update(components_, elapsed); }
-
-  /** @brief Moves the spawner and the systems of the sprites on, as a frame
-   * of the game screen does. */
-  void advance(Duration elapsed, FlashPreference preference) {
-    effects_.advance(elapsed, preference);
-    animations_.update(components_, elapsed);
-    hitFlashes_.update(components_, elapsed);
-    spriteEffects_.update(components_, elapsed);
-  }
-
-  /** @returns A ship of the pilot of that color, as the replicator makes it,
-   * at SHIP_CENTER. */
-  Entity shipOfPilot(int pilotColor) {
-    const Entity ship = entities_.create();
-    components_.add(ship, SHIP_CENTER);
-    components_.add(ship, EntityType::Player);
-    components_.add(ship, Sprite{.assetId = ENTITY_SHEET_ID,
-                                 .frame = PLAYER_SHIP_FRAME,
-                                 .layer = Layer::Players});
-    components_.add(ship, PilotShip{.color = pilotColor});
-    return ship;
-  }
-
-  /** @returns A Bydo at that position, as the replicator makes it. */
-  Entity bydoAt(Position position) {
-    const Entity bydo = entities_.create();
-    components_.add(bydo, position);
-    components_.add(bydo, EntityType::Enemy);
-    components_.add(bydo, Sprite{.assetId = "bydo",
-                                 .frame = TARGET_FRAME,
-                                 .layer = Layer::Enemies});
-    return bydo;
-  }
-
-  /** @returns The white picture a ship destroyed leaves, or nothing. */
-  std::optional<Entity> frozenPicture() {
-    std::optional<Entity> found;
-    components_.forEach<Lifetime, Sprite>(
-        [&found](Entity entity, const Lifetime&, const Sprite&) {
-          found = entity;
-        });
-    return found;
-  }
-
-  /** @returns How many entities carry a component of that type and a
-   * Position. */
-  template <typename Component>
-  [[nodiscard]] std::size_t count() {
-    std::size_t found = 0;
-    components_.forEach<Component, Position>(
-        [&found](Entity, const Component&, const Position&) { ++found; });
-    return found;
-  }
-
-  /** @returns How much longer the first frame of an effect stays. */
-  [[nodiscard]] Duration framesHeldFor(Entity effect) {
-    const SpriteAnimation* animation = components_.get<SpriteAnimation>(effect);
-    return animation != nullptr ? -animation->elapsed : Duration::zero();
-  }
-
-  /** @returns The tone an entity is drawn with by its hit flash, Normal
-   * without one. */
-  [[nodiscard]] SpriteTone toneOf(Entity entity) {
-    const HitFlash* flash = components_.get<HitFlash>(entity);
-    return flash != nullptr ? flash->tone : SpriteTone::Normal;
-  }
-
-  /** @returns The entity an effect follows, or nothing. */
-  [[nodiscard]] std::optional<Entity> anchorOf(Entity effect) {
-    const Anchor* anchor = components_.get<Anchor>(effect);
-    return anchor != nullptr ? std::optional<Entity>(anchor->entity)
-                             : std::nullopt;
-  }
-
-  [[nodiscard]] bool isNudged(Entity entity) {
-    return components_.has<Nudge>(entity);
-  }
-
-  /** @returns The age of the reveal of a ship arriving, or zero without
-   * one. */
-  [[nodiscard]] Duration revealAgeOf(Entity ship) {
-    const Reveal* reveal = components_.get<Reveal>(ship);
-    return reveal != nullptr ? reveal->age : Duration::zero();
-  }
-
-  [[nodiscard]] bool isSteadilyInvulnerable(Entity ship) {
-    const Invulnerability* invulnerability =
-        components_.get<Invulnerability>(ship);
-    return invulnerability != nullptr && invulnerability->steady;
-  }
-
-  /** @returns Whether every particle goes through that color as it ages. */
-  [[nodiscard]] bool everyParticleGoesThrough(sf::Color color) {
-    bool every = true;
-    components_.forEach<Particle, Position>(
-        [&every, color](Entity, const Particle& particle, const Position&) {
-          every = every && std::ranges::find(particle.colors, color) !=
-                               particle.colors.end();
-        });
-    return every;
-  }
-
-  /** @returns Whether a particle starts in that color. */
-  [[nodiscard]] bool anyParticleStartsWith(sf::Color color) {
-    bool any = false;
-    components_.forEach<Particle, Position>(
-        [&any, color](Entity, const Particle& particle, const Position&) {
-          any = any ||
-                (!particle.colors.empty() && particle.colors.front() == color);
-        });
-    return any;
-  }
-
-  /** @returns The first figure of a gain, or nothing. */
-  [[nodiscard]] std::optional<Caption> caption() {
-    std::optional<Caption> found;
-    components_.forEach<Caption, Position>(
-        [&found](Entity, const Caption& figure, const Position&) {
-          if (!found.has_value()) {
-            found = figure;
-          }
-        });
-    return found;
-  }
-
-  /** @returns The entities drawn in the Effects layer, in index order. */
-  std::vector<Entity> shownEffects() {
-    std::vector<Entity> shown;
-    components_.forEach<Position, Sprite>(
-        [&shown](Entity entity, const Position&, const Sprite& sprite) {
-          if (sprite.layer == Layer::Effects) {
-            shown.push_back(entity);
-          }
-        });
-    return shown;
-  }
-
-  [[nodiscard]] Sprite drawnSprite(Entity entity) {
-    const Sprite* sprite = components_.get<Sprite>(entity);
-    return sprite != nullptr ? *sprite : Sprite{};
-  }
-
-  [[nodiscard]] Position positionOf(Entity entity) {
-    const Position* position = components_.get<Position>(entity);
-    return position != nullptr ? *position : Position{};
-  }
-
-  /** @returns A drawn entity, as a Bydo the player may hit. */
-  Entity target() {
-    const Entity entity = entities_.create();
-    components_.add(entity, WHERE_IT_DIED);
-    components_.add(entity, Sprite{.assetId = "target",
-                                   .frame = TARGET_FRAME,
-                                   .layer = Layer::Enemies});
-    return entity;
-  }
-
-  /** @returns The flash of an entity, or nothing when it has none. */
-  [[nodiscard]] const HitFlash* flashOf(Entity entity) {
-    return components_.get<HitFlash>(entity);
-  }
-
-  EntityRegistry& entities() { return entities_; }
-  ComponentRegistry& components() { return components_; }
-
- private:
-  EntityRegistry entities_;
-  ComponentRegistry components_{entities_};
-  EffectSpawner effects_{entities_, components_, EFFECT_TEST_SEED};
-  AnimationSystem animations_;
-  HitFlashSystem hitFlashes_;
-  SpriteEffectSystem spriteEffects_;
-};
-
-}  // namespace
 
 /**
  * Given a spawner of effects
@@ -288,9 +62,10 @@ TEST(EffectSpawner, AKilledBydoBurstsIntoDrops) {
 
   scene.effects().playExplosion(EntityType::Enemy, WHERE_IT_DIED);
 
-  const std::vector<Entity> shown = scene.shownEffects();
+  const std::vector<Entity> shown = shownEffects(scene.components());
   ASSERT_EQ(shown.size(), 1U);
-  EXPECT_EQ(scene.drawnSprite(shown.front()).frame, BYDO_EXPLOSION_FRAME);
+  EXPECT_EQ(drawnSprite(scene.components(), shown.front()).frame,
+            BYDO_EXPLOSION_FRAME);
 }
 
 /**
@@ -303,9 +78,10 @@ TEST(EffectSpawner, AKilledShipPlaysTheChainOfFireballs) {
 
   scene.effects().playExplosion(EntityType::Player, WHERE_IT_DIED);
 
-  const std::vector<Entity> shown = scene.shownEffects();
+  const std::vector<Entity> shown = shownEffects(scene.components());
   ASSERT_EQ(shown.size(), 1U);
-  EXPECT_EQ(scene.drawnSprite(shown.front()).frame, SHIP_EXPLOSION_FRAME);
+  EXPECT_EQ(drawnSprite(scene.components(), shown.front()).frame,
+            SHIP_EXPLOSION_FRAME);
 }
 
 /**
@@ -321,9 +97,10 @@ TEST(EffectSpawner, AKilledMissileBurstsIntoAnImpact) {
 
     scene.effects().playExplosion(missile, WHERE_IT_DIED);
 
-    const std::vector<Entity> shown = scene.shownEffects();
+    const std::vector<Entity> shown = shownEffects(scene.components());
     ASSERT_EQ(shown.size(), 1U);
-    EXPECT_EQ(scene.drawnSprite(shown.front()).frame, IMPACT_FRAME);
+    EXPECT_EQ(drawnSprite(scene.components(), shown.front()).frame,
+              IMPACT_FRAME);
   }
 }
 
@@ -337,9 +114,10 @@ TEST(EffectSpawner, AnEffectIsDrawnFromTheEffectSheet) {
 
   scene.effects().playExplosion(EntityType::Enemy, WHERE_IT_DIED);
 
-  const std::vector<Entity> shown = scene.shownEffects();
+  const std::vector<Entity> shown = shownEffects(scene.components());
   ASSERT_EQ(shown.size(), 1U);
-  EXPECT_EQ(scene.drawnSprite(shown.front()).assetId, EFFECT_SHEET_ID);
+  EXPECT_EQ(drawnSprite(scene.components(), shown.front()).assetId,
+            EFFECT_SHEET_ID);
 }
 
 /**
@@ -353,7 +131,7 @@ TEST(EffectSpawner, AnEffectIsDrawnInTheEffectsLayer) {
 
   scene.effects().playExplosion(EntityType::Enemy, WHERE_IT_DIED);
 
-  EXPECT_EQ(scene.shownEffects().size(), 1U);
+  EXPECT_EQ(shownEffects(scene.components()).size(), 1U);
 }
 
 /**
@@ -366,10 +144,10 @@ TEST(EffectSpawner, AnEffectIsCenteredWhereTheEntityDied) {
 
   scene.effects().playExplosion(EntityType::Enemy, WHERE_IT_DIED);
 
-  const std::vector<Entity> shown = scene.shownEffects();
+  const std::vector<Entity> shown = shownEffects(scene.components());
   ASSERT_EQ(shown.size(), 1U);
-  EXPECT_EQ(scene.positionOf(shown.front()).x, WHERE_IT_DIED.x);
-  EXPECT_EQ(scene.positionOf(shown.front()).y, WHERE_IT_DIED.y);
+  EXPECT_EQ(positionOf(scene.components(), shown.front()).x, WHERE_IT_DIED.x);
+  EXPECT_EQ(positionOf(scene.components(), shown.front()).y, WHERE_IT_DIED.y);
 }
 
 /**
@@ -384,7 +162,7 @@ TEST(EffectSpawner, AnExplosionStaysUntilItsLastFrameHasShown) {
 
   scene.play(KILL_HOLD_LENGTH + BYDO_EXPLOSION_LENGTH - ONE_TICK);
 
-  EXPECT_EQ(scene.shownEffects().size(), 1U);
+  EXPECT_EQ(shownEffects(scene.components()).size(), 1U);
 }
 
 /**
@@ -399,7 +177,7 @@ TEST(EffectSpawner, AnExplosionDisappearsAfterItsLastFrame) {
 
   scene.play(KILL_HOLD_LENGTH + BYDO_EXPLOSION_LENGTH);
 
-  EXPECT_TRUE(scene.shownEffects().empty());
+  EXPECT_TRUE(shownEffects(scene.components()).empty());
 }
 
 /**
@@ -413,9 +191,9 @@ TEST(EffectSpawner, WithFlashesReducedAnExplosionStartsWithoutItsFlash) {
 
   scene.effects().playExplosion(EntityType::Enemy, WHERE_IT_DIED);
 
-  const std::vector<Entity> shown = scene.shownEffects();
+  const std::vector<Entity> shown = shownEffects(scene.components());
   ASSERT_EQ(shown.size(), 1U);
-  EXPECT_EQ(scene.drawnSprite(shown.front()).frame,
+  EXPECT_EQ(drawnSprite(scene.components(), shown.front()).frame,
             BYDO_EXPLOSION_WITHOUT_FLASH_FRAME);
 }
 
@@ -429,9 +207,10 @@ TEST(EffectSpawner, AMissileOfAPlayerFlashesAtItsMuzzle) {
 
   scene.effects().playAppearance(EntityType::PlayerMissile, WHERE_IT_DIED);
 
-  const std::vector<Entity> shown = scene.shownEffects();
+  const std::vector<Entity> shown = shownEffects(scene.components());
   ASSERT_EQ(shown.size(), 1U);
-  EXPECT_EQ(scene.drawnSprite(shown.front()).frame, PLAYER_MUZZLE_FLASH_FRAME);
+  EXPECT_EQ(drawnSprite(scene.components(), shown.front()).frame,
+            PLAYER_MUZZLE_FLASH_FRAME);
 }
 
 /**
@@ -444,9 +223,10 @@ TEST(EffectSpawner, AMissileOfAnEnemyFlashesAtItsMuzzle) {
 
   scene.effects().playAppearance(EntityType::EnemyMissile, WHERE_IT_DIED);
 
-  const std::vector<Entity> shown = scene.shownEffects();
+  const std::vector<Entity> shown = shownEffects(scene.components());
   ASSERT_EQ(shown.size(), 1U);
-  EXPECT_EQ(scene.drawnSprite(shown.front()).frame, ENEMY_MUZZLE_FLASH_FRAME);
+  EXPECT_EQ(drawnSprite(scene.components(), shown.front()).frame,
+            ENEMY_MUZZLE_FLASH_FRAME);
 }
 
 /**
@@ -460,7 +240,7 @@ TEST(EffectSpawner, AShipOrABydoAppearsWithoutEffect) {
   scene.effects().playAppearance(EntityType::Player, WHERE_IT_DIED);
   scene.effects().playAppearance(EntityType::Enemy, WHERE_IT_DIED);
 
-  EXPECT_TRUE(scene.shownEffects().empty());
+  EXPECT_TRUE(shownEffects(scene.components()).empty());
 }
 
 /**
@@ -473,7 +253,7 @@ TEST(EffectSpawner, AnExplosionOfAnUnknownTypePlaysNothing) {
 
   scene.effects().playExplosion(FIRST_VALUE_AFTER_THE_LAST_TYPE, WHERE_IT_DIED);
 
-  EXPECT_TRUE(scene.shownEffects().empty());
+  EXPECT_TRUE(shownEffects(scene.components()).empty());
 }
 
 /**
@@ -487,7 +267,7 @@ TEST(EffectSpawner, AnAppearanceOfAnUnknownTypePlaysNothing) {
   scene.effects().playAppearance(FIRST_VALUE_AFTER_THE_LAST_TYPE,
                                  WHERE_IT_DIED);
 
-  EXPECT_TRUE(scene.shownEffects().empty());
+  EXPECT_TRUE(shownEffects(scene.components()).empty());
 }
 
 /**
@@ -501,7 +281,7 @@ TEST(EffectSpawner, AHitEntityFlashesWhite) {
 
   scene.effects().playHit(target);
 
-  const HitFlash* flash = scene.flashOf(target);
+  const HitFlash* flash = flashOf(scene.components(), target);
   ASSERT_NE(flash, nullptr);
   EXPECT_EQ(flash->tone, SpriteTone::Flash);
 }
@@ -517,7 +297,7 @@ TEST(EffectSpawner, AHitEntityFlashesForSixtyMilliseconds) {
 
   scene.effects().playHit(target);
 
-  const HitFlash* flash = scene.flashOf(target);
+  const HitFlash* flash = flashOf(scene.components(), target);
   ASSERT_NE(flash, nullptr);
   EXPECT_EQ(flash->remaining, HIT_FLASH_LENGTH);
 }
@@ -534,7 +314,7 @@ TEST(EffectSpawner, WithFlashesReducedAHitEntityIsShaded) {
 
   scene.effects().playHit(target);
 
-  const HitFlash* flash = scene.flashOf(target);
+  const HitFlash* flash = flashOf(scene.components(), target);
   ASSERT_NE(flash, nullptr);
   EXPECT_EQ(flash->tone, SpriteTone::Shade);
 }
@@ -563,7 +343,7 @@ TEST(EffectSpawner, AnEntityWithoutSpriteIsNotFlashed) {
 
   scene.effects().playHit(unseen);
 
-  EXPECT_EQ(scene.flashOf(unseen), nullptr);
+  EXPECT_EQ(flashOf(scene.components(), unseen), nullptr);
 }
 
 /**
@@ -577,11 +357,11 @@ TEST(EffectSpawner, AKilledBydoFreezesThenBurstsIntoEightDrops) {
 
   scene.effects().playExplosion(EntityType::Enemy, WHERE_IT_DIED);
 
-  const std::vector<Entity> shown = scene.shownEffects();
+  const std::vector<Entity> shown = shownEffects(scene.components());
   ASSERT_EQ(shown.size(), 1U);
-  EXPECT_EQ(scene.framesHeldFor(shown.front()), KILL_HOLD_LENGTH);
-  EXPECT_EQ(scene.count<Particle>(), KILL_DROP_COUNT);
-  EXPECT_EQ(scene.count<Shockwave>(), 0U);
+  EXPECT_EQ(framesHeldFor(scene.components(), shown.front()), KILL_HOLD_LENGTH);
+  EXPECT_EQ(count<Particle>(scene.components()), KILL_DROP_COUNT);
+  EXPECT_EQ(count<Shockwave>(scene.components()), 0U);
 }
 
 /**
@@ -595,13 +375,15 @@ TEST(EffectSpawner, TheFifthKillOfAChainIsABigCatch) {
     scene.effects().playExplosion(EntityType::Enemy, WHERE_IT_DIED);
     scene.advance(CLOSE_KILLS, FlashPreference::Full);
   }
-  const std::size_t particlesBefore = scene.count<Particle>();
+  const std::size_t particlesBefore = count<Particle>(scene.components());
 
   scene.effects().playExplosion(EntityType::Enemy, WHERE_IT_DIED);
 
-  EXPECT_EQ(scene.count<Particle>() - particlesBefore, BIG_CATCH_DROP_COUNT);
-  EXPECT_EQ(scene.count<Shockwave>(), 1U);
-  EXPECT_EQ(scene.framesHeldFor(scene.shownEffects().back()),
+  EXPECT_EQ(count<Particle>(scene.components()) - particlesBefore,
+            BIG_CATCH_DROP_COUNT);
+  EXPECT_EQ(count<Shockwave>(scene.components()), 1U);
+  EXPECT_EQ(framesHeldFor(scene.components(),
+                          shownEffects(scene.components()).back()),
             BIG_CATCH_HOLD_LENGTH);
 }
 
@@ -619,12 +401,12 @@ TEST(EffectSpawner, AnExplosionPastTheFlashBudgetPlaysWithoutFlash) {
 
   scene.effects().playExplosion(EntityType::Enemy, WHERE_IT_DIED);
 
-  const std::vector<Entity> shown = scene.shownEffects();
+  const std::vector<Entity> shown = shownEffects(scene.components());
   ASSERT_EQ(shown.size(),
             static_cast<std::size_t>(BYDO_FLASHES_WITHIN_BUDGET) + 1);
-  EXPECT_EQ(scene.drawnSprite(shown[shown.size() - 2]).frame,
+  EXPECT_EQ(drawnSprite(scene.components(), shown[shown.size() - 2]).frame,
             BYDO_EXPLOSION_FRAME);
-  EXPECT_EQ(scene.drawnSprite(shown.back()).frame,
+  EXPECT_EQ(drawnSprite(scene.components(), shown.back()).frame,
             BYDO_EXPLOSION_WITHOUT_FLASH_FRAME);
 }
 
@@ -640,12 +422,13 @@ TEST(EffectSpawner, ADestroyedShipFreezesWhiteBeforeItsFireballs) {
 
   scene.effects().playShipDown(ship);
 
-  const std::optional<Entity> picture = scene.frozenPicture();
+  const std::optional<Entity> picture = frozenPicture(scene.components());
   ASSERT_TRUE(picture.has_value());
   const Entity frozen = picture.value_or(Entity{});
-  EXPECT_EQ(scene.toneOf(frozen), SpriteTone::Flash);
-  EXPECT_EQ(scene.drawnSprite(frozen).layer, Layer::Players);
-  EXPECT_EQ(scene.framesHeldFor(scene.shownEffects().back()),
+  EXPECT_EQ(toneOf(scene.components(), frozen), SpriteTone::Flash);
+  EXPECT_EQ(drawnSprite(scene.components(), frozen).layer, Layer::Players);
+  EXPECT_EQ(framesHeldFor(scene.components(),
+                          shownEffects(scene.components()).back()),
             SHIP_DOWN_HOLD_LENGTH);
 }
 
@@ -660,7 +443,7 @@ TEST(EffectSpawner, TheWhitePictureOfAShipGoesAfterItsFreeze) {
 
   scene.advance(SHIP_DOWN_HOLD_LENGTH, FlashPreference::Full);
 
-  EXPECT_FALSE(scene.frozenPicture().has_value());
+  EXPECT_FALSE(frozenPicture(scene.components()).has_value());
 }
 
 /**
@@ -673,8 +456,9 @@ TEST(EffectSpawner, TheDebrisOfAShipAreInTheColorsOfItsPilot) {
 
   scene.effects().playShipDown(scene.shipOfPilot(SECOND_PILOT_COLOR));
 
-  EXPECT_EQ(scene.count<Particle>(), SHIP_DEBRIS_COUNT);
-  EXPECT_TRUE(scene.everyParticleGoesThrough(PINK_OF_THE_SECOND_PILOT));
+  EXPECT_EQ(count<Particle>(scene.components()), SHIP_DEBRIS_COUNT);
+  EXPECT_TRUE(
+      everyParticleGoesThrough(scene.components(), PINK_OF_THE_SECOND_PILOT));
 }
 
 /**
@@ -690,12 +474,12 @@ TEST(EffectSpawner, WithFlashesReducedAShipGoesDownWithoutFlashNorShake) {
   scene.effects().playShipDown(scene.shipOfPilot(SECOND_PILOT_COLOR));
   scene.advance(ONE_FRAME, FlashPreference::Reduced);
 
-  const std::optional<Entity> picture = scene.frozenPicture();
+  const std::optional<Entity> picture = frozenPicture(scene.components());
   ASSERT_TRUE(picture.has_value());
   const Entity frozen = picture.value_or(Entity{});
-  EXPECT_EQ(scene.toneOf(frozen), SpriteTone::Shade);
+  EXPECT_EQ(toneOf(scene.components(), frozen), SpriteTone::Shade);
   EXPECT_EQ(scene.effects().cameraOffset(), sf::Vector2i());
-  EXPECT_FALSE(scene.anyParticleStartsWith(FLASH_COLOR));
+  EXPECT_FALSE(anyParticleStartsWith(scene.components(), FLASH_COLOR));
 }
 
 /**
@@ -709,10 +493,10 @@ TEST(EffectSpawner, AShotFlashFollowsTheShipThatFired) {
 
   scene.effects().playAppearance(EntityType::PlayerMissile, AHEAD_OF_THE_SHIP);
 
-  const std::vector<Entity> shown = scene.shownEffects();
+  const std::vector<Entity> shown = shownEffects(scene.components());
   ASSERT_EQ(shown.size(), 1U);
-  EXPECT_EQ(scene.anchorOf(shown.front()), ship);
-  EXPECT_TRUE(scene.isNudged(ship));
+  EXPECT_EQ(anchorOf(scene.components(), shown.front()), ship);
+  EXPECT_TRUE(isNudged(scene.components(), ship));
 }
 
 /**
@@ -726,9 +510,9 @@ TEST(EffectSpawner, AHitBydoFlashesRecoilsAndSparks) {
 
   scene.effects().playHit(bydo);
 
-  EXPECT_EQ(scene.toneOf(bydo), SpriteTone::Flash);
-  EXPECT_TRUE(scene.isNudged(bydo));
-  EXPECT_EQ(scene.count<Particle>(), SPARK_COUNT);
+  EXPECT_EQ(toneOf(scene.components(), bydo), SpriteTone::Flash);
+  EXPECT_TRUE(isNudged(scene.components(), bydo));
+  EXPECT_EQ(count<Particle>(scene.components()), SPARK_COUNT);
 }
 
 /**
@@ -742,8 +526,8 @@ TEST(EffectSpawner, AShipArrivingAtTheStartWaitsForThePilots) {
 
   scene.effects().playArrival(ship);
 
-  EXPECT_EQ(scene.revealAgeOf(ship), -PILOT_ARRIVAL_WAIT);
-  EXPECT_EQ(scene.count<SpeedLine>(), SPEED_LINE_COUNT);
+  EXPECT_EQ(revealAgeOf(scene.components(), ship), -PILOT_ARRIVAL_WAIT);
+  EXPECT_EQ(count<SpeedLine>(scene.components()), SPEED_LINE_COUNT);
 }
 
 /**
@@ -758,7 +542,7 @@ TEST(EffectSpawner, WithFlashesReducedAnInvulnerableShipIsSteady) {
 
   scene.effects().setInvulnerable(ship, true);
 
-  EXPECT_TRUE(scene.isSteadilyInvulnerable(ship));
+  EXPECT_TRUE(isSteadilyInvulnerable(scene.components(), ship));
 }
 
 /**
@@ -773,7 +557,7 @@ TEST(EffectSpawner, TheGainOfAKillShowsAsAFigure) {
 
   scene.effects().noteScore(SECOND_PILOT_COLOR, SCORE_BEFORE + DRIFTER_POINTS);
 
-  const std::optional<Caption> figure = scene.caption();
+  const std::optional<Caption> figure = caption(scene.components());
   ASSERT_TRUE(figure.has_value());
   const Caption shown = figure.value_or(Caption{});
   EXPECT_EQ(shown.text, "+100");

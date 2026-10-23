@@ -1,20 +1,13 @@
 #include <gtest/gtest.h>
-#include <chrono>
-#include <cstdint>
 #include "GameEventHistory.hpp"
-#include "TimeConstants.hpp"
+#include "GameEventHistoryTestConstants.hpp"
+#include "ServerConnectionTestConstants.hpp"
 #include "TimeTestConstants.hpp"
 
 using rtype::client::GameEventHistory;
-using rtype::engine::Duration;
-
-namespace {
-
-constexpr std::uint16_t EVENT_NUMBER = 42;
-constexpr Duration COPY_GAP = std::chrono::milliseconds(50);
-constexpr Duration EVENT_MEMORY_REQUIRED = std::chrono::seconds(1);
-
-}  // namespace
+using rtype::client::testing::COPY_GAP;
+using rtype::client::testing::EVENT_MEMORY_REQUIRED;
+using rtype::client::testing::EVENT_NUMBER;
 
 /**
  * Given an event already seen

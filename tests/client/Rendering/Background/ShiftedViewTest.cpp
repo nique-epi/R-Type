@@ -1,18 +1,10 @@
 #include <gtest/gtest.h>
-#include <SFML/Graphics/Rect.hpp>
 #include <SFML/Graphics/View.hpp>
 #include <SFML/System/Vector2.hpp>
 #include "ShiftedView.hpp"
+#include "ShiftedViewTestConstants.hpp"
 
 using rtype::client::shiftedBy;
-
-namespace {
-
-constexpr sf::FloatRect CANVAS_AREA({0.0F, 0.0F}, {480.0F, 270.0F});
-constexpr sf::Vector2i SHAKE(2, -1);
-constexpr sf::Vector2f A_PIXEL(100.0F, 50.0F);
-
-}  // namespace
 
 /**
  * Given the view of a canvas, and a shake of 2 pixels right and 1 up

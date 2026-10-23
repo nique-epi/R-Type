@@ -1,111 +1,26 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include <SFML/Graphics/Color.hpp>
-#include <algorithm>
 #include <array>
-#include <chrono>
 #include <cmath>
 #include <cstddef>
 #include <numbers>
 #include <utility>
 #include <vector>
-#include "Burst.hpp"
-#include "ComponentRegistry.hpp"
-#include "EffectLengths.hpp"
-#include "Entity.hpp"
-#include "EntityRegistry.hpp"
-#include "GroundEffectConstants.hpp"
+#include "EffectTestConstants.hpp"
 #include "Particle.hpp"
 #include "PixelEffects.hpp"
-#include "PlacedBurst.hpp"
+#include "PixelEffectsFixtures.hpp"
+#include "PixelEffectsTestConstants.hpp"
+#include "PixelScene.hpp"
 #include "Position.hpp"
-#include "Ring.hpp"
 #include "Shockwave.hpp"
-#include "SpeedLine.hpp"
 #include "SpriteToneColorConstants.hpp"
-#include "TimeConstants.hpp"
 
-using rtype::client::Burst;
 using rtype::client::FLASH_COLOR;
 using rtype::client::Particle;
-using rtype::client::PixelEffects;
-using rtype::client::PlacedBurst;
-using rtype::client::Ring;
 using rtype::client::Shockwave;
-using rtype::client::SpeedLine;
-using rtype::engine::ComponentRegistry;
-using rtype::engine::Duration;
-using rtype::engine::Entity;
-using rtype::engine::EntityRegistry;
-using rtype::game::Position;
 using ::testing::ElementsAre;
-
-namespace {
-
-constexpr Position CENTER{.x = 400.0F, .y = 200.0F};
-constexpr Duration WAIT = std::chrono::milliseconds(50);
-constexpr std::array RAMP{sf::Color::White, sf::Color::Black};
-constexpr sf::Color PILOT_LIGHT(127, 230, 255);
-constexpr float LEFT = std::numbers::pi_v<float>;
-constexpr float BURST_TOLERANCE = 1e-3F;
-constexpr Burst EIGHT_DROPS{.count = 8,
-                            .slowest = 100.0F,
-                            .fastest = 200.0F,
-                            .life = std::chrono::milliseconds(400),
-                            .lifeSpread = 0.0F,
-                            .cone = 1.0F,
-                            .shrinks = true};
-constexpr Ring WIDE_RING{.radius = 24, .life = std::chrono::milliseconds(300)};
-constexpr std::array SPEED_LINE_OFFSETS{-24.0F, -8.0F, 8.0F, 24.0F};
-
-class PixelScene {
- public:
-  PixelEffects& pixels() { return pixels_; }
-
-  std::vector<Particle> particles() {
-    std::vector<Particle> found;
-    components_.forEach<Particle, Position>(
-        [&found](Entity, const Particle& particle, const Position&) {
-          found.push_back(particle);
-        });
-    return found;
-  }
-
-  std::vector<Shockwave> shockwaves() {
-    std::vector<Shockwave> found;
-    components_.forEach<Shockwave, Position>(
-        [&found](Entity, const Shockwave& wave, const Position&) {
-          found.push_back(wave);
-        });
-    return found;
-  }
-
-  /** @returns Each speed line with the row it lies on, from the top. */
-  std::vector<std::pair<float, sf::Color>> speedLines() {
-    std::vector<std::pair<float, sf::Color>> found;
-    components_.forEach<SpeedLine, Position>(
-        [&found](Entity, const SpeedLine& line, const Position& position) {
-          found.emplace_back(position.y, line.color);
-        });
-    std::ranges::sort(found, {}, &std::pair<float, sf::Color>::first);
-    return found;
-  }
-
- private:
-  EntityRegistry entities_;
-  ComponentRegistry components_{entities_};
-  PixelEffects pixels_{entities_, components_, EFFECT_TEST_SEED};
-};
-
-PlacedBurst eightDropsAimedLeft() {
-  return {.shape = EIGHT_DROPS,
-          .center = CENTER,
-          .aim = LEFT,
-          .colors = RAMP,
-          .delay = WAIT};
-}
-
-}  // namespace
 
 /**
  * Given no particle alive

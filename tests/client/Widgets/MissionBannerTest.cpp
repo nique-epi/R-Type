@@ -1,9 +1,9 @@
 #include <gtest/gtest.h>
-#include <chrono>
 #include <cstddef>
-#include "EffectLengths.hpp"
+#include "EffectTestConstants.hpp"
 #include "InterfaceColorConstants.hpp"
 #include "MissionBanner.hpp"
+#include "MissionBannerTestConstants.hpp"
 #include "RecordingInterfaceCanvas.hpp"
 #include "ScreenTestConstants.hpp"
 #include "TimeConstants.hpp"
@@ -13,14 +13,6 @@ using rtype::client::missionBannerAt;
 using rtype::client::MissionBannerLook;
 using rtype::client::paintMissionBanner;
 using rtype::engine::Duration;
-
-namespace {
-
-constexpr Duration ALL_LETTERS_WRITTEN = std::chrono::milliseconds(1600);
-constexpr Duration BANNER_END = std::chrono::milliseconds(2650);
-constexpr std::size_t LETTERS = 13;
-
-}  // namespace
 
 /**
  * Given the start of a game

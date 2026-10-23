@@ -54,6 +54,12 @@ network::PlayerState playerFlying(std::uint8_t playerNumber,
                                   std::uint32_t shipEntityId);
 
 /**
+ * @returns A player of the second pilot, SECOND_PLAYER_NUMBER, flying the
+ * ship SHIP_ID, able or not to be hit.
+ */
+network::PlayerState secondPilotFlying(bool invulnerable);
+
+/**
  * @returns A GameEvent of that number saying the entity was hit.
  */
 network::GameEvent damaged(std::uint16_t eventNumber, std::uint32_t entityId);

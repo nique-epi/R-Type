@@ -1,12 +1,10 @@
 #include <gtest/gtest.h>
-#include <SFML/System/Vector2.hpp>
-#include <chrono>
 #include <string>
 #include <vector>
 #include "Caption.hpp"
 #include "CollisionBox.hpp"
 #include "ComponentRegistry.hpp"
-#include "Effects/EffectLengths.hpp"
+#include "Effects/EffectTestConstants.hpp"
 #include "Entity.hpp"
 #include "EntityRegistry.hpp"
 #include "HitFlash.hpp"
@@ -17,9 +15,11 @@
 #include "PilotTestConstants.hpp"
 #include "Position.hpp"
 #include "RecordingDrawSurface.hpp"
-#include "RenderSystem.hpp"
+#include "RenderSystemFixtures.hpp"
+#include "RenderSystemTestConstants.hpp"
 #include "RenderingConstants.hpp"
 #include "Reveal.hpp"
+#include "Scene.hpp"
 #include "Sprite.hpp"
 #include "SpriteFrame.hpp"
 #include "SpriteTone.hpp"
@@ -30,83 +30,18 @@ using rtype::client::Caption;
 using rtype::client::HALF;
 using rtype::client::HitFlash;
 using rtype::client::Invulnerability;
-using rtype::client::LAYER_COUNT;
 using rtype::client::Nudge;
 using rtype::client::PilotShip;
-using rtype::client::RenderSystem;
 using rtype::client::Reveal;
 using rtype::client::SpriteTone;
-using rtype::engine::ComponentRegistry;
 using rtype::engine::Duration;
 using rtype::engine::Entity;
-using rtype::engine::EntityRegistry;
 using rtype::game::CollisionBox;
 using rtype::game::Layer;
 using rtype::game::Position;
 using rtype::game::Sprite;
 using rtype::game::SpriteFrame;
 using rtype::game::Velocity;
-
-namespace {
-
-constexpr Duration FLASH_TIME = std::chrono::milliseconds(60);
-constexpr float SPAWN_X = 1.0F;
-constexpr float SPAWN_Y = 2.0F;
-constexpr float SHIP_X = 40.0F;
-constexpr float SHIP_Y = 25.0F;
-constexpr float SPEED = 5.0F;
-constexpr float BOX_SIZE = 9.0F;
-constexpr SpriteFrame WHOLE_IMAGE{
-    .left = 0, .top = 0, .width = 16, .height = 16};
-constexpr SpriteFrame SHEET_CELL{
-    .left = 40, .top = 72, .width = 24, .height = 8};
-constexpr auto FIRST_VALUE_AFTER_THE_LAST_LAYER =
-    static_cast<Layer>(LAYER_COUNT);
-
-class Scene {
- public:
-  Entity spawn(const std::string& assetId, Layer layer) {
-    const Entity entity = entities_.create();
-    addPositionAndSprite(entity, assetId, layer);
-    return entity;
-  }
-
-  void addPositionAndSprite(Entity entity, const std::string& assetId,
-                            Layer layer) {
-    components_.add(entity, Position{.x = SPAWN_X, .y = SPAWN_Y});
-    components_.add(
-        entity,
-        Sprite{.assetId = assetId, .frame = WHOLE_IMAGE, .layer = layer});
-  }
-
-  void render() { system_.render(components_, surface_); }
-
-  [[nodiscard]] ComponentRegistry& components() { return components_; }
-  [[nodiscard]] RecordingDrawSurface& surface() { return surface_; }
-  [[nodiscard]] EntityRegistry& entities() { return entities_; }
-
- private:
-  EntityRegistry entities_;
-  ComponentRegistry components_{entities_};
-  RenderSystem system_;
-  RecordingDrawSurface surface_;
-};
-
-std::vector<std::string> allLayersInOrder() {
-  return {"background",   "bydo",          "explosion", "ship",
-          "figure-plate", "enemy-missile", "score"};
-}
-
-constexpr Duration NUDGE_TIME = std::chrono::milliseconds(50);
-constexpr Duration VIBRATION_STEP_TIME = std::chrono::milliseconds(16);
-constexpr Duration BLINK_STEP_TIME = std::chrono::milliseconds(67);
-constexpr Duration A_REVEAL = std::chrono::milliseconds(200);
-constexpr Duration A_QUARTER_OF_A_REVEAL = std::chrono::milliseconds(50);
-constexpr Duration THREE_QUARTERS_OF_A_REVEAL = std::chrono::milliseconds(150);
-constexpr int HALF_OF_THE_ROWS = 8;
-constexpr sf::Vector2i ONE_PIXEL_RIGHT(1, 0);
-
-}  // namespace
 
 /**
  * Given one entity in each of the seven layers, created from the front layer
@@ -330,7 +265,7 @@ TEST(RenderSystem, AFlashedEntityIsDrawnWithTheFlashTone) {
   Scene scene;
   const Entity hit = scene.spawn("bydo", Layer::Enemies);
   scene.components().add(
-      hit, HitFlash{.tone = SpriteTone::Flash, .remaining = FLASH_TIME});
+      hit, HitFlash{.tone = SpriteTone::Flash, .remaining = HIT_FLASH_LENGTH});
 
   scene.render();
 
@@ -347,7 +282,7 @@ TEST(RenderSystem, AShadedEntityIsDrawnWithTheShadeTone) {
   Scene scene;
   const Entity hit = scene.spawn("bydo", Layer::Enemies);
   scene.components().add(
-      hit, HitFlash{.tone = SpriteTone::Shade, .remaining = FLASH_TIME});
+      hit, HitFlash{.tone = SpriteTone::Shade, .remaining = HIT_FLASH_LENGTH});
 
   scene.render();
 
@@ -496,7 +431,7 @@ TEST(RenderSystem, AHitFlashWinsOverInvulnerability) {
   scene.components().add(
       ship, Invulnerability{.elapsed = Duration::zero(), .steady = true});
   scene.components().add(
-      ship, HitFlash{.tone = SpriteTone::Flash, .remaining = FLASH_TIME});
+      ship, HitFlash{.tone = SpriteTone::Flash, .remaining = HIT_FLASH_LENGTH});
 
   scene.render();
 

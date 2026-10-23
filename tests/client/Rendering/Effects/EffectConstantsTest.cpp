@@ -1,14 +1,13 @@
 #include <gtest/gtest.h>
-#include <SFML/Graphics/Color.hpp>
 #include <SFML/Graphics/Image.hpp>
-#include <algorithm>
-#include <array>
 #include <cstddef>
-#include <span>
 #include <vector>
 #include "Animation.hpp"
+#include "EffectAnimations.hpp"
 #include "EffectConstants.hpp"
-#include "EffectLengths.hpp"
+#include "EffectConstantsFixtures.hpp"
+#include "EffectConstantsTestConstants.hpp"
+#include "EffectTestConstants.hpp"
 #include "EntitySpriteConstants.hpp"
 #include "SheetPixels.hpp"
 #include "SpriteFrame.hpp"
@@ -34,76 +33,6 @@ using rtype::client::SHIP_EXPLOSION_FLASH_AREA;
 using rtype::client::SHIP_EXPLOSION_FLASH_FRAMES;
 using rtype::client::SHIP_SILHOUETTE_AREA;
 using rtype::game::SpriteFrame;
-
-namespace {
-
-constexpr std::array ALL_EFFECTS{BYDO_EXPLOSION, SHIP_EXPLOSION, IMPACT,
-                                 PLAYER_MUZZLE_FLASH, ENEMY_MUZZLE_FLASH};
-
-/** @brief The white at the heart of an explosion, #fffbe8, which no version
- * without flash may show. */
-constexpr sf::Color EXPLOSION_WHITE(255, 251, 232);
-
-/** @brief The areas measured in the sheets as shipped: the most pixels a
- * frame of each effect changes between its row and its row without flash,
- * the frames that change any, and the largest silhouette of a Bydo and of a
- * ship. */
-constexpr int MEASURED_BYDO_EXPLOSION_FLASH = 275;
-constexpr int MEASURED_BYDO_EXPLOSION_FLASH_FRAMES = 1;
-constexpr int MEASURED_SHIP_EXPLOSION_FLASH = 23;
-constexpr int MEASURED_SHIP_EXPLOSION_FLASH_FRAMES = 8;
-constexpr int MEASURED_IMPACT_FLASH = 6;
-constexpr int MEASURED_IMPACT_FLASH_FRAMES = 2;
-constexpr int MEASURED_MUZZLE_FLASH = 12;
-constexpr int MEASURED_MUZZLE_FLASH_FRAMES = 1;
-constexpr int MEASURED_BYDO_SILHOUETTE = 367;
-constexpr int MEASURED_SHIP_SILHOUETTE = 254;
-
-/** @brief What the version without flash of an effect changes: the most
- * pixels one frame changes, and how many frames, from the first, change
- * any. */
-struct Change {
-  int pixels{};
-  int frames{};
-
-  bool operator==(const Change&) const = default;
-};
-
-Change changeOf(const sf::Image& sheet, const EffectAnimations& effect) {
-  Change change;
-  for (std::size_t i = 0; i < effect.standard.frames.size(); ++i) {
-    const int pixels = changedPixelCount(sheet, effect.standard.frames[i],
-                                         effect.withoutFlash.frames[i]);
-    if (pixels > 0) {
-      change.pixels = std::max(change.pixels, pixels);
-      change.frames = static_cast<int>(i) + 1;
-    }
-  }
-  return change;
-}
-
-int largestVisibleArea(const sf::Image& sheet,
-                       std::span<const SpriteFrame> frames) {
-  int largest = 0;
-  for (const SpriteFrame& frame : frames) {
-    largest = std::max(largest, visiblePixelCount(sheet, frame));
-  }
-  return largest;
-}
-
-/** @returns Every frame of both versions of every effect. */
-std::vector<SpriteFrame> everyEffectFrame() {
-  std::vector<SpriteFrame> frames;
-  for (const EffectAnimations& effect : ALL_EFFECTS) {
-    frames.insert(frames.end(), effect.standard.frames.begin(),
-                  effect.standard.frames.end());
-    frames.insert(frames.end(), effect.withoutFlash.frames.begin(),
-                  effect.withoutFlash.frames.end());
-  }
-  return frames;
-}
-
-}  // namespace
 
 /**
  * Given the effect sheet shipped in assets/

@@ -5,13 +5,14 @@
 #include <cstdint>
 #include <optional>
 #include <utility>
-#include <vector>
 #include "AllEntityTypes.hpp"
 #include "AnimatedSprite.hpp"
 #include "Animation.hpp"
 #include "EntitySpriteConstants.hpp"
 #include "EntitySpriteTestConstants.hpp"
 #include "EntitySprites.hpp"
+#include "EntitySpritesFixtures.hpp"
+#include "EntitySpritesTestConstants.hpp"
 #include "EntityType.hpp"
 #include "Layer.hpp"
 #include "SheetPixels.hpp"
@@ -32,45 +33,6 @@ using rtype::game::EntityType;
 using rtype::game::Layer;
 using rtype::game::Sprite;
 using rtype::game::SpriteFrame;
-
-namespace {
-
-/** @brief Stands for the frame of a type without a sprite: it lies nowhere on
- * the sheet, and EveryEntityTypeHasASpriteOfTheEntitySheet names the type. */
-constexpr SpriteFrame NO_FRAME{.left = 0, .top = 0, .width = 0, .height = 0};
-
-SpriteFrame frameOf(EntityType type) {
-  const std::optional<Sprite> sprite = spriteOf(type);
-  return sprite.has_value() ? sprite->frame : NO_FRAME;
-}
-
-/** @brief Network ids checked for their loop start, from 0 included. */
-constexpr std::uint32_t CHECKED_NETWORK_IDS = 10000;
-
-/** @brief Two network ids that follow each other, as the server gives two
- * Bydos of a wave. */
-constexpr std::uint32_t FIRST_BYDO_ID = 1;
-constexpr std::uint32_t NEXT_BYDO_ID = 2;
-
-/** @returns Every frame of the animations of every entity type. */
-std::vector<SpriteFrame> everyAnimationFrame() {
-  std::vector<SpriteFrame> frames;
-  for (const EntityType type : ALL_ENTITY_TYPES) {
-    const std::optional<SpriteAnimation> animation = animationOf(type, 0);
-    if (animation.has_value()) {
-      frames.insert(frames.end(), animation->animation.frames.begin(),
-                    animation->animation.frames.end());
-    }
-  }
-  return frames;
-}
-
-/** @returns The frame an animation shows where it starts. */
-SpriteFrame startFrameOf(const SpriteAnimation& animation) {
-  return animation.animation.frameAt(animation.elapsed).value_or(NO_FRAME);
-}
-
-}  // namespace
 
 /**
  * Given every entity type the server can announce

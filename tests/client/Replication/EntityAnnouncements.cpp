@@ -62,6 +62,12 @@ network::PlayerState playerFlying(std::uint8_t playerNumber,
                               .invulnerable = false};
 }
 
+network::PlayerState secondPilotFlying(bool invulnerable) {
+  network::PlayerState player = playerFlying(SECOND_PLAYER_NUMBER, SHIP_ID);
+  player.invulnerable = invulnerable;
+  return player;
+}
+
 network::GameEvent damaged(std::uint16_t eventNumber, std::uint32_t entityId) {
   return network::GameEvent{.eventNumber = eventNumber,
                             .kind = network::GameEventKind::EntityDamaged,

@@ -1,18 +1,10 @@
 #include <gtest/gtest.h>
-#include <chrono>
-#include "EffectLengths.hpp"
+#include "EffectTestConstants.hpp"
 #include "FlashBudget.hpp"
+#include "FlashBudgetTestConstants.hpp"
 #include "ScreenTestConstants.hpp"
-#include "TimeConstants.hpp"
 
 using rtype::client::FlashBudget;
-using rtype::engine::Duration;
-
-namespace {
-
-constexpr Duration LOAN_TIME = std::chrono::milliseconds(100);
-
-}  // namespace
 
 /**
  * Given an empty budget

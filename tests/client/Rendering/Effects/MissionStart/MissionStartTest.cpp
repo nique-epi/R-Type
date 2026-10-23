@@ -1,18 +1,12 @@
 #include <gtest/gtest.h>
 #include <chrono>
-#include "EffectLengths.hpp"
+#include "EffectTestConstants.hpp"
 #include "MissionStart.hpp"
 #include "ScreenTestConstants.hpp"
 #include "TimeConstants.hpp"
 
 using rtype::client::warpSpeedFactorAt;
 using rtype::engine::Duration;
-
-namespace {
-
-constexpr float FACTOR_TOLERANCE = 1e-4F;
-
-}  // namespace
 
 /**
  * Given the start of a game
@@ -21,10 +15,12 @@ constexpr float FACTOR_TOLERANCE = 1e-4F;
  * speed again
  */
 TEST(MissionStart, TheStarsReachTwelveTimesTheirSpeedThenComeBack) {
-  EXPECT_NEAR(warpSpeedFactorAt(Duration::zero()), OWN_SPEED, FACTOR_TOLERANCE);
+  EXPECT_NEAR(warpSpeedFactorAt(Duration::zero()), OWN_SPEED,
+              WARP_FACTOR_TOLERANCE);
   EXPECT_NEAR(warpSpeedFactorAt(WARP_TOP_TIME), TOP_WARP_SPEED,
-              FACTOR_TOLERANCE);
-  EXPECT_NEAR(warpSpeedFactorAt(WARP_END_TIME), OWN_SPEED, FACTOR_TOLERANCE);
+              WARP_FACTOR_TOLERANCE);
+  EXPECT_NEAR(warpSpeedFactorAt(WARP_END_TIME), OWN_SPEED,
+              WARP_FACTOR_TOLERANCE);
 }
 
 /**
@@ -37,8 +33,8 @@ TEST(MissionStart, TheStarsOnlySlowDownAfterTheTop) {
   for (Duration time = WARP_TOP_TIME; time <= WARP_END_TIME;
        time += std::chrono::milliseconds(1)) {
     const float factor = warpSpeedFactorAt(time);
-    EXPECT_LE(factor, previous + FACTOR_TOLERANCE);
-    EXPECT_LE(factor, TOP_WARP_SPEED + FACTOR_TOLERANCE);
+    EXPECT_LE(factor, previous + WARP_FACTOR_TOLERANCE);
+    EXPECT_LE(factor, TOP_WARP_SPEED + WARP_FACTOR_TOLERANCE);
     previous = factor;
   }
 }

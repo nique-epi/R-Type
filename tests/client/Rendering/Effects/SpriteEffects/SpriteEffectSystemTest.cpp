@@ -1,76 +1,27 @@
 #include <gtest/gtest.h>
 #include <SFML/System/Vector2.hpp>
-#include <chrono>
 #include "Anchor.hpp"
 #include "Caption.hpp"
 #include "ComponentRegistry.hpp"
-#include "EffectLengths.hpp"
+#include "EffectTestConstants.hpp"
 #include "Entity.hpp"
-#include "EntityRegistry.hpp"
-#include "Layer.hpp"
 #include "Lifetime.hpp"
 #include "Nudge.hpp"
-#include "Popup.hpp"
 #include "Position.hpp"
 #include "Reveal.hpp"
 #include "ScreenTestConstants.hpp"
-#include "SpriteEffectSystem.hpp"
+#include "SpriteEffectScene.hpp"
+#include "SpriteEffectSystemTestConstants.hpp"
 #include "TimeConstants.hpp"
 
 using rtype::client::Anchor;
 using rtype::client::Caption;
 using rtype::client::Lifetime;
 using rtype::client::Nudge;
-using rtype::client::Popup;
 using rtype::client::Reveal;
-using rtype::client::SpriteEffectSystem;
-using rtype::engine::ComponentRegistry;
 using rtype::engine::Duration;
 using rtype::engine::Entity;
-using rtype::engine::EntityRegistry;
-using rtype::game::Layer;
 using rtype::game::Position;
-
-namespace {
-
-constexpr Position START{.x = 800.0F, .y = 400.0F};
-constexpr Duration EFFECT_TIME = std::chrono::milliseconds(100);
-constexpr sf::Vector2f NOSE_OFFSET(40.0F, 4.0F);
-constexpr Position MOVED{.x = 900.0F, .y = 300.0F};
-
-class SpriteEffectScene {
- public:
-  Entity add(Position position) {
-    const Entity entity = entities_.create();
-    components_.add(entity, position);
-    return entity;
-  }
-
-  Entity addFigure() {
-    const Entity figure = add(START);
-    components_.add(figure, Caption{.text = "+100",
-                                    .style = {},
-                                    .layer = Layer::Popups,
-                                    .visible = true});
-    components_.add(figure, Popup{.originY = START.y, .age = Duration::zero()});
-    return figure;
-  }
-
-  void run(Duration elapsed) { system_.update(components_, elapsed); }
-
-  ComponentRegistry& components() { return components_; }
-
-  [[nodiscard]] bool isAlive(Entity entity) const {
-    return entities_.isAlive(entity);
-  }
-
- private:
-  EntityRegistry entities_;
-  ComponentRegistry components_{entities_};
-  SpriteEffectSystem system_;
-};
-
-}  // namespace
 
 /**
  * Given a nudge of 100 ms

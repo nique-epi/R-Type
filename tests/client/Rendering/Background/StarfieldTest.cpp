@@ -2,19 +2,21 @@
 #include <SFML/Graphics/Color.hpp>
 #include <SFML/System/Vector2.hpp>
 #include <algorithm>
-#include <chrono>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
 #include <vector>
 #include "BackgroundColorConstants.hpp"
 #include "BackgroundConstants.hpp"
+#include "BackgroundTestConstants.hpp"
 #include "ColoredPixel.hpp"
+#include "EffectTestConstants.hpp"
 #include "PlanetImage.hpp"
 #include "RecordingPixelSurface.hpp"
 #include "Star.hpp"
-#include "StarTwinkleStep.hpp"
 #include "Starfield.hpp"
+#include "StarfieldFixtures.hpp"
+#include "StarfieldTestConstants.hpp"
 #include "TimeConstants.hpp"
 #include "TimeTestConstants.hpp"
 
@@ -36,67 +38,8 @@ using rtype::client::STAR_WRAP_MARGIN;
 using rtype::client::StarDepth;
 using rtype::client::Starfield;
 using rtype::client::StarLayer;
-using rtype::client::StarTwinkleStep;
 using rtype::engine::Duration;
 using rtype::engine::testing::ONE_SECOND;
-
-namespace {
-
-constexpr std::uint32_t SEED = 2026;
-constexpr Duration SHORT_STEP = std::chrono::milliseconds(10);
-constexpr Duration HALF_MAXIMUM_STEP = MAXIMUM_BACKGROUND_STEP / 2;
-constexpr Duration ONE_MINUTE = std::chrono::minutes(1);
-constexpr Duration NEGATIVE_STEP = -std::chrono::milliseconds(10);
-constexpr Duration ONE_TWINKLE_STEP =
-    std::chrono::duration_cast<Duration>(StarTwinkleStep(1));
-constexpr Duration HALF_TWINKLE_STEP = ONE_TWINKLE_STEP / 2;
-constexpr Duration LONGER_THAN_A_PLANET_CROSSING = std::chrono::seconds(260);
-constexpr float POSITION_TOLERANCE = 1e-3F;
-constexpr float TOP_WARP_FACTOR = 12.0F;
-constexpr float LAST_FACTOR_WITHOUT_STREAK = 1.5F;
-constexpr float FIRST_FACTOR_WITH_STREAKS = 1.6F;
-constexpr int NEAR_STREAK_AT_THE_TOP_WARP = 6;
-constexpr float FAR_FROM_THE_LEFT_EDGE = 40.0F;
-
-float seconds(Duration duration) {
-  return std::chrono::duration<float>(duration).count();
-}
-
-void advanceBy(Starfield& starfield, Duration total) {
-  for (Duration left = total; left > Duration::zero();
-       left -= MAXIMUM_BACKGROUND_STEP) {
-    starfield.advance(std::min(left, MAXIMUM_BACKGROUND_STEP));
-  }
-}
-
-float speedOf(StarDepth depth) {
-  return STAR_LAYERS[static_cast<std::size_t>(depth)].speed;
-}
-
-std::size_t countAt(const Starfield& starfield, StarDepth depth) {
-  return static_cast<std::size_t>(
-      std::ranges::count(starfield.stars(), depth, &Star::depth));
-}
-
-void expectSameColumns(const Starfield& left, const Starfield& right) {
-  ASSERT_EQ(left.stars().size(), right.stars().size());
-  for (std::size_t i = 0; i < left.stars().size(); ++i) {
-    EXPECT_NEAR(left.stars()[i].position.x, right.stars()[i].position.x,
-                POSITION_TOLERANCE);
-  }
-}
-
-/** @returns How many pixels a starfield of SEED paints at that speed
- * factor. */
-std::size_t plotCountAt(float speedFactor) {
-  Starfield starfield(SEED);
-  starfield.setSpeedFactor(speedFactor);
-  RecordingPixelSurface surface;
-  starfield.paint(surface);
-  return surface.plots().size();
-}
-
-}  // namespace
 
 /**
  * Given a new starfield
@@ -361,7 +304,7 @@ TEST(Starfield, FarStarTwinklesOneStepInEight) {
 TEST(Starfield, ASpeedFactorMovesTheStarsThatManyTimesFaster) {
   Starfield calm(SEED);
   Starfield fast(SEED);
-  fast.setSpeedFactor(TOP_WARP_FACTOR);
+  fast.setSpeedFactor(TOP_WARP_SPEED);
   const std::vector<Star> before = calm.stars();
 
   calm.advance(MAXIMUM_BACKGROUND_STEP);
@@ -375,7 +318,7 @@ TEST(Starfield, ASpeedFactorMovesTheStarsThatManyTimesFaster) {
     SCOPED_TRACE(i);
     const float calmStep = before[i].position.x - calm.stars()[i].position.x;
     const float fastStep = before[i].position.x - fast.stars()[i].position.x;
-    EXPECT_NEAR(fastStep, TOP_WARP_FACTOR * calmStep, POSITION_TOLERANCE);
+    EXPECT_NEAR(fastStep, TOP_WARP_SPEED * calmStep, POSITION_TOLERANCE);
   }
 }
 
@@ -387,7 +330,7 @@ TEST(Starfield, ASpeedFactorMovesTheStarsThatManyTimesFaster) {
  */
 TEST(Starfield, AFastStarIsDrawnWithItsStreak) {
   Starfield starfield(SEED);
-  starfield.setSpeedFactor(TOP_WARP_FACTOR);
+  starfield.setSpeedFactor(TOP_WARP_SPEED);
   RecordingPixelSurface surface;
 
   starfield.paint(surface);
@@ -418,7 +361,7 @@ TEST(Starfield, AFastStarIsDrawnWithItsStreak) {
  * above 1.5
  */
 TEST(Starfield, TheStreaksStartAboveOneAndAHalfTimesTheSpeed) {
-  const std::size_t calm = plotCountAt(1.0F);
+  const std::size_t calm = plotCountAt(OWN_SPEED);
 
   EXPECT_EQ(plotCountAt(LAST_FACTOR_WITHOUT_STREAK), calm);
   EXPECT_GT(plotCountAt(FIRST_FACTOR_WITH_STREAKS), calm);

@@ -1,50 +1,10 @@
 #include <gtest/gtest.h>
 #include <SFML/System/Vector2.hpp>
-#include <algorithm>
-#include <chrono>
-#include <cstdlib>
 #include "CameraShake.hpp"
-#include "ScreenTestConstants.hpp"
-#include "TimeConstants.hpp"
+#include "CameraShakeFixtures.hpp"
+#include "CameraShakeTestConstants.hpp"
 
 using rtype::client::CameraShake;
-using rtype::engine::Duration;
-
-namespace {
-
-constexpr int FRAMES_IN_A_SECOND = 60;
-constexpr float FULL_TRAUMA = 1.0F;
-constexpr float BIG_CATCH_TRAUMA_REQUIRED = 0.45F;
-constexpr float SHIP_DOWN_TRAUMA_REQUIRED = 0.3F;
-constexpr float HIGH_TRAUMA = 0.8F;
-constexpr int LARGEST_SHAKE = 6;
-constexpr Duration BEFORE_A_TRAUMA_OF_03_IS_GONE =
-    std::chrono::milliseconds(150);
-constexpr Duration AFTER_A_TRAUMA_OF_03_IS_GONE =
-    std::chrono::milliseconds(250);
-
-/** @brief The largest offset on either axis over a second, the trauma kept
- * where it was, and whether the camera moved at all. */
-struct ShakeOverASecond {
-  int largest{};
-  bool moved = false;
-};
-
-ShakeOverASecond shakeKeeping(float trauma) {
-  CameraShake shake;
-  ShakeOverASecond result;
-  for (int frame = 0; frame < FRAMES_IN_A_SECOND; ++frame) {
-    shake.addTrauma(trauma - shake.trauma());
-    shake.advance(ONE_FRAME);
-    const sf::Vector2i offset = shake.offset();
-    result.largest =
-        std::max({result.largest, std::abs(offset.x), std::abs(offset.y)});
-    result.moved = result.moved || offset != sf::Vector2i();
-  }
-  return result;
-}
-
-}  // namespace
 
 /**
  * Given a camera without trauma

@@ -1,66 +1,10 @@
 #include <gtest/gtest.h>
-#include <chrono>
-#include "ComponentRegistry.hpp"
 #include "Entity.hpp"
-#include "EntityRegistry.hpp"
-#include "HitFlash.hpp"
-#include "HitFlashSystem.hpp"
-#include "Layer.hpp"
+#include "FlashedScene.hpp"
+#include "HitFlashSystemTestConstants.hpp"
 #include "ScreenTestConstants.hpp"
-#include "Sprite.hpp"
-#include "SpriteFrame.hpp"
-#include "SpriteTone.hpp"
-#include "TimeConstants.hpp"
 
-using rtype::client::HitFlash;
-using rtype::client::HitFlashSystem;
-using rtype::client::SpriteTone;
-using rtype::engine::ComponentRegistry;
-using rtype::engine::Duration;
 using rtype::engine::Entity;
-using rtype::engine::EntityRegistry;
-using rtype::game::Layer;
-using rtype::game::Sprite;
-using rtype::game::SpriteFrame;
-
-namespace {
-
-constexpr Duration FLASH_TIME = std::chrono::milliseconds(60);
-constexpr Duration LONGER_FLASH_TIME = std::chrono::milliseconds(120);
-constexpr SpriteFrame FRAME{.left = 0, .top = 0, .width = 8, .height = 8};
-constexpr const char* SHEET_ID = "sheet";
-
-/** @brief Registries of flashed entities, and the system that ends their
- * flashes. */
-class FlashedScene {
- public:
-  Entity flashed(Duration remaining) {
-    const Entity entity = entities_.create();
-    components_.add(
-        entity,
-        Sprite{.assetId = SHEET_ID, .frame = FRAME, .layer = Layer::Enemies});
-    components_.add(
-        entity, HitFlash{.tone = SpriteTone::Flash, .remaining = remaining});
-    return entity;
-  }
-
-  void play(Duration elapsed) { system_.update(components_, elapsed); }
-
-  [[nodiscard]] bool isFlashed(Entity entity) const {
-    return components_.has<HitFlash>(entity);
-  }
-
-  [[nodiscard]] bool isAlive(Entity entity) const {
-    return entities_.isAlive(entity);
-  }
-
- private:
-  EntityRegistry entities_;
-  ComponentRegistry components_{entities_};
-  HitFlashSystem system_;
-};
-
-}  // namespace
 
 /**
  * Given an entity flashed for 60 ms

@@ -2,19 +2,17 @@
 #include <SFML/Graphics/Color.hpp>
 #include <SFML/Graphics/Image.hpp>
 #include <SFML/System/Vector2.hpp>
-#include <cstdint>
+#include <algorithm>
 #include <filesystem>
+#include <span>
 #include <string_view>
 #include <utility>
+#include "SheetPixelsTestConstants.hpp"
 #include "SpriteFrame.hpp"
 
 using rtype::game::SpriteFrame;
 
 namespace {
-
-constexpr const char* SOURCE_ASSETS_FOLDER = RTYPE_SOURCE_ASSETS_FOLDER;
-
-constexpr std::uint8_t TRANSPARENT_ALPHA = 0;
 
 bool isVisible(const sf::Image& image, int column, int row) {
   const sf::Vector2u size = image.getSize();
@@ -30,7 +28,7 @@ bool isVisible(const sf::Image& image, int column, int row) {
 }  // namespace
 
 sf::Image shippedSheet(std::string_view assetId) {
-  return sf::Image(std::filesystem::path(SOURCE_ASSETS_FOLDER) /
+  return sf::Image(std::filesystem::path(RTYPE_SOURCE_ASSETS_FOLDER) /
                    std::filesystem::path(assetId));
 }
 
@@ -117,4 +115,13 @@ int visiblePixelCount(const sf::Image& image, SpriteFrame frame) {
     }
   }
   return visible;
+}
+
+int largestVisibleArea(const sf::Image& image,
+                       std::span<const SpriteFrame> frames) {
+  int largest = 0;
+  for (const SpriteFrame& frame : frames) {
+    largest = std::max(largest, visiblePixelCount(image, frame));
+  }
+  return largest;
 }
