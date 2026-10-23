@@ -80,7 +80,7 @@ The simulation advances at a fixed rate (`SIMULATION_TICKS_PER_SECOND`, 60), wha
 
 Game logic uses one logical frame, the same on the server and on the client, and never a window size in pixels.
 
-- The playfield is `PLAYFIELD_WIDTH` × `PLAYFIELD_HEIGHT` logical units, defined once in `rtype_game` (`PlayfieldConstants.hpp`).
+- The playfield is `PLAYFIELD_WIDTH` × `PLAYFIELD_HEIGHT` logical units, defined once in `rtype_game` (`src/game/Components/PlayfieldConstants.hpp`).
 - These dimensions are 1920 × 1080: the playfield has the proportions of a 16:9 screen. Code must read the constants and never assume they match the window.
 - The bottom `STATUS_BAND_HEIGHT` (96 logical units) of the playfield is covered by the status band every client lays over the game, so a match is played in the `PLAY_AREA_HEIGHT` (984) above it: whatever a player must see is placed there. The rows Bydos appear on keep half a Bydo and the room of a wave from its edges, so a Bydo stays in it even at the top and the bottom of a wave (see [Server](/R-Type/server/#bydos-bydospawner)).
 - The origin is the top-left corner, x grows to the right and y grows downwards.
