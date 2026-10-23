@@ -31,6 +31,11 @@
 [[nodiscard]] std::vector<std::byte> heartbeatDatagram(
     const rtype::network::PacketHeader& header = {});
 
+/** @returns A datagram holding a Disconnection, which a player sends when it
+ * leaves. */
+[[nodiscard]] std::vector<std::byte> disconnectionDatagram(
+    const rtype::network::PacketHeader& header = {});
+
 /** @returns A datagram holding @p input. */
 [[nodiscard]] std::vector<std::byte> inputDatagram(
     const rtype::network::PlayerInput& input,

@@ -22,6 +22,7 @@
 #include "MessageOrigin.hpp"
 #include "OutgoingDatagram.hpp"
 #include "PacketHeader.hpp"
+#include "PlayerDeparture.hpp"
 #include "PlayerInput.hpp"
 #include "PlayerRoster.hpp"
 #include "ReadyState.hpp"
@@ -95,6 +96,12 @@ namespace rtype::server {
  * runs, so a stall of the server closes no session. A game in progress whose
  * last player's session closed ends at that same tick, as finish() ends it, so
  * it waits for players again FINISHED_STATE_TICKS ticks later.
+ *
+ * A Disconnection from a player closes its session at once, in the tick that
+ * reads it and in the same way, with a PlayerDeparture (Left) instead: a player
+ * who leaves does not wait for the timeout. The copies of that Disconnection
+ * the client sends after it come from an address the roster no longer holds,
+ * so they change nothing.
  *
  * A ReadyState counts only while the game waits for players, and only when its
  * sequence is newer than the newest one accepted from that player, so a late
@@ -173,15 +180,15 @@ class GameInstance {
   void onPlayerJoined(ConnectedPlayer& player);
 
   /**
-   * @brief Runs one tick: applies the ReadyState and keeps the newest
-   * PlayerInput among @p datagrams, oldest first, closes the session of every
-   * player not heard from for SESSION_TIMEOUT_TICKS ticks, ends a game in
-   * progress that no player is left in, then moves the game along its states.
-   * While it waits, the players are told the room; while it is in progress, the
-   * tick is counted, the ships move, the systems run, the Bydos appear and the
-   * world is sent. Last, a player sent nothing for TICKS_PER_HEARTBEAT ticks is
-   * sent a Heartbeat. Nothing caused by the content of a datagram makes it
-   * throw.
+   * @brief Runs one tick: applies the ReadyState, keeps the newest PlayerInput
+   * and closes the session of each player who sent a Disconnection, among
+   * @p datagrams, oldest first, closes the session of every player not heard
+   * from for SESSION_TIMEOUT_TICKS ticks, ends a game in progress that no
+   * player is left in, then moves the game along its states. While it waits,
+   * the players are told the room; while it is in progress, the tick is
+   * counted, the ships move, the systems run, the Bydos appear and the world
+   * is sent. Last, a player sent nothing for TICKS_PER_HEARTBEAT ticks is sent
+   * a Heartbeat. Nothing caused by the content of a datagram makes it throw.
    */
   void onTick(std::span<const network::IncomingDatagram> datagrams);
 
@@ -254,18 +261,26 @@ class GameInstance {
   [[nodiscard]] std::vector<network::Endpoint> countSilentTicks();
 
   /** @brief Frees the seat of the player sending from @p player, removes its
-   * ship and announces it, announces the departure, then keeps the player for
-   * takeDepartedPlayers(). Everything after the seat is freed reads the copy
-   * of the player the roster handed back. */
-  void closeSession(const network::Endpoint& player);
+   * ship and announces it, announces that the player left for @p cause, then
+   * keeps the player for takeDepartedPlayers(). Does nothing when no player of
+   * the game sends from there. Everything after the seat is freed reads the
+   * copy of the player the roster handed back. */
+  void closeSession(const network::Endpoint& player,
+                    game::DepartureCause cause);
 
   /** @brief Publishes the EntityDestruction (Removed) of a ship that left the
    * world. */
   void announceShipRemoval(std::uint32_t shipEntityId);
 
-  /** @brief Logs that @p player timed out and publishes its PlayerDeparture
-   * (TimedOut). */
-  void announceTimeout(const ConnectedPlayer& player);
+  /** @brief Logs that @p player left or timed out, as @p cause says, and
+   * publishes its PlayerDeparture. */
+  void announceDeparture(const ConnectedPlayer& player,
+                         game::DepartureCause cause);
+
+  /** @brief Writes the info line of a departure: the address of a player who
+   * left, or how long a player who timed out stayed silent. */
+  void logDeparture(const ConnectedPlayer& player,
+                    game::DepartureCause cause) const;
 
   /** @returns Whether the game is in progress with no player left in it. */
   [[nodiscard]] bool isAbandoned();

@@ -39,8 +39,9 @@ class NetworkThread : public IDatagramLink {
   explicit NetworkThread(const network::Endpoint& localEndpoint);
 
   /**
-   * @brief Stops the network thread and waits for it. A datagram handed to
-   * send() and not sent yet is lost.
+   * @brief Has the network thread send what waits in the outgoing queue, then
+   * stop, and waits for it, so a datagram handed to send() before is not lost.
+   * When an error already stopped that thread, what waits is lost.
    */
   ~NetworkThread() override;
 

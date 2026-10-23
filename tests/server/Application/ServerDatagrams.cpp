@@ -5,6 +5,7 @@
 #include <vector>
 #include "ConnectionRequest.hpp"
 #include "DatagramCodec.hpp"
+#include "Disconnection.hpp"
 #include "Endpoint.hpp"
 #include "Heartbeat.hpp"
 #include "PacketHeader.hpp"
@@ -40,6 +41,12 @@ std::vector<std::byte> heartbeatDatagram(
     const rtype::network::PacketHeader& header) {
   return rtype::network::DatagramCodec::encode(header,
                                                rtype::network::Heartbeat{});
+}
+
+std::vector<std::byte> disconnectionDatagram(
+    const rtype::network::PacketHeader& header) {
+  return rtype::network::DatagramCodec::encode(header,
+                                               rtype::network::Disconnection{});
 }
 
 std::vector<std::byte> inputDatagram(

@@ -40,6 +40,11 @@ constexpr std::string_view SECOND_PLAYER_TIMED_OUT_LINE_TEXT =
     "player 2 timed out";
 
 /**
+ * @brief What the line about the second player leaving holds.
+ */
+constexpr std::string_view SECOND_PLAYER_LEFT_LINE_TEXT = "player 2 left";
+
+/**
  * @brief What the line about a game in progress that every player left holds.
  */
 constexpr std::string_view GAME_LEFT_BY_EVERY_PLAYER_LINE_TEXT =

@@ -25,7 +25,12 @@ NetworkThread::NetworkThread(const network::Endpoint& localEndpoint)
   thread_ = std::jthread{[this] { runNetwork(); }};
 }
 
-NetworkThread::~NetworkThread() { network_.stop(); }
+NetworkThread::~NetworkThread() {
+  network_.post([this] {
+    relay_.sendWaiting();
+    network_.stop();
+  });
+}
 
 void NetworkThread::send(network::OutgoingDatagram datagram) {
   outgoing_.push(std::move(datagram));

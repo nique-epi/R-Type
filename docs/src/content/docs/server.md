@@ -21,7 +21,7 @@ This page tells you where to look when you need to change something. It describe
 | Letting players in: challenge, acceptance or refusal | Available; refuses with `GameInProgress` while the game is not waiting for players | `src/server/Lobby/`, `src/server/Instances/` |
 | A game: states, ready rule, new world between two games | Available: one game, which ends only once no player is left in it | `src/server/Instances/GameInstance/` |
 | Newest input of each player, applied to its ship at each tick of a game in progress | Available; the shoot action is not read yet | `src/server/Instances/GameInstance/` |
-| Heartbeats, and the session of a silent player closed after 5 seconds | Available; a `Disconnection` does not close the session yet | `src/server/Instances/GameInstance/` |
+| Heartbeats, and the session of a silent player closed after 5 seconds | Available, and a `Disconnection` closes the session at once | `src/server/Instances/GameInstance/` |
 | Waiting room and start of the game sent to the players (`LobbyState`, `GameStarted`) | Available | `src/server/Replication/LobbyStateAnnouncer/`, `src/server/Instances/GameInstance/` |
 | End of a game sent to the players (`GameEnded`), several games, master link | Not yet written | — |
 | Components (`Position`, `Velocity`, `CollisionBox`, `Health`, `EntityType`, `Sprite`, `Layer`) | Available | `src/game/Components/` |
@@ -228,8 +228,9 @@ A client that crashes, is killed or loses the network sends nothing more, and no
 
 - The game counts the ticks it runs, not the time that passes: during a stall of the server, the datagrams wait in the player queue and are read at the next tick, so a stall closes no session.
 - The rest of the tick runs without the player: a waiting room whose other players are all ready starts the game in that tick, and the world state of that tick no longer lists the ship.
-- A game in progress whose last player timed out ends in that tick, after the sessions close and before the game moves along its states, as `finish()` ends it: it refuses new connections with `GameInProgress` until the finished state is over, `FINISHED_STATE_TICKS` (300) ticks counted from that tick, then waits for players with a new world. The game logs `game finished: no player left` at the `info` level under `Instances`. A waiting room whose last player timed out keeps waiting.
-- A `Disconnection` does not close the session yet: a player who leaves times out 5 seconds later, and the others get `PlayerLeft` (`TimedOut`) instead of (`Left`).
+- A game in progress whose last player timed out or left ends in that tick, after the sessions close and before the game moves along its states, as `finish()` ends it: it refuses new connections with `GameInProgress` until the finished state is over, `FINISHED_STATE_TICKS` (300) ticks counted from that tick, then waits for players with a new world. The game logs `game finished: no player left` at the `info` level under `Instances`. A waiting room whose last player timed out keeps waiting.
+
+A player who leaves does not wait for the timeout. Its client sends a `Disconnection` when the player leaves the waiting room or closes the window (see [Client](/R-Type/client/#joining-a-server-serverconnection)), and the session closes in the tick that reads it, through the same three steps, with a `PlayerDeparture` (`Left`): the others get `PlayerLeft` (`Left`) at once. The game logs `player <n> left from <address> port <port>` at the `info` level under `Instances`. The two copies the client sends after the first are dropped: by the sorter once it forgot the address, or by the game, whose roster no longer holds the sender.
 
 The server sends heartbeats too. At the end of each tick, a game sends a `Heartbeat` to each player that no datagram reached for `TICKS_PER_HEARTBEAT` (60) ticks, whoever sent the last one: every datagram to a player takes its header from `nextSessionHeader()`, which starts that count over. The waiting room (every 500 ms) and a game in progress (20 states per second) already send more often, so only a finished game would send heartbeats, and today a game finishes only once no player is left in it.
 

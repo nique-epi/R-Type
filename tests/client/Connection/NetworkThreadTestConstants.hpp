@@ -22,3 +22,10 @@ constexpr std::chrono::milliseconds DRAIN_INTERVAL{1};
  * of them to be destroyed before their thread ran the network.
  */
 constexpr int IMMEDIATE_DESTRUCTION_COUNT = 100;
+
+/**
+ * @brief Network threads a test hands one datagram each, then destroys at
+ * once, so the datagram is still waiting when the destructor of most of them
+ * runs.
+ */
+constexpr std::size_t SENDING_THREADS_DESTROYED_AT_ONCE = 32;
