@@ -54,6 +54,19 @@ class World {
    * @throws NetworkIdExhaustedException when every network id was given.
    */
   std::uint32_t spawnBydo(Position position, BydoKind kind);
+
+  /**
+   * @brief Creates, at @p position, a missile fired by the player numbered
+   * @p playerNumber, with the Position, the EntityType::PlayerMissile and the
+   * NetworkIdentity that make it a networked entity, a MissileOwner naming
+   * that player, so a kill is credited to it, and a CollisionBox of
+   * PLAYER_MISSILE_WIDTH by PLAYER_MISSILE_HEIGHT. It flies right at
+   * PLAYER_MISSILE_SPEED: MovementSystem moves it.
+   * @returns The network id the missile was given, never NO_ENTITY_ID.
+   * @throws NetworkIdExhaustedException when every network id was given.
+   */
+  std::uint32_t spawnPlayerMissile(Position position,
+                                   std::uint8_t playerNumber);
   [[nodiscard]] std::size_t entityCount() const;
 
   /**

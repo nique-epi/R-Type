@@ -3,11 +3,15 @@
 #include <cstdint>
 #include <optional>
 #include "BydoKind.hpp"
+#include "CollisionBox.hpp"
 #include "ComponentRegistry.hpp"
 #include "Entity.hpp"
+#include "EntitySizeConstants.hpp"
 #include "EntityType.hpp"
 #include "Health.hpp"
 #include "HealthConstants.hpp"
+#include "MissileConstants.hpp"
+#include "MissileOwner.hpp"
 #include "MovementPattern.hpp"
 #include "NetworkEntityTable.hpp"
 #include "NetworkIdentity.hpp"
@@ -51,6 +55,20 @@ std::uint32_t World::spawnBydo(Position position, BydoKind kind) {
   components_.add(bydo, Health{.points = BYDO_HEALTH});
   components_.add(bydo, ScoreValue{.points = pointsOf(kind)});
   components_.add(bydo, NetworkIdentity{.networkId = networkId});
+  return networkId;
+}
+
+std::uint32_t World::spawnPlayerMissile(Position position,
+                                        std::uint8_t playerNumber) {
+  const std::uint32_t networkId = networkIds_.allocate();
+  const engine::Entity missile = registry_.create();
+  components_.add(missile, position);
+  components_.add(missile, Velocity{.x = PLAYER_MISSILE_SPEED, .y = 0.0F});
+  components_.add(missile, CollisionBox{.width = PLAYER_MISSILE_WIDTH,
+                                        .height = PLAYER_MISSILE_HEIGHT});
+  components_.add(missile, EntityType::PlayerMissile);
+  components_.add(missile, MissileOwner{.playerNumber = playerNumber});
+  components_.add(missile, NetworkIdentity{.networkId = networkId});
   return networkId;
 }
 
