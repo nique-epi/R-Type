@@ -628,6 +628,21 @@ TEST_F(GameInstanceTest, FinishesTheGameInProgressItsLastPlayerLeft) {
 }
 
 /**
+ * Given a game in progress with one player
+ * When that player sends a Disconnection
+ * Then the game is finished in the tick that reads it, without waiting for
+ * the timeout
+ */
+TEST_F(GameInstanceTest, FinishesTheGameInTheTickItsLastPlayerLeaves) {
+  startGameWithOnePlayer();
+
+  leave(FIRST_PLAYER);
+  tick();
+
+  EXPECT_EQ(game().state(), GameState::Finished);
+}
+
+/**
  * Given a game in progress with two players
  * When one of them times out
  * Then the game goes on for the other
