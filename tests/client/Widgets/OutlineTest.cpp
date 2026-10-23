@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 #include <SFML/Graphics/Rect.hpp>
-#include "BackgroundColors.hpp"
+#include "BackgroundColorConstants.hpp"
 #include "Outline.hpp"
 #include "RecordingInterfaceCanvas.hpp"
 

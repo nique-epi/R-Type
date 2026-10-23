@@ -17,6 +17,8 @@
 #include "BackgroundConstants.hpp"
 #include "ImagePlacement.hpp"
 #include "InterfaceConstants.hpp"
+#include "SmoothImage.hpp"
+#include "TextLine.hpp"
 #include "TextStyle.hpp"
 #include "TextWriter.hpp"
 #include "TextureArea.hpp"
@@ -76,9 +78,8 @@ void InterfaceCanvas::fill(sf::IntRect area, sf::Color color) {
 
 void InterfaceCanvas::write(std::string_view text, sf::Vector2i anchor,
                             TextStyle style) {
-  writer_.write(
-      canvas_.canvas(),
-      TextWriter::Line{.text = text, .anchor = anchor, .style = style});
+  writer_.write(canvas_.canvas(),
+                TextLine{.text = text, .anchor = anchor, .style = style});
 }
 
 void InterfaceCanvas::drawImage(TextureArea image, ImagePlacement placement,

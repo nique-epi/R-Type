@@ -3,10 +3,12 @@
 #include <optional>
 #include "EffectLengths.hpp"
 #include "GainAttribution.hpp"
+#include "GainFigure.hpp"
 #include "Position.hpp"
 #include "ScreenTestConstants.hpp"
 
 using rtype::client::GainAttribution;
+using rtype::client::GainFigure;
 using rtype::game::Position;
 
 namespace {
@@ -55,11 +57,9 @@ TEST(GainAttribution, OnePilotGainingForOneKillGetsItsColor) {
 
   attribution.noteScore(FIRST_PILOT, SCORE_BEFORE + DRIFTER_POINTS);
 
-  const std::optional<GainAttribution::Figure> figure =
-      attribution.takeFigure();
+  const std::optional<GainFigure> figure = attribution.takeFigure();
   ASSERT_TRUE(figure.has_value());
-  const GainAttribution::Figure shown =
-      figure.value_or(GainAttribution::Figure{});
+  const GainFigure shown = figure.value_or(GainFigure{});
   EXPECT_EQ(shown.points, DRIFTER_POINTS);
   EXPECT_EQ(shown.pilotColor, FIRST_PILOT);
   EXPECT_EQ(shown.place.x, WHERE_IT_DIED.x);
@@ -78,11 +78,9 @@ TEST(GainAttribution, TwoPilotsGainingShareAFigureInNoColor) {
   attribution.noteScore(FIRST_PILOT, SCORE_BEFORE + DRIFTER_POINTS);
   attribution.noteScore(SECOND_PILOT, SCORE_BEFORE + DRIFTER_POINTS);
 
-  const std::optional<GainAttribution::Figure> figure =
-      attribution.takeFigure();
+  const std::optional<GainFigure> figure = attribution.takeFigure();
   ASSERT_TRUE(figure.has_value());
-  const GainAttribution::Figure shown =
-      figure.value_or(GainAttribution::Figure{});
+  const GainFigure shown = figure.value_or(GainFigure{});
   EXPECT_EQ(shown.points, 2 * DRIFTER_POINTS);
   EXPECT_FALSE(shown.pilotColor.has_value());
 }
@@ -99,11 +97,9 @@ TEST(GainAttribution, TwoKillsMakeOneFigureAtTheLastPlace) {
 
   attribution.noteScore(FIRST_PILOT, SCORE_BEFORE + (2 * DRIFTER_POINTS));
 
-  const std::optional<GainAttribution::Figure> figure =
-      attribution.takeFigure();
+  const std::optional<GainFigure> figure = attribution.takeFigure();
   ASSERT_TRUE(figure.has_value());
-  const GainAttribution::Figure shown =
-      figure.value_or(GainAttribution::Figure{});
+  const GainFigure shown = figure.value_or(GainFigure{});
   EXPECT_EQ(shown.place.x, WHERE_THE_LAST_DIED.x);
   EXPECT_FALSE(shown.pilotColor.has_value());
 }
@@ -149,11 +145,9 @@ TEST(GainAttribution, ABigCatchMakesALargeFigure) {
 
   attribution.noteScore(FIRST_PILOT, SCORE_BEFORE + DRIFTER_POINTS);
 
-  const std::optional<GainAttribution::Figure> figure =
-      attribution.takeFigure();
+  const std::optional<GainFigure> figure = attribution.takeFigure();
   ASSERT_TRUE(figure.has_value());
-  const GainAttribution::Figure shown =
-      figure.value_or(GainAttribution::Figure{});
+  const GainFigure shown = figure.value_or(GainFigure{});
   EXPECT_TRUE(shown.big);
 }
 

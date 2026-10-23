@@ -2,7 +2,7 @@
 #include <chrono>
 #include <cstddef>
 #include "EffectLengths.hpp"
-#include "InterfaceColors.hpp"
+#include "InterfaceColorConstants.hpp"
 #include "MissionBanner.hpp"
 #include "RecordingInterfaceCanvas.hpp"
 #include "ScreenTestConstants.hpp"

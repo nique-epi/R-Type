@@ -6,7 +6,7 @@
 #include <vector>
 #include "IInterfaceCanvas.hpp"
 #include "MotionPreference.hpp"
-#include "SquadronConstants.hpp"
+#include "SquadronShipPlacement.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::client {
@@ -44,19 +44,12 @@ class Squadron {
   void paint(IInterfaceCanvas& canvas, sf::Vector2i topLeft) const;
 
  private:
-  /** @brief Where a ship is, from the top-left corner of the box, and whether
-   * it has reached its place. */
-  struct ShipPlacement {
-    const SquadronShip* ship{};
-    sf::Vector2i topLeft;
-    bool landed{};
-  };
-
   /** @returns The time of the animation, in seconds. */
   [[nodiscard]] float seconds() const;
 
   /** @returns The ships that have entered, at a moment of the animation. */
-  [[nodiscard]] static std::vector<ShipPlacement> placements(float time);
+  [[nodiscard]] static std::vector<SquadronShipPlacement> placements(
+      float time);
 
   /** @brief Makes a random ship in place fire, then draws when the next shot
    * comes. */

@@ -16,6 +16,7 @@
 #include "ImagePlacement.hpp"
 #include "Logger.hpp"
 #include "PixelCanvas.hpp"
+#include "SmoothImage.hpp"
 #include "TextStyle.hpp"
 #include "TextWriter.hpp"
 #include "TextureArea.hpp"
@@ -71,14 +72,6 @@ class InterfaceCanvas : public IInterfaceCanvas {
   void show(sf::RenderTarget& target) const override;
 
  private:
-  /** @brief A texture laid smoothed over the picture: its smoothed copy, the
-   * area it covers, in pixels of the picture, and its tint. */
-  struct SmoothImage {
-    const sf::Texture* texture{};
-    sf::IntRect area;
-    sf::Color tint;
-  };
-
   /** @returns The loaded texture of an id, or nullptr once the log says it is
    * missing; a missing id is reported once. */
   [[nodiscard]] const sf::Texture* foundTexture(std::string_view assetId);

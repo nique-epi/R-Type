@@ -8,18 +8,20 @@
 #include "BackgroundConstants.hpp"
 #include "Caption.hpp"
 #include "ComponentRegistry.hpp"
+#include "DrawCall.hpp"
 #include "Entity.hpp"
-#include "EntitySpriteConstants.hpp"
 #include "HitFlash.hpp"
 #include "IDrawSurface.hpp"
-#include "InterfaceColors.hpp"
+#include "InterfaceColorConstants.hpp"
 #include "Invulnerability.hpp"
 #include "Nudge.hpp"
+#include "PilotColor.hpp"
 #include "PilotShip.hpp"
 #include "Position.hpp"
 #include "RenderingConstants.hpp"
 #include "Reveal.hpp"
 #include "Sprite.hpp"
+#include "SpriteAppearance.hpp"
 #include "SpriteDrawing.hpp"
 #include "SpriteFrame.hpp"
 #include "SpriteTone.hpp"
@@ -168,13 +170,12 @@ void RenderSystem::collectCaptions(engine::ComponentRegistry& components) {
   });
 }
 
-RenderSystem::SpriteLook RenderSystem::lookOf(
-    engine::ComponentRegistry& components, engine::Entity entity,
-    int frameHeight) {
+SpriteAppearance RenderSystem::lookOf(engine::ComponentRegistry& components,
+                                      engine::Entity entity, int frameHeight) {
   const Invulnerability* invulnerability =
       components.get<Invulnerability>(entity);
   const Reveal* reveal = components.get<Reveal>(entity);
-  return SpriteLook{
+  return SpriteAppearance{
       .tone = toneOf(components.get<HitFlash>(entity), invulnerability),
       .outline = outlineOf(invulnerability, components.get<PilotShip>(entity)),
       .offset = offsetOf(components.get<Nudge>(entity)),

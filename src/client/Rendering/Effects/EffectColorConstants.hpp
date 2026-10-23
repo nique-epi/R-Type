@@ -2,9 +2,9 @@
 
 #include <SFML/Graphics/Color.hpp>
 #include <array>
-#include "BackgroundColors.hpp"
-#include "InterfaceColors.hpp"
-#include "SpriteToneColors.hpp"
+#include "BackgroundColorConstants.hpp"
+#include "InterfaceColorConstants.hpp"
+#include "SpriteToneColorConstants.hpp"
 
 namespace rtype::client {
 

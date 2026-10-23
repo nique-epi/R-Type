@@ -10,16 +10,7 @@ target_link_libraries(rtype_client_rendering_interfaces
     SFML::Graphics
 )
 
-add_library(rtype_client_easing STATIC Easing.cpp)
-
-target_link_libraries(rtype_client_easing
-  PUBLIC
-    rtype_client_rendering_interfaces
-    rtype_engine_time
-)
-
-rtype_enable_warnings(rtype_client_easing)
-
+add_subdirectory(Easing)
 add_subdirectory(PixelCanvas)
 add_subdirectory(Shaders)
 add_subdirectory(Sprites)

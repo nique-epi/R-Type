@@ -39,7 +39,7 @@
 #include "SpriteEffectSystem.hpp"
 #include "SpriteFrame.hpp"
 #include "SpriteTone.hpp"
-#include "SpriteToneColors.hpp"
+#include "SpriteToneColorConstants.hpp"
 #include "TextStyle.hpp"
 #include "TimeConstants.hpp"
 
@@ -105,8 +105,8 @@ class EffectScene {
 
   /** @brief Moves the spawner and the systems of the sprites on, as a frame
    * of the game screen does. */
-  void advance(Duration elapsed) {
-    effects_.advance(elapsed);
+  void advance(Duration elapsed, FlashPreference preference) {
+    effects_.advance(elapsed, preference);
     animations_.update(components_, elapsed);
     hitFlashes_.update(components_, elapsed);
     spriteEffects_.update(components_, elapsed);
@@ -409,7 +409,7 @@ TEST(EffectSpawner, AnExplosionDisappearsAfterItsLastFrame) {
  */
 TEST(EffectSpawner, WithFlashesReducedAnExplosionStartsWithoutItsFlash) {
   EffectScene scene;
-  scene.effects().setFlashPreference(FlashPreference::Reduced);
+  scene.effects().advance(Duration::zero(), FlashPreference::Reduced);
 
   scene.effects().playExplosion(EntityType::Enemy, WHERE_IT_DIED);
 
@@ -529,7 +529,7 @@ TEST(EffectSpawner, AHitEntityFlashesForSixtyMilliseconds) {
  */
 TEST(EffectSpawner, WithFlashesReducedAHitEntityIsShaded) {
   EffectScene scene;
-  scene.effects().setFlashPreference(FlashPreference::Reduced);
+  scene.effects().advance(Duration::zero(), FlashPreference::Reduced);
   const Entity target = scene.target();
 
   scene.effects().playHit(target);
@@ -593,7 +593,7 @@ TEST(EffectSpawner, TheFifthKillOfAChainIsABigCatch) {
   EffectScene scene;
   for (int kill = 1; kill < KILLS_PER_BIG_CATCH; ++kill) {
     scene.effects().playExplosion(EntityType::Enemy, WHERE_IT_DIED);
-    scene.advance(CLOSE_KILLS);
+    scene.advance(CLOSE_KILLS, FlashPreference::Full);
   }
   const std::size_t particlesBefore = scene.count<Particle>();
 
@@ -658,7 +658,7 @@ TEST(EffectSpawner, TheWhitePictureOfAShipGoesAfterItsFreeze) {
   EffectScene scene;
   scene.effects().playShipDown(scene.shipOfPilot(SECOND_PILOT_COLOR));
 
-  scene.advance(SHIP_DOWN_HOLD_LENGTH);
+  scene.advance(SHIP_DOWN_HOLD_LENGTH, FlashPreference::Full);
 
   EXPECT_FALSE(scene.frozenPicture().has_value());
 }
@@ -685,10 +685,10 @@ TEST(EffectSpawner, TheDebrisOfAShipAreInTheColorsOfItsPilot) {
  */
 TEST(EffectSpawner, WithFlashesReducedAShipGoesDownWithoutFlashNorShake) {
   EffectScene scene;
-  scene.effects().setFlashPreference(FlashPreference::Reduced);
+  scene.effects().advance(Duration::zero(), FlashPreference::Reduced);
 
   scene.effects().playShipDown(scene.shipOfPilot(SECOND_PILOT_COLOR));
-  scene.advance(ONE_FRAME);
+  scene.advance(ONE_FRAME, FlashPreference::Reduced);
 
   const std::optional<Entity> picture = scene.frozenPicture();
   ASSERT_TRUE(picture.has_value());
@@ -753,7 +753,7 @@ TEST(EffectSpawner, AShipArrivingAtTheStartWaitsForThePilots) {
  */
 TEST(EffectSpawner, WithFlashesReducedAnInvulnerableShipIsSteady) {
   EffectScene scene;
-  scene.effects().setFlashPreference(FlashPreference::Reduced);
+  scene.effects().advance(Duration::zero(), FlashPreference::Reduced);
   const Entity ship = scene.shipOfPilot(SECOND_PILOT_COLOR);
 
   scene.effects().setInvulnerable(ship, true);

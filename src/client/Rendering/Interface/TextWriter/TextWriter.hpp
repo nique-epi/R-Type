@@ -1,13 +1,14 @@
 #pragma once
 
-#include <SFML/Graphics/Font.hpp>
 #include <SFML/Graphics/RenderTarget.hpp>
 #include <SFML/Graphics/Shader.hpp>
 #include <SFML/Graphics/Text.hpp>
 #include <SFML/System/Vector2.hpp>
 #include <optional>
 #include <string_view>
+#include "LoadedFont.hpp"
 #include "Logger.hpp"
+#include "TextLine.hpp"
 #include "TextStyle.hpp"
 
 namespace rtype::client {
@@ -34,17 +35,6 @@ class AssetLibrary;
  */
 class TextWriter {
  public:
-  /** @brief A line of text, where it goes and how it looks. */
-  struct Line {
-    /** @brief UTF-8 text. */
-    std::string_view text;
-    /** @brief Top-left corner of the line, its top-right corner with
-     * TextAlignment::Right, or the middle of its top edge with
-     * TextAlignment::Center, in pixels of the picture. */
-    sf::Vector2i anchor;
-    TextStyle style;
-  };
-
   /**
    * @throws AssetNotLoadedException when a font of the interface is not
    * loaded.
@@ -52,20 +42,13 @@ class TextWriter {
   explicit TextWriter(const AssetLibrary& library);
 
   /** @brief Writes the line on @p target, on whole pixels. */
-  void write(sf::RenderTarget& target, const Line& line) const;
+  void write(sf::RenderTarget& target, const TextLine& line) const;
 
   /** @returns How wide a line of UTF-8 text is in a font, in pixels, as
    * write() places it. */
   [[nodiscard]] int width(std::string_view text, TextFont font) const;
 
  private:
-  /** @brief A font of the interface, and the row of its baseline below the
-   * top of a line. */
-  struct LoadedFont {
-    const sf::Font* font{};
-    int baselineRow{};
-  };
-
   [[nodiscard]] const LoadedFont& loadedFontOf(TextFont font) const;
 
   /** @returns A line of text in a font, at TEXT_CHARACTER_SIZE, not placed. */
@@ -75,7 +58,7 @@ class TextWriter {
    * its baseline under the anchor, shifted left by its width or half of it
    * when aligned right or centered. */
   [[nodiscard]] sf::Vector2i positionOf(const sf::Text& text,
-                                        const Line& line) const;
+                                        const TextLine& line) const;
 
   LoadedFont regularFont_;
   LoadedFont smallFont_;

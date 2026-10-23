@@ -3,7 +3,8 @@
 #include <SFML/System/Vector2.hpp>
 #include <array>
 #include <string_view>
-#include "InterfaceColors.hpp"
+#include "InterfaceColorConstants.hpp"
+#include "SquadronShip.hpp"
 #include "TextStyle.hpp"
 
 namespace rtype::client {
@@ -37,20 +38,6 @@ constexpr std::string_view SQUADRON_TITLE = "SQUADRON";
 constexpr sf::Vector2i SQUADRON_TITLE_POSITION(8, 8);
 constexpr TextStyle SQUADRON_TITLE_STYLE{
     .font = TextFont::Regular, .color = HUD_CYAN, .outlined = true};
-
-/**
- * @brief One ship of the formation: its player color, by its row in the entity
- * sheet; its place in the box, in pixels; when it enters, in seconds; the
- * phase of its bobbing, in radians; how far below its place it enters, in
- * pixels.
- */
-struct SquadronShip {
-  int color{};
-  sf::Vector2f place;
-  float arrival{};
-  float bobPhase{};
-  float entryDrop{};
-};
 
 /** @brief The four ships, one per player color, in the order they enter. */
 constexpr std::array SQUADRON_SHIPS{

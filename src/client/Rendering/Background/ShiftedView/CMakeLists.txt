@@ -1,0 +1,7 @@
+add_library(rtype_client_shifted_view STATIC ShiftedView.cpp)
+
+target_include_directories(rtype_client_shifted_view PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+
+target_link_libraries(rtype_client_shifted_view PUBLIC rtype_client_background)
+
+rtype_enable_warnings(rtype_client_shifted_view)

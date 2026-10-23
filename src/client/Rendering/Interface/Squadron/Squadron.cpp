@@ -16,12 +16,14 @@
 #include "EntitySprites.hpp"
 #include "IInterfaceCanvas.hpp"
 #include "ImagePlacement.hpp"
-#include "InterfaceColors.hpp"
+#include "InterfaceColorConstants.hpp"
 #include "MotionPreference.hpp"
 #include "RandomRange.hpp"
 #include "RenderingConstants.hpp"
 #include "SpriteFrame.hpp"
 #include "SquadronConstants.hpp"
+#include "SquadronShip.hpp"
+#include "SquadronShipPlacement.hpp"
 #include "TextureArea.hpp"
 #include "TimeConstants.hpp"
 
@@ -158,7 +160,7 @@ void Squadron::paint(IInterfaceCanvas& canvas, sf::Vector2i topLeft) const {
   }
   const game::SpriteFrame shipFrame =
       PLAYER_SHIP_ANIMATION.frameAt(elapsed_).value_or(PLAYER_SHIP_FRAME);
-  for (const ShipPlacement& placement : placements(time)) {
+  for (const SquadronShipPlacement& placement : placements(time)) {
     canvas.drawImage(
         TextureArea{.assetId = ENTITY_SHEET_ID,
                     .rectangle = rectangleOf(
@@ -171,7 +173,7 @@ float Squadron::seconds() const {
   return std::chrono::duration<float>(elapsed_).count();
 }
 
-std::vector<Squadron::ShipPlacement> Squadron::placements(float time) {
+std::vector<SquadronShipPlacement> Squadron::placements(float time) {
   const float drift =
       smoothStep((time - SQUADRON_DRIFT_START) / SQUADRON_DRIFT_RAMP);
   const float angle = FULL_TURN * time / SQUADRON_DRIFT_PERIOD;
@@ -179,7 +181,7 @@ std::vector<Squadron::ShipPlacement> Squadron::placements(float time) {
       roundHalfUp(SQUADRON_DRIFT_X * drift * std::sin(angle)),
       roundHalfUp(SQUADRON_DRIFT_Y * drift *
                   std::sin(SQUADRON_DRIFT_VERTICAL_LOOPS * angle)));
-  std::vector<ShipPlacement> placed;
+  std::vector<SquadronShipPlacement> placed;
   placed.reserve(SQUADRON_SHIPS.size());
   for (const SquadronShip& ship : SQUADRON_SHIPS) {
     if (time < ship.arrival) {
@@ -203,12 +205,13 @@ std::vector<Squadron::ShipPlacement> Squadron::placements(float time) {
 }
 
 void Squadron::fire(float time) {
-  std::vector<ShipPlacement> ready = placements(time);
-  std::erase_if(
-      ready, [](const ShipPlacement& placement) { return !placement.landed; });
+  std::vector<SquadronShipPlacement> ready = placements(time);
+  std::erase_if(ready, [](const SquadronShipPlacement& placement) {
+    return !placement.landed;
+  });
   if (!ready.empty()) {
     std::uniform_int_distribution<std::size_t> shooters(0, ready.size() - 1);
-    const ShipPlacement& shooter = ready[shooters(random_)];
+    const SquadronShipPlacement& shooter = ready[shooters(random_)];
     missiles_.push_back(sf::Vector2f(shooter.topLeft) + SQUADRON_MUZZLE);
   }
   nextShot_ = time + randomBetween(random_, SQUADRON_SHORTEST_FIRE_GAP,

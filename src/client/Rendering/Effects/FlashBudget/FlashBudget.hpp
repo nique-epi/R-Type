@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include "FlashLoan.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::client {
@@ -16,16 +17,10 @@ namespace rtype::client {
  */
 class FlashBudget {
  public:
-  /** @brief Pixels an effect flashes, and for how long from now. */
-  struct Loan {
-    int area{};
-    engine::Duration remaining{};
-  };
-
   /** @returns Whether the pixels are lent: true when they fit under
    * FLASH_AREA_MAXIMUM with every loan still running, which this one then
    * joins; false otherwise, and nothing is lent. */
-  [[nodiscard]] bool reserve(Loan loan);
+  [[nodiscard]] bool reserve(FlashLoan loan);
 
   /** @brief Moves every loan on by the elapsed time; a loan whose time
    * passed gives its pixels back. */
@@ -35,7 +30,7 @@ class FlashBudget {
   [[nodiscard]] int areaInUse() const;
 
  private:
-  std::vector<Loan> loans_;
+  std::vector<FlashLoan> loans_;
 };
 
 }  // namespace rtype::client

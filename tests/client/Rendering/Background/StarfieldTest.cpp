@@ -7,12 +7,13 @@
 #include <cstddef>
 #include <cstdint>
 #include <vector>
-#include "BackgroundColors.hpp"
+#include "BackgroundColorConstants.hpp"
 #include "BackgroundConstants.hpp"
 #include "ColoredPixel.hpp"
 #include "PlanetImage.hpp"
 #include "RecordingPixelSurface.hpp"
 #include "Star.hpp"
+#include "StarTwinkleStep.hpp"
 #include "Starfield.hpp"
 #include "TimeConstants.hpp"
 #include "TimeTestConstants.hpp"

@@ -7,8 +7,10 @@
 #include <variant>
 #include "ActionSet.hpp"
 #include "AnimationSystem.hpp"
+#include "EffectSpawner.hpp"
 #include "EntityMessage.hpp"
 #include "FlashPreference.hpp"
+#include "GameScreenParts.hpp"
 #include "GroundEffectSystem.hpp"
 #include "HitFlashSystem.hpp"
 #include "IEntityLayer.hpp"
@@ -30,7 +32,30 @@
 
 namespace rtype::client {
 
-GameScreen::GameScreen(Parts parts, std::unique_ptr<IEntityLayer> entityLayer,
+namespace {
+
+/** @returns The version of the effects the settings ask for: the one without
+ * flash when the player reduced flashes. */
+FlashPreference flashPreferenceOf(const PlayerSettings& settings) {
+  return settings.reduceFlashes ? FlashPreference::Reduced
+                                : FlashPreference::Full;
+}
+
+/** @brief Sets the speed of the stars and the shake of the sky for the time
+ * since the start of the game: the warp of MISSION START with flashes, their
+ * own speed without. */
+void moveSky(ISky& sky, const EffectSpawner& effects,
+             FlashPreference preference) {
+  sky.setSpeedFactor(preference == FlashPreference::Full
+                         ? warpSpeedFactorAt(effects.sinceStart())
+                         : 1.0F);
+  sky.setOffset(effects.cameraOffset());
+}
+
+}  // namespace
+
+GameScreen::GameScreen(GameScreenParts parts,
+                       std::unique_ptr<IEntityLayer> entityLayer,
                        std::unique_ptr<IInterfaceCanvas> statusCanvas)
     : navigator_(&parts.navigator.get()),
       entityLayer_(std::move(entityLayer)),
@@ -47,7 +72,7 @@ GameScreen::GameScreen(Parts parts, std::unique_ptr<IEntityLayer> entityLayer,
   systems_.add(std::make_unique<HitFlashSystem>());
   systems_.add(std::make_unique<SpriteEffectSystem>());
   systems_.add(std::make_unique<GroundEffectSystem>());
-  moveSky();
+  moveSky(*sky_, effects_, flashPreferenceOf(*settings_));
   entityLayer_->paint(components_, effects_.cameraOffset());
   repaintStatus();
 }
@@ -84,10 +109,10 @@ void GameScreen::update(engine::Duration elapsed) {
     loggedActions_ = held.bits();
   }
   systems_.run(components_, elapsed);
-  effects_.setFlashPreference(flashPreference());
-  effects_.advance(elapsed);
+  const FlashPreference preference = flashPreferenceOf(*settings_);
+  effects_.advance(elapsed, preference);
   applyEntityMessages();
-  moveSky();
+  moveSky(*sky_, effects_, preference);
   entityLayer_->paint(components_, effects_.cameraOffset());
   repaintStatusWhenChanged();
 }
@@ -119,18 +144,6 @@ void GameScreen::repaintStatus() {
   statusCanvas_->display();
   paintedStatusRevision_ = scoreBoard_.revision();
   paintedBanner_ = banner;
-}
-
-void GameScreen::moveSky() {
-  const bool flashes = flashPreference() == FlashPreference::Full;
-  sky_->setSpeedFactor(flashes ? warpSpeedFactorAt(effects_.sinceStart())
-                               : 1.0F);
-  sky_->setOffset(effects_.cameraOffset());
-}
-
-FlashPreference GameScreen::flashPreference() const {
-  return settings_->reduceFlashes ? FlashPreference::Reduced
-                                  : FlashPreference::Full;
 }
 
 ActionSet GameScreen::playerActions() const { return playerCommands_.held(); }

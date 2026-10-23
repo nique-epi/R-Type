@@ -18,7 +18,7 @@
 #include "CutCornerBox.hpp"
 #include "IInterfaceCanvas.hpp"
 #include "ImagePlacement.hpp"
-#include "InterfaceColors.hpp"
+#include "InterfaceColorConstants.hpp"
 #include "InterfaceConstants.hpp"
 #include "Label.hpp"
 #include "PlayfieldMapping.hpp"

@@ -5,6 +5,7 @@
 #include <chrono>
 #include <cstddef>
 #include "Animation.hpp"
+#include "EffectAnimations.hpp"
 #include "EntitySpriteConstants.hpp"
 #include "SheetRow.hpp"
 #include "SpriteFrame.hpp"
@@ -18,16 +19,6 @@ namespace rtype::client {
  * holds one row, and frames and rows are SPRITE_SPACING pixels apart.
  */
 constexpr const char* EFFECT_SHEET_ID = "sprites/effects.png";
-
-/**
- * @brief The two versions of an effect: the standard one, and the one played
- * when the player turned REDUCE FLASHES on, which shows no white burst. Both
- * have as many frames, each as long.
- */
-struct EffectAnimations {
-  Animation standard;
-  Animation withoutFlash;
-};
 
 /** @brief Sizes of the frames of the effects, in pixels of the sheet. */
 constexpr int BYDO_EXPLOSION_SIZE = 48;

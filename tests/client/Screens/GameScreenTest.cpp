@@ -20,6 +20,7 @@
 #include "EntityReplicatorTestConstants.hpp"
 #include "FakeEntityMessageSource.hpp"
 #include "GameScreen.hpp"
+#include "GameScreenParts.hpp"
 #include "IEntityLayer.hpp"
 #include "IScreen.hpp"
 #include "KeyPress.hpp"
@@ -44,6 +45,7 @@ using rtype::client::BoundAction;
 using rtype::client::BYDO_EXPLOSION_FRAME;
 using rtype::client::ConnectionStatus;
 using rtype::client::GameScreen;
+using rtype::client::GameScreenParts;
 using rtype::client::IEntityLayer;
 using rtype::client::IScreen;
 using rtype::client::OPTIONS_KEY;
@@ -145,13 +147,13 @@ struct LoneGameParts {
   RecordingSky sky;
 
   /** @returns The parts of a game screen, borrowing these doubles. */
-  [[nodiscard]] GameScreen::Parts parts() {
-    return GameScreen::Parts{.navigator = navigator,
-                             .settings = settings,
-                             .inputs = inputs,
-                             .entityMessages = entityMessages,
-                             .connection = connection,
-                             .sky = sky};
+  [[nodiscard]] GameScreenParts parts() {
+    return GameScreenParts{.navigator = navigator,
+                           .settings = settings,
+                           .inputs = inputs,
+                           .entityMessages = entityMessages,
+                           .connection = connection,
+                           .sky = sky};
   }
 
   /** @returns A status canvas recording into statusCanvas. */
@@ -209,12 +211,12 @@ class GameScreenTest : public ::testing::Test {
   ScreenStack screens_{[this](ScreenId screen) -> std::unique_ptr<IScreen> {
     if (screen == ScreenId::Game) {
       return std::make_unique<GameScreen>(
-          GameScreen::Parts{.navigator = screens_,
-                            .settings = settings_,
-                            .inputs = inputs_,
-                            .entityMessages = entityMessages_,
-                            .connection = connection_,
-                            .sky = sky_},
+          GameScreenParts{.navigator = screens_,
+                          .settings = settings_,
+                          .inputs = inputs_,
+                          .entityMessages = entityMessages_,
+                          .connection = connection_,
+                          .sky = sky_},
           std::make_unique<RecordingEntityLayer>(layerRecord_),
           std::make_unique<RecordingInterfaceCanvas>(statusCanvas_));
     }

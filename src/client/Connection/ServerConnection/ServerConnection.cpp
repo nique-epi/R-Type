@@ -34,6 +34,7 @@
 #include "NetworkException.hpp"
 #include "OutgoingDatagram.hpp"
 #include "PacketHeader.hpp"
+#include "PendingDeparture.hpp"
 #include "PlayerInput.hpp"
 #include "ProtocolConstants.hpp"
 #include "ReadyState.hpp"
@@ -301,11 +302,11 @@ void ServerConnection::sendHeartbeatWhenSilent() {
 }
 
 void ServerConnection::leave() {
-  departure_ = Departure{.server = server_,
-                         .sessionToken = sessionToken_,
-                         .nextSequence = nextSequence_,
-                         .copiesLeft = DISCONNECTION_COPY_COUNT,
-                         .sinceCopy = engine::Duration::zero()};
+  departure_ = PendingDeparture{.server = server_,
+                                .sessionToken = sessionToken_,
+                                .nextSequence = nextSequence_,
+                                .copiesLeft = DISCONNECTION_COPY_COUNT,
+                                .sinceCopy = engine::Duration::zero()};
   sendDepartureCopy();
   logger_.info("left ", server_.address, " port ", server_.port);
 }

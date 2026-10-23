@@ -6,7 +6,6 @@
 #include <cstddef>
 #include <cstdint>
 #include <numbers>
-#include <ratio>
 #include <string_view>
 #include "PlayfieldConstants.hpp"
 #include "Star.hpp"
@@ -76,11 +75,8 @@ constexpr float STAR_WRAP_DISTANCE =
 /** @brief Chance that a star is warm: a warm near star is drawn gold. */
 constexpr float WARM_STAR_CHANCE = 0.2F;
 
-/**
- * @brief Twinkling: time runs in steps of a third of a second, and each star
- * twinkles during one step out of STAR_TWINKLE_CYCLE_STEPS.
- */
-using StarTwinkleStep = std::chrono::duration<std::int64_t, std::ratio<1, 3>>;
+/** @brief Each star twinkles during one StarTwinkleStep out of
+ * STAR_TWINKLE_CYCLE_STEPS. */
 constexpr std::int64_t STAR_TWINKLE_CYCLE_STEPS = 8;
 
 /**

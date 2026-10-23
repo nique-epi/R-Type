@@ -15,6 +15,7 @@
 #include "EntitySprites.hpp"
 #include "EntityType.hpp"
 #include "GameEvent.hpp"
+#include "NetworkEntityTable.hpp"
 #include "PilotShip.hpp"
 #include "Position.hpp"
 #include "ProtocolConstants.hpp"
@@ -78,6 +79,64 @@ std::optional<int> pilotColorOf(std::uint8_t playerNumber) {
   return playerNumber - network::FIRST_PLAYER_NUMBER;
 }
 
+/** @brief Puts the entity at the position; does nothing for an entity
+ * without a Position. */
+void moveEntity(engine::ComponentRegistry& components, engine::Entity entity,
+                game::Position position) {
+  auto* current = components.get<game::Position>(entity);
+  if (current != nullptr) {
+    *current = position;
+  }
+}
+
+/** @brief Plays the appearance of an entity created: the arrival of a ship,
+ * the muzzle flash of a missile, nothing for a Bydo. */
+void announce(EffectSpawner& effects, engine::ComponentRegistry& components,
+              engine::Entity entity) {
+  const game::EntityType* type = components.get<game::EntityType>(entity);
+  const game::Position* position = components.get<game::Position>(entity);
+  if (type == nullptr || position == nullptr) {
+    return;
+  }
+  if (*type == game::EntityType::Player) {
+    effects.playArrival(entity);
+    return;
+  }
+  effects.playAppearance(*type, *position);
+}
+
+/** @brief Plays the explosion of the entity, centered where it stands: T4 for
+ * a ship; does nothing for an entity without a Position or an EntityType. */
+void explode(EffectSpawner& effects, engine::ComponentRegistry& components,
+             engine::Entity entity) {
+  const game::EntityType* type = components.get<game::EntityType>(entity);
+  const game::Position* position = components.get<game::Position>(entity);
+  if (type == nullptr || position == nullptr) {
+    return;
+  }
+  if (*type == game::EntityType::Player) {
+    effects.playShipDown(entity);
+    return;
+  }
+  effects.playExplosion(*type, *position);
+}
+
+/** @returns The ship a network id names, or nothing when the client has no
+ * entity of that id or it is no ship. */
+std::optional<engine::Entity> shipOf(
+    const engine::NetworkEntityTable& entityByNetworkId,
+    engine::ComponentRegistry& components, std::uint32_t entityId) {
+  const std::optional<engine::Entity> known = entityByNetworkId.find(entityId);
+  if (!known.has_value()) {
+    return std::nullopt;
+  }
+  const game::EntityType* type = components.get<game::EntityType>(*known);
+  if (type == nullptr || *type != game::EntityType::Player) {
+    return std::nullopt;
+  }
+  return known;
+}
+
 }  // namespace
 
 EntityReplicator::EntityReplicator(engine::EntityRegistry& entities,
@@ -92,7 +151,7 @@ void EntityReplicator::apply(const network::EntitySpawned& message) {
   if (const std::optional<engine::Entity> created =
           create(announcedBy(message));
       created.has_value()) {
-    announce(*created);
+    announce(*effects_, *components_, *created);
   }
 }
 
@@ -103,7 +162,7 @@ void EntityReplicator::apply(const network::WorldState& state) {
   const std::vector<engine::Entity> created = applyEntities(state.entities);
   applyPlayers(state.players);
   for (const engine::Entity entity : created) {
-    announce(entity);
+    announce(*effects_, *components_, entity);
   }
 }
 
@@ -114,7 +173,7 @@ void EntityReplicator::apply(const network::EntityDestroyed& message) {
     return;
   }
   if (message.reason == network::DestructionReason::Killed) {
-    explode(*known);
+    explode(*effects_, *components_, *known);
   }
   components_->destroy(*known);
   entityByNetworkId_.unbind(message.entityId);
@@ -167,7 +226,8 @@ std::vector<engine::Entity> EntityReplicator::applyEntities(
     const std::optional<engine::Entity> known =
         entityByNetworkId_.find(listed.entityId);
     if (known.has_value()) {
-      move(*known, game::Position{.x = listed.x, .y = listed.y});
+      moveEntity(*components_, *known,
+                 game::Position{.x = listed.x, .y = listed.y});
     } else if (const std::optional<engine::Entity> entity = create(listed);
                entity.has_value()) {
       created.push_back(*entity);
@@ -189,57 +249,13 @@ void EntityReplicator::applyPlayers(
 
 void EntityReplicator::markShip(const network::PlayerState& player,
                                 int pilotColor) {
-  const std::optional<engine::Entity> ship = shipOf(player.shipEntityId);
+  const std::optional<engine::Entity> ship =
+      shipOf(entityByNetworkId_, *components_, player.shipEntityId);
   if (!ship.has_value()) {
     return;
   }
   components_->add(*ship, PilotShip{.color = pilotColor});
   effects_->setInvulnerable(*ship, player.invulnerable);
-}
-
-void EntityReplicator::move(engine::Entity entity, game::Position position) {
-  auto* current = components_->get<game::Position>(entity);
-  if (current != nullptr) {
-    *current = position;
-  }
-}
-
-void EntityReplicator::announce(engine::Entity entity) {
-  const game::EntityType* type = components_->get<game::EntityType>(entity);
-  const game::Position* position = components_->get<game::Position>(entity);
-  if (type == nullptr || position == nullptr) {
-    return;
-  }
-  if (*type == game::EntityType::Player) {
-    effects_->playArrival(entity);
-    return;
-  }
-  effects_->playAppearance(*type, *position);
-}
-
-void EntityReplicator::explode(engine::Entity entity) {
-  const game::EntityType* type = components_->get<game::EntityType>(entity);
-  const game::Position* position = components_->get<game::Position>(entity);
-  if (type == nullptr || position == nullptr) {
-    return;
-  }
-  if (*type == game::EntityType::Player) {
-    effects_->playShipDown(entity);
-    return;
-  }
-  effects_->playExplosion(*type, *position);
-}
-
-std::optional<engine::Entity> EntityReplicator::shipOf(std::uint32_t entityId) {
-  const std::optional<engine::Entity> known = entityByNetworkId_.find(entityId);
-  if (!known.has_value()) {
-    return std::nullopt;
-  }
-  const game::EntityType* type = components_->get<game::EntityType>(*known);
-  if (type == nullptr || *type != game::EntityType::Player) {
-    return std::nullopt;
-  }
-  return known;
 }
 
 }  // namespace rtype::client

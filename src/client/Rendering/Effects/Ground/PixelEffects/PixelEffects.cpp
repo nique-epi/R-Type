@@ -5,18 +5,22 @@
 #include <chrono>
 #include <cstddef>
 #include <cstdint>
+#include "ArrivalLines.hpp"
 #include "BackgroundConstants.hpp"
+#include "Burst.hpp"
 #include "ComponentRegistry.hpp"
 #include "Entity.hpp"
 #include "EntityRegistry.hpp"
 #include "GroundEffectConstants.hpp"
 #include "Particle.hpp"
+#include "PlacedBurst.hpp"
+#include "PlacedRing.hpp"
 #include "Position.hpp"
 #include "RandomRange.hpp"
 #include "RenderingConstants.hpp"
 #include "Shockwave.hpp"
 #include "SpeedLine.hpp"
-#include "SpriteToneColors.hpp"
+#include "SpriteToneColorConstants.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::client {
@@ -26,7 +30,7 @@ PixelEffects::PixelEffects(engine::EntityRegistry& entities,
                            std::uint32_t seed)
     : entities_(&entities), components_(&components), random_(seed) {}
 
-void PixelEffects::burst(const Particles& particles) {
+void PixelEffects::burst(const PlacedBurst& particles) {
   const std::size_t room =
       PARTICLE_MAXIMUM - std::min(particleCount(), PARTICLE_MAXIMUM);
   const std::size_t count = std::min(particles.shape.count, room);
@@ -35,7 +39,7 @@ void PixelEffects::burst(const Particles& particles) {
   }
 }
 
-void PixelEffects::wave(const Wave& wave) {
+void PixelEffects::wave(const PlacedRing& wave) {
   const engine::Entity entity = addEntityAt(wave.center);
   components_->add(entity, Shockwave{.radius = wave.shape.radius,
                                      .age = -wave.delay,
@@ -64,7 +68,7 @@ std::size_t PixelEffects::particleCount() {
   return count;
 }
 
-void PixelEffects::addParticle(const Particles& particles) {
+void PixelEffects::addParticle(const PlacedBurst& particles) {
   const Burst& shape = particles.shape;
   const float direction =
       particles.aim +

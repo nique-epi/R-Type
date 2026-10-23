@@ -9,11 +9,13 @@
 #include <string_view>
 #include "AssetLibrary.hpp"
 #include "BackgroundConstants.hpp"
-#include "CrispTextShader.hpp"
+#include "CrispTextShaderConstants.hpp"
 #include "FragmentShader.hpp"
-#include "InterfaceColors.hpp"
+#include "InterfaceColorConstants.hpp"
 #include "InterfaceConstants.hpp"
+#include "LoadedFont.hpp"
 #include "RenderingConstants.hpp"
+#include "TextLine.hpp"
 #include "TextStyle.hpp"
 
 namespace rtype::client {
@@ -36,7 +38,7 @@ TextWriter::TextWriter(const AssetLibrary& library)
       logger_(std::string(INTERFACE_LOG_MODULE_NAME)),
       crispText_(loadFragmentShader(CRISP_TEXT_SHADER, logger_)) {}
 
-void TextWriter::write(sf::RenderTarget& target, const Line& line) const {
+void TextWriter::write(sf::RenderTarget& target, const TextLine& line) const {
   sf::Text text = lineOf(line.text, line.style.font);
   const sf::Vector2i position = positionOf(text, line);
   const sf::RenderStates states(crispText_.has_value() ? &*crispText_
@@ -59,7 +61,7 @@ int TextWriter::width(std::string_view text, TextFont font) const {
   return static_cast<int>(std::round(widthOf(lineOf(text, font))));
 }
 
-const TextWriter::LoadedFont& TextWriter::loadedFontOf(TextFont font) const {
+const LoadedFont& TextWriter::loadedFontOf(TextFont font) const {
   switch (font) {
     case TextFont::Small:
       return smallFont_;
@@ -75,7 +77,7 @@ sf::Text TextWriter::lineOf(std::string_view text, TextFont font) const {
 }
 
 sf::Vector2i TextWriter::positionOf(const sf::Text& text,
-                                    const Line& line) const {
+                                    const TextLine& line) const {
   sf::Vector2i position(
       line.anchor.x, line.anchor.y + loadedFontOf(line.style.font).baselineRow -
                          static_cast<int>(TEXT_CHARACTER_SIZE));

@@ -12,9 +12,9 @@
 #include <string_view>
 #include "BackgroundConstants.hpp"
 #include "EntitySprites.hpp"
-#include "FlashShader.hpp"
+#include "FlashShaderConstants.hpp"
 #include "FragmentShader.hpp"
-#include "GhostShader.hpp"
+#include "GhostShaderConstants.hpp"
 #include "ITextureSource.hpp"
 #include "InterfaceConstants.hpp"
 #include "PixelRounding.hpp"
@@ -22,7 +22,8 @@
 #include "RenderingConstants.hpp"
 #include "SpriteDrawing.hpp"
 #include "SpriteTone.hpp"
-#include "SpriteToneColors.hpp"
+#include "SpriteToneColorConstants.hpp"
+#include "TextLine.hpp"
 #include "TextStyle.hpp"
 #include "TextWriter.hpp"
 
@@ -57,11 +58,10 @@ void SfmlDrawSurface::write(std::string_view text, game::Position center,
   style.alignment = TextAlignment::Center;
   writer_.write(
       canvas_,
-      TextWriter::Line{
-          .text = text,
-          .anchor = {middle.x,
-                     middle.y - static_cast<int>(TEXT_LINE_HEIGHT * HALF)},
-          .style = style});
+      TextLine{.text = text,
+               .anchor = {middle.x,
+                          middle.y - static_cast<int>(TEXT_LINE_HEIGHT * HALF)},
+               .style = style});
 }
 
 const sf::Texture* SfmlDrawSurface::foundTexture(std::string_view assetId) {

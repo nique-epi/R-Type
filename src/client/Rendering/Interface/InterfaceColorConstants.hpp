@@ -3,7 +3,8 @@
 #include <SFML/Graphics/Color.hpp>
 #include <array>
 #include <cstdint>
-#include "BackgroundColors.hpp"
+#include "BackgroundColorConstants.hpp"
+#include "PlayerColors.hpp"
 
 namespace rtype::client {
 
@@ -37,14 +38,6 @@ constexpr sf::Color PLAYER_LIGHT_BLUE(127, 230, 255);
 constexpr sf::Color PLAYER_LIGHT_PINK(255, 163, 207);
 constexpr sf::Color PLAYER_LIGHT_GREEN(210, 255, 138);
 constexpr sf::Color PLAYER_LIGHT_ORANGE(255, 211, 138);
-
-/** @brief The two shades of a player color: the main color of its ship, what
- * the interface paints in the color of the player, and its light shade, the
- * nickname of the player written on the sky. */
-struct PlayerColors {
-  sf::Color ship;
-  sf::Color light;
-};
 
 /** @brief The shades of each player color, in the order of the rows of the
  * entity sheet: player 1 first. */

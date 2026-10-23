@@ -8,13 +8,14 @@
 #include <random>
 #include <ranges>
 #include <vector>
-#include "BackgroundColors.hpp"
+#include "BackgroundColorConstants.hpp"
 #include "BackgroundConstants.hpp"
 #include "ColoredPixel.hpp"
 #include "IPixelSurface.hpp"
 #include "PixelRounding.hpp"
 #include "RandomRange.hpp"
 #include "Star.hpp"
+#include "StarTwinkleStep.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::client {

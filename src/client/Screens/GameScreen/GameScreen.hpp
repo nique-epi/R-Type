@@ -1,7 +1,6 @@
 #pragma once
 
 #include <cstdint>
-#include <functional>
 #include <memory>
 #include <string>
 #include <vector>
@@ -11,14 +10,13 @@
 #include "EntityMessage.hpp"
 #include "EntityRegistry.hpp"
 #include "EntityReplicator.hpp"
-#include "FlashPreference.hpp"
+#include "GameScreenParts.hpp"
 #include "IEntityLayer.hpp"
 #include "IEntityMessageSource.hpp"
 #include "IInterfaceCanvas.hpp"
 #include "IPlayerInputLink.hpp"
 #include "IScreen.hpp"
 #include "IScreenNavigator.hpp"
-#include "IServerConnection.hpp"
 #include "ISky.hpp"
 #include "Logger.hpp"
 #include "MissionBanner.hpp"
@@ -80,36 +78,12 @@ struct PlayerSettings;
  */
 class GameScreen : public IScreen {
  public:
-  /** @brief What a game screen is built from, but the pictures it owns. */
-  struct Parts {
-    /** @brief Screens the game lives among, which must outlive it; the
-     * options are pushed over the game when OPTIONS_KEY is released. */
-    std::reference_wrapper<IScreenNavigator> navigator;
-    /** @brief Settings of the player, which must outlive the screen: the keys
-     * of the controls, and whether effects reduce their flashes, read at each
-     * update. */
-    std::reference_wrapper<const PlayerSettings> settings;
-    /** @brief Where the actions held go to the server, which must outlive the
-     * screen. */
-    std::reference_wrapper<IPlayerInputLink> inputs;
-    /** @brief Where the entity messages of the server come from, which must
-     * outlive the screen. */
-    std::reference_wrapper<IEntityMessageSource> entityMessages;
-    /** @brief The session the game started in: its waiting room and the
-     * number of this client, read when the screen is built. */
-    std::reference_wrapper<const IServerConnection> connection;
-    /** @brief The sky behind the screens, which must outlive the screen: its
-     * stars speed up at the start of the game, and it shakes with the
-     * camera. */
-    std::reference_wrapper<ISky> sky;
-  };
-
   /**
    * @param entityLayer Picture the entities are painted on, never null.
    * @param statusCanvas Picture the status band is painted on, never null.
    * The screen owns both, so they come apart from the parts it borrows.
    */
-  GameScreen(Parts parts, std::unique_ptr<IEntityLayer> entityLayer,
+  GameScreen(GameScreenParts parts, std::unique_ptr<IEntityLayer> entityLayer,
              std::unique_ptr<IInterfaceCanvas> statusCanvas);
 
   GameScreen(const GameScreen&) = delete;
@@ -139,12 +113,6 @@ class GameScreen : public IScreen {
   /** @brief Paints the status band from the score board, and the banner of
    * the start of the game over it, and keeps what was painted. */
   void repaintStatus();
-
-  /** @brief Sets the speed of the stars and the shake of the sky for the
-   * time since the start of the game. */
-  void moveSky();
-
-  [[nodiscard]] FlashPreference flashPreference() const;
 
   IScreenNavigator* navigator_;
   std::unique_ptr<IEntityLayer> entityLayer_;

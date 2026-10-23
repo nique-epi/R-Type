@@ -1,17 +1,14 @@
 #pragma once
 
-#include <SFML/Graphics/Color.hpp>
-#include <SFML/System/Vector2.hpp>
 #include <array>
-#include <cstdint>
-#include <optional>
 #include <vector>
 #include "ComponentRegistry.hpp"
+#include "DrawCall.hpp"
 #include "Entity.hpp"
 #include "IDrawSurface.hpp"
 #include "Position.hpp"
 #include "RenderingConstants.hpp"
-#include "SpriteTone.hpp"
+#include "SpriteAppearance.hpp"
 
 namespace rtype::game {
 
@@ -44,26 +41,6 @@ class RenderSystem {
   void render(engine::ComponentRegistry& components, IDrawSurface& surface);
 
  private:
-  /** @brief How an entity is drawn beyond its sprite: its tone and outline,
-   * how many pixels of the canvas away from its Position, and how many rows
-   * of its frame show, from the top, with or without a leading line. */
-  struct SpriteLook {
-    SpriteTone tone{};
-    std::optional<sf::Color> outline;
-    sf::Vector2i offset;
-    std::optional<int> shownRows;
-    bool leadingLine = false;
-  };
-
-  /** @brief One sprite or one caption to draw, in its layer. */
-  struct DrawCall {
-    std::uint32_t entityIndex{};
-    game::Position position{};
-    const game::Sprite* sprite{};
-    const Caption* caption{};
-    SpriteLook look;
-  };
-
   /** @brief Adds a draw call for every entity that has a Position and a
    * Sprite of a drawing layer. */
   void collectSprites(engine::ComponentRegistry& components);
@@ -74,9 +51,9 @@ class RenderSystem {
 
   /** @returns How the effects on an entity change its drawing, for a frame
    * @p frameHeight rows tall. */
-  [[nodiscard]] static SpriteLook lookOf(engine::ComponentRegistry& components,
-                                         engine::Entity entity,
-                                         int frameHeight);
+  [[nodiscard]] static SpriteAppearance lookOf(
+      engine::ComponentRegistry& components, engine::Entity entity,
+      int frameHeight);
 
   /** @brief Draws the sprite or writes the caption of a call. */
   static void draw(IDrawSurface& surface, const DrawCall& call);

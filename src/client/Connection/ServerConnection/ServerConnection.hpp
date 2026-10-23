@@ -23,6 +23,7 @@
 #include "MessagePayload.hpp"
 #include "MessageType.hpp"
 #include "PacketHeader.hpp"
+#include "PendingDeparture.hpp"
 #include "ProtocolConstants.hpp"
 #include "TimeConstants.hpp"
 
@@ -127,16 +128,6 @@ class ServerConnection : public IServerConnection,
   [[nodiscard]] std::size_t wrongTokenCount() const;
 
  private:
-  /** @brief The copies of a Disconnection still due to a server the player
-   * left, sent with the token and the sequences of the session left. */
-  struct Departure {
-    network::Endpoint server;
-    std::uint64_t sessionToken{};
-    std::uint16_t nextSequence{};
-    int copiesLeft{};
-    engine::Duration sinceCopy{};
-  };
-
   void registerAnswers();
   void registerSessionMessages();
 
@@ -250,7 +241,7 @@ class ServerConnection : public IServerConnection,
   std::vector<network::LobbyPlayer> lobbyPlayers_;
   std::optional<bool> requestedReady_;
   bool gameStarted_ = false;
-  std::optional<Departure> departure_;
+  std::optional<PendingDeparture> departure_;
   std::vector<network::IncomingDatagram> received_;
   std::vector<EntityMessage> entityMessages_;
   GameEventHistory gameEvents_;

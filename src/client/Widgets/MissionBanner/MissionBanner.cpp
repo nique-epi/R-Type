@@ -4,7 +4,7 @@
 #include <algorithm>
 #include <cstddef>
 #include "IInterfaceCanvas.hpp"
-#include "InterfaceColors.hpp"
+#include "InterfaceColorConstants.hpp"
 #include "InterfaceConstants.hpp"
 #include "MissionBannerConstants.hpp"
 #include "TextStyle.hpp"

@@ -2,24 +2,15 @@
 
 #include <chrono>
 #include <optional>
+#include "Burst.hpp"
 #include "CameraShakeConstants.hpp"
 #include "EffectConstants.hpp"
 #include "GroundEffectConstants.hpp"
+#include "KillTier.hpp"
+#include "Ring.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::client {
-
-/**
- * @brief What a Bydo destroyed plays at its tier: how much longer its
- * explosion holds its first frame, its drops, its shockwave if any, and the
- * trauma it adds to the camera shake.
- */
-struct KillTier {
-  engine::Duration hold{};
-  Burst drops;
-  std::optional<Ring> ring;
-  float trauma{};
-};
 
 /** @brief Average life of a drop or a piece of debris, give or take a third,
  * and of a spark; the cone a spark leaves in, about 57 degrees. */

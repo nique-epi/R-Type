@@ -1,6 +1,5 @@
 #pragma once
 
-#include <cstdint>
 #include <optional>
 #include <span>
 #include <vector>
@@ -148,27 +147,6 @@ class EntityReplicator {
   /** @brief Marks the ship of a player with its pilot color and whether it
    * can be hit, when the client has that ship. */
   void markShip(const network::PlayerState& player, int pilotColor);
-
-  /**
-   * @brief Puts the entity at the position; does nothing for an entity
-   * without a Position.
-   */
-  void move(engine::Entity entity, game::Position position);
-
-  /** @brief Plays the appearance of an entity created: the arrival of a
-   * ship, the muzzle flash of a missile, nothing for a Bydo. */
-  void announce(engine::Entity entity);
-
-  /**
-   * @brief Plays the explosion of the entity, centered where it stands: T4
-   * for a ship; does nothing for an entity without a Position or an
-   * EntityType.
-   */
-  void explode(engine::Entity entity);
-
-  /** @returns The ship a network id names, or nothing when the client has no
-   * entity of that id or it is no ship. */
-  std::optional<engine::Entity> shipOf(std::uint32_t entityId);
 
   engine::EntityRegistry* entities_{};
   engine::ComponentRegistry* components_{};

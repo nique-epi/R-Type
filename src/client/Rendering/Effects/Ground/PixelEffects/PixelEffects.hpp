@@ -1,14 +1,13 @@
 #pragma once
 
-#include <SFML/Graphics/Color.hpp>
 #include <cstddef>
 #include <cstdint>
 #include <random>
-#include <span>
+#include "ArrivalLines.hpp"
 #include "Entity.hpp"
-#include "GroundEffectConstants.hpp"
+#include "PlacedBurst.hpp"
+#include "PlacedRing.hpp"
 #include "Position.hpp"
-#include "TimeConstants.hpp"
 
 namespace rtype::engine {
 
@@ -33,36 +32,6 @@ namespace rtype::client {
  */
 class PixelEffects {
  public:
-  /** @brief A burst of particles: its shape, where it bursts and where it
-   * aims, the colors its particles go through, and how long it waits. */
-  struct Particles {
-    Burst shape;
-    game::Position center{};
-    float aim{};
-    std::span<const sf::Color> colors;
-    engine::Duration delay{};
-  };
-
-  /** @brief A shockwave: its shape, its center, its colors, and how long it
-   * waits. */
-  struct Wave {
-    Ring shape;
-    game::Position center{};
-    std::span<const sf::Color> colors;
-    engine::Duration delay{};
-  };
-
-  /** @brief The speed lines of a ship arriving: where it stands, the light
-   * shade of its pilot, whether every other line is FLASH_COLOR, how long
-   * they wait, and how long each then lives. */
-  struct ArrivalLines {
-    game::Position shipCenter{};
-    sf::Color light;
-    bool flashes = true;
-    engine::Duration delay{};
-    engine::Duration life{};
-  };
-
   /** @param seed Seed of the draws of the particles: std::random_device in
    * a game, a fixed value in a test. */
   PixelEffects(engine::EntityRegistry& entities,
@@ -74,10 +43,10 @@ class PixelEffects {
    * speed drawn between shape.slowest and shape.fastest, and lives shape.life
    * give or take shape.lifeSpread of it.
    */
-  void burst(const Particles& particles);
+  void burst(const PlacedBurst& particles);
 
   /** @brief Opens a shockwave. */
-  void wave(const Wave& wave);
+  void wave(const PlacedRing& wave);
 
   /** @brief Lays one speed line on each row of SPEED_LINE_ROWS, from the left
    * edge to the ship, each living `lines.life`. */
@@ -88,7 +57,7 @@ class PixelEffects {
   [[nodiscard]] std::size_t particleCount();
 
   /** @brief Creates one particle of a burst. */
-  void addParticle(const Particles& particles);
+  void addParticle(const PlacedBurst& particles);
 
   /** @returns A new entity at a position. */
   engine::Entity addEntityAt(game::Position position);

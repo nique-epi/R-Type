@@ -2,7 +2,7 @@
 #include <SFML/System/Vector2.hpp>
 #include <cstddef>
 #include <optional>
-#include "BackgroundColors.hpp"
+#include "BackgroundColorConstants.hpp"
 #include "PixelSize.hpp"
 #include "RecordingInterfaceCanvas.hpp"
 #include "WindowSizeChart.hpp"

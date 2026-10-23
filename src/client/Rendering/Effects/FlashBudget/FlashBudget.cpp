@@ -1,11 +1,12 @@
 #include "FlashBudget.hpp"
 #include <vector>
 #include "EffectConstants.hpp"
+#include "FlashLoan.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::client {
 
-bool FlashBudget::reserve(Loan loan) {
+bool FlashBudget::reserve(FlashLoan loan) {
   if (areaInUse() + loan.area > FLASH_AREA_MAXIMUM) {
     return false;
   }
@@ -14,17 +15,17 @@ bool FlashBudget::reserve(Loan loan) {
 }
 
 void FlashBudget::advance(engine::Duration elapsed) {
-  for (Loan& loan : loans_) {
+  for (FlashLoan& loan : loans_) {
     loan.remaining -= elapsed;
   }
-  std::erase_if(loans_, [](const Loan& loan) {
+  std::erase_if(loans_, [](const FlashLoan& loan) {
     return loan.remaining <= engine::Duration::zero();
   });
 }
 
 int FlashBudget::areaInUse() const {
   int area = 0;
-  for (const Loan& loan : loans_) {
+  for (const FlashLoan& loan : loans_) {
     area += loan.area;
   }
   return area;

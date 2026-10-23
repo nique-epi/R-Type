@@ -11,7 +11,7 @@
 #include <string>
 #include <utility>
 #include <vector>
-#include "BackgroundColors.hpp"
+#include "BackgroundColorConstants.hpp"
 #include "ConnectionStatus.hpp"
 #include "KeyPress.hpp"
 #include "LobbyScreen.hpp"

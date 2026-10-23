@@ -59,17 +59,7 @@ target_link_libraries(rtype_client_status_band
 
 rtype_enable_warnings(rtype_client_status_band)
 
-add_library(rtype_client_mission_banner STATIC MissionBanner.cpp)
-
-target_link_libraries(rtype_client_mission_banner
-  PUBLIC
-    rtype_client_widgets
-  PRIVATE
-    rtype_client_widget_text
-)
-
-rtype_enable_warnings(rtype_client_mission_banner)
-
+add_subdirectory(MissionBanner)
 add_subdirectory(CutCornerBox)
 add_subdirectory(Outline)
 add_subdirectory(SunkBox)

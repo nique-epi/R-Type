@@ -8,18 +8,8 @@ target_link_libraries(rtype_client_sprites
     rtype_client_rendering_interfaces
 )
 
-add_library(rtype_client_entity_sprites STATIC EntitySprites.cpp)
-
-target_link_libraries(rtype_client_entity_sprites
-  PUBLIC
-    rtype_client_sprites
-  PRIVATE
-    rtype_engine
-    rtype_game
-)
-
-rtype_enable_warnings(rtype_client_entity_sprites)
-
 add_subdirectory(Animation)
+add_subdirectory(EntitySprites)
 add_subdirectory(AnimationSystem)
 add_subdirectory(AssetTextureSource)
+add_subdirectory(PilotColor)

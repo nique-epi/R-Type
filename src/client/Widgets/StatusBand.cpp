@@ -15,7 +15,7 @@
 #include "HudSpriteConstants.hpp"
 #include "IInterfaceCanvas.hpp"
 #include "ImagePlacement.hpp"
-#include "InterfaceColors.hpp"
+#include "InterfaceColorConstants.hpp"
 #include "InterfaceConstants.hpp"
 #include "Outline.hpp"
 #include "PilotStatus.hpp"

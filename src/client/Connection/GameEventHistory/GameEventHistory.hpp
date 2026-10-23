@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <vector>
+#include "SeenGameEvent.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::client {
@@ -25,12 +26,7 @@ class GameEventHistory {
   void forget();
 
  private:
-  struct SeenEvent {
-    std::uint16_t eventNumber{};
-    engine::Duration age{};
-  };
-
-  std::vector<SeenEvent> seen_;
+  std::vector<SeenGameEvent> seen_;
 };
 
 }  // namespace rtype::client

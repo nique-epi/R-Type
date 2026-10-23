@@ -9,6 +9,7 @@
 #include <numbers>
 #include <utility>
 #include <vector>
+#include "Burst.hpp"
 #include "ComponentRegistry.hpp"
 #include "EffectLengths.hpp"
 #include "Entity.hpp"
@@ -16,16 +17,19 @@
 #include "GroundEffectConstants.hpp"
 #include "Particle.hpp"
 #include "PixelEffects.hpp"
+#include "PlacedBurst.hpp"
 #include "Position.hpp"
+#include "Ring.hpp"
 #include "Shockwave.hpp"
 #include "SpeedLine.hpp"
-#include "SpriteToneColors.hpp"
+#include "SpriteToneColorConstants.hpp"
 #include "TimeConstants.hpp"
 
 using rtype::client::Burst;
 using rtype::client::FLASH_COLOR;
 using rtype::client::Particle;
 using rtype::client::PixelEffects;
+using rtype::client::PlacedBurst;
 using rtype::client::Ring;
 using rtype::client::Shockwave;
 using rtype::client::SpeedLine;
@@ -93,7 +97,7 @@ class PixelScene {
   PixelEffects pixels_{entities_, components_, EFFECT_TEST_SEED};
 };
 
-PixelEffects::Particles eightDropsAimedLeft() {
+PlacedBurst eightDropsAimedLeft() {
   return {.shape = EIGHT_DROPS,
           .center = CENTER,
           .aim = LEFT,

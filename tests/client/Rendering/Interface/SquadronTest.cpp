@@ -6,11 +6,12 @@
 #include <cstdint>
 #include <optional>
 #include <vector>
-#include "InterfaceColors.hpp"
+#include "InterfaceColorConstants.hpp"
 #include "MotionPreference.hpp"
 #include "RecordingInterfaceCanvas.hpp"
 #include "Squadron.hpp"
 #include "SquadronConstants.hpp"
+#include "SquadronShip.hpp"
 #include "TimeConstants.hpp"
 
 using rtype::client::EDGE_BLUE;

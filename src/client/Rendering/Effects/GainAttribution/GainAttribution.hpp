@@ -5,8 +5,11 @@
 #include <optional>
 #include <vector>
 #include "EntitySpriteConstants.hpp"
+#include "GainFigure.hpp"
 #include "Position.hpp"
 #include "TimeConstants.hpp"
+#include "WaitingGain.hpp"
+#include "WaitingKill.hpp"
 
 namespace rtype::client {
 
@@ -25,16 +28,6 @@ namespace rtype::client {
  */
 class GainAttribution {
  public:
-  /** @brief The figure of a gain. */
-  struct Figure {
-    game::Position place{};
-    std::uint32_t points{};
-    /** @brief 0 to PLAYER_COLOR_COUNT - 1; nothing when several pilots
-     * gained, or one gained for several kills. */
-    std::optional<int> pilotColor;
-    bool big = false;
-  };
-
   void noteKill(game::Position place, bool big);
 
   /** @brief Notes the score of the pilot of a color; a color outside 0 to
@@ -47,21 +40,9 @@ class GainAttribution {
 
   /** @returns The figure the kills and the gains waiting make, which forgets
    * them; nothing while either is missing. */
-  [[nodiscard]] std::optional<Figure> takeFigure();
+  [[nodiscard]] std::optional<GainFigure> takeFigure();
 
  private:
-  struct Kill {
-    game::Position place{};
-    bool big = false;
-    engine::Duration age{};
-  };
-
-  struct Gain {
-    int pilotColor{};
-    std::uint32_t points{};
-    engine::Duration age{};
-  };
-
   [[nodiscard]] std::uint32_t totalPoints() const;
 
   /** @returns The color of the pilot who gained, when one pilot gained for
@@ -69,8 +50,8 @@ class GainAttribution {
   [[nodiscard]] std::optional<int> soleGainer() const;
 
   std::array<std::optional<std::uint32_t>, PLAYER_COLOR_COUNT> scores_;
-  std::vector<Kill> kills_;
-  std::vector<Gain> gains_;
+  std::vector<WaitingKill> kills_;
+  std::vector<WaitingGain> gains_;
 };
 
 }  // namespace rtype::client
