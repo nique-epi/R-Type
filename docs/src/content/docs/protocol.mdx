@@ -98,7 +98,7 @@ A received datagram goes through these checks in order. No buffer is sized from 
 | The message type is listed below | that message is skipped, the next one is read |
 | The payload has the size its type requires and every value is in range | that message is dropped |
 
-The token is checked before the sequence, so a forged datagram never moves the counter. The server never sends an unknown sender more bytes than the datagram it answers, so a forged source address cannot turn it into an amplifier: a `ConnectionRequest` holds at least 35 bytes, and every answer to it at most 33 (`ConnectionChallenge`). A client that receives a datagram of another version decodes nothing in it, and reports both version numbers to the player: its own, and the one at offset 4.
+The token is checked before the sequence, so a forged datagram never moves the counter. The server never sends an unknown sender more bytes than the datagram it answers, so a forged source address cannot turn it into an amplifier: a `ConnectionRequest` holds at least 35 bytes, and every answer to it at most 33 (`ConnectionChallenge`). A client that receives a datagram of another version decodes nothing in it. While it connects to the server that sent it, it ends the attempt and reports both version numbers to the player: its own, and the one at offset 4; within a session it drops it, so a datagram forged with the address of the server cannot end the session.
 
 ## Messages
 
@@ -272,7 +272,7 @@ This section gathers what each side does when something goes wrong, from a datag
 | The receiver gets | It | It sends back |
 |---|---|---|
 | A datagram that fails one of the first checks of [Receiving a datagram](#receiving-a-datagram): size, `protocolId`, `flags`, message sizes | drops the datagram | nothing |
-| A datagram of another `version` | drops the datagram; a client tells the player both version numbers, its own and the one at offset 4 | from the server to an unknown sender, `ConnectionRefused` (`IncompatibleVersion`), under the size condition of [Receiving a datagram](#receiving-a-datagram); otherwise nothing |
+| A datagram of another `version` | drops the datagram; a client connecting to the server that sent it ends the attempt and tells the player both version numbers, its own and the one at offset 4 | from the server to an unknown sender, `ConnectionRefused` (`IncompatibleVersion`), under the size condition of [Receiving a datagram](#receiving-a-datagram); otherwise nothing |
 | A datagram from an unknown sender that holds no `ConnectionRequest` | drops the datagram | nothing |
 | Within a session, another `sessionToken`, or a `sequence` that is not newer | drops the datagram; a wrong token is counted | nothing |
 | A message of an unknown type | skips that message and reads the next one | nothing |
@@ -316,7 +316,7 @@ A message that is valid but means nothing in the current state of its receiver c
 
 A player that comes back after its session closed connects again from the first request, as an unknown sender, and gets a new session token.
 
-Of the cases above, the programs do not handle yet: the `PlayerLeft` a client receives, which it skips as a message it has no handler for, so no player is told on screen that another one left; the `Disconnection` of the server, which the server does not send when it shuts down and the client does not read; the 5-second timeout of the client, which never shows that the connection is lost; the `IncompatibleVersion` answer, which the server does not send, while the client, which shows the refusal, does not show the two version numbers, and drops a datagram of another version without telling the player.
+Of the cases above, the programs do not handle yet: the `PlayerLeft` a client receives, which it skips as a message it has no handler for, so no player is told on screen that another one left; the `Disconnection` of the server, which the server does not send when it shuts down and the client does not read; the 5-second timeout of the client, which never shows that the connection is lost.
 
 ## Losses
 
