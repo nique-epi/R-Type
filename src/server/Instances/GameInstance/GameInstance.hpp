@@ -41,10 +41,10 @@ namespace rtype::server {
  *
  * A game goes from WaitingForPlayers to InProgress when at least one player is
  * connected and every connected player is ready, from InProgress to Finished
- * when finish() is called, and from Finished back to WaitingForPlayers after
- * FINISHED_STATE_TICKS ticks. Coming back to WaitingForPlayers builds a new
- * world: every player gets a new ship, is no longer ready, and the tick is 0.
- * The players stay connected.
+ * when finish() is called or once no player is left in it, and from Finished
+ * back to WaitingForPlayers after FINISHED_STATE_TICKS ticks. Coming back to
+ * WaitingForPlayers builds a new world: every player gets a new ship, is no
+ * longer ready, and the tick is 0. The players stay connected.
  *
  * The game tells its players where it stands, as the A session section of the
  * protocol page describes. While it waits for players, a LobbyStateAnnouncer
@@ -93,7 +93,9 @@ namespace rtype::server {
  * (Removed), a PlayerDeparture (TimedOut) follows, and its seat and number are
  * free for the next player who joins. takeDepartedPlayers() hands the player
  * over to whoever must forget it outside the game. A game counts the ticks it
- * runs, so a stall of the server closes no session.
+ * runs, so a stall of the server closes no session. A game in progress whose
+ * last player's session closed ends at that same tick, as finish() ends it, so
+ * it waits for players again FINISHED_STATE_TICKS ticks later.
  *
  * A Disconnection from a player closes its session at once, in the tick that
  * reads it and in the same way, with a PlayerDeparture (Left) instead: a player
@@ -181,12 +183,12 @@ class GameInstance {
    * @brief Runs one tick: applies the ReadyState, keeps the newest PlayerInput
    * and closes the session of each player who sent a Disconnection, among
    * @p datagrams, oldest first, closes the session of every player not heard
-   * from for SESSION_TIMEOUT_TICKS ticks, then moves the game
-   * along its states. While it waits, the players are told the room; while it
-   * is in progress, the tick is counted, the ships move, the systems run, the
-   * Bydos appear and the world is sent. Last, a player sent nothing for
-   * TICKS_PER_HEARTBEAT ticks is sent a Heartbeat. Nothing caused by the
-   * content of a datagram makes it throw.
+   * from for SESSION_TIMEOUT_TICKS ticks, ends a game in progress that no
+   * player is left in, then moves the game along its states. While it waits,
+   * the players are told the room; while it is in progress, the tick is
+   * counted, the ships move, the systems run, the Bydos appear and the world
+   * is sent. Last, a player sent nothing for TICKS_PER_HEARTBEAT ticks is sent
+   * a Heartbeat. Nothing caused by the content of a datagram makes it throw.
    */
   void onTick(std::span<const network::IncomingDatagram> datagrams);
 
@@ -279,6 +281,13 @@ class GameInstance {
    * left, or how long a player who timed out stayed silent. */
   void logDeparture(const ConnectedPlayer& player,
                     game::DepartureCause cause) const;
+
+  /** @returns Whether the game is in progress with no player left in it. */
+  [[nodiscard]] bool isAbandoned();
+
+  /** @brief Logs and ends the game when it is in progress with no player left
+   * in it, as finish() ends it. */
+  void finishIfAbandoned();
 
   /** @brief Sends a Heartbeat to every player sent nothing for
    * TICKS_PER_HEARTBEAT ticks, then counts the tick that ends for every

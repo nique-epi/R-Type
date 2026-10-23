@@ -615,6 +615,46 @@ TEST_F(GameInstanceTest, WaitsForPlayersAgainOnceTheFinishedDurationElapsed) {
 }
 
 /**
+ * Given a game in progress with one player
+ * When that player times out
+ * Then the game is finished
+ */
+TEST_F(GameInstanceTest, FinishesTheGameInProgressItsLastPlayerLeft) {
+  startGameWithOnePlayer();
+
+  timeOut(FIRST_PLAYER);
+
+  EXPECT_EQ(game().state(), GameState::Finished);
+}
+
+/**
+ * Given a game in progress with two players
+ * When one of them times out
+ * Then the game goes on for the other
+ */
+TEST_F(GameInstanceTest, PlaysOnWhileOnePlayerIsLeft) {
+  startGameWith({FIRST_PLAYER, SECOND_PLAYER});
+
+  timeOut(SECOND_PLAYER);
+
+  EXPECT_EQ(game().state(), GameState::InProgress);
+}
+
+/**
+ * Given a game in progress whose last player timed out
+ * When the finished duration elapses
+ * Then the game waits for players again, so a new player may join it
+ */
+TEST_F(GameInstanceTest, WaitsForPlayersAgainAfterItsLastPlayerLeft) {
+  startGameWithOnePlayer();
+  timeOut(FIRST_PLAYER);
+
+  runTicks(FINISHED_STATE_TICKS);
+
+  EXPECT_EQ(game().state(), GameState::WaitingForPlayers);
+}
+
+/**
  * Given a game that was played by two players and finished
  * When it waits for players again
  * Then the world holds one fresh ship per player, not the old ones as well,
@@ -2258,6 +2298,43 @@ TEST_F(GameInstanceLogTest, LogsThePlayerWhoLeftWithItsSender) {
             std::string::npos);
   EXPECT_TRUE(journal()
                   .linesHolding(testing::SECOND_PLAYER_TIMED_OUT_LINE_TEXT)
+                  .empty());
+}
+
+/**
+ * Given a game in progress whose two players go silent
+ * When both time out, and the game stays finished for a while
+ * Then the journal holds one line saying the game finished with no player left
+ */
+TEST_F(GameInstanceLogTest, LogsOnceThatTheGameFinishedWithNoPlayerLeft) {
+  for (const std::size_t player : {FIRST_PLAYER, SECOND_PLAYER}) {
+    sendReady({.player = player, .ready = true, .sequence = FIRST_SEQUENCE});
+  }
+  tick();
+  silence(FIRST_PLAYER);
+
+  timeOut(SECOND_PLAYER);
+  runTicks(SOME_TICKS);
+
+  EXPECT_EQ(journal()
+                .linesHolding(testing::GAME_LEFT_BY_EVERY_PLAYER_LINE_TEXT)
+                .size(),
+            1U);
+}
+
+/**
+ * Given a room whose two players go silent
+ * When both time out, and the empty room keeps waiting
+ * Then no line says that a game finished
+ */
+TEST_F(GameInstanceLogTest, LogsNoFinishedGameForAnEmptyRoom) {
+  silence(FIRST_PLAYER);
+
+  timeOut(SECOND_PLAYER);
+  runTicks(SOME_TICKS);
+
+  EXPECT_TRUE(journal()
+                  .linesHolding(testing::GAME_LEFT_BY_EVERY_PLAYER_LINE_TEXT)
                   .empty());
 }
 

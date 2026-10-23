@@ -45,6 +45,12 @@ constexpr std::string_view SECOND_PLAYER_TIMED_OUT_LINE_TEXT =
 constexpr std::string_view SECOND_PLAYER_LEFT_LINE_TEXT = "player 2 left";
 
 /**
+ * @brief What the line about a game in progress that every player left holds.
+ */
+constexpr std::string_view GAME_LEFT_BY_EVERY_PLAYER_LINE_TEXT =
+    "game finished: no player left";
+
+/**
  * @brief Sequences of the datagrams a test player sends, in the order it sends
  * them.
  */

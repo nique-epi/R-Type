@@ -180,6 +180,7 @@ void GameInstance::onTick(
     readPlayerDatagram(datagram);
   }
   closeSilentSessions();
+  finishIfAbandoned();
   advanceState();
   if (state_ == GameState::InProgress) {
     worldStateSender_.onTick(tick_, world_->components());
@@ -363,6 +364,18 @@ void GameInstance::logDeparture(const ConnectedPlayer& player,
   logger_.info("player ", playerNumber, " timed out: nothing received from ",
                player.endpoint.address, " port ", player.endpoint.port, " for ",
                network::SESSION_TIMEOUT.count(), " s");
+}
+
+bool GameInstance::isAbandoned() {
+  return state_ == GameState::InProgress && roster_.connected().empty();
+}
+
+void GameInstance::finishIfAbandoned() {
+  if (!isAbandoned()) {
+    return;
+  }
+  logger_.info("game finished: no player left");
+  finish();
 }
 
 void GameInstance::sendHeartbeats() {
