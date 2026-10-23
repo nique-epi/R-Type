@@ -215,7 +215,7 @@ void ServerConnection::giveUp() {
   logger_.warn("no answer from ", server_.address, " port ", server_.port);
 }
 
-void ServerConnection::refuseAnotherVersion(std::uint8_t serverVersion) {
+void ServerConnection::endAttemptForServerVersion(std::uint8_t serverVersion) {
   if (!isConnecting()) {
     return;
   }
@@ -235,7 +235,7 @@ void ServerConnection::receive(const network::IncomingDatagram& datagram) {
     const network::PacketHeader header =
         network::DatagramCodec::decodeHeader(datagram.payload);
     if (network::DatagramCodec::speaksAnotherVersion(header)) {
-      refuseAnotherVersion(header.version);
+      endAttemptForServerVersion(header.version);
       return;
     }
     if (!network::DatagramCodec::speaksThisProtocol(header) ||

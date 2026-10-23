@@ -169,9 +169,9 @@ class ServerConnection : public IServerConnection,
   void giveUp();
 
   /** @brief Ends the attempt in progress as Refused (IncompatibleVersion),
-   * keeping @p serverVersion, and logs both versions; does nothing outside
-   * an attempt. */
-  void refuseAnotherVersion(std::uint8_t serverVersion);
+   * since the server answered in @p serverVersion, which it keeps, and logs
+   * both versions; sends nothing, and does nothing outside an attempt. */
+  void endAttemptForServerVersion(std::uint8_t serverVersion);
 
   /**
    * @returns Whether a datagram of the server may be read: always before the
