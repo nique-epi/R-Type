@@ -168,11 +168,12 @@ void ServerConnection::registerAnswers() {
         }
       });
   dispatcher_.registerHandler<network::ConnectionRefused>(
-      [this](const network::MessageOrigin&,
+      [this](const network::MessageOrigin& origin,
              const network::ConnectionRefused& refused) {
         if (isConnecting()) {
           status_ = {.phase = ConnectionStatus::Phase::Refused,
-                     .refusal = refused.reason};
+                     .refusal = refused.reason,
+                     .serverVersion = origin.header.version};
           logger_.info("refused, reason ",
                        static_cast<unsigned int>(refused.reason));
         }
@@ -214,6 +215,18 @@ void ServerConnection::giveUp() {
   logger_.warn("no answer from ", server_.address, " port ", server_.port);
 }
 
+void ServerConnection::refuseAnotherVersion(std::uint8_t serverVersion) {
+  if (!isConnecting()) {
+    return;
+  }
+  status_ = {.phase = ConnectionStatus::Phase::Refused,
+             .refusal = network::RefusalReason::IncompatibleVersion,
+             .serverVersion = serverVersion};
+  logger_.warn("refused: the server speaks protocol version ",
+               static_cast<unsigned int>(serverVersion), ", this client ",
+               static_cast<unsigned int>(network::PROTOCOL_VERSION));
+}
+
 void ServerConnection::receive(const network::IncomingDatagram& datagram) {
   if (datagram.sender != server_) {
     return;
@@ -221,6 +234,10 @@ void ServerConnection::receive(const network::IncomingDatagram& datagram) {
   try {
     const network::PacketHeader header =
         network::DatagramCodec::decodeHeader(datagram.payload);
+    if (network::DatagramCodec::speaksAnotherVersion(header)) {
+      refuseAnotherVersion(header.version);
+      return;
+    }
     if (!network::DatagramCodec::speaksThisProtocol(header) ||
         !passesSessionChecks(header)) {
       return;

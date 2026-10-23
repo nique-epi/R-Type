@@ -537,10 +537,12 @@ TEST_F(ServerConnectionTest, IgnoresATruncatedDatagram) {
 
 /**
  * Given an attempt in progress
- * When an acceptance of another protocol version arrives
- * Then the attempt is still connecting
+ * When the server answers in a datagram of another protocol version, whatever
+ * it holds
+ * Then the attempt is refused as IncompatibleVersion, with the version the
+ * server wrote, and nothing in the datagram is read
  */
-TEST_F(ServerConnectionTest, IgnoresAnAnswerOfAnotherVersion) {
+TEST_F(ServerConnectionTest, IsRefusedByAnAnswerOfAnotherVersion) {
   connect();
   network::PacketHeader header;
   header.version = NEXT_PROTOCOL_VERSION;
@@ -549,7 +551,67 @@ TEST_F(ServerConnectionTest, IgnoresAnAnswerOfAnotherVersion) {
 
   update();
 
+  EXPECT_EQ(
+      connection().status(),
+      (ConnectionStatus{.phase = Phase::Refused,
+                        .refusal = network::RefusalReason::IncompatibleVersion,
+                        .serverVersion = NEXT_PROTOCOL_VERSION}));
+}
+
+/**
+ * Given an attempt the server answered in another protocol version
+ * When two more intervals pass
+ * Then no request is sent again
+ */
+TEST_F(ServerConnectionTest, SendsNoRequestOnceRefusedForItsVersion) {
+  connect();
+  network::PacketHeader header;
+  header.version = NEXT_PROTOCOL_VERSION;
+  deliver(
+      network::ConnectionRefused{
+          .reason = network::RefusalReason::IncompatibleVersion},
+      server(), header);
+  update();
+
+  update(2 * CONNECTION_REQUEST_INTERVAL);
+
+  EXPECT_EQ(sentCountOf<network::ConnectionRequest>(), 1U);
+}
+
+/**
+ * Given an attempt in progress
+ * When a datagram of another protocol version comes from another sender
+ * Then the attempt is still connecting
+ */
+TEST_F(ServerConnectionTest, IgnoresAnotherVersionFromAnotherSender) {
+  connect();
+  network::PacketHeader header;
+  header.version = NEXT_PROTOCOL_VERSION;
+  deliver(
+      network::ConnectionRefused{
+          .reason = network::RefusalReason::IncompatibleVersion},
+      otherSender(), header);
+
+  update();
+
   EXPECT_EQ(phase(), Phase::Connecting);
+}
+
+/**
+ * Given a session the server accepted
+ * When a datagram of another protocol version comes from the server
+ * Then the session goes on: only an attempt ends this way
+ */
+TEST_F(ServerConnectionTest, KeepsTheSessionWhenAnotherVersionArrives) {
+  accept();
+  network::PacketHeader header;
+  header.version = NEXT_PROTOCOL_VERSION;
+  header.sessionToken = SESSION_TOKEN;
+  deliver(network::Heartbeat{}, server(), header);
+
+  update();
+
+  EXPECT_EQ(phase(), Phase::Accepted);
 }
 
 /**
