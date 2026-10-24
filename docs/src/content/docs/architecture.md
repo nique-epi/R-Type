@@ -80,7 +80,7 @@ The simulation advances at a fixed rate (`SIMULATION_TICKS_PER_SECOND`, 60), wha
 
 Game logic uses one logical frame, the same on the server and on the client, and never a window size in pixels.
 
-- The playfield is `PLAYFIELD_WIDTH` × `PLAYFIELD_HEIGHT` logical units, defined once in `rtype_game` (`PlayfieldConstants.hpp`).
+- The playfield is `PLAYFIELD_WIDTH` × `PLAYFIELD_HEIGHT` logical units, defined once in `rtype_game` (`src/game/Components/PlayfieldConstants.hpp`).
 - These dimensions are 1920 × 1080: the playfield has the proportions of a 16:9 screen. Code must read the constants and never assume they match the window.
 - The bottom `STATUS_BAND_HEIGHT` (96 logical units) of the playfield is covered by the status band every client lays over the game, so a match is played in the `PLAY_AREA_HEIGHT` (984) above it: whatever a player must see is placed there. The rows Bydos appear on keep half a Bydo and the room of a wave from its edges, so a Bydo stays in it even at the top and the bottom of a wave (see [Server](/R-Type/server/#bydos-bydospawner)).
 - The origin is the top-left corner, x grows to the right and y grows downwards.
@@ -89,6 +89,12 @@ Game logic uses one logical frame, the same on the server and on the client, and
 - The client is the only place that knows pixels. `GameWindow` gives the screens a render target whose view always covers the whole playfield, and `fitPlayfieldInWindow` (`src/client/Window/PlayfieldViewport/`) picks the largest centered rectangle of the window with the proportions of the playfield; the rest stays black. Resizing the window changes that rectangle only, never a logical position or a speed.
 - The window cannot be resized by dragging its border. The player picks one of five sizes with the proportions of the playfield (`WINDOW_SIZES` in `src/client/Window/WindowConstants.hpp`: 960 × 540, 1280 × 720, 1600 × 900, 1920 × 1080, 2560 × 1440), so no black bar shows. `WindowSizeSelection` only offers the sizes strictly smaller than the desktop and opens the window at the largest of them. The black bars remain as a safety net for the cases where the system gives the window another shape.
 - The size is picked in the DISPLAY tab of the options, which SETTINGS opens on the title screen and Escape during a game: a list of the five sizes next to a chart of every size to scale, where a size too large for the desktop is dashed and can never be taken. The size picked is saved: the next launch opens the window at it when it still fits the desktop, at the largest size that fits otherwise (see [Client](/R-Type/client/#options-optionsscreen)). The fonts of the menus are loaded at launch through the asset library, which finds `assets/` whatever folder the client is launched from (see [Client](/R-Type/client/#assets-the-folder-and-the-ids)).
+
+## Drawing order
+
+The client draws a `Sprite` in its `Layer` (`src/game/Components/Layer.hpp`), from the first to the last: `Background`, `Enemies`, `Effects`, `Players`, `Popups`, `EnemyMissiles`, `Interface`. What can kill a player stays in sight: an explosion covers the enemies only, never a ship, the missiles of the players or the figure of a gain, and the missiles of the enemies are drawn over everything of the playfield. Effects made of loose pixels (debris, shockwaves, speed lines) are painted under every sprite.
+
+Alternative considered: one layer for every entity, and the effects in front of it. It is simpler, and an explosion is never hidden, but the explosion of a Bydo then hides a missile the Bydo fired as it died for 11 frames, while that missile flies at a player.
 
 ## Consequences
 

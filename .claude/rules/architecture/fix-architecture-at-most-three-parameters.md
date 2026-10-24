@@ -14,7 +14,7 @@ Why: a review flagged a seven-parameter constructor. The C++ Core Guidelines set
 2. **Before writing a fourth parameter, look at what the values are, and take the first option that fits:**
    1. **Pass the whole object the values come from** (Fowler, *Preserve Whole Object*): `paintPlayerNumber(canvas, bay)`, not `paintPlayerNumber(canvas, bay.topLeft, bay.playerNumber, open)`.
    2. **Group values that only make sense together into a struct named after what they are** (Fowler, *Introduce Parameter Object*; I.23: "group arguments into meaningful objects"). Examples: `TextureArea{assetId, rectangle}`, `BayMotion{elapsed, preference}`.
-      - The dependencies a class is built from go in a struct nested in that class: `KeySlot::Wiring`, `LobbyScreen::Parts`. The constructor takes that struct, plus any object it takes ownership of (point 4).
+      - The dependencies a class is built from go in one struct of their own, `<Class>Parts` in `<Class>Parts.hpp` in the parent folder, never nested in the class (`fix-architecture-no-type-nested-in-a-class.md`). The constructor takes that struct, plus any object it takes ownership of (point 4). `KeySlot::Wiring` and `LobbyScreen::Parts`, nested before that rule, are pre-existing cases.
    3. **Give a member a default when most callers pass the same value** (I.23: "use default arguments or overloads"), rather than a parameter every caller repeats: `ImagePlacement::scale = NATIVE_SCALE`.
    4. **Compute the value before the call when the callee only needs the result**: the bay passes a ship frame, not the four values it comes from.
 3. **At the call site, build such a struct with designated initializers and name its type**, for example `TextureArea{.assetId = …, .rectangle = …}`. The reader sees which value is which, and two values of the same type cannot be swapped silently.
@@ -37,6 +37,6 @@ Why: a review flagged a seven-parameter constructor. The C++ Core Guidelines set
   - `drawImage(assetId, source, topLeft, scale, visibleArea)`;
   - `paintPilot(canvas, topLeft, color, pilot, elapsed, motion)`.
 - ✅ **After (right)**:
-  - `LobbyScreen(Parts parts, std::unique_ptr<IInterfaceCanvas> canvas)`, built as `LobbyScreen(LobbyScreen::Parts{.navigator = screens_, …, .motion = motionPreference()}, interfaceCanvas())`;
+  - `LobbyScreen(LobbyScreenParts parts, std::unique_ptr<IInterfaceCanvas> canvas)`, built as `LobbyScreen(LobbyScreenParts{.navigator = screens_, …, .motion = motionPreference()}, interfaceCanvas())`, `LobbyScreenParts` in `Screens/LobbyScreenParts.hpp`;
   - `drawImage(TextureArea image, ImagePlacement placement, sf::IntRect visibleArea)`;
   - `paintPilot(canvas, bay, pilot)`, with the ship painted next to it from `shipFrameOf(color, readiness, motion)`.

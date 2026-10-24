@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include "BackgroundColors.hpp"
+#include "BackgroundColorConstants.hpp"
 #include "KeyCap.hpp"
 #include "RecordingInterfaceCanvas.hpp"
 

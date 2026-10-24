@@ -4,7 +4,7 @@
 #include <array>
 #include <cstddef>
 #include <string_view>
-#include "BackgroundColors.hpp"
+#include "BackgroundColorConstants.hpp"
 #include "SkyEventKind.hpp"
 #include "TailGradient.hpp"
 

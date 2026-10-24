@@ -7,10 +7,10 @@
 #include <chrono>
 #include <cstddef>
 #include <optional>
-#include "BackgroundColors.hpp"
+#include "BackgroundColorConstants.hpp"
 #include "EntitySpriteTestConstants.hpp"
 #include "HangarBay.hpp"
-#include "InterfaceColors.hpp"
+#include "InterfaceColorConstants.hpp"
 #include "MotionPreference.hpp"
 #include "RecordingInterfaceCanvas.hpp"
 #include "TextStyle.hpp"

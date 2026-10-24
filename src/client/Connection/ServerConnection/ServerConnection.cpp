@@ -22,6 +22,8 @@
 #include "EntityDestroyed.hpp"
 #include "EntityMessage.hpp"
 #include "EntitySpawned.hpp"
+#include "GameEvent.hpp"
+#include "GameEventHistory.hpp"
 #include "GameStarted.hpp"
 #include "Heartbeat.hpp"
 #include "IDatagramLink.hpp"
@@ -32,6 +34,7 @@
 #include "NetworkException.hpp"
 #include "OutgoingDatagram.hpp"
 #include "PacketHeader.hpp"
+#include "PendingDeparture.hpp"
 #include "PlayerInput.hpp"
 #include "ProtocolConstants.hpp"
 #include "ReadyState.hpp"
@@ -92,6 +95,7 @@ std::optional<bool> ServerConnection::requestedReady() const {
 bool ServerConnection::gameStarted() const { return gameStarted_; }
 
 void ServerConnection::update(engine::Duration elapsed) {
+  gameEvents_.advance(elapsed);
   readReceived();
   repeatDeparture(elapsed);
   if (isAccepted()) {
@@ -208,6 +212,12 @@ void ServerConnection::registerSessionMessages() {
              const network::EntityDestroyed& destroyed) {
         keepEntityMessage(destroyed);
       });
+  dispatcher_.registerHandler<network::GameEvent>(
+      [this](const network::MessageOrigin&, const network::GameEvent& event) {
+        if (gameEvents_.isFirstCopy(event.eventNumber)) {
+          keepEntityMessage(event);
+        }
+      });
 }
 
 void ServerConnection::giveUp() {
@@ -309,11 +319,11 @@ void ServerConnection::sendHeartbeatWhenSilent() {
 }
 
 void ServerConnection::leave() {
-  departure_ = Departure{.server = server_,
-                         .sessionToken = sessionToken_,
-                         .nextSequence = nextSequence_,
-                         .copiesLeft = DISCONNECTION_COPY_COUNT,
-                         .sinceCopy = engine::Duration::zero()};
+  departure_ = PendingDeparture{.server = server_,
+                                .sessionToken = sessionToken_,
+                                .nextSequence = nextSequence_,
+                                .copiesLeft = DISCONNECTION_COPY_COUNT,
+                                .sinceCopy = engine::Duration::zero()};
   sendDepartureCopy();
   logger_.info("left ", server_.address, " port ", server_.port);
 }
@@ -352,6 +362,7 @@ void ServerConnection::forgetSession() {
   sinceReadyState_ = engine::Duration::zero();
   gameStarted_ = false;
   entityMessages_.clear();
+  gameEvents_.forget();
 }
 
 void ServerConnection::sendToServer(network::MessageType type,

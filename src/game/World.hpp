@@ -47,13 +47,27 @@ class World {
 
   /**
    * @brief Creates a Bydo of @p kind at @p position, with the Position, the
-   * EntityType::Enemy and the NetworkIdentity that make it a networked entity.
-   * It moves left at BYDO_SPEED, and follows the pattern of its kind around the
-   * row it appeared on: MovementSystem and PatternSystem move it.
+   * EntityType::Enemy and the NetworkIdentity that make it a networked entity,
+   * and a CollisionBox of BYDO_WIDTH by BYDO_HEIGHT. It moves left at
+   * BYDO_SPEED, and follows the pattern of its kind around the row it appeared
+   * on: MovementSystem and PatternSystem move it.
    * @returns The network id the Bydo was given, never NO_ENTITY_ID.
    * @throws NetworkIdExhaustedException when every network id was given.
    */
   std::uint32_t spawnBydo(Position position, BydoKind kind);
+
+  /**
+   * @brief Creates, at @p position, a missile fired by the player numbered
+   * @p playerNumber, with the Position, the EntityType::PlayerMissile and the
+   * NetworkIdentity that make it a networked entity, a MissileOwner naming
+   * that player, so a kill is credited to it, and a CollisionBox of
+   * PLAYER_MISSILE_WIDTH by PLAYER_MISSILE_HEIGHT. It flies right at
+   * PLAYER_MISSILE_SPEED: MovementSystem moves it.
+   * @returns The network id the missile was given, never NO_ENTITY_ID.
+   * @throws NetworkIdExhaustedException when every network id was given.
+   */
+  std::uint32_t spawnPlayerMissile(Position position,
+                                   std::uint8_t playerNumber);
   [[nodiscard]] std::size_t entityCount() const;
 
   /**

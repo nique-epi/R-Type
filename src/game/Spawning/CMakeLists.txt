@@ -4,7 +4,7 @@ add_library(rtype_game_spawning_constants INTERFACE)
 
 target_include_directories(rtype_game_spawning_constants INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
 
-add_library(rtype_game_spawning STATIC ShipStartPosition.cpp BydoSpawnPosition.cpp)
+add_library(rtype_game_spawning STATIC ShipStartPosition.cpp BydoSpawnPosition.cpp MissileStartPosition.cpp)
 
 target_include_directories(rtype_game_spawning PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
@@ -14,7 +14,9 @@ target_link_libraries(rtype_game_spawning
     rtype_game_components
     rtype_game_spawning_constants
   PRIVATE
+    rtype_engine_collision
     rtype_game_exceptions
+    rtype_game_ship_control_constants
 )
 
 rtype_enable_warnings(rtype_game_spawning)

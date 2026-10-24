@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstdint>
+
 namespace rtype::game::testing {
 
 /**
@@ -13,5 +15,14 @@ constexpr float OTHER_Y = 40.0F;
 
 /** @brief The health a new Bydo has, as the world tests expect it. */
 constexpr int THREE_HEALTH_POINTS = 3;
+
+/** @brief The player whose missile the world tests create. */
+constexpr std::uint8_t SECOND_PLAYER_NUMBER = 2;
+
+/**
+ * @brief How fast a missile of a player flies to the right, as the world tests
+ * expect it: 960 logical units per second, twice the speed of a ship.
+ */
+constexpr float MISSILE_UNITS_PER_SECOND = 960.0F;
 
 }  // namespace rtype::game::testing

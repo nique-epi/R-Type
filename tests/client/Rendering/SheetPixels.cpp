@@ -2,19 +2,17 @@
 #include <SFML/Graphics/Color.hpp>
 #include <SFML/Graphics/Image.hpp>
 #include <SFML/System/Vector2.hpp>
-#include <cstdint>
+#include <algorithm>
 #include <filesystem>
+#include <span>
 #include <string_view>
 #include <utility>
+#include "SheetPixelsTestConstants.hpp"
 #include "SpriteFrame.hpp"
 
 using rtype::game::SpriteFrame;
 
 namespace {
-
-constexpr const char* SOURCE_ASSETS_FOLDER = RTYPE_SOURCE_ASSETS_FOLDER;
-
-constexpr std::uint8_t TRANSPARENT_ALPHA = 0;
 
 bool isVisible(const sf::Image& image, int column, int row) {
   const sf::Vector2u size = image.getSize();
@@ -30,7 +28,7 @@ bool isVisible(const sf::Image& image, int column, int row) {
 }  // namespace
 
 sf::Image shippedSheet(std::string_view assetId) {
-  return sf::Image(std::filesystem::path(SOURCE_ASSETS_FOLDER) /
+  return sf::Image(std::filesystem::path(RTYPE_SOURCE_ASSETS_FOLDER) /
                    std::filesystem::path(assetId));
 }
 
@@ -87,4 +85,43 @@ bool showsColor(const sf::Image& image, SpriteFrame frame, sf::Color color) {
     }
   }
   return false;
+}
+
+int changedPixelCount(const sf::Image& image, SpriteFrame frame,
+                      SpriteFrame other) {
+  int changed = 0;
+  for (int row = 0; row < frame.height; ++row) {
+    for (int column = 0; column < frame.width; ++column) {
+      const sf::Vector2u pixel{static_cast<unsigned int>(frame.left + column),
+                               static_cast<unsigned int>(frame.top + row)};
+      const sf::Vector2u otherPixel{
+          static_cast<unsigned int>(other.left + column),
+          static_cast<unsigned int>(other.top + row)};
+      if (image.getPixel(pixel) != image.getPixel(otherPixel)) {
+        ++changed;
+      }
+    }
+  }
+  return changed;
+}
+
+int visiblePixelCount(const sf::Image& image, SpriteFrame frame) {
+  int visible = 0;
+  for (int row = frame.top; row < frame.top + frame.height; ++row) {
+    for (int column = frame.left; column < frame.left + frame.width; ++column) {
+      if (isVisible(image, column, row)) {
+        ++visible;
+      }
+    }
+  }
+  return visible;
+}
+
+int largestVisibleArea(const sf::Image& image,
+                       std::span<const SpriteFrame> frames) {
+  int largest = 0;
+  for (const SpriteFrame& frame : frames) {
+    largest = std::max(largest, visiblePixelCount(image, frame));
+  }
+  return largest;
 }

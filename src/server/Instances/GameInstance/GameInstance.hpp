@@ -10,7 +10,9 @@
 #include <string_view>
 #include <vector>
 #include "BydoSpawner.hpp"
+#include "CollisionRules.hpp"
 #include "ConnectedPlayer.hpp"
+#include "DamageRules.hpp"
 #include "Endpoint.hpp"
 #include "EventBus.hpp"
 #include "GameState.hpp"
@@ -20,6 +22,7 @@
 #include "MessageDispatcher.hpp"
 #include "MessageFrame.hpp"
 #include "MessageOrigin.hpp"
+#include "MissileLauncher.hpp"
 #include "OutgoingDatagram.hpp"
 #include "PacketHeader.hpp"
 #include "PlayerDeparture.hpp"
@@ -58,13 +61,24 @@ namespace rtype::server {
  * While the game is in progress, each tick first moves the ship of every player
  * who sent an input, by the directions its newest input holds (see
  * game::shipPositionAfter), then runs the systems of the world
- * (PatternSystem, MovementSystem, then PlayfieldExitSystem, which removes a
- * Bydo that left on the left and announces it on the event bus), then lets a
- * Bydo appear every BYDO_SPAWN_INTERVAL (see BydoSpawner). The ships move in
- * no other state. Each world starts
- * its random draws from a seed of its own, the seed of the game plus the number
- * of worlds built before it, so the seed of the game is enough to replay every
- * world of a session.
+ * (PatternSystem, MovementSystem, PlayfieldExitSystem, which removes a Bydo
+ * that left on the left or a missile that left on the right and announces it
+ * on the event bus, then CollisionSystem), then lets the ship of every player
+ * whose newest input holds shoot fire a missile, at most one every
+ * SHOT_INTERVAL_TICKS ticks (see MissileLauncher), then lets a Bydo appear
+ * every BYDO_SPAWN_INTERVAL (see BydoSpawner). The ships move and fire in no
+ * other state. Each world starts its random draws from a seed of its own, the
+ * seed of the game plus the number of worlds built before it, so the seed of
+ * the game is enough to replay every world of a session.
+ *
+ * The collisions CollisionSystem finds are judged when the event bus delivers
+ * them: CollisionRules turns a missile of a player that touches a Bydo into a
+ * MissileHit, and DamageRules destroys the missile, takes MISSILE_DAMAGE from
+ * the health of the Bydo and destroys the Bydo once it has none left, an
+ * EnemyKilled crediting its points to the player who fired. Both work on the
+ * world they were built with, and a new pair comes with each new world, so the
+ * events of a tick must be delivered before the world is replaced: the server
+ * dispatches the bus at the end of every tick.
  *
  * A datagram of the players is read only when its header carries this
  * protocol and version with no flag set, its messages add up to its end, and
@@ -132,8 +146,8 @@ class GameInstance {
    * @param seed Where the random draws of the game start from; logged by the
    * spawner each time a world is built.
    * @param events Where the game publishes what happens in the world, such as
-   * a Bydo leaving the playfield or a player leaving the game; it must outlive
-   * the game.
+   * a Bydo leaving the playfield, a collision or a player leaving the game; it
+   * must outlive the game, and its owner dispatches it after each onTick().
    */
   GameInstance(Send send, std::uint32_t seed, engine::EventBus& events);
 
@@ -186,9 +200,10 @@ class GameInstance {
    * from for SESSION_TIMEOUT_TICKS ticks, ends a game in progress that no
    * player is left in, then moves the game along its states. While it waits,
    * the players are told the room; while it is in progress, the tick is
-   * counted, the ships move, the systems run, the Bydos appear and the world
-   * is sent. Last, a player sent nothing for TICKS_PER_HEARTBEAT ticks is sent
-   * a Heartbeat. Nothing caused by the content of a datagram makes it throw.
+   * counted, the ships move, the systems run, the ships whose players hold
+   * shoot fire, the Bydos appear and the world is sent. Last, a player sent
+   * nothing for TICKS_PER_HEARTBEAT ticks is sent a Heartbeat. Nothing caused
+   * by the content of a datagram makes it throw.
    */
   void onTick(std::span<const network::IncomingDatagram> datagrams);
 
@@ -230,7 +245,8 @@ class GameInstance {
   void drop(const network::Endpoint& sender, std::string_view reason);
 
   /** @brief Moves the game along its states by one tick: the start of the
-   * game, its systems and its Bydos, or the end of the wait after it. */
+   * game, its systems, its missiles and its Bydos, or the end of the wait after
+   * it. */
   void advanceState();
 
   /**
@@ -298,6 +314,12 @@ class GameInstance {
    * GameStarted. */
   void startGame();
 
+  /** @brief Builds a new world, and every part of the game that works on one
+   * world: the rules that judge its collisions, the announcer of its ships, the
+   * spawner of its Bydos, the launcher of its missiles and the announcer of the
+   * room. */
+  void buildWorld();
+
   void startNewWorld();
 
   Send send_;
@@ -308,6 +330,9 @@ class GameInstance {
   std::vector<ConnectedPlayer> departedPlayers_;
   std::unique_ptr<ShipSpawnAnnouncer> shipSpawnAnnouncer_;
   std::unique_ptr<BydoSpawner> bydoSpawner_;
+  std::unique_ptr<MissileLauncher> missileLauncher_;
+  std::unique_ptr<game::CollisionRules> collisionRules_;
+  std::unique_ptr<game::DamageRules> damageRules_;
   std::unique_ptr<LobbyStateAnnouncer> lobbyStateAnnouncer_;
   ScoreKeeper scoreKeeper_;
   WorldStateSender worldStateSender_;

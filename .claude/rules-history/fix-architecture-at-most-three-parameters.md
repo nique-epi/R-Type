@@ -65,3 +65,7 @@ No rule and no check set a limit. `.clang-tidy` does not enable a parameter thre
   - `LobbyScreen(Parts parts, std::unique_ptr<IInterfaceCanvas> canvas)`, built as `LobbyScreen(LobbyScreen::Parts{.navigator = screens_, …, .motion = motionPreference()}, interfaceCanvas())`;
   - `drawImage(TextureArea image, ImagePlacement placement, sf::IntRect visibleArea)`;
   - `paintPilot(canvas, bay, pilot)`, with the ship painted next to it from `shipFrameOf(color, readiness, motion)`.
+
+## Update (23 October 2026) — the struct of a constructor is no longer nested
+
+Yannis Lorang's review of pull request #103 asked for no struct inside a class. Point 2.2 prescribed the opposite for the dependencies of a constructor (`KeySlot::Wiring`, `LobbyScreen::Parts`), and `GameScreen::Parts` had grown a member in that branch. Point 2.2 now names the struct `<Class>Parts`, in `<Class>Parts.hpp` in the parent folder, and points to `fix-architecture-no-type-nested-in-a-class.md`; the example uses `LobbyScreenParts`. The structs nested before this update are pre-existing cases, moved when their class is touched, or reported and asked about when the same nesting spans many classes.

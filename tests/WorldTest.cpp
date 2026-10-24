@@ -1,14 +1,18 @@
 #include <gtest/gtest.h>
 #include <cstddef>
 #include <cstdint>
+#include <optional>
 #include <vector>
 #include "BydoKind.hpp"
 #include "BydoPointsConstants.hpp"
+#include "CollisionBox.hpp"
 #include "ComponentRegistry.hpp"
 #include "Entity.hpp"
 #include "EntityIdConstants.hpp"
+#include "EntitySizeConstants.hpp"
 #include "EntityType.hpp"
 #include "Health.hpp"
+#include "MissileOwner.hpp"
 #include "MovementPattern.hpp"
 #include "NetworkIdentity.hpp"
 #include "Position.hpp"
@@ -17,11 +21,36 @@
 #include "World.hpp"
 #include "WorldTestConstants.hpp"
 
+using rtype::game::testing::MISSILE_UNITS_PER_SECOND;
 using rtype::game::testing::OTHER_X;
 using rtype::game::testing::OTHER_Y;
+using rtype::game::testing::SECOND_PLAYER_NUMBER;
 using rtype::game::testing::SOME_X;
 using rtype::game::testing::SOME_Y;
 using rtype::game::testing::THREE_HEALTH_POINTS;
+
+namespace {
+
+/**
+ * @returns The Component of the entity of @p world that carries @p networkId,
+ * or nothing when no such entity has one.
+ */
+template <typename Component>
+std::optional<Component> componentOf(rtype::game::World& world,
+                                     std::uint32_t networkId) {
+  std::optional<Component> found;
+  world.components().forEach<rtype::game::NetworkIdentity, Component>(
+      [&found, networkId](rtype::engine::Entity /*entity*/,
+                          const rtype::game::NetworkIdentity& identity,
+                          const Component& component) {
+        if (identity.networkId == networkId) {
+          found = component;
+        }
+      });
+  return found;
+}
+
+}  // namespace
 
 /**
  * Given an empty world
@@ -330,6 +359,27 @@ TEST(World, SpawnedBydoIsWorthThePointsOfItsKind) {
 }
 
 /**
+ * Given an empty world
+ * When a Bydo is spawned
+ * Then it collides with a box of the size of its sprite
+ */
+TEST(World, SpawnedBydoHasTheBoxOfItsSprite) {
+  rtype::game::World world;
+
+  const std::uint32_t networkId =
+      world.spawnBydo(rtype::game::Position{.x = SOME_X, .y = SOME_Y},
+                      rtype::game::BydoKind::Drifter);
+
+  const std::optional<rtype::game::CollisionBox> box =
+      componentOf<rtype::game::CollisionBox>(world, networkId);
+  ASSERT_TRUE(box.has_value());
+  const rtype::game::CollisionBox found =
+      box.value_or(rtype::game::CollisionBox{});
+  EXPECT_EQ(found.width, rtype::game::BYDO_WIDTH);
+  EXPECT_EQ(found.height, rtype::game::BYDO_HEIGHT);
+}
+
+/**
  * Given a world where a ship was spawned at a position
  * When the position of its network id is asked
  * Then it is the position of that ship
@@ -401,4 +451,87 @@ TEST(World, GivesNoShipPositionForNoEntityId) {
   world.spawnPlayer(rtype::game::Position{.x = SOME_X, .y = SOME_Y});
 
   EXPECT_EQ(world.shipPositionOf(rtype::identifiers::NO_ENTITY_ID), nullptr);
+}
+
+/**
+ * Given an empty world
+ * When the second player fires a missile at a position
+ * Then the world holds a player missile at that position, under the network id
+ * returned
+ */
+TEST(World, SpawnedPlayerMissileIsANetworkedMissileAtItsPosition) {
+  rtype::game::World world;
+
+  const std::uint32_t networkId = world.spawnPlayerMissile(
+      rtype::game::Position{.x = SOME_X, .y = SOME_Y}, SECOND_PLAYER_NUMBER);
+
+  EXPECT_EQ(world.entityCount(), 1U);
+  EXPECT_NE(networkId, rtype::identifiers::NO_ENTITY_ID);
+  const std::optional<rtype::game::Position> position =
+      componentOf<rtype::game::Position>(world, networkId);
+  ASSERT_TRUE(position.has_value());
+  const rtype::game::Position found =
+      position.value_or(rtype::game::Position{});
+  EXPECT_EQ(found.x, SOME_X);
+  EXPECT_EQ(found.y, SOME_Y);
+  EXPECT_EQ(componentOf<rtype::game::EntityType>(world, networkId),
+            rtype::game::EntityType::PlayerMissile);
+}
+
+/**
+ * Given an empty world
+ * When the second player fires a missile
+ * Then the missile belongs to the second player
+ */
+TEST(World, SpawnedPlayerMissileBelongsToThePlayerWhoFired) {
+  rtype::game::World world;
+
+  const std::uint32_t networkId = world.spawnPlayerMissile(
+      rtype::game::Position{.x = SOME_X, .y = SOME_Y}, SECOND_PLAYER_NUMBER);
+
+  const std::optional<rtype::game::MissileOwner> owner =
+      componentOf<rtype::game::MissileOwner>(world, networkId);
+  ASSERT_TRUE(owner.has_value());
+  EXPECT_EQ(owner.value_or(rtype::game::MissileOwner{}).playerNumber,
+            SECOND_PLAYER_NUMBER);
+}
+
+/**
+ * Given an empty world
+ * When a player fires a missile
+ * Then the missile flies right at 960 units per second, on its row
+ */
+TEST(World, SpawnedPlayerMissileFliesRight) {
+  rtype::game::World world;
+
+  const std::uint32_t networkId = world.spawnPlayerMissile(
+      rtype::game::Position{.x = SOME_X, .y = SOME_Y}, SECOND_PLAYER_NUMBER);
+
+  const std::optional<rtype::game::Velocity> velocity =
+      componentOf<rtype::game::Velocity>(world, networkId);
+  ASSERT_TRUE(velocity.has_value());
+  const rtype::game::Velocity found =
+      velocity.value_or(rtype::game::Velocity{});
+  EXPECT_EQ(found.x, MISSILE_UNITS_PER_SECOND);
+  EXPECT_EQ(found.y, 0.0F);
+}
+
+/**
+ * Given an empty world
+ * When a player fires a missile
+ * Then the missile collides with a box of the size of its sprite
+ */
+TEST(World, SpawnedPlayerMissileHasTheBoxOfItsSprite) {
+  rtype::game::World world;
+
+  const std::uint32_t networkId = world.spawnPlayerMissile(
+      rtype::game::Position{.x = SOME_X, .y = SOME_Y}, SECOND_PLAYER_NUMBER);
+
+  const std::optional<rtype::game::CollisionBox> box =
+      componentOf<rtype::game::CollisionBox>(world, networkId);
+  ASSERT_TRUE(box.has_value());
+  const rtype::game::CollisionBox found =
+      box.value_or(rtype::game::CollisionBox{});
+  EXPECT_EQ(found.width, rtype::game::PLAYER_MISSILE_WIDTH);
+  EXPECT_EQ(found.height, rtype::game::PLAYER_MISSILE_HEIGHT);
 }
