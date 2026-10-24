@@ -11,7 +11,8 @@ namespace {
 /**
  * @returns true when @p tick comes UNLISTED_ENTITY_TICKS or more after
  * @p lastListedTick; false before, and for a tick older than
- * @p lastListedTick, which a caller following the contract never gives.
+ * @p lastListedTick: an entity a part of the newer tick already listed is
+ * judged against the complete state before it.
  */
 bool unlistedLongEnough(std::uint32_t lastListedTick, std::uint32_t tick) {
   return tick >= lastListedTick &&
@@ -33,13 +34,25 @@ void LastListedTicks::forget(std::uint32_t networkId) {
 }
 
 std::vector<std::uint32_t> LastListedTicks::takeUnlistedAt(std::uint32_t tick) {
+  const std::optional<std::uint32_t> completeTick = completedBy(tick);
   newestTick_ = tick;
   startWaitingEntitiesAt(tick);
-  std::vector<std::uint32_t> unlisted = unlistedAt(tick);
+  if (!completeTick.has_value()) {
+    return {};
+  }
+  std::vector<std::uint32_t> unlisted = unlistedAt(*completeTick);
   for (const std::uint32_t networkId : unlisted) {
     forget(networkId);
   }
   return unlisted;
+}
+
+std::optional<std::uint32_t> LastListedTicks::completedBy(
+    std::uint32_t tick) const {
+  if (newestTick_.has_value() && tick > *newestTick_) {
+    return newestTick_;
+  }
+  return std::nullopt;
 }
 
 void LastListedTicks::startWaitingEntitiesAt(std::uint32_t tick) {

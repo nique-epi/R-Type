@@ -55,9 +55,10 @@ struct AnimatedSprite;
  * the client has, and an EntityDestroyed naming one it does not have, change
  * nothing; so does a message naming NO_ENTITY_ID or a type outside
  * WireEntityType. The players of a WorldState are not read. An entity no
- * WorldState listed for UNLISTED_ENTITY_TICKS is removed, without an effect,
- * by the first state that still leaves it out (see LastListedTicks): the
- * server destroyed it and every copy of its EntityDestroyed was lost.
+ * complete WorldState listed for UNLISTED_ENTITY_TICKS is removed, without an
+ * effect, once a part of a newer state shows that state complete (see
+ * LastListedTicks): the server destroyed it and every copy of its
+ * EntityDestroyed was lost.
  *
  * One replicator serves one game: the ticks start again with each game, and a
  * replicator kept from the previous one would ignore every state until the new
@@ -88,9 +89,9 @@ class EntityReplicator {
 
   /**
    * @brief Moves every entity the state lists to its position, and creates
-   * those the client does not have, then removes those no state listed for
-   * UNLISTED_ENTITY_TICKS; nothing, when the state is older than the newest
-   * one applied.
+   * those the client does not have, then removes those no complete state
+   * listed for UNLISTED_ENTITY_TICKS; nothing, when the state is older than the
+   * newest one applied.
    */
   void apply(const network::WorldState& state);
 
@@ -118,8 +119,9 @@ class EntityReplicator {
   bool place(const network::EntityState& listed);
 
   /**
-   * @brief Removes, without an effect, every entity no state listed for
-   * UNLISTED_ENTITY_TICKS at @p tick.
+   * @brief Removes, without an effect, every entity the state @p tick
+   * completes finds unlisted for UNLISTED_ENTITY_TICKS: nothing for another
+   * part of the newest tick.
    */
   void removeUnlistedAt(std::uint32_t tick);
 
