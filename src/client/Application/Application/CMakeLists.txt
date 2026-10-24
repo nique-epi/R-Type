@@ -8,7 +8,7 @@ target_link_libraries(rtype_client_application
     rtype_client_connection
     rtype_client_game_window
     rtype_client_network_thread
-    rtype_client_rendering_interfaces
+    rtype_client_interface
     rtype_client_window
     rtype_client_screen_stack
     rtype_client_platform

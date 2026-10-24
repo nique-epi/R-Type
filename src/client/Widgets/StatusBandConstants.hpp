@@ -4,10 +4,10 @@
 #include <SFML/Graphics/Rect.hpp>
 #include <SFML/System/Vector2.hpp>
 #include <cstdint>
-#include "BackgroundColors.hpp"
+#include "BackgroundColorConstants.hpp"
 #include "BackgroundConstants.hpp"
 #include "EntitySpriteConstants.hpp"
-#include "InterfaceColors.hpp"
+#include "InterfaceColorConstants.hpp"
 #include "InterfaceConstants.hpp"
 #include "PlayfieldConstants.hpp"
 #include "WidgetConstants.hpp"

@@ -12,7 +12,7 @@
 #include "HangarBayConstants.hpp"
 #include "IInterfaceCanvas.hpp"
 #include "ImagePlacement.hpp"
-#include "InterfaceColors.hpp"
+#include "InterfaceColorConstants.hpp"
 #include "MotionPreference.hpp"
 #include "SpriteFrame.hpp"
 #include "SunkBox.hpp"

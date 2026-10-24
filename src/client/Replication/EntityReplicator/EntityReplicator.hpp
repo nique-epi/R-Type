@@ -1,6 +1,9 @@
 #pragma once
 
 #include <cstdint>
+#include <optional>
+#include <span>
+#include <vector>
 #include "Entity.hpp"
 #include "EntityType.hpp"
 #include "LastListedTicks.hpp"
@@ -20,6 +23,8 @@ namespace rtype::network {
 struct EntityDestroyed;
 struct EntitySpawned;
 struct EntityState;
+struct GameEvent;
+struct PlayerState;
 struct WorldState;
 
 }  // namespace rtype::network
@@ -41,12 +46,14 @@ struct AnimatedSprite;
  * game runs here: where an entity is and when it disappears come from the
  * server only.
  *
- * It plays the effects the protocol page ties to these messages: the
- * appearance of every entity it creates, the muzzle flash of a missile; the
- * explosion of an entity an EntityDestroyed says was Killed, centered where
- * the entity stood; nothing for one Removed. Each plays once per entity: a
+ * It tells the effects what the protocol page ties to these messages: the
+ * arrival of every ship it creates and the muzzle flash of every missile; the
+ * explosion of an entity an EntityDestroyed says was Killed, the whole of T4
+ * for a ship, centered where the entity stood; nothing for one Removed; the
+ * hit of the entity an EntityDamaged names. Each plays once per entity: a
  * later copy of an EntityDestroyed names an entity the client no longer has,
- * and a later copy of an EntitySpawned names one it has.
+ * a later copy of an EntitySpawned names one it has, and the connection hands
+ * over the first copy of a GameEvent only.
  *
  * It follows the client rules of the protocol page. A WorldState older than
  * the newest one applied is ignored (see WorldStateFilter); an equal tick is
@@ -54,11 +61,18 @@ struct AnimatedSprite;
  * and the client does not have is created. An EntitySpawned naming an entity
  * the client has, and an EntityDestroyed naming one it does not have, change
  * nothing; so does a message naming NO_ENTITY_ID or a type outside
- * WireEntityType. The players of a WorldState are not read. An entity no
- * complete WorldState listed for UNLISTED_ENTITY_TICKS is removed, without an
- * effect, once a part of a newer state shows that state complete (see
- * LastListedTicks): the server destroyed it and every copy of its
- * EntityDestroyed was lost.
+ * WireEntityType. An entity no complete WorldState listed for
+ * UNLISTED_ENTITY_TICKS is removed, without an effect, once a part of a newer
+ * state shows that state complete (see LastListedTicks): the server destroyed
+ * it and every copy of its EntityDestroyed was lost.
+ *
+ * Of the players of a WorldState, it marks the ship of each with the color
+ * of its pilot (see PilotShip) and whether it can be hit, then gives the
+ * effects its score, from which they show the figure of a gain; a player
+ * number outside FIRST_PLAYER_NUMBER to MAXIMUM_PLAYERS, or a ship id that
+ * names no ship, is ignored. The players are read after the entities and
+ * before the appearances of the entities the state created, so a ship
+ * created by a world state arrives in the color of its pilot.
  *
  * One replicator serves one game: the ticks start again with each game, and a
  * replicator kept from the previous one would ignore every state until the new
@@ -83,14 +97,15 @@ class EntityReplicator {
 
   /**
    * @brief Creates the entity the message announces, unless the client
-   * already has it.
+   * already has it, then plays its appearance.
    */
   void apply(const network::EntitySpawned& message);
 
   /**
    * @brief Moves every entity the state lists to its position, and creates
    * those the client does not have, then removes those no complete state
-   * listed for UNLISTED_ENTITY_TICKS; nothing, when the state is older than the
+   * listed for UNLISTED_ENTITY_TICKS, then reads its players, then plays the
+   * appearance of the entities created; nothing for a state older than the
    * newest one applied.
    */
   void apply(const network::WorldState& state);
@@ -101,35 +116,20 @@ class EntityReplicator {
    */
   void apply(const network::EntityDestroyed& message);
 
+  /**
+   * @brief Plays the hit of the entity an EntityDamaged names, if the client
+   * has it. A PlayerHit or a PlayerEliminated plays nothing here.
+   */
+  void apply(const network::GameEvent& event);
+
  private:
   /**
-   * @brief Creates the entity, with the sprite and the animation of its type,
-   * binds its id to it, then plays its appearance. Creates nothing for the id
-   * NO_ENTITY_ID or a type outside WireEntityType: every check runs before
-   * anything is created.
-   * @returns true when the entity was created.
+   * @returns The entity created for an entity announced, with the sprite and
+   * the animation of its type, its id bound; nothing for the id NO_ENTITY_ID
+   * or a type outside WireEntityType, every check running before anything is
+   * created. Plays no effect.
    */
-  bool create(const network::EntityState& announced);
-
-  /**
-   * @brief Moves the entity a state lists to its position, or creates it when
-   * the client does not have it.
-   * @returns true when the client has the entity afterwards.
-   */
-  bool place(const network::EntityState& listed);
-
-  /**
-   * @brief Removes, without an effect, every entity the state @p tick
-   * completes finds unlisted for UNLISTED_ENTITY_TICKS: nothing for another
-   * part of the newest tick.
-   */
-  void removeUnlistedAt(std::uint32_t tick);
-
-  /**
-   * @brief Destroys the entity and forgets its id, so a later message naming
-   * it creates it again, or changes nothing.
-   */
-  void remove(std::uint32_t networkId, engine::Entity entity);
+  std::optional<engine::Entity> create(const network::EntityState& announced);
 
   /**
    * @returns A new entity at @p position, with its type and the sprite and
@@ -139,17 +139,26 @@ class EntityReplicator {
   engine::Entity addEntity(game::EntityType type, game::Position position,
                            AnimatedSprite look);
 
-  /**
-   * @brief Puts the entity at the position; does nothing for an entity
-   * without a Position.
-   */
-  void move(engine::Entity entity, game::Position position);
+  /** @brief Moves the entities a state of @p tick lists, and creates those the
+   * client does not have; records that the state listed each of them.
+   * @returns The entities created, for their appearance. */
+  std::vector<engine::Entity> applyEntities(
+      std::span<const network::EntityState> entities, std::uint32_t tick);
+
+  /** @brief Marks the ship of each player and notes its score; see the
+   * class. */
+  void applyPlayers(std::span<const network::PlayerState> players);
+
+  /** @brief Marks the ship of a player with its pilot color and whether it
+   * can be hit, when the client has that ship. */
+  void markShip(const network::PlayerState& player, int pilotColor);
 
   /**
-   * @brief Plays the explosion of the entity, centered where it stands; does
-   * nothing for an entity without a Position or an EntityType.
+   * @brief Removes, without an effect, every entity the state @p tick
+   * completes finds unlisted for UNLISTED_ENTITY_TICKS: nothing for another
+   * part of the newest tick.
    */
-  void explode(engine::Entity entity);
+  void removeUnlistedAt(std::uint32_t tick);
 
   engine::EntityRegistry* entities_{};
   engine::ComponentRegistry* components_{};

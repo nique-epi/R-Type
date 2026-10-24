@@ -1,0 +1,16 @@
+add_library(rtype_client_mission_start_interfaces INTERFACE)
+
+target_include_directories(rtype_client_mission_start_interfaces INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
+
+target_link_libraries(rtype_client_mission_start_interfaces INTERFACE rtype_engine_time)
+
+add_library(rtype_client_mission_start STATIC MissionStart.cpp)
+
+target_link_libraries(rtype_client_mission_start
+  PUBLIC
+    rtype_client_mission_start_interfaces
+  PRIVATE
+    rtype_client_easing
+)
+
+rtype_enable_warnings(rtype_client_mission_start)

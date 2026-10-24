@@ -15,7 +15,7 @@ target_link_libraries(rtype_client_screens
   PRIVATE
     rtype_client_asset_loading_step
     rtype_client_effect_interfaces
-    rtype_client_rendering_interfaces
+    rtype_client_interface
 )
 
 rtype_enable_warnings(rtype_client_screens)

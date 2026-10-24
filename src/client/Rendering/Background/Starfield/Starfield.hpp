@@ -19,6 +19,9 @@ namespace rtype::client {
  * Nothing depends on the frame rate: everything moves by the time given to
  * advance(). A star that leaves on the left comes back on the right at a new
  * height, so the sky never shows a seam.
+ *
+ * The stars move setSpeedFactor() times their own speed, 1 until set; above
+ * STREAK_SPEED_FACTOR, each is drawn with its streak behind it.
  */
 class Starfield {
  public:
@@ -30,6 +33,10 @@ class Starfield {
    * MAXIMUM_BACKGROUND_STEP. A negative time moves nothing.
    */
   void advance(engine::Duration elapsed);
+
+  /** @brief From the next advance, the stars move @p factor times their own
+   * speed, 0 at least. */
+  void setSpeedFactor(float factor);
 
   /**
    * @brief Paints the sky back to front: far stars, the planet, middle and
@@ -53,11 +60,21 @@ class Starfield {
   static void paintStar(const Star& star, std::int64_t twinkleStep,
                         IPixelSurface& surface);
 
+  /** @brief Paints a star, after its streak when it moves fast enough. */
+  void paintMovingStar(const Star& star, std::int64_t twinkleStep,
+                       IPixelSurface& surface) const;
+
+  /** @brief Paints, behind a star, the pixels it covers in one
+   * SIMULATION_TICK_DURATION at that speed factor. */
+  static void paintStreak(const Star& star, float speedFactor,
+                          IPixelSurface& surface);
+
   std::mt19937 random_;
   std::vector<Star> stars_;
   PlanetImage planetImage_;
   float planetLeft_ = BACKGROUND_WIDTH * PLANET_START_SHARE_OF_WIDTH;
   engine::Duration elapsed_{};
+  float speedFactor_ = 1.0F;
   SkyEventScheduler skyEvents_;
 };
 

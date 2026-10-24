@@ -17,6 +17,7 @@
 #include "Endpoint.hpp"
 #include "EntityLayer.hpp"
 #include "GameScreen.hpp"
+#include "GameScreenParts.hpp"
 #include "IInterfaceCanvas.hpp"
 #include "IScreen.hpp"
 #include "InterfaceCanvas.hpp"
@@ -160,11 +161,12 @@ std::unique_ptr<IScreen> Application::gameScreen() {
     return loading;
   }
   return std::make_unique<GameScreen>(
-      GameScreen::Parts{.navigator = screens_,
-                        .settings = settings_,
-                        .inputs = connection_,
-                        .entityMessages = connection_,
-                        .connection = connection_},
+      GameScreenParts{.navigator = screens_,
+                      .settings = settings_,
+                      .inputs = connection_,
+                      .entityMessages = connection_,
+                      .connection = connection_,
+                      .sky = background_},
       std::make_unique<EntityLayer>(*assets_), interfaceCanvas());
 }
 

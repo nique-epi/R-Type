@@ -8,8 +8,8 @@
 #include <optional>
 #include <string_view>
 #include <vector>
-#include "BackgroundColors.hpp"
-#include "InterfaceColors.hpp"
+#include "BackgroundColorConstants.hpp"
+#include "InterfaceColorConstants.hpp"
 #include "InterfaceConstants.hpp"
 #include "KeyPress.hpp"
 #include "Menu.hpp"

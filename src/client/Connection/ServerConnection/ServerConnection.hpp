@@ -11,6 +11,7 @@
 #include "ConnectionStatus.hpp"
 #include "Endpoint.hpp"
 #include "EntityMessage.hpp"
+#include "GameEventHistory.hpp"
 #include "IDatagramLink.hpp"
 #include "IEntityMessageSource.hpp"
 #include "IPlayerInputLink.hpp"
@@ -22,6 +23,7 @@
 #include "MessagePayload.hpp"
 #include "MessageType.hpp"
 #include "PacketHeader.hpp"
+#include "PendingDeparture.hpp"
 #include "ProtocolConstants.hpp"
 #include "TimeConstants.hpp"
 
@@ -63,10 +65,12 @@ namespace rtype::client {
  * and inputs from FIRST_INPUT_NUMBER again.
  *
  * From the start of the game, it keeps the EntitySpawned, WorldState and
- * EntityDestroyed of the server, in the order they arrived, until
- * drainEntityMessages() hands them over; leaving the session drops those not
- * handed over. The game screen drains them every frame, behind the options
- * too, so they never pile up for longer than the loading of the game.
+ * EntityDestroyed of the server, and the first copy of each GameEvent (see
+ * GameEventHistory), in the order they arrived, until drainEntityMessages()
+ * hands them over; leaving the session drops those not handed over and
+ * forgets the events seen. The game screen drains them every frame, behind
+ * the options too, so they never pile up for longer than the loading of the
+ * game.
  *
  * Only datagrams from the server being contacted, of this protocol and version
  * and whose messages add up to their end, are read; any other is ignored.
@@ -132,16 +136,6 @@ class ServerConnection : public IServerConnection,
   [[nodiscard]] bool isLeaving() const;
 
  private:
-  /** @brief The copies of a Disconnection still due to a server the player
-   * left, sent with the token and the sequences of the session left. */
-  struct Departure {
-    network::Endpoint server;
-    std::uint64_t sessionToken{};
-    std::uint16_t nextSequence{};
-    int copiesLeft{};
-    engine::Duration sinceCopy{};
-  };
-
   void registerAnswers();
   void registerSessionMessages();
 
@@ -255,9 +249,10 @@ class ServerConnection : public IServerConnection,
   std::vector<network::LobbyPlayer> lobbyPlayers_;
   std::optional<bool> requestedReady_;
   bool gameStarted_ = false;
-  std::optional<Departure> departure_;
+  std::optional<PendingDeparture> departure_;
   std::vector<network::IncomingDatagram> received_;
   std::vector<EntityMessage> entityMessages_;
+  GameEventHistory gameEvents_;
 };
 
 }  // namespace rtype::client

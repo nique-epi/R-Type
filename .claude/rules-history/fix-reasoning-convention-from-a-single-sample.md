@@ -26,3 +26,7 @@ The layout was taken from the two neighbours of the same folder, read as the con
 
 - ❌ `src/server/Replication/SessionDatagram/{SessionDatagram.hpp,SessionDatagram.cpp,CMakeLists.txt}`, copied from `EntitySpawnSender/`.
 - ✅ `src/server/Replication/SessionDatagram.{hpp,cpp}`, target declared in `src/server/Replication/CMakeLists.txt`; `EntitySpawnSender`, touched by the change, moved the same way; `WireEntityTypeMapping/` reported.
+
+## Update (23 October 2026) — the placement of the example changed with the folder rule
+
+Yannis Lorang's review of pull request #103 asked for every cpp/hpp pair in a folder of its own. Point 3 of `architecture-one-folder-per-concrete-class.md`, which the `SessionDatagram` example applied, now exempts header-only files only, and `fix-architecture-a-cpp-hpp-pair-has-its-own-folder.md` gives a free-function pair a folder. The example keeps its placement, marked as the rule then in force, with the placement the new rule gives; its lesson (read the written rule before copying a neighbour) is unchanged.

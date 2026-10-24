@@ -4,12 +4,13 @@ target_include_directories(rtype_client_scrolling_background PUBLIC ${CMAKE_CURR
 
 target_link_libraries(rtype_client_scrolling_background
   PUBLIC
+    rtype_client_background
     rtype_client_gaussian_blur
     rtype_client_pixel_batch
     rtype_client_pixel_canvas
     rtype_client_starfield
   PRIVATE
-    rtype_client_background
+    rtype_client_shifted_view
 )
 
 rtype_enable_warnings(rtype_client_scrolling_background)

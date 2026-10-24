@@ -3,7 +3,7 @@
 #include <SFML/System/Vector2.hpp>
 #include <cstddef>
 #include <random>
-#include "BackgroundColors.hpp"
+#include "BackgroundColorConstants.hpp"
 #include "BackgroundConstants.hpp"
 #include "IPixelSurface.hpp"
 #include "PixelRounding.hpp"

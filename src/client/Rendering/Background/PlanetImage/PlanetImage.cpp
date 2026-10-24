@@ -6,7 +6,7 @@
 #include <cmath>
 #include <cstddef>
 #include <vector>
-#include "BackgroundColors.hpp"
+#include "BackgroundColorConstants.hpp"
 #include "BackgroundConstants.hpp"
 #include "ColoredPixel.hpp"
 #include "PixelRounding.hpp"

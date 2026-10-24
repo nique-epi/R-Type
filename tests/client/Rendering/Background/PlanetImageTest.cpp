@@ -7,7 +7,7 @@
 #include <optional>
 #include <set>
 #include <utility>
-#include "BackgroundColors.hpp"
+#include "BackgroundColorConstants.hpp"
 #include "BackgroundConstants.hpp"
 #include "ColoredPixel.hpp"
 #include "PlanetImage.hpp"

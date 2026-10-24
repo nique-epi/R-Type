@@ -4,8 +4,8 @@
 #include <SFML/Graphics/Rect.hpp>
 #include <SFML/System/Vector2.hpp>
 #include <chrono>
-#include "BackgroundColors.hpp"
-#include "InterfaceColors.hpp"
+#include "BackgroundColorConstants.hpp"
+#include "InterfaceColorConstants.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::client {
