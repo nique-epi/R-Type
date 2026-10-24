@@ -43,7 +43,7 @@ Paths below are relative to `.claude/rules/`.
 | Situation | Apply |
 |---|---|
 | Writing C++ | `architecture/`, `code-style/` |
-| Writing a test | `code-style/code-style-tests-given-when-then.md`, `fix/process/fix-process-green-test-locking-a-defect-and-overly-deterministic-fake.md` |
+| Writing a test | `code-style/code-style-tests-given-when-then.md`, `code-style/fix-format-a-test-file-holds-only-tests.md`, `fix/process/fix-process-green-test-locking-a-defect-and-overly-deterministic-fake.md` |
 | Touching the network | security section of `core/code-review.md`, `fix/reasoning/fix-reasoning-an-exception-to-a-check-is-read-as-the-forger.md`, `fix/reasoning/fix-reasoning-last-received-is-not-newest-over-udp.md` |
 | Creating a branch | `fix/process/fix-process-branch-before-first-commit.md`, `fix/execution/fix-execution-checkout-b-starts-from-head-not-main.md`, `fix/process/fix-process-reread-rules-after-switching-branch.md` |
 | Committing | `core/commit.md`, `fix/process/fix-process-no-co-author-trailer.md`, `fix/execution/fix-execution-check-the-index-before-committing.md` |
@@ -84,6 +84,7 @@ Paths below are relative to `.claude/rules/`.
 - `code-style/code-style-full-names-no-abbreviations.md`
 - `code-style/code-style-private-members-trailing-underscore.md`
 - `code-style/code-style-tests-given-when-then.md`
+- `code-style/fix-format-a-test-file-holds-only-tests.md`
 - `code-style/fix-format-designated-initializers-for-aggregates.md`
 - `code-style/fix-format-name-after-data-not-process.md`
 - `code-style/fix-reasoning-a-pointer-into-a-temporary-dies-with-it.md`
