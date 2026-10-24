@@ -78,7 +78,9 @@ class Application {
 
   /**
    * @brief Runs the frame loop until the window is closed or no screen is
-   * left.
+   * left, then leaves the session with the server, if any: it returns once
+   * every copy of the Disconnection went out, DISCONNECTION_COPY_INTERVAL
+   * apart, so the server frees the place of the player at once.
    *
    * @throws AssetLoadingException when an asset of the game cannot be loaded.
    * @throws RenderTextureNotCreatedException when the background cannot be
@@ -88,6 +90,10 @@ class Application {
 
  private:
   void handleEvents();
+
+  /** @brief Leaves the session with the server, if any, and waits until the
+   * connection sent every copy of the Disconnection. */
+  void leaveServer();
 
   /** @returns The real time since the previous frame, which the background
    * and every screen move by. */

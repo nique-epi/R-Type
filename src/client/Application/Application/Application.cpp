@@ -7,10 +7,12 @@
 #include <optional>
 #include <random>
 #include <string>
+#include <thread>
 #include <utility>
 #include "AssetLibrary.hpp"
 #include "AssetList.hpp"
 #include "BoundAction.hpp"
+#include "ConnectionConstants.hpp"
 #include "ConnectionScreen.hpp"
 #include "Endpoint.hpp"
 #include "EntityLayer.hpp"
@@ -86,6 +88,15 @@ void Application::run() {
     screens_.update(elapsed);
     screens_.applyPendingChanges();
     render();
+  }
+  leaveServer();
+}
+
+void Application::leaveServer() {
+  connection_.cancel();
+  while (connection_.isLeaving()) {
+    std::this_thread::sleep_for(DISCONNECTION_COPY_INTERVAL);
+    connection_.update(measureFrame());
   }
 }
 

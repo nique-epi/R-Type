@@ -109,6 +109,42 @@ TEST(NetworkThread, SendsEachHandedDatagramToItsDestination) {
 }
 
 /**
+ * Given SENDING_THREADS_DESTROYED_AT_ONCE network threads, built one after
+ * the other, each handed one datagram for a peer
+ * When each one is destroyed right after its datagram was handed over
+ * Then every datagram reaches the peer
+ */
+TEST(NetworkThread, SendsWhatWaitsBeforeItStops) {
+  NetworkContext peerContext;
+  UdpSocket peer{peerContext, loopbackOnPort(ANY_PORT)};
+  const Endpoint peerEndpoint = peer.localEndpoint();
+  std::size_t arrivals = 0;
+  std::promise<void> everyArrival;
+  const std::future<void> arrivedAll = everyArrival.get_future();
+  peer.startReceiving(
+      [&arrivals, &everyArrival, &peerContext](
+          const Endpoint& /*sender*/, std::span<const std::byte> /*payload*/) {
+        ++arrivals;
+        if (arrivals == SENDING_THREADS_DESTROYED_AT_ONCE) {
+          everyArrival.set_value();
+          peerContext.stop();
+        }
+      });
+  const std::jthread peerThread{[&peerContext] { peerContext.run(); }};
+
+  for (std::size_t created = 0; created < SENDING_THREADS_DESTROYED_AT_ONCE;
+       ++created) {
+    NetworkThread networkThread{loopbackOnPort(ANY_PORT)};
+    networkThread.send(OutgoingDatagram{.destination = peerEndpoint,
+                                        .payload = exchangedBytes()});
+  }
+  const std::future_status status = arrivedAll.wait_for(DATAGRAM_TIMEOUT);
+  peerContext.stop();
+
+  EXPECT_EQ(status, std::future_status::ready);
+}
+
+/**
  * Given a network thread that received nothing
  * When the test thread drains it
  * Then the call returns without adding anything

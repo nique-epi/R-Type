@@ -681,6 +681,39 @@ TEST_F(ServerConnectionFixture, LeavingSendsThreeDisconnections50MsApart) {
 
 /**
  * Given a session
+ * When the player leaves it, then time passes by one copy interval at a time
+ * Then the connection is leaving until the third Disconnection went out, and
+ * no longer once it did
+ */
+TEST_F(ServerConnectionFixture, IsLeavingUntilTheLastDisconnectionWentOut) {
+  accept();
+
+  connection().cancel();
+  EXPECT_TRUE(connection().isLeaving());
+  update(DISCONNECTION_COPY_INTERVAL);
+  EXPECT_TRUE(connection().isLeaving());
+  update(DISCONNECTION_COPY_INTERVAL);
+
+  EXPECT_FALSE(connection().isLeaving());
+  EXPECT_EQ(sentCountOf<network::Disconnection>(), 3U);
+}
+
+/**
+ * Given an attempt the server has not answered yet
+ * When the player cancels it
+ * Then the connection is not leaving: no session was open, so no
+ * Disconnection is due
+ */
+TEST_F(ServerConnectionFixture, IsNotLeavingAnAttemptNeverAccepted) {
+  connect();
+
+  connection().cancel();
+
+  EXPECT_FALSE(connection().isLeaving());
+}
+
+/**
+ * Given a session
  * When the player leaves it
  * Then the Disconnection goes to that server, with the token of the session
  */
