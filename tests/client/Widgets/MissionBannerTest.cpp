@@ -1,5 +1,4 @@
 #include <gtest/gtest.h>
-#include <cstddef>
 #include "EffectTestConstants.hpp"
 #include "InterfaceColorConstants.hpp"
 #include "MissionBanner.hpp"
