@@ -1,11 +1,14 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include <SFML/Graphics/Color.hpp>
 #include <SFML/Graphics/Rect.hpp>
 #include <algorithm>
+#include <cstddef>
 #include "InterfaceColorConstants.hpp"
 #include "IntroOverlayConstants.hpp"
 #include "IntroOverlayFixtures.hpp"
 #include "IntroOverlayTestConstants.hpp"
+#include "IntroTestConstants.hpp"
 #include "IntroTimeline.hpp"
 #include "IntroTimelineConstants.hpp"
 #include "RecordingInterfaceCanvas.hpp"
@@ -36,12 +39,12 @@ using rtype::client::testing::HINT_ON_THE_BAND;
 using rtype::client::testing::HINT_ON_THE_FOOTER;
 using rtype::client::testing::INTO_A_CLOSEUP;
 using rtype::client::testing::INTO_THE_CREDIT;
-using rtype::client::testing::LOGO_AND_ITS_TRAIL;
 using rtype::client::testing::LOGO_ON_THE_TITLE;
 using rtype::client::testing::LUKAS_UNDERLINE;
 using rtype::client::testing::ONE_IMAGE;
 using rtype::client::testing::SECOND_PILOT_NAME;
 using rtype::client::testing::SQUADRON_BOX_ON_THE_TITLE;
+using rtype::client::testing::TRAIL_COPIES;
 using rtype::client::testing::UNDERLINE_TOP_LEFT;
 using rtype::client::testing::WHOLE_PICTURE;
 using ::testing::Contains;
@@ -170,7 +173,12 @@ TEST(IntroOverlay, TheLogoLandsWhereTheTitleShowsIt) {
 TEST(IntroOverlay, TheLogoFliesWithItsTrail) {
   const InterfaceCanvasRecord record = overlayAt(INTRO_SLAM + A_MOMENT);
 
-  EXPECT_EQ(record.images.size(), LOGO_AND_ITS_TRAIL);
+  EXPECT_EQ(static_cast<std::size_t>(
+                std::ranges::count_if(record.images,
+                                      [](const RecordedImage& image) {
+                                        return image.tint != sf::Color::White;
+                                      })),
+            TRAIL_COPIES);
 }
 
 /**

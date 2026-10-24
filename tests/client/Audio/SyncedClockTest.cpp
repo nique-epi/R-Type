@@ -10,7 +10,6 @@
 
 using rtype::client::MUSIC_SYNC_SNAP;
 using rtype::client::SyncedClock;
-using rtype::client::testing::A_FRAME;
 using rtype::client::testing::DURATION_ROUNDING;
 using rtype::client::testing::MUSIC_AT_SKIP;
 using rtype::client::testing::MUSIC_BEHIND;
@@ -29,11 +28,11 @@ TEST(SyncedClock, WithoutMusicTheClockFollowsTheFrames) {
   const FakeMusicClock music;
   SyncedClock clock(music);
 
-  clock.advance(A_FRAME);
-  clock.advance(A_FRAME);
-  clock.advance(A_FRAME);
+  clock.advance(ONE_FRAME);
+  clock.advance(ONE_FRAME);
+  clock.advance(ONE_FRAME);
 
-  EXPECT_EQ(clock.now(), A_FRAME + A_FRAME + A_FRAME);
+  EXPECT_EQ(clock.now(), ONE_FRAME + ONE_FRAME + ONE_FRAME);
 }
 
 /**
@@ -46,7 +45,7 @@ TEST(SyncedClock, TheClockTakesTheMusicWhenItIsFarOff) {
   music.setPlayingOffset(MUSIC_FAR_AHEAD);
   SyncedClock clock(music);
 
-  clock.advance(A_FRAME);
+  clock.advance(ONE_FRAME);
 
   EXPECT_EQ(clock.now(), MUSIC_FAR_AHEAD);
 }
@@ -58,13 +57,14 @@ TEST(SyncedClock, TheClockTakesTheMusicWhenItIsFarOff) {
  */
 TEST(SyncedClock, AFrameClosesPartOfASmallGap) {
   FakeMusicClock music;
-  music.setPlayingOffset(A_FRAME + SMALL_GAP);
+  music.setPlayingOffset(ONE_FRAME + SMALL_GAP);
   SyncedClock clock(music);
 
-  clock.advance(A_FRAME);
+  clock.advance(ONE_FRAME);
 
-  EXPECT_LE(std::chrono::abs(clock.now() - (A_FRAME + TENTH_OF_THE_SMALL_GAP)),
-            DURATION_ROUNDING);
+  EXPECT_LE(
+      std::chrono::abs(clock.now() - (ONE_FRAME + TENTH_OF_THE_SMALL_GAP)),
+      DURATION_ROUNDING);
 }
 
 /**
@@ -74,12 +74,12 @@ TEST(SyncedClock, AFrameClosesPartOfASmallGap) {
  */
 TEST(SyncedClock, AGapOfExactlyTheSnapIsClosedInPart) {
   FakeMusicClock music;
-  music.setPlayingOffset(A_FRAME + MUSIC_SYNC_SNAP);
+  music.setPlayingOffset(ONE_FRAME + MUSIC_SYNC_SNAP);
   SyncedClock clock(music);
 
-  clock.advance(A_FRAME);
+  clock.advance(ONE_FRAME);
 
-  EXPECT_LE(std::chrono::abs(clock.now() - (A_FRAME + TENTH_OF_THE_SNAP)),
+  EXPECT_LE(std::chrono::abs(clock.now() - (ONE_FRAME + TENTH_OF_THE_SNAP)),
             DURATION_ROUNDING);
 }
 
@@ -91,12 +91,12 @@ TEST(SyncedClock, AGapOfExactlyTheSnapIsClosedInPart) {
  */
 TEST(SyncedClock, AGapJustOverTheSnapTakesTheMusic) {
   FakeMusicClock music;
-  music.setPlayingOffset(A_FRAME + MUSIC_SYNC_SNAP + ONE_TICK);
+  music.setPlayingOffset(ONE_FRAME + MUSIC_SYNC_SNAP + ONE_TICK);
   SyncedClock clock(music);
 
-  clock.advance(A_FRAME);
+  clock.advance(ONE_FRAME);
 
-  EXPECT_EQ(clock.now(), A_FRAME + MUSIC_SYNC_SNAP + ONE_TICK);
+  EXPECT_EQ(clock.now(), ONE_FRAME + MUSIC_SYNC_SNAP + ONE_TICK);
 }
 
 /**
@@ -109,10 +109,10 @@ TEST(SyncedClock, ClosingPartOfAGapNeverMovesTheTimeBack) {
   FakeMusicClock music;
   music.setPlayingOffset(MUSIC_FAR_AHEAD);
   SyncedClock clock(music);
-  clock.advance(A_FRAME);
+  clock.advance(ONE_FRAME);
 
-  music.setPlayingOffset(MUSIC_FAR_AHEAD + A_FRAME - MUSIC_BEHIND);
-  clock.advance(A_FRAME);
+  music.setPlayingOffset(MUSIC_FAR_AHEAD + ONE_FRAME - MUSIC_BEHIND);
+  clock.advance(ONE_FRAME);
 
   EXPECT_GT(clock.now(), MUSIC_FAR_AHEAD);
 }
@@ -124,10 +124,10 @@ TEST(SyncedClock, ClosingPartOfAGapNeverMovesTheTimeBack) {
  */
 TEST(SyncedClock, TheGapLeftIsWhatTheFrameDidNotClose) {
   FakeMusicClock music;
-  music.setPlayingOffset(A_FRAME + SMALL_GAP);
+  music.setPlayingOffset(ONE_FRAME + SMALL_GAP);
   SyncedClock clock(music);
 
-  clock.advance(A_FRAME);
+  clock.advance(ONE_FRAME);
 
   const std::optional<rtype::engine::Duration> gap = clock.gapToMusic();
   ASSERT_TRUE(gap.has_value());
@@ -159,8 +159,8 @@ TEST(SyncedClock, AJumpLeavesTheMusicWhereItIs) {
   SyncedClock clock(music);
   clock.jumpTo(SKIP_TARGET);
 
-  music.setPlayingOffset(MUSIC_AT_SKIP + A_FRAME);
-  clock.advance(A_FRAME);
+  music.setPlayingOffset(MUSIC_AT_SKIP + ONE_FRAME);
+  clock.advance(ONE_FRAME);
 
-  EXPECT_EQ(clock.now(), SKIP_TARGET + A_FRAME);
+  EXPECT_EQ(clock.now(), SKIP_TARGET + ONE_FRAME);
 }

@@ -72,9 +72,3 @@ std::size_t speedLinesOf(const InterfaceCanvasRecord& record) {
                fill.area.size.x >= rtype::client::testing::SHORTEST_SPEED_LINE;
       }));
 }
-
-std::size_t cuesPlaying(const std::vector<IntroCue>& cues,
-                        std::string_view sound) {
-  return static_cast<std::size_t>(
-      std::ranges::count(cues, sound, &IntroCue::sound));
-}

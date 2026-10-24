@@ -2,6 +2,7 @@
 #include <gtest/gtest.h>
 #include <SFML/System/Vector2.hpp>
 #include <SFML/Window/Keyboard.hpp>
+#include "EffectTestConstants.hpp"
 #include "IntroScreenFixture.hpp"
 #include "IntroScreenTestConstants.hpp"
 #include "KeyPress.hpp"
@@ -22,10 +23,8 @@ using rtype::client::testing::JUST_BEFORE_THE_TITLE;
 using rtype::client::testing::MUSIC_AFTER_THE_ENTRY;
 using rtype::client::testing::MUSIC_AFTER_THE_RELEASE;
 using rtype::client::testing::MUSIC_IN_THE_WARP;
-using rtype::client::testing::OWN_SPEED;
 using rtype::client::testing::PAST_THE_BLACK_SECOND;
 using rtype::client::testing::PRESS_IN_THE_MUSIC;
-using rtype::client::testing::WARP;
 using rtype::client::testing::WITHIN_THE_BLACK_SECOND;
 using ::testing::Contains;
 using ::testing::ElementsAre;
@@ -220,7 +219,7 @@ TEST_F(IntroScreenFixture, TheStarsWarpAtTheBoost) {
 
   intro().update(ONE_FRAME);
 
-  EXPECT_FLOAT_EQ(sky().lastSpeedFactor(), WARP);
+  EXPECT_FLOAT_EQ(sky().lastSpeedFactor(), TOP_WARP_SPEED);
 }
 
 /**

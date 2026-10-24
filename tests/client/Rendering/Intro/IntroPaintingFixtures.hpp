@@ -30,7 +30,3 @@
 /** @returns How many fills of the record are speed lines: one pixel high, at
  * least SHORTEST_SPEED_LINE long. */
 [[nodiscard]] std::size_t speedLinesOf(const InterfaceCanvasRecord& record);
-
-/** @returns How many cues play @p sound. */
-[[nodiscard]] std::size_t cuesPlaying(
-    const std::vector<rtype::client::IntroCue>& cues, std::string_view sound);

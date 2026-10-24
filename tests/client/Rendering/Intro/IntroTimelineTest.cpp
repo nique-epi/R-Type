@@ -2,6 +2,7 @@
 #include <optional>
 #include <span>
 #include "CinemaView.hpp"
+#include "EffectTestConstants.hpp"
 #include "IntroFreeze.hpp"
 #include "IntroTestConstants.hpp"
 #include "IntroTimeline.hpp"
@@ -33,11 +34,9 @@ using rtype::client::testing::FLOAT_ROUNDING;
 using rtype::client::testing::JUST_BEFORE_THE_SLAM;
 using rtype::client::testing::MUSIC_AT_A_PRESS;
 using rtype::client::testing::NEXT_BEAT_AFTER_THE_PRESS;
-using rtype::client::testing::OWN_SPEED;
 using rtype::client::testing::SCREEN_WIDTH;
 using rtype::client::testing::SECOND_CLOSEUP_TOP_LEFT;
 using rtype::client::testing::UNTIL_THE_FIRST_BEAT;
-using rtype::client::testing::WARP;
 
 /**
  * Given the freezes of the intro
@@ -71,12 +70,12 @@ TEST(IntroTimeline, WithoutFreezesTheSceneIsTheMusic) {
 }
 
 /**
- * Given the scene just after the boost reached its top
+ * Given the scene at the slam of the logo, in the full warp of the boost
  * When the speed of the stars is read
  * Then they warp twelve times their speed
  */
 TEST(IntroTimeline, TheStarsWarpAtTheBoost) {
-  EXPECT_FLOAT_EQ(skyFactorAt(INTRO_SCENE_SLAM), WARP);
+  EXPECT_FLOAT_EQ(skyFactorAt(INTRO_SCENE_SLAM), TOP_WARP_SPEED);
 }
 
 /**

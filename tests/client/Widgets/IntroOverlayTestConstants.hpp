@@ -28,7 +28,6 @@ constexpr std::string_view CREDIT_AT_ITS_START = "R-TYPE";
 constexpr float INTO_A_CLOSEUP = 0.3F;
 constexpr float DURING_THE_BANDS = 4.0F;
 constexpr float BEFORE_THE_HINT = 1.0F;
-constexpr float A_MOMENT = 0.01F;
 
 /** @brief The two bands, 24 pixels high, at the top and at the bottom of
  * the 480 × 270 picture. */
@@ -39,11 +38,11 @@ constexpr sf::Vector2i BOTTOM_BAND_TOP_LEFT(0, 246);
 constexpr std::string_view TITLE_LOGO_ID = "sprites/logo.png";
 constexpr sf::Vector2i TITLE_LOGO_SIZE(210, 42);
 
-/** @brief The nickname of the second pilot; one image, the logo alone; four,
- * the logo and its three copies. */
+/** @brief The nickname of the second pilot; one image, the logo alone; the
+ * three tinted copies that trail it. */
 constexpr std::string_view SECOND_PILOT_NAME = "LUKAS";
 constexpr std::size_t ONE_IMAGE = 1;
-constexpr std::size_t LOGO_AND_ITS_TRAIL = 4;
+constexpr std::size_t TRAIL_COPIES = 3;
 
 /** @brief The whole 480 × 270 picture, which the black second covers. */
 constexpr sf::IntRect WHOLE_PICTURE({0, 0}, {480, 270});

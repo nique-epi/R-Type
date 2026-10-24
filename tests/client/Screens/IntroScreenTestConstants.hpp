@@ -37,10 +37,6 @@ constexpr engine::Duration MUSIC_AFTER_THE_RELEASE =
  * shake to leave zero on one of them. */
 constexpr int FRAMES_AFTER_THE_RELEASE = 10;
 
-/** @brief The stars warp twelve times their speed, and come back to it. */
-constexpr float WARP = 12.0F;
-constexpr float OWN_SPEED = 1.0F;
-
 /** @brief A press 1.23 s into the music, between its second and third beats:
  * the logo then lands 0.3 s after the third beat, at 3 × 60/109 + 0.3 = 1.951 s
  * of the music, 0.721 s after the press; the tests play a little less and a

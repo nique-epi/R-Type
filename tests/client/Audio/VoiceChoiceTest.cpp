@@ -12,6 +12,7 @@ using rtype::client::SOUND_VOICE_LIMIT;
 using rtype::client::voiceForNextSound;
 using rtype::client::VoiceState;
 using rtype::client::testing::MANY_SOUNDS;
+using rtype::client::testing::SIXTEEN_VOICES;
 using rtype::client::testing::THREE_VOICES;
 
 /**
@@ -65,7 +66,7 @@ TEST(VoiceChoice, ASoundCutsTheSoundThatStartedFirstWhenEveryVoicePlays) {
 /**
  * Given a client none of whose sounds ever ends
  * When forty sounds come one after the other, each on the voice it is given
- * Then the client never holds more than SOUND_VOICE_LIMIT voices
+ * Then the client never holds more than its 16 voices
  */
 TEST(VoiceChoice, TheClientNeverPlaysMoreSoundsThanItsVoiceLimit) {
   std::vector<VoiceState> voices;
@@ -77,5 +78,5 @@ TEST(VoiceChoice, TheClientNeverPlaysMoreSoundsThanItsVoiceLimit) {
     voices.at(voice) = VoiceState{.playing = true, .startRank = rank};
   }
 
-  EXPECT_EQ(voices.size(), SOUND_VOICE_LIMIT);
+  EXPECT_EQ(voices.size(), SIXTEEN_VOICES);
 }
