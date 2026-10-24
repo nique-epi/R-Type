@@ -23,6 +23,7 @@
 #include "MissionBanner.hpp"
 #include "MissionStart.hpp"
 #include "PlayerInputPacer.hpp"
+#include "PlayerPreferences.hpp"
 #include "PlayerSettings.hpp"
 #include "ScreenConstants.hpp"
 #include "ScreenId.hpp"
@@ -34,13 +35,6 @@
 namespace rtype::client {
 
 namespace {
-
-/** @returns The version of the effects the settings ask for: the one without
- * flash when the player reduced flashes. */
-FlashPreference flashPreferenceOf(const PlayerSettings& settings) {
-  return settings.reduceFlashes ? FlashPreference::Reduced
-                                : FlashPreference::Full;
-}
 
 /** @brief Sets the speed of the stars and the shake of the sky for the time
  * since the start of the game: the warp of MISSION START with flashes, their
