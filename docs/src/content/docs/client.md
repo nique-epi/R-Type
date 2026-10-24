@@ -67,7 +67,7 @@ Code names a file by its **asset id**: its path in `assets/`, with `/` between f
 
 `AssetLoadingStep` (`rtype_client_asset_loading_step`) loads an `AssetList`. When it is created, it releases every loaded asset the list does not name, except the permanent ones, so whatever still uses them must already be destroyed; the assets already loaded are neither read again nor counted. Then `loadNext()` loads one asset per call, so a loading screen can be drawn between two files. After the last asset, if any could not be loaded, it throws one `AssetLoadingException` naming every invalid id, missing file and unreadable file.
 
-Assets are loaded at three moments only, all declared in `src/client/Screens/ScreenAssets.hpp` and listed in `ScreenAssets.cpp`:
+Assets are loaded at three moments only, all declared in `src/client/Screens/ScreenAssets/ScreenAssets.hpp` and listed in `ScreenAssets.cpp`:
 
 - at launch, before the window opens, `loadInterfaceAssets()` loads `interfaceAssets()`, the assets of the interface, which any screen may use at any time, in a game or outside one (today the two pixel fonts of the menus, `REGULAR_FONT_ID` and `SMALL_FONT_ID`), and makes them permanent, so changing screen outside a game never reads a font;
 - right after, still before the window opens, `loadTitleAssets()` loads `titleAssets()`: the logo (`LOGO_ID`, `sprites/logo.png`) and the entity sheet the squadron is drawn from, so the first frame already shows the title. They are not permanent: entering a game releases the logo, and a title screen built later goes through the loading screen of `titleAssets()` when one is missing;
@@ -121,7 +121,7 @@ Showing a new image takes four steps:
 
 1. Draw it at its native size into `assets/sprites/entities.png`, or put a new file in `assets/sprites/`, named after the asset id rule.
 2. Write its rectangle once, as a named constant (`EntitySpriteConstants.hpp` for the entity sheet), and the id of a new file too.
-3. List the id in `gameAssets()` (`src/client/Screens/ScreenAssets.cpp`), which already names the entity, effect and HUD sheets and the plug icon.
+3. List the id in `gameAssets()` (`src/client/Screens/ScreenAssets/ScreenAssets.cpp`), which already names the entity, effect and HUD sheets and the plug icon.
 4. Give the entity a `Sprite` with that id, rectangle and layer: for an entity type, a case in `spriteOf`, and one in `animationOf` for its frames.
 
 ## Entity sprites: `spriteOf`, `animationOf`
@@ -605,7 +605,7 @@ At the start of a game, the status canvas also shows MISSION START. `missionBann
 | Hand the game screen another message of the server | its type in `EntityMessage` (`src/client/Connection/EntityMessage.hpp`), its handler in `ServerConnection::registerSessionMessages()`, an `apply()` in `EntityReplicator` |
 | Test the game screen with entities of the server | `FakeEntityMessageSource` in `tests/doubles/`, as `tests/client/Screens/GameScreenTest.cpp` does |
 | Add an entity type to the protocol | `entityTypeOf` in `src/client/Replication/EntityReplicator/EntityReplicator.cpp` and `toWireEntityType` on the server, then `spriteOf` for its look |
-| Add an asset | A file in `assets/sprites/`, `sounds/`, `music/` or `fonts/`, or in `assets/icons/<set>/` next to the license of the set, and its id in `gameAssets()`, in `titleAssets()` for the title screen, or in `interfaceAssets()` for a font any screen may use (`src/client/Screens/ScreenAssets.cpp`); `client_screen_tests` loads `interfaceAssets()` for real, and the CI cannot create a texture |
+| Add an asset | A file in `assets/sprites/`, `sounds/`, `music/` or `fonts/`, or in `assets/icons/<set>/` next to the license of the set, and its id in `gameAssets()`, in `titleAssets()` for the title screen, or in `interfaceAssets()` for a font any screen may use (`src/client/Screens/ScreenAssets/ScreenAssets.cpp`); `client_screen_tests` loads `interfaceAssets()` for real, and the CI cannot create a texture |
 | Change the asset id rule | `isValidAssetId()` in `src/client/Assets/AssetIds.cpp`, `ASSET_ID_PUNCTUATION` in `AssetConstants.hpp`, and `assets/README.md` |
 | Change where the client looks for `assets/` | `findAssetFolder()` in `src/client/Assets/AssetFolder.cpp` |
 | Show a new image in the game | `assets/sprites/`, its rectangle in `src/client/Rendering/Sprites/EntitySpriteConstants.hpp`, `gameAssets()`, `spriteOf` and `animationOf` in `src/client/Rendering/Sprites/EntitySprites.cpp` |

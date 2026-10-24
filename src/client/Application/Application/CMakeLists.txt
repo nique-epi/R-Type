@@ -26,7 +26,7 @@ target_link_libraries(rtype_client_application
     rtype_client_localized_key_name
     rtype_client_options_screen
     rtype_client_quit_confirmation_screen
-    rtype_client_screens
+    rtype_client_screen_assets
     rtype_client_title_screen
 )
 

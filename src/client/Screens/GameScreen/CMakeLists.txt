@@ -11,7 +11,7 @@ target_link_libraries(rtype_client_game_screen
     rtype_client_player_input_pacer
     rtype_client_drawing
     rtype_client_score_board
-    rtype_client_screens
+    rtype_client_screen_assets
     rtype_engine
     rtype_logging
     SFML::Graphics

@@ -6,7 +6,7 @@ target_link_libraries(rtype_client_title_screen
   PUBLIC
     rtype_client_menu
     rtype_client_interface
-    rtype_client_screens
+    rtype_client_screen_assets
     rtype_client_window
     rtype_client_squadron
     SFML::Graphics
