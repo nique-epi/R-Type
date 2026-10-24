@@ -22,7 +22,7 @@ TitleScreen::TitleScreen(TitleScreenParts parts,
     : canvas_(std::move(canvas)),
       playfieldPointAt_(std::move(parts.playfieldPointAt)),
       menu_(buildMenu(parts.navigator.get())),
-      squadron_(parts.motion, parts.seed) {
+      squadron_(parts.motion, parts.seed, parts.squadronStart) {
   repaint();
 }
 

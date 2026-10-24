@@ -1,22 +1,39 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include <SFML/Window/Keyboard.hpp>
+#include <memory>
 #include "BlankRenderTarget.hpp"
+#include "EntitySpriteConstants.hpp"
 #include "KeyPress.hpp"
+#include "MotionPreference.hpp"
+#include "PointerEvents.hpp"
 #include "RecordingInterfaceCanvas.hpp"
 #include "RecordingNavigator.hpp"
 #include "ScreenConstants.hpp"
 #include "ScreenId.hpp"
+#include "SquadronStart.hpp"
+#include "SquadronTestConstants.hpp"
 #include "TitleInTheStackFixture.hpp"
+#include "TitleScreen.hpp"
 #include "TitleScreenFixture.hpp"
+#include "TitleScreenParts.hpp"
 #include "TitleScreenTestConstants.hpp"
 
+using rtype::client::ENTITY_SHEET_ID;
 using rtype::client::LOGO_ID;
+using rtype::client::MotionPreference;
 using rtype::client::ScreenId;
+using rtype::client::SquadronStart;
+using rtype::client::TitleScreen;
+using rtype::client::TitleScreenParts;
 using rtype::client::testing::LOGO_TOP_LEFT;
 using rtype::client::testing::PLAY_BAR_MIDDLE;
+using rtype::client::testing::SHIP_SIZE;
+using rtype::client::testing::SHIPS_IN_PLACE_ON_THE_TITLE;
+using rtype::client::testing::TITLE_SEED;
 using ::testing::ElementsAre;
 using ::testing::IsEmpty;
+using ::testing::UnorderedElementsAreArray;
 
 /**
  * Given the title screen just built
@@ -27,6 +44,28 @@ TEST_F(TitleScreenFixture, TheFirstFrameAlreadyShowsTheLogo) {
   ASSERT_FALSE(canvas().images.empty());
   EXPECT_EQ(canvas().images.front().assetId, LOGO_ID);
   EXPECT_EQ(canvas().images.front().topLeft, LOGO_TOP_LEFT);
+}
+
+/**
+ * Given the title screen the intro gives way to, its squadron in place
+ * When its first frame is painted
+ * Then the four ships already sit in their places in the box, where the
+ * intro leaves them
+ */
+TEST(TitleScreen, ASquadronInPlaceShowsItsShipsOnTheFirstFrame) {
+  RecordingNavigator navigator;
+  InterfaceCanvasRecord canvas;
+
+  const TitleScreen title(
+      TitleScreenParts{.navigator = navigator,
+                       .playfieldPointAt = samePlayfieldPoint,
+                       .motion = MotionPreference::Full,
+                       .seed = TITLE_SEED,
+                       .squadronStart = SquadronStart::InPlace},
+      std::make_unique<RecordingInterfaceCanvas>(canvas));
+
+  EXPECT_THAT(untintedImagesOf(canvas, ENTITY_SHEET_ID, SHIP_SIZE),
+              UnorderedElementsAreArray(SHIPS_IN_PLACE_ON_THE_TITLE));
 }
 
 /**

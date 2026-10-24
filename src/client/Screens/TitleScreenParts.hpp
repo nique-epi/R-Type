@@ -5,6 +5,7 @@
 #include "IScreenNavigator.hpp"
 #include "MotionPreference.hpp"
 #include "PlayfieldMapping.hpp"
+#include "SquadronStart.hpp"
 
 namespace rtype::client {
 
@@ -26,6 +27,9 @@ struct TitleScreenParts {
   MotionPreference motion{};
   /** @brief Seed of the shots of the squadron. */
   std::uint32_t seed{};
+  /** @brief SquadronStart::InPlace opens the title on its squadron in place,
+   * as the intro leaves it. */
+  SquadronStart squadronStart{};
 };
 
 }  // namespace rtype::client
