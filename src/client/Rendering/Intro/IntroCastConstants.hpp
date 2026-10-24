@@ -85,20 +85,20 @@ constexpr float INTRO_BOB_PHASE_STEP = 1.3F;
 /** @brief The charge pulls the squadron back INTRO_PULL_BACK pixels in
  * INTRO_PULL_BACK_TIME; it trembles during the last INTRO_TREMBLE_TIME before
  * the release, recoils INTRO_RECOIL pixels at it, losing INTRO_RECOIL_DECAY
- * a second, and leaves INTRO_EXIT_DISTANCE pixels right in INTRO_EXIT_TIME at
- * the boost, INTRO_EXIT_STAGGER apart. */
+ * a second; from the boost, each ship lands on its place in the squadron of
+ * the title in INTRO_LANDING_TIME, INTRO_LANDING_STAGGER after the one before
+ * it, all of them before the title opens. */
 constexpr float INTRO_PULL_BACK = 8.0F;
 constexpr float INTRO_PULL_BACK_TIME = 0.3F;
 constexpr float INTRO_TREMBLE_TIME = 0.15F;
 constexpr float INTRO_RECOIL = 6.0F;
 constexpr float INTRO_RECOIL_DECAY = 12.0F;
-constexpr float INTRO_EXIT_DISTANCE = 600.0F;
-constexpr float INTRO_EXIT_STAGGER = 0.03F;
-constexpr float INTRO_EXIT_TIME = 0.5F;
+constexpr float INTRO_LANDING_STAGGER = 0.03F;
+constexpr float INTRO_LANDING_TIME = 0.7F;
 
 /** @brief Length of the flame of the ships, from 0 to 1: in the close-ups, at
  * the entry, settled behind the swarm in INTRO_EXHAUST_SETTLE, during the
- * charge, and at the boost. */
+ * charge, and at the boost, before it dies out as the ship lands. */
 constexpr float INTRO_CLOSEUP_EXHAUST = 0.8F;
 constexpr float INTRO_ENTRY_EXHAUST = 0.9F;
 constexpr float INTRO_SWARM_EXHAUST = 0.45F;
@@ -107,9 +107,9 @@ constexpr float INTRO_CHARGE_EXHAUST = 0.15F;
 constexpr float INTRO_BOOST_EXHAUST = 1.0F;
 
 /** @brief The ghosts of a ship fade in INTRO_ENTRY_SMEAR_FADE after its
- * entry starts, and come back in INTRO_BOOST_SMEAR_RISE at the boost. */
+ * entry starts; they come back at the boost and catch up with the ship as it
+ * lands. */
 constexpr float INTRO_ENTRY_SMEAR_FADE = 0.35F;
-constexpr float INTRO_BOOST_SMEAR_RISE = 0.25F;
 
 /** @brief The nose of a ship, from its top-left corner: one pixel past its
  * sprite, one row under its muzzle. */

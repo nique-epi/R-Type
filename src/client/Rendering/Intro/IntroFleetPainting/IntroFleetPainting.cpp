@@ -131,7 +131,7 @@ void paintFlameRow(IInterfaceCanvas& canvas, const IntroFrame& frame,
 /** @brief Paints the flame behind a ship, its rows flickering one pixel. */
 void paintExhaust(IInterfaceCanvas& canvas, const IntroFrame& frame,
                   const ShipOnScreen& ship) {
-  const float amount = exhaustAt(frame.scene);
+  const float amount = exhaustAt(ship.pilot, frame.scene);
   if (amount <= INTRO_EXHAUST_THRESHOLD) {
     return;
   }
@@ -167,7 +167,8 @@ void paintMobs(IInterfaceCanvas& canvas, const IntroFrame& frame) {
 
 void paintShips(IInterfaceCanvas& canvas, const IntroFrame& frame) {
   for (std::size_t pilot = 0; pilot < INTRO_HOMES.size(); ++pilot) {
-    const std::optional<sf::Vector2f> place = shipPlaceAt(pilot, frame.scene);
+    const std::optional<sf::Vector2f> place =
+        landedPlaceAt(pilot, frame.scene, frame.squadronBox);
     if (!place.has_value()) {
       continue;
     }

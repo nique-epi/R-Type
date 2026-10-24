@@ -20,6 +20,7 @@
 #include "IntroFrame.hpp"
 #include "IntroFreeze.hpp"
 #include "IntroOverlay.hpp"
+#include "IntroOverlayConstants.hpp"
 #include "IntroPainting.hpp"
 #include "IntroScreenParts.hpp"
 #include "IntroTimeline.hpp"
@@ -144,7 +145,7 @@ void IntroScreen::askForTheTitle() {
     return;
   }
   titleAsked_ = true;
-  navigator_->replaceAll(ScreenId::Title);
+  navigator_->replaceAll(ScreenId::TitleAfterIntro);
 }
 
 void IntroScreen::playCuesUpTo(float scene) {
@@ -172,7 +173,8 @@ void IntroScreen::repaint(float real, float scene) {
                                       .view = cinemaViewAt(real),
                                       .shake = shake_.offset(),
                                       .drift = debrisDriftAt(scene),
-                                      .preference = preference_});
+                                      .preference = preference_,
+                                      .squadronBox = INTRO_SQUADRON_BOX_PLACE});
   paintIntroOverlay(*canvas_, real, titleLogo());
   canvas_->display();
 }

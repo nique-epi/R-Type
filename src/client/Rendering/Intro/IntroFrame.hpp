@@ -10,8 +10,9 @@ namespace rtype::client {
 
 /** @brief What every painter of the intro reads for one frame: the cast, the
  * time of the music and of the scene, the part of the world shown, the shake
- * of the camera in pixels of the canvas, how far left the debris drifted, and
- * whether effects may flash.
+ * of the camera in pixels of the canvas, how far left the debris drifted,
+ * whether effects may flash, and where the title screen lays the box of its
+ * squadron, which the ships land in.
  *
  * A std::reference_wrapper has no default constructor, so this struct is
  * only ever built with designated initializers naming every member: the
@@ -26,6 +27,7 @@ struct IntroFrame {
   sf::Vector2i shake;
   float drift{};
   FlashPreference preference{};
+  sf::Vector2i squadronBox;
 };
 
 }  // namespace rtype::client

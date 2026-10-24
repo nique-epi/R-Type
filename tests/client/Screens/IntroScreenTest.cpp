@@ -68,7 +68,7 @@ TEST_F(IntroScreenFixture, TheIntroGivesWayToTheTitleAfterTenBeats) {
 
   EXPECT_THAT(navigator().calls(),
               ElementsAre(NavigatorCall{.request = NavigatorRequest::ReplaceAll,
-                                        .screen = ScreenId::Title}));
+                                        .screen = ScreenId::TitleAfterIntro}));
 }
 
 /**
@@ -99,7 +99,7 @@ TEST_F(IntroScreenFixture, ASecondPressOpensTheTitle) {
 
   EXPECT_THAT(navigator().calls(),
               ElementsAre(NavigatorCall{.request = NavigatorRequest::ReplaceAll,
-                                        .screen = ScreenId::Title}));
+                                        .screen = ScreenId::TitleAfterIntro}));
 }
 
 /**

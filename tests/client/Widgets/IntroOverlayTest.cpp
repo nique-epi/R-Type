@@ -9,6 +9,7 @@
 #include "IntroTimeline.hpp"
 #include "IntroTimelineConstants.hpp"
 #include "RecordingInterfaceCanvas.hpp"
+#include "SquadronTestConstants.hpp"
 
 using rtype::client::closeupStartOf;
 using rtype::client::INK;
@@ -16,6 +17,7 @@ using rtype::client::INTRO_BAND_OPENING;
 using rtype::client::INTRO_HINT;
 using rtype::client::INTRO_SLAM;
 using rtype::client::INTRO_SLAM_TIME;
+using rtype::client::INTRO_SQUADRON_BOX_PLACE;
 using rtype::client::PLAYER_LIGHT_PINK;
 using rtype::client::PLAYER_PINK;
 using rtype::client::testing::A_MOMENT;
@@ -34,6 +36,7 @@ using rtype::client::testing::LOGO_ON_THE_TITLE;
 using rtype::client::testing::LUKAS_UNDERLINE;
 using rtype::client::testing::ONE_IMAGE;
 using rtype::client::testing::SECOND_PILOT_NAME;
+using rtype::client::testing::SQUADRON_BOX_ON_THE_TITLE;
 using rtype::client::testing::UNDERLINE_TOP_LEFT;
 using ::testing::Contains;
 
@@ -162,4 +165,13 @@ TEST(IntroOverlay, TheLogoFliesWithItsTrail) {
   const InterfaceCanvasRecord record = overlayAt(INTRO_SLAM + A_MOMENT);
 
   EXPECT_EQ(record.images.size(), LOGO_AND_ITS_TRAIL);
+}
+
+/**
+ * Given the box the title screen lays its squadron in
+ * When the place the intro lands its ships in is read
+ * Then it is that box, so the title opens on the ships where they stopped
+ */
+TEST(IntroOverlay, TheShipsLandInTheBoxOfTheTitleSquadron) {
+  EXPECT_EQ(INTRO_SQUADRON_BOX_PLACE, SQUADRON_BOX_ON_THE_TITLE);
 }

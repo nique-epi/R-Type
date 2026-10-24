@@ -113,8 +113,8 @@ class Application {
 
   /** @brief The loading screen of titleAssets() while some are not loaded,
    * the title screen once they all are; its squadron is still when the system
-   * asks for less motion. */
-  [[nodiscard]] std::unique_ptr<IScreen> titleScreen();
+   * asks for less motion, and starts in place for ScreenId::TitleAfterIntro. */
+  [[nodiscard]] std::unique_ptr<IScreen> titleScreen(ScreenId screen);
 
   /** @brief The loading screen of gameAssets() while some are not loaded, the
    * game screen once they all are. */

@@ -1,3 +1,4 @@
+#include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include <algorithm>
 #include "EffectColorConstants.hpp"
@@ -10,6 +11,7 @@
 #include "IntroTimeline.hpp"
 #include "IntroTimelineConstants.hpp"
 #include "RecordingInterfaceCanvas.hpp"
+#include "SquadronTestConstants.hpp"
 
 using rtype::client::BYDO_EXPLOSION_FRAME;
 using rtype::client::BYDO_EXPLOSION_WITHOUT_FLASH_FRAME;
@@ -21,12 +23,16 @@ using rtype::client::FlashPreference;
 using rtype::client::INTRO_FIRST_KILL;
 using rtype::client::INTRO_SCENE_BOOST;
 using rtype::client::INTRO_SWARM_CUT;
+using rtype::client::INTRO_TITLE;
 using rtype::client::PLAYER_BLUE;
 using rtype::client::PLAYER_SHIP_FRAME;
 using rtype::client::testing::A_MOMENT;
 using rtype::client::testing::CLOSEUP_SCALE;
 using rtype::client::testing::FULL_SPEED_LINES;
+using rtype::client::testing::SHIP_SIZE;
+using rtype::client::testing::SHIPS_IN_PLACE_ON_THE_TITLE;
 using rtype::client::testing::WIDE_SCALE;
+using ::testing::UnorderedElementsAreArray;
 
 /**
  * Given the close-up of the first pilot
@@ -137,4 +143,17 @@ TEST(IntroPainting, WithReducedFlashesTheWarpDrawsNoSpeedLine) {
                 FlashPreference::Reduced);
 
   EXPECT_EQ(speedLinesOf(record), 0U);
+}
+
+/**
+ * Given the ships landed in the squadron of the title
+ * When the scene is painted just before the title opens
+ * Then the four ships lie where the title shows its squadron in place
+ */
+TEST(IntroPainting, TheLandedShipsLieWhereTheTitleShowsThem) {
+  const InterfaceCanvasRecord record =
+      paintedAt(INTRO_TITLE - A_MOMENT, FlashPreference::Full);
+
+  EXPECT_THAT(untintedImagesOf(record, ENTITY_SHEET_ID, SHIP_SIZE),
+              UnorderedElementsAreArray(SHIPS_IN_PLACE_ON_THE_TITLE));
 }

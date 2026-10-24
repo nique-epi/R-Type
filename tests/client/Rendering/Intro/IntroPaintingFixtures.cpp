@@ -16,6 +16,7 @@
 #include "IntroTimeline.hpp"
 #include "IntroTimelineConstants.hpp"
 #include "RecordingInterfaceCanvas.hpp"
+#include "SquadronTestConstants.hpp"
 
 using rtype::client::FlashPreference;
 using rtype::client::IntroCue;
@@ -33,13 +34,16 @@ InterfaceCanvasRecord paintedAt(float real, FlashPreference preference) {
   InterfaceCanvasRecord record;
   RecordingInterfaceCanvas canvas(record);
   rtype::client::paintIntroCast(
-      canvas, IntroFrame{.cast = cast,
-                         .real = real,
-                         .scene = scene,
-                         .view = rtype::client::cinemaViewAt(real),
-                         .shake = {},
-                         .drift = rtype::client::debrisDriftAt(scene),
-                         .preference = preference});
+      canvas,
+      IntroFrame{
+          .cast = cast,
+          .real = real,
+          .scene = scene,
+          .view = rtype::client::cinemaViewAt(real),
+          .shake = {},
+          .drift = rtype::client::debrisDriftAt(scene),
+          .preference = preference,
+          .squadronBox = rtype::client::testing::SQUADRON_BOX_ON_THE_TITLE});
   return record;
 }
 
