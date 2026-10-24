@@ -1,0 +1,7 @@
+add_library(rtype_client_intro_hash STATIC IntroHash.cpp)
+
+target_include_directories(rtype_client_intro_hash PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+
+target_link_libraries(rtype_client_intro_hash PUBLIC rtype_client_intro_interfaces)
+
+rtype_enable_warnings(rtype_client_intro_hash)

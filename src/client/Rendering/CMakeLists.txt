@@ -19,6 +19,7 @@ add_subdirectory(SpriteLook)
 add_subdirectory(Drawing)
 add_subdirectory(Effects)
 add_subdirectory(Background)
+add_subdirectory(Intro)
 
 add_library(rtype_client_rendering INTERFACE)
 
