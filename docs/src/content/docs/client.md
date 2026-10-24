@@ -32,7 +32,7 @@ This page tells you where to look when you need to change something. It describe
 | Network thread | Available; opened at launch | `src/client/Connection/NetworkThread/` |
 | Ignoring an old world state | Available; used by `EntityReplicator` | `src/client/Replication/WorldStateFilter/` |
 | Applying the entities the server announces | Available; used by the game screen | `src/client/Replication/EntityReplicator/` |
-| Status band of the game: nickname, lives and score of each pilot | Available; the server sends the real score but counts no lives yet, and the client does not decode `PlayerLeft` | `src/client/Widgets/StatusBand.cpp`, `src/client/Replication/ScoreBoard/`, `assets/sprites/hud.png` |
+| Status band of the game: nickname, lives and score of each pilot | Available; the client does not decode `PlayerLeft` | `src/client/Widgets/StatusBand.cpp`, `src/client/Replication/ScoreBoard/`, `assets/sprites/hud.png` |
 | Server address, port and nickname at launch | Available; they fill the connection screen | `src/client/LaunchOptions/` |
 | Joining a server | Available: request, challenge, acceptance or refusal, then the waiting room, the ready state, the start of the game, the entity messages and the game events of the game, and leaving | `src/client/Connection/ServerConnection/` |
 | Sounds and music of the game | Not yet written | — |
@@ -574,7 +574,7 @@ receivedEntityMessages_.clear();
 
 ## Status band: `ScoreBoard`, `paintStatusBand`
 
-The game screen lays a status band over the bottom `STATUS_BAND_ROWS` (24) rows of the interface picture, the `STATUS_BAND_HEIGHT` (96 logical units) the game leaves free (see [Architecture](/R-Type/architecture/#coordinate-system)): one bay per player number, 1 to 4, with the nickname, the lives and the score of its pilot. The screen paints it when it is built, then again in an update only when a pilot or the banner of the start changed, so the 20 world states of a second repaint nothing while no score or life moves. Today every pilot shows the 3 lives the server sends until it counts them (`PLAYER_LIVES_UNTRACKED`), so no word but `YOU` appears.
+The game screen lays a status band over the bottom `STATUS_BAND_ROWS` (24) rows of the interface picture, the `STATUS_BAND_HEIGHT` (96 logical units) the game leaves free (see [Architecture](/R-Type/architecture/#coordinate-system)): one bay per player number, 1 to 4, with the nickname, the lives and the score of its pilot. The screen paints it when it is built, then again in an update only when a pilot or the banner of the start changed, so the 20 world states of a second repaint nothing while no score or life moves. The lives are those the server counts (see [Server](/R-Type/server/#lives-lifekeeper)): a pilot shows `OUT` once it has none left, `LAST LIFE` on its last one, and `RESPAWN` while its ship, back after a hit, cannot be hit.
 
 ### What the server says: `ScoreBoard`
 
