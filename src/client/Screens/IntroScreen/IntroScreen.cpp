@@ -14,6 +14,7 @@
 #include "FlashPreference.hpp"
 #include "IInterfaceCanvas.hpp"
 #include "IMusicClock.hpp"
+#include "IMusicPlayer.hpp"
 #include "IntroCastBuilder.hpp"
 #include "IntroCue.hpp"
 #include "IntroCues.hpp"
@@ -86,8 +87,9 @@ IntroScreen::IntroScreen(IntroScreenParts parts,
       clock_(parts.music.get()),
       cast_(buildIntroCast(parts.seed)),
       cues_(introCues(cast_, freezes_)) {
-  moveSky(0.0F);
-  repaint(0.0F, 0.0F);
+  clock_.jumpTo(durationOf(-INTRO_BLACK_TIME));
+  moveSky(-INTRO_BLACK_TIME);
+  repaint(-INTRO_BLACK_TIME, -INTRO_BLACK_TIME);
 }
 
 IntroScreen::~IntroScreen() {
@@ -108,9 +110,12 @@ void IntroScreen::update(engine::Duration elapsed) {
   if (real >= INTRO_TITLE) {
     if (!titleAsked_) {
       logGiveWay(logger_, clock_.gapToMusic());
-      askForTheTitle();
+      askForTheTitle(ScreenId::TitleAfterIntro);
     }
     return;
+  }
+  if (real >= INTRO_MUSIC_START) {
+    music_->start();
   }
   const float scene = sceneTimeAt(real, freezes_);
   playCuesUpTo(scene);
@@ -127,8 +132,12 @@ bool IntroScreen::hidesScreensBelow() const { return true; }
 
 void IntroScreen::skip() {
   const float now = secondsOf(clock_.now());
+  if (now < 0.0F) {
+    askForTheTitle(ScreenId::Title);
+    return;
+  }
   if (skipped_ || now >= INTRO_SLAM) {
-    askForTheTitle();
+    askForTheTitle(ScreenId::TitleAfterIntro);
     return;
   }
   skipped_ = true;
@@ -140,12 +149,12 @@ void IntroScreen::skip() {
       std::max(nextCue_, static_cast<std::size_t>(jumpedOver - cues_.begin()));
 }
 
-void IntroScreen::askForTheTitle() {
+void IntroScreen::askForTheTitle(ScreenId title) {
   if (titleAsked_) {
     return;
   }
   titleAsked_ = true;
-  navigator_->replaceAll(ScreenId::TitleAfterIntro);
+  navigator_->replaceAll(title);
 }
 
 void IntroScreen::playCuesUpTo(float scene) {

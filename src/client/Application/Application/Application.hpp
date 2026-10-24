@@ -52,8 +52,9 @@ class AssetLibrary;
  * hold, the game reads their keys, the options change and save them.
  *
  * It owns the sounds every screen plays, on SOUND_VOICE_LIMIT voices for the
- * whole client, and the music, started at launch and never restarted, whose
- * volume follows the settings at each frame.
+ * whole client, and the music, started once, by the intro after its black
+ * second or by the first title screen, never restarted, and whose volume
+ * follows the settings at each frame.
  *
  * Screens are asked for by identifier; createScreen() is the one place that
  * builds them, with one case per ScreenId. The client opens on the intro, or
@@ -113,7 +114,9 @@ class Application {
 
   /** @brief The loading screen of titleAssets() while some are not loaded,
    * the title screen once they all are; its squadron is still when the system
-   * asks for less motion, and starts in place for ScreenId::TitleAfterIntro. */
+   * asks for less motion, and starts in place for ScreenId::TitleAfterIntro.
+   * It starts the music, unless it plays already: the intro starts it after
+   * its black second, and a client without intro starts it with its title. */
   [[nodiscard]] std::unique_ptr<IScreen> titleScreen(ScreenId screen);
 
   /** @brief The loading screen of gameAssets() while some are not loaded, the
@@ -157,9 +160,8 @@ class Application {
   /** @brief The sky behind every screen, declared before the screens so it
    * outlives the game screen, which speeds it up and shakes it. */
   ScrollingBackground background_;
-  /** @brief The sounds every screen plays and the music started at launch,
-   * declared after the settings they read and before the screens that play
-   * them. */
+  /** @brief The sounds every screen plays and the music, declared after the
+   * settings they read and before the screens that play them. */
   SoundPlayer sounds_;
   MusicPlayer music_;
   engine::SystemClock clock_;

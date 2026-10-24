@@ -87,7 +87,6 @@ Application::Application(AssetLibrary& assets, network::Endpoint server,
       server_(std::move(server)),
       nickname_(std::move(nickname)),
       screens_([this](ScreenId screen) { return createScreen(screen); }) {
-  music_.start();
   screens_.replaceAll(firstScreen());
   screens_.applyPendingChanges();
 }
@@ -169,6 +168,7 @@ std::unique_ptr<IScreen> Application::createScreen(ScreenId screen) {
 }
 
 std::unique_ptr<IScreen> Application::titleScreen(ScreenId screen) {
+  music_.start();
   std::unique_ptr<IScreen> loading =
       loadingScreenUnlessLoaded(titleAssets(), screen);
   if (loading != nullptr) {

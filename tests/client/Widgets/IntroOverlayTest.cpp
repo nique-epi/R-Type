@@ -21,12 +21,17 @@ using rtype::client::INTRO_SQUADRON_BOX_PLACE;
 using rtype::client::PLAYER_LIGHT_PINK;
 using rtype::client::PLAYER_PINK;
 using rtype::client::testing::A_MOMENT;
+using rtype::client::testing::AFTER_THE_FADE;
+using rtype::client::testing::ALPHA_ROUNDING;
 using rtype::client::testing::BAND_SIZE;
 using rtype::client::testing::BAND_TEXT;
 using rtype::client::testing::BEFORE_THE_HINT;
 using rtype::client::testing::BOTTOM_BAND_TOP_LEFT;
 using rtype::client::testing::CREDIT_AT_ITS_START;
 using rtype::client::testing::DURING_THE_BANDS;
+using rtype::client::testing::DURING_THE_BLACK_SECOND;
+using rtype::client::testing::HALF_INK_ALPHA;
+using rtype::client::testing::HALF_WAY_THROUGH_THE_FADE;
 using rtype::client::testing::HINT_ON_THE_BAND;
 using rtype::client::testing::HINT_ON_THE_FOOTER;
 using rtype::client::testing::INTO_A_CLOSEUP;
@@ -38,6 +43,7 @@ using rtype::client::testing::ONE_IMAGE;
 using rtype::client::testing::SECOND_PILOT_NAME;
 using rtype::client::testing::SQUADRON_BOX_ON_THE_TITLE;
 using rtype::client::testing::UNDERLINE_TOP_LEFT;
+using rtype::client::testing::WHOLE_PICTURE;
 using ::testing::Contains;
 
 /**
@@ -174,4 +180,44 @@ TEST(IntroOverlay, TheLogoFliesWithItsTrail) {
  */
 TEST(IntroOverlay, TheShipsLandInTheBoxOfTheTitleSquadron) {
   EXPECT_EQ(INTRO_SQUADRON_BOX_PLACE, SQUADRON_BOX_ON_THE_TITLE);
+}
+
+/**
+ * Given the black second before the intro
+ * When the overlay is painted during it
+ * Then the whole picture is covered in opaque ink
+ */
+TEST(IntroOverlay, TheIntroOpensOnABlackScreen) {
+  const InterfaceCanvasRecord record = overlayAt(DURING_THE_BLACK_SECOND);
+
+  EXPECT_THAT(record.fills,
+              Contains(RecordedFill{.area = WHOLE_PICTURE, .color = INK}));
+}
+
+/**
+ * Given the fade in that follows the black second
+ * When the overlay is painted half way through it
+ * Then the ink over the whole picture is half transparent
+ */
+TEST(IntroOverlay, TheBlackFadesOutQuickly) {
+  const InterfaceCanvasRecord record = overlayAt(HALF_WAY_THROUGH_THE_FADE);
+
+  const auto cover =
+      std::ranges::find(record.fills, WHOLE_PICTURE, &RecordedFill::area);
+  ASSERT_NE(cover, record.fills.end());
+  EXPECT_NEAR(static_cast<float>(cover->color.a), HALF_INK_ALPHA,
+              ALPHA_ROUNDING);
+}
+
+/**
+ * Given the fade in that follows the black second
+ * When the overlay is painted once it is over
+ * Then nothing covers the whole picture any more
+ */
+TEST(IntroOverlay, TheFadeIsOverAfterItsTime) {
+  const InterfaceCanvasRecord record = overlayAt(AFTER_THE_FADE);
+
+  EXPECT_TRUE(std::ranges::none_of(record.fills, [](const RecordedFill& fill) {
+    return fill.area == WHOLE_PICTURE;
+  }));
 }

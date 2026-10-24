@@ -13,6 +13,10 @@
 
 namespace rtype::client {
 
+/** @brief The picture is ink before time 0, the black second of the intro,
+ * then fades in from ink in INTRO_FADE_IN_TIME. */
+constexpr float INTRO_FADE_IN_TIME = 0.3F;
+
 /** @brief The bands of the cinema format, INTRO_BAND_HEIGHT pixels at the top
  * and at the bottom, open in INTRO_BAND_OPENING from the slam; texts lie on
  * the bottom band from INTRO_BAND_TEXT_TOP, a name underlined

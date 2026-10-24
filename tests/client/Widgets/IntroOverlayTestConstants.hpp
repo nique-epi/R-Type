@@ -1,5 +1,6 @@
 #pragma once
 
+#include <SFML/Graphics/Rect.hpp>
 #include <SFML/System/Vector2.hpp>
 #include <cstddef>
 #include <string_view>
@@ -43,5 +44,17 @@ constexpr sf::Vector2i TITLE_LOGO_SIZE(210, 42);
 constexpr std::string_view SECOND_PILOT_NAME = "LUKAS";
 constexpr std::size_t ONE_IMAGE = 1;
 constexpr std::size_t LOGO_AND_ITS_TRAIL = 4;
+
+/** @brief The whole 480 × 270 picture, which the black second covers. */
+constexpr sf::IntRect WHOLE_PICTURE({0, 0}, {480, 270});
+
+/** @brief Moments of the black second and of the fade in of 0.3 s that
+ * follows it, in seconds of the music, and the alpha the ink keeps half way
+ * through the fade, to the nearest unit. */
+constexpr float DURING_THE_BLACK_SECOND = -0.5F;
+constexpr float HALF_WAY_THROUGH_THE_FADE = 0.15F;
+constexpr float AFTER_THE_FADE = 0.31F;
+constexpr float HALF_INK_ALPHA = 255.0F / 2.0F;
+constexpr float ALPHA_ROUNDING = 1.0F;
 
 }  // namespace rtype::client::testing

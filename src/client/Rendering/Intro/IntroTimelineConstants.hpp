@@ -10,8 +10,16 @@
 namespace rtype::client {
 
 /** @brief One beat of the theme: the intro cuts on its beats. Every time of
- * the intro is in seconds since it started, the first beat of the theme. */
+ * the intro is in seconds since the first beat of the theme. */
 constexpr float INTRO_BEAT = THEME_BEAT;
+
+/** @brief The intro opens on INTRO_BLACK_TIME seconds of black before its
+ * time 0, so the player sees it start; it starts the music at
+ * INTRO_MUSIC_START, THEME_FIRST_BEAT before time 0, so the first beat of
+ * the theme lands on time 0. */
+constexpr float INTRO_BLACK_TIME = 1.0F;
+constexpr float INTRO_MUSIC_START =
+    -std::chrono::duration<float>(THEME_FIRST_BEAT).count();
 
 /**
  * @brief The beats of the intro, in seconds of the music: the Bydo in the

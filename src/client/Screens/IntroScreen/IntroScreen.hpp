@@ -7,7 +7,7 @@
 #include "CameraShake.hpp"
 #include "FlashPreference.hpp"
 #include "IInterfaceCanvas.hpp"
-#include "IMusicClock.hpp"
+#include "IMusicPlayer.hpp"
 #include "IScreen.hpp"
 #include "IScreenNavigator.hpp"
 #include "ISky.hpp"
@@ -17,14 +17,20 @@
 #include "IntroFreeze.hpp"
 #include "IntroScreenParts.hpp"
 #include "Logger.hpp"
+#include "ScreenId.hpp"
 #include "SyncedClock.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::client {
 
 /**
- * @brief The intro the client opens on: 5.5 s of trailer on the beats of the
- * theme (IntroTimelineConstants.hpp), then the title screen, on the same sky.
+ * @brief The intro the client opens on: a second of black, then 5.5 s of
+ * trailer on the beats of the theme (IntroTimelineConstants.hpp), then the
+ * title screen, on the same sky.
+ *
+ * Its time starts at -INTRO_BLACK_TIME: the picture is black until 0, then
+ * fades in. It starts the music itself at INTRO_MUSIC_START, so the first
+ * beat of the theme lands on its time 0.
  *
  * Its time follows the position of the music while the music plays, and the
  * time of the frames otherwise (SyncedClock); the scene stops during the
@@ -35,12 +41,14 @@ namespace rtype::client {
  * INTRO_TITLE it writes how far the music was ahead of it, then asks for the
  * title in its place: ScreenId::TitleAfterIntro, whose squadron starts where
  * the ships of the intro landed. It is painted once when built, so its first
- * frame already shows the Bydo in the dark.
+ * frame is already black.
  *
- * The first key or click before INTRO_SLAM jumps to just before the slam of
- * the logo, so the logo slams on the next beat of the music (skipTargetAt()),
- * the cues jumped over left unplayed; the next one, or one from the slam on,
- * opens the title at once. The music is never touched. With REDUCE FLASHES,
+ * A key or a click during the black second opens the title at once, its
+ * squadron flying in. Then the first one before INTRO_SLAM jumps to just
+ * before the slam of the logo, so the logo slams on the next beat of the
+ * music (skipTargetAt()), the cues jumped over left unplayed; the next one,
+ * or one from the slam on, opens the title at once. A skip never moves the
+ * music. With REDUCE FLASHES,
  * read when it is built, the scene does not freeze, the camera does not
  * shake, the bursts show their version without flash and no speed line is
  * drawn. The sky is put back at its speed and place when the intro goes.
@@ -67,9 +75,9 @@ class IntroScreen : public IScreen {
    * from the slam on, asks for the title. */
   void skip();
 
-  /** @brief Asks for the title in place of the intro, once: the screen may be
-   * updated again before it is replaced. */
-  void askForTheTitle();
+  /** @brief Asks for that title screen in place of the intro, once: the
+   * screen may be updated again before it is replaced. */
+  void askForTheTitle(ScreenId title);
 
   /** @brief Plays the sound and adds the trauma of every cue the scene
    * reached since the last update; no trauma with REDUCE FLASHES. */
@@ -87,7 +95,7 @@ class IntroScreen : public IScreen {
   std::unique_ptr<IInterfaceCanvas> canvas_;
   ISky* sky_;
   ISoundPlayer* sounds_;
-  const IMusicClock* music_;
+  IMusicPlayer* music_;
   logging::Logger logger_;
   FlashPreference preference_;
   std::span<const IntroFreeze> freezes_;

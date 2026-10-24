@@ -23,8 +23,10 @@ using rtype::client::testing::MUSIC_AFTER_THE_ENTRY;
 using rtype::client::testing::MUSIC_AFTER_THE_RELEASE;
 using rtype::client::testing::MUSIC_IN_THE_WARP;
 using rtype::client::testing::OWN_SPEED;
+using rtype::client::testing::PAST_THE_BLACK_SECOND;
 using rtype::client::testing::PRESS_IN_THE_MUSIC;
 using rtype::client::testing::WARP;
+using rtype::client::testing::WITHIN_THE_BLACK_SECOND;
 using ::testing::Contains;
 using ::testing::ElementsAre;
 using ::testing::IsEmpty;
@@ -32,23 +34,79 @@ using ::testing::Not;
 
 /**
  * Given an intro just built
- * When its first frame passes
- * Then the growl of the Bydo in the dark plays
+ * When most of its black second passes
+ * Then no sound plays
+ */
+TEST_F(IntroScreenFixture, TheBlackSecondIsSilent) {
+  start();
+
+  playWithTheMusicFor(WITHIN_THE_BLACK_SECOND);
+
+  EXPECT_THAT(sounds().played(), IsEmpty());
+}
+
+/**
+ * Given an intro just built
+ * When most of its black second passes
+ * Then the music has not started yet
+ */
+TEST_F(IntroScreenFixture, TheMusicWaitsForTheEndOfTheBlackSecond) {
+  start();
+
+  playWithTheMusicFor(WITHIN_THE_BLACK_SECOND);
+
+  EXPECT_FALSE(music().playingOffset().has_value());
+}
+
+/**
+ * Given an intro just built
+ * When its black second is over
+ * Then it started the music
+ */
+TEST_F(IntroScreenFixture, TheIntroStartsTheMusicAfterItsBlackSecond) {
+  start();
+
+  playWithTheMusicFor(PAST_THE_BLACK_SECOND);
+
+  EXPECT_TRUE(music().playingOffset().has_value());
+}
+
+/**
+ * Given an intro just built
+ * When its black second is over
+ * Then the growl of the Bydo in the dark plays, and nothing else yet
  */
 TEST_F(IntroScreenFixture, TheIntroOpensOnTheGrowlOfTheBydo) {
   start();
 
-  intro().update(ONE_FRAME);
+  playWithTheMusicFor(PAST_THE_BLACK_SECOND);
 
   EXPECT_THAT(sounds().played(), ElementsAre(BYDO_GROWL_SOUND_ID));
 }
 
 /**
- * Given an intro without music
- * When a little less than ten beats pass
+ * Given an intro on the first frame of its black second
+ * When a key is pressed
+ * Then it asks at once for the title, whose squadron flies in
+ */
+TEST_F(IntroScreenFixture, APressDuringTheBlackSecondOpensTheTitle) {
+  start();
+  intro().update(ONE_FRAME);
+
+  intro().handleEvent(keyPress(sf::Keyboard::Key::Space));
+
+  EXPECT_THAT(navigator().calls(),
+              ElementsAre(NavigatorCall{.request = NavigatorRequest::ReplaceAll,
+                                        .screen = ScreenId::Title}));
+}
+
+/**
+ * Given an intro without a music file
+ * When a little less than a black second and ten beats pass
  * Then it asks for nothing yet
  */
 TEST_F(IntroScreenFixture, TheIntroPlaysItsTenBeats) {
+  music().removeTheFile();
   start();
 
   playFor(JUST_BEFORE_THE_TITLE);
@@ -57,11 +115,12 @@ TEST_F(IntroScreenFixture, TheIntroPlaysItsTenBeats) {
 }
 
 /**
- * Given an intro without music
- * When a little more than ten beats pass
- * Then it asks for the title in its place, once
+ * Given an intro without a music file
+ * When a little more than a black second and ten beats pass
+ * Then it asks once for the title, whose squadron starts in place
  */
 TEST_F(IntroScreenFixture, TheIntroGivesWayToTheTitleAfterTenBeats) {
+  music().removeTheFile();
   start();
 
   playFor(JUST_AFTER_THE_TITLE);
@@ -72,13 +131,29 @@ TEST_F(IntroScreenFixture, TheIntroGivesWayToTheTitleAfterTenBeats) {
 }
 
 /**
- * Given an intro on its first frame
+ * Given an intro that starts its music
+ * When a little more than a black second and ten beats pass, the music with
+ * them
+ * Then it asks once for the title, whose squadron starts in place
+ */
+TEST_F(IntroScreenFixture, WithItsMusicTheIntroGivesWayAfterTenBeats) {
+  start();
+
+  playWithTheMusicFor(JUST_AFTER_THE_TITLE);
+
+  EXPECT_THAT(navigator().calls(),
+              ElementsAre(NavigatorCall{.request = NavigatorRequest::ReplaceAll,
+                                        .screen = ScreenId::TitleAfterIntro}));
+}
+
+/**
+ * Given an intro past its black second
  * When a key is pressed
- * Then it asks for nothing: it jumped to the slam of the logo
+ * Then it does not open the title yet: it jumped to the slam of the logo
  */
 TEST_F(IntroScreenFixture, AFirstPressJumpsToTheSlam) {
   start();
-  intro().update(ONE_FRAME);
+  playWithTheMusicFor(PAST_THE_BLACK_SECOND);
 
   intro().handleEvent(keyPress(sf::Keyboard::Key::Space));
 
@@ -88,11 +163,11 @@ TEST_F(IntroScreenFixture, AFirstPressJumpsToTheSlam) {
 /**
  * Given an intro skipped to the slam of the logo
  * When a key is pressed again
- * Then it asks for the title at once
+ * Then it asks for the title at once, whose squadron starts in place
  */
 TEST_F(IntroScreenFixture, ASecondPressOpensTheTitle) {
   start();
-  intro().update(ONE_FRAME);
+  playWithTheMusicFor(PAST_THE_BLACK_SECOND);
   intro().handleEvent(keyPress(sf::Keyboard::Key::Space));
 
   intro().handleEvent(keyPress(sf::Keyboard::Key::Space));
@@ -103,28 +178,29 @@ TEST_F(IntroScreenFixture, ASecondPressOpensTheTitle) {
 }
 
 /**
- * Given an intro skipped on its first frame
+ * Given an intro skipped just after its growl
  * When the next frame passes
  * Then none of the sounds jumped over plays: only the growl was heard
  */
 TEST_F(IntroScreenFixture, SkippingLeavesTheSkippedSoundsUnplayed) {
   start();
-  intro().update(ONE_FRAME);
+  playWithTheMusicFor(PAST_THE_BLACK_SECOND);
   intro().handleEvent(keyPress(sf::Keyboard::Key::Space));
 
-  intro().update(ONE_FRAME);
+  playWithTheMusicFor(ONE_FRAME);
 
   EXPECT_THAT(sounds().played(), ElementsAre(BYDO_GROWL_SOUND_ID));
 }
 
 /**
- * Given music already 3 s in when the intro starts
- * When its first frame passes
+ * Given an intro past its black second, and its music moved to 3 s
+ * When a frame passes
  * Then it follows the music: the whoosh of the squadron, at 2.75 s, plays
  */
 TEST_F(IntroScreenFixture, TheIntroFollowsTheMusic) {
-  music().setPlayingOffset(MUSIC_AFTER_THE_ENTRY);
   start();
+  playWithTheMusicFor(PAST_THE_BLACK_SECOND);
+  music().setPlayingOffset(MUSIC_AFTER_THE_ENTRY);
 
   intro().update(ONE_FRAME);
 
@@ -132,13 +208,15 @@ TEST_F(IntroScreenFixture, TheIntroFollowsTheMusic) {
 }
 
 /**
- * Given music in the full warp of the boost
- * When a frame of the intro passes
+ * Given an intro past its black second, and its music in the full warp of
+ * the boost
+ * When a frame passes
  * Then the stars move twelve times their speed
  */
 TEST_F(IntroScreenFixture, TheStarsWarpAtTheBoost) {
-  music().setPlayingOffset(MUSIC_IN_THE_WARP);
   start();
+  playWithTheMusicFor(PAST_THE_BLACK_SECOND);
+  music().setPlayingOffset(MUSIC_IN_THE_WARP);
 
   intro().update(ONE_FRAME);
 
@@ -151,8 +229,9 @@ TEST_F(IntroScreenFixture, TheStarsWarpAtTheBoost) {
  * Then the sky is back to its speed and its place
  */
 TEST_F(IntroScreenFixture, TheSkyIsPutBackWhenTheIntroGoes) {
-  music().setPlayingOffset(MUSIC_IN_THE_WARP);
   start();
+  playWithTheMusicFor(PAST_THE_BLACK_SECOND);
+  music().setPlayingOffset(MUSIC_IN_THE_WARP);
   intro().update(ONE_FRAME);
 
   close();
@@ -168,8 +247,9 @@ TEST_F(IntroScreenFixture, TheSkyIsPutBackWhenTheIntroGoes) {
  * Then the logo has not landed yet: it waits for the third beat
  */
 TEST_F(IntroScreenFixture, ASkippedLogoWaitsForTheNextBeat) {
-  music().setPlayingOffset(PRESS_IN_THE_MUSIC);
   start();
+  playWithTheMusicFor(PAST_THE_BLACK_SECOND);
+  music().setPlayingOffset(PRESS_IN_THE_MUSIC);
   intro().update(ONE_FRAME);
   intro().handleEvent(keyPress(sf::Keyboard::Key::Space));
 
@@ -184,8 +264,9 @@ TEST_F(IntroScreenFixture, ASkippedLogoWaitsForTheNextBeat) {
  * Then the logo landed with its impact, 0.3 s after the third beat
  */
 TEST_F(IntroScreenFixture, ASkippedLogoLandsOnTheNextBeat) {
-  music().setPlayingOffset(PRESS_IN_THE_MUSIC);
   start();
+  playWithTheMusicFor(PAST_THE_BLACK_SECOND);
+  music().setPlayingOffset(PRESS_IN_THE_MUSIC);
   intro().update(ONE_FRAME);
   intro().handleEvent(keyPress(sf::Keyboard::Key::Space));
 
@@ -200,8 +281,9 @@ TEST_F(IntroScreenFixture, ASkippedLogoLandsOnTheNextBeat) {
  * Then the sky shakes on at least one of them
  */
 TEST_F(IntroScreenFixture, TheReleaseShakesTheSky) {
-  music().setPlayingOffset(MUSIC_AFTER_THE_RELEASE);
   start();
+  playWithTheMusicFor(PAST_THE_BLACK_SECOND);
+  music().setPlayingOffset(MUSIC_AFTER_THE_RELEASE);
 
   bool shook = false;
   for (int frame = 0; frame < FRAMES_AFTER_THE_RELEASE; ++frame) {
@@ -219,8 +301,9 @@ TEST_F(IntroScreenFixture, TheReleaseShakesTheSky) {
  */
 TEST_F(IntroScreenFixture, WithReducedFlashesTheSkyNeverShakes) {
   settings().reduceFlashes = true;
-  music().setPlayingOffset(MUSIC_AFTER_THE_RELEASE);
   start();
+  playWithTheMusicFor(PAST_THE_BLACK_SECOND);
+  music().setPlayingOffset(MUSIC_AFTER_THE_RELEASE);
 
   bool shook = false;
   for (int frame = 0; frame < FRAMES_AFTER_THE_RELEASE; ++frame) {

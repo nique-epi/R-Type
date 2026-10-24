@@ -1,9 +1,11 @@
 #include "IntroOverlay.hpp"
+#include <SFML/Graphics/Color.hpp>
 #include <SFML/Graphics/Rect.hpp>
 #include <SFML/System/Vector2.hpp>
 #include <algorithm>
 #include <cmath>
 #include <cstddef>
+#include <cstdint>
 #include <limits>
 #include <string_view>
 #include "Easing.hpp"
@@ -187,6 +189,20 @@ void paintHint(IInterfaceCanvas& canvas, float real) {
                INTRO_HINT_STYLE);
 }
 
+/** @brief Covers the whole picture with ink before time 0, then with less
+ * and less of it until INTRO_FADE_IN_TIME: the black second and the fade
+ * in. */
+void paintFade(IInterfaceCanvas& canvas, float real) {
+  const float covered = 1.0F - progressThrough(real, 0.0F, INTRO_FADE_IN_TIME);
+  if (covered <= 0.0F) {
+    return;
+  }
+  sf::Color ink = INK;
+  ink.a = static_cast<std::uint8_t>(
+      std::round(static_cast<float>(INK.a) * covered));
+  canvas.fill(INTERFACE_AREA, ink);
+}
+
 }  // namespace
 
 void paintIntroOverlay(IInterfaceCanvas& canvas, float real, TextureArea logo) {
@@ -195,6 +211,7 @@ void paintIntroOverlay(IInterfaceCanvas& canvas, float real, TextureArea logo) {
   paintNameCards(canvas, real);
   paintLogoSlam(canvas, real, logo);
   paintHint(canvas, real);
+  paintFade(canvas, real);
 }
 
 }  // namespace rtype::client

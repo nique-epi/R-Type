@@ -9,16 +9,25 @@ namespace rtype::client::testing {
 /** @brief Seed of the intros of the tests. */
 constexpr std::uint32_t INTRO_SCREEN_SEED = 7;
 
-/** @brief The intro gives way to the title after ten beats of 60/109 s,
- * 5.505 s: the tests play a little less and a little more. */
+/** @brief The intro gives way to the title a black second and ten beats of
+ * 60/109 s after it is built, 6.505 s: the tests play a little less and a
+ * little more. */
 constexpr engine::Duration JUST_BEFORE_THE_TITLE =
-    std::chrono::milliseconds(5400);
+    std::chrono::milliseconds(6400);
 constexpr engine::Duration JUST_AFTER_THE_TITLE =
-    std::chrono::milliseconds(5600);
+    std::chrono::milliseconds(6600);
 
-/** @brief The music 3 s in, after the squadron entered (2.75 s); 4.9 s in,
- * in the full warp of the boost; 4.45 s in, just after the release
- * (4.40 s). */
+/** @brief The intro starts the music 85 ms before the end of its black
+ * second, 0.915 s after it is built: a moment well before, and one 0.1 s into
+ * the intro, after the growl at 0 and before the first shot at 0.3 s. */
+constexpr engine::Duration WITHIN_THE_BLACK_SECOND =
+    std::chrono::milliseconds(800);
+constexpr engine::Duration PAST_THE_BLACK_SECOND =
+    std::chrono::milliseconds(1100);
+
+/** @brief The music 3 s in, after the squadron started entering (2.75 s); 4.9 s
+ * in, in the full warp of the boost; 4.45 s in, just after the release (4.40
+ * s). */
 constexpr engine::Duration MUSIC_AFTER_THE_ENTRY = std::chrono::seconds(3);
 constexpr engine::Duration MUSIC_IN_THE_WARP = std::chrono::milliseconds(4900);
 constexpr engine::Duration MUSIC_AFTER_THE_RELEASE =
