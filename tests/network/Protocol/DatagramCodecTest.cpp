@@ -197,6 +197,41 @@ TEST(DatagramCodec, SaysAHeaderWithFlagsDoesNotSpeakThisProtocol) {
 }
 
 /**
+ * Given a header of this protocol id with another version, and flags set
+ * When it is checked
+ * Then it speaks another version: its flags may mean something there
+ */
+TEST(DatagramCodec, SaysAHeaderOfAnotherVersionSpeaksAnotherVersion) {
+  PacketHeader header;
+  header.version = SOME_OTHER_VERSION;
+  header.flags = SOME_FLAGS;
+
+  EXPECT_TRUE(DatagramCodec::speaksAnotherVersion(header));
+}
+
+/**
+ * Given the default header
+ * When it is checked
+ * Then it does not speak another version
+ */
+TEST(DatagramCodec, SaysTheDefaultHeaderSpeaksNoOtherVersion) {
+  EXPECT_FALSE(DatagramCodec::speaksAnotherVersion(PacketHeader{}));
+}
+
+/**
+ * Given a header of another protocol id and another version
+ * When it is checked
+ * Then it does not speak another version of this protocol
+ */
+TEST(DatagramCodec, SaysAnotherProtocolSpeaksNoOtherVersion) {
+  PacketHeader header;
+  header.protocolId = SOME_OTHER_PROTOCOL_ID;
+  header.version = SOME_OTHER_VERSION;
+
+  EXPECT_FALSE(DatagramCodec::speaksAnotherVersion(header));
+}
+
+/**
  * Given exactly the 22 bytes of a header
  * When the header is decoded
  * Then it is the default header

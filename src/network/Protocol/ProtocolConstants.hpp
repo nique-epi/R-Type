@@ -185,6 +185,15 @@ static_assert(LARGEST_CONNECTION_ANSWER_DATAGRAM_SIZE <=
               "than the request it answers");
 
 /**
+ * @brief The size of a datagram holding a ConnectionRefused and its reason:
+ * the server answers a datagram of another version from a sender it does not
+ * know only when it holds at least that many bytes, so the answer is never
+ * larger than what it answers.
+ */
+constexpr std::size_t CONNECTION_REFUSED_DATAGRAM_SIZE =
+    PACKET_HEADER_SIZE + MESSAGE_PREFIX_SIZE + UINT8_WIRE_SIZE;
+
+/**
  * @brief The names of the fields a refused message is reported by, as the
  * protocol page writes them.
  */
