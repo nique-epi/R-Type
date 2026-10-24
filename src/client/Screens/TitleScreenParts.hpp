@@ -13,7 +13,8 @@ namespace rtype::client {
  * @brief What a title screen is built from, but the picture it owns.
  *
  * A std::reference_wrapper has no default constructor, so this struct is
- * only ever built with designated initializers naming every member: the
+ * only ever built with designated initializers naming every member without
+ * a default: the
  * member-init checks, which report its implicit default constructor, see a
  * constructor that cannot be called.
  */

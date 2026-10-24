@@ -23,7 +23,9 @@ namespace rtype::client {
 
 /** @returns The moment of the scene the missile meant for Bydo @p index of
  * the helix hits it: INTRO_KILL_GAPS after the first kill, in seconds of the
- * music. */
+ * music, turned into the scene through INTRO_FREEZES; with REDUCE FLASHES,
+ * whose scene does not freeze, the hits after the first come that much
+ * before their moment of the music. */
 [[nodiscard]] float helixHitAt(std::size_t index);
 
 /** @returns The moment of the scene the beams hit newcomer @p index. */
