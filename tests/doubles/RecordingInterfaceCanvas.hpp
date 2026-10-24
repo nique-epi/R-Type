@@ -41,6 +41,7 @@ struct RecordedImage {
   sf::Vector2i topLeft;
   int scale{};
   sf::IntRect visibleArea;
+  sf::Color tint = sf::Color::White;
 };
 
 /** @brief A texture laid smoothed on a recording canvas. */

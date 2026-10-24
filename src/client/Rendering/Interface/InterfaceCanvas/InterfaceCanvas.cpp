@@ -97,6 +97,7 @@ void InterfaceCanvas::drawImage(TextureArea image, ImagePlacement placement,
   sprite.setPosition(
       sf::Vector2f(placement.topLeft + (visible->position * placement.scale)));
   sprite.setScale({scale, scale});
+  sprite.setColor(placement.tint);
   canvas_.canvas().draw(sprite);
 }
 

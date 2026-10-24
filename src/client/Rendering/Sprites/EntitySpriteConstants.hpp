@@ -85,6 +85,21 @@ constexpr Animation ENEMY_MISSILE_ANIMATION{
     .playback = Animation::Playback::Loop};
 
 /**
+ * @brief The bonus Bydo, right under the Bydo on the entity sheet, its two
+ * frames BONUS_BYDO_FRAME_TIME each, as listed in assets/README.md: no entity
+ * of a match is one yet, the intro draws it.
+ */
+constexpr game::SpriteFrame BONUS_BYDO_FRAME =
+    frameUnder(BYDO_FRAME, SPRITE_SPACING);
+constexpr engine::Duration BONUS_BYDO_FRAME_TIME =
+    std::chrono::milliseconds(200);
+constexpr std::array BONUS_BYDO_FRAMES =
+    framesInRow<SPRITE_FRAME_COUNT>(BONUS_BYDO_FRAME, SPRITE_SPACING);
+constexpr Animation BONUS_BYDO_ANIMATION{.frames = BONUS_BYDO_FRAMES,
+                                         .frameDuration = BONUS_BYDO_FRAME_TIME,
+                                         .playback = Animation::Playback::Loop};
+
+/**
  * @brief Share of a cycle between the loop starts of two entities whose
  * network ids follow each other: the fractional part of the golden ratio,
  * which spreads any run of ids over the whole cycle, so Bydos created in the
