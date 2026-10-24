@@ -177,6 +177,24 @@ TEST_F(IntroScreenFixture, ASecondPressOpensTheTitle) {
 }
 
 /**
+ * Given an intro that already asked for the title, on a second press
+ * When a key is pressed once more, before it is replaced
+ * Then it asks for nothing more: the title is asked for once
+ */
+TEST_F(IntroScreenFixture, ThePressesAfterTheTitleAskNothingMore) {
+  start();
+  playWithTheMusicFor(PAST_THE_BLACK_SECOND);
+  intro().handleEvent(keyPress(sf::Keyboard::Key::Space));
+  intro().handleEvent(keyPress(sf::Keyboard::Key::Space));
+
+  intro().handleEvent(keyPress(sf::Keyboard::Key::Space));
+
+  EXPECT_THAT(navigator().calls(),
+              ElementsAre(NavigatorCall{.request = NavigatorRequest::ReplaceAll,
+                                        .screen = ScreenId::TitleAfterIntro}));
+}
+
+/**
  * Given an intro skipped just after its growl
  * When the next frame passes
  * Then none of the sounds jumped over plays: only the growl was heard
