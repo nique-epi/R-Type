@@ -39,6 +39,7 @@
 #include "SettingsFile.hpp"
 #include "TimeConstants.hpp"
 #include "TitleScreen.hpp"
+#include "TitleScreenParts.hpp"
 
 namespace rtype::client {
 
@@ -171,9 +172,12 @@ std::unique_ptr<IScreen> Application::titleScreen() {
   if (loading != nullptr) {
     return loading;
   }
-  return std::make_unique<TitleScreen>(screens_, interfaceCanvas(),
-                                       playfieldMapping(), motionPreference(),
-                                       std::random_device{}());
+  return std::make_unique<TitleScreen>(
+      TitleScreenParts{.navigator = screens_,
+                       .playfieldPointAt = playfieldMapping(),
+                       .motion = motionPreference(),
+                       .seed = std::random_device{}()},
+      interfaceCanvas());
 }
 
 std::unique_ptr<IScreen> Application::gameScreen() {
