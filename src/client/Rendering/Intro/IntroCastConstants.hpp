@@ -291,7 +291,8 @@ constexpr float INTRO_BIG_RING_LIFE = 0.45F;
  * INTRO_GRAIN_FLIGHT from INTRO_GRAIN_REACH pixels to the nose along a curve
  * of power INTRO_GRAIN_CURVE, turning INTRO_GRAIN_TURN radians, white past
  * INTRO_GRAIN_WHITE_AFTER of its flight; every INTRO_LARGE_GRAIN_PERIOD-th is
- * INTRO_LARGE_GRAIN_WIDTH pixels wide; the hash of each is seeded with the
+ * INTRO_LARGE_GRAIN_WIDTH pixels wide, the others INTRO_SMALL_GRAIN_WIDTH; the
+ * hash of each is seeded with the
  * pilot times INTRO_GRAIN_SEED_STEP plus its number. The ball grows from
  * INTRO_BALL_RADIUS by INTRO_BALL_GROWTH pixels and stays
  * INTRO_CHARGE_AFTERGLOW past the release.
@@ -305,6 +306,7 @@ constexpr float INTRO_GRAIN_CURVE = 1.5F;
 constexpr float INTRO_GRAIN_WHITE_AFTER = 0.7F;
 constexpr std::size_t INTRO_LARGE_GRAIN_PERIOD = 3;
 constexpr int INTRO_LARGE_GRAIN_WIDTH = 2;
+constexpr int INTRO_SMALL_GRAIN_WIDTH = 1;
 constexpr std::size_t INTRO_GRAIN_SEED_STEP = 31;
 constexpr float INTRO_BALL_RADIUS = 1.0F;
 constexpr float INTRO_BALL_GROWTH = 4.0F;
