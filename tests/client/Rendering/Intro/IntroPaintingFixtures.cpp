@@ -4,11 +4,9 @@
 #include <cstddef>
 #include <span>
 #include <string_view>
-#include <vector>
 #include "FlashPreference.hpp"
 #include "IntroCast.hpp"
 #include "IntroCastBuilder.hpp"
-#include "IntroCue.hpp"
 #include "IntroFrame.hpp"
 #include "IntroFreeze.hpp"
 #include "IntroPainting.hpp"
@@ -19,7 +17,6 @@
 #include "SquadronTestConstants.hpp"
 
 using rtype::client::FlashPreference;
-using rtype::client::IntroCue;
 using rtype::client::IntroFrame;
 using rtype::client::IntroFreeze;
 

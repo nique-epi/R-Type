@@ -3,9 +3,7 @@
 #include <SFML/Graphics/Color.hpp>
 #include <cstddef>
 #include <string_view>
-#include <vector>
 #include "FlashPreference.hpp"
-#include "IntroCue.hpp"
 #include "RecordingInterfaceCanvas.hpp"
 
 /** @returns What paintIntroCast() asks a canvas at @p real seconds of the

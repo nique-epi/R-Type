@@ -5,6 +5,7 @@
 #include <cstddef>
 #include <numbers>
 #include <optional>
+#include <utility>
 #include "BackgroundConstants.hpp"
 #include "Easing.hpp"
 #include "IntroCastConstants.hpp"
@@ -100,9 +101,12 @@ float landingAt(std::size_t pilot, float scene) {
 /** @returns Where the ship of @p pilot sits in the squadron of the title, from
  * the top-left corner of its box; the corner itself for a pilot it has not. */
 sf::Vector2f titlePlaceOf(std::size_t pilot) {
-  const auto ship = std::ranges::find(SQUADRON_SHIPS, static_cast<int>(pilot),
-                                      &SquadronShip::color);
-  return ship != SQUADRON_SHIPS.end() ? ship->place : sf::Vector2f();
+  for (const SquadronShip& ship : SQUADRON_SHIPS) {
+    if (std::cmp_equal(ship.color, pilot)) {
+      return ship.place;
+    }
+  }
+  return {};
 }
 
 }  // namespace
