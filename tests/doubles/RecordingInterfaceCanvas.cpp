@@ -12,6 +12,7 @@
 #include "DrawJournal.hpp"
 #include "ImagePlacement.hpp"
 #include "InterfaceConstants.hpp"
+#include "RecordingInterfaceCanvasConstants.hpp"
 #include "TextStyle.hpp"
 #include "TextureArea.hpp"
 
