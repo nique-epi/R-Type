@@ -194,9 +194,11 @@ An entity takes 9 bytes, so one datagram holds up to 125 entities with 4 players
 
 - ignores a `WorldState` whose `tick` is lower than the last one applied; an equal `tick` is another part of the same state. The `tick` is compared as a plain 32-bit integer, without wrap-around: it takes 2.27 years at 60 ticks per second to reach 2³². The sender checks come first, so a forged datagram cannot raise the last `tick` applied;
 - creates an entity it does not know, from its type, with its appearance effect (the shot sound of a missile, for instance);
-- removes an entity that no `WorldState` has listed for 900 ms, so a ghost never stays a full second.
+- removes an entity that no `WorldState` has listed for 900 ms, counted on the `tick` of the states: the first state 54 ticks or more past the last one that listed it removes it, so a ghost never stays a full second while states arrive. While no state arrives, nothing is removed.
 
 An `EntityDestroyed` naming an entity the client does not know, and an `EntitySpawned` naming one it already has, change nothing.
+
+Measured on October 24, 2026, on a local game of two players lasting about 70 seconds (a `tcpdump` capture of the server port): each player received 20.0 `WorldState` per second, each state in a single datagram of 105 bytes of UDP payload on average and 116 at most, for 6 entities on average. That is about 2.1 kB per second and per player for the states alone. The players could not shoot yet, so the game held only ships and Bydos: a game with missiles sends larger states.
 
 `entityId` is given by the server, unique during a game, and never 0. A `u16` would wrap after about 22 minutes at 50 new entities per second, hence 32 bits.
 
