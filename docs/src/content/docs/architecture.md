@@ -90,6 +90,12 @@ Game logic uses one logical frame, the same on the server and on the client, and
 - The window cannot be resized by dragging its border. The player picks one of five sizes with the proportions of the playfield (`WINDOW_SIZES` in `src/client/Window/WindowConstants.hpp`: 960 × 540, 1280 × 720, 1600 × 900, 1920 × 1080, 2560 × 1440), so no black bar shows. `WindowSizeSelection` only offers the sizes strictly smaller than the desktop and opens the window at the largest of them. The black bars remain as a safety net for the cases where the system gives the window another shape.
 - The size is picked in the DISPLAY tab of the options, which SETTINGS opens on the title screen and Escape during a game: a list of the five sizes next to a chart of every size to scale, where a size too large for the desktop is dashed and can never be taken. The size picked is saved: the next launch opens the window at it when it still fits the desktop, at the largest size that fits otherwise (see [Client](/R-Type/client/#options-optionsscreen)). The fonts of the menus are loaded at launch through the asset library, which finds `assets/` whatever folder the client is launched from (see [Client](/R-Type/client/#assets-the-folder-and-the-ids)).
 
+## Drawing order
+
+The client draws a `Sprite` in its `Layer` (`src/game/Components/Layer.hpp`), from the first to the last: `Background`, `Enemies`, `Effects`, `Players`, `Popups`, `EnemyMissiles`, `Interface`. What can kill a player stays in sight: an explosion covers the enemies only, never a ship, the missiles of the players or the figure of a gain, and the missiles of the enemies are drawn over everything of the playfield. Effects made of loose pixels (debris, shockwaves, speed lines) are painted under every sprite.
+
+Alternative considered: one layer for every entity, and the effects in front of it. It is simpler, and an explosion is never hidden, but the explosion of a Bydo then hides a missile the Bydo fired as it died for 11 frames, while that missile flies at a player.
+
 ## Consequences
 
 - `EntityRegistry`, `ComponentRegistry`, `ISystem`, `SystemScheduler`, `EventBus` and `BoundedQueue` exist today. The game screen of the client calls a scheduler once per frame to play its animations; the tick of the server advances the timers and delivers the events of the bus, but calls no scheduler of systems yet.

@@ -11,7 +11,7 @@
 #include <string>
 #include "BoundAction.hpp"
 #include "FakeSizableWindow.hpp"
-#include "InterfaceColors.hpp"
+#include "InterfaceColorConstants.hpp"
 #include "KeyNames.hpp"
 #include "KeyPress.hpp"
 #include "OptionsScreen.hpp"

@@ -4,7 +4,7 @@ target_include_directories(rtype_client_widgets INTERFACE ${CMAKE_CURRENT_SOURCE
 
 target_link_libraries(rtype_client_widgets
   INTERFACE
-    rtype_client_rendering_interfaces
+    rtype_client_interface
     rtype_engine_time
     SFML::Graphics
     SFML::Window
@@ -59,6 +59,7 @@ target_link_libraries(rtype_client_status_band
 
 rtype_enable_warnings(rtype_client_status_band)
 
+add_subdirectory(MissionBanner)
 add_subdirectory(CutCornerBox)
 add_subdirectory(Outline)
 add_subdirectory(SunkBox)

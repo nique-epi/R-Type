@@ -4,7 +4,7 @@
 #include <cstddef>
 #include "EntitySpriteConstants.hpp"
 #include "HangarBayConstants.hpp"
-#include "InterfaceColors.hpp"
+#include "InterfaceColorConstants.hpp"
 #include "InterfaceConstants.hpp"
 #include "ProtocolConstants.hpp"
 #include "TextStyle.hpp"

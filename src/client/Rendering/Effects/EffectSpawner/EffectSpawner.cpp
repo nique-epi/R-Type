@@ -1,109 +1,93 @@
 #include "EffectSpawner.hpp"
-#include <optional>
-#include "Animation.hpp"
+#include <SFML/System/Vector2.hpp>
+#include <cstdint>
 #include "ComponentRegistry.hpp"
-#include "EffectConstants.hpp"
 #include "Entity.hpp"
 #include "EntityRegistry.hpp"
 #include "EntityType.hpp"
 #include "FlashPreference.hpp"
-#include "HitFlash.hpp"
-#include "Layer.hpp"
 #include "Position.hpp"
-#include "Sprite.hpp"
-#include "SpriteAnimation.hpp"
-#include "SpriteFrame.hpp"
-#include "SpriteTone.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::client {
 
-namespace {
-
-/** @returns The explosion of an entity type, or nullptr for a value outside
- * EntityType. */
-const EffectAnimations* explosionOf(game::EntityType type) {
-  switch (type) {
-    case game::EntityType::Player:
-      return &SHIP_EXPLOSION;
-    case game::EntityType::Enemy:
-      return &BYDO_EXPLOSION;
-    case game::EntityType::PlayerMissile:
-    case game::EntityType::EnemyMissile:
-      return &IMPACT;
-  }
-  return nullptr;
-}
-
-/** @returns The appearance effect of an entity type, or nullptr for a type
- * that appears without effect and for a value outside EntityType. */
-const EffectAnimations* appearanceOf(game::EntityType type) {
-  switch (type) {
-    case game::EntityType::PlayerMissile:
-      return &PLAYER_MUZZLE_FLASH;
-    case game::EntityType::EnemyMissile:
-      return &ENEMY_MUZZLE_FLASH;
-    case game::EntityType::Player:
-    case game::EntityType::Enemy:
-      break;
-  }
-  return nullptr;
-}
-
-}  // namespace
-
 EffectSpawner::EffectSpawner(engine::EntityRegistry& entities,
-                             engine::ComponentRegistry& components)
-    : entities_(&entities), components_(&components) {}
+                             engine::ComponentRegistry& components,
+                             std::uint32_t seed)
+    : pixels_(entities, components, seed),
+      tools_{.entities = entities,
+             .components = components,
+             .gate = gate_,
+             .pixels = pixels_,
+             .camera = camera_},
+      gains_(tools_),
+      hits_(tools_),
+      shots_(tools_),
+      kills_(tools_, gains_),
+      pilots_(tools_) {}
 
-void EffectSpawner::setFlashPreference(FlashPreference preference) {
-  flashes_ = preference;
+void EffectSpawner::advance(engine::Duration elapsed,
+                            FlashPreference preference) {
+  gate_.advance(elapsed, preference);
+  kills_.advance(elapsed);
+  gains_.advance(elapsed);
+  camera_.advance(elapsed);
+  pilots_.advance(elapsed);
 }
 
 void EffectSpawner::playExplosion(game::EntityType type,
                                   game::Position center) {
-  if (const EffectAnimations* explosion = explosionOf(type);
-      explosion != nullptr) {
-    spawn(*explosion, center);
+  switch (type) {
+    case game::EntityType::Enemy:
+      kills_.playKill(center);
+      return;
+    case game::EntityType::Player:
+      kills_.playShipExplosion(center);
+      return;
+    case game::EntityType::PlayerMissile:
+    case game::EntityType::EnemyMissile:
+      hits_.playImpact(type, center);
+      return;
   }
+}
+
+void EffectSpawner::playShipDown(engine::Entity ship) {
+  kills_.playShipDown(ship);
 }
 
 void EffectSpawner::playAppearance(game::EntityType type,
                                    game::Position center) {
-  if (const EffectAnimations* appearance = appearanceOf(type);
-      appearance != nullptr) {
-    spawn(*appearance, center);
+  switch (type) {
+    case game::EntityType::PlayerMissile:
+      shots_.playPlayerShot(center);
+      return;
+    case game::EntityType::EnemyMissile:
+      shots_.playEnemyShot(center);
+      return;
+    case game::EntityType::Player:
+    case game::EntityType::Enemy:
+      return;
   }
 }
 
-void EffectSpawner::flashHit(engine::Entity entity) {
-  if (!components_->has<game::Sprite>(entity)) {
-    return;
-  }
-  components_->add(entity, HitFlash{.tone = flashes_ == FlashPreference::Reduced
-                                                ? SpriteTone::Shade
-                                                : SpriteTone::Flash,
-                                    .remaining = HIT_FLASH_DURATION});
+void EffectSpawner::playArrival(engine::Entity ship) {
+  pilots_.playArrival(ship);
 }
 
-void EffectSpawner::spawn(const EffectAnimations& effect,
-                          game::Position center) {
-  const Animation& animation = flashes_ == FlashPreference::Reduced
-                                   ? effect.withoutFlash
-                                   : effect.standard;
-  const std::optional<game::SpriteFrame> firstFrame =
-      animation.frameAt(engine::Duration::zero());
-  if (!firstFrame.has_value()) {
-    return;
-  }
-  const engine::Entity entity = entities_->create();
-  components_->add(entity, center);
-  components_->add(entity, game::Sprite{.assetId = EFFECT_SHEET_ID,
-                                        .frame = *firstFrame,
-                                        .layer = game::Layer::Effects});
-  components_->add(entity,
-                   SpriteAnimation{.animation = animation,
-                                   .elapsed = engine::Duration::zero()});
+void EffectSpawner::playHit(engine::Entity entity) { hits_.playHit(entity); }
+
+void EffectSpawner::setInvulnerable(engine::Entity ship, bool invulnerable) {
+  pilots_.setInvulnerable(ship, invulnerable);
+}
+
+void EffectSpawner::noteScore(int pilotColor, std::uint32_t score) {
+  gains_.noteScore(pilotColor, score);
+}
+
+sf::Vector2i EffectSpawner::cameraOffset() const { return camera_.offset(); }
+
+engine::Duration EffectSpawner::sinceStart() const {
+  return pilots_.sinceStart();
 }
 
 }  // namespace rtype::client

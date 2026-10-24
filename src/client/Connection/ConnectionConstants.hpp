@@ -64,6 +64,10 @@ constexpr engine::Duration PLAYER_INPUT_INTERVAL =
     std::chrono::duration_cast<engine::Duration>(std::chrono::seconds(1)) /
     PLAYER_INPUTS_PER_SECOND;
 
+/** @brief How long the number of a GameEvent is remembered: its three copies
+ * come 50 ms apart, and the protocol page says a second is enough. */
+constexpr engine::Duration GAME_EVENT_MEMORY = std::chrono::seconds(1);
+
 /** @brief Module name the connection to a server writes its log lines under. */
 constexpr std::string_view CONNECTION_LOGGER_NAME = "Connection";
 

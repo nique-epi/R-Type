@@ -1,8 +1,8 @@
 #pragma once
 
 #include <SFML/Graphics/Color.hpp>
-#include "BackgroundColors.hpp"
-#include "InterfaceColors.hpp"
+#include "BackgroundColorConstants.hpp"
+#include "InterfaceColorConstants.hpp"
 
 namespace rtype::client {
 

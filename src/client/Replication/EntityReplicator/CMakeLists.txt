@@ -10,6 +10,7 @@ target_link_libraries(rtype_client_entity_replicator
     rtype_game_components
     rtype_network_entity_destroyed
     rtype_network_entity_spawned
+    rtype_network_game_event
     rtype_network_protocol
   PRIVATE
     rtype_client_entity_sprites

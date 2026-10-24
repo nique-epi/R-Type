@@ -3,21 +3,30 @@
 #include <string_view>
 #include <vector>
 #include "Position.hpp"
-#include "SpriteFrame.hpp"
-#include "SpriteTone.hpp"
+#include "SpriteDrawing.hpp"
+#include "TextStyle.hpp"
 
-void RecordingDrawSurface::draw(std::string_view assetId,
-                                rtype::game::SpriteFrame frame,
-                                rtype::game::Position center,
-                                rtype::client::SpriteTone tone) {
-  drawn_.push_back({.assetId = std::string(assetId),
-                    .frame = frame,
-                    .center = center,
-                    .tone = tone});
+void RecordingDrawSurface::draw(const rtype::client::SpriteDrawing& drawing) {
+  drawn_.push_back({.assetId = std::string(drawing.assetId),
+                    .frame = drawing.frame,
+                    .center = drawing.center,
+                    .tone = drawing.tone,
+                    .outline = drawing.outline});
+}
+
+void RecordingDrawSurface::write(std::string_view text,
+                                 rtype::game::Position center,
+                                 rtype::client::TextStyle style) {
+  written_.push_back(
+      {.text = std::string(text), .center = center, .style = style});
 }
 
 const std::vector<DrawnImage>& RecordingDrawSurface::drawn() const {
   return drawn_;
+}
+
+const std::vector<WrittenLine>& RecordingDrawSurface::written() const {
+  return written_;
 }
 
 std::vector<std::string> RecordingDrawSurface::assetIds() const {
@@ -29,4 +38,7 @@ std::vector<std::string> RecordingDrawSurface::assetIds() const {
   return ids;
 }
 
-void RecordingDrawSurface::forget() { drawn_.clear(); }
+void RecordingDrawSurface::forget() {
+  drawn_.clear();
+  written_.clear();
+}
