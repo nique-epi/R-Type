@@ -68,6 +68,7 @@ Paths below are relative to `.claude/rules/`.
 - `architecture/architecture-hpp-declarations-cpp-definitions.md`
 - `architecture/architecture-one-folder-per-concrete-class.md`
 - `architecture/architecture-pure-virtual-interfaces.md`
+- `architecture/fix-architecture-a-cpp-hpp-pair-has-its-own-folder.md`
 - `architecture/fix-architecture-a-function-does-one-kind-of-step.md`
 - `architecture/fix-architecture-at-most-three-parameters.md`
 - `architecture/fix-architecture-inherit-interfaces-compose-implementations.md`
