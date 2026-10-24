@@ -84,6 +84,7 @@ Paths below are relative to `.claude/rules/`.
 - `code-style/code-style-full-names-no-abbreviations.md`
 - `code-style/code-style-private-members-trailing-underscore.md`
 - `code-style/code-style-tests-given-when-then.md`
+- `code-style/fix-format-a-constants-header-ends-in-constants.md`
 - `code-style/fix-format-a-test-file-holds-only-tests.md`
 - `code-style/fix-format-designated-initializers-for-aggregates.md`
 - `code-style/fix-format-name-after-data-not-process.md`
