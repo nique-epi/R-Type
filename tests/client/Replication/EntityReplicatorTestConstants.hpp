@@ -43,4 +43,21 @@ constexpr auto WIRE_TYPE_BEFORE_THE_FIRST =
 constexpr auto WIRE_TYPE_AFTER_THE_LAST =
     static_cast<network::WireEntityType>(network::LAST_WIRE_ENTITY_TYPE + 1);
 
+/** @brief The lives of a player flying, as a WorldState of the tests lists
+ * it. */
+constexpr std::uint8_t FLYING_PLAYER_LIVES = 3;
+
+/** @brief The number of the second player of a game. */
+constexpr std::uint8_t SECOND_PLAYER_NUMBER = 2;
+
+/**
+ * @brief The player numbers just outside the players of a game, numbered 1
+ * to 4: the one before the first and the one after the last.
+ */
+constexpr std::uint8_t BEFORE_THE_FIRST_PLAYER = 0;
+constexpr std::uint8_t AFTER_THE_LAST_PLAYER = 5;
+
+/** @brief The number of the game events the tests send. */
+constexpr std::uint16_t AN_EVENT_NUMBER = 7;
+
 }  // namespace rtype::client::testing

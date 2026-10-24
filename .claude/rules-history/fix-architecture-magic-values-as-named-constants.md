@@ -25,3 +25,7 @@ Each test file was written on its own, without searching the existing test heade
 **Root cause.** The rule was read for single values; a literal inside a table, already given a name as a whole, did not look magic.
 
 **Addition to the rule.** Each entry of a table of values gets its own named constant, a color named after its hue, and the table lists the names; it applies to the files a change touches.
+
+## Update (23 October 2026) — a test constant never lives in the test file
+
+Yannis Lorang's review of pull request #103 asked to move the constants of the test files into files of their own. Point 2 already banned constants "in an anonymous namespace at the top of a `.cpp`", but the section on test constants only asked to search before defining one, so every test of that branch defined its constants in an anonymous namespace. Point 3 of that section now sends every test constant to `<Subject>TestConstants.hpp`, and `fix-format-a-test-file-holds-only-tests.md` gives the shape of a test file and its check.

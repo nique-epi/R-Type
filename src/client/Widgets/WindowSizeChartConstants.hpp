@@ -2,8 +2,8 @@
 
 #include <SFML/Graphics/Color.hpp>
 #include <SFML/System/Vector2.hpp>
-#include "BackgroundColors.hpp"
-#include "InterfaceColors.hpp"
+#include "BackgroundColorConstants.hpp"
+#include "InterfaceColorConstants.hpp"
 #include "WindowConstants.hpp"
 
 namespace rtype::client {

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <SFML/System/Vector2.hpp>
 #include <vector>
 #include "DrawJournal.hpp"
 #include "IEntityLayer.hpp"
@@ -14,6 +15,8 @@ class RenderTarget;
 struct EntityLayerRecord {
   int paintCount = 0;
   std::vector<rtype::game::SpriteFrame> framesAtLastPaint;
+  /** @brief The offset of the last paint: the shake of the camera. */
+  sf::Vector2i offsetAtLastPaint;
   int showCount = 0;
   const sf::RenderTarget* lastShowTarget = nullptr;
   /** @brief Where the layer writes ENTITY_LAYER_LAID each time it is shown,
@@ -29,7 +32,8 @@ class RecordingEntityLayer : public rtype::client::IEntityLayer {
    * layer. */
   explicit RecordingEntityLayer(EntityLayerRecord& record);
 
-  void paint(rtype::engine::ComponentRegistry& components) override;
+  void paint(rtype::engine::ComponentRegistry& components,
+             sf::Vector2i offset) override;
   void show(sf::RenderTarget& target) const override;
 
  private:

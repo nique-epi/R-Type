@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include "BackgroundColors.hpp"
+#include "BackgroundColorConstants.hpp"
 #include "CheckBox.hpp"
 #include "CheckMark.hpp"
 #include "RecordingInterfaceCanvas.hpp"

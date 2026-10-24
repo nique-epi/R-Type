@@ -2,22 +2,30 @@
 #include <SFML/Graphics/RenderTarget.hpp>
 #include <SFML/Window/Event.hpp>
 #include <memory>
+#include <random>
 #include <utility>
 #include <variant>
 #include "ActionSet.hpp"
 #include "AnimationSystem.hpp"
+#include "EffectSpawner.hpp"
 #include "EntityMessage.hpp"
 #include "FlashPreference.hpp"
+#include "GameScreenParts.hpp"
+#include "GroundEffectSystem.hpp"
 #include "HitFlashSystem.hpp"
 #include "IEntityLayer.hpp"
 #include "IEntityMessageSource.hpp"
 #include "IInterfaceCanvas.hpp"
 #include "IPlayerInputLink.hpp"
 #include "IScreenNavigator.hpp"
+#include "ISky.hpp"
+#include "MissionBanner.hpp"
+#include "MissionStart.hpp"
 #include "PlayerInputPacer.hpp"
 #include "PlayerSettings.hpp"
 #include "ScreenConstants.hpp"
 #include "ScreenId.hpp"
+#include "SpriteEffectSystem.hpp"
 #include "StatusBand.hpp"
 #include "TimeConstants.hpp"
 #include "WorldState.hpp"
@@ -26,29 +34,52 @@ namespace rtype::client {
 
 namespace {
 
-/** @returns The flash preference the settings of the player hold. */
+/** @returns The version of the effects the settings ask for: the one without
+ * flash when the player reduced flashes. */
 FlashPreference flashPreferenceOf(const PlayerSettings& settings) {
   return settings.reduceFlashes ? FlashPreference::Reduced
                                 : FlashPreference::Full;
 }
 
+/** @brief Sets the speed of the stars and the shake of the sky for the time
+ * since the start of the game: the warp of MISSION START with flashes, their
+ * own speed without. */
+void moveSky(ISky& sky, const EffectSpawner& effects,
+             FlashPreference preference) {
+  sky.setSpeedFactor(preference == FlashPreference::Full
+                         ? warpSpeedFactorAt(effects.sinceStart())
+                         : 1.0F);
+  sky.setOffset(effects.cameraOffset());
+}
+
 }  // namespace
 
-GameScreen::GameScreen(Parts parts, std::unique_ptr<IEntityLayer> entityLayer,
+GameScreen::GameScreen(GameScreenParts parts,
+                       std::unique_ptr<IEntityLayer> entityLayer,
                        std::unique_ptr<IInterfaceCanvas> statusCanvas)
     : navigator_(&parts.navigator.get()),
       entityLayer_(std::move(entityLayer)),
       statusCanvas_(std::move(statusCanvas)),
       settings_(&parts.settings.get()),
+      effects_(entities_, components_, std::random_device{}()),
       playerCommands_(true, parts.settings.get().keys),
       inputs_(&parts.inputs.get()),
       entityMessageSource_(&parts.entityMessages.get()),
       scoreBoard_(parts.connection.get().lobbyPlayers(),
-                  parts.connection.get().status().playerNumber) {
+                  parts.connection.get().status().playerNumber),
+      sky_(&parts.sky.get()) {
   systems_.add(std::make_unique<AnimationSystem>());
   systems_.add(std::make_unique<HitFlashSystem>());
-  entityLayer_->paint(components_);
+  systems_.add(std::make_unique<SpriteEffectSystem>());
+  systems_.add(std::make_unique<GroundEffectSystem>());
+  moveSky(*sky_, effects_, flashPreferenceOf(*settings_));
+  entityLayer_->paint(components_, effects_.cameraOffset());
   repaintStatus();
+}
+
+GameScreen::~GameScreen() {
+  sky_->setSpeedFactor(1.0F);
+  sky_->setOffset({});
 }
 
 void GameScreen::handleEvent(const sf::Event& event) {
@@ -78,9 +109,11 @@ void GameScreen::update(engine::Duration elapsed) {
     loggedActions_ = held.bits();
   }
   systems_.run(components_, elapsed);
-  effects_.setFlashPreference(flashPreferenceOf(*settings_));
+  const FlashPreference preference = flashPreferenceOf(*settings_);
+  effects_.advance(elapsed, preference);
   applyEntityMessages();
-  entityLayer_->paint(components_);
+  moveSky(*sky_, effects_, preference);
+  entityLayer_->paint(components_, effects_.cameraOffset());
   repaintStatusWhenChanged();
 }
 
@@ -97,16 +130,20 @@ void GameScreen::applyEntityMessages() {
 }
 
 void GameScreen::repaintStatusWhenChanged() {
-  if (scoreBoard_.revision() != paintedStatusRevision_) {
+  if (scoreBoard_.revision() != paintedStatusRevision_ ||
+      missionBannerAt(effects_.sinceStart()) != paintedBanner_) {
     repaintStatus();
   }
 }
 
 void GameScreen::repaintStatus() {
+  const MissionBannerLook banner = missionBannerAt(effects_.sinceStart());
   statusCanvas_->clear();
   paintStatusBand(*statusCanvas_, scoreBoard_.pilots());
+  paintMissionBanner(*statusCanvas_, banner);
   statusCanvas_->display();
   paintedStatusRevision_ = scoreBoard_.revision();
+  paintedBanner_ = banner;
 }
 
 ActionSet GameScreen::playerActions() const { return playerCommands_.held(); }

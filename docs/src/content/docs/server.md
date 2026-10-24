@@ -433,7 +433,7 @@ The bus and the registry must outlive `CollisionRules`, and the bus must outlive
 - The ship of a player has no `Health`: what a hit costs a player belongs to the lives of the players, which do not exist yet. A `ShipContact` is not handled either.
 - Network ids are read from the `NetworkIdentity` before the entity is destroyed. A hit naming an entity that is already gone, or that has no `NetworkIdentity`, is ignored, so two missiles that reach the same Bydo in one `dispatch()` kill it once, and the second missile is left alone.
 - The bus and the registry must outlive `DamageRules`. It publishes while the bus delivers, so its events reach `GameEventBroadcaster` in the same tick.
-- `GameInstance` builds it with each world (see [Collisions](#collisions)). A missile that hits therefore vanishes with no effect on the clients, and the third hit on a Bydo shows its explosion.
+- `GameInstance` builds it with each world (see [Collisions](#collisions)). A missile that hits therefore vanishes with no effect of its own; the clients play the hit of the Bydo on the `EntityDamaged` of the first two hits (see [Client](/R-Type/client/#effects-effectspawner)), and its explosion on the third.
 
 ```cpp
 rtype::engine::EventBus events;
