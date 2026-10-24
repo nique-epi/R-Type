@@ -407,7 +407,7 @@ The game screen sends the actions the player holds to the server through an `IPl
 - `ServerConnection::sendPlayerInput()` sends a `PlayerInput` numbered after the previous one, a 30-byte datagram carrying the session token, only while the attempt is `Accepted`; otherwise it sends nothing.
 - The game goes on behind the options, so it keeps sending them there, with nothing held.
 
-The rate is **provisional**, like every rate of the protocol page: code must read `PLAYER_INPUTS_PER_SECOND` and `PLAYER_INPUT_INTERVAL` in `src/client/Connection/ConnectionConstants.hpp`. The server keeps the newest input of each player and moves its ship with it at each tick of a game in progress (see [Server and game](/R-Type/server/#moving-the-ships-shipcontrol)); it does not read the shoot action yet.
+The rate is **provisional**, like every rate of the protocol page: code must read `PLAYER_INPUTS_PER_SECOND` and `PLAYER_INPUT_INTERVAL` in `src/client/Connection/ConnectionConstants.hpp`. The server keeps the newest input of each player and moves its ship with it at each tick of a game in progress (see [Server and game](/R-Type/server/#moving-the-ships-shipcontrol)), and fires its missiles while it holds shoot (see [Server and game](/R-Type/server/#shooting-missilelauncher)).
 
 ## Options: `OptionsScreen`
 
@@ -633,7 +633,7 @@ At the start of a game, the status canvas also shows MISSION START. `missionBann
 | Change how a bay of the waiting room looks | `src/client/Widgets/HangarBayConstants.hpp`, `paintHangarBay()` in `src/client/Widgets/HangarBay.cpp` |
 | Change what the status band shows, or how it looks | `paintStatusBand()` in `src/client/Widgets/StatusBand.cpp`, its sizes, words and colors in `StatusBandConstants.hpp`, its sprites in `assets/sprites/hud.png` and `src/client/Rendering/Interface/HudSpriteConstants.hpp` |
 | Change how the client keeps the score and the lives of each pilot | `ScoreBoard` in `src/client/Replication/ScoreBoard/` |
-| Change the height kept for the status band | `STATUS_BAND_HEIGHT` in `src/game/PlayfieldConstants.hpp`, read by the client and by `bydoSpawnPosition` |
+| Change the height kept for the status band | `STATUS_BAND_HEIGHT` in `src/game/Components/PlayfieldConstants.hpp`, read by the client and by `bydoSpawnPosition` |
 | Change where the parts of the menus go | `MenuBuilder::placeColumn()`, `placeDialog()`, `placeForm()`, `placeTabbedPanel()` and `placeRoom()`, `src/client/Widgets/WidgetConstants.hpp` |
 | Add a control to a row | A class deriving from `RowControl` in its own folder under `src/client/Widgets/RowControls/`, its sizes in `RowControlConstants.hpp`, added with `MenuBuilder::row()` |
 | Change the rows, texts or tabs of the options | `src/client/Screens/OptionsScreenConstants.hpp`, `OptionsScreen::soundTab()`, `controlsTab()`, `displayTab()` and `accessTab()` in `src/client/Screens/OptionsScreen/` |

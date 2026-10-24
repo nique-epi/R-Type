@@ -4,4 +4,11 @@ target_include_directories(rtype_server_bydo_spawn_constants INTERFACE ${CMAKE_C
 
 target_link_libraries(rtype_server_bydo_spawn_constants INTERFACE rtype_engine_time)
 
+add_library(rtype_server_missile_launcher_constants INTERFACE)
+
+target_include_directories(rtype_server_missile_launcher_constants INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
+
+target_link_libraries(rtype_server_missile_launcher_constants INTERFACE rtype_engine_time)
+
 add_subdirectory(BydoSpawner)
+add_subdirectory(MissileLauncher)

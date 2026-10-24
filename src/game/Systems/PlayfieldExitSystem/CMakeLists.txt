@@ -10,6 +10,7 @@ target_link_libraries(rtype_game_playfield_exit_system
     rtype_game_components
     rtype_game_events
   PRIVATE
+    rtype_engine_collision
     rtype_game_spawning_constants
 )
 
