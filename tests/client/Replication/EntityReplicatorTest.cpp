@@ -7,6 +7,7 @@
 #include "EntityReplicatorFixture.hpp"
 #include "EntityReplicatorTestConstants.hpp"
 #include "EntityType.hpp"
+#include "LastListedTicksTestConstants.hpp"
 #include "WorldState.hpp"
 #include "WorldStateFilterTestConstants.hpp"
 
@@ -24,9 +25,11 @@ using rtype::client::testing::EntityReplicatorFixture;
 using rtype::client::testing::FIRST_POSITION;
 using rtype::client::testing::killed;
 using rtype::client::testing::listed;
+using rtype::client::testing::LISTING_TICK;
 using rtype::client::testing::OLDER_TICK;
 using rtype::client::testing::PLAYER_MISSILE_ID;
 using rtype::client::testing::PLAYER_MISSILE_POSITION;
+using rtype::client::testing::REMOVAL_TICK;
 using rtype::client::testing::removed;
 using rtype::client::testing::SECOND_POSITION;
 using rtype::client::testing::SHIP_ID;
@@ -381,4 +384,103 @@ TEST_F(EntityReplicatorFixture, AShipAndABydoAppearWithoutEffect) {
   replicator().apply(spawned(BYDO_ID, WireEntityType::Bydo, BYDO_POSITION));
 
   EXPECT_THAT(drawnEffects(), IsEmpty());
+}
+
+/**
+ * Given a Bydo listed by a state of LISTING_TICK, whose EntityDestroyed copies
+ * were all lost
+ * When a state of REMOVAL_TICK, 900 ms later, lists nothing
+ * Then the Bydo is no longer drawn: no ghost stays a full second
+ */
+TEST_F(EntityReplicatorFixture,
+       RemovesAnEntityNoStateListedFor900Milliseconds) {
+  replicator().apply(stateListing(
+      LISTING_TICK, {listed(BYDO_ID, WireEntityType::Bydo, FIRST_POSITION)}));
+
+  replicator().apply(stateListing(REMOVAL_TICK, {}));
+
+  EXPECT_THAT(drawnEntities(), IsEmpty());
+}
+
+/**
+ * Given a Bydo listed by a state of LISTING_TICK
+ * When a state of REMOVAL_TICK lists it further on
+ * Then the Bydo is still drawn, where that state puts it
+ */
+TEST_F(EntityReplicatorFixture, KeepsAnEntityTheNewestStateLists) {
+  replicator().apply(stateListing(
+      LISTING_TICK, {listed(BYDO_ID, WireEntityType::Bydo, FIRST_POSITION)}));
+
+  replicator().apply(stateListing(
+      REMOVAL_TICK, {listed(BYDO_ID, WireEntityType::Bydo, SECOND_POSITION)}));
+
+  EXPECT_THAT(drawnEntities(), ElementsAre(drawnAs(EntityType::Enemy, BYDO_ID,
+                                                   SECOND_POSITION)));
+}
+
+/**
+ * Given a player missile listed by a state of LISTING_TICK
+ * When a state of REMOVAL_TICK lists it further on
+ * Then its muzzle flash has played once: the state does not remove the
+ * missile, then create it again
+ */
+TEST_F(EntityReplicatorFixture, DoesNotCreateAgainAnEntityTheNewestStateLists) {
+  replicator().apply(stateListing(
+      LISTING_TICK, {listed(PLAYER_MISSILE_ID, WireEntityType::PlayerMissile,
+                            FIRST_POSITION)}));
+
+  replicator().apply(stateListing(
+      REMOVAL_TICK, {listed(PLAYER_MISSILE_ID, WireEntityType::PlayerMissile,
+                            SECOND_POSITION)}));
+
+  EXPECT_THAT(drawnEffects(),
+              ElementsAre(effectAt(PLAYER_MUZZLE_FLASH_FRAME, FIRST_POSITION)));
+}
+
+/**
+ * Given a Bydo listed by a state of LISTING_TICK
+ * When a state of REMOVAL_TICK leaves it out
+ * Then no effect starts: the client cannot tell whether it was killed
+ */
+TEST_F(EntityReplicatorFixture, AnEntityRemovedUnlistedLeavesNoEffect) {
+  replicator().apply(stateListing(
+      LISTING_TICK, {listed(BYDO_ID, WireEntityType::Bydo, FIRST_POSITION)}));
+
+  replicator().apply(stateListing(REMOVAL_TICK, {}));
+
+  EXPECT_THAT(drawnEffects(), IsEmpty());
+}
+
+/**
+ * Given a state of LISTING_TICK, then a Bydo an EntitySpawned announced and no
+ * state listed
+ * When a state of REMOVAL_TICK leaves it out
+ * Then the Bydo is no longer drawn
+ */
+TEST_F(EntityReplicatorFixture, RemovesASpawnedEntityNoStateListed) {
+  replicator().apply(stateListing(LISTING_TICK, {}));
+  replicator().apply(spawned(BYDO_ID, WireEntityType::Bydo, FIRST_POSITION));
+
+  replicator().apply(stateListing(REMOVAL_TICK, {}));
+
+  EXPECT_THAT(drawnEntities(), IsEmpty());
+}
+
+/**
+ * Given a Bydo removed by a state of REMOVAL_TICK that left it out
+ * When a newer state lists it
+ * Then the Bydo is drawn again, where that state puts it
+ */
+TEST_F(EntityReplicatorFixture,
+       CreatesAgainAnEntityRemovedUnlistedThatAStateLists) {
+  replicator().apply(stateListing(
+      LISTING_TICK, {listed(BYDO_ID, WireEntityType::Bydo, FIRST_POSITION)}));
+  replicator().apply(stateListing(REMOVAL_TICK, {}));
+
+  replicator().apply(
+      stateListing(REMOVAL_TICK + 1,
+                   {listed(BYDO_ID, WireEntityType::Bydo, SECOND_POSITION)}));
+
+  EXPECT_THAT(drawnEntities(), ElementsAre(drawnAs(EntityType::Enemy, BYDO_ID,
+                                                   SECOND_POSITION)));
 }

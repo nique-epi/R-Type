@@ -1,4 +1,5 @@
 #include "EntityReplicator.hpp"
+#include <cstdint>
 #include <optional>
 #include <utility>
 #include "AnimatedSprite.hpp"
@@ -71,7 +72,9 @@ void EntityReplicator::apply(const network::EntitySpawned& message) {
   if (entityByNetworkId_.find(message.entityId).has_value()) {
     return;
   }
-  create(announcedBy(message));
+  if (create(announcedBy(message))) {
+    lastListedTicks_.appeared(message.entityId);
+  }
 }
 
 void EntityReplicator::apply(const network::WorldState& state) {
@@ -79,14 +82,11 @@ void EntityReplicator::apply(const network::WorldState& state) {
     return;
   }
   for (const network::EntityState& listed : state.entities) {
-    const std::optional<engine::Entity> known =
-        entityByNetworkId_.find(listed.entityId);
-    if (known.has_value()) {
-      move(*known, game::Position{.x = listed.x, .y = listed.y});
-    } else {
-      create(listed);
+    if (place(listed)) {
+      lastListedTicks_.listed(listed.entityId, state.tick);
     }
   }
+  removeUnlistedAt(state.tick);
 }
 
 void EntityReplicator::apply(const network::EntityDestroyed& message) {
@@ -98,24 +98,50 @@ void EntityReplicator::apply(const network::EntityDestroyed& message) {
   if (message.reason == network::DestructionReason::Killed) {
     explode(*known);
   }
-  components_->destroy(*known);
-  entityByNetworkId_.unbind(message.entityId);
+  remove(message.entityId, *known);
 }
 
-void EntityReplicator::create(const network::EntityState& announced) {
+bool EntityReplicator::create(const network::EntityState& announced) {
   const std::optional<game::EntityType> type = creatableTypeOf(announced);
   if (!type.has_value()) {
-    return;
+    return false;
   }
   std::optional<AnimatedSprite> look =
       animatedSpriteOf(*type, announced.entityId);
   if (!look.has_value()) {
-    return;
+    return false;
   }
   const game::Position position{.x = announced.x, .y = announced.y};
   entityByNetworkId_.bind(announced.entityId,
                           addEntity(*type, position, std::move(*look)));
   effects_->playAppearance(*type, position);
+  return true;
+}
+
+bool EntityReplicator::place(const network::EntityState& listed) {
+  const std::optional<engine::Entity> known =
+      entityByNetworkId_.find(listed.entityId);
+  if (!known.has_value()) {
+    return create(listed);
+  }
+  move(*known, game::Position{.x = listed.x, .y = listed.y});
+  return true;
+}
+
+void EntityReplicator::removeUnlistedAt(std::uint32_t tick) {
+  for (const std::uint32_t networkId : lastListedTicks_.takeUnlistedAt(tick)) {
+    const std::optional<engine::Entity> known =
+        entityByNetworkId_.find(networkId);
+    if (known.has_value()) {
+      remove(networkId, *known);
+    }
+  }
+}
+
+void EntityReplicator::remove(std::uint32_t networkId, engine::Entity entity) {
+  components_->destroy(entity);
+  entityByNetworkId_.unbind(networkId);
+  lastListedTicks_.forget(networkId);
 }
 
 engine::Entity EntityReplicator::addEntity(game::EntityType type,

@@ -1,7 +1,9 @@
 #pragma once
 
+#include <cstdint>
 #include "Entity.hpp"
 #include "EntityType.hpp"
+#include "LastListedTicks.hpp"
 #include "NetworkEntityTable.hpp"
 #include "Position.hpp"
 #include "WorldStateFilter.hpp"
@@ -53,8 +55,9 @@ struct AnimatedSprite;
  * the client has, and an EntityDestroyed naming one it does not have, change
  * nothing; so does a message naming NO_ENTITY_ID or a type outside
  * WireEntityType. The players of a WorldState are not read. An entity no
- * WorldState lists any more stays until an EntityDestroyed names it: removing
- * it after a delay is not done here.
+ * WorldState listed for UNLISTED_ENTITY_TICKS is removed, without an effect,
+ * by the first state that still leaves it out (see LastListedTicks): the
+ * server destroyed it and every copy of its EntityDestroyed was lost.
  *
  * One replicator serves one game: the ticks start again with each game, and a
  * replicator kept from the previous one would ignore every state until the new
@@ -85,7 +88,8 @@ class EntityReplicator {
 
   /**
    * @brief Moves every entity the state lists to its position, and creates
-   * those the client does not have, unless the state is older than the newest
+   * those the client does not have, then removes those no state listed for
+   * UNLISTED_ENTITY_TICKS; nothing, when the state is older than the newest
    * one applied.
    */
   void apply(const network::WorldState& state);
@@ -102,8 +106,28 @@ class EntityReplicator {
    * binds its id to it, then plays its appearance. Creates nothing for the id
    * NO_ENTITY_ID or a type outside WireEntityType: every check runs before
    * anything is created.
+   * @returns true when the entity was created.
    */
-  void create(const network::EntityState& announced);
+  bool create(const network::EntityState& announced);
+
+  /**
+   * @brief Moves the entity a state lists to its position, or creates it when
+   * the client does not have it.
+   * @returns true when the client has the entity afterwards.
+   */
+  bool place(const network::EntityState& listed);
+
+  /**
+   * @brief Removes, without an effect, every entity no state listed for
+   * UNLISTED_ENTITY_TICKS at @p tick.
+   */
+  void removeUnlistedAt(std::uint32_t tick);
+
+  /**
+   * @brief Destroys the entity and forgets its id, so a later message naming
+   * it creates it again, or changes nothing.
+   */
+  void remove(std::uint32_t networkId, engine::Entity entity);
 
   /**
    * @returns A new entity at @p position, with its type and the sprite and
@@ -130,6 +154,7 @@ class EntityReplicator {
   EffectSpawner* effects_{};
   engine::NetworkEntityTable entityByNetworkId_;
   WorldStateFilter worldStateFilter_;
+  LastListedTicks lastListedTicks_;
 };
 
 }  // namespace rtype::client
