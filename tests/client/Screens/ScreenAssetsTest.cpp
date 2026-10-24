@@ -10,8 +10,11 @@
 #include "HudSpriteConstants.hpp"
 #include "InterfaceConstants.hpp"
 #include "ScreenAssets.hpp"
+#include "ScreenAssetsFixtures.hpp"
 #include "ScreenConstants.hpp"
+#include "SoundConstants.hpp"
 
+using rtype::client::ALL_SOUND_IDS;
 using rtype::client::AssetLibrary;
 using rtype::client::AssetLoadingStep;
 using rtype::client::EFFECT_SHEET_ID;
@@ -28,12 +31,6 @@ using rtype::client::titleAssets;
 using ::testing::Contains;
 using ::testing::UnorderedElementsAre;
 
-namespace {
-
-std::filesystem::path repositoryAssets() { return RTYPE_ASSETS_FOLDER; }
-
-}  // namespace
-
 /**
  * Given the assets folder of the repository
  * When the interface assets are loaded at launch
@@ -46,6 +43,21 @@ TEST(ScreenAssets, LaunchLoadsTheInterfaceFonts) {
 
   EXPECT_NO_THROW(static_cast<void>(library.font(REGULAR_FONT_ID)));
   EXPECT_NO_THROW(static_cast<void>(library.font(SMALL_FONT_ID)));
+}
+
+/**
+ * Given the assets folder of the repository
+ * When the interface assets are loaded at launch
+ * Then every sound of the client can be looked up
+ */
+TEST(ScreenAssets, LaunchLoadsEverySound) {
+  AssetLibrary library{repositoryAssets()};
+
+  loadInterfaceAssets(library);
+
+  for (const char* soundId : ALL_SOUND_IDS) {
+    EXPECT_NO_THROW(static_cast<void>(library.sound(soundId))) << soundId;
+  }
 }
 
 /**

@@ -7,7 +7,8 @@ namespace rtype::client {
 class AssetLibrary;
 
 /** @brief The assets of the interface, which any screen may use at any time,
- * in a game or outside one: read once at launch and never released. */
+ * in a game or outside one: the two fonts and every sound of
+ * SoundConstants.hpp, read once at launch and never released. */
 [[nodiscard]] AssetList interfaceAssets();
 
 /** @brief The assets of the title screen: its logo, and the entity sheet its

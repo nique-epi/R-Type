@@ -10,6 +10,7 @@ target_link_libraries(rtype_client_screen_assets
     SFML::Graphics
   PRIVATE
     rtype_client_asset_loading_step
+    rtype_client_audio_interfaces
     rtype_client_effect_interfaces
     rtype_client_interface
 )
