@@ -55,6 +55,11 @@ std::size_t imagesOnRow(const InterfaceCanvasRecord& record,
       }));
 }
 
+std::size_t fillsColored(const InterfaceCanvasRecord& record, sf::Color color) {
+  return static_cast<std::size_t>(
+      std::ranges::count(record.fills, color, &RecordedFill::color));
+}
+
 std::size_t imagesTinted(const InterfaceCanvasRecord& record, sf::Color tint) {
   return static_cast<std::size_t>(
       std::ranges::count(record.images, tint, &RecordedImage::tint));

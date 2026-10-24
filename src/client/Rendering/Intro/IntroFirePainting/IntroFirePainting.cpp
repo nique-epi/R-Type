@@ -206,7 +206,8 @@ void paintDots(IInterfaceCanvas& canvas, const IntroFrame& frame,
 }
 
 /** @brief Paints a ring while it shows: a circle one pixel wide (circleOf())
- * that grows fast then slowly, fading through BIG_CATCH_RING_RAMP. */
+ * that grows fast then slowly, fading through BIG_CATCH_RING_RAMP, without
+ * its white with REDUCE FLASHES. */
 void paintRing(IInterfaceCanvas& canvas, const IntroFrame& frame,
                const IntroRing& ring) {
   const float through = (frame.scene - ring.start) / ring.life;
@@ -215,7 +216,8 @@ void paintRing(IInterfaceCanvas& canvas, const IntroFrame& frame,
   }
   const int radius = std::max(
       1, static_cast<int>(std::round(ring.radius * easeOutCubic(through))));
-  const sf::Color color = colorAt(BIG_CATCH_RING_RAMP, through);
+  const sf::Color color =
+      colorAt(rampFor(BIG_CATCH_RING_RAMP, frame.preference), through);
   for (const sf::Vector2i pixel : circleOf(radius)) {
     paintWorldArea(canvas, frame,
                    WorldArea{.topLeft = ring.center + sf::Vector2f(pixel),
@@ -270,12 +272,12 @@ void paintBursts(IInterfaceCanvas& canvas, const IntroFrame& frame) {
               DotSpray{.origin = burst.center,
                        .age = age,
                        .dots = burst.sparks,
-                       .ramp = std::span(SPARK_RAMP).subspan(1)});
+                       .ramp = rampFor(SPARK_RAMP, FlashPreference::Reduced)});
     paintDots(canvas, frame,
               DotSpray{.origin = burst.center,
                        .age = age,
                        .dots = burst.drops,
-                       .ramp = BYDO_RAMP});
+                       .ramp = rampFor(BYDO_RAMP, frame.preference)});
   }
 }
 

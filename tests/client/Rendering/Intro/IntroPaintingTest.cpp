@@ -16,6 +16,7 @@
 using rtype::client::BYDO_EXPLOSION_FRAME;
 using rtype::client::BYDO_EXPLOSION_WITHOUT_FLASH_FRAME;
 using rtype::client::BYDO_LILAC;
+using rtype::client::BYDO_PALE;
 using rtype::client::closeupStartOf;
 using rtype::client::EFFECT_SHEET_ID;
 using rtype::client::ENTITY_SHEET_ID;
@@ -156,4 +157,29 @@ TEST(IntroPainting, TheLandedShipsLieWhereTheTitleShowsThem) {
 
   EXPECT_THAT(untintedImagesOf(record, ENTITY_SHEET_ID, SHIP_SIZE),
               UnorderedElementsAreArray(SHIPS_IN_PLACE_ON_THE_TITLE));
+}
+
+/**
+ * Given the first kill of the cascade, with flashes
+ * When it is painted just after the hit
+ * Then its drops start pale, the first color of the drops of a Bydo
+ */
+TEST(IntroPainting, WithFlashesTheDropsOfAKillStartPale) {
+  const InterfaceCanvasRecord record = paintedAt(
+      INTRO_FIRST_KILL + rtype::client::INTRO_FIRST_IMPACT_FREEZE + A_MOMENT,
+      FlashPreference::Full);
+
+  EXPECT_GT(fillsColored(record, BYDO_PALE), 0U);
+}
+
+/**
+ * Given the first kill of the cascade, with REDUCE FLASHES
+ * When it is painted just after the hit
+ * Then no drop is pale: the drops lose their first color, as in a game
+ */
+TEST(IntroPainting, WithReducedFlashesNoDropIsPale) {
+  const InterfaceCanvasRecord record =
+      paintedAt(INTRO_FIRST_KILL + A_MOMENT, FlashPreference::Reduced);
+
+  EXPECT_EQ(fillsColored(record, BYDO_PALE), 0U);
 }

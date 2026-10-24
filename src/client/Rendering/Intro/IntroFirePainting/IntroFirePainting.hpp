@@ -15,12 +15,15 @@ void paintEnemyMissiles(IInterfaceCanvas& canvas, const IntroFrame& frame);
 void paintPlayerMissiles(IInterfaceCanvas& canvas, const IntroFrame& frame);
 
 /** @brief Paints every burst: its explosions of the effect sheet, its sparks
- * and its drops, all left behind by the boost; the explosions show their
- * version without flash with REDUCE FLASHES. */
+ * and its drops, all left behind by the boost. The sparks go through
+ * SPARK_RAMP after its flash, as in the mockup; with REDUCE FLASHES, the
+ * explosions show their version without flash and the drops lose the first
+ * color of BYDO_RAMP, as the drops of a game do. */
 void paintBursts(IInterfaceCanvas& canvas, const IntroFrame& frame);
 
 /** @brief Paints every ring, growing fast then slowly and fading through
- * BIG_CATCH_RING_RAMP, left behind by the boost. */
+ * BIG_CATCH_RING_RAMP, without its white with REDUCE FLASHES, left behind by
+ * the boost. */
 void paintRings(IInterfaceCanvas& canvas, const IntroFrame& frame);
 
 }  // namespace rtype::client
