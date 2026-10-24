@@ -43,6 +43,18 @@ constexpr std::uint32_t FIRST_SCORE = 300;
 constexpr std::uint32_t SECOND_SCORE = 100;
 
 /**
+ * @brief The lives of the two players of the test that lists them, different
+ * so that two swapped players fail it.
+ */
+constexpr std::uint8_t FIRST_LIVES = 2;
+constexpr std::uint8_t SECOND_LIVES = 1;
+
+/**
+ * @brief The protection a ship has left on the last tick it cannot be hit.
+ */
+constexpr std::size_t ONE_TICK_OF_PROTECTION = 1;
+
+/**
  * @brief The network id of an entity that has no type.
  */
 constexpr std::uint32_t UNTYPED_NETWORK_ID = 99;
