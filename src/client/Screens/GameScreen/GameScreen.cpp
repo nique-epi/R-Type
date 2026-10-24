@@ -8,6 +8,7 @@
 #include "ActionSet.hpp"
 #include "AnimationSystem.hpp"
 #include "EffectSpawner.hpp"
+#include "EntityFeedback.hpp"
 #include "EntityMessage.hpp"
 #include "FlashPreference.hpp"
 #include "GameScreenParts.hpp"
@@ -62,6 +63,8 @@ GameScreen::GameScreen(GameScreenParts parts,
       statusCanvas_(std::move(statusCanvas)),
       settings_(&parts.settings.get()),
       effects_(entities_, components_, std::random_device{}()),
+      replicator_(entities_, components_,
+                  EntityFeedback{.effects = effects_, .sounds = parts.sounds}),
       playerCommands_(true, parts.settings.get().keys),
       inputs_(&parts.inputs.get()),
       entityMessageSource_(&parts.entityMessages.get()),

@@ -48,10 +48,10 @@ constexpr const char* MUSIC_LABEL = "MUSIC";
 constexpr const char* EFFECTS_LABEL = "EFFECTS";
 constexpr std::string_view VOLUME_DESCRIPTION_STEP = "> BY ";
 constexpr std::string_view VOLUME_DESCRIPTION_DEFAULT = " %, DEFAULT ";
-constexpr std::string_view VOLUME_DESCRIPTION_END = " % (COMING SOON)";
+constexpr std::string_view VOLUME_DESCRIPTION_END = " %";
 constexpr const char* MUTED_VOLUME_DESCRIPTION = "> SOUND MUTED: SEE MUTE ALL";
 constexpr const char* MUTE_ALL_LABEL = "MUTE ALL";
-constexpr const char* MUTE_ALL_DESCRIPTION = "> SILENCES ALL (COMING SOON)";
+constexpr const char* MUTE_ALL_DESCRIPTION = "> SILENCES ALL";
 constexpr const char* DEFAULT_SOUND_LABEL = "DEFAULT SOUND";
 constexpr const char* DEFAULT_SOUND_DESCRIPTION =
     "> PUTS BACK THE VOLUMES OF A FIRST LAUNCH";

@@ -9,6 +9,8 @@ target_link_libraries(rtype_client_application
     rtype_client_game_window
     rtype_client_network_thread
     rtype_client_interface
+    rtype_client_music_player
+    rtype_client_sound_player
     rtype_client_window
     rtype_client_screen_stack
     rtype_client_platform

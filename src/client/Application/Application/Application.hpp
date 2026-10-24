@@ -9,6 +9,7 @@
 #include "GameWindow.hpp"
 #include "IInterfaceCanvas.hpp"
 #include "IScreen.hpp"
+#include "MusicPlayer.hpp"
 #include "NetworkThread.hpp"
 #include "PlayerSettings.hpp"
 #include "PlayfieldMapping.hpp"
@@ -17,6 +18,7 @@
 #include "ScrollingBackground.hpp"
 #include "ServerConnection.hpp"
 #include "SettingsFile.hpp"
+#include "SoundPlayer.hpp"
 #include "SystemClock.hpp"
 #include "TimeConstants.hpp"
 
@@ -48,6 +50,10 @@ class AssetLibrary;
  * takes the entities of the server from it. It owns the player's settings too,
  * read from the settings file at launch: the window opens at the size they
  * hold, the game reads their keys, the options change and save them.
+ *
+ * It owns the sounds every screen plays, on SOUND_VOICE_LIMIT voices for the
+ * whole client, and the music, started at launch and never restarted, whose
+ * volume follows the settings at each frame.
  *
  * Screens are asked for by identifier; createScreen() is the one place that
  * builds them, with one case per ScreenId. The client starts on the title
@@ -151,6 +157,11 @@ class Application {
   /** @brief The sky behind every screen, declared before the screens so it
    * outlives the game screen, which speeds it up and shakes it. */
   ScrollingBackground background_;
+  /** @brief The sounds every screen plays and the music started at launch,
+   * declared after the settings they read and before the screens that play
+   * them. */
+  SoundPlayer sounds_;
+  MusicPlayer music_;
   engine::SystemClock clock_;
   engine::Duration previousFrameTime_{};
   /**

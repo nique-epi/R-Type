@@ -30,6 +30,7 @@
 #include "ScreenId.hpp"
 #include "ScreenStack.hpp"
 #include "ScreenTestConstants.hpp"
+#include "SoundConstants.hpp"
 #include "TimeConstants.hpp"
 #include "WorldState.hpp"
 #include "WorldStateFilterTestConstants.hpp"
@@ -41,6 +42,7 @@ using rtype::client::OPTIONS_KEY;
 using rtype::client::PLAYER_INPUT_INTERVAL;
 using rtype::client::PLAYER_MUZZLE_FLASH_FRAME;
 using rtype::client::PLAYER_MUZZLE_FLASH_WITHOUT_FLASH_FRAME;
+using rtype::client::PLAYER_SHOT_SOUND_ID;
 using rtype::client::ScreenId;
 using rtype::client::testing::APPLIED_TICK;
 using rtype::client::testing::BYDO_ID;
@@ -49,6 +51,7 @@ using rtype::client::testing::FIRST_POSITION;
 using rtype::client::testing::killed;
 using rtype::client::testing::listed;
 using rtype::client::testing::PLAYER_MISSILE_ID;
+using rtype::client::testing::PLAYER_MISSILE_POSITION;
 using rtype::client::testing::removed;
 using rtype::client::testing::SHIP_ID;
 using rtype::client::testing::SHIP_POSITION;
@@ -560,4 +563,19 @@ TEST_F(GameScreenFixture, TheEntitiesArePaintedInPlaceAtRest) {
   screens().update(ONE_FRAME);
 
   EXPECT_EQ(layerRecord().offsetAtLastPaint, sf::Vector2i());
+}
+
+/**
+ * Given a game screen
+ * When the server announces a missile of a player and the screen updates
+ * Then the shot of a player plays through the sounds of its parts
+ */
+TEST_F(GameScreenFixture, TheGamePlaysTheSoundsOfWhatTheServerAnnounces) {
+  entityMessages().queue(spawned(PLAYER_MISSILE_ID,
+                                 WireEntityType::PlayerMissile,
+                                 PLAYER_MISSILE_POSITION));
+
+  screens().update(ONE_FRAME);
+
+  EXPECT_THAT(sounds().played(), ElementsAre(PLAYER_SHOT_SOUND_ID));
 }

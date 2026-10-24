@@ -5,6 +5,7 @@ target_include_directories(rtype_client_entity_replicator PUBLIC ${CMAKE_CURRENT
 target_link_libraries(rtype_client_entity_replicator
   PUBLIC
     rtype_client_effect_spawner
+    rtype_client_replication_interfaces
     rtype_client_world_state_filter
     rtype_engine
     rtype_game_components
@@ -13,6 +14,7 @@ target_link_libraries(rtype_client_entity_replicator
     rtype_network_game_event
     rtype_network_protocol
   PRIVATE
+    rtype_client_audio_interfaces
     rtype_client_entity_sprites
     rtype_identifiers
 )

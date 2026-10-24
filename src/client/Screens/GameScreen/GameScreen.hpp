@@ -37,7 +37,8 @@ struct PlayerSettings;
  *
  * The screen owns the entities of the game, which appear and disappear with
  * it, the systems that animate them, and the EntityReplicator that applies to
- * them what the server announces. Each update moves every animation and every
+ * them what the server announces and plays the sounds of what it applies,
+ * through the sounds of the parts. Each update moves every animation and every
  * hit flash forward by the time elapsed, then hands the replicator the entity
  * messages the server sent since the previous update, whose new effects show
  * their first frame, then repaints the entities on the entity layer; since
@@ -121,7 +122,7 @@ class GameScreen : public IScreen {
   engine::EntityRegistry entities_;
   engine::ComponentRegistry components_{entities_};
   EffectSpawner effects_;
-  EntityReplicator replicator_{entities_, components_, effects_};
+  EntityReplicator replicator_;
   engine::SystemScheduler systems_;
   PlayerCommands playerCommands_;
   IPlayerInputLink* inputs_;

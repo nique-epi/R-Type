@@ -2,7 +2,11 @@ add_library(rtype_client_screen_interfaces INTERFACE)
 
 target_include_directories(rtype_client_screen_interfaces INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
 
-target_link_libraries(rtype_client_screen_interfaces INTERFACE rtype_engine_time)
+target_link_libraries(rtype_client_screen_interfaces
+  INTERFACE
+    rtype_client_audio_interfaces
+    rtype_engine_time
+)
 
 add_subdirectory(ScreenAssets)
 add_subdirectory(ConnectionScreen)

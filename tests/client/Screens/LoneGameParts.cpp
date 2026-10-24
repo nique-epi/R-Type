@@ -14,7 +14,8 @@ GameScreenParts LoneGameParts::parts() {
                          .inputs = inputs,
                          .entityMessages = entityMessages,
                          .connection = connection,
-                         .sky = sky};
+                         .sky = sky,
+                         .sounds = sounds};
 }
 
 std::unique_ptr<RecordingInterfaceCanvas> LoneGameParts::statusCanvasDouble() {

@@ -67,6 +67,8 @@ Application::Application(AssetLibrary& assets, network::Endpoint server,
       settings_(settingsFile_.load(firstLaunchSettings())),
       window_(settings_.windowSize),
       background_(std::random_device{}()),
+      sounds_(assets, settings_),
+      music_(assets, settings_),
       network_(
           network::Endpoint{.address = std::string{network::ANY_IPV4_ADDRESS},
                             .port = network::ANY_PORT}),
@@ -74,6 +76,7 @@ Application::Application(AssetLibrary& assets, network::Endpoint server,
       server_(std::move(server)),
       nickname_(std::move(nickname)),
       screens_([this](ScreenId screen) { return createScreen(screen); }) {
+  music_.start();
   screens_.replaceAll(ScreenId::Title);
   screens_.applyPendingChanges();
 }
@@ -84,6 +87,7 @@ void Application::run() {
     handleEvents();
     const engine::Duration elapsed = measureFrame();
     connection_.update(elapsed);
+    music_.update();
     background_.advance(elapsed);
     screens_.update(elapsed);
     screens_.applyPendingChanges();
@@ -166,7 +170,8 @@ std::unique_ptr<IScreen> Application::gameScreen() {
                       .inputs = connection_,
                       .entityMessages = connection_,
                       .connection = connection_,
-                      .sky = background_},
+                      .sky = background_,
+                      .sounds = sounds_},
       std::make_unique<EntityLayer>(*assets_), interfaceCanvas());
 }
 

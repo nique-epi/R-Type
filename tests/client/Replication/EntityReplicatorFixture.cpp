@@ -4,6 +4,7 @@
 #include "EntityAnnouncements.hpp"
 #include "EntityReplicator.hpp"
 #include "EntityReplicatorTestConstants.hpp"
+#include "RecordingSoundPlayer.hpp"
 #include "WorldState.hpp"
 
 namespace rtype::client::testing {
@@ -29,6 +30,10 @@ void EntityReplicatorFixture::announceOneOfEachType() {
 
 std::size_t EntityReplicatorFixture::entityCount() const {
   return entities_.size();
+}
+
+const RecordingSoundPlayer& EntityReplicatorFixture::sounds() const {
+  return sounds_;
 }
 
 }  // namespace rtype::client::testing

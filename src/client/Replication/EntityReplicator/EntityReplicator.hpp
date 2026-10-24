@@ -4,6 +4,7 @@
 #include <span>
 #include <vector>
 #include "Entity.hpp"
+#include "EntityFeedback.hpp"
 #include "EntityType.hpp"
 #include "NetworkEntityTable.hpp"
 #include "Position.hpp"
@@ -29,7 +30,6 @@ struct WorldState;
 
 namespace rtype::client {
 
-class EffectSpawner;
 struct AnimatedSprite;
 
 /**
@@ -48,10 +48,13 @@ struct AnimatedSprite;
  * arrival of every ship it creates and the muzzle flash of every missile; the
  * explosion of an entity an EntityDestroyed says was Killed, the whole of T4
  * for a ship, centered where the entity stood; nothing for one Removed; the
- * hit of the entity an EntityDamaged names. Each plays once per entity: a
- * later copy of an EntityDestroyed names an entity the client no longer has,
- * a later copy of an EntitySpawned names one it has, and the connection hands
- * over the first copy of a GameEvent only.
+ * hit of the entity an EntityDamaged names. It plays the sound of each, from
+ * SoundConstants.hpp: the shot of a missile of a player or of an enemy, the
+ * small explosion of a Bydo killed and the big one of a ship, the hit of the
+ * entity an EntityDamaged names, and the hit of a player a PlayerHit names.
+ * Each plays once per entity: a later copy of an EntityDestroyed names an
+ * entity the client no longer has, a later copy of an EntitySpawned names one
+ * it has, and the connection hands over the first copy of a GameEvent only.
  *
  * It follows the client rules of the protocol page. A WorldState older than
  * the newest one applied is ignored (see WorldStateFilter); an equal tick is
@@ -84,12 +87,12 @@ class EntityReplicator {
   /**
    * @param entities Registry the entities are created in; must outlive this.
    * @param components Components of the entities; must outlive this.
-   * @param effects Plays the effects in the same registries; must outlive
-   * this.
+   * @param feedback Plays the effects in the same registries, and the
+   * sounds; both must outlive this.
    */
   EntityReplicator(engine::EntityRegistry& entities,
                    engine::ComponentRegistry& components,
-                   EffectSpawner& effects);
+                   EntityFeedback feedback);
 
   /**
    * @brief Creates the entity the message announces, unless the client
@@ -113,7 +116,8 @@ class EntityReplicator {
 
   /**
    * @brief Plays the hit of the entity an EntityDamaged names, if the client
-   * has it. A PlayerHit or a PlayerEliminated plays nothing here.
+   * has it, with its sound; plays the hit of a player for a PlayerHit;
+   * nothing for a PlayerEliminated.
    */
   void apply(const network::GameEvent& event);
 
@@ -150,7 +154,7 @@ class EntityReplicator {
 
   engine::EntityRegistry* entities_{};
   engine::ComponentRegistry* components_{};
-  EffectSpawner* effects_{};
+  EntityFeedback feedback_;
   engine::NetworkEntityTable entityByNetworkId_;
   WorldStateFilter worldStateFilter_;
 };
