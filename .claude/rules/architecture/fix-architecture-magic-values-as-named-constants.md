@@ -20,6 +20,7 @@ Why: the repository's `.clang-tidy` disables `readability-magic-numbers`; this r
 
 1. **Before defining a constant in a test file** (a time step, a sentinel value, a length the specification fixes), search the tests for it: `git grep -n --untracked '<NAME> =' -- tests`. A constant a shared test header already holds (`ScreenTestConstants.hpp`, `AllEntityTypes.hpp`) is included, never defined again.
 2. **A value two test files need goes in a test header from the start**, next to the tests that use it, never copied into both.
+3. **A test constant is never defined in the test `.cpp`**, even when one test alone reads it: it goes in `<Subject>TestConstants.hpp` (`fix-format-a-test-file-holds-only-tests.md`).
 
 ### Each entry of a table of values has its own name
 
