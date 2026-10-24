@@ -8,6 +8,7 @@
 #include <span>
 #include "Animation.hpp"
 #include "CinemaProjection.hpp"
+#include "ColorRamp.hpp"
 #include "Easing.hpp"
 #include "EffectAnimations.hpp"
 #include "EffectColorConstants.hpp"
@@ -25,6 +26,7 @@
 #include "IntroRing.hpp"
 #include "IntroSpark.hpp"
 #include "IntroTimeline.hpp"
+#include "PixelCircle.hpp"
 #include "RenderingConstants.hpp"
 #include "SpriteFrame.hpp"
 #include "TextureArea.hpp"
@@ -42,15 +44,6 @@ struct DotSpray {
   float age{};
   std::span<const IntroSpark> dots;
   std::span<const sf::Color> ramp;
-};
-
-/** @brief A circle of a ring: its center, its radius and its color, and the
- * step of the midpoint algorithm being painted. */
-struct Circle {
-  sf::Vector2f center;
-  int radius{};
-  sf::Color color;
-  sf::Vector2i step;
 };
 
 /** @returns The version of an effect the preference asks for. */
@@ -202,54 +195,33 @@ void paintDots(IInterfaceCanvas& canvas, const IntroFrame& frame,
       continue;
     }
     const float gone = flown / dot.life;
-    const auto shade = std::min(
-        spray.ramp.size() - 1,
-        static_cast<std::size_t>(gone * static_cast<float>(spray.ramp.size())));
     paintWorldArea(
         canvas, frame,
         WorldArea{.topLeft = spray.origin +
                              (dot.velocity * (flown * (1.0F - (gone * HALF)))),
                   .size = {dot.size, dot.size},
-                  .color = spray.ramp[shade],
+                  .color = colorAt(spray.ramp, gone),
                   .leftBehind = true});
   }
 }
 
-/** @brief Paints the eight points of a circle that one step of the midpoint
- * algorithm finds, @p step from its center. */
-void paintOctants(IInterfaceCanvas& canvas, const IntroFrame& frame,
-                  const Circle& circle) {
-  const sf::Vector2i step = circle.step;
-  for (const sf::Vector2i point :
-       {sf::Vector2i(step.x, step.y), sf::Vector2i(step.y, step.x),
-        sf::Vector2i(-step.y, step.x), sf::Vector2i(-step.x, step.y),
-        sf::Vector2i(-step.x, -step.y), sf::Vector2i(-step.y, -step.x),
-        sf::Vector2i(step.y, -step.x), sf::Vector2i(step.x, -step.y)}) {
-    paintWorldArea(canvas, frame,
-                   WorldArea{.topLeft = circle.center + sf::Vector2f(point),
-                             .size = {1, 1},
-                             .color = circle.color,
-                             .leftBehind = true});
+/** @brief Paints a ring while it shows: a circle one pixel wide (circleOf())
+ * that grows fast then slowly, fading through BIG_CATCH_RING_RAMP. */
+void paintRing(IInterfaceCanvas& canvas, const IntroFrame& frame,
+               const IntroRing& ring) {
+  const float through = (frame.scene - ring.start) / ring.life;
+  if (through < 0.0F || through >= 1.0F) {
+    return;
   }
-}
-
-/** @brief Paints a circle one pixel wide, after the midpoint algorithm: one
- * step per row of its first octant. */
-void paintCircle(IInterfaceCanvas& canvas, const IntroFrame& frame,
-                 Circle circle) {
-  int column = circle.radius;
-  int row = 0;
-  int error = 1 - column;
-  while (column >= row) {
-    circle.step = {column, row};
-    paintOctants(canvas, frame, circle);
-    ++row;
-    if (error < 0) {
-      error += row + row + 1;
-    } else {
-      --column;
-      error += (row - column) + (row - column) + 1;
-    }
+  const int radius = std::max(
+      1, static_cast<int>(std::round(ring.radius * easeOutCubic(through))));
+  const sf::Color color = colorAt(BIG_CATCH_RING_RAMP, through);
+  for (const sf::Vector2i pixel : circleOf(radius)) {
+    paintWorldArea(canvas, frame,
+                   WorldArea{.topLeft = ring.center + sf::Vector2f(pixel),
+                             .size = {1, 1},
+                             .color = color,
+                             .leftBehind = true});
   }
 }
 
@@ -309,21 +281,7 @@ void paintBursts(IInterfaceCanvas& canvas, const IntroFrame& frame) {
 
 void paintRings(IInterfaceCanvas& canvas, const IntroFrame& frame) {
   for (const IntroRing& ring : frame.cast.get().rings) {
-    const float through = (frame.scene - ring.start) / ring.life;
-    if (through < 0.0F || through >= 1.0F) {
-      continue;
-    }
-    const int radius = std::max(
-        1, static_cast<int>(std::round(ring.radius * easeOutCubic(through))));
-    const auto shade =
-        std::min(BIG_CATCH_RING_RAMP.size() - 1,
-                 static_cast<std::size_t>(
-                     through * static_cast<float>(BIG_CATCH_RING_RAMP.size())));
-    paintCircle(canvas, frame,
-                Circle{.center = ring.center,
-                       .radius = radius,
-                       .color = BIG_CATCH_RING_RAMP.at(shade),
-                       .step = {}});
+    paintRing(canvas, frame, ring);
   }
 }
 

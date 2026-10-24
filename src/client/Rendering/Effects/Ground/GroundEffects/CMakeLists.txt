@@ -7,7 +7,9 @@ target_link_libraries(rtype_client_ground_effects
     rtype_client_ground_effect_interfaces
     rtype_engine
   PRIVATE
+    rtype_client_color_ramp
     rtype_client_easing
+    rtype_client_pixel_circle
     rtype_client_pixel_rounding
 )
 
