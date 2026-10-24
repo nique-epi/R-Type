@@ -46,8 +46,14 @@ void loadInterfaceAssets(AssetLibrary& library) {
   library.keepPermanently(interfaceAssets());
 }
 
-void loadTitleAssets(AssetLibrary& library) {
-  loadAtOnce(library, titleAssets());
+AssetList introAssets() {
+  AssetList assets = titleAssets();
+  assets.textures.emplace_back(EFFECT_SHEET_ID);
+  return assets;
+}
+
+void loadIntroAssets(AssetLibrary& library) {
+  loadAtOnce(library, introAssets());
 }
 
 }  // namespace rtype::client

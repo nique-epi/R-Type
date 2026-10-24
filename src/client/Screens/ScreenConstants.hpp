@@ -19,6 +19,9 @@ constexpr sf::Keyboard::Key OPTIONS_KEY = MENU_CANCEL_KEY;
 constexpr const char* LOGO_ID = "sprites/logo.png";
 constexpr sf::Vector2i LOGO_SIZE(210, 42);
 
+/** @brief Module name the intro writes its log line under. */
+constexpr std::string_view INTRO_LOG_MODULE_NAME = "Intro";
+
 /**
  * @brief Texts of the title screen. The copyright sign is written as its two
  * UTF-8 bytes, so every compiler stores the same text.

@@ -21,6 +21,7 @@ using rtype::client::EFFECT_SHEET_ID;
 using rtype::client::ENTITY_SHEET_ID;
 using rtype::client::gameAssets;
 using rtype::client::HUD_SHEET_ID;
+using rtype::client::introAssets;
 using rtype::client::loadInterfaceAssets;
 using rtype::client::LOGO_ID;
 using rtype::client::LOGO_SIZE;
@@ -119,6 +120,17 @@ TEST(ScreenAssets, AGameLoadsThePlugIcon) {
 TEST(ScreenAssets, TheTitleLoadsItsLogoAndTheEntitySheet) {
   EXPECT_THAT(titleAssets().textures,
               UnorderedElementsAre(LOGO_ID, ENTITY_SHEET_ID));
+}
+
+/**
+ * Given the assets of the intro
+ * When their textures are listed
+ * Then they hold those of the title, which follows it, and the effect sheet
+ * of its explosions
+ */
+TEST(ScreenAssets, TheIntroLoadsTheTitleAndTheEffectSheet) {
+  EXPECT_THAT(introAssets().textures,
+              UnorderedElementsAre(LOGO_ID, ENTITY_SHEET_ID, EFFECT_SHEET_ID));
 }
 
 /**

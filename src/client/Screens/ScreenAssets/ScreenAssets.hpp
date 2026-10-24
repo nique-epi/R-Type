@@ -28,14 +28,19 @@ class AssetLibrary;
  */
 void loadInterfaceAssets(AssetLibrary& library);
 
+/** @brief The assets of the intro: those of the title screen, which comes
+ * after it, and the effect sheet of its explosions. */
+[[nodiscard]] AssetList introAssets();
+
 /**
- * @brief Loads the assets of the title screen at once, so the first frame
- * already shows it; they are not permanent. Call it after
- * loadInterfaceAssets(), whose assets stay loaded.
- *
- * @throws AssetLoadingException naming every title asset that could not be
+ * @brief Loads the assets of the intro at once, so its first frame already
+ * shows it; they are not permanent, and the title screen releases the effect
+ * sheet when it opens. Call it after loadInterfaceAssets(), whose assets stay
  * loaded.
+ *
+ * @throws AssetLoadingException naming every asset of the intro that could not
+ * be loaded.
  */
-void loadTitleAssets(AssetLibrary& library);
+void loadIntroAssets(AssetLibrary& library);
 
 }  // namespace rtype::client

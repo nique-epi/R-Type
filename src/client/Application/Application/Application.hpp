@@ -56,8 +56,8 @@ class AssetLibrary;
  * volume follows the settings at each frame.
  *
  * Screens are asked for by identifier; createScreen() is the one place that
- * builds them, with one case per ScreenId. The client starts on the title
- * screen.
+ * builds them, with one case per ScreenId. The client opens on the intro, or
+ * on the title screen when the system asks for less motion.
  */
 class Application {
  public:
