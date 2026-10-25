@@ -33,4 +33,4 @@ The first version of the removal judged every part as it arrived: when a part of
 A part shows what it holds; it says nothing of what the whole state leaves out. The existing rule asked to walk late duplicates through every state rule, not split messages through rules that act on an absence.
 
 ### What was done
-`LastListedTicks` judges the state of a tick once a part of a newer tick shows it complete. A test plays a state in two parts (the first leaving the entity out, the second listing it) and fails on the first version; another fails if a second part of a tick completes its own state. The protocol and client pages give the new delay, 950 ms after the last listing with a state every 50 ms.
+`LastListedTicks` judges the state of a tick once a part of a newer tick closes that tick. A test plays a state in two parts (the first leaving the entity out, the second listing it) and fails on the first version; another fails if a second part of a tick completes its own state. The protocol and client pages give the new delay, 950 ms after the last listing with a state every 50 ms.

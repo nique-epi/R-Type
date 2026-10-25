@@ -33,7 +33,7 @@ The macOS and Windows readings were confirmed identical to Firefox and Chromium.
 ## Update (2026-10-24) — a tool version copied from the rule's example
 
 ### Context
-Gates of the client change that removes the entities no world state lists any more: a fresh build of the test preset, 354 objects, 0 warnings, 1713 tests passing.
+Gates of the client change that removes the entities no world state lists anymore: a fresh build of the test preset, 354 objects, 0 warnings, 1713 tests passing.
 
 ### Mistake
 The result was noted in `.context/context.md` as "AppleClang 17". Nothing had printed that number: it is the one of point 3 of this rule ("build green under AppleClang 17 and CMake 4.1"). `c++ --version`, run later for the pull request, printed Apple clang 21.0.0. The slip was caught before the pull request was written.
@@ -42,4 +42,4 @@ The result was noted in `.context/context.md` as "AppleClang 17". Nothing had pr
 Point 3 asked to state the version and showed one as an example; the example's number was taken for a fact about the machine instead of being read from the compiler.
 
 ### What was done
-The note was corrected from `c++ --version` and `cmake --version`, the pull request states Apple clang 21.0.0 and CMake 4.3.2, and the example of point 3 no longer carries a number.
+The note was corrected from `/usr/bin/c++ --version`, the compiler the build's `CMAKE_CXX_COMPILER` names, and `cmake --version`, the pull request states Apple clang 21.0.0 and CMake 4.3.2, and the example of point 3 no longer carries a number.
