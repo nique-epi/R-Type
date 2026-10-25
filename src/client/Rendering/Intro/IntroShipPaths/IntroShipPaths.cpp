@@ -35,6 +35,7 @@ float entryXAt(std::size_t pilot, float scene) {
 /** @returns How far the pink and green ships moved from their homes as they
  * swap: to the row of the other, bulging forward and back on the way;
  * nothing for the others. */
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
 sf::Vector2f swapShiftAt(std::size_t pilot, float scene) {
   if (pilot != INTRO_PINK_PILOT && pilot != INTRO_GREEN_PILOT) {
     return {};
@@ -111,6 +112,7 @@ sf::Vector2f titlePlaceOf(std::size_t pilot) {
 
 }  // namespace
 
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
 std::optional<sf::Vector2f> closeupPlaceAt(std::size_t pilot, float scene) {
   const float start = closeupStartOf(pilot);
   if (scene < start || scene >= start + INTRO_BEAT) {
