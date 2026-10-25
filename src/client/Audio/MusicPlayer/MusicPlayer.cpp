@@ -10,6 +10,7 @@
 #include "AssetLoadResult.hpp"
 #include "AudioConstants.hpp"
 #include "AudioVolume.hpp"
+#include "MusicTrack.hpp"
 #include "PlayerSettings.hpp"
 #include "TimeConstants.hpp"
 
@@ -17,19 +18,23 @@ namespace rtype::client {
 
 namespace {
 
-/** @returns The part of the theme that loops: THEME_LOOP_BEATS beats from
- * its first beat. */
-sf::Music::TimeSpan themeLoop() {
-  return sf::Music::TimeSpan{
-      .offset = sf::Time(std::chrono::duration_cast<std::chrono::microseconds>(
-          THEME_FIRST_BEAT)),
-      .length = sf::seconds(THEME_BEAT * static_cast<float>(THEME_LOOP_BEATS))};
+/** @returns @p duration as SFML keeps it, in microseconds. */
+sf::Time sfmlTimeOf(engine::Duration duration) {
+  return {std::chrono::duration_cast<std::chrono::microseconds>(duration)};
+}
+
+/** @returns The part of the file of @p track that loops. */
+sf::Music::TimeSpan loopOf(const MusicTrack& track) {
+  return sf::Music::TimeSpan{.offset = sfmlTimeOf(track.loopStart),
+                             .length = sfmlTimeOf(track.loopLength)};
 }
 
 }  // namespace
 
-MusicPlayer::MusicPlayer(AssetLibrary& library, const PlayerSettings& settings)
+MusicPlayer::MusicPlayer(AssetLibrary& library, const PlayerSettings& settings,
+                         MusicTrack track)
     : settings_(&settings),
+      track_(track),
       logger_(std::string{AUDIO_LOG_MODULE_NAME}),
       opened_(open(library)) {}
 
@@ -37,11 +42,13 @@ void MusicPlayer::start() {
   if (!opened_ || music_.getStatus() == sf::SoundSource::Status::Playing) {
     return;
   }
-  music_.setLoopPoints(themeLoop());
+  music_.setLoopPoints(loopOf(track_));
   music_.setLooping(true);
   update();
   music_.play();
 }
+
+void MusicPlayer::stop() { music_.stop(); }
 
 void MusicPlayer::update() { music_.setVolume(musicVolumeOf(*settings_)); }
 
@@ -51,19 +58,19 @@ std::optional<engine::Duration> MusicPlayer::playingOffset() const {
   }
   return std::chrono::duration_cast<engine::Duration>(
              music_.getPlayingOffset().toDuration()) -
-         THEME_FIRST_BEAT;
+         track_.firstBeat;
 }
 
 bool MusicPlayer::open(AssetLibrary& library) {
-  if (library.load(AssetKind::Music, THEME_MUSIC_ID) !=
+  if (library.load(AssetKind::Music, track_.assetId) !=
       AssetLoadResult::Loaded) {
-    logger_.warn("no music file ", THEME_MUSIC_ID,
-                 ": the client plays without music");
+    logger_.warn("no music file ", track_.assetId,
+                 ": the client plays without it");
     return false;
   }
-  if (!music_.openFromFile(library.musicFile(THEME_MUSIC_ID))) {
-    logger_.warn("the music file ", THEME_MUSIC_ID,
-                 " cannot be read: the client plays without music");
+  if (!music_.openFromFile(library.musicFile(track_.assetId))) {
+    logger_.warn("the music file ", track_.assetId,
+                 " cannot be read: the client plays without it");
     return false;
   }
   return true;

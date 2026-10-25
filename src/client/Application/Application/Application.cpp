@@ -11,6 +11,7 @@
 #include <utility>
 #include "AssetLibrary.hpp"
 #include "AssetList.hpp"
+#include "AudioConstants.hpp"
 #include "BoundAction.hpp"
 #include "ConnectionConstants.hpp"
 #include "ConnectionScreen.hpp"
@@ -37,6 +38,7 @@
 #include "ScreenId.hpp"
 #include "ScreenStack.hpp"
 #include "SettingsFile.hpp"
+#include "SoundtrackParts.hpp"
 #include "SquadronStart.hpp"
 #include "TimeConstants.hpp"
 #include "TitleScreen.hpp"
@@ -79,7 +81,9 @@ Application::Application(AssetLibrary& assets, network::Endpoint server,
       window_(settings_.windowSize),
       background_(std::random_device{}()),
       sounds_(assets, settings_),
-      music_(assets, settings_),
+      theme_(assets, settings_, THEME_TRACK),
+      gameMusic_(assets, settings_, GAME_TRACK),
+      soundtrack_(SoundtrackParts{.theme = theme_, .gameMusic = gameMusic_}),
       network_(
           network::Endpoint{.address = std::string{network::ANY_IPV4_ADDRESS},
                             .port = network::ANY_PORT}),
@@ -97,7 +101,9 @@ void Application::run() {
     handleEvents();
     const engine::Duration elapsed = measureFrame();
     connection_.update(elapsed);
-    music_.update();
+    theme_.update();
+    gameMusic_.update();
+    soundtrack_.advance(elapsed);
     background_.advance(elapsed);
     screens_.update(elapsed);
     screens_.applyPendingChanges();
@@ -143,7 +149,7 @@ std::unique_ptr<IScreen> Application::createScreen(ScreenId screen) {
                            .settings = settings_,
                            .sky = background_,
                            .sounds = sounds_,
-                           .music = music_,
+                           .music = theme_,
                            .seed = std::random_device{}()},
           interfaceCanvas());
     case ScreenId::Title:
@@ -168,7 +174,7 @@ std::unique_ptr<IScreen> Application::createScreen(ScreenId screen) {
 }
 
 std::unique_ptr<IScreen> Application::titleScreen(ScreenId screen) {
-  music_.start();
+  soundtrack_.playTheme();
   std::unique_ptr<IScreen> loading =
       loadingScreenUnlessLoaded(titleAssets(), screen);
   if (loading != nullptr) {
@@ -186,6 +192,7 @@ std::unique_ptr<IScreen> Application::titleScreen(ScreenId screen) {
 }
 
 std::unique_ptr<IScreen> Application::gameScreen() {
+  soundtrack_.playGameMusic();
   std::unique_ptr<IScreen> loading =
       loadingScreenUnlessLoaded(gameAssets(), ScreenId::Game);
   if (loading != nullptr) {

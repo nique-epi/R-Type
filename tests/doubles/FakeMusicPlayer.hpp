@@ -15,6 +15,9 @@ class FakeMusicPlayer : public rtype::client::IMusicPlayer {
  public:
   void start() override;
 
+  /** @brief Stops the music, as MusicPlayer does. */
+  void stop() override;
+
   [[nodiscard]] std::optional<rtype::engine::Duration> playingOffset()
       const override;
 

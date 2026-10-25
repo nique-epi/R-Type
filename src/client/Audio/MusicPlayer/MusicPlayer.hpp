@@ -4,6 +4,7 @@
 #include <optional>
 #include "IMusicPlayer.hpp"
 #include "Logger.hpp"
+#include "MusicTrack.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::client {
@@ -12,27 +13,32 @@ class AssetLibrary;
 struct PlayerSettings;
 
 /**
- * @brief The music of the client: THEME_MUSIC_ID, read from disk while it
- * plays, started once, by the intro after its black second or by the first
- * title screen, and played at the MUSIC volume of the player, in a loop over
- * its first THEME_LOOP_BEATS beats, which end before its fade out.
+ * @brief A music of the client, THEME_TRACK or GAME_TRACK: its file, read
+ * from disk while it plays, at the MUSIC volume of the player, in a loop over
+ * the part of the track that loops, which ends before its fade out; its
+ * position counts from the first beat of the track.
  *
  * Without the file, or with a file SFML cannot read, it writes one warning
- * and stays silent: the client runs without music. start() never restarts a
- * music that plays, so the title screen and the options leave it where it
- * is.
+ * and stays silent: the client runs without that music. start() never
+ * restarts a music that plays, so the title screen and the options leave it
+ * where it is.
  */
 class MusicPlayer : public IMusicPlayer {
  public:
   /**
    * @param library Locates the music file.
    * @param settings The volumes of the player; they must outlive the player.
+   * @param track The music to play and the part of it that loops.
    */
-  MusicPlayer(AssetLibrary& library, const PlayerSettings& settings);
+  MusicPlayer(AssetLibrary& library, const PlayerSettings& settings,
+              MusicTrack track);
 
-  /** @brief Starts the music, looping over THEME_LOOP_BEATS beats, at the
-   * volume of the settings, unless it plays already or has no file. */
+  /** @brief Starts the music from the start of its file, looping over the
+   * part of its track that loops, at the volume of the settings, unless it
+   * plays already or has no file. */
   void start() override;
+
+  void stop() override;
 
   /** @brief Sets the volume the settings ask for: called each frame, so the
    * options change it at once. */
@@ -46,6 +52,7 @@ class MusicPlayer : public IMusicPlayer {
   [[nodiscard]] bool open(AssetLibrary& library);
 
   const PlayerSettings* settings_;
+  MusicTrack track_;
   logging::Logger logger_;
   sf::Music music_;
   bool opened_;

@@ -51,6 +51,7 @@ The client looks for `assets/` next to its executable, then in the folder above 
 | `sounds/kenney/logo_impact.ogg` | The logo of the intro landing, 0.63 s | `impactMetal_000.ogg` of Kenney's Sci-fi Sounds 1.0, CC0, license in `sounds/kenney/license-sci-fi-sounds.txt`; from kenney.nl |
 | `sounds/epidemic/hit.flac` | An entity hit that survives, 0.305 s | The first hit of "Fight, Impact, Hit, Hard, Melon", from Epidemic Sound: the file repeats a hit every 1.6 s, so only the first one is kept, from 5 ms before its attack (0.319 s) to 0.624 s, with a fade out of 30 ms; see [the license of Epidemic Sound](#the-license-of-epidemic-sound) |
 | `sounds/kenney/player_hit.ogg` | A player hit, 0.65 s | `impactPunch_heavy_000.ogg` of Kenney's Impact Sounds 1.0, CC0, license in `sounds/kenney/license-impact-sounds.txt`; from kenney.nl |
+| `music/oh_the_city.mp3` | The music of a game, Oh the City by Machine Dreams: 160.2 s, which starts at once; it loops from its start to 152 s, before its fade out, which starts at 152.1 s | From Epidemic Sound (downloaded as `ES_Machine Dreams - Oh the City.mp3`); see [the license of Epidemic Sound](#the-license-of-epidemic-sound) |
 | `music/spacesuit_suite.mp3` | The theme, Spacesuit Suite by Stationary Sign: 201 s at 109 beats a minute, its first beat 85 ms in; it loops over 352 beats from that beat (to 193.85 s), before its fade out, which starts at 197 s | From Epidemic Sound (downloaded as `ES_Spacesuit Suite - Stationary Sign.mp3`), licensed by the team; see the note on its license below |
 
 ## The entity sheet
@@ -94,4 +95,4 @@ The rectangles are written once, in `src/client/Rendering/Interface/HudSpriteCon
 
 ## The license of Epidemic Sound
 
-The theme and the hit come from Epidemic Sound. Its help pages describe the Creator and Pro subscriptions as covering videos and podcasts the subscriber produces, and point to other licenses for a game. Whether the license the team holds covers this game, shared in a public repository, is for the team to confirm; the team does not plan to publish the game.
+The theme, the music of a game and the hit come from Epidemic Sound. Its help pages describe the Creator and Pro subscriptions as covering videos and podcasts the subscriber produces, and point to other licenses for a game. Whether the license the team holds covers this game, shared in a public repository, is for the team to confirm; the team does not plan to publish the game.
