@@ -9,14 +9,17 @@ namespace rtype::client {
 
 /**
  * @brief Remembers, for each entity the client has, the tick of the newest
- * WorldState that listed it, and names the entities no complete state listed
- * for UNLISTED_ENTITY_TICKS: the server destroyed them and every copy of their
- * EntityDestroyed was lost, so they would stay on screen as ghosts.
+ * WorldState that listed it, and names the entities no state listed for
+ * UNLISTED_ENTITY_TICKS up to a closed tick: the server destroyed them and
+ * every copy of their EntityDestroyed was lost, so they would stay on screen as
+ * ghosts.
  *
  * A state too big for one datagram comes in several parts with the same tick,
- * and a later part may list an entity an earlier one left out. The client only
- * knows the state of a tick complete once a part of a newer tick arrives, so
- * an entity is judged on that complete state, never on a part.
+ * and a later part may list an entity an earlier one left out. A part of a
+ * newer tick closes the previous tick: WorldStateFilter drops a later part of
+ * it as older, and a lost part never comes. An entity is judged on the parts
+ * received for a closed tick, never on a part of the newest one, and never as
+ * if every part had arrived.
  *
  * It counts the ticks of the states it is given, never the time that passes:
  * while no state arrives, no entity ages, so a stall of the server or a burst
@@ -49,8 +52,8 @@ class LastListedTicks {
    * @brief Call it once for each part of a state WorldStateFilter accepted,
    * after listed() for each of its entities. An entity that appeared before
    * any state starts counting at @p tick.
-   * @returns When @p tick is newer than the tick given before, which makes the
-   * state of that previous tick complete: the entities that state finds
+   * @returns When @p tick is newer than the tick given before, which closes
+   * that previous tick: the entities its parts received find
    * UNLISTED_ENTITY_TICKS or more after their newest listing, in no particular
    * order; they are forgotten. Nothing for the first state, nor for another
    * part of the newest tick.
@@ -59,11 +62,10 @@ class LastListedTicks {
 
  private:
   /**
-   * @returns The tick whose state @p tick completes: the newest tick given
-   * before, when @p tick is newer than it; nothing otherwise.
+   * @returns The tick @p tick closes: the newest tick given before, when
+   * @p tick is newer than it; nothing otherwise.
    */
-  [[nodiscard]] std::optional<std::uint32_t> completedBy(
-      std::uint32_t tick) const;
+  [[nodiscard]] std::optional<std::uint32_t> closedBy(std::uint32_t tick) const;
 
   /**
    * @brief Gives @p tick to every entity that appeared before any state.

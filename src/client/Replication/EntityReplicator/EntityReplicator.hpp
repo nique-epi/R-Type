@@ -61,10 +61,10 @@ struct AnimatedSprite;
  * and the client does not have is created. An EntitySpawned naming an entity
  * the client has, and an EntityDestroyed naming one it does not have, change
  * nothing; so does a message naming NO_ENTITY_ID or a type outside
- * WireEntityType. An entity no complete WorldState listed for
- * UNLISTED_ENTITY_TICKS is removed, without an effect, once a part of a newer
- * state shows that state complete (see LastListedTicks): the server destroyed
- * it and every copy of its EntityDestroyed was lost.
+ * WireEntityType. An entity no WorldState listed for UNLISTED_ENTITY_TICKS up
+ * to a closed tick is removed, without an effect, once a part of a newer state
+ * closes that tick (see LastListedTicks): the server destroyed it and every
+ * copy of its EntityDestroyed was lost.
  *
  * Of the players of a WorldState, it marks the ship of each with the color
  * of its pilot (see PilotShip) and whether it can be hit, then gives the
@@ -103,10 +103,10 @@ class EntityReplicator {
 
   /**
    * @brief Moves every entity the state lists to its position, and creates
-   * those the client does not have, then removes those no complete state
-   * listed for UNLISTED_ENTITY_TICKS, then reads its players, then plays the
-   * appearance of the entities created; nothing for a state older than the
-   * newest one applied.
+   * those the client does not have, then removes those no state listed for
+   * UNLISTED_ENTITY_TICKS up to the tick it closes, then reads its players,
+   * then plays the appearance of the entities created; nothing for a state
+   * older than the newest one applied.
    */
   void apply(const network::WorldState& state);
 
@@ -154,8 +154,8 @@ class EntityReplicator {
   void markShip(const network::PlayerState& player, int pilotColor);
 
   /**
-   * @brief Removes, without an effect, every entity the state @p tick
-   * completes finds unlisted for UNLISTED_ENTITY_TICKS: nothing for another
+   * @brief Removes, without an effect, every entity unlisted for
+   * UNLISTED_ENTITY_TICKS up to the tick @p tick closes: nothing for another
    * part of the newest tick.
    */
   void removeUnlistedAt(std::uint32_t tick);

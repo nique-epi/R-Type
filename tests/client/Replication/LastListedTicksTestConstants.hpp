@@ -18,15 +18,15 @@ constexpr std::uint32_t TICKS_IN_900_MILLISECONDS = 54;
 constexpr std::uint32_t LISTING_TICK = 100;
 
 /**
- * @brief The first tick whose complete state removes an entity last listed at
- * LISTING_TICK, and the tick just before, whose complete state keeps it.
+ * @brief The first tick that, once closed, removes an entity last listed at
+ * LISTING_TICK, and the tick just before, which keeps it once closed.
  */
 constexpr std::uint32_t REMOVAL_TICK = LISTING_TICK + TICKS_IN_900_MILLISECONDS;
 constexpr std::uint32_t LAST_KEPT_TICK = REMOVAL_TICK - 1;
 
 /**
- * @brief A tick newer than REMOVAL_TICK: its first state shows that the state
- * of REMOVAL_TICK is complete, which may have come in several parts.
+ * @brief A tick newer than REMOVAL_TICK: its first state closes REMOVAL_TICK,
+ * whose state may have come in several parts.
  */
 constexpr std::uint32_t AFTER_REMOVAL_TICK = REMOVAL_TICK + 1;
 

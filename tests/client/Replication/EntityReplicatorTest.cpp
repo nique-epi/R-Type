@@ -570,11 +570,11 @@ TEST_F(EntityReplicatorFixture, IgnoresAShipIdThatNamesNoShip) {
 /**
  * Given a Bydo listed by a state of LISTING_TICK, whose EntityDestroyed copies
  * were all lost, and a state of REMOVAL_TICK, 900 ms later, that lists nothing
- * When a state of a newer tick shows that state complete
+ * When a state of a newer tick closes that tick
  * Then the Bydo is no longer drawn
  */
 TEST_F(EntityReplicatorFixture,
-       RemovesAnEntityNoCompleteStateListedFor900Milliseconds) {
+       RemovesAnEntityUnlistedFor900MillisecondsAtAClosedTick) {
   replicator().apply(stateListing(
       LISTING_TICK, {listed(BYDO_ID, WireEntityType::Bydo, FIRST_POSITION)}));
   replicator().apply(stateListing(REMOVAL_TICK, {}));
@@ -629,7 +629,7 @@ TEST_F(EntityReplicatorFixture, KeepsAnEntityALaterPartOfTheSameStateLists) {
 /**
  * Given a Bydo listed by a state of LISTING_TICK, and a state of REMOVAL_TICK
  * that leaves it out
- * When a state of a newer tick shows that state complete
+ * When a state of a newer tick closes that tick
  * Then no effect starts: the client cannot tell whether it was killed
  */
 TEST_F(EntityReplicatorFixture, AnEntityRemovedUnlistedLeavesNoEffect) {
@@ -645,7 +645,7 @@ TEST_F(EntityReplicatorFixture, AnEntityRemovedUnlistedLeavesNoEffect) {
 /**
  * Given a state of LISTING_TICK, then a Bydo an EntitySpawned announced and no
  * state listed, and a state of REMOVAL_TICK that leaves it out
- * When a state of a newer tick shows that state complete
+ * When a state of a newer tick closes that tick
  * Then the Bydo is no longer drawn
  */
 TEST_F(EntityReplicatorFixture, RemovesASpawnedEntityNoStateListed) {
@@ -659,8 +659,7 @@ TEST_F(EntityReplicatorFixture, RemovesASpawnedEntityNoStateListed) {
 }
 
 /**
- * Given a Bydo removed once the state of REMOVAL_TICK, which left it out, was
- * complete
+ * Given a Bydo removed once REMOVAL_TICK, whose state left it out, was closed
  * When a newer state lists it
  * Then the Bydo is drawn again, where that state puts it
  */

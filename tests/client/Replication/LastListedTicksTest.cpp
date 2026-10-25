@@ -19,9 +19,9 @@ using ::testing::IsEmpty;
  * later
  * When the first part of a state of REMOVAL_TICK leaves it out
  * Then it is not taken: a later part of that state may list it, and the newest
- * complete state comes less than 900 ms after its listing
+ * closed tick comes less than 900 ms after its listing
  */
-TEST(LastListedTicks, JudgesAnEntityOnTheNewestCompleteStateOnly) {
+TEST(LastListedTicks, JudgesAnEntityOnClosedTicksOnly) {
   LastListedTicks ticks;
   ticks.listed(BYDO_ID, LISTING_TICK);
   static_cast<void>(ticks.takeUnlistedAt(LAST_KEPT_TICK));
@@ -33,9 +33,9 @@ TEST(LastListedTicks, JudgesAnEntityOnTheNewestCompleteStateOnly) {
  * Given a Bydo listed at LISTING_TICK, a state of LAST_KEPT_TICK, and a first
  * part of the state of REMOVAL_TICK that leaves it out
  * When a second part of that state leaves it out too
- * Then it is not taken: a part never completes the state of its own tick
+ * Then it is not taken: a part never closes its own tick
  */
-TEST(LastListedTicks, NeverCompletesAStateOnAnotherPartOfItsTick) {
+TEST(LastListedTicks, NeverClosesATickOnAnotherPartOfIt) {
   LastListedTicks ticks;
   ticks.listed(BYDO_ID, LISTING_TICK);
   static_cast<void>(ticks.takeUnlistedAt(LAST_KEPT_TICK));
@@ -47,10 +47,10 @@ TEST(LastListedTicks, NeverCompletesAStateOnAnotherPartOfItsTick) {
 /**
  * Given a Bydo and a ship listed at LISTING_TICK, and a state of REMOVAL_TICK,
  * 54 ticks later, that lists the ship only
- * When a state of a newer tick shows that state complete
+ * When a state of a newer tick closes that tick
  * Then the Bydo is taken, and the ship is not
  */
-TEST(LastListedTicks, TakesTheEntitiesNoCompleteStateListedFor900Milliseconds) {
+TEST(LastListedTicks, TakesTheEntitiesUnlistedFor900MillisecondsAtAClosedTick) {
   LastListedTicks ticks;
   ticks.listed(BYDO_ID, LISTING_TICK);
   ticks.listed(SHIP_ID, LISTING_TICK);
@@ -64,7 +64,7 @@ TEST(LastListedTicks, TakesTheEntitiesNoCompleteStateListedFor900Milliseconds) {
 /**
  * Given a Bydo listed at LISTING_TICK, then again at LAST_KEPT_TICK, and a
  * state of REMOVAL_TICK that leaves it out
- * When a state of a newer tick shows that state complete
+ * When a state of a newer tick closes that tick
  * Then it is not taken: it counts from the newest state that listed it
  */
 TEST(LastListedTicks, CountsFromTheNewestStateListingAnEntity) {
@@ -77,7 +77,7 @@ TEST(LastListedTicks, CountsFromTheNewestStateListingAnEntity) {
 }
 
 /**
- * Given a Bydo taken once the state of REMOVAL_TICK was complete
+ * Given a Bydo taken once REMOVAL_TICK was closed
  * When the next state leaves it out too
  * Then it is not taken a second time
  */
@@ -93,7 +93,7 @@ TEST(LastListedTicks, TakesAnEntityOnce) {
 /**
  * Given a Bydo listed at LISTING_TICK, then forgotten as the client destroyed
  * it, and a state of REMOVAL_TICK
- * When a state of a newer tick shows that state complete
+ * When a state of a newer tick closes that tick
  * Then it is not taken
  */
 TEST(LastListedTicks, NeverTakesAForgottenEntity) {
@@ -108,7 +108,7 @@ TEST(LastListedTicks, NeverTakesAForgottenEntity) {
 /**
  * Given a state of LISTING_TICK, then a Bydo that appeared through an
  * EntitySpawned, and a state of LAST_KEPT_TICK
- * When a state of a newer tick shows that state complete
+ * When a state of a newer tick closes that tick
  * Then it is not taken: it counts from the newest state before it appeared
  */
 TEST(LastListedTicks, KeepsAnAppearedEntityLessThan900MillisecondsAfterIt) {
@@ -123,7 +123,7 @@ TEST(LastListedTicks, KeepsAnAppearedEntityLessThan900MillisecondsAfterIt) {
 /**
  * Given a state of LISTING_TICK, then a Bydo that appeared through an
  * EntitySpawned, and a state of REMOVAL_TICK that leaves it out
- * When a state of a newer tick shows that state complete
+ * When a state of a newer tick closes that tick
  * Then it is taken
  */
 TEST(LastListedTicks, TakesAnAppearedEntityNoStateListed) {
@@ -138,7 +138,7 @@ TEST(LastListedTicks, TakesAnAppearedEntityNoStateListed) {
 /**
  * Given a Bydo that appeared before any state, and a first state, of
  * LISTING_TICK, that leaves it out
- * When a state of REMOVAL_TICK shows that first state complete
+ * When a state of REMOVAL_TICK closes that first tick
  * Then it is not taken: it starts counting at the first state, not at the
  * start of the game
  */
@@ -153,7 +153,7 @@ TEST(LastListedTicks, StartsCountingAnEntityThatAppearedFirstAtTheFirstState) {
 /**
  * Given a Bydo that appeared before any state, a first state of LISTING_TICK
  * and a state of REMOVAL_TICK, both leaving it out
- * When a state of a newer tick shows the state of REMOVAL_TICK complete
+ * When a state of a newer tick closes REMOVAL_TICK
  * Then it is taken
  */
 TEST(LastListedTicks, TakesAnEntityThatAppearedFirstOnceNoStateListedIt) {
