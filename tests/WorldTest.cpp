@@ -11,6 +11,7 @@
 #include "EntityIdConstants.hpp"
 #include "EntitySizeConstants.hpp"
 #include "EntityType.hpp"
+#include "Gun.hpp"
 #include "Health.hpp"
 #include "MissileOwner.hpp"
 #include "MovementPattern.hpp"
@@ -535,6 +536,25 @@ TEST(World, SpawnedPlayerMissileHasTheBoxOfItsSprite) {
       box.value_or(rtype::game::CollisionBox{});
   EXPECT_EQ(found.width, rtype::game::PLAYER_MISSILE_WIDTH);
   EXPECT_EQ(found.height, rtype::game::PLAYER_MISSILE_HEIGHT);
+}
+
+/**
+ * Given an empty world
+ * When a Bydo is spawned
+ * Then it carries a gun that has not fired yet, so its first missile waits a
+ * whole interval
+ */
+TEST(World, SpawnedBydoHasAGunThatHasNotFiredYet) {
+  rtype::game::World world;
+
+  const std::uint32_t networkId =
+      world.spawnBydo(rtype::game::Position{.x = SOME_X, .y = SOME_Y},
+                      rtype::game::BydoKind::Drifter);
+
+  const std::optional<rtype::game::Gun> gun =
+      componentOf<rtype::game::Gun>(world, networkId);
+  ASSERT_TRUE(gun.has_value());
+  EXPECT_EQ(gun.value_or(rtype::game::Gun{}).ticksSinceLastShot, 0U);
 }
 
 /**

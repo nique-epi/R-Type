@@ -16,8 +16,11 @@
 #include "DatagramCodec.hpp"
 #include "DebugJournal.hpp"
 #include "EnemyKilled.hpp"
+#include "Entity.hpp"
 #include "EntityDestruction.hpp"
 #include "EntityIdConstants.hpp"
+#include "EntitySpawned.hpp"
+#include "EntityType.hpp"
 #include "EventBus.hpp"
 #include "GameInstance.hpp"
 #include "GameInstanceConstants.hpp"
@@ -657,22 +660,42 @@ TEST_F(GameInstanceTest, NoBydoAppearsWhileFinished) {
  * Given a game in progress for ten intervals of Bydos (about 20 seconds), a
  * Bydo taking about 8.5 seconds to cross the playfield
  * When the events are dispatched
- * Then the first five Bydos are gone, five removals were announced, and the
- * world holds the ship and the last five Bydos
+ * Then the first five Bydos are gone, a removal was announced for each, and the
+ * world holds the last five Bydos; the missiles the Bydos fire leave on the
+ * left too, and are not counted
  */
 TEST_F(GameInstanceTest, ABydoThatLeavesOnTheLeftDoesNotStayInTheWorld) {
-  std::size_t removals = 0;
+  std::vector<std::uint32_t> removed;
   events().subscribe<game::EntityDestruction>(
-      [&removals](const game::EntityDestruction& event) {
-        removals += event.cause == game::DestructionCause::Removed;
+      [&removed](const game::EntityDestruction& event) {
+        if (event.cause == game::DestructionCause::Removed) {
+          removed.push_back(event.networkId);
+        }
       });
   startGameWithOnePlayer();
 
   runTicks(INTERVALS_OF_BYDOS * testing::TICKS_PER_BYDO_INTERVAL);
   events().dispatch();
 
-  EXPECT_EQ(removals, 5U);
-  EXPECT_EQ(game().world().entityCount(), 6U);
+  std::size_t bydosRemoved = 0;
+  for (const network::OutgoingDatagram& datagram :
+       ofType(network::MessageType::EntitySpawned, sentTo(FIRST_PLAYER))) {
+    const auto spawned = onlyMessageIn<network::EntitySpawned>(datagram);
+    if (spawned.entityType == network::WireEntityType::Bydo &&
+        std::ranges::count(removed, spawned.entityId) == 1) {
+      ++bydosRemoved;
+    }
+  }
+  std::size_t bydosLeft = 0;
+  game().world().components().forEach<game::EntityType, game::Position>(
+      [&bydosLeft](engine::Entity /*entity*/, const game::EntityType& type,
+                   const game::Position& /*position*/) {
+        if (type == game::EntityType::Enemy) {
+          ++bydosLeft;
+        }
+      });
+  EXPECT_EQ(bydosRemoved, 5U);
+  EXPECT_EQ(bydosLeft, 5U);
 }
 
 /**

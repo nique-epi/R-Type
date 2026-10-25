@@ -8,6 +8,7 @@
 #include "Entity.hpp"
 #include "EntitySizeConstants.hpp"
 #include "EntityType.hpp"
+#include "Gun.hpp"
 #include "Health.hpp"
 #include "HealthConstants.hpp"
 #include "MissileConstants.hpp"
@@ -59,6 +60,7 @@ std::uint32_t World::spawnBydo(Position position, BydoKind kind) {
   components_.add(bydo, EntityType::Enemy);
   components_.add(bydo, Health{.points = BYDO_HEALTH});
   components_.add(bydo, ScoreValue{.points = pointsOf(kind)});
+  components_.add(bydo, Gun{.ticksSinceLastShot = 0});
   components_.add(bydo, NetworkIdentity{.networkId = networkId});
   return networkId;
 }

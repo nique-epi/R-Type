@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 #include <cstddef>
 #include <cstdint>
+#include "BydoKind.hpp"
 #include "BydoPointsConstants.hpp"
 #include "ConnectedPlayer.hpp"
 #include "EntityDestruction.hpp"
@@ -9,6 +10,7 @@
 #include "GameInstanceTestConstants.hpp"
 #include "GameState.hpp"
 #include "SentDatagrams.hpp"
+#include "Spawning/BydoGunnerTestConstants.hpp"
 #include "Spawning/BydoSpawnerTestConstants.hpp"
 #include "Spawning/MissileLauncherTestConstants.hpp"
 #include "World.hpp"
@@ -187,6 +189,23 @@ TEST_F(GameInstanceShootingFixture, DestroysABydoInTheNextGameToo) {
   runTicksDispatching(TICKS_PER_BYDO_INTERVAL - 1);
 
   EXPECT_TRUE(wasDestroyed(drifter, game::DestructionCause::Killed));
+}
+
+/**
+ * Given a game in progress and a Drifter far ahead of the ships
+ * When the ticks of one and a half seconds run
+ * Then every player is sent the EntitySpawned of one missile of an enemy
+ */
+TEST_F(GameInstanceShootingFixture, BydosFireWhileInProgress) {
+  startGame();
+  game().world().spawnBydo(BYDO_FAR_AHEAD_OF_THE_SHIPS,
+                           game::BydoKind::Drifter);
+
+  runTicksDispatching(ONE_AND_A_HALF_SECONDS_IN_TICKS);
+
+  for (const std::size_t player : {FIRST_PLAYER, SECOND_PLAYER}) {
+    EXPECT_EQ(enemyMissilesSentTo(player).size(), 1U);
+  }
 }
 
 }  // namespace

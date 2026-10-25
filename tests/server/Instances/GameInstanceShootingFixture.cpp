@@ -18,6 +18,25 @@
 
 namespace rtype::server::testing {
 
+namespace {
+
+/** @returns The EntitySpawned of the entities of @p type that @p datagrams
+ * announce, oldest first; each of @p datagrams holds one EntitySpawned. */
+std::vector<network::EntitySpawned> spawnsOfType(
+    const std::vector<network::OutgoingDatagram>& datagrams,
+    network::WireEntityType type) {
+  std::vector<network::EntitySpawned> spawns;
+  for (const network::OutgoingDatagram& datagram : datagrams) {
+    const auto spawned = onlyMessageIn<network::EntitySpawned>(datagram);
+    if (spawned.entityType == type) {
+      spawns.push_back(spawned);
+    }
+  }
+  return spawns;
+}
+
+}  // namespace
+
 void GameInstanceShootingFixture::holdForNextTick(std::size_t player,
                                                   std::uint8_t actions) {
   queue(network::IncomingDatagram{
@@ -34,15 +53,16 @@ void GameInstanceShootingFixture::runTicksDispatching(std::size_t count) {
 
 std::vector<network::EntitySpawned> GameInstanceShootingFixture::missilesSentTo(
     std::size_t player) {
-  std::vector<network::EntitySpawned> missiles;
-  for (const network::OutgoingDatagram& datagram :
-       ofType(network::MessageType::EntitySpawned, sentTo(player))) {
-    const auto spawned = onlyMessageIn<network::EntitySpawned>(datagram);
-    if (spawned.entityType == network::WireEntityType::PlayerMissile) {
-      missiles.push_back(spawned);
-    }
-  }
-  return missiles;
+  return spawnsOfType(
+      ofType(network::MessageType::EntitySpawned, sentTo(player)),
+      network::WireEntityType::PlayerMissile);
+}
+
+std::vector<network::EntitySpawned>
+GameInstanceShootingFixture::enemyMissilesSentTo(std::size_t player) {
+  return spawnsOfType(
+      ofType(network::MessageType::EntitySpawned, sentTo(player)),
+      network::WireEntityType::EnemyMissile);
 }
 
 void GameInstanceShootingFixture::recordDestructions() {
