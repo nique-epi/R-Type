@@ -25,6 +25,7 @@ float arrivalOf(std::size_t index) {
 
 /** @returns The place of slot @p slot of the ring: it turns faster and faster
  * during the charge, and shrinks. */
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
 sf::Vector2f ringSlotAt(std::size_t slot, float scene) {
   const float charged = std::max(0.0F, scene - INTRO_SCENE_CHARGE);
   const float spin = (INTRO_RING_SPIN * (scene - INTRO_REINFORCEMENTS)) +
@@ -59,6 +60,7 @@ std::optional<IntroMob> shownWhile(bool shown, IntroMob mob) {
 
 }  // namespace
 
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
 sf::Vector2f helixCenterAt(std::size_t index, float scene) {
   const auto strand = static_cast<float>(index % INTRO_HELIX_STRANDS);
   const std::size_t rank = index / INTRO_HELIX_STRANDS;
