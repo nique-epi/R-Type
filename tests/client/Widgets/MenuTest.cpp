@@ -4,7 +4,6 @@
 #include <SFML/System/Vector2.hpp>
 #include <SFML/Window/Event.hpp>
 #include <SFML/Window/Keyboard.hpp>
-#include <cstddef>
 #include <optional>
 #include <string>
 #include <vector>
