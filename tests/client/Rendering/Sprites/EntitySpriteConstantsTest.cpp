@@ -6,10 +6,13 @@
 
 using rtype::client::BACKGROUND_PIXEL_SIZE;
 using rtype::client::BYDO_FRAME;
+using rtype::client::ENEMY_MISSILE_FRAME;
 using rtype::client::PLAYER_MISSILE_FRAME;
 using rtype::client::PLAYER_SHIP_FRAME;
 using rtype::game::BYDO_HEIGHT;
 using rtype::game::BYDO_WIDTH;
+using rtype::game::ENEMY_MISSILE_HEIGHT;
+using rtype::game::ENEMY_MISSILE_WIDTH;
 using rtype::game::PLAYER_MISSILE_HEIGHT;
 using rtype::game::PLAYER_MISSILE_WIDTH;
 using rtype::game::SHIP_HEIGHT;
@@ -56,4 +59,19 @@ TEST(EntitySpriteConstants, TheBydoDrawnIsTheBydoTheServerHits) {
                   BYDO_WIDTH);
   EXPECT_FLOAT_EQ(static_cast<float>(BYDO_FRAME.height) * BACKGROUND_PIXEL_SIZE,
                   BYDO_HEIGHT);
+}
+
+/**
+ * Given the first frame of a missile of an enemy on the entity sheet
+ * When its size is measured in logical units, each pixel of the sheet covering
+ * BACKGROUND_PIXEL_SIZE
+ * Then it is the size of the box the server flies a missile of an enemy with
+ */
+TEST(EntitySpriteConstants, TheEnemyMissileDrawnIsTheMissileTheServerFlies) {
+  EXPECT_FLOAT_EQ(
+      static_cast<float>(ENEMY_MISSILE_FRAME.width) * BACKGROUND_PIXEL_SIZE,
+      ENEMY_MISSILE_WIDTH);
+  EXPECT_FLOAT_EQ(
+      static_cast<float>(ENEMY_MISSILE_FRAME.height) * BACKGROUND_PIXEL_SIZE,
+      ENEMY_MISSILE_HEIGHT);
 }

@@ -18,4 +18,8 @@ constexpr float BYDO_HEIGHT = 96.0F;
 constexpr float PLAYER_MISSILE_WIDTH = 64.0F;
 constexpr float PLAYER_MISSILE_HEIGHT = 24.0F;
 
+/** @brief A missile of an enemy is 8 by 8 pixels of the sheet. */
+constexpr float ENEMY_MISSILE_WIDTH = 32.0F;
+constexpr float ENEMY_MISSILE_HEIGHT = 32.0F;
+
 }  // namespace rtype::game

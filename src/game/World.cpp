@@ -77,6 +77,18 @@ std::uint32_t World::spawnPlayerMissile(Position position,
   return networkId;
 }
 
+std::uint32_t World::spawnEnemyMissile(Position position) {
+  const std::uint32_t networkId = networkIds_.allocate();
+  const engine::Entity missile = registry_.create();
+  components_.add(missile, position);
+  components_.add(missile, Velocity{.x = -ENEMY_MISSILE_SPEED, .y = 0.0F});
+  components_.add(missile, CollisionBox{.width = ENEMY_MISSILE_WIDTH,
+                                        .height = ENEMY_MISSILE_HEIGHT});
+  components_.add(missile, EntityType::EnemyMissile);
+  components_.add(missile, NetworkIdentity{.networkId = networkId});
+  return networkId;
+}
+
 std::size_t World::entityCount() const { return registry_.size(); }
 
 engine::ComponentRegistry& World::components() { return components_; }

@@ -68,6 +68,17 @@ class World {
    */
   std::uint32_t spawnPlayerMissile(Position position,
                                    std::uint8_t playerNumber);
+
+  /**
+   * @brief Creates, at @p position, a missile fired by an enemy, with the
+   * Position, the EntityType::EnemyMissile and the NetworkIdentity that make it
+   * a networked entity, and a CollisionBox of ENEMY_MISSILE_WIDTH by
+   * ENEMY_MISSILE_HEIGHT. It has no MissileOwner, since no player fired it. It
+   * flies left at ENEMY_MISSILE_SPEED: MovementSystem moves it.
+   * @returns The network id the missile was given, never NO_ENTITY_ID.
+   * @throws NetworkIdExhaustedException when every network id was given.
+   */
+  std::uint32_t spawnEnemyMissile(Position position);
   [[nodiscard]] std::size_t entityCount() const;
 
   /**
