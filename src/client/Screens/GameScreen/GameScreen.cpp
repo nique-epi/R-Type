@@ -24,6 +24,7 @@
 #include "MissionStart.hpp"
 #include "PlayerInputPacer.hpp"
 #include "PlayerPreferences.hpp"
+// NOLINTNEXTLINE(misc-include-cleaner)
 #include "PlayerSettings.hpp"
 #include "ScreenConstants.hpp"
 #include "ScreenId.hpp"
