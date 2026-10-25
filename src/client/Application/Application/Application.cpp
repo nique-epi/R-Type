@@ -31,7 +31,9 @@
 #include "LocalizedKeyName.hpp"
 #include "MotionPreference.hpp"
 #include "NetworkConstants.hpp"
+#include "OptionsPlace.hpp"
 #include "OptionsScreen.hpp"
+#include "OptionsScreenParts.hpp"
 #include "PlayerSettings.hpp"
 #include "PlayfieldMapping.hpp"
 #include "QuitConfirmationScreen.hpp"
@@ -219,12 +221,17 @@ std::unique_ptr<IScreen> Application::gameScreen() {
 }
 
 std::unique_ptr<IScreen> Application::optionsScreen(ScreenId screen) {
-  const OptionsScreen::Place place = screen == ScreenId::GameOptions
-                                         ? OptionsScreen::Place::OverGame
-                                         : OptionsScreen::Place::OverTitle;
   return std::make_unique<OptionsScreen>(
-      screens_, place, settings_, settingsFile_, window_, localizedKeyName,
-      interfaceCanvas(), playfieldMapping());
+      OptionsScreenParts{.navigator = screens_,
+                         .place = screen == ScreenId::GameOptions
+                                      ? OptionsPlace::OverGame
+                                      : OptionsPlace::OverTitle,
+                         .settings = settings_,
+                         .storage = settingsFile_,
+                         .window = window_,
+                         .keyName = localizedKeyName,
+                         .playfieldPointAt = playfieldMapping()},
+      interfaceCanvas());
 }
 
 std::unique_ptr<IScreen> Application::lobbyScreen() {
