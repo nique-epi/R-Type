@@ -162,6 +162,7 @@ float positiveRemainder(float value, float divisor) {
 
 /** @returns Where speed line @p line lies at @p real seconds of the music, in
  * pixels of the canvas. */
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
 sf::IntRect speedLineAt(std::size_t line, float real) {
   const auto seed = static_cast<double>(line);
   const int row = static_cast<int>(introHash(seed * INTRO_LINE_ROW_SEED) *

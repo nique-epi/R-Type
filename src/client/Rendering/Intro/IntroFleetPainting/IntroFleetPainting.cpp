@@ -70,6 +70,7 @@ void paintMob(IInterfaceCanvas& canvas, const IntroFrame& frame,
 }
 
 /** @returns The sprite of the ship of @p pilot at that moment. */
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
 TextureArea shipImageAt(std::size_t pilot, float scene) {
   const game::SpriteFrame frame =
       PLAYER_SHIP_ANIMATION.frameAt(durationOf(scene))
