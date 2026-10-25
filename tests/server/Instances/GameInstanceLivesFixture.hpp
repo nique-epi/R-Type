@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstddef>
+#include <cstdint>
 #include "ConnectedPlayer.hpp"
 #include "GameInstanceShootingFixture.hpp"
 #include "WorldState.hpp"
@@ -17,6 +18,13 @@ class GameInstanceLivesFixture : public GameInstanceShootingFixture {
   /** @brief Puts a Drifter on the ship of @p player, then runs the tick that
    * finds them touching, the bus delivering its events. */
   void hitTheShipOf(std::size_t player);
+
+  /**
+   * @brief Puts a missile of an enemy on the ship of @p player, then runs the
+   * tick that finds them touching, the bus delivering its events.
+   * @returns The network id of the missile.
+   */
+  std::uint32_t shootTheShipOf(std::size_t player);
 
   /** @brief Both players say ready again, then the tick that starts the next
    * game runs. */

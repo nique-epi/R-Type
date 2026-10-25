@@ -1,9 +1,11 @@
 #include <gtest/gtest.h>
 #include <cstddef>
+#include <cstdint>
 #include <initializer_list>
 #include <memory>
 #include <vector>
 #include "ConnectedPlayer.hpp"
+#include "EntityDestruction.hpp"
 #include "EntityIdConstants.hpp"
 #include "GameEvent.hpp"
 #include "GameEventBroadcaster.hpp"
@@ -148,6 +150,79 @@ TEST_F(GameInstanceLivesFixture, ListsTheShipThatCameBackAsInvulnerable) {
   runTicksDispatching(ONE_SECOND_IN_TICKS + TICKS_PER_WORLD_STATE);
 
   EXPECT_TRUE(newestStateOf(FIRST_PLAYER).invulnerable);
+}
+
+/**
+ * Given a game in progress
+ * When a missile of an enemy hits the ship of the first player
+ * Then the first player has one life less
+ */
+TEST_F(GameInstanceLivesFixture, TakesALifeWhenAnEnemyMissileHitsAShip) {
+  startGame();
+
+  shootTheShipOf(FIRST_PLAYER);
+
+  EXPECT_EQ(playerAt(FIRST_PLAYER).lives, THREE_LIVES - 1);
+}
+
+/**
+ * Given a game in progress whose destructions are recorded
+ * When a missile of an enemy hits the ship of the first player
+ * Then the ship is announced killed and the missile removed, once each: the
+ * damage rules remove the missile before the keeper of the lives takes the ship
+ */
+TEST_F(GameInstanceLivesFixture, DestroysTheShipAndRemovesTheMissileThatHitIt) {
+  recordDestructions();
+  startGame();
+  const std::uint32_t ship = shipIdOf(FIRST_PLAYER);
+
+  const std::uint32_t missile = shootTheShipOf(FIRST_PLAYER);
+
+  EXPECT_TRUE(wasDestroyed(ship, game::DestructionCause::Killed));
+  EXPECT_TRUE(wasDestroyed(missile, game::DestructionCause::Removed));
+}
+
+/**
+ * Given a game in progress whose events go through the broadcaster of the
+ * server
+ * When a missile of an enemy hits the ship of the first player
+ * Then every player is sent a PlayerHit naming the first player
+ */
+TEST_F(GameInstanceLivesFixture, TellsEveryPlayerWhoWasShot) {
+  engine::TimerScheduler timers;
+  std::vector<network::OutgoingDatagram> eventDatagrams;
+  const std::unique_ptr<GameEventBroadcaster> broadcaster =
+      eventBroadcaster(timers, eventDatagrams);
+  startGame();
+
+  shootTheShipOf(FIRST_PLAYER);
+
+  for (const std::size_t player : {FIRST_PLAYER, SECOND_PLAYER}) {
+    const std::vector<network::OutgoingDatagram> received =
+        ofType(network::MessageType::GameEvent,
+               testing::sentTo(eventDatagrams, playerEndpoint(player)));
+    ASSERT_EQ(received.size(), 1U);
+    const auto event = onlyMessageIn<network::GameEvent>(received.front());
+    EXPECT_EQ(event.kind, network::GameEventKind::PlayerHit);
+    EXPECT_EQ(event.playerNumber, playerAt(FIRST_PLAYER).playerNumber);
+  }
+}
+
+/**
+ * Given a game in progress whose first ship came back after a missile of an
+ * enemy hit it
+ * When a second missile hits the new ship
+ * Then the first player still has only one life less: the new ship cannot be
+ * hit yet
+ */
+TEST_F(GameInstanceLivesFixture, SparesTheShipThatCameBackFromAMissile) {
+  startGame();
+  shootTheShipOf(FIRST_PLAYER);
+  runTicksDispatching(ONE_SECOND_IN_TICKS);
+
+  shootTheShipOf(FIRST_PLAYER);
+
+  EXPECT_EQ(playerAt(FIRST_PLAYER).lives, THREE_LIVES - 1);
 }
 
 }  // namespace rtype::server::testing

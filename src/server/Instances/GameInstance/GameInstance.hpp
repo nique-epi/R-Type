@@ -81,15 +81,17 @@ namespace rtype::server {
  * them: CollisionRules turns a missile of a player that touches a Bydo into a
  * MissileHit, and DamageRules destroys the missile, takes MISSILE_DAMAGE from
  * the health of the Bydo and destroys the Bydo once it has none left, an
- * EnemyKilled crediting its points to the player who fired. CollisionRules
- * also turns a ship that touches a Bydo into a ShipContact, which LifeKeeper
- * turns into the loss of the ship, the Bydo and a life: the ship comes back
- * RESPAWN_DELAY later, invulnerable for INVULNERABILITY_DURATION, and a player
- * with no life left watches. A game whose players are all out goes on: no rule
- * ends a game yet. The rules work on the world they were built with, and new
- * ones come with each new world, so the events of a tick must be delivered
- * before the world is replaced: the server dispatches the bus at the end of
- * every tick.
+ * EnemyKilled crediting its points to the player who fired. CollisionRules also
+ * turns a ship that touches a Bydo into a ShipContact, which LifeKeeper turns
+ * into the loss of the ship, the Bydo and a life, and a missile of a Bydo that
+ * touches a ship into a MissileHit, which DamageRules turns into the removal of
+ * the missile and LifeKeeper into the loss of the ship and a life: the ship
+ * comes back RESPAWN_DELAY later, invulnerable for INVULNERABILITY_DURATION,
+ * and a player with no life left watches. A game whose players are all out goes
+ * on: no rule ends a game yet. The rules work on the world they were built
+ * with, and new ones come with each new world, so the events of a tick must be
+ * delivered before the world is replaced: the server dispatches the bus at the
+ * end of every tick.
  *
  * A datagram of the players is read only when its header carries this
  * protocol and version with no flag set, its messages add up to its end, and
@@ -329,7 +331,9 @@ class GameInstance {
   /** @brief Builds a new world, and every part of the game that works on one
    * world: the rules that judge its collisions, the announcer of its ships, the
    * spawner of its Bydos, the launcher of its missiles, the gunner of its
-   * Bydos, the keeper of the lives and the announcer of the room. */
+   * Bydos, the keeper of the lives and the announcer of the room. DamageRules
+   * is built before LifeKeeper, so the bus hands each MissileHit to DamageRules
+   * first (see LifeKeeper). */
   void buildWorld();
 
   void startNewWorld();
