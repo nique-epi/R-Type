@@ -24,10 +24,13 @@
 #include "RecordingInterfaceCanvas.hpp"
 #include "RecordingNavigator.hpp"
 #include "RecordingServerConnection.hpp"
+#include "RecordingSoundPlayer.hpp"
 #include "ScreenId.hpp"
 #include "ScreenTestConstants.hpp"
+#include "SoundConstants.hpp"
 #include "WidgetConstants.hpp"
 
+using rtype::client::CLICK_SOUND_ID;
 using rtype::client::ConnectionStatus;
 using rtype::client::LobbyScreen;
 using rtype::client::MotionPreference;
@@ -288,4 +291,28 @@ TEST_F(LobbyScreenFixture, TheBackChipLeavesTheServer) {
   EXPECT_THAT(navigator().calls(),
               ElementsAre(NavigatorCall{.request = NavigatorRequest::Pop,
                                         .screen = std::nullopt}));
+}
+
+/**
+ * Given the waiting room, READY selected
+ * When Enter activates READY, and the press lasts
+ * Then the click of READY plays once
+ */
+TEST_F(LobbyScreenFixture, ReadyPlaysTheClickOnce) {
+  tap(sf::Keyboard::Key::Enter, sf::Keyboard::Scan::Enter);
+
+  screen().update(PRESS_DURATION);
+
+  EXPECT_THAT(sounds().played(), ElementsAre(CLICK_SOUND_ID));
+}
+
+/**
+ * Given the waiting room
+ * When the ready key is pressed and released
+ * Then the click of READY plays, as when READY is pressed
+ */
+TEST_F(LobbyScreenFixture, TheReadyKeyPlaysTheClickOfReady) {
+  tap(sf::Keyboard::Key::R, READY_KEY);
+
+  EXPECT_THAT(sounds().played(), ElementsAre(CLICK_SOUND_ID));
 }

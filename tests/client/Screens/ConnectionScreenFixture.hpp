@@ -9,6 +9,7 @@
 #include "RecordingInterfaceCanvas.hpp"
 #include "RecordingNavigator.hpp"
 #include "RecordingServerConnection.hpp"
+#include "RecordingSoundPlayer.hpp"
 
 /** @brief A connection screen alone, with a recording navigator, connection
  * and canvas, its fields started with the launch values. */
@@ -37,9 +38,13 @@ class ConnectionScreenFixture : public ::testing::Test {
   /** @brief Gives the connection a status, then lets one frame go by. */
   void show(rtype::client::ConnectionStatus status);
 
+  /** @returns The sounds the screen played. */
+  [[nodiscard]] const RecordingSoundPlayer& sounds() const;
+
  private:
   RecordingNavigator navigator_;
   RecordingServerConnection connection_;
   InterfaceCanvasRecord canvas_;
+  RecordingSoundPlayer sounds_;
   rtype::client::ConnectionScreen screen_;
 };

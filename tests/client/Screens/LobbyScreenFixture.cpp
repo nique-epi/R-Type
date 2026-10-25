@@ -16,6 +16,7 @@
 #include "RecordingInterfaceCanvas.hpp"
 #include "RecordingNavigator.hpp"
 #include "RecordingServerConnection.hpp"
+#include "RecordingSoundPlayer.hpp"
 #include "ScreenTestConstants.hpp"
 
 using rtype::client::ConnectionStatus;
@@ -29,6 +30,7 @@ using rtype::network::LobbyPlayer;
 
 LobbyScreenFixture::LobbyScreenFixture()
     : screen_(LobbyScreenParts{.navigator = navigator_,
+                               .sounds = sounds_,
                                .connection = connection_,
                                .playfieldPointAt = samePlayfieldPoint,
                                .readyKey = {.key = READY_KEY,
@@ -73,3 +75,7 @@ const InterfaceCanvasRecord& LobbyScreenFixture::canvas() const {
 }
 
 LobbyScreen& LobbyScreenFixture::screen() { return screen_; }
+
+const RecordingSoundPlayer& LobbyScreenFixture::sounds() const {
+  return sounds_;
+}

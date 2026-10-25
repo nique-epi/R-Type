@@ -4,8 +4,11 @@
 #include "KeyPress.hpp"
 #include "QuitConfirmationScreenFixture.hpp"
 #include "RecordingNavigator.hpp"
+#include "RecordingSoundPlayer.hpp"
+#include "SoundConstants.hpp"
 #include "WidgetConstants.hpp"
 
+using rtype::client::CLICK_SOUND_ID;
 using rtype::client::PRESS_DURATION;
 using ::testing::ElementsAre;
 
@@ -51,4 +54,15 @@ TEST_F(QuitConfirmationScreenFixture, YesClosesTheClient) {
   EXPECT_THAT(navigator().calls(),
               ElementsAre(NavigatorCall{.request = NavigatorRequest::CloseAll,
                                         .screen = std::nullopt}));
+}
+
+/**
+ * Given the quit confirmation
+ * When Escape answers NO
+ * Then the click of NO plays once
+ */
+TEST_F(QuitConfirmationScreenFixture, AnsweringPlaysTheClick) {
+  tap(sf::Keyboard::Key::Escape);
+
+  EXPECT_THAT(sounds().played(), ElementsAre(CLICK_SOUND_ID));
 }

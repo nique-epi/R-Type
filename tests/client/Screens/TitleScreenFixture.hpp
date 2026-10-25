@@ -4,6 +4,7 @@
 #include <SFML/Window/Keyboard.hpp>
 #include "RecordingInterfaceCanvas.hpp"
 #include "RecordingNavigator.hpp"
+#include "RecordingSoundPlayer.hpp"
 #include "TitleScreen.hpp"
 
 /** @brief A title screen alone, with a recording navigator and canvas. */
@@ -18,8 +19,12 @@ class TitleScreenFixture : public ::testing::Test {
   /** @brief Presses and releases a key, then lets the press last. */
   void choose(sf::Keyboard::Key key);
 
+  /** @returns The sounds the title played. */
+  [[nodiscard]] const RecordingSoundPlayer& sounds() const;
+
  private:
   RecordingNavigator navigator_;
   InterfaceCanvasRecord canvas_;
+  RecordingSoundPlayer sounds_;
   rtype::client::TitleScreen title_;
 };

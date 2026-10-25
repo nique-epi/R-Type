@@ -50,7 +50,7 @@ ConnectionScreen::ConnectionScreen(ConnectionScreenParts parts,
       connection_(&parts.connection.get()),
       canvas_(std::move(canvas)),
       playfieldPointAt_(std::move(parts.playfieldPointAt)),
-      menu_(buildMenu(parts.server, parts.nickname)) {
+      menu_(buildMenu(parts.server, parts.nickname, parts.sounds.get())) {
   connection_->cancel();
   repaint(connection_->status());
 }
@@ -73,9 +73,10 @@ void ConnectionScreen::draw(sf::RenderTarget& target) const {
 bool ConnectionScreen::hidesScreensBelow() const { return true; }
 
 Menu ConnectionScreen::buildMenu(const network::Endpoint& server,
-                                 std::string_view nickname) {
+                                 std::string_view nickname,
+                                 ISoundPlayer& sounds) {
   const std::function<void()> connectAction = [this] { connect(); };
-  return MenuBuilder(MenuBuilder::Frame::Form)
+  return MenuBuilder(MenuBuilder::Frame::Form, &sounds)
       .heading(CONNECTION_HEADING)
       .textField({.label = ADDRESS_LABEL, .description = ADDRESS_DESCRIPTION},
                  TextField(server.address, ADDRESS_FIELD_SIZE,

@@ -9,13 +9,14 @@
 #include "MenuBuilder.hpp"
 #include "MenuFixtures.hpp"
 #include "PointerEvents.hpp"
+#include "RecordingSoundPlayer.hpp"
 
 using rtype::client::Menu;
 using rtype::client::MenuBuilder;
 
 MenuFixture::MenuFixture()
     : menu_(
-          MenuBuilder(MenuBuilder::Frame::Page)
+          MenuBuilder(MenuBuilder::Frame::Page, &sounds_)
               .button({.label = "A"}, [this] { activated_.emplace_back("A"); })
               .button({.label = "B"}, [this] { activated_.emplace_back("B"); })
               .cancelButton({.label = "C"},
@@ -40,3 +41,5 @@ void MenuFixture::tap(sf::Keyboard::Key key) {
 sf::Vector2i MenuFixture::barCorner(const std::string& label) {
   return barCornerOf(menu_, label);
 }
+
+const RecordingSoundPlayer& MenuFixture::sounds() const { return sounds_; }

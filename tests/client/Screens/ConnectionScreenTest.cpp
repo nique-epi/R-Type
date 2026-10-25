@@ -19,10 +19,13 @@
 #include "RecordingInterfaceCanvas.hpp"
 #include "RecordingNavigator.hpp"
 #include "RecordingServerConnection.hpp"
+#include "RecordingSoundPlayer.hpp"
 #include "ScreenId.hpp"
 #include "ScreenTestConstants.hpp"
+#include "SoundConstants.hpp"
 
 using rtype::client::ACCEPTED_STATUS_DURATION;
+using rtype::client::CLICK_SOUND_ID;
 using rtype::client::CONNECTING_STATUS;
 using rtype::client::ConnectionStatus;
 using rtype::client::GAME_FULL_STATUS;
@@ -304,6 +307,17 @@ TEST_P(ConnectionRefusalFixture, ARefusalShowsItsReason) {
   show({.phase = ConnectionStatus::Phase::Refused, .refusal = reason});
 
   EXPECT_NE(writingOf(canvas(), line), nullptr);
+}
+
+/**
+ * Given the connection screen
+ * When Escape activates BACK
+ * Then the click of BACK plays once
+ */
+TEST_F(ConnectionScreenFixture, BackPlaysTheClick) {
+  tap(sf::Keyboard::Key::Escape);
+
+  EXPECT_THAT(sounds().played(), ElementsAre(CLICK_SOUND_ID));
 }
 
 INSTANTIATE_TEST_SUITE_P(

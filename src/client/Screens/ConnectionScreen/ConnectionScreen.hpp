@@ -10,6 +10,7 @@
 #include "IScreen.hpp"
 #include "IScreenNavigator.hpp"
 #include "IServerConnection.hpp"
+#include "ISoundPlayer.hpp"
 #include "Menu.hpp"
 #include "PlayfieldMapping.hpp"
 #include "TimeConstants.hpp"
@@ -52,7 +53,7 @@ class ConnectionScreen : public IScreen {
 
  private:
   [[nodiscard]] Menu buildMenu(const network::Endpoint& server,
-                               std::string_view nickname);
+                               std::string_view nickname, ISoundPlayer& sounds);
 
   /** @brief Starts an attempt with the values of the fields, or names the field
    * to fix. */

@@ -18,10 +18,13 @@
 #include "RecordingInterfaceCanvas.hpp"
 #include "RecordingNavigator.hpp"
 #include "RecordingSettingsStorage.hpp"
+#include "RecordingSoundPlayer.hpp"
+#include "SoundConstants.hpp"
 #include "WidgetConstants.hpp"
 #include "WidgetText.hpp"
 
 using rtype::client::BoundAction;
+using rtype::client::CLICK_SOUND_ID;
 using rtype::client::DIM_LAYER_COLOR;
 using rtype::client::PRESS_DURATION;
 using rtype::client::regularTextWidth;
@@ -42,6 +45,8 @@ using rtype::client::testing::SAVED_ANCHOR;
 using rtype::client::testing::SAVED_STAMP_TIME;
 using rtype::client::testing::TABS;
 using rtype::client::testing::WINDOW_1280_BY_720;
+using ::testing::ElementsAre;
+using ::testing::IsEmpty;
 using Key = sf::Keyboard::Key;
 using Scan = sf::Keyboard::Scan;
 
@@ -371,4 +376,28 @@ TEST_F(GameOptionsScreenFixture, OverAGameTheOptionsDimItAndSaySo) {
   ASSERT_FALSE(canvas().fills.empty());
   EXPECT_EQ(canvas().fills.front().color, DIM_LAYER_COLOR);
   EXPECT_NE(writingOf(canvas(), "THE GAME GOES ON"), nullptr);
+}
+
+/**
+ * Given the SOUND tab
+ * When the label of the CONTROLS tab is clicked
+ * Then the click plays once
+ */
+TEST_F(OptionsScreenFixture, AClickOnATabPlaysTheClick) {
+  screen().handleEvent(leftPress(CONTROLS_TAB * INTERFACE_PIXEL));
+
+  screen().update(PRESS_DURATION);
+
+  EXPECT_THAT(sounds().played(), ElementsAre(CLICK_SOUND_ID));
+}
+
+/**
+ * Given MUSIC selected
+ * When Right raises it
+ * Then no click plays: a volume is set, not pressed
+ */
+TEST_F(OptionsScreenFixture, AVolumeRaisedPlaysNoClick) {
+  tap(Key::Right);
+
+  EXPECT_THAT(sounds().played(), IsEmpty());
 }

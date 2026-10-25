@@ -84,6 +84,7 @@ std::vector<std::string> textsOf(
 OptionsScreen::OptionsScreen(OptionsScreenParts parts,
                              std::unique_ptr<IInterfaceCanvas> canvas)
     : navigator_(&parts.navigator.get()),
+      sounds_(&parts.sounds.get()),
       place_(parts.place),
       settings_(&parts.settings.get()),
       storage_(&parts.storage.get()),
@@ -137,7 +138,7 @@ std::vector<Menu> OptionsScreen::buildTabs() {
 }
 
 MenuBuilder OptionsScreen::tabbedPanel(std::size_t tab) {
-  MenuBuilder builder(MenuBuilder::Frame::TabbedPanel);
+  MenuBuilder builder(MenuBuilder::Frame::TabbedPanel, sounds_);
   builder.heading(SETTINGS_HEADING)
       .tabs(textsOf(OPTIONS_TAB_LABELS), tab,
             {.previous = keyName_(PREVIOUS_TAB_KEY),
@@ -305,7 +306,7 @@ void OptionsScreen::resetKeys() { settings_->keys = KeyBindings(); }
 void OptionsScreen::askToReset(const std::string& question,
                                const std::function<void()>& reset) {
   dialog_ =
-      MenuBuilder(MenuBuilder::Frame::Dialog)
+      MenuBuilder(MenuBuilder::Frame::Dialog, sounds_)
           .heading(CONFIRM_HEADING)
           .message(question)
           .cancelButton({.label = NO_LABEL}, [this] { dialogAnswered_ = true; })

@@ -13,6 +13,7 @@
 #include "RecordingInterfaceCanvas.hpp"
 #include "RecordingNavigator.hpp"
 #include "RecordingSettingsStorage.hpp"
+#include "RecordingSoundPlayer.hpp"
 #include "WidgetConstants.hpp"
 
 using rtype::client::OptionsPlace;
@@ -23,6 +24,7 @@ using rtype::client::PlayerSettings;
 OptionsScreenFixture::OptionsScreenFixture(OptionsPlace place)
     : window_(rtype::client::testing::DESKTOP),
       screen_(OptionsScreenParts{.navigator = navigator_,
+                                 .sounds = sounds_,
                                  .place = place,
                                  .settings = settings_,
                                  .storage = storage_,
@@ -57,3 +59,7 @@ const InterfaceCanvasRecord& OptionsScreenFixture::canvas() const {
 }
 
 OptionsScreen& OptionsScreenFixture::screen() { return screen_; }
+
+const RecordingSoundPlayer& OptionsScreenFixture::sounds() const {
+  return sounds_;
+}

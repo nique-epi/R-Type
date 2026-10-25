@@ -9,8 +9,10 @@
 #include "PointerEvents.hpp"
 #include "RecordingInterfaceCanvas.hpp"
 #include "RecordingNavigator.hpp"
+#include "RecordingSoundPlayer.hpp"
 #include "ScreenConstants.hpp"
 #include "ScreenId.hpp"
+#include "SoundConstants.hpp"
 #include "SquadronStart.hpp"
 #include "SquadronTestConstants.hpp"
 #include "TitleInTheStackFixture.hpp"
@@ -19,6 +21,7 @@
 #include "TitleScreenParts.hpp"
 #include "TitleScreenTestConstants.hpp"
 
+using rtype::client::CLICK_SOUND_ID;
 using rtype::client::ENTITY_SHEET_ID;
 using rtype::client::LOGO_ID;
 using rtype::client::MotionPreference;
@@ -54,10 +57,12 @@ TEST_F(TitleScreenFixture, TheFirstFrameAlreadyShowsTheLogo) {
  */
 TEST(TitleScreen, ASquadronInPlaceShowsItsShipsOnTheFirstFrame) {
   RecordingNavigator navigator;
+  RecordingSoundPlayer sounds;
   InterfaceCanvasRecord canvas;
 
   const TitleScreen title(
       TitleScreenParts{.navigator = navigator,
+                       .sounds = sounds,
                        .playfieldPointAt = samePlayfieldPoint,
                        .motion = MotionPreference::Full,
                        .seed = TITLE_SEED,
@@ -196,4 +201,15 @@ TEST_F(TitleInTheStackFixture, OnceTheOptionsAreClosedAClickReachesTheTitle) {
   EXPECT_THAT(titleNavigator().calls(),
               ElementsAre(NavigatorCall{.request = NavigatorRequest::Push,
                                         .screen = ScreenId::Connection}));
+}
+
+/**
+ * Given the title screen, PLAY selected
+ * When Enter is pressed and released, and the press lasts
+ * Then the click of PLAY plays once
+ */
+TEST_F(TitleScreenFixture, ChoosingPlayPlaysTheClick) {
+  choose(sf::Keyboard::Key::Enter);
+
+  EXPECT_THAT(sounds().played(), ElementsAre(CLICK_SOUND_ID));
 }

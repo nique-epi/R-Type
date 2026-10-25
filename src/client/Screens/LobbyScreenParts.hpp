@@ -3,6 +3,7 @@
 #include <functional>
 #include "IScreenNavigator.hpp"
 #include "IServerConnection.hpp"
+#include "ISoundPlayer.hpp"
 #include "MotionPreference.hpp"
 #include "PlayfieldMapping.hpp"
 #include "ReadyKey.hpp"
@@ -21,6 +22,9 @@ namespace rtype::client {
 struct LobbyScreenParts {
   /** @brief Screens the waiting room lives among, which must outlive it. */
   std::reference_wrapper<IScreenNavigator> navigator;
+  /** @brief Plays the click of the menu and of the ready key, which must
+   * outlive the screen. */
+  std::reference_wrapper<ISoundPlayer> sounds;
   /** @brief Session the waiting room reads and drives, which must outlive
    * it. */
   std::reference_wrapper<IServerConnection> connection;

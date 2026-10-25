@@ -62,6 +62,7 @@ std::unique_ptr<IScreen> TitleInTheStackFixture::build(ScreenId screen) {
   if (screen == ScreenId::Title) {
     return std::make_unique<TitleScreen>(
         TitleScreenParts{.navigator = titleNavigator_,
+                         .sounds = sounds_,
                          .playfieldPointAt = samePlayfieldPoint,
                          .motion = MotionPreference::Full,
                          .seed = rtype::client::testing::TITLE_SEED},
@@ -70,6 +71,7 @@ std::unique_ptr<IScreen> TitleInTheStackFixture::build(ScreenId screen) {
   if (screen == ScreenId::QuitConfirmation) {
     return std::make_unique<QuitConfirmationScreen>(
         QuitConfirmationScreenParts{.navigator = dialogNavigator_,
+                                    .sounds = sounds_,
                                     .playfieldPointAt = samePlayfieldPoint},
         std::make_unique<RecordingInterfaceCanvas>(dialogCanvas_));
   }

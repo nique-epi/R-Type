@@ -13,6 +13,7 @@
 #include "IScreenNavigator.hpp"
 #include "ISettingsStorage.hpp"
 #include "ISizableWindow.hpp"
+#include "ISoundPlayer.hpp"
 #include "KeyNames.hpp"
 #include "Menu.hpp"
 #include "MenuBuilder.hpp"
@@ -110,6 +111,7 @@ class OptionsScreen : public IScreen {
   void repaint();
 
   IScreenNavigator* navigator_;
+  ISoundPlayer* sounds_;
   OptionsPlace place_;
   PlayerSettings* settings_;
   ISettingsStorage* storage_;

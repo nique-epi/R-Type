@@ -5,6 +5,7 @@
 #include "Endpoint.hpp"
 #include "IScreenNavigator.hpp"
 #include "IServerConnection.hpp"
+#include "ISoundPlayer.hpp"
 #include "PlayfieldMapping.hpp"
 
 namespace rtype::client {
@@ -14,6 +15,8 @@ struct ConnectionScreenParts {
   /** @brief Screens the connection screen lives among, which must outlive
    * it. */
   std::reference_wrapper<IScreenNavigator> navigator;
+  /** @brief Plays the click of the menu, which must outlive the screen. */
+  std::reference_wrapper<ISoundPlayer> sounds;
   /** @brief Connection the attempts go through, which must outlive the
    * screen. */
   std::reference_wrapper<IServerConnection> connection;

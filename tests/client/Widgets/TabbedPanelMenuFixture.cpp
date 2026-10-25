@@ -9,13 +9,14 @@
 #include "MenuBuilder.hpp"
 #include "PointerEvents.hpp"
 #include "RecordingRowControl.hpp"
+#include "RecordingSoundPlayer.hpp"
 #include "WidgetConstants.hpp"
 
 using rtype::client::Menu;
 using rtype::client::MenuBuilder;
 
 TabbedPanelMenuFixture::TabbedPanelMenuFixture()
-    : menu_(MenuBuilder(MenuBuilder::Frame::TabbedPanel)
+    : menu_(MenuBuilder(MenuBuilder::Frame::TabbedPanel, &sounds_)
                 .heading("SETTINGS")
                 .tabs({"A", "B", "C"}, 0, {.previous = "Q", .next = "E"},
                       [this](std::size_t tab) { opened_.push_back(tab); })
@@ -53,3 +54,7 @@ const std::vector<std::size_t>& TabbedPanelMenuFixture::opened() const {
 }
 
 int TabbedPanelMenuFixture::backs() const { return backs_; }
+
+const RecordingSoundPlayer& TabbedPanelMenuFixture::sounds() const {
+  return sounds_;
+}

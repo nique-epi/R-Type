@@ -8,6 +8,7 @@
 #include "RecordingInterfaceCanvas.hpp"
 #include "RecordingNavigator.hpp"
 #include "RecordingServerConnection.hpp"
+#include "RecordingSoundPlayer.hpp"
 
 /** @brief A waiting room alone, the local player accepted as player 1, with
  * a recording navigator, connection and canvas, and READY bound to
@@ -30,9 +31,13 @@ class LobbyScreenFixture : public ::testing::Test {
   [[nodiscard]] const InterfaceCanvasRecord& canvas() const;
   [[nodiscard]] rtype::client::LobbyScreen& screen();
 
+  /** @returns The sounds the waiting room played. */
+  [[nodiscard]] const RecordingSoundPlayer& sounds() const;
+
  private:
   RecordingNavigator navigator_;
   RecordingServerConnection connection_;
   InterfaceCanvasRecord canvas_;
+  RecordingSoundPlayer sounds_;
   rtype::client::LobbyScreen screen_;
 };

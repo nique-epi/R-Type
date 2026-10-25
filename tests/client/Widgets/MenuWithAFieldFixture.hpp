@@ -7,6 +7,7 @@
 #include <vector>
 #include "Menu.hpp"
 #include "RecordingInterfaceCanvas.hpp"
+#include "RecordingSoundPlayer.hpp"
 
 /**
  * @brief A form whose first bar is a field of four bytes, NAME, starting with
@@ -29,7 +30,11 @@ class MenuWithAFieldFixture : public ::testing::Test {
    * with this text, read from what the menu paints. */
   [[nodiscard]] sf::Vector2i pointOn(const std::string& text) const;
 
+  /** @returns The sounds the menu played. */
+  [[nodiscard]] const RecordingSoundPlayer& sounds() const;
+
  private:
   std::vector<std::string> activated_;
+  RecordingSoundPlayer sounds_;
   rtype::client::Menu menu_;
 };

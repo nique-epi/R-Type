@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <functional>
 #include "IScreenNavigator.hpp"
+#include "ISoundPlayer.hpp"
 #include "MotionPreference.hpp"
 #include "PlayfieldMapping.hpp"
 #include "SquadronStart.hpp"
@@ -22,6 +23,8 @@ namespace rtype::client {
 struct TitleScreenParts {
   /** @brief Screens the title lives among, which must outlive it. */
   std::reference_wrapper<IScreenNavigator> navigator;
+  /** @brief Plays the click of the menu, which must outlive the screen. */
+  std::reference_wrapper<ISoundPlayer> sounds;
   /** @brief Gives the point of the playfield under a pixel of the window. */
   PlayfieldMapping playfieldPointAt;
   /** @brief MotionPreference::Reduced shows the squadron at rest. */

@@ -9,6 +9,7 @@
 #include "RecordingInterfaceCanvas.hpp"
 #include "RecordingNavigator.hpp"
 #include "RecordingSettingsStorage.hpp"
+#include "RecordingSoundPlayer.hpp"
 
 /** @brief The options alone, over the title unless told otherwise, on a
  * DESKTOP whose window is 1600 x 900, with a recording navigator, storage and
@@ -33,11 +34,15 @@ class OptionsScreenFixture : public ::testing::Test {
   [[nodiscard]] const InterfaceCanvasRecord& canvas() const;
   rtype::client::OptionsScreen& screen();
 
+  /** @returns The sounds the options played. */
+  [[nodiscard]] const RecordingSoundPlayer& sounds() const;
+
  private:
   rtype::client::PlayerSettings settings_;
   RecordingSettingsStorage storage_;
   FakeSizableWindow window_;
   RecordingNavigator navigator_;
   InterfaceCanvasRecord canvas_;
+  RecordingSoundPlayer sounds_;
   rtype::client::OptionsScreen screen_;
 };

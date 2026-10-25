@@ -6,6 +6,7 @@
 #include "PointerEvents.hpp"
 #include "RecordingInterfaceCanvas.hpp"
 #include "RecordingNavigator.hpp"
+#include "RecordingSoundPlayer.hpp"
 #include "TitleScreen.hpp"
 #include "TitleScreenParts.hpp"
 #include "TitleScreenTestConstants.hpp"
@@ -18,6 +19,7 @@ using rtype::client::TitleScreenParts;
 
 TitleScreenFixture::TitleScreenFixture()
     : title_(TitleScreenParts{.navigator = navigator_,
+                              .sounds = sounds_,
                               .playfieldPointAt = samePlayfieldPoint,
                               .motion = MotionPreference::Full,
                               .seed = rtype::client::testing::TITLE_SEED},
@@ -37,4 +39,8 @@ void TitleScreenFixture::choose(sf::Keyboard::Key key) {
   title_.handleEvent(keyPress(key));
   title_.handleEvent(keyRelease(key));
   title_.update(PRESS_DURATION);
+}
+
+const RecordingSoundPlayer& TitleScreenFixture::sounds() const {
+  return sounds_;
 }

@@ -4,6 +4,7 @@
 #include "IScreenNavigator.hpp"
 #include "ISettingsStorage.hpp"
 #include "ISizableWindow.hpp"
+#include "ISoundPlayer.hpp"
 #include "KeyNames.hpp"
 #include "OptionsPlace.hpp"
 #include "PlayfieldMapping.hpp"
@@ -26,6 +27,8 @@ struct PlayerSettings;
 struct OptionsScreenParts {
   /** @brief Screens the options live among. */
   std::reference_wrapper<IScreenNavigator> navigator;
+  /** @brief Plays the click of the menu, which must outlive the screen. */
+  std::reference_wrapper<ISoundPlayer> sounds;
   /** @brief What the options are opened over. */
   OptionsPlace place{};
   /** @brief What the rows read and change. */

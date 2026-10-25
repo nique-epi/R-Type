@@ -12,6 +12,7 @@ target_link_libraries(rtype_client_menu
     rtype_client_widgets
     rtype_client_window
   PRIVATE
+    rtype_client_audio_interfaces
     rtype_client_cut_corner_box
 )
 

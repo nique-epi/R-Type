@@ -9,6 +9,7 @@
 #include "MenuTestConstants.hpp"
 #include "PointerEvents.hpp"
 #include "RecordingInterfaceCanvas.hpp"
+#include "RecordingSoundPlayer.hpp"
 #include "TextField.hpp"
 
 using rtype::client::Menu;
@@ -18,7 +19,7 @@ using rtype::client::testing::FOUR_BYTES;
 using rtype::client::testing::INSIDE_A_BAR;
 
 MenuWithAFieldFixture::MenuWithAFieldFixture()
-    : menu_(MenuBuilder(MenuBuilder::Frame::Form)
+    : menu_(MenuBuilder(MenuBuilder::Frame::Form, &sounds_)
                 .textField({.label = "NAME", .description = "> TYPE A NAME"},
                            TextField("AB", FOUR_BYTES,
                                      TextField::Characters::Printable),
@@ -47,4 +48,8 @@ sf::Vector2i MenuWithAFieldFixture::pointOn(const std::string& text) const {
   return writing == nullptr
              ? sf::Vector2i()
              : (writing->anchor * INTERFACE_PIXEL) + INSIDE_A_BAR;
+}
+
+const RecordingSoundPlayer& MenuWithAFieldFixture::sounds() const {
+  return sounds_;
 }

@@ -7,6 +7,7 @@
 #include "QuitConfirmationScreenParts.hpp"
 #include "RecordingInterfaceCanvas.hpp"
 #include "RecordingNavigator.hpp"
+#include "RecordingSoundPlayer.hpp"
 
 using rtype::client::QuitConfirmationScreen;
 using rtype::client::QuitConfirmationScreenParts;
@@ -14,6 +15,7 @@ using rtype::client::QuitConfirmationScreenParts;
 QuitConfirmationScreenFixture::QuitConfirmationScreenFixture()
     : dialog_(
           QuitConfirmationScreenParts{.navigator = navigator_,
+                                      .sounds = sounds_,
                                       .playfieldPointAt = samePlayfieldPoint},
           std::make_unique<RecordingInterfaceCanvas>(canvas_)) {}
 
@@ -28,4 +30,8 @@ QuitConfirmationScreen& QuitConfirmationScreenFixture::dialog() {
 void QuitConfirmationScreenFixture::tap(sf::Keyboard::Key key) {
   dialog_.handleEvent(keyPress(key));
   dialog_.handleEvent(keyRelease(key));
+}
+
+const RecordingSoundPlayer& QuitConfirmationScreenFixture::sounds() const {
+  return sounds_;
 }

@@ -9,6 +9,7 @@
 #include "IScreen.hpp"
 #include "IScreenNavigator.hpp"
 #include "IServerConnection.hpp"
+#include "ISoundPlayer.hpp"
 #include "LobbyScreenParts.hpp"
 #include "LobbyState.hpp"
 #include "Menu.hpp"
@@ -94,6 +95,7 @@ class LobbyScreen : public IScreen {
 
   IScreenNavigator* navigator_{};
   IServerConnection* connection_{};
+  ISoundPlayer* sounds_{};
   std::unique_ptr<IInterfaceCanvas> canvas_;
   PlayfieldMapping playfieldPointAt_;
   sf::Keyboard::Scancode readyKey_{};

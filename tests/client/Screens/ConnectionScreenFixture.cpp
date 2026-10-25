@@ -14,6 +14,7 @@
 #include "RecordingInterfaceCanvas.hpp"
 #include "RecordingNavigator.hpp"
 #include "RecordingServerConnection.hpp"
+#include "RecordingSoundPlayer.hpp"
 #include "ScreenTestConstants.hpp"
 #include "WidgetConstants.hpp"
 
@@ -30,6 +31,7 @@ ConnectionScreenFixture::ConnectionScreenFixture()
     : screen_(
           ConnectionScreenParts{
               .navigator = navigator_,
+              .sounds = sounds_,
               .connection = connection_,
               .playfieldPointAt = samePlayfieldPoint,
               .server = Endpoint{.address = std::string(LAUNCH_ADDRESS),
@@ -76,4 +78,8 @@ void ConnectionScreenFixture::erase(std::size_t characters) {
 void ConnectionScreenFixture::show(ConnectionStatus status) {
   connection_.setStatus(status);
   screen_.update(ONE_FRAME);
+}
+
+const RecordingSoundPlayer& ConnectionScreenFixture::sounds() const {
+  return sounds_;
 }

@@ -168,11 +168,13 @@ std::unique_ptr<IScreen> Application::createScreen(ScreenId screen) {
     case ScreenId::QuitConfirmation:
       return std::make_unique<QuitConfirmationScreen>(
           QuitConfirmationScreenParts{.navigator = screens_,
+                                      .sounds = sounds_,
                                       .playfieldPointAt = playfieldMapping()},
           interfaceCanvas());
     case ScreenId::Connection:
       return std::make_unique<ConnectionScreen>(
           ConnectionScreenParts{.navigator = screens_,
+                                .sounds = sounds_,
                                 .connection = connection_,
                                 .playfieldPointAt = playfieldMapping(),
                                 .server = server_,
@@ -193,6 +195,7 @@ std::unique_ptr<IScreen> Application::titleScreen(ScreenId screen) {
   }
   return std::make_unique<TitleScreen>(
       TitleScreenParts{.navigator = screens_,
+                       .sounds = sounds_,
                        .playfieldPointAt = playfieldMapping(),
                        .motion = motionPreference(),
                        .seed = std::random_device{}(),
@@ -223,6 +226,7 @@ std::unique_ptr<IScreen> Application::gameScreen() {
 std::unique_ptr<IScreen> Application::optionsScreen(ScreenId screen) {
   return std::make_unique<OptionsScreen>(
       OptionsScreenParts{.navigator = screens_,
+                         .sounds = sounds_,
                          .place = screen == ScreenId::GameOptions
                                       ? OptionsPlace::OverGame
                                       : OptionsPlace::OverTitle,
@@ -240,6 +244,7 @@ std::unique_ptr<IScreen> Application::lobbyScreen() {
   return std::make_unique<LobbyScreen>(
       LobbyScreenParts{
           .navigator = screens_,
+          .sounds = sounds_,
           .connection = connection_,
           .playfieldPointAt = playfieldMapping(),
           .readyKey = {.key = readyKey, .name = localizedKeyName(readyKey)},

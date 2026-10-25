@@ -20,7 +20,9 @@
 #include "PointerEvents.hpp"
 #include "RecordingInterfaceCanvas.hpp"
 #include "RecordingRowControl.hpp"
+#include "RecordingSoundPlayer.hpp"
 #include "ScreenTestConstants.hpp"
+#include "SoundConstants.hpp"
 #include "TabbedPanelMenuFixture.hpp"
 #include "TextStyle.hpp"
 #include "TimeConstants.hpp"
@@ -28,6 +30,7 @@
 #include "WidgetConstants.hpp"
 
 using rtype::client::BUTTON_TEXT_OFFSET;
+using rtype::client::CLICK_SOUND_ID;
 using rtype::client::Menu;
 using rtype::client::MenuBuilder;
 using rtype::client::PRESS_DURATION;
@@ -793,4 +796,90 @@ TEST_F(TabbedPanelMenuFixture, TheStatusIsStampedAtTheEndOfTheRule) {
   ASSERT_NE(stamp, nullptr);
   EXPECT_EQ(stamp->anchor, sf::Vector2i(270, 36));
   EXPECT_EQ(stamp->style.font, TextFont::Small);
+}
+
+/**
+ * Given a page of three buttons that has a sound player
+ * When Enter activates its first button
+ * Then the click plays once
+ */
+TEST_F(MenuFixture, ABarActivatedPlaysTheClick) {
+  tap(ENTER);
+
+  menu().advance(PRESS_DURATION);
+
+  EXPECT_THAT(sounds().played(), ElementsAre(CLICK_SOUND_ID));
+}
+
+/**
+ * Given Enter pressed and released on the first button
+ * When a little less than PRESS_DURATION has passed
+ * Then no click plays yet: it comes with the activation
+ */
+TEST_F(MenuFixture, APressNotDueYetPlaysNoClick) {
+  tap(ENTER);
+
+  menu().advance(JUST_BEFORE_DUE);
+
+  EXPECT_THAT(sounds().played(), IsEmpty());
+}
+
+/**
+ * Given a page whose last button is the cancel button
+ * When Escape is tapped
+ * Then the cancel button is activated with the click
+ */
+TEST_F(MenuFixture, EscapeActivatesTheCancelButtonWithTheClick) {
+  tap(ESCAPE);
+
+  EXPECT_THAT(sounds().played(), ElementsAre(CLICK_SOUND_ID));
+}
+
+/**
+ * Given a form whose field is selected
+ * When Enter runs the action of the field
+ * Then no click plays: a field is typed into, not pressed
+ */
+TEST_F(MenuWithAFieldFixture, EnterOnAFieldPlaysNoClick) {
+  send(keyPress(ENTER));
+  send(keyRelease(ENTER));
+
+  menu().advance(PRESS_DURATION);
+
+  EXPECT_THAT(sounds().played(), IsEmpty());
+}
+
+/**
+ * Given the first tab of a tabbed panel open
+ * When the key at the place of E asks for the next tab
+ * Then the click plays once
+ */
+TEST_F(TabbedPanelMenuFixture, AskingForATabPlaysTheClick) {
+  tap(sf::Keyboard::Key::E, sf::Keyboard::Scan::E);
+
+  EXPECT_THAT(sounds().played(), ElementsAre(CLICK_SOUND_ID));
+}
+
+/**
+ * Given the row that steps selected
+ * When Right steps its control
+ * Then no click plays: a control sets a value, as a slider does
+ */
+TEST_F(TabbedPanelMenuFixture, AControlSteppingPlaysNoClick) {
+  tap(sf::Keyboard::Key::Right);
+
+  EXPECT_THAT(sounds().played(), IsEmpty());
+}
+
+/**
+ * Given the row whose control can be activated selected
+ * When Enter activates it
+ * Then no click plays: only a bar sounds when it is activated
+ */
+TEST_F(TabbedPanelMenuFixture, ARowActivatedPlaysNoClick) {
+  tap(sf::Keyboard::Key::Down);
+
+  tap(sf::Keyboard::Key::Enter);
+
+  EXPECT_THAT(sounds().played(), IsEmpty());
 }

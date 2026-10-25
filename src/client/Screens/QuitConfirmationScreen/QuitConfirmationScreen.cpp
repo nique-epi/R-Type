@@ -18,7 +18,7 @@ QuitConfirmationScreen::QuitConfirmationScreen(
     QuitConfirmationScreenParts parts, std::unique_ptr<IInterfaceCanvas> canvas)
     : canvas_(std::move(canvas)),
       playfieldPointAt_(std::move(parts.playfieldPointAt)),
-      menu_(buildMenu(parts.navigator.get())) {
+      menu_(buildMenu(parts.navigator.get(), parts.sounds.get())) {
   repaint();
 }
 
@@ -37,8 +37,9 @@ void QuitConfirmationScreen::draw(sf::RenderTarget& target) const {
 
 bool QuitConfirmationScreen::hidesScreensBelow() const { return false; }
 
-Menu QuitConfirmationScreen::buildMenu(IScreenNavigator& navigator) {
-  return MenuBuilder(MenuBuilder::Frame::Dialog)
+Menu QuitConfirmationScreen::buildMenu(IScreenNavigator& navigator,
+                                       ISoundPlayer& sounds) {
+  return MenuBuilder(MenuBuilder::Frame::Dialog, &sounds)
       .heading(CONFIRM_HEADING)
       .message(QUIT_QUESTION)
       .cancelButton({.label = NO_LABEL}, [&navigator] { navigator.pop(); })
