@@ -5,9 +5,10 @@
 namespace rtype::client {
 
 /**
- * @brief Asset ids of the sounds of the client, all from the Kenney packs
- * Sci-fi Sounds and Impact Sounds (CC0), each renamed after what it stands
- * for; assets/README.md names the file each one comes from.
+ * @brief Asset ids of the sounds of the client, each renamed after what it
+ * stands for: all from the Kenney packs Sci-fi Sounds and Impact Sounds
+ * (CC0) but the hit, the first hit of a file of Epidemic Sound;
+ * assets/README.md names the file each one comes from.
  */
 constexpr const char* BYDO_GROWL_SOUND_ID = "sounds/kenney/bydo_growl.ogg";
 constexpr const char* ENEMY_SHOT_SOUND_ID = "sounds/kenney/enemy_shot.ogg";
@@ -23,7 +24,7 @@ constexpr const char* BIG_EXPLOSION_SOUND_ID =
     "sounds/kenney/big_explosion.ogg";
 constexpr const char* BOOST_SOUND_ID = "sounds/kenney/boost.ogg";
 constexpr const char* LOGO_IMPACT_SOUND_ID = "sounds/kenney/logo_impact.ogg";
-constexpr const char* HIT_SOUND_ID = "sounds/kenney/hit.ogg";
+constexpr const char* HIT_SOUND_ID = "sounds/epidemic/hit.flac";
 constexpr const char* PLAYER_HIT_SOUND_ID = "sounds/kenney/player_hit.ogg";
 
 /** @brief Every sound of the client, loaded at launch with the interface
