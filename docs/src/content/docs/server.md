@@ -3,7 +3,7 @@ title: Server and game
 description: What the server program and the game library do, how their parts fit together and where to find them in the code.
 ---
 
-The server, `r-type_server`, is meant to run the game for the players connected to it. Today it receives their datagrams, runs a tick at a fixed rate, lets up to four players in and keeps one game that starts when they are all ready: each tick answers the connection requests received and reads the `ReadyState` and the inputs of the players. Any datagram of a player proves it is still there, and a game closes the session of a player it hears nothing from for 5 seconds. The game tells its players the waiting room, the start of the game and the world state, each datagram under the session token and the next sequence of its player. Each tick of a game in progress moves the ship of every player by the arrows its newest input holds, fires the missiles of the players who hold shoot, and runs the collisions, so three missiles destroy a Bydo. It never links SFML or Asio: it reaches the network through `rtype_network`, and its own libraries are checked for it at configure time (see [Project layout](/R-Type/project-layout/#who-may-link-what)).
+The server, `r-type_server`, is meant to run the game for the players connected to it. Today it receives their datagrams, runs a tick at a fixed rate, lets up to four players in and keeps one game that starts when they are all ready: each tick answers the connection requests received and reads the `ReadyState` and the inputs of the players. Any datagram of a player proves it is still there, and a game closes the session of a player it hears nothing from for 5 seconds. The game tells its players the waiting room, the start of the game and the world state, each datagram under the session token and the next sequence of its player. Each tick of a game in progress moves the ship of every player by the arrows its newest input holds, fires the missiles of the players who hold shoot, lets every Bydo fire to the left, and runs the collisions, so three missiles destroy a Bydo, and a ship touched by a Bydo or by its missile costs a life. It never links SFML or Asio: it reaches the network through `rtype_network`, and its own libraries are checked for it at configure time (see [Project layout](/R-Type/project-layout/#who-may-link-what)).
 
 The game library, `rtype_game`, holds the rules of a match: what moves, what touches what and what that means. It is built on the engine (see [Engine](/R-Type/engine/)), and it knows nothing about sockets, SFML or the messages sent between the programs (see [Project layout](/R-Type/project-layout/#game)). The server runs all of it; the client will only run the part that predicts its own ship.
 
@@ -16,7 +16,7 @@ This page tells you where to look when you need to change something. It describe
 | Sorting the datagrams before the queues, session token checked | Available; no limit per address yet | `src/server/Application/DatagramSorter/` |
 | World state sent at a fixed rate to the players of the game | Available | `src/server/Replication/WorldStateSender/`, `src/server/Instances/GameInstance/` |
 | One header for every datagram to a player: session token and next sequence | Available | `src/server/Replication/SessionDatagram.hpp` |
-| Game events sent to the players | Available: the removal of a Bydo or a missile that leaves the playfield, the damage and destruction of a Bydo hit by missiles, and the loss of a ship and of a life when a ship touches a Bydo | `src/server/Replication/`, `src/game/Events/` |
+| Game events sent to the players | Available: the removal of a Bydo or a missile that leaves the playfield, the damage and destruction of a Bydo hit by missiles, and the loss of a ship and of a life when a ship touches a Bydo or a missile of a Bydo | `src/server/Replication/`, `src/game/Events/` |
 | Launch options | Available: the port, the seed and `--help` | `src/server/LaunchOptions/` |
 | Letting players in: challenge, acceptance or refusal | Available; refuses with `GameInProgress` while the game is not waiting for players | `src/server/Lobby/`, `src/server/Instances/` |
 | A game: states, ready rule, new world between two games | Available: one game, which ends only once no player is left in it | `src/server/Instances/GameInstance/` |
@@ -26,15 +26,16 @@ This page tells you where to look when you need to change something. It describe
 | End of a game sent to the players (`GameEnded`), several games, master link | Not yet written | — |
 | Components (`Position`, `Velocity`, `CollisionBox`, `Health`, `EntityType`, `Sprite`, `Layer`) | Available | `src/game/Components/` |
 | Movement, run by each game tick | Available | `src/game/Systems/MovementSystem/`, `src/server/Instances/GameInstance/` |
-| Movement patterns, and removal of what leaves the playfield | Available: patterns for the Bydos; a Bydo leaves on the left, a missile of a player on the right | `src/game/Systems/PatternSystem/`, `src/game/Systems/PlayfieldExitSystem/` |
+| Movement patterns, and removal of what leaves the playfield | Available: patterns for the Bydos; a Bydo and its missiles leave on the left, a missile of a player on the right | `src/game/Systems/PatternSystem/`, `src/game/Systems/PlayfieldExitSystem/` |
 | Collisions | Available, run by each game tick | `src/game/Systems/CollisionSystem/`, `src/game/Systems/CollisionRules/`, `src/game/Events/`, `src/server/Instances/GameInstance/` |
-| Damage and destruction | Available, run by each game tick; a missile does not hurt a ship | `src/game/Systems/DamageRules/`, `src/server/Instances/GameInstance/` |
+| Damage and destruction | Available, run by each game tick; a missile takes no health from a ship, and what its hit costs belongs to the lives | `src/game/Systems/DamageRules/`, `src/server/Instances/GameInstance/` |
 | Ship of each player, created when the player joins and announced to the others | Available | `src/game/Spawning/`, `src/server/Replication/ShipSpawnAnnouncer/` |
 | Ship control: where a ship goes from the directions its player holds, kept above the status band | Available; the client does not predict its own ship yet | `src/game/ShipControl/`, `src/server/Instances/GameInstance/` |
 | Bydos appearing off screen at random heights above the status band of the clients, on a timer, then moving left | Available | `src/game/Spawning/BydoSpawnPosition.*`, `src/server/Spawning/` |
 | Missiles of the players: fired in front of the ship while shoot is held, three per second at most, removed past the right edge | Available | `src/server/Spawning/MissileLauncher/`, `src/game/Spawning/MissileStartPosition.*`, `src/game/Systems/PlayfieldExitSystem/` |
+| Missiles of the Bydos: every Bydo fires to the left 1.5 s after it appears, then every 1.5 s; removed past the left edge | Available | `src/server/Spawning/BydoGunner/`, `src/game/Spawning/EnemyMissileStartPosition/`, `src/game/Systems/PlayfieldExitSystem/` |
 | Score: points per Bydo kind, credited to the player who fired the missile, sent in the world state | Available | `src/game/Spawning/BydoKind/`, `src/game/Systems/DamageRules/`, `src/server/Instances/ScoreKeeper/` |
-| Lives: a life lost when a ship touches a Bydo, a new ship 1 s later that cannot be hit for 2 s, a player with no life left watching | Available | `src/server/Instances/LifeKeeper/`, `src/server/Instances/GameInstance/` |
+| Lives: a life lost when a ship touches a Bydo or a missile of a Bydo, a new ship 1 s later that cannot be hit for 2 s, a player with no life left watching | Available | `src/server/Instances/LifeKeeper/`, `src/server/Instances/GameInstance/` |
 | Waves | Not yet written | — |
 
 ## Launch options: `LaunchOptions`
@@ -197,7 +198,7 @@ send(rtype::server::sessionDatagram(player, rtype::network::GameStarted{}));
 | State (`GameState`) | The game… | It goes to… |
 |---|---|---|
 | `WaitingForPlayers` | takes `ReadyState`, lets players in and sends them the room (see [Waiting room](#waiting-room-lobbystateannouncer)) | `InProgress` on the tick when at least one player is connected and every connected player is ready, which sends every connected player `GameStarted` |
-| `InProgress` | counts one tick per `onTick`, moves the ships, runs the systems of the world, fires the missiles of the players who hold shoot, lets the Bydos appear, counts the lives and sends the world state; refuses new connections | `Finished` when `finish()` is called, or on the tick the session of its last player closes |
+| `InProgress` | counts one tick per `onTick`, moves the ships, runs the systems of the world, fires the missiles of the players who hold shoot, lets the Bydos fire, lets the Bydos appear, counts the lives and sends the world state; refuses new connections | `Finished` when `finish()` is called, or on the tick the session of its last player closes |
 | `Finished` | refuses new connections | `WaitingForPlayers` after `FINISHED_STATE_TICKS` (300) ticks, `FINISHED_STATE_SECONDS` (5) seconds |
 
 - Going back to `WaitingForPlayers` builds a new `World`: the tick is 0, the players stay connected, none is ready any more, and each gets its `STARTING_LIVES` back and a new ship, announced again. Network ids start again at 1 in the new world, so the announced ids are the ones of the previous game.
@@ -318,7 +319,7 @@ The game announces what the players must see or hear by publishing an event on t
 - The broadcaster must outlive the last `dispatch()` of the bus and the last `advance()` of the timers, because both call back into it.
 - Nothing is sent or scheduled when the list of recipients is empty, but the encoder still runs, so a `GameEvent` still uses an event number.
 - In `main.cpp` the recipients are the players in the roster of the game when the bus delivers the event (`PlayerRoster::endpoints()`), and the header function is `GameInstance::nextSessionHeaderFor`, which reads the same roster through `sessionHeaderFor` (see [Session headers](#session-headers-sessiondatagram)), so each copy carries the token and the next sequence of its player. A player whose session closes in a tick leaves the roster before the bus delivers the events of that tick, so the others alone get its departure. A copy of an earlier event still goes to its address, under a header without session, which its client drops.
-- `PlayfieldExitSystem` publishes an `EntityDestruction` when a Bydo or a missile of a player leaves the playfield. `DamageRules` publishes one for each missile that hits and for each Bydo it destroys, and an `EntityDamage` for a Bydo hit that survives. The players get each of them.
+- `PlayfieldExitSystem` publishes an `EntityDestruction` when a Bydo or a missile, of a player or of a Bydo, leaves the playfield. `DamageRules` publishes one for each missile that hits and for each Bydo it destroys, and an `EntityDamage` for a Bydo hit that survives. The players get each of them.
 
 ```cpp
 rtype::engine::EventBus events;
@@ -359,7 +360,7 @@ Each tick of a game in progress, `GameInstance` moves the ships (see [Moving the
 - A Bydo moves left at `BYDO_SPEED` through its `Velocity`, which `MovementSystem` applies. Its `MovementPattern` holds a `PatternShape`, the row it appeared on (`originY`) and its age in seconds.
 - `PatternSystem` (`src/game/Systems/PatternSystem/`) sets the height of every entity that has a `MovementPattern`. `Straight` keeps the row. `Wave` puts the entity at `originY + WAVE_AMPLITUDE * sin(2 * pi * age / WAVE_PERIOD_SECONDS)`, with an amplitude of 48 units and a period of 2 seconds, both **provisional**. The height is computed from the age, never added up tick by tick, so it does not depend on how the time is cut into steps. The amplitude stays within `BYDO_PATTERN_ROOM`, the room every row keeps above and below it, checked at compile time, so a Bydo on a wave stays in the area of play.
 - `patternShapeOf(kind)` (`src/game/Spawning/BydoKind/`) says which shape a kind follows: the `Drifter` goes `Straight`, the `Weaver` follows a `Wave`.
-- `PlayfieldExitSystem` (`src/game/Systems/PlayfieldExitSystem/`) destroys an entity of type `Enemy` that has a `NetworkIdentity` once its `Position` is more than `BYDO_EXIT_MARGIN` (64 logical units, **provisional**) beyond the left edge, and publishes an `EntityDestruction` with the cause `Removed` under its network id. A Bydo exactly at the margin is still in. It removes a missile of a player the same way once its center is more than half of `PLAYER_MISSILE_WIDTH` beyond the right edge (see [Shooting](#shooting-missilelauncher)); a Bydo past the right edge, where Bydos appear, stays. A ship is never removed by leaving. It takes the `EventBus` of the server, which `GameInstance` receives at construction and which must outlive it.
+- `PlayfieldExitSystem` (`src/game/Systems/PlayfieldExitSystem/`) destroys an entity of type `Enemy` that has a `NetworkIdentity` once its `Position` is more than `BYDO_EXIT_MARGIN` (64 logical units, **provisional**) beyond the left edge, and publishes an `EntityDestruction` with the cause `Removed` under its network id. A Bydo exactly at the margin is still in. It removes a missile of a player the same way once its center is more than half of `PLAYER_MISSILE_WIDTH` beyond the right edge (see [Shooting](#shooting-missilelauncher)), and a missile of a Bydo once its center is more than half of `ENEMY_MISSILE_WIDTH` beyond the left edge (see [Enemy fire](#enemy-fire-bydogunner)); a Bydo or a missile of a Bydo past the right edge, where Bydos appear, stays. A ship is never removed by leaving. It takes the `EventBus` of the server, which `GameInstance` receives at construction and which must outlive it.
 - A Bydo crosses the playfield in about 8.5 seconds, so about four or five Bydos are in transit at the pace of `BYDO_SPAWN_INTERVAL`.
 - The players are sent an `EntityDestroyed` (`Removed`) for each Bydo removed, `REPEATED_MESSAGE_COPIES` (3) times (see [Game events](#game-events-gameeventencoder-and-gameeventbroadcaster)).
 
@@ -376,6 +377,20 @@ Each tick of a game in progress, `GameInstance` moves the ships (see [Moving the
 - A player still holding shoot when a game ends fires at the first tick of the next game, until its client sends a new input, as the arrows keep the ship moving.
 
 Code must read the constants (`src/server/Spawning/MissileLauncherConstants.hpp`, `src/game/Components/MissileConstants.hpp`, `src/game/Components/EntitySizeConstants.hpp`) and never repeat 3, 20, 960, 64 or 24.
+
+## Enemy fire: `BydoGunner`
+
+`BydoGunner` (`src/server/Spawning/BydoGunner/`) fires the missiles of the Bydos. Every Bydo carries a `Gun` (`src/game/Components/Gun.hpp`), which `World::spawnBydo` gives it with no tick counted. Each tick of a game in progress, after the missiles of the players are fired and before a Bydo may appear, `GameInstance` has the gunner count one tick on the gun of every Bydo; a gun that reaches `ENEMY_SHOT_INTERVAL_TICKS` (90) starts again from 0, and its Bydo fires. A Bydo therefore fires `ENEMY_SHOT_INTERVAL` (1.5 s, **provisional**) after it appears, then every 1.5 s, whatever its kind, and always straight to the left.
+
+- `enemyMissileStartPosition(bydo)` (`src/game/Spawning/EnemyMissileStartPosition/`) puts the missile on the row of the Bydo, its right side against the left side of the Bydo: its center is 64 logical units before the center of the Bydo, half of `BYDO_WIDTH` (96) plus half of `ENEMY_MISSILE_WIDTH` (32).
+- `World::spawnEnemyMissile(position)` gives it a `Position`, a `Velocity` of `-ENEMY_MISSILE_SPEED` (360 units per second to the left, **provisional**, three quarters of `SHIP_SPEED`, so a ship outruns it), a `CollisionBox` of `ENEMY_MISSILE_WIDTH` × `ENEMY_MISSILE_HEIGHT` (32 × 32, its 8 × 8 pixels of the entity sheet; a client test compares the two), `EntityType::EnemyMissile` and a `NetworkIdentity`. It has no `MissileOwner`, and it hits only ships (see [Rules](#rules-collisionrules)).
+- Every connected player is sent an `EntitySpawned` (`EnemyMissile`) in its own datagram, like a Bydo; the client draws it with its own sprite, over everything of the playfield, and plays its orange muzzle flash (see [Client](/R-Type/client/#entity-sprites-spriteof-animationof)).
+- `PlayfieldExitSystem` removes the missile once its center is past −16, half its width beyond the left edge, and announces it as `Removed`. A missile crosses the playfield in 5.3 seconds.
+- A missile that hits a ship is removed by `DamageRules` and costs the player a life (see [Lives](#lives-lifekeeper)).
+- With these values a Bydo fires five times on its way across: 1.5, 3, 4.5, 6 and 7.5 seconds after it appears, the last when the Bydo is at x 184, and it leaves at about 8.5 seconds. The Bydos appear every 2 seconds, so those on screen fire in three groups, half a second apart.
+- A gunner is built with each world, and the Bydos fire only while the game is in progress. When every network id was given, the missile is skipped, a warning is logged, and the Bydo fires again an interval later.
+
+Code must read the constants (`src/server/Spawning/BydoGunnerConstants.hpp`, `src/game/Components/MissileConstants.hpp`, `src/game/Components/EntitySizeConstants.hpp`) and never repeat 1.5 s, 90, 360 or 32.
 
 ## Collisions
 
@@ -403,7 +418,7 @@ A collision takes two steps, in two classes. The first finds what overlaps; the 
 
 Every other pair is ignored: a player missile does not hurt a player, two enemies do not hurt each other, two missiles do not stop each other. An entity without an `EntityType`, or destroyed between the moment the `Collision` was published and the moment it is delivered, is ignored too.
 
-The events are structs in `src/game/Events/`. `MissileHit` and `ShipContact` say that a contact happened; what it costs is decided by [`DamageRules`](#damage-damagerules) for a `MissileHit` and by [`LifeKeeper`](#lives-lifekeeper) for a `ShipContact`.
+The events are structs in `src/game/Events/`. `MissileHit` and `ShipContact` say that a contact happened; what it costs is decided by [`DamageRules`](#damage-damagerules) for a `MissileHit`, and by [`LifeKeeper`](#lives-lifekeeper) for a `ShipContact` and for a `MissileHit` whose target is a ship.
 
 ```cpp
 rtype::engine::EventBus events;
@@ -420,7 +435,7 @@ scheduler.run(components, SIMULATION_TICK_DURATION);
 events.dispatch();
 ```
 
-The bus and the registry must outlive `CollisionRules`, and the bus must outlive `CollisionSystem`. `GameInstance` adds `CollisionSystem` after `PlayfieldExitSystem`, and builds a `CollisionRules` and a `DamageRules` with each world, on the registry of that world. `main.cpp` delivers the events at the end of every tick, so a collision is judged in the tick it is found, and never against the registry of a world replaced since. A ship has a `CollisionBox` from `World::spawnPlayer`, so a ship that touches a Bydo makes a `ShipContact`.
+The bus and the registry must outlive `CollisionRules`, and the bus must outlive `CollisionSystem`. `GameInstance` adds `CollisionSystem` after `PlayfieldExitSystem`, and builds a `CollisionRules` and a `DamageRules` with each world, on the registry of that world. `main.cpp` delivers the events at the end of every tick, so a collision is judged in the tick it is found, and never against the registry of a world replaced since. A ship has a `CollisionBox` from `World::spawnPlayer`, so a ship that touches a Bydo makes a `ShipContact`, and a missile of a Bydo that touches it a `MissileHit`.
 
 ## Damage: `DamageRules`
 
@@ -431,7 +446,7 @@ The bus and the registry must outlive `CollisionRules`, and the bus must outlive
 3. A target without `Health` is not hurt: the missile still disappears.
 
 - A Bydo has `Health` of `BYDO_HEALTH` (3) when `World::spawnBydo` creates it, so three missiles destroy it. Both values are **provisional** until gameplay tunes them. Code must read the constants and never assume 1 or 3.
-- The ship of a player has no `Health`: a missile that hits it is removed and costs nothing, and what a contact with a Bydo costs belongs to the lives (see [Lives](#lives-lifekeeper)).
+- The ship of a player has no `Health`: a missile of a Bydo that hits it is removed here, and what that hit and a contact with a Bydo cost belongs to the lives (see [Lives](#lives-lifekeeper)).
 - Network ids are read from the `NetworkIdentity` before the entity is destroyed. A hit naming an entity that is already gone, or that has no `NetworkIdentity`, is ignored, so two missiles that reach the same Bydo in one `dispatch()` kill it once, and the second missile is left alone.
 - The bus and the registry must outlive `DamageRules`. It publishes while the bus delivers, so its events reach `GameEventBroadcaster` in the same tick.
 - `GameInstance` builds it with each world (see [Collisions](#collisions)). A missile that hits therefore vanishes with no effect of its own; the clients play the hit of the Bydo on the `EntityDamaged` of the first two hits (see [Client](/R-Type/client/#effects-effectspawner)), and its explosion on the third.
@@ -444,18 +459,19 @@ rtype::game::DamageRules damageRules{events, world.components()};
 
 ## Lives: `LifeKeeper`
 
-`LifeKeeper` (`src/server/Instances/LifeKeeper/`) keeps the lives of the players of one world. It subscribes to `ShipContact` when it is created and unsubscribes when it is destroyed. A player joins with `STARTING_LIVES` (3), its ship included, and each new world gives them back.
+`LifeKeeper` (`src/server/Instances/LifeKeeper/`) keeps the lives of the players of one world. It subscribes to `ShipContact` and `MissileHit` when it is created and unsubscribes when it is destroyed. A player joins with `STARTING_LIVES` (3), its ship included, and each new world gives them back.
 
-1. A ship that touches a Bydo is destroyed, and so is the Bydo, each announced with an `EntityDestruction` (`Killed`), so the clients show two explosions. Nobody earns the points of the Bydo.
+1. A ship that touches a Bydo is destroyed, and so is the Bydo, each announced with an `EntityDestruction` (`Killed`), so the clients show two explosions. Nobody earns the points of the Bydo. A ship that a missile of a Bydo hits is destroyed the same way, announced `Killed`; `DamageRules` removes the missile.
 2. The player loses a life, announced with a `PlayerHit`, then with a `PlayerElimination` when none is left.
 3. A player with a life left has no ship for `RESPAWN_DELAY` (1 s, 60 ticks), then gets a new one at its start position through `ShipSpawnAnnouncer::onPlayerJoined`, which announces it again.
-4. That ship cannot be hit for `INVULNERABILITY_DURATION` (2 s, 120 ticks), the tick it comes back included: a Bydo it touches meanwhile costs nothing and stays.
+4. That ship cannot be hit for `INVULNERABILITY_DURATION` (2 s, 120 ticks), the tick it comes back included: a Bydo it touches meanwhile costs nothing and stays, and a missile that hits it meanwhile disappears and costs nothing.
 
 - A player with no life left has no ship and only watches: its input moves and fires nothing. A game whose players have all lost their last life goes on, since no rule ends a game yet.
 - A contact naming an entity already gone is ignored, so two Bydos touching one ship in the same `dispatch()` cost one life.
 - The lives and the waits are kept in `ConnectedPlayer` (`lives`, `ticksUntilRespawn`, `invulnerableTicksLeft`). `onTick()` counts the waits down at each tick of a game in progress, and the world state sends `lives` and `invulnerable`.
 - The three values are **provisional** until gameplay tunes them. Code must read the constants (`src/server/Instances/LifeKeeperConstants.hpp`) and never repeat 3, 1 s or 2 s.
-- An enemy missile costs no life: no Bydo fires yet.
+- A hit on anything but the ship of a connected player, a Bydo hit by a missile of a player, changes nothing here.
+- `DamageRules` must subscribe before the keeper. The bus hands each `MissileHit` to its subscribers in the order they subscribed, and `DamageRules` ignores a hit whose target is already gone, so in the other order the missile would fly on past the ship. `GameInstance::buildWorld()` builds them in that order, and a test of the game checks that the hit removes the missile.
 
 ```cpp
 lifeKeeper_ = std::make_unique<LifeKeeper>(
@@ -486,7 +502,7 @@ lifeKeeper_ = std::make_unique<LifeKeeper>(
 | Send a new kind of event | A struct in `src/game/Events/`, an `encode` overload in `GameEventEncoder`, a `subscribeTo` line in the `GameEventBroadcaster` constructor |
 | Change how often an event is sent, or how far apart | `REPEATED_MESSAGE_COPIES` and `REPEATED_MESSAGE_INTERVAL` in `src/server/Replication/GameEventConstants.hpp` |
 | Change the lives a player starts with, the wait for its new ship, or how long that ship cannot be hit | `STARTING_LIVES`, `RESPAWN_DELAY` and `INVULNERABILITY_DURATION` in `src/server/Instances/LifeKeeperConstants.hpp` |
-| Change what a ship that touches an enemy costs | `LifeKeeper` in `src/server/Instances/LifeKeeper/` |
+| Change what a ship that touches an enemy, or that a missile of an enemy hits, costs | `LifeKeeper` in `src/server/Instances/LifeKeeper/` |
 | Change the health of a Bydo, or the damage of a missile | `BYDO_HEALTH` in `src/game/Components/HealthConstants.hpp`, `MISSILE_DAMAGE` in `src/game/Systems/DamageRules/DamageConstants.hpp` |
 | Change what a hit does | `DamageRules::onMissileHit` in `src/game/Systems/DamageRules/DamageRules.cpp` |
 | Change what the world state lists | `WorldStateSender::capture` in `src/server/Replication/WorldStateSender/WorldStateSender.cpp` |
@@ -504,6 +520,8 @@ lifeKeeper_ = std::make_unique<LifeKeeper>(
 | Change how often a ship fires | `SHOTS_PER_SECOND` in `src/server/Spawning/MissileLauncherConstants.hpp` |
 | Change which action fires | `shootersIn` in `src/server/Instances/GameInstance/GameInstance.cpp` |
 | Change where a missile appears, how fast it flies or its size | `missileStartPosition` in `src/game/Spawning/`, `PLAYER_MISSILE_SPEED` in `src/game/Components/MissileConstants.hpp`, `PLAYER_MISSILE_WIDTH` and `PLAYER_MISSILE_HEIGHT` in `src/game/Components/EntitySizeConstants.hpp`; a new size goes with a new `PLAYER_MISSILE_FRAME` on the client, which a test compares |
+| Change how often a Bydo fires | `ENEMY_SHOT_INTERVAL` in `src/server/Spawning/BydoGunnerConstants.hpp`; which Bydos fire, `BydoGunner` in `src/server/Spawning/BydoGunner/` |
+| Change where a missile of a Bydo appears, how fast it flies or its size | `enemyMissileStartPosition` in `src/game/Spawning/EnemyMissileStartPosition/`, `ENEMY_MISSILE_SPEED` in `src/game/Components/MissileConstants.hpp`, `ENEMY_MISSILE_WIDTH` and `ENEMY_MISSILE_HEIGHT` in `src/game/Components/EntitySizeConstants.hpp`; a new size goes with a new `ENEMY_MISSILE_FRAME` on the client, which a test compares |
 | Change the size a Bydo is hit at | `BYDO_WIDTH` and `BYDO_HEIGHT` in `src/game/Components/EntitySizeConstants.hpp`, with `BYDO_FRAME` on the client, which a test compares |
 | Replay a game | Start the server with the seed found in its log: `--seed <seed>` |
 | Change who is told about a new ship | `ShipSpawnAnnouncer` in `src/server/Replication/ShipSpawnAnnouncer/` |
