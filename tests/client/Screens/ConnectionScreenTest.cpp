@@ -2,8 +2,6 @@
 #include <gtest/gtest.h>
 #include <SFML/Window/Keyboard.hpp>
 #include <cstddef>
-#include <cstdint>
-#include <memory>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -14,21 +12,18 @@
 #include "ConnectionScreen.hpp"
 #include "ConnectionScreenConstants.hpp"
 #include "ConnectionScreenFixture.hpp"
+#include "ConnectionScreenFixtures.hpp"
 #include "ConnectionScreenTestConstants.hpp"
 #include "ConnectionStatus.hpp"
 #include "Endpoint.hpp"
-#include "KeyPress.hpp"
-#include "PointerEvents.hpp"
 #include "RecordingInterfaceCanvas.hpp"
 #include "RecordingNavigator.hpp"
 #include "RecordingServerConnection.hpp"
 #include "ScreenId.hpp"
 #include "ScreenTestConstants.hpp"
-#include "WidgetConstants.hpp"
 
 using rtype::client::ACCEPTED_STATUS_DURATION;
 using rtype::client::CONNECTING_STATUS;
-using rtype::client::ConnectionScreen;
 using rtype::client::ConnectionStatus;
 using rtype::client::GAME_FULL_STATUS;
 using rtype::client::GAME_IN_PROGRESS_STATUS;
@@ -36,19 +31,19 @@ using rtype::client::INCOMPATIBLE_VERSION_STATUS;
 using rtype::client::INVALID_ADDRESS_STATUS;
 using rtype::client::INVALID_PORT_STATUS;
 using rtype::client::MISSING_NICKNAME_STATUS;
-using rtype::client::PRESS_DURATION;
 using rtype::client::ScreenId;
 using rtype::client::UNREACHABLE_STATUS;
+using rtype::client::testing::ACCEPTED_AS_FIRST_PLAYER;
 using rtype::client::testing::CANCEL;
 using rtype::client::testing::LAST_ADDRESS_NUMBER_TEXT;
 using rtype::client::testing::LAUNCH_ADDRESS;
 using rtype::client::testing::LAUNCH_NICKNAME;
 using rtype::client::testing::LAUNCH_PORT;
+using rtype::client::testing::LAUNCH_PORT_TEXT;
 using rtype::client::testing::PORT_ZERO_TEXT;
 using rtype::client::testing::THIRD_PLAYER;
 using rtype::client::testing::TYPED_PORT;
 using rtype::client::testing::TYPED_PORT_TEXT;
-using rtype::network::Endpoint;
 using rtype::network::RefusalReason;
 using ::testing::ElementsAre;
 using ::testing::IsEmpty;
@@ -81,11 +76,12 @@ TEST_F(ConnectionScreenFixture, BuildingTheScreenDropsAnEarlierAttempt) {
 TEST_F(ConnectionScreenFixture, EnterConnectsWithTheValuesOfTheFields) {
   choose(sf::Keyboard::Key::Enter);
 
-  EXPECT_THAT(attempts(), ElementsAre(ServerConnectionCall{
-                              .request = ServerConnectionCall::Request::Connect,
-                              .server = {.address = std::string(LAUNCH_ADDRESS),
-                                         .port = LAUNCH_PORT},
-                              .nickname = std::string(LAUNCH_NICKNAME)}));
+  EXPECT_THAT(connectAttemptsOf(connection()),
+              ElementsAre(ServerConnectionCall{
+                  .request = ServerConnectionCall::Request::Connect,
+                  .server = {.address = std::string(LAUNCH_ADDRESS),
+                             .port = LAUNCH_PORT},
+                  .nickname = std::string(LAUNCH_NICKNAME)}));
 }
 
 /**
@@ -94,11 +90,14 @@ TEST_F(ConnectionScreenFixture, EnterConnectsWithTheValuesOfTheFields) {
  * Then the attempt goes to port 5000
  */
 TEST_F(ConnectionScreenFixture, ATypedPortIsTheOneConnectedTo) {
-  replacePort(TYPED_PORT_TEXT);
+  tap(sf::Keyboard::Key::Down);
+  erase(LAUNCH_PORT_TEXT.size());
+  type(TYPED_PORT_TEXT);
 
   choose(sf::Keyboard::Key::Enter);
 
-  const std::vector<ServerConnectionCall> requests = attempts();
+  const std::vector<ServerConnectionCall> requests =
+      connectAttemptsOf(connection());
   ASSERT_EQ(requests.size(), 1U);
   EXPECT_EQ(requests.front().server.port, TYPED_PORT);
 }
@@ -126,7 +125,7 @@ TEST_F(ConnectionScreenFixture, AnAddressThatIsNotIpv4StartsNoAttempt) {
 
   choose(sf::Keyboard::Key::Enter);
 
-  EXPECT_THAT(attempts(), IsEmpty());
+  EXPECT_THAT(connectAttemptsOf(connection()), IsEmpty());
 }
 
 /**
@@ -135,7 +134,9 @@ TEST_F(ConnectionScreenFixture, AnAddressThatIsNotIpv4StartsNoAttempt) {
  * Then the status line names the port
  */
 TEST_F(ConnectionScreenFixture, PortZeroIsNamed) {
-  replacePort(PORT_ZERO_TEXT);
+  tap(sf::Keyboard::Key::Down);
+  erase(LAUNCH_PORT_TEXT.size());
+  type(PORT_ZERO_TEXT);
 
   choose(sf::Keyboard::Key::Enter);
 
@@ -212,7 +213,7 @@ TEST_F(ConnectionScreenFixture, AnUnreachableServerIsShown) {
  * Then the screen asks for nothing yet
  */
 TEST_F(ConnectionScreenFixture, TheWaitingRoomWaitsUntilTheAcceptanceShowed) {
-  showAccepted();
+  show(ACCEPTED_AS_FIRST_PLAYER);
 
   screen().update(ACCEPTED_STATUS_DURATION - ONE_FRAME - ONE_TICK);
 
@@ -225,7 +226,7 @@ TEST_F(ConnectionScreenFixture, TheWaitingRoomWaitsUntilTheAcceptanceShowed) {
  * Then the screen opens the waiting room over itself
  */
 TEST_F(ConnectionScreenFixture, TheWaitingRoomOpensOnceTheAcceptanceShowed) {
-  showAccepted();
+  show(ACCEPTED_AS_FIRST_PLAYER);
 
   screen().update(ACCEPTED_STATUS_DURATION - ONE_FRAME);
 
@@ -240,7 +241,7 @@ TEST_F(ConnectionScreenFixture, TheWaitingRoomOpensOnceTheAcceptanceShowed) {
  * Then the waiting room is opened once only
  */
 TEST_F(ConnectionScreenFixture, TheWaitingRoomOpensOnce) {
-  showAccepted();
+  show(ACCEPTED_AS_FIRST_PLAYER);
   screen().update(ACCEPTED_STATUS_DURATION);
 
   screen().update(ONE_FRAME);
@@ -254,13 +255,13 @@ TEST_F(ConnectionScreenFixture, TheWaitingRoomOpensOnce) {
  * Then the waiting room opens a second time
  */
 TEST_F(ConnectionScreenFixture, AnotherAttemptOpensTheWaitingRoomAgain) {
-  showAccepted();
+  show(ACCEPTED_AS_FIRST_PLAYER);
   screen().update(ACCEPTED_STATUS_DURATION);
   connection().cancel();
   screen().update(ONE_FRAME);
 
   choose(sf::Keyboard::Key::Enter);
-  showAccepted();
+  show(ACCEPTED_AS_FIRST_PLAYER);
   screen().update(ACCEPTED_STATUS_DURATION);
 
   const NavigatorCall openLobby{.request = NavigatorRequest::Push,

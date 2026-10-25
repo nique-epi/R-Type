@@ -4,7 +4,6 @@
 #include <memory>
 #include <string>
 #include <string_view>
-#include <vector>
 #include "ConnectionScreen.hpp"
 #include "ConnectionScreenParts.hpp"
 #include "ConnectionScreenTestConstants.hpp"
@@ -22,7 +21,6 @@ using rtype::client::ConnectionScreen;
 using rtype::client::ConnectionScreenParts;
 using rtype::client::ConnectionStatus;
 using rtype::client::PRESS_DURATION;
-using rtype::client::testing::FIRST_PLAYER;
 using rtype::client::testing::LAUNCH_ADDRESS;
 using rtype::client::testing::LAUNCH_NICKNAME;
 using rtype::client::testing::LAUNCH_PORT;
@@ -75,28 +73,7 @@ void ConnectionScreenFixture::erase(std::size_t characters) {
   }
 }
 
-void ConnectionScreenFixture::replacePort(std::u32string_view text) {
-  tap(sf::Keyboard::Key::Down);
-  erase(std::to_string(LAUNCH_PORT).size());
-  type(text);
-}
-
 void ConnectionScreenFixture::show(ConnectionStatus status) {
   connection_.setStatus(status);
   screen_.update(ONE_FRAME);
-}
-
-void ConnectionScreenFixture::showAccepted() {
-  show({.phase = ConnectionStatus::Phase::Accepted,
-        .playerNumber = FIRST_PLAYER});
-}
-
-std::vector<ServerConnectionCall> ConnectionScreenFixture::attempts() const {
-  std::vector<ServerConnectionCall> connects;
-  for (const ServerConnectionCall& call : connection_.calls()) {
-    if (call.request == ServerConnectionCall::Request::Connect) {
-      connects.push_back(call);
-    }
-  }
-  return connects;
 }
