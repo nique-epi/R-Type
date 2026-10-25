@@ -27,6 +27,7 @@
 #include "IntroScreenParts.hpp"
 #include "LoadingScreen.hpp"
 #include "LobbyScreen.hpp"
+#include "LobbyScreenParts.hpp"
 #include "LocalizedKeyName.hpp"
 #include "MotionPreference.hpp"
 #include "NetworkConstants.hpp"
@@ -230,7 +231,7 @@ std::unique_ptr<IScreen> Application::lobbyScreen() {
   const sf::Keyboard::Scancode readyKey =
       settings_.keys.keyOf(BoundAction::Ready);
   return std::make_unique<LobbyScreen>(
-      LobbyScreen::Parts{
+      LobbyScreenParts{
           .navigator = screens_,
           .connection = connection_,
           .playfieldPointAt = playfieldMapping(),

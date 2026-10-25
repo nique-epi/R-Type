@@ -9,6 +9,7 @@
 #include "IScreen.hpp"
 #include "IScreenNavigator.hpp"
 #include "IServerConnection.hpp"
+#include "LobbyScreenParts.hpp"
 #include "LobbyState.hpp"
 #include "Menu.hpp"
 #include "MotionPreference.hpp"
@@ -42,32 +43,11 @@ struct HangarBay;
  */
 class LobbyScreen : public IScreen {
  public:
-  /** @brief The key bound to BoundAction::Ready, and the name its keycap
-   * shows. */
-  struct ReadyKey {
-    sf::Keyboard::Scancode key{};
-    std::string name;
-  };
-
-  /** @brief What a waiting room is built from, but the canvas it owns. */
-  struct Parts {
-    /** @brief Screens the waiting room lives among, which must outlive it. */
-    std::reference_wrapper<IScreenNavigator> navigator;
-    /** @brief Session the waiting room reads and drives, which must outlive
-     * it. */
-    std::reference_wrapper<IServerConnection> connection;
-    /** @brief Gives the point of the playfield under a pixel of the window. */
-    PlayfieldMapping playfieldPointAt;
-    ReadyKey readyKey;
-    /** @brief Whether the ships and the beacons may move. */
-    MotionPreference motion{};
-  };
-
   /**
    * @param canvas Picture the waiting room is painted on, never null: the
    * screen owns it, so it comes apart from the parts it borrows.
    */
-  LobbyScreen(Parts parts, std::unique_ptr<IInterfaceCanvas> canvas);
+  LobbyScreen(LobbyScreenParts parts, std::unique_ptr<IInterfaceCanvas> canvas);
 
   /** @brief The actions of the menu point at the screen, so it never moves. */
   LobbyScreen(const LobbyScreen&) = delete;

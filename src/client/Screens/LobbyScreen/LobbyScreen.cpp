@@ -17,6 +17,7 @@
 #include "IScreenNavigator.hpp"
 #include "IServerConnection.hpp"
 #include "LobbyScreenConstants.hpp"
+#include "LobbyScreenParts.hpp"
 #include "LobbyState.hpp"
 #include "Menu.hpp"
 #include "MenuBuilder.hpp"
@@ -87,7 +88,8 @@ sf::Vector2i bayTopLeft(sf::IntRect area, int slot) {
 
 }  // namespace
 
-LobbyScreen::LobbyScreen(Parts parts, std::unique_ptr<IInterfaceCanvas> canvas)
+LobbyScreen::LobbyScreen(LobbyScreenParts parts,
+                         std::unique_ptr<IInterfaceCanvas> canvas)
     : navigator_(&parts.navigator.get()),
       connection_(&parts.connection.get()),
       canvas_(std::move(canvas)),
