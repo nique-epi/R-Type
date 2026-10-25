@@ -1,6 +1,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include <SFML/Window/Keyboard.hpp>
+#include <optional>
 #include "KeyPress.hpp"
 #include "QuitConfirmationScreenFixture.hpp"
 #include "RecordingNavigator.hpp"

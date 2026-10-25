@@ -1,25 +1,17 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
-#include <SFML/Graphics/Rect.hpp>
 #include <SFML/System/Vector2.hpp>
 #include <SFML/Window/Keyboard.hpp>
 #include <algorithm>
-#include <cstdint>
-#include <iterator>
-#include <memory>
 #include <optional>
 #include <string>
-#include <utility>
 #include <vector>
 #include "BackgroundColorConstants.hpp"
-#include "ConnectionStatus.hpp"
 #include "KeyPress.hpp"
 #include "LobbyScreen.hpp"
 #include "LobbyScreenFixture.hpp"
 #include "LobbyScreenFixtures.hpp"
 #include "LobbyScreenTestConstants.hpp"
-#include "LobbyState.hpp"
-#include "MotionPreference.hpp"
 #include "PointerEvents.hpp"
 #include "RecordingInterfaceCanvas.hpp"
 #include "RecordingNavigator.hpp"
@@ -31,9 +23,6 @@
 #include "WidgetConstants.hpp"
 
 using rtype::client::CLICK_SOUND_ID;
-using rtype::client::ConnectionStatus;
-using rtype::client::LobbyScreen;
-using rtype::client::MotionPreference;
 using rtype::client::PRESS_DURATION;
 using rtype::client::ScreenId;
 using rtype::client::STAR_GOLD;
@@ -49,7 +38,6 @@ using rtype::client::testing::OWN_NICKNAME;
 using rtype::client::testing::OWN_NUMBER;
 using rtype::client::testing::READY_KEY;
 using rtype::client::testing::THIRD_BAY_NICKNAME;
-using rtype::network::LobbyPlayer;
 using ::testing::Contains;
 using ::testing::ElementsAre;
 

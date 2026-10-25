@@ -2,7 +2,6 @@
 
 #include <SFML/Graphics/Rect.hpp>
 #include <SFML/Window/Keyboard.hpp>
-#include <functional>
 #include <memory>
 #include <string>
 #include "IInterfaceCanvas.hpp"
