@@ -32,7 +32,7 @@ This page tells you where to look when you need to change something. It describe
 | Network thread | Available; opened at launch | `src/client/Connection/NetworkThread/` |
 | Ignoring an old world state | Available; used by `EntityReplicator` | `src/client/Replication/WorldStateFilter/` |
 | Applying the entities the server announces | Available; used by the game screen | `src/client/Replication/EntityReplicator/` |
-| Removing an entity no world state lists any more | Available; used by `EntityReplicator` | `src/client/Replication/LastListedTicks/` |
+| Removing an entity no world state has listed for 900 ms (54 ticks), once a part of a newer tick closes the tick that left it out | Available; used by `EntityReplicator` | `src/client/Replication/LastListedTicks/` |
 | Status band of the game: nickname, lives and score of each pilot | Available; the server sends the real score but counts no lives yet, and the client does not decode `PlayerLeft` | `src/client/Widgets/StatusBand.cpp`, `src/client/Replication/ScoreBoard/`, `assets/sprites/hud.png` |
 | Server address, port and nickname at launch | Available; they fill the connection screen | `src/client/LaunchOptions/` |
 | Joining a server | Available: request, challenge, acceptance or refusal, then the waiting room, the ready state, the start of the game, the entity messages and the game events of the game, and leaving | `src/client/Connection/ServerConnection/` |
