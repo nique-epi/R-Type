@@ -15,6 +15,7 @@
 #include "BoundAction.hpp"
 #include "ConnectionConstants.hpp"
 #include "ConnectionScreen.hpp"
+#include "ConnectionScreenParts.hpp"
 #include "Endpoint.hpp"
 #include "EntityLayer.hpp"
 #include "GameScreen.hpp"
@@ -168,8 +169,12 @@ std::unique_ptr<IScreen> Application::createScreen(ScreenId screen) {
           interfaceCanvas());
     case ScreenId::Connection:
       return std::make_unique<ConnectionScreen>(
-          screens_, connection_, interfaceCanvas(), playfieldMapping(), server_,
-          nickname_);
+          ConnectionScreenParts{.navigator = screens_,
+                                .connection = connection_,
+                                .playfieldPointAt = playfieldMapping(),
+                                .server = server_,
+                                .nickname = nickname_},
+          interfaceCanvas());
     case ScreenId::Lobby:
       return lobbyScreen();
   }

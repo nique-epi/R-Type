@@ -8,6 +8,7 @@
 #include <utility>
 #include "ConnectionRefused.hpp"
 #include "ConnectionScreenConstants.hpp"
+#include "ConnectionScreenParts.hpp"
 #include "ConnectionStatus.hpp"
 #include "Endpoint.hpp"
 #include "EndpointText.hpp"
@@ -43,17 +44,13 @@ const char* refusalLine(network::RefusalReason reason) {
 
 }  // namespace
 
-ConnectionScreen::ConnectionScreen(IScreenNavigator& navigator,
-                                   IServerConnection& connection,
-                                   std::unique_ptr<IInterfaceCanvas> canvas,
-                                   PlayfieldMapping playfieldPointAt,
-                                   const network::Endpoint& server,
-                                   std::string_view nickname)
-    : navigator_(&navigator),
-      connection_(&connection),
+ConnectionScreen::ConnectionScreen(ConnectionScreenParts parts,
+                                   std::unique_ptr<IInterfaceCanvas> canvas)
+    : navigator_(&parts.navigator.get()),
+      connection_(&parts.connection.get()),
       canvas_(std::move(canvas)),
-      playfieldPointAt_(std::move(playfieldPointAt)),
-      menu_(buildMenu(server, nickname)) {
+      playfieldPointAt_(std::move(parts.playfieldPointAt)),
+      menu_(buildMenu(parts.server, parts.nickname)) {
   connection_->cancel();
   repaint(connection_->status());
 }

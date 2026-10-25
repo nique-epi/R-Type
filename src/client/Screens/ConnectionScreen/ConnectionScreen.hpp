@@ -3,6 +3,7 @@
 #include <memory>
 #include <string>
 #include <string_view>
+#include "ConnectionScreenParts.hpp"
 #include "ConnectionStatus.hpp"
 #include "Endpoint.hpp"
 #include "IInterfaceCanvas.hpp"
@@ -33,21 +34,9 @@ namespace rtype::client {
  */
 class ConnectionScreen : public IScreen {
  public:
-  /**
-   * @param navigator Screens the connection screen lives among, which must
-   * outlive it.
-   * @param connection Connection the attempts go through, which must outlive
-   * the screen.
-   * @param canvas Picture the menu is painted on, never null.
-   * @param playfieldPointAt Gives the point of the playfield under a pixel of
-   * the window.
-   * @param server Address and port the fields start with.
-   * @param nickname Nickname the field starts with.
-   */
-  ConnectionScreen(IScreenNavigator& navigator, IServerConnection& connection,
-                   std::unique_ptr<IInterfaceCanvas> canvas,
-                   PlayfieldMapping playfieldPointAt,
-                   const network::Endpoint& server, std::string_view nickname);
+  /** @param canvas Picture the menu is painted on, never null. */
+  ConnectionScreen(ConnectionScreenParts parts,
+                   std::unique_ptr<IInterfaceCanvas> canvas);
 
   /** @brief The actions of the menu point at the screen, so it never moves. */
   ConnectionScreen(const ConnectionScreen&) = delete;
