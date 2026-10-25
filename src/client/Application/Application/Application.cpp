@@ -33,6 +33,7 @@
 #include "PlayerSettings.hpp"
 #include "PlayfieldMapping.hpp"
 #include "QuitConfirmationScreen.hpp"
+#include "QuitConfirmationScreenParts.hpp"
 #include "ReducedMotion.hpp"
 #include "ScreenAssets.hpp"
 #include "ScreenId.hpp"
@@ -162,7 +163,9 @@ std::unique_ptr<IScreen> Application::createScreen(ScreenId screen) {
       return optionsScreen(screen);
     case ScreenId::QuitConfirmation:
       return std::make_unique<QuitConfirmationScreen>(
-          screens_, interfaceCanvas(), playfieldMapping());
+          QuitConfirmationScreenParts{.navigator = screens_,
+                                      .playfieldPointAt = playfieldMapping()},
+          interfaceCanvas());
     case ScreenId::Connection:
       return std::make_unique<ConnectionScreen>(
           screens_, connection_, interfaceCanvas(), playfieldMapping(), server_,

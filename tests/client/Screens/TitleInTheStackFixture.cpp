@@ -5,6 +5,7 @@
 #include "MotionPreference.hpp"
 #include "PointerEvents.hpp"
 #include "QuitConfirmationScreen.hpp"
+#include "QuitConfirmationScreenParts.hpp"
 #include "RecordingInterfaceCanvas.hpp"
 #include "RecordingNavigator.hpp"
 #include "RecordingScreen.hpp"
@@ -19,6 +20,7 @@ using rtype::client::IScreen;
 using rtype::client::MotionPreference;
 using rtype::client::PRESS_DURATION;
 using rtype::client::QuitConfirmationScreen;
+using rtype::client::QuitConfirmationScreenParts;
 using rtype::client::ScreenId;
 using rtype::client::ScreenStack;
 using rtype::client::TitleScreen;
@@ -67,9 +69,9 @@ std::unique_ptr<IScreen> TitleInTheStackFixture::build(ScreenId screen) {
   }
   if (screen == ScreenId::QuitConfirmation) {
     return std::make_unique<QuitConfirmationScreen>(
-        dialogNavigator_,
-        std::make_unique<RecordingInterfaceCanvas>(dialogCanvas_),
-        samePlayfieldPoint);
+        QuitConfirmationScreenParts{.navigator = dialogNavigator_,
+                                    .playfieldPointAt = samePlayfieldPoint},
+        std::make_unique<RecordingInterfaceCanvas>(dialogCanvas_));
   }
   auto options = std::make_unique<RecordingScreen>(screen, journal_);
   options->setHidesScreensBelow(true);

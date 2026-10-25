@@ -6,6 +6,7 @@
 #include "IScreenNavigator.hpp"
 #include "Menu.hpp"
 #include "PlayfieldMapping.hpp"
+#include "QuitConfirmationScreenParts.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::client {
@@ -20,15 +21,9 @@ namespace rtype::client {
  */
 class QuitConfirmationScreen : public IScreen {
  public:
-  /**
-   * @param navigator Screens the dialog lives among, which must outlive it.
-   * @param canvas Picture the dialog is painted on, never null.
-   * @param playfieldPointAt Gives the point of the playfield under a pixel of
-   * the window.
-   */
-  QuitConfirmationScreen(IScreenNavigator& navigator,
-                         std::unique_ptr<IInterfaceCanvas> canvas,
-                         PlayfieldMapping playfieldPointAt);
+  /** @param canvas Picture the dialog is painted on, never null. */
+  QuitConfirmationScreen(QuitConfirmationScreenParts parts,
+                         std::unique_ptr<IInterfaceCanvas> canvas);
 
   void handleEvent(const sf::Event& event) override;
   void update(engine::Duration elapsed) override;
