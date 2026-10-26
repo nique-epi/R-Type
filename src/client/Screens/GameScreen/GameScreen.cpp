@@ -8,6 +8,7 @@
 #include "ActionSet.hpp"
 #include "AnimationSystem.hpp"
 #include "EffectSpawner.hpp"
+#include "EntityFeedback.hpp"
 #include "EntityMessage.hpp"
 #include "FlashPreference.hpp"
 #include "GameScreenParts.hpp"
@@ -22,6 +23,8 @@
 #include "MissionBanner.hpp"
 #include "MissionStart.hpp"
 #include "PlayerInputPacer.hpp"
+#include "PlayerPreferences.hpp"
+// NOLINTNEXTLINE(misc-include-cleaner)
 #include "PlayerSettings.hpp"
 #include "ScreenConstants.hpp"
 #include "ScreenId.hpp"
@@ -33,13 +36,6 @@
 namespace rtype::client {
 
 namespace {
-
-/** @returns The version of the effects the settings ask for: the one without
- * flash when the player reduced flashes. */
-FlashPreference flashPreferenceOf(const PlayerSettings& settings) {
-  return settings.reduceFlashes ? FlashPreference::Reduced
-                                : FlashPreference::Full;
-}
 
 /** @brief Sets the speed of the stars and the shake of the sky for the time
  * since the start of the game: the warp of MISSION START with flashes, their
@@ -62,6 +58,8 @@ GameScreen::GameScreen(GameScreenParts parts,
       statusCanvas_(std::move(statusCanvas)),
       settings_(&parts.settings.get()),
       effects_(entities_, components_, std::random_device{}()),
+      replicator_(entities_, components_,
+                  EntityFeedback{.effects = effects_, .sounds = parts.sounds}),
       playerCommands_(true, parts.settings.get().keys),
       inputs_(&parts.inputs.get()),
       entityMessageSource_(&parts.entityMessages.get()),

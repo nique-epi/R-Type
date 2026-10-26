@@ -7,7 +7,7 @@ target_link_libraries(rtype_client_connection_screen
     rtype_client_connection
     rtype_client_menu
     rtype_client_interface
-    rtype_client_screens
+    rtype_client_screen_assets
     rtype_client_window
     rtype_network_constants
     rtype_network_protocol

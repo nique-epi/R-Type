@@ -9,6 +9,7 @@
 #include "RecordingPlayerInputLink.hpp"
 #include "RecordingServerConnection.hpp"
 #include "RecordingSky.hpp"
+#include "RecordingSoundPlayer.hpp"
 
 /** @brief What a game screen alone is built from, every part a double, the
  * connection accepted as player 2 of a waiting room of three. */
@@ -22,6 +23,7 @@ struct LoneGameParts {
   RecordingServerConnection connection;
   InterfaceCanvasRecord statusCanvas;
   RecordingSky sky;
+  RecordingSoundPlayer sounds;
 
   /** @returns The parts of a game screen, borrowing these doubles. */
   [[nodiscard]] rtype::client::GameScreenParts parts();

@@ -6,7 +6,7 @@ target_link_libraries(rtype_client_quit_confirmation_screen
   PUBLIC
     rtype_client_menu
     rtype_client_interface
-    rtype_client_screens
+    rtype_client_screen_assets
     rtype_client_window
     SFML::Graphics
   PRIVATE

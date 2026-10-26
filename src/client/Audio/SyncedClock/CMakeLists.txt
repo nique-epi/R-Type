@@ -1,0 +1,7 @@
+add_library(rtype_client_synced_clock STATIC SyncedClock.cpp)
+
+target_include_directories(rtype_client_synced_clock PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+
+target_link_libraries(rtype_client_synced_clock PUBLIC rtype_client_audio_interfaces)
+
+rtype_enable_warnings(rtype_client_synced_clock)

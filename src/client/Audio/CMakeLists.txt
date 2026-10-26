@@ -1,0 +1,11 @@
+add_library(rtype_client_audio_interfaces INTERFACE)
+
+target_include_directories(rtype_client_audio_interfaces INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
+
+target_link_libraries(rtype_client_audio_interfaces INTERFACE rtype_engine_time)
+
+add_subdirectory(VoiceChoice)
+add_subdirectory(AudioVolume)
+add_subdirectory(SyncedClock)
+add_subdirectory(SoundPlayer)
+add_subdirectory(MusicPlayer)

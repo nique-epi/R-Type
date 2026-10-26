@@ -12,13 +12,20 @@
 #include "EntityType.hpp"
 #include "LastListedTicksTestConstants.hpp"
 #include "PilotTestConstants.hpp"
+#include "SoundConstants.hpp"
 #include "WorldState.hpp"
 #include "WorldStateFilterTestConstants.hpp"
 
+using rtype::client::BIG_EXPLOSION_SOUND_ID;
 using rtype::client::BYDO_EXPLOSION_FRAME;
 using rtype::client::ENEMY_MUZZLE_FLASH_FRAME;
+using rtype::client::ENEMY_SHOT_SOUND_ID;
+using rtype::client::HIT_SOUND_ID;
+using rtype::client::PLAYER_HIT_SOUND_ID;
 using rtype::client::PLAYER_MUZZLE_FLASH_FRAME;
+using rtype::client::PLAYER_SHOT_SOUND_ID;
 using rtype::client::SHIP_EXPLOSION_FRAME;
+using rtype::client::SMALL_EXPLOSION_SOUND_ID;
 using rtype::client::testing::AFTER_REMOVAL_TICK;
 using rtype::client::testing::AFTER_THE_LAST_PLAYER;
 using rtype::client::testing::AN_EVENT_NUMBER;
@@ -565,6 +572,147 @@ TEST_F(EntityReplicatorFixture, IgnoresAShipIdThatNamesNoShip) {
       APPLIED_TICK, {playerFlying(SECOND_PLAYER_NUMBER, BYDO_ID)}));
 
   EXPECT_FALSE(pilotColorOfThe(components(), EntityType::Enemy).has_value());
+}
+
+/**
+ * Given a replicator that has applied nothing
+ * When an EntitySpawned announces a missile of a player
+ * Then the shot of a player plays, once
+ */
+TEST_F(EntityReplicatorFixture, AMissileOfAPlayerPlaysTheShotOfAPlayer) {
+  replicator().apply(spawned(PLAYER_MISSILE_ID, WireEntityType::PlayerMissile,
+                             PLAYER_MISSILE_POSITION));
+
+  EXPECT_THAT(sounds().played(), ElementsAre(PLAYER_SHOT_SOUND_ID));
+}
+
+/**
+ * Given a replicator that has applied nothing
+ * When an EntitySpawned announces a missile of an enemy
+ * Then the shot of an enemy plays, once
+ */
+TEST_F(EntityReplicatorFixture, AMissileOfAnEnemyPlaysTheShotOfAnEnemy) {
+  replicator().apply(spawned(ENEMY_MISSILE_ID, WireEntityType::EnemyMissile,
+                             ENEMY_MISSILE_POSITION));
+
+  EXPECT_THAT(sounds().played(), ElementsAre(ENEMY_SHOT_SOUND_ID));
+}
+
+/**
+ * Given a replicator that has applied nothing
+ * When a ship and a Bydo are announced
+ * Then no sound plays
+ */
+TEST_F(EntityReplicatorFixture, AShipAndABydoAppearWithoutASound) {
+  replicator().apply(
+      spawned(SHIP_ID, WireEntityType::PlayerShip, SHIP_POSITION));
+  replicator().apply(spawned(BYDO_ID, WireEntityType::Bydo, BYDO_POSITION));
+
+  EXPECT_THAT(sounds().played(), IsEmpty());
+}
+
+/**
+ * Given a WorldState listing a missile of an enemy whose EntitySpawned was
+ * lost
+ * When it is applied
+ * Then the shot of an enemy plays, as the muzzle flash shows
+ */
+TEST_F(EntityReplicatorFixture, AMissileAWorldStateCreatesPlaysItsShot) {
+  replicator().apply(stateListing(
+      APPLIED_TICK, {listed(ENEMY_MISSILE_ID, WireEntityType::EnemyMissile,
+                            ENEMY_MISSILE_POSITION)}));
+
+  EXPECT_THAT(sounds().played(), ElementsAre(ENEMY_SHOT_SOUND_ID));
+}
+
+/**
+ * Given a missile of a player the client already shows
+ * When a later copy of its EntitySpawned arrives
+ * Then its shot does not play again
+ */
+TEST_F(EntityReplicatorFixture, ALaterCopyOfAnEntitySpawnedPlaysNoSecondShot) {
+  replicator().apply(spawned(PLAYER_MISSILE_ID, WireEntityType::PlayerMissile,
+                             PLAYER_MISSILE_POSITION));
+
+  replicator().apply(spawned(PLAYER_MISSILE_ID, WireEntityType::PlayerMissile,
+                             PLAYER_MISSILE_POSITION));
+
+  EXPECT_THAT(sounds().played(), ElementsAre(PLAYER_SHOT_SOUND_ID));
+}
+
+/**
+ * Given a Bydo the client shows
+ * When an EntityDestroyed says it was killed
+ * Then the small explosion plays
+ */
+TEST_F(EntityReplicatorFixture, AKilledBydoPlaysTheSmallExplosion) {
+  replicator().apply(spawned(BYDO_ID, WireEntityType::Bydo, BYDO_POSITION));
+
+  replicator().apply(killed(BYDO_ID));
+
+  EXPECT_THAT(sounds().played(), ElementsAre(SMALL_EXPLOSION_SOUND_ID));
+}
+
+/**
+ * Given a ship the client shows
+ * When an EntityDestroyed says it was killed
+ * Then the big explosion plays
+ */
+TEST_F(EntityReplicatorFixture, AKilledShipPlaysTheBigExplosion) {
+  replicator().apply(
+      spawned(SHIP_ID, WireEntityType::PlayerShip, SHIP_POSITION));
+
+  replicator().apply(killed(SHIP_ID));
+
+  EXPECT_THAT(sounds().played(), ElementsAre(BIG_EXPLOSION_SOUND_ID));
+}
+
+/**
+ * Given a Bydo the client shows
+ * When an EntityDestroyed says it was removed
+ * Then no sound plays
+ */
+TEST_F(EntityReplicatorFixture, ARemovedBydoPlaysNoSound) {
+  replicator().apply(spawned(BYDO_ID, WireEntityType::Bydo, BYDO_POSITION));
+
+  replicator().apply(removed(BYDO_ID));
+
+  EXPECT_THAT(sounds().played(), IsEmpty());
+}
+
+/**
+ * Given a Bydo the client shows
+ * When an EntityDamaged names it
+ * Then the hit plays
+ */
+TEST_F(EntityReplicatorFixture, ADamagedEntityPlaysTheHit) {
+  replicator().apply(spawned(BYDO_ID, WireEntityType::Bydo, BYDO_POSITION));
+
+  replicator().apply(damaged(AN_EVENT_NUMBER, BYDO_ID));
+
+  EXPECT_THAT(sounds().played(), ElementsAre(HIT_SOUND_ID));
+}
+
+/**
+ * Given a replicator that shows no entity
+ * When an EntityDamaged names an entity it does not have
+ * Then no sound plays, as no hit shows
+ */
+TEST_F(EntityReplicatorFixture, ADamagedEntityTheClientDoesNotHaveIsSilent) {
+  replicator().apply(damaged(AN_EVENT_NUMBER, UNANNOUNCED_ID));
+
+  EXPECT_THAT(sounds().played(), IsEmpty());
+}
+
+/**
+ * Given a replicator in a game
+ * When a PlayerHit names the second player
+ * Then the hit of a player plays
+ */
+TEST_F(EntityReplicatorFixture, AHitPlayerPlaysTheHitOfAPlayer) {
+  replicator().apply(playerHit(AN_EVENT_NUMBER, SECOND_PLAYER_NUMBER));
+
+  EXPECT_THAT(sounds().played(), ElementsAre(PLAYER_HIT_SOUND_ID));
 }
 
 /**

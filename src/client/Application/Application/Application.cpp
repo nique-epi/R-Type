@@ -21,6 +21,8 @@
 #include "IInterfaceCanvas.hpp"
 #include "IScreen.hpp"
 #include "InterfaceCanvas.hpp"
+#include "IntroScreen.hpp"
+#include "IntroScreenParts.hpp"
 #include "LoadingScreen.hpp"
 #include "LobbyScreen.hpp"
 #include "LocalizedKeyName.hpp"
@@ -57,6 +59,13 @@ MotionPreference motionPreference() {
                                       : MotionPreference::Full;
 }
 
+/** @returns The screen the client opens on: the intro, or the title when the
+ * system asks for less motion. */
+ScreenId firstScreen() {
+  return motionPreference() == MotionPreference::Reduced ? ScreenId::Title
+                                                         : ScreenId::Intro;
+}
+
 }  // namespace
 
 Application::Application(AssetLibrary& assets, network::Endpoint server,
@@ -67,6 +76,8 @@ Application::Application(AssetLibrary& assets, network::Endpoint server,
       settings_(settingsFile_.load(firstLaunchSettings())),
       window_(settings_.windowSize),
       background_(std::random_device{}()),
+      sounds_(assets, settings_),
+      music_(assets, settings_),
       network_(
           network::Endpoint{.address = std::string{network::ANY_IPV4_ADDRESS},
                             .port = network::ANY_PORT}),
@@ -74,7 +85,8 @@ Application::Application(AssetLibrary& assets, network::Endpoint server,
       server_(std::move(server)),
       nickname_(std::move(nickname)),
       screens_([this](ScreenId screen) { return createScreen(screen); }) {
-  screens_.replaceAll(ScreenId::Title);
+  music_.start();
+  screens_.replaceAll(firstScreen());
   screens_.applyPendingChanges();
 }
 
@@ -84,6 +96,7 @@ void Application::run() {
     handleEvents();
     const engine::Duration elapsed = measureFrame();
     connection_.update(elapsed);
+    music_.update();
     background_.advance(elapsed);
     screens_.update(elapsed);
     screens_.applyPendingChanges();
@@ -123,6 +136,15 @@ void Application::render() {
 
 std::unique_ptr<IScreen> Application::createScreen(ScreenId screen) {
   switch (screen) {
+    case ScreenId::Intro:
+      return std::make_unique<IntroScreen>(
+          IntroScreenParts{.navigator = screens_,
+                           .settings = settings_,
+                           .sky = background_,
+                           .sounds = sounds_,
+                           .music = music_,
+                           .seed = std::random_device{}()},
+          interfaceCanvas());
     case ScreenId::Title:
       return titleScreen();
     case ScreenId::Game:
@@ -166,7 +188,8 @@ std::unique_ptr<IScreen> Application::gameScreen() {
                       .inputs = connection_,
                       .entityMessages = connection_,
                       .connection = connection_,
-                      .sky = background_},
+                      .sky = background_,
+                      .sounds = sounds_},
       std::make_unique<EntityLayer>(*assets_), interfaceCanvas());
 }
 

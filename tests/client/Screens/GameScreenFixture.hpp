@@ -11,6 +11,7 @@
 #include "RecordingScreen.hpp"
 #include "RecordingServerConnection.hpp"
 #include "RecordingSky.hpp"
+#include "RecordingSoundPlayer.hpp"
 #include "ScreenStack.hpp"
 
 /** @brief The real game screen alone in a stack whose other screens are
@@ -42,6 +43,8 @@ class GameScreenFixture : public ::testing::Test {
 
   [[nodiscard]] const DrawJournal& drawJournal() const;
 
+  [[nodiscard]] const RecordingSoundPlayer& sounds() const;
+
  private:
   std::vector<JournalEntry> journal_;
   EntityLayerRecord layerRecord_;
@@ -52,5 +55,6 @@ class GameScreenFixture : public ::testing::Test {
   InterfaceCanvasRecord statusCanvas_;
   DrawJournal drawJournal_;
   RecordingSky sky_;
+  RecordingSoundPlayer sounds_;
   rtype::client::ScreenStack screens_;
 };
