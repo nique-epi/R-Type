@@ -26,6 +26,9 @@
 #include "GameState.hpp"
 #include "Heartbeat.hpp"
 #include "IncomingDatagram.hpp"
+#include "LifeKeeper.hpp"
+#include "LifeKeeperConstants.hpp"
+#include "LifeKeeperParts.hpp"
 #include "MessageFrame.hpp"
 #include "MessageOrigin.hpp"
 #include "MovementSystem.hpp"
@@ -223,6 +226,7 @@ void GameInstance::advanceState() {
       systems_.run(world_->components(), engine::SIMULATION_TICK_DURATION);
       missileLauncher_->onTick(shootersIn(roster_));
       bydoSpawner_->onTick();
+      lifeKeeper_->onTick();
       break;
     case GameState::Finished:
       ++finishedTicks_;
@@ -435,6 +439,13 @@ void GameInstance::buildWorld() {
   bydoSpawner_ = std::make_unique<BydoSpawner>(*world_, roster_, send_,
                                                seed_ + worldsBuilt_);
   missileLauncher_ = std::make_unique<MissileLauncher>(*world_, roster_, send_);
+  lifeKeeper_ = std::make_unique<LifeKeeper>(
+      LifeKeeperParts{.events = events_,
+                      .world = *world_,
+                      .roster = roster_,
+                      .respawn = [this](ConnectedPlayer& player) {
+                        shipSpawnAnnouncer_->onPlayerJoined(player);
+                      }});
   lobbyStateAnnouncer_ = std::make_unique<LobbyStateAnnouncer>(roster_, send_);
 }
 
@@ -446,6 +457,9 @@ void GameInstance::startNewWorld() {
   for (ConnectedPlayer* const player : roster_.connected()) {
     player->ready = false;
     player->score = 0;
+    player->lives = STARTING_LIVES;
+    player->ticksUntilRespawn = 0;
+    player->invulnerableTicksLeft = 0;
     player->shipEntityId = identifiers::NO_ENTITY_ID;
     shipSpawnAnnouncer_->onPlayerJoined(*player);
   }

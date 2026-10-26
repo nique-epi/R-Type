@@ -22,7 +22,7 @@ This page tells you where to look when you need to change something. It describe
 | Drawing entities | Available; drawn by the game screen | `src/client/Rendering/Drawing/EntityLayer/`, `src/client/Rendering/Drawing/RenderSystem/`, `src/client/Rendering/Drawing/SfmlDrawSurface/`, `src/client/Rendering/Sprites/AssetTextureSource/` |
 | Sprites of the ships, Bydos and missiles | Available, animated | `assets/sprites/entities.png`, `src/client/Rendering/Sprites/EntitySprites.cpp` |
 | Animations | Available; played by the game screen | `src/client/Rendering/Sprites/Animation/`, `src/client/Rendering/Sprites/AnimationSystem/` |
-| Effects: explosions, impacts, muzzle flashes, hit flashes, debris, shockwaves, camera shake, figures of gains, arrivals, invulnerability | Available; played when the server says an entity was killed or hit, when a missile or a ship appears, and when a world state says a ship cannot be hit; the server runs no collision yet and sends every ship as vulnerable, so in a game only the arrivals show | `assets/sprites/effects.png`, `src/client/Rendering/Effects/`, `src/client/Rendering/SpriteLook/HitFlashSystem/` |
+| Effects: explosions, impacts, muzzle flashes, hit flashes, debris, shockwaves, camera shake, figures of gains, arrivals, invulnerability | Available; played when the server says an entity was killed or hit, when a missile or a ship appears, and when a world state says a ship cannot be hit, which it does for 2 s after a ship comes back from a hit (see [Server](/R-Type/server/#lives-lifekeeper)); no Bydo fires yet, so the muzzle flash of an enemy missile never shows in a game | `assets/sprites/effects.png`, `src/client/Rendering/Effects/`, `src/client/Rendering/SpriteLook/HitFlashSystem/` |
 | MISSION START: the warp of the stars and the banner | Available; played by the game screen at the start of each game | `src/client/Rendering/Effects/MissionStart/MissionStart.cpp`, `src/client/Widgets/MissionBanner.cpp` |
 | Scrolling background | Available; drawn by the frame loop under every screen | `src/client/Rendering/Background/` |
 | Pictures of the menus, pixel fonts | Available | `src/client/Rendering/Interface/InterfaceCanvas/`, `assets/fonts/` |
@@ -33,7 +33,7 @@ This page tells you where to look when you need to change something. It describe
 | Ignoring an old world state | Available; used by `EntityReplicator` | `src/client/Replication/WorldStateFilter/` |
 | Applying the entities the server announces | Available; used by the game screen | `src/client/Replication/EntityReplicator/` |
 | Removing an entity no world state has listed for 900 ms (54 ticks), once a part of a newer tick closes the tick that left it out | Available; used by `EntityReplicator` | `src/client/Replication/LastListedTicks/` |
-| Status band of the game: nickname, lives and score of each pilot | Available; the server sends the real score but counts no lives yet, and the client does not decode `PlayerLeft` | `src/client/Widgets/StatusBand.cpp`, `src/client/Replication/ScoreBoard/`, `assets/sprites/hud.png` |
+| Status band of the game: nickname, lives and score of each pilot | Available; the client does not decode `PlayerLeft` | `src/client/Widgets/StatusBand.cpp`, `src/client/Replication/ScoreBoard/`, `assets/sprites/hud.png` |
 | Server address, port and nickname at launch | Available; they fill the connection screen | `src/client/LaunchOptions/` |
 | Joining a server | Available: request, challenge, acceptance or refusal, then the waiting room, the ready state, the start of the game, the entity messages and the game events of the game, and leaving | `src/client/Connection/ServerConnection/` |
 | Sounds and music of the game | Not yet written | — |
@@ -575,7 +575,7 @@ receivedEntityMessages_.clear();
 
 ## Status band: `ScoreBoard`, `paintStatusBand`
 
-The game screen lays a status band over the bottom `STATUS_BAND_ROWS` (24) rows of the interface picture, the `STATUS_BAND_HEIGHT` (96 logical units) the game leaves free (see [Architecture](/R-Type/architecture/#coordinate-system)): one bay per player number, 1 to 4, with the nickname, the lives and the score of its pilot. The screen paints it when it is built, then again in an update only when a pilot or the banner of the start changed, so the 20 world states of a second repaint nothing while no score or life moves. Today every pilot shows the 3 lives the server sends until it counts them (`PLAYER_LIVES_UNTRACKED`), so no word but `YOU` appears.
+The game screen lays a status band over the bottom `STATUS_BAND_ROWS` (24) rows of the interface picture, the `STATUS_BAND_HEIGHT` (96 logical units) the game leaves free (see [Architecture](/R-Type/architecture/#coordinate-system)): one bay per player number, 1 to 4, with the nickname, the lives and the score of its pilot. The screen paints it when it is built, then again in an update only when a pilot or the banner of the start changed, so the 20 world states of a second repaint nothing while no score or life moves. The lives are those the server counts (see [Server](/R-Type/server/#lives-lifekeeper)): a pilot shows `OUT` once it has none left, `LAST LIFE` on its last one, and `RESPAWN` while its ship, back after a hit, cannot be hit.
 
 ### What the server says: `ScoreBoard`
 
