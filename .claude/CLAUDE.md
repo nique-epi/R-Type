@@ -140,6 +140,7 @@ Paths below are relative to `.claude/rules/`.
 **Execution (shell, git, build) — `fix/execution/`**
 - `fix/execution/fix-execution-a-split-commit-carries-its-own-links.md`
 - `fix/execution/fix-execution-a-static-library-reached-twice-on-the-link-line.md`
+- `fix/execution/fix-execution-an-edit-of-a-shared-text-checks-it-is-unchanged.md`
 - `fix/execution/fix-execution-browser-global-names-are-window-properties.md`
 - `fix/execution/fix-execution-check-the-index-before-committing.md`
 - `fix/execution/fix-execution-checkout-b-starts-from-head-not-main.md`
