@@ -1,0 +1,7 @@
+add_library(rtype_server_exceptions STATIC ServerException.cpp)
+
+target_include_directories(rtype_server_exceptions PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+
+target_link_libraries(rtype_server_exceptions PUBLIC rtype_server_exception_parts)
+
+rtype_enable_warnings(rtype_server_exceptions)

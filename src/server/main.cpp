@@ -1,5 +1,6 @@
 #include <cstdint>
 #include <exception>
+#include <filesystem>
 #include <functional>
 #include <iostream>
 #include <memory>
@@ -14,6 +15,7 @@
 #include "EventBus.hpp"
 #include "GameEventBroadcaster.hpp"
 #include "GameInstance.hpp"
+#include "GameSettings.hpp"
 #include "GameState.hpp"
 #include "IncomingDatagram.hpp"
 #include "LaunchArguments.hpp"
@@ -28,6 +30,8 @@
 #include "SystemClock.hpp"
 #include "TimeConstants.hpp"
 #include "TimerScheduler.hpp"
+#include "WaveCatalog.hpp"
+#include "WavePlan.hpp"
 
 namespace {
 
@@ -73,6 +77,26 @@ rtype::server::GameEventBroadcaster::Wiring eventBroadcasterWiring(
             return game.nextSessionHeaderFor(recipient);
           },
       .send = send};
+}
+
+/**
+ * @returns The waves of DEFAULT_DIFFICULTY, read from WAVE_FILE_PATH in the
+ * folder the server is started in; the file and how many difficulties it
+ * describes are logged.
+ * @throws ServerException when the file cannot be read, does not describe the
+ * difficulties as the server expects them, or has no DEFAULT_DIFFICULTY: the
+ * message names the file, the line and the key.
+ */
+rtype::server::WavePlan wavesOfTheGames(const rtype::logging::Logger& logger) {
+  const rtype::server::WaveCatalog catalog =
+      rtype::server::WaveCatalog::fromFile(
+          std::filesystem::path{rtype::server::WAVE_FILE_PATH});
+  rtype::server::WavePlan waves =
+      catalog.planOf(rtype::server::DEFAULT_DIFFICULTY);
+  logger.info("waves file ", rtype::server::WAVE_FILE_PATH, ": ",
+              catalog.difficulties().size(), " difficulties, games play ",
+              rtype::server::DEFAULT_DIFFICULTY);
+  return waves;
 }
 
 /**
@@ -143,7 +167,10 @@ int runServer(const rtype::logging::LogLaunchOptions& logOptions,
         };
     Games games;
     games.push_back(std::make_unique<rtype::server::GameInstance>(
-        queueDatagram, launchOptions.seed().value_or(std::random_device{}()),
+        queueDatagram,
+        rtype::server::GameSettings{
+            .seed = launchOptions.seed().value_or(std::random_device{}()),
+            .waves = wavesOfTheGames(logger)},
         events));
     rtype::server::GameInstance& joinableGame = *games.front();
     rtype::server::ConnectionAcceptor connectionAcceptor{

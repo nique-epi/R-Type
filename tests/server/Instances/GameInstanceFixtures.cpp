@@ -11,15 +11,20 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include "ComponentRegistry.hpp"
 #include "ConnectedPlayer.hpp"
 #include "DatagramCodec.hpp"
 #include "DebugJournal.hpp"
 #include "Endpoint.hpp"
+#include "Entity.hpp"
 #include "EntityIdConstants.hpp"
+#include "EntitySpawned.hpp"
+#include "EntityType.hpp"
 #include "EventBus.hpp"
 #include "GameEventBroadcaster.hpp"
 #include "GameInstance.hpp"
 #include "GameInstanceTestConstants.hpp"
+#include "GameSettings.hpp"
 #include "GameState.hpp"
 #include "IncomingDatagram.hpp"
 #include "MessageType.hpp"
@@ -33,8 +38,11 @@
 #include "SentDatagrams.hpp"
 #include "ServerDatagrams.hpp"
 #include "ServerLobbyTestConstants.hpp"
+#include "Spawning/WavePlanFixtures.hpp"
 #include "TimerScheduler.hpp"
 #include "UnreliableNetwork.hpp"
+#include "World.hpp"
+#include "WorldState.hpp"
 
 namespace rtype::server::testing {
 
@@ -56,12 +64,39 @@ network::PacketHeader sessionHeader(std::size_t player) {
   return header;
 }
 
+std::size_t bydosAmong(
+    const std::vector<std::uint32_t>& removed,
+    const std::vector<network::OutgoingDatagram>& datagrams) {
+  std::size_t bydos = 0;
+  for (const network::OutgoingDatagram& datagram :
+       ofType(network::MessageType::EntitySpawned, datagrams)) {
+    const auto spawned = onlyMessageIn<network::EntitySpawned>(datagram);
+    if (spawned.entityType == network::WireEntityType::Bydo &&
+        std::ranges::count(removed, spawned.entityId) == 1) {
+      ++bydos;
+    }
+  }
+  return bydos;
+}
+
+std::size_t bydosIn(game::World& world) {
+  std::size_t bydos = 0;
+  world.components().forEach<game::EntityType, game::Position>(
+      [&bydos](engine::Entity /*entity*/, const game::EntityType& type,
+               const game::Position& /*position*/) {
+        if (type == game::EntityType::Enemy) {
+          ++bydos;
+        }
+      });
+  return bydos;
+}
+
 GameInstanceTest::GameInstanceTest()
     : game_(
           [this](network::OutgoingDatagram datagram) {
             sent_.push_back(std::move(datagram));
           },
-          SOME_SEED, events_) {}
+          GameSettings{.seed = SOME_SEED, .waves = testWavePlan()}, events_) {}
 
 ConnectedPlayer& GameInstanceTest::join(std::size_t index,
                                         std::uint64_t sessionToken) {

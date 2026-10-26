@@ -12,7 +12,8 @@
         "graphics",
         "window"
       ]
-    }
+    },
+    "tomlplusplus"
   ],
   "features": {
     "tests": {

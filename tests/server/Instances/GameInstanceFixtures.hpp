@@ -28,6 +28,7 @@
 #include "ServerLobbyTestConstants.hpp"
 #include "TimerScheduler.hpp"
 #include "UnreliableNetwork.hpp"
+#include "World.hpp"
 
 namespace rtype::server::testing {
 
@@ -47,6 +48,17 @@ struct SentReadyState {
 
 /** @returns A header carrying the session token of @p player. */
 [[nodiscard]] network::PacketHeader sessionHeader(std::size_t player);
+
+/** @returns How many of the network ids in @p removed belong to Bydos, as the
+ * EntitySpawned among @p datagrams announced them; the missiles the Bydos fire
+ * are not counted. */
+[[nodiscard]] std::size_t bydosAmong(
+    const std::vector<std::uint32_t>& removed,
+    const std::vector<network::OutgoingDatagram>& datagrams);
+
+/** @returns How many Bydos @p world holds; the missiles they fire are not
+ * counted. */
+[[nodiscard]] std::size_t bydosIn(game::World& world);
 
 /**
  * @brief A game whose datagrams are recorded and whose input is queued. Every

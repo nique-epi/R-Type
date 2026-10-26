@@ -16,11 +16,8 @@
 #include "DatagramCodec.hpp"
 #include "DebugJournal.hpp"
 #include "EnemyKilled.hpp"
-#include "Entity.hpp"
 #include "EntityDestruction.hpp"
 #include "EntityIdConstants.hpp"
-#include "EntitySpawned.hpp"
-#include "EntityType.hpp"
 #include "EventBus.hpp"
 #include "GameInstance.hpp"
 #include "GameInstanceConstants.hpp"
@@ -55,9 +52,9 @@
 namespace rtype::server {
 namespace {
 
-constexpr std::size_t INTERVALS_OF_BYDOS = 10;
-
 using game::testing::POSITION_TOLERANCE;
+using testing::bydosAmong;
+using testing::bydosIn;
 using testing::FIRST_PLAYER;
 using testing::FIRST_SENT;
 using testing::FIRST_SEQUENCE;
@@ -593,26 +590,26 @@ TEST_F(GameInstanceTest, StartsASecondGame) {
 
 /**
  * Given a game that waits for a player who is not ready
- * When as many ticks as an interval of Bydos pass
+ * When as many ticks pass as the first pause of a game
  * Then the world holds the ship only: no Bydo appears before the game starts
  */
 TEST_F(GameInstanceTest, NoBydoAppearsWhileWaitingForPlayers) {
   join(FIRST_PLAYER);
 
-  runTicks(testing::TICKS_PER_BYDO_INTERVAL);
+  runTicks(testing::TICKS_TO_THE_FIRST_BYDO);
 
   EXPECT_EQ(game().world().entityCount(), 1U);
 }
 
 /**
  * Given a game just started with one player
- * When one tick less than an interval passes, then one more
+ * When one tick less than the first pause passes, then one more
  * Then no Bydo is in the world, and then one is, next to the ship
  */
-TEST_F(GameInstanceTest, ABydoAppearsOnceTheGameRunsForAnInterval) {
+TEST_F(GameInstanceTest, TheFirstBydoAppearsOnceTheFirstPauseIsOver) {
   startGameWithOnePlayer();
 
-  runTicks(testing::TICKS_PER_BYDO_INTERVAL - 1);
+  runTicks(testing::TICKS_TO_THE_FIRST_BYDO - 1);
   EXPECT_EQ(game().world().entityCount(), 1U);
   tick();
 
@@ -620,14 +617,14 @@ TEST_F(GameInstanceTest, ABydoAppearsOnceTheGameRunsForAnInterval) {
 }
 
 /**
- * Given a finished game, which had run half an interval
+ * Given a finished game, which had run half its first pause
  * When it waits for players again, starts again, and runs one tick less than
- * an interval
- * Then no Bydo is in the new world: the timer started again from zero
+ * the first pause
+ * Then no Bydo is in the new world: its waves start over with the first pause
  */
-TEST_F(GameInstanceTest, ANewGameStartsTheBydoTimerOver) {
+TEST_F(GameInstanceTest, ANewGameStartsTheWavesOver) {
   startGameWithOnePlayer();
-  runTicks(testing::TICKS_PER_BYDO_INTERVAL / 2);
+  runTicks(testing::TICKS_TO_THE_FIRST_BYDO / 2);
   game().finish();
   runTicks(FINISHED_STATE_TICKS);
   ASSERT_EQ(game().state(), GameState::WaitingForPlayers);
@@ -636,14 +633,14 @@ TEST_F(GameInstanceTest, ANewGameStartsTheBydoTimerOver) {
   tick();
   ASSERT_EQ(game().state(), GameState::InProgress);
 
-  runTicks(testing::TICKS_PER_BYDO_INTERVAL - 1);
+  runTicks(testing::TICKS_TO_THE_FIRST_BYDO - 1);
 
   EXPECT_EQ(game().world().entityCount(), 1U);
 }
 
 /**
- * Given a finished game that has run for several intervals
- * When ticks run while it is finished
+ * Given a finished game
+ * When ticks run for twice the first pause
  * Then no Bydo appears
  */
 TEST_F(GameInstanceTest, NoBydoAppearsWhileFinished) {
@@ -651,18 +648,19 @@ TEST_F(GameInstanceTest, NoBydoAppearsWhileFinished) {
   game().finish();
   const std::size_t entitiesBefore = game().world().entityCount();
 
-  runTicks(2 * testing::TICKS_PER_BYDO_INTERVAL);
+  runTicks(2 * testing::TICKS_TO_THE_FIRST_BYDO);
 
   EXPECT_EQ(game().world().entityCount(), entitiesBefore);
 }
 
 /**
- * Given a game in progress for ten intervals of Bydos (about 20 seconds), a
- * Bydo taking about 8.5 seconds to cross the playfield
+ * Given a game in progress for 18 seconds: the three Bydos of its first wave
+ * appear 4, 6 and 8 seconds in and take about 8.5 seconds to cross the
+ * playfield, and the next wave comes a pause of 4 seconds after the last left
  * When the events are dispatched
- * Then the first five Bydos are gone, a removal was announced for each, and the
- * world holds the last five Bydos; the missiles the Bydos fire leave on the
- * left too, and are not counted
+ * Then the three Bydos are gone, a removal was announced for each, and the
+ * world holds no Bydo; the missiles the Bydos fire leave on the left too,
+ * and are not counted
  */
 TEST_F(GameInstanceTest, ABydoThatLeavesOnTheLeftDoesNotStayInTheWorld) {
   std::vector<std::uint32_t> removed;
@@ -674,28 +672,36 @@ TEST_F(GameInstanceTest, ABydoThatLeavesOnTheLeftDoesNotStayInTheWorld) {
       });
   startGameWithOnePlayer();
 
-  runTicks(INTERVALS_OF_BYDOS * testing::TICKS_PER_BYDO_INTERVAL);
+  runTicks(testing::FIRST_WAVE_GONE_TICKS);
   events().dispatch();
 
-  std::size_t bydosRemoved = 0;
-  for (const network::OutgoingDatagram& datagram :
-       ofType(network::MessageType::EntitySpawned, sentTo(FIRST_PLAYER))) {
-    const auto spawned = onlyMessageIn<network::EntitySpawned>(datagram);
-    if (spawned.entityType == network::WireEntityType::Bydo &&
-        std::ranges::count(removed, spawned.entityId) == 1) {
-      ++bydosRemoved;
-    }
-  }
-  std::size_t bydosLeft = 0;
-  game().world().components().forEach<game::EntityType, game::Position>(
-      [&bydosLeft](engine::Entity /*entity*/, const game::EntityType& type,
-                   const game::Position& /*position*/) {
-        if (type == game::EntityType::Enemy) {
-          ++bydosLeft;
+  EXPECT_EQ(bydosAmong(removed, sentTo(FIRST_PLAYER)), 3U);
+  EXPECT_EQ(bydosIn(game().world()), 0U);
+}
+
+/**
+ * Given a game in progress whose first wave left the playfield, its last Bydo
+ * about 16.6 seconds in
+ * When the game reaches 21.5 seconds and the events are dispatched
+ * Then the three Bydos of the first wave were removed, and the world holds the
+ * first Bydo of the second wave only, come a pause after the first wave left;
+ * the missiles the Bydos fire are not counted
+ */
+TEST_F(GameInstanceTest, TheSecondWaveComesAPauseAfterTheFirstIsGone) {
+  std::vector<std::uint32_t> removed;
+  events().subscribe<game::EntityDestruction>(
+      [&removed](const game::EntityDestruction& event) {
+        if (event.cause == game::DestructionCause::Removed) {
+          removed.push_back(event.networkId);
         }
       });
-  EXPECT_EQ(bydosRemoved, 5U);
-  EXPECT_EQ(bydosLeft, 5U);
+  startGameWithOnePlayer();
+
+  runTicks(testing::SECOND_WAVE_BEGUN_TICKS);
+  events().dispatch();
+
+  EXPECT_EQ(bydosAmong(removed, sentTo(FIRST_PLAYER)), 3U);
+  EXPECT_EQ(bydosIn(game().world()), 1U);
 }
 
 /**

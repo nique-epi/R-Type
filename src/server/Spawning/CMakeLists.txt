@@ -2,8 +2,6 @@ add_library(rtype_server_bydo_spawn_constants INTERFACE)
 
 target_include_directories(rtype_server_bydo_spawn_constants INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
 
-target_link_libraries(rtype_server_bydo_spawn_constants INTERFACE rtype_engine_time)
-
 add_library(rtype_server_missile_launcher_constants INTERFACE)
 
 target_include_directories(rtype_server_missile_launcher_constants INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
@@ -16,6 +14,19 @@ target_include_directories(rtype_server_bydo_gunner_constants INTERFACE ${CMAKE_
 
 target_link_libraries(rtype_server_bydo_gunner_constants INTERFACE rtype_engine_time)
 
+add_library(rtype_server_bydo_spawner_parts INTERFACE)
+
+target_include_directories(rtype_server_bydo_spawner_parts INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
+
+target_link_libraries(rtype_server_bydo_spawner_parts INTERFACE rtype_server_entity_spawn_sender rtype_server_wave_plan)
+
+add_library(rtype_server_wave_plan INTERFACE)
+
+target_include_directories(rtype_server_wave_plan INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
+
+target_link_libraries(rtype_server_wave_plan INTERFACE rtype_game_waves rtype_game_bydo_kind rtype_server_exception_parts)
+
 add_subdirectory(BydoGunner)
 add_subdirectory(BydoSpawner)
+add_subdirectory(WaveCatalog)
 add_subdirectory(MissileLauncher)
