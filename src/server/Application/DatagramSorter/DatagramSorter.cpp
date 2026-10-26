@@ -54,20 +54,19 @@ DatagramSorter::DatagramSorter(Destinations destinations,
 void DatagramSorter::sort(const network::Endpoint& sender,
                           std::span<const std::byte> datagram) {
   if (datagram.size() < network::PACKET_HEADER_SIZE) {
-    drop(sender, "it is shorter than the packet header");
+    drop(sender, SHORTER_THAN_HEADER_DROP_REASON);
     return;
   }
   const network::PacketHeader header =
       network::DatagramCodec::decodeHeader(datagram);
   if (!network::DatagramCodec::speaksThisProtocol(header)) {
-    drop(sender,
-         "its header is not of this protocol and version, or has a flag set");
+    sortForeignHeader(sender, header, datagram);
     return;
   }
   const std::optional<network::DatagramCodec::MessageTypes> types =
       network::DatagramCodec::messageTypes(datagram);
   if (!types.has_value()) {
-    drop(sender, "the sizes of its messages do not add up to its end");
+    drop(sender, MESSAGE_SIZES_DROP_REASON);
     return;
   }
   const bool holdsRequest = types->test(
@@ -83,9 +82,26 @@ void DatagramSorter::sort(const network::Endpoint& sender,
   } else if (player != nullptr) {
     pushCopy(*destinations_.players, sender, datagram);
   } else {
-    drop(sender,
-         "its sender was not admitted, and it holds no connection request");
+    drop(sender, STRANGER_DROP_REASON);
   }
+}
+
+void DatagramSorter::sortForeignHeader(const network::Endpoint& sender,
+                                       const network::PacketHeader& header,
+                                       std::span<const std::byte> datagram) {
+  if (isRefusedForItsVersion(sender, header, datagram.size())) {
+    pushCopy(*destinations_.connectionRequests, sender, datagram);
+    return;
+  }
+  drop(sender, network::FOREIGN_HEADER_DROP_REASON);
+}
+
+bool DatagramSorter::isRefusedForItsVersion(const network::Endpoint& sender,
+                                            const network::PacketHeader& header,
+                                            std::size_t datagramSize) const {
+  return network::DatagramCodec::speaksAnotherVersion(header) &&
+         findAdmitted(sender) == nullptr &&
+         datagramSize >= network::CONNECTION_REFUSED_DATAGRAM_SIZE;
 }
 
 void DatagramSorter::admit(const network::Endpoint& player,
@@ -137,9 +153,7 @@ void DatagramSorter::drop(const network::Endpoint& sender,
 
 void DatagramSorter::dropWrongToken(const network::Endpoint& sender) {
   dropLog_.debug(clock_->now(), "dropped a datagram from ", sender.address,
-                 " port ", sender.port,
-                 ": it carries another session token than the player of "
-                 "that address");
+                 " port ", sender.port, ": ", WRONG_TOKEN_DROP_REASON);
   const std::scoped_lock lock{wrongTokenSenderMutex_};
   if (!wrongTokenSender_.has_value()) {
     wrongTokenSender_ = sender;

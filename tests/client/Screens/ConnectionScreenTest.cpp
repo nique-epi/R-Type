@@ -21,6 +21,7 @@
 #include "RecordingServerConnection.hpp"
 #include "ScreenId.hpp"
 #include "ScreenTestConstants.hpp"
+#include "ServerConnectionTestConstants.hpp"
 #include "WidgetConstants.hpp"
 
 using rtype::client::ACCEPTED_STATUS_DURATION;
@@ -29,13 +30,13 @@ using rtype::client::ConnectionScreen;
 using rtype::client::ConnectionStatus;
 using rtype::client::GAME_FULL_STATUS;
 using rtype::client::GAME_IN_PROGRESS_STATUS;
-using rtype::client::INCOMPATIBLE_VERSION_STATUS;
 using rtype::client::INVALID_ADDRESS_STATUS;
 using rtype::client::INVALID_PORT_STATUS;
 using rtype::client::MISSING_NICKNAME_STATUS;
 using rtype::client::PRESS_DURATION;
 using rtype::client::ScreenId;
 using rtype::client::UNREACHABLE_STATUS;
+using rtype::client::testing::NEXT_PROTOCOL_VERSION;
 using rtype::network::Endpoint;
 using rtype::network::RefusalReason;
 using ::testing::ElementsAre;
@@ -412,10 +413,22 @@ TEST_P(RefusalTest, ARefusalShowsItsReason) {
 }
 
 INSTANTIATE_TEST_SUITE_P(
-    EveryReason, RefusalTest,
-    ::testing::Values(
-        std::tuple(RefusalReason::GameFull, std::string_view(GAME_FULL_STATUS)),
-        std::tuple(RefusalReason::GameInProgress,
-                   std::string_view(GAME_IN_PROGRESS_STATUS)),
-        std::tuple(RefusalReason::IncompatibleVersion,
-                   std::string_view(INCOMPATIBLE_VERSION_STATUS))));
+    EveryReasonButTheVersion, RefusalTest,
+    ::testing::Values(std::tuple(RefusalReason::GameFull,
+                                 std::string_view(GAME_FULL_STATUS)),
+                      std::tuple(RefusalReason::GameInProgress,
+                                 std::string_view(GAME_IN_PROGRESS_STATUS))));
+
+/**
+ * Given an attempt a server of protocol version 1 refused as
+ * IncompatibleVersion, the client speaking version 0
+ * When a frame goes by
+ * Then the status line names both versions, the client's first
+ */
+TEST_F(ConnectionScreenTest, AVersionRefusalNamesBothVersions) {
+  show({.phase = ConnectionStatus::Phase::Refused,
+        .refusal = RefusalReason::IncompatibleVersion,
+        .serverVersion = NEXT_PROTOCOL_VERSION});
+
+  EXPECT_NE(writingOf(canvas(), "REFUSED: YOU V0, SERVER V1"), nullptr);
+}

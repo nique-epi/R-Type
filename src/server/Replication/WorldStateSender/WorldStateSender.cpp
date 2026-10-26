@@ -63,11 +63,12 @@ std::vector<network::PlayerState> WorldStateSender::playerStatesOf(
   std::vector<network::PlayerState> states;
   states.reserve(players.size());
   for (const ConnectedPlayer* const player : players) {
-    states.push_back(network::PlayerState{.playerNumber = player->playerNumber,
-                                          .shipEntityId = player->shipEntityId,
-                                          .lives = PLAYER_LIVES_UNTRACKED,
-                                          .score = player->score,
-                                          .invulnerable = false});
+    states.push_back(network::PlayerState{
+        .playerNumber = player->playerNumber,
+        .shipEntityId = player->shipEntityId,
+        .lives = player->lives,
+        .score = player->score,
+        .invulnerable = player->invulnerableTicksLeft > 0});
   }
   return states;
 }

@@ -18,6 +18,7 @@
 #include "PatternConstants.hpp"
 #include "Position.hpp"
 #include "ScoreValue.hpp"
+#include "ShipControlConstants.hpp"
 #include "Velocity.hpp"
 
 namespace rtype::game {
@@ -26,6 +27,8 @@ std::uint32_t World::spawnPlayer(Position position) {
   const std::uint32_t networkId = networkIds_.allocate();
   const engine::Entity ship = registry_.create();
   components_.add(ship, position);
+  components_.add(ship,
+                  CollisionBox{.width = SHIP_WIDTH, .height = SHIP_HEIGHT});
   components_.add(ship, EntityType::Player);
   components_.add(ship, NetworkIdentity{.networkId = networkId});
   shipByNetworkId_.bind(networkId, ship);

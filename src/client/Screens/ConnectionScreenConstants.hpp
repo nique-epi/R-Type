@@ -56,13 +56,16 @@ static_assert(NICKNAME_FIELD_SIZE <= FIELD_CHARACTER_CAPACITY,
 /**
  * @brief Status lines of the connection screen: how the attempt stands, or
  * which field to fix before one starts. The number of the player follows
- * ACCEPTED_STATUS.
+ * ACCEPTED_STATUS. A refusal for another version names both protocol
+ * versions: the client's after INCOMPATIBLE_VERSION_STATUS, the server's after
+ * SERVER_VERSION_STATUS.
  */
 constexpr const char* CONNECTING_STATUS = "CONNECTING...";
 constexpr const char* ACCEPTED_STATUS = "CONNECTED AS PLAYER ";
 constexpr const char* GAME_FULL_STATUS = "REFUSED: GAME FULL";
 constexpr const char* GAME_IN_PROGRESS_STATUS = "REFUSED: GAME IN PROGRESS";
-constexpr const char* INCOMPATIBLE_VERSION_STATUS = "REFUSED: OTHER VERSION";
+constexpr const char* INCOMPATIBLE_VERSION_STATUS = "REFUSED: YOU V";
+constexpr const char* SERVER_VERSION_STATUS = ", SERVER V";
 constexpr const char* UNREACHABLE_STATUS = "SERVER UNREACHABLE";
 constexpr const char* INVALID_ADDRESS_STATUS = "INVALID ADDRESS";
 constexpr const char* INVALID_PORT_STATUS = "INVALID PORT";
