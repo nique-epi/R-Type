@@ -31,4 +31,13 @@ class InvalidRandomUnitException : public GameException {
   InvalidRandomUnitException();
 };
 
+/**
+ * @brief A wave curve would bring a wave without Bydos, Bydos with no time
+ * between them, waves that slow down, or a negative pause (see isPlayable).
+ */
+class InvalidWaveCurveException : public GameException {
+ public:
+  InvalidWaveCurveException();
+};
+
 }  // namespace rtype::game

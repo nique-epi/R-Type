@@ -1,0 +1,52 @@
+# The waves of Bydos of each difficulty. Only the server reads this file: it
+# reads it when it starts, from assets/waves/waves.toml in the folder it is
+# started in, and stops with an error naming the file, the line and the key
+# when a key is missing, misspelt or out of its range, or an enemy is unknown.
+# Every game plays the difficulty "normal" until the rules of a game can
+# choose another one.
+#
+# A difficulty is a table [difficulty.<name>] of:
+#   enemies                         the kinds its Bydos are, taken in turn and
+#                                   carried on from one wave to the next:
+#                                   "drifter" (straight) or "weaver" (weaves
+#                                   up and down), 1 to 100 names
+#   first_wave_bydos                Bydos of the first wave, 1 to 100
+#   bydos_added_per_wave            Bydos each next wave adds, 0 to 100
+#   first_spawn_interval_ms         milliseconds between two Bydos of the
+#                                   first wave, 1 to 60000
+#   spawn_interval_cut_per_wave_ms  milliseconds each next wave takes off that
+#                                   time, 0 to 60000
+#   shortest_spawn_interval_ms      the fewest milliseconds between two Bydos,
+#                                   1 to first_spawn_interval_ms
+#   wave_pause_ms                   milliseconds of empty sky before each
+#                                   wave, 0 to 60000
+# Numbers are integers: 2500, never 2500.0. A wave ends once every one of its
+# Bydos has appeared and none is left in the world, killed or gone on the
+# left; the pause before the next wave starts then.
+
+[difficulty.easy]
+enemies = ["drifter", "drifter", "weaver"]
+first_wave_bydos = 2
+bydos_added_per_wave = 1
+first_spawn_interval_ms = 2500
+spawn_interval_cut_per_wave_ms = 250
+shortest_spawn_interval_ms = 1500
+wave_pause_ms = 5000
+
+[difficulty.normal]
+enemies = ["drifter", "weaver"]
+first_wave_bydos = 3
+bydos_added_per_wave = 1
+first_spawn_interval_ms = 2000
+spawn_interval_cut_per_wave_ms = 250
+shortest_spawn_interval_ms = 1000
+wave_pause_ms = 4000
+
+[difficulty.hard]
+enemies = ["weaver", "weaver", "drifter"]
+first_wave_bydos = 4
+bydos_added_per_wave = 2
+first_spawn_interval_ms = 1500
+spawn_interval_cut_per_wave_ms = 250
+shortest_spawn_interval_ms = 500
+wave_pause_ms = 3000

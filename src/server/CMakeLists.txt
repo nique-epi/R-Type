@@ -4,6 +4,7 @@ target_include_directories(rtype_server_constants INTERFACE ${CMAKE_CURRENT_SOUR
 
 target_link_libraries(rtype_server_constants INTERFACE rtype_engine_time)
 
+add_subdirectory(Exceptions)
 add_subdirectory(Platform)
 add_subdirectory(Application)
 add_subdirectory(LaunchOptions)
@@ -24,6 +25,7 @@ target_link_libraries(r-type_server
     rtype_server_game_event_broadcaster
     rtype_server_game_instance
     rtype_server_launch_options
+    rtype_server_wave_catalog
 )
 
 rtype_enable_warnings(r-type_server)

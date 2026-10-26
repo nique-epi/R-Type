@@ -109,7 +109,7 @@ TEST_F(GameInstanceShootingFixture, ManyInputsPerTickFireNoFaster) {
 /**
  * Given a game in progress whose first player fired one missile, then
  * released shoot
- * When ticks run until just before the first Bydo appears, nearly two seconds
+ * When ticks run until just before the first Bydo appears, nearly four seconds
  * Then the missile left on the right: it is no longer in the world, and its
  * removal was announced
  */
@@ -122,7 +122,7 @@ TEST_F(GameInstanceShootingFixture, RemovesAMissileThatLeftOnTheRight) {
   const std::uint32_t missile = missilesSentTo(FIRST_PLAYER).front().entityId;
   holdForNextTick(FIRST_PLAYER, HOLDS_NOTHING);
 
-  runTicksDispatching(TICKS_PER_BYDO_INTERVAL - 2);
+  runTicksDispatching(TICKS_TO_THE_FIRST_BYDO - 2);
 
   EXPECT_TRUE(wasDestroyed(missile, game::DestructionCause::Removed));
   EXPECT_EQ(game().world().entityCount(), 2U);
@@ -139,7 +139,7 @@ TEST_F(GameInstanceShootingFixture, DestroysABydoWithItsMissiles) {
   startGame();
   const std::uint32_t drifter = aimAtADrifter();
 
-  runTicksDispatching(TICKS_PER_BYDO_INTERVAL - 1);
+  runTicksDispatching(TICKS_TO_THE_FIRST_BYDO - 1);
 
   EXPECT_TRUE(wasDestroyed(drifter, game::DestructionCause::Killed));
 }
@@ -154,7 +154,7 @@ TEST_F(GameInstanceShootingFixture, CreditsTheBydoToThePlayerWhoFired) {
   startGame();
   static_cast<void>(aimAtADrifter());
 
-  runTicksDispatching(TICKS_PER_BYDO_INTERVAL - 1);
+  runTicksDispatching(TICKS_TO_THE_FIRST_BYDO - 1);
 
   const ConnectedPlayer* const player =
       game().roster().find(playerEndpoint(FIRST_PLAYER));
@@ -184,7 +184,7 @@ TEST_F(GameInstanceShootingFixture, DestroysABydoInTheNextGameToo) {
   ASSERT_EQ(game().state(), GameState::InProgress);
   const std::uint32_t drifter = aimAtADrifter();
 
-  runTicksDispatching(TICKS_PER_BYDO_INTERVAL - 1);
+  runTicksDispatching(TICKS_TO_THE_FIRST_BYDO - 1);
 
   EXPECT_TRUE(wasDestroyed(drifter, game::DestructionCause::Killed));
 }

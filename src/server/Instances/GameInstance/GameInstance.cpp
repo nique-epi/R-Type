@@ -10,6 +10,7 @@
 #include <string_view>
 #include <utility>
 #include <vector>
+#include "BydoSpawnerParts.hpp"
 #include "CollisionRules.hpp"
 #include "CollisionSystem.hpp"
 #include "ConnectedPlayer.hpp"
@@ -22,6 +23,7 @@
 #include "EntityIdConstants.hpp"
 #include "EventBus.hpp"
 #include "GameInstanceConstants.hpp"
+#include "GameSettings.hpp"
 #include "GameStarted.hpp"
 #include "GameState.hpp"
 #include "Heartbeat.hpp"
@@ -36,6 +38,7 @@
 #include "NetworkException.hpp"
 #include "PacketHeader.hpp"
 #include "PatternSystem.hpp"
+#include "PlayerDatagram.hpp"
 #include "PlayerDeparture.hpp"
 #include "PlayerInput.hpp"
 #include "PlayerRoster.hpp"
@@ -144,13 +147,14 @@ void moveOneTick(const ShipMove& move) {
 
 }  // namespace
 
-GameInstance::GameInstance(Send send, std::uint32_t seed,
+GameInstance::GameInstance(Send send, GameSettings settings,
                            engine::EventBus& events)
     : send_(std::move(send)),
       events_(events),
       scoreKeeper_(events, roster_),
       worldStateSender_(roster_, send_),
-      seed_(seed),
+      seed_(settings.seed),
+      wavePlan_(std::move(settings.waves)),
       rejectionLog_(std::string{INSTANCES_LOGGER_NAME},
                     network::REJECTION_LINE_INTERVAL),
       logger_(std::string{INSTANCES_LOGGER_NAME}) {
@@ -259,7 +263,7 @@ void GameInstance::readPlayerDatagram(
   dispatcher_.dispatch(readable->origin, readable->messages);
 }
 
-std::optional<GameInstance::PlayerDatagram> GameInstance::playerDatagramOf(
+std::optional<PlayerDatagram> GameInstance::playerDatagramOf(
     const network::IncomingDatagram& datagram) {
   network::PacketHeader header;
   std::vector<network::MessageFrame> messages;
@@ -436,8 +440,12 @@ void GameInstance::buildWorld() {
       std::make_unique<game::DamageRules>(events_, world_->components());
   shipSpawnAnnouncer_ =
       std::make_unique<ShipSpawnAnnouncer>(*world_, roster_, send_);
-  bydoSpawner_ = std::make_unique<BydoSpawner>(*world_, roster_, send_,
-                                               seed_ + worldsBuilt_);
+  bydoSpawner_ = std::make_unique<BydoSpawner>(
+      BydoSpawnerParts{.world = *world_,
+                       .roster = roster_,
+                       .send = send_,
+                       .seed = seed_ + worldsBuilt_,
+                       .waves = wavePlan_});
   missileLauncher_ = std::make_unique<MissileLauncher>(*world_, roster_, send_);
   lifeKeeper_ = std::make_unique<LifeKeeper>(
       LifeKeeperParts{.events = events_,

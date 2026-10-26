@@ -28,5 +28,6 @@ CheckOptions:
   hicpp-special-member-functions.AllowSoleDefaultDtor: true
   misc-non-private-member-variables-in-classes.IgnoreClassesWithAllMemberVariablesBeingPublic: true
   # The Windows SDK is included through the headers Microsoft documents (windows.h, shlobj.h),
-  # not through the inner headers that declare each symbol.
-  misc-include-cleaner.IgnoreHeaders: 'Windows Kits[/\\]10[/\\]Include[/\\][^/\\]+[/\\](um|shared)[/\\].*'
+  # not through the inner headers that declare each symbol. toml++ likewise documents a single
+  # header, toml++/toml.hpp, which includes the inner headers of toml++/impl/.
+  misc-include-cleaner.IgnoreHeaders: 'Windows Kits[/\\]10[/\\]Include[/\\][^/\\]+[/\\](um|shared)[/\\].*;[/\\]toml\+\+[/\\].*'
