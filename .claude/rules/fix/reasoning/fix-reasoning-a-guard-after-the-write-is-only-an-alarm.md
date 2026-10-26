@@ -12,7 +12,14 @@ trigger: always_on
 3. **Code reused as is does not exempt you from rereading the order.** A defect found in copied code is reported.
 4. **In a PR, the word "guard" is reserved for a check that blocks the write.**
 
+### A check typed in the same command as the write gates it
+
+1. **A check written in the same shell call as the write it protects is the condition of that write**: `if <check>; then <write>; else echo 'BLOCKED'; fi`. A check followed by `;` and then the write only prints: the write runs whatever the check found.
+2. **A check whose output needs reading** (a `grep` for forbidden words that also matches allowed ones, a diff to look at) **runs alone, in the call before the write**; the write goes in the next call, once that output was read.
+
 ## Example
 
 - ❌ **Before (wrong)**: copying the payload into the entity's component, then checking that the entity id exists — another entity's component has already been overwritten.
 - ✅ **After (right)**: check that the entity exists and the payload size, then write the component.
+- ❌ **Before (wrong)**: `grep -n -i -E 'claude|anthropic|generated with|co-authored' pr-body.md; gh pr create --draft … --body-file pr-body.md` → the pull request was created before the five matches were read; all were `.claude/` paths, so nothing forbidden was published, by luck.
+- ✅ **After (right)**: the `grep` runs alone and its matches are read; `gh pr create` goes in the next call.
