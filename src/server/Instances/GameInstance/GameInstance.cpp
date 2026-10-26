@@ -10,6 +10,7 @@
 #include <string_view>
 #include <utility>
 #include <vector>
+#include "BydoSpawnerParts.hpp"
 #include "CollisionRules.hpp"
 #include "CollisionSystem.hpp"
 #include "ConnectedPlayer.hpp"
@@ -433,8 +434,11 @@ void GameInstance::buildWorld() {
       std::make_unique<game::DamageRules>(events_, world_->components());
   shipSpawnAnnouncer_ =
       std::make_unique<ShipSpawnAnnouncer>(*world_, roster_, send_);
-  bydoSpawner_ = std::make_unique<BydoSpawner>(*world_, roster_, send_,
-                                               seed_ + worldsBuilt_);
+  bydoSpawner_ = std::make_unique<BydoSpawner>(
+      BydoSpawnerParts{.world = *world_,
+                       .roster = roster_,
+                       .send = send_,
+                       .seed = seed_ + worldsBuilt_});
   missileLauncher_ = std::make_unique<MissileLauncher>(*world_, roster_, send_);
   lobbyStateAnnouncer_ = std::make_unique<LobbyStateAnnouncer>(roster_, send_);
 }

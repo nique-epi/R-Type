@@ -8,6 +8,7 @@
 #include "BydoKind.hpp"
 #include "BydoSpawnPosition.hpp"
 #include "BydoSpawnerConstants.hpp"
+#include "BydoSpawnerParts.hpp"
 #include "ConnectedPlayer.hpp"
 #include "EngineException.hpp"
 #include "EntitySpawnSender.hpp"
@@ -20,14 +21,13 @@
 
 namespace rtype::server {
 
-BydoSpawner::BydoSpawner(game::World& world, PlayerRoster& roster,
-                         SendDatagram send, std::uint32_t seed)
-    : world_(&world),
-      roster_(&roster),
-      send_(std::move(send)),
+BydoSpawner::BydoSpawner(BydoSpawnerParts parts)
+    : world_(&parts.world.get()),
+      roster_(&parts.roster.get()),
+      send_(std::move(parts.send)),
       logger_(std::string{BYDO_SPAWNER_LOGGER_NAME}),
-      random_(seed) {
-  logger_.info("Bydo spawning starts from the seed ", seed);
+      random_(parts.seed) {
+  logger_.info("Bydo spawning starts from the seed ", parts.seed);
   timers_.scheduleRepeating(BYDO_SPAWN_INTERVAL, [this] { spawnOne(); });
 }
 

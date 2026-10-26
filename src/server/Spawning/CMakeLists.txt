@@ -10,6 +10,12 @@ target_include_directories(rtype_server_missile_launcher_constants INTERFACE ${C
 
 target_link_libraries(rtype_server_missile_launcher_constants INTERFACE rtype_engine_time)
 
+add_library(rtype_server_bydo_spawner_parts INTERFACE)
+
+target_include_directories(rtype_server_bydo_spawner_parts INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
+
+target_link_libraries(rtype_server_bydo_spawner_parts INTERFACE rtype_server_entity_spawn_sender)
+
 add_library(rtype_server_wave_plan INTERFACE)
 
 target_include_directories(rtype_server_wave_plan INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})

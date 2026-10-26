@@ -5,6 +5,7 @@
 #include <utility>
 #include <vector>
 #include "BydoSpawner.hpp"
+#include "BydoSpawnerParts.hpp"
 #include "Entity.hpp"
 #include "EntitySpawned.hpp"
 #include "Instances/GameInstanceTestConstants.hpp"
@@ -22,11 +23,14 @@ void BydoSpawnerScene::connect(std::size_t index) {
 }
 
 BydoSpawner BydoSpawnerScene::makeSpawner(std::uint32_t seed) {
-  return BydoSpawner{world_, roster_,
-                     [this](network::OutgoingDatagram datagram) {
-                       sent_.push_back(std::move(datagram));
-                     },
-                     seed};
+  return BydoSpawner{
+      BydoSpawnerParts{.world = world_,
+                       .roster = roster_,
+                       .send =
+                           [this](network::OutgoingDatagram datagram) {
+                             sent_.push_back(std::move(datagram));
+                           },
+                       .seed = seed}};
 }
 
 void BydoSpawnerScene::runTicks(BydoSpawner& spawner, std::size_t count) {

@@ -8,6 +8,7 @@ target_link_libraries(rtype_server_bydo_spawner
     rtype_game
     rtype_logging
     rtype_server_bydo_spawn_constants
+    rtype_server_bydo_spawner_parts
     rtype_server_entity_spawn_sender
     rtype_server_player_roster
   PRIVATE

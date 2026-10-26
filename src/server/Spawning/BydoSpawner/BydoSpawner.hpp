@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <random>
+#include "BydoSpawnerParts.hpp"
 #include "EntitySpawnSender.hpp"
 #include "Logger.hpp"
 #include "PlayerRoster.hpp"
@@ -18,11 +19,10 @@ namespace rtype::server {
  * random generator (see game::bydoSpawnPosition). The kinds of Bydo alternate,
  * starting with the Drifter, which goes straight; the Weaver follows a wave.
  * The kind uses no random draw, so a seed still gives the same heights.
- * The generator starts from
- * the seed given at construction, which is logged, so the same seed gives the
- * same heights in the same order. Every connected player is sent an
- * EntitySpawned for the Bydo, as the Entities section of the protocol page
- * describes. When every network id was given, the Bydo of that interval is
+ * The generator starts from the seed of the parts, which is logged, so the
+ * same seed gives the same heights in the same order. Every connected player is
+ * sent an EntitySpawned for the Bydo, as the Entities section of the protocol
+ * page describes. When every network id was given, the Bydo of that interval is
  * skipped and a warning is logged.
  *
  * Not thread-safe: use it from the simulation thread only.
@@ -30,14 +30,10 @@ namespace rtype::server {
 class BydoSpawner {
  public:
   /**
-   * @param world The world the Bydos are created in; it must outlive the
-   * spawner.
-   * @param roster The players of the game; it must outlive the spawner.
-   * @param send Must not be empty.
-   * @param seed Starts the random generator; logged at info level.
+   * @param parts The world, the players, how to send, and the seed, which is
+   * logged at info level.
    */
-  BydoSpawner(game::World& world, PlayerRoster& roster, SendDatagram send,
-              std::uint32_t seed);
+  explicit BydoSpawner(BydoSpawnerParts parts);
 
   /**
    * @brief Lets one simulation tick of time pass: a Bydo appears for each
