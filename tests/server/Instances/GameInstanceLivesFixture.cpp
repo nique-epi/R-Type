@@ -2,6 +2,7 @@
 #include <gtest/gtest.h>
 #include <algorithm>
 #include <cstddef>
+#include <cstdint>
 #include <initializer_list>
 #include <vector>
 #include "BydoKind.hpp"
@@ -19,6 +20,13 @@ namespace rtype::server::testing {
 void GameInstanceLivesFixture::hitTheShipOf(std::size_t player) {
   game().world().spawnBydo(shipPositionOf(player), game::BydoKind::Drifter);
   runTicksDispatching(1);
+}
+
+std::uint32_t GameInstanceLivesFixture::shootTheShipOf(std::size_t player) {
+  const std::uint32_t missile =
+      game().world().spawnEnemyMissile(shipPositionOf(player));
+  runTicksDispatching(1);
+  return missile;
 }
 
 void GameInstanceLivesFixture::startTheNextGame() {

@@ -9,6 +9,7 @@
 #include <span>
 #include <string_view>
 #include <vector>
+#include "BydoGunner.hpp"
 #include "BydoSpawner.hpp"
 #include "CollisionRules.hpp"
 #include "ConnectedPlayer.hpp"
@@ -64,31 +65,35 @@ namespace rtype::server {
  *
  * While the game is in progress, each tick first moves the ship of every player
  * who sent an input, by the directions its newest input holds (see
- * game::shipPositionAfter), then runs the systems of the world
- * (PatternSystem, MovementSystem, PlayfieldExitSystem, which removes a Bydo
- * that left on the left or a missile that left on the right and announces it
- * on the event bus, then CollisionSystem), then lets the ship of every player
- * whose newest input holds shoot fire a missile, at most one every
- * SHOT_INTERVAL_TICKS ticks (see MissileLauncher), then lets the Bydos of
- * the current wave appear (see BydoSpawner), then counts the waits and the
- * protections of the lives (see LifeKeeper). The ships move and fire in no
- * other state. Each world starts its random draws from a seed of its own, the
- * seed of the game plus the number of worlds built before it, so the seed of
- * the game is enough to replay every world of a session.
+ * game::shipPositionAfter), then runs the systems of the world (PatternSystem,
+ * MovementSystem, PlayfieldExitSystem, which removes a Bydo or a missile of a
+ * Bydo that left on the left, or a missile of a player that left on the right,
+ * and announces it on the event bus, then CollisionSystem), then lets the ship
+ * of every player whose newest input holds shoot fire a missile, at most one
+ * every SHOT_INTERVAL_TICKS ticks (see MissileLauncher), then lets every Bydo
+ * fire a missile to the left every ENEMY_SHOT_INTERVAL (see BydoGunner), then
+ * lets the Bydos of the current wave appear (see BydoSpawner), then counts the
+ * waits and the protections of the lives (see LifeKeeper). The ships and
+ * the Bydos move and fire in no other state. Each world starts its random draws
+ * from a seed of its own, the seed of the game plus the number of worlds built
+ * before it, so the seed of the game is enough to replay every world of a
+ * session.
  *
  * The collisions CollisionSystem finds are judged when the event bus delivers
  * them: CollisionRules turns a missile of a player that touches a Bydo into a
  * MissileHit, and DamageRules destroys the missile, takes MISSILE_DAMAGE from
  * the health of the Bydo and destroys the Bydo once it has none left, an
- * EnemyKilled crediting its points to the player who fired. CollisionRules
- * also turns a ship that touches a Bydo into a ShipContact, which LifeKeeper
- * turns into the loss of the ship, the Bydo and a life: the ship comes back
- * RESPAWN_DELAY later, invulnerable for INVULNERABILITY_DURATION, and a player
- * with no life left watches. A game whose players are all out goes on: no rule
- * ends a game yet. The rules work on the world they were built with, and new
- * ones come with each new world, so the events of a tick must be delivered
- * before the world is replaced: the server dispatches the bus at the end of
- * every tick.
+ * EnemyKilled crediting its points to the player who fired. CollisionRules also
+ * turns a ship that touches a Bydo into a ShipContact, which LifeKeeper turns
+ * into the loss of the ship, the Bydo and a life, and a missile of a Bydo that
+ * touches a ship into a MissileHit, which DamageRules turns into the removal of
+ * the missile and LifeKeeper into the loss of the ship and a life: the ship
+ * comes back RESPAWN_DELAY later, invulnerable for INVULNERABILITY_DURATION,
+ * and a player with no life left watches. A game whose players are all out goes
+ * on: no rule ends a game yet. The rules work on the world they were built
+ * with, and new ones come with each new world, so the events of a tick must be
+ * delivered before the world is replaced: the server dispatches the bus at the
+ * end of every tick.
  *
  * A datagram of the players is read only when its header carries this
  * protocol and version with no flag set, its messages add up to its end, and
@@ -212,9 +217,9 @@ class GameInstance {
    * player is left in, then moves the game along its states. While it waits,
    * the players are told the room; while it is in progress, the tick is
    * counted, the ships move, the systems run, the ships whose players hold
-   * shoot fire, the Bydos appear, the waits and protections of the lives are
-   * counted and the world is sent. Last, a player sent nothing for
-   * TICKS_PER_HEARTBEAT ticks is sent a Heartbeat. Nothing caused by the
+   * shoot fire, the Bydos fire, the Bydos appear, the waits and protections of
+   * the lives are counted and the world is sent. Last, a player sent nothing
+   * for TICKS_PER_HEARTBEAT ticks is sent a Heartbeat. Nothing caused by the
    * content of a datagram makes it throw.
    */
   void onTick(std::span<const network::IncomingDatagram> datagrams);
@@ -320,8 +325,10 @@ class GameInstance {
 
   /** @brief Builds a new world, and every part of the game that works on one
    * world: the rules that judge its collisions, the announcer of its ships, the
-   * spawner of its Bydos, the launcher of its missiles, the keeper of the lives
-   * and the announcer of the room. */
+   * spawner of its Bydos, the launcher of its missiles, the gunner of its
+   * Bydos, the keeper of the lives and the announcer of the room. DamageRules
+   * is built before LifeKeeper, so the bus hands each MissileHit to DamageRules
+   * first (see LifeKeeper). */
   void buildWorld();
 
   void startNewWorld();
@@ -335,6 +342,7 @@ class GameInstance {
   std::unique_ptr<ShipSpawnAnnouncer> shipSpawnAnnouncer_;
   std::unique_ptr<BydoSpawner> bydoSpawner_;
   std::unique_ptr<MissileLauncher> missileLauncher_;
+  std::unique_ptr<BydoGunner> bydoGunner_;
   std::unique_ptr<game::CollisionRules> collisionRules_;
   std::unique_ptr<game::DamageRules> damageRules_;
   std::unique_ptr<LifeKeeper> lifeKeeper_;

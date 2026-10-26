@@ -29,6 +29,11 @@ class GameInstanceShootingFixture : public GameInstanceMovementTest {
   [[nodiscard]] std::vector<network::EntitySpawned> missilesSentTo(
       std::size_t player);
 
+  /** @returns The EntitySpawned of the missiles of the enemies sent to @p
+   * player, oldest first. */
+  [[nodiscard]] std::vector<network::EntitySpawned> enemyMissilesSentTo(
+      std::size_t player);
+
   /** @brief Records every EntityDestruction the event bus delivers. */
   void recordDestructions();
 

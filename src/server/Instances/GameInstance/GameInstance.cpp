@@ -229,6 +229,7 @@ void GameInstance::advanceState() {
       moveShips();
       systems_.run(world_->components(), engine::SIMULATION_TICK_DURATION);
       missileLauncher_->onTick(shootersIn(roster_));
+      bydoGunner_->onTick();
       bydoSpawner_->onTick();
       lifeKeeper_->onTick();
       break;
@@ -447,6 +448,7 @@ void GameInstance::buildWorld() {
                        .seed = seed_ + worldsBuilt_,
                        .waves = wavePlan_});
   missileLauncher_ = std::make_unique<MissileLauncher>(*world_, roster_, send_);
+  bydoGunner_ = std::make_unique<BydoGunner>(*world_, roster_, send_);
   lifeKeeper_ = std::make_unique<LifeKeeper>(
       LifeKeeperParts{.events = events_,
                       .world = *world_,

@@ -11,6 +11,7 @@
 #include "EntityIdConstants.hpp"
 #include "EntitySizeConstants.hpp"
 #include "EntityType.hpp"
+#include "Gun.hpp"
 #include "Health.hpp"
 #include "MissileOwner.hpp"
 #include "MovementPattern.hpp"
@@ -21,6 +22,7 @@
 #include "World.hpp"
 #include "WorldTestConstants.hpp"
 
+using rtype::game::testing::ENEMY_MISSILE_UNITS_PER_SECOND;
 using rtype::game::testing::MISSILE_UNITS_PER_SECOND;
 using rtype::game::testing::OTHER_X;
 using rtype::game::testing::OTHER_Y;
@@ -534,4 +536,88 @@ TEST(World, SpawnedPlayerMissileHasTheBoxOfItsSprite) {
       box.value_or(rtype::game::CollisionBox{});
   EXPECT_EQ(found.width, rtype::game::PLAYER_MISSILE_WIDTH);
   EXPECT_EQ(found.height, rtype::game::PLAYER_MISSILE_HEIGHT);
+}
+
+/**
+ * Given an empty world
+ * When a Bydo is spawned
+ * Then it carries a gun that has not fired yet, so its first missile waits a
+ * whole interval
+ */
+TEST(World, SpawnedBydoHasAGunThatHasNotFiredYet) {
+  rtype::game::World world;
+
+  const std::uint32_t networkId =
+      world.spawnBydo(rtype::game::Position{.x = SOME_X, .y = SOME_Y},
+                      rtype::game::BydoKind::Drifter);
+
+  const std::optional<rtype::game::Gun> gun =
+      componentOf<rtype::game::Gun>(world, networkId);
+  ASSERT_TRUE(gun.has_value());
+  EXPECT_EQ(gun.value_or(rtype::game::Gun{}).ticksSinceLastShot, 0U);
+}
+
+/**
+ * Given an empty world
+ * When an enemy fires a missile at a position
+ * Then the world holds a missile of an enemy at that position, under the
+ * network id returned
+ */
+TEST(World, SpawnedEnemyMissileIsANetworkedMissileAtItsPosition) {
+  rtype::game::World world;
+
+  const std::uint32_t networkId =
+      world.spawnEnemyMissile(rtype::game::Position{.x = SOME_X, .y = SOME_Y});
+
+  EXPECT_EQ(world.entityCount(), 1U);
+  EXPECT_NE(networkId, rtype::identifiers::NO_ENTITY_ID);
+  const std::optional<rtype::game::Position> position =
+      componentOf<rtype::game::Position>(world, networkId);
+  ASSERT_TRUE(position.has_value());
+  const rtype::game::Position found =
+      position.value_or(rtype::game::Position{});
+  EXPECT_EQ(found.x, SOME_X);
+  EXPECT_EQ(found.y, SOME_Y);
+  EXPECT_EQ(componentOf<rtype::game::EntityType>(world, networkId),
+            rtype::game::EntityType::EnemyMissile);
+}
+
+/**
+ * Given an empty world
+ * When an enemy fires a missile
+ * Then the missile flies left at 360 units per second, on its row
+ */
+TEST(World, SpawnedEnemyMissileFliesLeft) {
+  rtype::game::World world;
+
+  const std::uint32_t networkId =
+      world.spawnEnemyMissile(rtype::game::Position{.x = SOME_X, .y = SOME_Y});
+
+  const std::optional<rtype::game::Velocity> velocity =
+      componentOf<rtype::game::Velocity>(world, networkId);
+  ASSERT_TRUE(velocity.has_value());
+  const rtype::game::Velocity found =
+      velocity.value_or(rtype::game::Velocity{});
+  EXPECT_EQ(found.x, -ENEMY_MISSILE_UNITS_PER_SECOND);
+  EXPECT_EQ(found.y, 0.0F);
+}
+
+/**
+ * Given an empty world
+ * When an enemy fires a missile
+ * Then the missile collides with a box of the size of its sprite
+ */
+TEST(World, SpawnedEnemyMissileHasTheBoxOfItsSprite) {
+  rtype::game::World world;
+
+  const std::uint32_t networkId =
+      world.spawnEnemyMissile(rtype::game::Position{.x = SOME_X, .y = SOME_Y});
+
+  const std::optional<rtype::game::CollisionBox> box =
+      componentOf<rtype::game::CollisionBox>(world, networkId);
+  ASSERT_TRUE(box.has_value());
+  const rtype::game::CollisionBox found =
+      box.value_or(rtype::game::CollisionBox{});
+  EXPECT_EQ(found.width, rtype::game::ENEMY_MISSILE_WIDTH);
+  EXPECT_EQ(found.height, rtype::game::ENEMY_MISSILE_HEIGHT);
 }

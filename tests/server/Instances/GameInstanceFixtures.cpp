@@ -11,11 +11,15 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include "ComponentRegistry.hpp"
 #include "ConnectedPlayer.hpp"
 #include "DatagramCodec.hpp"
 #include "DebugJournal.hpp"
 #include "Endpoint.hpp"
+#include "Entity.hpp"
 #include "EntityIdConstants.hpp"
+#include "EntitySpawned.hpp"
+#include "EntityType.hpp"
 #include "EventBus.hpp"
 #include "GameEventBroadcaster.hpp"
 #include "GameInstance.hpp"
@@ -37,6 +41,8 @@
 #include "Spawning/WavePlanFixtures.hpp"
 #include "TimerScheduler.hpp"
 #include "UnreliableNetwork.hpp"
+#include "World.hpp"
+#include "WorldState.hpp"
 
 namespace rtype::server::testing {
 
@@ -56,6 +62,33 @@ network::PacketHeader sessionHeader(std::size_t player) {
   network::PacketHeader header;
   header.sessionToken = PLAYER_SESSION_TOKENS.at(player);
   return header;
+}
+
+std::size_t bydosAmong(
+    const std::vector<std::uint32_t>& removed,
+    const std::vector<network::OutgoingDatagram>& datagrams) {
+  std::size_t bydos = 0;
+  for (const network::OutgoingDatagram& datagram :
+       ofType(network::MessageType::EntitySpawned, datagrams)) {
+    const auto spawned = onlyMessageIn<network::EntitySpawned>(datagram);
+    if (spawned.entityType == network::WireEntityType::Bydo &&
+        std::ranges::count(removed, spawned.entityId) == 1) {
+      ++bydos;
+    }
+  }
+  return bydos;
+}
+
+std::size_t bydosIn(game::World& world) {
+  std::size_t bydos = 0;
+  world.components().forEach<game::EntityType, game::Position>(
+      [&bydos](engine::Entity /*entity*/, const game::EntityType& type,
+               const game::Position& /*position*/) {
+        if (type == game::EntityType::Enemy) {
+          ++bydos;
+        }
+      });
+  return bydos;
 }
 
 GameInstanceTest::GameInstanceTest()

@@ -7,6 +7,7 @@
 #include <limits>
 #include <string_view>
 #include "NetworkConstants.hpp"
+#include "Position.hpp"
 #include "ProtocolConstants.hpp"
 #include "ServerLobbyTestConstants.hpp"
 #include "TimeConstants.hpp"
@@ -75,6 +76,14 @@ constexpr std::uint32_t SOME_SEED = 7;
  * while it would take about two seconds to touch the ship.
  */
 constexpr float BYDO_DISTANCE_AHEAD = 600.0F;
+
+/**
+ * @brief Where a game test puts a Bydo whose missile must not reach a ship
+ * within the test: on screen, far ahead of the ships, which start at x 192. Its
+ * first missile starts at 1076 after one and a half seconds and flies 6 units
+ * per tick.
+ */
+constexpr game::Position BYDO_FAR_AHEAD_OF_THE_SHIPS{.x = 1500.0F, .y = 300.0F};
 
 /**
  * @brief How many ticks a game runs for its first wave to be gone before the

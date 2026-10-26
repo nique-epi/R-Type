@@ -8,6 +8,7 @@
 #include "Entity.hpp"
 #include "EntitySizeConstants.hpp"
 #include "EntityType.hpp"
+#include "Gun.hpp"
 #include "Health.hpp"
 #include "HealthConstants.hpp"
 #include "MissileConstants.hpp"
@@ -59,6 +60,7 @@ std::uint32_t World::spawnBydo(Position position, BydoKind kind) {
   components_.add(bydo, EntityType::Enemy);
   components_.add(bydo, Health{.points = BYDO_HEALTH});
   components_.add(bydo, ScoreValue{.points = pointsOf(kind)});
+  components_.add(bydo, Gun{.ticksSinceLastShot = 0});
   components_.add(bydo, NetworkIdentity{.networkId = networkId});
   return networkId;
 }
@@ -73,6 +75,18 @@ std::uint32_t World::spawnPlayerMissile(Position position,
                                         .height = PLAYER_MISSILE_HEIGHT});
   components_.add(missile, EntityType::PlayerMissile);
   components_.add(missile, MissileOwner{.playerNumber = playerNumber});
+  components_.add(missile, NetworkIdentity{.networkId = networkId});
+  return networkId;
+}
+
+std::uint32_t World::spawnEnemyMissile(Position position) {
+  const std::uint32_t networkId = networkIds_.allocate();
+  const engine::Entity missile = registry_.create();
+  components_.add(missile, position);
+  components_.add(missile, Velocity{.x = -ENEMY_MISSILE_SPEED, .y = 0.0F});
+  components_.add(missile, CollisionBox{.width = ENEMY_MISSILE_WIDTH,
+                                        .height = ENEMY_MISSILE_HEIGHT});
+  components_.add(missile, EntityType::EnemyMissile);
   components_.add(missile, NetworkIdentity{.networkId = networkId});
   return networkId;
 }

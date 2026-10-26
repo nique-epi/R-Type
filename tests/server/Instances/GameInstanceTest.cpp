@@ -53,6 +53,8 @@ namespace rtype::server {
 namespace {
 
 using game::testing::POSITION_TOLERANCE;
+using testing::bydosAmong;
+using testing::bydosIn;
 using testing::FIRST_PLAYER;
 using testing::FIRST_SENT;
 using testing::FIRST_SEQUENCE;
@@ -656,22 +658,25 @@ TEST_F(GameInstanceTest, NoBydoAppearsWhileFinished) {
  * appear 4, 6 and 8 seconds in and take about 8.5 seconds to cross the
  * playfield, and the next wave comes a pause of 4 seconds after the last left
  * When the events are dispatched
- * Then the three Bydos are gone, three removals were announced, and the world
- * holds the ship only
+ * Then the three Bydos are gone, a removal was announced for each, and the
+ * world holds no Bydo; the missiles the Bydos fire leave on the left too,
+ * and are not counted
  */
 TEST_F(GameInstanceTest, ABydoThatLeavesOnTheLeftDoesNotStayInTheWorld) {
-  std::size_t removals = 0;
+  std::vector<std::uint32_t> removed;
   events().subscribe<game::EntityDestruction>(
-      [&removals](const game::EntityDestruction& event) {
-        removals += event.cause == game::DestructionCause::Removed;
+      [&removed](const game::EntityDestruction& event) {
+        if (event.cause == game::DestructionCause::Removed) {
+          removed.push_back(event.networkId);
+        }
       });
   startGameWithOnePlayer();
 
   runTicks(testing::FIRST_WAVE_GONE_TICKS);
   events().dispatch();
 
-  EXPECT_EQ(removals, 3U);
-  EXPECT_EQ(game().world().entityCount(), 1U);
+  EXPECT_EQ(bydosAmong(removed, sentTo(FIRST_PLAYER)), 3U);
+  EXPECT_EQ(bydosIn(game().world()), 0U);
 }
 
 /**
@@ -679,22 +684,24 @@ TEST_F(GameInstanceTest, ABydoThatLeavesOnTheLeftDoesNotStayInTheWorld) {
  * about 16.6 seconds in
  * When the game reaches 21.5 seconds and the events are dispatched
  * Then the three Bydos of the first wave were removed, and the world holds the
- * ship and the first Bydo of the second wave, come a pause after the first
- * wave left
+ * first Bydo of the second wave only, come a pause after the first wave left;
+ * the missiles the Bydos fire are not counted
  */
 TEST_F(GameInstanceTest, TheSecondWaveComesAPauseAfterTheFirstIsGone) {
-  std::size_t removals = 0;
+  std::vector<std::uint32_t> removed;
   events().subscribe<game::EntityDestruction>(
-      [&removals](const game::EntityDestruction& event) {
-        removals += event.cause == game::DestructionCause::Removed;
+      [&removed](const game::EntityDestruction& event) {
+        if (event.cause == game::DestructionCause::Removed) {
+          removed.push_back(event.networkId);
+        }
       });
   startGameWithOnePlayer();
 
   runTicks(testing::SECOND_WAVE_BEGUN_TICKS);
   events().dispatch();
 
-  EXPECT_EQ(removals, 3U);
-  EXPECT_EQ(game().world().entityCount(), 2U);
+  EXPECT_EQ(bydosAmong(removed, sentTo(FIRST_PLAYER)), 3U);
+  EXPECT_EQ(bydosIn(game().world()), 1U);
 }
 
 /**
