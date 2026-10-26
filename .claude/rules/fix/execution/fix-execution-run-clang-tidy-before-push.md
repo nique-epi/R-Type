@@ -36,6 +36,11 @@ Why: the CI `Clang-tidy` job treats warnings as errors; a local failure put down
    A file printed is a failing file. Linting the headers through their `.cpp` with `--header-filter` does not replace it.
 6. **A header borrows the compile command of a neighbouring file**: it has none of its own, so an include folder only a distant target carries is missing and clang-tidy reports `file not found`. On a push to `main` the CI lints every header, and it adds the include folders of every compiled file to header runs; do the same locally with `--extra-arg=-I<folder>` before calling such an error a defect.
 
+### A `file not found` in a header is fixed by the CI's include folders, never by forward declarations
+
+1. **When a header linted as a main file stops on `file not found`, rerun it first with the include folders of every compiled file**, as the CI does (`jq -r '.[].command' build/compile_commands.json | grep -oE -- '-(I|isystem) ?[^ ]+'`, each passed as `--extra-arg`). The error usually disappears: it came from the borrowed command, not from the header.
+2. **Never replace the includes of a header by forward declarations to get past it.** A forward declaration makes `misc-include-cleaner` take it as the provider of the name: a `.cpp` that calls members of the class then fails to compile without the real include, and is told the real include is unused when it has it.
+
 ### A file that does not compile for clang-tidy hides findings
 
 1. **Count the `Error while processing` lines of the log before reading its findings.** Each one names a file clang-tidy could not compile; it was analyzed in part only, so its list of findings is a lower bound, never a verdict.
@@ -47,6 +52,7 @@ Why: the CI `Clang-tidy` job treats warnings as errors; a local failure put down
 1. **The local run and the CI read different standard libraries.** The macOS run reads libc++; the CI `Clang-tidy` job configures with `cmake --preset test` on `ubuntu-latest`, whose default compiler is GCC, so it reads libstdc++. The two declare the same symbol in different internal headers: an include libc++ counts as used can be reported unused by the CI, and the other way round. A local exit code 0 does not settle the CI's verdict on includes.
 2. **Before pushing, match each `#include` of a changed file against what the file names.** A standard header stays only if the file names a symbol it declares (`<cstddef>` for `std::byte` or `std::size_t`, `<cstdint>` for `std::uint8_t`); a header whose symbol the file names is included directly, never reached through another one.
 3. **An include the CI reports is fixed in the file**, never put down to the environment: the CI verdict is the one that gates the merge.
+4. **Code moved out of a file takes its uses with it**: after constants, fixtures or helpers leave a file (into a `…TestConstants.hpp`, a fixture, a new class), match the standard includes left in that file against what it still names, with a script over every file the move touched, not by eye. `MissionBannerTest.cpp` kept `<cstddef>` after its `std::size_t` constant moved to `MissionBannerTestConstants.hpp`; the local run (libc++) passed it, the CI failed on it.
 
 ### A configuration clang-tidy cannot read checks nothing
 
