@@ -25,7 +25,19 @@ Before reporting a **count, total or list** produced by a homemade filter (`grep
 1. **Before trusting a script that reads which tests failed**, feed it a known failure of each name shape the suite holds: a plain `Suite.Test`, a fixture, and a value-parameterized test, whose CTest name carries the printed parameter (spaces, quotes, parentheses). A pattern such as `(\S+)` silently skips the last kind.
 2. **When the script reports "no test red", read the raw log before believing it**: a variant that turns nothing red is either a gap in the tests or a gap in the parser, and only the log tells which.
 
+### A check written into a rule is calibrated with the command the rule prints
+
+1. **Calibrate the exact command a rule will tell the next reader to run**, tool and flags included, on its known positive case: `git grep -P '<pattern>' <commit> -- <path>`, never an equivalent pipe such as `git show <commit>:<path> | grep -E '<pattern>'`. Two tools that look alike read patterns differently: `git grep -E` (git 2.53) ignores `\b`, where `grep -E` honours it.
+2. **Write the calibration in the rule in the same form**, so the next reader reruns the very command that was measured.
+
+### A filter of diff lines keeps every kind of line it must show
+
+1. **To list the added and removed lines of a diff, drop only its two file headers**: `grep -E '^[-+]' | grep -v -E '^(\+\+\+|---) '`. A pattern such as `^[-+][^-+]` also drops every added or removed line that starts with `-` or `+`: every Markdown bullet (`+- …`) and every removed list item.
+2. **Before reading a staged diff through a filter, check it shows a line of each kind the change holds** (a bullet, a table row, a code line). A filter that shows the table row and none of the bullets of an index is the symptom.
+
 ## Example
 
 - ❌ **Before (wrong)**: `grep -rn "void on[A-Z]" src | wc -l` → "12 handlers"; handlers declared over two lines and lambdas were never seen.
 - ✅ **After (right)**: check that two known handlers (one multi-line) are in the output, widen the pattern, give the full list.
+- ❌ **Before (wrong)**: `git diff --cached -U0 -- .claude/CLAUDE.md | grep -E '^[-+][^-+]'` showed only the changed table row of the index; the two index bullets added (`+- …`), one of them meant for the next commit, were not printed.
+- ✅ **After (right)**: `grep -E '^[-+]' | grep -v -E '^(\+\+\+|---) '` prints the row and both bullets, and the stray bullet is seen before the commit.
