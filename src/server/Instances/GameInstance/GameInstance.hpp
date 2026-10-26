@@ -20,11 +20,11 @@
 #include "LobbyStateAnnouncer.hpp"
 #include "Logger.hpp"
 #include "MessageDispatcher.hpp"
-#include "MessageFrame.hpp"
 #include "MessageOrigin.hpp"
 #include "MissileLauncher.hpp"
 #include "OutgoingDatagram.hpp"
 #include "PacketHeader.hpp"
+#include "PlayerDatagram.hpp"
 #include "PlayerDeparture.hpp"
 #include "PlayerInput.hpp"
 #include "PlayerRoster.hpp"
@@ -220,14 +220,6 @@ class GameInstance {
   void finish();
 
  private:
-  /** @brief A datagram of a player of the game that passed every check of
-   * onTick(), with what reading it needs. */
-  struct PlayerDatagram {
-    ConnectedPlayer* player{};
-    network::MessageOrigin origin;
-    std::vector<network::MessageFrame> messages;
-  };
-
   /** @brief Notes that the sender of @p datagram was heard from, then hands
    * its messages to the dispatcher, when it passes the checks of
    * playerDatagramOf(). */

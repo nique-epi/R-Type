@@ -34,6 +34,7 @@
 #include "NetworkException.hpp"
 #include "PacketHeader.hpp"
 #include "PatternSystem.hpp"
+#include "PlayerDatagram.hpp"
 #include "PlayerDeparture.hpp"
 #include "PlayerInput.hpp"
 #include "PlayerRoster.hpp"
@@ -256,7 +257,7 @@ void GameInstance::readPlayerDatagram(
   dispatcher_.dispatch(readable->origin, readable->messages);
 }
 
-std::optional<GameInstance::PlayerDatagram> GameInstance::playerDatagramOf(
+std::optional<PlayerDatagram> GameInstance::playerDatagramOf(
     const network::IncomingDatagram& datagram) {
   network::PacketHeader header;
   std::vector<network::MessageFrame> messages;
