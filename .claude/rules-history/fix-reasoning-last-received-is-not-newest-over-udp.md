@@ -20,3 +20,17 @@ A "last one wins" rule needs an ordering key the receiver compares; walk a late 
 
 - ❌ **Before (wrong)**: "version 0 receivers may ignore `sequence`" next to "the client shows the screen of the last repeated message it received".
 - ✅ **After (right)**: a receiver drops a datagram not newer than the newest one accepted from that peer in the session, after the token check.
+
+## Update (2026-10-24) — an absence judged on one part of a split state
+
+### Context
+The client removes an entity no `WorldState` listed for 900 ms (54 ticks), after its three `EntityDestroyed` were all lost. A state too big for one datagram is sent in several parts with the same `tick`.
+
+### Mistake
+The first version of the removal judged every part as it arrived: when a part of tick T left out an entity last listed 54 ticks before, the entity was removed, even though a later part of the same tick listed it; that part then created it again, with its appearance effect a second time. The plan had walked the parts through the age of an entity (a part refreshes what it lists) but not through the decision to remove one. A review found it.
+
+### Root cause
+A part shows what it holds; it says nothing of what the whole state leaves out. The existing rule asked to walk late duplicates through every state rule, not split messages through rules that act on an absence.
+
+### What was done
+`LastListedTicks` judges the state of a tick once a part of a newer tick closes that tick. A test plays a state in two parts (the first leaving the entity out, the second listing it) and fails on the first version; another fails if a second part of a tick completes its own state. The protocol and client pages give the new delay, 950 ms after the last listing with a state every 50 ms.

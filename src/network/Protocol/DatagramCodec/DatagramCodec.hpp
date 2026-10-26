@@ -69,6 +69,14 @@ class DatagramCodec {
   [[nodiscard]] static bool speaksThisProtocol(const PacketHeader& header);
 
   /**
+   * @returns Whether @p header carries the protocol id of this code with
+   * another version: a peer of another version wrote it, whatever the rest of
+   * the header means in that version, since protocolId and version keep their
+   * offsets in every version.
+   */
+  [[nodiscard]] static bool speaksAnotherVersion(const PacketHeader& header);
+
+  /**
    * @brief Splits the messages that follow the header of @p datagram, in
    * order.
    *

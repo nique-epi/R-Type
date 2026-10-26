@@ -12,6 +12,7 @@
 #include "Endpoint.hpp"
 #include "IClock.hpp"
 #include "IncomingDatagram.hpp"
+#include "PacketHeader.hpp"
 #include "ThrottledLog.hpp"
 
 namespace rtype::server {
@@ -35,12 +36,16 @@ namespace rtype::server {
  * - to the player queue when its sender was admitted;
  * - nowhere otherwise.
  *
- * Every other datagram is dropped. Besides the counts the server reports,
- * each drop is logged at the debug level with its sender and why, at most
- * once per REJECTION_LINE_INTERVAL (see ThrottledLog). The sorter reads the
- * header and the type of each message, never a payload, throws nothing on a
- * malformed datagram, and reads the clock only to drop one, so its cost per
- * datagram stays close to that of the copy into a queue, whatever the
+ * A datagram whose header is of another version goes to the connection request
+ * queue, where the ConnectionAcceptor refuses it as IncompatibleVersion, when
+ * its sender was not admitted and it holds at least
+ * CONNECTION_REFUSED_DATAGRAM_SIZE bytes: the refusal is then never larger
+ * than what it answers. Every other datagram is dropped. Besides the counts the
+ * server reports, each drop is logged at the debug level with its sender and
+ * why, at most once per REJECTION_LINE_INTERVAL (see ThrottledLog). The sorter
+ * reads the header and the type of each message, never a payload, throws
+ * nothing on a malformed datagram, and reads the clock only to drop one, so its
+ * cost per datagram stays close to that of the copy into a queue, whatever the
  * datagram holds. Not thread-safe, except droppedCount(),
  * wrongTokenCount() and takeWrongTokenSender(): call the rest on the network
  * thread only.
@@ -118,6 +123,21 @@ class DatagramSorter {
 
   [[nodiscard]] const AdmittedPlayer* findAdmitted(
       const network::Endpoint& sender) const;
+
+  /** @brief Sends @p datagram, whose header this code does not speak, to the
+   * connection request queue when isRefusedForItsVersion(), and drops it
+   * otherwise. */
+  void sortForeignHeader(const network::Endpoint& sender,
+                         const network::PacketHeader& header,
+                         std::span<const std::byte> datagram);
+
+  /** @returns Whether the ConnectionAcceptor must refuse a datagram of
+   * @p datagramSize bytes as IncompatibleVersion: its header is of another
+   * version, @p sender was not admitted, and it holds at least
+   * CONNECTION_REFUSED_DATAGRAM_SIZE bytes, so the refusal is never larger. */
+  [[nodiscard]] bool isRefusedForItsVersion(const network::Endpoint& sender,
+                                            const network::PacketHeader& header,
+                                            std::size_t datagramSize) const;
   void drop(const network::Endpoint& sender, std::string_view reason);
   void dropWrongToken(const network::Endpoint& sender);
 

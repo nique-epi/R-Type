@@ -127,6 +127,14 @@ constexpr std::chrono::seconds HEARTBEAT_INTERVAL{1};
 constexpr std::chrono::seconds SESSION_TIMEOUT{5};
 
 /**
+ * @brief How long the client keeps an entity no WorldState lists any more:
+ * past it, the server destroyed the entity and every copy of its
+ * EntityDestroyed was lost, so the client removes it, without an effect.
+ * Provisional, see the protocol page.
+ */
+constexpr std::chrono::milliseconds UNLISTED_ENTITY_TIMEOUT{900};
+
+/**
  * @brief Bytes of a player in a WorldState: playerNumber, shipEntityId, lives,
  * score and invulnerable.
  */
@@ -183,6 +191,15 @@ static_assert(LARGEST_CONNECTION_ANSWER_DATAGRAM_SIZE <=
                   SMALLEST_CONNECTION_REQUEST_DATAGRAM_SIZE,
               "the server never sends a sender it does not know more bytes "
               "than the request it answers");
+
+/**
+ * @brief The size of a datagram holding a ConnectionRefused and its reason:
+ * the server answers a datagram of another version from a sender it does not
+ * know only when it holds at least that many bytes, so the answer is never
+ * larger than what it answers.
+ */
+constexpr std::size_t CONNECTION_REFUSED_DATAGRAM_SIZE =
+    PACKET_HEADER_SIZE + MESSAGE_PREFIX_SIZE + UINT8_WIRE_SIZE;
 
 /**
  * @brief The names of the fields a refused message is reported by, as the
