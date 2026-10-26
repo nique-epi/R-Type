@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <functional>
 #include "EntitySpawnSender.hpp"
+#include "WavePlan.hpp"
 
 namespace rtype::game {
 
@@ -25,6 +26,9 @@ struct BydoSpawnerParts {
   /** @brief Where the random draws of the heights start; logged at info level
    * when the spawner is built. */
   std::uint32_t seed{};
+  /** @brief The waves of Bydos: their curve must be playable (see
+   * game::isPlayable) and their enemies must name at least one kind. */
+  WavePlan waves;
 };
 
 }  // namespace rtype::server

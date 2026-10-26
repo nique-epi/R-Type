@@ -15,6 +15,7 @@
 #include "DamageRules.hpp"
 #include "Endpoint.hpp"
 #include "EventBus.hpp"
+#include "GameSettings.hpp"
 #include "GameState.hpp"
 #include "IncomingDatagram.hpp"
 #include "LobbyStateAnnouncer.hpp"
@@ -33,6 +34,7 @@
 #include "ShipSpawnAnnouncer.hpp"
 #include "SystemScheduler.hpp"
 #include "ThrottledLog.hpp"
+#include "WavePlan.hpp"
 #include "World.hpp"
 #include "WorldStateSender.hpp"
 
@@ -65,8 +67,8 @@ namespace rtype::server {
  * that left on the left or a missile that left on the right and announces it
  * on the event bus, then CollisionSystem), then lets the ship of every player
  * whose newest input holds shoot fire a missile, at most one every
- * SHOT_INTERVAL_TICKS ticks (see MissileLauncher), then lets a Bydo appear
- * every BYDO_SPAWN_INTERVAL (see BydoSpawner). The ships move and fire in no
+ * SHOT_INTERVAL_TICKS ticks (see MissileLauncher), then lets the Bydos of
+ * the current wave appear (see BydoSpawner). The ships move and fire in no
  * other state. Each world starts its random draws from a seed of its own, the
  * seed of the game plus the number of worlds built before it, so the seed of
  * the game is enough to replay every world of a session.
@@ -143,13 +145,14 @@ class GameInstance {
 
   /**
    * @param send Must not be empty.
-   * @param seed Where the random draws of the game start from; logged by the
-   * spawner each time a world is built.
+   * @param settings The seed the random draws of the game start from, logged
+   * by the spawner each time a world is built, and the waves of its
+   * difficulty, which must hold a playable curve and at least one enemy.
    * @param events Where the game publishes what happens in the world, such as
    * a Bydo leaving the playfield, a collision or a player leaving the game; it
    * must outlive the game, and its owner dispatches it after each onTick().
    */
-  GameInstance(Send send, std::uint32_t seed, engine::EventBus& events);
+  GameInstance(Send send, GameSettings settings, engine::EventBus& events);
 
   GameInstance(const GameInstance&) = delete;
   GameInstance& operator=(const GameInstance&) = delete;
@@ -331,6 +334,7 @@ class GameInstance {
   network::MessageDispatcher dispatcher_;
   GameState state_{GameState::WaitingForPlayers};
   std::uint32_t seed_;
+  WavePlan wavePlan_;
   std::uint32_t worldsBuilt_{0};
   std::uint32_t tick_{0};
   std::size_t finishedTicks_{0};

@@ -23,6 +23,7 @@
 #include "EntityIdConstants.hpp"
 #include "EventBus.hpp"
 #include "GameInstanceConstants.hpp"
+#include "GameSettings.hpp"
 #include "GameStarted.hpp"
 #include "GameState.hpp"
 #include "Heartbeat.hpp"
@@ -143,13 +144,14 @@ void moveOneTick(const ShipMove& move) {
 
 }  // namespace
 
-GameInstance::GameInstance(Send send, std::uint32_t seed,
+GameInstance::GameInstance(Send send, GameSettings settings,
                            engine::EventBus& events)
     : send_(std::move(send)),
       events_(events),
       scoreKeeper_(events, roster_),
       worldStateSender_(roster_, send_),
-      seed_(seed),
+      seed_(settings.seed),
+      wavePlan_(std::move(settings.waves)),
       rejectionLog_(std::string{INSTANCES_LOGGER_NAME},
                     network::REJECTION_LINE_INTERVAL),
       logger_(std::string{INSTANCES_LOGGER_NAME}) {
@@ -439,7 +441,8 @@ void GameInstance::buildWorld() {
       BydoSpawnerParts{.world = *world_,
                        .roster = roster_,
                        .send = send_,
-                       .seed = seed_ + worldsBuilt_});
+                       .seed = seed_ + worldsBuilt_,
+                       .waves = wavePlan_});
   missileLauncher_ = std::make_unique<MissileLauncher>(*world_, roster_, send_);
   lobbyStateAnnouncer_ = std::make_unique<LobbyStateAnnouncer>(roster_, send_);
 }

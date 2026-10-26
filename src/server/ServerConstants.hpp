@@ -26,6 +26,18 @@ constexpr std::string_view SEED_OPTION = "--seed";
 constexpr std::string_view SERVER_LOGGER_NAME = "Server";
 
 /**
+ * @brief Where the server reads the waves of each difficulty, from the folder
+ * it is started in: the root of the repository, where the build puts it.
+ */
+constexpr std::string_view WAVE_FILE_PATH = "assets/waves/waves.toml";
+
+/**
+ * @brief The difficulty every game is played at, until the rules of a game can
+ * choose another one.
+ */
+constexpr std::string_view DEFAULT_DIFFICULTY = "normal";
+
+/**
  * @brief Module name the simulation thread writes its tick reports under.
  */
 constexpr std::string_view SIMULATION_LOGGER_NAME = "Simulation";

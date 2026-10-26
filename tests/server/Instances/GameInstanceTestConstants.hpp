@@ -1,6 +1,7 @@
 #pragma once
 
 #include <array>
+#include <chrono>
 #include <cstddef>
 #include <cstdint>
 #include <limits>
@@ -70,10 +71,28 @@ constexpr std::uint32_t SOME_SEED = 7;
 
 /**
  * @brief How far in front of a ship the shooting tests put a Drifter, in
- * logical units: the missiles of the ship reach it within a second, and it
- * would not touch the ship before the first Bydo of the spawner appears.
+ * logical units: the three missiles it takes reach it within the first second,
+ * while it would take about two seconds to touch the ship.
  */
 constexpr float BYDO_DISTANCE_AHEAD = 600.0F;
+
+/**
+ * @brief How many ticks a game runs for its first wave to be gone before the
+ * second comes: the three Bydos of the first wave appear 4, 6 and 8 seconds in
+ * and take about 8.5 seconds to cross the playfield, so the last leaves about
+ * 16.6 seconds in, and the second wave comes a pause of 4 seconds after that.
+ * 18 seconds in, the world holds the ships only.
+ */
+constexpr std::size_t FIRST_WAVE_GONE_TICKS =
+    engine::wholeTicksIn(std::chrono::seconds(18));
+
+/**
+ * @brief How many ticks a game runs for the first Bydo of its second wave to
+ * be in the world, and not its second: they appear about 20.6 and 22.3 seconds
+ * in, so 21.5 seconds in, the world holds the ships and that one Bydo.
+ */
+constexpr std::size_t SECOND_WAVE_BEGUN_TICKS =
+    engine::wholeTicksIn(std::chrono::milliseconds(21500));
 
 /**
  * @brief Actions a test player holds, one bit each where the Inputs section of

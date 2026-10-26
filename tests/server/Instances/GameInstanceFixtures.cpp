@@ -20,6 +20,7 @@
 #include "GameEventBroadcaster.hpp"
 #include "GameInstance.hpp"
 #include "GameInstanceTestConstants.hpp"
+#include "GameSettings.hpp"
 #include "GameState.hpp"
 #include "IncomingDatagram.hpp"
 #include "MessageType.hpp"
@@ -33,6 +34,7 @@
 #include "SentDatagrams.hpp"
 #include "ServerDatagrams.hpp"
 #include "ServerLobbyTestConstants.hpp"
+#include "Spawning/WavePlanFixtures.hpp"
 #include "TimerScheduler.hpp"
 #include "UnreliableNetwork.hpp"
 
@@ -61,7 +63,7 @@ GameInstanceTest::GameInstanceTest()
           [this](network::OutgoingDatagram datagram) {
             sent_.push_back(std::move(datagram));
           },
-          SOME_SEED, events_) {}
+          GameSettings{.seed = SOME_SEED, .waves = testWavePlan()}, events_) {}
 
 ConnectedPlayer& GameInstanceTest::join(std::size_t index,
                                         std::uint64_t sessionToken) {

@@ -8,11 +8,14 @@
 #include "BydoSpawnerParts.hpp"
 #include "Entity.hpp"
 #include "EntitySpawned.hpp"
+#include "EntityType.hpp"
 #include "Instances/GameInstanceTestConstants.hpp"
 #include "MovementPattern.hpp"
 #include "OutgoingDatagram.hpp"
 #include "SentDatagrams.hpp"
 #include "ServerLobbyTestConstants.hpp"
+#include "WavePlan.hpp"
+#include "WavePlanFixtures.hpp"
 #include "World.hpp"
 
 namespace rtype::server::testing {
@@ -23,6 +26,11 @@ void BydoSpawnerScene::connect(std::size_t index) {
 }
 
 BydoSpawner BydoSpawnerScene::makeSpawner(std::uint32_t seed) {
+  return makeSpawnerWith(seed, testWavePlan());
+}
+
+BydoSpawner BydoSpawnerScene::makeSpawnerWith(std::uint32_t seed,
+                                              WavePlan waves) {
   return BydoSpawner{
       BydoSpawnerParts{.world = world_,
                        .roster = roster_,
@@ -30,7 +38,8 @@ BydoSpawner BydoSpawnerScene::makeSpawner(std::uint32_t seed) {
                            [this](network::OutgoingDatagram datagram) {
                              sent_.push_back(std::move(datagram));
                            },
-                       .seed = seed}};
+                       .seed = seed,
+                       .waves = std::move(waves)}};
 }
 
 void BydoSpawnerScene::runTicks(BydoSpawner& spawner, std::size_t count) {
@@ -64,6 +73,16 @@ std::vector<float> BydoSpawnerScene::heightsWithin(std::uint32_t seed,
   BydoSpawner spawner = scene.makeSpawner(seed);
   runTicks(spawner, ticks);
   return scene.heightsSentTo(FIRST_PLAYER);
+}
+
+void BydoSpawnerScene::clearTheSky() {
+  world_.components().forEach<game::EntityType, game::EntityType>(
+      [this](engine::Entity entity, const game::EntityType& type,
+             const game::EntityType&) {
+        if (type == game::EntityType::Enemy) {
+          world_.components().destroy(entity);
+        }
+      });
 }
 
 std::vector<game::PatternShape> BydoSpawnerScene::patternsOfTheBydos() {

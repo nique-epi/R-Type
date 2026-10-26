@@ -1,6 +1,8 @@
 #include "BydoSpawner.hpp"
 #include <algorithm>
+#include <chrono>
 #include <cmath>
+#include <cstddef>
 #include <cstdint>
 #include <optional>
 #include <random>
@@ -10,12 +12,17 @@
 #include "BydoSpawnPosition.hpp"
 #include "BydoSpawnerConstants.hpp"
 #include "BydoSpawnerParts.hpp"
+#include "BydoWave.hpp"
+#include "ComponentRegistry.hpp"
 #include "ConnectedPlayer.hpp"
 #include "EngineException.hpp"
+#include "Entity.hpp"
 #include "EntitySpawnSender.hpp"
 #include "EntitySpawned.hpp"
+#include "EntityType.hpp"
 #include "PlayerRoster.hpp"
 #include "Position.hpp"
+#include "ServerException.hpp"
 #include "TimeConstants.hpp"
 #include "World.hpp"
 #include "WorldState.hpp"
@@ -27,13 +34,24 @@ BydoSpawner::BydoSpawner(BydoSpawnerParts parts)
       roster_(&parts.roster.get()),
       send_(std::move(parts.send)),
       logger_(std::string{BYDO_SPAWNER_LOGGER_NAME}),
-      random_(parts.seed) {
+      random_(parts.seed),
+      enemies_(std::move(parts.waves.enemies)),
+      waveDirector_(parts.waves.curve) {
+  if (enemies_.empty()) {
+    throw EmptyEnemyCycleException();
+  }
   logger_.info("Bydo spawning starts from the seed ", parts.seed);
-  timers_.scheduleRepeating(BYDO_SPAWN_INTERVAL, [this] { spawnOne(); });
 }
 
 void BydoSpawner::onTick() {
-  timers_.advance(engine::SIMULATION_TICK_DURATION);
+  const std::size_t bydosDue =
+      waveDirector_.advance(engine::SIMULATION_TICK_DURATION, bydosInPlay());
+  if (waveDirector_.waveNumber() != loggedWaveNumber_) {
+    logCurrentWave();
+  }
+  for (std::size_t bydo = 0; bydo < bydosDue; ++bydo) {
+    spawnOne();
+  }
 }
 
 void BydoSpawner::spawnOne() {
@@ -54,8 +72,7 @@ game::Position BydoSpawner::nextPosition() {
 }
 
 game::BydoKind BydoSpawner::nextKind() const {
-  return spawnedCount_ % 2 == 0 ? game::BydoKind::Drifter
-                                : game::BydoKind::Weaver;
+  return enemies_[spawnedCount_ % enemies_.size()];
 }
 
 std::optional<std::uint32_t> BydoSpawner::createBydo(game::Position position,
@@ -77,6 +94,28 @@ void BydoSpawner::announce(std::uint32_t networkId, game::Position position) {
                                .x = position.x,
                                .y = position.y});
   }
+}
+
+std::size_t BydoSpawner::bydosInPlay() {
+  std::size_t bydos = 0;
+  world_->components().forEach<game::EntityType, game::EntityType>(
+      [&bydos](engine::Entity, const game::EntityType& type,
+               const game::EntityType&) {
+        if (type == game::EntityType::Enemy) {
+          ++bydos;
+        }
+      });
+  return bydos;
+}
+
+void BydoSpawner::logCurrentWave() {
+  loggedWaveNumber_ = waveDirector_.waveNumber();
+  const game::BydoWave wave = waveDirector_.currentWave();
+  logger_.info(
+      "wave ", loggedWaveNumber_, ": ", wave.bydoCount, " Bydos, one every ",
+      std::chrono::duration_cast<std::chrono::milliseconds>(wave.spawnInterval)
+          .count(),
+      " ms");
 }
 
 }  // namespace rtype::server

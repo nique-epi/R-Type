@@ -8,6 +8,7 @@
 #include "MovementPattern.hpp"
 #include "OutgoingDatagram.hpp"
 #include "PlayerRoster.hpp"
+#include "WavePlan.hpp"
 #include "World.hpp"
 
 namespace rtype::server::testing {
@@ -22,10 +23,13 @@ class BydoSpawnerScene {
   void connect(std::size_t index);
 
   /**
-   * @returns A spawner on this world and roster, started from @p seed, whose
-   * datagrams this scene records.
+   * @returns A spawner on this world and roster, started from @p seed, on
+   * testWavePlan(), whose datagrams this scene records.
    */
   [[nodiscard]] BydoSpawner makeSpawner(std::uint32_t seed);
+
+  /** @returns The same, on @p waves. */
+  [[nodiscard]] BydoSpawner makeSpawnerWith(std::uint32_t seed, WavePlan waves);
 
   /** @brief Runs @p count ticks of @p spawner. */
   static void runTicks(BydoSpawner& spawner, std::size_t count);
@@ -45,6 +49,12 @@ class BydoSpawnerScene {
    */
   [[nodiscard]] static std::vector<float> heightsWithin(std::uint32_t seed,
                                                         std::size_t ticks);
+
+  /**
+   * @brief Destroys every entity of type Enemy, as if the Bydos were all
+   * killed.
+   */
+  void clearTheSky();
 
   /** @returns The shapes of the patterns of the Bydos in the world. */
   [[nodiscard]] std::vector<game::PatternShape> patternsOfTheBydos();
