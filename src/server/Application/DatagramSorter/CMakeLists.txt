@@ -7,6 +7,7 @@ target_link_libraries(rtype_server_datagram_sorter
     rtype_concurrency_bounded_queue
     rtype_engine_time
     rtype_logging
+    rtype_network_protocol
     rtype_network_transport
   PRIVATE
     rtype_network_constants

@@ -10,6 +10,7 @@
 #include "EntityReplicatorFixtures.hpp"
 #include "EntityReplicatorTestConstants.hpp"
 #include "EntityType.hpp"
+#include "LastListedTicksTestConstants.hpp"
 #include "PilotTestConstants.hpp"
 #include "SoundConstants.hpp"
 #include "WorldState.hpp"
@@ -25,6 +26,7 @@ using rtype::client::PLAYER_MUZZLE_FLASH_FRAME;
 using rtype::client::PLAYER_SHOT_SOUND_ID;
 using rtype::client::SHIP_EXPLOSION_FRAME;
 using rtype::client::SMALL_EXPLOSION_SOUND_ID;
+using rtype::client::testing::AFTER_REMOVAL_TICK;
 using rtype::client::testing::AFTER_THE_LAST_PLAYER;
 using rtype::client::testing::AN_EVENT_NUMBER;
 using rtype::client::testing::animatedEntityCount;
@@ -47,7 +49,9 @@ using rtype::client::testing::isArriving;
 using rtype::client::testing::isFlashed;
 using rtype::client::testing::isInvulnerable;
 using rtype::client::testing::killed;
+using rtype::client::testing::LAST_KEPT_TICK;
 using rtype::client::testing::listed;
+using rtype::client::testing::LISTING_TICK;
 using rtype::client::testing::NEWER_TICK;
 using rtype::client::testing::OLDER_TICK;
 using rtype::client::testing::pilotColorOfThe;
@@ -55,6 +59,7 @@ using rtype::client::testing::PLAYER_MISSILE_ID;
 using rtype::client::testing::PLAYER_MISSILE_POSITION;
 using rtype::client::testing::playerFlying;
 using rtype::client::testing::playerHit;
+using rtype::client::testing::REMOVAL_TICK;
 using rtype::client::testing::removed;
 using rtype::client::testing::SECOND_PLAYER_NUMBER;
 using rtype::client::testing::SECOND_POSITION;
@@ -708,4 +713,116 @@ TEST_F(EntityReplicatorFixture, AHitPlayerPlaysTheHitOfAPlayer) {
   replicator().apply(playerHit(AN_EVENT_NUMBER, SECOND_PLAYER_NUMBER));
 
   EXPECT_THAT(sounds().played(), ElementsAre(PLAYER_HIT_SOUND_ID));
+}
+
+/**
+ * Given a Bydo listed by a state of LISTING_TICK, whose EntityDestroyed copies
+ * were all lost, and a state of REMOVAL_TICK, 900 ms later, that lists nothing
+ * When a state of a newer tick closes that tick
+ * Then the Bydo is no longer drawn
+ */
+TEST_F(EntityReplicatorFixture,
+       RemovesAnEntityUnlistedFor900MillisecondsAtAClosedTick) {
+  replicator().apply(stateListing(
+      LISTING_TICK, {listed(BYDO_ID, WireEntityType::Bydo, FIRST_POSITION)}));
+  replicator().apply(stateListing(REMOVAL_TICK, {}));
+
+  replicator().apply(stateListing(AFTER_REMOVAL_TICK, {}));
+
+  EXPECT_THAT(drawnEntities(components()), IsEmpty());
+}
+
+/**
+ * Given a Bydo listed by a state of LISTING_TICK, then by a state of
+ * REMOVAL_TICK further on
+ * When a state of a newer tick leaves it out
+ * Then the Bydo is still drawn, where the state of REMOVAL_TICK put it
+ */
+TEST_F(EntityReplicatorFixture, KeepsAnEntityTheNewestStateLists) {
+  replicator().apply(stateListing(
+      LISTING_TICK, {listed(BYDO_ID, WireEntityType::Bydo, FIRST_POSITION)}));
+  replicator().apply(stateListing(
+      REMOVAL_TICK, {listed(BYDO_ID, WireEntityType::Bydo, SECOND_POSITION)}));
+
+  replicator().apply(stateListing(AFTER_REMOVAL_TICK, {}));
+
+  EXPECT_THAT(
+      drawnEntities(components()),
+      ElementsAre(drawnAs(EntityType::Enemy, BYDO_ID, SECOND_POSITION)));
+}
+
+/**
+ * Given a player missile listed by a state of LISTING_TICK, and a state of
+ * LAST_KEPT_TICK that leaves it out
+ * When the state of REMOVAL_TICK comes in two parts, the first leaving the
+ * missile out and the second listing it
+ * Then its muzzle flash has played once: the first part does not remove the
+ * missile for the second to create it again
+ */
+TEST_F(EntityReplicatorFixture, KeepsAnEntityALaterPartOfTheSameStateLists) {
+  replicator().apply(stateListing(
+      LISTING_TICK, {listed(PLAYER_MISSILE_ID, WireEntityType::PlayerMissile,
+                            FIRST_POSITION)}));
+  replicator().apply(stateListing(LAST_KEPT_TICK, {}));
+
+  replicator().apply(stateListing(REMOVAL_TICK, {}));
+  replicator().apply(stateListing(
+      REMOVAL_TICK, {listed(PLAYER_MISSILE_ID, WireEntityType::PlayerMissile,
+                            SECOND_POSITION)}));
+
+  EXPECT_THAT(drawnEffects(components()),
+              ElementsAre(effectAt(PLAYER_MUZZLE_FLASH_FRAME, FIRST_POSITION)));
+}
+
+/**
+ * Given a Bydo listed by a state of LISTING_TICK, and a state of REMOVAL_TICK
+ * that leaves it out
+ * When a state of a newer tick closes that tick
+ * Then no effect starts: the client cannot tell whether it was killed
+ */
+TEST_F(EntityReplicatorFixture, AnEntityRemovedUnlistedLeavesNoEffect) {
+  replicator().apply(stateListing(
+      LISTING_TICK, {listed(BYDO_ID, WireEntityType::Bydo, FIRST_POSITION)}));
+  replicator().apply(stateListing(REMOVAL_TICK, {}));
+
+  replicator().apply(stateListing(AFTER_REMOVAL_TICK, {}));
+
+  EXPECT_THAT(drawnEffects(components()), IsEmpty());
+}
+
+/**
+ * Given a state of LISTING_TICK, then a Bydo an EntitySpawned announced and no
+ * state listed, and a state of REMOVAL_TICK that leaves it out
+ * When a state of a newer tick closes that tick
+ * Then the Bydo is no longer drawn
+ */
+TEST_F(EntityReplicatorFixture, RemovesASpawnedEntityNoStateListed) {
+  replicator().apply(stateListing(LISTING_TICK, {}));
+  replicator().apply(spawned(BYDO_ID, WireEntityType::Bydo, FIRST_POSITION));
+  replicator().apply(stateListing(REMOVAL_TICK, {}));
+
+  replicator().apply(stateListing(AFTER_REMOVAL_TICK, {}));
+
+  EXPECT_THAT(drawnEntities(components()), IsEmpty());
+}
+
+/**
+ * Given a Bydo removed once REMOVAL_TICK, whose state left it out, was closed
+ * When a newer state lists it
+ * Then the Bydo is drawn again, where that state puts it
+ */
+TEST_F(EntityReplicatorFixture,
+       CreatesAgainAnEntityRemovedUnlistedThatAStateLists) {
+  replicator().apply(stateListing(
+      LISTING_TICK, {listed(BYDO_ID, WireEntityType::Bydo, FIRST_POSITION)}));
+  replicator().apply(stateListing(REMOVAL_TICK, {}));
+  replicator().apply(stateListing(AFTER_REMOVAL_TICK, {}));
+
+  replicator().apply(
+      stateListing(AFTER_REMOVAL_TICK + 1,
+                   {listed(BYDO_ID, WireEntityType::Bydo, SECOND_POSITION)}));
+
+  EXPECT_THAT(
+      drawnEntities(components()),
+      ElementsAre(drawnAs(EntityType::Enemy, BYDO_ID, SECOND_POSITION)));
 }

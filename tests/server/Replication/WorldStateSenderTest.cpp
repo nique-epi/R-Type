@@ -6,7 +6,6 @@
 #include "ConnectedPlayer.hpp"
 #include "EntityType.hpp"
 #include "NetworkConstants.hpp"
-#include "ReplicationConstants.hpp"
 #include "ServerConstants.hpp"
 #include "ServerLobbyTestConstants.hpp"
 #include "TimeConstants.hpp"
@@ -25,17 +24,20 @@ using rtype::server::testing::ENEMY_NETWORK_ID;
 using rtype::server::testing::ENEMY_POSITION;
 using rtype::server::testing::expectedEntity;
 using rtype::server::testing::FIRST_CLIENT_PORT;
+using rtype::server::testing::FIRST_LIVES;
 using rtype::server::testing::FIRST_SCORE;
 using rtype::server::testing::FIRST_SHIP_ID;
 using rtype::server::testing::INFINITE_POSITION;
 using rtype::server::testing::MANY_ENTITIES;
 using rtype::server::testing::NOT_A_NUMBER_POSITION;
+using rtype::server::testing::ONE_TICK_OF_PROTECTION;
 using rtype::server::testing::OTHER_SESSION_TOKEN;
 using rtype::server::testing::PLAYER_MISSILE_NETWORK_ID;
 using rtype::server::testing::PLAYER_MISSILE_POSITION;
 using rtype::server::testing::PLAYER_NETWORK_ID;
 using rtype::server::testing::PLAYER_POSITION;
 using rtype::server::testing::SECOND_CLIENT_PORT;
+using rtype::server::testing::SECOND_LIVES;
 using rtype::server::testing::SECOND_SCORE;
 using rtype::server::testing::SECOND_SHIP_ID;
 using rtype::server::testing::SESSION_TOKEN;
@@ -264,19 +266,21 @@ TEST_F(WorldStateSenderFixture, LeavesOutAnEntityWhosePositionIsInfinite) {
 }
 
 /**
- * Given two connected players who earned different scores
+ * Given two connected players with different ships, lives and scores
  * When the first state is due
- * Then the state lists both, each under its number with its own ship and
- * score, and every player receives the same list
+ * Then the state lists both, each under its number with its own ship, lives
+ * and score, and every player receives the same list
  */
-TEST_F(WorldStateSenderFixture, ListsEveryPlayerWithItsOwnScore) {
+TEST_F(WorldStateSenderFixture, ListsEveryPlayerWithItsOwnShipLivesAndScore) {
   rtype::server::ConnectedPlayer& first =
       connect(FIRST_CLIENT_PORT, SESSION_TOKEN);
   rtype::server::ConnectedPlayer& second =
       connect(SECOND_CLIENT_PORT, OTHER_SESSION_TOKEN);
   first.shipEntityId = FIRST_SHIP_ID;
+  first.lives = FIRST_LIVES;
   first.score = FIRST_SCORE;
   second.shipEntityId = SECOND_SHIP_ID;
+  second.lives = SECOND_LIVES;
   second.score = SECOND_SCORE;
 
   runTicks(rtype::server::TICKS_PER_WORLD_STATE);
@@ -285,16 +289,34 @@ TEST_F(WorldStateSenderFixture, ListsEveryPlayerWithItsOwnScore) {
   const std::vector<PlayerState> expected{
       PlayerState{.playerNumber = first.playerNumber,
                   .shipEntityId = FIRST_SHIP_ID,
-                  .lives = rtype::server::PLAYER_LIVES_UNTRACKED,
+                  .lives = FIRST_LIVES,
                   .score = FIRST_SCORE,
                   .invulnerable = false},
       PlayerState{.playerNumber = second.playerNumber,
                   .shipEntityId = SECOND_SHIP_ID,
-                  .lives = rtype::server::PLAYER_LIVES_UNTRACKED,
+                  .lives = SECOND_LIVES,
                   .score = SECOND_SCORE,
                   .invulnerable = false}};
   EXPECT_EQ(decodedState(0).players, expected);
   EXPECT_EQ(decodedState(1).players, expected);
+}
+
+/**
+ * Given a player whose ship came back after a hit and has one tick of
+ * protection left
+ * When the first state is due
+ * Then the state lists the player as invulnerable
+ */
+TEST_F(WorldStateSenderFixture, ListsAPlayerWithProtectionLeftAsInvulnerable) {
+  rtype::server::ConnectedPlayer& player =
+      connect(FIRST_CLIENT_PORT, SESSION_TOKEN);
+  player.invulnerableTicksLeft = ONE_TICK_OF_PROTECTION;
+
+  runTicks(rtype::server::TICKS_PER_WORLD_STATE);
+
+  ASSERT_EQ(sentDatagrams().size(), 1U);
+  ASSERT_EQ(decodedState(0).players.size(), 1U);
+  EXPECT_TRUE(decodedState(0).players.front().invulnerable);
 }
 
 /**

@@ -21,6 +21,7 @@
 #include "RecordingSoundPlayer.hpp"
 #include "ScreenId.hpp"
 #include "ScreenTestConstants.hpp"
+#include "ServerConnectionTestConstants.hpp"
 #include "SoundConstants.hpp"
 
 using rtype::client::ACCEPTED_STATUS_DURATION;
@@ -29,7 +30,6 @@ using rtype::client::CONNECTING_STATUS;
 using rtype::client::ConnectionStatus;
 using rtype::client::GAME_FULL_STATUS;
 using rtype::client::GAME_IN_PROGRESS_STATUS;
-using rtype::client::INCOMPATIBLE_VERSION_STATUS;
 using rtype::client::INVALID_ADDRESS_STATUS;
 using rtype::client::INVALID_PORT_STATUS;
 using rtype::client::MISSING_NICKNAME_STATUS;
@@ -42,6 +42,7 @@ using rtype::client::testing::LAUNCH_ADDRESS;
 using rtype::client::testing::LAUNCH_NICKNAME;
 using rtype::client::testing::LAUNCH_PORT;
 using rtype::client::testing::LAUNCH_PORT_TEXT;
+using rtype::client::testing::NEXT_PROTOCOL_VERSION;
 using rtype::client::testing::PORT_ZERO_TEXT;
 using rtype::client::testing::THIRD_PLAYER;
 using rtype::client::testing::TYPED_PORT;
@@ -320,10 +321,22 @@ TEST_F(ConnectionScreenFixture, BackPlaysTheClick) {
 }
 
 INSTANTIATE_TEST_SUITE_P(
-    EveryReason, ConnectionRefusalFixture,
-    ::testing::Values(
-        std::tuple(RefusalReason::GameFull, std::string_view(GAME_FULL_STATUS)),
-        std::tuple(RefusalReason::GameInProgress,
-                   std::string_view(GAME_IN_PROGRESS_STATUS)),
-        std::tuple(RefusalReason::IncompatibleVersion,
-                   std::string_view(INCOMPATIBLE_VERSION_STATUS))));
+    EveryReasonButTheVersion, ConnectionRefusalFixture,
+    ::testing::Values(std::tuple(RefusalReason::GameFull,
+                                 std::string_view(GAME_FULL_STATUS)),
+                      std::tuple(RefusalReason::GameInProgress,
+                                 std::string_view(GAME_IN_PROGRESS_STATUS))));
+
+/**
+ * Given an attempt a server of protocol version 1 refused as
+ * IncompatibleVersion, the client speaking version 0
+ * When a frame goes by
+ * Then the status line names both versions, the client's first
+ */
+TEST_F(ConnectionScreenFixture, AVersionRefusalNamesBothVersions) {
+  show({.phase = ConnectionStatus::Phase::Refused,
+        .refusal = RefusalReason::IncompatibleVersion,
+        .serverVersion = NEXT_PROTOCOL_VERSION});
+
+  EXPECT_NE(writingOf(canvas(), "REFUSED: YOU V0, SERVER V1"), nullptr);
+}

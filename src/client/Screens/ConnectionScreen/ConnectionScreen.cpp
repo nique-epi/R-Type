@@ -1,6 +1,7 @@
 #include "ConnectionScreen.hpp"
 #include <SFML/Graphics/RenderTarget.hpp>
 #include <SFML/Window/Event.hpp>
+#include <cstdint>
 #include <functional>
 #include <memory>
 #include <string>
@@ -19,6 +20,7 @@
 #include "MenuBuilder.hpp"
 #include "NetworkException.hpp"
 #include "PlayfieldMapping.hpp"
+#include "ProtocolConstants.hpp"
 #include "ScreenId.hpp"
 #include "TextField.hpp"
 #include "TimeConstants.hpp"
@@ -29,9 +31,18 @@ namespace rtype::client {
 
 namespace {
 
-/** @returns The status line of a refusal. */
-const char* refusalLine(network::RefusalReason reason) {
-  switch (reason) {
+/** @returns The status line of a refusal for another version: the protocol
+ * version of the client, then the one of the server. */
+std::string versionRefusalLine(std::uint8_t serverVersion) {
+  return INCOMPATIBLE_VERSION_STATUS +
+         std::to_string(static_cast<unsigned int>(network::PROTOCOL_VERSION)) +
+         SERVER_VERSION_STATUS +
+         std::to_string(static_cast<unsigned int>(serverVersion));
+}
+
+/** @returns The status line of the refusal @p status reports. */
+std::string refusalLine(const ConnectionStatus& status) {
+  switch (status.refusal) {
     case network::RefusalReason::GameFull:
       return GAME_FULL_STATUS;
     case network::RefusalReason::GameInProgress:
@@ -39,7 +50,7 @@ const char* refusalLine(network::RefusalReason reason) {
     case network::RefusalReason::IncompatibleVersion:
       break;
   }
-  return INCOMPATIBLE_VERSION_STATUS;
+  return versionRefusalLine(status.serverVersion);
 }
 
 }  // namespace
@@ -146,7 +157,7 @@ std::string ConnectionScreen::statusLine(const ConnectionStatus& status) const {
     case ConnectionStatus::Phase::Accepted:
       return ACCEPTED_STATUS + std::to_string(status.playerNumber);
     case ConnectionStatus::Phase::Refused:
-      return refusalLine(status.refusal);
+      return refusalLine(status);
     case ConnectionStatus::Phase::Unreachable:
       return UNREACHABLE_STATUS;
     case ConnectionStatus::Phase::Idle:
