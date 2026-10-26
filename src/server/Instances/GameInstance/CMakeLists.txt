@@ -14,6 +14,7 @@ target_link_libraries(rtype_server_game_instance
     rtype_network_transport
     rtype_server_instances
     rtype_server_bydo_spawner
+    rtype_server_life_keeper
     rtype_server_missile_launcher
     rtype_server_lobby_state_announcer
     rtype_server_player_roster

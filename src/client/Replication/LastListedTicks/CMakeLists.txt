@@ -1,0 +1,7 @@
+add_library(rtype_client_last_listed_ticks STATIC LastListedTicks.cpp)
+
+target_include_directories(rtype_client_last_listed_ticks PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+
+target_link_libraries(rtype_client_last_listed_ticks PRIVATE rtype_client_replication_constants)
+
+rtype_enable_warnings(rtype_client_last_listed_ticks)

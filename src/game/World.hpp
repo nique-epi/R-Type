@@ -31,7 +31,7 @@ class World {
   /**
    * @brief Creates the ship of a player at @p position, with the Position, the
    * EntityType::Player and the NetworkIdentity that make it a networked
-   * entity.
+   * entity, and a CollisionBox of SHIP_WIDTH by SHIP_HEIGHT.
    * @returns The network id the ship was given, never NO_ENTITY_ID.
    * @throws NetworkIdExhaustedException when every network id was given.
    */
