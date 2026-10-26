@@ -151,6 +151,7 @@ void EntityReplicator::apply(const network::EntitySpawned& message) {
   if (const std::optional<engine::Entity> created =
           create(announcedBy(message));
       created.has_value()) {
+    lastListedTicks_.appeared(message.entityId);
     announce(*effects_, *components_, *created);
   }
 }
@@ -159,7 +160,9 @@ void EntityReplicator::apply(const network::WorldState& state) {
   if (!worldStateFilter_.accept(state.tick)) {
     return;
   }
-  const std::vector<engine::Entity> created = applyEntities(state.entities);
+  const std::vector<engine::Entity> created =
+      applyEntities(state.entities, state.tick);
+  removeUnlistedAt(state.tick);
   applyPlayers(state.players);
   for (const engine::Entity entity : created) {
     announce(*effects_, *components_, entity);
@@ -177,6 +180,7 @@ void EntityReplicator::apply(const network::EntityDestroyed& message) {
   }
   components_->destroy(*known);
   entityByNetworkId_.unbind(message.entityId);
+  lastListedTicks_.forget(message.entityId);
 }
 
 void EntityReplicator::apply(const network::GameEvent& event) {
@@ -220,7 +224,7 @@ engine::Entity EntityReplicator::addEntity(game::EntityType type,
 }
 
 std::vector<engine::Entity> EntityReplicator::applyEntities(
-    std::span<const network::EntityState> entities) {
+    std::span<const network::EntityState> entities, std::uint32_t tick) {
   std::vector<engine::Entity> created;
   for (const network::EntityState& listed : entities) {
     const std::optional<engine::Entity> known =
@@ -228,9 +232,11 @@ std::vector<engine::Entity> EntityReplicator::applyEntities(
     if (known.has_value()) {
       moveEntity(*components_, *known,
                  game::Position{.x = listed.x, .y = listed.y});
+      lastListedTicks_.listed(listed.entityId, tick);
     } else if (const std::optional<engine::Entity> entity = create(listed);
                entity.has_value()) {
       created.push_back(*entity);
+      lastListedTicks_.listed(listed.entityId, tick);
     }
   }
   return created;
@@ -256,6 +262,17 @@ void EntityReplicator::markShip(const network::PlayerState& player,
   }
   components_->add(*ship, PilotShip{.color = pilotColor});
   effects_->setInvulnerable(*ship, player.invulnerable);
+}
+
+void EntityReplicator::removeUnlistedAt(std::uint32_t tick) {
+  for (const std::uint32_t networkId : lastListedTicks_.takeUnlistedAt(tick)) {
+    const std::optional<engine::Entity> known =
+        entityByNetworkId_.find(networkId);
+    if (known.has_value()) {
+      components_->destroy(*known);
+      entityByNetworkId_.unbind(networkId);
+    }
+  }
 }
 
 }  // namespace rtype::client

@@ -18,6 +18,7 @@
 #include "GameSettings.hpp"
 #include "GameState.hpp"
 #include "IncomingDatagram.hpp"
+#include "LifeKeeper.hpp"
 #include "LobbyStateAnnouncer.hpp"
 #include "Logger.hpp"
 #include "MessageDispatcher.hpp"
@@ -48,8 +49,9 @@ namespace rtype::server {
  * connected and every connected player is ready, from InProgress to Finished
  * when finish() is called or once no player is left in it, and from Finished
  * back to WaitingForPlayers after FINISHED_STATE_TICKS ticks. Coming back to
- * WaitingForPlayers builds a new world: every player gets a new ship, is no
- * longer ready, and the tick is 0. The players stay connected.
+ * WaitingForPlayers builds a new world: every player gets a new ship and its
+ * STARTING_LIVES back, is no longer ready, and the tick is 0. The players stay
+ * connected.
  *
  * The game tells its players where it stands, as the A session section of the
  * protocol page describes. While it waits for players, a LobbyStateAnnouncer
@@ -68,7 +70,8 @@ namespace rtype::server {
  * on the event bus, then CollisionSystem), then lets the ship of every player
  * whose newest input holds shoot fire a missile, at most one every
  * SHOT_INTERVAL_TICKS ticks (see MissileLauncher), then lets the Bydos of
- * the current wave appear (see BydoSpawner). The ships move and fire in no
+ * the current wave appear (see BydoSpawner), then counts the waits and the
+ * protections of the lives (see LifeKeeper). The ships move and fire in no
  * other state. Each world starts its random draws from a seed of its own, the
  * seed of the game plus the number of worlds built before it, so the seed of
  * the game is enough to replay every world of a session.
@@ -77,10 +80,15 @@ namespace rtype::server {
  * them: CollisionRules turns a missile of a player that touches a Bydo into a
  * MissileHit, and DamageRules destroys the missile, takes MISSILE_DAMAGE from
  * the health of the Bydo and destroys the Bydo once it has none left, an
- * EnemyKilled crediting its points to the player who fired. Both work on the
- * world they were built with, and a new pair comes with each new world, so the
- * events of a tick must be delivered before the world is replaced: the server
- * dispatches the bus at the end of every tick.
+ * EnemyKilled crediting its points to the player who fired. CollisionRules
+ * also turns a ship that touches a Bydo into a ShipContact, which LifeKeeper
+ * turns into the loss of the ship, the Bydo and a life: the ship comes back
+ * RESPAWN_DELAY later, invulnerable for INVULNERABILITY_DURATION, and a player
+ * with no life left watches. A game whose players are all out goes on: no rule
+ * ends a game yet. The rules work on the world they were built with, and new
+ * ones come with each new world, so the events of a tick must be delivered
+ * before the world is replaced: the server dispatches the bus at the end of
+ * every tick.
  *
  * A datagram of the players is read only when its header carries this
  * protocol and version with no flag set, its messages add up to its end, and
@@ -204,9 +212,10 @@ class GameInstance {
    * player is left in, then moves the game along its states. While it waits,
    * the players are told the room; while it is in progress, the tick is
    * counted, the ships move, the systems run, the ships whose players hold
-   * shoot fire, the Bydos appear and the world is sent. Last, a player sent
-   * nothing for TICKS_PER_HEARTBEAT ticks is sent a Heartbeat. Nothing caused
-   * by the content of a datagram makes it throw.
+   * shoot fire, the Bydos appear, the waits and protections of the lives are
+   * counted and the world is sent. Last, a player sent nothing for
+   * TICKS_PER_HEARTBEAT ticks is sent a Heartbeat. Nothing caused by the
+   * content of a datagram makes it throw.
    */
   void onTick(std::span<const network::IncomingDatagram> datagrams);
 
@@ -311,8 +320,8 @@ class GameInstance {
 
   /** @brief Builds a new world, and every part of the game that works on one
    * world: the rules that judge its collisions, the announcer of its ships, the
-   * spawner of its Bydos, the launcher of its missiles and the announcer of the
-   * room. */
+   * spawner of its Bydos, the launcher of its missiles, the keeper of the lives
+   * and the announcer of the room. */
   void buildWorld();
 
   void startNewWorld();
@@ -328,6 +337,7 @@ class GameInstance {
   std::unique_ptr<MissileLauncher> missileLauncher_;
   std::unique_ptr<game::CollisionRules> collisionRules_;
   std::unique_ptr<game::DamageRules> damageRules_;
+  std::unique_ptr<LifeKeeper> lifeKeeper_;
   std::unique_ptr<LobbyStateAnnouncer> lobbyStateAnnouncer_;
   ScoreKeeper scoreKeeper_;
   WorldStateSender worldStateSender_;

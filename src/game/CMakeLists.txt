@@ -22,6 +22,8 @@ target_link_libraries(rtype_game
     rtype_game_collision_system
     rtype_game_collision_rules
     rtype_game_damage_rules
+  PRIVATE
+    rtype_game_ship_control_constants
 )
 
 rtype_enable_warnings(rtype_game)

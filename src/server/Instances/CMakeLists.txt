@@ -7,4 +7,5 @@ target_link_libraries(rtype_server_instances INTERFACE rtype_network_transport r
 add_subdirectory(ConnectedPlayers)
 add_subdirectory(PlayerRoster)
 add_subdirectory(ScoreKeeper)
+add_subdirectory(LifeKeeper)
 add_subdirectory(GameInstance)

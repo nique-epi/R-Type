@@ -6,6 +6,7 @@
 #include <string>
 #include "Endpoint.hpp"
 #include "EntityIdConstants.hpp"
+#include "LifeKeeperConstants.hpp"
 #include "PlayerInput.hpp"
 
 namespace rtype::server {
@@ -36,6 +37,18 @@ struct ConnectedPlayer {
   /** @brief The points the player earned in the current game; back to 0 when a
    * new world is built. */
   std::uint32_t score{0};
+  /** @brief The lives the player has left, the ship in play included:
+   * STARTING_LIVES when it joins and when a new world is built, one less each
+   * time its ship is destroyed. At 0 the player has no ship and watches. */
+  std::uint8_t lives{STARTING_LIVES};
+  /** @brief Ticks of the game left before the ship of the player comes back
+   * after it was destroyed: RESPAWN_DELAY_TICKS then, one less at each tick.
+   * 0 while the player has a ship, or no life left. LifeKeeper counts it. */
+  std::size_t ticksUntilRespawn{0};
+  /** @brief Ticks of the game left during which the ship of the player cannot
+   * be hit: INVULNERABILITY_TICKS when it comes back after a hit, one less at
+   * each tick; 0 when it can be hit. LifeKeeper counts it. */
+  std::size_t invulnerableTicksLeft{0};
   /** @brief Whether the player declared itself ready to start; cleared when the
    * game waits for players again. */
   bool ready{false};
