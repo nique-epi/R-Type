@@ -10,6 +10,8 @@ void FakeMusicPlayer::start() {
   clock_.setPlayingOffset(-rtype::client::THEME_FIRST_BEAT);
 }
 
+void FakeMusicPlayer::stop() { clock_.setPlayingOffset(std::nullopt); }
+
 std::optional<rtype::engine::Duration> FakeMusicPlayer::playingOffset() const {
   return clock_.playingOffset();
 }

@@ -48,4 +48,17 @@ constexpr engine::Duration SKIP_TARGET = std::chrono::microseconds(4954128);
  * second starts falling for good (-29 dBFS at 197 s, -40 at 197.5 s). */
 constexpr float THEME_FADE_START = 197.0F;
 
+/** @brief Where the fade out of the music of a game starts, in seconds of the
+ * file: measured on assets/music/oh_the_city.mp3, where its level by tenth of
+ * a second leaves -12 dBFS for good (-15 dBFS at 152.1 s, -22 at 153 s). */
+constexpr float GAME_MUSIC_FADE_START = 152.1F;
+
+/** @brief The silence between the theme and the music of a game, one second
+ * as asked, and moments inside it and past it. */
+constexpr engine::Duration THE_WHOLE_SILENCE = std::chrono::seconds(1);
+constexpr engine::Duration MOST_OF_THE_SILENCE = std::chrono::milliseconds(900);
+constexpr engine::Duration PART_OF_THE_SILENCE = std::chrono::milliseconds(600);
+constexpr engine::Duration REST_OF_THE_SILENCE = std::chrono::milliseconds(400);
+constexpr engine::Duration LONGER_THAN_THE_SILENCE = std::chrono::seconds(2);
+
 }  // namespace rtype::client::testing
