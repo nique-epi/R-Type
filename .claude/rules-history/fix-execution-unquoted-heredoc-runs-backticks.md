@@ -32,3 +32,21 @@ The terminator was chosen out of habit (`PY` for every Python heredoc), without 
 - ✅ **After (right)**: `gh pr create --body-file /tmp/pr-body.md`, the file written without going through the shell, or `<<'EOF'`.
 - ❌ **Before (wrong)**: `python3 - script.sh <<'PY'` whose replacement text holds a `<<'PY' … PY` block → the outer heredoc ends at the inner `PY`, zsh answers `unmatched "`, the edit is not made.
 - ✅ **After (right)**: the parser written to `scratchpad/flagged_parameters.py`, and the edit sent with `<<'EDIT'`.
+
+## Update (2026-10-21) — Shell escapes inside a quoted heredoc
+
+### Context
+
+Compacting `.context/context.md` during the RTY-122 effects proposal, with a Python script sent through `python3 - <path> <<'PY'`. One history line held an apostrophe ("Nolan's review").
+
+### Mistake
+
+The apostrophe was written `\\'`, as if the shell would remove one backslash. The heredoc is quoted, so the body reached Python as is: `'… Nolan\\'s …'` ends the string at the apostrophe, and Python stopped on `SyntaxError: invalid syntax`. The file was not written; its line count and headings were checked unchanged before trying again.
+
+### Root cause
+
+Escaping for the shell and for the interpreter at the same time, inside a body the shell does not touch.
+
+### Rule added
+
+The subsection "A quoted heredoc carries the script's own escapes, never the shell's" of the core rule: write the target language's escapes, switch quotes around a string holding its delimiter, and keep scripts carrying prose in their own file.

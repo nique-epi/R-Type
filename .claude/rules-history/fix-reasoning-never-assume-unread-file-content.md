@@ -49,3 +49,27 @@ A check name read in a note was taken as a check that runs here, without opening
 
 - ❌ **Before (wrong)**: the parameter rule said a struct holds no reference member "(`cppcoreguidelines-avoid-const-or-ref-data-members`)", from a note of an earlier session; `.clang-tidy` turns that check off.
 - ✅ **After (right)**: read `.clang-tidy` → the check is off → the rule cites Core Guidelines C.12 and says nothing checks it.
+
+## Update (2026-10-24) — A file the user says they have is found before it is described
+
+### Context
+
+Proposals for a launch intro (RTY-123, music and sound effects). The user wrote that they already had the menu music, then gave "Spacesuit Suite" and "Stationary Sign" on two lines.
+
+### Mistake
+
+The brief sent to the research agent asked for "the two tracks" and their artists. A search of the disk made afterwards found `ES_Spacesuit Suite - Stationary Sign.mp3`: one track and its artist, downloaded from Epidemic Sound. The brief was corrected by a message before the agent answered; the correction also made the licence of Epidemic Sound the main question, which the first brief had missed.
+
+### Root cause
+
+The two names were read from the message alone, in the shape a list takes, while the file they came from was on the disk and never looked for.
+
+### Rule
+
+1. When the user names an asset they already have, look for the file on disk before writing anything about it in a brief, a plan or a design.
+2. Read the names from the file, not from the message: two names on two lines may be one item's title and its author, and a prefix in the file name may say where it comes from.
+
+### Example
+
+- ❌ **Before (wrong)**: "Spacesuit Suite" and "Stationary Sign" briefed as two tracks.
+- ✅ **After (right)**: `find ~/Downloads -iname '*spacesuit*'` → one track by Stationary Sign, from Epidemic Sound.

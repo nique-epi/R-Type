@@ -95,6 +95,7 @@ Paths below are relative to `.claude/rules/`.
 
 **Process — `fix/process/`**
 - `fix/process/fix-process-a-model-is-called-not-copied.md`
+- `fix/process/fix-process-a-small-feature-is-checked-in-proportion.md`
 - `fix/process/fix-process-a-screen-without-mockup-is-validated-as-a-picture.md`
 - `fix/process/fix-process-ask-what-is-observed-before-building-a-protocol.md`
 - `fix/process/fix-process-branch-before-first-commit.md`
@@ -138,13 +139,16 @@ Paths below are relative to `.claude/rules/`.
 - `fix/reasoning/fix-reasoning-verify-the-premise-before-fixing-downstream.md`
 
 **Execution (shell, git, build) — `fix/execution/`**
+- `fix/execution/fix-execution-a-script-reading-repository-text-names-its-encoding.md`
 - `fix/execution/fix-execution-a-split-commit-carries-its-own-links.md`
 - `fix/execution/fix-execution-a-static-library-reached-twice-on-the-link-line.md`
+- `fix/execution/fix-execution-an-edit-of-a-shared-text-checks-it-is-unchanged.md`
 - `fix/execution/fix-execution-browser-global-names-are-window-properties.md`
 - `fix/execution/fix-execution-check-the-index-before-committing.md`
 - `fix/execution/fix-execution-checkout-b-starts-from-head-not-main.md`
 - `fix/execution/fix-execution-clang-format-only-on-cpp-files.md`
 - `fix/execution/fix-execution-edit-script-validates-anchors-before-writing.md`
+- `fix/execution/fix-execution-every-build-runs-in-parallel.md`
 - `fix/execution/fix-execution-git-check-branch-before-writing-history.md`
 - `fix/execution/fix-execution-gcc-warns-when-a-designated-initializer-skips-a-member-without-default.md`
 - `fix/execution/fix-execution-git-stash-pop-without-effective-push.md`

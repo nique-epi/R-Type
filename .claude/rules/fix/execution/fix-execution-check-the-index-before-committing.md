@@ -24,6 +24,16 @@ trigger: always_on
 2. **Read the index in one call, commit in the next.** `git add` and `git diff --cached --no-renames --name-status` go together; the `git commit` waits for the next call, once every listed path has been matched with the commit's intent. A chain that prints the index and commits in the same call only shows the stray path after it is committed.
 3. **When one working tree prepares several commits**, a `git rm` for a later commit is unstaged (`git restore --staged <path>`) before an earlier commit is made, or run only once that earlier commit exists.
 
+### A staging call names the paths of its commit, and nothing else
+
+1. **Every `git add` of a staging call names the paths of the commit being prepared**: never a bare `.`, `-A` or `-N` over the whole tree in the middle of a split. `git add -N -- .` marks every untracked file as intent-to-add, the local files that belong to no commit included.
+2. **No `2>/dev/null` on a git command that writes the index**: its error is the only sign that it did something else.
+3. **The index check reads `git status --porcelain` too**, not only `git diff --cached`: an intent-to-add entry shows as ` A` there and nowhere in the cached diff. Undo it with `git rm --cached -- <path>`, which keeps the file on disk.
+
+### A small commit gets the same two calls
+
+1. **The call that stages and prints the index never runs `git commit`**, even for a commit of two files whose paths were just typed: the commit goes in the next call, once the printed list was read.
+
 ## Example
 
 - ❌ **Before (wrong)**: `git rm old.cpp && git add old.cpp new.cpp CMakeLists.txt && git commit -m "…"` → `pathspec 'old.cpp'` → commit containing only the deletion.

@@ -17,7 +17,15 @@ Why: the user asked for it; a PR announced as done while its CI is red or unread
 6. **The final answer states the CI state** of every PR opened or pushed to in the turn: passing, failing (which checks) or pending.
 7. **A PR I pushed to again** (new commits) is followed the same way.
 
+### A pull request is built merged with its base
+
+1. **The CI of a pull request builds `refs/pull/<n>/merge`**, the branch merged with the current base, never the branch alone. A name the branch renamed and that new code on the base still uses compiles on the branch and fails on the merge, while git reports the PR as mergeable: the conflict is in meaning, not in text.
+2. **Before every push to a PR, compare its merge base with the current base** (`git fetch origin main`, then `git merge-base HEAD origin/main` against `git rev-parse origin/main`). When the base moved, merge it in a detached worktree (`git worktree add --detach <scratchpad>/<name> HEAD`, then `git merge --no-commit origin/main`), search the merged tree for every name the branch renamed or removed, build and test the merge, and push only once it is green. Syncing the PR's branch with the base follows the user's choice (merge or rebase).
+3. **A conflict announced earlier ("main moved, a conflict is expected") is checked before the push**, never left for the CI to show.
+
 ## Example
 
 - ❌ **Before (wrong)**: "Draft PR opened, tests green locally." — the Windows job fails and nobody looks.
 - ✅ **After (right)**: `get_status` → 1 failing check `build-and-test (windows)` → `gh run view <id> --log-failed` → MSVC `C4267` → fix, push, re-read; the answer says what is failing, pending or passing.
+- ❌ **Before (wrong)**: three commits pushed to #103 after `main` gained #105, whose two new tests name the fixture `ServerConnectionTest` that the branch had renamed `ServerConnectionFixture` → Linux, Windows and clang-tidy fail on the merge, the PR still "mergeable".
+- ✅ **After (right)**: `origin/main` merged in a detached worktree, the renamed names searched in the merged tree, the two suites renamed in the merge commit, the merge built and tested (1803/1803), then pushed.

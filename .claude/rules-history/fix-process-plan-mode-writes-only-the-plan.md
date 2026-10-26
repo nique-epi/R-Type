@@ -30,3 +30,23 @@ While plan mode is active, the only file written is the plan. A check compiles f
 **Root cause.** The rule was read as being about the output of checks; a draft of the plan itself did not register as "a file written", since its content was meant for the plan anyway.
 
 **Addition to the rule.** A section being rewritten goes straight into the plan file, by an edit in place or a script that writes the plan path only; before running a script in plan mode, every path it opens for writing is read.
+
+## Update (2026-10-22) — Helper scripts saved to the scratchpad during plan mode
+
+**Context.** While planning the visual effects of the client (RTY-122) in plan mode, the context had been compacted: the design had to be found again in the transcript, and later a component name (`Label`, already taken by a widget) had to be renamed across an 8000-line plan.
+
+**Mistake.** Two scripts were saved with the write tool in the scratchpad (`tools/find_thinking.py`, `tools/rename_label.py`) before being run. The second one was never run: the rename was done inline. Plan mode allows the plan file only, and the rule already said so twice.
+
+**Root cause.** The rule was read as being about what a check or a script writes, not about the script file itself; a helper that only reads (searching the transcript) did not register as a write, although saving it is one.
+
+**Addition to the rule.** In plan mode a helper script runs inline (`python3 -I - <args> <<'PY'`), never saved with the write tool; before every write in plan mode, its path is compared with the plan path.
+
+## Update (2026-10-24) — a read redirected into the scratchpad
+
+**Context.** While planning the launch intro and the sounds of the client (RTY-123) in plan mode, the code style rules had to be read again from a commit, a long output.
+
+**Mistake.** The output was redirected into the scratchpad (`… > <scratchpad>/code-style-rules.txt`) to be read in parts. Plan mode allows the plan file only, and the rule already said so three times.
+
+**Root cause.** The rule named checks, drafts and scripts; a plain read did not register as a write, although its redirection creates a file.
+
+**Addition to the rule.** In plan mode a read prints to standard output; a long one is cut into ranges with `sed -n`, never saved to a file.

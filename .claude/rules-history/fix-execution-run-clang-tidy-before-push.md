@@ -101,3 +101,11 @@ The rule asked for exit 0 and for a calibration, but not for the calibration to 
 ### What was done
 A deduplicated copy of the configuration passed with `--config-file` reported the planted fault; the 43 files were linted again with it. The broken configuration on `main` was reported to the user, its fix left to a separate branch.
 
+
+## Update (23 October 2026) — forward declarations to silence a borrowed command
+
+While applying Yannis Lorang's review of pull request #103, `GameScreen::Parts` moved to `src/client/Screens/GameScreenParts.hpp`. Linted alone, the header borrowed the compile command of a file of `Screens/` and stopped on `'IEntityMessageSource.hpp' file not found`. Instead of rerunning it with the include folders of every compiled file (point 6 of the first list, and what the CI's `Clang-tidy` step does), the includes were replaced by forward declarations. `GameScreen.cpp`, which calls members of `IServerConnection`, then failed to compile; given the real include, `misc-include-cleaner` called it unused, because it took the forward declaration as the provider. The includes were put back, the header linted with the CI's include folders (exit 0), and the include of `GameScreen.cpp` dropped. The lint script of the session now passes those folders to every header.
+
+## Update (24 October 2026) — Code moved out of a file takes its uses with it
+
+The answer to a review moved the constants of the test files into `…TestConstants.hpp` headers. `MissionBannerTest.cpp` kept `#include <cstddef>`, whose only use, a `std::size_t` constant, had moved to `MissionBannerTestConstants.hpp`. The local clang-tidy (libc++) passed it; the CI's `misc-include-cleaner` (libstdc++) failed on it. Point 2 of the subsection already asked to match each include against what the file names: it was not applied to the files the move emptied. New point 4: after a move, match the standard includes left behind with a script over every touched file.
