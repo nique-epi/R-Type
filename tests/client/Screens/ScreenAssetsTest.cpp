@@ -10,14 +10,18 @@
 #include "HudSpriteConstants.hpp"
 #include "InterfaceConstants.hpp"
 #include "ScreenAssets.hpp"
+#include "ScreenAssetsFixtures.hpp"
 #include "ScreenConstants.hpp"
+#include "SoundConstants.hpp"
 
+using rtype::client::ALL_SOUND_IDS;
 using rtype::client::AssetLibrary;
 using rtype::client::AssetLoadingStep;
 using rtype::client::EFFECT_SHEET_ID;
 using rtype::client::ENTITY_SHEET_ID;
 using rtype::client::gameAssets;
 using rtype::client::HUD_SHEET_ID;
+using rtype::client::introAssets;
 using rtype::client::loadInterfaceAssets;
 using rtype::client::LOGO_ID;
 using rtype::client::LOGO_SIZE;
@@ -27,12 +31,6 @@ using rtype::client::SMALL_FONT_ID;
 using rtype::client::titleAssets;
 using ::testing::Contains;
 using ::testing::UnorderedElementsAre;
-
-namespace {
-
-std::filesystem::path repositoryAssets() { return RTYPE_ASSETS_FOLDER; }
-
-}  // namespace
 
 /**
  * Given the assets folder of the repository
@@ -46,6 +44,21 @@ TEST(ScreenAssets, LaunchLoadsTheInterfaceFonts) {
 
   EXPECT_NO_THROW(static_cast<void>(library.font(REGULAR_FONT_ID)));
   EXPECT_NO_THROW(static_cast<void>(library.font(SMALL_FONT_ID)));
+}
+
+/**
+ * Given the assets folder of the repository
+ * When the interface assets are loaded at launch
+ * Then every sound of the client can be looked up
+ */
+TEST(ScreenAssets, LaunchLoadsEverySound) {
+  AssetLibrary library{repositoryAssets()};
+
+  loadInterfaceAssets(library);
+
+  for (const char* soundId : ALL_SOUND_IDS) {
+    EXPECT_NO_THROW(static_cast<void>(library.sound(soundId))) << soundId;
+  }
 }
 
 /**
@@ -107,6 +120,17 @@ TEST(ScreenAssets, AGameLoadsThePlugIcon) {
 TEST(ScreenAssets, TheTitleLoadsItsLogoAndTheEntitySheet) {
   EXPECT_THAT(titleAssets().textures,
               UnorderedElementsAre(LOGO_ID, ENTITY_SHEET_ID));
+}
+
+/**
+ * Given the assets of the intro
+ * When their textures are listed
+ * Then they hold those of the title, which follows it, and the effect sheet
+ * of its explosions
+ */
+TEST(ScreenAssets, TheIntroLoadsTheTitleAndTheEffectSheet) {
+  EXPECT_THAT(introAssets().textures,
+              UnorderedElementsAre(LOGO_ID, ENTITY_SHEET_ID, EFFECT_SHEET_ID));
 }
 
 /**

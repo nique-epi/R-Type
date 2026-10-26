@@ -2,6 +2,7 @@
 #include <SFML/Graphics/Color.hpp>
 #include <span>
 #include "CameraShake.hpp"
+#include "ColorRamp.hpp"
 #include "ComponentRegistry.hpp"
 #include "Entity.hpp"
 #include "FlashLoan.hpp"
@@ -32,7 +33,7 @@ HitFlash FlashGate::hitFlashFor(FlashLoan loan) {
 
 std::span<const sf::Color> FlashGate::rampOf(
     std::span<const sf::Color> ramp) const {
-  return flashes() || ramp.empty() ? ramp : ramp.subspan(1);
+  return rampFor(ramp, preference_);
 }
 
 void FlashGate::nudge(engine::ComponentRegistry& components,

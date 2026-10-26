@@ -9,9 +9,11 @@
 #include <string>
 #include <string_view>
 #include <utility>
+#include <vector>
 #include "DrawJournal.hpp"
 #include "ImagePlacement.hpp"
 #include "InterfaceConstants.hpp"
+#include "RecordingInterfaceCanvasConstants.hpp"
 #include "TextStyle.hpp"
 #include "TextureArea.hpp"
 
@@ -43,7 +45,8 @@ void RecordingInterfaceCanvas::drawImage(
                              .source = image.rectangle,
                              .topLeft = placement.topLeft,
                              .scale = placement.scale,
-                             .visibleArea = visibleArea});
+                             .visibleArea = visibleArea,
+                             .tint = placement.tint});
 }
 
 void RecordingInterfaceCanvas::drawSmoothImage(std::string_view assetId,
@@ -96,4 +99,17 @@ std::set<std::pair<int, int>> litPixelsOf(const InterfaceCanvasRecord& record) {
     }
   }
   return pixels;
+}
+
+std::vector<sf::Vector2i> untintedImagesOf(const InterfaceCanvasRecord& record,
+                                           std::string_view assetId,
+                                           sf::Vector2i size) {
+  std::vector<sf::Vector2i> places;
+  for (const RecordedImage& image : record.images) {
+    if (image.assetId == assetId && image.source.size == size &&
+        image.tint == sf::Color::White) {
+      places.push_back(image.topLeft);
+    }
+  }
+  return places;
 }

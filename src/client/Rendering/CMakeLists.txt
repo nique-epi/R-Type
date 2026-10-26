@@ -11,6 +11,8 @@ target_link_libraries(rtype_client_rendering_interfaces
 )
 
 add_subdirectory(Easing)
+add_subdirectory(ColorRamp)
+add_subdirectory(PixelCircle)
 add_subdirectory(PixelCanvas)
 add_subdirectory(Shaders)
 add_subdirectory(Sprites)
@@ -19,6 +21,7 @@ add_subdirectory(SpriteLook)
 add_subdirectory(Drawing)
 add_subdirectory(Effects)
 add_subdirectory(Background)
+add_subdirectory(Intro)
 
 add_library(rtype_client_rendering INTERFACE)
 

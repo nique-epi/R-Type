@@ -5,8 +5,10 @@
 #include "ComponentRegistry.hpp"
 #include "EffectSpawner.hpp"
 #include "Effects/EffectTestConstants.hpp"
+#include "EntityFeedback.hpp"
 #include "EntityRegistry.hpp"
 #include "EntityReplicator.hpp"
+#include "RecordingSoundPlayer.hpp"
 
 namespace rtype::client::testing {
 
@@ -41,11 +43,17 @@ class EntityReplicatorFixture : public ::testing::Test {
    */
   [[nodiscard]] std::size_t entityCount() const;
 
+  /** @returns The sounds the replicator played. */
+  [[nodiscard]] const RecordingSoundPlayer& sounds() const;
+
  private:
   engine::EntityRegistry entities_;
   engine::ComponentRegistry components_{entities_};
   EffectSpawner effects_{entities_, components_, EFFECT_TEST_SEED};
-  EntityReplicator replicator_{entities_, components_, effects_};
+  RecordingSoundPlayer sounds_;
+  EntityReplicator replicator_{
+      entities_, components_,
+      EntityFeedback{.effects = effects_, .sounds = sounds_}};
 };
 
 }  // namespace rtype::client::testing

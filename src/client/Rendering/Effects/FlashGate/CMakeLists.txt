@@ -9,6 +9,7 @@ target_link_libraries(rtype_client_flash_gate
     rtype_engine
   PRIVATE
     rtype_client_camera_shake
+    rtype_client_color_ramp
 )
 
 rtype_enable_warnings(rtype_client_flash_gate)

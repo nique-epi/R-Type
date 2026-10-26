@@ -12,6 +12,7 @@
 #include "RecordingInterfaceCanvas.hpp"
 #include "RecordingScreen.hpp"
 #include "RecordingSky.hpp"
+#include "RecordingSoundPlayer.hpp"
 #include "ScreenId.hpp"
 #include "ScreenStack.hpp"
 
@@ -31,7 +32,8 @@ GameScreenFixture::GameScreenFixture()
                               .inputs = inputs_,
                               .entityMessages = entityMessages_,
                               .connection = connection_,
-                              .sky = sky_},
+                              .sky = sky_,
+                              .sounds = sounds_},
               std::make_unique<RecordingEntityLayer>(layerRecord_),
               std::make_unique<RecordingInterfaceCanvas>(statusCanvas_));
         }
@@ -70,4 +72,8 @@ const InterfaceCanvasRecord& GameScreenFixture::statusCanvas() const {
 
 const DrawJournal& GameScreenFixture::drawJournal() const {
   return drawJournal_;
+}
+
+const RecordingSoundPlayer& GameScreenFixture::sounds() const {
+  return sounds_;
 }

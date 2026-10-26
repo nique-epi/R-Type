@@ -18,7 +18,7 @@ Every folder and file name of an id starts with a lowercase letter `a-z` or a di
 
 ## When files are loaded
 
-The assets of the interface, which any screen may use at any time, in a game or outside one, are loaded once at launch and never released. The assets of the title screen, its logo and the entity sheet of its squadron, are loaded at launch too, so the first frame shows the title, but they are not kept: entering a game releases the logo. The assets of a game are loaded by the loading screen when the player enters it: it first releases the loaded assets the game does not list, except the interface ones, then loads the missing ones one file per frame, drawing its progress between two files. An asset already loaded is never read again.
+The assets of the interface, which any screen may use at any time, in a game or outside one, the fonts and every sound, are loaded once at launch and never released. The assets of the intro, those of the title screen (its logo and the entity sheet of its squadron) and the effect sheet of its explosions, are loaded at launch too, so the intro has them from its first frame, but they are not kept: the title releases the effect sheet, and entering a game releases the logo. The assets of a game are loaded by the loading screen when the player enters it: it first releases the loaded assets the game does not list, except the interface ones, then loads the missing ones one file per frame, drawing its progress between two files. An asset already loaded is never read again.
 
 When an id breaks the rule, or its file is missing or cannot be read, the client stops once every file of the list was tried, and names every one of them. Music is only located: its file is read while it plays.
 
@@ -37,6 +37,22 @@ The client looks for `assets/` next to its executable, then in the folder above 
 | `sprites/effects.png` | The effects of a match: the explosions of the Bydo and of the ship, the impact of a missile and the muzzle flashes of both missiles, each with its version without flash | Drawn for this project (animation proposal, options C), generated from the drafts of the proposal; not taken from the sprite set shipped with the subject |
 | `sprites/hud.png` | The sheet of the status band of a game: the lives of the four player colors, a life lost, and the marker of each player | Drawn for this project (HUD design system, proposal B); not taken from the sprite set shipped with the subject |
 | `icons/phosphor/plugs_bold.png` | The unplugged plug of a pilot whose signal is lost, white on a square of 64 × 64 pixels | "plugs", bold weight, of Phosphor Icons, MIT License, copyright 2023 Phosphor Icons, license in `icons/phosphor/LICENSE.txt`; from `phosphor-icons/core` at tag `v2.0.8` (`assets/bold/plugs-bold.svg`), rendered to PNG and made white |
+| `sounds/kenney/bydo_growl.ogg` | The growl of the Bydo that opens the intro, 0.50 s | `slime_000.ogg` of Kenney's Sci-fi Sounds 1.0, CC0, license in `sounds/kenney/license-sci-fi-sounds.txt`; from kenney.nl |
+| `sounds/kenney/enemy_shot.ogg` | The shot of a Bydo, 0.26 s | `laserRetro_002.ogg` of Kenney's Sci-fi Sounds 1.0, CC0, license in `sounds/kenney/license-sci-fi-sounds.txt`; from kenney.nl |
+| `sounds/kenney/flyby.ogg` | A ship passing at the start of each close-up of the intro, 0.53 s | `doorOpen_001.ogg` of Kenney's Sci-fi Sounds 1.0, CC0, license in `sounds/kenney/license-sci-fi-sounds.txt`; from kenney.nl |
+| `sounds/kenney/player_shot.ogg` | The shot of a player, 0.24 s | `laserSmall_000.ogg` of Kenney's Sci-fi Sounds 1.0, CC0, license in `sounds/kenney/license-sci-fi-sounds.txt`; from kenney.nl |
+| `sounds/kenney/small_explosion.ogg` | A Bydo destroyed, 0.78 s | `explosionCrunch_000.ogg` of Kenney's Sci-fi Sounds 1.0, CC0, license in `sounds/kenney/license-sci-fi-sounds.txt`; from kenney.nl |
+| `sounds/kenney/heavy_impact.ogg` | The first kill of the cascade of the intro, 1.00 s | `lowFrequency_explosion_001.ogg` of Kenney's Sci-fi Sounds 1.0, CC0, license in `sounds/kenney/license-sci-fi-sounds.txt`; from kenney.nl |
+| `sounds/kenney/entry_whoosh.ogg` | The squadron and the reinforcements entering the intro, 0.95 s | `forceField_000.ogg` of Kenney's Sci-fi Sounds 1.0, CC0, license in `sounds/kenney/license-sci-fi-sounds.txt`; from kenney.nl |
+| `sounds/kenney/charge.ogg` | The charge of the four ships of the intro, 0.96 s | `forceField_002.ogg` of Kenney's Sci-fi Sounds 1.0, CC0, license in `sounds/kenney/license-sci-fi-sounds.txt`; from kenney.nl |
+| `sounds/kenney/beam.ogg` | The release of the four beams of the intro, 0.68 s | `laserLarge_000.ogg` of Kenney's Sci-fi Sounds 1.0, CC0, license in `sounds/kenney/license-sci-fi-sounds.txt`; from kenney.nl |
+| `sounds/kenney/big_explosion.ogg` | A ship destroyed, and the ring of the intro bursting, 1.98 s | `explosionCrunch_004.ogg` of Kenney's Sci-fi Sounds 1.0, CC0, license in `sounds/kenney/license-sci-fi-sounds.txt`; from kenney.nl |
+| `sounds/kenney/boost.ogg` | The boost of the intro, 0.95 s; the thruster sounds of the pack loop for 5 s | `forceField_004.ogg` of Kenney's Sci-fi Sounds 1.0, CC0, license in `sounds/kenney/license-sci-fi-sounds.txt`; from kenney.nl |
+| `sounds/kenney/logo_impact.ogg` | The logo of the intro landing, 0.63 s | `impactMetal_000.ogg` of Kenney's Sci-fi Sounds 1.0, CC0, license in `sounds/kenney/license-sci-fi-sounds.txt`; from kenney.nl |
+| `sounds/epidemic/hit.flac` | An entity hit that survives, 0.305 s | The first hit of "Fight, Impact, Hit, Hard, Melon", from Epidemic Sound: the file repeats a hit every 1.6 s, so only the first one is kept, from 5 ms before its attack (0.319 s) to 0.624 s, with a fade out of 30 ms; see [the license of Epidemic Sound](#the-license-of-epidemic-sound) |
+| `sounds/kenney/player_hit.ogg` | A player hit, 0.65 s | `impactPunch_heavy_000.ogg` of Kenney's Impact Sounds 1.0, CC0, license in `sounds/kenney/license-impact-sounds.txt`; from kenney.nl |
+| `music/oh_the_city.mp3` | The music of a game, Oh the City by Machine Dreams: 160.2 s, which starts at once; it loops from its start to 152 s, before its fade out, which starts at 152.1 s | From Epidemic Sound (downloaded as `ES_Machine Dreams - Oh the City.mp3`); see [the license of Epidemic Sound](#the-license-of-epidemic-sound) |
+| `music/spacesuit_suite.mp3` | The theme, Spacesuit Suite by Stationary Sign: 201 s at 109 beats a minute, its first beat 85 ms in; it loops over 352 beats from that beat (to 193.85 s), before its fade out, which starts at 197 s | From Epidemic Sound (downloaded as `ES_Spacesuit Suite - Stationary Sign.mp3`), licensed by the team; see the note on its license below |
 
 ## The entity sheet
 
@@ -76,3 +92,7 @@ Without flash, the Bydo explosion starts on the Bydo in its own colors instead o
 | Markers: triangle, square, circle and star, one per player color, so a player is never told by color alone | 4 | 7 × 7 | 10 |
 
 The rectangles are written once, in `src/client/Rendering/Interface/HudSpriteConstants.hpp`, with the id of the plug icon, which is drawn smoothed at the resolution of the window and tinted, not pixel for pixel. `client_rendering_tests` checks them against the shipped files: every frame lies inside the sheet, shows a visible pixel, cuts no drawing and overlaps no other, and every visible pixel of the icon is white. Both files are listed in `gameAssets()` only.
+
+## The license of Epidemic Sound
+
+The theme, the music of a game and the hit come from Epidemic Sound. Its help pages describe the Creator and Pro subscriptions as covering videos and podcasts the subscriber produces, and point to other licenses for a game. Whether the license the team holds covers this game, shared in a public repository, is for the team to confirm; the team does not plan to publish the game.

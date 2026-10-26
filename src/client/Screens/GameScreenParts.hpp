@@ -6,6 +6,7 @@
 #include "IScreenNavigator.hpp"
 #include "IServerConnection.hpp"
 #include "ISky.hpp"
+#include "ISoundPlayer.hpp"
 
 namespace rtype::client {
 
@@ -37,6 +38,9 @@ struct GameScreenParts {
    * stars speed up at the start of the game, and it shakes with the
    * camera. */
   std::reference_wrapper<ISky> sky;
+  /** @brief Plays the sounds of what the server announces, which must
+   * outlive the screen. */
+  std::reference_wrapper<ISoundPlayer> sounds;
 };
 
 }  // namespace rtype::client

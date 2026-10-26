@@ -11,6 +11,7 @@
 #include <utility>
 #include "AssetLibrary.hpp"
 #include "AssetList.hpp"
+#include "AudioConstants.hpp"
 #include "BoundAction.hpp"
 #include "ConnectionConstants.hpp"
 #include "ConnectionScreen.hpp"
@@ -21,6 +22,8 @@
 #include "IInterfaceCanvas.hpp"
 #include "IScreen.hpp"
 #include "InterfaceCanvas.hpp"
+#include "IntroScreen.hpp"
+#include "IntroScreenParts.hpp"
 #include "LoadingScreen.hpp"
 #include "LobbyScreen.hpp"
 #include "LocalizedKeyName.hpp"
@@ -35,8 +38,11 @@
 #include "ScreenId.hpp"
 #include "ScreenStack.hpp"
 #include "SettingsFile.hpp"
+#include "SoundtrackParts.hpp"
+#include "SquadronStart.hpp"
 #include "TimeConstants.hpp"
 #include "TitleScreen.hpp"
+#include "TitleScreenParts.hpp"
 
 namespace rtype::client {
 
@@ -57,6 +63,13 @@ MotionPreference motionPreference() {
                                       : MotionPreference::Full;
 }
 
+/** @returns The screen the client opens on: the intro, or the title when the
+ * system asks for less motion. */
+ScreenId firstScreen() {
+  return motionPreference() == MotionPreference::Reduced ? ScreenId::Title
+                                                         : ScreenId::Intro;
+}
+
 }  // namespace
 
 Application::Application(AssetLibrary& assets, network::Endpoint server,
@@ -67,6 +80,10 @@ Application::Application(AssetLibrary& assets, network::Endpoint server,
       settings_(settingsFile_.load(firstLaunchSettings())),
       window_(settings_.windowSize),
       background_(std::random_device{}()),
+      sounds_(assets, settings_),
+      theme_(assets, settings_, THEME_TRACK),
+      gameMusic_(assets, settings_, GAME_TRACK),
+      soundtrack_(SoundtrackParts{.theme = theme_, .gameMusic = gameMusic_}),
       network_(
           network::Endpoint{.address = std::string{network::ANY_IPV4_ADDRESS},
                             .port = network::ANY_PORT}),
@@ -74,7 +91,7 @@ Application::Application(AssetLibrary& assets, network::Endpoint server,
       server_(std::move(server)),
       nickname_(std::move(nickname)),
       screens_([this](ScreenId screen) { return createScreen(screen); }) {
-  screens_.replaceAll(ScreenId::Title);
+  screens_.replaceAll(firstScreen());
   screens_.applyPendingChanges();
 }
 
@@ -84,6 +101,9 @@ void Application::run() {
     handleEvents();
     const engine::Duration elapsed = measureFrame();
     connection_.update(elapsed);
+    theme_.update();
+    gameMusic_.update();
+    soundtrack_.advance(elapsed);
     background_.advance(elapsed);
     screens_.update(elapsed);
     screens_.applyPendingChanges();
@@ -123,8 +143,18 @@ void Application::render() {
 
 std::unique_ptr<IScreen> Application::createScreen(ScreenId screen) {
   switch (screen) {
+    case ScreenId::Intro:
+      return std::make_unique<IntroScreen>(
+          IntroScreenParts{.navigator = screens_,
+                           .settings = settings_,
+                           .sky = background_,
+                           .sounds = sounds_,
+                           .music = theme_,
+                           .seed = std::random_device{}()},
+          interfaceCanvas());
     case ScreenId::Title:
-      return titleScreen();
+    case ScreenId::TitleAfterIntro:
+      return titleScreen(screen);
     case ScreenId::Game:
       return gameScreen();
     case ScreenId::Options:
@@ -143,18 +173,26 @@ std::unique_ptr<IScreen> Application::createScreen(ScreenId screen) {
   return nullptr;
 }
 
-std::unique_ptr<IScreen> Application::titleScreen() {
+std::unique_ptr<IScreen> Application::titleScreen(ScreenId screen) {
+  soundtrack_.playTheme();
   std::unique_ptr<IScreen> loading =
-      loadingScreenUnlessLoaded(titleAssets(), ScreenId::Title);
+      loadingScreenUnlessLoaded(titleAssets(), screen);
   if (loading != nullptr) {
     return loading;
   }
-  return std::make_unique<TitleScreen>(screens_, interfaceCanvas(),
-                                       playfieldMapping(), motionPreference(),
-                                       std::random_device{}());
+  return std::make_unique<TitleScreen>(
+      TitleScreenParts{.navigator = screens_,
+                       .playfieldPointAt = playfieldMapping(),
+                       .motion = motionPreference(),
+                       .seed = std::random_device{}(),
+                       .squadronStart = screen == ScreenId::TitleAfterIntro
+                                            ? SquadronStart::InPlace
+                                            : SquadronStart::FlyingIn},
+      interfaceCanvas());
 }
 
 std::unique_ptr<IScreen> Application::gameScreen() {
+  soundtrack_.playGameMusic();
   std::unique_ptr<IScreen> loading =
       loadingScreenUnlessLoaded(gameAssets(), ScreenId::Game);
   if (loading != nullptr) {
@@ -166,7 +204,8 @@ std::unique_ptr<IScreen> Application::gameScreen() {
                       .inputs = connection_,
                       .entityMessages = connection_,
                       .connection = connection_,
-                      .sky = background_},
+                      .sky = background_,
+                      .sounds = sounds_},
       std::make_unique<EntityLayer>(*assets_), interfaceCanvas());
 }
 

@@ -9,6 +9,9 @@ target_link_libraries(rtype_client_application
     rtype_client_game_window
     rtype_client_network_thread
     rtype_client_interface
+    rtype_client_music_player
+    rtype_client_soundtrack
+    rtype_client_sound_player
     rtype_client_window
     rtype_client_screen_stack
     rtype_client_platform
@@ -20,13 +23,14 @@ target_link_libraries(rtype_client_application
     rtype_client_connection_screen
     rtype_client_entity_layer
     rtype_client_game_screen
+    rtype_client_intro_screen
     rtype_client_interface_canvas
     rtype_client_loading_screen
     rtype_client_lobby_screen
     rtype_client_localized_key_name
     rtype_client_options_screen
     rtype_client_quit_confirmation_screen
-    rtype_client_screens
+    rtype_client_screen_assets
     rtype_client_title_screen
 )
 

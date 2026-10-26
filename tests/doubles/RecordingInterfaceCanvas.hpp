@@ -41,6 +41,7 @@ struct RecordedImage {
   sf::Vector2i topLeft;
   int scale{};
   sf::IntRect visibleArea;
+  sf::Color tint = sf::Color::White;
 };
 
 /** @brief A texture laid smoothed on a recording canvas. */
@@ -66,12 +67,6 @@ struct InterfaceCanvasRecord {
    * shown, when a test shares one with other doubles. */
   DrawJournal* drawJournal = nullptr;
 };
-
-/** @brief Advance a recording canvas gives each character of small print:
- * Silkscreen is proportional (3 to 7 pixels), so the double takes 6, the
- * width of most of its capitals; the regular font keeps its real
- * REGULAR_FONT_ADVANCE. */
-constexpr int RECORDED_SMALL_ADVANCE = 6;
 
 /** @brief Interface canvas double that writes down what it is asked; it needs
  * no graphics card. */
@@ -112,3 +107,9 @@ class RecordingInterfaceCanvas : public rtype::client::IInterfaceCanvas {
 /** @returns Every pixel the fills of a record light, as (column, row). */
 [[nodiscard]] std::set<std::pair<int, int>> litPixelsOf(
     const InterfaceCanvasRecord& record);
+
+/** @returns Where every image of @p assetId whose rectangle is @p size large
+ * was laid untinted, in the order drawn: tinted copies are left out. */
+[[nodiscard]] std::vector<sf::Vector2i> untintedImagesOf(
+    const InterfaceCanvasRecord& record, std::string_view assetId,
+    sf::Vector2i size);

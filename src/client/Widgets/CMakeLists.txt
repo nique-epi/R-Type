@@ -60,6 +60,7 @@ target_link_libraries(rtype_client_status_band
 rtype_enable_warnings(rtype_client_status_band)
 
 add_subdirectory(MissionBanner)
+add_subdirectory(IntroOverlay)
 add_subdirectory(CutCornerBox)
 add_subdirectory(Outline)
 add_subdirectory(SunkBox)
