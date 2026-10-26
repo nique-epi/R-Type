@@ -49,6 +49,12 @@ constexpr std::uint32_t OTHER_PROTOCOL_ID = network::PROTOCOL_ID + 1;
 constexpr std::uint8_t NEXT_PROTOCOL_VERSION = network::PROTOCOL_VERSION + 1;
 
 /**
+ * @brief The 26 bytes of the protocol page below which the server answers no
+ * datagram of another version: the size of its ConnectionRefused.
+ */
+constexpr std::size_t REFUSAL_DATAGRAM_SIZE = 26;
+
+/**
  * @brief A flags byte with one flag set; version 0 of the protocol sets none.
  */
 constexpr std::uint8_t ONE_FLAG_SET = 0x01;

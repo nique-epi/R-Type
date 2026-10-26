@@ -31,6 +31,7 @@ using rtype::server::testing::NEXT_PROTOCOL_VERSION;
 using rtype::server::testing::ONE_FLAG_SET;
 using rtype::server::testing::OTHER_PROTOCOL_ID;
 using rtype::server::testing::OTHER_SESSION_TOKEN;
+using rtype::server::testing::REFUSAL_DATAGRAM_SIZE;
 using rtype::server::testing::SESSION_TOKEN;
 
 namespace {
@@ -209,13 +210,52 @@ TEST_F(DatagramSorterTest, DropsADatagramOfAnotherVersion) {
 /**
  * Given a sorter that admitted nobody
  * When a stranger sends a connection request of another protocol version
- * Then the request reaches no queue
+ * Then the request goes to the request queue, where it is refused, and
+ * nothing to the player queue
  */
-TEST_F(DatagramSorterTest, DropsAStrangersRequestOfAnotherVersion) {
+TEST_F(DatagramSorterTest, SendsAStrangersRequestOfAnotherVersionToBeRefused) {
   rtype::network::PacketHeader header;
   header.version = NEXT_PROTOCOL_VERSION;
 
   sort(stranger(), requestDatagram(header));
+
+  EXPECT_EQ(drainRequests(),
+            (std::vector<IncomingDatagram>{
+                {.sender = stranger(), .payload = requestDatagram(header)}}));
+  EXPECT_TRUE(drainPlayers().empty());
+}
+
+/**
+ * Given a sorter that admitted nobody
+ * When a stranger sends a datagram of another version of 26 bytes, the size of
+ * the refusal, whatever it holds
+ * Then it goes to the request queue
+ */
+TEST_F(DatagramSorterTest, SendsADatagramOfAnotherVersionAsLongAsTheRefusal) {
+  rtype::network::PacketHeader header;
+  header.version = NEXT_PROTOCOL_VERSION;
+  const std::vector<std::byte> datagram = readyDatagram(header);
+  ASSERT_EQ(datagram.size(), REFUSAL_DATAGRAM_SIZE);
+
+  sort(stranger(), datagram);
+
+  EXPECT_EQ(drainRequests().size(), 1U);
+}
+
+/**
+ * Given a sorter that admitted nobody
+ * When a stranger sends a datagram of another version of 25 bytes, one fewer
+ * than the refusal
+ * Then it reaches no queue: a refusal would send more bytes than it received
+ */
+TEST_F(DatagramSorterTest,
+       DropsADatagramOfAnotherVersionShorterThanTheRefusal) {
+  rtype::network::PacketHeader header;
+  header.version = NEXT_PROTOCOL_VERSION;
+  const std::vector<std::byte> datagram = heartbeatDatagram(header);
+  ASSERT_EQ(datagram.size(), REFUSAL_DATAGRAM_SIZE - 1);
+
+  sort(stranger(), datagram);
 
   EXPECT_TRUE(drainRequests().empty());
   EXPECT_TRUE(drainPlayers().empty());

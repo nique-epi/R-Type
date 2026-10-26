@@ -88,4 +88,11 @@ constexpr std::string_view NETWORK_LOGGER_NAME = "Network";
  */
 constexpr std::chrono::seconds REJECTION_LINE_INTERVAL{10};
 
+/**
+ * @brief Why a receiver drops a datagram whose header is not of this protocol
+ * and version, or has a flag set, as its rejection lines say.
+ */
+constexpr std::string_view FOREIGN_HEADER_DROP_REASON =
+    "its header is not of this protocol and version, or has a flag set";
+
 }  // namespace rtype::network
