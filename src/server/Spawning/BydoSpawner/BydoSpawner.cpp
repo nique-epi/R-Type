@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
+#include <optional>
 #include <random>
 #include <string>
 #include <utility>
@@ -36,20 +37,38 @@ void BydoSpawner::onTick() {
 }
 
 void BydoSpawner::spawnOne() {
-  std::uniform_real_distribution<float> unitDraw{0.0F, 1.0F};
-  const float highestDraw = std::nextafter(1.0F, 0.0F);
-  const game::Position position =
-      game::bydoSpawnPosition(std::min(unitDraw(random_), highestDraw));
-  const game::BydoKind kind =
-      spawnedCount_ % 2 == 0 ? game::BydoKind::Drifter : game::BydoKind::Weaver;
-  std::uint32_t networkId = 0;
-  try {
-    networkId = world_->spawnBydo(position, kind);
-  } catch (const engine::NetworkIdExhaustedException&) {
-    logger_.warn("no Bydo appears: every network id was given");
+  const game::Position position = nextPosition();
+  const std::optional<std::uint32_t> networkId =
+      createBydo(position, nextKind());
+  if (!networkId.has_value()) {
     return;
   }
   ++spawnedCount_;
+  announce(*networkId, position);
+}
+
+game::Position BydoSpawner::nextPosition() {
+  std::uniform_real_distribution<float> unitDraw{0.0F, 1.0F};
+  const float highestDraw = std::nextafter(1.0F, 0.0F);
+  return game::bydoSpawnPosition(std::min(unitDraw(random_), highestDraw));
+}
+
+game::BydoKind BydoSpawner::nextKind() const {
+  return spawnedCount_ % 2 == 0 ? game::BydoKind::Drifter
+                                : game::BydoKind::Weaver;
+}
+
+std::optional<std::uint32_t> BydoSpawner::createBydo(game::Position position,
+                                                     game::BydoKind kind) {
+  try {
+    return world_->spawnBydo(position, kind);
+  } catch (const engine::NetworkIdExhaustedException&) {
+    logger_.warn("no Bydo appears: every network id was given");
+    return std::nullopt;
+  }
+}
+
+void BydoSpawner::announce(std::uint32_t networkId, game::Position position) {
   for (ConnectedPlayer* const player : roster_->connected()) {
     sendEntitySpawned(
         send_, *player,

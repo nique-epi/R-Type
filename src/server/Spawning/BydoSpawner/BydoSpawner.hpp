@@ -1,11 +1,14 @@
 #pragma once
 
 #include <cstdint>
+#include <optional>
 #include <random>
+#include "BydoKind.hpp"
 #include "BydoSpawnerParts.hpp"
 #include "EntitySpawnSender.hpp"
 #include "Logger.hpp"
 #include "PlayerRoster.hpp"
+#include "Position.hpp"
 #include "TimerScheduler.hpp"
 #include "World.hpp"
 
@@ -43,6 +46,11 @@ class BydoSpawner {
 
  private:
   void spawnOne();
+  [[nodiscard]] game::Position nextPosition();
+  [[nodiscard]] game::BydoKind nextKind() const;
+  [[nodiscard]] std::optional<std::uint32_t> createBydo(game::Position position,
+                                                        game::BydoKind kind);
+  void announce(std::uint32_t networkId, game::Position position);
 
   game::World* world_;
   PlayerRoster* roster_;
