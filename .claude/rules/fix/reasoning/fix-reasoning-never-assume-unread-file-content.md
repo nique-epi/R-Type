@@ -21,9 +21,16 @@ trigger: always_on
 1. **Before naming a check as what enforces or forbids something** (in a rule, a plan, a doc comment or a pull request), read its line in `.clang-tidy`: the `Checks` list starts from `*` and turns checks off by name, so a check that exists in clang-tidy may be off in this repository.
 2. **When the check is off, say so next to the guideline it stands for**, and cite the guideline instead: "Core Guidelines C.12; `.clang-tidy` turns its check off".
 
+### A file the user says they have is found before it is described
+
+1. **When the user names an asset they already have** (a music, an image, a font), look for the file on disk (`find ~/Downloads ~/Desktop ~/Music . -maxdepth 4 -iname '*<word>*'`) before writing anything about it in a brief, a plan or a design.
+2. **Read the names from the file, not from the message**: two names on two lines may be one item's title and its author, as a music player shows them, and a prefix in the file name may say where it comes from.
+
 ## Example
 
 - ❌ **Before (wrong)**: reading `EntityRegistry.hpp` fails → I go on assuming a `getComponent<T>(entity)` method and code against it.
 - ✅ **After (right)**: the read fails → `git ls-files | grep -i registry` → read the real file → I see `get<T>(entity)` returning a `std::optional` → I code against reality.
 - ❌ **Before (wrong)**: the parameter rule said a struct holds no reference member "(`cppcoreguidelines-avoid-const-or-ref-data-members`)", from a note of an earlier session; `.clang-tidy` turns that check off.
 - ✅ **After (right)**: read `.clang-tidy` → the check is off → the rule cites Core Guidelines C.12 and says nothing checks it.
+- ❌ **Before (wrong)**: the user wrote "Spacesuit Suite" and "Stationary Sign" on two lines as the menu music → a research brief asked for "the two tracks".
+- ✅ **After (right)**: `find ~/Downloads -iname '*spacesuit*'` → `ES_Spacesuit Suite - Stationary Sign.mp3`: one track, Spacesuit Suite, by Stationary Sign, downloaded from Epidemic Sound (`ES_`).
