@@ -127,6 +127,14 @@ constexpr std::chrono::seconds HEARTBEAT_INTERVAL{1};
 constexpr std::chrono::seconds SESSION_TIMEOUT{5};
 
 /**
+ * @brief How long the client keeps an entity no WorldState lists any more:
+ * past it, the server destroyed the entity and every copy of its
+ * EntityDestroyed was lost, so the client removes it, without an effect.
+ * Provisional, see the protocol page.
+ */
+constexpr std::chrono::milliseconds UNLISTED_ENTITY_TIMEOUT{900};
+
+/**
  * @brief Bytes of a player in a WorldState: playerNumber, shipEntityId, lives,
  * score and invulnerable.
  */
