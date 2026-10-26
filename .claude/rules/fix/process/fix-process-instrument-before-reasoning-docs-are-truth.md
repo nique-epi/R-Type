@@ -39,9 +39,16 @@ When two primitives exist, choose the one whose **shape** rules out the class of
 2. **Before writing "never", "always", "on any path", "in every case"**, find the sentence of the source that says it. If none does, the word goes, and the case the source leaves open is written down ("a path with a smaller MTU may still fragment it").
 3. **Reread the cited section for its limits**, not only for the figure I came for: the exceptions are usually in the next paragraph.
 
+### 7. A template constructor is read with its definition
+
+1. **Before calling a constructor or a function template of a library with a type of my choice**, read its definition too (the `.inl` or the body in the header), not only its declaration: the declaration says what it takes, the definition says which conversions it does, and an implicit conversion inside it refuses the types that would lose precision.
+2. **When a duration, a number or a string goes through such a conversion, pass the type the definition stores**: `sf::Time(std::chrono::duration_cast<std::chrono::microseconds>(duration))`, since `sf::Time` keeps microseconds.
+
 ## Example
 
 - ❌ **Before (wrong)**: "the client doesn't see the other players, it must be the interpolation" → three fixes to the interpolation.
 - ✅ **After (right)**: a log when the snapshot is sent (tick, entity count) and one when it is received (tick, entity count) → the client receives 0 entities → the server serializes before adding the players → targeted fix.
 - ❌ **Before (wrong)**: RFC 9000 says 1200-byte datagrams are "expected" to pass on "modern IPv4 and all IPv6" paths → the page says "IP never fragments a datagram of this protocol, on any path".
 - ✅ **After (right)**: "QUIC relies on the same figure and expects it to pass on all IPv6 paths and on modern IPv4 paths; a path with a smaller MTU may still fragment or drop one of this protocol's datagrams." (RFC 9000's ban on IP fragmentation binds QUIC senders, not this protocol.)
+- ❌ **Before (wrong)**: `sf::Time(THEME_FIRST_BEAT)` with a duration in nanoseconds, after reading only `Time(const std::chrono::duration<Rep, Period>&)` in `Time.hpp:57` → `no matching constructor for initialization of 'std::chrono::microseconds'` from `Time.inl:39`.
+- ✅ **After (right)**: `Time.inl:39` read: it initializes `std::chrono::microseconds` from the duration, so the call casts first, `duration_cast<std::chrono::microseconds>(THEME_FIRST_BEAT)`.

@@ -24,3 +24,13 @@ Copy the qualifiers with the claim; before writing "never", "always" or "on any 
 
 - ❌ **Before (wrong)**: "IP never fragments a datagram of this protocol, on any path."
 - ✅ **After (right)**: "QUIC relies on the same figure and expects it to pass on all IPv6 paths and on modern IPv4 paths; a path with a smaller MTU may still fragment or drop a datagram."
+
+## Update (2026-10-24) — a template constructor read from its declaration only
+
+**Context.** The music player of the client (RTY-123) loops its theme from its first beat, a constant in `std::chrono::milliseconds` stored as the `engine::Duration` of the project (nanoseconds), handed to `sf::Time`.
+
+**Mistake.** `sf::Time(THEME_FIRST_BEAT)` was written after checking that `Time.hpp:57` declares a constructor template from any `std::chrono::duration`. The build failed: the definition, `Time.inl:39`, initializes a `std::chrono::microseconds` member from the duration, an implicit conversion that refuses nanoseconds.
+
+**Root cause.** The header was read for the existence of the constructor, not for what its body converts; a template's declaration accepts every type its body may still refuse.
+
+**Addition to the rule.** A template constructor or function of a library is read with its definition before a type of my choice is passed to it; a value goes in as the type the definition stores.
