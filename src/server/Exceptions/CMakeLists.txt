@@ -1,0 +1,5 @@
+add_library(rtype_server_exception_parts INTERFACE)
+
+target_include_directories(rtype_server_exception_parts INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
+
+add_subdirectory(ServerException)
