@@ -98,6 +98,12 @@ bool DatagramCodec::speaksThisProtocol(const PacketHeader& header) {
          header.flags == thisProtocol.flags;
 }
 
+bool DatagramCodec::speaksAnotherVersion(const PacketHeader& header) {
+  const PacketHeader thisProtocol;
+  return header.protocolId == thisProtocol.protocolId &&
+         header.version != thisProtocol.version;
+}
+
 std::vector<MessageFrame> DatagramCodec::splitMessages(
     std::span<const std::byte> datagram) {
   std::vector<MessageFrame> messages;

@@ -45,4 +45,12 @@ static_assert(TICKS_PER_HEARTBEAT >= 1,
  */
 constexpr std::string_view INSTANCES_LOGGER_NAME = "Instances";
 
+/**
+ * @brief Why a game drops a datagram whose sender is not one of its players,
+ * as its lines say; a header it does not speak is dropped for
+ * FOREIGN_HEADER_DROP_REASON.
+ */
+constexpr std::string_view NOT_A_PLAYER_DROP_REASON =
+    "its sender is not a player of this game";
+
 }  // namespace rtype::server

@@ -266,8 +266,7 @@ std::optional<PlayerDatagram> GameInstance::playerDatagramOf(
   try {
     header = network::DatagramCodec::decodeHeader(datagram.payload);
     if (!network::DatagramCodec::speaksThisProtocol(header)) {
-      drop(datagram.sender,
-           "its header is not of this protocol and version, or has a flag set");
+      drop(datagram.sender, network::FOREIGN_HEADER_DROP_REASON);
       return std::nullopt;
     }
     messages = network::DatagramCodec::splitMessages(datagram.payload);
@@ -277,7 +276,7 @@ std::optional<PlayerDatagram> GameInstance::playerDatagramOf(
   }
   ConnectedPlayer* const player = roster_.find(datagram.sender);
   if (player == nullptr) {
-    drop(datagram.sender, "its sender is not a player of this game");
+    drop(datagram.sender, NOT_A_PLAYER_DROP_REASON);
     return std::nullopt;
   }
   return PlayerDatagram{

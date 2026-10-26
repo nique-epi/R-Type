@@ -73,7 +73,11 @@ namespace rtype::client {
  * game.
  *
  * Only datagrams from the server being contacted, of this protocol and version
- * and whose messages add up to their end, are read; any other is ignored.
+ * and whose messages add up to their end, are read; any other is ignored, with
+ * one exception: during an attempt, a datagram of that server whose header is
+ * of this protocol with another version ends the attempt as Refused
+ * (IncompatibleVersion), with the version the server wrote. Within a session,
+ * such a datagram is ignored, so a forged one cannot end it.
  * Once accepted, the connection keeps the session token the acceptance
  * carries, and drops and counts any later datagram of the server that carries
  * another one.
@@ -157,6 +161,11 @@ class ServerConnection : public IServerConnection,
   /** @brief Ends the attempt as Unreachable, and logs that the server never
    * answered. */
   void giveUp();
+
+  /** @brief Ends the attempt in progress as Refused (IncompatibleVersion),
+   * since the server answered in @p serverVersion, which it keeps, and logs
+   * both versions; sends nothing, and does nothing outside an attempt. */
+  void endAttemptForServerVersion(std::uint8_t serverVersion);
 
   /**
    * @returns Whether a datagram of the server may be read: always before the
