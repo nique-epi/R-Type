@@ -61,7 +61,7 @@ rtype_add_test(NAME server_lobby_tests SOURCES server/Lobby/ConnectionAcceptorTe
 target_include_directories(server_lobby_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/server ${CMAKE_CURRENT_SOURCE_DIR}/network/Protocol)
 rtype_add_test(NAME server_spawning_tests SOURCES server/Replication/ShipSpawnAnnouncerTest.cpp LIBS rtype_server_ship_spawn_announcer rtype_game_spawning rtype_network_handshake)
 target_include_directories(server_spawning_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/server)
-rtype_add_test(NAME server_bydo_spawner_tests SOURCES server/Spawning/BydoSpawnerTest.cpp JournalFile.cpp LIBS rtype_server_bydo_spawner rtype_network_handshake rtype_game_spawning rtype_server_constants)
+rtype_add_test(NAME server_bydo_spawner_tests SOURCES server/Spawning/BydoSpawnerTest.cpp server/Spawning/BydoSpawnerScene.cpp JournalFile.cpp LIBS rtype_server_bydo_spawner rtype_game_spawning_constants rtype_network_constants server_test_datagrams)
 target_include_directories(server_bydo_spawner_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/server)
 rtype_add_test(NAME server_wave_catalog_tests SOURCES server/Spawning/WaveCatalogTest.cpp server/Spawning/WaveCatalogFixtures.cpp LIBS rtype_server_wave_catalog rtype_server_exceptions)
 target_include_directories(server_wave_catalog_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/server)
