@@ -35,6 +35,9 @@ enum class ScreenId : std::uint8_t {
    * over the connection screen once the server accepted the player.
    */
   Lobby,
+  /** @brief The intro the client opens on, entered through replaceAll() only,
+   * at launch: it replaces itself with the title. */
+  Intro,
 };
 
 }  // namespace rtype::client

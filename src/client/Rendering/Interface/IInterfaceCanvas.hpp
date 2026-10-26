@@ -46,12 +46,13 @@ class IInterfaceCanvas {
 
   /**
    * @brief Copies a rectangle of a loaded texture, each of its pixels made a
-   * square of placement.scale × placement.scale pixels, cutting off whatever
-   * falls outside visibleArea: a pixel of the texture that visibleArea cuts is
-   * left out whole.
+   * square of placement.scale × placement.scale pixels and multiplied by
+   * placement.tint, cutting off whatever falls outside visibleArea: a pixel of
+   * the texture that visibleArea cuts is left out whole.
    *
    * @param image The texture and its rectangle.
-   * @param placement Where the copy lands, and how many times it is enlarged.
+   * @param placement Where the copy lands, how many times it is enlarged, and
+   * its tint.
    * @param visibleArea The only pixels the copy may paint.
    */
   virtual void drawImage(TextureArea image, ImagePlacement placement,

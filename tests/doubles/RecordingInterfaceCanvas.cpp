@@ -12,6 +12,7 @@
 #include "DrawJournal.hpp"
 #include "ImagePlacement.hpp"
 #include "InterfaceConstants.hpp"
+#include "RecordingInterfaceCanvasConstants.hpp"
 #include "TextStyle.hpp"
 #include "TextureArea.hpp"
 
@@ -43,7 +44,8 @@ void RecordingInterfaceCanvas::drawImage(
                              .source = image.rectangle,
                              .topLeft = placement.topLeft,
                              .scale = placement.scale,
-                             .visibleArea = visibleArea});
+                             .visibleArea = visibleArea,
+                             .tint = placement.tint});
 }
 
 void RecordingInterfaceCanvas::drawSmoothImage(std::string_view assetId,

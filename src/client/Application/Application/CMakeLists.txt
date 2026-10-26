@@ -22,6 +22,7 @@ target_link_libraries(rtype_client_application
     rtype_client_connection_screen
     rtype_client_entity_layer
     rtype_client_game_screen
+    rtype_client_intro_screen
     rtype_client_interface_canvas
     rtype_client_loading_screen
     rtype_client_lobby_screen
