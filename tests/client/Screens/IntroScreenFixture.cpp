@@ -1,5 +1,7 @@
 #include "IntroScreenFixture.hpp"
 #include <memory>
+#include <optional>
+#include "FakeMusicPlayer.hpp"
 #include "IntroScreen.hpp"
 #include "IntroScreenParts.hpp"
 #include "IntroScreenTestConstants.hpp"
@@ -36,8 +38,10 @@ void IntroScreenFixture::playFor(rtype::engine::Duration duration) {
 void IntroScreenFixture::playWithTheMusicFor(rtype::engine::Duration duration) {
   for (rtype::engine::Duration played{}; played < duration;
        played += ONE_FRAME) {
-    music_.setPlayingOffset(
-        music_.playingOffset().value_or(rtype::engine::Duration{}) + ONE_FRAME);
+    if (const std::optional<rtype::engine::Duration> offset =
+            music_.playingOffset()) {
+      music_.setPlayingOffset(*offset + ONE_FRAME);
+    }
     intro_->update(ONE_FRAME);
   }
 }
@@ -54,7 +58,7 @@ const RecordingSoundPlayer& IntroScreenFixture::sounds() const {
   return sounds_;
 }
 
-FakeMusicClock& IntroScreenFixture::music() { return music_; }
+FakeMusicPlayer& IntroScreenFixture::music() { return music_; }
 
 rtype::client::PlayerSettings& IntroScreenFixture::settings() {
   return settings_;

@@ -37,8 +37,10 @@
 #include "ScreenId.hpp"
 #include "ScreenStack.hpp"
 #include "SettingsFile.hpp"
+#include "SquadronStart.hpp"
 #include "TimeConstants.hpp"
 #include "TitleScreen.hpp"
+#include "TitleScreenParts.hpp"
 
 namespace rtype::client {
 
@@ -85,7 +87,6 @@ Application::Application(AssetLibrary& assets, network::Endpoint server,
       server_(std::move(server)),
       nickname_(std::move(nickname)),
       screens_([this](ScreenId screen) { return createScreen(screen); }) {
-  music_.start();
   screens_.replaceAll(firstScreen());
   screens_.applyPendingChanges();
 }
@@ -146,7 +147,8 @@ std::unique_ptr<IScreen> Application::createScreen(ScreenId screen) {
                            .seed = std::random_device{}()},
           interfaceCanvas());
     case ScreenId::Title:
-      return titleScreen();
+    case ScreenId::TitleAfterIntro:
+      return titleScreen(screen);
     case ScreenId::Game:
       return gameScreen();
     case ScreenId::Options:
@@ -165,15 +167,22 @@ std::unique_ptr<IScreen> Application::createScreen(ScreenId screen) {
   return nullptr;
 }
 
-std::unique_ptr<IScreen> Application::titleScreen() {
+std::unique_ptr<IScreen> Application::titleScreen(ScreenId screen) {
+  music_.start();
   std::unique_ptr<IScreen> loading =
-      loadingScreenUnlessLoaded(titleAssets(), ScreenId::Title);
+      loadingScreenUnlessLoaded(titleAssets(), screen);
   if (loading != nullptr) {
     return loading;
   }
-  return std::make_unique<TitleScreen>(screens_, interfaceCanvas(),
-                                       playfieldMapping(), motionPreference(),
-                                       std::random_device{}());
+  return std::make_unique<TitleScreen>(
+      TitleScreenParts{.navigator = screens_,
+                       .playfieldPointAt = playfieldMapping(),
+                       .motion = motionPreference(),
+                       .seed = std::random_device{}(),
+                       .squadronStart = screen == ScreenId::TitleAfterIntro
+                                            ? SquadronStart::InPlace
+                                            : SquadronStart::FlyingIn},
+      interfaceCanvas());
 }
 
 std::unique_ptr<IScreen> Application::gameScreen() {

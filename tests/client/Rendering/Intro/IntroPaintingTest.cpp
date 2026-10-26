@@ -1,3 +1,4 @@
+#include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include <algorithm>
 #include "EffectColorConstants.hpp"
@@ -10,10 +11,12 @@
 #include "IntroTimeline.hpp"
 #include "IntroTimelineConstants.hpp"
 #include "RecordingInterfaceCanvas.hpp"
+#include "SquadronTestConstants.hpp"
 
 using rtype::client::BYDO_EXPLOSION_FRAME;
 using rtype::client::BYDO_EXPLOSION_WITHOUT_FLASH_FRAME;
 using rtype::client::BYDO_LILAC;
+using rtype::client::BYDO_PALE;
 using rtype::client::closeupStartOf;
 using rtype::client::EFFECT_SHEET_ID;
 using rtype::client::ENTITY_SHEET_ID;
@@ -21,12 +24,16 @@ using rtype::client::FlashPreference;
 using rtype::client::INTRO_FIRST_KILL;
 using rtype::client::INTRO_SCENE_BOOST;
 using rtype::client::INTRO_SWARM_CUT;
+using rtype::client::INTRO_TITLE;
 using rtype::client::PLAYER_BLUE;
 using rtype::client::PLAYER_SHIP_FRAME;
 using rtype::client::testing::A_MOMENT;
 using rtype::client::testing::CLOSEUP_SCALE;
 using rtype::client::testing::FULL_SPEED_LINES;
+using rtype::client::testing::SHIP_SIZE;
+using rtype::client::testing::SHIPS_IN_PLACE_ON_THE_TITLE;
 using rtype::client::testing::WIDE_SCALE;
+using ::testing::UnorderedElementsAreArray;
 
 /**
  * Given the close-up of the first pilot
@@ -137,4 +144,42 @@ TEST(IntroPainting, WithReducedFlashesTheWarpDrawsNoSpeedLine) {
                 FlashPreference::Reduced);
 
   EXPECT_EQ(speedLinesOf(record), 0U);
+}
+
+/**
+ * Given the ships landed in the squadron of the title
+ * When the scene is painted just before the title opens
+ * Then the four ships lie where the title shows its squadron in place
+ */
+TEST(IntroPainting, TheLandedShipsLieWhereTheTitleShowsThem) {
+  const InterfaceCanvasRecord record =
+      paintedAt(INTRO_TITLE - A_MOMENT, FlashPreference::Full);
+
+  EXPECT_THAT(untintedImagesOf(record, ENTITY_SHEET_ID, SHIP_SIZE),
+              UnorderedElementsAreArray(SHIPS_IN_PLACE_ON_THE_TITLE));
+}
+
+/**
+ * Given the first kill of the cascade, with flashes
+ * When it is painted just after the hit
+ * Then its drops start pale, the first color of the drops of a Bydo
+ */
+TEST(IntroPainting, WithFlashesTheDropsOfAKillStartPale) {
+  const InterfaceCanvasRecord record = paintedAt(
+      INTRO_FIRST_KILL + rtype::client::INTRO_FIRST_IMPACT_FREEZE + A_MOMENT,
+      FlashPreference::Full);
+
+  EXPECT_GT(fillsColored(record, BYDO_PALE), 0U);
+}
+
+/**
+ * Given the first kill of the cascade, with REDUCE FLASHES
+ * When it is painted just after the hit
+ * Then no drop is pale: the drops lose their first color, as in a game
+ */
+TEST(IntroPainting, WithReducedFlashesNoDropIsPale) {
+  const InterfaceCanvasRecord record =
+      paintedAt(INTRO_FIRST_KILL + A_MOMENT, FlashPreference::Reduced);
+
+  EXPECT_EQ(fillsColored(record, BYDO_PALE), 0U);
 }

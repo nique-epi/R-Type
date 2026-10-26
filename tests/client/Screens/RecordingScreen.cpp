@@ -30,6 +30,8 @@ const char* nameOf(ScreenId screen) {
       return "lobby";
     case ScreenId::Intro:
       return "intro";
+    case ScreenId::TitleAfterIntro:
+      return "title after the intro";
   }
   return "unknown screen";
 }

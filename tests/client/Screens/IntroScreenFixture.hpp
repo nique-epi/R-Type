@@ -2,7 +2,7 @@
 
 #include <gtest/gtest.h>
 #include <memory>
-#include "FakeMusicClock.hpp"
+#include "FakeMusicPlayer.hpp"
 #include "IntroScreen.hpp"
 #include "PlayerSettings.hpp"
 #include "RecordingInterfaceCanvas.hpp"
@@ -26,8 +26,8 @@ class IntroScreenFixture : public ::testing::Test {
   void playFor(rtype::engine::Duration duration);
 
   /** @brief Updates the intro frame by frame, ONE_FRAME each, for @p duration,
-   * moving the music of the double by ONE_FRAME before each frame, as the real
-   * music moves. */
+   * moving the music of the double by ONE_FRAME before each frame once it
+   * plays, as the real music moves. */
   void playWithTheMusicFor(rtype::engine::Duration duration);
 
   /** @brief Ends the intro, as replacing it with the title does. */
@@ -36,7 +36,7 @@ class IntroScreenFixture : public ::testing::Test {
   [[nodiscard]] const RecordingNavigator& navigator() const;
   [[nodiscard]] const RecordingSky& sky() const;
   [[nodiscard]] const RecordingSoundPlayer& sounds() const;
-  FakeMusicClock& music();
+  FakeMusicPlayer& music();
   rtype::client::PlayerSettings& settings();
 
  private:
@@ -44,7 +44,7 @@ class IntroScreenFixture : public ::testing::Test {
   rtype::client::PlayerSettings settings_;
   RecordingSky sky_;
   RecordingSoundPlayer sounds_;
-  FakeMusicClock music_;
+  FakeMusicPlayer music_;
   InterfaceCanvasRecord canvas_;
   std::unique_ptr<rtype::client::IntroScreen> intro_;
 };

@@ -1,15 +1,14 @@
 #pragma once
 
-#include <cstdint>
 #include <memory>
 #include "IInterfaceCanvas.hpp"
 #include "IScreen.hpp"
 #include "IScreenNavigator.hpp"
 #include "Menu.hpp"
-#include "MotionPreference.hpp"
 #include "PlayfieldMapping.hpp"
 #include "Squadron.hpp"
 #include "TimeConstants.hpp"
+#include "TitleScreenParts.hpp"
 
 namespace rtype::client {
 
@@ -26,19 +25,9 @@ namespace rtype::client {
  */
 class TitleScreen : public IScreen {
  public:
-  /**
-   * @param navigator Screens the title lives among, which must outlive it.
-   * @param canvas Picture the menu and the squadron are painted on, never
-   * null.
-   * @param playfieldPointAt Gives the point of the playfield under a pixel of
-   * the window.
-   * @param motion MotionPreference::Reduced shows the squadron at rest.
-   * @param seed Seed of the shots of the squadron.
-   */
-  TitleScreen(IScreenNavigator& navigator,
-              std::unique_ptr<IInterfaceCanvas> canvas,
-              PlayfieldMapping playfieldPointAt, MotionPreference motion,
-              std::uint32_t seed);
+  /** @param canvas Picture the menu and the squadron are painted on, never
+   * null. */
+  TitleScreen(TitleScreenParts parts, std::unique_ptr<IInterfaceCanvas> canvas);
 
   void handleEvent(const sf::Event& event) override;
   void update(engine::Duration elapsed) override;

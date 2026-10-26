@@ -7,6 +7,7 @@
 #include "IntroTestConstants.hpp"
 #include "IntroTimeline.hpp"
 #include "IntroTimelineConstants.hpp"
+#include "SquadronTestConstants.hpp"
 
 using rtype::client::closeupPlaceAt;
 using rtype::client::closeupStartOf;
@@ -17,13 +18,16 @@ using rtype::client::INTRO_HOMES;
 using rtype::client::INTRO_PINK_PILOT;
 using rtype::client::INTRO_SCENE_BOOST;
 using rtype::client::INTRO_SCENE_CHARGE;
+using rtype::client::INTRO_SCENE_TITLE;
 using rtype::client::INTRO_SWARM_CUT;
+using rtype::client::landedPlaceAt;
+using rtype::client::smearAt;
 using rtype::client::squadronPlaceAt;
 using rtype::client::testing::A_MOMENT;
 using rtype::client::testing::HALF_A_BEAT;
 using rtype::client::testing::MIDDLE_OF_A_CLOSEUP_X;
-using rtype::client::testing::ONE_SECOND;
-using rtype::client::testing::SCREEN_WIDTH;
+using rtype::client::testing::SHIPS_IN_PLACE_ON_THE_TITLE;
+using rtype::client::testing::SQUADRON_BOX_ON_THE_TITLE;
 using rtype::client::testing::SQUADRON_ENTRY_X;
 using rtype::client::testing::SWAPPED_ROWS_GAP;
 using rtype::client::testing::TWO_BOBS;
@@ -92,24 +96,63 @@ TEST(IntroShipPaths, ThePinkAndGreenShipsSwapRows) {
 }
 
 /**
- * Given the boost
- * When the places of the ships are read one second later
- * Then every ship left past the right edge
+ * Given the squadron box of the title screen
+ * When the places of the ships are read as the title opens
+ * Then each ship sits on its place in the squadron of the title, where the
+ * title shows it
  */
-TEST(IntroShipPaths, TheShipsLeaveRightAtTheBoost) {
+TEST(IntroShipPaths, TheShipsLandOnTheSquadronOfTheTitle) {
   for (std::size_t pilot = 0; pilot < INTRO_HOMES.size(); ++pilot) {
     const std::optional<sf::Vector2f> place =
-        squadronPlaceAt(pilot, INTRO_SCENE_BOOST + ONE_SECOND);
+        landedPlaceAt(pilot, INTRO_SCENE_TITLE, SQUADRON_BOX_ON_THE_TITLE);
     ASSERT_TRUE(place.has_value());
-    EXPECT_GT(place.value_or(sf::Vector2f()).x, SCREEN_WIDTH) << pilot;
+    EXPECT_EQ(place.value_or(sf::Vector2f()),
+              sf::Vector2f(SHIPS_IN_PLACE_ON_THE_TITLE.at(pilot)))
+        << pilot;
+  }
+}
+
+/**
+ * Given the squadron box of the title screen
+ * When the places of the ships are read at the boost
+ * Then each ship is still where its flight in the wide shot puts it
+ */
+TEST(IntroShipPaths, TheShipsStartLandingAtTheBoost) {
+  for (std::size_t pilot = 0; pilot < INTRO_HOMES.size(); ++pilot) {
+    EXPECT_EQ(
+        landedPlaceAt(pilot, INTRO_SCENE_BOOST, SQUADRON_BOX_ON_THE_TITLE),
+        squadronPlaceAt(pilot, INTRO_SCENE_BOOST))
+        << pilot;
   }
 }
 
 /**
  * Given the boost
- * When the length of the flames is read
- * Then they burn full
+ * When the length of the flame of the first ship is read
+ * Then it burns full
  */
 TEST(IntroShipPaths, TheFlamesBurnFullAtTheBoost) {
-  EXPECT_FLOAT_EQ(exhaustAt(INTRO_SCENE_BOOST), 1.0F);
+  EXPECT_FLOAT_EQ(exhaustAt(0, INTRO_SCENE_BOOST), 1.0F);
+}
+
+/**
+ * Given the ships landed in the squadron of the title
+ * When the lengths of their flames are read as the title opens
+ * Then no flame is left, as the title shows none
+ */
+TEST(IntroShipPaths, TheFlamesDieOutOnceTheShipsLanded) {
+  for (std::size_t pilot = 0; pilot < INTRO_HOMES.size(); ++pilot) {
+    EXPECT_FLOAT_EQ(exhaustAt(pilot, INTRO_SCENE_TITLE), 0.0F) << pilot;
+  }
+}
+
+/**
+ * Given the ships landed in the squadron of the title
+ * When their ghosts are read as the title opens
+ * Then they caught up with their ships, as the title shows none
+ */
+TEST(IntroShipPaths, TheGhostsCatchUpWithTheLandedShips) {
+  for (std::size_t pilot = 0; pilot < INTRO_HOMES.size(); ++pilot) {
+    EXPECT_FLOAT_EQ(smearAt(pilot, INTRO_SCENE_TITLE), 0.0F) << pilot;
+  }
 }

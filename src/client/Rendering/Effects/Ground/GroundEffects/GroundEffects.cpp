@@ -3,16 +3,15 @@
 #include <SFML/System/Vector2.hpp>
 #include <algorithm>
 #include <cmath>
-#include <cstddef>
-#include <span>
-#include <vector>
 #include "BackgroundConstants.hpp"
+#include "ColorRamp.hpp"
 #include "ComponentRegistry.hpp"
 #include "Easing.hpp"
 #include "Entity.hpp"
 #include "GroundEffectConstants.hpp"
 #include "IPixelSurface.hpp"
 #include "Particle.hpp"
+#include "PixelCircle.hpp"
 #include "PixelRounding.hpp"
 #include "Position.hpp"
 #include "Shockwave.hpp"
@@ -31,44 +30,10 @@ float shareOfLife(engine::Duration age, engine::Duration life) {
   return std::clamp(shareOf(age, life), 0.0F, 1.0F);
 }
 
-/** @returns The color of @p colors that a share of life reaches: the first
- * for 0, the last one for the end. */
-sf::Color colorAt(std::span<const sf::Color> colors, float share) {
-  const auto index =
-      static_cast<std::size_t>(share * static_cast<float>(colors.size()));
-  return colors[std::min(index, colors.size() - 1)];
-}
-
 /** @returns The pixel of the canvas under a position of the playfield. */
 sf::Vector2i pixelOf(game::Position position) {
   return nearestPixel(sf::Vector2f(position.x, position.y) /
                       BACKGROUND_PIXEL_SIZE);
-}
-
-/** @returns The pixels of a circle of that radius around (0, 0), from the
- * midpoint circle algorithm: one pixel thick, every pixel whole. */
-std::vector<sf::Vector2i> circleOf(int radius) {
-  std::vector<sf::Vector2i> pixels;
-  int column = radius;
-  int row = 0;
-  int error = 1 - radius;
-  while (column >= row) {
-    for (const sf::Vector2i octant :
-         {sf::Vector2i(column, row), sf::Vector2i(row, column),
-          sf::Vector2i(-row, column), sf::Vector2i(-column, row),
-          sf::Vector2i(-column, -row), sf::Vector2i(-row, -column),
-          sf::Vector2i(row, -column), sf::Vector2i(column, -row)}) {
-      pixels.push_back(octant);
-    }
-    ++row;
-    if (error < 0) {
-      error += (2 * row) + 1;
-    } else {
-      --column;
-      error += (2 * (row - column)) + 1;
-    }
-  }
-  return pixels;
 }
 
 void paintParticles(engine::ComponentRegistry& components,

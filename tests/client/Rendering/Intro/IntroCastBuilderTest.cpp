@@ -24,6 +24,7 @@ using rtype::client::IntroCast;
 using rtype::client::IntroMissile;
 using rtype::client::shipPlaceAt;
 using rtype::client::SQUADRON_MUZZLE;
+using rtype::client::testing::BURST_AFTER_THE_BEAMS;
 using rtype::client::testing::INTRO_TEST_SEED;
 
 /**
@@ -92,7 +93,6 @@ TEST(IntroCastBuilder, TheRingBurstsJustAfterTheBeams) {
 
   EXPECT_TRUE(std::ranges::any_of(cast.bursts, [](const auto& burst) {
     return burst.center == INTRO_RING_CENTER &&
-           burst.start ==
-               INTRO_SCENE_RELEASE + rtype::client::INTRO_BURST_DELAY;
+           burst.start == INTRO_SCENE_RELEASE + BURST_AFTER_THE_BEAMS;
   }));
 }

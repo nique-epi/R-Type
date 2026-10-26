@@ -5,12 +5,15 @@
 #include <cstddef>
 #include <numbers>
 #include <optional>
+#include <utility>
 #include "BackgroundConstants.hpp"
 #include "Easing.hpp"
 #include "IntroCastConstants.hpp"
 #include "IntroTimeline.hpp"
 #include "IntroTimelineConstants.hpp"
 #include "RenderingConstants.hpp"
+#include "SquadronConstants.hpp"
+#include "SquadronShip.hpp"
 
 namespace rtype::client {
 
@@ -82,13 +85,29 @@ float chargeShiftAt(float scene) {
   return shift;
 }
 
-/** @returns How far right a ship left at the boost, one after the other. */
-// NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
-float exitShiftAt(std::size_t pilot, float scene) {
-  const float start =
-      INTRO_SCENE_BOOST + (static_cast<float>(pilot) * INTRO_EXIT_STAGGER);
-  return INTRO_EXIT_DISTANCE *
-         easeInCubic(progressThrough(scene, start, INTRO_EXIT_TIME));
+/** @returns When the ship of @p pilot starts landing, one after the other
+ * from the boost. */
+float landingStartOf(std::size_t pilot) {
+  return INTRO_SCENE_BOOST +
+         (static_cast<float>(pilot) * INTRO_LANDING_STAGGER);
+}
+
+/** @returns How far the ship of @p pilot went of its way to its place in the
+ * squadron of the title, from 0 to 1: fast first, then braking. */
+float landingAt(std::size_t pilot, float scene) {
+  return easeOutCubic(
+      progressThrough(scene, landingStartOf(pilot), INTRO_LANDING_TIME));
+}
+
+/** @returns Where the ship of @p pilot sits in the squadron of the title, from
+ * the top-left corner of its box; the corner itself for a pilot it has not. */
+sf::Vector2f titlePlaceOf(std::size_t pilot) {
+  for (const SquadronShip& ship : SQUADRON_SHIPS) {
+    if (std::cmp_equal(ship.color, pilot)) {
+      return ship.place;
+    }
+  }
+  return {};
 }
 
 }  // namespace
@@ -115,8 +134,7 @@ std::optional<sf::Vector2f> squadronPlaceAt(std::size_t pilot, float scene) {
   }
   const sf::Vector2f swap = swapShiftAt(pilot, scene);
   return sf::Vector2f(
-      entryXAt(pilot, scene) + swap.x + chargeShiftAt(scene) +
-          exitShiftAt(pilot, scene),
+      entryXAt(pilot, scene) + swap.x + chargeShiftAt(scene),
       INTRO_HOMES.at(pilot).y + swap.y + swayAt(scene) + bobAt(pilot, scene));
 }
 
@@ -128,12 +146,24 @@ std::optional<sf::Vector2f> shipPlaceAt(std::size_t pilot, float scene) {
   return squadronPlaceAt(pilot, scene);
 }
 
-float exhaustAt(float scene) {
+std::optional<sf::Vector2f> landedPlaceAt(std::size_t pilot, float scene,
+                                          sf::Vector2i squadronBox) {
+  const std::optional<sf::Vector2f> place = shipPlaceAt(pilot, scene);
+  if (!place.has_value()) {
+    return std::nullopt;
+  }
+  const float landed = landingAt(pilot, scene);
+  const sf::Vector2f target = sf::Vector2f(squadronBox) + titlePlaceOf(pilot);
+  return sf::Vector2f(std::lerp(place->x, target.x, landed),
+                      std::lerp(place->y, target.y, landed));
+}
+
+float exhaustAt(std::size_t pilot, float scene) {
   if (scene < INTRO_SWARM_CUT) {
     return INTRO_CLOSEUP_EXHAUST;
   }
   if (scene >= INTRO_SCENE_BOOST) {
-    return INTRO_BOOST_EXHAUST;
+    return INTRO_BOOST_EXHAUST * (1.0F - landingAt(pilot, scene));
   }
   if (scene >= INTRO_SCENE_CHARGE) {
     return INTRO_CHARGE_EXHAUST;
@@ -147,10 +177,11 @@ float smearAt(std::size_t pilot, float scene) {
   if (scene < INTRO_SWARM_CUT) {
     return 0.0F;
   }
-  return std::max(
-      1.0F -
-          progressThrough(scene, entryStartOf(pilot), INTRO_ENTRY_SMEAR_FADE),
-      progressThrough(scene, INTRO_SCENE_BOOST, INTRO_BOOST_SMEAR_RISE));
+  const float landing =
+      scene >= landingStartOf(pilot) ? 1.0F - landingAt(pilot, scene) : 0.0F;
+  return std::max(1.0F - progressThrough(scene, entryStartOf(pilot),
+                                         INTRO_ENTRY_SMEAR_FADE),
+                  landing);
 }
 
 sf::Vector2f noseOf(sf::Vector2f place) { return place + INTRO_NOSE; }

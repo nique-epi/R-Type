@@ -7,10 +7,15 @@
 #include "InterfaceColorConstants.hpp"
 #include "InterfaceConstants.hpp"
 #include "IntroTimelineConstants.hpp"
+#include "SquadronConstants.hpp"
 #include "TextStyle.hpp"
 #include "WidgetConstants.hpp"
 
 namespace rtype::client {
+
+/** @brief The picture is ink before time 0, the black second of the intro,
+ * then fades in from ink in INTRO_FADE_IN_TIME. */
+constexpr float INTRO_FADE_IN_TIME = 0.3F;
 
 /** @brief The bands of the cinema format, INTRO_BAND_HEIGHT pixels at the top
  * and at the bottom, open in INTRO_BAND_OPENING from the slam; texts lie on
@@ -61,6 +66,14 @@ constexpr TextStyle INTRO_HINT_STYLE{.font = TextFont::Small,
 constexpr sf::Vector2i INTRO_LOGO_PLACE(SAFE_MARGIN, SAFE_MARGIN +
                                                          TEXT_LINE_HEIGHT +
                                                          SPACE_BELOW_VERSION);
+/** @brief Where the ships of the intro land: in the box the title screen lays
+ * its squadron in, against the right margin ILLUSTRATION_TOP rows down, where
+ * MenuBuilder lays the illustration of a page (MenuBuilder::placeColumn), so
+ * the title opens on its squadron where the ships stopped. */
+constexpr sf::Vector2i INTRO_SQUADRON_BOX_PLACE(INTERFACE_AREA.size.x -
+                                                    SAFE_MARGIN -
+                                                    SQUADRON_BOX_SIZE.x,
+                                                ILLUSTRATION_TOP);
 constexpr std::array INTRO_LOGO_TRAIL{DEEP_BLUE, BLUE, EDGE_BLUE};
 constexpr float INTRO_TRAIL_SPACING = 22.0F;
 constexpr float INTRO_LINES_REACH_TIME = 0.12F;

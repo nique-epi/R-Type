@@ -24,6 +24,7 @@
 #include "SquadronConstants.hpp"
 #include "SquadronShip.hpp"
 #include "SquadronShipPlacement.hpp"
+#include "SquadronStart.hpp"
 #include "TextureArea.hpp"
 #include "TimeConstants.hpp"
 
@@ -112,15 +113,21 @@ void paintTitle(IInterfaceCanvas& canvas, sf::IntRect box, float time) {
                box.position + SQUADRON_TITLE_POSITION, SQUADRON_TITLE_STYLE);
 }
 
+/** @returns The time the squadron starts at: SQUADRON_DRIFT_START, where the
+ * arrival ends, when it starts in place or does not move; 0 otherwise. */
+engine::Duration startTimeOf(MotionPreference motion, SquadronStart start) {
+  if (motion == MotionPreference::Reduced || start == SquadronStart::InPlace) {
+    return std::chrono::duration_cast<engine::Duration>(
+        std::chrono::duration<float>(SQUADRON_DRIFT_START));
+  }
+  return engine::Duration::zero();
+}
+
 }  // namespace
 
-Squadron::Squadron(MotionPreference motion, std::uint32_t seed)
-    : motion_(motion),
-      random_(seed),
-      elapsed_(motion == MotionPreference::Reduced
-                   ? std::chrono::duration_cast<engine::Duration>(
-                         std::chrono::duration<float>(SQUADRON_DRIFT_START))
-                   : engine::Duration::zero()) {}
+Squadron::Squadron(MotionPreference motion, std::uint32_t seed,
+                   SquadronStart start)
+    : motion_(motion), random_(seed), elapsed_(startTimeOf(motion, start)) {}
 
 void Squadron::advance(engine::Duration elapsed) {
   if (motion_ == MotionPreference::Reduced) {

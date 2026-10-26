@@ -10,12 +10,10 @@ namespace rtype::client::testing {
 constexpr std::uint32_t INTRO_TEST_SEED = 11;
 
 /** @brief Seconds of the music after a moment, small enough to stay in the
- * same shot and step of an animation; half a beat of 60/109 s; one
- * second. */
+ * same shot and step of an animation; half a beat of 60/109 s. */
 constexpr float A_MOMENT = 0.01F;
 constexpr float LONGER_THAN_A_FLASH = 0.03F;
 constexpr float HALF_A_BEAT = 30.0F / 109.0F;
-constexpr float ONE_SECOND = 1.0F;
 
 /** @brief The first freeze holds a kill of the game, 50 ms; the scene is
  * 50 ms behind the music once it is over. */
@@ -29,10 +27,9 @@ constexpr sf::Vector2i SECOND_CLOSEUP_TOP_LEFT(160, 110);
  * shot, 240 less half of its 32 pixels. */
 constexpr float MIDDLE_OF_A_CLOSEUP_X = 224.0F;
 
-/** @brief The speeds of the stars the mockup gives: the warp of the boost,
- * and their own speed when the title opens. */
-constexpr float WARP = 12.0F;
-constexpr float OWN_SPEED = 1.0F;
+/** @brief The ring bursts 30 ms after the beams leave, as the mockup
+ * times it. */
+constexpr float BURST_AFTER_THE_BEAMS = 0.03F;
 
 /** @brief The width of the screen, in pixels of the world: past it, debris
  * are gone. */

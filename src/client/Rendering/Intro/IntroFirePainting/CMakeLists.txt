@@ -7,9 +7,11 @@ target_link_libraries(rtype_client_intro_fire_painting
     rtype_client_intro_interfaces
   PRIVATE
     rtype_client_cinema_projection
+    rtype_client_color_ramp
     rtype_client_easing
     rtype_client_entity_sprites
     rtype_client_intro_timeline
+    rtype_client_pixel_circle
 )
 
 rtype_enable_warnings(rtype_client_intro_fire_painting)

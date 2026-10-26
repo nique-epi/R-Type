@@ -107,3 +107,9 @@ class RecordingInterfaceCanvas : public rtype::client::IInterfaceCanvas {
 /** @returns Every pixel the fills of a record light, as (column, row). */
 [[nodiscard]] std::set<std::pair<int, int>> litPixelsOf(
     const InterfaceCanvasRecord& record);
+
+/** @returns Where every image of @p assetId whose rectangle is @p size large
+ * was laid untinted, in the order drawn: tinted copies are left out. */
+[[nodiscard]] std::vector<sf::Vector2i> untintedImagesOf(
+    const InterfaceCanvasRecord& record, std::string_view assetId,
+    sf::Vector2i size);

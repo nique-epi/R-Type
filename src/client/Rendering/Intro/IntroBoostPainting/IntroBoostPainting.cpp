@@ -51,37 +51,46 @@ struct Beam {
   float through{};
 };
 
-/** @brief Paints the grains a charge draws in, each on a spiral that ends at
- * the nose. */
+/** @returns Grain @p grain of the charge at @p nose at that moment of the
+ * scene, on a spiral that ends at the nose; nothing while it does not
+ * fly. */
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
+std::optional<WorldArea> grainAt(const ChargingNose& nose, std::size_t grain,
+                                 float scene) {
+  const float chargeTime = INTRO_SCENE_RELEASE - INTRO_SCENE_CHARGE;
+  const float start =
+      INTRO_SCENE_CHARGE +
+      (static_cast<float>(grain) / static_cast<float>(INTRO_CHARGE_GRAINS) *
+       chargeTime * INTRO_GRAIN_SPREAD);
+  const float flight = (scene - start) / INTRO_GRAIN_FLIGHT;
+  if (flight < 0.0F || flight >= 1.0F) {
+    return std::nullopt;
+  }
+  const float angle = (introHash(static_cast<double>(
+                           (nose.pilot * INTRO_GRAIN_SEED_STEP) + grain)) *
+                       FULL_TURN) +
+                      (flight * INTRO_GRAIN_TURN);
+  const float reach =
+      INTRO_GRAIN_REACH * std::pow(1.0F - flight, INTRO_GRAIN_CURVE);
+  return WorldArea{
+      .topLeft = nose.point +
+                 sf::Vector2f(std::cos(angle) * reach, std::sin(angle) * reach),
+      .size = {grain % INTRO_LARGE_GRAIN_PERIOD == 0 ? INTRO_LARGE_GRAIN_WIDTH
+                                                     : INTRO_SMALL_GRAIN_WIDTH,
+               1},
+      .color = flight > INTRO_GRAIN_WHITE_AFTER
+                   ? STAR_WHITE
+                   : PLAYER_COLORS.at(nose.pilot).light};
+}
+
+/** @brief Paints the grains a charge draws in. */
 void paintGrains(IInterfaceCanvas& canvas, const IntroFrame& frame,
                  const ChargingNose& nose) {
-  const float span = INTRO_SCENE_RELEASE - INTRO_SCENE_CHARGE;
   for (std::size_t grain = 0; grain < INTRO_CHARGE_GRAINS; ++grain) {
-    const float start =
-        INTRO_SCENE_CHARGE +
-        (static_cast<float>(grain) / static_cast<float>(INTRO_CHARGE_GRAINS) *
-         span * INTRO_GRAIN_SPREAD);
-    const float flight = (frame.scene - start) / INTRO_GRAIN_FLIGHT;
-    if (flight < 0.0F || flight >= 1.0F) {
-      continue;
+    if (const std::optional<WorldArea> area =
+            grainAt(nose, grain, frame.scene)) {
+      paintWorldArea(canvas, frame, *area);
     }
-    const float angle = (introHash(static_cast<double>(
-                             (nose.pilot * INTRO_GRAIN_SEED_STEP) + grain)) *
-                         FULL_TURN) +
-                        (flight * INTRO_GRAIN_TURN);
-    const float reach =
-        INTRO_GRAIN_REACH * std::pow(1.0F - flight, INTRO_GRAIN_CURVE);
-    paintWorldArea(
-        canvas, frame,
-        WorldArea{.topLeft = nose.point + sf::Vector2f(std::cos(angle) * reach,
-                                                       std::sin(angle) * reach),
-                  .size = {grain % INTRO_LARGE_GRAIN_PERIOD == 0
-                               ? INTRO_LARGE_GRAIN_WIDTH
-                               : 1,
-                           1},
-                  .color = flight > INTRO_GRAIN_WHITE_AFTER
-                               ? STAR_WHITE
-                               : PLAYER_COLORS.at(nose.pilot).light});
   }
 }
 

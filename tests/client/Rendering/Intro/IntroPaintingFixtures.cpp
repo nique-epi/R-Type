@@ -4,11 +4,9 @@
 #include <cstddef>
 #include <span>
 #include <string_view>
-#include <vector>
 #include "FlashPreference.hpp"
 #include "IntroCast.hpp"
 #include "IntroCastBuilder.hpp"
-#include "IntroCue.hpp"
 #include "IntroFrame.hpp"
 #include "IntroFreeze.hpp"
 #include "IntroPainting.hpp"
@@ -16,9 +14,9 @@
 #include "IntroTimeline.hpp"
 #include "IntroTimelineConstants.hpp"
 #include "RecordingInterfaceCanvas.hpp"
+#include "SquadronTestConstants.hpp"
 
 using rtype::client::FlashPreference;
-using rtype::client::IntroCue;
 using rtype::client::IntroFrame;
 using rtype::client::IntroFreeze;
 
@@ -33,13 +31,16 @@ InterfaceCanvasRecord paintedAt(float real, FlashPreference preference) {
   InterfaceCanvasRecord record;
   RecordingInterfaceCanvas canvas(record);
   rtype::client::paintIntroCast(
-      canvas, IntroFrame{.cast = cast,
-                         .real = real,
-                         .scene = scene,
-                         .view = rtype::client::cinemaViewAt(real),
-                         .shake = {},
-                         .drift = rtype::client::debrisDriftAt(scene),
-                         .preference = preference});
+      canvas,
+      IntroFrame{
+          .cast = cast,
+          .real = real,
+          .scene = scene,
+          .view = rtype::client::cinemaViewAt(real),
+          .shake = {},
+          .drift = rtype::client::debrisDriftAt(scene),
+          .preference = preference,
+          .squadronBox = rtype::client::testing::SQUADRON_BOX_ON_THE_TITLE});
   return record;
 }
 
@@ -49,6 +50,11 @@ std::size_t imagesOnRow(const InterfaceCanvasRecord& record,
       std::ranges::count_if(record.images, [&](const RecordedImage& image) {
         return image.assetId == assetId && image.source.position.y == top;
       }));
+}
+
+std::size_t fillsColored(const InterfaceCanvasRecord& record, sf::Color color) {
+  return static_cast<std::size_t>(
+      std::ranges::count(record.fills, color, &RecordedFill::color));
 }
 
 std::size_t imagesTinted(const InterfaceCanvasRecord& record, sf::Color tint) {
@@ -62,10 +68,4 @@ std::size_t speedLinesOf(const InterfaceCanvasRecord& record) {
         return fill.area.size.y == 1 &&
                fill.area.size.x >= rtype::client::testing::SHORTEST_SPEED_LINE;
       }));
-}
-
-std::size_t cuesPlaying(const std::vector<IntroCue>& cues,
-                        std::string_view sound) {
-  return static_cast<std::size_t>(
-      std::ranges::count(cues, sound, &IntroCue::sound));
 }

@@ -7,6 +7,7 @@
 #include "IInterfaceCanvas.hpp"
 #include "MotionPreference.hpp"
 #include "SquadronShipPlacement.hpp"
+#include "SquadronStart.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::client {
@@ -18,16 +19,24 @@ namespace rtype::client {
  *
  * Everything follows the time given to advance(), from the moment the squadron
  * is built, so its arrival plays each time the title screen is built. With
- * MotionPreference::Reduced, time starts and stays at SQUADRON_DRIFT_START: the
- * box is open, SQUADRON is written, the ships are in place, still, and none
- * fires. It paints through an IInterfaceCanvas, so it can be tested without a
- * graphics card.
+ * SquadronStart::InPlace, time starts at SQUADRON_DRIFT_START, where the
+ * arrival ends: the box is open, SQUADRON is written and the ships are in
+ * place, about to drift; the title the intro gives way to starts so, its ships
+ * having landed there. With MotionPreference::Reduced, time starts and stays
+ * at SQUADRON_DRIFT_START: the ships are in place, still, and none fires. It
+ * paints through an IInterfaceCanvas, so it can be tested without a graphics
+ * card.
  */
 class Squadron {
  public:
-  /** @param seed Seed of the choice of the ship that fires and of the gaps
-   * between shots. */
-  Squadron(MotionPreference motion, std::uint32_t seed);
+  /**
+   * @param seed Seed of the choice of the ship that fires and of the gaps
+   * between shots.
+   * @param start Whether the squadron flies in, as it does every time but
+   * after the intro, or starts in place.
+   */
+  Squadron(MotionPreference motion, std::uint32_t seed,
+           SquadronStart start = SquadronStart::FlyingIn);
 
   /** @brief Moves the squadron by the elapsed time, capped at
    * MAXIMUM_BACKGROUND_STEP as the sky is; nothing moves with

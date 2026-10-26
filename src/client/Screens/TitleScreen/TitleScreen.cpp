@@ -2,7 +2,6 @@
 #include <SFML/Graphics/Rect.hpp>
 #include <SFML/Graphics/RenderTarget.hpp>
 #include <SFML/Window/Event.hpp>
-#include <cstdint>
 #include <memory>
 #include <optional>
 #include <utility>
@@ -10,23 +9,20 @@
 #include "IScreenNavigator.hpp"
 #include "Menu.hpp"
 #include "MenuBuilder.hpp"
-#include "MotionPreference.hpp"
-#include "PlayfieldMapping.hpp"
 #include "ScreenConstants.hpp"
 #include "ScreenId.hpp"
 #include "SquadronConstants.hpp"
 #include "TimeConstants.hpp"
+#include "TitleScreenParts.hpp"
 
 namespace rtype::client {
 
-TitleScreen::TitleScreen(IScreenNavigator& navigator,
-                         std::unique_ptr<IInterfaceCanvas> canvas,
-                         PlayfieldMapping playfieldPointAt,
-                         MotionPreference motion, std::uint32_t seed)
+TitleScreen::TitleScreen(TitleScreenParts parts,
+                         std::unique_ptr<IInterfaceCanvas> canvas)
     : canvas_(std::move(canvas)),
-      playfieldPointAt_(std::move(playfieldPointAt)),
-      menu_(buildMenu(navigator)),
-      squadron_(motion, seed) {
+      playfieldPointAt_(std::move(parts.playfieldPointAt)),
+      menu_(buildMenu(parts.navigator.get())),
+      squadron_(parts.motion, parts.seed, parts.squadronStart) {
   repaint();
 }
 

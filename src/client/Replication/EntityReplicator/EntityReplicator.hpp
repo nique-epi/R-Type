@@ -121,8 +121,8 @@ class EntityReplicator {
 
   /**
    * @brief Plays the hit of the entity an EntityDamaged names, if the client
-   * has it, with its sound; plays the hit of a player for a PlayerHit;
-   * nothing for a PlayerEliminated.
+   * has it, with its sound; plays only the sound of a hit player for a
+   * PlayerHit; nothing for a PlayerEliminated.
    */
   void apply(const network::GameEvent& event);
 

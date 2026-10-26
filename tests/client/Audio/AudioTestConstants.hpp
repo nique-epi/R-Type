@@ -9,6 +9,9 @@ namespace rtype::client::testing {
 /** @brief A small limit of voices, so a test lists every voice. */
 constexpr std::size_t THREE_VOICES = 3;
 
+/** @brief The voices of the client: 16 sounds at most at once. */
+constexpr std::size_t SIXTEEN_VOICES = 16;
+
 /** @brief More sounds than the client has voices: the cascade of the intro
  * starts 32 in less than half a second. */
 constexpr std::size_t MANY_SOUNDS = 40;
@@ -18,17 +21,13 @@ constexpr std::size_t MANY_SOUNDS = 40;
 constexpr int A_MUSIC_VOLUME = 35;
 constexpr int AN_EFFECTS_VOLUME = 55;
 
-/** @brief One frame of the tests of the clock: a frame of 16 ms closes a
- * tenth of a gap to the music (16 / 160). */
-constexpr engine::Duration A_FRAME = std::chrono::milliseconds(16);
-
 /** @brief A position of the music far ahead of the time of the frames, past
  * the snap of 100 ms. */
 constexpr engine::Duration MUSIC_FAR_AHEAD = std::chrono::milliseconds(200);
 
-/** @brief A gap of 40 ms to the music and the tenth of it a frame closes; the
- * tenth of the snap of 100 ms; a gap of the music behind the time, within
- * the snap. */
+/** @brief A gap of 40 ms to the music and the tenth of it ONE_FRAME closes, a
+ * frame of 16 ms closing 16 / 160 of a gap; the tenth of the snap of 100 ms;
+ * a gap of the music behind the time, within the snap. */
 constexpr engine::Duration SMALL_GAP = std::chrono::milliseconds(40);
 constexpr engine::Duration TENTH_OF_THE_SMALL_GAP =
     std::chrono::milliseconds(4);

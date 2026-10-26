@@ -2,7 +2,7 @@
 
 #include <cstdint>
 #include <functional>
-#include "IMusicClock.hpp"
+#include "IMusicPlayer.hpp"
 #include "IScreenNavigator.hpp"
 #include "ISky.hpp"
 #include "ISoundPlayer.hpp"
@@ -15,7 +15,8 @@ struct PlayerSettings;
  * @brief What the intro is built from, but the picture it owns.
  *
  * A std::reference_wrapper has no default constructor, so this struct is
- * only ever built with designated initializers naming every member: the
+ * only ever built with designated initializers naming every member without
+ * a default: the
  * member-init checks, which report its implicit default constructor, see a
  * constructor that cannot be called.
  */
@@ -33,9 +34,9 @@ struct IntroScreenParts {
   std::reference_wrapper<ISky> sky;
   /** @brief Plays the sounds of the intro; it must outlive the intro. */
   std::reference_wrapper<ISoundPlayer> sounds;
-  /** @brief Where the music is, which the intro follows; it must outlive the
-   * intro. */
-  std::reference_wrapper<const IMusicClock> music;
+  /** @brief The music, which the intro starts after its black second and
+   * follows; it must outlive the intro. */
+  std::reference_wrapper<IMusicPlayer> music;
   /** @brief Seed of the sparks of the bursts. */
   std::uint32_t seed{};
 };
