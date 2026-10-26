@@ -1,0 +1,7 @@
+add_library(rtype_game_wave_progression STATIC WaveProgression.cpp)
+
+target_include_directories(rtype_game_wave_progression PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+
+target_link_libraries(rtype_game_wave_progression PUBLIC rtype_game_waves)
+
+rtype_enable_warnings(rtype_game_wave_progression)

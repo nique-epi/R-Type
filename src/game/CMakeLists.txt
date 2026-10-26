@@ -4,6 +4,7 @@ add_subdirectory(Exceptions)
 add_subdirectory(ShipControl)
 add_subdirectory(Spawning)
 add_subdirectory(Systems)
+add_subdirectory(Waves)
 
 add_library(rtype_game STATIC World.cpp)
 
