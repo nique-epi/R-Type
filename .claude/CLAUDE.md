@@ -146,6 +146,7 @@ Paths below are relative to `.claude/rules/`.
 - `fix/execution/fix-execution-checkout-b-starts-from-head-not-main.md`
 - `fix/execution/fix-execution-clang-format-only-on-cpp-files.md`
 - `fix/execution/fix-execution-edit-script-validates-anchors-before-writing.md`
+- `fix/execution/fix-execution-every-build-runs-in-parallel.md`
 - `fix/execution/fix-execution-git-check-branch-before-writing-history.md`
 - `fix/execution/fix-execution-gcc-warns-when-a-designated-initializer-skips-a-member-without-default.md`
 - `fix/execution/fix-execution-git-stash-pop-without-effective-push.md`
