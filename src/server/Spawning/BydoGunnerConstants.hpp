@@ -11,9 +11,9 @@ namespace rtype::server {
  * @brief Time between two missiles of one Bydo, in simulation time; a new Bydo
  * also waits that long before its first missile.
  *
- * Provisional, until the game is tuned. It differs from BYDO_SPAWN_INTERVAL, so
- * the Bydos on screen fire in turn, a group every half second, instead of all
- * on the same tick.
+ * Provisional, until the game is tuned. Each Bydo counts it from its own
+ * appearance, so Bydos that appeared a multiple of it apart fire on the same
+ * tick: the Bydos of a wave that brings one every 1.5 s fire together.
  */
 constexpr engine::Duration ENEMY_SHOT_INTERVAL =
     std::chrono::milliseconds(1500);
