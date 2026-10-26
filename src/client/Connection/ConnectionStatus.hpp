@@ -31,6 +31,9 @@ struct ConnectionStatus {
   std::uint8_t playerNumber{};
   /** @brief Why the server refused; meaningful when phase is Refused only. */
   network::RefusalReason refusal{};
+  /** @brief The protocol version the server writes in the header of its
+   * answer; meaningful when refusal is IncompatibleVersion only. */
+  std::uint8_t serverVersion{};
 
   bool operator==(const ConnectionStatus&) const = default;
 };

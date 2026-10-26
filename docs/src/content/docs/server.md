@@ -16,7 +16,7 @@ This page tells you where to look when you need to change something. It describe
 | Sorting the datagrams before the queues, session token checked | Available; no limit per address yet | `src/server/Application/DatagramSorter/` |
 | World state sent at a fixed rate to the players of the game | Available | `src/server/Replication/WorldStateSender/`, `src/server/Instances/GameInstance/` |
 | One header for every datagram to a player: session token and next sequence | Available | `src/server/Replication/SessionDatagram.hpp` |
-| Game events sent to the players | Available: the removal of a Bydo or a missile that leaves the playfield, and the damage and destruction of a Bydo hit by missiles | `src/server/Replication/`, `src/game/Events/` |
+| Game events sent to the players | Available: the removal of a Bydo or a missile that leaves the playfield, the damage and destruction of a Bydo hit by missiles, and the loss of a ship and of a life when a ship touches a Bydo | `src/server/Replication/`, `src/game/Events/` |
 | Launch options | Available: the port, the seed and `--help` | `src/server/LaunchOptions/` |
 | Letting players in: challenge, acceptance or refusal | Available; refuses with `GameInProgress` while the game is not waiting for players | `src/server/Lobby/`, `src/server/Instances/` |
 | A game: states, ready rule, new world between two games | Available: one game, which ends only once no player is left in it | `src/server/Instances/GameInstance/` |
@@ -27,14 +27,15 @@ This page tells you where to look when you need to change something. It describe
 | Components (`Position`, `Velocity`, `CollisionBox`, `Health`, `EntityType`, `Sprite`, `Layer`) | Available | `src/game/Components/` |
 | Movement, run by each game tick | Available | `src/game/Systems/MovementSystem/`, `src/server/Instances/GameInstance/` |
 | Movement patterns, and removal of what leaves the playfield | Available: patterns for the Bydos; a Bydo leaves on the left, a missile of a player on the right | `src/game/Systems/PatternSystem/`, `src/game/Systems/PlayfieldExitSystem/` |
-| Collisions | Available, run by each game tick; ships have no `CollisionBox` yet | `src/game/Systems/CollisionSystem/`, `src/game/Systems/CollisionRules/`, `src/game/Events/`, `src/server/Instances/GameInstance/` |
-| Damage and destruction | Available, run by each game tick; players take no damage yet | `src/game/Systems/DamageRules/`, `src/server/Instances/GameInstance/` |
+| Collisions | Available, run by each game tick | `src/game/Systems/CollisionSystem/`, `src/game/Systems/CollisionRules/`, `src/game/Events/`, `src/server/Instances/GameInstance/` |
+| Damage and destruction | Available, run by each game tick; a missile does not hurt a ship | `src/game/Systems/DamageRules/`, `src/server/Instances/GameInstance/` |
 | Ship of each player, created when the player joins and announced to the others | Available | `src/game/Spawning/`, `src/server/Replication/ShipSpawnAnnouncer/` |
 | Ship control: where a ship goes from the directions its player holds, kept above the status band | Available; the client does not predict its own ship yet | `src/game/ShipControl/`, `src/server/Instances/GameInstance/` |
 | Bydos appearing off screen at random heights above the status band of the clients, on a timer, then moving left | Available | `src/game/Spawning/BydoSpawnPosition.*`, `src/server/Spawning/` |
 | Missiles of the players: fired in front of the ship while shoot is held, three per second at most, removed past the right edge | Available | `src/server/Spawning/MissileLauncher/`, `src/game/Spawning/MissileStartPosition.*`, `src/game/Systems/PlayfieldExitSystem/` |
 | Score: points per Bydo kind, credited to the player who fired the missile, sent in the world state | Available | `src/game/Spawning/BydoKind/`, `src/game/Systems/DamageRules/`, `src/server/Instances/ScoreKeeper/` |
-| Waves, lives | Not yet written | — |
+| Lives: a life lost when a ship touches a Bydo, a new ship 1 s later that cannot be hit for 2 s, a player with no life left watching | Available | `src/server/Instances/LifeKeeper/`, `src/server/Instances/GameInstance/` |
+| Waves | Not yet written | — |
 
 ## Launch options: `LaunchOptions`
 
@@ -80,6 +81,7 @@ The player queue and the outgoing queue hold `INCOMING_DATAGRAM_QUEUE_CAPACITY` 
 
 | The datagram… | Goes to |
 |---|---|
+| is of this protocol with another version, from a sender that was not admitted, and holds at least `CONNECTION_REFUSED_DATAGRAM_SIZE` (26) bytes | the request queue, where the `ConnectionAcceptor` refuses it |
 | is not of this protocol and version, has a flag set, or its message sizes do not add up | nowhere: dropped |
 | comes from the address and port of an admitted player without the session token of that player (a `ConnectionRequest` may carry 0 instead) | nowhere: dropped, and counted apart |
 | holds a `ConnectionRequest`, whoever sent it | the request queue, where the `ConnectionAcceptor` answers it (see [Letting players in](#letting-players-in-connectionacceptor-playerroster)) |
@@ -141,7 +143,7 @@ How late a tick starts depends on how precisely the system wakes a sleeping thre
 - `WORLD_STATES_PER_SECOND` is **provisional**: it will be revised once measured on a real network. It must divide the tick rate, and the build fails otherwise. Code must read the constants, `TICKS_PER_WORLD_STATE` for instance, and never repeat the 3.
 - Nothing is built when no player is connected. An entity without a network id, or without a type, is not listed.
 - An entity whose position is not a finite number (NaN or infinite), which only a game bug can produce, is left out of the state instead of stopping the server. A warning under the `Replication` module gives how many entities were left out, each time that number changes, so a stuck entity is reported once rather than 20 times per second.
-- The state lists every connected player with its number, ship, and score. `lives` is the provisional constant `PLAYER_LIVES_UNTRACKED` (3) and `invulnerable` is always false, since the server counts neither yet. The score is the points the player earned in the current game: a missile with a `MissileOwner` that destroys an enemy with a `ScoreValue` makes `DamageRules` publish `EnemyKilled`, and the `ScoreKeeper` adds the points (`DRIFTER_POINTS` 100, `WEAVER_POINTS` 200, both provisional) to the player's score, which stops at its largest value and goes back to 0 with each new world. The ship of each player has a `NetworkIdentity` (see [Player ships](#player-ships-shipspawnannouncer)), so it is listed as an entity too.
+- The state lists every connected player with its number, ship, and score. `lives` is what the player has left, and `invulnerable` is true while its ship, back after a hit, cannot be hit (see [Lives](#lives-lifekeeper)). The score is the points the player earned in the current game: a missile with a `MissileOwner` that destroys an enemy with a `ScoreValue` makes `DamageRules` publish `EnemyKilled`, and the `ScoreKeeper` adds the points (`DRIFTER_POINTS` 100, `WEAVER_POINTS` 200, both provisional) to the player's score, which stops at its largest value and goes back to 0 with each new world. The ship of each player has a `NetworkIdentity` (see [Player ships](#player-ships-shipspawnannouncer)), so it is listed as an entity too.
 - A state split into several datagrams takes one sequence per datagram, so the client reads every part.
 - A playfield larger than 2047 logical units in either direction fails the build, because a wire coordinate would no longer hold it (see [Protocol](/R-Type/protocol/#positions)).
 
@@ -158,7 +160,7 @@ worldStateSender.onTick(tick, world.components());
 
 `ConnectionAcceptor` (`src/server/Lobby/ConnectionAcceptor/`) answers the connection requests the sorter set aside for each tick, at most `CONNECTION_REQUEST_QUEUE_CAPACITY` (16), as the [Protocol](/R-Type/protocol/#connection) describes, and `PlayerRoster` (`src/server/Instances/PlayerRoster/`) holds the players it let in: at most `MAXIMUM_PLAYERS` (4), each a `ConnectedPlayer` with its number, nickname, address and port, session token, next sequence, ship id, score, newest input, and the ticks since the game last read one of its datagrams and since the server last sent it one. A new player takes the lowest free number, so the first four are 1 to 4 in the order they joined. `remove(endpoint)` frees the seat and the number of a player whose session closed; the next player to join takes the lowest free number again.
 
-A datagram is read only when its header is of this protocol and version and its message sizes add up; only its first `ConnectionRequest` is answered, so one datagram never gets more than one answer, and every other message is ignored. A request is answered by the first row that applies:
+A datagram of this protocol with another version is answered with `ConnectionRefused` (`IncompatibleVersion`) in a header of version 0, whatever it holds, when it holds at least `CONNECTION_REFUSED_DATAGRAM_SIZE` (26) bytes, the size of that refusal, so the answer is never larger than the datagram; a shorter one gets nothing. Any other datagram is read only when its header is of this protocol and version and its message sizes add up; only its first `ConnectionRequest` is answered, so one datagram never gets more than one answer, and every other message is ignored. A request is answered by the first row that applies:
 
 | The request comes… | Answer |
 |---|---|
@@ -196,10 +198,10 @@ send(rtype::server::sessionDatagram(player, rtype::network::GameStarted{}));
 | State (`GameState`) | The game… | It goes to… |
 |---|---|---|
 | `WaitingForPlayers` | takes `ReadyState`, lets players in and sends them the room (see [Waiting room](#waiting-room-lobbystateannouncer)) | `InProgress` on the tick when at least one player is connected and every connected player is ready, which sends every connected player `GameStarted` |
-| `InProgress` | counts one tick per `onTick`, moves the ships, runs the systems of the world, fires the missiles of the players who hold shoot, lets the Bydos appear and sends the world state; refuses new connections | `Finished` when `finish()` is called, or on the tick the session of its last player closes |
+| `InProgress` | counts one tick per `onTick`, moves the ships, runs the systems of the world, fires the missiles of the players who hold shoot, lets the Bydos appear, counts the lives and sends the world state; refuses new connections | `Finished` when `finish()` is called, or on the tick the session of its last player closes |
 | `Finished` | refuses new connections | `WaitingForPlayers` after `FINISHED_STATE_TICKS` (300) ticks, `FINISHED_STATE_SECONDS` (5) seconds |
 
-- Going back to `WaitingForPlayers` builds a new `World`: the tick is 0, the players stay connected, none is ready any more, and each gets a new ship, announced again. Network ids start again at 1 in the new world, so the announced ids are the ones of the previous game.
+- Going back to `WaitingForPlayers` builds a new `World`: the tick is 0, the players stay connected, none is ready any more, and each gets its `STARTING_LIVES` back and a new ship, announced again. Network ids start again at 1 in the new world, so the announced ids are the ones of the previous game.
 - `onTick` reads a datagram only when its header is of this protocol and version, its message sizes add up and its sender is a player of the game. It does not check the session token: the sorter already dropped, on the network thread, every datagram from the address of a player that does not carry its token (see [Sorting the datagrams](#sorting-the-datagrams-datagramsorter)), so a sender that forges the address of a player can neither say ready nor steer in its place. Every datagram it does not read is logged at the `debug` level under `Instances` with its sender and why, at most once per `REJECTION_LINE_INTERVAL` of the ticks the game ran: 600 ticks count as exactly 10 s.
 - A `ReadyState` counts only while the game waits for players, and with a sequence newer than the newest one accepted from that player (`isNewerSequence`, 1 to 32767 ahead, wrapping from 65535 to 0; exactly 32768 ahead is never newer). A late copy therefore never undoes a newer one. Anything else is ignored.
 - `finish()` ends the game in progress and does nothing in another state. The game ends itself the same way once no player is left in it (see [Silent players](#silent-players-heartbeats-and-timeouts)); no rule of the game decides yet that a game is over, so a game with players never ends today.
@@ -248,7 +250,7 @@ The server sends heartbeats too. At the end of each tick, a game sends a `Heartb
 
 ## Player ships: `ShipSpawnAnnouncer`
 
-A player gets a ship the moment the `ConnectionAcceptor` lets them in. `ShipSpawnAnnouncer` (`src/server/Replication/ShipSpawnAnnouncer/`) creates it with `World::spawnPlayer(position)` (`rtype_game`), which gives the entity a `Position`, an `EntityType::Player` and a `NetworkIdentity` from the world's `NetworkIdAllocator`, and returns that network id. The id is kept in `ConnectedPlayer::shipEntityId` (`NO_ENTITY_ID` while the player has no ship).
+A player gets a ship the moment the `ConnectionAcceptor` lets them in. `ShipSpawnAnnouncer` (`src/server/Replication/ShipSpawnAnnouncer/`) creates it with `World::spawnPlayer(position)` (`rtype_game`), which gives the entity a `Position`, a `CollisionBox` of `SHIP_WIDTH` by `SHIP_HEIGHT`, an `EntityType::Player` and a `NetworkIdentity` from the world's `NetworkIdAllocator`, and returns that network id. The id is kept in `ConnectedPlayer::shipEntityId` (`NO_ENTITY_ID` while the player has no ship).
 
 `shipStartPosition(playerNumber, playerCount)` (`src/game/Spawning/`) says where the ship appears: at `SHIP_START_X_RATIO` (0.1) of the playfield width, so x is 192, and on a row of its own. The height is cut into `playerCount + 1` equal parts and player n takes the n-th cut, so with four players the rows are 216, 432, 648 and 864 logical units, each pair 216 apart. A number that is 0 or above `playerCount` throws `InvalidPlayerNumberException`.
 
@@ -402,7 +404,7 @@ A collision takes two steps, in two classes. The first finds what overlaps; the 
 
 Every other pair is ignored: a player missile does not hurt a player, two enemies do not hurt each other, two missiles do not stop each other. An entity without an `EntityType`, or destroyed between the moment the `Collision` was published and the moment it is delivered, is ignored too.
 
-The events are structs in `src/game/Events/`. `MissileHit` and `ShipContact` say that a contact happened; what it costs is decided by [`DamageRules`](#damage-damagerules).
+The events are structs in `src/game/Events/`. `MissileHit` and `ShipContact` say that a contact happened; what it costs is decided by [`DamageRules`](#damage-damagerules) for a `MissileHit` and by [`LifeKeeper`](#lives-lifekeeper) for a `ShipContact`.
 
 ```cpp
 rtype::engine::EventBus events;
@@ -419,7 +421,7 @@ scheduler.run(components, SIMULATION_TICK_DURATION);
 events.dispatch();
 ```
 
-The bus and the registry must outlive `CollisionRules`, and the bus must outlive `CollisionSystem`. `GameInstance` adds `CollisionSystem` after `PlayfieldExitSystem`, and builds a `CollisionRules` and a `DamageRules` with each world, on the registry of that world. `main.cpp` delivers the events at the end of every tick, so a collision is judged in the tick it is found, and never against the registry of a world replaced since. Ships have no `CollisionBox` yet, so a game publishes no `ShipContact`.
+The bus and the registry must outlive `CollisionRules`, and the bus must outlive `CollisionSystem`. `GameInstance` adds `CollisionSystem` after `PlayfieldExitSystem`, and builds a `CollisionRules` and a `DamageRules` with each world, on the registry of that world. `main.cpp` delivers the events at the end of every tick, so a collision is judged in the tick it is found, and never against the registry of a world replaced since. A ship has a `CollisionBox` from `World::spawnPlayer`, so a ship that touches a Bydo makes a `ShipContact`.
 
 ## Damage: `DamageRules`
 
@@ -430,7 +432,7 @@ The bus and the registry must outlive `CollisionRules`, and the bus must outlive
 3. A target without `Health` is not hurt: the missile still disappears.
 
 - A Bydo has `Health` of `BYDO_HEALTH` (3) when `World::spawnBydo` creates it, so three missiles destroy it. Both values are **provisional** until gameplay tunes them. Code must read the constants and never assume 1 or 3.
-- The ship of a player has no `Health`: what a hit costs a player belongs to the lives of the players, which do not exist yet. A `ShipContact` is not handled either.
+- The ship of a player has no `Health`: a missile that hits it is removed and costs nothing, and what a contact with a Bydo costs belongs to the lives (see [Lives](#lives-lifekeeper)).
 - Network ids are read from the `NetworkIdentity` before the entity is destroyed. A hit naming an entity that is already gone, or that has no `NetworkIdentity`, is ignored, so two missiles that reach the same Bydo in one `dispatch()` kill it once, and the second missile is left alone.
 - The bus and the registry must outlive `DamageRules`. It publishes while the bus delivers, so its events reach `GameEventBroadcaster` in the same tick.
 - `GameInstance` builds it with each world (see [Collisions](#collisions)). A missile that hits therefore vanishes with no effect of its own; the clients play the hit of the Bydo on the `EntityDamaged` of the first two hits (see [Client](/R-Type/client/#effects-effectspawner)), and its explosion on the third.
@@ -440,6 +442,33 @@ rtype::engine::EventBus events;
 rtype::game::CollisionRules collisionRules{events, world.components()};
 rtype::game::DamageRules damageRules{events, world.components()};
 ```
+
+## Lives: `LifeKeeper`
+
+`LifeKeeper` (`src/server/Instances/LifeKeeper/`) keeps the lives of the players of one world. It subscribes to `ShipContact` when it is created and unsubscribes when it is destroyed. A player joins with `STARTING_LIVES` (3), its ship included, and each new world gives them back.
+
+1. A ship that touches a Bydo is destroyed, and so is the Bydo, each announced with an `EntityDestruction` (`Killed`), so the clients show two explosions. Nobody earns the points of the Bydo.
+2. The player loses a life, announced with a `PlayerHit`, then with a `PlayerElimination` when none is left.
+3. A player with a life left has no ship for `RESPAWN_DELAY` (1 s, 60 ticks), then gets a new one at its start position through `ShipSpawnAnnouncer::onPlayerJoined`, which announces it again.
+4. That ship cannot be hit for `INVULNERABILITY_DURATION` (2 s, 120 ticks), the tick it comes back included: a Bydo it touches meanwhile costs nothing and stays.
+
+- A player with no life left has no ship and only watches: its input moves and fires nothing. A game whose players have all lost their last life goes on, since no rule ends a game yet.
+- A contact naming an entity already gone is ignored, so two Bydos touching one ship in the same `dispatch()` cost one life.
+- The lives and the waits are kept in `ConnectedPlayer` (`lives`, `ticksUntilRespawn`, `invulnerableTicksLeft`). `onTick()` counts the waits down at each tick of a game in progress, and the world state sends `lives` and `invulnerable`.
+- The three values are **provisional** until gameplay tunes them. Code must read the constants (`src/server/Instances/LifeKeeperConstants.hpp`) and never repeat 3, 1 s or 2 s.
+- An enemy missile costs no life: no Bydo fires yet.
+
+```cpp
+lifeKeeper_ = std::make_unique<LifeKeeper>(
+    LifeKeeperParts{.events = events_,
+                    .world = *world_,
+                    .roster = roster_,
+                    .respawn = [this](ConnectedPlayer& player) {
+                      shipSpawnAnnouncer_->onPlayerJoined(player);
+                    }});
+```
+
+`GameInstance` builds one with each world, in `buildWorld()`, and calls `onTick()` after the Bydos appear.
 
 ## Where to intervene
 
@@ -457,6 +486,8 @@ rtype::game::DamageRules damageRules{events, world.components()};
 | Announce something to every client | Publish one of the events of `src/game/Events/` on the `EventBus`; `GameEventBroadcaster` sends it |
 | Send a new kind of event | A struct in `src/game/Events/`, an `encode` overload in `GameEventEncoder`, a `subscribeTo` line in the `GameEventBroadcaster` constructor |
 | Change how often an event is sent, or how far apart | `REPEATED_MESSAGE_COPIES` and `REPEATED_MESSAGE_INTERVAL` in `src/server/Replication/GameEventConstants.hpp` |
+| Change the lives a player starts with, the wait for its new ship, or how long that ship cannot be hit | `STARTING_LIVES`, `RESPAWN_DELAY` and `INVULNERABILITY_DURATION` in `src/server/Instances/LifeKeeperConstants.hpp` |
+| Change what a ship that touches an enemy costs | `LifeKeeper` in `src/server/Instances/LifeKeeper/` |
 | Change the health of a Bydo, or the damage of a missile | `BYDO_HEALTH` in `src/game/Components/HealthConstants.hpp`, `MISSILE_DAMAGE` in `src/game/Systems/DamageRules/DamageConstants.hpp` |
 | Change what a hit does | `DamageRules::onMissileHit` in `src/game/Systems/DamageRules/DamageRules.cpp` |
 | Change what the world state lists | `WorldStateSender::capture` in `src/server/Replication/WorldStateSender/WorldStateSender.cpp` |

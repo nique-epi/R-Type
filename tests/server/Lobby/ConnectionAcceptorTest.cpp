@@ -40,6 +40,7 @@ using testing::FIVE_PLAYER_PORTS;
 using testing::NEXT_PROTOCOL_VERSION;
 using testing::OTHER_PROTOCOL_ID;
 using testing::PLAYER_ADDRESS;
+using testing::REFUSAL_DATAGRAM_SIZE;
 using testing::REQUEST_TIME;
 using testing::SHORTEST_NICKNAME;
 
@@ -508,13 +509,58 @@ TEST_F(ConnectionAcceptorTest, IgnoresARequestWhoseNicknameHoldsALineFeed) {
 /**
  * Given a request of the next protocol version
  * When the acceptor receives it
- * Then it gets no answer
+ * Then it is refused as IncompatibleVersion, in a header of the version of
+ * this server, and nobody takes a place
  */
-TEST_F(ConnectionAcceptorTest, IgnoresARequestOfAnotherVersion) {
+TEST_F(ConnectionAcceptorTest, RefusesARequestOfAnotherVersion) {
   network::PacketHeader header;
   header.version = NEXT_PROTOCOL_VERSION;
 
   receive(playerEndpoint(0), requestDatagram(0, header));
+
+  ASSERT_EQ(answers().size(), 1U);
+  EXPECT_EQ(lastAnswer().destination, playerEndpoint(0));
+  EXPECT_EQ(network::DatagramCodec::decodeHeader(lastAnswer().payload).version,
+            network::PROTOCOL_VERSION);
+  EXPECT_EQ(messageOf<network::ConnectionRefused>(lastAnswer()).reason,
+            network::RefusalReason::IncompatibleVersion);
+  EXPECT_EQ(roster().find(playerEndpoint(0)), nullptr);
+}
+
+/**
+ * Given a datagram of another version of 26 bytes, the size of the refusal,
+ * that holds no request
+ * When the acceptor receives it
+ * Then it is refused, with no more bytes than it holds
+ */
+TEST_F(ConnectionAcceptorTest,
+       RefusesADatagramOfAnotherVersionAsLongAsTheRefusal) {
+  network::PacketHeader header;
+  header.version = NEXT_PROTOCOL_VERSION;
+  const std::vector<std::byte> datagram = readyDatagram(header);
+  ASSERT_EQ(datagram.size(), REFUSAL_DATAGRAM_SIZE);
+
+  receive(playerEndpoint(0), datagram);
+
+  ASSERT_EQ(answers().size(), 1U);
+  EXPECT_LE(lastAnswer().payload.size(), datagram.size());
+  EXPECT_EQ(messageOf<network::ConnectionRefused>(lastAnswer()).reason,
+            network::RefusalReason::IncompatibleVersion);
+}
+
+/**
+ * Given a datagram of another version of 25 bytes, one fewer than the refusal
+ * When the acceptor receives it
+ * Then it gets no answer
+ */
+TEST_F(ConnectionAcceptorTest,
+       IgnoresADatagramOfAnotherVersionShorterThanTheRefusal) {
+  network::PacketHeader header;
+  header.version = NEXT_PROTOCOL_VERSION;
+  const std::vector<std::byte> datagram = heartbeatDatagram(header);
+  ASSERT_EQ(datagram.size(), REFUSAL_DATAGRAM_SIZE - 1);
+
+  receive(playerEndpoint(0), datagram);
 
   EXPECT_TRUE(answers().empty());
 }

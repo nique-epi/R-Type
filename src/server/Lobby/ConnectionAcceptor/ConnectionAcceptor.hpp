@@ -51,6 +51,13 @@ namespace rtype::server {
  *
  * A refusal reserves nothing, so it is sent before the cookie is checked.
  * Nothing caused by the content of a datagram makes it throw.
+ *
+ * A datagram whose header carries this protocol with another version is
+ * answered with ConnectionRefused (IncompatibleVersion), whatever it holds,
+ * when it is at least CONNECTION_REFUSED_DATAGRAM_SIZE bytes long, so the
+ * refusal is never larger than what it answers; a shorter one gets nothing.
+ * The DatagramSorter hands over such a datagram only from a sender it did not
+ * admit.
  */
 class ConnectionAcceptor {
  public:
@@ -106,6 +113,12 @@ class ConnectionAcceptor {
    */
   [[nodiscard]] std::optional<network::ConnectionRequest> readRequest(
       const network::IncomingDatagram& datagram, engine::Duration now);
+
+  /** @brief Refuses @p datagram, of another protocol version, as
+   * IncompatibleVersion, or drops it when it is shorter than
+   * CONNECTION_REFUSED_DATAGRAM_SIZE. */
+  void refuseAnotherVersion(const network::IncomingDatagram& datagram,
+                            engine::Duration now);
   void drop(const network::Endpoint& sender, std::string_view reason,
             engine::Duration now);
   void answer(const network::Endpoint& sender,
