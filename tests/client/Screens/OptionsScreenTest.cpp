@@ -1,137 +1,65 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include <SFML/System/Vector2.hpp>
-#include <SFML/Window/Event.hpp>
 #include <SFML/Window/Keyboard.hpp>
 #include <algorithm>
-#include <chrono>
 #include <cstddef>
-#include <memory>
 #include <optional>
-#include <string>
 #include "BoundAction.hpp"
 #include "FakeSizableWindow.hpp"
+#include "GameOptionsScreenFixture.hpp"
 #include "InterfaceColorConstants.hpp"
-#include "KeyNames.hpp"
-#include "KeyPress.hpp"
 #include "OptionsScreen.hpp"
-#include "PixelSize.hpp"
+#include "OptionsScreenFixture.hpp"
+#include "OptionsScreenFixtures.hpp"
+#include "OptionsScreenTestConstants.hpp"
 #include "PlayerSettings.hpp"
 #include "PointerEvents.hpp"
 #include "RecordingInterfaceCanvas.hpp"
 #include "RecordingNavigator.hpp"
 #include "RecordingSettingsStorage.hpp"
+#include "RecordingSoundPlayer.hpp"
+#include "SoundConstants.hpp"
 #include "WidgetConstants.hpp"
 #include "WidgetText.hpp"
 
 using rtype::client::BoundAction;
+using rtype::client::CLICK_SOUND_ID;
 using rtype::client::DIM_LAYER_COLOR;
-using rtype::client::OptionsScreen;
-using rtype::client::PixelSize;
-using rtype::client::PlayerSettings;
 using rtype::client::PRESS_DURATION;
 using rtype::client::regularTextWidth;
+using rtype::client::testing::ALONG_THE_TRACK;
+using rtype::client::testing::CONTROLS_TAB;
+using rtype::client::testing::DESCRIPTION_LEFT;
+using rtype::client::testing::DESCRIPTION_RIGHT;
+using rtype::client::testing::INDEX_OF_1280_BY_720;
+using rtype::client::testing::LARGEST_FIT;
+using rtype::client::testing::LONG_AFTER_A_FAILED_SAVE;
+using rtype::client::testing::MUSIC_DEFAULT;
+using rtype::client::testing::MUSIC_ONE_STEP_UP;
+using rtype::client::testing::MUSIC_TRACK_START;
+using rtype::client::testing::OPEN_LIST_LEFT;
+using rtype::client::testing::QUIET_MUSIC;
+using rtype::client::testing::ROWS_IN_THE_LONGEST_TAB;
+using rtype::client::testing::SAVED_ANCHOR;
+using rtype::client::testing::SAVED_STAMP_TIME;
+using rtype::client::testing::TABS;
+using rtype::client::testing::WINDOW_1280_BY_720;
+using ::testing::ElementsAre;
+using ::testing::IsEmpty;
 using Key = sf::Keyboard::Key;
 using Scan = sf::Keyboard::Scan;
-
-namespace {
-
-/** @brief A 1920 x 1080 desktop: 960, 1280 and 1600 wide fit, 1600 x 900
- * is the window. */
-constexpr PixelSize DESKTOP{.width = 1920, .height = 1080};
-constexpr std::size_t LARGEST_FIT = 2;
-
-/** @brief The picture the team chose: SAVED at (270, 36); the description
- * from x 112 to the safe margin at 456; the open list of sizes from x 332;
- * the label of the CONTROLS tab at (158, 55). */
-constexpr sf::Vector2i SAVED_ANCHOR(270, 36);
-constexpr int DESCRIPTION_LEFT = 112;
-constexpr int DESCRIPTION_RIGHT = 456;
-constexpr int OPEN_LIST_LEFT = 332;
-constexpr sf::Vector2i CONTROLS_TAB(158, 55);
-constexpr int MUSIC_DEFAULT = 70;
-constexpr int MUSIC_ONE_STEP_UP = 75;
-constexpr int QUIET_MUSIC = 10;
-constexpr std::size_t ROWS_IN_THE_LONGEST_TAB = 8;
-constexpr int TABS = 4;
-constexpr std::chrono::seconds LONG_AFTER_A_FAILED_SAVE(10);
-constexpr sf::Vector2i ALONG_THE_TRACK(80, 0);
-
-/** @brief Names a key the way the settings file does, as the options would
- * on a US keyboard. */
-std::string nameInTheFile(sf::Keyboard::Scancode key) {
-  return std::string(rtype::client::keyName(key).value_or("?"));
-}
-
-class OptionsScreenTest : public ::testing::Test {
- protected:
-  explicit OptionsScreenTest(
-      OptionsScreen::Place place = OptionsScreen::Place::OverTitle)
-      : screen_(navigator_, place, settings_, storage_, window_, nameInTheFile,
-                std::make_unique<RecordingInterfaceCanvas>(canvas_),
-                samePlayfieldPoint) {}
-
-  void send(const sf::Event& event) { screen_.handleEvent(event); }
-
-  /** @brief Presses and releases a key, then lets a frame pass that is as
-   * long as a press. */
-  void tap(Key key, sf::Keyboard::Scancode scancode = Scan::Unknown) {
-    send(keyPress(key, scancode));
-    send(keyRelease(key, scancode));
-    screen_.update(PRESS_DURATION);
-  }
-
-  void openNextTab() { tap(Key::E, Scan::E); }
-
-  [[nodiscard]] const RecordedWriting* writing(const std::string& text) const {
-    return writingOf(canvas_, text);
-  }
-
-  [[nodiscard]] const RecordedWriting* description() const {
-    for (const RecordedWriting& written : canvas_.writings) {
-      if (written.anchor.x == DESCRIPTION_LEFT &&
-          written.text.starts_with("> ")) {
-        return &written;
-      }
-    }
-    return nullptr;
-  }
-
-  PlayerSettings& settings() { return settings_; }
-  RecordingSettingsStorage& storage() { return storage_; }
-  FakeSizableWindow& window() { return window_; }
-  [[nodiscard]] const RecordingNavigator& navigator() const {
-    return navigator_;
-  }
-  [[nodiscard]] const InterfaceCanvasRecord& canvas() const { return canvas_; }
-  OptionsScreen& screen() { return screen_; }
-
- private:
-  PlayerSettings settings_;
-  RecordingSettingsStorage storage_;
-  FakeSizableWindow window_{DESKTOP};
-  RecordingNavigator navigator_;
-  InterfaceCanvasRecord canvas_;
-  OptionsScreen screen_;
-};
-
-class GameOptionsScreenTest : public OptionsScreenTest {
- protected:
-  GameOptionsScreenTest() : OptionsScreenTest(OptionsScreen::Place::OverGame) {}
-};
-
-}  // namespace
 
 /**
  * Given the options just opened over the title
  * When they are painted
  * Then the SOUND tab shows its four rows
  */
-TEST_F(OptionsScreenTest, TheOptionsOpenOnTheSoundTab) {
-  EXPECT_NE(writing("MUSIC"), nullptr);
-  EXPECT_NE(writing("EFFECTS"), nullptr);
-  EXPECT_NE(writing("MUTE ALL"), nullptr);
-  EXPECT_NE(writing("DEFAULT SOUND"), nullptr);
+TEST_F(OptionsScreenFixture, TheOptionsOpenOnTheSoundTab) {
+  EXPECT_NE(writingOf(canvas(), "MUSIC"), nullptr);
+  EXPECT_NE(writingOf(canvas(), "EFFECTS"), nullptr);
+  EXPECT_NE(writingOf(canvas(), "MUTE ALL"), nullptr);
+  EXPECT_NE(writingOf(canvas(), "DEFAULT SOUND"), nullptr);
 }
 
 /**
@@ -139,9 +67,9 @@ TEST_F(OptionsScreenTest, TheOptionsOpenOnTheSoundTab) {
  * When the key at the place of E is tapped
  * Then the CONTROLS tab shows its rows
  */
-TEST_F(OptionsScreenTest, TheNextTabKeyOpensControls) {
+TEST_F(OptionsScreenFixture, TheNextTabKeyOpensControls) {
   openNextTab();
-  EXPECT_NE(writing("MOVE UP"), nullptr);
+  EXPECT_NE(writingOf(canvas(), "MOVE UP"), nullptr);
 }
 
 /**
@@ -149,10 +77,10 @@ TEST_F(OptionsScreenTest, TheNextTabKeyOpensControls) {
  * When the label of the CONTROLS tab is clicked
  * Then the CONTROLS tab shows its rows
  */
-TEST_F(OptionsScreenTest, AClickOnATabOpensIt) {
-  send(leftPress(CONTROLS_TAB * INTERFACE_PIXEL));
+TEST_F(OptionsScreenFixture, AClickOnATabOpensIt) {
+  screen().handleEvent(leftPress(CONTROLS_TAB * INTERFACE_PIXEL));
   screen().update(PRESS_DURATION);
-  EXPECT_NE(writing("MOVE UP"), nullptr);
+  EXPECT_NE(writingOf(canvas(), "MOVE UP"), nullptr);
 }
 
 /**
@@ -160,7 +88,7 @@ TEST_F(OptionsScreenTest, AClickOnATabOpensIt) {
  * When Right is tapped
  * Then the music is at 75 and those settings are saved once
  */
-TEST_F(OptionsScreenTest, RightOnMusicRaisesItAndSaves) {
+TEST_F(OptionsScreenFixture, RightOnMusicRaisesItAndSaves) {
   tap(Key::Right);
   EXPECT_EQ(settings().musicVolume, MUSIC_ONE_STEP_UP);
   ASSERT_EQ(storage().saves().size(), 1U);
@@ -172,9 +100,9 @@ TEST_F(OptionsScreenTest, RightOnMusicRaisesItAndSaves) {
  * When the options are painted
  * Then SAVED is stamped at the end of the rule
  */
-TEST_F(OptionsScreenTest, ASaveIsStampedSaved) {
+TEST_F(OptionsScreenFixture, ASaveIsStampedSaved) {
   tap(Key::Right);
-  const RecordedWriting* stamp = writing("SAVED");
+  const RecordedWriting* stamp = writingOf(canvas(), "SAVED");
   ASSERT_NE(stamp, nullptr);
   EXPECT_EQ(stamp->anchor, SAVED_ANCHOR);
 }
@@ -184,10 +112,10 @@ TEST_F(OptionsScreenTest, ASaveIsStampedSaved) {
  * When a second goes by
  * Then the stamp is gone
  */
-TEST_F(OptionsScreenTest, SavedFadesAfterASecond) {
+TEST_F(OptionsScreenFixture, SavedFadesAfterASecond) {
   tap(Key::Right);
-  screen().update(std::chrono::seconds(1));
-  EXPECT_EQ(writing("SAVED"), nullptr);
+  screen().update(SAVED_STAMP_TIME);
+  EXPECT_EQ(writingOf(canvas(), "SAVED"), nullptr);
 }
 
 /**
@@ -195,7 +123,7 @@ TEST_F(OptionsScreenTest, SavedFadesAfterASecond) {
  * When frames go by
  * Then nothing is saved: the file is written only after a change
  */
-TEST_F(OptionsScreenTest, AFrameWithoutAChangeSavesNothing) {
+TEST_F(OptionsScreenFixture, AFrameWithoutAChangeSavesNothing) {
   screen().update(PRESS_DURATION);
   screen().update(PRESS_DURATION);
   EXPECT_TRUE(storage().saves().empty());
@@ -206,11 +134,11 @@ TEST_F(OptionsScreenTest, AFrameWithoutAChangeSavesNothing) {
  * When the music is raised, then ten seconds go by
  * Then NOT SAVED stays on the screen
  */
-TEST_F(OptionsScreenTest, AFailedSaveStaysStampedNotSaved) {
+TEST_F(OptionsScreenFixture, AFailedSaveStaysStampedNotSaved) {
   storage().refuseSaves(true);
   tap(Key::Right);
   screen().update(LONG_AFTER_A_FAILED_SAVE);
-  EXPECT_NE(writing("NOT SAVED"), nullptr);
+  EXPECT_NE(writingOf(canvas(), "NOT SAVED"), nullptr);
 }
 
 /**
@@ -219,10 +147,10 @@ TEST_F(OptionsScreenTest, AFailedSaveStaysStampedNotSaved) {
  * Then the volume dragged to is already saved, so closing the window then
  * loses nothing
  */
-TEST_F(OptionsScreenTest, ADraggedVolumeIsSavedBeforeTheRelease) {
-  const sf::Vector2i trackStart(281, 78);
-  send(leftPress(trackStart * INTERFACE_PIXEL));
-  send(pointerMove((trackStart + ALONG_THE_TRACK) * INTERFACE_PIXEL));
+TEST_F(OptionsScreenFixture, ADraggedVolumeIsSavedBeforeTheRelease) {
+  screen().handleEvent(leftPress(MUSIC_TRACK_START * INTERFACE_PIXEL));
+  screen().handleEvent(
+      pointerMove((MUSIC_TRACK_START + ALONG_THE_TRACK) * INTERFACE_PIXEL));
   screen().update(PRESS_DURATION);
   ASSERT_FALSE(storage().saves().empty());
   EXPECT_EQ(storage().saves().back().musicVolume, settings().musicVolume);
@@ -234,11 +162,11 @@ TEST_F(OptionsScreenTest, ADraggedVolumeIsSavedBeforeTheRelease) {
  * When MUSIC is selected
  * Then its description says why its slider is dimmed
  */
-TEST_F(OptionsScreenTest, AMutedVolumeSaysWhy) {
+TEST_F(OptionsScreenFixture, AMutedVolumeSaysWhy) {
   settings().muted = true;
   screen().update(PRESS_DURATION);
-  ASSERT_NE(description(), nullptr);
-  EXPECT_EQ(description()->text, "> SOUND MUTED: SEE MUTE ALL");
+  ASSERT_NE(descriptionOf(canvas()), nullptr);
+  EXPECT_EQ(descriptionOf(canvas())->text, "> SOUND MUTED: SEE MUTE ALL");
 }
 
 /**
@@ -246,13 +174,13 @@ TEST_F(OptionsScreenTest, AMutedVolumeSaysWhy) {
  * When DEFAULT SOUND is activated
  * Then a question is asked, and the volume is still 10
  */
-TEST_F(OptionsScreenTest, DefaultSoundAsksFirst) {
+TEST_F(OptionsScreenFixture, DefaultSoundAsksFirst) {
   settings().musicVolume = QUIET_MUSIC;
   tap(Key::Down);
   tap(Key::Down);
   tap(Key::Down);
   tap(Key::Enter);
-  EXPECT_NE(writing("PUT BACK THE DEFAULT SOUND?"), nullptr);
+  EXPECT_NE(writingOf(canvas(), "PUT BACK THE DEFAULT SOUND?"), nullptr);
   EXPECT_EQ(settings().musicVolume, QUIET_MUSIC);
 }
 
@@ -261,7 +189,7 @@ TEST_F(OptionsScreenTest, DefaultSoundAsksFirst) {
  * When YES is chosen
  * Then the music is back at 70, saved, and the question is gone
  */
-TEST_F(OptionsScreenTest, YesPutsTheVolumesBack) {
+TEST_F(OptionsScreenFixture, YesPutsTheVolumesBack) {
   settings().musicVolume = QUIET_MUSIC;
   tap(Key::Down);
   tap(Key::Down);
@@ -272,7 +200,7 @@ TEST_F(OptionsScreenTest, YesPutsTheVolumesBack) {
   EXPECT_EQ(settings().musicVolume, MUSIC_DEFAULT);
   ASSERT_FALSE(storage().saves().empty());
   EXPECT_EQ(storage().saves().back().musicVolume, MUSIC_DEFAULT);
-  EXPECT_EQ(writing("PUT BACK THE DEFAULT SOUND?"), nullptr);
+  EXPECT_EQ(writingOf(canvas(), "PUT BACK THE DEFAULT SOUND?"), nullptr);
 }
 
 /**
@@ -280,7 +208,7 @@ TEST_F(OptionsScreenTest, YesPutsTheVolumesBack) {
  * When Escape is tapped
  * Then the volumes are kept, the question is gone and the options stay open
  */
-TEST_F(OptionsScreenTest, EscapeOnTheQuestionKeepsTheVolumes) {
+TEST_F(OptionsScreenFixture, EscapeOnTheQuestionKeepsTheVolumes) {
   settings().musicVolume = QUIET_MUSIC;
   tap(Key::Down);
   tap(Key::Down);
@@ -288,7 +216,7 @@ TEST_F(OptionsScreenTest, EscapeOnTheQuestionKeepsTheVolumes) {
   tap(Key::Enter);
   tap(Key::Escape);
   EXPECT_EQ(settings().musicVolume, QUIET_MUSIC);
-  EXPECT_EQ(writing("PUT BACK THE DEFAULT SOUND?"), nullptr);
+  EXPECT_EQ(writingOf(canvas(), "PUT BACK THE DEFAULT SOUND?"), nullptr);
   EXPECT_TRUE(navigator().calls().empty());
 }
 
@@ -297,11 +225,11 @@ TEST_F(OptionsScreenTest, EscapeOnTheQuestionKeepsTheVolumes) {
  * When Enter is tapped, then W
  * Then W moves up, and the settings are saved
  */
-TEST_F(OptionsScreenTest, AKeyIsChangedByPressingTheNewOne) {
+TEST_F(OptionsScreenFixture, AKeyIsChangedByPressingTheNewOne) {
   openNextTab();
   tap(Key::Enter);
-  ASSERT_NE(description(), nullptr);
-  EXPECT_EQ(description()->text, "> PRESS THE NEW KEY. ESC CANCELS");
+  ASSERT_NE(descriptionOf(canvas()), nullptr);
+  EXPECT_EQ(descriptionOf(canvas())->text, "> PRESS THE NEW KEY. ESC CANCELS");
   tap(Key::W, Scan::W);
   EXPECT_EQ(settings().keys.keyOf(BoundAction::MoveUp), Scan::W);
   EXPECT_FALSE(storage().saves().empty());
@@ -312,12 +240,12 @@ TEST_F(OptionsScreenTest, AKeyIsChangedByPressingTheNewOne) {
  * When the Command key is pressed
  * Then it goes on waiting, and its description says the key cannot be bound
  */
-TEST_F(OptionsScreenTest, ARefusedKeySaysItCannotBeBound) {
+TEST_F(OptionsScreenFixture, ARefusedKeySaysItCannotBeBound) {
   openNextTab();
   tap(Key::Enter);
   tap(Key::LSystem, Scan::LSystem);
-  ASSERT_NE(description(), nullptr);
-  EXPECT_EQ(description()->text, "> THIS KEY CANNOT BE BOUND");
+  ASSERT_NE(descriptionOf(canvas()), nullptr);
+  EXPECT_EQ(descriptionOf(canvas())->text, "> THIS KEY CANNOT BE BOUND");
   EXPECT_EQ(settings().keys.keyOf(BoundAction::MoveUp), Scan::Up);
 }
 
@@ -326,7 +254,7 @@ TEST_F(OptionsScreenTest, ARefusedKeySaysItCannotBeBound) {
  * When Escape is tapped
  * Then the key is kept and the options stay open
  */
-TEST_F(OptionsScreenTest, EscapeWhileWaitingKeepsTheKey) {
+TEST_F(OptionsScreenFixture, EscapeWhileWaitingKeepsTheKey) {
   openNextTab();
   tap(Key::Enter);
   tap(Key::Escape, Scan::Escape);
@@ -339,13 +267,13 @@ TEST_F(OptionsScreenTest, EscapeWhileWaitingKeepsTheKey) {
  * When MOVE UP is selected
  * Then its description names SHOOT, and a flag is drawn
  */
-TEST_F(OptionsScreenTest, AKeySharedByTwoActionsIsSignaled) {
+TEST_F(OptionsScreenFixture, AKeySharedByTwoActionsIsSignaled) {
   openNextTab();
   tap(Key::Enter);
   tap(Key::Space, Scan::Space);
-  ASSERT_NE(description(), nullptr);
-  EXPECT_EQ(description()->text, "> SAME KEY AS SHOOT: CHANGE ONE");
-  EXPECT_NE(writing("!"), nullptr);
+  ASSERT_NE(descriptionOf(canvas()), nullptr);
+  EXPECT_EQ(descriptionOf(canvas())->text, "> SAME KEY AS SHOOT: CHANGE ONE");
+  EXPECT_NE(writingOf(canvas(), "!"), nullptr);
 }
 
 /**
@@ -353,16 +281,16 @@ TEST_F(OptionsScreenTest, AKeySharedByTwoActionsIsSignaled) {
  * When Enter opens the list, Up then Enter take 1280 x 720
  * Then the window is 1280 x 720, and that size is saved
  */
-TEST_F(OptionsScreenTest, ASizeTakenResizesTheWindowAndIsSaved) {
+TEST_F(OptionsScreenFixture, ASizeTakenResizesTheWindowAndIsSaved) {
   openNextTab();
   openNextTab();
   tap(Key::Enter);
   tap(Key::Up);
   tap(Key::Enter);
-  EXPECT_EQ(window().windowSizeSelection().selectedIndex(), 1U);
+  EXPECT_EQ(window().windowSizeSelection().selectedIndex(),
+            INDEX_OF_1280_BY_720);
   ASSERT_FALSE(storage().saves().empty());
-  EXPECT_EQ(storage().saves().back().windowSize,
-            (PixelSize{.width = 1280, .height = 720}));
+  EXPECT_EQ(storage().saves().back().windowSize, WINDOW_1280_BY_720);
 }
 
 /**
@@ -371,7 +299,7 @@ TEST_F(OptionsScreenTest, ASizeTakenResizesTheWindowAndIsSaved) {
  * Then everything it adds to the picture lies right of x 332, clear of the
  * chart and its legend on the left
  */
-TEST_F(OptionsScreenTest, TheOpenListLeavesThePreviewUncovered) {
+TEST_F(OptionsScreenFixture, TheOpenListLeavesThePreviewUncovered) {
   openNextTab();
   openNextTab();
   const auto closed = canvas().fills;
@@ -388,7 +316,7 @@ TEST_F(OptionsScreenTest, TheOpenListLeavesThePreviewUncovered) {
  * When End is tapped in the open list
  * Then the highlight stays on that size: a size too large cannot be reached
  */
-TEST_F(OptionsScreenTest, ASizeTooLargeCannotBeReached) {
+TEST_F(OptionsScreenFixture, ASizeTooLargeCannotBeReached) {
   openNextTab();
   openNextTab();
   tap(Key::Enter);
@@ -402,10 +330,10 @@ TEST_F(OptionsScreenTest, ASizeTooLargeCannotBeReached) {
  * When each is selected in turn
  * Then its description fits between BACK and the safe margin
  */
-TEST_F(OptionsScreenTest, EveryDescriptionFitsBesideBack) {
+TEST_F(OptionsScreenFixture, EveryDescriptionFitsBesideBack) {
   for (int tab = 0; tab < TABS; ++tab) {
     for (std::size_t row = 0; row < ROWS_IN_THE_LONGEST_TAB; ++row) {
-      const RecordedWriting* line = description();
+      const RecordedWriting* line = descriptionOf(canvas());
       if (line != nullptr) {
         EXPECT_LE(DESCRIPTION_LEFT + regularTextWidth(line->text),
                   DESCRIPTION_RIGHT)
@@ -422,7 +350,7 @@ TEST_F(OptionsScreenTest, EveryDescriptionFitsBesideBack) {
  * When BACK is activated by Escape
  * Then they close
  */
-TEST_F(OptionsScreenTest, EscapeClosesTheOptions) {
+TEST_F(OptionsScreenFixture, EscapeClosesTheOptions) {
   tap(Key::Escape, Scan::Escape);
   EXPECT_THAT(navigator().calls(),
               ::testing::ElementsAre(NavigatorCall{
@@ -434,7 +362,7 @@ TEST_F(OptionsScreenTest, EscapeClosesTheOptions) {
  * When the stack asks whether they hide the screens below
  * Then they do
  */
-TEST_F(OptionsScreenTest, OverTheTitleTheOptionsHideIt) {
+TEST_F(OptionsScreenFixture, OverTheTitleTheOptionsHideIt) {
   EXPECT_TRUE(screen().hidesScreensBelow());
 }
 
@@ -443,9 +371,33 @@ TEST_F(OptionsScreenTest, OverTheTitleTheOptionsHideIt) {
  * When they are painted
  * Then the game shows, dimmed first, and THE GAME GOES ON is written
  */
-TEST_F(GameOptionsScreenTest, OverAGameTheOptionsDimItAndSaySo) {
+TEST_F(GameOptionsScreenFixture, OverAGameTheOptionsDimItAndSaySo) {
   EXPECT_FALSE(screen().hidesScreensBelow());
   ASSERT_FALSE(canvas().fills.empty());
   EXPECT_EQ(canvas().fills.front().color, DIM_LAYER_COLOR);
-  EXPECT_NE(writing("THE GAME GOES ON"), nullptr);
+  EXPECT_NE(writingOf(canvas(), "THE GAME GOES ON"), nullptr);
+}
+
+/**
+ * Given the SOUND tab
+ * When the label of the CONTROLS tab is clicked
+ * Then the click plays once
+ */
+TEST_F(OptionsScreenFixture, AClickOnATabPlaysTheClick) {
+  screen().handleEvent(leftPress(CONTROLS_TAB * INTERFACE_PIXEL));
+
+  screen().update(PRESS_DURATION);
+
+  EXPECT_THAT(sounds().played(), ElementsAre(CLICK_SOUND_ID));
+}
+
+/**
+ * Given MUSIC selected
+ * When Right raises it
+ * Then no click plays: a volume is set, not pressed
+ */
+TEST_F(OptionsScreenFixture, AVolumeRaisedPlaysNoClick) {
+  tap(Key::Right);
+
+  EXPECT_THAT(sounds().played(), IsEmpty());
 }

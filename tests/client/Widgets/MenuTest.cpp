@@ -4,8 +4,6 @@
 #include <SFML/System/Vector2.hpp>
 #include <SFML/Window/Event.hpp>
 #include <SFML/Window/Keyboard.hpp>
-#include <cstddef>
-#include <memory>
 #include <optional>
 #include <string>
 #include <vector>
@@ -13,25 +11,50 @@
 #include "KeyPress.hpp"
 #include "Menu.hpp"
 #include "MenuBuilder.hpp"
+#include "MenuFixture.hpp"
+#include "MenuFixtures.hpp"
 #include "MenuPainting.hpp"
+#include "MenuTestConstants.hpp"
+#include "MenuWithAFieldFixture.hpp"
 #include "PointerEvents.hpp"
 #include "RecordingInterfaceCanvas.hpp"
 #include "RecordingRowControl.hpp"
+#include "RecordingSoundPlayer.hpp"
 #include "ScreenTestConstants.hpp"
-#include "TextField.hpp"
+#include "SoundConstants.hpp"
+#include "TabbedPanelMenuFixture.hpp"
 #include "TextStyle.hpp"
 #include "TimeConstants.hpp"
 #include "WidgetColors.hpp"
 #include "WidgetConstants.hpp"
 
 using rtype::client::BUTTON_TEXT_OFFSET;
+using rtype::client::CLICK_SOUND_ID;
 using rtype::client::Menu;
 using rtype::client::MenuBuilder;
 using rtype::client::PRESS_DURATION;
 using rtype::client::PRESSED_BAR_TEXT_COLOR;
 using rtype::client::TEXT_LINE_HEIGHT;
-using rtype::client::TextField;
 using rtype::client::TextFont;
+using rtype::client::testing::AB_AND_E_ACUTE;
+using rtype::client::testing::BUTTON_AFTER_THE_FIELD;
+using rtype::client::testing::CHARACTERS_OF_AB;
+using rtype::client::testing::CHARACTERS_OF_AB_AND_E_ACUTE;
+using rtype::client::testing::E_ACUTE;
+using rtype::client::testing::ENTER;
+using rtype::client::testing::ESCAPE;
+using rtype::client::testing::FIELD;
+using rtype::client::testing::FIRST;
+using rtype::client::testing::INSIDE_A_BAR;
+using rtype::client::testing::JUST_BEFORE_DUE;
+using rtype::client::testing::LAST;
+using rtype::client::testing::LAST_TAB;
+using rtype::client::testing::LINK_ROW;
+using rtype::client::testing::ONE_PIXEL_LOWER;
+using rtype::client::testing::ONE_UNIT_LEFT;
+using rtype::client::testing::SECOND;
+using rtype::client::testing::SECOND_TAB;
+using rtype::client::testing::THIN_CARET_SIZE;
 using rtype::engine::Duration;
 using ::testing::Contains;
 using ::testing::ElementsAre;
@@ -39,72 +62,12 @@ using ::testing::Field;
 using ::testing::IsEmpty;
 using ::testing::Not;
 
-namespace {
-
-constexpr std::size_t FIRST = 0;
-constexpr std::size_t SECOND = 1;
-constexpr std::size_t LAST = 2;
-constexpr sf::Keyboard::Key ENTER = sf::Keyboard::Key::Enter;
-constexpr sf::Keyboard::Key ESCAPE = sf::Keyboard::Key::Escape;
-constexpr Duration JUST_BEFORE_DUE = PRESS_DURATION - ONE_TICK;
-constexpr sf::Vector2i ONE_UNIT_LEFT(-1, 0);
-constexpr sf::Vector2i ONE_PIXEL_LOWER(0, 1);
-constexpr sf::Vector2i INSIDE_A_BAR(4, 4);
-
-/** @returns The point of the playfield at the top-left corner of the bar of a
- * menu whose line reads so, read from what the menu paints. */
-sf::Vector2i barCornerOf(const Menu& menu, const std::string& line) {
-  const InterfaceCanvasRecord record = paintingOf(menu);
-  const RecordedWriting* writing = writingOf(record, line);
-  return writing == nullptr
-             ? sf::Vector2i()
-             : (writing->anchor - BUTTON_TEXT_OFFSET) * INTERFACE_PIXEL;
-}
-
-/** @brief A page of three buttons, A, B and C, C being the cancel button;
- * their actions write their label in a journal. */
-class MenuTest : public ::testing::Test {
- protected:
-  Menu& menu() { return menu_; }
-
-  [[nodiscard]] const std::vector<std::string>& activated() const {
-    return activated_;
-  }
-
-  void send(const sf::Event& event) {
-    menu_.handleEvent(event, samePlayfieldPoint);
-  }
-
-  void tap(sf::Keyboard::Key key) {
-    send(keyPress(key));
-    send(keyRelease(key));
-  }
-
-  /** @returns The point of the playfield at the top-left corner of the bar
-   * labelled so. */
-  sf::Vector2i barCorner(const std::string& label) {
-    return barCornerOf(menu_, label);
-  }
-
- private:
-  std::vector<std::string> activated_;
-  Menu menu_ =
-      MenuBuilder(MenuBuilder::Frame::Page)
-          .button({.label = "A"}, [this] { activated_.emplace_back("A"); })
-          .button({.label = "B"}, [this] { activated_.emplace_back("B"); })
-          .cancelButton({.label = "C"},
-                        [this] { activated_.emplace_back("C"); })
-          .build();
-};
-
-}  // namespace
-
 /**
  * Given a page of three buttons just built
  * When nothing happened yet
  * Then its first button is selected
  */
-TEST_F(MenuTest, SelectsItsFirstButtonAtFirst) {
+TEST_F(MenuFixture, SelectsItsFirstButtonAtFirst) {
   EXPECT_EQ(menu().selectedButton(), FIRST);
 }
 
@@ -113,7 +76,7 @@ TEST_F(MenuTest, SelectsItsFirstButtonAtFirst) {
  * When the down arrow is pressed
  * Then the second button is selected
  */
-TEST_F(MenuTest, DownArrowSelectsTheNextButton) {
+TEST_F(MenuFixture, DownArrowSelectsTheNextButton) {
   send(keyPress(sf::Keyboard::Key::Down));
 
   EXPECT_EQ(menu().selectedButton(), SECOND);
@@ -124,7 +87,7 @@ TEST_F(MenuTest, DownArrowSelectsTheNextButton) {
  * When the up arrow is pressed
  * Then the selection wraps around to the last button
  */
-TEST_F(MenuTest, UpArrowOnTheFirstButtonWrapsToTheLast) {
+TEST_F(MenuFixture, UpArrowOnTheFirstButtonWrapsToTheLast) {
   send(keyPress(sf::Keyboard::Key::Up));
 
   EXPECT_EQ(menu().selectedButton(), LAST);
@@ -135,7 +98,7 @@ TEST_F(MenuTest, UpArrowOnTheFirstButtonWrapsToTheLast) {
  * When Tab is pressed
  * Then the second button is selected
  */
-TEST_F(MenuTest, TabSelectsTheNextButton) {
+TEST_F(MenuFixture, TabSelectsTheNextButton) {
   send(keyPress(sf::Keyboard::Key::Tab));
 
   EXPECT_EQ(menu().selectedButton(), SECOND);
@@ -146,7 +109,7 @@ TEST_F(MenuTest, TabSelectsTheNextButton) {
  * When Shift+Tab is pressed
  * Then the selection goes back to the last button
  */
-TEST_F(MenuTest, ShiftTabSelectsThePreviousButton) {
+TEST_F(MenuFixture, ShiftTabSelectsThePreviousButton) {
   send(shiftedKeyPress(sf::Keyboard::Key::Tab));
 
   EXPECT_EQ(menu().selectedButton(), LAST);
@@ -157,7 +120,7 @@ TEST_F(MenuTest, ShiftTabSelectsThePreviousButton) {
  * When the down arrow is pressed
  * Then the third button is selected
  */
-TEST_F(MenuTest, ArrowsSkipADisabledButton) {
+TEST_F(MenuFixture, ArrowsSkipADisabledButton) {
   menu().setEnabled(SECOND, false);
 
   send(keyPress(sf::Keyboard::Key::Down));
@@ -170,7 +133,7 @@ TEST_F(MenuTest, ArrowsSkipADisabledButton) {
  * When it is disabled
  * Then the next enabled button is selected
  */
-TEST_F(MenuTest, DisablingTheSelectedButtonSelectsTheNextOne) {
+TEST_F(MenuFixture, DisablingTheSelectedButtonSelectsTheNextOne) {
   menu().setEnabled(FIRST, false);
 
   EXPECT_EQ(menu().selectedButton(), SECOND);
@@ -181,7 +144,7 @@ TEST_F(MenuTest, DisablingTheSelectedButtonSelectsTheNextOne) {
  * When all of them are disabled
  * Then no button is selected
  */
-TEST_F(MenuTest, NoButtonIsSelectedWhenNoneIsEnabled) {
+TEST_F(MenuFixture, NoButtonIsSelectedWhenNoneIsEnabled) {
   menu().setEnabled(FIRST, false);
   menu().setEnabled(SECOND, false);
 
@@ -196,7 +159,7 @@ TEST_F(MenuTest, NoButtonIsSelectedWhenNoneIsEnabled) {
  * PRESS_DURATION
  * Then the first button is activated, once
  */
-TEST_F(MenuTest, EnterActivatesTheSelectedButtonOncePressedLongEnough) {
+TEST_F(MenuFixture, EnterActivatesTheSelectedButtonOncePressedLongEnough) {
   tap(ENTER);
 
   menu().advance(PRESS_DURATION);
@@ -209,7 +172,7 @@ TEST_F(MenuTest, EnterActivatesTheSelectedButtonOncePressedLongEnough) {
  * When a little less than PRESS_DURATION has passed
  * Then nothing is activated yet
  */
-TEST_F(MenuTest, AQuickPressWaitsForThePressDuration) {
+TEST_F(MenuFixture, AQuickPressWaitsForThePressDuration) {
   tap(ENTER);
 
   menu().advance(JUST_BEFORE_DUE);
@@ -222,7 +185,7 @@ TEST_F(MenuTest, AQuickPressWaitsForThePressDuration) {
  * When the rest of PRESS_DURATION passes
  * Then the first button is activated
  */
-TEST_F(MenuTest, AQuickPressActivatesOnceThePressDurationHasPassed) {
+TEST_F(MenuFixture, AQuickPressActivatesOnceThePressDurationHasPassed) {
   tap(ENTER);
   menu().advance(JUST_BEFORE_DUE);
 
@@ -236,7 +199,7 @@ TEST_F(MenuTest, AQuickPressActivatesOnceThePressDurationHasPassed) {
  * When it is released
  * Then the first button is activated at once
  */
-TEST_F(MenuTest, ALongPressActivatesOnRelease) {
+TEST_F(MenuFixture, ALongPressActivatesOnRelease) {
   send(keyPress(ENTER));
   menu().advance(PRESS_DURATION);
 
@@ -250,7 +213,7 @@ TEST_F(MenuTest, ALongPressActivatesOnRelease) {
  * When it is released and PRESS_DURATION passes
  * Then the first button is activated once only
  */
-TEST_F(MenuTest, RepeatedPressesOfAHeldKeyActivateOnce) {
+TEST_F(MenuFixture, RepeatedPressesOfAHeldKeyActivateOnce) {
   send(keyPress(ENTER));
   send(keyPress(ENTER));
   send(keyPress(ENTER));
@@ -266,7 +229,7 @@ TEST_F(MenuTest, RepeatedPressesOfAHeldKeyActivateOnce) {
  * When Enter is released and PRESS_DURATION passes
  * Then nothing is activated
  */
-TEST_F(MenuTest, ReleaseOfAKeyPressedOnAnotherScreenDoesNothing) {
+TEST_F(MenuFixture, ReleaseOfAKeyPressedOnAnotherScreenDoesNothing) {
   send(keyRelease(ENTER));
 
   menu().advance(PRESS_DURATION);
@@ -279,7 +242,7 @@ TEST_F(MenuTest, ReleaseOfAKeyPressedOnAnotherScreenDoesNothing) {
  * When Escape is pressed and released
  * Then the cancel button is activated at once
  */
-TEST_F(MenuTest, EscapeActivatesTheCancelButtonAtOnce) {
+TEST_F(MenuFixture, EscapeActivatesTheCancelButtonAtOnce) {
   tap(ESCAPE);
 
   EXPECT_THAT(activated(), ElementsAre("C"));
@@ -290,7 +253,7 @@ TEST_F(MenuTest, EscapeActivatesTheCancelButtonAtOnce) {
  * When Escape is pressed and released
  * Then the cancel button is selected, as it was activated
  */
-TEST_F(MenuTest, EscapeSelectsTheCancelButton) {
+TEST_F(MenuFixture, EscapeSelectsTheCancelButton) {
   tap(ESCAPE);
 
   EXPECT_EQ(menu().selectedButton(), LAST);
@@ -301,7 +264,7 @@ TEST_F(MenuTest, EscapeSelectsTheCancelButton) {
  * When Escape is released
  * Then nothing is activated
  */
-TEST_F(MenuTest, EscapeReleasedWithoutItsPressDoesNothing) {
+TEST_F(MenuFixture, EscapeReleasedWithoutItsPressDoesNothing) {
   send(keyRelease(ESCAPE));
 
   EXPECT_THAT(activated(), IsEmpty());
@@ -329,7 +292,7 @@ TEST(Menu, EscapeWithoutCancelButtonDoesNothing) {
  * When the pointer moves over the second button
  * Then the second button is selected
  */
-TEST_F(MenuTest, PointerOverAButtonSelectsIt) {
+TEST_F(MenuFixture, PointerOverAButtonSelectsIt) {
   const sf::Vector2i second = barCorner("B");
 
   send(pointerMove(second + INSIDE_A_BAR));
@@ -342,7 +305,7 @@ TEST_F(MenuTest, PointerOverAButtonSelectsIt) {
  * When the pointer moves over it
  * Then the first button stays selected
  */
-TEST_F(MenuTest, PointerOverADisabledButtonKeepsTheSelection) {
+TEST_F(MenuFixture, PointerOverADisabledButtonKeepsTheSelection) {
   const sf::Vector2i second = barCorner("B");
   menu().setEnabled(SECOND, false);
 
@@ -356,7 +319,7 @@ TEST_F(MenuTest, PointerOverADisabledButtonKeepsTheSelection) {
  * When the pointer moves to the first column of pixels of the second button
  * Then the second button is selected
  */
-TEST_F(MenuTest, PointerOnTheLeftEdgeOfAButtonSelectsIt) {
+TEST_F(MenuFixture, PointerOnTheLeftEdgeOfAButtonSelectsIt) {
   const sf::Vector2i second = barCorner("B");
 
   send(pointerMove(second));
@@ -369,7 +332,7 @@ TEST_F(MenuTest, PointerOnTheLeftEdgeOfAButtonSelectsIt) {
  * When the pointer moves one logical unit left of the second button
  * Then the first button stays selected
  */
-TEST_F(MenuTest, PointerJustLeftOfAButtonSelectsNothing) {
+TEST_F(MenuFixture, PointerJustLeftOfAButtonSelectsNothing) {
   const sf::Vector2i second = barCorner("B");
 
   send(pointerMove(second + ONE_UNIT_LEFT));
@@ -383,7 +346,7 @@ TEST_F(MenuTest, PointerJustLeftOfAButtonSelectsNothing) {
  * passes
  * Then the second button is activated
  */
-TEST_F(MenuTest, ClickActivatesTheButtonUnderThePointer) {
+TEST_F(MenuFixture, ClickActivatesTheButtonUnderThePointer) {
   const sf::Vector2i second = barCorner("B") + INSIDE_A_BAR;
   send(leftPress(second));
   send(leftRelease(second));
@@ -398,7 +361,7 @@ TEST_F(MenuTest, ClickActivatesTheButtonUnderThePointer) {
  * When it is released over the third, and PRESS_DURATION passes
  * Then nothing is activated
  */
-TEST_F(MenuTest, ReleasingThePointerOffTheButtonDropsThePress) {
+TEST_F(MenuFixture, ReleasingThePointerOffTheButtonDropsThePress) {
   send(leftPress(barCorner("B") + INSIDE_A_BAR));
   send(leftRelease(barCorner("C") + INSIDE_A_BAR));
 
@@ -412,7 +375,7 @@ TEST_F(MenuTest, ReleasingThePointerOffTheButtonDropsThePress) {
  * When the window loses the focus, then Enter is released
  * Then nothing is activated
  */
-TEST_F(MenuTest, LosingTheFocusDropsAHeldPress) {
+TEST_F(MenuFixture, LosingTheFocusDropsAHeldPress) {
   send(keyPress(ENTER));
   send(sf::Event{sf::Event::FocusLost{}});
 
@@ -428,7 +391,7 @@ TEST_F(MenuTest, LosingTheFocusDropsAHeldPress) {
  * Then its label is written in the pressed color, one pixel lower than at
  * rest, as on the mockup
  */
-TEST_F(MenuTest, APressedButtonIsPaintedPressed) {
+TEST_F(MenuFixture, APressedButtonIsPaintedPressed) {
   const sf::Vector2i atRest = barCorner("A") / INTERFACE_PIXEL;
   send(keyPress(ENTER));
 
@@ -459,91 +422,12 @@ TEST(Menu, AMenuWithoutButtonsIgnoresEveryInput) {
   EXPECT_EQ(menu.selectedButton(), std::nullopt);
 }
 
-namespace {
-
-constexpr std::size_t FIELD = 0;
-constexpr std::size_t BUTTON_AFTER_THE_FIELD = 1;
-constexpr std::size_t FOUR_BYTES = 4;
-
-/** @brief Width of every character of the regular font, in pixels, read from
- * its file. */
-constexpr int CHARACTER_WIDTH = 8;
-
-/**
- * @brief The caret the team chose: one pixel wide, and taller than a line of
- * text by a pixel above and below it.
- */
-constexpr sf::Vector2i THIN_CARET_SIZE(1, 10);
-constexpr sf::Vector2i ONE_PIXEL_HIGHER(0, -1);
-
-/** @brief Characters of the texts the field holds in the tests. */
-constexpr int CHARACTERS_OF_AB = 2;
-constexpr int CHARACTERS_OF_AB_AND_E_ACUTE = 3;
-
-/** @brief The letter e with an acute accent, one character of two bytes, and
- * the text AB followed by it, in UTF-8. */
-constexpr char32_t E_ACUTE = U'\xE9';
-constexpr const char* AB_AND_E_ACUTE = "AB\xC3\xA9";
-
-/** @returns Where the caret lies after a text of so many characters written
- * at an anchor. */
-sf::IntRect caretAfter(sf::Vector2i textAnchor, int characters) {
-  return {textAnchor + sf::Vector2i(characters * CHARACTER_WIDTH, 0) +
-              ONE_PIXEL_HIGHER,
-          THIN_CARET_SIZE};
-}
-
-/**
- * @brief A form whose first bar is a field of four bytes, NAME, starting with
- * AB, then a button, OK; their actions write their label in a journal.
- */
-class MenuWithAFieldTest : public ::testing::Test {
- protected:
-  Menu& menu() { return menu_; }
-
-  [[nodiscard]] const std::vector<std::string>& activated() const {
-    return activated_;
-  }
-
-  void send(const sf::Event& event) {
-    menu_.handleEvent(event, samePlayfieldPoint);
-  }
-
-  /** @returns What the menu paints. */
-  [[nodiscard]] InterfaceCanvasRecord painting() const {
-    return paintingOf(menu_);
-  }
-
-  /** @returns The point of the playfield one pixel inside the line written
-   * with this text, read from what the menu paints. */
-  [[nodiscard]] sf::Vector2i pointOn(const std::string& text) const {
-    const InterfaceCanvasRecord record = painting();
-    const RecordedWriting* writing = writingOf(record, text);
-    return writing == nullptr
-               ? sf::Vector2i()
-               : (writing->anchor * INTERFACE_PIXEL) + INSIDE_A_BAR;
-  }
-
- private:
-  std::vector<std::string> activated_;
-  Menu menu_ =
-      MenuBuilder(MenuBuilder::Frame::Form)
-          .textField(
-              {.label = "NAME", .description = "> TYPE A NAME"},
-              TextField("AB", FOUR_BYTES, TextField::Characters::Printable),
-              [this] { activated_.emplace_back("NAME"); })
-          .button({.label = "OK"}, [this] { activated_.emplace_back("OK"); })
-          .build();
-};
-
-}  // namespace
-
 /**
  * Given a form whose field, holding AB, is selected
  * When C is typed
  * Then the field holds ABC
  */
-TEST_F(MenuWithAFieldTest, ACharacterTypedGoesToTheSelectedField) {
+TEST_F(MenuWithAFieldFixture, ACharacterTypedGoesToTheSelectedField) {
   send(typedCharacter(U'C'));
 
   EXPECT_EQ(menu().fieldText(FIELD), "ABC");
@@ -554,7 +438,7 @@ TEST_F(MenuWithAFieldTest, ACharacterTypedGoesToTheSelectedField) {
  * When C is typed
  * Then the field still holds AB
  */
-TEST_F(MenuWithAFieldTest, ACharacterTypedOnAButtonGoesNowhere) {
+TEST_F(MenuWithAFieldFixture, ACharacterTypedOnAButtonGoesNowhere) {
   send(keyPress(sf::Keyboard::Key::Down));
 
   send(typedCharacter(U'C'));
@@ -567,7 +451,7 @@ TEST_F(MenuWithAFieldTest, ACharacterTypedOnAButtonGoesNowhere) {
  * When Backspace is pressed
  * Then the field holds A
  */
-TEST_F(MenuWithAFieldTest, BackspaceErasesFromTheSelectedField) {
+TEST_F(MenuWithAFieldFixture, BackspaceErasesFromTheSelectedField) {
   send(keyPress(sf::Keyboard::Key::Backspace));
 
   EXPECT_EQ(menu().fieldText(FIELD), "A");
@@ -578,7 +462,7 @@ TEST_F(MenuWithAFieldTest, BackspaceErasesFromTheSelectedField) {
  * When C is typed before the press ends
  * Then the field still holds AB: every input waits while a bar is pressed
  */
-TEST_F(MenuWithAFieldTest, TypingWaitsWhileTheFieldIsPressed) {
+TEST_F(MenuWithAFieldFixture, TypingWaitsWhileTheFieldIsPressed) {
   send(keyPress(ENTER));
 
   send(typedCharacter(U'C'));
@@ -591,7 +475,7 @@ TEST_F(MenuWithAFieldTest, TypingWaitsWhileTheFieldIsPressed) {
  * When Enter is pressed and released, and the press lasts
  * Then the action of the field runs
  */
-TEST_F(MenuWithAFieldTest, EnterOnAFieldRunsItsAction) {
+TEST_F(MenuWithAFieldFixture, EnterOnAFieldRunsItsAction) {
   send(keyPress(ENTER));
   send(keyRelease(ENTER));
 
@@ -605,7 +489,7 @@ TEST_F(MenuWithAFieldTest, EnterOnAFieldRunsItsAction) {
  * When the left button is pressed and released on the text of the field
  * Then the field is selected
  */
-TEST_F(MenuWithAFieldTest, AClickOnAFieldSelectsIt) {
+TEST_F(MenuWithAFieldFixture, AClickOnAFieldSelectsIt) {
   send(keyPress(sf::Keyboard::Key::Down));
   const sf::Vector2i field = pointOn("AB");
 
@@ -620,7 +504,7 @@ TEST_F(MenuWithAFieldTest, AClickOnAFieldSelectsIt) {
  * When the field is clicked, then a press duration goes by
  * Then no action runs
  */
-TEST_F(MenuWithAFieldTest, AClickOnAFieldRunsNothing) {
+TEST_F(MenuWithAFieldFixture, AClickOnAFieldRunsNothing) {
   send(keyPress(sf::Keyboard::Key::Down));
   const sf::Vector2i field = pointOn("AB");
 
@@ -636,7 +520,7 @@ TEST_F(MenuWithAFieldTest, AClickOnAFieldRunsNothing) {
  * When the left button is pressed and released on the label of the field
  * Then the field is selected, as a click in its box would
  */
-TEST_F(MenuWithAFieldTest, AClickOnTheLabelOfAFieldSelectsIt) {
+TEST_F(MenuWithAFieldFixture, AClickOnTheLabelOfAFieldSelectsIt) {
   send(keyPress(sf::Keyboard::Key::Down));
   const sf::Vector2i label = pointOn("NAME");
 
@@ -651,7 +535,7 @@ TEST_F(MenuWithAFieldTest, AClickOnTheLabelOfAFieldSelectsIt) {
  * When the pointer moves over the button after it
  * Then the field stays selected: a form selects on a click only
  */
-TEST_F(MenuWithAFieldTest, ThePointerPassingOverAButtonKeepsTheField) {
+TEST_F(MenuWithAFieldFixture, ThePointerPassingOverAButtonKeepsTheField) {
   const sf::Vector2i button = pointOn("OK");
 
   send(pointerMove(button));
@@ -665,7 +549,7 @@ TEST_F(MenuWithAFieldTest, ThePointerPassingOverAButtonKeepsTheField) {
  * the press lasts
  * Then the action of that button runs
  */
-TEST_F(MenuWithAFieldTest, AClickOnAButtonOfAFormRunsIt) {
+TEST_F(MenuWithAFieldFixture, AClickOnAButtonOfAFormRunsIt) {
   const sf::Vector2i button = pointOn("OK");
 
   send(leftPress(button));
@@ -680,7 +564,7 @@ TEST_F(MenuWithAFieldTest, AClickOnAButtonOfAFormRunsIt) {
  * When the menu is painted
  * Then a caret one pixel wide stands right after the text
  */
-TEST_F(MenuWithAFieldTest, TheSelectedFieldShowsAThinCaretAfterItsText) {
+TEST_F(MenuWithAFieldFixture, TheSelectedFieldShowsAThinCaretAfterItsText) {
   const InterfaceCanvasRecord record = painting();
 
   const RecordedWriting* text = writingOf(record, "AB");
@@ -695,7 +579,7 @@ TEST_F(MenuWithAFieldTest, TheSelectedFieldShowsAThinCaretAfterItsText) {
  * When the menu is painted
  * Then no caret is painted
  */
-TEST_F(MenuWithAFieldTest, AFieldNotSelectedShowsNoCaret) {
+TEST_F(MenuWithAFieldFixture, AFieldNotSelectedShowsNoCaret) {
   send(keyPress(sf::Keyboard::Key::Down));
 
   EXPECT_THAT(painting().fills,
@@ -709,7 +593,7 @@ TEST_F(MenuWithAFieldTest, AFieldNotSelectedShowsNoCaret) {
  * Then the caret stands three characters after the start of the text, not
  * four
  */
-TEST_F(MenuWithAFieldTest, TheCaretCountsCharactersNotBytes) {
+TEST_F(MenuWithAFieldFixture, TheCaretCountsCharactersNotBytes) {
   send(typedCharacter(E_ACUTE));
 
   const InterfaceCanvasRecord record = painting();
@@ -727,7 +611,7 @@ TEST_F(MenuWithAFieldTest, TheCaretCountsCharactersNotBytes) {
  * When the text of the button is read
  * Then it has none
  */
-TEST_F(MenuWithAFieldTest, AButtonHasNoText) {
+TEST_F(MenuWithAFieldFixture, AButtonHasNoText) {
   EXPECT_EQ(menu().fieldText(BUTTON_AFTER_THE_FIELD), "");
 }
 
@@ -736,7 +620,7 @@ TEST_F(MenuWithAFieldTest, AButtonHasNoText) {
  * When a status line is set and the menu painted
  * Then it is written in line with the description, below it and clear of it
  */
-TEST_F(MenuWithAFieldTest, TheStatusLineLiesBelowTheDescription) {
+TEST_F(MenuWithAFieldFixture, TheStatusLineLiesBelowTheDescription) {
   menu().setStatus("WAIT");
 
   const InterfaceCanvasRecord record = painting();
@@ -781,65 +665,12 @@ TEST(MenuStatus, APageWritesNoStatusLine) {
   EXPECT_EQ(writingOf(record, "WAIT"), nullptr);
 }
 
-namespace {
-
-constexpr std::size_t SECOND_TAB = 1;
-constexpr std::size_t LAST_TAB = 2;
-constexpr std::size_t LINK_ROW = 1;
-
-/** @brief A tabbed panel of three tabs: a row whose control steps on Left
- * and Right, a row whose control can be activated, then BACK. */
-class TabbedPanelMenuTest : public ::testing::Test {
- protected:
-  void send(const sf::Event& event) {
-    menu_.handleEvent(event, samePlayfieldPoint);
-  }
-
-  void tap(sf::Keyboard::Key key,
-           sf::Keyboard::Scancode scancode = sf::Keyboard::Scan::Unknown) {
-    send(keyPress(key, scancode));
-    send(keyRelease(key, scancode));
-    menu_.advance(PRESS_DURATION);
-  }
-
-  Menu& menu() { return menu_; }
-  RowControlRecord& steps() { return steps_; }
-  RowControlRecord& link() { return link_; }
-  [[nodiscard]] const std::vector<std::size_t>& opened() const {
-    return opened_;
-  }
-  [[nodiscard]] int backs() const { return backs_; }
-
- private:
-  RowControlRecord steps_;
-  RowControlRecord link_;
-  std::vector<std::size_t> opened_;
-  int backs_ = 0;
-  Menu menu_ =
-      MenuBuilder(MenuBuilder::Frame::TabbedPanel)
-          .heading("SETTINGS")
-          .tabs({"A", "B", "C"}, 0, {.previous = "Q", .next = "E"},
-                [this](std::size_t tab) { opened_.push_back(tab); })
-          .row({.label = "STEPS"}, std::make_unique<RecordingRowControl>(
-                                       steps_,
-                                       std::vector{sf::Keyboard::Key::Left,
-                                                   sf::Keyboard::Key::Right},
-                                       false))
-          .row({.label = "LINK"},
-               std::make_unique<RecordingRowControl>(
-                   link_, std::vector<sf::Keyboard::Key>{}, true))
-          .cancelButton({.label = "BACK"}, [this] { ++backs_; })
-          .build();
-};
-
-}  // namespace
-
 /**
  * Given the row that steps selected
  * When Right is tapped
  * Then its control gets Right, and the selection stays on it
  */
-TEST_F(TabbedPanelMenuTest, RightGoesToTheControlOfTheSelectedRow) {
+TEST_F(TabbedPanelMenuFixture, RightGoesToTheControlOfTheSelectedRow) {
   tap(sf::Keyboard::Key::Right);
   EXPECT_EQ(steps().keys, std::vector{sf::Keyboard::Key::Right});
   EXPECT_EQ(menu().selectedButton(), 0U);
@@ -850,7 +681,7 @@ TEST_F(TabbedPanelMenuTest, RightGoesToTheControlOfTheSelectedRow) {
  * When Right is tapped
  * Then the selection stays on it: in a tabbed panel, Right steps a value
  */
-TEST_F(TabbedPanelMenuTest, ARightLeftUnusedDoesNothing) {
+TEST_F(TabbedPanelMenuFixture, ARightLeftUnusedDoesNothing) {
   tap(sf::Keyboard::Key::Down);
   tap(sf::Keyboard::Key::Right);
   EXPECT_EQ(menu().selectedButton(), LINK_ROW);
@@ -861,7 +692,7 @@ TEST_F(TabbedPanelMenuTest, ARightLeftUnusedDoesNothing) {
  * When Enter is tapped and the press time passes
  * Then nothing is activated
  */
-TEST_F(TabbedPanelMenuTest, EnterOnARowThatCannotBeActivatedDoesNothing) {
+TEST_F(TabbedPanelMenuFixture, EnterOnARowThatCannotBeActivatedDoesNothing) {
   tap(sf::Keyboard::Key::Enter);
   EXPECT_EQ(steps().activations, 0);
 }
@@ -871,7 +702,7 @@ TEST_F(TabbedPanelMenuTest, EnterOnARowThatCannotBeActivatedDoesNothing) {
  * When Enter is tapped and the press time passes
  * Then its control is activated once
  */
-TEST_F(TabbedPanelMenuTest, EnterActivatesTheControlOfALinkRow) {
+TEST_F(TabbedPanelMenuFixture, EnterActivatesTheControlOfALinkRow) {
   tap(sf::Keyboard::Key::Down);
   tap(sf::Keyboard::Key::Enter);
   EXPECT_EQ(link().activations, 1);
@@ -882,7 +713,7 @@ TEST_F(TabbedPanelMenuTest, EnterActivatesTheControlOfALinkRow) {
  * When the key at the place of E is tapped
  * Then the second tab is asked for
  */
-TEST_F(TabbedPanelMenuTest, TheKeyAtThePlaceOfEOpensTheNextTab) {
+TEST_F(TabbedPanelMenuFixture, TheKeyAtThePlaceOfEOpensTheNextTab) {
   tap(sf::Keyboard::Key::E, sf::Keyboard::Scan::E);
   EXPECT_EQ(opened(), std::vector{SECOND_TAB});
 }
@@ -892,7 +723,7 @@ TEST_F(TabbedPanelMenuTest, TheKeyAtThePlaceOfEOpensTheNextTab) {
  * When that key is tapped
  * Then the last tab is asked for: the key is read by its place
  */
-TEST_F(TabbedPanelMenuTest, TheKeyAtThePlaceOfQOpensThePreviousTab) {
+TEST_F(TabbedPanelMenuFixture, TheKeyAtThePlaceOfQOpensThePreviousTab) {
   tap(sf::Keyboard::Key::A, sf::Keyboard::Scan::Q);
   EXPECT_EQ(opened(), std::vector{LAST_TAB});
 }
@@ -902,7 +733,7 @@ TEST_F(TabbedPanelMenuTest, TheKeyAtThePlaceOfQOpensThePreviousTab) {
  * When that key is tapped
  * Then no tab is asked for: the character a key prints does not count
  */
-TEST_F(TabbedPanelMenuTest, TheKeyPrintingQElsewhereOpensNoTab) {
+TEST_F(TabbedPanelMenuFixture, TheKeyPrintingQElsewhereOpensNoTab) {
   tap(sf::Keyboard::Key::Q, sf::Keyboard::Scan::A);
   EXPECT_TRUE(opened().empty());
 }
@@ -913,7 +744,7 @@ TEST_F(TabbedPanelMenuTest, TheKeyPrintingQElsewhereOpensNoTab) {
  * Then all three reach the control, the selection stays, no tab opens and
  * BACK is not activated
  */
-TEST_F(TabbedPanelMenuTest, AControlHoldingTheInputGetsEveryKey) {
+TEST_F(TabbedPanelMenuFixture, AControlHoldingTheInputGetsEveryKey) {
   steps().holding = true;
   tap(sf::Keyboard::Key::Down);
   tap(sf::Keyboard::Key::E, sf::Keyboard::Scan::E);
@@ -931,7 +762,7 @@ TEST_F(TabbedPanelMenuTest, AControlHoldingTheInputGetsEveryKey) {
  * When the window loses the focus
  * Then the control is told to drop it
  */
-TEST_F(TabbedPanelMenuTest, LosingTheFocusDropsTheInputHeld) {
+TEST_F(TabbedPanelMenuFixture, LosingTheFocusDropsTheInputHeld) {
   steps().holding = true;
   send(sf::Event::FocusLost{});
   EXPECT_EQ(steps().cancels, 1);
@@ -943,7 +774,7 @@ TEST_F(TabbedPanelMenuTest, LosingTheFocusDropsTheInputHeld) {
  * When the pointer clicks the label of the second tab
  * Then the second tab is asked for
  */
-TEST_F(TabbedPanelMenuTest, AClickOnATabOpensIt) {
+TEST_F(TabbedPanelMenuFixture, AClickOnATabOpensIt) {
   const InterfaceCanvasRecord painting = paintingOf(menu());
   const RecordedWriting* label = writingOf(painting, "B");
   ASSERT_NE(label, nullptr);
@@ -957,11 +788,97 @@ TEST_F(TabbedPanelMenuTest, AClickOnATabOpensIt) {
  * Then the status is stamped at (270, 36), the end of the rule on the
  * picture, in small print
  */
-TEST_F(TabbedPanelMenuTest, TheStatusIsStampedAtTheEndOfTheRule) {
+TEST_F(TabbedPanelMenuFixture, TheStatusIsStampedAtTheEndOfTheRule) {
   menu().setStatus("SAVED");
   const InterfaceCanvasRecord painting = paintingOf(menu());
   const RecordedWriting* stamp = writingOf(painting, "SAVED");
   ASSERT_NE(stamp, nullptr);
   EXPECT_EQ(stamp->anchor, sf::Vector2i(270, 36));
   EXPECT_EQ(stamp->style.font, TextFont::Small);
+}
+
+/**
+ * Given a page of three buttons that has a sound player
+ * When Enter activates its first button
+ * Then the click plays once
+ */
+TEST_F(MenuFixture, ABarActivatedPlaysTheClick) {
+  tap(ENTER);
+
+  menu().advance(PRESS_DURATION);
+
+  EXPECT_THAT(sounds().played(), ElementsAre(CLICK_SOUND_ID));
+}
+
+/**
+ * Given Enter pressed and released on the first button
+ * When a little less than PRESS_DURATION has passed
+ * Then no click plays yet: it comes with the activation
+ */
+TEST_F(MenuFixture, APressNotDueYetPlaysNoClick) {
+  tap(ENTER);
+
+  menu().advance(JUST_BEFORE_DUE);
+
+  EXPECT_THAT(sounds().played(), IsEmpty());
+}
+
+/**
+ * Given a page whose last button is the cancel button
+ * When Escape is tapped
+ * Then the cancel button is activated with the click
+ */
+TEST_F(MenuFixture, EscapeActivatesTheCancelButtonWithTheClick) {
+  tap(ESCAPE);
+
+  EXPECT_THAT(sounds().played(), ElementsAre(CLICK_SOUND_ID));
+}
+
+/**
+ * Given a form whose field is selected
+ * When Enter runs the action of the field
+ * Then no click plays: a field is typed into, not pressed
+ */
+TEST_F(MenuWithAFieldFixture, EnterOnAFieldPlaysNoClick) {
+  send(keyPress(ENTER));
+  send(keyRelease(ENTER));
+
+  menu().advance(PRESS_DURATION);
+
+  EXPECT_THAT(sounds().played(), IsEmpty());
+}
+
+/**
+ * Given the first tab of a tabbed panel open
+ * When the key at the place of E asks for the next tab
+ * Then the click plays once
+ */
+TEST_F(TabbedPanelMenuFixture, AskingForATabPlaysTheClick) {
+  tap(sf::Keyboard::Key::E, sf::Keyboard::Scan::E);
+
+  EXPECT_THAT(sounds().played(), ElementsAre(CLICK_SOUND_ID));
+}
+
+/**
+ * Given the row that steps selected
+ * When Right steps its control
+ * Then no click plays: a control sets a value, as a slider does
+ */
+TEST_F(TabbedPanelMenuFixture, AControlSteppingPlaysNoClick) {
+  tap(sf::Keyboard::Key::Right);
+
+  EXPECT_THAT(sounds().played(), IsEmpty());
+}
+
+/**
+ * Given the row whose control can be activated selected
+ * When Enter activates it
+ * Then no click plays: only a bar sounds when it is activated
+ */
+TEST_F(TabbedPanelMenuFixture, ARowActivatedPlaysNoClick) {
+  tap(sf::Keyboard::Key::Down);
+
+  tap(sf::Keyboard::Key::Enter);
+
+  EXPECT_THAT(sounds().played(), IsEmpty());
 }

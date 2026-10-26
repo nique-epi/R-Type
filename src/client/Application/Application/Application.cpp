@@ -15,6 +15,7 @@
 #include "BoundAction.hpp"
 #include "ConnectionConstants.hpp"
 #include "ConnectionScreen.hpp"
+#include "ConnectionScreenParts.hpp"
 #include "Endpoint.hpp"
 #include "EntityLayer.hpp"
 #include "GameScreen.hpp"
@@ -26,13 +27,17 @@
 #include "IntroScreenParts.hpp"
 #include "LoadingScreen.hpp"
 #include "LobbyScreen.hpp"
+#include "LobbyScreenParts.hpp"
 #include "LocalizedKeyName.hpp"
 #include "MotionPreference.hpp"
 #include "NetworkConstants.hpp"
+#include "OptionsPlace.hpp"
 #include "OptionsScreen.hpp"
+#include "OptionsScreenParts.hpp"
 #include "PlayerSettings.hpp"
 #include "PlayfieldMapping.hpp"
 #include "QuitConfirmationScreen.hpp"
+#include "QuitConfirmationScreenParts.hpp"
 #include "ReducedMotion.hpp"
 #include "ScreenAssets.hpp"
 #include "ScreenId.hpp"
@@ -162,11 +167,19 @@ std::unique_ptr<IScreen> Application::createScreen(ScreenId screen) {
       return optionsScreen(screen);
     case ScreenId::QuitConfirmation:
       return std::make_unique<QuitConfirmationScreen>(
-          screens_, interfaceCanvas(), playfieldMapping());
+          QuitConfirmationScreenParts{.navigator = screens_,
+                                      .sounds = sounds_,
+                                      .playfieldPointAt = playfieldMapping()},
+          interfaceCanvas());
     case ScreenId::Connection:
       return std::make_unique<ConnectionScreen>(
-          screens_, connection_, interfaceCanvas(), playfieldMapping(), server_,
-          nickname_);
+          ConnectionScreenParts{.navigator = screens_,
+                                .sounds = sounds_,
+                                .connection = connection_,
+                                .playfieldPointAt = playfieldMapping(),
+                                .server = server_,
+                                .nickname = nickname_},
+          interfaceCanvas());
     case ScreenId::Lobby:
       return lobbyScreen();
   }
@@ -182,6 +195,7 @@ std::unique_ptr<IScreen> Application::titleScreen(ScreenId screen) {
   }
   return std::make_unique<TitleScreen>(
       TitleScreenParts{.navigator = screens_,
+                       .sounds = sounds_,
                        .playfieldPointAt = playfieldMapping(),
                        .motion = motionPreference(),
                        .seed = std::random_device{}(),
@@ -210,20 +224,27 @@ std::unique_ptr<IScreen> Application::gameScreen() {
 }
 
 std::unique_ptr<IScreen> Application::optionsScreen(ScreenId screen) {
-  const OptionsScreen::Place place = screen == ScreenId::GameOptions
-                                         ? OptionsScreen::Place::OverGame
-                                         : OptionsScreen::Place::OverTitle;
   return std::make_unique<OptionsScreen>(
-      screens_, place, settings_, settingsFile_, window_, localizedKeyName,
-      interfaceCanvas(), playfieldMapping());
+      OptionsScreenParts{.navigator = screens_,
+                         .sounds = sounds_,
+                         .place = screen == ScreenId::GameOptions
+                                      ? OptionsPlace::OverGame
+                                      : OptionsPlace::OverTitle,
+                         .settings = settings_,
+                         .storage = settingsFile_,
+                         .window = window_,
+                         .keyName = localizedKeyName,
+                         .playfieldPointAt = playfieldMapping()},
+      interfaceCanvas());
 }
 
 std::unique_ptr<IScreen> Application::lobbyScreen() {
   const sf::Keyboard::Scancode readyKey =
       settings_.keys.keyOf(BoundAction::Ready);
   return std::make_unique<LobbyScreen>(
-      LobbyScreen::Parts{
+      LobbyScreenParts{
           .navigator = screens_,
+          .sounds = sounds_,
           .connection = connection_,
           .playfieldPointAt = playfieldMapping(),
           .readyKey = {.key = readyKey, .name = localizedKeyName(readyKey)},

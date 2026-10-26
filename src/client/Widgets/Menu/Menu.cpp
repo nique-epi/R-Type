@@ -17,12 +17,14 @@
 #include "Button.hpp"
 #include "CutCornerBox.hpp"
 #include "IInterfaceCanvas.hpp"
+#include "ISoundPlayer.hpp"
 #include "ImagePlacement.hpp"
 #include "InterfaceColorConstants.hpp"
 #include "InterfaceConstants.hpp"
 #include "Label.hpp"
 #include "PlayfieldMapping.hpp"
 #include "RowControl.hpp"
+#include "SoundConstants.hpp"
 #include "TextField.hpp"
 #include "TextureArea.hpp"
 #include "TimeConstants.hpp"
@@ -43,6 +45,20 @@ sf::Vector2i interfacePixelAt(sf::Vector2f playfieldPoint) {
       static_cast<int>(std::floor(playfieldPoint.y / BACKGROUND_PIXEL_SIZE))};
 }
 
+/** @brief Plays the click of a bar or a tab, when the menu has a sound
+ * player. */
+void playClick(ISoundPlayer* sounds) {
+  if (sounds != nullptr) {
+    sounds->play(CLICK_SOUND_ID);
+  }
+}
+
+/** @returns Whether activating the button plays the click: a bar does, a
+ * field or a row does not. */
+bool clicksWhenActivated(const Button& button) {
+  return button.control() == nullptr && button.field() == nullptr;
+}
+
 /** @returns Whether the key is one of the list. */
 bool isOneOf(sf::Keyboard::Key key, std::span<const sf::Keyboard::Key> keys) {
   return std::ranges::find(keys, key) != keys.end();
@@ -50,7 +66,8 @@ bool isOneOf(sf::Keyboard::Key key, std::span<const sf::Keyboard::Key> keys) {
 
 }  // namespace
 
-Menu::Menu(Content content) : content_(std::move(content)) {
+Menu::Menu(Content content, ISoundPlayer* sounds)
+    : content_(std::move(content)), sounds_(sounds) {
   selectNeighbour(Direction::Next);
 }
 
@@ -297,6 +314,9 @@ void Menu::activateIfDue() {
   }
   const std::size_t button = press_->button;
   press_.reset();
+  if (clicksWhenActivated(content_.buttons[button])) {
+    playClick(sounds_);
+  }
   content_.buttons[button].activate();
 }
 
@@ -306,6 +326,9 @@ void Menu::activateCancel() {
     return;
   }
   selected_ = content_.cancelButton;
+  if (clicksWhenActivated(content_.buttons[*content_.cancelButton])) {
+    playClick(sounds_);
+  }
   content_.buttons[*content_.cancelButton].activate();
 }
 
@@ -375,6 +398,7 @@ bool Menu::offerToSelectedControl(const sf::Event::KeyPressed& key) {
 
 void Menu::openTab(std::size_t tab) const {
   if (content_.openTab != nullptr) {
+    playClick(sounds_);
     content_.openTab(tab);
   }
 }

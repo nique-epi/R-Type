@@ -21,7 +21,7 @@ TitleScreen::TitleScreen(TitleScreenParts parts,
                          std::unique_ptr<IInterfaceCanvas> canvas)
     : canvas_(std::move(canvas)),
       playfieldPointAt_(std::move(parts.playfieldPointAt)),
-      menu_(buildMenu(parts.navigator.get())),
+      menu_(buildMenu(parts.navigator.get(), parts.sounds.get())),
       squadron_(parts.motion, parts.seed, parts.squadronStart) {
   repaint();
 }
@@ -42,8 +42,8 @@ void TitleScreen::draw(sf::RenderTarget& target) const {
 
 bool TitleScreen::hidesScreensBelow() const { return true; }
 
-Menu TitleScreen::buildMenu(IScreenNavigator& navigator) {
-  return MenuBuilder(MenuBuilder::Frame::Page)
+Menu TitleScreen::buildMenu(IScreenNavigator& navigator, ISoundPlayer& sounds) {
+  return MenuBuilder(MenuBuilder::Frame::Page, &sounds)
       .version(GAME_VERSION_TEXT)
       .logo(LOGO_ID, LOGO_SIZE)
       .subtitle(TITLE_SUBTITLE)
