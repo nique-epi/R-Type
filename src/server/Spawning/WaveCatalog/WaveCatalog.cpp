@@ -254,14 +254,13 @@ std::string shownPath(const std::filesystem::path& file) {
 
 /**
  * @returns Everything @p file holds.
- * @throws UnreadableWaveFileException, naming it @p shown, when it cannot be
- * opened.
+ * @throws UnreadableWaveFileException, naming it as shownPath() does, when it
+ * cannot be opened.
  */
-std::string contentOf(const std::filesystem::path& file,
-                      const std::string& shown) {
+std::string contentOf(const std::filesystem::path& file) {
   const std::ifstream stream{file, std::ios::binary};
   if (!stream.is_open()) {
-    throw UnreadableWaveFileException(shown);
+    throw UnreadableWaveFileException(shownPath(file));
   }
   std::ostringstream content;
   content << stream.rdbuf();
@@ -288,8 +287,7 @@ WaveCatalog WaveCatalog::fromText(std::string_view text,
 }
 
 WaveCatalog WaveCatalog::fromFile(const std::filesystem::path& file) {
-  const std::string shown = shownPath(file);
-  return fromText(contentOf(file, shown), shown);
+  return fromText(contentOf(file), shownPath(file));
 }
 
 const WavePlan& WaveCatalog::planOf(std::string_view difficulty) const {
