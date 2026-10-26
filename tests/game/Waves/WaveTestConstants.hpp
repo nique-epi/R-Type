@@ -1,7 +1,10 @@
 #pragma once
 
 #include <chrono>
+#include <cstddef>
 #include "BydoWave.hpp"
+#include "TicksToReach.hpp"
+#include "TimeConstants.hpp"
 #include "WaveCurve.hpp"
 
 namespace rtype::game::testing {
@@ -34,5 +37,28 @@ constexpr BydoWave TEST_FIFTH_WAVE{.bydoCount = 7,
                                    .spawnInterval = std::chrono::seconds(1)};
 constexpr BydoWave TEST_SIXTH_WAVE{.bydoCount = 8,
                                    .spawnInterval = std::chrono::seconds(1)};
+
+/**
+ * @brief When the last Bydo of the first wave of TEST_WAVE_CURVE comes: its
+ * pause of 4 seconds, then two intervals of 2 seconds, 8 seconds into the
+ * game.
+ */
+constexpr engine::Duration END_OF_THE_FIRST_TEST_WAVE = std::chrono::seconds(8);
+
+/**
+ * @brief How many ticks a pause of TEST_WAVE_CURVE lasts, counting the tick it
+ * starts on and the tick the Bydo after it is due on: 4 seconds are reached on
+ * the 241st tick. A game starts with a pause, so it is also the tick of its
+ * first Bydo.
+ */
+constexpr std::size_t TICKS_OF_A_PAUSE =
+    engine::testing::ticksToReach(TEST_WAVE_CURVE.wavePause);
+
+/**
+ * @brief How many ticks run until every Bydo of the first wave is due, the
+ * tick of its last Bydo included: the 481st.
+ */
+constexpr std::size_t TICKS_TO_THE_WHOLE_FIRST_WAVE =
+    engine::testing::ticksToReach(END_OF_THE_FIRST_TEST_WAVE);
 
 }  // namespace rtype::game::testing
