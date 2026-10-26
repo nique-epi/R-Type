@@ -12,7 +12,7 @@ The code is split into engine, game and network libraries; see [the architecture
 - A C++20 compiler: GCC or Clang on Linux, MSVC (Visual Studio 2022) on Windows
 - Git
 
-Third-party libraries (SFML, Asio, GoogleTest) are built by [vcpkg](https://vcpkg.io), pinned as a Git submodule and bootstrapped automatically on the first configure.
+Third-party libraries (SFML, Asio, toml++, GoogleTest) are built by [vcpkg](https://vcpkg.io), pinned as a Git submodule and bootstrapped automatically on the first configure.
 
 On Linux, SFML and vcpkg need a few system packages. On Ubuntu:
 
@@ -47,6 +47,8 @@ The server listens on UDP port 4243 of every IPv4 interface; without `-p`, on po
 ```
 
 The Bydos appear at heights drawn from the seed; without `--seed` the server draws one, and the journal records it (`Bydo spawning starts from the seed ...`) so the same game can be replayed.
+
+The server reads the waves of Bydos from `assets/waves/waves.toml` in the folder it is started in, so start it from the repository root. A missing or invalid file stops it with exit code 1, naming the file, the line and the key at fault; the format is described in [Writing the waves file](https://nique-epi.github.io/R-Type/waves-file/).
 
 ```bash
 ./r-type_client -h 192.168.1.20 -p 4243 -n ACE
