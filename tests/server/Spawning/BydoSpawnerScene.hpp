@@ -45,10 +45,11 @@ class BydoSpawnerScene {
 
   /**
    * @returns The heights announced to FIRST_PLAYER by a spawner started from
-   * @p seed on a scene of its own, in the first @p ticks of a game.
+   * @p seed on a scene of its own, while the first wave of
+   * game::testing::TEST_WAVE_CURVE appears.
    */
-  [[nodiscard]] static std::vector<float> heightsWithin(std::uint32_t seed,
-                                                        std::size_t ticks);
+  [[nodiscard]] static std::vector<float> heightsOfTheFirstWave(
+      std::uint32_t seed);
 
   /**
    * @brief Destroys every entity of type Enemy, as if the Bydos were all

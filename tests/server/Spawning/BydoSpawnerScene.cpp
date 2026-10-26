@@ -17,6 +17,7 @@
 #include "WavePlan.hpp"
 #include "WavePlanFixtures.hpp"
 #include "World.hpp"
+#include "game/Waves/WaveTestConstants.hpp"
 
 namespace rtype::server::testing {
 
@@ -66,12 +67,11 @@ std::vector<network::EntitySpawned> BydoSpawnerScene::spawnsSent() const {
   return spawns;
 }
 
-std::vector<float> BydoSpawnerScene::heightsWithin(std::uint32_t seed,
-                                                   std::size_t ticks) {
+std::vector<float> BydoSpawnerScene::heightsOfTheFirstWave(std::uint32_t seed) {
   BydoSpawnerScene scene;
   scene.connect(FIRST_PLAYER);
   BydoSpawner spawner = scene.makeSpawner(seed);
-  runTicks(spawner, ticks);
+  runTicks(spawner, game::testing::TICKS_TO_THE_WHOLE_FIRST_WAVE);
   return scene.heightsSentTo(FIRST_PLAYER);
 }
 

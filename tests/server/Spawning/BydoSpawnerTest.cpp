@@ -107,15 +107,12 @@ TEST(BydoSpawner, EveryPlayerIsToldAboutEveryBydo) {
  * from another seed announces other heights
  */
 TEST(BydoSpawner, TheSeedDecidesTheHeights) {
-  const std::vector<float> reference = BydoSpawnerScene::heightsWithin(
-      SPAWNER_SEED, TICKS_TO_THE_WHOLE_FIRST_WAVE);
+  const std::vector<float> reference =
+      BydoSpawnerScene::heightsOfTheFirstWave(SPAWNER_SEED);
   ASSERT_EQ(reference.size(), TEST_WAVE_CURVE.firstWave.bydoCount);
 
-  EXPECT_EQ(BydoSpawnerScene::heightsWithin(SPAWNER_SEED,
-                                            TICKS_TO_THE_WHOLE_FIRST_WAVE),
-            reference);
-  EXPECT_NE(BydoSpawnerScene::heightsWithin(OTHER_SPAWNER_SEED,
-                                            TICKS_TO_THE_WHOLE_FIRST_WAVE),
+  EXPECT_EQ(BydoSpawnerScene::heightsOfTheFirstWave(SPAWNER_SEED), reference);
+  EXPECT_NE(BydoSpawnerScene::heightsOfTheFirstWave(OTHER_SPAWNER_SEED),
             reference);
 }
 
@@ -125,8 +122,8 @@ TEST(BydoSpawner, TheSeedDecidesTheHeights) {
  * Then they are not all the same, so the height is not a fixed row
  */
 TEST(BydoSpawner, HeightsVaryFromOneBydoToTheNext) {
-  const std::vector<float> heights = BydoSpawnerScene::heightsWithin(
-      SPAWNER_SEED, TICKS_TO_THE_WHOLE_FIRST_WAVE);
+  const std::vector<float> heights =
+      BydoSpawnerScene::heightsOfTheFirstWave(SPAWNER_SEED);
 
   EXPECT_GT(std::ranges::count_if(
                 heights,
