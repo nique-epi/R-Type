@@ -16,13 +16,16 @@
 #include "IInterfaceCanvas.hpp"
 #include "IScreenNavigator.hpp"
 #include "IServerConnection.hpp"
+#include "ISoundPlayer.hpp"
 #include "LobbyScreenConstants.hpp"
+#include "LobbyScreenParts.hpp"
 #include "LobbyState.hpp"
 #include "Menu.hpp"
 #include "MenuBuilder.hpp"
 #include "PlayfieldMapping.hpp"
 #include "ProtocolConstants.hpp"
 #include "ScreenId.hpp"
+#include "SoundConstants.hpp"
 #include "TimeConstants.hpp"
 #include "WidgetConstants.hpp"
 
@@ -87,9 +90,11 @@ sf::Vector2i bayTopLeft(sf::IntRect area, int slot) {
 
 }  // namespace
 
-LobbyScreen::LobbyScreen(Parts parts, std::unique_ptr<IInterfaceCanvas> canvas)
+LobbyScreen::LobbyScreen(LobbyScreenParts parts,
+                         std::unique_ptr<IInterfaceCanvas> canvas)
     : navigator_(&parts.navigator.get()),
       connection_(&parts.connection.get()),
+      sounds_(&parts.sounds.get()),
       canvas_(std::move(canvas)),
       playfieldPointAt_(std::move(parts.playfieldPointAt)),
       readyKey_(parts.readyKey.key),
@@ -103,6 +108,7 @@ void LobbyScreen::handleEvent(const sf::Event& event) {
       pressed != nullptr && pressed->scancode == readyKey_) {
     if (!readyKeyHeld_) {
       readyKeyHeld_ = true;
+      sounds_->play(CLICK_SOUND_ID);
       toggleReady();
     }
     return;
@@ -135,7 +141,7 @@ void LobbyScreen::draw(sf::RenderTarget& target) const {
 bool LobbyScreen::hidesScreensBelow() const { return true; }
 
 Menu LobbyScreen::buildMenu(std::string readyKeyName) {
-  return MenuBuilder(MenuBuilder::Frame::Room)
+  return MenuBuilder(MenuBuilder::Frame::Room, sounds_)
       .heading(LOBBY_HEADING)
       .illustration(LOBBY_BAYS_SIZE)
       .button({.label = READY_LABEL, .keyName = std::move(readyKeyName)},

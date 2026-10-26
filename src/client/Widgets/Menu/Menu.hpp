@@ -26,6 +26,8 @@
 
 namespace rtype::client {
 
+class ISoundPlayer;
+
 /**
  * @brief The widgets of one menu, already placed, and which of its buttons is
  * selected or pressed: the logic every menu shares.
@@ -59,6 +61,11 @@ namespace rtype::client {
  * nothing else. The tabs of a tabbed panel open on a click, or on
  * PREVIOUS_TAB_KEY and NEXT_TAB_KEY, read by their place on the keyboard; a
  * tabbed panel holds no text field.
+ *
+ * With a sound player, the menu plays CLICK_SOUND_ID each time it activates
+ * a bar, MENU_CANCEL_KEY included, and each time it asks for a tab. A field
+ * and a row are activated without it: the control of a row sets a value,
+ * as a slider does, rather than press a button.
  *
  * An action must not destroy the menu: screens ask for screen changes through
  * their IScreenNavigator, which applies them after the event or the update.
@@ -122,8 +129,13 @@ class Menu {
     TextStyle statusStyle = STATUS_STYLE;
   };
 
-  /** @brief Selects the first enabled button, if any. */
-  explicit Menu(Content content);
+  /**
+   * @brief Selects the first enabled button, if any.
+   *
+   * @param sounds Plays the click of the menu, and must outlive it; a menu
+   * without one is silent.
+   */
+  explicit Menu(Content content, ISoundPlayer* sounds = nullptr);
 
   /**
    * @param playfieldPointAt Gives the point of the playfield under a pixel of
@@ -226,6 +238,7 @@ class Menu {
   [[nodiscard]] TextField* selectedField();
 
   Content content_;
+  ISoundPlayer* sounds_;
   std::optional<std::size_t> selected_;
   std::optional<Press> press_;
   bool cancelPressed_ = false;

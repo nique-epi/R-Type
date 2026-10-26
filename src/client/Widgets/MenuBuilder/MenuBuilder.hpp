@@ -18,6 +18,8 @@
 
 namespace rtype::client {
 
+class ISoundPlayer;
+
 /**
  * @brief Assembles the content of a menu step by step, then places it with the
  * layout its frame shares with every other menu: screens say what a menu
@@ -68,7 +70,9 @@ class MenuBuilder {
     Room,
   };
 
-  explicit MenuBuilder(Frame frame);
+  /** @param sounds Plays the click of the menu built, and must outlive it;
+   * a menu built without one is silent. */
+  explicit MenuBuilder(Frame frame, ISoundPlayer* sounds = nullptr);
 
   /** @brief Small line at the top of a page, such as the version of the
    * game. */
@@ -196,6 +200,7 @@ class MenuBuilder {
   void placeDescriptionAndIllustration(Menu::Content& content, PanelCursor end);
 
   Frame frame_;
+  ISoundPlayer* sounds_;
   std::optional<std::string> version_;
   std::optional<Menu::Picture> logo_;
   std::optional<std::string> heading_;

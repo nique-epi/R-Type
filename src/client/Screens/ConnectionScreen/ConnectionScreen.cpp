@@ -9,6 +9,7 @@
 #include <utility>
 #include "ConnectionRefused.hpp"
 #include "ConnectionScreenConstants.hpp"
+#include "ConnectionScreenParts.hpp"
 #include "ConnectionStatus.hpp"
 #include "Endpoint.hpp"
 #include "EndpointText.hpp"
@@ -54,17 +55,13 @@ std::string refusalLine(const ConnectionStatus& status) {
 
 }  // namespace
 
-ConnectionScreen::ConnectionScreen(IScreenNavigator& navigator,
-                                   IServerConnection& connection,
-                                   std::unique_ptr<IInterfaceCanvas> canvas,
-                                   PlayfieldMapping playfieldPointAt,
-                                   const network::Endpoint& server,
-                                   std::string_view nickname)
-    : navigator_(&navigator),
-      connection_(&connection),
+ConnectionScreen::ConnectionScreen(ConnectionScreenParts parts,
+                                   std::unique_ptr<IInterfaceCanvas> canvas)
+    : navigator_(&parts.navigator.get()),
+      connection_(&parts.connection.get()),
       canvas_(std::move(canvas)),
-      playfieldPointAt_(std::move(playfieldPointAt)),
-      menu_(buildMenu(server, nickname)) {
+      playfieldPointAt_(std::move(parts.playfieldPointAt)),
+      menu_(buildMenu(parts.server, parts.nickname, parts.sounds.get())) {
   connection_->cancel();
   repaint(connection_->status());
 }
@@ -87,9 +84,10 @@ void ConnectionScreen::draw(sf::RenderTarget& target) const {
 bool ConnectionScreen::hidesScreensBelow() const { return true; }
 
 Menu ConnectionScreen::buildMenu(const network::Endpoint& server,
-                                 std::string_view nickname) {
+                                 std::string_view nickname,
+                                 ISoundPlayer& sounds) {
   const std::function<void()> connectAction = [this] { connect(); };
-  return MenuBuilder(MenuBuilder::Frame::Form)
+  return MenuBuilder(MenuBuilder::Frame::Form, &sounds)
       .heading(CONNECTION_HEADING)
       .textField({.label = ADDRESS_LABEL, .description = ADDRESS_DESCRIPTION},
                  TextField(server.address, ADDRESS_FIELD_SIZE,

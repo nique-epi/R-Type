@@ -2,7 +2,6 @@
 
 #include <array>
 #include <cstddef>
-#include <cstdint>
 #include <functional>
 #include <memory>
 #include <optional>
@@ -14,9 +13,12 @@
 #include "IScreenNavigator.hpp"
 #include "ISettingsStorage.hpp"
 #include "ISizableWindow.hpp"
+#include "ISoundPlayer.hpp"
 #include "KeyNames.hpp"
 #include "Menu.hpp"
 #include "MenuBuilder.hpp"
+#include "OptionsPlace.hpp"
+#include "OptionsScreenParts.hpp"
 #include "PlayerSettings.hpp"
 #include "PlayfieldMapping.hpp"
 #include "RowControl.hpp"
@@ -49,30 +51,9 @@ class KeySlot;
  */
 class OptionsScreen : public IScreen {
  public:
-  /** @brief What the options are opened over. */
-  enum class Place : std::uint8_t {
-    OverTitle,
-    OverGame,
-  };
-
-  /**
-   * @param navigator Screens the options live among.
-   * @param settings What the rows read and change.
-   * @param storage Where a change is saved.
-   * @param window Window whose size DISPLAY picks.
-   * @param keyName Gives the name drawn on the keycap of a key.
-   * @param canvas Picture the options are painted on, never null.
-   * @param playfieldPointAt Gives the point of the playfield under a pixel of
-   * the window.
-   *
-   * The navigator, the settings, the storage and the window must outlive the
-   * screen.
-   */
-  OptionsScreen(IScreenNavigator& navigator, Place place,
-                PlayerSettings& settings, ISettingsStorage& storage,
-                ISizableWindow& window, KeyNaming keyName,
-                std::unique_ptr<IInterfaceCanvas> canvas,
-                PlayfieldMapping playfieldPointAt);
+  /** @param canvas Picture the options are painted on, never null. */
+  OptionsScreen(OptionsScreenParts parts,
+                std::unique_ptr<IInterfaceCanvas> canvas);
 
   void handleEvent(const sf::Event& event) override;
   void update(engine::Duration elapsed) override;
@@ -130,7 +111,8 @@ class OptionsScreen : public IScreen {
   void repaint();
 
   IScreenNavigator* navigator_;
-  Place place_;
+  ISoundPlayer* sounds_;
+  OptionsPlace place_;
   PlayerSettings* settings_;
   ISettingsStorage* storage_;
   ISizableWindow* window_;

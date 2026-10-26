@@ -26,7 +26,9 @@
 #include "LinkText.hpp"
 #include "Menu.hpp"
 #include "MenuBuilder.hpp"
+#include "OptionsPlace.hpp"
 #include "OptionsScreenConstants.hpp"
+#include "OptionsScreenParts.hpp"
 #include "PixelSize.hpp"
 #include "PlayerSettings.hpp"
 #include "PlayfieldMapping.hpp"
@@ -79,20 +81,17 @@ std::vector<std::string> textsOf(
 
 }  // namespace
 
-OptionsScreen::OptionsScreen(IScreenNavigator& navigator, Place place,
-                             PlayerSettings& settings,
-                             ISettingsStorage& storage, ISizableWindow& window,
-                             KeyNaming keyName,
-                             std::unique_ptr<IInterfaceCanvas> canvas,
-                             PlayfieldMapping playfieldPointAt)
-    : navigator_(&navigator),
-      place_(place),
-      settings_(&settings),
-      storage_(&storage),
-      window_(&window),
-      keyName_(std::move(keyName)),
+OptionsScreen::OptionsScreen(OptionsScreenParts parts,
+                             std::unique_ptr<IInterfaceCanvas> canvas)
+    : navigator_(&parts.navigator.get()),
+      sounds_(&parts.sounds.get()),
+      place_(parts.place),
+      settings_(&parts.settings.get()),
+      storage_(&parts.storage.get()),
+      window_(&parts.window.get()),
+      keyName_(std::move(parts.keyName)),
       canvas_(std::move(canvas)),
-      playfieldPointAt_(std::move(playfieldPointAt)),
+      playfieldPointAt_(std::move(parts.playfieldPointAt)),
       tabs_(buildTabs()) {
   refresh();
   repaint();
@@ -125,7 +124,7 @@ void OptionsScreen::draw(sf::RenderTarget& target) const {
 }
 
 bool OptionsScreen::hidesScreensBelow() const {
-  return place_ == Place::OverTitle;
+  return place_ == OptionsPlace::OverTitle;
 }
 
 std::vector<Menu> OptionsScreen::buildTabs() {
@@ -139,13 +138,13 @@ std::vector<Menu> OptionsScreen::buildTabs() {
 }
 
 MenuBuilder OptionsScreen::tabbedPanel(std::size_t tab) {
-  MenuBuilder builder(MenuBuilder::Frame::TabbedPanel);
+  MenuBuilder builder(MenuBuilder::Frame::TabbedPanel, sounds_);
   builder.heading(SETTINGS_HEADING)
       .tabs(textsOf(OPTIONS_TAB_LABELS), tab,
             {.previous = keyName_(PREVIOUS_TAB_KEY),
              .next = keyName_(NEXT_TAB_KEY)},
             [this](std::size_t opened) { openTab(opened); });
-  if (place_ == Place::OverGame) {
+  if (place_ == OptionsPlace::OverGame) {
     builder.dimScreensBelow().notice(GAME_GOES_ON_NOTICE);
   }
   return builder;
@@ -307,7 +306,7 @@ void OptionsScreen::resetKeys() { settings_->keys = KeyBindings(); }
 void OptionsScreen::askToReset(const std::string& question,
                                const std::function<void()>& reset) {
   dialog_ =
-      MenuBuilder(MenuBuilder::Frame::Dialog)
+      MenuBuilder(MenuBuilder::Frame::Dialog, sounds_)
           .heading(CONFIRM_HEADING)
           .message(question)
           .cancelButton({.label = NO_LABEL}, [this] { dialogAnswered_ = true; })

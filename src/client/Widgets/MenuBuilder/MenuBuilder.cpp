@@ -23,7 +23,8 @@
 
 namespace rtype::client {
 
-MenuBuilder::MenuBuilder(Frame frame) : frame_(frame) {}
+MenuBuilder::MenuBuilder(Frame frame, ISoundPlayer* sounds)
+    : frame_(frame), sounds_(sounds) {}
 
 MenuBuilder& MenuBuilder::version(std::string text) {
   version_ = std::move(text);
@@ -138,7 +139,7 @@ Menu MenuBuilder::build() {
       placeRoom(content);
       break;
   }
-  return Menu(std::move(content));
+  return Menu(std::move(content), sounds_);
 }
 
 void MenuBuilder::placeColumn(Menu::Content& content) {

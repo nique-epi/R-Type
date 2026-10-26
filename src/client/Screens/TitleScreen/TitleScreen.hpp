@@ -4,6 +4,7 @@
 #include "IInterfaceCanvas.hpp"
 #include "IScreen.hpp"
 #include "IScreenNavigator.hpp"
+#include "ISoundPlayer.hpp"
 #include "Menu.hpp"
 #include "PlayfieldMapping.hpp"
 #include "Squadron.hpp"
@@ -35,7 +36,8 @@ class TitleScreen : public IScreen {
   [[nodiscard]] bool hidesScreensBelow() const override;
 
  private:
-  [[nodiscard]] static Menu buildMenu(IScreenNavigator& navigator);
+  [[nodiscard]] static Menu buildMenu(IScreenNavigator& navigator,
+                                      ISoundPlayer& sounds);
   void repaint();
 
   std::unique_ptr<IInterfaceCanvas> canvas_;

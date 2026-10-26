@@ -1,171 +1,62 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include <SFML/Window/Keyboard.hpp>
-#include <cstddef>
-#include <cstdint>
-#include <memory>
 #include <optional>
 #include <string>
 #include <string_view>
 #include <tuple>
 #include <vector>
+#include "ConnectionRefusalFixture.hpp"
 #include "ConnectionRefused.hpp"
 #include "ConnectionScreen.hpp"
 #include "ConnectionScreenConstants.hpp"
+#include "ConnectionScreenFixture.hpp"
+#include "ConnectionScreenFixtures.hpp"
+#include "ConnectionScreenTestConstants.hpp"
 #include "ConnectionStatus.hpp"
 #include "Endpoint.hpp"
-#include "KeyPress.hpp"
-#include "PointerEvents.hpp"
 #include "RecordingInterfaceCanvas.hpp"
 #include "RecordingNavigator.hpp"
 #include "RecordingServerConnection.hpp"
+#include "RecordingSoundPlayer.hpp"
 #include "ScreenId.hpp"
 #include "ScreenTestConstants.hpp"
 #include "ServerConnectionTestConstants.hpp"
-#include "WidgetConstants.hpp"
+#include "SoundConstants.hpp"
 
 using rtype::client::ACCEPTED_STATUS_DURATION;
+using rtype::client::CLICK_SOUND_ID;
 using rtype::client::CONNECTING_STATUS;
-using rtype::client::ConnectionScreen;
 using rtype::client::ConnectionStatus;
 using rtype::client::GAME_FULL_STATUS;
 using rtype::client::GAME_IN_PROGRESS_STATUS;
 using rtype::client::INVALID_ADDRESS_STATUS;
 using rtype::client::INVALID_PORT_STATUS;
 using rtype::client::MISSING_NICKNAME_STATUS;
-using rtype::client::PRESS_DURATION;
 using rtype::client::ScreenId;
 using rtype::client::UNREACHABLE_STATUS;
+using rtype::client::testing::ACCEPTED_AS_FIRST_PLAYER;
+using rtype::client::testing::CANCEL;
+using rtype::client::testing::LAST_ADDRESS_NUMBER_TEXT;
+using rtype::client::testing::LAUNCH_ADDRESS;
+using rtype::client::testing::LAUNCH_NICKNAME;
+using rtype::client::testing::LAUNCH_PORT;
+using rtype::client::testing::LAUNCH_PORT_TEXT;
 using rtype::client::testing::NEXT_PROTOCOL_VERSION;
-using rtype::network::Endpoint;
+using rtype::client::testing::PORT_ZERO_TEXT;
+using rtype::client::testing::THIRD_PLAYER;
+using rtype::client::testing::TYPED_PORT;
+using rtype::client::testing::TYPED_PORT_TEXT;
 using rtype::network::RefusalReason;
 using ::testing::ElementsAre;
 using ::testing::IsEmpty;
-
-namespace {
-
-/** @brief What the launch options gave: the fields start with them. */
-constexpr std::string_view LAUNCH_ADDRESS = "192.168.1.20";
-constexpr std::uint16_t LAUNCH_PORT = 4243;
-constexpr std::string_view LAUNCH_NICKNAME = "ACE";
-
-/** @brief A port the player types, as typed and as read. */
-constexpr std::u32string_view TYPED_PORT_TEXT = U"5000";
-constexpr std::uint16_t TYPED_PORT = 5000;
-
-/** @brief A port one below the lowest port. */
-constexpr std::u32string_view PORT_ZERO_TEXT = U"0";
-
-/** @brief The last number of the launch address, typed again. */
-constexpr std::u32string_view LAST_ADDRESS_NUMBER_TEXT = U"20";
-
-constexpr std::uint8_t THIRD_PLAYER = 3;
-constexpr std::uint8_t FIRST_PLAYER = 1;
-
-/** @brief The cancel the screen sends when it is built, before any request of
- * a test. */
-const ServerConnectionCall CANCEL{
-    .request = ServerConnectionCall::Request::Cancel,
-    .server = {},
-    .nickname = {}};
-
-/** @brief A connection screen alone, with a recording navigator, connection
- * and canvas, its fields started with the launch values. */
-class ConnectionScreenTest : public ::testing::Test {
- protected:
-  [[nodiscard]] const RecordingNavigator& navigator() const {
-    return navigator_;
-  }
-
-  RecordingServerConnection& connection() { return connection_; }
-
-  [[nodiscard]] const InterfaceCanvasRecord& canvas() const { return canvas_; }
-
-  ConnectionScreen& screen() { return screen_; }
-
-  void tap(sf::Keyboard::Key key) {
-    screen_.handleEvent(keyPress(key));
-    screen_.handleEvent(keyRelease(key));
-  }
-
-  /** @brief Presses and releases a key, then lets the press last. */
-  void choose(sf::Keyboard::Key key) {
-    tap(key);
-    screen_.update(PRESS_DURATION);
-  }
-
-  void type(std::u32string_view text) {
-    for (const char32_t character : text) {
-      screen_.handleEvent(typedCharacter(character));
-    }
-  }
-
-  /** @brief Erases characters from the selected field, Backspace after
-   * Backspace. */
-  void erase(std::size_t characters) {
-    for (std::size_t erased = 0; erased < characters; ++erased) {
-      screen_.handleEvent(keyPress(sf::Keyboard::Key::Backspace));
-    }
-  }
-
-  /** @brief Selects the port field and replaces the launch port with a text.
-   */
-  void replacePort(std::u32string_view text) {
-    tap(sf::Keyboard::Key::Down);
-    erase(std::to_string(LAUNCH_PORT).size());
-    type(text);
-  }
-
-  /** @brief Gives the connection a status, then lets one frame go by. */
-  void show(ConnectionStatus status) {
-    connection_.setStatus(status);
-    screen_.update(ONE_FRAME);
-  }
-
-  /** @brief Shows that the server has just accepted the first player. */
-  void showAccepted() {
-    show({.phase = ConnectionStatus::Phase::Accepted,
-          .playerNumber = FIRST_PLAYER});
-  }
-
-  /** @returns The requests to start an attempt, without the cancels. */
-  [[nodiscard]] std::vector<ServerConnectionCall> attempts() const {
-    std::vector<ServerConnectionCall> connects;
-    for (const ServerConnectionCall& call : connection_.calls()) {
-      if (call.request == ServerConnectionCall::Request::Connect) {
-        connects.push_back(call);
-      }
-    }
-    return connects;
-  }
-
- private:
-  RecordingNavigator navigator_;
-  RecordingServerConnection connection_;
-  InterfaceCanvasRecord canvas_;
-  ConnectionScreen screen_{
-      navigator_,
-      connection_,
-      std::make_unique<RecordingInterfaceCanvas>(canvas_),
-      samePlayfieldPoint,
-      Endpoint{.address = std::string(LAUNCH_ADDRESS), .port = LAUNCH_PORT},
-      LAUNCH_NICKNAME};
-};
-
-/** @brief A connection screen whose attempt the server refused, for one
- * reason, and the line it must show. */
-class RefusalTest : public ConnectionScreenTest,
-                    public ::testing::WithParamInterface<
-                        std::tuple<RefusalReason, std::string_view>> {};
-
-}  // namespace
 
 /**
  * Given the connection screen just built with the launch values
  * When it is painted
  * Then its fields read the address, the port and the nickname given at launch
  */
-TEST_F(ConnectionScreenTest, FieldsStartWithTheLaunchValues) {
+TEST_F(ConnectionScreenFixture, FieldsStartWithTheLaunchValues) {
   EXPECT_NE(writingOf(canvas(), "192.168.1.20"), nullptr);
   EXPECT_NE(writingOf(canvas(), "4243"), nullptr);
   EXPECT_NE(writingOf(canvas(), "ACE"), nullptr);
@@ -176,7 +67,7 @@ TEST_F(ConnectionScreenTest, FieldsStartWithTheLaunchValues) {
  * When the connection screen is built over it
  * Then the screen drops any earlier attempt
  */
-TEST_F(ConnectionScreenTest, BuildingTheScreenDropsAnEarlierAttempt) {
+TEST_F(ConnectionScreenFixture, BuildingTheScreenDropsAnEarlierAttempt) {
   EXPECT_THAT(connection().calls(), ElementsAre(CANCEL));
 }
 
@@ -185,14 +76,15 @@ TEST_F(ConnectionScreenTest, BuildingTheScreenDropsAnEarlierAttempt) {
  * When Enter is pressed and released, and the press lasts
  * Then an attempt starts with the launch values
  */
-TEST_F(ConnectionScreenTest, EnterConnectsWithTheValuesOfTheFields) {
+TEST_F(ConnectionScreenFixture, EnterConnectsWithTheValuesOfTheFields) {
   choose(sf::Keyboard::Key::Enter);
 
-  EXPECT_THAT(attempts(), ElementsAre(ServerConnectionCall{
-                              .request = ServerConnectionCall::Request::Connect,
-                              .server = {.address = std::string(LAUNCH_ADDRESS),
-                                         .port = LAUNCH_PORT},
-                              .nickname = std::string(LAUNCH_NICKNAME)}));
+  EXPECT_THAT(connectAttemptsOf(connection()),
+              ElementsAre(ServerConnectionCall{
+                  .request = ServerConnectionCall::Request::Connect,
+                  .server = {.address = std::string(LAUNCH_ADDRESS),
+                             .port = LAUNCH_PORT},
+                  .nickname = std::string(LAUNCH_NICKNAME)}));
 }
 
 /**
@@ -200,12 +92,15 @@ TEST_F(ConnectionScreenTest, EnterConnectsWithTheValuesOfTheFields) {
  * When 5000 is typed, then Enter chosen
  * Then the attempt goes to port 5000
  */
-TEST_F(ConnectionScreenTest, ATypedPortIsTheOneConnectedTo) {
-  replacePort(TYPED_PORT_TEXT);
+TEST_F(ConnectionScreenFixture, ATypedPortIsTheOneConnectedTo) {
+  tap(sf::Keyboard::Key::Down);
+  erase(LAUNCH_PORT_TEXT.size());
+  type(TYPED_PORT_TEXT);
 
   choose(sf::Keyboard::Key::Enter);
 
-  const std::vector<ServerConnectionCall> requests = attempts();
+  const std::vector<ServerConnectionCall> requests =
+      connectAttemptsOf(connection());
   ASSERT_EQ(requests.size(), 1U);
   EXPECT_EQ(requests.front().server.port, TYPED_PORT);
 }
@@ -215,7 +110,7 @@ TEST_F(ConnectionScreenTest, ATypedPortIsTheOneConnectedTo) {
  * When Enter is chosen
  * Then the status line names the address
  */
-TEST_F(ConnectionScreenTest, AnAddressThatIsNotIpv4IsNamed) {
+TEST_F(ConnectionScreenFixture, AnAddressThatIsNotIpv4IsNamed) {
   erase(LAST_ADDRESS_NUMBER_TEXT.size());
 
   choose(sf::Keyboard::Key::Enter);
@@ -228,12 +123,12 @@ TEST_F(ConnectionScreenTest, AnAddressThatIsNotIpv4IsNamed) {
  * When Enter is chosen
  * Then no attempt starts
  */
-TEST_F(ConnectionScreenTest, AnAddressThatIsNotIpv4StartsNoAttempt) {
+TEST_F(ConnectionScreenFixture, AnAddressThatIsNotIpv4StartsNoAttempt) {
   erase(LAST_ADDRESS_NUMBER_TEXT.size());
 
   choose(sf::Keyboard::Key::Enter);
 
-  EXPECT_THAT(attempts(), IsEmpty());
+  EXPECT_THAT(connectAttemptsOf(connection()), IsEmpty());
 }
 
 /**
@@ -241,8 +136,10 @@ TEST_F(ConnectionScreenTest, AnAddressThatIsNotIpv4StartsNoAttempt) {
  * When Enter is chosen
  * Then the status line names the port
  */
-TEST_F(ConnectionScreenTest, PortZeroIsNamed) {
-  replacePort(PORT_ZERO_TEXT);
+TEST_F(ConnectionScreenFixture, PortZeroIsNamed) {
+  tap(sf::Keyboard::Key::Down);
+  erase(LAUNCH_PORT_TEXT.size());
+  type(PORT_ZERO_TEXT);
 
   choose(sf::Keyboard::Key::Enter);
 
@@ -254,7 +151,7 @@ TEST_F(ConnectionScreenTest, PortZeroIsNamed) {
  * When Enter is chosen
  * Then the status line asks for a callsign
  */
-TEST_F(ConnectionScreenTest, AnEmptyNicknameIsNamed) {
+TEST_F(ConnectionScreenFixture, AnEmptyNicknameIsNamed) {
   tap(sf::Keyboard::Key::Down);
   tap(sf::Keyboard::Key::Down);
   erase(LAUNCH_NICKNAME.size());
@@ -269,7 +166,7 @@ TEST_F(ConnectionScreenTest, AnEmptyNicknameIsNamed) {
  * When Enter is chosen again
  * Then the status line no longer names the address
  */
-TEST_F(ConnectionScreenTest, AFixedFieldIsNoLongerNamed) {
+TEST_F(ConnectionScreenFixture, AFixedFieldIsNoLongerNamed) {
   erase(LAST_ADDRESS_NUMBER_TEXT.size());
   choose(sf::Keyboard::Key::Enter);
   type(LAST_ADDRESS_NUMBER_TEXT);
@@ -284,7 +181,7 @@ TEST_F(ConnectionScreenTest, AFixedFieldIsNoLongerNamed) {
  * When a frame goes by
  * Then the status line says the client is connecting
  */
-TEST_F(ConnectionScreenTest, ConnectingIsShown) {
+TEST_F(ConnectionScreenFixture, ConnectingIsShown) {
   show({.phase = ConnectionStatus::Phase::Connecting});
 
   EXPECT_NE(writingOf(canvas(), CONNECTING_STATUS), nullptr);
@@ -295,7 +192,7 @@ TEST_F(ConnectionScreenTest, ConnectingIsShown) {
  * When a frame goes by
  * Then the status line gives that number
  */
-TEST_F(ConnectionScreenTest, AnAcceptedPlayerSeesItsNumber) {
+TEST_F(ConnectionScreenFixture, AnAcceptedPlayerSeesItsNumber) {
   show({.phase = ConnectionStatus::Phase::Accepted,
         .playerNumber = THIRD_PLAYER});
 
@@ -307,7 +204,7 @@ TEST_F(ConnectionScreenTest, AnAcceptedPlayerSeesItsNumber) {
  * When a frame goes by
  * Then the status line says the server cannot be reached
  */
-TEST_F(ConnectionScreenTest, AnUnreachableServerIsShown) {
+TEST_F(ConnectionScreenFixture, AnUnreachableServerIsShown) {
   show({.phase = ConnectionStatus::Phase::Unreachable});
 
   EXPECT_NE(writingOf(canvas(), UNREACHABLE_STATUS), nullptr);
@@ -318,8 +215,8 @@ TEST_F(ConnectionScreenTest, AnUnreachableServerIsShown) {
  * When frames go by up to one tick before the acceptance showed long enough
  * Then the screen asks for nothing yet
  */
-TEST_F(ConnectionScreenTest, TheWaitingRoomWaitsUntilTheAcceptanceShowed) {
-  showAccepted();
+TEST_F(ConnectionScreenFixture, TheWaitingRoomWaitsUntilTheAcceptanceShowed) {
+  show(ACCEPTED_AS_FIRST_PLAYER);
 
   screen().update(ACCEPTED_STATUS_DURATION - ONE_FRAME - ONE_TICK);
 
@@ -331,8 +228,8 @@ TEST_F(ConnectionScreenTest, TheWaitingRoomWaitsUntilTheAcceptanceShowed) {
  * When frames go by until the acceptance showed long enough
  * Then the screen opens the waiting room over itself
  */
-TEST_F(ConnectionScreenTest, TheWaitingRoomOpensOnceTheAcceptanceShowed) {
-  showAccepted();
+TEST_F(ConnectionScreenFixture, TheWaitingRoomOpensOnceTheAcceptanceShowed) {
+  show(ACCEPTED_AS_FIRST_PLAYER);
 
   screen().update(ACCEPTED_STATUS_DURATION - ONE_FRAME);
 
@@ -346,8 +243,8 @@ TEST_F(ConnectionScreenTest, TheWaitingRoomOpensOnceTheAcceptanceShowed) {
  * When more frames go by
  * Then the waiting room is opened once only
  */
-TEST_F(ConnectionScreenTest, TheWaitingRoomOpensOnce) {
-  showAccepted();
+TEST_F(ConnectionScreenFixture, TheWaitingRoomOpensOnce) {
+  show(ACCEPTED_AS_FIRST_PLAYER);
   screen().update(ACCEPTED_STATUS_DURATION);
 
   screen().update(ONE_FRAME);
@@ -360,14 +257,14 @@ TEST_F(ConnectionScreenTest, TheWaitingRoomOpensOnce) {
  * When the player connects again and the server accepts again
  * Then the waiting room opens a second time
  */
-TEST_F(ConnectionScreenTest, AnotherAttemptOpensTheWaitingRoomAgain) {
-  showAccepted();
+TEST_F(ConnectionScreenFixture, AnotherAttemptOpensTheWaitingRoomAgain) {
+  show(ACCEPTED_AS_FIRST_PLAYER);
   screen().update(ACCEPTED_STATUS_DURATION);
   connection().cancel();
   screen().update(ONE_FRAME);
 
   choose(sf::Keyboard::Key::Enter);
-  showAccepted();
+  show(ACCEPTED_AS_FIRST_PLAYER);
   screen().update(ACCEPTED_STATUS_DURATION);
 
   const NavigatorCall openLobby{.request = NavigatorRequest::Push,
@@ -380,7 +277,7 @@ TEST_F(ConnectionScreenTest, AnotherAttemptOpensTheWaitingRoomAgain) {
  * When Escape is pressed and released
  * Then the attempt is dropped
  */
-TEST_F(ConnectionScreenTest, EscapeDropsTheAttempt) {
+TEST_F(ConnectionScreenFixture, EscapeDropsTheAttempt) {
   tap(sf::Keyboard::Key::Escape);
 
   EXPECT_THAT(connection().calls(), ElementsAre(CANCEL, CANCEL));
@@ -391,7 +288,7 @@ TEST_F(ConnectionScreenTest, EscapeDropsTheAttempt) {
  * When Escape is pressed and released
  * Then the screen asks to be closed
  */
-TEST_F(ConnectionScreenTest, EscapeClosesTheScreen) {
+TEST_F(ConnectionScreenFixture, EscapeClosesTheScreen) {
   tap(sf::Keyboard::Key::Escape);
 
   EXPECT_THAT(navigator().calls(),
@@ -404,7 +301,7 @@ TEST_F(ConnectionScreenTest, EscapeClosesTheScreen) {
  * When a frame goes by
  * Then the status line gives that reason
  */
-TEST_P(RefusalTest, ARefusalShowsItsReason) {
+TEST_P(ConnectionRefusalFixture, ARefusalShowsItsReason) {
   const auto [reason, line] = GetParam();
 
   show({.phase = ConnectionStatus::Phase::Refused, .refusal = reason});
@@ -412,8 +309,19 @@ TEST_P(RefusalTest, ARefusalShowsItsReason) {
   EXPECT_NE(writingOf(canvas(), line), nullptr);
 }
 
+/**
+ * Given the connection screen
+ * When Escape activates BACK
+ * Then the click of BACK plays once
+ */
+TEST_F(ConnectionScreenFixture, BackPlaysTheClick) {
+  tap(sf::Keyboard::Key::Escape);
+
+  EXPECT_THAT(sounds().played(), ElementsAre(CLICK_SOUND_ID));
+}
+
 INSTANTIATE_TEST_SUITE_P(
-    EveryReasonButTheVersion, RefusalTest,
+    EveryReasonButTheVersion, ConnectionRefusalFixture,
     ::testing::Values(std::tuple(RefusalReason::GameFull,
                                  std::string_view(GAME_FULL_STATUS)),
                       std::tuple(RefusalReason::GameInProgress,
@@ -425,7 +333,7 @@ INSTANTIATE_TEST_SUITE_P(
  * When a frame goes by
  * Then the status line names both versions, the client's first
  */
-TEST_F(ConnectionScreenTest, AVersionRefusalNamesBothVersions) {
+TEST_F(ConnectionScreenFixture, AVersionRefusalNamesBothVersions) {
   show({.phase = ConnectionStatus::Phase::Refused,
         .refusal = RefusalReason::IncompatibleVersion,
         .serverVersion = NEXT_PROTOCOL_VERSION});

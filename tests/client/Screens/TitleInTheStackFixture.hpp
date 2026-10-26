@@ -8,6 +8,7 @@
 #include "RecordingInterfaceCanvas.hpp"
 #include "RecordingNavigator.hpp"
 #include "RecordingScreen.hpp"
+#include "RecordingSoundPlayer.hpp"
 #include "ScreenId.hpp"
 #include "ScreenStack.hpp"
 
@@ -44,5 +45,6 @@ class TitleInTheStackFixture : public ::testing::Test {
   RecordingNavigator dialogNavigator_;
   InterfaceCanvasRecord dialogCanvas_;
   std::vector<JournalEntry> journal_;
+  RecordingSoundPlayer sounds_;
   rtype::client::ScreenStack screens_;
 };
