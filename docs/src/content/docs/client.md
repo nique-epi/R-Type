@@ -37,7 +37,7 @@ This page tells you where to look when you need to change something. It describe
 | Status band of the game: nickname, lives and score of each pilot | Available; the client does not decode `PlayerLeft` | `src/client/Widgets/StatusBand.cpp`, `src/client/Replication/ScoreBoard/`, `assets/sprites/hud.png` |
 | Server address, port and nickname at launch | Available; they fill the connection screen | `src/client/LaunchOptions/` |
 | Joining a server | Available: request, challenge, acceptance or refusal, then the waiting room, the ready state, the start of the game, the entity messages and the game events of the game, and leaving | `src/client/Connection/ServerConnection/` |
-| Sounds and music | Available: the theme in a loop from the end of the black second of the intro, the music of a game a second after a game starts, the sounds of the intro and of the messages of the server, at most 16 at once; the server sends no `PlayerHit` yet, so the hit of a player is never heard | `src/client/Audio/`, `assets/sounds/kenney/`, `assets/music/` |
+| Sounds and music | Available: the theme in a loop from the end of the black second of the intro, the music of a game a second after a game starts, the sounds of the intro and of the messages of the server, at most 16 at once | `src/client/Audio/`, `assets/sounds/kenney/`, `assets/music/` |
 
 ## Frame loop and screens: `Application`, `ScreenStack`
 
