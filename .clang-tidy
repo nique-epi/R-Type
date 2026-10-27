@@ -2,6 +2,12 @@
 # Enable specific checks.
 # This config enables bugprone, modernize, performance, and readability checks,
 # but ignores magic numbers and complexity checks for simplicity.
+# The checks clang-tidy 21 and 22 added are turned off, from
+# -abseil-unchecked-statusor-access on, to keep the set verified with clang-tidy 20.
+# Several are new names of checks 20 ran under a cert- or google- name: those names
+# are aliases in 22 and still run. clang-analyzer-security.VAList, which replaces the
+# valist checkers of 20, and clang-analyzer-core.builtin.AssumeModeling, which models
+# what core.builtin.BuiltinFunctions modeled in 20, stay on.
 Checks: '*,
          -llvmlibc-*,
          -fuchsia-*,
@@ -18,15 +24,60 @@ Checks: '*,
          -llvm-header-guard,
          -modernize-use-trailing-return-type,
          -llvm-include-order,
-         -cppcoreguidelines-avoid-const-or-ref-data-members'
+         -cppcoreguidelines-avoid-const-or-ref-data-members,
+         -abseil-unchecked-statusor-access,
+         -bugprone-capturing-this-in-member-variable,
+         -bugprone-command-processor,
+         -bugprone-copy-constructor-mutates-argument,
+         -bugprone-default-operator-new-on-overaligned-type,
+         -bugprone-derived-method-shadowing-base-method,
+         -bugprone-exception-copy-constructor-throws,
+         -bugprone-float-loop-counter,
+         -bugprone-invalid-enum-default-initialization,
+         -bugprone-misleading-setter-of-reference,
+         -bugprone-random-generator-seed,
+         -bugprone-raw-memory-call-on-non-trivial-type,
+         -bugprone-std-namespace-modification,
+         -bugprone-throwing-static-initialization,
+         -bugprone-unchecked-string-to-number-conversion,
+         -bugprone-unintended-char-ostream-output,
+         -clang-analyzer-core.FixedAddressDereference,
+         -clang-analyzer-core.NullPointerArithm,
+         -clang-analyzer-security.ArrayBound,
+         -cppcoreguidelines-use-enum-class,
+         -google-runtime-float,
+         -llvm-prefer-static-over-anonymous-namespace,
+         -llvm-use-new-mlir-op-builder,
+         -llvm-use-ranges,
+         -misc-anonymous-namespace-in-header,
+         -misc-multiple-inheritance,
+         -misc-override-with-different-visibility,
+         -misc-predictable-rand,
+         -modernize-avoid-c-style-cast,
+         -modernize-avoid-setjmp-longjmp,
+         -modernize-avoid-variadic-functions,
+         -modernize-use-scoped-lock,
+         -readability-ambiguous-smartptr-reset-call,
+         -readability-inconsistent-ifelse-braces,
+         -readability-redundant-parentheses,
+         -readability-redundant-typename,
+         -readability-use-concise-preprocessor-directives'
 
 # Treat warnings as errors so the CI fails on bad code
 WarningsAsErrors: '*'
+
+# clang-tidy 22 reports the findings of every header a file includes; 20 reported
+# only the file it was given, and the CI lints each header as a file of its own.
+HeaderFilterRegex: ''
 
 CheckOptions:
   cppcoreguidelines-special-member-functions.AllowSoleDefaultDtor: true
   hicpp-special-member-functions.AllowSoleDefaultDtor: true
   misc-non-private-member-variables-in-classes.IgnoreClassesWithAllMemberVariablesBeingPublic: true
+  # Kinds of findings checks of clang-tidy 20 gained in 21 and 22, turned off like the new checks:
+  # the constness of what a pointer points to, and internal linkage for types.
+  misc-const-correctness.WarnPointersAsPointers: false
+  misc-use-internal-linkage.AnalyzeTypes: false
   # The Windows SDK is included through the headers Microsoft documents (windows.h, shlobj.h),
   # not through the inner headers that declare each symbol. toml++ likewise documents a single
   # header, toml++/toml.hpp, which includes the inner headers of toml++/impl/.
