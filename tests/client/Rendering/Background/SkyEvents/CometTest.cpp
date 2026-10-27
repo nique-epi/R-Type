@@ -40,18 +40,17 @@ TEST(Comet, TailTrailsBehindTheHead) {
 /**
  * Given a comet in a steady sky, as for a player who reduced flashes
  * When it flies frame by frame for a second, painted at every frame
- * Then it paints as many pixels at every frame: no pixel of its tail blinks
+ * Then it paints its whole tail out of the gaps, and its head, at every
+ * frame: no pixel of its tail blinks
  */
 TEST(Comet, InASteadySkyItsTailDoesNotFlicker) {
   std::mt19937 random = generatorFrom(SEED);
   Comet comet(random);
-  comet.advance(FRAME);
-  const std::size_t firstCount =
-      paintOf(comet, SkyLight::Steady).plots().size();
 
   for (int frame = 0; frame < FRAMES_OF_A_SECOND; ++frame) {
     comet.advance(FRAME);
-    EXPECT_EQ(paintOf(comet, SkyLight::Steady).plots().size(), firstCount)
+    EXPECT_EQ(paintOf(comet, SkyLight::Steady).plots().size(),
+              PLOTS_OF_A_STEADY_COMET)
         << "frame " << frame;
   }
 }
