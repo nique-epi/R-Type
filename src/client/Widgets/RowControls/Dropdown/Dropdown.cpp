@@ -13,6 +13,7 @@
 #include "CheckBox.hpp"
 #include "CheckMark.hpp"
 #include "CutCornerBox.hpp"
+#include "DropdownParts.hpp"
 #include "IInterfaceCanvas.hpp"
 #include "RowControlConstants.hpp"
 #include "SunkBox.hpp"
@@ -23,12 +24,10 @@
 
 namespace rtype::client {
 
-Dropdown::Dropdown(std::vector<std::string> choices,
-                   std::function<bool(std::size_t)> available,
-                   ValueBinding<std::size_t> value)
-    : choices_(std::move(choices)),
-      available_(std::move(available)),
-      value_(std::move(value)) {}
+Dropdown::Dropdown(DropdownParts parts)
+    : choices_(std::move(parts.choices)),
+      available_(std::move(parts.available)),
+      value_(std::move(parts.value)) {}
 
 int Dropdown::width() const { return DROPDOWN_BOX_SIZE.x; }
 

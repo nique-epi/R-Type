@@ -10,6 +10,7 @@
 #include <string>
 #include <vector>
 #include "BarState.hpp"
+#include "DropdownParts.hpp"
 #include "IInterfaceCanvas.hpp"
 #include "RowControl.hpp"
 #include "ValueBinding.hpp"
@@ -32,14 +33,8 @@ namespace rtype::client {
  */
 class Dropdown : public RowControl {
  public:
-  /**
-   * @param choices Texts of the choices, in order.
-   * @param available Whether a choice can be taken, asked whenever needed.
-   * @param value Order of the current choice.
-   */
-  Dropdown(std::vector<std::string> choices,
-           std::function<bool(std::size_t)> available,
-           ValueBinding<std::size_t> value);
+  /** @param parts What the list is built from. */
+  explicit Dropdown(DropdownParts parts);
 
   [[nodiscard]] int width() const override;
   void paint(IInterfaceCanvas& canvas, sf::IntRect area,

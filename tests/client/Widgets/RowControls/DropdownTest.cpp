@@ -2,67 +2,31 @@
 #include <SFML/Graphics/Rect.hpp>
 #include <SFML/System/Vector2.hpp>
 #include <SFML/Window/Keyboard.hpp>
-#include <cstddef>
 #include "Dropdown.hpp"
-#include "KeyPress.hpp"
+#include "DropdownFixture.hpp"
+#include "DropdownFixtures.hpp"
+#include "DropdownTestConstants.hpp"
 #include "RecordingInterfaceCanvas.hpp"
-#include "ValueBinding.hpp"
 
-using rtype::client::Dropdown;
-using rtype::client::ValueBinding;
+using rtype::client::testing::FIRST_SIZE_INDEX;
+using rtype::client::testing::LARGEST_SIZE_INDEX;
+using rtype::client::testing::OPEN_LIST;
+using rtype::client::testing::OUTSIDE;
+using rtype::client::testing::SECOND_SIZE_INDEX;
+using rtype::client::testing::TOO_LARGE;
+using rtype::client::testing::WINDOW_SIZE_BOX;
 using Key = sf::Keyboard::Key;
-
-namespace {
-
-/**
- * @brief The list of window sizes on the picture the team chose: its box at
- * (332, 72), 112 by 12; open, the list at (332, 84), 112 by 74, a line of 14
- * pixels per size from (334, 86). On a 1920 x 1080 desktop, the first three
- * sizes fit.
- */
-constexpr sf::IntRect WINDOW_SIZE_BOX({332, 72}, {112, 12});
-constexpr sf::IntRect OPEN_LIST({332, 84}, {112, 74});
-constexpr int FIRST_LINE_MIDDLE = 86 + 7;
-constexpr int LINE_HEIGHT = 14;
-constexpr std::size_t SIZES_THAT_FIT = 3;
-constexpr std::size_t LARGEST_FIT = 2;
-constexpr std::size_t TOO_LARGE = 4;
-constexpr sf::Vector2i OUTSIDE(100, 100);
-
-sf::Vector2i lineMiddle(std::size_t line) {
-  return {OPEN_LIST.position.x + (OPEN_LIST.size.x / 2),
-          FIRST_LINE_MIDDLE + (static_cast<int>(line) * LINE_HEIGHT)};
-}
-
-class DropdownTest : public ::testing::Test {
- protected:
-  bool press(Key key) { return list_.keyPressed(keyPressOf(key)); }
-
-  [[nodiscard]] std::size_t size() const { return size_; }
-  Dropdown& list() { return list_; }
-
- private:
-  std::size_t size_ = LARGEST_FIT;
-  Dropdown list_{
-      {"960 X 540", "1280 X 720", "1600 X 900", "1920 X 1080", "2560 X 1440"},
-      [](std::size_t size) { return size < SIZES_THAT_FIT; },
-      ValueBinding<std::size_t>{
-          .read = [this] { return size_; },
-          .write = [this](std::size_t size) { size_ = size; }}};
-};
-
-}  // namespace
 
 /**
  * Given the list closed on 1600 x 900
  * When its row is activated, as Enter does
  * Then it opens, holds the input, and highlights the current size
  */
-TEST_F(DropdownTest, EnterOpensTheListOnTheCurrentSize) {
+TEST_F(DropdownFixture, EnterOpensTheListOnTheCurrentSize) {
   list().activate();
   EXPECT_TRUE(list().isOpen());
   EXPECT_TRUE(list().holdsInput());
-  EXPECT_EQ(list().highlighted(), LARGEST_FIT);
+  EXPECT_EQ(list().highlighted(), LARGEST_SIZE_INDEX);
 }
 
 /**
@@ -71,10 +35,10 @@ TEST_F(DropdownTest, EnterOpensTheListOnTheCurrentSize) {
  * Then the highlight stays: the larger sizes cannot be taken, and the list
  * never wraps
  */
-TEST_F(DropdownTest, DownStopsAtTheLargestSizeThatFits) {
+TEST_F(DropdownFixture, DownStopsAtTheLargestSizeThatFits) {
   list().activate();
   EXPECT_TRUE(press(Key::Down));
-  EXPECT_EQ(list().highlighted(), LARGEST_FIT);
+  EXPECT_EQ(list().highlighted(), LARGEST_SIZE_INDEX);
 }
 
 /**
@@ -82,11 +46,11 @@ TEST_F(DropdownTest, DownStopsAtTheLargestSizeThatFits) {
  * When Up is pressed
  * Then 1280 x 720 is highlighted, and the size is not changed yet
  */
-TEST_F(DropdownTest, UpMovesTheHighlightWithoutApplyingIt) {
+TEST_F(DropdownFixture, UpMovesTheHighlightWithoutApplyingIt) {
   list().activate();
   press(Key::Up);
-  EXPECT_EQ(list().highlighted(), 1U);
-  EXPECT_EQ(size(), LARGEST_FIT);
+  EXPECT_EQ(list().highlighted(), SECOND_SIZE_INDEX);
+  EXPECT_EQ(size(), LARGEST_SIZE_INDEX);
 }
 
 /**
@@ -94,11 +58,11 @@ TEST_F(DropdownTest, UpMovesTheHighlightWithoutApplyingIt) {
  * When Enter is pressed
  * Then it is the size, and the list closes
  */
-TEST_F(DropdownTest, EnterTakesTheHighlightedSize) {
+TEST_F(DropdownFixture, EnterTakesTheHighlightedSize) {
   list().activate();
   press(Key::Up);
   press(Key::Enter);
-  EXPECT_EQ(size(), 1U);
+  EXPECT_EQ(size(), SECOND_SIZE_INDEX);
   EXPECT_FALSE(list().isOpen());
 }
 
@@ -107,12 +71,12 @@ TEST_F(DropdownTest, EnterTakesTheHighlightedSize) {
  * When Escape is pressed
  * Then the list closes and the size does not change
  */
-TEST_F(DropdownTest, EscapeClosesWithoutChanging) {
+TEST_F(DropdownFixture, EscapeClosesWithoutChanging) {
   list().activate();
   press(Key::Up);
   press(Key::Escape);
   EXPECT_FALSE(list().isOpen());
-  EXPECT_EQ(size(), LARGEST_FIT);
+  EXPECT_EQ(size(), LARGEST_SIZE_INDEX);
 }
 
 /**
@@ -120,12 +84,12 @@ TEST_F(DropdownTest, EscapeClosesWithoutChanging) {
  * When Tab is pressed
  * Then the list closes and the size does not change
  */
-TEST_F(DropdownTest, TabClosesWithoutChanging) {
+TEST_F(DropdownFixture, TabClosesWithoutChanging) {
   list().activate();
   press(Key::Up);
   press(Key::Tab);
   EXPECT_FALSE(list().isOpen());
-  EXPECT_EQ(size(), LARGEST_FIT);
+  EXPECT_EQ(size(), LARGEST_SIZE_INDEX);
 }
 
 /**
@@ -133,10 +97,10 @@ TEST_F(DropdownTest, TabClosesWithoutChanging) {
  * When Home is pressed
  * Then the first size is highlighted
  */
-TEST_F(DropdownTest, HomeHighlightsTheFirstSize) {
+TEST_F(DropdownFixture, HomeHighlightsTheFirstSize) {
   list().activate();
   press(Key::Home);
-  EXPECT_EQ(list().highlighted(), 0U);
+  EXPECT_EQ(list().highlighted(), FIRST_SIZE_INDEX);
 }
 
 /**
@@ -144,10 +108,10 @@ TEST_F(DropdownTest, HomeHighlightsTheFirstSize) {
  * When the pointer clicks the line of a size too large
  * Then nothing changes and the list stays open
  */
-TEST_F(DropdownTest, AClickOnASizeTooLargeTakesNothing) {
+TEST_F(DropdownFixture, AClickOnASizeTooLargeTakesNothing) {
   list().activate();
   list().pointerPressed(lineMiddle(TOO_LARGE), WINDOW_SIZE_BOX);
-  EXPECT_EQ(size(), LARGEST_FIT);
+  EXPECT_EQ(size(), LARGEST_SIZE_INDEX);
   EXPECT_TRUE(list().isOpen());
 }
 
@@ -156,10 +120,10 @@ TEST_F(DropdownTest, AClickOnASizeTooLargeTakesNothing) {
  * When the pointer clicks the line of 960 x 540
  * Then it is the size, and the list closes
  */
-TEST_F(DropdownTest, AClickOnASizeTakesIt) {
+TEST_F(DropdownFixture, AClickOnASizeTakesIt) {
   list().activate();
-  list().pointerPressed(lineMiddle(0), WINDOW_SIZE_BOX);
-  EXPECT_EQ(size(), 0U);
+  list().pointerPressed(lineMiddle(FIRST_SIZE_INDEX), WINDOW_SIZE_BOX);
+  EXPECT_EQ(size(), FIRST_SIZE_INDEX);
   EXPECT_FALSE(list().isOpen());
 }
 
@@ -168,11 +132,11 @@ TEST_F(DropdownTest, AClickOnASizeTakesIt) {
  * When the pointer clicks outside it
  * Then the list closes and the size does not change
  */
-TEST_F(DropdownTest, AClickOutsideTheListClosesIt) {
+TEST_F(DropdownFixture, AClickOutsideTheListClosesIt) {
   list().activate();
   list().pointerPressed(OUTSIDE, WINDOW_SIZE_BOX);
   EXPECT_FALSE(list().isOpen());
-  EXPECT_EQ(size(), LARGEST_FIT);
+  EXPECT_EQ(size(), LARGEST_SIZE_INDEX);
 }
 
 /**
@@ -180,11 +144,11 @@ TEST_F(DropdownTest, AClickOutsideTheListClosesIt) {
  * When the pointer moves over a size too large
  * Then that size is the one pointed at, and the highlight stays where it was
  */
-TEST_F(DropdownTest, ThePointerOverASizeTooLargeHighlightsNothing) {
+TEST_F(DropdownFixture, ThePointerOverASizeTooLargeHighlightsNothing) {
   list().activate();
   list().pointerMoved(lineMiddle(TOO_LARGE), WINDOW_SIZE_BOX);
   EXPECT_EQ(list().pointedChoice(), TOO_LARGE);
-  EXPECT_EQ(list().highlighted(), LARGEST_FIT);
+  EXPECT_EQ(list().highlighted(), LARGEST_SIZE_INDEX);
 }
 
 /**
@@ -192,7 +156,7 @@ TEST_F(DropdownTest, ThePointerOverASizeTooLargeHighlightsNothing) {
  * When Left is pressed
  * Then the key is not used: a size is picked in the list only
  */
-TEST_F(DropdownTest, LeftDoesNothingOnTheClosedList) {
+TEST_F(DropdownFixture, LeftDoesNothingOnTheClosedList) {
   EXPECT_FALSE(press(Key::Left));
 }
 
@@ -202,7 +166,7 @@ TEST_F(DropdownTest, LeftDoesNothingOnTheClosedList) {
  * Then every pixel of it lies in the list of the picture, under its box, so
  * nothing on its left is covered
  */
-TEST_F(DropdownTest, TheOpenListLiesUnderItsBox) {
+TEST_F(DropdownFixture, TheOpenListLiesUnderItsBox) {
   list().activate();
   InterfaceCanvasRecord record;
   RecordingInterfaceCanvas canvas(record);

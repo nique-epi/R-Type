@@ -16,6 +16,7 @@
 #include "ChoiceSelector.hpp"
 #include "ColorMode.hpp"
 #include "Dropdown.hpp"
+#include "DropdownParts.hpp"
 #include "IInterfaceCanvas.hpp"
 #include "IScreenNavigator.hpp"
 #include "ISettingsStorage.hpp"
@@ -191,15 +192,16 @@ Menu OptionsScreen::displayTab() {
   for (const PixelSize size : WINDOW_SIZES) {
     sizes.push_back(windowSizeText(size));
   }
-  auto list = std::make_unique<Dropdown>(
-      std::move(sizes),
-      [this](std::size_t index) {
-        return window_->windowSizeSelection().isAvailable(index);
-      },
-      ValueBinding<std::size_t>{
+  auto list = std::make_unique<Dropdown>(DropdownParts{
+      .choices = std::move(sizes),
+      .available =
+          [this](std::size_t index) {
+            return window_->windowSizeSelection().isAvailable(index);
+          },
+      .value = ValueBinding<std::size_t>{
           .read =
               [this] { return window_->windowSizeSelection().selectedIndex(); },
-          .write = [this](std::size_t index) { chooseWindowSize(index); }});
+          .write = [this](std::size_t index) { chooseWindowSize(index); }}});
   windowSizes_ = list.get();
   MenuBuilder builder = tabbedPanel(DISPLAY_TAB);
   builder.row({.label = WINDOW_SIZE_LABEL}, std::move(list))
