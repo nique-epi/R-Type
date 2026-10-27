@@ -11,19 +11,18 @@
 #include "PlayerInput.hpp"
 #include "PlayerLeft.hpp"
 #include "ProtocolConstants.hpp"
+#include "ProtocolFixtures.hpp"
 #include "ProtocolTestConstants.hpp"
 #include "WorldState.hpp"
 #include "WorldStateCodec.hpp"
 #include "WorldStateFixtures.hpp"
 
 namespace rtype::network {
-namespace {
 
 using testing::byteSequence;
 using testing::EVERY_ACTION;
 using testing::EXAMPLE_ENTITY_ID;
-using testing::EXAMPLE_X;
-using testing::EXAMPLE_Y;
+using testing::exampleBydo;
 using testing::FIRST_BIT_ABOVE_THE_ACTIONS;
 using testing::LAST_PLAYER_NUMBER;
 using testing::oneShipState;
@@ -32,13 +31,6 @@ using testing::SECOND_PLAYER_NUMBER;
 using testing::SOME_EVENT_NUMBER;
 using testing::SOME_INPUT_NUMBER;
 using testing::UP_AND_SHOOT;
-
-EntitySpawned exampleBydo() {
-  return EntitySpawned{.entityId = EXAMPLE_ENTITY_ID,
-                       .entityType = WireEntityType::Bydo,
-                       .x = EXAMPLE_X,
-                       .y = EXAMPLE_Y};
-}
 
 /**
  * Given input number 0x01020304 with up and shoot held
@@ -514,5 +506,4 @@ TEST(WorldState, DecodesThroughTheSameEntryAsTheOtherMessages) {
   EXPECT_EQ(decodeMessage<WorldState>(payload), oneShipState());
 }
 
-}  // namespace
 }  // namespace rtype::network
