@@ -80,6 +80,8 @@ rtype_add_test(NAME server_platform_tests SOURCES server/Platform/FineTimerResol
 rtype_add_test(NAME server_launch_options_tests SOURCES server/LaunchOptions/LaunchOptionsTest.cpp LIBS rtype_server_launch_options rtype_server_constants rtype_network_constants rtype_logging)
 rtype_add_test(NAME logging_tests SOURCES LoggerTest.cpp LogLaunchOptionsTest.cpp logging/ThrottledLogTest.cpp JournalFile.cpp DebugJournal.cpp LIBS rtype_logging)
 target_include_directories(logging_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+rtype_add_test(NAME client_typing_tests SOURCES client/Rendering/TypingTest.cpp LIBS rtype_client_typing)
+target_include_directories(client_typing_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 rtype_add_test(NAME client_rendering_tests SOURCES client/Rendering/Drawing/RenderSystemTest.cpp client/Rendering/Drawing/Scene.cpp client/Rendering/Drawing/RenderSystemFixtures.cpp client/Rendering/Sprites/EntitySpritesFixtures.cpp client/Rendering/Sprites/EntitySpritesTest.cpp client/Rendering/Sprites/EntitySpriteConstantsTest.cpp client/Rendering/Interface/HudSpriteConstantsTest.cpp client/Rendering/SheetPixels.cpp doubles/RecordingDrawSurface.cpp LIBS rtype_client_entity_sprites rtype_client_render_system rtype_client_background rtype_game_components rtype_game_ship_control_constants GTest::gmock)
 target_include_directories(client_rendering_tests PRIVATE client/Rendering doubles)
 target_compile_definitions(client_rendering_tests PRIVATE RTYPE_SOURCE_ASSETS_FOLDER="${PROJECT_SOURCE_DIR}/assets")
