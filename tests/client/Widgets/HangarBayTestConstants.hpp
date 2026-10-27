@@ -21,7 +21,6 @@ constexpr sf::Vector2i LOCAL_TAG_ANCHOR(228, 58);
 constexpr sf::IntRect THIRD_COLOR_FIRST_FRAME({0, 36}, {32, 16});
 constexpr sf::IntRect THIRD_COLOR_SECOND_FRAME({34, 36}, {32, 16});
 constexpr int TWICE = 2;
-constexpr int THIRD_COLOR = 2;
 constexpr int THIRD_PLAYER = 3;
 /** @brief Three steps of the beacons, and the fourth beacon of the second
  * bay: 19 + 3 × 9 in, 47 down. */

@@ -5,6 +5,7 @@
 #include <optional>
 #include <vector>
 #include "AllEntityTypes.hpp"
+#include "BackgroundColorConstants.hpp"
 #include "Caption.hpp"
 #include "ComponentRegistry.hpp"
 #include "EffectConstants.hpp"
@@ -18,9 +19,12 @@
 #include "EntityType.hpp"
 #include "FlashPreference.hpp"
 #include "HitFlash.hpp"
+#include "Invulnerability.hpp"
 #include "Layer.hpp"
 #include "Particle.hpp"
+#include "PilotShadeConstants.hpp"
 #include "PilotTestConstants.hpp"
+#include "PlayerPaletteTestConstants.hpp"
 #include "Position.hpp"
 #include "ScreenTestConstants.hpp"
 #include "Shockwave.hpp"
@@ -34,19 +38,25 @@
 using rtype::client::BYDO_EXPLOSION_FRAME;
 using rtype::client::BYDO_EXPLOSION_WITHOUT_FLASH_FRAME;
 using rtype::client::Caption;
+using rtype::client::DEUTERANOPIA_PILOT_SHADES;
 using rtype::client::EFFECT_SHEET_ID;
 using rtype::client::ENEMY_MUZZLE_FLASH_FRAME;
 using rtype::client::FLASH_COLOR;
 using rtype::client::FlashPreference;
 using rtype::client::HitFlash;
 using rtype::client::IMPACT_FRAME;
+using rtype::client::Invulnerability;
 using rtype::client::Particle;
 using rtype::client::PLAYER_MUZZLE_FLASH_FRAME;
 using rtype::client::SHIP_EXPLOSION_FRAME;
 using rtype::client::Shockwave;
 using rtype::client::SpeedLine;
 using rtype::client::SpriteTone;
+using rtype::client::STANDARD_PILOT_SHADES;
+using rtype::client::STAR_GOLD;
 using rtype::client::TextFont;
+using rtype::client::testing::BLUISH_GREEN;
+using rtype::client::testing::LIGHT_BLUISH_GREEN;
 using rtype::engine::Duration;
 using rtype::engine::Entity;
 using rtype::game::EntityType;
@@ -187,7 +197,8 @@ TEST(EffectSpawner, AnExplosionDisappearsAfterItsLastFrame) {
  */
 TEST(EffectSpawner, WithFlashesReducedAnExplosionStartsWithoutItsFlash) {
   EffectScene scene;
-  scene.effects().advance(Duration::zero(), FlashPreference::Reduced);
+  scene.effects().advance(Duration::zero(), FlashPreference::Reduced,
+                          STANDARD_PILOT_SHADES);
 
   scene.effects().playExplosion(EntityType::Enemy, WHERE_IT_DIED);
 
@@ -309,7 +320,8 @@ TEST(EffectSpawner, AHitEntityFlashesForSixtyMilliseconds) {
  */
 TEST(EffectSpawner, WithFlashesReducedAHitEntityIsShaded) {
   EffectScene scene;
-  scene.effects().advance(Duration::zero(), FlashPreference::Reduced);
+  scene.effects().advance(Duration::zero(), FlashPreference::Reduced,
+                          STANDARD_PILOT_SHADES);
   const Entity target = scene.target();
 
   scene.effects().playHit(target);
@@ -469,7 +481,8 @@ TEST(EffectSpawner, TheDebrisOfAShipAreInTheColorsOfItsPilot) {
  */
 TEST(EffectSpawner, WithFlashesReducedAShipGoesDownWithoutFlashNorShake) {
   EffectScene scene;
-  scene.effects().advance(Duration::zero(), FlashPreference::Reduced);
+  scene.effects().advance(Duration::zero(), FlashPreference::Reduced,
+                          STANDARD_PILOT_SHADES);
 
   scene.effects().playShipDown(scene.shipOfPilot(SECOND_PILOT_COLOR));
   scene.advance(ONE_FRAME, FlashPreference::Reduced);
@@ -537,7 +550,8 @@ TEST(EffectSpawner, AShipArrivingAtTheStartWaitsForThePilots) {
  */
 TEST(EffectSpawner, WithFlashesReducedAnInvulnerableShipIsSteady) {
   EffectScene scene;
-  scene.effects().advance(Duration::zero(), FlashPreference::Reduced);
+  scene.effects().advance(Duration::zero(), FlashPreference::Reduced,
+                          STANDARD_PILOT_SHADES);
   const Entity ship = scene.shipOfPilot(SECOND_PILOT_COLOR);
 
   scene.effects().setInvulnerable(ship, true);
@@ -564,4 +578,40 @@ TEST(EffectSpawner, TheGainOfAKillShowsAsAFigure) {
   EXPECT_EQ(shown.style.color, PINK_LIGHT_OF_THE_SECOND_PILOT);
   EXPECT_EQ(shown.style.font, TextFont::Small);
   EXPECT_EQ(shown.layer, Layer::Popups);
+}
+
+/**
+ * Given the palette for deuteranopia
+ * When the ship of the third pilot is destroyed
+ * Then every particle of its debris goes through the bluish green of the
+ * palette
+ */
+TEST(EffectSpawner, TheDebrisOfAShipFollowThePalette) {
+  EffectScene scene;
+  scene.effects().advance(Duration::zero(), FlashPreference::Full,
+                          DEUTERANOPIA_PILOT_SHADES);
+
+  scene.effects().playShipDown(scene.shipOfPilot(THIRD_PILOT_COLOR));
+
+  EXPECT_TRUE(everyParticleGoesThrough(scene.components(), BLUISH_GREEN));
+}
+
+/**
+ * Given a player who reduced flashes and chose the palette for deuteranopia
+ * When the ship of the third pilot becomes invulnerable
+ * Then its invulnerability is outlined in the light bluish green of the
+ * palette
+ */
+TEST(EffectSpawner, ASteadyInvulnerabilityIsOutlinedInThePalette) {
+  EffectScene scene;
+  scene.effects().advance(Duration::zero(), FlashPreference::Reduced,
+                          DEUTERANOPIA_PILOT_SHADES);
+  const Entity ship = scene.shipOfPilot(THIRD_PILOT_COLOR);
+
+  scene.effects().setInvulnerable(ship, true);
+
+  const Invulnerability* invulnerability =
+      scene.components().get<Invulnerability>(ship);
+  ASSERT_NE(invulnerability, nullptr);
+  EXPECT_EQ(invulnerability->outline, LIGHT_BLUISH_GREEN);
 }

@@ -2,31 +2,30 @@
 #include <gtest/gtest.h>
 #include <SFML/Graphics/Color.hpp>
 #include <SFML/Graphics/Rect.hpp>
-#include <SFML/System/Vector2.hpp>
 #include <algorithm>
 #include <array>
 #include <cstddef>
-#include <cstdint>
-#include <iterator>
 #include <optional>
 #include <set>
 #include <string>
 #include <utility>
 #include <vector>
 #include "PilotStatus.hpp"
+#include "PlayerPaletteConstants.hpp"
+#include "PlayerPaletteTestConstants.hpp"
 #include "RecordingInterfaceCanvas.hpp"
-#include "StatusBand.hpp"
 #include "StatusBandFixtures.hpp"
 #include "StatusBandTestConstants.hpp"
 #include "TextStyle.hpp"
 
-using rtype::client::paintStatusBand;
+using rtype::client::DEUTERANOPIA_PLAYER_PALETTE;
 using rtype::client::PilotState;
 using rtype::client::PilotStatus;
 using rtype::client::TextAlignment;
 using rtype::client::TextFont;
 using rtype::client::testing::BAND_BOTTOM;
 using rtype::client::testing::BAND_TOP;
+using rtype::client::testing::BLUISH_GREEN;
 using rtype::client::testing::DIMMED;
 using rtype::client::testing::DIMMED_TEXT;
 using rtype::client::testing::FIRST_CHIP;
@@ -47,6 +46,7 @@ using rtype::client::testing::FOURTH_MARKER_SOURCE;
 using rtype::client::testing::LARGEST_SHOWN_SCORE_TEXT;
 using rtype::client::testing::LAST_LIFE;
 using rtype::client::testing::LEADING_ZEROS;
+using rtype::client::testing::LIGHT_BLUISH_GREEN;
 using rtype::client::testing::LIVES_SHOWN_AT_MOST;
 using rtype::client::testing::LOCAL_FRAME;
 using rtype::client::testing::LONGEST_NICKNAME;
@@ -69,9 +69,11 @@ using rtype::client::testing::PLUG_ICON;
 using rtype::client::testing::RULE_COLUMNS;
 using rtype::client::testing::RULE_HEIGHT;
 using rtype::client::testing::RULE_TOP;
+using rtype::client::testing::SHEET_GREEN;
+using rtype::client::testing::SHEET_GREEN_TO_BLUISH_GREEN;
 using rtype::client::testing::THIRD_CHIP;
-using rtype::client::testing::THIRD_COLOR;
 using rtype::client::testing::THIRD_LIFE_SOURCE;
+using rtype::client::testing::THIRD_MARKER_SOURCE;
 using rtype::client::testing::THREE_LIVES;
 using rtype::client::testing::TWO_LIVES;
 using rtype::client::testing::WARNING;
@@ -123,7 +125,7 @@ TEST(StatusBand, APilotTakesTheBayOfItsNumber) {
       bandPaintingOf({flying(PLAYER_THREE, THREE_LIVES)});
 
   EXPECT_THAT(record.fills,
-              Contains(RecordedFill{.area = THIRD_CHIP, .color = THIRD_COLOR}));
+              Contains(RecordedFill{.area = THIRD_CHIP, .color = SHEET_GREEN}));
 }
 
 /**
@@ -479,4 +481,77 @@ TEST(StatusBand, APilotWithoutABayIsNotPainted) {
 
   EXPECT_THAT(record.writings, IsEmpty());
   EXPECT_THAT(record.images, IsEmpty());
+}
+
+/**
+ * Given player 3 flying, and the palette for deuteranopia
+ * When the band is painted
+ * Then its chip is filled with the bluish green of the palette
+ */
+TEST(StatusBand, AChipIsFilledInThePalettesShade) {
+  const InterfaceCanvasRecord record = bandPaintingOf(
+      {flying(PLAYER_THREE, THREE_LIVES)}, DEUTERANOPIA_PLAYER_PALETTE);
+
+  EXPECT_THAT(record.fills, Contains(RecordedFill{.area = THIRD_CHIP,
+                                                  .color = BLUISH_GREEN}));
+}
+
+/**
+ * Given player 3, called ACE, flying, and the palette for deuteranopia
+ * When the band is painted
+ * Then ACE is written in the light bluish green of the palette
+ */
+TEST(StatusBand, ANicknameIsWrittenInThePalettesLightShade) {
+  const InterfaceCanvasRecord record = bandPaintingOf(
+      {flying(PLAYER_THREE, THREE_LIVES)}, DEUTERANOPIA_PLAYER_PALETTE);
+
+  const RecordedWriting* name = writingOf(record, "ACE");
+  ASSERT_NE(name, nullptr);
+  EXPECT_EQ(name->style.color, LIGHT_BLUISH_GREEN);
+}
+
+/**
+ * Given player 3 with 3 lives, and the palette for deuteranopia
+ * When the band is painted
+ * Then each of its ships swaps its shades for those of the palette
+ */
+TEST(StatusBand, LivesSwapTheirShadesForThePalettes) {
+  const InterfaceCanvasRecord record = bandPaintingOf(
+      {flying(PLAYER_THREE, THREE_LIVES)}, DEUTERANOPIA_PLAYER_PALETTE);
+
+  const std::vector<RecordedImage> lives = imagesOf(record, THIRD_LIFE_SOURCE);
+  ASSERT_EQ(lives.size(), LIVES_SHOWN_AT_MOST);
+  for (const RecordedImage& life : lives) {
+    EXPECT_EQ(life.recolor, SHEET_GREEN_TO_BLUISH_GREEN);
+  }
+}
+
+/**
+ * Given player 3 flying, and the palette for deuteranopia
+ * When the band is painted
+ * Then its marker swaps its shades for those of the palette
+ */
+TEST(StatusBand, AMarkerSwapsItsShadesForThePalettes) {
+  const InterfaceCanvasRecord record = bandPaintingOf(
+      {flying(PLAYER_THREE, THREE_LIVES)}, DEUTERANOPIA_PLAYER_PALETTE);
+
+  const std::vector<RecordedImage> markers =
+      imagesOf(record, THIRD_MARKER_SOURCE);
+  ASSERT_EQ(markers.size(), 1U);
+  EXPECT_EQ(markers.front().recolor, SHEET_GREEN_TO_BLUISH_GREEN);
+}
+
+/**
+ * Given player 3 with 3 lives, and the palette of the sheets
+ * When the band is painted
+ * Then no image swaps its shades: the HUD sheet is drawn as it is
+ */
+TEST(StatusBand, TheSheetPaletteSwapsNoImage) {
+  const InterfaceCanvasRecord record =
+      bandPaintingOf({flying(PLAYER_THREE, THREE_LIVES)});
+
+  ASSERT_FALSE(record.images.empty());
+  for (const RecordedImage& image : record.images) {
+    EXPECT_FALSE(image.recolor.has_value());
+  }
 }

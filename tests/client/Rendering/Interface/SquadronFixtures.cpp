@@ -1,6 +1,7 @@
 #include "SquadronFixtures.hpp"
 #include <SFML/System/Vector2.hpp>
 #include <vector>
+#include "PlayerPalette.hpp"
 #include "RecordingInterfaceCanvas.hpp"
 #include "Squadron.hpp"
 #include "SquadronConstants.hpp"
@@ -8,6 +9,7 @@
 #include "SquadronTestConstants.hpp"
 #include "TimeConstants.hpp"
 
+using rtype::client::PlayerPalette;
 using rtype::client::Squadron;
 using rtype::client::SQUADRON_SHIPS;
 using rtype::client::SquadronShip;
@@ -21,10 +23,11 @@ void play(Squadron& squadron, Duration total) {
   }
 }
 
-InterfaceCanvasRecord paintingOf(const Squadron& squadron) {
+InterfaceCanvasRecord paintingOf(const Squadron& squadron,
+                                 const PlayerPalette& palette) {
   InterfaceCanvasRecord record;
   RecordingInterfaceCanvas canvas(record);
-  squadron.paint(canvas, BOX.position);
+  squadron.paint(canvas, BOX.position, palette);
   return record;
 }
 

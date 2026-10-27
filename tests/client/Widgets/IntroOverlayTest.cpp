@@ -11,6 +11,9 @@
 #include "IntroTestConstants.hpp"
 #include "IntroTimeline.hpp"
 #include "IntroTimelineConstants.hpp"
+#include "PilotTestConstants.hpp"
+#include "PlayerPaletteConstants.hpp"
+#include "PlayerPaletteTestConstants.hpp"
 #include "RecordingInterfaceCanvas.hpp"
 #include "SquadronTestConstants.hpp"
 
@@ -23,6 +26,7 @@ using rtype::client::INTRO_SLAM_TIME;
 using rtype::client::INTRO_SQUADRON_BOX_PLACE;
 using rtype::client::PLAYER_LIGHT_PINK;
 using rtype::client::PLAYER_PINK;
+using rtype::client::PROTANOPIA_PLAYER_PALETTE;
 using rtype::client::testing::A_MOMENT;
 using rtype::client::testing::AFTER_THE_FADE;
 using rtype::client::testing::ALPHA_ROUNDING;
@@ -41,6 +45,7 @@ using rtype::client::testing::INTO_A_CLOSEUP;
 using rtype::client::testing::INTO_THE_CREDIT;
 using rtype::client::testing::LOGO_ON_THE_TITLE;
 using rtype::client::testing::LUKAS_UNDERLINE;
+using rtype::client::testing::MAGENTA;
 using rtype::client::testing::ONE_IMAGE;
 using rtype::client::testing::SECOND_PILOT_NAME;
 using rtype::client::testing::SQUADRON_BOX_ON_THE_TITLE;
@@ -227,5 +232,20 @@ TEST(IntroOverlay, TheFadeIsOverAfterItsTime) {
 
   EXPECT_TRUE(std::ranges::none_of(record.fills, [](const RecordedFill& fill) {
     return fill.area == WHOLE_PICTURE;
+  }));
+}
+
+/**
+ * Given the close-up of the second pilot, and the palette for protanopia
+ * When the overlay is painted
+ * Then the name is underlined in the magenta of the palette
+ */
+TEST(IntroOverlay, TheUnderlineFollowsThePalette) {
+  const InterfaceCanvasRecord record =
+      overlayAt(closeupStartOf(SECOND_PILOT_COLOR) + INTO_A_CLOSEUP,
+                PROTANOPIA_PLAYER_PALETTE);
+
+  EXPECT_TRUE(std::ranges::any_of(record.fills, [](const RecordedFill& fill) {
+    return fill.color == MAGENTA;
   }));
 }

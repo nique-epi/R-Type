@@ -4,6 +4,7 @@
 #include <SFML/System/Vector2.hpp>
 #include <array>
 #include <chrono>
+#include <cstddef>
 #include <cstdint>
 #include "EntitySpriteConstants.hpp"
 #include "SquadronConstants.hpp"
@@ -57,5 +58,13 @@ constexpr int MIDDLE_ROW = 72;
 constexpr int BOTTOM_ROW = 143;
 constexpr sf::Vector2i CORNER_STROKE(8, 1);
 constexpr sf::Vector2i TITLE_POSITION(296, 72);
+
+/** @brief With the palette for deuteranopia, the ships of players 2 to 4
+ * swap their shades and the ship of player 1 keeps its blue; the ship of
+ * player 3 is drawn from the third row of entities.png, 2 x (16 + 2) pixels
+ * down. */
+constexpr std::ptrdiff_t SHIPS_SWAPPED_IN_DEUTERANOPIA = 3;
+constexpr std::ptrdiff_t SHIPS_KEPT_IN_DEUTERANOPIA = 1;
+constexpr int THIRD_SHIP_ROW = 36;
 
 }  // namespace rtype::client::testing

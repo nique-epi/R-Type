@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>
+#include <optional>
 #include <random>
 #include <span>
 #include <string>
@@ -27,8 +28,10 @@
 #include "MotionPreference.hpp"
 #include "Outline.hpp"
 #include "PaddedScore.hpp"
+#include "PilotColor.hpp"
 #include "PlayerNumberLabel.hpp"
-#include "ProtocolConstants.hpp"
+#include "PlayerShading.hpp"
+#include "ShadeSwap.hpp"
 #include "TextStyle.hpp"
 #include "TextureArea.hpp"
 #include "TimeConstants.hpp"
@@ -145,11 +148,20 @@ void paintTeamScore(IInterfaceCanvas& canvas, const FlightLogLook& look,
                     .scale = TITLE_SCALE});
 }
 
+/** @brief Where the polaroid of a pilot lies, and the shades its ship and
+ * marker swap for those of the palette. */
+struct Polaroid {
+  sf::Vector2i topLeft;
+  std::optional<ShadeSwap> recolor = std::nullopt;
+};
+
 /** @brief Paints the polaroid of a pilot: its frame and window on the sky,
- * its ship, its marker, YOU or its number, and the tape. */
+ * its ship, its marker, YOU or its number, and the tape, the ship and the
+ * marker in the shades of the palette. */
 void paintPolaroid(IInterfaceCanvas& canvas, const FinalPilot& pilot,
-                   sf::Vector2i topLeft) {
-  const int color = pilot.playerNumber - network::FIRST_PLAYER_NUMBER;
+                   const Polaroid& polaroid) {
+  const sf::Vector2i topLeft = polaroid.topLeft;
+  const int color = pilotColorOfPlayerNumber(pilot.playerNumber);
   canvas.fill(sf::IntRect(topLeft, POLAROID_SIZE), PAPER_FAINT_COLOR);
   canvas.fill(
       sf::IntRect(topLeft + sf::Vector2i(1, 1),
@@ -162,16 +174,18 @@ void paintPolaroid(IInterfaceCanvas& canvas, const FinalPilot& pilot,
     canvas.fill(sf::IntRect(topLeft + POLAROID_STARS[star], {1, 1}),
                 POLAROID_STAR_COLORS[star]);
   }
-  canvas.drawImage(
-      TextureArea{
-          .assetId = ENTITY_SHEET_ID,
-          .rectangle = rectangleOf(inPlayerColorRow(PLAYER_SHIP_FRAME, color))},
-      ImagePlacement{.topLeft = topLeft + POLAROID_SHIP}, INTERFACE_AREA);
-  canvas.drawImage(
-      TextureArea{.assetId = HUD_SHEET_ID,
-                  .rectangle = rectangleOf(
-                      MARKER_FRAMES.at(static_cast<std::size_t>(color)))},
-      ImagePlacement{.topLeft = topLeft + POLAROID_MARKER}, INTERFACE_AREA);
+  canvas.drawImage(TextureArea{.assetId = ENTITY_SHEET_ID,
+                               .rectangle = rectangleOf(
+                                   inPlayerColorRow(PLAYER_SHIP_FRAME, color))},
+                   ImagePlacement{.topLeft = topLeft + POLAROID_SHIP,
+                                  .recolor = polaroid.recolor},
+                   INTERFACE_AREA);
+  canvas.drawImage(TextureArea{.assetId = HUD_SHEET_ID,
+                               .rectangle = rectangleOf(MARKER_FRAMES.at(
+                                   static_cast<std::size_t>(color)))},
+                   ImagePlacement{.topLeft = topLeft + POLAROID_MARKER,
+                                  .recolor = polaroid.recolor},
+                   INTERFACE_AREA);
   canvas.write(pilot.isLocalPlayer ? std::string{LOCAL_PLAYER_TAG}
                                    : playerNumberLabel(pilot.playerNumber),
                topLeft + POLAROID_CAPTION,
@@ -226,9 +240,16 @@ void paintPolaroids(IInterfaceCanvas& canvas, const FlightLogLook& look,
     if (sinceShown < engine::Duration::zero()) {
       return;
     }
-    paintPolaroid(canvas, numbered[static_cast<std::size_t>(slot)],
-                  polaroidTopLeft(look, page, slot) -
-                      sf::Vector2i(0, polaroidDropAt(sinceShown, look.motion)));
+    const FinalPilot& pilot = numbered[static_cast<std::size_t>(slot)];
+    paintPolaroid(
+        canvas, pilot,
+        Polaroid{
+            .topLeft = polaroidTopLeft(look, page, slot) -
+                       sf::Vector2i(0, polaroidDropAt(sinceShown, look.motion)),
+            .recolor = shadingOf(look.palette, static_cast<std::size_t>(
+                                                   pilotColorOfPlayerNumber(
+                                                       pilot.playerNumber)))
+                           .recolor});
   }
 }
 

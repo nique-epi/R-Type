@@ -4,6 +4,7 @@ target_include_directories(rtype_client_hangar_bay PUBLIC ${CMAKE_CURRENT_SOURCE
 
 target_link_libraries(rtype_client_hangar_bay
   PUBLIC
+    rtype_client_player_shading
     rtype_client_widgets
   PRIVATE
     rtype_client_cut_corner_box

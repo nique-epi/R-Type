@@ -1,10 +1,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include <SFML/Graphics/Color.hpp>
-#include <SFML/Graphics/Rect.hpp>
-#include <SFML/System/Vector2.hpp>
 #include <algorithm>
-#include <chrono>
 #include <cstddef>
 #include <optional>
 #include "BackgroundColorConstants.hpp"
@@ -14,14 +11,15 @@
 #include "HangarBayTestConstants.hpp"
 #include "InterfaceColorConstants.hpp"
 #include "MotionPreference.hpp"
+#include "PlayerPaletteConstants.hpp"
+#include "PlayerPaletteTestConstants.hpp"
 #include "RecordingInterfaceCanvas.hpp"
 #include "TextStyle.hpp"
 #include "TimeConstants.hpp"
 
-using rtype::client::BayMotion;
-using rtype::client::BayPilot;
 using rtype::client::BayReadiness;
 using rtype::client::DEEP_BLUE;
+using rtype::client::DEUTERANOPIA_PLAYER_PALETTE;
 using rtype::client::HangarBay;
 using rtype::client::HUD_CYAN;
 using rtype::client::MotionPreference;
@@ -30,11 +28,13 @@ using rtype::client::STAR_GOLD;
 using rtype::client::TextAlignment;
 using rtype::client::TextFont;
 using rtype::client::testing::BAY_AREA;
+using rtype::client::testing::BLUISH_GREEN;
 using rtype::client::testing::CELL_INSIDE;
 using rtype::client::testing::FOURTH_BEACON;
 using rtype::client::testing::LOCAL_TAG_ANCHOR;
 using rtype::client::testing::NICKNAME;
 using rtype::client::testing::NICKNAME_ANCHOR;
+using rtype::client::testing::SHEET_GREEN_TO_BLUISH_GREEN;
 using rtype::client::testing::SHIP_TOP_LEFT;
 using rtype::client::testing::THIRD_COLOR_FIRST_FRAME;
 using rtype::client::testing::THIRD_COLOR_SECOND_FRAME;
@@ -198,4 +198,37 @@ TEST(HangarBay, AnOpenBaySaysSoAndDrawsNoShip) {
 
   EXPECT_EQ(anchorOf(painted, "OPEN BAY"), NICKNAME_ANCHOR);
   EXPECT_TRUE(painted.images.empty());
+}
+
+/**
+ * Given the bay of player 3, and the palette for deuteranopia
+ * When it is painted
+ * Then its color band is filled with the bluish green of the palette
+ */
+TEST(HangarBay, TheColorBandIsInThePalettesShade) {
+  HangarBay bay = bayOf(BayReadiness::NotReady);
+  bay.palette = DEUTERANOPIA_PLAYER_PALETTE;
+
+  const InterfaceCanvasRecord painted =
+      bayPaintingOf(bay, {}, MotionPreference::Full);
+
+  EXPECT_TRUE(std::ranges::any_of(painted.fills, [](const RecordedFill& fill) {
+    return fill.color == BLUISH_GREEN;
+  }));
+}
+
+/**
+ * Given the bay of player 3, and the palette for deuteranopia
+ * When it is painted
+ * Then its ship swaps the shades of the sheet for those of the palette
+ */
+TEST(HangarBay, TheShipSwapsItsShadesForThePalettes) {
+  HangarBay bay = bayOf(BayReadiness::NotReady);
+  bay.palette = DEUTERANOPIA_PLAYER_PALETTE;
+
+  const InterfaceCanvasRecord painted =
+      bayPaintingOf(bay, {}, MotionPreference::Full);
+
+  ASSERT_EQ(painted.images.size(), 1U);
+  EXPECT_EQ(painted.images.front().recolor, SHEET_GREEN_TO_BLUISH_GREEN);
 }

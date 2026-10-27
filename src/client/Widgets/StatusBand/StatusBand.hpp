@@ -3,6 +3,7 @@
 #include <span>
 #include "IInterfaceCanvas.hpp"
 #include "PilotStatus.hpp"
+#include "PlayerPalette.hpp"
 
 namespace rtype::client {
 
@@ -24,10 +25,15 @@ namespace rtype::client {
  * pilot keeps its score, dimmed with its chip and its name. The bay of the
  * local player is framed in white.
  *
+ * The colors of a pilot are those @p palette gives its number: the chip, the
+ * nickname, and the ships and marker of the HUD sheet, whose shades are
+ * swapped for those of the palette.
+ *
  * A bay whose number has no pilot stays empty. A pilot whose number has no
  * bay, outside FIRST_PLAYER_NUMBER to PLAYER_COLOR_COUNT, is not painted.
  */
 void paintStatusBand(IInterfaceCanvas& canvas,
-                     std::span<const PilotStatus> pilots);
+                     std::span<const PilotStatus> pilots,
+                     const PlayerPalette& palette);
 
 }  // namespace rtype::client

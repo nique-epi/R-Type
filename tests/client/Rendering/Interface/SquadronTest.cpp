@@ -2,26 +2,23 @@
 #include <gtest/gtest.h>
 #include <SFML/Graphics/Rect.hpp>
 #include <SFML/System/Vector2.hpp>
-#include <chrono>
-#include <cstdint>
+#include <algorithm>
 #include <optional>
 #include <vector>
 #include "InterfaceColorConstants.hpp"
 #include "MotionPreference.hpp"
+#include "PlayerPaletteConstants.hpp"
+#include "PlayerPaletteTestConstants.hpp"
 #include "RecordingInterfaceCanvas.hpp"
 #include "Squadron.hpp"
-#include "SquadronConstants.hpp"
 #include "SquadronFixtures.hpp"
-#include "SquadronShip.hpp"
 #include "SquadronTestConstants.hpp"
 #include "TimeConstants.hpp"
 
+using rtype::client::DEUTERANOPIA_PLAYER_PALETTE;
 using rtype::client::EDGE_BLUE;
 using rtype::client::MotionPreference;
 using rtype::client::Squadron;
-using rtype::client::SQUADRON_BOX_SIZE;
-using rtype::client::SQUADRON_SHIPS;
-using rtype::client::SquadronShip;
 using rtype::client::testing::A_STALL;
 using rtype::client::testing::A_WHILE;
 using rtype::client::testing::ANY_SEED;
@@ -38,7 +35,11 @@ using rtype::client::testing::MIDDLE_ROW;
 using rtype::client::testing::MISSILE_SIZE;
 using rtype::client::testing::ONCE_LANDED_BEFORE_THE_DRIFT;
 using rtype::client::testing::ONCE_THE_BOX_IS_OPEN;
+using rtype::client::testing::SHEET_GREEN_TO_BLUISH_GREEN;
 using rtype::client::testing::SHIP_SIZE;
+using rtype::client::testing::SHIPS_KEPT_IN_DEUTERANOPIA;
+using rtype::client::testing::SHIPS_SWAPPED_IN_DEUTERANOPIA;
+using rtype::client::testing::THIRD_SHIP_ROW;
 using rtype::client::testing::THREE_LETTERS_IN;
 using rtype::client::testing::TITLE_POSITION;
 using rtype::client::testing::WHILE_THE_LINE_GROWS;
@@ -239,4 +240,51 @@ TEST(Squadron, AStallMovesTheSquadronByOneStepOnly) {
   const InterfaceCanvasRecord painted = paintingOf(squadron);
   ASSERT_THAT(painted.fills, SizeIs(1));
   EXPECT_EQ(painted.fills.front().area.size.y, 1);
+}
+
+/**
+ * Given a squadron whose four ships have landed, and the palette for
+ * deuteranopia
+ * When it is painted
+ * Then the ships of players 2 to 4 swap their shades, and player 1 keeps its
+ * blue
+ */
+TEST(Squadron, ShipsSwapTheirShadesButPlayerOnes) {
+  Squadron squadron(MotionPreference::Full, ANY_SEED);
+  play(squadron, ONCE_LANDED_BEFORE_THE_DRIFT);
+
+  const InterfaceCanvasRecord painted =
+      paintingOf(squadron, DEUTERANOPIA_PLAYER_PALETTE);
+
+  const auto swapped =
+      std::ranges::count_if(painted.images, [](const RecordedImage& image) {
+        return image.source.size == SHIP_SIZE && image.recolor.has_value();
+      });
+  const auto kept =
+      std::ranges::count_if(painted.images, [](const RecordedImage& image) {
+        return image.source.size == SHIP_SIZE && !image.recolor.has_value();
+      });
+  EXPECT_EQ(swapped, SHIPS_SWAPPED_IN_DEUTERANOPIA);
+  EXPECT_EQ(kept, SHIPS_KEPT_IN_DEUTERANOPIA);
+}
+
+/**
+ * Given a squadron whose four ships have landed, and the palette for
+ * deuteranopia
+ * When it is painted
+ * Then the ship of player 3 swaps its greens for the bluish greens of the
+ * palette
+ */
+TEST(Squadron, TheThirdShipTakesThePalettesShades) {
+  Squadron squadron(MotionPreference::Full, ANY_SEED);
+  play(squadron, ONCE_LANDED_BEFORE_THE_DRIFT);
+
+  const InterfaceCanvasRecord painted =
+      paintingOf(squadron, DEUTERANOPIA_PLAYER_PALETTE);
+
+  EXPECT_TRUE(
+      std::ranges::any_of(painted.images, [](const RecordedImage& image) {
+        return image.source.position.y == THIRD_SHIP_ROW &&
+               image.recolor == SHEET_GREEN_TO_BLUISH_GREEN;
+      }));
 }

@@ -7,6 +7,7 @@
 #include "HangarBayTestConstants.hpp"
 #include "InterfaceColorConstants.hpp"
 #include "MotionPreference.hpp"
+#include "PilotTestConstants.hpp"
 #include "RecordingInterfaceCanvas.hpp"
 #include "TimeConstants.hpp"
 
@@ -15,16 +16,17 @@ using rtype::client::BayPilot;
 using rtype::client::BayReadiness;
 using rtype::client::HangarBay;
 using rtype::client::MotionPreference;
+using rtype::client::PLAYER_COLORS;
 using rtype::client::testing::BAY_TOP_LEFT;
 using rtype::client::testing::BEACON_SQUARE;
 using rtype::client::testing::NICKNAME;
-using rtype::client::testing::THIRD_COLOR;
 using rtype::client::testing::THIRD_PLAYER;
 
 HangarBay bayOf(std::optional<BayReadiness> readiness, bool isLocalPlayer) {
   HangarBay bay{.topLeft = BAY_TOP_LEFT,
                 .playerNumber = THIRD_PLAYER,
-                .color = THIRD_COLOR,
+                .color = THIRD_PILOT_COLOR,
+                .palette = PLAYER_COLORS,
                 .pilot = std::nullopt};
   if (readiness.has_value()) {
     bay.pilot = BayPilot{.nickname = NICKNAME,

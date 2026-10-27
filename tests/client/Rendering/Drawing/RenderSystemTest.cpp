@@ -1,4 +1,5 @@
 #include <gtest/gtest.h>
+#include <optional>
 #include <string>
 #include <vector>
 #include "Caption.hpp"
@@ -11,7 +12,6 @@
 #include "Invulnerability.hpp"
 #include "Layer.hpp"
 #include "Nudge.hpp"
-#include "PilotShip.hpp"
 #include "PilotTestConstants.hpp"
 #include "Position.hpp"
 #include "RecordingDrawSurface.hpp"
@@ -31,7 +31,6 @@ using rtype::client::HALF;
 using rtype::client::HitFlash;
 using rtype::client::Invulnerability;
 using rtype::client::Nudge;
-using rtype::client::PilotShip;
 using rtype::client::Reveal;
 using rtype::client::SpriteTone;
 using rtype::engine::Duration;
@@ -400,17 +399,18 @@ TEST(RenderSystem, AnInvulnerableShipBlinksBetweenItselfAndItsDither) {
 }
 
 /**
- * Given a steady invulnerable ship of the second pilot, as a player who
- * reduced flashes sees it
+ * Given a steady invulnerable ship outlined in the light pink of the second
+ * pilot, as a player who reduced flashes sees it
  * When a frame is rendered
- * Then it is dithered and outlined in the light pink of its pilot
+ * Then it is dithered and outlined in that pink
  */
 TEST(RenderSystem, ASteadyInvulnerableShipIsDitheredAndOutlined) {
   Scene scene;
   const Entity ship = scene.spawn("ship", Layer::Players);
   scene.components().add(
-      ship, Invulnerability{.elapsed = Duration::zero(), .steady = true});
-  scene.components().add(ship, PilotShip{.color = SECOND_PILOT_COLOR});
+      ship, Invulnerability{.elapsed = Duration::zero(),
+                            .steady = true,
+                            .outline = PINK_LIGHT_OF_THE_SECOND_PILOT});
 
   scene.render();
 
@@ -482,4 +482,24 @@ TEST(RenderSystem, AShipArrivingShowsItsTopRowsAndALeadingLine) {
   EXPECT_EQ(drawn[1].tone, SpriteTone::Flash);
   EXPECT_EQ(drawn[1].frame.top, WHOLE_IMAGE.top + HALF_OF_THE_ROWS);
   EXPECT_EQ(drawn[1].frame.height, 1);
+}
+
+/**
+ * Given a steady invulnerable ship whose pilot is not known, so no outline was
+ * chosen for it
+ * When a frame is rendered
+ * Then it is dithered and drawn without outline
+ */
+TEST(RenderSystem, ASteadyInvulnerabilityWithoutOutlineDrawsNone) {
+  Scene scene;
+  const Entity ship = scene.spawn("ship", Layer::Players);
+  scene.components().add(ship, Invulnerability{.elapsed = Duration::zero(),
+                                               .steady = true,
+                                               .outline = std::nullopt});
+
+  scene.render();
+
+  ASSERT_EQ(scene.surface().drawn().size(), 1U);
+  EXPECT_EQ(scene.surface().drawn().front().tone, SpriteTone::Ghost);
+  EXPECT_FALSE(scene.surface().drawn().front().outline.has_value());
 }

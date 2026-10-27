@@ -12,6 +12,7 @@ target_link_libraries(rtype_client_title_screen
     SFML::Graphics
   PRIVATE
     rtype_client_menu_builder
+    rtype_client_player_preferences
 )
 
 rtype_enable_warnings(rtype_client_title_screen)

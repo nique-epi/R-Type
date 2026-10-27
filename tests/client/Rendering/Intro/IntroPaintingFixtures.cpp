@@ -13,14 +13,17 @@
 #include "IntroTestConstants.hpp"
 #include "IntroTimeline.hpp"
 #include "IntroTimelineConstants.hpp"
+#include "PlayerPalette.hpp"
 #include "RecordingInterfaceCanvas.hpp"
 #include "SquadronTestConstants.hpp"
 
 using rtype::client::FlashPreference;
 using rtype::client::IntroFrame;
 using rtype::client::IntroFreeze;
+using rtype::client::PlayerPalette;
 
-InterfaceCanvasRecord paintedAt(float real, FlashPreference preference) {
+InterfaceCanvasRecord paintedAt(float real, FlashPreference preference,
+                                const PlayerPalette& palette) {
   const rtype::client::IntroCast cast =
       rtype::client::buildIntroCast(rtype::client::testing::INTRO_TEST_SEED);
   const std::span<const IntroFreeze> freezes =
@@ -40,6 +43,7 @@ InterfaceCanvasRecord paintedAt(float real, FlashPreference preference) {
           .shake = {},
           .drift = rtype::client::debrisDriftAt(scene),
           .preference = preference,
+          .palette = palette,
           .squadronBox = rtype::client::testing::SQUADRON_BOX_ON_THE_TITLE});
   return record;
 }

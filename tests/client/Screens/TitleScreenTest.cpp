@@ -6,6 +6,7 @@
 #include "EntitySpriteConstants.hpp"
 #include "KeyPress.hpp"
 #include "MotionPreference.hpp"
+#include "PlayerSettings.hpp"
 #include "PointerEvents.hpp"
 #include "RecordingInterfaceCanvas.hpp"
 #include "RecordingNavigator.hpp"
@@ -25,6 +26,7 @@ using rtype::client::CLICK_SOUND_ID;
 using rtype::client::ENTITY_SHEET_ID;
 using rtype::client::LOGO_ID;
 using rtype::client::MotionPreference;
+using rtype::client::PlayerSettings;
 using rtype::client::ScreenId;
 using rtype::client::SquadronStart;
 using rtype::client::TitleScreen;
@@ -59,10 +61,12 @@ TEST(TitleScreen, ASquadronInPlaceShowsItsShipsOnTheFirstFrame) {
   RecordingNavigator navigator;
   RecordingSoundPlayer sounds;
   InterfaceCanvasRecord canvas;
+  const PlayerSettings settings;
 
   const TitleScreen title(
       TitleScreenParts{.navigator = navigator,
                        .sounds = sounds,
+                       .settings = settings,
                        .playfieldPointAt = samePlayfieldPoint,
                        .motion = MotionPreference::Full,
                        .seed = TITLE_SEED,

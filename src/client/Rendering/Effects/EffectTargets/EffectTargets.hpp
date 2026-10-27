@@ -5,6 +5,7 @@
 #include "DownedShip.hpp"
 #include "Entity.hpp"
 #include "HitSpot.hpp"
+#include "PlayerPalette.hpp"
 #include "Position.hpp"
 #include "Shooter.hpp"
 
@@ -36,8 +37,9 @@ namespace rtype::client {
 [[nodiscard]] std::optional<int> pilotColorOf(
     engine::ComponentRegistry& components, engine::Entity ship);
 
-/** @returns The light shade of a pilot color, or UNKNOWN_PILOT_LIGHT when the
- * pilot is not known. */
-[[nodiscard]] sf::Color pilotLightOf(std::optional<int> pilotColor);
+/** @returns The light shade @p palette gives a pilot color, or
+ * UNKNOWN_PILOT_LIGHT when the pilot is not known. */
+[[nodiscard]] sf::Color pilotLightOf(const PlayerPalette& palette,
+                                     std::optional<int> pilotColor);
 
 }  // namespace rtype::client

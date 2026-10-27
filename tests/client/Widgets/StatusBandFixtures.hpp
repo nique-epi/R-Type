@@ -7,16 +7,19 @@
 #include <set>
 #include <utility>
 #include <vector>
+#include "InterfaceColorConstants.hpp"
 #include "PilotStatus.hpp"
+#include "PlayerPalette.hpp"
 #include "RecordingInterfaceCanvas.hpp"
 
 /** @returns A teammate called ACE flying, with these lives. */
 [[nodiscard]] rtype::client::PilotStatus flying(
     std::uint8_t number, std::optional<std::uint8_t> lives);
 
-/** @returns What the band painted for these pilots. */
+/** @returns What the band painted for these pilots, in @p palette. */
 [[nodiscard]] InterfaceCanvasRecord bandPaintingOf(
-    std::vector<rtype::client::PilotStatus> pilots);
+    std::vector<rtype::client::PilotStatus> pilots,
+    const rtype::client::PlayerPalette& palette = rtype::client::PLAYER_COLORS);
 
 /** @returns The images of the record drawn from this source rectangle. */
 [[nodiscard]] std::vector<RecordedImage> imagesOf(

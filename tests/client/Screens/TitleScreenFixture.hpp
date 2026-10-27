@@ -2,6 +2,7 @@
 
 #include <gtest/gtest.h>
 #include <SFML/Window/Keyboard.hpp>
+#include "PlayerSettings.hpp"
 #include "RecordingInterfaceCanvas.hpp"
 #include "RecordingNavigator.hpp"
 #include "RecordingSoundPlayer.hpp"
@@ -26,5 +27,6 @@ class TitleScreenFixture : public ::testing::Test {
   RecordingNavigator navigator_;
   InterfaceCanvasRecord canvas_;
   RecordingSoundPlayer sounds_;
+  rtype::client::PlayerSettings settings_;
   rtype::client::TitleScreen title_;
 };
