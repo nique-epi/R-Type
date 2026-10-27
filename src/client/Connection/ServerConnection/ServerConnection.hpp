@@ -65,8 +65,12 @@ namespace rtype::client {
  * the session, newer than the newest one read, and whose messages add up to its
  * end. The silence starts over at connect() and at each such datagram, the
  * acceptance included. The time counts before update() reads what arrived, so a
- * frame longer than SESSION_TIMEOUT loses no session whose datagrams waited in
- * the link. Leaving the session, through cancel() or connect(), sends a
+ * long frame is never taken for silence of the server: counted after the read,
+ * a frame of 4.9 s in the waiting room would lose a live session 100 ms later
+ * unless a datagram came first. A frame that kept the client silent for
+ * SESSION_TIMEOUT is another matter: the server has closed the session by then,
+ * and the client learns it SESSION_TIMEOUT after it read the datagrams that
+ * waited. Leaving the session, through cancel() or connect(), sends a
  * Disconnection DISCONNECTION_COPY_COUNT times, DISCONNECTION_COPY_INTERVAL
  * apart, with the token and the sequences of the session left, the first at
  * once and the others from update(), while isLeaving() is true; connect() then
