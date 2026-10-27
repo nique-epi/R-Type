@@ -238,6 +238,15 @@ An entity hit carries a `HitFlash` component: the `SpriteTone` it is drawn with 
 
 The game screen reads REDUCE FLASHES (`PlayerSettings::reduceFlashes`) at every update and hands it to the spawner as a `FlashPreference`, `Full` or `Reduced`: a change made in the options during a game applies to the next effect, and an effect already playing keeps its version. While it is `Reduced`, nothing flashes, shakes, recoils or vibrates: each effect plays its version without flash, a row of the effect sheet as long as the standard one that shows no white; a hit shades the entity instead of whitening it; the particles lose the first color of their ramp; an invulnerable ship is dithered all along and outlined; an arrival shows no white line; and the stars do not warp at the start of a game. `Rendering/` never reads the settings: the preference is all it gets, as `MotionPreference` is for the squadron.
 
+### Ship flight: `ShipFlight`, `ShipFlightSystem`
+
+Every pilot's ship carries a `ShipFlight` (`src/client/Rendering/SpriteLook/`): `EntityReplicator` copies into it, at each world state, what the `motion` of the player says (pushing forward, moving up or down, rolling, dashing), and `ShipFlightSystem` moves its look on at each frame. Every client draws it the same way for every ship.
+
+- The flame burns behind the engine, from 1 pixel when out to `FLAME_LONGEST` (8) at full thrust, one more every other 50 ms: full while the pilot holds right or dashes, `FLAME_MANEUVER_SHARE` (0.35) while it only moves up or down, out while the ship glides, eased at `FLAME_RESPONSE_RATE` (14 per second). It lights before the drift has gathered speed, so the inertia shows.
+- Four flight lines scroll behind a ship pushed forward for `FLIGHT_LINES_AFTER` (650 ms) or dashing, on the rows of `SPEED_LINE_ROWS`. `paintGroundEffects()` paints the flame and the lines under every sprite.
+- A roll draws one whole turn in `ROLL_DURATION` (400 ms): `RenderSystem` draws the sprite row by row, round(16 × |cos|) rows and `ROLL_THINNEST_ROWS` (2) at least, upside down and in `SpriteTone::Shade` once its belly shows. An invulnerable ship loses its outline while it rolls.
+- While a ship rolls or dashes, three afterimages lit one pixel in two (`SpriteTone::Ghost`) follow it, `AFTERIMAGE_AGES` (12, 8 and 4) frames behind, in the `Effects` layer under the ships. A plain move leaves nothing behind.
+
 ## Scrolling background: `ScrollingBackground`
 
 `ScrollingBackground` (`rtype_client_scrolling_background`) fills the playfield behind everything else: three layers of stars drifting left at different speeds, a ringed planet, and random sky events. `Application`, the frame loop, moves it every frame by the real time elapsed since the previous frame, read from `engine::SystemClock`, so its speed does not depend on the frame rate, and draws it before the screens. A frame longer than `MAXIMUM_BACKGROUND_STEP` (50 ms) moves it by 50 ms only, so the sky does not jump after a stall. A star that leaves on the left comes back on the right at a new height, so the sky never shows a seam.
@@ -659,6 +668,7 @@ Text twice or three times its size is written with `TextStyle::scale`: every pix
 
 | You want to… | Look at |
 |---|---|
+| Change the flame, the flight lines, the roll or the afterimages of a ship | `ShipFlightConstants.hpp` and `ShipFlightSystem` in `src/client/Rendering/SpriteLook/`; the `FLAME_` and `FLIGHT_LINE_` constants in `src/client/Rendering/Effects/Ground/GroundEffectConstants.hpp` |
 | Change which world states the client ignores | `WorldStateFilter::accept` in `src/client/Replication/WorldStateFilter/` |
 | Change how the client applies the entities the server announces, or the effects they play | `EntityReplicator` in `src/client/Replication/EntityReplicator/` |
 | Change how long the client keeps an entity no world state lists any more | `UNLISTED_ENTITY_TIMEOUT` in `src/network/Protocol/ProtocolConstants.hpp`; the count in `LastListedTicks` (`src/client/Replication/LastListedTicks/`) |
