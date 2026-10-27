@@ -31,4 +31,12 @@ namespace rtype::tools {
  */
 [[nodiscard]] std::optional<std::uint16_t> acceptClient(LoopbackPeer& peer);
 
+/**
+ * @returns Whether a datagram from @p clientPort whose header carries
+ * TOOL_SESSION_TOKEN reaches @p peer within CLIENT_SIGN_OF_LIFE_TIMEOUT: the
+ * client is still in the session acceptClient() opened.
+ */
+[[nodiscard]] bool clientStillInSession(LoopbackPeer& peer,
+                                        std::uint16_t clientPort);
+
 }  // namespace rtype::tools

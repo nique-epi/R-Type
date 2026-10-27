@@ -65,7 +65,8 @@ int floodServer(std::uint16_t serverPort) {
 
 /**
  * @returns The exit code of a flood of the first client that connects to
- * @p listeningPort: 0 once the flood is over, 1 when no client came.
+ * @p listeningPort: 0 when the client still sends in its session after the
+ * flood, 1 when it no longer does or when no client came.
  */
 int floodClient(std::uint16_t listeningPort) {
   rtype::tools::LoopbackPeer peer{listeningPort};
@@ -83,6 +84,11 @@ int floodClient(std::uint16_t listeningPort) {
           .sessionToken = rtype::tools::TOOL_SESSION_TOKEN},
       rtype::tools::FLOOD_SEED};
   printReport(flood.run(peer));
+  if (!rtype::tools::clientStillInSession(peer, *clientPort)) {
+    std::cout << "the client no longer sends in its session\n";
+    return 1;
+  }
+  std::cout << "the client still sends in its session\n";
   return 0;
 }
 

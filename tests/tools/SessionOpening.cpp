@@ -104,6 +104,20 @@ std::optional<std::uint16_t> firstRequesterOf(LoopbackPeer& peer) {
   return std::nullopt;
 }
 
+/**
+ * @returns Whether @p datagram comes from @p clientPort with
+ * TOOL_SESSION_TOKEN in its header.
+ */
+bool isInTheToolSession(const network::IncomingDatagram& datagram,
+                        std::uint16_t clientPort) {
+  if (datagram.sender.port != clientPort ||
+      datagram.payload.size() < network::PACKET_HEADER_SIZE) {
+    return false;
+  }
+  return network::DatagramCodec::decodeHeader(datagram.payload).sessionToken ==
+         TOOL_SESSION_TOKEN;
+}
+
 }  // namespace
 
 std::optional<std::uint64_t> joinServer(LoopbackPeer& peer,
@@ -130,6 +144,19 @@ std::optional<std::uint16_t> acceptClient(LoopbackPeer& peer) {
     peer.send(*clientPort, acceptanceDatagram());
   }
   return clientPort;
+}
+
+bool clientStillInSession(LoopbackPeer& peer, std::uint16_t clientPort) {
+  const auto deadline =
+      std::chrono::steady_clock::now() + CLIENT_SIGN_OF_LIFE_TIMEOUT;
+  while (std::chrono::steady_clock::now() < deadline) {
+    const std::optional<network::IncomingDatagram> datagram =
+        peer.receive(ANSWER_TIMEOUT);
+    if (datagram.has_value() && isInTheToolSession(*datagram, clientPort)) {
+      return true;
+    }
+  }
+  return false;
 }
 
 }  // namespace rtype::tools

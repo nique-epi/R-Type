@@ -62,8 +62,8 @@ std::string floodUsage() {
   text += engine::usageEntry(
       std::string{CLIENT_OPTION} + " <port>",
       "Wait on that port of " + loopback +
-          " for a client, accept it, then send it malformed datagrams for " +
-          seconds + " s.");
+          " for a client, accept it, send it malformed datagrams for " +
+          seconds + " s, then check that it still sends in its session.");
   text += engine::usageEntry(engine::HELP_OPTION,
                              "Print this help and send nothing.");
   return text;
