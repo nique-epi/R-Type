@@ -4,6 +4,7 @@
 #include <string_view>
 #include <vector>
 #include "IModule.hpp"
+#include "InstallContext.hpp"
 #include "JournalModule.hpp"
 #include "RecordingModuleSetup.hpp"
 
@@ -17,7 +18,7 @@ class RecordingModule : public rtype::engine::IModule {
 
   [[nodiscard]] std::string name() const override;
   [[nodiscard]] std::vector<std::string> dependencies() const override;
-  void install() override;
+  void install(rtype::engine::InstallContext& context) override;
   /** @throws StartRefusedException after writing the call down, when the setup
    * says the module fails to start. */
   void start() override;
