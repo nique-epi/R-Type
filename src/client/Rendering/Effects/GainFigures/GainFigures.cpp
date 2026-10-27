@@ -11,7 +11,9 @@
 #include "Entity.hpp"
 #include "GainFigure.hpp"
 #include "Layer.hpp"
+#include "PilotColor.hpp"
 #include "PilotShades.hpp"
+#include "PlayerNumberLabel.hpp"
 #include "PlayerPalette.hpp"
 #include "Popup.hpp"
 #include "Position.hpp"
@@ -33,6 +35,19 @@ TextStyle figureStyleOf(const GainFigure& figure,
                                 : STAR_GOLD,
                    .outlined = true,
                    .alignment = TextAlignment::Center};
+}
+
+/** @returns The text of the figure of a gain: the number of the only pilot
+ * who gained, as the waiting room writes it, then its points; the points
+ * alone when no pilot gained alone. */
+std::string figureTextOf(const GainFigure& figure) {
+  std::string pilotLabel;
+  if (figure.pilotColor.has_value()) {
+    pilotLabel =
+        playerNumberLabel(playerNumberOfPilotColor(*figure.pilotColor)) +
+        GAIN_PILOT_SEPARATOR;
+  }
+  return pilotLabel + GAIN_PREFIX + std::to_string(figure.points);
 }
 
 }  // namespace
@@ -65,11 +80,10 @@ void GainFigures::addGainFigure(const GainFigure& figure) const {
   const PilotShades& shades = tools_.shades;
   const engine::Entity entity = tools_.entities.get().create();
   components.add(entity, figure.place);
-  components.add(entity,
-                 Caption{.text = GAIN_PREFIX + std::to_string(figure.points),
-                         .style = figureStyleOf(figure, shades.palette),
-                         .layer = game::Layer::Popups,
-                         .visible = true});
+  components.add(entity, Caption{.text = figureTextOf(figure),
+                                 .style = figureStyleOf(figure, shades.palette),
+                                 .layer = game::Layer::Popups,
+                                 .visible = true});
   components.add(entity, Popup{.originY = figure.place.y,
                                .age = engine::Duration::zero()});
 }

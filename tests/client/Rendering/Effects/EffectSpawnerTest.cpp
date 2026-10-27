@@ -560,9 +560,9 @@ TEST(EffectSpawner, WithFlashesReducedAnInvulnerableShipIsSteady) {
 }
 
 /**
- * Given a pilot at 1000 points and a Bydo killed
+ * Given the second pilot at 1000 points and a Bydo killed
  * When its score reaches 1100
- * Then "+100" shows, small, in the light of that pilot, in the Popups layer
+ * Then "P2 +100" shows, small, in the light of that pilot, in the Popups layer
  */
 TEST(EffectSpawner, TheGainOfAKillShowsAsAFigure) {
   EffectScene scene;
@@ -574,7 +574,7 @@ TEST(EffectSpawner, TheGainOfAKillShowsAsAFigure) {
   const std::optional<Caption> figure = caption(scene.components());
   ASSERT_TRUE(figure.has_value());
   const Caption shown = figure.value_or(Caption{});
-  EXPECT_EQ(shown.text, "+100");
+  EXPECT_EQ(shown.text, "P2 +100");
   EXPECT_EQ(shown.style.color, PINK_LIGHT_OF_THE_SECOND_PILOT);
   EXPECT_EQ(shown.style.font, TextFont::Small);
   EXPECT_EQ(shown.layer, Layer::Popups);
@@ -614,4 +614,26 @@ TEST(EffectSpawner, ASteadyInvulnerabilityIsOutlinedInThePalette) {
       scene.components().get<Invulnerability>(ship);
   ASSERT_NE(invulnerability, nullptr);
   EXPECT_EQ(invulnerability->outline, LIGHT_BLUISH_GREEN);
+}
+
+/**
+ * Given the first and the second pilots who both gained 100 points
+ * When a Bydo is killed
+ * Then the figure shows "+200" in gold: no pilot gained alone, so none is
+ * named
+ */
+TEST(EffectSpawner, AGainOfSeveralPilotsNamesNoPilot) {
+  EffectScene scene;
+  scene.effects().noteScore(FIRST_PILOT_COLOR, SCORE_BEFORE);
+  scene.effects().noteScore(SECOND_PILOT_COLOR, SCORE_BEFORE);
+  scene.effects().noteScore(FIRST_PILOT_COLOR, SCORE_BEFORE + DRIFTER_POINTS);
+  scene.effects().noteScore(SECOND_PILOT_COLOR, SCORE_BEFORE + DRIFTER_POINTS);
+
+  scene.effects().playExplosion(EntityType::Enemy, WHERE_IT_DIED);
+
+  const std::optional<Caption> figure = caption(scene.components());
+  ASSERT_TRUE(figure.has_value());
+  const Caption shown = figure.value_or(Caption{});
+  EXPECT_EQ(shown.text, "+200");
+  EXPECT_EQ(shown.style.color, STAR_GOLD);
 }

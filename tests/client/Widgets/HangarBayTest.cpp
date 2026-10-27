@@ -134,13 +134,13 @@ TEST(HangarBay, AReadyPilotsCellSaysReadyOnAPaleFill) {
 /**
  * Given a local player who asked to be ready, not shown ready yet
  * When the bay is painted
- * Then its cell says READY on gold
+ * Then its cell says READY... on gold: the wait is told by its word too
  */
-TEST(HangarBay, AnAskNotShownYetIsWrittenOnGold) {
+TEST(HangarBay, AnAskNotShownYetSaysReadyWithDotsOnGold) {
   const InterfaceCanvasRecord painted = bayPaintingOf(
       bayOf(BayReadiness::ReadyAsked, true), {}, MotionPreference::Full);
 
-  EXPECT_NE(writingOf(painted, "READY"), nullptr);
+  EXPECT_NE(writingOf(painted, "READY..."), nullptr);
   EXPECT_THAT(painted.fills,
               Contains(RecordedFill{.area = CELL_INSIDE, .color = STAR_GOLD}));
 }

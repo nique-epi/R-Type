@@ -62,8 +62,9 @@ struct BayMotion {
  *
  * With a pilot: its number, YOU for the local player, a band of the ship
  * color, the ship enlarged BAY_SHIP_SCALE times, the nickname, and a cell that
- * says whether the pilot is ready, gold while the server does not show what
- * the local player asked. A ready pilot's ship plays PLAYER_SHIP_ANIMATION,
+ * says whether the pilot is ready, gold and ending in three dots while the
+ * server does not show what the local player asked, so the wait is never told
+ * by its color alone. A ready pilot's ship plays PLAYER_SHIP_ANIMATION,
  * engines running; any other shows its first frame.
  *
  * Without one: its number, docking clamps around a row of beacons lit one

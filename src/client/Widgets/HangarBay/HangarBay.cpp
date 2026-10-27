@@ -44,7 +44,7 @@ CellLook cellLookOf(BayReadiness readiness) {
               .text = CURRENT_CELL_TEXT_COLOR};
     case BayReadiness::ReadyAsked:
       return {.fill = AWAITED_VALUE_COLOR,
-              .word = READY_TEXT,
+              .word = READY_ASKED_TEXT,
               .text = CURRENT_CELL_TEXT_COLOR};
     case BayReadiness::NotReadyAsked:
       return {.fill = AWAITED_VALUE_COLOR,
