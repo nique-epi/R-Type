@@ -18,7 +18,7 @@ This page tells you where to look when you need to change something. It describe
 | Assets folder and asset ids | Available | `src/client/Assets/`, `assets/README.md` |
 | Asset loading | Available; used at launch for the interface assets, and by the loading screen | `src/client/Assets/AssetLibrary/`, `src/client/Assets/AssetLoadingStep/` |
 | Path of the running executable, the reduced motion setting of the system, the settings folder | Available | `src/client/Platform/` |
-| Player settings and their file | Available; the game reads the flashes setting, the sounds and the music read the volumes and MUTE ALL; the color mode, the sound cues and auto-fire are saved, but nothing reads them yet | `src/client/Settings/` |
+| Player settings and their file | Available; the game reads the flashes setting and auto-fire, the sounds and the music read the volumes and MUTE ALL; the color mode and the sound cues are saved, but nothing reads them yet | `src/client/Settings/` |
 | Drawing entities | Available; drawn by the game screen | `src/client/Rendering/Drawing/EntityLayer/`, `src/client/Rendering/Drawing/RenderSystem/`, `src/client/Rendering/Drawing/SfmlDrawSurface/`, `src/client/Rendering/Sprites/AssetTextureSource/` |
 | Sprites of the ships, Bydos and missiles | Available, animated | `assets/sprites/entities.png`, `src/client/Rendering/Sprites/EntitySprites.cpp` |
 | Animations | Available; played by the game screen | `src/client/Rendering/Sprites/Animation/`, `src/client/Rendering/Sprites/AnimationSystem/` |
@@ -425,7 +425,7 @@ The game screen sends the actions the player holds to the server through an `IPl
 - Each `GameScreen::update()` asks `PlayerInputPacer` (`rtype_client_player_input_pacer`, `src/client/Connection/PlayerInputPacer/`) whether an input is due, and if so sends `playerActions()`. The first update sends at once, then one input goes out every `PLAYER_INPUT_INTERVAL`, a sixtieth of a second (`PLAYER_INPUTS_PER_SECOND`, 60).
 - The time a frame lasts beyond the interval counts toward the next input, so frames of 16 or 17 ms still send 60 inputs per second. Never two in one frame: below 60 frames per second the client sends one input per frame, and a stall of the frame loop sends one input, not a burst.
 - `ServerConnection::sendPlayerInput()` sends a `PlayerInput` numbered after the previous one, a 30-byte datagram carrying the session token, only while the attempt is `Accepted`; otherwise it sends nothing.
-- The game goes on behind the options, so it keeps sending them there, with nothing held.
+- The game goes on behind the options, so it keeps sending them there, with nothing held, or shoot alone while AUTO-FIRE is on.
 
 The rate is **provisional**, like every rate of the protocol page: code must read `PLAYER_INPUTS_PER_SECOND` and `PLAYER_INPUT_INTERVAL` in `src/client/Connection/ConnectionConstants.hpp`. The server keeps the newest input of each player and moves its ship with it at each tick of a game in progress (see [Server and game](/R-Type/server/#moving-the-ships-shipcontrol)), and fires its missiles while it holds shoot (see [Server and game](/R-Type/server/#shooting-missilelauncher)).
 
@@ -444,7 +444,7 @@ Every row reads and writes the `PlayerSettings` that `Application` owns (see [Se
 
 The description of the selected row follows its state: the keys of an open list, `> PRESS THE NEW KEY. ESC CANCELS` while a key is awaited, `> THIS KEY CANNOT BE BOUND` after a key that cannot be bound, `> SAME KEY AS SHOOT: CHANGE ONE` when two actions share a key, `> SOUND MUTED: SEE MUTE ALL` on a muted volume, and the sizes too large for the desktop, which the list shows dashed and never takes. Every description fits right of BACK, 43 characters at most.
 
-REDUCE FLASHES is read by the game: its effects show no white and a hit shades the entity instead of whitening it (see [Reduced flashes](#reduced-flashes-flashpreference)). The READY key is read by the waiting room. The volumes and MUTE ALL are read by the sounds and the music, at once (see [Sounds and music](#sounds-and-music-soundplayer-musicplayer)). The color mode, SOUND CUES and AUTO-FIRE are saved and shown, but nothing reads them yet: there is no color palette, no sound cue and no auto-fire. Their descriptions end with `(COMING SOON)`.
+REDUCE FLASHES is read by the game: its effects show no white and a hit shades the entity instead of whitening it (see [Reduced flashes](#reduced-flashes-flashpreference)). AUTO-FIRE is read by the game at once: while it is on, every input holds shoot (see [Player commands](#player-commands-playercommands)). The READY key is read by the waiting room. The volumes and MUTE ALL are read by the sounds and the music, at once (see [Sounds and music](#sounds-and-music-soundplayer-musicplayer)). The color mode and SOUND CUES are saved and shown, but nothing reads them yet: there is no color palette and no sound cue. Their descriptions end with `(COMING SOON)`.
 
 Over the title (`ScreenId::Options`) the options hide it. Over a game (`ScreenId::GameOptions`) the game goes on running, dimmed under them, and THE GAME GOES ON is written in the top-right corner. The texts are in `src/client/Screens/OptionsScreenConstants.hpp`. The screen takes the window as an `ISizableWindow` (`src/client/Window/`) and saves through an `ISettingsStorage` (`src/client/Settings/`), so `client_screen_tests` checks it with a fake window and a recording storage from `tests/doubles/`.
 
@@ -510,6 +510,8 @@ const std::uint8_t actions = held.bits();
 ```
 
 `GameScreen::playerActions()` is the only way out, since the window hands the key and focus events to the screen on top. The game screen sends it to the server at each input due (see [Inputs to the server](#inputs-to-the-server-playerinputpacer-iplayerinputlink)); the client does not move the player's ship itself yet: it shows it where the world state of the server puts it. The game screen logs `actions held: <byte>` at trace level each time the byte changes. It assumes the window has the focus when it is built and learns otherwise from the focus events. Only the screen on top receives events, so opening the options releases every action held (`PlayerCommands::releaseAll()`): a key changed in the options would otherwise never release its action.
+
+While AUTO-FIRE is on (`PlayerSettings::autoFire`), `playerActions()` holds shoot as well, whatever the keys: releasing the shoot key, losing the focus or opening the options leaves it held, so the ship goes on firing without a key. The setting is read at each call, so a change in the options applies at the next input. The server fires at most `SHOTS_PER_SECOND` (3) missiles per second per ship, whatever the inputs say (see [Server and game](/R-Type/server/#shooting-missilelauncher)), so auto-fire fires no faster than the key held.
 
 ## Launch options: `LaunchOptions`
 
@@ -659,7 +661,7 @@ At the start of a game, the status canvas also shows MISSION START. `missionBann
 | Change the characters a field accepts | `TextField::Characters` and `TextField::accepts()`; the ranges in `src/client/Widgets/WidgetConstants.hpp` |
 | Change how the client joins a server, or how it holds the session | `ServerConnection` in `src/client/Connection/ServerConnection/`; `CONNECTION_REQUEST_INTERVAL`, `CONNECTION_ATTEMPT_TIMEOUT`, `READY_STATE_INTERVAL`, `DISCONNECTION_COPY_COUNT` and `DISCONNECTION_COPY_INTERVAL` in `src/client/Connection/ConnectionConstants.hpp`; `HEARTBEAT_INTERVAL`, shared with the server, in `src/network/Protocol/ProtocolConstants.hpp` |
 | Change how often the client sends its inputs | `PLAYER_INPUTS_PER_SECOND` in `src/client/Connection/ConnectionConstants.hpp`, `PlayerInputPacer` in `src/client/Connection/PlayerInputPacer/` |
-| Change what an input carries | `ServerConnection::sendPlayerInput()` in `src/client/Connection/ServerConnection/`, `GameScreen::update()` in `src/client/Screens/GameScreen/` |
+| Change what an input carries | `ServerConnection::sendPlayerInput()` in `src/client/Connection/ServerConnection/`, `GameScreen::update()` and `GameScreen::playerActions()`, which adds the shoot of AUTO-FIRE, in `src/client/Screens/GameScreen/` |
 | Change the texts, sizes or checks of the connection screen | `src/client/Screens/ConnectionScreenConstants.hpp`, `ConnectionScreen::connect()` |
 | Change the texts or the status line of the waiting room | `src/client/Screens/LobbyScreenConstants.hpp`, `statusLine()` in `src/client/Screens/LobbyScreen/LobbyScreen.cpp` |
 | Change how a bay of the waiting room looks | `src/client/Widgets/HangarBayConstants.hpp`, `paintHangarBay()` in `src/client/Widgets/HangarBay.cpp` |

@@ -22,6 +22,7 @@
 #include "ISky.hpp"
 #include "MissionBanner.hpp"
 #include "MissionStart.hpp"
+#include "PlayerAction.hpp"
 #include "PlayerInputPacer.hpp"
 #include "PlayerPreferences.hpp"
 // NOLINTNEXTLINE(misc-include-cleaner)
@@ -98,7 +99,7 @@ void GameScreen::handleEvent(const sf::Event& event) {
 }
 
 void GameScreen::update(engine::Duration elapsed) {
-  const ActionSet held = playerCommands_.held();
+  const ActionSet held = playerActions();
   if (inputPacer_.advance(elapsed)) {
     inputs_->sendPlayerInput(held);
   }
@@ -144,7 +145,13 @@ void GameScreen::repaintStatus() {
   paintedBanner_ = banner;
 }
 
-ActionSet GameScreen::playerActions() const { return playerCommands_.held(); }
+ActionSet GameScreen::playerActions() const {
+  ActionSet held = playerCommands_.held();
+  if (settings_->autoFire) {
+    held.add(PlayerAction::Shoot);
+  }
+  return held;
+}
 
 void GameScreen::draw(sf::RenderTarget& target) const {
   entityLayer_->show(target);
