@@ -22,6 +22,7 @@
 #include "EntityDestruction.hpp"
 #include "EntityIdConstants.hpp"
 #include "EventBus.hpp"
+#include "GameEndAnnouncer.hpp"
 #include "GameInstanceConstants.hpp"
 #include "GameSettings.hpp"
 #include "GameStarted.hpp"
@@ -145,6 +146,32 @@ void moveOneTick(const ShipMove& move) {
                                        engine::SIMULATION_TICK_DURATION);
 }
 
+/**
+ * @returns Whether @p player has a life left, the one of a ship it waits for
+ * included.
+ */
+bool hasALifeLeft(const ConnectedPlayer* player) { return player->lives > 0; }
+
+/**
+ * @returns Why a game in @p state, played by @p roster, must finish now: it is
+ * in progress with no player left in it, or with no player left who has a
+ * life. Nothing otherwise.
+ */
+std::optional<std::string_view> reasonToFinish(GameState state,
+                                               PlayerRoster& roster) {
+  if (state != GameState::InProgress) {
+    return std::nullopt;
+  }
+  const ConnectedPlayers players = roster.connected();
+  if (players.empty()) {
+    return NO_PLAYER_LEFT_FINISH_REASON;
+  }
+  if (std::ranges::none_of(players, hasALifeLeft)) {
+    return NO_LIFE_LEFT_FINISH_REASON;
+  }
+  return std::nullopt;
+}
+
 }  // namespace
 
 GameInstance::GameInstance(Send send, GameSettings settings,
@@ -206,7 +233,7 @@ void GameInstance::onTick(
     readPlayerDatagram(datagram);
   }
   closeSilentSessions();
-  finishIfAbandoned();
+  finishIfOver();
   advanceState();
   if (state_ == GameState::InProgress) {
     worldStateSender_.onTick(tick_, world_->components());
@@ -238,6 +265,8 @@ void GameInstance::advanceState() {
       if (finishedTicks_ >= FINISHED_STATE_TICKS) {
         startNewWorld();
         state_ = GameState::WaitingForPlayers;
+      } else if (gameEndAnnouncer_ != nullptr) {
+        gameEndAnnouncer_->onFinishedTick();
       }
       break;
   }
@@ -394,16 +423,15 @@ void GameInstance::logDeparture(const ConnectedPlayer& player,
                network::SESSION_TIMEOUT.count(), " s");
 }
 
-bool GameInstance::isAbandoned() {
-  return state_ == GameState::InProgress && roster_.connected().empty();
-}
-
-void GameInstance::finishIfAbandoned() {
-  if (!isAbandoned()) {
+void GameInstance::finishIfOver() {
+  const std::optional<std::string_view> reason =
+      reasonToFinish(state_, roster_);
+  if (!reason.has_value()) {
     return;
   }
-  logger_.info("game finished: no player left");
+  logger_.info("game finished: ", *reason);
   finish();
+  gameEndAnnouncer_ = std::make_unique<GameEndAnnouncer>(roster_, send_);
 }
 
 void GameInstance::sendHeartbeats() {
@@ -457,6 +485,7 @@ void GameInstance::buildWorld() {
                         shipSpawnAnnouncer_->onPlayerJoined(player);
                       }});
   lobbyStateAnnouncer_ = std::make_unique<LobbyStateAnnouncer>(roster_, send_);
+  gameEndAnnouncer_.reset();
 }
 
 void GameInstance::startNewWorld() {
