@@ -71,11 +71,6 @@ TEST(WorldStateCodec, EncodesTheLayoutOfTheProtocolPage) {
 }
 
 /**
- * Given a state with players and entities
- * When it is encoded then decoded
- * Then the decoded state equals the original
- */
-/**
  * Given a state of the largest u32 tick, whose player holds the largest value
  * of each of its fields and whose enemy missile has the largest u32 id, at
  * the smallest x and the largest y of the wire range
@@ -99,6 +94,11 @@ TEST(WorldStateCodec, KeepsTheLargestValueOfEachField) {
             state);
 }
 
+/**
+ * Given a state with players and entities
+ * When it is encoded then decoded
+ * Then the decoded state equals the original
+ */
 TEST(WorldStateCodec, DecodesWhatItEncoded) {
   const WorldState state{.tick = LATE_TICK,
                          .players = fourPlayers(),

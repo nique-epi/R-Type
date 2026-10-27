@@ -50,11 +50,6 @@ TEST(PlayerInput, EncodesTheInputNumberThenTheActions) {
 }
 
 /**
- * Given an input with all five actions held
- * When it is encoded then decoded
- * Then the decoded input equals the original
- */
-/**
  * Given an input numbered with the largest u32, every action held
  * When it is encoded then decoded
  * Then the decoded input equals the original
@@ -65,6 +60,11 @@ TEST(PlayerInput, KeepsTheLargestInputNumber) {
   EXPECT_EQ(decodeMessage<PlayerInput>(encodeMessage(input)), input);
 }
 
+/**
+ * Given an input with all five actions held
+ * When it is encoded then decoded
+ * Then the decoded input equals the original
+ */
 TEST(PlayerInput, DecodesWhatItEncoded) {
   const PlayerInput input{.inputNumber = SOME_INPUT_NUMBER,
                           .actions = EVERY_ACTION};
@@ -147,11 +147,6 @@ TEST(EntitySpawned, EncodesTheIdTheTypeThenThePosition) {
 }
 
 /**
- * Given Bydo 9 at (100, 50.5)
- * When its EntitySpawned is encoded then decoded
- * Then the decoded message equals the original
- */
-/**
  * Given an enemy missile of the largest u32 id, at the smallest x and the
  * largest y of the wire range
  * When its spawn is encoded then decoded
@@ -166,6 +161,11 @@ TEST(EntitySpawned, KeepsTheLargestIdAndTheEndsOfTheWireRange) {
   EXPECT_EQ(decodeMessage<EntitySpawned>(encodeMessage(spawned)), spawned);
 }
 
+/**
+ * Given Bydo 9 at (100, 50.5)
+ * When its EntitySpawned is encoded then decoded
+ * Then the decoded message equals the original
+ */
 TEST(EntitySpawned, DecodesWhatItEncoded) {
   EXPECT_EQ(decodeMessage<EntitySpawned>(encodeMessage(exampleBydo())),
             exampleBydo());
@@ -337,11 +337,6 @@ TEST(GameEvent, EncodesEveryFieldInOrder) {
 }
 
 /**
- * Given an event telling that entity 9 was damaged
- * When it is encoded then decoded
- * Then the decoded event equals the original
- */
-/**
  * Given a damage event of the largest u16 number, on the entity of the
  * largest u32 id
  * When it is encoded then decoded
@@ -356,6 +351,11 @@ TEST(GameEvent, KeepsTheLargestEventNumberAndEntityId) {
   EXPECT_EQ(decodeMessage<GameEvent>(encodeMessage(event)), event);
 }
 
+/**
+ * Given an event telling that entity 9 was damaged
+ * When it is encoded then decoded
+ * Then the decoded event equals the original
+ */
 TEST(GameEvent, DecodesWhatItEncoded) {
   const GameEvent event{.eventNumber = SOME_EVENT_NUMBER,
                         .kind = GameEventKind::EntityDamaged,
