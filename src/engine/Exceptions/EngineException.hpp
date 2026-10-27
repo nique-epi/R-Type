@@ -112,4 +112,31 @@ class InvalidLaunchOptionValueException : public EngineException {
                                     const std::string& value);
 };
 
+/**
+ * @brief A null module was given to an application.
+ */
+class NullModuleException : public EngineException {
+ public:
+  NullModuleException();
+};
+
+/**
+ * @brief A module of an application requires a module that is not listed before
+ * it.
+ */
+class MissingRequiredModuleException : public EngineException {
+ public:
+  MissingRequiredModuleException(const std::string& moduleName,
+                                 const std::string& requiredModule);
+};
+
+/**
+ * @brief A module of an application threw while it started.
+ */
+class ModuleStartFailedException : public EngineException {
+ public:
+  ModuleStartFailedException(const std::string& moduleName,
+                             const std::string& reason);
+};
+
 }  // namespace rtype::engine
