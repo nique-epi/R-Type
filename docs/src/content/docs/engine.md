@@ -233,7 +233,7 @@ The reasoning behind the order is in [Architecture](/R-Type/architecture/#module
 | Change how components are stored | `src/engine/Components/ComponentStorage.hpp`, `EntityIndexMap/` |
 | Change how entities are created or recycled | `src/engine/EntityRegistry/` |
 | Change the simulation rate | `SIMULATION_TICKS_PER_SECOND` in `src/engine/Time/TimeConstants.hpp` |
-| Write a behavior that walks components | A class implementing `ISystem` in `src/engine/Systems/ISystem.hpp`, added to a `SystemScheduler` |
+| Write a behavior that walks components | A class implementing `ISystem` (declared in `src/engine/Systems/ISystem.hpp`), written in the library it belongs to (the game's are in `src/game/Systems/`), added to a `SystemScheduler` |
 | Change how entities move | `MovementSystem` in `src/game/Systems/MovementSystem/`; the ships move through `ShipControl` in `src/game/ShipControl/` instead |
 | Change the order systems run in | The order of the `SystemScheduler::add()` calls |
 | Change how network identifiers are given or looked up | `src/engine/NetworkIds/` |
@@ -242,7 +242,7 @@ The reasoning behind the order is in [Architecture](/R-Type/architecture/#module
 | Announce that something happened, or react to it | `EventBus` in `src/engine/Events/EventBus/`: `publish` the event, `subscribe<Event>` to it |
 | Hand data from one thread to another | `BoundedQueue`, in its own library: see [Concurrency](/R-Type/concurrency/) |
 | Change how the launch options are read, or how the usage and the launch errors read | `src/engine/LaunchArguments/`; each program's own options are in its `LaunchOptions` |
-| Add a part a program can switch on or off | A class implementing `IModule` in `src/engine/Modules/IModule.hpp`, listed after its dependencies in the list given to `Application` |
+| Add a part a program can switch on or off | A class implementing `IModule` (declared in `src/engine/Modules/IModule.hpp`), written in the program or library it belongs to, listed after its dependencies in the list given to `Application` |
 | Add an engine error | `src/engine/Exceptions/EngineException.hpp` |
 | Write a test that depends on time | `tests/SimulatedClock.hpp`, `tests/engine/Time/FixedTimestepTest.cpp` |
 
