@@ -8,10 +8,11 @@ namespace rtype::engine {
 /**
  * @brief One part of a program that an Application installs, starts and stops.
  *
- * install() prepares the module and opens nothing; start() opens what the
- * module needs to run (a socket, a thread, a file); stop() closes it. An
- * Application calls install() once, start() once after every module is
- * installed, and stop() once after a start() that returned.
+ * install() prepares the module and keeps nothing open; start() opens what
+ * must live until stop() (a socket, a thread, a file kept open, an event
+ * subscription); stop() closes it. An Application calls install() once,
+ * start() once after every module is installed, and stop() once after a
+ * start() that returned.
  */
 class IModule {
  public:
@@ -26,11 +27,21 @@ class IModule {
    */
   [[nodiscard]] virtual std::vector<std::string> dependencies() const = 0;
 
-  /** @brief Prepares the module. Opens nothing. */
+  /**
+   * @brief Prepares the module, and keeps nothing open when it returns.
+   *
+   * It may read a file and close it, build its own objects and check its
+   * configuration. It binds no socket, starts no thread, keeps no file open
+   * and subscribes to no event: a module installed but never started is never
+   * stopped.
+   */
   virtual void install() = 0;
 
   /**
-   * @brief Opens what the module needs to run.
+   * @brief Opens what the module needs until stop().
+   *
+   * A start() that throws first closes what it already opened: the Application
+   * does not call stop() on the module whose start() threw.
    *
    * @throws std::exception, or a class derived from it, when the module cannot
    * start.
