@@ -27,6 +27,10 @@ class OptionsScreenFixture : public ::testing::Test {
   /** @brief Taps the key at the place of E, which opens the next tab. */
   void openNextTab();
 
+  /** @brief On the DISPLAY tab, DISPLAY MODE selected: opens the list of modes
+   * and takes BORDERLESS. */
+  void takeBorderless();
+
   rtype::client::PlayerSettings& settings();
   RecordingSettingsStorage& storage();
   FakeSizableWindow& window();

@@ -12,4 +12,5 @@ rtype_enable_warnings(rtype_client_window_size_text)
 
 add_subdirectory(PlayfieldViewport)
 add_subdirectory(WindowSizeSelection)
+add_subdirectory(WindowLayout)
 add_subdirectory(GameWindow)
