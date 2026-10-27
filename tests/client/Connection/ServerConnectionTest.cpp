@@ -39,6 +39,7 @@
 
 namespace rtype::client {
 
+using testing::ACCEPTANCE_SEQUENCE;
 using testing::ACCEPTED_PLAYER_NUMBER;
 using testing::APPLIED_TICK;
 using testing::CHALLENGE_COOKIE;
@@ -1388,6 +1389,48 @@ TEST_F(ServerConnectionFixture, AFrameLongerThanTheTimeoutLosesNoSession) {
   deliverInSession(network::Heartbeat{}, FIRST_SEQUENCE);
 
   update(PROTOCOL_SESSION_TIMEOUT + ONE_NANOSECOND);
+
+  EXPECT_EQ(phase(), Phase::Accepted);
+}
+
+/**
+ * Given a client idle for the session timeout, then an attempt the server
+ * accepts one request interval after it started
+ * When the session timeout minus one nanosecond passes
+ * Then the session holds: neither the idle time nor the wait of the attempt
+ * counts as silence of the session
+ */
+TEST_F(ServerConnectionFixture, KeepsASessionOpenedAfterAnIdleWait) {
+  update(PROTOCOL_SESSION_TIMEOUT);
+  connect();
+  update(PROTOCOL_REQUEST_INTERVAL);
+  deliverInSession(
+      network::ConnectionAccepted{.playerNumber = ACCEPTED_PLAYER_NUMBER},
+      ACCEPTANCE_SEQUENCE);
+  update();
+
+  update(PROTOCOL_SESSION_TIMEOUT - ONE_NANOSECOND);
+
+  EXPECT_EQ(phase(), Phase::Accepted);
+}
+
+/**
+ * Given a session lost to the silence of its server, then a new attempt the
+ * server accepts one request interval after it started
+ * When the session timeout minus one nanosecond passes
+ * Then the new session holds: the silence of the lost one does not carry over
+ */
+TEST_F(ServerConnectionFixture, KeepsASessionOpenedAfterALostOne) {
+  accept();
+  update(PROTOCOL_SESSION_TIMEOUT);
+  connect();
+  update(PROTOCOL_REQUEST_INTERVAL);
+  deliverInSession(
+      network::ConnectionAccepted{.playerNumber = ACCEPTED_PLAYER_NUMBER},
+      ACCEPTANCE_SEQUENCE);
+  update();
+
+  update(PROTOCOL_SESSION_TIMEOUT - ONE_NANOSECOND);
 
   EXPECT_EQ(phase(), Phase::Accepted);
 }
