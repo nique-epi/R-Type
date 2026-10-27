@@ -66,16 +66,20 @@ struct PlayerSettings;
  *
  * Key and focus events feed the player commands, by the place of the keys on
  * the keyboard and through the keys the player chose: playerActions() tells
- * what the player holds right now, and nothing while the window has no focus.
- * The screen assumes the window has the focus when it is built, and learns
- * otherwise from the focus events; only the screen on top receives events,
- * which is why opening the options releases what is held. The actions held
- * are logged each time they change.
+ * what the player holds right now, and nothing while the window has no focus,
+ * but shoot while AUTO-FIRE is on. The screen assumes the window has the focus
+ * when it is built, and learns otherwise from the focus events; only the
+ * screen on top receives events, which is why opening the options releases
+ * what is held. The actions held are logged each time they change.
  *
  * Each update sends the actions held to the server when the PlayerInputPacer
  * says an input is due, the first update included. The game goes on behind the
- * options, so it keeps sending them there, with nothing held, and keeps
- * applying what the server announces.
+ * options, so it keeps sending them there, with nothing held but shoot while
+ * AUTO-FIRE is on, and keeps applying what the server announces.
+ *
+ * AUTO-FIRE is read in the settings at each call of playerActions(), so a
+ * change in the options applies at once. The server keeps its own rate of
+ * fire, so the ship fires no faster than with the shoot key held.
  */
 class GameScreen : public IScreen {
  public:
@@ -98,7 +102,8 @@ class GameScreen : public IScreen {
   void draw(sf::RenderTarget& target) const override;
   [[nodiscard]] bool hidesScreensBelow() const override;
 
-  /** @returns The actions the player holds right now. */
+  /** @returns The actions the player holds right now, and shoot while
+   * AUTO-FIRE is on. */
   [[nodiscard]] ActionSet playerActions() const;
 
  private:
