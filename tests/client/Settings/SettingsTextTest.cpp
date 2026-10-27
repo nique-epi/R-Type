@@ -5,45 +5,27 @@
 #include <vector>
 #include "BoundAction.hpp"
 #include "ColorMode.hpp"
-#include "PixelSize.hpp"
 #include "PlayerSettings.hpp"
 #include "SettingsText.hpp"
+#include "SettingsTextTestConstants.hpp"
 
 using rtype::client::BoundAction;
 using rtype::client::ColorMode;
-using rtype::client::PixelSize;
 using rtype::client::PlayerSettings;
 using rtype::client::readSettingsText;
 using rtype::client::settingsText;
+using rtype::client::testing::ANY_VOLUME;
+using rtype::client::testing::CHANGED_EFFECTS_VOLUME;
+using rtype::client::testing::CHANGED_MUSIC_VOLUME;
+using rtype::client::testing::FIRST_LAUNCH_FILE;
+using rtype::client::testing::FIRST_LAUNCH_MUSIC_VOLUME;
+using rtype::client::testing::FIRST_LINE_WITHOUT_SEPARATOR;
+using rtype::client::testing::HIGHEST_VOLUME;
+using rtype::client::testing::INVALID_FIRST_LINE;
+using rtype::client::testing::LOWEST_VOLUME;
+using rtype::client::testing::SMALLER_WINDOW;
+using rtype::client::testing::UNKNOWN_FIRST_LINE;
 using Scan = sf::Keyboard::Scan;
-
-namespace {
-
-/** @brief The file of a first launch, as the format of the options writes
- * it: a comment, the version, one line per setting. */
-constexpr const char* FIRST_LAUNCH_FILE =
-    "# R-Type settings, written by the game\n"
-    "version=1\n"
-    "music_volume=70\n"
-    "effects_volume=80\n"
-    "mute_all=off\n"
-    "key_move_up=UP\n"
-    "key_move_down=DOWN\n"
-    "key_move_left=LEFT\n"
-    "key_move_right=RIGHT\n"
-    "key_shoot=SPACE\n"
-    "key_ready=R\n"
-    "color_mode=off\n"
-    "reduce_flashes=off\n"
-    "sound_cues=off\n"
-    "auto_fire=off\n";
-
-constexpr int ANY_VOLUME = 40;
-constexpr int QUIET_MUSIC = 35;
-constexpr int QUIET_EFFECTS = 5;
-constexpr PixelSize SMALLER_WINDOW{.width = 1280, .height = 720};
-
-}  // namespace
 
 /**
  * Given the settings of a first launch
@@ -61,8 +43,8 @@ TEST(SettingsTextTest, AFirstLaunchWritesTheDocumentedFile) {
  */
 TEST(SettingsTextTest, EveryChangedSettingReadsBack) {
   PlayerSettings settings;
-  settings.musicVolume = QUIET_MUSIC;
-  settings.effectsVolume = QUIET_EFFECTS;
+  settings.musicVolume = CHANGED_MUSIC_VOLUME;
+  settings.effectsVolume = CHANGED_EFFECTS_VOLUME;
   settings.muted = true;
   settings.windowSize = SMALLER_WINDOW;
   settings.keys.bind(BoundAction::Shoot, Scan::LControl);
@@ -85,10 +67,9 @@ TEST(SettingsTextTest, EveryChangedSettingReadsBack) {
 TEST(SettingsTextTest, AnInvalidValueKeepsTheDefaultOfThatSettingOnly) {
   const auto reading = readSettingsText("music_volume=101\neffects_volume=40\n",
                                         PlayerSettings{});
-  EXPECT_EQ(reading.settings.musicVolume, 70);
+  EXPECT_EQ(reading.settings.musicVolume, FIRST_LAUNCH_MUSIC_VOLUME);
   EXPECT_EQ(reading.settings.effectsVolume, ANY_VOLUME);
-  EXPECT_EQ(reading.ignoredLines,
-            std::vector<std::string>{"line 1: invalid value"});
+  EXPECT_EQ(reading.ignoredLines, std::vector<std::string>{INVALID_FIRST_LINE});
 }
 
 /**
@@ -98,10 +79,10 @@ TEST(SettingsTextTest, AnInvalidValueKeepsTheDefaultOfThatSettingOnly) {
  */
 TEST(SettingsTextTest, AVolumeIsTakenFromZeroToOneHundred) {
   const std::vector<std::pair<std::string, int>> cases{
-      {"music_volume=-1", 70},
-      {"music_volume=0", 0},
-      {"music_volume=100", 100},
-      {"music_volume=101", 70}};
+      {"music_volume=-1", FIRST_LAUNCH_MUSIC_VOLUME},
+      {"music_volume=0", LOWEST_VOLUME},
+      {"music_volume=100", HIGHEST_VOLUME},
+      {"music_volume=101", FIRST_LAUNCH_MUSIC_VOLUME}};
   for (const auto& [text, volume] : cases) {
     EXPECT_EQ(readSettingsText(text, PlayerSettings{}).settings.musicVolume,
               volume)
@@ -117,8 +98,7 @@ TEST(SettingsTextTest, AVolumeIsTakenFromZeroToOneHundred) {
 TEST(SettingsTextTest, AnUnknownSettingIsListed) {
   const auto reading = readSettingsText("brightness=3", PlayerSettings{});
   EXPECT_EQ(reading.settings, PlayerSettings{});
-  EXPECT_EQ(reading.ignoredLines,
-            std::vector<std::string>{"line 1: unknown setting"});
+  EXPECT_EQ(reading.ignoredLines, std::vector<std::string>{UNKNOWN_FIRST_LINE});
 }
 
 /**
@@ -128,7 +108,7 @@ TEST(SettingsTextTest, AnUnknownSettingIsListed) {
  */
 TEST(SettingsTextTest, ALineWithoutEqualsSignIsListed) {
   EXPECT_EQ(readSettingsText("music_volume 40", PlayerSettings{}).ignoredLines,
-            std::vector<std::string>{"line 1: not NAME=VALUE"});
+            std::vector<std::string>{FIRST_LINE_WITHOUT_SEPARATOR});
 }
 
 /**
@@ -152,8 +132,7 @@ TEST(SettingsTextTest, SpacesLineEndsAndCommentsAreIgnored) {
 TEST(SettingsTextTest, AnUnknownKeyNameKeepsTheKey) {
   const auto reading = readSettingsText("key_shoot=SPACEBAR", PlayerSettings{});
   EXPECT_EQ(reading.settings.keys.keyOf(BoundAction::Shoot), Scan::Space);
-  EXPECT_EQ(reading.ignoredLines,
-            std::vector<std::string>{"line 1: invalid value"});
+  EXPECT_EQ(reading.ignoredLines, std::vector<std::string>{INVALID_FIRST_LINE});
 }
 
 /**
@@ -180,8 +159,7 @@ TEST(SettingsTextTest, AnotherVersionIsListedAndItsSettingsRead) {
   const auto reading =
       readSettingsText("version=2\nmusic_volume=40\n", PlayerSettings{});
   EXPECT_EQ(reading.settings.musicVolume, ANY_VOLUME);
-  EXPECT_EQ(reading.ignoredLines,
-            std::vector<std::string>{"line 1: invalid value"});
+  EXPECT_EQ(reading.ignoredLines, std::vector<std::string>{INVALID_FIRST_LINE});
 }
 
 /**
