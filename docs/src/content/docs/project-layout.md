@@ -154,7 +154,7 @@ src/server/
 ```
 src/client/
 ├── Application/      frame loop and screen stack
-├── Window/           the SFML window
+├── Window/           the SFML window, its display mode and its size
 ├── Assets/           assets found by id, loaded at launch or entering a game
 ├── Platform/         what differs between Windows, macOS and Linux
 ├── LaunchOptions/    server address, port and nickname

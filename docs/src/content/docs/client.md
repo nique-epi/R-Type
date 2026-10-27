@@ -3,13 +3,13 @@ title: Client
 description: What the client does, how its parts fit together and where to find them in the code.
 ---
 
-The client, `r-type_client` (`src/client/`), shows the game, plays its sounds and reads the player's input; the server decides what happens in the match (see [Architecture](/R-Type/architecture/)). Today it finds its assets folder, loads the assets of its interface, opens a window and runs its screens over a scrolling starfield: an intro of 5.5 s set to the beats of its theme, which it opens on, the title screen, a connection screen, a waiting room, a loading screen, the game screen, which draws the entities the server announces from one sprite sheet, animated, and their effects from another, on a ladder of intensity from a shot to a ship destroyed, and opens each game with MISSION START, an options screen and a quit confirmation, the menus all built from the same widgets. The game screen reads the player's actions through the keys the player chose, the arrows and the space bar at first; the options change them, with the volumes, the window size and the accessibility settings, and save them in a file for the next launch. It reads the server's address and port and the player's nickname at launch, shows them on its connection screen, and joins the server from there: it sends the connection request of the protocol, on a network thread opened at launch, until the server accepts or refuses it. Once accepted, it opens a waiting room that lists the players of the server and where the player says it is ready, then the game when the server announces its start, where the ships and Bydos appear, move and disappear as the server says, over a status band that shows the nickname, the lives and the score of each pilot. From launch it plays its theme in a loop, the sounds of the intro and of what the server announces, and a click on the buttons and tabs of its menus.
+The client, `r-type_client` (`src/client/`), shows the game, plays its sounds and reads the player's input; the server decides what happens in the match (see [Architecture](/R-Type/architecture/)). Today it finds its assets folder, loads the assets of its interface, opens a window and runs its screens over a scrolling starfield: an intro of 5.5 s set to the beats of its theme, which it opens on, the title screen, a connection screen, a waiting room, a loading screen, the game screen, which draws the entities the server announces from one sprite sheet, animated, and their effects from another, on a ladder of intensity from a shot to a ship destroyed, and opens each game with MISSION START, an options screen and a quit confirmation, the menus all built from the same widgets. The game screen reads the player's actions through the keys the player chose, the arrows and the space bar at first; the options change them, with the volumes, the display mode, the window size and the accessibility settings, and save them in a file for the next launch. It reads the server's address and port and the player's nickname at launch, shows them on its connection screen, and joins the server from there: it sends the connection request of the protocol, on a network thread opened at launch, until the server accepts or refuses it. Once accepted, it opens a waiting room that lists the players of the server and where the player says it is ready, then the game when the server announces its start, where the ships and Bydos appear, move and disappear as the server says, over a status band that shows the nickname, the lives and the score of each pilot. From launch it plays its theme in a loop, the sounds of the intro and of what the server announces, and a click on the buttons and tabs of its menus.
 
 This page tells you where to look when you need to change something. It describes what exists today and says plainly what does not exist yet.
 
 | Part | State | Where |
 |---|---|---|
-| Window | Available | `src/client/Window/` |
+| Window | Available: windowed, or borderless over the whole screen | `src/client/Window/` |
 | Frame loop and screen stack | Available | `src/client/Application/` |
 | Screens | Available: intro, title, connection, waiting room, loading, game, options and quit confirmation | `src/client/Screens/` |
 | Menu widgets and their builder | Available; used by the title, the connection screen, the waiting room, the options and the quit confirmation | `src/client/Widgets/` |
@@ -17,7 +17,7 @@ This page tells you where to look when you need to change something. It describe
 | Controls of a row: slider, switch, selector, list, key slot, link | Available; used by the options | `src/client/Widgets/RowControls/` |
 | Assets folder and asset ids | Available | `src/client/Assets/`, `assets/README.md` |
 | Asset loading | Available; used at launch for the interface assets, and by the loading screen | `src/client/Assets/AssetLibrary/`, `src/client/Assets/AssetLoadingStep/` |
-| Path of the running executable, the reduced motion setting of the system, the settings folder | Available | `src/client/Platform/` |
+| Path of the running executable, the reduced motion setting of the system, the settings folder, how a borderless window covers the screen | Available | `src/client/Platform/` |
 | Player settings and their file | Available; the game reads the flashes setting and auto-fire, the sounds and the music read the volumes and MUTE ALL; the color mode and the sound cues are saved, but nothing reads them yet | `src/client/Settings/` |
 | Drawing entities | Available; drawn by the game screen | `src/client/Rendering/Drawing/EntityLayer/`, `src/client/Rendering/Drawing/RenderSystem/`, `src/client/Rendering/Drawing/SfmlDrawSurface/`, `src/client/Rendering/Sprites/AssetTextureSource/` |
 | Sprites of the ships, Bydos and missiles | Available, animated | `assets/sprites/entities.png`, `src/client/Rendering/Sprites/EntitySprites.cpp` |
@@ -57,6 +57,12 @@ Screens are asked for by identifier: `push()` and `replaceAll()` take a `ScreenI
 | `QuitConfirmationScreen` | over the title, still drawn under a dimmed layer, a panel: ARE YOU SURE YOU WANT TO QUIT?, NO selected | NO or Escape closes it; YES asks `closeAll()`, which closes the client |
 
 The frame loop draws the scrolling background under every screen, the loading screen and the options included, even when they hide the screens below; this is **provisional**, since the starfield will probably become the background of the game screen alone. At launch the client opens on the intro, with `replaceAll(ScreenId::Intro)`, or on the title screen, with `replaceAll(ScreenId::Title)`, when the system asks for less motion (`systemPrefersReducedMotion()`); the intro gives way to the title with `replaceAll(ScreenId::Title)`. PLAY pushes the connection screen, which pushes the waiting room once a connection is accepted; the waiting room asks for the game with `replaceAll(ScreenId::Game)` once the server announces its start: the loading screen of `gameAssets()` while some are not loaded, then the game screen. A file the loading screen cannot load stops the client with exit code 1, naming every such file. The game opens the options on the release of `OPTIONS_KEY`, not on its press: the system repeats the press of a held key, which would open and close them again and again. Menus act on releases for the same reason (see [Menus](#menus-menubuilder-menu)).
+
+## Window: `GameWindow`, `WindowLayout`
+
+`GameWindow` (`src/client/Window/GameWindow/`) opens the window in one of two display modes, `DisplayMode` (`src/client/Window/DisplayMode.hpp`). Windowed, it has a title bar and the size the player picks among `WINDOW_SIZES`, centered on the desktop; `WindowSizeSelection` offers only the sizes strictly smaller than the desktop, since a window as large as the desktop does not fit once its title bar is added. Borderless, it covers the whole screen at the size of the desktop and never changes the resolution, so a 1920 × 1080 screen shows the game at 1920 × 1080. `WindowLayout` (`src/client/Window/WindowLayout/`) holds the mode and the size, and gives the frame of the window, its size and position, in both modes; while the window is borderless no size is selected, and the size selected before comes back once it is windowed again.
+
+SFML 3 sets the border of a window only when it opens it, so changing the mode closes the window and opens it again, then sets the frame limit and the view of the playfield again. How a borderless window covers the screen depends on the system (`borderlessUsesDesktopFullscreen()`, see [Platform](#platform-the-executable-path)): on Windows, a window without border as large as the desktop, which the taskbar steps aside for; on macOS and Linux, SFML's fullscreen at the video mode of the desktop, since SFML leaves a window without border at the level of ordinary windows, under the menu bar and the Dock. On a desktop without the proportions of the playfield, such as a 16:10 laptop screen, black bars fill the rest.
 
 ## Assets: the folder and the ids
 
@@ -437,12 +443,12 @@ The rate is **provisional**, like every rate of the protocol page: code must rea
 |---|---|
 | SOUND | MUSIC and EFFECTS, sliders from 0 to 100 % by `VOLUME_STEP` (5); MUTE ALL; DEFAULT SOUND |
 | CONTROLS | MOVE UP, MOVE DOWN, MOVE LEFT, MOVE RIGHT, SHOOT and READY, one key slot each; DEFAULT KEYS |
-| DISPLAY | WINDOW SIZE, a list, and under it every size of `WINDOW_SIZES` drawn to scale |
+| DISPLAY | DISPLAY MODE, a list of WINDOWED and BORDERLESS; WINDOW SIZE, a list, and under it every size of `WINDOW_SIZES` drawn to scale. While the window is borderless, WINDOW SIZE is disabled and shows the size of the screen, and the chart is not drawn |
 | ACCESS | COLOR MODE, a selector; REDUCE FLASHES, SOUND CUES, AUTO-FIRE |
 
-Every row reads and writes the `PlayerSettings` that `Application` owns (see [Settings](/R-Type/client/#settings-playersettings-settingsfile)). A change takes effect at once: the window takes its new size, and the game reads the new keys as soon as the options close. It is saved at the next update, once a frame at most, so a slider dragged is saved at each step it crosses and a window closed meanwhile loses nothing. SAVED is then written at the end of the rule for `SAVED_STAMP_DURATION` (1 s); NOT SAVED stays until the next save that works. DEFAULT SOUND and DEFAULT KEYS ask first, in a dialog over the options with NO selected; Escape answers NO.
+Every row reads and writes the `PlayerSettings` that `Application` owns (see [Settings](/R-Type/client/#settings-playersettings-settingsfile)). A change takes effect at once: the window takes its new size or display mode, and the game reads the new keys as soon as the options close. It is saved at the next update, once a frame at most, so a slider dragged is saved at each step it crosses and a window closed meanwhile loses nothing. SAVED is then written at the end of the rule for `SAVED_STAMP_DURATION` (1 s); NOT SAVED stays until the next save that works. DEFAULT SOUND and DEFAULT KEYS ask first, in a dialog over the options with NO selected; Escape answers NO.
 
-The description of the selected row follows its state: the keys of an open list, `> PRESS THE NEW KEY. ESC CANCELS` while a key is awaited, `> THIS KEY CANNOT BE BOUND` after a key that cannot be bound, `> SAME KEY AS SHOOT: CHANGE ONE` when two actions share a key, `> SOUND MUTED: SEE MUTE ALL` on a muted volume, and the sizes too large for the desktop, which the list shows dashed and never takes. Every description fits right of BACK, 43 characters at most.
+The description of the selected row follows its state: the keys of an open list, `> PRESS THE NEW KEY. ESC CANCELS` while a key is awaited, `> THIS KEY CANNOT BE BOUND` after a key that cannot be bound, `> SAME KEY AS SHOOT: CHANGE ONE` when two actions share a key, `> SOUND MUTED: SEE MUTE ALL` on a muted volume, `> BORDERLESS COVERS THE WHOLE SCREEN` on a borderless window, and the sizes too large for the desktop, which the list shows dashed and never takes. Every description fits right of BACK, 43 characters at most.
 
 REDUCE FLASHES is read by the game: its effects show no white and a hit shades the entity instead of whitening it (see [Reduced flashes](#reduced-flashes-flashpreference)). AUTO-FIRE is read by the game at once: while it is on, every input holds shoot (see [Player commands](#player-commands-playercommands)). The READY key is read by the waiting room. The volumes and MUTE ALL are read by the sounds and the music, at once (see [Sounds and music](#sounds-and-music-soundplayer-musicplayer)). The color mode and SOUND CUES are saved and shown, but nothing reads them yet: there is no color palette and no sound cue. Their descriptions end with `(COMING SOON)`.
 
@@ -452,9 +458,9 @@ The chart of the window sizes is `paintWindowSizeChart()` (`rtype_client_window_
 
 ## Settings: `PlayerSettings`, `SettingsFile`
 
-`PlayerSettings` (`rtype_client_settings`, `src/client/Settings/`) holds what the player sets: the music and effects volumes, in percent from `MINIMUM_VOLUME` (0) to `MAXIMUM_VOLUME` (100), mute, the window size, empty until the player picks one, the keys (`KeyBindings`), the color mode, reduce flashes, sound cues and auto-fire. A default-built value holds the settings of a first launch; `Application` then takes reduce flashes from the system (`systemPrefersReducedMotion()`).
+`PlayerSettings` (`rtype_client_settings`, `src/client/Settings/`) holds what the player sets: the music and effects volumes, in percent from `MINIMUM_VOLUME` (0) to `MAXIMUM_VOLUME` (100), mute, the window size, empty until the player picks one, the display mode, windowed at first, the keys (`KeyBindings`), the color mode, reduce flashes, sound cues and auto-fire. A default-built value holds the settings of a first launch; `Application` then takes reduce flashes from the system (`systemPrefersReducedMotion()`).
 
-`SettingsFile` (`rtype_client_settings_file`, `src/client/Settings/SettingsFile/`) keeps them in a text file, one `name=value` per line, readable and editable by hand. A first launch writes:
+`SettingsFile` (`rtype_client_settings_file`, `src/client/Settings/SettingsFile/`) keeps them in a text file, one `name=value` per line, readable and editable by hand, whose text `settingsText()` and `readSettingsText()` write and read (`rtype_client_settings_text`, `src/client/Settings/SettingsText/`). A first launch writes:
 
 ```ini
 # R-Type settings, written by the game
@@ -462,6 +468,7 @@ version=1
 music_volume=70
 effects_volume=80
 mute_all=off
+display_mode=windowed
 key_move_up=UP
 key_move_down=DOWN
 key_move_left=LEFT
@@ -474,7 +481,7 @@ sound_cues=off
 auto_fire=off
 ```
 
-`window_size=1920x1080` follows `mute_all` once a size is picked. `readSettingsText()` reads a file over the settings of a first launch: a line that is missing, unknown or invalid leaves the default of that setting only, and is logged as a warning with its number (`line 3: unknown setting`); spaces around a name or a value, a final `\r` and lines starting with `#` are ignored; a file larger than `MAXIMUM_SETTINGS_FILE_SIZE` (65536 bytes) is ignored whole. A save writes `settings.ini.tmp` next to the file, then renames it over the file, so the file is always the previous one or the new one. The folder is created on the first save, open to its owner only.
+`window_size=1920x1080` comes between `mute_all` and `display_mode` once a size is picked; `display_mode` is `windowed` or `borderless`. `readSettingsText()` reads a file over the settings of a first launch: a line that is missing, unknown or invalid leaves the default of that setting only, and is logged as a warning with its number (`line 3: unknown setting`); spaces around a name or a value, a final `\r` and lines starting with `#` are ignored; a file larger than `MAXIMUM_SETTINGS_FILE_SIZE` (65536 bytes) is ignored whole. A save writes `settings.ini.tmp` next to the file, then renames it over the file, so the file is always the previous one or the new one. The folder is created on the first save, open to its owner only.
 
 | System | Folder of `settings.ini` |
 |---|---|
@@ -482,7 +489,7 @@ auto_fire=off
 | macOS | `~/Library/Application Support/R-Type` |
 | Windows | `%LOCALAPPDATA%\R-Type` |
 
-`settingsFolder()` (`src/client/Platform/`) finds it, and the client logs `settings file: <path>` at launch; when the system tells no folder, the settings last for that launch only. A size saved that no longer fits the desktop is kept in the file, and the window opens at the largest size that fits.
+`settingsFolder()` (`src/client/Platform/`) finds it, and the client logs `settings file: <path>` at launch; when the system tells no folder, the settings last for that launch only. A size saved that no longer fits the desktop is kept in the file, and the window opens at the largest size that fits. The window opens in the display mode saved.
 
 ## Sounds and music: `SoundPlayer`, `MusicPlayer`
 
@@ -554,6 +561,8 @@ The incoming queue holds `INCOMING_DATAGRAM_QUEUE_CAPACITY` (256) datagrams, nea
 `systemPrefersReducedMotion()`, in the same folder and the same way, tells whether the player asked the system for less motion: "Reduce motion" on macOS (read from AppKit), "Show animations in Windows" turned off on Windows (`SPI_GETCLIENTAREAANIMATION`), the GNOME setting `enable-animations` turned off on Linux (read with `gsettings`). A setting the system does not give counts as no request. No test reads it: its answer depends on the machine.
 
 `settingsFolder()`, in the same folder and the same way, gives the folder where the client keeps the player's files (see [Settings](/R-Type/client/#settings-playersettings-settingsfile)), or nothing when the system does not tell.
+
+`borderlessUsesDesktopFullscreen()`, in the same folder and the same way, tells how a borderless window covers the screen: `false` on Windows, a window without border; `true` on macOS and Linux, SFML's fullscreen at the video mode of the desktop (see [Window](#window-gamewindow-windowlayout)).
 
 ## World state: `WorldStateFilter`
 
@@ -671,7 +680,7 @@ At the start of a game, the status canvas also shows MISSION START. `missionBann
 | Change where the parts of the menus go | `MenuBuilder::placeColumn()`, `placeDialog()`, `placeForm()`, `placeTabbedPanel()` and `placeRoom()`, `src/client/Widgets/WidgetConstants.hpp` |
 | Add a control to a row | A class deriving from `RowControl` in its own folder under `src/client/Widgets/RowControls/`, its sizes in `RowControlConstants.hpp`, added with `MenuBuilder::row()` |
 | Change the rows, texts or tabs of the options | `src/client/Screens/OptionsScreenConstants.hpp`, `OptionsScreen::soundTab()`, `controlsTab()`, `displayTab()` and `accessTab()` in `src/client/Screens/OptionsScreen/` |
-| Add a setting | A member of `PlayerSettings`, its name in `src/client/Settings/SettingsConstants.hpp`, its line in `settingsText()` and `applyLine()` (`SettingsText.cpp`), its row in `OptionsScreen` |
+| Add a setting | A member of `PlayerSettings`, its name in `src/client/Settings/SettingsConstants.hpp`, its line in `settingsText()` and `applySetting()` (`src/client/Settings/SettingsText/SettingsText.cpp`), its row in `OptionsScreen` |
 | Change where the settings file is kept | `settingsFolder()` in `src/client/Platform/`, `SETTINGS_FILE_NAME` in `SettingsConstants.hpp` |
 | Change how a bar looks | `Button::lookOf()`, `src/client/Widgets/WidgetColors.hpp` |
 | Change the keys of the menus, or how long a press shows | `MENU_NEXT_KEYS`, `MENU_PREVIOUS_KEYS`, `MENU_TAB_KEY`, `MENU_CONFIRM_KEY`, `MENU_CANCEL_KEY`, `FIELD_ERASE_KEY`, `PRESS_DURATION` in `WidgetConstants.hpp` |
@@ -696,7 +705,7 @@ At the start of a game, the status canvas also shows MISSION START. `missionBann
 | Change how the sky and the entities are enlarged | `PixelCanvas::show` in `src/client/Rendering/PixelCanvas/`, `IntegerScale/` in `src/client/Rendering/Background/` |
 | Change the keys of a first launch, or which keys can be bound | `DEFAULT_KEYS` and `KEY_NAMES` in `src/client/Input/InputConstants.hpp` |
 | Add a bound action | `BoundAction` and `BOUND_ACTIONS` (`src/client/Input/BoundAction.hpp`), `DEFAULT_KEYS`, `KeyBindings::playerActionOf()` when it is a `PlayerAction` with its bit in the protocol, `BOUND_ACTION_KEY_NAMES` in `SettingsConstants.hpp`, `BOUND_ACTION_LABELS` in `OptionsScreenConstants.hpp` |
-| Change the window, or when the background moves and is drawn | `src/client/Window/GameWindow/`, `Application::measureFrame()` and `Application::render()` in `src/client/Application/Application/` |
+| Change the window, its display modes, or when the background moves and is drawn | `src/client/Window/GameWindow/`, `src/client/Window/WindowLayout/`, `src/client/Platform/BorderlessScreen*.cpp`, `Application::measureFrame()` and `Application::render()` in `src/client/Application/Application/` |
 | Change the default server address or port | `DEFAULT_SERVER_ADDRESS` in `src/client/ClientConstants.hpp`, `DEFAULT_SERVER_PORT` in `src/network/NetworkConstants.hpp` |
 | Change the default nickname | `DEFAULT_NICKNAME` in `src/client/ClientConstants.hpp` |
 | Add a launch option | The options listed in `LaunchOptions::read()` and `usage()`, in `src/client/LaunchOptions/LaunchOptions.cpp`; its name in `src/client/ClientConstants.hpp`, or in `src/engine/LaunchArguments/LaunchArgumentsConstants.hpp` when the server uses it too |

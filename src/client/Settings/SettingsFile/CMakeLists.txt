@@ -4,7 +4,7 @@ target_include_directories(rtype_client_settings_file PUBLIC ${CMAKE_CURRENT_SOU
 
 target_link_libraries(rtype_client_settings_file
   PUBLIC
-    rtype_client_settings
+    rtype_client_settings_text
     rtype_logging
   PRIVATE
     rtype_client_assets

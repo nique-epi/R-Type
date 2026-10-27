@@ -35,7 +35,7 @@ struct OptionsScreenParts {
   std::reference_wrapper<PlayerSettings> settings;
   /** @brief Where a change is saved. */
   std::reference_wrapper<ISettingsStorage> storage;
-  /** @brief Window whose size DISPLAY picks. */
+  /** @brief Window whose display mode and size DISPLAY picks. */
   std::reference_wrapper<ISizableWindow> window;
   /** @brief Gives the name drawn on the keycap of a key. */
   KeyNaming keyName;
