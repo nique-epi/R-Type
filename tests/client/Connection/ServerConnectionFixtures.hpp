@@ -6,6 +6,7 @@
 #include "ActionSet.hpp"
 #include "DatagramCodec.hpp"
 #include "Endpoint.hpp"
+#include "GameEnded.hpp"
 #include "MessageFrame.hpp"
 #include "MessagePayload.hpp"
 #include "OutgoingDatagram.hpp"
@@ -45,5 +46,9 @@ network::PlayerInput inputOf(const network::OutgoingDatagram& datagram);
 
 /** @returns The actions of a player who holds up only. */
 ActionSet upHeld();
+
+/** @returns The end of a game of the accepted player alone, scoring
+ * PILOT_FINAL_SCORE. */
+network::GameEnded endOfOnePilot();
 
 }  // namespace rtype::client::testing

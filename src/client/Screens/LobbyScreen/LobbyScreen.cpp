@@ -17,6 +17,7 @@
 #include "IScreenNavigator.hpp"
 #include "IServerConnection.hpp"
 #include "ISoundPlayer.hpp"
+#include "LobbyPlace.hpp"
 #include "LobbyScreenConstants.hpp"
 #include "LobbyScreenParts.hpp"
 #include "LobbyState.hpp"
@@ -99,6 +100,7 @@ LobbyScreen::LobbyScreen(LobbyScreenParts parts,
       playfieldPointAt_(std::move(parts.playfieldPointAt)),
       readyKey_(parts.readyKey.key),
       motion_(parts.motion),
+      place_(parts.place),
       menu_(buildMenu(std::move(parts.readyKey.name))) {
   repaint();
 }
@@ -154,6 +156,10 @@ void LobbyScreen::toggleReady() { connection_->setReady(!wantsReady()); }
 
 void LobbyScreen::leave() {
   connection_->cancel();
+  if (place_ == LobbyPlace::AfterGame) {
+    navigator_->replaceAll(ScreenId::Title);
+    return;
+  }
   navigator_->pop();
 }
 

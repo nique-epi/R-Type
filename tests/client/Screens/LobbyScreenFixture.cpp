@@ -7,6 +7,7 @@
 #include <vector>
 #include "ConnectionStatus.hpp"
 #include "KeyPress.hpp"
+#include "LobbyPlace.hpp"
 #include "LobbyScreen.hpp"
 #include "LobbyScreenParts.hpp"
 #include "LobbyScreenTestConstants.hpp"
@@ -20,6 +21,7 @@
 #include "ScreenTestConstants.hpp"
 
 using rtype::client::ConnectionStatus;
+using rtype::client::LobbyPlace;
 using rtype::client::LobbyScreen;
 using rtype::client::LobbyScreenParts;
 using rtype::client::MotionPreference;
@@ -28,14 +30,15 @@ using rtype::client::testing::READY_KEY;
 using rtype::client::testing::READY_KEY_NAME;
 using rtype::network::LobbyPlayer;
 
-LobbyScreenFixture::LobbyScreenFixture()
+LobbyScreenFixture::LobbyScreenFixture(LobbyPlace place)
     : screen_(LobbyScreenParts{.navigator = navigator_,
                                .sounds = sounds_,
                                .connection = connection_,
                                .playfieldPointAt = samePlayfieldPoint,
                                .readyKey = {.key = READY_KEY,
                                             .name = READY_KEY_NAME},
-                               .motion = MotionPreference::Full},
+                               .motion = MotionPreference::Full,
+                               .place = place},
               std::make_unique<RecordingInterfaceCanvas>(canvas_)) {
   connection_.setStatus(
       {.phase = ConnectionStatus::Phase::Accepted, .playerNumber = OWN_NUMBER});

@@ -39,7 +39,7 @@ TextWriter::TextWriter(const AssetLibrary& library)
       crispText_(loadFragmentShader(CRISP_TEXT_SHADER, logger_)) {}
 
 void TextWriter::write(sf::RenderTarget& target, const TextLine& line) const {
-  sf::Text text = lineOf(line.text, line.style.font);
+  sf::Text text = lineOf(line.text, line.style.font, line.style.scale);
   const sf::Vector2i position = positionOf(text, line);
   const sf::RenderStates states(crispText_.has_value() ? &*crispText_
                                                        : nullptr);
@@ -58,7 +58,8 @@ void TextWriter::write(sf::RenderTarget& target, const TextLine& line) const {
 }
 
 int TextWriter::width(std::string_view text, TextFont font) const {
-  return static_cast<int>(std::round(widthOf(lineOf(text, font))));
+  return static_cast<int>(
+      std::round(widthOf(lineOf(text, font, NATIVE_SCALE))));
 }
 
 const LoadedFont& TextWriter::loadedFontOf(TextFont font) const {
@@ -71,16 +72,19 @@ const LoadedFont& TextWriter::loadedFontOf(TextFont font) const {
   return regularFont_;
 }
 
-sf::Text TextWriter::lineOf(std::string_view text, TextFont font) const {
+sf::Text TextWriter::lineOf(std::string_view text, TextFont font,
+                            int scale) const {
   return {*loadedFontOf(font).font,
-          sf::String::fromUtf8(text.begin(), text.end()), TEXT_CHARACTER_SIZE};
+          sf::String::fromUtf8(text.begin(), text.end()),
+          TEXT_CHARACTER_SIZE * static_cast<unsigned int>(scale)};
 }
 
 sf::Vector2i TextWriter::positionOf(const sf::Text& text,
                                     const TextLine& line) const {
-  sf::Vector2i position(
-      line.anchor.x, line.anchor.y + loadedFontOf(line.style.font).baselineRow -
-                         static_cast<int>(TEXT_CHARACTER_SIZE));
+  const int risingRows = loadedFontOf(line.style.font).baselineRow -
+                         static_cast<int>(TEXT_CHARACTER_SIZE);
+  sf::Vector2i position(line.anchor.x,
+                        line.anchor.y + (risingRows * line.style.scale));
   if (line.style.alignment != TextAlignment::Left) {
     const float lineWidth = widthOf(text);
     position.x -= line.style.alignment == TextAlignment::Right
