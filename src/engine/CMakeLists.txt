@@ -7,6 +7,7 @@ add_subdirectory(Events)
 add_subdirectory(Collision)
 add_subdirectory(NetworkIds)
 add_subdirectory(LaunchArguments)
+add_subdirectory(Modules)
 
 add_library(rtype_engine INTERFACE)
 
@@ -31,4 +32,6 @@ target_link_libraries(rtype_engine
     rtype_engine_network_id_allocator
     rtype_engine_network_entity_table
     rtype_engine_launch_arguments
+    rtype_engine_modules
+    rtype_engine_application
 )

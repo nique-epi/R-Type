@@ -51,4 +51,18 @@ InvalidLaunchOptionValueException::InvalidLaunchOptionValueException(
     : EngineException("Invalid value \"" + value + "\" after the option " +
                       option) {}
 
+NullModuleException::NullModuleException()
+    : EngineException("A null module cannot be given to an application") {}
+
+MissingDependencyException::MissingDependencyException(
+    const std::string& moduleName, const std::string& dependency)
+    : EngineException("The module \"" + moduleName +
+                      "\" depends on the module \"" + dependency +
+                      "\", which is not listed before it") {}
+
+ModuleStartFailedException::ModuleStartFailedException(
+    const std::string& moduleName, const std::string& reason)
+    : EngineException("The module \"" + moduleName +
+                      "\" failed to start: " + reason) {}
+
 }  // namespace rtype::engine
