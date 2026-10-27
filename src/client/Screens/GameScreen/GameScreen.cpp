@@ -2,6 +2,7 @@
 #include <SFML/Graphics/RenderTarget.hpp>
 #include <SFML/Window/Event.hpp>
 #include <memory>
+#include <optional>
 #include <random>
 #include <type_traits>
 #include <utility>
@@ -116,6 +117,7 @@ void GameScreen::update(engine::Duration elapsed) {
   const FlashPreference preference = flashPreferenceOf(*settings_);
   effects_.advance(elapsed, preference);
   applyEntityMessages();
+  askForTheEndWhenDue();
   moveSky(*sky_, effects_, preference);
   entityLayer_->paint(components_, effects_.cameraOffset());
   repaintStatusWhenChanged();
@@ -144,6 +146,16 @@ void GameScreen::applyEntityMessages() {
 void GameScreen::recordEnd(const network::GameEnded& ended) {
   *result_ = GameResult{
       .pilots = rankedPilots(finalPilotsOf(scoreBoard_.pilots(), ended))};
+  endedAt_ = effects_.sinceStart();
+}
+
+void GameScreen::askForTheEndWhenDue() {
+  if (!endedAt_.has_value() ||
+      effects_.sinceStart() - *endedAt_ < END_SCREEN_DELAY) {
+    return;
+  }
+  endedAt_.reset();
+  navigator_->replaceAll(ScreenId::End);
 }
 
 void GameScreen::repaintStatusWhenChanged() {

@@ -1,6 +1,8 @@
 #include "PaddedScore.hpp"
 #include <algorithm>
+#include <cmath>
 #include <cstddef>
+#include <cstdint>
 #include <string>
 #include <string_view>
 #include "IInterfaceCanvas.hpp"
@@ -41,6 +43,11 @@ void paintPaddedScore(IInterfaceCanvas& canvas, const PaddedScore& score) {
                 .alignment = TextAlignment::Right,
                 .scale = score.scale});
   paintLeadingZeros(canvas, score, digits);
+}
+
+std::uint32_t countedScore(std::uint32_t score, float share) {
+  return static_cast<std::uint32_t>(
+      std::lround(static_cast<double>(score) * share));
 }
 
 }  // namespace rtype::client

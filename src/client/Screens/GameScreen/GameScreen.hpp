@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <memory>
+#include <optional>
 #include <string>
 #include <vector>
 #include "ActionSet.hpp"
@@ -84,7 +85,9 @@ struct PlayerSettings;
  * fire, so the ship fires no faster than with the shoot key held.
  *
  * Once the server ends the game, the screen ranks its pilots into the result
- * of the parts.
+ * of the parts, then asks for the end screen in place of every screen
+ * END_SCREEN_DELAY later on the clock of the game, once; the game goes on
+ * meanwhile, so the last explosion plays.
  */
 class GameScreen : public IScreen {
  public:
@@ -126,8 +129,12 @@ class GameScreen : public IScreen {
   void repaintStatus();
 
   /** @brief Ranks the pilots of the board by the scores of @p ended into the
-   * result of the parts. */
+   * result of the parts, and remembers when the game ended. */
   void recordEnd(const network::GameEnded& ended);
+
+  /** @brief Asks for the end screen in place of every screen once
+   * END_SCREEN_DELAY passed since the game ended, once. */
+  void askForTheEndWhenDue();
 
   IScreenNavigator* navigator_;
   std::unique_ptr<IEntityLayer> entityLayer_;
@@ -144,6 +151,7 @@ class GameScreen : public IScreen {
   std::vector<EntityMessage> receivedEntityMessages_;
   ScoreBoard scoreBoard_;
   GameResult* result_;
+  std::optional<engine::Duration> endedAt_;
   std::uint32_t paintedStatusRevision_{};
   PlayerInputPacer inputPacer_;
   logging::Logger logger_{std::string{GAME_SCREEN_LOGGER_NAME}};

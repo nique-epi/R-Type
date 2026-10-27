@@ -16,6 +16,8 @@
 #include "ConnectionConstants.hpp"
 #include "ConnectionScreen.hpp"
 #include "ConnectionScreenParts.hpp"
+#include "EndScreen.hpp"
+#include "EndScreenParts.hpp"
 #include "Endpoint.hpp"
 #include "EntityLayer.hpp"
 #include "GameScreen.hpp"
@@ -35,6 +37,7 @@
 #include "OptionsPlace.hpp"
 #include "OptionsScreen.hpp"
 #include "OptionsScreenParts.hpp"
+#include "PlayerPreferences.hpp"
 #include "PlayerSettings.hpp"
 #include "PlayfieldMapping.hpp"
 #include "QuitConfirmationScreen.hpp"
@@ -184,6 +187,24 @@ std::unique_ptr<IScreen> Application::createScreen(ScreenId screen) {
     case ScreenId::Lobby:
     case ScreenId::LobbyAfterGame:
       return lobbyScreen(screen);
+    case ScreenId::End: {
+      std::unique_ptr<IScreen> loading =
+          loadingScreenUnlessLoaded(gameAssets(), screen);
+      if (loading != nullptr) {
+        return loading;
+      }
+      return std::make_unique<EndScreen>(
+          EndScreenParts{.navigator = screens_,
+                         .sounds = sounds_,
+                         .connection = connection_,
+                         .result = gameResult_,
+                         .previousTaunt = previousTaunt_,
+                         .playfieldPointAt = playfieldMapping(),
+                         .seed = std::random_device{}(),
+                         .motion = motionPreference(),
+                         .flashes = flashPreferenceOf(settings_)},
+          interfaceCanvas());
+    }
   }
   return nullptr;
 }

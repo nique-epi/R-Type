@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstddef>
 #include <filesystem>
 #include <memory>
 #include <optional>
@@ -59,7 +60,9 @@ class AssetLibrary;
  * starts a silence after stopping the theme (Soundtrack); their volume
  * follows the settings at each frame.
  *
- * When the server ends a game, the game screen writes its result here.
+ * When the server ends a game, the game screen writes its result here and
+ * gives way to the end screen, from which the player plays again in the
+ * waiting room or quits to the title.
  *
  * Screens are asked for by identifier; createScreen() is the one place that
  * builds them, with one case per ScreenId. The client opens on the intro, or
@@ -184,8 +187,11 @@ class Application {
   ServerConnection connection_;
   network::Endpoint server_;
   std::string nickname_;
-  /** @brief How the last game ended, written by the game screen. */
+  /** @brief How the last game ended, written by the game screen, read by
+   * the end screen. */
   GameResult gameResult_;
+  /** @brief The taunt of the last end screen, never picked twice in a row. */
+  std::optional<std::size_t> previousTaunt_;
   ScreenStack screens_;
 };
 

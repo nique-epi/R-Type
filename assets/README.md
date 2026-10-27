@@ -109,7 +109,7 @@ The rectangles are written once, in `src/client/Rendering/Interface/HudSpriteCon
 | Medal of the best pilot | 192, 208, 9 × 10 |
 | Cross of QUIT, white so a tint gives it its color | 203, 208, 7 × 7 |
 
-The rectangles are written once, in `src/client/Rendering/Interface/FlightLogSheetConstants.hpp`. `client_rendering_tests` checks them against the shipped file: every frame lies inside the sheet, shows a visible pixel, cuts no drawing and overlaps no other, and every visible pixel of the cross is white.
+The rectangles are written once, in `src/client/Rendering/Interface/FlightLogSheetConstants.hpp`. `client_rendering_tests` checks them against the shipped file: every frame lies inside the sheet, shows a visible pixel, cuts no drawing and overlaps no other, and every visible pixel of the cross is white. The sheet is listed in `gameAssets()`, so the end screen opens without loading after a game; the end screen asks for the same list, so it releases nothing the next game needs.
 
 ## The license of Epidemic Sound
 

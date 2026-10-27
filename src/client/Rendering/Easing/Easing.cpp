@@ -1,6 +1,7 @@
 #include "Easing.hpp"
 #include <algorithm>
 #include <chrono>
+#include <cmath>
 #include "RenderingConstants.hpp"
 #include "TimeConstants.hpp"
 
@@ -47,6 +48,18 @@ float progressThrough(float time, float start, float length) {
     return time >= start ? 1.0F : 0.0F;
   }
   return std::clamp((time - start) / length, 0.0F, 1.0F);
+}
+
+float progressBetween(engine::Duration now, engine::Duration start,
+                      engine::Duration length) {
+  if (length <= engine::Duration::zero()) {
+    return now >= start ? 1.0F : 0.0F;
+  }
+  return std::clamp(shareOf(now - start, length), 0.0F, 1.0F);
+}
+
+int pixelsOf(int distance, float share) {
+  return static_cast<int>(std::lround(static_cast<float>(distance) * share));
 }
 
 }  // namespace rtype::client

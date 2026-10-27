@@ -43,7 +43,7 @@ struct GameScreenParts {
    * outlive the screen. */
   std::reference_wrapper<ISoundPlayer> sounds;
   /** @brief Where the game writes how it ended, once the server ends it,
-   * which must outlive the screen. */
+   * which must outlive the screen: the end screen reads it. */
   std::reference_wrapper<GameResult> result;
 };
 

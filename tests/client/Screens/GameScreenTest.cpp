@@ -24,6 +24,7 @@
 #include "PlayerSettings.hpp"
 #include "RecordingEntityLayer.hpp"
 #include "RecordingInterfaceCanvas.hpp"
+#include "RecordingNavigator.hpp"
 #include "RecordingPlayerInputLink.hpp"
 #include "RecordingScreen.hpp"
 #include "RecordingSky.hpp"
@@ -721,4 +722,41 @@ TEST(GameScreenEndTest, TheEndOfTheGameRanksThePilotsOfTheBoard) {
   EXPECT_EQ(doubles.result.pilots.front().nickname, SECOND_PILOT_NICKNAME);
   EXPECT_TRUE(doubles.result.pilots.front().isLocalPlayer);
   EXPECT_EQ(doubles.result.pilots.back().nickname, FIRST_PILOT_NICKNAME);
+}
+
+/**
+ * Given a game the server just ended
+ * When a second less one nanosecond passes
+ * Then the end screen is not asked for yet
+ */
+TEST(GameScreenEndTest, TheEndScreenWaitsForTheLastExplosion) {
+  LoneGameParts doubles;
+  GameScreen game(doubles.parts(), std::make_unique<IgnoringEntityLayer>(),
+                  doubles.statusCanvasDouble());
+  doubles.entityMessages.queue(endOfThreePilots());
+  game.update(ONE_FRAME);
+
+  game.update(END_WAIT - ONE_TICK);
+
+  EXPECT_THAT(doubles.navigator.calls(), IsEmpty());
+}
+
+/**
+ * Given a game the server just ended
+ * When a second passes, then another
+ * Then the end screen is asked for in place of every screen, once
+ */
+TEST(GameScreenEndTest, TheEndScreenReplacesTheGameASecondLater) {
+  LoneGameParts doubles;
+  GameScreen game(doubles.parts(), std::make_unique<IgnoringEntityLayer>(),
+                  doubles.statusCanvasDouble());
+  doubles.entityMessages.queue(endOfThreePilots());
+  game.update(ONE_FRAME);
+
+  game.update(END_WAIT);
+  game.update(END_WAIT);
+
+  EXPECT_THAT(doubles.navigator.calls(),
+              ElementsAre(NavigatorCall{.request = NavigatorRequest::ReplaceAll,
+                                        .screen = ScreenId::End}));
 }

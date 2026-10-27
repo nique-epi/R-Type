@@ -27,4 +27,8 @@ struct PaddedScore {
  * left. */
 void paintPaddedScore(IInterfaceCanvas& canvas, const PaddedScore& score);
 
+/** @returns @p score counted up to @p share of it, from 0 to 1, rounded: what
+ * a score counting up from 0 shows on the way. */
+[[nodiscard]] std::uint32_t countedScore(std::uint32_t score, float share);
+
 }  // namespace rtype::client
