@@ -13,6 +13,12 @@ if(NOT CMAKE_RUNTIME_OUTPUT_DIRECTORY)
   set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR})
 endif()
 
+# The sources are UTF-8, and the text shown on screen is decoded as UTF-8
+# (sf::String::fromUtf8). GCC and Clang read and store UTF-8 by default; MSVC
+# reads a source without a byte order mark in the current code page and
+# stores its strings in it, unless /utf-8 sets both to UTF-8.
+add_compile_options($<$<CXX_COMPILER_ID:MSVC>:/utf-8>)
+
 function(rtype_enable_warnings target)
   target_compile_options(${target} PRIVATE
     $<$<CXX_COMPILER_ID:MSVC>:/W4 /permissive->
