@@ -101,7 +101,7 @@ constexpr const char* COLOR_MODE_DESCRIPTION =
 constexpr std::array<std::string_view, COLOR_MODE_COUNT> COLOR_MODE_LABELS{
     "OFF", "PROTANOPIA", "DEUTERANOPIA", "TRITANOPIA"};
 constexpr const char* REDUCE_FLASHES_LABEL = "REDUCE FLASHES";
-constexpr const char* REDUCE_FLASHES_DESCRIPTION = "> NO FLASH OR SHAKE";
+constexpr const char* REDUCE_FLASHES_DESCRIPTION = "> NO FLASH, BLINK OR SHAKE";
 constexpr const char* SOUND_CUES_LABEL = "SOUND CUES";
 constexpr const char* SOUND_CUES_DESCRIPTION =
     "> SOUNDS SHOWN ON SCREEN (COMING SOON)";
