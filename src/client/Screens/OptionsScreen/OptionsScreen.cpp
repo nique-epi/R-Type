@@ -102,6 +102,62 @@ std::optional<std::string> imposedSizeText(const WindowLayout& layout) {
   return windowSizeText(*imposed);
 }
 
+/** @returns The list of DISPLAY_MODES, showing the mode of the window. A mode
+ * picked goes to the window and, once the window takes it, to the settings,
+ * then changed is called. */
+std::unique_ptr<Dropdown> displayModeList(ISizableWindow& window,
+                                          PlayerSettings& settings,
+                                          std::function<void()> changed) {
+  return std::make_unique<Dropdown>(DropdownParts{
+      .choices = textsOf(DISPLAY_MODE_LABELS),
+      .available = [](std::size_t) { return true; },
+      .value = ValueBinding<std::size_t>{
+          .read =
+              [&window] {
+                return static_cast<std::size_t>(
+                    window.windowLayout().displayMode());
+              },
+          .write =
+              [&window, &settings,
+               changed = std::move(changed)](std::size_t mode) {
+                if (window.selectDisplayMode(DISPLAY_MODES[mode])) {
+                  settings.displayMode = DISPLAY_MODES[mode];
+                  changed();
+                }
+              }},
+      .imposedText = {}});
+}
+
+/** @returns The list of WINDOW_SIZES, showing the size of the window, or the
+ * size its display mode imposes. A size picked goes to the window and, once
+ * the window takes it, to the settings, then changed is called. */
+std::unique_ptr<Dropdown> windowSizeList(ISizableWindow& window,
+                                         PlayerSettings& settings,
+                                         std::function<void()> changed) {
+  return std::make_unique<Dropdown>(DropdownParts{
+      .choices = windowSizeTexts(),
+      .available =
+          [&window](std::size_t index) {
+            return window.windowLayout().sizes().isAvailable(index);
+          },
+      .value =
+          ValueBinding<std::size_t>{
+              .read =
+                  [&window] {
+                    return window.windowLayout().sizes().selectedIndex();
+                  },
+              .write =
+                  [&window, &settings,
+                   changed = std::move(changed)](std::size_t index) {
+                    if (window.selectWindowSize(index)) {
+                      settings.windowSize = WINDOW_SIZES[index];
+                      changed();
+                    }
+                  }},
+      .imposedText =
+          [&window] { return imposedSizeText(window.windowLayout()); }});
+}
+
 /** @returns The description of the list of display modes: its keys while it is
  * open, what borderless does while the window is borderless. */
 const char* displayModeDescription(const Dropdown& modes, DisplayMode mode) {
@@ -221,43 +277,15 @@ Menu OptionsScreen::controlsTab() {
 }
 
 Menu OptionsScreen::displayTab() {
-  auto modes = std::make_unique<Dropdown>(DropdownParts{
-      .choices = textsOf(DISPLAY_MODE_LABELS),
-      .available = [](std::size_t) { return true; },
-      .value = ValueBinding<std::size_t>{
-          .read =
-              [this] {
-                return static_cast<std::size_t>(
-                    window_->windowLayout().displayMode());
-              },
-          .write =
-              [this](std::size_t mode) {
-                if (window_->selectDisplayMode(DISPLAY_MODES[mode])) {
-                  settings_->displayMode = DISPLAY_MODES[mode];
-                  changed();
-                }
-              }},
-      .imposedText = {}});
+  std::unique_ptr<Dropdown> modes =
+      displayModeList(*window_, *settings_, [this] { changed(); });
   displayModes_ = modes.get();
-  auto list = std::make_unique<Dropdown>(DropdownParts{
-      .choices = windowSizeTexts(),
-      .available =
-          [this](std::size_t index) {
-            return window_->windowLayout().sizes().isAvailable(index);
-          },
-      .value =
-          ValueBinding<std::size_t>{
-              .read =
-                  [this] {
-                    return window_->windowLayout().sizes().selectedIndex();
-                  },
-              .write = [this](std::size_t index) { chooseWindowSize(index); }},
-      .imposedText =
-          [this] { return imposedSizeText(window_->windowLayout()); }});
-  windowSizes_ = list.get();
+  std::unique_ptr<Dropdown> sizes =
+      windowSizeList(*window_, *settings_, [this] { changed(); });
+  windowSizes_ = sizes.get();
   MenuBuilder builder = tabbedPanel(DISPLAY_TAB);
   builder.row({.label = DISPLAY_MODE_LABEL}, std::move(modes))
-      .row({.label = WINDOW_SIZE_LABEL}, std::move(list))
+      .row({.label = WINDOW_SIZE_LABEL}, std::move(sizes))
       .illustration(WINDOW_SIZE_CHART_SIZE);
   return withBack(builder);
 }
@@ -339,13 +367,6 @@ std::unique_ptr<RowControl> OptionsScreen::resetLink(
 void OptionsScreen::openTab(std::size_t tab) {
   if (tab < tabs_.size()) {
     openTab_ = tab;
-  }
-}
-
-void OptionsScreen::chooseWindowSize(std::size_t index) {
-  if (window_->selectWindowSize(index)) {
-    settings_->windowSize = WINDOW_SIZES[index];
-    changed();
   }
 }
 

@@ -80,7 +80,6 @@ class OptionsScreen : public IScreen {
       std::string question, std::function<void()> reset);
 
   void openTab(std::size_t tab);
-  void chooseWindowSize(std::size_t index);
   void resetSound();
   void resetKeys();
 
