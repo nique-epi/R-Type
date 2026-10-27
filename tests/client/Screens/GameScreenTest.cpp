@@ -13,6 +13,7 @@
 #include "EntityAnnouncements.hpp"
 #include "EntityReplicatorTestConstants.hpp"
 #include "FakeEntityMessageSource.hpp"
+#include "GameResult.hpp"
 #include "GameScreen.hpp"
 #include "GameScreenFixture.hpp"
 #include "GameScreenFixtures.hpp"
@@ -261,9 +262,9 @@ TEST_F(GameScreenFixture, ReducingFlashesDuringTheGameAppliesToTheNextEffect) {
  * Then the status band is titled ACE, NOVA and KAI, and no bay by its number
  */
 TEST_F(GameScreenFixture, TheStatusBandShowsThePilotsOfTheWaitingRoom) {
-  EXPECT_NE(writingOf(statusCanvas(), "ACE"), nullptr);
-  EXPECT_NE(writingOf(statusCanvas(), "NOVA"), nullptr);
-  EXPECT_NE(writingOf(statusCanvas(), "KAI"), nullptr);
+  EXPECT_NE(writingOf(statusCanvas(), FIRST_PILOT_NICKNAME), nullptr);
+  EXPECT_NE(writingOf(statusCanvas(), SECOND_PILOT_NICKNAME), nullptr);
+  EXPECT_NE(writingOf(statusCanvas(), THIRD_PILOT_NICKNAME), nullptr);
   EXPECT_EQ(writingOf(statusCanvas(), "P1"), nullptr);
 }
 
@@ -700,4 +701,24 @@ TEST_F(GameScreenFixture, TheGamePlaysTheSoundsOfWhatTheServerAnnounces) {
   screens().update(ONE_FRAME);
 
   EXPECT_THAT(sounds().played(), ElementsAre(PLAYER_SHOT_SOUND_ID));
+}
+
+/**
+ * Given the game of three pilots
+ * When the server ends it with their scores
+ * Then the result ranks them best first, with their nicknames, NOVA as this
+ * client
+ */
+TEST(GameScreenEndTest, TheEndOfTheGameRanksThePilotsOfTheBoard) {
+  LoneGameParts doubles;
+  GameScreen game(doubles.parts(), std::make_unique<IgnoringEntityLayer>(),
+                  doubles.statusCanvasDouble());
+  doubles.entityMessages.queue(endOfThreePilots());
+
+  game.update(ONE_FRAME);
+
+  ASSERT_EQ(doubles.result.pilots.size(), PILOTS_AT_THE_END);
+  EXPECT_EQ(doubles.result.pilots.front().nickname, SECOND_PILOT_NICKNAME);
+  EXPECT_TRUE(doubles.result.pilots.front().isLocalPlayer);
+  EXPECT_EQ(doubles.result.pilots.back().nickname, FIRST_PILOT_NICKNAME);
 }

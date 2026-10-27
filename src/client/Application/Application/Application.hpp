@@ -6,6 +6,7 @@
 #include <string>
 #include "AssetList.hpp"
 #include "Endpoint.hpp"
+#include "GameResult.hpp"
 #include "GameWindow.hpp"
 #include "IInterfaceCanvas.hpp"
 #include "IScreen.hpp"
@@ -57,6 +58,8 @@ class AssetLibrary;
  * black second or by a title screen, and the music of a game, which a game
  * starts a silence after stopping the theme (Soundtrack); their volume
  * follows the settings at each frame.
+ *
+ * When the server ends a game, the game screen writes its result here.
  *
  * Screens are asked for by identifier; createScreen() is the one place that
  * builds them, with one case per ScreenId. The client opens on the intro, or
@@ -180,6 +183,8 @@ class Application {
   ServerConnection connection_;
   network::Endpoint server_;
   std::string nickname_;
+  /** @brief How the last game ended, written by the game screen. */
+  GameResult gameResult_;
   ScreenStack screens_;
 };
 

@@ -3,6 +3,7 @@
 #include <SFML/Window/Event.hpp>
 #include <memory>
 #include <random>
+#include <type_traits>
 #include <utility>
 #include <variant>
 #include "ActionSet.hpp"
@@ -10,7 +11,10 @@
 #include "EffectSpawner.hpp"
 #include "EntityFeedback.hpp"
 #include "EntityMessage.hpp"
+#include "FinalRanking.hpp"
 #include "FlashPreference.hpp"
+#include "GameEnded.hpp"
+#include "GameResult.hpp"
 #include "GameScreenParts.hpp"
 #include "GroundEffectSystem.hpp"
 #include "HitFlashSystem.hpp"
@@ -66,6 +70,7 @@ GameScreen::GameScreen(GameScreenParts parts,
       entityMessageSource_(&parts.entityMessages.get()),
       scoreBoard_(parts.connection.get().lobbyPlayers(),
                   parts.connection.get().status().playerNumber),
+      result_(&parts.result.get()),
       sky_(&parts.sky.get()) {
   systems_.add(std::make_unique<AnimationSystem>());
   systems_.add(std::make_unique<HitFlashSystem>());
@@ -119,13 +124,26 @@ void GameScreen::update(engine::Duration elapsed) {
 void GameScreen::applyEntityMessages() {
   entityMessageSource_->drainEntityMessages(receivedEntityMessages_);
   for (const EntityMessage& message : receivedEntityMessages_) {
-    std::visit([this](const auto& announced) { replicator_.apply(announced); },
-               message);
+    std::visit(
+        [this](const auto& announced) {
+          if constexpr (std::is_same_v<std::decay_t<decltype(announced)>,
+                                       network::GameEnded>) {
+            recordEnd(announced);
+          } else {
+            replicator_.apply(announced);
+          }
+        },
+        message);
     if (const auto* state = std::get_if<network::WorldState>(&message)) {
       scoreBoard_.apply(*state);
     }
   }
   receivedEntityMessages_.clear();
+}
+
+void GameScreen::recordEnd(const network::GameEnded& ended) {
+  *result_ = GameResult{
+      .pilots = rankedPilots(finalPilotsOf(scoreBoard_.pilots(), ended))};
 }
 
 void GameScreen::repaintStatusWhenChanged() {

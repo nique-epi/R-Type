@@ -1,6 +1,7 @@
 #pragma once
 
 #include <functional>
+#include "GameResult.hpp"
 #include "IEntityMessageSource.hpp"
 #include "IPlayerInputLink.hpp"
 #include "IScreenNavigator.hpp"
@@ -41,6 +42,9 @@ struct GameScreenParts {
   /** @brief Plays the sounds of what the server announces, which must
    * outlive the screen. */
   std::reference_wrapper<ISoundPlayer> sounds;
+  /** @brief Where the game writes how it ended, once the server ends it,
+   * which must outlive the screen. */
+  std::reference_wrapper<GameResult> result;
 };
 
 }  // namespace rtype::client

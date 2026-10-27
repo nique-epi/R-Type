@@ -5,6 +5,7 @@ target_include_directories(rtype_client_application PUBLIC ${CMAKE_CURRENT_SOURC
 target_link_libraries(rtype_client_application
   PUBLIC
     rtype_client_asset_library
+    rtype_client_replication_interfaces
     rtype_client_connection
     rtype_client_game_window
     rtype_client_network_thread

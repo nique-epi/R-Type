@@ -10,6 +10,8 @@
 #include "EntityMessage.hpp"
 #include "EntityRegistry.hpp"
 #include "EntityReplicator.hpp"
+#include "GameEnded.hpp"
+#include "GameResult.hpp"
 #include "GameScreenParts.hpp"
 #include "IEntityLayer.hpp"
 #include "IEntityMessageSource.hpp"
@@ -80,6 +82,9 @@ struct PlayerSettings;
  * AUTO-FIRE is read in the settings at each call of playerActions(), so a
  * change in the options applies at once. The server keeps its own rate of
  * fire, so the ship fires no faster than with the shoot key held.
+ *
+ * Once the server ends the game, the screen ranks its pilots into the result
+ * of the parts.
  */
 class GameScreen : public IScreen {
  public:
@@ -120,6 +125,10 @@ class GameScreen : public IScreen {
    * the start of the game over it, and keeps what was painted. */
   void repaintStatus();
 
+  /** @brief Ranks the pilots of the board by the scores of @p ended into the
+   * result of the parts. */
+  void recordEnd(const network::GameEnded& ended);
+
   IScreenNavigator* navigator_;
   std::unique_ptr<IEntityLayer> entityLayer_;
   std::unique_ptr<IInterfaceCanvas> statusCanvas_;
@@ -134,6 +143,7 @@ class GameScreen : public IScreen {
   IEntityMessageSource* entityMessageSource_;
   std::vector<EntityMessage> receivedEntityMessages_;
   ScoreBoard scoreBoard_;
+  GameResult* result_;
   std::uint32_t paintedStatusRevision_{};
   PlayerInputPacer inputPacer_;
   logging::Logger logger_{std::string{GAME_SCREEN_LOGGER_NAME}};
