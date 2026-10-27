@@ -111,3 +111,7 @@ npm run dev
 ```
 
 `npm run build` fails on a broken internal link, like the `docs` check on pull requests.
+
+## Contributing
+
+How to branch, write a commit, write and test the code, open a pull request and know when a change is done is summed up in [the contributing guide](docs/src/content/docs/contributing.md).
