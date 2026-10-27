@@ -1,6 +1,7 @@
 #pragma once
 
 #include "IPixelSurface.hpp"
+#include "SkyLight.hpp"
 
 namespace rtype::client {
 
@@ -21,7 +22,10 @@ class ISkyEvent {
   /** @returns Whether the event has left the sky or faded out. */
   [[nodiscard]] virtual bool isOver() const = 0;
 
-  virtual void paint(IPixelSurface& surface) const = 0;
+  /** @brief Paints the event as it stands. In a sky of SkyLight::Steady,
+   * nothing of it twinkles nor flickers, whatever advance() drew for the
+   * frame. */
+  virtual void paint(IPixelSurface& surface, SkyLight light) const = 0;
 };
 
 }  // namespace rtype::client

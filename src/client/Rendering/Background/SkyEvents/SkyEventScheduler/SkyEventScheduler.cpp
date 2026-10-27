@@ -13,6 +13,7 @@
 #include "ShootingStar.hpp"
 #include "SkyEventConstants.hpp"
 #include "SkyEventKind.hpp"
+#include "SkyLight.hpp"
 
 namespace rtype::client {
 
@@ -38,9 +39,9 @@ void SkyEventScheduler::advance(float seconds) {
   });
 }
 
-void SkyEventScheduler::paint(IPixelSurface& surface) const {
+void SkyEventScheduler::paint(IPixelSurface& surface, SkyLight light) const {
   for (const std::unique_ptr<ISkyEvent>& event : events_) {
-    event->paint(surface);
+    event->paint(surface, light);
   }
 }
 

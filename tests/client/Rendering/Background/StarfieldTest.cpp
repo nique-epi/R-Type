@@ -13,6 +13,7 @@
 #include "EffectTestConstants.hpp"
 #include "PlanetImage.hpp"
 #include "RecordingPixelSurface.hpp"
+#include "SkyLight.hpp"
 #include "Star.hpp"
 #include "Starfield.hpp"
 #include "StarfieldFixtures.hpp"
@@ -30,6 +31,7 @@ using rtype::client::PALE_BLUE;
 using rtype::client::PLANET_REENTRY_MARGIN;
 using rtype::client::PLANET_SPEED;
 using rtype::client::PlanetImage;
+using rtype::client::SkyLight;
 using rtype::client::Star;
 using rtype::client::STAR_LAYERS;
 using rtype::client::STAR_STREAK_COLORS;
@@ -256,7 +258,7 @@ TEST(Starfield, PlanetIsPaintedBetweenFarAndNearerStars) {
   const PlanetImage planet;
   RecordingPixelSurface surface;
 
-  starfield.paint(surface);
+  starfield.paint(surface, SkyLight::Twinkling);
 
   const std::size_t farStars = countAt(starfield, StarDepth::Far);
   const std::size_t planetEnd = farStars + planet.pixels().size();
@@ -285,7 +287,7 @@ TEST(Starfield, FarStarTwinklesOneStepInEight) {
 
   for (std::int64_t step = 0; step < STAR_TWINKLE_CYCLE_STEPS; ++step) {
     RecordingPixelSurface surface;
-    starfield.paint(surface);
+    starfield.paint(surface, SkyLight::Twinkling);
     if (surface.plots().front().color == BLUE) {
       ++twinkles;
     }
@@ -293,6 +295,24 @@ TEST(Starfield, FarStarTwinklesOneStepInEight) {
   }
 
   EXPECT_EQ(twinkles, 1);
+}
+
+/**
+ * Given a sky shining steadily, as for a player who reduced flashes
+ * When its first far star is painted in the middle of each of eight
+ * successive twinkle steps
+ * Then it never twinkles: it stays deep blue at every step
+ */
+TEST(Starfield, AFarStarOfASteadySkyNeverTwinkles) {
+  Starfield starfield(SEED);
+  advanceBy(starfield, HALF_TWINKLE_STEP);
+
+  for (std::int64_t step = 0; step < STAR_TWINKLE_CYCLE_STEPS; ++step) {
+    RecordingPixelSurface surface;
+    starfield.paint(surface, SkyLight::Steady);
+    EXPECT_EQ(surface.plots().front().color, DEEP_BLUE) << "step " << step;
+    advanceBy(starfield, ONE_TWINKLE_STEP);
+  }
 }
 
 /**
@@ -333,7 +353,7 @@ TEST(Starfield, AFastStarIsDrawnWithItsStreak) {
   starfield.setSpeedFactor(TOP_WARP_SPEED);
   RecordingPixelSurface surface;
 
-  starfield.paint(surface);
+  starfield.paint(surface, SkyLight::Twinkling);
 
   const sf::Color streak =
       STAR_STREAK_COLORS[static_cast<std::size_t>(StarDepth::Near)];

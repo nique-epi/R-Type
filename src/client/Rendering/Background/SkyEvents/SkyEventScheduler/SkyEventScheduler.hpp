@@ -9,6 +9,7 @@
 #include "ISkyEvent.hpp"
 #include "SkyEventConstants.hpp"
 #include "SkyEventKind.hpp"
+#include "SkyLight.hpp"
 
 namespace rtype::client {
 
@@ -29,8 +30,8 @@ class SkyEventScheduler {
    */
   void advance(float seconds);
 
-  /** @brief Paints every event, the oldest first. */
-  void paint(IPixelSurface& surface) const;
+  /** @brief Paints every event, the oldest first, in a sky of that light. */
+  void paint(IPixelSurface& surface, SkyLight light) const;
 
   /** @returns How many events are shown. */
   [[nodiscard]] std::size_t eventCount() const;

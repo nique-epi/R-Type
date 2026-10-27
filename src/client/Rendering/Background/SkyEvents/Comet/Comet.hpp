@@ -7,12 +7,14 @@
 #include "IPixelSurface.hpp"
 #include "ISkyEvent.hpp"
 #include "SkyEventConstants.hpp"
+#include "SkyLight.hpp"
 
 namespace rtype::client {
 
 /**
  * @brief A comet crossing from right to left, its tail fading and flickering
- * behind its head.
+ * behind its head; in a sky of SkyLight::Steady, its tail keeps its gaps
+ * still and hides no pixel.
  */
 class Comet final : public ISkyEvent {
  public:
@@ -20,11 +22,16 @@ class Comet final : public ISkyEvent {
 
   void advance(float eventSeconds) override;
   [[nodiscard]] bool isOver() const override;
-  void paint(IPixelSurface& surface) const override;
+  void paint(IPixelSurface& surface, SkyLight light) const override;
 
  private:
   /** @returns How far along the tail a pixel lies, from 0 to almost 1. */
   [[nodiscard]] static float tailFraction(std::size_t pixel);
+
+  /** @returns Whether a pixel of the tail shows: out of the gaps, and not
+   * hidden by the flicker advance() drew for the frame. In a steady sky the
+   * gaps stand where they start and nothing is hidden. */
+  [[nodiscard]] bool showsTailPixel(std::size_t pixel, SkyLight light) const;
 
   sf::Vector2f head_;
   sf::Vector2f velocity_;

@@ -1,12 +1,14 @@
 #pragma once
 
 #include <cstdint>
+#include <optional>
 #include <random>
 #include <vector>
 #include "BackgroundConstants.hpp"
 #include "IPixelSurface.hpp"
 #include "PlanetImage.hpp"
 #include "SkyEventScheduler.hpp"
+#include "SkyLight.hpp"
 #include "Star.hpp"
 #include "TimeConstants.hpp"
 
@@ -40,9 +42,10 @@ class Starfield {
 
   /**
    * @brief Paints the sky back to front: far stars, the planet, middle and
-   * near stars, then sky events.
+   * near stars, then sky events. In a sky of SkyLight::Steady, no star
+   * twinkles and no comet tail flickers.
    */
-  void paint(IPixelSurface& surface) const;
+  void paint(IPixelSurface& surface, SkyLight light) const;
 
   /**
    * @returns The stars: far ones first, then middle ones, then near ones.
@@ -57,11 +60,15 @@ class Starfield {
  private:
   void moveStar(Star& star, float seconds);
   void paintPlanet(IPixelSurface& surface) const;
-  static void paintStar(const Star& star, std::int64_t twinkleStep,
+  /** @brief Paints a star, twinkling when @p twinkleStep is its step of the
+   * cycle; nothing twinkles without a step. */
+  static void paintStar(const Star& star,
+                        std::optional<std::int64_t> twinkleStep,
                         IPixelSurface& surface);
 
   /** @brief Paints a star, after its streak when it moves fast enough. */
-  void paintMovingStar(const Star& star, std::int64_t twinkleStep,
+  void paintMovingStar(const Star& star,
+                       std::optional<std::int64_t> twinkleStep,
                        IPixelSurface& surface) const;
 
   /** @brief Paints, behind a star, the pixels it covers in one

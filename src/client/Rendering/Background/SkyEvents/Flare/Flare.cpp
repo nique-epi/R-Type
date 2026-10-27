@@ -9,6 +9,7 @@
 #include "IPixelSurface.hpp"
 #include "RandomRange.hpp"
 #include "SkyEventConstants.hpp"
+#include "SkyLight.hpp"
 
 namespace rtype::client {
 
@@ -23,7 +24,8 @@ void Flare::advance(float eventSeconds) { age_ += eventSeconds; }
 
 bool Flare::isOver() const { return age_ >= duration_; }
 
-void Flare::paint(IPixelSurface& surface) const {
+void Flare::paint(IPixelSurface& surface,
+                  [[maybe_unused]] SkyLight light) const {
   const float glow = std::sin(age_ / duration_ * std::numbers::pi_v<float>);
   const int armLength = static_cast<int>(std::lround(glow * FLARE_LONGEST_ARM));
   for (int i = 1; i <= armLength; ++i) {

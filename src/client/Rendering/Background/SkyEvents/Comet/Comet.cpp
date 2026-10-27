@@ -9,6 +9,7 @@
 #include "PixelRounding.hpp"
 #include "RandomRange.hpp"
 #include "SkyEventConstants.hpp"
+#include "SkyLight.hpp"
 #include "TailGradient.hpp"
 
 namespace rtype::client {
@@ -34,12 +35,9 @@ void Comet::advance(float eventSeconds) {
 
 bool Comet::isOver() const { return head_.x <= -COMET_OFF_SKY_MARGIN; }
 
-void Comet::paint(IPixelSurface& surface) const {
-  const auto gapOffset = static_cast<std::size_t>(gapPhase_);
+void Comet::paint(IPixelSurface& surface, SkyLight light) const {
   for (std::size_t i = 1; i < COMET_TAIL_LENGTH; ++i) {
-    const bool inGap =
-        i > COMET_SOLID_TAIL && (i + gapOffset) % COMET_GAP_PERIOD == 0;
-    if (inGap || flickeredOut_.test(i)) {
+    if (!showsTailPixel(i, light)) {
       continue;
     }
     const sf::Color color = tailColor(COMET_GRADIENT, tailFraction(i));
@@ -55,6 +53,15 @@ void Comet::paint(IPixelSurface& surface) const {
   for (const sf::Vector2i offset : COMET_HEAD_OFFSETS) {
     surface.plot(head + offset, STAR_WHITE);
   }
+}
+
+bool Comet::showsTailPixel(std::size_t pixel, SkyLight light) const {
+  const bool steady = light == SkyLight::Steady;
+  const std::size_t gapOffset =
+      steady ? std::size_t{0} : static_cast<std::size_t>(gapPhase_);
+  const bool inGap =
+      pixel > COMET_SOLID_TAIL && (pixel + gapOffset) % COMET_GAP_PERIOD == 0;
+  return !inGap && (steady || !flickeredOut_.test(pixel));
 }
 
 float Comet::tailFraction(std::size_t pixel) {

@@ -8,6 +8,7 @@
 #include "PixelRounding.hpp"
 #include "RandomRange.hpp"
 #include "SkyEventConstants.hpp"
+#include "SkyLight.hpp"
 
 namespace rtype::client {
 
@@ -29,7 +30,8 @@ void Asteroid::advance(float eventSeconds) {
 
 bool Asteroid::isOver() const { return topLeft_.x <= -ASTEROID_OFF_SKY_MARGIN; }
 
-void Asteroid::paint(IPixelSurface& surface) const {
+void Asteroid::paint(IPixelSurface& surface,
+                     [[maybe_unused]] SkyLight light) const {
   const AsteroidFrame& rows = ASTEROID_FRAMES[static_cast<std::size_t>(frame_) %
                                               ASTEROID_FRAMES.size()];
   const sf::Vector2i topLeft = nearestPixel(topLeft_);

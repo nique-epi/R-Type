@@ -125,4 +125,5 @@ target_include_directories(client_row_control_tests PRIVATE client/Screens doubl
 rtype_add_test(NAME client_input_tests SOURCES client/Input/KeyBindingsTest.cpp client/Input/KeyNamesTest.cpp client/Input/ActionSetTest.cpp client/Input/PlayerCommandsTest.cpp LIBS rtype_client_player_commands rtype_client_key_names)
 rtype_add_test(NAME client_settings_tests SOURCES client/Settings/SettingsTextTest.cpp client/Settings/SettingsFileTest.cpp client/Assets/TemporaryFolder.cpp LIBS rtype_client_settings_file)
 target_include_directories(client_settings_tests PRIVATE client/Assets)
+rtype_add_test(NAME client_player_preferences_tests SOURCES client/Screens/PlayerPreferencesTest.cpp LIBS rtype_client_player_preferences rtype_client_settings)
 rtype_add_test(NAME client_launch_options_tests SOURCES client/LaunchOptions/LaunchOptionsTest.cpp LIBS rtype_client_launch_options rtype_client_constants rtype_network_constants rtype_logging)

@@ -4,6 +4,7 @@
 #include <random>
 #include "IPixelSurface.hpp"
 #include "ISkyEvent.hpp"
+#include "SkyLight.hpp"
 
 namespace rtype::client {
 
@@ -17,7 +18,7 @@ class ShootingStar final : public ISkyEvent {
 
   void advance(float eventSeconds) override;
   [[nodiscard]] bool isOver() const override;
-  void paint(IPixelSurface& surface) const override;
+  void paint(IPixelSurface& surface, SkyLight light) const override;
 
  private:
   float speed_;

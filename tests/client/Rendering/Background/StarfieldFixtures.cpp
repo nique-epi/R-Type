@@ -6,12 +6,14 @@
 #include "BackgroundConstants.hpp"
 #include "BackgroundTestConstants.hpp"
 #include "RecordingPixelSurface.hpp"
+#include "SkyLight.hpp"
 #include "Star.hpp"
 #include "Starfield.hpp"
 #include "StarfieldTestConstants.hpp"
 #include "TimeConstants.hpp"
 
 using rtype::client::MAXIMUM_BACKGROUND_STEP;
+using rtype::client::SkyLight;
 using rtype::client::Star;
 using rtype::client::STAR_LAYERS;
 using rtype::client::StarDepth;
@@ -50,6 +52,6 @@ std::size_t plotCountAt(float speedFactor) {
   Starfield starfield(SEED);
   starfield.setSpeedFactor(speedFactor);
   RecordingPixelSurface surface;
-  starfield.paint(surface);
+  starfield.paint(surface, SkyLight::Twinkling);
   return surface.plots().size();
 }

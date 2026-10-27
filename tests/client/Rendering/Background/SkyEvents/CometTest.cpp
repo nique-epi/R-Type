@@ -8,11 +8,13 @@
 #include "SkyEventConstants.hpp"
 #include "SkyEventFixtures.hpp"
 #include "SkyEventTestConstants.hpp"
+#include "SkyLight.hpp"
 
 using rtype::client::Comet;
 using rtype::client::COMET_FASTEST_SPEED;
 using rtype::client::COMET_HEAD_OFFSETS;
 using rtype::client::COMET_SLOWEST_SPEED;
+using rtype::client::SkyLight;
 
 /**
  * Given a comet in the sky
@@ -24,7 +26,7 @@ TEST(Comet, TailTrailsBehindTheHead) {
   Comet comet(random);
   advanceFor(comet, ONE_EVENT_SECOND);
 
-  const RecordingPixelSurface surface = paintOf(comet);
+  const RecordingPixelSurface surface = paintOf(comet, SkyLight::Twinkling);
 
   ASSERT_GT(surface.plots().size(), COMET_HEAD_OFFSETS.size());
   const std::size_t tailCount =
@@ -33,6 +35,47 @@ TEST(Comet, TailTrailsBehindTheHead) {
   for (std::size_t i = 0; i < tailCount; ++i) {
     EXPECT_GE(surface.plots()[i].position.x, headColumn);
   }
+}
+
+/**
+ * Given a comet in a steady sky, as for a player who reduced flashes
+ * When it flies frame by frame for a second, painted at every frame
+ * Then it paints as many pixels at every frame: no pixel of its tail blinks
+ */
+TEST(Comet, InASteadySkyItsTailDoesNotFlicker) {
+  std::mt19937 random = generatorFrom(SEED);
+  Comet comet(random);
+  comet.advance(FRAME);
+  const std::size_t firstCount =
+      paintOf(comet, SkyLight::Steady).plots().size();
+
+  for (int frame = 0; frame < FRAMES_OF_A_SECOND; ++frame) {
+    comet.advance(FRAME);
+    EXPECT_EQ(paintOf(comet, SkyLight::Steady).plots().size(), firstCount)
+        << "frame " << frame;
+  }
+}
+
+/**
+ * Given a comet in a twinkling sky
+ * When it flies frame by frame for a second, painted at every frame
+ * Then the number of pixels it paints changes: its tail flickers
+ */
+TEST(Comet, InATwinklingSkyItsTailFlickers) {
+  std::mt19937 random = generatorFrom(SEED);
+  Comet comet(random);
+  comet.advance(FRAME);
+  const std::size_t firstCount =
+      paintOf(comet, SkyLight::Twinkling).plots().size();
+  bool changed = false;
+
+  for (int frame = 0; frame < FRAMES_OF_A_SECOND; ++frame) {
+    comet.advance(FRAME);
+    changed = changed ||
+              paintOf(comet, SkyLight::Twinkling).plots().size() != firstCount;
+  }
+
+  EXPECT_TRUE(changed);
 }
 
 /**

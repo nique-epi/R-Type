@@ -9,12 +9,14 @@
 #include "SkyEventConstants.hpp"
 #include "SkyEventFixtures.hpp"
 #include "SkyEventTestConstants.hpp"
+#include "SkyLight.hpp"
 
 using rtype::client::SHOOTING_STAR_LONGEST_LIFE;
 using rtype::client::SHOOTING_STAR_LONGEST_TRAIL;
 using rtype::client::SHOOTING_STAR_SHORTEST_LIFE;
 using rtype::client::SHOOTING_STAR_TRAIL_SHRINK;
 using rtype::client::ShootingStar;
+using rtype::client::SkyLight;
 
 /**
  * Given new shooting stars drawn from twenty seeds, so that some draw a life
@@ -60,11 +62,13 @@ TEST(ShootingStar, FallsTowardsTheBottomLeft) {
   std::mt19937 random = generatorFrom(SEED);
   ShootingStar star(random);
   star.advance(FRAME);
-  const sf::Vector2i before = paintOf(star).plots().front().position;
+  const sf::Vector2i before =
+      paintOf(star, SkyLight::Twinkling).plots().front().position;
 
   advanceFor(star, A_TENTH_OF_A_SECOND);
 
-  const sf::Vector2i after = paintOf(star).plots().front().position;
+  const sf::Vector2i after =
+      paintOf(star, SkyLight::Twinkling).plots().front().position;
   EXPECT_LT(after.x, before.x);
   EXPECT_GT(after.y, before.y);
 }

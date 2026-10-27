@@ -7,10 +7,12 @@
 #include "SkyEventConstants.hpp"
 #include "SkyEventFixtures.hpp"
 #include "SkyEventTestConstants.hpp"
+#include "SkyLight.hpp"
 
 using rtype::client::Flare;
 using rtype::client::FLARE_LONGEST_DURATION;
 using rtype::client::FLARE_SHORTEST_DURATION;
+using rtype::client::SkyLight;
 
 /**
  * Given a flare that has just started
@@ -23,7 +25,7 @@ TEST(Flare, StartsAsASinglePixel) {
 
   flare.advance(FRAME);
 
-  EXPECT_EQ(paintOf(flare).plots().size(), 1U);
+  EXPECT_EQ(paintOf(flare, SkyLight::Twinkling).plots().size(), 1U);
 }
 
 /**
@@ -37,7 +39,8 @@ TEST(Flare, SpreadsIntoAFullCrossMidLife) {
 
   advanceFor(flare, MIDDLE_OF_ANY_FLARE);
 
-  EXPECT_EQ(paintOf(flare).plots().size(), PIXELS_OF_A_FULL_FLARE);
+  EXPECT_EQ(paintOf(flare, SkyLight::Twinkling).plots().size(),
+            PIXELS_OF_A_FULL_FLARE);
 }
 
 /**

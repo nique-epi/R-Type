@@ -5,6 +5,7 @@
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
+#include <optional>
 #include <random>
 #include <ranges>
 #include <vector>
@@ -14,11 +15,26 @@
 #include "IPixelSurface.hpp"
 #include "PixelRounding.hpp"
 #include "RandomRange.hpp"
+#include "SkyLight.hpp"
 #include "Star.hpp"
 #include "StarTwinkleStep.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::client {
+
+namespace {
+
+/** @returns The step of the twinkle cycle the sky has reached after
+ * @p elapsed, or nothing in a steady sky, where no star twinkles. */
+std::optional<std::int64_t> twinkleStepOf(engine::Duration elapsed,
+                                          SkyLight light) {
+  if (light == SkyLight::Steady) {
+    return std::nullopt;
+  }
+  return std::chrono::duration_cast<StarTwinkleStep>(elapsed).count();
+}
+
+}  // namespace
 
 Starfield::Starfield(std::uint32_t seed)
     : random_(seed), skyEvents_(static_cast<std::uint32_t>(random_())) {
@@ -56,9 +72,9 @@ void Starfield::setSpeedFactor(float factor) {
   speedFactor_ = std::max(factor, 0.0F);
 }
 
-void Starfield::paint(IPixelSurface& surface) const {
-  const std::int64_t twinkleStep =
-      std::chrono::duration_cast<StarTwinkleStep>(elapsed_).count();
+void Starfield::paint(IPixelSurface& surface, SkyLight light) const {
+  const std::optional<std::int64_t> twinkleStep =
+      twinkleStepOf(elapsed_, light);
   const auto firstNearerStar =
       std::ranges::upper_bound(stars_, StarDepth::Far, {}, &Star::depth);
   for (const Star& star :
@@ -70,7 +86,7 @@ void Starfield::paint(IPixelSurface& surface) const {
        std::ranges::subrange(firstNearerStar, stars_.end())) {
     paintMovingStar(star, twinkleStep, surface);
   }
-  skyEvents_.paint(surface);
+  skyEvents_.paint(surface, light);
 }
 
 const std::vector<Star>& Starfield::stars() const { return stars_; }
@@ -94,7 +110,8 @@ void Starfield::paintPlanet(IPixelSurface& surface) const {
   }
 }
 
-void Starfield::paintMovingStar(const Star& star, std::int64_t twinkleStep,
+void Starfield::paintMovingStar(const Star& star,
+                                std::optional<std::int64_t> twinkleStep,
                                 IPixelSurface& surface) const {
   if (speedFactor_ > STREAK_SPEED_FACTOR) {
     paintStreak(star, speedFactor_, surface);
@@ -115,11 +132,13 @@ void Starfield::paintStreak(const Star& star, float speedFactor,
   }
 }
 
-void Starfield::paintStar(const Star& star, std::int64_t twinkleStep,
+void Starfield::paintStar(const Star& star,
+                          std::optional<std::int64_t> twinkleStep,
                           IPixelSurface& surface) {
   const sf::Vector2i pixel = nearestPixel(star.position);
   const bool twinkling =
-      (twinkleStep + star.twinklePhase) % STAR_TWINKLE_CYCLE_STEPS == 0;
+      twinkleStep.has_value() &&
+      (*twinkleStep + star.twinklePhase) % STAR_TWINKLE_CYCLE_STEPS == 0;
   switch (star.depth) {
     case StarDepth::Far:
       surface.plot(pixel, twinkling ? BLUE : DEEP_BLUE);

@@ -10,6 +10,7 @@
 #include "PixelRounding.hpp"
 #include "RandomRange.hpp"
 #include "SkyEventConstants.hpp"
+#include "SkyLight.hpp"
 #include "TailGradient.hpp"
 
 namespace rtype::client {
@@ -43,7 +44,8 @@ bool ShootingStar::isOver() const {
   return trailLength_ <= 0.0F && remainingLife_ <= 0.0F;
 }
 
-void ShootingStar::paint(IPixelSurface& surface) const {
+void ShootingStar::paint(IPixelSurface& surface,
+                         [[maybe_unused]] SkyLight light) const {
   const int pixelCount =
       std::max(1, static_cast<int>(std::lround(trailLength_)));
   for (int i = 0; i < pixelCount; ++i) {

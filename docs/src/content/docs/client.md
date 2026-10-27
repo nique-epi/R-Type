@@ -236,7 +236,7 @@ An entity hit carries a `HitFlash` component: the `SpriteTone` it is drawn with 
 
 ### Reduced flashes: `FlashPreference`
 
-The game screen reads REDUCE FLASHES (`PlayerSettings::reduceFlashes`) at every update and hands it to the spawner as a `FlashPreference`, `Full` or `Reduced`: a change made in the options during a game applies to the next effect, and an effect already playing keeps its version, except an invulnerability: `PilotEffects` brings every `Invulnerability` to the preference at each advance, so a ship switches between blinking and steady at the next frame. While it is `Reduced`, nothing flashes, blinks, shakes, recoils or vibrates: each effect plays its version without flash, a row of the effect sheet as long as the standard one that shows no white; a hit shades the entity instead of whitening it; the particles lose the first color of their ramp; an invulnerable ship is dithered all along and outlined; the figure of a gain stays shown instead of blinking; an arrival shows no white line; and the stars do not warp at the start of a game. `Rendering/` never reads the settings: the preference is all it gets, as `MotionPreference` is for the squadron.
+The game screen reads REDUCE FLASHES (`PlayerSettings::reduceFlashes`) at every update and hands it to the spawner as a `FlashPreference`, `Full` or `Reduced`: a change made in the options during a game applies to the next effect, and an effect already playing keeps its version, except an invulnerability: `PilotEffects` brings every `Invulnerability` to the preference at each advance, so a ship switches between blinking and steady at the next frame. While it is `Reduced`, nothing flashes, blinks, shakes, recoils or vibrates: each effect plays its version without flash, a row of the effect sheet as long as the standard one that shows no white; a hit shades the entity instead of whitening it; the particles lose the first color of their ramp; an invulnerable ship is dithered all along and outlined; the figure of a gain stays shown instead of blinking; an arrival shows no white line; and the stars do not warp at the start of a game. The sky shines steadily too, behind every screen (see [Steady sky](#steady-sky-skylight)). `Rendering/` never reads the settings: the preference is all it gets, as `MotionPreference` is for the squadron.
 
 ## Scrolling background: `ScrollingBackground`
 
@@ -247,10 +247,10 @@ The sky is cosmetic and local to each client: it is not made of entities, nothin
 ```cpp
 ScrollingBackground background(std::random_device{}());
 background.advance(now - previousFrameTime);
-background.draw(window);
+background.draw(window, skyLightOf(settings));
 ```
 
-`draw()` expects a target whose view shows the playfield in its logical units, as the render target of `GameWindow` is set up.
+`draw()` expects a target whose view shows the playfield in its logical units, as the render target of `GameWindow` is set up, and the light of the sky, which says whether the stars twinkle (see [Steady sky](#steady-sky-skylight)).
 
 ### What the sky holds
 
@@ -275,6 +275,10 @@ On a Retina Mac, SFML 3 renders every window at its size in points, not in scree
 `ScrollingBackground` implements `ISky` (`src/client/Rendering/Background/ISky.hpp`), which `Application` hands to the game screen. `setSpeedFactor(factor)` makes the stars move that many times their own speed from the next `advance()`; the planet and the sky events keep theirs. Faster than `STREAK_SPEED_FACTOR` (1.5), each star is drawn with the streak it covers in a sixtieth of a second behind it, in `STAR_STREAK_COLORS`. `setOffset(pixels)` paints the sky that many pixels of the canvas away, through `shiftedBy()` (`ShiftedView.hpp`); the canvas is cleared to the sky color whole first, so a shift never uncovers the window. The game screen sets both every frame and puts them back, 1 and (0, 0), when it goes.
 
 At the start of a game, `warpSpeedFactorAt()` (`src/client/Rendering/Effects/MissionStart/MissionStart.hpp`) takes the stars from their own speed to `WARP_TOP_SPEED_FACTOR` (12) times it in `WARP_RISE` (117 ms), then back to their speed, fast then slowly, at `WARP_DURATION` (600 ms): a near star then streaks 6 pixels.
+
+### Steady sky: `SkyLight`
+
+`draw(target, light)` takes a `SkyLight` (`src/client/Rendering/Background/SkyLight.hpp`), which `Application` reads from the settings at every frame through `skyLightOf()` (`src/client/Screens/PlayerPreferences/`). While it is `Twinkling`, each star twinkles one `StarTwinkleStep` (a third of a second) in `STAR_TWINKLE_CYCLE_STEPS` (8): a far or middle star turns `BLUE`, a near star loses its cross; the gaps of the tail of a comet run along it, and past `COMET_FLICKER_START` of its length its pixels hide at random at every frame. While it is `Steady`, the value REDUCE FLASHES gives, no star twinkles, and a comet keeps its gaps still and hides no pixel. The light is given at every draw and nothing of the sky keeps it, so a change shows at the next frame, on a comet already crossing too; a flare still swells once. The sky has its own value instead of `FlashPreference` because the folder of `FlashPreference`, `Rendering/`, links `Background/`.
 
 ### Tested without a screen
 
@@ -720,7 +724,7 @@ Text twice or three times its size is written with `TextStyle::scale`: every pix
 | Change the number or the speed of the stars | `STAR_LAYERS` in `src/client/Rendering/Background/BackgroundConstants.hpp` |
 | Change a color of the sky | `src/client/Rendering/Background/BackgroundColorConstants.hpp` |
 | Change how often sky events appear, or how many at once | `SHORTEST_SKY_EVENT_GAP`, `LONGEST_SKY_EVENT_GAP`, `MAXIMUM_SKY_EVENTS` in `src/client/Rendering/Background/SkyEvents/SkyEventConstants.hpp` |
-| Add a kind of sky event | A class implementing `ISkyEvent` in `src/client/Rendering/Background/SkyEvents/`, a value of `SkyEventKind`, a weight in `SKY_EVENT_WEIGHTS`, a case in `SkyEventScheduler::createEvent` |
+| Add a kind of sky event | A class implementing `ISkyEvent` in `src/client/Rendering/Background/SkyEvents/`, whose `paint()` shows nothing that flickers under `SkyLight::Steady`, a value of `SkyEventKind`, a weight in `SKY_EVENT_WEIGHTS`, a case in `SkyEventScheduler::createEvent` |
 | Change the halo | `HALO_STANDARD_DEVIATION` in `BackgroundConstants.hpp`, `HALO_TINT` in `BackgroundColorConstants.hpp`, the blur shader in `HaloShader.hpp`, `GaussianBlur/` |
 | Change how the sky and the entities are enlarged | `PixelCanvas::show` in `src/client/Rendering/PixelCanvas/`, `IntegerScale/` in `src/client/Rendering/Background/` |
 | Change the keys of a first launch, or which keys can be bound | `DEFAULT_KEYS` and `KEY_NAMES` in `src/client/Input/InputConstants.hpp` |

@@ -4,6 +4,7 @@
 #include <random>
 #include "ISkyEvent.hpp"
 #include "RecordingPixelSurface.hpp"
+#include "SkyLight.hpp"
 
 /** @returns A generator of random numbers seeded with @p seed, for the draws of
  * an event. */
@@ -13,6 +14,6 @@
  * frames of FRAME, the last one whole. */
 void advanceFor(rtype::client::ISkyEvent& event, float eventSeconds);
 
-/** @returns The pixels @p event paints, in order. */
+/** @returns The pixels @p event paints, in order, in a sky of that light. */
 [[nodiscard]] RecordingPixelSurface paintOf(
-    const rtype::client::ISkyEvent& event);
+    const rtype::client::ISkyEvent& event, rtype::client::SkyLight light);

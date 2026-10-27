@@ -145,7 +145,7 @@ engine::Duration Application::measureFrame() {
 
 void Application::render() {
   window_.clear();
-  background_.draw(window_.renderTarget());
+  background_.draw(window_.renderTarget(), skyLightOf(settings_));
   screens_.draw(window_.renderTarget());
   window_.display();
 }

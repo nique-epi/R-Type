@@ -8,6 +8,7 @@
 #include "BackgroundColorConstants.hpp"
 #include "BackgroundConstants.hpp"
 #include "ShiftedView.hpp"
+#include "SkyLight.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::client {
@@ -25,9 +26,9 @@ void ScrollingBackground::setSpeedFactor(float factor) {
 
 void ScrollingBackground::setOffset(sf::Vector2i pixels) { offset_ = pixels; }
 
-void ScrollingBackground::draw(sf::RenderTarget& target) {
+void ScrollingBackground::draw(sf::RenderTarget& target, SkyLight light) {
   pixels_.clear();
-  starfield_.paint(pixels_);
+  starfield_.paint(pixels_, light);
   sf::RenderTexture& sky = sky_.canvas();
   sky.clear(SKY_COLOR);
   sky.setView(shiftedBy(sky.getDefaultView(), offset_));
