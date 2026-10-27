@@ -5,6 +5,8 @@
 #include <cstddef>
 #include <vector>
 #include "HudSpriteConstants.hpp"
+#include "HudSpriteConstantsFixtures.hpp"
+#include "HudSpriteConstantsTestConstants.hpp"
 #include "SheetPixels.hpp"
 #include "SpriteFrame.hpp"
 
@@ -12,22 +14,8 @@ using rtype::client::HUD_SHEET_ID;
 using rtype::client::LIFE_ROW;
 using rtype::client::MARKER_FRAMES;
 using rtype::client::PLUG_ICON_ID;
+using rtype::client::testing::PLUG_ICON_FILE_SIZE;
 using rtype::game::SpriteFrame;
-
-namespace {
-
-/** @brief Size of the plug icon file: a square of 64 pixels. */
-constexpr sf::Vector2u PLUG_ICON_FILE_SIZE(64, 64);
-
-/** @returns Every frame of the HUD sheet: the lives, the life lost, the
- * markers. */
-std::vector<SpriteFrame> everyHudFrame() {
-  std::vector<SpriteFrame> frames(LIFE_ROW.begin(), LIFE_ROW.end());
-  frames.insert(frames.end(), MARKER_FRAMES.begin(), MARKER_FRAMES.end());
-  return frames;
-}
-
-}  // namespace
 
 /**
  * Given the HUD sheet shipped in assets/
