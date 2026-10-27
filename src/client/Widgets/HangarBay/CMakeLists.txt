@@ -8,6 +8,7 @@ target_link_libraries(rtype_client_hangar_bay
   PRIVATE
     rtype_client_cut_corner_box
     rtype_client_entity_sprites
+    rtype_client_player_number_label
     rtype_client_sunk_box
     rtype_client_widget_text
 )

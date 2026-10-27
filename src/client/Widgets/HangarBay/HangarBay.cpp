@@ -14,6 +14,7 @@
 #include "ImagePlacement.hpp"
 #include "InterfaceColorConstants.hpp"
 #include "MotionPreference.hpp"
+#include "PlayerNumberLabel.hpp"
 #include "SpriteFrame.hpp"
 #include "SunkBox.hpp"
 #include "TextStyle.hpp"

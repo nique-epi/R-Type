@@ -52,4 +52,8 @@ constexpr int SMALL_FONT_BASELINE_ROW = 7;
 
 constexpr std::string_view INTERFACE_LOG_MODULE_NAME = "Interface";
 
+/** @brief How a player is named on screen: P and its number, on every bay of
+ * the waiting room, and in the status band where no nickname is shown. */
+constexpr const char* PLAYER_NUMBER_PREFIX = "P";
+
 }  // namespace rtype::client

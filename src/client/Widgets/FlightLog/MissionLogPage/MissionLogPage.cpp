@@ -9,6 +9,7 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include "BarRowWidth.hpp"
 #include "Easing.hpp"
 #include "EntitySpriteConstants.hpp"
 #include "EntitySprites.hpp"
@@ -26,6 +27,7 @@
 #include "MotionPreference.hpp"
 #include "Outline.hpp"
 #include "PaddedScore.hpp"
+#include "PlayerNumberLabel.hpp"
 #include "ProtocolConstants.hpp"
 #include "TextStyle.hpp"
 #include "TextureArea.hpp"

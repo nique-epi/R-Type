@@ -2,6 +2,7 @@
 
 #include <SFML/System/Vector2.hpp>
 #include <cstddef>
+#include "BarRowWidth.hpp"
 #include "EntitySpriteConstants.hpp"
 #include "HangarBayConstants.hpp"
 #include "InterfaceColorConstants.hpp"
