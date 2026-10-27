@@ -6,6 +6,7 @@
 #include "AssetLoadingStep.hpp"
 #include "EffectConstants.hpp"
 #include "EntitySpriteConstants.hpp"
+#include "FlightLogSheetConstants.hpp"
 #include "HudSpriteConstants.hpp"
 #include "InterfaceConstants.hpp"
 #include "ScreenConstants.hpp"
@@ -38,7 +39,7 @@ AssetList titleAssets() {
 
 AssetList gameAssets() {
   return AssetList{.textures = {ENTITY_SHEET_ID, EFFECT_SHEET_ID, HUD_SHEET_ID,
-                                PLUG_ICON_ID}};
+                                PLUG_ICON_ID, FLIGHT_LOG_SHEET_ID}};
 }
 
 void loadInterfaceAssets(AssetLibrary& library) {

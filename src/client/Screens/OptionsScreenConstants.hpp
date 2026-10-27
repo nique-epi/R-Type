@@ -9,6 +9,7 @@
 #include "SettingsConstants.hpp"
 #include "Slider.hpp"
 #include "TimeConstants.hpp"
+#include "WindowConstants.hpp"
 
 namespace rtype::client {
 
@@ -29,7 +30,8 @@ constexpr std::size_t ACCESS_TAB = 3;
 constexpr std::size_t MUSIC_ROW = 0;
 constexpr std::size_t EFFECTS_ROW = 1;
 constexpr std::size_t FIRST_KEY_ROW = 0;
-constexpr std::size_t WINDOW_SIZE_ROW = 0;
+constexpr std::size_t DISPLAY_MODE_ROW = 0;
+constexpr std::size_t WINDOW_SIZE_ROW = 1;
 
 /** @brief How a description starts. */
 constexpr std::string_view DESCRIPTION_START = "> ";
@@ -73,7 +75,15 @@ constexpr const char* DEFAULT_KEYS_DESCRIPTION =
     "> PUTS BACK THE KEYS OF A FIRST LAUNCH";
 constexpr const char* DEFAULT_KEYS_QUESTION = "PUT BACK THE DEFAULT KEYS?";
 
-/** @brief DISPLAY: the size of the window, and what its row says. */
+/** @brief DISPLAY: the display mode, its choices in the order of DISPLAY_MODES,
+ * and the size of the window, and what their rows say. */
+constexpr const char* DISPLAY_MODE_LABEL = "DISPLAY MODE";
+constexpr std::array<std::string_view, DISPLAY_MODE_COUNT> DISPLAY_MODE_LABELS{
+    "WINDOWED", "BORDERLESS"};
+constexpr const char* DISPLAY_MODE_DESCRIPTION =
+    "> ENTER OPENS THE LIST OF MODES";
+constexpr const char* BORDERLESS_DESCRIPTION =
+    "> BORDERLESS COVERS THE WHOLE SCREEN";
 constexpr const char* WINDOW_SIZE_LABEL = "WINDOW SIZE";
 constexpr const char* WINDOW_SIZE_DESCRIPTION =
     "> ENTER OPENS THE LIST OF SIZES";

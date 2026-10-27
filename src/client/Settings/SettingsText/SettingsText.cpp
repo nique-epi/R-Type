@@ -1,6 +1,7 @@
 #include "SettingsText.hpp"
 #include <SFML/Window/Keyboard.hpp>
 #include <algorithm>
+#include <array>
 #include <charconv>
 #include <cstddef>
 #include <cstdint>
@@ -16,6 +17,7 @@
 #include "PixelSize.hpp"
 #include "PlayerSettings.hpp"
 #include "SettingsConstants.hpp"
+#include "WindowConstants.hpp"
 
 namespace rtype::client {
 
@@ -100,32 +102,27 @@ std::optional<PixelSize> windowSizeOf(std::string_view text) {
                    .height = static_cast<unsigned int>(*height)};
 }
 
-std::optional<ColorMode> colorModeOf(std::string_view text) {
-  for (std::size_t mode = 0; mode < COLOR_MODE_COUNT; ++mode) {
-    if (COLOR_MODE_VALUES[mode] == text) {
-      return COLOR_MODES[mode];
+/** @returns The value placed in its list as this text is placed in the list of
+ * names, or nothing when no name is this text. */
+template <typename Value, std::size_t Count>
+std::optional<Value> valueNamed(
+    std::string_view text, const std::array<std::string_view, Count>& names,
+    const std::array<Value, Count>& values) {
+  for (std::size_t index = 0; index < Count; ++index) {
+    if (names[index] == text) {
+      return values[index];
     }
   }
   return std::nullopt;
 }
 
-template <typename Value>
-LineOutcome assign(std::optional<Value> parsed, Value& setting) {
+template <typename Value, typename Setting>
+LineOutcome assign(std::optional<Value> parsed, Setting& setting) {
   if (!parsed.has_value()) {
     return LineOutcome::InvalidValue;
   }
   setting = *parsed;
   return LineOutcome::Applied;
-}
-
-/** @returns The bound action whose key a setting names, or nothing. */
-std::optional<BoundAction> boundActionNamed(std::string_view name) {
-  for (std::size_t action = 0; action < BOUND_ACTION_COUNT; ++action) {
-    if (BOUND_ACTION_KEY_NAMES[action] == name) {
-      return BOUND_ACTIONS[action];
-    }
-  }
-  return std::nullopt;
 }
 
 LineOutcome applyKey(PlayerSettings& settings, BoundAction action,
@@ -138,13 +135,28 @@ LineOutcome applyKey(PlayerSettings& settings, BoundAction action,
   return LineOutcome::Applied;
 }
 
-LineOutcome applyLine(PlayerSettings& settings, std::string_view line) {
+/** @brief A line of a settings text: its name and its value, without the
+ * spaces around them. */
+struct SettingLine {
+  std::string_view name;
+  std::string_view value;
+};
+
+/** @returns The name and the value of a line, or nothing when it holds no
+ * SETTING_SEPARATOR. */
+std::optional<SettingLine> settingLineOf(std::string_view line) {
   const std::size_t separator = line.find(SETTING_SEPARATOR);
   if (separator == std::string_view::npos) {
-    return LineOutcome::WithoutSeparator;
+    return std::nullopt;
   }
-  const std::string_view name = trimmed(line.substr(0, separator));
-  const std::string_view value = trimmed(line.substr(separator + 1));
+  return SettingLine{.name = trimmed(line.substr(0, separator)),
+                     .value = trimmed(line.substr(separator + 1))};
+}
+
+/** @returns What became of a setting written into the settings: applied, or
+ * left out with the reason. */
+LineOutcome applySetting(PlayerSettings& settings, SettingLine setting) {
+  const auto [name, value] = setting;
   if (name == SETTINGS_VERSION_NAME) {
     return integerOf(value) == SETTINGS_VERSION ? LineOutcome::Applied
                                                 : LineOutcome::InvalidValue;
@@ -159,15 +171,15 @@ LineOutcome applyLine(PlayerSettings& settings, std::string_view line) {
     return assign(switchOf(value), settings.muted);
   }
   if (name == WINDOW_SIZE_NAME) {
-    const std::optional<PixelSize> size = windowSizeOf(value);
-    if (!size.has_value()) {
-      return LineOutcome::InvalidValue;
-    }
-    settings.windowSize = size;
-    return LineOutcome::Applied;
+    return assign(windowSizeOf(value), settings.windowSize);
+  }
+  if (name == DISPLAY_MODE_NAME) {
+    return assign(valueNamed(value, DISPLAY_MODE_VALUES, DISPLAY_MODES),
+                  settings.displayMode);
   }
   if (name == COLOR_MODE_NAME) {
-    return assign(colorModeOf(value), settings.colorMode);
+    return assign(valueNamed(value, COLOR_MODE_VALUES, COLOR_MODES),
+                  settings.colorMode);
   }
   if (name == REDUCE_FLASHES_NAME) {
     return assign(switchOf(value), settings.reduceFlashes);
@@ -178,11 +190,20 @@ LineOutcome applyLine(PlayerSettings& settings, std::string_view line) {
   if (name == AUTO_FIRE_NAME) {
     return assign(switchOf(value), settings.autoFire);
   }
-  const std::optional<BoundAction> action = boundActionNamed(name);
+  const std::optional<BoundAction> action =
+      valueNamed(name, BOUND_ACTION_KEY_NAMES, BOUND_ACTIONS);
   if (!action.has_value()) {
     return LineOutcome::UnknownSetting;
   }
   return applyKey(settings, *action, value);
+}
+
+LineOutcome applyLine(PlayerSettings& settings, std::string_view line) {
+  const std::optional<SettingLine> setting = settingLineOf(line);
+  if (!setting.has_value()) {
+    return LineOutcome::WithoutSeparator;
+  }
+  return applySetting(settings, *setting);
 }
 
 std::string ignoredLine(std::size_t number, LineOutcome outcome) {
@@ -216,6 +237,9 @@ std::string settingsText(const PlayerSettings& settings) {
   if (settings.windowSize.has_value()) {
     writeLine(text, WINDOW_SIZE_NAME, windowSizeValue(*settings.windowSize));
   }
+  writeLine(
+      text, DISPLAY_MODE_NAME,
+      DISPLAY_MODE_VALUES[static_cast<std::size_t>(settings.displayMode)]);
   for (std::size_t action = 0; action < BOUND_ACTION_COUNT; ++action) {
     writeLine(text, BOUND_ACTION_KEY_NAMES[action],
               keyName(settings.keys.keyOf(BOUND_ACTIONS[action]))

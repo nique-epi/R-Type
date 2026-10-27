@@ -4,6 +4,7 @@
 #include <chrono>
 #include <cstddef>
 #include <cstdint>
+#include <string_view>
 #include "TimeConstants.hpp"
 
 /** @brief A key that is not the options key. */
@@ -39,10 +40,22 @@ constexpr std::uint8_t FIRST_PILOT = 1;
 constexpr std::uint8_t SECOND_PILOT = 2;
 constexpr std::uint8_t THIRD_PILOT = 3;
 constexpr std::uint8_t LOCAL_NUMBER = SECOND_PILOT;
+constexpr std::string_view FIRST_PILOT_NICKNAME = "ACE";
+constexpr std::string_view SECOND_PILOT_NICKNAME = "NOVA";
+constexpr std::string_view THIRD_PILOT_NICKNAME = "KAI";
 
 /** @brief The lives and the score a world state gives the first pilot. */
 constexpr std::uint8_t PILOT_LIVES = 3;
 constexpr std::uint32_t PILOT_SCORE = 12400;
+
+/** @brief Scores of the end of a game: ACE 100, NOVA (this client) 300, KAI
+ * 200; how many pilots it ranks; and the second the game goes on before the
+ * end screen (the design: the end screen starts within a second). */
+constexpr std::uint32_t FIRST_PILOT_FINAL = 100;
+constexpr std::uint32_t SECOND_PILOT_FINAL = 300;
+constexpr std::uint32_t THIRD_PILOT_FINAL = 200;
+constexpr std::size_t PILOTS_AT_THE_END = 3;
+constexpr rtype::engine::Duration END_WAIT = std::chrono::milliseconds(1000);
 
 /** @brief How many times the status canvas is displayed when the game screen
  * is built. */

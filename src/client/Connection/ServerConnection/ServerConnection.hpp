@@ -83,7 +83,9 @@ namespace rtype::client {
  * hands them over; leaving the session drops those not handed over and
  * forgets the events seen. The game screen drains them every frame, behind
  * the options too, so they never pile up for longer than the loading of the
- * game.
+ * game. The first GameEnded of a game goes to the game screen with them, and
+ * the session is no longer in a game: the waiting room can be entered again,
+ * and ready asked again; the copies the server repeats are dropped.
  *
  * Only datagrams from the server being contacted, of this protocol and version
  * and whose messages add up to their end, are read; any other is ignored, with

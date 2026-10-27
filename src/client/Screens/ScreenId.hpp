@@ -41,6 +41,13 @@ enum class ScreenId : std::uint8_t {
   /** @brief The title screen the intro gives way to: its squadron starts in
    * place, where the ships of the intro landed. */
   TitleAfterIntro,
+  /** @brief The end of a game: its scores in the flight log, then PRESS ENTER
+   * TO REPLAY or QUIT; entered through replaceAll() only, by the game once
+   * the server ended it. */
+  End,
+  /** @brief The waiting room after a game, entered through replaceAll()
+   * only: alone on the stack, its BACK leaves the server for the title. */
+  LobbyAfterGame,
 };
 
 }  // namespace rtype::client

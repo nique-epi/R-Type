@@ -7,6 +7,7 @@
 #include "ConnectedPlayer.hpp"
 #include "EntityDestruction.hpp"
 #include "EntityIdConstants.hpp"
+#include "GameEnded.hpp"
 #include "GameEvent.hpp"
 #include "GameEventBroadcaster.hpp"
 #include "GameInstanceConstants.hpp"
@@ -17,6 +18,7 @@
 #include "LifeKeeperTestConstants.hpp"
 #include "MessageType.hpp"
 #include "OutgoingDatagram.hpp"
+#include "Replication/GameEndAnnouncerTestConstants.hpp"
 #include "SentDatagrams.hpp"
 #include "ServerConstants.hpp"
 #include "TimerScheduler.hpp"
@@ -223,6 +225,110 @@ TEST_F(GameInstanceLivesFixture, SparesTheShipThatCameBackFromAMissile) {
   shootTheShipOf(FIRST_PLAYER);
 
   EXPECT_EQ(playerAt(FIRST_PLAYER).lives, THREE_LIVES - 1);
+}
+
+/**
+ * Given a game in progress whose first player lost its last life
+ * When the second player loses its last life, then the next tick runs
+ * Then the game is finished: no player has a life left
+ */
+TEST_F(GameInstanceLivesFixture, EndsTheGameOnceNoPlayerHasALifeLeft) {
+  startGame();
+  takeTheLastLifeOf(FIRST_PLAYER);
+
+  takeTheLastLifeOf(SECOND_PLAYER);
+  runTicksDispatching(1);
+
+  EXPECT_EQ(game().state(), GameState::Finished);
+}
+
+/**
+ * Given a game in progress
+ * When the first player loses its last life, then a few ticks run
+ * Then the game goes on: the second player has a life left
+ */
+TEST_F(GameInstanceLivesFixture, GoesOnWhileAPlayerHasALifeLeft) {
+  startGame();
+
+  takeTheLastLifeOf(FIRST_PLAYER);
+  runTicksDispatching(SOME_TICKS);
+
+  EXPECT_EQ(game().state(), GameState::InProgress);
+}
+
+/**
+ * Given a game in progress whose first player lost its last life
+ * When the ship of the second player touches a Bydo, which leaves that player
+ * lives but no ship until it comes back, then the next tick runs
+ * Then the game goes on: a player who waits for its ship has a life left
+ */
+TEST_F(GameInstanceLivesFixture, GoesOnWhileAPlayerWaitsForItsShip) {
+  startGame();
+  takeTheLastLifeOf(FIRST_PLAYER);
+
+  hitTheShipOf(SECOND_PLAYER);
+  runTicksDispatching(1);
+
+  EXPECT_EQ(game().state(), GameState::InProgress);
+}
+
+/**
+ * Given a game in progress whose two players scored
+ * When both lose their last life
+ * Then each player is sent one GameEnded listing both, in order of number,
+ * with the score each ended the game with
+ */
+TEST_F(GameInstanceLivesFixture, SendsEveryPlayerTheScoresAtTheEnd) {
+  startGame();
+  giveTheFinalScores();
+
+  loseEveryLife();
+
+  const network::GameEnded expected{
+      .players = {network::PlayerScore{.playerNumber = FIRST_JOINED_NUMBER,
+                                       .score = FIRST_PLAYER_FINAL_SCORE},
+                  network::PlayerScore{.playerNumber = SECOND_JOINED_NUMBER,
+                                       .score = SECOND_PLAYER_FINAL_SCORE}}};
+  for (const std::size_t player : {FIRST_PLAYER, SECOND_PLAYER}) {
+    const std::vector<network::OutgoingDatagram> ends =
+        ofType(network::MessageType::GameEnded, sentTo(player));
+    ASSERT_EQ(ends.size(), 1U);
+    EXPECT_EQ(onlyMessageIn<network::GameEnded>(ends.front()), expected);
+  }
+}
+
+/**
+ * Given a game whose two players lost their last life, which sent them the
+ * end
+ * When the 500 ms the protocol sets between two GameEnded run
+ * Then the first player was sent the end once more, so a lost one is
+ * corrected
+ */
+TEST_F(GameInstanceLivesFixture, RepeatsTheEndWhileTheGameIsFinished) {
+  startGame();
+  loseEveryLife();
+
+  runTicksDispatching(PROTOCOL_GAME_ENDED_TICKS);
+
+  EXPECT_EQ(
+      ofType(network::MessageType::GameEnded, sentTo(FIRST_PLAYER)).size(), 2U);
+}
+
+/**
+ * Given a game whose two players lost their last life, waiting for players
+ * again once its finished state is over
+ * When both players say ready again, then a few ticks of the new game run
+ * Then the new game is in progress: no restart of the server is needed
+ */
+TEST_F(GameInstanceLivesFixture, PlaysANewGameAfterTheEnd) {
+  startGame();
+  loseEveryLife();
+  runTicksDispatching(FINISHED_STATE_TICKS);
+
+  startTheNextGame();
+  runTicksDispatching(SOME_TICKS);
+
+  EXPECT_EQ(game().state(), GameState::InProgress);
 }
 
 }  // namespace rtype::server::testing

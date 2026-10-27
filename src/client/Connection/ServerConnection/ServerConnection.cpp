@@ -23,6 +23,7 @@
 #include "EntityDestroyed.hpp"
 #include "EntityMessage.hpp"
 #include "EntitySpawned.hpp"
+#include "GameEnded.hpp"
 #include "GameEvent.hpp"
 #include "GameEventHistory.hpp"
 #include "GameStarted.hpp"
@@ -224,6 +225,14 @@ void ServerConnection::registerSessionMessages() {
       [this](const network::MessageOrigin&, const network::GameEvent& event) {
         if (gameEvents_.isFirstCopy(event.eventNumber)) {
           keepEntityMessage(event);
+        }
+      });
+  dispatcher_.registerHandler<network::GameEnded>(
+      [this](const network::MessageOrigin&, const network::GameEnded& ended) {
+        if (gameStarted_) {
+          keepEntityMessage(ended);
+          gameStarted_ = false;
+          logger_.info("the game ended");
         }
       });
 }

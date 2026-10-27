@@ -3,7 +3,7 @@ title: Server and game
 description: What the server program and the game library do, how their parts fit together and where to find them in the code.
 ---
 
-The server, `r-type_server`, is meant to run the game for the players connected to it. Today it receives their datagrams, runs a tick at a fixed rate, lets up to four players in and keeps one game that starts when they are all ready: each tick answers the connection requests received and reads the `ReadyState` and the inputs of the players. Any datagram of a player proves it is still there, and a game closes the session of a player it hears nothing from for 5 seconds. The game tells its players the waiting room, the start of the game and the world state, each datagram under the session token and the next sequence of its player. Each tick of a game in progress moves the ship of every player by the arrows its newest input holds, fires the missiles of the players who hold shoot, lets every Bydo fire to the left, and runs the collisions, so three missiles destroy a Bydo, and a ship touched by a Bydo or by its missile costs a life. The Bydos come in waves that grow, read at launch from the waves file of the server. It never links SFML or Asio: it reaches the network through `rtype_network`, and its own libraries are checked for it at configure time (see [Project layout](/R-Type/project-layout/#who-may-link-what)).
+The server, `r-type_server`, is meant to run the game for the players connected to it. Today it receives their datagrams, runs a tick at a fixed rate, lets up to four players in and keeps one game that starts when they are all ready: each tick answers the connection requests received and reads the `ReadyState` and the inputs of the players. Any datagram of a player proves it is still there, and a game closes the session of a player it hears nothing from for 5 seconds. The game tells its players the waiting room, the start of the game, the world state and, once no player has a life left, the end of the game with the score of each, each datagram under the session token and the next sequence of its player. Each tick of a game in progress moves the ship of every player by the arrows its newest input holds, fires the missiles of the players who hold shoot, lets every Bydo fire to the left, and runs the collisions, so three missiles destroy a Bydo, and a ship touched by a Bydo or by its missile costs a life. The Bydos come in waves that grow, read at launch from the waves file of the server. It never links SFML or Asio: it reaches the network through `rtype_network`, and its own libraries are checked for it at configure time (see [Project layout](/R-Type/project-layout/#who-may-link-what)).
 
 The game library, `rtype_game`, holds the rules of a match: what moves, what touches what and what that means. It is built on the engine (see [Engine](/R-Type/engine/)), and it knows nothing about sockets, SFML or the messages sent between the programs (see [Project layout](/R-Type/project-layout/#game)). The server runs all of it; the client will only run the part that predicts its own ship.
 
@@ -19,11 +19,12 @@ This page tells you where to look when you need to change something. It describe
 | Game events sent to the players | Available: the removal of a Bydo or a missile that leaves the playfield, the damage and destruction of a Bydo hit by missiles, and the loss of a ship and of a life when a ship touches a Bydo or a missile of a Bydo | `src/server/Replication/`, `src/game/Events/` |
 | Launch options | Available: the port, the seed and `--help` | `src/server/LaunchOptions/` |
 | Letting players in: challenge, acceptance or refusal | Available; refuses with `GameInProgress` while the game is not waiting for players | `src/server/Lobby/`, `src/server/Instances/` |
-| A game: states, ready rule, new world between two games | Available: one game, which ends only once no player is left in it | `src/server/Instances/GameInstance/` |
+| A game: states, ready rule, new world between two games | Available: one game, which ends once no player is left in it or no player left has a life | `src/server/Instances/GameInstance/` |
 | Newest input of each player, applied to its ship at each tick of a game in progress | Available: the arrows move the ship, shoot fires its missiles | `src/server/Instances/GameInstance/` |
 | Heartbeats, and the session of a silent player closed after 5 seconds | Available, and a `Disconnection` closes the session at once | `src/server/Instances/GameInstance/` |
 | Waiting room and start of the game sent to the players (`LobbyState`, `GameStarted`) | Available | `src/server/Replication/LobbyStateAnnouncer/`, `src/server/Instances/GameInstance/` |
-| End of a game sent to the players (`GameEnded`), several games, master link | Not yet written | — |
+| End of a game sent to the players (`GameEnded`) | Available: once no player has a life left, with the score of each, until the game waits for players again | `src/server/Replication/GameEndAnnouncer/`, `src/server/Instances/GameInstance/` |
+| Several games, master link | Not yet written | — |
 | Components (`Position`, `Velocity`, `CollisionBox`, `Health`, `EntityType`, `Sprite`, `Layer`) | Available | `src/game/Components/` |
 | Movement, run by each game tick | Available | `src/game/Systems/MovementSystem/`, `src/server/Instances/GameInstance/` |
 | Movement patterns, and removal of what leaves the playfield | Available: patterns for the Bydos; a Bydo and its missiles leave on the left, a missile of a player on the right | `src/game/Systems/PatternSystem/`, `src/game/Systems/PlayfieldExitSystem/` |
@@ -199,15 +200,15 @@ send(rtype::server::sessionDatagram(player, rtype::network::GameStarted{}));
 | State (`GameState`) | The game… | It goes to… |
 |---|---|---|
 | `WaitingForPlayers` | takes `ReadyState`, lets players in and sends them the room (see [Waiting room](#waiting-room-lobbystateannouncer)) | `InProgress` on the tick when at least one player is connected and every connected player is ready, which sends every connected player `GameStarted` |
-| `InProgress` | counts one tick per `onTick`, moves the ships, runs the systems of the world, fires the missiles of the players who hold shoot, lets the Bydos fire, lets the Bydos appear, counts the lives and sends the world state; refuses new connections | `Finished` when `finish()` is called, or on the tick the session of its last player closes |
-| `Finished` | refuses new connections | `WaitingForPlayers` after `FINISHED_STATE_TICKS` (300) ticks, `FINISHED_STATE_SECONDS` (5) seconds |
+| `InProgress` | counts one tick per `onTick`, moves the ships, runs the systems of the world, fires the missiles of the players who hold shoot, lets the Bydos fire, lets the Bydos appear, counts the lives and sends the world state; refuses new connections | `Finished` when `finish()` is called, on the tick the session of its last player closes, or on the tick after the last life of its players is lost (see [End of a game](#end-of-a-game-gameendannouncer)) |
+| `Finished` | refuses new connections; a game that ended by itself sends every player the result (see [End of a game](#end-of-a-game-gameendannouncer)) | `WaitingForPlayers` after `FINISHED_STATE_TICKS` (300) ticks, `FINISHED_STATE_SECONDS` (5) seconds |
 
 - Going back to `WaitingForPlayers` builds a new `World`: the tick is 0, the players stay connected, none is ready any more, and each gets its `STARTING_LIVES` back and a new ship, announced again. Network ids start again at 1 in the new world, so the announced ids are the ones of the previous game.
 - `onTick` reads a datagram only when its header is of this protocol and version, its message sizes add up and its sender is a player of the game. It does not check the session token: the sorter already dropped, on the network thread, every datagram from the address of a player that does not carry its token (see [Sorting the datagrams](#sorting-the-datagrams-datagramsorter)), so a sender that forges the address of a player can neither say ready nor steer in its place. Every datagram it does not read is logged at the `debug` level under `Instances` with its sender and why, at most once per `REJECTION_LINE_INTERVAL` of the ticks the game ran: 600 ticks count as exactly 10 s.
 - A `ReadyState` counts only while the game waits for players, and with a sequence newer than the newest one accepted from that player (`isNewerSequence`, 1 to 32767 ahead, wrapping from 65535 to 0; exactly 32768 ahead is never newer). A late copy therefore never undoes a newer one. Anything else is ignored.
-- `finish()` ends the game in progress and does nothing in another state. The game ends itself the same way once no player is left in it (see [Silent players](#silent-players-heartbeats-and-timeouts)); no rule of the game decides yet that a game is over, so a game with players never ends today.
+- `finish()` ends the game in progress and does nothing in another state; it tells the players no result. The game ends itself the same way once no player is left in it (see [Silent players](#silent-players-heartbeats-and-timeouts)) or once no player left in it has a life (see [End of a game](#end-of-a-game-gameendannouncer)), and only then tells them the result.
 - The tick that starts the game sends every connected player `GameStarted`, then the world state of tick 0, so `GameStarted` always leaves first and a lost one is corrected by that world state. The game logs `game started, players connected: <n>` at the `info` level under `Instances`.
-- `GameEnded` is not sent yet.
+- The end of a game goes out as a `GameEnded` (see [End of a game](#end-of-a-game-gameendannouncer)).
 
 ```cpp
 for (const std::unique_ptr<rtype::server::GameInstance>& game :
@@ -236,7 +237,7 @@ A client that crashes, is killed or loses the network sends nothing more, and no
 
 A player who leaves does not wait for the timeout. Its client sends a `Disconnection` when the player leaves the waiting room or closes the window (see [Client](/R-Type/client/#joining-a-server-serverconnection)), and the session closes in the tick that reads it, through the same three steps, with a `PlayerDeparture` (`Left`): the others get `PlayerLeft` (`Left`) at once. The game logs `player <n> left from <address> port <port>` at the `info` level under `Instances`. The two copies the client sends after the first are dropped: by the sorter once it forgot the address, or by the game, whose roster no longer holds the sender.
 
-The server sends heartbeats too. At the end of each tick, a game sends a `Heartbeat` to each player that no datagram reached for `TICKS_PER_HEARTBEAT` (60) ticks, whoever sent the last one: every datagram to a player takes its header from `nextSessionHeader()`, which starts that count over. The waiting room (every 500 ms) and a game in progress (20 states per second) already send more often, so only a finished game would send heartbeats, and today a game finishes only once no player is left in it.
+The server sends heartbeats too. At the end of each tick, a game sends a `Heartbeat` to each player that no datagram reached for `TICKS_PER_HEARTBEAT` (60) ticks, whoever sent the last one: every datagram to a player takes its header from `nextSessionHeader()`, which starts that count over. The waiting room (every 500 ms), a game in progress (20 states per second) and a game that ended by itself (`GameEnded` every 500 ms) already send more often, so only a game ended by `finish()` sends heartbeats.
 
 `HEARTBEAT_INTERVAL` and `SESSION_TIMEOUT` (`src/network/Protocol/ProtocolConstants.hpp`) are **provisional**, like every delay of the protocol. Code must read them, or their tick counts in `src/server/Instances/GameInstanceConstants.hpp`, and never repeat 1, 5, 60 or 300.
 
@@ -494,7 +495,7 @@ rtype::game::DamageRules damageRules{events, world.components()};
 3. A player with a life left has no ship for `RESPAWN_DELAY` (1 s, 60 ticks), then gets a new one at its start position through `ShipSpawnAnnouncer::onPlayerJoined`, which announces it again.
 4. That ship cannot be hit for `INVULNERABILITY_DURATION` (2 s, 120 ticks), the tick it comes back included: a Bydo it touches meanwhile costs nothing and stays, and a missile that hits it meanwhile disappears and costs nothing.
 
-- A player with no life left has no ship and only watches: its input moves and fires nothing. A game whose players have all lost their last life goes on, since no rule ends a game yet.
+- A player with no life left has no ship and only watches: its input moves and fires nothing. Once no player left in the game has a life, the game ends (see [End of a game](#end-of-a-game-gameendannouncer)).
 - A contact naming an entity already gone is ignored, so two Bydos touching one ship in the same `dispatch()` cost one life.
 - The lives and the waits are kept in `ConnectedPlayer` (`lives`, `ticksUntilRespawn`, `invulnerableTicksLeft`). `onTick()` counts the waits down at each tick of a game in progress, and the world state sends `lives` and `invulnerable`.
 - The three values are **provisional** until gameplay tunes them. Code must read the constants (`src/server/Instances/LifeKeeperConstants.hpp`) and never repeat 3, 1 s or 2 s.
@@ -513,6 +514,19 @@ lifeKeeper_ = std::make_unique<LifeKeeper>(
 
 `GameInstance` builds one with each world, in `buildWorld()`, and calls `onTick()` after the Bydos appear.
 
+## End of a game: `GameEndAnnouncer`
+
+A game in progress ends once no player left in it has a life. `LifeKeeper` takes the last one while the bus is dispatched, at the end of a tick; at the start of the next tick, after the sessions close, `GameInstance` finds no connected player with a life, logs `game finished: no player has a life left` at the `info` level under `Instances` and moves to `Finished`. A player who waits for its next ship still has a life, so the game goes on.
+
+`GameEndAnnouncer` (`src/server/Replication/GameEndAnnouncer/`) then tells every player the result, as a `GameEnded` (see [Protocol](/R-Type/protocol/#a-session)):
+
+- The result is read once, when the game ends: every connected player, in order of number, with its score. Every copy says the same, whoever leaves meanwhile.
+- It goes to every connected player at the first tick of the end, one tick after the last life was lost, so after the first copy of the last explosion and of its game events. It goes again to the players still connected every `TICKS_PER_GAME_ENDED` (30) ticks, until the game waits for players again `FINISHED_STATE_TICKS` (300) ticks after the end.
+- No world state goes out meanwhile. The new world then gives every player its `STARTING_LIVES` and a score of 0; the players stay connected and say ready to play again.
+- `GAME_ENDED_INTERVAL` (500 ms) is **provisional**, like the protocol rate it follows; `TICKS_PER_GAME_ENDED` is that interval in whole ticks, rounded down. Code must read the constants (`src/server/ServerConstants.hpp`) and never repeat 500 or 30.
+
+A game ended by `finish()`, or by the departure of its last player, tells no one a result.
+
 ## Where to intervene
 
 | You want to… | Look at |
@@ -525,6 +539,8 @@ lifeKeeper_ = std::make_unique<LifeKeeper>(
 | Change how often the world state is sent | `WORLD_STATES_PER_SECOND` in `src/server/ServerConstants.hpp` |
 | Change how often an unchanged waiting room is sent again | `LOBBY_STATE_INTERVAL` in `src/server/ServerConstants.hpp` |
 | Change what the waiting room lists | `roomOf` in `src/server/Replication/LobbyStateAnnouncer/LobbyStateAnnouncer.cpp` |
+| Change when a game ends | `reasonToFinish` in `src/server/Instances/GameInstance/GameInstance.cpp` |
+| Change how often the end of a game is sent again | `GAME_ENDED_INTERVAL` in `src/server/ServerConstants.hpp` |
 | Send a datagram to a player during a session | `sessionDatagram` in `src/server/Replication/SessionDatagram.hpp`, then the send function of the game |
 | Announce something to every client | Publish one of the events of `src/game/Events/` on the `EventBus`; `GameEventBroadcaster` sends it |
 | Send a new kind of event | A struct in `src/game/Events/`, an `encode` overload in `GameEventEncoder`, a `subscribeTo` line in the `GameEventBroadcaster` constructor |

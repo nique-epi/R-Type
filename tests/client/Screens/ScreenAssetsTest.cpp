@@ -7,6 +7,7 @@
 #include "AssetLoadingStep.hpp"
 #include "EffectConstants.hpp"
 #include "EntitySpriteConstants.hpp"
+#include "FlightLogSheetConstants.hpp"
 #include "HudSpriteConstants.hpp"
 #include "InterfaceConstants.hpp"
 #include "ScreenAssets.hpp"
@@ -19,6 +20,7 @@ using rtype::client::AssetLibrary;
 using rtype::client::AssetLoadingStep;
 using rtype::client::EFFECT_SHEET_ID;
 using rtype::client::ENTITY_SHEET_ID;
+using rtype::client::FLIGHT_LOG_SHEET_ID;
 using rtype::client::gameAssets;
 using rtype::client::HUD_SHEET_ID;
 using rtype::client::introAssets;
@@ -110,6 +112,16 @@ TEST(ScreenAssets, AGameLoadsTheHudSheet) {
  */
 TEST(ScreenAssets, AGameLoadsThePlugIcon) {
   EXPECT_THAT(gameAssets().textures, Contains(PLUG_ICON_ID));
+}
+
+/**
+ * Given the assets a game needs
+ * When its textures are listed
+ * Then they hold the flight log sheet, so the end screen opens without
+ * loading after a game
+ */
+TEST(ScreenAssets, AGameLoadsTheFlightLogSheet) {
+  EXPECT_THAT(gameAssets().textures, Contains(FLIGHT_LOG_SHEET_ID));
 }
 
 /**

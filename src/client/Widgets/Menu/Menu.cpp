@@ -5,14 +5,12 @@
 #include <SFML/Window/Keyboard.hpp>
 #include <SFML/Window/Mouse.hpp>
 #include <algorithm>
-#include <cmath>
 #include <cstddef>
 #include <optional>
 #include <span>
 #include <string>
 #include <string_view>
 #include <utility>
-#include "BackgroundConstants.hpp"
 #include "BarState.hpp"
 #include "Button.hpp"
 #include "CutCornerBox.hpp"
@@ -21,6 +19,7 @@
 #include "ImagePlacement.hpp"
 #include "InterfaceColorConstants.hpp"
 #include "InterfaceConstants.hpp"
+#include "InterfacePixel.hpp"
 #include "Label.hpp"
 #include "PlayfieldMapping.hpp"
 #include "RowControl.hpp"
@@ -34,16 +33,6 @@
 namespace rtype::client {
 
 namespace {
-
-/**
- * @returns The pixel of the interface picture under a point of the playfield;
- * a point left of or above the picture gives a negative pixel.
- */
-sf::Vector2i interfacePixelAt(sf::Vector2f playfieldPoint) {
-  return {
-      static_cast<int>(std::floor(playfieldPoint.x / BACKGROUND_PIXEL_SIZE)),
-      static_cast<int>(std::floor(playfieldPoint.y / BACKGROUND_PIXEL_SIZE))};
-}
 
 /** @brief Plays the click of a bar or a tab, when the menu has a sound
  * player. */

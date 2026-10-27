@@ -3,6 +3,7 @@
 #include <gtest/gtest.h>
 #include <SFML/Window/Keyboard.hpp>
 #include <vector>
+#include "LobbyPlace.hpp"
 #include "LobbyScreen.hpp"
 #include "LobbyState.hpp"
 #include "RecordingInterfaceCanvas.hpp"
@@ -15,7 +16,8 @@
  * READY_KEY. */
 class LobbyScreenFixture : public ::testing::Test {
  protected:
-  LobbyScreenFixture();
+  explicit LobbyScreenFixture(rtype::client::LobbyPlace place =
+                                  rtype::client::LobbyPlace::AfterConnection);
 
   /** @brief The server lists these players, and a frame goes by. */
   void list(std::vector<rtype::network::LobbyPlayer> players);

@@ -6,8 +6,9 @@ target_link_libraries(rtype_client_game_window
   PUBLIC
     SFML::Graphics
     rtype_client_window
-    rtype_client_window_size_selection
+    rtype_client_window_layout
   PRIVATE
+    rtype_client_platform
     rtype_client_playfield_viewport
     rtype_game
 )
