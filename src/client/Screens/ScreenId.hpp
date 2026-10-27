@@ -43,7 +43,7 @@ enum class ScreenId : std::uint8_t {
   TitleAfterIntro,
   /** @brief The end of a game: its scores in the flight log, then PRESS ENTER
    * TO REPLAY or QUIT; entered through replaceAll() only, by the game once
-   * the server ended it. */
+   * the server ended it, or at launch with --end-screen-demo. */
   End,
   /** @brief The waiting room after a game, entered through replaceAll()
    * only: alone on the stack, its BACK leaves the server for the title. */

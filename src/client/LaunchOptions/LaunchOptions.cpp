@@ -56,6 +56,13 @@ LaunchOptions LaunchOptions::read(std::span<const std::string_view> arguments) {
               [&options]([[maybe_unused]] std::string_view value) {
                 options.helpRequested_ = true;
               }},
+      engine::LaunchOption{
+          .name = END_SCREEN_DEMO_OPTION,
+          .takesValue = false,
+          .record =
+              [&options]([[maybe_unused]] std::string_view value) {
+                options.endScreenDemo_ = true;
+              }},
   };
   engine::readLaunchArguments(arguments, launchOptions);
   return options;
@@ -79,6 +86,9 @@ std::string LaunchOptions::usage() {
           std::to_string(network::MINIMUM_NICKNAME_SIZE) + " to " +
           std::to_string(network::MAXIMUM_NICKNAME_SIZE) +
           " bytes of UTF-8. Default: " + std::string(DEFAULT_NICKNAME) + ".");
+  text += engine::usageEntry(END_SCREEN_DEMO_OPTION,
+                             "Open on the end screen of a sample game, to see "
+                             "it without a server.");
   text += engine::usageEntry(engine::HELP_OPTION,
                              "Print this help and open no window.");
   text += '\n';
@@ -93,6 +103,8 @@ const network::Endpoint& LaunchOptions::serverEndpoint() const {
 const std::string& LaunchOptions::nickname() const { return nickname_; }
 
 bool LaunchOptions::helpRequested() const { return helpRequested_; }
+
+bool LaunchOptions::endScreenDemo() const { return endScreenDemo_; }
 
 LaunchOptions::LaunchOptions(network::Endpoint serverEndpoint,
                              std::string nickname, bool helpRequested)

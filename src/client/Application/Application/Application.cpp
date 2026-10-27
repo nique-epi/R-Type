@@ -17,9 +17,11 @@
 #include "ConnectionScreen.hpp"
 #include "ConnectionScreenParts.hpp"
 #include "EndScreen.hpp"
+#include "EndScreenDemo.hpp"
 #include "EndScreenParts.hpp"
 #include "Endpoint.hpp"
 #include "EntityLayer.hpp"
+#include "GameResult.hpp"
 #include "GameScreen.hpp"
 #include "GameScreenParts.hpp"
 #include "IInterfaceCanvas.hpp"
@@ -27,6 +29,7 @@
 #include "InterfaceCanvas.hpp"
 #include "IntroScreen.hpp"
 #include "IntroScreenParts.hpp"
+#include "LaunchOptions.hpp"
 #include "LoadingScreen.hpp"
 #include "LobbyPlace.hpp"
 #include "LobbyScreen.hpp"
@@ -72,17 +75,20 @@ MotionPreference motionPreference() {
                                       : MotionPreference::Full;
 }
 
-/** @returns The screen the client opens on: the intro, or the title when the
- * system asks for less motion. */
-ScreenId firstScreen() {
+/** @returns The screen the client opens on: the end screen of a sample game
+ * for --end-screen-demo; else the intro, or the title when the system asks
+ * for less motion. */
+ScreenId firstScreen(bool endScreenDemo) {
+  if (endScreenDemo) {
+    return ScreenId::End;
+  }
   return motionPreference() == MotionPreference::Reduced ? ScreenId::Title
                                                          : ScreenId::Intro;
 }
 
 }  // namespace
 
-Application::Application(AssetLibrary& assets, network::Endpoint server,
-                         std::string nickname,
+Application::Application(AssetLibrary& assets, const LaunchOptions& launch,
                          std::optional<std::filesystem::path> settingsFile)
     : assets_(&assets),
       settingsFile_(std::move(settingsFile)),
@@ -97,10 +103,11 @@ Application::Application(AssetLibrary& assets, network::Endpoint server,
           network::Endpoint{.address = std::string{network::ANY_IPV4_ADDRESS},
                             .port = network::ANY_PORT}),
       connection_(network_),
-      server_(std::move(server)),
-      nickname_(std::move(nickname)),
+      server_(launch.serverEndpoint()),
+      nickname_(launch.nickname()),
+      gameResult_(launch.endScreenDemo() ? demoGameResult() : GameResult{}),
       screens_([this](ScreenId screen) { return createScreen(screen); }) {
-  screens_.replaceAll(firstScreen());
+  screens_.replaceAll(firstScreen(launch.endScreenDemo()));
   screens_.applyPendingChanges();
 }
 
