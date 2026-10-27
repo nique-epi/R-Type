@@ -31,7 +31,7 @@ The CI (`build-and-test`) checks formatting, then builds and tests on Linux (GCC
 
 ## Rules
 
-Every file in `.claude/rules/` (subdirectories included) is an isolated rule, loaded automatically. Applying them is not optional: a violated rule is a defect, not a preference. On any mistake, `core/errors-learning.md` requires creating a new one.
+Every file in `.claude/rules/` (subdirectories included) is an isolated rule, loaded automatically. Applying them is not optional: a violated rule is a defect, not a preference. On a mistake in the code, `core/errors-learning.md` requires creating a new one; a mistake outside the code (shell, git, local machine, tools, conversation) produces none.
 
 Paths below are relative to `.claude/rules/`.
 
@@ -53,7 +53,7 @@ Paths below are relative to `.claude/rules/`.
 | Reviewing | `core/code-review.md` |
 | Announcing a green gate | `fix/execution/fix-execution-zsh-pipestatus.md`, `fix/execution/fix-execution-zero-warnings-proven-on-a-recompiling-build.md`, `fix/execution/fix-execution-run-clang-tidy-before-push.md` |
 | Writing a documentation page or a diagram | `fix/format/fix-format-schematic-diagrams-and-map-level-pages.md`, `fix/format/fix-format-context-before-the-deliverable.md`, the `document-feature` skill |
-| Making a mistake | `core/errors-learning.md` — the mistake produces a new rule |
+| Making a mistake | `core/errors-learning.md` — a mistake in the code produces a new rule, a mistake outside it none |
 | Pausing, finishing a step | `core/context-continuity.md` |
 
 ### Index
