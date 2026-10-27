@@ -26,6 +26,7 @@
 #include "IntroScreen.hpp"
 #include "IntroScreenParts.hpp"
 #include "LoadingScreen.hpp"
+#include "LobbyPlace.hpp"
 #include "LobbyScreen.hpp"
 #include "LobbyScreenParts.hpp"
 #include "LocalizedKeyName.hpp"
@@ -181,7 +182,8 @@ std::unique_ptr<IScreen> Application::createScreen(ScreenId screen) {
                                 .nickname = nickname_},
           interfaceCanvas());
     case ScreenId::Lobby:
-      return lobbyScreen();
+    case ScreenId::LobbyAfterGame:
+      return lobbyScreen(screen);
   }
   return nullptr;
 }
@@ -239,7 +241,11 @@ std::unique_ptr<IScreen> Application::optionsScreen(ScreenId screen) {
       interfaceCanvas());
 }
 
-std::unique_ptr<IScreen> Application::lobbyScreen() {
+std::unique_ptr<IScreen> Application::lobbyScreen(ScreenId screen) {
+  const bool afterGame = screen == ScreenId::LobbyAfterGame;
+  if (afterGame) {
+    soundtrack_.playTheme();
+  }
   const sf::Keyboard::Scancode readyKey =
       settings_.keys.keyOf(BoundAction::Ready);
   return std::make_unique<LobbyScreen>(
@@ -249,7 +255,9 @@ std::unique_ptr<IScreen> Application::lobbyScreen() {
           .connection = connection_,
           .playfieldPointAt = playfieldMapping(),
           .readyKey = {.key = readyKey, .name = localizedKeyName(readyKey)},
-          .motion = motionPreference()},
+          .motion = motionPreference(),
+          .place =
+              afterGame ? LobbyPlace::AfterGame : LobbyPlace::AfterConnection},
       interfaceCanvas());
 }
 

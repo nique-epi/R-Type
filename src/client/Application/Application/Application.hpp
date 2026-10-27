@@ -134,8 +134,9 @@ class Application {
   [[nodiscard]] std::unique_ptr<IScreen> optionsScreen(ScreenId screen);
 
   /** @brief The waiting room, its READY key read from the bindings of the
-   * player when it is built. */
-  [[nodiscard]] std::unique_ptr<IScreen> lobbyScreen();
+   * player when it is built; for ScreenId::LobbyAfterGame, alone after a
+   * game, playing the theme again, its BACK leading to the title. */
+  [[nodiscard]] std::unique_ptr<IScreen> lobbyScreen(ScreenId screen);
 
   /**
    * @brief The loading screen of a list while some of its assets are not
