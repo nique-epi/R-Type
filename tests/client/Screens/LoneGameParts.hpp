@@ -2,6 +2,7 @@
 
 #include <memory>
 #include "FakeEntityMessageSource.hpp"
+#include "GameResult.hpp"
 #include "GameScreenParts.hpp"
 #include "PlayerSettings.hpp"
 #include "RecordingInterfaceCanvas.hpp"
@@ -24,6 +25,7 @@ struct LoneGameParts {
   InterfaceCanvasRecord statusCanvas;
   RecordingSky sky;
   RecordingSoundPlayer sounds;
+  rtype::client::GameResult result;
 
   /** @returns The parts of a game screen, borrowing these doubles. */
   [[nodiscard]] rtype::client::GameScreenParts parts();

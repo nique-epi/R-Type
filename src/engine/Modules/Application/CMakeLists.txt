@@ -1,0 +1,11 @@
+add_library(rtype_engine_application STATIC Application.cpp)
+
+target_include_directories(rtype_engine_application PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+
+target_link_libraries(rtype_engine_application
+  PUBLIC
+    rtype_engine_modules
+    rtype_engine_exceptions
+)
+
+rtype_enable_warnings(rtype_engine_application)

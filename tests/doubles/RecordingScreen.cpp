@@ -32,6 +32,10 @@ const char* nameOf(ScreenId screen) {
       return "intro";
     case ScreenId::TitleAfterIntro:
       return "title after the intro";
+    case ScreenId::End:
+      return "end";
+    case ScreenId::LobbyAfterGame:
+      return "lobby after a game";
   }
   return "unknown screen";
 }
@@ -64,7 +68,12 @@ RecordingScreen::RecordingScreen(ScreenId screen,
   write(ScreenCall::Built);
 }
 
-RecordingScreen::~RecordingScreen() { write(ScreenCall::Destroyed); }
+RecordingScreen::~RecordingScreen() {
+  try {
+    write(ScreenCall::Destroyed);
+  } catch (...) {  // NOLINT(bugprone-empty-catch)
+  }
+}
 
 void RecordingScreen::runOnEvent(std::function<void()> action) {
   onEvent_ = std::move(action);

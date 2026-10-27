@@ -8,6 +8,7 @@
 #include <vector>
 #include "BackgroundColorConstants.hpp"
 #include "KeyPress.hpp"
+#include "LobbyAfterGameFixture.hpp"
 #include "LobbyScreen.hpp"
 #include "LobbyScreenFixture.hpp"
 #include "LobbyScreenFixtures.hpp"
@@ -248,6 +249,22 @@ TEST_F(LobbyScreenFixture, TheGameIsAskedOnceItStarted) {
   EXPECT_THAT(navigator().calls(),
               ElementsAre(NavigatorCall{.request = NavigatorRequest::ReplaceAll,
                                         .screen = ScreenId::Game}));
+}
+
+/**
+ * Given the waiting room after a game, alone on the stack
+ * When Escape is pressed and released
+ * Then the server is left and the title opened in place of every screen
+ */
+TEST_F(LobbyAfterGameFixture, BackLeavesForTheTitle) {
+  tap(sf::Keyboard::Key::Escape, sf::Keyboard::Scan::Escape);
+
+  ASSERT_FALSE(connection().calls().empty());
+  EXPECT_EQ(connection().calls().back().request,
+            ServerConnectionCall::Request::Cancel);
+  EXPECT_THAT(navigator().calls(),
+              ElementsAre(NavigatorCall{.request = NavigatorRequest::ReplaceAll,
+                                        .screen = ScreenId::Title}));
 }
 
 /**

@@ -5,6 +5,7 @@
 #include "ActionSet.hpp"
 #include "DatagramCodec.hpp"
 #include "Endpoint.hpp"
+#include "GameEnded.hpp"
 #include "MessageFrame.hpp"
 #include "MessagePayload.hpp"
 #include "OutgoingDatagram.hpp"
@@ -35,6 +36,11 @@ ActionSet upHeld() {
   ActionSet held;
   held.add(PlayerAction::Up);
   return held;
+}
+
+network::GameEnded endOfOnePilot() {
+  return network::GameEnded{.players = {{.playerNumber = ACCEPTED_PLAYER_NUMBER,
+                                         .score = PILOT_FINAL_SCORE}}};
 }
 
 }  // namespace rtype::client::testing

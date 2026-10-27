@@ -16,6 +16,8 @@
 #include "ConnectionConstants.hpp"
 #include "ConnectionScreen.hpp"
 #include "ConnectionScreenParts.hpp"
+#include "EndScreen.hpp"
+#include "EndScreenParts.hpp"
 #include "Endpoint.hpp"
 #include "EntityLayer.hpp"
 #include "GameScreen.hpp"
@@ -26,6 +28,7 @@
 #include "IntroScreen.hpp"
 #include "IntroScreenParts.hpp"
 #include "LoadingScreen.hpp"
+#include "LobbyPlace.hpp"
 #include "LobbyScreen.hpp"
 #include "LobbyScreenParts.hpp"
 #include "LocalizedKeyName.hpp"
@@ -34,6 +37,7 @@
 #include "OptionsPlace.hpp"
 #include "OptionsScreen.hpp"
 #include "OptionsScreenParts.hpp"
+#include "PlayerPreferences.hpp"
 #include "PlayerSettings.hpp"
 #include "PlayfieldMapping.hpp"
 #include "QuitConfirmationScreen.hpp"
@@ -83,7 +87,7 @@ Application::Application(AssetLibrary& assets, network::Endpoint server,
     : assets_(&assets),
       settingsFile_(std::move(settingsFile)),
       settings_(settingsFile_.load(firstLaunchSettings())),
-      window_(settings_.windowSize),
+      window_(settings_.windowSize, settings_.displayMode),
       background_(std::random_device{}()),
       sounds_(assets, settings_),
       theme_(assets, settings_, THEME_TRACK),
@@ -181,7 +185,26 @@ std::unique_ptr<IScreen> Application::createScreen(ScreenId screen) {
                                 .nickname = nickname_},
           interfaceCanvas());
     case ScreenId::Lobby:
-      return lobbyScreen();
+    case ScreenId::LobbyAfterGame:
+      return lobbyScreen(screen);
+    case ScreenId::End: {
+      std::unique_ptr<IScreen> loading =
+          loadingScreenUnlessLoaded(gameAssets(), screen);
+      if (loading != nullptr) {
+        return loading;
+      }
+      return std::make_unique<EndScreen>(
+          EndScreenParts{.navigator = screens_,
+                         .sounds = sounds_,
+                         .connection = connection_,
+                         .result = gameResult_,
+                         .previousTaunt = previousTaunt_,
+                         .playfieldPointAt = playfieldMapping(),
+                         .seed = std::random_device{}(),
+                         .motion = motionPreference(),
+                         .flashes = flashPreferenceOf(settings_)},
+          interfaceCanvas());
+    }
   }
   return nullptr;
 }
@@ -219,7 +242,8 @@ std::unique_ptr<IScreen> Application::gameScreen() {
                       .entityMessages = connection_,
                       .connection = connection_,
                       .sky = background_,
-                      .sounds = sounds_},
+                      .sounds = sounds_,
+                      .result = gameResult_},
       std::make_unique<EntityLayer>(*assets_), interfaceCanvas());
 }
 
@@ -238,7 +262,11 @@ std::unique_ptr<IScreen> Application::optionsScreen(ScreenId screen) {
       interfaceCanvas());
 }
 
-std::unique_ptr<IScreen> Application::lobbyScreen() {
+std::unique_ptr<IScreen> Application::lobbyScreen(ScreenId screen) {
+  const bool afterGame = screen == ScreenId::LobbyAfterGame;
+  if (afterGame) {
+    soundtrack_.playTheme();
+  }
   const sf::Keyboard::Scancode readyKey =
       settings_.keys.keyOf(BoundAction::Ready);
   return std::make_unique<LobbyScreen>(
@@ -248,7 +276,9 @@ std::unique_ptr<IScreen> Application::lobbyScreen() {
           .connection = connection_,
           .playfieldPointAt = playfieldMapping(),
           .readyKey = {.key = readyKey, .name = localizedKeyName(readyKey)},
-          .motion = motionPreference()},
+          .motion = motionPreference(),
+          .place =
+              afterGame ? LobbyPlace::AfterGame : LobbyPlace::AfterConnection},
       interfaceCanvas());
 }
 

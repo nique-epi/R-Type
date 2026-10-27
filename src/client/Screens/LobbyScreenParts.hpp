@@ -4,6 +4,7 @@
 #include "IScreenNavigator.hpp"
 #include "IServerConnection.hpp"
 #include "ISoundPlayer.hpp"
+#include "LobbyPlace.hpp"
 #include "MotionPreference.hpp"
 #include "PlayfieldMapping.hpp"
 #include "ReadyKey.hpp"
@@ -33,6 +34,8 @@ struct LobbyScreenParts {
   ReadyKey readyKey;
   /** @brief Whether the ships and the beacons may move. */
   MotionPreference motion{};
+  /** @brief Where BACK leads: the connection screen below, or the title. */
+  LobbyPlace place{};
 };
 
 }  // namespace rtype::client

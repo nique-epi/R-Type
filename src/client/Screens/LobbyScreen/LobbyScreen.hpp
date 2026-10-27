@@ -9,6 +9,7 @@
 #include "IScreenNavigator.hpp"
 #include "IServerConnection.hpp"
 #include "ISoundPlayer.hpp"
+#include "LobbyPlace.hpp"
 #include "LobbyScreenParts.hpp"
 #include "LobbyState.hpp"
 #include "Menu.hpp"
@@ -38,8 +39,9 @@ struct HangarBay;
  *
  * Once the connection learns that the game started, the screen asks for the
  * game in place of every screen, once. BACK, or MENU_CANCEL_KEY, leaves the
- * server and closes the screen, back to the connection screen. The key of
- * READY wins over the keys of the menu.
+ * server and closes the screen, back to the connection screen; after a game,
+ * it opens the title in place of every screen instead. The key of READY wins
+ * over the keys of the menu.
  */
 class LobbyScreen : public IScreen {
  public:
@@ -99,6 +101,7 @@ class LobbyScreen : public IScreen {
   PlayfieldMapping playfieldPointAt_;
   sf::Keyboard::Scancode readyKey_{};
   MotionPreference motion_{};
+  LobbyPlace place_{};
   engine::Duration elapsed_{};
   bool readyKeyHeld_ = false;
   bool gameAsked_ = false;

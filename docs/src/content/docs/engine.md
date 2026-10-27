@@ -3,7 +3,7 @@ title: Engine
 description: What the engine does, how its parts fit together and where to find them in the code.
 ---
 
-The engine is the generic part of the game: it stores game objects, advances time at a fixed rate, runs delayed work, carries events from the code that announces them to the code that reacts to them, and reads the options a program is given at launch. It knows nothing about R-Type, SFML or sockets. The rules of the game live in `rtype_game`, which is built on top of it (see [Architecture](/R-Type/architecture/)).
+The engine is the generic part of the game: it stores game objects, advances time at a fixed rate, runs delayed work, carries events from the code that announces them to the code that reacts to them, reads the options a program is given at launch, and installs, starts and stops the modules a program is made of. It knows nothing about R-Type, SFML or sockets. The rules of the game live in `rtype_game`, which is built on top of it (see [Architecture](/R-Type/architecture/)).
 
 This page tells you where to look when you need to change something. It describes what exists today and says plainly what does not exist yet.
 
@@ -18,6 +18,7 @@ This page tells you where to look when you need to change something. It describe
 | Event bus | Available | `src/engine/Events/` |
 | Collisions | Available: the overlap test and the event; the system that detects them is in the game | `src/engine/Collision/` |
 | Launch arguments | Available; used by the server and the client | `src/engine/LaunchArguments/` |
+| Modules and application | Available; no program uses it yet | `src/engine/Modules/` |
 
 ## How the parts fit together
 
@@ -201,6 +202,29 @@ const std::array options{rtype::engine::LaunchOption{
 rtype::engine::readLaunchArguments(logOptions.otherArguments(), options);
 ```
 
+## Modules: `Application` and `IModule`
+
+`src/engine/Modules/` (`rtype_engine_modules`, `rtype_engine_application`) gives a program one place to plug each of its parts in. A part is a **module**: a class implementing `IModule`, with a `name()`, its `dependencies()` (the names of the modules it needs), and three steps. `install()` prepares it and opens nothing; `start()` opens what it needs to run (a socket, a thread, a file) and throws a `std::exception` when it cannot; `stop()` closes it and must not throw.
+
+- `Application` takes the list of modules once, when it is built, and checks it before anything is installed. A null module throws `NullModuleException`. A module whose dependency is not listed **before** it throws `MissingDependencyException`, whose message names both modules. So a missing module stops the program before any socket, thread or file is opened.
+- `start()` installs every module in list order, then starts every module in list order. Only the first call does anything.
+- `stop()` stops the started modules in the reverse order, so a module is stopped before its dependencies. Each module is stopped once, and the destructor of `Application` stops the modules still started.
+- When a module throws from `start()`, the modules started before it are stopped in the reverse order, then `start()` throws `ModuleStartFailedException`, whose message names the module and gives the reason. The module that threw is not stopped.
+
+No program builds an `Application` yet: the server and the client still assemble their parts in their `main.cpp`. In this example, `LogModule` and `AudioModule` stand for modules a program would write, and `AudioModule` depends on `LogModule`:
+
+```cpp
+std::vector<std::unique_ptr<rtype::engine::IModule>> modules;
+modules.push_back(std::make_unique<LogModule>());
+modules.push_back(std::make_unique<AudioModule>());
+rtype::engine::Application application(std::move(modules));
+application.start();
+runUntilClosed();
+application.stop();
+```
+
+The reasoning behind the order is in [Architecture](/R-Type/architecture/#modules).
+
 ## Where to intervene
 
 | You want to… | Look at |
@@ -218,6 +242,7 @@ rtype::engine::readLaunchArguments(logOptions.otherArguments(), options);
 | Announce that something happened, or react to it | `EventBus` in `src/engine/Events/EventBus/`: `publish` the event, `subscribe<Event>` to it |
 | Hand data from one thread to another | `BoundedQueue`, in its own library: see [Concurrency](/R-Type/concurrency/) |
 | Change how the launch options are read, or how the usage and the launch errors read | `src/engine/LaunchArguments/`; each program's own options are in its `LaunchOptions` |
+| Add a part a program can switch on or off | A class implementing `IModule` in `src/engine/Modules/IModule.hpp`, listed after its dependencies in the list given to `Application` |
 | Add an engine error | `src/engine/Exceptions/EngineException.hpp` |
 | Write a test that depends on time | `tests/SimulatedClock.hpp`, `tests/engine/Time/FixedTimestepTest.cpp` |
 

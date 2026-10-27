@@ -13,6 +13,7 @@
 #include "EntityAnnouncements.hpp"
 #include "EntityReplicatorTestConstants.hpp"
 #include "FakeEntityMessageSource.hpp"
+#include "GameResult.hpp"
 #include "GameScreen.hpp"
 #include "GameScreenFixture.hpp"
 #include "GameScreenFixtures.hpp"
@@ -23,6 +24,7 @@
 #include "PlayerSettings.hpp"
 #include "RecordingEntityLayer.hpp"
 #include "RecordingInterfaceCanvas.hpp"
+#include "RecordingNavigator.hpp"
 #include "RecordingPlayerInputLink.hpp"
 #include "RecordingScreen.hpp"
 #include "RecordingSky.hpp"
@@ -261,9 +263,9 @@ TEST_F(GameScreenFixture, ReducingFlashesDuringTheGameAppliesToTheNextEffect) {
  * Then the status band is titled ACE, NOVA and KAI, and no bay by its number
  */
 TEST_F(GameScreenFixture, TheStatusBandShowsThePilotsOfTheWaitingRoom) {
-  EXPECT_NE(writingOf(statusCanvas(), "ACE"), nullptr);
-  EXPECT_NE(writingOf(statusCanvas(), "NOVA"), nullptr);
-  EXPECT_NE(writingOf(statusCanvas(), "KAI"), nullptr);
+  EXPECT_NE(writingOf(statusCanvas(), FIRST_PILOT_NICKNAME), nullptr);
+  EXPECT_NE(writingOf(statusCanvas(), SECOND_PILOT_NICKNAME), nullptr);
+  EXPECT_NE(writingOf(statusCanvas(), THIRD_PILOT_NICKNAME), nullptr);
   EXPECT_EQ(writingOf(statusCanvas(), "P1"), nullptr);
 }
 
@@ -494,6 +496,128 @@ TEST(GameScreenInputsTest, BehindTheOptionsItSendsNothingHeld) {
 }
 
 /**
+ * Given the game with AUTO-FIRE on and no key pressed
+ * When its first frame is updated
+ * Then the input sent holds shoot
+ */
+TEST(GameScreenAutoFireTest, ShootsWithoutAKey) {
+  LoneGameParts doubles;
+  doubles.settings.autoFire = true;
+  GameScreen game(doubles.parts(), std::make_unique<IgnoringEntityLayer>(),
+                  doubles.statusCanvasDouble());
+
+  game.update(ONE_FRAME);
+
+  EXPECT_THAT(doubles.inputs.sentActions(), ElementsAre(SHOOT_BIT));
+}
+
+/**
+ * Given the game with AUTO-FIRE on
+ * When the player presses up
+ * Then up and shoot are held
+ */
+TEST(GameScreenAutoFireTest, KeepsTheMovesOfTheKeys) {
+  LoneGameParts doubles;
+  doubles.settings.autoFire = true;
+  GameScreen game(doubles.parts(), std::make_unique<IgnoringEntityLayer>(),
+                  doubles.statusCanvasDouble());
+
+  game.handleEvent(keyPress(sf::Keyboard::Key::Up, sf::Keyboard::Scan::Up));
+
+  EXPECT_EQ(game.playerActions().bits(), UP_BIT | SHOOT_BIT);
+}
+
+/**
+ * Given the game with AUTO-FIRE on and space pressed
+ * When the player releases space
+ * Then shoot is still held
+ */
+TEST(GameScreenAutoFireTest, ReleasingTheShootKeyKeepsShooting) {
+  LoneGameParts doubles;
+  doubles.settings.autoFire = true;
+  GameScreen game(doubles.parts(), std::make_unique<IgnoringEntityLayer>(),
+                  doubles.statusCanvasDouble());
+  game.handleEvent(
+      keyPress(sf::Keyboard::Key::Space, sf::Keyboard::Scan::Space));
+
+  game.handleEvent(
+      keyRelease(sf::Keyboard::Key::Space, sf::Keyboard::Scan::Space));
+
+  EXPECT_EQ(game.playerActions().bits(), SHOOT_BIT);
+}
+
+/**
+ * Given the game with AUTO-FIRE on, and the options just opened over it
+ * When the game is updated behind them
+ * Then the input it sends holds shoot
+ */
+TEST(GameScreenAutoFireTest, ShootsBehindTheOptions) {
+  LoneGameParts doubles;
+  doubles.settings.autoFire = true;
+  GameScreen game(doubles.parts(), std::make_unique<IgnoringEntityLayer>(),
+                  doubles.statusCanvasDouble());
+  game.handleEvent(keyRelease(OPTIONS_KEY, sf::Keyboard::Scan::Escape));
+
+  game.update(ONE_FRAME);
+
+  EXPECT_THAT(doubles.inputs.sentActions(), ElementsAre(SHOOT_BIT));
+}
+
+/**
+ * Given the game with AUTO-FIRE on, after the window lost the focus
+ * When its first frame is updated
+ * Then the input sent holds shoot
+ */
+TEST(GameScreenAutoFireTest, ShootsWithoutTheFocus) {
+  LoneGameParts doubles;
+  doubles.settings.autoFire = true;
+  GameScreen game(doubles.parts(), std::make_unique<IgnoringEntityLayer>(),
+                  doubles.statusCanvasDouble());
+  game.handleEvent(sf::Event{sf::Event::FocusLost{}});
+
+  game.update(ONE_FRAME);
+
+  EXPECT_THAT(doubles.inputs.sentActions(), ElementsAre(SHOOT_BIT));
+}
+
+/**
+ * Given the game with AUTO-FIRE off, after a first input that held nothing
+ * When AUTO-FIRE is turned on and the next input is due
+ * Then that input holds shoot
+ */
+TEST(GameScreenAutoFireTest, TurningItOnDuringTheGameShootsAtTheNextInput) {
+  LoneGameParts doubles;
+  GameScreen game(doubles.parts(), std::make_unique<IgnoringEntityLayer>(),
+                  doubles.statusCanvasDouble());
+  game.update(ONE_FRAME);
+
+  doubles.settings.autoFire = true;
+  game.update(PLAYER_INPUT_INTERVAL);
+
+  EXPECT_THAT(doubles.inputs.sentActions(),
+              ElementsAre(NOTHING_HELD, SHOOT_BIT));
+}
+
+/**
+ * Given the game with AUTO-FIRE on, after a first input that held shoot
+ * When AUTO-FIRE is turned off and the next input is due
+ * Then that input holds nothing
+ */
+TEST(GameScreenAutoFireTest, TurningItOffDuringTheGameStopsAtTheNextInput) {
+  LoneGameParts doubles;
+  doubles.settings.autoFire = true;
+  GameScreen game(doubles.parts(), std::make_unique<IgnoringEntityLayer>(),
+                  doubles.statusCanvasDouble());
+  game.update(ONE_FRAME);
+
+  doubles.settings.autoFire = false;
+  game.update(PLAYER_INPUT_INTERVAL);
+
+  EXPECT_THAT(doubles.inputs.sentActions(),
+              ElementsAre(SHOOT_BIT, NOTHING_HELD));
+}
+
+/**
  * Given a game just started
  * When 117 ms pass
  * Then the stars of the sky go 12 times their speed
@@ -578,4 +702,61 @@ TEST_F(GameScreenFixture, TheGamePlaysTheSoundsOfWhatTheServerAnnounces) {
   screens().update(ONE_FRAME);
 
   EXPECT_THAT(sounds().played(), ElementsAre(PLAYER_SHOT_SOUND_ID));
+}
+
+/**
+ * Given the game of three pilots
+ * When the server ends it with their scores
+ * Then the result ranks them best first, with their nicknames, NOVA as this
+ * client
+ */
+TEST(GameScreenEndTest, TheEndOfTheGameRanksThePilotsOfTheBoard) {
+  LoneGameParts doubles;
+  GameScreen game(doubles.parts(), std::make_unique<IgnoringEntityLayer>(),
+                  doubles.statusCanvasDouble());
+  doubles.entityMessages.queue(endOfThreePilots());
+
+  game.update(ONE_FRAME);
+
+  ASSERT_EQ(doubles.result.pilots.size(), PILOTS_AT_THE_END);
+  EXPECT_EQ(doubles.result.pilots.front().nickname, SECOND_PILOT_NICKNAME);
+  EXPECT_TRUE(doubles.result.pilots.front().isLocalPlayer);
+  EXPECT_EQ(doubles.result.pilots.back().nickname, FIRST_PILOT_NICKNAME);
+}
+
+/**
+ * Given a game the server just ended
+ * When a second less one nanosecond passes
+ * Then the end screen is not asked for yet
+ */
+TEST(GameScreenEndTest, TheEndScreenWaitsForTheLastExplosion) {
+  LoneGameParts doubles;
+  GameScreen game(doubles.parts(), std::make_unique<IgnoringEntityLayer>(),
+                  doubles.statusCanvasDouble());
+  doubles.entityMessages.queue(endOfThreePilots());
+  game.update(ONE_FRAME);
+
+  game.update(END_WAIT - ONE_TICK);
+
+  EXPECT_THAT(doubles.navigator.calls(), IsEmpty());
+}
+
+/**
+ * Given a game the server just ended
+ * When a second passes, then another
+ * Then the end screen is asked for in place of every screen, once
+ */
+TEST(GameScreenEndTest, TheEndScreenReplacesTheGameASecondLater) {
+  LoneGameParts doubles;
+  GameScreen game(doubles.parts(), std::make_unique<IgnoringEntityLayer>(),
+                  doubles.statusCanvasDouble());
+  doubles.entityMessages.queue(endOfThreePilots());
+  game.update(ONE_FRAME);
+
+  game.update(END_WAIT);
+  game.update(END_WAIT);
+
+  EXPECT_THAT(doubles.navigator.calls(),
+              ElementsAre(NavigatorCall{.request = NavigatorRequest::ReplaceAll,
+                                        .screen = ScreenId::End}));
 }

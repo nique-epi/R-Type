@@ -27,6 +27,9 @@ constexpr std::string_view NICKNAME = "Nolan";
 constexpr std::uint64_t CHALLENGE_COOKIE = 0x1122334455667788;
 constexpr std::uint8_t ACCEPTED_PLAYER_NUMBER = 3;
 
+/** @brief The score of the accepted player when the server ends the game. */
+constexpr std::uint32_t PILOT_FINAL_SCORE = 1200;
+
 /**
  * @brief A session token a server could draw, and a version this client does
  * not speak.

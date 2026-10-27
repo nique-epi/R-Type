@@ -134,6 +134,23 @@ static_assert(TICKS_PER_LOBBY_STATE >= 1,
               "LOBBY_STATE_INTERVAL must last at least one simulation tick");
 
 /**
+ * @brief The time between two GameEnded sent to the players while their game
+ * is finished. Provisional, see the protocol page.
+ */
+constexpr engine::Duration GAME_ENDED_INTERVAL = std::chrono::milliseconds(500);
+
+/**
+ * @brief Simulation ticks between two GameEnded: GAME_ENDED_INTERVAL in whole
+ * ticks, rounded down, so two of them are never further apart than the
+ * interval. At 60 ticks per second it is 30 ticks.
+ */
+constexpr std::size_t TICKS_PER_GAME_ENDED =
+    engine::wholeTicksIn(GAME_ENDED_INTERVAL);
+
+static_assert(TICKS_PER_GAME_ENDED >= 1,
+              "GAME_ENDED_INTERVAL must last at least one simulation tick");
+
+/**
  * @brief Timer resolution, in milliseconds, the server asks Windows for while
  * the simulation runs, so a sleeping thread wakes close to its deadline.
  */

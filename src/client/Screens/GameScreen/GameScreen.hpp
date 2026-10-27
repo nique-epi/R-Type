@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <memory>
+#include <optional>
 #include <string>
 #include <vector>
 #include "ActionSet.hpp"
@@ -10,6 +11,8 @@
 #include "EntityMessage.hpp"
 #include "EntityRegistry.hpp"
 #include "EntityReplicator.hpp"
+#include "GameEnded.hpp"
+#include "GameResult.hpp"
 #include "GameScreenParts.hpp"
 #include "IEntityLayer.hpp"
 #include "IEntityMessageSource.hpp"
@@ -66,16 +69,25 @@ struct PlayerSettings;
  *
  * Key and focus events feed the player commands, by the place of the keys on
  * the keyboard and through the keys the player chose: playerActions() tells
- * what the player holds right now, and nothing while the window has no focus.
- * The screen assumes the window has the focus when it is built, and learns
- * otherwise from the focus events; only the screen on top receives events,
- * which is why opening the options releases what is held. The actions held
- * are logged each time they change.
+ * what the player holds right now, and nothing while the window has no focus,
+ * but shoot while AUTO-FIRE is on. The screen assumes the window has the focus
+ * when it is built, and learns otherwise from the focus events; only the
+ * screen on top receives events, which is why opening the options releases
+ * what is held. The actions held are logged each time they change.
  *
  * Each update sends the actions held to the server when the PlayerInputPacer
  * says an input is due, the first update included. The game goes on behind the
- * options, so it keeps sending them there, with nothing held, and keeps
- * applying what the server announces.
+ * options, so it keeps sending them there, with nothing held but shoot while
+ * AUTO-FIRE is on, and keeps applying what the server announces.
+ *
+ * AUTO-FIRE is read in the settings at each call of playerActions(), so a
+ * change in the options applies at once. The server keeps its own rate of
+ * fire, so the ship fires no faster than with the shoot key held.
+ *
+ * Once the server ends the game, the screen ranks its pilots into the result
+ * of the parts, then asks for the end screen in place of every screen
+ * END_SCREEN_DELAY later on the clock of the game, once; the game goes on
+ * meanwhile, so the last explosion plays.
  */
 class GameScreen : public IScreen {
  public:
@@ -98,7 +110,8 @@ class GameScreen : public IScreen {
   void draw(sf::RenderTarget& target) const override;
   [[nodiscard]] bool hidesScreensBelow() const override;
 
-  /** @returns The actions the player holds right now. */
+  /** @returns The actions the player holds right now, and shoot while
+   * AUTO-FIRE is on. */
   [[nodiscard]] ActionSet playerActions() const;
 
  private:
@@ -115,6 +128,14 @@ class GameScreen : public IScreen {
    * the start of the game over it, and keeps what was painted. */
   void repaintStatus();
 
+  /** @brief Ranks the pilots of the board by the scores of @p ended into the
+   * result of the parts, and remembers when the game ended. */
+  void recordEnd(const network::GameEnded& ended);
+
+  /** @brief Asks for the end screen in place of every screen once
+   * END_SCREEN_DELAY passed since the game ended, once. */
+  void askForTheEndWhenDue();
+
   IScreenNavigator* navigator_;
   std::unique_ptr<IEntityLayer> entityLayer_;
   std::unique_ptr<IInterfaceCanvas> statusCanvas_;
@@ -129,6 +150,8 @@ class GameScreen : public IScreen {
   IEntityMessageSource* entityMessageSource_;
   std::vector<EntityMessage> receivedEntityMessages_;
   ScoreBoard scoreBoard_;
+  GameResult* result_;
+  std::optional<engine::Duration> endedAt_;
   std::uint32_t paintedStatusRevision_{};
   PlayerInputPacer inputPacer_;
   logging::Logger logger_{std::string{GAME_SCREEN_LOGGER_NAME}};

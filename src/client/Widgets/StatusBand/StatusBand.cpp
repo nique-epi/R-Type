@@ -3,7 +3,6 @@
 #include <SFML/Graphics/Rect.hpp>
 #include <SFML/System/Utf.hpp>
 #include <SFML/System/Vector2.hpp>
-#include <algorithm>
 #include <cstddef>
 #include <optional>
 #include <span>
@@ -18,6 +17,8 @@
 #include "InterfaceColorConstants.hpp"
 #include "InterfaceConstants.hpp"
 #include "Outline.hpp"
+#include "PaddedScore.hpp"
+#include "PilotName.hpp"
 #include "PilotStatus.hpp"
 #include "ProtocolConstants.hpp"
 #include "SpriteFrame.hpp"
@@ -25,7 +26,6 @@
 #include "TextStyle.hpp"
 #include "TextureArea.hpp"
 #include "WidgetConstants.hpp"
-#include "WidgetText.hpp"
 
 namespace rtype::client {
 
@@ -141,15 +141,6 @@ std::optional<StatusWord> statusWordOf(const PilotStatus& pilot) {
   return goneWord.has_value() ? goneWord : flyingWordOf(pilot);
 }
 
-/** @returns The name of a pilot: its nickname, or P and its number while the
- * waiting room never named it. */
-std::string nameOf(const PilotStatus& pilot) {
-  if (pilot.nickname.empty()) {
-    return playerNumberLabel(pilot.playerNumber);
-  }
-  return pilot.nickname;
-}
-
 /** @returns The longest start of a name, in whole characters, that fits a
  * width in the regular font, REGULAR_FONT_ADVANCE pixels each. */
 std::string fittedName(std::string_view name, int width) {
@@ -222,7 +213,8 @@ void paintTitle(IInterfaceCanvas& canvas, const PilotStatus& pilot,
   }
   const std::size_t color = colorIndexOf(pilot);
   canvas.write(
-      fittedName(nameOf(pilot), nameRoom(canvas, word)),
+      fittedName(pilotNameOf(pilot.nickname, pilot.playerNumber),
+                 nameRoom(canvas, word)),
       bay + STATUS_NAME_TOP_LEFT,
       {.font = TextFont::Regular,
        .color = isGone(pilot) ? GONE_TEXT_COLOR : PLAYER_COLORS[color].light});
@@ -288,36 +280,15 @@ void paintLives(IInterfaceCanvas& canvas, const PilotStatus& pilot,
   }
 }
 
-/** @brief Writes, dimmed, the zeros that make a score of @p digits
- * STATUS_SCORE_DIGITS long, ending where the score starts. */
-void paintLeadingZeros(IInterfaceCanvas& canvas, std::string_view digits,
-                       sf::Vector2i scoreEnd) {
-  const int missingDigits =
-      STATUS_SCORE_DIGITS - static_cast<int>(digits.size());
-  if (missingDigits <= 0) {
-    return;
-  }
-  canvas.write(
-      std::string(static_cast<std::size_t>(missingDigits), LEADING_ZERO),
-      {scoreEnd.x - regularTextWidth(digits), scoreEnd.y},
-      {.font = TextFont::Regular,
-       .color = LEADING_ZERO_COLOR,
-       .alignment = TextAlignment::Right});
-}
-
 /** @brief Writes the score of a pilot, its last digit at STATUS_SCORE_END,
- * after the dimmed leading zeros that make it STATUS_SCORE_DIGITS long; a
- * higher score stops at LARGEST_SHOWN_SCORE. */
+ * padded to STATUS_SCORE_DIGITS digits (see paintPaddedScore()). */
 void paintScore(IInterfaceCanvas& canvas, const PilotStatus& pilot,
                 sf::Vector2i bay) {
-  const std::string digits =
-      std::to_string(std::min(pilot.score, LARGEST_SHOWN_SCORE));
-  const sf::Vector2i end = bay + STATUS_SCORE_END;
-  canvas.write(digits, end,
-               {.font = TextFont::Regular,
-                .color = isGone(pilot) ? GONE_TEXT_COLOR : SCORE_COLOR,
-                .alignment = TextAlignment::Right});
-  paintLeadingZeros(canvas, digits, end);
+  paintPaddedScore(canvas,
+                   {.value = pilot.score,
+                    .end = bay + STATUS_SCORE_END,
+                    .digitColor = isGone(pilot) ? GONE_TEXT_COLOR : SCORE_COLOR,
+                    .zeroColor = LEADING_ZERO_COLOR});
 }
 
 /** @brief Paints the bay of a pilot: its frame when it is the local player,
