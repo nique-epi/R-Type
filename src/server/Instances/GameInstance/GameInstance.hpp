@@ -70,7 +70,7 @@ namespace rtype::server {
  *
  * While the game is in progress, each tick first moves the ship of every player
  * who sent an input, by the directions its newest input holds (see
- * game::shipPositionAfter), then runs the systems of the world (PatternSystem,
+ * game::shipAfter), then runs the systems of the world (PatternSystem,
  * MovementSystem, PlayfieldExitSystem, which removes a Bydo or a missile of a
  * Bydo that left on the left, or a missile of a player that left on the right,
  * and announces it on the event bus, then CollisionSystem), then lets the ship
@@ -147,7 +147,9 @@ namespace rtype::server {
  * arrives late or twice changes nothing. inputNumber is compared as a plain
  * number: a session sending 60 inputs per second would take more than 800 days
  * to wrap it. The input kept outlives a new world, since the client numbers its
- * inputs for the whole session.
+ * inputs for the whole session. Each input kept is compared with the one
+ * before: a direction pressed twice within game::DOUBLE_TAP_INPUTS starts a
+ * roll or a dash of the ship (see game::motionAfterInput).
  *
  * A ScoreKeeper adds the points of each EnemyKilled published on the event bus
  * to the score of the player it names; every score goes back to 0 with each

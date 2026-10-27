@@ -54,8 +54,12 @@ class WorldStateSender {
   void onTick(std::uint32_t tick, engine::ComponentRegistry& components);
 
  private:
+  /** @returns What the WorldState says of each of @p players: its number, its
+   * ship, its lives, its score, whether it can be hit, and its motion: the
+   * directions of its newest input and the maneuver its ship in @p components
+   * runs. */
   [[nodiscard]] static std::vector<network::PlayerState> playerStatesOf(
-      const ConnectedPlayers& players);
+      const ConnectedPlayers& players, engine::ComponentRegistry& components);
   [[nodiscard]] static network::WorldState capture(
       std::uint32_t tick, engine::ComponentRegistry& components,
       std::size_t& leftOutCount);

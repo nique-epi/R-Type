@@ -1,7 +1,6 @@
 #include <gtest/gtest.h>
 #include <algorithm>
 #include <array>
-#include <chrono>
 #include <cstddef>
 #include <cstdint>
 #include <initializer_list>
@@ -40,7 +39,6 @@
 #include "ServerConstants.hpp"
 #include "ServerDatagrams.hpp"
 #include "ServerLobbyTestConstants.hpp"
-#include "ShipControlConstants.hpp"
 #include "Spawning/BydoSpawnerTestConstants.hpp"
 #include "TimeConstants.hpp"
 #include "TimerScheduler.hpp"
@@ -50,7 +48,11 @@
 
 namespace rtype::server {
 
+using game::testing::FIRST_TICK_DISTANCE;
+using game::testing::HELD_SECOND_DISTANCE;
 using game::testing::POSITION_TOLERANCE;
+using game::testing::ROLL_DISTANCE;
+using game::testing::ROLL_END_TICK;
 using testing::bydosAmong;
 using testing::bydosIn;
 using testing::entityOf;
@@ -69,6 +71,7 @@ using testing::GameInstanceTest;
 using testing::HeldArrow;
 using testing::HOLDS_DOWN;
 using testing::HOLDS_LEFT;
+using testing::HOLDS_NOTHING;
 using testing::HOLDS_RIGHT;
 using testing::HOLDS_SHOOT;
 using testing::HOLDS_UP;
@@ -1600,10 +1603,10 @@ TEST_F(GameInstanceInputTest, KeepsTheInputAcrossANewWorld) {
  * Given a game in progress whose first player holds right
  * When a second of ticks runs: the tick that reads the input, then
  * SIMULATION_TICKS_PER_SECOND - 1 more
- * Then the ship of that player has moved SHIP_SPEED to the right, on the same
- * row
+ * Then the ship of that player has drifted HELD_SECOND_DISTANCE to the right,
+ * on the same row: it gathered speed from rest
  */
-TEST_F(GameInstanceMovementTest, MovesAShipAtTheShipSpeedWhileInProgress) {
+TEST_F(GameInstanceMovementTest, DriftsAShipTowardsTheDirectionHeld) {
   startGame();
   const game::Position start = shipPositionOf(FIRST_PLAYER);
   send(FIRST_PLAYER, HOLDS_RIGHT);
@@ -1612,7 +1615,7 @@ TEST_F(GameInstanceMovementTest, MovesAShipAtTheShipSpeedWhileInProgress) {
   runTicks(engine::SIMULATION_TICKS_PER_SECOND - 1);
 
   const game::Position arrival = shipPositionOf(FIRST_PLAYER);
-  EXPECT_NEAR(arrival.x, start.x + game::SHIP_SPEED, POSITION_TOLERANCE);
+  EXPECT_NEAR(arrival.x, start.x + HELD_SECOND_DISTANCE, POSITION_TOLERANCE);
   EXPECT_FLOAT_EQ(arrival.y, start.y);
 }
 
@@ -1620,7 +1623,7 @@ TEST_F(GameInstanceMovementTest, MovesAShipAtTheShipSpeedWhileInProgress) {
  * Given a game in progress whose first player holds right and whose second
  * player holds down
  * When a second of ticks runs
- * Then each ship has moved SHIP_SPEED the way its own player holds
+ * Then each ship has drifted HELD_SECOND_DISTANCE the way its own player holds
  */
 TEST_F(GameInstanceMovementTest, MovesEachShipByTheInputOfItsOwnPlayer) {
   startGame();
@@ -1634,12 +1637,35 @@ TEST_F(GameInstanceMovementTest, MovesEachShipByTheInputOfItsOwnPlayer) {
 
   const game::Position firstArrival = shipPositionOf(FIRST_PLAYER);
   const game::Position secondArrival = shipPositionOf(SECOND_PLAYER);
-  EXPECT_NEAR(firstArrival.x, firstStart.x + game::SHIP_SPEED,
+  EXPECT_NEAR(firstArrival.x, firstStart.x + HELD_SECOND_DISTANCE,
               POSITION_TOLERANCE);
   EXPECT_FLOAT_EQ(firstArrival.y, firstStart.y);
   EXPECT_FLOAT_EQ(secondArrival.x, secondStart.x);
-  EXPECT_NEAR(secondArrival.y, secondStart.y + game::SHIP_SPEED,
+  EXPECT_NEAR(secondArrival.y, secondStart.y + HELD_SECOND_DISTANCE,
               POSITION_TOLERANCE);
+}
+
+/**
+ * Given a game in progress
+ * When the first player sends down, nothing, down and nothing, read in one
+ * tick, then the ticks of a whole roll run
+ * Then its ship is ROLL_DISTANCE lower, on the same column: the server
+ * read the double press and rolled the ship, no direction held to drift it
+ */
+TEST_F(GameInstanceMovementTest, RollsAShipOnADoublePressOfDown) {
+  startGame();
+  const game::Position start = shipPositionOf(FIRST_PLAYER);
+  send(FIRST_PLAYER, HOLDS_DOWN);
+  send(FIRST_PLAYER, HOLDS_NOTHING);
+  send(FIRST_PLAYER, HOLDS_DOWN);
+  send(FIRST_PLAYER, HOLDS_NOTHING);
+
+  deliver({FIRST_SENT, SECOND_SENT, THIRD_SENT, FOURTH_SENT});
+  runTicks(ROLL_END_TICK - 1);
+
+  const game::Position arrival = shipPositionOf(FIRST_PLAYER);
+  EXPECT_NEAR(arrival.y, start.y + ROLL_DISTANCE, POSITION_TOLERANCE);
+  EXPECT_FLOAT_EQ(arrival.x, start.x);
 }
 
 /**
@@ -1750,8 +1776,8 @@ TEST_F(GameInstanceMovementTest, SendsTheShipWhereItMovedInTheSameTick) {
  * Given a game in progress whose first player holds one arrow
  * When the tick that reads the input runs
  * Then the ship of that player has moved along the axis of the arrow, the way
- * it points, as far as SHIP_SPEED goes in one tick, and not along the other
- * axis
+ * it points, as far as a ship at rest drifts in its first tick, and not along
+ * the other axis
  */
 TEST_P(GameInstanceArrowTest, MovesTheShipTheWayOfTheArrowHeld) {
   const HeldArrow arrow = GetParam();
@@ -1761,13 +1787,10 @@ TEST_P(GameInstanceArrowTest, MovesTheShipTheWayOfTheArrowHeld) {
 
   deliver({FIRST_SENT});
 
-  const float oneTick =
-      game::SHIP_SPEED *
-      std::chrono::duration<float>(engine::SIMULATION_TICK_DURATION).count();
   const game::Position arrival = shipPositionOf(FIRST_PLAYER);
-  EXPECT_NEAR(arrival.x, start.x + (oneTick * arrow.towardsX),
+  EXPECT_NEAR(arrival.x, start.x + (FIRST_TICK_DISTANCE * arrow.towardsX),
               POSITION_TOLERANCE);
-  EXPECT_NEAR(arrival.y, start.y + (oneTick * arrow.towardsY),
+  EXPECT_NEAR(arrival.y, start.y + (FIRST_TICK_DISTANCE * arrow.towardsY),
               POSITION_TOLERANCE);
 }
 

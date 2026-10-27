@@ -68,6 +68,17 @@ class RenderSystem {
   static void drawRevealed(IDrawSurface& surface, const DrawCall& call,
                            game::Position center);
 
+  /** @brief Adds, in the effects layer under the ships, a ghost draw call at
+   * the AFTERIMAGE_AGES frames before of every ship that rolls or dashes. */
+  void collectAfterimages(engine::ComponentRegistry& components);
+
+  /** @brief Draws a rolling sprite row by row: round(height x |cos|) rows of
+   * its frame, ROLL_THINNEST_ROWS at least, upside down and shaded once its
+   * belly shows. The outline of an invulnerable ship is left out while it
+   * rolls. */
+  static void drawRolled(IDrawSurface& surface, const DrawCall& call,
+                         game::Position center);
+
   std::array<std::vector<DrawCall>, LAYER_COUNT> drawCallsByLayer_;
 };
 

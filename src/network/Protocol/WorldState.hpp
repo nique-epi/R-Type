@@ -24,11 +24,15 @@ enum class WireEntityType : std::uint8_t {
  * @brief One player of a game, as a WorldState lists it.
  */
 struct PlayerState {
-  std::uint8_t playerNumber;
-  std::uint32_t shipEntityId;
-  std::uint8_t lives;
-  std::uint32_t score;
-  bool invulnerable;
+  std::uint8_t playerNumber{};
+  std::uint32_t shipEntityId{};
+  std::uint8_t lives{};
+  std::uint32_t score{};
+  bool invulnerable{false};
+  /** @brief What the pilot does: the directions of its newest input, at
+   * their bits of the actions (DIRECTION_ACTION_BITS), and the maneuver of its
+   * ship (ROLLING_MOTION_BIT_POSITION, DASHING_MOTION_BIT_POSITION). */
+  std::uint8_t motion{};
 
   bool operator==(const PlayerState&) const = default;
 };

@@ -24,10 +24,10 @@ constexpr std::uint32_t LATE_TICK = 4000000000U;
 constexpr std::size_t DATAGRAM_PAYLOAD_LIMIT = 1175;
 
 /**
- * @brief Entities one payload holds next to four players: (1175 - 6 - 4 * 11)
+ * @brief Entities one payload holds next to four players: (1175 - 6 - 4 * 12)
  * / 9, rounded down.
  */
-constexpr std::size_t ENTITIES_FITTING_WITH_FOUR_PLAYERS = 125;
+constexpr std::size_t ENTITIES_FITTING_WITH_FOUR_PLAYERS = 124;
 
 /**
  * @brief Entities in a small state.

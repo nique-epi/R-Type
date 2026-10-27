@@ -3,16 +3,14 @@
 #include <SFML/Graphics/Color.hpp>
 #include <array>
 #include "BackgroundColorConstants.hpp"
+#include "FireColorConstants.hpp"
 #include "InterfaceColorConstants.hpp"
 #include "SpriteToneColorConstants.hpp"
 
 namespace rtype::client {
 
-/** @brief Colors read in effects.png: the fire of the explosions and of the
- * impact, after FLASH_COLOR, and the smoke every ramp ends on. */
-constexpr sf::Color FIRE_YELLOW(255, 242, 168);
-constexpr sf::Color FIRE_GOLD(255, 197, 49);
-constexpr sf::Color FIRE_RED(255, 106, 61);
+/** @brief Colors read in effects.png after the fire (FireColorConstants.hpp):
+ * the ember, and the smoke every ramp ends on. */
 constexpr sf::Color EMBER(122, 31, 77);
 constexpr sf::Color SMOKE(42, 22, 64);
 
