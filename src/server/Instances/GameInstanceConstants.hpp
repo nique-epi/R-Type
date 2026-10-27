@@ -22,7 +22,9 @@ constexpr std::size_t FINISHED_STATE_TICKS =
  * @brief SESSION_TIMEOUT in whole simulation ticks, rounded down: 300 ticks at
  * 60 per second. A game counts the ticks it runs, not the time that passes, so
  * a stall of the server, during which the datagrams of the players wait in
- * their queue, closes no session.
+ * their queue, closes no session by itself; a stall long enough for the
+ * clients to take the server for lost closes them all, SESSION_TIMEOUT_TICKS
+ * ticks after the server resumes, since those clients send nothing more.
  */
 constexpr std::size_t SESSION_TIMEOUT_TICKS =
     engine::wholeTicksIn(network::SESSION_TIMEOUT);

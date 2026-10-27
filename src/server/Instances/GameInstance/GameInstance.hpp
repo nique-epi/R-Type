@@ -122,9 +122,12 @@ namespace rtype::server {
  * (Removed), a PlayerDeparture (TimedOut) follows, and its seat and number are
  * free for the next player who joins. takeDepartedPlayers() hands the player
  * over to whoever must forget it outside the game. A game counts the ticks it
- * runs, so a stall of the server closes no session. A game in progress whose
- * last player's session closed ends at that same tick, as finish() ends it, so
- * it waits for players again FINISHED_STATE_TICKS ticks later.
+ * runs, so a stall of the server closes no session by itself; a stall long
+ * enough for the clients to take the server for lost closes them all,
+ * SESSION_TIMEOUT_TICKS ticks after the server resumes, since those clients
+ * send nothing more. A game in progress whose last player's session closed
+ * ends at that same tick, as finish() ends it, so it waits for players again
+ * FINISHED_STATE_TICKS ticks later.
  *
  * A Disconnection from a player closes its session at once, in the tick that
  * reads it and in the same way, with a PlayerDeparture (Left) instead: a player
