@@ -63,6 +63,7 @@ void ServerConnection::connect(const network::Endpoint& server,
   nextSequence_ = 0;
   nextInputNumber_ = network::FIRST_INPUT_NUMBER;
   sinceConnect_ = engine::Duration::zero();
+  sinceReceived_ = engine::Duration::zero();
   sendRequest();
   status_ = {.phase = ConnectionStatus::Phase::Connecting};
   logger_.info("connecting to ", server_.address, " port ", server_.port);

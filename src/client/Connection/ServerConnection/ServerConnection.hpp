@@ -64,14 +64,15 @@ namespace rtype::client {
  * of the server that the checks of this comment let through counts, whatever
  * it holds: from that server, of this protocol and version, with the token of
  * the session, newer than the newest one read, and whose messages add up to its
- * end. The time counts before update() reads what arrived, so a frame longer
- * than SESSION_TIMEOUT loses no session whose datagrams waited in the link.
- * Leaving the session, through
- * cancel() or connect(), sends a Disconnection DISCONNECTION_COPY_COUNT times,
- * DISCONNECTION_COPY_INTERVAL apart, with the token and the sequences of the
- * session left, the first at once and the others from update(), while
- * isLeaving() is true; connect() then starts a new session: sequence 0, token 0
- * and inputs from FIRST_INPUT_NUMBER again.
+ * end. The silence starts over at connect() and at each such datagram, the
+ * acceptance included. The time counts before update() reads what arrived, so a
+ * frame longer than SESSION_TIMEOUT loses no session whose datagrams waited in
+ * the link. Leaving the session, through cancel() or connect(), sends a
+ * Disconnection DISCONNECTION_COPY_COUNT times, DISCONNECTION_COPY_INTERVAL
+ * apart, with the token and the sequences of the session left, the first at
+ * once and the others from update(), while isLeaving() is true; connect() then
+ * starts a new session: sequence 0, token 0 and inputs from FIRST_INPUT_NUMBER
+ * again.
  *
  * From the start of the game, it keeps the EntitySpawned, WorldState and
  * EntityDestroyed of the server, and the first copy of each GameEvent (see
