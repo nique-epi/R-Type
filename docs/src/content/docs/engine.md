@@ -204,12 +204,24 @@ rtype::engine::readLaunchArguments(logOptions.otherArguments(), options);
 
 ## Modules: `Application` and `IModule`
 
-`src/engine/Modules/` (`rtype_engine_modules`, `rtype_engine_application`) gives a program one place to plug each of its parts in. A part is a **module**: a class implementing `IModule`, with a `name()`, its `dependencies()` (the names of the modules it needs), and three steps. `install()` prepares it and keeps nothing open when it returns: it may read a file and close it, but it never binds a socket, starts a thread or subscribes to an event. `start()` opens what must live until `stop()` (a socket, a thread, a file kept open, an event subscription) and throws a `std::exception` when it cannot; `stop()` closes it and must not throw.
+`src/engine/Modules/` (`rtype_engine_modules`, `rtype_engine_application`) gives a program one place to plug each of its parts in. A part is a **module**: a class implementing `IModule`, with a `name()`, its `dependencies()` (the names of the modules it needs), and three steps. `install(InstallContext&)` prepares it and keeps nothing open when it returns: it may read a file and close it, but it never binds a socket, starts a thread or subscribes to an event. Through the context it adds its work to a loop stage and provides or looks up services (below). `start()` opens what must live until `stop()` (a socket, a thread, a file kept open, an event subscription) and throws a `std::exception` when it cannot; `stop()` closes it and must not throw.
 
 - `Application` takes the list of modules once, when it is built, and checks it before anything is installed. A null module throws `NullModuleException`. A module whose dependency is not listed **before** it throws `MissingDependencyException`, whose message names both modules. So a missing module stops the program before any socket, thread or file is opened.
 - `start()` installs every module in list order, then starts every module in list order. Only the first call does anything.
 - `stop()` stops the started modules in the reverse order, so a module is stopped before its dependencies. Each module is stopped once, and the destructor of `Application` stops the modules still started.
 - When a module throws from `start()`, the modules started before it are stopped in the reverse order, then `start()` throws `ModuleStartFailedException`, whose message names the module and gives the reason. The module that threw is not stopped, so its `start()` closes what it had already opened before it throws.
+
+### Loop stages
+
+A program declares the stages of its loop once, in order, as constants: `SERVER_LOOP_STAGES` (`inputs`, `simulation`, `outputs`) in `src/server/ServerConstants.hpp` and `CLIENT_LOOP_STAGES` (`events`, `network`, `update`, `render`) in `src/client/ClientConstants.hpp`. It gives them to `Application(LoopStages(...), modules)`. During `install()`, a module calls `context.addWork(stageName, work)`, where `work` is a `StageWork`, a callable taking the time of the pass. `Application::runStages(elapsed)` runs the stages in the declared order and, within a stage, the works in the order the modules are listed, since modules are installed in list order. It runs only while the modules are started.
+
+A stage name that is not declared throws `UnknownStageException` at install, a stage declared twice throws `DuplicateStageException`, and an empty work throws `EmptyStageWorkException`, so a typo stops the program before anything starts.
+
+### Services
+
+A module provides an object to the modules installed after it with `context.provide(service)`, designated by its type; a second provider of the same type throws `DuplicateServiceException`. Another module gets it during its own `install()` only: `context.require<Service>()` returns a reference or throws `MissingServiceException`, whose message names the module and the service; `context.find<Service>()` returns `nullptr` when the service is absent, without an exception. The module then passes the object to its classes through their constructors, so its dependencies read in the constructors, and nothing looks a service up during a tick: the context only exists while `install()` runs. The module that provides a service owns it and outlives its users, as `Application` destroys modules from the last listed to the first.
+
+A module that subscribes to the `EventBus` keeps the `SubscriptionHandle` and unsubscribes in its `stop()`.
 
 No program builds an `Application` yet: the server and the client still assemble their parts in their `main.cpp`. In this example, `LogModule` and `AudioModule` stand for modules a program would write, and `AudioModule` depends on `LogModule`:
 
@@ -243,6 +255,9 @@ The reasoning behind the order is in [Architecture](/R-Type/architecture/#module
 | Hand data from one thread to another | `BoundedQueue`, in its own library: see [Concurrency](/R-Type/concurrency/) |
 | Change how the launch options are read, or how the usage and the launch errors read | `src/engine/LaunchArguments/`; each program's own options are in its `LaunchOptions` |
 | Add a part a program can switch on or off | A class implementing `IModule` (declared in `src/engine/Modules/IModule.hpp`), written in the program or library it belongs to, listed after its dependencies in the list given to `Application` |
+| Run a module's work every tick, frame or pass of the loop | `InstallContext::addWork()`, called from the module's `install()` |
+| Hand an object to the modules installed after | `InstallContext::provide()`; the other modules call `require<>()` or `find<>()` |
+| Change the stages of a program | `SERVER_LOOP_STAGES` or `CLIENT_LOOP_STAGES` |
 | Add an engine error | `src/engine/Exceptions/EngineException.hpp` |
 | Write a test that depends on time | `tests/SimulatedClock.hpp`, `tests/engine/Time/FixedTimestepTest.cpp` |
 
