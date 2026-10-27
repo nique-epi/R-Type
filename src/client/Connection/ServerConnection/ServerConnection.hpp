@@ -1,6 +1,5 @@
 #pragma once
 
-#include <chrono>
 #include <cstddef>
 #include <cstdint>
 #include <optional>
@@ -174,8 +173,9 @@ class ServerConnection : public IServerConnection,
 
   /** @brief Ends the attempt as Unreachable, or the session as Lost, as
    * @p ending says; forgets the session, sends nothing, and logs that the
-   * server did not answer for @p silence. */
-  void giveUp(ConnectionStatus::Phase ending, std::chrono::seconds silence);
+   * server did not answer for the delay that ran out: SESSION_TIMEOUT for
+   * Lost, CONNECTION_ATTEMPT_TIMEOUT for Unreachable. */
+  void giveUp(ConnectionStatus::Phase ending);
 
   /** @brief Ends the attempt in progress as Refused (IncompatibleVersion),
    * since the server answered in @p serverVersion, which it keeps, and logs

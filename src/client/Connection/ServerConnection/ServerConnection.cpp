@@ -119,7 +119,7 @@ void ServerConnection::readReceived() {
 
 void ServerConnection::holdSession(engine::Duration elapsed) {
   if (sinceReceived_ >= network::SESSION_TIMEOUT) {
-    giveUp(ConnectionStatus::Phase::Lost, network::SESSION_TIMEOUT);
+    giveUp(ConnectionStatus::Phase::Lost);
     return;
   }
   sinceSent_ += elapsed;
@@ -130,7 +130,7 @@ void ServerConnection::holdSession(engine::Duration elapsed) {
 void ServerConnection::continueAttempt(engine::Duration elapsed) {
   sinceConnect_ += elapsed;
   if (sinceConnect_ >= CONNECTION_ATTEMPT_TIMEOUT) {
-    giveUp(ConnectionStatus::Phase::Unreachable, CONNECTION_ATTEMPT_TIMEOUT);
+    giveUp(ConnectionStatus::Phase::Unreachable);
     return;
   }
   sinceRequest_ += elapsed;
@@ -228,8 +228,10 @@ void ServerConnection::registerSessionMessages() {
       });
 }
 
-void ServerConnection::giveUp(ConnectionStatus::Phase ending,
-                              std::chrono::seconds silence) {
+void ServerConnection::giveUp(ConnectionStatus::Phase ending) {
+  const std::chrono::seconds silence = ending == ConnectionStatus::Phase::Lost
+                                           ? network::SESSION_TIMEOUT
+                                           : CONNECTION_ATTEMPT_TIMEOUT;
   status_ = {.phase = ending};
   forgetSession();
   logger_.warn("no answer from ", server_.address, " port ", server_.port,
