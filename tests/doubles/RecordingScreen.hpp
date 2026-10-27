@@ -36,6 +36,10 @@ class RecordingScreen : public rtype::client::IScreen {
  public:
   RecordingScreen(rtype::client::ScreenId screen,
                   std::vector<JournalEntry>& journal);
+
+  /** @brief Writes the destruction in the journal. A failure to write it is
+   * swallowed, since a destructor must not throw: the journal then lacks the
+   * entry, and a test expecting it fails. */
   ~RecordingScreen() override;
 
   RecordingScreen(const RecordingScreen&) = delete;
