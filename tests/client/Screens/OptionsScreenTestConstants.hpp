@@ -3,6 +3,7 @@
 #include <SFML/System/Vector2.hpp>
 #include <chrono>
 #include <cstddef>
+#include <string_view>
 #include "PixelSize.hpp"
 
 namespace rtype::client::testing {
@@ -16,6 +17,11 @@ constexpr std::size_t LARGEST_FIT = 2;
  * of 1600 x 900. */
 constexpr PixelSize WINDOW_1280_BY_720{.width = 1280, .height = 720};
 constexpr std::size_t INDEX_OF_1280_BY_720 = 1;
+
+/** @brief The size of DESKTOP as the list of sizes writes it, and the legend of
+ * the chart of the sizes over the window of 1600 x 900. */
+constexpr std::string_view DESKTOP_SIZE_TEXT = "1920 X 1080";
+constexpr std::string_view CHART_LEGEND = "NOW  1600 X 900";
 
 /** @brief The picture the team chose: SAVED at (270, 36); the description
  * from x 112 to the safe margin at 456; the open list of sizes from x 332;

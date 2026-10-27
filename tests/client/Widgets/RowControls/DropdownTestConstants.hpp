@@ -1,9 +1,11 @@
 #pragma once
 
+#include <SFML/Graphics/Color.hpp>
 #include <SFML/Graphics/Rect.hpp>
 #include <SFML/System/Vector2.hpp>
 #include <array>
 #include <cstddef>
+#include <string_view>
 
 namespace rtype::client::testing {
 
@@ -26,5 +28,12 @@ constexpr std::size_t FIRST_SIZE_INDEX = 0;
 constexpr std::size_t SECOND_SIZE_INDEX = 1;
 constexpr std::size_t TOO_LARGE = 4;
 constexpr sf::Vector2i OUTSIDE(100, 100);
+
+/** @brief The text of the current size, 1600 x 900; the size of the 1920 x 1080
+ * screen a borderless window imposes; and the blue of a disabled row, on the
+ * picture of the display tab the player chose. */
+constexpr std::string_view CURRENT_SIZE_TEXT = "1600 X 900";
+constexpr std::string_view IMPOSED_SIZE_TEXT = "1920 X 1080";
+constexpr sf::Color DISABLED_ROW_BLUE(74, 90, 168);
 
 }  // namespace rtype::client::testing

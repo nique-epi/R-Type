@@ -2,13 +2,18 @@
 #include <SFML/Graphics/Rect.hpp>
 #include <SFML/System/Vector2.hpp>
 #include <SFML/Window/Keyboard.hpp>
+#include "BarState.hpp"
 #include "Dropdown.hpp"
 #include "DropdownFixture.hpp"
 #include "DropdownFixtures.hpp"
 #include "DropdownTestConstants.hpp"
 #include "RecordingInterfaceCanvas.hpp"
 
+using rtype::client::BarState;
+using rtype::client::testing::CURRENT_SIZE_TEXT;
+using rtype::client::testing::DISABLED_ROW_BLUE;
 using rtype::client::testing::FIRST_SIZE_INDEX;
+using rtype::client::testing::IMPOSED_SIZE_TEXT;
 using rtype::client::testing::LARGEST_SIZE_INDEX;
 using rtype::client::testing::OPEN_LIST;
 using rtype::client::testing::OUTSIDE;
@@ -177,4 +182,36 @@ TEST_F(DropdownFixture, TheOpenListLiesUnderItsBox) {
     EXPECT_TRUE(OPEN_LIST.contains(fill.area.position + fill.area.size -
                                    sf::Vector2i(1, 1)));
   }
+}
+
+/**
+ * Given the list on 1600 x 900, the size of a 1920 x 1080 screen imposed
+ * When its box is painted
+ * Then the box shows 1920 x 1080, and not 1600 x 900
+ */
+TEST_F(DropdownFixture, TheBoxShowsTheImposedTextInPlaceOfTheChoice) {
+  impose(IMPOSED_SIZE_TEXT);
+  InterfaceCanvasRecord record;
+  RecordingInterfaceCanvas canvas(record);
+
+  list().paint(canvas, WINDOW_SIZE_BOX, BarState::Idle);
+
+  EXPECT_NE(writingOf(record, IMPOSED_SIZE_TEXT), nullptr);
+  EXPECT_EQ(writingOf(record, CURRENT_SIZE_TEXT), nullptr);
+}
+
+/**
+ * Given the list on 1600 x 900
+ * When its box is painted on a disabled row
+ * Then its text is the blue of a disabled row
+ */
+TEST_F(DropdownFixture, ADisabledRowDimsTheTextOfTheBox) {
+  InterfaceCanvasRecord record;
+  RecordingInterfaceCanvas canvas(record);
+
+  list().paint(canvas, WINDOW_SIZE_BOX, BarState::Disabled);
+
+  const RecordedWriting* text = writingOf(record, CURRENT_SIZE_TEXT);
+  ASSERT_NE(text, nullptr);
+  EXPECT_EQ(text->style.color, DISABLED_ROW_BLUE);
 }

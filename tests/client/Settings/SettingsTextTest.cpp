@@ -5,12 +5,14 @@
 #include <vector>
 #include "BoundAction.hpp"
 #include "ColorMode.hpp"
+#include "DisplayMode.hpp"
 #include "PlayerSettings.hpp"
 #include "SettingsText.hpp"
 #include "SettingsTextTestConstants.hpp"
 
 using rtype::client::BoundAction;
 using rtype::client::ColorMode;
+using rtype::client::DisplayMode;
 using rtype::client::PlayerSettings;
 using rtype::client::readSettingsText;
 using rtype::client::settingsText;
@@ -47,6 +49,7 @@ TEST(SettingsTextTest, EveryChangedSettingReadsBack) {
   settings.effectsVolume = CHANGED_EFFECTS_VOLUME;
   settings.muted = true;
   settings.windowSize = SMALLER_WINDOW;
+  settings.displayMode = DisplayMode::Borderless;
   settings.keys.bind(BoundAction::Shoot, Scan::LControl);
   settings.colorMode = ColorMode::Tritanopia;
   settings.reduceFlashes = true;
@@ -148,6 +151,18 @@ TEST(SettingsTextTest, AWindowSizeNeedsTwoPositiveWholeNumbers) {
                      .settings.windowSize.has_value())
         << text;
   }
+}
+
+/**
+ * Given a display mode line naming no display mode
+ * When it is read
+ * Then the window stays windowed, and the line is listed as invalid
+ */
+TEST(SettingsTextTest, AnUnknownDisplayModeKeepsTheWindowWindowed) {
+  const auto reading =
+      readSettingsText("display_mode=fullscreen", PlayerSettings{});
+  EXPECT_EQ(reading.settings.displayMode, DisplayMode::Windowed);
+  EXPECT_EQ(reading.ignoredLines, std::vector<std::string>{INVALID_FIRST_LINE});
 }
 
 /**

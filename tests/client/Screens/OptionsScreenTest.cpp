@@ -6,6 +6,7 @@
 #include <cstddef>
 #include <optional>
 #include "BoundAction.hpp"
+#include "DisplayMode.hpp"
 #include "FakeSizableWindow.hpp"
 #include "GameOptionsScreenFixture.hpp"
 #include "InterfaceColorConstants.hpp"
@@ -20,18 +21,25 @@
 #include "RecordingSettingsStorage.hpp"
 #include "RecordingSoundPlayer.hpp"
 #include "SoundConstants.hpp"
+#include "WidgetColors.hpp"
 #include "WidgetConstants.hpp"
 #include "WidgetText.hpp"
+#include "WindowLayout.hpp"
+#include "WindowSizeSelection.hpp"
 
 using rtype::client::BoundAction;
 using rtype::client::CLICK_SOUND_ID;
 using rtype::client::DIM_LAYER_COLOR;
+using rtype::client::DISABLED_BAR_TEXT_COLOR;
+using rtype::client::DisplayMode;
 using rtype::client::PRESS_DURATION;
 using rtype::client::regularTextWidth;
 using rtype::client::testing::ALONG_THE_TRACK;
+using rtype::client::testing::CHART_LEGEND;
 using rtype::client::testing::CONTROLS_TAB;
 using rtype::client::testing::DESCRIPTION_LEFT;
 using rtype::client::testing::DESCRIPTION_RIGHT;
+using rtype::client::testing::DESKTOP_SIZE_TEXT;
 using rtype::client::testing::INDEX_OF_1280_BY_720;
 using rtype::client::testing::LARGEST_FIT;
 using rtype::client::testing::LONG_AFTER_A_FAILED_SAVE;
@@ -278,23 +286,25 @@ TEST_F(OptionsScreenFixture, AKeySharedByTwoActionsIsSignaled) {
 
 /**
  * Given the DISPLAY tab, the window at 1600 x 900
- * When Enter opens the list, Up then Enter take 1280 x 720
+ * When Down selects WINDOW SIZE, Enter opens the list, Up then Enter take
+ * 1280 x 720
  * Then the window is 1280 x 720, and that size is saved
  */
 TEST_F(OptionsScreenFixture, ASizeTakenResizesTheWindowAndIsSaved) {
   openNextTab();
   openNextTab();
+  tap(Key::Down);
   tap(Key::Enter);
   tap(Key::Up);
   tap(Key::Enter);
-  EXPECT_EQ(window().windowSizeSelection().selectedIndex(),
+  EXPECT_EQ(window().windowLayout().sizes().selectedIndex(),
             INDEX_OF_1280_BY_720);
   ASSERT_FALSE(storage().saves().empty());
   EXPECT_EQ(storage().saves().back().windowSize, WINDOW_1280_BY_720);
 }
 
 /**
- * Given the DISPLAY tab
+ * Given the DISPLAY tab, WINDOW SIZE selected
  * When the list of sizes opens
  * Then everything it adds to the picture lies right of x 332, clear of the
  * chart and its legend on the left
@@ -302,6 +312,7 @@ TEST_F(OptionsScreenFixture, ASizeTakenResizesTheWindowAndIsSaved) {
 TEST_F(OptionsScreenFixture, TheOpenListLeavesThePreviewUncovered) {
   openNextTab();
   openNextTab();
+  tap(Key::Down);
   const auto closed = canvas().fills;
   tap(Key::Enter);
   for (const RecordedFill& fill : canvas().fills) {
@@ -313,16 +324,69 @@ TEST_F(OptionsScreenFixture, TheOpenListLeavesThePreviewUncovered) {
 
 /**
  * Given the DISPLAY tab, the window at the largest size that fits
- * When End is tapped in the open list
+ * When Down selects WINDOW SIZE and End is tapped in the open list
  * Then the highlight stays on that size: a size too large cannot be reached
  */
 TEST_F(OptionsScreenFixture, ASizeTooLargeCannotBeReached) {
   openNextTab();
   openNextTab();
+  tap(Key::Down);
   tap(Key::Enter);
   tap(Key::End);
   tap(Key::Enter);
-  EXPECT_EQ(window().windowSizeSelection().selectedIndex(), LARGEST_FIT);
+  EXPECT_EQ(window().windowLayout().sizes().selectedIndex(), LARGEST_FIT);
+}
+
+/**
+ * Given the DISPLAY tab, the window windowed
+ * When Enter opens the list of modes, Down then Enter take BORDERLESS
+ * Then the window is borderless
+ */
+TEST_F(OptionsScreenFixture, BorderlessTakenIsApplied) {
+  openNextTab();
+  openNextTab();
+  takeBorderless();
+  EXPECT_EQ(window().windowLayout().displayMode(), DisplayMode::Borderless);
+}
+
+/**
+ * Given the DISPLAY tab, the window windowed
+ * When BORDERLESS is taken
+ * Then the settings saved hold the borderless mode
+ */
+TEST_F(OptionsScreenFixture, BorderlessTakenIsSaved) {
+  openNextTab();
+  openNextTab();
+  takeBorderless();
+  ASSERT_FALSE(storage().saves().empty());
+  EXPECT_EQ(storage().saves().back().displayMode, DisplayMode::Borderless);
+}
+
+/**
+ * Given the DISPLAY tab on a 1920 x 1080 desktop
+ * When BORDERLESS is taken
+ * Then WINDOW SIZE shows 1920 x 1080, dimmed as a disabled row
+ */
+TEST_F(OptionsScreenFixture, BorderlessShowsTheScreenSizeDimmed) {
+  openNextTab();
+  openNextTab();
+  takeBorderless();
+  const RecordedWriting* size = writingOf(canvas(), DESKTOP_SIZE_TEXT);
+  ASSERT_NE(size, nullptr);
+  EXPECT_EQ(size->style.color, DISABLED_BAR_TEXT_COLOR);
+}
+
+/**
+ * Given the DISPLAY tab, the chart of the sizes under its rows
+ * When BORDERLESS is taken
+ * Then the chart is no longer drawn
+ */
+TEST_F(OptionsScreenFixture, BorderlessHidesTheChartOfTheSizes) {
+  openNextTab();
+  openNextTab();
+  ASSERT_NE(writingOf(canvas(), CHART_LEGEND), nullptr);
+  takeBorderless();
+  EXPECT_EQ(writingOf(canvas(), CHART_LEGEND), nullptr);
 }
 
 /**

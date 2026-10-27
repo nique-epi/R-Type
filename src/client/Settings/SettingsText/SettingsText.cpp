@@ -17,6 +17,7 @@
 #include "PixelSize.hpp"
 #include "PlayerSettings.hpp"
 #include "SettingsConstants.hpp"
+#include "WindowConstants.hpp"
 
 namespace rtype::client {
 
@@ -172,6 +173,10 @@ LineOutcome applySetting(PlayerSettings& settings, SettingLine setting) {
   if (name == WINDOW_SIZE_NAME) {
     return assign(windowSizeOf(value), settings.windowSize);
   }
+  if (name == DISPLAY_MODE_NAME) {
+    return assign(valueNamed(value, DISPLAY_MODE_VALUES, DISPLAY_MODES),
+                  settings.displayMode);
+  }
   if (name == COLOR_MODE_NAME) {
     return assign(valueNamed(value, COLOR_MODE_VALUES, COLOR_MODES),
                   settings.colorMode);
@@ -232,6 +237,9 @@ std::string settingsText(const PlayerSettings& settings) {
   if (settings.windowSize.has_value()) {
     writeLine(text, WINDOW_SIZE_NAME, windowSizeValue(*settings.windowSize));
   }
+  writeLine(
+      text, DISPLAY_MODE_NAME,
+      DISPLAY_MODE_VALUES[static_cast<std::size_t>(settings.displayMode)]);
   for (std::size_t action = 0; action < BOUND_ACTION_COUNT; ++action) {
     writeLine(text, BOUND_ACTION_KEY_NAMES[action],
               keyName(settings.keys.keyOf(BOUND_ACTIONS[action]))

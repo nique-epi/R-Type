@@ -15,6 +15,7 @@
 #include "BoundAction.hpp"
 #include "ChoiceSelector.hpp"
 #include "ColorMode.hpp"
+#include "DisplayMode.hpp"
 #include "Dropdown.hpp"
 #include "DropdownParts.hpp"
 #include "IInterfaceCanvas.hpp"
@@ -42,6 +43,7 @@
 #include "ValueBinding.hpp"
 #include "WidgetConstants.hpp"
 #include "WindowConstants.hpp"
+#include "WindowLayout.hpp"
 #include "WindowSizeChart.hpp"
 #include "WindowSizeChartConstants.hpp"
 #include "WindowSizeSelection.hpp"
@@ -78,6 +80,38 @@ template <std::size_t Count>
 std::vector<std::string> textsOf(
     const std::array<std::string_view, Count>& labels) {
   return {labels.begin(), labels.end()};
+}
+
+/** @returns The texts of the sizes of WINDOW_SIZES, in their order. */
+std::vector<std::string> windowSizeTexts() {
+  std::vector<std::string> texts;
+  texts.reserve(WINDOW_SIZES.size());
+  for (const PixelSize size : WINDOW_SIZES) {
+    texts.push_back(windowSizeText(size));
+  }
+  return texts;
+}
+
+/** @returns The size the display mode imposes on the window, as the list of
+ * sizes writes it, or nothing while the player picks the size. */
+std::optional<std::string> imposedSizeText(const WindowLayout& layout) {
+  const std::optional<PixelSize> imposed = layout.imposedSize();
+  if (!imposed.has_value()) {
+    return std::nullopt;
+  }
+  return windowSizeText(*imposed);
+}
+
+/** @returns The description of the list of display modes: its keys while it is
+ * open, what borderless does while the window is borderless. */
+const char* displayModeDescription(const Dropdown& modes, DisplayMode mode) {
+  if (modes.isOpen()) {
+    return OPEN_LIST_DESCRIPTION;
+  }
+  if (mode == DisplayMode::Borderless) {
+    return BORDERLESS_DESCRIPTION;
+  }
+  return DISPLAY_MODE_DESCRIPTION;
 }
 
 }  // namespace
@@ -187,24 +221,43 @@ Menu OptionsScreen::controlsTab() {
 }
 
 Menu OptionsScreen::displayTab() {
-  std::vector<std::string> sizes;
-  sizes.reserve(WINDOW_SIZES.size());
-  for (const PixelSize size : WINDOW_SIZES) {
-    sizes.push_back(windowSizeText(size));
-  }
-  auto list = std::make_unique<Dropdown>(DropdownParts{
-      .choices = std::move(sizes),
-      .available =
-          [this](std::size_t index) {
-            return window_->windowSizeSelection().isAvailable(index);
-          },
+  auto modes = std::make_unique<Dropdown>(DropdownParts{
+      .choices = textsOf(DISPLAY_MODE_LABELS),
+      .available = [](std::size_t) { return true; },
       .value = ValueBinding<std::size_t>{
           .read =
-              [this] { return window_->windowSizeSelection().selectedIndex(); },
-          .write = [this](std::size_t index) { chooseWindowSize(index); }}});
+              [this] {
+                return static_cast<std::size_t>(
+                    window_->windowLayout().displayMode());
+              },
+          .write =
+              [this](std::size_t mode) {
+                if (window_->selectDisplayMode(DISPLAY_MODES[mode])) {
+                  settings_->displayMode = DISPLAY_MODES[mode];
+                  changed();
+                }
+              }},
+      .imposedText = {}});
+  displayModes_ = modes.get();
+  auto list = std::make_unique<Dropdown>(DropdownParts{
+      .choices = windowSizeTexts(),
+      .available =
+          [this](std::size_t index) {
+            return window_->windowLayout().sizes().isAvailable(index);
+          },
+      .value =
+          ValueBinding<std::size_t>{
+              .read =
+                  [this] {
+                    return window_->windowLayout().sizes().selectedIndex();
+                  },
+              .write = [this](std::size_t index) { chooseWindowSize(index); }},
+      .imposedText =
+          [this] { return imposedSizeText(window_->windowLayout()); }});
   windowSizes_ = list.get();
   MenuBuilder builder = tabbedPanel(DISPLAY_TAB);
-  builder.row({.label = WINDOW_SIZE_LABEL}, std::move(list))
+  builder.row({.label = DISPLAY_MODE_LABEL}, std::move(modes))
+      .row({.label = WINDOW_SIZE_LABEL}, std::move(list))
       .illustration(WINDOW_SIZE_CHART_SIZE);
   return withBack(builder);
 }
@@ -370,7 +423,13 @@ void OptionsScreen::refresh() {
     tabs_[CONTROLS_TAB].setDescription(FIRST_KEY_ROW + row,
                                        keyDescription(row));
   }
-  tabs_[DISPLAY_TAB].setDescription(WINDOW_SIZE_ROW, windowSizeDescription());
+  const WindowLayout& layout = window_->windowLayout();
+  Menu& display = tabs_[DISPLAY_TAB];
+  display.setDescription(
+      DISPLAY_MODE_ROW,
+      displayModeDescription(*displayModes_, layout.displayMode()));
+  display.setEnabled(WINDOW_SIZE_ROW, !layout.imposedSize().has_value());
+  display.setDescription(WINDOW_SIZE_ROW, windowSizeDescription());
   openMenu().setStatus(stamp_);
 }
 
@@ -392,7 +451,7 @@ std::string OptionsScreen::keyDescription(std::size_t row) const {
 }
 
 std::string OptionsScreen::windowSizeDescription() const {
-  const WindowSizeSelection& selection = window_->windowSizeSelection();
+  const WindowSizeSelection& selection = window_->windowLayout().sizes();
   if (windowSizes_->isOpen()) {
     const std::optional<std::size_t> pointed = windowSizes_->pointedChoice();
     if (pointed.has_value() && !selection.isAvailable(*pointed)) {
@@ -416,9 +475,9 @@ void OptionsScreen::repaint() {
   const Menu& menu = openMenu();
   menu.paint(*canvas_);
   const std::optional<sf::IntRect> chart = menu.illustrationArea();
-  if (chart.has_value()) {
-    paintWindowSizeChart(*canvas_, chart->position,
-                         window_->windowSizeSelection(),
+  const WindowLayout& layout = window_->windowLayout();
+  if (chart.has_value() && !layout.imposedSize().has_value()) {
+    paintWindowSizeChart(*canvas_, chart->position, layout.sizes(),
                          windowSizes_->highlighted());
   }
   if (dialog_.has_value()) {

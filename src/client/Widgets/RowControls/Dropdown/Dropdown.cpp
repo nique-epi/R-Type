@@ -24,25 +24,43 @@
 
 namespace rtype::client {
 
+namespace {
+
+/** @returns The color of a part of the box, its text or its pointer: dimmed on
+ * a disabled row, the lit color of that part while the list is open or its row
+ * selected. */
+sf::Color boxColorOf(BarState row, bool open, sf::Color lit) {
+  if (row == BarState::Disabled) {
+    return DISABLED_BAR_TEXT_COLOR;
+  }
+  return open || row == BarState::Selected ? lit : BOXED_VALUE_COLOR;
+}
+
+}  // namespace
+
 Dropdown::Dropdown(DropdownParts parts)
     : choices_(std::move(parts.choices)),
       available_(std::move(parts.available)),
-      value_(std::move(parts.value)) {}
+      value_(std::move(parts.value)),
+      imposedText_(std::move(parts.imposedText)) {}
 
 int Dropdown::width() const { return DROPDOWN_BOX_SIZE.x; }
 
 void Dropdown::paint(IInterfaceCanvas& canvas, sf::IntRect area,
                      BarState row) const {
-  const bool lit = open_ || row == BarState::Selected;
   SunkBox(area, open_ ? SunkBox::Sides::Lit : SunkBox::Sides::Shaded)
       .paint(canvas);
-  canvas.write(choices_[value_.read()],
+  const std::optional<std::string> imposed =
+      imposedText_ ? imposedText_() : std::nullopt;
+  const std::string& shown =
+      imposed.has_value() ? *imposed : choices_[value_.read()];
+  canvas.write(shown,
                {area.position.x + DROPDOWN_TEXT_LEFT,
                 area.position.y + CONTROL_TEXT_TOP},
                {.font = TextFont::Regular,
-                .color = lit ? SELECTED_BOXED_VALUE_COLOR : BOXED_VALUE_COLOR});
+                .color = boxColorOf(row, open_, SELECTED_BOXED_VALUE_COLOR)});
   paintPointer(canvas, area,
-               lit ? SELECTED_FIELD_BORDER_COLOR : BOXED_VALUE_COLOR);
+               boxColorOf(row, open_, SELECTED_FIELD_BORDER_COLOR));
 }
 
 void Dropdown::paintOverlay(IInterfaceCanvas& canvas, sf::IntRect area) const {

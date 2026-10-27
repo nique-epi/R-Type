@@ -12,6 +12,7 @@ constexpr const char* FIRST_LAUNCH_FILE =
     "music_volume=70\n"
     "effects_volume=80\n"
     "mute_all=off\n"
+    "display_mode=windowed\n"
     "key_move_up=UP\n"
     "key_move_down=DOWN\n"
     "key_move_left=LEFT\n"
