@@ -9,14 +9,20 @@ namespace rtype::client {
 /**
  * @brief Plays what happens to the ship of a pilot without a shot: its
  * arrival and its invulnerability, and counts the time since the start of
- * the game the arrivals wait on. Every method but advance() and sinceStart()
- * adds components, so none may be called during a forEach of the registry.
+ * the game the arrivals wait on. Unlike the other effects, which keep the
+ * version they started with, an invulnerability follows the flash preference
+ * while it lasts: turned on during it, REDUCE FLASHES shows it steady from the
+ * next advance(). Every method but advance() and sinceStart() adds
+ * components, so none may be called during a forEach of the registry.
  */
 class PilotEffects {
  public:
   explicit PilotEffects(EffectTools tools);
 
-  /** @brief Moves the time since the start of the game on. */
+  /** @brief Moves the time since the start of the game on, and shows every
+   * invulnerable ship as the preference of the gate now asks: steady when
+   * flashes are reduced, blinking otherwise. The gate must have been advanced
+   * first. */
   void advance(engine::Duration elapsed);
 
   /** @returns The time advance() moved on since the effects were built: the

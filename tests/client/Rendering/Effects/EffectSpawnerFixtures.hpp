@@ -55,6 +55,11 @@ template <typename Component>
 [[nodiscard]] bool isSteadilyInvulnerable(
     rtype::engine::ComponentRegistry& components, rtype::engine::Entity ship);
 
+/** @returns Whether the ship is invulnerable and blinks between its sprite and
+ * a dithered picture. */
+[[nodiscard]] bool blinksWhileInvulnerable(
+    rtype::engine::ComponentRegistry& components, rtype::engine::Entity ship);
+
 /** @returns Whether every particle goes through that color as it ages. */
 [[nodiscard]] bool everyParticleGoesThrough(
     rtype::engine::ComponentRegistry& components, sf::Color color);

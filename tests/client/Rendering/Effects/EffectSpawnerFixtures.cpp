@@ -77,6 +77,12 @@ bool isSteadilyInvulnerable(ComponentRegistry& components, Entity ship) {
   return invulnerability != nullptr && invulnerability->steady;
 }
 
+bool blinksWhileInvulnerable(ComponentRegistry& components, Entity ship) {
+  const Invulnerability* invulnerability =
+      components.get<Invulnerability>(ship);
+  return invulnerability != nullptr && !invulnerability->steady;
+}
+
 bool everyParticleGoesThrough(ComponentRegistry& components, sf::Color color) {
   bool every = true;
   components.forEach<Particle, Position>(

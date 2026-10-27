@@ -546,6 +546,38 @@ TEST(EffectSpawner, WithFlashesReducedAnInvulnerableShipIsSteady) {
 }
 
 /**
+ * Given a ship that became invulnerable while flashes were allowed
+ * When the player reduces flashes and a frame passes
+ * Then it is dithered all along at once, no longer blinking
+ */
+TEST(EffectSpawner, AnInvulnerableShipTurnsSteadyAsSoonAsFlashesAreReduced) {
+  EffectScene scene;
+  const Entity ship = scene.shipOfPilot(SECOND_PILOT_COLOR);
+  scene.effects().setInvulnerable(ship, true);
+
+  scene.advance(ONE_FRAME, FlashPreference::Reduced);
+
+  EXPECT_TRUE(isSteadilyInvulnerable(scene.components(), ship));
+}
+
+/**
+ * Given a ship that became invulnerable while flashes were reduced
+ * When the player allows flashes again and a frame passes
+ * Then it blinks again at once
+ */
+TEST(EffectSpawner,
+     ASteadyInvulnerableShipBlinksAgainAsSoonAsFlashesAreAllowed) {
+  EffectScene scene;
+  scene.effects().advance(Duration::zero(), FlashPreference::Reduced);
+  const Entity ship = scene.shipOfPilot(SECOND_PILOT_COLOR);
+  scene.effects().setInvulnerable(ship, true);
+
+  scene.advance(ONE_FRAME, FlashPreference::Full);
+
+  EXPECT_TRUE(blinksWhileInvulnerable(scene.components(), ship));
+}
+
+/**
  * Given a pilot at 1000 points and a Bydo killed
  * When its score reaches 1100
  * Then "+100" shows, small, in the light of that pilot, in the Popups layer

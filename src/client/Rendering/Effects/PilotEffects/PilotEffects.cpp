@@ -15,9 +15,25 @@
 
 namespace rtype::client {
 
+namespace {
+
+/** @brief Shows every invulnerable ship dithered all along and outlined when
+ * @p steady, blinking otherwise: an invulnerability follows the flash
+ * preference while it lasts. */
+void setSteadiness(engine::ComponentRegistry& components, bool steady) {
+  components.forEach<Invulnerability, Invulnerability>(
+      [steady](engine::Entity, Invulnerability& invulnerability,
+               Invulnerability&) { invulnerability.steady = steady; });
+}
+
+}  // namespace
+
 PilotEffects::PilotEffects(EffectTools tools) : tools_(tools) {}
 
-void PilotEffects::advance(engine::Duration elapsed) { sinceStart_ += elapsed; }
+void PilotEffects::advance(engine::Duration elapsed) {
+  sinceStart_ += elapsed;
+  setSteadiness(tools_.components, !tools_.gate.get().flashes());
+}
 
 engine::Duration PilotEffects::sinceStart() const { return sinceStart_; }
 
