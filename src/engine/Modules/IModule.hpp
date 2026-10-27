@@ -17,14 +17,14 @@ class IModule {
  public:
   virtual ~IModule() = default;
 
-  /** @returns The name other modules give to require this one. */
+  /** @returns The name other modules give to depend on this one. */
   [[nodiscard]] virtual std::string name() const = 0;
 
   /**
-   * @returns The names of the modules this one needs. Each must come before it
-   * in the list given to the Application.
+   * @returns The names of the modules this one depends on. Each must come
+   * before it in the list given to the Application.
    */
-  [[nodiscard]] virtual std::vector<std::string> requiredModules() const = 0;
+  [[nodiscard]] virtual std::vector<std::string> dependencies() const = 0;
 
   /** @brief Prepares the module. Opens nothing. */
   virtual void install() = 0;

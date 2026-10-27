@@ -204,14 +204,14 @@ rtype::engine::readLaunchArguments(logOptions.otherArguments(), options);
 
 ## Modules: `Application` and `IModule`
 
-`src/engine/Modules/` (`rtype_engine_modules`, `rtype_engine_application`) gives a program one place to plug each of its parts in. A part is a **module**: a class implementing `IModule`, with a `name()`, the `requiredModules()` it needs, and three steps. `install()` prepares it and opens nothing; `start()` opens what it needs to run (a socket, a thread, a file) and throws a `std::exception` when it cannot; `stop()` closes it and must not throw.
+`src/engine/Modules/` (`rtype_engine_modules`, `rtype_engine_application`) gives a program one place to plug each of its parts in. A part is a **module**: a class implementing `IModule`, with a `name()`, its `dependencies()` (the names of the modules it needs), and three steps. `install()` prepares it and opens nothing; `start()` opens what it needs to run (a socket, a thread, a file) and throws a `std::exception` when it cannot; `stop()` closes it and must not throw.
 
-- `Application` takes the list of modules once, when it is built, and checks it before anything is installed. A null module throws `NullModuleException`. A module whose required module is not listed **before** it throws `MissingRequiredModuleException`, whose message names both modules. So a missing module stops the program before any socket, thread or file is opened.
+- `Application` takes the list of modules once, when it is built, and checks it before anything is installed. A null module throws `NullModuleException`. A module whose dependency is not listed **before** it throws `MissingDependencyException`, whose message names both modules. So a missing module stops the program before any socket, thread or file is opened.
 - `start()` installs every module in list order, then starts every module in list order. Only the first call does anything.
-- `stop()` stops the started modules in the reverse order, so a module is stopped before the modules it requires. Each module is stopped once, and the destructor of `Application` stops the modules still started.
+- `stop()` stops the started modules in the reverse order, so a module is stopped before its dependencies. Each module is stopped once, and the destructor of `Application` stops the modules still started.
 - When a module throws from `start()`, the modules started before it are stopped in the reverse order, then `start()` throws `ModuleStartFailedException`, whose message names the module and gives the reason. The module that threw is not stopped.
 
-No program builds an `Application` yet: the server and the client still assemble their parts in their `main.cpp`. In this example, `LogModule` and `AudioModule` stand for modules a program would write, and `AudioModule` requires `LogModule`:
+No program builds an `Application` yet: the server and the client still assemble their parts in their `main.cpp`. In this example, `LogModule` and `AudioModule` stand for modules a program would write, and `AudioModule` depends on `LogModule`:
 
 ```cpp
 std::vector<std::unique_ptr<rtype::engine::IModule>> modules;
@@ -242,7 +242,7 @@ The reasoning behind the order is in [Architecture](/R-Type/architecture/#module
 | Announce that something happened, or react to it | `EventBus` in `src/engine/Events/EventBus/`: `publish` the event, `subscribe<Event>` to it |
 | Hand data from one thread to another | `BoundedQueue`, in its own library: see [Concurrency](/R-Type/concurrency/) |
 | Change how the launch options are read, or how the usage and the launch errors read | `src/engine/LaunchArguments/`; each program's own options are in its `LaunchOptions` |
-| Add a part a program can switch on or off | A class implementing `IModule` in `src/engine/Modules/IModule.hpp`, listed after the modules it requires in the list given to `Application` |
+| Add a part a program can switch on or off | A class implementing `IModule` in `src/engine/Modules/IModule.hpp`, listed after its dependencies in the list given to `Application` |
 | Add an engine error | `src/engine/Exceptions/EngineException.hpp` |
 | Write a test that depends on time | `tests/SimulatedClock.hpp`, `tests/engine/Time/FixedTimestepTest.cpp` |
 

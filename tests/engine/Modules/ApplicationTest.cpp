@@ -8,11 +8,11 @@
 #include "ApplicationTestConstants.hpp"
 #include "EngineException.hpp"
 #include "IModule.hpp"
-#include "ModuleJournal.hpp"
+#include "JournalModule.hpp"
 
 using rtype::engine::Application;
 using rtype::engine::IModule;
-using rtype::engine::MissingRequiredModuleException;
+using rtype::engine::MissingDependencyException;
 using rtype::engine::ModuleStartFailedException;
 using rtype::engine::NullModuleException;
 
@@ -22,7 +22,7 @@ using rtype::engine::NullModuleException;
  * Then it installs the three in list order, then starts the three in list order
  */
 TEST(Application, InstallsEveryModuleThenStartsEveryModuleInListOrder) {
-  ModuleJournal journal;
+  JournalModule journal;
   Application application(threeModules(journal));
 
   application.start();
@@ -38,7 +38,7 @@ TEST(Application, InstallsEveryModuleThenStartsEveryModuleInListOrder) {
  * Then it stops third, then second, then first
  */
 TEST(Application, StopsModulesInReverseListOrder) {
-  ModuleJournal journal;
+  JournalModule journal;
   Application application(threeModules(journal));
   application.start();
   journal.calls.clear();
@@ -55,7 +55,7 @@ TEST(Application, StopsModulesInReverseListOrder) {
  * Then no module is stopped a second time
  */
 TEST(Application, SecondStopStopsNothing) {
-  ModuleJournal journal;
+  JournalModule journal;
   Application application(threeModules(journal));
   application.start();
   application.stop();
@@ -72,7 +72,7 @@ TEST(Application, SecondStopStopsNothing) {
  * Then it stops third, then second, then first
  */
 TEST(Application, DestructionStopsStartedModulesInReverseListOrder) {
-  ModuleJournal journal;
+  JournalModule journal;
   {
     Application application(threeModules(journal));
     application.start();
@@ -89,7 +89,7 @@ TEST(Application, DestructionStopsStartedModulesInReverseListOrder) {
  * Then no module is installed or started a second time
  */
 TEST(Application, SecondStartDoesNothing) {
-  ModuleJournal journal;
+  JournalModule journal;
   Application application(threeModules(journal));
   application.start();
   journal.calls.clear();
@@ -105,7 +105,7 @@ TEST(Application, SecondStartDoesNothing) {
  * Then nothing throws
  */
 TEST(Application, ApplicationWithoutModulesStartsAndStops) {
-  ModuleJournal journal;
+  JournalModule journal;
   Application application(recordingModules({}, journal));
 
   EXPECT_NO_THROW(application.start());
@@ -113,68 +113,71 @@ TEST(Application, ApplicationWithoutModulesStartsAndStops) {
 }
 
 /**
- * Given a list where second requires a module no entry is named after
+ * Given a list where second depends on a module no entry is named after
  * When an application is built from it
- * Then a MissingRequiredModuleException is thrown
+ * Then a MissingDependencyException is thrown
  */
-TEST(Application, RefusesAModuleWhoseRequiredModuleIsMissing) {
-  ModuleJournal journal;
+TEST(Application, RefusesAModuleWhoseDependencyIsMissing) {
+  JournalModule journal;
 
-  EXPECT_THROW(const Application application(secondRequiringUnlisted(journal)),
-               MissingRequiredModuleException);
+  EXPECT_THROW(
+      const Application application(secondDependingOnUnlisted(journal)),
+      MissingDependencyException);
 }
 
 /**
- * Given a list where second requires a module no entry is named after
+ * Given a list where second depends on a module no entry is named after
  * When an application is built from it
  * Then the error names second and the missing module
  */
-TEST(Application, MissingRequiredModuleErrorNamesTheMissingModule) {
-  ModuleJournal journal;
+TEST(Application, MissingDependencyErrorNamesTheMissingModule) {
+  JournalModule journal;
 
   try {
-    const Application application(secondRequiringUnlisted(journal));
+    const Application application(secondDependingOnUnlisted(journal));
     ADD_FAILURE() << "the application was built";
-  } catch (const MissingRequiredModuleException& error) {
-    EXPECT_EQ(std::string{error.what()}, SECOND_REQUIRES_UNLISTED_MESSAGE);
+  } catch (const MissingDependencyException& error) {
+    EXPECT_EQ(std::string{error.what()}, SECOND_DEPENDS_ON_UNLISTED_MESSAGE);
   }
 }
 
 /**
- * Given a list where second requires a module no entry is named after
+ * Given a list where second depends on a module no entry is named after
  * When an application is built from it
  * Then no module is installed, started or stopped
  */
-TEST(Application, MissingRequiredModuleCallsNoModule) {
-  ModuleJournal journal;
+TEST(Application, MissingDependencyCallsNoModule) {
+  JournalModule journal;
 
-  EXPECT_THROW(const Application application(secondRequiringUnlisted(journal)),
-               MissingRequiredModuleException);
+  EXPECT_THROW(
+      const Application application(secondDependingOnUnlisted(journal)),
+      MissingDependencyException);
 
   EXPECT_TRUE(journal.calls.empty());
 }
 
 /**
- * Given a list where first requires second, listed after it
+ * Given a list where first depends on second, listed after it
  * When an application is built from it
- * Then a MissingRequiredModuleException is thrown
+ * Then a MissingDependencyException is thrown
  */
-TEST(Application, RefusesARequiredModuleListedAfterTheModuleThatNeedsIt) {
-  ModuleJournal journal;
+TEST(Application, RefusesADependencyListedAfterTheModuleThatNeedsIt) {
+  JournalModule journal;
 
-  EXPECT_THROW(const Application application(firstRequiringSecond(journal)),
-               MissingRequiredModuleException);
+  EXPECT_THROW(const Application application(firstDependingOnSecond(journal)),
+               MissingDependencyException);
 }
 
 /**
- * Given a list where second requires first, listed before it
+ * Given a list where second depends on first, listed before it
  * When an application is built from it
  * Then nothing throws
  */
-TEST(Application, AcceptsARequiredModuleListedBeforeTheModuleThatNeedsIt) {
-  ModuleJournal journal;
+TEST(Application, AcceptsADependencyListedBeforeTheModuleThatNeedsIt) {
+  JournalModule journal;
 
-  EXPECT_NO_THROW(const Application application(secondRequiringFirst(journal)));
+  EXPECT_NO_THROW(
+      const Application application(secondDependingOnFirst(journal)));
 }
 
 /**
@@ -196,7 +199,7 @@ TEST(Application, RefusesANullModule) {
  * Then second, then first are stopped, and third is not stopped
  */
 TEST(Application, FailedStartStopsTheStartedModulesInReverseListOrder) {
-  ModuleJournal journal;
+  JournalModule journal;
   Application application(thirdFailingToStart(journal));
 
   EXPECT_THROW(application.start(), ModuleStartFailedException);
@@ -213,7 +216,7 @@ TEST(Application, FailedStartStopsTheStartedModulesInReverseListOrder) {
  * Then no module is stopped and no later module is started
  */
 TEST(Application, FailedStartOfTheFirstModuleStopsNothing) {
-  ModuleJournal journal;
+  JournalModule journal;
   Application application(firstFailingToStart(journal));
 
   EXPECT_THROW(application.start(), ModuleStartFailedException);
@@ -229,7 +232,7 @@ TEST(Application, FailedStartOfTheFirstModuleStopsNothing) {
  * Then the error names third and gives the reason third threw
  */
 TEST(Application, FailedStartErrorNamesTheFailingModule) {
-  ModuleJournal journal;
+  JournalModule journal;
   Application application(thirdFailingToStart(journal));
 
   try {
@@ -246,7 +249,7 @@ TEST(Application, FailedStartErrorNamesTheFailingModule) {
  * Then no module is stopped a second time
  */
 TEST(Application, StopAfterAFailedStartStopsNothing) {
-  ModuleJournal journal;
+  JournalModule journal;
   Application application(thirdFailingToStart(journal));
   EXPECT_THROW(application.start(), ModuleStartFailedException);
   journal.calls.clear();

@@ -19,9 +19,9 @@ constexpr const char* STOP_FIRST = "stop first";
 constexpr const char* STOP_SECOND = "stop second";
 constexpr const char* STOP_THIRD = "stop third";
 
-/** @brief The error of SECOND_MODULE requiring UNLISTED_MODULE. */
-constexpr const char* SECOND_REQUIRES_UNLISTED_MESSAGE =
-    "The module \"second\" requires the module \"unlisted\", which is not "
+/** @brief The error of SECOND_MODULE depending on UNLISTED_MODULE. */
+constexpr const char* SECOND_DEPENDS_ON_UNLISTED_MESSAGE =
+    "The module \"second\" depends on the module \"unlisted\", which is not "
     "listed before it";
 
 /** @brief The error of THIRD_MODULE throwing START_REFUSAL_REASON from start().

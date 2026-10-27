@@ -54,10 +54,10 @@ InvalidLaunchOptionValueException::InvalidLaunchOptionValueException(
 NullModuleException::NullModuleException()
     : EngineException("A null module cannot be given to an application") {}
 
-MissingRequiredModuleException::MissingRequiredModuleException(
-    const std::string& moduleName, const std::string& requiredModule)
+MissingDependencyException::MissingDependencyException(
+    const std::string& moduleName, const std::string& dependency)
     : EngineException("The module \"" + moduleName +
-                      "\" requires the module \"" + requiredModule +
+                      "\" depends on the module \"" + dependency +
                       "\", which is not listed before it") {}
 
 ModuleStartFailedException::ModuleStartFailedException(

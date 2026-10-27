@@ -13,8 +13,8 @@ namespace rtype::engine {
  * The order is the one of the list given to the constructor. start() installs
  * every module in that order, then starts every module in that order; stop()
  * stops the started modules in the reverse order. A module comes after every
- * module it requires, so what it requires is installed and started before it,
- * and stopped after it.
+ * module it depends on, so its dependencies are installed and started before
+ * it, and stopped after it.
  */
 class Application {
  public:
@@ -25,8 +25,8 @@ class Application {
    * @param modules The modules of the program, in the order they install and
    * start.
    * @throws NullModuleException if a module is null.
-   * @throws MissingRequiredModuleException if a module requires a module that
-   * is not listed before it.
+   * @throws MissingDependencyException if a dependency of a module is not
+   * listed before it.
    */
   explicit Application(std::vector<std::unique_ptr<IModule>> modules);
 

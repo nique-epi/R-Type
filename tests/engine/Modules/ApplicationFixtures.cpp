@@ -3,14 +3,14 @@
 #include <vector>
 #include "ApplicationTestConstants.hpp"
 #include "IModule.hpp"
-#include "ModuleJournal.hpp"
+#include "JournalModule.hpp"
 #include "RecordingModule.hpp"
 #include "RecordingModuleSetup.hpp"
 
 using rtype::engine::IModule;
 
 std::vector<std::unique_ptr<IModule>> recordingModules(
-    const std::vector<RecordingModuleSetup>& setups, ModuleJournal& journal) {
+    const std::vector<RecordingModuleSetup>& setups, JournalModule& journal) {
   std::vector<std::unique_ptr<IModule>> modules;
   modules.reserve(setups.size());
   for (const RecordingModuleSetup& setup : setups) {
@@ -19,57 +19,57 @@ std::vector<std::unique_ptr<IModule>> recordingModules(
   return modules;
 }
 
-std::vector<std::unique_ptr<IModule>> threeModules(ModuleJournal& journal) {
+std::vector<std::unique_ptr<IModule>> threeModules(JournalModule& journal) {
   return recordingModules(
-      {RecordingModuleSetup{.name = FIRST_MODULE, .requiredModules = {}},
-       RecordingModuleSetup{.name = SECOND_MODULE, .requiredModules = {}},
-       RecordingModuleSetup{.name = THIRD_MODULE, .requiredModules = {}}},
+      {RecordingModuleSetup{.name = FIRST_MODULE, .dependencies = {}},
+       RecordingModuleSetup{.name = SECOND_MODULE, .dependencies = {}},
+       RecordingModuleSetup{.name = THIRD_MODULE, .dependencies = {}}},
       journal);
 }
 
 std::vector<std::unique_ptr<IModule>> thirdFailingToStart(
-    ModuleJournal& journal) {
+    JournalModule& journal) {
   return recordingModules(
-      {RecordingModuleSetup{.name = FIRST_MODULE, .requiredModules = {}},
-       RecordingModuleSetup{.name = SECOND_MODULE, .requiredModules = {}},
+      {RecordingModuleSetup{.name = FIRST_MODULE, .dependencies = {}},
+       RecordingModuleSetup{.name = SECOND_MODULE, .dependencies = {}},
        RecordingModuleSetup{
-           .name = THIRD_MODULE, .requiredModules = {}, .failsToStart = true}},
+           .name = THIRD_MODULE, .dependencies = {}, .failsToStart = true}},
       journal);
 }
 
 std::vector<std::unique_ptr<IModule>> firstFailingToStart(
-    ModuleJournal& journal) {
+    JournalModule& journal) {
   return recordingModules(
       {RecordingModuleSetup{
-           .name = FIRST_MODULE, .requiredModules = {}, .failsToStart = true},
-       RecordingModuleSetup{.name = SECOND_MODULE, .requiredModules = {}},
-       RecordingModuleSetup{.name = THIRD_MODULE, .requiredModules = {}}},
+           .name = FIRST_MODULE, .dependencies = {}, .failsToStart = true},
+       RecordingModuleSetup{.name = SECOND_MODULE, .dependencies = {}},
+       RecordingModuleSetup{.name = THIRD_MODULE, .dependencies = {}}},
       journal);
 }
 
-std::vector<std::unique_ptr<IModule>> secondRequiringUnlisted(
-    ModuleJournal& journal) {
+std::vector<std::unique_ptr<IModule>> secondDependingOnUnlisted(
+    JournalModule& journal) {
   return recordingModules(
-      {RecordingModuleSetup{.name = FIRST_MODULE, .requiredModules = {}},
+      {RecordingModuleSetup{.name = FIRST_MODULE, .dependencies = {}},
        RecordingModuleSetup{.name = SECOND_MODULE,
-                            .requiredModules = {UNLISTED_MODULE}}},
+                            .dependencies = {UNLISTED_MODULE}}},
       journal);
 }
 
-std::vector<std::unique_ptr<IModule>> firstRequiringSecond(
-    ModuleJournal& journal) {
+std::vector<std::unique_ptr<IModule>> firstDependingOnSecond(
+    JournalModule& journal) {
   return recordingModules(
       {RecordingModuleSetup{.name = FIRST_MODULE,
-                            .requiredModules = {SECOND_MODULE}},
-       RecordingModuleSetup{.name = SECOND_MODULE, .requiredModules = {}}},
+                            .dependencies = {SECOND_MODULE}},
+       RecordingModuleSetup{.name = SECOND_MODULE, .dependencies = {}}},
       journal);
 }
 
-std::vector<std::unique_ptr<IModule>> secondRequiringFirst(
-    ModuleJournal& journal) {
+std::vector<std::unique_ptr<IModule>> secondDependingOnFirst(
+    JournalModule& journal) {
   return recordingModules(
-      {RecordingModuleSetup{.name = FIRST_MODULE, .requiredModules = {}},
+      {RecordingModuleSetup{.name = FIRST_MODULE, .dependencies = {}},
        RecordingModuleSetup{.name = SECOND_MODULE,
-                            .requiredModules = {FIRST_MODULE}}},
+                            .dependencies = {FIRST_MODULE}}},
       journal);
 }

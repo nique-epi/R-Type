@@ -121,13 +121,13 @@ class NullModuleException : public EngineException {
 };
 
 /**
- * @brief A module of an application requires a module that is not listed before
- * it.
+ * @brief A module of an application depends on a module that is not listed
+ * before it.
  */
-class MissingRequiredModuleException : public EngineException {
+class MissingDependencyException : public EngineException {
  public:
-  MissingRequiredModuleException(const std::string& moduleName,
-                                 const std::string& requiredModule);
+  MissingDependencyException(const std::string& moduleName,
+                             const std::string& dependency);
 };
 
 /**

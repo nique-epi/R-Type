@@ -30,15 +30,14 @@ bool listsModule(std::span<const std::unique_ptr<IModule>> modules,
       });
 }
 
-void requireModulesListedBefore(
+void requireDependenciesListedBefore(
     std::span<const std::unique_ptr<IModule>> modules) {
   for (std::size_t position = 0; position < modules.size(); ++position) {
     const std::span<const std::unique_ptr<IModule>> listedBefore =
         modules.first(position);
-    for (const std::string& required : modules[position]->requiredModules()) {
-      if (!listsModule(listedBefore, required)) {
-        throw MissingRequiredModuleException(modules[position]->name(),
-                                             required);
+    for (const std::string& dependency : modules[position]->dependencies()) {
+      if (!listsModule(listedBefore, dependency)) {
+        throw MissingDependencyException(modules[position]->name(), dependency);
       }
     }
   }
@@ -49,7 +48,7 @@ void requireModulesListedBefore(
 Application::Application(std::vector<std::unique_ptr<IModule>> modules)
     : modules_(std::move(modules)) {
   requireNoNullModule(modules_);
-  requireModulesListedBefore(modules_);
+  requireDependenciesListedBefore(modules_);
 }
 
 Application::~Application() { stop(); }
