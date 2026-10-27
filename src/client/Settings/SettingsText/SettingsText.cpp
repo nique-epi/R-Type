@@ -115,8 +115,8 @@ std::optional<Value> valueNamed(
   return std::nullopt;
 }
 
-template <typename Value>
-LineOutcome assign(std::optional<Value> parsed, Value& setting) {
+template <typename Value, typename Setting>
+LineOutcome assign(std::optional<Value> parsed, Setting& setting) {
   if (!parsed.has_value()) {
     return LineOutcome::InvalidValue;
   }
@@ -134,13 +134,28 @@ LineOutcome applyKey(PlayerSettings& settings, BoundAction action,
   return LineOutcome::Applied;
 }
 
-LineOutcome applyLine(PlayerSettings& settings, std::string_view line) {
+/** @brief A line of a settings text: its name and its value, without the
+ * spaces around them. */
+struct SettingLine {
+  std::string_view name;
+  std::string_view value;
+};
+
+/** @returns The name and the value of a line, or nothing when it holds no
+ * SETTING_SEPARATOR. */
+std::optional<SettingLine> settingLineOf(std::string_view line) {
   const std::size_t separator = line.find(SETTING_SEPARATOR);
   if (separator == std::string_view::npos) {
-    return LineOutcome::WithoutSeparator;
+    return std::nullopt;
   }
-  const std::string_view name = trimmed(line.substr(0, separator));
-  const std::string_view value = trimmed(line.substr(separator + 1));
+  return SettingLine{.name = trimmed(line.substr(0, separator)),
+                     .value = trimmed(line.substr(separator + 1))};
+}
+
+/** @returns What became of a setting written into the settings: applied, or
+ * left out with the reason. */
+LineOutcome applySetting(PlayerSettings& settings, SettingLine setting) {
+  const auto [name, value] = setting;
   if (name == SETTINGS_VERSION_NAME) {
     return integerOf(value) == SETTINGS_VERSION ? LineOutcome::Applied
                                                 : LineOutcome::InvalidValue;
@@ -155,12 +170,7 @@ LineOutcome applyLine(PlayerSettings& settings, std::string_view line) {
     return assign(switchOf(value), settings.muted);
   }
   if (name == WINDOW_SIZE_NAME) {
-    const std::optional<PixelSize> size = windowSizeOf(value);
-    if (!size.has_value()) {
-      return LineOutcome::InvalidValue;
-    }
-    settings.windowSize = size;
-    return LineOutcome::Applied;
+    return assign(windowSizeOf(value), settings.windowSize);
   }
   if (name == COLOR_MODE_NAME) {
     return assign(valueNamed(value, COLOR_MODE_VALUES, COLOR_MODES),
@@ -181,6 +191,14 @@ LineOutcome applyLine(PlayerSettings& settings, std::string_view line) {
     return LineOutcome::UnknownSetting;
   }
   return applyKey(settings, *action, value);
+}
+
+LineOutcome applyLine(PlayerSettings& settings, std::string_view line) {
+  const std::optional<SettingLine> setting = settingLineOf(line);
+  if (!setting.has_value()) {
+    return LineOutcome::WithoutSeparator;
+  }
+  return applySetting(settings, *setting);
 }
 
 std::string ignoredLine(std::size_t number, LineOutcome outcome) {
