@@ -11,7 +11,9 @@ FlashPreference flashPreferenceOf(const PlayerSettings& settings) {
 }
 
 SkyLight skyLightOf(const PlayerSettings& settings) {
-  return settings.reduceFlashes ? SkyLight::Steady : SkyLight::Twinkling;
+  return flashPreferenceOf(settings) == FlashPreference::Reduced
+             ? SkyLight::Steady
+             : SkyLight::Twinkling;
 }
 
 }  // namespace rtype::client
