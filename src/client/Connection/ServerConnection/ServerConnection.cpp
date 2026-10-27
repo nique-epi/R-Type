@@ -14,6 +14,7 @@
 #include "ConnectionAccepted.hpp"
 #include "ConnectionChallenge.hpp"
 #include "ConnectionConstants.hpp"
+#include "ConnectionPhase.hpp"
 #include "ConnectionRefused.hpp"
 #include "ConnectionRequest.hpp"
 #include "ConnectionStatus.hpp"
@@ -66,7 +67,7 @@ void ServerConnection::connect(const network::Endpoint& server,
   sinceConnect_ = engine::Duration::zero();
   sinceReceived_ = engine::Duration::zero();
   sendRequest();
-  status_ = {.phase = ConnectionStatus::Phase::Connecting};
+  status_ = {.phase = ConnectionPhase::Connecting};
   logger_.info("connecting to ", server_.address, " port ", server_.port);
 }
 
@@ -120,7 +121,7 @@ void ServerConnection::readReceived() {
 
 void ServerConnection::holdSession(engine::Duration elapsed) {
   if (sinceReceived_ >= network::SESSION_TIMEOUT) {
-    giveUp(ConnectionStatus::Phase::Lost);
+    giveUp(ConnectionPhase::Lost);
     return;
   }
   sinceSent_ += elapsed;
@@ -131,7 +132,7 @@ void ServerConnection::holdSession(engine::Duration elapsed) {
 void ServerConnection::continueAttempt(engine::Duration elapsed) {
   sinceConnect_ += elapsed;
   if (sinceConnect_ >= CONNECTION_ATTEMPT_TIMEOUT) {
-    giveUp(ConnectionStatus::Phase::Unreachable);
+    giveUp(ConnectionPhase::Unreachable);
     return;
   }
   sinceRequest_ += elapsed;
@@ -141,7 +142,7 @@ void ServerConnection::continueAttempt(engine::Duration elapsed) {
 }
 
 void ServerConnection::sendPlayerInput(ActionSet held) {
-  if (status_.phase != ConnectionStatus::Phase::Accepted) {
+  if (status_.phase != ConnectionPhase::Accepted) {
     return;
   }
   sendToServer(network::PlayerInput{.inputNumber = nextInputNumber_,
@@ -168,7 +169,7 @@ void ServerConnection::registerAnswers() {
       [this](const network::MessageOrigin& origin,
              const network::ConnectionAccepted& accepted) {
         if (isConnecting()) {
-          status_ = {.phase = ConnectionStatus::Phase::Accepted,
+          status_ = {.phase = ConnectionPhase::Accepted,
                      .playerNumber = accepted.playerNumber};
           sessionToken_ = origin.header.sessionToken;
           newestReceivedSequence_ = origin.header.sequence;
@@ -184,7 +185,7 @@ void ServerConnection::registerAnswers() {
       [this](const network::MessageOrigin& origin,
              const network::ConnectionRefused& refused) {
         if (isConnecting()) {
-          status_ = {.phase = ConnectionStatus::Phase::Refused,
+          status_ = {.phase = ConnectionPhase::Refused,
                      .refusal = refused.reason,
                      .serverVersion = origin.header.version};
           logger_.info("refused, reason ",
@@ -237,8 +238,8 @@ void ServerConnection::registerSessionMessages() {
       });
 }
 
-void ServerConnection::giveUp(ConnectionStatus::Phase ending) {
-  const std::chrono::seconds silence = ending == ConnectionStatus::Phase::Lost
+void ServerConnection::giveUp(ConnectionPhase ending) {
+  const std::chrono::seconds silence = ending == ConnectionPhase::Lost
                                            ? network::SESSION_TIMEOUT
                                            : CONNECTION_ATTEMPT_TIMEOUT;
   status_ = {.phase = ending};
@@ -251,7 +252,7 @@ void ServerConnection::endAttemptForServerVersion(std::uint8_t serverVersion) {
   if (!isConnecting()) {
     return;
   }
-  status_ = {.phase = ConnectionStatus::Phase::Refused,
+  status_ = {.phase = ConnectionPhase::Refused,
              .refusal = network::RefusalReason::IncompatibleVersion,
              .serverVersion = serverVersion};
   logger_.warn("refused: the server speaks protocol version ",
@@ -417,11 +418,11 @@ std::size_t ServerConnection::wrongTokenCount() const {
 bool ServerConnection::isLeaving() const { return departure_.has_value(); }
 
 bool ServerConnection::isConnecting() const {
-  return status_.phase == ConnectionStatus::Phase::Connecting;
+  return status_.phase == ConnectionPhase::Connecting;
 }
 
 bool ServerConnection::isAccepted() const {
-  return status_.phase == ConnectionStatus::Phase::Accepted;
+  return status_.phase == ConnectionPhase::Accepted;
 }
 
 bool ServerConnection::roomShowsReady(bool ready) const {

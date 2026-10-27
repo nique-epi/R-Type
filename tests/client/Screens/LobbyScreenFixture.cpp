@@ -5,7 +5,7 @@
 #include <memory>
 #include <utility>
 #include <vector>
-#include "ConnectionStatus.hpp"
+#include "ConnectionPhase.hpp"
 #include "KeyPress.hpp"
 #include "LobbyPlace.hpp"
 #include "LobbyScreen.hpp"
@@ -20,7 +20,7 @@
 #include "RecordingSoundPlayer.hpp"
 #include "ScreenTestConstants.hpp"
 
-using rtype::client::ConnectionStatus;
+using rtype::client::ConnectionPhase;
 using rtype::client::LobbyPlace;
 using rtype::client::LobbyScreen;
 using rtype::client::LobbyScreenParts;
@@ -41,7 +41,7 @@ LobbyScreenFixture::LobbyScreenFixture(LobbyPlace place)
                                .place = place},
               std::make_unique<RecordingInterfaceCanvas>(canvas_)) {
   connection_.setStatus(
-      {.phase = ConnectionStatus::Phase::Accepted, .playerNumber = OWN_NUMBER});
+      {.phase = ConnectionPhase::Accepted, .playerNumber = OWN_NUMBER});
 }
 
 void LobbyScreenFixture::list(std::vector<LobbyPlayer> players) {

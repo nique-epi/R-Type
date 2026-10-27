@@ -4,6 +4,7 @@
 #include <utility>
 #include <vector>
 #include "ConnectionAccepted.hpp"
+#include "ConnectionPhase.hpp"
 #include "ConnectionRequest.hpp"
 #include "ConnectionStatus.hpp"
 #include "DatagramCodec.hpp"
@@ -44,7 +45,7 @@ void ServerConnectionFixture::connectAndGetAccepted() {
   update();
 }
 
-ConnectionStatus::Phase ServerConnectionFixture::phase() const {
+ConnectionPhase ServerConnectionFixture::phase() const {
   return connection_.status().phase;
 }
 

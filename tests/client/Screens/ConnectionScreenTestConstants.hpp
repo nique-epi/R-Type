@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <string_view>
+#include "ConnectionPhase.hpp"
 #include "ConnectionStatus.hpp"
 #include "RecordingServerConnection.hpp"
 
@@ -30,7 +31,7 @@ constexpr std::uint8_t FIRST_PLAYER = 1;
 /** @brief What the connection says once the server accepted the player
  * as the first one. */
 constexpr ConnectionStatus ACCEPTED_AS_FIRST_PLAYER{
-    .phase = ConnectionStatus::Phase::Accepted, .playerNumber = FIRST_PLAYER};
+    .phase = ConnectionPhase::Accepted, .playerNumber = FIRST_PLAYER};
 
 /** @brief The cancel the screen sends when it is built, before any request of
  * a test. */

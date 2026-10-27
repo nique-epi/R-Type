@@ -8,6 +8,7 @@
 #include <string_view>
 #include <vector>
 #include "ActionSet.hpp"
+#include "ConnectionPhase.hpp"
 #include "ConnectionStatus.hpp"
 #include "Endpoint.hpp"
 #include "EntityMessage.hpp"
@@ -181,7 +182,7 @@ class ServerConnection : public IServerConnection,
    * @p ending says; forgets the session, sends nothing, and logs that the
    * server did not answer for the delay that ran out: SESSION_TIMEOUT for
    * Lost, CONNECTION_ATTEMPT_TIMEOUT for Unreachable. */
-  void giveUp(ConnectionStatus::Phase ending);
+  void giveUp(ConnectionPhase ending);
 
   /** @brief Ends the attempt in progress as Refused (IncompatibleVersion),
    * since the server answered in @p serverVersion, which it keeps, and logs

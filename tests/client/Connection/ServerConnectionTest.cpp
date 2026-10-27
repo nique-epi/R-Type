@@ -8,6 +8,7 @@
 #include "ConnectionAccepted.hpp"
 #include "ConnectionChallenge.hpp"
 #include "ConnectionConstants.hpp"
+#include "ConnectionPhase.hpp"
 #include "ConnectionRefused.hpp"
 #include "ConnectionRequest.hpp"
 #include "ConnectionStatus.hpp"
@@ -85,8 +86,6 @@ using testing::stateListing;
 using testing::THIRD_SEQUENCE;
 using testing::upHeld;
 
-using Phase = ConnectionStatus::Phase;
-
 /**
  * Given the delays of the protocol page
  * When the connection's request interval and timeout are read
@@ -103,7 +102,7 @@ TEST(ServerConnectionDelays, AreThoseOfTheProtocolPage) {
  * Then there is no attempt
  */
 TEST_F(ServerConnectionFixture, StartsWithNoAttempt) {
-  EXPECT_EQ(phase(), Phase::Idle);
+  EXPECT_EQ(phase(), ConnectionPhase::Idle);
 }
 
 /**
@@ -120,7 +119,7 @@ TEST_F(ServerConnectionFixture, SendsARequestWithoutCookieAtOnce) {
   EXPECT_EQ(lastRequest(),
             (network::ConnectionRequest{.cookie = 0,
                                         .nickname = std::string{NICKNAME}}));
-  EXPECT_EQ(phase(), Phase::Connecting);
+  EXPECT_EQ(phase(), ConnectionPhase::Connecting);
 }
 
 /**
@@ -211,7 +210,7 @@ TEST_F(ServerConnectionFixture, IsAcceptedWithThePlayerNumberOfTheServer) {
   update();
 
   EXPECT_EQ(connection().status(),
-            (ConnectionStatus{.phase = Phase::Accepted,
+            (ConnectionStatus{.phase = ConnectionPhase::Accepted,
                               .playerNumber = ACCEPTED_PLAYER_NUMBER}));
 }
 
@@ -270,7 +269,7 @@ TEST_F(ServerConnectionFixture, IsRefusedWithTheReasonOfTheServer) {
   update();
 
   EXPECT_EQ(connection().status(),
-            (ConnectionStatus{.phase = Phase::Refused,
+            (ConnectionStatus{.phase = ConnectionPhase::Refused,
                               .refusal = network::RefusalReason::GameFull}));
 }
 
@@ -299,7 +298,7 @@ TEST_F(ServerConnectionFixture, KeepsTryingUntilTheTimeout) {
 
   update(CONNECTION_ATTEMPT_TIMEOUT - ONE_NANOSECOND);
 
-  EXPECT_EQ(phase(), Phase::Connecting);
+  EXPECT_EQ(phase(), ConnectionPhase::Connecting);
 }
 
 /**
@@ -312,7 +311,7 @@ TEST_F(ServerConnectionFixture, GivesUpAtTheTimeout) {
 
   update(CONNECTION_ATTEMPT_TIMEOUT);
 
-  EXPECT_EQ(phase(), Phase::Unreachable);
+  EXPECT_EQ(phase(), ConnectionPhase::Unreachable);
 }
 
 /**
@@ -343,7 +342,7 @@ TEST_F(ServerConnectionFixture, ChallengeDoesNotRestartTheTimeout) {
 
   update(ONE_NANOSECOND);
 
-  EXPECT_EQ(phase(), Phase::Unreachable);
+  EXPECT_EQ(phase(), ConnectionPhase::Unreachable);
 }
 
 /**
@@ -358,7 +357,7 @@ TEST_F(ServerConnectionFixture, IgnoresAnAnswerFromAnotherSender) {
 
   update();
 
-  EXPECT_EQ(phase(), Phase::Connecting);
+  EXPECT_EQ(phase(), ConnectionPhase::Connecting);
 }
 
 /**
@@ -375,7 +374,7 @@ TEST_F(ServerConnectionFixture, IgnoresATruncatedDatagram) {
   deliverBytes(std::move(datagram));
 
   EXPECT_NO_THROW(update());
-  EXPECT_EQ(phase(), Phase::Connecting);
+  EXPECT_EQ(phase(), ConnectionPhase::Connecting);
 }
 
 /**
@@ -396,7 +395,7 @@ TEST_F(ServerConnectionFixture, IsRefusedByAnAnswerOfAnotherVersion) {
 
   EXPECT_EQ(
       connection().status(),
-      (ConnectionStatus{.phase = Phase::Refused,
+      (ConnectionStatus{.phase = ConnectionPhase::Refused,
                         .refusal = network::RefusalReason::IncompatibleVersion,
                         .serverVersion = NEXT_PROTOCOL_VERSION}));
 }
@@ -437,7 +436,7 @@ TEST_F(ServerConnectionFixture, IgnoresAnotherVersionFromAnotherSender) {
 
   update();
 
-  EXPECT_EQ(phase(), Phase::Connecting);
+  EXPECT_EQ(phase(), ConnectionPhase::Connecting);
 }
 
 /**
@@ -454,7 +453,7 @@ TEST_F(ServerConnectionFixture, KeepsTheSessionWhenAnotherVersionArrives) {
 
   update();
 
-  EXPECT_EQ(phase(), Phase::Accepted);
+  EXPECT_EQ(phase(), ConnectionPhase::Accepted);
 }
 
 /**
@@ -468,7 +467,7 @@ TEST_F(ServerConnectionFixture, SendsNothingOnceCancelled) {
   connection().cancel();
   update(CONNECTION_REQUEST_INTERVAL);
 
-  EXPECT_EQ(phase(), Phase::Idle);
+  EXPECT_EQ(phase(), ConnectionPhase::Idle);
   EXPECT_EQ(sent().size(), 1);
 }
 
@@ -484,7 +483,7 @@ TEST_F(ServerConnectionFixture, IgnoresALateAnswerOnceCancelled) {
 
   update();
 
-  EXPECT_EQ(phase(), Phase::Idle);
+  EXPECT_EQ(phase(), ConnectionPhase::Idle);
 }
 
 /**
@@ -503,7 +502,7 @@ TEST_F(ServerConnectionFixture, StartsANewAttemptWithoutStaleAnswers) {
   connect();
   update();
 
-  EXPECT_EQ(phase(), Phase::Connecting);
+  EXPECT_EQ(phase(), ConnectionPhase::Connecting);
   EXPECT_EQ(lastRequest().cookie, 0);
 }
 
@@ -1265,7 +1264,7 @@ TEST_F(ServerConnectionFixture, KeepsTheSessionUntilTheServerTimeout) {
 
   update(PROTOCOL_SESSION_TIMEOUT - ONE_NANOSECOND);
 
-  EXPECT_EQ(phase(), Phase::Accepted);
+  EXPECT_EQ(phase(), ConnectionPhase::Accepted);
 }
 
 /**
@@ -1278,7 +1277,7 @@ TEST_F(ServerConnectionFixture, LosesTheServerAtTheTimeoutWithoutADatagram) {
 
   update(PROTOCOL_SESSION_TIMEOUT);
 
-  EXPECT_EQ(phase(), Phase::Lost);
+  EXPECT_EQ(phase(), ConnectionPhase::Lost);
 }
 
 /**
@@ -1295,7 +1294,7 @@ TEST_F(ServerConnectionFixture, AHeartbeatOfTheServerRestartsTheTimeout) {
 
   update(PROTOCOL_SESSION_TIMEOUT - ONE_NANOSECOND);
 
-  EXPECT_EQ(phase(), Phase::Accepted);
+  EXPECT_EQ(phase(), ConnectionPhase::Accepted);
 }
 
 /**
@@ -1316,7 +1315,7 @@ TEST_F(ServerConnectionFixture, AWorldStateRestartsTheTimeout) {
 
   update(PROTOCOL_SESSION_TIMEOUT - ONE_NANOSECOND);
 
-  EXPECT_EQ(phase(), Phase::Accepted);
+  EXPECT_EQ(phase(), ConnectionPhase::Accepted);
 }
 
 /**
@@ -1336,7 +1335,7 @@ TEST_F(ServerConnectionFixture, ADatagramWithAnotherTokenKeepsNoSessionAlive) {
 
   update(ONE_NANOSECOND);
 
-  EXPECT_EQ(phase(), Phase::Lost);
+  EXPECT_EQ(phase(), ConnectionPhase::Lost);
 }
 
 /**
@@ -1355,7 +1354,7 @@ TEST_F(ServerConnectionFixture, ACopyOfADatagramReadKeepsNoSessionAlive) {
 
   update(ONE_NANOSECOND);
 
-  EXPECT_EQ(phase(), Phase::Lost);
+  EXPECT_EQ(phase(), ConnectionPhase::Lost);
 }
 
 /**
@@ -1376,7 +1375,7 @@ TEST_F(ServerConnectionFixture, ATruncatedDatagramKeepsNoSessionAlive) {
 
   update(ONE_NANOSECOND);
 
-  EXPECT_EQ(phase(), Phase::Lost);
+  EXPECT_EQ(phase(), ConnectionPhase::Lost);
 }
 
 /**
@@ -1391,7 +1390,7 @@ TEST_F(ServerConnectionFixture, AFrameLongerThanTheTimeoutLosesNoSession) {
 
   update(PROTOCOL_SESSION_TIMEOUT + ONE_NANOSECOND);
 
-  EXPECT_EQ(phase(), Phase::Accepted);
+  EXPECT_EQ(phase(), ConnectionPhase::Accepted);
 }
 
 /**
@@ -1412,7 +1411,7 @@ TEST_F(ServerConnectionFixture, KeepsASessionOpenedAfterAnIdleWait) {
 
   update(PROTOCOL_SESSION_TIMEOUT - ONE_NANOSECOND);
 
-  EXPECT_EQ(phase(), Phase::Accepted);
+  EXPECT_EQ(phase(), ConnectionPhase::Accepted);
 }
 
 /**
@@ -1433,7 +1432,7 @@ TEST_F(ServerConnectionFixture, KeepsASessionOpenedAfterALostOne) {
 
   update(PROTOCOL_SESSION_TIMEOUT - ONE_NANOSECOND);
 
-  EXPECT_EQ(phase(), Phase::Accepted);
+  EXPECT_EQ(phase(), ConnectionPhase::Accepted);
 }
 
 /**
@@ -1482,7 +1481,7 @@ TEST_F(ServerConnectionFixture, StaysLostWhenALateAcceptanceArrives) {
       FIRST_SEQUENCE);
   update();
 
-  EXPECT_EQ(phase(), Phase::Lost);
+  EXPECT_EQ(phase(), ConnectionPhase::Lost);
 }
 
 /**

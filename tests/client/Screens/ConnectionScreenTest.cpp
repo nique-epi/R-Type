@@ -7,6 +7,7 @@
 #include <string_view>
 #include <tuple>
 #include <vector>
+#include "ConnectionPhase.hpp"
 #include "ConnectionRefusalFixture.hpp"
 #include "ConnectionRefused.hpp"
 #include "ConnectionScreen.hpp"
@@ -28,7 +29,7 @@
 using rtype::client::ACCEPTED_STATUS_DURATION;
 using rtype::client::CLICK_SOUND_ID;
 using rtype::client::CONNECTING_STATUS;
-using rtype::client::ConnectionStatus;
+using rtype::client::ConnectionPhase;
 using rtype::client::GAME_FULL_STATUS;
 using rtype::client::GAME_IN_PROGRESS_STATUS;
 using rtype::client::INVALID_ADDRESS_STATUS;
@@ -186,7 +187,7 @@ TEST_F(ConnectionScreenFixture, AFixedFieldIsNoLongerNamed) {
  * Then the status line says the client is connecting
  */
 TEST_F(ConnectionScreenFixture, ConnectingIsShown) {
-  show({.phase = ConnectionStatus::Phase::Connecting});
+  show({.phase = ConnectionPhase::Connecting});
 
   EXPECT_NE(writingOf(canvas(), CONNECTING_STATUS), nullptr);
 }
@@ -197,8 +198,7 @@ TEST_F(ConnectionScreenFixture, ConnectingIsShown) {
  * Then the status line gives that number
  */
 TEST_F(ConnectionScreenFixture, AnAcceptedPlayerSeesItsNumber) {
-  show({.phase = ConnectionStatus::Phase::Accepted,
-        .playerNumber = THIRD_PLAYER});
+  show({.phase = ConnectionPhase::Accepted, .playerNumber = THIRD_PLAYER});
 
   EXPECT_NE(writingOf(canvas(), "CONNECTED AS PLAYER 3"), nullptr);
 }
@@ -209,7 +209,7 @@ TEST_F(ConnectionScreenFixture, AnAcceptedPlayerSeesItsNumber) {
  * Then the status line says the server cannot be reached
  */
 TEST_F(ConnectionScreenFixture, AnUnreachableServerIsShown) {
-  show({.phase = ConnectionStatus::Phase::Unreachable});
+  show({.phase = ConnectionPhase::Unreachable});
 
   EXPECT_NE(writingOf(canvas(), UNREACHABLE_STATUS), nullptr);
 }
@@ -220,12 +220,12 @@ TEST_F(ConnectionScreenFixture, AnUnreachableServerIsShown) {
  * Then nothing is written where the status line goes
  */
 TEST_F(ConnectionScreenFixture, ALostSessionShowsNoStatusLine) {
-  show({.phase = ConnectionStatus::Phase::Unreachable});
+  show({.phase = ConnectionPhase::Unreachable});
   const RecordedWriting* unreachable = writingOf(canvas(), UNREACHABLE_STATUS);
   ASSERT_NE(unreachable, nullptr);
   const sf::Vector2i statusAnchor = unreachable->anchor;
 
-  show({.phase = ConnectionStatus::Phase::Lost});
+  show({.phase = ConnectionPhase::Lost});
 
   EXPECT_THAT(canvas().writings,
               Not(Contains(Field(&RecordedWriting::anchor, statusAnchor))));
@@ -325,7 +325,7 @@ TEST_F(ConnectionScreenFixture, EscapeClosesTheScreen) {
 TEST_P(ConnectionRefusalFixture, ARefusalShowsItsReason) {
   const auto [reason, line] = GetParam();
 
-  show({.phase = ConnectionStatus::Phase::Refused, .refusal = reason});
+  show({.phase = ConnectionPhase::Refused, .refusal = reason});
 
   EXPECT_NE(writingOf(canvas(), line), nullptr);
 }
@@ -355,7 +355,7 @@ INSTANTIATE_TEST_SUITE_P(
  * Then the status line names both versions, the client's first
  */
 TEST_F(ConnectionScreenFixture, AVersionRefusalNamesBothVersions) {
-  show({.phase = ConnectionStatus::Phase::Refused,
+  show({.phase = ConnectionPhase::Refused,
         .refusal = RefusalReason::IncompatibleVersion,
         .serverVersion = NEXT_PROTOCOL_VERSION});
 

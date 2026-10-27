@@ -7,6 +7,7 @@
 #include <string>
 #include <string_view>
 #include <utility>
+#include "ConnectionPhase.hpp"
 #include "ConnectionRefused.hpp"
 #include "ConnectionScreenConstants.hpp"
 #include "ConnectionScreenParts.hpp"
@@ -136,7 +137,7 @@ void ConnectionScreen::leave() {
 
 void ConnectionScreen::followConnection(const ConnectionStatus& status,
                                         engine::Duration elapsed) {
-  if (status.phase != ConnectionStatus::Phase::Accepted) {
+  if (status.phase != ConnectionPhase::Accepted) {
     acceptedFor_ = engine::Duration::zero();
     return;
   }
@@ -152,16 +153,16 @@ std::string ConnectionScreen::statusLine(const ConnectionStatus& status) const {
     return std::string(fieldProblem_);
   }
   switch (status.phase) {
-    case ConnectionStatus::Phase::Connecting:
+    case ConnectionPhase::Connecting:
       return CONNECTING_STATUS;
-    case ConnectionStatus::Phase::Accepted:
+    case ConnectionPhase::Accepted:
       return ACCEPTED_STATUS + std::to_string(status.playerNumber);
-    case ConnectionStatus::Phase::Refused:
+    case ConnectionPhase::Refused:
       return refusalLine(status);
-    case ConnectionStatus::Phase::Unreachable:
+    case ConnectionPhase::Unreachable:
       return UNREACHABLE_STATUS;
-    case ConnectionStatus::Phase::Idle:
-    case ConnectionStatus::Phase::Lost:
+    case ConnectionPhase::Idle:
+    case ConnectionPhase::Lost:
       break;
   }
   return {};
