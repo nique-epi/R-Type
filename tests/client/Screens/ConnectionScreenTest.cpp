@@ -1,5 +1,6 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include <SFML/System/Vector2.hpp>
 #include <SFML/Window/Keyboard.hpp>
 #include <optional>
 #include <string>
@@ -48,8 +49,11 @@ using rtype::client::testing::THIRD_PLAYER;
 using rtype::client::testing::TYPED_PORT;
 using rtype::client::testing::TYPED_PORT_TEXT;
 using rtype::network::RefusalReason;
+using ::testing::Contains;
 using ::testing::ElementsAre;
+using ::testing::Field;
 using ::testing::IsEmpty;
+using ::testing::Not;
 
 /**
  * Given the connection screen just built with the launch values
@@ -208,6 +212,23 @@ TEST_F(ConnectionScreenFixture, AnUnreachableServerIsShown) {
   show({.phase = ConnectionStatus::Phase::Unreachable});
 
   EXPECT_NE(writingOf(canvas(), UNREACHABLE_STATUS), nullptr);
+}
+
+/**
+ * Given a screen whose status line said the server cannot be reached
+ * When the connection reports a lost session
+ * Then nothing is written where the status line goes
+ */
+TEST_F(ConnectionScreenFixture, ALostSessionShowsNoStatusLine) {
+  show({.phase = ConnectionStatus::Phase::Unreachable});
+  const RecordedWriting* unreachable = writingOf(canvas(), UNREACHABLE_STATUS);
+  ASSERT_NE(unreachable, nullptr);
+  const sf::Vector2i statusAnchor = unreachable->anchor;
+
+  show({.phase = ConnectionStatus::Phase::Lost});
+
+  EXPECT_THAT(canvas().writings,
+              Not(Contains(Field(&RecordedWriting::anchor, statusAnchor))));
 }
 
 /**
