@@ -50,6 +50,7 @@ Paths below are relative to `.claude/rules/`.
 | Committing | `core/commit.md`, `fix/process/fix-process-no-co-author-trailer.md`, `fix/execution/fix-execution-check-the-index-before-committing.md` |
 | Finishing a feature | the `document-feature` skill (`.claude/skills/document-feature/SKILL.md`), `fix/process/fix-process-grep-every-page-for-what-the-feature-replaced.md` |
 | Opening a PR | `fix/format/fix-format-pull-requests-in-english.md`, `fix/format/fix-format-pr-links-its-linear-issue.md`, `fix/process/fix-process-pr-always-opened-as-draft.md`, the `document-feature` skill if the feature is not documented yet |
+| Commenting on a PR, answering the user | `fix/format/fix-format-french-in-the-conversation-and-pr-comments.md` |
 | Reviewing | `core/code-review.md` |
 | Announcing a green gate | `fix/execution/fix-execution-zsh-pipestatus.md`, `fix/execution/fix-execution-zero-warnings-proven-on-a-recompiling-build.md`, `fix/execution/fix-execution-run-clang-tidy-before-push.md` |
 | Writing a documentation page or a diagram | `fix/format/fix-format-schematic-diagrams-and-map-level-pages.md`, `fix/format/fix-format-context-before-the-deliverable.md`, the `document-feature` skill |
@@ -173,6 +174,7 @@ Paths below are relative to `.claude/rules/`.
 - `fix/format/fix-format-a-lost-unit-looks-the-same-at-every-count.md`
 - `fix/format/fix-format-a-summary-keeps-the-conditions-of-its-rule.md`
 - `fix/format/fix-format-context-before-the-deliverable.md`
+- `fix/format/fix-format-french-in-the-conversation-and-pr-comments.md`
 - `fix/format/fix-format-no-tool-call-artifacts-in-written-files.md`
 - `fix/format/fix-format-plan-shows-all-code-and-explains-it.md`
 - `fix/format/fix-format-pr-links-its-linear-issue.md`
@@ -198,4 +200,4 @@ Skills live in `.claude/skills/<name>/SKILL.md`, relative to the repository root
 - [ ] `format-check` and `tidy` green.
 - [ ] No violation of the `architecture/` and `code-style/` rules.
 - [ ] Given / When / Then tests for the added or fixed behavior.
-- [ ] Commits and PR in English, **no AI mention**, PR opened as a draft.
+- [ ] Commits, PR title and description in English, PR comments in French, **no AI mention**, PR opened as a draft.
