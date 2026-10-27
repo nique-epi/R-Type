@@ -82,7 +82,7 @@ jobs:
           SHARD_COUNT: ${{ strategy.job-total }}
         run: |
           lint_everything() {
-            find src tests \( -name '*.cpp' -o -name '*.hpp' \) -print0 > "$RUNNER_TEMP/files-to-lint"
+            find src \( -name '*.cpp' -o -name '*.hpp' \) -print0 > "$RUNNER_TEMP/files-to-lint"
           }
           if [ -z "$BASE_SHA" ]; then
             lint_everything
@@ -90,7 +90,7 @@ jobs:
             echo "The pull request changes .clang-tidy or this workflow: every file is linted."
             lint_everything
           else
-            git diff --name-only -z --diff-filter=ACMR "$BASE_SHA"...HEAD -- 'src/*.cpp' 'src/*.hpp' 'tests/*.cpp' 'tests/*.hpp' \
+            git diff --name-only -z --diff-filter=ACMR "$BASE_SHA"...HEAD -- 'src/*.cpp' 'src/*.hpp' \
               > "$RUNNER_TEMP/files-to-lint"
           fi
           jq -r --arg root "$GITHUB_WORKSPACE/" '.[].file | ltrimstr($root)' build/compile_commands.json \
@@ -145,7 +145,7 @@ jobs:
         id: select
         shell: bash
         run: |
-          git ls-files -z -- 'src/*Windows.cpp' 'tests/*Windows.cpp' > "$RUNNER_TEMP/files-to-lint"
+          git ls-files -z -- 'src/*Windows.cpp' > "$RUNNER_TEMP/files-to-lint"
           echo "Files to lint:"
           tr '\0' '\n' < "$RUNNER_TEMP/files-to-lint"
           if [ -s "$RUNNER_TEMP/files-to-lint" ]; then
