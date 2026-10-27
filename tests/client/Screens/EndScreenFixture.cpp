@@ -11,6 +11,7 @@
 #include "EndScreenTestConstants.hpp"
 #include "FinalPilot.hpp"
 #include "FlashPreference.hpp"
+#include "InterfaceColorConstants.hpp"
 #include "KeyPress.hpp"
 #include "MotionPreference.hpp"
 #include "PointerEvents.hpp"
@@ -69,7 +70,8 @@ void EndScreenFixture::rebuildWith(MotionPreference motion) {
                      .playfieldPointAt = samePlayfieldPoint,
                      .seed = END_SEED,
                      .motion = motion,
-                     .flashes = rtype::client::FlashPreference::Full},
+                     .flashes = rtype::client::FlashPreference::Full,
+                     .palette = rtype::client::PLAYER_COLORS},
       std::make_unique<RecordingInterfaceCanvas>(canvas_));
 }
 

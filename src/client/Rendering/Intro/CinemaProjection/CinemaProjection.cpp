@@ -43,7 +43,8 @@ void drawWorldImage(IInterfaceCanvas& canvas, const IntroFrame& frame,
                                       frame, placedInWorld(frame, image.topLeft,
                                                            image.leftBehind)),
                                   .scale = frame.view.zoom,
-                                  .tint = image.tint},
+                                  .tint = image.tint,
+                                  .recolor = image.recolor},
                    INTERFACE_AREA);
 }
 

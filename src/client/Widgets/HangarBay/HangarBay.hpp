@@ -2,10 +2,12 @@
 
 #include <SFML/System/Vector2.hpp>
 #include <cstdint>
+#include <functional>
 #include <optional>
 #include <string_view>
 #include "IInterfaceCanvas.hpp"
 #include "MotionPreference.hpp"
+#include "PlayerPalette.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::client {
@@ -26,14 +28,21 @@ struct BayPilot {
   bool isLocalPlayer = false;
 };
 
-/** @brief One bay of the waiting room: where it lies, its player number, the
- * color of its ship, 0 to PLAYER_COLOR_COUNT - 1, and its pilot, none while
- * it is open. */
+/**
+ * @brief One bay of the waiting room: where it lies, its player number, the
+ * color of its ship, 0 to PLAYER_COLOR_COUNT - 1, the palette the player
+ * chose, and its pilot, none while it is open.
+ *
+ * A std::reference_wrapper has no default constructor, so this struct is
+ * only ever built with designated initializers naming every member.
+ */
+// NOLINTNEXTLINE(cppcoreguidelines-pro-type-member-init,hicpp-member-init)
 struct HangarBay {
   /** @brief Top-left corner of the bay, in pixels of the interface picture. */
   sf::Vector2i topLeft;
   int playerNumber{};
   int color{};
+  std::reference_wrapper<const PlayerPalette> palette;
   std::optional<BayPilot> pilot;
 };
 
@@ -53,8 +62,9 @@ struct BayMotion {
  *
  * With a pilot: its number, YOU for the local player, a band of the ship
  * color, the ship enlarged BAY_SHIP_SCALE times, the nickname, and a cell that
- * says whether the pilot is ready, gold while the server does not show what
- * the local player asked. A ready pilot's ship plays PLAYER_SHIP_ANIMATION,
+ * says whether the pilot is ready, gold and ending in three dots while the
+ * server does not show what the local player asked, so the wait is never told
+ * by its color alone. A ready pilot's ship plays PLAYER_SHIP_ANIMATION,
  * engines running; any other shows its first frame.
  *
  * Without one: its number, docking clamps around a row of beacons lit one

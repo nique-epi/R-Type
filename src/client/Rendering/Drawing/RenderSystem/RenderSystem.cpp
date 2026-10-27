@@ -12,11 +12,8 @@
 #include "Entity.hpp"
 #include "HitFlash.hpp"
 #include "IDrawSurface.hpp"
-#include "InterfaceColorConstants.hpp"
 #include "Invulnerability.hpp"
 #include "Nudge.hpp"
-#include "PilotColor.hpp"
-#include "PilotShip.hpp"
 #include "Position.hpp"
 #include "RenderingConstants.hpp"
 #include "Reveal.hpp"
@@ -56,16 +53,13 @@ SpriteTone toneOf(const HitFlash* flash,
              : SpriteTone::Normal;
 }
 
-/** @returns The light shade of the pilot of a ship whose invulnerability is
- * steady, or nothing: no such invulnerability, no pilot, or no pilot
- * color. */
-std::optional<sf::Color> outlineOf(const Invulnerability* invulnerability,
-                                   const PilotShip* pilot) {
-  if (invulnerability == nullptr || !invulnerability->steady ||
-      pilot == nullptr || !isPilotColor(pilot->color)) {
+/** @returns The outline of a ship whose invulnerability is steady, or
+ * nothing: no such invulnerability, or no outline chosen for it. */
+std::optional<sf::Color> outlineOf(const Invulnerability* invulnerability) {
+  if (invulnerability == nullptr || !invulnerability->steady) {
     return std::nullopt;
   }
-  return PLAYER_COLORS[static_cast<std::size_t>(pilot->color)].light;
+  return invulnerability->outline;
 }
 
 /** @returns How many pixels of the canvas a nudge draws an entity away: its
@@ -177,7 +171,7 @@ SpriteAppearance RenderSystem::lookOf(engine::ComponentRegistry& components,
   const Reveal* reveal = components.get<Reveal>(entity);
   return SpriteAppearance{
       .tone = toneOf(components.get<HitFlash>(entity), invulnerability),
-      .outline = outlineOf(invulnerability, components.get<PilotShip>(entity)),
+      .outline = outlineOf(invulnerability),
       .offset = offsetOf(components.get<Nudge>(entity)),
       .shownRows = shownRowsOf(reveal, frameHeight),
       .leadingLine = reveal != nullptr && reveal->leadingLine};

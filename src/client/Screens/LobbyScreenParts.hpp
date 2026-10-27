@@ -6,6 +6,7 @@
 #include "ISoundPlayer.hpp"
 #include "LobbyPlace.hpp"
 #include "MotionPreference.hpp"
+#include "PlayerPalette.hpp"
 #include "PlayfieldMapping.hpp"
 #include "ReadyKey.hpp"
 
@@ -32,6 +33,9 @@ struct LobbyScreenParts {
   /** @brief Gives the point of the playfield under a pixel of the window. */
   PlayfieldMapping playfieldPointAt;
   ReadyKey readyKey;
+  /** @brief The palette the ships and their bands are painted in: a
+   * constant, so it outlives the screen. */
+  std::reference_wrapper<const PlayerPalette> palette;
   /** @brief Whether the ships and the beacons may move. */
   MotionPreference motion{};
   /** @brief Where BACK leads: the connection screen below, or the title. */

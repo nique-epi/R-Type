@@ -13,6 +13,8 @@
 
 namespace rtype::client {
 
+struct PlayerSettings;
+
 /**
  * @brief The screen the client opens on: the logo, PLAY, SETTINGS and QUIT
  * over the scrolling background, and the squadron flying in on the right.
@@ -42,6 +44,7 @@ class TitleScreen : public IScreen {
 
   std::unique_ptr<IInterfaceCanvas> canvas_;
   PlayfieldMapping playfieldPointAt_;
+  const PlayerSettings* settings_;
   Menu menu_;
   Squadron squadron_;
 };

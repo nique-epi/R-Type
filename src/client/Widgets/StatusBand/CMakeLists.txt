@@ -11,8 +11,9 @@ target_link_libraries(rtype_client_status_band
     rtype_client_entity_sprites
     rtype_client_outline
     rtype_client_padded_score
+    rtype_client_pilot_color
     rtype_client_pilot_name
-    rtype_network_protocol
+    rtype_client_player_shading
 )
 
 rtype_enable_warnings(rtype_client_status_band)

@@ -74,6 +74,7 @@ EndScreen::EndScreen(EndScreenParts parts,
       playfieldPointAt_(std::move(parts.playfieldPointAt)),
       motion_(parts.motion),
       flashes_(parts.flashes),
+      palette_(parts.palette),
       pilots_(parts.result.get().pilots) {
   std::mt19937 random(parts.seed);
   std::optional<std::size_t>& previousTaunt = parts.previousTaunt.get();
@@ -173,7 +174,8 @@ FlightLogLook EndScreen::lookNow() const {
                        .replay = stateOf(EndChoice::Replay, pressed_, hovered_),
                        .quit = stateOf(EndChoice::Quit, pressed_, hovered_),
                        .motion = motion_,
-                       .flashes = flashes_};
+                       .flashes = flashes_,
+                       .palette = palette_};
 }
 
 void EndScreen::repaint() {

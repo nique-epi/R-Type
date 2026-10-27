@@ -21,6 +21,8 @@
 #include "Layer.hpp"
 #include "Lifetime.hpp"
 #include "Nudge.hpp"
+#include "PilotDebrisRamps.hpp"
+#include "PilotShades.hpp"
 #include "PixelEffects.hpp"
 #include "Position.hpp"
 #include "RenderingConstants.hpp"
@@ -41,21 +43,24 @@ FlashLoan shipExplosionFlash(engine::Duration hold) {
                                         SHIP_EXPLOSION_FLASH_FRAMES)};
 }
 
-/** @returns The colors the debris of the ship of a pilot go through. */
-std::span<const sf::Color> debrisRampOf(std::optional<int> pilotColor) {
+/** @returns The colors the debris of the ship of a pilot go through, among
+ * the ramps of the palette the player chose. */
+std::span<const sf::Color> debrisRampOf(const PilotDebrisRamps& ramps,
+                                        std::optional<int> pilotColor) {
   if (!pilotColor.has_value()) {
     return UNKNOWN_PILOT_DEBRIS_RAMP;
   }
-  return PILOT_DEBRIS_RAMPS[static_cast<std::size_t>(*pilotColor)];
+  return ramps[static_cast<std::size_t>(*pilotColor)];
 }
 
 /** @returns The colors the shockwave of the ship of a pilot goes through:
  * its debris ramp without the white. */
-std::span<const sf::Color> ringRampOf(std::optional<int> pilotColor) {
+std::span<const sf::Color> ringRampOf(const PilotDebrisRamps& ramps,
+                                      std::optional<int> pilotColor) {
   if (!pilotColor.has_value()) {
     return UNKNOWN_PILOT_RING_RAMP;
   }
-  return debrisRampOf(pilotColor).subspan(1);
+  return debrisRampOf(ramps, pilotColor).subspan(1);
 }
 
 /** @returns The vibration of a victim frozen for @p hold: one pixel to each
@@ -124,20 +129,22 @@ void KillEffects::playShipDown(engine::Entity ship) {
   }
   const FlashGate& gate = tools_.gate;
   PixelEffects& pixels = tools_.pixels;
+  const PilotShades& shades = tools_.shades;
   freeze(*downed);
   spawnSheetEffect(tools_,
                    SheetEffect{.animations = &SHIP_EXPLOSION,
                                .center = downed->center,
                                .hold = SHIP_DOWN_HOLD,
                                .flash = shipExplosionFlash(SHIP_DOWN_HOLD)});
-  pixels.burst({.shape = SHIP_DEBRIS,
-                .center = downed->center,
-                .aim = TOWARDS_RIGHT,
-                .colors = gate.rampOf(debrisRampOf(downed->pilotColor)),
-                .delay = SHIP_DOWN_HOLD});
+  pixels.burst(
+      {.shape = SHIP_DEBRIS,
+       .center = downed->center,
+       .aim = TOWARDS_RIGHT,
+       .colors = gate.rampOf(debrisRampOf(shades.debris, downed->pilotColor)),
+       .delay = SHIP_DOWN_HOLD});
   pixels.wave({.shape = SHIP_DOWN_RING,
                .center = downed->center,
-               .colors = ringRampOf(downed->pilotColor),
+               .colors = ringRampOf(shades.debris, downed->pilotColor),
                .delay = SHIP_DOWN_HOLD});
   gate.shake(tools_.camera, SHIP_DOWN_TRAUMA);
 }

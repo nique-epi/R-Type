@@ -10,9 +10,9 @@
 #include "Entity.hpp"
 #include "EntityType.hpp"
 #include "HitSpot.hpp"
-#include "InterfaceColorConstants.hpp"
 #include "PilotColor.hpp"
 #include "PilotShip.hpp"
+#include "PlayerPalette.hpp"
 #include "Position.hpp"
 #include "Shooter.hpp"
 #include "Sprite.hpp"
@@ -78,11 +78,12 @@ std::optional<int> pilotColorOf(engine::ComponentRegistry& components,
   return pilot->color;
 }
 
-sf::Color pilotLightOf(std::optional<int> pilotColor) {
+sf::Color pilotLightOf(const PlayerPalette& palette,
+                       std::optional<int> pilotColor) {
   if (!pilotColor.has_value()) {
     return UNKNOWN_PILOT_LIGHT;
   }
-  return PLAYER_COLORS[static_cast<std::size_t>(*pilotColor)].light;
+  return palette[static_cast<std::size_t>(*pilotColor)].light;
 }
 
 }  // namespace rtype::client

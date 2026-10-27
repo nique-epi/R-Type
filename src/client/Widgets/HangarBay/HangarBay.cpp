@@ -12,8 +12,9 @@
 #include "HangarBayConstants.hpp"
 #include "IInterfaceCanvas.hpp"
 #include "ImagePlacement.hpp"
-#include "InterfaceColorConstants.hpp"
 #include "MotionPreference.hpp"
+#include "PlayerNumberLabel.hpp"
+#include "PlayerShading.hpp"
 #include "SpriteFrame.hpp"
 #include "SunkBox.hpp"
 #include "TextStyle.hpp"
@@ -43,7 +44,7 @@ CellLook cellLookOf(BayReadiness readiness) {
               .text = CURRENT_CELL_TEXT_COLOR};
     case BayReadiness::ReadyAsked:
       return {.fill = AWAITED_VALUE_COLOR,
-              .word = READY_TEXT,
+              .word = READY_ASKED_TEXT,
               .text = CURRENT_CELL_TEXT_COLOR};
     case BayReadiness::NotReadyAsked:
       return {.fill = AWAITED_VALUE_COLOR,
@@ -136,23 +137,27 @@ void paintLocalPlayerTag(IInterfaceCanvas& canvas, sf::Vector2i topLeft) {
 }
 
 /** @brief Paints the band of the ship color under the row of the number. */
-void paintColorBand(IInterfaceCanvas& canvas, sf::Vector2i topLeft, int color) {
-  canvas.fill(onBay(topLeft, BAY_COLOR_BAND),
-              PLAYER_COLORS[static_cast<std::size_t>(color)].ship);
+void paintColorBand(IInterfaceCanvas& canvas, const HangarBay& bay) {
+  canvas.fill(onBay(bay.topLeft, BAY_COLOR_BAND),
+              bay.palette.get().at(static_cast<std::size_t>(bay.color)).ship);
 }
 
 /** @brief Draws a ship frame BAY_SHIP_SCALE times its size, centered on the
- * bay and cut to it. */
-void paintShip(IInterfaceCanvas& canvas, sf::Vector2i topLeft,
+ * bay and cut to it, in the shades of the palette. */
+void paintShip(IInterfaceCanvas& canvas, const HangarBay& bay,
                game::SpriteFrame frame) {
   const int shipWidth = frame.width * BAY_SHIP_SCALE;
   const sf::Vector2i shipTopLeft(
-      topLeft.x + ((HANGAR_BAY_SIZE.x - shipWidth) / SIDES_PER_AXIS),
-      topLeft.y + BAY_SHIP_TOP);
+      bay.topLeft.x + ((HANGAR_BAY_SIZE.x - shipWidth) / SIDES_PER_AXIS),
+      bay.topLeft.y + BAY_SHIP_TOP);
   canvas.drawImage(
       TextureArea{.assetId = ENTITY_SHEET_ID, .rectangle = rectangleOf(frame)},
-      ImagePlacement{.topLeft = shipTopLeft, .scale = BAY_SHIP_SCALE},
-      {topLeft, HANGAR_BAY_SIZE});
+      ImagePlacement{
+          .topLeft = shipTopLeft,
+          .scale = BAY_SHIP_SCALE,
+          .recolor = shadingOf(bay.palette, static_cast<std::size_t>(bay.color))
+                         .recolor},
+      {bay.topLeft, HANGAR_BAY_SIZE});
 }
 
 /** @brief Writes the nickname of a pilot, centered on its row. */
@@ -224,7 +229,7 @@ void paintPilot(IInterfaceCanvas& canvas, const HangarBay& bay,
   if (pilot.isLocalPlayer) {
     paintLocalPlayerTag(canvas, bay.topLeft);
   }
-  paintColorBand(canvas, bay.topLeft, bay.color);
+  paintColorBand(canvas, bay);
   paintNickname(canvas, bay.topLeft, pilot.nickname);
   paintCell(canvas, bay.topLeft, pilot.readiness);
 }
@@ -245,7 +250,7 @@ void paintHangarBay(IInterfaceCanvas& canvas, const HangarBay& bay,
   paintPlayerNumber(canvas, bay);
   if (bay.pilot.has_value()) {
     paintPilot(canvas, bay, *bay.pilot);
-    paintShip(canvas, bay.topLeft,
+    paintShip(canvas, bay,
               shipFrameOf(bay.color, bay.pilot->readiness, motion));
   } else {
     paintOpenBay(canvas, bay.topLeft, motion);

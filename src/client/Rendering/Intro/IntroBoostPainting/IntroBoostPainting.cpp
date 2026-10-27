@@ -13,7 +13,6 @@
 #include "Easing.hpp"
 #include "FlashPreference.hpp"
 #include "IInterfaceCanvas.hpp"
-#include "InterfaceColorConstants.hpp"
 #include "InterfaceConstants.hpp"
 #include "IntroCastConstants.hpp"
 #include "IntroFrame.hpp"
@@ -52,17 +51,16 @@ struct Beam {
 };
 
 /** @returns Grain @p grain of the charge at @p nose at that moment of the
- * scene, on a spiral that ends at the nose; nothing while it does not
- * fly. */
-// NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
+ * scene, on a spiral that ends at the nose, in the light shade of its pilot;
+ * nothing while it does not fly. */
 std::optional<WorldArea> grainAt(const ChargingNose& nose, std::size_t grain,
-                                 float scene) {
+                                 const IntroFrame& frame) {
   const float chargeTime = INTRO_SCENE_RELEASE - INTRO_SCENE_CHARGE;
   const float start =
       INTRO_SCENE_CHARGE +
       (static_cast<float>(grain) / static_cast<float>(INTRO_CHARGE_GRAINS) *
        chargeTime * INTRO_GRAIN_SPREAD);
-  const float flight = (scene - start) / INTRO_GRAIN_FLIGHT;
+  const float flight = (frame.scene - start) / INTRO_GRAIN_FLIGHT;
   if (flight < 0.0F || flight >= 1.0F) {
     return std::nullopt;
   }
@@ -80,15 +78,14 @@ std::optional<WorldArea> grainAt(const ChargingNose& nose, std::size_t grain,
                1},
       .color = flight > INTRO_GRAIN_WHITE_AFTER
                    ? STAR_WHITE
-                   : PLAYER_COLORS.at(nose.pilot).light};
+                   : frame.palette.get().at(nose.pilot).light};
 }
 
 /** @brief Paints the grains a charge draws in. */
 void paintGrains(IInterfaceCanvas& canvas, const IntroFrame& frame,
                  const ChargingNose& nose) {
   for (std::size_t grain = 0; grain < INTRO_CHARGE_GRAINS; ++grain) {
-    if (const std::optional<WorldArea> area =
-            grainAt(nose, grain, frame.scene)) {
+    if (const std::optional<WorldArea> area = grainAt(nose, grain, frame)) {
       paintWorldArea(canvas, frame, *area);
     }
   }
@@ -120,7 +117,7 @@ void paintChargeBall(IInterfaceCanvas& canvas, const IntroFrame& frame,
   const int radius = static_cast<int>(std::round(INTRO_BALL_RADIUS +
                                                  (INTRO_BALL_GROWTH * grown))) +
                      flicker;
-  const PlayerColors& colors = PLAYER_COLORS.at(nose.pilot);
+  const PlayerColors& colors = frame.palette.get().at(nose.pilot);
   const std::array<sf::Color, INTRO_BALL_LAYERS> layers{
       colors.ship, colors.light, STAR_WHITE};
   for (std::size_t layer = 0; layer < layers.size(); ++layer) {
@@ -146,10 +143,9 @@ void paintBeam(IInterfaceCanvas& canvas, const IntroFrame& frame,
       0,
       static_cast<int>(std::round(
           (INTRO_BEAM_HALF + std::sin(frame.scene * INTRO_BEAM_WAVE)) * fade)));
-  const PlayerColors& colors = PLAYER_COLORS.at(beam.pilot);
-  const std::array<sf::Color, INTRO_BEAM_BANDS> bands{
-      INTRO_PLAYER_DARK_COLORS.at(beam.pilot), colors.ship, colors.light,
-      STAR_WHITE};
+  const PlayerColors& colors = frame.palette.get().at(beam.pilot);
+  const std::array<sf::Color, INTRO_BEAM_BANDS> bands{colors.dark, colors.ship,
+                                                      colors.light, STAR_WHITE};
   for (int level = half; level >= 0; --level) {
     const auto band = static_cast<std::size_t>(
         std::max(0, static_cast<int>(bands.size()) - 1 - level));

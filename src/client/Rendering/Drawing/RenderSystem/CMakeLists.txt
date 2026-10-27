@@ -6,8 +6,6 @@ target_link_libraries(rtype_client_render_system
   PUBLIC
     rtype_engine
     rtype_client_drawing
-  PRIVATE
-    rtype_client_pilot_color
 )
 
 rtype_enable_warnings(rtype_client_render_system)

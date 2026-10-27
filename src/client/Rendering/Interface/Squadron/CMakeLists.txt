@@ -9,6 +9,7 @@ target_link_libraries(rtype_client_squadron
   PRIVATE
     rtype_client_easing
     rtype_client_entity_sprites
+    rtype_client_player_shading
     rtype_client_random_range
 )
 

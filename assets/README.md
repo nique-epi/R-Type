@@ -68,6 +68,8 @@ The client looks for `assets/` next to its executable, then in the folder above 
 | Player missile | 16 × 6 | 60 ms |
 | Enemy missile | 8 × 8 | 120 ms |
 
+The light shade of player 4, `#ffd38b`, is one step of blue above `#ffd38a`, the gold of every flame, here and in `sprites/hud.png`: a palette for color blindness swaps the three shades of a player color, and this step keeps the flame of player 4 out of the swap.
+
 The game and the squadron of the title screen show the two frames in turn, each for the frame time above. The rectangle, the frames and the animation of each entity type are written once, in `src/client/Rendering/Sprites/EntitySpriteConstants.hpp`. The sheet is listed in `titleAssets()`, for the squadron of the title screen, and in `gameAssets()`.
 
 ## The effect sheet
