@@ -10,7 +10,7 @@ Why: `Application` stops only the modules whose `start()` returned, so a module 
 
 ## Rule
 
-1. **`install()` prepares and checks; when it returns, nothing it opened is still open or registered.** It may open and close within the call: read a file through a local `std::ifstream` and parse it, as `WaveCatalog::fromFile` reads `waves.toml`; build the objects the module owns; check a configuration and throw when it is wrong. The doc comment of `IModule::install()` says "opens nothing": read it as "keeps nothing open".
+1. **`install()` prepares and checks; when it returns, nothing it opened is still open or registered.** It may open and close within the call: read a file through a local `std::ifstream` and parse it, as `WaveCatalog::fromFile` reads `waves.toml`; build the objects the module owns; check a configuration and throw when it is wrong.
 2. **Everything that must live until `stop()` is opened or registered in `start()`**:
 
    | In `install()` | In `start()` |
