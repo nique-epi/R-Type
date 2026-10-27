@@ -108,7 +108,7 @@ The player queue stays as the last safety net. It discards its oldest datagram, 
 
 `TickLoop` (`src/server/Application/TickLoop/`) calls a function once per tick on the thread that runs it. It counts ticks with a `FixedTimestep` and sleeps until its `nextTickTime()`, so the average rate stays at 60 ticks per second: after a late wake-up the missed ticks run back to back, and a stall longer than `MAXIMUM_TICKS_PER_ADVANCE` (5) ticks drops the excess. `ServerApplication` creates it when `run()` starts, so the first tick is due one tick after the call.
 
-The limit is a choice for this game: during a longer stall the game freezes, then resumes where it stopped, unless it lasts long enough for every client to take the server for lost, more than 4 s at the earliest and 5 s in every phase: the server then closes every session after it resumes (see [A long stall and the clients](#a-long-stall-and-the-clients)). Catching the whole stall up would play it in an instant, a second of enemy fire that nobody saw coming. Engines differ on it: a Quake 3 dedicated server catches up to 5 seconds, so that the clients' view of the server's clock stays right; Unity lets each game set its `maximumDeltaTime`.
+The limit is a choice for this game: during a longer stall the game freezes, then resumes where it stopped, unless it lasts long enough for every client to take the server for lost (see [A long stall and the clients](#a-long-stall-and-the-clients)). Catching the whole stall up would play it in an instant, a second of enemy fire that nobody saw coming. Engines differ on it: a Quake 3 dedicated server catches up to 5 seconds, so that the clients' view of the server's clock stays right; Unity lets each game set its `maximumDeltaTime`.
 
 Every `TICKS_PER_REPORT` ticks, the loop logs at the `debug` level how late its ticks started, each compared with the moment it was due; a dropped stall shows in full. The lines go to the terminal and to the journal, `r-type_server.log` (see [Logging](/R-Type/logging/#choosing-the-level-and-the-output-at-launch)):
 
@@ -230,7 +230,7 @@ A client that crashes, is killed or loses the network sends nothing more, and no
 
 `takeDepartedPlayers()` hands each departed player over once. `main.cpp` then calls `ServerApplication::forget()`. The game events go to the players of the roster, so the next ones reach the others only (see [Game events](#game-events-gameeventencoder-and-gameeventbroadcaster)). The game logs `player <n> timed out: nothing received from <address> port <port> for 5 s` at the `info` level under `Instances`.
 
-- The game counts the ticks it runs, not the time that passes: during a stall of the server, the datagrams wait in the player queue and are read at the next tick, so a stall closes no session by itself. A stall long enough for the clients to take the server for lost closes them all the same, `SESSION_TIMEOUT_TICKS` (300) ticks after the server resumes (see [A long stall and the clients](#a-long-stall-and-the-clients)).
+- The game counts the ticks it runs, not the time that passes: during a stall of the server, the datagrams wait in the player queue and are read at the next tick, so a stall closes no session by itself. A stall long enough for the clients to take the server for lost closes them all the same, `SESSION_TIMEOUT_TICKS` (300) ticks after the last datagram the server read from that client (see [A long stall and the clients](#a-long-stall-and-the-clients)).
 - The rest of the tick runs without the player: a waiting room whose other players are all ready starts the game in that tick, and the world state of that tick no longer lists the ship.
 - A game in progress whose last player timed out or left ends in that tick, after the sessions close and before the game moves along its states, as `finish()` ends it: it refuses new connections with `GameInProgress` until the finished state is over, `FINISHED_STATE_TICKS` (300) ticks counted from that tick, then waits for players with a new world. The game logs `game finished: no player left` at the `info` level under `Instances`. A waiting room whose last player timed out keeps waiting.
 
@@ -242,15 +242,7 @@ The server sends heartbeats too. At the end of each tick, a game sends a `Heartb
 
 ### A long stall and the clients
 
-A client takes the server for lost once `SESSION_TIMEOUT` (5 s) passed since the last datagram it read, then sends nothing more (see [Client](/R-Type/client/#joining-a-server-serverconnection)), so every session times out `SESSION_TIMEOUT_TICKS` (300) ticks after the server resumes and reads the datagrams that waited. The last datagram a client read left before the stall began, and the tick counts stand still during a stall, so a stall lengthens the gap between two datagrams to a player by its own length. When the server resumes, its tick loop runs `MAXIMUM_TICKS_PER_ADVANCE` (5) ticks back to back, then one per tick. The gap after a stall of length *d* is then at least *d* plus the interval of the phase less 5 ticks (*d* alone when the interval is 5 ticks or less), and less than *d* plus the interval; where in the interval the stall began decides which:
-
-| Phase | Interval between two datagrams to a player | A stall may close every session when longer than | It always does from |
-|---|---|---|---|
-| Game in progress | `TICKS_PER_WORLD_STATE` (3 ticks, 50 ms) | 4.95 s | 5 s |
-| Waiting room | `TICKS_PER_LOBBY_STATE` (30 ticks, 500 ms) | 4.5 s | 4.583 s |
-| Heartbeats only: a finished game, which holds no player today | `TICKS_PER_HEARTBEAT` (60 ticks, 1 s) | 4 s | 4.083 s |
-
-These bounds are read on that timeline, not measured, to one tick of the server and one frame of the client.
+A client takes the server for lost once `SESSION_TIMEOUT` (5 s) passed since the last datagram it read, then sends nothing more (see [Client](/R-Type/client/#joining-a-server-serverconnection)). That datagram left before the stall began, so a stall somewhat shorter than `SESSION_TIMEOUT` can already be enough. The server then closes each of those sessions `SESSION_TIMEOUT_TICKS` (300) ticks after the last datagram it read from that client.
 
 ## Waiting room: `LobbyStateAnnouncer`
 
