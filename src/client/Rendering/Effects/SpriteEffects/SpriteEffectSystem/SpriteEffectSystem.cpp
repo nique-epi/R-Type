@@ -27,7 +27,7 @@ float riseOf(engine::Duration age) {
 }
 
 /** @returns Whether a figure shows: not before 0, all along its rise and its
- * hold, then on every even blink step, or all along when it is steady. */
+ * hold, then on every even blink step, or from 0 on when it is steady. */
 bool isPopupShown(const Popup& popup) {
   if (popup.age < engine::Duration::zero()) {
     return false;

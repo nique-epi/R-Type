@@ -14,7 +14,7 @@ namespace rtype::client {
 /**
  * @brief A comet crossing from right to left, its tail fading and flickering
  * behind its head; in a sky of SkyLight::Steady, its tail keeps its gaps
- * still and hides no pixel.
+ * still and hides no other pixel.
  */
 class Comet final : public ISkyEvent {
  public:
@@ -30,7 +30,7 @@ class Comet final : public ISkyEvent {
 
   /** @returns Whether a pixel of the tail shows: out of the gaps, and not
    * hidden by the flicker advance() drew for the frame. In a steady sky the
-   * gaps stand where they start and nothing is hidden. */
+   * gaps stand where they start and nothing else is hidden. */
   [[nodiscard]] bool showsTailPixel(std::size_t pixel, SkyLight light) const;
 
   sf::Vector2f head_;
