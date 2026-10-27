@@ -37,6 +37,19 @@ class GameInstanceLivesFixture : public GameInstanceShootingFixture {
   /** @returns How the newest WorldState sent to the player at @p index lists
    * that player; a default one, after a failure, when none does. */
   [[nodiscard]] network::PlayerState newestStateOf(std::size_t index);
+
+  /** @brief Leaves @p player one life, then puts a Drifter on its ship and runs
+   * the tick that finds them touching, the bus delivering its events: the
+   * player has no life left. */
+  void takeTheLastLifeOf(std::size_t player);
+
+  /** @brief Takes the last life of both players, then runs the tick that finds
+   * no life left in the game, which ends it. */
+  void loseEveryLife();
+
+  /** @brief Gives the first player FIRST_PLAYER_FINAL_SCORE points and the
+   * second SECOND_PLAYER_FINAL_SCORE. */
+  void giveTheFinalScores();
 };
 
 }  // namespace rtype::server::testing

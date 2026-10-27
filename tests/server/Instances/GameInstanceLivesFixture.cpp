@@ -9,8 +9,10 @@
 #include "ConnectedPlayer.hpp"
 #include "GameInstanceFixtures.hpp"
 #include "GameInstanceTestConstants.hpp"
+#include "LifeKeeperTestConstants.hpp"
 #include "MessageType.hpp"
 #include "OutgoingDatagram.hpp"
+#include "Replication/GameEndAnnouncerTestConstants.hpp"
 #include "SentDatagrams.hpp"
 #include "World.hpp"
 #include "WorldState.hpp"
@@ -58,6 +60,30 @@ network::PlayerState GameInstanceLivesFixture::newestStateOf(
                                         &network::PlayerState::playerNumber);
   EXPECT_NE(listed, players.end());
   return listed == players.end() ? network::PlayerState{} : *listed;
+}
+
+void GameInstanceLivesFixture::takeTheLastLifeOf(std::size_t player) {
+  ConnectedPlayer* const target = game().roster().find(playerEndpoint(player));
+  ASSERT_NE(target, nullptr);
+  target->lives = ONE_LIFE;
+  hitTheShipOf(player);
+}
+
+void GameInstanceLivesFixture::loseEveryLife() {
+  takeTheLastLifeOf(FIRST_PLAYER);
+  takeTheLastLifeOf(SECOND_PLAYER);
+  runTicksDispatching(1);
+}
+
+void GameInstanceLivesFixture::giveTheFinalScores() {
+  ConnectedPlayer* const first =
+      game().roster().find(playerEndpoint(FIRST_PLAYER));
+  ConnectedPlayer* const second =
+      game().roster().find(playerEndpoint(SECOND_PLAYER));
+  ASSERT_NE(first, nullptr);
+  ASSERT_NE(second, nullptr);
+  first->score = FIRST_PLAYER_FINAL_SCORE;
+  second->score = SECOND_PLAYER_FINAL_SCORE;
 }
 
 }  // namespace rtype::server::testing
