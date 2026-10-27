@@ -16,6 +16,7 @@
 #include "DamageRules.hpp"
 #include "Endpoint.hpp"
 #include "EventBus.hpp"
+#include "GameEndAnnouncer.hpp"
 #include "GameSettings.hpp"
 #include "GameState.hpp"
 #include "IncomingDatagram.hpp"
@@ -48,11 +49,11 @@ namespace rtype::server {
  *
  * A game goes from WaitingForPlayers to InProgress when at least one player is
  * connected and every connected player is ready, from InProgress to Finished
- * when finish() is called or once no player is left in it, and from Finished
- * back to WaitingForPlayers after FINISHED_STATE_TICKS ticks. Coming back to
- * WaitingForPlayers builds a new world: every player gets a new ship and its
- * STARTING_LIVES back, is no longer ready, and the tick is 0. The players stay
- * connected.
+ * when finish() is called, once no player is left in it, or once no player
+ * left in it has a life, and from Finished back to WaitingForPlayers after
+ * FINISHED_STATE_TICKS ticks. Coming back to WaitingForPlayers builds a new
+ * world: every player gets a new ship and its STARTING_LIVES back, is no longer
+ * ready, and the tick is 0. The players stay connected.
  *
  * The game tells its players where it stands, as the A session section of the
  * protocol page describes. While it waits for players, a LobbyStateAnnouncer
@@ -60,8 +61,12 @@ namespace rtype::server {
  * out at the first tick of every wait. The tick that starts the game sends
  * every connected player GameStarted, then, on that tick and every tick of the
  * game, the WorldStateSender sends them the world, from tick 0: GameStarted
- * always leaves before the first WorldState. Every datagram to a player
- * carries its session token and its next sequence (see nextSessionHeader).
+ * always leaves before the first WorldState. A game that ends by itself builds
+ * a GameEndAnnouncer, which reads the score of every player then and sends
+ * them that result at the first tick of the end, then every
+ * GAME_ENDED_INTERVAL until the game waits for players again; no WorldState
+ * goes out meanwhile. Every datagram to a player carries its session token and
+ * its next sequence (see nextSessionHeader).
  *
  * While the game is in progress, each tick first moves the ship of every player
  * who sent an input, by the directions its newest input holds (see
@@ -89,11 +94,12 @@ namespace rtype::server {
  * touches a ship into a MissileHit, which DamageRules turns into the removal of
  * the missile and LifeKeeper into the loss of the ship and a life: the ship
  * comes back RESPAWN_DELAY later, invulnerable for INVULNERABILITY_DURATION,
- * and a player with no life left watches. A game whose players are all out goes
- * on: no rule ends a game yet. The rules work on the world they were built
- * with, and new ones come with each new world, so the events of a tick must be
- * delivered before the world is replaced: the server dispatches the bus at the
- * end of every tick.
+ * and a player with no life left watches. A life is taken while the bus is
+ * dispatched, after onTick(), so a game whose last life was taken ends at the
+ * next onTick(), after the sessions close and before the game moves along its
+ * states. The rules work on the world they were built with, and new ones come
+ * with each new world, so the events of a tick must be delivered before the
+ * world is replaced: the server dispatches the bus at the end of every tick.
  *
  * A datagram of the players is read only when its header carries this
  * protocol and version with no flag set, its messages add up to its end, and
@@ -214,13 +220,14 @@ class GameInstance {
    * and closes the session of each player who sent a Disconnection, among
    * @p datagrams, oldest first, closes the session of every player not heard
    * from for SESSION_TIMEOUT_TICKS ticks, ends a game in progress that no
-   * player is left in, then moves the game along its states. While it waits,
-   * the players are told the room; while it is in progress, the tick is
-   * counted, the ships move, the systems run, the ships whose players hold
-   * shoot fire, the Bydos fire, the Bydos appear, the waits and protections of
-   * the lives are counted and the world is sent. Last, a player sent nothing
-   * for TICKS_PER_HEARTBEAT ticks is sent a Heartbeat. Nothing caused by the
-   * content of a datagram makes it throw.
+   * player is left in, or that no player left in has a life, then moves the
+   * game along its states. While it waits, the players are told the room;
+   * while it is in progress, the tick is counted, the ships move, the systems
+   * run, the ships whose players hold shoot fire, the Bydos fire, the Bydos
+   * appear, the waits and protections of the lives are counted and the world is
+   * sent; while it is finished, the players are told the result. Last, a player
+   * sent nothing for TICKS_PER_HEARTBEAT ticks is sent a Heartbeat. Nothing
+   * caused by the content of a datagram makes it throw.
    */
   void onTick(std::span<const network::IncomingDatagram> datagrams);
 
@@ -232,7 +239,9 @@ class GameInstance {
   [[nodiscard]] std::vector<ConnectedPlayer> takeDepartedPlayers();
 
   /**
-   * @brief Ends the game in progress. Does nothing in any other state.
+   * @brief Ends the game in progress without telling its players a result:
+   * only a game that ends by itself does (see finishIfOver). Does nothing in
+   * any other state.
    */
   void finish();
 
@@ -307,12 +316,11 @@ class GameInstance {
   void logDeparture(const ConnectedPlayer& player,
                     game::DepartureCause cause) const;
 
-  /** @returns Whether the game is in progress with no player left in it. */
-  [[nodiscard]] bool isAbandoned();
-
-  /** @brief Logs and ends the game when it is in progress with no player left
-   * in it, as finish() ends it. */
-  void finishIfAbandoned();
+  /** @brief Logs why and ends the game, as finish() ends it, when it is in
+   * progress with no player left in it, or with no player left who has a
+   * life, then builds the GameEndAnnouncer that tells the players the result.
+   */
+  void finishIfOver();
 
   /** @brief Sends a Heartbeat to every player sent nothing for
    * TICKS_PER_HEARTBEAT ticks, then counts the tick that ends for every
@@ -328,7 +336,8 @@ class GameInstance {
    * spawner of its Bydos, the launcher of its missiles, the gunner of its
    * Bydos, the keeper of the lives and the announcer of the room. DamageRules
    * is built before LifeKeeper, so the bus hands each MissileHit to DamageRules
-   * first (see LifeKeeper). */
+   * first (see LifeKeeper). The announcer of the end of the previous game is
+   * dropped. */
   void buildWorld();
 
   void startNewWorld();
@@ -347,6 +356,9 @@ class GameInstance {
   std::unique_ptr<game::DamageRules> damageRules_;
   std::unique_ptr<LifeKeeper> lifeKeeper_;
   std::unique_ptr<LobbyStateAnnouncer> lobbyStateAnnouncer_;
+  /** @brief Tells the players the result of a game that ended by itself;
+   * empty before the first end, and again with each new world. */
+  std::unique_ptr<GameEndAnnouncer> gameEndAnnouncer_;
   ScoreKeeper scoreKeeper_;
   WorldStateSender worldStateSender_;
   network::MessageDispatcher dispatcher_;

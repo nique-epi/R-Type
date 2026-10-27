@@ -53,4 +53,12 @@ constexpr std::string_view INSTANCES_LOGGER_NAME = "Instances";
 constexpr std::string_view NOT_A_PLAYER_DROP_REASON =
     "its sender is not a player of this game";
 
+/**
+ * @brief Why a game in progress finishes, as its line says after "game
+ * finished: ": no player is left in it, or no player left in it has a life.
+ */
+constexpr std::string_view NO_PLAYER_LEFT_FINISH_REASON = "no player left";
+constexpr std::string_view NO_LIFE_LEFT_FINISH_REASON =
+    "no player has a life left";
+
 }  // namespace rtype::server
