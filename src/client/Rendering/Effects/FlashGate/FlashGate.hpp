@@ -29,8 +29,9 @@ struct Nudge;
  * FlashPreference::Reduced, nothing flashes, nudges or shakes, and a ramp of
  * colors loses its first, hottest color. The preference is the one the last
  * advance() gave, FlashPreference::Full before any: an effect reads it when
- * it starts, so an effect already playing keeps its version, but an
- * invulnerability, which PilotEffects reads it for at every advance.
+ * it starts, so an effect already playing keeps its version. An
+ * invulnerability is the exception: it lasts as long as the server holds it,
+ * so PilotEffects reads the preference for it at every advance.
  */
 class FlashGate {
  public:

@@ -47,8 +47,9 @@ namespace rtype::client {
  * ship is dithered all along and outlined, the figure of a gain stays shown
  * instead of blinking, and an arrival shows no white. The
  * preference is the one the last advance() gave, read when an effect starts:
- * an effect already playing keeps its version, but an invulnerability, which
- * follows the preference at every advance().
+ * an effect already playing keeps its version. An invulnerability is the
+ * exception: it lasts as long as the server holds it, so it follows the
+ * preference at every advance() (see PilotEffects).
  *
  * advance() moves on what counts time: the game calls it every frame, before
  * applying the messages of the frame. Every other method but cameraOffset()
