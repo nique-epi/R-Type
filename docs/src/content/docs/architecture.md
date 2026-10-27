@@ -54,6 +54,12 @@ Destroying an entity inside a `forEach` is postponed until the outermost `forEac
 
 Alternative considered: a numeric priority on each system, sorted by the scheduler. It lets a system be placed without touching the others, but the order then lives in numbers scattered across classes and two systems can tie. A single list of `add()` calls is the one place that says what runs after what.
 
+## Modules
+
+A program is a list of modules, objects implementing `IModule`, handed to an `Application`. The application installs them all, then starts them all, in list order, and stops them in the reverse order, so a module is stopped before the modules it requires. The list is checked when the application is built: a module whose required module is not listed before it is refused before anything is installed, so a missing module never leaves a socket or a thread half open. When a start fails, the modules already started are stopped before the error goes up.
+
+Alternative considered: sorting the modules by their requirements. A module could then be listed anywhere, but the order would be computed instead of read in one place, and two modules that require nothing of each other would have no defined order. As with systems, the list is the one place that says what starts after what.
+
 ## Events
 
 A system tells the rest of the game what happened through `EventBus` rather than by calling it: it publishes a typed event, and every callback subscribed to that type is called. A generic collision system in `rtype_engine` can therefore report a hit to the rules in `rtype_game`, which the engine may not link.
