@@ -14,6 +14,7 @@ target_link_libraries(rtype_client_menu
   PRIVATE
     rtype_client_audio_interfaces
     rtype_client_cut_corner_box
+    rtype_client_interface_pixel
 )
 
 rtype_enable_warnings(rtype_client_menu)

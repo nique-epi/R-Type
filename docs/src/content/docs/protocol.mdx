@@ -249,13 +249,15 @@ sequenceDiagram
   C->>S: Disconnection
 ```
 
-In each phase the server repeats one message, and the client shows the screen of the last one it received, so a lost transition never leaves it on the wrong screen.
+In each phase the server repeats one message, and the client shows the screen of the last one it received, so a lost transition never leaves it on the wrong screen; the end screen is the one exception (below).
 
 | Phase | Repeated message | The client shows |
 |---|---|---|
 | Waiting for players | `LobbyState`, every 500 ms | the lobby |
 | Game in progress | `WorldState`, 20 per second | the game |
 | Game ended | `GameEnded`, every 500 ms | the end screen |
+
+The end screen stays until the player chooses, whatever the server sends after `GameEnded`: a player who plays again finds the waiting room, a player who quits leaves the server. Between `GameEnded` and the next `GameStarted`, the server must send no `WorldState`: the client reads a `WorldState` as the start of a game.
 
 The server takes a `ReadyState` into account only in the first phase, from a connected player, with the same checks as every datagram: the session token, then the `sequence`. The game starts when at least one player is connected and every connected player is ready.
 

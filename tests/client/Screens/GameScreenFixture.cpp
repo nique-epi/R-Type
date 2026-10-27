@@ -33,7 +33,8 @@ GameScreenFixture::GameScreenFixture()
                               .entityMessages = entityMessages_,
                               .connection = connection_,
                               .sky = sky_,
-                              .sounds = sounds_},
+                              .sounds = sounds_,
+                              .result = result_},
               std::make_unique<RecordingEntityLayer>(layerRecord_),
               std::make_unique<RecordingInterfaceCanvas>(statusCanvas_));
         }

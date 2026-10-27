@@ -1,7 +1,6 @@
 #include "MissionBanner.hpp"
 #include <SFML/Graphics/Rect.hpp>
 #include <SFML/System/Vector2.hpp>
-#include <algorithm>
 #include <cstddef>
 #include "IInterfaceCanvas.hpp"
 #include "InterfaceColorConstants.hpp"
@@ -9,6 +8,7 @@
 #include "MissionBannerConstants.hpp"
 #include "TextStyle.hpp"
 #include "TimeConstants.hpp"
+#include "Typing.hpp"
 #include "WidgetConstants.hpp"
 #include "WidgetText.hpp"
 
@@ -31,15 +31,13 @@ void paintRule(IInterfaceCanvas& canvas, int row, int halfWidth) {
 MissionBannerLook missionBannerAt(engine::Duration sinceStart) {
   const engine::Duration intoBanner = sinceStart - MISSION_BANNER_DELAY;
   const engine::Duration writing =
-      MISSION_BANNER_LETTER_TIME *
-      static_cast<engine::Duration::rep>(MISSION_BANNER_TEXT.size());
+      typingTimeOf(MISSION_BANNER_LETTER_TIME, MISSION_BANNER_TEXT.size());
   if (intoBanner < engine::Duration::zero() ||
       intoBanner >= writing + MISSION_BANNER_HOLD) {
     return {};
   }
-  const std::size_t letters = std::min(
-      MISSION_BANNER_TEXT.size(),
-      static_cast<std::size_t>(intoBanner / MISSION_BANNER_LETTER_TIME) + 1);
+  const std::size_t letters = lettersTypedAt(
+      intoBanner, MISSION_BANNER_LETTER_TIME, MISSION_BANNER_TEXT.size());
   return MissionBannerLook{
       .letters = letters,
       .ruleHalfWidth = static_cast<int>(

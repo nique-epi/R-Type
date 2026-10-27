@@ -45,6 +45,7 @@ using testing::CHALLENGE_COOKIE;
 using testing::damaged;
 using ::testing::ElementsAre;
 using ::testing::ElementsAreArray;
+using testing::endOfOnePilot;
 using testing::EVENT_NUMBER;
 using testing::FIRST_POSITION;
 using testing::FIRST_SEQUENCE;
@@ -1249,6 +1250,54 @@ TEST_F(ServerConnectionLogFixture, ReadsAHeartbeatOfTheServerWithoutLoggingIt) {
   update();
 
   EXPECT_TRUE(journal().linesHolding(SKIPPED_MESSAGE_LINE_TEXT).empty());
+}
+
+/**
+ * Given a game in progress
+ * When the server ends it, then repeats the end
+ * Then the game gets the end once
+ */
+TEST_F(ServerConnectionFixture, HandsOverTheEndOfTheGameOnce) {
+  accept();
+  deliverInSession(network::GameStarted{}, FIRST_SEQUENCE);
+  deliverInSession(endOfOnePilot(), SECOND_SEQUENCE);
+  deliverInSession(endOfOnePilot(), THIRD_SEQUENCE);
+
+  update();
+
+  EXPECT_THAT(drainedEntityMessages(),
+              ElementsAre(EntityMessage{endOfOnePilot()}));
+}
+
+/**
+ * Given a game the server ended
+ * When the connection is asked whether a game runs
+ * Then none does
+ */
+TEST_F(ServerConnectionFixture, AnEndedGameIsNoLongerStarted) {
+  accept();
+  deliverInSession(network::GameStarted{}, FIRST_SEQUENCE);
+  deliverInSession(endOfOnePilot(), SECOND_SEQUENCE);
+
+  update();
+
+  EXPECT_FALSE(connection().gameStarted());
+}
+
+/**
+ * Given a game the server ended
+ * When the player asks to be ready again
+ * Then a ReadyState is sent
+ */
+TEST_F(ServerConnectionFixture, SendsReadyAgainAfterAnEndedGame) {
+  accept();
+  deliverInSession(network::GameStarted{}, FIRST_SEQUENCE);
+  deliverInSession(endOfOnePilot(), SECOND_SEQUENCE);
+  update();
+
+  connection().setReady(true);
+
+  EXPECT_EQ(sentCountOf<network::ReadyState>(), 1U);
 }
 
 }  // namespace rtype::client

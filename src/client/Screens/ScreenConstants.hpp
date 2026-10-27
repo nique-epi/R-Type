@@ -2,7 +2,9 @@
 
 #include <SFML/System/Vector2.hpp>
 #include <SFML/Window/Keyboard.hpp>
+#include <chrono>
 #include <string_view>
+#include "TimeConstants.hpp"
 #include "WidgetConstants.hpp"
 
 namespace rtype::client {
@@ -13,6 +15,10 @@ constexpr std::string_view GAME_SCREEN_LOGGER_NAME = "GameScreen";
 /** @brief Key whose release opens the options during a game: the key that
  * closes every menu, so the same key opens and closes them. */
 constexpr sf::Keyboard::Key OPTIONS_KEY = MENU_CANCEL_KEY;
+
+/** @brief Time the game goes on after the server ended it before the end
+ * screen replaces it, so the last explosion plays. */
+constexpr engine::Duration END_SCREEN_DELAY = std::chrono::milliseconds(1000);
 
 /** @brief Asset id of the logo of the title screen, and its size in
  * pixels. */

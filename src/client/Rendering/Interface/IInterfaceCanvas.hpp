@@ -34,7 +34,8 @@ class IInterfaceCanvas {
   virtual void fill(sf::IntRect area, sf::Color color) = 0;
 
   /**
-   * @brief Writes one line of text, on whole pixels.
+   * @brief Writes one line of text, on whole pixels, at the scale of its
+   * style: every pixel of a letter a square of that many pixels.
    *
    * @param text UTF-8 text.
    * @param anchor Top-left corner of the line, its top-right corner with

@@ -1,11 +1,13 @@
 #pragma once
 
+#include <cstddef>
 #include <filesystem>
 #include <memory>
 #include <optional>
 #include <string>
 #include "AssetList.hpp"
 #include "Endpoint.hpp"
+#include "GameResult.hpp"
 #include "GameWindow.hpp"
 #include "IInterfaceCanvas.hpp"
 #include "IScreen.hpp"
@@ -57,6 +59,10 @@ class AssetLibrary;
  * black second or by a title screen, and the music of a game, which a game
  * starts a silence after stopping the theme (Soundtrack); their volume
  * follows the settings at each frame.
+ *
+ * When the server ends a game, the game screen writes its result here and
+ * gives way to the end screen, from which the player plays again in the
+ * waiting room or quits to the title.
  *
  * Screens are asked for by identifier; createScreen() is the one place that
  * builds them, with one case per ScreenId. The client opens on the intro, or
@@ -131,8 +137,9 @@ class Application {
   [[nodiscard]] std::unique_ptr<IScreen> optionsScreen(ScreenId screen);
 
   /** @brief The waiting room, its READY key read from the bindings of the
-   * player when it is built. */
-  [[nodiscard]] std::unique_ptr<IScreen> lobbyScreen();
+   * player when it is built; for ScreenId::LobbyAfterGame, alone after a
+   * game, playing the theme again, its BACK leading to the title. */
+  [[nodiscard]] std::unique_ptr<IScreen> lobbyScreen(ScreenId screen);
 
   /**
    * @brief The loading screen of a list while some of its assets are not
@@ -180,6 +187,11 @@ class Application {
   ServerConnection connection_;
   network::Endpoint server_;
   std::string nickname_;
+  /** @brief How the last game ended, written by the game screen, read by
+   * the end screen. */
+  GameResult gameResult_;
+  /** @brief The taunt of the last end screen, never picked twice in a row. */
+  std::optional<std::size_t> previousTaunt_;
   ScreenStack screens_;
 };
 

@@ -37,4 +37,15 @@ namespace rtype::client {
  * it. Times in seconds. */
 [[nodiscard]] float progressThrough(float time, float start, float length);
 
+/** @returns How far @p now is from @p start to @p start + @p length, from 0
+ * to 1: 0 before, 1 after; with no length, 1 from @p start on. The same as
+ * progressThrough(), on the durations of the clock. */
+[[nodiscard]] float progressBetween(engine::Duration now,
+                                    engine::Duration start,
+                                    engine::Duration length);
+
+/** @returns @p distance times @p share, rounded to a whole pixel: how far
+ * something has gone along a distance at a share of its way. */
+[[nodiscard]] int pixelsOf(int distance, float share);
+
 }  // namespace rtype::client
