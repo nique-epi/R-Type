@@ -9,6 +9,7 @@ target_link_libraries(rtype_client_gain_figures
     rtype_engine
   PRIVATE
     rtype_client_effect_targets
+    rtype_client_flash_gate
     rtype_client_sprite_effect_interfaces
 )
 

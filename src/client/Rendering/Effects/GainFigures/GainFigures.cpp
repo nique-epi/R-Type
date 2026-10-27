@@ -9,6 +9,7 @@
 #include "EffectTargets.hpp"
 #include "EffectTools.hpp"
 #include "Entity.hpp"
+#include "FlashGate.hpp"
 #include "GainFigure.hpp"
 #include "Layer.hpp"
 #include "Popup.hpp"
@@ -67,7 +68,8 @@ void GainFigures::addGainFigure(const GainFigure& figure) const {
                          .layer = game::Layer::Popups,
                          .visible = true});
   components.add(entity, Popup{.originY = figure.place.y,
-                               .age = engine::Duration::zero()});
+                               .age = engine::Duration::zero(),
+                               .steady = !tools_.gate.get().flashes()});
 }
 
 }  // namespace rtype::client

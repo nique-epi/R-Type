@@ -126,6 +126,36 @@ TEST(SpriteEffectSystem, AFigureGoesAfterItsLife) {
 }
 
 /**
+ * Given the figure of a gain shown steadily, as for a player who reduced
+ * flashes
+ * When 700 ms pass, its rise and its stay, then one blink step more
+ * Then it still shows: it does not blink
+ */
+TEST(SpriteEffectSystem, ASteadyFigureDoesNotBlinkAfterItsStay) {
+  SpriteEffectScene scene;
+  const Entity figure = scene.addSteadyFigure();
+
+  scene.run(POPUP_STILL_LENGTH);
+  scene.run(POPUP_BLINK_LENGTH);
+
+  EXPECT_TRUE(scene.components().get<Caption>(figure)->visible);
+}
+
+/**
+ * Given the figure of a gain shown steadily
+ * When 968 ms pass
+ * Then it is gone, as a blinking figure is
+ */
+TEST(SpriteEffectSystem, ASteadyFigureGoesAfterItsLife) {
+  SpriteEffectScene scene;
+  const Entity figure = scene.addSteadyFigure();
+
+  scene.run(POPUP_LIFE_LENGTH);
+
+  EXPECT_FALSE(scene.isAlive(figure));
+}
+
+/**
  * Given a ship revealing over 267 ms
  * When 267 ms pass
  * Then the reveal is removed: the ship shows whole

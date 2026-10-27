@@ -41,10 +41,11 @@ namespace rtype::client {
  *
  * Every effect that flashes asks the FlashBudget first, through the
  * FlashGate, and plays its version without flash when refused. While the
- * flash preference is FlashPreference::Reduced, nothing flashes, shakes,
- * recoils or vibrates: the versions without flash play, a hit is shaded, the
- * particles lose the first color of their ramp, an invulnerable ship is
- * dithered all along and outlined, and an arrival shows no white. The
+ * flash preference is FlashPreference::Reduced, nothing flashes, blinks,
+ * shakes, recoils or vibrates: the versions without flash play, a hit is
+ * shaded, the particles lose the first color of their ramp, an invulnerable
+ * ship is dithered all along and outlined, the figure of a gain stays shown
+ * instead of blinking, and an arrival shows no white. The
  * preference is the one the last advance() gave, read when an effect starts:
  * an effect already playing keeps its version.
  *

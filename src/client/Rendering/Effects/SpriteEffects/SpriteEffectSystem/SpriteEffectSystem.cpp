@@ -26,14 +26,14 @@ float riseOf(engine::Duration age) {
          static_cast<float>(POPUP_RISE_HEIGHT) * BACKGROUND_PIXEL_SIZE;
 }
 
-/** @returns Whether a figure of that age shows: not before 0, all along its
- * rise and its hold, then on every even blink step. */
-bool isPopupShown(engine::Duration age) {
-  if (age < engine::Duration::zero()) {
+/** @returns Whether a figure shows: not before 0, all along its rise and its
+ * hold, then on every even blink step, or all along when it is steady. */
+bool isPopupShown(const Popup& popup) {
+  if (popup.age < engine::Duration::zero()) {
     return false;
   }
-  const engine::Duration intoBlinks = age - POPUP_RISE - POPUP_HOLD;
-  return intoBlinks < engine::Duration::zero() ||
+  const engine::Duration intoBlinks = popup.age - POPUP_RISE - POPUP_HOLD;
+  return popup.steady || intoBlinks < engine::Duration::zero() ||
          (intoBlinks / POPUP_BLINK_STEP) % 2 == 0;
 }
 
@@ -100,7 +100,7 @@ void SpriteEffectSystem::advancePopups(engine::ComponentRegistry& components,
         position.y = popup.originY - riseOf(popup.age);
         if (auto* caption = components.get<Caption>(entity);
             caption != nullptr) {
-          caption->visible = isPopupShown(popup.age);
+          caption->visible = isPopupShown(popup);
         }
       });
 }

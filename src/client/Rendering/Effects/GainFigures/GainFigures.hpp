@@ -12,9 +12,10 @@ namespace rtype::client {
 /**
  * @brief Shows the figure of each gain of score where a Bydo died, once a
  * kill and a gain wait for each other (see GainAttribution): a line of text
- * in the Popups layer that rises, stays, blinks and goes (see Popup).
- * noteKill() and noteScore() add components, so neither may be called during
- * a forEach of the registry.
+ * in the Popups layer that rises, stays, blinks and goes, or stays shown
+ * instead of blinking while flashes are reduced (see Popup). noteKill() and
+ * noteScore() add components, so neither may be called during a forEach of
+ * the registry.
  */
 class GainFigures {
  public:

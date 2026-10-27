@@ -565,3 +565,23 @@ TEST(EffectSpawner, TheGainOfAKillShowsAsAFigure) {
   EXPECT_EQ(shown.style.font, TextFont::Small);
   EXPECT_EQ(shown.layer, Layer::Popups);
 }
+
+/**
+ * Given a player who reduced flashes, and the gain of a Bydo killed
+ * When the figure of the gain has risen, stayed, and one blink step more passed
+ * Then it still shows: it does not blink
+ */
+TEST(EffectSpawner, WithFlashesReducedTheFigureOfAGainDoesNotBlink) {
+  EffectScene scene;
+  scene.effects().advance(Duration::zero(), FlashPreference::Reduced);
+  scene.effects().noteScore(SECOND_PILOT_COLOR, SCORE_BEFORE);
+  scene.effects().playExplosion(EntityType::Enemy, WHERE_IT_DIED);
+  scene.effects().noteScore(SECOND_PILOT_COLOR, SCORE_BEFORE + DRIFTER_POINTS);
+
+  scene.advance(POPUP_STILL_LENGTH, FlashPreference::Reduced);
+  scene.advance(POPUP_BLINK_LENGTH, FlashPreference::Reduced);
+
+  const std::optional<Caption> figure = caption(scene.components());
+  ASSERT_TRUE(figure.has_value());
+  EXPECT_TRUE(figure.value_or(Caption{}).visible);
+}

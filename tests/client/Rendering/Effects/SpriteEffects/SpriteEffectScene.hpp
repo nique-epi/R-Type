@@ -20,6 +20,11 @@ class SpriteEffectScene {
   /** @returns The figure of a gain, GAIN_FIGURE_TEXT, just shown at START. */
   rtype::engine::Entity addFigure();
 
+  /** @returns The figure of a gain, GAIN_FIGURE_TEXT, just shown at START,
+   * steady as for a player who reduced flashes: it shows instead of
+   * blinking. */
+  rtype::engine::Entity addSteadyFigure();
+
   void run(rtype::engine::Duration elapsed);
 
   rtype::engine::ComponentRegistry& components();

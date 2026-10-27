@@ -35,6 +35,14 @@ Entity SpriteEffectScene::addFigure() {
   return figure;
 }
 
+Entity SpriteEffectScene::addSteadyFigure() {
+  const Entity figure = addFigure();
+  components_.add(
+      figure,
+      Popup{.originY = START.y, .age = Duration::zero(), .steady = true});
+  return figure;
+}
+
 void SpriteEffectScene::run(Duration elapsed) {
   system_.update(components_, elapsed);
 }
