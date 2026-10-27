@@ -18,6 +18,7 @@ This page tells you where to look when you need to change something. It describe
 | Protocol messages, datagram header, dispatch by type | Available | `src/network/Protocol/` |
 | Connection cookies | Available | `src/network/Handshake/` |
 | Rate limit of the requests, sessions, reliability, history of states, statistics | Not yet written | — |
+| Test tool that sends malformed datagrams | Available, never shipped | `tests/tools/` |
 
 ## Event loop: `NetworkContext`
 
@@ -190,6 +191,32 @@ const rtype::network::WorldState received =
     rtype::network::WorldStateCodec::decode(payload);
 ```
 
+## Malformed datagrams: `malformed_datagrams`
+
+Anyone can send a datagram to the server, and a client reads whatever comes from the address of its server, so both must survive bytes that are not a valid message. The unit tests check each reader on its own; `malformed_datagrams` checks the programs as they run. It is a test tool in `tests/tools/`, built with the `test` preset into `build/tests/` and never shipped, and it only talks to the loopback address, 127.0.0.1.
+
+For `FLOOD_DURATION` (60 s) it sends `FLOOD_DATAGRAMS_PER_SECOND` (1000) datagrams per second, seven kinds in turn, written by `MalformedDatagramBuilder` from a fixed seed (`FLOOD_SEED`), so a run can be replayed. Every kind but oversized and random bytes starts from a valid message of the protocol and breaks it in one way:
+
+| Kind | What the datagram holds | Where a receiver stops it |
+|---|---|---|
+| Truncated | a valid message, cut before its last byte | splitting the messages |
+| Too long | a valid message followed by random bytes, counted in its size | the reader of its type |
+| Oversized | 1201 to 2400 random bytes | the socket |
+| Unknown type | a message of type 17 to 255, holding up to 64 random bytes | no reader: skipped |
+| Lying size | a valid message whose size announces more bytes than follow it | splitting the messages |
+| Extreme value | a valid message whose bounded one-byte field (a bool, a player number, a reason, a count of players) holds 255 | the reader of its type |
+| Random bytes | up to 1200 random bytes | almost always the header |
+
+The tests of the tool (`malformed_datagram_tests`) check that each kind is stopped where the table says, so a flood never sends a valid message by mistake.
+
+```bash
+./build/tests/malformed_datagrams --server 4242
+```
+
+This joins the server listening on port 4242 as a player, so the datagrams carry a session token and reach the readers of the game instead of stopping at the sorting of the network thread. After the flood, it checks that the server still answers a connection request: the exit code is 0 if it does, 1 otherwise. `--client 4243` waits on port 4243 for a client launched with `-h 127.0.0.1 -p 4243`, accepts it as player 1, then floods it. At 1000 per second the flood stays below what the player queue of the server takes (256 datagrams per tick, 60 ticks per second), so it tests the readers, not the queue. A player flooding with its own token can still push the datagrams of the others out of that shared queue (see [Flood protection](/R-Type/server/#flood-protection)).
+
+Measured on 27 October 2026 on an Apple M4 Pro under macOS 27.0, with the server built in Release: the tool sent 59,999 datagrams in the minute, none refused by the system, and received 121 datagrams from the server meanwhile; the server only sends to the players of its game, so the session of the tool stayed open. The resident memory of the server was 2,576 KiB before the flood. It rose to 3,264 KiB during the first 25 seconds, then stayed at 3,264 KiB until 10 seconds after the flood. The server still answered a connection request, and its log held 48 lines, at most one per kind of rejection every 10 seconds. The client, built in Release and accepted by `--client` on the same machine, stayed connected for the whole minute and kept sending the tool about one datagram per second (59). Its resident memory rose from 101,120 KiB to 103,552 KiB in the first 15 seconds of the flood, then by about 16 KiB every 5 seconds. Without the flood, in the waiting room of a real server, it rises at the same pace (102,688 to 103,136 KiB over 65 seconds), so the flood adds no growth of its own after its first seconds.
+
 ## Where to intervene
 
 | You want to… | Look at |
@@ -213,5 +240,6 @@ const rtype::network::WorldState received =
 | Test code against a real socket | `tests/UdpSocketTest.cpp`: a plain Asio client on the loopback address |
 | Test code that uses a socket without the network | `tests/doubles/RecordingDatagramSocket.hpp`, as `tests/network/Transport/DatagramRelayTest.cpp` does |
 | Build the bytes of a datagram in a test | `datagramOf()` and `defaultHeaderBytes()` in `tests/network/Protocol/ProtocolFixtures.hpp` |
+| Check that a change survives malformed datagrams | `malformed_datagrams` (`tests/tools/`), see [Malformed datagrams](#malformed-datagrams-malformed_datagrams) |
 
 Each folder has its own `CMakeLists.txt` declaring one library, linked into `rtype_network` by `src/network/CMakeLists.txt`.
