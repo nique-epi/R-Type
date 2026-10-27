@@ -4,6 +4,8 @@
 
 The engine has no structure that tells a developer where a part of a program plugs in: the server and the client build their parts by hand in their `main.cpp`. This change adds to `rtype_engine` an `IModule` interface (a name, the modules it needs, `install()`, `start()`, `stop()`) and an `Application` class that installs then starts a list of modules in list order and stops them in reverse order, refusing a list whose required module is missing before anything is opened. No program uses it yet: the server and the client do not change.
 
+The design follows the module system document the issue links ("Système de modules R-Type", 26 October 2026, read from the copy the user attached; see Assumptions). This change is the first half of its step 1, "Squelette dans le moteur", which Linear splits into RTY-193 and RTY-194. Its "Décisions" section settled that dynamic plugins will exist (RTY-205, RTY-208) and will implement this same module interface, so the interface is written to be loadable from a shared library unchanged (decision D10). The loader itself is not part of this change.
+
 Issue: **RTY-193**. The pull request delivers the whole issue: `Closes RTY-193`.
 
 ## Acceptance criteria
@@ -21,11 +23,18 @@ Issue: **RTY-193**. The pull request delivers the whole issue: `Closes RTY-193`.
 ## Out of scope
 
 - Using `Application` in the server or the client: the issue says no program changes. Their `main.cpp` keep assembling their parts by hand.
-- Anything a module would install *into* (a service registry, the game loop, a shared logger): later steps of the module system. `install()` takes no parameter in this step.
-- Sorting modules by their requirements: the program's list is the order (see decision D3).
+- The other moments of the document's skeleton. In "Le squelette d'application et ses cinq moments", this change covers 2 (install), 3 (start) and 5 (stop). Moment 1 (read the configuration, `server.cfg`) is RTY-195. Moment 4 (run: the stages Entrées / Simulation / Sorties on the server, Événements / Réseau / Mise à jour / Rendu on the client) is not in the issue.
+- Anything a module installs *into*: the installation context, the services, the stages and the event subscriptions. The document lists them in step 1 next to `Application` and the module interface. Since RTY-193's own text names only the application, the interface and the lifecycle, they are taken to be RTY-194 (assumption). `install()` therefore takes no parameter in this step; RTY-194 gives it its context.
+- The dynamic plugin loader, its C entry point and its API version number (RTY-205), and the demonstration plugin `stats` (RTY-208). D10 lists what this change guarantees them.
+- The two scopes "programme" and "partie". On 26 October, the document settled on one process per game (decision 6, and "Un thread ou un processus par partie"). Under that model, "le choix d'un rôle se réduit donc au choix d'une liste de modules" (choosing a role comes down to choosing a list of modules), so the engine needs no scope concept: one `Application` per process.
+- Sorting modules by their requirements. The document rules it out ("Ce qu'on ne fait pas": "Pas de graphe de dépendances résolu tout seul […] L'ordre, c'est la liste de `main.cpp`"); see D3.
 - Restarting an application after `stop()`: an application starts once (decision D5).
-- Duplicate module names: not checked; with two modules of the same name, a requirement is met by the first one listed before the module that needs it.
-- The order in which the module objects are destroyed: `std::vector` destroys them after `stop()`, and in this step no module holds a reference to another.
+- Duplicate module names: not checked. With two modules of the same name, a requirement is met by the first one listed before the module that needs it.
+- The order in which the module objects are destroyed. `std::vector` destroys them after `stop()`, and no module holds a reference to another in this step. Once RTY-194 lets a module keep another's service by reference, and RTY-205 unloads a plugin library after its module, the `Application` destructor will need to destroy the modules last listed first. That belongs with RTY-194.
+
+  Two measurements say why it is not done here:
+  - libc++ already destroys a `std::vector` from its last element (measured with Apple clang 21.0.0), so a test of that order could not turn red locally.
+  - A test double that records its own destruction must write into a journal, and clang-tidy's `bugprone-exception-escape` reports a destructor that appends to a `std::vector` (measured).
 - Moving the older tests at the root of `tests/` (`SystemSchedulerTest.cpp`, …) into `tests/engine/`: pre-existing, reported in the pull request, not touched.
 
 ## Areas of the code concerned
@@ -55,19 +64,34 @@ Placement, rule by rule:
 
 ## Design decisions
 
-The issue links a design document ("Le squelette d'application", "Plan par étapes"); it could not be read in this session (see Assumptions). The decisions below come from the issue text and the code; each one is a choice to confirm when the plan is reviewed.
+The decisions come from the issue, the module system document it links, and the code. "Document" below means that page. Its quotes are in French, as written; what is concluded from them is said apart from the quotes. The document calls its class names "indicatifs" (indicative): `Application` and "l'interface de module" are its words, and `IModule` follows the repository's `I` prefix for interfaces.
 
 | # | Decision | Why |
 |---|---|---|
-| D1 | `IModule` has `name()` and `requiredModules()` returning `std::string` and `std::vector<std::string>` | names are compared once, when the list is checked; owned strings have no lifetime to explain, unlike a `std::string_view` into the module |
-| D2 | The list is given once, to the constructor, as `std::vector<std::unique_ptr<IModule>>`, and checked there | a list that cannot change after construction has no "add after start" case; a missing module throws before `start()`, so before anything can be opened |
-| D3 | A required module must be listed **before** the module that needs it; listed after it, it counts as missing | the list is the order: what a module needs is then installed and started before it, and stopped after it. A module listed after its user would start after it. One check covers "absent" and "too late", and the message says "not listed before it" |
-| D4 | `start()` installs every module first, then starts every module | the order of `IAppSystem.h` the issue cites (connect all, then init all); `install()` opens nothing, so a module can prepare itself knowing every other module is installed |
+| D1 | `IModule` has `name()` and `requiredModules()`, returning `std::string` and `std::vector<std::string>` | The document's definition: a module "déclare son nom et les modules dont elle a besoin, puis elle s'installe, démarre et s'arrête". Names are compared once, when the list is checked. Owned strings have no lifetime to explain, unlike a `std::string_view` into a module, which matters once that module lives in a plugin library (D10) |
+| D2 | The list is given once, to the constructor, as `std::vector<std::unique_ptr<IModule>>`, and checked there | Document: "Le `main.cpp` lui donne la liste des modules du programme". A list that cannot change after construction has no "add after start" case, and a missing module throws before `start()`, so before anything can be opened |
+| D3 | A required module must be listed **before** the module that needs it; listed after it, it counts as missing | Document, "Ce qu'on ne fait pas": "Le squelette vérifie seulement que les dépendances déclarées sont présentes et placées avant." One check covers "absent" and "too late", and the message says "not listed before it" |
+| D4 | `start()` installs every module first, then starts every module | Document: every module goes through the same moments "dans l'ordre de la liste". Installing is when each module registers "ses services, son travail dans les étapes, ses commandes et ses abonnements" and "rien ne s'ouvre encore"; starting is when "chaque module ouvre ce qui le concerne". The document draws these as moments of the whole program, so every module is installed before any starts. This is also the order of `IAppSystem.h`, which the issue cites |
+| D4b | `IModule` has no `update()` or per-tick method | Document: "Pourquoi des étapes plutôt qu'une méthode `update()` par module": a module with nothing to do each tick writes nothing, and the interface stays purely virtual, with no empty methods. Per-tick work is registered in stages at install time (RTY-194) |
 | D5 | `start()` acts once: a second call, even after `stop()`, does nothing | `fix-reasoning-a-sequence-asserts-its-starting-state.md`: a repeated call must not install twice. Measured: without this guard, a second `start()` leaves the started count above the number of modules and `stop()` reads past the end of the list (the red proof crashes) |
 | D6 | `stop()` stops the started modules last first, each once; the destructor calls it | a program that leaves through an exception still stops its modules; a second `stop()` is harmless |
-| D7 | A module throwing from `start()`: the started modules stop in reverse order, then `ModuleStartFailedException(name, reason)` is thrown; the module that threw is not stopped | the issue's rule; the module that threw did not start, so it has nothing to stop. The reason is `what()` of the original exception, so the message says what failed |
+| D7 | A module throwing from `start()`: the started modules stop in reverse order, then `ModuleStartFailedException(name, reason)` is thrown; the module that threw is not stopped | Document: "Si un démarrage échoue, les modules déjà démarrés s'arrêtent dans l'ordre inverse, puis le programme sort avec le nom du module fautif." Making the program exit is its `main.cpp`'s job, once it catches the exception. The module that threw did not start, so it has nothing to stop. The reason is the original exception's `what()`, so the message says what failed |
 | D8 | `IModule::stop()` must not throw, said in its doc comment, **not** marked `noexcept` | measured: clang-tidy 20's `bugprone-exception-escape` reports a `noexcept` function that appends to a `std::vector` (libc++), so a `noexcept` interface would make every real `stop()` that allocates fail the gate. The destructor calling it is not reported (measured) |
-| D9 | `install()` errors go through unchanged | the issue only names failed starts; `install()` opens nothing, so no module has anything to stop at that point |
+| D9 | `install()` errors go through unchanged | The issue only names failed starts. `install()` opens nothing, so no module has anything to stop at that point |
+| D10 | The interface can be implemented by a dynamic plugin unchanged; nothing here loads one | Document, decision 1, settled on 26 October: dynamic plugins, "même interface que les modules liés, côté serveur seulement, chargés au lancement et jamais déchargés". Under "Le plugin dynamique": "Un plugin implémente l'interface de module ordinaire et exporte une seule fonction C qui la crée, avec un numéro de version d'API. […] Un module ne sait pas s'il a été lié ou chargé." See "What the plugins need from this change" below |
+
+### What the plugins need from this change
+
+The plugin loader and its demonstration are RTY-205 and RTY-208, in the document's step 6. Each point below is a property of this change, set against the sentence of the document it serves.
+
+| The document says | This change |
+|---|---|
+| "Un plugin implémente l'interface de module ordinaire" | `IModule` is pure virtual, with no data member and no default body (`architecture-pure-virtual-interfaces.md`), so a class in a shared library can implement it. `Application` holds `std::unique_ptr<IModule>` and never names a concrete module type |
+| "Un module ne sait pas s'il a été lié ou chargé" | Nothing in `IModule` or `Application` tells the two apart: no flag, no origin, no plugin-specific method |
+| "exporte une seule fonction C qui la crée, avec un numéro de version d'API" | Belongs to the loader (RTY-205): the entry point and the version constant are not declared here, so this change does not fix their names before that issue designs them |
+| "Même compilateur, même version du moteur. Le format binaire du C++ change d'un compilateur à l'autre" | `name()` and `requiredModules()` return `std::string` and `std::vector<std::string>` across the interface. That is safe only under this condition of the document, which RTY-205 enforces with its API version |
+| "Chargé au lancement, déchargé seulement à la sortie, une fois le module détruit" | `Application` owns its modules and destroys them in its own destructor, after `stop()`. A loader built before the `Application` and destroyed after it therefore unloads a library only once its module is gone. The order between modules is for RTY-194 (Out of scope) |
+| "Risques à tester d'abord […] `std::type_index`" | `Application` uses no `std::type_index`. It catches a failed start as `const std::exception&`, which relies on matching the exception's type across the library boundary. Whether a `std::exception` thrown inside a plugin is caught there on Linux, macOS and Windows is for RTY-205 to test, as the document asks for its other risks |
 
 ## Test strategy
 
@@ -1227,10 +1251,12 @@ Nothing changes on screen or in the logs: no program builds an `Application` yet
 
 ## Assumptions
 
-- **The design document is not read.** The issue points to a claude.ai artifact ("Le squelette d'application", "Plan par étapes"). Reading it was refused in this non-interactive session (the Claude Docs connector is not allowed), and the repository holds no copy. The names (`IModule`, `Application`, `Modules/`, the three exceptions), the signatures (no parameter to `install()`), and decisions D1 to D9 come from the issue text and the code. If the document fixes other names or signatures, the plan must be corrected before it runs.
+- **The design document, read from the user's copy.** The issue links a claude.ai artifact, which the Docs connector still cannot open in this session. The user then attached a Markdown export: `~/Downloads/Système de modules R-Type (Copy).md`, the same name as in the task's attachment record, 542 lines, "R-Type · architecture proposée · 26 octobre 2026". The sections used are "Décisions", "Les mots de cette page", "La proposition" 1 to 5, "Ce qu'on ne fait pas" and "Plan par étapes". The plan assumes this export matches the linked artifact.
+- **What RTY-194 holds.** The document's step 1 lists "`Application`, l'interface de module, le contexte d'installation, les services, les étapes, les exceptions du module, les tests", and its "Dans Linear" list maps step 1 to RTY-193 and RTY-194. RTY-193's text names only the application, the interface and the lifecycle. The plan therefore takes the installation context, the services and the stages to be RTY-194. This could not be checked: the plan step does not read Linear. If RTY-193 is meant to carry them too, the plan must grow before it runs.
+- **"Le système de plugin".** The user asked to design "the plugin system" from this document. The document makes plugins a separate step (step 6, RTY-205 and RTY-208, cycle 6, after the modules exist), and RTY-193 says nothing of plugins. The plan therefore designs the module interface so that a plugin can implement it unchanged (D10), and builds no loader. Building the loader here would mean taking RTY-205 into this pull request: that is a choice for the user.
 - **Branch.** The rules want a branch `<type>/<slug>` started from `origin/main` (`fix-process-branch-before-first-commit.md`); this run works on the branch the harness created, `cez/0a1f079c`, which sits at `origin/main` (`4db8e52`, checked with `git rev-parse HEAD origin/main`). Renaming it, if wanted (for example `feat/engine-application-modules`), is the user's call; the pull request should say which branch carries it.
 - **Attribution.** The harness asks for a `Co-Authored-By` trailer and a "Generated with" line; `fix-process-no-co-author-trailer.md` forbids both and states it takes precedence. The plan follows the repository rule: no trailer, no AI mention.
 - **Parameter rule.** `fix-architecture-at-most-three-parameters.md` says `.clang-tidy` does not check the limit; it is measured with the command of its point 6.
 - **CI-only differences.** `misc-include-cleaner` reads libstdc++ on the CI and libc++ here; the includes of each file were matched against the symbols it names, but only the CI's clang-tidy job settles it. GCC (`-Wmissing-field-initializers`) and MSVC (`/W4`) were not run on this code.
 - **Pre-existing, reported, not changed.** The older engine tests sit at the root of `tests/` (`SystemSchedulerTest.cpp`, …) and `tests/engine/LaunchArguments/LaunchArgumentsTest.cpp` holds an anonymous namespace with a struct and a class (before `fix-format-a-test-file-holds-only-tests.md`); this change does not touch those files.
-- **`.context/context.md`** does not exist in this worktree (it is local and ignored by git); `.cezar-work/context.md` was the exploration's record, and its "Écarts issue / code" are carried into this section and into D1 to D9.
+- **`.context/context.md`** does not exist in this worktree (it is local and ignored by git); `.cezar-work/context.md` was the exploration's record, and its "Écarts issue / code" are carried into this section and into D1 to D10.
