@@ -15,7 +15,6 @@
 
 using rtype::client::ADDRESS_OPTION;
 using rtype::client::DEFAULT_SERVER_ADDRESS;
-using rtype::client::END_SCREEN_DEMO_OPTION;
 using rtype::client::InvalidNicknameOptionException;
 using rtype::client::LaunchOptions;
 using rtype::client::NICKNAME_OPTION;
@@ -301,23 +300,4 @@ TEST(ClientLaunchOptions, NicknameOptionWithoutValueIsRejected) {
 TEST(ClientLaunchOptions, UsageGivesTheDefaultNickname) {
   EXPECT_NE(LaunchOptions::usage().find(DEFAULT_NICKNAME_LINE),
             std::string::npos);
-}
-
-/**
- * Given no argument
- * When the launch options are read
- * Then the client does not open on the end screen
- */
-TEST(ClientLaunchOptions, TheEndScreenDemoIsOffByDefault) {
-  EXPECT_FALSE(LaunchOptions::read(Arguments{}).endScreenDemo());
-}
-
-/**
- * Given --end-screen-demo
- * When the launch options are read
- * Then the client opens on the end screen of a sample game
- */
-TEST(ClientLaunchOptions, TheEndScreenDemoOptionTurnsItOn) {
-  EXPECT_TRUE(
-      LaunchOptions::read(Arguments{END_SCREEN_DEMO_OPTION}).endScreenDemo());
 }

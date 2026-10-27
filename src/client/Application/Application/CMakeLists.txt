@@ -5,7 +5,6 @@ target_include_directories(rtype_client_application PUBLIC ${CMAKE_CURRENT_SOURC
 target_link_libraries(rtype_client_application
   PUBLIC
     rtype_client_asset_library
-    rtype_client_launch_options
     rtype_client_replication_interfaces
     rtype_client_connection
     rtype_client_game_window
@@ -24,7 +23,6 @@ target_link_libraries(rtype_client_application
   PRIVATE
     rtype_client_connection_screen
     rtype_client_end_screen
-    rtype_client_end_screen_demo
     rtype_client_entity_layer
     rtype_client_game_screen
     rtype_client_intro_screen

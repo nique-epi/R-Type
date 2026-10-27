@@ -11,7 +11,6 @@
 #include "GameWindow.hpp"
 #include "IInterfaceCanvas.hpp"
 #include "IScreen.hpp"
-#include "LaunchOptions.hpp"
 #include "MusicPlayer.hpp"
 #include "NetworkThread.hpp"
 #include "PlayerSettings.hpp"
@@ -67,24 +66,23 @@ class AssetLibrary;
  *
  * Screens are asked for by identifier; createScreen() is the one place that
  * builds them, with one case per ScreenId. The client opens on the intro, or
- * on the title screen when the system asks for less motion, or on the end
- * screen of a sample game with --end-screen-demo.
+ * on the title screen when the system asks for less motion.
  */
 class Application {
  public:
   /**
    * @param assets Library holding the interface assets, loaded and permanent;
    * it must outlive the application.
-   * @param launch What the client was told at launch: the address, port and
-   * nickname the connection screen starts with, and whether to open on the
-   * end screen of a sample game.
+   * @param server Address and port the connection screen starts with.
+   * @param nickname Nickname the connection screen starts with.
    * @param settingsFile File the settings are read from and saved to, or
    * nothing to keep them for this launch only.
    * @throws RenderTextureNotCreatedException when the background cannot get
    * its render textures.
    * @throws SocketOpenException when the system refuses to open the socket.
    */
-  Application(AssetLibrary& assets, const LaunchOptions& launch,
+  Application(AssetLibrary& assets, network::Endpoint server,
+              std::string nickname,
               std::optional<std::filesystem::path> settingsFile);
 
   Application(const Application&) = delete;
@@ -190,7 +188,7 @@ class Application {
   network::Endpoint server_;
   std::string nickname_;
   /** @brief How the last game ended, written by the game screen, read by
-   * the end screen; the sample game with --end-screen-demo. */
+   * the end screen. */
   GameResult gameResult_;
   /** @brief The taunt of the last end screen, never picked twice in a row. */
   std::optional<std::size_t> previousTaunt_;

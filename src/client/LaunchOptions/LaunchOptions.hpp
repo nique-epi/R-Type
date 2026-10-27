@@ -10,15 +10,14 @@ namespace rtype::client {
 /**
  * @brief What the client is told at launch: the address and the port of the
  * server to join and the nickname of the player, which the connection screen
- * starts with, whether to open on the end screen of a sample game, or a
- * request for its usage.
+ * starts with, or a request for its usage.
  */
 class LaunchOptions {
  public:
   /**
-   * @brief Reads `-h <address>`, `-p <port>`, `-n <nickname>`,
-   * `--end-screen-demo` and `--help` from @p arguments, the arguments the
-   * logging options left (see logging::LogLaunchOptions).
+   * @brief Reads `-h <address>`, `-p <port>`, `-n <nickname>` and `--help` from
+   * @p arguments, the arguments the logging options left (see
+   * logging::LogLaunchOptions).
    *
    * Without `-h` the address is DEFAULT_SERVER_ADDRESS, without `-p` the
    * port is DEFAULT_SERVER_PORT, without `-n` the nickname is DEFAULT_NICKNAME.
@@ -56,10 +55,6 @@ class LaunchOptions {
    */
   [[nodiscard]] bool helpRequested() const;
 
-  /** @returns whether `--end-screen-demo` was given: the client then opens on
-   *          the end screen of a sample game. */
-  [[nodiscard]] bool endScreenDemo() const;
-
  private:
   LaunchOptions(network::Endpoint serverEndpoint, std::string nickname,
                 bool helpRequested);
@@ -67,7 +62,6 @@ class LaunchOptions {
   network::Endpoint serverEndpoint_;
   std::string nickname_;
   bool helpRequested_;
-  bool endScreenDemo_ = false;
 };
 
 }  // namespace rtype::client

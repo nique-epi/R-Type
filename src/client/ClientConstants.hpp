@@ -28,10 +28,6 @@ constexpr std::string_view DEFAULT_SERVER_ADDRESS =
  */
 constexpr std::string_view NICKNAME_OPTION = "-n";
 
-/** @brief Option that opens the client on the end screen of a sample game,
- * to see it without a server. */
-constexpr std::string_view END_SCREEN_DEMO_OPTION = "--end-screen-demo";
-
 /**
  * @brief Nickname of the player when none is given at launch.
  */
