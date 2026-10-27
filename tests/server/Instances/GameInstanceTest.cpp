@@ -11,7 +11,6 @@
 #include <string_view>
 #include <utility>
 #include <vector>
-#include "ByteWriter.hpp"
 #include "ConnectedPlayer.hpp"
 #include "DatagramCodec.hpp"
 #include "DebugJournal.hpp"
@@ -50,11 +49,11 @@
 #include "game/ShipControl/ShipControlTestConstants.hpp"
 
 namespace rtype::server {
-namespace {
 
 using game::testing::POSITION_TOLERANCE;
 using testing::bydosAmong;
 using testing::bydosIn;
+using testing::entityOf;
 using testing::FIRST_PLAYER;
 using testing::FIRST_SENT;
 using testing::FIRST_SEQUENCE;
@@ -73,21 +72,24 @@ using testing::HOLDS_LEFT;
 using testing::HOLDS_RIGHT;
 using testing::HOLDS_SHOOT;
 using testing::HOLDS_UP;
+using testing::inputPayload;
 using testing::LARGEST_INPUT_NUMBER;
+using testing::messageTypesOf;
 using testing::NEXT_PROTOCOL_VERSION;
 using testing::ofType;
 using testing::onlyMessageIn;
-using testing::onlyMessageTypeOf;
 using testing::PLAYER_SESSION_TOKENS;
 using testing::playerEndpoint;
 using testing::PROTOCOL_HEARTBEAT_TICKS;
 using testing::PROTOCOL_SESSION_TIMEOUT_TICKS;
+using testing::roomOfTheFirstPlayerNotReady;
 using testing::SECOND_PLAYER;
 using testing::SECOND_SENT;
 using testing::SECOND_SEQUENCE;
 using testing::sessionHeader;
 using testing::SHUFFLE_SEED_COUNT;
 using testing::SHUFFLED_INPUT_COUNT;
+using testing::SOME_POINTS;
 using testing::SOME_TICKS;
 using testing::STRANGER;
 using testing::THIRD_PLAYER;
@@ -96,40 +98,6 @@ using testing::THIRD_SEQUENCE;
 using testing::TICKS_PER_REJECTION_LINE;
 using testing::UNLISTED_ACTION;
 using testing::WIRE_COORDINATE_TOLERANCE;
-
-constexpr std::uint32_t SOME_POINTS = 100;
-
-/** @returns The type of the only message of each of @p datagrams, in order. */
-std::vector<network::MessageType> messageTypesOf(
-    const std::vector<network::OutgoingDatagram>& datagrams) {
-  std::vector<network::MessageType> types;
-  types.reserve(datagrams.size());
-  for (const network::OutgoingDatagram& datagram : datagrams) {
-    types.push_back(onlyMessageTypeOf(datagram));
-  }
-  return types;
-}
-
-/** @returns The entity of @p state whose id is @p entityId, or nothing when the
- * state does not list it. */
-std::optional<network::EntityState> entityOf(const network::WorldState& state,
-                                             std::uint32_t entityId) {
-  for (const network::EntityState& entity : state.entities) {
-    if (entity.entityId == entityId) {
-      return entity;
-    }
-  }
-  return std::nullopt;
-}
-
-/** @returns The room of a game whose only player, the first, is not ready. */
-network::LobbyState roomOfTheFirstPlayerNotReady() {
-  return network::LobbyState{
-      .players = {network::LobbyPlayer{
-          .playerNumber = network::FIRST_PLAYER_NUMBER,
-          .ready = false,
-          .nickname = std::string{testing::PLAYER_NICKNAME}}}};
-}
 
 /**
  * Given a game that was just built
@@ -916,17 +884,6 @@ TEST_F(GameInstanceTest, SendsTheRoomAtOnceWhenTheGameWaitsAgain) {
   ASSERT_EQ(rooms.size(), roomsBefore + 1);
   EXPECT_EQ(onlyMessageIn<network::LobbyState>(rooms.back()),
             roomOfTheFirstPlayerNotReady());
-}
-
-/**
- * @returns The payload of @p input written field by field, so it may hold
- * actions encodePayload() refuses.
- */
-std::vector<std::byte> inputPayload(const network::PlayerInput& input) {
-  network::ByteWriter payload;
-  payload.writeUint32(input.inputNumber);
-  payload.writeUint8(input.actions);
-  return payload.bytes();
 }
 
 /**
@@ -2010,5 +1967,4 @@ INSTANTIATE_TEST_SUITE_P(Seeds, GameInstanceInputShuffleTest,
                          ::testing::Range(std::uint32_t{0},
                                           SHUFFLE_SEED_COUNT));
 
-}  // namespace
 }  // namespace rtype::server

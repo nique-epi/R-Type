@@ -19,6 +19,7 @@
 #include "GameInstance.hpp"
 #include "GameInstanceTestConstants.hpp"
 #include "IncomingDatagram.hpp"
+#include "LobbyState.hpp"
 #include "MessageType.hpp"
 #include "OutgoingDatagram.hpp"
 #include "PacketHeader.hpp"
@@ -29,6 +30,7 @@
 #include "TimerScheduler.hpp"
 #include "UnreliableNetwork.hpp"
 #include "World.hpp"
+#include "WorldState.hpp"
 
 namespace rtype::server::testing {
 
@@ -272,5 +274,24 @@ class GameInstanceLogTest : public GameInstanceInputTest {
 class GameInstanceInputShuffleTest
     : public GameInstanceInputTest,
       public ::testing::WithParamInterface<std::uint32_t> {};
+
+/** @returns The type of the only message of each of @p datagrams, in order. */
+[[nodiscard]] std::vector<network::MessageType> messageTypesOf(
+    const std::vector<network::OutgoingDatagram>& datagrams);
+
+/** @returns The entity of @p state whose id is @p entityId, or nothing when the
+ * state does not list it. */
+[[nodiscard]] std::optional<network::EntityState> entityOf(
+    const network::WorldState& state, std::uint32_t entityId);
+
+/** @returns The room of a game whose only player, the first, is not ready. */
+[[nodiscard]] network::LobbyState roomOfTheFirstPlayerNotReady();
+
+/**
+ * @returns The payload of @p input written field by field, so it may hold
+ * actions encodePayload() refuses.
+ */
+[[nodiscard]] std::vector<std::byte> inputPayload(
+    const network::PlayerInput& input);
 
 }  // namespace rtype::server::testing
