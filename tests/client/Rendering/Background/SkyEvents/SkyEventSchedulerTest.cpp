@@ -1,33 +1,16 @@
 #include <gtest/gtest.h>
 #include <algorithm>
-#include <cmath>
 #include <cstddef>
-#include <cstdint>
+#include "BackgroundTestConstants.hpp"
 #include "SkyEventConstants.hpp"
 #include "SkyEventScheduler.hpp"
+#include "SkyEventSchedulerFixtures.hpp"
+#include "SkyEventSchedulerTestConstants.hpp"
+#include "SkyEventTestConstants.hpp"
 
 using rtype::client::FIRST_SKY_EVENT_DELAY;
 using rtype::client::MAXIMUM_SKY_EVENTS;
 using rtype::client::SkyEventScheduler;
-
-namespace {
-
-constexpr std::uint32_t SEED = 2026;
-constexpr float FRAME_SECONDS = 0.01F;
-constexpr float A_TENTH_OF_A_SECOND = 0.1F;
-constexpr float ONE_HOUR = 3600.0F;
-
-int framesIn(float seconds) {
-  return static_cast<int>(std::lround(seconds / FRAME_SECONDS));
-}
-
-void advanceFor(SkyEventScheduler& scheduler, float seconds) {
-  for (int frame = 0; frame < framesIn(seconds); ++frame) {
-    scheduler.advance(FRAME_SECONDS);
-  }
-}
-
-}  // namespace
 
 /**
  * Given a new scheduler
@@ -68,7 +51,7 @@ TEST(SkyEventScheduler, ShowsAtMostTheMaximumAtOnce) {
   std::size_t mostShown = 0;
 
   for (int frame = 0; frame < framesIn(ONE_HOUR); ++frame) {
-    scheduler.advance(FRAME_SECONDS);
+    scheduler.advance(FRAME);
     mostShown = std::max(mostShown, scheduler.eventCount());
   }
 
