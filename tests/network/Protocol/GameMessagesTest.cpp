@@ -24,10 +24,14 @@ using testing::EVERY_ACTION;
 using testing::EXAMPLE_ENTITY_ID;
 using testing::exampleBydo;
 using testing::FIRST_BIT_ABOVE_THE_ACTIONS;
+using testing::LARGEST_U16;
+using testing::LARGEST_U32;
+using testing::LARGEST_WIRE_COORDINATE;
 using testing::LAST_PLAYER_NUMBER;
 using testing::oneShipState;
 using testing::PLAYER_NUMBER_ABOVE_THE_LAST;
 using testing::SECOND_PLAYER_NUMBER;
+using testing::SMALLEST_WIRE_COORDINATE;
 using testing::SOME_EVENT_NUMBER;
 using testing::SOME_INPUT_NUMBER;
 using testing::UP_AND_SHOOT;
@@ -50,6 +54,17 @@ TEST(PlayerInput, EncodesTheInputNumberThenTheActions) {
  * When it is encoded then decoded
  * Then the decoded input equals the original
  */
+/**
+ * Given an input numbered with the largest u32, every action held
+ * When it is encoded then decoded
+ * Then the decoded input equals the original
+ */
+TEST(PlayerInput, KeepsTheLargestInputNumber) {
+  const PlayerInput input{.inputNumber = LARGEST_U32, .actions = EVERY_ACTION};
+
+  EXPECT_EQ(decodeMessage<PlayerInput>(encodeMessage(input)), input);
+}
+
 TEST(PlayerInput, DecodesWhatItEncoded) {
   const PlayerInput input{.inputNumber = SOME_INPUT_NUMBER,
                           .actions = EVERY_ACTION};
@@ -136,6 +151,21 @@ TEST(EntitySpawned, EncodesTheIdTheTypeThenThePosition) {
  * When its EntitySpawned is encoded then decoded
  * Then the decoded message equals the original
  */
+/**
+ * Given an enemy missile of the largest u32 id, at the smallest x and the
+ * largest y of the wire range
+ * When its spawn is encoded then decoded
+ * Then the decoded spawn equals the original
+ */
+TEST(EntitySpawned, KeepsTheLargestIdAndTheEndsOfTheWireRange) {
+  const EntitySpawned spawned{.entityId = LARGEST_U32,
+                              .entityType = WireEntityType::EnemyMissile,
+                              .x = SMALLEST_WIRE_COORDINATE,
+                              .y = LARGEST_WIRE_COORDINATE};
+
+  EXPECT_EQ(decodeMessage<EntitySpawned>(encodeMessage(spawned)), spawned);
+}
+
 TEST(EntitySpawned, DecodesWhatItEncoded) {
   EXPECT_EQ(decodeMessage<EntitySpawned>(encodeMessage(exampleBydo())),
             exampleBydo());
@@ -311,6 +341,21 @@ TEST(GameEvent, EncodesEveryFieldInOrder) {
  * When it is encoded then decoded
  * Then the decoded event equals the original
  */
+/**
+ * Given a damage event of the largest u16 number, on the entity of the
+ * largest u32 id
+ * When it is encoded then decoded
+ * Then the decoded event equals the original
+ */
+TEST(GameEvent, KeepsTheLargestEventNumberAndEntityId) {
+  const GameEvent event{.eventNumber = LARGEST_U16,
+                        .kind = GameEventKind::EntityDamaged,
+                        .playerNumber = NO_PLAYER_NUMBER,
+                        .entityId = LARGEST_U32};
+
+  EXPECT_EQ(decodeMessage<GameEvent>(encodeMessage(event)), event);
+}
+
 TEST(GameEvent, DecodesWhatItEncoded) {
   const GameEvent event{.eventNumber = SOME_EVENT_NUMBER,
                         .kind = GameEventKind::EntityDamaged,

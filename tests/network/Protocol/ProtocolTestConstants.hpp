@@ -176,6 +176,14 @@ constexpr std::uint8_t EVERY_ACTION = 0x1F;
 constexpr std::uint8_t FIRST_BIT_ABOVE_THE_ACTIONS = 0x20;
 
 /**
+ * @brief The largest value of a field the protocol page types u8, u16 and
+ * u32.
+ */
+constexpr std::uint8_t LARGEST_U8 = 0xFF;
+constexpr std::uint16_t LARGEST_U16 = 0xFFFF;
+constexpr std::uint32_t LARGEST_U32 = 0xFFFFFFFF;
+
+/**
  * @brief The number of a player who is not the first, for messages naming
  * one.
  */
