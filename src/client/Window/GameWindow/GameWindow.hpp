@@ -6,32 +6,40 @@
 #include <SFML/Window/Event.hpp>
 #include <cstddef>
 #include <optional>
+#include "DisplayMode.hpp"
 #include "ISizableWindow.hpp"
 #include "PixelSize.hpp"
-#include "WindowSizeSelection.hpp"
+#include "WindowLayout.hpp"
 
 namespace rtype::client {
 
 /**
  * @brief Client window, which always shows the whole playfield.
  *
- * The window cannot be resized by dragging its border. The player picks one of
- * the sizes of WINDOW_SIZES; the window opens at the largest one that fits the
- * desktop, or at the size the player saved when it still fits. Every size has
- * the proportions of the playfield, so the playfield fills the window.
+ * The window cannot be resized by dragging its border. Windowed, the player
+ * picks one of the sizes of WINDOW_SIZES; the window opens at the largest one
+ * that fits the desktop, or at the size the player saved when it still fits.
+ * Every size has the proportions of the playfield, so the playfield fills the
+ * window. Borderless, the window covers the whole screen at the size of the
+ * desktop, without changing its resolution.
  *
- * Should the system still give the window another shape, the whole playfield
- * stays visible: drawing is done in the logical units of the playfield, scaled
- * without distortion, and what the playfield does not cover stays black.
+ * Changing the display mode closes the window and opens it again in the other
+ * mode: SFML 3 changes the border of a window only when it opens it.
+ *
+ * Should the system still give the window another shape, or the desktop not
+ * have the proportions of the playfield, the whole playfield stays visible:
+ * drawing is done in the logical units of the playfield, scaled without
+ * distortion, and what the playfield does not cover stays black.
  */
 class GameWindow : public ISizableWindow {
  public:
   /**
-   * @brief Opens the window at the preferred size when it is available, at
-   * the largest available one otherwise, centered on the desktop, showing at
-   * most FRAMES_PER_SECOND_LIMIT frames per second.
+   * @brief Opens the window in the given display mode; windowed, at the
+   * preferred size when it is available, at the largest available one
+   * otherwise, centered on the desktop. It shows at most
+   * FRAMES_PER_SECOND_LIMIT frames per second.
    */
-  explicit GameWindow(std::optional<PixelSize> preferredSize);
+  GameWindow(std::optional<PixelSize> preferredSize, DisplayMode displayMode);
 
   [[nodiscard]] bool isOpen() const;
 
@@ -56,15 +64,23 @@ class GameWindow : public ISizableWindow {
   /** @brief Shows what was drawn since clear(). */
   void display();
 
-  [[nodiscard]] const WindowSizeSelection& windowSizeSelection() const override;
+  [[nodiscard]] const WindowLayout& windowLayout() const override;
 
   /**
-   * @brief Gives the window the size at this index of WINDOW_SIZES, centered
-   * on the desktop.
+   * @brief Gives the window the size at this index of WINDOW_SIZES, centered on
+   * the desktop.
    *
-   * @returns false, changing nothing, when that size is not available.
+   * @returns false, changing nothing, when the window is borderless or that
+   * size is not available.
    */
   bool selectWindowSize(std::size_t index) override;
+
+  /**
+   * @brief Closes the window and opens it again in this display mode.
+   *
+   * @returns false, changing nothing, when the window is already in it.
+   */
+  bool selectDisplayMode(DisplayMode mode) override;
 
   /**
    * @param pixel Position in the window, in pixels.
@@ -73,30 +89,7 @@ class GameWindow : public ISizableWindow {
   [[nodiscard]] sf::Vector2f playfieldPointAt(sf::Vector2i pixel) const;
 
  private:
-  /**
-   * @brief Makes the window show the whole playfield, undistorted and
-   * centered.
-   *
-   * Must be called every time the size of the window changes: SFML keeps the
-   * previous view otherwise, which stretches the playfield over the new size.
-   *
-   * @param windowSize Size of the window, in pixels.
-   */
-  void showWholePlayfield(sf::Vector2u windowSize);
-
-  /** @brief Gives the window the selected size and centers it on the
-   * desktop. */
-  void applySelectedWindowSize();
-
-  /** @returns The size of the desktop the window opens on. */
-  [[nodiscard]] static PixelSize desktopSize();
-
-  /** @returns The sizes of the desktop, the preferred one selected when it is
-   * available. */
-  [[nodiscard]] static WindowSizeSelection initialSelection(
-      std::optional<PixelSize> preferredSize);
-
-  WindowSizeSelection windowSizeSelection_;
+  WindowLayout layout_;
   sf::RenderWindow window_;
 };
 

@@ -27,11 +27,7 @@ using rtype::network::Endpoint;
 using rtype::network::InvalidIpv4AddressException;
 using rtype::network::InvalidPortException;
 
-namespace {
-
 using Arguments = std::vector<std::string_view>;
-
-}  // namespace
 
 /**
  * Given no argument

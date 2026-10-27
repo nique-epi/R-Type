@@ -2,6 +2,7 @@
 
 #include <SFML/Graphics/Color.hpp>
 #include <cstdint>
+#include "InterfaceConstants.hpp"
 
 namespace rtype::client {
 
@@ -22,14 +23,18 @@ enum class TextAlignment : std::uint8_t {
 
 /**
  * @brief How a line of text is written: its font, its color, whether it is
- * outlined in INK so it stays readable over the sky, and which side its anchor
- * is on.
+ * outlined in INK so it stays readable over the sky, which side its anchor
+ * is on, and how large it is.
  */
 struct TextStyle {
   TextFont font{};
   sf::Color color;
   bool outlined = false;
   TextAlignment alignment = TextAlignment::Left;
+  /** @brief Whole factor every pixel of the letters is enlarged by: the font
+   * is drawn at that many times TEXT_CHARACTER_SIZE; the outline stays one
+   * pixel wide. */
+  int scale = NATIVE_SCALE;
 };
 
 }  // namespace rtype::client

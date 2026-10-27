@@ -16,8 +16,10 @@ class AssetLibrary;
 [[nodiscard]] AssetList titleAssets();
 
 /** @brief The assets a game needs, loaded by the loading screen when the
- * player enters it: the entity sheet, the effect sheet, and the HUD sheet and
- * the plug icon of the status band. */
+ * player enters it: the entity sheet, the effect sheet, the HUD sheet and the
+ * plug icon of the status band, and the sheet of the flight log, so the end
+ * screen opens without loading; the end screen keeps them all, so the next
+ * game opens without loading too. */
 [[nodiscard]] AssetList gameAssets();
 
 /**

@@ -51,8 +51,10 @@ class TextWriter {
  private:
   [[nodiscard]] const LoadedFont& loadedFontOf(TextFont font) const;
 
-  /** @returns A line of text in a font, at TEXT_CHARACTER_SIZE, not placed. */
-  [[nodiscard]] sf::Text lineOf(std::string_view text, TextFont font) const;
+  /** @returns A line of text in a font, at TEXT_CHARACTER_SIZE times
+   * @p scale, not placed. */
+  [[nodiscard]] sf::Text lineOf(std::string_view text, TextFont font,
+                                int scale) const;
 
   /** @returns Where SFML places @p text so the line lands as write() says:
    * its baseline under the anchor, shifted left by its width or half of it
