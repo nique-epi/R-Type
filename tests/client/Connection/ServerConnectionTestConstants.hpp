@@ -87,6 +87,19 @@ constexpr std::uint8_t PROTOCOL_UP_ACTION_BIT = 0b00001;
 constexpr std::chrono::milliseconds PROTOCOL_HEARTBEAT_INTERVAL{1000};
 
 /**
+ * @brief How long the protocol page lets a server stay silent: after 5 s
+ * without a datagram of the server, the client takes it for gone.
+ */
+constexpr std::chrono::seconds PROTOCOL_SESSION_TIMEOUT{5};
+
+/**
+ * @brief The words the client logs when it gives the server of the tests up
+ * after the 5 s of the protocol page.
+ */
+constexpr std::string_view LOST_SERVER_LINE_TEXT =
+    "no answer from 192.0.2.30 port 4242 for 5 s";
+
+/**
  * @brief The rate of the inputs the protocol page gives: 60 per second.
  */
 constexpr std::size_t PROTOCOL_INPUTS_PER_SECOND = 60;

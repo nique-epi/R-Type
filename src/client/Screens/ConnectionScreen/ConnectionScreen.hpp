@@ -68,7 +68,7 @@ class ConnectionScreen : public IScreen {
                         engine::Duration elapsed);
 
   /** @returns The line naming the field to fix, or telling how the attempt
-   * stands; empty when there is no attempt. */
+   * stands; empty when there is no attempt, and once a session was lost. */
   [[nodiscard]] std::string statusLine(const ConnectionStatus& status) const;
 
   /** @brief Paints the menu, its status line telling how the attempt stands,

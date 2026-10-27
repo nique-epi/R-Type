@@ -1,5 +1,6 @@
 #include "ServerConnection.hpp"
 #include <algorithm>
+#include <chrono>
 #include <cstddef>
 #include <cstdint>
 #include <iterator>
@@ -29,6 +30,7 @@
 #include "IDatagramLink.hpp"
 #include "IncomingDatagram.hpp"
 #include "LobbyState.hpp"
+#include "MessageFrame.hpp"
 #include "MessageOrigin.hpp"
 #include "MessageType.hpp"
 #include "NetworkException.hpp"
@@ -96,6 +98,7 @@ bool ServerConnection::gameStarted() const { return gameStarted_; }
 
 void ServerConnection::update(engine::Duration elapsed) {
   gameEvents_.advance(elapsed);
+  sinceReceived_ += elapsed;
   readReceived();
   repeatDeparture(elapsed);
   if (isAccepted()) {
@@ -114,6 +117,10 @@ void ServerConnection::readReceived() {
 }
 
 void ServerConnection::holdSession(engine::Duration elapsed) {
+  if (sinceReceived_ >= network::SESSION_TIMEOUT) {
+    giveUp(ConnectionStatus::Phase::Lost, network::SESSION_TIMEOUT);
+    return;
+  }
   sinceSent_ += elapsed;
   repeatReadyState(elapsed);
   sendHeartbeatWhenSilent();
@@ -122,7 +129,7 @@ void ServerConnection::holdSession(engine::Duration elapsed) {
 void ServerConnection::continueAttempt(engine::Duration elapsed) {
   sinceConnect_ += elapsed;
   if (sinceConnect_ >= CONNECTION_ATTEMPT_TIMEOUT) {
-    giveUp();
+    giveUp(ConnectionStatus::Phase::Unreachable, CONNECTION_ATTEMPT_TIMEOUT);
     return;
   }
   sinceRequest_ += elapsed;
@@ -220,9 +227,12 @@ void ServerConnection::registerSessionMessages() {
       });
 }
 
-void ServerConnection::giveUp() {
-  status_ = {.phase = ConnectionStatus::Phase::Unreachable};
-  logger_.warn("no answer from ", server_.address, " port ", server_.port);
+void ServerConnection::giveUp(ConnectionStatus::Phase ending,
+                              std::chrono::seconds silence) {
+  status_ = {.phase = ending};
+  forgetSession();
+  logger_.warn("no answer from ", server_.address, " port ", server_.port,
+               " for ", silence.count(), " s");
 }
 
 void ServerConnection::endAttemptForServerVersion(std::uint8_t serverVersion) {
@@ -252,9 +262,11 @@ void ServerConnection::receive(const network::IncomingDatagram& datagram) {
         !passesSessionChecks(header)) {
       return;
     }
-    dispatcher_.dispatch(
-        {.sender = datagram.sender, .header = header},
-        network::DatagramCodec::splitMessages(datagram.payload));
+    const std::vector<network::MessageFrame> messages =
+        network::DatagramCodec::splitMessages(datagram.payload);
+    sinceReceived_ = engine::Duration::zero();
+    dispatcher_.dispatch({.sender = datagram.sender, .header = header},
+                         messages);
   } catch (const network::MalformedDatagramException&) {
     return;
   }

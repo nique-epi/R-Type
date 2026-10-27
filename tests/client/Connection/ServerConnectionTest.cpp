@@ -53,6 +53,7 @@ using testing::holds;
 using ::testing::IsEmpty;
 using testing::killed;
 using testing::listed;
+using testing::LOST_SERVER_LINE_TEXT;
 using testing::NEXT_PROTOCOL_VERSION;
 using testing::NICKNAME;
 using testing::onlyMessageOf;
@@ -67,6 +68,7 @@ using testing::PROTOCOL_FIRST_INPUT_NUMBER;
 using testing::PROTOCOL_HEARTBEAT_INTERVAL;
 using testing::PROTOCOL_READY_STATE_INTERVAL;
 using testing::PROTOCOL_REQUEST_INTERVAL;
+using testing::PROTOCOL_SESSION_TIMEOUT;
 using testing::PROTOCOL_UP_ACTION_BIT;
 using testing::SECOND_POSITION;
 using testing::SECOND_SEQUENCE;
@@ -1249,6 +1251,207 @@ TEST_F(ServerConnectionLogFixture, ReadsAHeartbeatOfTheServerWithoutLoggingIt) {
   update();
 
   EXPECT_TRUE(journal().linesHolding(SKIPPED_MESSAGE_LINE_TEXT).empty());
+}
+
+/**
+ * Given a session the server opened, then sent nothing more
+ * When the session timeout minus one nanosecond passes
+ * Then the session holds
+ */
+TEST_F(ServerConnectionFixture, KeepsTheSessionUntilTheServerTimeout) {
+  accept();
+
+  update(PROTOCOL_SESSION_TIMEOUT - ONE_NANOSECOND);
+
+  EXPECT_EQ(phase(), Phase::Accepted);
+}
+
+/**
+ * Given a session the server opened, then sent nothing more
+ * When the session timeout passes
+ * Then the connection is lost
+ */
+TEST_F(ServerConnectionFixture, LosesTheServerAtTheTimeoutWithoutADatagram) {
+  accept();
+
+  update(PROTOCOL_SESSION_TIMEOUT);
+
+  EXPECT_EQ(phase(), Phase::Lost);
+}
+
+/**
+ * Given a session silent for the timeout minus one nanosecond, then a
+ * Heartbeat of the server read
+ * When the timeout minus one nanosecond passes again
+ * Then the session holds: the Heartbeat started the delay over
+ */
+TEST_F(ServerConnectionFixture, AHeartbeatOfTheServerRestartsTheTimeout) {
+  accept();
+  update(PROTOCOL_SESSION_TIMEOUT - ONE_NANOSECOND);
+  deliverInSession(network::Heartbeat{}, FIRST_SEQUENCE);
+  update();
+
+  update(PROTOCOL_SESSION_TIMEOUT - ONE_NANOSECOND);
+
+  EXPECT_EQ(phase(), Phase::Accepted);
+}
+
+/**
+ * Given a game silent for the timeout minus one nanosecond, then a WorldState
+ * read, which a server never follows with a Heartbeat while states go out
+ * When the timeout minus one nanosecond passes again
+ * Then the session holds: any datagram of the session starts the delay over
+ */
+TEST_F(ServerConnectionFixture, AWorldStateRestartsTheTimeout) {
+  accept();
+  update(PROTOCOL_SESSION_TIMEOUT - ONE_NANOSECOND);
+  deliverWorldStateInSession(
+      stateListing(APPLIED_TICK,
+                   {listed(SHIP_ID, network::WireEntityType::PlayerShip,
+                           FIRST_POSITION)}),
+      FIRST_SEQUENCE);
+  update();
+
+  update(PROTOCOL_SESSION_TIMEOUT - ONE_NANOSECOND);
+
+  EXPECT_EQ(phase(), Phase::Accepted);
+}
+
+/**
+ * Given a session silent for the timeout minus one nanosecond, then a
+ * Heartbeat from the address of the server carrying another token
+ * When one more nanosecond passes
+ * Then the connection is lost: a forged datagram keeps no session alive
+ */
+TEST_F(ServerConnectionFixture, ADatagramWithAnotherTokenKeepsNoSessionAlive) {
+  accept();
+  update(PROTOCOL_SESSION_TIMEOUT - ONE_NANOSECOND);
+  network::PacketHeader forged;
+  forged.sessionToken = OTHER_SESSION_TOKEN;
+  forged.sequence = FIRST_SEQUENCE;
+  deliver(network::Heartbeat{}, server(), forged);
+  update();
+
+  update(ONE_NANOSECOND);
+
+  EXPECT_EQ(phase(), Phase::Lost);
+}
+
+/**
+ * Given a session that read a Heartbeat, then stayed silent for the timeout
+ * minus one nanosecond, then got a copy of that Heartbeat
+ * When one more nanosecond passes
+ * Then the connection is lost: a copy says nothing newer than the original
+ */
+TEST_F(ServerConnectionFixture, ACopyOfADatagramReadKeepsNoSessionAlive) {
+  accept();
+  deliverInSession(network::Heartbeat{}, FIRST_SEQUENCE);
+  update();
+  update(PROTOCOL_SESSION_TIMEOUT - ONE_NANOSECOND);
+  deliverInSession(network::Heartbeat{}, FIRST_SEQUENCE);
+  update();
+
+  update(ONE_NANOSECOND);
+
+  EXPECT_EQ(phase(), Phase::Lost);
+}
+
+/**
+ * Given a session silent for the timeout minus one nanosecond, then a
+ * Heartbeat of the session with its last byte cut off
+ * When one more nanosecond passes
+ * Then the connection is lost: a datagram whose messages do not add up to its
+ * end is dropped, and proves nothing
+ */
+TEST_F(ServerConnectionFixture, ATruncatedDatagramKeepsNoSessionAlive) {
+  accept();
+  update(PROTOCOL_SESSION_TIMEOUT - ONE_NANOSECOND);
+  std::vector<std::byte> datagram = network::DatagramCodec::encode(
+      sessionHeader(FIRST_SEQUENCE), network::Heartbeat{});
+  datagram.pop_back();
+  deliverBytes(std::move(datagram));
+  update();
+
+  update(ONE_NANOSECOND);
+
+  EXPECT_EQ(phase(), Phase::Lost);
+}
+
+/**
+ * Given a session in which a Heartbeat of the server waits in the link
+ * When a frame one nanosecond longer than the timeout ends
+ * Then the session holds: the Heartbeat that arrived during that frame is
+ * read before the silence is judged
+ */
+TEST_F(ServerConnectionFixture, AFrameLongerThanTheTimeoutLosesNoSession) {
+  accept();
+  deliverInSession(network::Heartbeat{}, FIRST_SEQUENCE);
+
+  update(PROTOCOL_SESSION_TIMEOUT + ONE_NANOSECOND);
+
+  EXPECT_EQ(phase(), Phase::Accepted);
+}
+
+/**
+ * Given a session the server opened, then sent nothing more
+ * When the session timeout passes, then a heartbeat interval
+ * Then nothing goes to the server: no Heartbeat, and no Disconnection, so
+ * the server closes the session as timed out
+ */
+TEST_F(ServerConnectionFixture, SendsNothingToALostServer) {
+  accept();
+  const std::size_t sentWhenAccepted = sent().size();
+
+  update(PROTOCOL_SESSION_TIMEOUT);
+  update(PROTOCOL_HEARTBEAT_INTERVAL);
+
+  EXPECT_EQ(sent().size(), sentWhenAccepted);
+}
+
+/**
+ * Given a session with a room and a started game
+ * When the server stays silent for the session timeout
+ * Then the room and the start of the game are forgotten
+ */
+TEST_F(ServerConnectionFixture, LosingTheServerForgetsTheSession) {
+  accept();
+  deliverInSession(network::GameStarted{}, FIRST_SEQUENCE);
+  update();
+
+  update(PROTOCOL_SESSION_TIMEOUT);
+
+  EXPECT_TRUE(connection().lobbyPlayers().empty());
+  EXPECT_FALSE(connection().gameStarted());
+}
+
+/**
+ * Given a session lost to the silence of the server
+ * When a late copy of the acceptance of the server arrives
+ * Then the connection stays lost: only a new attempt opens a session
+ */
+TEST_F(ServerConnectionFixture, StaysLostWhenALateAcceptanceArrives) {
+  accept();
+  update(PROTOCOL_SESSION_TIMEOUT);
+
+  deliverInSession(
+      network::ConnectionAccepted{.playerNumber = ACCEPTED_PLAYER_NUMBER},
+      FIRST_SEQUENCE);
+  update();
+
+  EXPECT_EQ(phase(), Phase::Lost);
+}
+
+/**
+ * Given a session the server opened, then sent nothing more
+ * When the session timeout passes
+ * Then the journal names the server and the delay it stayed silent for
+ */
+TEST_F(ServerConnectionLogFixture, LogsTheServerItLost) {
+  accept();
+
+  update(PROTOCOL_SESSION_TIMEOUT);
+
+  EXPECT_THAT(journal().linesHolding(LOST_SERVER_LINE_TEXT), SizeIs(1));
 }
 
 }  // namespace rtype::client
