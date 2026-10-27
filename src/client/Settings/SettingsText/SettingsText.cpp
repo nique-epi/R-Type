@@ -1,6 +1,7 @@
 #include "SettingsText.hpp"
 #include <SFML/Window/Keyboard.hpp>
 #include <algorithm>
+#include <array>
 #include <charconv>
 #include <cstddef>
 #include <cstdint>
@@ -100,10 +101,15 @@ std::optional<PixelSize> windowSizeOf(std::string_view text) {
                    .height = static_cast<unsigned int>(*height)};
 }
 
-std::optional<ColorMode> colorModeOf(std::string_view text) {
-  for (std::size_t mode = 0; mode < COLOR_MODE_COUNT; ++mode) {
-    if (COLOR_MODE_VALUES[mode] == text) {
-      return COLOR_MODES[mode];
+/** @returns The value placed in its list as this text is placed in the list of
+ * names, or nothing when no name is this text. */
+template <typename Value, std::size_t Count>
+std::optional<Value> valueNamed(
+    std::string_view text, const std::array<std::string_view, Count>& names,
+    const std::array<Value, Count>& values) {
+  for (std::size_t index = 0; index < Count; ++index) {
+    if (names[index] == text) {
+      return values[index];
     }
   }
   return std::nullopt;
@@ -116,16 +122,6 @@ LineOutcome assign(std::optional<Value> parsed, Value& setting) {
   }
   setting = *parsed;
   return LineOutcome::Applied;
-}
-
-/** @returns The bound action whose key a setting names, or nothing. */
-std::optional<BoundAction> boundActionNamed(std::string_view name) {
-  for (std::size_t action = 0; action < BOUND_ACTION_COUNT; ++action) {
-    if (BOUND_ACTION_KEY_NAMES[action] == name) {
-      return BOUND_ACTIONS[action];
-    }
-  }
-  return std::nullopt;
 }
 
 LineOutcome applyKey(PlayerSettings& settings, BoundAction action,
@@ -167,7 +163,8 @@ LineOutcome applyLine(PlayerSettings& settings, std::string_view line) {
     return LineOutcome::Applied;
   }
   if (name == COLOR_MODE_NAME) {
-    return assign(colorModeOf(value), settings.colorMode);
+    return assign(valueNamed(value, COLOR_MODE_VALUES, COLOR_MODES),
+                  settings.colorMode);
   }
   if (name == REDUCE_FLASHES_NAME) {
     return assign(switchOf(value), settings.reduceFlashes);
@@ -178,7 +175,8 @@ LineOutcome applyLine(PlayerSettings& settings, std::string_view line) {
   if (name == AUTO_FIRE_NAME) {
     return assign(switchOf(value), settings.autoFire);
   }
-  const std::optional<BoundAction> action = boundActionNamed(name);
+  const std::optional<BoundAction> action =
+      valueNamed(name, BOUND_ACTION_KEY_NAMES, BOUND_ACTIONS);
   if (!action.has_value()) {
     return LineOutcome::UnknownSetting;
   }
