@@ -67,6 +67,21 @@ TEST(InstallContext, MissingServiceErrorNamesTheModuleAndTheService) {
 }
 
 /**
+ * Given first provided a TestService
+ * When second looks for a TestService
+ * Then it finds the one first provided
+ */
+TEST(InstallContext, FindReturnsTheServiceAModuleInstalledBeforeProvides) {
+  ServiceRegistry services;
+  LoopStages stages(TEST_LOOP_STAGES);
+  TestService service;
+  InstallContext(FIRST_MODULE, services, stages).provide(service);
+  const InstallContext second(SECOND_MODULE, services, stages);
+
+  EXPECT_EQ(second.find<TestService>(), &service);
+}
+
+/**
  * Given no module provided a TestService
  * When second looks for a TestService
  * Then it finds none, and nothing throws

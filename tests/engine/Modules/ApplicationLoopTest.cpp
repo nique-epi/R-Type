@@ -18,6 +18,7 @@ using rtype::engine::Application;
 using rtype::engine::EventBus;
 using rtype::engine::LoopStages;
 using rtype::engine::MissingServiceException;
+using rtype::engine::ModuleStartFailedException;
 
 /**
  * Given a loop of inputs, simulation and outputs, and modules listed first,
@@ -77,6 +78,40 @@ TEST(ApplicationLoop, RunsNoStageAfterStop) {
   application.runStages(ELAPSED_TIME);
 
   EXPECT_TRUE(journal.calls.empty());
+}
+
+/**
+ * Given modules that added work to simulation, the third failing to start
+ * When the application starts, then runs its stages
+ * Then start throws a ModuleStartFailedException and no work runs
+ */
+TEST(ApplicationLoop, RunsNoStageAfterAFailedStart) {
+  JournalModule journal;
+  Application application(LoopStages(TEST_LOOP_STAGES),
+                          threeModulesInSimulationThirdFailingToStart(journal));
+  EXPECT_THROW(application.start(), ModuleStartFailedException);
+
+  application.runStages(ELAPSED_TIME);
+
+  EXPECT_TRUE(journal.calls.empty());
+}
+
+/**
+ * Given an application of first, second and third, started
+ * When it is destroyed
+ * Then the modules are destroyed third, second, first, so a provider outlives
+ * the modules listed after it
+ */
+TEST(ApplicationLoop, DestroysTheModulesLastListedFirst) {
+  std::vector<std::string> destroyed;
+  {
+    Application application(LoopStages(TEST_LOOP_STAGES),
+                            threeModulesRecordingTheirDestruction(destroyed));
+    application.start();
+  }
+
+  EXPECT_EQ(destroyed, (std::vector<std::string>{THIRD_MODULE, SECOND_MODULE,
+                                                 FIRST_MODULE}));
 }
 
 /**

@@ -60,6 +60,19 @@ TEST(ServiceRegistry, SecondProvideOfATypeKeepsTheFirst) {
 }
 
 /**
+ * Given a registry given a TestService
+ * When a const TestService is looked for
+ * Then the one given is returned
+ */
+TEST(ServiceRegistry, FindOfAConstTypeReturnsTheProvidedService) {
+  ServiceRegistry services;
+  TestService service;
+  services.provide(service);
+
+  EXPECT_EQ(services.find<const TestService>(), &service);
+}
+
+/**
  * Given a registry given a TestService and an EventBus
  * When an EventBus is looked for
  * Then the EventBus given is returned

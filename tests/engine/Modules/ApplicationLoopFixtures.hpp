@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+#include <string>
 #include <vector>
 #include "DeliveredEvents.hpp"
 #include "EventBus.hpp"
@@ -47,3 +48,13 @@ secondLookingBeforeTheProvider(TestService& service,
 std::vector<std::unique_ptr<rtype::engine::IModule>> providerThenSubscriber(
     TestService& service, rtype::engine::EventBus& bus,
     DeliveredEvents& delivered);
+
+/** @returns FIRST_MODULE, SECOND_MODULE and THIRD_MODULE, each adding its work
+ * to SIMULATION_STAGE; THIRD_MODULE throws from start(). */
+std::vector<std::unique_ptr<rtype::engine::IModule>>
+threeModulesInSimulationThirdFailingToStart(JournalModule& journal);
+
+/** @returns FIRST_MODULE, SECOND_MODULE and THIRD_MODULE, each appending its
+ * name to @p destroyed when it is destroyed. */
+std::vector<std::unique_ptr<rtype::engine::IModule>>
+threeModulesRecordingTheirDestruction(std::vector<std::string>& destroyed);

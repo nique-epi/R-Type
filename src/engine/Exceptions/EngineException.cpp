@@ -79,8 +79,7 @@ DuplicateServiceException::DuplicateServiceException(
     const std::string& moduleName, const std::string& serviceName)
     : EngineException("The module \"" + moduleName +
                       "\" provides the service " + serviceName +
-                      ", which a module installed before it already "
-                      "provides") {}
+                      ", which is already provided") {}
 
 MissingServiceException::MissingServiceException(const std::string& moduleName,
                                                  const std::string& serviceName)

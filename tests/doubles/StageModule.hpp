@@ -19,6 +19,8 @@ class StageModule : public rtype::engine::IModule {
   [[nodiscard]] std::string name() const override;
   [[nodiscard]] std::vector<std::string> dependencies() const override;
   void install(rtype::engine::InstallContext& context) override;
+  /** @throws StartRefusedException when the setup says the module fails to
+   * start. */
   void start() override;
   void stop() override;
 

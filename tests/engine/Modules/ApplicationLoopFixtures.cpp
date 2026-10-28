@@ -1,9 +1,12 @@
 #include "ApplicationLoopFixtures.hpp"
 #include <memory>
+#include <string>
+#include <string_view>
 #include <vector>
 #include "ApplicationLoopTestConstants.hpp"
 #include "ApplicationTestConstants.hpp"
 #include "DeliveredEvents.hpp"
+#include "DestructionRecordingModule.hpp"
 #include "EventBus.hpp"
 #include "IModule.hpp"
 #include "JournalModule.hpp"
@@ -97,5 +100,29 @@ std::vector<std::unique_ptr<IModule>> providerThenSubscriber(
       std::make_unique<ProvidingModule>(PROVIDER_MODULE, service, bus));
   modules.push_back(
       std::make_unique<SubscribingModule>(SUBSCRIBER_MODULE, delivered));
+  return modules;
+}
+
+std::vector<std::unique_ptr<IModule>>
+threeModulesInSimulationThirdFailingToStart(JournalModule& journal) {
+  std::vector<std::unique_ptr<IModule>> modules;
+  for (const char* name : {FIRST_MODULE, SECOND_MODULE, THIRD_MODULE}) {
+    modules.push_back(std::make_unique<StageModule>(
+        StageModuleSetup{
+            .name = name,
+            .stage = SIMULATION_STAGE,
+            .failsToStart = std::string_view{name} == THIRD_MODULE},
+        journal));
+  }
+  return modules;
+}
+
+std::vector<std::unique_ptr<IModule>> threeModulesRecordingTheirDestruction(
+    std::vector<std::string>& destroyed) {
+  std::vector<std::unique_ptr<IModule>> modules;
+  for (const char* name : {FIRST_MODULE, SECOND_MODULE, THIRD_MODULE}) {
+    modules.push_back(
+        std::make_unique<DestructionRecordingModule>(name, destroyed));
+  }
   return modules;
 }

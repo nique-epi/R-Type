@@ -6,6 +6,7 @@
 #include "JournalModule.hpp"
 #include "StageModuleConstants.hpp"
 #include "StageModuleSetup.hpp"
+#include "StartRefusedException.hpp"
 #include "TimeConstants.hpp"
 
 StageModule::StageModule(StageModuleSetup setup, JournalModule& journal)
@@ -22,7 +23,11 @@ void StageModule::install(rtype::engine::InstallContext& context) {
                   });
 }
 
-void StageModule::start() {}
+void StageModule::start() {
+  if (setup_.failsToStart) {
+    throw StartRefusedException();
+  }
+}
 
 void StageModule::stop() {}
 
