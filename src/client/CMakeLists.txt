@@ -26,12 +26,10 @@ add_executable(r-type_client main.cpp)
 
 target_link_libraries(r-type_client
   PRIVATE
-    rtype_client_application
     rtype_client_constants
-    rtype_client_launch_options
+    rtype_client_modules
     rtype_client_rendering
     rtype_logging
-    rtype_network
 )
 
 rtype_enable_warnings(r-type_client)
