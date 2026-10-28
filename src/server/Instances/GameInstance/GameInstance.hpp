@@ -1,36 +1,22 @@
 #pragma once
 
-#include <cstddef>
 #include <cstdint>
 #include <functional>
-#include <memory>
 #include <span>
 #include <vector>
-#include "BydoGunner.hpp"
-#include "BydoSpawner.hpp"
-#include "CollisionRules.hpp"
 #include "ConnectedPlayer.hpp"
-#include "DamageRules.hpp"
 #include "Endpoint.hpp"
 #include "EventBus.hpp"
-#include "GameEndAnnouncer.hpp"
+#include "GameFlow.hpp"
 #include "GameSessions.hpp"
 #include "GameSettings.hpp"
 #include "GameState.hpp"
 #include "IncomingDatagram.hpp"
-#include "LifeKeeper.hpp"
-#include "LobbyStateAnnouncer.hpp"
-#include "Logger.hpp"
-#include "MissileLauncher.hpp"
 #include "OutgoingDatagram.hpp"
 #include "PacketHeader.hpp"
 #include "PlayerRoster.hpp"
 #include "ScoreKeeper.hpp"
-#include "ShipSpawnAnnouncer.hpp"
-#include "SystemScheduler.hpp"
-#include "WavePlan.hpp"
 #include "World.hpp"
-#include "WorldStateSender.hpp"
 
 namespace rtype::server {
 
@@ -38,59 +24,9 @@ namespace rtype::server {
  * @brief One game: its world, its players (1 to MAXIMUM_PLAYERS, whose numbers
  * also pick their colors), its state and its tick.
  *
- * A game goes from WaitingForPlayers to InProgress when at least one player is
- * connected and every connected player is ready, from InProgress to Finished
- * when finish() is called, once no player is left in it, or once no player
- * left in it has a life, and from Finished back to WaitingForPlayers after
- * FINISHED_STATE_TICKS ticks. Coming back to WaitingForPlayers builds a new
- * world: every player gets a new ship and its STARTING_LIVES back, is no longer
- * ready, and the tick is 0. The players stay connected.
- *
- * The game tells its players where it stands, as the A session section of the
- * protocol page describes. While it waits for players, a LobbyStateAnnouncer
- * sends them the room; a new one comes with each new world, so the room goes
- * out at the first tick of every wait. The tick that starts the game sends
- * every connected player GameStarted, then, on that tick and every tick of the
- * game, the WorldStateSender sends them the world, from tick 0: GameStarted
- * always leaves before the first WorldState. A game that ends by itself builds
- * a GameEndAnnouncer, which reads the score of every player then and sends
- * them that result at the first tick of the end, then every
- * GAME_ENDED_INTERVAL until the game waits for players again; no WorldState
- * goes out meanwhile. Every datagram to a player carries its session token and
- * its next sequence (see nextSessionHeader).
- *
- * While the game is in progress, each tick first moves the ship of every player
- * who sent an input, by the directions its newest input holds (see
- * game::shipPositionAfter), then runs the systems of the world (PatternSystem,
- * MovementSystem, PlayfieldExitSystem, which removes a Bydo or a missile of a
- * Bydo that left on the left, or a missile of a player that left on the right,
- * and announces it on the event bus, then CollisionSystem), then lets the ship
- * of every player whose newest input holds shoot fire a missile, at most one
- * every SHOT_INTERVAL_TICKS ticks (see MissileLauncher), then lets every Bydo
- * fire a missile to the left every ENEMY_SHOT_INTERVAL (see BydoGunner), then
- * lets the Bydos of the current wave appear (see BydoSpawner), then counts the
- * waits and the protections of the lives (see LifeKeeper). The ships and
- * the Bydos move and fire in no other state. Each world starts its random draws
- * from a seed of its own, the seed of the game plus the number of worlds built
- * before it, so the seed of the game is enough to replay every world of a
- * session.
- *
- * The collisions CollisionSystem finds are judged when the event bus delivers
- * them: CollisionRules turns a missile of a player that touches a Bydo into a
- * MissileHit, and DamageRules destroys the missile, takes MISSILE_DAMAGE from
- * the health of the Bydo and destroys the Bydo once it has none left, an
- * EnemyKilled crediting its points to the player who fired. CollisionRules also
- * turns a ship that touches a Bydo into a ShipContact, which LifeKeeper turns
- * into the loss of the ship, the Bydo and a life, and a missile of a Bydo that
- * touches a ship into a MissileHit, which DamageRules turns into the removal of
- * the missile and LifeKeeper into the loss of the ship and a life: the ship
- * comes back RESPAWN_DELAY later, invulnerable for INVULNERABILITY_DURATION,
- * and a player with no life left watches. A life is taken while the bus is
- * dispatched, after onTick(), so a game whose last life was taken ends at the
- * next onTick(), after the sessions close and before the game moves along its
- * states. The rules work on the world they were built with, and new ones come
- * with each new world, so the events of a tick must be delivered before the
- * world is replaced: the server dispatches the bus at the end of every tick.
+ * How the game runs (its states, the tick, the world and the rules that work on
+ * it) belongs to GameFlow. Every datagram to a player carries its session token
+ * and its next sequence (see nextSessionHeaderFor).
  *
  * The players and their sessions (the datagrams read, who is ready, the newest
  * input, the silence that closes a session, the departures and the Heartbeats)
@@ -99,9 +35,9 @@ namespace rtype::server {
  * closes leaves the world and is announced on the event bus as an
  * EntityDestruction (Removed). A game in progress whose last player's session
  * closed ends at that same tick, as finish() ends it, so it waits for players
- * again FINISHED_STATE_TICKS ticks later. takeDepartedPlayers() hands the
- * players whose session closed over to whoever must forget them outside the
- * game.
+ * again FINISHED_STATE_TICKS ticks later (see GameFlow). takeDepartedPlayers()
+ * hands the players whose session closed over to whoever must forget them
+ * outside the game.
  *
  * A ScoreKeeper adds the points of each EnemyKilled published on the event bus
  * to the score of the player it names; every score goes back to 0 with each
@@ -200,65 +136,15 @@ class GameInstance {
   void finish();
 
  private:
-  /** @brief Moves the game along its states by one tick: the start of the
-   * game, its systems, its missiles and its Bydos, or the end of the wait after
-   * it. */
-  void advanceState();
-
-  /** @brief Moves the ship of every player who sent an input by one tick of
-   * what that input holds. */
-  void moveShips();
-
   /** @brief Removes the ship of @p departed from the world, when it has one,
    * and announces it on the event bus as an EntityDestruction (Removed). */
   void removeShipOf(const ConnectedPlayer& departed);
 
-  /** @brief Logs why and ends the game, as finish() ends it, when it is in
-   * progress with no player left in it, or with no player left who has a
-   * life, then builds the GameEndAnnouncer that tells the players the result.
-   */
-  void finishIfOver();
-
-  /** @brief Moves the game to InProgress and sends every connected player
-   * GameStarted. */
-  void startGame();
-
-  /** @brief Builds a new world, and every part of the game that works on one
-   * world: the rules that judge its collisions, the announcer of its ships, the
-   * spawner of its Bydos, the launcher of its missiles, the gunner of its
-   * Bydos, the keeper of the lives and the announcer of the room. DamageRules
-   * is built before LifeKeeper, so the bus hands each MissileHit to DamageRules
-   * first (see LifeKeeper). The announcer of the end of the previous game is
-   * dropped. */
-  void buildWorld();
-
-  void startNewWorld();
-
   Send send_;
   engine::EventBus& events_;
-  std::unique_ptr<game::World> world_;
-  engine::SystemScheduler systems_;
   GameSessions sessions_;
-  std::unique_ptr<ShipSpawnAnnouncer> shipSpawnAnnouncer_;
-  std::unique_ptr<BydoSpawner> bydoSpawner_;
-  std::unique_ptr<MissileLauncher> missileLauncher_;
-  std::unique_ptr<BydoGunner> bydoGunner_;
-  std::unique_ptr<game::CollisionRules> collisionRules_;
-  std::unique_ptr<game::DamageRules> damageRules_;
-  std::unique_ptr<LifeKeeper> lifeKeeper_;
-  std::unique_ptr<LobbyStateAnnouncer> lobbyStateAnnouncer_;
-  /** @brief Tells the players the result of a game that ended by itself;
-   * empty before the first end, and again with each new world. */
-  std::unique_ptr<GameEndAnnouncer> gameEndAnnouncer_;
   ScoreKeeper scoreKeeper_;
-  WorldStateSender worldStateSender_;
-  GameState state_{GameState::WaitingForPlayers};
-  std::uint32_t seed_;
-  WavePlan wavePlan_;
-  std::uint32_t worldsBuilt_{0};
-  std::uint32_t tick_{0};
-  std::size_t finishedTicks_{0};
-  logging::Logger logger_;
+  GameFlow flow_;
 };
 
 }  // namespace rtype::server
