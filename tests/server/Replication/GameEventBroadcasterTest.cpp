@@ -282,4 +282,20 @@ TEST_F(GameEventBroadcasterFixture, SkipsTheDepartureOfAPlayerOutsideTheGame) {
   EXPECT_TRUE(sentDatagrams().empty());
 }
 
+/**
+ * Given two clients and a broadcaster that was destroyed
+ * When a destruction is published and the bus delivers it
+ * Then nothing is sent
+ */
+TEST_F(GameEventBroadcasterFixture, StopsListeningOnceDestroyed) {
+  destroyBroadcaster();
+
+  publishAndDispatch(
+      game::EntityDestruction{.networkId = MONSTER_NETWORK_ID,
+                              .cause = game::DestructionCause::Killed});
+  advanceTimers(ALL_COPIES_SENT);
+
+  EXPECT_TRUE(sentDatagrams().empty());
+}
+
 }  // namespace rtype::server::testing
