@@ -17,6 +17,7 @@ target_link_libraries(rtype_client_application
     rtype_client_screen_stack
     rtype_client_platform
     rtype_client_scrolling_background
+    rtype_client_screen_interfaces
     rtype_client_server_connection
     rtype_client_settings_file
     rtype_engine_system_clock

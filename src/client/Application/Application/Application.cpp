@@ -46,6 +46,7 @@
 #include "ScreenAssets.hpp"
 #include "ScreenId.hpp"
 #include "ScreenStack.hpp"
+#include "ServerChoice.hpp"
 #include "SettingsFile.hpp"
 #include "SoundtrackParts.hpp"
 #include "SquadronStart.hpp"
@@ -97,8 +98,8 @@ Application::Application(AssetLibrary& assets, network::Endpoint server,
           network::Endpoint{.address = std::string{network::ANY_IPV4_ADDRESS},
                             .port = network::ANY_PORT}),
       connection_(network_),
-      server_(std::move(server)),
-      nickname_(std::move(nickname)),
+      serverChoice_(ServerChoice{.server = std::move(server),
+                                 .nickname = std::move(nickname)}),
       screens_([this](ScreenId screen) { return createScreen(screen); }) {
   screens_.replaceAll(firstScreen());
   screens_.applyPendingChanges();
@@ -181,8 +182,7 @@ std::unique_ptr<IScreen> Application::createScreen(ScreenId screen) {
                                 .sounds = sounds_,
                                 .connection = connection_,
                                 .playfieldPointAt = playfieldMapping(),
-                                .server = server_,
-                                .nickname = nickname_},
+                                .choice = serverChoice_},
           interfaceCanvas());
     case ScreenId::Lobby:
     case ScreenId::LobbyAfterGame:

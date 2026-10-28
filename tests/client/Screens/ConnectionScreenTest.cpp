@@ -11,6 +11,7 @@
 #include "ConnectionRefusalFixture.hpp"
 #include "ConnectionRefused.hpp"
 #include "ConnectionScreen.hpp"
+#include "ConnectionScreenChoiceFixture.hpp"
 #include "ConnectionScreenConstants.hpp"
 #include "ConnectionScreenFixture.hpp"
 #include "ConnectionScreenFixtures.hpp"
@@ -45,8 +46,11 @@ using rtype::client::testing::LAUNCH_NICKNAME;
 using rtype::client::testing::LAUNCH_PORT;
 using rtype::client::testing::LAUNCH_PORT_TEXT;
 using rtype::client::testing::NEXT_PROTOCOL_VERSION;
+using rtype::client::testing::NO_NICKNAME_TEXT;
 using rtype::client::testing::PORT_ZERO_TEXT;
 using rtype::client::testing::THIRD_PLAYER;
+using rtype::client::testing::TYPED_NICKNAME;
+using rtype::client::testing::TYPED_NICKNAME_TEXT;
 using rtype::client::testing::TYPED_PORT;
 using rtype::client::testing::TYPED_PORT_TEXT;
 using rtype::network::RefusalReason;
@@ -377,4 +381,39 @@ TEST_F(ConnectionScreenFixture, AVersionRefusalNamesBothVersions) {
         .serverVersion = NEXT_PROTOCOL_VERSION});
 
   EXPECT_NE(writingOf(canvas(), "REFUSED: YOU V0, SERVER V1"), nullptr);
+}
+
+/**
+ * Given a connection screen whose player connected as NOVA
+ * When a new connection screen opens and the player chooses Enter at once
+ * Then the attempt goes out as NOVA, to the server of the launch values
+ */
+TEST_F(ConnectionScreenChoiceFixture, ANewScreenStartsWithTheLastAttempt) {
+  connectAs(TYPED_NICKNAME_TEXT);
+
+  reopen();
+  chooseEnter();
+
+  EXPECT_EQ(
+      connectAttemptsOf(connection()).back(),
+      (ServerConnectionCall{.request = ServerConnectionCall::Request::Connect,
+                            .server = {.address = std::string(LAUNCH_ADDRESS),
+                                       .port = LAUNCH_PORT},
+                            .nickname = std::string(TYPED_NICKNAME)}));
+}
+
+/**
+ * Given a connection screen whose nickname field was emptied, then Enter
+ * chosen, which the empty nickname refuses
+ * When a new connection screen opens and Enter is chosen
+ * Then the attempt goes out with the launch nickname: a refused attempt
+ * leaves the choice
+ */
+TEST_F(ConnectionScreenChoiceFixture, AnAttemptTheFieldsRefuseKeepsTheChoice) {
+  connectAs(NO_NICKNAME_TEXT);
+
+  reopen();
+  chooseEnter();
+
+  EXPECT_EQ(connectAttemptsOf(connection()).back().nickname, LAUNCH_NICKNAME);
 }

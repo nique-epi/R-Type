@@ -23,6 +23,7 @@
 #include "PlayfieldMapping.hpp"
 #include "ProtocolConstants.hpp"
 #include "ScreenId.hpp"
+#include "ServerChoice.hpp"
 #include "TextField.hpp"
 #include "TimeConstants.hpp"
 #include "WidgetConstants.hpp"
@@ -60,9 +61,10 @@ ConnectionScreen::ConnectionScreen(ConnectionScreenParts parts,
                                    std::unique_ptr<IInterfaceCanvas> canvas)
     : navigator_(&parts.navigator.get()),
       connection_(&parts.connection.get()),
+      choice_(&parts.choice.get()),
       canvas_(std::move(canvas)),
       playfieldPointAt_(std::move(parts.playfieldPointAt)),
-      menu_(buildMenu(parts.server, parts.nickname, parts.sounds.get())) {
+      menu_(buildMenu(parts.sounds.get())) {
   connection_->cancel();
   repaint(connection_->status());
 }
@@ -84,22 +86,21 @@ void ConnectionScreen::draw(sf::RenderTarget& target) const {
 
 bool ConnectionScreen::hidesScreensBelow() const { return true; }
 
-Menu ConnectionScreen::buildMenu(const network::Endpoint& server,
-                                 std::string_view nickname,
-                                 ISoundPlayer& sounds) {
+Menu ConnectionScreen::buildMenu(ISoundPlayer& sounds) {
+  const ServerChoice& choice = *choice_;
   const std::function<void()> connectAction = [this] { connect(); };
   return MenuBuilder(MenuBuilder::Frame::Form, &sounds)
       .heading(CONNECTION_HEADING)
       .textField({.label = ADDRESS_LABEL, .description = ADDRESS_DESCRIPTION},
-                 TextField(server.address, ADDRESS_FIELD_SIZE,
+                 TextField(choice.server.address, ADDRESS_FIELD_SIZE,
                            TextField::Characters::DigitsAndDots),
                  connectAction)
       .textField({.label = PORT_LABEL, .description = PORT_DESCRIPTION},
-                 TextField(std::to_string(server.port), PORT_FIELD_SIZE,
+                 TextField(std::to_string(choice.server.port), PORT_FIELD_SIZE,
                            TextField::Characters::Digits),
                  connectAction)
       .textField({.label = NICKNAME_LABEL, .description = NICKNAME_DESCRIPTION},
-                 TextField(nickname, NICKNAME_FIELD_SIZE,
+                 TextField(choice.nickname, NICKNAME_FIELD_SIZE,
                            TextField::Characters::Printable),
                  connectAction)
       .button({.label = CONNECT_LABEL, .description = CONNECT_DESCRIPTION},
@@ -122,6 +123,8 @@ void ConnectionScreen::connect() {
       return;
     }
     fieldProblem_ = {};
+    *choice_ =
+        ServerChoice{.server = server, .nickname = std::string(nickname)};
     connection_->connect(server, nickname);
   } catch (const network::InvalidIpv4AddressException&) {
     fieldProblem_ = INVALID_ADDRESS_STATUS;

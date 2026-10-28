@@ -6,6 +6,7 @@ target_link_libraries(rtype_client_screen_interfaces
   INTERFACE
     rtype_client_audio_interfaces
     rtype_engine_time
+    rtype_network_transport
 )
 
 add_subdirectory(ScreenAssets)

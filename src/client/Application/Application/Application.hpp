@@ -18,6 +18,7 @@
 #include "ScreenId.hpp"
 #include "ScreenStack.hpp"
 #include "ScrollingBackground.hpp"
+#include "ServerChoice.hpp"
 #include "ServerConnection.hpp"
 #include "SettingsFile.hpp"
 #include "SoundPlayer.hpp"
@@ -73,8 +74,8 @@ class Application {
   /**
    * @param assets Library holding the interface assets, loaded and permanent;
    * it must outlive the application.
-   * @param server Address and port the connection screen starts with.
-   * @param nickname Nickname the connection screen starts with.
+   * @param server Address and port the first connection screen starts with.
+   * @param nickname Nickname the first connection screen starts with.
    * @param settingsFile File the settings are read from and saved to, or
    * nothing to keep them for this launch only.
    * @throws RenderTextureNotCreatedException when the background cannot get
@@ -185,8 +186,9 @@ class Application {
    */
   NetworkThread network_;
   ServerConnection connection_;
-  network::Endpoint server_;
-  std::string nickname_;
+  /** @brief The server and the nickname every connection screen starts
+   * with: those of launch, then those of the last attempt. */
+  ServerChoice serverChoice_;
   /** @brief How the last game ended, written by the game screen, read by
    * the end screen. */
   GameResult gameResult_;
