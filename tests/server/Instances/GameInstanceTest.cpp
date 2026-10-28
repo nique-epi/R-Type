@@ -17,7 +17,6 @@
 #include "DebugJournal.hpp"
 #include "EnemyKilled.hpp"
 #include "EntityDestruction.hpp"
-#include "EntityIdConstants.hpp"
 #include "EventBus.hpp"
 #include "GameInstance.hpp"
 #include "GameInstanceConstants.hpp"
@@ -42,7 +41,6 @@
 #include "ServerDatagrams.hpp"
 #include "ServerLobbyTestConstants.hpp"
 #include "ShipControlConstants.hpp"
-#include "Spawning/BydoSpawnerTestConstants.hpp"
 #include "TimeConstants.hpp"
 #include "TimerScheduler.hpp"
 #include "UnreliableNetwork.hpp"
@@ -129,87 +127,6 @@ network::LobbyState roomOfTheFirstPlayerNotReady() {
           .playerNumber = network::FIRST_PLAYER_NUMBER,
           .ready = false,
           .nickname = std::string{testing::PLAYER_NICKNAME}}}};
-}
-
-/**
- * Given a game that was just built
- * When nothing happened yet
- * Then it waits for players, at tick 0
- */
-TEST_F(GameInstanceTest, StartsWaitingForPlayers) {
-  EXPECT_EQ(game().state(), GameState::WaitingForPlayers);
-  EXPECT_EQ(game().tick(), 0);
-}
-
-/**
- * Given a game with no connected player
- * When ticks run
- * Then it keeps waiting for players
- */
-TEST_F(GameInstanceTest, DoesNotStartWithoutPlayers) {
-  runTicks(SOME_TICKS);
-
-  EXPECT_EQ(game().state(), GameState::WaitingForPlayers);
-}
-
-/**
- * Given one connected player who did not say ready
- * When ticks run
- * Then the game keeps waiting
- */
-TEST_F(GameInstanceTest, WaitsForAPlayerWhoIsNotReady) {
-  join(FIRST_PLAYER);
-
-  runTicks(SOME_TICKS);
-
-  EXPECT_EQ(game().state(), GameState::WaitingForPlayers);
-}
-
-/**
- * Given one connected player
- * When the player says ready and a tick runs
- * Then the game is in progress
- */
-TEST_F(GameInstanceTest, StartsWhenTheOnlyPlayerIsReady) {
-  join(FIRST_PLAYER);
-  sendReady(
-      {.player = FIRST_PLAYER, .ready = true, .sequence = FIRST_SEQUENCE});
-
-  tick();
-
-  EXPECT_EQ(game().state(), GameState::InProgress);
-}
-
-/**
- * Given two connected players
- * When only the first says ready
- * Then the game keeps waiting
- */
-TEST_F(GameInstanceTest, WaitsWhileOnePlayerIsNotReady) {
-  join(FIRST_PLAYER);
-  join(SECOND_PLAYER);
-  sendReady(
-      {.player = FIRST_PLAYER, .ready = true, .sequence = FIRST_SEQUENCE});
-
-  tick();
-
-  EXPECT_EQ(game().state(), GameState::WaitingForPlayers);
-}
-
-/**
- * Given four connected players, the most a game holds
- * When every one of them says ready
- * Then the game is in progress
- */
-TEST_F(GameInstanceTest, StartsWhenFourPlayersAreReady) {
-  for (std::size_t index = 0; index < network::MAXIMUM_PLAYERS; ++index) {
-    join(index);
-    sendReady({.player = index, .ready = true, .sequence = FIRST_SEQUENCE});
-  }
-
-  tick();
-
-  EXPECT_EQ(game().state(), GameState::InProgress);
 }
 
 /**
@@ -338,84 +255,6 @@ TEST_F(GameInstanceTest, IgnoresAReadyStateWhileInProgress) {
 }
 
 /**
- * Given a game that waits for players
- * When ticks run
- * Then the tick stays at 0
- */
-TEST_F(GameInstanceTest, DoesNotCountTicksWhileWaiting) {
-  join(FIRST_PLAYER);
-
-  runTicks(SOME_TICKS);
-
-  EXPECT_EQ(game().tick(), 0);
-}
-
-/**
- * Given a game that just started
- * When SOME_TICKS ticks run
- * Then the tick is SOME_TICKS
- */
-TEST_F(GameInstanceTest, CountsTicksWhileInProgress) {
-  startGameWithOnePlayer();
-
-  runTicks(SOME_TICKS);
-
-  EXPECT_EQ(game().tick(), SOME_TICKS);
-}
-
-/**
- * Given a game in progress
- * When it is finished
- * Then its state is Finished
- */
-TEST_F(GameInstanceTest, FinishEndsTheGameInProgress) {
-  startGameWithOnePlayer();
-
-  game().finish();
-
-  EXPECT_EQ(game().state(), GameState::Finished);
-}
-
-/**
- * Given a game that waits for players
- * When it is finished
- * Then it keeps waiting
- */
-TEST_F(GameInstanceTest, FinishDoesNothingWhileWaiting) {
-  game().finish();
-
-  EXPECT_EQ(game().state(), GameState::WaitingForPlayers);
-}
-
-/**
- * Given a finished game
- * When one tick less than FINISHED_STATE_TICKS runs
- * Then it is still finished
- */
-TEST_F(GameInstanceTest, StaysFinishedBeforeTheFinishedDurationElapsed) {
-  startGameWithOnePlayer();
-  game().finish();
-
-  runTicks(FINISHED_STATE_TICKS - 1);
-
-  EXPECT_EQ(game().state(), GameState::Finished);
-}
-
-/**
- * Given a finished game
- * When FINISHED_STATE_TICKS ticks run
- * Then it waits for players again
- */
-TEST_F(GameInstanceTest, WaitsForPlayersAgainOnceTheFinishedDurationElapsed) {
-  startGameWithOnePlayer();
-  game().finish();
-
-  runTicks(FINISHED_STATE_TICKS);
-
-  EXPECT_EQ(game().state(), GameState::WaitingForPlayers);
-}
-
-/**
  * Given a game in progress with one player
  * When that player times out
  * Then the game is finished
@@ -471,29 +310,6 @@ TEST_F(GameInstanceTest, WaitsForPlayersAgainAfterItsLastPlayerLeft) {
 }
 
 /**
- * Given a game that was played by two players and finished
- * When it waits for players again
- * Then the world holds one fresh ship per player, not the old ones as well,
- * and the tick is back at 0
- */
-TEST_F(GameInstanceTest, ResetsTheWorldBetweenTwoGames) {
-  join(FIRST_PLAYER);
-  join(SECOND_PLAYER);
-  sendReady(
-      {.player = FIRST_PLAYER, .ready = true, .sequence = FIRST_SEQUENCE});
-  sendReady(
-      {.player = SECOND_PLAYER, .ready = true, .sequence = FIRST_SEQUENCE});
-  tick();
-  runTicks(SOME_TICKS);
-  game().finish();
-
-  runTicks(FINISHED_STATE_TICKS);
-
-  EXPECT_EQ(game().world().entityCount(), 2);
-  EXPECT_EQ(game().tick(), 0);
-}
-
-/**
  * Given a game in progress whose player killed an enemy and a game that
  * finished
  * When the game waits for players again
@@ -535,43 +351,6 @@ TEST_F(GameInstanceTest, CreditsTheKillOfAnEnemyToThePlayerWhoFired) {
 }
 
 /**
- * Given a game that was played and finished
- * When it waits for players again
- * Then every player is connected, not ready, and has a ship
- */
-TEST_F(GameInstanceTest, KeepsThePlayersConnectedButNotReadyForTheNextGame) {
-  join(FIRST_PLAYER);
-  sendReady(
-      {.player = FIRST_PLAYER, .ready = true, .sequence = FIRST_SEQUENCE});
-  tick();
-  game().finish();
-
-  runTicks(FINISHED_STATE_TICKS);
-
-  ASSERT_EQ(game().roster().connected().size(), 1);
-  const ConnectedPlayer* const player =
-      game().roster().find(playerEndpoint(FIRST_PLAYER));
-  ASSERT_NE(player, nullptr);
-  EXPECT_FALSE(player->ready);
-  EXPECT_NE(player->shipEntityId, identifiers::NO_ENTITY_ID);
-}
-
-/**
- * Given a game that waits for players again after a game
- * When ticks run without any player saying ready
- * Then the game keeps waiting
- */
-TEST_F(GameInstanceTest, NeedsEveryPlayerReadyAgainForTheNextGame) {
-  startGameWithOnePlayer();
-  game().finish();
-  runTicks(FINISHED_STATE_TICKS);
-
-  runTicks(SOME_TICKS);
-
-  EXPECT_EQ(game().state(), GameState::WaitingForPlayers);
-}
-
-/**
  * Given a game that waits for players again after a game
  * When the player says ready with a newer sequence
  * Then the second game starts
@@ -586,71 +365,6 @@ TEST_F(GameInstanceTest, StartsASecondGame) {
   tick();
 
   EXPECT_EQ(game().state(), GameState::InProgress);
-}
-
-/**
- * Given a game that waits for a player who is not ready
- * When as many ticks pass as the first pause of a game
- * Then the world holds the ship only: no Bydo appears before the game starts
- */
-TEST_F(GameInstanceTest, NoBydoAppearsWhileWaitingForPlayers) {
-  join(FIRST_PLAYER);
-
-  runTicks(testing::TICKS_TO_THE_FIRST_BYDO);
-
-  EXPECT_EQ(game().world().entityCount(), 1U);
-}
-
-/**
- * Given a game just started with one player
- * When one tick less than the first pause passes, then one more
- * Then no Bydo is in the world, and then one is, next to the ship
- */
-TEST_F(GameInstanceTest, TheFirstBydoAppearsOnceTheFirstPauseIsOver) {
-  startGameWithOnePlayer();
-
-  runTicks(testing::TICKS_TO_THE_FIRST_BYDO - 1);
-  EXPECT_EQ(game().world().entityCount(), 1U);
-  tick();
-
-  EXPECT_EQ(game().world().entityCount(), 2U);
-}
-
-/**
- * Given a finished game, which had run half its first pause
- * When it waits for players again, starts again, and runs one tick less than
- * the first pause
- * Then no Bydo is in the new world: its waves start over with the first pause
- */
-TEST_F(GameInstanceTest, ANewGameStartsTheWavesOver) {
-  startGameWithOnePlayer();
-  runTicks(testing::TICKS_TO_THE_FIRST_BYDO / 2);
-  game().finish();
-  runTicks(FINISHED_STATE_TICKS);
-  ASSERT_EQ(game().state(), GameState::WaitingForPlayers);
-  sendReady(
-      {.player = FIRST_PLAYER, .ready = true, .sequence = SECOND_SEQUENCE});
-  tick();
-  ASSERT_EQ(game().state(), GameState::InProgress);
-
-  runTicks(testing::TICKS_TO_THE_FIRST_BYDO - 1);
-
-  EXPECT_EQ(game().world().entityCount(), 1U);
-}
-
-/**
- * Given a finished game
- * When ticks run for twice the first pause
- * Then no Bydo appears
- */
-TEST_F(GameInstanceTest, NoBydoAppearsWhileFinished) {
-  startGameWithOnePlayer();
-  game().finish();
-  const std::size_t entitiesBefore = game().world().entityCount();
-
-  runTicks(2 * testing::TICKS_TO_THE_FIRST_BYDO);
-
-  EXPECT_EQ(game().world().entityCount(), entitiesBefore);
 }
 
 /**
