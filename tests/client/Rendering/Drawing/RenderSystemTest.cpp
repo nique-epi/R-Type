@@ -504,6 +504,51 @@ TEST(RenderSystem, ARollingShipArrivingIsHiddenOnTheFirstHalf) {
 }
 
 /**
+ * Given a ship halfway through its roll
+ * When a frame is rendered
+ * Then all 16 rows of its frame are drawn one by one, shaded: its belly
+ * shows
+ */
+TEST(RenderSystem, ARollingShipIsDrawnRowByRowAndShadedOnItsBelly) {
+  Scene scene;
+  const Entity ship = scene.spawn("ship", Layer::Players);
+  scene.components().add(ship, halfwayRollingFlight());
+
+  scene.render();
+
+  const std::vector<DrawnImage>& drawn = scene.surface().drawn();
+  ASSERT_EQ(drawn.size(), static_cast<std::size_t>(WHOLE_IMAGE.height));
+  for (const DrawnImage& row : drawn) {
+    EXPECT_EQ(row.frame.height, 1);
+    EXPECT_EQ(row.tone, SpriteTone::Shade);
+  }
+}
+
+/**
+ * Given a steady invulnerable ship halfway through its roll
+ * When a frame is rendered
+ * Then every row of its belly stays dithered: the roll does not hide that
+ * the ship cannot be hit
+ */
+TEST(RenderSystem, AnInvulnerableRollingShipStaysDitheredOnItsBelly) {
+  Scene scene;
+  const Entity ship = scene.spawn("ship", Layer::Players);
+  scene.components().add(ship, halfwayRollingFlight());
+  scene.components().add(
+      ship, Invulnerability{.elapsed = Duration::zero(),
+                            .steady = true,
+                            .outline = PINK_LIGHT_OF_THE_SECOND_PILOT});
+
+  scene.render();
+
+  const std::vector<DrawnImage>& drawn = scene.surface().drawn();
+  ASSERT_FALSE(drawn.empty());
+  for (const DrawnImage& row : drawn) {
+    EXPECT_EQ(row.tone, SpriteTone::Ghost);
+  }
+}
+
+/**
  * Given a dashing ship whose trail is known
  * When a frame is rendered
  * Then AFTERIMAGE_COUNT dithered copies are drawn before the ship itself

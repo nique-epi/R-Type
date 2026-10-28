@@ -245,7 +245,7 @@ Every pilot's ship carries a `ShipFlight` (`src/client/Rendering/SpriteLook/`): 
 
 - The flame burns behind the engine, from 1 pixel when out to `FLAME_LONGEST` (8) at full thrust, one more every other 50 ms: full while the pilot holds right or dashes, `FLAME_MANEUVER_SHARE` (0.35) while it only moves up or down, out while the ship glides, eased at `FLAME_RESPONSE_RATE` (14 per second). It lights before the drift has gathered speed, so the inertia shows.
 - Four flight lines scroll behind a ship pushed forward for `FLIGHT_LINES_AFTER` (650 ms) or dashing, on the rows of `SPEED_LINE_ROWS`. `paintGroundEffects()` paints the flame and the lines under every sprite.
-- A roll draws one whole turn in `ROLL_DURATION` (400 ms): `RenderSystem` draws the sprite row by row, round(16 × |cos|) rows and `ROLL_THINNEST_ROWS` (2) at least, upside down and in `SpriteTone::Shade` once its belly shows. An invulnerable ship loses its outline while it rolls.
+- A roll draws one whole turn in `ROLL_DURATION` (400 ms): `RenderSystem` draws the sprite row by row, round(16 × |cos|) rows and `ROLL_THINNEST_ROWS` (2) at least, upside down and in `SpriteTone::Shade` once its belly shows, unless a hit or an invulnerability already gives it another tone. An invulnerable ship loses its outline while it rolls.
 - While a ship rolls or dashes, three afterimages lit one pixel in two (`SpriteTone::Ghost`) follow it, `AFTERIMAGE_AGES` (12, 8 and 4) frames behind, in the `Effects` layer under the ships. A plain move leaves nothing behind, and a ship still arriving (`Reveal`) shows neither its roll nor its afterimages: the arrival draws it.
 
 ## Color modes: `PlayerPalette`

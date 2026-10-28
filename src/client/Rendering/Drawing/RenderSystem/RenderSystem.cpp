@@ -315,7 +315,9 @@ void RenderSystem::drawRolled(IDrawSurface& surface, const DrawCall& call,
                         RowSpan{.first = sourceRowOf(rolled, row), .count = 1}),
         .center = centerOfRows(center, rolled.count,
                                RowSpan{.first = row, .count = 1}),
-        .tone = rolled.belly ? SpriteTone::Shade : call.look.tone,
+        .tone = rolled.belly && call.look.tone == SpriteTone::Normal
+                    ? SpriteTone::Shade
+                    : call.look.tone,
         .outline = std::nullopt});
   }
 }
