@@ -47,6 +47,7 @@ Paths below are relative to `.claude/rules/`.
 | Writing a module (`IModule`) | `architecture/fix-architecture-a-module-install-keeps-nothing-open.md`, `architecture/fix-architecture-a-module-start-that-throws-closes-what-it-opened.md` |
 | Touching the network | security section of `core/code-review.md`, `fix/reasoning/fix-reasoning-an-exception-to-a-check-is-read-as-the-forger.md`, `fix/reasoning/fix-reasoning-last-received-is-not-newest-over-udp.md` |
 | Creating a branch | `fix/process/fix-process-branch-before-first-commit.md`, `fix/execution/fix-execution-checkout-b-starts-from-head-not-main.md`, `fix/process/fix-process-reread-rules-after-switching-branch.md` |
+| Finishing the application of a plan | `core/simplify-after-plan.md` — `/simplify` before the final gates |
 | Committing | `core/commit.md`, `fix/process/fix-process-no-co-author-trailer.md`, `fix/execution/fix-execution-check-the-index-before-committing.md` |
 | Finishing a feature | the `document-feature` skill (`.claude/skills/document-feature/SKILL.md`), `fix/process/fix-process-grep-every-page-for-what-the-feature-replaced.md` |
 | Opening a PR | `fix/format/fix-format-pull-requests-in-english.md`, `fix/format/fix-format-pr-links-its-linear-issue.md`, `fix/process/fix-process-pr-always-opened-as-draft.md`, the `document-feature` skill if the feature is not documented yet |
@@ -63,6 +64,7 @@ Paths below are relative to `.claude/rules/`.
 - `core/commit.md`
 - `core/context-continuity.md`
 - `core/errors-learning.md`
+- `core/simplify-after-plan.md`
 
 **C++ architecture — `architecture/` (loaded when a C++ file is read)**
 - `architecture/architecture-a-module-is-one-folder-and-one-target.md`
@@ -193,6 +195,7 @@ Skills live in `.claude/skills/<name>/SKILL.md`, relative to the repository root
 ## Definition of done
 
 - [ ] Dedicated branch started from `origin/main`, one intent per commit.
+- [ ] `/simplify` run once the plan is fully applied, before the gates below.
 - [ ] `cmake --workflow --preset test` green, **zero warnings**, output and exit code read.
 - [ ] `format-check` and `tidy` green.
 - [ ] No violation of the `architecture/` and `code-style/` rules.
