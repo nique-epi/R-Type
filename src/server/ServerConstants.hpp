@@ -158,6 +158,14 @@ static_assert(TICKS_PER_GAME_ENDED >= 1,
 constexpr std::uint32_t FINE_TIMER_RESOLUTION_MILLISECONDS = 1;
 
 /**
+ * @brief How long the handler of the closing of a Windows console waits for the
+ * server to finish stopping before it returns. Windows ends the process 5000 ms
+ * after that event whatever the handler does (HandlerRoutine,
+ * learn.microsoft.com); the margin leaves time to leave main().
+ */
+constexpr engine::Duration CONSOLE_CLOSE_WAIT = std::chrono::seconds(4);
+
+/**
  * @brief The stages of the server's loop, in the order each tick runs them:
  * the datagrams received are read, the game is simulated, then what changed is
  * sent. A module adds its work to one of them during its install().

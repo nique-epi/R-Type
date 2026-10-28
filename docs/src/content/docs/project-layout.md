@@ -133,8 +133,9 @@ src/network/
 ```
 src/server/
 ├── Application/      starts and stops the threads
+├── Modules/          one folder per module (logger, network, games, lobby) and the list that assembles them
 ├── Exceptions/       the root exception of the server, errors of the waves file
-├── Platform/         what differs between Windows, macOS and Linux
+├── Platform/         what differs between Windows, macOS and Linux, and the stop signals
 ├── LaunchOptions/    port, name, limits, master address
 ├── Lobby/            players not in a game: list, create, join, chat
 ├── Instances/        one GameInstance per game, each on its thread
@@ -147,7 +148,7 @@ src/server/
 └── Storage/          this server's SQLite file: leaderboard, statistics
 ```
 
-`Application`, `Replication` (the world state sender, the waiting room announcer, the announcer of the end of a game, the announcement of the ship of each new player, and the encoder and broadcaster of the game events), `Platform`, `LaunchOptions`, `Lobby` (the answers to connection requests only), `Spawning` (the Bydo spawner, the reader of the waves file and the missile launcher), `Exceptions`, `Sessions` (the roster of the players of a game, the session header of every datagram to a player, and the classes that read their datagrams, keep their ready state and newest input, close their sessions and send their heartbeats; no other folder of `src/server` is linked by it) and `Instances` (one `GameInstance` for now, run on the simulation thread like the rest, which runs the systems of its world, and the score and the lives of its players) exist today: the network thread and the simulation thread, the waiting room, the start of the game, the world state, the game events and the end of a game sent to the players (see [Server](/R-Type/server/)), the timer resolution the server asks Windows for, the port and seed read at launch, the players let in, the Bydos appearing and moving, the missiles the players fire, and a game with its states, its ready rule and the newest input of each player, which moves its ship.
+`Application`, `Modules` (the logger, network, games and lobby modules, the list that assembles them, and the farewell the games module sends when the server stops), `Replication` (the world state sender, the waiting room announcer, the announcer of the end of a game, the announcement of the ship of each new player, and the encoder and broadcaster of the game events), `Platform`, `LaunchOptions`, `Lobby` (the answers to connection requests only), `Spawning` (the Bydo spawner, the reader of the waves file and the missile launcher), `Exceptions`, `Sessions` (the roster of the players of a game, the session header of every datagram to a player, and the classes that read their datagrams, keep their ready state and newest input, close their sessions and send their heartbeats; no other folder of `src/server` is linked by it) and `Instances` (one `GameInstance` for now, run on the simulation thread like the rest, which runs the systems of its world, and the score and the lives of its players) exist today: the network thread and the simulation thread, the waiting room, the start of the game, the world state, the game events and the end of a game sent to the players (see [Server](/R-Type/server/)), the timer resolution the server asks Windows for, the port and seed read at launch, the players let in, the Bydos appearing and moving, the missiles the players fire, and a game with its states, its ready rule and the newest input of each player, which moves its ship.
 
 ### Client
 
@@ -216,26 +217,28 @@ Each module splits its classes into a controller (HTTP in and out), a service (t
 
 ## Adding a class
 
-Adding `WaveDirector` to `src/game/Waves`:
+Adding `WaveDirector` to `src/game/Waves`, a module that already holds `WaveProgression`:
 
 ```
 src/game/Waves/
-├── CMakeLists.txt         add_subdirectory(WaveDirector)
-└── WaveDirector/
-    ├── CMakeLists.txt     add_library(rtype_game_wave_director STATIC WaveDirector.cpp)
-    ├── WaveDirector.hpp
-    └── WaveDirector.cpp
+├── CMakeLists.txt         add_library(rtype_game_waves STATIC WaveDirector.cpp WaveProgression.cpp)
+├── WaveDirector.hpp
+├── WaveDirector.cpp
+├── WaveProgression.hpp
+└── WaveProgression.cpp
 ```
 
-- A concrete class has its own folder, named after it, holding only its `.hpp`, its `.cpp` and its `CMakeLists.txt`; so does a header of free functions that has a `.cpp`.
-- Interfaces (`IWaveSource`), plain structs and constants headers (`WaveConstants.hpp`) have no `.cpp`: they stay in the parent folder.
-- A class declares no type inside it: a struct it uses has a header of its own, in the parent folder. A class declares at most ten member functions besides its constructors and its destructor.
+- A module is a folder with one `CMakeLists.txt` and one library. It holds the `.hpp` and `.cpp` of its classes, and of its free functions, side by side, at most ten `.cpp`. A sub-folder with a library of its own, a sub-module, exists only for a group of classes that needs a dependency the rest of the module must not link, or that another module reuses, or when the module would pass ten `.cpp`; never deeper than that.
+- Interfaces (`IWaveSource`), plain structs and constants headers (`WaveConstants.hpp`) sit in the same folder as the classes.
+- Two classes of a module never include each other, directly or through a third.
+- A module written before this convention keeps a folder per class until it is flattened, in a commit of its own; a folder never holds both layouts.
+- A class declares no type inside it: a struct it uses has a header of its own, in the same module. A class declares at most ten member functions besides its constructors and its destructor.
 - A header of constants is named `<Concept>Constants.hpp` and holds constants only.
-- The class library is `rtype_<owner>_<class_in_snake_case>`, linked by the aggregate of its library (`rtype_game`) or by its program.
+- The module library is `rtype_<owner>_<module_in_snake_case>`, linked by the aggregate of its library (`rtype_game`) or by its program.
 - The namespace is `rtype::<owner>`: `rtype::game` here.
 - An error is a subclass of the owner's root exception, in `<owner>/Exceptions/`: `GameException` here.
 
-This follows our previous projects: shared code in libraries and one folder per program, like Zappy; one library per module, interfaces next to their implementations and tests that mirror the sources, like the Raytracer. Two things differ: folders are `PascalCase`, and a folder holds one class.
+This follows our previous projects: shared code in libraries and one folder per program, like Zappy; one library per module, interfaces next to their implementations and tests that mirror the sources, like the Raytracer. One thing differs: folders are `PascalCase`.
 
 ## A key press, from one screen to another
 

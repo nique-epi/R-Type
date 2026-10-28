@@ -1,4 +1,5 @@
 #include "ServerException.hpp"
+#include <cstdint>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -84,5 +85,24 @@ UnknownDifficultyException::UnknownDifficultyException(
 
 EmptyEnemyCycleException::EmptyEnemyCycleException()
     : ServerException("A wave plan must name at least one enemy") {}
+
+NoJoinableGameException::NoJoinableGameException()
+    : ServerException("no game to join: the server has not created one") {}
+
+ServerAlreadyOpenException::ServerAlreadyOpenException()
+    : ServerException("the server is already open") {}
+
+ServerNotOpenException::ServerNotOpenException()
+    : ServerException("the server is not open: call open() first") {}
+
+SignalMaskException::SignalMaskException(const std::string& reason)
+    : ServerException("cannot block the signals that stop the server: " +
+                      reason) {}
+
+ConsoleHandlerException::ConsoleHandlerException(std::uint32_t errorCode)
+    : ServerException(
+          "cannot register the handler of the console events that stop the "
+          "server: Windows error " +
+          std::to_string(errorCode)) {}
 
 }  // namespace rtype::server
