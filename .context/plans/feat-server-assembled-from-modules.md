@@ -52,6 +52,7 @@ Each gap between the issue and the code (from `.cezar-work/context.md`) and each
 14. **Folders follow the project map** (`project-layout.md:133-146`): `Application/` "starts and stops the threads" holds `ServerLink`, `NetworkModule`, `LoggingModule` and `IServerLink.hpp`; `Instances/` holds `GameList`, `GamesModule` and `GameListSettings.hpp`; `Lobby/` holds `LobbyModule`; `Platform/` "what differs between Windows, macOS and Linux" holds `StopSignals`. No new top-level folder. Link directions checked: no target of `Application/` or `Platform/` links `Instances/` or `Lobby/` (`git grep` exit 1); `Lobby/` already links `Instances/` (`rtype_server_player_roster`), and `Instances/` already links `Replication/`.
 15. **The event subscriptions of the game.** `GameInstance` and `GameEventBroadcaster` subscribe in their constructors and keep no handle (pre-existing), so `GamesModule::stop()` cannot unsubscribe one by one. It owns the bus and the timers through `std::unique_ptr` and destroys them after the game and the broadcaster, which drops every subscription.
 16. **No interface per module** (question raised on the first version of this plan): each module implements `engine::IModule` only; the contracts between modules are the services `IStageRunner`, `IServerLink` (interfaces), `ServerApplication::ReceivedDatagrams` and `GameList` (concrete). See "Interfaces: one per contract between modules, not one per module".
+17. **How a module knows another module's functions** (second question on this plan): through the header of the service it uses (`#include "IServerLink.hpp"`), the CMake target that exposes it, and `InstallContext::require<Service>()`, which returns a reference of that type; a module never includes the header of another module. See "How a module knows the functions of the module it needs".
 
 ## Design at a glance
 
@@ -86,6 +87,41 @@ No module has an interface of its own: there is no `INetworkModule` (`IReseau`),
 - `fix-architecture-inherit-interfaces-compose-implementations.md` asks for inheritance "only to implement an interface" that callers use. An interface nobody calls adds a file and a second name per module, with no caller.
 
 When RTY-59 brings a second way to hold games (one process per game), `GameList` is the service that would become an interface, because the lobby would then talk to two implementations.
+
+### How a module knows the functions of the module it needs
+
+A module never sees the class of another module. It sees the **header of the service** that module provides, the way any C++ class sees the class it calls. Three things carry it, at three moments:
+
+| Moment | What carries it | Example: `games` uses the network |
+|---|---|---|
+| Compile time | the service's header, `#include`d by the user; it declares the functions with their exact signatures | `GamesModule.cpp` includes `IServerLink.hpp`, which declares `send(network::OutgoingDatagram)`, `admit(const network::Endpoint&, std::uint64_t)`, `forget(…)`, `sendQueuedAfterRun()`. It never includes `NetworkModule.hpp` |
+| Link time | the CMake target of the folder that exposes the header, in the user's `target_link_libraries` | `rtype_server_games_module` links `rtype_server_application_interfaces`, the INTERFACE target that exposes `src/server/Application/`, where `IServerLink.hpp` sits |
+| Install time | `InstallContext::require<Service>()`, which looks the object up by its C++ type and returns a typed reference | `link_ = &context.require<IServerLink>();` gives an `IServerLink&`, so `link_->forget(departed.endpoint, departed.sessionToken)` is checked by the compiler like any call |
+
+The lookup by type is how the engine already works (`ServiceRegistry`, `src/engine/Modules/Services/ServiceRegistry.hpp`):
+- `provide<Service>(service)` keeps a `Service*` under the key `std::type_index(typeid(Service))`;
+- `require<Service>()` finds that key and returns `Service&` (`InstallContext.hpp:62`).
+
+So `NetworkModule::install()` provides with `context.provide<IServerLink>(link_)`, and the users require `IServerLink`. The key is the interface type, never the concrete `ServerLink`.
+
+What each side checks, and when:
+
+| Mistake | Caught |
+|---|---|
+| a call to a function the service does not declare, or with the wrong arguments | at compile time: the header declares the only signatures |
+| a user module listed before its provider, or the provider missing from the list | when `Application` is built: `MissingDependencyException`, from `dependencies()`, before anything is installed |
+| a provider listed but not providing the service | in `Application::start()`, during the user's `install()`: `MissingServiceException` names the module and the type, before anything is opened |
+
+The names in `dependencies()` (`"network"`, `"games"`) only fix the order of the list. They do not give access to anything: the functions come from the header, the object from `require<>()`.
+
+Who includes what in this plan:
+
+| Module | Includes, from other folders | Gets at install |
+|---|---|---|
+| `NetworkModule` | `IStageRunner.hpp` (engine) | `require<engine::IStageRunner>()`; provides `IServerLink`, `ServerApplication::ReceivedDatagrams` |
+| `GamesModule` | `IServerLink.hpp`, `ServerApplication.hpp` (for the struct of the datagrams) | `require<IServerLink>()`, `require<const ServerApplication::ReceivedDatagrams>()`; provides `GameList` |
+| `LobbyModule` | `IServerLink.hpp`, `ServerApplication.hpp`, `GameList.hpp` | `require<IServerLink>()`, `require<const ServerApplication::ReceivedDatagrams>()`, `require<GameList>()` |
+| `LoggingModule` | nothing of another module | nothing |
 
 The life of the program, when Ctrl-C arrives:
 
