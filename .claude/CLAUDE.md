@@ -72,6 +72,7 @@ Paths below are relative to `.claude/rules/`.
 - `architecture/architecture-custom-exceptions-per-module.md`
 - `architecture/architecture-hpp-declarations-cpp-definitions.md`
 - `architecture/architecture-pure-virtual-interfaces.md`
+- `architecture/fix-architecture-a-class-the-tests-build-opens-no-opengl-context.md`
 - `architecture/fix-architecture-a-function-does-one-kind-of-step.md`
 - `architecture/fix-architecture-a-module-install-keeps-nothing-open.md`
 - `architecture/fix-architecture-a-module-start-that-throws-closes-what-it-opened.md`
