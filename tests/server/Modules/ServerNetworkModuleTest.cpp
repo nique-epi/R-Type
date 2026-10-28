@@ -180,14 +180,19 @@ TEST_F(ServerNetworkModuleFixture, TellsTheStopRequestWhenTheServerFails) {
 }
 
 /**
- * Given a port another socket already holds
+ * Given a port another socket already holds on every interface, as the server
+ * would bind it (Windows lets a socket bound to one address share the port with
+ * one bound to every address, so the holder must take the same address)
  * When the application starts
  * Then start() fails naming the network module, and the other socket keeps its
  * port
  */
 TEST_F(ServerNetworkModuleFixture, FailsToStartWhenThePortIsTaken) {
   rtype::network::NetworkContext holderContext;
-  const rtype::network::UdpSocket holder{holderContext, loopbackOnPort(0)};
+  const rtype::network::UdpSocket holder{
+      holderContext,
+      Endpoint{.address = std::string{rtype::network::ANY_IPV4_ADDRESS},
+               .port = rtype::network::ANY_PORT}};
   Application application(
       LoopStages(SERVER_LOOP_STAGES),
       networkModulesThen(holder.localEndpoint().port,
