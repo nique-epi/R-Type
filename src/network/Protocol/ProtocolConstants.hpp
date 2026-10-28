@@ -21,7 +21,7 @@ constexpr std::uint32_t PROTOCOL_ID = 0x52545950;
 /**
  * @brief The version of the protocol this code speaks.
  */
-constexpr std::uint8_t PROTOCOL_VERSION = 0;
+constexpr std::uint8_t PROTOCOL_VERSION = 1;
 
 /**
  * @brief The session token of a datagram sent before the connection is
@@ -125,6 +125,24 @@ constexpr std::chrono::seconds HEARTBEAT_INTERVAL{1};
  * before it takes the peer for gone. Provisional, see the protocol page.
  */
 constexpr std::chrono::seconds SESSION_TIMEOUT{5};
+
+/**
+ * @brief How long the server keeps the seat of a player it took for gone,
+ * counted from SESSION_TIMEOUT: a datagram of the player carrying its session
+ * token, from the same address and port, within this delay gives it back its
+ * seat, its ship, its score and its lives; past it the seat is freed.
+ * Provisional, see the protocol page.
+ */
+constexpr std::chrono::seconds RECONNECTION_GRACE{15};
+
+/**
+ * @brief The silence after which the server closes the session of a player,
+ * and a client takes its server for gone: SESSION_TIMEOUT plus
+ * RECONNECTION_GRACE. Within it, a side keeps the session and sends its
+ * heartbeats, so a cut of the network that ends sooner costs nothing.
+ */
+constexpr std::chrono::seconds SESSION_SILENCE_LIMIT =
+    SESSION_TIMEOUT + RECONNECTION_GRACE;
 
 /**
  * @brief How long the client keeps an entity no WorldState lists any more:

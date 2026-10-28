@@ -69,12 +69,15 @@ using testing::PROTOCOL_DISCONNECTION_COPY_INTERVAL;
 using testing::PROTOCOL_FIRST_INPUT_NUMBER;
 using testing::PROTOCOL_HEARTBEAT_INTERVAL;
 using testing::PROTOCOL_READY_STATE_INTERVAL;
+using testing::PROTOCOL_RECONNECTION_GRACE;
 using testing::PROTOCOL_REQUEST_INTERVAL;
 using testing::PROTOCOL_SESSION_TIMEOUT;
+using testing::PROTOCOL_SILENCE_LIMIT;
 using testing::PROTOCOL_UP_ACTION_BIT;
 using testing::SECOND_POSITION;
 using testing::SECOND_SEQUENCE;
 using testing::server;
+using testing::SERVER_VERSION;
 using testing::ServerConnectionFixture;
 using testing::ServerConnectionLogFixture;
 using testing::SESSION_TOKEN;
@@ -271,7 +274,8 @@ TEST_F(ServerConnectionFixture, IsRefusedWithTheReasonOfTheServer) {
 
   EXPECT_EQ(connection().status(),
             (ConnectionStatus{.phase = Phase::Refused,
-                              .refusal = network::RefusalReason::GameFull}));
+                              .refusal = network::RefusalReason::GameFull,
+                              .serverVersion = SERVER_VERSION}));
 }
 
 /**
@@ -1257,56 +1261,89 @@ TEST_F(ServerConnectionLogFixture, ReadsAHeartbeatOfTheServerWithoutLoggingIt) {
 
 /**
  * Given a session the server opened, then sent nothing more
- * When the session timeout minus one nanosecond passes
- * Then the session holds
+ * When the session timeout of 5 s passes
+ * Then the session holds, and a Heartbeat has gone to the server: the server
+ * keeps the seat for the reconnection grace
  */
-TEST_F(ServerConnectionFixture, KeepsTheSessionUntilTheServerTimeout) {
+TEST_F(ServerConnectionFixture, KeepsTheSessionAndItsHeartbeatsPastTheTimeout) {
   accept();
 
-  update(PROTOCOL_SESSION_TIMEOUT - ONE_NANOSECOND);
+  update(PROTOCOL_SESSION_TIMEOUT);
+
+  EXPECT_EQ(phase(), Phase::Accepted);
+  EXPECT_GE(sentCountOf<network::Heartbeat>(), 1U);
+}
+
+/**
+ * Given a session silent for the timeout and the grace, less one nanosecond
+ * When a Heartbeat of the server in the session is read
+ * Then the session holds, and survives a further timeout of silence
+ */
+TEST_F(ServerConnectionFixture, ResumesWhenTheServerAnswersDuringTheGrace) {
+  accept();
+  update(PROTOCOL_SESSION_TIMEOUT + PROTOCOL_RECONNECTION_GRACE -
+         ONE_NANOSECOND);
+  deliverInSession(network::Heartbeat{}, FIRST_SEQUENCE);
+  update();
+
+  update(PROTOCOL_SESSION_TIMEOUT);
 
   EXPECT_EQ(phase(), Phase::Accepted);
 }
 
 /**
  * Given a session the server opened, then sent nothing more
- * When the session timeout passes
- * Then the connection is lost
+ * When the silence limit minus one nanosecond passes
+ * Then the session holds
  */
-TEST_F(ServerConnectionFixture, LosesTheServerAtTheTimeoutWithoutADatagram) {
+TEST_F(ServerConnectionFixture, KeepsTheSessionUntilTheServerTimeout) {
   accept();
 
-  update(PROTOCOL_SESSION_TIMEOUT);
-
-  EXPECT_EQ(phase(), Phase::Lost);
-}
-
-/**
- * Given a session silent for the timeout minus one nanosecond, then a
- * Heartbeat of the server read
- * When the timeout minus one nanosecond passes again
- * Then the session holds: the Heartbeat started the delay over
- */
-TEST_F(ServerConnectionFixture, AHeartbeatOfTheServerRestartsTheTimeout) {
-  accept();
-  update(PROTOCOL_SESSION_TIMEOUT - ONE_NANOSECOND);
-  deliverInSession(network::Heartbeat{}, FIRST_SEQUENCE);
-  update();
-
-  update(PROTOCOL_SESSION_TIMEOUT - ONE_NANOSECOND);
+  update(PROTOCOL_SILENCE_LIMIT - ONE_NANOSECOND);
 
   EXPECT_EQ(phase(), Phase::Accepted);
 }
 
 /**
- * Given a game silent for the timeout minus one nanosecond, then a WorldState
- * read, which a server never follows with a Heartbeat while states go out
- * When the timeout minus one nanosecond passes again
+ * Given a session the server opened, then sent nothing more
+ * When the silence limit passes
+ * Then the connection is lost
+ */
+TEST_F(ServerConnectionFixture, LosesTheServerAtTheTimeoutWithoutADatagram) {
+  accept();
+
+  update(PROTOCOL_SILENCE_LIMIT);
+
+  EXPECT_EQ(phase(), Phase::Lost);
+}
+
+/**
+ * Given a session silent for the silence limit minus one nanosecond, then a
+ * Heartbeat of the server read
+ * When the silence limit minus one nanosecond passes again
+ * Then the session holds: the Heartbeat started the delay over
+ */
+TEST_F(ServerConnectionFixture, AHeartbeatOfTheServerRestartsTheTimeout) {
+  accept();
+  update(PROTOCOL_SILENCE_LIMIT - ONE_NANOSECOND);
+  deliverInSession(network::Heartbeat{}, FIRST_SEQUENCE);
+  update();
+
+  update(PROTOCOL_SILENCE_LIMIT - ONE_NANOSECOND);
+
+  EXPECT_EQ(phase(), Phase::Accepted);
+}
+
+/**
+ * Given a game silent for the silence limit minus one nanosecond, then a
+ * WorldState read, which a server never follows with a Heartbeat while states
+ * go out
+ * When the silence limit minus one nanosecond passes again
  * Then the session holds: any datagram of the session starts the delay over
  */
 TEST_F(ServerConnectionFixture, AWorldStateRestartsTheTimeout) {
   accept();
-  update(PROTOCOL_SESSION_TIMEOUT - ONE_NANOSECOND);
+  update(PROTOCOL_SILENCE_LIMIT - ONE_NANOSECOND);
   deliverWorldStateInSession(
       stateListing(APPLIED_TICK,
                    {listed(SHIP_ID, network::WireEntityType::PlayerShip,
@@ -1314,20 +1351,20 @@ TEST_F(ServerConnectionFixture, AWorldStateRestartsTheTimeout) {
       FIRST_SEQUENCE);
   update();
 
-  update(PROTOCOL_SESSION_TIMEOUT - ONE_NANOSECOND);
+  update(PROTOCOL_SILENCE_LIMIT - ONE_NANOSECOND);
 
   EXPECT_EQ(phase(), Phase::Accepted);
 }
 
 /**
- * Given a session silent for the timeout minus one nanosecond, then a
+ * Given a session silent for the silence limit minus one nanosecond, then a
  * Heartbeat from the address of the server carrying another token
  * When one more nanosecond passes
  * Then the connection is lost: a forged datagram keeps no session alive
  */
 TEST_F(ServerConnectionFixture, ADatagramWithAnotherTokenKeepsNoSessionAlive) {
   accept();
-  update(PROTOCOL_SESSION_TIMEOUT - ONE_NANOSECOND);
+  update(PROTOCOL_SILENCE_LIMIT - ONE_NANOSECOND);
   network::PacketHeader forged;
   forged.sessionToken = OTHER_SESSION_TOKEN;
   forged.sequence = FIRST_SEQUENCE;
@@ -1349,7 +1386,7 @@ TEST_F(ServerConnectionFixture, ACopyOfADatagramReadKeepsNoSessionAlive) {
   accept();
   deliverInSession(network::Heartbeat{}, FIRST_SEQUENCE);
   update();
-  update(PROTOCOL_SESSION_TIMEOUT - ONE_NANOSECOND);
+  update(PROTOCOL_SILENCE_LIMIT - ONE_NANOSECOND);
   deliverInSession(network::Heartbeat{}, FIRST_SEQUENCE);
   update();
 
@@ -1359,7 +1396,7 @@ TEST_F(ServerConnectionFixture, ACopyOfADatagramReadKeepsNoSessionAlive) {
 }
 
 /**
- * Given a session silent for the timeout minus one nanosecond, then a
+ * Given a session silent for the silence limit minus one nanosecond, then a
  * Heartbeat of the session with its last byte cut off
  * When one more nanosecond passes
  * Then the connection is lost: a datagram whose messages do not add up to its
@@ -1367,7 +1404,7 @@ TEST_F(ServerConnectionFixture, ACopyOfADatagramReadKeepsNoSessionAlive) {
  */
 TEST_F(ServerConnectionFixture, ATruncatedDatagramKeepsNoSessionAlive) {
   accept();
-  update(PROTOCOL_SESSION_TIMEOUT - ONE_NANOSECOND);
+  update(PROTOCOL_SILENCE_LIMIT - ONE_NANOSECOND);
   std::vector<std::byte> datagram = network::DatagramCodec::encode(
       sessionHeader(FIRST_SEQUENCE), network::Heartbeat{});
   datagram.pop_back();
@@ -1381,7 +1418,7 @@ TEST_F(ServerConnectionFixture, ATruncatedDatagramKeepsNoSessionAlive) {
 
 /**
  * Given a session in which a Heartbeat of the server waits in the link
- * When a frame one nanosecond longer than the timeout ends
+ * When a frame one nanosecond longer than the silence limit ends
  * Then the session holds: the Heartbeat that arrived during that frame is
  * read before the silence is judged
  */
@@ -1389,20 +1426,20 @@ TEST_F(ServerConnectionFixture, AFrameLongerThanTheTimeoutLosesNoSession) {
   accept();
   deliverInSession(network::Heartbeat{}, FIRST_SEQUENCE);
 
-  update(PROTOCOL_SESSION_TIMEOUT + ONE_NANOSECOND);
+  update(PROTOCOL_SILENCE_LIMIT + ONE_NANOSECOND);
 
   EXPECT_EQ(phase(), Phase::Accepted);
 }
 
 /**
- * Given a client idle for the session timeout, then an attempt the server
+ * Given a client idle for the silence limit, then an attempt the server
  * accepts one request interval after it started
- * When the session timeout minus one nanosecond passes
+ * When the silence limit minus one nanosecond passes
  * Then the session holds: neither the idle time nor the wait of the attempt
  * counts as silence of the session
  */
 TEST_F(ServerConnectionFixture, KeepsASessionOpenedAfterAnIdleWait) {
-  update(PROTOCOL_SESSION_TIMEOUT);
+  update(PROTOCOL_SILENCE_LIMIT);
   connect();
   update(PROTOCOL_REQUEST_INTERVAL);
   deliverInSession(
@@ -1410,7 +1447,7 @@ TEST_F(ServerConnectionFixture, KeepsASessionOpenedAfterAnIdleWait) {
       ACCEPTANCE_SEQUENCE);
   update();
 
-  update(PROTOCOL_SESSION_TIMEOUT - ONE_NANOSECOND);
+  update(PROTOCOL_SILENCE_LIMIT - ONE_NANOSECOND);
 
   EXPECT_EQ(phase(), Phase::Accepted);
 }
@@ -1418,12 +1455,12 @@ TEST_F(ServerConnectionFixture, KeepsASessionOpenedAfterAnIdleWait) {
 /**
  * Given a session lost to the silence of its server, then a new attempt the
  * server accepts one request interval after it started
- * When the session timeout minus one nanosecond passes
+ * When the silence limit minus one nanosecond passes
  * Then the new session holds: the silence of the lost one does not carry over
  */
 TEST_F(ServerConnectionFixture, KeepsASessionOpenedAfterALostOne) {
   accept();
-  update(PROTOCOL_SESSION_TIMEOUT);
+  update(PROTOCOL_SILENCE_LIMIT);
   connect();
   update(PROTOCOL_REQUEST_INTERVAL);
   deliverInSession(
@@ -1431,14 +1468,14 @@ TEST_F(ServerConnectionFixture, KeepsASessionOpenedAfterALostOne) {
       ACCEPTANCE_SEQUENCE);
   update();
 
-  update(PROTOCOL_SESSION_TIMEOUT - ONE_NANOSECOND);
+  update(PROTOCOL_SILENCE_LIMIT - ONE_NANOSECOND);
 
   EXPECT_EQ(phase(), Phase::Accepted);
 }
 
 /**
  * Given a session the server opened, then sent nothing more
- * When the session timeout passes, then a heartbeat interval
+ * When the silence limit passes, then a heartbeat interval
  * Then nothing goes to the server: no Heartbeat, and no Disconnection, so
  * the server closes the session as timed out
  */
@@ -1446,7 +1483,7 @@ TEST_F(ServerConnectionFixture, SendsNothingToALostServer) {
   accept();
   const std::size_t sentWhenAccepted = sent().size();
 
-  update(PROTOCOL_SESSION_TIMEOUT);
+  update(PROTOCOL_SILENCE_LIMIT);
   update(PROTOCOL_HEARTBEAT_INTERVAL);
 
   EXPECT_EQ(sent().size(), sentWhenAccepted);
@@ -1462,7 +1499,7 @@ TEST_F(ServerConnectionFixture, LosingTheServerForgetsTheSession) {
   deliverInSession(network::GameStarted{}, FIRST_SEQUENCE);
   update();
 
-  update(PROTOCOL_SESSION_TIMEOUT);
+  update(PROTOCOL_SILENCE_LIMIT);
 
   EXPECT_TRUE(connection().lobbyPlayers().empty());
   EXPECT_FALSE(connection().gameStarted());
@@ -1475,7 +1512,7 @@ TEST_F(ServerConnectionFixture, LosingTheServerForgetsTheSession) {
  */
 TEST_F(ServerConnectionFixture, StaysLostWhenALateAcceptanceArrives) {
   accept();
-  update(PROTOCOL_SESSION_TIMEOUT);
+  update(PROTOCOL_SILENCE_LIMIT);
 
   deliverInSession(
       network::ConnectionAccepted{.playerNumber = ACCEPTED_PLAYER_NUMBER},
@@ -1487,13 +1524,13 @@ TEST_F(ServerConnectionFixture, StaysLostWhenALateAcceptanceArrives) {
 
 /**
  * Given a session the server opened, then sent nothing more
- * When the session timeout passes
+ * When the silence limit passes
  * Then the journal names the server and the delay it stayed silent for
  */
 TEST_F(ServerConnectionLogFixture, LogsTheServerItLost) {
   accept();
 
-  update(PROTOCOL_SESSION_TIMEOUT);
+  update(PROTOCOL_SILENCE_LIMIT);
 
   EXPECT_THAT(journal().linesHolding(LOST_SERVER_LINE_TEXT), SizeIs(1));
 }

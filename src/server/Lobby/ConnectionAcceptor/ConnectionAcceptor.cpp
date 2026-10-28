@@ -139,6 +139,10 @@ void ConnectionAcceptor::answer(const network::Endpoint& sender,
     refuse(sender, network::RefusalReason::GameFull);
     return;
   }
+  if (roster_->hasNickname(request.nickname)) {
+    refuse(sender, network::RefusalReason::NicknameTaken);
+    return;
+  }
   if (!hasValidCookie) {
     challenge(sender, now);
     return;

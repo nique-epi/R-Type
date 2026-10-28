@@ -211,6 +211,90 @@ TEST(PlayerRoster, FindsAPlayerByItsNumberOnly) {
 
 /**
  * Given an empty roster
+ * When a nickname is looked up
+ * Then nobody holds it
+ */
+TEST(PlayerRoster, HoldsNoNicknameWhenEmpty) {
+  const PlayerRoster roster;
+
+  EXPECT_FALSE(roster.hasNickname("Ace"));
+}
+
+/**
+ * Given a roster with a player named Ace
+ * When Ace, ACE and aCe are looked up
+ * Then each is held: letters of the ASCII alphabet compare without case
+ */
+TEST(PlayerRoster, HoldsANicknameWhateverTheCaseOfItsLetters) {
+  PlayerRoster roster;
+  static_cast<void>(roster.add(playerEndpoint(0), "Ace", SESSION_TOKEN));
+
+  EXPECT_TRUE(roster.hasNickname("Ace"));
+  EXPECT_TRUE(roster.hasNickname("ACE"));
+  EXPECT_TRUE(roster.hasNickname("aCe"));
+}
+
+/**
+ * Given a roster with a player named Ace
+ * When Ac, Acer and Bce are looked up
+ * Then none is held: a prefix, an extension or another letter is another
+ * nickname
+ */
+TEST(PlayerRoster, HoldsNoNicknameThatOnlyLooksLikeAHeldOne) {
+  PlayerRoster roster;
+  static_cast<void>(roster.add(playerEndpoint(0), "Ace", SESSION_TOKEN));
+
+  EXPECT_FALSE(roster.hasNickname("Ac"));
+  EXPECT_FALSE(roster.hasNickname("Acer"));
+  EXPECT_FALSE(roster.hasNickname("Bce"));
+}
+
+/**
+ * Given a roster with a player named Ace, away
+ * When Ace is looked up
+ * Then it is held: the seat of a player who is away keeps its nickname
+ */
+TEST(PlayerRoster, HoldsTheNicknameOfAPlayerWhoIsAway) {
+  PlayerRoster roster;
+  ConnectedPlayer* const player =
+      roster.add(playerEndpoint(0), "Ace", SESSION_TOKEN);
+  player->away = true;
+
+  EXPECT_TRUE(roster.hasNickname("Ace"));
+}
+
+/**
+ * Given a roster where the player named Ace was removed
+ * When Ace is looked up
+ * Then it is not held
+ */
+TEST(PlayerRoster, ReleasesTheNicknameOfARemovedPlayer) {
+  PlayerRoster roster;
+  static_cast<void>(roster.add(playerEndpoint(0), "Ace", SESSION_TOKEN));
+  static_cast<void>(roster.remove(playerEndpoint(0)));
+
+  EXPECT_FALSE(roster.hasNickname("Ace"));
+}
+
+/**
+ * Given a roster with a player named Éa, whose É is two bytes
+ * When éa is looked up
+ * Then it is not held: only the ASCII letters compare without case
+ */
+TEST(PlayerRoster, ComparesAccentedLettersByTheirBytes) {
+  PlayerRoster roster;
+  static_cast<void>(roster.add(playerEndpoint(0),
+                               "\xC3\x89"
+                               "a",
+                               SESSION_TOKEN));
+
+  EXPECT_FALSE(
+      roster.hasNickname("\xC3\xA9"
+                         "a"));
+}
+
+/**
+ * Given an empty roster
  * When a sender is removed
  * Then nobody is removed
  */

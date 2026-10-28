@@ -32,10 +32,14 @@ void ReadyKeeper::apply(const network::MessageOrigin& origin,
 
 bool ReadyKeeper::everyPlayerIsReady() {
   const ConnectedPlayers players = roster_.connected();
-  return !players.empty() &&
-         std::ranges::all_of(players, [](const ConnectedPlayer* player) {
-           return player->ready;
-         });
+  const auto isPresent = [](const ConnectedPlayer* player) {
+    return !player->away;
+  };
+  return std::ranges::any_of(players, isPresent) &&
+         std::ranges::all_of(players,
+                             [&isPresent](const ConnectedPlayer* player) {
+                               return !isPresent(player) || player->ready;
+                             });
 }
 
 }  // namespace rtype::server
