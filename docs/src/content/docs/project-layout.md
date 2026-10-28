@@ -128,7 +128,7 @@ src/network/
 
 ### Server
 
-`src/server` builds `r-type_server`: who plays where, and how the state reaches them. Every game runs on its own thread and owns its `World`; the network thread owns the sessions and the lobby; threads only talk through queues.
+`src/server` builds `r-type_server`: who plays where, and how the state reaches them. Every game owns its `World` and its event bus, and the games run one after the other on the simulation thread; the network thread receives and sends; threads only talk through queues.
 
 ```
 src/server/
