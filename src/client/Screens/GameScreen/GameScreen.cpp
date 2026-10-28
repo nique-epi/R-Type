@@ -29,6 +29,7 @@
 #include "MissionStart.hpp"
 #include "PlayerAction.hpp"
 #include "PlayerInputPacer.hpp"
+#include "PlayerLeft.hpp"
 #include "PlayerPalette.hpp"
 #include "PlayerPreferences.hpp"
 // NOLINTNEXTLINE(misc-include-cleaner)
@@ -129,9 +130,11 @@ void GameScreen::applyEntityMessages() {
   for (const EntityMessage& message : receivedEntityMessages_) {
     std::visit(
         [this](const auto& announced) {
-          if constexpr (std::is_same_v<std::decay_t<decltype(announced)>,
-                                       network::GameEnded>) {
+          using Announced = std::decay_t<decltype(announced)>;
+          if constexpr (std::is_same_v<Announced, network::GameEnded>) {
             recordEnd(announced);
+          } else if constexpr (std::is_same_v<Announced, network::PlayerLeft>) {
+            scoreBoard_.apply(announced);
           } else {
             replicator_.apply(announced);
           }

@@ -232,6 +232,23 @@ TEST_F(ConnectionScreenFixture, ALostSessionShowsNoStatusLine) {
 }
 
 /**
+ * Given a screen whose status line said the server cannot be reached
+ * When the connection reports a session the server closed
+ * Then nothing is written where the status line goes
+ */
+TEST_F(ConnectionScreenFixture, AClosedSessionShowsNoStatusLine) {
+  show({.phase = ConnectionPhase::Unreachable});
+  const RecordedWriting* unreachable = writingOf(canvas(), UNREACHABLE_STATUS);
+  ASSERT_NE(unreachable, nullptr);
+  const sf::Vector2i statusAnchor = unreachable->anchor;
+
+  show({.phase = ConnectionPhase::Closed});
+
+  EXPECT_THAT(canvas().writings,
+              Not(Contains(Field(&RecordedWriting::anchor, statusAnchor))));
+}
+
+/**
  * Given an attempt the server has just accepted
  * When frames go by up to one tick before the acceptance showed long enough
  * Then the screen asks for nothing yet

@@ -59,9 +59,10 @@ struct PlayerSettings;
  *
  * The status band of the players lies over the entities: it is painted when
  * the screen is built, from the waiting room the game started from, then
- * again whenever a world state changes a pilot (see ScoreBoard) or the
- * MISSION START banner changes (see missionBannerAt()), never at every frame
- * otherwise.
+ * again whenever a world state or a PlayerLeft changes a pilot (see
+ * ScoreBoard) or the MISSION START banner changes (see missionBannerAt()),
+ * never at every frame otherwise. A PlayerLeft marks its pilot as gone: LEFT,
+ * or SIGNAL LOST when the server timed it out.
  *
  * Releasing OPTIONS_KEY releases every action held, then puts the options over
  * the game, which goes on running behind them, dimmed. The release, not the

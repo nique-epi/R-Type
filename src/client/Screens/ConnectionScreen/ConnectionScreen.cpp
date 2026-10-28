@@ -163,6 +163,7 @@ std::string ConnectionScreen::statusLine(const ConnectionStatus& status) const {
       return UNREACHABLE_STATUS;
     case ConnectionPhase::Idle:
     case ConnectionPhase::Lost:
+    case ConnectionPhase::Closed:
       break;
   }
   return {};

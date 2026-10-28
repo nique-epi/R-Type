@@ -27,6 +27,7 @@
 #include "NetworkTestConstants.hpp"
 #include "PacketHeader.hpp"
 #include "PlayerInput.hpp"
+#include "PlayerLeft.hpp"
 #include "ReadyState.hpp"
 #include "ServerConnection.hpp"
 #include "ServerConnectionFixture.hpp"
@@ -1433,6 +1434,86 @@ TEST_F(ServerConnectionFixture, KeepsASessionOpenedAfterALostOne) {
   update(PROTOCOL_SESSION_TIMEOUT - ONE_NANOSECOND);
 
   EXPECT_EQ(phase(), ConnectionPhase::Accepted);
+}
+
+/**
+ * Given a session the server opened
+ * When the server sends a Disconnection in the session
+ * Then the session is closed
+ */
+TEST_F(ServerConnectionFixture, ADisconnectionOfTheServerClosesTheSession) {
+  accept();
+  deliverInSession(network::Disconnection{}, FIRST_SEQUENCE);
+
+  update();
+
+  EXPECT_EQ(phase(), ConnectionPhase::Closed);
+}
+
+/**
+ * Given a session the server opened
+ * When a Disconnection arrives with another session token
+ * Then the session holds: only the server of the session may close it
+ */
+TEST_F(ServerConnectionFixture, IgnoresADisconnectionWithAnotherToken) {
+  accept();
+  network::PacketHeader forged = sessionHeader(FIRST_SEQUENCE);
+  forged.sessionToken = OTHER_SESSION_TOKEN;
+  deliver(network::Disconnection{}, server(), forged);
+
+  update();
+
+  EXPECT_EQ(phase(), ConnectionPhase::Accepted);
+}
+
+/**
+ * Given an attempt the server has not accepted yet
+ * When a Disconnection arrives from the address of the server
+ * Then the attempt goes on: there is no session to close
+ */
+TEST_F(ServerConnectionFixture, IgnoresADisconnectionBeforeTheAcceptance) {
+  connect();
+  deliver(network::Disconnection{});
+
+  update();
+
+  EXPECT_EQ(phase(), ConnectionPhase::Connecting);
+}
+
+/**
+ * Given a session the server closed with a Disconnection
+ * When a heartbeat interval passes
+ * Then nothing went back to the server: no Disconnection, no Heartbeat
+ */
+TEST_F(ServerConnectionFixture, SendsNothingToAServerThatClosedTheSession) {
+  accept();
+  const std::size_t sentWhenAccepted = sent().size();
+  deliverInSession(network::Disconnection{}, FIRST_SEQUENCE);
+  update();
+
+  update(PROTOCOL_HEARTBEAT_INTERVAL);
+
+  EXPECT_EQ(sent().size(), sentWhenAccepted);
+}
+
+/**
+ * Given a game started
+ * When the server says twice that a player left
+ * Then the game screen gets both copies, in order
+ */
+TEST_F(ServerConnectionFixture, HandsOverEveryCopyOfAPlayerLeft) {
+  accept();
+  deliverInSession(network::GameStarted{}, FIRST_SEQUENCE);
+  const network::PlayerLeft departure{
+      .playerNumber = OTHER_PLAYER_NUMBER,
+      .reason = network::DepartureReason::TimedOut};
+  deliverInSession(departure, SECOND_SEQUENCE);
+  deliverInSession(departure, THIRD_SEQUENCE);
+
+  update();
+
+  EXPECT_THAT(drainedEntityMessages(),
+              ElementsAre(EntityMessage{departure}, EntityMessage{departure}));
 }
 
 /**

@@ -60,7 +60,10 @@ namespace rtype::client {
  * other datagram to the server, so the server knows the player is still there
  * while nothing else is due. A session whose server sent nothing for
  * SESSION_TIMEOUT is lost: the status becomes Lost, the session is forgotten
- * and nothing more goes to the server, not even a Disconnection. Every datagram
+ * and nothing more goes to the server, not even a Disconnection. A
+ * Disconnection of the server within the session, which it sends when it
+ * shuts down, closes it: the status becomes Closed, the session is forgotten,
+ * and nothing goes back. Every datagram
  * of the server that the checks of this comment let through counts, whatever
  * it holds: from that server, of this protocol and version, with the token of
  * the session, newer than the newest one read, and whose messages add up to its
@@ -78,8 +81,9 @@ namespace rtype::client {
  * starts a new session: sequence 0, token 0 and inputs from FIRST_INPUT_NUMBER
  * again.
  *
- * From the start of the game, it keeps the EntitySpawned, WorldState and
- * EntityDestroyed of the server, and the first copy of each GameEvent (see
+ * From the start of the game, it keeps the EntitySpawned, WorldState,
+ * EntityDestroyed and every copy of PlayerLeft of the server, and the first
+ * copy of each GameEvent (see
  * GameEventHistory), in the order they arrived, until drainEntityMessages()
  * hands them over; leaving the session drops those not handed over and
  * forgets the events seen. The game screen drains them every frame, behind
@@ -178,10 +182,11 @@ class ServerConnection : public IServerConnection,
    * CONNECTION_REQUEST_INTERVAL. */
   void continueAttempt(engine::Duration elapsed);
 
-  /** @brief Ends the attempt as Unreachable, or the session as Lost, as
-   * @p ending says; forgets the session, sends nothing, and logs that the
-   * server did not answer for the delay that ran out: SESSION_TIMEOUT for
-   * Lost, CONNECTION_ATTEMPT_TIMEOUT for Unreachable. */
+  /** @brief Ends the attempt as Unreachable, or the session as Lost or
+   * Closed, as @p ending says; forgets the session, sends nothing, and logs
+   * that the server did not answer for the delay that ran out
+   * (SESSION_TIMEOUT for Lost, CONNECTION_ATTEMPT_TIMEOUT for Unreachable),
+   * or that it closed the session. */
   void giveUp(ConnectionPhase ending);
 
   /** @brief Ends the attempt in progress as Refused (IncompatibleVersion),
