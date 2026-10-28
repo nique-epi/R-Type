@@ -1,12 +1,21 @@
 #pragma once
 
 #include <string>
+#include <string_view>
 #include <vector>
 #include "GameContext.hpp"
 #include "IGameModule.hpp"
 #include "InstallContext.hpp"
 
 namespace rtype::server::testing {
+
+/**
+ * @returns The journal line of the module called @p module for @p what, a
+ * call (INSTALL_CALL...), a stage of the tick or a player event: the module
+ * name, a space, then @p what.
+ */
+[[nodiscard]] std::string journalLine(std::string_view module,
+                                      std::string_view what);
 
 /**
  * @brief A game module that writes down, in a journal the test owns, each

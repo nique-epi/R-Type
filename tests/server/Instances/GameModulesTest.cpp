@@ -5,13 +5,16 @@
 #include <vector>
 #include "ConnectedPlayer.hpp"
 #include "EngineException.hpp"
+#include "GameInstanceConstants.hpp"
 #include "GameModuleFixture.hpp"
 #include "GameModules.hpp"
 #include "GameModulesFixtures.hpp"
-#include "GameModulesTestConstants.hpp"
 #include "IGameFlow.hpp"
 #include "IGameModule.hpp"
 #include "IGameReplication.hpp"
+#include "RecordedModulesTestConstants.hpp"
+#include "RecordingGameModule.hpp"
+#include "RecordingGameModuleConstants.hpp"
 #include "ReplicationModule.hpp"
 #include "RtypeRulesModule.hpp"
 #include "TimeConstants.hpp"
@@ -30,8 +33,10 @@ TEST_F(GameModuleFixture, GameModulesInstallEveryModuleThenStartThemInOrder) {
 
   modules.installAndStart(context());
 
-  EXPECT_EQ(journal, journalOf({FIRST_INSTALLED, SECOND_INSTALLED,
-                                FIRST_STARTED, SECOND_STARTED}));
+  EXPECT_EQ(journal, journalOf({journalLine(FIRST_MODULE_NAME, INSTALL_CALL),
+                                journalLine(SECOND_MODULE_NAME, INSTALL_CALL),
+                                journalLine(FIRST_MODULE_NAME, START_CALL),
+                                journalLine(SECOND_MODULE_NAME, START_CALL)}));
 }
 
 /**
@@ -47,7 +52,8 @@ TEST_F(GameModuleFixture, GameModulesStopTheModulesInTheOppositeOrder) {
     journal.clear();
   }
 
-  EXPECT_EQ(journal, journalOf({SECOND_STOPPED, FIRST_STOPPED}));
+  EXPECT_EQ(journal, journalOf({journalLine(SECOND_MODULE_NAME, STOP_CALL),
+                                journalLine(FIRST_MODULE_NAME, STOP_CALL)}));
 }
 
 /**
@@ -62,8 +68,11 @@ TEST_F(GameModuleFixture, GameModulesStopOnlyTheModulesThatStarted) {
     EXPECT_THROW(modules.installAndStart(context()), engine::EngineException);
   }
 
-  EXPECT_EQ(journal, journalOf({FIRST_INSTALLED, SECOND_INSTALLED,
-                                FIRST_STARTED, SECOND_STARTED, FIRST_STOPPED}));
+  EXPECT_EQ(journal, journalOf({journalLine(FIRST_MODULE_NAME, INSTALL_CALL),
+                                journalLine(SECOND_MODULE_NAME, INSTALL_CALL),
+                                journalLine(FIRST_MODULE_NAME, START_CALL),
+                                journalLine(SECOND_MODULE_NAME, START_CALL),
+                                journalLine(FIRST_MODULE_NAME, STOP_CALL)}));
 }
 
 /**
@@ -81,9 +90,12 @@ TEST_F(GameModuleFixture, GameModulesRunTheStagesInOrder) {
   modules.runStages(engine::SIMULATION_TICK_DURATION);
 
   EXPECT_EQ(journal,
-            journalOf({FIRST_IN_INPUT_STAGE, SECOND_IN_INPUT_STAGE,
-                       FIRST_IN_SIMULATION_STAGE, SECOND_IN_SIMULATION_STAGE,
-                       FIRST_IN_OUTPUT_STAGE, SECOND_IN_OUTPUT_STAGE}));
+            journalOf({journalLine(FIRST_MODULE_NAME, GAME_INPUT_STAGE),
+                       journalLine(SECOND_MODULE_NAME, GAME_INPUT_STAGE),
+                       journalLine(FIRST_MODULE_NAME, GAME_SIMULATION_STAGE),
+                       journalLine(SECOND_MODULE_NAME, GAME_SIMULATION_STAGE),
+                       journalLine(FIRST_MODULE_NAME, GAME_OUTPUT_STAGE),
+                       journalLine(SECOND_MODULE_NAME, GAME_OUTPUT_STAGE)}));
 }
 
 /**
@@ -130,7 +142,8 @@ TEST_F(GameModuleFixture, GameModulesTellEveryModuleOfAPlayerWhoJoined) {
 
   playerJoined(player);
 
-  EXPECT_EQ(journal, journalOf({FIRST_TOLD_OF_A_JOIN, SECOND_TOLD_OF_A_JOIN}));
+  EXPECT_EQ(journal, journalOf({journalLine(FIRST_MODULE_NAME, JOINED_CALL),
+                                journalLine(SECOND_MODULE_NAME, JOINED_CALL)}));
 }
 
 /**
@@ -148,7 +161,8 @@ TEST_F(GameModuleFixture, GameModulesTellEveryModuleOfAClosingSession) {
   sessionClosing(player);
 
   EXPECT_EQ(journal,
-            journalOf({FIRST_TOLD_OF_A_DEPARTURE, SECOND_TOLD_OF_A_DEPARTURE}));
+            journalOf({journalLine(FIRST_MODULE_NAME, LEAVING_CALL),
+                       journalLine(SECOND_MODULE_NAME, LEAVING_CALL)}));
 }
 
 }  // namespace rtype::server::testing

@@ -2,21 +2,15 @@
 #include <initializer_list>
 #include <memory>
 #include <string>
-#include <string_view>
 #include <vector>
-#include "GameModulesTestConstants.hpp"
 #include "IGameModule.hpp"
+#include "RecordedModulesTestConstants.hpp"
 #include "RecordingGameModule.hpp"
 
 namespace rtype::server::testing {
 
-std::vector<std::string> journalOf(
-    std::initializer_list<std::string_view> lines) {
-  std::vector<std::string> journal;
-  for (const std::string_view line : lines) {
-    journal.emplace_back(line);
-  }
-  return journal;
+std::vector<std::string> journalOf(std::initializer_list<std::string> lines) {
+  return std::vector<std::string>{lines};
 }
 
 std::vector<std::unique_ptr<IGameModule>> twoRecordingModules(
