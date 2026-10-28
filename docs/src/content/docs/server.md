@@ -15,30 +15,30 @@ This page tells you where to look when you need to change something. It describe
 | Timer resolution on Windows | Available | `src/server/Platform/` |
 | The server assembled from modules (logger, network, games, lobby), stopped on Ctrl-C or SIGTERM with a `Disconnection` to every player | Available | `src/server/Modules/`, `src/server/Platform/StopSignals/` |
 | Sorting the datagrams before the queues, session token checked | Available; no limit per address yet | `src/server/Application/DatagramSorter/` |
-| World state sent at a fixed rate to the players of the game | Available | `src/server/Replication/WorldStateSender/`, `src/server/Instances/GameInstance/` |
+| World state sent at a fixed rate to the players of the game | Available | `src/server/Replication/WorldStateSender/`, `src/server/Instances/GameFlow/` |
 | One header for every datagram to a player: session token and next sequence | Available | `src/server/Sessions/SessionDatagram/` |
 | Game events sent to the players | Available: the removal of a Bydo or a missile that leaves the playfield, the damage and destruction of a Bydo hit by missiles, and the loss of a ship and of a life when a ship touches a Bydo or a missile of a Bydo | `src/server/Replication/`, `src/game/Events/` |
 | Launch options | Available: the port, the seed and `--help` | `src/server/LaunchOptions/` |
 | Letting players in: challenge, acceptance or refusal | Available; refuses with `GameInProgress` while the game is not waiting for players | `src/server/Lobby/`, `src/server/Sessions/` |
-| A game: states, ready rule, new world between two games | Available: one game, which ends once no player is left in it or no player left has a life | `src/server/Instances/GameInstance/` |
-| Newest input of each player, applied to its ship at each tick of a game in progress | Available: the arrows move the ship, shoot fires its missiles | `src/server/Sessions/InputKeeper/`, `src/server/Instances/GameInstance/` |
+| A game: states, ready rule, new world between two games | Available: one game, which ends once no player is left in it or no player left has a life | `src/server/Instances/GameFlow/` |
+| Newest input of each player, applied to its ship at each tick of a game in progress | Available: the arrows move the ship, shoot fires its missiles | `src/server/Sessions/InputKeeper/`, `src/server/Instances/GameFlow/` |
 | Heartbeats, and the session of a silent player closed after 5 seconds | Available, and a `Disconnection` closes the session at once | `src/server/Sessions/` |
-| Waiting room and start of the game sent to the players (`LobbyState`, `GameStarted`) | Available | `src/server/Replication/LobbyStateAnnouncer/`, `src/server/Instances/GameInstance/` |
-| End of a game sent to the players (`GameEnded`) | Available: once no player has a life left, with the score of each, until the game waits for players again | `src/server/Replication/GameEndAnnouncer/`, `src/server/Instances/GameInstance/` |
+| Waiting room and start of the game sent to the players (`LobbyState`, `GameStarted`) | Available | `src/server/Replication/LobbyStateAnnouncer/`, `src/server/Instances/GameFlow/` |
+| End of a game sent to the players (`GameEnded`) | Available: once no player has a life left, with the score of each, until the game waits for players again | `src/server/Replication/GameEndAnnouncer/`, `src/server/Instances/GameFlow/` |
 | Several games, master link | Not yet written | — |
 | Components (`Position`, `Velocity`, `CollisionBox`, `Health`, `EntityType`, `Sprite`, `Layer`) | Available | `src/game/Components/` |
-| Movement, run by each game tick | Available | `src/game/Systems/MovementSystem/`, `src/server/Instances/GameInstance/` |
+| Movement, run by each game tick | Available | `src/game/Systems/MovementSystem/`, `src/server/Instances/GameFlow/` |
 | Movement patterns, and removal of what leaves the playfield | Available: patterns for the Bydos; a Bydo and its missiles leave on the left, a missile of a player on the right | `src/game/Systems/PatternSystem/`, `src/game/Systems/PlayfieldExitSystem/` |
-| Collisions | Available, run by each game tick | `src/game/Systems/CollisionSystem/`, `src/game/Systems/CollisionRules/`, `src/game/Events/`, `src/server/Instances/GameInstance/` |
-| Damage and destruction | Available, run by each game tick; a missile takes no health from a ship, and what its hit costs belongs to the lives | `src/game/Systems/DamageRules/`, `src/server/Instances/GameInstance/` |
+| Collisions | Available, run by each game tick | `src/game/Systems/CollisionSystem/`, `src/game/Systems/CollisionRules/`, `src/game/Events/`, `src/server/Instances/GameFlow/` |
+| Damage and destruction | Available, run by each game tick; a missile takes no health from a ship, and what its hit costs belongs to the lives | `src/game/Systems/DamageRules/`, `src/server/Instances/GameFlow/` |
 | Ship of each player, created when the player joins and announced to the others | Available | `src/game/Spawning/`, `src/server/Replication/ShipSpawnAnnouncer/` |
-| Ship control: where a ship goes from the directions its player holds, kept above the status band | Available; the client does not predict its own ship yet | `src/game/ShipControl/`, `src/server/Instances/GameInstance/` |
+| Ship control: where a ship goes from the directions its player holds, kept above the status band | Available; the client does not predict its own ship yet | `src/game/ShipControl/`, `src/server/Instances/GameFlow/` |
 | Bydos appearing off screen at random heights above the status band of the clients, in waves, then moving left | Available | `src/game/Spawning/BydoSpawnPosition.*`, `src/server/Spawning/` |
 | Missiles of the players: fired in front of the ship while shoot is held, three per second at most, removed past the right edge | Available | `src/server/Spawning/MissileLauncher/`, `src/game/Spawning/MissileStartPosition.*`, `src/game/Systems/PlayfieldExitSystem/` |
 | Missiles of the Bydos: every Bydo fires to the left 1.5 s after it appears, then every 1.5 s; removed past the left edge | Available | `src/server/Spawning/BydoGunner/`, `src/game/Spawning/EnemyMissileStartPosition/`, `src/game/Systems/PlayfieldExitSystem/` |
 | Score: points per Bydo kind, credited to the player who fired the missile, sent in the world state | Available | `src/game/Spawning/BydoKind/`, `src/game/Systems/DamageRules/`, `src/server/Instances/ScoreKeeper/` |
 | Waves of Bydos that grow, read from the waves file at launch | Available: every game plays the `normal` difficulty | `src/game/Waves/`, `src/server/Spawning/WaveCatalog/`, `assets/waves/waves.toml` |
-| Lives: a life lost when a ship touches a Bydo or a missile of a Bydo, a new ship 1 s later that cannot be hit for 2 s, a player with no life left watching | Available | `src/server/Instances/LifeKeeper/`, `src/server/Instances/GameInstance/` |
+| Lives: a life lost when a ship touches a Bydo or a missile of a Bydo, a new ship 1 s later that cannot be hit for 2 s, a player with no life left watching | Available | `src/server/Instances/LifeKeeper/`, `src/server/Instances/GameFlow/` |
 
 ## Launch options: `LaunchOptions`
 
@@ -64,7 +64,7 @@ This page tells you where to look when you need to change something. It describe
 - The **network thread**, the one that calls `run()`, runs the `NetworkContext`. A `DatagramSorter` sorts every datagram as it arrives: the datagrams of admitted players that carry their session token go to the player queue, connection requests to the request queue, and the rest is dropped there (see [Sorting the datagrams](#sorting-the-datagrams-datagramsorter)). `DatagramRelay` (`rtype_network`, see [Network](/R-Type/network/#socket-to-queues-datagramrelay)) sends what was left in the outgoing queue. It is the only thread that touches the socket.
 - The **simulation thread** runs `SIMULATION_TICKS_PER_SECOND` (60) ticks per second. Each tick drains the player queue and the request queue and hands what arrived, often nothing, to the tick handler given to the constructor, as a `ReceivedDatagrams` (`players`, `connectionRequests`), so a slow or silent player never holds the game up. At the end of the tick it asks the network thread, through `NetworkContext::post()`, to send the outgoing queue.
 
-The tick handler is where the game plugs in. The network module gives one (see [Modules](#modules-and-stopping-the-server)): it keeps the datagrams for the modules and runs the stages of the loop, so in a tick each game of the list gets the datagrams of the players, reads the `ReadyState` and the inputs among them, moves along its states and tells its players the room, the start and the world state (see [A game](#a-game-gameinstance) and [Player inputs](#player-inputs)), and the address of each player whose session closed in that tick is forgotten (see [Silent players](#silent-players-heartbeats-and-timeouts)); then the connection requests go to the `ConnectionAcceptor`, which answers them and gives each new player a ship in the first game (see [Letting players in](#letting-players-in-connectionacceptor-playerroster) and [Player ships](#player-ships-shipspawnannouncer)); then the timers advance by one tick and the `EventBus` delivers its events, which the broadcaster sends to the players who joined (see [Game events](#game-events-gameeventencoder-and-gameeventbroadcaster)).
+The tick handler is where the game plugs in. The network module gives one (see [Modules](#modules-and-stopping-the-server)): it keeps the datagrams for the modules and runs the stages of the loop, so in a tick each game of the list gets the datagrams of the players, reads the `ReadyState` and the inputs among them, moves along its states and tells its players the room, the start and the world state (see [A game](#a-game-gameinstance-and-gameflow) and [Player inputs](#player-inputs)), and the address of each player whose session closed in that tick is forgotten (see [Silent players](#silent-players-heartbeats-and-timeouts)); then the connection requests go to the `ConnectionAcceptor`, which answers them and gives each new player a ship in the first game (see [Letting players in](#letting-players-in-connectionacceptor-playerroster) and [Player ships](#player-ships-shipspawnannouncer)); then the timers advance by one tick and the `EventBus` delivers its events, which the broadcaster sends to the players who joined (see [Game events](#game-events-gameeventencoder-and-gameeventbroadcaster)).
 
 A tick handler puts a datagram in the outgoing queue with `queueDatagram()`, called from the handler itself, on the simulation thread. The datagram is sent at the end of the same tick.
 
@@ -166,7 +166,7 @@ How late a tick starts depends on how precisely the system wakes a sleeping thre
 
 ## World state: `WorldStateSender`
 
-`WorldStateSender` (`src/server/Replication/WorldStateSender/`) sends the state of the game to its players, at a fixed rate. Each `GameInstance` builds one with its `PlayerRoster` and calls `onTick(tick, components)` on the tick that starts the game and on every tick of the game, on the simulation thread, with the tick the game counts (see [A game](#a-game-gameinstance)). Every `TICKS_PER_WORLD_STATE` (3) ticks, that is `WORLD_STATES_PER_SECOND` (20) times per second, it lists every entity that has a `NetworkIdentity`, a `Position` and an `EntityType`, has `WorldStateCodec` encode the list (see [Network](/R-Type/network/#world-state-worldstatecodec)), and hands one `OutgoingDatagram` per connected player and per payload to the function it was given, each starting with the header of that player (see [Session headers](#session-headers-sessiondatagram)). In `main.cpp` that function is `queueDatagram()`.
+`WorldStateSender` (`src/server/Replication/WorldStateSender/`) sends the state of the game to its players, at a fixed rate. Each `GameFlow` builds one with its `PlayerRoster` and calls `onTick(tick, components)` on the tick that starts the game and on every tick of the game, on the simulation thread, with the tick the game counts (see [A game](#a-game-gameinstance-and-gameflow)). Every `TICKS_PER_WORLD_STATE` (3) ticks, that is `WORLD_STATES_PER_SECOND` (20) times per second, it lists every entity that has a `NetworkIdentity`, a `Position` and an `EntityType`, has `WorldStateCodec` encode the list (see [Network](/R-Type/network/#world-state-worldstatecodec)), and hands one `OutgoingDatagram` per connected player and per payload to the function it was given, each starting with the header of that player (see [Session headers](#session-headers-sessiondatagram)). In `main.cpp` that function is `queueDatagram()`.
 
 - The `tick` of a state is the tick given to `onTick`, so the client can tell which of two states is newer. The first state of a game carries tick 0 and leaves in the tick that starts the game, right after `GameStarted`. The game's counter is 32 bits and is not made to wrap: it takes 2.27 years at 60 ticks per second. It starts again at 0 with each game.
 - `WORLD_STATES_PER_SECOND` is **provisional**: it will be revised once measured on a real network. It must divide the tick rate, and the build fails otherwise. Code must read the constants, `TICKS_PER_WORLD_STATE` for instance, and never repeat the 3.
@@ -181,7 +181,7 @@ rtype::server::WorldStateSender worldStateSender{roster, send};
 worldStateSender.onTick(tick, world.components());
 ```
 
-`GameInstance` builds the sender once, with its roster, which lives as long as the game, and hands it the components of the current world at each call: a new world replaces the old one between two games.
+`GameFlow` builds the sender once, with its roster, which lives as long as the game, and hands it the components of the current world at each call: a new world replaces the old one between two games.
 
 `World::components()` (`rtype_game`) is the `ComponentRegistry` of the world: a `World` owns its entities and their components, and cannot be copied or moved.
 
@@ -237,9 +237,9 @@ send(rtype::server::sessionDatagram(player, rtype::network::GameStarted{}));
 - The log lines of the sessions are written under `Sessions`.
 
 
-## A game: `GameInstance`
+## A game: `GameInstance` and `GameFlow`
 
-`GameInstance` (`src/server/Instances/GameInstance/`) groups everything that belongs to one game: its `World`, its `PlayerRoster` (players 1 to 4, whose numbers also pick their colors), its state and its tick. The server keeps a list of games (`Games`); today the games module builds one, and every connection enters it. The tick handler calls `onTick(datagrams)` on each game with the datagrams of the admitted players, on the simulation thread, and `onPlayerJoined(player)` gives a new player its ship.
+`GameInstance` (`src/server/Instances/GameInstance/`) groups everything that belongs to one game: its `PlayerRoster` (players 1 to 4, whose numbers also pick their colors), the sessions of its players (see [Sessions of a game](#sessions-of-a-game-gamesessions)), their scores, and a `GameFlow`. `GameFlow` (`src/server/Instances/GameFlow/`) is how the game runs: its state, its tick, its `World` and every part that works on one world. It has no session and no network of its own, so a rule of the game changes there without touching how players connect or what they send. The server keeps a list of games (`Games`); today the games module builds one, and every connection enters it. The tick handler calls `onTick(datagrams)` on each game with the datagrams of the admitted players, on the simulation thread, and `onPlayerJoined(player)` gives a new player its ship.
 
 | State (`GameState`) | The game… | It goes to… |
 |---|---|---|
@@ -287,7 +287,7 @@ The server sends heartbeats too. At the end of each tick, a game sends a `Heartb
 
 ## Waiting room: `LobbyStateAnnouncer`
 
-`LobbyStateAnnouncer` (`src/server/Replication/LobbyStateAnnouncer/`) tells the players of a game who is in the waiting room and who is ready, as a `LobbyState` (see [Protocol](/R-Type/protocol/#a-session)). `GameInstance` calls `onWaitingTick()` on every tick it waits for players, and builds a new announcer with each new world, so the room goes out at the first tick of every wait.
+`LobbyStateAnnouncer` (`src/server/Replication/LobbyStateAnnouncer/`) tells the players of a game who is in the waiting room and who is ready, as a `LobbyState` (see [Protocol](/R-Type/protocol/#a-session)). `GameFlow` calls `onWaitingTick()` on every tick it waits for players, and builds a new announcer with each new world, so the room goes out at the first tick of every wait.
 
 - The room lists every connected player, in order of number, with its ready state and its nickname, read from the `PlayerRoster` at each tick.
 - It is sent to every connected player as soon as it differs from the room sent last: in the tick a `ReadyState` changes it, and in the tick after a player joins, since the lobby module answers the connection requests after the games ticked. When that `ReadyState` makes every player ready, the game starts in the same tick and sends `GameStarted` instead.
@@ -324,7 +324,7 @@ rtype::server::ConnectionAcceptor connectionAcceptor{
 
 ## Player inputs
 
-Each game's `InputKeeper` keeps, in `ConnectedPlayer::newestInput`, the `PlayerInput` with the highest `inputNumber` each of its players sent, as the [Protocol](/R-Type/protocol/#inputs) requires. It reads them in `onTick`, through the same dispatcher and after the same checks as the `ReadyState` (see [A game](#a-game-gameinstance)), so each datagram is decoded once. The field is empty until the first input arrives. Each tick of a game in progress applies it to the ship of the player (see [Moving the ships](#moving-the-ships-shipcontrol)) and, while it holds shoot, fires the missiles of that ship (see [Shooting](#shooting-missilelauncher)).
+Each game's `InputKeeper` keeps, in `ConnectedPlayer::newestInput`, the `PlayerInput` with the highest `inputNumber` each of its players sent, as the [Protocol](/R-Type/protocol/#inputs) requires. It reads them in `onTick`, through the same dispatcher and after the same checks as the `ReadyState` (see [A game](#a-game-gameinstance-and-gameflow)), so each datagram is decoded once. The field is empty until the first input arrives. Each tick of a game in progress applies it to the ship of the player (see [Moving the ships](#moving-the-ships-shipcontrol)) and, while it holds shoot, fires the missiles of that ship (see [Shooting](#shooting-missilelauncher)).
 
 - An input that is older, a duplicate, or numbered like the one kept changes nothing, so a datagram that arrives late or twice never undoes a newer input. Each player is compared with its own inputs only. Inputs are ordered by their `inputNumber`, not by the sequence of their datagram.
 - Inputs are kept in every state of the game, and the input kept outlives a new world: the client numbers its inputs for the whole session, so its next input stays newer. An input moves the ship only while the game is in progress: one kept in the waiting room moves the ship from the tick after the one that starts the game.
@@ -343,7 +343,7 @@ Each game's `InputKeeper` keeps, in `ConnectedPlayer::newestInput`, the `PlayerI
 - `SHIP_WIDTH` and `SHIP_HEIGHT` are the size the client draws the ship at: 32 by 16 pixels of the entity sheet (`PLAYER_SHIP_FRAME`), each covering `BACKGROUND_PIXEL_SIZE` (4) logical units. A client test compares the two, so a new ship sprite comes with new constants.
 - `SHIP_SPEED` is **provisional**: it will be tuned once the game is played on screen. Code must read the constants (`src/game/ShipControl/ShipControlConstants.hpp`) and never repeat 480, 128 or 64.
 
-Each tick of a game in progress, `GameInstance::moveShips()` moves the ship of every connected player who sent an input by one `SIMULATION_TICK_DURATION`, before the systems run. It reads the directions from the `actions` byte of the input with the bit positions the protocol names in `ProtocolConstants.hpp` (`UP_ACTION_BIT_POSITION` to `SHOOT_ACTION_BIT_POSITION`); the shoot bit is not a direction. A player who sent no input yet keeps its ship still, and the newest input keeps moving the ship until a newer one arrives. The ships do not move while the game waits for players or is finished. Each ship is found by its network id with `World::shipPositionOf(shipId)`, which looks it up in a table of the ships of the world instead of visiting every entity, and gives `nullptr` for any other id.
+Each tick of a game in progress, `GameFlow` moves the ship of every connected player who sent an input by one `SIMULATION_TICK_DURATION`, before the systems run. It reads the directions from the `actions` byte of the input with the bit positions the protocol names in `ProtocolConstants.hpp` (`UP_ACTION_BIT_POSITION` to `SHOOT_ACTION_BIT_POSITION`); the shoot bit is not a direction. A player who sent no input yet keeps its ship still, and the newest input keeps moving the ship until a newer one arrives. The ships do not move while the game waits for players or is finished. Each ship is found by its network id with `World::shipPositionOf(shipId)`, which looks it up in a table of the ships of the world instead of visiting every entity, and gives `nullptr` for any other id.
 
 ```cpp
 const rtype::game::Position next = rtype::game::shipPositionAfter(
@@ -389,12 +389,12 @@ events.dispatch();
 
 ## Bydos: `BydoSpawner`
 
-`BydoSpawner` (`src/server/Spawning/BydoSpawner/`) makes the Bydos appear in the `World`, in waves: a `WaveDirector` says when (see [Waves of Bydos](#waves-of-bydos-wavedirector)). A `GameInstance` builds one with each world, from a `BydoSpawnerParts` holding the world, the players, the send function, the seed and the wave plan of the game, and ticks it only while the game is `InProgress`, so nothing appears while the game waits for players or is finished, and every new game starts its waves over with the first pause. With the `normal` difficulty, the first Bydo of a game appears on the 241st tick, 4 seconds in.
+`BydoSpawner` (`src/server/Spawning/BydoSpawner/`) makes the Bydos appear in the `World`, in waves: a `WaveDirector` says when (see [Waves of Bydos](#waves-of-bydos-wavedirector)). A `GameFlow` builds one with each world, from a `BydoSpawnerParts` holding the world, the players, the send function, the seed and the wave plan of the game, and ticks it only while the game is `InProgress`, so nothing appears while the game waits for players or is finished, and every new game starts its waves over with the first pause. With the `normal` difficulty, the first Bydo of a game appears on the 241st tick, 4 seconds in.
 
 - `bydoSpawnPosition(randomUnit)` (`src/game/Spawning/`) says where: `BYDO_SPAWN_MARGIN` (64 logical units) past the right edge of the playfield, so the Bydo is off screen, and at a height from `BYDO_ROW_MARGIN` (112) to `PLAY_AREA_HEIGHT` (984) minus that margin, 872. The margin is `BYDO_SPAWN_VERTICAL_MARGIN` (64), more than half of the height of a Bydo, and the room a Bydo may move on its pattern, `BYDO_PATTERN_ROOM` (48), so even at the bottom of a wave a Bydo stays above the status band every client draws along the bottom of the playfield (see [Architecture](/R-Type/architecture/#coordinate-system)). A draw of 0 gives the highest row; a draw from 0 up to, but not including, 1 is accepted, anything else (1 included, or not a number) throws `InvalidRandomUnitException`. The margins are **provisional**: chosen before a Bydo had a size, they are wider than half of its 96 units, so a Bydo still appears and leaves off screen.
 - `World::spawnBydo(position, kind)` gives the entity a `Position`, a `Velocity` of `-BYDO_SPEED` (240 units per second, **provisional**, to the left), a `MovementPattern`, `EntityType::Enemy`, `Health`, a `NetworkIdentity` and a `CollisionBox` of `BYDO_WIDTH` × `BYDO_HEIGHT` (96 × 96 logical units, its 24 × 24 pixels of the entity sheet; a client test compares the two). The spawner gives the Bydos the kinds the wave plan lists, in turn, the turn carrying on from one wave to the next (`Drifter` then `Weaver` with `normal`), and draws nothing for it, so a seed still gives the same heights. A plan without kinds throws `EmptyEnemyCycleException`. See [Bydo movement](#bydo-movement-patternsystem-and-playfieldexitsystem).
 - Every connected player is sent an `EntitySpawned` (`Bydo`, the position), in its own datagram, like the ship of a player. Both use `sendEntitySpawned` (`src/server/Replication/EntitySpawnSender.hpp`). With no player connected, the Bydo appears and nothing is sent. When every network id was given, the spawn is skipped and a warning is logged.
-- The generator is a `std::mt19937` started from a seed. The spawner logs it at the `info` level when it is built (`Bydo spawning starts from the seed 42`), so the same seed gives the same heights in the same order. `GameInstance` gives each world the seed of the game plus the number of worlds built before it, so one seed replays every game of a session; without `--seed`, the server draws it from `std::random_device`. The spawner also logs each wave at the start of the pause before it (`wave 2: 4 Bydos, one every 1750 ms`).
+- The generator is a `std::mt19937` started from a seed. The spawner logs it at the `info` level when it is built (`Bydo spawning starts from the seed 42`), so the same seed gives the same heights in the same order. `GameFlow` gives each world the seed of the game plus the number of worlds built before it, so one seed replays every game of a session; without `--seed`, the server draws it from `std::random_device`. The spawner also logs each wave at the start of the pause before it (`wave 2: 4 Bydos, one every 1750 ms`).
 
 ```bash
 ./r-type_server --seed 42
@@ -402,7 +402,7 @@ events.dispatch();
 
 ## Bydo movement: `PatternSystem` and `PlayfieldExitSystem`
 
-Each tick of a game in progress, `GameInstance` moves the ships (see [Moving the ships](#moving-the-ships-shipcontrol)), then runs four systems of the world, in this order, before the missiles are fired and the Bydos appear: `PatternSystem`, `MovementSystem`, `PlayfieldExitSystem`, then `CollisionSystem` (see [Collisions](#collisions)). It runs them with `SIMULATION_TICK_DURATION`, and the scheduler is built once per game, so it survives the new worlds.
+Each tick of a game in progress, `GameFlow` moves the ships (see [Moving the ships](#moving-the-ships-shipcontrol)), then runs four systems of the world, in this order, before the missiles are fired and the Bydos appear: `PatternSystem`, `MovementSystem`, `PlayfieldExitSystem`, then `CollisionSystem` (see [Collisions](#collisions)). It runs them with `SIMULATION_TICK_DURATION`, and the scheduler is built once per game, so it survives the new worlds.
 
 - A Bydo moves left at `BYDO_SPEED` through its `Velocity`, which `MovementSystem` applies. Its `MovementPattern` holds a `PatternShape`, the row it appeared on (`originY`) and its age in seconds.
 - `PatternSystem` (`src/game/Systems/PatternSystem/`) sets the height of every entity that has a `MovementPattern`. `Straight` keeps the row. `Wave` puts the entity at `originY + WAVE_AMPLITUDE * sin(2 * pi * age / WAVE_PERIOD_SECONDS)`, with an amplitude of 48 units and a period of 2 seconds, both **provisional**. The height is computed from the age, never added up tick by tick, so it does not depend on how the time is cut into steps. The amplitude stays within `BYDO_PATTERN_ROOM`, the room every row keeps above and below it, checked at compile time, so a Bydo on a wave stays in the area of play.
@@ -436,7 +436,7 @@ rtype::server::WavePlan waves =
 
 ## Shooting: `MissileLauncher`
 
-`MissileLauncher` (`src/server/Spawning/MissileLauncher/`) fires the missiles of the players. Each tick of a game in progress, after the systems run, `GameInstance` hands it the connected players whose newest input holds the shoot bit (`SHOOT_ACTION_BIT_POSITION`), and the ship of each fires one missile, unless it fired less than `SHOT_INTERVAL_TICKS` (20) ticks ago. Holding shoot therefore fires at once, then three times per second, `SHOTS_PER_SECOND` (3, **provisional**).
+`MissileLauncher` (`src/server/Spawning/MissileLauncher/`) fires the missiles of the players. Each tick of a game in progress, after the systems run, `GameFlow` hands it the connected players whose newest input holds the shoot bit (`SHOOT_ACTION_BIT_POSITION`), and the ship of each fires one missile, unless it fired less than `SHOT_INTERVAL_TICKS` (20) ticks ago. Holding shoot therefore fires at once, then three times per second, `SHOTS_PER_SECOND` (3, **provisional**).
 
 - The wait of each ship is counted in the ticks the game runs, whatever its player holds meanwhile, so releasing shoot and pressing it again fires no sooner. The game reads one input per player per tick, the newest, so sending more inputs fires no faster either: a modified client cannot beat the rate.
 - `missileStartPosition(ship)` (`src/game/Spawning/`) puts the missile on the row of the ship, its back against the front of the ship: its center is 96 logical units ahead of the center of the ship, half of `SHIP_WIDTH` (128) plus half of `PLAYER_MISSILE_WIDTH` (64).
@@ -450,7 +450,7 @@ Code must read the constants (`src/server/Spawning/MissileLauncherConstants.hpp`
 
 ## Enemy fire: `BydoGunner`
 
-`BydoGunner` (`src/server/Spawning/BydoGunner/`) fires the missiles of the Bydos. Every Bydo carries a `Gun` (`src/game/Components/Gun.hpp`), which `World::spawnBydo` gives it with no tick counted. Each tick of a game in progress, after the missiles of the players are fired and before a Bydo may appear, `GameInstance` has the gunner count one tick on the gun of every Bydo; a gun that reaches `ENEMY_SHOT_INTERVAL_TICKS` (90) starts again from 0, and its Bydo fires. A Bydo therefore fires `ENEMY_SHOT_INTERVAL` (1.5 s, **provisional**) after it appears, then every 1.5 s, whatever its kind, and always straight to the left.
+`BydoGunner` (`src/server/Spawning/BydoGunner/`) fires the missiles of the Bydos. Every Bydo carries a `Gun` (`src/game/Components/Gun.hpp`), which `World::spawnBydo` gives it with no tick counted. Each tick of a game in progress, after the missiles of the players are fired and before a Bydo may appear, `GameFlow` has the gunner count one tick on the gun of every Bydo; a gun that reaches `ENEMY_SHOT_INTERVAL_TICKS` (90) starts again from 0, and its Bydo fires. A Bydo therefore fires `ENEMY_SHOT_INTERVAL` (1.5 s, **provisional**) after it appears, then every 1.5 s, whatever its kind, and always straight to the left.
 
 - `enemyMissileStartPosition(bydo)` (`src/game/Spawning/EnemyMissileStartPosition/`) puts the missile on the row of the Bydo, its right side against the left side of the Bydo: its center is 64 logical units before the center of the Bydo, half of `BYDO_WIDTH` (96) plus half of `ENEMY_MISSILE_WIDTH` (32).
 - `World::spawnEnemyMissile(position)` gives it a `Position`, a `Velocity` of `-ENEMY_MISSILE_SPEED` (360 units per second to the left, **provisional**, three quarters of `SHIP_SPEED`, so a ship outruns it), a `CollisionBox` of `ENEMY_MISSILE_WIDTH` × `ENEMY_MISSILE_HEIGHT` (32 × 32, its 8 × 8 pixels of the entity sheet; a client test compares the two), `EntityType::EnemyMissile` and a `NetworkIdentity`. It has no `MissileOwner`, and it hits only ships (see [Rules](#rules-collisionrules)).
@@ -505,7 +505,7 @@ scheduler.run(components, SIMULATION_TICK_DURATION);
 events.dispatch();
 ```
 
-The bus and the registry must outlive `CollisionRules`, and the bus must outlive `CollisionSystem`. `GameInstance` adds `CollisionSystem` after `PlayfieldExitSystem`, and builds a `CollisionRules` and a `DamageRules` with each world, on the registry of that world. The games module delivers the events in the `outputs` stage of every tick, so a collision is judged in the tick it is found, and never against the registry of a world replaced since. A ship has a `CollisionBox` from `World::spawnPlayer`, so a ship that touches a Bydo makes a `ShipContact`, and a missile of a Bydo that touches it a `MissileHit`.
+The bus and the registry must outlive `CollisionRules`, and the bus must outlive `CollisionSystem`. `GameFlow` adds `CollisionSystem` after `PlayfieldExitSystem`, and builds a `CollisionRules` and a `DamageRules` with each world, on the registry of that world. The games module delivers the events in the `outputs` stage of every tick, so a collision is judged in the tick it is found, and never against the registry of a world replaced since. A ship has a `CollisionBox` from `World::spawnPlayer`, so a ship that touches a Bydo makes a `ShipContact`, and a missile of a Bydo that touches it a `MissileHit`.
 
 ## Damage: `DamageRules`
 
@@ -519,7 +519,7 @@ The bus and the registry must outlive `CollisionRules`, and the bus must outlive
 - The ship of a player has no `Health`: a missile of a Bydo that hits it is removed here, and what that hit and a contact with a Bydo cost belongs to the lives (see [Lives](#lives-lifekeeper)).
 - Network ids are read from the `NetworkIdentity` before the entity is destroyed. A hit naming an entity that is already gone, or that has no `NetworkIdentity`, is ignored, so two missiles that reach the same Bydo in one `dispatch()` kill it once, and the second missile is left alone.
 - The bus and the registry must outlive `DamageRules`. It publishes while the bus delivers, so its events reach `GameEventBroadcaster` in the same tick.
-- `GameInstance` builds it with each world (see [Collisions](#collisions)). A missile that hits therefore vanishes with no effect of its own; the clients play the hit of the Bydo on the `EntityDamaged` of the first two hits (see [Client](/R-Type/client/#effects-effectspawner)), and its explosion on the third.
+- `GameFlow` builds it with each world (see [Collisions](#collisions)). A missile that hits therefore vanishes with no effect of its own; the clients play the hit of the Bydo on the `EntityDamaged` of the first two hits (see [Client](/R-Type/client/#effects-effectspawner)), and its explosion on the third.
 
 ```cpp
 rtype::engine::EventBus events;
@@ -541,7 +541,7 @@ rtype::game::DamageRules damageRules{events, world.components()};
 - The lives and the waits are kept in `ConnectedPlayer` (`lives`, `ticksUntilRespawn`, `invulnerableTicksLeft`). `onTick()` counts the waits down at each tick of a game in progress, and the world state sends `lives` and `invulnerable`.
 - The three values are **provisional** until gameplay tunes them. Code must read the constants (`STARTING_LIVES` in `src/server/Sessions/ConnectedPlayerConstants.hpp`, the other two in `src/server/Instances/LifeKeeperConstants.hpp`) and never repeat 3, 1 s or 2 s.
 - A hit on anything but the ship of a connected player, a Bydo hit by a missile of a player, changes nothing here.
-- `DamageRules` must subscribe before the keeper. The bus hands each `MissileHit` to its subscribers in the order they subscribed, and `DamageRules` ignores a hit whose target is already gone, so in the other order the missile would fly on past the ship. `GameInstance::buildWorld()` builds them in that order, and a test of the game checks that the hit removes the missile.
+- `DamageRules` must subscribe before the keeper. The bus hands each `MissileHit` to its subscribers in the order they subscribed, and `DamageRules` ignores a hit whose target is already gone, so in the other order the missile would fly on past the ship. `GameFlow::buildWorld()` builds them in that order, and a test of the game checks that the hit removes the missile.
 
 ```cpp
 lifeKeeper_ = std::make_unique<LifeKeeper>(
@@ -553,11 +553,11 @@ lifeKeeper_ = std::make_unique<LifeKeeper>(
                     }});
 ```
 
-`GameInstance` builds one with each world, in `buildWorld()`, and calls `onTick()` after the Bydos appear.
+`GameFlow` builds one with each world, in `buildWorld()`, and calls `onTick()` after the Bydos appear.
 
 ## End of a game: `GameEndAnnouncer`
 
-A game in progress ends once no player left in it has a life. `LifeKeeper` takes the last one while the bus is dispatched, at the end of a tick; at the start of the next tick, after the sessions close, `GameInstance` finds no connected player with a life, logs `game finished: no player has a life left` at the `info` level under `Instances` and moves to `Finished`. A player who waits for its next ship still has a life, so the game goes on.
+A game in progress ends once no player left in it has a life. `LifeKeeper` takes the last one while the bus is dispatched, at the end of a tick; at the start of the next tick, after the sessions close, `GameFlow` finds no connected player with a life, logs `game finished: no player has a life left` at the `info` level under `Instances` and moves to `Finished`. A player who waits for its next ship still has a life, so the game goes on.
 
 `GameEndAnnouncer` (`src/server/Replication/GameEndAnnouncer/`) then tells every player the result, as a `GameEnded` (see [Protocol](/R-Type/protocol/#a-session)):
 
@@ -582,7 +582,7 @@ A game ended by `finish()`, or by the departure of its last player, tells no one
 | Change how often the world state is sent | `WORLD_STATES_PER_SECOND` in `src/server/ServerConstants.hpp` |
 | Change how often an unchanged waiting room is sent again | `LOBBY_STATE_INTERVAL` in `src/server/ServerConstants.hpp` |
 | Change what the waiting room lists | `roomOf` in `src/server/Replication/LobbyStateAnnouncer/LobbyStateAnnouncer.cpp` |
-| Change when a game ends | `reasonToFinish` in `src/server/Instances/GameInstance/GameInstance.cpp` |
+| Change when a game ends | `reasonToFinish` in `src/server/Instances/GameFlow/GameFlow.cpp` |
 | Change how often the end of a game is sent again | `GAME_ENDED_INTERVAL` in `src/server/ServerConstants.hpp` |
 | Send a datagram to a player during a session | `sessionDatagram` in `src/server/Sessions/SessionDatagram/SessionDatagram.hpp`, then the send function of the game |
 | Announce something to every client | Publish one of the events of `src/game/Events/` on the `EventBus`; `GameEventBroadcaster` sends it |
@@ -598,7 +598,7 @@ A game ended by `finish()`, or by the departure of its last player, tells no one
 | Change where a ship appears | `shipStartPosition` and `SHIP_START_X_RATIO` in `src/game/Spawning/` |
 | Change how fast a ship moves, or its size | `SHIP_SPEED`, `SHIP_WIDTH` and `SHIP_HEIGHT` in `src/game/ShipControl/ShipControlConstants.hpp`; a new size goes with a new `PLAYER_SHIP_FRAME` on the client, which a test compares |
 | Change how a ship moves from the directions held | `shipPositionAfter` in `src/game/ShipControl/ShipControl.cpp` |
-| Change which actions of an input move the ship | `directionsOf` in `src/server/Instances/GameInstance/GameInstance.cpp`, with the bit positions of `src/network/Protocol/ProtocolConstants.hpp` |
+| Change which actions of an input move the ship | `directionsOf` in `src/server/Instances/GameFlow/GameFlow.cpp`, with the bit positions of `src/network/Protocol/ProtocolConstants.hpp` |
 | Change how many Bydos come, how often, or which kinds | `assets/waves/waves.toml`; see [Writing the waves file](/R-Type/waves-file/) |
 | Change how a wave follows the one before | `bydoWaveAfter` in `src/game/Waves/WaveProgression/WaveProgression.cpp` |
 | Change when the next wave starts | `WaveDirector::advance` in `src/game/Waves/WaveDirector/WaveDirector.cpp` |
@@ -609,14 +609,14 @@ A game ended by `finish()`, or by the departure of its last player, tells no one
 | Change which pattern a kind of Bydo follows | `patternShapeOf` in `src/game/Spawning/BydoKind/BydoKind.cpp` |
 | Change when a Bydo or a missile leaves the playfield | `BYDO_EXIT_MARGIN` in `src/game/Spawning/SpawningConstants.hpp`, `hasLeftThePlayfield` in `src/game/Systems/PlayfieldExitSystem/PlayfieldExitSystem.cpp` |
 | Change how often a ship fires | `SHOTS_PER_SECOND` in `src/server/Spawning/MissileLauncherConstants.hpp` |
-| Change which action fires | `shootersIn` in `src/server/Instances/GameInstance/GameInstance.cpp` |
+| Change which action fires | `shootersIn` in `src/server/Instances/GameFlow/GameFlow.cpp` |
 | Change where a missile appears, how fast it flies or its size | `missileStartPosition` in `src/game/Spawning/`, `PLAYER_MISSILE_SPEED` in `src/game/Components/MissileConstants.hpp`, `PLAYER_MISSILE_WIDTH` and `PLAYER_MISSILE_HEIGHT` in `src/game/Components/EntitySizeConstants.hpp`; a new size goes with a new `PLAYER_MISSILE_FRAME` on the client, which a test compares |
 | Change how often a Bydo fires | `ENEMY_SHOT_INTERVAL` in `src/server/Spawning/BydoGunnerConstants.hpp`; which Bydos fire, `BydoGunner` in `src/server/Spawning/BydoGunner/` |
 | Change where a missile of a Bydo appears, how fast it flies or its size | `enemyMissileStartPosition` in `src/game/Spawning/EnemyMissileStartPosition/`, `ENEMY_MISSILE_SPEED` in `src/game/Components/MissileConstants.hpp`, `ENEMY_MISSILE_WIDTH` and `ENEMY_MISSILE_HEIGHT` in `src/game/Components/EntitySizeConstants.hpp`; a new size goes with a new `ENEMY_MISSILE_FRAME` on the client, which a test compares |
 | Change the size a Bydo is hit at | `BYDO_WIDTH` and `BYDO_HEIGHT` in `src/game/Components/EntitySizeConstants.hpp`, with `BYDO_FRAME` on the client, which a test compares |
 | Replay a game | Start the server with the seed found in its log: `--seed <seed>` |
 | Change who is told about a new ship | `ShipSpawnAnnouncer` in `src/server/Replication/ShipSpawnAnnouncer/` |
-| Change when a game starts or ends, what the players are told at the start, or what is reset between two games | `GameInstance::advanceState`, `startGame`, `startNewWorld` and `buildWorld` in `src/server/Instances/GameInstance/GameInstance.cpp` |
+| Change when a game starts or ends, what the players are told at the start, or what is reset between two games | `GameFlow::advanceState`, `announceGameStart`, `startNewWorld` and `buildWorld` in `src/server/Instances/GameFlow/GameFlow.cpp` |
 | Change how long a game stays finished | `FINISHED_STATE_SECONDS` in `src/server/Instances/GameInstanceConstants.hpp` |
 | Change how players get their number, or what the server keeps of them | `PlayerRoster` in `src/server/Sessions/PlayerRoster/`, `ConnectedPlayer` in `src/server/Sessions/ConnectedPlayer.hpp` |
 | Read the input a player holds | `ConnectedPlayer::newestInput`, kept by the `InputKeeper` of its game |
@@ -639,4 +639,4 @@ A game ended by `finish()`, or by the departure of its last player, tells no one
 | Add a component type | A new struct in `src/game/Components/` |
 | Write a test with entities that collide | `tests/CollisionScene.hpp` |
 
-Each folder holding sources has its own `CMakeLists.txt` declaring one library; `Application/` and `Platform/` declare the INTERFACE library of their header-only files (`rtype_server_application_interfaces`, `rtype_server_platform_interfaces`) and add their subfolders, `Modules/` declares the constants of the modules and adds one folder per module (`Logger/`, `Network/`, `Games/`, `Lobby/`, each a module in the flat layout of [Project layout](/R-Type/project-layout/#adding-a-class) with one library, `rtype_server_<name>_module`) and `Assembly/`, which holds the list of modules (`rtype_server_modules`), `Replication/` declares its constants and adds one folder per sender (`WorldStateSender/`, `LobbyStateAnnouncer/`, `ShipSpawnAnnouncer/`, the event encoder and broadcaster…), `Lobby/` declares its constants and adds `ConnectionAcceptor/`, `Sessions/` declares the include folder and adds `ConnectedPlayers/`, `PlayerRoster/`, `SessionDatagram/` and one folder per class of the sessions of a game, `Instances/` declares `GameState`, `GameSettings` and the game constants and adds `GameInstance/`, `Spawning/` declares the spawner parts, the wave plan and the waves file constants and adds `BydoSpawner/`, `WaveCatalog/` and `MissileLauncher/`, `Exceptions/` declares the parts of the server errors and adds `ServerException/`, and `r-type_server` links `rtype_server_application`, `rtype_server_connection_acceptor`, `rtype_server_game_event_broadcaster`, `rtype_server_game_instance`, `rtype_server_launch_options` and `rtype_server_wave_catalog` in `src/server/CMakeLists.txt`.
+Each folder holding sources has its own `CMakeLists.txt` declaring one library; `Application/` and `Platform/` declare the INTERFACE library of their header-only files (`rtype_server_application_interfaces`, `rtype_server_platform_interfaces`) and add their subfolders, `Modules/` declares the constants of the modules and adds one folder per module (`Logger/`, `Network/`, `Games/`, `Lobby/`, each a module in the flat layout of [Project layout](/R-Type/project-layout/#adding-a-class) with one library, `rtype_server_<name>_module`) and `Assembly/`, which holds the list of modules (`rtype_server_modules`), `Replication/` declares its constants and adds one folder per sender (`WorldStateSender/`, `LobbyStateAnnouncer/`, `ShipSpawnAnnouncer/`, the event encoder and broadcaster…), `Lobby/` declares its constants and adds `ConnectionAcceptor/`, `Sessions/` declares the include folder and adds `ConnectedPlayers/`, `PlayerRoster/`, `SessionDatagram/` and one folder per class of the sessions of a game, `Instances/` declares `GameState`, `GameSettings`, `GameFlowParts` and the game constants and adds `GameFlow/` and `GameInstance/`, `Spawning/` declares the spawner parts, the wave plan and the waves file constants and adds `BydoSpawner/`, `WaveCatalog/` and `MissileLauncher/`, `Exceptions/` declares the parts of the server errors and adds `ServerException/`, and `r-type_server` links `rtype_server_application`, `rtype_server_connection_acceptor`, `rtype_server_game_event_broadcaster`, `rtype_server_game_instance`, `rtype_server_launch_options` and `rtype_server_wave_catalog` in `src/server/CMakeLists.txt`.
