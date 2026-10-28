@@ -124,6 +124,7 @@ Paths below are relative to `.claude/rules/`.
 **Reasoning — `fix/reasoning/`**
 - `fix/reasoning/fix-reasoning-a-guard-after-the-write-is-only-an-alarm.md`
 - `fix/reasoning/fix-reasoning-a-sanitizer-sees-only-what-leaves-the-allocation.md`
+- `fix/reasoning/fix-reasoning-a-screen-pushed-over-others-leaves-them-running.md`
 - `fix/reasoning/fix-reasoning-a-sequence-asserts-its-starting-state.md`
 - `fix/reasoning/fix-reasoning-an-error-type-is-not-a-diagnosis.md`
 - `fix/reasoning/fix-reasoning-an-exception-to-a-check-is-read-as-the-forger.md`
