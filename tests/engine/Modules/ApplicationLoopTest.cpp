@@ -1,18 +1,26 @@
 #include <gtest/gtest.h>
+#include <atomic>
+#include <memory>
+#include <mutex>
 #include <string>
+#include <thread>
+#include <utility>
 #include <vector>
 #include "Application.hpp"
+#include "ApplicationFindingModule.hpp"
 #include "ApplicationLoopFixtures.hpp"
 #include "ApplicationLoopTestConstants.hpp"
 #include "ApplicationTestConstants.hpp"
 #include "DeliveredEvents.hpp"
 #include "EngineException.hpp"
 #include "EventBus.hpp"
+#include "IModule.hpp"
 #include "JournalModule.hpp"
 #include "LoopStages.hpp"
 #include "StageTestConstants.hpp"
 #include "TestEvent.hpp"
 #include "TestService.hpp"
+#include "WorkAddingModule.hpp"
 
 using rtype::engine::Application;
 using rtype::engine::EventBus;
@@ -222,4 +230,64 @@ TEST(ApplicationLoop, StoppedSubscriberReceivesNoEvent) {
   bus.dispatch();
 
   EXPECT_EQ(delivered.count, 0);
+}
+
+/**
+ * Given an application whose only module requires the Application during its
+ * install()
+ * When the application starts
+ * Then the module was given that very application
+ */
+TEST(ApplicationLoop, GivesItselfToTheModulesAsAService) {
+  const Application* found = nullptr;
+  std::vector<std::unique_ptr<rtype::engine::IModule>> modules;
+  modules.push_back(std::make_unique<ApplicationFindingModule>(
+      APPLICATION_FINDING_MODULE, found));
+  Application application(LoopStages(TEST_LOOP_STAGES), std::move(modules));
+
+  application.start();
+
+  EXPECT_EQ(found, &application);
+}
+
+/**
+ * Given a started application whose work is running on another thread, and
+ * keeps running for a while after stop() was called
+ * When stop() is called
+ * Then it returns only after the work ended, so no work runs once it returned
+ */
+TEST(ApplicationLoop, StopWaitsForTheStageInFlight) {
+  std::mutex journalMutex;
+  std::vector<std::string> journal;
+  std::atomic<bool> inWork{false};
+  std::atomic<bool> stopCalled{false};
+  std::vector<std::unique_ptr<rtype::engine::IModule>> modules;
+  modules.push_back(std::make_unique<WorkAddingModule>(
+      SLOW_STAGE_MODULE, SIMULATION_STAGE,
+      [&](rtype::engine::Duration /*elapsed*/) {
+        inWork = true;
+        while (!stopCalled) {
+          std::this_thread::yield();
+        }
+        std::this_thread::sleep_for(SLOW_WORK_DURATION);
+        const std::scoped_lock lock{journalMutex};
+        journal.emplace_back(SLOW_WORK_ENDED);
+      }));
+  Application application(LoopStages(TEST_LOOP_STAGES), std::move(modules));
+  application.start();
+  std::thread loop{[&application] { application.runStages(ELAPSED_TIME); }};
+  while (!inWork) {
+    std::this_thread::yield();
+  }
+
+  stopCalled = true;
+  application.stop();
+  {
+    const std::scoped_lock lock{journalMutex};
+    journal.emplace_back(STOP_RETURNED);
+  }
+  loop.join();
+
+  EXPECT_EQ(journal,
+            (std::vector<std::string>{SLOW_WORK_ENDED, STOP_RETURNED}));
 }

@@ -9,7 +9,7 @@ Why: the user asked for it; a single file listing every source of a module hides
 
 ## Rule
 
-1. **Every folder holding sources has its own `CMakeLists.txt`** that declares the target of that folder (a `STATIC` library, or the executable for the entry-point folder).
+1. **Every folder holding sources has its own `CMakeLists.txt`** that declares the target of that folder (a `STATIC` library, or the executable for the entry-point folder). A module folder declares one library that lists the `.cpp` of all its classes, a class having no folder and no target of its own (`architecture-a-module-is-one-folder-and-one-target.md`).
 2. **The parent `CMakeLists.txt` calls its children** with `add_subdirectory(<Folder>)` and links their targets. The root `CMakeLists.txt` calls `src/`, which calls `server/` and `client/`, which call their own subfolders.
 3. **A parent never lists the `.cpp` files of a child folder** in its own `add_executable` / `add_library`.
 4. **Include directories travel with the target**: the child exposes its folder with `target_include_directories(<target> PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})`, so callers include `"GameWindow.hpp"` without a relative path.

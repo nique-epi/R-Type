@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <memory>
+#include <mutex>
 #include <vector>
 #include "IModule.hpp"
 #include "LoopStages.hpp"
@@ -19,7 +20,9 @@ namespace rtype::engine {
  * stops the started modules in the reverse order. A module comes after every
  * module it depends on, so its dependencies are installed and started before
  * it, and stopped after it. A module finds, during its install(), the services
- * of the modules installed before it.
+ * of the modules installed before it, and the application itself: a module
+ * that drives the loop (the one that owns the thread a program ticks on) asks
+ * for the Application to call runStages().
  */
 class Application {
  public:
@@ -79,7 +82,10 @@ class Application {
   /**
    * @brief Stops the started modules, the last started first.
    *
-   * A module is stopped once: a second call stops nothing.
+   * The stages stop running first: a pass of runStages() on another thread is
+   * waited for, and every later pass runs nothing, so the modules are stopped
+   * while no work of theirs runs. A module is stopped once: a second call
+   * stops nothing. Call it from a thread that is not running a stage.
    */
   void stop();
 
@@ -87,6 +93,9 @@ class Application {
    * @brief Runs every stage of the loop in declared order, each work with
    * @p elapsed, while every module is started; runs nothing before start()
    * returned, after a failed start() and after stop().
+   *
+   * It may be called from the thread of the loop while another thread calls
+   * stop(): stop() waits for the pass in flight.
    */
   void runStages(Duration elapsed) const;
 
@@ -99,6 +108,8 @@ class Application {
   std::vector<std::unique_ptr<IModule>> modules_;
   std::size_t startedCount_{0};
   bool startCalled_{false};
+  /** Held while a pass of runStages() runs, and while running_ changes. */
+  mutable std::mutex stagesMutex_;
   bool running_{false};
 };
 

@@ -4,9 +4,9 @@
 #include <cstdint>
 #include <optional>
 #include <string>
+#include "ConnectedPlayerConstants.hpp"
 #include "Endpoint.hpp"
 #include "EntityIdConstants.hpp"
-#include "LifeKeeperConstants.hpp"
 #include "PlayerInput.hpp"
 
 namespace rtype::server {

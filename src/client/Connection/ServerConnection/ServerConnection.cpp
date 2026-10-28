@@ -1,5 +1,6 @@
 #include "ServerConnection.hpp"
 #include <algorithm>
+#include <chrono>
 #include <cstddef>
 #include <cstdint>
 #include <iterator>
@@ -30,6 +31,7 @@
 #include "IDatagramLink.hpp"
 #include "IncomingDatagram.hpp"
 #include "LobbyState.hpp"
+#include "MessageFrame.hpp"
 #include "MessageOrigin.hpp"
 #include "MessageType.hpp"
 #include "NetworkException.hpp"
@@ -62,6 +64,7 @@ void ServerConnection::connect(const network::Endpoint& server,
   nextSequence_ = 0;
   nextInputNumber_ = network::FIRST_INPUT_NUMBER;
   sinceConnect_ = engine::Duration::zero();
+  sinceReceived_ = engine::Duration::zero();
   sendRequest();
   status_ = {.phase = ConnectionStatus::Phase::Connecting};
   logger_.info("connecting to ", server_.address, " port ", server_.port);
@@ -97,6 +100,7 @@ bool ServerConnection::gameStarted() const { return gameStarted_; }
 
 void ServerConnection::update(engine::Duration elapsed) {
   gameEvents_.advance(elapsed);
+  sinceReceived_ += elapsed;
   readReceived();
   repeatDeparture(elapsed);
   if (isAccepted()) {
@@ -115,6 +119,10 @@ void ServerConnection::readReceived() {
 }
 
 void ServerConnection::holdSession(engine::Duration elapsed) {
+  if (sinceReceived_ >= network::SESSION_TIMEOUT) {
+    giveUp(ConnectionStatus::Phase::Lost);
+    return;
+  }
   sinceSent_ += elapsed;
   repeatReadyState(elapsed);
   sendHeartbeatWhenSilent();
@@ -123,7 +131,7 @@ void ServerConnection::holdSession(engine::Duration elapsed) {
 void ServerConnection::continueAttempt(engine::Duration elapsed) {
   sinceConnect_ += elapsed;
   if (sinceConnect_ >= CONNECTION_ATTEMPT_TIMEOUT) {
-    giveUp();
+    giveUp(ConnectionStatus::Phase::Unreachable);
     return;
   }
   sinceRequest_ += elapsed;
@@ -229,9 +237,14 @@ void ServerConnection::registerSessionMessages() {
       });
 }
 
-void ServerConnection::giveUp() {
-  status_ = {.phase = ConnectionStatus::Phase::Unreachable};
-  logger_.warn("no answer from ", server_.address, " port ", server_.port);
+void ServerConnection::giveUp(ConnectionStatus::Phase ending) {
+  const std::chrono::seconds silence = ending == ConnectionStatus::Phase::Lost
+                                           ? network::SESSION_TIMEOUT
+                                           : CONNECTION_ATTEMPT_TIMEOUT;
+  status_ = {.phase = ending};
+  forgetSession();
+  logger_.warn("no answer from ", server_.address, " port ", server_.port,
+               " for ", silence.count(), " s");
 }
 
 void ServerConnection::endAttemptForServerVersion(std::uint8_t serverVersion) {
@@ -261,9 +274,11 @@ void ServerConnection::receive(const network::IncomingDatagram& datagram) {
         !passesSessionChecks(header)) {
       return;
     }
-    dispatcher_.dispatch(
-        {.sender = datagram.sender, .header = header},
-        network::DatagramCodec::splitMessages(datagram.payload));
+    const std::vector<network::MessageFrame> messages =
+        network::DatagramCodec::splitMessages(datagram.payload);
+    sinceReceived_ = engine::Duration::zero();
+    dispatcher_.dispatch({.sender = datagram.sender, .header = header},
+                         messages);
   } catch (const network::MalformedDatagramException&) {
     return;
   }

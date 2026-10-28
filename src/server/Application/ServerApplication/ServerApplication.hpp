@@ -3,12 +3,15 @@
 #include <cstddef>
 #include <cstdint>
 #include <functional>
+#include <optional>
 #include <span>
 #include <vector>
 #include "BoundedQueue.hpp"
 #include "DatagramRelay.hpp"
 #include "DatagramSorter.hpp"
 #include "Endpoint.hpp"
+#include "IDatagramSender.hpp"
+#include "IPlayerAdmission.hpp"
 #include "IncomingDatagram.hpp"
 #include "Logger.hpp"
 #include "NetworkContext.hpp"
@@ -34,8 +37,13 @@ namespace rtype::server {
  * Each tick, the simulation thread drains both queues, hands what they held
  * to the tick handler, then asks the network thread to send what was queued.
  * The DatagramRelay only sends.
+ *
+ * Building the object binds nothing: the socket is bound by open(), so a part
+ * of a program that builds it while it installs keeps no resource open until
+ * it starts.
  */
-class ServerApplication {
+class ServerApplication final : public IDatagramSender,
+                                public IPlayerAdmission {
  public:
   /**
    * @brief What arrived since the previous tick, oldest first in each list;
@@ -64,25 +72,39 @@ class ServerApplication {
   using TickHandler = std::function<void(const ReceivedDatagrams&)>;
 
   /**
-   * @brief Opens the UDP socket on @p localEndpoint; port 0 lets the system
-   * pick a free port.
+   * @brief Prepares a server that will listen on @p localEndpoint once open()
+   * is called; port 0 lets the system pick a free port. Binds nothing.
    * @param handleTick Must not be empty.
-   * @throws InvalidAddressException when the address is not an IP address.
-   * @throws SocketOpenException when the system refuses the port.
    */
-  ServerApplication(const network::Endpoint& localEndpoint,
-                    TickHandler handleTick);
+  ServerApplication(network::Endpoint localEndpoint, TickHandler handleTick);
 
   ServerApplication(const ServerApplication&) = delete;
   ServerApplication& operator=(const ServerApplication&) = delete;
   ServerApplication(ServerApplication&&) = delete;
   ServerApplication& operator=(ServerApplication&&) = delete;
-  ~ServerApplication() = default;
+  ~ServerApplication() override = default;
+
+  /**
+   * @brief Binds the UDP socket on the endpoint given to the constructor.
+   * @throws ServerAlreadyOpenException when the socket is already bound.
+   * @throws InvalidAddressException when the address is not an IP address.
+   * @throws SocketOpenException when the system refuses the port.
+   */
+  void open();
+
+  /**
+   * @brief Unbinds the socket, so the port is free again. Call it once run()
+   * returned; does nothing when the server is not open. Open it again with
+   * open().
+   */
+  void close();
 
   /**
    * @brief Runs the network on the calling thread and the ticks on a thread of
    * their own, until stop() is called or either thread fails, then waits for
-   * both. The first tick is due one tick after the call. Call it once.
+   * both. The first tick is due one tick after the call. Call it once, after
+   * open().
+   * @throws ServerNotOpenException when open() was not called.
    * @throws The error that stopped either thread.
    */
   void run();
@@ -93,50 +115,44 @@ class ServerApplication {
    */
   void stop();
 
-  /**
-   * @brief Queues a datagram for the network thread to send at the end of the
-   * current tick. Call it from the tick handler, which runs on the simulation
-   * thread. When more than OUTGOING_DATAGRAM_QUEUE_CAPACITY wait, the oldest
-   * is discarded.
-   */
-  void queueDatagram(network::OutgoingDatagram datagram);
+  /** @brief Queues a datagram for the network thread to send at the end of the
+   * current tick, as IDatagramSender says. The tick handler runs on the
+   * simulation thread. */
+  void queueDatagram(network::OutgoingDatagram datagram) override;
 
-  /**
-   * @brief From now on, the datagrams @p player sends with @p sessionToken
-   * reach the tick handler in ReceivedDatagrams::players, and those it sends
-   * with another token are dropped. Call it from any thread, once the player
-   * holds a place; it takes effect on the network thread shortly after, and a
-   * datagram it receives before that is dropped like a stranger's.
-   */
-  void admit(const network::Endpoint& player, std::uint64_t sessionToken);
+  /** @brief Admits @p player, as IPlayerAdmission says; the players reach the
+   * tick handler in ReceivedDatagrams::players. */
+  void admit(const network::Endpoint& player,
+             std::uint64_t sessionToken) override;
 
-  /**
-   * @brief From now on, the datagrams @p player sends are dropped like a
-   * stranger's, unless it was admitted again with another token than
-   * @p sessionToken. Call it from any thread once the session of the player
-   * closed; it takes effect on the network thread shortly after, so a datagram
-   * it receives before that still reaches the tick handler.
-   */
-  void forget(const network::Endpoint& player, std::uint64_t sessionToken);
+  /** @brief Forgets @p player, as IPlayerAdmission says; a datagram it sent
+   * before the call took effect still reaches the tick handler. */
+  void forget(const network::Endpoint& player,
+              std::uint64_t sessionToken) override;
 
   /**
    * @returns The address and port the socket is bound to.
+   * @throws ServerNotOpenException when open() was not called.
    */
   [[nodiscard]] network::Endpoint localEndpoint() const;
 
  private:
+  /** @throws ServerNotOpenException when open() was not called. */
+  [[nodiscard]] network::UdpSocket& openSocket();
+  [[nodiscard]] const network::UdpSocket& openSocket() const;
   void simulateTick();
   void reportDiscardedDatagrams();
 
   logging::Logger logger_;
   engine::SystemClock clock_;
+  network::Endpoint listeningEndpoint_;
   network::NetworkContext network_;
-  network::UdpSocket socket_;
+  std::optional<network::UdpSocket> socket_;
   concurrency::BoundedQueue<network::IncomingDatagram> incoming_;
   concurrency::BoundedQueue<network::IncomingDatagram> connectionRequests_;
   concurrency::BoundedQueue<network::OutgoingDatagram> outgoing_;
   DatagramSorter sorter_;
-  network::DatagramRelay relay_;
+  std::optional<network::DatagramRelay> relay_;
   TickHandler handleTick_;
   std::vector<network::IncomingDatagram> received_;
   std::vector<network::IncomingDatagram> receivedRequests_;

@@ -32,7 +32,7 @@ flowchart LR
   Components --> Entities[EntityRegistry]
 ```
 
-The engine provides the building blocks and no loop of its own. The server runs its ticks in `TickLoop` (see [Server](/R-Type/server/#tick-loop-tickloop)); the client runs no tick yet, but its game screen runs a `SystemScheduler` once per frame, with the real time of the frame, to play its animations (see [Client](/R-Type/client/#animations-animation-animationsystem)).
+The engine provides the building blocks and no loop of its own. The server runs its ticks in `TickLoop` (see [Server](/R-Type/server/#tick-loop-tickloop)), and each tick runs the stages of its `Application` (see [Server](/R-Type/server/#modules-and-stopping-the-server)); the client runs no tick yet, but its game screen runs a `SystemScheduler` once per frame, with the real time of the frame, to play its animations (see [Client](/R-Type/client/#animations-animation-animationsystem)).
 
 ## ECS: entities and components
 
@@ -208,7 +208,7 @@ rtype::engine::readLaunchArguments(logOptions.otherArguments(), options);
 
 - `Application` takes the list of modules once, when it is built, and checks it before anything is installed. A null module throws `NullModuleException`. A module whose dependency is not listed **before** it throws `MissingDependencyException`, whose message names both modules. So a missing module stops the program before any socket, thread or file is opened.
 - `start()` installs every module in list order, then starts every module in list order. Only the first call does anything.
-- `stop()` stops the started modules in the reverse order, so a module is stopped before its dependencies. Each module is stopped once, and the destructor of `Application` stops the modules still started.
+- `stop()` stops the started modules in the reverse order, so a module is stopped before its dependencies. Each module is stopped once, and the destructor of `Application` stops the modules still started. Before stopping any module it takes the lock that `runStages()` holds, so `stop()` waits for the pass of the loop in flight and no work of a stage runs after it: a loop on another thread and `stop()` are safe together. Call `stop()` from a thread that is not running a stage.
 - When a module throws from `start()`, the modules started before it are stopped in the reverse order, then `start()` throws `ModuleStartFailedException`, whose message names the module and gives the reason. The module that threw is not stopped, so its `start()` closes what it had already opened before it throws.
 
 ### Loop stages
@@ -223,7 +223,9 @@ A module provides an object to the modules installed after it with `context.prov
 
 A module that subscribes to the `EventBus` keeps the `SubscriptionHandle` and unsubscribes in its `stop()`.
 
-No program builds an `Application` yet: the server and the client still assemble their parts in their `main.cpp`. In this example, `LogModule` and `AudioModule` stand for modules a program would write, and `AudioModule` depends on `LogModule`:
+`Application` provides itself as a service, so a module that owns the thread a program ticks on asks for it with `context.require<Application>()` and calls `runStages()` from that thread.
+
+The server builds an `Application` from its modules (see [Server](/R-Type/server/#modules-and-stopping-the-server)); the client still assembles its parts in its `main.cpp`. In this example, `LogModule` and `AudioModule` stand for modules a program would write, and `AudioModule` depends on `LogModule`:
 
 ```cpp
 std::vector<std::unique_ptr<rtype::engine::IModule>> modules;
