@@ -96,4 +96,25 @@ class EmptyEnemyCycleException : public ServerException {
   EmptyEnemyCycleException();
 };
 
+/**
+ * @brief A module used the link to the network while the network module
+ * had not opened it, or had closed it: a defect in the order of the modules.
+ */
+class ServerLinkClosedException : public ServerException {
+ public:
+  ServerLinkClosedException();
+};
+
+/** @brief A new player has no game to join: the games module started none. */
+class NoGameException : public ServerException {
+ public:
+  NoGameException();
+};
+
+/** @brief The system refused the handler of the stop signals. */
+class StopSignalsRefusedException : public ServerException {
+ public:
+  StopSignalsRefusedException();
+};
+
 }  // namespace rtype::server

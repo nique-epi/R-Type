@@ -10,6 +10,7 @@
 #include <vector>
 #include "EngineException.hpp"
 #include "IModule.hpp"
+#include "IStageRunner.hpp"
 #include "InstallContext.hpp"
 #include "LoopStages.hpp"
 #include "TimeConstants.hpp"
@@ -58,6 +59,7 @@ Application::Application(LoopStages stages,
     : stages_(std::move(stages)), modules_(std::move(modules)) {
   requireNoNullModule(modules_);
   requireDependenciesListedBefore(modules_);
+  services_.provide<IStageRunner>(*this);
 }
 
 Application::~Application() {

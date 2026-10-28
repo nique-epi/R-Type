@@ -102,6 +102,21 @@ class ServerApplication {
   void queueDatagram(network::OutgoingDatagram datagram);
 
   /**
+   * @brief Sends, on the calling thread, every datagram queued and not sent
+   * yet, oldest first, so a program can still tell its players it stops
+   * once run() returned. Call it only after run() returned: no other thread
+   * may run the network then.
+   *
+   * The system takes each datagram within the call: Asio 1.32 tries the
+   * send at once on the kqueue and epoll reactors and calls WSASendTo on
+   * Windows, so nothing has to run afterwards. A datagram the system cannot
+   * take at once, because the send buffer of the socket is full, is lost.
+   * @throws DatagramTooLargeException or InvalidAddressException, from the
+   * socket, for a datagram it cannot send; the ones after it are not sent.
+   */
+  void sendQueuedAfterRun();
+
+  /**
    * @brief From now on, the datagrams @p player sends with @p sessionToken
    * reach the tick handler in ReceivedDatagrams::players, and those it sends
    * with another token are dropped. Call it from any thread, once the player

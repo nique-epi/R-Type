@@ -1,1 +1,2 @@
 add_subdirectory(FineTimerResolution)
+add_subdirectory(StopSignals)

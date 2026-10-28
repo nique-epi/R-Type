@@ -4,6 +4,7 @@
 #include <memory>
 #include <vector>
 #include "IModule.hpp"
+#include "IStageRunner.hpp"
 #include "LoopStages.hpp"
 #include "ServiceRegistry.hpp"
 #include "TimeConstants.hpp"
@@ -19,9 +20,10 @@ namespace rtype::engine {
  * stops the started modules in the reverse order. A module comes after every
  * module it depends on, so its dependencies are installed and started before
  * it, and stopped after it. A module finds, during its install(), the services
- * of the modules installed before it.
+ * of the modules installed before it, and the Application itself as the
+ * IStageRunner, which the module that paces the loop requires.
  */
-class Application {
+class Application : public IStageRunner {
  public:
   /**
    * @brief Builds an application whose loop has no stage, as a program that
@@ -52,7 +54,7 @@ class Application {
    * modules, the last listed first, so a module is destroyed before the
    * modules whose services it holds.
    */
-  ~Application();
+  ~Application() override;
 
   Application(const Application&) = delete;
   Application& operator=(const Application&) = delete;
@@ -87,8 +89,12 @@ class Application {
    * @brief Runs every stage of the loop in declared order, each work with
    * @p elapsed, while every module is started; runs nothing before start()
    * returned, after a failed start() and after stop().
+   *
+   * Call it from one thread at a time, and never while start() or stop()
+   * runs: the server calls it from its simulation thread, which starts after
+   * start() returned and ends before stop() is called.
    */
-  void runStages(Duration elapsed) const;
+  void runStages(Duration elapsed) const override;
 
  private:
   void installModules();

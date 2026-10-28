@@ -90,6 +90,8 @@ void ServerApplication::queueDatagram(network::OutgoingDatagram datagram) {
   outgoing_.push(std::move(datagram));
 }
 
+void ServerApplication::sendQueuedAfterRun() { relay_.sendWaiting(); }
+
 network::Endpoint ServerApplication::localEndpoint() const {
   return socket_.localEndpoint();
 }

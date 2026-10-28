@@ -1,53 +1,28 @@
-#include <cstdint>
 #include <exception>
 #include <filesystem>
-#include <functional>
 #include <iostream>
 #include <memory>
-#include <random>
-#include <span>
 #include <string>
 #include <utility>
 #include <vector>
-#include "ConnectedPlayer.hpp"
-#include "ConnectionAcceptor.hpp"
+#include "Application.hpp"
 #include "Endpoint.hpp"
-#include "EventBus.hpp"
-#include "GameEventBroadcaster.hpp"
-#include "GameInstance.hpp"
-#include "GameSettings.hpp"
-#include "GameState.hpp"
-#include "IncomingDatagram.hpp"
+#include "GameListSettings.hpp"
+#include "GamesModule.hpp"
+#include "IModule.hpp"
 #include "LaunchArguments.hpp"
 #include "LaunchOptions.hpp"
+#include "LobbyModule.hpp"
 #include "LogLaunchOptions.hpp"
 #include "Logger.hpp"
 #include "LoggingConstants.hpp"
+#include "LoggingModule.hpp"
+#include "LoopStages.hpp"
 #include "NetworkConstants.hpp"
-#include "OutgoingDatagram.hpp"
-#include "ServerApplication.hpp"
+#include "NetworkModule.hpp"
 #include "ServerConstants.hpp"
-#include "SystemClock.hpp"
-#include "TimeConstants.hpp"
-#include "TimerScheduler.hpp"
-#include "WaveCatalog.hpp"
-#include "WavePlan.hpp"
 
 namespace {
-
-using Games = std::vector<std::unique_ptr<rtype::server::GameInstance>>;
-
-/**
- * @brief What each tick of the server works on. Everything must outlive the
- * server; the first game of the list is the one new players join.
- */
-struct TickParts {
-  std::reference_wrapper<Games> games;
-  std::reference_wrapper<rtype::server::ConnectionAcceptor> acceptor;
-  std::reference_wrapper<rtype::engine::EventBus> events;
-  std::reference_wrapper<rtype::engine::TimerScheduler> timers;
-  std::reference_wrapper<const rtype::engine::SystemClock> clock;
-};
 
 /**
  * @returns The address and port the server listens on: every IPv4 interface,
@@ -61,143 +36,46 @@ rtype::network::Endpoint listeningEndpoint(
 }
 
 /**
- * @returns What the broadcaster of the game events is built from: the bus and
- * the timers of @p parts, and as recipients the players of @p game, each under
- * its own session header; @p send puts a datagram in the outgoing queue.
+ * @returns The modules of the server, in the order they install and start:
+ * the journal, @p network, the games, then the lobby that seats the new
+ * players in them.
  */
-rtype::server::GameEventBroadcaster::Wiring eventBroadcasterWiring(
-    const TickParts& parts, rtype::server::GameInstance& game,
-    const rtype::server::GameInstance::Send& send) {
-  return rtype::server::GameEventBroadcaster::Wiring{
-      .events = parts.events,
-      .timers = parts.timers,
-      .recipients = [&game] { return game.roster().endpoints(); },
-      .headerFor =
-          [&game](const rtype::network::Endpoint& recipient) {
-            return game.nextSessionHeaderFor(recipient);
-          },
-      .send = send};
+std::vector<std::unique_ptr<rtype::engine::IModule>> serverModules(
+    const rtype::logging::LogLaunchOptions& logOptions,
+    const rtype::server::LaunchOptions& launchOptions,
+    std::unique_ptr<rtype::server::NetworkModule> network) {
+  std::vector<std::unique_ptr<rtype::engine::IModule>> modules;
+  modules.push_back(std::make_unique<rtype::server::LoggingModule>(logOptions));
+  modules.push_back(std::move(network));
+  modules.push_back(std::make_unique<rtype::server::GamesModule>(
+      rtype::server::GameListSettings{
+          .seed = launchOptions.seed(),
+          .waveFile = std::filesystem::path{rtype::server::WAVE_FILE_PATH}}));
+  modules.push_back(std::make_unique<rtype::server::LobbyModule>());
+  return modules;
 }
 
 /**
- * @returns The waves of DEFAULT_DIFFICULTY, read from WAVE_FILE_PATH in the
- * folder the server is started in; the file and how many difficulties it
- * describes are logged.
- * @throws ServerException when the file cannot be read, does not describe the
- * difficulties as the server expects them, or has no DEFAULT_DIFFICULTY: the
- * message names the file, the line and the key.
- */
-rtype::server::WavePlan wavesOfTheGames(const rtype::logging::Logger& logger) {
-  const rtype::server::WaveCatalog catalog =
-      rtype::server::WaveCatalog::fromFile(
-          std::filesystem::path{rtype::server::WAVE_FILE_PATH});
-  rtype::server::WavePlan waves =
-      catalog.planOf(rtype::server::DEFAULT_DIFFICULTY);
-  logger.info("waves file ", rtype::server::WAVE_FILE_PATH, ": ",
-              catalog.difficulties().size(), " difficulties, games play ",
-              rtype::server::DEFAULT_DIFFICULTY);
-  return waves;
-}
-
-/**
- * @brief Makes @p server forget the address of every player of @p game whose
- * session closed in this tick.
- */
-void forgetDepartedPlayers(rtype::server::GameInstance& game,
-                           rtype::server::ServerApplication& server) {
-  for (const rtype::server::ConnectedPlayer& departed :
-       game.takeDepartedPlayers()) {
-    server.forget(departed.endpoint, departed.sessionToken);
-  }
-}
-
-/**
- * @brief Answers @p requests, refused with GameInProgress unless the game new
- * players join waits for players.
- */
-void answerConnectionRequests(
-    const TickParts& parts,
-    std::span<const rtype::network::IncomingDatagram> requests) {
-  const rtype::server::GameInstance& joinableGame = *parts.games.get().front();
-  rtype::server::ConnectionAcceptor& acceptor = parts.acceptor.get();
-  acceptor.setGameInProgress(joinableGame.state() !=
-                             rtype::server::GameState::WaitingForPlayers);
-  acceptor.receive(requests, parts.clock.get().now());
-}
-
-/**
- * @brief Runs one tick of the server: each game reads the datagrams of its
- * players and moves on, the players whose session closed are forgotten, the
- * connection requests are answered, then the timers advance and the bus
- * delivers the events of the tick.
- */
-void runTick(
-    const TickParts& parts, rtype::server::ServerApplication& server,
-    const rtype::server::ServerApplication::ReceivedDatagrams& received) {
-  for (const std::unique_ptr<rtype::server::GameInstance>& game :
-       parts.games.get()) {
-    game->onTick(received.players);
-    forgetDepartedPlayers(*game, server);
-  }
-  answerConnectionRequests(parts, received.connectionRequests);
-  parts.timers.get().advance(rtype::engine::SIMULATION_TICK_DURATION);
-  parts.events.get().dispatch();
-}
-
-/**
- * @brief Applies the logging options, then runs the server on the port of
- * @p launchOptions until it stops.
+ * @brief Starts the modules of the server, runs it until a stop signal, then
+ * stops the modules in the reverse order: the players are told the server
+ * stops, then the socket closes.
  * @returns the exit code: 0 once the server stopped, 1 after an error, which
  *          is logged and printed. No exception leaves it.
  */
 int runServer(const rtype::logging::LogLaunchOptions& logOptions,
               const rtype::server::LaunchOptions& launchOptions) {
   try {
-    logOptions.apply();
+    auto network = std::make_unique<rtype::server::NetworkModule>(
+        listeningEndpoint(launchOptions));
+    rtype::server::NetworkModule& pacer = *network;
+    rtype::engine::Application application{
+        rtype::engine::LoopStages(rtype::server::SERVER_LOOP_STAGES),
+        serverModules(logOptions, launchOptions, std::move(network))};
+    application.start();
+    pacer.run();
+    application.stop();
     const rtype::logging::Logger logger{
         std::string{rtype::server::SERVER_LOGGER_NAME}};
-    logger.info("server starting");
-    rtype::engine::EventBus events;
-    rtype::engine::TimerScheduler timers;
-    const rtype::engine::SystemClock clock;
-    rtype::server::ServerApplication* serverPointer = nullptr;
-    const rtype::server::GameInstance::Send queueDatagram =
-        [&serverPointer](rtype::network::OutgoingDatagram datagram) {
-          serverPointer->queueDatagram(std::move(datagram));
-        };
-    Games games;
-    games.push_back(std::make_unique<rtype::server::GameInstance>(
-        queueDatagram,
-        rtype::server::GameSettings{
-            .seed = launchOptions.seed().value_or(std::random_device{}()),
-            .waves = wavesOfTheGames(logger)},
-        events));
-    rtype::server::GameInstance& joinableGame = *games.front();
-    rtype::server::ConnectionAcceptor connectionAcceptor{
-        joinableGame.roster(), queueDatagram,
-        [&serverPointer](const rtype::network::Endpoint& player,
-                         std::uint64_t sessionToken) {
-          serverPointer->admit(player, sessionToken);
-        },
-        [&joinableGame](rtype::server::ConnectedPlayer& player) {
-          joinableGame.onPlayerJoined(player);
-        }};
-    const TickParts parts{.games = games,
-                          .acceptor = connectionAcceptor,
-                          .events = events,
-                          .timers = timers,
-                          .clock = clock};
-    const auto gameEventBroadcaster =
-        std::make_unique<rtype::server::GameEventBroadcaster>(
-            eventBroadcasterWiring(parts, joinableGame, queueDatagram));
-    rtype::server::ServerApplication server{
-        listeningEndpoint(launchOptions),
-        [&parts, &serverPointer](
-            const rtype::server::ServerApplication::ReceivedDatagrams&
-                received) { runTick(parts, *serverPointer, received); }};
-    serverPointer = &server;
-    logger.info("listening on UDP port ", server.localEndpoint().port);
-    server.run();
     logger.info("server stopped");
   } catch (const std::exception& error) {
     const rtype::logging::Logger logger{

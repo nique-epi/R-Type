@@ -19,13 +19,12 @@ target_link_libraries(r-type_server
   PRIVATE
     rtype_logging
     rtype_network_constants
-    rtype_server_application
-    rtype_server_connection_acceptor
     rtype_server_constants
-    rtype_server_game_event_broadcaster
-    rtype_server_game_instance
+    rtype_server_games_module
     rtype_server_launch_options
-    rtype_server_wave_catalog
+    rtype_server_lobby_module
+    rtype_server_logging_module
+    rtype_server_network_module
 )
 
 rtype_enable_warnings(r-type_server)

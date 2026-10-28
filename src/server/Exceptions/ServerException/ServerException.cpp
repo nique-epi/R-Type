@@ -85,4 +85,15 @@ UnknownDifficultyException::UnknownDifficultyException(
 EmptyEnemyCycleException::EmptyEnemyCycleException()
     : ServerException("A wave plan must name at least one enemy") {}
 
+ServerLinkClosedException::ServerLinkClosedException()
+    : ServerException(
+          "the link to the network is not open: the network module is not "
+          "started") {}
+
+NoGameException::NoGameException()
+    : ServerException("no game is running, so a new player has none to join") {}
+
+StopSignalsRefusedException::StopSignalsRefusedException()
+    : ServerException("the system refused the handler of the stop signals") {}
+
 }  // namespace rtype::server

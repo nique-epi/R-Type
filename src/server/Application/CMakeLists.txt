@@ -1,3 +1,12 @@
+add_library(rtype_server_application_interfaces INTERFACE)
+
+target_include_directories(rtype_server_application_interfaces INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
+
+target_link_libraries(rtype_server_application_interfaces INTERFACE rtype_network_transport)
+
 add_subdirectory(TickLoop)
 add_subdirectory(DatagramSorter)
 add_subdirectory(ServerApplication)
+add_subdirectory(ServerLink)
+add_subdirectory(LoggingModule)
+add_subdirectory(NetworkModule)

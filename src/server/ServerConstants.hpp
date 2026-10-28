@@ -168,4 +168,14 @@ constexpr std::string_view OUTPUT_STAGE = "outputs";
 constexpr std::array<std::string_view, 3> SERVER_LOOP_STAGES{
     INPUT_STAGE, SIMULATION_STAGE, OUTPUT_STAGE};
 
+/**
+ * @brief The names the modules of the server are listed and depended on
+ * under, in the order main() lists them: the journal, the network, the
+ * games, then the lobby.
+ */
+constexpr std::string_view JOURNAL_MODULE_NAME = "journal";
+constexpr std::string_view NETWORK_MODULE_NAME = "network";
+constexpr std::string_view GAMES_MODULE_NAME = "games";
+constexpr std::string_view LOBBY_MODULE_NAME = "lobby";
+
 }  // namespace rtype::server
