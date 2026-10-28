@@ -1,4 +1,5 @@
 #include <gtest/gtest.h>
+#include <SFML/Window/Keyboard.hpp>
 #include <vector>
 #include "EventListeners.hpp"
 #include "EventListenersFixtures.hpp"
@@ -10,6 +11,21 @@
 using rtype::client::EventListeners;
 using rtype::client::EventUse;
 using rtype::engine::SubscriptionHandle;
+
+/**
+ * Given a listener that records the keys pressed
+ * When a key is pressed
+ * Then the listener is shown that key
+ */
+TEST(EventListeners, ShowsTheOfferedEventToTheListener) {
+  EventListeners listeners;
+  std::vector<sf::Keyboard::Key> pressedKeys;
+  static_cast<void>(listeners.add(keyRecordingListener(pressedKeys)));
+
+  listeners.offer(keyPress(GLOBAL_KEY));
+
+  EXPECT_EQ(pressedKeys, (std::vector<sf::Keyboard::Key>{GLOBAL_KEY}));
+}
 
 /**
  * Given the listener of the screens, then a listener of a global key that
@@ -67,6 +83,22 @@ TEST(EventListeners, ShowsNothingToARemovedListener) {
   listeners.offer(keyPress(GLOBAL_KEY));
 
   EXPECT_EQ(seen, (std::vector<int>{SCREENS_LISTENER}));
+}
+
+/**
+ * Given a listener added under a handle
+ * When it is removed
+ * Then the removal reports that a listener had that handle
+ */
+TEST(EventListeners, ReportsTheRemovalOfAnAddedListener) {
+  EventListeners listeners;
+  std::vector<int> seen;
+  const SubscriptionHandle handle =
+      listeners.add(recordingListener(seen, SCREENS_LISTENER, EventUse::Kept));
+
+  const bool removed = listeners.remove(handle);
+
+  EXPECT_TRUE(removed);
 }
 
 /**
