@@ -13,6 +13,7 @@ This page tells you where to look when you need to change something. It describe
 |---|---|---|
 | Network thread and simulation thread | Available | `src/server/Application/` |
 | Timer resolution on Windows | Available | `src/server/Platform/` |
+| The server assembled from modules (journal, network, games, lobby), stopped on Ctrl-C or SIGTERM with a `Disconnection` to every player | Available | `src/server/Modules/`, `src/server/Platform/StopSignals/` |
 | Sorting the datagrams before the queues, session token checked | Available; no limit per address yet | `src/server/Application/DatagramSorter/` |
 | World state sent at a fixed rate to the players of the game | Available | `src/server/Replication/WorldStateSender/`, `src/server/Instances/GameInstance/` |
 | One header for every datagram to a player: session token and next sequence | Available | `src/server/Replication/SessionDatagram.hpp` |
@@ -63,7 +64,7 @@ This page tells you where to look when you need to change something. It describe
 - The **network thread**, the one that calls `run()`, runs the `NetworkContext`. A `DatagramSorter` sorts every datagram as it arrives: the datagrams of admitted players that carry their session token go to the player queue, connection requests to the request queue, and the rest is dropped there (see [Sorting the datagrams](#sorting-the-datagrams-datagramsorter)). `DatagramRelay` (`rtype_network`, see [Network](/R-Type/network/#socket-to-queues-datagramrelay)) sends what was left in the outgoing queue. It is the only thread that touches the socket.
 - The **simulation thread** runs `SIMULATION_TICKS_PER_SECOND` (60) ticks per second. Each tick drains the player queue and the request queue and hands what arrived, often nothing, to the tick handler given to the constructor, as a `ReceivedDatagrams` (`players`, `connectionRequests`), so a slow or silent player never holds the game up. At the end of the tick it asks the network thread, through `NetworkContext::post()`, to send the outgoing queue.
 
-The tick handler is where the game plugs in. Today `src/server/main.cpp` gives one, `runTick()`, that gives the datagrams of the players to each game of its list, which reads the `ReadyState` and the inputs among them, moves along its states and tells its players the room, the start and the world state (see [A game](#a-game-gameinstance) and [Player inputs](#player-inputs)), forgets the address of each player whose session closed in that tick (see [Silent players](#silent-players-heartbeats-and-timeouts)), hands the connection requests to the `ConnectionAcceptor`, which answers them and gives each new player a ship in the first game (see [Letting players in](#letting-players-in-connectionacceptor-playerroster) and [Player ships](#player-ships-shipspawnannouncer)), advances the timers by one tick, then delivers the events of the `EventBus`, which the broadcaster sends to the players who joined (see [Game events](#game-events-gameeventencoder-and-gameeventbroadcaster)).
+The tick handler is where the game plugs in. The network module gives one (see [Modules](#modules-and-stopping-the-server)): it keeps the datagrams for the modules and runs the stages of the loop, so in a tick each game of the list gets the datagrams of the players, reads the `ReadyState` and the inputs among them, moves along its states and tells its players the room, the start and the world state (see [A game](#a-game-gameinstance) and [Player inputs](#player-inputs)), and the address of each player whose session closed in that tick is forgotten (see [Silent players](#silent-players-heartbeats-and-timeouts)); then the connection requests go to the `ConnectionAcceptor`, which answers them and gives each new player a ship in the first game (see [Letting players in](#letting-players-in-connectionacceptor-playerroster) and [Player ships](#player-ships-shipspawnannouncer)); then the timers advance by one tick and the `EventBus` delivers its events, which the broadcaster sends to the players who joined (see [Game events](#game-events-gameeventencoder-and-gameeventbroadcaster)).
 
 A tick handler puts a datagram in the outgoing queue with `queueDatagram()`, called from the handler itself, on the simulation thread. The datagram is sent at the end of the same tick.
 
@@ -74,6 +75,8 @@ The player queue and the outgoing queue hold `INCOMING_DATAGRAM_QUEUE_CAPACITY` 
 - When more datagrams arrive between two ticks than the player queue or the request queue holds, the oldest are discarded. Every `TICKS_PER_REPORT` ticks (600, so every ten seconds), the server logs one warning per queue with how many were discarded, if any, one with how many datagrams the sorter dropped before any queue, and one with how many it dropped for their session token, naming the address and port of the first of them (see below). Each datagram the sorter drops is also logged with its sender at the `debug` level (see below).
 - A flood of connection requests, or of datagrams from strangers, never pushes a player's datagram out of its queue. It still delays the requests of new players: nothing limits the requests of one address yet (see [Flood protection](#flood-protection)).
 - The outgoing queue also discards its oldest datagram when full, but nothing reports it yet.
+
+`ServerApplication` implements `IDatagramSender` (`queueDatagram()`) and `IPlayerAdmission` (`admit()`, `forget()`), the two interfaces the other parts of the server use to reach it. Building it binds nothing: `open()` binds the socket (`ServerAlreadyOpenException` when it is already bound), and `run()` and `localEndpoint()` throw `ServerNotOpenException` before it. `close()` unbinds it, so the port is free again once `run()` returned.
 
 `stop()` makes `run()` return, from any thread: the network thread stops at once, the simulation thread when its current sleep ends, about one tick later. An exception thrown on either thread, by the tick handler for instance, stops both, and `run()` rethrows it.
 
@@ -104,6 +107,30 @@ The room of the player queue protects the server's memory; the sorter protects t
 3. **One input per player and per tick.** The protocol requires it (see [Protocol](/R-Type/protocol/#inputs)). Written: each `GameInstance` keeps only the newest `PlayerInput` of each of its players and ignores older ones (see [Player inputs](#player-inputs)), then applies it to the ship of that player at each tick of a game in progress (see [Moving the ships](#moving-the-ships-shipcontrol)).
 
 The player queue stays as the last safety net. It discards its oldest datagram, where GameNetworkingSockets refuses the newest, because only the newest input of a player counts. Why threads only talk through queues is explained in [Architecture](/R-Type/architecture/#queues-between-threads).
+
+## Modules and stopping the server
+
+`src/server/main.cpp` reads the options and hands a list of modules to an `engine::Application` (see [Engine](/R-Type/engine/#modules-application-and-imodule)). `serverModules()` (`src/server/Modules/ServerModules/`) is the one place that lists them; they start in this order and stop in the reverse one.
+
+| Module | Does | Where |
+|---|---|---|
+| `journal` | applies the logging options when it starts, logs "server starting" and "server stopped" | `src/server/Modules/ServerJournalModule/` |
+| `network` | owns the `ServerApplication`: binds the socket and runs the server on a thread when it starts, gives the port back when it stops; provides `IDatagramSender`, `IPlayerAdmission` and `TickDatagrams` (the datagrams of the tick) | `src/server/Modules/ServerNetworkModule/`, `TickDatagrams/` |
+| `games` | the one game of today, its event broadcaster, the `EventBus` and the `TimerScheduler`; reads the waves file when it starts; provides `Games` | `src/server/Modules/ServerGamesModule/`, `Games/` |
+| `lobby` | the `ConnectionAcceptor`, built on the roster of the game new players join | `src/server/Modules/ServerLobbyModule/` |
+
+Each tick runs the stages of `SERVER_LOOP_STAGES` once, with `SIMULATION_TICK_DURATION`. In `simulation`, the games module runs `onTick()` on each game and makes the network forget the players whose session closed, then the lobby module answers the connection requests, so a request is refused with `GameInProgress` by the state the games just reached. In `outputs`, the games module advances the timers and delivers the events of the bus. The `inputs` stage is empty: `onTick()` reads the datagrams and moves the game in one step. `Games::joinable()` is the rule "every new player joins the first game", the same for the lobby and for the tests.
+
+The waves file is read when the games module starts, after the journal opened, so a missing or wrong file stops the start with an error that names the games module, the file, the line and the key, and the line "waves file …" reaches the journal.
+
+### Stopping: Ctrl-C and SIGTERM
+
+`StopSignals` (`src/server/Platform/StopSignals/`) turns the signals that ask a program to stop into a request on a `StopRequest`, the object `main()` waits on. A failure of the network thread asks for the same stop, with the text of the error, so `main()` returns 1 after it and 0 after a signal. Only the first request counts.
+
+- Linux and macOS: `SIGINT` (Ctrl-C) and `SIGTERM`. `StopSignals` blocks them in the main thread before any other thread exists, so every thread inherits the mask, and one thread takes them with `sigwait()`: nothing runs inside a signal handler. A signal that arrives before it is built, while the program starts, has its default action.
+- Windows: `SetConsoleCtrlHandler`. The system runs the handler on a new thread. Ctrl-C and Ctrl-Break have no time limit; closing the console window gives the process 5 seconds, so that handler waits for the program to finish stopping, at most `CONSOLE_CLOSE_WAIT` (4 s), before it returns. Logoff and shutdown only reach services, and are handled the same way. This file is checked by the Windows job of the CI only.
+
+On a request, `main()` calls `Application::stop()`. It first stops the stages: it waits for the tick in progress, and no work runs after it. Then the modules stop in the reverse order. The games module tells every player that the server shuts down, with `REPEATED_MESSAGE_COPIES` (3) copies of a `Disconnection`, `REPEATED_MESSAGE_INTERVAL` (50 ms) apart, each under the next session header of its player (see `FarewellSender`), then waits `FAREWELL_FLUSH_WAIT` (two ticks) so the last copy leaves; the whole stop takes about 130 ms with a player connected (two intervals and two ticks). The network module then stops the server and closes the socket, and the journal logs "server stopped". The client does not read that `Disconnection` yet (see [Protocol](/R-Type/protocol/#a-peer-disappears)).
 
 ## Tick loop: `TickLoop`
 
@@ -174,9 +201,9 @@ A datagram of this protocol with another version is answered with `ConnectionRef
 
 - A refusal reserves nothing, so it goes before the cookie is checked. The cookies come from a `CookieIssuer` whose key is drawn when the acceptor is built (see [Network](/R-Type/network/#connection-cookies-cookieissuer)).
 - An acceptance carries the session token and the next sequence of that player, 0 for the first (see [Session headers](#session-headers-sessiondatagram)). Challenges and refusals carry token 0 and sequence 0, as every datagram sent before a session.
-- Besides the function that admits a sender, the acceptor takes an optional one it calls once for each player it lets in, after it sent the acceptance, and not again when an acceptance is repeated. `main.cpp` gives it the first `GameInstance`, which gives the player a ship.
+- Besides the function that admits a sender, the acceptor takes an optional one it calls once for each player it lets in, after it sent the acceptance, and not again when an acceptance is repeated. The lobby module gives it the first `GameInstance`, which gives the player a ship.
 - Nothing caused by the content of a datagram makes it throw. Each new player is logged at the `info` level under `Lobby`, as `player <n> joined from <address> port <port>`; challenges and refusals at the `debug` level. A datagram it cannot read, or whose request its reader refuses (a nickname empty, longer than 16 bytes, not UTF-8 or holding a control character, a cookie cut short), gets no answer and is logged at the `debug` level with its sender and why, at most once per `REJECTION_LINE_INTERVAL` (10 s) of the time the tick hands it.
-- Each new player is announced once to the function given to the acceptor, which `main.cpp` hands to `ServerApplication::admit()`, so the datagrams of that player reach the tick from then on.
+- Each new player is announced once to the function given to the acceptor, which the lobby module hands to `IPlayerAdmission::admit()` (implemented by `ServerApplication`), so the datagrams of that player reach the tick from then on.
 - `setGameInProgress(bool)` turns the `GameInProgress` refusal on and off. The tick handler sets it before the requests are read, to whether the first game is in any state other than waiting for players, so a request that arrives in the tick where the game starts is already refused. A player leaves the roster when its session closes (see [Silent players](#silent-players-heartbeats-and-timeouts)).
 
 ## Session headers: `SessionDatagram`
@@ -195,7 +222,7 @@ send(rtype::server::sessionDatagram(player, rtype::network::GameStarted{}));
 
 ## A game: `GameInstance`
 
-`GameInstance` (`src/server/Instances/GameInstance/`) groups everything that belongs to one game: its `World`, its `PlayerRoster` (players 1 to 4, whose numbers also pick their colors), its state and its tick. The server keeps a list of games; today `main.cpp` builds one, and every connection enters it. The tick handler calls `onTick(datagrams)` on each game with the datagrams of the admitted players, on the simulation thread, and `onPlayerJoined(player)` gives a new player its ship.
+`GameInstance` (`src/server/Instances/GameInstance/`) groups everything that belongs to one game: its `World`, its `PlayerRoster` (players 1 to 4, whose numbers also pick their colors), its state and its tick. The server keeps a list of games (`Games`); today the games module builds one, and every connection enters it. The tick handler calls `onTick(datagrams)` on each game with the datagrams of the admitted players, on the simulation thread, and `onPlayerJoined(player)` gives a new player its ship.
 
 | State (`GameState`) | The game… | It goes to… |
 |---|---|---|
@@ -219,7 +246,7 @@ for (const std::unique_ptr<rtype::server::GameInstance>& game :
 answerConnectionRequests(parts, received.connectionRequests);
 ```
 
-`runTick()` in `src/server/main.cpp` runs these steps; `answerConnectionRequests()` first tells the acceptor whether the first game is in progress, then hands it the requests.
+The simulation stage runs these steps (see [Modules](#modules-and-stopping-the-server)); `ServerLobbyModule` first tells the acceptor whether the first game is in progress, then hands it the requests.
 
 ## Silent players: heartbeats and timeouts
 
@@ -229,7 +256,7 @@ A client that crashes, is killed or loses the network sends nothing more, and no
 2. the ship leaves the world (`World::removePlayer`) and, when the world held it, is published as an `EntityDestruction` (`Removed`), so the clients make it disappear without an explosion;
 3. a `PlayerDeparture` (`TimedOut`) is published, which the others get as `PlayerLeft`, three times (see [Game events](#game-events-gameeventencoder-and-gameeventbroadcaster)). No client reads `PlayerLeft` yet: it skips it as a message without handler, so no player is told on screen (see [Protocol](/R-Type/protocol/#a-peer-disappears)).
 
-`takeDepartedPlayers()` hands each departed player over once. `main.cpp` then calls `ServerApplication::forget()`. The game events go to the players of the roster, so the next ones reach the others only (see [Game events](#game-events-gameeventencoder-and-gameeventbroadcaster)). The game logs `player <n> timed out: nothing received from <address> port <port> for 5 s` at the `info` level under `Instances`.
+`takeDepartedPlayers()` hands each departed player over once. The games module then calls `IPlayerAdmission::forget()`. The game events go to the players of the roster, so the next ones reach the others only (see [Game events](#game-events-gameeventencoder-and-gameeventbroadcaster)). The game logs `player <n> timed out: nothing received from <address> port <port> for 5 s` at the `info` level under `Instances`.
 
 - The game counts the ticks it runs, not the time that passes: during a stall of the server, the datagrams wait in the player queue and are read at the next tick, so a stall closes no session.
 - The rest of the tick runs without the player: a waiting room whose other players are all ready starts the game in that tick, and the world state of that tick no longer lists the ship.
@@ -246,7 +273,7 @@ The server sends heartbeats too. At the end of each tick, a game sends a `Heartb
 `LobbyStateAnnouncer` (`src/server/Replication/LobbyStateAnnouncer/`) tells the players of a game who is in the waiting room and who is ready, as a `LobbyState` (see [Protocol](/R-Type/protocol/#a-session)). `GameInstance` calls `onWaitingTick()` on every tick it waits for players, and builds a new announcer with each new world, so the room goes out at the first tick of every wait.
 
 - The room lists every connected player, in order of number, with its ready state and its nickname, read from the `PlayerRoster` at each tick.
-- It is sent to every connected player as soon as it differs from the room sent last: in the tick a `ReadyState` changes it, and in the tick after a player joins, since `main.cpp` answers the connection requests after the games ticked. When that `ReadyState` makes every player ready, the game starts in the same tick and sends `GameStarted` instead.
+- It is sent to every connected player as soon as it differs from the room sent last: in the tick a `ReadyState` changes it, and in the tick after a player joins, since the lobby module answers the connection requests after the games ticked. When that `ReadyState` makes every player ready, the game starts in the same tick and sends `GameStarted` instead.
 - An unchanged room is sent again `TICKS_PER_LOBBY_STATE` (30) ticks after the last send. `LOBBY_STATE_INTERVAL` (500 ms) is **provisional**, like the protocol rate it follows; `TICKS_PER_LOBBY_STATE` is that interval in whole ticks, rounded down, so 30 ticks are 499.99998 ms, while adding up tick durations until 500 ms would wait 31 ticks, 516.7 ms. Code must read the constants (`src/server/ServerConstants.hpp`) and never repeat 500 or 30.
 - Nothing is sent while the game is in progress or finished, and a room without players reaches no one.
 
@@ -269,8 +296,9 @@ rtype::server::ShipSpawnAnnouncer shipSpawnAnnouncer{world, roster,
                                                      queueDatagram};
 rtype::server::ConnectionAcceptor connectionAcceptor{
     roster, queueDatagram,
-    [&serverPointer](const rtype::network::Endpoint& player) {
-      serverPointer->admit(player);
+    [&admission](const rtype::network::Endpoint& player,
+                 std::uint64_t sessionToken) {
+      admission.admit(player, sessionToken);
     },
     [&shipSpawnAnnouncer](rtype::server::ConnectedPlayer& player) {
       shipSpawnAnnouncer.onPlayerJoined(player);
@@ -320,7 +348,7 @@ The game announces what the players must see or hear by publishing an event on t
 - An event the protocol refuses is skipped: a position that is not a number, the entity id 0 (which no entity has), or a player number outside 1 to 4. The broadcaster logs a warning with the name of the event, sends nothing, schedules no copy, and does not use an event number, so the next event goes out and the server keeps running. Only the encoding is protected: a fault in the sending still stops the tick.
 - The broadcaster must outlive the last `dispatch()` of the bus and the last `advance()` of the timers, because both call back into it.
 - Nothing is sent or scheduled when the list of recipients is empty, but the encoder still runs, so a `GameEvent` still uses an event number.
-- In `main.cpp` the recipients are the players in the roster of the game when the bus delivers the event (`PlayerRoster::endpoints()`), and the header function is `GameInstance::nextSessionHeaderFor`, which reads the same roster through `sessionHeaderFor` (see [Session headers](#session-headers-sessiondatagram)), so each copy carries the token and the next sequence of its player. A player whose session closes in a tick leaves the roster before the bus delivers the events of that tick, so the others alone get its departure. A copy of an earlier event still goes to its address, under a header without session, which its client drops.
+- In the games module the recipients are the players in the roster of the game when the bus delivers the event (`PlayerRoster::endpoints()`), and the header function is `GameInstance::nextSessionHeaderFor`, which reads the same roster through `sessionHeaderFor` (see [Session headers](#session-headers-sessiondatagram)), so each copy carries the token and the next sequence of its player. A player whose session closes in a tick leaves the roster before the bus delivers the events of that tick, so the others alone get its departure. A copy of an earlier event still goes to its address, under a header without session, which its client drops.
 - `PlayfieldExitSystem` publishes an `EntityDestruction` when a Bydo or a missile, of a player or of a Bydo, leaves the playfield. `DamageRules` publishes one for each missile that hits and for each Bydo it destroys, and an `EntityDamage` for a Bydo hit that survives. The players get each of them.
 
 ```cpp
@@ -377,7 +405,7 @@ Each tick of a game in progress, `GameInstance` moves the ships (see [Moving the
 
 ## Waves file: `WaveCatalog`
 
-`WaveCatalog` (`src/server/Spawning/WaveCatalog/`, `rtype_server_wave_catalog`) reads the waves of each difficulty from a TOML file with toml++. It is the only target that links toml++, and only the server links it, so no client target can read the levels. Before the server listens, `main.cpp` reads `WAVE_FILE_PATH` (`assets/waves/waves.toml`) from the folder the server is started in, takes the `WavePlan` of `DEFAULT_DIFFICULTY` (`normal`) and gives it to the game in its `GameSettings`, with the seed. A `WavePlan` holds a `WaveCurve` and the kinds its Bydos take in turn.
+`WaveCatalog` (`src/server/Spawning/WaveCatalog/`, `rtype_server_wave_catalog`) reads the waves of each difficulty from a TOML file with toml++. It is the only target that links toml++, and only the server links it, so no client target can read the levels. When the games module starts, it reads `WAVE_FILE_PATH` (`assets/waves/waves.toml`) from the folder the server is started in, takes the `WavePlan` of `DEFAULT_DIFFICULTY` (`normal`) and gives it to the game in its `GameSettings`, with the seed. A `WavePlan` holds a `WaveCurve` and the kinds its Bydos take in turn.
 
 Every key, value and enemy name of every difficulty is checked. The first error throws a `ServerException` (`src/server/Exceptions/`) naming the file, the line and the column, and the dotted name of the key; `runServer` prints it and returns 1. The format, the ranges, the shipped difficulties and every error are in [Writing the waves file](/R-Type/waves-file/).
 
@@ -460,7 +488,7 @@ scheduler.run(components, SIMULATION_TICK_DURATION);
 events.dispatch();
 ```
 
-The bus and the registry must outlive `CollisionRules`, and the bus must outlive `CollisionSystem`. `GameInstance` adds `CollisionSystem` after `PlayfieldExitSystem`, and builds a `CollisionRules` and a `DamageRules` with each world, on the registry of that world. `main.cpp` delivers the events at the end of every tick, so a collision is judged in the tick it is found, and never against the registry of a world replaced since. A ship has a `CollisionBox` from `World::spawnPlayer`, so a ship that touches a Bydo makes a `ShipContact`, and a missile of a Bydo that touches it a `MissileHit`.
+The bus and the registry must outlive `CollisionRules`, and the bus must outlive `CollisionSystem`. `GameInstance` adds `CollisionSystem` after `PlayfieldExitSystem`, and builds a `CollisionRules` and a `DamageRules` with each world, on the registry of that world. The games module delivers the events in the `outputs` stage of every tick, so a collision is judged in the tick it is found, and never against the registry of a world replaced since. A ship has a `CollisionBox` from `World::spawnPlayer`, so a ship that touches a Bydo makes a `ShipContact`, and a missile of a Bydo that touches it a `MissileHit`.
 
 ## Damage: `DamageRules`
 
@@ -527,7 +555,9 @@ A game ended by `finish()`, or by the departure of its last player, tells no one
 
 | You want to… | Look at |
 |---|---|
-| Change what a tick does | `runTick()` in `src/server/main.cpp`, the tick handler given to `ServerApplication` |
+| Change what a tick does | The work a module adds to a stage: `playGames()` in `src/server/Modules/ServerGamesModule/`, `answerConnectionRequests()` in `src/server/Modules/ServerLobbyModule/` |
+| Add a part to the server | A class implementing `IModule` in `src/server/Modules/`, listed in `serverModules()` after the modules it depends on |
+| Change what the server does when it stops | `ServerGamesModule::stop()` and `FarewellSender`, in `src/server/Modules/` |
 | Change which datagrams reach the tick | `DatagramSorter::sort` in `src/server/Application/DatagramSorter/DatagramSorter.cpp` |
 | Change how many connection requests a tick answers | `CONNECTION_REQUEST_QUEUE_CAPACITY` in `src/server/ServerConstants.hpp` |
 | Add a launch option | The options listed in `LaunchOptions::read()` and `usage()`, in `src/server/LaunchOptions/LaunchOptions.cpp`; a name the client uses too goes in `src/engine/LaunchArguments/LaunchArgumentsConstants.hpp` |
@@ -576,7 +606,7 @@ A game ended by `finish()`, or by the departure of its last player, tells no one
 | Change which input of a player the server keeps | `isNewer` in `src/server/Instances/GameInstance/GameInstance.cpp` |
 | Change which datagrams of the players a game reads | `GameInstance::playerDatagramOf` in `src/server/Instances/GameInstance/GameInstance.cpp` |
 | Change how long a game waits for a silent player, or how often a side sends a heartbeat | `SESSION_TIMEOUT` and `HEARTBEAT_INTERVAL` in `src/network/Protocol/ProtocolConstants.hpp`, shared with the client |
-| Change what happens when the session of a player closes | `GameInstance::closeSession` in `src/server/Instances/GameInstance/GameInstance.cpp`, and `forgetDepartedPlayers()` in `src/server/main.cpp` |
+| Change what happens when the session of a player closes | `GameInstance::closeSession` in `src/server/Instances/GameInstance/GameInstance.cpp`, and `playGames()` in `src/server/Modules/ServerGamesModule/` |
 | Change the size of the queues between threads | `INCOMING_DATAGRAM_QUEUE_CAPACITY` and `OUTGOING_DATAGRAM_QUEUE_CAPACITY` in `src/server/ServerConstants.hpp` |
 | Change the simulation rate | `SIMULATION_TICKS_PER_SECOND` in `src/engine/Time/TimeConstants.hpp` |
 | Change how often the simulation reports | `REPORT_SECONDS` in `src/server/ServerConstants.hpp` |

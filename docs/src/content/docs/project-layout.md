@@ -133,8 +133,9 @@ src/network/
 ```
 src/server/
 ├── Application/      starts and stops the threads
+├── Modules/          the journal, network, games and lobby modules and the list that assembles them
 ├── Exceptions/       the root exception of the server, errors of the waves file
-├── Platform/         what differs between Windows, macOS and Linux
+├── Platform/         what differs between Windows, macOS and Linux, and the stop signals
 ├── LaunchOptions/    port, name, limits, master address
 ├── Lobby/            players not in a game: list, create, join, chat
 ├── Instances/        one GameInstance per game, each on its thread
@@ -146,7 +147,7 @@ src/server/
 └── Storage/          this server's SQLite file: leaderboard, statistics
 ```
 
-`Application`, `Replication` (the world state sender, the waiting room announcer, the announcer of the end of a game, the session header of every datagram to a player, the announcement of the ship of each new player, and the encoder and broadcaster of the game events), `Platform`, `LaunchOptions`, `Lobby` (the answers to connection requests only), `Spawning` (the Bydo spawner, the reader of the waves file and the missile launcher), `Exceptions` and `Instances` (one `GameInstance` for now, run on the simulation thread like the rest, which runs the systems of its world, and the score and the lives of its players) exist today: the network thread and the simulation thread, the waiting room, the start of the game, the world state, the game events and the end of a game sent to the players (see [Server](/R-Type/server/)), the timer resolution the server asks Windows for, the port and seed read at launch, the players let in, the Bydos appearing and moving, the missiles the players fire, and a game with its states, its ready rule and the newest input of each player, which moves its ship.
+`Application`, `Modules` (the journal, network, games and lobby modules, the list that assembles them, and the farewell the games module sends when the server stops), `Replication` (the world state sender, the waiting room announcer, the announcer of the end of a game, the session header of every datagram to a player, the announcement of the ship of each new player, and the encoder and broadcaster of the game events), `Platform`, `LaunchOptions`, `Lobby` (the answers to connection requests only), `Spawning` (the Bydo spawner, the reader of the waves file and the missile launcher), `Exceptions` and `Instances` (one `GameInstance` for now, run on the simulation thread like the rest, which runs the systems of its world, and the score and the lives of its players) exist today: the network thread and the simulation thread, the waiting room, the start of the game, the world state, the game events and the end of a game sent to the players (see [Server](/R-Type/server/)), the timer resolution the server asks Windows for, the port and seed read at launch, the players let in, the Bydos appearing and moving, the missiles the players fire, and a game with its states, its ready rule and the newest input of each player, which moves its ship.
 
 ### Client
 

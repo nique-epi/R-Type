@@ -320,7 +320,7 @@ A message that is valid but means nothing in the current state of its receiver c
 
 A player that comes back after its session closed connects again from the first request, as an unknown sender, and gets a new session token.
 
-Of the cases above, the programs do not handle yet: the `PlayerLeft` a client receives, which it skips as a message it has no handler for, so no player is told on screen that another one left; the `Disconnection` of the server, which the server does not send when it shuts down and the client does not read; the 5-second timeout of the client, which never shows that the connection is lost.
+Of the cases above, the programs do not handle yet: the `PlayerLeft` a client receives, which it skips as a message it has no handler for, so no player is told on screen that another one left; the `Disconnection` of the server, which the server sends three times when it shuts down on Ctrl-C or SIGTERM (see [Server](/R-Type/server/#stopping-ctrl-c-and-sigterm)) and the client does not read; the 5-second timeout of the client, which never shows that the connection is lost.
 
 ## Losses
 
