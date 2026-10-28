@@ -43,7 +43,7 @@ std::string ServerNetworkModule::name() const {
 }
 
 std::vector<std::string> ServerNetworkModule::dependencies() const {
-  return {std::string{JOURNAL_MODULE_NAME}};
+  return {std::string{LOGGER_MODULE_NAME}};
 }
 
 void ServerNetworkModule::install(engine::InstallContext& context) {

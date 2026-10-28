@@ -19,9 +19,9 @@ namespace rtype::server {
  * stopped last: the lines of every other module's start() and stop() are
  * written.
  */
-class ServerJournalModule final : public engine::IModule {
+class ServerLoggerModule final : public engine::IModule {
  public:
-  explicit ServerJournalModule(logging::LogLaunchOptions options);
+  explicit ServerLoggerModule(logging::LogLaunchOptions options);
 
   [[nodiscard]] std::string name() const override;
   [[nodiscard]] std::vector<std::string> dependencies() const override;

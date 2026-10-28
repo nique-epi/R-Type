@@ -27,7 +27,7 @@ using rtype::server::serverModules;
  * Then they are the journal, the network, the games and the lobby, in the order
  * they start
  */
-TEST_F(ServerModulesFixture, ListsTheJournalTheNetworkTheGamesAndTheLobby) {
+TEST_F(ServerModulesFixture, ListsTheLoggerTheNetworkTheGamesAndTheLobby) {
   const auto modules =
       serverModules(journalOptions(), launchOptions(), stopRequest());
 
@@ -37,7 +37,7 @@ TEST_F(ServerModulesFixture, ListsTheJournalTheNetworkTheGamesAndTheLobby) {
     names.push_back(listed->name());
   }
   EXPECT_EQ(names, (std::vector<std::string>{
-                       std::string{rtype::server::JOURNAL_MODULE_NAME},
+                       std::string{rtype::server::LOGGER_MODULE_NAME},
                        std::string{rtype::server::NETWORK_MODULE_NAME},
                        std::string{rtype::server::GAMES_MODULE_NAME},
                        std::string{rtype::server::LOBBY_MODULE_NAME}}));

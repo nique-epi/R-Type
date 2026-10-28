@@ -19,7 +19,7 @@ class PortProbeModule;
 class ServerNetworkModuleFixture : public ServerModuleFixture {
  protected:
   /**
-   * @returns The journal module, the network module on @p port, then
+   * @returns The logger module, the network module on @p port, then
    * @p probe, which depends on the network module.
    */
   [[nodiscard]] std::vector<std::unique_ptr<rtype::engine::IModule>>

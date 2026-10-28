@@ -23,7 +23,7 @@
 #include "ServerConstants.hpp"
 #include "ServerDatagrams.hpp"
 #include "ServerGamesModule.hpp"
-#include "ServerJournalModule.hpp"
+#include "ServerLoggerModule.hpp"
 #include "ServerModuleTestConstants.hpp"
 #include "ServiceProbeModule.hpp"
 #include "TimeConstants.hpp"
@@ -35,7 +35,7 @@ using rtype::server::testing::playerEndpoint;
 void ServerGamesFixture::startWith(rtype::server::GamesSettings settings) {
   std::vector<std::unique_ptr<rtype::engine::IModule>> modules;
   modules.push_back(
-      std::make_unique<rtype::server::ServerJournalModule>(journalOptions()));
+      std::make_unique<rtype::server::ServerLoggerModule>(journalOptions()));
   auto network = std::make_unique<RecordingNetworkModule>();
   network_ = network.get();
   modules.push_back(std::move(network));

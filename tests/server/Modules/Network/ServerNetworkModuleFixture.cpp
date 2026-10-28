@@ -9,7 +9,7 @@
 #include <vector>
 #include "IModule.hpp"
 #include "ModuleConstants.hpp"
-#include "ServerJournalModule.hpp"
+#include "ServerLoggerModule.hpp"
 #include "ServerModuleTestConstants.hpp"
 #include "ServerNetworkModule.hpp"
 #include "ServiceProbeModule.hpp"
@@ -22,7 +22,7 @@ ServerNetworkModuleFixture::networkModulesThen(
     std::uint16_t port, std::unique_ptr<rtype::engine::IModule> probe) {
   std::vector<std::unique_ptr<rtype::engine::IModule>> modules;
   modules.push_back(
-      std::make_unique<rtype::server::ServerJournalModule>(journalOptions()));
+      std::make_unique<rtype::server::ServerLoggerModule>(journalOptions()));
   modules.push_back(
       std::make_unique<rtype::server::ServerNetworkModule>(port, stopRequest_));
   modules.push_back(std::move(probe));

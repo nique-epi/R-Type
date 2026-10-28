@@ -13,7 +13,7 @@ This page tells you where to look when you need to change something. It describe
 |---|---|---|
 | Network thread and simulation thread | Available | `src/server/Application/` |
 | Timer resolution on Windows | Available | `src/server/Platform/` |
-| The server assembled from modules (journal, network, games, lobby), stopped on Ctrl-C or SIGTERM with a `Disconnection` to every player | Available | `src/server/Modules/`, `src/server/Platform/StopSignals/` |
+| The server assembled from modules (logger, network, games, lobby), stopped on Ctrl-C or SIGTERM with a `Disconnection` to every player | Available | `src/server/Modules/`, `src/server/Platform/StopSignals/` |
 | Sorting the datagrams before the queues, session token checked | Available; no limit per address yet | `src/server/Application/DatagramSorter/` |
 | World state sent at a fixed rate to the players of the game | Available | `src/server/Replication/WorldStateSender/`, `src/server/Instances/GameInstance/` |
 | One header for every datagram to a player: session token and next sequence | Available | `src/server/Sessions/SessionDatagram/` |
@@ -110,18 +110,18 @@ The player queue stays as the last safety net. It discards its oldest datagram, 
 
 ## Modules and stopping the server
 
-`src/server/main.cpp` reads the options and hands a list of modules to an `engine::Application` (see [Engine](/R-Type/engine/#modules-application-and-imodule)). `serverModules()` (`src/server/Modules/ServerModules.cpp`) is the one place that lists them; they start in this order and stop in the reverse one.
+`src/server/main.cpp` reads the options and hands a list of modules to an `engine::Application` (see [Engine](/R-Type/engine/#modules-application-and-imodule)). `serverModules()` (`src/server/Modules/Assembly/ServerModules.cpp`) is the one place that lists them; they start in this order and stop in the reverse one.
 
 | Module | Does | Where |
 |---|---|---|
-| `journal` | applies the logging options when it starts, logs "server starting" and "server stopped" | `src/server/Modules/ServerJournalModule.cpp` |
-| `network` | owns the `ServerApplication`: binds the socket and runs the server on a thread when it starts, gives the port back when it stops; provides `IDatagramSender`, `IPlayerAdmission` and `TickDatagrams` (the datagrams of the tick) | `src/server/Modules/ServerNetworkModule.cpp`, `TickDatagrams.cpp` |
-| `games` | the one game of today, its event broadcaster, the `EventBus` and the `TimerScheduler`; reads the waves file when it starts; provides `Games` | `src/server/Modules/ServerGamesModule.cpp`, `Games.cpp` |
-| `lobby` | the `ConnectionAcceptor`, built on the roster of the game new players join | `src/server/Modules/ServerLobbyModule.cpp` |
+| `logger` | applies the logging options when it starts, logs "server starting" and "server stopped" | `src/server/Modules/Logger/` |
+| `network` | owns the `ServerApplication`: binds the socket and runs the server on a thread when it starts, gives the port back when it stops; provides `IDatagramSender`, `IPlayerAdmission` and `TickDatagrams` (the datagrams of the tick) | `src/server/Modules/Network/` |
+| `games` | the one game of today, its event broadcaster, the `EventBus` and the `TimerScheduler`; reads the waves file when it starts; provides `Games` | `src/server/Modules/Games/` |
+| `lobby` | the `ConnectionAcceptor`, built on the roster of the game new players join | `src/server/Modules/Lobby/` |
 
 Each tick runs the stages of `SERVER_LOOP_STAGES` once, with `SIMULATION_TICK_DURATION`. In `simulation`, the games module runs `onTick()` on each game and makes the network forget the players whose session closed, then the lobby module answers the connection requests, so a request is refused with `GameInProgress` by the state the games just reached. In `outputs`, the games module advances the timers and delivers the events of the bus. The `inputs` stage is empty: `onTick()` reads the datagrams and moves the game in one step. `Games::joinable()` is the rule "every new player joins the first game", the same for the lobby and for the tests.
 
-The waves file is read when the games module starts, after the journal opened, so a missing or wrong file stops the start with an error that names the games module, the file, the line and the key, and the line "waves file …" reaches the journal.
+The waves file is read when the games module starts, after the logger module started, so a missing or wrong file stops the start with an error that names the games module, the file, the line and the key, and the line "waves file …" reaches the journal.
 
 ### Stopping: Ctrl-C and SIGTERM
 
@@ -572,9 +572,9 @@ A game ended by `finish()`, or by the departure of its last player, tells no one
 
 | You want to… | Look at |
 |---|---|
-| Change what a tick does | The work a module adds to a stage: `playGames()` in `src/server/Modules/ServerGamesModule.cpp`, `answerConnectionRequests()` in `src/server/Modules/ServerLobbyModule.cpp` |
-| Add a part to the server | A class implementing `IModule` in `src/server/Modules/`, listed in `serverModules()` after the modules it depends on |
-| Change what the server does when it stops | `ServerGamesModule::stop()` and `FarewellSender`, in `src/server/Modules/` |
+| Change what a tick does | The work a module adds to a stage: `playGames()` in `src/server/Modules/Games/ServerGamesModule.cpp`, `answerConnectionRequests()` in `src/server/Modules/Lobby/ServerLobbyModule.cpp` |
+| Add a part to the server | A class implementing `IModule` in a folder of its own under `src/server/Modules/`, listed in `serverModules()` after the modules it depends on |
+| Change what the server does when it stops | `ServerGamesModule::stop()` and `FarewellSender`, in `src/server/Modules/Games/` |
 | Change which datagrams reach the tick | `DatagramSorter::sort` in `src/server/Application/DatagramSorter/DatagramSorter.cpp` |
 | Change how many connection requests a tick answers | `CONNECTION_REQUEST_QUEUE_CAPACITY` in `src/server/ServerConstants.hpp` |
 | Add a launch option | The options listed in `LaunchOptions::read()` and `usage()`, in `src/server/LaunchOptions/LaunchOptions.cpp`; a name the client uses too goes in `src/engine/LaunchArguments/LaunchArgumentsConstants.hpp` |
@@ -623,7 +623,7 @@ A game ended by `finish()`, or by the departure of its last player, tells no one
 | Change which input of a player the server keeps | `isNewer` in `src/server/Sessions/InputKeeper/InputKeeper.cpp` |
 | Change which datagrams of the players a game reads | `DatagramReader::read` in `src/server/Sessions/DatagramReader/DatagramReader.cpp` |
 | Change how long a game waits for a silent player, or how often a side sends a heartbeat | `SESSION_TIMEOUT` and `HEARTBEAT_INTERVAL` in `src/network/Protocol/ProtocolConstants.hpp`, shared with the client |
-| Change what happens when the session of a player closes | `Departures::close` in `src/server/Sessions/Departures/Departures.cpp`, `GameInstance::removeShipOf` in `src/server/Instances/GameInstance/GameInstance.cpp`, and `playGames()` in `src/server/Modules/ServerGamesModule.cpp` |
+| Change what happens when the session of a player closes | `Departures::close` in `src/server/Sessions/Departures/Departures.cpp`, `GameInstance::removeShipOf` in `src/server/Instances/GameInstance/GameInstance.cpp`, and `playGames()` in `src/server/Modules/Games/ServerGamesModule.cpp` |
 | Change the size of the queues between threads | `INCOMING_DATAGRAM_QUEUE_CAPACITY` and `OUTGOING_DATAGRAM_QUEUE_CAPACITY` in `src/server/ServerConstants.hpp` |
 | Change the simulation rate | `SIMULATION_TICKS_PER_SECOND` in `src/engine/Time/TimeConstants.hpp` |
 | Change how often the simulation reports | `REPORT_SECONDS` in `src/server/ServerConstants.hpp` |
@@ -639,4 +639,4 @@ A game ended by `finish()`, or by the departure of its last player, tells no one
 | Add a component type | A new struct in `src/game/Components/` |
 | Write a test with entities that collide | `tests/CollisionScene.hpp` |
 
-Each folder holding sources has its own `CMakeLists.txt` declaring one library; `Application/` and `Platform/` declare the INTERFACE library of their header-only files (`rtype_server_application_interfaces`, `rtype_server_platform_interfaces`) and add their subfolders, `Modules/` is a module in the flat layout of [Project layout](/R-Type/project-layout/#adding-a-class): one library, `rtype_server_modules`, lists the `.cpp` of all its classes, `Replication/` declares its constants and adds one folder per sender (`WorldStateSender/`, `LobbyStateAnnouncer/`, `ShipSpawnAnnouncer/`, the event encoder and broadcaster…), `Lobby/` declares its constants and adds `ConnectionAcceptor/`, `Sessions/` declares the include folder and adds `ConnectedPlayers/`, `PlayerRoster/`, `SessionDatagram/` and one folder per class of the sessions of a game, `Instances/` declares `GameState`, `GameSettings` and the game constants and adds `GameInstance/`, `Spawning/` declares the spawner parts, the wave plan and the waves file constants and adds `BydoSpawner/`, `WaveCatalog/` and `MissileLauncher/`, `Exceptions/` declares the parts of the server errors and adds `ServerException/`, and `r-type_server` links `rtype_server_application`, `rtype_server_connection_acceptor`, `rtype_server_game_event_broadcaster`, `rtype_server_game_instance`, `rtype_server_launch_options` and `rtype_server_wave_catalog` in `src/server/CMakeLists.txt`.
+Each folder holding sources has its own `CMakeLists.txt` declaring one library; `Application/` and `Platform/` declare the INTERFACE library of their header-only files (`rtype_server_application_interfaces`, `rtype_server_platform_interfaces`) and add their subfolders, `Modules/` declares the constants of the modules and adds one folder per module (`Logger/`, `Network/`, `Games/`, `Lobby/`, each a module in the flat layout of [Project layout](/R-Type/project-layout/#adding-a-class) with one library, `rtype_server_<name>_module`) and `Assembly/`, which holds the list of modules (`rtype_server_modules`), `Replication/` declares its constants and adds one folder per sender (`WorldStateSender/`, `LobbyStateAnnouncer/`, `ShipSpawnAnnouncer/`, the event encoder and broadcaster…), `Lobby/` declares its constants and adds `ConnectionAcceptor/`, `Sessions/` declares the include folder and adds `ConnectedPlayers/`, `PlayerRoster/`, `SessionDatagram/` and one folder per class of the sessions of a game, `Instances/` declares `GameState`, `GameSettings` and the game constants and adds `GameInstance/`, `Spawning/` declares the spawner parts, the wave plan and the waves file constants and adds `BydoSpawner/`, `WaveCatalog/` and `MissileLauncher/`, `Exceptions/` declares the parts of the server errors and adds `ServerException/`, and `r-type_server` links `rtype_server_application`, `rtype_server_connection_acceptor`, `rtype_server_game_event_broadcaster`, `rtype_server_game_instance`, `rtype_server_launch_options` and `rtype_server_wave_catalog` in `src/server/CMakeLists.txt`.

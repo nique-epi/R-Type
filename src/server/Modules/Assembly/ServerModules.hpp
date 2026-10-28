@@ -11,10 +11,10 @@ namespace rtype::server {
 
 /**
  * @brief The modules of the server, in the order an Application installs and
- * starts them (and stops them in reverse): the journal, the network, the games
+ * starts them (and stops them in reverse): the logger, the network, the games
  * and the lobby. This is the one place that lists them.
  *
- * @param logOptions Applied by the journal module when it starts.
+ * @param logOptions Applied by the logger module when it starts.
  * @param launchOptions Give the port the network module listens on and the
  * seed of the first game.
  * @param stopRequest Told by the network module when the server fails; it must

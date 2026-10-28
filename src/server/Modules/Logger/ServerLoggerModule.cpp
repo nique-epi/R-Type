@@ -1,4 +1,4 @@
-#include "ServerJournalModule.hpp"
+#include "ServerLoggerModule.hpp"
 #include <string>
 #include <utility>
 #include <vector>
@@ -9,25 +9,23 @@
 
 namespace rtype::server {
 
-ServerJournalModule::ServerJournalModule(logging::LogLaunchOptions options)
+ServerLoggerModule::ServerLoggerModule(logging::LogLaunchOptions options)
     : options_(std::move(options)), logger_(std::string{SERVER_LOGGER_NAME}) {}
 
-std::string ServerJournalModule::name() const {
-  return std::string{JOURNAL_MODULE_NAME};
+std::string ServerLoggerModule::name() const {
+  return std::string{LOGGER_MODULE_NAME};
 }
 
-std::vector<std::string> ServerJournalModule::dependencies() const {
-  return {};
-}
+std::vector<std::string> ServerLoggerModule::dependencies() const { return {}; }
 
-void ServerJournalModule::install(
+void ServerLoggerModule::install(
     [[maybe_unused]] engine::InstallContext& context) {}
 
-void ServerJournalModule::start() {
+void ServerLoggerModule::start() {
   options_.apply();
   logger_.info("server starting");
 }
 
-void ServerJournalModule::stop() { logger_.info("server stopped"); }
+void ServerLoggerModule::stop() { logger_.info("server stopped"); }
 
 }  // namespace rtype::server

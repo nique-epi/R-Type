@@ -6,11 +6,11 @@
 #include <vector>
 #include "Application.hpp"
 #include "IModule.hpp"
-#include "ServerJournalModule.hpp"
+#include "ServerLoggerModule.hpp"
 #include "ServerModuleFixture.hpp"
 
 using rtype::engine::Application;
-using rtype::server::ServerJournalModule;
+using rtype::server::ServerLoggerModule;
 
 namespace {
 
@@ -23,33 +23,33 @@ bool journalHolds(const std::vector<std::string>& lines,
 
 }  // namespace
 
-class ServerJournalModuleTest : public ServerModuleFixture {
+class ServerLoggerModuleTest : public ServerModuleFixture {
  protected:
-  [[nodiscard]] Application applicationWithTheJournal() const {
+  [[nodiscard]] Application applicationWithTheLogger() const {
     std::vector<std::unique_ptr<rtype::engine::IModule>> modules;
-    modules.push_back(std::make_unique<ServerJournalModule>(journalOptions()));
+    modules.push_back(std::make_unique<ServerLoggerModule>(journalOptions()));
     return Application(std::move(modules));
   }
 };
 
 /**
- * Given an application made of the journal module only
+ * Given an application made of the logger module only
  * When it is built and nothing is started
  * Then the journal file has no line: opening the journal waits for start()
  */
-TEST_F(ServerJournalModuleTest, WritesNothingBeforeItIsStarted) {
-  const Application application = applicationWithTheJournal();
+TEST_F(ServerLoggerModuleTest, WritesNothingBeforeItIsStarted) {
+  const Application application = applicationWithTheLogger();
 
   EXPECT_TRUE(journal().lines().empty());
 }
 
 /**
- * Given the journal module started
+ * Given the logger module started
  * When the application has started
  * Then the journal says that the server starts
  */
-TEST_F(ServerJournalModuleTest, WritesThatTheServerStartsWhenStarted) {
-  Application application = applicationWithTheJournal();
+TEST_F(ServerLoggerModuleTest, WritesThatTheServerStartsWhenStarted) {
+  Application application = applicationWithTheLogger();
 
   application.start();
 
@@ -57,12 +57,12 @@ TEST_F(ServerJournalModuleTest, WritesThatTheServerStartsWhenStarted) {
 }
 
 /**
- * Given the journal module started
+ * Given the logger module started
  * When the application stops
  * Then the journal says that the server stopped
  */
-TEST_F(ServerJournalModuleTest, WritesThatTheServerStoppedWhenStopped) {
-  Application application = applicationWithTheJournal();
+TEST_F(ServerLoggerModuleTest, WritesThatTheServerStoppedWhenStopped) {
+  Application application = applicationWithTheLogger();
   application.start();
 
   application.stop();

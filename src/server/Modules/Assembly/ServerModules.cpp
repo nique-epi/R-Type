@@ -8,8 +8,8 @@
 #include "LogLaunchOptions.hpp"
 #include "ServerConstants.hpp"
 #include "ServerGamesModule.hpp"
-#include "ServerJournalModule.hpp"
 #include "ServerLobbyModule.hpp"
+#include "ServerLoggerModule.hpp"
 #include "ServerNetworkModule.hpp"
 #include "StopRequest.hpp"
 
@@ -19,7 +19,7 @@ std::vector<std::unique_ptr<engine::IModule>> serverModules(
     const logging::LogLaunchOptions& logOptions,
     const LaunchOptions& launchOptions, StopRequest& stopRequest) {
   std::vector<std::unique_ptr<engine::IModule>> modules;
-  modules.push_back(std::make_unique<ServerJournalModule>(logOptions));
+  modules.push_back(std::make_unique<ServerLoggerModule>(logOptions));
   modules.push_back(
       std::make_unique<ServerNetworkModule>(launchOptions.port(), stopRequest));
   modules.push_back(std::make_unique<ServerGamesModule>(

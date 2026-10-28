@@ -14,7 +14,7 @@
 #include "ServerModuleFixture.hpp"
 #include "ServiceProbeModule.hpp"
 
-/** @brief The base of the tests of the games module: the journal module, a
+/** @brief The base of the tests of the games module: the logger module, a
  * network module that records, the games module on the shipped waves file, and
  * a probe that finds the games, all started. */
 class ServerGamesFixture : public ServerModuleFixture {
