@@ -53,6 +53,7 @@ Each gap between the issue and the code (from `.cezar-work/context.md`) and each
 15. **The event subscriptions of the game.** `GameInstance` and `GameEventBroadcaster` subscribe in their constructors and keep no handle (pre-existing), so `GamesModule::stop()` cannot unsubscribe one by one. It owns the bus and the timers through `std::unique_ptr` and destroys them after the game and the broadcaster, which drops every subscription.
 16. **No interface per module** (question raised on the first version of this plan): each module implements `engine::IModule` only; the contracts between modules are the services `IStageRunner`, `IServerLink` (interfaces), `ServerApplication::ReceivedDatagrams` and `GameList` (concrete). See "Interfaces: one per contract between modules, not one per module".
 17. **How a module knows another module's functions** (second question on this plan): through the header of the service it uses (`#include "IServerLink.hpp"`), the CMake target that exposes it, and `InstallContext::require<Service>()`, which returns a reference of that type; a module never includes the header of another module. See "How a module knows the functions of the module it needs".
+18. **The engine carries the services but does not declare them** (third question on this plan): the engine gives the generic `provide`/`require`/`find` templates, `IModule` and `IStageRunner`; the interface of each service (`IServerLink`) lives on the server side, since it names network types the engine may not link. See "What the engine gives, and what the server declares".
 
 ## Design at a glance
 
@@ -122,6 +123,24 @@ Who includes what in this plan:
 | `GamesModule` | `IServerLink.hpp`, `ServerApplication.hpp` (for the struct of the datagrams) | `require<IServerLink>()`, `require<const ServerApplication::ReceivedDatagrams>()`; provides `GameList` |
 | `LobbyModule` | `IServerLink.hpp`, `ServerApplication.hpp`, `GameList.hpp` | `require<IServerLink>()`, `require<const ServerApplication::ReceivedDatagrams>()`, `require<GameList>()` |
 | `LoggingModule` | nothing of another module | nothing |
+
+### What the engine gives, and what the server declares
+
+The engine does not declare the interfaces of the services. It declares the **mechanism** that carries any service, plus two interfaces of its own:
+
+| Lives in | What | Kind | Role |
+|---|---|---|---|
+| engine, existing | `InstallContext::provide<Service>()`, `require<Service>()`, `find<Service>()`, over `ServiceRegistry` | templates, generic over any type | carry a service from the module that provides it to the modules that use it, keyed by its C++ type; the engine never knows which types go through |
+| engine, existing | `engine::IModule` | interface | what `Application` installs, starts and stops |
+| engine, new in this plan | `engine::IStageRunner` | interface | the one service the engine itself provides: the `Application`, to the module that paces the loop |
+| server, new in this plan | `IServerLink` (`src/server/Application/IServerLink.hpp`) | interface | the network's service to the games and the lobby |
+| server, new or existing | `GameList`, `ServerApplication::ReceivedDatagrams` | concrete class, struct | the games' and the network's other services |
+
+The interface of a service lives with the program or library whose concepts it names, never in the engine:
+- `IServerLink` names `network::OutgoingDatagram` and `network::Endpoint`, and the engine may not link the network library (root `CMakeLists.txt:79`: `rtype_forbid_links(rtype_engine "SFML::" "asio::" "rtype_game" "rtype_network" "rtype_client")`);
+- the engine knows nothing of R-Type (`engine.md`, first paragraph).
+
+So a service the client's modules will share goes in `src/client/`, and a service two programs share goes in the library both link. Only a service that any game would need unchanged belongs in `src/engine/` (map rule 4 of `project-layout.md`), as `IStageRunner` does.
 
 The life of the program, when Ctrl-C arrives:
 
