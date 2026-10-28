@@ -58,8 +58,9 @@ class RenderSystem {
   /** @brief Draws the sprite or writes the caption of a call. */
   static void draw(IDrawSurface& surface, const DrawCall& call);
 
-  /** @brief Draws the sprite of a call, offset as its look says, whole or as
-   * revealed. */
+  /** @brief Draws the sprite of a call, offset as its look says: as revealed
+   * while a Reveal is on it, the arrival winning over a roll; rolled while
+   * it rolls; whole otherwise. */
   static void drawSprite(IDrawSurface& surface, const DrawCall& call);
 
   /** @brief Draws the rows of a sprite a Reveal shows so far, at their place
@@ -69,7 +70,8 @@ class RenderSystem {
                            game::Position center);
 
   /** @brief Adds, in the effects layer under the ships, a ghost draw call at
-   * the AFTERIMAGE_AGES frames before of every ship that rolls or dashes. */
+   * the AFTERIMAGE_AGES frames before of every ship that rolls or dashes,
+   * except a ship still arriving (Reveal). */
   void collectAfterimages(engine::ComponentRegistry& components);
 
   /** @brief Draws a rolling sprite row by row: round(height x |cos|) rows of

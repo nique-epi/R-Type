@@ -2,6 +2,7 @@
 
 #include <SFML/System/Vector2.hpp>
 #include <chrono>
+#include <cstddef>
 #include "Layer.hpp"
 #include "RenderingConstants.hpp"
 #include "SpriteFrame.hpp"
@@ -45,6 +46,13 @@ constexpr rtype::engine::Duration A_QUARTER_OF_A_REVEAL =
     std::chrono::milliseconds(50);
 constexpr rtype::engine::Duration THREE_QUARTERS_OF_A_REVEAL =
     std::chrono::milliseconds(150);
+
+/** @brief A roll drawn halfway, the belly of the ship showing. */
+constexpr float HALF_A_ROLL = 0.5F;
+
+/** @brief The afterimages that follow a ship rolling or dashing: three, as
+ * the design of the ship motion draws them. */
+constexpr std::size_t AFTERIMAGE_COUNT = 3;
 
 /** @brief Half of the 16 rows of WHOLE_IMAGE. */
 constexpr int HALF_OF_THE_ROWS = 8;

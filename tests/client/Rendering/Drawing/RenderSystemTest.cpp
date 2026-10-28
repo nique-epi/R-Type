@@ -1,4 +1,5 @@
 #include <gtest/gtest.h>
+#include <cstddef>
 #include <optional>
 #include <string>
 #include <vector>
@@ -482,6 +483,67 @@ TEST(RenderSystem, AShipArrivingShowsItsTopRowsAndALeadingLine) {
   EXPECT_EQ(drawn[1].tone, SpriteTone::Flash);
   EXPECT_EQ(drawn[1].frame.top, WHOLE_IMAGE.top + HALF_OF_THE_ROWS);
   EXPECT_EQ(drawn[1].frame.height, 1);
+}
+
+/**
+ * Given a ship halfway through its roll, whose reveal is in its first half
+ * When a frame is rendered
+ * Then nothing of it is drawn: the arrival hides it, roll or not
+ */
+TEST(RenderSystem, ARollingShipArrivingIsHiddenOnTheFirstHalf) {
+  Scene scene;
+  const Entity ship = scene.spawn("ship", Layer::Players);
+  scene.components().add(ship, halfwayRollingFlight());
+  scene.components().add(ship, Reveal{.age = A_QUARTER_OF_A_REVEAL,
+                                      .duration = A_REVEAL,
+                                      .leadingLine = true});
+
+  scene.render();
+
+  EXPECT_TRUE(scene.surface().drawn().empty());
+}
+
+/**
+ * Given a dashing ship whose trail is known
+ * When a frame is rendered
+ * Then AFTERIMAGE_COUNT dithered copies are drawn before the ship itself
+ */
+TEST(RenderSystem, ADashingShipLeavesItsAfterimages) {
+  Scene scene;
+  const Entity ship = scene.spawn("ship", Layer::Players);
+  scene.components().add(ship, dashingFlight());
+
+  scene.render();
+
+  const std::vector<DrawnImage>& drawn = scene.surface().drawn();
+  ASSERT_EQ(drawn.size(), AFTERIMAGE_COUNT + 1);
+  for (std::size_t index = 0; index < AFTERIMAGE_COUNT; ++index) {
+    EXPECT_EQ(drawn[index].tone, SpriteTone::Ghost);
+  }
+  EXPECT_EQ(drawn.back().tone, SpriteTone::Normal);
+}
+
+/**
+ * Given a dashing ship whose trail is known, at three quarters of its
+ * reveal
+ * When a frame is rendered
+ * Then only its top rows and the leading line are drawn: no afterimage
+ * follows a ship still arriving
+ */
+TEST(RenderSystem, ADashingShipArrivingLeavesNoAfterimage) {
+  Scene scene;
+  const Entity ship = scene.spawn("ship", Layer::Players);
+  scene.components().add(ship, dashingFlight());
+  scene.components().add(ship, Reveal{.age = THREE_QUARTERS_OF_A_REVEAL,
+                                      .duration = A_REVEAL,
+                                      .leadingLine = true});
+
+  scene.render();
+
+  const std::vector<DrawnImage>& drawn = scene.surface().drawn();
+  ASSERT_EQ(drawn.size(), 2U);
+  EXPECT_EQ(drawn[0].frame.height, HALF_OF_THE_ROWS);
+  EXPECT_EQ(drawn[1].tone, SpriteTone::Flash);
 }
 
 /**

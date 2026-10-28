@@ -244,12 +244,12 @@ void RenderSystem::draw(IDrawSurface& surface, const DrawCall& call) {
 
 void RenderSystem::drawSprite(IDrawSurface& surface, const DrawCall& call) {
   const game::Position center = nudged(call.position, call.look.offset);
-  if (call.look.rollAngle.has_value()) {
-    drawRolled(surface, call, center);
-    return;
-  }
   if (call.look.shownRows.has_value()) {
     drawRevealed(surface, call, center);
+    return;
+  }
+  if (call.look.rollAngle.has_value()) {
+    drawRolled(surface, call, center);
     return;
   }
   surface.draw(SpriteDrawing{.assetId = call.sprite->assetId,
@@ -287,11 +287,12 @@ void RenderSystem::drawRevealed(IDrawSurface& surface, const DrawCall& call,
 void RenderSystem::collectAfterimages(engine::ComponentRegistry& components) {
   std::vector<DrawCall>& effects =
       drawCallsByLayer_[static_cast<std::size_t>(game::Layer::Effects)];
-  components.forEach<ShipFlight, game::Sprite>([&effects](
+  components.forEach<ShipFlight, game::Sprite>([&effects, &components](
                                                    engine::Entity entity,
                                                    ShipFlight& flight,
                                                    game::Sprite& sprite) {
-    if (!flight.rolling && !flight.dashing) {
+    if ((!flight.rolling && !flight.dashing) ||
+        components.get<Reveal>(entity) != nullptr) {
       return;
     }
     for (const std::size_t age : AFTERIMAGE_AGES) {
