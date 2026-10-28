@@ -13,6 +13,7 @@ target_link_libraries(rtype_client_effect_spawner
     rtype_client_pilot_effects
     rtype_client_pixel_effects
     rtype_client_shot_effects
+    rtype_client_sound_cues
     rtype_engine
 )
 

@@ -98,11 +98,18 @@ bool anyParticleStartsWith(ComponentRegistry& components, sf::Color color) {
 }
 
 std::optional<Caption> caption(ComponentRegistry& components) {
-  std::optional<Caption> found;
+  const std::optional<Entity> found = captioned(components);
+  const Caption* shown =
+      found.has_value() ? components.get<Caption>(*found) : nullptr;
+  return shown != nullptr ? std::optional<Caption>(*shown) : std::nullopt;
+}
+
+std::optional<Entity> captioned(ComponentRegistry& components) {
+  std::optional<Entity> found;
   components.forEach<Caption, Position>(
-      [&found](Entity, const Caption& figure, const Position&) {
+      [&found](Entity entity, const Caption&, const Position&) {
         if (!found.has_value()) {
-          found = figure;
+          found = entity;
         }
       });
   return found;

@@ -63,8 +63,14 @@ template <typename Component>
 [[nodiscard]] bool anyParticleStartsWith(
     rtype::engine::ComponentRegistry& components, sf::Color color);
 
-/** @returns The first figure of a gain, or nothing. */
+/** @returns The first caption written at a Position, the figure of a gain or a
+ * sound cue, or nothing. */
 [[nodiscard]] std::optional<rtype::client::Caption> caption(
+    rtype::engine::ComponentRegistry& components);
+
+/** @returns The first entity that writes a Caption at a Position; nothing
+ * when there is none. */
+[[nodiscard]] std::optional<rtype::engine::Entity> captioned(
     rtype::engine::ComponentRegistry& components);
 
 /** @returns The entities drawn in the Effects layer, in index order. */

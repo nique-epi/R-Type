@@ -9,6 +9,7 @@
 #include <variant>
 #include "ActionSet.hpp"
 #include "AnimationSystem.hpp"
+#include "EffectPreferences.hpp"
 #include "EffectSpawner.hpp"
 #include "EntityFeedback.hpp"
 #include "EntityMessage.hpp"
@@ -116,7 +117,10 @@ void GameScreen::update(engine::Duration elapsed) {
   }
   systems_.run(components_, elapsed);
   const FlashPreference preference = flashPreferenceOf(*settings_);
-  effects_.advance(elapsed, preference, pilotShadesOf(*settings_));
+  effects_.advance(elapsed,
+                   EffectPreferences{.flashes = preference,
+                                     .shades = pilotShadesOf(*settings_),
+                                     .soundCues = settings_->soundCues});
   applyEntityMessages();
   askForTheEndWhenDue();
   moveSky(*sky_, effects_, preference);
