@@ -18,7 +18,10 @@ namespace rtype::server {
  * A player is heard from each time its datagram is read, whatever it holds. A
  * player not heard from for SESSION_TIMEOUT_TICKS ticks crashed or lost the
  * network: closeSilentSessions() closes its session. A game counts the ticks
- * it runs, so a stall of the server closes no session.
+ * it runs, so a stall of the server closes no session by itself; a stall long
+ * enough for the clients to take the server for lost closes each of their
+ * sessions, SESSION_TIMEOUT_TICKS ticks after the last datagram the server read
+ * from its client, since those clients send nothing more.
  *
  * Closing a session frees the seat and the number of the player, calls the
  * function given at construction with the player, logs the departure,
