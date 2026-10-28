@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <cstddef>
 #include <string_view>
 #include "TimeConstants.hpp"
@@ -21,6 +22,12 @@ constexpr std::size_t FINISHED_STATE_TICKS =
  * @brief Module name the games write their log lines under.
  */
 constexpr std::string_view INSTANCES_LOGGER_NAME = "Instances";
+
+constexpr std::string_view GAME_INPUT_STAGE = "game inputs";
+constexpr std::string_view GAME_SIMULATION_STAGE = "game simulation";
+constexpr std::string_view GAME_OUTPUT_STAGE = "game outputs";
+constexpr std::array<std::string_view, 3> GAME_STAGES{
+    GAME_INPUT_STAGE, GAME_SIMULATION_STAGE, GAME_OUTPUT_STAGE};
 
 /**
  * @brief Why a game in progress finishes, as its line says after "game
