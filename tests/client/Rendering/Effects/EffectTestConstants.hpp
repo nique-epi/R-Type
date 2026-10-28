@@ -40,6 +40,8 @@ constexpr rtype::engine::Duration POPUP_BLINK_LENGTH =
     std::chrono::milliseconds(67);
 constexpr rtype::engine::Duration POPUP_LIFE_LENGTH =
     std::chrono::milliseconds(968);
+constexpr rtype::engine::Duration SHOT_CUE_LIFE_LENGTH =
+    std::chrono::milliseconds(500);
 
 /** @brief The life of a particle the tests make: a drop, as the card of
  * the debris gives it. */

@@ -3,11 +3,11 @@
 #include <SFML/System/Vector2.hpp>
 #include <cstdint>
 #include "CameraShake.hpp"
+#include "EffectPreferences.hpp"
 #include "EffectTools.hpp"
 #include "Entity.hpp"
 #include "EntityType.hpp"
 #include "FlashGate.hpp"
-#include "FlashPreference.hpp"
 #include "GainFigures.hpp"
 #include "HitEffects.hpp"
 #include "KillEffects.hpp"
@@ -16,6 +16,7 @@
 #include "PixelEffects.hpp"
 #include "Position.hpp"
 #include "ShotEffects.hpp"
+#include "SoundCues.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::engine {
@@ -30,11 +31,11 @@ namespace rtype::client {
 /**
  * @brief Plays the effects of a game on a ladder of intensity: a shot (T0), a
  * hit (T1), a Bydo destroyed (T2), every fifth kill of a chain (T3), a ship
- * destroyed (T4); and the arrival of a ship, its invulnerability, and the
- * figure of each gain. It is what the replicator and the game screen call;
- * each family of effects is a class it holds (HitEffects, ShotEffects,
- * KillEffects, PilotEffects, GainFigures), all playing with the same
- * EffectTools.
+ * destroyed (T4); and the arrival of a ship, its invulnerability, the figure
+ * of each gain, and the sound cues while the player turned them on. It is what
+ * the replicator and the game screen call; each family of effects is a class
+ * it holds (HitEffects, ShotEffects, KillEffects, PilotEffects, GainFigures,
+ * SoundCues), all playing with the same EffectTools.
  *
  * An effect of the sheet is an entity of its own, in the Effects layer,
  * centered on the position given, whose animation plays once; AnimationSystem
@@ -70,11 +71,10 @@ class EffectSpawner {
 
   /** @brief Moves on the flash budget, the chain of kills, the kills and
    * gains waiting for each other, the camera shake and the time since the
-   * game started, and sets which version of the effects starts from now on,
-   * the standard one or the one without flash, and the shades the effects
-   * starting from now on paint pilots in. */
-  void advance(engine::Duration elapsed, FlashPreference preference,
-               PilotShades shades);
+   * game started, and sets what the effects starting from now on follow:
+   * whether they may flash, whether the sound cues show (see SoundCues), and
+   * the shades they paint pilots in. */
+  void advance(engine::Duration elapsed, EffectPreferences preferences);
 
   /**
    * @brief Plays the explosion of an entity killed, centered where it died:
@@ -85,14 +85,16 @@ class EffectSpawner {
    */
   void playExplosion(game::EntityType type, game::Position center);
 
-  /** @brief Plays T4 for a ship destroyed (see KillEffects::playShipDown()).
-   * Call it before the ship is destroyed. */
+  /** @brief Plays T4 for a ship destroyed (see KillEffects::playShipDown()),
+   * and the cue of its pilot hit while the sound cues show. Call it before the
+   * ship is destroyed. */
   void playShipDown(engine::Entity ship);
 
   /**
    * @brief Plays the appearance of an entity, centered where it appears: the
-   * muzzle flash of a missile (see ShotEffects). A ship or a Bydo appears
-   * without effect: see playArrival() for a ship.
+   * muzzle flash of a missile (see ShotEffects), and the cue of the Bydo that
+   * fired a missile of an enemy while the sound cues show. A ship or a Bydo
+   * appears without effect: see playArrival() for a ship.
    */
   void playAppearance(game::EntityType type, game::Position center);
 
@@ -130,6 +132,8 @@ class EffectSpawner {
   ShotEffects shots_;
   KillEffects kills_;
   PilotEffects pilots_;
+  SoundCues cues_;
+  bool soundCues_{false};
 };
 
 }  // namespace rtype::client

@@ -2,10 +2,10 @@
 #include <SFML/System/Vector2.hpp>
 #include <cstdint>
 #include "ComponentRegistry.hpp"
+#include "EffectPreferences.hpp"
 #include "Entity.hpp"
 #include "EntityRegistry.hpp"
 #include "EntityType.hpp"
-#include "FlashPreference.hpp"
 #include "PilotShadeConstants.hpp"
 #include "PilotShades.hpp"
 #include "Position.hpp"
@@ -28,12 +28,14 @@ EffectSpawner::EffectSpawner(engine::EntityRegistry& entities,
       hits_(tools_),
       shots_(tools_),
       kills_(tools_, gains_),
-      pilots_(tools_) {}
+      pilots_(tools_),
+      cues_(tools_) {}
 
 void EffectSpawner::advance(engine::Duration elapsed,
-                            FlashPreference preference, PilotShades shades) {
-  gate_.advance(elapsed, preference);
-  shades_ = shades;
+                            EffectPreferences preferences) {
+  gate_.advance(elapsed, preferences.flashes);
+  shades_ = preferences.shades;
+  soundCues_ = preferences.soundCues;
   kills_.advance(elapsed);
   gains_.advance(elapsed);
   camera_.advance(elapsed);
@@ -57,6 +59,9 @@ void EffectSpawner::playExplosion(game::EntityType type,
 }
 
 void EffectSpawner::playShipDown(engine::Entity ship) {
+  if (soundCues_) {
+    cues_.showPilotHit(ship);
+  }
   kills_.playShipDown(ship);
 }
 
@@ -68,6 +73,9 @@ void EffectSpawner::playAppearance(game::EntityType type,
       return;
     case game::EntityType::EnemyMissile:
       shots_.playEnemyShot(center);
+      if (soundCues_) {
+        cues_.showEnemyShot(center);
+      }
       return;
     case game::EntityType::Player:
     case game::EntityType::Enemy:

@@ -11,9 +11,7 @@
 #include "Entity.hpp"
 #include "GainFigure.hpp"
 #include "Layer.hpp"
-#include "PilotColor.hpp"
 #include "PilotShades.hpp"
-#include "PlayerNumberLabel.hpp"
 #include "PlayerPalette.hpp"
 #include "Popup.hpp"
 #include "Position.hpp"
@@ -41,13 +39,8 @@ TextStyle figureStyleOf(const GainFigure& figure,
  * who gained, as the waiting room writes it, then its points; the points
  * alone when no pilot gained alone. */
 std::string figureTextOf(const GainFigure& figure) {
-  std::string pilotLabel;
-  if (figure.pilotColor.has_value()) {
-    pilotLabel =
-        playerNumberLabel(playerNumberOfPilotColor(*figure.pilotColor)) +
-        GAIN_PILOT_SEPARATOR;
-  }
-  return pilotLabel + GAIN_PREFIX + std::to_string(figure.points);
+  return pilotLabelOf(figure.pilotColor) + GAIN_PREFIX +
+         std::to_string(figure.points);
 }
 
 }  // namespace

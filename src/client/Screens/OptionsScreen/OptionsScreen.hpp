@@ -44,9 +44,8 @@ class KeySlot;
  * takes every event until it is answered. The description of a row says what
  * it needs right now: the keys of an open list, a key awaited, a key two
  * actions share, the sound muted, a size too large for the screen, what
- * borderless does; the settings without an effect yet say COMING SOON. While
- * the window is borderless, WINDOW SIZE is disabled, shows the size of the
- * screen, and the chart of the sizes is not drawn.
+ * borderless does. While the window is borderless, WINDOW SIZE is disabled,
+ * shows the size of the screen, and the chart of the sizes is not drawn.
  *
  * Over the title, the options hide it. Over a game, which goes on, they dim it
  * and say so in the top-right corner.

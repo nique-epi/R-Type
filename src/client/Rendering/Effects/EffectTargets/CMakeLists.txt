@@ -8,6 +8,7 @@ target_link_libraries(rtype_client_effect_targets
     rtype_engine
   PRIVATE
     rtype_client_pilot_color
+    rtype_client_player_number_label
 )
 
 rtype_enable_warnings(rtype_client_effect_targets)

@@ -190,9 +190,21 @@ constexpr engine::Duration RECOIL_DURATION = std::chrono::milliseconds(33);
 /** @brief Written before the points of a gain. */
 constexpr const char* GAIN_PREFIX = "+";
 
-/** @brief Written between the number of the only pilot who gained and the
- * points of its gain. */
-constexpr const char* GAIN_PILOT_SEPARATOR = " ";
+/** @brief Written between the number of a pilot and what follows it: the
+ * points of a gain only that pilot made, or HIT_CUE_TEXT. */
+constexpr const char* PILOT_LABEL_SEPARATOR = " ";
+
+/**
+ * @brief The sound cues (SoundCues): SHOT_CUE_TEXT over a Bydo that fires, for
+ * SHOT_CUE_LIFE, and the number of a pilot hit then HIT_CUE_TEXT over its ship,
+ * for HIT_CUE_LIFE. The line of a cue stands CUE_GAP pixels above the top of
+ * the sprite it is over.
+ */
+constexpr const char* SHOT_CUE_TEXT = "!";
+constexpr const char* HIT_CUE_TEXT = "HIT";
+constexpr engine::Duration SHOT_CUE_LIFE = std::chrono::milliseconds(500);
+constexpr engine::Duration HIT_CUE_LIFE = std::chrono::milliseconds(1000);
+constexpr int CUE_GAP = 2;
 
 /** @brief How many colors the debris of a ship go through: white, the three
  * shades of its pilot, then the smoke. */
