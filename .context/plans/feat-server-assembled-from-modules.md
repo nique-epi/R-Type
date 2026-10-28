@@ -54,6 +54,7 @@ Each gap between the issue and the code (from `.cezar-work/context.md`) and each
 16. **No interface per module** (question raised on the first version of this plan): each module implements `engine::IModule` only; the contracts between modules are the services `IStageRunner`, `IServerLink` (interfaces), `ServerApplication::ReceivedDatagrams` and `GameList` (concrete). See "Interfaces: one per contract between modules, not one per module".
 17. **How a module knows another module's functions** (second question on this plan): through the header of the service it uses (`#include "IServerLink.hpp"`), the CMake target that exposes it, and `InstallContext::require<Service>()`, which returns a reference of that type; a module never includes the header of another module. See "How a module knows the functions of the module it needs".
 18. **The engine carries the services but does not declare them** (third question on this plan): the engine gives the generic `provide`/`require`/`find` templates, `IModule` and `IStageRunner`; the interface of each service (`IServerLink`) lives on the server side, since it names network types the engine may not link. See "What the engine gives, and what the server declares".
+19. **The journal provides no logging service** (fourth question on this plan): every module logs through `logging::Logger` (`Logger.hpp`, library `rtype_logging`), whose header is the shared declaration; the journal module only configures it in `start()` and is listed first. A service between modules (`IServerLink`) has its interface in a shared header too. See "Worked example: the journal and the network".
 
 ## Design at a glance
 
@@ -141,6 +142,36 @@ The interface of a service lives with the program or library whose concepts it n
 - the engine knows nothing of R-Type (`engine.md`, first paragraph).
 
 So a service the client's modules will share goes in `src/client/`, and a service two programs share goes in the library both link. Only a service that any game would need unchanged belongs in `src/engine/` (map rule 4 of `project-layout.md`), as `IStageRunner` does.
+
+### Worked example: the journal and the network
+
+There *is* a shared declaration between a module and what it uses: the **header of the type it calls**. What there is not is a header per module (`INetworkModule`), because no one calls a module. Two cases show it, the journal (as built in this plan) and the link (a service between modules).
+
+**1. Logging: no service, a shared class.** The journal module provides no logging service. Every module logs through the class `logging::Logger` of the library `rtype_logging`, which `project-layout.md:24` lets every target link:
+
+| Step | In the network module | Where the signatures come from |
+|---|---|---|
+| Compile time | `NetworkModule.hpp` includes `"Logger.hpp"` and holds `logging::Logger logger_;` | `src/logging/Logger/Logger.hpp` declares `explicit Logger(std::string module)` and `template <class... Args> void info(Args&&... args) const` (line 123), `warn`, `error`… |
+| Link time | `rtype_server_network_module` links `rtype_logging` (`PUBLIC`) | the CMake target exposes the folder of `Logger.hpp` |
+| Run time | `logger_.info("listening on UDP port ", link_.localEndpoint().port);` | an ordinary call, checked by the compiler |
+
+The journal module is the one that *configures* the logger. Its `start()` calls `LogLaunchOptions::apply()`, which calls the static `Logger::setOutput()` and `Logger::setLevel()` (`LogLaunchOptions.cpp:171,173`), so every `Logger` of the program writes to the file from then on. The network module needs nothing from the journal module except that it starts first, which `dependencies()` (`JOURNAL_MODULE_NAME`) guarantees.
+
+**2. The link: a service, a shared interface.** The games module needs an object the network module owns and opens, so a class it can build itself is not enough. The shared declaration is then the service's interface:
+
+| Step | In the games module | Where the signatures come from |
+|---|---|---|
+| Compile time | `GamesModule.cpp` includes `"IServerLink.hpp"` | `IServerLink.hpp` declares `send`, `admit`, `forget`, `sendQueuedAfterRun` |
+| Link time | `rtype_server_games_module` links `rtype_server_application_interfaces` | the INTERFACE target exposes `src/server/Application/` |
+| Install time | `link_ = &context.require<IServerLink>();` | `require<IServerLink>()` returns an `IServerLink&`; the network module provided its `ServerLink` under that type |
+| Run time | `link_->forget(departed.endpoint, departed.sessionToken);` | a virtual call, checked by the compiler against `IServerLink.hpp` |
+
+**If the journal were a service.** For example, the journal could one day hand out a log sink that a test replaces. The shape would be the same as the link:
+- the interface (say `ILogSink`) goes in `src/logging/`, the library both modules link;
+- the journal module provides its implementation with `context.provide<ILogSink>(sink_)`;
+- the network module includes `ILogSink.hpp` and calls `context.require<ILogSink>()`.
+
+This plan does not add one: `Logger` already reaches every module, and the issue asks for no new logging behavior.
 
 The life of the program, when Ctrl-C arrives:
 
