@@ -85,6 +85,9 @@ UnknownDifficultyException::UnknownDifficultyException(
 EmptyEnemyCycleException::EmptyEnemyCycleException()
     : ServerException("A wave plan must name at least one enemy") {}
 
+NoJoinableGameException::NoJoinableGameException()
+    : ServerException("no game to join: the server has not created one") {}
+
 ServerAlreadyOpenException::ServerAlreadyOpenException()
     : ServerException("the server is already open") {}
 

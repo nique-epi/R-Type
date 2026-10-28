@@ -2,6 +2,7 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include "Games.hpp"
 #include "IDatagramSender.hpp"
 #include "IPlayerAdmission.hpp"
 #include "InstallContext.hpp"
@@ -26,6 +27,7 @@ void ServiceProbeModule::install(rtype::engine::InstallContext& context) {
   sender_ = context.find<rtype::server::IDatagramSender>();
   admission_ = context.find<rtype::server::IPlayerAdmission>();
   tickDatagrams_ = context.find<rtype::server::TickDatagrams>();
+  games_ = context.find<rtype::server::Games>();
   context.addWork(rtype::server::SIMULATION_STAGE, work_);
 }
 
@@ -44,3 +46,5 @@ rtype::server::IPlayerAdmission* ServiceProbeModule::admission() const {
 rtype::server::TickDatagrams* ServiceProbeModule::tickDatagrams() const {
   return tickDatagrams_;
 }
+
+rtype::server::Games* ServiceProbeModule::games() const { return games_; }

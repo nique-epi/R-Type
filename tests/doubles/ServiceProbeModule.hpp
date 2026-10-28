@@ -2,6 +2,7 @@
 
 #include <string>
 #include <vector>
+#include "Games.hpp"
 #include "IDatagramSender.hpp"
 #include "IModule.hpp"
 #include "IPlayerAdmission.hpp"
@@ -28,6 +29,7 @@ class ServiceProbeModule : public rtype::engine::IModule {
   [[nodiscard]] rtype::server::IDatagramSender* sender() const;
   [[nodiscard]] rtype::server::IPlayerAdmission* admission() const;
   [[nodiscard]] rtype::server::TickDatagrams* tickDatagrams() const;
+  [[nodiscard]] rtype::server::Games* games() const;
 
  private:
   std::string name_;
@@ -36,4 +38,5 @@ class ServiceProbeModule : public rtype::engine::IModule {
   rtype::server::IDatagramSender* sender_{nullptr};
   rtype::server::IPlayerAdmission* admission_{nullptr};
   rtype::server::TickDatagrams* tickDatagrams_{nullptr};
+  rtype::server::Games* games_{nullptr};
 };

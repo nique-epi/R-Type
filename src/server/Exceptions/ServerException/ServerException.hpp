@@ -90,6 +90,12 @@ class UnknownDifficultyException : public ServerException {
                              const std::vector<std::string>& known);
 };
 
+/** @brief A new player has no game to join: no game was added yet. */
+class NoJoinableGameException : public ServerException {
+ public:
+  NoJoinableGameException();
+};
+
 /** @brief ServerApplication::open() was called on a server already open. */
 class ServerAlreadyOpenException : public ServerException {
  public:
