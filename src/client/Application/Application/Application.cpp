@@ -100,6 +100,7 @@ Application::Application(AssetLibrary& assets, network::Endpoint server,
       server_(std::move(server)),
       nickname_(std::move(nickname)),
       screens_([this](ScreenId screen) { return createScreen(screen); }) {
+  network_.open();
   screens_.replaceAll(firstScreen());
   screens_.applyPendingChanges();
 }

@@ -1,10 +1,8 @@
 #include <gtest/gtest.h>
-#include <chrono>
 #include <cstddef>
 #include <cstdint>
 #include <future>
 #include <span>
-#include <string>
 #include <thread>
 #include <vector>
 #include "Endpoint.hpp"
@@ -14,55 +12,29 @@
 #include "NetworkException.hpp"
 #include "NetworkTestConstants.hpp"
 #include "NetworkThread.hpp"
+#include "NetworkThreadFixtures.hpp"
 #include "NetworkThreadTestConstants.hpp"
 #include "OutgoingDatagram.hpp"
+#include "UdpPortProbe.hpp"
 #include "UdpSocket.hpp"
 
 using rtype::client::NetworkThread;
 using rtype::network::ANY_PORT;
 using rtype::network::Endpoint;
 using rtype::network::IncomingDatagram;
-using rtype::network::LOOPBACK_IPV4_ADDRESS;
 using rtype::network::NetworkContext;
 using rtype::network::OutgoingDatagram;
 using rtype::network::UdpSocket;
 
-namespace {
-
-Endpoint loopbackOnPort(std::uint16_t port) {
-  return Endpoint{.address = std::string{LOOPBACK_IPV4_ADDRESS}, .port = port};
-}
-
-std::vector<std::byte> exchangedBytes() {
-  return {EXCHANGED_BYTES.begin(), EXCHANGED_BYTES.end()};
-}
-
 /**
- * @brief Drains @p networkThread the way the frame loop does, until something
- * arrived or DATAGRAM_TIMEOUT passed.
- * @return what arrived; nothing after DATAGRAM_TIMEOUT.
- */
-std::vector<IncomingDatagram> drainUntilReceived(NetworkThread& networkThread) {
-  const auto deadline = std::chrono::steady_clock::now() + DATAGRAM_TIMEOUT;
-  std::vector<IncomingDatagram> received;
-  networkThread.drainReceived(received);
-  while (received.empty() && std::chrono::steady_clock::now() < deadline) {
-    std::this_thread::sleep_for(DRAIN_INTERVAL);
-    networkThread.drainReceived(received);
-  }
-  return received;
-}
-
-}  // namespace
-
-/**
- * Given a network thread on the loopback address
+ * Given a network thread opened on the loopback address
  * When a peer sends it a datagram
  * Then draining it on the test thread returns that datagram, with the peer as
  * its sender
  */
 TEST(NetworkThread, HandsEachReceivedDatagramToTheDrainingThread) {
   NetworkThread networkThread{loopbackOnPort(ANY_PORT)};
+  networkThread.open();
   NetworkContext peerContext;
   UdpSocket peer{peerContext, loopbackOnPort(ANY_PORT)};
 
@@ -77,12 +49,13 @@ TEST(NetworkThread, HandsEachReceivedDatagramToTheDrainingThread) {
 }
 
 /**
- * Given a network thread and a peer listening on the loopback address
+ * Given a network thread opened and a peer listening on the loopback address
  * When the test thread hands the network thread a datagram for the peer
  * Then the peer receives its bytes, sent from the network thread's port
  */
 TEST(NetworkThread, SendsEachHandedDatagramToItsDestination) {
   NetworkThread networkThread{loopbackOnPort(ANY_PORT)};
+  networkThread.open();
   NetworkContext peerContext;
   UdpSocket peer{peerContext, loopbackOnPort(ANY_PORT)};
   const Endpoint peerEndpoint = peer.localEndpoint();
@@ -109,7 +82,7 @@ TEST(NetworkThread, SendsEachHandedDatagramToItsDestination) {
 }
 
 /**
- * Given SENDING_THREADS_DESTROYED_AT_ONCE network threads, built one after
+ * Given SENDING_THREADS_DESTROYED_AT_ONCE network threads, opened one after
  * the other, each handed one datagram for a peer
  * When each one is destroyed right after its datagram was handed over
  * Then every datagram reaches the peer
@@ -121,20 +94,21 @@ TEST(NetworkThread, SendsWhatWaitsBeforeItStops) {
   std::size_t arrivals = 0;
   std::promise<void> everyArrival;
   const std::future<void> arrivedAll = everyArrival.get_future();
-  peer.startReceiving(
-      [&arrivals, &everyArrival, &peerContext](
-          const Endpoint& /*sender*/, std::span<const std::byte> /*payload*/) {
-        ++arrivals;
-        if (arrivals == SENDING_THREADS_DESTROYED_AT_ONCE) {
-          everyArrival.set_value();
-          peerContext.stop();
-        }
-      });
+  peer.startReceiving([&arrivals, &everyArrival, &peerContext](
+                          [[maybe_unused]] const Endpoint& sender,
+                          [[maybe_unused]] std::span<const std::byte> payload) {
+    ++arrivals;
+    if (arrivals == SENDING_THREADS_DESTROYED_AT_ONCE) {
+      everyArrival.set_value();
+      peerContext.stop();
+    }
+  });
   const std::jthread peerThread{[&peerContext] { peerContext.run(); }};
 
   for (std::size_t created = 0; created < SENDING_THREADS_DESTROYED_AT_ONCE;
        ++created) {
     NetworkThread networkThread{loopbackOnPort(ANY_PORT)};
+    networkThread.open();
     networkThread.send(OutgoingDatagram{.destination = peerEndpoint,
                                         .payload = exchangedBytes()});
   }
@@ -145,12 +119,13 @@ TEST(NetworkThread, SendsWhatWaitsBeforeItStops) {
 }
 
 /**
- * Given a network thread that received nothing
+ * Given a network thread opened that received nothing
  * When the test thread drains it
  * Then the call returns without adding anything
  */
 TEST(NetworkThread, DrainingReturnsAtOnceWhenNothingArrived) {
   NetworkThread networkThread{loopbackOnPort(ANY_PORT)};
+  networkThread.open();
   std::vector<IncomingDatagram> received;
 
   networkThread.drainReceived(received);
@@ -159,13 +134,14 @@ TEST(NetworkThread, DrainingReturnsAtOnceWhenNothingArrived) {
 }
 
 /**
- * Given a network thread
+ * Given a network thread opened
  * When it is handed a datagram larger than MAX_DATAGRAM_SIZE
  * Then the network thread stops, and draining it throws
  * DatagramTooLargeException
  */
 TEST(NetworkThread, DrainingThrowsWhatStoppedTheNetworkThread) {
   NetworkThread networkThread{loopbackOnPort(ANY_PORT)};
+  networkThread.open();
 
   networkThread.send(OutgoingDatagram{
       .destination = networkThread.localEndpoint(),
@@ -176,16 +152,45 @@ TEST(NetworkThread, DrainingThrowsWhatStoppedTheNetworkThread) {
 }
 
 /**
- * Given network threads destroyed as soon as they are created, some before
- * their thread ran the network
+ * Given network threads opened then destroyed at once, some before their
+ * thread ran the network
  * When each one is destroyed
  * Then its destructor returns, instead of waiting for a network that was told
  * to stop before it started
  */
 TEST(NetworkThread, StopsEvenWhenDestroyedBeforeItsThreadRuns) {
   for (int created = 0; created < IMMEDIATE_DESTRUCTION_COUNT; ++created) {
-    const NetworkThread networkThread{loopbackOnPort(ANY_PORT)};
+    NetworkThread networkThread{loopbackOnPort(ANY_PORT)};
+    networkThread.open();
   }
 
   SUCCEED();
+}
+
+/**
+ * Given a network thread built on a UDP port nothing is bound to
+ * When it is not opened
+ * Then the port is still free
+ */
+TEST(NetworkThread, BindsNothingBeforeItIsOpened) {
+  const std::uint16_t port = freeUdpPort();
+
+  const NetworkThread networkThread{anyInterfaceOn(port)};
+
+  EXPECT_TRUE(udpPortIsFree(port));
+}
+
+/**
+ * Given a network thread opened on a UDP port nothing was bound to
+ * When it is closed
+ * Then the port is free again
+ */
+TEST(NetworkThread, FreesItsPortOnceClosed) {
+  const std::uint16_t port = freeUdpPort();
+  NetworkThread networkThread{anyInterfaceOn(port)};
+  networkThread.open();
+
+  networkThread.close();
+
+  EXPECT_TRUE(udpPortIsFree(port));
 }
