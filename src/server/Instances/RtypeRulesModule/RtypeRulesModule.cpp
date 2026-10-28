@@ -17,6 +17,7 @@
 #include "PlayerInput.hpp"
 #include "RtypeSystems.hpp"
 #include "ScoreKeeper.hpp"
+#include "SessionHooks.hpp"
 #include "ShipInput.hpp"
 #include "TimeConstants.hpp"
 
@@ -52,6 +53,7 @@ void RtypeRulesModule::start() {
                     .waves = game_->settings.get().waves});
   scoreKeeper_ = std::move(scoreKeeper);
   flow_ = std::move(flow);
+  addSessionHooks();
 }
 
 void RtypeRulesModule::stop() {
@@ -63,23 +65,27 @@ GameState RtypeRulesModule::state() const { return flow_->state(); }
 
 std::uint32_t RtypeRulesModule::tick() const { return flow_->tick(); }
 
-void RtypeRulesModule::onPlayerJoined(ConnectedPlayer& player) {
-  flow_->onPlayerJoined(player);
-}
-
 void RtypeRulesModule::finish() { flow_->finish(); }
 
-void RtypeRulesModule::onPlayerLeaving(const ConnectedPlayer& player) {
-  if (flow_->world().removePlayer(player.shipEntityId)) {
-    game_->events.get().publish(
-        game::EntityDestruction{.networkId = player.shipEntityId,
-                                .cause = game::DestructionCause::Removed});
-  }
+void RtypeRulesModule::addSessionHooks() {
+  SessionHooks& hooks = game_->hooks;
+  hooks.joined.emplace_back([this](ConnectedPlayer& player) {
+    replication_->onPlayerJoined(player);
+  });
+  hooks.closing.emplace_back(
+      [this](const ConnectedPlayer& departed) { removeShipOf(departed); });
+  hooks.newerInput.emplace_back(
+      [this](const ConnectedPlayer& player, const network::PlayerInput& input) {
+        noteTaps(flow_->world(), player, input);
+      });
 }
 
-void RtypeRulesModule::onNewerInput(const ConnectedPlayer& player,
-                                    const network::PlayerInput& input) {
-  noteTaps(flow_->world(), player, input);
+void RtypeRulesModule::removeShipOf(const ConnectedPlayer& departed) {
+  if (flow_->world().removePlayer(departed.shipEntityId)) {
+    game_->events.get().publish(
+        game::EntityDestruction{.networkId = departed.shipEntityId,
+                                .cause = game::DestructionCause::Removed});
+  }
 }
 
 }  // namespace rtype::server

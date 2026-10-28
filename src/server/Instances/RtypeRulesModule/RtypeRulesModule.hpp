@@ -10,7 +10,6 @@
 #include "IGameModule.hpp"
 #include "IGameReplication.hpp"
 #include "InstallContext.hpp"
-#include "PlayerInput.hpp"
 #include "ScoreKeeper.hpp"
 
 namespace rtype::server {
@@ -27,13 +26,15 @@ struct GameContext;
  * players what the rules do. install() adds the work of the tick; start()
  * adds the systems, subscribes the ScoreKeeper and builds the GameFlow, which
  * builds the first world; stop() destroys the flow, then the keeper, which
- * give their subscriptions back to the bus. state(), tick(), onPlayerJoined()
- * and finish() are valid from the end of start() to the start of stop().
+ * give their subscriptions back to the bus. state(), tick() and finish() are
+ * valid from the end of start() to the start of stop().
  *
- * The ship of a player whose session closes leaves the world and is announced
- * on the event bus as an EntityDestruction (Removed); each PlayerInput newer
- * than the one kept goes through noteTaps before it replaces it, so a
- * direction pressed twice starts a roll or a dash of the ship. A ScoreKeeper
+ * start() also adds three functions to the hooks of the game: a player who
+ * joins gets a ship through the replication; the ship of a player whose
+ * session closes leaves the world and is announced on the event bus as an
+ * EntityDestruction (Removed); each PlayerInput newer than the one kept goes
+ * through noteTaps before it replaces it, so a direction pressed twice starts
+ * a roll or a dash of the ship. A ScoreKeeper
  * adds the points of each EnemyKilled published on the event bus to the score
  * of the player it names; every score goes back to 0 with each new world.
  */
@@ -51,16 +52,17 @@ class RtypeRulesModule final : public IGameModule, public IGameFlow {
 
   [[nodiscard]] std::uint32_t tick() const override;
 
-  void onPlayerJoined(ConnectedPlayer& player) override;
-
   void finish() override;
 
-  void onPlayerLeaving(const ConnectedPlayer& player) override;
-
-  void onNewerInput(const ConnectedPlayer& player,
-                    const network::PlayerInput& input) override;
-
  private:
+  /** @brief Adds the functions the rules run when a player joins, leaves or
+   * sends an input to the hooks of the game. */
+  void addSessionHooks();
+
+  /** @brief Removes the ship of @p departed from the world, when it has one,
+   * and announces it on the event bus as an EntityDestruction (Removed). */
+  void removeShipOf(const ConnectedPlayer& departed);
+
   GameContext* game_{nullptr};
   IGameReplication* replication_{nullptr};
   std::unique_ptr<ScoreKeeper> scoreKeeper_;

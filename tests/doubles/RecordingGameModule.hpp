@@ -10,8 +10,8 @@ namespace rtype::server::testing {
 
 /**
  * @brief A game module that writes down, in a journal the test owns, each
- * call it receives and each stage it runs in, each line starting with its name.
- * It can be told to throw from start().
+ * call it receives, each stage it runs in and each player event it is told
+ * of, each line starting with its name. It can be told to throw from start().
  */
 class RecordingGameModule final : public IGameModule {
  public:
@@ -32,6 +32,7 @@ class RecordingGameModule final : public IGameModule {
   void stop() override;
 
  private:
+  GameContext* game_{nullptr};
   std::string name_;
   std::vector<std::string>* journal_;
   bool failsToStart_;

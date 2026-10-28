@@ -110,4 +110,43 @@ TEST_F(GameModuleFixture, RtypeRulesModuleStopsCountingOnceStopped) {
   EXPECT_EQ(player.score, 0U);
 }
 
+/**
+ * Given both modules started and a player in the roster with no ship
+ * When the functions added to the hooks for a joined player are called
+ * Then the player holds a ship of the world
+ */
+TEST_F(GameModuleFixture, RtypeRulesModuleGivesAJoiningPlayerAShip) {
+  ReplicationModule replication;
+  RtypeRulesModule rules;
+  install(replication);
+  install(rules);
+  replication.start();
+  rules.start();
+  ConnectedPlayer& player = join(0);
+
+  playerJoined(player);
+
+  EXPECT_NE(world().shipPositionOf(player.shipEntityId), nullptr);
+}
+
+/**
+ * Given both modules started and a player who holds a ship
+ * When the functions added to the hooks for a closing session are called
+ * Then the ship is no longer in the world
+ */
+TEST_F(GameModuleFixture, RtypeRulesModuleRemovesTheShipOfAClosingSession) {
+  ReplicationModule replication;
+  RtypeRulesModule rules;
+  install(replication);
+  install(rules);
+  replication.start();
+  rules.start();
+  ConnectedPlayer& player = join(0);
+  playerJoined(player);
+
+  sessionClosing(player);
+
+  EXPECT_EQ(world().shipPositionOf(player.shipEntityId), nullptr);
+}
+
 }  // namespace rtype::server::testing

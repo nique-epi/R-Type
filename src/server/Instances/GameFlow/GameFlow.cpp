@@ -161,10 +161,6 @@ std::uint32_t GameFlow::tick() const { return tick_; }
 
 game::World& GameFlow::world() { return worldSlot_.get().current(); }
 
-void GameFlow::onPlayerJoined(ConnectedPlayer& player) {
-  replication_.get().onPlayerJoined(player);
-}
-
 void GameFlow::onTick() {
   finishIfOver();
   advanceState();

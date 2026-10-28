@@ -3,11 +3,13 @@
 #include <string_view>
 #include <utility>
 #include <vector>
+#include "ConnectedPlayer.hpp"
 #include "EngineException.hpp"
 #include "GameContext.hpp"
 #include "GameInstanceConstants.hpp"
 #include "InstallContext.hpp"
 #include "RecordingGameModuleConstants.hpp"
+#include "SessionHooks.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::server::testing {
@@ -19,8 +21,9 @@ RecordingGameModule::RecordingGameModule(std::string name,
 
 std::string RecordingGameModule::name() const { return name_; }
 
-void RecordingGameModule::install([[maybe_unused]] GameContext& game,
+void RecordingGameModule::install(GameContext& game,
                                   engine::InstallContext& install) {
+  game_ = &game;
   journal_->push_back(name_ + " " + std::string{INSTALL_CALL});
   for (const std::string_view stage : GAME_STAGES) {
     install.addWork(stage, [this, stage]([[maybe_unused]] engine::Duration) {
@@ -34,6 +37,13 @@ void RecordingGameModule::start() {
   if (failsToStart_) {
     throw engine::NullModuleException();
   }
+  SessionHooks& hooks = game_->hooks;
+  hooks.joined.emplace_back([this](ConnectedPlayer&) {
+    journal_->push_back(name_ + " " + std::string{JOINED_CALL});
+  });
+  hooks.closing.emplace_back([this](const ConnectedPlayer&) {
+    journal_->push_back(name_ + " " + std::string{LEAVING_CALL});
+  });
 }
 
 void RecordingGameModule::stop() {

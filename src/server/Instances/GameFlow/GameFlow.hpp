@@ -7,7 +7,6 @@
 #include "BydoGunner.hpp"
 #include "BydoSpawner.hpp"
 #include "CollisionRules.hpp"
-#include "ConnectedPlayer.hpp"
 #include "DamageRules.hpp"
 #include "EventBus.hpp"
 #include "GameFlowParts.hpp"
@@ -106,13 +105,6 @@ class GameFlow {
    * for players again, so do not keep the reference across ticks.
    */
   [[nodiscard]] game::World& world();
-
-  /**
-   * @brief Gives @p player, who just took a place in the roster, a ship in the
-   * world and announces it to the players.
-   * @throws NetworkIdExhaustedException when every network id was given.
-   */
-  void onPlayerJoined(ConnectedPlayer& player);
 
   /**
    * @brief Runs one tick: ends a game in progress that no player is left in, or

@@ -22,6 +22,17 @@
 
 namespace rtype::server {
 
+namespace {
+
+template <typename Hooks, typename... Arguments>
+void callAll(const Hooks& hooks, Arguments&... arguments) {
+  for (const auto& hook : hooks) {
+    hook(arguments...);
+  }
+}
+
+}  // namespace
+
 GameInstance::GameInstance(GameInstanceParts parts,
                            std::vector<std::unique_ptr<IGameModule>> modules)
     : settings_(std::move(parts.settings)),
@@ -32,18 +43,19 @@ GameInstance::GameInstance(GameInstanceParts parts,
               [this] { return flow_->state() == GameState::WaitingForPlayers; },
           .onClosing =
               [this](const ConnectedPlayer& departed) {
-                flow_->onPlayerLeaving(departed);
+                callAll(hooks_.closing, departed);
               },
           .onNewerInput =
               [this](const ConnectedPlayer& player,
                      const network::PlayerInput& input) {
-                flow_->onNewerInput(player, input);
+                callAll(hooks_.newerInput, player, input);
               }}),
       context_{.events = parts.events,
                .timers = parts.timers,
                .systems = systems_,
                .world = world_,
                .roster = sessions_.roster(),
+               .hooks = hooks_,
                .settings = settings_,
                .send = std::move(parts.send),
                .everyPlayerIsReady =
@@ -75,8 +87,8 @@ network::PacketHeader GameInstance::nextSessionHeaderFor(
   return sessions_.nextSessionHeaderFor(player);
 }
 
-void GameInstance::onPlayerJoined(ConnectedPlayer& player) {
-  flow_->onPlayerJoined(player);
+void GameInstance::onPlayerJoined(ConnectedPlayer& player) const {
+  callAll(hooks_.joined, player);
 }
 
 std::vector<ConnectedPlayer> GameInstance::takeDepartedPlayers() {

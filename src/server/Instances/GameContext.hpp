@@ -5,6 +5,7 @@
 #include "GameSettings.hpp"
 #include "OutgoingDatagram.hpp"
 #include "PlayerRoster.hpp"
+#include "SessionHooks.hpp"
 #include "SystemScheduler.hpp"
 #include "TimerScheduler.hpp"
 #include "WorldSlot.hpp"
@@ -28,6 +29,9 @@ struct GameContext {
   std::reference_wrapper<WorldSlot> world;
   /** @brief The players of the game. */
   std::reference_wrapper<PlayerRoster> roster;
+  /** @brief What the game calls when a player joins, leaves or sends an
+   * input; modules add their functions to it. */
+  std::reference_wrapper<SessionHooks> hooks;
   /** @brief The seed and the waves the game was defined with. */
   std::reference_wrapper<const GameSettings> settings;
   /** @brief What is called for each datagram to send. */

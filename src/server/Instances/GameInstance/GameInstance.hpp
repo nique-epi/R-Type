@@ -17,6 +17,7 @@
 #include "IncomingDatagram.hpp"
 #include "PacketHeader.hpp"
 #include "PlayerRoster.hpp"
+#include "SessionHooks.hpp"
 #include "SystemScheduler.hpp"
 #include "World.hpp"
 #include "WorldSlot.hpp"
@@ -39,12 +40,14 @@ namespace rtype::server {
  *
  * The players and their sessions (the datagrams read, who is ready, the newest
  * input, the silence that closes a session, the departures and the Heartbeats)
- * belong to GameSessions. The game gives it three things, each answered by
- * IGameFlow: a ReadyState counts only while the game waits for players; each
- * PlayerInput newer than the one kept goes to IGameFlow::onNewerInput before
- * it replaces it; and a player whose session closes goes to
- * IGameFlow::onPlayerLeaving. takeDepartedPlayers() hands the players whose
- * session closed over to whoever must forget them outside the game.
+ * belong to GameSessions. The game gives it three things: a ReadyState counts
+ * only while the game waits for players (IGameFlow::state); each PlayerInput
+ * newer than the one kept goes to the SessionHooks::newerInput functions of the
+ * modules before it replaces it; and a player whose session closes goes to
+ * their SessionHooks::closing functions. A player who joins goes to their
+ * SessionHooks::joined functions (see onPlayerJoined()). takeDepartedPlayers()
+ * hands the players whose session closed over to whoever must forget them
+ * outside the game.
  *
  * A tick runs three stages, in order: GAME_INPUT_STAGE reads the datagrams and
  * closes the silent sessions, GAME_SIMULATION_STAGE runs the work the modules
@@ -103,11 +106,12 @@ class GameInstance {
       const network::Endpoint& player);
 
   /**
-   * @brief Gives @p player, who just took a place in roster(), a ship in the
-   * world and announces it to the players.
+   * @brief Tells the modules that @p player just took a place in roster(), as
+   * the SessionHooks::joined functions receive it; with the rules of R-Type,
+   * the player gets a ship in the world, announced to the players.
    * @throws NetworkIdExhaustedException when every network id was given.
    */
-  void onPlayerJoined(ConnectedPlayer& player);
+  void onPlayerJoined(ConnectedPlayer& player) const;
 
   /**
    * @brief Runs one tick: applies the ReadyState, keeps the newest PlayerInput
@@ -135,6 +139,7 @@ class GameInstance {
 
  private:
   GameSettings settings_;
+  SessionHooks hooks_;
   engine::SystemScheduler systems_;
   WorldSlot world_;
   GameSessions sessions_;

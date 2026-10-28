@@ -38,7 +38,7 @@ GameFlowFixture::GameFlowFixture()
 ConnectedPlayer& GameFlowFixture::join(std::size_t index) {
   ConnectedPlayer* const player = roster_.add(
       playerEndpoint(index), std::string{PLAYER_NICKNAME}, SESSION_TOKEN);
-  flow_.onPlayerJoined(*player);
+  replication_.onPlayerJoined(*player);
   return *player;
 }
 

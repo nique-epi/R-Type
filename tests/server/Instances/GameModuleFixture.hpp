@@ -14,6 +14,7 @@
 #include "OutgoingDatagram.hpp"
 #include "PlayerRoster.hpp"
 #include "ServiceRegistry.hpp"
+#include "SessionHooks.hpp"
 #include "SystemScheduler.hpp"
 #include "TimerScheduler.hpp"
 #include "World.hpp"
@@ -49,6 +50,14 @@ class GameModuleFixture : public ::testing::Test {
     events_.dispatch();
   }
 
+  /** @brief Calls the functions the modules added to the hooks for a player
+   * who joined, as GameInstance does. */
+  void playerJoined(ConnectedPlayer& player);
+
+  /** @brief Calls the functions the modules added to the hooks for a player
+   * whose session closes, as GameInstance does. */
+  void sessionClosing(const ConnectedPlayer& player);
+
   /** @returns The context the modules are installed with. */
   [[nodiscard]] GameContext& context();
 
@@ -66,6 +75,7 @@ class GameModuleFixture : public ::testing::Test {
   engine::SystemScheduler systems_;
   WorldSlot world_;
   PlayerRoster roster_;
+  SessionHooks hooks_;
   GameSettings settings_;
   engine::ServiceRegistry services_;
   engine::LoopStages stages_{GAME_STAGES};

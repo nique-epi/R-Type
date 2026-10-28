@@ -24,6 +24,7 @@ GameModuleFixture::GameModuleFixture()
                .systems = systems_,
                .world = world_,
                .roster = roster_,
+               .hooks = hooks_,
                .settings = settings_,
                .send =
                    [this](network::OutgoingDatagram datagram) {
@@ -39,6 +40,18 @@ void GameModuleFixture::install(IGameModule& module) {
 ConnectedPlayer& GameModuleFixture::join(std::size_t index) {
   return *roster_.add(playerEndpoint(index), std::string{PLAYER_NICKNAME},
                       SESSION_TOKEN);
+}
+
+void GameModuleFixture::playerJoined(ConnectedPlayer& player) {
+  for (const auto& hook : hooks_.joined) {
+    hook(player);
+  }
+}
+
+void GameModuleFixture::sessionClosing(const ConnectedPlayer& player) {
+  for (const auto& hook : hooks_.closing) {
+    hook(player);
+  }
 }
 
 GameContext& GameModuleFixture::context() { return context_; }

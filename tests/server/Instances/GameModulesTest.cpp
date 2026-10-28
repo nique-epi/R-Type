@@ -3,6 +3,7 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include "ConnectedPlayer.hpp"
 #include "EngineException.hpp"
 #include "GameModuleFixture.hpp"
 #include "GameModules.hpp"
@@ -113,6 +114,41 @@ TEST_F(GameModuleFixture, GameModulesGiveTheServicesTheirModulesProvided) {
   EXPECT_NO_THROW(static_cast<void>(modules.require<IGameReplication>()));
   EXPECT_THROW(static_cast<void>(modules.require<IGameFlow>()),
                engine::MissingServiceException);
+}
+
+/**
+ * Given two started modules and a player in the roster
+ * When the functions added to the hooks for a joined player are called
+ * Then both modules are told, in the order of the modules
+ */
+TEST_F(GameModuleFixture, GameModulesTellEveryModuleOfAPlayerWhoJoined) {
+  std::vector<std::string> journal;
+  GameModules modules(twoRecordingModules(journal, false));
+  modules.installAndStart(context());
+  ConnectedPlayer& player = join(0);
+  journal.clear();
+
+  playerJoined(player);
+
+  EXPECT_EQ(journal, journalOf({FIRST_TOLD_OF_A_JOIN, SECOND_TOLD_OF_A_JOIN}));
+}
+
+/**
+ * Given two started modules and a player in the roster
+ * When the functions added to the hooks for a closing session are called
+ * Then both modules are told, in the order of the modules
+ */
+TEST_F(GameModuleFixture, GameModulesTellEveryModuleOfAClosingSession) {
+  std::vector<std::string> journal;
+  GameModules modules(twoRecordingModules(journal, false));
+  modules.installAndStart(context());
+  const ConnectedPlayer& player = join(0);
+  journal.clear();
+
+  sessionClosing(player);
+
+  EXPECT_EQ(journal,
+            journalOf({FIRST_TOLD_OF_A_DEPARTURE, SECOND_TOLD_OF_A_DEPARTURE}));
 }
 
 }  // namespace rtype::server::testing
