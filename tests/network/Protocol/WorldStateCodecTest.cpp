@@ -31,7 +31,6 @@ using rtype::network::testing::EXAMPLE_ENTITY_ID;
 using rtype::network::testing::EXAMPLE_PLAYER_NUMBER;
 using rtype::network::testing::EXAMPLE_PLAYER_SHIP_ID;
 using rtype::network::testing::FEW_ENTITIES;
-using rtype::network::testing::FIRST_MOTION_OFFSET;
 using rtype::network::testing::fourPlayers;
 using rtype::network::testing::invulnerablePlayer;
 using rtype::network::testing::LARGEST_MOTION;
@@ -42,6 +41,7 @@ using rtype::network::testing::LARGEST_WIRE_COORDINATE;
 using rtype::network::testing::LAST_ENTITY_TYPE;
 using rtype::network::testing::LAST_PLAYER_NUMBER;
 using rtype::network::testing::LATE_TICK;
+using rtype::network::testing::MOTION_HIGHEST_BIT;
 using rtype::network::testing::MOTION_PAST_THE_DASH;
 using rtype::network::testing::NEAREST_EIGHTH_OF_UNROUNDED_X;
 using rtype::network::testing::NEAREST_EIGHTH_OF_UNROUNDED_Y;
@@ -49,6 +49,7 @@ using rtype::network::testing::NO_ENTITY_ID_BYTE;
 using rtype::network::testing::NOT_A_BOOLEAN;
 using rtype::network::testing::NUMBER_OF_A_FIFTH_PLAYER;
 using rtype::network::testing::oneShipState;
+using rtype::network::testing::payloadWithMotion;
 using rtype::network::testing::PLAYER_NUMBER_BYTE_ABOVE_THE_LAST;
 using rtype::network::testing::PLAYER_NUMBER_BYTE_BELOW_THE_FIRST;
 using rtype::network::testing::ROLLING_RIGHT_MOTION;
@@ -438,17 +439,20 @@ TEST(WorldStateCodec, KeepsTheMotionOfAPlayer) {
  * Then it is refused as an invalid field
  */
 TEST(WorldStateCodec, RefusesAMotionWithABitPastTheDash) {
-  const WorldState state{
-      .tick = SOME_TICK,
-      .players = {PlayerState{.playerNumber = EXAMPLE_PLAYER_NUMBER,
-                              .shipEntityId = EXAMPLE_PLAYER_SHIP_ID,
-                              .lives = SOME_LIVES,
-                              .score = SOME_SCORE,
-                              .invulnerable = false,
-                              .motion = 0}},
-      .entities = {}};
-  std::vector<std::byte> payload = WorldStateCodec::encode(state).front();
-  payload.at(FIRST_MOTION_OFFSET) = std::byte{MOTION_PAST_THE_DASH};
+  const std::vector<std::byte> payload =
+      payloadWithMotion(MOTION_PAST_THE_DASH);
+
+  EXPECT_THROW((void)WorldStateCodec::decode(payload),
+               InvalidFieldValueException);
+}
+
+/**
+ * Given the payload of a world state whose player's motion has bit 7 set
+ * When it is decoded
+ * Then it is refused as an invalid field
+ */
+TEST(WorldStateCodec, RefusesAMotionWithItsHighestBitSet) {
+  const std::vector<std::byte> payload = payloadWithMotion(MOTION_HIGHEST_BIT);
 
   EXPECT_THROW((void)WorldStateCodec::decode(payload),
                InvalidFieldValueException);

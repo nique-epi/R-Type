@@ -128,4 +128,11 @@ PlayerState invulnerablePlayer();
  */
 WorldState oneShipState();
 
+/**
+ * @returns The payload of a state of one player and no entity, whose motion
+ * byte is overwritten with @p motion, a byte the encoder never writes when
+ * it holds a bit past PLAYER_MOTION_BITS.
+ */
+std::vector<std::byte> payloadWithMotion(std::uint8_t motion);
+
 }  // namespace rtype::network::testing

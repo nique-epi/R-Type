@@ -16,6 +16,9 @@ constexpr std::uint8_t LARGEST_MOTION = 0x3F;
 /** @brief A motion with bit 6 set, past the bit of the dash. */
 constexpr std::uint8_t MOTION_PAST_THE_DASH = 0x40;
 
+/** @brief A motion with bit 7 set, the highest bit of the byte. */
+constexpr std::uint8_t MOTION_HIGHEST_BIT = 0x80;
+
 /** @brief Where the motion of the first player sits in a payload: tick (4),
  * playerCount (1), then playerNumber (1), shipEntityId (4), lives (1),
  * score (4) and invulnerable (1). */
