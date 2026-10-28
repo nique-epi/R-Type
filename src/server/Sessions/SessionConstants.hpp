@@ -30,6 +30,11 @@ static_assert(TICKS_PER_HEARTBEAT >= 1,
               "HEARTBEAT_INTERVAL must last at least one simulation tick");
 
 /**
+ * @brief Module name the sessions write their log lines under.
+ */
+constexpr std::string_view SESSIONS_LOGGER_NAME = "Sessions";
+
+/**
  * @brief Why a game drops a datagram whose sender is not one of its players,
  * as its lines say; a header it does not speak is dropped for
  * FOREIGN_HEADER_DROP_REASON.

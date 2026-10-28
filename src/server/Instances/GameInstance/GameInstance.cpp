@@ -1,10 +1,8 @@
 #include "GameInstance.hpp"
 #include <algorithm>
-#include <chrono>
 #include <cstdint>
 #include <memory>
 #include <optional>
-#include <ratio>
 #include <span>
 #include <string>
 #include <string_view>
@@ -17,38 +15,27 @@
 #include "ConnectedPlayerConstants.hpp"
 #include "ConnectedPlayers.hpp"
 #include "DamageRules.hpp"
-#include "DatagramCodec.hpp"
-#include "Disconnection.hpp"
 #include "Endpoint.hpp"
 #include "EntityDestruction.hpp"
 #include "EntityIdConstants.hpp"
 #include "EventBus.hpp"
 #include "GameEndAnnouncer.hpp"
 #include "GameInstanceConstants.hpp"
+#include "GameSessionsParts.hpp"
 #include "GameSettings.hpp"
 #include "GameStarted.hpp"
 #include "GameState.hpp"
-#include "Heartbeat.hpp"
 #include "IncomingDatagram.hpp"
 #include "LifeKeeper.hpp"
 #include "LifeKeeperParts.hpp"
-#include "MessageFrame.hpp"
-#include "MessageOrigin.hpp"
 #include "MovementSystem.hpp"
-#include "NetworkConstants.hpp"
-#include "NetworkException.hpp"
 #include "PacketHeader.hpp"
 #include "PatternSystem.hpp"
-#include "PlayerDatagram.hpp"
-#include "PlayerDeparture.hpp"
 #include "PlayerInput.hpp"
 #include "PlayerRoster.hpp"
 #include "PlayfieldExitSystem.hpp"
 #include "Position.hpp"
 #include "ProtocolConstants.hpp"
-#include "ReadyState.hpp"
-#include "SequenceOrder.hpp"
-#include "SessionConstants.hpp"
 #include "SessionDatagram.hpp"
 #include "ShipControl.hpp"
 #include "TimeConstants.hpp"
@@ -57,33 +44,6 @@
 namespace rtype::server {
 
 namespace {
-
-/**
- * @brief A count of simulation ticks, as a duration: converted to nanoseconds,
- * a whole number of seconds of ticks gives exactly that many seconds.
- */
-using SimulationTicks = std::chrono::duration<
-    std::uint64_t, std::ratio<1, static_cast<std::intmax_t>(
-                                     engine::SIMULATION_TICKS_PER_SECOND)>>;
-
-/**
- * @returns Whether @p input is newer than @p newest: no input was kept yet, or
- * its number is higher. An input numbered like the one kept is not newer: it
- * is that input again, or one the player did not send.
- */
-bool isNewer(const network::PlayerInput& input,
-             const std::optional<network::PlayerInput>& newest) {
-  return !newest.has_value() || input.inputNumber > newest->inputNumber;
-}
-
-/**
- * @returns Whether @p input holds other actions than @p newest, or no input
- * was kept yet.
- */
-bool changesActions(const network::PlayerInput& input,
-                    const std::optional<network::PlayerInput>& newest) {
-  return !newest.has_value() || input.actions != newest->actions;
-}
 
 /**
  * @returns Whether @p input holds the action at @p bitPosition of its actions
@@ -95,9 +55,6 @@ bool holdsActionAt(const network::PlayerInput& input,
   return (static_cast<unsigned int>(input.actions) & mask) != 0U;
 }
 
-/**
- * @returns The directions @p input holds for the ship; shooting is not one.
- */
 /**
  * @returns The connected players of @p roster whose newest input holds shoot.
  */
@@ -113,6 +70,9 @@ ConnectedPlayers shootersIn(PlayerRoster& roster) {
   return shooters;
 }
 
+/**
+ * @returns The directions @p input holds for the ship; shooting is not one.
+ */
 game::ShipDirections directionsOf(const network::PlayerInput& input) {
   return game::ShipDirections{
       .up = holdsActionAt(input, network::UP_ACTION_BIT_POSITION),
@@ -179,35 +139,24 @@ GameInstance::GameInstance(Send send, GameSettings settings,
                            engine::EventBus& events)
     : send_(std::move(send)),
       events_(events),
-      scoreKeeper_(events, roster_),
-      worldStateSender_(roster_, send_),
+      sessions_(GameSessionsParts{
+          .events = events,
+          .send = send_,
+          .readyAccepted =
+              [this] { return state_ == GameState::WaitingForPlayers; },
+          .onClosing =
+              [this](const ConnectedPlayer& departed) {
+                removeShipOf(departed);
+              }}),
+      scoreKeeper_(events, sessions_.roster()),
+      worldStateSender_(sessions_.roster(), send_),
       seed_(settings.seed),
       wavePlan_(std::move(settings.waves)),
-      rejectionLog_(std::string{INSTANCES_LOGGER_NAME},
-                    network::REJECTION_LINE_INTERVAL),
       logger_(std::string{INSTANCES_LOGGER_NAME}) {
   systems_.add(std::make_unique<game::PatternSystem>());
   systems_.add(std::make_unique<game::MovementSystem>());
   systems_.add(std::make_unique<game::PlayfieldExitSystem>(events));
   systems_.add(std::make_unique<game::CollisionSystem>(events));
-  dispatcher_.registerHandler<network::ReadyState>(
-      [this](const network::MessageOrigin& origin,
-             const network::ReadyState& message) {
-        applyReadyState(origin, message);
-      });
-  dispatcher_.registerHandler<network::PlayerInput>(
-      [this](const network::MessageOrigin& origin,
-             const network::PlayerInput& input) {
-        keepIfNewer(origin, input);
-      });
-  dispatcher_.registerHandler<network::Heartbeat>(
-      [](const network::MessageOrigin& /*origin*/,
-         const network::Heartbeat& /*heartbeat*/) {});
-  dispatcher_.registerHandler<network::Disconnection>(
-      [this](const network::MessageOrigin& origin,
-             const network::Disconnection& /*disconnection*/) {
-        closeSession(origin.sender, game::DepartureCause::Left);
-      });
   startNewWorld();
 }
 
@@ -215,38 +164,39 @@ GameState GameInstance::state() const { return state_; }
 
 std::uint32_t GameInstance::tick() const { return tick_; }
 
-PlayerRoster& GameInstance::roster() { return roster_; }
+PlayerRoster& GameInstance::roster() { return sessions_.roster(); }
 
 game::World& GameInstance::world() { return *world_; }
 
 network::PacketHeader GameInstance::nextSessionHeaderFor(
     const network::Endpoint& player) {
-  return sessionHeaderFor(roster_, player);
+  return sessions_.nextSessionHeaderFor(player);
 }
 
 void GameInstance::onPlayerJoined(ConnectedPlayer& player) {
   shipSpawnAnnouncer_->onPlayerJoined(player);
 }
 
+std::vector<ConnectedPlayer> GameInstance::takeDepartedPlayers() {
+  return sessions_.takeDepartedPlayers();
+}
+
 void GameInstance::onTick(
     std::span<const network::IncomingDatagram> datagrams) {
-  for (const network::IncomingDatagram& datagram : datagrams) {
-    readPlayerDatagram(datagram);
-  }
-  closeSilentSessions();
+  sessions_.readDatagrams(datagrams);
+  sessions_.closeSilentSessions();
   finishIfOver();
   advanceState();
   if (state_ == GameState::InProgress) {
     worldStateSender_.onTick(tick_, world_->components());
   }
-  sendHeartbeats();
-  ++ticksRun_;
+  sessions_.endTick();
 }
 
 void GameInstance::advanceState() {
   switch (state_) {
     case GameState::WaitingForPlayers:
-      if (everyPlayerIsReady()) {
+      if (sessions_.everyPlayerIsReady()) {
         startGame();
       } else {
         lobbyStateAnnouncer_->onWaitingTick();
@@ -256,7 +206,7 @@ void GameInstance::advanceState() {
       ++tick_;
       moveShips();
       systems_.run(world_->components(), engine::SIMULATION_TICK_DURATION);
-      missileLauncher_->onTick(shootersIn(roster_));
+      missileLauncher_->onTick(shootersIn(sessions_.roster()));
       bydoGunner_->onTick();
       bydoSpawner_->onTick();
       lifeKeeper_->onTick();
@@ -273,10 +223,6 @@ void GameInstance::advanceState() {
   }
 }
 
-std::vector<ConnectedPlayer> GameInstance::takeDepartedPlayers() {
-  return std::exchange(departedPlayers_, {});
-}
-
 void GameInstance::finish() {
   if (state_ == GameState::InProgress) {
     state_ = GameState::Finished;
@@ -284,169 +230,29 @@ void GameInstance::finish() {
   }
 }
 
-void GameInstance::readPlayerDatagram(
-    const network::IncomingDatagram& datagram) {
-  const std::optional<PlayerDatagram> readable = playerDatagramOf(datagram);
-  if (!readable.has_value()) {
-    return;
+void GameInstance::removeShipOf(const ConnectedPlayer& departed) {
+  if (world_->removePlayer(departed.shipEntityId)) {
+    events_.publish(
+        game::EntityDestruction{.networkId = departed.shipEntityId,
+                                .cause = game::DestructionCause::Removed});
   }
-  readable->player->ticksSinceReceived = 0;
-  dispatcher_.dispatch(readable->origin, readable->messages);
-}
-
-std::optional<PlayerDatagram> GameInstance::playerDatagramOf(
-    const network::IncomingDatagram& datagram) {
-  network::PacketHeader header;
-  std::vector<network::MessageFrame> messages;
-  try {
-    header = network::DatagramCodec::decodeHeader(datagram.payload);
-    if (!network::DatagramCodec::speaksThisProtocol(header)) {
-      drop(datagram.sender, network::FOREIGN_HEADER_DROP_REASON);
-      return std::nullopt;
-    }
-    messages = network::DatagramCodec::splitMessages(datagram.payload);
-  } catch (const network::NetworkException& error) {
-    drop(datagram.sender, error.what());
-    return std::nullopt;
-  }
-  ConnectedPlayer* const player = roster_.find(datagram.sender);
-  if (player == nullptr) {
-    drop(datagram.sender, NOT_A_PLAYER_DROP_REASON);
-    return std::nullopt;
-  }
-  return PlayerDatagram{
-      .player = player,
-      .origin =
-          network::MessageOrigin{.sender = datagram.sender, .header = header},
-      .messages = std::move(messages)};
-}
-
-void GameInstance::drop(const network::Endpoint& sender,
-                        std::string_view reason) {
-  rejectionLog_.debug(timeRun(), "dropped a datagram from ", sender.address,
-                      " port ", sender.port, ": ", reason);
-}
-
-std::chrono::nanoseconds GameInstance::timeRun() const {
-  return std::chrono::duration_cast<std::chrono::nanoseconds>(
-      SimulationTicks{ticksRun_});
-}
-
-void GameInstance::applyReadyState(const network::MessageOrigin& origin,
-                                   const network::ReadyState& message) {
-  ConnectedPlayer* const player = roster_.find(origin.sender);
-  if (state_ != GameState::WaitingForPlayers || player == nullptr) {
-    return;
-  }
-  if (player->newestReceivedSequence.has_value() &&
-      !network::isNewerSequence(origin.header.sequence,
-                                *player->newestReceivedSequence)) {
-    return;
-  }
-  player->newestReceivedSequence = origin.header.sequence;
-  player->ready = message.ready;
-}
-
-void GameInstance::keepIfNewer(const network::MessageOrigin& origin,
-                               const network::PlayerInput& input) {
-  ConnectedPlayer* const player = roster_.find(origin.sender);
-  if (player == nullptr || !isNewer(input, player->newestInput)) {
-    return;
-  }
-  if (changesActions(input, player->newestInput)) {
-    logger_.debug("player ", static_cast<unsigned int>(player->playerNumber),
-                  " holds actions ", static_cast<unsigned int>(input.actions));
-  }
-  player->newestInput = input;
-}
-
-bool GameInstance::everyPlayerIsReady() {
-  const ConnectedPlayers players = roster_.connected();
-  return !players.empty() &&
-         std::ranges::all_of(players, [](const ConnectedPlayer* player) {
-           return player->ready;
-         });
-}
-
-void GameInstance::closeSilentSessions() {
-  for (const network::Endpoint& player : countSilentTicks()) {
-    closeSession(player, game::DepartureCause::TimedOut);
-  }
-}
-
-std::vector<network::Endpoint> GameInstance::countSilentTicks() {
-  std::vector<network::Endpoint> timedOut;
-  for (ConnectedPlayer* const player : roster_.connected()) {
-    if (player->ticksSinceReceived >= SESSION_TIMEOUT_TICKS) {
-      timedOut.push_back(player->endpoint);
-    } else {
-      ++player->ticksSinceReceived;
-    }
-  }
-  return timedOut;
-}
-
-void GameInstance::closeSession(const network::Endpoint& player,
-                                game::DepartureCause cause) {
-  std::optional<ConnectedPlayer> departed = roster_.remove(player);
-  if (!departed.has_value()) {
-    return;
-  }
-  if (world_->removePlayer(departed->shipEntityId)) {
-    announceShipRemoval(departed->shipEntityId);
-  }
-  announceDeparture(*departed, cause);
-  departedPlayers_.push_back(std::move(*departed));
-}
-
-void GameInstance::announceShipRemoval(std::uint32_t shipEntityId) {
-  events_.publish(game::EntityDestruction{
-      .networkId = shipEntityId, .cause = game::DestructionCause::Removed});
-}
-
-void GameInstance::announceDeparture(const ConnectedPlayer& player,
-                                     game::DepartureCause cause) {
-  logDeparture(player, cause);
-  events_.publish(game::PlayerDeparture{.playerNumber = player.playerNumber,
-                                        .cause = cause});
-}
-
-void GameInstance::logDeparture(const ConnectedPlayer& player,
-                                game::DepartureCause cause) const {
-  const auto playerNumber = static_cast<unsigned int>(player.playerNumber);
-  if (cause == game::DepartureCause::Left) {
-    logger_.info("player ", playerNumber, " left from ",
-                 player.endpoint.address, " port ", player.endpoint.port);
-    return;
-  }
-  logger_.info("player ", playerNumber, " timed out: nothing received from ",
-               player.endpoint.address, " port ", player.endpoint.port, " for ",
-               network::SESSION_TIMEOUT.count(), " s");
 }
 
 void GameInstance::finishIfOver() {
   const std::optional<std::string_view> reason =
-      reasonToFinish(state_, roster_);
+      reasonToFinish(state_, sessions_.roster());
   if (!reason.has_value()) {
     return;
   }
   logger_.info("game finished: ", *reason);
   finish();
-  gameEndAnnouncer_ = std::make_unique<GameEndAnnouncer>(roster_, send_);
-}
-
-void GameInstance::sendHeartbeats() {
-  for (ConnectedPlayer* const player : roster_.connected()) {
-    if (player->ticksSinceSent >= TICKS_PER_HEARTBEAT) {
-      send_(sessionDatagram(*player, network::Heartbeat{}));
-    }
-    ++player->ticksSinceSent;
-  }
+  gameEndAnnouncer_ =
+      std::make_unique<GameEndAnnouncer>(sessions_.roster(), send_);
 }
 
 void GameInstance::startGame() {
   state_ = GameState::InProgress;
-  const ConnectedPlayers players = roster_.connected();
+  const ConnectedPlayers players = sessions_.roster().connected();
   for (ConnectedPlayer* const player : players) {
     send_(sessionDatagram(*player, network::GameStarted{}));
   }
@@ -454,7 +260,7 @@ void GameInstance::startGame() {
 }
 
 void GameInstance::moveShips() {
-  for (const ConnectedPlayer* const player : roster_.connected()) {
+  for (const ConnectedPlayer* const player : sessions_.roster().connected()) {
     const std::optional<ShipMove> move = shipMoveOf(*world_, *player);
     if (move.has_value()) {
       moveOneTick(*move);
@@ -469,23 +275,26 @@ void GameInstance::buildWorld() {
   damageRules_ =
       std::make_unique<game::DamageRules>(events_, world_->components());
   shipSpawnAnnouncer_ =
-      std::make_unique<ShipSpawnAnnouncer>(*world_, roster_, send_);
+      std::make_unique<ShipSpawnAnnouncer>(*world_, sessions_.roster(), send_);
   bydoSpawner_ = std::make_unique<BydoSpawner>(
       BydoSpawnerParts{.world = *world_,
-                       .roster = roster_,
+                       .roster = sessions_.roster(),
                        .send = send_,
                        .seed = seed_ + worldsBuilt_,
                        .waves = wavePlan_});
-  missileLauncher_ = std::make_unique<MissileLauncher>(*world_, roster_, send_);
-  bydoGunner_ = std::make_unique<BydoGunner>(*world_, roster_, send_);
+  missileLauncher_ =
+      std::make_unique<MissileLauncher>(*world_, sessions_.roster(), send_);
+  bydoGunner_ =
+      std::make_unique<BydoGunner>(*world_, sessions_.roster(), send_);
   lifeKeeper_ = std::make_unique<LifeKeeper>(
       LifeKeeperParts{.events = events_,
                       .world = *world_,
-                      .roster = roster_,
+                      .roster = sessions_.roster(),
                       .respawn = [this](ConnectedPlayer& player) {
                         shipSpawnAnnouncer_->onPlayerJoined(player);
                       }});
-  lobbyStateAnnouncer_ = std::make_unique<LobbyStateAnnouncer>(roster_, send_);
+  lobbyStateAnnouncer_ =
+      std::make_unique<LobbyStateAnnouncer>(sessions_.roster(), send_);
   gameEndAnnouncer_.reset();
 }
 
@@ -494,7 +303,7 @@ void GameInstance::startNewWorld() {
   ++worldsBuilt_;
   tick_ = 0;
   finishedTicks_ = 0;
-  for (ConnectedPlayer* const player : roster_.connected()) {
+  for (ConnectedPlayer* const player : sessions_.roster().connected()) {
     player->ready = false;
     player->score = 0;
     player->lives = STARTING_LIVES;
