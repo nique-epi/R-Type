@@ -60,8 +60,9 @@ struct HeldChange {
  * last press: down or up rolls the ship ROLL_SIDESTEP that way, right dashes
  * it DASH_DISTANCE forward, left BACKSTEP_DISTANCE back. Nothing starts while
  * a maneuver runs, nor a roll before ROLL_COOLDOWN has passed since the last
- * one ended. A second press that starts a maneuver is not a first press of the
- * next one.
+ * roll ended, nor a dash or a backstep before DASH_COOLDOWN has passed since
+ * the last of them ended. A second press that starts a maneuver is not a
+ * first press of the next one.
  */
 [[nodiscard]] ShipMotion motionAfterInput(ShipMotion motion, HeldChange change);
 

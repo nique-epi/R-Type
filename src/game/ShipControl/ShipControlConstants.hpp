@@ -52,11 +52,14 @@ constexpr engine::Duration ROLL_COOLDOWN = std::chrono::milliseconds(500);
 
 /**
  * @brief A dash carries the ship DASH_DISTANCE units forward, a backstep
- * BACKSTEP_DISTANCE back, over DASH_DURATION, eased out.
+ * BACKSTEP_DISTANCE back, over DASH_DURATION, eased out; the next dash or
+ * backstep waits DASH_COOLDOWN after it ends, so dashes are not chained back
+ * to back.
  */
 constexpr float DASH_DISTANCE = 144.0F;
 constexpr float BACKSTEP_DISTANCE = 96.0F;
 constexpr engine::Duration DASH_DURATION = std::chrono::milliseconds(200);
+constexpr engine::Duration DASH_COOLDOWN = std::chrono::milliseconds(500);
 
 /**
  * @brief Inputs a second press of a direction may follow the first by and

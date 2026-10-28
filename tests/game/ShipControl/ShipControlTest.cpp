@@ -375,7 +375,7 @@ TEST(ShipControl, IsCarriedTheRollDistanceByTheEndOfTheRoll) {
 
 /**
  * Given a ship whose dash, started by presses of right at FIRST_PRESS and
- * QUICK_SECOND_PRESS, ran to its end
+ * QUICK_SECOND_PRESS, ran to its end and waited out its cooldown
  * When its player presses right again within the window of the second press
  * Then no dash starts: the press that started the dash is not the first press
  * of the next one
@@ -386,7 +386,7 @@ TEST(ShipControl, StartsNoManeuverFromThePressThatStartedTheLast) {
           .position = PLAY_AREA_CENTER,
           .motion = motionAfterTwoPresses(
               ShipMotion{}, ShipDirections{.right = true}, QUICK_SECOND_PRESS)},
-      ShipDirections{}, DASH_END_TICK);
+      ShipDirections{}, DASH_END_TICK + COOLDOWN_TICKS);
 
   ShipMotion motion = motionAfterInput(
       dashed.motion, HeldChange{.before = {.right = true},
@@ -417,4 +417,61 @@ TEST(ShipControl, StartsNoRollDuringTheCooldown) {
       rolled.motion, ShipDirections{.up = true}, QUICK_SECOND_PRESS);
 
   EXPECT_EQ(motion.maneuver, ManeuverKind::None);
+}
+
+/**
+ * Given a ship whose dash ended one tick less than COOLDOWN_TICKS ago
+ * When its player double presses right
+ * Then no dash starts: chained dashes wait out the cooldown
+ */
+TEST(ShipControl, StartsNoDashDuringTheCooldown) {
+  const MovingShip dashed = shipAfterTicks(
+      MovingShip{
+          .position = PLAY_AREA_CENTER,
+          .motion = motionAfterTwoPresses(
+              ShipMotion{}, ShipDirections{.right = true}, QUICK_SECOND_PRESS)},
+      ShipDirections{}, DASH_END_TICK + COOLDOWN_TICKS - 1);
+
+  const ShipMotion motion = motionAfterTwoPresses(
+      dashed.motion, ShipDirections{.right = true}, QUICK_SECOND_PRESS);
+
+  EXPECT_EQ(motion.maneuver, ManeuverKind::None);
+}
+
+/**
+ * Given a ship whose backstep ended one tick less than COOLDOWN_TICKS ago
+ * When its player double presses left
+ * Then no backstep starts: a backstep waits like a dash
+ */
+TEST(ShipControl, StartsNoBackstepDuringTheCooldown) {
+  const MovingShip backstepped = shipAfterTicks(
+      MovingShip{
+          .position = PLAY_AREA_CENTER,
+          .motion = motionAfterTwoPresses(
+              ShipMotion{}, ShipDirections{.left = true}, QUICK_SECOND_PRESS)},
+      ShipDirections{}, DASH_END_TICK + COOLDOWN_TICKS - 1);
+
+  const ShipMotion motion = motionAfterTwoPresses(
+      backstepped.motion, ShipDirections{.left = true}, QUICK_SECOND_PRESS);
+
+  EXPECT_EQ(motion.maneuver, ManeuverKind::None);
+}
+
+/**
+ * Given a ship whose dash ended COOLDOWN_TICKS ago
+ * When its player double presses right
+ * Then a dash starts: the cooldown is over
+ */
+TEST(ShipControl, StartsADashOnceTheCooldownIsOver) {
+  const MovingShip dashed = shipAfterTicks(
+      MovingShip{
+          .position = PLAY_AREA_CENTER,
+          .motion = motionAfterTwoPresses(
+              ShipMotion{}, ShipDirections{.right = true}, QUICK_SECOND_PRESS)},
+      ShipDirections{}, DASH_END_TICK + COOLDOWN_TICKS);
+
+  const ShipMotion motion = motionAfterTwoPresses(
+      dashed.motion, ShipDirections{.right = true}, QUICK_SECOND_PRESS);
+
+  EXPECT_EQ(motion.maneuver, ManeuverKind::Dash);
 }

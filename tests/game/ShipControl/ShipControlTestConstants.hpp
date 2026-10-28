@@ -89,8 +89,9 @@ constexpr float BACKSTEP_BACK_DISTANCE = 96.0F;
  * 25th ends it. */
 constexpr std::size_t ROLL_END_TICK = 25;
 
-/** @brief Ticks from the end of a roll during which the next may not start:
- * the 500 ms of the design. */
+/** @brief Ticks from the end of a roll during which the next may not start,
+ * and from the end of a dash or a backstep during which neither may: the
+ * 500 ms of the design. */
 constexpr std::size_t COOLDOWN_TICKS = 30;
 
 /** @brief The tick on which a dash has carried a ship its whole distance:

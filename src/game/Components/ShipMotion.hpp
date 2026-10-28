@@ -24,6 +24,9 @@ struct ShipMotion {
   engine::Duration maneuverTime{};
   /** @brief How long the ship still waits before it may roll again. */
   engine::Duration rollWait{};
+  /** @brief How long the ship still waits before it may dash or backstep
+   * again. */
+  engine::Duration dashWait{};
   /** @brief The inputNumber of the last press of each direction, 0 for none:
    * a second press within DOUBLE_TAP_INPUTS of it starts a maneuver. */
   std::uint32_t lastUpPress{};

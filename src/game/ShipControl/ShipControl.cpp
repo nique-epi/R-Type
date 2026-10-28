@@ -180,21 +180,27 @@ std::optional<ManeuverOrder> orderOf(ShipDirections twice) {
 }
 
 /** @returns Whether @p motion may start a maneuver of @p kind: none runs, and
- * a roll has waited out rollWait. */
+ * the wait of that kind, rollWait for a roll and dashWait for a dash or a
+ * backstep, is over. */
 bool mayStart(const ShipMotion& motion, ManeuverKind kind) {
+  const engine::Duration wait =
+      kind == ManeuverKind::Roll ? motion.rollWait : motion.dashWait;
   return motion.maneuver == ManeuverKind::None &&
-         (kind != ManeuverKind::Roll ||
-          motion.rollWait <= engine::Duration::zero());
+         wait <= engine::Duration::zero();
 }
 
 /** @returns @p motion running @p order from its start; a roll also makes the
- * next one wait its duration and ROLL_COOLDOWN. */
+ * next roll wait its duration and ROLL_COOLDOWN, a dash or a backstep the
+ * next of them its duration and DASH_COOLDOWN. */
 ShipMotion started(ShipMotion motion, ManeuverOrder order) {
   motion.maneuver = order.kind;
   motion.maneuverDistance = order.distance;
   motion.maneuverTime = engine::Duration::zero();
   if (order.kind == ManeuverKind::Roll) {
     motion.rollWait = ROLL_DURATION + ROLL_COOLDOWN;
+  }
+  if (order.kind == ManeuverKind::Dash) {
+    motion.dashWait = DASH_DURATION + DASH_COOLDOWN;
   }
   return motion;
 }
@@ -217,6 +223,8 @@ MovingShip shipAfter(MovingShip from, ShipDirections held,
                                   .seconds = seconds});
   motion.rollWait =
       std::max(motion.rollWait - elapsed, engine::Duration::zero());
+  motion.dashWait =
+      std::max(motion.dashWait - elapsed, engine::Duration::zero());
   const Position carried = carriedBy(motion, elapsed);
   const Position wanted{
       .x = from.position.x + (motion.velocityX * seconds) + carried.x,
