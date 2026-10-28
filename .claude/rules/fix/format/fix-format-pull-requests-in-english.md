@@ -1,5 +1,5 @@
 ---
-description: Pull requests — entirely in English, Conventional Commits title, description following the structure of the repository's PRs
+description: Pull requests — title and description in English, Conventional Commits title, description following the structure of the repository's PRs
 trigger: always_on
 ---
 
@@ -7,7 +7,7 @@ trigger: always_on
 
 ## Rule
 
-1. **Every pull request is written in English**: title, whole description, section headings, tables, lists, and **every comment posted on the PR** (review, reply, follow-up). No mixing of languages in one document. The language of the conversation has no bearing on what is written in the repository.
+1. **Every pull request is written in English**: title, whole description, section headings, tables, lists. No mixing of languages in one document. The language of the conversation has no bearing on what is written in the repository. **Comments posted on the PR** (review, reply, follow-up) are the exception: they are in French (see `fix-format-french-in-the-conversation-and-pr-comments.md`).
 2. **The title follows Conventional Commits**, like commits (see `commit.md`).
 3. **The description follows the structure of the repository's PRs**, all sections, in order:
    `## Summary` (with `Closes RTY-<n>` for its Linear issue, see `fix-format-pr-links-its-linear-issue.md`) · `## Changes` · `## Type of Change` · `## Testing` · `## Checklist`.

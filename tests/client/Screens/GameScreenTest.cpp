@@ -6,6 +6,7 @@
 #include <memory>
 #include "BlankRenderTarget.hpp"
 #include "BoundAction.hpp"
+#include "ColorMode.hpp"
 #include "ConnectionConstants.hpp"
 #include "DrawJournal.hpp"
 #include "EffectConstants.hpp"
@@ -21,6 +22,7 @@
 #include "IgnoringEntityLayer.hpp"
 #include "KeyPress.hpp"
 #include "LoneGameParts.hpp"
+#include "PlayerPaletteTestConstants.hpp"
 #include "PlayerSettings.hpp"
 #include "RecordingEntityLayer.hpp"
 #include "RecordingInterfaceCanvas.hpp"
@@ -39,6 +41,7 @@
 
 using rtype::client::BoundAction;
 using rtype::client::BYDO_EXPLOSION_FRAME;
+using rtype::client::ColorMode;
 using rtype::client::GameScreen;
 using rtype::client::OPTIONS_KEY;
 using rtype::client::PLAYER_INPUT_INTERVAL;
@@ -51,6 +54,7 @@ using rtype::client::testing::BYDO_ID;
 using rtype::client::testing::BYDO_POSITION;
 using rtype::client::testing::FIRST_POSITION;
 using rtype::client::testing::killed;
+using rtype::client::testing::LIGHT_BLUISH_GREEN;
 using rtype::client::testing::listed;
 using rtype::client::testing::PLAYER_MISSILE_ID;
 using rtype::client::testing::PLAYER_MISSILE_POSITION;
@@ -759,4 +763,20 @@ TEST(GameScreenEndTest, TheEndScreenReplacesTheGameASecondLater) {
   EXPECT_THAT(doubles.navigator.calls(),
               ElementsAre(NavigatorCall{.request = NavigatorRequest::ReplaceAll,
                                         .screen = ScreenId::End}));
+}
+
+/**
+ * Given a game where KAI is player 3
+ * When the player picks deuteranopia in the options and a frame goes by
+ * Then the status band is painted again, KAI in the light bluish green of the
+ * palette
+ */
+TEST_F(GameScreenFixture, ChangingTheColorModeRepaintsTheStatusBand) {
+  settings().colorMode = ColorMode::Deuteranopia;
+
+  screens().update(ONE_FRAME);
+
+  const RecordedWriting* name = writingOf(statusCanvas(), THIRD_PILOT_NICKNAME);
+  ASSERT_NE(name, nullptr);
+  EXPECT_EQ(name->style.color, LIGHT_BLUISH_GREEN);
 }

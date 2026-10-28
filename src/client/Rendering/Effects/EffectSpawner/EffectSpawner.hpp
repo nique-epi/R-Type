@@ -12,6 +12,7 @@
 #include "HitEffects.hpp"
 #include "KillEffects.hpp"
 #include "PilotEffects.hpp"
+#include "PilotShades.hpp"
 #include "PixelEffects.hpp"
 #include "Position.hpp"
 #include "ShotEffects.hpp"
@@ -69,9 +70,11 @@ class EffectSpawner {
 
   /** @brief Moves on the flash budget, the chain of kills, the kills and
    * gains waiting for each other, the camera shake and the time since the
-   * game started, and sets which version of the effects starts from now on:
-   * the standard one, or the one without flash. */
-  void advance(engine::Duration elapsed, FlashPreference preference);
+   * game started, and sets which version of the effects starts from now on,
+   * the standard one or the one without flash, and the shades the effects
+   * starting from now on paint pilots in. */
+  void advance(engine::Duration elapsed, FlashPreference preference,
+               PilotShades shades);
 
   /**
    * @brief Plays the explosion of an entity killed, centered where it died:
@@ -119,6 +122,7 @@ class EffectSpawner {
  private:
   FlashGate gate_;
   CameraShake camera_;
+  PilotShades shades_;
   PixelEffects pixels_;
   EffectTools tools_;
   GainFigures gains_;

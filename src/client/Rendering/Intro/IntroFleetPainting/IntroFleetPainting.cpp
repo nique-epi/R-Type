@@ -13,7 +13,6 @@
 #include "EntitySpriteConstants.hpp"
 #include "EntitySprites.hpp"
 #include "IInterfaceCanvas.hpp"
-#include "InterfaceColorConstants.hpp"
 #include "IntroCastConstants.hpp"
 #include "IntroExhaustRow.hpp"
 #include "IntroFrame.hpp"
@@ -25,6 +24,7 @@
 #include "IntroTimeline.hpp"
 #include "IntroTimelineConstants.hpp"
 #include "PlayerColors.hpp"
+#include "PlayerShading.hpp"
 #include "SpriteFrame.hpp"
 #include "TextureArea.hpp"
 #include "WorldArea.hpp"
@@ -88,15 +88,15 @@ void paintSmear(IInterfaceCanvas& canvas, const IntroFrame& frame,
   if (smear <= INTRO_SMEAR_THRESHOLD) {
     return;
   }
+  const PlayerShading shading = shadingOf(frame.palette, ship.pilot);
   for (std::size_t copy = INTRO_SMEAR_COPIES; copy > 0; --copy) {
     const float back = static_cast<float>(copy) * INTRO_SMEAR_SPACING * smear;
-    drawWorldImage(
-        canvas, frame,
-        WorldImage{.image = shipImageAt(ship.pilot, frame.scene),
-                   .topLeft = ship.place - sf::Vector2f(back, 0.0F),
-                   .tint = copy == 1
-                               ? PLAYER_COLORS.at(ship.pilot).ship
-                               : INTRO_PLAYER_DARK_COLORS.at(ship.pilot)});
+    drawWorldImage(canvas, frame,
+                   WorldImage{.image = shipImageAt(ship.pilot, frame.scene),
+                              .topLeft = ship.place - sf::Vector2f(back, 0.0F),
+                              .tint = copy == 1 ? shading.shades.ship
+                                                : shading.shades.dark,
+                              .recolor = shading.recolor});
   }
 }
 
@@ -111,10 +111,9 @@ int firstPixelOfShade(std::size_t shade, int length) {
  * the nozzle to the dark shade of the pilot at its end. */
 void paintFlameRow(IInterfaceCanvas& canvas, const IntroFrame& frame,
                    const FlameRow& flame) {
-  const PlayerColors& colors = PLAYER_COLORS.at(flame.pilot);
+  const PlayerColors& colors = frame.palette.get().at(flame.pilot);
   const std::array<sf::Color, INTRO_FLAME_SHADES> shades{
-      STAR_WHITE, colors.light, colors.ship,
-      INTRO_PLAYER_DARK_COLORS.at(flame.pilot)};
+      STAR_WHITE, colors.light, colors.ship, colors.dark};
   for (std::size_t shade = 0; shade < shades.size(); ++shade) {
     const int first = firstPixelOfShade(shade, flame.length);
     const int end = firstPixelOfShade(shade + 1, flame.length);
@@ -176,9 +175,11 @@ void paintShips(IInterfaceCanvas& canvas, const IntroFrame& frame) {
     const ShipOnScreen ship{.pilot = pilot, .place = *place};
     paintSmear(canvas, frame, ship);
     paintExhaust(canvas, frame, ship);
-    drawWorldImage(canvas, frame,
-                   WorldImage{.image = shipImageAt(pilot, frame.scene),
-                              .topLeft = ship.place});
+    drawWorldImage(
+        canvas, frame,
+        WorldImage{.image = shipImageAt(pilot, frame.scene),
+                   .topLeft = ship.place,
+                   .recolor = shadingOf(frame.palette, pilot).recolor});
   }
 }
 

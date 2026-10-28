@@ -25,6 +25,7 @@
 #include "MissionBanner.hpp"
 #include "PlayerCommands.hpp"
 #include "PlayerInputPacer.hpp"
+#include "PlayerPalette.hpp"
 #include "ScoreBoard.hpp"
 #include "ScreenConstants.hpp"
 #include "SystemScheduler.hpp"
@@ -120,8 +121,8 @@ class GameScreen : public IScreen {
    * world state among them. */
   void applyEntityMessages();
 
-  /** @brief Repaints the status band when a pilot changed since it was last
-   * painted. */
+  /** @brief Repaints the status band when a pilot, the banner or the palette
+   * the player chose changed since it was last painted. */
   void repaintStatusWhenChanged();
 
   /** @brief Paints the status band from the score board, and the banner of
@@ -158,6 +159,7 @@ class GameScreen : public IScreen {
   std::uint8_t loggedActions_{0};
   ISky* sky_;
   MissionBannerLook paintedBanner_;
+  std::optional<PlayerPalette> paintedPalette_;
 };
 
 }  // namespace rtype::client

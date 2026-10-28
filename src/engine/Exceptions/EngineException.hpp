@@ -112,4 +112,59 @@ class InvalidLaunchOptionValueException : public EngineException {
                                     const std::string& value);
 };
 
+/**
+ * @brief A null module was given to an application.
+ */
+class NullModuleException : public EngineException {
+ public:
+  NullModuleException();
+};
+
+/**
+ * @brief A module of an application depends on a module that is not listed
+ * before it.
+ */
+class MissingDependencyException : public EngineException {
+ public:
+  MissingDependencyException(const std::string& moduleName,
+                             const std::string& dependency);
+};
+
+/**
+ * @brief A module of an application threw while it started.
+ */
+class ModuleStartFailedException : public EngineException {
+ public:
+  ModuleStartFailedException(const std::string& moduleName,
+                             const std::string& reason);
+};
+
+/**
+ * @brief Work was added to a stage the loop does not declare.
+ */
+class UnknownStageException : public EngineException {
+ public:
+  explicit UnknownStageException(const std::string& stageName);
+};
+
+/**
+ * @brief A module provides a service that a module installed before it already
+ * provides.
+ */
+class DuplicateServiceException : public EngineException {
+ public:
+  DuplicateServiceException(const std::string& moduleName,
+                            const std::string& serviceName);
+};
+
+/**
+ * @brief A module requires a service that no module installed before it
+ * provides.
+ */
+class MissingServiceException : public EngineException {
+ public:
+  MissingServiceException(const std::string& moduleName,
+                          const std::string& serviceName);
+};
+
 }  // namespace rtype::engine

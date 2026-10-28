@@ -1,0 +1,7 @@
+add_library(rtype_client_player_number_label STATIC PlayerNumberLabel.cpp)
+
+target_include_directories(rtype_client_player_number_label PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+
+target_link_libraries(rtype_client_player_number_label PRIVATE rtype_client_interface)
+
+rtype_enable_warnings(rtype_client_player_number_label)

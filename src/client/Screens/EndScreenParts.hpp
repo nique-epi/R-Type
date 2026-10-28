@@ -10,6 +10,7 @@
 #include "IServerConnection.hpp"
 #include "ISoundPlayer.hpp"
 #include "MotionPreference.hpp"
+#include "PlayerPalette.hpp"
 #include "PlayfieldMapping.hpp"
 
 namespace rtype::client {
@@ -43,6 +44,9 @@ struct EndScreenParts {
   std::uint32_t seed{};
   MotionPreference motion{};
   FlashPreference flashes{};
+  /** @brief The palette the ships and markers of the pilots are painted in:
+   * a constant, so it outlives the screen. */
+  std::reference_wrapper<const PlayerPalette> palette;
 };
 
 }  // namespace rtype::client

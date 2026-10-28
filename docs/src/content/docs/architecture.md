@@ -54,6 +54,14 @@ Destroying an entity inside a `forEach` is postponed until the outermost `forEac
 
 Alternative considered: a numeric priority on each system, sorted by the scheduler. It lets a system be placed without touching the others, but the order then lives in numbers scattered across classes and two systems can tie. A single list of `add()` calls is the one place that says what runs after what.
 
+## Modules
+
+A program is a list of modules, objects implementing `IModule`, handed to an `Application`. The application installs them all, then starts them all, in list order, and stops them in the reverse order, so a module is stopped before its dependencies. The list is checked when the application is built: a module whose dependency is not listed before it is refused before anything is installed, so a missing module never leaves a socket or a thread half open. When a start fails, the modules already started are stopped before the error goes up. Stopping first stops the loop: the application waits for the pass in flight, so no work of a stage runs while the modules stop.
+
+A program also declares the named stages of its loop, and a module adds its work to one of them while it installs. That is meant to replace, over time, the three ways work is wired today: systems, `onTick` or `advance` calls written by hand, and bus subscribers. A module hands an object to the modules installed after it as a service found by type during install only, so what a module depends on shows in its constructors; a required service no earlier module provides stops the program before it starts, while an optional one is found to be absent.
+
+Alternative considered: sorting the modules by their dependencies. A module could then be listed anywhere, but the order would be computed instead of read in one place, and two modules that do not depend on each other would have no defined order. As with systems, the list is the one place that says what starts after what.
+
 ## Events
 
 A system tells the rest of the game what happened through `EventBus` rather than by calling it: it publishes a typed event, and every callback subscribed to that type is called. A generic collision system in `rtype_engine` can therefore report a hit to the rules in `rtype_game`, which the engine may not link.
@@ -98,7 +106,7 @@ Alternative considered: one layer for every entity, and the effects in front of 
 
 ## Consequences
 
-- `EntityRegistry`, `ComponentRegistry`, `ISystem`, `SystemScheduler`, `EventBus` and `BoundedQueue` exist today. The game screen of the client calls a scheduler once per frame to play its animations; the tick of the server advances the timers and delivers the events of the bus, but calls no scheduler of systems yet.
+- `EntityRegistry`, `ComponentRegistry`, `ISystem`, `SystemScheduler`, `EventBus` and `BoundedQueue` exist today. The game screen of the client calls a scheduler once per frame to play its animations; the tick of the server runs the stages of its `Application`: the games move on and run their systems, the connection requests are answered, the timers advance and the events of the bus are delivered.
 - Any new target declares its links explicitly; a link that breaks the table above fails the configure step.
 
 ## Validation

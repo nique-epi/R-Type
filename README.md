@@ -64,6 +64,12 @@ The client is given the IPv4 address and the port of the server, `127.0.0.1` and
 cmake --workflow --preset test
 ```
 
+```bash
+./build/tests/malformed_datagrams --server 4242
+```
+
+Once the test preset is built, this sends the server running on port 4242 of the same machine malformed datagrams for one minute, then checks that it still answers a connection request. `--client <port>` does the same to a client; see [Network](https://nique-epi.github.io/R-Type/network/#malformed-datagrams-malformed_datagrams).
+
 ## Logging
 
 The client and the server write a timestamped journal, `r-type_server.log` or `r-type_client.log` in the current directory, and show the same lines in the terminal; the first line gives the absolute path of the journal. The level and the output are chosen at launch:

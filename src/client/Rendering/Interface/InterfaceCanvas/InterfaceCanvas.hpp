@@ -3,10 +3,12 @@
 #include <SFML/Graphics/Color.hpp>
 #include <SFML/Graphics/Rect.hpp>
 #include <SFML/Graphics/RenderTarget.hpp>
+#include <SFML/Graphics/Shader.hpp>
 #include <SFML/Graphics/Texture.hpp>
 #include <SFML/System/Vector2.hpp>
 #include <functional>
 #include <map>
+#include <optional>
 #include <set>
 #include <string>
 #include <string_view>
@@ -95,6 +97,9 @@ class InterfaceCanvas : public IInterfaceCanvas {
   TextWriter writer_;
   PixelCanvas canvas_;
   logging::Logger logger_;
+  /** @brief The shade swap shader, none where the graphics card has none or
+   * it did not compile. */
+  std::optional<sf::Shader> shadeSwap_;
   std::set<std::string, std::less<>> reportedMissingIds_;
   std::map<std::string, sf::Texture, std::less<>> smoothTextures_;
   std::vector<SmoothImage> paintedSmoothImages_;

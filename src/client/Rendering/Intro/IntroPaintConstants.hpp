@@ -3,16 +3,9 @@
 #include <array>
 #include <cstddef>
 #include "BackgroundColorConstants.hpp"
-#include "EffectColorConstants.hpp"
 #include "IntroExhaustRow.hpp"
 
 namespace rtype::client {
-
-/** @brief The dark shade of each player color, in the order of
- * PLAYER_COLORS: the ghosts of a ship, the end of its flame, the edge of its
- * beam. */
-constexpr std::array INTRO_PLAYER_DARK_COLORS{
-    PLAYER_DARK_BLUE, PLAYER_DARK_PINK, PLAYER_DARK_GREEN, PLAYER_DARK_ORANGE};
 
 /** @brief A ship leaves INTRO_SMEAR_COPIES ghosts, INTRO_SMEAR_SPACING pixels
  * apart at a full smear, none under INTRO_SMEAR_THRESHOLD. */

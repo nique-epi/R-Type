@@ -6,6 +6,7 @@
 #include <vector>
 #include "IInterfaceCanvas.hpp"
 #include "MotionPreference.hpp"
+#include "PlayerPalette.hpp"
 #include "SquadronShipPlacement.hpp"
 #include "SquadronStart.hpp"
 #include "TimeConstants.hpp"
@@ -45,12 +46,13 @@ class Squadron {
 
   /**
    * @brief Paints the box, its title, the missiles, then the ships, cut off at
-   * the edges of the box.
+   * the edges of the box, each ship in the shades @p palette gives its color.
    *
    * @param topLeft Top-left corner of the box, SQUADRON_BOX_SIZE large, in
    * pixels of the interface picture.
    */
-  void paint(IInterfaceCanvas& canvas, sf::Vector2i topLeft) const;
+  void paint(IInterfaceCanvas& canvas, sf::Vector2i topLeft,
+             const PlayerPalette& palette) const;
 
  private:
   /** @returns The time of the animation, in seconds. */

@@ -1,25 +1,52 @@
 ---
-description: Self-correction — create a corrective fix-* rule after every mistake so it cannot happen again
+description: Self-correction — create a corrective fix-* rule after a mistake in the code so it cannot happen again; a mistake outside the code produces no rule
 trigger: always_on
 ---
 
-# RULE: Self-correction through new rules
+# RULE: Self-correction through new rules — for mistakes in the code only
 
 ## Goal
 
-Every time a mistake is made — in reasoning, execution, interpretation, format or behavior — a **dedicated corrective rule must be created** to prevent it from happening again. This continuously builds a corrective knowledge base specific to **this project**. The rule is **always active**: creating the corrective rule is part of handling the mistake, never postponed.
+Every time a mistake reaches **the code of the repository**, or would have reached it, a **dedicated corrective rule must be created** to prevent it from happening again. This builds a corrective knowledge base about **this project's code**, shared by the team. Creating the rule is part of handling the mistake, never postponed.
+
+A mistake that only concerns my machine, my tools or the way I work in the conversation **produces no rule**: it is fixed on the spot (see "A mistake outside the code").
+
+## Scope: what counts as the code
+
+**In the code — produces a rule:**
+
+- C++ sources and headers (`src/`);
+- tests and test doubles (`tests/`);
+- build files: `CMakeLists.txt`, presets, `vcpkg.json`;
+- CI workflows (`.github/workflows/`);
+- the network protocol and its wire format.
+
+**Outside the code — produces no rule:**
+
+- shell and zsh syntax, quoting, heredocs, scripts I typed;
+- git commands: staging, branches, stashes, pushes;
+- the local machine: macOS SDK, Homebrew, local tool versions and setup, paths;
+- my own checks: isolated copies, red-proof scripts, the local clang-tidy command;
+- the docs site, the README, commit messages and pull request text;
+- how I answer, plan, report or ask in the conversation.
+
+Test: **would the mistake show in the diff of `src/`, `tests/`, the CMake files or the CI, or in the behavior of the built game?** If not, it is outside the code.
 
 ## Triggers
 
-Create a corrective rule when:
+Create a corrective rule when a mistake in the code is:
 
-1. **Reasoning error** — wrong deduction, two concepts confused, flawed logic.
-2. **Execution error** — a script or command fails because of a syntax, path or parameter I generated.
-3. **Interpretation error** — the request was misunderstood, or a wrong assumption was made about the context or the state of the code.
-4. **Format / output error** — deliverable in the wrong format or structure, conventions not followed.
-5. **Process error** — step forgotten, wrong order, explicit constraint ignored.
-6. **Regression** — repeating a mistake that was already reported or fixed.
-7. **User correction** — the user explicitly corrects something, even a minor point.
+1. **A reasoning error** — a wrong deduction, two concepts confused or flawed logic that produced a defect in the code.
+2. **A defect** — a bug, a crash, a build or CI failure, a warning, a test that cannot fail, a violated `architecture/` or `code-style/` rule.
+3. **An interpretation error** — a request about the code misunderstood, or a wrong assumption about the state of the code, that changed what was written.
+4. **A regression** — a code mistake that a rule already covers, made again.
+5. **A user correction** — the user corrects something in the code, even a minor point.
+
+## A mistake outside the code
+
+1. **Name it in one line, fix it, and go on.** No rule, no history, no index line.
+2. **Never a commit, a branch or a pull request for it**, and no extension of an existing rule after a recurrence.
+3. **If it is likely to come back**, a one-line note may go in my local memory, outside the repository and never committed.
 
 ## Procedure
 
@@ -80,5 +107,7 @@ State the name of the created file, summarize the rule in one sentence, and resu
 
 ## Examples
 
-- ❌ **Forbidden**: noticing a mistake, apologizing, and moving on without recording anything — the mistake can happen again.
+- ❌ **Forbidden**: a test that cannot fail is noticed, I apologize and move on without recording anything — the mistake can happen again.
 - ✅ **Instead**: notice the mistake → create `fix/[category]/fix-[category]-[slug].md` (+ its history) → confirm → resume applying the correction.
+- ❌ **Forbidden**: a zsh command stops on an unquoted `?` → a new `fix-execution-…` rule, then a branch and a pull request to ship it.
+- ✅ **Instead**: one line saying why the command failed, the command rerun quoted, and the work goes on.

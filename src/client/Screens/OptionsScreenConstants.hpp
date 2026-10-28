@@ -96,8 +96,7 @@ constexpr std::string_view LARGER_TOO_LARGE_END = " IS TOO LARGE HERE";
 /** @brief ACCESS: the color modes, in the order of COLOR_MODES, and the
  * other rows. */
 constexpr const char* COLOR_MODE_LABEL = "COLOR MODE";
-constexpr const char* COLOR_MODE_DESCRIPTION =
-    "> SHIP AND MISSILE COLORS (COMING SOON)";
+constexpr const char* COLOR_MODE_DESCRIPTION = "> PILOT COLORS TOLD APART";
 constexpr std::array<std::string_view, COLOR_MODE_COUNT> COLOR_MODE_LABELS{
     "OFF", "PROTANOPIA", "DEUTERANOPIA", "TRITANOPIA"};
 constexpr const char* REDUCE_FLASHES_LABEL = "REDUCE FLASHES";

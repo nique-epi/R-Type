@@ -23,8 +23,8 @@
 #include "LobbyState.hpp"
 #include "Menu.hpp"
 #include "MenuBuilder.hpp"
+#include "PilotColor.hpp"
 #include "PlayfieldMapping.hpp"
-#include "ProtocolConstants.hpp"
 #include "ScreenId.hpp"
 #include "SoundConstants.hpp"
 #include "TimeConstants.hpp"
@@ -99,6 +99,7 @@ LobbyScreen::LobbyScreen(LobbyScreenParts parts,
       canvas_(std::move(canvas)),
       playfieldPointAt_(std::move(parts.playfieldPointAt)),
       readyKey_(parts.readyKey.key),
+      palette_(parts.palette),
       motion_(parts.motion),
       place_(parts.place),
       menu_(buildMenu(std::move(parts.readyKey.name))) {
@@ -199,11 +200,11 @@ void LobbyScreen::paintBays() {
 }
 
 HangarBay LobbyScreen::bayOf(sf::IntRect area, int slot) const {
-  const auto number =
-      static_cast<std::uint8_t>(network::FIRST_PLAYER_NUMBER + slot);
+  const auto number = static_cast<std::uint8_t>(playerNumberOfPilotColor(slot));
   HangarBay bay{.topLeft = bayTopLeft(area, slot),
                 .playerNumber = number,
                 .color = slot,
+                .palette = palette_,
                 .pilot = std::nullopt};
   const network::LobbyPlayer* player =
       playerNumbered(connection_->lobbyPlayers(), number);

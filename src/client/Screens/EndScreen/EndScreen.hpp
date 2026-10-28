@@ -3,6 +3,7 @@
 #include <SFML/Graphics/RenderTarget.hpp>
 #include <SFML/Window/Event.hpp>
 #include <SFML/Window/Keyboard.hpp>
+#include <functional>
 #include <memory>
 #include <optional>
 #include <string>
@@ -19,6 +20,7 @@
 #include "IServerConnection.hpp"
 #include "ISoundPlayer.hpp"
 #include "MotionPreference.hpp"
+#include "PlayerPalette.hpp"
 #include "PlayfieldMapping.hpp"
 #include "TimeConstants.hpp"
 
@@ -95,6 +97,7 @@ class EndScreen : public IScreen {
   PlayfieldMapping playfieldPointAt_;
   MotionPreference motion_{};
   FlashPreference flashes_{};
+  std::reference_wrapper<const PlayerPalette> palette_;
   std::vector<FinalPilot> pilots_;
   std::vector<std::string> taunt_;
   FlightLogSchedule schedule_;

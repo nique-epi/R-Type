@@ -2,6 +2,7 @@
 
 #include <SFML/Graphics/Rect.hpp>
 #include <SFML/Window/Keyboard.hpp>
+#include <functional>
 #include <memory>
 #include <string>
 #include "IInterfaceCanvas.hpp"
@@ -14,6 +15,7 @@
 #include "LobbyState.hpp"
 #include "Menu.hpp"
 #include "MotionPreference.hpp"
+#include "PlayerPalette.hpp"
 #include "PlayfieldMapping.hpp"
 #include "TimeConstants.hpp"
 
@@ -100,6 +102,7 @@ class LobbyScreen : public IScreen {
   std::unique_ptr<IInterfaceCanvas> canvas_;
   PlayfieldMapping playfieldPointAt_;
   sf::Keyboard::Scancode readyKey_{};
+  std::reference_wrapper<const PlayerPalette> palette_;
   MotionPreference motion_{};
   LobbyPlace place_{};
   engine::Duration elapsed_{};
