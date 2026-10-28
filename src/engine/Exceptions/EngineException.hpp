@@ -139,4 +139,32 @@ class ModuleStartFailedException : public EngineException {
                              const std::string& reason);
 };
 
+/**
+ * @brief Work was added to a stage the loop does not declare.
+ */
+class UnknownStageException : public EngineException {
+ public:
+  explicit UnknownStageException(const std::string& stageName);
+};
+
+/**
+ * @brief A module provides a service that a module installed before it already
+ * provides.
+ */
+class DuplicateServiceException : public EngineException {
+ public:
+  DuplicateServiceException(const std::string& moduleName,
+                            const std::string& serviceName);
+};
+
+/**
+ * @brief A module requires a service that no module installed before it
+ * provides.
+ */
+class MissingServiceException : public EngineException {
+ public:
+  MissingServiceException(const std::string& moduleName,
+                          const std::string& serviceName);
+};
+
 }  // namespace rtype::engine

@@ -33,5 +33,9 @@ target_link_libraries(rtype_engine
     rtype_engine_network_entity_table
     rtype_engine_launch_arguments
     rtype_engine_modules
+    rtype_engine_stages
+    rtype_engine_loop_stages
+    rtype_engine_services
+    rtype_engine_install_context
     rtype_engine_application
 )

@@ -68,7 +68,7 @@ src/engine/
 ├── Time/             fixed timestep, clocks, timers
 ├── NetworkIds/       entity to network id, and back
 ├── LaunchArguments/  options read at launch, usage and errors
-├── Modules/          installs, starts and stops a program's modules, in list order
+├── Modules/          installs, starts and stops a program's modules, in list order; runs their work in named stages and hands services between them
 └── Exceptions/
 ```
 
