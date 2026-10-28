@@ -19,7 +19,9 @@ namespace rtype::engine {
  * stops the started modules in the reverse order. A module comes after every
  * module it depends on, so its dependencies are installed and started before
  * it, and stopped after it. A module finds, during its install(), the services
- * of the modules installed before it.
+ * of the modules installed before it, and the application itself: a module
+ * that drives the loop (the one that owns the thread a program ticks on) asks
+ * for the Application to call runStages().
  */
 class Application {
  public:

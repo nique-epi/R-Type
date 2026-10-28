@@ -4,6 +4,7 @@
  * that subscribe to the bus. */
 constexpr const char* PROVIDER_MODULE = "provider";
 constexpr const char* SUBSCRIBER_MODULE = "subscriber";
+constexpr const char* APPLICATION_FINDING_MODULE = "application finding";
 
 /** @brief The journal lines of the works of StageModules, a stage then a
  * module. */

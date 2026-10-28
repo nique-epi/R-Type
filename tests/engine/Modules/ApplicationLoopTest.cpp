@@ -1,13 +1,17 @@
 #include <gtest/gtest.h>
+#include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 #include "Application.hpp"
+#include "ApplicationFindingModule.hpp"
 #include "ApplicationLoopFixtures.hpp"
 #include "ApplicationLoopTestConstants.hpp"
 #include "ApplicationTestConstants.hpp"
 #include "DeliveredEvents.hpp"
 #include "EngineException.hpp"
 #include "EventBus.hpp"
+#include "IModule.hpp"
 #include "JournalModule.hpp"
 #include "LoopStages.hpp"
 #include "StageTestConstants.hpp"
@@ -222,4 +226,22 @@ TEST(ApplicationLoop, StoppedSubscriberReceivesNoEvent) {
   bus.dispatch();
 
   EXPECT_EQ(delivered.count, 0);
+}
+
+/**
+ * Given an application whose only module requires the Application during its
+ * install()
+ * When the application starts
+ * Then the module was given that very application
+ */
+TEST(ApplicationLoop, GivesItselfToTheModulesAsAService) {
+  const Application* found = nullptr;
+  std::vector<std::unique_ptr<rtype::engine::IModule>> modules;
+  modules.push_back(std::make_unique<ApplicationFindingModule>(
+      APPLICATION_FINDING_MODULE, found));
+  Application application(LoopStages(TEST_LOOP_STAGES), std::move(modules));
+
+  application.start();
+
+  EXPECT_EQ(found, &application);
 }

@@ -58,6 +58,7 @@ Application::Application(LoopStages stages,
     : stages_(std::move(stages)), modules_(std::move(modules)) {
   requireNoNullModule(modules_);
   requireDependenciesListedBefore(modules_);
+  services_.provide(*this);
 }
 
 Application::~Application() {
