@@ -90,6 +90,18 @@ class UnknownDifficultyException : public ServerException {
                              const std::vector<std::string>& known);
 };
 
+/** @brief ServerApplication::open() was called on a server already open. */
+class ServerAlreadyOpenException : public ServerException {
+ public:
+  ServerAlreadyOpenException();
+};
+
+/** @brief A server was used before open() bound its socket. */
+class ServerNotOpenException : public ServerException {
+ public:
+  ServerNotOpenException();
+};
+
 /** @brief The system refuses to block the signals that ask the server to
  * stop (Linux and macOS). */
 class SignalMaskException : public ServerException {

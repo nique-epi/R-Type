@@ -85,6 +85,12 @@ UnknownDifficultyException::UnknownDifficultyException(
 EmptyEnemyCycleException::EmptyEnemyCycleException()
     : ServerException("A wave plan must name at least one enemy") {}
 
+ServerAlreadyOpenException::ServerAlreadyOpenException()
+    : ServerException("the server is already open") {}
+
+ServerNotOpenException::ServerNotOpenException()
+    : ServerException("the server is not open: call open() first") {}
+
 SignalMaskException::SignalMaskException(const std::string& reason)
     : ServerException("cannot block the signals that stop the server: " +
                       reason) {}

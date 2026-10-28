@@ -12,6 +12,7 @@
 #include "Endpoint.hpp"
 #include "OutgoingDatagram.hpp"
 #include "ServerConstants.hpp"
+#include "ServerException.hpp"
 #include "TickLoop.hpp"
 
 namespace rtype::server {
@@ -35,7 +36,7 @@ std::string firstSenderText(const std::optional<network::Endpoint>& sender) {
 ServerApplication::ServerApplication(const network::Endpoint& localEndpoint,
                                      TickHandler handleTick)
     : logger_(std::string{SERVER_LOGGER_NAME}),
-      socket_(network_, localEndpoint),
+      listeningEndpoint_(localEndpoint),
       incoming_(INCOMING_DATAGRAM_QUEUE_CAPACITY),
       connectionRequests_(CONNECTION_REQUEST_QUEUE_CAPACITY),
       outgoing_(OUTGOING_DATAGRAM_QUEUE_CAPACITY),
@@ -43,12 +44,20 @@ ServerApplication::ServerApplication(const network::Endpoint& localEndpoint,
                                            .connectionRequests =
                                                &connectionRequests_},
               clock_),
-      relay_(socket_, incoming_, outgoing_),
       handleTick_(std::move(handleTick)) {}
 
+void ServerApplication::open() {
+  if (socket_.has_value()) {
+    throw ServerAlreadyOpenException();
+  }
+  socket_.emplace(network_, listeningEndpoint_);
+  relay_.emplace(*socket_, incoming_, outgoing_);
+}
+
 void ServerApplication::run() {
-  socket_.startReceiving([this](const network::Endpoint& sender,
-                                std::span<const std::byte> datagram) {
+  requireOpen();
+  socket_->startReceiving([this](const network::Endpoint& sender,
+                                 std::span<const std::byte> datagram) {
     sorter_.sort(sender, datagram);
   });
   TickLoop simulation{clock_, [this] { simulateTick(); }};
@@ -91,7 +100,14 @@ void ServerApplication::queueDatagram(network::OutgoingDatagram datagram) {
 }
 
 network::Endpoint ServerApplication::localEndpoint() const {
-  return socket_.localEndpoint();
+  requireOpen();
+  return socket_->localEndpoint();
+}
+
+void ServerApplication::requireOpen() const {
+  if (!socket_.has_value()) {
+    throw ServerNotOpenException();
+  }
 }
 
 void ServerApplication::simulateTick() {
@@ -102,7 +118,7 @@ void ServerApplication::simulateTick() {
   handleTick_(ReceivedDatagrams{.players = received_,
                                 .connectionRequests = receivedRequests_});
   reportDiscardedDatagrams();
-  network_.post([this] { relay_.sendWaiting(); });
+  network_.post([this] { relay_->sendWaiting(); });
 }
 
 void ServerApplication::reportDiscardedDatagrams() {

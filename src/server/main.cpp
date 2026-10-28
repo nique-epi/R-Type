@@ -196,6 +196,7 @@ int runServer(const rtype::logging::LogLaunchOptions& logOptions,
             const rtype::server::ServerApplication::ReceivedDatagrams&
                 received) { runTick(parts, *serverPointer, received); }};
     serverPointer = &server;
+    server.open();
     logger.info("listening on UDP port ", server.localEndpoint().port);
     server.run();
     logger.info("server stopped");
