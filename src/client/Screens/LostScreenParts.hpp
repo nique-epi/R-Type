@@ -2,6 +2,7 @@
 
 #include <SFML/Graphics/Texture.hpp>
 #include <functional>
+#include <optional>
 #include "ConnectionPhase.hpp"
 #include "FlashPreference.hpp"
 #include "IScreenNavigator.hpp"
@@ -19,8 +20,10 @@ struct LostScreenParts {
   /** @brief Plays the click of the call, which must outlive the screen. */
   std::reference_wrapper<ISoundPlayer> sounds;
   /** @brief The last picture of the screens it covers, the size of the
-   * playfield in pixels, which it squeezes as it turns off. */
-  sf::Texture picture;
+   * playfield in pixels, which it squeezes as it turns off; or none, and it
+   * turns off on the dark alone. Any texture opens the OpenGL context of
+   * SFML, which a machine without a display cannot: the tests give none. */
+  std::optional<sf::Texture> picture;
   /** @brief How the session ended: Lost when the server went silent, Closed
    * when it said it shut down. */
   ConnectionPhase ending{};

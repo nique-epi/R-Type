@@ -76,7 +76,7 @@ class LostScreen : public IScreen {
   IScreenNavigator* navigator_;
   ISoundPlayer* sounds_;
   std::unique_ptr<IInterfaceCanvas> canvas_;
-  sf::Texture picture_;
+  std::optional<sf::Texture> picture_;
   NoSignalReason reason_;
   PlayfieldMapping playfieldPointAt_;
   /** @brief Whether the call never blinks: motion or flashes reduced. */

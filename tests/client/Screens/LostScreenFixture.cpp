@@ -1,6 +1,6 @@
 #include "LostScreenFixture.hpp"
-#include <SFML/Graphics/Texture.hpp>
 #include <memory>
+#include <optional>
 #include "ConnectionPhase.hpp"
 #include "FlashPreference.hpp"
 #include "LostScreen.hpp"
@@ -26,7 +26,7 @@ void LostScreenFixture::rebuildFor(ConnectionPhase ending,
   screen_ = std::make_unique<LostScreen>(
       LostScreenParts{.navigator = navigator_,
                       .sounds = sounds_,
-                      .picture = sf::Texture{},
+                      .picture = std::nullopt,
                       .ending = ending,
                       .playfieldPointAt = samePlayfieldPoint,
                       .motion = motion,

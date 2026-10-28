@@ -193,8 +193,9 @@ void LostScreen::repaint() {
 
 void LostScreen::draw(sf::RenderTarget& target) const {
   canvas_->show(target);
-  if (painted_.has_value() && painted_->screenOff.pictureRows > 0) {
-    drawSqueezed(target, picture_, painted_->screenOff.pictureRows);
+  if (picture_.has_value() && painted_.has_value() &&
+      painted_->screenOff.pictureRows > 0) {
+    drawSqueezed(target, *picture_, painted_->screenOff.pictureRows);
   }
 }
 
