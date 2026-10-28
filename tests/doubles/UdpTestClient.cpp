@@ -1,10 +1,12 @@
 #include "UdpTestClient.hpp"
 #include <chrono>
 #include <cstddef>
+#include <memory>
 #include <mutex>
 #include <span>
 #include <string>
 #include <thread>
+#include <utility>
 #include <vector>
 #include "Endpoint.hpp"
 #include "NetworkConstants.hpp"
@@ -28,15 +30,23 @@ UdpTestClient::UdpTestClient()
   runner_ = std::jthread{[this] { context_.run(); }};
 }
 
-UdpTestClient::~UdpTestClient() {
-  context_.stop();
-  runner_.join();
-}
+UdpTestClient::~UdpTestClient() { context_.stop(); }
 
 void UdpTestClient::send(const rtype::network::Endpoint& server,
                          const std::vector<std::byte>& datagram) {
-  context_.post([this, server, datagram] { socket_.send(server, datagram); });
+  const auto outgoing = std::make_shared<
+      const std::pair<rtype::network::Endpoint, std::vector<std::byte>>>(
+      server, datagram);
+  context_.post([this, outgoing] {
+    try {
+      socket_.send(outgoing->first, outgoing->second);
+    } catch (...) {
+      ++failedSends_;
+    }
+  });
 }
+
+std::size_t UdpTestClient::failedSendCount() const { return failedSends_; }
 
 std::vector<ReceivedAt> UdpTestClient::waitForDatagrams(
     std::size_t count, std::chrono::milliseconds timeout) {

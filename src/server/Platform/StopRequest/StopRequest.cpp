@@ -16,7 +16,7 @@ void StopRequest::fail(std::string text) {
 StopReason StopRequest::wait() {
   std::unique_lock lock{mutex_};
   changed_.wait(lock, [this] { return reason_.has_value(); });
-  return *reason_;
+  return reason_.value_or(StopReason{});
 }
 
 void StopRequest::announceStopped() {

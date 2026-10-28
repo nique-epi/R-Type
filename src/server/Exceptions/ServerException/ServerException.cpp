@@ -1,4 +1,5 @@
 #include "ServerException.hpp"
+#include <cstdint>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -98,7 +99,7 @@ SignalMaskException::SignalMaskException(const std::string& reason)
     : ServerException("cannot block the signals that stop the server: " +
                       reason) {}
 
-ConsoleHandlerException::ConsoleHandlerException(unsigned long errorCode)
+ConsoleHandlerException::ConsoleHandlerException(std::uint32_t errorCode)
     : ServerException(
           "cannot register the handler of the console events that stop the "
           "server: Windows error " +

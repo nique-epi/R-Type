@@ -172,7 +172,7 @@ TEST_F(ServerNetworkModuleFixture, TellsTheStopRequestWhenTheServerFails) {
                          })));
   application.start();
 
-  const rtype::server::StopReason reason = stopRequest_.wait();
+  const rtype::server::StopReason reason = stopRequest().wait();
   application.stop();
 
   EXPECT_TRUE(reason.failed);

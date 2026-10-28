@@ -9,6 +9,7 @@
 #include "Endpoint.hpp"
 #include "GameInstance.hpp"
 #include "GameState.hpp"
+#include "Games.hpp"
 #include "IDatagramSender.hpp"
 #include "IPlayerAdmission.hpp"
 #include "InstallContext.hpp"

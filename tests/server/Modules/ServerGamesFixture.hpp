@@ -43,8 +43,8 @@ class ServerGamesFixture : public ServerModuleFixture {
 
   /** @returns A Disconnection from the player at @p index, as its client
    * sends it. */
-  [[nodiscard]] rtype::network::IncomingDatagram disconnectionFrom(
-      std::size_t index) const;
+  [[nodiscard]] static rtype::network::IncomingDatagram disconnectionFrom(
+      std::size_t index);
 
   /** @returns How many datagrams of the type @p type went to the player at
    * @p index. */
@@ -53,6 +53,11 @@ class ServerGamesFixture : public ServerModuleFixture {
 
   [[nodiscard]] static std::uint64_t tokenOf(std::size_t index);
 
+  [[nodiscard]] rtype::engine::Application& application();
+  [[nodiscard]] RecordingNetworkModule& network();
+  [[nodiscard]] ServiceProbeModule& probe();
+
+ private:
   std::unique_ptr<rtype::engine::Application> application_;
   RecordingNetworkModule* network_{nullptr};
   ServiceProbeModule* probe_{nullptr};

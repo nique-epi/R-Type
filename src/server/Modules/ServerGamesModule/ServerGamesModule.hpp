@@ -5,6 +5,7 @@
 #include <vector>
 #include "EventBus.hpp"
 #include "GameEventBroadcaster.hpp"
+#include "GameInstance.hpp"
 #include "Games.hpp"
 #include "GamesSettings.hpp"
 #include "IDatagramSender.hpp"
@@ -15,6 +16,7 @@
 #include "TickDatagrams.hpp"
 #include "TimeConstants.hpp"
 #include "TimerScheduler.hpp"
+#include "WavePlan.hpp"
 
 namespace rtype::server {
 

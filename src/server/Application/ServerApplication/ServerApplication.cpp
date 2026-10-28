@@ -33,10 +33,10 @@ std::string firstSenderText(const std::optional<network::Endpoint>& sender) {
 
 }  // namespace
 
-ServerApplication::ServerApplication(const network::Endpoint& localEndpoint,
+ServerApplication::ServerApplication(network::Endpoint localEndpoint,
                                      TickHandler handleTick)
     : logger_(std::string{SERVER_LOGGER_NAME}),
-      listeningEndpoint_(localEndpoint),
+      listeningEndpoint_(std::move(localEndpoint)),
       incoming_(INCOMING_DATAGRAM_QUEUE_CAPACITY),
       connectionRequests_(CONNECTION_REQUEST_QUEUE_CAPACITY),
       outgoing_(OUTGOING_DATAGRAM_QUEUE_CAPACITY),
@@ -60,9 +60,8 @@ void ServerApplication::close() {
 }
 
 void ServerApplication::run() {
-  requireOpen();
-  socket_->startReceiving([this](const network::Endpoint& sender,
-                                 std::span<const std::byte> datagram) {
+  openSocket().startReceiving([this](const network::Endpoint& sender,
+                                     std::span<const std::byte> datagram) {
     sorter_.sort(sender, datagram);
   });
   TickLoop simulation{clock_, [this] { simulateTick(); }};
@@ -105,14 +104,21 @@ void ServerApplication::queueDatagram(network::OutgoingDatagram datagram) {
 }
 
 network::Endpoint ServerApplication::localEndpoint() const {
-  requireOpen();
-  return socket_->localEndpoint();
+  return openSocket().localEndpoint();
 }
 
-void ServerApplication::requireOpen() const {
+network::UdpSocket& ServerApplication::openSocket() {
   if (!socket_.has_value()) {
     throw ServerNotOpenException();
   }
+  return *socket_;
+}
+
+const network::UdpSocket& ServerApplication::openSocket() const {
+  if (!socket_.has_value()) {
+    throw ServerNotOpenException();
+  }
+  return *socket_;
 }
 
 void ServerApplication::simulateTick() {
@@ -123,7 +129,11 @@ void ServerApplication::simulateTick() {
   handleTick_(ReceivedDatagrams{.players = received_,
                                 .connectionRequests = receivedRequests_});
   reportDiscardedDatagrams();
-  network_.post([this] { relay_->sendWaiting(); });
+  network_.post([this] {
+    if (relay_.has_value()) {
+      relay_->sendWaiting();
+    }
+  });
 }
 
 void ServerApplication::reportDiscardedDatagrams() {

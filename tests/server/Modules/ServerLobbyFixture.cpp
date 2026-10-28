@@ -30,7 +30,7 @@ rtype::network::IncomingDatagram ServerLobbyFixture::requestFrom(
 
 std::uint64_t ServerLobbyFixture::challengeCookieOf(std::size_t index) {
   const auto received =
-      sentTo(network_->sender().sent(), playerEndpoint(index));
+      sentTo(network().sender().sent(), playerEndpoint(index));
   return onlyMessageIn<rtype::network::ConnectionChallenge>(received.back())
       .cookie;
 }

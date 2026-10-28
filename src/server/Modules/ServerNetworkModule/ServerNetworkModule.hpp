@@ -1,7 +1,7 @@
 #pragma once
 
 #include <cstdint>
-#include <optional>
+#include <memory>
 #include <string>
 #include <thread>
 #include <vector>
@@ -59,7 +59,7 @@ class ServerNetworkModule final : public engine::IModule {
   StopRequest* stopRequest_;
   logging::Logger logger_;
   TickDatagrams tickDatagrams_;
-  std::optional<ServerApplication> server_;
+  std::unique_ptr<ServerApplication> server_;
   std::jthread serverThread_;
 };
 

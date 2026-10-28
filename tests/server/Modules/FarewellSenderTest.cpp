@@ -11,6 +11,7 @@
 #include "PacketHeader.hpp"
 #include "SentDatagrams.hpp"
 #include "ServerModuleTestConstants.hpp"
+#include "TimeConstants.hpp"
 
 using rtype::network::DatagramCodec;
 using rtype::network::Disconnection;
@@ -31,14 +32,14 @@ using rtype::server::testing::sentTo;
  */
 TEST_F(GamesFixture, SendsEveryPlayerAllTheCopiesOfADisconnection) {
   addGame();
-  join(0, 0);
-  join(0, 1);
+  join(0);
+  join(1);
 
-  farewell_.sayGoodbyeTo(games_);
+  farewell().sayGoodbyeTo(games());
 
   for (const std::size_t index : {0U, 1U}) {
     const std::vector<OutgoingDatagram> received =
-        sentTo(sender_.sent(), playerEndpoint(index));
+        sentTo(sender().sent(), playerEndpoint(index));
     ASSERT_EQ(received.size(), REPEATED_MESSAGE_COPIES);
     for (const OutgoingDatagram& datagram : received) {
       static_cast<void>(onlyMessageIn<Disconnection>(datagram));
@@ -55,12 +56,12 @@ TEST_F(GamesFixture, SendsEveryPlayerAllTheCopiesOfADisconnection) {
  */
 TEST_F(GamesFixture, WritesTheCopiesUnderTheSessionHeaderOfThePlayer) {
   addGame();
-  const std::uint16_t firstFreeSequence = join(0, 0).nextSequence;
+  const std::uint16_t firstFreeSequence = join(0).nextSequence;
 
-  farewell_.sayGoodbyeTo(games_);
+  farewell().sayGoodbyeTo(games());
 
   const std::vector<OutgoingDatagram> received =
-      sentTo(sender_.sent(), playerEndpoint(0));
+      sentTo(sender().sent(), playerEndpoint(0));
   ASSERT_EQ(received.size(), REPEATED_MESSAGE_COPIES);
   for (std::size_t copy = 0; copy < received.size(); ++copy) {
     const PacketHeader header =
@@ -78,13 +79,13 @@ TEST_F(GamesFixture, WritesTheCopiesUnderTheSessionHeaderOfThePlayer) {
  */
 TEST_F(GamesFixture, WaitsBetweenTheCopiesThenForTheLastOneToLeave) {
   addGame();
-  join(0, 0);
+  join(0);
 
-  farewell_.sayGoodbyeTo(games_);
+  farewell().sayGoodbyeTo(games());
 
-  EXPECT_EQ(pauses_, (std::vector<rtype::engine::Duration>{
-                         REPEATED_MESSAGE_INTERVAL, REPEATED_MESSAGE_INTERVAL,
-                         FAREWELL_FLUSH_WAIT}));
+  EXPECT_EQ(pauses(), (std::vector<rtype::engine::Duration>{
+                          REPEATED_MESSAGE_INTERVAL, REPEATED_MESSAGE_INTERVAL,
+                          FAREWELL_FLUSH_WAIT}));
 }
 
 /**
@@ -95,8 +96,8 @@ TEST_F(GamesFixture, WaitsBetweenTheCopiesThenForTheLastOneToLeave) {
 TEST_F(GamesFixture, SendsNothingAndWaitsForNothingWhenNoPlayerIsThere) {
   addGame();
 
-  farewell_.sayGoodbyeTo(games_);
+  farewell().sayGoodbyeTo(games());
 
-  EXPECT_TRUE(sender_.sent().empty());
-  EXPECT_TRUE(pauses_.empty());
+  EXPECT_TRUE(sender().sent().empty());
+  EXPECT_TRUE(pauses().empty());
 }

@@ -5,8 +5,6 @@
 #include <cstdint>
 #include <memory>
 #include <vector>
-#include "Application.hpp"
-#include "Endpoint.hpp"
 #include "IModule.hpp"
 #include "ServerModuleFixture.hpp"
 #include "StageWork.hpp"
@@ -44,5 +42,8 @@ class ServerNetworkModuleFixture : public ServerModuleFixture {
   [[nodiscard]] static bool waitForPasses(const std::atomic<int>& passes,
                                           int wanted);
 
+  [[nodiscard]] rtype::server::StopRequest& stopRequest();
+
+ private:
   rtype::server::StopRequest stopRequest_;
 };

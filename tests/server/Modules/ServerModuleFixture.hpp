@@ -23,9 +23,11 @@ class ServerModuleFixture : public ::testing::Test {
   /** @returns Whether a UDP socket can be bound on @p port now. */
   [[nodiscard]] static bool portIsFree(std::uint16_t port);
 
-  JournalFile journal_;
+  /** @returns The journal file the logging options point to. */
+  [[nodiscard]] const JournalFile& journal() const;
 
  private:
+  JournalFile journal_;
   std::string journalPath_;
   std::vector<std::string_view> arguments_;
 };

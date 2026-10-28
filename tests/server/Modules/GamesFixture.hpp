@@ -15,14 +15,20 @@
  * down how long it was asked to wait. */
 class GamesFixture : public ::testing::Test {
  protected:
-  /** @brief Adds a game to games_, with a sender that goes nowhere. */
+  /** @brief Adds a game to games(), with a sender that goes nowhere. */
   void addGame();
 
-  /** @brief Connects the player at @p index to the game at @p gameIndex of
-   * games_. */
-  rtype::server::ConnectedPlayer& join(std::size_t gameIndex,
-                                       std::size_t index);
+  /** @brief Connects the player at @p index to the first game of games(). */
+  rtype::server::ConnectedPlayer& join(std::size_t index);
 
+  [[nodiscard]] rtype::server::Games& games();
+  [[nodiscard]] RecordingDatagramSender& sender();
+  [[nodiscard]] rtype::server::FarewellSender& farewell();
+
+  /** @returns Every wait the farewell asked for, in order. */
+  [[nodiscard]] const std::vector<rtype::engine::Duration>& pauses() const;
+
+ private:
   rtype::engine::EventBus events_;
   rtype::server::Games games_;
   RecordingDatagramSender sender_;

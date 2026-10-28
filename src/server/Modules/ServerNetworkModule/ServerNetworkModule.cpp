@@ -1,6 +1,7 @@
 #include "ServerNetworkModule.hpp"
 #include <cstdint>
 #include <exception>
+#include <memory>
 #include <string>
 #include <thread>
 #include <vector>
@@ -46,14 +47,15 @@ std::vector<std::string> ServerNetworkModule::dependencies() const {
 }
 
 void ServerNetworkModule::install(engine::InstallContext& context) {
-  engine::Application& application = context.require<engine::Application>();
-  server_.emplace(listeningEndpoint(port_),
-                  [this, &application](
-                      const ServerApplication::ReceivedDatagrams& received) {
-                    tickDatagrams_.begin(received);
-                    application.runStages(engine::SIMULATION_TICK_DURATION);
-                    tickDatagrams_.end();
-                  });
+  auto& application = context.require<engine::Application>();
+  server_ = std::make_unique<ServerApplication>(
+      listeningEndpoint(port_),
+      [this,
+       &application](const ServerApplication::ReceivedDatagrams& received) {
+        tickDatagrams_.begin(received);
+        application.runStages(engine::SIMULATION_TICK_DURATION);
+        tickDatagrams_.end();
+      });
   context.provide<IDatagramSender>(*server_);
   context.provide<IPlayerAdmission>(*server_);
   context.provide(tickDatagrams_);

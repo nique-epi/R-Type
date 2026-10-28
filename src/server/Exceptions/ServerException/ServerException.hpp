@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -121,7 +122,7 @@ class SignalMaskException : public ServerException {
 class ConsoleHandlerException : public ServerException {
  public:
   /** @param errorCode The code GetLastError() gave, in the message. */
-  explicit ConsoleHandlerException(unsigned long errorCode);
+  explicit ConsoleHandlerException(std::uint32_t errorCode);
 };
 
 /** @brief A wave plan names no enemy, so its waves would bring nothing. */

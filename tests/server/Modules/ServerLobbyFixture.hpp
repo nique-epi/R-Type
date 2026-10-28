@@ -1,9 +1,9 @@
 #pragma once
 
+#include <cstddef>
 #include <cstdint>
 #include <memory>
 #include <vector>
-#include "Endpoint.hpp"
 #include "IModule.hpp"
 #include "IncomingDatagram.hpp"
 #include "ServerGamesFixture.hpp"

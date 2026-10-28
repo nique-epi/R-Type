@@ -10,7 +10,7 @@ using rtype::server::NoJoinableGameException;
  * Then a NoJoinableGameException is thrown
  */
 TEST_F(GamesFixture, HasNoGameToJoinBeforeOneIsAdded) {
-  EXPECT_THROW(static_cast<void>(games_.joinable()), NoJoinableGameException);
+  EXPECT_THROW(static_cast<void>(games().joinable()), NoJoinableGameException);
 }
 
 /**
@@ -22,6 +22,6 @@ TEST_F(GamesFixture, LetsNewPlayersJoinTheFirstGame) {
   addGame();
   addGame();
 
-  EXPECT_EQ(&games_.joinable(), games_.all()[0].get());
-  EXPECT_NE(&games_.joinable(), games_.all()[1].get());
+  EXPECT_EQ(&games().joinable(), games().all()[0].get());
+  EXPECT_NE(&games().joinable(), games().all()[1].get());
 }

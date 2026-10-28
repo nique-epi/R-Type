@@ -2,24 +2,20 @@
 #include <atomic>
 #include <chrono>
 #include <cstdint>
-#include <exception>
 #include <memory>
 #include <string>
 #include <thread>
 #include <utility>
 #include <vector>
-#include "Endpoint.hpp"
 #include "IModule.hpp"
 #include "ModuleConstants.hpp"
-#include "NetworkConstants.hpp"
-#include "NetworkContext.hpp"
 #include "ServerJournalModule.hpp"
 #include "ServerModuleTestConstants.hpp"
 #include "ServerNetworkModule.hpp"
 #include "ServiceProbeModule.hpp"
 #include "StageWork.hpp"
+#include "StopRequest.hpp"
 #include "TimeConstants.hpp"
-#include "UdpSocket.hpp"
 
 std::vector<std::unique_ptr<rtype::engine::IModule>>
 ServerNetworkModuleFixture::networkModulesThen(
@@ -60,4 +56,8 @@ bool ServerNetworkModuleFixture::waitForPasses(const std::atomic<int>& passes,
     std::this_thread::sleep_for(std::chrono::milliseconds(1));
   }
   return true;
+}
+
+rtype::server::StopRequest& ServerNetworkModuleFixture::stopRequest() {
+  return stopRequest_;
 }

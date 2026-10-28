@@ -1,5 +1,4 @@
 #include <gtest/gtest.h>
-#include <chrono>
 #include <thread>
 #include "StopReason.hpp"
 #include "StopRequest.hpp"
@@ -70,7 +69,7 @@ TEST(StopRequest, KeepsTheFirstFailure) {
  */
 TEST(StopRequest, WakesTheWaitWhenAnotherThreadAsksForTheStop) {
   StopRequest request;
-  std::jthread asker{[&request] {
+  const std::jthread asker{[&request] {
     std::this_thread::sleep_for(ASKING_DELAY);
     request.fail(FAILURE_TEXT);
   }};

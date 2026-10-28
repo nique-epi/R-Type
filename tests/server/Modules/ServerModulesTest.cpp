@@ -1,8 +1,8 @@
 #include <gtest/gtest.h>
 #include <chrono>
+#include <cstdint>
 #include <memory>
 #include <string>
-#include <thread>
 #include <vector>
 #include "Application.hpp"
 #include "DatagramCodec.hpp"
@@ -14,6 +14,7 @@
 #include "ServerModuleTestConstants.hpp"
 #include "ServerModules.hpp"
 #include "ServerModulesFixture.hpp"
+#include "UdpTestClient.hpp"
 
 using rtype::engine::Application;
 using rtype::engine::LoopStages;
@@ -28,9 +29,10 @@ using rtype::server::serverModules;
  */
 TEST_F(ServerModulesFixture, ListsTheJournalTheNetworkTheGamesAndTheLobby) {
   const auto modules =
-      serverModules(journalOptions(), launchOptions_, stopRequest_);
+      serverModules(journalOptions(), launchOptions(), stopRequest());
 
   std::vector<std::string> names;
+  names.reserve(modules.size());
   for (const auto& listed : modules) {
     names.push_back(listed->name());
   }
@@ -51,14 +53,14 @@ TEST_F(ServerModulesFixture, ListsTheJournalTheNetworkTheGamesAndTheLobby) {
 TEST_F(ServerModulesFixture, SaysGoodbyeToAJoinedPlayerWhenItStops) {
   Application application(
       LoopStages(rtype::server::SERVER_LOOP_STAGES),
-      serverModules(journalOptions(), launchOptions_, stopRequest_));
+      serverModules(journalOptions(), launchOptions(), stopRequest()));
   application.start();
   const std::uint64_t token = joinWithTheClient();
 
   application.stop();
 
   const std::vector<ReceivedAt> everything =
-      client_.waitForDatagrams(UNREACHABLE_COUNT, GOODBYE_WAIT);
+      client().waitForDatagrams(UNREACHABLE_COUNT, GOODBYE_WAIT);
   const std::vector<ReceivedAt> goodbyes =
       holding(everything, MessageType::Disconnection);
   ASSERT_EQ(goodbyes.size(), 3U);
@@ -69,5 +71,5 @@ TEST_F(ServerModulesFixture, SaysGoodbyeToAJoinedPlayerWhenItStops) {
   }
   EXPECT_GE(goodbyes[1].time - goodbyes[0].time, MINIMUM_COPY_SPACING);
   EXPECT_GE(goodbyes[2].time - goodbyes[1].time, MINIMUM_COPY_SPACING);
-  EXPECT_TRUE(portIsFree(port_));
+  EXPECT_TRUE(portIsFree(port()));
 }

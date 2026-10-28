@@ -1,5 +1,9 @@
 #ifndef _WIN32
 
+// misc-include-cleaner wants <signal.h> for the POSIX signal API, which
+// modernize-deprecated-headers rejects in C++: the checks cannot both be met.
+// NOLINTBEGIN(misc-include-cleaner)
+
 #include <gtest/gtest.h>
 #include <pthread.h>
 #include <unistd.h>
@@ -14,7 +18,7 @@ namespace {
 
 /** @returns Whether the calling thread blocks @p signalNumber. */
 bool blocksSignal(int signalNumber) {
-  sigset_t mask;
+  sigset_t mask{};
   pthread_sigmask(SIG_BLOCK, nullptr, &mask);
   return sigismember(&mask, signalNumber) == 1;
 }
@@ -65,5 +69,7 @@ TEST(StopSignals, GivesTheSignalMaskBackWhenDestroyed) {
   EXPECT_FALSE(blocksSignal(SIGTERM));
   EXPECT_FALSE(blocksSignal(SIGINT));
 }
+
+// NOLINTEND(misc-include-cleaner)
 
 #endif

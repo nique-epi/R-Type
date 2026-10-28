@@ -1,7 +1,9 @@
 #include <gtest/gtest.h>
+#include <cstddef>
 #include <string>
 #include <vector>
 #include "EngineException.hpp"
+#include "GameState.hpp"
 #include "GamesSettings.hpp"
 #include "MessageType.hpp"
 #include "RecordingPlayerAdmission.hpp"
@@ -38,7 +40,7 @@ TEST_F(ServerGamesFixture, FailsToStartNamingTheWavesFileWhenItCannotBeRead) {
 TEST_F(ServerGamesFixture, CreatesTheFirstGameFromTheShippedWavesFile) {
   startWith(shippedWaves());
 
-  EXPECT_EQ(probe_->games()->joinable().state(),
+  EXPECT_EQ(probe().games()->joinable().state(),
             rtype::server::GameState::WaitingForPlayers);
 }
 
@@ -53,7 +55,7 @@ TEST_F(ServerGamesFixture, MakesTheNetworkForgetAPlayerWhoseSessionClosed) {
 
   runTick({disconnectionFrom(0)});
 
-  EXPECT_EQ(network_->admission().forgotten(),
+  EXPECT_EQ(network().admission().forgotten(),
             (std::vector<AdmissionCall>{AdmissionCall{
                 .player = playerEndpoint(0), .sessionToken = tokenOf(0)}}));
 }
@@ -95,7 +97,7 @@ TEST_F(ServerGamesFixture, SaysGoodbyeToThePlayersWhenTheApplicationStops) {
   startWith(shippedWaves());
   join(0);
 
-  application_->stop();
+  application().stop();
 
   EXPECT_EQ(datagramsTo(0, MessageType::Disconnection), 3U);
 }

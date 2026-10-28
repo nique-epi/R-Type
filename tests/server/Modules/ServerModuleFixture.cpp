@@ -42,3 +42,5 @@ bool ServerModuleFixture::portIsFree(std::uint16_t port) {
     return false;
   }
 }
+
+const JournalFile& ServerModuleFixture::journal() const { return journal_; }

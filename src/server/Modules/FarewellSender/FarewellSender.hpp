@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstddef>
 #include <functional>
 #include "Games.hpp"
 #include "IDatagramSender.hpp"

@@ -27,6 +27,7 @@ class StopSignals {
    * (Linux and macOS), or ConsoleHandlerException when it refuses the handler
    * (Windows). */
   explicit StopSignals(StopRequest& request);
+  // NOLINTNEXTLINE(performance-trivially-destructible)
   ~StopSignals();
 
   StopSignals(const StopSignals&) = delete;

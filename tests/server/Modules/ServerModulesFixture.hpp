@@ -1,6 +1,5 @@
 #pragma once
 
-#include <chrono>
 #include <cstddef>
 #include <cstdint>
 #include <filesystem>
@@ -18,7 +17,7 @@
  * (the server reads assets/waves/waves.toml from there), and a client that
  * can join. */
 class ServerModulesFixture : public ServerModuleFixture {
- protected:
+ public:
   ServerModulesFixture();
   ~ServerModulesFixture() override;
 
@@ -27,6 +26,7 @@ class ServerModulesFixture : public ServerModuleFixture {
   ServerModulesFixture(ServerModulesFixture&&) = delete;
   ServerModulesFixture& operator=(ServerModulesFixture&&) = delete;
 
+ protected:
   /** @brief Has the client join the server through the whole handshake.
    * @returns The session token the server gave it. */
   [[nodiscard]] std::uint64_t joinWithTheClient();
@@ -37,15 +37,17 @@ class ServerModulesFixture : public ServerModuleFixture {
       const std::vector<ReceivedAt>& received,
       rtype::network::MessageType type);
 
+  [[nodiscard]] std::uint16_t port() const;
+  [[nodiscard]] rtype::server::StopRequest& stopRequest();
+  [[nodiscard]] UdpTestClient& client();
+  [[nodiscard]] const rtype::server::LaunchOptions& launchOptions() const;
+
+ private:
   std::uint16_t port_;
   rtype::server::StopRequest stopRequest_;
   UdpTestClient client_;
-
- private:
   std::filesystem::path previousFolder_;
   std::string portText_;
   std::vector<std::string_view> arguments_;
-
- protected:
   rtype::server::LaunchOptions launchOptions_;
 };

@@ -40,7 +40,7 @@ class ServerJournalModuleTest : public ServerModuleFixture {
 TEST_F(ServerJournalModuleTest, WritesNothingBeforeItIsStarted) {
   const Application application = applicationWithTheJournal();
 
-  EXPECT_TRUE(journal_.lines().empty());
+  EXPECT_TRUE(journal().lines().empty());
 }
 
 /**
@@ -53,7 +53,7 @@ TEST_F(ServerJournalModuleTest, WritesThatTheServerStartsWhenStarted) {
 
   application.start();
 
-  EXPECT_TRUE(journalHolds(journal_.lines(), "server starting"));
+  EXPECT_TRUE(journalHolds(journal().lines(), "server starting"));
 }
 
 /**
@@ -67,5 +67,5 @@ TEST_F(ServerJournalModuleTest, WritesThatTheServerStoppedWhenStopped) {
 
   application.stop();
 
-  EXPECT_TRUE(journalHolds(journal_.lines(), "server stopped"));
+  EXPECT_TRUE(journalHolds(journal().lines(), "server stopped"));
 }

@@ -9,6 +9,7 @@
 #include "Application.hpp"
 #include "ConnectedPlayer.hpp"
 #include "DatagramCodec.hpp"
+#include "GameInstance.hpp"
 #include "GamesSettings.hpp"
 #include "IModule.hpp"
 #include "IncomingDatagram.hpp"
@@ -16,12 +17,15 @@
 #include "MessageType.hpp"
 #include "ModuleConstants.hpp"
 #include "PacketHeader.hpp"
+#include "RecordingNetworkModule.hpp"
 #include "SentDatagrams.hpp"
+#include "ServerApplication.hpp"
 #include "ServerConstants.hpp"
 #include "ServerDatagrams.hpp"
 #include "ServerGamesModule.hpp"
 #include "ServerJournalModule.hpp"
 #include "ServerModuleTestConstants.hpp"
+#include "ServiceProbeModule.hpp"
 #include "TimeConstants.hpp"
 
 using rtype::network::IncomingDatagram;
@@ -49,7 +53,7 @@ void ServerGamesFixture::startWith(rtype::server::GamesSettings settings) {
   application_ = std::make_unique<rtype::engine::Application>(
       rtype::engine::LoopStages(rtype::server::SERVER_LOOP_STAGES),
       std::move(modules));
-  application_->start();
+  application().start();
 }
 
 std::vector<std::unique_ptr<rtype::engine::IModule>>
@@ -65,7 +69,7 @@ rtype::server::GamesSettings ServerGamesFixture::shippedWaves() {
 }
 
 ConnectedPlayer& ServerGamesFixture::join(std::size_t index) {
-  rtype::server::GameInstance& game = probe_->games()->joinable();
+  rtype::server::GameInstance& game = probe().games()->joinable();
   ConnectedPlayer* const player = game.roster().add(
       playerEndpoint(index), std::string{PLAYER_NICKNAME}, tokenOf(index));
   game.onPlayerJoined(*player);
@@ -75,15 +79,14 @@ ConnectedPlayer& ServerGamesFixture::join(std::size_t index) {
 void ServerGamesFixture::runTick(
     const std::vector<IncomingDatagram>& players,
     const std::vector<IncomingDatagram>& requests) {
-  network_->tickDatagrams().begin(
+  network().tickDatagrams().begin(
       rtype::server::ServerApplication::ReceivedDatagrams{
           .players = players, .connectionRequests = requests});
-  application_->runStages(rtype::engine::SIMULATION_TICK_DURATION);
-  network_->tickDatagrams().end();
+  application().runStages(rtype::engine::SIMULATION_TICK_DURATION);
+  network().tickDatagrams().end();
 }
 
-IncomingDatagram ServerGamesFixture::disconnectionFrom(
-    std::size_t index) const {
+IncomingDatagram ServerGamesFixture::disconnectionFrom(std::size_t index) {
   rtype::network::PacketHeader header;
   header.sessionToken = tokenOf(index);
   return IncomingDatagram{.sender = playerEndpoint(index),
@@ -94,7 +97,7 @@ std::size_t ServerGamesFixture::datagramsTo(std::size_t index,
                                             rtype::network::MessageType type) {
   std::size_t count = 0;
   for (const auto& datagram : rtype::server::testing::sentTo(
-           network_->sender().sent(), playerEndpoint(index))) {
+           network().sender().sent(), playerEndpoint(index))) {
     for (const auto& frame :
          rtype::network::DatagramCodec::splitMessages(datagram.payload)) {
       if (frame.type == static_cast<std::uint8_t>(type)) {
@@ -108,3 +111,11 @@ std::size_t ServerGamesFixture::datagramsTo(std::size_t index,
 std::uint64_t ServerGamesFixture::tokenOf(std::size_t index) {
   return PLAYER_TOKEN_BASE + index;
 }
+
+rtype::engine::Application& ServerGamesFixture::application() {
+  return *application_;
+}
+
+RecordingNetworkModule& ServerGamesFixture::network() { return *network_; }
+
+ServiceProbeModule& ServerGamesFixture::probe() { return *probe_; }

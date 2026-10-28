@@ -76,14 +76,13 @@ class ServerApplication final : public IDatagramSender,
    * is called; port 0 lets the system pick a free port. Binds nothing.
    * @param handleTick Must not be empty.
    */
-  ServerApplication(const network::Endpoint& localEndpoint,
-                    TickHandler handleTick);
+  ServerApplication(network::Endpoint localEndpoint, TickHandler handleTick);
 
   ServerApplication(const ServerApplication&) = delete;
   ServerApplication& operator=(const ServerApplication&) = delete;
   ServerApplication(ServerApplication&&) = delete;
   ServerApplication& operator=(ServerApplication&&) = delete;
-  ~ServerApplication() = default;
+  ~ServerApplication() override = default;
 
   /**
    * @brief Binds the UDP socket on the endpoint given to the constructor.
@@ -138,7 +137,9 @@ class ServerApplication final : public IDatagramSender,
   [[nodiscard]] network::Endpoint localEndpoint() const;
 
  private:
-  void requireOpen() const;
+  /** @throws ServerNotOpenException when open() was not called. */
+  [[nodiscard]] network::UdpSocket& openSocket();
+  [[nodiscard]] const network::UdpSocket& openSocket() const;
   void simulateTick();
   void reportDiscardedDatagrams();
 

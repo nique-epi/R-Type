@@ -1,16 +1,39 @@
+// misc-include-cleaner wants <signal.h> for the POSIX signal API, which
+// modernize-deprecated-headers rejects in C++: the checks cannot both be met.
+// NOLINTBEGIN(misc-include-cleaner)
 #include <pthread.h>
 #include <unistd.h>
 #include <atomic>
 #include <cerrno>
 #include <csignal>
-#include <cstring>
 #include <memory>
+#include <system_error>
 #include <thread>
 #include "ServerException.hpp"
 #include "StopRequest.hpp"
 #include "StopSignals.hpp"
 
 namespace rtype::server {
+
+namespace {
+
+/** Takes each of the signals that is pending: sigwait() returns at once for a
+ * pending signal, and macOS has no sigtimedwait(). */
+void takePendingSignals() {
+  sigset_t pending{};
+  sigpending(&pending);
+  for (const int signalNumber : {SIGINT, SIGTERM}) {
+    if (sigismember(&pending, signalNumber) == 1) {
+      sigset_t one{};
+      sigemptyset(&one);
+      sigaddset(&one, signalNumber);
+      int taken = 0;
+      sigwait(&one, &taken);
+    }
+  }
+}
+
+}  // namespace
 
 /**
  * @brief Blocks SIGINT and SIGTERM in the calling thread, and keeps the thread
@@ -24,7 +47,7 @@ class StopSignalsHandle {
     sigaddset(&signals_, SIGTERM);
     const int error = pthread_sigmask(SIG_BLOCK, &signals_, &previousMask_);
     if (error != 0) {
-      throw SignalMaskException(std::strerror(error));
+      throw SignalMaskException(std::generic_category().message(error));
     }
     waiter_ = std::jthread{[this, &request] { waitForASignal(request); }};
   }
@@ -49,22 +72,6 @@ class StopSignalsHandle {
   StopSignalsHandle& operator=(StopSignalsHandle&&) = delete;
 
  private:
-  /** Takes each of the signals that is pending: sigwait() returns at once for
-   * a pending signal, and macOS has no sigtimedwait(). */
-  void takePendingSignals() {
-    sigset_t pending;
-    sigpending(&pending);
-    for (const int signalNumber : {SIGINT, SIGTERM}) {
-      if (sigismember(&pending, signalNumber) == 1) {
-        sigset_t one;
-        sigemptyset(&one);
-        sigaddset(&one, signalNumber);
-        int taken = 0;
-        sigwait(&one, &taken);
-      }
-    }
-  }
-
   void waitForASignal(StopRequest& request) {
     int received = 0;
     if (sigwait(&signals_, &received) != 0) {
@@ -88,3 +95,4 @@ StopSignals::StopSignals(StopRequest& request)
 StopSignals::~StopSignals() = default;
 
 }  // namespace rtype::server
+// NOLINTEND(misc-include-cleaner)

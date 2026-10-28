@@ -10,11 +10,14 @@
 #include "DatagramCodec.hpp"
 #include "Endpoint.hpp"
 #include "LaunchOptions.hpp"
+#include "MessagePayload.hpp"
 #include "MessageType.hpp"
 #include "NetworkConstants.hpp"
 #include "ServerConstants.hpp"
 #include "ServerDatagrams.hpp"
 #include "ServerModuleTestConstants.hpp"
+#include "StopRequest.hpp"
+#include "UdpTestClient.hpp"
 
 namespace {
 
@@ -42,18 +45,18 @@ std::uint64_t ServerModulesFixture::joinWithTheClient() {
   const rtype::network::Endpoint server{
       .address = std::string{rtype::network::LOOPBACK_IPV4_ADDRESS},
       .port = port_};
-  client_.send(server, requestDatagram());
+  client().send(server, requestDatagram());
   const std::vector<ReceivedAt> challenge =
-      client_.waitForDatagrams(1, WAIT_FOR_ANSWER);
+      client().waitForDatagrams(1, WAIT_FOR_ANSWER);
   const auto frames =
       rtype::network::DatagramCodec::splitMessages(challenge.at(0).payload);
   const std::uint64_t cookie =
       rtype::network::decodeMessage<rtype::network::ConnectionChallenge>(
           frames.at(0).payload)
           .cookie;
-  client_.send(server, requestDatagram(cookie));
+  client().send(server, requestDatagram(cookie));
   const std::vector<ReceivedAt> accepted =
-      client_.waitForDatagrams(2, WAIT_FOR_ANSWER);
+      client().waitForDatagrams(2, WAIT_FOR_ANSWER);
   return rtype::network::DatagramCodec::decodeHeader(accepted.at(1).payload)
       .sessionToken;
 }
@@ -71,4 +74,17 @@ std::vector<ReceivedAt> ServerModulesFixture::holding(
     }
   }
   return matching;
+}
+
+std::uint16_t ServerModulesFixture::port() const { return port_; }
+
+rtype::server::StopRequest& ServerModulesFixture::stopRequest() {
+  return stopRequest_;
+}
+
+UdpTestClient& ServerModulesFixture::client() { return client_; }
+
+const rtype::server::LaunchOptions& ServerModulesFixture::launchOptions()
+    const {
+  return launchOptions_;
 }

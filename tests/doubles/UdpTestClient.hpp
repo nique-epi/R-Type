@@ -1,5 +1,6 @@
 #pragma once
 
+#include <atomic>
 #include <chrono>
 #include <condition_variable>
 #include <cstddef>
@@ -33,6 +34,10 @@ class UdpTestClient {
   void send(const rtype::network::Endpoint& server,
             const std::vector<std::byte>& datagram);
 
+  /** @returns How many sends failed on the thread of the client, which a test
+   * sees otherwise as datagrams that never arrive. */
+  [[nodiscard]] std::size_t failedSendCount() const;
+
   /**
    * @brief Waits until @p count datagrams arrived in all, at most
    * @p timeout.
@@ -47,5 +52,6 @@ class UdpTestClient {
   std::mutex mutex_;
   std::condition_variable arrived_;
   std::vector<ReceivedAt> received_;
+  std::atomic<std::size_t> failedSends_{0};
   std::jthread runner_;
 };

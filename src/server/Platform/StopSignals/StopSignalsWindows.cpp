@@ -18,6 +18,7 @@ namespace {
 
 /** The request the handler of the system reaches; the system gives the handler
  * no argument of ours. */
+// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
 std::atomic<StopRequest*> activeRequest{nullptr};
 
 /**
