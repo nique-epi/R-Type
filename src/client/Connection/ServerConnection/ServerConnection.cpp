@@ -40,6 +40,7 @@
 #include "PacketHeader.hpp"
 #include "PendingDeparture.hpp"
 #include "PlayerInput.hpp"
+#include "PlayerLeft.hpp"
 #include "ProtocolConstants.hpp"
 #include "ReadyState.hpp"
 #include "SequenceOrder.hpp"
@@ -236,14 +237,29 @@ void ServerConnection::registerSessionMessages() {
           logger_.info("the game ended");
         }
       });
+  dispatcher_.registerHandler<network::Disconnection>(
+      [this](const network::MessageOrigin&, const network::Disconnection&) {
+        if (isAccepted()) {
+          giveUp(ConnectionPhase::Closed);
+        }
+      });
+  dispatcher_.registerHandler<network::PlayerLeft>(
+      [this](const network::MessageOrigin&,
+             const network::PlayerLeft& departure) {
+        keepEntityMessage(departure);
+      });
 }
 
 void ServerConnection::giveUp(ConnectionPhase ending) {
+  status_ = {.phase = ending};
+  forgetSession();
+  if (ending == ConnectionPhase::Closed) {
+    logger_.warn("closed by ", server_.address, " port ", server_.port);
+    return;
+  }
   const std::chrono::seconds silence = ending == ConnectionPhase::Lost
                                            ? network::SESSION_TIMEOUT
                                            : CONNECTION_ATTEMPT_TIMEOUT;
-  status_ = {.phase = ending};
-  forgetSession();
   logger_.warn("no answer from ", server_.address, " port ", server_.port,
                " for ", silence.count(), " s");
 }

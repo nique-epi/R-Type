@@ -6,9 +6,11 @@ target_link_libraries(rtype_client_screen_interfaces
   INTERFACE
     rtype_client_audio_interfaces
     rtype_engine_time
+    rtype_network_transport
 )
 
 add_subdirectory(ScreenAssets)
+add_subdirectory(HeldKey)
 add_subdirectory(PlayerPreferences)
 add_subdirectory(ConnectionScreen)
 add_subdirectory(GameScreen)
@@ -19,3 +21,4 @@ add_subdirectory(OptionsScreen)
 add_subdirectory(TitleScreen)
 add_subdirectory(QuitConfirmationScreen)
 add_subdirectory(EndScreen)
+add_subdirectory(LostScreen)

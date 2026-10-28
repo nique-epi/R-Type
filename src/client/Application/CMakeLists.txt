@@ -1,2 +1,3 @@
 add_subdirectory(ScreenStack)
+add_subdirectory(FramePicture)
 add_subdirectory(Application)

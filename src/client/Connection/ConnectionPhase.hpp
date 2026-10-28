@@ -25,6 +25,12 @@ enum class ConnectionPhase : std::uint8_t {
    * session without telling the server.
    */
   Lost,
+  /**
+   * @brief The server said within the session that it shuts down: a
+   * Disconnection carrying the token of the session arrived, and the client
+   * closed the session without answering.
+   */
+  Closed,
 };
 
 }  // namespace rtype::client

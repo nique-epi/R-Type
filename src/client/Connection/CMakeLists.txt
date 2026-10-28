@@ -12,6 +12,7 @@ target_link_libraries(rtype_client_connection
     rtype_network_game_ended
     rtype_network_game_event
     rtype_network_lobby_state
+    rtype_network_player_left
     rtype_network_protocol
     rtype_network_transport
 )
@@ -20,3 +21,4 @@ add_subdirectory(NetworkThread)
 add_subdirectory(PlayerInputPacer)
 add_subdirectory(GameEventHistory)
 add_subdirectory(ServerConnection)
+add_subdirectory(SessionLossWatch)

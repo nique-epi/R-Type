@@ -14,6 +14,7 @@ target_link_libraries(rtype_client_end_screen
     rtype_client_end_choices
     rtype_client_flight_log_painting
     rtype_client_flight_log_timeline
+    rtype_client_held_key
     rtype_client_interface_pixel
     rtype_client_taunts
 )

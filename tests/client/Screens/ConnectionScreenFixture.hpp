@@ -10,6 +10,7 @@
 #include "RecordingNavigator.hpp"
 #include "RecordingServerConnection.hpp"
 #include "RecordingSoundPlayer.hpp"
+#include "ServerChoice.hpp"
 
 /** @brief A connection screen alone, with a recording navigator, connection
  * and canvas, its fields started with the launch values. */
@@ -46,5 +47,6 @@ class ConnectionScreenFixture : public ::testing::Test {
   RecordingServerConnection connection_;
   InterfaceCanvasRecord canvas_;
   RecordingSoundPlayer sounds_;
+  rtype::client::ServerChoice choice_;
   rtype::client::ConnectionScreen screen_;
 };

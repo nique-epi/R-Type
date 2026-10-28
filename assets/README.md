@@ -35,7 +35,7 @@ The client looks for `assets/` next to its executable, then in the folder above 
 | `sprites/logo.png` | The logo of the title screen, 210 × 42 pixels | Drawn for this project (main menu mockup 1c v4) |
 | `sprites/entities.png` | The sprite sheet of a match: four player ships, the Bydo, the bonus Bydo, the player missile and the enemy missile | Drawn for this project (proposal 3a); not taken from the sprite set shipped with the subject |
 | `sprites/effects.png` | The effects of a match: the explosions of the Bydo and of the ship, the impact of a missile and the muzzle flashes of both missiles, each with its version without flash | Drawn for this project (animation proposal, options C), generated from the drafts of the proposal; not taken from the sprite set shipped with the subject |
-| `sprites/hud.png` | The sheet of the status band of a game: the lives of the four player colors, a life lost, and the marker of each player | Drawn for this project (HUD design system, proposal B); not taken from the sprite set shipped with the subject |
+| `sprites/hud.png` | The sheet of the status band of a game: the lives of the four player colors, a life lost, the marker of each player, and the icons of the notices of a game: the door of a departure and the bars of a weak signal | Drawn for this project (HUD design system, proposal B; the two icons from the disconnect notices design system); not taken from the sprite set shipped with the subject |
 | `sprites/flight_log.png` | The flight log of the end screen: the front cover, the inside of the cover with the left page, the right half with its page, the label of the taunt, a tile of the shadow, the medal of the best pilot and the cross of QUIT | Drawn for this project (end screen design system, proposal A v2), generated from the code of the design with its seeds; the four markers copied from `sprites/hud.png`; not taken from the sprite set shipped with the subject |
 | `icons/phosphor/plugs_bold.png` | The unplugged plug of a pilot whose signal is lost, white on a square of 64 × 64 pixels | "plugs", bold weight, of Phosphor Icons, MIT License, copyright 2023 Phosphor Icons, license in `icons/phosphor/LICENSE.txt`; from `phosphor-icons/core` at tag `v2.0.8` (`assets/bold/plugs-bold.svg`), rendered to PNG and made white |
 | `sounds/kenney/bydo_growl.ogg` | The growl of the Bydo that opens the intro, 0.50 s | `slime_000.ogg` of Kenney's Sci-fi Sounds 1.0, CC0, license in `sounds/kenney/license-sci-fi-sounds.txt`; from kenney.nl |
@@ -88,12 +88,13 @@ Without flash, the Bydo explosion starts on the Bydo in its own colors instead o
 
 ## The HUD sheet
 
-`sprites/hud.png` is 88 × 17 pixels, laid out like the entity sheet: native size, frames and rows 2 pixels apart, transparent outside the frames. One pixel of the sheet is one pixel of the interface picture.
+`sprites/hud.png` is 88 × 30 pixels, laid out like the entity sheet: native size, frames and rows 2 pixels apart, transparent outside the frames. One pixel of the sheet is one pixel of the interface picture.
 
 | Row | Frames | Frame size | Top |
 |---|---|---|---|
 | Lives: the ship of each player color, then a life lost, in the shade of the far stars | 5 | 16 × 8 | 0 |
 | Markers: triangle, square, circle and star, one per player color, so a player is never told by color alone | 4 | 7 × 7 | 10 |
+| Notices: the door a pilot left through, then the bars of a weak signal, pale and dark blue outlined in ink, so no palette recolors them | 2 | 9 × 11, 13 × 10 | 19 |
 
 The rectangles are written once, in `src/client/Rendering/Interface/HudSpriteConstants.hpp`, with the id of the plug icon, which is drawn smoothed at the resolution of the window and tinted, not pixel for pixel. `client_rendering_tests` checks them against the shipped files: every frame lies inside the sheet, shows a visible pixel, cuts no drawing and overlaps no other, and every visible pixel of the icon is white. Both files are listed in `gameAssets()` only.
 

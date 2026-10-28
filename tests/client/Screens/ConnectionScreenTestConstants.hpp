@@ -19,6 +19,12 @@ constexpr std::string_view LAUNCH_NICKNAME = "ACE";
 constexpr std::u32string_view TYPED_PORT_TEXT = U"5000";
 constexpr std::uint16_t TYPED_PORT = 5000;
 
+/** @brief A nickname the player types, as typed and as read, and an emptied
+ * nickname field, which the screen refuses. */
+constexpr std::u32string_view TYPED_NICKNAME_TEXT = U"NOVA";
+constexpr std::string_view TYPED_NICKNAME = "NOVA";
+constexpr std::u32string_view NO_NICKNAME_TEXT{};
+
 /** @brief A port one below the lowest port. */
 constexpr std::u32string_view PORT_ZERO_TEXT = U"0";
 
