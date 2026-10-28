@@ -118,6 +118,8 @@ void GameScreen::update(engine::Duration elapsed) {
   systems_.run(components_, elapsed);
   const FlashPreference preference = flashPreferenceOf(*settings_);
   effects_.advance(elapsed, preference, pilotShadesOf(*settings_));
+  departures_.advance(elapsed);
+  silence_.advance(elapsed);
   applyEntityMessages();
   askForTheEndWhenDue();
   moveSky(*sky_, effects_, preference);
@@ -127,6 +129,9 @@ void GameScreen::update(engine::Duration elapsed) {
 
 void GameScreen::applyEntityMessages() {
   entityMessageSource_->drainEntityMessages(receivedEntityMessages_);
+  if (!receivedEntityMessages_.empty()) {
+    silence_.hear();
+  }
   for (const EntityMessage& message : receivedEntityMessages_) {
     std::visit(
         [this](const auto& announced) {
@@ -135,6 +140,7 @@ void GameScreen::applyEntityMessages() {
             recordEnd(announced);
           } else if constexpr (std::is_same_v<Announced, network::PlayerLeft>) {
             scoreBoard_.apply(announced);
+            departures_.follow(scoreBoard_.pilots());
           } else {
             replicator_.apply(announced);
           }
@@ -151,6 +157,7 @@ void GameScreen::recordEnd(const network::GameEnded& ended) {
   *result_ = GameResult{
       .pilots = rankedPilots(finalPilotsOf(scoreBoard_.pilots(), ended))};
   endedAt_ = effects_.sinceStart();
+  silence_.stop();
 }
 
 void GameScreen::askForTheEndWhenDue() {
@@ -165,7 +172,9 @@ void GameScreen::askForTheEndWhenDue() {
 void GameScreen::repaintStatusWhenChanged() {
   if (scoreBoard_.revision() != paintedStatusRevision_ ||
       missionBannerAt(effects_.sinceStart()) != paintedBanner_ ||
-      paintedPalette_ != playerPaletteOf(*settings_)) {
+      paintedPalette_ != playerPaletteOf(*settings_) ||
+      departures_.revision() != paintedDepartures_ ||
+      silence_.isShown() != paintedSilence_) {
     repaintStatus();
   }
 }
@@ -176,10 +185,14 @@ void GameScreen::repaintStatus() {
   statusCanvas_->clear();
   paintStatusBand(*statusCanvas_, scoreBoard_.pilots(), palette);
   paintMissionBanner(*statusCanvas_, banner);
+  departures_.paint(*statusCanvas_, palette);
+  silence_.paint(*statusCanvas_);
   statusCanvas_->display();
   paintedStatusRevision_ = scoreBoard_.revision();
   paintedBanner_ = banner;
   paintedPalette_ = palette;
+  paintedDepartures_ = departures_.revision();
+  paintedSilence_ = silence_.isShown();
 }
 
 ActionSet GameScreen::playerActions() const {

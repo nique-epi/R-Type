@@ -7,6 +7,7 @@
 #include <vector>
 #include "ActionSet.hpp"
 #include "ComponentRegistry.hpp"
+#include "DepartureFeed.hpp"
 #include "EffectSpawner.hpp"
 #include "EntityMessage.hpp"
 #include "EntityRegistry.hpp"
@@ -28,6 +29,7 @@
 #include "PlayerPalette.hpp"
 #include "ScoreBoard.hpp"
 #include "ScreenConstants.hpp"
+#include "SilenceWarning.hpp"
 #include "SystemScheduler.hpp"
 #include "TimeConstants.hpp"
 
@@ -63,6 +65,13 @@ struct PlayerSettings;
  * ScoreBoard) or the MISSION START banner changes (see missionBannerAt()),
  * never at every frame otherwise. A PlayerLeft marks its pilot as gone: LEFT,
  * or SIGNAL LOST when the server timed it out.
+ *
+ * The feed of departures lies over the entities with the band: a line for
+ * each pilot the band shows gone (see DepartureFeed). From
+ * SILENCE_WARNING_DELAY without any message of the server, until the next
+ * one, WAITING FOR THE SERVER shows in the top-right corner (see
+ * SilenceWarning); never once the game ended. Both are painted with the band,
+ * only when they change.
  *
  * Releasing OPTIONS_KEY releases every action held, then puts the options over
  * the game, which goes on running behind them, dimmed. The release, not the
@@ -161,6 +170,10 @@ class GameScreen : public IScreen {
   ISky* sky_;
   MissionBannerLook paintedBanner_;
   std::optional<PlayerPalette> paintedPalette_;
+  DepartureFeed departures_;
+  SilenceWarning silence_;
+  std::uint32_t paintedDepartures_{};
+  bool paintedSilence_ = false;
 };
 
 }  // namespace rtype::client
