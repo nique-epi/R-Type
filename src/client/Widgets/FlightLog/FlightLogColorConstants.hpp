@@ -43,14 +43,6 @@ constexpr sf::Color RIBBON_SHADE_COLOR = EMBER;
 constexpr sf::Color RIBBON_NOTCH_COLOR = SKY_COLOR;
 constexpr std::array DUST_COLORS{PALE_BLUE, STAR_WHITE};
 
-/** @brief PRESS ENTER TO REPLAY: gold with a dark orange glow; under the
- * pointer, yellow with a gold glow; pressed, star white. */
-constexpr sf::Color PROMPT_COLOR = FIRE_GOLD;
-constexpr sf::Color PROMPT_GLOW_COLOR = PLAYER_DARK_ORANGE;
-constexpr sf::Color HOVERED_PROMPT_COLOR = FIRE_YELLOW;
-constexpr sf::Color HOVERED_PROMPT_GLOW_COLOR = FIRE_GOLD;
-constexpr sf::Color PRESSED_PROMPT_COLOR = STAR_WHITE;
-
 /** @brief QUIT: red on the sky; under the pointer, filled red under ink;
  * pressed, ember under star white. */
 constexpr sf::Color QUIT_COLOR = FIRE_RED;

@@ -9,6 +9,7 @@ target_link_libraries(rtype_client_screen_interfaces
 )
 
 add_subdirectory(ScreenAssets)
+add_subdirectory(HeldKey)
 add_subdirectory(PlayerPreferences)
 add_subdirectory(ConnectionScreen)
 add_subdirectory(GameScreen)
