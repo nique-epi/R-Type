@@ -12,6 +12,6 @@ std::vector<std::string> allLayersInOrder();
  * the way. */
 rtype::client::ShipFlight halfwayRollingFlight();
 
-/** @returns The ShipFlight of a ship dashing, its whole trail known, at
- * (SHIP_X, SHIP_Y). */
+/** @returns The ShipFlight of a ship dashing, its whole trail known: the
+ * frame n frames ago at (SHIP_X + n, SHIP_Y). */
 rtype::client::ShipFlight dashingFlight();

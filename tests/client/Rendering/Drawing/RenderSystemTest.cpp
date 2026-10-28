@@ -1,4 +1,5 @@
 #include <gtest/gtest.h>
+#include <algorithm>
 #include <cstddef>
 #include <optional>
 #include <string>
@@ -562,8 +563,16 @@ TEST(RenderSystem, ADashingShipLeavesItsAfterimages) {
 
   const std::vector<DrawnImage>& drawn = scene.surface().drawn();
   ASSERT_EQ(drawn.size(), AFTERIMAGE_COUNT + 1);
+  std::vector<float> afterimageColumns;
   for (std::size_t index = 0; index < AFTERIMAGE_COUNT; ++index) {
     EXPECT_EQ(drawn[index].tone, SpriteTone::Ghost);
+    afterimageColumns.push_back(drawn[index].center.x);
+  }
+  std::ranges::sort(afterimageColumns);
+  for (std::size_t index = 0; index < AFTERIMAGE_COUNT; ++index) {
+    EXPECT_FLOAT_EQ(
+        afterimageColumns.at(index),
+        SHIP_X + static_cast<float>(AFTERIMAGE_FRAMES_BEHIND.at(index)));
   }
   EXPECT_EQ(drawn.back().tone, SpriteTone::Normal);
 }

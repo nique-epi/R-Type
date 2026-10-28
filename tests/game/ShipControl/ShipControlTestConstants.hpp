@@ -105,10 +105,12 @@ constexpr std::uint32_t PRESS_AFTER_THE_DASH = 16;
 
 /** @brief Input numbers of a double press: the first press, its release, a
  * second press within the 220 ms of the design (13 inputs at 60 per second),
- * and one 14 inputs after the first, past it. */
+ * one exactly 13 inputs after the first, the last of the window, and one 14
+ * inputs after the first, past it. */
 constexpr std::uint32_t FIRST_PRESS = 1;
 constexpr std::uint32_t RELEASE = 2;
 constexpr std::uint32_t QUICK_SECOND_PRESS = 3;
+constexpr std::uint32_t LAST_PRESS_OF_THE_WINDOW = 14;
 constexpr std::uint32_t LATE_SECOND_PRESS = 15;
 
 /** @brief How far a ship at rest drifts while its player holds a direction for

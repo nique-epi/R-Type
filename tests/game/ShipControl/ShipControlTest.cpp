@@ -29,6 +29,7 @@ using rtype::game::testing::FIRST_TICK_DISTANCE;
 using rtype::game::testing::FULL_SPEED_TICK;
 using rtype::game::testing::GLIDE_DISTANCE;
 using rtype::game::testing::HELD_SECOND_DISTANCE;
+using rtype::game::testing::LAST_PRESS_OF_THE_WINDOW;
 using rtype::game::testing::LATE_SECOND_PRESS;
 using rtype::game::testing::LEFT_EDGE_STOP_X;
 using rtype::game::testing::motionAfterTwoPresses;
@@ -326,6 +327,19 @@ INSTANTIATE_TEST_SUITE_P(
 
 /**
  * Given a ship at rest
+ * When its player presses down, lets go, and presses down again exactly
+ * DOUBLE_TAP_INPUTS inputs after the first press
+ * Then a roll starts: the window holds its last input
+ */
+TEST(ShipControl, StartsTheManeuverOfASecondPressOnTheLastInputOfTheWindow) {
+  const ShipMotion motion = motionAfterTwoPresses(
+      ShipMotion{}, ShipDirections{.down = true}, LAST_PRESS_OF_THE_WINDOW);
+
+  EXPECT_EQ(motion.maneuver, ManeuverKind::Roll);
+}
+
+/**
+ * Given a ship at rest
  * When its player presses down, lets go, and presses down again past the
  * window
  * Then no maneuver starts: two slow taps stay two small moves
@@ -351,6 +365,7 @@ TEST(ShipControl, IsShortOfTheRollDistanceTheTickBeforeTheRollEnds) {
       ShipDirections{}, ROLL_END_TICK - 1);
 
   EXPECT_LT(ship.position.y, PLAY_AREA_CENTER.y + ROLL_DISTANCE);
+  EXPECT_GT(ship.position.y, PLAY_AREA_CENTER.y);
 }
 
 /**

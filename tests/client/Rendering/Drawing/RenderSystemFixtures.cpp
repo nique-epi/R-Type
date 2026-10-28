@@ -1,4 +1,5 @@
 #include "RenderSystemFixtures.hpp"
+#include <cstddef>
 #include <string>
 #include <vector>
 #include "Position.hpp"
@@ -20,7 +21,10 @@ rtype::client::ShipFlight halfwayRollingFlight() {
 rtype::client::ShipFlight dashingFlight() {
   rtype::client::ShipFlight flight{};
   flight.dashing = true;
-  flight.trail.fill(rtype::game::Position{.x = SHIP_X, .y = SHIP_Y});
+  for (std::size_t frame = 0; frame < flight.trail.size(); ++frame) {
+    flight.trail.at(frame) = rtype::game::Position{
+        .x = SHIP_X + static_cast<float>(frame), .y = SHIP_Y};
+  }
   flight.trailLength = flight.trail.size();
   return flight;
 }

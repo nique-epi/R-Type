@@ -1,6 +1,7 @@
 #pragma once
 
 #include <SFML/System/Vector2.hpp>
+#include <array>
 #include <chrono>
 #include <cstddef>
 #include "Layer.hpp"
@@ -53,6 +54,11 @@ constexpr float HALF_A_ROLL = 0.5F;
 /** @brief The afterimages that follow a ship rolling or dashing: three, as
  * the design of the ship motion draws them. */
 constexpr std::size_t AFTERIMAGE_COUNT = 3;
+
+/** @brief How many frames behind the ship each afterimage of the design is
+ * drawn, nearest first. */
+constexpr std::array<std::size_t, AFTERIMAGE_COUNT> AFTERIMAGE_FRAMES_BEHIND{
+    4, 8, 12};
 
 /** @brief Half of the 16 rows of WHOLE_IMAGE. */
 constexpr int HALF_OF_THE_ROWS = 8;

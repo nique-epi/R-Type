@@ -94,17 +94,19 @@ TEST(InputKeeper, IgnoresAnInputNumberedLikeTheNewest) {
 /**
  * Given a roster without the sender
  * When an input arrives from that sender
- * Then no player keeps it
+ * Then no player keeps it, and the game is not shown it
  */
 TEST(InputKeeper, IgnoresAnInputFromAnAddressNoPlayerSendsFrom) {
   PlayerRoster roster;
   const ConnectedPlayer& player = addPlayer(roster);
-  InputKeeper keeper(roster, ignoreInput);
+  std::vector<ShownInput> shown;
+  InputKeeper keeper(roster, recorderOf(shown));
 
   keeper.keepIfNewer(originOf(1),
                      inputNumbered(SOME_INPUT_NUMBER, SOME_ACTIONS));
 
   EXPECT_FALSE(player.newestInput.has_value());
+  EXPECT_TRUE(shown.empty());
 }
 
 /**
