@@ -19,7 +19,6 @@
 #include "LoopStages.hpp"
 #include "MessageType.hpp"
 #include "OutgoingDatagram.hpp"
-#include "RecordedSession.hpp"
 #include "RecordingServerLink.hpp"
 #include "SentDatagrams.hpp"
 #include "ServerApplication.hpp"

@@ -4,7 +4,6 @@
 #include <vector>
 #include "Endpoint.hpp"
 #include "OutgoingDatagram.hpp"
-#include "RecordedSession.hpp"
 
 void RecordingServerLink::send(rtype::network::OutgoingDatagram datagram) {
   queued_.push_back(datagram);

@@ -5,7 +5,15 @@
 #include "Endpoint.hpp"
 #include "IServerLink.hpp"
 #include "OutgoingDatagram.hpp"
-#include "RecordedSession.hpp"
+
+/** @brief An address and the session token a RecordingServerLink was told to
+ * admit or forget. */
+struct RecordedSession {
+  rtype::network::Endpoint endpoint{};
+  std::uint64_t sessionToken{};
+
+  bool operator==(const RecordedSession&) const = default;
+};
 
 /**
  * @brief IServerLink double that keeps what the modules ask of the network.
