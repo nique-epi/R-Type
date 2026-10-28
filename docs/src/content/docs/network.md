@@ -87,7 +87,7 @@ The server only sends through one: it receives through its own `DatagramSorter`,
 | `writeString` | one length byte, then the characters, at most `MAX_SHORT_STRING_LENGTH` (255) |
 | `writeBytes` | the bytes as they are, without a length |
 
-The build fails on a platform where `float` is not binary32. Version 0 of the protocol sends no float (positions are quantized integers), so `writeFloat` is there for later use.
+The build fails on a platform where `float` is not binary32. Version 1 of the protocol sends no float (positions are quantized integers), so `writeFloat` is there for later use.
 
 `ByteReader` does not own its buffer: the caller keeps the bytes alive while it reads, and `readBytes(count)` returns a view into it, not a copy. Every read first compares what it needs with `remaining()`. A read that needs more throws `BufferUnderflowException`, and the position does not move, so a truncated or forged datagram is rejected without reading outside the buffer. A string announcing more characters than follow is rejected the same way, before anything is allocated.
 
