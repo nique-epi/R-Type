@@ -85,4 +85,14 @@ UnknownDifficultyException::UnknownDifficultyException(
 EmptyEnemyCycleException::EmptyEnemyCycleException()
     : ServerException("A wave plan must name at least one enemy") {}
 
+SignalMaskException::SignalMaskException(const std::string& reason)
+    : ServerException("cannot block the signals that stop the server: " +
+                      reason) {}
+
+ConsoleHandlerException::ConsoleHandlerException(unsigned long errorCode)
+    : ServerException(
+          "cannot register the handler of the console events that stop the "
+          "server: Windows error " +
+          std::to_string(errorCode)) {}
+
 }  // namespace rtype::server

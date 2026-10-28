@@ -90,6 +90,22 @@ class UnknownDifficultyException : public ServerException {
                              const std::vector<std::string>& known);
 };
 
+/** @brief The system refuses to block the signals that ask the server to
+ * stop (Linux and macOS). */
+class SignalMaskException : public ServerException {
+ public:
+  /** @param reason What the system answered, in the message. */
+  explicit SignalMaskException(const std::string& reason);
+};
+
+/** @brief Windows refuses the handler of the console events that ask the
+ * server to stop. */
+class ConsoleHandlerException : public ServerException {
+ public:
+  /** @param errorCode The code GetLastError() gave, in the message. */
+  explicit ConsoleHandlerException(unsigned long errorCode);
+};
+
 /** @brief A wave plan names no enemy, so its waves would bring nothing. */
 class EmptyEnemyCycleException : public ServerException {
  public:
