@@ -8,13 +8,11 @@ target_link_libraries(rtype_server_game_instance
     rtype_engine_systems
     rtype_engine_time
     rtype_game
-    rtype_network_datagram_codec
-    rtype_network_message_dispatcher
-    rtype_network_ready_state
     rtype_network_transport
     rtype_server_instances
     rtype_server_bydo_gunner
     rtype_server_bydo_spawner
+    rtype_server_game_sessions
     rtype_server_game_end_announcer
     rtype_server_life_keeper
     rtype_server_missile_launcher
@@ -26,12 +24,7 @@ target_link_libraries(rtype_server_game_instance
   PRIVATE
     rtype_game_ship_control
     rtype_identifiers
-    rtype_network_constants
-    rtype_network_disconnection
-    rtype_network_exceptions
     rtype_network_game_started
-    rtype_network_heartbeat
-    rtype_network_sequence_order
     rtype_server_session_datagram
 )
 
