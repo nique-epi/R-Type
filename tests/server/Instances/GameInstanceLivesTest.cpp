@@ -2,14 +2,12 @@
 #include <cstddef>
 #include <cstdint>
 #include <initializer_list>
-#include <memory>
 #include <vector>
 #include "ConnectedPlayer.hpp"
 #include "EntityDestruction.hpp"
 #include "EntityIdConstants.hpp"
 #include "GameEnded.hpp"
 #include "GameEvent.hpp"
-#include "GameEventBroadcaster.hpp"
 #include "GameInstanceConstants.hpp"
 #include "GameInstanceFixtures.hpp"
 #include "GameInstanceLivesFixture.hpp"
@@ -21,7 +19,6 @@
 #include "Replication/GameEndAnnouncerTestConstants.hpp"
 #include "SentDatagrams.hpp"
 #include "ServerConstants.hpp"
-#include "TimerScheduler.hpp"
 
 namespace rtype::server::testing {
 
@@ -59,10 +56,6 @@ TEST_F(GameInstanceLivesFixture, LeavesOnlyTheOtherShipInTheWorld) {
  * Then every player is sent a PlayerHit naming the first player
  */
 TEST_F(GameInstanceLivesFixture, TellsEveryPlayerWhoWasHit) {
-  engine::TimerScheduler timers;
-  std::vector<network::OutgoingDatagram> eventDatagrams;
-  const std::unique_ptr<GameEventBroadcaster> broadcaster =
-      eventBroadcaster(timers, eventDatagrams);
   startGame();
 
   hitTheShipOf(FIRST_PLAYER);
@@ -70,7 +63,7 @@ TEST_F(GameInstanceLivesFixture, TellsEveryPlayerWhoWasHit) {
   for (const std::size_t player : {FIRST_PLAYER, SECOND_PLAYER}) {
     const std::vector<network::OutgoingDatagram> received =
         ofType(network::MessageType::GameEvent,
-               testing::sentTo(eventDatagrams, playerEndpoint(player)));
+               testing::sentTo(sentDatagrams(), playerEndpoint(player)));
     ASSERT_EQ(received.size(), 1U);
     const auto event = onlyMessageIn<network::GameEvent>(received.front());
     EXPECT_EQ(event.kind, network::GameEventKind::PlayerHit);
@@ -191,10 +184,6 @@ TEST_F(GameInstanceLivesFixture, DestroysTheShipAndRemovesTheMissileThatHitIt) {
  * Then every player is sent a PlayerHit naming the first player
  */
 TEST_F(GameInstanceLivesFixture, TellsEveryPlayerWhoWasShot) {
-  engine::TimerScheduler timers;
-  std::vector<network::OutgoingDatagram> eventDatagrams;
-  const std::unique_ptr<GameEventBroadcaster> broadcaster =
-      eventBroadcaster(timers, eventDatagrams);
   startGame();
 
   shootTheShipOf(FIRST_PLAYER);
@@ -202,7 +191,7 @@ TEST_F(GameInstanceLivesFixture, TellsEveryPlayerWhoWasShot) {
   for (const std::size_t player : {FIRST_PLAYER, SECOND_PLAYER}) {
     const std::vector<network::OutgoingDatagram> received =
         ofType(network::MessageType::GameEvent,
-               testing::sentTo(eventDatagrams, playerEndpoint(player)));
+               testing::sentTo(sentDatagrams(), playerEndpoint(player)));
     ASSERT_EQ(received.size(), 1U);
     const auto event = onlyMessageIn<network::GameEvent>(received.front());
     EXPECT_EQ(event.kind, network::GameEventKind::PlayerHit);

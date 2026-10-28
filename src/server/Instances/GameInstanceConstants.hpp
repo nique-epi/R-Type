@@ -23,6 +23,10 @@ constexpr std::size_t FINISHED_STATE_TICKS =
  */
 constexpr std::string_view INSTANCES_LOGGER_NAME = "Instances";
 
+constexpr std::string_view GAME_INSTALL_NAME = "game";
+constexpr std::string_view RTYPE_RULES_MODULE_NAME = "rtype rules";
+constexpr std::string_view REPLICATION_MODULE_NAME = "replication";
+
 constexpr std::string_view GAME_INPUT_STAGE = "game inputs";
 constexpr std::string_view GAME_SIMULATION_STAGE = "game simulation";
 constexpr std::string_view GAME_OUTPUT_STAGE = "game outputs";

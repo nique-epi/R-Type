@@ -49,6 +49,9 @@ class GameModuleFixture : public ::testing::Test {
     events_.dispatch();
   }
 
+  /** @returns The context the modules are installed with. */
+  [[nodiscard]] GameContext& context();
+
   /** @brief Runs the stages of a tick, as a game does. */
   void runStages();
 

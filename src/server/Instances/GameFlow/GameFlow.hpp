@@ -10,20 +10,18 @@
 #include "ConnectedPlayer.hpp"
 #include "DamageRules.hpp"
 #include "EventBus.hpp"
-#include "GameEndAnnouncer.hpp"
 #include "GameFlowParts.hpp"
 #include "GameState.hpp"
+#include "IGameReplication.hpp"
 #include "LifeKeeper.hpp"
-#include "LobbyStateAnnouncer.hpp"
 #include "Logger.hpp"
 #include "MissileLauncher.hpp"
 #include "OutgoingDatagram.hpp"
 #include "PlayerRoster.hpp"
-#include "ShipSpawnAnnouncer.hpp"
 #include "SystemScheduler.hpp"
 #include "WavePlan.hpp"
 #include "World.hpp"
-#include "WorldStateSender.hpp"
+#include "WorldSlot.hpp"
 
 namespace rtype::server {
 
@@ -39,16 +37,16 @@ namespace rtype::server {
  * ready, and the tick is 0. The players stay connected.
  *
  * The flow tells the players where the game stands, as the A session section
- * of the protocol page describes. While the game waits for players, a
- * LobbyStateAnnouncer sends them the room; a new one comes with each new
- * world, so the room goes out at the first tick of every wait. The tick that
- * starts the game sends every connected player GameStarted, then, on that tick
- * and every tick of the game, the WorldStateSender sends them the world, from
- * tick 0: GameStarted always leaves before the first WorldState. A game that
- * ends by itself builds a GameEndAnnouncer, which reads the score of every
- * player then and sends them that result at the first tick of the end, then
- * every GAME_ENDED_INTERVAL until the game waits for players again; no
- * WorldState goes out meanwhile.
+ * of the protocol page describes, through the IGameReplication it is given.
+ * While the game waits for players, the replication sends them the room; it
+ * builds a new announcer of the room with each new world, so the room goes out
+ * at the first tick of every wait. The tick that starts the game sends every
+ * connected player GameStarted, then, on that tick and every tick of the game,
+ * the replication sends them the world, from tick 0: GameStarted always leaves
+ * before the first WorldState. A game that ends by itself tells the
+ * replication, which reads the score of every player then and sends them that
+ * result at the first tick of the end, then every GAME_ENDED_INTERVAL until
+ * the game waits for players again; no WorldState goes out meanwhile.
  *
  * While the game is in progress, each tick first moves the ship of every player
  * who sent an input, by the directions its newest input holds (see
@@ -142,39 +140,33 @@ class GameFlow {
 
   /** @brief Logs why and ends the game, as finish() ends it, when it is in
    * progress with no player left in it, or with no player left who has a
-   * life, then builds the GameEndAnnouncer that tells the players the result.
+   * life, then tells the replication, which tells the players the result.
    */
   void finishIfOver();
 
   /** @brief Builds a new world, and every part of the game that works on one
-   * world: the rules that judge its collisions, the announcer of its ships, the
-   * spawner of its Bydos, the launcher of its missiles, the gunner of its
-   * Bydos, the keeper of the lives and the announcer of the room. DamageRules
-   * is built before LifeKeeper, so the bus hands each MissileHit to DamageRules
-   * first (see LifeKeeper). The announcer of the end of the previous game is
-   * dropped. */
+   * world: the rules that judge its collisions, the spawner of its Bydos, the
+   * launcher of its missiles, the gunner of its Bydos and the keeper of the
+   * lives, after telling the replication about the new world. DamageRules is
+   * built before LifeKeeper, so the bus hands each MissileHit to DamageRules
+   * first (see LifeKeeper). */
   void buildWorld();
 
   void startNewWorld();
 
   std::reference_wrapper<engine::EventBus> events_;
+  std::reference_wrapper<engine::SystemScheduler> systems_;
+  std::reference_wrapper<WorldSlot> worldSlot_;
   std::reference_wrapper<PlayerRoster> roster_;
+  std::reference_wrapper<IGameReplication> replication_;
   std::function<void(network::OutgoingDatagram)> send_;
   std::function<bool()> everyPlayerIsReady_;
-  std::unique_ptr<game::World> world_;
-  engine::SystemScheduler systems_;
-  std::unique_ptr<ShipSpawnAnnouncer> shipSpawnAnnouncer_;
   std::unique_ptr<BydoSpawner> bydoSpawner_;
   std::unique_ptr<MissileLauncher> missileLauncher_;
   std::unique_ptr<BydoGunner> bydoGunner_;
   std::unique_ptr<game::CollisionRules> collisionRules_;
   std::unique_ptr<game::DamageRules> damageRules_;
   std::unique_ptr<LifeKeeper> lifeKeeper_;
-  std::unique_ptr<LobbyStateAnnouncer> lobbyStateAnnouncer_;
-  /** @brief Tells the players the result of a game that ended by itself;
-   * empty before the first end, and again with each new world. */
-  std::unique_ptr<GameEndAnnouncer> gameEndAnnouncer_;
-  WorldStateSender worldStateSender_;
   GameState state_{GameState::WaitingForPlayers};
   std::uint32_t seed_;
   WavePlan wavePlan_;

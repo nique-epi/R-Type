@@ -12,13 +12,9 @@ target_link_libraries(rtype_server_game_flow
     rtype_server_instances
     rtype_server_bydo_gunner
     rtype_server_bydo_spawner
-    rtype_server_game_end_announcer
     rtype_server_life_keeper
     rtype_server_missile_launcher
-    rtype_server_lobby_state_announcer
     rtype_server_player_roster
-    rtype_server_ship_spawn_announcer
-    rtype_server_world_state_sender
   PRIVATE
     rtype_server_ship_input
     rtype_identifiers

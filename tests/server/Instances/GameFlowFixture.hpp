@@ -6,8 +6,11 @@
 #include "ConnectedPlayer.hpp"
 #include "EventBus.hpp"
 #include "GameFlow.hpp"
+#include "GameReplication.hpp"
 #include "PlayerRoster.hpp"
 #include "ReadyKeeper.hpp"
+#include "SystemScheduler.hpp"
+#include "WorldSlot.hpp"
 
 namespace rtype::server::testing {
 
@@ -43,8 +46,11 @@ class GameFlowFixture : public ::testing::Test {
 
  private:
   engine::EventBus events_;
+  engine::SystemScheduler systems_;
+  WorldSlot world_;
   PlayerRoster roster_;
   ReadyKeeper readyKeeper_;
+  GameReplication replication_;
   GameFlow flow_;
 };
 

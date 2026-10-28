@@ -11,6 +11,7 @@
 #include "GameState.hpp"
 #include "OutgoingDatagram.hpp"
 #include "PlayerRoster.hpp"
+#include "RtypeSystems.hpp"
 #include "SentDatagrams.hpp"
 #include "ServerLobbyTestConstants.hpp"
 #include "Spawning/WavePlanFixtures.hpp"
@@ -19,14 +20,20 @@ namespace rtype::server::testing {
 
 GameFlowFixture::GameFlowFixture()
     : readyKeeper_(roster_, [] { return true; }),
+      replication_(roster_, [](const network::OutgoingDatagram&) {}),
       flow_(GameFlowParts{
           .events = events_,
+          .systems = systems_,
+          .world = world_,
           .roster = roster_,
+          .replication = replication_,
           .send = [](const network::OutgoingDatagram&) {},
           .everyPlayerIsReady =
               [this] { return readyKeeper_.everyPlayerIsReady(); },
           .settings =
-              GameSettings{.seed = SOME_SEED, .waves = testWavePlan()}}) {}
+              GameSettings{.seed = SOME_SEED, .waves = testWavePlan()}}) {
+  addRtypeSystems(systems_, events_);
+}
 
 ConnectedPlayer& GameFlowFixture::join(std::size_t index) {
   ConnectedPlayer* const player = roster_.add(

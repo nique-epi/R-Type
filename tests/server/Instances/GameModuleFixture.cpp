@@ -40,6 +40,8 @@ ConnectedPlayer& GameModuleFixture::join(std::size_t index) {
                       std::string{MODULE_PLAYER_NICKNAME}, MODULE_PLAYER_TOKEN);
 }
 
+GameContext& GameModuleFixture::context() { return context_; }
+
 void GameModuleFixture::runStages() {
   stages_.run(engine::SIMULATION_TICK_DURATION);
 }

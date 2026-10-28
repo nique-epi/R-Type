@@ -3,6 +3,7 @@
 #include <cstdint>
 #include "ConnectedPlayer.hpp"
 #include "GameState.hpp"
+#include "PlayerInput.hpp"
 
 namespace rtype::server {
 
@@ -34,6 +35,21 @@ class IGameFlow {
    * @brief Ends the game in progress. Does nothing in any other state.
    */
   virtual void finish() = 0;
+
+  /**
+   * @brief Called with the player whose session closes, after its seat is
+   * freed and before its departure is announced: the game takes what it holds
+   * of the player out of the world.
+   */
+  virtual void onPlayerLeaving(const ConnectedPlayer& player) = 0;
+
+  /**
+   * @brief Called with each PlayerInput newer than the one kept for
+   * @p player, before it replaces that one, for the game to read the presses
+   * the input holds.
+   */
+  virtual void onNewerInput(const ConnectedPlayer& player,
+                            const network::PlayerInput& input) = 0;
 };
 
 }  // namespace rtype::server

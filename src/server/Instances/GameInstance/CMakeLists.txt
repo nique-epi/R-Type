@@ -8,12 +8,9 @@ target_link_libraries(rtype_server_game_instance
     rtype_game
     rtype_network_transport
     rtype_server_instances
-    rtype_server_game_flow
+    rtype_server_game_modules
     rtype_server_game_sessions
     rtype_server_player_roster
-    rtype_server_score_keeper
-  PRIVATE
-    rtype_server_ship_input
 )
 
 rtype_enable_warnings(rtype_server_game_instance)

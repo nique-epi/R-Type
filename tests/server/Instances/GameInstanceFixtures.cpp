@@ -4,7 +4,6 @@
 #include <cstddef>
 #include <cstdint>
 #include <initializer_list>
-#include <memory>
 #include <optional>
 #include <ostream>
 #include <span>
@@ -16,14 +15,13 @@
 #include "ConnectedPlayer.hpp"
 #include "DatagramCodec.hpp"
 #include "DebugJournal.hpp"
-#include "Endpoint.hpp"
 #include "Entity.hpp"
 #include "EntityIdConstants.hpp"
 #include "EntitySpawned.hpp"
 #include "EntityType.hpp"
 #include "EventBus.hpp"
-#include "GameEventBroadcaster.hpp"
 #include "GameInstance.hpp"
+#include "GameInstanceParts.hpp"
 #include "GameInstanceTestConstants.hpp"
 #include "GameSettings.hpp"
 #include "GameState.hpp"
@@ -37,6 +35,7 @@
 #include "Position.hpp"
 #include "ProtocolConstants.hpp"
 #include "ReadyState.hpp"
+#include "RtypeGameModules.hpp"
 #include "SentDatagrams.hpp"
 #include "ServerDatagrams.hpp"
 #include "ServerLobbyTestConstants.hpp"
@@ -94,11 +93,15 @@ std::size_t bydosIn(game::World& world) {
 }
 
 GameInstanceTest::GameInstanceTest()
-    : game_(
-          [this](network::OutgoingDatagram datagram) {
-            sent_.push_back(std::move(datagram));
-          },
-          GameSettings{.seed = SOME_SEED, .waves = testWavePlan()}, events_) {}
+    : game_(GameInstanceParts{.send =
+                                  [this](network::OutgoingDatagram datagram) {
+                                    sent_.push_back(std::move(datagram));
+                                  },
+                              .settings = GameSettings{.seed = SOME_SEED,
+                                                       .waves = testWavePlan()},
+                              .events = events_,
+                              .timers = timers_},
+            rtypeGameModules()) {}
 
 ConnectedPlayer& GameInstanceTest::join(std::size_t index,
                                         std::uint64_t sessionToken) {
@@ -126,21 +129,11 @@ void GameInstanceTest::queueDisconnectionFrom(std::size_t index) {
                                   .payload = disconnectionDatagram()});
 }
 
-std::unique_ptr<GameEventBroadcaster> GameInstanceTest::eventBroadcaster(
-    engine::TimerScheduler& timers,
-    std::vector<network::OutgoingDatagram>& datagrams) {
-  return std::make_unique<GameEventBroadcaster>(GameEventBroadcaster::Wiring{
-      .events = events(),
-      .timers = timers,
-      .recipients = [this] { return game().roster().endpoints(); },
-      .headerFor =
-          [this](const network::Endpoint& recipient) {
-            return game().nextSessionHeaderFor(recipient);
-          },
-      .send =
-          [&datagrams](network::OutgoingDatagram datagram) {
-            datagrams.push_back(std::move(datagram));
-          }});
+engine::TimerScheduler& GameInstanceTest::timers() { return timers_; }
+
+const std::vector<network::OutgoingDatagram>& GameInstanceTest::sentDatagrams()
+    const {
+  return sent_;
 }
 
 std::vector<network::PlayerLeft> GameInstanceTest::playerLeftSentTo(
