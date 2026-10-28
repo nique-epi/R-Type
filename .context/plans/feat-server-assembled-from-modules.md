@@ -51,6 +51,7 @@ Each gap between the issue and the code (from `.cezar-work/context.md`) and each
 13. **Tests**: no existing `*Test.cpp` changes (the issue allows changing their construction only, and `guard-tests.sh` fails on any change to them). New behavior gets new test files.
 14. **Folders follow the project map** (`project-layout.md:133-146`): `Application/` "starts and stops the threads" holds `ServerLink`, `NetworkModule`, `LoggingModule` and `IServerLink.hpp`; `Instances/` holds `GameList`, `GamesModule` and `GameListSettings.hpp`; `Lobby/` holds `LobbyModule`; `Platform/` "what differs between Windows, macOS and Linux" holds `StopSignals`. No new top-level folder. Link directions checked: no target of `Application/` or `Platform/` links `Instances/` or `Lobby/` (`git grep` exit 1); `Lobby/` already links `Instances/` (`rtype_server_player_roster`), and `Instances/` already links `Replication/`.
 15. **The event subscriptions of the game.** `GameInstance` and `GameEventBroadcaster` subscribe in their constructors and keep no handle (pre-existing), so `GamesModule::stop()` cannot unsubscribe one by one. It owns the bus and the timers through `std::unique_ptr` and destroys them after the game and the broadcaster, which drops every subscription.
+16. **No interface per module** (question raised on the first version of this plan): each module implements `engine::IModule` only; the contracts between modules are the services `IStageRunner`, `IServerLink` (interfaces), `ServerApplication::ReceivedDatagrams` and `GameList` (concrete). See "Interfaces: one per contract between modules, not one per module".
 
 ## Design at a glance
 
@@ -64,6 +65,27 @@ What each module holds and what each step opens:
 | `LobbyModule` ("lobby") | `ConnectionAcceptor`, `SystemClock` | requires link, datagrams, `GameList` | builds the acceptor on the roster of `GameList::joinable()` | destroys the acceptor | `simulation` (after `games`): answers the connection requests |
 
 The works run in this order each tick: `games` simulation, `lobby` simulation, `games` outputs. That is today's `runTick()`: each game's `onTick` then `forget`, then `answerConnectionRequests`, then `timers.advance`, then `events.dispatch`.
+
+### Interfaces: one per contract between modules, not one per module
+
+No module has an interface of its own: there is no `INetworkModule` (`IReseau`), `IGamesModule` or `ILobbyModule`. Every module implements the one interface the engine already has, `engine::IModule` (`name`, `dependencies`, `install`, `start`, `stop`), and that is the only type through which `Application` sees it. What a module offers the others is a **service**, found by type during `install()`. A service is an interface when a second implementation exists or a test must replace it, and a concrete type otherwise:
+
+| Contract | Type | Interface? | Implemented by | Used by | Why this shape |
+|---|---|---|---|---|---|
+| a program's module | `engine::IModule` | yes, already in the engine | the four modules and the test doubles (`PacingModule`, `TickCountingModule`, `ServerTrafficModule`) | `Application` | `Application` holds a list of different modules |
+| running the stages of the loop | `engine::IStageRunner` (new) | yes | `Application` | `NetworkModule`, `PacingModule` | the engine cannot name the server's `Application` user; a module must not depend on `Application` itself |
+| sending, admitting, forgetting | `IServerLink` (new) | yes | `ServerLink` (production), `RecordingServerLink` (tests) | `GamesModule`, `LobbyModule` | the module tests replace the socket and the threads with a recording double |
+| the datagrams of the tick | `ServerApplication::ReceivedDatagrams` (existing struct) | no: plain data | filled by `NetworkModule`, by the fixture in tests | `GamesModule`, `LobbyModule` | two spans, nothing to implement |
+| the games and the joinable one | `GameList` (new class) | no | `GamesModule` provides it | `LobbyModule` | one implementation; the tests run the real games module with the lobby |
+
+`main.cpp` names one concrete module, `NetworkModule`, to call `run()` on it (Assumption 1); it is the only place a module is used through its own type.
+
+*Alternative considered*: an interface per module (`INetworkModule`, `IGamesModule`, …). Rejected:
+- no code would hold a module through it, since `Application` only uses `IModule` and the other modules only use services;
+- each such interface would have exactly one implementation and no test double;
+- `fix-architecture-inherit-interfaces-compose-implementations.md` asks for inheritance "only to implement an interface" that callers use. An interface nobody calls adds a file and a second name per module, with no caller.
+
+When RTY-59 brings a second way to hold games (one process per game), `GameList` is the service that would become an interface, because the lobby would then talk to two implementations.
 
 The life of the program, when Ctrl-C arrives:
 
