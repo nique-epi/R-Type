@@ -69,11 +69,19 @@ rtype::server::GamesSettings ServerGamesFixture::shippedWaves() {
 }
 
 ConnectedPlayer& ServerGamesFixture::join(std::size_t index) {
-  rtype::server::GameInstance& game = probe().games()->joinable();
+  return joinIn(*probe().games()->all().front(), index);
+}
+
+ConnectedPlayer& ServerGamesFixture::joinIn(rtype::server::GameInstance& game,
+                                            std::size_t index) {
   ConnectedPlayer* const player = game.roster().add(
       playerEndpoint(index), std::string{PLAYER_NICKNAME}, tokenOf(index));
   game.onPlayerJoined(*player);
   return *player;
+}
+
+rtype::server::GameInstance& ServerGamesFixture::game(std::size_t index) {
+  return *probe().games()->all()[index];
 }
 
 void ServerGamesFixture::runTick(

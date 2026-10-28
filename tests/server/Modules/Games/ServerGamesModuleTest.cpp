@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 #include <cstddef>
 #include <string>
+#include <utility>
 #include <vector>
 #include "EngineException.hpp"
 #include "GameState.hpp"
@@ -45,6 +46,23 @@ TEST_F(ServerGamesFixture, CreatesTheFirstGameFromTheShippedWavesFile) {
 }
 
 /**
+ * Given settings that ask for three games
+ * When the application starts
+ * Then there are three games, all waiting for players
+ */
+TEST_F(ServerGamesFixture, CreatesAsManyGamesAsTheSettingsAsk) {
+  rtype::server::GamesSettings settings = shippedWaves();
+  settings.gameCount = THREE_GAMES;
+
+  startWith(std::move(settings));
+
+  ASSERT_EQ(probe().games()->all().size(), THREE_GAMES);
+  for (const auto& game : probe().games()->all()) {
+    EXPECT_EQ(game->state(), rtype::server::GameState::WaitingForPlayers);
+  }
+}
+
+/**
  * Given a player in the first game
  * When its Disconnection reaches a tick
  * Then the network is told to forget that player, with its address and token
@@ -85,6 +103,25 @@ TEST_F(ServerGamesFixture, TellsTheOthersThatAPlayerLeftAsTimersAndBusRun) {
 
   EXPECT_EQ(afterTheLeavingTick, 1U);
   EXPECT_EQ(afterOneMoreInterval, 2U);
+  EXPECT_EQ(datagramsTo(1, MessageType::PlayerLeft), 3U);
+}
+
+/**
+ * Given two players in the second game
+ * When one of them leaves, and the loop goes on for a few ticks
+ * Then the other one gets every copy of PlayerLeft: the second game reads the
+ * datagrams of its players, and its own bus delivers its events
+ */
+TEST_F(ServerGamesFixture, RunsTheSecondGameWithItsOwnPlayersAndBus) {
+  startWith(shippedWaves());
+  joinIn(game(SECOND_GAME), 0);
+  joinIn(game(SECOND_GAME), 1);
+
+  runTick({disconnectionFrom(0)});
+  for (int tick = 0; tick < TICKS_FOR_THE_LAST_COPY; ++tick) {
+    runTick({});
+  }
+
   EXPECT_EQ(datagramsTo(1, MessageType::PlayerLeft), 3U);
 }
 

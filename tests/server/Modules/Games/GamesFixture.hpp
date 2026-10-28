@@ -4,8 +4,8 @@
 #include <cstddef>
 #include <vector>
 #include "ConnectedPlayer.hpp"
-#include "EventBus.hpp"
 #include "FarewellSender.hpp"
+#include "GameInstance.hpp"
 #include "Games.hpp"
 #include "RecordingDatagramSender.hpp"
 #include "TimeConstants.hpp"
@@ -22,6 +22,13 @@ class GamesFixture : public ::testing::Test {
   /** @brief Connects the player at @p index to the first game of games(). */
   rtype::server::ConnectedPlayer& join(std::size_t index);
 
+  /** @brief Connects the player at @p index to @p game. */
+  static rtype::server::ConnectedPlayer& joinIn(
+      rtype::server::GameInstance& game, std::size_t index);
+
+  /** @brief Connects players to @p game until every seat is taken. */
+  static void fill(rtype::server::GameInstance& game);
+
   [[nodiscard]] rtype::server::Games& games();
   [[nodiscard]] RecordingDatagramSender& sender();
   [[nodiscard]] rtype::server::FarewellSender& farewell();
@@ -30,7 +37,6 @@ class GamesFixture : public ::testing::Test {
   [[nodiscard]] const std::vector<rtype::engine::Duration>& pauses() const;
 
  private:
-  rtype::engine::EventBus events_;
   rtype::engine::TimerScheduler timers_;
   rtype::server::Games games_;
   RecordingDatagramSender sender_;

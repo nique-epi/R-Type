@@ -1,4 +1,6 @@
 #include "ServerGamesModule.hpp"
+#include <cstddef>
+#include <cstdint>
 #include <functional>
 #include <memory>
 #include <random>
@@ -7,6 +9,7 @@
 #include <utility>
 #include <vector>
 #include "ConnectedPlayer.hpp"
+#include "EventBus.hpp"
 #include "FarewellSender.hpp"
 #include "GameInstance.hpp"
 #include "GameInstanceParts.hpp"
@@ -17,6 +20,7 @@
 #include "IPlayerAdmission.hpp"
 #include "InstallContext.hpp"
 #include "ModuleConstants.hpp"
+#include "PlayerDatagrams.hpp"
 #include "RtypeGameModules.hpp"
 #include "ServerConstants.hpp"
 #include "TickDatagrams.hpp"
@@ -50,7 +54,19 @@ void ServerGamesModule::install(engine::InstallContext& context) {
                   [this](engine::Duration elapsed) { deliverEvents(elapsed); });
 }
 
-void ServerGamesModule::start() { games_.add(createGame()); }
+void ServerGamesModule::start() {
+  const WavePlan waves = readWaves();
+  for (std::size_t game = 0; game < settings_.gameCount; ++game) {
+    auto events = std::make_unique<engine::EventBus>();
+    std::unique_ptr<GameInstance> created = createGame(
+        *events, GameSettings{.seed = settings_.seed
+                                          ? *settings_.seed +
+                                                static_cast<std::uint32_t>(game)
+                                          : std::random_device{}(),
+                              .waves = waves});
+    games_.add(std::move(events), std::move(created));
+  }
+}
 
 void ServerGamesModule::stop() {
   FarewellSender farewell{*sender_, [](engine::Duration pause) {
@@ -68,22 +84,22 @@ WavePlan ServerGamesModule::readWaves() const {
   return waves;
 }
 
-std::unique_ptr<GameInstance> ServerGamesModule::createGame() {
+std::unique_ptr<GameInstance> ServerGamesModule::createGame(
+    engine::EventBus& events, GameSettings settings) {
   return std::make_unique<GameInstance>(
       GameInstanceParts{
           .send = std::bind_front(&IDatagramSender::queueDatagram, sender_),
-          .settings =
-              GameSettings{.seed = settings_.seed ? *settings_.seed
-                                                  : std::random_device{}(),
-                           .waves = readWaves()},
-          .events = events_,
+          .settings = std::move(settings),
+          .events = events,
           .timers = timers_},
       rtypeGameModules());
 }
 
 void ServerGamesModule::playGames() {
   for (const std::unique_ptr<GameInstance>& game : games_.all()) {
-    game->onTick(tickDatagrams_->players());
+    keepDatagramsOf(game->roster(), tickDatagrams_->players(),
+                    datagramsOfGame_);
+    game->onTick(datagramsOfGame_);
     for (const ConnectedPlayer& departed : game->takeDepartedPlayers()) {
       admission_->forget(departed.endpoint, departed.sessionToken);
     }
@@ -92,7 +108,7 @@ void ServerGamesModule::playGames() {
 
 void ServerGamesModule::deliverEvents(engine::Duration elapsed) {
   timers_.advance(elapsed);
-  events_.dispatch();
+  games_.dispatchEvents();
 }
 
 }  // namespace rtype::server

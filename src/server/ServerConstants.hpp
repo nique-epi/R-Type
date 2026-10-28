@@ -22,6 +22,13 @@ constexpr std::string_view PROGRAM_NAME = "r-type_server";
 constexpr std::string_view SEED_OPTION = "--seed";
 
 /**
+ * @brief How many games the server hosts at once, unless told otherwise. They
+ * are all created when the server starts and reused: a finished game waits for
+ * players again.
+ */
+constexpr std::size_t DEFAULT_HOSTED_GAME_COUNT = 8;
+
+/**
  * @brief Module name the server writes its log lines under.
  */
 constexpr std::string_view SERVER_LOGGER_NAME = "Server";

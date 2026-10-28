@@ -6,6 +6,7 @@
 #include <vector>
 #include "Application.hpp"
 #include "ConnectedPlayer.hpp"
+#include "GameInstance.hpp"
 #include "GamesSettings.hpp"
 #include "IModule.hpp"
 #include "IncomingDatagram.hpp"
@@ -34,6 +35,14 @@ class ServerGamesFixture : public ServerModuleFixture {
   /** @brief Connects the player at @p index to the first game, under a token
    * of its own. */
   rtype::server::ConnectedPlayer& join(std::size_t index);
+
+  /** @brief Connects the player at @p index to @p game, under a token of its
+   * own. */
+  static rtype::server::ConnectedPlayer& joinIn(
+      rtype::server::GameInstance& game, std::size_t index);
+
+  /** @returns The game at @p index, in the order the games were created. */
+  [[nodiscard]] rtype::server::GameInstance& game(std::size_t index);
 
   /** @brief Runs one tick of the loop with @p players and @p requests among the
    * datagrams. */
