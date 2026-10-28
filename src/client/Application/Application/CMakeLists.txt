@@ -19,16 +19,19 @@ target_link_libraries(rtype_client_application
     rtype_client_scrolling_background
     rtype_client_screen_interfaces
     rtype_client_server_connection
+    rtype_client_session_loss_watch
     rtype_client_settings_file
     rtype_engine_system_clock
   PRIVATE
     rtype_client_connection_screen
     rtype_client_end_screen
     rtype_client_entity_layer
+    rtype_client_frame_picture
     rtype_client_game_screen
     rtype_client_intro_screen
     rtype_client_interface_canvas
     rtype_client_loading_screen
+    rtype_client_lost_screen
     rtype_client_lobby_screen
     rtype_client_localized_key_name
     rtype_client_options_screen

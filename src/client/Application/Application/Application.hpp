@@ -1,5 +1,6 @@
 #pragma once
 
+#include <SFML/Graphics/Texture.hpp>
 #include <cstddef>
 #include <filesystem>
 #include <memory>
@@ -20,6 +21,7 @@
 #include "ScrollingBackground.hpp"
 #include "ServerChoice.hpp"
 #include "ServerConnection.hpp"
+#include "SessionLossWatch.hpp"
 #include "SettingsFile.hpp"
 #include "SoundPlayer.hpp"
 #include "Soundtrack.hpp"
@@ -63,7 +65,10 @@ class AssetLibrary;
  *
  * When the server ends a game, the game screen writes its result here and
  * gives way to the end screen, from which the player plays again in the
- * waiting room or quits to the title.
+ * waiting room or quits to the title. When the session with the server ends,
+ * lost or closed, the frame loop puts the NO SIGNAL card in place of every
+ * screen, on the last picture they showed; the screens of the session stop
+ * there.
  *
  * Screens are asked for by identifier; createScreen() is the one place that
  * builds them, with one case per ScreenId. The client opens on the intro, or
@@ -186,6 +191,13 @@ class Application {
    */
   NetworkThread network_;
   ServerConnection connection_;
+  /** @brief Notices, once per end, a session the server let go silent or
+   * closed, so the frame loop puts the NO SIGNAL card in place of every
+   * screen. */
+  SessionLossWatch sessionLoss_;
+  /** @brief The last picture of the screens of a session that ended, taken
+   * before the NO SIGNAL card replaces them, which it moves into it. */
+  sf::Texture lostPicture_;
   /** @brief The server and the nickname every connection screen starts
    * with: those of launch, then those of the last attempt. */
   ServerChoice serverChoice_;

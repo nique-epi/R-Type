@@ -48,6 +48,11 @@ enum class ScreenId : std::uint8_t {
   /** @brief The waiting room after a game, entered through replaceAll()
    * only: alone on the stack, its BACK leaves the server for the title. */
   LobbyAfterGame,
+  /** @brief The NO SIGNAL card once the session with the server ended, lost
+   * or closed, which the frame loop puts in place of every screen through
+   * replaceAll(); PRESS ENTER TO RECONNECT opens the connection screen over
+   * the title, Escape the title. */
+  Lost,
 };
 
 }  // namespace rtype::client

@@ -20,6 +20,7 @@
 #include "EndScreenParts.hpp"
 #include "Endpoint.hpp"
 #include "EntityLayer.hpp"
+#include "FramePicture.hpp"
 #include "GameScreen.hpp"
 #include "GameScreenParts.hpp"
 #include "IInterfaceCanvas.hpp"
@@ -32,6 +33,8 @@
 #include "LobbyScreen.hpp"
 #include "LobbyScreenParts.hpp"
 #include "LocalizedKeyName.hpp"
+#include "LostScreen.hpp"
+#include "LostScreenParts.hpp"
 #include "MotionPreference.hpp"
 #include "NetworkConstants.hpp"
 #include "OptionsPlace.hpp"
@@ -116,6 +119,10 @@ void Application::run() {
     soundtrack_.advance(elapsed);
     background_.advance(elapsed);
     screens_.update(elapsed);
+    if (sessionLoss_.endsTheSession(connection_.status())) {
+      lostPicture_ = framePictureOf(background_, screens_);
+      screens_.replaceAll(ScreenId::Lost);
+    }
     screens_.applyPendingChanges();
     render();
   }
@@ -146,8 +153,7 @@ engine::Duration Application::measureFrame() {
 
 void Application::render() {
   window_.clear();
-  background_.draw(window_.renderTarget());
-  screens_.draw(window_.renderTarget());
+  drawFrame(window_.renderTarget(), background_, screens_);
   window_.display();
 }
 
@@ -206,6 +212,16 @@ std::unique_ptr<IScreen> Application::createScreen(ScreenId screen) {
                          .palette = playerPaletteOf(settings_)},
           interfaceCanvas());
     }
+    case ScreenId::Lost:
+      return std::make_unique<LostScreen>(
+          LostScreenParts{.navigator = screens_,
+                          .sounds = sounds_,
+                          .picture = std::move(lostPicture_),
+                          .ending = connection_.status().phase,
+                          .playfieldPointAt = playfieldMapping(),
+                          .motion = motionPreference(),
+                          .flashes = flashPreferenceOf(settings_)},
+          interfaceCanvas());
   }
   return nullptr;
 }
