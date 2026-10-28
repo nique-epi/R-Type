@@ -2,6 +2,7 @@
 
 #include <string>
 #include <vector>
+#include "InstallContext.hpp"
 
 namespace rtype::engine {
 
@@ -31,11 +32,21 @@ class IModule {
    * @brief Prepares the module, and keeps nothing open when it returns.
    *
    * It may read a file and close it, build its own objects and check its
-   * configuration. It binds no socket, starts no thread, keeps no file open
-   * and subscribes to no event: a module installed but never started is never
-   * stopped.
+   * configuration. Through @p context it provides its services, finds or
+   * requires the services of the modules installed before it, and adds its
+   * work to the stages of the loop. @p context lives for this call only: the
+   * module keeps the services it got, never the context, and hands them to its
+   * classes through their constructors.
+   *
+   * It binds no socket, starts no thread, keeps no file open and subscribes to
+   * no event: a module installed but never started is never stopped. A module
+   * that subscribes in start() keeps the SubscriptionHandle and unsubscribes in
+   * stop().
+   *
+   * @throws MissingServiceException if it requires a service no module
+   * installed before it provides, which stops the installation.
    */
-  virtual void install() = 0;
+  virtual void install(InstallContext& context) = 0;
 
   /**
    * @brief Opens what the module needs until stop().

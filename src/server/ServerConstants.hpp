@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <chrono>
 #include <cstddef>
 #include <cstdint>
@@ -155,5 +156,16 @@ static_assert(TICKS_PER_GAME_ENDED >= 1,
  * the simulation runs, so a sleeping thread wakes close to its deadline.
  */
 constexpr std::uint32_t FINE_TIMER_RESOLUTION_MILLISECONDS = 1;
+
+/**
+ * @brief The stages of the server's loop, in the order each tick runs them:
+ * the datagrams received are read, the game is simulated, then what changed is
+ * sent. A module adds its work to one of them during its install().
+ */
+constexpr std::string_view INPUT_STAGE = "inputs";
+constexpr std::string_view SIMULATION_STAGE = "simulation";
+constexpr std::string_view OUTPUT_STAGE = "outputs";
+constexpr std::array<std::string_view, 3> SERVER_LOOP_STAGES{
+    INPUT_STAGE, SIMULATION_STAGE, OUTPUT_STAGE};
 
 }  // namespace rtype::server

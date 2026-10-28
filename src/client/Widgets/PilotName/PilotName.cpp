@@ -1,7 +1,7 @@
 #include "PilotName.hpp"
 #include <string>
 #include <string_view>
-#include "WidgetText.hpp"
+#include "PlayerNumberLabel.hpp"
 
 namespace rtype::client {
 

@@ -18,6 +18,8 @@
 #include "ImagePlacement.hpp"
 #include "InterfaceColorConstants.hpp"
 #include "MotionPreference.hpp"
+#include "PlayerPalette.hpp"
+#include "PlayerShading.hpp"
 #include "RandomRange.hpp"
 #include "RenderingConstants.hpp"
 #include "SpriteFrame.hpp"
@@ -149,7 +151,8 @@ void Squadron::advance(engine::Duration elapsed) {
   });
 }
 
-void Squadron::paint(IInterfaceCanvas& canvas, sf::Vector2i topLeft) const {
+void Squadron::paint(IInterfaceCanvas& canvas, sf::Vector2i topLeft,
+                     const PlayerPalette& palette) const {
   const sf::IntRect box(topLeft, SQUADRON_BOX_SIZE);
   const float time = seconds();
   paintFrame(canvas, box, time);
@@ -168,11 +171,16 @@ void Squadron::paint(IInterfaceCanvas& canvas, sf::Vector2i topLeft) const {
   const game::SpriteFrame shipFrame =
       PLAYER_SHIP_ANIMATION.frameAt(elapsed_).value_or(PLAYER_SHIP_FRAME);
   for (const SquadronShipPlacement& placement : placements(time)) {
+    const int color = placement.ship->color;
     canvas.drawImage(
-        TextureArea{.assetId = ENTITY_SHEET_ID,
-                    .rectangle = rectangleOf(
-                        inPlayerColorRow(shipFrame, placement.ship->color))},
-        ImagePlacement{.topLeft = box.position + placement.topLeft}, box);
+        TextureArea{
+            .assetId = ENTITY_SHEET_ID,
+            .rectangle = rectangleOf(inPlayerColorRow(shipFrame, color))},
+        ImagePlacement{
+            .topLeft = box.position + placement.topLeft,
+            .recolor =
+                shadingOf(palette, static_cast<std::size_t>(color)).recolor},
+        box);
   }
 }
 

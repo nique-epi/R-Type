@@ -2,7 +2,6 @@
 #include <SFML/Graphics/Color.hpp>
 #include <SFML/Graphics/Rect.hpp>
 #include <SFML/System/Utf.hpp>
-#include <string>
 #include <string_view>
 #include "BarState.hpp"
 #include "InterfaceConstants.hpp"
@@ -14,10 +13,6 @@ namespace rtype::client {
 int regularTextWidth(std::string_view text) {
   return static_cast<int>(sf::Utf8::count(text.begin(), text.end())) *
          REGULAR_FONT_ADVANCE;
-}
-
-std::string playerNumberLabel(int playerNumber) {
-  return PLAYER_NUMBER_PREFIX + std::to_string(playerNumber);
 }
 
 int centeredTextLeft(sf::IntRect box, std::string_view text) {

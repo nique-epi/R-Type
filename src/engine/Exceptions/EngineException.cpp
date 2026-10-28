@@ -65,4 +65,19 @@ ModuleStartFailedException::ModuleStartFailedException(
     : EngineException("The module \"" + moduleName +
                       "\" failed to start: " + reason) {}
 
+UnknownStageException::UnknownStageException(const std::string& stageName)
+    : EngineException("The loop has no stage named \"" + stageName + "\"") {}
+
+DuplicateServiceException::DuplicateServiceException(
+    const std::string& moduleName, const std::string& serviceName)
+    : EngineException("The module \"" + moduleName +
+                      "\" provides the service " + serviceName +
+                      ", which is already provided") {}
+
+MissingServiceException::MissingServiceException(const std::string& moduleName,
+                                                 const std::string& serviceName)
+    : EngineException("The module \"" + moduleName +
+                      "\" requires the service " + serviceName +
+                      ", which no module installed before it provides") {}
+
 }  // namespace rtype::engine

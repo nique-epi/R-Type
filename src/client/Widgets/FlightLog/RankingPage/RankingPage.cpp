@@ -2,6 +2,7 @@
 #include <SFML/Graphics/Rect.hpp>
 #include <SFML/System/Vector2.hpp>
 #include <cstddef>
+#include <optional>
 #include <string>
 #include "Easing.hpp"
 #include "EntitySprites.hpp"
@@ -20,8 +21,10 @@
 #include "MotionPreference.hpp"
 #include "Outline.hpp"
 #include "PaddedScore.hpp"
+#include "PilotColor.hpp"
 #include "PilotName.hpp"
-#include "ProtocolConstants.hpp"
+#include "PlayerShading.hpp"
+#include "ShadeSwap.hpp"
 #include "TextStyle.hpp"
 #include "TextureArea.hpp"
 #include "TimeConstants.hpp"
@@ -33,12 +36,14 @@ namespace rtype::client {
 namespace {
 
 /** @brief A row being written: its top-left corner, how long ago it started,
- * whether things may move, and where its dotted leader starts. */
+ * whether things may move, where its dotted leader starts, and the shades its
+ * marker swaps for those of the palette. */
 struct RowPlace {
   sf::Vector2i topLeft;
   engine::Duration intoRow{};
   MotionPreference motion{};
   int leaderLeft = LEADER_LEFT;
+  std::optional<ShadeSwap> markerRecolor = std::nullopt;
 };
 
 /** @returns How wide the ink behind YOU is. */
@@ -103,8 +108,9 @@ void paintRowName(IInterfaceCanvas& canvas, const FinalPilot& pilot,
       TextureArea{
           .assetId = HUD_SHEET_ID,
           .rectangle = rectangleOf(MARKER_FRAMES.at(static_cast<std::size_t>(
-              pilot.playerNumber - network::FIRST_PLAYER_NUMBER)))},
-      ImagePlacement{.topLeft = place.topLeft + PILOT_MARKER_OFFSET},
+              pilotColorOfPlayerNumber(pilot.playerNumber))))},
+      ImagePlacement{.topLeft = place.topLeft + PILOT_MARKER_OFFSET,
+                     .recolor = place.markerRecolor},
       INTERFACE_AREA);
   if (pilot.isLocalPlayer) {
     paintYouTag(canvas, place.topLeft);
@@ -197,6 +203,11 @@ void paintRankingPage(IInterfaceCanvas& canvas, const FlightLogLook& look,
     const FinalPilot& pilot = look.pilots[row];
     RowPlace place = rowPlaceOf(look, page, row);
     place.leaderLeft = leaderLeftOf(canvas, pilot);
+    place.markerRecolor =
+        shadingOf(look.palette,
+                  static_cast<std::size_t>(
+                      pilotColorOfPlayerNumber(pilot.playerNumber)))
+            .recolor;
     paintRow(canvas, pilot, place);
   }
 }

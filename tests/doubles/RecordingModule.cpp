@@ -3,6 +3,7 @@
 #include <string_view>
 #include <utility>
 #include <vector>
+#include "InstallContext.hpp"
 #include "JournalModule.hpp"
 #include "RecordingModuleConstants.hpp"
 #include "RecordingModuleSetup.hpp"
@@ -18,7 +19,10 @@ std::vector<std::string> RecordingModule::dependencies() const {
   return setup_.dependencies;
 }
 
-void RecordingModule::install() { record(INSTALL_CALL); }
+void RecordingModule::install(
+    [[maybe_unused]] rtype::engine::InstallContext& context) {
+  record(INSTALL_CALL);
+}
 
 void RecordingModule::start() {
   record(START_CALL);

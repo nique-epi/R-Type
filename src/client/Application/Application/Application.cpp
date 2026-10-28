@@ -202,7 +202,8 @@ std::unique_ptr<IScreen> Application::createScreen(ScreenId screen) {
                          .playfieldPointAt = playfieldMapping(),
                          .seed = std::random_device{}(),
                          .motion = motionPreference(),
-                         .flashes = flashPreferenceOf(settings_)},
+                         .flashes = flashPreferenceOf(settings_),
+                         .palette = playerPaletteOf(settings_)},
           interfaceCanvas());
     }
   }
@@ -219,6 +220,7 @@ std::unique_ptr<IScreen> Application::titleScreen(ScreenId screen) {
   return std::make_unique<TitleScreen>(
       TitleScreenParts{.navigator = screens_,
                        .sounds = sounds_,
+                       .settings = settings_,
                        .playfieldPointAt = playfieldMapping(),
                        .motion = motionPreference(),
                        .seed = std::random_device{}(),
@@ -276,6 +278,7 @@ std::unique_ptr<IScreen> Application::lobbyScreen(ScreenId screen) {
           .connection = connection_,
           .playfieldPointAt = playfieldMapping(),
           .readyKey = {.key = readyKey, .name = localizedKeyName(readyKey)},
+          .palette = playerPaletteOf(settings_),
           .motion = motionPreference(),
           .place =
               afterGame ? LobbyPlace::AfterGame : LobbyPlace::AfterConnection},

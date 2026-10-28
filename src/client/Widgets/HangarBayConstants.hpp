@@ -56,6 +56,7 @@ constexpr sf::Color CLAMP_COLOR = BLUE;
  * PLAYER_NUMBER_PREFIX and LOCAL_PLAYER_TAG say. */
 constexpr const char* OPEN_BAY_TEXT = "OPEN BAY";
 constexpr const char* READY_TEXT = "READY";
+constexpr const char* READY_ASKED_TEXT = "READY...";
 constexpr const char* NOT_READY_TEXT = "NOT READY";
 constexpr const char* NOT_READY_ASKED_TEXT = "CANCEL...";
 

@@ -29,6 +29,7 @@
 #include "MissionStart.hpp"
 #include "PlayerAction.hpp"
 #include "PlayerInputPacer.hpp"
+#include "PlayerPalette.hpp"
 #include "PlayerPreferences.hpp"
 #include "ShipFlightSystem.hpp"
 // NOLINTNEXTLINE(misc-include-cleaner)
@@ -117,7 +118,7 @@ void GameScreen::update(engine::Duration elapsed) {
   }
   systems_.run(components_, elapsed);
   const FlashPreference preference = flashPreferenceOf(*settings_);
-  effects_.advance(elapsed, preference);
+  effects_.advance(elapsed, preference, pilotShadesOf(*settings_));
   applyEntityMessages();
   askForTheEndWhenDue();
   moveSky(*sky_, effects_, preference);
@@ -162,19 +163,22 @@ void GameScreen::askForTheEndWhenDue() {
 
 void GameScreen::repaintStatusWhenChanged() {
   if (scoreBoard_.revision() != paintedStatusRevision_ ||
-      missionBannerAt(effects_.sinceStart()) != paintedBanner_) {
+      missionBannerAt(effects_.sinceStart()) != paintedBanner_ ||
+      paintedPalette_ != playerPaletteOf(*settings_)) {
     repaintStatus();
   }
 }
 
 void GameScreen::repaintStatus() {
   const MissionBannerLook banner = missionBannerAt(effects_.sinceStart());
+  const PlayerPalette& palette = playerPaletteOf(*settings_);
   statusCanvas_->clear();
-  paintStatusBand(*statusCanvas_, scoreBoard_.pilots());
+  paintStatusBand(*statusCanvas_, scoreBoard_.pilots(), palette);
   paintMissionBanner(*statusCanvas_, banner);
   statusCanvas_->display();
   paintedStatusRevision_ = scoreBoard_.revision();
   paintedBanner_ = banner;
+  paintedPalette_ = palette;
 }
 
 ActionSet GameScreen::playerActions() const {

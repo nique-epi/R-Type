@@ -46,7 +46,8 @@ void RecordingInterfaceCanvas::drawImage(
                              .topLeft = placement.topLeft,
                              .scale = placement.scale,
                              .visibleArea = visibleArea,
-                             .tint = placement.tint});
+                             .tint = placement.tint,
+                             .recolor = placement.recolor});
 }
 
 void RecordingInterfaceCanvas::drawSmoothImage(std::string_view assetId,

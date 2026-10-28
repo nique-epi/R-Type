@@ -4,6 +4,7 @@
 #include "ByteSequence.hpp"
 #include "NetworkException.hpp"
 #include "ProtocolConstants.hpp"
+#include "ProtocolTestConstants.hpp"
 #include "WorldState.hpp"
 #include "WorldStateCodec.hpp"
 #include "WorldStateCodecTestConstants.hpp"
@@ -33,9 +34,13 @@ using rtype::network::testing::FEW_ENTITIES;
 using rtype::network::testing::FIRST_MOTION_OFFSET;
 using rtype::network::testing::fourPlayers;
 using rtype::network::testing::invulnerablePlayer;
+using rtype::network::testing::LARGEST_MOTION;
 using rtype::network::testing::LARGEST_STATE_PAYLOAD;
+using rtype::network::testing::LARGEST_U32;
+using rtype::network::testing::LARGEST_U8;
 using rtype::network::testing::LARGEST_WIRE_COORDINATE;
 using rtype::network::testing::LAST_ENTITY_TYPE;
+using rtype::network::testing::LAST_PLAYER_NUMBER;
 using rtype::network::testing::LATE_TICK;
 using rtype::network::testing::MOTION_PAST_THE_DASH;
 using rtype::network::testing::NEAREST_EIGHTH_OF_UNROUNDED_X;
@@ -71,6 +76,31 @@ TEST(WorldStateCodec, EncodesTheLayoutOfTheProtocolPage) {
       byteSequence({0x00, 0x00, 0x00, 0x03, 0x01, 0x01, 0x00, 0x00, 0x00,
                     0x07, 0x03, 0x00, 0x00, 0x00, 0x64, 0x00, 0x00, 0x01,
                     0x00, 0x00, 0x00, 0x09, 0x01, 0x03, 0x20, 0x01, 0x94}));
+}
+
+/**
+ * Given a state of the largest u32 tick, whose player holds the largest value
+ * of each of its fields and whose enemy missile has the largest u32 id, at
+ * the smallest x and the largest y of the wire range
+ * When it is encoded then decoded
+ * Then the decoded state equals the original
+ */
+TEST(WorldStateCodec, KeepsTheLargestValueOfEachField) {
+  const WorldState state{
+      .tick = LARGEST_U32,
+      .players = {PlayerState{.playerNumber = LAST_PLAYER_NUMBER,
+                              .shipEntityId = LARGEST_U32,
+                              .lives = LARGEST_U8,
+                              .score = LARGEST_U32,
+                              .invulnerable = true,
+                              .motion = LARGEST_MOTION}},
+      .entities = {EntityState{.entityId = LARGEST_U32,
+                               .entityType = WireEntityType::EnemyMissile,
+                               .x = SMALLEST_WIRE_COORDINATE,
+                               .y = LARGEST_WIRE_COORDINATE}}};
+
+  EXPECT_EQ(WorldStateCodec::decode(WorldStateCodec::encode(state).front()),
+            state);
 }
 
 /**

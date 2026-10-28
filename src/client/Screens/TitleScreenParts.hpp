@@ -10,6 +10,8 @@
 
 namespace rtype::client {
 
+struct PlayerSettings;
+
 /**
  * @brief What a title screen is built from, but the picture it owns.
  *
@@ -25,6 +27,9 @@ struct TitleScreenParts {
   std::reference_wrapper<IScreenNavigator> navigator;
   /** @brief Plays the click of the menu, which must outlive the screen. */
   std::reference_wrapper<ISoundPlayer> sounds;
+  /** @brief Settings of the player, read at every repaint: the squadron is
+   * painted in the palette of its color mode. They must outlive the screen. */
+  std::reference_wrapper<const PlayerSettings> settings;
   /** @brief Gives the point of the playfield under a pixel of the window. */
   PlayfieldMapping playfieldPointAt;
   /** @brief MotionPreference::Reduced shows the squadron at rest. */

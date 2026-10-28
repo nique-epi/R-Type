@@ -222,14 +222,14 @@ TEST_F(LobbyScreenFixture, TheBarSaysCancelReadyOnceAsked) {
  * Given the local player asked to be ready, the server still listing it not
  * ready
  * When a frame goes by
- * Then its cell says READY on gold
+ * Then its cell says READY... on gold
  */
 TEST_F(LobbyScreenFixture, AnAskTheServerDoesNotShowYetIsWaitedFor) {
   connection().setRequestedReady(true);
 
   list({pilot(OWN_NUMBER, OWN_NICKNAME, false)});
 
-  EXPECT_NE(writingOf(canvas(), "READY"), nullptr);
+  EXPECT_NE(writingOf(canvas(), "READY..."), nullptr);
   EXPECT_THAT(canvas().fills,
               Contains(RecordedFill{.area = FIRST_BAY_CELL_INSIDE,
                                     .color = STAR_GOLD}));

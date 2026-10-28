@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstddef>
+#include <functional>
 #include <memory>
 #include <span>
 #include <vector>
@@ -17,6 +18,7 @@
 #include "IntroFreeze.hpp"
 #include "IntroScreenParts.hpp"
 #include "Logger.hpp"
+#include "PlayerPalette.hpp"
 #include "ScreenId.hpp"
 #include "SyncedClock.hpp"
 #include "TimeConstants.hpp"
@@ -98,6 +100,7 @@ class IntroScreen : public IScreen {
   IMusicPlayer* music_;
   logging::Logger logger_;
   FlashPreference preference_;
+  std::reference_wrapper<const PlayerPalette> palette_;
   std::span<const IntroFreeze> freezes_;
   SyncedClock clock_;
   CameraShake shake_;

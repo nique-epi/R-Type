@@ -1,25 +1,25 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include <SFML/Graphics/Color.hpp>
-#include <SFML/Graphics/Rect.hpp>
-#include <SFML/System/Vector2.hpp>
 #include <algorithm>
-#include <chrono>
 #include <cstddef>
 #include <optional>
 #include "BackgroundColorConstants.hpp"
 #include "EntitySpriteTestConstants.hpp"
 #include "HangarBay.hpp"
+#include "HangarBayFixtures.hpp"
+#include "HangarBayTestConstants.hpp"
 #include "InterfaceColorConstants.hpp"
 #include "MotionPreference.hpp"
+#include "PlayerPaletteConstants.hpp"
+#include "PlayerPaletteTestConstants.hpp"
 #include "RecordingInterfaceCanvas.hpp"
 #include "TextStyle.hpp"
 #include "TimeConstants.hpp"
 
-using rtype::client::BayMotion;
-using rtype::client::BayPilot;
 using rtype::client::BayReadiness;
 using rtype::client::DEEP_BLUE;
+using rtype::client::DEUTERANOPIA_PLAYER_PALETTE;
 using rtype::client::HangarBay;
 using rtype::client::HUD_CYAN;
 using rtype::client::MotionPreference;
@@ -27,76 +27,20 @@ using rtype::client::PALE_BLUE;
 using rtype::client::STAR_GOLD;
 using rtype::client::TextAlignment;
 using rtype::client::TextFont;
+using rtype::client::testing::BAY_AREA;
+using rtype::client::testing::BLUISH_GREEN;
+using rtype::client::testing::CELL_INSIDE;
+using rtype::client::testing::FOURTH_BEACON;
+using rtype::client::testing::LOCAL_TAG_ANCHOR;
+using rtype::client::testing::NICKNAME;
+using rtype::client::testing::NICKNAME_ANCHOR;
+using rtype::client::testing::SHEET_GREEN_TO_BLUISH_GREEN;
+using rtype::client::testing::SHIP_TOP_LEFT;
+using rtype::client::testing::THIRD_COLOR_FIRST_FRAME;
+using rtype::client::testing::THIRD_COLOR_SECOND_FRAME;
+using rtype::client::testing::THREE_BEACON_STEPS;
+using rtype::client::testing::TWICE;
 using ::testing::Contains;
-
-namespace {
-
-/** @brief The second bay of the waiting room the team chose, and where its
- * parts lie: the nickname on its middle column at row 120, the ship 19 in and
- * 30 down, the inside of its cell, YOU at the end of the number row. */
-constexpr sf::Vector2i BAY_TOP_LEFT(134, 50);
-constexpr sf::IntRect BAY_AREA({134, 50}, {102, 112});
-constexpr sf::Vector2i NICKNAME_ANCHOR(185, 120);
-constexpr sf::Vector2i SHIP_TOP_LEFT(153, 80);
-constexpr sf::IntRect CELL_INSIDE({143, 137}, {84, 14});
-constexpr sf::Vector2i LOCAL_TAG_ANCHOR(228, 58);
-
-/** @brief The two frames of the third ship color of the entity sheet, and the
- * enlargement of a ship in a bay. */
-constexpr sf::IntRect THIRD_COLOR_FIRST_FRAME({0, 36}, {32, 16});
-constexpr sf::IntRect THIRD_COLOR_SECOND_FRAME({34, 36}, {32, 16});
-constexpr int TWICE = 2;
-constexpr int THIRD_COLOR = 2;
-constexpr int THIRD_PLAYER = 3;
-
-/** @brief Three steps of the beacons, and the fourth beacon of the second
- * bay: 19 + 3 × 9 in, 47 down. */
-constexpr rtype::engine::Duration THREE_BEACON_STEPS =
-    std::chrono::milliseconds(600);
-constexpr sf::IntRect FOURTH_BEACON({180, 97}, {2, 2});
-constexpr sf::Vector2i BEACON_SQUARE(2, 2);
-
-constexpr const char* NICKNAME = "CAPTAIN_STARDUST";
-
-/** @returns The bay of player 3 at BAY_TOP_LEFT, with a pilot in this state,
- * or open. */
-HangarBay bayOf(std::optional<BayReadiness> readiness,
-                bool isLocalPlayer = false) {
-  HangarBay bay{.topLeft = BAY_TOP_LEFT,
-                .playerNumber = THIRD_PLAYER,
-                .color = THIRD_COLOR,
-                .pilot = std::nullopt};
-  if (readiness.has_value()) {
-    bay.pilot = BayPilot{.nickname = NICKNAME,
-                         .readiness = *readiness,
-                         .isLocalPlayer = isLocalPlayer};
-  }
-  return bay;
-}
-
-/** @returns What painting a bay asks of a canvas, its animations run for
- * @p elapsed. */
-InterfaceCanvasRecord bayPaintingOf(const HangarBay& bay,
-                                    rtype::engine::Duration elapsed,
-                                    MotionPreference motion) {
-  InterfaceCanvasRecord record;
-  RecordingInterfaceCanvas canvas(record);
-  rtype::client::paintHangarBay(
-      canvas, bay, BayMotion{.elapsed = elapsed, .preference = motion});
-  return record;
-}
-
-/** @returns How many beacons of a record are of this color: fills of this
- * color as large as a beacon, unlike the strokes of the box around them. */
-std::size_t beaconsOfColor(const InterfaceCanvasRecord& record,
-                           sf::Color color) {
-  return static_cast<std::size_t>(std::ranges::count_if(
-      record.fills, [color](const RecordedFill& fill) noexcept {
-        return fill.color == color && fill.area.size == BEACON_SQUARE;
-      }));
-}
-
-}  // namespace
 
 /**
  * Given a bay with a pilot
@@ -190,13 +134,13 @@ TEST(HangarBay, AReadyPilotsCellSaysReadyOnAPaleFill) {
 /**
  * Given a local player who asked to be ready, not shown ready yet
  * When the bay is painted
- * Then its cell says READY on gold
+ * Then its cell says READY... on gold: the wait is told by its word too
  */
-TEST(HangarBay, AnAskNotShownYetIsWrittenOnGold) {
+TEST(HangarBay, AnAskNotShownYetSaysReadyWithDotsOnGold) {
   const InterfaceCanvasRecord painted = bayPaintingOf(
       bayOf(BayReadiness::ReadyAsked, true), {}, MotionPreference::Full);
 
-  EXPECT_NE(writingOf(painted, "READY"), nullptr);
+  EXPECT_NE(writingOf(painted, "READY..."), nullptr);
   EXPECT_THAT(painted.fills,
               Contains(RecordedFill{.area = CELL_INSIDE, .color = STAR_GOLD}));
 }
@@ -254,4 +198,37 @@ TEST(HangarBay, AnOpenBaySaysSoAndDrawsNoShip) {
 
   EXPECT_EQ(anchorOf(painted, "OPEN BAY"), NICKNAME_ANCHOR);
   EXPECT_TRUE(painted.images.empty());
+}
+
+/**
+ * Given the bay of player 3, and the palette for deuteranopia
+ * When it is painted
+ * Then its color band is filled with the bluish green of the palette
+ */
+TEST(HangarBay, TheColorBandIsInThePalettesShade) {
+  HangarBay bay = bayOf(BayReadiness::NotReady);
+  bay.palette = DEUTERANOPIA_PLAYER_PALETTE;
+
+  const InterfaceCanvasRecord painted =
+      bayPaintingOf(bay, {}, MotionPreference::Full);
+
+  EXPECT_TRUE(std::ranges::any_of(painted.fills, [](const RecordedFill& fill) {
+    return fill.color == BLUISH_GREEN;
+  }));
+}
+
+/**
+ * Given the bay of player 3, and the palette for deuteranopia
+ * When it is painted
+ * Then its ship swaps the shades of the sheet for those of the palette
+ */
+TEST(HangarBay, TheShipSwapsItsShadesForThePalettes) {
+  HangarBay bay = bayOf(BayReadiness::NotReady);
+  bay.palette = DEUTERANOPIA_PLAYER_PALETTE;
+
+  const InterfaceCanvasRecord painted =
+      bayPaintingOf(bay, {}, MotionPreference::Full);
+
+  ASSERT_EQ(painted.images.size(), 1U);
+  EXPECT_EQ(painted.images.front().recolor, SHEET_GREEN_TO_BLUISH_GREEN);
 }

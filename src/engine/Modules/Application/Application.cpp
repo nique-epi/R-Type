@@ -5,10 +5,14 @@
 #include <memory>
 #include <span>
 #include <string>
+#include <string_view>
 #include <utility>
 #include <vector>
 #include "EngineException.hpp"
 #include "IModule.hpp"
+#include "InstallContext.hpp"
+#include "LoopStages.hpp"
+#include "TimeConstants.hpp"
 
 namespace rtype::engine {
 
@@ -46,12 +50,22 @@ void requireDependenciesListedBefore(
 }  // namespace
 
 Application::Application(std::vector<std::unique_ptr<IModule>> modules)
-    : modules_(std::move(modules)) {
+    : Application(LoopStages(std::span<const std::string_view>{}),
+                  std::move(modules)) {}
+
+Application::Application(LoopStages stages,
+                         std::vector<std::unique_ptr<IModule>> modules)
+    : stages_(std::move(stages)), modules_(std::move(modules)) {
   requireNoNullModule(modules_);
   requireDependenciesListedBefore(modules_);
 }
 
-Application::~Application() { stop(); }
+Application::~Application() {
+  stop();
+  while (!modules_.empty()) {
+    modules_.pop_back();
+  }
+}
 
 void Application::start() {
   if (startCalled_) {
@@ -63,15 +77,23 @@ void Application::start() {
 }
 
 void Application::stop() {
+  running_ = false;
   while (startedCount_ > 0) {
     --startedCount_;
     modules_[startedCount_]->stop();
   }
 }
 
+void Application::runStages(Duration elapsed) const {
+  if (running_) {
+    stages_.run(elapsed);
+  }
+}
+
 void Application::installModules() {
   for (const std::unique_ptr<IModule>& listedModule : modules_) {
-    listedModule->install();
+    InstallContext context(listedModule->name(), services_, stages_);
+    listedModule->install(context);
   }
 }
 
@@ -85,6 +107,7 @@ void Application::startModules() {
     }
     ++startedCount_;
   }
+  running_ = true;
 }
 
 }  // namespace rtype::engine

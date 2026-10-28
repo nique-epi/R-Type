@@ -9,6 +9,10 @@ namespace rtype::network::testing {
  */
 constexpr std::uint8_t ROLLING_RIGHT_MOTION = 0x18;
 
+/** @brief The largest motion a player may carry: the four directions, the
+ * roll and the dash, bits 0 to 5. */
+constexpr std::uint8_t LARGEST_MOTION = 0x3F;
+
 /** @brief A motion with bit 6 set, past the bit of the dash. */
 constexpr std::uint8_t MOTION_PAST_THE_DASH = 0x40;
 

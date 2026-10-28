@@ -4,33 +4,54 @@
 #include <memory>
 #include <vector>
 #include "IModule.hpp"
+#include "LoopStages.hpp"
+#include "ServiceRegistry.hpp"
+#include "TimeConstants.hpp"
 
 namespace rtype::engine {
 
 /**
- * @brief Installs, starts and stops the modules of a program in a known order.
+ * @brief Installs, starts and stops the modules of a program in a known order,
+ * and runs the work they added to the stages of the program's loop.
  *
  * The order is the one of the list given to the constructor. start() installs
  * every module in that order, then starts every module in that order; stop()
  * stops the started modules in the reverse order. A module comes after every
  * module it depends on, so its dependencies are installed and started before
- * it, and stopped after it.
+ * it, and stopped after it. A module finds, during its install(), the services
+ * of the modules installed before it.
  */
 class Application {
  public:
   /**
-   * @brief Takes the modules and checks the list, before any module is
-   * installed.
+   * @brief Builds an application whose loop has no stage, as a program that
+   * runs no work through it does.
    *
-   * @param modules The modules of the program, in the order they install and
-   * start.
    * @throws NullModuleException if a module is null.
    * @throws MissingDependencyException if a dependency of a module is not
    * listed before it.
    */
   explicit Application(std::vector<std::unique_ptr<IModule>> modules);
 
-  /** @brief Stops the modules still started, as stop() does. */
+  /**
+   * @brief Takes the stages of the loop and the modules, and checks the list,
+   * before any module is installed.
+   *
+   * @param stages The stages of the program's loop, in the order they run,
+   * still without work: the modules add theirs while they install.
+   * @param modules The modules of the program, in the order they install and
+   * start.
+   * @throws NullModuleException if a module is null.
+   * @throws MissingDependencyException if a dependency of a module is not
+   * listed before it.
+   */
+  Application(LoopStages stages, std::vector<std::unique_ptr<IModule>> modules);
+
+  /**
+   * @brief Stops the modules still started, as stop() does, then destroys the
+   * modules, the last listed first, so a module is destroyed before the
+   * modules whose services it holds.
+   */
   ~Application();
 
   Application(const Application&) = delete;
@@ -45,10 +66,13 @@ class Application {
    * installs and starts nothing. When a module throws from start(), the modules
    * started before it are stopped, the last started first, then the error is
    * thrown; the module that threw is not stopped. An exception thrown by
-   * install() goes through unchanged, and no module is started.
+   * install() goes through unchanged, no later module is installed and no
+   * module is started.
    *
    * @throws ModuleStartFailedException if a module throws from start(); its
    * message names the module and gives the reason.
+   * @throws MissingServiceException if a module requires a service no module
+   * installed before it provides.
    */
   void start();
 
@@ -59,13 +83,23 @@ class Application {
    */
   void stop();
 
+  /**
+   * @brief Runs every stage of the loop in declared order, each work with
+   * @p elapsed, while every module is started; runs nothing before start()
+   * returned, after a failed start() and after stop().
+   */
+  void runStages(Duration elapsed) const;
+
  private:
   void installModules();
   void startModules();
 
+  LoopStages stages_;
+  ServiceRegistry services_;
   std::vector<std::unique_ptr<IModule>> modules_;
   std::size_t startedCount_{0};
   bool startCalled_{false};
+  bool running_{false};
 };
 
 }  // namespace rtype::engine

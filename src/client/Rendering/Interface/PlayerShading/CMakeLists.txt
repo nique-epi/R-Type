@@ -1,0 +1,7 @@
+add_library(rtype_client_player_shading STATIC PlayerShading.cpp)
+
+target_include_directories(rtype_client_player_shading PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+
+target_link_libraries(rtype_client_player_shading PUBLIC rtype_client_interface)
+
+rtype_enable_warnings(rtype_client_player_shading)
