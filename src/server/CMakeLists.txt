@@ -19,14 +19,9 @@ add_executable(r-type_server main.cpp)
 target_link_libraries(r-type_server
   PRIVATE
     rtype_logging
-    rtype_network_constants
-    rtype_server_application
-    rtype_server_connection_acceptor
     rtype_server_constants
-    rtype_server_game_event_broadcaster
-    rtype_server_game_instance
-    rtype_server_launch_options
-    rtype_server_wave_catalog
+    rtype_server_modules
+    rtype_server_stop_signals
 )
 
 rtype_enable_warnings(r-type_server)

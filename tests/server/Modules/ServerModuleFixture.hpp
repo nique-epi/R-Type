@@ -20,6 +20,9 @@ class ServerModuleFixture : public ::testing::Test {
   /** @returns A UDP port nothing was bound to a moment ago. */
   [[nodiscard]] static std::uint16_t freeUdpPort();
 
+  /** @returns Whether a UDP socket can be bound on @p port now. */
+  [[nodiscard]] static bool portIsFree(std::uint16_t port);
+
   JournalFile journal_;
 
  private:

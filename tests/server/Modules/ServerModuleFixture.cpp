@@ -1,5 +1,6 @@
 #include "ServerModuleFixture.hpp"
 #include <cstdint>
+#include <exception>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -27,4 +28,17 @@ std::uint16_t ServerModuleFixture::freeUdpPort() {
                    .address = std::string{rtype::network::ANY_IPV4_ADDRESS},
                    .port = rtype::network::ANY_PORT}};
   return socket.localEndpoint().port;
+}
+
+bool ServerModuleFixture::portIsFree(std::uint16_t port) {
+  try {
+    rtype::network::NetworkContext network;
+    const rtype::network::UdpSocket socket{
+        network, rtype::network::Endpoint{
+                     .address = std::string{rtype::network::ANY_IPV4_ADDRESS},
+                     .port = port}};
+    return true;
+  } catch (const std::exception&) {
+    return false;
+  }
 }

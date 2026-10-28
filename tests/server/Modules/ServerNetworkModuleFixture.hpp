@@ -33,9 +33,6 @@ class ServerNetworkModuleFixture : public ServerModuleFixture {
   [[nodiscard]] static std::unique_ptr<ServiceProbeModule> probeRunning(
       rtype::engine::StageWork work);
 
-  /** @returns Whether a UDP socket can be bound on @p port now. */
-  [[nodiscard]] static bool portIsFree(std::uint16_t port);
-
   /** @returns A work that counts its passes in @p passes and keeps the time of
    * the last one in @p lastElapsedNanoseconds. */
   [[nodiscard]] static rtype::engine::StageWork countingPassesIn(

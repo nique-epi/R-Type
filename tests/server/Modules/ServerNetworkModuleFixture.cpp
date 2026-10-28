@@ -41,19 +41,6 @@ std::unique_ptr<ServiceProbeModule> ServerNetworkModuleFixture::probeRunning(
       std::move(work));
 }
 
-bool ServerNetworkModuleFixture::portIsFree(std::uint16_t port) {
-  try {
-    rtype::network::NetworkContext network;
-    const rtype::network::UdpSocket socket{
-        network, rtype::network::Endpoint{
-                     .address = std::string{rtype::network::ANY_IPV4_ADDRESS},
-                     .port = port}};
-    return true;
-  } catch (const std::exception&) {
-    return false;
-  }
-}
-
 rtype::engine::StageWork ServerNetworkModuleFixture::countingPassesIn(
     std::atomic<int>& passes,
     std::atomic<std::int64_t>& lastElapsedNanoseconds) {
