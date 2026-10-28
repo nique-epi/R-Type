@@ -17,7 +17,6 @@
 #include "SystemScheduler.hpp"
 #include "TimerScheduler.hpp"
 #include "World.hpp"
-#include "WorldSlot.hpp"
 
 namespace rtype::server::testing {
 
@@ -72,7 +71,7 @@ class GameModuleFixture : public ::testing::Test {
   engine::EventBus events_;
   engine::TimerScheduler timers_;
   engine::SystemScheduler systems_;
-  WorldSlot world_;
+  game::World world_;
   PlayerRoster roster_;
   SessionHooks hooks_;
   engine::ServiceRegistry services_;

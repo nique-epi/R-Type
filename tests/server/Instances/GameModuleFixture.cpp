@@ -60,7 +60,7 @@ void GameModuleFixture::runStages() {
   stages_.run(engine::SIMULATION_TICK_DURATION);
 }
 
-game::World& GameModuleFixture::world() { return world_.current(); }
+game::World& GameModuleFixture::world() { return world_; }
 
 const std::vector<network::OutgoingDatagram>& GameModuleFixture::sentDatagrams()
     const {
