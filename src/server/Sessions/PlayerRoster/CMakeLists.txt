@@ -6,7 +6,7 @@ target_link_libraries(rtype_server_player_roster
   PUBLIC
     rtype_network_protocol
     rtype_server_connected_players
-    rtype_server_instances
+    rtype_server_sessions
 )
 
 rtype_enable_warnings(rtype_server_player_roster)
