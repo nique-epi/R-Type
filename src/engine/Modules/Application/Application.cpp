@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <exception>
 #include <memory>
+#include <mutex>
 #include <span>
 #include <string>
 #include <string_view>
@@ -78,7 +79,10 @@ void Application::start() {
 }
 
 void Application::stop() {
-  running_ = false;
+  {
+    const std::scoped_lock lock{stagesMutex_};
+    running_ = false;
+  }
   while (startedCount_ > 0) {
     --startedCount_;
     modules_[startedCount_]->stop();
@@ -86,6 +90,7 @@ void Application::stop() {
 }
 
 void Application::runStages(Duration elapsed) const {
+  const std::scoped_lock lock{stagesMutex_};
   if (running_) {
     stages_.run(elapsed);
   }
@@ -108,6 +113,7 @@ void Application::startModules() {
     }
     ++startedCount_;
   }
+  const std::scoped_lock lock{stagesMutex_};
   running_ = true;
 }
 
