@@ -11,6 +11,7 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include "ByteWriter.hpp"
 #include "ComponentRegistry.hpp"
 #include "ConnectedPlayer.hpp"
 #include "DatagramCodec.hpp"
@@ -27,6 +28,7 @@
 #include "GameSettings.hpp"
 #include "GameState.hpp"
 #include "IncomingDatagram.hpp"
+#include "LobbyState.hpp"
 #include "MessageType.hpp"
 #include "OutgoingDatagram.hpp"
 #include "PacketHeader.hpp"
@@ -346,5 +348,39 @@ std::vector<std::string> GameInstanceLogTest::dropLines() const {
 }
 
 const DebugJournal& GameInstanceLogTest::journal() const { return journal_; }
+
+std::vector<network::MessageType> messageTypesOf(
+    const std::vector<network::OutgoingDatagram>& datagrams) {
+  std::vector<network::MessageType> types;
+  types.reserve(datagrams.size());
+  for (const network::OutgoingDatagram& datagram : datagrams) {
+    types.push_back(onlyMessageTypeOf(datagram));
+  }
+  return types;
+}
+
+std::optional<network::EntityState> entityOf(const network::WorldState& state,
+                                             std::uint32_t entityId) {
+  for (const network::EntityState& entity : state.entities) {
+    if (entity.entityId == entityId) {
+      return entity;
+    }
+  }
+  return std::nullopt;
+}
+
+network::LobbyState roomOfTheFirstPlayerNotReady() {
+  return network::LobbyState{.players = {network::LobbyPlayer{
+                                 .playerNumber = network::FIRST_PLAYER_NUMBER,
+                                 .ready = false,
+                                 .nickname = std::string{PLAYER_NICKNAME}}}};
+}
+
+std::vector<std::byte> inputPayload(const network::PlayerInput& input) {
+  network::ByteWriter payload;
+  payload.writeUint32(input.inputNumber);
+  payload.writeUint8(input.actions);
+  return payload.bytes();
+}
 
 }  // namespace rtype::server::testing

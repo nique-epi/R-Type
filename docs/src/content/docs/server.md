@@ -32,7 +32,7 @@ This page tells you where to look when you need to change something. It describe
 | Collisions | Available, run by each game tick | `src/game/Systems/CollisionSystem/`, `src/game/Systems/CollisionRules/`, `src/game/Events/`, `src/server/Instances/GameFlow/` |
 | Damage and destruction | Available, run by each game tick; a missile takes no health from a ship, and what its hit costs belongs to the lives | `src/game/Systems/DamageRules/`, `src/server/Instances/GameFlow/` |
 | Ship of each player, created when the player joins and announced to the others | Available | `src/game/Spawning/`, `src/server/Replication/ShipSpawnAnnouncer/` |
-| Ship control: where a ship goes from the directions its player holds, kept above the status band | Available; the client does not predict its own ship yet | `src/game/ShipControl/`, `src/server/Instances/GameFlow/` |
+| Ship control: how a ship drifts from the directions its player holds, rolls and dashes on a double press, kept above the status band | Available; the client does not predict its own ship yet | `src/game/ShipControl/`, `src/server/Instances/GameFlow/`, `src/server/Instances/ShipInput/` |
 | Bydos appearing off screen at random heights above the status band of the clients, in waves, then moving left | Available | `src/game/Spawning/BydoSpawnPosition.*`, `src/server/Spawning/` |
 | Missiles of the players: fired in front of the ship while shoot is held, three per second at most, removed past the right edge | Available | `src/server/Spawning/MissileLauncher/`, `src/game/Spawning/MissileStartPosition.*`, `src/game/Systems/PlayfieldExitSystem/` |
 | Missiles of the Bydos: every Bydo fires to the left 1.5 s after it appears, then every 1.5 s; removed past the left edge | Available | `src/server/Spawning/BydoGunner/`, `src/game/Spawning/EnemyMissileStartPosition/`, `src/game/Systems/PlayfieldExitSystem/` |
@@ -172,7 +172,7 @@ How late a tick starts depends on how precisely the system wakes a sleeping thre
 - `WORLD_STATES_PER_SECOND` is **provisional**: it will be revised once measured on a real network. It must divide the tick rate, and the build fails otherwise. Code must read the constants, `TICKS_PER_WORLD_STATE` for instance, and never repeat the 3.
 - Nothing is built when no player is connected. An entity without a network id, or without a type, is not listed.
 - An entity whose position is not a finite number (NaN or infinite), which only a game bug can produce, is left out of the state instead of stopping the server. A warning under the `Replication` module gives how many entities were left out, each time that number changes, so a stuck entity is reported once rather than 20 times per second.
-- The state lists every connected player with its number, ship, and score. `lives` is what the player has left, and `invulnerable` is true while its ship, back after a hit, cannot be hit (see [Lives](#lives-lifekeeper)). The score is the points the player earned in the current game: a missile with a `MissileOwner` that destroys an enemy with a `ScoreValue` makes `DamageRules` publish `EnemyKilled`, and the `ScoreKeeper` adds the points (`DRIFTER_POINTS` 100, `WEAVER_POINTS` 200, both provisional) to the player's score, which stops at its largest value and goes back to 0 with each new world. The ship of each player has a `NetworkIdentity` (see [Player ships](#player-ships-shipspawnannouncer)), so it is listed as an entity too.
+- The state lists every connected player with its number, ship, and score. `lives` is what the player has left, `invulnerable` is true while its ship, back after a hit, cannot be hit (see [Lives](#lives-lifekeeper)), and `motion` holds the directions of its newest input and whether its ship rolls or dashes, so every client can draw what each pilot does. The score is the points the player earned in the current game: a missile with a `MissileOwner` that destroys an enemy with a `ScoreValue` makes `DamageRules` publish `EnemyKilled`, and the `ScoreKeeper` adds the points (`DRIFTER_POINTS` 100, `WEAVER_POINTS` 200, both provisional) to the player's score, which stops at its largest value and goes back to 0 with each new world. The ship of each player has a `NetworkIdentity` (see [Player ships](#player-ships-shipspawnannouncer)), so it is listed as an entity too.
 - A state split into several datagrams takes one sequence per datagram, so the client reads every part.
 - A playfield larger than 2047 logical units in either direction fails the build, because a wire coordinate would no longer hold it (see [Protocol](/R-Type/protocol/#positions)).
 
@@ -222,13 +222,13 @@ send(rtype::server::sessionDatagram(player, rtype::network::GameStarted{}));
 
 ## Sessions of a game: `GameSessions`
 
-`GameSessions` (`src/server/Sessions/GameSessions/`) holds the players of one game and the sessions the server keeps with them. `Sessions/` links no other folder of `src/server`, so `Instances/`, `Lobby/`, `Replication/` and `Spawning/` link it and never the other way round. It is not yet free of R-Type: `ConnectedPlayer` still carries the ship, score and lives of a player, and `Departures` publishes the `PlayerDeparture` of `src/game`. A game gives it a `GameSessionsParts`: the event bus, the send function, `readyAccepted`, which says whether a `ReadyState` counts right now, and `onClosing`, which receives each player whose session closes.
+`GameSessions` (`src/server/Sessions/GameSessions/`) holds the players of one game and the sessions the server keeps with them. `Sessions/` links no other folder of `src/server`, so `Instances/`, `Lobby/`, `Replication/` and `Spawning/` link it and never the other way round. It is not yet free of R-Type: `ConnectedPlayer` still carries the ship, score and lives of a player, and `Departures` publishes the `PlayerDeparture` of `src/game`. A game gives it a `GameSessionsParts`: the event bus, the send function, `readyAccepted`, which says whether a `ReadyState` counts right now, `onClosing`, which receives each player whose session closes, and `onNewerInput`, which is shown each `PlayerInput` newer than the one kept, before it replaces it.
 
 | Class or function | Does |
 |---|---|
 | `DatagramReader` | splits a datagram of a player into its messages, or drops it and logs why |
 | `ReadyKeeper` | keeps whether each player is ready, and whether all of them are |
-| `InputKeeper` | keeps the newest `PlayerInput` of each player |
+| `InputKeeper` | keeps the newest `PlayerInput` of each player, after showing it to `onNewerInput` |
 | `Departures` | closes the session of a player who left or fell silent, and keeps it for `takeDepartedPlayers()` |
 | `sendHeartbeats` | sends a `Heartbeat` to a player the server sent nothing for `TICKS_PER_HEARTBEAT` ticks |
 
@@ -339,18 +339,31 @@ Each game's `InputKeeper` keeps, in `ConnectedPlayer::newestInput`, the `PlayerI
 
 ## Moving the ships: `ShipControl`
 
-`shipPositionAfter(from, held, elapsed)` (`src/game/ShipControl/`, `rtype_game_ship_control`) says where a ship centered on `from` is after `elapsed`, its player holding the `ShipDirections` `held` (up, down, left, right). It is a free function, not a system: a ship has no `Velocity`, so `MovementSystem` never moves it, and the client can run the same function to predict its own ship, which it does not do yet.
+`shipAfter(from, held, elapsed)` (`src/game/ShipControl/`, `rtype_game_ship_control`) says where a `MovingShip` is after `elapsed`, its player holding the `ShipDirections` `held` (up, down, left, right), and how it moves then. A `MovingShip` is a position and a `ShipMotion`, the component `World::spawnPlayer` gives every ship: its velocity along each axis, the maneuver it runs and the last press of each direction. A new world or a respawn creates a new ship, so it starts at rest. `shipAfter` is a free function, not a system: a ship has no `Velocity`, so `MovementSystem` never moves it, and the client can run the same function to predict its own ship, which it does not do yet.
 
-- A direction held alone moves the ship `SHIP_SPEED` (480 logical units per second) that way, 8 units per tick. x grows to the right and y downwards.
-- Two directions on two axes move it along the diagonal at `SHIP_SPEED` too: each axis gets `SHIP_SPEED` divided by the square root of 2, 339.4 units per second, so a diagonal is no faster than a straight line. Two opposite directions cancel out: up and down together move nothing, and up, down and right move right at full speed.
-- The ship stops where its side meets an edge of the play area, the playfield less the status band at its bottom (`PLAY_AREA_HEIGHT`, 984 units from the top edge): its center stays from 64 to 1856 in x and from 32 to 952 in y, half of `SHIP_WIDTH` (128) and of `SHIP_HEIGHT` (64) away from each edge, so the whole ship stays in sight. A ship pushed along a diagonal against an edge slides along it at 339.4 units per second.
+- The ship drifts. Along each axis, its velocity chases the direction held times `SHIP_SPEED` (480 logical units per second): each tick closes the share 1 − e^(−rate × tick) of the gap, and never less than floor × tick, so the curve ends instead of creeping. While the axis is held, the rate is `DRIFT_RISE_RATE` (6 per second) and the floor `DRIFT_RISE_FLOOR` (960 units per second squared): a ship at rest reaches `SHIP_SPEED` on its 21st tick, 350 ms. Once let go, `DRIFT_FALL_RATE` (4.5) and `DRIFT_FALL_FLOOR` (720): a ship let go at `SHIP_SPEED` glides 85 units and stops on its 28th tick. A reversal chases the new target from the current speed, so the ship slides a little before it turns. x grows to the right and y downwards.
+- Two directions on two axes aim at `SHIP_SPEED` divided by the square root of 2 on each axis, 339.4 units per second, so a diagonal is no faster than a straight line. Two opposite directions cancel out: up and down together aim at nothing on that axis.
+- The ship stops where its side meets an edge of the play area, the playfield less the status band at its bottom (`PLAY_AREA_HEIGHT`, 984 units from the top edge): its center stays from 64 to 1856 in x and from 32 to 952 in y, half of `SHIP_WIDTH` (128) and of `SHIP_HEIGHT` (64) away from each edge, so the whole ship stays in sight. It loses its velocity along the axis an edge stopped, so it never pushes on once let go.
 - `SHIP_WIDTH` and `SHIP_HEIGHT` are the size the client draws the ship at: 32 by 16 pixels of the entity sheet (`PLAYER_SHIP_FRAME`), each covering `BACKGROUND_PIXEL_SIZE` (4) logical units. A client test compares the two, so a new ship sprite comes with new constants.
-- `SHIP_SPEED` is **provisional**: it will be tuned once the game is played on screen. Code must read the constants (`src/game/ShipControl/ShipControlConstants.hpp`) and never repeat 480, 128 or 64.
+- `SHIP_SPEED` and the drift constants are **provisional**: they will be tuned once the game is played on screen. Code must read the constants (`src/game/ShipControl/ShipControlConstants.hpp`) and never repeat their values.
 
-Each tick of a game in progress, `GameFlow` moves the ship of every connected player who sent an input by one `SIMULATION_TICK_DURATION`, before the systems run. It reads the directions from the `actions` byte of the input with the bit positions the protocol names in `ProtocolConstants.hpp` (`UP_ACTION_BIT_POSITION` to `SHOOT_ACTION_BIT_POSITION`); the shoot bit is not a direction. A player who sent no input yet keeps its ship still, and the newest input keeps moving the ship until a newer one arrives. The ships do not move while the game waits for players or is finished. Each ship is found by its network id with `World::shipPositionOf(shipId)`, which looks it up in a table of the ships of the world instead of visiting every entity, and gives `nullptr` for any other id.
+### Roll and dash: `motionAfterInput`
+
+`motionAfterInput(motion, change)` reads a new input of a player for its ship: the directions it held before, the ones it holds now, and its `inputNumber`. A direction pressed again within `DOUBLE_TAP_INPUTS` (13) inputs of its last press starts a maneuver, which `shipAfter` carries on top of the drift, its distance eased out (fast first, then slow):
+
+| Pressed twice | Maneuver | Distance | Duration |
+|---|---|---|---|
+| down or up | roll | `ROLL_SIDESTEP` (112 units) that way | `ROLL_DURATION` (400 ms) |
+| right | dash | `DASH_DISTANCE` (144 units) forward | `DASH_DURATION` (200 ms) |
+| left | backstep | `BACKSTEP_DISTANCE` (96 units) back | `DASH_DURATION` |
+
+The window is counted in input numbers, the clock of the client, which sends 60 inputs per second: 13 inputs are 217 ms, whatever the delays of the network. Nothing starts while a maneuver runs, a roll waits `ROLL_COOLDOWN` (500 ms) after the last roll, a dash or a backstep waits `DASH_COOLDOWN` (500 ms) after the last of them, so they are not chained back to back, and the press that started a maneuver is not the first press of the next one, so two slow taps stay two small moves. A rolling ship is hit like any other. These values are **provisional**, like `SHIP_SPEED`.
+
+Each tick of a game in progress, `GameFlow` moves the ship of every connected player who sent an input by one `SIMULATION_TICK_DURATION` with `shipAfter`, before the systems run. It reads the directions from the `actions` byte of the input with the bit positions the protocol names in `ProtocolConstants.hpp` (`UP_ACTION_BIT_POSITION` to `SHOOT_ACTION_BIT_POSITION`), through `directionsOf` in `src/server/Instances/ShipInput/`; the shoot bit is not a direction. Every input the `InputKeeper` keeps is first shown to the `onNewerInput` the game gives its sessions, which runs `motionAfterInput` against the input kept before it (`noteTaps`, also in `ShipInput`), so a double press is read even when its inputs arrive in the same tick. A player who sent no input yet keeps its ship still, and the newest input keeps moving the ship until a newer one arrives. The ships do not move while the game waits for players or is finished. Each ship and its motion are found by network id with `World::shipPositionOf(shipId)` and `World::shipMotionOf(shipId)`, which look it up in a table of the ships of the world instead of visiting every entity, and give `nullptr` for any other id.
 
 ```cpp
-const rtype::game::Position next = rtype::game::shipPositionAfter(
+rtype::game::MovingShip ship{.position = start, .motion = {}};
+ship = rtype::game::shipAfter(
     ship, rtype::game::ShipDirections{.up = true, .right = true},
     rtype::engine::SIMULATION_TICK_DURATION);
 ```
@@ -600,9 +613,9 @@ A game ended by `finish()`, or by the departure of its last player, tells no one
 | Send a datagram from the tick | `ServerApplication::queueDatagram()` |
 | Change how a connection request is answered | `ConnectionAcceptor::answer` in `src/server/Lobby/ConnectionAcceptor/ConnectionAcceptor.cpp` |
 | Change where a ship appears | `shipStartPosition` and `SHIP_START_X_RATIO` in `src/game/Spawning/` |
-| Change how fast a ship moves, or its size | `SHIP_SPEED`, `SHIP_WIDTH` and `SHIP_HEIGHT` in `src/game/ShipControl/ShipControlConstants.hpp`; a new size goes with a new `PLAYER_SHIP_FRAME` on the client, which a test compares |
-| Change how a ship moves from the directions held | `shipPositionAfter` in `src/game/ShipControl/ShipControl.cpp` |
-| Change which actions of an input move the ship | `directionsOf` in `src/server/Instances/GameFlow/GameFlow.cpp`, with the bit positions of `src/network/Protocol/ProtocolConstants.hpp` |
+| Change how fast a ship moves, drifts, rolls or dashes, or its size | `SHIP_SPEED`, the `DRIFT_`, `ROLL_` and `DASH_` constants, `DOUBLE_TAP_INPUTS`, `SHIP_WIDTH` and `SHIP_HEIGHT` in `src/game/ShipControl/ShipControlConstants.hpp`; a new size goes with a new `PLAYER_SHIP_FRAME` on the client, which a test compares |
+| Change how a ship moves from the directions held, or what a double press starts | `shipAfter` and `motionAfterInput` in `src/game/ShipControl/ShipControl.cpp` |
+| Change which actions of an input move the ship | `directionsOf` in `src/server/Instances/ShipInput/ShipInput.cpp`, with the bit positions of `src/network/Protocol/ProtocolConstants.hpp` |
 | Change how many Bydos come, how often, or which kinds | `assets/waves/waves.toml`; see [Writing the waves file](/R-Type/waves-file/) |
 | Change how a wave follows the one before | `bydoWaveAfter` in `src/game/Waves/WaveProgression/WaveProgression.cpp` |
 | Change when the next wave starts | `WaveDirector::advance` in `src/game/Waves/WaveDirector/WaveDirector.cpp` |

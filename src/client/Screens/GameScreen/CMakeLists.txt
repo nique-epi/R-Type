@@ -20,6 +20,7 @@ target_link_libraries(rtype_client_game_screen
     rtype_client_final_ranking
     rtype_client_ground_effect_system
     rtype_client_hit_flash_system
+    rtype_client_ship_flight_system
     rtype_client_mission_start
     rtype_client_player_preferences
     rtype_client_settings

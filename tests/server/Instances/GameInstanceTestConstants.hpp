@@ -170,4 +170,7 @@ static_assert(SHUFFLED_INPUT_COUNT <= network::PLAYER_ACTION_BITS + 1U,
 constexpr float WIRE_COORDINATE_TOLERANCE =
     1.0F / network::WIRE_COORDINATE_STEPS_PER_UNIT;
 
+/** @brief A score worth some points, when the number does not matter. */
+constexpr std::uint32_t SOME_POINTS = 100;
+
 }  // namespace rtype::server::testing

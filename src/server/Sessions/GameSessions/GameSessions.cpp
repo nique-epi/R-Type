@@ -25,7 +25,7 @@ GameSessions::GameSessions(GameSessionsParts parts)
     : send_(std::move(parts.send)),
       reader_(roster_),
       readyKeeper_(roster_, std::move(parts.readyAccepted)),
-      inputKeeper_(roster_),
+      inputKeeper_(roster_, std::move(parts.onNewerInput)),
       departures_(roster_, parts.events, std::move(parts.onClosing)) {
   dispatcher_.registerHandler<network::ReadyState>(
       [this](const network::MessageOrigin& origin,

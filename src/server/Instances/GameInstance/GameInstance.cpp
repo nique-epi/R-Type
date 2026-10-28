@@ -13,7 +13,9 @@
 #include "GameState.hpp"
 #include "IncomingDatagram.hpp"
 #include "PacketHeader.hpp"
+#include "PlayerInput.hpp"
 #include "PlayerRoster.hpp"
+#include "ShipInput.hpp"
 #include "World.hpp"
 
 namespace rtype::server {
@@ -30,6 +32,11 @@ GameInstance::GameInstance(Send send, GameSettings settings,
           .onClosing =
               [this](const ConnectedPlayer& departed) {
                 removeShipOf(departed);
+              },
+          .onNewerInput =
+              [this](const ConnectedPlayer& player,
+                     const network::PlayerInput& input) {
+                noteTaps(flow_.world(), player, input);
               }}),
       scoreKeeper_(events, sessions_.roster()),
       flow_(GameFlowParts{.events = events,

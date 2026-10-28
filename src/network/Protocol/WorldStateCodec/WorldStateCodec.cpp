@@ -26,6 +26,7 @@ void writePlayers(ByteWriter& writer, const std::vector<PlayerState>& players) {
     writer.writeUint8(player.lives);
     writer.writeUint32(player.score);
     writeBool(writer, player.invulnerable);
+    writer.writeUint8(player.motion);
   }
 }
 
@@ -50,6 +51,17 @@ std::vector<std::byte> encodePart(const WorldState& state,
   return writer.bytes();
 }
 
+/** @returns The motion of a player.
+ * @throws InvalidFieldValueException When a bit past PLAYER_MOTION_BITS is
+ * set. */
+std::uint8_t readMotion(ByteReader& reader) {
+  const std::uint8_t motion = reader.readUint8();
+  if ((motion & static_cast<std::uint8_t>(~PLAYER_MOTION_BITS)) != 0) {
+    throw InvalidFieldValueException(MOTION_FIELD, motion);
+  }
+  return motion;
+}
+
 std::vector<PlayerState> readPlayers(ByteReader& reader) {
   const std::uint8_t playerCount = readPlayerCount(reader);
   std::vector<PlayerState> players;
@@ -59,7 +71,8 @@ std::vector<PlayerState> readPlayers(ByteReader& reader) {
                                   .shipEntityId = reader.readUint32(),
                                   .lives = reader.readUint8(),
                                   .score = reader.readUint32(),
-                                  .invulnerable = readBool(reader)});
+                                  .invulnerable = readBool(reader),
+                                  .motion = readMotion(reader)});
   }
   return players;
 }

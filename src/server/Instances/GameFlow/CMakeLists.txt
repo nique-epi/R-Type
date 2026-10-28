@@ -20,7 +20,7 @@ target_link_libraries(rtype_server_game_flow
     rtype_server_ship_spawn_announcer
     rtype_server_world_state_sender
   PRIVATE
-    rtype_game_ship_control
+    rtype_server_ship_input
     rtype_identifiers
     rtype_network_game_started
     rtype_server_session_datagram

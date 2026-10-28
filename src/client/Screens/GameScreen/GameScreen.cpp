@@ -32,6 +32,7 @@
 #include "PlayerInputPacer.hpp"
 #include "PlayerPalette.hpp"
 #include "PlayerPreferences.hpp"
+#include "ShipFlightSystem.hpp"
 // NOLINTNEXTLINE(misc-include-cleaner)
 #include "PlayerSettings.hpp"
 #include "ScreenConstants.hpp"
@@ -79,6 +80,7 @@ GameScreen::GameScreen(GameScreenParts parts,
   systems_.add(std::make_unique<HitFlashSystem>());
   systems_.add(std::make_unique<SpriteEffectSystem>());
   systems_.add(std::make_unique<GroundEffectSystem>());
+  systems_.add(std::make_unique<ShipFlightSystem>());
   moveSky(*sky_, effects_, flashPreferenceOf(*settings_));
   entityLayer_->paint(components_, effects_.cameraOffset());
   repaintStatus();

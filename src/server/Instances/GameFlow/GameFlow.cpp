@@ -26,29 +26,20 @@
 #include "MovementSystem.hpp"
 #include "OutgoingDatagram.hpp"
 #include "PatternSystem.hpp"
-#include "PlayerInput.hpp"
 #include "PlayerRoster.hpp"
 #include "PlayfieldExitSystem.hpp"
 #include "Position.hpp"
 #include "ProtocolConstants.hpp"
 #include "SessionDatagram.hpp"
 #include "ShipControl.hpp"
+#include "ShipInput.hpp"
+#include "ShipMotion.hpp"
 #include "TimeConstants.hpp"
 #include "World.hpp"
 
 namespace rtype::server {
 
 namespace {
-
-/**
- * @returns Whether @p input holds the action at @p bitPosition of its actions
- * byte.
- */
-bool holdsActionAt(const network::PlayerInput& input,
-                   std::uint8_t bitPosition) {
-  const unsigned int mask = 1U << static_cast<unsigned int>(bitPosition);
-  return (static_cast<unsigned int>(input.actions) & mask) != 0U;
-}
 
 /**
  * @returns The connected players of @p roster whose newest input holds shoot.
@@ -65,41 +56,38 @@ ConnectedPlayers shootersIn(PlayerRoster& roster) {
   return shooters;
 }
 
-/**
- * @returns The directions @p input holds for the ship; shooting is not one.
- */
-game::ShipDirections directionsOf(const network::PlayerInput& input) {
-  return game::ShipDirections{
-      .up = holdsActionAt(input, network::UP_ACTION_BIT_POSITION),
-      .down = holdsActionAt(input, network::DOWN_ACTION_BIT_POSITION),
-      .left = holdsActionAt(input, network::LEFT_ACTION_BIT_POSITION),
-      .right = holdsActionAt(input, network::RIGHT_ACTION_BIT_POSITION)};
-}
-
-/** @brief A ship to move this tick, and the directions its player holds. */
+/** @brief A ship to move this tick, how it moves, and the directions its
+ * player holds. */
 struct ShipMove {
   game::Position* ship{nullptr};
+  game::ShipMotion* motion{nullptr};
   game::ShipDirections held;
 };
 
 /**
- * @returns The ship of @p player in @p world and the directions its newest
- * input holds; nothing when the player has no ship in that world or sent no
- * input yet.
+ * @returns The ship of @p player in @p world, its motion and the directions
+ * its newest input holds; nothing when the player has no ship in that world or
+ * sent no input yet.
  */
 std::optional<ShipMove> shipMoveOf(game::World& world,
                                    const ConnectedPlayer& player) {
   game::Position* const ship = world.shipPositionOf(player.shipEntityId);
-  if (ship == nullptr || !player.newestInput.has_value()) {
+  game::ShipMotion* const motion = world.shipMotionOf(player.shipEntityId);
+  if (ship == nullptr || motion == nullptr || !player.newestInput.has_value()) {
     return std::nullopt;
   }
-  return ShipMove{.ship = ship, .held = directionsOf(*player.newestInput)};
+  return ShipMove{.ship = ship,
+                  .motion = motion,
+                  .held = directionsOf(*player.newestInput)};
 }
 
 /** @brief Moves the ship of @p move by one tick of the directions it holds. */
 void moveOneTick(const ShipMove& move) {
-  *move.ship = game::shipPositionAfter(*move.ship, move.held,
-                                       engine::SIMULATION_TICK_DURATION);
+  const game::MovingShip moved = game::shipAfter(
+      game::MovingShip{.position = *move.ship, .motion = *move.motion},
+      move.held, engine::SIMULATION_TICK_DURATION);
+  *move.ship = moved.position;
+  *move.motion = moved.motion;
 }
 
 /**

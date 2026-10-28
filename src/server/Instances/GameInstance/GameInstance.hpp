@@ -30,9 +30,11 @@ namespace rtype::server {
  *
  * The players and their sessions (the datagrams read, who is ready, the newest
  * input, the silence that closes a session, the departures and the Heartbeats)
- * belong to GameSessions. The game gives it two things: a ReadyState counts
- * only while the game waits for players, and the ship of a player whose session
- * closes leaves the world and is announced on the event bus as an
+ * belong to GameSessions. The game gives it three things: a ReadyState counts
+ * only while the game waits for players; each PlayerInput newer than the one
+ * kept goes through noteTaps before it replaces it, so a direction pressed
+ * twice starts a roll or a dash of the ship; and the ship of a player whose
+ * session closes leaves the world and is announced on the event bus as an
  * EntityDestruction (Removed). A game in progress whose last player's session
  * closed ends at that same tick, as finish() ends it, so it waits for players
  * again FINISHED_STATE_TICKS ticks later (see GameFlow). takeDepartedPlayers()

@@ -1,6 +1,8 @@
 #include "InputKeeper.hpp"
+#include <functional>
 #include <optional>
 #include <string>
+#include <utility>
 #include "ConnectedPlayer.hpp"
 #include "Logger.hpp"
 #include "MessageOrigin.hpp"
@@ -33,8 +35,13 @@ bool changesActions(const network::PlayerInput& input,
 
 }  // namespace
 
-InputKeeper::InputKeeper(PlayerRoster& roster)
-    : roster_(roster), logger_(std::string{SESSIONS_LOGGER_NAME}) {}
+InputKeeper::InputKeeper(
+    PlayerRoster& roster,
+    std::function<void(const ConnectedPlayer&, const network::PlayerInput&)>
+        onNewerInput)
+    : roster_(roster),
+      onNewerInput_(std::move(onNewerInput)),
+      logger_(std::string{SESSIONS_LOGGER_NAME}) {}
 
 void InputKeeper::keepIfNewer(const network::MessageOrigin& origin,
                               const network::PlayerInput& input) {
@@ -46,6 +53,7 @@ void InputKeeper::keepIfNewer(const network::MessageOrigin& origin,
     logger_.debug("player ", static_cast<unsigned int>(player->playerNumber),
                   " holds actions ", static_cast<unsigned int>(input.actions));
   }
+  onNewerInput_(*player, input);
   player->newestInput = input;
 }
 

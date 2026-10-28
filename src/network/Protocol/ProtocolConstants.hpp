@@ -108,6 +108,24 @@ constexpr std::uint8_t RIGHT_ACTION_BIT_POSITION = 3;
 constexpr std::uint8_t SHOOT_ACTION_BIT_POSITION = 4;
 
 /**
+ * @brief The directions among the actions, bits 0 to 3: up, down, left and
+ * right. A PlayerState repeats them in its motion.
+ */
+constexpr std::size_t DIRECTION_ACTION_COUNT = 4;
+constexpr auto DIRECTION_ACTION_BITS =
+    static_cast<std::uint8_t>((1U << DIRECTION_ACTION_COUNT) - 1);
+
+/**
+ * @brief The bits of the motion of a PlayerState after its directions: its
+ * ship rolls, its ship dashes. Bits 6 and 7 are 0.
+ */
+constexpr std::uint8_t ROLLING_MOTION_BIT_POSITION = 4;
+constexpr std::uint8_t DASHING_MOTION_BIT_POSITION = 5;
+constexpr std::size_t PLAYER_MOTION_BIT_COUNT = 6;
+constexpr auto PLAYER_MOTION_BITS =
+    static_cast<std::uint8_t>((1U << PLAYER_MOTION_BIT_COUNT) - 1);
+
+/**
  * @brief The inputNumber of the first PlayerInput of a session; each next one
  * is one more.
  */
@@ -136,11 +154,11 @@ constexpr std::chrono::milliseconds UNLISTED_ENTITY_TIMEOUT{900};
 
 /**
  * @brief Bytes of a player in a WorldState: playerNumber, shipEntityId, lives,
- * score and invulnerable.
+ * score, invulnerable and motion.
  */
 constexpr std::size_t PLAYER_STATE_WIRE_SIZE =
     UINT8_WIRE_SIZE + UINT32_WIRE_SIZE + UINT8_WIRE_SIZE + UINT32_WIRE_SIZE +
-    UINT8_WIRE_SIZE;
+    UINT8_WIRE_SIZE + UINT8_WIRE_SIZE;
 
 /**
  * @brief Bytes of an entity in a WorldState: entityId, entityType, x and y.
@@ -211,6 +229,7 @@ constexpr std::string_view ENTITY_TYPE_FIELD = "entityType";
 constexpr std::string_view REASON_FIELD = "reason";
 constexpr std::string_view KIND_FIELD = "kind";
 constexpr std::string_view ACTIONS_FIELD = "actions";
+constexpr std::string_view MOTION_FIELD = "motion";
 
 /**
  * @brief Wire steps in one logical unit: a coordinate is sent in eighths of a

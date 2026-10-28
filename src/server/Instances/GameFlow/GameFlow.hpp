@@ -52,7 +52,7 @@ namespace rtype::server {
  *
  * While the game is in progress, each tick first moves the ship of every player
  * who sent an input, by the directions its newest input holds (see
- * game::shipPositionAfter), then runs the systems of the world (PatternSystem,
+ * game::shipAfter), then runs the systems of the world (PatternSystem,
  * MovementSystem, PlayfieldExitSystem, which removes a Bydo or a missile of a
  * Bydo that left on the left, or a missile of a player that left on the right,
  * and announces it on the event bus, then CollisionSystem), then lets the ship
