@@ -4,6 +4,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <initializer_list>
+#include <memory>
 #include <optional>
 #include <ostream>
 #include <span>
@@ -25,6 +26,7 @@
 #include "GameInstanceTestConstants.hpp"
 #include "GameSettings.hpp"
 #include "GameState.hpp"
+#include "IGameModule.hpp"
 #include "IncomingDatagram.hpp"
 #include "LobbyState.hpp"
 #include "MessageType.hpp"
@@ -36,6 +38,7 @@
 #include "ProtocolConstants.hpp"
 #include "ReadyState.hpp"
 #include "RtypeGameModules.hpp"
+#include "RtypeRulesModule.hpp"
 #include "SentDatagrams.hpp"
 #include "ServerDatagrams.hpp"
 #include "ServerLobbyTestConstants.hpp"
@@ -92,6 +95,22 @@ std::size_t bydosIn(game::World& world) {
   return bydos;
 }
 
+namespace {
+
+std::vector<std::unique_ptr<IGameModule>> modulesWithRulesAt(
+    RtypeRulesModule*& rules) {
+  std::vector<std::unique_ptr<IGameModule>> modules = rtypeGameModules();
+  for (const std::unique_ptr<IGameModule>& listedModule : modules) {
+    if (auto* const found = dynamic_cast<RtypeRulesModule*>(listedModule.get());
+        found != nullptr) {
+      rules = found;
+    }
+  }
+  return modules;
+}
+
+}  // namespace
+
 GameInstanceTest::GameInstanceTest()
     : game_(GameInstanceParts{.send =
                                   [this](network::OutgoingDatagram datagram) {
@@ -101,7 +120,9 @@ GameInstanceTest::GameInstanceTest()
                                                        .waves = testWavePlan()},
                               .events = events_,
                               .timers = timers_},
-            rtypeGameModules()) {}
+            modulesWithRulesAt(rules_)) {}
+
+game::World& GameInstanceTest::world() { return rules_->world(); }
 
 ConnectedPlayer& GameInstanceTest::join(std::size_t index,
                                         std::uint64_t sessionToken) {
@@ -314,8 +335,7 @@ std::uint32_t GameInstanceMovementTest::shipIdOf(std::size_t player) {
 }
 
 game::Position GameInstanceMovementTest::shipPositionOf(std::size_t player) {
-  const game::Position* const ship =
-      game().world().shipPositionOf(shipIdOf(player));
+  const game::Position* const ship = world().shipPositionOf(shipIdOf(player));
   if (ship == nullptr) {
     ADD_FAILURE() << "player " << player << " has no ship";
     return game::Position{.x = 0.0F, .y = 0.0F};

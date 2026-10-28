@@ -2,23 +2,18 @@
 
 #include <cstddef>
 #include <cstdint>
-#include <functional>
 #include <memory>
 #include "BydoGunner.hpp"
 #include "BydoSpawner.hpp"
 #include "CollisionRules.hpp"
 #include "DamageRules.hpp"
-#include "EventBus.hpp"
-#include "GameFlowParts.hpp"
+#include "GameContext.hpp"
 #include "GameState.hpp"
+#include "IGameFlow.hpp"
 #include "IGameReplication.hpp"
 #include "LifeKeeper.hpp"
 #include "Logger.hpp"
 #include "MissileLauncher.hpp"
-#include "OutgoingDatagram.hpp"
-#include "PlayerRoster.hpp"
-#include "SystemScheduler.hpp"
-#include "WavePlan.hpp"
 #include "World.hpp"
 #include "WorldSlot.hpp"
 
@@ -82,23 +77,37 @@ namespace rtype::server {
  *
  * Not thread-safe: use it from the simulation thread only.
  */
-class GameFlow {
+class GameFlow final : public IGameFlow {
  public:
-  explicit GameFlow(GameFlowParts parts);
+  /**
+   * @param game The context of the game; it must outlive the flow. The flow
+   * reads its roster, bus, systems, settings, send function and ready rule.
+   * @param world Holds the world of the game, which the flow replaces with
+   * each new world; it must outlive the flow.
+   * @param replication Tells the players how the game stands, and gives them
+   * their ships; it must outlive the flow.
+   */
+  GameFlow(GameContext& game, WorldSlot& world, IGameReplication& replication);
 
   GameFlow(const GameFlow&) = delete;
   GameFlow& operator=(const GameFlow&) = delete;
   GameFlow(GameFlow&&) = delete;
   GameFlow& operator=(GameFlow&&) = delete;
-  ~GameFlow() = default;
+  ~GameFlow() override = default;
 
-  [[nodiscard]] GameState state() const;
+  /**
+   * @brief Builds the first world and the rules that work on it, which
+   * subscribe to the event bus. Called once, before the first onTick().
+   */
+  void begin();
+
+  [[nodiscard]] GameState state() const override;
 
   /**
    * @returns How many ticks were simulated since the game started: 0 while it
    * waits for players, and again once it waits after a game.
    */
-  [[nodiscard]] std::uint32_t tick() const;
+  [[nodiscard]] std::uint32_t tick() const override;
 
   /**
    * @returns The world of the game. A new one replaces it when the game waits
@@ -122,7 +131,7 @@ class GameFlow {
    * only a game that ends by itself does (see finishIfOver). Does nothing in
    * any other state.
    */
-  void finish();
+  void finish() override;
 
  private:
   /** @brief Moves the game along its states by one tick: the start of the
@@ -146,13 +155,9 @@ class GameFlow {
 
   void startNewWorld();
 
-  std::reference_wrapper<engine::EventBus> events_;
-  std::reference_wrapper<engine::SystemScheduler> systems_;
-  std::reference_wrapper<WorldSlot> worldSlot_;
-  std::reference_wrapper<PlayerRoster> roster_;
-  std::reference_wrapper<IGameReplication> replication_;
-  std::function<void(network::OutgoingDatagram)> send_;
-  std::function<bool()> everyPlayerIsReady_;
+  GameContext& game_;
+  WorldSlot& worldSlot_;
+  IGameReplication& replication_;
   std::unique_ptr<BydoSpawner> bydoSpawner_;
   std::unique_ptr<MissileLauncher> missileLauncher_;
   std::unique_ptr<BydoGunner> bydoGunner_;
@@ -160,8 +165,6 @@ class GameFlow {
   std::unique_ptr<game::DamageRules> damageRules_;
   std::unique_ptr<LifeKeeper> lifeKeeper_;
   GameState state_{GameState::WaitingForPlayers};
-  std::uint32_t seed_;
-  std::reference_wrapper<const WavePlan> wavePlan_;
   std::uint32_t worldsBuilt_{0};
   std::uint32_t tick_{0};
   std::size_t finishedTicks_{0};

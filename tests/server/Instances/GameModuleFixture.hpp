@@ -8,7 +8,6 @@
 #include "EventBus.hpp"
 #include "GameContext.hpp"
 #include "GameInstanceConstants.hpp"
-#include "GameSettings.hpp"
 #include "IGameModule.hpp"
 #include "LoopStages.hpp"
 #include "OutgoingDatagram.hpp"
@@ -76,7 +75,6 @@ class GameModuleFixture : public ::testing::Test {
   WorldSlot world_;
   PlayerRoster roster_;
   SessionHooks hooks_;
-  GameSettings settings_;
   engine::ServiceRegistry services_;
   engine::LoopStages stages_{GAME_STAGES};
   std::vector<network::OutgoingDatagram> sent_;

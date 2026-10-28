@@ -18,7 +18,6 @@
 #include "PlayerInput.hpp"
 #include "PlayerRoster.hpp"
 #include "TimeConstants.hpp"
-#include "World.hpp"
 
 namespace rtype::server {
 
@@ -35,8 +34,7 @@ void callAll(const Hooks& hooks, Arguments&... arguments) {
 
 GameInstance::GameInstance(GameInstanceParts parts,
                            std::vector<std::unique_ptr<IGameModule>> modules)
-    : settings_(std::move(parts.settings)),
-      sessions_(GameSessionsParts{
+    : sessions_(GameSessionsParts{
           .events = parts.events,
           .send = parts.send,
           .readyAccepted =
@@ -53,10 +51,9 @@ GameInstance::GameInstance(GameInstanceParts parts,
       context_{.events = parts.events,
                .timers = parts.timers,
                .systems = systems_,
-               .world = world_,
                .roster = sessions_.roster(),
                .hooks = hooks_,
-               .settings = settings_,
+               .settings = std::move(parts.settings),
                .send = std::move(parts.send),
                .everyPlayerIsReady =
                    [this] { return sessions_.everyPlayerIsReady(); }},
@@ -79,8 +76,6 @@ GameState GameInstance::state() const { return flow_->state(); }
 std::uint32_t GameInstance::tick() const { return flow_->tick(); }
 
 PlayerRoster& GameInstance::roster() { return sessions_.roster(); }
-
-game::World& GameInstance::world() { return world_.current(); }
 
 network::PacketHeader GameInstance::nextSessionHeaderFor(
     const network::Endpoint& player) {

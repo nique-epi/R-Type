@@ -39,9 +39,6 @@ void ReplicationModule::start() {
           .send = game_->send});
 }
 
-void ReplicationModule::stop() {
-  broadcaster_.reset();
-  replication_.reset();
-}
+void ReplicationModule::stop() { broadcaster_.reset(); }
 
 }  // namespace rtype::server

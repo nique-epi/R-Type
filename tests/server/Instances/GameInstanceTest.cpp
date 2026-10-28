@@ -361,7 +361,7 @@ TEST_F(GameInstanceTest, ABydoThatLeavesOnTheLeftDoesNotStayInTheWorld) {
   events().dispatch();
 
   EXPECT_EQ(bydosAmong(removed, sentTo(FIRST_PLAYER)), 3U);
-  EXPECT_EQ(bydosIn(game().world()), 0U);
+  EXPECT_EQ(bydosIn(world()), 0U);
 }
 
 /**
@@ -386,7 +386,7 @@ TEST_F(GameInstanceTest, TheSecondWaveComesAPauseAfterTheFirstIsGone) {
   events().dispatch();
 
   EXPECT_EQ(bydosAmong(removed, sentTo(FIRST_PLAYER)), 3U);
-  EXPECT_EQ(bydosIn(game().world()), 1U);
+  EXPECT_EQ(bydosIn(world()), 1U);
 }
 
 /**
@@ -687,7 +687,7 @@ TEST_F(GameInstanceTest, RemovesTheShipOfAPlayerWhoTimedOut) {
   EXPECT_EQ(destructions,
             (std::vector{game::EntityDestruction{
                 .networkId = ship, .cause = game::DestructionCause::Removed}}));
-  EXPECT_EQ(game().world().entityCount(), 1U);
+  EXPECT_EQ(world().entityCount(), 1U);
 }
 
 /**
@@ -885,7 +885,7 @@ TEST_F(GameInstanceTest, RemovesTheShipOfAPlayerWhoLeaves) {
   EXPECT_EQ(destructions,
             (std::vector{game::EntityDestruction{
                 .networkId = ship, .cause = game::DestructionCause::Removed}}));
-  EXPECT_EQ(game().world().entityCount(), 1U);
+  EXPECT_EQ(world().entityCount(), 1U);
 }
 
 /**

@@ -46,7 +46,7 @@ TEST_F(GameInstanceLivesFixture, LeavesOnlyTheOtherShipInTheWorld) {
 
   hitTheShipOf(FIRST_PLAYER);
 
-  EXPECT_EQ(game().world().entityCount(), 1U);
+  EXPECT_EQ(world().entityCount(), 1U);
 }
 
 /**

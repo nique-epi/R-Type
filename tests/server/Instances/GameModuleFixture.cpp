@@ -6,6 +6,7 @@
 #include "ConnectedPlayer.hpp"
 #include "GameContext.hpp"
 #include "GameInstanceTestConstants.hpp"
+#include "GameSettings.hpp"
 #include "IGameModule.hpp"
 #include "InstallContext.hpp"
 #include "OutgoingDatagram.hpp"
@@ -18,19 +19,18 @@
 namespace rtype::server::testing {
 
 GameModuleFixture::GameModuleFixture()
-    : settings_{.seed = SOME_SEED, .waves = testWavePlan()},
-      context_{.events = events_,
-               .timers = timers_,
-               .systems = systems_,
-               .world = world_,
-               .roster = roster_,
-               .hooks = hooks_,
-               .settings = settings_,
-               .send =
-                   [this](network::OutgoingDatagram datagram) {
-                     sent_.push_back(std::move(datagram));
-                   },
-               .everyPlayerIsReady = [] { return false; }} {}
+    : context_{
+          .events = events_,
+          .timers = timers_,
+          .systems = systems_,
+          .roster = roster_,
+          .hooks = hooks_,
+          .settings = GameSettings{.seed = SOME_SEED, .waves = testWavePlan()},
+          .send =
+              [this](network::OutgoingDatagram datagram) {
+                sent_.push_back(std::move(datagram));
+              },
+          .everyPlayerIsReady = [] { return false; }} {}
 
 void GameModuleFixture::install(IGameModule& module) {
   engine::InstallContext installation(module.name(), services_, stages_);

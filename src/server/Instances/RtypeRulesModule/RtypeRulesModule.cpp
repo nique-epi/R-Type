@@ -1,6 +1,4 @@
 #include "RtypeRulesModule.hpp"
-#include <cstdint>
-#include <functional>
 #include <memory>
 #include <string>
 #include <utility>
@@ -8,9 +6,7 @@
 #include "EntityDestruction.hpp"
 #include "GameContext.hpp"
 #include "GameFlow.hpp"
-#include "GameFlowParts.hpp"
 #include "GameInstanceConstants.hpp"
-#include "GameState.hpp"
 #include "IGameFlow.hpp"
 #include "IGameReplication.hpp"
 #include "InstallContext.hpp"
@@ -20,6 +16,7 @@
 #include "SessionHooks.hpp"
 #include "ShipInput.hpp"
 #include "TimeConstants.hpp"
+#include "World.hpp"
 
 namespace rtype::server {
 
@@ -31,7 +28,8 @@ void RtypeRulesModule::install(GameContext& game,
                                engine::InstallContext& install) {
   game_ = &game;
   replication_ = &install.require<IGameReplication>();
-  install.provide<IGameFlow>(*this);
+  flow_ = std::make_unique<GameFlow>(game, world_, *replication_);
+  install.provide<IGameFlow>(*flow_);
   install.addWork(
       GAME_SIMULATION_STAGE,
       [this]([[maybe_unused]] engine::Duration elapsed) { flow_->onTick(); });
@@ -41,18 +39,8 @@ void RtypeRulesModule::start() {
   addRtypeSystems(game_->systems, game_->events);
   auto scoreKeeper =
       std::make_unique<ScoreKeeper>(game_->events, game_->roster);
-  auto flow = std::make_unique<GameFlow>(
-      GameFlowParts{.events = game_->events,
-                    .systems = game_->systems,
-                    .world = game_->world,
-                    .roster = game_->roster,
-                    .replication = std::ref(*replication_),
-                    .send = game_->send,
-                    .everyPlayerIsReady = game_->everyPlayerIsReady,
-                    .seed = game_->settings.get().seed,
-                    .waves = game_->settings.get().waves});
+  flow_->begin();
   scoreKeeper_ = std::move(scoreKeeper);
-  flow_ = std::move(flow);
   addSessionHooks();
 }
 
@@ -61,11 +49,7 @@ void RtypeRulesModule::stop() {
   scoreKeeper_.reset();
 }
 
-GameState RtypeRulesModule::state() const { return flow_->state(); }
-
-std::uint32_t RtypeRulesModule::tick() const { return flow_->tick(); }
-
-void RtypeRulesModule::finish() { flow_->finish(); }
+game::World& RtypeRulesModule::world() { return world_.current(); }
 
 void RtypeRulesModule::addSessionHooks() {
   SessionHooks& hooks = game_->hooks;
@@ -76,12 +60,12 @@ void RtypeRulesModule::addSessionHooks() {
       [this](const ConnectedPlayer& departed) { removeShipOf(departed); });
   hooks.newerInput.emplace_back(
       [this](const ConnectedPlayer& player, const network::PlayerInput& input) {
-        noteTaps(flow_->world(), player, input);
+        noteTaps(world(), player, input);
       });
 }
 
 void RtypeRulesModule::removeShipOf(const ConnectedPlayer& departed) {
-  if (flow_->world().removePlayer(departed.shipEntityId)) {
+  if (world().removePlayer(departed.shipEntityId)) {
     game_->events.get().publish(
         game::EntityDestruction{.networkId = departed.shipEntityId,
                                 .cause = game::DestructionCause::Removed});

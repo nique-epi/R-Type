@@ -24,6 +24,7 @@
 #include "PlayerInput.hpp"
 #include "PlayerLeft.hpp"
 #include "Position.hpp"
+#include "RtypeRulesModule.hpp"
 #include "ServerLobbyTestConstants.hpp"
 #include "TimerScheduler.hpp"
 #include "UnreliableNetwork.hpp"
@@ -146,6 +147,10 @@ class GameInstanceTest : public ::testing::Test {
       std::size_t index) const;
 
   [[nodiscard]] GameInstance& game();
+
+  /** @returns The world of the game, which the rules of R-Type own. A new
+   * one replaces it when the game waits for players again. */
+  [[nodiscard]] game::World& world();
   [[nodiscard]] engine::EventBus& events();
 
  private:
@@ -159,6 +164,7 @@ class GameInstanceTest : public ::testing::Test {
   std::vector<LivePlayer> livePlayers_;
   engine::EventBus events_;
   engine::TimerScheduler timers_;
+  RtypeRulesModule* rules_{nullptr};
   GameInstance game_;
   std::vector<network::IncomingDatagram> incoming_;
 };

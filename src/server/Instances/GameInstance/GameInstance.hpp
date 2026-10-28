@@ -10,7 +10,6 @@
 #include "GameInstanceParts.hpp"
 #include "GameModules.hpp"
 #include "GameSessions.hpp"
-#include "GameSettings.hpp"
 #include "GameState.hpp"
 #include "IGameFlow.hpp"
 #include "IGameModule.hpp"
@@ -19,14 +18,12 @@
 #include "PlayerRoster.hpp"
 #include "SessionHooks.hpp"
 #include "SystemScheduler.hpp"
-#include "World.hpp"
-#include "WorldSlot.hpp"
 
 namespace rtype::server {
 
 /**
- * @brief One game: the context its modules work in (its world, its players,
- * its event bus, its timers and its systems) and its tick, run in stages.
+ * @brief One game: the context its modules work in (its players, its event
+ * bus, its timers, its systems and its settings) and its tick, run in stages.
  *
  * A game knows nothing of the rules it plays. Its modules (see IGameModule)
  * carry them out: the game installs them in the order they are listed, then
@@ -91,12 +88,6 @@ class GameInstance {
   [[nodiscard]] PlayerRoster& roster();
 
   /**
-   * @returns The world of the game. A new one replaces it when the game waits
-   * for players again, so do not keep the reference across ticks.
-   */
-  [[nodiscard]] game::World& world();
-
-  /**
    * @returns The header of the next datagram to the player of the game who
    * sends from @p player, as sessionHeaderFor() gives it: the session token
    * and the next sequence of that player, which then moves on by one, or a
@@ -138,10 +129,8 @@ class GameInstance {
   void finish();
 
  private:
-  GameSettings settings_;
   SessionHooks hooks_;
   engine::SystemScheduler systems_;
-  WorldSlot world_;
   GameSessions sessions_;
   GameContext context_;
   std::span<const network::IncomingDatagram> datagrams_;

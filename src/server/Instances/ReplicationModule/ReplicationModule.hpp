@@ -19,7 +19,7 @@ struct GameContext;
  * It is installed before the module whose rules require IGameReplication.
  * install() builds the replication and provides it; start() subscribes the
  * broadcaster to the bus; stop() destroys the broadcaster, which gives its
- * subscriptions back to the bus, then the replication.
+ * subscriptions back to the bus.
  */
 class ReplicationModule final : public IGameModule {
  public:
