@@ -1,15 +1,10 @@
 #include "ServerModuleFixture.hpp"
 #include <cstdint>
-#include <exception>
-#include <string>
 #include <string_view>
 #include <vector>
-#include "Endpoint.hpp"
 #include "LogLaunchOptions.hpp"
 #include "LoggingConstants.hpp"
-#include "NetworkConstants.hpp"
-#include "NetworkContext.hpp"
-#include "UdpSocket.hpp"
+#include "UdpPortProbe.hpp"
 
 ServerModuleFixture::ServerModuleFixture()
     : journalPath_(journal_.path().string()),
@@ -21,26 +16,10 @@ rtype::logging::LogLaunchOptions ServerModuleFixture::journalOptions() const {
       arguments_, rtype::logging::SERVER_LOG_FILE_NAME);
 }
 
-std::uint16_t ServerModuleFixture::freeUdpPort() {
-  rtype::network::NetworkContext network;
-  const rtype::network::UdpSocket socket{
-      network, rtype::network::Endpoint{
-                   .address = std::string{rtype::network::ANY_IPV4_ADDRESS},
-                   .port = rtype::network::ANY_PORT}};
-  return socket.localEndpoint().port;
-}
+std::uint16_t ServerModuleFixture::freeUdpPort() { return ::freeUdpPort(); }
 
 bool ServerModuleFixture::portIsFree(std::uint16_t port) {
-  try {
-    rtype::network::NetworkContext network;
-    const rtype::network::UdpSocket socket{
-        network, rtype::network::Endpoint{
-                     .address = std::string{rtype::network::ANY_IPV4_ADDRESS},
-                     .port = port}};
-    return true;
-  } catch (const std::exception&) {
-    return false;
-  }
+  return udpPortIsFree(port);
 }
 
 const JournalFile& ServerModuleFixture::journal() const { return journal_; }

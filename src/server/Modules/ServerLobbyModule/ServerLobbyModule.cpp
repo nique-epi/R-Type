@@ -1,8 +1,8 @@
 #include "ServerLobbyModule.hpp"
 #include <cstdint>
+#include <functional>
 #include <memory>
 #include <string>
-#include <utility>
 #include <vector>
 #include "ConnectedPlayer.hpp"
 #include "ConnectionAcceptor.hpp"
@@ -14,7 +14,6 @@
 #include "IPlayerAdmission.hpp"
 #include "InstallContext.hpp"
 #include "ModuleConstants.hpp"
-#include "OutgoingDatagram.hpp"
 #include "ServerConstants.hpp"
 #include "TickDatagrams.hpp"
 #include "TimeConstants.hpp"
@@ -42,13 +41,10 @@ void ServerLobbyModule::install(engine::InstallContext& context) {
 
 void ServerLobbyModule::start() {
   GameInstance& joinable = games_->joinable();
-  IDatagramSender* const sender = sender_;
   IPlayerAdmission* const admission = admission_;
   acceptor_ = std::make_unique<ConnectionAcceptor>(
       joinable.roster(),
-      [sender](network::OutgoingDatagram datagram) {
-        sender->queueDatagram(std::move(datagram));
-      },
+      std::bind_front(&IDatagramSender::queueDatagram, sender_),
       [admission](const network::Endpoint& player, std::uint64_t sessionToken) {
         admission->admit(player, sessionToken);
       },

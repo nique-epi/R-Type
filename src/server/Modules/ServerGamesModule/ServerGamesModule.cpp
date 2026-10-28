@@ -1,4 +1,5 @@
 #include "ServerGamesModule.hpp"
+#include <functional>
 #include <memory>
 #include <random>
 #include <string>
@@ -17,7 +18,6 @@
 #include "IPlayerAdmission.hpp"
 #include "InstallContext.hpp"
 #include "ModuleConstants.hpp"
-#include "OutgoingDatagram.hpp"
 #include "ServerConstants.hpp"
 #include "TickDatagrams.hpp"
 #include "TimeConstants.hpp"
@@ -75,18 +75,15 @@ WavePlan ServerGamesModule::readWaves() const {
 }
 
 std::unique_ptr<GameInstance> ServerGamesModule::createGame() {
-  IDatagramSender* const sender = sender_;
   return std::make_unique<GameInstance>(
-      [sender](network::OutgoingDatagram datagram) {
-        sender->queueDatagram(std::move(datagram));
-      },
-      GameSettings{.seed = settings_.seed.value_or(std::random_device{}()),
-                   .waves = readWaves()},
+      std::bind_front(&IDatagramSender::queueDatagram, sender_),
+      GameSettings{
+          .seed = settings_.seed ? *settings_.seed : std::random_device{}(),
+          .waves = readWaves()},
       events_);
 }
 
 GameEventBroadcaster::Wiring ServerGamesModule::wiringFor(GameInstance& game) {
-  IDatagramSender* const sender = sender_;
   return GameEventBroadcaster::Wiring{
       .events = events_,
       .timers = timers_,
@@ -95,10 +92,7 @@ GameEventBroadcaster::Wiring ServerGamesModule::wiringFor(GameInstance& game) {
           [&game](const network::Endpoint& recipient) {
             return game.nextSessionHeaderFor(recipient);
           },
-      .send =
-          [sender](network::OutgoingDatagram datagram) {
-            sender->queueDatagram(std::move(datagram));
-          }};
+      .send = std::bind_front(&IDatagramSender::queueDatagram, sender_)};
 }
 
 void ServerGamesModule::playGames() {

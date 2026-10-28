@@ -82,7 +82,6 @@ void ServerNetworkModule::runServer() {
   try {
     server_->run();
   } catch (const std::exception& error) {
-    logger_.error("server stopped: ", error.what());
     stopRequest_->fail(error.what());
   }
 }

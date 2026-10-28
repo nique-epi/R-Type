@@ -74,12 +74,12 @@ class StopSignalsHandle {
  private:
   void waitForASignal(StopRequest& request) {
     int received = 0;
-    if (sigwait(&signals_, &received) != 0) {
+    const int error = sigwait(&signals_, &received);
+    received_ = true;
+    if (error != 0) {
       request.fail("the system refused to wait for the stop signals");
-      received_ = true;
       return;
     }
-    received_ = true;
     request.request();
   }
 

@@ -1,14 +1,10 @@
 #include "PortProbeModule.hpp"
 #include <cstdint>
-#include <exception>
 #include <string>
 #include <utility>
 #include <vector>
-#include "Endpoint.hpp"
 #include "InstallContext.hpp"
-#include "NetworkConstants.hpp"
-#include "NetworkContext.hpp"
-#include "UdpSocket.hpp"
+#include "UdpPortProbe.hpp"
 
 PortProbeModule::PortProbeModule(std::string name,
                                  std::vector<std::string> dependencies,
@@ -25,16 +21,7 @@ std::vector<std::string> PortProbeModule::dependencies() const {
 
 void PortProbeModule::install(
     [[maybe_unused]] rtype::engine::InstallContext& context) {
-  try {
-    rtype::network::NetworkContext network;
-    const rtype::network::UdpSocket socket{
-        network, rtype::network::Endpoint{
-                     .address = std::string{rtype::network::ANY_IPV4_ADDRESS},
-                     .port = port_}};
-    portWasFree_ = true;
-  } catch (const std::exception&) {
-    portWasFree_ = false;
-  }
+  portWasFree_ = udpPortIsFree(port_);
 }
 
 void PortProbeModule::start() {}

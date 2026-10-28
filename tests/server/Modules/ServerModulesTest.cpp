@@ -72,4 +72,5 @@ TEST_F(ServerModulesFixture, SaysGoodbyeToAJoinedPlayerWhenItStops) {
   EXPECT_GE(goodbyes[1].time - goodbyes[0].time, MINIMUM_COPY_SPACING);
   EXPECT_GE(goodbyes[2].time - goodbyes[1].time, MINIMUM_COPY_SPACING);
   EXPECT_TRUE(portIsFree(port()));
+  EXPECT_EQ(client().failedSendCount(), 0U);
 }
