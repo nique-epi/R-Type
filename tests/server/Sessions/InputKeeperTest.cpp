@@ -1,27 +1,20 @@
 #include <gtest/gtest.h>
-#include <cstdint>
 #include "ConnectedPlayer.hpp"
 #include "InputKeeper.hpp"
-#include "PlayerInput.hpp"
 #include "PlayerRoster.hpp"
 #include "SessionsFixtures.hpp"
 #include "SessionsTestConstants.hpp"
 
 namespace rtype::server {
-namespace {
 
 using testing::addPlayer;
+using testing::inputNumbered;
 using testing::NEWER_INPUT_NUMBER;
 using testing::OLDER_INPUT_NUMBER;
 using testing::originOf;
 using testing::OTHER_ACTIONS;
 using testing::SOME_ACTIONS;
 using testing::SOME_INPUT_NUMBER;
-
-network::PlayerInput inputNumbered(std::uint32_t inputNumber,
-                                   std::uint8_t actions) {
-  return network::PlayerInput{.inputNumber = inputNumber, .actions = actions};
-}
 
 /**
  * Given a player who sent no input yet
@@ -110,5 +103,4 @@ TEST(InputKeeper, IgnoresAnInputFromAnAddressNoPlayerSendsFrom) {
   EXPECT_FALSE(player.newestInput.has_value());
 }
 
-}  // namespace
 }  // namespace rtype::server

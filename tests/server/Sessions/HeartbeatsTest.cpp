@@ -11,7 +11,6 @@
 #include "SessionsFixtures.hpp"
 
 namespace rtype::server {
-namespace {
 
 using testing::addPlayer;
 using testing::onlyMessageTypeOf;
@@ -56,5 +55,4 @@ TEST(Heartbeats, SendsAHeartbeatOnceTheIntervalIsReached) {
   EXPECT_EQ(player.ticksSinceSent, 1U);
 }
 
-}  // namespace
 }  // namespace rtype::server

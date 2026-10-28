@@ -7,9 +7,10 @@
 #include "SessionsTestConstants.hpp"
 
 namespace rtype::server {
-namespace {
 
 using testing::addPlayer;
+using testing::FIRST_SEQUENCE;
+using testing::LAST_SEQUENCE;
 using testing::NEWER_SEQUENCE;
 using testing::OLDER_SEQUENCE;
 using testing::originOf;
@@ -127,5 +128,21 @@ TEST(ReadyKeeper, WaitsForEveryConnectedPlayer) {
   EXPECT_TRUE(keeper.everyPlayerIsReady());
 }
 
-}  // namespace
+/**
+ * Given a player who said ready in the datagram of sequence 65535
+ * When a ReadyState of sequence 0 says not ready
+ * Then the player is not ready, since sequence 0 follows sequence 65535
+ */
+TEST(ReadyKeeper, AppliesAReadyStateOnceTheSequenceWrapsAround) {
+  PlayerRoster roster;
+  const ConnectedPlayer& player = addPlayer(roster, 0);
+  ReadyKeeper keeper(roster, [] { return true; });
+  keeper.apply(originOf(0, LAST_SEQUENCE), network::ReadyState{.ready = true});
+
+  keeper.apply(originOf(0, FIRST_SEQUENCE),
+               network::ReadyState{.ready = false});
+
+  EXPECT_FALSE(player.ready);
+}
+
 }  // namespace rtype::server

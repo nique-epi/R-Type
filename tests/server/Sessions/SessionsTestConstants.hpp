@@ -13,6 +13,11 @@ constexpr std::uint16_t SOME_SEQUENCE = 40;
 constexpr std::uint16_t OLDER_SEQUENCE = SOME_SEQUENCE - 1;
 constexpr std::uint16_t NEWER_SEQUENCE = SOME_SEQUENCE + 1;
 
+/** @brief The last sequence of a 16-bit counter, and the one that follows it.
+ */
+constexpr std::uint16_t LAST_SEQUENCE = 65535;
+constexpr std::uint16_t FIRST_SEQUENCE = 0;
+
 /**
  * @brief Numbers of the inputs a player sent, in the order it numbers them.
  */

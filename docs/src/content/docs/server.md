@@ -181,7 +181,7 @@ A datagram of this protocol with another version is answered with `ConnectionRef
 
 ## Session headers: `SessionDatagram`
 
-Every datagram the server sends a connected player starts with the session token and the next sequence of that player, whatever its message, because the client drops a datagram that carries another token or that is not newer than the newest one it read (see [Protocol](/R-Type/protocol/#datagram)). The free functions of `SessionDatagram.hpp` (`src/server/Sessions/SessionDatagram/`) are the one place that reads and moves `ConnectedPlayer::nextSequence`. They take the server's `ConnectedPlayer`, so they live in the server, in the sessions folder every sender links, rather than with the session checks of `rtype_network`:
+Every datagram the server sends a connected player starts with the session token and the next sequence of that player, whatever its message, because the client drops a datagram that carries another token or that is not newer than the newest one it read (see [Protocol](/R-Type/protocol/#datagram)). The free functions of `SessionDatagram.hpp` (`src/server/Sessions/SessionDatagram/`) are the one place that reads and moves `ConnectedPlayer::nextSequence`. They take the server's `ConnectedPlayer`, so they live in the server, in the sessions folder, rather than with the session checks of `rtype_network`:
 
 - `nextSessionHeader(player)` gives the header and moves the sequence on by one, wrapping from 65535 to 0. It also starts over the count of ticks since a datagram was sent to that player (`ConnectedPlayer::ticksSinceSent`), from which the game sends its heartbeats (see [Silent players](#silent-players-heartbeats-and-timeouts)).
 - `sessionDatagram(player, message)` builds the datagram to the address of the player; an overload takes a message type and a payload already encoded, as the world state needs.
@@ -195,9 +195,9 @@ send(rtype::server::sessionDatagram(player, rtype::network::GameStarted{}));
 
 ## Sessions of a game: `GameSessions`
 
-`GameSessions` (`src/server/Sessions/GameSessions/`) holds the players of one game and the sessions the server keeps with them. Nothing in `src/server/Sessions/` belongs to R-Type, and no other folder of `src/server` is linked by it, so every other folder links `Sessions/` and never the other way round. A game gives it a `GameSessionsParts`: the event bus, the send function, `readyAccepted`, which says whether a `ReadyState` counts right now, and `onClosing`, which receives each player whose session closes.
+`GameSessions` (`src/server/Sessions/GameSessions/`) holds the players of one game and the sessions the server keeps with them. `Sessions/` links no other folder of `src/server`, so `Instances/`, `Lobby/`, `Replication/` and `Spawning/` link it and never the other way round. It is not yet free of R-Type: `ConnectedPlayer` still carries the ship, score and lives of a player, and `Departures` publishes the `PlayerDeparture` of `src/game`. A game gives it a `GameSessionsParts`: the event bus, the send function, `readyAccepted`, which says whether a `ReadyState` counts right now, and `onClosing`, which receives each player whose session closes.
 
-| Class | Does |
+| Class or function | Does |
 |---|---|
 | `DatagramReader` | splits a datagram of a player into its messages, or drops it and logs why |
 | `ReadyKeeper` | keeps whether each player is ready, and whether all of them are |

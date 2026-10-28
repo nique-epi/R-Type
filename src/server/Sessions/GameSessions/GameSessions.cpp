@@ -38,11 +38,10 @@ GameSessions::GameSessions(GameSessionsParts parts)
         inputKeeper_.keepIfNewer(origin, input);
       });
   dispatcher_.registerHandler<network::Heartbeat>(
-      [](const network::MessageOrigin& /*origin*/,
-         const network::Heartbeat& /*heartbeat*/) {});
+      [](const network::MessageOrigin&, const network::Heartbeat&) {});
   dispatcher_.registerHandler<network::Disconnection>(
       [this](const network::MessageOrigin& origin,
-             const network::Disconnection& /*disconnection*/) {
+             const network::Disconnection&) {
         departures_.close(origin.sender, game::DepartureCause::Left);
       });
 }

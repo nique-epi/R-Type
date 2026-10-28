@@ -21,8 +21,8 @@ namespace rtype::server {
  * it runs, so a stall of the server closes no session.
  *
  * Closing a session frees the seat and the number of the player, calls the
- * function given at construction with the player, announces the departure on
- * the event bus as a PlayerDeparture, logs it, and keeps the player for
+ * function given at construction with the player, logs the departure,
+ * publishes it on the event bus as a PlayerDeparture, and keeps the player for
  * takeDeparted(). Everything after the seat is freed reads the copy of the
  * player the roster handed back.
  *

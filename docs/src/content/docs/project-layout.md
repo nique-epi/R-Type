@@ -138,7 +138,7 @@ src/server/
 ├── LaunchOptions/    port, name, limits, master address
 ├── Lobby/            players not in a game: list, create, join, chat
 ├── Instances/        one GameInstance per game, each on its thread
-├── Sessions/         the players of a game and their sessions, nothing specific to R-Type
+├── Sessions/         the players of a game and their sessions (still carries a player's ship, score and lives)
 ├── Replication/      world to snapshots and game events
 ├── Spawning/         when and where the enemies and missiles appear
 ├── MasterLink/       registration and heartbeat

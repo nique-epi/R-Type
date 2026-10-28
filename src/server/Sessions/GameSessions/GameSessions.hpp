@@ -60,7 +60,8 @@ class GameSessions {
   void readDatagrams(std::span<const network::IncomingDatagram> datagrams);
 
   /** @brief Closes the session of every player not heard from for
-   * SESSION_TIMEOUT_TICKS ticks. */
+   * SESSION_TIMEOUT_TICKS ticks, and counts one more tick of silence for each
+   * player it does not close. */
   void closeSilentSessions();
 
   /** @returns Whether at least one player is connected and every connected
