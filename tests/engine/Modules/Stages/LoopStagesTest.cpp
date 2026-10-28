@@ -9,9 +9,7 @@
 #include "StageWorkFixtures.hpp"
 #include "TimeConstants.hpp"
 
-using rtype::engine::DuplicateStageException;
 using rtype::engine::Duration;
-using rtype::engine::EmptyStageWorkException;
 using rtype::engine::LoopStages;
 using rtype::engine::StageWork;
 using rtype::engine::UnknownStageException;
@@ -97,25 +95,4 @@ TEST(LoopStages, UnknownStageErrorNamesTheStage) {
   } catch (const UnknownStageException& error) {
     EXPECT_EQ(std::string{error.what()}, UNKNOWN_STAGE_MESSAGE);
   }
-}
-
-/**
- * Given a loop of inputs, simulation and outputs
- * When an empty work is added to inputs
- * Then an EmptyStageWorkException is thrown
- */
-TEST(LoopStages, RefusesAnEmptyWork) {
-  LoopStages stages(TEST_LOOP_STAGES);
-
-  EXPECT_THROW(stages.add(INPUT_STAGE, StageWork{}), EmptyStageWorkException);
-}
-
-/**
- * Given a list of stages that names inputs twice
- * When a loop is built from it
- * Then a DuplicateStageException is thrown
- */
-TEST(LoopStages, RefusesAStageDeclaredTwice) {
-  EXPECT_THROW(const LoopStages stages(INPUTS_DECLARED_TWICE),
-               DuplicateStageException);
 }

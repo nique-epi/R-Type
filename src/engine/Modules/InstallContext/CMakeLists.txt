@@ -6,7 +6,6 @@ target_link_libraries(rtype_engine_install_context
   PUBLIC
     rtype_engine_services
     rtype_engine_loop_stages
-    rtype_engine_type_name
 )
 
 rtype_enable_warnings(rtype_engine_install_context)

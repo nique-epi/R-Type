@@ -65,15 +65,8 @@ ModuleStartFailedException::ModuleStartFailedException(
     : EngineException("The module \"" + moduleName +
                       "\" failed to start: " + reason) {}
 
-DuplicateStageException::DuplicateStageException(const std::string& stageName)
-    : EngineException("The loop declares the stage \"" + stageName +
-                      "\" twice") {}
-
 UnknownStageException::UnknownStageException(const std::string& stageName)
     : EngineException("The loop has no stage named \"" + stageName + "\"") {}
-
-EmptyStageWorkException::EmptyStageWorkException()
-    : EngineException("An empty work cannot be added to a loop stage") {}
 
 DuplicateServiceException::DuplicateServiceException(
     const std::string& moduleName, const std::string& serviceName)

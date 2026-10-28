@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 #include <string>
+#include <typeinfo>
 #include <vector>
 #include "ApplicationTestConstants.hpp"
 #include "EngineException.hpp"
@@ -62,7 +63,9 @@ TEST(InstallContext, MissingServiceErrorNamesTheModuleAndTheService) {
     ADD_FAILURE() << "the service was found";
   } catch (const MissingServiceException& error) {
     EXPECT_EQ(std::string{error.what()},
-              SECOND_REQUIRES_ABSENT_SERVICE_MESSAGE);
+              std::string(SECOND_REQUIRES_MESSAGE_BEFORE_SERVICE) +
+                  typeid(TestService).name() +
+                  SECOND_REQUIRES_MESSAGE_AFTER_SERVICE);
   }
 }
 
@@ -128,7 +131,9 @@ TEST(InstallContext, DuplicateServiceErrorNamesTheModuleAndTheService) {
     ADD_FAILURE() << "the second service was kept";
   } catch (const DuplicateServiceException& error) {
     EXPECT_EQ(std::string{error.what()},
-              SECOND_PROVIDES_PROVIDED_SERVICE_MESSAGE);
+              std::string(SECOND_PROVIDES_MESSAGE_BEFORE_SERVICE) +
+                  typeid(TestService).name() +
+                  SECOND_PROVIDES_MESSAGE_AFTER_SERVICE);
   }
 }
 

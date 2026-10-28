@@ -140,27 +140,11 @@ class ModuleStartFailedException : public EngineException {
 };
 
 /**
- * @brief A loop declares the same stage twice.
- */
-class DuplicateStageException : public EngineException {
- public:
-  explicit DuplicateStageException(const std::string& stageName);
-};
-
-/**
  * @brief Work was added to a stage the loop does not declare.
  */
 class UnknownStageException : public EngineException {
  public:
   explicit UnknownStageException(const std::string& stageName);
-};
-
-/**
- * @brief An empty work was added to a loop stage.
- */
-class EmptyStageWorkException : public EngineException {
- public:
-  EmptyStageWorkException();
 };
 
 /**

@@ -36,7 +36,6 @@ target_link_libraries(rtype_engine
     rtype_engine_stages
     rtype_engine_loop_stages
     rtype_engine_services
-    rtype_engine_type_name
     rtype_engine_install_context
     rtype_engine_application
 )

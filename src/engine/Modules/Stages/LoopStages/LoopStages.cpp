@@ -1,6 +1,5 @@
 #include "LoopStages.hpp"
 #include <algorithm>
-#include <cstddef>
 #include <span>
 #include <string>
 #include <string_view>
@@ -15,15 +14,6 @@ namespace rtype::engine {
 
 namespace {
 
-void requireDistinctNames(std::span<const std::string_view> stageNames) {
-  for (std::size_t position = 0; position < stageNames.size(); ++position) {
-    if (std::ranges::find(stageNames.first(position), stageNames[position]) !=
-        stageNames.first(position).end()) {
-      throw DuplicateStageException(std::string(stageNames[position]));
-    }
-  }
-}
-
 std::vector<LoopStage> emptyStagesNamed(
     std::span<const std::string_view> stageNames) {
   std::vector<LoopStage> stages;
@@ -34,21 +24,12 @@ std::vector<LoopStage> emptyStagesNamed(
   return stages;
 }
 
-void requireWork(const StageWork& work) {
-  if (!work) {
-    throw EmptyStageWorkException();
-  }
-}
-
 }  // namespace
 
-LoopStages::LoopStages(std::span<const std::string_view> stageNames) {
-  requireDistinctNames(stageNames);
-  stages_ = emptyStagesNamed(stageNames);
-}
+LoopStages::LoopStages(std::span<const std::string_view> stageNames)
+    : stages_(emptyStagesNamed(stageNames)) {}
 
 void LoopStages::add(std::string_view stageName, StageWork work) {
-  requireWork(work);
   stageNamed(stageName).works.push_back(std::move(work));
 }
 

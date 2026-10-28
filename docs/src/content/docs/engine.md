@@ -215,7 +215,7 @@ rtype::engine::readLaunchArguments(logOptions.otherArguments(), options);
 
 A program declares the stages of its loop once, in order, as constants: `SERVER_LOOP_STAGES` (`inputs`, `simulation`, `outputs`) in `src/server/ServerConstants.hpp` and `CLIENT_LOOP_STAGES` (`events`, `network`, `update`, `render`) in `src/client/ClientConstants.hpp`. It gives them to `Application(LoopStages(...), modules)`. During `install()`, a module calls `context.addWork(stageName, work)`, where `work` is a `StageWork`, a callable taking the time of the pass. `Application::runStages(elapsed)` runs the stages in the declared order and, within a stage, the works in the order the modules are listed, since modules are installed in list order. It runs only while the modules are started.
 
-A stage name that is not declared throws `UnknownStageException` at install, a stage declared twice throws `DuplicateStageException`, and an empty work throws `EmptyStageWorkException`, so a typo stops the program before anything starts.
+A stage name that is not declared throws `UnknownStageException` at install, so a typo stops the program before anything starts.
 
 ### Services
 

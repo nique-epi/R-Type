@@ -7,7 +7,6 @@
 #include "LoopStages.hpp"
 #include "ServiceRegistry.hpp"
 #include "StageWork.hpp"
-#include "TypeName.hpp"
 
 namespace rtype::engine {
 
@@ -22,11 +21,11 @@ void InstallContext::addWork(std::string_view stageName, StageWork work) {
 }
 
 void InstallContext::refuseSecondProvider(std::type_index service) const {
-  throw DuplicateServiceException(moduleName_, typeName(service));
+  throw DuplicateServiceException(moduleName_, service.name());
 }
 
 void InstallContext::refuseMissingService(std::type_index service) const {
-  throw MissingServiceException(moduleName_, typeName(service));
+  throw MissingServiceException(moduleName_, service.name());
 }
 
 }  // namespace rtype::engine

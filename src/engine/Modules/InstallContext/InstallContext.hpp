@@ -70,7 +70,6 @@ class InstallContext {
   /**
    * @brief Adds @p work at the end of the stage named @p stageName; the work
    * of the modules installed later in the same stage runs after it.
-   * @throws EmptyStageWorkException if @p work is empty.
    * @throws UnknownStageException if the loop declares no such stage.
    */
   void addWork(std::string_view stageName, StageWork work);

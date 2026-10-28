@@ -22,13 +22,11 @@ class LoopStages {
   /**
    * @param stageNames The stages of the loop, in the order they run, for
    * example "inputs", "simulation", "outputs". It may be empty.
-   * @throws DuplicateStageException if a name is given twice.
    */
   explicit LoopStages(std::span<const std::string_view> stageNames);
 
   /**
    * @brief Adds @p work at the end of the stage named @p stageName.
-   * @throws EmptyStageWorkException if @p work is empty.
    * @throws UnknownStageException if the loop declares no such stage.
    */
   void add(std::string_view stageName, StageWork work);
