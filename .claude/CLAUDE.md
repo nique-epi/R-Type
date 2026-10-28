@@ -65,11 +65,10 @@ Paths below are relative to `.claude/rules/`.
 - `core/errors-learning.md`
 
 **C++ architecture — `architecture/` (loaded when a C++ file is read)**
+- `architecture/architecture-a-module-is-one-folder-and-one-target.md`
 - `architecture/architecture-custom-exceptions-per-module.md`
 - `architecture/architecture-hpp-declarations-cpp-definitions.md`
-- `architecture/architecture-one-folder-per-concrete-class.md`
 - `architecture/architecture-pure-virtual-interfaces.md`
-- `architecture/fix-architecture-a-cpp-hpp-pair-has-its-own-folder.md`
 - `architecture/fix-architecture-a-function-does-one-kind-of-step.md`
 - `architecture/fix-architecture-a-module-install-keeps-nothing-open.md`
 - `architecture/fix-architecture-a-module-start-that-throws-closes-what-it-opened.md`

@@ -216,26 +216,28 @@ Each module splits its classes into a controller (HTTP in and out), a service (t
 
 ## Adding a class
 
-Adding `WaveDirector` to `src/game/Waves`:
+Adding `WaveDirector` to `src/game/Waves`, a module that already holds `WaveProgression`:
 
 ```
 src/game/Waves/
-├── CMakeLists.txt         add_subdirectory(WaveDirector)
-└── WaveDirector/
-    ├── CMakeLists.txt     add_library(rtype_game_wave_director STATIC WaveDirector.cpp)
-    ├── WaveDirector.hpp
-    └── WaveDirector.cpp
+├── CMakeLists.txt         add_library(rtype_game_waves STATIC WaveDirector.cpp WaveProgression.cpp)
+├── WaveDirector.hpp
+├── WaveDirector.cpp
+├── WaveProgression.hpp
+└── WaveProgression.cpp
 ```
 
-- A concrete class has its own folder, named after it, holding only its `.hpp`, its `.cpp` and its `CMakeLists.txt`; so does a header of free functions that has a `.cpp`.
-- Interfaces (`IWaveSource`), plain structs and constants headers (`WaveConstants.hpp`) have no `.cpp`: they stay in the parent folder.
-- A class declares no type inside it: a struct it uses has a header of its own, in the parent folder. A class declares at most ten member functions besides its constructors and its destructor.
+- A module is a folder with one `CMakeLists.txt` and one library. It holds the `.hpp` and `.cpp` of its classes, and of its free functions, side by side, at most ten `.cpp`. A sub-folder with a library of its own, a sub-module, exists only for a group of classes that needs a dependency the rest of the module must not link, or that another module reuses, or when the module would pass ten `.cpp`; never deeper than that.
+- Interfaces (`IWaveSource`), plain structs and constants headers (`WaveConstants.hpp`) sit in the same folder as the classes.
+- Two classes of a module never include each other, directly or through a third.
+- A module written before this convention keeps a folder per class until it is flattened, in a commit of its own; a folder never holds both layouts.
+- A class declares no type inside it: a struct it uses has a header of its own, in the same module. A class declares at most ten member functions besides its constructors and its destructor.
 - A header of constants is named `<Concept>Constants.hpp` and holds constants only.
-- The class library is `rtype_<owner>_<class_in_snake_case>`, linked by the aggregate of its library (`rtype_game`) or by its program.
+- The module library is `rtype_<owner>_<module_in_snake_case>`, linked by the aggregate of its library (`rtype_game`) or by its program.
 - The namespace is `rtype::<owner>`: `rtype::game` here.
 - An error is a subclass of the owner's root exception, in `<owner>/Exceptions/`: `GameException` here.
 
-This follows our previous projects: shared code in libraries and one folder per program, like Zappy; one library per module, interfaces next to their implementations and tests that mirror the sources, like the Raytracer. Two things differ: folders are `PascalCase`, and a folder holds one class.
+This follows our previous projects: shared code in libraries and one folder per program, like Zappy; one library per module, interfaces next to their implementations and tests that mirror the sources, like the Raytracer. One thing differs: folders are `PascalCase`.
 
 ## A key press, from one screen to another
 
