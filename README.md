@@ -40,7 +40,7 @@ If the repository was cloned without its submodules, run `git submodule update -
 ./r-type_server -p 4243
 ```
 
-The server listens on UDP port 4243 of every IPv4 interface; without `-p`, on port 4242.
+The server listens on UDP port 4243 of every IPv4 interface; without `-p`, on port 4242. Ctrl-C (or closing the console on Windows) or SIGTERM stops it cleanly: the players are told, and it exits with code 0.
 
 ```bash
 ./r-type_server --seed 42

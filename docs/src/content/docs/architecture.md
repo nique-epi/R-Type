@@ -60,6 +60,10 @@ A program is a list of modules, objects implementing `IModule`, handed to an `Ap
 
 A program also declares the named stages of its loop, and a module adds its work to one of them while it installs. That is meant to replace, over time, the three ways work is wired today: systems, `onTick` or `advance` calls written by hand, and bus subscribers. A module hands an object to the modules installed after it as a service found by type during install only, so what a module depends on shows in its constructors; a required service no earlier module provides stops the program before it starts, while an optional one is found to be absent.
 
+`Application` has no loop of its own: it provides itself as an `IStageRunner`, and the module that owns the thread or the window of the program requires it during `install()` and calls `runStages()` at each pass. The server is the first program built this way: its network module paces the loop.
+
+Alternative considered: starting the loop thread of the program in `start()` of a module. It is simpler, but `Application::stop()` stops the later modules first, so ticks would still run while the games module destroys its game: a data race.
+
 Alternative considered: sorting the modules by their dependencies. A module could then be listed anywhere, but the order would be computed instead of read in one place, and two modules that do not depend on each other would have no defined order. As with systems, the list is the one place that says what starts after what.
 
 ## Events

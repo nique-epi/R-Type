@@ -18,7 +18,7 @@ This page tells you where to look when you need to change something. It describe
 | Event bus | Available | `src/engine/Events/` |
 | Collisions | Available: the overlap test and the event; the system that detects them is in the game | `src/engine/Collision/` |
 | Launch arguments | Available; used by the server and the client | `src/engine/LaunchArguments/` |
-| Modules and application | Available; no program uses it yet | `src/engine/Modules/` |
+| Modules and application | Available; used by the server | `src/engine/Modules/` |
 
 ## How the parts fit together
 
@@ -145,7 +145,7 @@ for (std::size_t tick = 0; tick < ticks; ++tick) {
 }
 ```
 
-The server runs ticks at this rate on its simulation thread, in `TickLoop` (see [Server](/R-Type/server/#tick-loop-tickloop)), but its tick only advances the timers and delivers the events of the bus: no tick runs systems yet. The client frame loop, `Application` (`src/client/Application/`), reads `SystemClock` and hands the real time of each frame to the scrolling background (see [Client](/R-Type/client/#scrolling-background-scrollingbackground)) and to the screens; it runs no tick. The game screen runs its systems, which play the animations, once per frame with that real time, not at a fixed step (see [Client](/R-Type/client/#animations-animation-animationsystem)).
+The server runs ticks at this rate on its simulation thread, in `TickLoop` (see [Server](/R-Type/server/#tick-loop-tickloop)), and its tick runs the systems of each game, advances the timers and delivers the events of the bus, as stage works of its loop (see [Server](/R-Type/server/#modules-loggingmodule-networkmodule-gamesmodule-lobbymodule)). The client frame loop, `Application` (`src/client/Application/`), reads `SystemClock` and hands the real time of each frame to the scrolling background (see [Client](/R-Type/client/#scrolling-background-scrollingbackground)) and to the screens; it runs no tick. The game screen runs its systems, which play the animations, once per frame with that real time, not at a fixed step (see [Client](/R-Type/client/#animations-animation-animationsystem)).
 
 ## Event bus: `EventBus`
 
@@ -223,7 +223,7 @@ A module provides an object to the modules installed after it with `context.prov
 
 A module that subscribes to the `EventBus` keeps the `SubscriptionHandle` and unsubscribes in its `stop()`.
 
-No program builds an `Application` yet: the server and the client still assemble their parts in their `main.cpp`. In this example, `LogModule` and `AudioModule` stand for modules a program would write, and `AudioModule` depends on `LogModule`:
+The server builds an `Application` from four modules (see [Server](/R-Type/server/#modules-loggingmodule-networkmodule-gamesmodule-lobbymodule)); the client still assembles its parts in its `main.cpp`. In this example, `LogModule` and `AudioModule` stand for modules a program would write, and `AudioModule` depends on `LogModule`:
 
 ```cpp
 std::vector<std::unique_ptr<rtype::engine::IModule>> modules;
@@ -236,6 +236,10 @@ application.stop();
 ```
 
 The reasoning behind the order is in [Architecture](/R-Type/architecture/#modules).
+
+### Running the stages: `IStageRunner`
+
+`IStageRunner` (`src/engine/Modules/Stages/IStageRunner.hpp`) has one function, `runStages(elapsed)`. `Application` implements it and provides itself as that service before it installs any module, so the module whose thread or window paces the program requires it during `install()` and calls it at each pass of its loop. `runStages()` runs nothing before `start()` returned, after a failed `start()` and after `stop()`. Call it from one thread at a time, and never while `start()` or `stop()` runs. The server's network module does this (see [Server](/R-Type/server/#modules-loggingmodule-networkmodule-gamesmodule-lobbymodule)).
 
 ## Where to intervene
 
