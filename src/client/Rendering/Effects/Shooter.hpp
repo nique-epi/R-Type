@@ -5,7 +5,8 @@
 
 namespace rtype::client {
 
-/** @brief The ship a missile of a player came from, and where it stands. */
+/** @brief What fired a missile, the ship of a player or a Bydo, and where it
+ * stands. */
 struct Shooter {
   engine::Entity ship{};
   game::Position center{};

@@ -102,8 +102,7 @@ constexpr std::array<std::string_view, COLOR_MODE_COUNT> COLOR_MODE_LABELS{
 constexpr const char* REDUCE_FLASHES_LABEL = "REDUCE FLASHES";
 constexpr const char* REDUCE_FLASHES_DESCRIPTION = "> NO FLASH OR SHAKE";
 constexpr const char* SOUND_CUES_LABEL = "SOUND CUES";
-constexpr const char* SOUND_CUES_DESCRIPTION =
-    "> SOUNDS SHOWN ON SCREEN (COMING SOON)";
+constexpr const char* SOUND_CUES_DESCRIPTION = "> SOUNDS SHOWN ON SCREEN";
 constexpr const char* AUTO_FIRE_LABEL = "AUTO-FIRE";
 constexpr const char* AUTO_FIRE_DESCRIPTION = "> SHOOTS WITHOUT HOLDING";
 
