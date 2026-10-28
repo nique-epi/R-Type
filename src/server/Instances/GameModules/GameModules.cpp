@@ -4,34 +4,21 @@
 #include <string_view>
 #include <utility>
 #include <vector>
-#include "EngineException.hpp"
 #include "GameContext.hpp"
 #include "GameInstanceConstants.hpp"
 #include "IGameModule.hpp"
 #include "InstallContext.hpp"
+#include "RequireNoNullModule.hpp"
 #include "StageWork.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::server {
 
-namespace {
-
-void requireNoNullModule(
-    const std::vector<std::unique_ptr<IGameModule>>& modules) {
-  for (const std::unique_ptr<IGameModule>& listedModule : modules) {
-    if (listedModule == nullptr) {
-      throw engine::NullModuleException();
-    }
-  }
-}
-
-}  // namespace
-
 GameModules::GameModules(std::vector<std::unique_ptr<IGameModule>> modules)
     : stages_(GAME_STAGES),
       game_(std::string{GAME_INSTALL_NAME}, services_, stages_),
       modules_(std::move(modules)) {
-  requireNoNullModule(modules_);
+  engine::requireNoNullModule<IGameModule>(modules_);
 }
 
 GameModules::~GameModules() {
