@@ -7,6 +7,7 @@
 #include "Application.hpp"
 #include "ConnectedPlayer.hpp"
 #include "GamesSettings.hpp"
+#include "IModule.hpp"
 #include "IncomingDatagram.hpp"
 #include "MessageType.hpp"
 #include "RecordingNetworkModule.hpp"
@@ -22,6 +23,11 @@ class ServerGamesFixture : public ServerModuleFixture {
    * @throws what Application::start() throws. */
   void startWith(rtype::server::GamesSettings settings);
 
+  /** @returns The modules listed after the games module and before the
+   * probe; none unless a derived fixture lists some. */
+  [[nodiscard]] virtual std::vector<std::unique_ptr<rtype::engine::IModule>>
+  modulesAfterTheGames() const;
+
   /** @returns The settings that read the waves file shipped in assets/. */
   [[nodiscard]] static rtype::server::GamesSettings shippedWaves();
 
@@ -29,8 +35,11 @@ class ServerGamesFixture : public ServerModuleFixture {
    * of its own. */
   rtype::server::ConnectedPlayer& join(std::size_t index);
 
-  /** @brief Runs one tick of the loop with @p players among the datagrams. */
-  void runTick(const std::vector<rtype::network::IncomingDatagram>& players);
+  /** @brief Runs one tick of the loop with @p players and @p requests among the
+   * datagrams. */
+  void runTick(
+      const std::vector<rtype::network::IncomingDatagram>& players,
+      const std::vector<rtype::network::IncomingDatagram>& requests = {});
 
   /** @returns A Disconnection from the player at @p index, as its client
    * sends it. */

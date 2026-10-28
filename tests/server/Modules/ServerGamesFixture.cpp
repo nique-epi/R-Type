@@ -37,6 +37,9 @@ void ServerGamesFixture::startWith(rtype::server::GamesSettings settings) {
   modules.push_back(std::move(network));
   modules.push_back(
       std::make_unique<rtype::server::ServerGamesModule>(std::move(settings)));
+  for (auto& moduleAfterTheGames : modulesAfterTheGames()) {
+    modules.push_back(std::move(moduleAfterTheGames));
+  }
   auto probe = std::make_unique<ServiceProbeModule>(
       PROBE_MODULE,
       std::vector<std::string>{std::string{rtype::server::GAMES_MODULE_NAME}},
@@ -47,6 +50,11 @@ void ServerGamesFixture::startWith(rtype::server::GamesSettings settings) {
       rtype::engine::LoopStages(rtype::server::SERVER_LOOP_STAGES),
       std::move(modules));
   application_->start();
+}
+
+std::vector<std::unique_ptr<rtype::engine::IModule>>
+ServerGamesFixture::modulesAfterTheGames() const {
+  return {};
 }
 
 rtype::server::GamesSettings ServerGamesFixture::shippedWaves() {
@@ -64,10 +72,12 @@ ConnectedPlayer& ServerGamesFixture::join(std::size_t index) {
   return *player;
 }
 
-void ServerGamesFixture::runTick(const std::vector<IncomingDatagram>& players) {
+void ServerGamesFixture::runTick(
+    const std::vector<IncomingDatagram>& players,
+    const std::vector<IncomingDatagram>& requests) {
   network_->tickDatagrams().begin(
       rtype::server::ServerApplication::ReceivedDatagrams{
-          .players = players, .connectionRequests = {}});
+          .players = players, .connectionRequests = requests});
   application_->runStages(rtype::engine::SIMULATION_TICK_DURATION);
   network_->tickDatagrams().end();
 }
