@@ -198,11 +198,29 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest]
+        include:
+          - os: ubuntu-latest
+            generator_arguments: ""
+          - os: windows-latest
+            # Ninja compiles every file in parallel; the Visual Studio generator does not.
+            # /Z7 puts the debug information in the object files, which sccache can cache.
+            generator_arguments: >-
+              -G Ninja
+              -DCMAKE_CXX_SCAN_FOR_MODULES=OFF
+              -DCMAKE_MSVC_DEBUG_INFORMATION_FORMAT=Embedded
+    env:
+      SCCACHE_GHA_ENABLED: "true"
     steps:
       - uses: actions/checkout@v5
         with:
           submodules: true
+
+      - name: Set up the MSVC environment
+        if: runner.os == 'Windows'
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Set up sccache
+        uses: mozilla-actions/sccache-action@v0.0.11
 
       - name: Install system dependencies
         if: runner.os == 'Linux'
@@ -225,9 +243,14 @@ jobs:
           restore-keys: vcpkg-${{ runner.os }}-
 
       - name: Configure
+        shell: bash
         env:
           VCPKG_SSL_REVOKE_BEST_EFFORT: ${{ runner.os == 'Windows' && '1' || '0' }}
-        run: cmake --preset test -DCMAKE_COMPILE_WARNING_AS_ERROR=ON
+        run: >-
+          cmake --preset test ${{ matrix.generator_arguments }}
+          -DCMAKE_COMPILE_WARNING_AS_ERROR=ON
+          -DCMAKE_C_COMPILER_LAUNCHER=sccache
+          -DCMAKE_CXX_COMPILER_LAUNCHER=sccache
 
       - name: Save vcpkg binary cache
         if: steps.vcpkg-cache.outputs.cache-hit != 'true'
@@ -237,7 +260,12 @@ jobs:
           key: ${{ steps.vcpkg-cache.outputs.cache-primary-key }}
 
       - name: Build
-        run: cmake --build --preset test
+        run: cmake --build --preset test --parallel
+
+      - name: Show the compiler cache statistics
+        if: always()
+        shell: bash
+        run: ${SCCACHE_PATH} --show-stats
 
       - name: Test
         run: ctest --preset test
