@@ -48,7 +48,8 @@ void RtypeRulesModule::start() {
                     .replication = std::ref(*replication_),
                     .send = game_->send,
                     .everyPlayerIsReady = game_->everyPlayerIsReady,
-                    .settings = game_->settings});
+                    .seed = game_->settings.get().seed,
+                    .waves = game_->settings.get().waves});
   scoreKeeper_ = std::move(scoreKeeper);
   flow_ = std::move(flow);
 }

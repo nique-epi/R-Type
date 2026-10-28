@@ -48,7 +48,9 @@ namespace rtype::server {
  *
  * A tick runs three stages, in order: GAME_INPUT_STAGE reads the datagrams and
  * closes the silent sessions, GAME_SIMULATION_STAGE runs the work the modules
- * added, and GAME_OUTPUT_STAGE sends the Heartbeats.
+ * added, and GAME_OUTPUT_STAGE sends the Heartbeats. The work of the game
+ * itself is added before the modules are installed, so it runs first in the
+ * input and output stages, ahead of the work of the modules.
  *
  * Not thread-safe: use it from the simulation thread only.
  */

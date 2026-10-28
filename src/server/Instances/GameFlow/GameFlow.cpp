@@ -149,8 +149,8 @@ GameFlow::GameFlow(GameFlowParts parts)
       replication_(parts.replication),
       send_(std::move(parts.send)),
       everyPlayerIsReady_(std::move(parts.everyPlayerIsReady)),
-      seed_(parts.settings.seed),
-      wavePlan_(std::move(parts.settings.waves)),
+      seed_(parts.seed),
+      wavePlan_(parts.waves),
       logger_(std::string{INSTANCES_LOGGER_NAME}) {
   startNewWorld();
 }
@@ -235,7 +235,7 @@ void GameFlow::buildWorld() {
                        .roster = roster_.get(),
                        .send = send_,
                        .seed = seed_ + worldsBuilt_,
-                       .waves = wavePlan_});
+                       .waves = wavePlan_.get()});
   missileLauncher_ =
       std::make_unique<MissileLauncher>(world, roster_.get(), send_);
   bydoGunner_ = std::make_unique<BydoGunner>(world, roster_.get(), send_);

@@ -169,7 +169,7 @@ class GameFlow {
   std::unique_ptr<LifeKeeper> lifeKeeper_;
   GameState state_{GameState::WaitingForPlayers};
   std::uint32_t seed_;
-  WavePlan wavePlan_;
+  std::reference_wrapper<const WavePlan> wavePlan_;
   std::uint32_t worldsBuilt_{0};
   std::uint32_t tick_{0};
   std::size_t finishedTicks_{0};

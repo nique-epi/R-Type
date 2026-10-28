@@ -10,6 +10,7 @@
 #include "PlayerRoster.hpp"
 #include "ReadyKeeper.hpp"
 #include "SystemScheduler.hpp"
+#include "WavePlan.hpp"
 #include "WorldSlot.hpp"
 
 namespace rtype::server::testing {
@@ -51,6 +52,7 @@ class GameFlowFixture : public ::testing::Test {
   PlayerRoster roster_;
   ReadyKeeper readyKeeper_;
   GameReplication replication_;
+  WavePlan wavePlan_;
   GameFlow flow_;
 };
 

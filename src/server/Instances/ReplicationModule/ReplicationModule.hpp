@@ -2,13 +2,14 @@
 
 #include <memory>
 #include <string>
-#include "GameContext.hpp"
 #include "GameEventBroadcaster.hpp"
 #include "GameReplication.hpp"
 #include "IGameModule.hpp"
 #include "InstallContext.hpp"
 
 namespace rtype::server {
+
+struct GameContext;
 
 /**
  * @brief The module of a game that tells its players about it: it provides

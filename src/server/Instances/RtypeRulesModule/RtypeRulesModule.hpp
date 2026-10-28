@@ -4,7 +4,6 @@
 #include <memory>
 #include <string>
 #include "ConnectedPlayer.hpp"
-#include "GameContext.hpp"
 #include "GameFlow.hpp"
 #include "GameState.hpp"
 #include "IGameFlow.hpp"
@@ -15,6 +14,8 @@
 #include "ScoreKeeper.hpp"
 
 namespace rtype::server {
+
+struct GameContext;
 
 /**
  * @brief The module of a game that carries out the rules of R-Type: its

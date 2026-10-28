@@ -7,7 +7,6 @@
 #include "GameFlow.hpp"
 #include "GameFlowParts.hpp"
 #include "GameInstanceTestConstants.hpp"
-#include "GameSettings.hpp"
 #include "GameState.hpp"
 #include "OutgoingDatagram.hpp"
 #include "PlayerRoster.hpp"
@@ -21,6 +20,7 @@ namespace rtype::server::testing {
 GameFlowFixture::GameFlowFixture()
     : readyKeeper_(roster_, [] { return true; }),
       replication_(roster_, [](const network::OutgoingDatagram&) {}),
+      wavePlan_(testWavePlan()),
       flow_(GameFlowParts{
           .events = events_,
           .systems = systems_,
@@ -30,8 +30,8 @@ GameFlowFixture::GameFlowFixture()
           .send = [](const network::OutgoingDatagram&) {},
           .everyPlayerIsReady =
               [this] { return readyKeeper_.everyPlayerIsReady(); },
-          .settings =
-              GameSettings{.seed = SOME_SEED, .waves = testWavePlan()}}) {
+          .seed = SOME_SEED,
+          .waves = wavePlan_}) {
   addRtypeSystems(systems_, events_);
 }
 

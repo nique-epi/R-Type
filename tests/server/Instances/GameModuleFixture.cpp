@@ -5,11 +5,12 @@
 #include <vector>
 #include "ConnectedPlayer.hpp"
 #include "GameContext.hpp"
-#include "GameModuleTestConstants.hpp"
+#include "GameInstanceTestConstants.hpp"
 #include "IGameModule.hpp"
 #include "InstallContext.hpp"
 #include "OutgoingDatagram.hpp"
 #include "SentDatagrams.hpp"
+#include "ServerLobbyTestConstants.hpp"
 #include "Spawning/WavePlanFixtures.hpp"
 #include "TimeConstants.hpp"
 #include "World.hpp"
@@ -17,7 +18,7 @@
 namespace rtype::server::testing {
 
 GameModuleFixture::GameModuleFixture()
-    : settings_{.seed = MODULE_TEST_SEED, .waves = testWavePlan()},
+    : settings_{.seed = SOME_SEED, .waves = testWavePlan()},
       context_{.events = events_,
                .timers = timers_,
                .systems = systems_,
@@ -36,8 +37,8 @@ void GameModuleFixture::install(IGameModule& module) {
 }
 
 ConnectedPlayer& GameModuleFixture::join(std::size_t index) {
-  return *roster_.add(playerEndpoint(index),
-                      std::string{MODULE_PLAYER_NICKNAME}, MODULE_PLAYER_TOKEN);
+  return *roster_.add(playerEndpoint(index), std::string{PLAYER_NICKNAME},
+                      SESSION_TOKEN);
 }
 
 GameContext& GameModuleFixture::context() { return context_; }

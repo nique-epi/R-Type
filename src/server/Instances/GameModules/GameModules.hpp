@@ -4,7 +4,6 @@
 #include <memory>
 #include <string_view>
 #include <vector>
-#include "GameContext.hpp"
 #include "IGameModule.hpp"
 #include "InstallContext.hpp"
 #include "LoopStages.hpp"
@@ -13,6 +12,8 @@
 #include "TimeConstants.hpp"
 
 namespace rtype::server {
+
+struct GameContext;
 
 /**
  * @brief The modules a game installed, the services they provide to each other

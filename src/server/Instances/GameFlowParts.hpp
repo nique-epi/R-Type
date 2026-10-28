@@ -1,12 +1,13 @@
 #pragma once
 
+#include <cstdint>
 #include <functional>
 #include "EventBus.hpp"
-#include "GameSettings.hpp"
 #include "IGameReplication.hpp"
 #include "OutgoingDatagram.hpp"
 #include "PlayerRoster.hpp"
 #include "SystemScheduler.hpp"
+#include "WavePlan.hpp"
 #include "WorldSlot.hpp"
 
 namespace rtype::server {
@@ -33,9 +34,11 @@ struct GameFlowParts {
    * the sessions. Must not be empty. */
   std::function<bool()> everyPlayerIsReady;
   /** @brief The seed the random draws of the game start from, logged by the
-   * spawner each time a world is built, and the waves of its difficulty, which
-   * must hold a playable curve and at least one enemy. */
-  GameSettings settings;
+   * spawner each time a world is built. */
+  std::uint32_t seed;
+  /** @brief The waves of the difficulty of the game, which must hold a
+   * playable curve and at least one enemy; they must outlive the flow. */
+  std::reference_wrapper<const WavePlan> waves;
 };
 
 }  // namespace rtype::server
