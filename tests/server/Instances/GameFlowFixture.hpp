@@ -3,11 +3,9 @@
 #include <gtest/gtest.h>
 #include <cstddef>
 #include <initializer_list>
-#include <vector>
 #include "ConnectedPlayer.hpp"
 #include "EventBus.hpp"
 #include "GameFlow.hpp"
-#include "OutgoingDatagram.hpp"
 #include "PlayerRoster.hpp"
 #include "ReadyKeeper.hpp"
 
@@ -46,7 +44,6 @@ class GameFlowFixture : public ::testing::Test {
  private:
   engine::EventBus events_;
   PlayerRoster roster_;
-  std::vector<network::OutgoingDatagram> sent_;
   ReadyKeeper readyKeeper_;
   GameFlow flow_;
 };

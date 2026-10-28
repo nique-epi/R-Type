@@ -5,7 +5,7 @@
 namespace rtype::server {
 
 /**
- * @brief Where a game is in its life, see GameInstance.
+ * @brief Where a game is in its life, see GameFlow.
  */
 enum class GameState : std::uint8_t {
   WaitingForPlayers,

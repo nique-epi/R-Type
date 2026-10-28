@@ -109,15 +109,10 @@ class GameInstance {
    * @brief Runs one tick: applies the ReadyState, keeps the newest PlayerInput
    * and closes the session of each player who sent a Disconnection, among
    * @p datagrams, oldest first, closes the session of every player not heard
-   * from for SESSION_TIMEOUT_TICKS ticks, ends a game in progress that no
-   * player is left in, or that no player left in has a life, then moves the
-   * game along its states. While it waits, the players are told the room;
-   * while it is in progress, the tick is counted, the ships move, the systems
-   * run, the ships whose players hold shoot fire, the Bydos fire, the Bydos
-   * appear, the waits and protections of the lives are counted and the world is
-   * sent; while it is finished, the players are told the result. Last, a player
-   * sent nothing for TICKS_PER_HEARTBEAT ticks is sent a Heartbeat. Nothing
-   * caused by the content of a datagram makes it throw.
+   * from for SESSION_TIMEOUT_TICKS ticks, then runs the tick of the game (see
+   * GameFlow::onTick). Last, a player sent nothing for TICKS_PER_HEARTBEAT
+   * ticks is sent a Heartbeat. Nothing caused by the content of a datagram
+   * makes it throw.
    */
   void onTick(std::span<const network::IncomingDatagram> datagrams);
 

@@ -3,7 +3,6 @@
 #include <cstddef>
 #include <initializer_list>
 #include <string>
-#include <utility>
 #include "ConnectedPlayer.hpp"
 #include "GameFlow.hpp"
 #include "GameFlowParts.hpp"
@@ -23,10 +22,7 @@ GameFlowFixture::GameFlowFixture()
       flow_(GameFlowParts{
           .events = events_,
           .roster = roster_,
-          .send =
-              [this](network::OutgoingDatagram datagram) {
-                sent_.push_back(std::move(datagram));
-              },
+          .send = [](const network::OutgoingDatagram&) {},
           .everyPlayerIsReady =
               [this] { return readyKeeper_.everyPlayerIsReady(); },
           .settings =

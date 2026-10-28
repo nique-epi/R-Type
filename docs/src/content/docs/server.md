@@ -232,7 +232,7 @@ send(rtype::server::sessionDatagram(player, rtype::network::GameStarted{}));
 | `Departures` | closes the session of a player who left or fell silent, and keeps it for `takeDepartedPlayers()` |
 | `sendHeartbeats` | sends a `Heartbeat` to a player the server sent nothing for `TICKS_PER_HEARTBEAT` ticks |
 
-- `GameInstance` calls `readDatagrams`, `closeSilentSessions`, `everyPlayerIsReady`, `endTick` (the heartbeats, then the tick is counted) and `takeDepartedPlayers`; the rest of this page tells what each does.
+- `GameInstance` calls `readDatagrams`, `closeSilentSessions`, `endTick` (the heartbeats, then the tick is counted) and `takeDepartedPlayers`; `GameFlow` calls `everyPlayerIsReady` through the function `GameInstance` gives it; the rest of this page tells what each does.
 - When a session closes, `Departures` frees the seat, calls `onClosing` with a copy of the player (the game removes its ship there), then logs and publishes the `PlayerDeparture`, in that order.
 - The log lines of the sessions are written under `Sessions`.
 
