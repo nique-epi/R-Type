@@ -87,7 +87,6 @@ Application::Application(AssetLibrary& assets, network::Endpoint server,
     : assets_(&assets),
       settingsFile_(std::move(settingsFile)),
       settings_(settingsFile_.load(firstLaunchSettings())),
-      window_(settings_.windowSize, settings_.displayMode),
       background_(std::random_device{}()),
       sounds_(assets, settings_),
       theme_(assets, settings_, THEME_TRACK),
@@ -100,6 +99,7 @@ Application::Application(AssetLibrary& assets, network::Endpoint server,
       server_(std::move(server)),
       nickname_(std::move(nickname)),
       screens_([this](ScreenId screen) { return createScreen(screen); }) {
+  window_.open(settings_.windowSize, settings_.displayMode);
   network_.open();
   screens_.replaceAll(firstScreen());
   screens_.applyPendingChanges();
@@ -145,7 +145,7 @@ engine::Duration Application::measureFrame() {
 }
 
 void Application::render() {
-  window_.clear();
+  window_.renderTarget().clear();
   background_.draw(window_.renderTarget());
   screens_.draw(window_.renderTarget());
   window_.display();
