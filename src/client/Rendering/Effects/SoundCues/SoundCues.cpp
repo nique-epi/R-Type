@@ -46,7 +46,7 @@ Caption cueCaption(std::string text, sf::Color color) {
  * centered on its place. */
 game::Position cuePlaceOver(game::Position center, int spriteHeight) {
   const float rise =
-      (static_cast<float>(spriteHeight + TEXT_LINE_HEIGHT) * HALF +
+      ((static_cast<float>(spriteHeight + TEXT_LINE_HEIGHT) * HALF) +
        static_cast<float>(CUE_GAP)) *
       BACKGROUND_PIXEL_SIZE;
   return game::Position{.x = center.x, .y = center.y - rise};
