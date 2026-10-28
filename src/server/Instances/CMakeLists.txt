@@ -6,4 +6,6 @@ target_link_libraries(rtype_server_instances INTERFACE rtype_engine_time rtype_s
 
 add_subdirectory(ScoreKeeper)
 add_subdirectory(LifeKeeper)
+add_subdirectory(ShipInput)
+add_subdirectory(GameFlow)
 add_subdirectory(GameInstance)
