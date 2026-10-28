@@ -181,8 +181,8 @@ TEST(NetworkThread, BindsNothingBeforeItIsOpened) {
 }
 
 /**
- * Given a network thread opened on every IPv4 interface, on the UDP port the
- * system picked
+ * Given a network thread opened on every IPv4 interface, holding the UDP port
+ * the system picked
  * When it is closed
  * Then that port is free again
  */
@@ -190,6 +190,7 @@ TEST(NetworkThread, FreesItsPortOnceClosed) {
   NetworkThread networkThread{anyInterfaceOn(ANY_PORT)};
   networkThread.open();
   const std::uint16_t port = networkThread.localEndpoint().port;
+  ASSERT_FALSE(udpPortIsFree(port));
 
   networkThread.close();
 
