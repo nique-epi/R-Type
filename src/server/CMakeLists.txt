@@ -12,6 +12,7 @@ add_subdirectory(Replication)
 add_subdirectory(Spawning)
 add_subdirectory(Instances)
 add_subdirectory(Lobby)
+add_subdirectory(Modules)
 
 add_executable(r-type_server main.cpp)
 

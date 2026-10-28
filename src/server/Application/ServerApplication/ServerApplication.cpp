@@ -54,6 +54,11 @@ void ServerApplication::open() {
   relay_.emplace(*socket_, incoming_, outgoing_);
 }
 
+void ServerApplication::close() {
+  relay_.reset();
+  socket_.reset();
+}
+
 void ServerApplication::run() {
   requireOpen();
   socket_->startReceiving([this](const network::Endpoint& sender,

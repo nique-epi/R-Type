@@ -94,6 +94,13 @@ class ServerApplication final : public IDatagramSender,
   void open();
 
   /**
+   * @brief Unbinds the socket, so the port is free again. Call it once run()
+   * returned; does nothing when the server is not open. Open it again with
+   * open().
+   */
+  void close();
+
+  /**
    * @brief Runs the network on the calling thread and the ticks on a thread of
    * their own, until stop() is called or either thread fails, then waits for
    * both. The first tick is due one tick after the call. Call it once, after

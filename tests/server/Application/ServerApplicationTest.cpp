@@ -423,3 +423,21 @@ TEST(ServerApplication, RefusesToOpenTwice) {
   EXPECT_THROW(server.open(), rtype::server::ServerAlreadyOpenException);
   EXPECT_EQ(server.localEndpoint().port, port);
 }
+
+/**
+ * Given a server that is open on a port the system picked
+ * When it is closed
+ * Then another socket can bind that port, and the server can open again
+ */
+TEST(ServerApplication, GivesItsPortBackWhenClosed) {
+  ServerApplication server{loopbackOnPort(ANY_PORT), ignoringDatagrams()};
+  server.open();
+  const std::uint16_t port = server.localEndpoint().port;
+
+  server.close();
+
+  rtype::network::NetworkContext otherContext;
+  EXPECT_NO_THROW(
+      rtype::network::UdpSocket(otherContext, loopbackOnPort(port)));
+  EXPECT_NO_THROW(server.open());
+}
