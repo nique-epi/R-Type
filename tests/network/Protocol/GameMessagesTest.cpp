@@ -11,34 +11,30 @@
 #include "PlayerInput.hpp"
 #include "PlayerLeft.hpp"
 #include "ProtocolConstants.hpp"
+#include "ProtocolFixtures.hpp"
 #include "ProtocolTestConstants.hpp"
 #include "WorldState.hpp"
 #include "WorldStateCodec.hpp"
 #include "WorldStateFixtures.hpp"
 
 namespace rtype::network {
-namespace {
 
 using testing::byteSequence;
 using testing::EVERY_ACTION;
 using testing::EXAMPLE_ENTITY_ID;
-using testing::EXAMPLE_X;
-using testing::EXAMPLE_Y;
+using testing::exampleBydo;
 using testing::FIRST_BIT_ABOVE_THE_ACTIONS;
+using testing::LARGEST_U16;
+using testing::LARGEST_U32;
+using testing::LARGEST_WIRE_COORDINATE;
 using testing::LAST_PLAYER_NUMBER;
 using testing::oneShipState;
 using testing::PLAYER_NUMBER_ABOVE_THE_LAST;
 using testing::SECOND_PLAYER_NUMBER;
+using testing::SMALLEST_WIRE_COORDINATE;
 using testing::SOME_EVENT_NUMBER;
 using testing::SOME_INPUT_NUMBER;
 using testing::UP_AND_SHOOT;
-
-EntitySpawned exampleBydo() {
-  return EntitySpawned{.entityId = EXAMPLE_ENTITY_ID,
-                       .entityType = WireEntityType::Bydo,
-                       .x = EXAMPLE_X,
-                       .y = EXAMPLE_Y};
-}
 
 /**
  * Given input number 0x01020304 with up and shoot held
@@ -51,6 +47,17 @@ TEST(PlayerInput, EncodesTheInputNumberThenTheActions) {
   EXPECT_EQ(encodeMessage(PlayerInput{.inputNumber = SOME_INPUT_NUMBER,
                                       .actions = UP_AND_SHOOT}),
             expected);
+}
+
+/**
+ * Given an input numbered with the largest u32, every action held
+ * When it is encoded then decoded
+ * Then the decoded input equals the original
+ */
+TEST(PlayerInput, KeepsTheLargestInputNumber) {
+  const PlayerInput input{.inputNumber = LARGEST_U32, .actions = EVERY_ACTION};
+
+  EXPECT_EQ(decodeMessage<PlayerInput>(encodeMessage(input)), input);
 }
 
 /**
@@ -137,6 +144,21 @@ TEST(EntitySpawned, EncodesTheIdTheTypeThenThePosition) {
       byteSequence({0x00, 0x00, 0x00, 0x09, 0x03, 0x03, 0x20, 0x01, 0x94});
 
   EXPECT_EQ(encodeMessage(exampleBydo()), expected);
+}
+
+/**
+ * Given an enemy missile of the largest u32 id, at the smallest x and the
+ * largest y of the wire range
+ * When its spawn is encoded then decoded
+ * Then the decoded spawn equals the original
+ */
+TEST(EntitySpawned, KeepsTheLargestIdAndTheEndsOfTheWireRange) {
+  const EntitySpawned spawned{.entityId = LARGEST_U32,
+                              .entityType = WireEntityType::EnemyMissile,
+                              .x = SMALLEST_WIRE_COORDINATE,
+                              .y = LARGEST_WIRE_COORDINATE};
+
+  EXPECT_EQ(decodeMessage<EntitySpawned>(encodeMessage(spawned)), spawned);
 }
 
 /**
@@ -312,6 +334,21 @@ TEST(GameEvent, EncodesEveryFieldInOrder) {
       byteSequence({0x01, 0x02, 0x02, 0x02, 0x00, 0x00, 0x00, 0x00});
 
   EXPECT_EQ(encodeMessage(event), expected);
+}
+
+/**
+ * Given a damage event of the largest u16 number, on the entity of the
+ * largest u32 id
+ * When it is encoded then decoded
+ * Then the decoded event equals the original
+ */
+TEST(GameEvent, KeepsTheLargestEventNumberAndEntityId) {
+  const GameEvent event{.eventNumber = LARGEST_U16,
+                        .kind = GameEventKind::EntityDamaged,
+                        .playerNumber = NO_PLAYER_NUMBER,
+                        .entityId = LARGEST_U32};
+
+  EXPECT_EQ(decodeMessage<GameEvent>(encodeMessage(event)), event);
 }
 
 /**
@@ -514,5 +551,4 @@ TEST(WorldState, DecodesThroughTheSameEntryAsTheOtherMessages) {
   EXPECT_EQ(decodeMessage<WorldState>(payload), oneShipState());
 }
 
-}  // namespace
 }  // namespace rtype::network

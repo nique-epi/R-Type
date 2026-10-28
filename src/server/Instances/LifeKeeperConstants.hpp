@@ -2,18 +2,9 @@
 
 #include <chrono>
 #include <cstddef>
-#include <cstdint>
 #include "TimeConstants.hpp"
 
 namespace rtype::server {
-
-/**
- * @brief Lives a player starts each game with, the ship in play included: its
- * ship can be destroyed this many times before the player only watches.
- *
- * Provisional: gameplay will tune it.
- */
-constexpr std::uint8_t STARTING_LIVES = 3;
 
 /**
  * @brief How long a player whose ship was destroyed, with a life left, has no

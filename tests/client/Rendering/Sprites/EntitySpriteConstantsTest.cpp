@@ -1,8 +1,12 @@
 #include <gtest/gtest.h>
 #include <SFML/Graphics/Image.hpp>
+#include <cstddef>
 #include "BackgroundConstants.hpp"
 #include "EntitySizeConstants.hpp"
 #include "EntitySpriteConstants.hpp"
+#include "EntitySprites.hpp"
+#include "InterfaceColorConstants.hpp"
+#include "PlayerColors.hpp"
 #include "SheetPixels.hpp"
 #include "ShipControlConstants.hpp"
 #include "SpriteFrame.hpp"
@@ -12,8 +16,12 @@ using rtype::client::BONUS_BYDO_FRAMES;
 using rtype::client::BYDO_FRAME;
 using rtype::client::ENEMY_MISSILE_FRAME;
 using rtype::client::ENTITY_SHEET_ID;
+using rtype::client::inPlayerColorRow;
+using rtype::client::PLAYER_COLOR_COUNT;
+using rtype::client::PLAYER_COLORS;
 using rtype::client::PLAYER_MISSILE_FRAME;
 using rtype::client::PLAYER_SHIP_FRAME;
+using rtype::client::PlayerColors;
 using rtype::game::BYDO_HEIGHT;
 using rtype::game::BYDO_WIDTH;
 using rtype::game::ENEMY_MISSILE_HEIGHT;
@@ -108,5 +116,25 @@ TEST(EntitySpriteConstants, TheBonusBydoFramesHoldWholeDrawings) {
     SCOPED_TRACE(frame.left);
     EXPECT_TRUE(showsAVisiblePixel(sheet, frame));
     EXPECT_FALSE(hasAVisiblePixelAround(sheet, frame));
+  }
+}
+
+/**
+ * Given the entity sheet shipped in assets/
+ * When the first frame of the ship of each player color is read
+ * Then it shows the dark, main and light shades of that color, which a
+ * palette for color blindness swaps
+ */
+TEST(EntitySpriteConstants, EachShipRowShowsTheThreeShadesOfItsColor) {
+  const sf::Image sheet = shippedSheet(ENTITY_SHEET_ID);
+
+  for (int color = 0; color < PLAYER_COLOR_COUNT; ++color) {
+    SCOPED_TRACE(color);
+    const SpriteFrame frame = inPlayerColorRow(PLAYER_SHIP_FRAME, color);
+    const PlayerColors& shades =
+        PLAYER_COLORS.at(static_cast<std::size_t>(color));
+    EXPECT_TRUE(showsColor(sheet, frame, shades.dark));
+    EXPECT_TRUE(showsColor(sheet, frame, shades.ship));
+    EXPECT_TRUE(showsColor(sheet, frame, shades.light));
   }
 }

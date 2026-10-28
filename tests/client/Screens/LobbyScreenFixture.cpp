@@ -6,6 +6,7 @@
 #include <utility>
 #include <vector>
 #include "ConnectionPhase.hpp"
+#include "InterfaceColorConstants.hpp"
 #include "KeyPress.hpp"
 #include "LobbyPlace.hpp"
 #include "LobbyScreen.hpp"
@@ -25,6 +26,7 @@ using rtype::client::LobbyPlace;
 using rtype::client::LobbyScreen;
 using rtype::client::LobbyScreenParts;
 using rtype::client::MotionPreference;
+using rtype::client::PLAYER_COLORS;
 using rtype::client::testing::OWN_NUMBER;
 using rtype::client::testing::READY_KEY;
 using rtype::client::testing::READY_KEY_NAME;
@@ -37,6 +39,7 @@ LobbyScreenFixture::LobbyScreenFixture(LobbyPlace place)
                                .playfieldPointAt = samePlayfieldPoint,
                                .readyKey = {.key = READY_KEY,
                                             .name = READY_KEY_NAME},
+                               .palette = PLAYER_COLORS,
                                .motion = MotionPreference::Full,
                                .place = place},
               std::make_unique<RecordingInterfaceCanvas>(canvas_)) {

@@ -6,6 +6,8 @@
 #include "EntityRegistry.hpp"
 #include "EntityType.hpp"
 #include "FlashPreference.hpp"
+#include "PilotShadeConstants.hpp"
+#include "PilotShades.hpp"
 #include "Position.hpp"
 #include "TimeConstants.hpp"
 
@@ -14,12 +16,14 @@ namespace rtype::client {
 EffectSpawner::EffectSpawner(engine::EntityRegistry& entities,
                              engine::ComponentRegistry& components,
                              std::uint32_t seed)
-    : pixels_(entities, components, seed),
+    : shades_(STANDARD_PILOT_SHADES),
+      pixels_(entities, components, seed),
       tools_{.entities = entities,
              .components = components,
              .gate = gate_,
              .pixels = pixels_,
-             .camera = camera_},
+             .camera = camera_,
+             .shades = shades_},
       gains_(tools_),
       hits_(tools_),
       shots_(tools_),
@@ -27,8 +31,9 @@ EffectSpawner::EffectSpawner(engine::EntityRegistry& entities,
       pilots_(tools_) {}
 
 void EffectSpawner::advance(engine::Duration elapsed,
-                            FlashPreference preference) {
+                            FlashPreference preference, PilotShades shades) {
   gate_.advance(elapsed, preference);
+  shades_ = shades;
   kills_.advance(elapsed);
   gains_.advance(elapsed);
   camera_.advance(elapsed);

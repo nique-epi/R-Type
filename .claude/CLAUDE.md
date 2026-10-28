@@ -31,7 +31,7 @@ The CI (`build-and-test`) checks formatting, then builds and tests on Linux (GCC
 
 ## Rules
 
-Every file in `.claude/rules/` (subdirectories included) is an isolated rule, loaded automatically. Applying them is not optional: a violated rule is a defect, not a preference. On any mistake, `core/errors-learning.md` requires creating a new one.
+Every file in `.claude/rules/` (subdirectories included) is an isolated rule, loaded automatically. Applying them is not optional: a violated rule is a defect, not a preference. On a mistake in the code, `core/errors-learning.md` requires creating a new one; a mistake outside the code (shell, git, local machine, tools, conversation) produces none.
 
 Paths below are relative to `.claude/rules/`.
 
@@ -44,15 +44,17 @@ Paths below are relative to `.claude/rules/`.
 |---|---|
 | Writing C++ | `architecture/`, `code-style/` |
 | Writing a test | `code-style/code-style-tests-given-when-then.md`, `code-style/fix-format-a-test-file-holds-only-tests.md`, `fix/process/fix-process-green-test-locking-a-defect-and-overly-deterministic-fake.md` |
+| Writing a module (`IModule`) | `architecture/fix-architecture-a-module-install-keeps-nothing-open.md`, `architecture/fix-architecture-a-module-start-that-throws-closes-what-it-opened.md` |
 | Touching the network | security section of `core/code-review.md`, `fix/reasoning/fix-reasoning-an-exception-to-a-check-is-read-as-the-forger.md`, `fix/reasoning/fix-reasoning-last-received-is-not-newest-over-udp.md` |
 | Creating a branch | `fix/process/fix-process-branch-before-first-commit.md`, `fix/execution/fix-execution-checkout-b-starts-from-head-not-main.md`, `fix/process/fix-process-reread-rules-after-switching-branch.md` |
 | Committing | `core/commit.md`, `fix/process/fix-process-no-co-author-trailer.md`, `fix/execution/fix-execution-check-the-index-before-committing.md` |
 | Finishing a feature | the `document-feature` skill (`.claude/skills/document-feature/SKILL.md`), `fix/process/fix-process-grep-every-page-for-what-the-feature-replaced.md` |
 | Opening a PR | `fix/format/fix-format-pull-requests-in-english.md`, `fix/format/fix-format-pr-links-its-linear-issue.md`, `fix/process/fix-process-pr-always-opened-as-draft.md`, the `document-feature` skill if the feature is not documented yet |
+| Commenting on a PR, answering the user | `fix/format/fix-format-french-in-the-conversation-and-pr-comments.md` |
 | Reviewing | `core/code-review.md` |
 | Announcing a green gate | `fix/execution/fix-execution-zsh-pipestatus.md`, `fix/execution/fix-execution-zero-warnings-proven-on-a-recompiling-build.md`, `fix/execution/fix-execution-run-clang-tidy-before-push.md` |
 | Writing a documentation page or a diagram | `fix/format/fix-format-schematic-diagrams-and-map-level-pages.md`, `fix/format/fix-format-context-before-the-deliverable.md`, the `document-feature` skill |
-| Making a mistake | `core/errors-learning.md` — the mistake produces a new rule |
+| Making a mistake | `core/errors-learning.md` — a mistake in the code produces a new rule, a mistake outside it none |
 | Pausing, finishing a step | `core/context-continuity.md` |
 
 ### Index
@@ -64,12 +66,13 @@ Paths below are relative to `.claude/rules/`.
 - `core/errors-learning.md`
 
 **C++ architecture — `architecture/` (loaded when a C++ file is read)**
+- `architecture/architecture-a-module-is-one-folder-and-one-target.md`
 - `architecture/architecture-custom-exceptions-per-module.md`
 - `architecture/architecture-hpp-declarations-cpp-definitions.md`
-- `architecture/architecture-one-folder-per-concrete-class.md`
 - `architecture/architecture-pure-virtual-interfaces.md`
-- `architecture/fix-architecture-a-cpp-hpp-pair-has-its-own-folder.md`
 - `architecture/fix-architecture-a-function-does-one-kind-of-step.md`
+- `architecture/fix-architecture-a-module-install-keeps-nothing-open.md`
+- `architecture/fix-architecture-a-module-start-that-throws-closes-what-it-opened.md`
 - `architecture/fix-architecture-at-most-ten-methods-per-class.md`
 - `architecture/fix-architecture-at-most-three-parameters.md`
 - `architecture/fix-architecture-inherit-interfaces-compose-implementations.md`
@@ -170,6 +173,7 @@ Paths below are relative to `.claude/rules/`.
 - `fix/format/fix-format-a-lost-unit-looks-the-same-at-every-count.md`
 - `fix/format/fix-format-a-summary-keeps-the-conditions-of-its-rule.md`
 - `fix/format/fix-format-context-before-the-deliverable.md`
+- `fix/format/fix-format-french-in-the-conversation-and-pr-comments.md`
 - `fix/format/fix-format-no-tool-call-artifacts-in-written-files.md`
 - `fix/format/fix-format-plan-shows-all-code-and-explains-it.md`
 - `fix/format/fix-format-pr-links-its-linear-issue.md`
@@ -195,4 +199,4 @@ Skills live in `.claude/skills/<name>/SKILL.md`, relative to the repository root
 - [ ] `format-check` and `tidy` green.
 - [ ] No violation of the `architecture/` and `code-style/` rules.
 - [ ] Given / When / Then tests for the added or fixed behavior.
-- [ ] Commits and PR in English, **no AI mention**, PR opened as a draft.
+- [ ] Commits, PR title and description in English, PR comments in French, **no AI mention**, PR opened as a draft.

@@ -68,7 +68,12 @@ RecordingScreen::RecordingScreen(ScreenId screen,
   write(ScreenCall::Built);
 }
 
-RecordingScreen::~RecordingScreen() { write(ScreenCall::Destroyed); }
+RecordingScreen::~RecordingScreen() {
+  try {
+    write(ScreenCall::Destroyed);
+  } catch (...) {  // NOLINT(bugprone-empty-catch)
+  }
+}
 
 void RecordingScreen::runOnEvent(std::function<void()> action) {
   onEvent_ = std::move(action);

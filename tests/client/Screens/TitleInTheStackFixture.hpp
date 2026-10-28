@@ -5,6 +5,7 @@
 #include <memory>
 #include <vector>
 #include "IScreen.hpp"
+#include "PlayerSettings.hpp"
 #include "RecordingInterfaceCanvas.hpp"
 #include "RecordingNavigator.hpp"
 #include "RecordingScreen.hpp"
@@ -46,5 +47,6 @@ class TitleInTheStackFixture : public ::testing::Test {
   InterfaceCanvasRecord dialogCanvas_;
   std::vector<JournalEntry> journal_;
   RecordingSoundPlayer sounds_;
+  rtype::client::PlayerSettings settings_;
   rtype::client::ScreenStack screens_;
 };

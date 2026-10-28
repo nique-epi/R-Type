@@ -1,0 +1,15 @@
+add_library(rtype_server_sessions INTERFACE)
+
+target_include_directories(rtype_server_sessions INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
+
+target_link_libraries(rtype_server_sessions INTERFACE rtype_engine_event_bus rtype_network_transport rtype_identifiers rtype_network_player_input rtype_network_protocol rtype_engine_time)
+
+add_subdirectory(ConnectedPlayers)
+add_subdirectory(PlayerRoster)
+add_subdirectory(SessionDatagram)
+add_subdirectory(DatagramReader)
+add_subdirectory(ReadyKeeper)
+add_subdirectory(InputKeeper)
+add_subdirectory(Departures)
+add_subdirectory(Heartbeats)
+add_subdirectory(GameSessions)

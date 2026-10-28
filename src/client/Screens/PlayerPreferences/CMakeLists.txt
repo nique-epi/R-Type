@@ -4,6 +4,7 @@ target_include_directories(rtype_client_player_preferences PUBLIC ${CMAKE_CURREN
 
 target_link_libraries(rtype_client_player_preferences
   PUBLIC
+    rtype_client_effect_interfaces
     rtype_client_rendering_interfaces
   PRIVATE
     rtype_client_settings

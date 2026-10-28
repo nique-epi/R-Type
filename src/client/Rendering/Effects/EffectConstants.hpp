@@ -190,6 +190,14 @@ constexpr engine::Duration RECOIL_DURATION = std::chrono::milliseconds(33);
 /** @brief Written before the points of a gain. */
 constexpr const char* GAIN_PREFIX = "+";
 
+/** @brief Written between the number of the only pilot who gained and the
+ * points of its gain. */
+constexpr const char* GAIN_PILOT_SEPARATOR = " ";
+
+/** @brief How many colors the debris of a ship go through: white, the three
+ * shades of its pilot, then the smoke. */
+constexpr std::size_t PILOT_DEBRIS_SHADE_COUNT = 5;
+
 /** @brief A ship arriving stays hidden on the first half of
  * MATERIALIZE_DURATION, 16 frames, then shows row by row; its speed lines
  * live as long. */

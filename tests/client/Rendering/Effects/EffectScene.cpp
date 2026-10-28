@@ -9,6 +9,7 @@
 #include "EntityType.hpp"
 #include "FlashPreference.hpp"
 #include "Layer.hpp"
+#include "PilotShadeConstants.hpp"
 #include "PilotShip.hpp"
 #include "Position.hpp"
 #include "Sprite.hpp"
@@ -19,6 +20,7 @@ using rtype::client::ENTITY_SHEET_ID;
 using rtype::client::FlashPreference;
 using rtype::client::PilotShip;
 using rtype::client::PLAYER_SHIP_FRAME;
+using rtype::client::STANDARD_PILOT_SHADES;
 using rtype::engine::ComponentRegistry;
 using rtype::engine::Duration;
 using rtype::engine::Entity;
@@ -39,7 +41,7 @@ void EffectScene::play(Duration elapsed) {
 }
 
 void EffectScene::advance(Duration elapsed, FlashPreference preference) {
-  effects_.advance(elapsed, preference);
+  effects_.advance(elapsed, preference, STANDARD_PILOT_SHADES);
   animations_.update(components_, elapsed);
   hitFlashes_.update(components_, elapsed);
   spriteEffects_.update(components_, elapsed);

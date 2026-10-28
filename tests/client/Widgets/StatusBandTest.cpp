@@ -2,137 +2,83 @@
 #include <gtest/gtest.h>
 #include <SFML/Graphics/Color.hpp>
 #include <SFML/Graphics/Rect.hpp>
-#include <SFML/System/Vector2.hpp>
 #include <algorithm>
 #include <array>
 #include <cstddef>
-#include <cstdint>
-#include <iterator>
 #include <optional>
 #include <set>
 #include <string>
 #include <utility>
 #include <vector>
 #include "PilotStatus.hpp"
+#include "PlayerPaletteConstants.hpp"
+#include "PlayerPaletteTestConstants.hpp"
 #include "RecordingInterfaceCanvas.hpp"
-#include "StatusBand.hpp"
+#include "StatusBandFixtures.hpp"
+#include "StatusBandTestConstants.hpp"
 #include "TextStyle.hpp"
 
-using rtype::client::paintStatusBand;
+using rtype::client::DEUTERANOPIA_PLAYER_PALETTE;
 using rtype::client::PilotState;
 using rtype::client::PilotStatus;
 using rtype::client::TextAlignment;
 using rtype::client::TextFont;
+using rtype::client::testing::BAND_BOTTOM;
+using rtype::client::testing::BAND_TOP;
+using rtype::client::testing::BLUISH_GREEN;
+using rtype::client::testing::DIMMED;
+using rtype::client::testing::DIMMED_TEXT;
+using rtype::client::testing::FIRST_CHIP;
+using rtype::client::testing::FIRST_FRAME_CORNERS;
+using rtype::client::testing::FIRST_LIFE_SOURCE;
+using rtype::client::testing::FIRST_LIGHT;
+using rtype::client::testing::FIRST_LIVES;
+using rtype::client::testing::FIRST_LIVES_COUNT;
+using rtype::client::testing::FIRST_NAME;
+using rtype::client::testing::FIRST_PLUG;
+using rtype::client::testing::FIRST_SCORE_END;
+using rtype::client::testing::FIRST_SMALL_WORD_END;
+using rtype::client::testing::FIRST_WORD_END;
+using rtype::client::testing::FIRST_ZEROS_END;
+using rtype::client::testing::FIVE_LIVES;
+using rtype::client::testing::FOUR_LIVES;
+using rtype::client::testing::FOURTH_MARKER_SOURCE;
+using rtype::client::testing::LARGEST_SHOWN_SCORE_TEXT;
+using rtype::client::testing::LAST_LIFE;
+using rtype::client::testing::LEADING_ZEROS;
+using rtype::client::testing::LIGHT_BLUISH_GREEN;
+using rtype::client::testing::LIVES_SHOWN_AT_MOST;
+using rtype::client::testing::LOCAL_FRAME;
+using rtype::client::testing::LONGEST_NICKNAME;
+using rtype::client::testing::LONGEST_NICKNAME_BESIDE_A_WORD;
+using rtype::client::testing::LONGEST_NICKNAME_CUT;
+using rtype::client::testing::LOST_LIFE_SOURCE;
+using rtype::client::testing::MIDDLE_ROW;
+using rtype::client::testing::NAME_AND_SCORE;
+using rtype::client::testing::NICKNAME_WITH_ACCENTS;
+using rtype::client::testing::NICKNAME_WITH_ACCENTS_CUT;
+using rtype::client::testing::NINE_DIGIT_SCORE;
+using rtype::client::testing::NO_LIFE;
+using rtype::client::testing::NO_PLAYER;
+using rtype::client::testing::PAST_THE_LAST_PLAYER;
+using rtype::client::testing::PICTURE_WIDTH;
+using rtype::client::testing::PLAYER_FOUR;
+using rtype::client::testing::PLAYER_ONE;
+using rtype::client::testing::PLAYER_THREE;
+using rtype::client::testing::PLUG_ICON;
+using rtype::client::testing::RULE_COLUMNS;
+using rtype::client::testing::RULE_HEIGHT;
+using rtype::client::testing::RULE_TOP;
+using rtype::client::testing::SHEET_GREEN;
+using rtype::client::testing::SHEET_GREEN_TO_BLUISH_GREEN;
+using rtype::client::testing::THIRD_CHIP;
+using rtype::client::testing::THIRD_LIFE_SOURCE;
+using rtype::client::testing::THIRD_MARKER_SOURCE;
+using rtype::client::testing::THREE_LIVES;
+using rtype::client::testing::TWO_LIVES;
+using rtype::client::testing::WARNING;
 using ::testing::Contains;
 using ::testing::IsEmpty;
-
-namespace {
-
-/** @brief Places and colors read on the picture the team chose (proposal B of
- * the HUD design system, nickname in title), in pixels of the 480 x 270
- * picture. */
-constexpr int BAND_TOP = 246;
-constexpr int BAND_BOTTOM = 269;
-constexpr int MIDDLE_ROW = 257;
-constexpr int PICTURE_WIDTH = 480;
-constexpr sf::IntRect FIRST_CHIP({6, 249}, {11, 10});
-constexpr sf::IntRect THIRD_CHIP({246, 249}, {11, 10});
-constexpr sf::Vector2i FIRST_NAME(20, 250);
-constexpr sf::Vector2i FIRST_WORD_END(113, 250);
-constexpr sf::Vector2i FIRST_SMALL_WORD_END(113, 251);
-constexpr sf::Vector2i FIRST_SCORE_END(113, 260);
-constexpr sf::Vector2i FIRST_ZEROS_END(73, 260);
-constexpr std::array FIRST_LIVES{sf::Vector2i(6, 260), sf::Vector2i(23, 260),
-                                 sf::Vector2i(40, 260)};
-constexpr sf::Vector2i FIRST_LIVES_COUNT(24, 260);
-constexpr sf::IntRect FIRST_PLUG({6, 260}, {8, 8});
-constexpr std::array FIRST_FRAME_CORNERS{std::pair(2, 246), std::pair(117, 246),
-                                         std::pair(2, 269),
-                                         std::pair(117, 269)};
-constexpr std::array RULE_COLUMNS{119, 239, 359};
-constexpr int RULE_TOP = 250;
-constexpr int RULE_HEIGHT = 16;
-constexpr sf::IntRect FIRST_LIFE_SOURCE({0, 0}, {16, 8});
-constexpr sf::IntRect THIRD_LIFE_SOURCE({36, 0}, {16, 8});
-constexpr sf::IntRect LOST_LIFE_SOURCE({72, 0}, {16, 8});
-constexpr sf::IntRect FOURTH_MARKER_SOURCE({27, 10}, {7, 7});
-constexpr sf::Color FIRST_LIGHT(127, 230, 255);
-constexpr sf::Color THIRD_COLOR(126, 194, 58);
-constexpr sf::Color DIMMED(38, 48, 94);
-constexpr sf::Color DIMMED_TEXT(143, 162, 230);
-constexpr sf::Color LEADING_ZEROS(74, 90, 168);
-constexpr sf::Color WARNING(255, 179, 107);
-constexpr sf::Color LOCAL_FRAME(238, 241, 255);
-constexpr const char* PLUG_ICON = "icons/phosphor/plugs_bold.png";
-
-constexpr std::uint8_t PLAYER_ONE = 1;
-constexpr std::uint8_t PLAYER_THREE = 3;
-constexpr std::uint8_t PLAYER_FOUR = 4;
-constexpr std::uint8_t NO_PLAYER = 0;
-constexpr std::uint8_t PAST_THE_LAST_PLAYER = 5;
-constexpr std::uint32_t SCORE = 12400;
-constexpr std::uint32_t NINE_DIGIT_SCORE = 123456789;
-constexpr const char* LARGEST_SHOWN_SCORE_TEXT = "9999999";
-constexpr std::uint8_t TWO_LIVES = 2;
-constexpr std::uint8_t THREE_LIVES = 3;
-constexpr std::uint8_t FOUR_LIVES = 4;
-constexpr std::uint8_t FIVE_LIVES = 5;
-constexpr std::uint8_t LAST_LIFE = 1;
-constexpr std::uint8_t NO_LIFE = 0;
-constexpr std::size_t LIVES_SHOWN_AT_MOST = 3;
-constexpr std::size_t NAME_AND_SCORE = 2;
-
-/** @brief Nicknames of 16 and 13 characters, the first the longest the
- * protocol carries, the second holding characters of two bytes. */
-constexpr const char* LONGEST_NICKNAME = "CAPTAIN_STARDUST";
-constexpr const char* NICKNAME_WITH_ACCENTS = "ÉLODIE_ÉTOILE";
-
-/** @brief What the room of 93 pixels of the first row keeps of them: 11
- * characters of 8 pixels; 5 once RESPAWN (7 characters of 6 pixels on the
- * recording canvas) and its gap of 4 take their part. */
-constexpr const char* LONGEST_NICKNAME_CUT = "CAPTAIN_STA";
-constexpr const char* LONGEST_NICKNAME_BESIDE_A_WORD = "CAPTA";
-constexpr const char* NICKNAME_WITH_ACCENTS_CUT = "ÉLODIE_ÉTOI";
-
-/** @returns A teammate called ACE flying, with these lives. */
-PilotStatus flying(std::uint8_t number, std::optional<std::uint8_t> lives) {
-  return PilotStatus{.playerNumber = number,
-                     .nickname = "ACE",
-                     .score = SCORE,
-                     .lives = lives,
-                     .state = PilotState::Flying,
-                     .isLocalPlayer = false};
-}
-
-/** @returns What the band painted for these pilots. */
-InterfaceCanvasRecord bandPaintingOf(std::vector<PilotStatus> pilots) {
-  InterfaceCanvasRecord record;
-  RecordingInterfaceCanvas canvas(record);
-  paintStatusBand(canvas, pilots);
-  return record;
-}
-
-/** @returns The images of the record drawn from this source rectangle. */
-std::vector<RecordedImage> imagesOf(const InterfaceCanvasRecord& record,
-                                    sf::IntRect source) {
-  std::vector<RecordedImage> found;
-  std::ranges::copy_if(
-      record.images, std::back_inserter(found),
-      [source](const RecordedImage& image) { return image.source == source; });
-  return found;
-}
-
-/** @returns Every pixel the fills of this color light, as (column, row). */
-std::set<std::pair<int, int>> pixelsIn(const InterfaceCanvasRecord& record,
-                                       sf::Color color) {
-  InterfaceCanvasRecord ofColor;
-  std::ranges::copy_if(
-      record.fills, std::back_inserter(ofColor.fills),
-      [color](const RecordedFill& fill) { return fill.color == color; });
-  return litPixelsOf(ofColor);
-}
-
-}  // namespace
 
 /**
  * Given no pilot
@@ -179,7 +125,7 @@ TEST(StatusBand, APilotTakesTheBayOfItsNumber) {
       bandPaintingOf({flying(PLAYER_THREE, THREE_LIVES)});
 
   EXPECT_THAT(record.fills,
-              Contains(RecordedFill{.area = THIRD_CHIP, .color = THIRD_COLOR}));
+              Contains(RecordedFill{.area = THIRD_CHIP, .color = SHEET_GREEN}));
 }
 
 /**
@@ -535,4 +481,77 @@ TEST(StatusBand, APilotWithoutABayIsNotPainted) {
 
   EXPECT_THAT(record.writings, IsEmpty());
   EXPECT_THAT(record.images, IsEmpty());
+}
+
+/**
+ * Given player 3 flying, and the palette for deuteranopia
+ * When the band is painted
+ * Then its chip is filled with the bluish green of the palette
+ */
+TEST(StatusBand, AChipIsFilledInThePalettesShade) {
+  const InterfaceCanvasRecord record = bandPaintingOf(
+      {flying(PLAYER_THREE, THREE_LIVES)}, DEUTERANOPIA_PLAYER_PALETTE);
+
+  EXPECT_THAT(record.fills, Contains(RecordedFill{.area = THIRD_CHIP,
+                                                  .color = BLUISH_GREEN}));
+}
+
+/**
+ * Given player 3, called ACE, flying, and the palette for deuteranopia
+ * When the band is painted
+ * Then ACE is written in the light bluish green of the palette
+ */
+TEST(StatusBand, ANicknameIsWrittenInThePalettesLightShade) {
+  const InterfaceCanvasRecord record = bandPaintingOf(
+      {flying(PLAYER_THREE, THREE_LIVES)}, DEUTERANOPIA_PLAYER_PALETTE);
+
+  const RecordedWriting* name = writingOf(record, "ACE");
+  ASSERT_NE(name, nullptr);
+  EXPECT_EQ(name->style.color, LIGHT_BLUISH_GREEN);
+}
+
+/**
+ * Given player 3 with 3 lives, and the palette for deuteranopia
+ * When the band is painted
+ * Then each of its ships swaps its shades for those of the palette
+ */
+TEST(StatusBand, LivesSwapTheirShadesForThePalettes) {
+  const InterfaceCanvasRecord record = bandPaintingOf(
+      {flying(PLAYER_THREE, THREE_LIVES)}, DEUTERANOPIA_PLAYER_PALETTE);
+
+  const std::vector<RecordedImage> lives = imagesOf(record, THIRD_LIFE_SOURCE);
+  ASSERT_EQ(lives.size(), LIVES_SHOWN_AT_MOST);
+  for (const RecordedImage& life : lives) {
+    EXPECT_EQ(life.recolor, SHEET_GREEN_TO_BLUISH_GREEN);
+  }
+}
+
+/**
+ * Given player 3 flying, and the palette for deuteranopia
+ * When the band is painted
+ * Then its marker swaps its shades for those of the palette
+ */
+TEST(StatusBand, AMarkerSwapsItsShadesForThePalettes) {
+  const InterfaceCanvasRecord record = bandPaintingOf(
+      {flying(PLAYER_THREE, THREE_LIVES)}, DEUTERANOPIA_PLAYER_PALETTE);
+
+  const std::vector<RecordedImage> markers =
+      imagesOf(record, THIRD_MARKER_SOURCE);
+  ASSERT_EQ(markers.size(), 1U);
+  EXPECT_EQ(markers.front().recolor, SHEET_GREEN_TO_BLUISH_GREEN);
+}
+
+/**
+ * Given player 3 with 3 lives, and the palette of the sheets
+ * When the band is painted
+ * Then no image swaps its shades: the HUD sheet is drawn as it is
+ */
+TEST(StatusBand, TheSheetPaletteSwapsNoImage) {
+  const InterfaceCanvasRecord record =
+      bandPaintingOf({flying(PLAYER_THREE, THREE_LIVES)});
+
+  ASSERT_FALSE(record.images.empty());
+  for (const RecordedImage& image : record.images) {
+    EXPECT_FALSE(image.recolor.has_value());
+  }
 }

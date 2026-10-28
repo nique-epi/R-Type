@@ -20,6 +20,7 @@ using rtype::client::TitleScreenParts;
 TitleScreenFixture::TitleScreenFixture()
     : title_(TitleScreenParts{.navigator = navigator_,
                               .sounds = sounds_,
+                              .settings = settings_,
                               .playfieldPointAt = samePlayfieldPoint,
                               .motion = MotionPreference::Full,
                               .seed = rtype::client::testing::TITLE_SEED},

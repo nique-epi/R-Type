@@ -14,9 +14,11 @@
 #include "InterfaceColorConstants.hpp"
 #include "InterfaceConstants.hpp"
 #include "IntroOverlayConstants.hpp"
+#include "IntroOverlayLook.hpp"
 #include "IntroTimeline.hpp"
 #include "IntroTimelineConstants.hpp"
 #include "PlayerColors.hpp"
+#include "PlayerPalette.hpp"
 #include "RenderingConstants.hpp"
 #include "TextStyle.hpp"
 #include "TextureArea.hpp"
@@ -99,7 +101,8 @@ void paintCredit(IInterfaceCanvas& canvas, float real) {
 
 /** @brief Writes the nickname of the pilot whose close-up plays, underlined
  * in its color as far as its letters go. */
-void paintNameCards(IInterfaceCanvas& canvas, float real) {
+void paintNameCards(IInterfaceCanvas& canvas, float real,
+                    const PlayerPalette& palette) {
   for (std::size_t pilot = 0; pilot < INTRO_PILOT_NAMES.size(); ++pilot) {
     const float appear = closeupStartOf(pilot) + INTRO_NAME_DELAY;
     if (real < appear || real >= closeupStartOf(pilot) + INTRO_BEAT) {
@@ -108,7 +111,7 @@ void paintNameCards(IInterfaceCanvas& canvas, float real) {
     const std::string_view shown = typedPart(
         INTRO_PILOT_NAMES.at(pilot), real,
         Typing{.start = appear, .letterTime = INTRO_NAME_LETTER_TIME});
-    const PlayerColors& colors = PLAYER_COLORS.at(pilot);
+    const PlayerColors& colors = palette.at(pilot);
     canvas.write(shown, {SAFE_MARGIN, INTRO_BAND_TEXT_TOP},
                  TextStyle{.font = TextFont::Regular, .color = colors.light});
     canvas.fill(
@@ -205,11 +208,12 @@ void paintFade(IInterfaceCanvas& canvas, float real) {
 
 }  // namespace
 
-void paintIntroOverlay(IInterfaceCanvas& canvas, float real, TextureArea logo) {
+void paintIntroOverlay(IInterfaceCanvas& canvas, float real,
+                       IntroOverlayLook look) {
   paintBands(canvas, real);
   paintCredit(canvas, real);
-  paintNameCards(canvas, real);
-  paintLogoSlam(canvas, real, logo);
+  paintNameCards(canvas, real, look.palette);
+  paintLogoSlam(canvas, real, look.logo);
   paintHint(canvas, real);
   paintFade(canvas, real);
 }

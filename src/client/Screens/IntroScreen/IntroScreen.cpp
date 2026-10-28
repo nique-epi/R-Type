@@ -22,6 +22,7 @@
 #include "IntroFreeze.hpp"
 #include "IntroOverlay.hpp"
 #include "IntroOverlayConstants.hpp"
+#include "IntroOverlayLook.hpp"
 #include "IntroPainting.hpp"
 #include "IntroScreenParts.hpp"
 #include "IntroTimeline.hpp"
@@ -83,6 +84,7 @@ IntroScreen::IntroScreen(IntroScreenParts parts,
       music_(&parts.music.get()),
       logger_(std::string(INTRO_LOG_MODULE_NAME)),
       preference_(flashPreferenceOf(parts.settings.get())),
+      palette_(playerPaletteOf(parts.settings.get())),
       freezes_(freezesFor(preference_)),
       clock_(parts.music.get()),
       cast_(buildIntroCast(parts.seed)),
@@ -183,8 +185,10 @@ void IntroScreen::repaint(float real, float scene) {
                                       .shake = shake_.offset(),
                                       .drift = debrisDriftAt(scene),
                                       .preference = preference_,
+                                      .palette = palette_,
                                       .squadronBox = INTRO_SQUADRON_BOX_PLACE});
-  paintIntroOverlay(*canvas_, real, titleLogo());
+  paintIntroOverlay(*canvas_, real,
+                    IntroOverlayLook{.logo = titleLogo(), .palette = palette_});
   canvas_->display();
 }
 

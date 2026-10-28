@@ -10,6 +10,7 @@ target_link_libraries(rtype_client_intro_fleet_painting
     rtype_client_entity_sprites
     rtype_client_intro_mob_paths
     rtype_client_intro_ship_paths
+    rtype_client_player_shading
 )
 
 rtype_enable_warnings(rtype_client_intro_fleet_painting)

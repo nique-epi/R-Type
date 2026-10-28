@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <initializer_list>
 #include <vector>
+#include "EntitySpawned.hpp"
 #include "PacketHeader.hpp"
 
 namespace rtype::network::testing {
@@ -23,5 +24,10 @@ std::vector<std::byte> defaultHeaderBytes();
  */
 std::vector<std::byte> datagramOf(
     std::initializer_list<unsigned int> messageBytes);
+
+/**
+ * @returns The spawn of a Bydo of EXAMPLE_ENTITY_ID at EXAMPLE_X, EXAMPLE_Y.
+ */
+EntitySpawned exampleBydo();
 
 }  // namespace rtype::network::testing
