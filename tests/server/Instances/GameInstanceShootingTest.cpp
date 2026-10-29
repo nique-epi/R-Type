@@ -127,7 +127,7 @@ TEST_F(GameInstanceShootingFixture, RemovesAMissileThatLeftOnTheRight) {
   runTicksDispatching(TICKS_TO_THE_FIRST_BYDO - 2);
 
   EXPECT_TRUE(wasDestroyed(missile, game::DestructionCause::Removed));
-  EXPECT_EQ(game().world().entityCount(), 2U);
+  EXPECT_EQ(world().entityCount(), 2U);
 }
 
 /**
@@ -198,8 +198,7 @@ TEST_F(GameInstanceShootingFixture, DestroysABydoInTheNextGameToo) {
  */
 TEST_F(GameInstanceShootingFixture, BydosFireWhileInProgress) {
   startGame();
-  game().world().spawnBydo(BYDO_FAR_AHEAD_OF_THE_SHIPS,
-                           game::BydoKind::Drifter);
+  world().spawnBydo(BYDO_FAR_AHEAD_OF_THE_SHIPS, game::BydoKind::Drifter);
 
   runTicksDispatching(ONE_AND_A_HALF_SECONDS_IN_TICKS);
 

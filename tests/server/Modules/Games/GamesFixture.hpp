@@ -9,6 +9,7 @@
 #include "Games.hpp"
 #include "RecordingDatagramSender.hpp"
 #include "TimeConstants.hpp"
+#include "TimerScheduler.hpp"
 
 /** @brief The base of the tests of Games and FarewellSender: games of the
  * server built by hand, a sender that records, and a pause that only writes
@@ -30,6 +31,7 @@ class GamesFixture : public ::testing::Test {
 
  private:
   rtype::engine::EventBus events_;
+  rtype::engine::TimerScheduler timers_;
   rtype::server::Games games_;
   RecordingDatagramSender sender_;
   std::vector<rtype::engine::Duration> pauses_;

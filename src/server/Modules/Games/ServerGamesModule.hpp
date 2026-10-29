@@ -4,7 +4,6 @@
 #include <string>
 #include <vector>
 #include "EventBus.hpp"
-#include "GameEventBroadcaster.hpp"
 #include "GameInstance.hpp"
 #include "Games.hpp"
 #include "GamesSettings.hpp"
@@ -62,7 +61,6 @@ class ServerGamesModule final : public engine::IModule {
  private:
   [[nodiscard]] WavePlan readWaves() const;
   [[nodiscard]] std::unique_ptr<GameInstance> createGame();
-  [[nodiscard]] GameEventBroadcaster::Wiring wiringFor(GameInstance& game);
   void playGames();
   void deliverEvents(engine::Duration elapsed);
 
@@ -74,7 +72,6 @@ class ServerGamesModule final : public engine::IModule {
   IDatagramSender* sender_{nullptr};
   IPlayerAdmission* admission_{nullptr};
   TickDatagrams* tickDatagrams_{nullptr};
-  std::unique_ptr<GameEventBroadcaster> broadcaster_;
 };
 
 }  // namespace rtype::server

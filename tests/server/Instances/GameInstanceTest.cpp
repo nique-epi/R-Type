@@ -361,7 +361,7 @@ TEST_F(GameInstanceTest, ABydoThatLeavesOnTheLeftDoesNotStayInTheWorld) {
   events().dispatch();
 
   EXPECT_EQ(bydosAmong(removed, sentTo(FIRST_PLAYER)), 3U);
-  EXPECT_EQ(bydosIn(game().world()), 0U);
+  EXPECT_EQ(bydosIn(world()), 0U);
 }
 
 /**
@@ -386,7 +386,7 @@ TEST_F(GameInstanceTest, TheSecondWaveComesAPauseAfterTheFirstIsGone) {
   events().dispatch();
 
   EXPECT_EQ(bydosAmong(removed, sentTo(FIRST_PLAYER)), 3U);
-  EXPECT_EQ(bydosIn(game().world()), 1U);
+  EXPECT_EQ(bydosIn(world()), 1U);
 }
 
 /**
@@ -687,7 +687,7 @@ TEST_F(GameInstanceTest, RemovesTheShipOfAPlayerWhoTimedOut) {
   EXPECT_EQ(destructions,
             (std::vector{game::EntityDestruction{
                 .networkId = ship, .cause = game::DestructionCause::Removed}}));
-  EXPECT_EQ(game().world().entityCount(), 1U);
+  EXPECT_EQ(world().entityCount(), 1U);
 }
 
 /**
@@ -773,24 +773,21 @@ TEST_F(GameInstanceTest, TheOthersPlayOnWhenOneOfThreePlayersTimesOut) {
  * timed out, and the second player gets none
  */
 TEST_F(GameInstanceTest, TellsOnlyTheOthersThatAPlayerTimedOut) {
-  engine::TimerScheduler timers;
-  std::vector<network::OutgoingDatagram> eventDatagrams;
-  const auto broadcaster = eventBroadcaster(timers, eventDatagrams);
   for (const std::size_t player : {FIRST_PLAYER, SECOND_PLAYER, THIRD_PLAYER}) {
     join(player);
   }
 
   timeOut(SECOND_PLAYER);
   events().dispatch();
-  timers.advance(testing::ALL_COPIES_SENT);
+  timers().advance(testing::ALL_COPIES_SENT);
 
   const std::vector expected(
       testing::PROTOCOL_REPEATED_MESSAGE_COPIES,
       network::PlayerLeft{.playerNumber = network::FIRST_PLAYER_NUMBER + 1,
                           .reason = network::DepartureReason::TimedOut});
-  EXPECT_EQ(playerLeftSentTo(eventDatagrams, FIRST_PLAYER), expected);
-  EXPECT_EQ(playerLeftSentTo(eventDatagrams, THIRD_PLAYER), expected);
-  EXPECT_TRUE(playerLeftSentTo(eventDatagrams, SECOND_PLAYER).empty());
+  EXPECT_EQ(playerLeftSentTo(sentDatagrams(), FIRST_PLAYER), expected);
+  EXPECT_EQ(playerLeftSentTo(sentDatagrams(), THIRD_PLAYER), expected);
+  EXPECT_TRUE(playerLeftSentTo(sentDatagrams(), SECOND_PLAYER).empty());
 }
 
 /**
@@ -802,9 +799,6 @@ TEST_F(GameInstanceTest, TellsOnlyTheOthersThatAPlayerTimedOut) {
  * left, and the second player gets none
  */
 TEST_F(GameInstanceTest, TellsOnlyTheOthersThatAPlayerLeft) {
-  engine::TimerScheduler timers;
-  std::vector<network::OutgoingDatagram> eventDatagrams;
-  const auto broadcaster = eventBroadcaster(timers, eventDatagrams);
   for (const std::size_t player : {FIRST_PLAYER, SECOND_PLAYER, THIRD_PLAYER}) {
     join(player);
   }
@@ -812,15 +806,15 @@ TEST_F(GameInstanceTest, TellsOnlyTheOthersThatAPlayerLeft) {
   leave(SECOND_PLAYER);
   tick();
   events().dispatch();
-  timers.advance(testing::ALL_COPIES_SENT);
+  timers().advance(testing::ALL_COPIES_SENT);
 
   const std::vector expected(
       testing::PROTOCOL_REPEATED_MESSAGE_COPIES,
       network::PlayerLeft{.playerNumber = network::FIRST_PLAYER_NUMBER + 1,
                           .reason = network::DepartureReason::Left});
-  EXPECT_EQ(playerLeftSentTo(eventDatagrams, FIRST_PLAYER), expected);
-  EXPECT_EQ(playerLeftSentTo(eventDatagrams, THIRD_PLAYER), expected);
-  EXPECT_TRUE(playerLeftSentTo(eventDatagrams, SECOND_PLAYER).empty());
+  EXPECT_EQ(playerLeftSentTo(sentDatagrams(), FIRST_PLAYER), expected);
+  EXPECT_EQ(playerLeftSentTo(sentDatagrams(), THIRD_PLAYER), expected);
+  EXPECT_TRUE(playerLeftSentTo(sentDatagrams(), SECOND_PLAYER).empty());
 }
 
 /**
@@ -891,7 +885,7 @@ TEST_F(GameInstanceTest, RemovesTheShipOfAPlayerWhoLeaves) {
   EXPECT_EQ(destructions,
             (std::vector{game::EntityDestruction{
                 .networkId = ship, .cause = game::DestructionCause::Removed}}));
-  EXPECT_EQ(game().world().entityCount(), 1U);
+  EXPECT_EQ(world().entityCount(), 1U);
 }
 
 /**

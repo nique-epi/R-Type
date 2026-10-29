@@ -5,7 +5,6 @@
 #include <cstddef>
 #include <cstdint>
 #include <initializer_list>
-#include <memory>
 #include <optional>
 #include <ostream>
 #include <span>
@@ -15,7 +14,6 @@
 #include "ConnectedPlayer.hpp"
 #include "DebugJournal.hpp"
 #include "EventBus.hpp"
-#include "GameEventBroadcaster.hpp"
 #include "GameInstance.hpp"
 #include "GameInstanceTestConstants.hpp"
 #include "IncomingDatagram.hpp"
@@ -26,6 +24,7 @@
 #include "PlayerInput.hpp"
 #include "PlayerLeft.hpp"
 #include "Position.hpp"
+#include "RtypeRulesModule.hpp"
 #include "ServerLobbyTestConstants.hpp"
 #include "TimerScheduler.hpp"
 #include "UnreliableNetwork.hpp"
@@ -97,13 +96,14 @@ class GameInstanceTest : public ::testing::Test {
   void queueDisconnectionFrom(std::size_t index);
 
   /**
-   * @returns A broadcaster of the game events, wired to the roster as the
-   * server wires it, that runs its later copies on @p timers and puts each
-   * datagram in @p datagrams.
+   * @returns The timers the game plans the later copies of its events on:
+   * advancing them sends those copies.
    */
-  [[nodiscard]] std::unique_ptr<GameEventBroadcaster> eventBroadcaster(
-      engine::TimerScheduler& timers,
-      std::vector<network::OutgoingDatagram>& datagrams);
+  [[nodiscard]] engine::TimerScheduler& timers();
+
+  /** @returns Every datagram the game sent, oldest first. */
+  [[nodiscard]] const std::vector<network::OutgoingDatagram>& sentDatagrams()
+      const;
 
   /** @returns The PlayerLeft that @p datagrams carry to the player at
    * @p index, in the order they were sent. */
@@ -147,6 +147,10 @@ class GameInstanceTest : public ::testing::Test {
       std::size_t index) const;
 
   [[nodiscard]] GameInstance& game();
+
+  /** @returns The world of the game, which the rules of R-Type own. A new
+   * one replaces it when the game waits for players again. */
+  [[nodiscard]] game::World& world();
   [[nodiscard]] engine::EventBus& events();
 
  private:
@@ -159,6 +163,8 @@ class GameInstanceTest : public ::testing::Test {
   std::vector<network::OutgoingDatagram> sent_;
   std::vector<LivePlayer> livePlayers_;
   engine::EventBus events_;
+  engine::TimerScheduler timers_;
+  RtypeRulesModule* rules_{nullptr};
   GameInstance game_;
   std::vector<network::IncomingDatagram> incoming_;
 };

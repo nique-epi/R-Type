@@ -6,28 +6,23 @@
 #include <optional>
 #include <string>
 #include <string_view>
-#include <utility>
 #include "BydoSpawnerParts.hpp"
 #include "CollisionRules.hpp"
-#include "CollisionSystem.hpp"
 #include "ConnectedPlayer.hpp"
 #include "ConnectedPlayerConstants.hpp"
 #include "ConnectedPlayers.hpp"
 #include "DamageRules.hpp"
 #include "EntityIdConstants.hpp"
-#include "GameEndAnnouncer.hpp"
-#include "GameFlowParts.hpp"
+#include "GameContext.hpp"
 #include "GameInstanceConstants.hpp"
 #include "GameStarted.hpp"
 #include "GameState.hpp"
+#include "IGameReplication.hpp"
 #include "LifeKeeper.hpp"
 #include "LifeKeeperParts.hpp"
 #include "Logger.hpp"
-#include "MovementSystem.hpp"
 #include "OutgoingDatagram.hpp"
-#include "PatternSystem.hpp"
 #include "PlayerRoster.hpp"
-#include "PlayfieldExitSystem.hpp"
 #include "Position.hpp"
 #include "ProtocolConstants.hpp"
 #include "SessionDatagram.hpp"
@@ -36,6 +31,7 @@
 #include "ShipMotion.hpp"
 #include "TimeConstants.hpp"
 #include "World.hpp"
+#include "WorldSlot.hpp"
 
 namespace rtype::server {
 
@@ -146,66 +142,58 @@ void announceGameStart(
 
 }  // namespace
 
-GameFlow::GameFlow(GameFlowParts parts)
-    : events_(parts.events),
-      roster_(parts.roster),
-      send_(std::move(parts.send)),
-      everyPlayerIsReady_(std::move(parts.everyPlayerIsReady)),
-      worldStateSender_(roster_.get(), send_),
-      seed_(parts.settings.seed),
-      wavePlan_(std::move(parts.settings.waves)),
-      logger_(std::string{INSTANCES_LOGGER_NAME}) {
-  systems_.add(std::make_unique<game::PatternSystem>());
-  systems_.add(std::make_unique<game::MovementSystem>());
-  systems_.add(std::make_unique<game::PlayfieldExitSystem>(events_.get()));
-  systems_.add(std::make_unique<game::CollisionSystem>(events_.get()));
-  startNewWorld();
-}
+GameFlow::GameFlow(GameContext& game, WorldSlot& world,
+                   IGameReplication& replication)
+    : game_(game),
+      worldSlot_(world),
+      replication_(replication),
+      logger_(std::string{INSTANCES_LOGGER_NAME}) {}
+
+void GameFlow::begin() { startNewWorld(); }
 
 GameState GameFlow::state() const { return state_; }
 
 std::uint32_t GameFlow::tick() const { return tick_; }
 
-game::World& GameFlow::world() { return *world_; }
-
-void GameFlow::onPlayerJoined(ConnectedPlayer& player) {
-  shipSpawnAnnouncer_->onPlayerJoined(player);
-}
+game::World& GameFlow::world() { return worldSlot_.current(); }
 
 void GameFlow::onTick() {
   finishIfOver();
   advanceState();
   if (state_ == GameState::InProgress) {
-    worldStateSender_.onTick(tick_, world_->components());
+    replication_.onProgressTick(tick_, world().components());
   }
 }
 
 void GameFlow::advanceState() {
   switch (state_) {
     case GameState::WaitingForPlayers:
-      if (everyPlayerIsReady_()) {
+      if (game_.everyPlayerIsReady()) {
         state_ = GameState::InProgress;
-        announceGameStart(roster_.get(), send_, logger_);
+        announceGameStart(game_.roster.get(), game_.send, logger_);
       } else {
-        lobbyStateAnnouncer_->onWaitingTick();
+        replication_.onWaitingTick();
       }
       break;
-    case GameState::InProgress:
+    case GameState::InProgress: {
+      game::World& currentWorld = world();
       ++tick_;
-      moveShips(*world_, roster_.get());
-      systems_.run(world_->components(), engine::SIMULATION_TICK_DURATION);
-      missileLauncher_->onTick(shootersIn(roster_.get()));
+      moveShips(currentWorld, game_.roster.get());
+      game_.systems.get().run(currentWorld.components(),
+                              engine::SIMULATION_TICK_DURATION);
+      missileLauncher_->onTick(shootersIn(game_.roster.get()));
       bydoGunner_->onTick();
       bydoSpawner_->onTick();
       lifeKeeper_->onTick();
       break;
+    }
     case GameState::Finished:
       ++finishedTicks_;
       if (finishedTicks_ >= FINISHED_STATE_TICKS) {
         startNewWorld();
         state_ = GameState::WaitingForPlayers;
-      } else if (gameEndAnnouncer_ != nullptr) {
-        gameEndAnnouncer_->onFinishedTick();
+      } else {
+        replication_.onFinishedTick();
       }
       break;
   }
@@ -220,42 +208,39 @@ void GameFlow::finish() {
 
 void GameFlow::finishIfOver() {
   const std::optional<std::string_view> reason =
-      reasonToFinish(state_, roster_.get());
+      reasonToFinish(state_, game_.roster.get());
   if (!reason.has_value()) {
     return;
   }
   logger_.info("game finished: ", *reason);
   finish();
-  gameEndAnnouncer_ = std::make_unique<GameEndAnnouncer>(roster_.get(), send_);
+  replication_.onGameFinished();
 }
 
 void GameFlow::buildWorld() {
-  world_ = std::make_unique<game::World>();
-  collisionRules_ = std::make_unique<game::CollisionRules>(
-      events_.get(), world_->components());
-  damageRules_ =
-      std::make_unique<game::DamageRules>(events_.get(), world_->components());
-  shipSpawnAnnouncer_ =
-      std::make_unique<ShipSpawnAnnouncer>(*world_, roster_.get(), send_);
+  game::World& world = worldSlot_.renew();
+  replication_.onWorldBuilt(world);
+  collisionRules_ = std::make_unique<game::CollisionRules>(game_.events.get(),
+                                                           world.components());
+  damageRules_ = std::make_unique<game::DamageRules>(game_.events.get(),
+                                                     world.components());
   bydoSpawner_ = std::make_unique<BydoSpawner>(
-      BydoSpawnerParts{.world = *world_,
-                       .roster = roster_.get(),
-                       .send = send_,
-                       .seed = seed_ + worldsBuilt_,
-                       .waves = wavePlan_});
+      BydoSpawnerParts{.world = world,
+                       .roster = game_.roster.get(),
+                       .send = game_.send,
+                       .seed = game_.settings.seed + worldsBuilt_,
+                       .waves = game_.settings.waves});
   missileLauncher_ =
-      std::make_unique<MissileLauncher>(*world_, roster_.get(), send_);
-  bydoGunner_ = std::make_unique<BydoGunner>(*world_, roster_.get(), send_);
+      std::make_unique<MissileLauncher>(world, game_.roster.get(), game_.send);
+  bydoGunner_ =
+      std::make_unique<BydoGunner>(world, game_.roster.get(), game_.send);
   lifeKeeper_ = std::make_unique<LifeKeeper>(
-      LifeKeeperParts{.events = events_.get(),
-                      .world = *world_,
-                      .roster = roster_.get(),
+      LifeKeeperParts{.events = game_.events.get(),
+                      .world = world,
+                      .roster = game_.roster.get(),
                       .respawn = [this](ConnectedPlayer& player) {
-                        shipSpawnAnnouncer_->onPlayerJoined(player);
+                        replication_.onPlayerJoined(player);
                       }});
-  lobbyStateAnnouncer_ =
-      std::make_unique<LobbyStateAnnouncer>(roster_.get(), send_);
-  gameEndAnnouncer_.reset();
 }
 
 void GameFlow::startNewWorld() {
@@ -263,14 +248,14 @@ void GameFlow::startNewWorld() {
   ++worldsBuilt_;
   tick_ = 0;
   finishedTicks_ = 0;
-  for (ConnectedPlayer* const player : roster_.get().connected()) {
+  for (ConnectedPlayer* const player : game_.roster.get().connected()) {
     player->ready = false;
     player->score = 0;
     player->lives = STARTING_LIVES;
     player->ticksUntilRespawn = 0;
     player->invulnerableTicksLeft = 0;
     player->shipEntityId = identifiers::NO_ENTITY_ID;
-    shipSpawnAnnouncer_->onPlayerJoined(*player);
+    replication_.onPlayerJoined(*player);
   }
 }
 

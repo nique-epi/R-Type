@@ -2,6 +2,7 @@
 
 #include <gtest/gtest.h>
 #include <cstdint>
+#include <memory>
 #include <utility>
 #include <vector>
 #include "DatagramCodec.hpp"
@@ -63,6 +64,9 @@ class GameEventBroadcasterFixture : public ::testing::Test {
    */
   void advanceTimers(engine::Duration elapsed);
 
+  /** @brief Destroys the broadcaster, as a game does when its module stops. */
+  void destroyBroadcaster();
+
   /**
    * @returns The datagrams the broadcaster handed to its send function, in
    * order.
@@ -98,7 +102,7 @@ class GameEventBroadcasterFixture : public ::testing::Test {
   std::vector<network::Endpoint> recipients_;
   std::vector<network::OutgoingDatagram> sent_;
   std::uint16_t nextSequence_{1};
-  GameEventBroadcaster broadcaster_;
+  std::unique_ptr<GameEventBroadcaster> broadcaster_;
 };
 
 }  // namespace rtype::server::testing

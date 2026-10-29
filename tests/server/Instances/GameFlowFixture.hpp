@@ -5,9 +5,15 @@
 #include <initializer_list>
 #include "ConnectedPlayer.hpp"
 #include "EventBus.hpp"
+#include "GameContext.hpp"
 #include "GameFlow.hpp"
+#include "GameReplication.hpp"
 #include "PlayerRoster.hpp"
 #include "ReadyKeeper.hpp"
+#include "SessionHooks.hpp"
+#include "SystemScheduler.hpp"
+#include "TimerScheduler.hpp"
+#include "WorldSlot.hpp"
 
 namespace rtype::server::testing {
 
@@ -43,8 +49,14 @@ class GameFlowFixture : public ::testing::Test {
 
  private:
   engine::EventBus events_;
+  engine::TimerScheduler timers_;
+  engine::SystemScheduler systems_;
+  SessionHooks hooks_;
+  WorldSlot world_;
   PlayerRoster roster_;
   ReadyKeeper readyKeeper_;
+  GameReplication replication_;
+  GameContext context_;
   GameFlow flow_;
 };
 
