@@ -112,8 +112,10 @@ constexpr std::size_t DEFAULT_WORLD_STATES_PER_SECOND = 20;
 
 /**
  * @brief The fewest states per second STATE_RATE_OPTION accepts. A client
- * removes an entity that no state listed for UNLISTED_ENTITY_TIMEOUT, so one
- * state per second would remove entities that are alive.
+ * removes an entity that no state listed for UNLISTED_ENTITY_TIMEOUT. When a
+ * state is cut into several datagrams, one state per second would remove a
+ * live entity as soon as the part that lists it is lost; two per second need
+ * two such parts lost in a row.
  */
 constexpr std::size_t LOWEST_WORLD_STATES_PER_SECOND = 2;
 
