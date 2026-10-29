@@ -75,7 +75,8 @@ std::unique_ptr<GameInstance> ServerGamesModule::createGame() {
           .settings =
               GameSettings{.seed = settings_.seed ? *settings_.seed
                                                   : std::random_device{}(),
-                           .waves = readWaves()},
+                           .waves = readWaves(),
+                           .statesPerSecond = settings_.statesPerSecond},
           .events = events_,
           .timers = timers_},
       rtypeGameModules());

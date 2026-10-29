@@ -9,7 +9,10 @@
 #include "Lives.hpp"
 #include "NetworkConstants.hpp"
 #include "ServerConstants.hpp"
+#include "ServerException.hpp"
 #include "ServerLobbyTestConstants.hpp"
+#include "ServerTestConstants.hpp"
+#include "StateRateMeasurementFixtures.hpp"
 #include "TimeConstants.hpp"
 #include "WorldState.hpp"
 #include "WorldStateSenderFixture.hpp"
@@ -40,6 +43,7 @@ using rtype::server::testing::PLAYER_MISSILE_NETWORK_ID;
 using rtype::server::testing::PLAYER_MISSILE_POSITION;
 using rtype::server::testing::PLAYER_NETWORK_ID;
 using rtype::server::testing::PLAYER_POSITION;
+using rtype::server::testing::REFUSED_STATE_RATES;
 using rtype::server::testing::SECOND_CLIENT_PORT;
 using rtype::server::testing::SECOND_LIVES;
 using rtype::server::testing::SECOND_SCORE;
@@ -47,14 +51,16 @@ using rtype::server::testing::SECOND_SHIP_ID;
 using rtype::server::testing::SESSION_TOKEN;
 using rtype::server::testing::SHIP_NETWORK_ID;
 using rtype::server::testing::SHIP_POSITION;
+using rtype::server::testing::STATE_RATES_UNDER_TEST;
+using rtype::server::testing::ticksSentTo;
 using rtype::server::testing::UNTYPED_NETWORK_ID;
 using rtype::server::testing::WorldStateSenderFixture;
 
 /**
  * Given a world with one networked ship and one connected player
  * When one second of ticks runs
- * Then WORLD_STATES_PER_SECOND states are sent, with the ticks
- * TICKS_PER_WORLD_STATE, 2 times that, and so on
+ * Then DEFAULT_WORLD_STATES_PER_SECOND states are sent, with the ticks
+ * DEFAULT_TICKS_PER_WORLD_STATE, 2 times that, and so on
  */
 TEST_F(WorldStateSenderFixture, SendsTheStatesPerSecondOfTheConstant) {
   addNetworkedEntity(EntityType::Player, SHIP_POSITION, SHIP_NETWORK_ID);
@@ -62,23 +68,24 @@ TEST_F(WorldStateSenderFixture, SendsTheStatesPerSecondOfTheConstant) {
 
   runTicks(rtype::engine::SIMULATION_TICKS_PER_SECOND);
 
-  ASSERT_EQ(sentDatagrams().size(), rtype::server::WORLD_STATES_PER_SECOND);
+  ASSERT_EQ(sentDatagrams().size(),
+            rtype::server::DEFAULT_WORLD_STATES_PER_SECOND);
   for (std::size_t index = 0; index < sentDatagrams().size(); ++index) {
     EXPECT_EQ(decodedState(index).tick,
-              (index + 1) * rtype::server::TICKS_PER_WORLD_STATE);
+              (index + 1) * DEFAULT_TICKS_PER_WORLD_STATE);
   }
 }
 
 /**
  * Given a world with one networked ship and one connected player
- * When fewer ticks than TICKS_PER_WORLD_STATE run
+ * When fewer ticks than DEFAULT_TICKS_PER_WORLD_STATE run
  * Then nothing is sent
  */
 TEST_F(WorldStateSenderFixture, SendsNothingBeforeTheFirstStateIsDue) {
   addNetworkedEntity(EntityType::Player, SHIP_POSITION, SHIP_NETWORK_ID);
   connect(FIRST_CLIENT_PORT, SESSION_TOKEN);
 
-  runTicks(rtype::server::TICKS_PER_WORLD_STATE - 1);
+  runTicks(DEFAULT_TICKS_PER_WORLD_STATE - 1);
 
   EXPECT_TRUE(sentDatagrams().empty());
 }
@@ -106,7 +113,7 @@ TEST_F(WorldStateSenderFixture, SendsTheStateToEveryPlayer) {
   connect(FIRST_CLIENT_PORT, SESSION_TOKEN);
   connect(SECOND_CLIENT_PORT, OTHER_SESSION_TOKEN);
 
-  runTicks(rtype::server::TICKS_PER_WORLD_STATE);
+  runTicks(DEFAULT_TICKS_PER_WORLD_STATE);
 
   ASSERT_EQ(sentDatagrams().size(), 2U);
   EXPECT_EQ(sentDatagrams()[0].destination, client(FIRST_CLIENT_PORT));
@@ -125,7 +132,7 @@ TEST_F(WorldStateSenderFixture, StartsEachDatagramWithTheHeaderOfItsPlayer) {
   connect(FIRST_CLIENT_PORT, SESSION_TOKEN);
   connect(SECOND_CLIENT_PORT, OTHER_SESSION_TOKEN);
 
-  runTicks(rtype::server::TICKS_PER_WORLD_STATE);
+  runTicks(DEFAULT_TICKS_PER_WORLD_STATE);
 
   ASSERT_EQ(sentDatagrams().size(), 2U);
   EXPECT_EQ(headerOf(0).sessionToken, SESSION_TOKEN);
@@ -148,7 +155,7 @@ TEST_F(WorldStateSenderFixture, ListsEachEntityUnderItsWireType) {
                      ENEMY_MISSILE_NETWORK_ID);
   connect(FIRST_CLIENT_PORT, SESSION_TOKEN);
 
-  runTicks(rtype::server::TICKS_PER_WORLD_STATE);
+  runTicks(DEFAULT_TICKS_PER_WORLD_STATE);
 
   ASSERT_EQ(sentDatagrams().size(), 1U);
   std::vector<EntityState> listed = decodedState(0).entities;
@@ -175,7 +182,7 @@ TEST_F(WorldStateSenderFixture, ListsOnlyEntitiesThatCanBeNamedAndTyped) {
   addEntityWithoutType(ENEMY_POSITION, UNTYPED_NETWORK_ID);
   connect(FIRST_CLIENT_PORT, SESSION_TOKEN);
 
-  runTicks(rtype::server::TICKS_PER_WORLD_STATE);
+  runTicks(DEFAULT_TICKS_PER_WORLD_STATE);
 
   ASSERT_EQ(sentDatagrams().size(), 1U);
   EXPECT_EQ(decodedState(0).entities,
@@ -197,14 +204,14 @@ TEST_F(WorldStateSenderFixture, SplitsABigStateIntoDatagramsOfTheSameTick) {
   }
   connect(FIRST_CLIENT_PORT, SESSION_TOKEN);
 
-  runTicks(rtype::server::TICKS_PER_WORLD_STATE);
+  runTicks(DEFAULT_TICKS_PER_WORLD_STATE);
 
   ASSERT_GT(sentDatagrams().size(), 1U);
   std::size_t listed = 0;
   for (std::size_t index = 0; index < sentDatagrams().size(); ++index) {
     EXPECT_LE(sentDatagrams()[index].payload.size(),
               rtype::network::MAX_DATAGRAM_SIZE);
-    EXPECT_EQ(decodedState(index).tick, rtype::server::TICKS_PER_WORLD_STATE);
+    EXPECT_EQ(decodedState(index).tick, DEFAULT_TICKS_PER_WORLD_STATE);
     listed += decodedState(index).entities.size();
   }
   EXPECT_EQ(listed, MANY_ENTITIES);
@@ -224,7 +231,7 @@ TEST_F(WorldStateSenderFixture, GivesEachPartOfAStateTheNextSequence) {
   }
   connect(FIRST_CLIENT_PORT, SESSION_TOKEN);
 
-  runTicks(rtype::server::TICKS_PER_WORLD_STATE);
+  runTicks(DEFAULT_TICKS_PER_WORLD_STATE);
 
   ASSERT_GT(sentDatagrams().size(), 1U);
   for (std::size_t index = 0; index < sentDatagrams().size(); ++index) {
@@ -243,7 +250,7 @@ TEST_F(WorldStateSenderFixture, LeavesOutAnEntityWhosePositionIsNotANumber) {
                      ENEMY_NETWORK_ID);
   connect(FIRST_CLIENT_PORT, SESSION_TOKEN);
 
-  runTicks(rtype::server::TICKS_PER_WORLD_STATE);
+  runTicks(DEFAULT_TICKS_PER_WORLD_STATE);
 
   ASSERT_EQ(sentDatagrams().size(), 1U);
   EXPECT_EQ(decodedState(0).entities,
@@ -261,7 +268,7 @@ TEST_F(WorldStateSenderFixture, LeavesOutAnEntityWhosePositionIsInfinite) {
   addNetworkedEntity(EntityType::Enemy, INFINITE_POSITION, ENEMY_NETWORK_ID);
   connect(FIRST_CLIENT_PORT, SESSION_TOKEN);
 
-  runTicks(rtype::server::TICKS_PER_WORLD_STATE);
+  runTicks(DEFAULT_TICKS_PER_WORLD_STATE);
 
   ASSERT_EQ(sentDatagrams().size(), 1U);
   EXPECT_EQ(decodedState(0).entities,
@@ -287,7 +294,7 @@ TEST_F(WorldStateSenderFixture, ListsEveryPlayerWithItsOwnShipLivesAndScore) {
   addShip(FIRST_SHIP_ID, Lives{.count = FIRST_LIVES}, Invulnerable{});
   addShip(SECOND_SHIP_ID, Lives{.count = SECOND_LIVES}, Invulnerable{});
 
-  runTicks(rtype::server::TICKS_PER_WORLD_STATE);
+  runTicks(DEFAULT_TICKS_PER_WORLD_STATE);
 
   ASSERT_EQ(sentDatagrams().size(), 2U);
   const std::vector<PlayerState> expected{
@@ -315,7 +322,7 @@ TEST_F(WorldStateSenderFixture, ListsAPlayerWithoutAShipWithTheLivesItKeeps) {
       connect(FIRST_CLIENT_PORT, SESSION_TOKEN);
   player.livesWithoutShip = FIRST_LIVES;
 
-  runTicks(rtype::server::TICKS_PER_WORLD_STATE);
+  runTicks(DEFAULT_TICKS_PER_WORLD_STATE);
 
   ASSERT_EQ(decodedState(0).players.size(), 1U);
   EXPECT_EQ(decodedState(0).players.front().lives, FIRST_LIVES);
@@ -335,7 +342,7 @@ TEST_F(WorldStateSenderFixture, ListsAPlayerWithProtectionLeftAsInvulnerable) {
   addShip(FIRST_SHIP_ID, Lives{.count = FIRST_LIVES},
           Invulnerable{.ticksLeft = ONE_TICK_OF_PROTECTION});
 
-  runTicks(rtype::server::TICKS_PER_WORLD_STATE);
+  runTicks(DEFAULT_TICKS_PER_WORLD_STATE);
 
   ASSERT_EQ(sentDatagrams().size(), 1U);
   ASSERT_EQ(decodedState(0).players.size(), 1U);
@@ -350,9 +357,69 @@ TEST_F(WorldStateSenderFixture, ListsAPlayerWithProtectionLeftAsInvulnerable) {
 TEST_F(WorldStateSenderFixture, ListsAPlayerWhoHasNotScoredWithZero) {
   connect(FIRST_CLIENT_PORT, SESSION_TOKEN);
 
-  runTicks(rtype::server::TICKS_PER_WORLD_STATE);
+  runTicks(DEFAULT_TICKS_PER_WORLD_STATE);
 
   ASSERT_EQ(sentDatagrams().size(), 1U);
   ASSERT_EQ(decodedState(0).players.size(), 1U);
   EXPECT_EQ(decodedState(0).players.front().score, 0U);
+}
+
+/**
+ * Given a world with one networked ship and one connected player
+ * When one second of ticks runs at each rate under test
+ * Then exactly that many states are sent
+ */
+TEST_F(WorldStateSenderFixture, SendsExactlyTheConfiguredStatesPerSecond) {
+  addNetworkedEntity(EntityType::Player, SHIP_POSITION, SHIP_NETWORK_ID);
+  connect(FIRST_CLIENT_PORT, SESSION_TOKEN);
+
+  for (const std::size_t rate : STATE_RATES_UNDER_TEST) {
+    SCOPED_TRACE(rate);
+    restartWithStatesPerSecond(rate);
+
+    runTicks(rtype::engine::SIMULATION_TICKS_PER_SECOND);
+
+    EXPECT_EQ(sentDatagrams().size(), rate);
+  }
+}
+
+/**
+ * Given a world with one networked ship and one connected player
+ * When one second of ticks runs at each rate under test
+ * Then no two states are further apart than a rate-th of a second rounded up
+ * to whole ticks
+ */
+TEST_F(WorldStateSenderFixture, SpreadsTheStatesOverTheSecond) {
+  addNetworkedEntity(EntityType::Player, SHIP_POSITION, SHIP_NETWORK_ID);
+  connect(FIRST_CLIENT_PORT, SESSION_TOKEN);
+
+  for (const std::size_t rate : STATE_RATES_UNDER_TEST) {
+    SCOPED_TRACE(rate);
+    restartWithStatesPerSecond(rate);
+    const std::size_t longestGapInTicks =
+        (rtype::engine::SIMULATION_TICKS_PER_SECOND + rate - 1) / rate;
+
+    runTicks(rtype::engine::SIMULATION_TICKS_PER_SECOND);
+
+    const std::vector<std::uint32_t> ticks =
+        ticksSentTo(sentDatagrams(), client(FIRST_CLIENT_PORT));
+    for (std::size_t index = 1; index < ticks.size(); ++index) {
+      EXPECT_LE(ticks[index] - ticks[index - 1], longestGapInTicks);
+    }
+  }
+}
+
+/**
+ * Given a sender
+ * When it is built for a rate outside the lowest to the highest the server
+ * accepts
+ * Then it refuses it
+ */
+TEST_F(WorldStateSenderFixture, RefusesARateTheServerDoesNotAccept) {
+  for (const std::size_t rate : REFUSED_STATE_RATES) {
+    SCOPED_TRACE(rate);
+
+    EXPECT_THROW(restartWithStatesPerSecond(rate),
+                 rtype::server::InvalidStateRateException);
+  }
 }
