@@ -14,6 +14,7 @@ target_link_libraries(rtype_client_screens_module
     rtype_client_scrolling_background
     rtype_client_server_connection
     rtype_client_settings
+    rtype_client_settings_service
     rtype_client_sound_player
     rtype_client_soundtrack
     rtype_client_window

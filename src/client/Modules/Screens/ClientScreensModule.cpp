@@ -66,7 +66,10 @@ void ClientScreensModule::start() {
   });
 }
 
-void ClientScreensModule::stop() { listeners_->remove(listenerHandle_); }
+void ClientScreensModule::stop() {
+  listeners_->remove(listenerHandle_);
+  screens_->stopListening();
+}
 
 void ClientScreensModule::update(engine::Duration elapsed) {
   screens_->update(elapsed);

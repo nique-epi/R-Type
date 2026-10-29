@@ -13,10 +13,11 @@
 namespace rtype::client {
 
 ClientScreens::ClientScreens(const ClientScreensParts& parts)
-    : background_(std::random_device{}()),
-      sounds_(parts.assets.get(), parts.settings.get()),
-      theme_(parts.assets.get(), parts.settings.get(), THEME_TRACK),
-      gameMusic_(parts.assets.get(), parts.settings.get(), GAME_TRACK),
+    : settingsService_(&parts.settingsService.get()),
+      background_(std::random_device{}()),
+      sounds_(parts.assets.get(), *settingsService_),
+      theme_(parts.assets.get(), *settingsService_, THEME_TRACK),
+      gameMusic_(parts.assets.get(), *settingsService_, GAME_TRACK),
       soundtrack_(SoundtrackParts{.theme = theme_, .gameMusic = gameMusic_}),
       screens_([this](ScreenId screen) { return catalog_.create(screen); }),
       catalog_(ScreenCatalogParts{.services = parts,
@@ -29,6 +30,9 @@ ClientScreens::ClientScreens(const ClientScreensParts& parts)
                                   .previousTaunt = previousTaunt_}) {
   screens_.replaceAll(ScreenCatalog::firstScreen());
   screens_.applyPendingChanges();
+  settingsService_->subscribe(sounds_);
+  settingsService_->subscribe(theme_);
+  settingsService_->subscribe(gameMusic_);
 }
 
 void ClientScreens::handleEvent(const sf::Event& event) {
@@ -37,8 +41,6 @@ void ClientScreens::handleEvent(const sf::Event& event) {
 }
 
 void ClientScreens::update(engine::Duration elapsed) {
-  theme_.update();
-  gameMusic_.update();
   soundtrack_.advance(elapsed);
   background_.advance(elapsed);
   screens_.update(elapsed);
@@ -51,5 +53,11 @@ void ClientScreens::draw(sf::RenderTarget& target) {
 }
 
 bool ClientScreens::isEmpty() const { return screens_.isEmpty(); }
+
+void ClientScreens::stopListening() {
+  settingsService_->unsubscribe(gameMusic_);
+  settingsService_->unsubscribe(theme_);
+  settingsService_->unsubscribe(sounds_);
+}
 
 }  // namespace rtype::client

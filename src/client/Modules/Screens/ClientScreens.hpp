@@ -10,6 +10,7 @@
 #include "ScreenCatalog.hpp"
 #include "ScreenStack.hpp"
 #include "ScrollingBackground.hpp"
+#include "SettingsService.hpp"
 #include "SoundPlayer.hpp"
 #include "Soundtrack.hpp"
 #include "TimeConstants.hpp"
@@ -23,10 +24,10 @@ namespace rtype::client {
  *
  * The music is the theme, started by the intro after its black second or by a
  * title screen, and the music of a game, which a game starts a silence after
- * stopping the theme (Soundtrack); their volume follows the settings at each
- * frame. When the server ends a game, the game screen writes its result here
- * and gives way to the end screen, from which the player plays again in the
- * waiting room or quits to the title.
+ * stopping the theme (Soundtrack); their volume follows the settings service,
+ * which tells them each time it moves. When the server ends a game, the game
+ * screen writes its result here and gives way to the end screen, from which the
+ * player plays again in the waiting room or quits to the title.
  *
  * Each frame, the events go to the screen on top, the music, the sky and every
  * screen are updated, then the sky is drawn and every screen over it, from the
@@ -74,7 +75,12 @@ class ClientScreens {
 
   [[nodiscard]] bool isEmpty() const;
 
+  /** @brief Stops the sounds and the music from hearing the settings service:
+   * called before the service goes away. */
+  void stopListening();
+
  private:
+  SettingsService* settingsService_;
   ScrollingBackground background_;
   SoundPlayer sounds_;
   MusicPlayer theme_;

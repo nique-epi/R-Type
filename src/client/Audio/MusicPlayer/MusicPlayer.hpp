@@ -3,14 +3,16 @@
 #include <SFML/Audio/Music.hpp>
 #include <optional>
 #include "IMusicPlayer.hpp"
+#include "ISettingsListener.hpp"
 #include "Logger.hpp"
 #include "MusicTrack.hpp"
+#include "SettingId.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::client {
 
 class AssetLibrary;
-struct PlayerSettings;
+class SettingsService;
 
 /**
  * @brief A music of the client, THEME_TRACK or GAME_TRACK: its file, read
@@ -23,14 +25,15 @@ struct PlayerSettings;
  * restarts a music that plays, so the title screen and the options leave it
  * where it is.
  */
-class MusicPlayer : public IMusicPlayer {
+class MusicPlayer : public IMusicPlayer, public ISettingsListener {
  public:
   /**
    * @param library Locates the music file.
-   * @param settings The volumes of the player; they must outlive the player.
+   * @param settings Holds the volumes of the player; it must outlive the
+   * player, and tell it through subscribe().
    * @param track The music to play and the part of it that loops.
    */
-  MusicPlayer(AssetLibrary& library, const PlayerSettings& settings,
+  MusicPlayer(AssetLibrary& library, const SettingsService& settings,
               MusicTrack track);
 
   /** @brief Starts the music from the start of its file, looping over the
@@ -40,9 +43,9 @@ class MusicPlayer : public IMusicPlayer {
 
   void stop() override;
 
-  /** @brief Sets the volume the settings ask for: called each frame, so the
-   * options change it at once. */
-  void update();
+  /** @brief Sets the volume the settings now hold when @p changed moves it, so
+   * the options change the music at once; ignores the other settings. */
+  void settingChanged(SettingId changed) override;
 
   [[nodiscard]] std::optional<engine::Duration> playingOffset() const override;
 
@@ -51,7 +54,9 @@ class MusicPlayer : public IMusicPlayer {
    * otherwise. */
   [[nodiscard]] bool open(AssetLibrary& library);
 
-  const PlayerSettings* settings_;
+  void applyVolume();
+
+  const SettingsService* settings_;
   MusicTrack track_;
   logging::Logger logger_;
   sf::Music music_;
