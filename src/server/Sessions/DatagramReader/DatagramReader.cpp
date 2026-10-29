@@ -60,6 +60,10 @@ std::optional<PlayerDatagram> DatagramReader::read(
     drop(datagram.sender, NOT_A_PLAYER_DROP_REASON);
     return std::nullopt;
   }
+  if (!player->arrivals.accept(header.sequence)) {
+    drop(datagram.sender, NOT_NEWER_DROP_REASON);
+    return std::nullopt;
+  }
   return PlayerDatagram{
       .player = player,
       .origin =

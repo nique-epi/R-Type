@@ -129,15 +129,12 @@ ConnectedPlayer& GameInstanceTest::join(std::size_t index,
   ConnectedPlayer* const player = game().roster().add(
       playerEndpoint(index), std::string{PLAYER_NICKNAME}, sessionToken);
   game().onPlayerJoined(*player);
-  livePlayers_.push_back(
-      LivePlayer{.index = index, .sessionToken = sessionToken});
+  livePlayers_.push_back(index);
   return *player;
 }
 
 void GameInstanceTest::silence(std::size_t index) {
-  std::erase_if(livePlayers_, [index](const LivePlayer& player) {
-    return player.index == index;
-  });
+  std::erase(livePlayers_, index);
 }
 
 void GameInstanceTest::leave(std::size_t index) {
@@ -146,8 +143,10 @@ void GameInstanceTest::leave(std::size_t index) {
 }
 
 void GameInstanceTest::queueDisconnectionFrom(std::size_t index) {
-  queue(network::IncomingDatagram{.sender = playerEndpoint(index),
-                                  .payload = disconnectionDatagram()});
+  queue(network::IncomingDatagram{
+      .sender = playerEndpoint(index),
+      .payload = disconnectionDatagram(
+          network::PacketHeader{.sequence = DISCONNECTION_SEQUENCE})});
 }
 
 engine::TimerScheduler& GameInstanceTest::timers() { return timers_; }
@@ -184,11 +183,12 @@ void GameInstanceTest::queue(network::IncomingDatagram datagram) {
 }
 
 void GameInstanceTest::tick() {
-  for (const LivePlayer& player : livePlayers_) {
-    network::PacketHeader header;
-    header.sessionToken = player.sessionToken;
-    queue(network::IncomingDatagram{.sender = playerEndpoint(player.index),
-                                    .payload = heartbeatDatagram(header)});
+  for (const std::size_t index : livePlayers_) {
+    ConnectedPlayer* const player = game().roster().find(playerEndpoint(index));
+    if (player != nullptr) {
+      player->ticksSinceReceived = 0;
+      player->away = false;
+    }
   }
   game().onTick(incoming_);
   incoming_.clear();
@@ -244,10 +244,13 @@ std::vector<std::byte> GameInstanceInputTest::nextInputDatagram(
     std::size_t player, std::uint8_t actions,
     const network::PacketHeader& header) {
   ++inputsSent_.at(player);
+  network::PacketHeader numbered = header;
+  numbered.sequence =
+      static_cast<std::uint16_t>(LAST_READY_SEQUENCE + inputsSent_.at(player));
   return inputDatagram(
       network::PlayerInput{.inputNumber = inputsSent_.at(player),
                            .actions = actions},
-      header);
+      numbered);
 }
 
 void GameInstanceInputTest::send(std::size_t player, std::uint8_t actions) {

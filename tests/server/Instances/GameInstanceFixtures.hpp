@@ -154,14 +154,11 @@ class GameInstanceTest : public ::testing::Test {
   [[nodiscard]] engine::EventBus& events();
 
  private:
-  /** @brief A player that sends a Heartbeat before each tick. */
-  struct LivePlayer {
-    std::size_t index{};
-    std::uint64_t sessionToken{};
-  };
-
   std::vector<network::OutgoingDatagram> sent_;
-  std::vector<LivePlayer> livePlayers_;
+  /** @brief The indexes of the players the game hears from before each tick:
+   * the fixture marks them as heard from, as the Heartbeat of a client would,
+   * without a datagram whose sequence would have to follow the others. */
+  std::vector<std::size_t> livePlayers_;
   engine::EventBus events_;
   engine::TimerScheduler timers_;
   RtypeRulesModule* rules_{nullptr};

@@ -96,7 +96,7 @@ ConnectedPlayer* PlayerRoster::add(const network::Endpoint& endpoint,
                           .endpoint = endpoint,
                           .sessionToken = sessionToken,
                           .nextSequence = 0,
-                          .newestReceivedSequence = std::nullopt,
+                          .arrivals = ArrivalLedger{},
                           .newestInput = std::nullopt});
     }
   }
