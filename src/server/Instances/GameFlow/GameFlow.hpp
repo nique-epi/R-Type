@@ -3,7 +3,6 @@
 #include <cstddef>
 #include <cstdint>
 #include <memory>
-#include "BydoGunner.hpp"
 #include "BydoSpawner.hpp"
 #include "CollisionRules.hpp"
 #include "DamageRules.hpp"
@@ -13,7 +12,7 @@
 #include "IGameReplication.hpp"
 #include "LifeKeeper.hpp"
 #include "Logger.hpp"
-#include "MissileLauncher.hpp"
+#include "WeaponSystem.hpp"
 #include "World.hpp"
 #include "WorldSlot.hpp"
 
@@ -43,16 +42,16 @@ namespace rtype::server {
  * the game waits for players again; no WorldState goes out meanwhile.
  *
  * While the game is in progress, each tick first writes the Intent of the ship
- * of every player from the directions its newest input holds (see
- * steerPlayerShips), then runs the systems of the world (PatternSystem,
- * MovementSystem, PlayfieldExitSystem, which removes a Bydo or a missile of a
- * Bydo that left on the left, or a missile of a player that left on the right,
- * and announces it on the event bus, then CollisionSystem), then lets the ship
- * of every player whose newest input holds shoot fire a missile, at most one
- * every SHOT_INTERVAL_TICKS ticks (see MissileLauncher), then lets every Bydo
- * fire a missile to the left every ENEMY_SHOT_INTERVAL (see BydoGunner), then
- * lets the Bydos of the current wave appear (see BydoSpawner), then counts the
- * waits and the protections of the lives (see LifeKeeper). The ships and
+ * of every player from the directions and the shot its newest input holds (see
+ * steerPlayerShips) and the Intent of every Bydo (see steerBydos), then runs
+ * the systems of the world (PatternSystem, MovementSystem, PlayfieldExitSystem,
+ * which removes a Bydo or a missile of a Bydo that left on the left, or a
+ * missile of a player that left on the right, and announces it on the event
+ * bus, then CollisionSystem), then fires the Gun of every ship and Bydo whose
+ * Intent wants to shoot: a ship at most one missile every SHOT_INTERVAL_TICKS
+ * ticks, a Bydo one to the left every ENEMY_SHOT_INTERVAL (see WeaponSystem),
+ * then lets the Bydos of the current wave appear (see BydoSpawner), then counts
+ * the waits and the protections of the lives (see LifeKeeper). The ships and
  * the Bydos move and fire in no other state. Each world starts its random draws
  * from a seed of its own, the seed of the game plus the number of worlds built
  * before it, so the seed of the game is enough to replay every world of a
@@ -159,8 +158,7 @@ class GameFlow final : public IGameFlow {
   WorldSlot& worldSlot_;
   IGameReplication& replication_;
   std::unique_ptr<BydoSpawner> bydoSpawner_;
-  std::unique_ptr<MissileLauncher> missileLauncher_;
-  std::unique_ptr<BydoGunner> bydoGunner_;
+  std::unique_ptr<WeaponSystem> weaponSystem_;
   std::unique_ptr<game::CollisionRules> collisionRules_;
   std::unique_ptr<game::DamageRules> damageRules_;
   std::unique_ptr<LifeKeeper> lifeKeeper_;

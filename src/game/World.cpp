@@ -9,6 +9,7 @@
 #include "EntitySizeConstants.hpp"
 #include "EntityType.hpp"
 #include "Gun.hpp"
+#include "GunConstants.hpp"
 #include "Health.hpp"
 #include "HealthConstants.hpp"
 #include "Intent.hpp"
@@ -32,6 +33,9 @@ std::uint32_t World::spawnPlayer(Position position) {
   components_.add(ship, position);
   components_.add(ship, ShipMotion{});
   components_.add(ship, Intent{});
+  components_.add(ship, Gun{.intervalTicks = SHOT_INTERVAL_TICKS,
+                            .ticksUntilReady = 0,
+                            .projectile = EntityType::PlayerMissile});
   components_.add(ship,
                   CollisionBox{.width = SHIP_WIDTH, .height = SHIP_HEIGHT});
   components_.add(ship, EntityType::Player);
@@ -64,7 +68,10 @@ std::uint32_t World::spawnBydo(Position position, BydoKind kind) {
   components_.add(bydo, EntityType::Enemy);
   components_.add(bydo, Health{.points = BYDO_HEALTH});
   components_.add(bydo, ScoreValue{.points = pointsOf(kind)});
-  components_.add(bydo, Gun{.ticksSinceLastShot = 0});
+  components_.add(bydo, Intent{});
+  components_.add(bydo, Gun{.intervalTicks = ENEMY_SHOT_INTERVAL_TICKS,
+                            .ticksUntilReady = ENEMY_SHOT_INTERVAL_TICKS,
+                            .projectile = EntityType::EnemyMissile});
   components_.add(bydo, NetworkIdentity{.networkId = networkId});
   return networkId;
 }

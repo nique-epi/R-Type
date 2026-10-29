@@ -8,6 +8,7 @@ target_link_libraries(rtype_server_player_controller
     rtype_server_player_roster
     rtype_server_sessions
   PRIVATE
+    rtype_network_protocol
     rtype_server_ship_input
 )
 

@@ -10,9 +10,8 @@
 #include "GameInstanceTestConstants.hpp"
 #include "GameState.hpp"
 #include "SentDatagrams.hpp"
-#include "Spawning/BydoGunnerTestConstants.hpp"
 #include "Spawning/BydoSpawnerTestConstants.hpp"
-#include "Spawning/MissileLauncherTestConstants.hpp"
+#include "Spawning/WeaponSystemTestConstants.hpp"
 #include "World.hpp"
 
 namespace rtype::server::testing {

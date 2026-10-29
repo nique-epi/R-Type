@@ -24,6 +24,8 @@ struct ShipDirections {
 struct Intent {
   /** @brief The directions the controller wants the body to go in. */
   ShipDirections directions{};
+  /** @brief Whether the controller wants the body to fire its Gun. */
+  bool shooting{false};
 };
 
 }  // namespace rtype::game

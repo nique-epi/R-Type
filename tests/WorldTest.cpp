@@ -23,11 +23,13 @@
 #include "World.hpp"
 #include "WorldTestConstants.hpp"
 
+using rtype::game::testing::BYDO_SHOT_INTERVAL_TICKS;
 using rtype::game::testing::ENEMY_MISSILE_UNITS_PER_SECOND;
 using rtype::game::testing::MISSILE_UNITS_PER_SECOND;
 using rtype::game::testing::OTHER_X;
 using rtype::game::testing::OTHER_Y;
 using rtype::game::testing::SECOND_PLAYER_NUMBER;
+using rtype::game::testing::SHIP_SHOT_INTERVAL_TICKS;
 using rtype::game::testing::SOME_X;
 using rtype::game::testing::SOME_Y;
 using rtype::game::testing::THREE_HEALTH_POINTS;
@@ -542,10 +544,10 @@ TEST(World, SpawnedPlayerMissileHasTheBoxOfItsSprite) {
 /**
  * Given an empty world
  * When a Bydo is spawned
- * Then it carries a gun that has not fired yet, so its first missile waits a
- * whole interval
+ * Then it carries a gun of enemy missiles that fires every 90 ticks, its first
+ * missile waiting a whole interval
  */
-TEST(World, SpawnedBydoHasAGunThatHasNotFiredYet) {
+TEST(World, SpawnedBydoHasAGunThatWaitsAWholeIntervalFirst) {
   rtype::game::World world;
 
   const std::uint32_t networkId =
@@ -555,7 +557,29 @@ TEST(World, SpawnedBydoHasAGunThatHasNotFiredYet) {
   const std::optional<rtype::game::Gun> gun =
       componentOf<rtype::game::Gun>(world, networkId);
   ASSERT_TRUE(gun.has_value());
-  EXPECT_EQ(gun.value_or(rtype::game::Gun{}).ticksSinceLastShot, 0U);
+  EXPECT_EQ(gun->intervalTicks, BYDO_SHOT_INTERVAL_TICKS);
+  EXPECT_EQ(gun->ticksUntilReady, BYDO_SHOT_INTERVAL_TICKS);
+  EXPECT_EQ(gun->projectile, rtype::game::EntityType::EnemyMissile);
+}
+
+/**
+ * Given an empty world
+ * When a ship is spawned for a player
+ * Then it carries a gun of player missiles that fires every 20 ticks and is
+ * ready at once
+ */
+TEST(World, SpawnedShipHasAGunThatIsReadyAtOnce) {
+  rtype::game::World world;
+
+  const std::uint32_t networkId =
+      world.spawnPlayer(rtype::game::Position{.x = SOME_X, .y = SOME_Y});
+
+  const std::optional<rtype::game::Gun> gun =
+      componentOf<rtype::game::Gun>(world, networkId);
+  ASSERT_TRUE(gun.has_value());
+  EXPECT_EQ(gun->intervalTicks, SHIP_SHOT_INTERVAL_TICKS);
+  EXPECT_EQ(gun->ticksUntilReady, 0U);
+  EXPECT_EQ(gun->projectile, rtype::game::EntityType::PlayerMissile);
 }
 
 /**

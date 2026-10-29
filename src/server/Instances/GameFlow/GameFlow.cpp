@@ -6,6 +6,7 @@
 #include <optional>
 #include <string>
 #include <string_view>
+#include "BydoController.hpp"
 #include "BydoSpawnerParts.hpp"
 #include "CollisionRules.hpp"
 #include "ConnectedPlayer.hpp"
@@ -24,31 +25,15 @@
 #include "OutgoingDatagram.hpp"
 #include "PlayerController.hpp"
 #include "PlayerRoster.hpp"
-#include "ProtocolConstants.hpp"
 #include "SessionDatagram.hpp"
-#include "ShipInput.hpp"
 #include "TimeConstants.hpp"
+#include "WeaponSystem.hpp"
 #include "World.hpp"
 #include "WorldSlot.hpp"
 
 namespace rtype::server {
 
 namespace {
-
-/**
- * @returns The connected players of @p roster whose newest input holds shoot.
- */
-ConnectedPlayers shootersIn(PlayerRoster& roster) {
-  ConnectedPlayers shooters;
-  for (ConnectedPlayer* const player : roster.connected()) {
-    if (player->newestInput.has_value() &&
-        holdsActionAt(*player->newestInput,
-                      network::SHOOT_ACTION_BIT_POSITION)) {
-      shooters.append(player);
-    }
-  }
-  return shooters;
-}
 
 /**
  * @returns Whether @p player has a life left, the one of a ship it waits for
@@ -130,10 +115,10 @@ void GameFlow::advanceState() {
       game::World& currentWorld = world();
       ++tick_;
       steerPlayerShips(currentWorld, game_.roster.get());
+      steerBydos(currentWorld);
       game_.systems.get().run(currentWorld.components(),
                               engine::SIMULATION_TICK_DURATION);
-      missileLauncher_->onTick(shootersIn(game_.roster.get()));
-      bydoGunner_->onTick();
+      weaponSystem_->onTick();
       bydoSpawner_->onTick();
       lifeKeeper_->onTick();
       break;
@@ -181,10 +166,8 @@ void GameFlow::buildWorld() {
                        .send = game_.send,
                        .seed = game_.settings.seed + worldsBuilt_,
                        .waves = game_.settings.waves});
-  missileLauncher_ =
-      std::make_unique<MissileLauncher>(world, game_.roster.get(), game_.send);
-  bydoGunner_ =
-      std::make_unique<BydoGunner>(world, game_.roster.get(), game_.send);
+  weaponSystem_ =
+      std::make_unique<WeaponSystem>(world, game_.roster.get(), game_.send);
   lifeKeeper_ = std::make_unique<LifeKeeper>(
       LifeKeeperParts{.events = game_.events.get(),
                       .world = world,
