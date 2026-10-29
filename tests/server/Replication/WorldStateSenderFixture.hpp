@@ -10,6 +10,8 @@
 #include "Endpoint.hpp"
 #include "EntityRegistry.hpp"
 #include "EntityType.hpp"
+#include "Invulnerable.hpp"
+#include "Lives.hpp"
 #include "OutgoingDatagram.hpp"
 #include "PacketHeader.hpp"
 #include "PlayerRoster.hpp"
@@ -52,6 +54,13 @@ class WorldStateSenderFixture : public ::testing::Test {
    */
   void addNetworkedEntity(game::EntityType type, game::Position position,
                           std::uint32_t networkId);
+
+  /**
+   * @brief Adds the ship of a player: an entity under @p networkId with a
+   * ShipMotion, an Intent, @p lives and @p protection.
+   */
+  void addShip(std::uint32_t networkId, game::Lives lives,
+               game::Invulnerable protection);
 
   /**
    * @brief Adds an entity with a Position and an EntityType, and no

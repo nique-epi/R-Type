@@ -34,6 +34,10 @@ class GameInstanceLivesFixture : public GameInstanceShootingFixture {
    * is not in the roster. */
   [[nodiscard]] ConnectedPlayer playerAt(std::size_t index);
 
+  /** @returns The lives the player at @p index has left, its ship in play
+   * included. */
+  [[nodiscard]] std::uint8_t livesOf(std::size_t index);
+
   /** @returns How the newest WorldState sent to the player at @p index lists
    * that player; a default one, after a failure, when none does. */
   [[nodiscard]] network::PlayerState newestStateOf(std::size_t index);

@@ -10,9 +10,8 @@
 #include "GameInstanceTestConstants.hpp"
 #include "GameState.hpp"
 #include "SentDatagrams.hpp"
-#include "Spawning/BydoGunnerTestConstants.hpp"
 #include "Spawning/BydoSpawnerTestConstants.hpp"
-#include "Spawning/MissileLauncherTestConstants.hpp"
+#include "Spawning/WeaponSystemTestConstants.hpp"
 #include "World.hpp"
 
 namespace rtype::server::testing {
@@ -71,6 +70,27 @@ TEST_F(GameInstanceShootingFixture, FiresNothingWhileWaitingForPlayers) {
   runTicks(TICKS_BETWEEN_TWO_SHOTS);
 
   EXPECT_TRUE(missilesSentTo(FIRST_PLAYER).empty());
+}
+
+/**
+ * Given a game in progress whose first player holds shoot, then goes silent
+ * until the server takes it for away
+ * When more ticks than three shot intervals run
+ * Then the second player is sent no new missile: the ship of an away player
+ * stops firing
+ */
+TEST_F(GameInstanceShootingFixture, StopsFiringTheShipOfAnAwayPlayer) {
+  startGame();
+  holdForNextTick(FIRST_PLAYER, HOLDS_SHOOT);
+  tick();
+  silence(FIRST_PLAYER);
+  runTicks(PROTOCOL_SESSION_TIMEOUT_TICKS);
+  ASSERT_TRUE(game().roster().find(playerEndpoint(FIRST_PLAYER))->away);
+  const std::size_t missilesBefore = missilesSentTo(SECOND_PLAYER).size();
+
+  runTicks(3 * TICKS_BETWEEN_TWO_SHOTS);
+
+  EXPECT_EQ(missilesSentTo(SECOND_PLAYER).size(), missilesBefore);
 }
 
 /**

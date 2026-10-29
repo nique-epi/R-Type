@@ -197,7 +197,7 @@ TEST_F(GameFlowFixture, FinishesTheGameInProgressNoPlayerHasALife) {
   player.ready = true;
   tick();
   ASSERT_EQ(flow().state(), GameState::InProgress);
-  player.lives = 0;
+  takeEveryLifeOf(player);
 
   tick();
 
@@ -211,7 +211,7 @@ TEST_F(GameFlowFixture, FinishesTheGameInProgressNoPlayerHasALife) {
  */
 TEST_F(GameFlowFixture, PlaysOnWhileAPlayerHasALife) {
   startGameWith({FIRST_PLAYER, SECOND_PLAYER});
-  roster().find(playerEndpoint(FIRST_PLAYER))->lives = 0;
+  takeEveryLifeOf(*roster().find(playerEndpoint(FIRST_PLAYER)));
 
   tick();
 
