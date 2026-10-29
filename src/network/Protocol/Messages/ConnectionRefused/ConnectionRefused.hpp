@@ -17,6 +17,7 @@ enum class RefusalReason : std::uint8_t {
   GameFull = 1,
   GameInProgress = 2,
   IncompatibleVersion = 3,
+  NicknameTaken = 4,
 };
 
 /**

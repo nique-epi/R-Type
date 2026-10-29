@@ -60,8 +60,14 @@ struct ConnectedPlayer {
    * empty until the first one arrives. GameInstance keeps it. */
   std::optional<network::PlayerInput> newestInput;
   /** @brief Ticks the game ran since it last read a datagram of the player;
-   * the session of the player closes once it reaches SESSION_TIMEOUT_TICKS. */
+   * the player is away once it reaches SESSION_TIMEOUT_TICKS, and the session
+   * closes once it reaches SESSION_CLOSING_TICKS.
+   */
   std::size_t ticksSinceReceived{0};
+  /** @brief Whether the server took the player for gone: its seat, ship, score
+   * and lives are kept, its input is cleared and it does not count for the
+   * ready check. The next datagram read from the player clears it. */
+  bool away{false};
   /** @brief Ticks that ended since the server last sent the player a datagram;
    * a Heartbeat goes out once it reaches TICKS_PER_HEARTBEAT.
    * nextSessionHeader() sets it back to 0. */

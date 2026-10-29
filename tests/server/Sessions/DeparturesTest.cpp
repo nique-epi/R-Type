@@ -6,6 +6,7 @@
 #include "DeparturesFixture.hpp"
 #include "Endpoint.hpp"
 #include "PlayerDeparture.hpp"
+#include "PlayerInput.hpp"
 #include "SentDatagrams.hpp"
 #include "SessionConstants.hpp"
 
@@ -64,12 +65,13 @@ TEST_F(DeparturesFixture, HandsEachDepartedPlayerOverOnce) {
 }
 
 /**
- * Given a player not heard from for SESSION_TIMEOUT_TICKS ticks
+ * Given a player not heard from for 1200 ticks, the timeout and the grace of
+ * the protocol page, 5 s and 15 s
  * When one more tick of silence is counted
  * Then its session closes with a departure (TimedOut), and not a tick before
  */
-TEST_F(DeparturesFixture, ClosesASilentSessionOnceTheTimeoutIsReached) {
-  for (std::size_t tick = 0; tick < SESSION_TIMEOUT_TICKS; ++tick) {
+TEST_F(DeparturesFixture, ClosesASilentSessionOnceTheGraceIsOver) {
+  for (std::size_t tick = 0; tick < SESSION_CLOSING_TICKS; ++tick) {
     departures().closeSilentSessions();
   }
   ASSERT_NE(roster().find(playerEndpoint(0)), nullptr);
@@ -79,6 +81,27 @@ TEST_F(DeparturesFixture, ClosesASilentSessionOnceTheTimeoutIsReached) {
   EXPECT_EQ(roster().find(playerEndpoint(0)), nullptr);
   ASSERT_EQ(announced().size(), 1U);
   EXPECT_EQ(announced().front().cause, game::DepartureCause::TimedOut);
+}
+
+/**
+ * Given a player with an input, not heard from for 299 ticks, 5 s less one
+ * When one more tick of silence is counted
+ * Then the player is away, its input cleared, its seat kept and no departure
+ * announced; and it was not away a tick before
+ */
+TEST_F(DeparturesFixture, MarksAPlayerAwayOnceTheTimeoutIsReached) {
+  player().newestInput = network::PlayerInput{};
+  for (std::size_t tick = 0; tick < SESSION_TIMEOUT_TICKS - 1; ++tick) {
+    departures().closeSilentSessions();
+  }
+  ASSERT_FALSE(player().away);
+
+  departures().closeSilentSessions();
+
+  EXPECT_TRUE(player().away);
+  EXPECT_FALSE(player().newestInput.has_value());
+  EXPECT_NE(roster().find(playerEndpoint(0)), nullptr);
+  EXPECT_TRUE(announced().empty());
 }
 
 /**

@@ -34,6 +34,7 @@ using rtype::client::GAME_IN_PROGRESS_STATUS;
 using rtype::client::INVALID_ADDRESS_STATUS;
 using rtype::client::INVALID_PORT_STATUS;
 using rtype::client::MISSING_NICKNAME_STATUS;
+using rtype::client::NICKNAME_TAKEN_STATUS;
 using rtype::client::ScreenId;
 using rtype::client::UNREACHABLE_STATUS;
 using rtype::client::testing::ACCEPTED_AS_FIRST_PLAYER;
@@ -346,11 +347,13 @@ INSTANTIATE_TEST_SUITE_P(
     ::testing::Values(std::tuple(RefusalReason::GameFull,
                                  std::string_view(GAME_FULL_STATUS)),
                       std::tuple(RefusalReason::GameInProgress,
-                                 std::string_view(GAME_IN_PROGRESS_STATUS))));
+                                 std::string_view(GAME_IN_PROGRESS_STATUS)),
+                      std::tuple(RefusalReason::NicknameTaken,
+                                 std::string_view(NICKNAME_TAKEN_STATUS))));
 
 /**
- * Given an attempt a server of protocol version 1 refused as
- * IncompatibleVersion, the client speaking version 0
+ * Given an attempt a server of protocol version 2 refused as
+ * IncompatibleVersion, the client speaking version 1
  * When a frame goes by
  * Then the status line names both versions, the client's first
  */
@@ -359,5 +362,5 @@ TEST_F(ConnectionScreenFixture, AVersionRefusalNamesBothVersions) {
         .refusal = RefusalReason::IncompatibleVersion,
         .serverVersion = NEXT_PROTOCOL_VERSION});
 
-  EXPECT_NE(writingOf(canvas(), "REFUSED: YOU V0, SERVER V1"), nullptr);
+  EXPECT_NE(writingOf(canvas(), "REFUSED: YOU V1, SERVER V2"), nullptr);
 }

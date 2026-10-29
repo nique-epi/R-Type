@@ -81,6 +81,7 @@ void GameSessions::readDatagram(const network::IncomingDatagram& datagram) {
     return;
   }
   readable->player->ticksSinceReceived = 0;
+  readable->player->away = false;
   dispatcher_.dispatch(readable->origin, readable->messages);
 }
 

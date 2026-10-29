@@ -23,6 +23,17 @@ static_assert(SESSION_TIMEOUT_TICKS >= 1,
               "SESSION_TIMEOUT must last at least one simulation tick");
 
 /**
+ * @brief SESSION_SILENCE_LIMIT in whole simulation ticks, rounded down: 1200
+ * ticks at 60 per second. A player not heard from for SESSION_TIMEOUT_TICKS
+ * ticks is away; its seat is freed once it has been silent for this many.
+ */
+constexpr std::size_t SESSION_CLOSING_TICKS =
+    engine::wholeTicksIn(network::SESSION_SILENCE_LIMIT);
+
+static_assert(SESSION_CLOSING_TICKS > SESSION_TIMEOUT_TICKS,
+              "RECONNECTION_GRACE must last at least one simulation tick");
+
+/**
  * @brief HEARTBEAT_INTERVAL in whole simulation ticks, rounded down: 60 ticks
  * at 60 per second.
  */

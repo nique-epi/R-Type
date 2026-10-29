@@ -82,6 +82,8 @@ using testing::onlyMessageIn;
 using testing::PLAYER_SESSION_TOKENS;
 using testing::playerEndpoint;
 using testing::PROTOCOL_HEARTBEAT_TICKS;
+using testing::PROTOCOL_RECONNECTION_GRACE_TICKS;
+using testing::PROTOCOL_SESSION_CLOSING_TICKS;
 using testing::PROTOCOL_SESSION_TIMEOUT_TICKS;
 using testing::roomOfTheFirstPlayerNotReady;
 using testing::SECOND_PLAYER;
@@ -620,17 +622,63 @@ TEST_F(GameInstanceTest, KeepsAPlayerSilentForOneTickLessThanTheTimeout) {
 
 /**
  * Given a player heard from in a tick, then silent
- * When the timeout of the protocol, 5 s of ticks, runs without a datagram
+ * When the timeout and the reconnection grace of the protocol, 20 s of ticks,
+ * run without a datagram
  * Then the player is no longer in the game
  */
-TEST_F(GameInstanceTest, ClosesTheSessionOfAPlayerSilentForTheTimeout) {
+TEST_F(GameInstanceTest, ClosesTheSessionOfAPlayerSilentForTheTimeoutAndGrace) {
   join(FIRST_PLAYER);
   tick();
   silence(FIRST_PLAYER);
 
-  runTicks(PROTOCOL_SESSION_TIMEOUT_TICKS);
+  runTicks(PROTOCOL_SESSION_CLOSING_TICKS);
 
   EXPECT_EQ(game().roster().find(playerEndpoint(FIRST_PLAYER)), nullptr);
+}
+
+/**
+ * Given a player heard from in a tick, then silent
+ * When the timeout and the grace, less one tick, run without a datagram
+ * Then the player still holds its seat, away
+ */
+TEST_F(GameInstanceTest,
+       KeepsTheSeatOfAPlayerSilentForOneTickLessThanTheGrace) {
+  join(FIRST_PLAYER);
+  tick();
+  silence(FIRST_PLAYER);
+
+  runTicks(PROTOCOL_SESSION_CLOSING_TICKS - 1);
+
+  const ConnectedPlayer* const player =
+      game().roster().find(playerEndpoint(FIRST_PLAYER));
+  ASSERT_NE(player, nullptr);
+  EXPECT_TRUE(player->away);
+}
+
+/**
+ * Given a player silent for the timeout and half the grace
+ * When it sends a ReadyState, then stays silent again for the timeout and the
+ * grace, less one tick
+ * Then it still holds its seat: the delay started over when it was heard
+ */
+TEST_F(GameInstanceTest, GivesTheSeatBackToAPlayerWhoReturnsDuringTheGrace) {
+  join(FIRST_PLAYER);
+  join(SECOND_PLAYER);
+  tick();
+  silence(FIRST_PLAYER);
+  runTicks(PROTOCOL_SESSION_TIMEOUT_TICKS +
+           (PROTOCOL_RECONNECTION_GRACE_TICKS / 2));
+  sendReady(
+      {.player = FIRST_PLAYER, .ready = true, .sequence = FIRST_SEQUENCE});
+  tick();
+  ASSERT_FALSE(game().roster().find(playerEndpoint(FIRST_PLAYER))->away);
+
+  runTicks(PROTOCOL_SESSION_CLOSING_TICKS - 1);
+
+  const ConnectedPlayer* const player =
+      game().roster().find(playerEndpoint(FIRST_PLAYER));
+  ASSERT_NE(player, nullptr);
+  EXPECT_TRUE(player->away);
 }
 
 /**
@@ -705,7 +753,7 @@ TEST_F(GameInstanceTest, AnnouncesThePlayerWhoTimedOut) {
       });
   silence(SECOND_PLAYER);
 
-  runTicks(2 * PROTOCOL_SESSION_TIMEOUT_TICKS);
+  runTicks(PROTOCOL_SESSION_CLOSING_TICKS + 1);
   events().dispatch();
 
   EXPECT_EQ(departures, (std::vector{game::PlayerDeparture{

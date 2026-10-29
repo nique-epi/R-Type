@@ -64,6 +64,7 @@ constexpr const char* CONNECTING_STATUS = "CONNECTING...";
 constexpr const char* ACCEPTED_STATUS = "CONNECTED AS PLAYER ";
 constexpr const char* GAME_FULL_STATUS = "REFUSED: GAME FULL";
 constexpr const char* GAME_IN_PROGRESS_STATUS = "REFUSED: GAME IN PROGRESS";
+constexpr const char* NICKNAME_TAKEN_STATUS = "REFUSED: CALLSIGN TAKEN";
 constexpr const char* INCOMPATIBLE_VERSION_STATUS = "REFUSED: YOU V";
 constexpr const char* SERVER_VERSION_STATUS = ", SERVER V";
 constexpr const char* UNREACHABLE_STATUS = "SERVER UNREACHABLE";

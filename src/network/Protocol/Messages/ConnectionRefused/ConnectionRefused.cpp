@@ -18,6 +18,7 @@ bool isListed(RefusalReason reason) {
     case RefusalReason::GameFull:
     case RefusalReason::GameInProgress:
     case RefusalReason::IncompatibleVersion:
+    case RefusalReason::NicknameTaken:
       return true;
   }
   return false;
