@@ -148,6 +148,11 @@ class MenuBuilder {
    * the actions move into the menu. */
   [[nodiscard]] Menu build();
 
+  /** @returns Where the chip of a room lies: as wide as its label and its
+   * keycap need, against the bottom-right corner of the safe margin; read by
+   * a room that lays another chip beside it. */
+  [[nodiscard]] static sf::IntRect chipArea(const Button::Text& text);
+
  private:
   /** @brief A bar asked for, not placed yet: a button, or a field when it holds
    * one. */
@@ -170,10 +175,6 @@ class MenuBuilder {
   void placeForm(Menu::Content& content);
   void placeTabbedPanel(Menu::Content& content);
   void placeRoom(Menu::Content& content);
-
-  /** @returns Where the chip of a room lies: as wide as its label and its
-   * keycap need, against the bottom-right corner of the safe margin. */
-  [[nodiscard]] static sf::IntRect chipArea(const Button::Text& text);
 
   /** @brief Places the heading against the top-left corner of the safe
    * margin and, under it, a rule of @p ruleSize.
