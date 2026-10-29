@@ -9,9 +9,11 @@
 #include "AssetLibrary.hpp"
 #include "AssetList.hpp"
 #include "ClientException.hpp"
+#include "GameScreenIdConstants.hpp"
 #include "IScreen.hpp"
 #include "LoadingScreen.hpp"
 #include "LoadingScreenParts.hpp"
+#include "MenuScreenIdConstants.hpp"
 #include "RecordingScreen.hpp"
 #include "ScreenId.hpp"
 #include "ScreenStack.hpp"
@@ -23,10 +25,12 @@ using rtype::client::AssetKind;
 using rtype::client::AssetLibrary;
 using rtype::client::AssetList;
 using rtype::client::AssetLoadingException;
+using rtype::client::GAME_SCREEN;
 using rtype::client::genericText;
 using rtype::client::IScreen;
 using rtype::client::LoadingScreen;
 using rtype::client::LoadingScreenParts;
+using rtype::client::OPTIONS_SCREEN;
 using rtype::client::ScreenId;
 using rtype::client::ScreenStack;
 using ::testing::ElementsAre;
@@ -102,7 +106,7 @@ class LoadingScreenTest : public ::testing::Test {
  */
 TEST_F(LoadingScreenTest, ReadsOneFilePerFrame) {
   loadTwoSounds();
-  showLoadingScreenOf(ScreenId::Game);
+  showLoadingScreenOf(GAME_SCREEN);
 
   screens().update(ONE_FRAME);
 
@@ -117,7 +121,7 @@ TEST_F(LoadingScreenTest, ReadsOneFilePerFrame) {
  */
 TEST_F(LoadingScreenTest, WaitsForEveryFileBeforeShowingItsScreen) {
   loadTwoSounds();
-  showLoadingScreenOf(ScreenId::Game);
+  showLoadingScreenOf(GAME_SCREEN);
 
   runFrame();
 
@@ -131,12 +135,12 @@ TEST_F(LoadingScreenTest, WaitsForEveryFileBeforeShowingItsScreen) {
  */
 TEST_F(LoadingScreenTest, GivesWayToItsScreenOnceEveryFileIsLoaded) {
   loadTwoSounds();
-  showLoadingScreenOf(ScreenId::Game);
+  showLoadingScreenOf(GAME_SCREEN);
 
   runFrame();
   runFrame();
 
-  EXPECT_THAT(journal(), ElementsAre(JournalEntry{.screen = ScreenId::Game,
+  EXPECT_THAT(journal(), ElementsAre(JournalEntry{.screen = GAME_SCREEN,
                                                   .call = ScreenCall::Built}));
 }
 
@@ -146,11 +150,11 @@ TEST_F(LoadingScreenTest, GivesWayToItsScreenOnceEveryFileIsLoaded) {
  * Then the options are shown, by their identifier
  */
 TEST_F(LoadingScreenTest, AsksForTheScreenItLoadsFor) {
-  showLoadingScreenOf(ScreenId::Options);
+  showLoadingScreenOf(OPTIONS_SCREEN);
 
   runFrame();
 
-  EXPECT_THAT(journal(), ElementsAre(JournalEntry{.screen = ScreenId::Options,
+  EXPECT_THAT(journal(), ElementsAre(JournalEntry{.screen = OPTIONS_SCREEN,
                                                   .call = ScreenCall::Built}));
 }
 
@@ -160,11 +164,11 @@ TEST_F(LoadingScreenTest, AsksForTheScreenItLoadsFor) {
  * Then its screen is shown at once
  */
 TEST_F(LoadingScreenTest, NothingToLoadShowsItsScreenAtTheFirstFrame) {
-  showLoadingScreenOf(ScreenId::Game);
+  showLoadingScreenOf(GAME_SCREEN);
 
   runFrame();
 
-  EXPECT_THAT(journal(), ElementsAre(JournalEntry{.screen = ScreenId::Game,
+  EXPECT_THAT(journal(), ElementsAre(JournalEntry{.screen = GAME_SCREEN,
                                                   .call = ScreenCall::Built}));
 }
 
@@ -174,7 +178,7 @@ TEST_F(LoadingScreenTest, NothingToLoadShowsItsScreenAtTheFirstFrame) {
  * Then the stack is empty, the loading screen being gone
  */
 TEST_F(LoadingScreenTest, LeavesTheStackOnceItsScreenIsShown) {
-  showLoadingScreenOf(ScreenId::Game);
+  showLoadingScreenOf(GAME_SCREEN);
   runFrame();
 
   screens().pop();
@@ -190,7 +194,7 @@ TEST_F(LoadingScreenTest, LeavesTheStackOnceItsScreenIsShown) {
  */
 TEST_F(LoadingScreenTest, MissingFileStopsTheLoadingWithItsPath) {
   loadOnly(AssetList{.sounds = {SHOT_SOUND_ID}});
-  showLoadingScreenOf(ScreenId::Game);
+  showLoadingScreenOf(GAME_SCREEN);
 
   EXPECT_THAT([this] { screens().update(ONE_FRAME); },
               ThrowsMessage<AssetLoadingException>(

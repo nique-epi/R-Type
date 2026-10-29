@@ -5,6 +5,7 @@
 #include "FakeEntityMessageSource.hpp"
 #include "GameScreen.hpp"
 #include "GameScreenFixtures.hpp"
+#include "GameScreenIdConstants.hpp"
 #include "GameScreenParts.hpp"
 #include "IScreen.hpp"
 #include "PlayerSettings.hpp"
@@ -16,6 +17,7 @@
 #include "ScreenId.hpp"
 #include "ScreenStack.hpp"
 
+using rtype::client::GAME_SCREEN;
 using rtype::client::GameScreen;
 using rtype::client::GameScreenParts;
 using rtype::client::IScreen;
@@ -25,7 +27,7 @@ using rtype::client::ScreenStack;
 
 GameScreenFixture::GameScreenFixture()
     : screens_([this](ScreenId screen) -> std::unique_ptr<IScreen> {
-        if (screen == ScreenId::Game) {
+        if (screen == GAME_SCREEN) {
           return std::make_unique<GameScreen>(
               GameScreenParts{.navigator = screens_,
                               .settings = settings_,
@@ -45,7 +47,7 @@ void GameScreenFixture::SetUp() {
   seatThreePilots(connection_);
   layerRecord_.drawJournal = &drawJournal_;
   statusCanvas_.drawJournal = &drawJournal_;
-  screens_.push(ScreenId::Game);
+  screens_.push(GAME_SCREEN);
   screens_.applyPendingChanges();
 }
 

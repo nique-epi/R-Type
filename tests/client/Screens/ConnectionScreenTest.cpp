@@ -16,11 +16,11 @@
 #include "ConnectionScreenTestConstants.hpp"
 #include "ConnectionStatus.hpp"
 #include "Endpoint.hpp"
+#include "LobbyScreenIdConstants.hpp"
 #include "RecordingInterfaceCanvas.hpp"
 #include "RecordingNavigator.hpp"
 #include "RecordingServerConnection.hpp"
 #include "RecordingSoundPlayer.hpp"
-#include "ScreenId.hpp"
 #include "ScreenTestConstants.hpp"
 #include "ServerConnectionTestConstants.hpp"
 #include "SoundConstants.hpp"
@@ -33,9 +33,9 @@ using rtype::client::GAME_FULL_STATUS;
 using rtype::client::GAME_IN_PROGRESS_STATUS;
 using rtype::client::INVALID_ADDRESS_STATUS;
 using rtype::client::INVALID_PORT_STATUS;
+using rtype::client::LOBBY_SCREEN;
 using rtype::client::MISSING_NICKNAME_STATUS;
 using rtype::client::NICKNAME_TAKEN_STATUS;
-using rtype::client::ScreenId;
 using rtype::client::UNREACHABLE_STATUS;
 using rtype::client::testing::ACCEPTED_AS_FIRST_PLAYER;
 using rtype::client::testing::CANCEL;
@@ -257,7 +257,7 @@ TEST_F(ConnectionScreenFixture, TheWaitingRoomOpensOnceTheAcceptanceShowed) {
 
   EXPECT_THAT(navigator().calls(),
               ElementsAre(NavigatorCall{.request = NavigatorRequest::Push,
-                                        .screen = ScreenId::Lobby}));
+                                        .screen = LOBBY_SCREEN}));
 }
 
 /**
@@ -290,7 +290,7 @@ TEST_F(ConnectionScreenFixture, AnotherAttemptOpensTheWaitingRoomAgain) {
   screen().update(ACCEPTED_STATUS_DURATION);
 
   const NavigatorCall openLobby{.request = NavigatorRequest::Push,
-                                .screen = ScreenId::Lobby};
+                                .screen = LOBBY_SCREEN};
   EXPECT_THAT(navigator().calls(), ElementsAre(openLobby, openLobby));
 }
 

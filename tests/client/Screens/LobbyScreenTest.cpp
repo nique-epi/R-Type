@@ -8,6 +8,7 @@
 #include <string>
 #include <vector>
 #include "BackgroundColorConstants.hpp"
+#include "GameScreenIdConstants.hpp"
 #include "HelpWalkthroughConstants.hpp"
 #include "HelpWalkthroughTestConstants.hpp"
 #include "KeyPress.hpp"
@@ -16,21 +17,22 @@
 #include "LobbyScreenFixture.hpp"
 #include "LobbyScreenFixtures.hpp"
 #include "LobbyScreenTestConstants.hpp"
+#include "MenuScreenIdConstants.hpp"
 #include "PointerEvents.hpp"
 #include "RecordingInterfaceCanvas.hpp"
 #include "RecordingNavigator.hpp"
 #include "RecordingServerConnection.hpp"
 #include "RecordingSoundPlayer.hpp"
-#include "ScreenId.hpp"
 #include "ScreenTestConstants.hpp"
 #include "SoundConstants.hpp"
 #include "WidgetConstants.hpp"
 
 using rtype::client::CLICK_SOUND_ID;
+using rtype::client::GAME_SCREEN;
 using rtype::client::HELP_STEPS;
 using rtype::client::PRESS_DURATION;
-using rtype::client::ScreenId;
 using rtype::client::STAR_GOLD;
+using rtype::client::TITLE_SCREEN;
 using rtype::client::testing::ASK_NOT_READY;
 using rtype::client::testing::ASK_READY;
 using rtype::client::testing::BACK_CHIP_MIDDLE;
@@ -254,7 +256,7 @@ TEST_F(LobbyScreenFixture, TheGameIsAskedOnceItStarted) {
 
   EXPECT_THAT(navigator().calls(),
               ElementsAre(NavigatorCall{.request = NavigatorRequest::ReplaceAll,
-                                        .screen = ScreenId::Game}));
+                                        .screen = GAME_SCREEN}));
 }
 
 /**
@@ -270,7 +272,7 @@ TEST_F(LobbyAfterGameFixture, BackLeavesForTheTitle) {
             ServerConnectionCall::Request::Cancel);
   EXPECT_THAT(navigator().calls(),
               ElementsAre(NavigatorCall{.request = NavigatorRequest::ReplaceAll,
-                                        .screen = ScreenId::Title}));
+                                        .screen = TITLE_SCREEN}));
 }
 
 /**

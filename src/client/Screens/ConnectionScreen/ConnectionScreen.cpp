@@ -16,6 +16,7 @@
 #include "IInterfaceCanvas.hpp"
 #include "IScreenNavigator.hpp"
 #include "IServerConnection.hpp"
+#include "LobbyScreenIdConstants.hpp"
 #include "Menu.hpp"
 #include "MenuBuilder.hpp"
 #include "NetworkException.hpp"
@@ -145,7 +146,7 @@ void ConnectionScreen::followConnection(const ConnectionStatus& status,
   acceptedFor_ += elapsed;
   if (!lobbyAsked_ && acceptedFor_ >= ACCEPTED_STATUS_DURATION) {
     lobbyAsked_ = true;
-    navigator_->push(ScreenId::Lobby);
+    navigator_->push(LOBBY_SCREEN);
   }
 }
 

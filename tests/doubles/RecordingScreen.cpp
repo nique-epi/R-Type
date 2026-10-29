@@ -12,34 +12,6 @@ using rtype::client::ScreenId;
 
 namespace {
 
-const char* nameOf(ScreenId screen) {
-  switch (screen) {
-    case ScreenId::Title:
-      return "title";
-    case ScreenId::Game:
-      return "game";
-    case ScreenId::Options:
-      return "options";
-    case ScreenId::GameOptions:
-      return "game options";
-    case ScreenId::QuitConfirmation:
-      return "quit confirmation";
-    case ScreenId::Connection:
-      return "connection";
-    case ScreenId::Lobby:
-      return "lobby";
-    case ScreenId::Intro:
-      return "intro";
-    case ScreenId::TitleAfterIntro:
-      return "title after the intro";
-    case ScreenId::End:
-      return "end";
-    case ScreenId::LobbyAfterGame:
-      return "lobby after a game";
-  }
-  return "unknown screen";
-}
-
 const char* nameOf(ScreenCall call) {
   switch (call) {
     case ScreenCall::Built:
@@ -59,7 +31,7 @@ const char* nameOf(ScreenCall call) {
 }  // namespace
 
 void PrintTo(const JournalEntry& entry, std::ostream* output) {
-  *output << nameOf(entry.screen) << ' ' << nameOf(entry.call);
+  *output << entry.screen.name() << ' ' << nameOf(entry.call);
 }
 
 RecordingScreen::RecordingScreen(ScreenId screen,

@@ -4,10 +4,11 @@
 #include <SFML/Window/Event.hpp>
 #include <cstddef>
 #include <optional>
-#include "ClientScreensParts.hpp"
 #include "GameResult.hpp"
 #include "MusicPlayer.hpp"
-#include "ScreenCatalog.hpp"
+#include "ScreenContext.hpp"
+#include "ScreenRegistry.hpp"
+#include "ScreenServices.hpp"
 #include "ScreenStack.hpp"
 #include "ScrollingBackground.hpp"
 #include "SoundPlayer.hpp"
@@ -42,11 +43,13 @@ class ClientScreens {
  public:
   /**
    * @brief Builds the sky, the sounds, the music and the screens, then opens
-   * on ScreenCatalog::firstScreen().
+   * on openingScreen().
+   * @param registry The screens the modules registered, which must outlive
+   * the screens.
    * @throws RenderTextureNotCreatedException when the sky cannot get its
    * render textures.
    */
-  explicit ClientScreens(const ClientScreensParts& parts);
+  ClientScreens(const ScreenServices& parts, const ScreenRegistry& registry);
 
   ClientScreens(const ClientScreens&) = delete;
   ClientScreens& operator=(const ClientScreens&) = delete;
@@ -83,7 +86,7 @@ class ClientScreens {
   GameResult gameResult_;
   std::optional<std::size_t> previousTaunt_;
   ScreenStack screens_;
-  ScreenCatalog catalog_;
+  ScreenContext context_;
 };
 
 }  // namespace rtype::client

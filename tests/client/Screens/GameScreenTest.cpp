@@ -18,10 +18,12 @@
 #include "GameScreen.hpp"
 #include "GameScreenFixture.hpp"
 #include "GameScreenFixtures.hpp"
+#include "GameScreenIdConstants.hpp"
 #include "GameScreenTestConstants.hpp"
 #include "IgnoringEntityLayer.hpp"
 #include "KeyPress.hpp"
 #include "LoneGameParts.hpp"
+#include "MenuScreenIdConstants.hpp"
 #include "PlayerPaletteTestConstants.hpp"
 #include "PlayerSettings.hpp"
 #include "RecordingEntityLayer.hpp"
@@ -31,7 +33,6 @@
 #include "RecordingScreen.hpp"
 #include "RecordingSky.hpp"
 #include "ScreenConstants.hpp"
-#include "ScreenId.hpp"
 #include "ScreenStack.hpp"
 #include "ScreenTestConstants.hpp"
 #include "SoundConstants.hpp"
@@ -42,13 +43,14 @@
 using rtype::client::BoundAction;
 using rtype::client::BYDO_EXPLOSION_FRAME;
 using rtype::client::ColorMode;
+using rtype::client::END_SCREEN;
+using rtype::client::GAME_OPTIONS_SCREEN;
 using rtype::client::GameScreen;
 using rtype::client::OPTIONS_KEY;
 using rtype::client::PLAYER_INPUT_INTERVAL;
 using rtype::client::PLAYER_MUZZLE_FLASH_FRAME;
 using rtype::client::PLAYER_MUZZLE_FLASH_WITHOUT_FLASH_FRAME;
 using rtype::client::PLAYER_SHOT_SOUND_ID;
-using rtype::client::ScreenId;
 using rtype::client::testing::APPLIED_TICK;
 using rtype::client::testing::BYDO_ID;
 using rtype::client::testing::BYDO_POSITION;
@@ -78,9 +80,8 @@ TEST_F(GameScreenFixture, ReleasingTheOptionsKeyOpensTheOptions) {
   screens().handleEvent(keyRelease(OPTIONS_KEY));
   screens().applyPendingChanges();
 
-  EXPECT_THAT(journal(),
-              ElementsAre(JournalEntry{.screen = ScreenId::GameOptions,
-                                       .call = ScreenCall::Built}));
+  EXPECT_THAT(journal(), ElementsAre(JournalEntry{.screen = GAME_OPTIONS_SCREEN,
+                                                  .call = ScreenCall::Built}));
 }
 
 /**
@@ -762,7 +763,7 @@ TEST(GameScreenEndTest, TheEndScreenReplacesTheGameASecondLater) {
 
   EXPECT_THAT(doubles.navigator.calls(),
               ElementsAre(NavigatorCall{.request = NavigatorRequest::ReplaceAll,
-                                        .screen = ScreenId::End}));
+                                        .screen = END_SCREEN}));
 }
 
 /**

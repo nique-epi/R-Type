@@ -2,6 +2,7 @@
 #include <SFML/System/Vector2.hpp>
 #include <memory>
 #include "IScreen.hpp"
+#include "MenuScreenIdConstants.hpp"
 #include "MotionPreference.hpp"
 #include "PointerEvents.hpp"
 #include "QuitConfirmationScreen.hpp"
@@ -19,16 +20,18 @@
 using rtype::client::IScreen;
 using rtype::client::MotionPreference;
 using rtype::client::PRESS_DURATION;
+using rtype::client::QUIT_CONFIRMATION_SCREEN;
 using rtype::client::QuitConfirmationScreen;
 using rtype::client::QuitConfirmationScreenParts;
 using rtype::client::ScreenId;
 using rtype::client::ScreenStack;
+using rtype::client::TITLE_SCREEN;
 using rtype::client::TitleScreen;
 using rtype::client::TitleScreenParts;
 
 TitleInTheStackFixture::TitleInTheStackFixture()
     : screens_([this](ScreenId screen) { return build(screen); }) {
-  screens_.replaceAll(ScreenId::Title);
+  screens_.replaceAll(TITLE_SCREEN);
   screens_.applyPendingChanges();
 }
 
@@ -59,7 +62,7 @@ void TitleInTheStackFixture::click(sf::Vector2i position) {
 }
 
 std::unique_ptr<IScreen> TitleInTheStackFixture::build(ScreenId screen) {
-  if (screen == ScreenId::Title) {
+  if (screen == TITLE_SCREEN) {
     return std::make_unique<TitleScreen>(
         TitleScreenParts{.navigator = titleNavigator_,
                          .sounds = sounds_,
@@ -69,7 +72,7 @@ std::unique_ptr<IScreen> TitleInTheStackFixture::build(ScreenId screen) {
                          .seed = rtype::client::testing::TITLE_SEED},
         std::make_unique<RecordingInterfaceCanvas>(titleCanvas_));
   }
-  if (screen == ScreenId::QuitConfirmation) {
+  if (screen == QUIT_CONFIRMATION_SCREEN) {
     return std::make_unique<QuitConfirmationScreen>(
         QuitConfirmationScreenParts{.navigator = dialogNavigator_,
                                     .sounds = sounds_,

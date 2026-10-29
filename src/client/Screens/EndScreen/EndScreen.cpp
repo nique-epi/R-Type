@@ -20,6 +20,8 @@
 #include "FlightLogTimingConstants.hpp"
 #include "IInterfaceCanvas.hpp"
 #include "InterfacePixel.hpp"
+#include "LobbyScreenIdConstants.hpp"
+#include "MenuScreenIdConstants.hpp"
 #include "MotionPreference.hpp"
 #include "ScreenId.hpp"
 #include "SoundConstants.hpp"
@@ -155,10 +157,10 @@ void EndScreen::advanceExit(engine::Duration elapsed) {
 void EndScreen::leave(EndChoice choice) {
   if (choice == EndChoice::Quit) {
     connection_->cancel();
-    navigator_->replaceAll(ScreenId::Title);
+    navigator_->replaceAll(TITLE_SCREEN);
     return;
   }
-  navigator_->replaceAll(ScreenId::LobbyAfterGame);
+  navigator_->replaceAll(LOBBY_AFTER_GAME_SCREEN);
 }
 
 FlightLogLook EndScreen::lookNow() const {
