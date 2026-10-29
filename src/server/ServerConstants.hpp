@@ -98,21 +98,36 @@ constexpr std::size_t TICKS_PER_REPORT =
     REPORT_SECONDS * engine::SIMULATION_TICKS_PER_SECOND;
 
 /**
- * @brief States of the world the server sends per second. Provisional, see the
- * protocol page.
+ * @brief Launch option followed by the number of world states the server
+ * sends to each player per second, a whole number from
+ * LOWEST_WORLD_STATES_PER_SECOND to HIGHEST_WORLD_STATES_PER_SECOND.
  */
-constexpr std::size_t WORLD_STATES_PER_SECOND = 20;
-
-static_assert(engine::SIMULATION_TICKS_PER_SECOND % WORLD_STATES_PER_SECOND ==
-                  0,
-              "the state rate must divide the tick rate: a state is sent every "
-              "whole number of ticks");
+constexpr std::string_view STATE_RATE_OPTION = "--state-rate";
 
 /**
- * @brief Simulation ticks between two states of the world.
+ * @brief States of the world the server sends per second when STATE_RATE_OPTION
+ * is not given.
  */
-constexpr std::size_t TICKS_PER_WORLD_STATE =
-    engine::SIMULATION_TICKS_PER_SECOND / WORLD_STATES_PER_SECOND;
+constexpr std::size_t DEFAULT_WORLD_STATES_PER_SECOND = 20;
+
+/**
+ * @brief The fewest states per second STATE_RATE_OPTION accepts. A client
+ * removes an entity that no state listed for UNLISTED_ENTITY_TIMEOUT, so one
+ * state per second would remove entities that are alive.
+ */
+constexpr std::size_t LOWEST_WORLD_STATES_PER_SECOND = 2;
+
+/**
+ * @brief The most states per second STATE_RATE_OPTION accepts: one per tick.
+ */
+constexpr std::size_t HIGHEST_WORLD_STATES_PER_SECOND =
+    engine::SIMULATION_TICKS_PER_SECOND;
+
+static_assert(DEFAULT_WORLD_STATES_PER_SECOND >=
+                      LOWEST_WORLD_STATES_PER_SECOND &&
+                  DEFAULT_WORLD_STATES_PER_SECOND <=
+                      HIGHEST_WORLD_STATES_PER_SECOND,
+              "the default state rate must be one the option accepts");
 
 /**
  * @brief The longest time between two LobbyState sent to the players while
