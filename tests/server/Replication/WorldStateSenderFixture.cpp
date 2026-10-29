@@ -9,6 +9,9 @@
 #include "Endpoint.hpp"
 #include "Entity.hpp"
 #include "EntityType.hpp"
+#include "Intent.hpp"
+#include "Invulnerable.hpp"
+#include "Lives.hpp"
 #include "NetworkConstants.hpp"
 #include "NetworkIdentity.hpp"
 #include "OutgoingDatagram.hpp"
@@ -17,6 +20,7 @@
 #include "Position.hpp"
 #include "SentDatagrams.hpp"
 #include "ServerLobbyTestConstants.hpp"
+#include "ShipMotion.hpp"
 #include "WorldState.hpp"
 
 namespace rtype::server::testing {
@@ -52,6 +56,17 @@ void WorldStateSenderFixture::addNetworkedEntity(game::EntityType type,
   components_.add(entity, game::NetworkIdentity{.networkId = networkId});
   components_.add(entity, position);
   components_.add(entity, type);
+}
+
+void WorldStateSenderFixture::addShip(std::uint32_t networkId,
+                                      std::uint8_t lives,
+                                      std::size_t protectionTicks) {
+  const engine::Entity entity = entities_.create();
+  components_.add(entity, game::NetworkIdentity{.networkId = networkId});
+  components_.add(entity, game::ShipMotion{});
+  components_.add(entity, game::Intent{});
+  components_.add(entity, game::Lives{.count = lives});
+  components_.add(entity, game::Invulnerable{.ticksLeft = protectionTicks});
 }
 
 void WorldStateSenderFixture::addEntityWithoutNetworkId(

@@ -41,9 +41,10 @@ namespace rtype::server {
  * result at the first tick of the end, then every GAME_ENDED_INTERVAL until
  * the game waits for players again; no WorldState goes out meanwhile.
  *
- * While the game is in progress, each tick first writes the Intent of the ship
- * of every player from the directions and the shot its newest input holds (see
- * steerPlayerShips) and the Intent of every Bydo (see steerBydos), then runs
+ * While the game is in progress, each tick first makes the ship of every away
+ * player want nothing (see silenceAwayShips) and writes the Intent of every
+ * Bydo (see steerBydos), while the Intent of the ship of a player is its last
+ * input (see steerShipByInput), then runs
  * the systems of the world (PatternSystem, MovementSystem, PlayfieldExitSystem,
  * which removes a Bydo or a missile of a Bydo that left on the left, or a
  * missile of a player that left on the right, and announces it on the event

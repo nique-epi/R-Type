@@ -32,7 +32,7 @@ TEST_F(GameInstanceLivesFixture, TakesALifeWhenAShipTouchesABydo) {
 
   hitTheShipOf(FIRST_PLAYER);
 
-  EXPECT_EQ(playerAt(FIRST_PLAYER).lives, THREE_LIVES - 1);
+  EXPECT_EQ(livesOf(FIRST_PLAYER), THREE_LIVES - 1);
 }
 
 /**
@@ -98,7 +98,7 @@ TEST_F(GameInstanceLivesFixture, GivesThreeLivesBackWithANewWorld) {
   runTicksDispatching(FINISHED_STATE_TICKS);
 
   ASSERT_EQ(game().state(), GameState::WaitingForPlayers);
-  EXPECT_EQ(playerAt(FIRST_PLAYER).lives, THREE_LIVES);
+  EXPECT_EQ(livesOf(FIRST_PLAYER), THREE_LIVES);
 }
 
 /**
@@ -157,7 +157,7 @@ TEST_F(GameInstanceLivesFixture, TakesALifeWhenAnEnemyMissileHitsAShip) {
 
   shootTheShipOf(FIRST_PLAYER);
 
-  EXPECT_EQ(playerAt(FIRST_PLAYER).lives, THREE_LIVES - 1);
+  EXPECT_EQ(livesOf(FIRST_PLAYER), THREE_LIVES - 1);
 }
 
 /**
@@ -213,7 +213,7 @@ TEST_F(GameInstanceLivesFixture, SparesTheShipThatCameBackFromAMissile) {
 
   shootTheShipOf(FIRST_PLAYER);
 
-  EXPECT_EQ(playerAt(FIRST_PLAYER).lives, THREE_LIVES - 1);
+  EXPECT_EQ(livesOf(FIRST_PLAYER), THREE_LIVES - 1);
 }
 
 /**

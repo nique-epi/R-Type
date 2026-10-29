@@ -13,6 +13,8 @@
 #include "Health.hpp"
 #include "HealthConstants.hpp"
 #include "Intent.hpp"
+#include "Invulnerable.hpp"
+#include "Lives.hpp"
 #include "MissileConstants.hpp"
 #include "MissileOwner.hpp"
 #include "MovementPattern.hpp"
@@ -27,12 +29,14 @@
 
 namespace rtype::game {
 
-std::uint32_t World::spawnPlayer(Position position) {
+std::uint32_t World::spawnPlayer(Position position, std::uint8_t lives) {
   const std::uint32_t networkId = networkIds_.allocate();
   const engine::Entity ship = registry_.create();
   components_.add(ship, position);
   components_.add(ship, ShipMotion{});
   components_.add(ship, Intent{});
+  components_.add(ship, Lives{.count = lives});
+  components_.add(ship, Invulnerable{});
   components_.add(ship, Gun{.intervalTicks = SHOT_INTERVAL_TICKS,
                             .ticksUntilReady = 0,
                             .projectile = EntityType::PlayerMissile});
@@ -128,6 +132,22 @@ Intent* World::shipIntentOf(std::uint32_t shipId) {
     return nullptr;
   }
   return components_.get<Intent>(*ship);
+}
+
+Lives* World::shipLivesOf(std::uint32_t shipId) {
+  const std::optional<engine::Entity> ship = shipByNetworkId_.find(shipId);
+  if (!ship.has_value()) {
+    return nullptr;
+  }
+  return components_.get<Lives>(*ship);
+}
+
+Invulnerable* World::shipInvulnerabilityOf(std::uint32_t shipId) {
+  const std::optional<engine::Entity> ship = shipByNetworkId_.find(shipId);
+  if (!ship.has_value()) {
+    return nullptr;
+  }
+  return components_.get<Invulnerable>(*ship);
 }
 
 }  // namespace rtype::game

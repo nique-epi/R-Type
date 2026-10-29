@@ -49,6 +49,15 @@ class LifeKeeperFixture : public ::testing::Test {
    */
   std::uint32_t touchABydo(const ConnectedPlayer& player);
 
+  /** @returns The lives @p player has left, its ship in play included. */
+  [[nodiscard]] std::uint8_t livesOf(const ConnectedPlayer& player);
+
+  /** @brief Gives the ship of @p player @p lives lives. */
+  void setLives(const ConnectedPlayer& player, std::uint8_t lives);
+
+  /** @returns Whether the ship of @p player is invulnerable. */
+  [[nodiscard]] bool isInvulnerable(const ConnectedPlayer& player);
+
   /** @brief Runs @p count ticks of the keeper. */
   void runTicks(std::size_t count);
 

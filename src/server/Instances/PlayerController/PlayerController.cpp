@@ -1,6 +1,7 @@
 #include "PlayerController.hpp"
 #include "ConnectedPlayer.hpp"
 #include "Intent.hpp"
+#include "PlayerInput.hpp"
 #include "PlayerRoster.hpp"
 #include "ProtocolConstants.hpp"
 #include "ShipInput.hpp"
@@ -8,29 +9,22 @@
 
 namespace rtype::server {
 
-namespace {
-
-/**
- * @returns What the newest input of @p player wants: the directions and the
- * shot it holds, or nothing when the player sent no input yet.
- */
-game::Intent intentOf(const ConnectedPlayer& player) {
-  if (!player.newestInput.has_value()) {
-    return game::Intent{};
+void steerShipByInput(game::World& world, const ConnectedPlayer& player,
+                      const network::PlayerInput& input) {
+  game::Intent* const intent = world.shipIntentOf(player.shipEntityId);
+  if (intent == nullptr) {
+    return;
   }
-  return game::Intent{
-      .directions = directionsOf(*player.newestInput),
-      .shooting = holdsActionAt(*player.newestInput,
-                                network::SHOOT_ACTION_BIT_POSITION)};
+  *intent = game::Intent{
+      .directions = directionsOf(input),
+      .shooting = holdsActionAt(input, network::SHOOT_ACTION_BIT_POSITION)};
 }
 
-}  // namespace
-
-void steerPlayerShips(game::World& world, PlayerRoster& roster) {
+void silenceAwayShips(game::World& world, PlayerRoster& roster) {
   for (const ConnectedPlayer* const player : roster.connected()) {
     game::Intent* const intent = world.shipIntentOf(player->shipEntityId);
-    if (intent != nullptr) {
-      *intent = intentOf(*player);
+    if (player->away && intent != nullptr) {
+      *intent = game::Intent{};
     }
   }
 }

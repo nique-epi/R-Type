@@ -29,11 +29,11 @@ namespace rtype::server::testing {
  */
 ConnectedPlayer& addPlayer(PlayerRoster& roster, std::size_t index = 0);
 
-/** @brief What an InputKeeper showed the game: an input, and the input the
- * player kept when it was shown. */
+/** @brief What an InputKeeper showed the game: an input, and the input number
+ * the player kept when it was shown. */
 struct ShownInput {
   network::PlayerInput input{};
-  std::optional<network::PlayerInput> keptBefore;
+  std::optional<std::uint32_t> numberKeptBefore;
 };
 
 /** @brief Reads nothing of the inputs it is shown: the onNewerInput of a test

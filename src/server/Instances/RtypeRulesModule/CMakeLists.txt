@@ -10,6 +10,7 @@ target_link_libraries(rtype_server_rtype_rules_module
     rtype_server_score_keeper
   PRIVATE
     rtype_server_rtype_systems
+    rtype_server_player_controller
     rtype_server_ship_input
 )
 

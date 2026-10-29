@@ -1129,7 +1129,7 @@ TEST_F(GameInstanceInputTest, KeepsNoInputFromADatagramWithoutOne) {
 
   deliver({FIRST_SENT});
 
-  EXPECT_FALSE(newestInputOf(FIRST_PLAYER).has_value());
+  EXPECT_FALSE(newestInputNumberOf(FIRST_PLAYER).has_value());
 }
 
 /**
@@ -1259,7 +1259,7 @@ TEST_F(GameInstanceInputTest, IgnoresAnInputFromASenderNotInTheRoster) {
 
   deliver({FIRST_SENT});
 
-  EXPECT_FALSE(newestInputOf(FIRST_PLAYER).has_value());
+  EXPECT_FALSE(newestInputNumberOf(FIRST_PLAYER).has_value());
 }
 
 /**
@@ -1328,16 +1328,16 @@ TEST_F(GameInstanceInputTest, IgnoresADatagramOfAnotherVersion) {
 
   deliver({FIRST_SENT});
 
-  EXPECT_FALSE(newestInputOf(FIRST_PLAYER).has_value());
+  EXPECT_FALSE(newestInputNumberOf(FIRST_PLAYER).has_value());
 }
 
 /**
  * Given a player whose input holding up was kept during a game
  * When that game finishes and the game waits for players in a new world
- * Then the player still holds up: the client numbers its inputs for the whole
- * session, so its next input stays newer than the one kept
+ * Then the number of its input is still kept: the client numbers its inputs
+ * for the whole session, so its next input stays newer than the one kept
  */
-TEST_F(GameInstanceInputTest, KeepsTheInputAcrossANewWorld) {
+TEST_F(GameInstanceInputTest, KeepsTheInputNumberAcrossANewWorld) {
   send(FIRST_PLAYER, HOLDS_UP);
   for (const std::size_t player : {FIRST_PLAYER, SECOND_PLAYER}) {
     sendReady({.player = player,
@@ -1352,7 +1352,31 @@ TEST_F(GameInstanceInputTest, KeepsTheInputAcrossANewWorld) {
   runTicks(FINISHED_STATE_TICKS);
 
   ASSERT_EQ(game().state(), GameState::WaitingForPlayers);
-  EXPECT_EQ(heldActions(FIRST_PLAYER), HOLDS_UP);
+  EXPECT_EQ(newestInputNumberOf(FIRST_PLAYER), lastInputNumber(FIRST_PLAYER));
+}
+
+/**
+ * Given a player whose input holding up was kept during a game
+ * When that game finishes and the game waits for players in a new world
+ * Then its new ship wants nothing until the next input arrives: the input is
+ * held by the Intent of the ship, and a new world builds new ships
+ */
+TEST_F(GameInstanceInputTest, NewShipOfANewWorldWantsNothingUntilTheNextInput) {
+  send(FIRST_PLAYER, HOLDS_UP);
+  for (const std::size_t player : {FIRST_PLAYER, SECOND_PLAYER}) {
+    sendReady({.player = player,
+               .ready = true,
+               .sequence = FIRST_SEQUENCE,
+               .sessionToken = PLAYER_SESSION_TOKENS.at(player)});
+  }
+  deliver({FIRST_SENT});
+  ASSERT_EQ(game().state(), GameState::InProgress);
+  game().finish();
+
+  runTicks(FINISHED_STATE_TICKS);
+
+  ASSERT_EQ(game().state(), GameState::WaitingForPlayers);
+  EXPECT_EQ(heldActions(FIRST_PLAYER), HOLDS_NOTHING);
 }
 
 /**

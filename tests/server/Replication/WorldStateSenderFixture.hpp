@@ -53,6 +53,14 @@ class WorldStateSenderFixture : public ::testing::Test {
                           std::uint32_t networkId);
 
   /**
+   * @brief Adds the ship of a player: an entity under @p networkId with a
+   * ShipMotion, an Intent, @p lives lives and @p protectionTicks ticks of
+   * protection.
+   */
+  void addShip(std::uint32_t networkId, std::uint8_t lives,
+               std::size_t protectionTicks);
+
+  /**
    * @brief Adds an entity with a Position and an EntityType, and no
    * NetworkIdentity.
    */

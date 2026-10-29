@@ -37,8 +37,8 @@ std::function<void(const ConnectedPlayer&, const network::PlayerInput&)>
 recorderOf(std::vector<ShownInput>& shown) {
   return [&shown](const ConnectedPlayer& player,
                   const network::PlayerInput& input) {
-    shown.push_back(
-        ShownInput{.input = input, .keptBefore = player.newestInput});
+    shown.push_back(ShownInput{.input = input,
+                               .numberKeptBefore = player.newestInputNumber});
   };
 }
 

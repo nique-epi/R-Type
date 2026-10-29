@@ -210,11 +210,13 @@ class GameInstanceInputTest : public GameInstanceTest {
   /** @returns The number of the last input @p player sent. */
   [[nodiscard]] std::uint32_t lastInputNumber(std::size_t player) const;
 
-  /** @returns The input the game keeps for @p player, if any. */
-  [[nodiscard]] std::optional<network::PlayerInput> newestInputOf(
+  /** @returns The number of the newest input the game kept for @p player, if
+   * any. */
+  [[nodiscard]] std::optional<std::uint32_t> newestInputNumberOf(
       std::size_t player);
 
-  /** @returns The actions of the input the game keeps for @p player. */
+  /** @returns The actions the Intent of the ship of @p player holds, as the
+   * bits of an input; nothing while the game kept no input for @p player. */
   [[nodiscard]] std::optional<std::uint8_t> heldActions(std::size_t player);
 
   [[nodiscard]] const UnreliableNetwork& network() const;

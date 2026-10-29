@@ -28,6 +28,7 @@
 #include "GameState.hpp"
 #include "IGameModule.hpp"
 #include "IncomingDatagram.hpp"
+#include "Intent.hpp"
 #include "LobbyState.hpp"
 #include "MessageType.hpp"
 #include "OutgoingDatagram.hpp"
@@ -289,7 +290,7 @@ std::uint32_t GameInstanceInputTest::lastInputNumber(std::size_t player) const {
   return inputsSent_.at(player);
 }
 
-std::optional<network::PlayerInput> GameInstanceInputTest::newestInputOf(
+std::optional<std::uint32_t> GameInstanceInputTest::newestInputNumberOf(
     std::size_t player) {
   const ConnectedPlayer* const connected =
       game().roster().find(playerEndpoint(player));
@@ -297,16 +298,28 @@ std::optional<network::PlayerInput> GameInstanceInputTest::newestInputOf(
     ADD_FAILURE() << "player " << player << " is not in the roster";
     return std::nullopt;
   }
-  return connected->newestInput;
+  return connected->newestInputNumber;
 }
 
 std::optional<std::uint8_t> GameInstanceInputTest::heldActions(
     std::size_t player) {
-  const std::optional<network::PlayerInput> newest = newestInputOf(player);
-  if (!newest.has_value()) {
+  if (!newestInputNumberOf(player).has_value()) {
     return std::nullopt;
   }
-  return newest->actions;
+  const ConnectedPlayer* const connected =
+      game().roster().find(playerEndpoint(player));
+  const game::Intent* const intent =
+      world().shipIntentOf(connected->shipEntityId);
+  if (intent == nullptr) {
+    ADD_FAILURE() << "player " << player << " has no ship";
+    return std::nullopt;
+  }
+  return static_cast<std::uint8_t>(
+      (intent->directions.up ? HOLDS_UP : 0) |
+      (intent->directions.down ? HOLDS_DOWN : 0) |
+      (intent->directions.left ? HOLDS_LEFT : 0) |
+      (intent->directions.right ? HOLDS_RIGHT : 0) |
+      (intent->shooting ? HOLDS_SHOOT : 0));
 }
 
 const UnreliableNetwork& GameInstanceInputTest::network() const {

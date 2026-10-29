@@ -1,6 +1,7 @@
 #include "ShipInput.hpp"
 #include <cstdint>
 #include "ConnectedPlayer.hpp"
+#include "Intent.hpp"
 #include "PlayerInput.hpp"
 #include "ProtocolConstants.hpp"
 #include "ShipControl.hpp"
@@ -29,9 +30,9 @@ void noteTaps(game::World& world, const ConnectedPlayer& player,
   if (motion == nullptr) {
     return;
   }
-  const game::ShipDirections before = player.newestInput.has_value()
-                                          ? directionsOf(*player.newestInput)
-                                          : game::ShipDirections{};
+  const game::Intent* const held = world.shipIntentOf(player.shipEntityId);
+  const game::ShipDirections before =
+      held != nullptr ? held->directions : game::ShipDirections{};
   *motion = game::motionAfterInput(
       *motion, game::HeldChange{.before = before,
                                 .now = directionsOf(input),

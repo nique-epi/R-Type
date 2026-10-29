@@ -10,7 +10,6 @@
 #include "BydoSpawnerParts.hpp"
 #include "CollisionRules.hpp"
 #include "ConnectedPlayer.hpp"
-#include "ConnectedPlayerConstants.hpp"
 #include "ConnectedPlayers.hpp"
 #include "DamageRules.hpp"
 #include "EntityIdConstants.hpp"
@@ -21,9 +20,11 @@
 #include "IGameReplication.hpp"
 #include "LifeKeeper.hpp"
 #include "LifeKeeperParts.hpp"
+#include "LivesConstants.hpp"
 #include "Logger.hpp"
 #include "OutgoingDatagram.hpp"
 #include "PlayerController.hpp"
+#include "PlayerLives.hpp"
 #include "PlayerRoster.hpp"
 #include "SessionDatagram.hpp"
 #include "TimeConstants.hpp"
@@ -39,15 +40,18 @@ namespace {
  * @returns Whether @p player has a life left, the one of a ship it waits for
  * included.
  */
-bool hasALifeLeft(const ConnectedPlayer* player) { return player->lives > 0; }
+bool hasALifeLeft(game::World& world, const ConnectedPlayer* player) {
+  return livesOf(world, *player) > 0;
+}
 
 /**
- * @returns Why a game in @p state, played by @p roster, must finish now: it is
- * in progress with no player left in it, or with no player left who has a
- * life. Nothing otherwise.
+ * @returns Why a game in @p state, played by @p roster in @p world, must
+ * finish now: it is in progress with no player left in it, or with no player
+ * left who has a life. Nothing otherwise.
  */
 std::optional<std::string_view> reasonToFinish(GameState state,
-                                               PlayerRoster& roster) {
+                                               PlayerRoster& roster,
+                                               game::World& world) {
   if (state != GameState::InProgress) {
     return std::nullopt;
   }
@@ -55,7 +59,9 @@ std::optional<std::string_view> reasonToFinish(GameState state,
   if (players.empty()) {
     return NO_PLAYER_LEFT_FINISH_REASON;
   }
-  if (std::ranges::none_of(players, hasALifeLeft)) {
+  if (std::ranges::none_of(players, [&world](const ConnectedPlayer* player) {
+        return hasALifeLeft(world, player);
+      })) {
     return NO_LIFE_LEFT_FINISH_REASON;
   }
   return std::nullopt;
@@ -114,7 +120,7 @@ void GameFlow::advanceState() {
     case GameState::InProgress: {
       game::World& currentWorld = world();
       ++tick_;
-      steerPlayerShips(currentWorld, game_.roster.get());
+      silenceAwayShips(currentWorld, game_.roster.get());
       steerBydos(currentWorld);
       game_.systems.get().run(currentWorld.components(),
                               engine::SIMULATION_TICK_DURATION);
@@ -144,7 +150,7 @@ void GameFlow::finish() {
 
 void GameFlow::finishIfOver() {
   const std::optional<std::string_view> reason =
-      reasonToFinish(state_, game_.roster.get());
+      reasonToFinish(state_, game_.roster.get(), world());
   if (!reason.has_value()) {
     return;
   }
@@ -185,9 +191,8 @@ void GameFlow::startNewWorld() {
   for (ConnectedPlayer* const player : game_.roster.get().connected()) {
     player->ready = false;
     player->score = 0;
-    player->lives = STARTING_LIVES;
+    player->livesWithoutShip = game::STARTING_LIVES;
     player->ticksUntilRespawn = 0;
-    player->invulnerableTicksLeft = 0;
     player->shipEntityId = identifiers::NO_ENTITY_ID;
     replication_.onPlayerJoined(*player);
   }

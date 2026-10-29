@@ -6,6 +6,9 @@
 #include "ComponentRegistry.hpp"
 #include "EntityRegistry.hpp"
 #include "Intent.hpp"
+#include "Invulnerable.hpp"
+#include "Lives.hpp"
+#include "LivesConstants.hpp"
 #include "NetworkEntityTable.hpp"
 #include "NetworkIdAllocator.hpp"
 #include "Position.hpp"
@@ -35,12 +38,14 @@ class World {
    * EntityType::Player and the NetworkIdentity that make it a networked
    * entity, a CollisionBox of SHIP_WIDTH by SHIP_HEIGHT, an Intent that wants
    * nothing until a controller writes it, and a Gun that fires a missile of a
-   * player every SHOT_INTERVAL_TICKS ticks and is ready at once: MovementSystem
-   * moves the ship by its Intent, and the server fires its Gun by it.
+   * player every SHOT_INTERVAL_TICKS ticks and is ready at once, @p lives lives
+   * in its Lives and no protection in its Invulnerable: MovementSystem moves
+   * the ship by its Intent, and the server fires its Gun by it.
    * @returns The network id the ship was given, never NO_ENTITY_ID.
    * @throws NetworkIdExhaustedException when every network id was given.
    */
-  std::uint32_t spawnPlayer(Position position);
+  std::uint32_t spawnPlayer(Position position,
+                            std::uint8_t lives = STARTING_LIVES);
 
   /**
    * @brief Destroys the ship of a player, found by the network id
@@ -114,6 +119,18 @@ class World {
    * next add or remove of an Intent, like ComponentRegistry::get.
    */
   [[nodiscard]] Intent* shipIntentOf(std::uint32_t shipId);
+
+  /**
+   * @returns The Lives of the ship spawnPlayer gave @p shipId, or nullptr for
+   * any other id, as shipPositionOf() does.
+   */
+  [[nodiscard]] Lives* shipLivesOf(std::uint32_t shipId);
+
+  /**
+   * @returns The Invulnerable of the ship spawnPlayer gave @p shipId, or
+   * nullptr for any other id, as shipPositionOf() does.
+   */
+  [[nodiscard]] Invulnerable* shipInvulnerabilityOf(std::uint32_t shipId);
 
  private:
   engine::EntityRegistry registry_;

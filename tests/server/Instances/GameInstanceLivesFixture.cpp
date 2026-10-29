@@ -10,8 +10,10 @@
 #include "GameInstanceFixtures.hpp"
 #include "GameInstanceTestConstants.hpp"
 #include "LifeKeeperTestConstants.hpp"
+#include "Lives.hpp"
 #include "MessageType.hpp"
 #include "OutgoingDatagram.hpp"
+#include "PlayerLives.hpp"
 #include "Replication/GameEndAnnouncerTestConstants.hpp"
 #include "SentDatagrams.hpp"
 #include "World.hpp"
@@ -48,6 +50,10 @@ ConnectedPlayer GameInstanceLivesFixture::playerAt(std::size_t index) {
   return player == nullptr ? ConnectedPlayer{} : *player;
 }
 
+std::uint8_t GameInstanceLivesFixture::livesOf(std::size_t index) {
+  return server::livesOf(world(), playerAt(index));
+}
+
 network::PlayerState GameInstanceLivesFixture::newestStateOf(
     std::size_t index) {
   const std::vector<network::OutgoingDatagram> states =
@@ -63,9 +69,12 @@ network::PlayerState GameInstanceLivesFixture::newestStateOf(
 }
 
 void GameInstanceLivesFixture::takeTheLastLifeOf(std::size_t player) {
-  ConnectedPlayer* const target = game().roster().find(playerEndpoint(player));
+  const ConnectedPlayer* const target =
+      game().roster().find(playerEndpoint(player));
   ASSERT_NE(target, nullptr);
-  target->lives = ONE_LIFE;
+  game::Lives* const lives = world().shipLivesOf(target->shipEntityId);
+  ASSERT_NE(lives, nullptr);
+  lives->count = ONE_LIFE;
   hitTheShipOf(player);
 }
 

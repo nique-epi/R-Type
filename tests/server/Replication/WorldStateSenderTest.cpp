@@ -277,11 +277,11 @@ TEST_F(WorldStateSenderFixture, ListsEveryPlayerWithItsOwnShipLivesAndScore) {
   rtype::server::ConnectedPlayer& second =
       connect(SECOND_CLIENT_PORT, OTHER_SESSION_TOKEN);
   first.shipEntityId = FIRST_SHIP_ID;
-  first.lives = FIRST_LIVES;
   first.score = FIRST_SCORE;
   second.shipEntityId = SECOND_SHIP_ID;
-  second.lives = SECOND_LIVES;
   second.score = SECOND_SCORE;
+  addShip(FIRST_SHIP_ID, FIRST_LIVES, 0);
+  addShip(SECOND_SHIP_ID, SECOND_LIVES, 0);
 
   runTicks(rtype::server::TICKS_PER_WORLD_STATE);
 
@@ -302,6 +302,23 @@ TEST_F(WorldStateSenderFixture, ListsEveryPlayerWithItsOwnShipLivesAndScore) {
 }
 
 /**
+ * Given a player without a ship, who keeps lives for its next one
+ * When the first state is due
+ * Then the state lists the player with those lives, not invulnerable
+ */
+TEST_F(WorldStateSenderFixture, ListsAPlayerWithoutAShipWithTheLivesItKeeps) {
+  rtype::server::ConnectedPlayer& player =
+      connect(FIRST_CLIENT_PORT, SESSION_TOKEN);
+  player.livesWithoutShip = FIRST_LIVES;
+
+  runTicks(rtype::server::TICKS_PER_WORLD_STATE);
+
+  ASSERT_EQ(decodedState(0).players.size(), 1U);
+  EXPECT_EQ(decodedState(0).players.front().lives, FIRST_LIVES);
+  EXPECT_FALSE(decodedState(0).players.front().invulnerable);
+}
+
+/**
  * Given a player whose ship came back after a hit and has one tick of
  * protection left
  * When the first state is due
@@ -310,7 +327,8 @@ TEST_F(WorldStateSenderFixture, ListsEveryPlayerWithItsOwnShipLivesAndScore) {
 TEST_F(WorldStateSenderFixture, ListsAPlayerWithProtectionLeftAsInvulnerable) {
   rtype::server::ConnectedPlayer& player =
       connect(FIRST_CLIENT_PORT, SESSION_TOKEN);
-  player.invulnerableTicksLeft = ONE_TICK_OF_PROTECTION;
+  player.shipEntityId = FIRST_SHIP_ID;
+  addShip(FIRST_SHIP_ID, FIRST_LIVES, ONE_TICK_OF_PROTECTION);
 
   runTicks(rtype::server::TICKS_PER_WORLD_STATE);
 

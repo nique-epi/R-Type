@@ -12,12 +12,15 @@
 #include "ConnectedPlayer.hpp"
 #include "Entity.hpp"
 #include "EntityDestruction.hpp"
+#include "Invulnerable.hpp"
 #include "LifeKeeper.hpp"
 #include "LifeKeeperParts.hpp"
+#include "Lives.hpp"
 #include "NetworkIdentity.hpp"
 #include "OutgoingDatagram.hpp"
 #include "PlayerElimination.hpp"
 #include "PlayerHit.hpp"
+#include "PlayerLives.hpp"
 #include "Position.hpp"
 #include "SentDatagrams.hpp"
 #include "ServerLobbyTestConstants.hpp"
@@ -75,6 +78,23 @@ ConnectedPlayer& LifeKeeperFixture::join(std::size_t index) {
       playerEndpoint(index), std::string{PLAYER_NICKNAME}, SESSION_TOKEN);
   announcer_.onPlayerJoined(*player);
   return *player;
+}
+
+std::uint8_t LifeKeeperFixture::livesOf(const ConnectedPlayer& player) {
+  return server::livesOf(world_, player);
+}
+
+void LifeKeeperFixture::setLives(const ConnectedPlayer& player,
+                                 std::uint8_t lives) {
+  game::Lives* const ship = world_.shipLivesOf(player.shipEntityId);
+  ASSERT_NE(ship, nullptr);
+  ship->count = lives;
+}
+
+bool LifeKeeperFixture::isInvulnerable(const ConnectedPlayer& player) {
+  const game::Invulnerable* const protection =
+      world_.shipInvulnerabilityOf(player.shipEntityId);
+  return protection != nullptr && protection->ticksLeft > 0;
 }
 
 std::uint32_t LifeKeeperFixture::bydoOn(const ConnectedPlayer& player) {

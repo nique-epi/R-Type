@@ -21,7 +21,7 @@ TEST_F(LifeKeeperFixture, TakesALifeWhenItsShipTouchesABydo) {
 
   touchABydo(player);
 
-  EXPECT_EQ(player.lives, THREE_LIVES - 1);
+  EXPECT_EQ(livesOf(player), THREE_LIVES - 1);
 }
 
 /**
@@ -61,7 +61,7 @@ TEST_F(LifeKeeperFixture, AnnouncesWhichPlayerWasHit) {
  */
 TEST_F(LifeKeeperFixture, EliminatesThePlayerAtItsLastLife) {
   ConnectedPlayer& player = join(FIRST_PLAYER);
-  player.lives = ONE_LIFE;
+  setLives(player, ONE_LIFE);
 
   touchABydo(player);
 
@@ -106,7 +106,7 @@ TEST_F(LifeKeeperFixture, GivesANewShipAfterOneSecond) {
  */
 TEST_F(LifeKeeperFixture, NeverBringsBackTheShipOfAPlayerWithNoLifeLeft) {
   ConnectedPlayer& player = join(FIRST_PLAYER);
-  player.lives = ONE_LIFE;
+  setLives(player, ONE_LIFE);
   touchABydo(player);
 
   runTicks(ONE_SECOND_IN_TICKS);
@@ -125,11 +125,11 @@ TEST_F(LifeKeeperFixture, ProtectsTheNewShipForTwoSeconds) {
   touchABydo(player);
   runTicks(ONE_SECOND_IN_TICKS);
   runTicks(TWO_SECONDS_IN_TICKS - 1);
-  const std::uint8_t livesBefore = player.lives;
+  const std::uint8_t livesBefore = livesOf(player);
 
   touchABydo(player);
 
-  EXPECT_EQ(player.lives, livesBefore);
+  EXPECT_EQ(livesOf(player), livesBefore);
 }
 
 /**
@@ -142,11 +142,11 @@ TEST_F(LifeKeeperFixture, HurtsTheNewShipOnceTwoSecondsPassed) {
   touchABydo(player);
   runTicks(ONE_SECOND_IN_TICKS);
   runTicks(TWO_SECONDS_IN_TICKS);
-  const std::uint8_t livesBefore = player.lives;
+  const std::uint8_t livesBefore = livesOf(player);
 
   touchABydo(player);
 
-  EXPECT_EQ(player.lives, livesBefore - 1);
+  EXPECT_EQ(livesOf(player), livesBefore - 1);
 }
 
 /**
@@ -163,7 +163,7 @@ TEST_F(LifeKeeperFixture, CountsOneLifeForTwoBydosInOneDispatch) {
 
   deliver();
 
-  EXPECT_EQ(player.lives, THREE_LIVES - 1);
+  EXPECT_EQ(livesOf(player), THREE_LIVES - 1);
 }
 
 /**
@@ -173,11 +173,11 @@ TEST_F(LifeKeeperFixture, CountsOneLifeForTwoBydosInOneDispatch) {
  */
 TEST_F(LifeKeeperFixture, NeverTakesALifeFromAPlayerWithNone) {
   ConnectedPlayer& player = join(FIRST_PLAYER);
-  player.lives = 0;
+  setLives(player, 0);
 
   touchABydo(player);
 
-  EXPECT_EQ(player.lives, 0);
+  EXPECT_EQ(livesOf(player), 0);
 }
 
 /**
@@ -191,7 +191,7 @@ TEST_F(LifeKeeperFixture, StopsListeningOnceDestroyed) {
 
   touchABydo(player);
 
-  EXPECT_EQ(player.lives, THREE_LIVES);
+  EXPECT_EQ(livesOf(player), THREE_LIVES);
 }
 
 }  // namespace rtype::server::testing
