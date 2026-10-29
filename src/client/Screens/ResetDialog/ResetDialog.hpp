@@ -20,7 +20,8 @@ namespace rtype::client {
  */
 class ResetDialog {
  public:
-  /** @param sounds Plays the click of the dialog; it must outlive the dialog. */
+  /** @param sounds Plays the click of the dialog; it must outlive the dialog.
+   */
   explicit ResetDialog(ISoundPlayer& sounds);
 
   ResetDialog(const ResetDialog&) = delete;

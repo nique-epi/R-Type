@@ -8,6 +8,7 @@
 #include "ISettingsStorage.hpp"
 #include "PlayerSettings.hpp"
 #include "Setting.hpp"
+#include "SettingId.hpp"
 
 namespace rtype::client {
 
@@ -57,7 +58,7 @@ class SettingsService {
   [[nodiscard]] std::optional<bool> saveIfChanged();
 
  private:
-  void changed(SettingId id);
+  void changed(SettingId changedSetting);
 
   PlayerSettings* settings_;
   ISettingsStorage* storage_;

@@ -8,8 +8,8 @@
 #include <optional>
 #include <string>
 #include <utility>
-#include "IInterfaceCanvas.hpp"
 #include "Dropdown.hpp"
+#include "IInterfaceCanvas.hpp"
 #include "IScreenNavigator.hpp"
 #include "ISizableWindow.hpp"
 #include "Menu.hpp"

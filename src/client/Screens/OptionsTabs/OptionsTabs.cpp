@@ -23,6 +23,7 @@
 #include "SettingDefinitionConstants.hpp"
 #include "SettingsConstants.hpp"
 #include "SettingsService.hpp"
+#include "WidgetConstants.hpp"
 #include "WindowLayout.hpp"
 #include "WindowSizeChartConstants.hpp"
 
@@ -142,7 +143,7 @@ std::vector<Menu> buildTabs(const OptionsTabsParts& parts,
 
 }  // namespace
 
-OptionsTabs::OptionsTabs(OptionsTabsParts parts)
+OptionsTabs::OptionsTabs(const OptionsTabsParts& parts)
     : service_(&parts.service.get()),
       window_(&parts.window.get()),
       tabs_(buildTabs(parts, handles_)) {}
@@ -164,8 +165,8 @@ const Dropdown& OptionsTabs::windowSizes() const {
 void OptionsTabs::refreshDescriptions() {
   const PlayerSettings& settings = service_->settings();
   Menu& sound = tabs_[SOUND_TAB];
-  sound.setDescription(
-      MUSIC_ROW, volumeDescription(DEFAULT_MUSIC_VOLUME, settings.muted));
+  sound.setDescription(MUSIC_ROW,
+                       volumeDescription(DEFAULT_MUSIC_VOLUME, settings.muted));
   sound.setDescription(
       EFFECTS_ROW, volumeDescription(DEFAULT_EFFECTS_VOLUME, settings.muted));
   for (std::size_t row = 0; row < BOUND_ACTION_COUNT; ++row) {
@@ -181,7 +182,8 @@ void OptionsTabs::refreshDescriptions() {
       displayModeDescription(*handles_.displayModes, layout.displayMode()));
   display.setEnabled(WINDOW_SIZE_ROW, !layout.imposedSize().has_value());
   display.setDescription(
-      WINDOW_SIZE_ROW, windowSizeDescription(*handles_.windowSizes, layout.sizes()));
+      WINDOW_SIZE_ROW,
+      windowSizeDescription(*handles_.windowSizes, layout.sizes()));
 }
 
 }  // namespace rtype::client

@@ -15,8 +15,8 @@ namespace rtype::client {
  */
 template <typename Value>
 struct Setting {
-  Value PlayerSettings::* member;
-  SettingId id;
+  Value PlayerSettings::* member = nullptr;
+  SettingId id = SettingId::MusicVolume;
   /** @brief Only an int setting reads it; empty accepts every value. */
   std::optional<SettingRange> range;
 };

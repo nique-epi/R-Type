@@ -4,12 +4,9 @@
 #include <type_traits>
 #include <vector>
 #include "BoundAction.hpp"
-#include "ColorMode.hpp"
-#include "DisplayMode.hpp"
 #include "ISettingsListener.hpp"
 #include "ISettingsStorage.hpp"
 #include "KeyBindings.hpp"
-#include "PixelSize.hpp"
 #include "PlayerSettings.hpp"
 #include "Setting.hpp"
 #include "SettingId.hpp"
@@ -99,10 +96,10 @@ std::optional<bool> SettingsService::saveIfChanged() {
   return storage_->save(*settings_);
 }
 
-void SettingsService::changed(SettingId id) {
+void SettingsService::changed(SettingId changedSetting) {
   unsaved_ = true;
   for (ISettingsListener* listener : listeners_) {
-    listener->settingChanged(id);
+    listener->settingChanged(changedSetting);
   }
 }
 

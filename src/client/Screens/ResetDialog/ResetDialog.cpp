@@ -6,7 +6,6 @@
 #include "ISoundPlayer.hpp"
 #include "Menu.hpp"
 #include "MenuBuilder.hpp"
-#include "OptionsScreenConstants.hpp"
 #include "PlayfieldMapping.hpp"
 #include "ScreenConstants.hpp"
 #include "TimeConstants.hpp"
@@ -33,12 +32,16 @@ bool ResetDialog::isOpen() const { return dialog_.has_value(); }
 
 void ResetDialog::handleEvent(const sf::Event& event,
                               const PlayfieldMapping& pointAt) {
-  dialog_->handleEvent(event, pointAt);
+  if (dialog_.has_value()) {
+    dialog_->handleEvent(event, pointAt);
+  }
   closeIfAnswered();
 }
 
 void ResetDialog::advance(engine::Duration elapsed) {
-  dialog_->advance(elapsed);
+  if (dialog_.has_value()) {
+    dialog_->advance(elapsed);
+  }
   closeIfAnswered();
 }
 

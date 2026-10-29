@@ -23,7 +23,7 @@ class Dropdown;
  */
 class OptionsTabs {
  public:
-  explicit OptionsTabs(OptionsTabsParts parts);
+  explicit OptionsTabs(const OptionsTabsParts& parts);
 
   /** @brief Opens @p tab; ignores a tab there is not. */
   void openTab(std::size_t tab);

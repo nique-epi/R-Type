@@ -29,14 +29,14 @@ using rtype::client::WINDOW_SIZE_SETTING;
  * Then both values are applied
  */
 TEST_F(SettingsServiceFixture, VolumeEndsAreAccepted) {
-  const bool lowest = service_.apply(MUSIC_VOLUME_SETTING, LOWEST_VOLUME);
-  const int storedAtLowest = settings_.musicVolume;
-  const bool highest = service_.apply(MUSIC_VOLUME_SETTING, HIGHEST_VOLUME);
+  const bool lowest = service().apply(MUSIC_VOLUME_SETTING, LOWEST_VOLUME);
+  const int storedAtLowest = settings().musicVolume;
+  const bool highest = service().apply(MUSIC_VOLUME_SETTING, HIGHEST_VOLUME);
 
   EXPECT_TRUE(lowest);
   EXPECT_EQ(storedAtLowest, LOWEST_VOLUME);
   EXPECT_TRUE(highest);
-  EXPECT_EQ(settings_.musicVolume, HIGHEST_VOLUME);
+  EXPECT_EQ(settings().musicVolume, HIGHEST_VOLUME);
 }
 
 /**
@@ -45,13 +45,13 @@ TEST_F(SettingsServiceFixture, VolumeEndsAreAccepted) {
  * Then it is refused and the volume is unchanged
  */
 TEST_F(SettingsServiceFixture, VolumeBelowTheLowestIsRefused) {
-  const PlayerSettings before = settings_;
+  const PlayerSettings before = settings();
 
   const bool applied =
-      service_.apply(MUSIC_VOLUME_SETTING, BELOW_LOWEST_VOLUME);
+      service().apply(MUSIC_VOLUME_SETTING, BELOW_LOWEST_VOLUME);
 
   EXPECT_FALSE(applied);
-  EXPECT_EQ(settings_, before);
+  EXPECT_EQ(settings(), before);
 }
 
 /**
@@ -60,13 +60,13 @@ TEST_F(SettingsServiceFixture, VolumeBelowTheLowestIsRefused) {
  * Then it is refused and the volume is unchanged
  */
 TEST_F(SettingsServiceFixture, VolumeAboveTheHighestIsRefused) {
-  const PlayerSettings before = settings_;
+  const PlayerSettings before = settings();
 
   const bool applied =
-      service_.apply(EFFECTS_VOLUME_SETTING, ABOVE_HIGHEST_VOLUME);
+      service().apply(EFFECTS_VOLUME_SETTING, ABOVE_HIGHEST_VOLUME);
 
   EXPECT_FALSE(applied);
-  EXPECT_EQ(settings_, before);
+  EXPECT_EQ(settings(), before);
 }
 
 /**
@@ -76,11 +76,11 @@ TEST_F(SettingsServiceFixture, VolumeAboveTheHighestIsRefused) {
  */
 TEST_F(SettingsServiceFixture, ARefusedValueTellsNobodyAndSavesNothing) {
   const bool applied =
-      service_.apply(MUSIC_VOLUME_SETTING, ABOVE_HIGHEST_VOLUME);
+      service().apply(MUSIC_VOLUME_SETTING, ABOVE_HIGHEST_VOLUME);
 
   EXPECT_FALSE(applied);
-  EXPECT_TRUE(listener_.changes().empty());
-  EXPECT_FALSE(service_.saveIfChanged().has_value());
+  EXPECT_TRUE(listener().changes().empty());
+  EXPECT_FALSE(service().saveIfChanged().has_value());
 }
 
 /**
@@ -89,10 +89,10 @@ TEST_F(SettingsServiceFixture, ARefusedValueTellsNobodyAndSavesNothing) {
  * Then the listener is told the effects volume changed, once
  */
 TEST_F(SettingsServiceFixture, AnAppliedVolumeTellsTheListenerOnce) {
-  const bool applied = service_.apply(EFFECTS_VOLUME_SETTING, A_VOLUME);
+  const bool applied = service().apply(EFFECTS_VOLUME_SETTING, A_VOLUME);
 
   EXPECT_TRUE(applied);
-  EXPECT_EQ(listener_.changes(),
+  EXPECT_EQ(listener().changes(),
             std::vector<SettingId>{SettingId::EffectsVolume});
 }
 
@@ -102,14 +102,14 @@ TEST_F(SettingsServiceFixture, AnAppliedVolumeTellsTheListenerOnce) {
  * Then the settings hold both values
  */
 TEST_F(SettingsServiceFixture, SwitchesAndColorModeAreApplied) {
-  const bool muted = service_.apply(MUTED_SETTING, true);
+  const bool muted = service().apply(MUTED_SETTING, true);
   const bool colored =
-      service_.apply(COLOR_MODE_SETTING, ColorMode::Protanopia);
+      service().apply(COLOR_MODE_SETTING, ColorMode::Protanopia);
 
   EXPECT_TRUE(muted);
   EXPECT_TRUE(colored);
-  EXPECT_TRUE(service_.settings().muted);
-  EXPECT_EQ(service_.settings().colorMode, ColorMode::Protanopia);
+  EXPECT_TRUE(service().settings().muted);
+  EXPECT_EQ(service().settings().colorMode, ColorMode::Protanopia);
 }
 
 /**
@@ -118,16 +118,16 @@ TEST_F(SettingsServiceFixture, SwitchesAndColorModeAreApplied) {
  * Then the first save reaches the storage and the second has nothing to save
  */
 TEST_F(SettingsServiceFixture, AChangeIsSavedOnce) {
-  const bool applied = service_.apply(AUTO_FIRE_SETTING, true);
+  const bool applied = service().apply(AUTO_FIRE_SETTING, true);
 
-  const std::optional<bool> first = service_.saveIfChanged();
-  const std::optional<bool> second = service_.saveIfChanged();
+  const std::optional<bool> first = service().saveIfChanged();
+  const std::optional<bool> second = service().saveIfChanged();
 
   EXPECT_TRUE(applied);
   EXPECT_EQ(first, std::optional<bool>(true));
   EXPECT_FALSE(second.has_value());
-  ASSERT_EQ(storage_.saves().size(), 1U);
-  EXPECT_TRUE(storage_.saves().front().autoFire);
+  ASSERT_EQ(storage().saves().size(), 1U);
+  EXPECT_TRUE(storage().saves().front().autoFire);
 }
 
 /**
@@ -136,11 +136,11 @@ TEST_F(SettingsServiceFixture, AChangeIsSavedOnce) {
  * Then the first save reports the refusal and the second has nothing to save
  */
 TEST_F(SettingsServiceFixture, ARefusedSaveIsReportedAndNotRetried) {
-  storage_.refuseSaves(true);
-  const bool applied = service_.apply(MUSIC_VOLUME_SETTING, A_VOLUME);
+  storage().refuseSaves(true);
+  const bool applied = service().apply(MUSIC_VOLUME_SETTING, A_VOLUME);
 
-  const std::optional<bool> first = service_.saveIfChanged();
-  const std::optional<bool> second = service_.saveIfChanged();
+  const std::optional<bool> first = service().saveIfChanged();
+  const std::optional<bool> second = service().saveIfChanged();
 
   EXPECT_TRUE(applied);
   EXPECT_EQ(first, std::optional<bool>(false));
@@ -154,18 +154,18 @@ TEST_F(SettingsServiceFixture, ARefusedSaveIsReportedAndNotRetried) {
  * music, the effects and MUTE ALL changed
  */
 TEST_F(SettingsServiceFixture, ResettingTheSoundTellsTheThreeSoundSettings) {
-  const bool music = service_.apply(MUSIC_VOLUME_SETTING, A_VOLUME);
-  const bool muted = service_.apply(MUTED_SETTING, true);
-  listener_.forgetChanges();
+  const bool music = service().apply(MUSIC_VOLUME_SETTING, A_VOLUME);
+  const bool muted = service().apply(MUTED_SETTING, true);
+  listener().forgetChanges();
 
-  service_.resetSound();
+  service().resetSound();
 
   EXPECT_TRUE(music);
   EXPECT_TRUE(muted);
-  EXPECT_EQ(settings_.musicVolume, PlayerSettings{}.musicVolume);
-  EXPECT_FALSE(settings_.muted);
+  EXPECT_EQ(settings().musicVolume, PlayerSettings{}.musicVolume);
+  EXPECT_FALSE(settings().muted);
   EXPECT_EQ(
-      listener_.changes(),
+      listener().changes(),
       (std::vector<SettingId>{SettingId::MusicVolume, SettingId::EffectsVolume,
                               SettingId::Muted}));
 }
@@ -177,18 +177,18 @@ TEST_F(SettingsServiceFixture, ResettingTheSoundTellsTheThreeSoundSettings) {
  * and DisplayMode in that order
  */
 TEST_F(SettingsServiceFixture, KeysWindowSizeAndDisplayModeAreAppliedAndTold) {
-  service_.bindKey(BoundAction::Shoot, A_KEY);
+  service().bindKey(BoundAction::Shoot, A_KEY);
   const bool sized =
-      service_.apply(WINDOW_SIZE_SETTING, std::optional(A_WINDOW_SIZE));
+      service().apply(WINDOW_SIZE_SETTING, std::optional(A_WINDOW_SIZE));
   const bool displayed =
-      service_.apply(DISPLAY_MODE_SETTING, DisplayMode::Borderless);
+      service().apply(DISPLAY_MODE_SETTING, DisplayMode::Borderless);
 
   EXPECT_TRUE(sized);
   EXPECT_TRUE(displayed);
-  EXPECT_EQ(settings_.keys.keyOf(BoundAction::Shoot), A_KEY);
-  EXPECT_EQ(settings_.windowSize, std::optional(A_WINDOW_SIZE));
-  EXPECT_EQ(settings_.displayMode, DisplayMode::Borderless);
-  EXPECT_EQ(listener_.changes(),
+  EXPECT_EQ(settings().keys.keyOf(BoundAction::Shoot), A_KEY);
+  EXPECT_EQ(settings().windowSize, std::optional(A_WINDOW_SIZE));
+  EXPECT_EQ(settings().displayMode, DisplayMode::Borderless);
+  EXPECT_EQ(listener().changes(),
             (std::vector<SettingId>{SettingId::Keys, SettingId::WindowSize,
                                     SettingId::DisplayMode}));
 }
@@ -199,10 +199,10 @@ TEST_F(SettingsServiceFixture, KeysWindowSizeAndDisplayModeAreAppliedAndTold) {
  * Then the listener is told nothing
  */
 TEST_F(SettingsServiceFixture, AnUnsubscribedListenerIsToldNothing) {
-  service_.unsubscribe(listener_);
+  service().unsubscribe(listener());
 
-  const bool applied = service_.apply(MUSIC_VOLUME_SETTING, A_VOLUME);
+  const bool applied = service().apply(MUSIC_VOLUME_SETTING, A_VOLUME);
 
   EXPECT_TRUE(applied);
-  EXPECT_TRUE(listener_.changes().empty());
+  EXPECT_TRUE(listener().changes().empty());
 }

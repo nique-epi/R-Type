@@ -12,6 +12,12 @@ class SettingsServiceFixture : public ::testing::Test {
  protected:
   SettingsServiceFixture();
 
+  rtype::client::PlayerSettings& settings();
+  RecordingSettingsStorage& storage();
+  RecordingSettingsListener& listener();
+  rtype::client::SettingsService& service();
+
+ private:
   rtype::client::PlayerSettings settings_;
   RecordingSettingsStorage storage_;
   RecordingSettingsListener listener_;

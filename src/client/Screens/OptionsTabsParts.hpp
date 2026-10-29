@@ -36,7 +36,8 @@ struct OptionsTabsParts {
   std::function<void(std::size_t)> openTab;
   /** @brief Called when BACK is pressed. */
   std::function<void()> close;
-  /** @brief Called with a question and the reset to run if it is answered YES. */
+  /** @brief Called with a question and the reset to run if it is answered YES.
+   */
   std::function<void(const std::string&, const std::function<void()>&)>
       askToReset;
 };

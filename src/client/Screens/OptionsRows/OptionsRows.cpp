@@ -4,11 +4,10 @@
 #include <memory>
 #include <optional>
 #include <string>
-#include <utility>
 #include <vector>
 #include "BoundAction.hpp"
 #include "ChoiceSelector.hpp"
-#include "DisplayMode.hpp"
+#include "ColorMode.hpp"
 #include "Dropdown.hpp"
 #include "DropdownParts.hpp"
 #include "ISizableWindow.hpp"
@@ -58,19 +57,20 @@ std::unique_ptr<RowControl> volumeSlider(SettingsService& service,
   return std::make_unique<Slider>(
       VOLUME_RANGE,
       ValueBinding<int>{
-          .read = [&service, &volume] { return service.settings().*volume.member; },
-          .write =
-              [&service, &volume](int value) { service.apply(volume, value); }},
+          .read = [&service,
+                   &volume] { return service.settings().*volume.member; },
+          .write = [&service,
+                    &volume](int value) { service.apply(volume, value); }},
       [&service] { return service.settings().muted; }, PERCENT_UNIT);
 }
 
 std::unique_ptr<RowControl> settingSwitch(SettingsService& service,
                                           const Setting<bool>& setting) {
   return std::make_unique<Switch>(ValueBinding<bool>{
-      .read = [&service, &setting] { return service.settings().*setting.member; },
-      .write = [&service, &setting](bool switchedOn) {
-        service.apply(setting, switchedOn);
-      }});
+      .read = [&service,
+               &setting] { return service.settings().*setting.member; },
+      .write = [&service, &setting](
+                   bool switchedOn) { service.apply(setting, switchedOn); }});
 }
 
 std::unique_ptr<RowControl> colorModeSelector(SettingsService& service) {
@@ -81,9 +81,10 @@ std::unique_ptr<RowControl> colorModeSelector(SettingsService& service) {
               [&service] {
                 return static_cast<std::size_t>(service.settings().colorMode);
               },
-          .write = [&service](std::size_t mode) {
-            service.apply(COLOR_MODE_SETTING, COLOR_MODES[mode]);
-          }});
+          .write =
+              [&service](std::size_t mode) {
+                service.apply(COLOR_MODE_SETTING, COLOR_MODES[mode]);
+              }});
 }
 
 std::unique_ptr<KeySlot> keySlot(SettingsService& service,
