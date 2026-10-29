@@ -4,8 +4,6 @@
 #include <SFML/Graphics/RenderTarget.hpp>
 #include <SFML/System/Vector2.hpp>
 #include <SFML/Window/Event.hpp>
-#include "AssetLibrary.hpp"
-#include "AssetList.hpp"
 #include "AssetLoadingStep.hpp"
 #include "IScreenNavigator.hpp"
 #include "LoadingScreenParts.hpp"
