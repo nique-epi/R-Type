@@ -1,33 +1,20 @@
 #pragma once
 
-#include <array>
-#include <cstddef>
-#include <functional>
 #include <memory>
-#include <optional>
-#include <string>
-#include <vector>
-#include "BoundAction.hpp"
 #include "IInterfaceCanvas.hpp"
 #include "IScreen.hpp"
 #include "IScreenNavigator.hpp"
 #include "ISizableWindow.hpp"
-#include "ISoundPlayer.hpp"
-#include "KeyNames.hpp"
-#include "Menu.hpp"
-#include "MenuBuilder.hpp"
 #include "OptionsPlace.hpp"
 #include "OptionsScreenParts.hpp"
+#include "OptionsTabs.hpp"
 #include "PlayfieldMapping.hpp"
-#include "RowControl.hpp"
-#include "Setting.hpp"
+#include "ResetDialog.hpp"
+#include "SavedStamp.hpp"
 #include "SettingsService.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::client {
-
-class Dropdown;
-class KeySlot;
 
 /**
  * @brief The options, in four tabs, SOUND, CONTROLS, DISPLAY and ACCESS, each
@@ -62,73 +49,27 @@ class OptionsScreen : public IScreen {
   [[nodiscard]] bool hidesScreensBelow() const override;
 
  private:
-  [[nodiscard]] std::vector<Menu> buildTabs();
-  [[nodiscard]] MenuBuilder tabbedPanel(std::size_t tab);
-  [[nodiscard]] Menu withBack(MenuBuilder& builder);
-  [[nodiscard]] Menu soundTab();
-  [[nodiscard]] Menu controlsTab();
-  [[nodiscard]] Menu displayTab();
-  [[nodiscard]] Menu accessTab();
-
-  [[nodiscard]] std::unique_ptr<RowControl> volumeSlider(
-      const Setting<int>& volume);
-  [[nodiscard]] std::unique_ptr<RowControl> settingSwitch(
-      const Setting<bool>& setting);
-  [[nodiscard]] std::unique_ptr<KeySlot> keySlot(BoundAction action);
-  [[nodiscard]] std::unique_ptr<RowControl> resetLink(
-      std::string question, std::function<void()> reset);
-
-  void openTab(std::size_t tab);
-  void resetSound();
-  void resetKeys();
-
-  /** @brief Opens the dialog that asks a question before a reset. */
-  void askToReset(const std::string& question,
-                  const std::function<void()>& reset);
-
-  /** @brief Closes the dialog once one of its buttons has run: an action must
-   * not destroy the menu that runs it. */
-  void closeDialogIfAnswered();
-
   /** @brief Saves the settings when a change is not saved yet, and stamps the
    * result; does nothing otherwise. */
   void save();
 
   void close();
-  void ageStamp(engine::Duration elapsed);
 
-  /** @brief Writes the descriptions and the rows enabled that follow the state
-   * of the rows, on every tab, and the stamp, on the open tab. */
+  /** @brief Writes the descriptions that follow the state of the rows, on
+   * every tab, and the stamp, on the open tab. */
   void refresh();
 
-  [[nodiscard]] std::string keyDescription(std::size_t row) const;
-  [[nodiscard]] std::string windowSizeDescription() const;
-
-  [[nodiscard]] Menu& openMenu();
-  [[nodiscard]] const Menu& openMenu() const;
   void repaint();
 
   IScreenNavigator* navigator_;
-  ISoundPlayer* sounds_;
   OptionsPlace place_;
   SettingsService* service_;
   ISizableWindow* window_;
-  KeyNaming keyName_;
   std::unique_ptr<IInterfaceCanvas> canvas_;
   PlayfieldMapping playfieldPointAt_;
-  /** @brief The lists of display modes and of sizes, and the key slots, owned
-   * by their rows; set while tabs_ is built, so declared, and initialized,
-   * before it. */
-  Dropdown* displayModes_ = nullptr;
-  Dropdown* windowSizes_ = nullptr;
-  std::array<KeySlot*, BOUND_ACTION_COUNT> keySlots_{};
-  std::vector<Menu> tabs_;
-  std::size_t openTab_ = 0;
-  std::optional<Menu> dialog_;
-  bool dialogAnswered_ = false;
-  std::string stamp_;
-  /** @brief How long SAVED has been written; nothing while no stamp fades. */
-  std::optional<engine::Duration> stampAge_;
+  ResetDialog dialog_;
+  OptionsTabs tabs_;
+  SavedStamp stamp_;
 };
 
 }  // namespace rtype::client
