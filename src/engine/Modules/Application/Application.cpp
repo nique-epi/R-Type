@@ -13,19 +13,12 @@
 #include "IModule.hpp"
 #include "InstallContext.hpp"
 #include "LoopStages.hpp"
+#include "RequireNoNullModule.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::engine {
 
 namespace {
-
-void requireNoNullModule(std::span<const std::unique_ptr<IModule>> modules) {
-  for (const std::unique_ptr<IModule>& listedModule : modules) {
-    if (listedModule == nullptr) {
-      throw NullModuleException();
-    }
-  }
-}
 
 bool listsModule(std::span<const std::unique_ptr<IModule>> modules,
                  const std::string& name) {
@@ -57,7 +50,7 @@ Application::Application(std::vector<std::unique_ptr<IModule>> modules)
 Application::Application(LoopStages stages,
                          std::vector<std::unique_ptr<IModule>> modules)
     : stages_(std::move(stages)), modules_(std::move(modules)) {
-  requireNoNullModule(modules_);
+  requireNoNullModule<IModule>(modules_);
   requireDependenciesListedBefore(modules_);
   services_.provide(*this);
 }

@@ -4,6 +4,7 @@
 #include "ConnectedPlayer.hpp"
 #include "EventBus.hpp"
 #include "OutgoingDatagram.hpp"
+#include "PlayerInput.hpp"
 
 namespace rtype::server {
 
@@ -19,6 +20,12 @@ struct GameSessionsParts {
    * freed and before its departure is announced, for whoever owns something of
    * the player (its ship). Must not be empty. */
   std::function<void(const ConnectedPlayer&)> onClosing;
+  /** @brief Called with the player and each PlayerInput newer than the one
+   * kept, before it replaces it, for whoever reads the presses an input
+   * holds (the game reads the double presses of a ship there). Must not be
+   * empty. */
+  std::function<void(const ConnectedPlayer&, const network::PlayerInput&)>
+      onNewerInput;
 };
 
 }  // namespace rtype::server

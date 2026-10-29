@@ -1,67 +1,71 @@
 #pragma once
 
 #include <cstdint>
-#include <functional>
+#include <memory>
 #include <span>
 #include <vector>
 #include "ConnectedPlayer.hpp"
 #include "Endpoint.hpp"
-#include "EventBus.hpp"
-#include "GameFlow.hpp"
+#include "GameContext.hpp"
+#include "GameInstanceParts.hpp"
+#include "GameModules.hpp"
 #include "GameSessions.hpp"
-#include "GameSettings.hpp"
 #include "GameState.hpp"
+#include "IGameFlow.hpp"
+#include "IGameModule.hpp"
 #include "IncomingDatagram.hpp"
-#include "OutgoingDatagram.hpp"
 #include "PacketHeader.hpp"
 #include "PlayerRoster.hpp"
-#include "ScoreKeeper.hpp"
-#include "World.hpp"
+#include "SessionHooks.hpp"
+#include "SystemScheduler.hpp"
 
 namespace rtype::server {
 
 /**
- * @brief One game: its world, its players (1 to MAXIMUM_PLAYERS, whose numbers
- * also pick their colors), its state and its tick.
+ * @brief One game: the context its modules work in (its players, its event
+ * bus, its timers, its systems and its settings) and its tick, run in stages.
  *
- * How the game runs (its states, the tick, the world and the rules that work on
- * it) belongs to GameFlow. Every datagram to a player carries its session token
- * and its next sequence (see nextSessionHeaderFor).
+ * A game knows nothing of the rules it plays. Its modules (see IGameModule)
+ * carry them out: the game installs them in the order they are listed, then
+ * starts them, when it is built, and stops them in the opposite order when it
+ * is destroyed. One of them must provide IGameFlow, which tells the game its
+ * state and its tick and which the game calls when a player joins, when a
+ * session closes and when an input is kept. The rules of R-Type and their
+ * replication are two such modules (see RtypeRulesModule and
+ * ReplicationModule). Every datagram to a player carries its session token and
+ * its next sequence (see nextSessionHeaderFor).
  *
  * The players and their sessions (the datagrams read, who is ready, the newest
  * input, the silence that closes a session, the departures and the Heartbeats)
- * belong to GameSessions. The game gives it two things: a ReadyState counts
- * only while the game waits for players, and the ship of a player whose session
- * closes leaves the world and is announced on the event bus as an
- * EntityDestruction (Removed). A game in progress whose last player's session
- * closed ends at that same tick, as finish() ends it, so it waits for players
- * again FINISHED_STATE_TICKS ticks later (see GameFlow). takeDepartedPlayers()
+ * belong to GameSessions. The game gives it three things: a ReadyState counts
+ * only while the game waits for players (IGameFlow::state); each PlayerInput
+ * newer than the one kept goes to the SessionHooks::newerInput functions of the
+ * modules before it replaces it; and a player whose session closes goes to
+ * their SessionHooks::closing functions. A player who joins goes to their
+ * SessionHooks::joined functions (see onPlayerJoined()). takeDepartedPlayers()
  * hands the players whose session closed over to whoever must forget them
  * outside the game.
  *
- * A ScoreKeeper adds the points of each EnemyKilled published on the event bus
- * to the score of the player it names; every score goes back to 0 with each
- * new world.
+ * A tick runs three stages, in order: GAME_INPUT_STAGE reads the datagrams and
+ * closes the silent sessions, GAME_SIMULATION_STAGE runs the work the modules
+ * added, and GAME_OUTPUT_STAGE sends the Heartbeats. The work of the game
+ * itself is added before the modules are installed, so it runs first in the
+ * input and output stages, ahead of the work of the modules.
  *
  * Not thread-safe: use it from the simulation thread only.
  */
 class GameInstance {
  public:
   /**
-   * @brief What the game calls for each datagram to send.
+   * @param parts What the game sends with, is defined by and publishes on.
+   * @param modules The modules of the game, in the order they are installed.
+   * Must not hold a null pointer, and one of them must provide IGameFlow,
+   * after the modules whose services it requires.
+   * @throws engine::MissingServiceException when a module requires a service
+   * no module before it provides, or none provides IGameFlow.
    */
-  using Send = std::function<void(network::OutgoingDatagram)>;
-
-  /**
-   * @param send Must not be empty.
-   * @param settings The seed the random draws of the game start from, logged
-   * by the spawner each time a world is built, and the waves of its
-   * difficulty, which must hold a playable curve and at least one enemy.
-   * @param events Where the game publishes what happens in the world, such as
-   * a Bydo leaving the playfield, a collision or a player leaving the game; it
-   * must outlive the game, and its owner dispatches it after each onTick().
-   */
-  GameInstance(Send send, GameSettings settings, engine::EventBus& events);
+  GameInstance(GameInstanceParts parts,
+               std::vector<std::unique_ptr<IGameModule>> modules);
 
   GameInstance(const GameInstance&) = delete;
   GameInstance& operator=(const GameInstance&) = delete;
@@ -84,12 +88,6 @@ class GameInstance {
   [[nodiscard]] PlayerRoster& roster();
 
   /**
-   * @returns The world of the game. A new one replaces it when the game waits
-   * for players again, so do not keep the reference across ticks.
-   */
-  [[nodiscard]] game::World& world();
-
-  /**
    * @returns The header of the next datagram to the player of the game who
    * sends from @p player, as sessionHeaderFor() gives it: the session token
    * and the next sequence of that player, which then moves on by one, or a
@@ -99,20 +97,21 @@ class GameInstance {
       const network::Endpoint& player);
 
   /**
-   * @brief Gives @p player, who just took a place in roster(), a ship in the
-   * world and announces it to the players.
+   * @brief Tells the modules that @p player just took a place in roster(), as
+   * the SessionHooks::joined functions receive it; with the rules of R-Type,
+   * the player gets a ship in the world, announced to the players.
    * @throws NetworkIdExhaustedException when every network id was given.
    */
-  void onPlayerJoined(ConnectedPlayer& player);
+  void onPlayerJoined(ConnectedPlayer& player) const;
 
   /**
    * @brief Runs one tick: applies the ReadyState, keeps the newest PlayerInput
    * and closes the session of each player who sent a Disconnection, among
    * @p datagrams, oldest first, closes the session of every player not heard
-   * from for SESSION_TIMEOUT_TICKS ticks, then runs the tick of the game (see
-   * GameFlow::onTick). Last, a player sent nothing for TICKS_PER_HEARTBEAT
-   * ticks is sent a Heartbeat. Nothing caused by the content of a datagram
-   * makes it throw.
+   * from for SESSION_TIMEOUT_TICKS ticks, then runs the work of the modules.
+   * Last, a player sent nothing for TICKS_PER_HEARTBEAT ticks is sent a
+   * Heartbeat. Nothing caused by the content of a datagram makes it throw.
+   * @p datagrams must stay valid until the call returns.
    */
   void onTick(std::span<const network::IncomingDatagram> datagrams);
 
@@ -125,21 +124,18 @@ class GameInstance {
 
   /**
    * @brief Ends the game in progress without telling its players a result:
-   * only a game that ends by itself does (see finishIfOver). Does nothing in
-   * any other state.
+   * only a game that ends by itself does. Does nothing in any other state.
    */
   void finish();
 
  private:
-  /** @brief Removes the ship of @p departed from the world, when it has one,
-   * and announces it on the event bus as an EntityDestruction (Removed). */
-  void removeShipOf(const ConnectedPlayer& departed);
-
-  Send send_;
-  engine::EventBus& events_;
+  SessionHooks hooks_;
+  engine::SystemScheduler systems_;
   GameSessions sessions_;
-  ScoreKeeper scoreKeeper_;
-  GameFlow flow_;
+  GameContext context_;
+  std::span<const network::IncomingDatagram> datagrams_;
+  IGameFlow* flow_{nullptr};
+  GameModules modules_;
 };
 
 }  // namespace rtype::server

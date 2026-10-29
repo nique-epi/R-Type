@@ -2,6 +2,9 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <functional>
+#include <optional>
+#include <vector>
 #include "ConnectedPlayer.hpp"
 #include "MessageOrigin.hpp"
 #include "PlayerInput.hpp"
@@ -25,5 +28,23 @@ namespace rtype::server::testing {
  * @returns The player added; it stays at that address until it is removed.
  */
 ConnectedPlayer& addPlayer(PlayerRoster& roster, std::size_t index = 0);
+
+/** @brief What an InputKeeper showed the game: an input, and the input the
+ * player kept when it was shown. */
+struct ShownInput {
+  network::PlayerInput input{};
+  std::optional<network::PlayerInput> keptBefore;
+};
+
+/** @brief Reads nothing of the inputs it is shown: the onNewerInput of a test
+ * that does not look at them. */
+void ignoreInput(const ConnectedPlayer& player,
+                 const network::PlayerInput& input);
+
+/** @returns An onNewerInput that adds what it is shown to @p shown, which
+ * must outlive it. */
+[[nodiscard]] std::function<void(const ConnectedPlayer&,
+                                 const network::PlayerInput&)>
+recorderOf(std::vector<ShownInput>& shown);
 
 }  // namespace rtype::server::testing

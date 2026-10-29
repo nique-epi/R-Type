@@ -6,6 +6,9 @@ target_link_libraries(rtype_client_render_system
   PUBLIC
     rtype_engine
     rtype_client_drawing
+  PRIVATE
+    rtype_client_easing
+    rtype_client_sprite_look
 )
 
 rtype_enable_warnings(rtype_client_render_system)

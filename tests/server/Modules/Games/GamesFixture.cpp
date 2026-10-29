@@ -6,9 +6,11 @@
 #include "ConnectedPlayer.hpp"
 #include "FarewellSender.hpp"
 #include "GameInstance.hpp"
+#include "GameInstanceParts.hpp"
 #include "GameSettings.hpp"
 #include "OutgoingDatagram.hpp"
 #include "RecordingDatagramSender.hpp"
+#include "RtypeGameModules.hpp"
 #include "SentDatagrams.hpp"
 #include "ServerModuleTestConstants.hpp"
 #include "Spawning/WavePlanFixtures.hpp"
@@ -16,10 +18,16 @@
 
 void GamesFixture::addGame() {
   games_.add(std::make_unique<rtype::server::GameInstance>(
-      []([[maybe_unused]] const rtype::network::OutgoingDatagram& datagram) {},
-      rtype::server::GameSettings{
-          .seed = SOME_SEED, .waves = rtype::server::testing::testWavePlan()},
-      events_));
+      rtype::server::GameInstanceParts{
+          .send = []([[maybe_unused]] const rtype::network::OutgoingDatagram&
+                         datagram) {},
+          .settings =
+              rtype::server::GameSettings{
+                  .seed = SOME_SEED,
+                  .waves = rtype::server::testing::testWavePlan()},
+          .events = events_,
+          .timers = timers_},
+      rtype::server::rtypeGameModules()));
 }
 
 rtype::server::ConnectedPlayer& GamesFixture::join(std::size_t index) {

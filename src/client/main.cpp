@@ -1,65 +1,40 @@
 #include <exception>
-#include <filesystem>
 #include <iostream>
-#include <optional>
 #include <string>
 #include "Application.hpp"
-#include "AssetFolder.hpp"
-#include "AssetIds.hpp"
-#include "AssetLibrary.hpp"
 #include "ClientConstants.hpp"
+#include "ClientModules.hpp"
+#include "FrameLoop.hpp"
 #include "LaunchArguments.hpp"
 #include "LaunchOptions.hpp"
 #include "LogLaunchOptions.hpp"
 #include "Logger.hpp"
 #include "LoggingConstants.hpp"
-#include "ScreenAssets.hpp"
-#include "SettingsConstants.hpp"
-#include "SettingsFolder.hpp"
+#include "LoopStages.hpp"
+#include "SystemClock.hpp"
 
 namespace {
 
 /**
- * @returns The file the settings are kept in, logged, or nothing when the
- * system tells no settings folder, which is logged too.
- */
-std::optional<std::filesystem::path> settingsFile(
-    const rtype::logging::Logger& logger) {
-  const std::optional<std::filesystem::path> folder =
-      rtype::client::settingsFolder();
-  if (!folder.has_value()) {
-    logger.warn("no settings folder, the settings last for this launch only");
-    return std::nullopt;
-  }
-  logger.info(
-      "settings file: ",
-      rtype::client::genericText(*folder / rtype::client::SETTINGS_FILE_NAME));
-  return *folder / rtype::client::SETTINGS_FILE_NAME;
-}
-
-/**
- * @brief Applies the logging options, logs the server given at launch, then
- * runs the client until its window closes.
- * @returns the exit code: 0 once the window closed, 1 after an error, which
+ * @brief Starts the modules of the client, runs its frame loop until the
+ * window is closed or no screen is left, then stops the modules in the
+ * reverse order: the connection leaves the server, then the window closes.
+ * @returns the exit code: 0 once the client stopped, 1 after an error, which
  *          is logged and printed. No exception leaves it.
  */
 int runClient(const rtype::logging::LogLaunchOptions& logOptions,
               const rtype::client::LaunchOptions& launchOptions) {
   try {
-    logOptions.apply();
+    const rtype::engine::SystemClock clock;
+    rtype::client::FrameLoop loop{clock};
+    rtype::engine::Application application{
+        rtype::engine::LoopStages{rtype::client::CLIENT_LOOP_STAGES},
+        rtype::client::clientModules(logOptions, launchOptions, loop)};
+    application.start();
+    loop.run(application);
+    application.stop();
     const rtype::logging::Logger logger{
         std::string{rtype::client::CLIENT_LOGGER_NAME}};
-    logger.info("client starting");
-    logger.info("server: ", launchOptions.serverEndpoint().address, " port ",
-                launchOptions.serverEndpoint().port);
-    rtype::client::AssetLibrary assets{rtype::client::locateAssetFolder()};
-    logger.info("assets folder: ", rtype::client::genericText(assets.folder()));
-    rtype::client::loadInterfaceAssets(assets);
-    rtype::client::loadIntroAssets(assets);
-    rtype::client::Application application{
-        assets, launchOptions.serverEndpoint(), launchOptions.nickname(),
-        settingsFile(logger)};
-    application.run();
     logger.info("client stopped");
   } catch (const std::exception& error) {
     const rtype::logging::Logger logger{

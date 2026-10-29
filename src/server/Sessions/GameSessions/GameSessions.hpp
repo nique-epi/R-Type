@@ -22,8 +22,8 @@ namespace rtype::server {
  * @brief The players of one game and the sessions the server keeps with them:
  * who they are, whether they are ready, their newest input, the silence that
  * closes a session, their departure and the Heartbeats that keep it open.
- * Nothing in it belongs to one game: the game gives it the two things that do
- * (see GameSessionsParts).
+ * Nothing in it belongs to one game: the game gives it the things that do (see
+ * GameSessionsParts).
  *
  * A datagram of the players is read when its header carries this protocol and
  * version with no flag set, its messages add up to its end, and its sender is

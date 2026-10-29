@@ -5,12 +5,12 @@
 #include <string>
 #include "ConnectedPlayer.hpp"
 #include "GameFlow.hpp"
-#include "GameFlowParts.hpp"
 #include "GameInstanceTestConstants.hpp"
 #include "GameSettings.hpp"
 #include "GameState.hpp"
 #include "OutgoingDatagram.hpp"
 #include "PlayerRoster.hpp"
+#include "RtypeSystems.hpp"
 #include "SentDatagrams.hpp"
 #include "ServerLobbyTestConstants.hpp"
 #include "Spawning/WavePlanFixtures.hpp"
@@ -19,19 +19,26 @@ namespace rtype::server::testing {
 
 GameFlowFixture::GameFlowFixture()
     : readyKeeper_(roster_, [] { return true; }),
-      flow_(GameFlowParts{
+      replication_(roster_, [](const network::OutgoingDatagram&) {}),
+      context_{
           .events = events_,
+          .timers = timers_,
+          .systems = systems_,
           .roster = roster_,
+          .hooks = hooks_,
+          .settings = GameSettings{.seed = SOME_SEED, .waves = testWavePlan()},
           .send = [](const network::OutgoingDatagram&) {},
           .everyPlayerIsReady =
-              [this] { return readyKeeper_.everyPlayerIsReady(); },
-          .settings =
-              GameSettings{.seed = SOME_SEED, .waves = testWavePlan()}}) {}
+              [this] { return readyKeeper_.everyPlayerIsReady(); }},
+      flow_(context_, world_, replication_) {
+  flow_.begin();
+  addRtypeSystems(systems_, events_);
+}
 
 ConnectedPlayer& GameFlowFixture::join(std::size_t index) {
   ConnectedPlayer* const player = roster_.add(
       playerEndpoint(index), std::string{PLAYER_NICKNAME}, SESSION_TOKEN);
-  flow_.onPlayerJoined(*player);
+  replication_.onPlayerJoined(*player);
   return *player;
 }
 

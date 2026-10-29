@@ -13,6 +13,7 @@
 #include "MessageType.hpp"
 #include "OutgoingDatagram.hpp"
 #include "PacketHeader.hpp"
+#include "SubscriptionHandle.hpp"
 #include "TimerScheduler.hpp"
 
 namespace rtype::server {
@@ -30,8 +31,10 @@ namespace rtype::server {
  * nothing is sent, no copy is scheduled, and the next event goes out. It never
  * stops the tick, which would stop the server for every player.
  *
- * The broadcaster must outlive the last dispatch() of the event bus and the
- * last advance() of the timer scheduler: both call back into it.
+ * The broadcaster keeps the handle of each of its subscriptions and gives them
+ * back to the bus when it is destroyed, so the bus never calls it after that.
+ * The copies it planned on the timer scheduler are not cancelled: it must
+ * outlive the last advance() of the timer scheduler, which calls back into it.
  */
 class GameEventBroadcaster {
  public:
@@ -59,11 +62,11 @@ class GameEventBroadcaster {
   GameEventBroadcaster& operator=(const GameEventBroadcaster&) = delete;
   GameEventBroadcaster(GameEventBroadcaster&&) = delete;
   GameEventBroadcaster& operator=(GameEventBroadcaster&&) = delete;
-  ~GameEventBroadcaster() = default;
+  ~GameEventBroadcaster();
 
  private:
   template <typename Event>
-  void subscribeTo(engine::EventBus& events, std::string_view eventName);
+  void subscribeTo(std::string_view eventName);
 
   template <typename Event>
   std::optional<EncodedMessage> tryEncode(const Event& event,
@@ -74,12 +77,14 @@ class GameEventBroadcaster {
                 network::MessageType type,
                 const std::vector<std::byte>& payload) const;
 
+  engine::EventBus& events_;
   engine::TimerScheduler& timers_;
   std::function<std::vector<network::Endpoint>()> recipients_;
   std::function<network::PacketHeader(const network::Endpoint&)> headerFor_;
   std::function<void(network::OutgoingDatagram)> send_;
   GameEventEncoder encoder_;
   logging::Logger logger_;
+  std::vector<engine::SubscriptionHandle> subscriptions_;
 };
 
 }  // namespace rtype::server

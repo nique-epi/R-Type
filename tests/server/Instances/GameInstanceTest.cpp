@@ -1,7 +1,6 @@
 #include <gtest/gtest.h>
 #include <algorithm>
 #include <array>
-#include <chrono>
 #include <cstddef>
 #include <cstdint>
 #include <initializer_list>
@@ -11,7 +10,6 @@
 #include <string_view>
 #include <utility>
 #include <vector>
-#include "ByteWriter.hpp"
 #include "ConnectedPlayer.hpp"
 #include "DatagramCodec.hpp"
 #include "DebugJournal.hpp"
@@ -40,7 +38,6 @@
 #include "ServerConstants.hpp"
 #include "ServerDatagrams.hpp"
 #include "ServerLobbyTestConstants.hpp"
-#include "ShipControlConstants.hpp"
 #include "TimeConstants.hpp"
 #include "TimerScheduler.hpp"
 #include "UnreliableNetwork.hpp"
@@ -48,11 +45,15 @@
 #include "game/ShipControl/ShipControlTestConstants.hpp"
 
 namespace rtype::server {
-namespace {
 
+using game::testing::FIRST_TICK_DISTANCE;
+using game::testing::HELD_SECOND_DISTANCE;
 using game::testing::POSITION_TOLERANCE;
+using game::testing::ROLL_DISTANCE;
+using game::testing::ROLL_END_TICK;
 using testing::bydosAmong;
 using testing::bydosIn;
+using testing::entityOf;
 using testing::FIRST_PLAYER;
 using testing::FIRST_SENT;
 using testing::FIRST_SEQUENCE;
@@ -68,26 +69,30 @@ using testing::GameInstanceTest;
 using testing::HeldArrow;
 using testing::HOLDS_DOWN;
 using testing::HOLDS_LEFT;
+using testing::HOLDS_NOTHING;
 using testing::HOLDS_RIGHT;
 using testing::HOLDS_SHOOT;
 using testing::HOLDS_UP;
+using testing::inputPayload;
 using testing::LARGEST_INPUT_NUMBER;
+using testing::messageTypesOf;
 using testing::NEXT_PROTOCOL_VERSION;
 using testing::ofType;
 using testing::onlyMessageIn;
-using testing::onlyMessageTypeOf;
 using testing::PLAYER_SESSION_TOKENS;
 using testing::playerEndpoint;
 using testing::PROTOCOL_HEARTBEAT_TICKS;
 using testing::PROTOCOL_RECONNECTION_GRACE_TICKS;
 using testing::PROTOCOL_SESSION_CLOSING_TICKS;
 using testing::PROTOCOL_SESSION_TIMEOUT_TICKS;
+using testing::roomOfTheFirstPlayerNotReady;
 using testing::SECOND_PLAYER;
 using testing::SECOND_SENT;
 using testing::SECOND_SEQUENCE;
 using testing::sessionHeader;
 using testing::SHUFFLE_SEED_COUNT;
 using testing::SHUFFLED_INPUT_COUNT;
+using testing::SOME_POINTS;
 using testing::SOME_TICKS;
 using testing::STRANGER;
 using testing::THIRD_PLAYER;
@@ -96,40 +101,6 @@ using testing::THIRD_SEQUENCE;
 using testing::TICKS_PER_REJECTION_LINE;
 using testing::UNLISTED_ACTION;
 using testing::WIRE_COORDINATE_TOLERANCE;
-
-constexpr std::uint32_t SOME_POINTS = 100;
-
-/** @returns The type of the only message of each of @p datagrams, in order. */
-std::vector<network::MessageType> messageTypesOf(
-    const std::vector<network::OutgoingDatagram>& datagrams) {
-  std::vector<network::MessageType> types;
-  types.reserve(datagrams.size());
-  for (const network::OutgoingDatagram& datagram : datagrams) {
-    types.push_back(onlyMessageTypeOf(datagram));
-  }
-  return types;
-}
-
-/** @returns The entity of @p state whose id is @p entityId, or nothing when the
- * state does not list it. */
-std::optional<network::EntityState> entityOf(const network::WorldState& state,
-                                             std::uint32_t entityId) {
-  for (const network::EntityState& entity : state.entities) {
-    if (entity.entityId == entityId) {
-      return entity;
-    }
-  }
-  return std::nullopt;
-}
-
-/** @returns The room of a game whose only player, the first, is not ready. */
-network::LobbyState roomOfTheFirstPlayerNotReady() {
-  return network::LobbyState{
-      .players = {network::LobbyPlayer{
-          .playerNumber = network::FIRST_PLAYER_NUMBER,
-          .ready = false,
-          .nickname = std::string{testing::PLAYER_NICKNAME}}}};
-}
 
 /**
  * Given four connected players of whom the first three are ready
@@ -392,7 +363,7 @@ TEST_F(GameInstanceTest, ABydoThatLeavesOnTheLeftDoesNotStayInTheWorld) {
   events().dispatch();
 
   EXPECT_EQ(bydosAmong(removed, sentTo(FIRST_PLAYER)), 3U);
-  EXPECT_EQ(bydosIn(game().world()), 0U);
+  EXPECT_EQ(bydosIn(world()), 0U);
 }
 
 /**
@@ -417,7 +388,7 @@ TEST_F(GameInstanceTest, TheSecondWaveComesAPauseAfterTheFirstIsGone) {
   events().dispatch();
 
   EXPECT_EQ(bydosAmong(removed, sentTo(FIRST_PLAYER)), 3U);
-  EXPECT_EQ(bydosIn(game().world()), 1U);
+  EXPECT_EQ(bydosIn(world()), 1U);
 }
 
 /**
@@ -635,17 +606,6 @@ TEST_F(GameInstanceTest, SendsTheRoomAtOnceWhenTheGameWaitsAgain) {
 }
 
 /**
- * @returns The payload of @p input written field by field, so it may hold
- * actions encodePayload() refuses.
- */
-std::vector<std::byte> inputPayload(const network::PlayerInput& input) {
-  network::ByteWriter payload;
-  payload.writeUint32(input.inputNumber);
-  payload.writeUint8(input.actions);
-  return payload.bytes();
-}
-
-/**
  * Given a player heard from in a tick, then silent
  * When the timeout of the protocol, less one tick, runs without a datagram
  * Then the player is still in the game
@@ -775,7 +735,7 @@ TEST_F(GameInstanceTest, RemovesTheShipOfAPlayerWhoTimedOut) {
   EXPECT_EQ(destructions,
             (std::vector{game::EntityDestruction{
                 .networkId = ship, .cause = game::DestructionCause::Removed}}));
-  EXPECT_EQ(game().world().entityCount(), 1U);
+  EXPECT_EQ(world().entityCount(), 1U);
 }
 
 /**
@@ -861,24 +821,21 @@ TEST_F(GameInstanceTest, TheOthersPlayOnWhenOneOfThreePlayersTimesOut) {
  * timed out, and the second player gets none
  */
 TEST_F(GameInstanceTest, TellsOnlyTheOthersThatAPlayerTimedOut) {
-  engine::TimerScheduler timers;
-  std::vector<network::OutgoingDatagram> eventDatagrams;
-  const auto broadcaster = eventBroadcaster(timers, eventDatagrams);
   for (const std::size_t player : {FIRST_PLAYER, SECOND_PLAYER, THIRD_PLAYER}) {
     join(player);
   }
 
   timeOut(SECOND_PLAYER);
   events().dispatch();
-  timers.advance(testing::ALL_COPIES_SENT);
+  timers().advance(testing::ALL_COPIES_SENT);
 
   const std::vector expected(
       testing::PROTOCOL_REPEATED_MESSAGE_COPIES,
       network::PlayerLeft{.playerNumber = network::FIRST_PLAYER_NUMBER + 1,
                           .reason = network::DepartureReason::TimedOut});
-  EXPECT_EQ(playerLeftSentTo(eventDatagrams, FIRST_PLAYER), expected);
-  EXPECT_EQ(playerLeftSentTo(eventDatagrams, THIRD_PLAYER), expected);
-  EXPECT_TRUE(playerLeftSentTo(eventDatagrams, SECOND_PLAYER).empty());
+  EXPECT_EQ(playerLeftSentTo(sentDatagrams(), FIRST_PLAYER), expected);
+  EXPECT_EQ(playerLeftSentTo(sentDatagrams(), THIRD_PLAYER), expected);
+  EXPECT_TRUE(playerLeftSentTo(sentDatagrams(), SECOND_PLAYER).empty());
 }
 
 /**
@@ -890,9 +847,6 @@ TEST_F(GameInstanceTest, TellsOnlyTheOthersThatAPlayerTimedOut) {
  * left, and the second player gets none
  */
 TEST_F(GameInstanceTest, TellsOnlyTheOthersThatAPlayerLeft) {
-  engine::TimerScheduler timers;
-  std::vector<network::OutgoingDatagram> eventDatagrams;
-  const auto broadcaster = eventBroadcaster(timers, eventDatagrams);
   for (const std::size_t player : {FIRST_PLAYER, SECOND_PLAYER, THIRD_PLAYER}) {
     join(player);
   }
@@ -900,15 +854,15 @@ TEST_F(GameInstanceTest, TellsOnlyTheOthersThatAPlayerLeft) {
   leave(SECOND_PLAYER);
   tick();
   events().dispatch();
-  timers.advance(testing::ALL_COPIES_SENT);
+  timers().advance(testing::ALL_COPIES_SENT);
 
   const std::vector expected(
       testing::PROTOCOL_REPEATED_MESSAGE_COPIES,
       network::PlayerLeft{.playerNumber = network::FIRST_PLAYER_NUMBER + 1,
                           .reason = network::DepartureReason::Left});
-  EXPECT_EQ(playerLeftSentTo(eventDatagrams, FIRST_PLAYER), expected);
-  EXPECT_EQ(playerLeftSentTo(eventDatagrams, THIRD_PLAYER), expected);
-  EXPECT_TRUE(playerLeftSentTo(eventDatagrams, SECOND_PLAYER).empty());
+  EXPECT_EQ(playerLeftSentTo(sentDatagrams(), FIRST_PLAYER), expected);
+  EXPECT_EQ(playerLeftSentTo(sentDatagrams(), THIRD_PLAYER), expected);
+  EXPECT_TRUE(playerLeftSentTo(sentDatagrams(), SECOND_PLAYER).empty());
 }
 
 /**
@@ -979,7 +933,7 @@ TEST_F(GameInstanceTest, RemovesTheShipOfAPlayerWhoLeaves) {
   EXPECT_EQ(destructions,
             (std::vector{game::EntityDestruction{
                 .networkId = ship, .cause = game::DestructionCause::Removed}}));
-  EXPECT_EQ(game().world().entityCount(), 1U);
+  EXPECT_EQ(world().entityCount(), 1U);
 }
 
 /**
@@ -1405,10 +1359,10 @@ TEST_F(GameInstanceInputTest, KeepsTheInputAcrossANewWorld) {
  * Given a game in progress whose first player holds right
  * When a second of ticks runs: the tick that reads the input, then
  * SIMULATION_TICKS_PER_SECOND - 1 more
- * Then the ship of that player has moved SHIP_SPEED to the right, on the same
- * row
+ * Then the ship of that player has drifted HELD_SECOND_DISTANCE to the right,
+ * on the same row: it gathered speed from rest
  */
-TEST_F(GameInstanceMovementTest, MovesAShipAtTheShipSpeedWhileInProgress) {
+TEST_F(GameInstanceMovementTest, DriftsAShipTowardsTheDirectionHeld) {
   startGame();
   const game::Position start = shipPositionOf(FIRST_PLAYER);
   send(FIRST_PLAYER, HOLDS_RIGHT);
@@ -1417,7 +1371,7 @@ TEST_F(GameInstanceMovementTest, MovesAShipAtTheShipSpeedWhileInProgress) {
   runTicks(engine::SIMULATION_TICKS_PER_SECOND - 1);
 
   const game::Position arrival = shipPositionOf(FIRST_PLAYER);
-  EXPECT_NEAR(arrival.x, start.x + game::SHIP_SPEED, POSITION_TOLERANCE);
+  EXPECT_NEAR(arrival.x, start.x + HELD_SECOND_DISTANCE, POSITION_TOLERANCE);
   EXPECT_FLOAT_EQ(arrival.y, start.y);
 }
 
@@ -1425,7 +1379,7 @@ TEST_F(GameInstanceMovementTest, MovesAShipAtTheShipSpeedWhileInProgress) {
  * Given a game in progress whose first player holds right and whose second
  * player holds down
  * When a second of ticks runs
- * Then each ship has moved SHIP_SPEED the way its own player holds
+ * Then each ship has drifted HELD_SECOND_DISTANCE the way its own player holds
  */
 TEST_F(GameInstanceMovementTest, MovesEachShipByTheInputOfItsOwnPlayer) {
   startGame();
@@ -1439,12 +1393,35 @@ TEST_F(GameInstanceMovementTest, MovesEachShipByTheInputOfItsOwnPlayer) {
 
   const game::Position firstArrival = shipPositionOf(FIRST_PLAYER);
   const game::Position secondArrival = shipPositionOf(SECOND_PLAYER);
-  EXPECT_NEAR(firstArrival.x, firstStart.x + game::SHIP_SPEED,
+  EXPECT_NEAR(firstArrival.x, firstStart.x + HELD_SECOND_DISTANCE,
               POSITION_TOLERANCE);
   EXPECT_FLOAT_EQ(firstArrival.y, firstStart.y);
   EXPECT_FLOAT_EQ(secondArrival.x, secondStart.x);
-  EXPECT_NEAR(secondArrival.y, secondStart.y + game::SHIP_SPEED,
+  EXPECT_NEAR(secondArrival.y, secondStart.y + HELD_SECOND_DISTANCE,
               POSITION_TOLERANCE);
+}
+
+/**
+ * Given a game in progress
+ * When the first player sends down, nothing, down and nothing, read in one
+ * tick, then the ticks of a whole roll run
+ * Then its ship is ROLL_DISTANCE lower, on the same column: the server
+ * read the double press and rolled the ship, no direction held to drift it
+ */
+TEST_F(GameInstanceMovementTest, RollsAShipOnADoublePressOfDown) {
+  startGame();
+  const game::Position start = shipPositionOf(FIRST_PLAYER);
+  send(FIRST_PLAYER, HOLDS_DOWN);
+  send(FIRST_PLAYER, HOLDS_NOTHING);
+  send(FIRST_PLAYER, HOLDS_DOWN);
+  send(FIRST_PLAYER, HOLDS_NOTHING);
+
+  deliver({FIRST_SENT, SECOND_SENT, THIRD_SENT, FOURTH_SENT});
+  runTicks(ROLL_END_TICK - 1);
+
+  const game::Position arrival = shipPositionOf(FIRST_PLAYER);
+  EXPECT_NEAR(arrival.y, start.y + ROLL_DISTANCE, POSITION_TOLERANCE);
+  EXPECT_FLOAT_EQ(arrival.x, start.x);
 }
 
 /**
@@ -1555,8 +1532,8 @@ TEST_F(GameInstanceMovementTest, SendsTheShipWhereItMovedInTheSameTick) {
  * Given a game in progress whose first player holds one arrow
  * When the tick that reads the input runs
  * Then the ship of that player has moved along the axis of the arrow, the way
- * it points, as far as SHIP_SPEED goes in one tick, and not along the other
- * axis
+ * it points, as far as a ship at rest drifts in its first tick, and not along
+ * the other axis
  */
 TEST_P(GameInstanceArrowTest, MovesTheShipTheWayOfTheArrowHeld) {
   const HeldArrow arrow = GetParam();
@@ -1566,13 +1543,10 @@ TEST_P(GameInstanceArrowTest, MovesTheShipTheWayOfTheArrowHeld) {
 
   deliver({FIRST_SENT});
 
-  const float oneTick =
-      game::SHIP_SPEED *
-      std::chrono::duration<float>(engine::SIMULATION_TICK_DURATION).count();
   const game::Position arrival = shipPositionOf(FIRST_PLAYER);
-  EXPECT_NEAR(arrival.x, start.x + (oneTick * arrow.towardsX),
+  EXPECT_NEAR(arrival.x, start.x + (FIRST_TICK_DISTANCE * arrow.towardsX),
               POSITION_TOLERANCE);
-  EXPECT_NEAR(arrival.y, start.y + (oneTick * arrow.towardsY),
+  EXPECT_NEAR(arrival.y, start.y + (FIRST_TICK_DISTANCE * arrow.towardsY),
               POSITION_TOLERANCE);
 }
 
@@ -1772,5 +1746,4 @@ INSTANTIATE_TEST_SUITE_P(Seeds, GameInstanceInputShuffleTest,
                          ::testing::Range(std::uint32_t{0},
                                           SHUFFLE_SEED_COUNT));
 
-}  // namespace
 }  // namespace rtype::server

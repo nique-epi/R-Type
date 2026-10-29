@@ -22,6 +22,7 @@
 #include "PilotShip.hpp"
 #include "Position.hpp"
 #include "ProtocolConstants.hpp"
+#include "ShipFlight.hpp"
 #include "SoundConstants.hpp"
 #include "WorldState.hpp"
 
@@ -81,6 +82,32 @@ std::optional<int> pilotColorOf(std::uint8_t playerNumber) {
     return std::nullopt;
   }
   return playerNumber - network::FIRST_PLAYER_NUMBER;
+}
+
+/** @returns Whether the motion of @p player holds the bit at @p position. */
+bool holdsMotionBit(const network::PlayerState& player, std::uint8_t position) {
+  const unsigned int mask = 1U << static_cast<unsigned int>(position);
+  return (static_cast<unsigned int>(player.motion) & mask) != 0U;
+}
+
+/**
+ * @returns The ShipFlight of @p ship in @p components, a new one the first
+ * time, with what the motion of @p player says its pilot does: pushing
+ * forward (right without left), moving up or down, rolling, dashing.
+ */
+ShipFlight flightOf(engine::ComponentRegistry& components, engine::Entity ship,
+                    const network::PlayerState& player) {
+  const ShipFlight* const known = components.get<ShipFlight>(ship);
+  ShipFlight flight = known != nullptr ? *known : ShipFlight{};
+  const bool upHeld = holdsMotionBit(player, network::UP_ACTION_BIT_POSITION);
+  const bool downHeld =
+      holdsMotionBit(player, network::DOWN_ACTION_BIT_POSITION);
+  flight.forward = holdsMotionBit(player, network::RIGHT_ACTION_BIT_POSITION) &&
+                   !holdsMotionBit(player, network::LEFT_ACTION_BIT_POSITION);
+  flight.sideways = upHeld != downHeld;
+  flight.rolling = holdsMotionBit(player, network::ROLLING_MOTION_BIT_POSITION);
+  flight.dashing = holdsMotionBit(player, network::DASHING_MOTION_BIT_POSITION);
+  return flight;
 }
 
 /** @brief Puts the entity at the position; does nothing for an entity
@@ -311,6 +338,7 @@ void EntityReplicator::markShip(const network::PlayerState& player,
     return;
   }
   components_->add(*ship, PilotShip{.color = pilotColor});
+  components_->add(*ship, flightOf(*components_, *ship, player));
   feedback_.effects.get().setInvulnerable(*ship, player.invulnerable);
 }
 

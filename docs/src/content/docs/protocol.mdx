@@ -151,7 +151,7 @@ A nickname is unique on the server: a request whose nickname a player already ho
 `WorldState` lists every player and every entity of the game, in full each time. The payload of a state with one player and one entity, byte by byte:
 
 <ByteLayout
-  label="A WorldState with one player and one entity: tick on bytes 0 to 3, playerCount on byte 4, the player on bytes 5 to 15 (playerNumber, shipEntityId, lives, score, invulnerable), entityCount on byte 16, the entity on bytes 17 to 25 (entityId, entityType, x, y)."
+  label="A WorldState with one player and one entity: tick on bytes 0 to 3, playerCount on byte 4, the player on bytes 5 to 16 (playerNumber, shipEntityId, lives, score, invulnerable, motion), entityCount on byte 17, the entity on bytes 18 to 26 (entityId, entityType, x, y)."
   rows={[
     {
       fields: [
@@ -166,6 +166,7 @@ A nickname is unique on the server: a request whose nickname a player already ho
         { name: 'lives', bytes: 1, tone: 'blue' },
         { name: 'score', bytes: 4, tone: 'blue' },
         { name: 'invulnerable', bytes: 1, tone: 'blue' },
+        { name: 'motion', bytes: 1, tone: 'blue' },
       ],
       note: 'One player, repeated playerCount times.',
     },
@@ -188,11 +189,11 @@ A nickname is unique on the server: a request whose nickname a player already ho
 |---|---|
 | `tick` | `u32`, the simulation tick of the server, counted from the start of the game |
 | `playerCount` | `u8` (1 to 4) |
-| each player | `playerNumber` `u8`, `shipEntityId` `u32` (0 while the player has no ship), `lives` `u8`, `score` `u32`, `invulnerable` `bool` |
+| each player | `playerNumber` `u8`, `shipEntityId` `u32` (0 while the player has no ship), `lives` `u8`, `score` `u32`, `invulnerable` `bool`, `motion` `u8` |
 | `entityCount` | `u8` |
 | each entity | `entityId` `u32`, `entityType` `u8`, `position` |
 
-An entity takes 9 bytes, so one datagram holds up to 125 entities with 4 players. When the entities do not fit, the server sends several `WorldState` with the same `tick`, each in its own datagram, each with every player and a part of the entities. The client:
+`motion` says what the pilot does, one bit each from bit 0: the directions its newest `PlayerInput` holds, at their bits of `actions` (0 up, 1 down, 2 left, 3 right), then 4 its ship rolls, 5 its ship dashes. Bits 6 and 7 are 0, otherwise the message is invalid. A player takes 12 bytes and an entity 9, so one datagram holds up to 124 entities with 4 players. When the entities do not fit, the server sends several `WorldState` with the same `tick`, each in its own datagram, each with every player and a part of the entities. The client:
 
 - ignores a `WorldState` whose `tick` is lower than the last one applied; an equal `tick` is another part of the same state. The `tick` is compared as a plain 32-bit integer, without wrap-around: it takes 2.27 years at 60 ticks per second to reach 2³². The sender checks come first, so a forged datagram cannot raise the last `tick` applied;
 - creates an entity it does not know, from its type, with its appearance effect (the shot sound of a missile, for instance);
@@ -283,7 +284,7 @@ This section gathers what each side does when something goes wrong, from a datag
 | Within a session, another `sessionToken`, or a `sequence` that is not newer | drops the datagram; a wrong token is counted | nothing |
 | A message of an unknown type | skips that message and reads the next one | nothing |
 | A message of a type that only the other side receives, such as `ConnectionAccepted` reaching the server or `PlayerInput` reaching a client | skips that message, as if its type were unknown | nothing |
-| A payload of the wrong size, or a value out of range: a `bool` other than 0 or 1, an enumeration value not listed, a bit 5 to 7 set in `actions`, a nickname that is empty, longer than 16 bytes, not UTF-8 or holding a control character (U+0000 to U+001F, U+007F) | drops that message; the other messages of the datagram are read | nothing, even to a `ConnectionRequest` dropped this way |
+| A payload of the wrong size, or a value out of range: a `bool` other than 0 or 1, an enumeration value not listed, a bit 5 to 7 set in `actions`, a bit 6 or 7 set in `motion`, a nickname that is empty, longer than 16 bytes, not UTF-8 or holding a control character (U+0000 to U+001F, U+007F) | drops that message; the other messages of the datagram are read | nothing, even to a `ConnectionRequest` dropped this way |
 | An entity of an unknown type in a `WorldState` | skips that entity and reads the next one (see [World state](#world-state)) | nothing |
 
 ### A message at the wrong moment

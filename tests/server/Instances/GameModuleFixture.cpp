@@ -1,0 +1,70 @@
+#include "GameModuleFixture.hpp"
+#include <cstddef>
+#include <string>
+#include <utility>
+#include <vector>
+#include "ConnectedPlayer.hpp"
+#include "GameContext.hpp"
+#include "GameInstanceTestConstants.hpp"
+#include "GameSettings.hpp"
+#include "IGameModule.hpp"
+#include "InstallContext.hpp"
+#include "OutgoingDatagram.hpp"
+#include "SentDatagrams.hpp"
+#include "ServerLobbyTestConstants.hpp"
+#include "Spawning/WavePlanFixtures.hpp"
+#include "TimeConstants.hpp"
+#include "World.hpp"
+
+namespace rtype::server::testing {
+
+GameModuleFixture::GameModuleFixture()
+    : context_{
+          .events = events_,
+          .timers = timers_,
+          .systems = systems_,
+          .roster = roster_,
+          .hooks = hooks_,
+          .settings = GameSettings{.seed = SOME_SEED, .waves = testWavePlan()},
+          .send =
+              [this](network::OutgoingDatagram datagram) {
+                sent_.push_back(std::move(datagram));
+              },
+          .everyPlayerIsReady = [] { return false; }} {}
+
+void GameModuleFixture::install(IGameModule& module) {
+  engine::InstallContext installation(module.name(), services_, stages_);
+  module.install(context_, installation);
+}
+
+ConnectedPlayer& GameModuleFixture::join(std::size_t index) {
+  return *roster_.add(playerEndpoint(index), std::string{PLAYER_NICKNAME},
+                      SESSION_TOKEN);
+}
+
+void GameModuleFixture::playerJoined(ConnectedPlayer& player) {
+  for (const auto& hook : hooks_.joined) {
+    hook(player);
+  }
+}
+
+void GameModuleFixture::sessionClosing(const ConnectedPlayer& player) {
+  for (const auto& hook : hooks_.closing) {
+    hook(player);
+  }
+}
+
+GameContext& GameModuleFixture::context() { return context_; }
+
+void GameModuleFixture::runStages() {
+  stages_.run(engine::SIMULATION_TICK_DURATION);
+}
+
+game::World& GameModuleFixture::world() { return world_; }
+
+const std::vector<network::OutgoingDatagram>& GameModuleFixture::sentDatagrams()
+    const {
+  return sent_;
+}
+
+}  // namespace rtype::server::testing

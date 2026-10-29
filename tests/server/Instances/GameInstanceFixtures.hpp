@@ -5,7 +5,6 @@
 #include <cstddef>
 #include <cstdint>
 #include <initializer_list>
-#include <memory>
 #include <optional>
 #include <ostream>
 #include <span>
@@ -15,20 +14,22 @@
 #include "ConnectedPlayer.hpp"
 #include "DebugJournal.hpp"
 #include "EventBus.hpp"
-#include "GameEventBroadcaster.hpp"
 #include "GameInstance.hpp"
 #include "GameInstanceTestConstants.hpp"
 #include "IncomingDatagram.hpp"
+#include "LobbyState.hpp"
 #include "MessageType.hpp"
 #include "OutgoingDatagram.hpp"
 #include "PacketHeader.hpp"
 #include "PlayerInput.hpp"
 #include "PlayerLeft.hpp"
 #include "Position.hpp"
+#include "RtypeRulesModule.hpp"
 #include "ServerLobbyTestConstants.hpp"
 #include "TimerScheduler.hpp"
 #include "UnreliableNetwork.hpp"
 #include "World.hpp"
+#include "WorldState.hpp"
 
 namespace rtype::server::testing {
 
@@ -95,13 +96,14 @@ class GameInstanceTest : public ::testing::Test {
   void queueDisconnectionFrom(std::size_t index);
 
   /**
-   * @returns A broadcaster of the game events, wired to the roster as the
-   * server wires it, that runs its later copies on @p timers and puts each
-   * datagram in @p datagrams.
+   * @returns The timers the game plans the later copies of its events on:
+   * advancing them sends those copies.
    */
-  [[nodiscard]] std::unique_ptr<GameEventBroadcaster> eventBroadcaster(
-      engine::TimerScheduler& timers,
-      std::vector<network::OutgoingDatagram>& datagrams);
+  [[nodiscard]] engine::TimerScheduler& timers();
+
+  /** @returns Every datagram the game sent, oldest first. */
+  [[nodiscard]] const std::vector<network::OutgoingDatagram>& sentDatagrams()
+      const;
 
   /** @returns The PlayerLeft that @p datagrams carry to the player at
    * @p index, in the order they were sent. */
@@ -145,6 +147,10 @@ class GameInstanceTest : public ::testing::Test {
       std::size_t index) const;
 
   [[nodiscard]] GameInstance& game();
+
+  /** @returns The world of the game, which the rules of R-Type own. A new
+   * one replaces it when the game waits for players again. */
+  [[nodiscard]] game::World& world();
   [[nodiscard]] engine::EventBus& events();
 
  private:
@@ -157,6 +163,8 @@ class GameInstanceTest : public ::testing::Test {
   std::vector<network::OutgoingDatagram> sent_;
   std::vector<LivePlayer> livePlayers_;
   engine::EventBus events_;
+  engine::TimerScheduler timers_;
+  RtypeRulesModule* rules_{nullptr};
   GameInstance game_;
   std::vector<network::IncomingDatagram> incoming_;
 };
@@ -272,5 +280,24 @@ class GameInstanceLogTest : public GameInstanceInputTest {
 class GameInstanceInputShuffleTest
     : public GameInstanceInputTest,
       public ::testing::WithParamInterface<std::uint32_t> {};
+
+/** @returns The type of the only message of each of @p datagrams, in order. */
+[[nodiscard]] std::vector<network::MessageType> messageTypesOf(
+    const std::vector<network::OutgoingDatagram>& datagrams);
+
+/** @returns The entity of @p state whose id is @p entityId, or nothing when the
+ * state does not list it. */
+[[nodiscard]] std::optional<network::EntityState> entityOf(
+    const network::WorldState& state, std::uint32_t entityId);
+
+/** @returns The room of a game whose only player, the first, is not ready. */
+[[nodiscard]] network::LobbyState roomOfTheFirstPlayerNotReady();
+
+/**
+ * @returns The payload of @p input written field by field, so it may hold
+ * actions encodePayload() refuses.
+ */
+[[nodiscard]] std::vector<std::byte> inputPayload(
+    const network::PlayerInput& input);
 
 }  // namespace rtype::server::testing
