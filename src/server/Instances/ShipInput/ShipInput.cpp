@@ -31,12 +31,13 @@ void noteTaps(game::World& world, const ConnectedPlayer& player,
     return;
   }
   const game::Intent* const held = world.shipIntentOf(player.shipEntityId);
+  const game::ShipDirections now = directionsOf(input);
   const game::ShipDirections before =
-      held != nullptr ? held->directions : game::ShipDirections{};
+      held != nullptr && held->steered ? held->directions : now;
   *motion = game::motionAfterInput(
-      *motion, game::HeldChange{.before = before,
-                                .now = directionsOf(input),
-                                .inputNumber = input.inputNumber});
+      *motion,
+      game::HeldChange{
+          .before = before, .now = now, .inputNumber = input.inputNumber});
 }
 
 }  // namespace rtype::server

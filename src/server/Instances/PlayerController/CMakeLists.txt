@@ -7,9 +7,9 @@ target_link_libraries(rtype_server_player_controller
     rtype_game
     rtype_server_player_roster
     rtype_server_sessions
+    rtype_server_ship_input
   PRIVATE
     rtype_network_protocol
-    rtype_server_ship_input
 )
 
 rtype_enable_warnings(rtype_server_player_controller)

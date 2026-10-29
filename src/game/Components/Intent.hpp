@@ -26,6 +26,9 @@ struct Intent {
   ShipDirections directions{};
   /** @brief Whether the controller wants the body to fire its Gun. */
   bool shooting{false};
+  /** @brief Whether a controller wrote this Intent since the body appeared: a
+   * new body has been told nothing yet, so what it holds is not a decision. */
+  bool steered{false};
 };
 
 }  // namespace rtype::game

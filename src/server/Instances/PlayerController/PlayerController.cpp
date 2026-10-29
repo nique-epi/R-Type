@@ -17,7 +17,8 @@ void steerShipByInput(game::World& world, const ConnectedPlayer& player,
   }
   *intent = game::Intent{
       .directions = directionsOf(input),
-      .shooting = holdsActionAt(input, network::SHOOT_ACTION_BIT_POSITION)};
+      .shooting = holdsActionAt(input, network::SHOOT_ACTION_BIT_POSITION),
+      .steered = true};
 }
 
 void silenceAwayShips(game::World& world, PlayerRoster& roster) {
