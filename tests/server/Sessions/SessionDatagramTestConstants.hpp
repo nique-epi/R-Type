@@ -1,6 +1,6 @@
 #pragma once
 
-#include <cstddef>
+#include <chrono>
 #include <cstdint>
 #include <limits>
 
@@ -13,9 +13,9 @@ namespace rtype::server::testing {
 constexpr std::uint16_t SOME_NEXT_SEQUENCE = 7;
 
 /**
- * @brief Ticks a player was sent nothing for, short of a Heartbeat.
+ * @brief A time the server sent a player nothing for, short of a Heartbeat.
  */
-constexpr std::size_t SOME_TICKS_SINCE_SENT = 42;
+constexpr std::chrono::milliseconds SOME_TIME_SINCE_SENT{700};
 
 /**
  * @brief The last sequence before the counter of a session wraps to 0.

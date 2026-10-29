@@ -19,6 +19,7 @@
 #include "SessionDatagram.hpp"
 #include "SessionDatagramFixture.hpp"
 #include "SessionDatagramTestConstants.hpp"
+#include "TimeConstants.hpp"
 
 namespace rtype::server {
 
@@ -29,19 +30,19 @@ using testing::playerEndpoint;
 using testing::SESSION_TOKEN;
 using testing::SessionDatagramFixture;
 using testing::SOME_NEXT_SEQUENCE;
-using testing::SOME_TICKS_SINCE_SENT;
+using testing::SOME_TIME_SINCE_SENT;
 
 /**
- * Given a player sent nothing for some ticks
+ * Given a player the server sent nothing for some time
  * When the header of its next datagram is asked for
- * Then the ticks since a datagram was sent to it start again from 0
+ * Then the time since a datagram was sent to it starts again from zero
  */
-TEST_F(SessionDatagramFixture, StartsTheTicksSinceSentOverForEachHeader) {
-  firstPlayer().ticksSinceSent = SOME_TICKS_SINCE_SENT;
+TEST_F(SessionDatagramFixture, StartsTheTimeSinceSentOverForEachHeader) {
+  firstPlayer().sinceSent = SOME_TIME_SINCE_SENT;
 
   static_cast<void>(nextSessionHeader(firstPlayer()));
 
-  EXPECT_EQ(firstPlayer().ticksSinceSent, 0U);
+  EXPECT_EQ(firstPlayer().sinceSent, engine::Duration::zero());
 }
 
 /**

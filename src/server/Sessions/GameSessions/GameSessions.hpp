@@ -8,6 +8,7 @@
 #include "Departures.hpp"
 #include "Endpoint.hpp"
 #include "GameSessionsParts.hpp"
+#include "IClock.hpp"
 #include "IncomingDatagram.hpp"
 #include "InputKeeper.hpp"
 #include "MessageDispatcher.hpp"
@@ -15,6 +16,7 @@
 #include "PacketHeader.hpp"
 #include "PlayerRoster.hpp"
 #include "ReadyKeeper.hpp"
+#include "TimeConstants.hpp"
 
 namespace rtype::server {
 
@@ -33,6 +35,13 @@ namespace rtype::server {
  * sender at once, with a PlayerDeparture (Left): the copies of that
  * Disconnection the client sends after it come from an address the roster no
  * longer holds, so they change nothing.
+ *
+ * The silence of a player is counted in the ticks the game runs, and the time
+ * since the server last sent a player a datagram in real time, read on the
+ * clock at the start of each tick: during a stall of the server, the datagrams
+ * of the players wait in their queue and are read at the next tick, while their
+ * clients go on waiting, so the first tick after a stall of HEARTBEAT_INTERVAL
+ * or more sends a Heartbeat to each player it sent nothing else.
  *
  * Not thread-safe: use it from the simulation thread only.
  */
@@ -53,6 +62,13 @@ class GameSessions {
   [[nodiscard]] PlayerRoster& roster();
 
   /**
+   * @brief Starts the tick, before anything is sent in it: adds the time on the
+   * clock since the start of the previous tick, or since the sessions were
+   * built, to ConnectedPlayer::sinceSent of each player.
+   */
+  void startTick();
+
+  /**
    * @brief Reads @p datagrams, oldest first: applies each ReadyState, keeps the
    * newest PlayerInput and closes the session of each player who sent a
    * Disconnection. Nothing caused by the content of a datagram makes it throw.
@@ -70,7 +86,7 @@ class GameSessions {
 
   /**
    * @brief Ends the tick: sends a Heartbeat to every player sent nothing for
-   * TICKS_PER_HEARTBEAT ticks, then counts the tick.
+   * SILENCE_BEFORE_HEARTBEAT, then counts the tick.
    */
   void endTick();
 
@@ -94,6 +110,8 @@ class GameSessions {
   void readDatagram(const network::IncomingDatagram& datagram);
 
   std::function<void(network::OutgoingDatagram)> send_;
+  const engine::IClock* clock_{nullptr};
+  engine::Duration previousTickStart_{};
   PlayerRoster roster_;
   DatagramReader reader_;
   ReadyKeeper readyKeeper_;

@@ -12,6 +12,7 @@
 #include "IPlayerAdmission.hpp"
 #include "InstallContext.hpp"
 #include "Logger.hpp"
+#include "SystemClock.hpp"
 #include "TickDatagrams.hpp"
 #include "TimeConstants.hpp"
 #include "TimerScheduler.hpp"
@@ -27,7 +28,8 @@ namespace rtype::server {
  * stage, each game reads the datagrams of its players and moves on, and the
  * players whose session closed are forgotten by the network. In the outputs
  * stage, the timers advance and the bus delivers the events of the tick. The
- * lobby module adds its work to the simulation stage after this one.
+ * lobby module adds its work to the simulation stage after this one. Each game
+ * reads real time on the clock of the module for its Heartbeats.
  *
  * install() builds the bus, the timers and the empty list of games and
  * provides Games. start() reads the waves file, creates the game and
@@ -68,6 +70,7 @@ class ServerGamesModule final : public engine::IModule {
   logging::Logger logger_;
   engine::EventBus events_;
   engine::TimerScheduler timers_;
+  engine::SystemClock clock_;
   Games games_;
   IDatagramSender* sender_{nullptr};
   IPlayerAdmission* admission_{nullptr};

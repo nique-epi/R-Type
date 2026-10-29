@@ -78,7 +78,8 @@ std::unique_ptr<GameInstance> ServerGamesModule::createGame() {
                            .waves = readWaves(),
                            .statesPerSecond = settings_.statesPerSecond},
           .events = events_,
-          .timers = timers_},
+          .timers = timers_,
+          .clock = clock_},
       rtypeGameModules());
 }
 
