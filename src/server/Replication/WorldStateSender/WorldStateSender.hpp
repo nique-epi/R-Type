@@ -16,7 +16,8 @@ class ConnectedPlayers;
 
 /**
  * @brief Sends the state of the world to every connected player of a game,
- * on the ticks that are a multiple of TICKS_PER_WORLD_STATE.
+ * as many times per second as it is built to, spread over the ticks: the state
+ * of a tick is sent when the tick is the first of its share of the second.
  *
  * The state lists every connected player with the score the player earned,
  * then every entity that has a NetworkIdentity, a Position and an
@@ -41,8 +42,13 @@ class WorldStateSender {
    * @param roster The players of the game, who receive the state; it must
    * outlive the sender.
    * @param send Must not be empty.
+   * @param statesPerSecond The states sent to each player per second, from
+   * LOWEST_WORLD_STATES_PER_SECOND to HIGHEST_WORLD_STATES_PER_SECOND; it need
+   * not divide the tick rate.
+   * @throws InvalidStateRateException when it is outside that range.
    */
-  WorldStateSender(PlayerRoster& roster, Send send);
+  WorldStateSender(PlayerRoster& roster, Send send,
+                   std::size_t statesPerSecond);
 
   /**
    * @brief Sends the state to every connected player when @p tick is one that
@@ -64,9 +70,14 @@ class WorldStateSender {
       std::uint32_t tick, engine::ComponentRegistry& components,
       std::size_t& leftOutCount);
   void reportLeftOut(std::size_t leftOutCount);
+  /** @returns Whether @p tick is one that carries a state: exactly
+   * statesPerSecond_ of every SIMULATION_TICKS_PER_SECOND consecutive ticks
+   * are, the first of them included. */
+  [[nodiscard]] bool carriesState(std::uint32_t tick) const;
 
   PlayerRoster* roster_{nullptr};
   Send send_;
+  std::size_t statesPerSecond_;
   std::size_t reportedLeftOutCount_{0};
   logging::Logger logger_;
 };

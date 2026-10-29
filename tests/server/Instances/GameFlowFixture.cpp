@@ -12,6 +12,7 @@
 #include "PlayerRoster.hpp"
 #include "RtypeSystems.hpp"
 #include "SentDatagrams.hpp"
+#include "ServerConstants.hpp"
 #include "ServerLobbyTestConstants.hpp"
 #include "Spawning/WavePlanFixtures.hpp"
 
@@ -19,7 +20,9 @@ namespace rtype::server::testing {
 
 GameFlowFixture::GameFlowFixture()
     : readyKeeper_(roster_, [] { return true; }),
-      replication_(roster_, [](const network::OutgoingDatagram&) {}),
+      replication_(
+          roster_, [](const network::OutgoingDatagram&) {},
+          DEFAULT_WORLD_STATES_PER_SECOND),
       context_{
           .events = events_,
           .timers = timers_,

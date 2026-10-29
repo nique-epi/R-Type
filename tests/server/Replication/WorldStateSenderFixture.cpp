@@ -1,6 +1,7 @@
 #include "WorldStateSenderFixture.hpp"
 #include <cstddef>
 #include <cstdint>
+#include <memory>
 #include <string>
 #include <utility>
 #include <vector>
@@ -16,8 +17,10 @@
 #include "PlayerRoster.hpp"
 #include "Position.hpp"
 #include "SentDatagrams.hpp"
+#include "ServerConstants.hpp"
 #include "ServerLobbyTestConstants.hpp"
 #include "WorldState.hpp"
+#include "WorldStateSender.hpp"
 
 namespace rtype::server::testing {
 
@@ -35,10 +38,21 @@ network::EntityState expectedEntity(std::uint32_t networkId,
                               .y = position.y};
 }
 
-WorldStateSenderFixture::WorldStateSenderFixture()
-    : sender_(roster_, [this](network::OutgoingDatagram datagram) {
+WorldStateSenderFixture::WorldStateSenderFixture() {
+  restartWithStatesPerSecond(DEFAULT_WORLD_STATES_PER_SECOND);
+}
+
+void WorldStateSenderFixture::restartWithStatesPerSecond(
+    std::size_t statesPerSecond) {
+  sender_ = std::make_unique<WorldStateSender>(
+      roster_,
+      [this](network::OutgoingDatagram datagram) {
         sent_.push_back(std::move(datagram));
-      }) {}
+      },
+      statesPerSecond);
+  sent_.clear();
+  tick_ = 0;
+}
 
 ConnectedPlayer& WorldStateSenderFixture::connect(std::uint16_t port,
                                                   std::uint64_t sessionToken) {
@@ -71,7 +85,7 @@ void WorldStateSenderFixture::addEntityWithoutType(game::Position position,
 void WorldStateSenderFixture::runTicks(std::size_t count) {
   for (std::size_t index = 0; index < count; ++index) {
     ++tick_;
-    sender_.onTick(tick_, components_);
+    sender_->onTick(tick_, components_);
   }
 }
 

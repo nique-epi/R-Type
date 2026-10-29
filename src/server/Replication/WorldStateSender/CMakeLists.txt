@@ -9,6 +9,7 @@ target_link_libraries(rtype_server_world_state_sender
     rtype_logging
     rtype_network_transport
     rtype_network_world_state_codec
+    rtype_server_exceptions
     rtype_server_player_roster
   PRIVATE
     rtype_server_constants

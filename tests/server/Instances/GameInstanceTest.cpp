@@ -38,6 +38,7 @@
 #include "ServerConstants.hpp"
 #include "ServerDatagrams.hpp"
 #include "ServerLobbyTestConstants.hpp"
+#include "ServerTestConstants.hpp"
 #include "TimeConstants.hpp"
 #include "TimerScheduler.hpp"
 #include "UnreliableNetwork.hpp"
@@ -446,22 +447,22 @@ TEST_F(GameInstanceTest, SendsGameStartedBeforeTheFirstWorldState) {
 
 /**
  * Given a game just started by its only player
- * When TICKS_PER_WORLD_STATE more ticks run
+ * When DEFAULT_TICKS_PER_WORLD_STATE more ticks run
  * Then the player was sent the WorldState of tick 0 and of tick
- * TICKS_PER_WORLD_STATE, each starting with a header DatagramCodec reads,
- * carrying its session token
+ * DEFAULT_TICKS_PER_WORLD_STATE, each starting with a header DatagramCodec
+ * reads, carrying its session token
  */
 TEST_F(GameInstanceTest, SendsTheWorldStatesUnderTheTokenOfThePlayer) {
   startGameWithOnePlayer();
 
-  runTicks(TICKS_PER_WORLD_STATE);
+  runTicks(DEFAULT_TICKS_PER_WORLD_STATE);
 
   const std::vector<network::OutgoingDatagram> states =
       ofType(network::MessageType::WorldState, sentTo(FIRST_PLAYER));
   ASSERT_EQ(states.size(), 2U);
   EXPECT_EQ(onlyMessageIn<network::WorldState>(states.at(0)).tick, 0U);
   EXPECT_EQ(onlyMessageIn<network::WorldState>(states.at(1)).tick,
-            TICKS_PER_WORLD_STATE);
+            DEFAULT_TICKS_PER_WORLD_STATE);
   for (const network::OutgoingDatagram& state : states) {
     EXPECT_EQ(network::DatagramCodec::decodeHeader(state.payload).sessionToken,
               testing::SESSION_TOKEN);
@@ -481,7 +482,7 @@ TEST_F(GameInstanceTest, NumbersEveryDatagramToAPlayerFromOneCounter) {
   sendReady(
       {.player = FIRST_PLAYER, .ready = true, .sequence = FIRST_SEQUENCE});
   tick();
-  runTicks(TICKS_PER_WORLD_STATE);
+  runTicks(DEFAULT_TICKS_PER_WORLD_STATE);
 
   const std::vector<network::OutgoingDatagram> toPlayer = sentTo(FIRST_PLAYER);
   ASSERT_EQ(
@@ -552,13 +553,13 @@ TEST_F(GameInstanceTest, AnnouncesNoStartWhileAPlayerIsNotReady) {
 
 /**
  * Given one connected player who is not ready
- * When TICKS_PER_WORLD_STATE ticks run
+ * When DEFAULT_TICKS_PER_WORLD_STATE ticks run
  * Then the player is sent no WorldState
  */
 TEST_F(GameInstanceTest, SendsNoWorldStateWhileWaiting) {
   join(FIRST_PLAYER);
 
-  runTicks(TICKS_PER_WORLD_STATE);
+  runTicks(DEFAULT_TICKS_PER_WORLD_STATE);
 
   EXPECT_TRUE(
       ofType(network::MessageType::WorldState, sentTo(FIRST_PLAYER)).empty());
@@ -795,7 +796,7 @@ TEST_F(GameInstanceTest, TheOthersPlayOnWhenOneOfThreePlayersTimesOut) {
   const std::size_t sentToTheFirst =
       ofType(network::MessageType::WorldState, sentTo(FIRST_PLAYER)).size();
 
-  runTicks(TICKS_PER_WORLD_STATE);
+  runTicks(DEFAULT_TICKS_PER_WORLD_STATE);
 
   EXPECT_EQ(game().state(), GameState::InProgress);
   for (const std::size_t player : {FIRST_PLAYER, THIRD_PLAYER}) {
@@ -1511,7 +1512,7 @@ TEST_F(GameInstanceMovementTest, SendsTheShipWhereItMovedInTheSameTick) {
   send(FIRST_PLAYER, HOLDS_RIGHT);
 
   deliver({FIRST_SENT});
-  runTicks(TICKS_PER_WORLD_STATE - 1);
+  runTicks(DEFAULT_TICKS_PER_WORLD_STATE - 1);
 
   const game::Position moved = shipPositionOf(FIRST_PLAYER);
   ASSERT_NE(moved.x, start.x);
@@ -1519,7 +1520,7 @@ TEST_F(GameInstanceMovementTest, SendsTheShipWhereItMovedInTheSameTick) {
       ofType(network::MessageType::WorldState, sentTo(FIRST_PLAYER));
   ASSERT_EQ(states.size(), 2U);
   const auto state = onlyMessageIn<network::WorldState>(states.back());
-  ASSERT_EQ(state.tick, TICKS_PER_WORLD_STATE);
+  ASSERT_EQ(state.tick, DEFAULT_TICKS_PER_WORLD_STATE);
   const std::optional<network::EntityState> ship =
       entityOf(state, shipIdOf(FIRST_PLAYER));
   ASSERT_TRUE(ship.has_value());
