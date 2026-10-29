@@ -22,8 +22,11 @@ void steerShipByInput(game::World& world, const ConnectedPlayer& player,
 
 void silenceAwayShips(game::World& world, PlayerRoster& roster) {
   for (const ConnectedPlayer* const player : roster.connected()) {
+    if (!player->away) {
+      continue;
+    }
     game::Intent* const intent = world.shipIntentOf(player->shipEntityId);
-    if (player->away && intent != nullptr) {
+    if (intent != nullptr) {
       *intent = game::Intent{};
     }
   }

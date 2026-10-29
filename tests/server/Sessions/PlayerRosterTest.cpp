@@ -7,6 +7,7 @@
 #include "ConnectedPlayer.hpp"
 #include "ConnectedPlayers.hpp"
 #include "Endpoint.hpp"
+#include "EntityIdConstants.hpp"
 #include "PlayerRoster.hpp"
 #include "ProtocolConstants.hpp"
 #include "ServerLobbyTestConstants.hpp"
@@ -19,6 +20,8 @@ using testing::OTHER_SESSION_TOKEN;
 using testing::PLAYER_ADDRESS;
 using testing::PLAYER_NICKNAME;
 using testing::SESSION_TOKEN;
+
+constexpr std::uint32_t SOME_SHIP_ID = 7;
 
 network::Endpoint playerEndpoint(std::size_t player) {
   return network::Endpoint{.address = std::string{PLAYER_ADDRESS},
@@ -207,6 +210,25 @@ TEST(PlayerRoster, FindsAPlayerByItsNumberOnly) {
   EXPECT_EQ(roster.findByNumber(network::FIRST_PLAYER_NUMBER + 2), nullptr);
   EXPECT_EQ(roster.findByNumber(network::NO_PLAYER_NUMBER), nullptr);
   EXPECT_EQ(roster.findByNumber(network::MAXIMUM_PLAYERS + 1), nullptr);
+}
+
+/**
+ * Given a roster of two players, the second with a ship and the first without
+ * When a player is looked up by ship
+ * Then the second player is found under its ship, and neither another ship id
+ * nor NO_ENTITY_ID, which the first player holds, finds anybody
+ */
+TEST(PlayerRoster, FindsAPlayerByItsShipOnly) {
+  PlayerRoster roster;
+  addPlayers(roster, 2);
+  ConnectedPlayer* const second =
+      roster.findByNumber(network::FIRST_PLAYER_NUMBER + 1);
+  ASSERT_NE(second, nullptr);
+  second->shipEntityId = SOME_SHIP_ID;
+
+  EXPECT_EQ(roster.findByShip(SOME_SHIP_ID), second);
+  EXPECT_EQ(roster.findByShip(SOME_SHIP_ID + 1), nullptr);
+  EXPECT_EQ(roster.findByShip(identifiers::NO_ENTITY_ID), nullptr);
 }
 
 /**

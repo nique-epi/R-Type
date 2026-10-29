@@ -43,25 +43,18 @@ struct CostlyContact {
   std::uint32_t enemyId{0};
 };
 
-/** @returns The connected player of @p roster whose ship is @p shipId, or
- * nullptr when none has it. */
-ConnectedPlayer* ownerOf(PlayerRoster& roster, std::uint32_t shipId) {
-  for (ConnectedPlayer* const player : roster.connected()) {
-    if (player->shipEntityId == shipId) {
-      return player;
-    }
-  }
-  return nullptr;
-}
-
-/** @returns Whether the ship @p shipId of @p world can be hit: it has a life
- * left and is not invulnerable. */
-bool canBeHit(game::World& world, std::uint32_t shipId) {
+/** @returns The lives of the ship @p shipId of @p world when it can be hit: it
+ * has a life left and is not invulnerable. Nothing otherwise. */
+std::optional<std::uint8_t> livesOfAHittableShip(game::World& world,
+                                                 std::uint32_t shipId) {
   const game::Lives* const lives = world.shipLivesOf(shipId);
   const game::Invulnerable* const protection =
       world.shipInvulnerabilityOf(shipId);
-  return lives != nullptr && protection != nullptr && lives->count > 0 &&
-         protection->ticksLeft == 0;
+  if (lives == nullptr || protection == nullptr || lives->count == 0 ||
+      protection->ticksLeft != 0) {
+    return std::nullopt;
+  }
+  return lives->count;
 }
 
 /**
@@ -76,14 +69,17 @@ std::optional<DoomedShip> doomedShipOf(game::World& world, PlayerRoster& roster,
   if (identity == nullptr) {
     return std::nullopt;
   }
-  ConnectedPlayer* const player = ownerOf(roster, identity->networkId);
-  if (player == nullptr || !canBeHit(world, identity->networkId)) {
+  ConnectedPlayer* const player = roster.findByShip(identity->networkId);
+  if (player == nullptr) {
+    return std::nullopt;
+  }
+  const std::optional<std::uint8_t> lives =
+      livesOfAHittableShip(world, identity->networkId);
+  if (!lives.has_value()) {
     return std::nullopt;
   }
   return DoomedShip{
-      .player = player,
-      .shipId = identity->networkId,
-      .livesBefore = world.shipLivesOf(identity->networkId)->count};
+      .player = player, .shipId = identity->networkId, .livesBefore = *lives};
 }
 
 /**

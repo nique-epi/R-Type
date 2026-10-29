@@ -2,8 +2,10 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <optional>
 #include "BydoKind.hpp"
 #include "ComponentRegistry.hpp"
+#include "Entity.hpp"
 #include "EntityRegistry.hpp"
 #include "Intent.hpp"
 #include "Invulnerable.hpp"
@@ -133,6 +135,14 @@ class World {
   [[nodiscard]] Invulnerable* shipInvulnerabilityOf(std::uint32_t shipId);
 
  private:
+  /** @returns The component of type T of the ship spawnPlayer gave @p shipId,
+   * or nullptr for any other id. */
+  template <typename T>
+  [[nodiscard]] T* shipComponent(std::uint32_t shipId) {
+    const std::optional<engine::Entity> ship = shipByNetworkId_.find(shipId);
+    return ship.has_value() ? components_.get<T>(*ship) : nullptr;
+  }
+
   engine::EntityRegistry registry_;
   engine::ComponentRegistry components_{registry_};
   engine::NetworkIdAllocator networkIds_;

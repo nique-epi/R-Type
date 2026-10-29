@@ -111,43 +111,23 @@ std::size_t World::entityCount() const { return registry_.size(); }
 engine::ComponentRegistry& World::components() { return components_; }
 
 Position* World::shipPositionOf(std::uint32_t shipId) {
-  const std::optional<engine::Entity> ship = shipByNetworkId_.find(shipId);
-  if (!ship.has_value()) {
-    return nullptr;
-  }
-  return components_.get<Position>(*ship);
+  return shipComponent<Position>(shipId);
 }
 
 ShipMotion* World::shipMotionOf(std::uint32_t shipId) {
-  const std::optional<engine::Entity> ship = shipByNetworkId_.find(shipId);
-  if (!ship.has_value()) {
-    return nullptr;
-  }
-  return components_.get<ShipMotion>(*ship);
+  return shipComponent<ShipMotion>(shipId);
 }
 
 Intent* World::shipIntentOf(std::uint32_t shipId) {
-  const std::optional<engine::Entity> ship = shipByNetworkId_.find(shipId);
-  if (!ship.has_value()) {
-    return nullptr;
-  }
-  return components_.get<Intent>(*ship);
+  return shipComponent<Intent>(shipId);
 }
 
 Lives* World::shipLivesOf(std::uint32_t shipId) {
-  const std::optional<engine::Entity> ship = shipByNetworkId_.find(shipId);
-  if (!ship.has_value()) {
-    return nullptr;
-  }
-  return components_.get<Lives>(*ship);
+  return shipComponent<Lives>(shipId);
 }
 
 Invulnerable* World::shipInvulnerabilityOf(std::uint32_t shipId) {
-  const std::optional<engine::Entity> ship = shipByNetworkId_.find(shipId);
-  if (!ship.has_value()) {
-    return nullptr;
-  }
-  return components_.get<Invulnerable>(*ship);
+  return shipComponent<Invulnerable>(shipId);
 }
 
 }  // namespace rtype::game

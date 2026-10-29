@@ -13,6 +13,7 @@ target_link_libraries(rtype_server_weapon_system
     rtype_game_enemy_missile_start_position
     rtype_game_spawning
     rtype_server_weapon_system_constants
+    rtype_server_wire_entity_type_mapping
 )
 
 rtype_enable_warnings(rtype_server_weapon_system)

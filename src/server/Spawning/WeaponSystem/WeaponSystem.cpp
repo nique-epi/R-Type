@@ -19,6 +19,7 @@
 #include "Position.hpp"
 #include "WeaponShot.hpp"
 #include "WeaponSystemConstants.hpp"
+#include "WireEntityTypeMapping.hpp"
 #include "World.hpp"
 #include "WorldState.hpp"
 
@@ -38,33 +39,16 @@ bool countsDownToReady(game::Gun& gun) {
 }
 
 /**
- * @returns The number of the player whose ship is @p shipId among the
- * connected players of @p roster, or nothing when none has it.
- */
-std::optional<std::uint8_t> ownerOf(PlayerRoster& roster,
-                                    std::uint32_t shipId) {
-  for (const ConnectedPlayer* const player : roster.connected()) {
-    if (player->shipEntityId == shipId) {
-      return player->playerNumber;
-    }
-  }
-  return std::nullopt;
-}
-
-/**
  * @returns The EntitySpawned that announces the projectile @p projectileId of
  * type @p type, at @p position.
  */
 network::EntitySpawned spawnAt(std::uint32_t projectileId,
                                game::EntityType type,
                                const game::Position& position) {
-  return network::EntitySpawned{
-      .entityId = projectileId,
-      .entityType = type == game::EntityType::PlayerMissile
-                        ? network::WireEntityType::PlayerMissile
-                        : network::WireEntityType::EnemyMissile,
-      .x = position.x,
-      .y = position.y};
+  return network::EntitySpawned{.entityId = projectileId,
+                                .entityType = toWireEntityType(type),
+                                .x = position.x,
+                                .y = position.y};
 }
 
 }  // namespace
@@ -89,13 +73,14 @@ void WeaponSystem::collectShots() {
   components.forEach<game::Gun, game::Intent>(
       [this, &components](engine::Entity body, game::Gun& gun,
                           const game::Intent& intent) {
-        const bool ready = countsDownToReady(gun);
+        if (!countsDownToReady(gun) || !intent.shooting) {
+          return;
+        }
         const game::Position* const position =
             components.get<game::Position>(body);
         const game::NetworkIdentity* const identity =
             components.get<game::NetworkIdentity>(body);
-        if (!ready || !intent.shooting || position == nullptr ||
-            identity == nullptr) {
+        if (position == nullptr || identity == nullptr) {
           return;
         }
         gun.ticksUntilReady = gun.intervalTicks;
@@ -117,14 +102,13 @@ std::optional<network::EntitySpawned> WeaponSystem::spawnProjectile(
     const WeaponShot& shot) {
   try {
     if (shot.projectile == game::EntityType::PlayerMissile) {
-      const std::optional<std::uint8_t> owner =
-          ownerOf(*roster_, shot.shooterId);
-      if (!owner.has_value()) {
+      const ConnectedPlayer* const owner = roster_->findByShip(shot.shooterId);
+      if (owner == nullptr) {
         return std::nullopt;
       }
       const game::Position start = game::missileStartPosition(shot.muzzle);
-      return spawnAt(world_->spawnPlayerMissile(start, *owner), shot.projectile,
-                     start);
+      return spawnAt(world_->spawnPlayerMissile(start, owner->playerNumber),
+                     shot.projectile, start);
     }
     const game::Position start = game::enemyMissileStartPosition(shot.muzzle);
     return spawnAt(world_->spawnEnemyMissile(start), shot.projectile, start);
