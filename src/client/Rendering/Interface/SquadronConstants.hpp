@@ -28,10 +28,9 @@ constexpr float SQUADRON_DRIFT_START = 1.9F;
 constexpr float SQUADRON_DRIFT_RAMP = 1.0F;
 constexpr float SQUADRON_FIRE_START = 2.4F;
 
-/** @brief The opening moves by steps of SQUADRON_OPENING_STEP pixels, and
- * each corner is two strokes SQUADRON_CORNER_LENGTH pixels long. */
+/** @brief The opening moves by steps of SQUADRON_OPENING_STEP pixels, each
+ * corner as paintBoxCorners() paints it. */
 constexpr int SQUADRON_OPENING_STEP = 4;
-constexpr int SQUADRON_CORNER_LENGTH = 8;
 
 /** @brief Title written in the top-left corner of the box, outlined. */
 constexpr std::string_view SQUADRON_TITLE = "SQUADRON";
