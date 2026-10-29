@@ -1,12 +1,10 @@
 #include "ScreenCatalog.hpp"
 #include <SFML/System/Vector2.hpp>
-#include <SFML/Window/Keyboard.hpp>
 #include <memory>
 #include <random>
 #include <utility>
 #include "AssetLibrary.hpp"
 #include "AssetList.hpp"
-#include "BoundAction.hpp"
 #include "ConnectionScreen.hpp"
 #include "ConnectionScreenParts.hpp"
 #include "EndScreen.hpp"
@@ -188,19 +186,17 @@ std::unique_ptr<IScreen> ScreenCatalog::lobbyScreen(ScreenId screen) {
     parts_.services.audio.get().playTheme();
   }
   const PlayerSettings& settings = parts_.services.settings.get();
-  const sf::Keyboard::Scancode readyKey =
-      settings.keys.keyOf(BoundAction::Ready);
   return std::make_unique<LobbyScreen>(
-      LobbyScreenParts{
-          .navigator = parts_.navigator.get(),
-          .sounds = sounds(),
-          .connection = parts_.services.connection.get(),
-          .playfieldPointAt = playfieldMapping(),
-          .readyKey = {.key = readyKey, .name = localizedKeyName(readyKey)},
-          .palette = playerPaletteOf(settings),
-          .motion = motionPreference(),
-          .place =
-              afterGame ? LobbyPlace::AfterGame : LobbyPlace::AfterConnection},
+      LobbyScreenParts{.navigator = parts_.navigator.get(),
+                       .sounds = sounds(),
+                       .connection = parts_.services.connection.get(),
+                       .playfieldPointAt = playfieldMapping(),
+                       .keys = settings.keys,
+                       .keyName = localizedKeyName,
+                       .palette = playerPaletteOf(settings),
+                       .motion = motionPreference(),
+                       .place = afterGame ? LobbyPlace::AfterGame
+                                          : LobbyPlace::AfterConnection},
       interfaceCanvas());
 }
 

@@ -37,6 +37,12 @@ bool showsColor(const sf::Image& image, rtype::game::SpriteFrame frame,
 int changedPixelCount(const sf::Image& image, rtype::game::SpriteFrame frame,
                       rtype::game::SpriteFrame other);
 
+/** @returns How many pixels of @p frame differ from the pixel of @p mirror,
+ * a rectangle of the same size, at the same row and the mirrored column: none
+ * when one is the other drawn facing the other way. */
+int mirrorMismatchCount(const sf::Image& image, rtype::game::SpriteFrame frame,
+                        rtype::game::SpriteFrame mirror);
+
 /** @returns How many pixels of the rectangle are not transparent. */
 int visiblePixelCount(const sf::Image& image, rtype::game::SpriteFrame frame);
 

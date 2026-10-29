@@ -14,6 +14,7 @@
 #include "LobbyScreenTestConstants.hpp"
 #include "LobbyState.hpp"
 #include "MotionPreference.hpp"
+#include "OptionsScreenFixtures.hpp"
 #include "PointerEvents.hpp"
 #include "RecordingInterfaceCanvas.hpp"
 #include "RecordingNavigator.hpp"
@@ -28,8 +29,6 @@ using rtype::client::LobbyScreenParts;
 using rtype::client::MotionPreference;
 using rtype::client::PLAYER_COLORS;
 using rtype::client::testing::OWN_NUMBER;
-using rtype::client::testing::READY_KEY;
-using rtype::client::testing::READY_KEY_NAME;
 using rtype::network::LobbyPlayer;
 
 LobbyScreenFixture::LobbyScreenFixture(LobbyPlace place)
@@ -37,8 +36,8 @@ LobbyScreenFixture::LobbyScreenFixture(LobbyPlace place)
                                .sounds = sounds_,
                                .connection = connection_,
                                .playfieldPointAt = samePlayfieldPoint,
-                               .readyKey = {.key = READY_KEY,
-                                            .name = READY_KEY_NAME},
+                               .keys = keys_,
+                               .keyName = nameInTheFile,
                                .palette = PLAYER_COLORS,
                                .motion = MotionPreference::Full,
                                .place = place},
