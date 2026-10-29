@@ -78,6 +78,11 @@ Message messageOf(const network::OutgoingDatagram& datagram) {
       network::DatagramCodec::splitMessages(datagram.payload).front().payload);
 }
 
+/** @returns A nickname of its own for the player at @p player. */
+std::string nicknameOf(std::size_t player) {
+  return "Pilot" + std::to_string(player);
+}
+
 /** @brief An acceptor whose answers are recorded instead of sent. */
 class ConnectionAcceptorTest : public ::testing::Test {
  protected:
@@ -90,6 +95,12 @@ class ConnectionAcceptorTest : public ::testing::Test {
 
   /** @returns The cookie of the challenge @p sender gets for a request
    * without one. */
+  std::uint64_t challengeCookie(const network::Endpoint& sender,
+                                const std::string& nickname) {
+    receive(sender, requestDatagramOf(nickname, 0));
+    return messageOf<network::ConnectionChallenge>(lastAnswer()).cookie;
+  }
+
   std::uint64_t challengeCookie(const network::Endpoint& sender) {
     receive(sender, requestDatagram(0));
     return messageOf<network::ConnectionChallenge>(lastAnswer()).cookie;
@@ -99,6 +110,13 @@ class ConnectionAcceptorTest : public ::testing::Test {
    * cookie. */
   void connect(const network::Endpoint& sender) {
     receive(sender, requestDatagram(challengeCookie(sender)));
+  }
+
+  /** @brief Goes through the challenge and the request with its cookie, for a
+   * player who asks for @p nickname. */
+  void connectAs(const network::Endpoint& sender, const std::string& nickname) {
+    receive(sender,
+            requestDatagramOf(nickname, challengeCookie(sender, nickname)));
   }
 
   [[nodiscard]] const std::vector<network::OutgoingDatagram>& answers() const {
@@ -268,7 +286,7 @@ TEST_F(ConnectionAcceptorTest, AnnouncesAPlayerAcceptedAgainOnlyOnce) {
  */
 TEST_F(ConnectionAcceptorTest, NumbersFourPlayersInTheOrderTheyConnect) {
   for (std::size_t player = 0; player < network::MAXIMUM_PLAYERS; ++player) {
-    connect(playerEndpoint(player));
+    connectAs(playerEndpoint(player), nicknameOf(player));
 
     EXPECT_EQ(messageOf<network::ConnectionAccepted>(lastAnswer()).playerNumber,
               network::FIRST_PLAYER_NUMBER + player);
@@ -282,13 +300,76 @@ TEST_F(ConnectionAcceptorTest, NumbersFourPlayersInTheOrderTheyConnect) {
  */
 TEST_F(ConnectionAcceptorTest, RefusesTheFifthPlayerBecauseTheGameIsFull) {
   for (std::size_t player = 0; player < network::MAXIMUM_PLAYERS; ++player) {
-    connect(playerEndpoint(player));
+    connectAs(playerEndpoint(player), nicknameOf(player));
   }
 
-  receive(playerEndpoint(network::MAXIMUM_PLAYERS), requestDatagram(0));
+  receive(playerEndpoint(network::MAXIMUM_PLAYERS),
+          requestDatagramOf(nicknameOf(network::MAXIMUM_PLAYERS), 0));
 
   EXPECT_EQ(messageOf<network::ConnectionRefused>(lastAnswer()).reason,
             network::RefusalReason::GameFull);
+}
+
+/**
+ * Given a connected player named Ace
+ * When another sender requests a connection as ACE, with no cookie yet
+ * Then it is refused at once because the nickname is taken, and nothing is
+ * kept for it
+ */
+TEST_F(ConnectionAcceptorTest,
+       RefusesANicknameTakenWhateverTheCaseOfItsLetters) {
+  connectAs(playerEndpoint(0), "Ace");
+
+  receive(playerEndpoint(1), requestDatagramOf("ACE", 0));
+
+  EXPECT_EQ(messageOf<network::ConnectionRefused>(lastAnswer()).reason,
+            network::RefusalReason::NicknameTaken);
+  EXPECT_EQ(roster().find(playerEndpoint(1)), nullptr);
+}
+
+/**
+ * Given a player named Ace whose seat is held, away
+ * When another sender asks for Ace
+ * Then it is refused because the nickname is taken
+ */
+TEST_F(ConnectionAcceptorTest, RefusesTheNicknameOfAPlayerWhoseSeatIsHeld) {
+  connectAs(playerEndpoint(0), "Ace");
+  roster().find(playerEndpoint(0))->away = true;
+
+  receive(playerEndpoint(1), requestDatagramOf("Ace", 0));
+
+  EXPECT_EQ(messageOf<network::ConnectionRefused>(lastAnswer()).reason,
+            network::RefusalReason::NicknameTaken);
+}
+
+/**
+ * Given a connected player named Ace
+ * When the same sender sends its request again with a valid cookie
+ * Then it gets its ConnectionAccepted again, not a refusal as a duplicate of
+ * itself
+ */
+TEST_F(ConnectionAcceptorTest, AcceptsAgainThePlayerWhoSendsItsRequestTwice) {
+  connectAs(playerEndpoint(0), "Ace");
+
+  connectAs(playerEndpoint(0), "Ace");
+
+  EXPECT_EQ(messageTypeOf(lastAnswer()),
+            static_cast<std::uint8_t>(network::ConnectionAccepted::TYPE));
+}
+
+/**
+ * Given a connected player named Ace, who then left
+ * When another sender asks for Ace
+ * Then it is accepted: the nickname is free again
+ */
+TEST_F(ConnectionAcceptorTest, GivesANicknameBackOnceItsPlayerLeft) {
+  connectAs(playerEndpoint(0), "Ace");
+  static_cast<void>(roster().remove(playerEndpoint(0)));
+
+  connectAs(playerEndpoint(1), "Ace");
+
+  EXPECT_EQ(messageTypeOf(lastAnswer()),
+            static_cast<std::uint8_t>(network::ConnectionAccepted::TYPE));
 }
 
 /**

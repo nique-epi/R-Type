@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <optional>
 #include <string>
+#include <string_view>
 #include <vector>
 #include "ConnectedPlayer.hpp"
 #include "ConnectedPlayers.hpp"
@@ -48,6 +49,13 @@ class PlayerRoster {
   /** @returns The address and port of each connected player, in order of
    * their number. */
   [[nodiscard]] std::vector<network::Endpoint> endpoints() const;
+
+  /**
+   * @returns Whether a player holds a seat under @p nickname, away or not,
+   * comparing the ASCII letters without regard to case and every other byte as
+   * it is.
+   */
+  [[nodiscard]] bool hasNickname(std::string_view nickname) const;
 
   /** @returns Whether MAXIMUM_PLAYERS players are connected. */
   [[nodiscard]] bool isFull() const;

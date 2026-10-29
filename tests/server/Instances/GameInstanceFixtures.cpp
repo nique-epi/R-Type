@@ -216,7 +216,7 @@ void GameInstanceTest::startGameWithOnePlayer() {
 
 void GameInstanceTest::timeOut(std::size_t index) {
   silence(index);
-  runTicks(PROTOCOL_SESSION_TIMEOUT_TICKS + 1);
+  runTicks(PROTOCOL_SESSION_CLOSING_TICKS + 1);
 }
 
 std::uint32_t GameInstanceTest::shipOf(std::size_t index) {

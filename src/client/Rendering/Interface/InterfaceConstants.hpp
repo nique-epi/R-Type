@@ -32,6 +32,10 @@ constexpr unsigned int TEXT_CHARACTER_SIZE = 8;
 /** @brief Height of a line of text, in pixels: as tall as the fonts. */
 constexpr int TEXT_LINE_HEIGHT = static_cast<int>(TEXT_CHARACTER_SIZE);
 
+/** @brief Length of each of the two strokes of a corner paintBoxCorners()
+ * paints, in pixels. */
+constexpr int BOX_CORNER_LENGTH = 8;
+
 /** @brief Scale of an image drawImage() copies pixel for pixel. */
 constexpr int NATIVE_SCALE = 1;
 

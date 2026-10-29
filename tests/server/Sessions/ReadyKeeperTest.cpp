@@ -129,6 +129,37 @@ TEST(ReadyKeeper, WaitsForEveryConnectedPlayer) {
 }
 
 /**
+ * Given two players, the first ready and the second, not ready, away
+ * When the keeper is asked whether every player is ready
+ * Then the answer is yes: a player who is away does not hold the game back
+ */
+TEST(ReadyKeeper, DoesNotWaitForAPlayerWhoIsAway) {
+  PlayerRoster roster;
+  static_cast<void>(addPlayer(roster, 0));
+  ConnectedPlayer& second = addPlayer(roster, 1);
+  ReadyKeeper keeper(roster, [] { return true; });
+  keeper.apply(originOf(0, SOME_SEQUENCE), network::ReadyState{.ready = true});
+  second.away = true;
+
+  EXPECT_TRUE(keeper.everyPlayerIsReady());
+}
+
+/**
+ * Given one player, away
+ * When the keeper is asked whether every player is ready
+ * Then the answer is no: nobody is there to start the game
+ */
+TEST(ReadyKeeper, IsNotReadyWhenEveryPlayerIsAway) {
+  PlayerRoster roster;
+  ConnectedPlayer& player = addPlayer(roster, 0);
+  ReadyKeeper keeper(roster, [] { return true; });
+  keeper.apply(originOf(0, SOME_SEQUENCE), network::ReadyState{.ready = true});
+  player.away = true;
+
+  EXPECT_FALSE(keeper.everyPlayerIsReady());
+}
+
+/**
  * Given a player who said ready in the datagram of sequence 65535
  * When a ReadyState of sequence 0 says not ready
  * Then the player is not ready, since sequence 0 follows sequence 65535

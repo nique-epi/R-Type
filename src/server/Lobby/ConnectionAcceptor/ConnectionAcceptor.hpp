@@ -44,6 +44,9 @@ namespace rtype::server {
  *   otherwise, even while a game is in progress;
  * - while a game is in progress: ConnectionRefused (GameInProgress);
  * - when MAXIMUM_PLAYERS players are connected: ConnectionRefused (GameFull);
+ * - when a player holds a seat under the same nickname, away or not, letters
+ *   of the ASCII alphabet compared without regard to case: ConnectionRefused
+ *   (NicknameTaken);
  * - without a valid cookie: a ConnectionChallenge, and nothing is kept;
  * - with a valid cookie: a place in the roster, a session token drawn at
  *   random, and a ConnectionAccepted that carries both; the new player is

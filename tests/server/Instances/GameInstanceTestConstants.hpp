@@ -30,6 +30,14 @@ constexpr std::size_t FOURTH_PLAYER = 3;
 constexpr std::size_t PROTOCOL_SESSION_TIMEOUT_TICKS = 300;
 
 /**
+ * @brief The 15 s of the protocol page during which the server keeps the seat
+ * of a player it took for gone, at 60 ticks per second, so the session closes
+ * after PROTOCOL_SESSION_TIMEOUT_TICKS plus these.
+ */
+constexpr std::size_t PROTOCOL_RECONNECTION_GRACE_TICKS = 900;
+constexpr std::size_t PROTOCOL_SESSION_CLOSING_TICKS = 1200;
+
+/**
  * @brief The 1 s of the protocol page after which a side sends a Heartbeat
  * when it sent nothing else, at 60 ticks per second.
  */

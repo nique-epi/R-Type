@@ -119,7 +119,7 @@ void ServerConnection::readReceived() {
 }
 
 void ServerConnection::holdSession(engine::Duration elapsed) {
-  if (sinceReceived_ >= network::SESSION_TIMEOUT) {
+  if (sinceReceived_ >= network::SESSION_SILENCE_LIMIT) {
     giveUp(ConnectionStatus::Phase::Lost);
     return;
   }
@@ -239,7 +239,7 @@ void ServerConnection::registerSessionMessages() {
 
 void ServerConnection::giveUp(ConnectionStatus::Phase ending) {
   const std::chrono::seconds silence = ending == ConnectionStatus::Phase::Lost
-                                           ? network::SESSION_TIMEOUT
+                                           ? network::SESSION_SILENCE_LIMIT
                                            : CONNECTION_ATTEMPT_TIMEOUT;
   status_ = {.phase = ending};
   forgetSession();

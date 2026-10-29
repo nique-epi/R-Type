@@ -58,8 +58,12 @@ namespace rtype::client {
  * Accepted, a Heartbeat goes out once HEARTBEAT_INTERVAL passed without any
  * other datagram to the server, so the server knows the player is still there
  * while nothing else is due. A session whose server sent nothing for
- * SESSION_TIMEOUT is lost: the status becomes Lost, the session is forgotten
- * and nothing more goes to the server, not even a Disconnection. Every datagram
+ * SESSION_SILENCE_LIMIT (SESSION_TIMEOUT plus RECONNECTION_GRACE) is lost: the
+ * status becomes Lost, the session is forgotten and nothing more goes to the
+ * server, not even a Disconnection. Before that the session holds, with its
+ * token, and the Heartbeats keep going out: the server keeps the seat for
+ * RECONNECTION_GRACE after SESSION_TIMEOUT, and the first datagram of the
+ * server that gets through gives the session back as it was. Every datagram
  * of the server that the checks of this comment let through counts, whatever
  * it holds: from that server, of this protocol and version, with the token of
  * the session, newer than the newest one read, and whose messages add up to its
@@ -68,14 +72,14 @@ namespace rtype::client {
  * long frame is never taken for silence of the server: counted after the read,
  * a frame of 4.9 s in the waiting room would lose a live session 100 ms later
  * unless a datagram came first. A frame that kept the client silent for
- * SESSION_TIMEOUT is another matter: the server has closed the session by then,
- * and the client learns it SESSION_TIMEOUT after it read the datagrams that
- * waited. Leaving the session, through cancel() or connect(), sends a
- * Disconnection DISCONNECTION_COPY_COUNT times, DISCONNECTION_COPY_INTERVAL
- * apart, with the token and the sequences of the session left, the first at
- * once and the others from update(), while isLeaving() is true; connect() then
- * starts a new session: sequence 0, token 0 and inputs from FIRST_INPUT_NUMBER
- * again.
+ * SESSION_SILENCE_LIMIT is another matter: the server has closed the session by
+ * then, and the client learns it SESSION_SILENCE_LIMIT after it read the
+ * datagrams that waited. Leaving the session, through cancel() or connect(),
+ * sends a Disconnection DISCONNECTION_COPY_COUNT times,
+ * DISCONNECTION_COPY_INTERVAL apart, with the token and the sequences of the
+ * session left, the first at once and the others from update(), while
+ * isLeaving() is true; connect() then starts a new session: sequence 0, token 0
+ * and inputs from FIRST_INPUT_NUMBER again.
  *
  * From the start of the game, it keeps the EntitySpawned, WorldState and
  * EntityDestroyed of the server, and the first copy of each GameEvent (see
@@ -131,7 +135,7 @@ class ServerConnection : public IServerConnection,
    * what is due: the request of an attempt, or its end; a ReadyState the
    * waiting room does not show yet; a copy of a Disconnection; a Heartbeat
    * once HEARTBEAT_INTERVAL passed in a session without sending anything.
-   * A session whose server sent nothing for SESSION_TIMEOUT ends as Lost
+   * A session whose server sent nothing for SESSION_SILENCE_LIMIT ends as Lost
    * instead, and nothing goes to it.
    *
    * @param elapsed Time since the previous call, or since connect().
@@ -164,11 +168,11 @@ class ServerConnection : public IServerConnection,
   void readReceived();
   void receive(const network::IncomingDatagram& datagram);
 
-  /** @brief Gives the session up as Lost once SESSION_TIMEOUT passed without a
-   * datagram of the server, before anything is sent; otherwise sends what the
-   * session needs: the ReadyState the waiting room does not show yet, and a
-   * Heartbeat once HEARTBEAT_INTERVAL passed without sending. The elapsed time
-   * counts before either is sent, so a datagram sent now starts the next
+  /** @brief Gives the session up as Lost once SESSION_SILENCE_LIMIT passed
+   * without a datagram of the server, before anything is sent; otherwise sends
+   * what the session needs: the ReadyState the waiting room does not show yet,
+   * and a Heartbeat once HEARTBEAT_INTERVAL passed without sending. The elapsed
+   * time counts before either is sent, so a datagram sent now starts the next
    * delay. */
   void holdSession(engine::Duration elapsed);
 
@@ -179,7 +183,7 @@ class ServerConnection : public IServerConnection,
 
   /** @brief Ends the attempt as Unreachable, or the session as Lost, as
    * @p ending says; forgets the session, sends nothing, and logs that the
-   * server did not answer for the delay that ran out: SESSION_TIMEOUT for
+   * server did not answer for the delay that ran out: SESSION_SILENCE_LIMIT for
    * Lost, CONNECTION_ATTEMPT_TIMEOUT for Unreachable. */
   void giveUp(ConnectionStatus::Phase ending);
 
