@@ -124,6 +124,9 @@ constexpr sf::Keyboard::Key MENU_CANCEL_KEY = sf::Keyboard::Key::Escape;
  * bindings names: it cannot be bound. */
 constexpr const char* CANCEL_KEY_NAME = "ESC";
 
+/** @brief Name written on the keycap of MENU_CONFIRM_KEY. */
+constexpr const char* CONFIRM_KEY_NAME = "ENTER";
+
 /**
  * @brief Text field: its label in small print, then, FIELD_LABEL_GAP lower, a
  * box sunk into the panel, as wide as a form leaves between the left side of

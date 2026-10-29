@@ -3,6 +3,7 @@
 #include <gtest/gtest.h>
 #include <SFML/Window/Keyboard.hpp>
 #include <vector>
+#include "KeyBindings.hpp"
 #include "LobbyPlace.hpp"
 #include "LobbyScreen.hpp"
 #include "LobbyState.hpp"
@@ -12,8 +13,8 @@
 #include "RecordingSoundPlayer.hpp"
 
 /** @brief A waiting room alone, the local player accepted as player 1, with
- * a recording navigator, connection and canvas, and READY bound to
- * READY_KEY. */
+ * a recording navigator, connection and canvas, and the bindings of a first
+ * launch, which bind READY to READY_KEY. */
 class LobbyScreenFixture : public ::testing::Test {
  protected:
   explicit LobbyScreenFixture(rtype::client::LobbyPlace place =
@@ -41,5 +42,6 @@ class LobbyScreenFixture : public ::testing::Test {
   RecordingServerConnection connection_;
   InterfaceCanvasRecord canvas_;
   RecordingSoundPlayer sounds_;
+  rtype::client::KeyBindings keys_;
   rtype::client::LobbyScreen screen_;
 };

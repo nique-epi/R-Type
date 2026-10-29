@@ -11,6 +11,7 @@
 #include <vector>
 #include "Animation.hpp"
 #include "BackgroundConstants.hpp"
+#include "BoxCorners.hpp"
 #include "Easing.hpp"
 #include "EntitySpriteConstants.hpp"
 #include "EntitySprites.hpp"
@@ -53,27 +54,11 @@ float smoothStep(float share) {
   return clamped * clamped * (1.0F + left + left);
 }
 
-/**
- * @brief Paints the four corners of the box, the top ones that many rows
- * below its top edge and the bottom ones as far above its bottom edge, each
- * two strokes SQUADRON_CORNER_LENGTH long.
- */
-void paintCorners(IInterfaceCanvas& canvas, sf::IntRect box, int rowsIn) {
-  const int left = box.position.x;
-  const int right = box.position.x + box.size.x - 1;
-  const int upper = box.position.y + rowsIn;
-  const int lower = box.position.y + std::max(rowsIn, box.size.y - 1 - rowsIn);
-  const int farEnd = SQUADRON_CORNER_LENGTH - 1;
-  const sf::Vector2i across(SQUADRON_CORNER_LENGTH, 1);
-  const sf::Vector2i down(1, SQUADRON_CORNER_LENGTH);
-  canvas.fill({{left, upper}, across}, EDGE_BLUE);
-  canvas.fill({{left, upper}, down}, EDGE_BLUE);
-  canvas.fill({{right - farEnd, upper}, across}, EDGE_BLUE);
-  canvas.fill({{right, upper}, down}, EDGE_BLUE);
-  canvas.fill({{left, lower}, across}, EDGE_BLUE);
-  canvas.fill({{left, lower - farEnd}, down}, EDGE_BLUE);
-  canvas.fill({{right - farEnd, lower}, across}, EDGE_BLUE);
-  canvas.fill({{right, lower - farEnd}, down}, EDGE_BLUE);
+/** @returns The box with that many rows taken off its top and its bottom,
+ * where the opening squadron draws its corners. */
+sf::IntRect rowsInside(sf::IntRect box, int rows) {
+  return {{box.position.x, box.position.y + rows},
+          {box.size.x, box.size.y - rows - rows}};
 }
 
 /** @brief Paints the line growing from the middle of the box, or its corners
@@ -95,10 +80,12 @@ void paintFrame(IInterfaceCanvas& canvas, sf::IntRect box, float time) {
   const float opened =
       std::min(1.0F, (time - SQUADRON_LINE_END) /
                          (SQUADRON_OPEN_END - SQUADRON_LINE_END));
-  paintCorners(
-      canvas, box,
-      std::min(middle.y, stepped(static_cast<float>(middle.y) * (1.0F - opened),
-                                 SQUADRON_OPENING_STEP)));
+  paintBoxCorners(
+      canvas,
+      rowsInside(box, std::min(middle.y, stepped(static_cast<float>(middle.y) *
+                                                     (1.0F - opened),
+                                                 SQUADRON_OPENING_STEP))),
+      EDGE_BLUE);
 }
 
 /** @brief Writes as many letters of SQUADRON as have appeared. */

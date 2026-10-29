@@ -5,6 +5,7 @@
 #include <functional>
 #include <memory>
 #include <string>
+#include "HelpWalkthrough.hpp"
 #include "IInterfaceCanvas.hpp"
 #include "IScreen.hpp"
 #include "IScreenNavigator.hpp"
@@ -44,6 +45,11 @@ struct HangarBay;
  * server and closes the screen, back to the connection screen; after a game,
  * it opens the title in place of every screen instead. The key of READY wins
  * over the keys of the menu.
+ *
+ * HELP, a chip beside BACK, or HELP_KEY opens the help of the room
+ * (HelpWalkthrough) over it: while it is open it takes every event but the
+ * release of a key, the room keeps updating under it, and the game, once it
+ * starts, replaces both.
  */
 class LobbyScreen : public IScreen {
  public:
@@ -109,6 +115,7 @@ class LobbyScreen : public IScreen {
   bool readyKeyHeld_ = false;
   bool gameAsked_ = false;
   Menu menu_;
+  HelpWalkthrough help_;
 };
 
 }  // namespace rtype::client
