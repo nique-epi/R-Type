@@ -16,6 +16,10 @@ namespace rtype::client {
 /**
  * @brief Client window, which always shows the whole playfield.
  *
+ * Building it opens nothing: open() opens the window, close() closes it, so
+ * the module that owns it builds it while it installs and opens it when it
+ * starts, once the settings that give its size are read.
+ *
  * The window cannot be resized by dragging its border. Windowed, the player
  * picks one of the sizes of WINDOW_SIZES; the window opens at the largest one
  * that fits the desktop, or at the size the player saved when it still fits.
@@ -33,13 +37,21 @@ namespace rtype::client {
  */
 class GameWindow : public ISizableWindow {
  public:
+  /** @brief A closed window, laid out windowed at the largest size the
+   * desktop holds until open() lays it out again. */
+  GameWindow();
+
   /**
    * @brief Opens the window in the given display mode; windowed, at the
    * preferred size when it is available, at the largest available one
    * otherwise, centered on the desktop. It shows at most
-   * FRAMES_PER_SECOND_LIMIT frames per second.
+   * FRAMES_PER_SECOND_LIMIT frames per second. A window already open is
+   * closed first.
    */
-  GameWindow(std::optional<PixelSize> preferredSize, DisplayMode displayMode);
+  void open(std::optional<PixelSize> preferredSize, DisplayMode displayMode);
+
+  /** @brief Closes the window; does nothing when it is closed. */
+  void close();
 
   [[nodiscard]] bool isOpen() const;
 
@@ -55,13 +67,11 @@ class GameWindow : public ISizableWindow {
    */
   [[nodiscard]] std::optional<sf::Event> pollScreenEvent();
 
-  /** @brief Clears the window to black before a frame is drawn. */
-  void clear();
-
-  /** @brief Where a frame is drawn, in playfield units. */
+  /** @brief Where a frame is drawn, in playfield units; its clear() clears
+   * the window to black before a frame is drawn. */
   [[nodiscard]] sf::RenderTarget& renderTarget();
 
-  /** @brief Shows what was drawn since clear(). */
+  /** @brief Shows what was drawn since the window was cleared. */
   void display();
 
   [[nodiscard]] const WindowLayout& windowLayout() const override;

@@ -109,11 +109,16 @@ void resizeWindow(sf::RenderWindow& window, const WindowFrame& frame) {
 
 }  // namespace
 
-GameWindow::GameWindow(std::optional<PixelSize> preferredSize,
-                       DisplayMode displayMode)
-    : layout_(desktopSize(), displayMode, preferredSize) {
+GameWindow::GameWindow()
+    : layout_(desktopSize(), DisplayMode::Windowed, std::nullopt) {}
+
+void GameWindow::open(std::optional<PixelSize> preferredSize,
+                      DisplayMode displayMode) {
+  layout_ = WindowLayout(desktopSize(), displayMode, preferredSize);
   openWindow(window_, layout_);
 }
+
+void GameWindow::close() { window_.close(); }
 
 bool GameWindow::isOpen() const { return window_.isOpen(); }
 
@@ -131,8 +136,6 @@ std::optional<sf::Event> GameWindow::pollScreenEvent() {
   }
   return std::nullopt;
 }
-
-void GameWindow::clear() { window_.clear(); }
 
 sf::RenderTarget& GameWindow::renderTarget() { return window_; }
 

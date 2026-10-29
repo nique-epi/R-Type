@@ -7,14 +7,10 @@
 #include "NetworkContext.hpp"
 #include "UdpSocket.hpp"
 
-namespace {
-
 rtype::network::Endpoint anyInterfaceOn(std::uint16_t port) {
   return rtype::network::Endpoint{
       .address = std::string{rtype::network::ANY_IPV4_ADDRESS}, .port = port};
 }
-
-}  // namespace
 
 bool udpPortIsFree(std::uint16_t port) {
   try {
