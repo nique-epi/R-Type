@@ -25,7 +25,8 @@ TEST_F(PlayerControllerFixture, TurnsAnInputIntoTheIntentOfTheShip) {
   steerShipByInput(world(), player,
                    inputHolding(HOLDS_UP | HOLDS_SHOOT, ANY_INPUT_NUMBER));
 
-  const game::Intent* const intent = world().shipIntentOf(player.shipEntityId);
+  const game::Intent* const intent =
+      world().shipComponentOf<game::Intent>(player.shipEntityId);
   ASSERT_NE(intent, nullptr);
   EXPECT_TRUE(intent->directions.up);
   EXPECT_FALSE(intent->directions.down);
@@ -48,7 +49,8 @@ TEST_F(PlayerControllerFixture, ReplacesTheIntentWithTheNewestInput) {
   steerShipByInput(world(), player,
                    inputHolding(HOLDS_NOTHING, ANY_INPUT_NUMBER + 1));
 
-  const game::Intent* const intent = world().shipIntentOf(player.shipEntityId);
+  const game::Intent* const intent =
+      world().shipComponentOf<game::Intent>(player.shipEntityId);
   ASSERT_NE(intent, nullptr);
   EXPECT_FALSE(intent->directions.up);
 }
@@ -85,9 +87,9 @@ TEST_F(PlayerControllerFixture, SilencesTheShipOfAnAwayPlayerOnly) {
   silenceAwayShips(world(), roster());
 
   const game::Intent* const presentIntent =
-      world().shipIntentOf(present.shipEntityId);
+      world().shipComponentOf<game::Intent>(present.shipEntityId);
   const game::Intent* const awayIntent =
-      world().shipIntentOf(away.shipEntityId);
+      world().shipComponentOf<game::Intent>(away.shipEntityId);
   ASSERT_NE(presentIntent, nullptr);
   ASSERT_NE(awayIntent, nullptr);
   EXPECT_TRUE(presentIntent->directions.up);
@@ -97,14 +99,14 @@ TEST_F(PlayerControllerFixture, SilencesTheShipOfAnAwayPlayerOnly) {
 }
 
 /**
- * Given a ship that just appeared, whose player was already holding right
- * When its first input (holding right), a release, and a second press within
- * DOUBLE_TAP_INPUTS of the first arrive
+ * Given a player who sent inputs to an earlier ship and was holding right
+ * When its new ship gets its first input (holding right), a release, and a
+ * second press within DOUBLE_TAP_INPUTS of the first
  * Then no dash starts: the first input of a new ship presses nothing
  */
 TEST_F(PlayerControllerFixture, FirstInputOfANewShipStartsNoManeuver) {
-  const ConnectedPlayer& player =
-      addPlayerWithShip(FIRST_PLAYER, SESSION_TOKEN);
+  ConnectedPlayer& player = addPlayerWithShip(FIRST_PLAYER, SESSION_TOKEN);
+  player.newestInputNumber = FIRST_PRESS_INPUT_NUMBER - 1;
   const network::PlayerInput inputs[] = {
       inputHolding(HOLDS_RIGHT, FIRST_PRESS_INPUT_NUMBER),
       inputHolding(HOLDS_NOTHING, RELEASE_INPUT_NUMBER),
@@ -119,6 +121,31 @@ TEST_F(PlayerControllerFixture, FirstInputOfANewShipStartsNoManeuver) {
       world().shipMotionOf(player.shipEntityId);
   ASSERT_NE(motion, nullptr);
   EXPECT_EQ(motion->maneuver, game::ManeuverKind::None);
+}
+
+/**
+ * Given a player who sent no input yet, whose first input holds right
+ * When that press, a release and a second press within DOUBLE_TAP_INPUTS of the
+ * first arrive
+ * Then a dash starts: the first input of a session still counts as a press
+ */
+TEST_F(PlayerControllerFixture, FirstInputOfASessionStillPressesWhatItHolds) {
+  const ConnectedPlayer& player =
+      addPlayerWithShip(FIRST_PLAYER, SESSION_TOKEN);
+  const network::PlayerInput inputs[] = {
+      inputHolding(HOLDS_RIGHT, FIRST_PRESS_INPUT_NUMBER),
+      inputHolding(HOLDS_NOTHING, RELEASE_INPUT_NUMBER),
+      inputHolding(HOLDS_RIGHT, SECOND_PRESS_INPUT_NUMBER)};
+
+  for (const network::PlayerInput& input : inputs) {
+    noteTaps(world(), player, input);
+    steerShipByInput(world(), player, input);
+  }
+
+  const game::ShipMotion* const motion =
+      world().shipComponentOf<game::ShipMotion>(player.shipEntityId);
+  ASSERT_NE(motion, nullptr);
+  EXPECT_EQ(motion->maneuver, game::ManeuverKind::Dash);
 }
 
 /**
