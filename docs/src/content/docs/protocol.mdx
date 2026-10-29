@@ -7,7 +7,7 @@ sidebar:
 
 import ByteLayout from '../../components/ByteLayout.astro';
 
-The client and the server talk over UDP in the binary format described on this page, byte by byte, so each side can be written without reading the code of the other. Version 1 is the contract for the first part of the project. The code follows it in `src/network`: the socket in `Transport` drops a datagram over 1200 bytes (see [Network](/R-Type/network/)), `Serialization` encodes integers and strings, and `Protocol` holds the datagram header and every message of this page, each checked as listed here, except that a `WorldState` without players is accepted while the game has none (see [Network](/R-Type/network/#world-state-worldstatecodec)). The programs apply part of the checks of [Receiving a datagram](#receiving-a-datagram) today: both drop a datagram whose header is not of this protocol and version or whose message sizes do not add up, the server drops on its network thread every datagram that is neither a connection request nor from a player it admitted, and answers the requests as [Connection](#connection) describes, and the client reads only the server it contacts. Within a session, each side writes the session token and its next sequence into every datagram it sends: the server in its acceptances, the `EntitySpawned` of the ships, the Bydos and the missiles, `LobbyState`, `GameStarted`, `WorldState`, the game events, `GameEnded` and `Heartbeat`, the client in its inputs, `ReadyState`, `Heartbeat` and `Disconnection`. Each side sends a `Heartbeat` after 1 s without sending anything else, the server keeps the seat of a player 5 s after its last datagram, marks it away, and closes the session 15 s later, 20 s in all, and the client closes its session after 20 s without a datagram of the server, as [A session](#a-session) describes. The server checks the token of every datagram from the address of a player it admitted, on its network thread before any queue, and the sequence of those holding a `ReadyState`; the client checks the token, then the sequence, of every datagram of the server. The `IncompatibleVersion` answer is not sent yet.
+The client and the server talk over UDP in the binary format described on this page, byte by byte, so each side can be written without reading the code of the other. Version 1 is the contract for the first part of the project. The code follows it in `src/network`: the socket in `Transport` drops a datagram over 1200 bytes (see [Network](/R-Type/network/)), `Serialization` encodes integers and strings, and `Protocol` holds the datagram header and every message of this page, each checked as listed here, except that a `WorldState` without players is accepted while the game has none (see [Network](/R-Type/network/#world-state-worldstatecodec)). The programs apply part of the checks of [Receiving a datagram](#receiving-a-datagram) today: both drop a datagram whose header is not of this protocol and version or whose message sizes do not add up, the server drops on its network thread every datagram that is neither a connection request nor from a player it admitted, and answers the requests as [Connection](#connection) describes, and the client reads only the server it contacts. Within a session, each side writes the session token and its next sequence into every datagram it sends: the server in its acceptances, the `EntitySpawned` of the ships, the Bydos and the missiles, `LobbyState`, `GameStarted`, `WorldState`, the game events, `GameEnded` and `Heartbeat`, the client in its inputs, `ReadyState`, `Heartbeat` and `Disconnection`. Each side sends a `Heartbeat` after 1 s without sending anything else, the server keeps the seat of a player 5 s after its last datagram, marks it away, and closes the session 15 s later, 20 s in all, and the client closes its session after 20 s without a datagram of the server, as [A session](#a-session) describes. The server checks the token of every datagram from the address of a player it admitted, on its network thread before any queue, and the sequence of every datagram it reads from a player, so a duplicate or a late one is dropped whatever its message; the client checks the token, then the sequence, of every datagram of the server. The `IncompatibleVersion` answer is not sent yet.
 
 ## Transport
 
@@ -98,7 +98,9 @@ A received datagram goes through these checks in order. No buffer is sized from 
 | The message type is listed below | that message is skipped, the next one is read |
 | The payload has the size its type requires and every value is in range | that message is dropped |
 
-The token is checked before the sequence, so a forged datagram never moves the counter. The server never sends an unknown sender more bytes than the datagram it answers, so a forged source address cannot turn it into an amplifier: a `ConnectionRequest` holds at least 35 bytes, and every answer to it at most 33 (`ConnectionChallenge`). A client that receives a datagram of another version decodes nothing in it. While it connects to the server that sent it, it ends the attempt and reports both version numbers to the player: its own, and the one at offset 4; within a session it drops it, so a datagram forged with the address of the server cannot end the session.
+The token is checked before the sequence, so a forged datagram never moves the counter. A datagram dropped for its sequence is not heard from the peer: it does not restart the silence count of [A session](#a-session).
+
+The server measures the loss rate of each player from the gaps in `sequence`. Each datagram it accepts counts as received, and the sequences it skips over count as lost; every 100 datagrams counted, received or lost, it takes the share lost as the loss rate of that player and starts counting again. A datagram that arrives late and is dropped stays counted as lost. Nothing is added to the wire. The server never sends an unknown sender more bytes than the datagram it answers, so a forged source address cannot turn it into an amplifier: a `ConnectionRequest` holds at least 35 bytes, and every answer to it at most 33 (`ConnectionChallenge`). A client that receives a datagram of another version decodes nothing in it. While it connects to the server that sent it, it ends the attempt and reports both version numbers to the player: its own, and the one at offset 4; within a session it drops it, so a datagram forged with the address of the server cannot end the session.
 
 ## Messages
 
@@ -124,7 +126,7 @@ The type identifies a message in both directions: `Disconnection` and `Heartbeat
 | 5 | `Heartbeat` | none | after 1 s without sending anything else |
 | 7 | `LobbyState` | `playerCount` `u8`, then per player `playerNumber` `u8`, `ready` `bool`, `nickname` `string` | on every change, and at least every 500 ms while no game runs |
 | 8 | `GameStarted` | none | when every connected player is ready |
-| 10 | `WorldState` | see [World state](#world-state) | 20 times per second during a game |
+| 10 | `WorldState` | see [World state](#world-state) | during a game, as many times per second as the server was told to (20 by default, from 2 to 60) |
 | 11 | `EntitySpawned` | `entityId` `u32`, `entityType` `u8`, `position` | when an entity appears; the ship of a player, when the player is accepted; the ship of a player again, when it comes back after a hit; a Bydo, every time one appears; a missile of a player, every time one is fired |
 | 12 | `EntityDestroyed` | `entityId` `u32`, `reason` `u8`: 1 `Killed` (explosion), 2 `Removed` (no effect) | when an entity disappears, three times 50 ms apart |
 | 13 | `GameEvent` | `eventNumber` `u16`, `kind` `u8`, `playerNumber` `u8`, `entityId` `u32` | see [Game events](#game-events), three times 50 ms apart |
@@ -197,7 +199,7 @@ A nickname is unique on the server: a request whose nickname a player already ho
 
 - ignores a `WorldState` whose `tick` is lower than the last one applied; an equal `tick` is another part of the same state. The `tick` is compared as a plain 32-bit integer, without wrap-around: it takes 2.27 years at 60 ticks per second to reach 2³². The sender checks come first, so a forged datagram cannot raise the last `tick` applied;
 - creates an entity it does not know, from its type, with its appearance effect (the shot sound of a missile, for instance);
-- removes an entity that no `WorldState` has listed for 900 ms, counted on the `tick` of the states. A state may come in several parts, and a later part may list an entity an earlier one left out, so a tick counts only once a part of a newer tick closes it: no later part of it is applied, and a lost part never comes. The entity goes when the tick 54 ticks or more past the last one that listed it is closed. With a state every 50 ms and none lost, a ghost goes 950 ms after the last state that listed it. While no state arrives, nothing is removed.
+- removes an entity that no `WorldState` has listed for 900 ms, counted on the `tick` of the states. A state may come in several parts, and a later part may list an entity an earlier one left out, so a tick counts only once a part of a newer tick closes it: no later part of it is applied, and a lost part never comes. The entity goes when the tick 54 ticks or more past the last one that listed it is closed. With none lost, a ghost goes when the first state after the first state whose tick is 54 ticks or more past its last listing arrives: 950 ms after that listing at the default 20 states per second, 1000 ms at 10, 1500 ms at the lowest rate of 2. While no state arrives, nothing is removed.
 
 An `EntityDestroyed` naming an entity the client does not know, and an `EntitySpawned` naming one it already has, change nothing.
 
@@ -246,7 +248,7 @@ sequenceDiagram
   C->>S: ReadyState
   S->>C: GameStarted
   C->>S: PlayerInput (60 per second)
-  S->>C: WorldState (20 per second), events
+  S->>C: WorldState (20 per second by default), events
   S->>C: GameEnded (repeated)
   S->>C: LobbyState (repeated)
   C->>S: Disconnection
@@ -257,7 +259,7 @@ In each phase the server repeats one message, and the client shows the screen of
 | Phase | Repeated message | The client shows |
 |---|---|---|
 | Waiting for players | `LobbyState`, every 500 ms | the lobby |
-| Game in progress | `WorldState`, 20 per second | the game |
+| Game in progress | `WorldState`, 20 per second by default | the game |
 | Game ended | `GameEnded`, every 500 ms | the end screen |
 
 The end screen stays until the player chooses, whatever the server sends after `GameEnded`: a player who plays again finds the waiting room, a player who quits leaves the server. Between `GameEnded` and the next `GameStarted`, the server must send no `WorldState`: the client reads a `WorldState` as the start of a game.
@@ -338,23 +340,23 @@ Nothing is guaranteed in version 1: a lost message is never resent on request. T
 | `ConnectionRequest`, or its answer | the client sends the request again, the server answers it again | 500 ms |
 | `ReadyState` | sent again while `LobbyState` shows another value | 500 ms |
 | `LobbyState`, `GameEnded` | the next one | 500 ms |
-| `WorldState` | the next one | 50 ms |
-| `GameStarted` | the first `WorldState` | 50 ms |
+| `WorldState` | the next one | 50 ms at the default 20 per second, one rate-th of a second at any other |
+| `GameStarted` | the first `WorldState` | 50 ms at 20 per second |
 | `PlayerInput` | the next input | 17 ms |
 | `Heartbeat` | the next datagram | 1 s |
-| `EntitySpawned` | the next `WorldState` creates the entity, with its appearance effect | 50 ms |
+| `EntitySpawned` | the next `WorldState` creates the entity, with its appearance effect | 50 ms at 20 per second |
 | `EntityDestroyed`, `GameEvent`, `PlayerLeft`, `Disconnection` | the next copy | 50 ms |
 | all three copies of `Disconnection` | the session times out: the others get `PlayerLeft` (`TimedOut`) instead of (`Left`) | 20 s |
-| all three copies of `EntityDestroyed` | the entity is removed once no `WorldState` has listed it for 900 ms up to a closed tick, without explosion | 950 ms |
+| all three copies of `EntityDestroyed` | the entity is removed once no `WorldState` has listed it for 900 ms up to a closed tick, without explosion | 950 ms at 20 per second |
 | all three copies of `GameEvent` or `PlayerLeft` | not corrected: the sound, effect or message on screen is missed; lives, scores and players stay right through the state messages | — |
 
-The rates and delays on this page (60 inputs and 20 states per second, 500 ms, 900 ms, 1 s, 5 s, 15 s, the 10-second cookie window) are **provisional**: they will be revised once measured on a real network. Code must name each of them as a constant and never repeat the number.
+The rates and delays on this page (60 inputs and 20 states per second by default, 500 ms, 900 ms, 1 s, 5 s, 15 s, the 10-second cookie window) are **provisional**: they will be revised once measured on a real network. Code must name each of them as a constant and never repeat the number.
 
 ## Version 2
 
 The second part of the project changes the protocol as follows:
 
-- Each side measures the loss rate of the other from the gaps in `sequence`: nothing changes on the wire.
+- The client measures the loss rate of the server from the gaps in `sequence`, as the server does for each player: nothing changes on the wire.
 - Guaranteed messages use `flags`, `acknowledgedSequence` and `acknowledgementBits` and replace the three copies: same layout, new meaning, so `version` becomes 2.
 - Several messages share a datagram: receivers of version 1 already accept it, and a sender of version 2 may use it.
 - `PlayerInput` repeats the inputs not yet confirmed, `WorldState` confirms the last input applied to each player, and states are sent as differences from the last one received: these payloads change in version 2.

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstddef>
 #include <cstdint>
 #include <stdexcept>
 #include <string>
@@ -129,6 +130,14 @@ class ConsoleHandlerException : public ServerException {
 class EmptyEnemyCycleException : public ServerException {
  public:
   EmptyEnemyCycleException();
+};
+
+/** @brief A game was set up with a number of world states per second the
+ * server cannot send. */
+class InvalidStateRateException : public ServerException {
+ public:
+  /** @param statesPerSecond The number given, in the message. */
+  explicit InvalidStateRateException(std::size_t statesPerSecond);
 };
 
 }  // namespace rtype::server

@@ -6,8 +6,6 @@ target_link_libraries(rtype_server_ready_keeper
   PUBLIC
     rtype_network_ready_state
     rtype_server_player_roster
-  PRIVATE
-    rtype_network_sequence_order
 )
 
 rtype_enable_warnings(rtype_server_ready_keeper)

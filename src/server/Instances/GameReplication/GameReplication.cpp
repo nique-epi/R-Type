@@ -1,4 +1,5 @@
 #include "GameReplication.hpp"
+#include <cstddef>
 #include <cstdint>
 #include <memory>
 #include <utility>
@@ -13,10 +14,11 @@
 
 namespace rtype::server {
 
-GameReplication::GameReplication(PlayerRoster& roster, SendDatagram send)
+GameReplication::GameReplication(PlayerRoster& roster, SendDatagram send,
+                                 std::size_t statesPerSecond)
     : roster_(roster),
       send_(std::move(send)),
-      worldStateSender_(roster_, send_) {}
+      worldStateSender_(roster_, send_, statesPerSecond) {}
 
 void GameReplication::onWorldBuilt(game::World& world) {
   shipSpawnAnnouncer_ =

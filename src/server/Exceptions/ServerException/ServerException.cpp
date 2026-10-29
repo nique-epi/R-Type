@@ -1,8 +1,10 @@
 #include "ServerException.hpp"
+#include <cstddef>
 #include <cstdint>
 #include <stdexcept>
 #include <string>
 #include <vector>
+#include "ServerConstants.hpp"
 #include "WaveFilePlace.hpp"
 #include "WholeNumberRange.hpp"
 
@@ -104,5 +106,13 @@ ConsoleHandlerException::ConsoleHandlerException(std::uint32_t errorCode)
           "cannot register the handler of the console events that stop the "
           "server: Windows error " +
           std::to_string(errorCode)) {}
+
+InvalidStateRateException::InvalidStateRateException(
+    std::size_t statesPerSecond)
+    : ServerException("the world state rate must be from " +
+                      std::to_string(LOWEST_WORLD_STATES_PER_SECOND) + " to " +
+                      std::to_string(HIGHEST_WORLD_STATES_PER_SECOND) +
+                      " states per second, not " +
+                      std::to_string(statesPerSecond)) {}
 
 }  // namespace rtype::server

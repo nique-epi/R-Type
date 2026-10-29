@@ -18,8 +18,10 @@
 #include "ProtocolConstants.hpp"
 #include "ReplicationConstants.hpp"
 #include "ServerConstants.hpp"
+#include "ServerException.hpp"
 #include "SessionDatagram.hpp"
 #include "ShipMotion.hpp"
+#include "TimeConstants.hpp"
 #include "WireEntityTypeMapping.hpp"
 #include "WorldState.hpp"
 #include "WorldStateCodec.hpp"
@@ -77,14 +79,28 @@ std::uint8_t maneuverBitOfShip(engine::ComponentRegistry& components,
 
 }  // namespace
 
-WorldStateSender::WorldStateSender(PlayerRoster& roster, Send send)
+WorldStateSender::WorldStateSender(PlayerRoster& roster, Send send,
+                                   std::size_t statesPerSecond)
     : roster_(&roster),
       send_(std::move(send)),
-      logger_(std::string{REPLICATION_LOGGER_NAME}) {}
+      statesPerSecond_(statesPerSecond),
+      logger_(std::string{REPLICATION_LOGGER_NAME}) {
+  if (statesPerSecond < LOWEST_WORLD_STATES_PER_SECOND ||
+      statesPerSecond > HIGHEST_WORLD_STATES_PER_SECOND) {
+    throw InvalidStateRateException(statesPerSecond);
+  }
+}
+
+bool WorldStateSender::carriesState(std::uint32_t tick) const {
+  const std::uint64_t shareOfSecond = static_cast<std::uint64_t>(tick) *
+                                      statesPerSecond_ %
+                                      engine::SIMULATION_TICKS_PER_SECOND;
+  return shareOfSecond < statesPerSecond_;
+}
 
 void WorldStateSender::onTick(std::uint32_t tick,
                               engine::ComponentRegistry& components) {
-  if (tick % TICKS_PER_WORLD_STATE != 0) {
+  if (!carriesState(tick)) {
     return;
   }
   const ConnectedPlayers players = roster_->connected();

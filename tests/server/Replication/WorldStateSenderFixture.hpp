@@ -3,6 +3,7 @@
 #include <gtest/gtest.h>
 #include <cstddef>
 #include <cstdint>
+#include <memory>
 #include <vector>
 #include "ComponentRegistry.hpp"
 #include "ConnectedPlayer.hpp"
@@ -72,6 +73,13 @@ class WorldStateSenderFixture : public ::testing::Test {
   void runTicks(std::size_t count);
 
   /**
+   * @brief Replaces the sender by one that sends @p statesPerSecond states per
+   * second, and forgets the ticks run and the datagrams handed over so far.
+   * @throws InvalidStateRateException when the rate is not one a sender takes.
+   */
+  void restartWithStatesPerSecond(std::size_t statesPerSecond);
+
+  /**
    * @returns The WorldState the datagram handed over at @p sentIndex holds
    * after its header.
    */
@@ -93,7 +101,7 @@ class WorldStateSenderFixture : public ::testing::Test {
   engine::ComponentRegistry components_{entities_};
   PlayerRoster roster_;
   std::vector<network::OutgoingDatagram> sent_;
-  WorldStateSender sender_;
+  std::unique_ptr<WorldStateSender> sender_;
   std::uint32_t tick_{0};
 };
 

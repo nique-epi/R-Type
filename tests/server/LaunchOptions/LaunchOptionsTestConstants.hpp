@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstddef>
 #include <cstdint>
 #include <string_view>
 
@@ -63,3 +64,21 @@ constexpr std::uint32_t HIGHEST_SEED = 4294967295U;
 constexpr std::string_view TOO_HIGH_SEED_ARGUMENT = "4294967296";
 constexpr std::string_view NEGATIVE_SEED_ARGUMENT = "-1";
 constexpr std::string_view EMPTY_SEED_ARGUMENT{};
+
+/**
+ * @brief The values of the state rate option the tests give: ones the server
+ * accepts, with the number each reads as, and ones it refuses.
+ */
+constexpr std::string_view STATE_RATE_ARGUMENT = "30";
+constexpr std::size_t RATE_OF_STATE_RATE_ARGUMENT = 30;
+constexpr std::string_view OTHER_STATE_RATE_ARGUMENT = "45";
+constexpr std::size_t RATE_OF_OTHER_STATE_RATE_ARGUMENT = 45;
+constexpr std::string_view LOWEST_STATE_RATE_ARGUMENT = "2";
+constexpr std::size_t LOWEST_STATE_RATE = 2;
+constexpr std::string_view HIGHEST_STATE_RATE_ARGUMENT = "60";
+constexpr std::size_t HIGHEST_STATE_RATE = 60;
+constexpr std::string_view TOO_LOW_STATE_RATE_ARGUMENT = "1";
+constexpr std::string_view TOO_HIGH_STATE_RATE_ARGUMENT = "61";
+constexpr std::string_view NEGATIVE_STATE_RATE_ARGUMENT = "-30";
+constexpr std::string_view NOT_A_NUMBER_STATE_RATE_ARGUMENT = "fast";
+constexpr std::string_view EMPTY_STATE_RATE_ARGUMENT{};

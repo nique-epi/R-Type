@@ -63,7 +63,8 @@ void ServerGamesModule::start() {
                                           ? *settings_.seed +
                                                 static_cast<std::uint32_t>(game)
                                           : std::random_device{}(),
-                              .waves = waves});
+                              .waves = waves,
+                              .statesPerSecond = settings_.statesPerSecond});
     games_.add(std::move(events), std::move(created));
   }
 }

@@ -18,8 +18,10 @@ using rtype::engine::PORT_OPTION;
 using rtype::engine::UnknownLaunchArgumentException;
 using rtype::network::DEFAULT_SERVER_PORT;
 using rtype::network::InvalidPortException;
+using rtype::server::DEFAULT_WORLD_STATES_PER_SECOND;
 using rtype::server::LaunchOptions;
 using rtype::server::SEED_OPTION;
+using rtype::server::STATE_RATE_OPTION;
 
 namespace {
 
@@ -235,4 +237,104 @@ TEST(ServerLaunchOptions, InvalidSeedIsRejected) {
 TEST(ServerLaunchOptions, SeedOptionWithoutValueIsRejected) {
   EXPECT_THROW(static_cast<void>(LaunchOptions::read(Arguments{SEED_OPTION})),
                MissingLaunchOptionValueException);
+}
+
+/**
+ * Given no state rate option
+ * When the launch options are read
+ * Then each player is sent the default number of states per second
+ */
+TEST(ServerLaunchOptions, NoStateRateOptionGivesTheDefaultRate) {
+  const LaunchOptions options = LaunchOptions::read(Arguments{});
+
+  EXPECT_EQ(options.stateRate(), DEFAULT_WORLD_STATES_PER_SECOND);
+}
+
+/**
+ * Given the state rate option and a rate
+ * When the launch options are read
+ * Then each player is sent that many states per second
+ */
+TEST(ServerLaunchOptions, StateRateOptionSetsTheRate) {
+  const LaunchOptions options =
+      LaunchOptions::read(Arguments{STATE_RATE_OPTION, STATE_RATE_ARGUMENT});
+
+  EXPECT_EQ(options.stateRate(), RATE_OF_STATE_RATE_ARGUMENT);
+}
+
+/**
+ * Given the state rate option given twice
+ * When the launch options are read
+ * Then the last rate wins
+ */
+TEST(ServerLaunchOptions, LastStateRateOptionWins) {
+  const LaunchOptions options = LaunchOptions::read(
+      Arguments{STATE_RATE_OPTION, STATE_RATE_ARGUMENT, STATE_RATE_OPTION,
+                OTHER_STATE_RATE_ARGUMENT});
+
+  EXPECT_EQ(options.stateRate(), RATE_OF_OTHER_STATE_RATE_ARGUMENT);
+}
+
+/**
+ * Given the lowest rate the server accepts
+ * When the launch options are read
+ * Then it is accepted
+ */
+TEST(ServerLaunchOptions, StateRateOptionAcceptsTheLowestRate) {
+  const LaunchOptions options = LaunchOptions::read(
+      Arguments{STATE_RATE_OPTION, LOWEST_STATE_RATE_ARGUMENT});
+
+  EXPECT_EQ(options.stateRate(), LOWEST_STATE_RATE);
+}
+
+/**
+ * Given the highest rate the server accepts, one state per tick
+ * When the launch options are read
+ * Then it is accepted
+ */
+TEST(ServerLaunchOptions, StateRateOptionAcceptsTheHighestRate) {
+  const LaunchOptions options = LaunchOptions::read(
+      Arguments{STATE_RATE_OPTION, HIGHEST_STATE_RATE_ARGUMENT});
+
+  EXPECT_EQ(options.stateRate(), HIGHEST_STATE_RATE);
+}
+
+/**
+ * Given a rate under the lowest, over the highest, negative, not a number or
+ * empty
+ * When the launch options are read
+ * Then each is refused as an invalid value of the option
+ */
+TEST(ServerLaunchOptions, StateRateOptionRefusesARateOutOfRange) {
+  for (const std::string_view rate :
+       {TOO_LOW_STATE_RATE_ARGUMENT, TOO_HIGH_STATE_RATE_ARGUMENT,
+        NEGATIVE_STATE_RATE_ARGUMENT, NOT_A_NUMBER_STATE_RATE_ARGUMENT,
+        EMPTY_STATE_RATE_ARGUMENT}) {
+    SCOPED_TRACE(rate);
+
+    EXPECT_THROW(static_cast<void>(
+                     LaunchOptions::read(Arguments{STATE_RATE_OPTION, rate})),
+                 InvalidLaunchOptionValueException);
+  }
+}
+
+/**
+ * Given the state rate option as the last argument
+ * When the launch options are read
+ * Then the missing value is reported
+ */
+TEST(ServerLaunchOptions, StateRateOptionWithoutValueIsRefused) {
+  EXPECT_THROW(
+      static_cast<void>(LaunchOptions::read(Arguments{STATE_RATE_OPTION})),
+      MissingLaunchOptionValueException);
+}
+
+/**
+ * Given nothing
+ * When the usage is asked for
+ * Then it names the state rate option
+ */
+TEST(ServerLaunchOptions, UsageNamesTheStateRateOption) {
+  EXPECT_NE(LaunchOptions::usage().find(std::string(STATE_RATE_OPTION)),
+            std::string::npos);
 }
