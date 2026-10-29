@@ -18,9 +18,16 @@ trigger: always_on
 2. **A shortcut that changes the setup is a new environment**: a symlinked dependency folder, a shared build directory, a copied cache. Measure it there; never inherit the result from the folder it was copied from.
 3. **A claim found false after launch is corrected at once**: tell every running agent that the claim was false and what was observed (command, exit code, error), and forbid the destructive workaround (deleting or reinstalling a shared folder). Name the setup as the cause only with evidence that tells it apart from a code defect, such as the same command passing once the setup is repaired.
 
+### A test of a layout computes where each thing lands before it asserts a side
+
+1. **Before asserting that one thing lies left, right, above or below another** (the professor faces a part, a bubble sits under the bays), compute both positions with the constants of the code, and write the two numbers next to the assertion while writing it.
+2. **A side read from the picture of a whole screen is not a side relative to a moving piece**: "BACK is on the right of the room" says nothing of where BACK lies from a professor who also stands on the right.
+
 ## Example
 
 - ❌ **Before (wrong)**: brief → "two simulations with the same seed produce the same state at tick 100; write the test asserting it" — without checking (enemies shoot using `std::random_device`).
 - ✅ **After (right)**: run two simulations → see them diverge at tick 12 → brief → "the simulation is not deterministic today (source: `EnemySpawner` uses `std::random_device`). Make it deterministic by injecting the generator, then assert equality at tick 100."
 - ❌ **Before (wrong)**: `docs/node_modules` symlinked into six worktrees, brief → "`npm run build` in `docs/` works directly" → Astro resolves the real path outside the project and every build fails with "No cached compile metadata".
 - ✅ **After (right)**: run `npm run build` in one prepared worktree first → it fails with the symlink → `npm ci --prefer-offline` in each worktree, build measured green, then brief.
+- ❌ **Before (wrong)**: the help test asserted the professor faces right on the step of BACK, "on the right of the room"; computed, the professor stands at x 394 to 442 (middle 418) and BACK's middle is at x 415, on his left: the test failed on correct code.
+- ✅ **After (right)**: the step of the Bydos, whose middle (x 361) pushes the professor to the left of the bubble (x 38 to 86): they lie on his right, both numbers written in the test's Given.
