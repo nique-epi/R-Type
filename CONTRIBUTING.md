@@ -100,12 +100,12 @@ clang-tidy -p build --extra-arg=-isysroot --extra-arg="$SDK" \
 | Rule | In short |
 |---|---|
 | Headers declare, sources define | No function body in a `.hpp`, one-line getters included. Only templates, `constexpr` and `= default` or `= delete` members stay there. |
-| One folder per class | A class, or a header of free functions that has a `.cpp`, lives in a folder of its name with its own `CMakeLists.txt`. See [Adding a class](https://nique-epi.github.io/R-Type/project-layout/#adding-a-class). |
-| One `CMakeLists.txt` per folder | It declares the library of its folder and calls `rtype_enable_warnings()`; the parent adds it with `add_subdirectory`. |
+| A module is one folder and one library | A module groups the classes of one feature (`src/server/Spawning/`). Its `CMakeLists.txt` declares one library, `rtype_<owner>_<module>`, listing the `.cpp` of every class; each class is a `.hpp` and `.cpp` pair of the folder, never a folder of its own. A module holds at most 10 `.cpp`. A sub-folder with a library of its own, a sub-module, exists only for a group that needs a dependency the rest of the module must not link, that another module reuses, or when the module would pass ten. Two classes of a module never include each other. A module written before this layout keeps a folder per class until it is flattened in a `refactor` commit of its own. See [Adding a class](https://nique-epi.github.io/R-Type/project-layout/#adding-a-class). |
+| One `CMakeLists.txt` per folder | It declares the library of its folder (the one library of a module) and calls `rtype_enable_warnings()`; the parent adds it with `add_subdirectory`. |
 | Who may link what | The server and the shared libraries never link SFML; the configure stops if they do. See [Who may link what](https://nique-epi.github.io/R-Type/project-layout/#who-may-link-what). |
 | Interfaces are pure | An interface holds only `= 0` methods and a `= default` virtual destructor: no body, no data. |
 | Inherit interfaces, compose the rest | A class derives only from interfaces. To reuse code, it holds an object as a member. No `protected` data. |
-| No type inside a class | No nested `struct`, `enum` or `using` alias: each type gets a header of its own. |
+| No type inside a class | No nested `struct`, `enum` or `using` alias: each type gets a header of its own, in the module folder next to the class that uses it. |
 | At most 10 member functions | Constructors, the destructor and `= default` members are not counted. A larger class is split along the state its functions share. |
 | At most 3 parameters | Pass the whole object, or a struct named after what the values are, built with designated initializers: `TextureArea{.assetId = …, .rectangle = …}`. |
 | One kind of step per function | Checks that decide, writes that build, and notifications (a sound, a message, a log) go in separate functions. |
@@ -114,6 +114,14 @@ clang-tidy -p build --extra-arg=-isysroot --extra-arg="$SDK" \
 | Designated initializers | An aggregate of two members or more is built with `Type{.first = a, .second = b}`. |
 
 A file you touch that already breaks one of these rules is fixed, not extended: in a `refactor` commit of its own when the fix stays in the file or the module, or reported in the pull request and discussed first when it would spread across modules.
+
+### Writing a module
+
+A module that implements `IModule` is installed, started and stopped in the order of its program's list:
+
+- `install()` prepares and checks, and keeps nothing open: it may read a file and close it, build the objects the module owns, or throw on a wrong configuration.
+- `start()` opens what must live until `stop()`: a socket, a thread, an open file, an event subscription, a timer. A `start()` that opens several things releases the ones already open before an exception leaves it, because `Application` never calls `stop()` on the module whose `start()` threw.
+- `stop()` closes everything `start()` opened, in the reverse order. Test the failure of a second step as well as the success: the first resource must be released.
 
 ## Tests
 
@@ -137,6 +145,7 @@ TEST_F(WaveDirectorFixture, StartsWithTheFirstWave) {
 - A `…Test.cpp` holds only its includes, its `using` lines and its tests. Its constants go in `<Subject>TestConstants.hpp`, its fixture in `<Subject>Fixture.{hpp,cpp}` and its helper functions in `<Subject>Fixtures.{hpp,cpp}`, next to it. A class that stands in for a production one goes in `tests/doubles/`.
 - An assertion states what the product requires, never what the code happened to return: that decoding an encoded message gives the message back, rather than the byte count the encoder produced on the day the test was written. When a requirement fixes a value, the test writes that value, never the constant the code under test reads.
 - A test double keeps the risky properties of what it replaces: a fake network loses, repeats and reorders datagrams; a fake clock moves.
+- A test added to an existing test executable links what it uses: a gmock matcher needs `GTest::gmock`, and a header of `src/` needs the library that exposes it. Build that executable alone right after adding the test.
 - Watch a new test fail on the faulty code before keeping it: a test that was never red proves nothing.
 
 ```bash
@@ -149,7 +158,7 @@ It configures in Debug, builds and runs every test. It must pass with zero warni
 
 The server reads datagrams from clients it cannot trust:
 
-- every size, index or identifier read from a datagram is bounded before it is used, and a datagram that is truncated, too long or of an unknown type is dropped without a crash;
+- every size, index or identifier read from a datagram is bounded before it is used, and a datagram that is truncated, too long or of an unknown type is dropped without a crash; a bound is tested on the empty input, on the full input and one step on each side of it;
 - the wire format is explicit, with fixed sizes and a byte order (see [Protocol](https://nique-epi.github.io/R-Type/protocol/)), never a struct copied as is;
 - a client can never make the server allocate memory in proportion to a value it sends;
 - a check runs before the write it protects, never after;
@@ -168,7 +177,7 @@ git grep -n -i -e '<old name>' -- docs/src/content README.md
 
 ## Pull requests
 
-Open the pull request as a draft, in English (title, description and every comment), with a title written like a commit message. Its description has these sections, in this order:
+Open the pull request as a draft, with a title written like a commit message. The title and the description are in English; the comments posted on the pull request (replies, review comments, follow-ups) are in French. Its description has these sections, in this order:
 
 | Section | Holds |
 |---|---|
@@ -185,7 +194,7 @@ Then follow its checks until they are green:
 | Check | Runs |
 |---|---|
 | Format check | `clang-format` 20 on every `.cpp` and `.hpp` of `src/` and `tests/` |
-| Clang-tidy (1/4 to 4/4) | `clang-tidy` 20 on the `.cpp` and `.hpp` files the pull request changes, or on every file when it changes `.clang-tidy` or the workflow |
+| Clang-tidy (1/4 to 4/4) | `clang-tidy` 22 on the `.cpp` and `.hpp` files the pull request changes, or on every file when it changes `.clang-tidy` or the workflow |
 | Clang-tidy (Windows-only files) | the `…Windows.cpp` files, which only Windows compiles |
 | Build and test (ubuntu-latest, windows-latest) | the `test` preset with warnings as errors, under GCC on Linux and MSVC on Windows, then every test |
 | Build documentation | `npm ci` and `npm run build` in `docs/` |
@@ -215,7 +224,8 @@ A change is done when:
 - it sits on its own branch, started from `origin/main`, with one intent per commit;
 - `cmake --workflow --preset test` passes with zero warnings;
 - the format check and `clang-tidy` pass on the files it changes;
+- once its plan was applied, the changed code was reviewed for reuse and simplification (`/simplify`) before the final checks above were run;
 - it breaks none of the rules of [Code style](#code-style) and [Code structure](#code-structure);
 - each behavior it adds or fixes has a Given / When / Then test;
 - the site and the README describe it;
-- its commits and its pull request are in English, with no mention of the tools used to write them, and the pull request was opened as a draft.
+- its commits and the title and description of its pull request are in English, its pull request comments are in French, none of them mentions the tools used to write them, and the pull request was opened as a draft.
