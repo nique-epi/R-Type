@@ -11,6 +11,7 @@
 #include "ClientException.hpp"
 #include "IScreen.hpp"
 #include "LoadingScreen.hpp"
+#include "LoadingScreenParts.hpp"
 #include "RecordingScreen.hpp"
 #include "ScreenId.hpp"
 #include "ScreenStack.hpp"
@@ -25,6 +26,7 @@ using rtype::client::AssetLoadingException;
 using rtype::client::genericText;
 using rtype::client::IScreen;
 using rtype::client::LoadingScreen;
+using rtype::client::LoadingScreenParts;
 using rtype::client::ScreenId;
 using rtype::client::ScreenStack;
 using ::testing::ElementsAre;
@@ -81,8 +83,11 @@ class LoadingScreenTest : public ::testing::Test {
   ScreenStack screens_{[this](ScreenId screen) -> std::unique_ptr<IScreen> {
     if (!loadingScreenBuilt_) {
       loadingScreenBuilt_ = true;
-      return std::make_unique<LoadingScreen>(screens_, library_, toLoad_,
-                                             screen);
+      return std::make_unique<LoadingScreen>(
+          LoadingScreenParts{.navigator = screens_,
+                             .library = library_,
+                             .assets = toLoad_,
+                             .nextScreen = screen});
     }
     return std::make_unique<RecordingScreen>(screen, journal_);
   }};

@@ -19,6 +19,7 @@
 #include "IntroScreen.hpp"
 #include "IntroScreenParts.hpp"
 #include "LoadingScreen.hpp"
+#include "LoadingScreenParts.hpp"
 #include "LobbyPlace.hpp"
 #include "LobbyScreen.hpp"
 #include "LobbyScreenParts.hpp"
@@ -203,8 +204,11 @@ std::unique_ptr<IScreen> ScreenCatalog::loadingScreenUnlessLoaded(
     const AssetList& assets, ScreenId screen) const {
   AssetLibrary& library = parts_.services.assets.get();
   if (!library.isLoaded(assets)) {
-    return std::make_unique<LoadingScreen>(parts_.navigator.get(), library,
-                                           assets, screen);
+    return std::make_unique<LoadingScreen>(
+        LoadingScreenParts{.navigator = parts_.navigator.get(),
+                           .library = library,
+                           .assets = assets,
+                           .nextScreen = screen});
   }
   library.releaseAllExcept(assets);
   return nullptr;
