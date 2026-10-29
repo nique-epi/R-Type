@@ -10,3 +10,4 @@ target_link_libraries(rtype_client_settings
 
 add_subdirectory(SettingsText)
 add_subdirectory(SettingsFile)
+add_subdirectory(SettingsService)
