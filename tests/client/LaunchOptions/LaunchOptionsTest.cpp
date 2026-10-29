@@ -2,6 +2,7 @@
 #include <string>
 #include <string_view>
 #include <vector>
+#include "AudioMode.hpp"
 #include "ClientConstants.hpp"
 #include "ClientException.hpp"
 #include "Endpoint.hpp"
@@ -14,10 +15,12 @@
 #include "NetworkException.hpp"
 
 using rtype::client::ADDRESS_OPTION;
+using rtype::client::AudioMode;
 using rtype::client::DEFAULT_SERVER_ADDRESS;
 using rtype::client::InvalidNicknameOptionException;
 using rtype::client::LaunchOptions;
 using rtype::client::NICKNAME_OPTION;
+using rtype::client::NO_SOUND_OPTION;
 using rtype::engine::HELP_OPTION;
 using rtype::engine::MissingLaunchOptionValueException;
 using rtype::engine::PORT_OPTION;
@@ -198,6 +201,40 @@ TEST(ClientLaunchOptions, ArgumentWithoutOptionIsRejected) {
 }
 
 /**
+ * Given no argument
+ * When the launch options are read
+ * Then the client makes sound
+ */
+TEST(ClientLaunchOptions, NoArgumentKeepsTheSoundOn) {
+  const LaunchOptions options = LaunchOptions::read(Arguments{});
+
+  EXPECT_EQ(options.audioMode(), AudioMode::Enabled);
+}
+
+/**
+ * Given the no-sound option
+ * When the launch options are read
+ * Then the client makes no sound
+ */
+TEST(ClientLaunchOptions, NoSoundOptionTurnsTheSoundOff) {
+  const LaunchOptions options = LaunchOptions::read(Arguments{NO_SOUND_OPTION});
+
+  EXPECT_EQ(options.audioMode(), AudioMode::Disabled);
+}
+
+/**
+ * Given the no-sound option and the address option
+ * When the launch options are read
+ * Then the sound is off and the address is still read
+ */
+TEST(ClientLaunchOptions, NoSoundOptionLeavesTheOtherOptionsAlone) {
+  const LaunchOptions options = LaunchOptions::read(
+      Arguments{NO_SOUND_OPTION, ADDRESS_OPTION, ADDRESS_ARGUMENT});
+
+  EXPECT_EQ(options.serverEndpoint().address, std::string(ADDRESS_ARGUMENT));
+}
+
+/**
  * Given the options of the client and of the logging
  * When the usage is built
  * Then each option starts a line of it
@@ -206,8 +243,8 @@ TEST(ClientLaunchOptions, UsageNamesEveryOption) {
   const std::string usage = LaunchOptions::usage();
 
   for (const std::string_view option :
-       {ADDRESS_OPTION, PORT_OPTION, NICKNAME_OPTION, HELP_OPTION,
-        rtype::logging::LEVEL_OPTION, rtype::logging::FILE_OPTION,
+       {ADDRESS_OPTION, PORT_OPTION, NICKNAME_OPTION, NO_SOUND_OPTION,
+        HELP_OPTION, rtype::logging::LEVEL_OPTION, rtype::logging::FILE_OPTION,
         rtype::logging::NO_FILE_OPTION, rtype::logging::STDERR_OPTION,
         rtype::logging::NO_STDERR_OPTION}) {
     SCOPED_TRACE(option);
