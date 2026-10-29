@@ -2,15 +2,21 @@
 #include <SFML/Graphics/RenderTarget.hpp>
 #include <SFML/Window/Event.hpp>
 #include <memory>
+#include <optional>
 #include <random>
+#include <type_traits>
 #include <utility>
 #include <variant>
 #include "ActionSet.hpp"
 #include "AnimationSystem.hpp"
+#include "EffectPreferences.hpp"
 #include "EffectSpawner.hpp"
 #include "EntityFeedback.hpp"
 #include "EntityMessage.hpp"
+#include "FinalRanking.hpp"
 #include "FlashPreference.hpp"
+#include "GameEnded.hpp"
+#include "GameResult.hpp"
 #include "GameScreenParts.hpp"
 #include "GroundEffectSystem.hpp"
 #include "HitFlashSystem.hpp"
@@ -24,7 +30,9 @@
 #include "MissionStart.hpp"
 #include "PlayerAction.hpp"
 #include "PlayerInputPacer.hpp"
+#include "PlayerPalette.hpp"
 #include "PlayerPreferences.hpp"
+#include "ShipFlightSystem.hpp"
 // NOLINTNEXTLINE(misc-include-cleaner)
 #include "PlayerSettings.hpp"
 #include "ScreenConstants.hpp"
@@ -66,11 +74,13 @@ GameScreen::GameScreen(GameScreenParts parts,
       entityMessageSource_(&parts.entityMessages.get()),
       scoreBoard_(parts.connection.get().lobbyPlayers(),
                   parts.connection.get().status().playerNumber),
+      result_(&parts.result.get()),
       sky_(&parts.sky.get()) {
   systems_.add(std::make_unique<AnimationSystem>());
   systems_.add(std::make_unique<HitFlashSystem>());
   systems_.add(std::make_unique<SpriteEffectSystem>());
   systems_.add(std::make_unique<GroundEffectSystem>());
+  systems_.add(std::make_unique<ShipFlightSystem>());
   moveSky(*sky_, effects_, flashPreferenceOf(*settings_));
   entityLayer_->paint(components_, effects_.cameraOffset());
   repaintStatus();
@@ -109,8 +119,12 @@ void GameScreen::update(engine::Duration elapsed) {
   }
   systems_.run(components_, elapsed);
   const FlashPreference preference = flashPreferenceOf(*settings_);
-  effects_.advance(elapsed, preference);
+  effects_.advance(elapsed,
+                   EffectPreferences{.flashes = preference,
+                                     .shades = pilotShadesOf(*settings_),
+                                     .soundCues = settings_->soundCues});
   applyEntityMessages();
+  askForTheEndWhenDue();
   moveSky(*sky_, effects_, preference);
   entityLayer_->paint(components_, effects_.cameraOffset());
   repaintStatusWhenChanged();
@@ -119,8 +133,16 @@ void GameScreen::update(engine::Duration elapsed) {
 void GameScreen::applyEntityMessages() {
   entityMessageSource_->drainEntityMessages(receivedEntityMessages_);
   for (const EntityMessage& message : receivedEntityMessages_) {
-    std::visit([this](const auto& announced) { replicator_.apply(announced); },
-               message);
+    std::visit(
+        [this](const auto& announced) {
+          if constexpr (std::is_same_v<std::decay_t<decltype(announced)>,
+                                       network::GameEnded>) {
+            recordEnd(announced);
+          } else {
+            replicator_.apply(announced);
+          }
+        },
+        message);
     if (const auto* state = std::get_if<network::WorldState>(&message)) {
       scoreBoard_.apply(*state);
     }
@@ -128,21 +150,39 @@ void GameScreen::applyEntityMessages() {
   receivedEntityMessages_.clear();
 }
 
+void GameScreen::recordEnd(const network::GameEnded& ended) {
+  *result_ = GameResult{
+      .pilots = rankedPilots(finalPilotsOf(scoreBoard_.pilots(), ended))};
+  endedAt_ = effects_.sinceStart();
+}
+
+void GameScreen::askForTheEndWhenDue() {
+  if (!endedAt_.has_value() ||
+      effects_.sinceStart() - *endedAt_ < END_SCREEN_DELAY) {
+    return;
+  }
+  endedAt_.reset();
+  navigator_->replaceAll(ScreenId::End);
+}
+
 void GameScreen::repaintStatusWhenChanged() {
   if (scoreBoard_.revision() != paintedStatusRevision_ ||
-      missionBannerAt(effects_.sinceStart()) != paintedBanner_) {
+      missionBannerAt(effects_.sinceStart()) != paintedBanner_ ||
+      paintedPalette_ != playerPaletteOf(*settings_)) {
     repaintStatus();
   }
 }
 
 void GameScreen::repaintStatus() {
   const MissionBannerLook banner = missionBannerAt(effects_.sinceStart());
+  const PlayerPalette& palette = playerPaletteOf(*settings_);
   statusCanvas_->clear();
-  paintStatusBand(*statusCanvas_, scoreBoard_.pilots());
+  paintStatusBand(*statusCanvas_, scoreBoard_.pilots(), palette);
   paintMissionBanner(*statusCanvas_, banner);
   statusCanvas_->display();
   paintedStatusRevision_ = scoreBoard_.revision();
   paintedBanner_ = banner;
+  paintedPalette_ = palette;
 }
 
 ActionSet GameScreen::playerActions() const {

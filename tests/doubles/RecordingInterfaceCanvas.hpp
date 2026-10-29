@@ -12,6 +12,7 @@
 #include "DrawJournal.hpp"
 #include "IInterfaceCanvas.hpp"
 #include "ImagePlacement.hpp"
+#include "ShadeSwap.hpp"
 #include "TextStyle.hpp"
 #include "TextureArea.hpp"
 
@@ -42,6 +43,7 @@ struct RecordedImage {
   int scale{};
   sf::IntRect visibleArea;
   sf::Color tint = sf::Color::White;
+  std::optional<rtype::client::ShadeSwap> recolor = std::nullopt;
 };
 
 /** @brief A texture laid smoothed on a recording canvas. */

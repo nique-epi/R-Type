@@ -26,3 +26,7 @@ Changed in the same pass: point 3 of `architecture-one-folder-per-concrete-class
 
 - ❌ **Before (wrong)**: `src/client/Widgets/MissionBanner.{hpp,cpp}`, flat, its library `rtype_client_mission_banner` declared by `Widgets/CMakeLists.txt`.
 - ✅ **After (right)**: `src/client/Widgets/MissionBanner/{CMakeLists.txt,MissionBanner.hpp,MissionBanner.cpp}`, `Widgets/CMakeLists.txt` calling `add_subdirectory(MissionBanner)`.
+
+## Update (2026-10-28) — superseded by the module rule
+
+The user chose the module as the unit of folder and target: a folder of `src/` holds the `.hpp`/`.cpp` pairs of its classes flat, with one library, and a sub-folder with a library of its own is the exception (`.claude/rules/architecture/architecture-a-module-is-one-folder-and-one-target.md`). This rule's core was removed; its lesson stands in the new one: a pair with a `.cpp` is never left loose in a folder that is not a module. Layouts written under this rule stay valid until their module is flattened.

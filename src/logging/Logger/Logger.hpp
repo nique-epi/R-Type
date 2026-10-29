@@ -145,8 +145,8 @@ class Logger {
     ScopedTimer(std::string module, std::string label, LogLevel level);
 
     /**
-     * @brief Writes the elapsed time. A failure to write is swallowed: a
-     *        journal must never take the program down.
+     * @brief Writes the elapsed time. A failure to read the level or to
+     *        write is swallowed: a journal must never take the program down.
      */
     ~ScopedTimer();
 

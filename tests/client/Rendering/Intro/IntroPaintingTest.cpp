@@ -10,6 +10,8 @@
 #include "IntroTestConstants.hpp"
 #include "IntroTimeline.hpp"
 #include "IntroTimelineConstants.hpp"
+#include "PlayerPaletteConstants.hpp"
+#include "PlayerPaletteTestConstants.hpp"
 #include "RecordingInterfaceCanvas.hpp"
 #include "SquadronTestConstants.hpp"
 
@@ -18,6 +20,7 @@ using rtype::client::BYDO_EXPLOSION_WITHOUT_FLASH_FRAME;
 using rtype::client::BYDO_LILAC;
 using rtype::client::BYDO_PALE;
 using rtype::client::closeupStartOf;
+using rtype::client::DEUTERANOPIA_PLAYER_PALETTE;
 using rtype::client::EFFECT_SHEET_ID;
 using rtype::client::ENTITY_SHEET_ID;
 using rtype::client::FlashPreference;
@@ -30,6 +33,7 @@ using rtype::client::PLAYER_SHIP_FRAME;
 using rtype::client::testing::A_MOMENT;
 using rtype::client::testing::CLOSEUP_SCALE;
 using rtype::client::testing::FULL_SPEED_LINES;
+using rtype::client::testing::SHEET_GREEN_TO_BLUISH_GREEN;
 using rtype::client::testing::SHIP_SIZE;
 using rtype::client::testing::SHIPS_IN_PLACE_ON_THE_TITLE;
 using rtype::client::testing::WIDE_SCALE;
@@ -182,4 +186,23 @@ TEST(IntroPainting, WithReducedFlashesNoDropIsPale) {
       paintedAt(INTRO_FIRST_KILL + A_MOMENT, FlashPreference::Reduced);
 
   EXPECT_EQ(fillsColored(record, BYDO_PALE), 0U);
+}
+
+/**
+ * Given the ships landed in the squadron of the title, and the palette for
+ * deuteranopia
+ * When the scene is painted just before the title opens
+ * Then the ship of player 3 swaps its greens for the bluish greens of the
+ * palette
+ */
+TEST(IntroPainting, TheLandedShipsSwapTheirShadesForThePalettes) {
+  const InterfaceCanvasRecord record =
+      paintedAt(INTRO_TITLE - A_MOMENT, FlashPreference::Full,
+                DEUTERANOPIA_PLAYER_PALETTE);
+
+  EXPECT_TRUE(
+      std::ranges::any_of(record.images, [](const RecordedImage& image) {
+        return image.assetId == ENTITY_SHEET_ID &&
+               image.recolor == SHEET_GREEN_TO_BLUISH_GREEN;
+      }));
 }

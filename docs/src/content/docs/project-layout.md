@@ -43,7 +43,7 @@ The cases where people hesitate:
 
 | Code | Goes in | Because |
 |---|---|---|
-| Moving the ship from the player's input | `src/game/ShipControl` | the server runs it, and the client will run the same code to predict its own ship |
+| Moving the ship from the player's input: its drift, its roll and its dash | `src/game/ShipControl` | the server runs it, and the client will run the same code to predict its own ship |
 | Damage after a collision | `src/game/Systems` | it is a rule of the match, even though only the server runs it |
 | A queue between two threads | `src/concurrency` | the client, the server and `rtype_network` all need it, and `rtype_network` may not link `rtype_engine` |
 | Finding an entity from its network id | `src/engine/NetworkIds` | `rtype_network` may not know entities |
@@ -68,10 +68,11 @@ src/engine/
 ├── Time/             fixed timestep, clocks, timers
 ├── NetworkIds/       entity to network id, and back
 ├── LaunchArguments/  options read at launch, usage and errors
+├── Modules/          installs, starts and stops a program's modules, in list order; runs their work in named stages and hands services between them
 └── Exceptions/
 ```
 
-`EntityRegistry`, `Components`, `Systems`, `Events`, `Collision`, `Time`, `NetworkIds`, `LaunchArguments` and `Exceptions` exist.
+`EntityRegistry`, `Components`, `Systems`, `Events`, `Collision`, `Time`, `NetworkIds`, `LaunchArguments`, `Modules` and `Exceptions` exist.
 
 ### Logging
 
@@ -121,7 +122,7 @@ src/network/
 └── Exceptions/
 ```
 
-`NetworkContext`, `Transport` (the UDP socket and the relay to queues, not the simulator), `Serialization`, `Exceptions`, `Protocol` (the datagram header, every message of version 0 and the dispatch by type) and `Handshake` (the connection cookies; no rate limit or version answer yet) exist; see [Network](/R-Type/network/). `Sessions` is not written: the heartbeat and session timeout delays are in `Protocol/ProtocolConstants.hpp`, and each program counts them itself, the server in `GameInstance` and the client in `ServerConnection`.
+`NetworkContext`, `Transport` (the UDP socket and the relay to queues, not the simulator), `Serialization`, `Exceptions`, `Protocol` (the datagram header, every message of version 1 and the dispatch by type) and `Handshake` (the connection cookies; no rate limit or version answer yet) exist; see [Network](/R-Type/network/). `Sessions` is not written: the heartbeat and session timeout delays are in `Protocol/ProtocolConstants.hpp`, and each program counts them itself, the server in `GameInstance` and the client in `ServerConnection`.
 
 ## The programs
 
@@ -132,11 +133,13 @@ src/network/
 ```
 src/server/
 ├── Application/      starts and stops the threads
+├── Modules/          one folder per module (logger, network, games, lobby) and the list that assembles them
 ├── Exceptions/       the root exception of the server, errors of the waves file
-├── Platform/         what differs between Windows, macOS and Linux
+├── Platform/         what differs between Windows, macOS and Linux, and the stop signals
 ├── LaunchOptions/    port, name, limits, master address
 ├── Lobby/            players not in a game: list, create, join, chat
-├── Instances/        one GameInstance per game, each on its thread
+├── Instances/        one GameInstance per game, the context its modules work in; the rules of the match are the RtypeRulesModule, with its GameFlow
+├── Sessions/         the players of a game and their sessions (still carries a player's ship, score and lives)
 ├── Replication/      world to snapshots and game events
 ├── Spawning/         when and where the enemies and missiles appear
 ├── MasterLink/       registration and heartbeat
@@ -145,7 +148,7 @@ src/server/
 └── Storage/          this server's SQLite file: leaderboard, statistics
 ```
 
-`Application`, `Replication` (the world state sender, the waiting room announcer, the announcer of the end of a game, the session header of every datagram to a player, the announcement of the ship of each new player, and the encoder and broadcaster of the game events), `Platform`, `LaunchOptions`, `Lobby` (the answers to connection requests only), `Spawning` (the Bydo spawner, the reader of the waves file and the missile launcher), `Exceptions` and `Instances` (one `GameInstance` for now, run on the simulation thread like the rest, which runs the systems of its world, and the score and the lives of its players) exist today: the network thread and the simulation thread, the waiting room, the start of the game, the world state, the game events and the end of a game sent to the players (see [Server](/R-Type/server/)), the timer resolution the server asks Windows for, the port and seed read at launch, the players let in, the Bydos appearing and moving, the missiles the players fire, and a game with its states, its ready rule and the newest input of each player, which moves its ship.
+`Application`, `Modules` (the logger, network, games and lobby modules, the list that assembles them, and the farewell the games module sends when the server stops), `Replication` (the world state sender, the waiting room announcer, the announcer of the end of a game, the announcement of the ship of each new player, and the encoder and broadcaster of the game events), `Platform`, `LaunchOptions`, `Lobby` (the answers to connection requests only), `Spawning` (the Bydo spawner, the reader of the waves file and the missile launcher), `Exceptions`, `Sessions` (the roster of the players of a game, the session header of every datagram to a player, and the classes that read their datagrams, keep their ready state and newest input, close their sessions and send their heartbeats; no other folder of `src/server` is linked by it) and `Instances` (one `GameInstance` for now, run on the simulation thread like the rest, which installs the modules of a game: the `RtypeRulesModule` holds its states, its tick and its rules with `GameFlow`, runs the systems of the world, and keeps the score and the lives of its players, and the replication module in `Replication` tells the players) exist today: the network thread and the simulation thread, the waiting room, the start of the game, the world state, the game events and the end of a game sent to the players (see [Server](/R-Type/server/)), the timer resolution the server asks Windows for, the port and seed read at launch, the players let in, the Bydos appearing and moving, the missiles the players fire, and a game with its states, its ready rule and the newest input of each player, which moves its ship.
 
 ### Client
 
@@ -153,8 +156,9 @@ src/server/
 
 ```
 src/client/
-├── Application/      frame loop and screen stack
-├── Window/           the SFML window
+├── Modules/          the modules of the client, the frame loop and their list
+├── Application/      screen stack
+├── Window/           the SFML window, its display mode and its size
 ├── Assets/           assets found by id, loaded at launch or entering a game
 ├── Platform/         what differs between Windows, macOS and Linux
 ├── LaunchOptions/    server address, port and nickname
@@ -169,24 +173,24 @@ src/client/
 └── Prediction/       own ship predicted, other ships interpolated
 ```
 
-`Application`, `Window`, `Screens` (intro, title, connection, waiting room, loading, game, options and quit confirmation, and `PlayerPreferences`, the flash preference the settings ask for, which the intro and the game share), `Widgets`, `Rendering`, `Audio`, `Assets`, `Platform`, `Input`, `Settings`, `Connection`, `Replication` (the filter that ignores an old world state, `LastListedTicks`, which names the entities no world state has listed for 900 ms up to a closed tick, `EntityReplicator`, which applies the entities the server announces to the game screen, see [Client](/R-Type/client/#entities-from-the-server-entityreplicator), and `ScoreBoard`, which keeps the score and the lives of each pilot for the status band, see [Client](/R-Type/client/#status-band-scoreboard-paintstatusband)) and `LaunchOptions` exist today. `Input` holds the keys, their remapping and the held actions; the gamepad is not written yet. `Settings` holds what the player sets and the file it is saved in; the game reads the flashes setting and auto-fire, the sounds and the music read the volumes, and the other accessibility settings are saved, but nothing reads them yet (see [Client](/R-Type/client/#settings-playersettings-settingsfile)). `Audio` holds the player of the sounds, the player of a music, the `Soundtrack` that switches from the theme to the music of a game, and the clock the intro follows, with the interfaces the screens and their tests use (see [Client](/R-Type/client/#sounds-and-music-soundplayer-musicplayer)). `Connection` holds the network thread the client opens at launch (see [Client](/R-Type/client/#network-networkthread)) and the connection to a server, which the connection screen and the waiting room drive (see [Client](/R-Type/client/#joining-a-server-serverconnection)) and through which the game takes the entities and the game events the server announces, one copy of each event (`GameEventHistory`), and sends the player's inputs at a fixed rate (see [Client](/R-Type/client/#inputs-to-the-server-playerinputpacer-iplayerinputlink)).
+`Modules` (the logger, assets, settings, window, connection and screens modules, the frame loop, the listeners of the window events and the list that assembles them), `Application` (the screen stack), `Window`, `Screens` (intro, title, connection, waiting room, loading, game, end, options and quit confirmation, and `PlayerPreferences`, the flash preference and the palette of the pilots the settings ask for, which the screens share), `Widgets`, `Rendering`, `Audio`, `Assets`, `Platform`, `Input`, `Settings`, `Connection`, `Replication` (the filter that ignores an old world state, `LastListedTicks`, which names the entities no world state has listed for 900 ms up to a closed tick, `EntityReplicator`, which applies the entities the server announces to the game screen, see [Client](/R-Type/client/#entities-from-the-server-entityreplicator), `ScoreBoard`, which keeps the score and the lives of each pilot for the status band, see [Client](/R-Type/client/#status-band-scoreboard-paintstatusband), and `FinalRanking`, which ranks the pilots of a game the server ended into the `GameResult` the end screen reads, see [Client](/R-Type/client/#end-screen-endscreen-paintflightlog)) and `LaunchOptions` exist today. `Input` holds the keys, their remapping and the held actions; the gamepad is not written yet. `Settings` holds what the player sets and the file it is saved in; the game reads the flashes setting, the sound cues and auto-fire, every screen that paints a pilot reads the color mode, and the sounds and the music read the volumes (see [Client](/R-Type/client/#settings-playersettings-settingsfile)). `Audio` holds the player of the sounds, the player of a music, the `Soundtrack` that switches from the theme to the music of a game, and the clock the intro follows, with the interfaces the screens and their tests use (see [Client](/R-Type/client/#sounds-and-music-soundplayer-musicplayer)). `Connection` holds the network thread the connection module opens when it starts (see [Client](/R-Type/client/#network-networkthread)) and the connection to a server, which the connection screen and the waiting room drive (see [Client](/R-Type/client/#joining-a-server-serverconnection)) and through which the game takes the entities and the game events the server announces, one copy of each event (`GameEventHistory`), and sends the player's inputs at a fixed rate (see [Client](/R-Type/client/#inputs-to-the-server-playerinputpacer-iplayerinputlink)).
 
 `Rendering` draws every entity that has a `Position` and a `Sprite` (an asset id, the rectangle of it to show and a layer), from the background layer to the interface layer; the game screen draws them through its `EntityLayer`. Its files are grouped by family, a folder each with its headers and its classes, and a family only depends on the families listed before it:
 
 - `Shaders`: the fragment shaders and how they are loaded.
-- `Sprites`: the entity sheet, `spriteOf` and `animationOf` (the single table that gives each entity type its sprite, its animation and its layer), `Animation` and `AnimationSystem`, and `AssetTextureSource`, which finds textures in the asset library behind `ITextureSource`.
-- `Interface`: what a menu or the status band is painted with: `IInterfaceCanvas` and `InterfaceCanvas`, the text styles, colors and constants, `TextWriter`, which writes the lines of text of the menus and of the entity layer, and `Squadron`.
-- `SpriteLook`: what changes how an entity is drawn: its `SpriteTone`, its `HitFlash` (ended by `HitFlashSystem`), the `Caption` of a line of text, `Nudge`, `Reveal`, `Invulnerability` and `PilotShip`.
+- `Sprites`: the entity sheet, `spriteOf` and `animationOf` (the single table that gives each entity type its sprite, its animation and its layer), `Animation` and `AnimationSystem`, `PilotColor`, the color of a pilot and the number of its player, and `AssetTextureSource`, which finds textures in the asset library behind `ITextureSource`.
+- `Interface`: what a menu or the status band is painted with: `IInterfaceCanvas` and `InterfaceCanvas`, the text styles, colors and constants, `TextWriter`, which writes the lines of text of the menus and of the entity layer, `PlayerShading`, how a palette paints a player color, `PlayerNumberLabel`, `P` and the number of a player, and `Squadron`.
+- `SpriteLook`: what changes how an entity is drawn: its `SpriteTone`, its `HitFlash` (ended by `HitFlashSystem`), the `Caption` of a line of text, `Nudge`, `Reveal`, `Invulnerability`, `PilotShip`, and the `ShipFlight` of a pilot's ship (moved on by `ShipFlightSystem`).
 - `Drawing`: `RenderSystem`, which reads those components and draws through `IDrawSurface`, so it is tested without a graphics card; `SfmlDrawSurface`, which draws on the pixel grid of the background with SFML; and `EntityLayer`.
 - `Intro`: the scene of the launch intro, as pure functions of its time, its cast drawn once from a seed, and the table of its sounds. Unlike the families above, it also uses the effects, the background and the audio of the client (the holds of the game, the warp, the pixel rounding, the tempo and the sounds): it comes last, and nothing in `Rendering/` uses it (see [Client](/R-Type/client/#launch-intro-introscreen)).
 
-`Rendering/` itself keeps what belongs to no single family: `RenderingConstants.hpp`, `FlashPreference.hpp`, `Easing`, `ColorRamp` (the color a share of life reaches in a ramp, and the ramp without its flash under REDUCE FLASHES), `PixelCircle` (the midpoint circle the rings are drawn with) and `PixelCanvas`. It is described in [Client](/R-Type/client/#entity-sprites-spriteof-animationof).
+`Rendering/` itself keeps what belongs to no single family: `RenderingConstants.hpp`, `FlashPreference.hpp`, `Easing`, `Typing` (how many letters of a line are typed at a moment, and its start cut at a whole UTF-8 character), `ColorRamp` (the color a share of life reaches in a ramp, and the ramp without its flash under REDUCE FLASHES), `PixelCircle` (the midpoint circle the rings are drawn with) and `PixelCanvas`. It is described in [Client](/R-Type/client/#entity-sprites-spriteof-animationof).
 
-`Rendering/Sprites/Animation` and `Rendering/Sprites/AnimationSystem` play the animations, described as data, by the time elapsed. `Rendering/Effects` holds the rows of the effect sheet and the values of the ladder of intensity, and `EffectSpawner`, which the replicator and the game screen call to play every effect on that ladder. What it holds has a folder each: one class per family of events (`ShotEffects`, `HitEffects`, `KillEffects`, `PilotEffects`, `GainFigures`), the `FlashGate` every effect asks before a flash (with its `FlashBudget`), `KillChain`, `GainAttribution`, and the free functions of `SheetEffects` and `EffectTargets`. Then one folder per family of effects, each with its components, its constants and its classes: `Ground`, the pixel effects painted under every sprite (`PixelEffects` creates them, `GroundEffectSystem` moves them on and `paintGroundEffects()` paints them); `SpriteEffects`, what an effect holds on a sprite for a moment, moved on by `SpriteEffectSystem`; `Camera` (`CameraShake`); `MissionStart`, the warp of the stars. The effects depend on the families, never the other way round; of the families, only `Intro` uses them. `Rendering/Easing` holds the easings the effects and the title squadron share. `Rendering/SpriteLook/HitFlashSystem` ends the hit flashes. They are described in [Client](/R-Type/client/#animations-and-effects).
+`Rendering/Sprites/Animation` and `Rendering/Sprites/AnimationSystem` play the animations, described as data, by the time elapsed. `Rendering/Effects` holds the rows of the effect sheet and the values of the ladder of intensity, and `EffectSpawner`, which the replicator and the game screen call to play every effect on that ladder. What it holds has a folder each: one class per family of events (`ShotEffects`, `HitEffects`, `KillEffects`, `PilotEffects`, `GainFigures`, `SoundCues`), the `FlashGate` every effect asks before a flash (with its `FlashBudget`), `KillChain`, `GainAttribution`, and the free functions of `SheetEffects` and `EffectTargets`. Then one folder per family of effects, each with its components, its constants and its classes: `Ground`, the pixel effects painted under every sprite (`PixelEffects` creates them, `GroundEffectSystem` moves them on and `paintGroundEffects()` paints them); `SpriteEffects`, what an effect holds on a sprite for a moment, moved on by `SpriteEffectSystem`; `Camera` (`CameraShake`); `MissionStart`, the warp of the stars. The effects depend on the families, never the other way round; of the families, only `Intro` uses them. `Rendering/Easing` holds the easings the effects, the title squadron, the drawing of a roll and the ship flight share. `Rendering/SpriteLook/HitFlashSystem` ends the hit flashes. They are described in [Client](/R-Type/client/#animations-and-effects).
 
-`Rendering/Background` draws the scrolling starfield behind the playfield, and the frame loop already draws it; through `ISky`, the game screen speeds its stars up and shakes it. `Rendering/PixelCanvas` is the picture of the background's size that the sky, the entities and the menus are painted on. It is described in [Client](/R-Type/client/#scrolling-background-scrollingbackground).
+`Rendering/Background` draws the scrolling starfield behind the playfield, and the screens module already draws it; through `ISky`, the game screen speeds its stars up and shakes it. `Rendering/PixelCanvas` is the picture of the background's size that the sky, the entities and the menus are painted on. It is described in [Client](/R-Type/client/#scrolling-background-scrollingbackground).
 
-`Widgets` holds the labels, buttons, text fields and menus every menu is built from, placed by `MenuBuilder`, and the pieces they are drawn with; lists of items are not written yet. Each widget is a class in its own folder (`Label/`, `Button/`, `TextField/`, `Menu/`, `MenuBuilder/`, `CutCornerBox/`, `SunkBox/`, `Outline/`, `CheckBox/`, `KeyCap/`, `TabStrip/`), with the types it owns nested in it; `Widgets/` itself holds the constants, colors and styles they share, the few types and functions every widget uses (`BarState`, `CheckMark`, the text helpers of `WidgetText.hpp`), `paintWindowSizeChart()`, the chart of the window sizes drawn beside their list in the options, `paintHangarBay()`, a bay of the waiting room, `paintStatusBand()`, the status band of the game, whose sprites are listed in `Rendering/Interface/` (`HudSpriteConstants.hpp`), `paintMissionBanner()`, the banner that opens a game, and `paintIntroOverlay()` (`IntroOverlay/`), the bands, texts and logo of the intro. `Widgets/RowControls/` holds the controls of a row of a tabbed panel: the abstract `RowControl`, its constants, and one folder per control (`Slider/`, `Switch/`, `ChoiceSelector/`, `Dropdown/`, `KeySlot/`, `LinkText/`). `Rendering/Interface/InterfaceCanvas` is the picture a menu is painted on, `Rendering/Interface/Squadron` the animation of the title screen. They are described in [Client](/R-Type/client/#menus-menubuilder-menu).
+`Widgets` holds the labels, buttons, text fields and menus every menu is built from, placed by `MenuBuilder`, and the pieces they are drawn with; lists of items are not written yet. Each widget is a class in its own folder (`Label/`, `Button/`, `TextField/`, `Menu/`, `MenuBuilder/`, `CutCornerBox/`, `SunkBox/`, `Outline/`, `CheckBox/`, `KeyCap/`, `TabStrip/`), with the types it owns nested in it; `Widgets/` itself holds the constants, colors and styles they share, the few types and functions every widget uses (`BarState`, `CheckMark`, `barRowWidth()`, the text helpers of `WidgetText/`), `paintWindowSizeChart()`, the chart of the window sizes drawn beside their list in the options, `paintHangarBay()` (`HangarBay/`), a bay of the waiting room, `paintStatusBand()` (`StatusBand/`), the status band of the game, whose sprites are listed in `Rendering/Interface/` (`HudSpriteConstants.hpp`), `paintPaddedScore()` (`PaddedScore/`), a score on 7 digits whose leading zeros are dimmed, and `pilotNameOf()` (`PilotName/`), the nickname of a pilot or `P` and its number, which the band and the end screen share, `paintMissionBanner()`, the banner that opens a game, and `paintIntroOverlay()` (`IntroOverlay/`), the bands, texts and logo of the intro. `Widgets/FlightLog/` holds the flight log of the end screen, a family like `RowControls/`: its constants and plain types, then one folder per painter or pure function (`BookMotion/`, `BookPainting/`, `TauntLabel/`, `MissionLogPage/`, `RankingPage/`, `EndChoices/`, `FlightLogPainting/`, `FlightLogTimeline/`, `Taunts/`); its sheet is listed in `Rendering/Interface/` (`FlightLogSheetConstants.hpp`). `Widgets/RowControls/` holds the controls of a row of a tabbed panel: the abstract `RowControl`, its constants, and one folder per control (`Slider/`, `Switch/`, `ChoiceSelector/`, `Dropdown/`, `KeySlot/`, `LinkText/`). `Rendering/Interface/InterfaceCanvas` is the picture a menu is painted on, `Rendering/Interface/InterfacePixel` gives the pixel of that picture under a point of the playfield, `Rendering/Interface/Squadron` the animation of the title screen. They are described in [Client](/R-Type/client/#menus-menubuilder-menu).
 
 `Input` turns key and focus events into the set of actions the player holds. It is described in [Client](/R-Type/client/#player-commands-playercommands).
 
@@ -208,32 +212,34 @@ Each module splits its classes into a controller (HTTP in and out), a service (t
 
 ### Tests, web frontend, assets
 
-- **`tests/`** mirrors `src/`: the test of `src/game/Waves/WaveDirector` is `tests/game/Waves/WaveDirectorTest.cpp`, built into `game_tests`, one executable per library or program. Test doubles (fake clock, lossy transport) go in `tests/doubles/`; load-test bots in `tests/tools/`, never shipped. Today the older tests sit at the root of `tests/`; `tests/client/`, `tests/concurrency/`, `tests/engine/`, `tests/network/` and `tests/server/` already follow this layout, and `tests/doubles/` holds a socket that records instead of sending, a datagram link that records what is sent and hands over what a test delivers, a connection to a server that records what a screen asks, a settings storage that records each save, a window on a desktop of a given size, a draw surface that records each rectangle it is asked to draw, an entity layer that records what it paints, a sound player that records the ids it plays, a music clock whose position the test sets, and a network that delivers the datagrams a test sends late, twice or never, in an order the test gives or draws from a seed. A test file holds only its tests: its constants are in `<Subject>TestConstants.hpp`, its fixture in `<Subject>Fixture.{hpp,cpp}` and its helpers in `<Subject>Fixtures.{hpp,cpp}`, next to it.
+- **`tests/`** mirrors `src/`: the test of `src/game/Waves/WaveDirector` is `tests/game/Waves/WaveDirectorTest.cpp`, built into `game_tests`, one executable per library or program. Test doubles (fake clock, lossy transport) go in `tests/doubles/`; test tools in `tests/tools/`, never shipped: today the tool that sends malformed datagrams (see [Network](/R-Type/network/#malformed-datagrams-malformed_datagrams)), later the load-test bots. Today the older tests sit at the root of `tests/`; `tests/client/`, `tests/concurrency/`, `tests/engine/`, `tests/network/` and `tests/server/` already follow this layout, and `tests/doubles/` holds a socket that records instead of sending, a datagram link that records what is sent and hands over what a test delivers, a connection to a server that records what a screen asks, a settings storage that records each save, a window on a desktop of a given size, a draw surface that records each rectangle it is asked to draw, an entity layer that records what it paints, a sound player that records the ids it plays, a music clock whose position the test sets, a module that writes down when it is installed, started and stopped, and a network that delivers the datagrams a test sends late, twice or never, in an order the test gives or draws from a seed. A test file holds only its tests: its constants are in `<Subject>TestConstants.hpp`, its fixture in `<Subject>Fixture.{hpp,cpp}` and its helpers in `<Subject>Fixtures.{hpp,cpp}`, next to it.
 - **`web/`** is the React frontend served by the master: `src/api/` (one function per route), `src/pages/`, `src/components/`.
 - **`assets/`** holds the files read at run time: `sprites/`, `sounds/`, `music/`, `fonts/` and `icons/` for the client, `waves/` for the server (`waves.toml`, see [Writing the waves file](/R-Type/waves-file/)).
 
 ## Adding a class
 
-Adding `WaveDirector` to `src/game/Waves`:
+Adding `WaveDirector` to `src/game/Waves`, a module that already holds `WaveProgression`:
 
 ```
 src/game/Waves/
-├── CMakeLists.txt         add_subdirectory(WaveDirector)
-└── WaveDirector/
-    ├── CMakeLists.txt     add_library(rtype_game_wave_director STATIC WaveDirector.cpp)
-    ├── WaveDirector.hpp
-    └── WaveDirector.cpp
+├── CMakeLists.txt         add_library(rtype_game_waves STATIC WaveDirector.cpp WaveProgression.cpp)
+├── WaveDirector.hpp
+├── WaveDirector.cpp
+├── WaveProgression.hpp
+└── WaveProgression.cpp
 ```
 
-- A concrete class has its own folder, named after it, holding only its `.hpp`, its `.cpp` and its `CMakeLists.txt`; so does a header of free functions that has a `.cpp`.
-- Interfaces (`IWaveSource`), plain structs and constants headers (`WaveConstants.hpp`) have no `.cpp`: they stay in the parent folder.
-- A class declares no type inside it: a struct it uses has a header of its own, in the parent folder. A class declares at most ten member functions besides its constructors and its destructor.
+- A module is a folder with one `CMakeLists.txt` and one library. It holds the `.hpp` and `.cpp` of its classes, and of its free functions, side by side, at most ten `.cpp`. A sub-folder with a library of its own, a sub-module, exists only for a group of classes that needs a dependency the rest of the module must not link, or that another module reuses, or when the module would pass ten `.cpp`; never deeper than that.
+- Interfaces (`IWaveSource`), plain structs and constants headers (`WaveConstants.hpp`) sit in the same folder as the classes.
+- Two classes of a module never include each other, directly or through a third.
+- A module written before this convention keeps a folder per class until it is flattened, in a commit of its own; a folder never holds both layouts.
+- A class declares no type inside it: a struct it uses has a header of its own, in the same module. A class declares at most ten member functions besides its constructors and its destructor.
 - A header of constants is named `<Concept>Constants.hpp` and holds constants only.
-- The class library is `rtype_<owner>_<class_in_snake_case>`, linked by the aggregate of its library (`rtype_game`) or by its program.
+- The module library is `rtype_<owner>_<module_in_snake_case>`, linked by the aggregate of its library (`rtype_game`) or by its program.
 - The namespace is `rtype::<owner>`: `rtype::game` here.
 - An error is a subclass of the owner's root exception, in `<owner>/Exceptions/`: `GameException` here.
 
-This follows our previous projects: shared code in libraries and one folder per program, like Zappy; one library per module, interfaces next to their implementations and tests that mirror the sources, like the Raytracer. Two things differ: folders are `PascalCase`, and a folder holds one class.
+This follows our previous projects: shared code in libraries and one folder per program, like Zappy; one library per module, interfaces next to their implementations and tests that mirror the sources, like the Raytracer. One thing differs: folders are `PascalCase`.
 
 ## A key press, from one screen to another
 

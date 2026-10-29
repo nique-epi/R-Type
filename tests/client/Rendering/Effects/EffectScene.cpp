@@ -1,5 +1,6 @@
 #include "EffectScene.hpp"
 #include "ComponentRegistry.hpp"
+#include "EffectPreferences.hpp"
 #include "EffectSpawner.hpp"
 #include "EffectSpawnerTestConstants.hpp"
 #include "EffectTestConstants.hpp"
@@ -7,16 +8,15 @@
 #include "EntityRegistry.hpp"
 #include "EntitySpriteConstants.hpp"
 #include "EntityType.hpp"
-#include "FlashPreference.hpp"
 #include "Layer.hpp"
 #include "PilotShip.hpp"
 #include "Position.hpp"
 #include "Sprite.hpp"
 #include "TimeConstants.hpp"
 
+using rtype::client::EffectPreferences;
 using rtype::client::EffectSpawner;
 using rtype::client::ENTITY_SHEET_ID;
-using rtype::client::FlashPreference;
 using rtype::client::PilotShip;
 using rtype::client::PLAYER_SHIP_FRAME;
 using rtype::engine::ComponentRegistry;
@@ -38,8 +38,8 @@ void EffectScene::play(Duration elapsed) {
   animations_.update(components_, elapsed);
 }
 
-void EffectScene::advance(Duration elapsed, FlashPreference preference) {
-  effects_.advance(elapsed, preference);
+void EffectScene::advance(Duration elapsed, EffectPreferences preferences) {
+  effects_.advance(elapsed, preferences);
   animations_.update(components_, elapsed);
   hitFlashes_.update(components_, elapsed);
   spriteEffects_.update(components_, elapsed);

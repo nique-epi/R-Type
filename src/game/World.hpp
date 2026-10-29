@@ -8,6 +8,7 @@
 #include "NetworkEntityTable.hpp"
 #include "NetworkIdAllocator.hpp"
 #include "Position.hpp"
+#include "ShipMotion.hpp"
 
 namespace rtype::game {
 
@@ -15,9 +16,9 @@ namespace rtype::game {
  * @brief Game state shared by client and server. It knows neither sockets nor
  * the network protocol.
  *
- * The ship of each player is listed under its network id, so shipPositionOf()
- * and removePlayer() find it without visiting the other entities;
- * removePlayer() takes it out of that list.
+ * The ship of each player is listed under its network id, so shipPositionOf(),
+ * shipMotionOf() and removePlayer() find it without visiting the other
+ * entities; removePlayer() takes it out of that list.
  */
 class World {
  public:
@@ -93,6 +94,13 @@ class World {
    * Position, like ComponentRegistry::get.
    */
   [[nodiscard]] Position* shipPositionOf(std::uint32_t shipId);
+
+  /**
+   * @returns The ShipMotion of the ship spawnPlayer gave @p shipId, or nullptr
+   * for any other id, as shipPositionOf() does. The pointer is invalidated by
+   * the next add or remove of a ShipMotion, like ComponentRegistry::get.
+   */
+  [[nodiscard]] ShipMotion* shipMotionOf(std::uint32_t shipId);
 
  private:
   engine::EntityRegistry registry_;

@@ -1,1 +1,7 @@
+add_library(rtype_server_platform_interfaces INTERFACE)
+
+target_include_directories(rtype_server_platform_interfaces INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
+
 add_subdirectory(FineTimerResolution)
+add_subdirectory(StopRequest)
+add_subdirectory(StopSignals)

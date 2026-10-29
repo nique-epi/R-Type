@@ -1,9 +1,11 @@
 #include "InterfaceCanvas.hpp"
 #include <SFML/Graphics/Color.hpp>
+#include <SFML/Graphics/Glsl.hpp>
 #include <SFML/Graphics/PrimitiveType.hpp>
 #include <SFML/Graphics/Rect.hpp>
 #include <SFML/Graphics/RenderStates.hpp>
 #include <SFML/Graphics/RenderTarget.hpp>
+#include <SFML/Graphics/Shader.hpp>
 #include <SFML/Graphics/Sprite.hpp>
 #include <SFML/Graphics/Texture.hpp>
 #include <SFML/Graphics/Vertex.hpp>
@@ -15,8 +17,12 @@
 #include <vector>
 #include "AssetLibrary.hpp"
 #include "BackgroundConstants.hpp"
+#include "FragmentShader.hpp"
 #include "ImagePlacement.hpp"
 #include "InterfaceConstants.hpp"
+#include "PlayerColors.hpp"
+#include "ShadeSwap.hpp"
+#include "ShadeSwapShaderConstants.hpp"
 #include "SmoothImage.hpp"
 #include "TextLine.hpp"
 #include "TextStyle.hpp"
@@ -52,12 +58,44 @@ std::optional<sf::IntRect> visiblePixelsOf(TextureArea image,
   return sf::IntRect(firstPixel, shownPixels);
 }
 
+/** @returns The three shades of a player color as the shade swap shader reads
+ * them, dark, main then light, each channel from 0 to 1. */
+std::array<sf::Glsl::Vec4, PLAYER_SHADE_COUNT> shaderShadesOf(
+    const PlayerColors& shades) {
+  return {sf::Glsl::Vec4(shades.dark), sf::Glsl::Vec4(shades.ship),
+          sf::Glsl::Vec4(shades.light)};
+}
+
+/** @brief Gives the shade swap shader the shades it looks for and those it
+ * paints instead. */
+void setShades(sf::Shader& shader, const ShadeSwap& swap) {
+  const std::array sought = shaderShadesOf(swap.from);
+  const std::array painted = shaderShadesOf(swap.to);
+  shader.setUniformArray(std::string(SHADE_SWAP_FROM_UNIFORM), sought.data(),
+                         sought.size());
+  shader.setUniformArray(std::string(SHADE_SWAP_TO_UNIFORM), painted.data(),
+                         painted.size());
+}
+
+/** @returns How a copy is drawn: through the shade swap shader, given the
+ * swap, when the copy asks for one and the shader is loaded; plainly
+ * otherwise. */
+sf::RenderStates statesFor(const std::optional<ShadeSwap>& recolor,
+                           std::optional<sf::Shader>& shader) {
+  if (!recolor.has_value() || !shader.has_value()) {
+    return sf::RenderStates::Default;
+  }
+  setShades(*shader, *recolor);
+  return {&*shader};
+}
+
 }  // namespace
 
 InterfaceCanvas::InterfaceCanvas(const AssetLibrary& library)
     : textures_(library),
       writer_(library),
-      logger_(std::string(INTERFACE_LOG_MODULE_NAME)) {}
+      logger_(std::string(INTERFACE_LOG_MODULE_NAME)),
+      shadeSwap_(loadFragmentShader(SHADE_SWAP_SHADER, logger_)) {}
 
 void InterfaceCanvas::clear() {
   canvas_.canvas().clear(sf::Color::Transparent);
@@ -98,7 +136,7 @@ void InterfaceCanvas::drawImage(TextureArea image, ImagePlacement placement,
       sf::Vector2f(placement.topLeft + (visible->position * placement.scale)));
   sprite.setScale({scale, scale});
   sprite.setColor(placement.tint);
-  canvas_.canvas().draw(sprite);
+  canvas_.canvas().draw(sprite, statesFor(placement.recolor, shadeSwap_));
 }
 
 void InterfaceCanvas::drawSmoothImage(std::string_view assetId,

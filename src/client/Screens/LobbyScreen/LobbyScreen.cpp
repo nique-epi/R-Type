@@ -11,23 +11,31 @@
 #include <span>
 #include <string>
 #include <utility>
+#include "BoundAction.hpp"
 #include "HangarBay.hpp"
 #include "HangarBayConstants.hpp"
+#include "HelpWalkthrough.hpp"
+#include "HelpWalkthroughConstants.hpp"
+#include "HelpWalkthroughParts.hpp"
 #include "IInterfaceCanvas.hpp"
 #include "IScreenNavigator.hpp"
 #include "IServerConnection.hpp"
 #include "ISoundPlayer.hpp"
+#include "InterfaceConstants.hpp"
+#include "LobbyPartAreas.hpp"
+#include "LobbyPlace.hpp"
 #include "LobbyScreenConstants.hpp"
 #include "LobbyScreenParts.hpp"
 #include "LobbyState.hpp"
 #include "Menu.hpp"
 #include "MenuBuilder.hpp"
+#include "PilotColor.hpp"
 #include "PlayfieldMapping.hpp"
-#include "ProtocolConstants.hpp"
 #include "ScreenId.hpp"
 #include "SoundConstants.hpp"
 #include "TimeConstants.hpp"
 #include "WidgetConstants.hpp"
+#include "WidgetStyles.hpp"
 
 namespace rtype::client {
 
@@ -88,6 +96,57 @@ sf::Vector2i bayTopLeft(sf::IntRect area, int slot) {
          sf::Vector2i(slot * (HANGAR_BAY_SIZE.x + HANGAR_BAY_GAP), 0);
 }
 
+/** @returns Where the room paints BACK, its cancel chip. */
+sf::IntRect backChipArea() {
+  return MenuBuilder::chipArea(
+      {.label = BACK_LABEL, .keyName = CANCEL_KEY_NAME});
+}
+
+/** @returns Where the room paints HELP: a chip like BACK, BUTTON_GAP to its
+ * left. */
+sf::IntRect helpChipArea() {
+  sf::IntRect help =
+      MenuBuilder::chipArea({.label = HELP_LABEL, .keyName = HELP_KEY_NAME});
+  help.position.x = backChipArea().position.x - BUTTON_GAP - help.size.x;
+  return help;
+}
+
+/** @returns The slot of the bay of the local player, or nothing while the
+ * server lists no player with its number. */
+std::optional<int> ownSlotOf(std::span<const network::LobbyPlayer> players,
+                             std::uint8_t ownNumber) {
+  if (playerNumbered(players, ownNumber) == nullptr) {
+    return std::nullopt;
+  }
+  return pilotColorOfPlayerNumber(ownNumber);
+}
+
+/** @returns Where the room paints the parts its help explains, as
+ * MenuBuilder lays a room: the bays, where the menu lays its illustration;
+ * READY, its only bar, centered SPACE_ABOVE_ROOM_BARS under them; the status
+ * line BUTTON_GAP under READY, centered; then BACK. Menu gives no area of a
+ * bar, so READY and the status line are placed by the same arithmetic as
+ * MenuBuilder::placeRoom. */
+LobbyPartAreas partAreasOf(sf::IntRect bays, std::optional<int> ownSlot,
+                           int statusWidth) {
+  const sf::IntRect ready(
+      {(INTERFACE_AREA.size.x - BUTTON_SIZE.x) / SIDES_PER_AXIS,
+       bays.position.y + bays.size.y + SPACE_ABOVE_ROOM_BARS},
+      BUTTON_SIZE);
+  const int statusShown = std::max(statusWidth, BUTTON_SIZE.x);
+  return {
+      .bays = bays,
+      .ownBay = ownSlot.has_value()
+                    ? sf::IntRect(bayTopLeft(bays, *ownSlot), HANGAR_BAY_SIZE)
+                    : bays,
+      .ready = ready,
+      .status =
+          sf::IntRect({(INTERFACE_AREA.size.x - statusShown) / SIDES_PER_AXIS,
+                       ready.position.y + ready.size.y + BUTTON_GAP},
+                      {statusShown, TEXT_LINE_HEIGHT}),
+      .back = backChipArea()};
+}
+
 }  // namespace
 
 LobbyScreen::LobbyScreen(LobbyScreenParts parts,
@@ -97,13 +156,24 @@ LobbyScreen::LobbyScreen(LobbyScreenParts parts,
       sounds_(&parts.sounds.get()),
       canvas_(std::move(canvas)),
       playfieldPointAt_(std::move(parts.playfieldPointAt)),
-      readyKey_(parts.readyKey.key),
+      readyKey_(parts.keys.get().keyOf(BoundAction::Ready)),
+      palette_(parts.palette),
       motion_(parts.motion),
-      menu_(buildMenu(std::move(parts.readyKey.name))) {
+      place_(parts.place),
+      menu_(buildMenu(parts.keyName(readyKey_))),
+      help_(HelpWalkthroughParts{.sounds = parts.sounds,
+                                 .keys = parts.keys,
+                                 .keyName = parts.keyName,
+                                 .palette = parts.palette,
+                                 .motion = parts.motion,
+                                 .chipArea = helpChipArea()}) {
   repaint();
 }
 
 void LobbyScreen::handleEvent(const sf::Event& event) {
+  if (help_.handleEvent(event, playfieldPointAt_)) {
+    return;
+  }
   if (const auto* pressed = event.getIf<sf::Event::KeyPressed>();
       pressed != nullptr && pressed->scancode == readyKey_) {
     if (!readyKeyHeld_) {
@@ -126,6 +196,7 @@ void LobbyScreen::handleEvent(const sf::Event& event) {
 
 void LobbyScreen::update(engine::Duration elapsed) {
   menu_.advance(elapsed);
+  help_.advance(elapsed);
   elapsed_ += elapsed;
   if (!gameAsked_ && connection_->gameStarted()) {
     gameAsked_ = true;
@@ -154,6 +225,10 @@ void LobbyScreen::toggleReady() { connection_->setReady(!wantsReady()); }
 
 void LobbyScreen::leave() {
   connection_->cancel();
+  if (place_ == LobbyPlace::AfterGame) {
+    navigator_->replaceAll(ScreenId::Title);
+    return;
+  }
   navigator_->pop();
 }
 
@@ -171,13 +246,21 @@ void LobbyScreen::repaint() {
   const std::span<const network::LobbyPlayer> players =
       connection_->lobbyPlayers();
   const std::uint8_t ownNumber = connection_->status().playerNumber;
+  std::string status = statusLine(players, ownNumber);
+  const LobbyPartAreas parts =
+      partAreasOf(menu_.illustrationArea().value_or(sf::IntRect()),
+                  ownSlotOf(players, ownNumber),
+                  canvas_->textWidth(status, ROOM_STATUS_STYLE.font));
   menu_.setLabel(READY_BUTTON, wantsReady() ? CANCEL_READY_LABEL : READY_LABEL);
-  menu_.setStatus(statusLine(players, ownNumber));
+  menu_.setStatus(std::move(status));
   canvas_->clear();
-  menu_.paint(*canvas_);
-  paintBays();
-  canvas_->write(pilotCount(players.size()), PILOT_COUNT_ANCHOR,
-                 PILOT_COUNT_STYLE);
+  if (!help_.showsGame()) {
+    menu_.paint(*canvas_);
+    paintBays();
+    canvas_->write(pilotCount(players.size()), PILOT_COUNT_ANCHOR,
+                   PILOT_COUNT_STYLE);
+  }
+  help_.paint(*canvas_, parts);
   canvas_->display();
 }
 
@@ -193,11 +276,11 @@ void LobbyScreen::paintBays() {
 }
 
 HangarBay LobbyScreen::bayOf(sf::IntRect area, int slot) const {
-  const auto number =
-      static_cast<std::uint8_t>(network::FIRST_PLAYER_NUMBER + slot);
+  const auto number = static_cast<std::uint8_t>(playerNumberOfPilotColor(slot));
   HangarBay bay{.topLeft = bayTopLeft(area, slot),
                 .playerNumber = number,
                 .color = slot,
+                .palette = palette_,
                 .pilot = std::nullopt};
   const network::LobbyPlayer* player =
       playerNumbered(connection_->lobbyPlayers(), number);

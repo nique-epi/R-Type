@@ -1,0 +1,11 @@
+add_library(rtype_server_module_constants INTERFACE)
+
+target_include_directories(rtype_server_module_constants INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
+
+target_link_libraries(rtype_server_module_constants INTERFACE rtype_engine_time)
+
+add_subdirectory(Logger)
+add_subdirectory(Network)
+add_subdirectory(Games)
+add_subdirectory(Lobby)
+add_subdirectory(Assembly)

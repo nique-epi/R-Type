@@ -37,12 +37,6 @@ constexpr int SPACE_BELOW_RULE = 9;
 constexpr sf::Vector2i BUTTON_SIZE(160, 20);
 constexpr int BUTTON_GAP = 8;
 
-/** @returns How wide @p count bars of @p barSize are side by side, @p gap
- * apart, in pixels. */
-constexpr int barRowWidth(int count, sf::Vector2i barSize, int gap) {
-  return (count * barSize.x) + ((count - 1) * gap);
-}
-
 /**
  * @brief Where the label of a bar starts, from its top-left corner, and how
  * many pixels it drops while the bar is pressed.
@@ -130,6 +124,9 @@ constexpr sf::Keyboard::Key MENU_CANCEL_KEY = sf::Keyboard::Key::Escape;
  * bindings names: it cannot be bound. */
 constexpr const char* CANCEL_KEY_NAME = "ESC";
 
+/** @brief Name written on the keycap of MENU_CONFIRM_KEY. */
+constexpr const char* CONFIRM_KEY_NAME = "ENTER";
+
 /**
  * @brief Text field: its label in small print, then, FIELD_LABEL_GAP lower, a
  * box sunk into the panel, as wide as a form leaves between the left side of
@@ -183,10 +180,8 @@ constexpr char32_t LAST_DIGIT = U'9';
  */
 constexpr int SPACE_BELOW_DESCRIPTION = BUTTON_GAP;
 
-/** @brief How a player is named on screen: P and its number, on every bay of
- * the waiting room, and in the status band where no nickname is shown; YOU
- * for the local player. */
-constexpr const char* PLAYER_NUMBER_PREFIX = "P";
+/** @brief How the local player is named on screen, where the others are named
+ * by PLAYER_NUMBER_PREFIX and their number. */
 constexpr const char* LOCAL_PLAYER_TAG = "YOU";
 
 /** @brief Label of the button that closes a menu, the same in every menu. */

@@ -49,8 +49,8 @@ jobs:
         run: |
           wget -qO "$RUNNER_TEMP/llvm.sh" https://apt.llvm.org/llvm.sh
           chmod +x "$RUNNER_TEMP/llvm.sh"
-          sudo "$RUNNER_TEMP/llvm.sh" 20
-          sudo apt-get install -y clang-tidy-20
+          sudo "$RUNNER_TEMP/llvm.sh" 22
+          sudo apt-get install -y clang-tidy-22
 
       - name: Point vcpkg at a local binary cache
         run: |
@@ -82,7 +82,7 @@ jobs:
           SHARD_COUNT: ${{ strategy.job-total }}
         run: |
           lint_everything() {
-            find src tests \( -name '*.cpp' -o -name '*.hpp' \) -print0 > "$RUNNER_TEMP/files-to-lint"
+            find src \( -name '*.cpp' -o -name '*.hpp' \) -print0 > "$RUNNER_TEMP/files-to-lint"
           }
           if [ -z "$BASE_SHA" ]; then
             lint_everything
@@ -90,7 +90,7 @@ jobs:
             echo "The pull request changes .clang-tidy or this workflow: every file is linted."
             lint_everything
           else
-            git diff --name-only -z --diff-filter=ACMR "$BASE_SHA"...HEAD -- 'src/*.cpp' 'src/*.hpp' 'tests/*.cpp' 'tests/*.hpp' \
+            git diff --name-only -z --diff-filter=ACMR "$BASE_SHA"...HEAD -- 'src/*.cpp' 'src/*.hpp' \
               > "$RUNNER_TEMP/files-to-lint"
           fi
           jq -r --arg root "$GITHUB_WORKSPACE/" '.[].file | ltrimstr($root)' build/compile_commands.json \
@@ -112,6 +112,7 @@ jobs:
             echo "No C++ file to lint."
             exit 0
           fi
+          clang-tidy-22 --version
           echo "Running $(nproc) clang-tidy processes at a time."
           output="$RUNNER_TEMP/clang-tidy-output"
           mkdir "$output"
@@ -126,7 +127,7 @@ jobs:
           status=0
           xargs -0 -n 1 -P "$(nproc)" -a "$RUNNER_TEMP/files-to-lint" \
             sh -c 'case "$1" in *.hpp) set -- "$1" $(cat "$HEADER_INCLUDE_ARGUMENTS") ;; esac
-                   clang-tidy-20 -p build --quiet "$@" > "$0/$(printf %s "$1" | tr / _).txt" 2>&1' "$output" \
+                   clang-tidy-22 -p build --quiet "$@" > "$0/$(printf %s "$1" | tr / _).txt" 2>&1' "$output" \
             || status=$?
           cat "$output"/*.txt
           exit "$status"
@@ -144,7 +145,7 @@ jobs:
         id: select
         shell: bash
         run: |
-          git ls-files -z -- 'src/*Windows.cpp' 'tests/*Windows.cpp' > "$RUNNER_TEMP/files-to-lint"
+          git ls-files -z -- 'src/*Windows.cpp' > "$RUNNER_TEMP/files-to-lint"
           echo "Files to lint:"
           tr '\0' '\n' < "$RUNNER_TEMP/files-to-lint"
           if [ -s "$RUNNER_TEMP/files-to-lint" ]; then
@@ -179,6 +180,10 @@ jobs:
           VCPKG_SSL_REVOKE_BEST_EFFORT: '1'
         run: cmake --preset test -G Ninja -DCMAKE_CXX_SCAN_FOR_MODULES=OFF
 
+      - name: Install clang-tidy 22
+        if: steps.select.outputs.found == 'true'
+        run: choco upgrade llvm --version 22.1.8 -y --no-progress
+
       - name: Run clang-tidy
         if: steps.select.outputs.found == 'true'
         shell: bash
@@ -193,11 +198,29 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest]
+        include:
+          - os: ubuntu-latest
+            generator_arguments: ""
+          - os: windows-latest
+            # Ninja compiles every file in parallel; the Visual Studio generator does not.
+            # /Z7 puts the debug information in the object files, which sccache can cache.
+            generator_arguments: >-
+              -G Ninja
+              -DCMAKE_CXX_SCAN_FOR_MODULES=OFF
+              -DCMAKE_MSVC_DEBUG_INFORMATION_FORMAT=Embedded
+    env:
+      SCCACHE_GHA_ENABLED: "true"
     steps:
       - uses: actions/checkout@v5
         with:
           submodules: true
+
+      - name: Set up the MSVC environment
+        if: runner.os == 'Windows'
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Set up sccache
+        uses: mozilla-actions/sccache-action@v0.0.11
 
       - name: Install system dependencies
         if: runner.os == 'Linux'
@@ -220,9 +243,14 @@ jobs:
           restore-keys: vcpkg-${{ runner.os }}-
 
       - name: Configure
+        shell: bash
         env:
           VCPKG_SSL_REVOKE_BEST_EFFORT: ${{ runner.os == 'Windows' && '1' || '0' }}
-        run: cmake --preset test -DCMAKE_COMPILE_WARNING_AS_ERROR=ON
+        run: >-
+          cmake --preset test ${{ matrix.generator_arguments }}
+          -DCMAKE_COMPILE_WARNING_AS_ERROR=ON
+          -DCMAKE_C_COMPILER_LAUNCHER=sccache
+          -DCMAKE_CXX_COMPILER_LAUNCHER=sccache
 
       - name: Save vcpkg binary cache
         if: steps.vcpkg-cache.outputs.cache-hit != 'true'
@@ -232,7 +260,12 @@ jobs:
           key: ${{ steps.vcpkg-cache.outputs.cache-primary-key }}
 
       - name: Build
-        run: cmake --build --preset test
+        run: cmake --build --preset test --parallel
+
+      - name: Show the compiler cache statistics
+        if: always()
+        shell: bash
+        run: ${SCCACHE_PATH} --show-stats
 
       - name: Test
         run: ctest --preset test

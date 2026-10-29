@@ -9,6 +9,7 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include "BarRowWidth.hpp"
 #include "Button.hpp"
 #include "IScreenNavigator.hpp"
 #include "InterfaceConstants.hpp"

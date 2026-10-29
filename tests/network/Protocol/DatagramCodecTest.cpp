@@ -55,9 +55,9 @@ static_assert(!SplittableAs<std::array<std::byte, EMPTY_MESSAGE_DATAGRAM_SIZE>>,
 /**
  * Given a default header
  * When a datagram is encoded with it
- * Then it starts with RTYP, version 0, and zeros for every other field
+ * Then it starts with RTYP, version 1, and zeros for every other field
  */
-TEST(DatagramCodec, DefaultHeaderIsVersionZeroWithoutSession) {
+TEST(DatagramCodec, DefaultHeaderIsVersionOneWithoutSession) {
   const auto datagram =
       DatagramCodec::encode(PacketHeader{}, MessageType::Heartbeat, {});
 
@@ -77,7 +77,7 @@ TEST(DatagramCodec, EncodesTheHeaderAndOneMessageByteByByte) {
       someSessionHeader(), MessageType::ReadyState, byteSequence({0x01}));
 
   EXPECT_EQ(datagram,
-            byteSequence({0x52, 0x54, 0x59, 0x50, 0x00, 0x00, 0x01, 0x02, 0x03,
+            byteSequence({0x52, 0x54, 0x59, 0x50, 0x01, 0x00, 0x01, 0x02, 0x03,
                           0x04, 0x05, 0x06, 0x07, 0x08, 0x0A, 0x0B, 0x00, 0x00,
                           0x00, 0x00, 0x00, 0x00, 0x06, 0x00, 0x01, 0x01}));
 }
@@ -139,9 +139,9 @@ TEST(DatagramCodec, DecodesTheHeaderItEncoded) {
 }
 
 /**
- * Given a datagram whose version byte is 1
+ * Given a datagram whose version byte is 2
  * When its header is decoded
- * Then the version 1 is returned, so the receiver can name it
+ * Then the version 2 is returned, so the receiver can name it
  */
 TEST(DatagramCodec, DecodesTheHeaderOfAnotherVersion) {
   auto datagram =
@@ -185,7 +185,7 @@ TEST(DatagramCodec, SaysAnotherProtocolIdDoesNotSpeakThisProtocol) {
 }
 
 /**
- * Given a header with a flag set, which version 0 never sets
+ * Given a header with a flag set, which version 1 never sets
  * When it is checked
  * Then it does not speak this protocol
  */

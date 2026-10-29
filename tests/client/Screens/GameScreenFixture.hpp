@@ -4,6 +4,7 @@
 #include <vector>
 #include "DrawJournal.hpp"
 #include "FakeEntityMessageSource.hpp"
+#include "GameResult.hpp"
 #include "PlayerSettings.hpp"
 #include "RecordingEntityLayer.hpp"
 #include "RecordingInterfaceCanvas.hpp"
@@ -56,5 +57,6 @@ class GameScreenFixture : public ::testing::Test {
   DrawJournal drawJournal_;
   RecordingSky sky_;
   RecordingSoundPlayer sounds_;
+  rtype::client::GameResult result_;
   rtype::client::ScreenStack screens_;
 };

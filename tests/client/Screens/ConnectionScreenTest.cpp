@@ -1,5 +1,6 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include <SFML/System/Vector2.hpp>
 #include <SFML/Window/Keyboard.hpp>
 #include <optional>
 #include <string>
@@ -33,6 +34,7 @@ using rtype::client::GAME_IN_PROGRESS_STATUS;
 using rtype::client::INVALID_ADDRESS_STATUS;
 using rtype::client::INVALID_PORT_STATUS;
 using rtype::client::MISSING_NICKNAME_STATUS;
+using rtype::client::NICKNAME_TAKEN_STATUS;
 using rtype::client::ScreenId;
 using rtype::client::UNREACHABLE_STATUS;
 using rtype::client::testing::ACCEPTED_AS_FIRST_PLAYER;
@@ -48,8 +50,11 @@ using rtype::client::testing::THIRD_PLAYER;
 using rtype::client::testing::TYPED_PORT;
 using rtype::client::testing::TYPED_PORT_TEXT;
 using rtype::network::RefusalReason;
+using ::testing::Contains;
 using ::testing::ElementsAre;
+using ::testing::Field;
 using ::testing::IsEmpty;
+using ::testing::Not;
 
 /**
  * Given the connection screen just built with the launch values
@@ -211,6 +216,23 @@ TEST_F(ConnectionScreenFixture, AnUnreachableServerIsShown) {
 }
 
 /**
+ * Given a screen whose status line said the server cannot be reached
+ * When the connection reports a lost session
+ * Then nothing is written where the status line goes
+ */
+TEST_F(ConnectionScreenFixture, ALostSessionShowsNoStatusLine) {
+  show({.phase = ConnectionStatus::Phase::Unreachable});
+  const RecordedWriting* unreachable = writingOf(canvas(), UNREACHABLE_STATUS);
+  ASSERT_NE(unreachable, nullptr);
+  const sf::Vector2i statusAnchor = unreachable->anchor;
+
+  show({.phase = ConnectionStatus::Phase::Lost});
+
+  EXPECT_THAT(canvas().writings,
+              Not(Contains(Field(&RecordedWriting::anchor, statusAnchor))));
+}
+
+/**
  * Given an attempt the server has just accepted
  * When frames go by up to one tick before the acceptance showed long enough
  * Then the screen asks for nothing yet
@@ -325,11 +347,13 @@ INSTANTIATE_TEST_SUITE_P(
     ::testing::Values(std::tuple(RefusalReason::GameFull,
                                  std::string_view(GAME_FULL_STATUS)),
                       std::tuple(RefusalReason::GameInProgress,
-                                 std::string_view(GAME_IN_PROGRESS_STATUS))));
+                                 std::string_view(GAME_IN_PROGRESS_STATUS)),
+                      std::tuple(RefusalReason::NicknameTaken,
+                                 std::string_view(NICKNAME_TAKEN_STATUS))));
 
 /**
- * Given an attempt a server of protocol version 1 refused as
- * IncompatibleVersion, the client speaking version 0
+ * Given an attempt a server of protocol version 2 refused as
+ * IncompatibleVersion, the client speaking version 1
  * When a frame goes by
  * Then the status line names both versions, the client's first
  */
@@ -338,5 +362,5 @@ TEST_F(ConnectionScreenFixture, AVersionRefusalNamesBothVersions) {
         .refusal = RefusalReason::IncompatibleVersion,
         .serverVersion = NEXT_PROTOCOL_VERSION});
 
-  EXPECT_NE(writingOf(canvas(), "REFUSED: YOU V0, SERVER V1"), nullptr);
+  EXPECT_NE(writingOf(canvas(), "REFUSED: YOU V1, SERVER V2"), nullptr);
 }

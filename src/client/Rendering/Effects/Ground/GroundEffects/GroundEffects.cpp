@@ -2,7 +2,10 @@
 #include <SFML/Graphics/Color.hpp>
 #include <SFML/System/Vector2.hpp>
 #include <algorithm>
+#include <chrono>
 #include <cmath>
+#include <cstddef>
+#include "BackgroundColorConstants.hpp"
 #include "BackgroundConstants.hpp"
 #include "ColorRamp.hpp"
 #include "ComponentRegistry.hpp"
@@ -14,6 +17,7 @@
 #include "PixelCircle.hpp"
 #include "PixelRounding.hpp"
 #include "Position.hpp"
+#include "ShipFlight.hpp"
 #include "Shockwave.hpp"
 #include "SpeedLine.hpp"
 #include "TimeConstants.hpp"
@@ -106,12 +110,83 @@ void paintSpeedLines(engine::ComponentRegistry& components,
       });
 }
 
+/** @brief One flight line of a ship: its row of the canvas, the column after
+ * its last pixel, and its length. */
+struct FlightLine {
+  int row{};
+  int right{};
+  int length{};
+};
+
+/** @returns How many pixels the flame of @p flight burns behind the engine. */
+int flameLengthOf(const ShipFlight& flight) {
+  const int flicker = (flight.age / FLAME_FLICKER_STEP) % 2 == 0 ? 0 : 1;
+  return 1 + pixelsOf(FLAME_LONGEST - 1, flight.flame) + flicker;
+}
+
+/** @brief Paints the flame of every ship that has a ShipFlight behind its
+ * engine, on the two rows of the engine, its tip on the upper one. */
+void paintFlames(engine::ComponentRegistry& components,
+                 IPixelSurface& surface) {
+  components.forEach<ShipFlight, game::Position>(
+      [&surface](engine::Entity, const ShipFlight& flight,
+                 const game::Position& position) {
+        const sf::Vector2i nozzle =
+            pixelOf(position) - sf::Vector2i(SHIP_HALF_WIDTH_PIXELS + 1, 1);
+        const int length = flameLengthOf(flight);
+        for (int step = 0; step < length; ++step) {
+          const float share = static_cast<float>(step) /
+                              static_cast<float>(std::max(length - 1, 1));
+          const sf::Color color = colorAt(FLAME_COLORS, share);
+          surface.plot(nozzle - sf::Vector2i(step, 0), color);
+          if (share < FLAME_TIP_SHARE) {
+            surface.plot(nozzle - sf::Vector2i(step, -1), color);
+          }
+        }
+      });
+}
+
+/** @brief Paints @p line in PALE_BLUE. */
+void paintFlightLine(IPixelSurface& surface, FlightLine line) {
+  for (int column = line.right - line.length; column < line.right; ++column) {
+    surface.plot({column, line.row}, PALE_BLUE);
+  }
+}
+
+/** @brief Paints the flight lines of every ShipFlight whose pilot has pushed
+ * forward for FLIGHT_LINES_AFTER or dashes. */
+void paintFlightLines(engine::ComponentRegistry& components,
+                      IPixelSurface& surface) {
+  components.forEach<ShipFlight, game::Position>(
+      [&surface](engine::Entity, const ShipFlight& flight,
+                 const game::Position& position) {
+        if (flight.forwardTime < FLIGHT_LINES_AFTER && !flight.dashing) {
+          return;
+        }
+        const sf::Vector2i center = pixelOf(position);
+        const auto scrolled =
+            static_cast<int>(std::chrono::duration<float>(flight.age).count() *
+                             FLIGHT_LINE_PACE);
+        for (std::size_t index = 0; index < SPEED_LINE_ROWS.size(); ++index) {
+          const int phase =
+              (scrolled + FLIGHT_LINE_PHASES.at(index)) % FLIGHT_LINE_PERIOD;
+          paintFlightLine(
+              surface, FlightLine{.row = center.y + SPEED_LINE_ROWS.at(index),
+                                  .right = center.x - SHIP_HALF_WIDTH_PIXELS -
+                                           FLIGHT_LINE_GAP - phase,
+                                  .length = FLIGHT_LINE_LENGTHS.at(index)});
+        }
+      });
+}
+
 }  // namespace
 
 void paintGroundEffects(engine::ComponentRegistry& components,
                         IPixelSurface& surface) {
   paintShockwaves(components, surface);
   paintSpeedLines(components, surface);
+  paintFlightLines(components, surface);
+  paintFlames(components, surface);
   paintParticles(components, surface);
 }
 

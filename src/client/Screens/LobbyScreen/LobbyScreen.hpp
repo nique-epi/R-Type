@@ -2,17 +2,21 @@
 
 #include <SFML/Graphics/Rect.hpp>
 #include <SFML/Window/Keyboard.hpp>
+#include <functional>
 #include <memory>
 #include <string>
+#include "HelpWalkthrough.hpp"
 #include "IInterfaceCanvas.hpp"
 #include "IScreen.hpp"
 #include "IScreenNavigator.hpp"
 #include "IServerConnection.hpp"
 #include "ISoundPlayer.hpp"
+#include "LobbyPlace.hpp"
 #include "LobbyScreenParts.hpp"
 #include "LobbyState.hpp"
 #include "Menu.hpp"
 #include "MotionPreference.hpp"
+#include "PlayerPalette.hpp"
 #include "PlayfieldMapping.hpp"
 #include "TimeConstants.hpp"
 
@@ -38,8 +42,14 @@ struct HangarBay;
  *
  * Once the connection learns that the game started, the screen asks for the
  * game in place of every screen, once. BACK, or MENU_CANCEL_KEY, leaves the
- * server and closes the screen, back to the connection screen. The key of
- * READY wins over the keys of the menu.
+ * server and closes the screen, back to the connection screen; after a game,
+ * it opens the title in place of every screen instead. The key of READY wins
+ * over the keys of the menu.
+ *
+ * HELP, a chip beside BACK, or HELP_KEY opens the help of the room
+ * (HelpWalkthrough) over it: while it is open it takes every event but the
+ * release of a key, the room keeps updating under it, and the game, once it
+ * starts, replaces both.
  */
 class LobbyScreen : public IScreen {
  public:
@@ -98,11 +108,14 @@ class LobbyScreen : public IScreen {
   std::unique_ptr<IInterfaceCanvas> canvas_;
   PlayfieldMapping playfieldPointAt_;
   sf::Keyboard::Scancode readyKey_{};
+  std::reference_wrapper<const PlayerPalette> palette_;
   MotionPreference motion_{};
+  LobbyPlace place_{};
   engine::Duration elapsed_{};
   bool readyKeyHeld_ = false;
   bool gameAsked_ = false;
   Menu menu_;
+  HelpWalkthrough help_;
 };
 
 }  // namespace rtype::client

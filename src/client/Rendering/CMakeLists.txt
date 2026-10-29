@@ -11,6 +11,7 @@ target_link_libraries(rtype_client_rendering_interfaces
 )
 
 add_subdirectory(Easing)
+add_subdirectory(Typing)
 add_subdirectory(ColorRamp)
 add_subdirectory(PixelCircle)
 add_subdirectory(PixelCanvas)

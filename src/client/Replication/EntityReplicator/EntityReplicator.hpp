@@ -70,7 +70,8 @@ struct AnimatedSprite;
  * copy of its EntityDestroyed was lost.
  *
  * Of the players of a WorldState, it marks the ship of each with the color
- * of its pilot (see PilotShip) and whether it can be hit, then gives the
+ * of its pilot (see PilotShip), whether it can be hit and what its pilot
+ * does (see ShipFlight, from the motion of the player), then gives the
  * effects its score, from which they show the figure of a gain; a player
  * number outside FIRST_PLAYER_NUMBER to MAXIMUM_PLAYERS, or a ship id that
  * names no ship, is ignored. The players are read after the entities and

@@ -4,13 +4,17 @@
 #include <cstddef>
 #include <string_view>
 #include "FlashPreference.hpp"
+#include "InterfaceColorConstants.hpp"
+#include "PlayerPalette.hpp"
 #include "RecordingInterfaceCanvas.hpp"
 
 /** @returns What paintIntroCast() asks a canvas at @p real seconds of the
  * music, the cast built from INTRO_TEST_SEED, without shake, the freezes
- * played unless @p preference reduces flashes. */
+ * played unless @p preference reduces flashes, the pilots painted in
+ * @p palette. */
 [[nodiscard]] InterfaceCanvasRecord paintedAt(
-    float real, rtype::client::FlashPreference preference);
+    float real, rtype::client::FlashPreference preference,
+    const rtype::client::PlayerPalette& palette = rtype::client::PLAYER_COLORS);
 
 /** @returns How many images of a sheet the record holds whose rectangle
  * starts on row @p top. */

@@ -4,8 +4,10 @@
 #include "ByteSequence.hpp"
 #include "NetworkException.hpp"
 #include "ProtocolConstants.hpp"
+#include "ProtocolTestConstants.hpp"
 #include "WorldState.hpp"
 #include "WorldStateCodec.hpp"
+#include "WorldStateCodecTestConstants.hpp"
 #include "WorldStateFixtures.hpp"
 
 using rtype::network::BufferUnderflowException;
@@ -13,6 +15,7 @@ using rtype::network::DuplicatePlayerNumberException;
 using rtype::network::EntityState;
 using rtype::network::InvalidFieldValueException;
 using rtype::network::MalformedMessageException;
+using rtype::network::PlayerState;
 using rtype::network::TooManyPlayersException;
 using rtype::network::WireEntityType;
 using rtype::network::WorldState;
@@ -25,21 +28,31 @@ using rtype::network::testing::ENTITIES_FITTING_WITH_FOUR_PLAYERS;
 using rtype::network::testing::ENTITY_TYPE_ABOVE_THE_LAST;
 using rtype::network::testing::ENTITY_TYPE_BELOW_THE_FIRST;
 using rtype::network::testing::EXAMPLE_ENTITY_ID;
+using rtype::network::testing::EXAMPLE_PLAYER_NUMBER;
 using rtype::network::testing::EXAMPLE_PLAYER_SHIP_ID;
 using rtype::network::testing::FEW_ENTITIES;
 using rtype::network::testing::fourPlayers;
 using rtype::network::testing::invulnerablePlayer;
+using rtype::network::testing::LARGEST_MOTION;
+using rtype::network::testing::LARGEST_STATE_PAYLOAD;
+using rtype::network::testing::LARGEST_U32;
+using rtype::network::testing::LARGEST_U8;
 using rtype::network::testing::LARGEST_WIRE_COORDINATE;
 using rtype::network::testing::LAST_ENTITY_TYPE;
+using rtype::network::testing::LAST_PLAYER_NUMBER;
 using rtype::network::testing::LATE_TICK;
+using rtype::network::testing::MOTION_HIGHEST_BIT;
+using rtype::network::testing::MOTION_PAST_THE_DASH;
 using rtype::network::testing::NEAREST_EIGHTH_OF_UNROUNDED_X;
 using rtype::network::testing::NEAREST_EIGHTH_OF_UNROUNDED_Y;
 using rtype::network::testing::NO_ENTITY_ID_BYTE;
 using rtype::network::testing::NOT_A_BOOLEAN;
 using rtype::network::testing::NUMBER_OF_A_FIFTH_PLAYER;
 using rtype::network::testing::oneShipState;
+using rtype::network::testing::payloadWithMotion;
 using rtype::network::testing::PLAYER_NUMBER_BYTE_ABOVE_THE_LAST;
 using rtype::network::testing::PLAYER_NUMBER_BYTE_BELOW_THE_FIRST;
+using rtype::network::testing::ROLLING_RIGHT_MOTION;
 using rtype::network::testing::SMALLEST_WIRE_COORDINATE;
 using rtype::network::testing::SOME_LIVES;
 using rtype::network::testing::SOME_SCORE;
@@ -52,17 +65,43 @@ using rtype::network::testing::UNROUNDED_Y;
 /**
  * Given a state with one player and one entity
  * When it is encoded
- * Then the payload is the 26 bytes of the protocol page: tick, playerCount,
+ * Then the payload is the 27 bytes of the protocol page: tick, playerCount,
  * the player, entityCount, the entity with x and y in eighths of a unit
  */
 TEST(WorldStateCodec, EncodesTheLayoutOfTheProtocolPage) {
   const auto payloads = WorldStateCodec::encode(oneShipState());
 
   ASSERT_EQ(payloads.size(), 1U);
-  EXPECT_EQ(payloads.front(),
-            byteSequence({0x00, 0x00, 0x00, 0x03, 0x01, 0x01, 0x00, 0x00, 0x00,
-                          0x07, 0x03, 0x00, 0x00, 0x00, 0x64, 0x00, 0x01, 0x00,
-                          0x00, 0x00, 0x09, 0x01, 0x03, 0x20, 0x01, 0x94}));
+  EXPECT_EQ(
+      payloads.front(),
+      byteSequence({0x00, 0x00, 0x00, 0x03, 0x01, 0x01, 0x00, 0x00, 0x00,
+                    0x07, 0x03, 0x00, 0x00, 0x00, 0x64, 0x00, 0x00, 0x01,
+                    0x00, 0x00, 0x00, 0x09, 0x01, 0x03, 0x20, 0x01, 0x94}));
+}
+
+/**
+ * Given a state of the largest u32 tick, whose player holds the largest value
+ * of each of its fields and whose enemy missile has the largest u32 id, at
+ * the smallest x and the largest y of the wire range
+ * When it is encoded then decoded
+ * Then the decoded state equals the original
+ */
+TEST(WorldStateCodec, KeepsTheLargestValueOfEachField) {
+  const WorldState state{
+      .tick = LARGEST_U32,
+      .players = {PlayerState{.playerNumber = LAST_PLAYER_NUMBER,
+                              .shipEntityId = LARGEST_U32,
+                              .lives = LARGEST_U8,
+                              .score = LARGEST_U32,
+                              .invulnerable = true,
+                              .motion = LARGEST_MOTION}},
+      .entities = {EntityState{.entityId = LARGEST_U32,
+                               .entityType = WireEntityType::EnemyMissile,
+                               .x = SMALLEST_WIRE_COORDINATE,
+                               .y = LARGEST_WIRE_COORDINATE}}};
+
+  EXPECT_EQ(WorldStateCodec::decode(WorldStateCodec::encode(state).front()),
+            state);
 }
 
 /**
@@ -131,9 +170,10 @@ TEST(WorldStateCodec, ClampsAPositionToTheRangeOfTheWire) {
 }
 
 /**
- * Given four players and 125 entities, the most one datagram holds
+ * Given four players and 124 entities, the most one datagram holds
  * When the state is encoded
- * Then one payload of 1175 bytes is produced
+ * Then one payload of 1170 bytes is produced, within the 1175 a datagram
+ * carries
  */
 TEST(WorldStateCodec, KeepsTheLargestStateThatFitsInOnePayload) {
   const WorldState state{
@@ -144,14 +184,14 @@ TEST(WorldStateCodec, KeepsTheLargestStateThatFitsInOnePayload) {
   const auto payloads = WorldStateCodec::encode(state);
 
   ASSERT_EQ(payloads.size(), 1U);
-  EXPECT_EQ(payloads.front().size(), DATAGRAM_PAYLOAD_LIMIT);
+  EXPECT_EQ(payloads.front().size(), LARGEST_STATE_PAYLOAD);
 }
 
 /**
- * Given four players and 126 entities, one more than a datagram holds
+ * Given four players and 125 entities, one more than a datagram holds
  * When the state is encoded
  * Then two payloads are produced, each with the same tick and the four
- * players, holding 125 then 1 entities in their order, and none exceeds 1175
+ * players, holding 124 then 1 entities in their order, and none exceeds 1175
  * bytes
  */
 TEST(WorldStateCodec, SplitsEntitiesThatDoNotFitIntoSeveralPayloads) {
@@ -321,7 +361,7 @@ TEST(WorldStateCodec, RefusesAnEntityWithoutAnId) {
 TEST(WorldStateCodec, RefusesAPlayerNumberOutsideOneToFour) {
   const auto withNumber = [](unsigned int number) {
     return byteSequence({0, 0, 0, 1, 1, number, 0, 0, 0, EXAMPLE_PLAYER_SHIP_ID,
-                         SOME_LIVES, 0, 0, 0, SOME_SCORE, 0, 0});
+                         SOME_LIVES, 0, 0, 0, SOME_SCORE, 0, 0, 0});
   };
 
   EXPECT_THROW((void)WorldStateCodec::decode(
@@ -338,10 +378,21 @@ TEST(WorldStateCodec, RefusesAPlayerNumberOutsideOneToFour) {
  * Then it is refused
  */
 TEST(WorldStateCodec, RefusesTheSamePlayerTwice) {
-  const auto payload = byteSequence(
-      {0, 0, 0, 1,          2, 1, 0, 0, 0, EXAMPLE_PLAYER_SHIP_ID, SOME_LIVES,
-       0, 0, 0, SOME_SCORE, 0, 1, 0, 0, 0, EXAMPLE_PLAYER_SHIP_ID, SOME_LIVES,
-       0, 0, 0, SOME_SCORE, 0, 0});
+  const auto payload = byteSequence({0,          0,
+                                     0,          1,
+                                     2,          1,
+                                     0,          0,
+                                     0,          EXAMPLE_PLAYER_SHIP_ID,
+                                     SOME_LIVES, 0,
+                                     0,          0,
+                                     SOME_SCORE, 0,
+                                     0,          1,
+                                     0,          0,
+                                     0,          EXAMPLE_PLAYER_SHIP_ID,
+                                     SOME_LIVES, 0,
+                                     0,          0,
+                                     SOME_SCORE, 0,
+                                     0,          0});
 
   EXPECT_THROW((void)WorldStateCodec::decode(payload),
                DuplicatePlayerNumberException);
@@ -358,4 +409,51 @@ TEST(WorldStateCodec, ReportsBytesAfterTheLastEntityAsTrailingBytes) {
 
   EXPECT_THROW((void)WorldStateCodec::decode(payload),
                rtype::network::TrailingBytesException);
+}
+
+/**
+ * Given a world state whose only player holds right and rolls
+ * When it is encoded and decoded
+ * Then the player keeps that motion
+ */
+TEST(WorldStateCodec, KeepsTheMotionOfAPlayer) {
+  const WorldState state{
+      .tick = SOME_TICK,
+      .players = {PlayerState{.playerNumber = EXAMPLE_PLAYER_NUMBER,
+                              .shipEntityId = EXAMPLE_PLAYER_SHIP_ID,
+                              .lives = SOME_LIVES,
+                              .score = SOME_SCORE,
+                              .invulnerable = false,
+                              .motion = ROLLING_RIGHT_MOTION}},
+      .entities = {}};
+
+  const WorldState decoded =
+      WorldStateCodec::decode(WorldStateCodec::encode(state).front());
+
+  EXPECT_EQ(decoded.players.front().motion, ROLLING_RIGHT_MOTION);
+}
+
+/**
+ * Given the payload of a world state whose player's motion has bit 6 set
+ * When it is decoded
+ * Then it is refused as an invalid field
+ */
+TEST(WorldStateCodec, RefusesAMotionWithABitPastTheDash) {
+  const std::vector<std::byte> payload =
+      payloadWithMotion(MOTION_PAST_THE_DASH);
+
+  EXPECT_THROW((void)WorldStateCodec::decode(payload),
+               InvalidFieldValueException);
+}
+
+/**
+ * Given the payload of a world state whose player's motion has bit 7 set
+ * When it is decoded
+ * Then it is refused as an invalid field
+ */
+TEST(WorldStateCodec, RefusesAMotionWithItsHighestBitSet) {
+  const std::vector<std::byte> payload = payloadWithMotion(MOTION_HIGHEST_BIT);
+
+  EXPECT_THROW((void)WorldStateCodec::decode(payload),
+               InvalidFieldValueException);
 }

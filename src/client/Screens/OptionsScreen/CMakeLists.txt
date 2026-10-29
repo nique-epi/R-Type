@@ -11,7 +11,7 @@ target_link_libraries(rtype_client_options_screen
     rtype_client_screen_assets
     rtype_client_settings
     rtype_client_window
-    rtype_client_window_size_selection
+    rtype_client_window_layout
     SFML::Graphics
   PRIVATE
     rtype_client_choice_selector

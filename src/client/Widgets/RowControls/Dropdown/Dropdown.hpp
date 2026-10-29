@@ -10,6 +10,7 @@
 #include <string>
 #include <vector>
 #include "BarState.hpp"
+#include "DropdownParts.hpp"
 #include "IInterfaceCanvas.hpp"
 #include "RowControl.hpp"
 #include "ValueBinding.hpp"
@@ -29,17 +30,14 @@ namespace rtype::client {
  * nothing; the pointer highlights the choice it is over, a click takes it, a
  * click elsewhere closes. A choice that cannot be taken is shown, dimmed and
  * dashed, never taken.
+ *
+ * On a disabled row, the text of the box and its pointer are dimmed. While a
+ * text is imposed, the box shows it in place of the current choice.
  */
 class Dropdown : public RowControl {
  public:
-  /**
-   * @param choices Texts of the choices, in order.
-   * @param available Whether a choice can be taken, asked whenever needed.
-   * @param value Order of the current choice.
-   */
-  Dropdown(std::vector<std::string> choices,
-           std::function<bool(std::size_t)> available,
-           ValueBinding<std::size_t> value);
+  /** @param parts What the list is built from. */
+  explicit Dropdown(DropdownParts parts);
 
   [[nodiscard]] int width() const override;
   void paint(IInterfaceCanvas& canvas, sf::IntRect area,
@@ -81,6 +79,7 @@ class Dropdown : public RowControl {
   std::vector<std::string> choices_;
   std::function<bool(std::size_t)> available_;
   ValueBinding<std::size_t> value_;
+  std::function<std::optional<std::string>()> imposedText_;
   bool open_ = false;
   std::size_t highlight_ = 0;
   std::optional<std::size_t> pointed_;

@@ -7,6 +7,7 @@ target_link_libraries(rtype_server_life_keeper
     rtype_engine_event_bus
     rtype_game
     rtype_logging
+    rtype_server_instances
     rtype_server_player_roster
   PRIVATE
     rtype_identifiers

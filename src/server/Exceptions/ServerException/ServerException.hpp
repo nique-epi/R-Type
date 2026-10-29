@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -88,6 +89,40 @@ class UnknownDifficultyException : public ServerException {
   /** @param known The difficulties the file describes, in the message. */
   UnknownDifficultyException(const std::string& difficulty,
                              const std::vector<std::string>& known);
+};
+
+/** @brief A new player has no game to join: no game was added yet. */
+class NoJoinableGameException : public ServerException {
+ public:
+  NoJoinableGameException();
+};
+
+/** @brief ServerApplication::open() was called on a server already open. */
+class ServerAlreadyOpenException : public ServerException {
+ public:
+  ServerAlreadyOpenException();
+};
+
+/** @brief A server was used before open() bound its socket. */
+class ServerNotOpenException : public ServerException {
+ public:
+  ServerNotOpenException();
+};
+
+/** @brief The system refuses to block the signals that ask the server to
+ * stop (Linux and macOS). */
+class SignalMaskException : public ServerException {
+ public:
+  /** @param reason What the system answered, in the message. */
+  explicit SignalMaskException(const std::string& reason);
+};
+
+/** @brief Windows refuses the handler of the console events that ask the
+ * server to stop. */
+class ConsoleHandlerException : public ServerException {
+ public:
+  /** @param errorCode The code GetLastError() gave, in the message. */
+  explicit ConsoleHandlerException(std::uint32_t errorCode);
 };
 
 /** @brief A wave plan names no enemy, so its waves would bring nothing. */

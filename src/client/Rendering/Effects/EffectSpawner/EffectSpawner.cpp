@@ -2,10 +2,12 @@
 #include <SFML/System/Vector2.hpp>
 #include <cstdint>
 #include "ComponentRegistry.hpp"
+#include "EffectPreferences.hpp"
 #include "Entity.hpp"
 #include "EntityRegistry.hpp"
 #include "EntityType.hpp"
-#include "FlashPreference.hpp"
+#include "PilotShadeConstants.hpp"
+#include "PilotShades.hpp"
 #include "Position.hpp"
 #include "TimeConstants.hpp"
 
@@ -14,21 +16,26 @@ namespace rtype::client {
 EffectSpawner::EffectSpawner(engine::EntityRegistry& entities,
                              engine::ComponentRegistry& components,
                              std::uint32_t seed)
-    : pixels_(entities, components, seed),
+    : shades_(STANDARD_PILOT_SHADES),
+      pixels_(entities, components, seed),
       tools_{.entities = entities,
              .components = components,
              .gate = gate_,
              .pixels = pixels_,
-             .camera = camera_},
+             .camera = camera_,
+             .shades = shades_},
       gains_(tools_),
       hits_(tools_),
       shots_(tools_),
       kills_(tools_, gains_),
-      pilots_(tools_) {}
+      pilots_(tools_),
+      cues_(tools_) {}
 
 void EffectSpawner::advance(engine::Duration elapsed,
-                            FlashPreference preference) {
-  gate_.advance(elapsed, preference);
+                            EffectPreferences preferences) {
+  gate_.advance(elapsed, preferences.flashes);
+  shades_ = preferences.shades;
+  soundCues_ = preferences.soundCues;
   kills_.advance(elapsed);
   gains_.advance(elapsed);
   camera_.advance(elapsed);
@@ -52,6 +59,9 @@ void EffectSpawner::playExplosion(game::EntityType type,
 }
 
 void EffectSpawner::playShipDown(engine::Entity ship) {
+  if (soundCues_) {
+    cues_.showPilotHit(ship);
+  }
   kills_.playShipDown(ship);
 }
 
@@ -63,6 +73,9 @@ void EffectSpawner::playAppearance(game::EntityType type,
       return;
     case game::EntityType::EnemyMissile:
       shots_.playEnemyShot(center);
+      if (soundCues_) {
+        cues_.showEnemyShot(center);
+      }
       return;
     case game::EntityType::Player:
     case game::EntityType::Enemy:

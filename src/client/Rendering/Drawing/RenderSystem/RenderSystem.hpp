@@ -58,8 +58,9 @@ class RenderSystem {
   /** @brief Draws the sprite or writes the caption of a call. */
   static void draw(IDrawSurface& surface, const DrawCall& call);
 
-  /** @brief Draws the sprite of a call, offset as its look says, whole or as
-   * revealed. */
+  /** @brief Draws the sprite of a call, offset as its look says: as revealed
+   * while a Reveal is on it, the arrival winning over a roll; rolled while
+   * it rolls; whole otherwise. */
   static void drawSprite(IDrawSurface& surface, const DrawCall& call);
 
   /** @brief Draws the rows of a sprite a Reveal shows so far, at their place
@@ -67,6 +68,18 @@ class RenderSystem {
    * line, while it shows no row. */
   static void drawRevealed(IDrawSurface& surface, const DrawCall& call,
                            game::Position center);
+
+  /** @brief Adds, in the effects layer under the ships, a ghost draw call at
+   * the AFTERIMAGE_AGES frames before of every ship that rolls or dashes,
+   * except a ship still arriving (Reveal). */
+  void collectAfterimages(engine::ComponentRegistry& components);
+
+  /** @brief Draws a rolling sprite row by row: round(height x |cos|) rows of
+   * its frame, ROLL_THINNEST_ROWS at least, upside down and shaded once its
+   * belly shows, unless a hit or an invulnerability already tones it. The
+   * outline of an invulnerable ship is left out while it rolls. */
+  static void drawRolled(IDrawSurface& surface, const DrawCall& call,
+                         game::Position center);
 
   std::array<std::vector<DrawCall>, LAYER_COUNT> drawCallsByLayer_;
 };

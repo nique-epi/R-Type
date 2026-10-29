@@ -21,20 +21,22 @@
 #include "PlayerElimination.hpp"
 #include "PlayerHit.hpp"
 #include "ReplicationConstants.hpp"
+#include "SubscriptionHandle.hpp"
 #include "TimeConstants.hpp"
 #include "TimerScheduler.hpp"
 
 namespace rtype::server {
 
 template <typename Event>
-void GameEventBroadcaster::subscribeTo(engine::EventBus& events,
-                                       std::string_view eventName) {
-  events.subscribe<Event>([this, eventName](const Event& event) {
-    const std::optional<EncodedMessage> message = tryEncode(event, eventName);
-    if (message.has_value()) {
-      broadcast(*message);
-    }
-  });
+void GameEventBroadcaster::subscribeTo(std::string_view eventName) {
+  subscriptions_.push_back(
+      events_.subscribe<Event>([this, eventName](const Event& event) {
+        const std::optional<EncodedMessage> message =
+            tryEncode(event, eventName);
+        if (message.has_value()) {
+          broadcast(*message);
+        }
+      }));
 }
 
 template <typename Event>
@@ -49,18 +51,24 @@ std::optional<EncodedMessage> GameEventBroadcaster::tryEncode(
 }
 
 GameEventBroadcaster::GameEventBroadcaster(Wiring wiring)
-    : timers_(wiring.timers.get()),
+    : events_(wiring.events.get()),
+      timers_(wiring.timers.get()),
       recipients_(std::move(wiring.recipients)),
       headerFor_(std::move(wiring.headerFor)),
       send_(std::move(wiring.send)),
       logger_(std::string{REPLICATION_LOGGER_NAME}) {
-  engine::EventBus& events = wiring.events.get();
-  subscribeTo<game::EntitySpawn>(events, ENTITY_SPAWN_EVENT_NAME);
-  subscribeTo<game::EntityDestruction>(events, ENTITY_DESTRUCTION_EVENT_NAME);
-  subscribeTo<game::EntityDamage>(events, ENTITY_DAMAGE_EVENT_NAME);
-  subscribeTo<game::PlayerHit>(events, PLAYER_HIT_EVENT_NAME);
-  subscribeTo<game::PlayerElimination>(events, PLAYER_ELIMINATION_EVENT_NAME);
-  subscribeTo<game::PlayerDeparture>(events, PLAYER_DEPARTURE_EVENT_NAME);
+  subscribeTo<game::EntitySpawn>(ENTITY_SPAWN_EVENT_NAME);
+  subscribeTo<game::EntityDestruction>(ENTITY_DESTRUCTION_EVENT_NAME);
+  subscribeTo<game::EntityDamage>(ENTITY_DAMAGE_EVENT_NAME);
+  subscribeTo<game::PlayerHit>(PLAYER_HIT_EVENT_NAME);
+  subscribeTo<game::PlayerElimination>(PLAYER_ELIMINATION_EVENT_NAME);
+  subscribeTo<game::PlayerDeparture>(PLAYER_DEPARTURE_EVENT_NAME);
+}
+
+GameEventBroadcaster::~GameEventBroadcaster() {
+  for (const engine::SubscriptionHandle handle : subscriptions_) {
+    events_.unsubscribe(handle);
+  }
 }
 
 void GameEventBroadcaster::broadcast(const EncodedMessage& message) {

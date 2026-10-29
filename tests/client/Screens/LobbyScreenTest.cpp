@@ -3,11 +3,15 @@
 #include <SFML/System/Vector2.hpp>
 #include <SFML/Window/Keyboard.hpp>
 #include <algorithm>
+#include <cstddef>
 #include <optional>
 #include <string>
 #include <vector>
 #include "BackgroundColorConstants.hpp"
+#include "HelpWalkthroughConstants.hpp"
+#include "HelpWalkthroughTestConstants.hpp"
 #include "KeyPress.hpp"
+#include "LobbyAfterGameFixture.hpp"
 #include "LobbyScreen.hpp"
 #include "LobbyScreenFixture.hpp"
 #include "LobbyScreenFixtures.hpp"
@@ -23,6 +27,7 @@
 #include "WidgetConstants.hpp"
 
 using rtype::client::CLICK_SOUND_ID;
+using rtype::client::HELP_STEPS;
 using rtype::client::PRESS_DURATION;
 using rtype::client::ScreenId;
 using rtype::client::STAR_GOLD;
@@ -32,6 +37,8 @@ using rtype::client::testing::BACK_CHIP_MIDDLE;
 using rtype::client::testing::FIRST_BAY_CELL_INSIDE;
 using rtype::client::testing::FIRST_BAY_LOCAL_TAG;
 using rtype::client::testing::FIRST_BAY_NICKNAME;
+using rtype::client::testing::FIRST_STEP_WORD;
+using rtype::client::testing::HELP_CHIP_MIDDLE;
 using rtype::client::testing::OTHER_NICKNAME;
 using rtype::client::testing::OTHER_NUMBER;
 using rtype::client::testing::OWN_NICKNAME;
@@ -221,14 +228,14 @@ TEST_F(LobbyScreenFixture, TheBarSaysCancelReadyOnceAsked) {
  * Given the local player asked to be ready, the server still listing it not
  * ready
  * When a frame goes by
- * Then its cell says READY on gold
+ * Then its cell says READY... on gold
  */
 TEST_F(LobbyScreenFixture, AnAskTheServerDoesNotShowYetIsWaitedFor) {
   connection().setRequestedReady(true);
 
   list({pilot(OWN_NUMBER, OWN_NICKNAME, false)});
 
-  EXPECT_NE(writingOf(canvas(), "READY"), nullptr);
+  EXPECT_NE(writingOf(canvas(), "READY..."), nullptr);
   EXPECT_THAT(canvas().fills,
               Contains(RecordedFill{.area = FIRST_BAY_CELL_INSIDE,
                                     .color = STAR_GOLD}));
@@ -248,6 +255,22 @@ TEST_F(LobbyScreenFixture, TheGameIsAskedOnceItStarted) {
   EXPECT_THAT(navigator().calls(),
               ElementsAre(NavigatorCall{.request = NavigatorRequest::ReplaceAll,
                                         .screen = ScreenId::Game}));
+}
+
+/**
+ * Given the waiting room after a game, alone on the stack
+ * When Escape is pressed and released
+ * Then the server is left and the title opened in place of every screen
+ */
+TEST_F(LobbyAfterGameFixture, BackLeavesForTheTitle) {
+  tap(sf::Keyboard::Key::Escape, sf::Keyboard::Scan::Escape);
+
+  ASSERT_FALSE(connection().calls().empty());
+  EXPECT_EQ(connection().calls().back().request,
+            ServerConnectionCall::Request::Cancel);
+  EXPECT_THAT(navigator().calls(),
+              ElementsAre(NavigatorCall{.request = NavigatorRequest::ReplaceAll,
+                                        .screen = ScreenId::Title}));
 }
 
 /**
@@ -303,4 +326,74 @@ TEST_F(LobbyScreenFixture, TheReadyKeyPlaysTheClickOfReady) {
   tap(sf::Keyboard::Key::R, READY_KEY);
 
   EXPECT_THAT(sounds().played(), ElementsAre(CLICK_SOUND_ID));
+}
+
+/**
+ * Given the waiting room
+ * When H is pressed and released
+ * Then the help opens over it on its first step
+ */
+TEST_F(LobbyScreenFixture, TheHelpKeyOpensTheHelp) {
+  tap(sf::Keyboard::Key::H, sf::Keyboard::Scan::H);
+  screen().update(ONE_FRAME);
+
+  EXPECT_NE(writingOf(canvas(), FIRST_STEP_WORD), nullptr);
+}
+
+/**
+ * Given the waiting room
+ * When the HELP chip beside BACK is clicked
+ * Then the help opens, and the room is not left
+ */
+TEST_F(LobbyScreenFixture, TheHelpChipOpensTheHelp) {
+  screen().handleEvent(leftPress(HELP_CHIP_MIDDLE));
+  screen().handleEvent(leftRelease(HELP_CHIP_MIDDLE));
+  screen().update(ONE_FRAME);
+
+  EXPECT_NE(writingOf(canvas(), FIRST_STEP_WORD), nullptr);
+  EXPECT_TRUE(navigator().calls().empty());
+}
+
+/**
+ * Given the help open over the waiting room
+ * When the ready key is pressed and released
+ * Then the room asks nothing of the server
+ */
+TEST_F(LobbyScreenFixture, TheReadyKeyAsksNothingWhileTheHelpIsOpen) {
+  tap(sf::Keyboard::Key::H, sf::Keyboard::Scan::H);
+
+  tap(sf::Keyboard::Key::R, READY_KEY);
+
+  EXPECT_TRUE(readyRequests().empty());
+}
+
+/**
+ * Given the help open over the waiting room
+ * When Escape is pressed and released
+ * Then the help closes and the room stays
+ */
+TEST_F(LobbyScreenFixture, EscapeClosesTheHelpWithoutLeaving) {
+  tap(sf::Keyboard::Key::H, sf::Keyboard::Scan::H);
+
+  tap(sf::Keyboard::Key::Escape, sf::Keyboard::Scan::Escape);
+  screen().update(ONE_FRAME);
+
+  EXPECT_EQ(writingOf(canvas(), FIRST_STEP_WORD), nullptr);
+  EXPECT_TRUE(navigator().calls().empty());
+}
+
+/**
+ * Given the help on its first step, READY selected under it
+ * When Enter is pressed and released through every step to the end
+ * Then the help closes and READY was never pressed
+ */
+TEST_F(LobbyScreenFixture, ClosingTheHelpWithEnterPressesNothing) {
+  tap(sf::Keyboard::Key::H, sf::Keyboard::Scan::H);
+
+  for (std::size_t step = 0; step < HELP_STEPS.size(); ++step) {
+    tap(sf::Keyboard::Key::Enter, sf::Keyboard::Scan::Enter);
+  }
+  screen().update(PRESS_DURATION);
+
+  EXPECT_TRUE(readyRequests().empty());
 }

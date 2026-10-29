@@ -374,14 +374,16 @@ TEST(ConnectionRefused, EncodesTheReason) {
 }
 
 /**
- * Given the payloads 01, 02 and 03
+ * Given the payloads 01, 02, 03 and 04
  * When each is decoded
- * Then they give GameFull, GameInProgress and IncompatibleVersion
+ * Then they give GameFull, GameInProgress, IncompatibleVersion and
+ * NicknameTaken
  */
 TEST(ConnectionRefused, DecodesEveryReasonOfTheProtocolPage) {
   const auto gameFull = byteSequence({0x01});
   const auto gameInProgress = byteSequence({0x02});
   const auto incompatibleVersion = byteSequence({0x03});
+  const auto nicknameTaken = byteSequence({0x04});
 
   EXPECT_EQ(decodeMessage<ConnectionRefused>(gameFull).reason,
             RefusalReason::GameFull);
@@ -389,16 +391,18 @@ TEST(ConnectionRefused, DecodesEveryReasonOfTheProtocolPage) {
             RefusalReason::GameInProgress);
   EXPECT_EQ(decodeMessage<ConnectionRefused>(incompatibleVersion).reason,
             RefusalReason::IncompatibleVersion);
+  EXPECT_EQ(decodeMessage<ConnectionRefused>(nicknameTaken).reason,
+            RefusalReason::NicknameTaken);
 }
 
 /**
- * Given the payloads 00 and 04, just outside the reasons of the protocol page
+ * Given the payloads 00 and 05, just outside the reasons of the protocol page
  * When each is decoded
  * Then each is refused
  */
 TEST(ConnectionRefused, RefusesToReadAReasonOutsideTheList) {
   const auto belowTheFirst = byteSequence({0x00});
-  const auto aboveTheLast = byteSequence({0x04});
+  const auto aboveTheLast = byteSequence({0x05});
 
   EXPECT_THROW((void)decodeMessage<ConnectionRefused>(belowTheFirst),
                InvalidFieldValueException);

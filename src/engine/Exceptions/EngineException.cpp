@@ -51,4 +51,33 @@ InvalidLaunchOptionValueException::InvalidLaunchOptionValueException(
     : EngineException("Invalid value \"" + value + "\" after the option " +
                       option) {}
 
+NullModuleException::NullModuleException()
+    : EngineException("A null module cannot be given to an application") {}
+
+MissingDependencyException::MissingDependencyException(
+    const std::string& moduleName, const std::string& dependency)
+    : EngineException("The module \"" + moduleName +
+                      "\" depends on the module \"" + dependency +
+                      "\", which is not listed before it") {}
+
+ModuleStartFailedException::ModuleStartFailedException(
+    const std::string& moduleName, const std::string& reason)
+    : EngineException("The module \"" + moduleName +
+                      "\" failed to start: " + reason) {}
+
+UnknownStageException::UnknownStageException(const std::string& stageName)
+    : EngineException("The loop has no stage named \"" + stageName + "\"") {}
+
+DuplicateServiceException::DuplicateServiceException(
+    const std::string& moduleName, const std::string& serviceName)
+    : EngineException("The module \"" + moduleName +
+                      "\" provides the service " + serviceName +
+                      ", which is already provided") {}
+
+MissingServiceException::MissingServiceException(const std::string& moduleName,
+                                                 const std::string& serviceName)
+    : EngineException("The module \"" + moduleName +
+                      "\" requires the service " + serviceName +
+                      ", which no module installed before it provides") {}
+
 }  // namespace rtype::engine

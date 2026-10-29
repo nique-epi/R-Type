@@ -9,6 +9,7 @@
 #include "IScreenNavigator.hpp"
 #include "Menu.hpp"
 #include "MenuBuilder.hpp"
+#include "PlayerPreferences.hpp"
 #include "ScreenConstants.hpp"
 #include "ScreenId.hpp"
 #include "SquadronConstants.hpp"
@@ -21,6 +22,7 @@ TitleScreen::TitleScreen(TitleScreenParts parts,
                          std::unique_ptr<IInterfaceCanvas> canvas)
     : canvas_(std::move(canvas)),
       playfieldPointAt_(std::move(parts.playfieldPointAt)),
+      settings_(&parts.settings.get()),
       menu_(buildMenu(parts.navigator.get(), parts.sounds.get())),
       squadron_(parts.motion, parts.seed, parts.squadronStart) {
   repaint();
@@ -64,7 +66,8 @@ void TitleScreen::repaint() {
   menu_.paint(*canvas_);
   const std::optional<sf::IntRect> squadronBox = menu_.illustrationArea();
   if (squadronBox.has_value()) {
-    squadron_.paint(*canvas_, squadronBox->position);
+    squadron_.paint(*canvas_, squadronBox->position,
+                    playerPaletteOf(*settings_));
   }
   canvas_->display();
 }

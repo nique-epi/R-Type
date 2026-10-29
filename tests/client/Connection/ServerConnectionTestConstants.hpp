@@ -27,12 +27,18 @@ constexpr std::string_view NICKNAME = "Nolan";
 constexpr std::uint64_t CHALLENGE_COOKIE = 0x1122334455667788;
 constexpr std::uint8_t ACCEPTED_PLAYER_NUMBER = 3;
 
+/** @brief The score of the accepted player when the server ends the game. */
+constexpr std::uint32_t PILOT_FINAL_SCORE = 1200;
+
 /**
  * @brief A session token a server could draw, and a version this client does
  * not speak.
  */
 constexpr std::uint64_t SESSION_TOKEN = 0x0123456789abcdef;
-constexpr std::uint8_t NEXT_PROTOCOL_VERSION = 1;
+constexpr std::uint8_t NEXT_PROTOCOL_VERSION = 2;
+
+/** @brief The version a server of this protocol writes in its headers. */
+constexpr std::uint8_t SERVER_VERSION = 1;
 
 /**
  * @brief Another session token, as a datagram forging the address of the
@@ -85,6 +91,27 @@ constexpr std::uint8_t PROTOCOL_UP_ACTION_BIT = 0b00001;
  * so half of it is 500 ms rather than a whole number of seconds.
  */
 constexpr std::chrono::milliseconds PROTOCOL_HEARTBEAT_INTERVAL{1000};
+
+/**
+ * @brief How long the protocol page lets a server stay silent: after 5 s
+ * without a datagram of the server, the client takes it for gone.
+ */
+constexpr std::chrono::seconds PROTOCOL_SESSION_TIMEOUT{5};
+
+/**
+ * @brief The 15 s of the protocol page during which the server keeps the seat
+ * of a silent player, and the 20 s of silence after which the client takes the
+ * server for gone: the timeout and the grace.
+ */
+constexpr std::chrono::seconds PROTOCOL_RECONNECTION_GRACE{15};
+constexpr std::chrono::seconds PROTOCOL_SILENCE_LIMIT{20};
+
+/**
+ * @brief The words the client logs when it gives the server of the tests up
+ * after the 20 s of the protocol page, the timeout and the grace.
+ */
+constexpr std::string_view LOST_SERVER_LINE_TEXT =
+    "no answer from 192.0.2.30 port 4242 for 20 s";
 
 /**
  * @brief The rate of the inputs the protocol page gives: 60 per second.

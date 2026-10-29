@@ -43,8 +43,9 @@ class KeySlot;
  * DEFAULT SOUND and DEFAULT KEYS ask first, in a dialog over the options that
  * takes every event until it is answered. The description of a row says what
  * it needs right now: the keys of an open list, a key awaited, a key two
- * actions share, the sound muted, a size too large for the screen; the
- * settings without an effect yet say COMING SOON.
+ * actions share, the sound muted, a size too large for the screen, what
+ * borderless does. While the window is borderless, WINDOW SIZE is disabled,
+ * shows the size of the screen, and the chart of the sizes is not drawn.
  *
  * Over the title, the options hide it. Over a game, which goes on, they dim it
  * and say so in the top-right corner.
@@ -78,7 +79,6 @@ class OptionsScreen : public IScreen {
       std::string question, std::function<void()> reset);
 
   void openTab(std::size_t tab);
-  void chooseWindowSize(std::size_t index);
   void resetSound();
   void resetKeys();
 
@@ -99,8 +99,8 @@ class OptionsScreen : public IScreen {
   void close();
   void ageStamp(engine::Duration elapsed);
 
-  /** @brief Writes the descriptions that follow the state of the rows, on
-   * every tab, and the stamp, on the open tab. */
+  /** @brief Writes the descriptions and the rows enabled that follow the state
+   * of the rows, on every tab, and the stamp, on the open tab. */
   void refresh();
 
   [[nodiscard]] std::string keyDescription(std::size_t row) const;
@@ -119,8 +119,10 @@ class OptionsScreen : public IScreen {
   KeyNaming keyName_;
   std::unique_ptr<IInterfaceCanvas> canvas_;
   PlayfieldMapping playfieldPointAt_;
-  /** @brief The list of sizes and the key slots, owned by their rows; set
-   * while tabs_ is built, so declared, and initialized, before it. */
+  /** @brief The lists of display modes and of sizes, and the key slots, owned
+   * by their rows; set while tabs_ is built, so declared, and initialized,
+   * before it. */
+  Dropdown* displayModes_ = nullptr;
   Dropdown* windowSizes_ = nullptr;
   std::array<KeySlot*, BOUND_ACTION_COUNT> keySlots_{};
   std::vector<Menu> tabs_;

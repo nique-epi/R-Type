@@ -63,6 +63,7 @@ std::unique_ptr<IScreen> TitleInTheStackFixture::build(ScreenId screen) {
     return std::make_unique<TitleScreen>(
         TitleScreenParts{.navigator = titleNavigator_,
                          .sounds = sounds_,
+                         .settings = settings_,
                          .playfieldPointAt = samePlayfieldPoint,
                          .motion = MotionPreference::Full,
                          .seed = rtype::client::testing::TITLE_SEED},

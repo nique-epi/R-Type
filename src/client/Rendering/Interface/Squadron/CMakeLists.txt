@@ -7,8 +7,10 @@ target_link_libraries(rtype_client_squadron
     rtype_client_interface
     rtype_engine_time
   PRIVATE
+    rtype_client_box_corners
     rtype_client_easing
     rtype_client_entity_sprites
+    rtype_client_player_shading
     rtype_client_random_range
 )
 

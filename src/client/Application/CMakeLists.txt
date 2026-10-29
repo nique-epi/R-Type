@@ -1,2 +1,1 @@
 add_subdirectory(ScreenStack)
-add_subdirectory(Application)

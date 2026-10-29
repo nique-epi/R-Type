@@ -20,13 +20,13 @@
 namespace rtype::server::testing {
 
 void GameInstanceLivesFixture::hitTheShipOf(std::size_t player) {
-  game().world().spawnBydo(shipPositionOf(player), game::BydoKind::Drifter);
+  world().spawnBydo(shipPositionOf(player), game::BydoKind::Drifter);
   runTicksDispatching(1);
 }
 
 std::uint32_t GameInstanceLivesFixture::shootTheShipOf(std::size_t player) {
   const std::uint32_t missile =
-      game().world().spawnEnemyMissile(shipPositionOf(player));
+      world().spawnEnemyMissile(shipPositionOf(player));
   runTicksDispatching(1);
   return missile;
 }

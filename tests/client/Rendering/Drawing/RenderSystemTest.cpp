@@ -1,4 +1,7 @@
 #include <gtest/gtest.h>
+#include <algorithm>
+#include <cstddef>
+#include <optional>
 #include <string>
 #include <vector>
 #include "Caption.hpp"
@@ -11,7 +14,6 @@
 #include "Invulnerability.hpp"
 #include "Layer.hpp"
 #include "Nudge.hpp"
-#include "PilotShip.hpp"
 #include "PilotTestConstants.hpp"
 #include "Position.hpp"
 #include "RecordingDrawSurface.hpp"
@@ -31,7 +33,6 @@ using rtype::client::HALF;
 using rtype::client::HitFlash;
 using rtype::client::Invulnerability;
 using rtype::client::Nudge;
-using rtype::client::PilotShip;
 using rtype::client::Reveal;
 using rtype::client::SpriteTone;
 using rtype::engine::Duration;
@@ -400,17 +401,18 @@ TEST(RenderSystem, AnInvulnerableShipBlinksBetweenItselfAndItsDither) {
 }
 
 /**
- * Given a steady invulnerable ship of the second pilot, as a player who
- * reduced flashes sees it
+ * Given a steady invulnerable ship outlined in the light pink of the second
+ * pilot, as a player who reduced flashes sees it
  * When a frame is rendered
- * Then it is dithered and outlined in the light pink of its pilot
+ * Then it is dithered and outlined in that pink
  */
 TEST(RenderSystem, ASteadyInvulnerableShipIsDitheredAndOutlined) {
   Scene scene;
   const Entity ship = scene.spawn("ship", Layer::Players);
   scene.components().add(
-      ship, Invulnerability{.elapsed = Duration::zero(), .steady = true});
-  scene.components().add(ship, PilotShip{.color = SECOND_PILOT_COLOR});
+      ship, Invulnerability{.elapsed = Duration::zero(),
+                            .steady = true,
+                            .outline = PINK_LIGHT_OF_THE_SECOND_PILOT});
 
   scene.render();
 
@@ -482,4 +484,138 @@ TEST(RenderSystem, AShipArrivingShowsItsTopRowsAndALeadingLine) {
   EXPECT_EQ(drawn[1].tone, SpriteTone::Flash);
   EXPECT_EQ(drawn[1].frame.top, WHOLE_IMAGE.top + HALF_OF_THE_ROWS);
   EXPECT_EQ(drawn[1].frame.height, 1);
+}
+
+/**
+ * Given a ship halfway through its roll, whose reveal is in its first half
+ * When a frame is rendered
+ * Then nothing of it is drawn: the arrival hides it, roll or not
+ */
+TEST(RenderSystem, ARollingShipArrivingIsHiddenOnTheFirstHalf) {
+  Scene scene;
+  const Entity ship = scene.spawn("ship", Layer::Players);
+  scene.components().add(ship, halfwayRollingFlight());
+  scene.components().add(ship, Reveal{.age = A_QUARTER_OF_A_REVEAL,
+                                      .duration = A_REVEAL,
+                                      .leadingLine = true});
+
+  scene.render();
+
+  EXPECT_TRUE(scene.surface().drawn().empty());
+}
+
+/**
+ * Given a ship halfway through its roll
+ * When a frame is rendered
+ * Then all 16 rows of its frame are drawn one by one, shaded: its belly
+ * shows
+ */
+TEST(RenderSystem, ARollingShipIsDrawnRowByRowAndShadedOnItsBelly) {
+  Scene scene;
+  const Entity ship = scene.spawn("ship", Layer::Players);
+  scene.components().add(ship, halfwayRollingFlight());
+
+  scene.render();
+
+  const std::vector<DrawnImage>& drawn = scene.surface().drawn();
+  ASSERT_EQ(drawn.size(), static_cast<std::size_t>(WHOLE_IMAGE.height));
+  for (const DrawnImage& row : drawn) {
+    EXPECT_EQ(row.frame.height, 1);
+    EXPECT_EQ(row.tone, SpriteTone::Shade);
+  }
+}
+
+/**
+ * Given a steady invulnerable ship halfway through its roll
+ * When a frame is rendered
+ * Then every row of its belly stays dithered: the roll does not hide that
+ * the ship cannot be hit
+ */
+TEST(RenderSystem, AnInvulnerableRollingShipStaysDitheredOnItsBelly) {
+  Scene scene;
+  const Entity ship = scene.spawn("ship", Layer::Players);
+  scene.components().add(ship, halfwayRollingFlight());
+  scene.components().add(
+      ship, Invulnerability{.elapsed = Duration::zero(),
+                            .steady = true,
+                            .outline = PINK_LIGHT_OF_THE_SECOND_PILOT});
+
+  scene.render();
+
+  const std::vector<DrawnImage>& drawn = scene.surface().drawn();
+  ASSERT_FALSE(drawn.empty());
+  for (const DrawnImage& row : drawn) {
+    EXPECT_EQ(row.tone, SpriteTone::Ghost);
+  }
+}
+
+/**
+ * Given a dashing ship whose trail is known
+ * When a frame is rendered
+ * Then AFTERIMAGE_COUNT dithered copies are drawn before the ship itself
+ */
+TEST(RenderSystem, ADashingShipLeavesItsAfterimages) {
+  Scene scene;
+  const Entity ship = scene.spawn("ship", Layer::Players);
+  scene.components().add(ship, dashingFlight());
+
+  scene.render();
+
+  const std::vector<DrawnImage>& drawn = scene.surface().drawn();
+  ASSERT_EQ(drawn.size(), AFTERIMAGE_COUNT + 1);
+  std::vector<float> afterimageColumns;
+  for (std::size_t index = 0; index < AFTERIMAGE_COUNT; ++index) {
+    EXPECT_EQ(drawn[index].tone, SpriteTone::Ghost);
+    afterimageColumns.push_back(drawn[index].center.x);
+  }
+  std::ranges::sort(afterimageColumns);
+  for (std::size_t index = 0; index < AFTERIMAGE_COUNT; ++index) {
+    EXPECT_FLOAT_EQ(
+        afterimageColumns.at(index),
+        SHIP_X + static_cast<float>(AFTERIMAGE_FRAMES_BEHIND.at(index)));
+  }
+  EXPECT_EQ(drawn.back().tone, SpriteTone::Normal);
+}
+
+/**
+ * Given a dashing ship whose trail is known, at three quarters of its
+ * reveal
+ * When a frame is rendered
+ * Then only its top rows and the leading line are drawn: no afterimage
+ * follows a ship still arriving
+ */
+TEST(RenderSystem, ADashingShipArrivingLeavesNoAfterimage) {
+  Scene scene;
+  const Entity ship = scene.spawn("ship", Layer::Players);
+  scene.components().add(ship, dashingFlight());
+  scene.components().add(ship, Reveal{.age = THREE_QUARTERS_OF_A_REVEAL,
+                                      .duration = A_REVEAL,
+                                      .leadingLine = true});
+
+  scene.render();
+
+  const std::vector<DrawnImage>& drawn = scene.surface().drawn();
+  ASSERT_EQ(drawn.size(), 2U);
+  EXPECT_EQ(drawn[0].frame.height, HALF_OF_THE_ROWS);
+  EXPECT_EQ(drawn[1].tone, SpriteTone::Flash);
+}
+
+/**
+ * Given a steady invulnerable ship whose pilot is not known, so no outline was
+ * chosen for it
+ * When a frame is rendered
+ * Then it is dithered and drawn without outline
+ */
+TEST(RenderSystem, ASteadyInvulnerabilityWithoutOutlineDrawsNone) {
+  Scene scene;
+  const Entity ship = scene.spawn("ship", Layer::Players);
+  scene.components().add(ship, Invulnerability{.elapsed = Duration::zero(),
+                                               .steady = true,
+                                               .outline = std::nullopt});
+
+  scene.render();
+
+  ASSERT_EQ(scene.surface().drawn().size(), 1U);
+  EXPECT_EQ(scene.surface().drawn().front().tone, SpriteTone::Ghost);
+  EXPECT_FALSE(scene.surface().drawn().front().outline.has_value());
 }

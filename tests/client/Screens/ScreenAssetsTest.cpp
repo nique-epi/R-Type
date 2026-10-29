@@ -7,8 +7,10 @@
 #include "AssetLoadingStep.hpp"
 #include "EffectConstants.hpp"
 #include "EntitySpriteConstants.hpp"
+#include "FlightLogSheetConstants.hpp"
 #include "HudSpriteConstants.hpp"
 #include "InterfaceConstants.hpp"
+#include "ProfessorSpriteConstants.hpp"
 #include "ScreenAssets.hpp"
 #include "ScreenAssetsFixtures.hpp"
 #include "ScreenConstants.hpp"
@@ -19,6 +21,7 @@ using rtype::client::AssetLibrary;
 using rtype::client::AssetLoadingStep;
 using rtype::client::EFFECT_SHEET_ID;
 using rtype::client::ENTITY_SHEET_ID;
+using rtype::client::FLIGHT_LOG_SHEET_ID;
 using rtype::client::gameAssets;
 using rtype::client::HUD_SHEET_ID;
 using rtype::client::introAssets;
@@ -26,10 +29,12 @@ using rtype::client::loadInterfaceAssets;
 using rtype::client::LOGO_ID;
 using rtype::client::LOGO_SIZE;
 using rtype::client::PLUG_ICON_ID;
+using rtype::client::PROFESSOR_SHEET_ID;
 using rtype::client::REGULAR_FONT_ID;
 using rtype::client::SMALL_FONT_ID;
 using rtype::client::titleAssets;
 using ::testing::Contains;
+using ::testing::IsSupersetOf;
 using ::testing::UnorderedElementsAre;
 
 /**
@@ -113,13 +118,43 @@ TEST(ScreenAssets, AGameLoadsThePlugIcon) {
 }
 
 /**
+ * Given the assets a game needs
+ * When its textures are listed
+ * Then they hold the flight log sheet, so the end screen opens without
+ * loading after a game
+ */
+TEST(ScreenAssets, AGameLoadsTheFlightLogSheet) {
+  EXPECT_THAT(gameAssets().textures, Contains(FLIGHT_LOG_SHEET_ID));
+}
+
+/**
  * Given the assets of the title screen
  * When their textures are listed
  * Then they hold the logo and the entity sheet the squadron is drawn from
  */
 TEST(ScreenAssets, TheTitleLoadsItsLogoAndTheEntitySheet) {
+  EXPECT_THAT(titleAssets().textures, IsSupersetOf({LOGO_ID, ENTITY_SHEET_ID}));
+}
+
+/**
+ * Given the assets of the title screen
+ * When their textures are listed
+ * Then they hold the sheets the help of the waiting room draws, since the
+ * waiting room is pushed over the title without loading
+ */
+TEST(ScreenAssets, TheTitleLoadsTheSheetsOfTheHelpOfTheWaitingRoom) {
   EXPECT_THAT(titleAssets().textures,
-              UnorderedElementsAre(LOGO_ID, ENTITY_SHEET_ID));
+              IsSupersetOf({HUD_SHEET_ID, PROFESSOR_SHEET_ID}));
+}
+
+/**
+ * Given the assets of a game
+ * When their textures are listed
+ * Then they hold the professor sheet, so the help of the waiting room after
+ * the game has it
+ */
+TEST(ScreenAssets, AGameKeepsTheProfessorSheetForTheWaitingRoomAfterIt) {
+  EXPECT_THAT(gameAssets().textures, Contains(PROFESSOR_SHEET_ID));
 }
 
 /**
@@ -130,7 +165,8 @@ TEST(ScreenAssets, TheTitleLoadsItsLogoAndTheEntitySheet) {
  */
 TEST(ScreenAssets, TheIntroLoadsTheTitleAndTheEffectSheet) {
   EXPECT_THAT(introAssets().textures,
-              UnorderedElementsAre(LOGO_ID, ENTITY_SHEET_ID, EFFECT_SHEET_ID));
+              UnorderedElementsAre(LOGO_ID, ENTITY_SHEET_ID, HUD_SHEET_ID,
+                                   PROFESSOR_SHEET_ID, EFFECT_SHEET_ID));
 }
 
 /**

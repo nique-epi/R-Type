@@ -9,5 +9,9 @@ target_link_libraries(rtype_client_interface
 )
 
 add_subdirectory(TextWriter)
+add_subdirectory(InterfacePixel)
 add_subdirectory(InterfaceCanvas)
+add_subdirectory(PlayerNumberLabel)
+add_subdirectory(PlayerShading)
+add_subdirectory(BoxCorners)
 add_subdirectory(Squadron)

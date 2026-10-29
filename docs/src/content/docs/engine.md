@@ -3,7 +3,7 @@ title: Engine
 description: What the engine does, how its parts fit together and where to find them in the code.
 ---
 
-The engine is the generic part of the game: it stores game objects, advances time at a fixed rate, runs delayed work, carries events from the code that announces them to the code that reacts to them, and reads the options a program is given at launch. It knows nothing about R-Type, SFML or sockets. The rules of the game live in `rtype_game`, which is built on top of it (see [Architecture](/R-Type/architecture/)).
+The engine is the generic part of the game: it stores game objects, advances time at a fixed rate, runs delayed work, carries events from the code that announces them to the code that reacts to them, reads the options a program is given at launch, and installs, starts and stops the modules a program is made of. It knows nothing about R-Type, SFML or sockets. The rules of the game live in `rtype_game`, which is built on top of it (see [Architecture](/R-Type/architecture/)).
 
 This page tells you where to look when you need to change something. It describes what exists today and says plainly what does not exist yet.
 
@@ -18,6 +18,7 @@ This page tells you where to look when you need to change something. It describe
 | Event bus | Available | `src/engine/Events/` |
 | Collisions | Available: the overlap test and the event; the system that detects them is in the game | `src/engine/Collision/` |
 | Launch arguments | Available; used by the server and the client | `src/engine/LaunchArguments/` |
+| Modules and application | Available; the server and the client are built from modules | `src/engine/Modules/` |
 
 ## How the parts fit together
 
@@ -31,7 +32,7 @@ flowchart LR
   Components --> Entities[EntityRegistry]
 ```
 
-The engine provides the building blocks and no loop of its own. The server runs its ticks in `TickLoop` (see [Server](/R-Type/server/#tick-loop-tickloop)); the client runs no tick yet, but its game screen runs a `SystemScheduler` once per frame, with the real time of the frame, to play its animations (see [Client](/R-Type/client/#animations-animation-animationsystem)).
+The engine provides the building blocks and no loop of its own. The server runs its ticks in `TickLoop` (see [Server](/R-Type/server/#tick-loop-tickloop)), and each tick runs the stages of its `Application` (see [Server](/R-Type/server/#modules-and-stopping-the-server)); the client runs its frame loop, `FrameLoop`, over the stages of its own `Application` (see [Client](/R-Type/client/#modules-and-frame-loop-clientmodules-frameloop)), and its game screen runs a `SystemScheduler` once per frame, with the real time of the frame, to play its animations (see [Client](/R-Type/client/#animations-animation-animationsystem)).
 
 ## ECS: entities and components
 
@@ -201,6 +202,43 @@ const std::array options{rtype::engine::LaunchOption{
 rtype::engine::readLaunchArguments(logOptions.otherArguments(), options);
 ```
 
+## Modules: `Application` and `IModule`
+
+`src/engine/Modules/` (`rtype_engine_modules`, `rtype_engine_application`) gives a program one place to plug each of its parts in. A part is a **module**: a class implementing `IModule`, with a `name()`, its `dependencies()` (the names of the modules it needs), and three steps. `install(InstallContext&)` prepares it and keeps nothing open when it returns: it may read a file and close it, but it never binds a socket, starts a thread or subscribes to an event. Through the context it adds its work to a loop stage and provides or looks up services (below). `start()` opens what must live until `stop()` (a socket, a thread, a file kept open, an event subscription) and throws a `std::exception` when it cannot; `stop()` closes it and must not throw.
+
+- `Application` takes the list of modules once, when it is built, and checks it before anything is installed. A null module throws `NullModuleException`. A module whose dependency is not listed **before** it throws `MissingDependencyException`, whose message names both modules. So a missing module stops the program before any socket, thread or file is opened.
+- `start()` installs every module in list order, then starts every module in list order. Only the first call does anything.
+- `stop()` stops the started modules in the reverse order, so a module is stopped before its dependencies. Each module is stopped once, and the destructor of `Application` stops the modules still started. Before stopping any module it takes the lock that `runStages()` holds, so `stop()` waits for the pass of the loop in flight and no work of a stage runs after it: a loop on another thread and `stop()` are safe together. Call `stop()` from a thread that is not running a stage.
+- When a module throws from `start()`, the modules started before it are stopped in the reverse order, then `start()` throws `ModuleStartFailedException`, whose message names the module and gives the reason. The module that threw is not stopped, so its `start()` closes what it had already opened before it throws.
+
+### Loop stages
+
+A program declares the stages of its loop once, in order, as constants: `SERVER_LOOP_STAGES` (`inputs`, `simulation`, `outputs`) in `src/server/ServerConstants.hpp` and `CLIENT_LOOP_STAGES` (`events`, `network`, `update`, `render`, `display`) in `src/client/ClientConstants.hpp`. It gives them to `Application(LoopStages(...), modules)`. During `install()`, a module calls `context.addWork(stageName, work)`, where `work` is a `StageWork`, a callable taking the time of the pass. `Application::runStages(elapsed)` runs the stages in the declared order and, within a stage, the works in the order the modules are listed, since modules are installed in list order. It runs only while the modules are started.
+
+A stage name that is not declared throws `UnknownStageException` at install, so a typo stops the program before anything starts.
+
+### Services
+
+A module provides an object to the modules installed after it with `context.provide(service)`, designated by its type; a second provider of the same type throws `DuplicateServiceException`. Another module gets it during its own `install()` only: `context.require<Service>()` returns a reference or throws `MissingServiceException`, whose message names the module and the service; `context.find<Service>()` returns `nullptr` when the service is absent, without an exception. The module then passes the object to its classes through their constructors, so its dependencies read in the constructors, and nothing looks a service up during a tick: the context only exists while `install()` runs. The module that provides a service owns it and outlives its users, as `Application` destroys modules from the last listed to the first.
+
+A module that subscribes to the `EventBus` keeps the `SubscriptionHandle` and unsubscribes in its `stop()`.
+
+`Application` provides itself as a service, so a module that owns the thread a program ticks on asks for it with `context.require<Application>()` and calls `runStages()` from that thread.
+
+The server and the client build an `Application` from their modules (see [Server](/R-Type/server/#modules-and-stopping-the-server) and [Client](/R-Type/client/#modules-and-frame-loop-clientmodules-frameloop)). In this example, `LogModule` and `AudioModule` stand for modules a program would write, and `AudioModule` depends on `LogModule`:
+
+```cpp
+std::vector<std::unique_ptr<rtype::engine::IModule>> modules;
+modules.push_back(std::make_unique<LogModule>());
+modules.push_back(std::make_unique<AudioModule>());
+rtype::engine::Application application(std::move(modules));
+application.start();
+runUntilClosed();
+application.stop();
+```
+
+The reasoning behind the order is in [Architecture](/R-Type/architecture/#modules).
+
 ## Where to intervene
 
 | You want to… | Look at |
@@ -209,7 +247,7 @@ rtype::engine::readLaunchArguments(logOptions.otherArguments(), options);
 | Change how components are stored | `src/engine/Components/ComponentStorage.hpp`, `EntityIndexMap/` |
 | Change how entities are created or recycled | `src/engine/EntityRegistry/` |
 | Change the simulation rate | `SIMULATION_TICKS_PER_SECOND` in `src/engine/Time/TimeConstants.hpp` |
-| Write a behavior that walks components | A class implementing `ISystem` in `src/engine/Systems/ISystem.hpp`, added to a `SystemScheduler` |
+| Write a behavior that walks components | A class implementing `ISystem` (declared in `src/engine/Systems/ISystem.hpp`), written in the library it belongs to (the game's are in `src/game/Systems/`), added to a `SystemScheduler` |
 | Change how entities move | `MovementSystem` in `src/game/Systems/MovementSystem/`; the ships move through `ShipControl` in `src/game/ShipControl/` instead |
 | Change the order systems run in | The order of the `SystemScheduler::add()` calls |
 | Change how network identifiers are given or looked up | `src/engine/NetworkIds/` |
@@ -218,6 +256,10 @@ rtype::engine::readLaunchArguments(logOptions.otherArguments(), options);
 | Announce that something happened, or react to it | `EventBus` in `src/engine/Events/EventBus/`: `publish` the event, `subscribe<Event>` to it |
 | Hand data from one thread to another | `BoundedQueue`, in its own library: see [Concurrency](/R-Type/concurrency/) |
 | Change how the launch options are read, or how the usage and the launch errors read | `src/engine/LaunchArguments/`; each program's own options are in its `LaunchOptions` |
+| Add a part a program can switch on or off | A class implementing `IModule` (declared in `src/engine/Modules/IModule.hpp`), written in the program or library it belongs to, listed after its dependencies in the list given to `Application` |
+| Run a module's work every tick, frame or pass of the loop | `InstallContext::addWork()`, called from the module's `install()` |
+| Hand an object to the modules installed after | `InstallContext::provide()`; the other modules call `require<>()` or `find<>()` |
+| Change the stages of a program | `SERVER_LOOP_STAGES` or `CLIENT_LOOP_STAGES` |
 | Add an engine error | `src/engine/Exceptions/EngineException.hpp` |
 | Write a test that depends on time | `tests/SimulatedClock.hpp`, `tests/engine/Time/FixedTimestepTest.cpp` |
 

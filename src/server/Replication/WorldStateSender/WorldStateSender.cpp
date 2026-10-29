@@ -10,13 +10,16 @@
 #include "ConnectedPlayers.hpp"
 #include "Entity.hpp"
 #include "EntityType.hpp"
+#include "ManeuverKind.hpp"
 #include "NetworkIdentity.hpp"
 #include "PlayerRoster.hpp"
 #include "PlayfieldConstants.hpp"
 #include "Position.hpp"
+#include "ProtocolConstants.hpp"
 #include "ReplicationConstants.hpp"
 #include "ServerConstants.hpp"
 #include "SessionDatagram.hpp"
+#include "ShipMotion.hpp"
 #include "WireEntityTypeMapping.hpp"
 #include "WorldState.hpp"
 #include "WorldStateCodec.hpp"
@@ -28,6 +31,49 @@ namespace {
 static_assert(game::PLAYFIELD_WIDTH <= LARGEST_PLAYFIELD_SIZE_ON_THE_WIRE &&
                   game::PLAYFIELD_HEIGHT <= LARGEST_PLAYFIELD_SIZE_ON_THE_WIRE,
               "a larger playfield no longer fits a wire coordinate");
+
+/** @returns A byte with only the bit at @p position set. */
+std::uint8_t bitAt(std::uint8_t position) {
+  return static_cast<std::uint8_t>(1U << static_cast<unsigned int>(position));
+}
+
+/** @returns The bits of the directions the newest input of @p player holds,
+ * where a PlayerState carries them in its motion; 0 before any input. */
+std::uint8_t heldDirectionsOf(const ConnectedPlayer& player) {
+  if (!player.newestInput.has_value()) {
+    return 0;
+  }
+  return static_cast<std::uint8_t>(player.newestInput->actions &
+                                   network::DIRECTION_ACTION_BITS);
+}
+
+/** @returns The bit of the motion that tells @p kind; 0 for no maneuver. */
+std::uint8_t maneuverBitOf(game::ManeuverKind kind) {
+  switch (kind) {
+    case game::ManeuverKind::Roll:
+      return bitAt(network::ROLLING_MOTION_BIT_POSITION);
+    case game::ManeuverKind::Dash:
+      return bitAt(network::DASHING_MOTION_BIT_POSITION);
+    case game::ManeuverKind::None:
+      return 0;
+  }
+  return 0;
+}
+
+/** @returns The maneuver bit of the ship whose network id is @p shipId in
+ * @p components; 0 when no ship of that id has a ShipMotion. */
+std::uint8_t maneuverBitOfShip(engine::ComponentRegistry& components,
+                               std::uint32_t shipId) {
+  std::uint8_t bit = 0;
+  components.forEach<game::ShipMotion, game::NetworkIdentity>(
+      [shipId, &bit](engine::Entity, const game::ShipMotion& motion,
+                     const game::NetworkIdentity& identity) {
+        if (identity.networkId == shipId) {
+          bit = maneuverBitOf(motion.maneuver);
+        }
+      });
+  return bit;
+}
 
 }  // namespace
 
@@ -47,7 +93,7 @@ void WorldStateSender::onTick(std::uint32_t tick,
   }
   std::size_t leftOutCount = 0;
   network::WorldState state = capture(tick, components, leftOutCount);
-  state.players = playerStatesOf(players);
+  state.players = playerStatesOf(players, components);
   reportLeftOut(leftOutCount);
   const std::vector<std::vector<std::byte>> payloads =
       network::WorldStateCodec::encode(state);
@@ -59,7 +105,7 @@ void WorldStateSender::onTick(std::uint32_t tick,
 }
 
 std::vector<network::PlayerState> WorldStateSender::playerStatesOf(
-    const ConnectedPlayers& players) {
+    const ConnectedPlayers& players, engine::ComponentRegistry& components) {
   std::vector<network::PlayerState> states;
   states.reserve(players.size());
   for (const ConnectedPlayer* const player : players) {
@@ -68,7 +114,10 @@ std::vector<network::PlayerState> WorldStateSender::playerStatesOf(
         .shipEntityId = player->shipEntityId,
         .lives = player->lives,
         .score = player->score,
-        .invulnerable = player->invulnerableTicksLeft > 0});
+        .invulnerable = player->invulnerableTicksLeft > 0,
+        .motion = static_cast<std::uint8_t>(
+            heldDirectionsOf(*player) |
+            maneuverBitOfShip(components, player->shipEntityId))});
   }
   return states;
 }

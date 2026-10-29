@@ -44,6 +44,12 @@ void OptionsScreenFixture::openNextTab() {
   tap(sf::Keyboard::Key::E, sf::Keyboard::Scan::E);
 }
 
+void OptionsScreenFixture::takeBorderless() {
+  tap(sf::Keyboard::Key::Enter);
+  tap(sf::Keyboard::Key::Down);
+  tap(sf::Keyboard::Key::Enter);
+}
+
 PlayerSettings& OptionsScreenFixture::settings() { return settings_; }
 
 RecordingSettingsStorage& OptionsScreenFixture::storage() { return storage_; }

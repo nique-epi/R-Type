@@ -1,0 +1,41 @@
+#pragma once
+
+#include <functional>
+#include "EventBus.hpp"
+#include "GameSettings.hpp"
+#include "OutgoingDatagram.hpp"
+#include "PlayerRoster.hpp"
+#include "SessionHooks.hpp"
+#include "SystemScheduler.hpp"
+#include "TimerScheduler.hpp"
+
+namespace rtype::server {
+
+/**
+ * @brief What a game gives the modules it installs: the parts of the game they
+ * work on. Every reference outlives the modules.
+ */
+struct GameContext {
+  /** @brief Where the game publishes what happens in it. */
+  std::reference_wrapper<engine::EventBus> events;
+  /** @brief Runs what must happen later, such as the repeated copies of a
+   * message. */
+  std::reference_wrapper<engine::TimerScheduler> timers;
+  /** @brief The systems that run on the world each tick; modules add theirs
+   * when they are installed. */
+  std::reference_wrapper<engine::SystemScheduler> systems;
+  /** @brief The players of the game. */
+  std::reference_wrapper<PlayerRoster> roster;
+  /** @brief What the game calls when a player joins, leaves or sends an
+   * input; modules add their functions to it. */
+  std::reference_wrapper<SessionHooks> hooks;
+  /** @brief The seed and the waves the game was defined with. */
+  GameSettings settings;
+  /** @brief What is called for each datagram to send. */
+  std::function<void(network::OutgoingDatagram)> send;
+  /** @brief Whether at least one player is connected and every connected
+   * player is ready. */
+  std::function<bool()> everyPlayerIsReady;
+};
+
+}  // namespace rtype::server

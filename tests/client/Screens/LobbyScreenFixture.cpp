@@ -6,12 +6,15 @@
 #include <utility>
 #include <vector>
 #include "ConnectionStatus.hpp"
+#include "InterfaceColorConstants.hpp"
 #include "KeyPress.hpp"
+#include "LobbyPlace.hpp"
 #include "LobbyScreen.hpp"
 #include "LobbyScreenParts.hpp"
 #include "LobbyScreenTestConstants.hpp"
 #include "LobbyState.hpp"
 #include "MotionPreference.hpp"
+#include "OptionsScreenFixtures.hpp"
 #include "PointerEvents.hpp"
 #include "RecordingInterfaceCanvas.hpp"
 #include "RecordingNavigator.hpp"
@@ -20,22 +23,24 @@
 #include "ScreenTestConstants.hpp"
 
 using rtype::client::ConnectionStatus;
+using rtype::client::LobbyPlace;
 using rtype::client::LobbyScreen;
 using rtype::client::LobbyScreenParts;
 using rtype::client::MotionPreference;
+using rtype::client::PLAYER_COLORS;
 using rtype::client::testing::OWN_NUMBER;
-using rtype::client::testing::READY_KEY;
-using rtype::client::testing::READY_KEY_NAME;
 using rtype::network::LobbyPlayer;
 
-LobbyScreenFixture::LobbyScreenFixture()
+LobbyScreenFixture::LobbyScreenFixture(LobbyPlace place)
     : screen_(LobbyScreenParts{.navigator = navigator_,
                                .sounds = sounds_,
                                .connection = connection_,
                                .playfieldPointAt = samePlayfieldPoint,
-                               .readyKey = {.key = READY_KEY,
-                                            .name = READY_KEY_NAME},
-                               .motion = MotionPreference::Full},
+                               .keys = keys_,
+                               .keyName = nameInTheFile,
+                               .palette = PLAYER_COLORS,
+                               .motion = MotionPreference::Full,
+                               .place = place},
               std::make_unique<RecordingInterfaceCanvas>(canvas_)) {
   connection_.setStatus(
       {.phase = ConnectionStatus::Phase::Accepted, .playerNumber = OWN_NUMBER});

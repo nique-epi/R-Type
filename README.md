@@ -2,7 +2,7 @@
 
 A networked multiplayer remake of the R-Type shoot'em up, built on a custom C++ game engine.
 
-The client plays its theme in a loop, then the music of a game a second after a game starts, the sounds of the intro and of the game, and a click on the buttons of its menus. It opens on a second of black and an intro of 5.5 s set to the beats of the theme, which a key or a click skips, then on its title screen, over a scrolling starfield: PLAY opens the connection screen, then the game, SETTINGS opens the options (sound, keys, window size, accessibility), QUIT asks before closing the client; Escape during a game opens the options over it. The server listens for UDP datagrams on port 4242, or on the port given at launch: it answers each connection request with a challenge, an acceptance with a player number from 1 to 4, or a refusal when the game is full, and logs the datagrams of the players it admitted at the `debug` level.
+The client plays its theme in a loop, then the music of a game a second after a game starts, the sounds of the intro and of the game, and a click on the buttons of its menus. It opens on a second of black and an intro of 5.5 s set to the beats of the theme, which a key or a click skips, then on its title screen, over a scrolling starfield: PLAY opens the connection screen, then the game, SETTINGS opens the options (sound, keys, display mode and window size, accessibility), QUIT asks before closing the client; Escape during a game opens the options over it. The server listens for UDP datagrams on port 4242, or on the port given at launch: it answers each connection request with a challenge, an acceptance with a player number from 1 to 4, or a refusal when the game is full, and logs the datagrams of the players it admitted at the `debug` level.
 
 The code is split into engine, game and network libraries; see [the architecture decision](docs/src/content/docs/architecture.md).
 
@@ -63,6 +63,12 @@ The client is given the IPv4 address and the port of the server, `127.0.0.1` and
 ```bash
 cmake --workflow --preset test
 ```
+
+```bash
+./build/tests/malformed_datagrams --server 4242
+```
+
+Once the test preset is built, this sends the server running on port 4242 of the same machine malformed datagrams for one minute, then checks that it still answers a connection request. `--client <port>` does the same to a client; see [Network](https://nique-epi.github.io/R-Type/network/#malformed-datagrams-malformed_datagrams).
 
 ## Logging
 

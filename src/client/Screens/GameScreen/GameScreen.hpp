@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <memory>
+#include <optional>
 #include <string>
 #include <vector>
 #include "ActionSet.hpp"
@@ -10,6 +11,8 @@
 #include "EntityMessage.hpp"
 #include "EntityRegistry.hpp"
 #include "EntityReplicator.hpp"
+#include "GameEnded.hpp"
+#include "GameResult.hpp"
 #include "GameScreenParts.hpp"
 #include "IEntityLayer.hpp"
 #include "IEntityMessageSource.hpp"
@@ -22,6 +25,7 @@
 #include "MissionBanner.hpp"
 #include "PlayerCommands.hpp"
 #include "PlayerInputPacer.hpp"
+#include "PlayerPalette.hpp"
 #include "ScoreBoard.hpp"
 #include "ScreenConstants.hpp"
 #include "SystemScheduler.hpp"
@@ -80,6 +84,11 @@ struct PlayerSettings;
  * AUTO-FIRE is read in the settings at each call of playerActions(), so a
  * change in the options applies at once. The server keeps its own rate of
  * fire, so the ship fires no faster than with the shoot key held.
+ *
+ * Once the server ends the game, the screen ranks its pilots into the result
+ * of the parts, then asks for the end screen in place of every screen
+ * END_SCREEN_DELAY later on the clock of the game, once; the game goes on
+ * meanwhile, so the last explosion plays.
  */
 class GameScreen : public IScreen {
  public:
@@ -112,13 +121,21 @@ class GameScreen : public IScreen {
    * world state among them. */
   void applyEntityMessages();
 
-  /** @brief Repaints the status band when a pilot changed since it was last
-   * painted. */
+  /** @brief Repaints the status band when a pilot, the banner or the palette
+   * the player chose changed since it was last painted. */
   void repaintStatusWhenChanged();
 
   /** @brief Paints the status band from the score board, and the banner of
    * the start of the game over it, and keeps what was painted. */
   void repaintStatus();
+
+  /** @brief Ranks the pilots of the board by the scores of @p ended into the
+   * result of the parts, and remembers when the game ended. */
+  void recordEnd(const network::GameEnded& ended);
+
+  /** @brief Asks for the end screen in place of every screen once
+   * END_SCREEN_DELAY passed since the game ended, once. */
+  void askForTheEndWhenDue();
 
   IScreenNavigator* navigator_;
   std::unique_ptr<IEntityLayer> entityLayer_;
@@ -134,12 +151,15 @@ class GameScreen : public IScreen {
   IEntityMessageSource* entityMessageSource_;
   std::vector<EntityMessage> receivedEntityMessages_;
   ScoreBoard scoreBoard_;
+  GameResult* result_;
+  std::optional<engine::Duration> endedAt_;
   std::uint32_t paintedStatusRevision_{};
   PlayerInputPacer inputPacer_;
   logging::Logger logger_{std::string{GAME_SCREEN_LOGGER_NAME}};
   std::uint8_t loggedActions_{0};
   ISky* sky_;
   MissionBannerLook paintedBanner_;
+  std::optional<PlayerPalette> paintedPalette_;
 };
 
 }  // namespace rtype::client

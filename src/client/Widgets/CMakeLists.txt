@@ -10,12 +10,6 @@ target_link_libraries(rtype_client_widgets
     SFML::Window
 )
 
-add_library(rtype_client_widget_text STATIC WidgetText.cpp)
-
-target_link_libraries(rtype_client_widget_text PUBLIC rtype_client_widgets)
-
-rtype_enable_warnings(rtype_client_widget_text)
-
 add_library(rtype_client_window_size_chart STATIC WindowSizeChart.cpp)
 
 target_link_libraries(rtype_client_window_size_chart
@@ -29,36 +23,11 @@ target_link_libraries(rtype_client_window_size_chart
 
 rtype_enable_warnings(rtype_client_window_size_chart)
 
-add_library(rtype_client_hangar_bay STATIC HangarBay.cpp)
-
-target_link_libraries(rtype_client_hangar_bay
-  PUBLIC
-    rtype_client_widgets
-  PRIVATE
-    rtype_client_cut_corner_box
-    rtype_client_entity_sprites
-    rtype_client_sunk_box
-    rtype_client_widget_text
-)
-
-rtype_enable_warnings(rtype_client_hangar_bay)
-
-add_library(rtype_client_status_band STATIC StatusBand.cpp)
-
-target_link_libraries(rtype_client_status_band
-  PUBLIC
-    rtype_client_replication_interfaces
-    rtype_client_widgets
-  PRIVATE
-    rtype_client_cut_corner_box
-    rtype_client_entity_sprites
-    rtype_client_outline
-    rtype_client_widget_text
-    rtype_network_protocol
-)
-
-rtype_enable_warnings(rtype_client_status_band)
-
+add_subdirectory(HangarBay)
+add_subdirectory(PaddedScore)
+add_subdirectory(PilotName)
+add_subdirectory(WidgetText)
+add_subdirectory(StatusBand)
 add_subdirectory(MissionBanner)
 add_subdirectory(IntroOverlay)
 add_subdirectory(CutCornerBox)
@@ -73,3 +42,5 @@ add_subdirectory(RowControls)
 add_subdirectory(Button)
 add_subdirectory(Menu)
 add_subdirectory(MenuBuilder)
+add_subdirectory(HelpWalkthrough)
+add_subdirectory(FlightLog)

@@ -47,6 +47,8 @@ std::string refusalLine(const ConnectionStatus& status) {
       return GAME_FULL_STATUS;
     case network::RefusalReason::GameInProgress:
       return GAME_IN_PROGRESS_STATUS;
+    case network::RefusalReason::NicknameTaken:
+      return NICKNAME_TAKEN_STATUS;
     case network::RefusalReason::IncompatibleVersion:
       break;
   }
@@ -161,6 +163,7 @@ std::string ConnectionScreen::statusLine(const ConnectionStatus& status) const {
     case ConnectionStatus::Phase::Unreachable:
       return UNREACHABLE_STATUS;
     case ConnectionStatus::Phase::Idle:
+    case ConnectionStatus::Phase::Lost:
       break;
   }
   return {};

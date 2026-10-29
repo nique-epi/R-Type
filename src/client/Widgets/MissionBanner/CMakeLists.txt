@@ -6,6 +6,7 @@ target_link_libraries(rtype_client_mission_banner
   PUBLIC
     rtype_client_widgets
   PRIVATE
+    rtype_client_typing
     rtype_client_widget_text
 )
 

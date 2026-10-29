@@ -270,10 +270,10 @@ Logger::ScopedTimer::~ScopedTimer() {
   if (!active_) {
     return;
   }
-  if (!Logger::shouldLog(level_)) {
-    return;
-  }
   try {
+    if (!Logger::shouldLog(level_)) {
+      return;
+    }
     const auto elapsed = std::chrono::steady_clock::now() - begin_;
     const auto microseconds =
         std::chrono::duration_cast<std::chrono::microseconds>(elapsed).count();

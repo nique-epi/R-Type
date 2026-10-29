@@ -26,6 +26,11 @@ trigger: always_on
 1. **When the user names an asset they already have** (a music, an image, a font), look for the file on disk (`find ~/Downloads ~/Desktop ~/Music . -maxdepth 4 -iname '*<word>*'`) before writing anything about it in a brief, a plan or a design.
 2. **Read the names from the file, not from the message**: two names on two lines may be one item's title and its author, as a music player shows them, and a prefix in the file name may say where it comes from.
 
+### A name from another file is read in that file before it is written
+
+1. **Before writing an enumerator, a member or a function of another file** (`BarState::Rest`, `Button::Text::keyName`), open its header and copy the name from it. A name written from the role it plays ("a bar at rest") is a guess.
+2. **This holds for code pasted from a plan**: a plan written without reading the header carries the guess into the code.
+
 ## Example
 
 - ❌ **Before (wrong)**: reading `EntityRegistry.hpp` fails → I go on assuming a `getComponent<T>(entity)` method and code against it.
@@ -34,3 +39,5 @@ trigger: always_on
 - ✅ **After (right)**: read `.clang-tidy` → the check is off → the rule cites Core Guidelines C.12 and says nothing checks it.
 - ❌ **Before (wrong)**: the user wrote "Spacesuit Suite" and "Stationary Sign" on two lines as the menu music → a research brief asked for "the two tracks".
 - ✅ **After (right)**: `find ~/Downloads -iname '*spacesuit*'` → `ES_Spacesuit Suite - Stationary Sign.mp3`: one track, Spacesuit Suite, by Stationary Sign, downloaded from Epidemic Sound (`ES_`).
+- ❌ **Before (wrong)**: the help paints its chip with `BarState::Rest`, a name taken from the doc comment "a bar at rest" → `no member named 'Rest' in 'rtype::client::BarState'`.
+- ✅ **After (right)**: `src/client/Widgets/BarState.hpp` read first → `BarState::Idle`.
