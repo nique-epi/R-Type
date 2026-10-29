@@ -20,7 +20,7 @@ This page tells you where to look when you need to change something. It describe
 | Assets folder and asset ids | Available | `src/client/Assets/`, `assets/README.md` |
 | Asset loading | Available; used at launch for the interface assets, and by the loading screen | `src/client/Assets/AssetLibrary/`, `src/client/Assets/AssetLoadingStep/` |
 | Path of the running executable, the reduced motion setting of the system, the settings folder, how a borderless window covers the screen | Available | `src/client/Platform/` |
-| Player settings and their file | Available; the game reads the flashes setting, the sound cues and auto-fire, every screen that paints a pilot reads the color mode, the sounds and the music read the volumes and MUTE ALL | `src/client/Settings/` |
+| Player settings and their file | Available; every change goes through the `SettingsService`, which tells the sounds and the music when a volume or MUTE ALL changes; the game reads the flashes setting, the sound cues and auto-fire, and every screen that paints a pilot reads the color mode | `src/client/Settings/` |
 | Color modes: the pilots in a palette for protanopia, deuteranopia or tritanopia | Available; read by the status band, the waiting room, the title, the intro, the flight log and the effects | `src/client/Rendering/Interface/PlayerPaletteConstants.hpp`, `src/client/Screens/PlayerPreferences/` |
 | Drawing entities | Available; drawn by the game screen | `src/client/Rendering/Drawing/EntityLayer/`, `src/client/Rendering/Drawing/RenderSystem/`, `src/client/Rendering/Drawing/SfmlDrawSurface/`, `src/client/Rendering/Sprites/AssetTextureSource/` |
 | Sprites of the ships, Bydos and missiles | Available, animated | `assets/sprites/entities.png`, `src/client/Rendering/Sprites/EntitySprites.cpp` |
@@ -50,7 +50,7 @@ This page tells you where to look when you need to change something. It describe
 |---|---|---|
 | `logger` | applies the logging options when it starts, then logs "client starting" and the server given at launch | `src/client/Modules/Logger/` |
 | `assets` | finds the assets folder when it installs and provides the `AssetLibrary`; loads the assets of the interface and of the intro when it starts | `src/client/Modules/Assets/` |
-| `settings` | provides the `PlayerSettings` and the `ISettingsStorage`; reads the settings file when it starts | `src/client/Modules/Settings/` |
+| `settings` | provides the `PlayerSettings` and the `SettingsService`; reads the settings file when it starts | `src/client/Modules/Settings/` |
 | `window` | provides the `GameWindow`, the `EventListeners` and the `FrameLoop`; opens the window at the saved size when it starts, closes it when it stops | `src/client/Modules/Window/` |
 | `connection` | provides the `ServerConnection`; opens the socket and its network thread when it starts; leaves the server, then closes the socket, when it stops | `src/client/Modules/Connection/` |
 | `screens` | the screens and what they share (`ClientScreens`), built when it starts, on the intro or on the title | `src/client/Modules/Screens/` |
@@ -434,12 +434,11 @@ builder.row({.label = MUSIC_LABEL},
             std::make_unique<Slider>(
                 VOLUME_RANGE,
                 ValueBinding<int>{
-                    .read = [this] { return settings_->musicVolume; },
-                    .write = [this](int volume) {
-                      settings_->musicVolume = volume;
-                      changed();
+                    .read = [&service] { return service.settings().musicVolume; },
+                    .write = [&service](int volume) {
+                      service.apply(MUSIC_VOLUME_SETTING, volume);
                     }},
-                [this] { return settings_->muted; }, PERCENT_UNIT));
+                [&service] { return service.settings().muted; }, PERCENT_UNIT));
 ```
 
 `client_row_control_tests` checks every control without a screen, and `client_widget_piece_tests` the pieces they are drawn with.
@@ -514,19 +513,30 @@ The rate is **provisional**, like every rate of the protocol page: code must rea
 | DISPLAY | DISPLAY MODE, a list of WINDOWED and BORDERLESS; WINDOW SIZE, a list, and under it every size of `WINDOW_SIZES` drawn to scale. While the window is borderless, WINDOW SIZE is disabled and shows the size of the screen, and the chart is not drawn |
 | ACCESS | COLOR MODE, a selector; REDUCE FLASHES, SOUND CUES, AUTO-FIRE |
 
-Every row reads and writes the `PlayerSettings` that the settings module owns (see [Settings](/R-Type/client/#settings-playersettings-settingsfile)). A change takes effect at once: the window takes its new size or display mode, and the game reads the new keys as soon as the options close. It is saved at the next update, once a frame at most, so a slider dragged is saved at each step it crosses and a window closed meanwhile loses nothing. SAVED is then written at the end of the rule for `SAVED_STAMP_DURATION` (1 s); NOT SAVED stays until the next save that works. DEFAULT SOUND and DEFAULT KEYS ask first, in a dialog over the options with NO selected; Escape answers NO.
+Every row reads the `PlayerSettings` that the settings module owns and changes them through the `SettingsService` (see [Settings](/R-Type/client/#settings-playersettings-settingsservice-settingsfile)). A change takes effect at once: the window takes its new size or display mode, and the game reads the new keys as soon as the options close. It is saved at the next update, once a frame at most, so a slider dragged is saved at each step it crosses and a window closed meanwhile loses nothing. SAVED is then written at the end of the rule for `SAVED_STAMP_DURATION` (1 s); NOT SAVED stays until the next save that works. DEFAULT SOUND and DEFAULT KEYS ask first, in a dialog over the options with NO selected; Escape answers NO.
 
 The description of the selected row follows its state: the keys of an open list, `> PRESS THE NEW KEY. ESC CANCELS` while a key is awaited, `> THIS KEY CANNOT BE BOUND` after a key that cannot be bound, `> SAME KEY AS SHOOT: CHANGE ONE` when two actions share a key, `> SOUND MUTED: SEE MUTE ALL` on a muted volume, `> BORDERLESS COVERS THE WHOLE SCREEN` on a borderless window, and the sizes too large for the desktop, which the list shows dashed and never takes. Every description fits right of BACK, 43 characters at most.
 
-REDUCE FLASHES is read by the game: its effects show no white and a hit shades the entity instead of whitening it (see [Reduced flashes](#reduced-flashes-flashpreference)). AUTO-FIRE is read by the game at once: while it is on, every input holds shoot (see [Player commands](#player-commands-playercommands)). The READY key is read by the waiting room. The volumes and MUTE ALL are read by the sounds and the music, at once (see [Sounds and music](#sounds-and-music-soundplayer-musicplayer)). The color mode is read by every screen that paints a pilot (see [Color modes](#color-modes-playerpalette)). SOUND CUES is read by the game at once: the shot of a Bydo and a pilot hit show on screen (see [Sound cues](#sound-cues-soundcues)).
+REDUCE FLASHES is read by the game: its effects show no white and a hit shades the entity instead of whitening it (see [Reduced flashes](#reduced-flashes-flashpreference)). AUTO-FIRE is read by the game at once: while it is on, every input holds shoot (see [Player commands](#player-commands-playercommands)). The READY key is read by the waiting room. The volumes and MUTE ALL reach the sounds and the music at once, because the service tells them (see [Sounds and music](#sounds-and-music-soundplayer-musicplayer)). The color mode is read by every screen that paints a pilot (see [Color modes](#color-modes-playerpalette)). SOUND CUES is read by the game at once: the shot of a Bydo and a pilot hit show on screen (see [Sound cues](#sound-cues-soundcues)).
 
-Over the title (`ScreenId::Options`) the options hide it. Over a game (`ScreenId::GameOptions`) the game goes on running, dimmed under them, and THE GAME GOES ON is written in the top-right corner. The texts are in `src/client/Screens/OptionsScreenConstants.hpp`. The screen takes the window as an `ISizableWindow` (`src/client/Window/`) and saves through an `ISettingsStorage` (`src/client/Settings/`), so `client_screen_tests` checks it with a fake window and a recording storage from `tests/doubles/`.
+Over the title (`ScreenId::Options`) the options hide it. Over a game (`ScreenId::GameOptions`) the game goes on running, dimmed under them, and THE GAME GOES ON is written in the top-right corner. The texts are in `src/client/Screens/OptionsScreenConstants.hpp`. The screen takes the window as an `ISizableWindow` (`src/client/Window/`) and the `SettingsService`, which saves through an `ISettingsStorage` (`src/client/Settings/`), so `client_screen_tests` checks it with a fake window and a recording storage from `tests/doubles/`.
+
+The screen itself only routes events, saves and paints. The pieces that hold its state have a folder each in `src/client/Screens/`: `OptionsTabs` builds the four tabs and keeps the open one, from the rows of `OptionsRows` and the texts of `OptionsDescriptions`; `ResetDialog` is the question before a reset; `SavedStamp` is the SAVED and NOT SAVED stamp.
 
 The chart of the window sizes is `paintWindowSizeChart()` (`rtype_client_window_size_chart`, `src/client/Widgets/WindowSizeChart.cpp`): one pixel for `WINDOW_SIZE_CHART_SCALE` (20) pixels of a window, every size centered on the same point, the size of the window in cyan, the size highlighted in the open list in gold, the sizes too large dashed, and a legend on the right (NOW, NEW, TOO LARGE).
 
-## Settings: `PlayerSettings`, `SettingsFile`
+## Settings: `PlayerSettings`, `SettingsService`, `SettingsFile`
 
 `PlayerSettings` (`rtype_client_settings`, `src/client/Settings/`) holds what the player sets: the music and effects volumes, in percent from `MINIMUM_VOLUME` (0) to `MAXIMUM_VOLUME` (100), mute, the window size, empty until the player picks one, the display mode, windowed at first, the keys (`KeyBindings`), the color mode, reduce flashes, sound cues and auto-fire. A default-built value holds the settings of a first launch; the settings module then takes reduce flashes from the system (`systemPrefersReducedMotion()`).
+
+`SettingsService` (`rtype_client_settings_service`, `src/client/Settings/SettingsService/`) is the one way to change them: the options screen and any other module go through it. Each setting is a constant naming its field, its `SettingId` and, for an integer, its range (`MUSIC_VOLUME_SETTING`, `MUTED_SETTING`, `AUTO_FIRE_SETTING`, in `SettingDefinitionConstants.hpp`):
+
+```cpp
+service.apply(MUSIC_VOLUME_SETTING, 75);   // true: applied, saved at the next saveIfChanged()
+service.apply(MUSIC_VOLUME_SETTING, 101);  // false: out of range, nothing changes
+```
+
+`apply()` accepts a value inside the range, both ends included (0 and 100 for a volume), and refuses any other without changing anything or telling anybody. A change marks the settings unsaved and tells every `ISettingsListener` subscribed which `SettingId` changed; the listener reads the new value from `settings()`. `bindKey()`, `resetSound()` and `resetKeys()` do the same for the keys and the sound. `saveIfChanged()` saves through the `ISettingsStorage` when a change is not saved yet and answers whether the storage kept them, or nothing when there was nothing to save; a refused save is not retried until the next change. `client_settings_tests` checks the ends of the ranges, the notifications and the saves with a recording listener and storage from `tests/doubles/`.
 
 `SettingsFile` (`rtype_client_settings_file`, `src/client/Settings/SettingsFile/`) keeps them in a text file, one `name=value` per line, readable and editable by hand, whose text `settingsText()` and `readSettingsText()` write and read (`rtype_client_settings_text`, `src/client/Settings/SettingsText/`). A first launch writes:
 
@@ -561,13 +571,13 @@ auto_fire=off
 
 ## Sounds and music: `SoundPlayer`, `MusicPlayer`
 
-`ClientScreens` (`src/client/Modules/Screens/`) owns one `SoundPlayer`, two `MusicPlayer`s, the theme and the music of a game, and the `Soundtrack` that switches between them (`src/client/Audio/`), for the whole client. A screen plays a sound through `ISoundPlayer::play()`, with an id of `SoundConstants.hpp`; the 15 sounds, 14 from the Kenney packs Sci-fi Sounds, Impact Sounds and Interface Sounds (CC0, `assets/sounds/kenney/`) and the hit from Epidemic Sound (`assets/sounds/epidemic/`), are loaded at launch with the interface assets. `SoundPlayer` plays at most `SOUND_VOICE_LIMIT` (16) sounds at once: a sound started while every voice plays cuts the one that started first (`voiceForNextSound()`). Each sound plays at the EFFECTS volume read when it starts, and none plays while MUTE ALL is on.
+`ClientScreens` (`src/client/Modules/Screens/`) owns one `SoundPlayer`, two `MusicPlayer`s, the theme and the music of a game, and the `Soundtrack` that switches between them (`src/client/Audio/`), for the whole client. A screen plays a sound through `ISoundPlayer::play()`, with an id of `SoundConstants.hpp`; the 15 sounds, 14 from the Kenney packs Sci-fi Sounds, Impact Sounds and Interface Sounds (CC0, `assets/sounds/kenney/`) and the hit from Epidemic Sound (`assets/sounds/epidemic/`), are loaded at launch with the interface assets. `SoundPlayer` plays at most `SOUND_VOICE_LIMIT` (16) sounds at once: a sound started while every voice plays cuts the one that started first (`voiceForNextSound()`). Each sound plays at the EFFECTS volume the player has when it starts, and none plays while MUTE ALL is on. The player keeps that volume and takes the new one when the `SettingsService` tells it that the EFFECTS volume or MUTE ALL changed.
 
-A `MusicPlayer` plays one `MusicTrack`, read from disk while it plays: `THEME_TRACK`, the theme (`music/spacesuit_suite.mp3`), which loops over `THEME_LOOP_BEATS` (352) beats from its first beat, `THEME_FIRST_BEAT` (85 ms into the file), to 193.85 s, before its fade out; `GAME_TRACK`, the music of a game (`music/oh_the_city.mp3`), which loops from its start to `GAME_MUSIC_LOOP_END` (152 s), before its fade out at 152.1 s. Its volume follows MUSIC and MUTE ALL at each frame, so the options change it at once. `start()` never restarts a music that plays: in SFML 3.0.2, `play()` on a music that plays starts it again from the beginning. Without the file, or with a file SFML cannot read, it logs one warning and the client plays without that music.
+A `MusicPlayer` plays one `MusicTrack`, read from disk while it plays: `THEME_TRACK`, the theme (`music/spacesuit_suite.mp3`), which loops over `THEME_LOOP_BEATS` (352) beats from its first beat, `THEME_FIRST_BEAT` (85 ms into the file), to 193.85 s, before its fade out; `GAME_TRACK`, the music of a game (`music/oh_the_city.mp3`), which loops from its start to `GAME_MUSIC_LOOP_END` (152 s), before its fade out at 152.1 s. Its volume follows MUSIC and MUTE ALL: the `SettingsService` tells the player when one changes and `start()` applies it, so the options change it at once without the frame loop reading the settings. `start()` never restarts a music that plays: in SFML 3.0.2, `play()` on a music that plays starts it again from the beginning. Without the file, or with a file SFML cannot read, it logs one warning and the client plays without that music.
 
 `Soundtrack` decides which one plays. The intro starts the theme after its black second, and a title screen plays it otherwise (`playTheme()`), stopping the music of a game. When the waiting room opens the game, `ScreenCatalog::gameScreen()` asks `playGameMusic()`: the theme stops at once and the music of the game starts `GAME_MUSIC_SILENCE` (1 s) later; asking again during the silence does not restart it. As an `IMusicPlayer`, an `IMusicClock` the intro can start, the theme gives the intro its position from its first beat.
 
-The game screen plays the sounds of what the server announces through `EntityReplicator` (see [Entities from the server](#entities-from-the-server-entityreplicator)); with SOUND CUES on, the shot of a Bydo and a pilot hit also show on screen (see [Sound cues](#sound-cues-soundcues)). Every menu screen hands its sound player to its `MenuBuilder`, so the menu plays `CLICK_SOUND_ID` when it activates a bar, Escape included, or asks for a tab; a row, whose control sets a value, and a text field stay silent, and the READY key of the waiting room plays the click of READY. `client_audio_tests` checks the choice of a voice, the volumes, `SyncedClock` and `Soundtrack`, and `client_theme_tests` that the loops of the theme and of the music of a game end before their fades; no test opens an audio device.
+The game screen plays the sounds of what the server announces through `EntityReplicator` (see [Entities from the server](#entities-from-the-server-entityreplicator)); with SOUND CUES on, the shot of a Bydo and a pilot hit also show on screen (see [Sound cues](#sound-cues-soundcues)). Every menu screen hands its sound player to its `MenuBuilder`, so the menu plays `CLICK_SOUND_ID` when it activates a bar, Escape included, or asks for a tab; a row, whose control sets a value, and a text field stay silent, and the READY key of the waiting room plays the click of READY. `client_audio_tests` checks the choice of a voice, the volumes and which settings move them, `SyncedClock` and `Soundtrack`, and `client_theme_tests` that the loops of the theme and of the music of a game end before their fades; no test opens an audio device.
 
 ## Player commands: `PlayerCommands`
 
@@ -628,7 +638,7 @@ The connection module builds one when it installs and opens it when it starts, o
 
 `systemPrefersReducedMotion()`, in the same folder and the same way, tells whether the player asked the system for less motion: "Reduce motion" on macOS (read from AppKit), "Show animations in Windows" turned off on Windows (`SPI_GETCLIENTAREAANIMATION`), the GNOME setting `enable-animations` turned off on Linux (read with `gsettings`). A setting the system does not give counts as no request. No test reads it: its answer depends on the machine.
 
-`settingsFolder()`, in the same folder and the same way, gives the folder where the client keeps the player's files (see [Settings](/R-Type/client/#settings-playersettings-settingsfile)), or nothing when the system does not tell.
+`settingsFolder()`, in the same folder and the same way, gives the folder where the client keeps the player's files (see [Settings](/R-Type/client/#settings-playersettings-settingsservice-settingsfile)), or nothing when the system does not tell.
 
 `borderlessUsesDesktopFullscreen()`, in the same folder and the same way, tells how a borderless window covers the screen: `false` on Windows, a window without border; `true` on macOS and Linux, SFML's fullscreen at the video mode of the desktop (see [Window](#window-gamewindow-windowlayout)).
 
@@ -766,8 +776,8 @@ Text twice or three times its size is written with `TextStyle::scale`: every pix
 | Change the height kept for the status band | `STATUS_BAND_HEIGHT` in `src/game/Components/PlayfieldConstants.hpp`, read by the client and by `bydoSpawnPosition` |
 | Change where the parts of the menus go | `MenuBuilder::placeColumn()`, `placeDialog()`, `placeForm()`, `placeTabbedPanel()` and `placeRoom()`, `src/client/Widgets/WidgetConstants.hpp` |
 | Add a control to a row | A class deriving from `RowControl` in its own folder under `src/client/Widgets/RowControls/`, its sizes in `RowControlConstants.hpp`, added with `MenuBuilder::row()` |
-| Change the rows, texts or tabs of the options | `src/client/Screens/OptionsScreenConstants.hpp`, `OptionsScreen::soundTab()`, `controlsTab()`, `displayTab()` and `accessTab()` in `src/client/Screens/OptionsScreen/` |
-| Add a setting | A member of `PlayerSettings`, its name in `src/client/Settings/SettingsConstants.hpp`, its line in `settingsText()` and `applySetting()` (`src/client/Settings/SettingsText/SettingsText.cpp`), its row in `OptionsScreen` |
+| Change the rows, texts or tabs of the options | `src/client/Screens/OptionsScreenConstants.hpp`, the tab functions of `src/client/Screens/OptionsTabs/`, the rows of `OptionsRows/` and the descriptions of `OptionsDescriptions/` |
+| Add a setting | A member of `PlayerSettings`, its name in `src/client/Settings/SettingsConstants.hpp`, its line in `settingsText()` and `applySetting()` (`src/client/Settings/SettingsText/SettingsText.cpp`), its `Setting` constant in `SettingDefinitionConstants.hpp` and a `SettingId`, its row in `OptionsRows/` and `OptionsTabs/`; a setting of a type no `SettingsService::apply()` instantiation covers (`int`, `bool`, `ColorMode`, `DisplayMode`, `std::optional<PixelSize>`) needs one more line in `SettingsService.cpp` |
 | Change where the settings file is kept | `settingsFolder()` in `src/client/Platform/`, `SETTINGS_FILE_NAME` in `SettingsConstants.hpp` |
 | Change how a bar looks | `Button::lookOf()`, `src/client/Widgets/WidgetColors.hpp` |
 | Change the keys of the menus, or how long a press shows | `MENU_NEXT_KEYS`, `MENU_PREVIOUS_KEYS`, `MENU_TAB_KEY`, `MENU_CONFIRM_KEY`, `MENU_CANCEL_KEY`, `FIELD_ERASE_KEY`, `PRESS_DURATION` in `WidgetConstants.hpp` |
