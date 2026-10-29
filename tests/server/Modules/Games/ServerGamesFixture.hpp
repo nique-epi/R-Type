@@ -36,24 +36,11 @@ class ServerGamesFixture : public ServerModuleFixture {
    * of its own. */
   rtype::server::ConnectedPlayer& join(std::size_t index);
 
-  /** @brief Connects the player at @p index to @p game, under a token of its
-   * own. */
-  static rtype::server::ConnectedPlayer& joinIn(
-      rtype::server::GameInstance& game, std::size_t index);
-
-  /** @returns The game at @p index, in the order the games were created. */
-  [[nodiscard]] rtype::server::GameInstance& game(std::size_t index);
-
   /** @brief Runs one tick of the loop with @p players and @p requests among the
    * datagrams. */
   void runTick(
       const std::vector<rtype::network::IncomingDatagram>& players,
       const std::vector<rtype::network::IncomingDatagram>& requests = {});
-
-  /** @returns A Disconnection from the player at @p index, as its client
-   * sends it. */
-  [[nodiscard]] static rtype::network::IncomingDatagram disconnectionFrom(
-      std::size_t index);
 
   /** @returns How many datagrams of the type @p type went to the player at
    * @p index. */

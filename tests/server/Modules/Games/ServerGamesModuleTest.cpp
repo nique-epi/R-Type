@@ -4,6 +4,7 @@
 #include <utility>
 #include <vector>
 #include "EngineException.hpp"
+#include "GamePlayers.hpp"
 #include "GameState.hpp"
 #include "GamesSettings.hpp"
 #include "MessageType.hpp"
@@ -114,8 +115,8 @@ TEST_F(ServerGamesFixture, TellsTheOthersThatAPlayerLeftAsTimersAndBusRun) {
  */
 TEST_F(ServerGamesFixture, RunsTheSecondGameWithItsOwnPlayersAndBus) {
   startWith(shippedWaves());
-  joinIn(game(SECOND_GAME), 0);
-  joinIn(game(SECOND_GAME), 1);
+  seatPlayerIn(*probe().games()->all()[SECOND_GAME], 0);
+  seatPlayerIn(*probe().games()->all()[SECOND_GAME], 1);
 
   runTick({disconnectionFrom(0)});
   for (int tick = 0; tick < TICKS_FOR_THE_LAST_COPY; ++tick) {
@@ -123,6 +124,38 @@ TEST_F(ServerGamesFixture, RunsTheSecondGameWithItsOwnPlayersAndBus) {
   }
 
   EXPECT_EQ(datagramsTo(1, MessageType::PlayerLeft), 3U);
+}
+
+/**
+ * Given one player in the first game and one in the second
+ * When the player of the first game leaves, and the loop goes on for a few
+ * ticks
+ * Then the player of the second game is told nothing: the games do not share
+ * a bus
+ */
+TEST_F(ServerGamesFixture, KeepsTheEventsOfAGameAwayFromTheOtherGames) {
+  startWith(shippedWaves());
+  seatPlayerIn(*probe().games()->all()[FIRST_GAME], 0);
+  seatPlayerIn(*probe().games()->all()[SECOND_GAME], 1);
+
+  runTick({disconnectionFrom(0)});
+  for (int tick = 0; tick < TICKS_FOR_THE_LAST_COPY; ++tick) {
+    runTick({});
+  }
+
+  EXPECT_EQ(datagramsTo(1, MessageType::PlayerLeft), 0U);
+}
+
+/**
+ * Given settings that ask for no game
+ * When the application starts
+ * Then start() fails with an error that names the games module
+ */
+TEST_F(ServerGamesFixture, FailsToStartWhenTheSettingsAskForNoGame) {
+  rtype::server::GamesSettings settings = shippedWaves();
+  settings.gameCount = 0;
+
+  EXPECT_THROW(startWith(std::move(settings)), ModuleStartFailedException);
 }
 
 /**

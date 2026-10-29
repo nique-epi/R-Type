@@ -23,6 +23,7 @@
 #include "PlayerDatagrams.hpp"
 #include "RtypeGameModules.hpp"
 #include "ServerConstants.hpp"
+#include "ServerException.hpp"
 #include "TickDatagrams.hpp"
 #include "TimeConstants.hpp"
 #include "WaveCatalog.hpp"
@@ -55,16 +56,21 @@ void ServerGamesModule::install(engine::InstallContext& context) {
 }
 
 void ServerGamesModule::start() {
+  if (settings_.gameCount == 0) {
+    throw NoJoinableGameException();
+  }
   const WavePlan waves = readWaves();
   for (std::size_t game = 0; game < settings_.gameCount; ++game) {
     auto events = std::make_unique<engine::EventBus>();
     std::unique_ptr<GameInstance> created = createGame(
-        *events, GameSettings{.seed = settings_.seed
-                                          ? *settings_.seed +
-                                                static_cast<std::uint32_t>(game)
-                                          : std::random_device{}(),
-                              .waves = waves,
-                              .statesPerSecond = settings_.statesPerSecond});
+        *events,
+        GameSettings{
+            .seed = settings_.seed
+                        ? *settings_.seed + (static_cast<std::uint32_t>(game) *
+                                             GAME_SEED_STRIDE)
+                        : std::random_device{}(),
+            .waves = waves,
+            .statesPerSecond = settings_.statesPerSecond});
     games_.add(std::move(events), std::move(created));
   }
 }

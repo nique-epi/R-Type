@@ -129,7 +129,7 @@ The server creates its games when it starts and keeps them: a finished game wait
 
 | The sender | The request goes to |
 |---|---|
-| has a seat in a game | that game, so a repeated request gets the same acceptance again |
+| has a seat in a game | that game, so a repeated request that carries a valid cookie gets the same acceptance again; without a cookie it gets a challenge, as any request does |
 | has no seat | the first game waiting for players with a free seat (`Games::joinable()`) |
 | has no seat, and no game waits with a free seat | the first game, which refuses it with `GameInProgress` or `GameFull` |
 

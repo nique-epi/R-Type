@@ -43,13 +43,15 @@ TEST_F(GamesFixture, SendsNewPlayersToTheNextGameOnceTheFirstIsFull) {
 }
 
 /**
- * Given a single game with every seat taken
+ * Given two games, both with every seat taken
  * When a new player asks which game to join
- * Then it is still that game, which refuses it
+ * Then it is the first game, which refuses it
  */
 TEST_F(GamesFixture, FallsBackToTheFirstGameWhenNoneHasASeat) {
   addGame();
+  addGame();
   fill(*games().all()[FIRST_GAME]);
+  fill(*games().all()[SECOND_GAME]);
 
   EXPECT_EQ(&games().joinable(), games().all()[FIRST_GAME].get());
 }

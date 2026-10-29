@@ -9,19 +9,17 @@
 #include "Application.hpp"
 #include "ConnectedPlayer.hpp"
 #include "DatagramCodec.hpp"
-#include "GameInstance.hpp"
+#include "GamePlayers.hpp"
 #include "GamesSettings.hpp"
 #include "IModule.hpp"
 #include "IncomingDatagram.hpp"
 #include "LoopStages.hpp"
 #include "MessageType.hpp"
 #include "ModuleConstants.hpp"
-#include "PacketHeader.hpp"
 #include "RecordingNetworkModule.hpp"
 #include "SentDatagrams.hpp"
 #include "ServerApplication.hpp"
 #include "ServerConstants.hpp"
-#include "ServerDatagrams.hpp"
 #include "ServerGamesModule.hpp"
 #include "ServerLoggerModule.hpp"
 #include "ServerModuleTestConstants.hpp"
@@ -69,19 +67,7 @@ rtype::server::GamesSettings ServerGamesFixture::shippedWaves() {
 }
 
 ConnectedPlayer& ServerGamesFixture::join(std::size_t index) {
-  return joinIn(*probe().games()->all().front(), index);
-}
-
-ConnectedPlayer& ServerGamesFixture::joinIn(rtype::server::GameInstance& game,
-                                            std::size_t index) {
-  ConnectedPlayer* const player = game.roster().add(
-      playerEndpoint(index), std::string{PLAYER_NICKNAME}, tokenOf(index));
-  game.onPlayerJoined(*player);
-  return *player;
-}
-
-rtype::server::GameInstance& ServerGamesFixture::game(std::size_t index) {
-  return *probe().games()->all()[index];
+  return seatPlayerIn(*probe().games()->all().front(), index);
 }
 
 void ServerGamesFixture::runTick(
@@ -92,13 +78,6 @@ void ServerGamesFixture::runTick(
           .players = players, .connectionRequests = requests});
   application().runStages(rtype::engine::SIMULATION_TICK_DURATION);
   network().tickDatagrams().end();
-}
-
-IncomingDatagram ServerGamesFixture::disconnectionFrom(std::size_t index) {
-  rtype::network::PacketHeader header;
-  header.sessionToken = tokenOf(index);
-  return IncomingDatagram{.sender = playerEndpoint(index),
-                          .payload = disconnectionDatagram(header)};
 }
 
 std::size_t ServerGamesFixture::datagramsTo(std::size_t index,

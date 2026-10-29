@@ -20,7 +20,8 @@ namespace rtype::server {
  * its sender, and seats the players it accepts in that game.
  *
  * A player already seated is answered by the acceptor of its own game, so a
- * repeated request finds the same acceptance again; a new player goes to the
+ * repeated request that carries a valid cookie finds the same acceptance
+ * again, and one without a cookie is challenged; a new player goes to the
  * first game waiting for players with a free seat. Each acceptor draws its own
  * cookies, so a player challenged by one game and sent to another, because
  * the first one filled up meanwhile, is challenged once more.
