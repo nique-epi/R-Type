@@ -1523,6 +1523,31 @@ TEST_F(ServerConnectionFixture, StaysLostWhenALateAcceptanceArrives) {
 }
 
 /**
+ * Given a session lost to the silence of the server
+ * When the server comes back and sends a Heartbeat, then a LobbyState, of
+ * the session, then a heartbeat interval passes
+ * Then the connection stays lost, keeps no room and sends the server
+ * nothing, so the server closes the session as timed out
+ */
+TEST_F(ServerConnectionFixture, IgnoresAServerThatComesBackAfterTheLoss) {
+  accept();
+  update(PROTOCOL_SILENCE_LIMIT);
+  const std::size_t sentWhenLost = sent().size();
+
+  deliverInSession(network::Heartbeat{}, FIRST_SEQUENCE);
+  deliverInSession(
+      network::LobbyState{.players = {{.playerNumber = ACCEPTED_PLAYER_NUMBER,
+                                       .ready = false,
+                                       .nickname = std::string{NICKNAME}}}},
+      SECOND_SEQUENCE);
+  update(PROTOCOL_HEARTBEAT_INTERVAL);
+
+  EXPECT_EQ(phase(), Phase::Lost);
+  EXPECT_TRUE(connection().lobbyPlayers().empty());
+  EXPECT_EQ(sent().size(), sentWhenLost);
+}
+
+/**
  * Given a session the server opened, then sent nothing more
  * When the silence limit passes
  * Then the journal names the server and the delay it stayed silent for
