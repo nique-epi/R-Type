@@ -101,7 +101,7 @@ src/game/
 └── Events/           entity destroyed, player left...
 ```
 
-`World`, `Components`, `Events`, `Spawning` (the start position of a player's ship and of its missiles, the position of a new Bydo and the kinds of Bydo), the systems for movement (`Systems/MovementSystem/`), movement patterns (`Systems/PatternSystem/`) and leaving the playfield (`Systems/PlayfieldExitSystem/`), the collision classes (`Systems/CollisionSystem/`, `Systems/CollisionRules/`), the damage rules (`Systems/DamageRules/`), `Waves` (how the waves of Bydos grow and when their Bydos are due) and `ShipControl`, which the server runs and the client does not run yet, exist; the other systems and folders are not written yet. See [Server and game](/R-Type/server/).
+`World`, `Components`, `Events`, `Spawning` (the start position of a player's ship and of its missiles, the position of a new Bydo and the kinds of Bydo), the systems for movement (`Systems/MovementSystem/`, which moves a body by its `Velocity` or by its `Intent`), movement patterns (`Systems/PatternSystem/`) and leaving the playfield (`Systems/PlayfieldExitSystem/`), the collision classes (`Systems/CollisionSystem/`, `Systems/CollisionRules/`), the damage rules (`Systems/DamageRules/`), `Waves` (how the waves of Bydos grow and when their Bydos are due) and `ShipControl`, which the server runs and the client does not run yet, exist; the other systems and folders are not written yet. See [Server and game](/R-Type/server/).
 
 ### Network
 
@@ -245,7 +245,7 @@ This follows our previous projects: shared code in libraries and one folder per 
 
 Player A holds the Up arrow and player B sees A's ship move. Each step happens in one place.
 
-This is the path the design aims for, and only its server half runs today. The inputs of client A reach its game, each tick of a game in progress moves the ships with `ShipControl` before the systems, and the world state goes to every player 20 times per second. Client A does not move its ship before the server answers and replays no input: `client/Prediction` does not exist yet. Both clients draw each ship where the newest world state puts it, without the 100 ms delay. `network/Sessions` and `network/Snapshots` do not exist either: the session token is checked by `DatagramSorter` and the sequence by `GameInstance`, both in `src/server/`, and the world state is written by `WorldStateCodec` in `network/Protocol`.
+This is the path the design aims for, and only its server half runs today. The inputs of client A reach its game, each tick of a game in progress moves the ships by their `Intent` with `ShipControl` in `MovementSystem`, and the world state goes to every player 20 times per second. Client A does not move its ship before the server answers and replays no input: `client/Prediction` does not exist yet. Both clients draw each ship where the newest world state puts it, without the 100 ms delay. `network/Sessions` and `network/Snapshots` do not exist either: the session token is checked by `DatagramSorter` and the sequence by `GameInstance`, both in `src/server/`, and the world state is written by `WorldStateCodec` in `network/Protocol`.
 
 ```mermaid
 sequenceDiagram
