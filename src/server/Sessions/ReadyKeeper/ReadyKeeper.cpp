@@ -7,7 +7,6 @@
 #include "MessageOrigin.hpp"
 #include "PlayerRoster.hpp"
 #include "ReadyState.hpp"
-#include "SequenceOrder.hpp"
 
 namespace rtype::server {
 
@@ -21,12 +20,6 @@ void ReadyKeeper::apply(const network::MessageOrigin& origin,
   if (!readyAccepted_() || player == nullptr) {
     return;
   }
-  if (player->newestReceivedSequence.has_value() &&
-      !network::isNewerSequence(origin.header.sequence,
-                                *player->newestReceivedSequence)) {
-    return;
-  }
-  player->newestReceivedSequence = origin.header.sequence;
   player->ready = message.ready;
 }
 

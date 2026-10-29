@@ -56,4 +56,11 @@ constexpr std::string_view SESSIONS_LOGGER_NAME = "Sessions";
 constexpr std::string_view NOT_A_PLAYER_DROP_REASON =
     "its sender is not a player of this game";
 
+/**
+ * @brief Why a game drops a datagram of a player that is not newer than the
+ * newest one it accepted from them: a duplicate, or one that came late.
+ */
+constexpr std::string_view NOT_NEWER_DROP_REASON =
+    "it is not newer than the newest datagram of its sender";
+
 }  // namespace rtype::server
