@@ -17,37 +17,26 @@
 #include "SentDatagrams.hpp"
 #include "ServerLobbyTestConstants.hpp"
 #include "SessionDatagram.hpp"
+#include "SessionDatagramFixture.hpp"
 #include "SessionDatagramTestConstants.hpp"
 
 namespace rtype::server {
-namespace {
 
 using testing::LAST_SEQUENCE;
 using testing::OTHER_SESSION_TOKEN;
 using testing::PLAYER_NICKNAME;
 using testing::playerEndpoint;
 using testing::SESSION_TOKEN;
+using testing::SessionDatagramFixture;
 using testing::SOME_NEXT_SEQUENCE;
 using testing::SOME_TICKS_SINCE_SENT;
-
-/** @brief A roster whose first player is connected under SESSION_TOKEN. */
-class SessionDatagramTest : public ::testing::Test {
- protected:
-  [[nodiscard]] PlayerRoster& roster() { return roster_; }
-  [[nodiscard]] ConnectedPlayer& firstPlayer() { return *firstPlayer_; }
-
- private:
-  PlayerRoster roster_;
-  ConnectedPlayer* firstPlayer_{roster_.add(
-      playerEndpoint(0), std::string{PLAYER_NICKNAME}, SESSION_TOKEN)};
-};
 
 /**
  * Given a player sent nothing for some ticks
  * When the header of its next datagram is asked for
  * Then the ticks since a datagram was sent to it start again from 0
  */
-TEST_F(SessionDatagramTest, StartsTheTicksSinceSentOverForEachHeader) {
+TEST_F(SessionDatagramFixture, StartsTheTicksSinceSentOverForEachHeader) {
   firstPlayer().ticksSinceSent = SOME_TICKS_SINCE_SENT;
 
   static_cast<void>(nextSessionHeader(firstPlayer()));
@@ -61,7 +50,7 @@ TEST_F(SessionDatagramTest, StartsTheTicksSinceSentOverForEachHeader) {
  * Then the header carries its session token and that sequence, and its next
  * sequence moves on by one
  */
-TEST_F(SessionDatagramTest, GivesTheTokenAndTheNextSequenceOfThePlayer) {
+TEST_F(SessionDatagramFixture, GivesTheTokenAndTheNextSequenceOfThePlayer) {
   firstPlayer().nextSequence = SOME_NEXT_SEQUENCE;
 
   const network::PacketHeader header = nextSessionHeader(firstPlayer());
@@ -76,7 +65,7 @@ TEST_F(SessionDatagramTest, GivesTheTokenAndTheNextSequenceOfThePlayer) {
  * When the header of its next datagram is asked for
  * Then the header carries 65535 and the next sequence wraps to 0
  */
-TEST_F(SessionDatagramTest, WrapsTheSequenceAfterTheLastOne) {
+TEST_F(SessionDatagramFixture, WrapsTheSequenceAfterTheLastOne) {
   firstPlayer().nextSequence = LAST_SEQUENCE;
 
   const network::PacketHeader header = nextSessionHeader(firstPlayer());
@@ -91,7 +80,7 @@ TEST_F(SessionDatagramTest, WrapsTheSequenceAfterTheLastOne) {
  * Then it carries the token and the first sequence of the second player, and
  * only that player's next sequence moves on
  */
-TEST_F(SessionDatagramTest, FindsThePlayerWhoSendsFromTheRecipient) {
+TEST_F(SessionDatagramFixture, FindsThePlayerWhoSendsFromTheRecipient) {
   const ConnectedPlayer* const second = roster().add(
       playerEndpoint(1), std::string{PLAYER_NICKNAME}, OTHER_SESSION_TOKEN);
   ASSERT_NE(second, nullptr);
@@ -111,7 +100,7 @@ TEST_F(SessionDatagramTest, FindsThePlayerWhoSendsFromTheRecipient) {
  * Then it carries no session, token 0 and sequence 0, and the player's next
  * sequence does not move
  */
-TEST_F(SessionDatagramTest, GivesNoSessionToAnAddressWithoutPlayer) {
+TEST_F(SessionDatagramFixture, GivesNoSessionToAnAddressWithoutPlayer) {
   const network::PacketHeader header =
       sessionHeaderFor(roster(), playerEndpoint(1));
 
@@ -126,7 +115,7 @@ TEST_F(SessionDatagramTest, GivesNoSessionToAnAddressWithoutPlayer) {
  * Then it goes to the address of the player, starts with the token and the
  * first sequence of its session, and holds that one message
  */
-TEST_F(SessionDatagramTest, AddressesTheMessageToThePlayerUnderItsHeader) {
+TEST_F(SessionDatagramFixture, AddressesTheMessageToThePlayerUnderItsHeader) {
   const network::ConnectionAccepted accepted{.playerNumber =
                                                  network::FIRST_PLAYER_NUMBER};
 
@@ -155,7 +144,7 @@ TEST_F(SessionDatagramTest, AddressesTheMessageToThePlayerUnderItsHeader) {
  * Then the second carries the sequence after the first: every kind of message
  * takes its sequence from the same counter
  */
-TEST_F(SessionDatagramTest, NumbersEveryKindOfMessageFromOneCounter) {
+TEST_F(SessionDatagramFixture, NumbersEveryKindOfMessageFromOneCounter) {
   const network::OutgoingDatagram accepted = sessionDatagram(
       firstPlayer(), network::ConnectionAccepted{
                          .playerNumber = network::FIRST_PLAYER_NUMBER});
@@ -167,5 +156,4 @@ TEST_F(SessionDatagramTest, NumbersEveryKindOfMessageFromOneCounter) {
   EXPECT_EQ(network::DatagramCodec::decodeHeader(started.payload).sequence, 1);
 }
 
-}  // namespace
 }  // namespace rtype::server
