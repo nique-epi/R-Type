@@ -11,7 +11,7 @@ namespace rtype::server {
  * the network id of the body.
  */
 struct WeaponShot {
-  game::Position muzzle;
+  game::Position muzzle{};
   game::EntityType projectile{game::EntityType::PlayerMissile};
   std::uint32_t shooterId{0};
 };

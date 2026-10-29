@@ -60,7 +60,7 @@ TEST_F(LifeKeeperFixture, AnnouncesWhichPlayerWasHit) {
  * Then the bus hears that this player is eliminated
  */
 TEST_F(LifeKeeperFixture, EliminatesThePlayerAtItsLastLife) {
-  ConnectedPlayer& player = join(FIRST_PLAYER);
+  const ConnectedPlayer& player = join(FIRST_PLAYER);
   setLives(player, ONE_LIFE);
 
   touchABydo(player);
@@ -105,7 +105,7 @@ TEST_F(LifeKeeperFixture, GivesANewShipAfterOneSecond) {
  * Then the player still has no ship: it watches
  */
 TEST_F(LifeKeeperFixture, NeverBringsBackTheShipOfAPlayerWithNoLifeLeft) {
-  ConnectedPlayer& player = join(FIRST_PLAYER);
+  const ConnectedPlayer& player = join(FIRST_PLAYER);
   setLives(player, ONE_LIFE);
   touchABydo(player);
 
@@ -172,7 +172,7 @@ TEST_F(LifeKeeperFixture, CountsOneLifeForTwoBydosInOneDispatch) {
  * Then it still has no life: the count never wraps around
  */
 TEST_F(LifeKeeperFixture, NeverTakesALifeFromAPlayerWithNone) {
-  ConnectedPlayer& player = join(FIRST_PLAYER);
+  const ConnectedPlayer& player = join(FIRST_PLAYER);
   setLives(player, 0);
 
   touchABydo(player);

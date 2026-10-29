@@ -37,7 +37,7 @@ void moveByIntent(engine::ComponentRegistry& components,
   components.forEach<Intent, ShipMotion>(
       [&components, elapsed](engine::Entity body, const Intent& intent,
                              ShipMotion& motion) {
-        Position* const position = components.get<Position>(body);
+        auto* const position = components.get<Position>(body);
         if (position == nullptr) {
           return;
         }

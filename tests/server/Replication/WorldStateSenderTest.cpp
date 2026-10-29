@@ -5,6 +5,8 @@
 #include <vector>
 #include "ConnectedPlayer.hpp"
 #include "EntityType.hpp"
+#include "Invulnerable.hpp"
+#include "Lives.hpp"
 #include "NetworkConstants.hpp"
 #include "ServerConstants.hpp"
 #include "ServerLobbyTestConstants.hpp"
@@ -14,6 +16,8 @@
 #include "WorldStateSenderTestConstants.hpp"
 
 using rtype::game::EntityType;
+using rtype::game::Invulnerable;
+using rtype::game::Lives;
 using rtype::network::EntityState;
 using rtype::network::PlayerState;
 using rtype::network::WireEntityType;
@@ -280,8 +284,8 @@ TEST_F(WorldStateSenderFixture, ListsEveryPlayerWithItsOwnShipLivesAndScore) {
   first.score = FIRST_SCORE;
   second.shipEntityId = SECOND_SHIP_ID;
   second.score = SECOND_SCORE;
-  addShip(FIRST_SHIP_ID, FIRST_LIVES, 0);
-  addShip(SECOND_SHIP_ID, SECOND_LIVES, 0);
+  addShip(FIRST_SHIP_ID, Lives{.count = FIRST_LIVES}, Invulnerable{});
+  addShip(SECOND_SHIP_ID, Lives{.count = SECOND_LIVES}, Invulnerable{});
 
   runTicks(rtype::server::TICKS_PER_WORLD_STATE);
 
@@ -328,7 +332,8 @@ TEST_F(WorldStateSenderFixture, ListsAPlayerWithProtectionLeftAsInvulnerable) {
   rtype::server::ConnectedPlayer& player =
       connect(FIRST_CLIENT_PORT, SESSION_TOKEN);
   player.shipEntityId = FIRST_SHIP_ID;
-  addShip(FIRST_SHIP_ID, FIRST_LIVES, ONE_TICK_OF_PROTECTION);
+  addShip(FIRST_SHIP_ID, Lives{.count = FIRST_LIVES},
+          Invulnerable{.ticksLeft = ONE_TICK_OF_PROTECTION});
 
   runTicks(rtype::server::TICKS_PER_WORLD_STATE);
 

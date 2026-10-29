@@ -78,7 +78,7 @@ TEST(PlayerController, ReplacesTheIntentWithTheNewestInput) {
 TEST(PlayerController, SteersNothingForAPlayerWithoutAShip) {
   game::World world;
   PlayerRoster roster;
-  ConnectedPlayer& player =
+  const ConnectedPlayer& player =
       *roster.add(playerEndpoint(FIRST_PLAYER), std::string{PLAYER_NICKNAME},
                   SESSION_TOKEN);
 

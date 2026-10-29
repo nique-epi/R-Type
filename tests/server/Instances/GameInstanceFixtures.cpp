@@ -314,12 +314,23 @@ std::optional<std::uint8_t> GameInstanceInputTest::heldActions(
     ADD_FAILURE() << "player " << player << " has no ship";
     return std::nullopt;
   }
-  return static_cast<std::uint8_t>(
-      (intent->directions.up ? HOLDS_UP : 0) |
-      (intent->directions.down ? HOLDS_DOWN : 0) |
-      (intent->directions.left ? HOLDS_LEFT : 0) |
-      (intent->directions.right ? HOLDS_RIGHT : 0) |
-      (intent->shooting ? HOLDS_SHOOT : 0));
+  unsigned int actions = 0U;
+  if (intent->directions.up) {
+    actions |= static_cast<unsigned int>(HOLDS_UP);
+  }
+  if (intent->directions.down) {
+    actions |= static_cast<unsigned int>(HOLDS_DOWN);
+  }
+  if (intent->directions.left) {
+    actions |= static_cast<unsigned int>(HOLDS_LEFT);
+  }
+  if (intent->directions.right) {
+    actions |= static_cast<unsigned int>(HOLDS_RIGHT);
+  }
+  if (intent->shooting) {
+    actions |= static_cast<unsigned int>(HOLDS_SHOOT);
+  }
+  return static_cast<std::uint8_t>(actions);
 }
 
 const UnreliableNetwork& GameInstanceInputTest::network() const {

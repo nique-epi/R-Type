@@ -21,7 +21,6 @@
 #include "WeaponSystemConstants.hpp"
 #include "WireEntityTypeMapping.hpp"
 #include "World.hpp"
-#include "WorldState.hpp"
 
 namespace rtype::server {
 

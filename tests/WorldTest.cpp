@@ -557,9 +557,10 @@ TEST(World, SpawnedBydoHasAGunThatWaitsAWholeIntervalFirst) {
   const std::optional<rtype::game::Gun> gun =
       componentOf<rtype::game::Gun>(world, networkId);
   ASSERT_TRUE(gun.has_value());
-  EXPECT_EQ(gun->intervalTicks, BYDO_SHOT_INTERVAL_TICKS);
-  EXPECT_EQ(gun->ticksUntilReady, BYDO_SHOT_INTERVAL_TICKS);
-  EXPECT_EQ(gun->projectile, rtype::game::EntityType::EnemyMissile);
+  const rtype::game::Gun held = gun.value_or(rtype::game::Gun{});
+  EXPECT_EQ(held.intervalTicks, BYDO_SHOT_INTERVAL_TICKS);
+  EXPECT_EQ(held.ticksUntilReady, BYDO_SHOT_INTERVAL_TICKS);
+  EXPECT_EQ(held.projectile, rtype::game::EntityType::EnemyMissile);
 }
 
 /**
@@ -577,9 +578,10 @@ TEST(World, SpawnedShipHasAGunThatIsReadyAtOnce) {
   const std::optional<rtype::game::Gun> gun =
       componentOf<rtype::game::Gun>(world, networkId);
   ASSERT_TRUE(gun.has_value());
-  EXPECT_EQ(gun->intervalTicks, SHIP_SHOT_INTERVAL_TICKS);
-  EXPECT_EQ(gun->ticksUntilReady, 0U);
-  EXPECT_EQ(gun->projectile, rtype::game::EntityType::PlayerMissile);
+  const rtype::game::Gun held = gun.value_or(rtype::game::Gun{});
+  EXPECT_EQ(held.intervalTicks, SHIP_SHOT_INTERVAL_TICKS);
+  EXPECT_EQ(held.ticksUntilReady, 0U);
+  EXPECT_EQ(held.projectile, rtype::game::EntityType::PlayerMissile);
 }
 
 /**
