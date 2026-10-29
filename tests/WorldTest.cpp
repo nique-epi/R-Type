@@ -13,6 +13,7 @@
 #include "EntityType.hpp"
 #include "Gun.hpp"
 #include "Health.hpp"
+#include "Intent.hpp"
 #include "MissileOwner.hpp"
 #include "MovementPattern.hpp"
 #include "NetworkIdentity.hpp"
@@ -620,4 +621,24 @@ TEST(World, SpawnedEnemyMissileHasTheBoxOfItsSprite) {
       box.value_or(rtype::game::CollisionBox{});
   EXPECT_EQ(found.width, rtype::game::ENEMY_MISSILE_WIDTH);
   EXPECT_EQ(found.height, rtype::game::ENEMY_MISSILE_HEIGHT);
+}
+
+/**
+ * Given a world
+ * When a ship is spawned for a player
+ * Then shipIntentOf finds an Intent wanting nothing, and no other id has one
+ */
+TEST(World, ShipIsSpawnedWithAnIntentThatWantsNothing) {
+  rtype::game::World world;
+  const std::uint32_t shipId =
+      world.spawnPlayer(rtype::game::Position{.x = SOME_X, .y = SOME_Y});
+
+  const rtype::game::Intent* const intent = world.shipIntentOf(shipId);
+
+  ASSERT_NE(intent, nullptr);
+  EXPECT_FALSE(intent->directions.up);
+  EXPECT_FALSE(intent->directions.down);
+  EXPECT_FALSE(intent->directions.left);
+  EXPECT_FALSE(intent->directions.right);
+  EXPECT_EQ(world.shipIntentOf(shipId + 1), nullptr);
 }

@@ -22,13 +22,11 @@
 #include "LifeKeeperParts.hpp"
 #include "Logger.hpp"
 #include "OutgoingDatagram.hpp"
+#include "PlayerController.hpp"
 #include "PlayerRoster.hpp"
-#include "Position.hpp"
 #include "ProtocolConstants.hpp"
 #include "SessionDatagram.hpp"
-#include "ShipControl.hpp"
 #include "ShipInput.hpp"
-#include "ShipMotion.hpp"
 #include "TimeConstants.hpp"
 #include "World.hpp"
 #include "WorldSlot.hpp"
@@ -50,53 +48,6 @@ ConnectedPlayers shootersIn(PlayerRoster& roster) {
     }
   }
   return shooters;
-}
-
-/** @brief A ship to move this tick, how it moves, and the directions its
- * player holds. */
-struct ShipMove {
-  game::Position* ship{nullptr};
-  game::ShipMotion* motion{nullptr};
-  game::ShipDirections held;
-};
-
-/**
- * @returns The ship of @p player in @p world, its motion and the directions
- * its newest input holds; nothing when the player has no ship in that world or
- * sent no input yet.
- */
-std::optional<ShipMove> shipMoveOf(game::World& world,
-                                   const ConnectedPlayer& player) {
-  game::Position* const ship = world.shipPositionOf(player.shipEntityId);
-  game::ShipMotion* const motion = world.shipMotionOf(player.shipEntityId);
-  if (ship == nullptr || motion == nullptr || !player.newestInput.has_value()) {
-    return std::nullopt;
-  }
-  return ShipMove{.ship = ship,
-                  .motion = motion,
-                  .held = directionsOf(*player.newestInput)};
-}
-
-/** @brief Moves the ship of @p move by one tick of the directions it holds. */
-void moveOneTick(const ShipMove& move) {
-  const game::MovingShip moved = game::shipAfter(
-      game::MovingShip{.position = *move.ship, .motion = *move.motion},
-      move.held, engine::SIMULATION_TICK_DURATION);
-  *move.ship = moved.position;
-  *move.motion = moved.motion;
-}
-
-/**
- * @brief Moves the ship of every player of @p roster who sent an input, in
- * @p world, by one tick of what that input holds.
- */
-void moveShips(game::World& world, PlayerRoster& roster) {
-  for (const ConnectedPlayer* const player : roster.connected()) {
-    const std::optional<ShipMove> move = shipMoveOf(world, *player);
-    if (move.has_value()) {
-      moveOneTick(*move);
-    }
-  }
 }
 
 /**
@@ -178,7 +129,7 @@ void GameFlow::advanceState() {
     case GameState::InProgress: {
       game::World& currentWorld = world();
       ++tick_;
-      moveShips(currentWorld, game_.roster.get());
+      steerPlayerShips(currentWorld, game_.roster.get());
       game_.systems.get().run(currentWorld.components(),
                               engine::SIMULATION_TICK_DURATION);
       missileLauncher_->onTick(shootersIn(game_.roster.get()));

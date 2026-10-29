@@ -11,6 +11,7 @@
 #include "Gun.hpp"
 #include "Health.hpp"
 #include "HealthConstants.hpp"
+#include "Intent.hpp"
 #include "MissileConstants.hpp"
 #include "MissileOwner.hpp"
 #include "MovementPattern.hpp"
@@ -30,6 +31,7 @@ std::uint32_t World::spawnPlayer(Position position) {
   const engine::Entity ship = registry_.create();
   components_.add(ship, position);
   components_.add(ship, ShipMotion{});
+  components_.add(ship, Intent{});
   components_.add(ship,
                   CollisionBox{.width = SHIP_WIDTH, .height = SHIP_HEIGHT});
   components_.add(ship, EntityType::Player);
@@ -111,6 +113,14 @@ ShipMotion* World::shipMotionOf(std::uint32_t shipId) {
     return nullptr;
   }
   return components_.get<ShipMotion>(*ship);
+}
+
+Intent* World::shipIntentOf(std::uint32_t shipId) {
+  const std::optional<engine::Entity> ship = shipByNetworkId_.find(shipId);
+  if (!ship.has_value()) {
+    return nullptr;
+  }
+  return components_.get<Intent>(*ship);
 }
 
 }  // namespace rtype::game

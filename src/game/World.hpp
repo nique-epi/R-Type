@@ -5,6 +5,7 @@
 #include "BydoKind.hpp"
 #include "ComponentRegistry.hpp"
 #include "EntityRegistry.hpp"
+#include "Intent.hpp"
 #include "NetworkEntityTable.hpp"
 #include "NetworkIdAllocator.hpp"
 #include "Position.hpp"
@@ -32,7 +33,9 @@ class World {
   /**
    * @brief Creates the ship of a player at @p position, with the Position, the
    * EntityType::Player and the NetworkIdentity that make it a networked
-   * entity, and a CollisionBox of SHIP_WIDTH by SHIP_HEIGHT.
+   * entity, a CollisionBox of SHIP_WIDTH by SHIP_HEIGHT, and an Intent that
+   * wants nothing until a controller writes it: MovementSystem moves the ship
+   * by it.
    * @returns The network id the ship was given, never NO_ENTITY_ID.
    * @throws NetworkIdExhaustedException when every network id was given.
    */
@@ -101,6 +104,13 @@ class World {
    * the next add or remove of a ShipMotion, like ComponentRegistry::get.
    */
   [[nodiscard]] ShipMotion* shipMotionOf(std::uint32_t shipId);
+
+  /**
+   * @returns The Intent of the ship spawnPlayer gave @p shipId, or nullptr for
+   * any other id, as shipPositionOf() does. The pointer is invalidated by the
+   * next add or remove of an Intent, like ComponentRegistry::get.
+   */
+  [[nodiscard]] Intent* shipIntentOf(std::uint32_t shipId);
 
  private:
   engine::EntityRegistry registry_;

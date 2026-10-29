@@ -17,6 +17,7 @@ target_link_libraries(rtype_server_game_flow
     rtype_server_player_roster
     rtype_server_world_slot
   PRIVATE
+    rtype_server_player_controller
     rtype_server_ship_input
     rtype_identifiers
     rtype_network_game_started
