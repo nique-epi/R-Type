@@ -124,7 +124,7 @@ The type identifies a message in both directions: `Disconnection` and `Heartbeat
 | 5 | `Heartbeat` | none | after 1 s without sending anything else |
 | 7 | `LobbyState` | `playerCount` `u8`, then per player `playerNumber` `u8`, `ready` `bool`, `nickname` `string` | on every change, and at least every 500 ms while no game runs |
 | 8 | `GameStarted` | none | when every connected player is ready |
-| 10 | `WorldState` | see [World state](#world-state) | 20 times per second during a game |
+| 10 | `WorldState` | see [World state](#world-state) | during a game, as many times per second as the server was told to (20 by default, from 2 to 60) |
 | 11 | `EntitySpawned` | `entityId` `u32`, `entityType` `u8`, `position` | when an entity appears; the ship of a player, when the player is accepted; the ship of a player again, when it comes back after a hit; a Bydo, every time one appears; a missile of a player, every time one is fired |
 | 12 | `EntityDestroyed` | `entityId` `u32`, `reason` `u8`: 1 `Killed` (explosion), 2 `Removed` (no effect) | when an entity disappears, three times 50 ms apart |
 | 13 | `GameEvent` | `eventNumber` `u16`, `kind` `u8`, `playerNumber` `u8`, `entityId` `u32` | see [Game events](#game-events), three times 50 ms apart |
@@ -197,7 +197,7 @@ A nickname is unique on the server: a request whose nickname a player already ho
 
 - ignores a `WorldState` whose `tick` is lower than the last one applied; an equal `tick` is another part of the same state. The `tick` is compared as a plain 32-bit integer, without wrap-around: it takes 2.27 years at 60 ticks per second to reach 2³². The sender checks come first, so a forged datagram cannot raise the last `tick` applied;
 - creates an entity it does not know, from its type, with its appearance effect (the shot sound of a missile, for instance);
-- removes an entity that no `WorldState` has listed for 900 ms, counted on the `tick` of the states. A state may come in several parts, and a later part may list an entity an earlier one left out, so a tick counts only once a part of a newer tick closes it: no later part of it is applied, and a lost part never comes. The entity goes when the tick 54 ticks or more past the last one that listed it is closed. With a state every 50 ms and none lost, a ghost goes 950 ms after the last state that listed it. While no state arrives, nothing is removed.
+- removes an entity that no `WorldState` has listed for 900 ms, counted on the `tick` of the states. A state may come in several parts, and a later part may list an entity an earlier one left out, so a tick counts only once a part of a newer tick closes it: no later part of it is applied, and a lost part never comes. The entity goes when the tick 54 ticks or more past the last one that listed it is closed. With none lost, a ghost goes 900 ms plus one interval between states after the last state that listed it: 950 ms at the default 20 states per second, 1400 ms at the lowest rate of 2. While no state arrives, nothing is removed.
 
 An `EntityDestroyed` naming an entity the client does not know, and an `EntitySpawned` naming one it already has, change nothing.
 
@@ -246,7 +246,7 @@ sequenceDiagram
   C->>S: ReadyState
   S->>C: GameStarted
   C->>S: PlayerInput (60 per second)
-  S->>C: WorldState (20 per second), events
+  S->>C: WorldState (20 per second by default), events
   S->>C: GameEnded (repeated)
   S->>C: LobbyState (repeated)
   C->>S: Disconnection
@@ -257,7 +257,7 @@ In each phase the server repeats one message, and the client shows the screen of
 | Phase | Repeated message | The client shows |
 |---|---|---|
 | Waiting for players | `LobbyState`, every 500 ms | the lobby |
-| Game in progress | `WorldState`, 20 per second | the game |
+| Game in progress | `WorldState`, 20 per second by default | the game |
 | Game ended | `GameEnded`, every 500 ms | the end screen |
 
 The end screen stays until the player chooses, whatever the server sends after `GameEnded`: a player who plays again finds the waiting room, a player who quits leaves the server. Between `GameEnded` and the next `GameStarted`, the server must send no `WorldState`: the client reads a `WorldState` as the start of a game.
@@ -338,17 +338,17 @@ Nothing is guaranteed in version 1: a lost message is never resent on request. T
 | `ConnectionRequest`, or its answer | the client sends the request again, the server answers it again | 500 ms |
 | `ReadyState` | sent again while `LobbyState` shows another value | 500 ms |
 | `LobbyState`, `GameEnded` | the next one | 500 ms |
-| `WorldState` | the next one | 50 ms |
-| `GameStarted` | the first `WorldState` | 50 ms |
+| `WorldState` | the next one | 50 ms at the default 20 per second, one rate-th of a second at any other |
+| `GameStarted` | the first `WorldState` | 50 ms at 20 per second |
 | `PlayerInput` | the next input | 17 ms |
 | `Heartbeat` | the next datagram | 1 s |
-| `EntitySpawned` | the next `WorldState` creates the entity, with its appearance effect | 50 ms |
+| `EntitySpawned` | the next `WorldState` creates the entity, with its appearance effect | 50 ms at 20 per second |
 | `EntityDestroyed`, `GameEvent`, `PlayerLeft`, `Disconnection` | the next copy | 50 ms |
 | all three copies of `Disconnection` | the session times out: the others get `PlayerLeft` (`TimedOut`) instead of (`Left`) | 20 s |
-| all three copies of `EntityDestroyed` | the entity is removed once no `WorldState` has listed it for 900 ms up to a closed tick, without explosion | 950 ms |
+| all three copies of `EntityDestroyed` | the entity is removed once no `WorldState` has listed it for 900 ms up to a closed tick, without explosion | 950 ms at 20 per second |
 | all three copies of `GameEvent` or `PlayerLeft` | not corrected: the sound, effect or message on screen is missed; lives, scores and players stay right through the state messages | — |
 
-The rates and delays on this page (60 inputs and 20 states per second, 500 ms, 900 ms, 1 s, 5 s, 15 s, the 10-second cookie window) are **provisional**: they will be revised once measured on a real network. Code must name each of them as a constant and never repeat the number.
+The rates and delays on this page (60 inputs and 20 states per second by default, 500 ms, 900 ms, 1 s, 5 s, 15 s, the 10-second cookie window) are **provisional**: they will be revised once measured on a real network. Code must name each of them as a constant and never repeat the number.
 
 ## Version 2
 

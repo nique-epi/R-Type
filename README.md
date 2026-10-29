@@ -48,6 +48,12 @@ The server listens on UDP port 4243 of every IPv4 interface; without `-p`, on po
 
 The Bydos appear at heights drawn from the seed; without `--seed` the server draws one, and the journal records it (`Bydo spawning starts from the seed ...`) so the same game can be replayed.
 
+```bash
+./r-type_server --state-rate 30
+```
+
+The server sends each player 30 world states per second instead of 20, from 2 to 60: more states move the other ships more smoothly and use more bandwidth (about 350 bytes per state with four players and thirty entities, see [the server page](https://nique-epi.github.io/R-Type/server/)).
+
 The server reads the waves of Bydos from `assets/waves/waves.toml` in the folder it is started in, so start it from the repository root. A missing or invalid file stops it with exit code 1, naming the file, the line and the key at fault; the format is described in [Writing the waves file](https://nique-epi.github.io/R-Type/waves-file/).
 
 ```bash

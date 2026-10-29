@@ -71,7 +71,7 @@ The Bydos take the names of the list in turn, and the turn carries on from one w
 
 - Start from `normal` and change one key at a time, so the effect of each change is plain.
 - If none is killed, up to 8.5 seconds divided by the interval Bydos are on screen at once, and never more than the wave holds: the three Bydos of the first wave of `normal` are all on screen together, and at one Bydo per second, eight or nine are, once the waves hold that many.
-- A world state datagram carries 124 entities with four players, 128 with one, ships and missiles included (`WorldStateCodec`). Past that, every world state takes one more datagram per player, `WORLD_STATES_PER_SECOND` (20) times per second.
+- A world state datagram carries 124 entities with four players, 128 with one, ships and missiles included (`WorldStateCodec`). Past that, every world state takes one more datagram per player, `--state-rate` times per second (20 by default).
 - `bydos_added_per_wave = 0` keeps every wave the size of the first; `shortest_spawn_interval_ms` equal to `first_spawn_interval_ms` keeps their pace.
 - Try a change by editing the file and starting the server again from the repository root; nothing is rebuilt and the client does not change:
 
