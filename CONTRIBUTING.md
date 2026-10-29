@@ -1,18 +1,13 @@
----
-title: Contributing
-description: What a pull request must respect to be merged on the first try, from the branch to the definition of done.
-sidebar:
-  label: Contributing
----
+# Contributing
 
-This page sums up what a pull request must respect to be accepted on the first try: how to branch, how to write a commit, how the code and its tests are written, what the review looks at, and when a change is done. It is the readable version of the rules in `.claude/rules/`, which state each point in full with a wrong and a right example. The rules are the reference: when this page and a rule disagree, the rule wins and this page is fixed.
+This guide sums up what a pull request must respect to be accepted on the first try: how to branch, how to write a commit, how the code and its tests are written, what the review looks at, and when a change is done. It is the readable version of the rules in `.claude/rules/`, which state each point in full with a wrong and a right example. The rules are the reference: when this guide and a rule disagree, the rule wins and this guide is fixed.
 
 The rules grow from mistakes. Each file of `.claude/rules/fix/` was written after one, and the file of the same name in `.claude/rules-history/` tells what happened.
 
 ## Before you start
 
 - Check that the work is not done already: search the code, and the open pull requests (`gh pr list`) for a teammate already on it.
-- Decide where the code goes before writing it: the first table of [Project layout](/R-Type/project-layout/#where-does-a-new-class-go) answers in five questions.
+- Decide where the code goes before writing it: the first table of [Project layout](https://nique-epi.github.io/R-Type/project-layout/#where-does-a-new-class-go) answers in five questions.
 
 ## Branches
 
@@ -105,9 +100,9 @@ clang-tidy -p build --extra-arg=-isysroot --extra-arg="$SDK" \
 | Rule | In short |
 |---|---|
 | Headers declare, sources define | No function body in a `.hpp`, one-line getters included. Only templates, `constexpr` and `= default` or `= delete` members stay there. |
-| One folder per class | A class, or a header of free functions that has a `.cpp`, lives in a folder of its name with its own `CMakeLists.txt`. See [Adding a class](/R-Type/project-layout/#adding-a-class). |
+| One folder per class | A class, or a header of free functions that has a `.cpp`, lives in a folder of its name with its own `CMakeLists.txt`. See [Adding a class](https://nique-epi.github.io/R-Type/project-layout/#adding-a-class). |
 | One `CMakeLists.txt` per folder | It declares the library of its folder and calls `rtype_enable_warnings()`; the parent adds it with `add_subdirectory`. |
-| Who may link what | The server and the shared libraries never link SFML; the configure stops if they do. See [Who may link what](/R-Type/project-layout/#who-may-link-what). |
+| Who may link what | The server and the shared libraries never link SFML; the configure stops if they do. See [Who may link what](https://nique-epi.github.io/R-Type/project-layout/#who-may-link-what). |
 | Interfaces are pure | An interface holds only `= 0` methods and a `= default` virtual destructor: no body, no data. |
 | Inherit interfaces, compose the rest | A class derives only from interfaces. To reuse code, it holds an object as a member. No `protected` data. |
 | No type inside a class | No nested `struct`, `enum` or `using` alias: each type gets a header of its own. |
@@ -122,7 +117,7 @@ A file you touch that already breaks one of these rules is fixed, not extended: 
 
 ## Tests
 
-Tests use GoogleTest. Each test executable is declared with `rtype_add_test()` in `tests/CMakeLists.txt`, and `tests/` mirrors `src/`: see [Project layout](/R-Type/project-layout/#tests-web-frontend-assets).
+Tests use GoogleTest. Each test executable is declared with `rtype_add_test()` in `tests/CMakeLists.txt`, and `tests/` mirrors `src/`: see [Project layout](https://nique-epi.github.io/R-Type/project-layout/#tests-web-frontend-assets).
 
 Each test checks one behavior and says which in a Given / When / Then comment above it:
 
@@ -155,11 +150,11 @@ It configures in Debug, builds and runs every test. It must pass with zero warni
 The server reads datagrams from clients it cannot trust:
 
 - every size, index or identifier read from a datagram is bounded before it is used, and a datagram that is truncated, too long or of an unknown type is dropped without a crash;
-- the wire format is explicit, with fixed sizes and a byte order (see [Protocol](/R-Type/protocol/)), never a struct copied as is;
+- the wire format is explicit, with fixed sizes and a byte order (see [Protocol](https://nique-epi.github.io/R-Type/protocol/)), never a struct copied as is;
 - a client can never make the server allocate memory in proportion to a value it sends;
 - a check runs before the write it protects, never after;
 - an exception to a check, such as a message accepted from an unknown address, is first played through as an attacker who forges the address and repeats the message every second;
-- data shared between the network thread and the game loop goes through a queue (see [Concurrency](/R-Type/concurrency/)).
+- data shared between the network thread and the game loop goes through a queue (see [Concurrency](https://nique-epi.github.io/R-Type/concurrency/)).
 
 ## Documentation
 
@@ -206,7 +201,7 @@ A review is done by someone who did not write the code. Each finding gives its p
 | Severity | Means | Example |
 |---|---|---|
 | Critical | a crash, undefined behavior, corrupted state, or a flaw a remote client can use | an out-of-bounds read on a received packet |
-| Warning | a bug, a slowdown, or a rule of this page broken | a function body in a `.hpp`, an allocation every frame |
+| Warning | a bug, a slowdown, or a rule of this guide broken | a function body in a `.hpp`, an allocation every frame |
 | Info | style or readability; a matter of taste starts with `Nit:` | a clearer name |
 
 When unsure between two severities, the reviewer picks the lower one. The verdict is `NO-GO` when there is a Critical, `GO-with-changes` when Warnings must be fixed before the merge, and `GO` otherwise.

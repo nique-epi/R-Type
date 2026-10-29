@@ -114,4 +114,4 @@ npm run dev
 
 ## Contributing
 
-How to branch, write a commit, write and test the code, open a pull request and know when a change is done is summed up in [the contributing guide](docs/src/content/docs/contributing.md).
+How to branch, write a commit, write and test the code, open a pull request and know when a change is done is summed up in [the contributing guide](CONTRIBUTING.md).
