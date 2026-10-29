@@ -70,6 +70,21 @@ constexpr std::uint16_t THIRD_SEQUENCE = 3;
 constexpr std::uint16_t FOURTH_SEQUENCE = 4;
 
 /**
+ * @brief The inputs a test player sends follow the ReadyState datagrams, which
+ * use sequences up to FOURTH_SEQUENCE: the datagram of input number n carries
+ * the sequence LAST_READY_SEQUENCE + n, so the datagrams of one player keep the
+ * increasing order a client gives them.
+ */
+constexpr std::uint16_t LAST_READY_SEQUENCE = FOURTH_SEQUENCE;
+
+/**
+ * @brief The sequence of the Disconnection a test player sends when it leaves:
+ * ahead of every other datagram a test sends, as the last datagram of a client
+ * is.
+ */
+constexpr std::uint16_t DISCONNECTION_SEQUENCE = 20000;
+
+/**
  * @brief A few ticks, for the tests that check nothing changes while they
  * run.
  */

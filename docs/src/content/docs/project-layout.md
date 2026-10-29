@@ -245,7 +245,7 @@ This follows our previous projects: shared code in libraries and one folder per 
 
 Player A holds the Up arrow and player B sees A's ship move. Each step happens in one place.
 
-This is the path the design aims for, and only its server half runs today. The inputs of client A reach its game, each tick of a game in progress moves the ships with `ShipControl` before the systems, and the world state goes to every player 20 times per second. Client A does not move its ship before the server answers and replays no input: `client/Prediction` does not exist yet. Both clients draw each ship where the newest world state puts it, without the 100 ms delay. `network/Sessions` and `network/Snapshots` do not exist either: the session token is checked by `DatagramSorter` and the sequence by `GameInstance`, both in `src/server/`, and the world state is written by `WorldStateCodec` in `network/Protocol`.
+This is the path the design aims for, and only its server half runs today. The inputs of client A reach its game, each tick of a game in progress moves the ships with `ShipControl` before the systems, and the world state goes to every player 20 times per second. Client A does not move its ship before the server answers and replays no input: `client/Prediction` does not exist yet. Both clients draw each ship where the newest world state puts it, without the 100 ms delay. `network/Sessions` and `network/Snapshots` do not exist either: the session token is checked by `DatagramSorter` and the sequence by `DatagramReader`, both in `src/server/`, and the world state is written by `WorldStateCodec` in `network/Protocol`.
 
 ```mermaid
 sequenceDiagram

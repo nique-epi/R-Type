@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <optional>
 #include <string>
+#include "ArrivalLedger.hpp"
 #include "ConnectedPlayerConstants.hpp"
 #include "Endpoint.hpp"
 #include "EntityIdConstants.hpp"
@@ -52,9 +53,10 @@ struct ConnectedPlayer {
   /** @brief Whether the player declared itself ready to start; cleared when the
    * game waits for players again. */
   bool ready{false};
-  /** @brief The sequence of the newest datagram accepted from the player for
-   * the messages that need an order, nothing before the first. */
-  std::optional<std::uint16_t> newestReceivedSequence;
+  /** @brief The sequence of the newest datagram accepted from the player, and
+   * how many of the datagrams it sent never arrived. DatagramReader keeps it.
+   */
+  ArrivalLedger arrivals;
   /** @brief The PlayerInput with the highest inputNumber the player sent
    * during the session, to apply at every tick until a newer one arrives;
    * empty until the first one arrives. GameInstance keeps it. */
