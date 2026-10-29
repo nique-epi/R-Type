@@ -56,7 +56,7 @@ The server reads the waves of Bydos from `assets/waves/waves.toml` in the folder
 
 The client is given the IPv4 address and the port of the server, `127.0.0.1` and 4242 by default, and the nickname of the player, `PILOT` by default; its connection screen starts with them. CONNECT on that screen joins the server, so start the server first: without one, the screen shows `SERVER UNREACHABLE` after 5 seconds.
 
-`--help` prints the options of either program. An invalid argument stops it with a message and exit code 1.
+`--no-sound` starts the client without sound: the screens and the volumes work as usual, and nothing plays. `--help` prints the options of either program. An invalid argument stops it with a message and exit code 1.
 
 ## Tests
 
