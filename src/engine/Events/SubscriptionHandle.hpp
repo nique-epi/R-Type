@@ -4,7 +4,8 @@
 
 namespace rtype::engine {
 
-/** @brief Identifies one subscription of an EventBus; never reused. */
+/** @brief Identifies one subscription to an EventBus, or to any list of
+ * callbacks that hands out handles; never reused by what handed it out. */
 struct SubscriptionHandle {
   std::uint64_t identifier;
 
