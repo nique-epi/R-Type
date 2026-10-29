@@ -50,6 +50,52 @@ network::EntitySpawned spawnAt(std::uint32_t projectileId,
                                 .y = position.y};
 }
 
+/**
+ * @returns The shot of the body @p body of @p components whose Gun is @p gun,
+ * where it stands and under which network id; nothing for a body that lacks
+ * a Position or a NetworkIdentity.
+ */
+std::optional<WeaponShot> shotOf(engine::ComponentRegistry& components,
+                                 engine::Entity body, const game::Gun& gun) {
+  const game::Position* const position = components.get<game::Position>(body);
+  const game::NetworkIdentity* const identity =
+      components.get<game::NetworkIdentity>(body);
+  if (position == nullptr || identity == nullptr) {
+    return std::nullopt;
+  }
+  return WeaponShot{.muzzle = *position,
+                    .projectile = gun.projectile,
+                    .shooterId = identity->networkId};
+}
+
+/**
+ * @returns The EntitySpawned of the missile of a player that @p world just
+ * created for @p shot; nothing when the shooter belongs to no player of
+ * @p roster, in which case no missile is created.
+ * @throws NetworkIdExhaustedException when every network id was given.
+ */
+std::optional<network::EntitySpawned> spawnPlayerMissileOf(
+    game::World& world, PlayerRoster& roster, const WeaponShot& shot) {
+  const ConnectedPlayer* const owner = roster.findByShip(shot.shooterId);
+  if (owner == nullptr) {
+    return std::nullopt;
+  }
+  const game::Position start = game::missileStartPosition(shot.muzzle);
+  return spawnAt(world.spawnPlayerMissile(start, owner->playerNumber),
+                 shot.projectile, start);
+}
+
+/**
+ * @returns The EntitySpawned of the missile of an enemy that @p world just
+ * created for @p shot.
+ * @throws NetworkIdExhaustedException when every network id was given.
+ */
+network::EntitySpawned spawnEnemyMissileOf(game::World& world,
+                                           const WeaponShot& shot) {
+  const game::Position start = game::enemyMissileStartPosition(shot.muzzle);
+  return spawnAt(world.spawnEnemyMissile(start), shot.projectile, start);
+}
+
 }  // namespace
 
 WeaponSystem::WeaponSystem(game::World& world, PlayerRoster& roster,
@@ -75,17 +121,12 @@ void WeaponSystem::collectShots() {
         if (!countsDownToReady(gun) || !intent.shooting) {
           return;
         }
-        const game::Position* const position =
-            components.get<game::Position>(body);
-        const game::NetworkIdentity* const identity =
-            components.get<game::NetworkIdentity>(body);
-        if (position == nullptr || identity == nullptr) {
+        const std::optional<WeaponShot> shot = shotOf(components, body, gun);
+        if (!shot.has_value()) {
           return;
         }
         gun.ticksUntilReady = gun.intervalTicks;
-        shots_.push_back(WeaponShot{.muzzle = *position,
-                                    .projectile = gun.projectile,
-                                    .shooterId = identity->networkId});
+        shots_.push_back(*shot);
       });
 }
 
@@ -101,16 +142,9 @@ std::optional<network::EntitySpawned> WeaponSystem::spawnProjectile(
     const WeaponShot& shot) {
   try {
     if (shot.projectile == game::EntityType::PlayerMissile) {
-      const ConnectedPlayer* const owner = roster_->findByShip(shot.shooterId);
-      if (owner == nullptr) {
-        return std::nullopt;
-      }
-      const game::Position start = game::missileStartPosition(shot.muzzle);
-      return spawnAt(world_->spawnPlayerMissile(start, owner->playerNumber),
-                     shot.projectile, start);
+      return spawnPlayerMissileOf(*world_, *roster_, shot);
     }
-    const game::Position start = game::enemyMissileStartPosition(shot.muzzle);
-    return spawnAt(world_->spawnEnemyMissile(start), shot.projectile, start);
+    return spawnEnemyMissileOf(*world_, shot);
   } catch (const engine::NetworkIdExhaustedException&) {
     logger_.warn("no projectile fired: every network id was given");
     return std::nullopt;

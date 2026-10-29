@@ -5,6 +5,7 @@
 #include "PlayerInput.hpp"
 #include "ProtocolConstants.hpp"
 #include "ShipControl.hpp"
+#include "ShipDirections.hpp"
 #include "ShipMotion.hpp"
 #include "World.hpp"
 

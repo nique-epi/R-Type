@@ -24,6 +24,7 @@
 #include "ServerConstants.hpp"
 #include "ServerException.hpp"
 #include "SessionDatagram.hpp"
+#include "ShipDirections.hpp"
 #include "ShipMotion.hpp"
 #include "TimeConstants.hpp"
 #include "WireEntityTypeMapping.hpp"

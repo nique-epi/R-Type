@@ -6,7 +6,6 @@
 #include <optional>
 #include <string>
 #include <string_view>
-#include "BydoController.hpp"
 #include "BydoSpawnerParts.hpp"
 #include "CollisionRules.hpp"
 #include "ConnectedPlayer.hpp"
@@ -121,7 +120,6 @@ void GameFlow::advanceState() {
       game::World& currentWorld = world();
       ++tick_;
       silenceAwayShips(currentWorld, game_.roster.get());
-      steerBydos(currentWorld);
       game_.systems.get().run(currentWorld.components(),
                               engine::SIMULATION_TICK_DURATION);
       weaponSystem_->onTick();

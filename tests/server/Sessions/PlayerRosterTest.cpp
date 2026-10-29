@@ -20,8 +20,7 @@ using testing::OTHER_SESSION_TOKEN;
 using testing::PLAYER_ADDRESS;
 using testing::PLAYER_NICKNAME;
 using testing::SESSION_TOKEN;
-
-constexpr std::uint32_t SOME_SHIP_ID = 7;
+using testing::SOME_SHIP_ID;
 
 network::Endpoint playerEndpoint(std::size_t player) {
   return network::Endpoint{.address = std::string{PLAYER_ADDRESS},

@@ -1,8 +1,8 @@
 #pragma once
 
 #include <cstdint>
-#include "Intent.hpp"
 #include "Position.hpp"
+#include "ShipDirections.hpp"
 #include "ShipMotion.hpp"
 #include "TimeConstants.hpp"
 

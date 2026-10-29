@@ -43,7 +43,8 @@ namespace rtype::server {
  *
  * While the game is in progress, each tick first makes the ship of every away
  * player want nothing (see silenceAwayShips) and writes the Intent of every
- * Bydo (see steerBydos), while the Intent of the ship of a player is its last
+ * Bydo (see BydoControlSystem, one of the systems of the world), while the
+ * Intent of the ship of a player is its last
  * input (see steerShipByInput), then runs
  * the systems of the world (PatternSystem, MovementSystem, PlayfieldExitSystem,
  * which removes a Bydo or a missile of a Bydo that left on the left, or a
@@ -119,9 +120,10 @@ class GameFlow final : public IGameFlow {
    * @brief Runs one tick: ends a game in progress that no player is left in, or
    * that no player left in has a life, then moves the game along its states.
    * While it waits, the players are told the room; while it is in progress, the
-   * tick is counted, the ships move, the systems run, the ships whose players
-   * hold shoot fire, the Bydos fire, the Bydos appear, the waits and
-   * protections of the lives are counted and the world is sent; while it is
+   * tick is counted, the systems run (they move the ships and the Bydos by
+   * their Intent), every Gun whose Intent wants to shoot fires, the Bydos
+   * appear, the waits and protections of the lives are counted and the world
+   * is sent; while it is
    * finished, the players are told the result.
    */
   void onTick();
@@ -147,10 +149,10 @@ class GameFlow final : public IGameFlow {
 
   /** @brief Builds a new world, and every part of the game that works on one
    * world: the rules that judge its collisions, the spawner of its Bydos, the
-   * launcher of its missiles, the gunner of its Bydos and the keeper of the
-   * lives, after telling the replication about the new world. DamageRules is
-   * built before LifeKeeper, so the bus hands each MissileHit to DamageRules
-   * first (see LifeKeeper). */
+   * weapon system of its missiles and the keeper of the lives, after telling
+   * the replication about the new world. DamageRules is built before
+   * LifeKeeper, so the bus hands each MissileHit to DamageRules first (see
+   * LifeKeeper). */
   void buildWorld();
 
   void startNewWorld();

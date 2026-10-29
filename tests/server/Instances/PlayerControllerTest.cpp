@@ -1,4 +1,5 @@
 #include <gtest/gtest.h>
+#include <array>
 #include "ConnectedPlayer.hpp"
 #include "GameInstanceTestConstants.hpp"
 #include "Intent.hpp"
@@ -6,6 +7,7 @@
 #include "PlayerController.hpp"
 #include "PlayerControllerFixture.hpp"
 #include "PlayerControllerTestConstants.hpp"
+#include "PlayerInput.hpp"
 #include "ServerLobbyTestConstants.hpp"
 #include "ShipInput.hpp"
 #include "ShipMotion.hpp"
@@ -107,7 +109,7 @@ TEST_F(PlayerControllerFixture, SilencesTheShipOfAnAwayPlayerOnly) {
 TEST_F(PlayerControllerFixture, FirstInputOfANewShipStartsNoManeuver) {
   ConnectedPlayer& player = addPlayerWithShip(FIRST_PLAYER, SESSION_TOKEN);
   player.newestInputNumber = FIRST_PRESS_INPUT_NUMBER - 1;
-  const network::PlayerInput inputs[] = {
+  const std::array inputs = {
       inputHolding(HOLDS_RIGHT, FIRST_PRESS_INPUT_NUMBER),
       inputHolding(HOLDS_NOTHING, RELEASE_INPUT_NUMBER),
       inputHolding(HOLDS_RIGHT, SECOND_PRESS_INPUT_NUMBER)};
@@ -132,7 +134,7 @@ TEST_F(PlayerControllerFixture, FirstInputOfANewShipStartsNoManeuver) {
 TEST_F(PlayerControllerFixture, FirstInputOfASessionStillPressesWhatItHolds) {
   const ConnectedPlayer& player =
       addPlayerWithShip(FIRST_PLAYER, SESSION_TOKEN);
-  const network::PlayerInput inputs[] = {
+  const std::array inputs = {
       inputHolding(HOLDS_RIGHT, FIRST_PRESS_INPUT_NUMBER),
       inputHolding(HOLDS_NOTHING, RELEASE_INPUT_NUMBER),
       inputHolding(HOLDS_RIGHT, SECOND_PRESS_INPUT_NUMBER)};
@@ -157,7 +159,7 @@ TEST_F(PlayerControllerFixture, FirstInputOfASessionStillPressesWhatItHolds) {
 TEST_F(PlayerControllerFixture, SecondPressOfASteeredShipStartsADash) {
   const ConnectedPlayer& player =
       addPlayerWithShip(FIRST_PLAYER, SESSION_TOKEN);
-  const network::PlayerInput inputs[] = {
+  const std::array inputs = {
       inputHolding(HOLDS_NOTHING, FIRST_PRESS_INPUT_NUMBER - 1),
       inputHolding(HOLDS_RIGHT, FIRST_PRESS_INPUT_NUMBER),
       inputHolding(HOLDS_NOTHING, RELEASE_INPUT_NUMBER),

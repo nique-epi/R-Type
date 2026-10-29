@@ -62,8 +62,8 @@ class WorldStateSender {
  private:
   /** @returns What the WorldState says of each of @p players: its number, its
    * ship, its lives, its score, whether it can be hit, and its motion: the
-   * directions of its newest input and the maneuver its ship in @p components
-   * runs. */
+   * directions of the Intent of its ship and the maneuver its ship in @p
+   * components runs. */
   [[nodiscard]] static std::vector<network::PlayerState> playerStatesOf(
       const ConnectedPlayers& players, engine::ComponentRegistry& components);
   [[nodiscard]] static network::WorldState capture(

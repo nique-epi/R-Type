@@ -2,8 +2,8 @@
 
 #include <cstdint>
 #include "ConnectedPlayer.hpp"
-#include "Intent.hpp"
 #include "PlayerInput.hpp"
+#include "ShipDirections.hpp"
 #include "World.hpp"
 
 namespace rtype::server {

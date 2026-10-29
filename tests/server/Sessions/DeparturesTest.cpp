@@ -85,10 +85,10 @@ TEST_F(DeparturesFixture, ClosesASilentSessionOnceTheGraceIsOver) {
 }
 
 /**
- * Given a player with an input number, not heard from for 299 ticks, 5 s less
- * one When one more tick of silence is counted Then the player is away, its
- * input number cleared, its seat kept and no departure announced; and it was
- * not away a tick before
+ * Given a player with an input number, silent for 299 ticks, 5 s less one
+ * When one more tick of silence is counted
+ * Then the player is away, its input number cleared, its seat kept and no
+ * departure announced; and it was not away a tick before
  */
 TEST_F(DeparturesFixture, MarksAPlayerAwayOnceTheTimeoutIsReached) {
   player().newestInputNumber = SOME_INPUT_NUMBER;

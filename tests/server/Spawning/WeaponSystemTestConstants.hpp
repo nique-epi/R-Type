@@ -19,11 +19,11 @@ constexpr std::size_t TICKS_BETWEEN_TWO_SHOTS = 20;
  */
 constexpr std::size_t ONE_AND_A_HALF_SECONDS_IN_TICKS = 90;
 
-/** @brief Where the gunner tests make a Bydo appear: on screen, above the
+/** @brief Where the weapon tests make a Bydo appear: on screen, above the
  * status band. */
 constexpr game::Position SOME_BYDO{.x = 1000.0F, .y = 300.0F};
 
-/** @brief Where the gunner tests make a second Bydo appear, on another row. */
+/** @brief Where the weapon tests make a second Bydo appear, on another row. */
 constexpr game::Position OTHER_BYDO{.x = 1400.0F, .y = 600.0F};
 
 /**

@@ -7,7 +7,8 @@
 namespace rtype::server {
 
 std::uint8_t livesOf(game::World& world, const ConnectedPlayer& player) {
-  const game::Lives* const lives = world.shipLivesOf(player.shipEntityId);
+  const game::Lives* const lives =
+      world.shipComponentOf<game::Lives>(player.shipEntityId);
   return lives != nullptr ? lives->count : player.livesWithoutShip;
 }
 

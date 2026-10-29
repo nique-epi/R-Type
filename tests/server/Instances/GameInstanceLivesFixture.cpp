@@ -72,7 +72,8 @@ void GameInstanceLivesFixture::takeTheLastLifeOf(std::size_t player) {
   const ConnectedPlayer* const target =
       game().roster().find(playerEndpoint(player));
   ASSERT_NE(target, nullptr);
-  game::Lives* const lives = world().shipLivesOf(target->shipEntityId);
+  auto* const lives =
+      world().shipComponentOf<game::Lives>(target->shipEntityId);
   ASSERT_NE(lives, nullptr);
   lives->count = ONE_LIFE;
   hitTheShipOf(player);

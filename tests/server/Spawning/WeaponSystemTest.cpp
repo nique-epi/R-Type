@@ -11,6 +11,7 @@
 #include "OutgoingDatagram.hpp"
 #include "Position.hpp"
 #include "SentDatagrams.hpp"
+#include "ShipWeaponFixture.hpp"
 #include "TimeConstants.hpp"
 #include "WeaponSystemFixture.hpp"
 #include "WeaponSystemTestConstants.hpp"
@@ -24,7 +25,7 @@ namespace {
  * When one tick runs
  * Then one missile is in the world
  */
-TEST_F(WeaponSystemFixture, ShipFiresAtOnceWhenShootIsHeld) {
+TEST_F(ShipWeaponFixture, ShipFiresAtOnceWhenShootIsHeld) {
   runTicksShooting(connect(FIRST_PLAYER), 1);
 
   EXPECT_EQ(missilesInTheWorld(), 1U);
@@ -36,7 +37,7 @@ TEST_F(WeaponSystemFixture, ShipFiresAtOnceWhenShootIsHeld) {
  * Then the player is sent the EntitySpawned of a missile of a player, in front
  * of its ship
  */
-TEST_F(WeaponSystemFixture, AnnouncesTheMissileInFrontOfTheShip) {
+TEST_F(ShipWeaponFixture, AnnouncesTheMissileInFrontOfTheShip) {
   ConnectedPlayer& player = connect(FIRST_PLAYER);
 
   runTicksShooting(player, 1);
@@ -54,7 +55,7 @@ TEST_F(WeaponSystemFixture, AnnouncesTheMissileInFrontOfTheShip) {
  * When one tick runs
  * Then the second player is sent the EntitySpawned of that missile too
  */
-TEST_F(WeaponSystemFixture, TellsEveryPlayerAboutAMissile) {
+TEST_F(ShipWeaponFixture, TellsEveryPlayerAboutAMissile) {
   ConnectedPlayer& shooter = connect(FIRST_PLAYER);
   static_cast<void>(connect(SECOND_PLAYER));
 
@@ -69,7 +70,7 @@ TEST_F(WeaponSystemFixture, TellsEveryPlayerAboutAMissile) {
  * When one tick runs
  * Then the missile belongs to the second player
  */
-TEST_F(WeaponSystemFixture, GivesTheMissileToThePlayerWhoFired) {
+TEST_F(ShipWeaponFixture, GivesTheMissileToThePlayerWhoFired) {
   static_cast<void>(connect(FIRST_PLAYER));
   ConnectedPlayer& shooter = connect(SECOND_PLAYER);
 
@@ -84,7 +85,7 @@ TEST_F(WeaponSystemFixture, GivesTheMissileToThePlayerWhoFired) {
  * When ticks run
  * Then no missile appears and nothing is sent
  */
-TEST_F(WeaponSystemFixture, FiresNothingWithoutAShooter) {
+TEST_F(ShipWeaponFixture, FiresNothingWithoutAShooter) {
   static_cast<void>(connect(FIRST_PLAYER));
   static_cast<void>(connect(SECOND_PLAYER));
 
@@ -100,7 +101,7 @@ TEST_F(WeaponSystemFixture, FiresNothingWithoutAShooter) {
  * When its wait of 20 ticks is over and one more tick runs
  * Then no missile appears: a missile of a player always has an owner
  */
-TEST_F(WeaponSystemFixture, ShipOfNoConnectedPlayerFiresNothing) {
+TEST_F(ShipWeaponFixture, ShipOfNoConnectedPlayerFiresNothing) {
   ConnectedPlayer& player = connect(FIRST_PLAYER);
   runTicksShooting(player, 1);
   const std::size_t firedByTheOwner = missilesInTheWorld();
@@ -117,7 +118,7 @@ TEST_F(WeaponSystemFixture, ShipOfNoConnectedPlayerFiresNothing) {
  * When a second of ticks runs
  * Then three missiles appeared, the rate chosen for the game
  */
-TEST_F(WeaponSystemFixture, ShipFiresThreeMissilesPerSecondWhileShootIsHeld) {
+TEST_F(ShipWeaponFixture, ShipFiresThreeMissilesPerSecondWhileShootIsHeld) {
   runTicksShooting(connect(FIRST_PLAYER), engine::SIMULATION_TICKS_PER_SECOND);
 
   EXPECT_EQ(missilesInTheWorld(), MISSILES_PER_SECOND_OF_FIRE);
@@ -128,7 +129,7 @@ TEST_F(WeaponSystemFixture, ShipFiresThreeMissilesPerSecondWhileShootIsHeld) {
  * When 20 ticks run, then one more
  * Then one missile appeared in the 20 ticks, and the second at the 21st
  */
-TEST_F(WeaponSystemFixture, ShipWaitsTwentyTicksBetweenTwoMissiles) {
+TEST_F(ShipWeaponFixture, ShipWaitsTwentyTicksBetweenTwoMissiles) {
   ConnectedPlayer& shooter = connect(FIRST_PLAYER);
 
   runTicksShooting(shooter, TICKS_BETWEEN_TWO_SHOTS);
@@ -144,7 +145,7 @@ TEST_F(WeaponSystemFixture, ShipWaitsTwentyTicksBetweenTwoMissiles) {
  * When the rest of the 20 ticks runs
  * Then no second missile appeared: pressing again does not shorten the wait
  */
-TEST_F(WeaponSystemFixture, PressingShootAgainFiresNoSooner) {
+TEST_F(ShipWeaponFixture, PressingShootAgainFiresNoSooner) {
   ConnectedPlayer& shooter = connect(FIRST_PLAYER);
   runTicksShooting(shooter, 1);
 
@@ -166,7 +167,7 @@ TEST_F(WeaponSystemFixture, PressingShootAgainFiresNoSooner) {
  * When it holds shoot again for one tick
  * Then a second missile appears at once
  */
-TEST_F(WeaponSystemFixture, ShipFiresAtOnceWhenShootIsPressedAfterTheWait) {
+TEST_F(ShipWeaponFixture, ShipFiresAtOnceWhenShootIsPressedAfterTheWait) {
   ConnectedPlayer& shooter = connect(FIRST_PLAYER);
   runTicksShooting(shooter, 1);
   runTicksWithoutShooting(TICKS_BETWEEN_TWO_SHOTS);
@@ -182,7 +183,7 @@ TEST_F(WeaponSystemFixture, ShipFiresAtOnceWhenShootIsPressedAfterTheWait) {
  * When that tick runs
  * Then the second player fires at once: each ship waits on its own
  */
-TEST_F(WeaponSystemFixture, EachShipWaitsOnItsOwn) {
+TEST_F(ShipWeaponFixture, EachShipWaitsOnItsOwn) {
   ConnectedPlayer& first = connect(FIRST_PLAYER);
   ConnectedPlayer& second = connect(SECOND_PLAYER);
   runTicksShooting(first, 1);
@@ -313,7 +314,7 @@ TEST_F(WeaponSystemFixture, TellsEveryPlayerAboutTheMissileOfABydo) {
  * Then the ship fired its missile and the Bydo fired nothing: the same system
  * gives each its own first shot
  */
-TEST_F(WeaponSystemFixture, ShipAndBydoHaveTheirOwnFirstShot) {
+TEST_F(ShipWeaponFixture, ShipAndBydoHaveTheirOwnFirstShot) {
   bydoAt(SOME_BYDO);
 
   runTicksShooting(connect(FIRST_PLAYER), 1);
@@ -328,7 +329,7 @@ TEST_F(WeaponSystemFixture, ShipAndBydoHaveTheirOwnFirstShot) {
  * Then the ship fired a missile every 20 ticks, five times, and the Bydo
  * once, at the 90th tick
  */
-TEST_F(WeaponSystemFixture, ShipAndBydoFireAtTheirOwnCadence) {
+TEST_F(ShipWeaponFixture, ShipAndBydoFireAtTheirOwnCadence) {
   bydoAt(SOME_BYDO);
 
   runTicksShooting(connect(FIRST_PLAYER), ONE_AND_A_HALF_SECONDS_IN_TICKS);

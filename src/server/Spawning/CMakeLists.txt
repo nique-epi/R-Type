@@ -24,7 +24,6 @@ target_include_directories(rtype_server_wave_plan INTERFACE ${CMAKE_CURRENT_SOUR
 
 target_link_libraries(rtype_server_wave_plan INTERFACE rtype_game_waves rtype_game_bydo_kind rtype_server_exception_parts)
 
-add_subdirectory(BydoController)
 add_subdirectory(BydoSpawner)
 add_subdirectory(WaveCatalog)
 add_subdirectory(WeaponSystem)

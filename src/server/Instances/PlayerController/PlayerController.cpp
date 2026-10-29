@@ -11,7 +11,7 @@ namespace rtype::server {
 
 void steerShipByInput(game::World& world, const ConnectedPlayer& player,
                       const network::PlayerInput& input) {
-  game::Intent* const intent = world.shipIntentOf(player.shipEntityId);
+  auto* const intent = world.shipComponentOf<game::Intent>(player.shipEntityId);
   if (intent == nullptr) {
     return;
   }
@@ -26,7 +26,8 @@ void silenceAwayShips(game::World& world, PlayerRoster& roster) {
     if (!player->away) {
       continue;
     }
-    game::Intent* const intent = world.shipIntentOf(player->shipEntityId);
+    auto* const intent =
+        world.shipComponentOf<game::Intent>(player->shipEntityId);
     if (intent != nullptr) {
       *intent = game::Intent{};
     }

@@ -15,11 +15,12 @@ namespace rtype::server {
  * @brief Fires the Gun of every body whose Intent wants to shoot, ships and
  * Bydos alike, and tells the players about each projectile.
  *
- * At each onTick(), every Gun that is not ready yet counts one tick down.
- * Every body that has a Gun, an Intent and a Position, whose Intent wants to
- * shoot and whose Gun is ready, fires one projectile of the type of its Gun
- * (see game::World::spawnPlayerMissile and game::World::spawnEnemyMissile),
- * just in front of the body (see game::missileStartPosition and
+ * At each onTick(), every Gun of a body that also has an Intent and is not
+ * ready yet counts one tick down. Every such body that has a Position and a
+ * NetworkIdentity too, whose Intent wants to shoot and whose Gun is ready,
+ * fires one projectile of the type of its Gun (see
+ * game::World::spawnPlayerMissile and game::World::spawnEnemyMissile), just in
+ * front of the body (see game::missileStartPosition and
  * game::enemyMissileStartPosition), and its Gun starts counting its interval
  * again. The wait is counted in the ticks onTick() runs, whether the Intent
  * wants to shoot meanwhile or not, so releasing shoot and pressing it again

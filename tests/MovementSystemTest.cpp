@@ -11,6 +11,7 @@
 #include "MovementSystem.hpp"
 #include "PlayfieldConstants.hpp"
 #include "Position.hpp"
+#include "ShipDirections.hpp"
 #include "ShipMotion.hpp"
 #include "SimulatedClock.hpp"
 #include "SystemScheduler.hpp"

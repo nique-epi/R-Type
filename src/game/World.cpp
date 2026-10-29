@@ -111,23 +111,11 @@ std::size_t World::entityCount() const { return registry_.size(); }
 engine::ComponentRegistry& World::components() { return components_; }
 
 Position* World::shipPositionOf(std::uint32_t shipId) {
-  return shipComponent<Position>(shipId);
+  return shipComponentOf<Position>(shipId);
 }
 
 ShipMotion* World::shipMotionOf(std::uint32_t shipId) {
-  return shipComponent<ShipMotion>(shipId);
-}
-
-Intent* World::shipIntentOf(std::uint32_t shipId) {
-  return shipComponent<Intent>(shipId);
-}
-
-Lives* World::shipLivesOf(std::uint32_t shipId) {
-  return shipComponent<Lives>(shipId);
-}
-
-Invulnerable* World::shipInvulnerabilityOf(std::uint32_t shipId) {
-  return shipComponent<Invulnerable>(shipId);
+  return shipComponentOf<ShipMotion>(shipId);
 }
 
 }  // namespace rtype::game

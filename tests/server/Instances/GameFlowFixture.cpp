@@ -47,7 +47,8 @@ ConnectedPlayer& GameFlowFixture::join(std::size_t index) {
 }
 
 void GameFlowFixture::takeEveryLifeOf(ConnectedPlayer& player) {
-  game::Lives* const lives = world_.current().shipLivesOf(player.shipEntityId);
+  auto* const lives =
+      world_.current().shipComponentOf<game::Lives>(player.shipEntityId);
   ASSERT_NE(lives, nullptr);
   lives->count = 0;
 }

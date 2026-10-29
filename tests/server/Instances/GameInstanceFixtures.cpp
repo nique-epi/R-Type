@@ -312,7 +312,7 @@ std::optional<std::uint8_t> GameInstanceInputTest::heldActions(
   const ConnectedPlayer* const connected =
       game().roster().find(playerEndpoint(player));
   const game::Intent* const intent =
-      world().shipIntentOf(connected->shipEntityId);
+      world().shipComponentOf<game::Intent>(connected->shipEntityId);
   if (intent == nullptr) {
     ADD_FAILURE() << "player " << player << " has no ship";
     return std::nullopt;

@@ -47,9 +47,9 @@ struct CostlyContact {
  * has a life left and is not invulnerable. Nothing otherwise. */
 std::optional<std::uint8_t> livesOfAHittableShip(game::World& world,
                                                  std::uint32_t shipId) {
-  const game::Lives* const lives = world.shipLivesOf(shipId);
+  const game::Lives* const lives = world.shipComponentOf<game::Lives>(shipId);
   const game::Invulnerable* const protection =
-      world.shipInvulnerabilityOf(shipId);
+      world.shipComponentOf<game::Invulnerable>(shipId);
   if (lives == nullptr || protection == nullptr || lives->count == 0 ||
       protection->ticksLeft != 0) {
     return std::nullopt;
@@ -147,7 +147,7 @@ void announceLifeLost(engine::EventBus& events, const logging::Logger& logger,
 void countInvulnerabilityDown(engine::ComponentRegistry& components) {
   components.forEach<game::Invulnerable, game::Invulnerable>(
       [](engine::Entity, game::Invulnerable& protection,
-         const game::Invulnerable& /*same*/) {
+         const game::Invulnerable&) {
         if (protection.ticksLeft > 0) {
           --protection.ticksLeft;
         }
@@ -224,8 +224,8 @@ void LifeKeeper::respawn(ConnectedPlayer& player) {
                  " gets no new ship: every network id was given");
     return;
   }
-  game::Invulnerable* const protection =
-      world_.shipInvulnerabilityOf(player.shipEntityId);
+  auto* const protection =
+      world_.shipComponentOf<game::Invulnerable>(player.shipEntityId);
   if (protection != nullptr) {
     protection->ticksLeft = INVULNERABILITY_TICKS;
   }

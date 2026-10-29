@@ -652,19 +652,21 @@ TEST(World, SpawnedEnemyMissileHasTheBoxOfItsSprite) {
 /**
  * Given a world
  * When a ship is spawned for a player
- * Then shipIntentOf finds an Intent wanting nothing, and no other id has one
+ * Then shipComponentOf finds an Intent wanting nothing, and no other id has one
  */
 TEST(World, ShipIsSpawnedWithAnIntentThatWantsNothing) {
   rtype::game::World world;
   const std::uint32_t shipId =
       world.spawnPlayer(rtype::game::Position{.x = SOME_X, .y = SOME_Y});
 
-  const rtype::game::Intent* const intent = world.shipIntentOf(shipId);
+  const rtype::game::Intent* const intent =
+      world.shipComponentOf<rtype::game::Intent>(shipId);
 
   ASSERT_NE(intent, nullptr);
   EXPECT_FALSE(intent->directions.up);
   EXPECT_FALSE(intent->directions.down);
   EXPECT_FALSE(intent->directions.left);
   EXPECT_FALSE(intent->directions.right);
-  EXPECT_EQ(world.shipIntentOf(shipId + 1), nullptr);
+  EXPECT_FALSE(intent->shooting);
+  EXPECT_EQ(world.shipComponentOf<rtype::game::Intent>(shipId + 1), nullptr);
 }

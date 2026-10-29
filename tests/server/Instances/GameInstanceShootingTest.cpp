@@ -73,6 +73,27 @@ TEST_F(GameInstanceShootingFixture, FiresNothingWhileWaitingForPlayers) {
 }
 
 /**
+ * Given a game in progress whose first player holds shoot, then goes silent
+ * until the server takes it for away
+ * When more ticks than three shot intervals run
+ * Then the second player is sent no new missile: the ship of an away player
+ * stops firing
+ */
+TEST_F(GameInstanceShootingFixture, StopsFiringTheShipOfAnAwayPlayer) {
+  startGame();
+  holdForNextTick(FIRST_PLAYER, HOLDS_SHOOT);
+  tick();
+  silence(FIRST_PLAYER);
+  runTicks(PROTOCOL_SESSION_TIMEOUT_TICKS);
+  ASSERT_TRUE(game().roster().find(playerEndpoint(FIRST_PLAYER))->away);
+  const std::size_t missilesBefore = missilesSentTo(SECOND_PLAYER).size();
+
+  runTicks(3 * TICKS_BETWEEN_TWO_SHOTS);
+
+  EXPECT_EQ(missilesSentTo(SECOND_PLAYER).size(), missilesBefore);
+}
+
+/**
  * Given a finished game whose first player holds shoot
  * When ticks run
  * Then no missile is fired

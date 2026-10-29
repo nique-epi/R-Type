@@ -7,9 +7,6 @@
 #include "ComponentRegistry.hpp"
 #include "Entity.hpp"
 #include "EntityRegistry.hpp"
-#include "Intent.hpp"
-#include "Invulnerable.hpp"
-#include "Lives.hpp"
 #include "LivesConstants.hpp"
 #include "NetworkEntityTable.hpp"
 #include "NetworkIdAllocator.hpp"
@@ -116,33 +113,18 @@ class World {
   [[nodiscard]] ShipMotion* shipMotionOf(std::uint32_t shipId);
 
   /**
-   * @returns The Intent of the ship spawnPlayer gave @p shipId, or nullptr for
-   * any other id, as shipPositionOf() does. The pointer is invalidated by the
-   * next add or remove of an Intent, like ComponentRegistry::get.
+   * @returns The component of type T of the ship spawnPlayer gave @p shipId
+   * (Intent, Lives, Invulnerable, Gun…), or nullptr for any other id or a ship
+   * without that component, as shipPositionOf() does. The pointer is
+   * invalidated by the next add or remove of a T, like ComponentRegistry::get.
    */
-  [[nodiscard]] Intent* shipIntentOf(std::uint32_t shipId);
-
-  /**
-   * @returns The Lives of the ship spawnPlayer gave @p shipId, or nullptr for
-   * any other id, as shipPositionOf() does.
-   */
-  [[nodiscard]] Lives* shipLivesOf(std::uint32_t shipId);
-
-  /**
-   * @returns The Invulnerable of the ship spawnPlayer gave @p shipId, or
-   * nullptr for any other id, as shipPositionOf() does.
-   */
-  [[nodiscard]] Invulnerable* shipInvulnerabilityOf(std::uint32_t shipId);
-
- private:
-  /** @returns The component of type T of the ship spawnPlayer gave @p shipId,
-   * or nullptr for any other id. */
   template <typename T>
-  [[nodiscard]] T* shipComponent(std::uint32_t shipId) {
+  [[nodiscard]] T* shipComponentOf(std::uint32_t shipId) {
     const std::optional<engine::Entity> ship = shipByNetworkId_.find(shipId);
     return ship.has_value() ? components_.get<T>(*ship) : nullptr;
   }
 
+ private:
   engine::EntityRegistry registry_;
   engine::ComponentRegistry components_{registry_};
   engine::NetworkIdAllocator networkIds_;
