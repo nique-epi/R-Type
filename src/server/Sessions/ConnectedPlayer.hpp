@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <optional>
 #include <string>
+#include "ArrivalLedger.hpp"
 #include "Endpoint.hpp"
 #include "EntityIdConstants.hpp"
 #include "LivesConstants.hpp"
@@ -50,9 +51,10 @@ struct ConnectedPlayer {
   /** @brief Whether the player declared itself ready to start; cleared when the
    * game waits for players again. */
   bool ready{false};
-  /** @brief The sequence of the newest datagram accepted from the player for
-   * the messages that need an order, nothing before the first. */
-  std::optional<std::uint16_t> newestReceivedSequence;
+  /** @brief The sequence of the newest datagram accepted from the player, and
+   * how many of the datagrams it sent never arrived. DatagramReader keeps it.
+   */
+  ArrivalLedger arrivals;
   /** @brief The highest inputNumber the player sent during the session, the
    * key that tells a newer input from a late one; empty until the first input
    * arrives. The input itself is held by the Intent of the ship of the player.

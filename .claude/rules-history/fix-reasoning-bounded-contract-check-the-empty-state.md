@@ -24,3 +24,26 @@ When a range goes into prose, write its endpoints as numbers taken from the comp
 
 - ❌ **Before (wrong)**: "newer means ahead by 1 to half the range".
 - ✅ **After (right)**: "newer means ahead by 1 to 32767; exactly half the range (32768) is never newer".
+
+## Update (2026-10-29) — A guard on a size is tested where it changes the result
+
+### Context
+
+The help of the waiting room shares the corners of the squadron box: `paintBoxCorners` places the bottom corners on `top + max(0, height - 1)`, a guard the squadron needs when its opening box closes to 0 rows.
+
+### Mistake
+
+The plan tested the guard on a box one row tall. At height 1 the guarded and the unguarded value are both the top row, so the test could not fail; it was caught while writing the test, before it ran.
+
+### Root cause
+
+The boundary was picked from the word "one row" in the doc comment, not computed: the value of the guard at each size was never written down.
+
+### Rule
+
+Compute the guarded and the unguarded value at each candidate size, test at a size where they differ, and find the smallest size the callers pass.
+
+### Example
+
+- ❌ **Before (wrong)**: `ONE_ROW_BOX({10, 20}, {30, 1})`.
+- ✅ **After (right)**: `CLOSED_BOX({10, 20}, {30, 0})`; without the guard the bottom strokes land on row 19.

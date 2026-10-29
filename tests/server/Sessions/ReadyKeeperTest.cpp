@@ -9,10 +9,6 @@
 namespace rtype::server {
 
 using testing::addPlayer;
-using testing::FIRST_SEQUENCE;
-using testing::LAST_SEQUENCE;
-using testing::NEWER_SEQUENCE;
-using testing::OLDER_SEQUENCE;
 using testing::originOf;
 using testing::SOME_SEQUENCE;
 using testing::TWO_PLAYERS;
@@ -43,40 +39,6 @@ TEST(ReadyKeeper, IgnoresAReadyStateItDoesNotAccept) {
   ReadyKeeper keeper(roster, [] { return false; });
 
   keeper.apply(originOf(0, SOME_SEQUENCE), network::ReadyState{.ready = true});
-
-  EXPECT_FALSE(player.ready);
-}
-
-/**
- * Given a player who said ready in the datagram of sequence 40
- * When a ReadyState of sequence 39 says not ready
- * Then the player stays ready
- */
-TEST(ReadyKeeper, IgnoresAReadyStateOlderThanTheNewestAccepted) {
-  PlayerRoster roster;
-  const ConnectedPlayer& player = addPlayer(roster, 0);
-  ReadyKeeper keeper(roster, [] { return true; });
-  keeper.apply(originOf(0, SOME_SEQUENCE), network::ReadyState{.ready = true});
-
-  keeper.apply(originOf(0, OLDER_SEQUENCE),
-               network::ReadyState{.ready = false});
-
-  EXPECT_TRUE(player.ready);
-}
-
-/**
- * Given a player who said ready in the datagram of sequence 40
- * When a ReadyState of sequence 41 says not ready
- * Then the player is not ready
- */
-TEST(ReadyKeeper, AppliesAReadyStateNewerThanTheNewestAccepted) {
-  PlayerRoster roster;
-  const ConnectedPlayer& player = addPlayer(roster, 0);
-  ReadyKeeper keeper(roster, [] { return true; });
-  keeper.apply(originOf(0, SOME_SEQUENCE), network::ReadyState{.ready = true});
-
-  keeper.apply(originOf(0, NEWER_SEQUENCE),
-               network::ReadyState{.ready = false});
 
   EXPECT_FALSE(player.ready);
 }
@@ -157,23 +119,6 @@ TEST(ReadyKeeper, IsNotReadyWhenEveryPlayerIsAway) {
   player.away = true;
 
   EXPECT_FALSE(keeper.everyPlayerIsReady());
-}
-
-/**
- * Given a player who said ready in the datagram of sequence 65535
- * When a ReadyState of sequence 0 says not ready
- * Then the player is not ready, since sequence 0 follows sequence 65535
- */
-TEST(ReadyKeeper, AppliesAReadyStateOnceTheSequenceWrapsAround) {
-  PlayerRoster roster;
-  const ConnectedPlayer& player = addPlayer(roster, 0);
-  ReadyKeeper keeper(roster, [] { return true; });
-  keeper.apply(originOf(0, LAST_SEQUENCE), network::ReadyState{.ready = true});
-
-  keeper.apply(originOf(0, FIRST_SEQUENCE),
-               network::ReadyState{.ready = false});
-
-  EXPECT_FALSE(player.ready);
 }
 
 }  // namespace rtype::server

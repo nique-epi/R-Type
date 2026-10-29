@@ -73,3 +73,26 @@ The two names were read from the message alone, in the shape a list takes, while
 
 - ❌ **Before (wrong)**: "Spacesuit Suite" and "Stationary Sign" briefed as two tracks.
 - ✅ **After (right)**: `find ~/Downloads -iname '*spacesuit*'` → one track by Stationary Sign, from Epidemic Sound.
+
+## Update (2026-10-29) — A name from another file is read in that file before it is written
+
+### Context
+
+The help of the waiting room holds a HELP chip, a `Button` it paints itself in the state of a bar at rest.
+
+### Mistake
+
+The plan, then the code copied from it, wrote `chip_.paint(canvas, BarState::Rest)`. The enumerator is `BarState::Idle`; the first build failed with `no member named 'Rest'`.
+
+### Root cause
+
+The name was taken from the doc comment of `Button` ("a bar at rest") while planning, and `BarState.hpp` was never opened.
+
+### Rule
+
+Before writing an enumerator, a member or a function of another file, open its header and copy the name from it; code pasted from a plan is checked the same way.
+
+### Example
+
+- ❌ **Before (wrong)**: `BarState::Rest`.
+- ✅ **After (right)**: `BarState.hpp` read → `BarState::Idle`.

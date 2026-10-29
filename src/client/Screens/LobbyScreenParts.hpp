@@ -4,11 +4,12 @@
 #include "IScreenNavigator.hpp"
 #include "IServerConnection.hpp"
 #include "ISoundPlayer.hpp"
+#include "KeyBindings.hpp"
+#include "KeyNames.hpp"
 #include "LobbyPlace.hpp"
 #include "MotionPreference.hpp"
 #include "PlayerPalette.hpp"
 #include "PlayfieldMapping.hpp"
-#include "ReadyKey.hpp"
 
 namespace rtype::client {
 
@@ -32,7 +33,12 @@ struct LobbyScreenParts {
   std::reference_wrapper<IServerConnection> connection;
   /** @brief Gives the point of the playfield under a pixel of the window. */
   PlayfieldMapping playfieldPointAt;
-  ReadyKey readyKey;
+  /** @brief The keys the player chose, read when the screen is built: READY
+   * shows the key bound to BoundAction::Ready, and the help names them all;
+   * they must outlive the screen. */
+  std::reference_wrapper<const KeyBindings> keys;
+  /** @brief Gives the name a keycap shows for a key. */
+  KeyNaming keyName;
   /** @brief The palette the ships and their bands are painted in: a
    * constant, so it outlives the screen. */
   std::reference_wrapper<const PlayerPalette> palette;

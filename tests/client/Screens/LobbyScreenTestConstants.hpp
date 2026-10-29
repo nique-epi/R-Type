@@ -29,10 +29,10 @@ constexpr sf::IntRect FIRST_BAY_CELL_INSIDE({33, 137}, {84, 14});
 constexpr sf::Vector2i BACK_CHIP_MIDDLE =
     sf::Vector2i(415, 238) * INTERFACE_PIXEL;
 
-/** @brief The key READY is bound to in these tests, and the name its keycap
- * shows. */
+/** @brief The key READY is bound to in these tests: the key of a first
+ * launch, DEFAULT_KEYS, since the fixture keeps the bindings of a first
+ * launch. */
 constexpr sf::Keyboard::Scancode READY_KEY = sf::Keyboard::Scan::R;
-constexpr const char* READY_KEY_NAME = "R";
 
 /** @brief The two ready states a test expects the waiting room to ask. */
 const ServerConnectionCall ASK_READY{
