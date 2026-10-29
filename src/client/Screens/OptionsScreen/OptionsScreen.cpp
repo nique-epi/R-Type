@@ -20,7 +20,6 @@
 #include "DropdownParts.hpp"
 #include "IInterfaceCanvas.hpp"
 #include "IScreenNavigator.hpp"
-#include "ISettingsStorage.hpp"
 #include "ISizableWindow.hpp"
 #include "KeyBindings.hpp"
 #include "KeyNames.hpp"
@@ -36,7 +35,10 @@
 #include "PlayfieldMapping.hpp"
 #include "RowControl.hpp"
 #include "ScreenConstants.hpp"
+#include "Setting.hpp"
+#include "SettingDefinitionConstants.hpp"
 #include "SettingsConstants.hpp"
+#include "SettingsService.hpp"
 #include "Slider.hpp"
 #include "Switch.hpp"
 #include "TimeConstants.hpp"
@@ -103,11 +105,10 @@ std::optional<std::string> imposedSizeText(const WindowLayout& layout) {
 }
 
 /** @returns The list of DISPLAY_MODES, showing the mode of the window. A mode
- * picked goes to the window and, once the window takes it, to the settings,
- * then changed is called. */
+ * picked goes to the window and, once the window takes it, to the settings
+ * service. */
 std::unique_ptr<Dropdown> displayModeList(ISizableWindow& window,
-                                          PlayerSettings& settings,
-                                          std::function<void()> changed) {
+                                          SettingsService& service) {
   return std::make_unique<Dropdown>(DropdownParts{
       .choices = textsOf(DISPLAY_MODE_LABELS),
       .available = [](std::size_t) { return true; },
@@ -118,11 +119,9 @@ std::unique_ptr<Dropdown> displayModeList(ISizableWindow& window,
                     window.windowLayout().displayMode());
               },
           .write =
-              [&window, &settings,
-               changed = std::move(changed)](std::size_t mode) {
+              [&window, &service](std::size_t mode) {
                 if (window.selectDisplayMode(DISPLAY_MODES[mode])) {
-                  settings.displayMode = DISPLAY_MODES[mode];
-                  changed();
+                  service.apply(DISPLAY_MODE_SETTING, DISPLAY_MODES[mode]);
                 }
               }},
       .imposedText = {}});
@@ -130,10 +129,9 @@ std::unique_ptr<Dropdown> displayModeList(ISizableWindow& window,
 
 /** @returns The list of WINDOW_SIZES, showing the size of the window, or the
  * size its display mode imposes. A size picked goes to the window and, once
- * the window takes it, to the settings, then changed is called. */
+ * the window takes it, to the settings service. */
 std::unique_ptr<Dropdown> windowSizeList(ISizableWindow& window,
-                                         PlayerSettings& settings,
-                                         std::function<void()> changed) {
+                                         SettingsService& service) {
   return std::make_unique<Dropdown>(DropdownParts{
       .choices = windowSizeTexts(),
       .available =
@@ -147,11 +145,10 @@ std::unique_ptr<Dropdown> windowSizeList(ISizableWindow& window,
                     return window.windowLayout().sizes().selectedIndex();
                   },
               .write =
-                  [&window, &settings,
-                   changed = std::move(changed)](std::size_t index) {
+                  [&window, &service](std::size_t index) {
                     if (window.selectWindowSize(index)) {
-                      settings.windowSize = WINDOW_SIZES[index];
-                      changed();
+                      service.apply(WINDOW_SIZE_SETTING,
+                                    std::optional(WINDOW_SIZES[index]));
                     }
                   }},
       .imposedText =
@@ -177,8 +174,7 @@ OptionsScreen::OptionsScreen(OptionsScreenParts parts,
     : navigator_(&parts.navigator.get()),
       sounds_(&parts.sounds.get()),
       place_(parts.place),
-      settings_(&parts.settings.get()),
-      storage_(&parts.storage.get()),
+      service_(&parts.settings.get()),
       window_(&parts.window.get()),
       keyName_(std::move(parts.keyName)),
       canvas_(std::move(canvas)),
@@ -250,12 +246,10 @@ Menu OptionsScreen::withBack(MenuBuilder& builder) {
 
 Menu OptionsScreen::soundTab() {
   MenuBuilder builder = tabbedPanel(SOUND_TAB);
-  builder
-      .row({.label = MUSIC_LABEL}, volumeSlider(&PlayerSettings::musicVolume))
-      .row({.label = EFFECTS_LABEL},
-           volumeSlider(&PlayerSettings::effectsVolume))
+  builder.row({.label = MUSIC_LABEL}, volumeSlider(MUSIC_VOLUME_SETTING))
+      .row({.label = EFFECTS_LABEL}, volumeSlider(EFFECTS_VOLUME_SETTING))
       .row({.label = MUTE_ALL_LABEL, .description = MUTE_ALL_DESCRIPTION},
-           settingSwitch(&PlayerSettings::muted))
+           settingSwitch(MUTED_SETTING))
       .row({.label = DEFAULT_SOUND_LABEL,
             .description = DEFAULT_SOUND_DESCRIPTION},
            resetLink(DEFAULT_SOUND_QUESTION, [this] { resetSound(); }));
@@ -277,11 +271,9 @@ Menu OptionsScreen::controlsTab() {
 }
 
 Menu OptionsScreen::displayTab() {
-  std::unique_ptr<Dropdown> modes =
-      displayModeList(*window_, *settings_, [this] { changed(); });
+  std::unique_ptr<Dropdown> modes = displayModeList(*window_, *service_);
   displayModes_ = modes.get();
-  std::unique_ptr<Dropdown> sizes =
-      windowSizeList(*window_, *settings_, [this] { changed(); });
+  std::unique_ptr<Dropdown> sizes = windowSizeList(*window_, *service_);
   windowSizes_ = sizes.get();
   MenuBuilder builder = tabbedPanel(DISPLAY_TAB);
   builder.row({.label = DISPLAY_MODE_LABEL}, std::move(modes))
@@ -299,61 +291,61 @@ Menu OptionsScreen::accessTab() {
                ValueBinding<std::size_t>{
                    .read =
                        [this] {
-                         return static_cast<std::size_t>(settings_->colorMode);
+                         return static_cast<std::size_t>(
+                             service_->settings().colorMode);
                        },
                    .write =
                        [this](std::size_t mode) {
-                         settings_->colorMode = COLOR_MODES[mode];
-                         changed();
+                         service_->apply(COLOR_MODE_SETTING, COLOR_MODES[mode]);
                        }}))
       .row({.label = REDUCE_FLASHES_LABEL,
             .description = REDUCE_FLASHES_DESCRIPTION},
-           settingSwitch(&PlayerSettings::reduceFlashes))
+           settingSwitch(REDUCE_FLASHES_SETTING))
       .row({.label = SOUND_CUES_LABEL, .description = SOUND_CUES_DESCRIPTION},
-           settingSwitch(&PlayerSettings::soundCues))
+           settingSwitch(SOUND_CUES_SETTING))
       .row({.label = AUTO_FIRE_LABEL, .description = AUTO_FIRE_DESCRIPTION},
-           settingSwitch(&PlayerSettings::autoFire));
+           settingSwitch(AUTO_FIRE_SETTING));
   return withBack(builder);
 }
 
 std::unique_ptr<RowControl> OptionsScreen::volumeSlider(
-    int PlayerSettings::* volume) {
+    const Setting<int>& volume) {
   return std::make_unique<Slider>(
       VOLUME_RANGE,
-      ValueBinding<int>{.read = [this, volume] { return settings_->*volume; },
-                        .write =
-                            [this, volume](int value) {
-                              settings_->*volume = value;
-                              changed();
-                            }},
-      [this] { return settings_->muted; }, PERCENT_UNIT);
+      ValueBinding<int>{
+          .read = [this,
+                   &volume] { return service_->settings().*volume.member; },
+          .write = [this,
+                    &volume](int value) { service_->apply(volume, value); }},
+      [this] { return service_->settings().muted; }, PERCENT_UNIT);
 }
 
 std::unique_ptr<RowControl> OptionsScreen::settingSwitch(
-    bool PlayerSettings::* setting) {
+    const Setting<bool>& setting) {
   return std::make_unique<Switch>(ValueBinding<bool>{
-      .read = [this, setting] { return settings_->*setting; },
-      .write =
-          [this, setting](bool switchedOn) {
-            settings_->*setting = switchedOn;
-            changed();
-          }});
+      .read = [this, &setting] { return service_->settings().*setting.member; },
+      .write = [this, &setting](
+                   bool switchedOn) { service_->apply(setting, switchedOn); }});
 }
 
 std::unique_ptr<KeySlot> OptionsScreen::keySlot(BoundAction action) {
   return std::make_unique<KeySlot>(KeySlot::Wiring{
-      .key = {.read = [this, action] { return settings_->keys.keyOf(action); },
+      .key = {.read =
+                  [this, action] {
+                    return service_->settings().keys.keyOf(action);
+                  },
               .write =
                   [this, action](sf::Keyboard::Scancode key) {
-                    settings_->keys.bind(action, key);
-                    changed();
+                    service_->bindKey(action, key);
                   }},
       .name = keyName_,
       .accepts =
           [](sf::Keyboard::Scancode key) { return keyName(key).has_value(); },
       .conflicts =
           [this, action] {
-            return settings_->keys.otherActionWithKeyOf(action).has_value();
+            return service_->settings()
+                .keys.otherActionWithKeyOf(action)
+                .has_value();
           }});
 }
 
@@ -370,14 +362,9 @@ void OptionsScreen::openTab(std::size_t tab) {
   }
 }
 
-void OptionsScreen::resetSound() {
-  const PlayerSettings firstLaunch;
-  settings_->musicVolume = firstLaunch.musicVolume;
-  settings_->effectsVolume = firstLaunch.effectsVolume;
-  settings_->muted = firstLaunch.muted;
-}
+void OptionsScreen::resetSound() { service_->resetSound(); }
 
-void OptionsScreen::resetKeys() { settings_->keys = KeyBindings(); }
+void OptionsScreen::resetKeys() { service_->resetKeys(); }
 
 void OptionsScreen::askToReset(const std::string& question,
                                const std::function<void()>& reset) {
@@ -389,7 +376,6 @@ void OptionsScreen::askToReset(const std::string& question,
           .button({.label = YES_LABEL},
                   [this, reset] {
                     reset();
-                    changed();
                     dialogAnswered_ = true;
                   })
           .build();
@@ -402,14 +388,12 @@ void OptionsScreen::closeDialogIfAnswered() {
   }
 }
 
-void OptionsScreen::changed() { unsaved_ = true; }
-
 void OptionsScreen::save() {
-  if (!unsaved_) {
+  const std::optional<bool> saved = service_->saveIfChanged();
+  if (!saved.has_value()) {
     return;
   }
-  unsaved_ = false;
-  if (storage_->save(*settings_)) {
+  if (*saved) {
     stamp_ = SAVED_STAMP;
     stampAge_ = engine::Duration::zero();
     return;
@@ -437,9 +421,11 @@ void OptionsScreen::ageStamp(engine::Duration elapsed) {
 void OptionsScreen::refresh() {
   Menu& sound = tabs_[SOUND_TAB];
   sound.setDescription(
-      MUSIC_ROW, volumeDescription(DEFAULT_MUSIC_VOLUME, settings_->muted));
+      MUSIC_ROW,
+      volumeDescription(DEFAULT_MUSIC_VOLUME, service_->settings().muted));
   sound.setDescription(
-      EFFECTS_ROW, volumeDescription(DEFAULT_EFFECTS_VOLUME, settings_->muted));
+      EFFECTS_ROW,
+      volumeDescription(DEFAULT_EFFECTS_VOLUME, service_->settings().muted));
   for (std::size_t row = 0; row < BOUND_ACTION_COUNT; ++row) {
     tabs_[CONTROLS_TAB].setDescription(FIRST_KEY_ROW + row,
                                        keyDescription(row));
@@ -461,7 +447,7 @@ std::string OptionsScreen::keyDescription(std::size_t row) const {
                                             : LISTENING_DESCRIPTION;
   }
   const std::optional<BoundAction> other =
-      settings_->keys.otherActionWithKeyOf(action);
+      service_->settings().keys.otherActionWithKeyOf(action);
   if (other.has_value()) {
     std::string text(CONFLICT_DESCRIPTION_START);
     text += BOUND_ACTION_LABELS[static_cast<std::size_t>(*other)];

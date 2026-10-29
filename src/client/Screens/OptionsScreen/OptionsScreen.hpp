@@ -11,7 +11,6 @@
 #include "IInterfaceCanvas.hpp"
 #include "IScreen.hpp"
 #include "IScreenNavigator.hpp"
-#include "ISettingsStorage.hpp"
 #include "ISizableWindow.hpp"
 #include "ISoundPlayer.hpp"
 #include "KeyNames.hpp"
@@ -19,9 +18,10 @@
 #include "MenuBuilder.hpp"
 #include "OptionsPlace.hpp"
 #include "OptionsScreenParts.hpp"
-#include "PlayerSettings.hpp"
 #include "PlayfieldMapping.hpp"
 #include "RowControl.hpp"
+#include "Setting.hpp"
+#include "SettingsService.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::client {
@@ -71,9 +71,9 @@ class OptionsScreen : public IScreen {
   [[nodiscard]] Menu accessTab();
 
   [[nodiscard]] std::unique_ptr<RowControl> volumeSlider(
-      int PlayerSettings::* volume);
+      const Setting<int>& volume);
   [[nodiscard]] std::unique_ptr<RowControl> settingSwitch(
-      bool PlayerSettings::* setting);
+      const Setting<bool>& setting);
   [[nodiscard]] std::unique_ptr<KeySlot> keySlot(BoundAction action);
   [[nodiscard]] std::unique_ptr<RowControl> resetLink(
       std::string question, std::function<void()> reset);
@@ -89,8 +89,6 @@ class OptionsScreen : public IScreen {
   /** @brief Closes the dialog once one of its buttons has run: an action must
    * not destroy the menu that runs it. */
   void closeDialogIfAnswered();
-
-  void changed();
 
   /** @brief Saves the settings when a change is not saved yet, and stamps the
    * result; does nothing otherwise. */
@@ -113,8 +111,7 @@ class OptionsScreen : public IScreen {
   IScreenNavigator* navigator_;
   ISoundPlayer* sounds_;
   OptionsPlace place_;
-  PlayerSettings* settings_;
-  ISettingsStorage* storage_;
+  SettingsService* service_;
   ISizableWindow* window_;
   KeyNaming keyName_;
   std::unique_ptr<IInterfaceCanvas> canvas_;
@@ -129,7 +126,6 @@ class OptionsScreen : public IScreen {
   std::size_t openTab_ = 0;
   std::optional<Menu> dialog_;
   bool dialogAnswered_ = false;
-  bool unsaved_ = false;
   std::string stamp_;
   /** @brief How long SAVED has been written; nothing while no stamp fades. */
   std::optional<engine::Duration> stampAge_;
