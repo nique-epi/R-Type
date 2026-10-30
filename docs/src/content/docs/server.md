@@ -255,7 +255,7 @@ send(rtype::server::sessionDatagram(player, rtype::network::GameStarted{}));
 
 ## Sessions of a game: `GameSessions`
 
-`GameSessions` (`src/server/Sessions/GameSessions/`) holds the players of one game and the sessions the server keeps with them. `Sessions/` links no other folder of `src/server`, so `Instances/`, `Lobby/`, `Replication/` and `Spawning/` link it and never the other way round. It is not yet free of R-Type: `ConnectedPlayer` still carries the ship, the score and the lives without a ship of a player, and `Departures` publishes the `PlayerDeparture` of `src/game`. A game gives it a `GameSessionsParts`: the event bus, the send function, `readyAccepted`, which says whether a `ReadyState` counts right now, `onClosing`, which receives each player whose session closes, and `onNewerInput`, which is shown each `PlayerInput` newer than the number kept, before the number is kept.
+`GameSessions` (`src/server/Sessions/GameSessions/`) holds the players of one game and the sessions the server keeps with them. `Sessions/` links no other folder of `src/server`, so `Instances/`, `Lobby/`, `Replication/` and `Spawning/` link it and never the other way round. It is not yet free of R-Type: `ConnectedPlayer` still carries the ship, the score and the lives without a ship of a player, and `Departures` publishes the `PlayerDeparture` of `src/game`. A game gives it a `GameSessionsParts`: the event bus, the send function, the clock it reads when each tick starts (see [Silent players](#silent-players-heartbeats-and-timeouts)), `readyAccepted`, which says whether a `ReadyState` counts right now, `onClosing`, which receives each player whose session closes, and `onNewerInput`, which is shown each `PlayerInput` newer than the number kept, before the number is kept.
 
 | Class or function | Does |
 |---|---|
@@ -330,7 +330,8 @@ rtype::server::GameInstance game{
     rtype::server::GameInstanceParts{.send = send,
                                      .settings = settings,
                                      .events = events,
-                                     .timers = timers},
+                                     .timers = timers,
+                                     .clock = clock},
     rtype::server::rtypeGameModules()};
 ```
 
