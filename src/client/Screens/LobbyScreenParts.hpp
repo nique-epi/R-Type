@@ -4,6 +4,7 @@
 #include "IScreenNavigator.hpp"
 #include "IServerConnection.hpp"
 #include "ISoundPlayer.hpp"
+#include "IWaitingRoom.hpp"
 #include "KeyBindings.hpp"
 #include "KeyNames.hpp"
 #include "LobbyPlace.hpp"
@@ -28,9 +29,11 @@ struct LobbyScreenParts {
   /** @brief Plays the click of the menu and of the ready key, which must
    * outlive the screen. */
   std::reference_wrapper<ISoundPlayer> sounds;
-  /** @brief Session the waiting room reads and drives, which must outlive
-   * it. */
+  /** @brief Session the waiting room leaves, which must outlive it: its
+   * status gives the number of this client. */
   std::reference_wrapper<IServerConnection> connection;
+  /** @brief The room the screen reads and drives, which must outlive it. */
+  std::reference_wrapper<IWaitingRoom> waitingRoom;
   /** @brief Gives the point of the playfield under a pixel of the window. */
   PlayfieldMapping playfieldPointAt;
   /** @brief The keys the player chose, read when the screen is built: READY

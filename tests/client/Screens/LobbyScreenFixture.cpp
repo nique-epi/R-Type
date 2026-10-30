@@ -1,7 +1,5 @@
 #include "LobbyScreenFixture.hpp"
 #include <SFML/Window/Keyboard.hpp>
-#include <algorithm>
-#include <iterator>
 #include <memory>
 #include <utility>
 #include <vector>
@@ -20,6 +18,7 @@
 #include "RecordingNavigator.hpp"
 #include "RecordingServerConnection.hpp"
 #include "RecordingSoundPlayer.hpp"
+#include "RecordingWaitingRoom.hpp"
 #include "ScreenTestConstants.hpp"
 
 using rtype::client::ConnectionStatus;
@@ -35,6 +34,7 @@ LobbyScreenFixture::LobbyScreenFixture(LobbyPlace place)
     : screen_(LobbyScreenParts{.navigator = navigator_,
                                .sounds = sounds_,
                                .connection = connection_,
+                               .waitingRoom = waitingRoom_,
                                .playfieldPointAt = samePlayfieldPoint,
                                .keys = keys_,
                                .keyName = nameInTheFile,
@@ -47,7 +47,7 @@ LobbyScreenFixture::LobbyScreenFixture(LobbyPlace place)
 }
 
 void LobbyScreenFixture::list(std::vector<LobbyPlayer> players) {
-  connection_.setLobbyPlayers(std::move(players));
+  waitingRoom_.setLobbyPlayers(std::move(players));
   screen_.update(ONE_FRAME);
 }
 
@@ -57,14 +57,8 @@ void LobbyScreenFixture::tap(sf::Keyboard::Key key,
   screen_.handleEvent(keyRelease(key, scancode));
 }
 
-std::vector<ServerConnectionCall> LobbyScreenFixture::readyRequests() const {
-  std::vector<ServerConnectionCall> requests;
-  std::ranges::copy_if(connection_.calls(), std::back_inserter(requests),
-                       [](const ServerConnectionCall& call) noexcept {
-                         return call.request ==
-                                ServerConnectionCall::Request::SetReady;
-                       });
-  return requests;
+const std::vector<bool>& LobbyScreenFixture::readyRequests() const {
+  return waitingRoom_.readyRequests();
 }
 
 const RecordingNavigator& LobbyScreenFixture::navigator() const {
@@ -74,6 +68,8 @@ const RecordingNavigator& LobbyScreenFixture::navigator() const {
 RecordingServerConnection& LobbyScreenFixture::connection() {
   return connection_;
 }
+
+RecordingWaitingRoom& LobbyScreenFixture::waitingRoom() { return waitingRoom_; }
 
 const InterfaceCanvasRecord& LobbyScreenFixture::canvas() const {
   return canvas_;

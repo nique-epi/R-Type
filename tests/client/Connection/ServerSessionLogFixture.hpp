@@ -1,12 +1,12 @@
 #pragma once
 
 #include "DebugJournal.hpp"
-#include "ServerConnectionFixture.hpp"
+#include "ServerSessionFixture.hpp"
 
 namespace rtype::client::testing {
 
 /** @brief The connection, with the log written to a journal the test reads. */
-class ServerConnectionLogFixture : public ServerConnectionFixture {
+class ServerSessionLogFixture : public ServerSessionFixture {
  protected:
   [[nodiscard]] const DebugJournal& journal() const;
 

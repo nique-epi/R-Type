@@ -11,6 +11,7 @@
 #include "RecordingNavigator.hpp"
 #include "RecordingServerConnection.hpp"
 #include "RecordingSoundPlayer.hpp"
+#include "RecordingWaitingRoom.hpp"
 
 /** @brief A waiting room alone, the local player accepted as player 1, with
  * a recording navigator, connection and canvas, and the bindings of a first
@@ -26,11 +27,12 @@ class LobbyScreenFixture : public ::testing::Test {
   /** @brief Presses then releases a key, by its place on the keyboard. */
   void tap(sf::Keyboard::Key key, sf::Keyboard::Scancode scancode);
 
-  /** @returns The ready states asked of the connection, in order. */
-  [[nodiscard]] std::vector<ServerConnectionCall> readyRequests() const;
+  /** @returns The ready states asked of the waiting room, in order. */
+  [[nodiscard]] const std::vector<bool>& readyRequests() const;
 
   [[nodiscard]] const RecordingNavigator& navigator() const;
   [[nodiscard]] RecordingServerConnection& connection();
+  [[nodiscard]] RecordingWaitingRoom& waitingRoom();
   [[nodiscard]] const InterfaceCanvasRecord& canvas() const;
   [[nodiscard]] rtype::client::LobbyScreen& screen();
 
@@ -40,6 +42,7 @@ class LobbyScreenFixture : public ::testing::Test {
  private:
   RecordingNavigator navigator_;
   RecordingServerConnection connection_;
+  RecordingWaitingRoom waitingRoom_;
   InterfaceCanvasRecord canvas_;
   RecordingSoundPlayer sounds_;
   rtype::client::KeyBindings keys_;

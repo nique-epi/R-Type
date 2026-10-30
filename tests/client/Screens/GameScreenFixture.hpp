@@ -13,6 +13,7 @@
 #include "RecordingServerConnection.hpp"
 #include "RecordingSky.hpp"
 #include "RecordingSoundPlayer.hpp"
+#include "RecordingWaitingRoom.hpp"
 #include "ScreenStack.hpp"
 
 /** @brief The real game screen alone in a stack whose other screens are
@@ -53,6 +54,7 @@ class GameScreenFixture : public ::testing::Test {
   RecordingPlayerInputLink inputs_;
   FakeEntityMessageSource entityMessages_;
   RecordingServerConnection connection_;
+  RecordingWaitingRoom waitingRoom_;
   InterfaceCanvasRecord statusCanvas_;
   DrawJournal drawJournal_;
   RecordingSky sky_;

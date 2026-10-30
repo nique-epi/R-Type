@@ -2,7 +2,7 @@
 #include <chrono>
 #include "ConnectionConstants.hpp"
 #include "PlayerInputPacer.hpp"
-#include "ServerConnectionTestConstants.hpp"
+#include "ServerSessionTestConstants.hpp"
 #include "TimeConstants.hpp"
 #include "TimeTestConstants.hpp"
 

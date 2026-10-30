@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 #include "GameEventHistory.hpp"
 #include "GameEventHistoryTestConstants.hpp"
-#include "ServerConnectionTestConstants.hpp"
+#include "ServerSessionTestConstants.hpp"
 #include "TimeTestConstants.hpp"
 
 using rtype::client::GameEventHistory;

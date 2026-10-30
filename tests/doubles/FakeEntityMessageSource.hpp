@@ -6,8 +6,8 @@
 
 /**
  * @brief Entity message source double: the next drain hands over the messages
- * the test queued, in the order it queued them, as ServerConnection hands over
- * those of the server in the order they arrived. A test may queue what the
+ * the test queued, in the order it queued them, as EntityMessageQueue hands
+ * over those of the server in the order they arrived. A test may queue what the
  * network brings: the copies of a message, the parts of one state.
  */
 class FakeEntityMessageSource : public rtype::client::IEntityMessageSource {

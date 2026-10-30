@@ -22,7 +22,7 @@
 #include "RecordingSoundPlayer.hpp"
 #include "ScreenId.hpp"
 #include "ScreenTestConstants.hpp"
-#include "ServerConnectionTestConstants.hpp"
+#include "ServerSessionTestConstants.hpp"
 #include "SoundConstants.hpp"
 
 using rtype::client::ACCEPTED_STATUS_DURATION;

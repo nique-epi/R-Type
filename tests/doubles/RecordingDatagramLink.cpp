@@ -1,7 +1,9 @@
 #include "RecordingDatagramLink.hpp"
 #include <iterator>
+#include <optional>
 #include <utility>
 #include <vector>
+#include "Endpoint.hpp"
 #include "IncomingDatagram.hpp"
 #include "OutgoingDatagram.hpp"
 
@@ -17,6 +19,11 @@ void RecordingDatagramLink::drainReceived(
   delivered_.clear();
 }
 
+void RecordingDatagramLink::listenTo(const rtype::network::Endpoint& sender) {
+  listenedTo_ = sender;
+  delivered_.clear();
+}
+
 void RecordingDatagramLink::deliver(rtype::network::IncomingDatagram datagram) {
   delivered_.push_back(std::move(datagram));
 }
@@ -24,4 +31,9 @@ void RecordingDatagramLink::deliver(rtype::network::IncomingDatagram datagram) {
 const std::vector<rtype::network::OutgoingDatagram>&
 RecordingDatagramLink::sent() const {
   return sent_;
+}
+
+const std::optional<rtype::network::Endpoint>&
+RecordingDatagramLink::listenedTo() const {
+  return listenedTo_;
 }

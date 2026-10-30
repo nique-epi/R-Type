@@ -6,7 +6,7 @@
 
 using rtype::client::GameScreenParts;
 
-LoneGameParts::LoneGameParts() { seatThreePilots(connection); }
+LoneGameParts::LoneGameParts() { seatThreePilots(connection, waitingRoom); }
 
 GameScreenParts LoneGameParts::parts() {
   return GameScreenParts{.navigator = navigator,
@@ -14,6 +14,7 @@ GameScreenParts LoneGameParts::parts() {
                          .inputs = inputs,
                          .entityMessages = entityMessages,
                          .connection = connection,
+                         .waitingRoom = waitingRoom,
                          .sky = sky,
                          .sounds = sounds,
                          .result = result};

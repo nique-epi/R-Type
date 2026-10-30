@@ -176,7 +176,7 @@ TEST_F(LobbyScreenFixture, TheReadyKeyAsksToBeReady) {
  */
 TEST_F(LobbyScreenFixture, TheReadyKeyAsksNotToBeReadyOnceAsked) {
   list({pilot(OWN_NUMBER, OWN_NICKNAME, false)});
-  connection().setRequestedReady(true);
+  waitingRoom().setRequestedReady(true);
 
   tap(sf::Keyboard::Key::R, READY_KEY);
 
@@ -217,7 +217,7 @@ TEST_F(LobbyScreenFixture, TheReadyBarAsksToBeReady) {
  * Then the bar reads CANCEL READY
  */
 TEST_F(LobbyScreenFixture, TheBarSaysCancelReadyOnceAsked) {
-  connection().setRequestedReady(true);
+  waitingRoom().setRequestedReady(true);
 
   list({pilot(OWN_NUMBER, OWN_NICKNAME, false)});
 
@@ -231,7 +231,7 @@ TEST_F(LobbyScreenFixture, TheBarSaysCancelReadyOnceAsked) {
  * Then its cell says READY... on gold
  */
 TEST_F(LobbyScreenFixture, AnAskTheServerDoesNotShowYetIsWaitedFor) {
-  connection().setRequestedReady(true);
+  waitingRoom().setRequestedReady(true);
 
   list({pilot(OWN_NUMBER, OWN_NICKNAME, false)});
 
@@ -247,7 +247,7 @@ TEST_F(LobbyScreenFixture, AnAskTheServerDoesNotShowYetIsWaitedFor) {
  * Then the game is asked for in place of every screen, once
  */
 TEST_F(LobbyScreenFixture, TheGameIsAskedOnceItStarted) {
-  connection().setGameStarted(true);
+  waitingRoom().setGameStarted(true);
 
   screen().update(ONE_FRAME);
   screen().update(ONE_FRAME);

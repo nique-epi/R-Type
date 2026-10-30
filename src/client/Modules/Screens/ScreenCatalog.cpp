@@ -37,7 +37,7 @@
 #include "ScreenAssets.hpp"
 #include "ScreenCatalogParts.hpp"
 #include "ScreenId.hpp"
-#include "ServerConnection.hpp"
+#include "ServerSession.hpp"
 #include "SquadronStart.hpp"
 #include "TitleScreen.hpp"
 #include "TitleScreenParts.hpp"
@@ -151,13 +151,14 @@ std::unique_ptr<IScreen> ScreenCatalog::gameScreen() {
   if (loading != nullptr) {
     return loading;
   }
-  ServerConnection& connection = parts_.services.connection.get();
+  ServerSession& connection = parts_.services.connection.get();
   return std::make_unique<GameScreen>(
       GameScreenParts{.navigator = parts_.navigator.get(),
                       .settings = parts_.services.settings.get(),
                       .inputs = connection,
-                      .entityMessages = connection,
+                      .entityMessages = parts_.services.entityMessages.get(),
                       .connection = connection,
+                      .waitingRoom = parts_.services.waitingRoom.get(),
                       .sky = parts_.sky.get(),
                       .sounds = sounds(),
                       .result = parts_.gameResult.get()},
@@ -190,6 +191,7 @@ std::unique_ptr<IScreen> ScreenCatalog::lobbyScreen(ScreenId screen) {
       LobbyScreenParts{.navigator = parts_.navigator.get(),
                        .sounds = sounds(),
                        .connection = parts_.services.connection.get(),
+                       .waitingRoom = parts_.services.waitingRoom.get(),
                        .playfieldPointAt = playfieldMapping(),
                        .keys = settings.keys,
                        .keyName = localizedKeyName,
