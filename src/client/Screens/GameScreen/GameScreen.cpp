@@ -34,6 +34,8 @@
 #include "PlayerPreferences.hpp"
 #include "ShipFlightSystem.hpp"
 // NOLINTNEXTLINE(misc-include-cleaner)
+#include "GameScreenIdConstants.hpp"
+#include "MenuScreenIdConstants.hpp"
 #include "PlayerSettings.hpp"
 #include "ScreenConstants.hpp"
 #include "ScreenId.hpp"
@@ -95,7 +97,7 @@ void GameScreen::handleEvent(const sf::Event& event) {
   const auto* released = event.getIf<sf::Event::KeyReleased>();
   if (released != nullptr && released->code == OPTIONS_KEY) {
     playerCommands_.releaseAll();
-    navigator_->push(ScreenId::GameOptions);
+    navigator_->push(GAME_OPTIONS_SCREEN);
   }
   if (const auto* keyPressed = event.getIf<sf::Event::KeyPressed>()) {
     playerCommands_.keyPressed(keyPressed->scancode);
@@ -162,7 +164,7 @@ void GameScreen::askForTheEndWhenDue() {
     return;
   }
   endedAt_.reset();
-  navigator_->replaceAll(ScreenId::End);
+  navigator_->replaceAll(END_SCREEN);
 }
 
 void GameScreen::repaintStatusWhenChanged() {

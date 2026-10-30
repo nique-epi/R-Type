@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <functional>
 #include <memory>
+#include <string_view>
 #include <vector>
 #include "IScreen.hpp"
 #include "IScreenNavigator.hpp"
@@ -73,7 +74,7 @@ class ScreenStack : public IScreenNavigator {
 
   struct Change {
     ChangeKind kind{};
-    ScreenId screen{};
+    ScreenId screen{std::string_view{}};
   };
 
   void apply(const Change& change);

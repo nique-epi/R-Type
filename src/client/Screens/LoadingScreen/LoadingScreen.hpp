@@ -1,11 +1,10 @@
 #pragma once
 
 #include <SFML/Graphics/RectangleShape.hpp>
-#include "AssetLibrary.hpp"
-#include "AssetList.hpp"
 #include "AssetLoadingStep.hpp"
 #include "IScreen.hpp"
 #include "IScreenNavigator.hpp"
+#include "LoadingScreenParts.hpp"
 #include "ScreenId.hpp"
 #include "TimeConstants.hpp"
 
@@ -28,15 +27,10 @@ class LoadingScreen : public IScreen {
    * permanent ones: build it once the screens that used them are destroyed,
    * as ScreenStack::replaceAll() does.
    *
-   * @param navigator Screens the loading screen lives among, which must
-   * outlive it.
-   * @param library Library the assets are loaded into, which must outlive the
-   * screen.
-   * @param assets Assets the next screen needs.
-   * @param nextScreen Screen shown once every asset is loaded.
+   * @param parts The screens it lives among, the library and the assets to
+   * load, and the screen shown once every asset is loaded.
    */
-  LoadingScreen(IScreenNavigator& navigator, AssetLibrary& library,
-                const AssetList& assets, ScreenId nextScreen);
+  explicit LoadingScreen(const LoadingScreenParts& parts);
 
   /** @brief Ignores every event: nothing can be done while a game loads. */
   void handleEvent(const sf::Event& event) override;

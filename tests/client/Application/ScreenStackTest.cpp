@@ -7,12 +7,17 @@
 #include <utility>
 #include <vector>
 #include "BlankRenderTarget.hpp"
+#include "GameScreenIdConstants.hpp"
 #include "KeyPress.hpp"
+#include "MenuScreenIdConstants.hpp"
 #include "RecordingScreen.hpp"
 #include "ScreenId.hpp"
 #include "ScreenStack.hpp"
 #include "ScreenTestConstants.hpp"
 
+using rtype::client::GAME_SCREEN;
+using rtype::client::OPTIONS_SCREEN;
+using rtype::client::QUIT_CONFIRMATION_SCREEN;
 using rtype::client::ScreenId;
 using rtype::client::ScreenStack;
 using ::testing::ElementsAre;
@@ -28,8 +33,8 @@ constexpr sf::Keyboard::Key ANY_KEY = sf::Keyboard::Key::A;
 class ScreenStackTest : public ::testing::Test {
  protected:
   void showOptionsOverTheGame() {
-    screens_.push(ScreenId::Game);
-    screens_.push(ScreenId::Options);
+    screens_.push(GAME_SCREEN);
+    screens_.push(OPTIONS_SCREEN);
     screens_.applyPendingChanges();
     journal_.clear();
   }
@@ -53,7 +58,7 @@ class ScreenStackTest : public ::testing::Test {
   ScreenStack screens_{[this](ScreenId screen) {
     auto built = std::make_unique<RecordingScreen>(screen, journal_);
     built->setHidesScreensBelow(hidingScreens_.contains(screen));
-    if (screen == ScreenId::Game && onGameBuilt_ != nullptr) {
+    if (screen == GAME_SCREEN && onGameBuilt_ != nullptr) {
       onGameBuilt_(*built);
     }
     return built;
@@ -73,7 +78,7 @@ TEST_F(ScreenStackTest, EventsReachOnlyTheScreenOnTop) {
   screens().handleEvent(keyPress(ANY_KEY));
 
   EXPECT_THAT(journal(),
-              ElementsAre(JournalEntry{.screen = ScreenId::Options,
+              ElementsAre(JournalEntry{.screen = OPTIONS_SCREEN,
                                        .call = ScreenCall::HandleEvent}));
 }
 
@@ -87,10 +92,11 @@ TEST_F(ScreenStackTest, EveryScreenIsUpdatedFromTheBottomUp) {
 
   screens().update(ONE_FRAME);
 
-  EXPECT_THAT(journal(), ElementsAre(JournalEntry{.screen = ScreenId::Game,
-                                                  .call = ScreenCall::Update},
-                                     JournalEntry{.screen = ScreenId::Options,
-                                                  .call = ScreenCall::Update}));
+  EXPECT_THAT(
+      journal(),
+      ElementsAre(
+          JournalEntry{.screen = GAME_SCREEN, .call = ScreenCall::Update},
+          JournalEntry{.screen = OPTIONS_SCREEN, .call = ScreenCall::Update}));
 }
 
 /**
@@ -107,8 +113,8 @@ TEST_F(ScreenStackTest, EveryScreenIsDrawnFromTheBottomUp) {
   EXPECT_THAT(
       journal(),
       ElementsAre(
-          JournalEntry{.screen = ScreenId::Game, .call = ScreenCall::Draw},
-          JournalEntry{.screen = ScreenId::Options, .call = ScreenCall::Draw}));
+          JournalEntry{.screen = GAME_SCREEN, .call = ScreenCall::Draw},
+          JournalEntry{.screen = OPTIONS_SCREEN, .call = ScreenCall::Draw}));
 }
 
 /**
@@ -125,7 +131,7 @@ TEST_F(ScreenStackTest, PoppingGivesTheEventsBackToTheScreenBelow) {
   screens().handleEvent(keyPress(ANY_KEY));
 
   EXPECT_THAT(journal(),
-              ElementsAre(JournalEntry{.screen = ScreenId::Game,
+              ElementsAre(JournalEntry{.screen = GAME_SCREEN,
                                        .call = ScreenCall::HandleEvent}));
 }
 
@@ -135,7 +141,7 @@ TEST_F(ScreenStackTest, PoppingGivesTheEventsBackToTheScreenBelow) {
  * Then the screen is neither built nor given the event
  */
 TEST_F(ScreenStackTest, AskedChangeWaitsUntilApplied) {
-  screens().push(ScreenId::Game);
+  screens().push(GAME_SCREEN);
 
   screens().handleEvent(keyPress(ANY_KEY));
 
@@ -151,14 +157,14 @@ TEST_F(ScreenStackTest, ScreenAskingToLeaveStaysAliveWhileHandlingAnEvent) {
   onGameBuilt([this](RecordingScreen& game) {
     game.runOnEvent([this] { screens().pop(); });
   });
-  screens().push(ScreenId::Game);
+  screens().push(GAME_SCREEN);
   screens().applyPendingChanges();
   journal().clear();
 
   screens().handleEvent(keyPress(ANY_KEY));
 
   EXPECT_THAT(journal(),
-              ElementsAre(JournalEntry{.screen = ScreenId::Game,
+              ElementsAre(JournalEntry{.screen = GAME_SCREEN,
                                        .call = ScreenCall::HandleEvent}));
 }
 
@@ -170,16 +176,15 @@ TEST_F(ScreenStackTest, ScreenAskingToLeaveStaysAliveWhileHandlingAnEvent) {
 TEST_F(ScreenStackTest, ReplacingDestroysEveryScreenBeforeBuildingTheNewOne) {
   showOptionsOverTheGame();
 
-  screens().replaceAll(ScreenId::Game);
+  screens().replaceAll(GAME_SCREEN);
   screens().applyPendingChanges();
 
   EXPECT_THAT(
       journal(),
       ElementsAre(
-          JournalEntry{.screen = ScreenId::Options,
-                       .call = ScreenCall::Destroyed},
-          JournalEntry{.screen = ScreenId::Game, .call = ScreenCall::Destroyed},
-          JournalEntry{.screen = ScreenId::Game, .call = ScreenCall::Built}));
+          JournalEntry{.screen = OPTIONS_SCREEN, .call = ScreenCall::Destroyed},
+          JournalEntry{.screen = GAME_SCREEN, .call = ScreenCall::Destroyed},
+          JournalEntry{.screen = GAME_SCREEN, .call = ScreenCall::Built}));
 }
 
 /**
@@ -188,7 +193,7 @@ TEST_F(ScreenStackTest, ReplacingDestroysEveryScreenBeforeBuildingTheNewOne) {
  * Then they are applied in that order and the stack is empty
  */
 TEST_F(ScreenStackTest, ChangesAreAppliedInTheOrderAskedFor) {
-  screens().push(ScreenId::Game);
+  screens().push(GAME_SCREEN);
   screens().pop();
 
   screens().applyPendingChanges();
@@ -216,17 +221,17 @@ TEST_F(ScreenStackTest, PoppingAnEmptyStackLeavesItEmpty) {
  */
 TEST_F(ScreenStackTest, ChangeAskedWhileApplyingWaitsForTheNextApply) {
   onGameBuilt([this]([[maybe_unused]] RecordingScreen& game) {
-    screens().push(ScreenId::Options);
+    screens().push(OPTIONS_SCREEN);
   });
-  screens().push(ScreenId::Game);
+  screens().push(GAME_SCREEN);
   screens().applyPendingChanges();
 
   screens().handleEvent(keyPress(ANY_KEY));
 
   EXPECT_THAT(journal(),
-              ElementsAre(JournalEntry{.screen = ScreenId::Game,
+              ElementsAre(JournalEntry{.screen = GAME_SCREEN,
                                        .call = ScreenCall::Built},
-                          JournalEntry{.screen = ScreenId::Game,
+                          JournalEntry{.screen = GAME_SCREEN,
                                        .call = ScreenCall::HandleEvent}));
 }
 
@@ -257,11 +262,11 @@ TEST_F(ScreenStackTest, CloseAllDestroysEveryScreenFromTheTopDown) {
   screens().closeAll();
   screens().applyPendingChanges();
 
-  EXPECT_THAT(journal(),
-              ElementsAre(JournalEntry{.screen = ScreenId::Options,
-                                       .call = ScreenCall::Destroyed},
-                          JournalEntry{.screen = ScreenId::Game,
-                                       .call = ScreenCall::Destroyed}));
+  EXPECT_THAT(
+      journal(),
+      ElementsAre(
+          JournalEntry{.screen = OPTIONS_SCREEN, .call = ScreenCall::Destroyed},
+          JournalEntry{.screen = GAME_SCREEN, .call = ScreenCall::Destroyed}));
 }
 
 /**
@@ -285,12 +290,12 @@ TEST_F(ScreenStackTest, CloseAllLeavesNoScreen) {
  */
 TEST_F(ScreenStackTest, AScreenThatHidesTheScreensBelowLeavesThemUndrawn) {
   BlankRenderTarget target;
-  hideTheScreensBelow(ScreenId::Options);
+  hideTheScreensBelow(OPTIONS_SCREEN);
   showOptionsOverTheGame();
 
   screens().draw(target);
 
-  EXPECT_THAT(journal(), ElementsAre(JournalEntry{.screen = ScreenId::Options,
+  EXPECT_THAT(journal(), ElementsAre(JournalEntry{.screen = OPTIONS_SCREEN,
                                                   .call = ScreenCall::Draw}));
 }
 
@@ -300,15 +305,16 @@ TEST_F(ScreenStackTest, AScreenThatHidesTheScreensBelowLeavesThemUndrawn) {
  * Then the game is updated too, so it keeps running behind the options
  */
 TEST_F(ScreenStackTest, AHiddenScreenIsStillUpdated) {
-  hideTheScreensBelow(ScreenId::Options);
+  hideTheScreensBelow(OPTIONS_SCREEN);
   showOptionsOverTheGame();
 
   screens().update(ONE_FRAME);
 
-  EXPECT_THAT(journal(), ElementsAre(JournalEntry{.screen = ScreenId::Game,
-                                                  .call = ScreenCall::Update},
-                                     JournalEntry{.screen = ScreenId::Options,
-                                                  .call = ScreenCall::Update}));
+  EXPECT_THAT(
+      journal(),
+      ElementsAre(
+          JournalEntry{.screen = GAME_SCREEN, .call = ScreenCall::Update},
+          JournalEntry{.screen = OPTIONS_SCREEN, .call = ScreenCall::Update}));
 }
 
 /**
@@ -319,18 +325,18 @@ TEST_F(ScreenStackTest, AHiddenScreenIsStillUpdated) {
  */
 TEST_F(ScreenStackTest, DrawingStartsAtTheTopmostScreenThatHidesTheOthers) {
   BlankRenderTarget target;
-  hideTheScreensBelow(ScreenId::Options);
+  hideTheScreensBelow(OPTIONS_SCREEN);
   showOptionsOverTheGame();
-  screens().push(ScreenId::QuitConfirmation);
+  screens().push(QUIT_CONFIRMATION_SCREEN);
   screens().applyPendingChanges();
   journal().clear();
 
   screens().draw(target);
 
   EXPECT_THAT(journal(),
-              ElementsAre(JournalEntry{.screen = ScreenId::Options,
+              ElementsAre(JournalEntry{.screen = OPTIONS_SCREEN,
                                        .call = ScreenCall::Draw},
-                          JournalEntry{.screen = ScreenId::QuitConfirmation,
+                          JournalEntry{.screen = QUIT_CONFIRMATION_SCREEN,
                                        .call = ScreenCall::Draw}));
 }
 
@@ -341,14 +347,14 @@ TEST_F(ScreenStackTest, DrawingStartsAtTheTopmostScreenThatHidesTheOthers) {
  */
 TEST_F(ScreenStackTest, ALoneScreenThatHidesTheScreensBelowIsDrawn) {
   BlankRenderTarget target;
-  hideTheScreensBelow(ScreenId::Game);
-  screens().push(ScreenId::Game);
+  hideTheScreensBelow(GAME_SCREEN);
+  screens().push(GAME_SCREEN);
   screens().applyPendingChanges();
   journal().clear();
 
   screens().draw(target);
 
-  EXPECT_THAT(journal(), ElementsAre(JournalEntry{.screen = ScreenId::Game,
+  EXPECT_THAT(journal(), ElementsAre(JournalEntry{.screen = GAME_SCREEN,
                                                   .call = ScreenCall::Draw}));
 }
 

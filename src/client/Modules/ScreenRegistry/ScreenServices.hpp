@@ -24,7 +24,7 @@ namespace rtype::client {
  * constructor that cannot be called.
  */
 // NOLINTNEXTLINE(cppcoreguidelines-pro-type-member-init,hicpp-member-init)
-struct ClientScreensParts {
+struct ScreenServices {
   std::reference_wrapper<PlayerSettings> settings;
   std::reference_wrapper<ISettingsStorage> storage;
   std::reference_wrapper<AssetLibrary> assets;

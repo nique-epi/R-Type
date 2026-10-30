@@ -1,53 +1,28 @@
 #pragma once
 
-#include <cstdint>
+#include <string_view>
 
 namespace rtype::client {
 
 /**
- * @brief The screens the client can show.
+ * @brief The name a screen is registered under, and asked for by.
  *
- * Every value has one case in Application::createScreen(), which builds the
- * screen; a value without a case does not compile with -Wswitch.
+ * Every module declares the names of its own screens in a constants header of
+ * its own, so adding a screen touches no list shared by the modules. A name is
+ * compared by its text, and must outlive the identifier: the names of the
+ * constants headers are string literals.
  */
-enum class ScreenId : std::uint8_t {
-  /** @brief The screen the client opens on, entered through replaceAll()
-   * only: building it releases the assets the title does not use. */
-  Title,
-  /** @brief The game in progress, entered through replaceAll() only:
-   * building it releases the assets of a previous game. */
-  Game,
-  /** @brief The options, pushed over the title, which they hide. */
-  Options,
-  /** @brief The options, pushed over a game, which goes on behind them,
-   * dimmed. */
-  GameOptions,
-  /** @brief The question asked before closing the client, pushed over the
-   * title. */
-  QuitConfirmation,
-  /**
-   * @brief The server to join and the nickname to join it with, then how the
-   * attempt stands, pushed over the title.
-   */
-  Connection,
-  /**
-   * @brief The players of the server joined and whether each is ready, pushed
-   * over the connection screen once the server accepted the player.
-   */
-  Lobby,
-  /** @brief The intro the client opens on, entered through replaceAll() only,
-   * at launch: it replaces itself with TitleAfterIntro. */
-  Intro,
-  /** @brief The title screen the intro gives way to: its squadron starts in
-   * place, where the ships of the intro landed. */
-  TitleAfterIntro,
-  /** @brief The end of a game: its scores in the flight log, then PRESS ENTER
-   * TO REPLAY or QUIT; entered through replaceAll() only, by the game once
-   * the server ended it. */
-  End,
-  /** @brief The waiting room after a game, entered through replaceAll()
-   * only: alone on the stack, its BACK leaves the server for the title. */
-  LobbyAfterGame,
+class ScreenId {
+ public:
+  explicit constexpr ScreenId(std::string_view name) : name_(name) {}
+
+  /** @returns The text the screen is registered under. */
+  [[nodiscard]] constexpr std::string_view name() const { return name_; }
+
+  constexpr auto operator<=>(const ScreenId& other) const = default;
+
+ private:
+  std::string_view name_;
 };
 
 }  // namespace rtype::client

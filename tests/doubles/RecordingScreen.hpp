@@ -21,7 +21,7 @@ enum class ScreenCall : std::uint8_t {
  * it. */
 struct JournalEntry {
   rtype::client::ScreenId screen;
-  ScreenCall call;
+  ScreenCall call{};
 
   bool operator==(const JournalEntry& other) const = default;
 };

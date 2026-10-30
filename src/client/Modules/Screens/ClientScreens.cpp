@@ -2,23 +2,27 @@
 #include <SFML/Graphics/RenderTarget.hpp>
 #include <SFML/Window/Event.hpp>
 #include <random>
-#include "ClientScreensParts.hpp"
-#include "ScreenCatalog.hpp"
-#include "ScreenCatalogParts.hpp"
+#include "OpeningScreen.hpp"
+#include "ScreenContext.hpp"
 #include "ScreenId.hpp"
+#include "ScreenRegistry.hpp"
+#include "ScreenServices.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::client {
 
-ClientScreens::ClientScreens(const ClientScreensParts& parts)
+ClientScreens::ClientScreens(const ScreenServices& parts,
+                             const ScreenRegistry& registry)
     : background_(std::random_device{}()),
-      screens_([this](ScreenId screen) { return catalog_.create(screen); }),
-      catalog_(ScreenCatalogParts{.services = parts,
-                                  .navigator = screens_,
-                                  .sky = background_,
-                                  .gameResult = gameResult_,
-                                  .previousTaunt = previousTaunt_}) {
-  screens_.replaceAll(ScreenCatalog::firstScreen());
+      screens_([this, &registry](ScreenId screen) {
+        return registry.create(screen, context_);
+      }),
+      context_(ScreenContext{.services = parts,
+                             .navigator = screens_,
+                             .sky = background_,
+                             .gameResult = gameResult_,
+                             .previousTaunt = previousTaunt_}) {
+  screens_.replaceAll(openingScreen());
   screens_.applyPendingChanges();
 }
 

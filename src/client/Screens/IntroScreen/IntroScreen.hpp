@@ -41,7 +41,7 @@ namespace rtype::client {
  * the shake of the camera; then it sets the speed and the shake of the sky,
  * and paints the scene and the texts on its canvas, which draw() lays. At
  * INTRO_TITLE it writes how far the music was ahead of it, then asks for the
- * title in its place: ScreenId::TitleAfterIntro, whose squadron starts where
+ * title in its place: TITLE_AFTER_INTRO_SCREEN, whose squadron starts where
  * the ships of the intro landed. It is painted once when built, so its first
  * frame is already black.
  *

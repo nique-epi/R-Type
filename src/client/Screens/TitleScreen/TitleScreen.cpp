@@ -9,6 +9,7 @@
 #include "IScreenNavigator.hpp"
 #include "Menu.hpp"
 #include "MenuBuilder.hpp"
+#include "MenuScreenIdConstants.hpp"
 #include "PlayerPreferences.hpp"
 #include "ScreenConstants.hpp"
 #include "ScreenId.hpp"
@@ -50,12 +51,11 @@ Menu TitleScreen::buildMenu(IScreenNavigator& navigator, ISoundPlayer& sounds) {
       .logo(LOGO_ID, LOGO_SIZE)
       .subtitle(TITLE_SUBTITLE)
       .button({.label = PLAY_LABEL, .description = PLAY_DESCRIPTION},
-              [&navigator] { navigator.push(ScreenId::Connection); })
+              [&navigator] { navigator.push(CONNECTION_SCREEN); })
       .button({.label = SETTINGS_LABEL, .description = SETTINGS_DESCRIPTION},
-              [&navigator] { navigator.push(ScreenId::Options); })
-      .cancelButton(
-          {.label = QUIT_LABEL, .description = QUIT_DESCRIPTION},
-          [&navigator] { navigator.push(ScreenId::QuitConfirmation); })
+              [&navigator] { navigator.push(OPTIONS_SCREEN); })
+      .cancelButton({.label = QUIT_LABEL, .description = QUIT_DESCRIPTION},
+                    [&navigator] { navigator.push(QUIT_CONFIRMATION_SCREEN); })
       .illustration(SQUADRON_BOX_SIZE)
       .footer(COPYRIGHT_TEXT)
       .build();

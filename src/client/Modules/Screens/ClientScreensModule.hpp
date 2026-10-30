@@ -14,6 +14,7 @@
 #include "ISettingsStorage.hpp"
 #include "InstallContext.hpp"
 #include "PlayerSettings.hpp"
+#include "ScreenRegistry.hpp"
 #include "ServerConnection.hpp"
 #include "SubscriptionHandle.hpp"
 #include "TimeConstants.hpp"
@@ -72,6 +73,7 @@ class ClientScreensModule final : public engine::IModule {
   ServerConnection* connection_{nullptr};
   FrameLoop* loop_{nullptr};
   EventListeners* listeners_{nullptr};
+  ScreenRegistry* registry_{nullptr};
   std::unique_ptr<ClientScreens> screens_;
   engine::SubscriptionHandle listenerHandle_{};
 };
