@@ -11,6 +11,7 @@ target_link_libraries(rtype_client_modules
     rtype_logging
   PRIVATE
     rtype_client_assets_module
+    rtype_client_audio_module
     rtype_client_connection_module
     rtype_client_logger_module
     rtype_client_screens_module
