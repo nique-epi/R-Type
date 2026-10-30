@@ -2,6 +2,7 @@
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
@@ -10,6 +11,9 @@
 #include "ConnectedPlayers.hpp"
 #include "Entity.hpp"
 #include "EntityType.hpp"
+#include "Intent.hpp"
+#include "Invulnerable.hpp"
+#include "Lives.hpp"
 #include "ManeuverKind.hpp"
 #include "NetworkIdentity.hpp"
 #include "PlayerRoster.hpp"
@@ -20,6 +24,7 @@
 #include "ServerConstants.hpp"
 #include "ServerException.hpp"
 #include "SessionDatagram.hpp"
+#include "ShipDirections.hpp"
 #include "ShipMotion.hpp"
 #include "TimeConstants.hpp"
 #include "WireEntityTypeMapping.hpp"
@@ -39,14 +44,23 @@ std::uint8_t bitAt(std::uint8_t position) {
   return static_cast<std::uint8_t>(1U << static_cast<unsigned int>(position));
 }
 
-/** @returns The bits of the directions the newest input of @p player holds,
- * where a PlayerState carries them in its motion; 0 before any input. */
-std::uint8_t heldDirectionsOf(const ConnectedPlayer& player) {
-  if (!player.newestInput.has_value()) {
-    return 0;
+/** @returns The bits of @p directions, where a PlayerState carries them in its
+ * motion. */
+std::uint8_t directionBitsOf(const game::ShipDirections& directions) {
+  std::uint8_t bits = 0;
+  if (directions.up) {
+    bits |= bitAt(network::UP_ACTION_BIT_POSITION);
   }
-  return static_cast<std::uint8_t>(player.newestInput->actions &
-                                   network::DIRECTION_ACTION_BITS);
+  if (directions.down) {
+    bits |= bitAt(network::DOWN_ACTION_BIT_POSITION);
+  }
+  if (directions.left) {
+    bits |= bitAt(network::LEFT_ACTION_BIT_POSITION);
+  }
+  if (directions.right) {
+    bits |= bitAt(network::RIGHT_ACTION_BIT_POSITION);
+  }
+  return bits;
 }
 
 /** @returns The bit of the motion that tells @p kind; 0 for no maneuver. */
@@ -62,19 +76,42 @@ std::uint8_t maneuverBitOf(game::ManeuverKind kind) {
   return 0;
 }
 
-/** @returns The maneuver bit of the ship whose network id is @p shipId in
- * @p components; 0 when no ship of that id has a ShipMotion. */
-std::uint8_t maneuverBitOfShip(engine::ComponentRegistry& components,
-                               std::uint32_t shipId) {
-  std::uint8_t bit = 0;
+/** @brief What a PlayerState reads off the ship of a player. */
+struct ShipReading {
+  std::optional<std::uint8_t> lives;
+  bool invulnerable{false};
+  std::uint8_t motion{0};
+};
+
+/** @returns What the ship whose network id is @p shipId in @p components tells
+ * a PlayerState: its lives and protection, and the bits of the directions its
+ * Intent holds and of its maneuver. Nothing is read when no ship has that id
+ * and a ShipMotion. */
+ShipReading readShip(engine::ComponentRegistry& components,
+                     std::uint32_t shipId) {
+  ShipReading reading;
   components.forEach<game::ShipMotion, game::NetworkIdentity>(
-      [shipId, &bit](engine::Entity, const game::ShipMotion& motion,
-                     const game::NetworkIdentity& identity) {
-        if (identity.networkId == shipId) {
-          bit = maneuverBitOf(motion.maneuver);
+      [&components, shipId, &reading](engine::Entity ship,
+                                      const game::ShipMotion& motion,
+                                      const game::NetworkIdentity& identity) {
+        if (identity.networkId != shipId) {
+          return;
+        }
+        reading.motion = maneuverBitOf(motion.maneuver);
+        if (const game::Intent* const intent =
+                components.get<game::Intent>(ship)) {
+          reading.motion |= directionBitsOf(intent->directions);
+        }
+        if (const game::Lives* const lives =
+                components.get<game::Lives>(ship)) {
+          reading.lives = lives->count;
+        }
+        if (const game::Invulnerable* const protection =
+                components.get<game::Invulnerable>(ship)) {
+          reading.invulnerable = protection->ticksLeft > 0;
         }
       });
-  return bit;
+  return reading;
 }
 
 }  // namespace
@@ -125,15 +162,14 @@ std::vector<network::PlayerState> WorldStateSender::playerStatesOf(
   std::vector<network::PlayerState> states;
   states.reserve(players.size());
   for (const ConnectedPlayer* const player : players) {
+    const ShipReading ship = readShip(components, player->shipEntityId);
     states.push_back(network::PlayerState{
         .playerNumber = player->playerNumber,
         .shipEntityId = player->shipEntityId,
-        .lives = player->lives,
+        .lives = ship.lives.value_or(player->livesWithoutShip),
         .score = player->score,
-        .invulnerable = player->invulnerableTicksLeft > 0,
-        .motion = static_cast<std::uint8_t>(
-            heldDirectionsOf(*player) |
-            maneuverBitOfShip(components, player->shipEntityId))});
+        .invulnerable = ship.invulnerable,
+        .motion = ship.motion});
   }
   return states;
 }

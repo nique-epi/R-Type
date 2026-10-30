@@ -10,6 +10,7 @@
 #include "IGameFlow.hpp"
 #include "IGameReplication.hpp"
 #include "InstallContext.hpp"
+#include "PlayerController.hpp"
 #include "PlayerInput.hpp"
 #include "RtypeSystems.hpp"
 #include "ScoreKeeper.hpp"
@@ -61,6 +62,7 @@ void RtypeRulesModule::addSessionHooks() {
   hooks.newerInput.emplace_back(
       [this](const ConnectedPlayer& player, const network::PlayerInput& input) {
         noteTaps(world(), player, input);
+        steerShipByInput(world(), player, input);
       });
 }
 

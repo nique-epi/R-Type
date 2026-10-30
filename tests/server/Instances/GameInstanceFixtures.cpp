@@ -28,6 +28,7 @@
 #include "GameState.hpp"
 #include "IGameModule.hpp"
 #include "IncomingDatagram.hpp"
+#include "Intent.hpp"
 #include "LobbyState.hpp"
 #include "MessageType.hpp"
 #include "OutgoingDatagram.hpp"
@@ -292,7 +293,7 @@ std::uint32_t GameInstanceInputTest::lastInputNumber(std::size_t player) const {
   return inputsSent_.at(player);
 }
 
-std::optional<network::PlayerInput> GameInstanceInputTest::newestInputOf(
+std::optional<std::uint32_t> GameInstanceInputTest::newestInputNumberOf(
     std::size_t player) {
   const ConnectedPlayer* const connected =
       game().roster().find(playerEndpoint(player));
@@ -300,16 +301,39 @@ std::optional<network::PlayerInput> GameInstanceInputTest::newestInputOf(
     ADD_FAILURE() << "player " << player << " is not in the roster";
     return std::nullopt;
   }
-  return connected->newestInput;
+  return connected->newestInputNumber;
 }
 
 std::optional<std::uint8_t> GameInstanceInputTest::heldActions(
     std::size_t player) {
-  const std::optional<network::PlayerInput> newest = newestInputOf(player);
-  if (!newest.has_value()) {
+  if (!newestInputNumberOf(player).has_value()) {
     return std::nullopt;
   }
-  return newest->actions;
+  const ConnectedPlayer* const connected =
+      game().roster().find(playerEndpoint(player));
+  const game::Intent* const intent =
+      world().shipComponentOf<game::Intent>(connected->shipEntityId);
+  if (intent == nullptr) {
+    ADD_FAILURE() << "player " << player << " has no ship";
+    return std::nullopt;
+  }
+  unsigned int actions = 0U;
+  if (intent->directions.up) {
+    actions |= static_cast<unsigned int>(HOLDS_UP);
+  }
+  if (intent->directions.down) {
+    actions |= static_cast<unsigned int>(HOLDS_DOWN);
+  }
+  if (intent->directions.left) {
+    actions |= static_cast<unsigned int>(HOLDS_LEFT);
+  }
+  if (intent->directions.right) {
+    actions |= static_cast<unsigned int>(HOLDS_RIGHT);
+  }
+  if (intent->shooting) {
+    actions |= static_cast<unsigned int>(HOLDS_SHOOT);
+  }
+  return static_cast<std::uint8_t>(actions);
 }
 
 const UnreliableNetwork& GameInstanceInputTest::network() const {

@@ -8,6 +8,7 @@
 #include "GameInstanceTestConstants.hpp"
 #include "GameSettings.hpp"
 #include "GameState.hpp"
+#include "Lives.hpp"
 #include "OutgoingDatagram.hpp"
 #include "PlayerRoster.hpp"
 #include "RtypeSystems.hpp"
@@ -43,6 +44,13 @@ ConnectedPlayer& GameFlowFixture::join(std::size_t index) {
       playerEndpoint(index), std::string{PLAYER_NICKNAME}, SESSION_TOKEN);
   replication_.onPlayerJoined(*player);
   return *player;
+}
+
+void GameFlowFixture::takeEveryLifeOf(ConnectedPlayer& player) {
+  auto* const lives =
+      world_.current().shipComponentOf<game::Lives>(player.shipEntityId);
+  ASSERT_NE(lives, nullptr);
+  lives->count = 0;
 }
 
 void GameFlowFixture::startGameWith(

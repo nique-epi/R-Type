@@ -39,6 +39,9 @@ class GameFlowFixture : public ::testing::Test {
    * the game. */
   void startGameWithOnePlayer();
 
+  /** @brief Takes every life of @p player, the ship in play included. */
+  void takeEveryLifeOf(ConnectedPlayer& player);
+
   /** @brief Runs one tick, then delivers the events it published. */
   void tick();
 

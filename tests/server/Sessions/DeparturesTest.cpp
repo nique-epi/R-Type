@@ -6,15 +6,16 @@
 #include "DeparturesFixture.hpp"
 #include "Endpoint.hpp"
 #include "PlayerDeparture.hpp"
-#include "PlayerInput.hpp"
 #include "SentDatagrams.hpp"
 #include "SessionConstants.hpp"
+#include "SessionsTestConstants.hpp"
 
 namespace rtype::server {
 
 using testing::ClosingStep;
 using testing::DeparturesFixture;
 using testing::playerEndpoint;
+using testing::SOME_INPUT_NUMBER;
 
 /**
  * Given a game with one player
@@ -84,13 +85,13 @@ TEST_F(DeparturesFixture, ClosesASilentSessionOnceTheGraceIsOver) {
 }
 
 /**
- * Given a player with an input, not heard from for 299 ticks, 5 s less one
+ * Given a player with an input number, silent for 299 ticks, 5 s less one
  * When one more tick of silence is counted
- * Then the player is away, its input cleared, its seat kept and no departure
- * announced; and it was not away a tick before
+ * Then the player is away, its input number cleared, its seat kept and no
+ * departure announced; and it was not away a tick before
  */
 TEST_F(DeparturesFixture, MarksAPlayerAwayOnceTheTimeoutIsReached) {
-  player().newestInput = network::PlayerInput{};
+  player().newestInputNumber = SOME_INPUT_NUMBER;
   for (std::size_t tick = 0; tick < SESSION_TIMEOUT_TICKS - 1; ++tick) {
     departures().closeSilentSessions();
   }
@@ -99,7 +100,7 @@ TEST_F(DeparturesFixture, MarksAPlayerAwayOnceTheTimeoutIsReached) {
   departures().closeSilentSessions();
 
   EXPECT_TRUE(player().away);
-  EXPECT_FALSE(player().newestInput.has_value());
+  EXPECT_FALSE(player().newestInputNumber.has_value());
   EXPECT_NE(roster().find(playerEndpoint(0)), nullptr);
   EXPECT_TRUE(announced().empty());
 }

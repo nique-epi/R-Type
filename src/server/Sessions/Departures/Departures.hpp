@@ -72,7 +72,7 @@ class Departures {
    * tick of silence for every other player. */
   [[nodiscard]] std::vector<network::Endpoint> countSilentTicks();
 
-  /** @brief Marks @p player away, clears its input and logs it. */
+  /** @brief Marks @p player away, clears its input number and logs it. */
   void setAway(ConnectedPlayer& player) const;
 
   /** @brief Logs that @p player left or timed out, as @p cause says, and
