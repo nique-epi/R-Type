@@ -104,6 +104,56 @@ The client draws a `Sprite` in its `Layer` (`src/game/Components/Layer.hpp`), fr
 
 Alternative considered: one layer for every entity, and the effects in front of it. It is simpler, and an explosion is never hidden, but the explosion of a Bydo then hides a missile the Bydo fired as it died for 11 frames, while that missile flies at a player.
 
+## Network model
+
+The game runs on one authoritative server: a client sends the keys it holds, the server runs every rule of the match and sends the state of the world back. Messages travel over UDP in a binary format (see [Protocol](/R-Type/protocol/)). The three choices below each have a cost, stated with them.
+
+### UDP rather than TCP
+
+TCP delivers every byte, in order. After a loss it holds back everything that follows until the missing segment is sent again, which takes at least one round trip. A game gains nothing from waiting: the state sent 50 ms later replaces the lost one, and an input is replaced 17 ms later by the next.
+
+| | UDP | TCP |
+|---|---|---|
+| After a loss | the next datagram carries newer data and nothing waits | everything after the lost segment waits for it |
+| Delivery | datagrams may be lost, duplicated or reordered | all bytes, in order |
+| Header on top of IP | 8 bytes | 20 bytes at least |
+| Connection | none: the protocol builds its own session | opened by the system |
+
+The cost is that the protocol does the work TCP does. Version 1 already drops a duplicate or a late datagram (`sequence`), checks who sends (`sessionToken`, and a cookie before a seat is given) and repeats the messages that matter. Guaranteed delivery is the work of the second part.
+
+Alternative considered: TCP for the lobby and UDP for the game. The lobby needs no speed, but it would take a second port and a second connection to open, and the lobby messages already survive losses by being repeated over the one UDP socket.
+
+### Binary rather than text
+
+A message is its fields written one after the other at a fixed size, so its size is known before it is read, and a receiver checks it with a comparison. Measured on the code of this repository, with the same fields written as compact JSON (the names of the protocol page, the 22 bytes of header included):
+
+| Datagram | Binary | JSON |
+|---|---|---|
+| `PlayerInput` (60 per second) | 30 bytes | 196 bytes |
+| `WorldState`, 2 players and 6 entities (20 per second) | 105 bytes | 722 bytes |
+
+The binary `PlayerInput` is the output of `DatagramCodec::encode`. The binary `WorldState` is the average of the capture described in [Protocol](/R-Type/protocol/#world-state), and its JSON is a constructed example, not a capture. That is about 1.8 kB per second against 11.8 kB for the inputs of one player, and 2.1 kB against 14.4 kB for the states sent to one: roughly seven times less.
+
+The cost is that nobody reads a capture without the specification. The protocol page therefore gives every field byte by byte, in big-endian order so a number reads in a capture the way it is written, and a new field changes the version.
+
+Alternative considered: JSON. A capture and a log read themselves, and a field is added without a layout. It loses on size, as above, on the parsing and the allocations every datagram would cost at 60 per second and per player, and on the bounds: a text length is known only after reading the text.
+
+### An authoritative server rather than peer to peer
+
+The client sends keys, never positions. The server moves the ships, fires, collides and scores (`rtype_game`), so there is one truth: two players never disagree about who was hit, and a modified client cannot move out of the rules or claim a hit, because the server decides from the keys alone and checks every datagram it receives. Only the server needs a reachable address. With 4 players, 4 streams go to the server and 4 come back; a mesh of peers would carry 12.
+
+The cost is that a player sees the effect of a key after a round trip to the server, and that the game ends for everyone when the server stops. Hiding that round trip is what client-side prediction does (see [Project layout](/R-Type/project-layout/)).
+
+Alternative considered: peer to peer, with every peer running the game. It needs no server to host, but the peers must compute exactly the same result, every pair must reach the other through its router, and any peer can cheat. A peer acting as host would be a server whose owner also has an advantage in the game.
+
+### Known limits of the proof of concept
+
+- **Losses.** Nothing is guaranteed in version 1. State messages repeat what they say, so they correct themselves; the messages that show something once are sent three times, 50 ms apart. If all three copies are lost, a sound or an effect is missed, and lives, scores and players stay right through the states (see [Losses](/R-Type/protocol/#losses)).
+- **Latency.** The client neither predicts its own ship nor interpolates the others: it draws what the last state says, so a key shows after a round trip plus up to one state interval (50 ms at 20 states per second), and a ship moves at the pace of the states.
+- **Measures.** The rates and delays are **provisional**. The only capture is a local game: no loss, no latency, and the network simulator that would add them does not exist yet (see [Network](/R-Type/network/)).
+
+The second part answers each point (see [Version 2](/R-Type/protocol/#version-2)): guaranteed messages replace the three copies, an input is repeated until the server confirms it, and the state confirms the last input applied, which is what lets the client replay its newest inputs on top of a state and correct its ship. Prediction and interpolation themselves are client work, placed in `client/Prediction` (see [Project layout](/R-Type/project-layout/)).
+
 ## Consequences
 
 - `EntityRegistry`, `ComponentRegistry`, `ISystem`, `SystemScheduler`, `EventBus` and `BoundedQueue` exist today. The game screen of the client calls a scheduler once per frame to play its animations; the tick of the server runs the stages of its `Application`: the games move on and run their systems, the connection requests are answered, the timers advance and the events of the bus are delivered.
