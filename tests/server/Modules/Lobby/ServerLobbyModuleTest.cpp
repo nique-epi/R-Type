@@ -66,7 +66,7 @@ TEST_F(ServerLobbyFixture, RefusesANewPlayerWhenEveryGameIsInProgress) {
   startWith(std::move(settings));
   join(0);
   sayReady(0);
-  ASSERT_EQ(probe().games()->all()[FIRST_GAME]->state(), GameState::InProgress);
+  ASSERT_EQ(probe().games()->all()[FIRST_GAME]->state(), GameState::Starting);
 
   runTick({}, {requestFrom(1)});
 
@@ -86,7 +86,7 @@ TEST_F(ServerLobbyFixture, SeatsAPlayerWhoArrivesDuringAGameInTheNextGame) {
   startWith(shippedWaves());
   join(0);
   sayReady(0);
-  ASSERT_EQ(probe().games()->all()[FIRST_GAME]->state(), GameState::InProgress);
+  ASSERT_EQ(probe().games()->all()[FIRST_GAME]->state(), GameState::Starting);
 
   runTick({}, {requestFrom(1)});
   runTick({}, {requestFrom(1, challengeCookieOf(1))});

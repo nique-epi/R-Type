@@ -54,7 +54,10 @@ namespace rtype::client {
  * sends a ReadyState at once, then again every READY_STATE_INTERVAL while the
  * waiting room shows another value. While the attempt is Accepted,
  * sendPlayerInput() sends the inputs of the game, numbered from
- * FIRST_INPUT_NUMBER; otherwise it sends nothing. While the attempt is
+ * FIRST_INPUT_NUMBER, preceded by a GameLoaded, at most one every
+ * GAME_LOADED_INTERVAL, until the first WorldState of the game arrives, so the
+ * server starts the game once this client shows it;
+ * otherwise it sends nothing. While the attempt is
  * Accepted, a Heartbeat goes out once HEARTBEAT_INTERVAL passed without any
  * other datagram to the server, so the server knows the player is still there
  * while nothing else is due. A session whose server sent nothing for
@@ -278,12 +281,14 @@ class ServerConnection : public IServerConnection,
   engine::Duration sinceRequest_{};
   engine::Duration sinceConnect_{};
   engine::Duration sinceReadyState_{};
+  engine::Duration sinceGameLoaded_{};
   engine::Duration sinceSent_{};
   engine::Duration sinceReceived_{};
   ConnectionStatus status_;
   std::vector<network::LobbyPlayer> lobbyPlayers_;
   std::optional<bool> requestedReady_;
   bool gameStarted_ = false;
+  bool worldStateSeen_ = false;
   std::optional<PendingDeparture> departure_;
   std::vector<network::IncomingDatagram> received_;
   std::vector<EntityMessage> entityMessages_;

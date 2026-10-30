@@ -51,6 +51,9 @@ struct ConnectedPlayer {
   /** @brief Whether the player declared itself ready to start; cleared when the
    * game waits for players again. */
   bool ready{false};
+  /** @brief Whether the player told the game it shows the game screen, since
+   * the game last started waiting for it; cleared when the game does. */
+  bool loaded{false};
   /** @brief The sequence of the newest datagram accepted from the player, and
    * how many of the datagrams it sent never arrived. DatagramReader keeps it.
    */
@@ -60,12 +63,6 @@ struct ConnectedPlayer {
    * arrives. The input itself is held by the Intent of the ship of the player.
    * InputKeeper keeps it. */
   std::optional<std::uint32_t> newestInputNumber;
-  /** @brief The inputNumber of the newest input of the player that was applied
-   * to its ship, after being held for the input delay; empty until the first
-   * one is, and cleared with newestInputNumber. It tells an input that follows
-   * earlier ones from the first of the session, which lags newestInputNumber by
-   * the input delay. DelayedInputs keeps it. */
-  std::optional<std::uint32_t> newestAppliedInputNumber;
   /** @brief Ticks the game ran since it last read a datagram of the player;
    * the player is away once it reaches SESSION_TIMEOUT_TICKS, and the session
    * closes once it reaches SESSION_CLOSING_TICKS.
@@ -75,6 +72,12 @@ struct ConnectedPlayer {
    * and lives are kept, its input number is cleared and it does not count for
    * the ready check. The next datagram read from the player clears it. */
   bool away{false};
+  /** @brief Whether an input of the player was applied to its ship, after being
+   * held for the input delay; cleared with newestInputNumber. It tells an input
+   * that follows earlier ones from the first of the session, which
+   * newestInputNumber cannot, since it runs ahead by the input delay.
+   * DelayedInputs keeps it. */
+  bool inputApplied{false};
   /** @brief Ticks that ended since the server last sent the player a datagram;
    * a Heartbeat goes out once it reaches TICKS_PER_HEARTBEAT.
    * nextSessionHeader() sets it back to 0. */

@@ -24,6 +24,7 @@
 #include "GameInstance.hpp"
 #include "GameInstanceParts.hpp"
 #include "GameInstanceTestConstants.hpp"
+#include "GameLoaded.hpp"
 #include "GameSettings.hpp"
 #include "GameState.hpp"
 #include "IGameModule.hpp"
@@ -183,6 +184,21 @@ void GameInstanceTest::sendReady(const SentReadyState& sent) {
           header, network::ReadyState{.ready = sent.ready})});
 }
 
+void GameInstanceTest::sendLoaded(std::size_t player, std::uint16_t sequence) {
+  network::PacketHeader header;
+  header.sessionToken = SESSION_TOKEN;
+  header.sequence = sequence;
+  queue(network::IncomingDatagram{.sender = playerEndpoint(player),
+                                  .payload = network::DatagramCodec::encode(
+                                      header, network::GameLoaded{})});
+}
+
+void GameInstanceTest::loadEveryPlayer() {
+  for (ConnectedPlayer* const player : game().roster().connected()) {
+    player->loaded = true;
+  }
+}
+
 void GameInstanceTest::queue(network::IncomingDatagram datagram) {
   incoming_.push_back(std::move(datagram));
 }
@@ -211,6 +227,9 @@ void GameInstanceTest::startGameWith(
     join(index);
     sendReady({.player = index, .ready = true, .sequence = FIRST_SEQUENCE});
   }
+  tick();
+  ASSERT_EQ(game().state(), GameState::Starting);
+  loadEveryPlayer();
   tick();
   ASSERT_EQ(game().state(), GameState::InProgress);
 }
@@ -358,6 +377,9 @@ void GameInstanceMovementTest::startGame() {
                .sequence = FIRST_SEQUENCE,
                .sessionToken = PLAYER_SESSION_TOKENS.at(player)});
   }
+  tick();
+  ASSERT_EQ(game().state(), GameState::Starting);
+  loadEveryPlayer();
   tick();
   ASSERT_EQ(game().state(), GameState::InProgress);
 }

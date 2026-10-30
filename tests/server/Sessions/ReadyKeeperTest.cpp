@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 #include "ConnectedPlayer.hpp"
+#include "GameLoaded.hpp"
 #include "PlayerRoster.hpp"
 #include "ReadyKeeper.hpp"
 #include "ReadyState.hpp"
@@ -119,6 +120,36 @@ TEST(ReadyKeeper, IsNotReadyWhenEveryPlayerIsAway) {
   player.away = true;
 
   EXPECT_FALSE(keeper.everyPlayerIsReady());
+}
+
+/**
+ * Given a keeper that accepts no ReadyState and a player not loaded
+ * When the player sends GameLoaded
+ * Then the player is loaded, since GameLoaded counts in every state
+ */
+TEST(ReadyKeeper, MarksThePlayerLoadedWhateverTheStateOfTheGame) {
+  PlayerRoster roster;
+  const ConnectedPlayer& player = addPlayer(roster, 0);
+  ReadyKeeper keeper(roster, [] { return false; });
+
+  keeper.apply(originOf(0, SOME_SEQUENCE), network::GameLoaded{});
+
+  EXPECT_TRUE(player.loaded);
+}
+
+/**
+ * Given a keeper and a roster without the sender
+ * When a GameLoaded arrives from that sender
+ * Then nobody is loaded
+ */
+TEST(ReadyKeeper, IgnoresAGameLoadedFromANonPlayer) {
+  PlayerRoster roster;
+  const ConnectedPlayer& player = addPlayer(roster, 0);
+  ReadyKeeper keeper(roster, [] { return true; });
+
+  keeper.apply(originOf(1, SOME_SEQUENCE), network::GameLoaded{});
+
+  EXPECT_FALSE(player.loaded);
 }
 
 }  // namespace rtype::server

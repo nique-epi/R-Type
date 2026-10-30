@@ -46,6 +46,12 @@ constexpr std::chrono::seconds CONNECTION_ATTEMPT_TIMEOUT{5};
 constexpr std::chrono::milliseconds READY_STATE_INTERVAL{500};
 
 /**
+ * @brief Time between two GameLoaded while the game is started and no
+ * WorldState arrived yet. Provisional, see the protocol page.
+ */
+constexpr std::chrono::milliseconds GAME_LOADED_INTERVAL{100};
+
+/**
  * @brief How many times a Disconnection goes out when the player leaves a
  * server, and the time between two copies: nothing repeats it, so a lost copy
  * is made up by the next. Provisional, see the protocol page.

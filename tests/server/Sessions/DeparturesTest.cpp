@@ -111,12 +111,12 @@ TEST_F(DeparturesFixture, MarksAPlayerAwayOnceTheTimeoutIsReached) {
  * Then the number of its newest applied input is cleared
  */
 TEST_F(DeparturesFixture, ClearsTheAppliedInputNumberOfAPlayerWhoIsAway) {
-  player().newestAppliedInputNumber = SOME_INPUT_NUMBER;
+  player().inputApplied = true;
   for (std::size_t tick = 0; tick < SESSION_TIMEOUT_TICKS; ++tick) {
     departures().closeSilentSessions();
   }
 
-  EXPECT_FALSE(player().newestAppliedInputNumber.has_value());
+  EXPECT_FALSE(player().inputApplied);
 }
 
 /**

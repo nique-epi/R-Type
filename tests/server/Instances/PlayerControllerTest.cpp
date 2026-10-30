@@ -108,7 +108,7 @@ TEST_F(PlayerControllerFixture, SilencesTheShipOfAnAwayPlayerOnly) {
  */
 TEST_F(PlayerControllerFixture, FirstInputOfANewShipStartsNoManeuver) {
   ConnectedPlayer& player = addPlayerWithShip(FIRST_PLAYER, SESSION_TOKEN);
-  player.newestAppliedInputNumber = FIRST_PRESS_INPUT_NUMBER - 1;
+  player.inputApplied = true;
   const std::array inputs = {
       inputHolding(HOLDS_RIGHT, FIRST_PRESS_INPUT_NUMBER),
       inputHolding(HOLDS_NOTHING, RELEASE_INPUT_NUMBER),

@@ -115,6 +115,7 @@ The type identifies a message in both directions: `Disconnection` and `Heartbeat
 | 5 | `Heartbeat` | none | after 1 s without sending anything else |
 | 6 | `ReadyState` | `ready` `bool` | when the player changes it, and again while `LobbyState` shows another value |
 | 9 | `PlayerInput` | `inputNumber` `u32`, `actions` `u8` | 60 times per second during a game |
+| 17 | `GameLoaded` | none | with a `PlayerInput`, at most every 100 ms, from the first one after `GameStarted` until the first `WorldState` arrives |
 
 ### Server to client
 
@@ -125,7 +126,7 @@ The type identifies a message in both directions: `Disconnection` and `Heartbeat
 | 4 | `Disconnection` | none | when the server shuts down, three times 50 ms apart |
 | 5 | `Heartbeat` | none | after 1 s without sending anything else |
 | 7 | `LobbyState` | `playerCount` `u8`, then per player `playerNumber` `u8`, `ready` `bool`, `nickname` `string` | on every change, and at least every 500 ms while no game runs |
-| 8 | `GameStarted` | none | when every connected player is ready |
+| 8 | `GameStarted` | none | when every connected player is ready, then every 500 ms to the players that did not send `GameLoaded` yet |
 | 10 | `WorldState` | see [World state](#world-state) | during a game, as many times per second as the server was told to (20 by default, from 2 to 60) |
 | 11 | `EntitySpawned` | `entityId` `u32`, `entityType` `u8`, `position` | when an entity appears; the ship of a player, when the player is accepted; the ship of a player again, when it comes back after a hit; a Bydo, every time one appears; a missile of a player, every time one is fired |
 | 12 | `EntityDestroyed` | `entityId` `u32`, `reason` `u8`: 1 `Killed` (explosion), 2 `Removed` (no effect) | when an entity disappears, three times 50 ms apart |
@@ -247,7 +248,7 @@ sequenceDiagram
   S->>C: LobbyState (repeated)
   C->>S: ReadyState
   S->>C: GameStarted
-  C->>S: PlayerInput (60 per second)
+  C->>S: GameLoaded, PlayerInput (60 per second)
   S->>C: WorldState (20 per second by default), events
   S->>C: GameEnded (repeated)
   S->>C: LobbyState (repeated)
@@ -264,7 +265,7 @@ In each phase the server repeats one message, and the client shows the screen of
 
 The end screen stays until the player chooses, whatever the server sends after `GameEnded`: a player who plays again finds the waiting room, a player who quits leaves the server. Between `GameEnded` and the next `GameStarted`, the server must send no `WorldState`: the client reads a `WorldState` as the start of a game.
 
-The server takes a `ReadyState` into account only in the first phase, from a connected player, with the same checks as every datagram: the session token, then the `sequence`. The game starts when at least one player is connected and every connected player is ready.
+The server takes a `ReadyState` into account only in the first phase, from a connected player, with the same checks as every datagram: the session token, then the `sequence`. Once at least one player is connected and every connected player is ready, the server sends `GameStarted` and waits for the clients to show the game: the screen of a client that has the game assets to load is not ready on the tick the server sends it. A client that shows the game sends `GameLoaded` with its inputs, at most every 100 ms, until the first `WorldState` arrives. The game starts, and the first `WorldState` goes out, once every connected player that is not away has sent one, or after 10 s (`START_BARRIER_SECONDS`) without waiting any longer for the others. Until then the server sends no `WorldState`, and repeats `GameStarted` every 500 ms to the players not yet loaded. A `GameLoaded` outside this wait changes nothing. The message is new in version 1 and carries no field; a server that does not know it skips it as an unknown type.
 
 Each side sends a `Heartbeat` after 1 s without sending anything else; any datagram that passes the checks above proves its sender is alive. A player the server has heard nothing from for `SESSION_TIMEOUT` (5 s) may only have lost the network for a moment. The server then marks the player away and keeps its seat, its token, its ship, its score and its lives for `RECONNECTION_GRACE` (15 s) more. The ship stays in the world and can be hit, but the input of the player is cleared and the player does not count when the waiting room checks that everyone is ready. Any datagram carrying the token, from the same address and port, ends the absence: the player is back, nothing was lost, and a new `SESSION_TIMEOUT` starts. A player not heard from for `SESSION_TIMEOUT` plus `RECONNECTION_GRACE` (20 s) loses its seat: the server closes the session, removes the ship and sends `PlayerLeft` (`TimedOut`) to the others, only then. A client that comes back from another address or port is an unknown sender and starts again from the first request. The client keeps its session, and keeps sending its `Heartbeat`, for the same 20 s without a datagram from the server, then closes it and must tell the player that the connection is lost. A `Disconnection` frees the place at once, and the others get `PlayerLeft` (`Left`).
 
@@ -341,7 +342,8 @@ Nothing is guaranteed in version 1: a lost message is never resent on request. T
 | `ReadyState` | sent again while `LobbyState` shows another value | 500 ms |
 | `LobbyState`, `GameEnded` | the next one | 500 ms |
 | `WorldState` | the next one | 50 ms at the default 20 per second, one rate-th of a second at any other |
-| `GameStarted` | the first `WorldState` | 50 ms at 20 per second |
+| `GameStarted` | the copy sent every 500 ms, or the first `WorldState` | 500 ms |
+| `GameLoaded` | the next one, sent with an input | 100 ms |
 | `PlayerInput` | the next input | 17 ms |
 | `Heartbeat` | the next datagram | 1 s |
 | `EntitySpawned` | the next `WorldState` creates the entity, with its appearance effect | 50 ms at 20 per second |

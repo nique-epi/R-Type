@@ -41,6 +41,8 @@ void GameInstanceLivesFixture::startTheNextGame() {
                .sessionToken = PLAYER_SESSION_TOKENS.at(player)});
   }
   runTicksDispatching(1);
+  loadEveryPlayer();
+  runTicksDispatching(1);
 }
 
 ConnectedPlayer GameInstanceLivesFixture::playerAt(std::size_t index) {

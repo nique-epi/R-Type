@@ -25,6 +25,7 @@ enum class MessageType : std::uint8_t {
   PlayerLeft = 14,
   GameEnded = 15,
   ConnectionChallenge = 16,
+  GameLoaded = 17,
 };
 
 }  // namespace rtype::network

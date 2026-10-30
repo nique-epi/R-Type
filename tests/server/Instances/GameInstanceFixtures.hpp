@@ -118,8 +118,16 @@ class GameInstanceTest : public ::testing::Test {
   /** @brief Queues the ReadyState described by @p sent for the next tick. */
   void sendReady(const SentReadyState& sent);
 
+  /** @brief Queues a GameLoaded from the player at @p player for the next
+   * tick, under its session token and @p sequence. */
+  void sendLoaded(std::size_t player, std::uint16_t sequence);
+
   /** @brief Queues @p datagram for the next tick. */
   void queue(network::IncomingDatagram datagram);
+
+  /** @brief Every player of the roster has told the game it shows the game
+   * screen, as the datagram of a GameLoaded does. */
+  void loadEveryPlayer();
 
   /** @brief Runs one tick with what was queued, then a Heartbeat from each
    * player not silenced, then empties the queue. */

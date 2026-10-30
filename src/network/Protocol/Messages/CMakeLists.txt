@@ -7,6 +7,7 @@ add_subdirectory(EntityDestroyed)
 add_subdirectory(EntitySpawned)
 add_subdirectory(GameEnded)
 add_subdirectory(GameEvent)
+add_subdirectory(GameLoaded)
 add_subdirectory(GameStarted)
 add_subdirectory(Heartbeat)
 add_subdirectory(LobbyState)
@@ -27,6 +28,7 @@ target_link_libraries(rtype_network_messages
     rtype_network_entity_spawned
     rtype_network_game_ended
     rtype_network_game_event
+    rtype_network_game_loaded
     rtype_network_game_started
     rtype_network_heartbeat
     rtype_network_lobby_state

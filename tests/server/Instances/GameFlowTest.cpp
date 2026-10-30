@@ -14,6 +14,7 @@ using rtype::identifiers::NO_ENTITY_ID;
 using rtype::server::ConnectedPlayer;
 using rtype::server::FINISHED_STATE_TICKS;
 using rtype::server::GameState;
+using rtype::server::START_BARRIER_TICKS;
 using rtype::server::testing::FIRST_PLAYER;
 using rtype::server::testing::FOURTH_PLAYER;
 using rtype::server::testing::GameFlowFixture;
@@ -60,14 +61,14 @@ TEST_F(GameFlowFixture, WaitsForAPlayerWhoIsNotReady) {
 /**
  * Given one connected player
  * When the player is ready and a tick runs
- * Then the game is in progress
+ * Then the game waits for the player to load
  */
-TEST_F(GameFlowFixture, StartsWhenTheOnlyPlayerIsReady) {
+TEST_F(GameFlowFixture, WaitsForTheOnlyPlayerToLoadOnceItIsReady) {
   join(FIRST_PLAYER).ready = true;
 
   tick();
 
-  EXPECT_EQ(flow().state(), GameState::InProgress);
+  EXPECT_EQ(flow().state(), GameState::Starting);
 }
 
 /**
@@ -193,11 +194,8 @@ TEST_F(GameFlowFixture, FinishesTheGameInProgressNoPlayerIsLeftIn) {
  * Then the game is finished in that tick
  */
 TEST_F(GameFlowFixture, FinishesTheGameInProgressNoPlayerHasALife) {
-  ConnectedPlayer& player = join(FIRST_PLAYER);
-  player.ready = true;
-  tick();
-  ASSERT_EQ(flow().state(), GameState::InProgress);
-  takeEveryLifeOf(player);
+  startGameWithOnePlayer();
+  takeEveryLifeOf(*roster().find(playerEndpoint(FIRST_PLAYER)));
 
   tick();
 
@@ -311,6 +309,8 @@ TEST_F(GameFlowFixture, ANewGameStartsTheWavesOver) {
   ASSERT_EQ(flow().state(), GameState::WaitingForPlayers);
   roster().find(playerEndpoint(FIRST_PLAYER))->ready = true;
   tick();
+  roster().find(playerEndpoint(FIRST_PLAYER))->loaded = true;
+  tick();
   ASSERT_EQ(flow().state(), GameState::InProgress);
 
   runTicks(TICKS_TO_THE_FIRST_BYDO - 1);
@@ -331,4 +331,92 @@ TEST_F(GameFlowFixture, NoBydoAppearsWhileFinished) {
   runTicks(2 * TICKS_TO_THE_FIRST_BYDO);
 
   EXPECT_EQ(flow().world().entityCount(), entitiesBefore);
+}
+
+/**
+ * Given one ready player who has not loaded the game
+ * When ticks run, fewer than the wait the game allows
+ * Then the game keeps waiting for the player to load
+ */
+TEST_F(GameFlowFixture, KeepsWaitingWhileAReadyPlayerHasNotLoaded) {
+  join(FIRST_PLAYER).ready = true;
+  tick();
+
+  runTicks(START_BARRIER_TICKS - 1);
+
+  EXPECT_EQ(flow().state(), GameState::Starting);
+}
+
+/**
+ * Given two ready players, of whom one loaded the game
+ * When a tick runs
+ * Then the game still waits, and once the other loads it starts
+ */
+TEST_F(GameFlowFixture, StartsOnceEveryPlayerLoaded) {
+  ConnectedPlayer& first = join(FIRST_PLAYER);
+  ConnectedPlayer& second = join(SECOND_PLAYER);
+  first.ready = true;
+  second.ready = true;
+  tick();
+  first.loaded = true;
+  tick();
+  const GameState whileOneIsLoading = flow().state();
+  second.loaded = true;
+
+  tick();
+
+  EXPECT_EQ(whileOneIsLoading, GameState::Starting);
+  EXPECT_EQ(flow().state(), GameState::InProgress);
+}
+
+/**
+ * Given one ready player who never loads the game
+ * When the wait the game allows is over
+ * Then the game starts without that player, in that very tick
+ */
+TEST_F(GameFlowFixture, StartsWithoutAPlayerWhoNeverLoads) {
+  join(FIRST_PLAYER).ready = true;
+  tick();
+  runTicks(START_BARRIER_TICKS - 1);
+  ASSERT_EQ(flow().state(), GameState::Starting);
+
+  tick();
+
+  EXPECT_EQ(flow().state(), GameState::InProgress);
+}
+
+/**
+ * Given two ready players, of whom one is away and the other loaded the game
+ * When a tick runs
+ * Then the game starts: an away player is not waited for
+ */
+TEST_F(GameFlowFixture, DoesNotWaitForAnAwayPlayer) {
+  ConnectedPlayer& first = join(FIRST_PLAYER);
+  ConnectedPlayer& second = join(SECOND_PLAYER);
+  first.ready = true;
+  second.ready = true;
+  tick();
+  second.away = true;
+  first.loaded = true;
+
+  tick();
+
+  EXPECT_EQ(flow().state(), GameState::InProgress);
+}
+
+/**
+ * Given a player who told the game it was loaded while the game still waited
+ * for players
+ * When the player is ready and the game starts waiting
+ * Then the game waits for the player to load again
+ */
+TEST_F(GameFlowFixture, ForgetsAGameLoadedFromBeforeTheWait) {
+  ConnectedPlayer& player = join(FIRST_PLAYER);
+  player.loaded = true;
+  player.ready = true;
+  tick();
+
+  tick();
+
+  EXPECT_EQ(flow().state(), GameState::Starting);
 }
