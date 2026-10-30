@@ -6,18 +6,14 @@
 #include <utility>
 #include "ActionSet.hpp"
 #include "AttemptProgress.hpp"
-#include "ConnectionAccepted.hpp"
-#include "ConnectionChallenge.hpp"
 #include "ConnectionConstants.hpp"
 #include "ConnectionRefused.hpp"
 #include "ConnectionStatus.hpp"
 #include "Endpoint.hpp"
-#include "Heartbeat.hpp"
+#include "HandshakeAnswersParts.hpp"
 #include "ISessionOutbox.hpp"
 #include "IncomingDatagram.hpp"
-#include "LobbyState.hpp"
 #include "Logger.hpp"
-#include "MessageOrigin.hpp"
 #include "PlayerInput.hpp"
 #include "ProtocolConstants.hpp"
 #include "Reception.hpp"
@@ -49,50 +45,14 @@ ServerSession::ServerSession(ServerSessionParts parts)
       inbound_(parts.link.get()),
       observers_(std::move(parts.observers)),
       dispatcher_(&parts.dispatcher.get()),
-      logger_(std::string{CONNECTION_LOGGER_NAME}) {
-  registerHandshake();
-}
-
-void ServerSession::registerHandshake() {
-  dispatcher_->registerHandler<network::ConnectionChallenge>(
-      [this](const network::MessageOrigin&,
-             const network::ConnectionChallenge& challenge) {
-        if (status_.phase == ConnectionStatus::Phase::Connecting) {
-          attempt_.answerChallenge(challenge.cookie, outbox_);
-        }
-      });
-  dispatcher_->registerHandler<network::ConnectionAccepted>(
-      [this](const network::MessageOrigin& origin,
-             const network::ConnectionAccepted& accepted) {
-        if (status_.phase != ConnectionStatus::Phase::Connecting) {
-          return;
-        }
-        status_ = {.phase = ConnectionStatus::Phase::Accepted,
-                   .playerNumber = accepted.playerNumber};
-        outbox_.openSession(origin.header.sessionToken);
-        inbound_.open(origin.header);
-        observers_.opened(
-            network::LobbyPlayer{.playerNumber = accepted.playerNumber,
-                                 .ready = false,
-                                 .nickname = attempt_.nickname()},
-            outbox_);
-        logger_.info("accepted as player ",
-                     static_cast<unsigned int>(accepted.playerNumber));
-      });
-  dispatcher_->registerHandler<network::ConnectionRefused>(
-      [this](const network::MessageOrigin& origin,
-             const network::ConnectionRefused& refused) {
-        if (status_.phase == ConnectionStatus::Phase::Connecting) {
-          status_ = {.phase = ConnectionStatus::Phase::Refused,
-                     .refusal = refused.reason,
-                     .serverVersion = origin.header.version};
-          logger_.info("refused, reason ",
-                       static_cast<unsigned int>(refused.reason));
-        }
-      });
-  dispatcher_->registerHandler<network::Heartbeat>(
-      [](const network::MessageOrigin&, const network::Heartbeat&) {});
-}
+      logger_(std::string{CONNECTION_LOGGER_NAME}),
+      answers_(HandshakeAnswersParts{.dispatcher = parts.dispatcher,
+                                     .status = status_,
+                                     .attempt = attempt_,
+                                     .outbox = outbox_,
+                                     .inbound = inbound_,
+                                     .observers = observers_,
+                                     .logger = logger_}) {}
 
 void ServerSession::connect(const network::Endpoint& server,
                             std::string_view nickname) {

@@ -6,6 +6,7 @@
 #include "ConnectionAttempt.hpp"
 #include "ConnectionStatus.hpp"
 #include "Endpoint.hpp"
+#include "HandshakeAnswers.hpp"
 #include "IPlayerInputLink.hpp"
 #include "IServerConnection.hpp"
 #include "Logger.hpp"
@@ -98,10 +99,6 @@ class ServerSession final : public IServerConnection, public IPlayerInputLink {
    * hands the messages of those that pass the checks to the dispatcher. */
   void readReceived();
 
-  /** @brief Registers the handlers of the messages of the handshake and the
-   * Heartbeat on the dispatcher. */
-  void registerHandshake();
-
   /** @brief Ends the attempt as Unreachable, or the session as Lost, as
    * @p ending says; forgets the session, sends nothing, and logs that the
    * server did not answer for the delay that ran out: SESSION_SILENCE_LIMIT for
@@ -120,6 +117,7 @@ class ServerSession final : public IServerConnection, public IPlayerInputLink {
   network::MessageDispatcher* dispatcher_;
   logging::Logger logger_;
   ConnectionStatus status_;
+  HandshakeAnswers answers_;
   std::uint32_t nextInputNumber_{network::FIRST_INPUT_NUMBER};
 };
 
