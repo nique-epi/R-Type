@@ -7,13 +7,24 @@ sidebar:
 
 import ByteLayout from '../../components/ByteLayout.astro';
 
-The client and the server talk over UDP in the binary format described on this page, byte by byte, so each side can be written without reading the code of the other. Version 1 is the contract for the first part of the project. The code follows it in `src/network`: the socket in `Transport` drops a datagram over 1200 bytes (see [Network](/R-Type/network/)), `Serialization` encodes integers and strings, and `Protocol` holds the datagram header and every message of this page, each checked as listed here, except that a `WorldState` without players is accepted while the game has none (see [Network](/R-Type/network/#world-state-worldstatecodec)). The programs apply part of the checks of [Receiving a datagram](#receiving-a-datagram) today: both drop a datagram whose header is not of this protocol and version or whose message sizes do not add up, the server drops on its network thread every datagram that is neither a connection request nor from a player it admitted, and answers the requests as [Connection](#connection) describes, and the client reads only the server it contacts. Within a session, each side writes the session token and its next sequence into every datagram it sends: the server in its acceptances, the `EntitySpawned` of the ships, the Bydos and the missiles, `LobbyState`, `GameStarted`, `WorldState`, the game events, `GameEnded` and `Heartbeat`, the client in its inputs, `ReadyState`, `Heartbeat` and `Disconnection`. Each side sends a `Heartbeat` after 1 s without sending anything else, the server keeps the seat of a player 5 s after its last datagram, marks it away, and closes the session 15 s later, 20 s in all, and the client closes its session after 20 s without a datagram of the server, as [A session](#a-session) describes. The server checks the token of every datagram from the address of a player it admitted, on its network thread before any queue, and the sequence of every datagram it reads from a player, so a duplicate or a late one is dropped whatever its message; the client checks the token, then the sequence, of every datagram of the server. The `IncompatibleVersion` answer is not sent yet.
+This page is the specification of the protocol the client and the server speak: the format of every datagram and message, the values each field takes, the order of the exchanges from the connection to the end of a game and the departure or the crash of a peer, and what each side does with what it cannot accept. A developer who follows it can write a client for this server, or a server for this client, without reading the code.
+
+## Status of this document
+
+- This is version 1 of the protocol. It is the only version the code speaks; [Version 2](#version-2) says what the second part of the project changes.
+- The words MUST, MUST NOT, SHOULD and MAY are used as in RFC 2119. A MUST is a rule every implementation follows to interoperate; a SHOULD names a behavior the code of this repository has and another implementation can drop without breaking the exchange.
+- Everything on this page is checked against the code of `src/network`, `src/server` and `src/client`. [Implementation status](#implementation-status) lists the rules the programs do not apply yet, so a rule never reads as working when it does not.
+- Numbers are decimal unless written `0x`. A size is in bytes.
+
+## Overview
+
+The client and the server exchange datagrams over UDP. A client asks to join, the server admits it to a waiting room, starts the game once every connected player is ready, then sends the state of the world about 20 times per second while the client sends the keys held 60 times per second. The sections below follow that order: [Transport](#transport) and [Encoding](#encoding) fix the bytes, [Datagram](#datagram) the header and the checks, [Messages](#messages) every message, [A session](#a-session) the exchanges and their timing, [Errors](#errors) and [Losses](#losses) what goes wrong.
 
 ## Transport
 
 - Every message of the game travels over UDP; no TCP connection is opened.
 - The server listens on one port. The client sends from any port, and the server answers to the address and port the datagram came from.
-- A datagram carries at most 1200 bytes of UDP payload. Every IPv6 link carries packets of 1280 bytes or more (RFC 8200, section 5); minus the 40-byte IPv6 header and the 8-byte UDP header, that leaves 1232 bytes, so 1200 keeps room for 32 bytes of IPv6 extension headers. QUIC relies on the same figure and expects it to pass on all IPv6 paths and on modern IPv4 paths (RFC 9000, section 14). A path with a smaller MTU, such as some VPNs and tunnels, may still fragment or drop a datagram; version 0 does not detect it.
+- A datagram carries at most 1200 bytes of UDP payload. Every IPv6 link carries packets of 1280 bytes or more (RFC 8200, section 5); minus the 40-byte IPv6 header and the 8-byte UDP header, that leaves 1232 bytes, so 1200 keeps room for 32 bytes of IPv6 extension headers. QUIC relies on the same figure and expects it to pass on all IPv6 paths and on modern IPv4 paths (RFC 9000, section 14). A path with a smaller MTU, such as some VPNs and tunnels, may still fragment or drop a datagram; version 1 does not detect it.
 - A datagram is read on its own: no message is split across two datagrams.
 
 ## Encoding
@@ -63,7 +74,7 @@ A datagram is a 22-byte header followed by one or more messages. The header, byt
 | Offset | Size | Field | In version 1 |
 |---|---|---|---|
 | 0 | 4 | `protocolId` | `0x52545950`, `RTYP` in ASCII |
-| 4 | 1 | `version` | 0 |
+| 4 | 1 | `version` | 1 |
 | 5 | 1 | `flags` | 0 |
 | 6 | 8 | `sessionToken` | 0 until the connection is accepted, then the token given by the server |
 | 14 | 2 | `sequence` | number of the datagram for its sender |
@@ -133,6 +144,24 @@ The type identifies a message in both directions: `Disconnection` and `Heartbeat
 | 14 | `PlayerLeft` | `playerNumber` `u8`, `reason` `u8`: 1 `Left`, 2 `TimedOut` | to the other players, when one leaves or times out, three times 50 ms apart |
 | 15 | `GameEnded` | `playerCount` `u8`, then per player `playerNumber` `u8`, `score` `u32` | when no player has a life left, then every 500 ms until the server waits for players again |
 | 16 | `ConnectionChallenge` | `cookie` `u64` | in answer to a request without a valid cookie |
+
+### Payload rules
+
+A message is accepted only when its payload has exactly the size its fields add up to, with no byte left over, and every value is in range. These rules complete the tables above; a message that breaks one is dropped (see [Errors](#errors)).
+
+| Message | Rule |
+|---|---|
+| `ConnectionRequest` | the nickname follows the rules of [Connection](#connection): 1 to 16 bytes of valid UTF-8, no control character |
+| `ConnectionAccepted` | `playerNumber` is 1 to 4 |
+| `LobbyState` | at most 4 players, each `playerNumber` 1 to 4 and listed once, each nickname valid as above |
+| `GameEnded` | at most 4 players, each `playerNumber` 1 to 4 and listed once |
+| `WorldState` | at most 4 players, each `playerNumber` 1 to 4 and listed once; `motion` follows [World state](#world-state) |
+| `EntitySpawned` | `entityId` is not 0, `entityType` is in the table of [World state](#world-state) |
+| `EntityDestroyed`, `PlayerLeft`, `ConnectionRefused` | `reason` is in the table of its message; `PlayerLeft` names a `playerNumber` of 1 to 4 |
+| `GameEvent` | `kind` is in the table of [Game events](#game-events), and `playerNumber` and `entityId` are 0 or a valid value as that table says |
+| `Disconnection`, `Heartbeat`, `GameStarted` | the payload is empty |
+
+A `LobbyState` or a `GameEnded` with no player is well formed; a `WorldState` too, while the game has none.
 
 ### Connection
 
@@ -362,6 +391,18 @@ The second part of the project changes the protocol as follows:
 - `PlayerInput` repeats the inputs not yet confirmed, `WorldState` confirms the last input applied to each player, and states are sent as differences from the last one received: these payloads change in version 2.
 
 A client and a server of different versions never play together: the connection is refused with `IncompatibleVersion`.
+
+## Implementation status
+
+The code of this repository applies the rules above, with the exceptions listed at the end of this section.
+
+- `src/network` holds the pieces: the socket in `Transport` drops a datagram over 1200 bytes (see [Network](/R-Type/network/)), `Serialization` encodes integers and strings, and `Protocol` holds the header and every message of this page, each checked as listed here. A `WorldState` without players is accepted while the game has none (see [Network](/R-Type/network/#world-state-worldstatecodec)).
+- Both programs drop a datagram whose header is not of this protocol and version, or whose message sizes do not add up. The server drops on its network thread every datagram that is neither a connection request nor from a player it admitted, answers the requests as [Connection](#connection) describes, and answers a datagram of another version from an unknown sender with `ConnectionRefused` (`IncompatibleVersion`). The client reads only the server it contacts.
+- Within a session, each side writes the session token and its next sequence into every datagram it sends: the server in its acceptances, the `EntitySpawned` of the ships, the Bydos and the missiles, `LobbyState`, `GameStarted`, `WorldState`, the game events, `GameEnded` and `Heartbeat`; the client in its inputs, `ReadyState`, `Heartbeat` and `Disconnection`.
+- The server checks the token of every datagram from the address of a player it admitted, on its network thread before any queue, and the sequence of every datagram it reads from a player, so a duplicate or a late one is dropped whatever its message. The client checks the token, then the sequence, of every datagram of the server.
+- Each side sends a `Heartbeat` after 1 s without sending anything else. The server keeps the seat of a silent player for 20 s in all, as [A session](#a-session) describes, and the client closes its session after 20 s without a datagram of the server.
+
+What the programs do not do yet is listed at the end of [A peer disappears](#a-peer-disappears).
 
 ## Validation
 

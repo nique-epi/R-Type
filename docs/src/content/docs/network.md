@@ -111,7 +111,7 @@ const auto decodedName = reader.readString();
 
 `DatagramCodec` (`src/network/Protocol/DatagramCodec/`) turns a header and one message into the bytes of a datagram, and a received datagram back into its header and its messages; the layout is in [Protocol](/R-Type/protocol/#datagram).
 
-- `encode(header, message)` writes the `PACKET_HEADER_SIZE` (22) bytes of the `PacketHeader`, the type of the message, the size of its payload on two bytes, then the payload. A payload over `MESSAGE_PAYLOAD_LIMIT` (1175 bytes) throws `DatagramTooLargeException`. A default `PacketHeader` is version 0 without a session; the sender sets `sessionToken` and `sequence`.
+- `encode(header, message)` writes the `PACKET_HEADER_SIZE` (22) bytes of the `PacketHeader`, the type of the message, the size of its payload on two bytes, then the payload. A payload over `MESSAGE_PAYLOAD_LIMIT` (1175 bytes) throws `DatagramTooLargeException`. A default `PacketHeader` is version 1 without a session; the sender sets `sessionToken` and `sequence`.
 - `decodeHeader(datagram)` reads the header without judging it, so a datagram of another version still gives its version. Fewer than 22 bytes throws `MalformedDatagramException`.
 - `splitMessages(datagram)` returns the `MessageFrame`s that follow the header: the type byte as it arrived, and a view of the payload into the datagram. Either the sizes add up exactly to the end of the datagram, or it throws `MalformedDatagramException` and returns nothing: a datagram without a message, with a size running past its end, or with bytes after its last message is refused whole. Calling it on a temporary buffer does not compile.
 
