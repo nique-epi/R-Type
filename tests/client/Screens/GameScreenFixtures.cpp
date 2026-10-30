@@ -8,6 +8,7 @@
 #include "GameScreenTestConstants.hpp"
 #include "LobbyState.hpp"
 #include "RecordingServerConnection.hpp"
+#include "RecordingWaitingRoom.hpp"
 #include "WorldState.hpp"
 
 using rtype::client::ConnectionStatus;
@@ -18,10 +19,11 @@ using rtype::network::LobbyPlayer;
 using rtype::network::PlayerState;
 using rtype::network::WorldState;
 
-void seatThreePilots(RecordingServerConnection& connection) {
+void seatThreePilots(RecordingServerConnection& connection,
+                     RecordingWaitingRoom& waitingRoom) {
   connection.setStatus({.phase = ConnectionStatus::Phase::Accepted,
                         .playerNumber = LOCAL_NUMBER});
-  connection.setLobbyPlayers(
+  waitingRoom.setLobbyPlayers(
       {LobbyPlayer{.playerNumber = FIRST_PILOT,
                    .ready = false,
                    .nickname = std::string{FIRST_PILOT_NICKNAME}},

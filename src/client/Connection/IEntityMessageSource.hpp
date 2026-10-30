@@ -7,7 +7,7 @@ namespace rtype::client {
 
 /**
  * @brief Where the game takes the entity messages of the server from:
- * ServerConnection in the client, a double in the tests.
+ * EntityMessageQueue in the client, a double in the tests.
  */
 class IEntityMessageSource {
  public:

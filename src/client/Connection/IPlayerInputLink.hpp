@@ -5,7 +5,7 @@
 namespace rtype::client {
 
 /**
- * @brief Where the game sends the actions the player holds: ServerConnection in
+ * @brief Where the game sends the actions the player holds: ServerSession in
  * the client, a double in the tests.
  */
 class IPlayerInputLink {

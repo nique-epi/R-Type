@@ -1,4 +1,4 @@
-#include "ServerConnectionFixtures.hpp"
+#include "ServerSessionFixtures.hpp"
 #include <gtest/gtest.h>
 #include <string>
 #include <vector>
@@ -11,7 +11,7 @@
 #include "OutgoingDatagram.hpp"
 #include "PlayerAction.hpp"
 #include "PlayerInput.hpp"
-#include "ServerConnectionTestConstants.hpp"
+#include "ServerSessionTestConstants.hpp"
 
 namespace rtype::client::testing {
 

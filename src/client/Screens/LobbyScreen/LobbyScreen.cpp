@@ -21,6 +21,7 @@
 #include "IScreenNavigator.hpp"
 #include "IServerConnection.hpp"
 #include "ISoundPlayer.hpp"
+#include "IWaitingRoom.hpp"
 #include "InterfaceConstants.hpp"
 #include "LobbyPartAreas.hpp"
 #include "LobbyPlace.hpp"
@@ -153,6 +154,7 @@ LobbyScreen::LobbyScreen(LobbyScreenParts parts,
                          std::unique_ptr<IInterfaceCanvas> canvas)
     : navigator_(&parts.navigator.get()),
       connection_(&parts.connection.get()),
+      waitingRoom_(&parts.waitingRoom.get()),
       sounds_(&parts.sounds.get()),
       canvas_(std::move(canvas)),
       playfieldPointAt_(std::move(parts.playfieldPointAt)),
@@ -198,7 +200,7 @@ void LobbyScreen::update(engine::Duration elapsed) {
   menu_.advance(elapsed);
   help_.advance(elapsed);
   elapsed_ += elapsed;
-  if (!gameAsked_ && connection_->gameStarted()) {
+  if (!gameAsked_ && waitingRoom_->gameStarted()) {
     gameAsked_ = true;
     navigator_->replaceAll(ScreenId::Game);
   }
@@ -221,7 +223,7 @@ Menu LobbyScreen::buildMenu(std::string readyKeyName) {
       .build();
 }
 
-void LobbyScreen::toggleReady() { connection_->setReady(!wantsReady()); }
+void LobbyScreen::toggleReady() { waitingRoom_->setReady(!wantsReady()); }
 
 void LobbyScreen::leave() {
   connection_->cancel();
@@ -233,18 +235,18 @@ void LobbyScreen::leave() {
 }
 
 bool LobbyScreen::wantsReady() const {
-  const std::optional<bool> requested = connection_->requestedReady();
+  const std::optional<bool> requested = waitingRoom_->requestedReady();
   if (requested.has_value()) {
     return *requested;
   }
   const network::LobbyPlayer* own = playerNumbered(
-      connection_->lobbyPlayers(), connection_->status().playerNumber);
+      waitingRoom_->lobbyPlayers(), connection_->status().playerNumber);
   return own != nullptr && own->ready;
 }
 
 void LobbyScreen::repaint() {
   const std::span<const network::LobbyPlayer> players =
-      connection_->lobbyPlayers();
+      waitingRoom_->lobbyPlayers();
   const std::uint8_t ownNumber = connection_->status().playerNumber;
   std::string status = statusLine(players, ownNumber);
   const LobbyPartAreas parts =
@@ -283,7 +285,7 @@ HangarBay LobbyScreen::bayOf(sf::IntRect area, int slot) const {
                 .palette = palette_,
                 .pilot = std::nullopt};
   const network::LobbyPlayer* player =
-      playerNumbered(connection_->lobbyPlayers(), number);
+      playerNumbered(waitingRoom_->lobbyPlayers(), number);
   if (player != nullptr) {
     bay.pilot = pilotOf(*player);
   }
@@ -294,7 +296,7 @@ BayPilot LobbyScreen::pilotOf(const network::LobbyPlayer& player) const {
   const bool isLocalPlayer =
       player.playerNumber == connection_->status().playerNumber;
   const std::optional<bool> requested =
-      isLocalPlayer ? connection_->requestedReady() : std::nullopt;
+      isLocalPlayer ? waitingRoom_->requestedReady() : std::nullopt;
   return {.nickname = player.nickname,
           .readiness = readinessOf(player, requested),
           .isLocalPlayer = isLocalPlayer};

@@ -72,7 +72,7 @@ GameScreen::GameScreen(GameScreenParts parts,
       playerCommands_(true, parts.settings.get().keys),
       inputs_(&parts.inputs.get()),
       entityMessageSource_(&parts.entityMessages.get()),
-      scoreBoard_(parts.connection.get().lobbyPlayers(),
+      scoreBoard_(parts.waitingRoom.get().lobbyPlayers(),
                   parts.connection.get().status().playerNumber),
       result_(&parts.result.get()),
       sky_(&parts.sky.get()) {

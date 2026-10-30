@@ -11,6 +11,7 @@
 #include "RecordingServerConnection.hpp"
 #include "RecordingSky.hpp"
 #include "RecordingSoundPlayer.hpp"
+#include "RecordingWaitingRoom.hpp"
 
 /** @brief What a game screen alone is built from, every part a double, the
  * connection accepted as player 2 of a waiting room of three. */
@@ -22,6 +23,7 @@ struct LoneGameParts {
   RecordingPlayerInputLink inputs;
   FakeEntityMessageSource entityMessages;
   RecordingServerConnection connection;
+  RecordingWaitingRoom waitingRoom;
   InterfaceCanvasRecord statusCanvas;
   RecordingSky sky;
   RecordingSoundPlayer sounds;

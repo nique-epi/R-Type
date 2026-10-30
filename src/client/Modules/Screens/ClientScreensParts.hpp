@@ -4,11 +4,13 @@
 #include <string>
 #include "AssetLibrary.hpp"
 #include "Endpoint.hpp"
+#include "EntityMessageQueue.hpp"
 #include "GameWindow.hpp"
 #include "IAudioService.hpp"
 #include "ISettingsStorage.hpp"
 #include "PlayerSettings.hpp"
-#include "ServerConnection.hpp"
+#include "ServerSession.hpp"
+#include "WaitingRoom.hpp"
 
 namespace rtype::client {
 
@@ -30,7 +32,9 @@ struct ClientScreensParts {
   std::reference_wrapper<AssetLibrary> assets;
   std::reference_wrapper<IAudioService> audio;
   std::reference_wrapper<GameWindow> window;
-  std::reference_wrapper<ServerConnection> connection;
+  std::reference_wrapper<ServerSession> connection;
+  std::reference_wrapper<WaitingRoom> waitingRoom;
+  std::reference_wrapper<EntityMessageQueue> entityMessages;
   network::Endpoint server;
   std::string nickname;
 };

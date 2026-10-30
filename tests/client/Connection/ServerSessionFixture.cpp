@@ -1,41 +1,43 @@
-#include "ServerConnectionFixture.hpp"
+#include "ServerSessionFixture.hpp"
 #include <cstddef>
 #include <cstdint>
+#include <optional>
 #include <utility>
 #include <vector>
 #include "ConnectionAccepted.hpp"
 #include "ConnectionRequest.hpp"
 #include "ConnectionStatus.hpp"
 #include "DatagramCodec.hpp"
+#include "Endpoint.hpp"
 #include "EntityMessage.hpp"
 #include "IncomingDatagram.hpp"
 #include "MessageType.hpp"
 #include "OutgoingDatagram.hpp"
 #include "PacketHeader.hpp"
 #include "PlayerInput.hpp"
-#include "ServerConnection.hpp"
-#include "ServerConnectionFixtures.hpp"
-#include "ServerConnectionTestConstants.hpp"
+#include "ServerSession.hpp"
+#include "ServerSessionFixtures.hpp"
+#include "ServerSessionTestConstants.hpp"
 #include "TimeConstants.hpp"
+#include "WaitingRoom.hpp"
 #include "WorldState.hpp"
 #include "WorldStateCodec.hpp"
 
 namespace rtype::client::testing {
 
-void ServerConnectionFixture::connect() {
-  connection_.connect(server(), NICKNAME);
-}
+void ServerSessionFixture::connect() { session_.connect(server(), NICKNAME); }
 
-void ServerConnectionFixture::deliverBytes(std::vector<std::byte> datagram) {
+void ServerSessionFixture::deliverBytes(std::vector<std::byte> datagram) {
   link_.deliver(network::IncomingDatagram{.sender = server(),
                                           .payload = std::move(datagram)});
 }
 
-void ServerConnectionFixture::update(engine::Duration elapsed) {
-  connection_.update(elapsed);
+void ServerSessionFixture::update(engine::Duration elapsed) {
+  entityMessages_.advance(elapsed);
+  session_.update(elapsed);
 }
 
-void ServerConnectionFixture::connectAndGetAccepted() {
+void ServerSessionFixture::connectAndGetAccepted() {
   connect();
   network::PacketHeader header;
   header.sessionToken = SESSION_TOKEN;
@@ -44,22 +46,24 @@ void ServerConnectionFixture::connectAndGetAccepted() {
   update();
 }
 
-ConnectionStatus::Phase ServerConnectionFixture::phase() const {
-  return connection_.status().phase;
+ConnectionStatus::Phase ServerSessionFixture::phase() const {
+  return session_.status().phase;
 }
 
-ServerConnection& ServerConnectionFixture::connection() { return connection_; }
+ServerSession& ServerSessionFixture::session() { return session_; }
 
-const std::vector<network::OutgoingDatagram>& ServerConnectionFixture::sent()
+WaitingRoom& ServerSessionFixture::waitingRoom() { return waitingRoom_; }
+
+const std::vector<network::OutgoingDatagram>& ServerSessionFixture::sent()
     const {
   return link_.sent();
 }
 
-network::ConnectionRequest ServerConnectionFixture::lastRequest() const {
+network::ConnectionRequest ServerSessionFixture::lastRequest() const {
   return onlyMessageOf<network::ConnectionRequest>(link_.sent().back());
 }
 
-void ServerConnectionFixture::accept() {
+void ServerSessionFixture::accept() {
   connect();
   deliverInSession(
       network::ConnectionAccepted{.playerNumber = ACCEPTED_PLAYER_NUMBER},
@@ -67,7 +71,7 @@ void ServerConnectionFixture::accept() {
   update();
 }
 
-void ServerConnectionFixture::deliverWorldStateInSession(
+void ServerSessionFixture::deliverWorldStateInSession(
     const network::WorldState& state, std::uint16_t sequence) {
   const std::vector<std::vector<std::byte>> payloads =
       network::WorldStateCodec::encode(state);
@@ -76,13 +80,13 @@ void ServerConnectionFixture::deliverWorldStateInSession(
                                               payloads.front()));
 }
 
-std::vector<EntityMessage> ServerConnectionFixture::drainedEntityMessages() {
+std::vector<EntityMessage> ServerSessionFixture::drainedEntityMessages() {
   std::vector<EntityMessage> drained;
-  connection_.drainEntityMessages(drained);
+  entityMessages_.drainEntityMessages(drained);
   return drained;
 }
 
-network::PacketHeader ServerConnectionFixture::sessionHeader(
+network::PacketHeader ServerSessionFixture::sessionHeader(
     std::uint16_t sequence) {
   network::PacketHeader header;
   header.sessionToken = SESSION_TOKEN;
@@ -90,11 +94,16 @@ network::PacketHeader ServerConnectionFixture::sessionHeader(
   return header;
 }
 
-network::PlayerInput ServerConnectionFixture::lastInput() const {
+const std::optional<network::Endpoint>& ServerSessionFixture::listenedTo()
+    const {
+  return link_.listenedTo();
+}
+
+network::PlayerInput ServerSessionFixture::lastInput() const {
   return inputOf(link_.sent().back());
 }
 
-network::PacketHeader ServerConnectionFixture::lastHeader() const {
+network::PacketHeader ServerSessionFixture::lastHeader() const {
   return network::DatagramCodec::decodeHeader(link_.sent().back().payload);
 }
 

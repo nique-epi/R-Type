@@ -4,8 +4,11 @@ target_include_directories(rtype_client_connection_module PUBLIC ${CMAKE_CURRENT
 
 target_link_libraries(rtype_client_connection_module
   PUBLIC
+    rtype_client_datagram_router
+    rtype_client_entity_message_queue
     rtype_client_network_thread
-    rtype_client_server_connection
+    rtype_client_server_session
+    rtype_client_waiting_room
     rtype_engine_modules
     rtype_logging
   PRIVATE

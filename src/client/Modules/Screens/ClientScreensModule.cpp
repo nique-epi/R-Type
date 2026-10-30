@@ -9,6 +9,7 @@
 #include "ClientScreens.hpp"
 #include "ClientScreensParts.hpp"
 #include "Endpoint.hpp"
+#include "EntityMessageQueue.hpp"
 #include "EventListeners.hpp"
 #include "EventUse.hpp"
 #include "FrameLoop.hpp"
@@ -18,8 +19,9 @@
 #include "InstallContext.hpp"
 #include "ModuleConstants.hpp"
 #include "PlayerSettings.hpp"
-#include "ServerConnection.hpp"
+#include "ServerSession.hpp"
 #include "TimeConstants.hpp"
+#include "WaitingRoom.hpp"
 
 namespace rtype::client {
 
@@ -43,7 +45,9 @@ void ClientScreensModule::install(engine::InstallContext& context) {
   assets_ = &context.require<AssetLibrary>();
   audio_ = &context.require<IAudioService>();
   window_ = &context.require<GameWindow>();
-  connection_ = &context.require<ServerConnection>();
+  connection_ = &context.require<ServerSession>();
+  waitingRoom_ = &context.require<WaitingRoom>();
+  entityMessages_ = &context.require<EntityMessageQueue>();
   loop_ = &context.require<FrameLoop>();
   listeners_ = &context.require<EventListeners>();
   context.addWork(UPDATE_STAGE,
@@ -62,6 +66,8 @@ void ClientScreensModule::start() {
                          .audio = *audio_,
                          .window = *window_,
                          .connection = *connection_,
+                         .waitingRoom = *waitingRoom_,
+                         .entityMessages = *entityMessages_,
                          .server = server_,
                          .nickname = nickname_});
   listenerHandle_ = listeners_->add([this](const sf::Event& event) {
