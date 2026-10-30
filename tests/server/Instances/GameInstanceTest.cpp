@@ -62,6 +62,7 @@ using testing::FOURTH_PLAYER;
 using testing::FOURTH_SENT;
 using testing::FOURTH_SEQUENCE;
 using testing::GameInstanceArrowTest;
+using testing::GameInstanceInputDelayTest;
 using testing::GameInstanceInputShuffleTest;
 using testing::GameInstanceInputTest;
 using testing::GameInstanceLogTest;
@@ -74,6 +75,7 @@ using testing::HOLDS_NOTHING;
 using testing::HOLDS_RIGHT;
 using testing::HOLDS_SHOOT;
 using testing::HOLDS_UP;
+using testing::INPUT_DELAY_TICKS;
 using testing::inputPayload;
 using testing::LARGEST_INPUT_NUMBER;
 using testing::messageTypesOf;
@@ -1770,5 +1772,56 @@ TEST_P(GameInstanceInputShuffleTest,
 INSTANTIATE_TEST_SUITE_P(Seeds, GameInstanceInputShuffleTest,
                          ::testing::Range(std::uint32_t{0},
                                           SHUFFLE_SEED_COUNT));
+
+/**
+ * Given a game that holds each input for two ticks and a player who sent up
+ * When the tick that reads the input and the one after it run
+ * Then the player does not hold up yet
+ */
+TEST_F(GameInstanceInputDelayTest, HoldsAnInputUntilItsDelayIsOver) {
+  send(FIRST_PLAYER, HOLDS_UP);
+
+  deliver({FIRST_SENT});
+  tick();
+
+  EXPECT_EQ(heldActions(FIRST_PLAYER), HOLDS_NOTHING);
+}
+
+/**
+ * Given a game that holds each input for two ticks and a player who sent up
+ * When two more ticks than the one that read it have run
+ * Then the player holds up
+ */
+TEST_F(GameInstanceInputDelayTest, AppliesAnInputOnceItsDelayIsOver) {
+  send(FIRST_PLAYER, HOLDS_UP);
+
+  deliver({FIRST_SENT});
+  runTicks(INPUT_DELAY_TICKS);
+
+  EXPECT_EQ(heldActions(FIRST_PLAYER), HOLDS_UP);
+}
+
+/**
+ * Given a game that holds each input for two ticks and two players who sent
+ * their input in ticks one apart
+ * When each input has waited the delay
+ * Then each ship is steered exactly the delay after its own input arrived
+ */
+TEST_F(GameInstanceInputDelayTest, DelaysEveryPlayerByTheSameNumberOfTicks) {
+  send(FIRST_PLAYER, HOLDS_UP);
+  send(SECOND_PLAYER, HOLDS_DOWN);
+  deliver({FIRST_SENT});
+  deliver({SECOND_SENT});
+
+  runTicks(INPUT_DELAY_TICKS - 1);
+  const std::optional<std::uint8_t> firstAtItsDelay = heldActions(FIRST_PLAYER);
+  const std::optional<std::uint8_t> secondBeforeItsDelay =
+      heldActions(SECOND_PLAYER);
+  tick();
+
+  EXPECT_EQ(firstAtItsDelay, HOLDS_UP);
+  EXPECT_EQ(secondBeforeItsDelay, HOLDS_NOTHING);
+  EXPECT_EQ(heldActions(SECOND_PLAYER), HOLDS_DOWN);
+}
 
 }  // namespace rtype::server

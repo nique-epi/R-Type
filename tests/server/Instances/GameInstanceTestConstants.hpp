@@ -90,6 +90,13 @@ constexpr std::uint16_t DISCONNECTION_SEQUENCE = 20000;
  */
 constexpr std::size_t SOME_TICKS = 3;
 
+/** @brief The delay of a game that applies each input in the tick that reads
+ * it, as most tests of the game expect. */
+constexpr std::size_t NO_INPUT_DELAY_TICKS = 0;
+
+/** @brief The delay of the game of the tests of the input delay. */
+constexpr std::size_t INPUT_DELAY_TICKS = 2;
+
 /** @brief The seed the games of the tests start their random draws from. */
 constexpr std::uint32_t SOME_SEED = 7;
 

@@ -112,13 +112,17 @@ std::vector<std::unique_ptr<IGameModule>> modulesWithRulesAt(
 
 }  // namespace
 
-GameInstanceTest::GameInstanceTest()
+GameInstanceTest::GameInstanceTest() : GameInstanceTest(NO_INPUT_DELAY_TICKS) {}
+
+GameInstanceTest::GameInstanceTest(std::size_t inputDelayTicks)
     : game_(GameInstanceParts{.send =
                                   [this](network::OutgoingDatagram datagram) {
                                     sent_.push_back(std::move(datagram));
                                   },
                               .settings = GameSettings{.seed = SOME_SEED,
-                                                       .waves = testWavePlan()},
+                                                       .waves = testWavePlan(),
+                                                       .inputDelayTicks =
+                                                           inputDelayTicks},
                               .events = events_,
                               .timers = timers_},
             modulesWithRulesAt(rules_)) {}
@@ -235,7 +239,14 @@ GameInstance& GameInstanceTest::game() { return game_; }
 
 engine::EventBus& GameInstanceTest::events() { return events_; }
 
-GameInstanceInputTest::GameInstanceInputTest() {
+GameInstanceInputTest::GameInstanceInputTest()
+    : GameInstanceInputTest(NO_INPUT_DELAY_TICKS) {}
+
+GameInstanceInputDelayTest::GameInstanceInputDelayTest()
+    : GameInstanceInputTest(INPUT_DELAY_TICKS) {}
+
+GameInstanceInputTest::GameInstanceInputTest(std::size_t inputDelayTicks)
+    : GameInstanceTest(inputDelayTicks) {
   for (const std::size_t player : {FIRST_PLAYER, SECOND_PLAYER}) {
     join(player, PLAYER_SESSION_TOKENS.at(player));
   }

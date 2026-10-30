@@ -110,7 +110,8 @@ ConnectedPlayer* PlayerRoster::add(const network::Endpoint& endpoint,
                           .sessionToken = sessionToken,
                           .nextSequence = 0,
                           .arrivals = ArrivalLedger{},
-                          .newestInputNumber = std::nullopt});
+                          .newestInputNumber = std::nullopt,
+                          .newestAppliedInputNumber = std::nullopt});
     }
   }
   return nullptr;

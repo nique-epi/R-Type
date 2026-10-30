@@ -63,6 +63,20 @@ std::size_t stateRateFromText(std::string_view text) {
   return rate;
 }
 
+/**
+ * @returns The input delay @p text writes, from LOWEST_INPUT_DELAY_TICKS to
+ * HIGHEST_INPUT_DELAY_TICKS.
+ * @throws engine::InvalidLaunchOptionValueException when it is not one.
+ */
+std::size_t inputDelayFromText(std::string_view text) {
+  const auto delay = wholeNumberFromText<std::size_t>(INPUT_DELAY_OPTION, text);
+  if (delay < LOWEST_INPUT_DELAY_TICKS || delay > HIGHEST_INPUT_DELAY_TICKS) {
+    throw engine::InvalidLaunchOptionValueException(
+        std::string(INPUT_DELAY_OPTION), std::string(text));
+  }
+  return delay;
+}
+
 }  // namespace
 
 LaunchOptions LaunchOptions::read(std::span<const std::string_view> arguments) {
@@ -85,6 +99,13 @@ LaunchOptions LaunchOptions::read(std::span<const std::string_view> arguments) {
                            .record =
                                [&options](std::string_view rate) {
                                  options.stateRate_ = stateRateFromText(rate);
+                               }},
+      engine::LaunchOption{.name = INPUT_DELAY_OPTION,
+                           .takesValue = true,
+                           .record =
+                               [&options](std::string_view delay) {
+                                 options.inputDelay_ =
+                                     inputDelayFromText(delay);
                                }},
       engine::LaunchOption{
           .name = engine::HELP_OPTION,
@@ -118,6 +139,14 @@ std::string LaunchOptions::usage() {
           ". More states move the other ships more smoothly and use more "
           "bandwidth. Default: " +
           std::to_string(DEFAULT_WORLD_STATES_PER_SECOND) + ".");
+  text += engine::usageEntry(
+      std::string(INPUT_DELAY_OPTION) + " <ticks>",
+      "Ticks every player's input is held before it is applied, from " +
+          std::to_string(LOWEST_INPUT_DELAY_TICKS) + " to " +
+          std::to_string(HIGHEST_INPUT_DELAY_TICKS) +
+          ". The same delay holds for every player, so it adds the same lag to "
+          "all of them. Default: " +
+          std::to_string(DEFAULT_INPUT_DELAY_TICKS) + ".");
   text += engine::usageEntry(engine::HELP_OPTION,
                              "Print this help and start nothing.");
   text += '\n';
@@ -131,11 +160,14 @@ std::optional<std::uint32_t> LaunchOptions::seed() const { return seed_; }
 
 std::size_t LaunchOptions::stateRate() const { return stateRate_; }
 
+std::size_t LaunchOptions::inputDelay() const { return inputDelay_; }
+
 bool LaunchOptions::helpRequested() const { return helpRequested_; }
 
 LaunchOptions::LaunchOptions(std::uint16_t port, bool helpRequested)
     : port_(port),
       helpRequested_(helpRequested),
-      stateRate_(DEFAULT_WORLD_STATES_PER_SECOND) {}
+      stateRate_(DEFAULT_WORLD_STATES_PER_SECOND),
+      inputDelay_(DEFAULT_INPUT_DELAY_TICKS) {}
 
 }  // namespace rtype::server

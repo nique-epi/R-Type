@@ -60,6 +60,12 @@ struct ConnectedPlayer {
    * arrives. The input itself is held by the Intent of the ship of the player.
    * InputKeeper keeps it. */
   std::optional<std::uint32_t> newestInputNumber;
+  /** @brief The inputNumber of the newest input of the player that was applied
+   * to its ship, after being held for the input delay; empty until the first
+   * one is, and cleared with newestInputNumber. It tells an input that follows
+   * earlier ones from the first of the session, which lags newestInputNumber by
+   * the input delay. DelayedInputs keeps it. */
+  std::optional<std::uint32_t> newestAppliedInputNumber;
   /** @brief Ticks the game ran since it last read a datagram of the player;
    * the player is away once it reaches SESSION_TIMEOUT_TICKS, and the session
    * closes once it reaches SESSION_CLOSING_TICKS.

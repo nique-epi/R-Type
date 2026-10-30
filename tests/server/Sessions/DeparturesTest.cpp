@@ -106,6 +106,20 @@ TEST_F(DeparturesFixture, MarksAPlayerAwayOnceTheTimeoutIsReached) {
 }
 
 /**
+ * Given a player with an input applied, silent until its timeout is reached
+ * When one more tick of silence is counted
+ * Then the number of its newest applied input is cleared
+ */
+TEST_F(DeparturesFixture, ClearsTheAppliedInputNumberOfAPlayerWhoIsAway) {
+  player().newestAppliedInputNumber = SOME_INPUT_NUMBER;
+  for (std::size_t tick = 0; tick < SESSION_TIMEOUT_TICKS; ++tick) {
+    departures().closeSilentSessions();
+  }
+
+  EXPECT_FALSE(player().newestAppliedInputNumber.has_value());
+}
+
+/**
  * Given a player heard from at the last tick before its timeout
  * When silence is counted again
  * Then its session stays open
