@@ -27,7 +27,7 @@ std::unique_ptr<IScreen> buildLobbyScreen(const ScreenContext& context,
   const PlayerSettings& settings = context.services.settings.get();
   return std::make_unique<LobbyScreen>(
       LobbyScreenParts{.navigator = context.navigator.get(),
-                       .sounds = context.sounds.get(),
+                       .sounds = soundsOf(context),
                        .connection = context.services.connection.get(),
                        .playfieldPointAt = playfieldMappingOf(context),
                        .keys = settings.keys,
@@ -41,7 +41,7 @@ std::unique_ptr<IScreen> buildLobbyScreen(const ScreenContext& context,
 /** @returns The waiting room alone after a game, playing the theme again. */
 std::unique_ptr<IScreen> buildLobbyAfterGameScreen(
     const ScreenContext& context) {
-  context.soundtrack.get().playTheme();
+  context.services.audio.get().playTheme();
   return buildLobbyScreen(context, LobbyPlace::AfterGame);
 }
 

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <cstddef>
 #include <cstdint>
 #include <limits>
@@ -72,5 +73,17 @@ constexpr game::Position INFINITE_POSITION{
  * @brief More entities than one datagram holds.
  */
 constexpr std::size_t MANY_ENTITIES = 300;
+
+/**
+ * @brief The rates the cadence tests run: the lowest and the highest the
+ * server accepts, the default, and one that does not divide the tick rate.
+ */
+constexpr std::array<std::size_t, 5> STATE_RATES_UNDER_TEST{2, 10, 20, 45, 60};
+
+/**
+ * @brief Rates the server refuses: one under the lowest, none, and one over
+ * the tick rate.
+ */
+constexpr std::array<std::size_t, 3> REFUSED_STATE_RATES{1, 0, 61};
 
 }  // namespace rtype::server::testing

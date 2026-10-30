@@ -4,6 +4,7 @@
 #include <string>
 #include <string_view>
 #include <utility>
+#include "AudioMode.hpp"
 #include "ClientConstants.hpp"
 #include "ClientException.hpp"
 #include "Endpoint.hpp"
@@ -50,6 +51,13 @@ LaunchOptions LaunchOptions::read(std::span<const std::string_view> arguments) {
                                  options.nickname_ = std::string(nickname);
                                }},
       engine::LaunchOption{
+          .name = NO_SOUND_OPTION,
+          .takesValue = false,
+          .record =
+              [&options]([[maybe_unused]] std::string_view value) {
+                options.audioMode_ = AudioMode::Disabled;
+              }},
+      engine::LaunchOption{
           .name = engine::HELP_OPTION,
           .takesValue = false,
           .record =
@@ -79,6 +87,8 @@ std::string LaunchOptions::usage() {
           std::to_string(network::MINIMUM_NICKNAME_SIZE) + " to " +
           std::to_string(network::MAXIMUM_NICKNAME_SIZE) +
           " bytes of UTF-8. Default: " + std::string(DEFAULT_NICKNAME) + ".");
+  text += engine::usageEntry(std::string(NO_SOUND_OPTION),
+                             "Start the client without sound.");
   text += engine::usageEntry(engine::HELP_OPTION,
                              "Print this help and open no window.");
   text += '\n';
@@ -91,6 +101,8 @@ const network::Endpoint& LaunchOptions::serverEndpoint() const {
 }
 
 const std::string& LaunchOptions::nickname() const { return nickname_; }
+
+AudioMode LaunchOptions::audioMode() const { return audioMode_; }
 
 bool LaunchOptions::helpRequested() const { return helpRequested_; }
 

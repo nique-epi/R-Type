@@ -39,7 +39,8 @@ void ShipSpawnAnnouncer::onPlayerJoined(ConnectedPlayer& player) {
     return;
   }
   player.shipEntityId = world_->spawnPlayer(
-      game::shipStartPosition(player.playerNumber, network::MAXIMUM_PLAYERS));
+      game::shipStartPosition(player.playerNumber, network::MAXIMUM_PLAYERS),
+      player.livesWithoutShip);
   for (ConnectedPlayer* const other : roster_->connected()) {
     announce(*other, player);
     if (other != &player && other->shipEntityId != identifiers::NO_ENTITY_ID) {

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstddef>
 #include <cstdint>
 
 namespace rtype::game::testing {
@@ -31,5 +32,13 @@ constexpr float MISSILE_UNITS_PER_SECOND = 960.0F;
  * ship.
  */
 constexpr float ENEMY_MISSILE_UNITS_PER_SECOND = 360.0F;
+
+/** @brief Ticks between two missiles of a Bydo, as the world tests expect it:
+ * one and a half seconds at 60 ticks per second. */
+constexpr std::size_t BYDO_SHOT_INTERVAL_TICKS = 90;
+
+/** @brief Ticks between two missiles of a ship, as the world tests expect it:
+ * a third of a second at 60 ticks per second. */
+constexpr std::size_t SHIP_SHOT_INTERVAL_TICKS = 20;
 
 }  // namespace rtype::game::testing

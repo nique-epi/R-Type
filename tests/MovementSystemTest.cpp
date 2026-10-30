@@ -7,9 +7,12 @@
 #include "Entity.hpp"
 #include "EntityRegistry.hpp"
 #include "FixedTimestep.hpp"
+#include "Intent.hpp"
 #include "MovementSystem.hpp"
 #include "PlayfieldConstants.hpp"
 #include "Position.hpp"
+#include "ShipDirections.hpp"
+#include "ShipMotion.hpp"
 #include "SimulatedClock.hpp"
 #include "SystemScheduler.hpp"
 #include "TimeConstants.hpp"
@@ -24,9 +27,12 @@ using rtype::engine::FixedTimestep;
 using rtype::engine::SIMULATION_TICK_DURATION;
 using rtype::engine::SystemScheduler;
 using rtype::engine::testing::ONE_SECOND;
+using rtype::game::Intent;
 using rtype::game::MovementSystem;
 using rtype::game::PLAYFIELD_WIDTH;
 using rtype::game::Position;
+using rtype::game::ShipDirections;
+using rtype::game::ShipMotion;
 using rtype::game::Velocity;
 
 namespace {
@@ -171,4 +177,71 @@ TEST(MovementSystem, ZeroElapsedTimeMovesNothing) {
   ASSERT_NE(position, nullptr);
   EXPECT_FLOAT_EQ(position->x, START_X);
   EXPECT_FLOAT_EQ(position->y, START_Y);
+}
+
+/**
+ * Given a ship at (100, 200) whose Intent holds right
+ * When one tick of movement is applied
+ * Then it moved right and not vertically, and it drifts right
+ */
+TEST(MovementSystem, ShipMovesByTheDirectionsOfItsIntent) {
+  EntityRegistry entities;
+  ComponentRegistry components(entities);
+  const Entity ship = entities.create();
+  components.add(ship, Position{.x = START_X, .y = START_Y});
+  components.add(ship, ShipMotion{});
+  components.add(ship, Intent{.directions = ShipDirections{.right = true}});
+  MovementSystem movement;
+
+  movement.update(components, SIMULATION_TICK_DURATION);
+
+  const Position* position = components.get<Position>(ship);
+  const ShipMotion* motion = components.get<ShipMotion>(ship);
+  ASSERT_NE(position, nullptr);
+  ASSERT_NE(motion, nullptr);
+  EXPECT_GT(position->x, START_X);
+  EXPECT_FLOAT_EQ(position->y, START_Y);
+  EXPECT_GT(motion->velocityX, 0.0F);
+}
+
+/**
+ * Given a ship at rest whose Intent holds nothing
+ * When one tick of movement is applied
+ * Then it stays in place
+ */
+TEST(MovementSystem, ShipWhoseIntentHoldsNothingStaysInPlace) {
+  EntityRegistry entities;
+  ComponentRegistry components(entities);
+  const Entity ship = entities.create();
+  components.add(ship, Position{.x = START_X, .y = START_Y});
+  components.add(ship, ShipMotion{});
+  components.add(ship, Intent{});
+  MovementSystem movement;
+
+  movement.update(components, SIMULATION_TICK_DURATION);
+
+  const Position* position = components.get<Position>(ship);
+  ASSERT_NE(position, nullptr);
+  EXPECT_FLOAT_EQ(position->x, START_X);
+  EXPECT_FLOAT_EQ(position->y, START_Y);
+}
+
+/**
+ * Given an entity with a ShipMotion and no Intent
+ * When one tick of movement is applied
+ * Then it does not move: no controller wants it anywhere
+ */
+TEST(MovementSystem, BodyWithoutIntentIsNotMovedByIt) {
+  EntityRegistry entities;
+  ComponentRegistry components(entities);
+  const Entity body = entities.create();
+  components.add(body, Position{.x = START_X, .y = START_Y});
+  components.add(body, ShipMotion{.velocityX = SPEED_X});
+  MovementSystem movement;
+
+  movement.update(components, SIMULATION_TICK_DURATION);
+
+  const Position* position = components.get<Position>(body);
+  ASSERT_NE(position, nullptr);
+  EXPECT_FLOAT_EQ(position->x, START_X);
 }

@@ -35,8 +35,8 @@ std::unique_ptr<IScreen> buildIntroScreen(const ScreenContext& context) {
       IntroScreenParts{.navigator = context.navigator.get(),
                        .settings = context.services.settings.get(),
                        .sky = context.sky.get(),
-                       .sounds = context.sounds.get(),
-                       .music = context.theme.get(),
+                       .sounds = soundsOf(context),
+                       .music = context.services.audio.get().theme(),
                        .seed = std::random_device{}()},
       interfaceCanvasOf(context));
 }
@@ -47,7 +47,7 @@ std::unique_ptr<IScreen> buildIntroScreen(const ScreenContext& context) {
 std::unique_ptr<IScreen> buildTitleScreen(const ScreenContext& context,
                                           ScreenId screen,
                                           SquadronStart squadronStart) {
-  context.soundtrack.get().playTheme();
+  context.services.audio.get().playTheme();
   std::unique_ptr<IScreen> loading =
       loadingScreenUnlessLoaded(context, titleAssets(), screen);
   if (loading != nullptr) {
@@ -55,7 +55,7 @@ std::unique_ptr<IScreen> buildTitleScreen(const ScreenContext& context,
   }
   return std::make_unique<TitleScreen>(
       TitleScreenParts{.navigator = context.navigator.get(),
-                       .sounds = context.sounds.get(),
+                       .sounds = soundsOf(context),
                        .settings = context.services.settings.get(),
                        .playfieldPointAt = playfieldMappingOf(context),
                        .motion = motionPreference(),
@@ -68,7 +68,7 @@ std::unique_ptr<IScreen> buildOptionsScreen(const ScreenContext& context,
                                             OptionsPlace place) {
   return std::make_unique<OptionsScreen>(
       OptionsScreenParts{.navigator = context.navigator.get(),
-                         .sounds = context.sounds.get(),
+                         .sounds = soundsOf(context),
                          .place = place,
                          .settings = context.services.settings.get(),
                          .storage = context.services.storage.get(),
@@ -83,7 +83,7 @@ std::unique_ptr<IScreen> buildQuitConfirmationScreen(
   return std::make_unique<QuitConfirmationScreen>(
       QuitConfirmationScreenParts{
           .navigator = context.navigator.get(),
-          .sounds = context.sounds.get(),
+          .sounds = soundsOf(context),
           .playfieldPointAt = playfieldMappingOf(context)},
       interfaceCanvasOf(context));
 }
@@ -91,7 +91,7 @@ std::unique_ptr<IScreen> buildQuitConfirmationScreen(
 std::unique_ptr<IScreen> buildConnectionScreen(const ScreenContext& context) {
   return std::make_unique<ConnectionScreen>(
       ConnectionScreenParts{.navigator = context.navigator.get(),
-                            .sounds = context.sounds.get(),
+                            .sounds = soundsOf(context),
                             .connection = context.services.connection.get(),
                             .playfieldPointAt = playfieldMappingOf(context),
                             .server = context.services.server,

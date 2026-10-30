@@ -77,6 +77,8 @@ ConnectedPlayer& LifeKeeperFixture::join(std::size_t index) {
   return *player;
 }
 
+game::World& LifeKeeperFixture::world() { return world_; }
+
 std::uint32_t LifeKeeperFixture::bydoOn(const ConnectedPlayer& player) {
   const game::Position* const ship = world_.shipPositionOf(player.shipEntityId);
   EXPECT_NE(ship, nullptr);

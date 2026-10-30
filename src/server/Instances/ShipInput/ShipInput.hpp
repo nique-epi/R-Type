@@ -3,7 +3,7 @@
 #include <cstdint>
 #include "ConnectedPlayer.hpp"
 #include "PlayerInput.hpp"
-#include "ShipControl.hpp"
+#include "ShipDirections.hpp"
 #include "World.hpp"
 
 namespace rtype::server {
@@ -25,8 +25,11 @@ namespace rtype::server {
  * @brief Gives the ship of @p player in @p world the presses of @p input,
  * which may start a roll or a dash (game::motionAfterInput()); nothing when
  * the player has no ship in that world. Runs before @p input becomes the
- * newest input of the player, which is what it compares to: GameInstance
- * gives it to its sessions as their onNewerInput.
+ * Intent of the ship, which holds the directions it compares to. A ship no
+ * input reached yet knows no directions: when its player sent inputs to an
+ * earlier ship, its first input presses nothing, so a key held through a
+ * respawn starts no maneuver. GameInstance gives it to its sessions as their
+ * onNewerInput.
  */
 void noteTaps(game::World& world, const ConnectedPlayer& player,
               const network::PlayerInput& input);

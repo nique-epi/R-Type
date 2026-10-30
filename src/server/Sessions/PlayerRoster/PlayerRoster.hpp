@@ -39,6 +39,13 @@ class PlayerRoster {
   [[nodiscard]] ConnectedPlayer* findByNumber(std::uint8_t playerNumber);
 
   /**
+   * @returns The player connected whose ship has the network id @p shipId, or
+   * nullptr when none has it, including for NO_ENTITY_ID: a player without a
+   * ship owns no ship. The player stays at that address until it is removed.
+   */
+  [[nodiscard]] ConnectedPlayer* findByShip(std::uint32_t shipId);
+
+  /**
    * @returns The connected players, in order of their number. They stay at
    * their addresses until they are removed. The list is a copy that
    * allocates nothing, so a tick may ask for it every time; a player

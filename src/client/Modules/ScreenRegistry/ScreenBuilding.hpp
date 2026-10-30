@@ -4,6 +4,7 @@
 #include "AssetList.hpp"
 #include "IInterfaceCanvas.hpp"
 #include "IScreen.hpp"
+#include "ISoundPlayer.hpp"
 #include "MotionPreference.hpp"
 #include "PlayfieldMapping.hpp"
 #include "ScreenContext.hpp"
@@ -14,6 +15,9 @@ namespace rtype::client {
 /** @returns Reduced when the system asks for less motion, Full otherwise;
  * read each time a screen that moves is built. */
 [[nodiscard]] MotionPreference motionPreference();
+
+/** @returns The player of the short sounds of the audio service. */
+[[nodiscard]] ISoundPlayer& soundsOf(const ScreenContext& context);
 
 /** @returns A new picture for a menu, written with the fonts of the asset
  * library. */

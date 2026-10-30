@@ -6,6 +6,7 @@
 #include "GameWindow.hpp"
 #include "IInterfaceCanvas.hpp"
 #include "IScreen.hpp"
+#include "ISoundPlayer.hpp"
 #include "InterfaceCanvas.hpp"
 #include "LoadingScreen.hpp"
 #include "LoadingScreenParts.hpp"
@@ -20,6 +21,10 @@ namespace rtype::client {
 MotionPreference motionPreference() {
   return systemPrefersReducedMotion() ? MotionPreference::Reduced
                                       : MotionPreference::Full;
+}
+
+ISoundPlayer& soundsOf(const ScreenContext& context) {
+  return context.services.audio.get().sounds();
 }
 
 std::unique_ptr<IInterfaceCanvas> interfaceCanvasOf(

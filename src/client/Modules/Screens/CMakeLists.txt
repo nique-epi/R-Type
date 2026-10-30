@@ -5,19 +5,17 @@ target_include_directories(rtype_client_screens_module PUBLIC ${CMAKE_CURRENT_SO
 target_link_libraries(rtype_client_screens_module
   PUBLIC
     rtype_client_asset_library
+    rtype_client_audio_interfaces
     rtype_client_connection
     rtype_client_game_window
     rtype_client_interface
     rtype_client_menus
-    rtype_client_music_player
     rtype_client_replication_interfaces
     rtype_client_screen_registry
     rtype_client_screen_stack
     rtype_client_scrolling_background
     rtype_client_server_connection
     rtype_client_settings
-    rtype_client_sound_player
-    rtype_client_soundtrack
     rtype_client_window
     rtype_client_window_module
     rtype_engine_events

@@ -12,6 +12,7 @@
 #include "EventUse.hpp"
 #include "FrameLoop.hpp"
 #include "GameWindow.hpp"
+#include "IAudioService.hpp"
 #include "ISettingsStorage.hpp"
 #include "InstallContext.hpp"
 #include "ModuleConstants.hpp"
@@ -34,6 +35,7 @@ std::string ClientScreensModule::name() const {
 std::vector<std::string> ClientScreensModule::dependencies() const {
   return {std::string{ASSETS_MODULE_NAME},
           std::string{SETTINGS_MODULE_NAME},
+          std::string{AUDIO_MODULE_NAME},
           std::string{WINDOW_MODULE_NAME},
           std::string{CONNECTION_MODULE_NAME},
           std::string{SCREEN_REGISTRY_MODULE_NAME},
@@ -46,6 +48,7 @@ void ClientScreensModule::install(engine::InstallContext& context) {
   settings_ = &context.require<PlayerSettings>();
   storage_ = &context.require<ISettingsStorage>();
   assets_ = &context.require<AssetLibrary>();
+  audio_ = &context.require<IAudioService>();
   window_ = &context.require<GameWindow>();
   connection_ = &context.require<ServerConnection>();
   loop_ = &context.require<FrameLoop>();
@@ -64,6 +67,7 @@ void ClientScreensModule::start() {
       std::make_unique<ClientScreens>(ScreenServices{.settings = *settings_,
                                                      .storage = *storage_,
                                                      .assets = *assets_,
+                                                     .audio = *audio_,
                                                      .window = *window_,
                                                      .connection = *connection_,
                                                      .server = server_,

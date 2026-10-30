@@ -75,9 +75,9 @@ class LifeKeeper {
   LifeKeeper& operator=(LifeKeeper&&) = delete;
 
   /**
-   * @brief Runs one tick of the game for every connected player: one tick less
-   * of invulnerability for a player who has some, then one tick less of the
-   * wait of a player without a ship, who gets a new one when its wait ends.
+   * @brief Runs one tick of the game: one tick less of invulnerability for
+   * every ship that has some, then one tick less of the wait of every
+   * connected player without a ship, who gets a new one when its wait ends.
    */
   void onTick();
 

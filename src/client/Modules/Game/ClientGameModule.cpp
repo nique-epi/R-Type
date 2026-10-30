@@ -27,7 +27,7 @@ namespace {
 /** @returns The loading screen of gameAssets() while some are not loaded, the
  * game screen once they all are. */
 std::unique_ptr<IScreen> buildGameScreen(const ScreenContext& context) {
-  context.soundtrack.get().playGameMusic();
+  context.services.audio.get().playGameMusic();
   std::unique_ptr<IScreen> loading =
       loadingScreenUnlessLoaded(context, gameAssets(), GAME_SCREEN);
   if (loading != nullptr) {
@@ -41,7 +41,7 @@ std::unique_ptr<IScreen> buildGameScreen(const ScreenContext& context) {
                       .entityMessages = connection,
                       .connection = connection,
                       .sky = context.sky.get(),
-                      .sounds = context.sounds.get(),
+                      .sounds = soundsOf(context),
                       .result = context.gameResult.get()},
       std::make_unique<EntityLayer>(context.services.assets.get()),
       interfaceCanvasOf(context));
@@ -58,7 +58,7 @@ std::unique_ptr<IScreen> buildEndScreen(const ScreenContext& context) {
   const PlayerSettings& settings = context.services.settings.get();
   return std::make_unique<EndScreen>(
       EndScreenParts{.navigator = context.navigator.get(),
-                     .sounds = context.sounds.get(),
+                     .sounds = soundsOf(context),
                      .connection = context.services.connection.get(),
                      .result = context.gameResult.get(),
                      .previousTaunt = context.previousTaunt.get(),

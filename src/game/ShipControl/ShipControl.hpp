@@ -2,21 +2,11 @@
 
 #include <cstdint>
 #include "Position.hpp"
+#include "ShipDirections.hpp"
 #include "ShipMotion.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::game {
-
-/**
- * @brief The directions a player holds for its ship. Holding two opposite
- * directions is holding neither.
- */
-struct ShipDirections {
-  bool up{false};
-  bool down{false};
-  bool left{false};
-  bool right{false};
-};
 
 /** @brief A ship as ShipControl moves it: where its center is, in logical
  * units, and what moves it besides the directions held. */
