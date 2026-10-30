@@ -45,7 +45,7 @@ This page tells you where to look when you need to change something. It describe
 
 ## Modules and frame loop: `clientModules()`, `FrameLoop`
 
-`src/client/main.cpp` reads the options and hands a list of modules to an `engine::Application` (see [Engine](/R-Type/engine/#modules-application-and-imodule)), as the server does. `clientModules()` (`src/client/Modules/Assembly/ClientModules.cpp`) is the one place that lists them; they start in this order and stop in the reverse one.
+`src/client/main.cpp` reads the options and hands a list of modules to an `engine::Application` (see [Modules](/R-Type/modules/)), as the server does. `clientModules()` (`src/client/Modules/Assembly/ClientModules.cpp`) is the one place that lists them; they start in this order and stop in the reverse one.
 
 | Module | Does | Where |
 |---|---|---|
@@ -810,7 +810,7 @@ Text twice or three times its size is written with `TextStyle::scale`: every pix
 | Change the keys of a first launch, or which keys can be bound | `DEFAULT_KEYS` and `KEY_NAMES` in `src/client/Input/InputConstants.hpp` |
 | Add a bound action | `BoundAction` and `BOUND_ACTIONS` (`src/client/Input/BoundAction.hpp`), `DEFAULT_KEYS`, `KeyBindings::playerActionOf()` when it is a `PlayerAction` with its bit in the protocol, `BOUND_ACTION_KEY_NAMES` in `SettingsConstants.hpp`, `BOUND_ACTION_LABELS` in `OptionsScreenConstants.hpp` |
 | Change the window, its display modes, or when the background moves and is drawn | `src/client/Window/GameWindow/`, `src/client/Window/WindowLayout/`, `src/client/Platform/BorderlessScreen*.cpp`, `FrameLoop` and `ClientWindowModule` in `src/client/Modules/Window/`, `ClientScreens::draw()` in `src/client/Modules/Screens/` |
-| Add a part of the client that works each frame, or a global key | A class implementing `IModule` in a folder of `src/client/Modules/`, listed in `clientModules()` (`src/client/Modules/Assembly/ClientModules.cpp`) after its dependencies; it adds its work to a stage of `CLIENT_LOOP_STAGES` in its `install()`, and its listener to `EventListeners` in its `start()` |
+| Add a part of the client that works each frame, or a global key | A class implementing `IModule` in a folder of `src/client/Modules/`, listed in `clientModules()` (`src/client/Modules/Assembly/ClientModules.cpp`) after its dependencies (the steps are those of the [tutorial](/R-Type/tutorial-write-a-module/), which writes a server module); it adds its work to a stage of `CLIENT_LOOP_STAGES` in its `install()`, and its listener to `EventListeners` in its `start()` |
 | Change the default server address or port | `DEFAULT_SERVER_ADDRESS` in `src/client/ClientConstants.hpp`, `DEFAULT_SERVER_PORT` in `src/network/NetworkConstants.hpp` |
 | Change the default nickname | `DEFAULT_NICKNAME` in `src/client/ClientConstants.hpp` |
 | Add a launch option | The options listed in `LaunchOptions::read()` and `usage()`, in `src/client/LaunchOptions/LaunchOptions.cpp`; its name in `src/client/ClientConstants.hpp`, or in `src/engine/LaunchArguments/LaunchArgumentsConstants.hpp` when the server uses it too |

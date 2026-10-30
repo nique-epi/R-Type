@@ -112,7 +112,7 @@ The player queue stays as the last safety net. It discards its oldest datagram, 
 
 ## Modules and stopping the server
 
-`src/server/main.cpp` reads the options and hands a list of modules to an `engine::Application` (see [Engine](/R-Type/engine/#modules-application-and-imodule)). `serverModules()` (`src/server/Modules/Assembly/ServerModules.cpp`) is the one place that lists them; they start in this order and stop in the reverse one.
+`src/server/main.cpp` reads the options and hands a list of modules to an `engine::Application` (see [Modules](/R-Type/modules/)). `serverModules()` (`src/server/Modules/Assembly/ServerModules.cpp`) is the one place that lists them; they start in this order and stop in the reverse one.
 
 | Module | Does | Where |
 |---|---|---|
@@ -651,7 +651,7 @@ A game ended by `finish()`, or by the departure of its last player, tells no one
 | You want to… | Look at |
 |---|---|
 | Change what a tick does | The work a module adds to a stage: `playGames()` in `src/server/Modules/Games/ServerGamesModule.cpp`, `answerConnectionRequests()` in `src/server/Modules/Lobby/ServerLobbyModule.cpp` |
-| Add a part to the server | A class implementing `IModule` in a folder of its own under `src/server/Modules/`, listed in `serverModules()` after the modules it depends on |
+| Add a part to the server | A class implementing `IModule` in a folder of its own under `src/server/Modules/`, listed in `serverModules()` after the modules it depends on: see the [tutorial](/R-Type/tutorial-write-a-module/) |
 | Change what the server does when it stops | `ServerGamesModule::stop()` and `FarewellSender`, in `src/server/Modules/Games/` |
 | Change which datagrams reach the tick | `DatagramSorter::sort` in `src/server/Application/DatagramSorter/DatagramSorter.cpp` |
 | Change how many connection requests a tick answers | `CONNECTION_REQUEST_QUEUE_CAPACITY` in `src/server/ServerConstants.hpp` |
