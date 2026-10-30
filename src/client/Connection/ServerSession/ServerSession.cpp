@@ -50,6 +50,10 @@ ServerSession::ServerSession(ServerSessionParts parts)
       observers_(std::move(parts.observers)),
       dispatcher_(&parts.dispatcher.get()),
       logger_(std::string{CONNECTION_LOGGER_NAME}) {
+  registerHandshake();
+}
+
+void ServerSession::registerHandshake() {
   dispatcher_->registerHandler<network::ConnectionChallenge>(
       [this](const network::MessageOrigin&,
              const network::ConnectionChallenge& challenge) {
@@ -117,7 +121,13 @@ void ServerSession::update(engine::Duration elapsed) {
   readReceived();
   departure_.update(elapsed);
   if (status_.phase == ConnectionStatus::Phase::Accepted) {
-    holdSession(elapsed);
+    if (inbound_.isSilentTooLong()) {
+      giveUp(ConnectionStatus::Phase::Lost);
+      return;
+    }
+    outbox_.advance(elapsed);
+    observers_.held(elapsed);
+    outbox_.sendHeartbeatWhenSilent();
   } else if (status_.phase == ConnectionStatus::Phase::Connecting &&
              attempt_.advance(elapsed, outbox_) == AttemptProgress::TimedOut) {
     giveUp(ConnectionStatus::Phase::Unreachable);
@@ -147,16 +157,6 @@ void ServerSession::readReceived() {
       status_ = refusedForVersion(logger_, reception.header.version);
     }
   }
-}
-
-void ServerSession::holdSession(engine::Duration elapsed) {
-  if (inbound_.isSilentTooLong()) {
-    giveUp(ConnectionStatus::Phase::Lost);
-    return;
-  }
-  outbox_.advance(elapsed);
-  observers_.held(elapsed);
-  outbox_.sendHeartbeatWhenSilent();
 }
 
 void ServerSession::giveUp(ConnectionStatus::Phase ending) {

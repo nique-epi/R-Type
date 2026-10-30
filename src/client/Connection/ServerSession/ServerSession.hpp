@@ -1,6 +1,5 @@
 #pragma once
 
-#include <cstddef>
 #include <cstdint>
 #include <string_view>
 #include "ActionSet.hpp"
@@ -99,12 +98,9 @@ class ServerSession final : public IServerConnection, public IPlayerInputLink {
    * hands the messages of those that pass the checks to the dispatcher. */
   void readReceived();
 
-  /** @brief Gives the session up as Lost once SESSION_SILENCE_LIMIT passed
-   * without a datagram of the server, before anything is sent; otherwise lets
-   * the observers send, then sends a Heartbeat if one is due. The elapsed time
-   * counts before either is sent, so a datagram sent now starts the next
-   * delay. */
-  void holdSession(engine::Duration elapsed);
+  /** @brief Registers the handlers of the messages of the handshake and the
+   * Heartbeat on the dispatcher. */
+  void registerHandshake();
 
   /** @brief Ends the attempt as Unreachable, or the session as Lost, as
    * @p ending says; forgets the session, sends nothing, and logs that the
