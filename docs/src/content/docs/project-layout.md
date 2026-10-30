@@ -51,6 +51,7 @@ The cases where people hesitate:
 | The heartbeat sent to the master | `src/server/MasterLink` | only the server sends it; the message format lives in `src/network/Master` |
 | A new protocol message | `src/network/Protocol` | one struct per message, its encoding next to it, then a row in [Protocol](/R-Type/protocol/#messages) |
 | A fake transport that loses datagrams | `tests/doubles` | test doubles are never built into a program |
+| A part of the server or the client that is installed, started and stopped with it (a sound, a lobby, a metrics reporter) | `src/server/Modules/<Name>/` or `src/client/Modules/<Name>/` | it implements `IModule` and is listed in `serverModules()` or `clientModules()`: see [Adding a module](#adding-a-module) |
 
 ## The libraries
 
@@ -157,7 +158,7 @@ src/server/
 ```
 src/client/
 ├── Modules/          the modules of the client, the frame loop and their list
-├── Application/      screen stack
+├── Application/      the screen stack (the program's `Application` is the engine's, built in `main()`)
 ├── Window/           the SFML window, its display mode and its size
 ├── Assets/           assets found by id, loaded at launch or entering a game
 ├── Platform/         what differs between Windows, macOS and Linux
@@ -240,6 +241,22 @@ src/game/Waves/
 - An error is a subclass of the owner's root exception, in `<owner>/Exceptions/`: `GameException` here.
 
 This follows our previous projects: shared code in libraries and one folder per program, like Zappy; one library per module, interfaces next to their implementations and tests that mirror the sources, like the Raytracer. One thing differs: folders are `PascalCase`.
+
+## Adding a module
+
+A module here is a class implementing `IModule`, installed and started with its program; the page [Modules](/R-Type/modules/) explains what that means, and the [tutorial](/R-Type/tutorial-write-a-module/) writes one. It goes where this table says:
+
+| The module… | Goes in | Listed in |
+|---|---|---|
+| belongs to the server and lives as long as the program | `src/server/Modules/<Name>/` | `serverModules()`, `src/server/Modules/Assembly/ServerModules.cpp` |
+| belongs to the client | `src/client/Modules/<Name>/` | `clientModules()`, `src/client/Modules/Assembly/ClientModules.cpp` |
+| is a rule or a service of one game, and each game has its own | `src/server/Instances/<Name>Module/` | `rtypeGameModules()`, `src/server/Modules/Games/RtypeGameModules.cpp` |
+| would serve a program that is neither (the master) | the folder `Modules/` of that program, once it exists | its own list, built the same way |
+
+- The folder is a module folder like any other (see [Adding a class](#adding-a-class)): one `CMakeLists.txt`, one library `rtype_<owner>_<name>_module`, the class `<Owner><Name>Module` as a `.hpp` and `.cpp` pair.
+- The name other modules depend on is a constant in `ModuleConstants.hpp`, next to the other names, in `src/server/Modules/` or `src/client/Modules/`.
+- The class a module wraps stays in the folder of its feature (`Lobby/`, `Sessions/`, `Connection/`): the module in `Modules/` only installs it, starts it and stops it. Code that must be tested without a program is in the feature folder, and the module is a thin layer over it.
+- A module of the program never goes in `src/engine`, unless every game would need it unchanged. `IModule` itself lives there; the modules of R-Type do not.
 
 ## A key press, from one screen to another
 
