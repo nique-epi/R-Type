@@ -42,8 +42,8 @@ class IServerConnection {
   virtual void cancel() = 0;
 
   /** @returns How the attempt stands: ConnectionPhase::Lost once the server
-   * of a session went silent for SESSION_TIMEOUT, until the next connect() or
-   * cancel(). */
+   * of a session went silent for SESSION_SILENCE_LIMIT, until the next
+   * connect() or cancel(). */
   [[nodiscard]] virtual ConnectionStatus status() const = 0;
 
   /**

@@ -21,7 +21,7 @@ enum class ConnectionPhase : std::uint8_t {
   Unreachable,
   /**
    * @brief The server accepted the player, then sent nothing that passed
-   * the checks of the session for SESSION_TIMEOUT: the client closed the
+   * the checks of the session for SESSION_SILENCE_LIMIT: the client closed the
    * session without telling the server.
    */
   Lost,
