@@ -11,7 +11,7 @@ namespace rtype::network {
  *
  * The default values make a header of the version this code speaks, with no
  * session yet: a sender sets the session token and the sequence it knows.
- * flags, acknowledgedSequence and acknowledgementBits stay 0 in version 0.
+ * flags, acknowledgedSequence and acknowledgementBits stay 0 in version 1.
  */
 struct PacketHeader {
   std::uint32_t protocolId{PROTOCOL_ID};
