@@ -47,13 +47,26 @@ std::vector<ConnectedPlayer> Departures::takeDeparted() {
 std::vector<network::Endpoint> Departures::countSilentTicks() {
   std::vector<network::Endpoint> timedOut;
   for (ConnectedPlayer* const player : roster_.connected()) {
-    if (player->ticksSinceReceived >= SESSION_TIMEOUT_TICKS) {
+    if (player->ticksSinceReceived >= SESSION_CLOSING_TICKS) {
       timedOut.push_back(player->endpoint);
-    } else {
-      ++player->ticksSinceReceived;
+      continue;
+    }
+    ++player->ticksSinceReceived;
+    if (!player->away && player->ticksSinceReceived >= SESSION_TIMEOUT_TICKS) {
+      setAway(*player);
     }
   }
   return timedOut;
+}
+
+void Departures::setAway(ConnectedPlayer& player) const {
+  player.away = true;
+  player.newestInputNumber.reset();
+  logger_.info("player ", static_cast<unsigned int>(player.playerNumber),
+               " is away: nothing received from ", player.endpoint.address,
+               " port ", player.endpoint.port, " for ",
+               network::SESSION_TIMEOUT.count(), " s, seat kept for ",
+               network::RECONNECTION_GRACE.count(), " s");
 }
 
 void Departures::announce(const ConnectedPlayer& player,
@@ -73,7 +86,7 @@ void Departures::logDeparture(const ConnectedPlayer& player,
   }
   logger_.info("player ", playerNumber, " timed out: nothing received from ",
                player.endpoint.address, " port ", player.endpoint.port, " for ",
-               network::SESSION_TIMEOUT.count(), " s");
+               network::SESSION_SILENCE_LIMIT.count(), " s");
 }
 
 }  // namespace rtype::server

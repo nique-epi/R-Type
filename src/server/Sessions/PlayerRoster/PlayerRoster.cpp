@@ -4,11 +4,13 @@
 #include <cstdint>
 #include <optional>
 #include <string>
+#include <string_view>
 #include <utility>
 #include <vector>
 #include "ConnectedPlayer.hpp"
 #include "ConnectedPlayers.hpp"
 #include "Endpoint.hpp"
+#include "EntityIdConstants.hpp"
 #include "ProtocolConstants.hpp"
 
 namespace rtype::server {
@@ -25,6 +27,18 @@ ConnectedPlayer* PlayerRoster::find(const network::Endpoint& endpoint) {
 ConnectedPlayer* PlayerRoster::findByNumber(std::uint8_t playerNumber) {
   for (std::optional<ConnectedPlayer>& seat : seats_) {
     if (seat.has_value() && seat->playerNumber == playerNumber) {
+      return &seat.value();
+    }
+  }
+  return nullptr;
+}
+
+ConnectedPlayer* PlayerRoster::findByShip(std::uint32_t shipId) {
+  if (shipId == identifiers::NO_ENTITY_ID) {
+    return nullptr;
+  }
+  for (std::optional<ConnectedPlayer>& seat : seats_) {
+    if (seat.has_value() && seat->shipEntityId == shipId) {
       return &seat.value();
     }
   }
@@ -59,6 +73,19 @@ std::size_t PlayerRoster::occupiedSeatCount() const {
       }));
 }
 
+bool PlayerRoster::hasNickname(std::string_view nickname) const {
+  const auto lowered = [](char letter) {
+    return letter >= 'A' && letter <= 'Z'
+               ? static_cast<char>(letter - 'A' + 'a')
+               : letter;
+  };
+  return std::ranges::any_of(
+      seats_, [&](const std::optional<ConnectedPlayer>& seat) {
+        return seat.has_value() && std::ranges::equal(seat->nickname, nickname,
+                                                      {}, lowered, lowered);
+      });
+}
+
 bool PlayerRoster::isFull() const {
   return std::ranges::all_of(seats_,
                              [](const std::optional<ConnectedPlayer>& seat) {
@@ -82,8 +109,8 @@ ConnectedPlayer* PlayerRoster::add(const network::Endpoint& endpoint,
                           .endpoint = endpoint,
                           .sessionToken = sessionToken,
                           .nextSequence = 0,
-                          .newestReceivedSequence = std::nullopt,
-                          .newestInput = std::nullopt});
+                          .arrivals = ArrivalLedger{},
+                          .newestInputNumber = std::nullopt});
     }
   }
   return nullptr;

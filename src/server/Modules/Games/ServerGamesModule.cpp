@@ -1,4 +1,6 @@
 #include "ServerGamesModule.hpp"
+#include <cstddef>
+#include <cstdint>
 #include <functional>
 #include <memory>
 #include <random>
@@ -7,10 +9,10 @@
 #include <utility>
 #include <vector>
 #include "ConnectedPlayer.hpp"
-#include "Endpoint.hpp"
+#include "EventBus.hpp"
 #include "FarewellSender.hpp"
-#include "GameEventBroadcaster.hpp"
 #include "GameInstance.hpp"
+#include "GameInstanceParts.hpp"
 #include "GameSettings.hpp"
 #include "Games.hpp"
 #include "GamesSettings.hpp"
@@ -18,7 +20,10 @@
 #include "IPlayerAdmission.hpp"
 #include "InstallContext.hpp"
 #include "ModuleConstants.hpp"
+#include "PlayerDatagrams.hpp"
+#include "RtypeGameModules.hpp"
 #include "ServerConstants.hpp"
+#include "ServerException.hpp"
 #include "TickDatagrams.hpp"
 #include "TimeConstants.hpp"
 #include "WaveCatalog.hpp"
@@ -51,10 +56,23 @@ void ServerGamesModule::install(engine::InstallContext& context) {
 }
 
 void ServerGamesModule::start() {
-  std::unique_ptr<GameInstance> game = createGame();
-  auto broadcaster = std::make_unique<GameEventBroadcaster>(wiringFor(*game));
-  games_.add(std::move(game));
-  broadcaster_ = std::move(broadcaster);
+  if (settings_.gameCount == 0) {
+    throw NoJoinableGameException();
+  }
+  const WavePlan waves = readWaves();
+  for (std::size_t game = 0; game < settings_.gameCount; ++game) {
+    auto events = std::make_unique<engine::EventBus>();
+    std::unique_ptr<GameInstance> created = createGame(
+        *events,
+        GameSettings{
+            .seed = settings_.seed
+                        ? *settings_.seed + (static_cast<std::uint32_t>(game) *
+                                             GAME_SEED_STRIDE)
+                        : std::random_device{}(),
+            .waves = waves,
+            .statesPerSecond = settings_.statesPerSecond});
+    games_.add(std::move(events), std::move(created));
+  }
 }
 
 void ServerGamesModule::stop() {
@@ -62,7 +80,6 @@ void ServerGamesModule::stop() {
                             std::this_thread::sleep_for(pause);
                           }};
   farewell.sayGoodbyeTo(games_);
-  broadcaster_.reset();
 }
 
 WavePlan ServerGamesModule::readWaves() const {
@@ -74,30 +91,22 @@ WavePlan ServerGamesModule::readWaves() const {
   return waves;
 }
 
-std::unique_ptr<GameInstance> ServerGamesModule::createGame() {
+std::unique_ptr<GameInstance> ServerGamesModule::createGame(
+    engine::EventBus& events, GameSettings settings) {
   return std::make_unique<GameInstance>(
-      std::bind_front(&IDatagramSender::queueDatagram, sender_),
-      GameSettings{
-          .seed = settings_.seed ? *settings_.seed : std::random_device{}(),
-          .waves = readWaves()},
-      events_);
-}
-
-GameEventBroadcaster::Wiring ServerGamesModule::wiringFor(GameInstance& game) {
-  return GameEventBroadcaster::Wiring{
-      .events = events_,
-      .timers = timers_,
-      .recipients = [&game] { return game.roster().endpoints(); },
-      .headerFor =
-          [&game](const network::Endpoint& recipient) {
-            return game.nextSessionHeaderFor(recipient);
-          },
-      .send = std::bind_front(&IDatagramSender::queueDatagram, sender_)};
+      GameInstanceParts{
+          .send = std::bind_front(&IDatagramSender::queueDatagram, sender_),
+          .settings = std::move(settings),
+          .events = events,
+          .timers = timers_},
+      rtypeGameModules());
 }
 
 void ServerGamesModule::playGames() {
   for (const std::unique_ptr<GameInstance>& game : games_.all()) {
-    game->onTick(tickDatagrams_->players());
+    keepDatagramsOf(game->roster(), tickDatagrams_->players(),
+                    datagramsOfGame_);
+    game->onTick(datagramsOfGame_);
     for (const ConnectedPlayer& departed : game->takeDepartedPlayers()) {
       admission_->forget(departed.endpoint, departed.sessionToken);
     }
@@ -106,7 +115,7 @@ void ServerGamesModule::playGames() {
 
 void ServerGamesModule::deliverEvents(engine::Duration elapsed) {
   timers_.advance(elapsed);
-  events_.dispatch();
+  games_.dispatchEvents();
 }
 
 }  // namespace rtype::server

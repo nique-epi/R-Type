@@ -49,7 +49,7 @@ enum class ScreenId : std::uint8_t {
    * only: alone on the stack, its BACK leaves the server for the title. */
   LobbyAfterGame,
   /** @brief The NO SIGNAL card once the session with the server ended, lost
-   * or closed, which the frame loop puts in place of every screen through
+   * or closed, which ClientScreens puts in place of every screen through
    * replaceAll(); PRESS ENTER TO RECONNECT opens the connection screen over
    * the title, Escape the title. */
   Lost,

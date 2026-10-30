@@ -149,6 +149,7 @@ Paths below are relative to `.claude/rules/`.
 - `fix/execution/fix-execution-a-script-reading-repository-text-names-its-encoding.md`
 - `fix/execution/fix-execution-a-split-commit-carries-its-own-links.md`
 - `fix/execution/fix-execution-a-static-library-reached-twice-on-the-link-line.md`
+- `fix/execution/fix-execution-a-test-added-to-an-executable-links-what-it-uses.md`
 - `fix/execution/fix-execution-an-edit-of-a-shared-text-checks-it-is-unchanged.md`
 - `fix/execution/fix-execution-browser-global-names-are-window-properties.md`
 - `fix/execution/fix-execution-check-the-index-before-committing.md`

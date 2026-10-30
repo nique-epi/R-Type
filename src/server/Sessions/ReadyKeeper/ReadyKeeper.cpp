@@ -7,7 +7,6 @@
 #include "MessageOrigin.hpp"
 #include "PlayerRoster.hpp"
 #include "ReadyState.hpp"
-#include "SequenceOrder.hpp"
 
 namespace rtype::server {
 
@@ -21,21 +20,19 @@ void ReadyKeeper::apply(const network::MessageOrigin& origin,
   if (!readyAccepted_() || player == nullptr) {
     return;
   }
-  if (player->newestReceivedSequence.has_value() &&
-      !network::isNewerSequence(origin.header.sequence,
-                                *player->newestReceivedSequence)) {
-    return;
-  }
-  player->newestReceivedSequence = origin.header.sequence;
   player->ready = message.ready;
 }
 
 bool ReadyKeeper::everyPlayerIsReady() {
   const ConnectedPlayers players = roster_.connected();
-  return !players.empty() &&
-         std::ranges::all_of(players, [](const ConnectedPlayer* player) {
-           return player->ready;
-         });
+  const auto isPresent = [](const ConnectedPlayer* player) {
+    return !player->away;
+  };
+  return std::ranges::any_of(players, isPresent) &&
+         std::ranges::all_of(players,
+                             [&isPresent](const ConnectedPlayer* player) {
+                               return !isPresent(player) || player->ready;
+                             });
 }
 
 }  // namespace rtype::server

@@ -121,7 +121,7 @@ void ServerConnection::readReceived() {
 }
 
 void ServerConnection::holdSession(engine::Duration elapsed) {
-  if (sinceReceived_ >= network::SESSION_TIMEOUT) {
+  if (sinceReceived_ >= network::SESSION_SILENCE_LIMIT) {
     giveUp(ConnectionPhase::Lost);
     return;
   }
@@ -258,7 +258,7 @@ void ServerConnection::giveUp(ConnectionPhase ending) {
     return;
   }
   const std::chrono::seconds silence = ending == ConnectionPhase::Lost
-                                           ? network::SESSION_TIMEOUT
+                                           ? network::SESSION_SILENCE_LIMIT
                                            : CONNECTION_ATTEMPT_TIMEOUT;
   logger_.warn("no answer from ", server_.address, " port ", server_.port,
                " for ", silence.count(), " s");

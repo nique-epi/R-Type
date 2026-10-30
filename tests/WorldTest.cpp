@@ -13,6 +13,7 @@
 #include "EntityType.hpp"
 #include "Gun.hpp"
 #include "Health.hpp"
+#include "Intent.hpp"
 #include "MissileOwner.hpp"
 #include "MovementPattern.hpp"
 #include "NetworkIdentity.hpp"
@@ -22,11 +23,13 @@
 #include "World.hpp"
 #include "WorldTestConstants.hpp"
 
+using rtype::game::testing::BYDO_SHOT_INTERVAL_TICKS;
 using rtype::game::testing::ENEMY_MISSILE_UNITS_PER_SECOND;
 using rtype::game::testing::MISSILE_UNITS_PER_SECOND;
 using rtype::game::testing::OTHER_X;
 using rtype::game::testing::OTHER_Y;
 using rtype::game::testing::SECOND_PLAYER_NUMBER;
+using rtype::game::testing::SHIP_SHOT_INTERVAL_TICKS;
 using rtype::game::testing::SOME_X;
 using rtype::game::testing::SOME_Y;
 using rtype::game::testing::THREE_HEALTH_POINTS;
@@ -541,10 +544,10 @@ TEST(World, SpawnedPlayerMissileHasTheBoxOfItsSprite) {
 /**
  * Given an empty world
  * When a Bydo is spawned
- * Then it carries a gun that has not fired yet, so its first missile waits a
- * whole interval
+ * Then it carries a gun of enemy missiles that fires every 90 ticks, its first
+ * missile waiting a whole interval
  */
-TEST(World, SpawnedBydoHasAGunThatHasNotFiredYet) {
+TEST(World, SpawnedBydoHasAGunThatWaitsAWholeIntervalFirst) {
   rtype::game::World world;
 
   const std::uint32_t networkId =
@@ -554,7 +557,31 @@ TEST(World, SpawnedBydoHasAGunThatHasNotFiredYet) {
   const std::optional<rtype::game::Gun> gun =
       componentOf<rtype::game::Gun>(world, networkId);
   ASSERT_TRUE(gun.has_value());
-  EXPECT_EQ(gun.value_or(rtype::game::Gun{}).ticksSinceLastShot, 0U);
+  const rtype::game::Gun held = gun.value_or(rtype::game::Gun{});
+  EXPECT_EQ(held.intervalTicks, BYDO_SHOT_INTERVAL_TICKS);
+  EXPECT_EQ(held.ticksUntilReady, BYDO_SHOT_INTERVAL_TICKS);
+  EXPECT_EQ(held.projectile, rtype::game::EntityType::EnemyMissile);
+}
+
+/**
+ * Given an empty world
+ * When a ship is spawned for a player
+ * Then it carries a gun of player missiles that fires every 20 ticks and is
+ * ready at once
+ */
+TEST(World, SpawnedShipHasAGunThatIsReadyAtOnce) {
+  rtype::game::World world;
+
+  const std::uint32_t networkId =
+      world.spawnPlayer(rtype::game::Position{.x = SOME_X, .y = SOME_Y});
+
+  const std::optional<rtype::game::Gun> gun =
+      componentOf<rtype::game::Gun>(world, networkId);
+  ASSERT_TRUE(gun.has_value());
+  const rtype::game::Gun held = gun.value_or(rtype::game::Gun{});
+  EXPECT_EQ(held.intervalTicks, SHIP_SHOT_INTERVAL_TICKS);
+  EXPECT_EQ(held.ticksUntilReady, 0U);
+  EXPECT_EQ(held.projectile, rtype::game::EntityType::PlayerMissile);
 }
 
 /**
@@ -620,4 +647,26 @@ TEST(World, SpawnedEnemyMissileHasTheBoxOfItsSprite) {
       box.value_or(rtype::game::CollisionBox{});
   EXPECT_EQ(found.width, rtype::game::ENEMY_MISSILE_WIDTH);
   EXPECT_EQ(found.height, rtype::game::ENEMY_MISSILE_HEIGHT);
+}
+
+/**
+ * Given a world
+ * When a ship is spawned for a player
+ * Then shipComponentOf finds an Intent wanting nothing, and no other id has one
+ */
+TEST(World, ShipIsSpawnedWithAnIntentThatWantsNothing) {
+  rtype::game::World world;
+  const std::uint32_t shipId =
+      world.spawnPlayer(rtype::game::Position{.x = SOME_X, .y = SOME_Y});
+
+  const rtype::game::Intent* const intent =
+      world.shipComponentOf<rtype::game::Intent>(shipId);
+
+  ASSERT_NE(intent, nullptr);
+  EXPECT_FALSE(intent->directions.up);
+  EXPECT_FALSE(intent->directions.down);
+  EXPECT_FALSE(intent->directions.left);
+  EXPECT_FALSE(intent->directions.right);
+  EXPECT_FALSE(intent->shooting);
+  EXPECT_EQ(world.shipComponentOf<rtype::game::Intent>(shipId + 1), nullptr);
 }

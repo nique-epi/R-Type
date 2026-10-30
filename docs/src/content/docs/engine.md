@@ -18,7 +18,7 @@ This page tells you where to look when you need to change something. It describe
 | Event bus | Available | `src/engine/Events/` |
 | Collisions | Available: the overlap test and the event; the system that detects them is in the game | `src/engine/Collision/` |
 | Launch arguments | Available; used by the server and the client | `src/engine/LaunchArguments/` |
-| Modules and application | Available; no program uses it yet | `src/engine/Modules/` |
+| Modules and application | Available; the server and the client are built from modules | `src/engine/Modules/` |
 
 ## How the parts fit together
 
@@ -32,7 +32,7 @@ flowchart LR
   Components --> Entities[EntityRegistry]
 ```
 
-The engine provides the building blocks and no loop of its own. The server runs its ticks in `TickLoop` (see [Server](/R-Type/server/#tick-loop-tickloop)), and each tick runs the stages of its `Application` (see [Server](/R-Type/server/#modules-and-stopping-the-server)); the client runs no tick yet, but its game screen runs a `SystemScheduler` once per frame, with the real time of the frame, to play its animations (see [Client](/R-Type/client/#animations-animation-animationsystem)).
+The engine provides the building blocks and no loop of its own. The server runs its ticks in `TickLoop` (see [Server](/R-Type/server/#tick-loop-tickloop)), and each tick runs the stages of its `Application` (see [Server](/R-Type/server/#modules-and-stopping-the-server)); the client runs its frame loop, `FrameLoop`, over the stages of its own `Application` (see [Client](/R-Type/client/#modules-and-frame-loop-clientmodules-frameloop)), and its game screen runs a `SystemScheduler` once per frame, with the real time of the frame, to play its animations (see [Client](/R-Type/client/#animations-animation-animationsystem)).
 
 ## ECS: entities and components
 
@@ -103,7 +103,7 @@ if (const auto entity = table.find(networkId)) {
 
 A **system** is one behavior of the game: a class that implements `ISystem` (`src/engine/Systems/ISystem.hpp`) and reads or updates components in `update(components, elapsed)`.
 
-`MovementSystem` (`rtype_game`, `src/game/Systems/MovementSystem/`) is the first system of the game. It moves every entity that has a `Position` and a `Velocity` by the velocity, in units per second, multiplied by `elapsed`, so the distance depends on simulation time and never on the frame rate. It leaves an entity without a `Velocity` where it is, and keeps no entity inside the playfield: the ships have no `Velocity`, and `ShipControl` moves them and keeps them above the status band (see [Moving the ships](/R-Type/server/#moving-the-ships-shipcontrol)). The server runs it on every tick of a game in progress (see [Bydo movement](/R-Type/server/#bydo-movement-patternsystem-and-playfieldexitsystem)).
+`MovementSystem` (`rtype_game`, `src/game/Systems/MovementSystem/`) is the first system of the game. It moves every entity that has a `Position` and a `Velocity` by the velocity, in units per second, multiplied by `elapsed`, so the distance depends on simulation time and never on the frame rate. It leaves an entity without a `Velocity` where it is, and keeps no entity inside the playfield. A second pass moves every entity that has a `Position`, a `ShipMotion` and an `Intent`, the ships, by the directions the `Intent` holds, with `shipAfter` of `ShipControl`, which keeps them above the status band (see [Moving the ships](/R-Type/server/#moving-the-ships-shipcontrol)). The `Intent` is written by a controller, a player or an artificial intelligence, so the system never knows who steers the body. The server runs it on every tick of a game in progress (see [Bydo movement](/R-Type/server/#bydo-movement-patternsystem-and-playfieldexitsystem)).
 
 ### Queries: `ComponentRegistry::forEach`
 
@@ -213,7 +213,7 @@ rtype::engine::readLaunchArguments(logOptions.otherArguments(), options);
 
 ### Loop stages
 
-A program declares the stages of its loop once, in order, as constants: `SERVER_LOOP_STAGES` (`inputs`, `simulation`, `outputs`) in `src/server/ServerConstants.hpp` and `CLIENT_LOOP_STAGES` (`events`, `network`, `update`, `render`) in `src/client/ClientConstants.hpp`. It gives them to `Application(LoopStages(...), modules)`. During `install()`, a module calls `context.addWork(stageName, work)`, where `work` is a `StageWork`, a callable taking the time of the pass. `Application::runStages(elapsed)` runs the stages in the declared order and, within a stage, the works in the order the modules are listed, since modules are installed in list order. It runs only while the modules are started.
+A program declares the stages of its loop once, in order, as constants: `SERVER_LOOP_STAGES` (`inputs`, `simulation`, `outputs`) in `src/server/ServerConstants.hpp` and `CLIENT_LOOP_STAGES` (`events`, `network`, `update`, `render`, `display`) in `src/client/ClientConstants.hpp`. It gives them to `Application(LoopStages(...), modules)`. During `install()`, a module calls `context.addWork(stageName, work)`, where `work` is a `StageWork`, a callable taking the time of the pass. `Application::runStages(elapsed)` runs the stages in the declared order and, within a stage, the works in the order the modules are listed, since modules are installed in list order. It runs only while the modules are started.
 
 A stage name that is not declared throws `UnknownStageException` at install, so a typo stops the program before anything starts.
 
@@ -225,7 +225,7 @@ A module that subscribes to the `EventBus` keeps the `SubscriptionHandle` and un
 
 `Application` provides itself as a service, so a module that owns the thread a program ticks on asks for it with `context.require<Application>()` and calls `runStages()` from that thread.
 
-The server builds an `Application` from its modules (see [Server](/R-Type/server/#modules-and-stopping-the-server)); the client still assembles its parts in its `main.cpp`. In this example, `LogModule` and `AudioModule` stand for modules a program would write, and `AudioModule` depends on `LogModule`:
+The server and the client build an `Application` from their modules (see [Server](/R-Type/server/#modules-and-stopping-the-server) and [Client](/R-Type/client/#modules-and-frame-loop-clientmodules-frameloop)). In this example, `LogModule` and `AudioModule` stand for modules a program would write, and `AudioModule` depends on `LogModule`:
 
 ```cpp
 std::vector<std::unique_ptr<rtype::engine::IModule>> modules;
@@ -248,7 +248,7 @@ The reasoning behind the order is in [Architecture](/R-Type/architecture/#module
 | Change how entities are created or recycled | `src/engine/EntityRegistry/` |
 | Change the simulation rate | `SIMULATION_TICKS_PER_SECOND` in `src/engine/Time/TimeConstants.hpp` |
 | Write a behavior that walks components | A class implementing `ISystem` (declared in `src/engine/Systems/ISystem.hpp`), written in the library it belongs to (the game's are in `src/game/Systems/`), added to a `SystemScheduler` |
-| Change how entities move | `MovementSystem` in `src/game/Systems/MovementSystem/`; the ships move through `ShipControl` in `src/game/ShipControl/` instead |
+| Change how entities move | `MovementSystem` in `src/game/Systems/MovementSystem/`; for a ship, the drift is `shipAfter` in `src/game/ShipControl/` |
 | Change the order systems run in | The order of the `SystemScheduler::add()` calls |
 | Change how network identifiers are given or looked up | `src/engine/NetworkIds/` |
 | Run something after a delay | `TimerScheduler` in `src/engine/Time/TimerScheduler/` |

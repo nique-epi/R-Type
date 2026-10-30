@@ -9,6 +9,7 @@
 #include "Caption.hpp"
 #include "ComponentRegistry.hpp"
 #include "EffectConstants.hpp"
+#include "EffectPreferences.hpp"
 #include "EffectScene.hpp"
 #include "EffectSpawner.hpp"
 #include "EffectSpawnerFixtures.hpp"
@@ -40,6 +41,7 @@ using rtype::client::BYDO_EXPLOSION_WITHOUT_FLASH_FRAME;
 using rtype::client::Caption;
 using rtype::client::DEUTERANOPIA_PILOT_SHADES;
 using rtype::client::EFFECT_SHEET_ID;
+using rtype::client::EffectPreferences;
 using rtype::client::ENEMY_MUZZLE_FLASH_FRAME;
 using rtype::client::FLASH_COLOR;
 using rtype::client::FlashPreference;
@@ -52,7 +54,6 @@ using rtype::client::SHIP_EXPLOSION_FRAME;
 using rtype::client::Shockwave;
 using rtype::client::SpeedLine;
 using rtype::client::SpriteTone;
-using rtype::client::STANDARD_PILOT_SHADES;
 using rtype::client::STAR_GOLD;
 using rtype::client::TextFont;
 using rtype::client::testing::BLUISH_GREEN;
@@ -61,6 +62,7 @@ using rtype::engine::Duration;
 using rtype::engine::Entity;
 using rtype::game::EntityType;
 using rtype::game::Layer;
+using rtype::game::Position;
 
 /**
  * Given a spawner of effects
@@ -197,8 +199,8 @@ TEST(EffectSpawner, AnExplosionDisappearsAfterItsLastFrame) {
  */
 TEST(EffectSpawner, WithFlashesReducedAnExplosionStartsWithoutItsFlash) {
   EffectScene scene;
-  scene.effects().advance(Duration::zero(), FlashPreference::Reduced,
-                          STANDARD_PILOT_SHADES);
+  scene.effects().advance(
+      Duration::zero(), EffectPreferences{.flashes = FlashPreference::Reduced});
 
   scene.effects().playExplosion(EntityType::Enemy, WHERE_IT_DIED);
 
@@ -320,8 +322,8 @@ TEST(EffectSpawner, AHitEntityFlashesForSixtyMilliseconds) {
  */
 TEST(EffectSpawner, WithFlashesReducedAHitEntityIsShaded) {
   EffectScene scene;
-  scene.effects().advance(Duration::zero(), FlashPreference::Reduced,
-                          STANDARD_PILOT_SHADES);
+  scene.effects().advance(
+      Duration::zero(), EffectPreferences{.flashes = FlashPreference::Reduced});
   const Entity target = scene.target();
 
   scene.effects().playHit(target);
@@ -385,7 +387,8 @@ TEST(EffectSpawner, TheFifthKillOfAChainIsABigCatch) {
   EffectScene scene;
   for (int kill = 1; kill < KILLS_PER_BIG_CATCH; ++kill) {
     scene.effects().playExplosion(EntityType::Enemy, WHERE_IT_DIED);
-    scene.advance(CLOSE_KILLS, FlashPreference::Full);
+    scene.advance(CLOSE_KILLS,
+                  EffectPreferences{.flashes = FlashPreference::Full});
   }
   const std::size_t particlesBefore = count<Particle>(scene.components());
 
@@ -453,7 +456,8 @@ TEST(EffectSpawner, TheWhitePictureOfAShipGoesAfterItsFreeze) {
   EffectScene scene;
   scene.effects().playShipDown(scene.shipOfPilot(SECOND_PILOT_COLOR));
 
-  scene.advance(SHIP_DOWN_HOLD_LENGTH, FlashPreference::Full);
+  scene.advance(SHIP_DOWN_HOLD_LENGTH,
+                EffectPreferences{.flashes = FlashPreference::Full});
 
   EXPECT_FALSE(frozenPicture(scene.components()).has_value());
 }
@@ -481,11 +485,12 @@ TEST(EffectSpawner, TheDebrisOfAShipAreInTheColorsOfItsPilot) {
  */
 TEST(EffectSpawner, WithFlashesReducedAShipGoesDownWithoutFlashNorShake) {
   EffectScene scene;
-  scene.effects().advance(Duration::zero(), FlashPreference::Reduced,
-                          STANDARD_PILOT_SHADES);
+  scene.effects().advance(
+      Duration::zero(), EffectPreferences{.flashes = FlashPreference::Reduced});
 
   scene.effects().playShipDown(scene.shipOfPilot(SECOND_PILOT_COLOR));
-  scene.advance(ONE_FRAME, FlashPreference::Reduced);
+  scene.advance(ONE_FRAME,
+                EffectPreferences{.flashes = FlashPreference::Reduced});
 
   const std::optional<Entity> picture = frozenPicture(scene.components());
   ASSERT_TRUE(picture.has_value());
@@ -550,8 +555,8 @@ TEST(EffectSpawner, AShipArrivingAtTheStartWaitsForThePilots) {
  */
 TEST(EffectSpawner, WithFlashesReducedAnInvulnerableShipIsSteady) {
   EffectScene scene;
-  scene.effects().advance(Duration::zero(), FlashPreference::Reduced,
-                          STANDARD_PILOT_SHADES);
+  scene.effects().advance(
+      Duration::zero(), EffectPreferences{.flashes = FlashPreference::Reduced});
   const Entity ship = scene.shipOfPilot(SECOND_PILOT_COLOR);
 
   scene.effects().setInvulnerable(ship, true);
@@ -588,8 +593,9 @@ TEST(EffectSpawner, TheGainOfAKillShowsAsAFigure) {
  */
 TEST(EffectSpawner, TheDebrisOfAShipFollowThePalette) {
   EffectScene scene;
-  scene.effects().advance(Duration::zero(), FlashPreference::Full,
-                          DEUTERANOPIA_PILOT_SHADES);
+  scene.effects().advance(
+      Duration::zero(), EffectPreferences{.flashes = FlashPreference::Full,
+                                          .shades = DEUTERANOPIA_PILOT_SHADES});
 
   scene.effects().playShipDown(scene.shipOfPilot(THIRD_PILOT_COLOR));
 
@@ -604,8 +610,9 @@ TEST(EffectSpawner, TheDebrisOfAShipFollowThePalette) {
  */
 TEST(EffectSpawner, ASteadyInvulnerabilityIsOutlinedInThePalette) {
   EffectScene scene;
-  scene.effects().advance(Duration::zero(), FlashPreference::Reduced,
-                          DEUTERANOPIA_PILOT_SHADES);
+  scene.effects().advance(
+      Duration::zero(), EffectPreferences{.flashes = FlashPreference::Reduced,
+                                          .shades = DEUTERANOPIA_PILOT_SHADES});
   const Entity ship = scene.shipOfPilot(THIRD_PILOT_COLOR);
 
   scene.effects().setInvulnerable(ship, true);
@@ -636,4 +643,104 @@ TEST(EffectSpawner, AGainOfSeveralPilotsNamesNoPilot) {
   const Caption shown = figure.value_or(Caption{});
   EXPECT_EQ(shown.text, "+200");
   EXPECT_EQ(shown.style.color, STAR_GOLD);
+}
+
+/**
+ * Given the sound cues shown and a Bydo
+ * When a missile appears where that Bydo fires
+ * Then "!" shows in the light orange of the enemy missile, the middle of its
+ * line 72 units above the center of the Bydo
+ */
+TEST(EffectSpawner, AShotCueShowsOverTheBydoThatFired) {
+  EffectScene scene;
+  scene.advance(ONE_FRAME, EffectPreferences{.soundCues = true});
+  scene.bydoAt(FIRING_BYDO);
+
+  scene.effects().playAppearance(EntityType::EnemyMissile,
+                                 MISSILE_OF_THE_FIRING_BYDO);
+
+  const std::optional<Entity> cue = captioned(scene.components());
+  ASSERT_TRUE(cue.has_value());
+  const Caption shown = caption(scene.components()).value_or(Caption{});
+  const Position place = positionOf(scene.components(), cue.value_or(Entity{}));
+  EXPECT_EQ(shown.text, "!");
+  EXPECT_EQ(shown.style.color, LIGHT_ORANGE_OF_THE_ENEMY_MISSILE);
+  EXPECT_EQ(place.x, ABOVE_THE_FIRING_BYDO.x);
+  EXPECT_EQ(place.y, ABOVE_THE_FIRING_BYDO.y);
+}
+
+/**
+ * Given the sound cues shown and a Bydo that just fired
+ * When its cue is read
+ * Then it is anchored to that Bydo, so it follows it
+ */
+TEST(EffectSpawner, AShotCueFollowsItsBydo) {
+  EffectScene scene;
+  scene.advance(ONE_FRAME, EffectPreferences{.soundCues = true});
+  const Entity bydo = scene.bydoAt(FIRING_BYDO);
+
+  scene.effects().playAppearance(EntityType::EnemyMissile,
+                                 MISSILE_OF_THE_FIRING_BYDO);
+
+  const std::optional<Entity> cue = captioned(scene.components());
+  ASSERT_TRUE(cue.has_value());
+  EXPECT_EQ(anchorOf(scene.components(), cue.value_or(Entity{})), bydo);
+}
+
+/**
+ * Given the sound cues shown and the cue of a shot
+ * When half a second passes
+ * Then the cue is gone
+ */
+TEST(EffectSpawner, AShotCueGoesAfterHalfASecond) {
+  EffectScene scene;
+  scene.advance(ONE_FRAME, EffectPreferences{.soundCues = true});
+  scene.bydoAt(FIRING_BYDO);
+  scene.effects().playAppearance(EntityType::EnemyMissile,
+                                 MISSILE_OF_THE_FIRING_BYDO);
+
+  scene.advance(SHOT_CUE_LIFE_LENGTH, EffectPreferences{});
+
+  EXPECT_EQ(count<Caption>(scene.components()), 0U);
+}
+
+/**
+ * Given the sound cues shown and a ship of the second pilot
+ * When it goes down
+ * Then "P2 HIT" shows in the light of that pilot, the middle of its line 56
+ * units above the center of the ship
+ */
+TEST(EffectSpawner, AHitCueNamesThePilotOverItsShip) {
+  EffectScene scene;
+  scene.advance(ONE_FRAME, EffectPreferences{.soundCues = true});
+  const Entity ship = scene.shipOfPilot(SECOND_PILOT_COLOR);
+
+  scene.effects().playShipDown(ship);
+
+  const std::optional<Entity> cue = captioned(scene.components());
+  ASSERT_TRUE(cue.has_value());
+  const Caption shown = caption(scene.components()).value_or(Caption{});
+  const Position place = positionOf(scene.components(), cue.value_or(Entity{}));
+  EXPECT_EQ(shown.text, "P2 HIT");
+  EXPECT_EQ(shown.style.color, PINK_LIGHT_OF_THE_SECOND_PILOT);
+  EXPECT_EQ(place.x, ABOVE_THE_SHIP.x);
+  EXPECT_EQ(place.y, ABOVE_THE_SHIP.y);
+}
+
+/**
+ * Given the sound cues not shown, a Bydo and a ship
+ * When the Bydo fires and the ship goes down
+ * Then no cue shows
+ */
+TEST(EffectSpawner, NoCueShowsWhileTheSoundCuesAreOff) {
+  EffectScene scene;
+  scene.advance(ONE_FRAME, EffectPreferences{.flashes = FlashPreference::Full});
+  scene.bydoAt(FIRING_BYDO);
+  const Entity ship = scene.shipOfPilot(SECOND_PILOT_COLOR);
+
+  scene.effects().playAppearance(EntityType::EnemyMissile,
+                                 MISSILE_OF_THE_FIRING_BYDO);
+  scene.effects().playShipDown(ship);
+
+  EXPECT_EQ(count<Caption>(scene.components()), 0U);
 }

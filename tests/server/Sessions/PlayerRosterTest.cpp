@@ -7,6 +7,7 @@
 #include "ConnectedPlayer.hpp"
 #include "ConnectedPlayers.hpp"
 #include "Endpoint.hpp"
+#include "EntityIdConstants.hpp"
 #include "PlayerRoster.hpp"
 #include "ProtocolConstants.hpp"
 #include "ServerLobbyTestConstants.hpp"
@@ -19,6 +20,7 @@ using testing::OTHER_SESSION_TOKEN;
 using testing::PLAYER_ADDRESS;
 using testing::PLAYER_NICKNAME;
 using testing::SESSION_TOKEN;
+using testing::SOME_SHIP_ID;
 
 network::Endpoint playerEndpoint(std::size_t player) {
   return network::Endpoint{.address = std::string{PLAYER_ADDRESS},
@@ -207,6 +209,109 @@ TEST(PlayerRoster, FindsAPlayerByItsNumberOnly) {
   EXPECT_EQ(roster.findByNumber(network::FIRST_PLAYER_NUMBER + 2), nullptr);
   EXPECT_EQ(roster.findByNumber(network::NO_PLAYER_NUMBER), nullptr);
   EXPECT_EQ(roster.findByNumber(network::MAXIMUM_PLAYERS + 1), nullptr);
+}
+
+/**
+ * Given a roster of two players, the second with a ship and the first without
+ * When a player is looked up by ship
+ * Then the second player is found under its ship, and neither another ship id
+ * nor NO_ENTITY_ID, which the first player holds, finds anybody
+ */
+TEST(PlayerRoster, FindsAPlayerByItsShipOnly) {
+  PlayerRoster roster;
+  addPlayers(roster, 2);
+  ConnectedPlayer* const second =
+      roster.findByNumber(network::FIRST_PLAYER_NUMBER + 1);
+  ASSERT_NE(second, nullptr);
+  second->shipEntityId = SOME_SHIP_ID;
+
+  EXPECT_EQ(roster.findByShip(SOME_SHIP_ID), second);
+  EXPECT_EQ(roster.findByShip(SOME_SHIP_ID + 1), nullptr);
+  EXPECT_EQ(roster.findByShip(identifiers::NO_ENTITY_ID), nullptr);
+}
+
+/**
+ * Given an empty roster
+ * When a nickname is looked up
+ * Then nobody holds it
+ */
+TEST(PlayerRoster, HoldsNoNicknameWhenEmpty) {
+  const PlayerRoster roster;
+
+  EXPECT_FALSE(roster.hasNickname("Ace"));
+}
+
+/**
+ * Given a roster with a player named Ace
+ * When Ace, ACE and aCe are looked up
+ * Then each is held: letters of the ASCII alphabet compare without case
+ */
+TEST(PlayerRoster, HoldsANicknameWhateverTheCaseOfItsLetters) {
+  PlayerRoster roster;
+  static_cast<void>(roster.add(playerEndpoint(0), "Ace", SESSION_TOKEN));
+
+  EXPECT_TRUE(roster.hasNickname("Ace"));
+  EXPECT_TRUE(roster.hasNickname("ACE"));
+  EXPECT_TRUE(roster.hasNickname("aCe"));
+}
+
+/**
+ * Given a roster with a player named Ace
+ * When Ac, Acer and Bce are looked up
+ * Then none is held: a prefix, an extension or another letter is another
+ * nickname
+ */
+TEST(PlayerRoster, HoldsNoNicknameThatOnlyLooksLikeAHeldOne) {
+  PlayerRoster roster;
+  static_cast<void>(roster.add(playerEndpoint(0), "Ace", SESSION_TOKEN));
+
+  EXPECT_FALSE(roster.hasNickname("Ac"));
+  EXPECT_FALSE(roster.hasNickname("Acer"));
+  EXPECT_FALSE(roster.hasNickname("Bce"));
+}
+
+/**
+ * Given a roster with a player named Ace, away
+ * When Ace is looked up
+ * Then it is held: the seat of a player who is away keeps its nickname
+ */
+TEST(PlayerRoster, HoldsTheNicknameOfAPlayerWhoIsAway) {
+  PlayerRoster roster;
+  ConnectedPlayer* const player =
+      roster.add(playerEndpoint(0), "Ace", SESSION_TOKEN);
+  player->away = true;
+
+  EXPECT_TRUE(roster.hasNickname("Ace"));
+}
+
+/**
+ * Given a roster where the player named Ace was removed
+ * When Ace is looked up
+ * Then it is not held
+ */
+TEST(PlayerRoster, ReleasesTheNicknameOfARemovedPlayer) {
+  PlayerRoster roster;
+  static_cast<void>(roster.add(playerEndpoint(0), "Ace", SESSION_TOKEN));
+  static_cast<void>(roster.remove(playerEndpoint(0)));
+
+  EXPECT_FALSE(roster.hasNickname("Ace"));
+}
+
+/**
+ * Given a roster with a player named Éa, whose É is two bytes
+ * When éa is looked up
+ * Then it is not held: only the ASCII letters compare without case
+ */
+TEST(PlayerRoster, ComparesAccentedLettersByTheirBytes) {
+  PlayerRoster roster;
+  static_cast<void>(roster.add(playerEndpoint(0),
+                               "\xC3\x89"
+                               "a",
+                               SESSION_TOKEN));
+
+  EXPECT_FALSE(
+      roster.hasNickname("\xC3\xA9"
+                         "a"));
 }
 
 /**

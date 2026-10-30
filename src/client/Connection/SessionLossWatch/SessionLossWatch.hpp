@@ -8,7 +8,7 @@ namespace rtype::client {
 /**
  * @brief Notices the end of a session the server had accepted: a status that
  * turns Lost, the server having gone silent, or Closed, the server having
- * said it shuts down. The frame loop asks it once per frame, so it answers
+ * said it shuts down. ClientScreens asks it once per frame, so it answers
  * yes once per end, however long the status stays so.
  */
 class SessionLossWatch {

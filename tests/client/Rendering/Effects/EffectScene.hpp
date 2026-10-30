@@ -2,10 +2,10 @@
 
 #include "AnimationSystem.hpp"
 #include "ComponentRegistry.hpp"
+#include "EffectPreferences.hpp"
 #include "EffectSpawner.hpp"
 #include "Entity.hpp"
 #include "EntityRegistry.hpp"
-#include "FlashPreference.hpp"
 #include "HitFlashSystem.hpp"
 #include "Position.hpp"
 #include "SpriteEffectSystem.hpp"
@@ -26,9 +26,9 @@ class EffectScene {
   void play(rtype::engine::Duration elapsed);
 
   /** @brief Moves the spawner and the systems of the sprites on, as a frame
-   * of the game screen does, with the flash preference of the player. */
+   * of the game screen does, with what the player asked of the effects. */
   void advance(rtype::engine::Duration elapsed,
-               rtype::client::FlashPreference preference);
+               rtype::client::EffectPreferences preferences);
 
   /** @returns A ship of the pilot of that color, as the replicator makes it,
    * at SHIP_CENTER. */

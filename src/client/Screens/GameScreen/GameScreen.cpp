@@ -9,6 +9,7 @@
 #include <variant>
 #include "ActionSet.hpp"
 #include "AnimationSystem.hpp"
+#include "EffectPreferences.hpp"
 #include "EffectSpawner.hpp"
 #include "EntityFeedback.hpp"
 #include "EntityMessage.hpp"
@@ -32,6 +33,7 @@
 #include "PlayerLeft.hpp"
 #include "PlayerPalette.hpp"
 #include "PlayerPreferences.hpp"
+#include "ShipFlightSystem.hpp"
 // NOLINTNEXTLINE(misc-include-cleaner)
 #include "PlayerSettings.hpp"
 #include "ScreenConstants.hpp"
@@ -79,6 +81,7 @@ GameScreen::GameScreen(GameScreenParts parts,
   systems_.add(std::make_unique<HitFlashSystem>());
   systems_.add(std::make_unique<SpriteEffectSystem>());
   systems_.add(std::make_unique<GroundEffectSystem>());
+  systems_.add(std::make_unique<ShipFlightSystem>());
   moveSky(*sky_, effects_, flashPreferenceOf(*settings_));
   entityLayer_->paint(components_, effects_.cameraOffset());
   repaintStatus();
@@ -117,7 +120,10 @@ void GameScreen::update(engine::Duration elapsed) {
   }
   systems_.run(components_, elapsed);
   const FlashPreference preference = flashPreferenceOf(*settings_);
-  effects_.advance(elapsed, preference, pilotShadesOf(*settings_));
+  effects_.advance(elapsed,
+                   EffectPreferences{.flashes = preference,
+                                     .shades = pilotShadesOf(*settings_),
+                                     .soundCues = settings_->soundCues});
   departures_.advance(elapsed);
   silence_.advance(elapsed);
   applyEntityMessages();

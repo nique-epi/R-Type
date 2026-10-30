@@ -9,7 +9,7 @@ class ScreenStack;
 class ScrollingBackground;
 
 /** @brief Draws one frame on @p target, in playfield units: @p sky, then the
- * screens of @p screens over it, from the bottom up. The frame loop draws the
+ * screens of @p screens over it, from the bottom up. ClientScreens draws the
  * window with it. */
 void drawFrame(sf::RenderTarget& target, ScrollingBackground& sky,
                const ScreenStack& screens);

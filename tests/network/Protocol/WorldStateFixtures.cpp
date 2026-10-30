@@ -3,6 +3,8 @@
 #include <cstdint>
 #include <vector>
 #include "WorldState.hpp"
+#include "WorldStateCodec.hpp"
+#include "WorldStateCodecTestConstants.hpp"
 
 namespace rtype::network::testing {
 
@@ -51,6 +53,21 @@ WorldState oneShipState() {
                                .entityType = WireEntityType::PlayerShip,
                                .x = EXAMPLE_X,
                                .y = EXAMPLE_Y}}};
+}
+
+std::vector<std::byte> payloadWithMotion(std::uint8_t motion) {
+  const WorldState state{
+      .tick = SOME_TICK,
+      .players = {PlayerState{.playerNumber = EXAMPLE_PLAYER_NUMBER,
+                              .shipEntityId = EXAMPLE_PLAYER_SHIP_ID,
+                              .lives = SOME_LIVES,
+                              .score = SOME_SCORE,
+                              .invulnerable = false,
+                              .motion = 0}},
+      .entities = {}};
+  std::vector<std::byte> payload = WorldStateCodec::encode(state).front();
+  payload.at(FIRST_MOTION_OFFSET) = std::byte{motion};
+  return payload;
 }
 
 }  // namespace rtype::network::testing

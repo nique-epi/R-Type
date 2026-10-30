@@ -67,4 +67,7 @@ constexpr std::uint8_t ONE_FLAG_SET = 0x01;
 constexpr std::string_view DROPPED_DATAGRAM_LINE_TEXT = "dropped a datagram";
 constexpr std::size_t DROPPED_TOGETHER_COUNT = 3;
 
+/** @brief The network id of a ship in the tests that only need one. */
+constexpr std::uint32_t SOME_SHIP_ID = 7;
+
 }  // namespace rtype::server::testing

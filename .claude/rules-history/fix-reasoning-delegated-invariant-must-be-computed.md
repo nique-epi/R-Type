@@ -21,3 +21,27 @@ The first version of the rule told the coordinator to "say the failure comes fro
 
 ## Rule
 See `.claude/rules/fix/reasoning/fix-reasoning-delegated-invariant-must-be-computed.md`, section "A claim about the agent's environment is measured in that environment".
+
+## Update (2026-10-29) — A test of a layout computes where each thing lands before it asserts a side
+
+### Context
+
+The help of the waiting room places Professor Bydo beside its bubble and turns him toward the part a step explains. A test checks that he faces right when the part lies on his right.
+
+### Mistake
+
+The plan picked the step of BACK, "on the right of the room", and asserted the right-facing row. The test failed: the professor stands right of the high bubble, x 394 to 442 (middle 418), and BACK's middle is x 415, on his left; the code was right and the test's premise wrong.
+
+### Root cause
+
+The side was read from the picture of the whole room, not computed relative to the professor, who moves with the bubble; no position was written down while the test was planned.
+
+### Rule
+
+Before asserting a side between two things, compute both positions with the constants of the code and write the numbers next to the assertion.
+
+### Example
+
+- ❌ **Before (wrong)**: `showStep(BACK_STEP)` then expect the right-facing row.
+- ✅ **After (right)**: `showStep(BYDOS_STEP)`: the Bydos (middle x 361) push the professor to x 38, and lie on his right.
+

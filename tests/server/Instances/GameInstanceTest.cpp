@@ -1,7 +1,6 @@
 #include <gtest/gtest.h>
 #include <algorithm>
 #include <array>
-#include <chrono>
 #include <cstddef>
 #include <cstdint>
 #include <initializer_list>
@@ -11,13 +10,11 @@
 #include <string_view>
 #include <utility>
 #include <vector>
-#include "ByteWriter.hpp"
 #include "ConnectedPlayer.hpp"
 #include "DatagramCodec.hpp"
 #include "DebugJournal.hpp"
 #include "EnemyKilled.hpp"
 #include "EntityDestruction.hpp"
-#include "EntityIdConstants.hpp"
 #include "EventBus.hpp"
 #include "GameInstance.hpp"
 #include "GameInstanceConstants.hpp"
@@ -41,8 +38,7 @@
 #include "ServerConstants.hpp"
 #include "ServerDatagrams.hpp"
 #include "ServerLobbyTestConstants.hpp"
-#include "ShipControlConstants.hpp"
-#include "Spawning/BydoSpawnerTestConstants.hpp"
+#include "ServerTestConstants.hpp"
 #include "TimeConstants.hpp"
 #include "TimerScheduler.hpp"
 #include "UnreliableNetwork.hpp"
@@ -50,11 +46,15 @@
 #include "game/ShipControl/ShipControlTestConstants.hpp"
 
 namespace rtype::server {
-namespace {
 
+using game::testing::FIRST_TICK_DISTANCE;
+using game::testing::HELD_SECOND_DISTANCE;
 using game::testing::POSITION_TOLERANCE;
+using game::testing::ROLL_DISTANCE;
+using game::testing::ROLL_END_TICK;
 using testing::bydosAmong;
 using testing::bydosIn;
+using testing::entityOf;
 using testing::FIRST_PLAYER;
 using testing::FIRST_SENT;
 using testing::FIRST_SEQUENCE;
@@ -70,24 +70,30 @@ using testing::GameInstanceTest;
 using testing::HeldArrow;
 using testing::HOLDS_DOWN;
 using testing::HOLDS_LEFT;
+using testing::HOLDS_NOTHING;
 using testing::HOLDS_RIGHT;
 using testing::HOLDS_SHOOT;
 using testing::HOLDS_UP;
+using testing::inputPayload;
 using testing::LARGEST_INPUT_NUMBER;
+using testing::messageTypesOf;
 using testing::NEXT_PROTOCOL_VERSION;
 using testing::ofType;
 using testing::onlyMessageIn;
-using testing::onlyMessageTypeOf;
 using testing::PLAYER_SESSION_TOKENS;
 using testing::playerEndpoint;
 using testing::PROTOCOL_HEARTBEAT_TICKS;
+using testing::PROTOCOL_RECONNECTION_GRACE_TICKS;
+using testing::PROTOCOL_SESSION_CLOSING_TICKS;
 using testing::PROTOCOL_SESSION_TIMEOUT_TICKS;
+using testing::roomOfTheFirstPlayerNotReady;
 using testing::SECOND_PLAYER;
 using testing::SECOND_SENT;
 using testing::SECOND_SEQUENCE;
 using testing::sessionHeader;
 using testing::SHUFFLE_SEED_COUNT;
 using testing::SHUFFLED_INPUT_COUNT;
+using testing::SOME_POINTS;
 using testing::SOME_TICKS;
 using testing::STRANGER;
 using testing::THIRD_PLAYER;
@@ -96,121 +102,6 @@ using testing::THIRD_SEQUENCE;
 using testing::TICKS_PER_REJECTION_LINE;
 using testing::UNLISTED_ACTION;
 using testing::WIRE_COORDINATE_TOLERANCE;
-
-constexpr std::uint32_t SOME_POINTS = 100;
-
-/** @returns The type of the only message of each of @p datagrams, in order. */
-std::vector<network::MessageType> messageTypesOf(
-    const std::vector<network::OutgoingDatagram>& datagrams) {
-  std::vector<network::MessageType> types;
-  types.reserve(datagrams.size());
-  for (const network::OutgoingDatagram& datagram : datagrams) {
-    types.push_back(onlyMessageTypeOf(datagram));
-  }
-  return types;
-}
-
-/** @returns The entity of @p state whose id is @p entityId, or nothing when the
- * state does not list it. */
-std::optional<network::EntityState> entityOf(const network::WorldState& state,
-                                             std::uint32_t entityId) {
-  for (const network::EntityState& entity : state.entities) {
-    if (entity.entityId == entityId) {
-      return entity;
-    }
-  }
-  return std::nullopt;
-}
-
-/** @returns The room of a game whose only player, the first, is not ready. */
-network::LobbyState roomOfTheFirstPlayerNotReady() {
-  return network::LobbyState{
-      .players = {network::LobbyPlayer{
-          .playerNumber = network::FIRST_PLAYER_NUMBER,
-          .ready = false,
-          .nickname = std::string{testing::PLAYER_NICKNAME}}}};
-}
-
-/**
- * Given a game that was just built
- * When nothing happened yet
- * Then it waits for players, at tick 0
- */
-TEST_F(GameInstanceTest, StartsWaitingForPlayers) {
-  EXPECT_EQ(game().state(), GameState::WaitingForPlayers);
-  EXPECT_EQ(game().tick(), 0);
-}
-
-/**
- * Given a game with no connected player
- * When ticks run
- * Then it keeps waiting for players
- */
-TEST_F(GameInstanceTest, DoesNotStartWithoutPlayers) {
-  runTicks(SOME_TICKS);
-
-  EXPECT_EQ(game().state(), GameState::WaitingForPlayers);
-}
-
-/**
- * Given one connected player who did not say ready
- * When ticks run
- * Then the game keeps waiting
- */
-TEST_F(GameInstanceTest, WaitsForAPlayerWhoIsNotReady) {
-  join(FIRST_PLAYER);
-
-  runTicks(SOME_TICKS);
-
-  EXPECT_EQ(game().state(), GameState::WaitingForPlayers);
-}
-
-/**
- * Given one connected player
- * When the player says ready and a tick runs
- * Then the game is in progress
- */
-TEST_F(GameInstanceTest, StartsWhenTheOnlyPlayerIsReady) {
-  join(FIRST_PLAYER);
-  sendReady(
-      {.player = FIRST_PLAYER, .ready = true, .sequence = FIRST_SEQUENCE});
-
-  tick();
-
-  EXPECT_EQ(game().state(), GameState::InProgress);
-}
-
-/**
- * Given two connected players
- * When only the first says ready
- * Then the game keeps waiting
- */
-TEST_F(GameInstanceTest, WaitsWhileOnePlayerIsNotReady) {
-  join(FIRST_PLAYER);
-  join(SECOND_PLAYER);
-  sendReady(
-      {.player = FIRST_PLAYER, .ready = true, .sequence = FIRST_SEQUENCE});
-
-  tick();
-
-  EXPECT_EQ(game().state(), GameState::WaitingForPlayers);
-}
-
-/**
- * Given four connected players, the most a game holds
- * When every one of them says ready
- * Then the game is in progress
- */
-TEST_F(GameInstanceTest, StartsWhenFourPlayersAreReady) {
-  for (std::size_t index = 0; index < network::MAXIMUM_PLAYERS; ++index) {
-    join(index);
-    sendReady({.player = index, .ready = true, .sequence = FIRST_SEQUENCE});
-  }
-
-  tick();
-
-  EXPECT_EQ(game().state(), GameState::InProgress);
-}
 
 /**
  * Given four connected players of whom the first three are ready
@@ -338,84 +229,6 @@ TEST_F(GameInstanceTest, IgnoresAReadyStateWhileInProgress) {
 }
 
 /**
- * Given a game that waits for players
- * When ticks run
- * Then the tick stays at 0
- */
-TEST_F(GameInstanceTest, DoesNotCountTicksWhileWaiting) {
-  join(FIRST_PLAYER);
-
-  runTicks(SOME_TICKS);
-
-  EXPECT_EQ(game().tick(), 0);
-}
-
-/**
- * Given a game that just started
- * When SOME_TICKS ticks run
- * Then the tick is SOME_TICKS
- */
-TEST_F(GameInstanceTest, CountsTicksWhileInProgress) {
-  startGameWithOnePlayer();
-
-  runTicks(SOME_TICKS);
-
-  EXPECT_EQ(game().tick(), SOME_TICKS);
-}
-
-/**
- * Given a game in progress
- * When it is finished
- * Then its state is Finished
- */
-TEST_F(GameInstanceTest, FinishEndsTheGameInProgress) {
-  startGameWithOnePlayer();
-
-  game().finish();
-
-  EXPECT_EQ(game().state(), GameState::Finished);
-}
-
-/**
- * Given a game that waits for players
- * When it is finished
- * Then it keeps waiting
- */
-TEST_F(GameInstanceTest, FinishDoesNothingWhileWaiting) {
-  game().finish();
-
-  EXPECT_EQ(game().state(), GameState::WaitingForPlayers);
-}
-
-/**
- * Given a finished game
- * When one tick less than FINISHED_STATE_TICKS runs
- * Then it is still finished
- */
-TEST_F(GameInstanceTest, StaysFinishedBeforeTheFinishedDurationElapsed) {
-  startGameWithOnePlayer();
-  game().finish();
-
-  runTicks(FINISHED_STATE_TICKS - 1);
-
-  EXPECT_EQ(game().state(), GameState::Finished);
-}
-
-/**
- * Given a finished game
- * When FINISHED_STATE_TICKS ticks run
- * Then it waits for players again
- */
-TEST_F(GameInstanceTest, WaitsForPlayersAgainOnceTheFinishedDurationElapsed) {
-  startGameWithOnePlayer();
-  game().finish();
-
-  runTicks(FINISHED_STATE_TICKS);
-
-  EXPECT_EQ(game().state(), GameState::WaitingForPlayers);
-}
-
-/**
  * Given a game in progress with one player
  * When that player times out
  * Then the game is finished
@@ -471,29 +284,6 @@ TEST_F(GameInstanceTest, WaitsForPlayersAgainAfterItsLastPlayerLeft) {
 }
 
 /**
- * Given a game that was played by two players and finished
- * When it waits for players again
- * Then the world holds one fresh ship per player, not the old ones as well,
- * and the tick is back at 0
- */
-TEST_F(GameInstanceTest, ResetsTheWorldBetweenTwoGames) {
-  join(FIRST_PLAYER);
-  join(SECOND_PLAYER);
-  sendReady(
-      {.player = FIRST_PLAYER, .ready = true, .sequence = FIRST_SEQUENCE});
-  sendReady(
-      {.player = SECOND_PLAYER, .ready = true, .sequence = FIRST_SEQUENCE});
-  tick();
-  runTicks(SOME_TICKS);
-  game().finish();
-
-  runTicks(FINISHED_STATE_TICKS);
-
-  EXPECT_EQ(game().world().entityCount(), 2);
-  EXPECT_EQ(game().tick(), 0);
-}
-
-/**
  * Given a game in progress whose player killed an enemy and a game that
  * finished
  * When the game waits for players again
@@ -535,43 +325,6 @@ TEST_F(GameInstanceTest, CreditsTheKillOfAnEnemyToThePlayerWhoFired) {
 }
 
 /**
- * Given a game that was played and finished
- * When it waits for players again
- * Then every player is connected, not ready, and has a ship
- */
-TEST_F(GameInstanceTest, KeepsThePlayersConnectedButNotReadyForTheNextGame) {
-  join(FIRST_PLAYER);
-  sendReady(
-      {.player = FIRST_PLAYER, .ready = true, .sequence = FIRST_SEQUENCE});
-  tick();
-  game().finish();
-
-  runTicks(FINISHED_STATE_TICKS);
-
-  ASSERT_EQ(game().roster().connected().size(), 1);
-  const ConnectedPlayer* const player =
-      game().roster().find(playerEndpoint(FIRST_PLAYER));
-  ASSERT_NE(player, nullptr);
-  EXPECT_FALSE(player->ready);
-  EXPECT_NE(player->shipEntityId, identifiers::NO_ENTITY_ID);
-}
-
-/**
- * Given a game that waits for players again after a game
- * When ticks run without any player saying ready
- * Then the game keeps waiting
- */
-TEST_F(GameInstanceTest, NeedsEveryPlayerReadyAgainForTheNextGame) {
-  startGameWithOnePlayer();
-  game().finish();
-  runTicks(FINISHED_STATE_TICKS);
-
-  runTicks(SOME_TICKS);
-
-  EXPECT_EQ(game().state(), GameState::WaitingForPlayers);
-}
-
-/**
  * Given a game that waits for players again after a game
  * When the player says ready with a newer sequence
  * Then the second game starts
@@ -586,71 +339,6 @@ TEST_F(GameInstanceTest, StartsASecondGame) {
   tick();
 
   EXPECT_EQ(game().state(), GameState::InProgress);
-}
-
-/**
- * Given a game that waits for a player who is not ready
- * When as many ticks pass as the first pause of a game
- * Then the world holds the ship only: no Bydo appears before the game starts
- */
-TEST_F(GameInstanceTest, NoBydoAppearsWhileWaitingForPlayers) {
-  join(FIRST_PLAYER);
-
-  runTicks(testing::TICKS_TO_THE_FIRST_BYDO);
-
-  EXPECT_EQ(game().world().entityCount(), 1U);
-}
-
-/**
- * Given a game just started with one player
- * When one tick less than the first pause passes, then one more
- * Then no Bydo is in the world, and then one is, next to the ship
- */
-TEST_F(GameInstanceTest, TheFirstBydoAppearsOnceTheFirstPauseIsOver) {
-  startGameWithOnePlayer();
-
-  runTicks(testing::TICKS_TO_THE_FIRST_BYDO - 1);
-  EXPECT_EQ(game().world().entityCount(), 1U);
-  tick();
-
-  EXPECT_EQ(game().world().entityCount(), 2U);
-}
-
-/**
- * Given a finished game, which had run half its first pause
- * When it waits for players again, starts again, and runs one tick less than
- * the first pause
- * Then no Bydo is in the new world: its waves start over with the first pause
- */
-TEST_F(GameInstanceTest, ANewGameStartsTheWavesOver) {
-  startGameWithOnePlayer();
-  runTicks(testing::TICKS_TO_THE_FIRST_BYDO / 2);
-  game().finish();
-  runTicks(FINISHED_STATE_TICKS);
-  ASSERT_EQ(game().state(), GameState::WaitingForPlayers);
-  sendReady(
-      {.player = FIRST_PLAYER, .ready = true, .sequence = SECOND_SEQUENCE});
-  tick();
-  ASSERT_EQ(game().state(), GameState::InProgress);
-
-  runTicks(testing::TICKS_TO_THE_FIRST_BYDO - 1);
-
-  EXPECT_EQ(game().world().entityCount(), 1U);
-}
-
-/**
- * Given a finished game
- * When ticks run for twice the first pause
- * Then no Bydo appears
- */
-TEST_F(GameInstanceTest, NoBydoAppearsWhileFinished) {
-  startGameWithOnePlayer();
-  game().finish();
-  const std::size_t entitiesBefore = game().world().entityCount();
-
-  runTicks(2 * testing::TICKS_TO_THE_FIRST_BYDO);
-
-  EXPECT_EQ(game().world().entityCount(), entitiesBefore);
 }
 
 /**
@@ -676,7 +364,7 @@ TEST_F(GameInstanceTest, ABydoThatLeavesOnTheLeftDoesNotStayInTheWorld) {
   events().dispatch();
 
   EXPECT_EQ(bydosAmong(removed, sentTo(FIRST_PLAYER)), 3U);
-  EXPECT_EQ(bydosIn(game().world()), 0U);
+  EXPECT_EQ(bydosIn(world()), 0U);
 }
 
 /**
@@ -701,7 +389,7 @@ TEST_F(GameInstanceTest, TheSecondWaveComesAPauseAfterTheFirstIsGone) {
   events().dispatch();
 
   EXPECT_EQ(bydosAmong(removed, sentTo(FIRST_PLAYER)), 3U);
-  EXPECT_EQ(bydosIn(game().world()), 1U);
+  EXPECT_EQ(bydosIn(world()), 1U);
 }
 
 /**
@@ -759,22 +447,22 @@ TEST_F(GameInstanceTest, SendsGameStartedBeforeTheFirstWorldState) {
 
 /**
  * Given a game just started by its only player
- * When TICKS_PER_WORLD_STATE more ticks run
+ * When DEFAULT_TICKS_PER_WORLD_STATE more ticks run
  * Then the player was sent the WorldState of tick 0 and of tick
- * TICKS_PER_WORLD_STATE, each starting with a header DatagramCodec reads,
- * carrying its session token
+ * DEFAULT_TICKS_PER_WORLD_STATE, each starting with a header DatagramCodec
+ * reads, carrying its session token
  */
 TEST_F(GameInstanceTest, SendsTheWorldStatesUnderTheTokenOfThePlayer) {
   startGameWithOnePlayer();
 
-  runTicks(TICKS_PER_WORLD_STATE);
+  runTicks(DEFAULT_TICKS_PER_WORLD_STATE);
 
   const std::vector<network::OutgoingDatagram> states =
       ofType(network::MessageType::WorldState, sentTo(FIRST_PLAYER));
   ASSERT_EQ(states.size(), 2U);
   EXPECT_EQ(onlyMessageIn<network::WorldState>(states.at(0)).tick, 0U);
   EXPECT_EQ(onlyMessageIn<network::WorldState>(states.at(1)).tick,
-            TICKS_PER_WORLD_STATE);
+            DEFAULT_TICKS_PER_WORLD_STATE);
   for (const network::OutgoingDatagram& state : states) {
     EXPECT_EQ(network::DatagramCodec::decodeHeader(state.payload).sessionToken,
               testing::SESSION_TOKEN);
@@ -794,7 +482,7 @@ TEST_F(GameInstanceTest, NumbersEveryDatagramToAPlayerFromOneCounter) {
   sendReady(
       {.player = FIRST_PLAYER, .ready = true, .sequence = FIRST_SEQUENCE});
   tick();
-  runTicks(TICKS_PER_WORLD_STATE);
+  runTicks(DEFAULT_TICKS_PER_WORLD_STATE);
 
   const std::vector<network::OutgoingDatagram> toPlayer = sentTo(FIRST_PLAYER);
   ASSERT_EQ(
@@ -865,13 +553,13 @@ TEST_F(GameInstanceTest, AnnouncesNoStartWhileAPlayerIsNotReady) {
 
 /**
  * Given one connected player who is not ready
- * When TICKS_PER_WORLD_STATE ticks run
+ * When DEFAULT_TICKS_PER_WORLD_STATE ticks run
  * Then the player is sent no WorldState
  */
 TEST_F(GameInstanceTest, SendsNoWorldStateWhileWaiting) {
   join(FIRST_PLAYER);
 
-  runTicks(TICKS_PER_WORLD_STATE);
+  runTicks(DEFAULT_TICKS_PER_WORLD_STATE);
 
   EXPECT_TRUE(
       ofType(network::MessageType::WorldState, sentTo(FIRST_PLAYER)).empty());
@@ -919,17 +607,6 @@ TEST_F(GameInstanceTest, SendsTheRoomAtOnceWhenTheGameWaitsAgain) {
 }
 
 /**
- * @returns The payload of @p input written field by field, so it may hold
- * actions encodePayload() refuses.
- */
-std::vector<std::byte> inputPayload(const network::PlayerInput& input) {
-  network::ByteWriter payload;
-  payload.writeUint32(input.inputNumber);
-  payload.writeUint8(input.actions);
-  return payload.bytes();
-}
-
-/**
  * Given a player heard from in a tick, then silent
  * When the timeout of the protocol, less one tick, runs without a datagram
  * Then the player is still in the game
@@ -946,17 +623,63 @@ TEST_F(GameInstanceTest, KeepsAPlayerSilentForOneTickLessThanTheTimeout) {
 
 /**
  * Given a player heard from in a tick, then silent
- * When the timeout of the protocol, 5 s of ticks, runs without a datagram
+ * When the timeout and the reconnection grace of the protocol, 20 s of ticks,
+ * run without a datagram
  * Then the player is no longer in the game
  */
-TEST_F(GameInstanceTest, ClosesTheSessionOfAPlayerSilentForTheTimeout) {
+TEST_F(GameInstanceTest, ClosesTheSessionOfAPlayerSilentForTheTimeoutAndGrace) {
   join(FIRST_PLAYER);
   tick();
   silence(FIRST_PLAYER);
 
-  runTicks(PROTOCOL_SESSION_TIMEOUT_TICKS);
+  runTicks(PROTOCOL_SESSION_CLOSING_TICKS);
 
   EXPECT_EQ(game().roster().find(playerEndpoint(FIRST_PLAYER)), nullptr);
+}
+
+/**
+ * Given a player heard from in a tick, then silent
+ * When the timeout and the grace, less one tick, run without a datagram
+ * Then the player still holds its seat, away
+ */
+TEST_F(GameInstanceTest,
+       KeepsTheSeatOfAPlayerSilentForOneTickLessThanTheGrace) {
+  join(FIRST_PLAYER);
+  tick();
+  silence(FIRST_PLAYER);
+
+  runTicks(PROTOCOL_SESSION_CLOSING_TICKS - 1);
+
+  const ConnectedPlayer* const player =
+      game().roster().find(playerEndpoint(FIRST_PLAYER));
+  ASSERT_NE(player, nullptr);
+  EXPECT_TRUE(player->away);
+}
+
+/**
+ * Given a player silent for the timeout and half the grace
+ * When it sends a ReadyState, then stays silent again for the timeout and the
+ * grace, less one tick
+ * Then it still holds its seat: the delay started over when it was heard
+ */
+TEST_F(GameInstanceTest, GivesTheSeatBackToAPlayerWhoReturnsDuringTheGrace) {
+  join(FIRST_PLAYER);
+  join(SECOND_PLAYER);
+  tick();
+  silence(FIRST_PLAYER);
+  runTicks(PROTOCOL_SESSION_TIMEOUT_TICKS +
+           (PROTOCOL_RECONNECTION_GRACE_TICKS / 2));
+  sendReady(
+      {.player = FIRST_PLAYER, .ready = true, .sequence = FIRST_SEQUENCE});
+  tick();
+  ASSERT_FALSE(game().roster().find(playerEndpoint(FIRST_PLAYER))->away);
+
+  runTicks(PROTOCOL_SESSION_CLOSING_TICKS - 1);
+
+  const ConnectedPlayer* const player =
+      game().roster().find(playerEndpoint(FIRST_PLAYER));
+  ASSERT_NE(player, nullptr);
+  EXPECT_TRUE(player->away);
 }
 
 /**
@@ -1013,7 +736,7 @@ TEST_F(GameInstanceTest, RemovesTheShipOfAPlayerWhoTimedOut) {
   EXPECT_EQ(destructions,
             (std::vector{game::EntityDestruction{
                 .networkId = ship, .cause = game::DestructionCause::Removed}}));
-  EXPECT_EQ(game().world().entityCount(), 1U);
+  EXPECT_EQ(world().entityCount(), 1U);
 }
 
 /**
@@ -1031,7 +754,7 @@ TEST_F(GameInstanceTest, AnnouncesThePlayerWhoTimedOut) {
       });
   silence(SECOND_PLAYER);
 
-  runTicks(2 * PROTOCOL_SESSION_TIMEOUT_TICKS);
+  runTicks(PROTOCOL_SESSION_CLOSING_TICKS + 1);
   events().dispatch();
 
   EXPECT_EQ(departures, (std::vector{game::PlayerDeparture{
@@ -1073,7 +796,7 @@ TEST_F(GameInstanceTest, TheOthersPlayOnWhenOneOfThreePlayersTimesOut) {
   const std::size_t sentToTheFirst =
       ofType(network::MessageType::WorldState, sentTo(FIRST_PLAYER)).size();
 
-  runTicks(TICKS_PER_WORLD_STATE);
+  runTicks(DEFAULT_TICKS_PER_WORLD_STATE);
 
   EXPECT_EQ(game().state(), GameState::InProgress);
   for (const std::size_t player : {FIRST_PLAYER, THIRD_PLAYER}) {
@@ -1099,24 +822,21 @@ TEST_F(GameInstanceTest, TheOthersPlayOnWhenOneOfThreePlayersTimesOut) {
  * timed out, and the second player gets none
  */
 TEST_F(GameInstanceTest, TellsOnlyTheOthersThatAPlayerTimedOut) {
-  engine::TimerScheduler timers;
-  std::vector<network::OutgoingDatagram> eventDatagrams;
-  const auto broadcaster = eventBroadcaster(timers, eventDatagrams);
   for (const std::size_t player : {FIRST_PLAYER, SECOND_PLAYER, THIRD_PLAYER}) {
     join(player);
   }
 
   timeOut(SECOND_PLAYER);
   events().dispatch();
-  timers.advance(testing::ALL_COPIES_SENT);
+  timers().advance(testing::ALL_COPIES_SENT);
 
   const std::vector expected(
       testing::PROTOCOL_REPEATED_MESSAGE_COPIES,
       network::PlayerLeft{.playerNumber = network::FIRST_PLAYER_NUMBER + 1,
                           .reason = network::DepartureReason::TimedOut});
-  EXPECT_EQ(playerLeftSentTo(eventDatagrams, FIRST_PLAYER), expected);
-  EXPECT_EQ(playerLeftSentTo(eventDatagrams, THIRD_PLAYER), expected);
-  EXPECT_TRUE(playerLeftSentTo(eventDatagrams, SECOND_PLAYER).empty());
+  EXPECT_EQ(playerLeftSentTo(sentDatagrams(), FIRST_PLAYER), expected);
+  EXPECT_EQ(playerLeftSentTo(sentDatagrams(), THIRD_PLAYER), expected);
+  EXPECT_TRUE(playerLeftSentTo(sentDatagrams(), SECOND_PLAYER).empty());
 }
 
 /**
@@ -1128,9 +848,6 @@ TEST_F(GameInstanceTest, TellsOnlyTheOthersThatAPlayerTimedOut) {
  * left, and the second player gets none
  */
 TEST_F(GameInstanceTest, TellsOnlyTheOthersThatAPlayerLeft) {
-  engine::TimerScheduler timers;
-  std::vector<network::OutgoingDatagram> eventDatagrams;
-  const auto broadcaster = eventBroadcaster(timers, eventDatagrams);
   for (const std::size_t player : {FIRST_PLAYER, SECOND_PLAYER, THIRD_PLAYER}) {
     join(player);
   }
@@ -1138,15 +855,15 @@ TEST_F(GameInstanceTest, TellsOnlyTheOthersThatAPlayerLeft) {
   leave(SECOND_PLAYER);
   tick();
   events().dispatch();
-  timers.advance(testing::ALL_COPIES_SENT);
+  timers().advance(testing::ALL_COPIES_SENT);
 
   const std::vector expected(
       testing::PROTOCOL_REPEATED_MESSAGE_COPIES,
       network::PlayerLeft{.playerNumber = network::FIRST_PLAYER_NUMBER + 1,
                           .reason = network::DepartureReason::Left});
-  EXPECT_EQ(playerLeftSentTo(eventDatagrams, FIRST_PLAYER), expected);
-  EXPECT_EQ(playerLeftSentTo(eventDatagrams, THIRD_PLAYER), expected);
-  EXPECT_TRUE(playerLeftSentTo(eventDatagrams, SECOND_PLAYER).empty());
+  EXPECT_EQ(playerLeftSentTo(sentDatagrams(), FIRST_PLAYER), expected);
+  EXPECT_EQ(playerLeftSentTo(sentDatagrams(), THIRD_PLAYER), expected);
+  EXPECT_TRUE(playerLeftSentTo(sentDatagrams(), SECOND_PLAYER).empty());
 }
 
 /**
@@ -1217,7 +934,7 @@ TEST_F(GameInstanceTest, RemovesTheShipOfAPlayerWhoLeaves) {
   EXPECT_EQ(destructions,
             (std::vector{game::EntityDestruction{
                 .networkId = ship, .cause = game::DestructionCause::Removed}}));
-  EXPECT_EQ(game().world().entityCount(), 1U);
+  EXPECT_EQ(world().entityCount(), 1U);
 }
 
 /**
@@ -1413,7 +1130,7 @@ TEST_F(GameInstanceInputTest, KeepsNoInputFromADatagramWithoutOne) {
 
   deliver({FIRST_SENT});
 
-  EXPECT_FALSE(newestInputOf(FIRST_PLAYER).has_value());
+  EXPECT_FALSE(newestInputNumberOf(FIRST_PLAYER).has_value());
 }
 
 /**
@@ -1543,7 +1260,7 @@ TEST_F(GameInstanceInputTest, IgnoresAnInputFromASenderNotInTheRoster) {
 
   deliver({FIRST_SENT});
 
-  EXPECT_FALSE(newestInputOf(FIRST_PLAYER).has_value());
+  EXPECT_FALSE(newestInputNumberOf(FIRST_PLAYER).has_value());
 }
 
 /**
@@ -1612,16 +1329,16 @@ TEST_F(GameInstanceInputTest, IgnoresADatagramOfAnotherVersion) {
 
   deliver({FIRST_SENT});
 
-  EXPECT_FALSE(newestInputOf(FIRST_PLAYER).has_value());
+  EXPECT_FALSE(newestInputNumberOf(FIRST_PLAYER).has_value());
 }
 
 /**
  * Given a player whose input holding up was kept during a game
  * When that game finishes and the game waits for players in a new world
- * Then the player still holds up: the client numbers its inputs for the whole
- * session, so its next input stays newer than the one kept
+ * Then the number of its input is still kept: the client numbers its inputs
+ * for the whole session, so its next input stays newer than the one kept
  */
-TEST_F(GameInstanceInputTest, KeepsTheInputAcrossANewWorld) {
+TEST_F(GameInstanceInputTest, KeepsTheInputNumberAcrossANewWorld) {
   send(FIRST_PLAYER, HOLDS_UP);
   for (const std::size_t player : {FIRST_PLAYER, SECOND_PLAYER}) {
     sendReady({.player = player,
@@ -1636,17 +1353,41 @@ TEST_F(GameInstanceInputTest, KeepsTheInputAcrossANewWorld) {
   runTicks(FINISHED_STATE_TICKS);
 
   ASSERT_EQ(game().state(), GameState::WaitingForPlayers);
-  EXPECT_EQ(heldActions(FIRST_PLAYER), HOLDS_UP);
+  EXPECT_EQ(newestInputNumberOf(FIRST_PLAYER), lastInputNumber(FIRST_PLAYER));
+}
+
+/**
+ * Given a player whose input holding up was kept during a game
+ * When that game finishes and the game waits for players in a new world
+ * Then its new ship wants nothing until the next input arrives: the input is
+ * held by the Intent of the ship, and a new world builds new ships
+ */
+TEST_F(GameInstanceInputTest, NewShipOfANewWorldWantsNothingUntilTheNextInput) {
+  send(FIRST_PLAYER, HOLDS_UP);
+  for (const std::size_t player : {FIRST_PLAYER, SECOND_PLAYER}) {
+    sendReady({.player = player,
+               .ready = true,
+               .sequence = FIRST_SEQUENCE,
+               .sessionToken = PLAYER_SESSION_TOKENS.at(player)});
+  }
+  deliver({FIRST_SENT});
+  ASSERT_EQ(game().state(), GameState::InProgress);
+  game().finish();
+
+  runTicks(FINISHED_STATE_TICKS);
+
+  ASSERT_EQ(game().state(), GameState::WaitingForPlayers);
+  EXPECT_EQ(heldActions(FIRST_PLAYER), HOLDS_NOTHING);
 }
 
 /**
  * Given a game in progress whose first player holds right
  * When a second of ticks runs: the tick that reads the input, then
  * SIMULATION_TICKS_PER_SECOND - 1 more
- * Then the ship of that player has moved SHIP_SPEED to the right, on the same
- * row
+ * Then the ship of that player has drifted HELD_SECOND_DISTANCE to the right,
+ * on the same row: it gathered speed from rest
  */
-TEST_F(GameInstanceMovementTest, MovesAShipAtTheShipSpeedWhileInProgress) {
+TEST_F(GameInstanceMovementTest, DriftsAShipTowardsTheDirectionHeld) {
   startGame();
   const game::Position start = shipPositionOf(FIRST_PLAYER);
   send(FIRST_PLAYER, HOLDS_RIGHT);
@@ -1655,7 +1396,7 @@ TEST_F(GameInstanceMovementTest, MovesAShipAtTheShipSpeedWhileInProgress) {
   runTicks(engine::SIMULATION_TICKS_PER_SECOND - 1);
 
   const game::Position arrival = shipPositionOf(FIRST_PLAYER);
-  EXPECT_NEAR(arrival.x, start.x + game::SHIP_SPEED, POSITION_TOLERANCE);
+  EXPECT_NEAR(arrival.x, start.x + HELD_SECOND_DISTANCE, POSITION_TOLERANCE);
   EXPECT_FLOAT_EQ(arrival.y, start.y);
 }
 
@@ -1663,7 +1404,7 @@ TEST_F(GameInstanceMovementTest, MovesAShipAtTheShipSpeedWhileInProgress) {
  * Given a game in progress whose first player holds right and whose second
  * player holds down
  * When a second of ticks runs
- * Then each ship has moved SHIP_SPEED the way its own player holds
+ * Then each ship has drifted HELD_SECOND_DISTANCE the way its own player holds
  */
 TEST_F(GameInstanceMovementTest, MovesEachShipByTheInputOfItsOwnPlayer) {
   startGame();
@@ -1677,12 +1418,35 @@ TEST_F(GameInstanceMovementTest, MovesEachShipByTheInputOfItsOwnPlayer) {
 
   const game::Position firstArrival = shipPositionOf(FIRST_PLAYER);
   const game::Position secondArrival = shipPositionOf(SECOND_PLAYER);
-  EXPECT_NEAR(firstArrival.x, firstStart.x + game::SHIP_SPEED,
+  EXPECT_NEAR(firstArrival.x, firstStart.x + HELD_SECOND_DISTANCE,
               POSITION_TOLERANCE);
   EXPECT_FLOAT_EQ(firstArrival.y, firstStart.y);
   EXPECT_FLOAT_EQ(secondArrival.x, secondStart.x);
-  EXPECT_NEAR(secondArrival.y, secondStart.y + game::SHIP_SPEED,
+  EXPECT_NEAR(secondArrival.y, secondStart.y + HELD_SECOND_DISTANCE,
               POSITION_TOLERANCE);
+}
+
+/**
+ * Given a game in progress
+ * When the first player sends down, nothing, down and nothing, read in one
+ * tick, then the ticks of a whole roll run
+ * Then its ship is ROLL_DISTANCE lower, on the same column: the server
+ * read the double press and rolled the ship, no direction held to drift it
+ */
+TEST_F(GameInstanceMovementTest, RollsAShipOnADoublePressOfDown) {
+  startGame();
+  const game::Position start = shipPositionOf(FIRST_PLAYER);
+  send(FIRST_PLAYER, HOLDS_DOWN);
+  send(FIRST_PLAYER, HOLDS_NOTHING);
+  send(FIRST_PLAYER, HOLDS_DOWN);
+  send(FIRST_PLAYER, HOLDS_NOTHING);
+
+  deliver({FIRST_SENT, SECOND_SENT, THIRD_SENT, FOURTH_SENT});
+  runTicks(ROLL_END_TICK - 1);
+
+  const game::Position arrival = shipPositionOf(FIRST_PLAYER);
+  EXPECT_NEAR(arrival.y, start.y + ROLL_DISTANCE, POSITION_TOLERANCE);
+  EXPECT_FLOAT_EQ(arrival.x, start.x);
 }
 
 /**
@@ -1772,7 +1536,7 @@ TEST_F(GameInstanceMovementTest, SendsTheShipWhereItMovedInTheSameTick) {
   send(FIRST_PLAYER, HOLDS_RIGHT);
 
   deliver({FIRST_SENT});
-  runTicks(TICKS_PER_WORLD_STATE - 1);
+  runTicks(DEFAULT_TICKS_PER_WORLD_STATE - 1);
 
   const game::Position moved = shipPositionOf(FIRST_PLAYER);
   ASSERT_NE(moved.x, start.x);
@@ -1780,7 +1544,7 @@ TEST_F(GameInstanceMovementTest, SendsTheShipWhereItMovedInTheSameTick) {
       ofType(network::MessageType::WorldState, sentTo(FIRST_PLAYER));
   ASSERT_EQ(states.size(), 2U);
   const auto state = onlyMessageIn<network::WorldState>(states.back());
-  ASSERT_EQ(state.tick, TICKS_PER_WORLD_STATE);
+  ASSERT_EQ(state.tick, DEFAULT_TICKS_PER_WORLD_STATE);
   const std::optional<network::EntityState> ship =
       entityOf(state, shipIdOf(FIRST_PLAYER));
   ASSERT_TRUE(ship.has_value());
@@ -1793,8 +1557,8 @@ TEST_F(GameInstanceMovementTest, SendsTheShipWhereItMovedInTheSameTick) {
  * Given a game in progress whose first player holds one arrow
  * When the tick that reads the input runs
  * Then the ship of that player has moved along the axis of the arrow, the way
- * it points, as far as SHIP_SPEED goes in one tick, and not along the other
- * axis
+ * it points, as far as a ship at rest drifts in its first tick, and not along
+ * the other axis
  */
 TEST_P(GameInstanceArrowTest, MovesTheShipTheWayOfTheArrowHeld) {
   const HeldArrow arrow = GetParam();
@@ -1804,13 +1568,10 @@ TEST_P(GameInstanceArrowTest, MovesTheShipTheWayOfTheArrowHeld) {
 
   deliver({FIRST_SENT});
 
-  const float oneTick =
-      game::SHIP_SPEED *
-      std::chrono::duration<float>(engine::SIMULATION_TICK_DURATION).count();
   const game::Position arrival = shipPositionOf(FIRST_PLAYER);
-  EXPECT_NEAR(arrival.x, start.x + (oneTick * arrow.towardsX),
+  EXPECT_NEAR(arrival.x, start.x + (FIRST_TICK_DISTANCE * arrow.towardsX),
               POSITION_TOLERANCE);
-  EXPECT_NEAR(arrival.y, start.y + (oneTick * arrow.towardsY),
+  EXPECT_NEAR(arrival.y, start.y + (FIRST_TICK_DISTANCE * arrow.towardsY),
               POSITION_TOLERANCE);
 }
 
@@ -2010,5 +1771,4 @@ INSTANTIATE_TEST_SUITE_P(Seeds, GameInstanceInputShuffleTest,
                          ::testing::Range(std::uint32_t{0},
                                           SHUFFLE_SEED_COUNT));
 
-}  // namespace
 }  // namespace rtype::server

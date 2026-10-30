@@ -18,7 +18,7 @@ Every folder and file name of an id starts with a lowercase letter `a-z` or a di
 
 ## When files are loaded
 
-The assets of the interface, which any screen may use at any time, in a game or outside one, the fonts and every sound, are loaded once at launch and never released. The assets of the intro, those of the title screen (its logo and the entity sheet of its squadron) and the effect sheet of its explosions, are loaded at launch too, so the intro has them from its first frame, but they are not kept: the title releases the effect sheet, and entering a game releases the logo. The assets of a game are loaded by the loading screen when the player enters it: it first releases the loaded assets the game does not list, except the interface ones, then loads the missing ones one file per frame, drawing its progress between two files. An asset already loaded is never read again.
+The assets of the interface, which any screen may use at any time, in a game or outside one, the fonts and every sound, are loaded once at launch and never released. The assets of the intro, those of the title screen (its logo, the entity sheet of its squadron, and the HUD sheet and the professor sheet the help of the waiting room draws, since the waiting room is pushed over the title) and the effect sheet of its explosions, are loaded at launch too, so the intro has them from its first frame, but they are not kept: the title releases the effect sheet, and entering a game releases the logo. The assets of a game are loaded by the loading screen when the player enters it: it first releases the loaded assets the game does not list, except the interface ones, then loads the missing ones one file per frame, drawing its progress between two files. An asset already loaded is never read again.
 
 When an id breaks the rule, or its file is missing or cannot be read, the client stops once every file of the list was tried, and names every one of them. Music is only located: its file is read while it plays.
 
@@ -36,6 +36,7 @@ The client looks for `assets/` next to its executable, then in the folder above 
 | `sprites/entities.png` | The sprite sheet of a match: four player ships, the Bydo, the bonus Bydo, the player missile and the enemy missile | Drawn for this project (proposal 3a); not taken from the sprite set shipped with the subject |
 | `sprites/effects.png` | The effects of a match: the explosions of the Bydo and of the ship, the impact of a missile and the muzzle flashes of both missiles, each with its version without flash | Drawn for this project (animation proposal, options C), generated from the drafts of the proposal; not taken from the sprite set shipped with the subject |
 | `sprites/hud.png` | The sheet of the status band of a game: the lives of the four player colors, a life lost, the marker of each player, and the icons of the notices of a game: the door of a departure and the bars of a weak signal | Drawn for this project (HUD design system, proposal B; the two icons from the disconnect notices design system); not taken from the sprite set shipped with the subject |
+| `sprites/professor.png` | Professor Bydo, the guide of the help of the waiting room: the Bydo under a mortarboard, round glasses over its eye, two frames facing left, then the same two mirrored | Drawn for this project (help design system, version 2), from the Bydo of `sprites/entities.png`; not taken from the sprite set shipped with the subject |
 | `sprites/flight_log.png` | The flight log of the end screen: the front cover, the inside of the cover with the left page, the right half with its page, the label of the taunt, a tile of the shadow, the medal of the best pilot and the cross of QUIT | Drawn for this project (end screen design system, proposal A v2), generated from the code of the design with its seeds; the four markers copied from `sprites/hud.png`; not taken from the sprite set shipped with the subject |
 | `icons/phosphor/plugs_bold.png` | The unplugged plug of a pilot whose signal is lost, white on a square of 64 × 64 pixels | "plugs", bold weight, of Phosphor Icons, MIT License, copyright 2023 Phosphor Icons, license in `icons/phosphor/LICENSE.txt`; from `phosphor-icons/core` at tag `v2.0.8` (`assets/bold/plugs-bold.svg`), rendered to PNG and made white |
 | `sounds/kenney/bydo_growl.ogg` | The growl of the Bydo that opens the intro, 0.50 s | `slime_000.ogg` of Kenney's Sci-fi Sounds 1.0, CC0, license in `sounds/kenney/license-sci-fi-sounds.txt`; from kenney.nl |
@@ -96,7 +97,18 @@ Without flash, the Bydo explosion starts on the Bydo in its own colors instead o
 | Markers: triangle, square, circle and star, one per player color, so a player is never told by color alone | 4 | 7 × 7 | 10 |
 | Notices: the door a pilot left through, then the bars of a weak signal, pale and dark blue outlined in ink, so no palette recolors them | 2 | 9 × 11, 13 × 10 | 19 |
 
-The rectangles are written once, in `src/client/Rendering/Interface/HudSpriteConstants.hpp`, with the id of the plug icon, which is drawn smoothed at the resolution of the window and tinted, not pixel for pixel. `client_rendering_tests` checks them against the shipped files: every frame lies inside the sheet, shows a visible pixel, cuts no drawing and overlaps no other, and every visible pixel of the icon is white. Both files are listed in `gameAssets()` only.
+The rectangles are written once, in `src/client/Rendering/Interface/HudSpriteConstants.hpp`, with the id of the plug icon, which is drawn smoothed at the resolution of the window and tinted, not pixel for pixel. `client_rendering_tests` checks them against the shipped files: every frame lies inside the sheet, shows a visible pixel, cuts no drawing and overlaps no other, and every visible pixel of the icon is white. Both files are listed in `gameAssets()`; the HUD sheet is also listed in `titleAssets()`, for the status band the help of the waiting room paints.
+
+## The professor sheet
+
+`sprites/professor.png` is 50 × 58 pixels, laid out like the entity sheet: native size, frames and rows 2 pixels apart, transparent outside the frames. The help of the waiting room draws it twice its size.
+
+| Row | Frames | Frame size | Top |
+|---|---|---|---|
+| Professor Bydo facing left, as the entity sheet draws the Bydo | 2 | 24 × 28 | 0 |
+| The same frames mirrored, facing right, since the interface canvas cannot mirror an image | 2 | 24 × 28 | 30 |
+
+Each row shows its two frames in turn, 250 ms each, as the Bydo. The rectangles and the animations are written once, in `src/client/Rendering/Interface/ProfessorSpriteConstants.hpp`. `client_rendering_tests` checks them against the shipped file: every frame lies inside the sheet, shows a visible pixel and cuts no drawing, and the second row is the first mirrored. The sheet is listed in `titleAssets()` and `gameAssets()`.
 
 ## The flight log sheet
 

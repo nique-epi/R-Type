@@ -5,18 +5,23 @@
 #include <cmath>
 #include <cstddef>
 #include <optional>
+#include <vector>
 #include "BackgroundConstants.hpp"
 #include "Caption.hpp"
 #include "ComponentRegistry.hpp"
 #include "DrawCall.hpp"
+#include "Easing.hpp"
 #include "Entity.hpp"
 #include "HitFlash.hpp"
 #include "IDrawSurface.hpp"
 #include "Invulnerability.hpp"
+#include "Layer.hpp"
 #include "Nudge.hpp"
 #include "Position.hpp"
 #include "RenderingConstants.hpp"
 #include "Reveal.hpp"
+#include "ShipFlight.hpp"
+#include "ShipFlightConstants.hpp"
 #include "Sprite.hpp"
 #include "SpriteAppearance.hpp"
 #include "SpriteDrawing.hpp"
@@ -114,6 +119,56 @@ game::Position centerOfRows(game::Position center, int height, RowSpan span) {
                                          BACKGROUND_PIXEL_SIZE)};
 }
 
+/** @brief The rows a roll shows of a frame: its height, how many it shows,
+ * and whether they are upside down. */
+struct RolledFrame {
+  int height{};
+  int count{};
+  bool belly{false};
+};
+
+/** @returns The angle of the roll @p flight draws, a whole turn over its
+ * share; nothing without a ShipFlight or a roll. */
+std::optional<float> rollAngleOf(const ShipFlight* flight) {
+  if (flight == nullptr || !flight->rollShare.has_value()) {
+    return std::nullopt;
+  }
+  return FULL_TURN * *flight->rollShare;
+}
+
+/** @returns The rows of @p frame a roll at @p angle shows: round(height x
+ * |cos|), ROLL_THINNEST_ROWS at least, upside down past a quarter turn. */
+RolledFrame rolledFrameOf(game::SpriteFrame frame, float angle) {
+  const float cosine = std::cos(angle);
+  const int count = pixelsOf(frame.height, std::abs(cosine));
+  return RolledFrame{.height = frame.height,
+                     .count = std::max(ROLL_THINNEST_ROWS, count),
+                     .belly = cosine < 0.0F};
+}
+
+/** @returns The row of the frame that row @p row of @p rolled shows: the
+ * nearest, counted from the bottom while the belly shows. */
+int sourceRowOf(RolledFrame rolled, int row) {
+  const int nearest = (((2 * row) + 1) * rolled.height) / (2 * rolled.count);
+  return rolled.belly ? rolled.height - 1 - nearest : nearest;
+}
+
+/** @returns The draw call of an afterimage of @p sprite, the sprite of
+ * @p entity, at @p position: the sprite lit one pixel in two. */
+DrawCall afterimageAt(engine::Entity entity, const game::Sprite& sprite,
+                      game::Position position) {
+  return DrawCall{.entityIndex = entity.index,
+                  .position = position,
+                  .sprite = &sprite,
+                  .caption = nullptr,
+                  .look = SpriteAppearance{.tone = SpriteTone::Ghost,
+                                           .outline = std::nullopt,
+                                           .offset = {},
+                                           .shownRows = std::nullopt,
+                                           .leadingLine = false,
+                                           .rollAngle = std::nullopt}};
+}
+
 }  // namespace
 
 void RenderSystem::render(engine::ComponentRegistry& components,
@@ -122,6 +177,7 @@ void RenderSystem::render(engine::ComponentRegistry& components,
     drawCalls.clear();
   }
   collectSprites(components);
+  collectAfterimages(components);
   collectCaptions(components);
   for (auto& drawCalls : drawCallsByLayer_) {
     std::ranges::sort(drawCalls, {}, &DrawCall::entityIndex);
@@ -174,7 +230,8 @@ SpriteAppearance RenderSystem::lookOf(engine::ComponentRegistry& components,
       .outline = outlineOf(invulnerability),
       .offset = offsetOf(components.get<Nudge>(entity)),
       .shownRows = shownRowsOf(reveal, frameHeight),
-      .leadingLine = reveal != nullptr && reveal->leadingLine};
+      .leadingLine = reveal != nullptr && reveal->leadingLine,
+      .rollAngle = rollAngleOf(components.get<ShipFlight>(entity))};
 }
 
 void RenderSystem::draw(IDrawSurface& surface, const DrawCall& call) {
@@ -189,6 +246,10 @@ void RenderSystem::drawSprite(IDrawSurface& surface, const DrawCall& call) {
   const game::Position center = nudged(call.position, call.look.offset);
   if (call.look.shownRows.has_value()) {
     drawRevealed(surface, call, center);
+    return;
+  }
+  if (call.look.rollAngle.has_value()) {
+    drawRolled(surface, call, center);
     return;
   }
   surface.draw(SpriteDrawing{.assetId = call.sprite->assetId,
@@ -220,6 +281,44 @@ void RenderSystem::drawRevealed(IDrawSurface& surface, const DrawCall& call,
                       .center = centerOfRows(center, frame.height, line),
                       .tone = SpriteTone::Flash,
                       .outline = std::nullopt});
+  }
+}
+
+void RenderSystem::collectAfterimages(engine::ComponentRegistry& components) {
+  std::vector<DrawCall>& effects =
+      drawCallsByLayer_[static_cast<std::size_t>(game::Layer::Effects)];
+  components.forEach<ShipFlight, game::Sprite>([&effects, &components](
+                                                   engine::Entity entity,
+                                                   ShipFlight& flight,
+                                                   game::Sprite& sprite) {
+    if ((!flight.rolling && !flight.dashing) ||
+        components.get<Reveal>(entity) != nullptr) {
+      return;
+    }
+    for (const std::size_t age : AFTERIMAGE_AGES) {
+      if (age < flight.trailLength) {
+        effects.push_back(afterimageAt(entity, sprite, flight.trail.at(age)));
+      }
+    }
+  });
+}
+
+void RenderSystem::drawRolled(IDrawSurface& surface, const DrawCall& call,
+                              game::Position center) {
+  const game::SpriteFrame frame = call.sprite->frame;
+  const RolledFrame rolled =
+      rolledFrameOf(frame, call.look.rollAngle.value_or(0.0F));
+  for (int row = 0; row < rolled.count; ++row) {
+    surface.draw(SpriteDrawing{
+        .assetId = call.sprite->assetId,
+        .frame = rowsOf(frame,
+                        RowSpan{.first = sourceRowOf(rolled, row), .count = 1}),
+        .center = centerOfRows(center, rolled.count,
+                               RowSpan{.first = row, .count = 1}),
+        .tone = rolled.belly && call.look.tone == SpriteTone::Normal
+                    ? SpriteTone::Shade
+                    : call.look.tone,
+        .outline = std::nullopt});
   }
 }
 

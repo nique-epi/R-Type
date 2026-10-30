@@ -1,0 +1,7 @@
+add_library(rtype_server_world_slot STATIC WorldSlot.cpp)
+
+target_include_directories(rtype_server_world_slot PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+
+target_link_libraries(rtype_server_world_slot PUBLIC rtype_game)
+
+rtype_enable_warnings(rtype_server_world_slot)

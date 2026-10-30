@@ -23,4 +23,8 @@ class ServerLobbyFixture : public ServerGamesFixture {
   /** @returns The cookie of the challenge the server last sent to the player
    * at @p index. */
   [[nodiscard]] std::uint64_t challengeCookieOf(std::size_t index);
+
+  /** @brief Runs one tick in which the player at @p index, already seated,
+   * says it is ready. */
+  void sayReady(std::size_t index);
 };

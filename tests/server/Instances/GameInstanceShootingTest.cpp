@@ -10,9 +10,8 @@
 #include "GameInstanceTestConstants.hpp"
 #include "GameState.hpp"
 #include "SentDatagrams.hpp"
-#include "Spawning/BydoGunnerTestConstants.hpp"
 #include "Spawning/BydoSpawnerTestConstants.hpp"
-#include "Spawning/MissileLauncherTestConstants.hpp"
+#include "Spawning/WeaponSystemTestConstants.hpp"
 #include "World.hpp"
 
 namespace rtype::server::testing {
@@ -74,6 +73,27 @@ TEST_F(GameInstanceShootingFixture, FiresNothingWhileWaitingForPlayers) {
 }
 
 /**
+ * Given a game in progress whose first player holds shoot, then goes silent
+ * until the server takes it for away
+ * When more ticks than three shot intervals run
+ * Then the second player is sent no new missile: the ship of an away player
+ * stops firing
+ */
+TEST_F(GameInstanceShootingFixture, StopsFiringTheShipOfAnAwayPlayer) {
+  startGame();
+  holdForNextTick(FIRST_PLAYER, HOLDS_SHOOT);
+  tick();
+  silence(FIRST_PLAYER);
+  runTicks(PROTOCOL_SESSION_TIMEOUT_TICKS);
+  ASSERT_TRUE(game().roster().find(playerEndpoint(FIRST_PLAYER))->away);
+  const std::size_t missilesBefore = missilesSentTo(SECOND_PLAYER).size();
+
+  runTicks(3 * TICKS_BETWEEN_TWO_SHOTS);
+
+  EXPECT_EQ(missilesSentTo(SECOND_PLAYER).size(), missilesBefore);
+}
+
+/**
  * Given a finished game whose first player holds shoot
  * When ticks run
  * Then no missile is fired
@@ -127,7 +147,7 @@ TEST_F(GameInstanceShootingFixture, RemovesAMissileThatLeftOnTheRight) {
   runTicksDispatching(TICKS_TO_THE_FIRST_BYDO - 2);
 
   EXPECT_TRUE(wasDestroyed(missile, game::DestructionCause::Removed));
-  EXPECT_EQ(game().world().entityCount(), 2U);
+  EXPECT_EQ(world().entityCount(), 2U);
 }
 
 /**
@@ -198,8 +218,7 @@ TEST_F(GameInstanceShootingFixture, DestroysABydoInTheNextGameToo) {
  */
 TEST_F(GameInstanceShootingFixture, BydosFireWhileInProgress) {
   startGame();
-  game().world().spawnBydo(BYDO_FAR_AHEAD_OF_THE_SHIPS,
-                           game::BydoKind::Drifter);
+  world().spawnBydo(BYDO_FAR_AHEAD_OF_THE_SHIPS, game::BydoKind::Drifter);
 
   runTicksDispatching(ONE_AND_A_HALF_SECONDS_IN_TICKS);
 

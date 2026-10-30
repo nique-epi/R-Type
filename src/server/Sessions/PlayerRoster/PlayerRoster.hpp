@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <optional>
 #include <string>
+#include <string_view>
 #include <vector>
 #include "ConnectedPlayer.hpp"
 #include "ConnectedPlayers.hpp"
@@ -38,6 +39,13 @@ class PlayerRoster {
   [[nodiscard]] ConnectedPlayer* findByNumber(std::uint8_t playerNumber);
 
   /**
+   * @returns The player connected whose ship has the network id @p shipId, or
+   * nullptr when none has it, including for NO_ENTITY_ID: a player without a
+   * ship owns no ship. The player stays at that address until it is removed.
+   */
+  [[nodiscard]] ConnectedPlayer* findByShip(std::uint32_t shipId);
+
+  /**
    * @returns The connected players, in order of their number. They stay at
    * their addresses until they are removed. The list is a copy that
    * allocates nothing, so a tick may ask for it every time; a player
@@ -48,6 +56,13 @@ class PlayerRoster {
   /** @returns The address and port of each connected player, in order of
    * their number. */
   [[nodiscard]] std::vector<network::Endpoint> endpoints() const;
+
+  /**
+   * @returns Whether a player holds a seat under @p nickname, away or not,
+   * comparing the ASCII letters without regard to case and every other byte as
+   * it is.
+   */
+  [[nodiscard]] bool hasNickname(std::string_view nickname) const;
 
   /** @returns Whether MAXIMUM_PLAYERS players are connected. */
   [[nodiscard]] bool isFull() const;

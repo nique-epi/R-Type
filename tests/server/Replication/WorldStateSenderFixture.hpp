@@ -3,12 +3,15 @@
 #include <gtest/gtest.h>
 #include <cstddef>
 #include <cstdint>
+#include <memory>
 #include <vector>
 #include "ComponentRegistry.hpp"
 #include "ConnectedPlayer.hpp"
 #include "Endpoint.hpp"
 #include "EntityRegistry.hpp"
 #include "EntityType.hpp"
+#include "Invulnerable.hpp"
+#include "Lives.hpp"
 #include "OutgoingDatagram.hpp"
 #include "PacketHeader.hpp"
 #include "PlayerRoster.hpp"
@@ -53,6 +56,13 @@ class WorldStateSenderFixture : public ::testing::Test {
                           std::uint32_t networkId);
 
   /**
+   * @brief Adds the ship of a player: an entity under @p networkId with a
+   * ShipMotion, an Intent, @p lives and @p protection.
+   */
+  void addShip(std::uint32_t networkId, game::Lives lives,
+               game::Invulnerable protection);
+
+  /**
    * @brief Adds an entity with a Position and an EntityType, and no
    * NetworkIdentity.
    */
@@ -70,6 +80,13 @@ class WorldStateSenderFixture : public ::testing::Test {
    * the last call.
    */
   void runTicks(std::size_t count);
+
+  /**
+   * @brief Replaces the sender by one that sends @p statesPerSecond states per
+   * second, and forgets the ticks run and the datagrams handed over so far.
+   * @throws InvalidStateRateException when the rate is not one a sender takes.
+   */
+  void restartWithStatesPerSecond(std::size_t statesPerSecond);
 
   /**
    * @returns The WorldState the datagram handed over at @p sentIndex holds
@@ -93,7 +110,7 @@ class WorldStateSenderFixture : public ::testing::Test {
   engine::ComponentRegistry components_{entities_};
   PlayerRoster roster_;
   std::vector<network::OutgoingDatagram> sent_;
-  WorldStateSender sender_;
+  std::unique_ptr<WorldStateSender> sender_;
   std::uint32_t tick_{0};
 };
 

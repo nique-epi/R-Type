@@ -5,6 +5,7 @@
 #include <cstdint>
 #include "BackgroundColorConstants.hpp"
 #include "EffectColorConstants.hpp"
+#include "FireColorConstants.hpp"
 #include "InterfaceColorConstants.hpp"
 #include "SpriteToneColorConstants.hpp"
 

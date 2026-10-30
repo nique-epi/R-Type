@@ -30,6 +30,14 @@ constexpr std::size_t FOURTH_PLAYER = 3;
 constexpr std::size_t PROTOCOL_SESSION_TIMEOUT_TICKS = 300;
 
 /**
+ * @brief The 15 s of the protocol page during which the server keeps the seat
+ * of a player it took for gone, at 60 ticks per second, so the session closes
+ * after PROTOCOL_SESSION_TIMEOUT_TICKS plus these.
+ */
+constexpr std::size_t PROTOCOL_RECONNECTION_GRACE_TICKS = 900;
+constexpr std::size_t PROTOCOL_SESSION_CLOSING_TICKS = 1200;
+
+/**
  * @brief The 1 s of the protocol page after which a side sends a Heartbeat
  * when it sent nothing else, at 60 ticks per second.
  */
@@ -60,6 +68,21 @@ constexpr std::uint16_t FIRST_SEQUENCE = 1;
 constexpr std::uint16_t SECOND_SEQUENCE = 2;
 constexpr std::uint16_t THIRD_SEQUENCE = 3;
 constexpr std::uint16_t FOURTH_SEQUENCE = 4;
+
+/**
+ * @brief The inputs a test player sends follow the ReadyState datagrams, which
+ * use sequences up to FOURTH_SEQUENCE: the datagram of input number n carries
+ * the sequence LAST_READY_SEQUENCE + n, so the datagrams of one player keep the
+ * increasing order a client gives them.
+ */
+constexpr std::uint16_t LAST_READY_SEQUENCE = FOURTH_SEQUENCE;
+
+/**
+ * @brief The sequence of the Disconnection a test player sends when it leaves:
+ * ahead of every other datagram a test sends, as the last datagram of a client
+ * is.
+ */
+constexpr std::uint16_t DISCONNECTION_SEQUENCE = 20000;
 
 /**
  * @brief A few ticks, for the tests that check nothing changes while they
@@ -169,5 +192,8 @@ static_assert(SHUFFLED_INPUT_COUNT <= network::PLAYER_ACTION_BITS + 1U,
  */
 constexpr float WIRE_COORDINATE_TOLERANCE =
     1.0F / network::WIRE_COORDINATE_STEPS_PER_UNIT;
+
+/** @brief A score worth some points, when the number does not matter. */
+constexpr std::uint32_t SOME_POINTS = 100;
 
 }  // namespace rtype::server::testing

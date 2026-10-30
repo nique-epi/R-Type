@@ -9,10 +9,6 @@
 namespace rtype::server {
 
 using testing::addPlayer;
-using testing::FIRST_SEQUENCE;
-using testing::LAST_SEQUENCE;
-using testing::NEWER_SEQUENCE;
-using testing::OLDER_SEQUENCE;
 using testing::originOf;
 using testing::SOME_SEQUENCE;
 using testing::TWO_PLAYERS;
@@ -43,40 +39,6 @@ TEST(ReadyKeeper, IgnoresAReadyStateItDoesNotAccept) {
   ReadyKeeper keeper(roster, [] { return false; });
 
   keeper.apply(originOf(0, SOME_SEQUENCE), network::ReadyState{.ready = true});
-
-  EXPECT_FALSE(player.ready);
-}
-
-/**
- * Given a player who said ready in the datagram of sequence 40
- * When a ReadyState of sequence 39 says not ready
- * Then the player stays ready
- */
-TEST(ReadyKeeper, IgnoresAReadyStateOlderThanTheNewestAccepted) {
-  PlayerRoster roster;
-  const ConnectedPlayer& player = addPlayer(roster, 0);
-  ReadyKeeper keeper(roster, [] { return true; });
-  keeper.apply(originOf(0, SOME_SEQUENCE), network::ReadyState{.ready = true});
-
-  keeper.apply(originOf(0, OLDER_SEQUENCE),
-               network::ReadyState{.ready = false});
-
-  EXPECT_TRUE(player.ready);
-}
-
-/**
- * Given a player who said ready in the datagram of sequence 40
- * When a ReadyState of sequence 41 says not ready
- * Then the player is not ready
- */
-TEST(ReadyKeeper, AppliesAReadyStateNewerThanTheNewestAccepted) {
-  PlayerRoster roster;
-  const ConnectedPlayer& player = addPlayer(roster, 0);
-  ReadyKeeper keeper(roster, [] { return true; });
-  keeper.apply(originOf(0, SOME_SEQUENCE), network::ReadyState{.ready = true});
-
-  keeper.apply(originOf(0, NEWER_SEQUENCE),
-               network::ReadyState{.ready = false});
 
   EXPECT_FALSE(player.ready);
 }
@@ -129,20 +91,34 @@ TEST(ReadyKeeper, WaitsForEveryConnectedPlayer) {
 }
 
 /**
- * Given a player who said ready in the datagram of sequence 65535
- * When a ReadyState of sequence 0 says not ready
- * Then the player is not ready, since sequence 0 follows sequence 65535
+ * Given two players, the first ready and the second, not ready, away
+ * When the keeper is asked whether every player is ready
+ * Then the answer is yes: a player who is away does not hold the game back
  */
-TEST(ReadyKeeper, AppliesAReadyStateOnceTheSequenceWrapsAround) {
+TEST(ReadyKeeper, DoesNotWaitForAPlayerWhoIsAway) {
   PlayerRoster roster;
-  const ConnectedPlayer& player = addPlayer(roster, 0);
+  static_cast<void>(addPlayer(roster, 0));
+  ConnectedPlayer& second = addPlayer(roster, 1);
   ReadyKeeper keeper(roster, [] { return true; });
-  keeper.apply(originOf(0, LAST_SEQUENCE), network::ReadyState{.ready = true});
+  keeper.apply(originOf(0, SOME_SEQUENCE), network::ReadyState{.ready = true});
+  second.away = true;
 
-  keeper.apply(originOf(0, FIRST_SEQUENCE),
-               network::ReadyState{.ready = false});
+  EXPECT_TRUE(keeper.everyPlayerIsReady());
+}
 
-  EXPECT_FALSE(player.ready);
+/**
+ * Given one player, away
+ * When the keeper is asked whether every player is ready
+ * Then the answer is no: nobody is there to start the game
+ */
+TEST(ReadyKeeper, IsNotReadyWhenEveryPlayerIsAway) {
+  PlayerRoster roster;
+  ConnectedPlayer& player = addPlayer(roster, 0);
+  ReadyKeeper keeper(roster, [] { return true; });
+  keeper.apply(originOf(0, SOME_SEQUENCE), network::ReadyState{.ready = true});
+  player.away = true;
+
+  EXPECT_FALSE(keeper.everyPlayerIsReady());
 }
 
 }  // namespace rtype::server

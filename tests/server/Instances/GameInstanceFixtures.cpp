@@ -11,22 +11,25 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include "ByteWriter.hpp"
 #include "ComponentRegistry.hpp"
 #include "ConnectedPlayer.hpp"
 #include "DatagramCodec.hpp"
 #include "DebugJournal.hpp"
-#include "Endpoint.hpp"
 #include "Entity.hpp"
 #include "EntityIdConstants.hpp"
 #include "EntitySpawned.hpp"
 #include "EntityType.hpp"
 #include "EventBus.hpp"
-#include "GameEventBroadcaster.hpp"
 #include "GameInstance.hpp"
+#include "GameInstanceParts.hpp"
 #include "GameInstanceTestConstants.hpp"
 #include "GameSettings.hpp"
 #include "GameState.hpp"
+#include "IGameModule.hpp"
 #include "IncomingDatagram.hpp"
+#include "Intent.hpp"
+#include "LobbyState.hpp"
 #include "MessageType.hpp"
 #include "OutgoingDatagram.hpp"
 #include "PacketHeader.hpp"
@@ -35,6 +38,8 @@
 #include "Position.hpp"
 #include "ProtocolConstants.hpp"
 #include "ReadyState.hpp"
+#include "RtypeGameModules.hpp"
+#include "RtypeRulesModule.hpp"
 #include "SentDatagrams.hpp"
 #include "ServerDatagrams.hpp"
 #include "ServerLobbyTestConstants.hpp"
@@ -91,27 +96,46 @@ std::size_t bydosIn(game::World& world) {
   return bydos;
 }
 
+namespace {
+
+std::vector<std::unique_ptr<IGameModule>> modulesWithRulesAt(
+    RtypeRulesModule*& rules) {
+  std::vector<std::unique_ptr<IGameModule>> modules = rtypeGameModules();
+  for (const std::unique_ptr<IGameModule>& listedModule : modules) {
+    if (auto* const found = dynamic_cast<RtypeRulesModule*>(listedModule.get());
+        found != nullptr) {
+      rules = found;
+    }
+  }
+  return modules;
+}
+
+}  // namespace
+
 GameInstanceTest::GameInstanceTest()
-    : game_(
-          [this](network::OutgoingDatagram datagram) {
-            sent_.push_back(std::move(datagram));
-          },
-          GameSettings{.seed = SOME_SEED, .waves = testWavePlan()}, events_) {}
+    : game_(GameInstanceParts{.send =
+                                  [this](network::OutgoingDatagram datagram) {
+                                    sent_.push_back(std::move(datagram));
+                                  },
+                              .settings = GameSettings{.seed = SOME_SEED,
+                                                       .waves = testWavePlan()},
+                              .events = events_,
+                              .timers = timers_},
+            modulesWithRulesAt(rules_)) {}
+
+game::World& GameInstanceTest::world() { return rules_->world(); }
 
 ConnectedPlayer& GameInstanceTest::join(std::size_t index,
                                         std::uint64_t sessionToken) {
   ConnectedPlayer* const player = game().roster().add(
       playerEndpoint(index), std::string{PLAYER_NICKNAME}, sessionToken);
   game().onPlayerJoined(*player);
-  livePlayers_.push_back(
-      LivePlayer{.index = index, .sessionToken = sessionToken});
+  livePlayers_.push_back(index);
   return *player;
 }
 
 void GameInstanceTest::silence(std::size_t index) {
-  std::erase_if(livePlayers_, [index](const LivePlayer& player) {
-    return player.index == index;
-  });
+  std::erase(livePlayers_, index);
 }
 
 void GameInstanceTest::leave(std::size_t index) {
@@ -120,25 +144,17 @@ void GameInstanceTest::leave(std::size_t index) {
 }
 
 void GameInstanceTest::queueDisconnectionFrom(std::size_t index) {
-  queue(network::IncomingDatagram{.sender = playerEndpoint(index),
-                                  .payload = disconnectionDatagram()});
+  queue(network::IncomingDatagram{
+      .sender = playerEndpoint(index),
+      .payload = disconnectionDatagram(
+          network::PacketHeader{.sequence = DISCONNECTION_SEQUENCE})});
 }
 
-std::unique_ptr<GameEventBroadcaster> GameInstanceTest::eventBroadcaster(
-    engine::TimerScheduler& timers,
-    std::vector<network::OutgoingDatagram>& datagrams) {
-  return std::make_unique<GameEventBroadcaster>(GameEventBroadcaster::Wiring{
-      .events = events(),
-      .timers = timers,
-      .recipients = [this] { return game().roster().endpoints(); },
-      .headerFor =
-          [this](const network::Endpoint& recipient) {
-            return game().nextSessionHeaderFor(recipient);
-          },
-      .send =
-          [&datagrams](network::OutgoingDatagram datagram) {
-            datagrams.push_back(std::move(datagram));
-          }});
+engine::TimerScheduler& GameInstanceTest::timers() { return timers_; }
+
+const std::vector<network::OutgoingDatagram>& GameInstanceTest::sentDatagrams()
+    const {
+  return sent_;
 }
 
 std::vector<network::PlayerLeft> GameInstanceTest::playerLeftSentTo(
@@ -168,11 +184,12 @@ void GameInstanceTest::queue(network::IncomingDatagram datagram) {
 }
 
 void GameInstanceTest::tick() {
-  for (const LivePlayer& player : livePlayers_) {
-    network::PacketHeader header;
-    header.sessionToken = player.sessionToken;
-    queue(network::IncomingDatagram{.sender = playerEndpoint(player.index),
-                                    .payload = heartbeatDatagram(header)});
+  for (const std::size_t index : livePlayers_) {
+    ConnectedPlayer* const player = game().roster().find(playerEndpoint(index));
+    if (player != nullptr) {
+      player->ticksSinceReceived = 0;
+      player->away = false;
+    }
   }
   game().onTick(incoming_);
   incoming_.clear();
@@ -200,7 +217,7 @@ void GameInstanceTest::startGameWithOnePlayer() {
 
 void GameInstanceTest::timeOut(std::size_t index) {
   silence(index);
-  runTicks(PROTOCOL_SESSION_TIMEOUT_TICKS + 1);
+  runTicks(PROTOCOL_SESSION_CLOSING_TICKS + 1);
 }
 
 std::uint32_t GameInstanceTest::shipOf(std::size_t index) {
@@ -228,10 +245,13 @@ std::vector<std::byte> GameInstanceInputTest::nextInputDatagram(
     std::size_t player, std::uint8_t actions,
     const network::PacketHeader& header) {
   ++inputsSent_.at(player);
+  network::PacketHeader numbered = header;
+  numbered.sequence =
+      static_cast<std::uint16_t>(LAST_READY_SEQUENCE + inputsSent_.at(player));
   return inputDatagram(
       network::PlayerInput{.inputNumber = inputsSent_.at(player),
                            .actions = actions},
-      header);
+      numbered);
 }
 
 void GameInstanceInputTest::send(std::size_t player, std::uint8_t actions) {
@@ -273,7 +293,7 @@ std::uint32_t GameInstanceInputTest::lastInputNumber(std::size_t player) const {
   return inputsSent_.at(player);
 }
 
-std::optional<network::PlayerInput> GameInstanceInputTest::newestInputOf(
+std::optional<std::uint32_t> GameInstanceInputTest::newestInputNumberOf(
     std::size_t player) {
   const ConnectedPlayer* const connected =
       game().roster().find(playerEndpoint(player));
@@ -281,16 +301,39 @@ std::optional<network::PlayerInput> GameInstanceInputTest::newestInputOf(
     ADD_FAILURE() << "player " << player << " is not in the roster";
     return std::nullopt;
   }
-  return connected->newestInput;
+  return connected->newestInputNumber;
 }
 
 std::optional<std::uint8_t> GameInstanceInputTest::heldActions(
     std::size_t player) {
-  const std::optional<network::PlayerInput> newest = newestInputOf(player);
-  if (!newest.has_value()) {
+  if (!newestInputNumberOf(player).has_value()) {
     return std::nullopt;
   }
-  return newest->actions;
+  const ConnectedPlayer* const connected =
+      game().roster().find(playerEndpoint(player));
+  const game::Intent* const intent =
+      world().shipComponentOf<game::Intent>(connected->shipEntityId);
+  if (intent == nullptr) {
+    ADD_FAILURE() << "player " << player << " has no ship";
+    return std::nullopt;
+  }
+  unsigned int actions = 0U;
+  if (intent->directions.up) {
+    actions |= static_cast<unsigned int>(HOLDS_UP);
+  }
+  if (intent->directions.down) {
+    actions |= static_cast<unsigned int>(HOLDS_DOWN);
+  }
+  if (intent->directions.left) {
+    actions |= static_cast<unsigned int>(HOLDS_LEFT);
+  }
+  if (intent->directions.right) {
+    actions |= static_cast<unsigned int>(HOLDS_RIGHT);
+  }
+  if (intent->shooting) {
+    actions |= static_cast<unsigned int>(HOLDS_SHOOT);
+  }
+  return static_cast<std::uint8_t>(actions);
 }
 
 const UnreliableNetwork& GameInstanceInputTest::network() const {
@@ -319,8 +362,7 @@ std::uint32_t GameInstanceMovementTest::shipIdOf(std::size_t player) {
 }
 
 game::Position GameInstanceMovementTest::shipPositionOf(std::size_t player) {
-  const game::Position* const ship =
-      game().world().shipPositionOf(shipIdOf(player));
+  const game::Position* const ship = world().shipPositionOf(shipIdOf(player));
   if (ship == nullptr) {
     ADD_FAILURE() << "player " << player << " has no ship";
     return game::Position{.x = 0.0F, .y = 0.0F};
@@ -346,5 +388,39 @@ std::vector<std::string> GameInstanceLogTest::dropLines() const {
 }
 
 const DebugJournal& GameInstanceLogTest::journal() const { return journal_; }
+
+std::vector<network::MessageType> messageTypesOf(
+    const std::vector<network::OutgoingDatagram>& datagrams) {
+  std::vector<network::MessageType> types;
+  types.reserve(datagrams.size());
+  for (const network::OutgoingDatagram& datagram : datagrams) {
+    types.push_back(onlyMessageTypeOf(datagram));
+  }
+  return types;
+}
+
+std::optional<network::EntityState> entityOf(const network::WorldState& state,
+                                             std::uint32_t entityId) {
+  for (const network::EntityState& entity : state.entities) {
+    if (entity.entityId == entityId) {
+      return entity;
+    }
+  }
+  return std::nullopt;
+}
+
+network::LobbyState roomOfTheFirstPlayerNotReady() {
+  return network::LobbyState{.players = {network::LobbyPlayer{
+                                 .playerNumber = network::FIRST_PLAYER_NUMBER,
+                                 .ready = false,
+                                 .nickname = std::string{PLAYER_NICKNAME}}}};
+}
+
+std::vector<std::byte> inputPayload(const network::PlayerInput& input) {
+  network::ByteWriter payload;
+  payload.writeUint32(input.inputNumber);
+  payload.writeUint8(input.actions);
+  return payload.bytes();
+}
 
 }  // namespace rtype::server::testing

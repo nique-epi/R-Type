@@ -16,12 +16,14 @@ namespace rtype::server {
  * for whoever must forget them outside the game.
  *
  * A player is heard from each time its datagram is read, whatever it holds. A
- * player not heard from for SESSION_TIMEOUT_TICKS ticks crashed or lost the
- * network: closeSilentSessions() closes its session. A game counts the ticks
- * it runs, so a stall of the server closes no session by itself; a stall long
- * enough for the clients to take the server for lost closes each of their
- * sessions, SESSION_TIMEOUT_TICKS ticks after the last datagram the server read
- * from its client, since those clients send nothing more.
+ * player not heard from for SESSION_TIMEOUT_TICKS ticks may have lost the
+ * network for a moment: closeSilentSessions() marks it away, keeping its seat
+ * until SESSION_CLOSING_TICKS ticks of silence, then closes its session. A game
+ * counts the ticks it runs, so a stall of the server closes no session by
+ * itself; a stall long enough for the clients to take the server for lost
+ * closes each of their sessions, SESSION_CLOSING_TICKS ticks after the last
+ * datagram the server read from its client, since those clients send nothing
+ * more.
  *
  * Closing a session frees the seat and the number of the player, calls the
  * function given at construction with the player, logs the departure,
@@ -51,9 +53,10 @@ class Departures {
 
   /**
    * @brief Closes the session of every player not heard from for
-   * SESSION_TIMEOUT_TICKS ticks, and counts one more tick of silence for the
-   * others. The players to close are listed first, then closed, so no seat is
-   * freed while the roster is being walked.
+   * SESSION_CLOSING_TICKS ticks, and counts one
+   * more tick of silence for the others, marking away those that reach
+   * SESSION_TIMEOUT_TICKS. The players to close are listed first, then closed,
+   * so no seat is freed while the roster is being walked.
    */
   void closeSilentSessions();
 
@@ -65,9 +68,12 @@ class Departures {
 
  private:
   /** @returns The addresses of the players not heard from for
-   * SESSION_TIMEOUT_TICKS ticks; counts one more tick of silence for every
-   * other player. */
+   * SESSION_CLOSING_TICKS ticks; counts one more
+   * tick of silence for every other player. */
   [[nodiscard]] std::vector<network::Endpoint> countSilentTicks();
+
+  /** @brief Marks @p player away, clears its input number and logs it. */
+  void setAway(ConnectedPlayer& player) const;
 
   /** @brief Logs that @p player left or timed out, as @p cause says, and
    * publishes its PlayerDeparture. */

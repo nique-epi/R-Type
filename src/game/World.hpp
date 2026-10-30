@@ -2,12 +2,16 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <optional>
 #include "BydoKind.hpp"
 #include "ComponentRegistry.hpp"
+#include "Entity.hpp"
 #include "EntityRegistry.hpp"
+#include "LivesConstants.hpp"
 #include "NetworkEntityTable.hpp"
 #include "NetworkIdAllocator.hpp"
 #include "Position.hpp"
+#include "ShipMotion.hpp"
 
 namespace rtype::game {
 
@@ -15,9 +19,9 @@ namespace rtype::game {
  * @brief Game state shared by client and server. It knows neither sockets nor
  * the network protocol.
  *
- * The ship of each player is listed under its network id, so shipPositionOf()
- * and removePlayer() find it without visiting the other entities;
- * removePlayer() takes it out of that list.
+ * The ship of each player is listed under its network id, so shipPositionOf(),
+ * shipMotionOf() and removePlayer() find it without visiting the other
+ * entities; removePlayer() takes it out of that list.
  */
 class World {
  public:
@@ -31,11 +35,16 @@ class World {
   /**
    * @brief Creates the ship of a player at @p position, with the Position, the
    * EntityType::Player and the NetworkIdentity that make it a networked
-   * entity, and a CollisionBox of SHIP_WIDTH by SHIP_HEIGHT.
+   * entity, a CollisionBox of SHIP_WIDTH by SHIP_HEIGHT, an Intent that wants
+   * nothing until a controller writes it, and a Gun that fires a missile of a
+   * player every SHOT_INTERVAL_TICKS ticks and is ready at once, @p lives lives
+   * in its Lives and no protection in its Invulnerable: MovementSystem moves
+   * the ship by its Intent, and the server fires its Gun by it.
    * @returns The network id the ship was given, never NO_ENTITY_ID.
    * @throws NetworkIdExhaustedException when every network id was given.
    */
-  std::uint32_t spawnPlayer(Position position);
+  std::uint32_t spawnPlayer(Position position,
+                            std::uint8_t lives = STARTING_LIVES);
 
   /**
    * @brief Destroys the ship of a player, found by the network id
@@ -48,8 +57,10 @@ class World {
   /**
    * @brief Creates a Bydo of @p kind at @p position, with the Position, the
    * EntityType::Enemy and the NetworkIdentity that make it a networked entity,
-   * a CollisionBox of BYDO_WIDTH by BYDO_HEIGHT, and a Gun that has not fired
-   * yet. It moves left at BYDO_SPEED, and follows the pattern of its kind
+   * a CollisionBox of BYDO_WIDTH by BYDO_HEIGHT, an Intent that wants nothing
+   * until a controller writes it, and a Gun that fires a missile of an enemy
+   * every ENEMY_SHOT_INTERVAL_TICKS ticks, the first one after a whole
+   * interval. It moves left at BYDO_SPEED, and follows the pattern of its kind
    * around the row it appeared on: MovementSystem and PatternSystem move it.
    * @returns The network id the Bydo was given, never NO_ENTITY_ID.
    * @throws NetworkIdExhaustedException when every network id was given.
@@ -93,6 +104,25 @@ class World {
    * Position, like ComponentRegistry::get.
    */
   [[nodiscard]] Position* shipPositionOf(std::uint32_t shipId);
+
+  /**
+   * @returns The ShipMotion of the ship spawnPlayer gave @p shipId, or nullptr
+   * for any other id, as shipPositionOf() does. The pointer is invalidated by
+   * the next add or remove of a ShipMotion, like ComponentRegistry::get.
+   */
+  [[nodiscard]] ShipMotion* shipMotionOf(std::uint32_t shipId);
+
+  /**
+   * @returns The component of type T of the ship spawnPlayer gave @p shipId
+   * (Intent, Lives, Invulnerable, Gun…), or nullptr for any other id or a ship
+   * without that component, as shipPositionOf() does. The pointer is
+   * invalidated by the next add or remove of a T, like ComponentRegistry::get.
+   */
+  template <typename T>
+  [[nodiscard]] T* shipComponentOf(std::uint32_t shipId) {
+    const std::optional<engine::Entity> ship = shipByNetworkId_.find(shipId);
+    return ship.has_value() ? components_.get<T>(*ship) : nullptr;
+  }
 
  private:
   engine::EntityRegistry registry_;

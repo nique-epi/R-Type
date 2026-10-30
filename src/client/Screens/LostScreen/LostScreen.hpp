@@ -19,7 +19,7 @@
 namespace rtype::client {
 
 /**
- * @brief The screen the frame loop puts in place of every other once the
+ * @brief The screen ClientScreens puts in place of every other once the
  * session with the server ended: the last picture they showed turns off like
  * an old screen (see screenOffAt()), then the NO SIGNAL card shows the SMPTE
  * color bars, why the signal is gone and PRESS ENTER TO RECONNECT (see
