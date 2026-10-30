@@ -12,6 +12,7 @@
 #include "IGameReplication.hpp"
 #include "LifeKeeper.hpp"
 #include "Logger.hpp"
+#include "StartBarrier.hpp"
 #include "WeaponSystem.hpp"
 #include "World.hpp"
 #include "WorldSlot.hpp"
@@ -21,8 +22,11 @@ namespace rtype::server {
 /**
  * @brief How a game runs: its state, its tick and its world.
  *
- * A game goes from WaitingForPlayers to InProgress when at least one player is
- * connected and every connected player is ready, from InProgress to Finished
+ * A game goes from WaitingForPlayers to Starting when at least one player is
+ * connected and every connected player is ready, from Starting to InProgress
+ * once every connected player told it the game screen is shown or
+ * START_BARRIER_TICKS ticks went by (see StartBarrier), from InProgress to
+ * Finished
  * when finish() is called, once no player is left in it, or once no player
  * left in it has a life, and from Finished back to WaitingForPlayers after
  * FINISHED_STATE_TICKS ticks. Coming back to WaitingForPlayers builds a new
@@ -33,13 +37,15 @@ namespace rtype::server {
  * of the protocol page describes, through the IGameReplication it is given.
  * While the game waits for players, the replication sends them the room; it
  * builds a new announcer of the room with each new world, so the room goes out
- * at the first tick of every wait. The tick that starts the game sends every
- * connected player GameStarted, then, on that tick and every tick of the game,
- * the replication sends them the world, from tick 0: GameStarted always leaves
- * before the first WorldState. A game that ends by itself tells the
- * replication, which reads the score of every player then and sends them that
- * result at the first tick of the end, then every GAME_ENDED_INTERVAL until
- * the game waits for players again; no WorldState goes out meanwhile.
+ * at the first tick of every wait. The tick that puts the game in Starting
+ * sends every connected player GameStarted, which leaves again to the players
+ * not loaded while the game is Starting; on the tick that puts the game in
+ * progress and every tick of the game, the replication sends them the world,
+ * from tick 0: GameStarted always leaves before the first WorldState. A game
+ * that ends by itself tells the replication, which reads the score of every
+ * player then and sends them that result at the first tick of the end, then
+ * every GAME_ENDED_INTERVAL until the game waits for players again; no
+ * WorldState goes out meanwhile.
  *
  * While the game is in progress, each tick first makes the ship of every away
  * player want nothing (see silenceAwayShips) and writes the Intent of every
@@ -165,6 +171,7 @@ class GameFlow final : public IGameFlow {
   std::unique_ptr<game::CollisionRules> collisionRules_;
   std::unique_ptr<game::DamageRules> damageRules_;
   std::unique_ptr<LifeKeeper> lifeKeeper_;
+  StartBarrier startBarrier_;
   GameState state_{GameState::WaitingForPlayers};
   std::uint32_t worldsBuilt_{0};
   std::uint32_t tick_{0};

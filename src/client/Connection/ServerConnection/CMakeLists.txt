@@ -17,6 +17,7 @@ target_link_libraries(rtype_client_server_connection
     rtype_network_datagram_codec
     rtype_network_disconnection
     rtype_network_exceptions
+    rtype_network_game_loaded
     rtype_network_game_started
     rtype_network_heartbeat
     rtype_network_player_input

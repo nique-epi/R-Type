@@ -115,4 +115,10 @@ InvalidStateRateException::InvalidStateRateException(
                       " states per second, not " +
                       std::to_string(statesPerSecond)) {}
 
+InvalidInputDelayException::InvalidInputDelayException(std::size_t delayTicks)
+    : ServerException("the input delay must be from " +
+                      std::to_string(LOWEST_INPUT_DELAY_TICKS) + " to " +
+                      std::to_string(HIGHEST_INPUT_DELAY_TICKS) +
+                      " ticks, not " + std::to_string(delayTicks)) {}
+
 }  // namespace rtype::server

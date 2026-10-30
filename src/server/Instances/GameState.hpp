@@ -9,6 +9,7 @@ namespace rtype::server {
  */
 enum class GameState : std::uint8_t {
   WaitingForPlayers,
+  Starting,
   InProgress,
   Finished,
 };

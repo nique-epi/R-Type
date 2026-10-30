@@ -62,6 +62,7 @@ using testing::FOURTH_PLAYER;
 using testing::FOURTH_SENT;
 using testing::FOURTH_SEQUENCE;
 using testing::GameInstanceArrowTest;
+using testing::GameInstanceInputDelayTest;
 using testing::GameInstanceInputShuffleTest;
 using testing::GameInstanceInputTest;
 using testing::GameInstanceLogTest;
@@ -74,6 +75,7 @@ using testing::HOLDS_NOTHING;
 using testing::HOLDS_RIGHT;
 using testing::HOLDS_SHOOT;
 using testing::HOLDS_UP;
+using testing::INPUT_DELAY_TICKS;
 using testing::inputPayload;
 using testing::LARGEST_INPUT_NUMBER;
 using testing::messageTypesOf;
@@ -106,7 +108,8 @@ using testing::WIRE_COORDINATE_TOLERANCE;
 /**
  * Given four connected players of whom the first three are ready
  * When the fourth says ready
- * Then the game starts on that tick and not before
+ * Then the game starts waiting for the players to load on that tick and not
+ * before
  */
 TEST_F(GameInstanceTest, StartsOnlyOnceTheLastPlayerIsReady) {
   for (std::size_t index = 0; index < network::MAXIMUM_PLAYERS; ++index) {
@@ -122,7 +125,7 @@ TEST_F(GameInstanceTest, StartsOnlyOnceTheLastPlayerIsReady) {
 
   tick();
 
-  EXPECT_EQ(game().state(), GameState::InProgress);
+  EXPECT_EQ(game().state(), GameState::Starting);
 }
 
 /**
@@ -326,7 +329,7 @@ TEST_F(GameInstanceTest, CreditsTheKillOfAnEnemyToThePlayerWhoFired) {
 
 /**
  * Given a game that waits for players again after a game
- * When the player says ready with a newer sequence
+ * When the player says ready with a newer sequence and loads the game
  * Then the second game starts
  */
 TEST_F(GameInstanceTest, StartsASecondGame) {
@@ -335,6 +338,8 @@ TEST_F(GameInstanceTest, StartsASecondGame) {
   runTicks(FINISHED_STATE_TICKS);
   sendReady(
       {.player = FIRST_PLAYER, .ready = true, .sequence = FOURTH_SEQUENCE});
+  tick();
+  loadEveryPlayer();
 
   tick();
 
@@ -429,13 +434,15 @@ TEST_F(GameInstanceTest, SendsTheRoomToAWaitingPlayer) {
 
 /**
  * Given one connected player, sent the EntitySpawned of its ship
- * When the player says ready and the tick runs
+ * When the player says ready, loads the game and the ticks run
  * Then the player is sent GameStarted, then a WorldState
  */
 TEST_F(GameInstanceTest, SendsGameStartedBeforeTheFirstWorldState) {
   join(FIRST_PLAYER);
   sendReady(
       {.player = FIRST_PLAYER, .ready = true, .sequence = FIRST_SEQUENCE});
+  tick();
+  loadEveryPlayer();
 
   tick();
 
@@ -471,8 +478,8 @@ TEST_F(GameInstanceTest, SendsTheWorldStatesUnderTheTokenOfThePlayer) {
 
 /**
  * Given one connected player, sent the EntitySpawned of its ship
- * When it waits one tick, says ready, and the game runs until its second
- * WorldState
+ * When it waits one tick, says ready, loads the game, and the game runs until
+ * its second WorldState
  * Then the datagrams it was sent, whatever their message, carry the sequences
  * 0, 1, 2… in the order they were sent, so the client reads every one
  */
@@ -481,6 +488,8 @@ TEST_F(GameInstanceTest, NumbersEveryDatagramToAPlayerFromOneCounter) {
   tick();
   sendReady(
       {.player = FIRST_PLAYER, .ready = true, .sequence = FIRST_SEQUENCE});
+  tick();
+  loadEveryPlayer();
   tick();
   runTicks(DEFAULT_TICKS_PER_WORLD_STATE);
 
@@ -590,6 +599,8 @@ TEST_F(GameInstanceTest, SendsTheRoomAtOnceWhenTheGameWaitsAgain) {
   tick();
   sendReady(
       {.player = FIRST_PLAYER, .ready = true, .sequence = FIRST_SEQUENCE});
+  tick();
+  loadEveryPlayer();
   tick();
   game().finish();
   runTicks(FINISHED_STATE_TICKS);
@@ -1104,7 +1115,8 @@ TEST_F(GameInstanceTest, SendsNoHeartbeatWhileTheRoomGoesOut) {
  * Given a waiting room where the first player is ready and the second, not
  * ready, goes silent
  * When the timeout runs
- * Then the game starts with the first player: every connected player is ready
+ * Then the game starts waiting for the first player alone: every connected
+ * player is ready
  */
 TEST_F(GameInstanceTest, StartsOnceThePlayerNotReadyTimedOut) {
   join(FIRST_PLAYER);
@@ -1117,7 +1129,7 @@ TEST_F(GameInstanceTest, StartsOnceThePlayerNotReadyTimedOut) {
 
   runTicks(PROTOCOL_SESSION_TIMEOUT_TICKS);
 
-  EXPECT_EQ(game().state(), GameState::InProgress);
+  EXPECT_EQ(game().state(), GameState::Starting);
 }
 
 /**
@@ -1347,6 +1359,8 @@ TEST_F(GameInstanceInputTest, KeepsTheInputNumberAcrossANewWorld) {
                .sessionToken = PLAYER_SESSION_TOKENS.at(player)});
   }
   deliver({FIRST_SENT});
+  loadEveryPlayer();
+  tick();
   ASSERT_EQ(game().state(), GameState::InProgress);
   game().finish();
 
@@ -1371,6 +1385,8 @@ TEST_F(GameInstanceInputTest, NewShipOfANewWorldWantsNothingUntilTheNextInput) {
                .sessionToken = PLAYER_SESSION_TOKENS.at(player)});
   }
   deliver({FIRST_SENT});
+  loadEveryPlayer();
+  tick();
   ASSERT_EQ(game().state(), GameState::InProgress);
   game().finish();
 
@@ -1770,5 +1786,116 @@ TEST_P(GameInstanceInputShuffleTest,
 INSTANTIATE_TEST_SUITE_P(Seeds, GameInstanceInputShuffleTest,
                          ::testing::Range(std::uint32_t{0},
                                           SHUFFLE_SEED_COUNT));
+
+/**
+ * Given a game that holds each input for two ticks and a player who sent up
+ * When the tick that reads the input and the one after it run
+ * Then the player does not hold up yet
+ */
+TEST_F(GameInstanceInputDelayTest, HoldsAnInputUntilItsDelayIsOver) {
+  send(FIRST_PLAYER, HOLDS_UP);
+
+  deliver({FIRST_SENT});
+  tick();
+
+  EXPECT_EQ(heldActions(FIRST_PLAYER), HOLDS_NOTHING);
+}
+
+/**
+ * Given a game that holds each input for two ticks and a player who sent up
+ * When two more ticks than the one that read it have run
+ * Then the player holds up
+ */
+TEST_F(GameInstanceInputDelayTest, AppliesAnInputOnceItsDelayIsOver) {
+  send(FIRST_PLAYER, HOLDS_UP);
+
+  deliver({FIRST_SENT});
+  runTicks(INPUT_DELAY_TICKS);
+
+  EXPECT_EQ(heldActions(FIRST_PLAYER), HOLDS_UP);
+}
+
+/**
+ * Given a game that holds each input for two ticks and two players who sent
+ * their input in ticks one apart
+ * When each input has waited the delay
+ * Then each ship is steered exactly the delay after its own input arrived
+ */
+TEST_F(GameInstanceInputDelayTest, DelaysEveryPlayerByTheSameNumberOfTicks) {
+  send(FIRST_PLAYER, HOLDS_UP);
+  send(SECOND_PLAYER, HOLDS_DOWN);
+  deliver({FIRST_SENT});
+  deliver({SECOND_SENT});
+
+  runTicks(INPUT_DELAY_TICKS - 1);
+  const std::optional<std::uint8_t> firstAtItsDelay = heldActions(FIRST_PLAYER);
+  const std::optional<std::uint8_t> secondBeforeItsDelay =
+      heldActions(SECOND_PLAYER);
+  tick();
+
+  EXPECT_EQ(firstAtItsDelay, HOLDS_UP);
+  EXPECT_EQ(secondBeforeItsDelay, HOLDS_NOTHING);
+  EXPECT_EQ(heldActions(SECOND_PLAYER), HOLDS_DOWN);
+}
+
+/**
+ * Given a game that started waiting for its only player to load
+ * When the player's GameLoaded datagram is read
+ * Then the game is in progress
+ */
+TEST_F(GameInstanceTest, StartsOnceTheGameLoadedOfThePlayerIsRead) {
+  join(FIRST_PLAYER);
+  sendReady(
+      {.player = FIRST_PLAYER, .ready = true, .sequence = FIRST_SEQUENCE});
+  tick();
+  ASSERT_EQ(game().state(), GameState::Starting);
+  sendLoaded(FIRST_PLAYER, SECOND_SEQUENCE);
+
+  tick();
+
+  EXPECT_EQ(game().state(), GameState::InProgress);
+}
+
+/**
+ * Given a game waiting for a player to load, which was sent GameStarted once
+ * When GAME_STARTED_REPEAT_TICKS ticks run
+ * Then the player is sent GameStarted a second time
+ */
+TEST_F(GameInstanceTest, SendsGameStartedAgainToAPlayerWhoDidNotLoad) {
+  join(FIRST_PLAYER);
+  sendReady(
+      {.player = FIRST_PLAYER, .ready = true, .sequence = FIRST_SEQUENCE});
+  tick();
+
+  runTicks(GAME_STARTED_REPEAT_TICKS);
+
+  EXPECT_EQ(
+      ofType(network::MessageType::GameStarted, sentTo(FIRST_PLAYER)).size(),
+      2U);
+}
+
+/**
+ * Given a game waiting for two players to load, of whom the first loaded
+ * When GAME_STARTED_REPEAT_TICKS ticks run
+ * Then only the second player is sent GameStarted again
+ */
+TEST_F(GameInstanceTest, SendsGameStartedAgainOnlyToThePlayersNotLoaded) {
+  join(FIRST_PLAYER);
+  join(SECOND_PLAYER);
+  for (const std::size_t player : {FIRST_PLAYER, SECOND_PLAYER}) {
+    sendReady({.player = player, .ready = true, .sequence = FIRST_SEQUENCE});
+  }
+  tick();
+  game().roster().find(playerEndpoint(FIRST_PLAYER))->loaded = true;
+
+  runTicks(GAME_STARTED_REPEAT_TICKS);
+
+  EXPECT_EQ(
+      ofType(network::MessageType::GameStarted, sentTo(FIRST_PLAYER)).size(),
+      1U);
+  EXPECT_EQ(
+      ofType(network::MessageType::GameStarted, sentTo(SECOND_PLAYER)).size(),
+      2U);
+}
 
 }  // namespace rtype::server

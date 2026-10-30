@@ -69,9 +69,13 @@ struct SentReadyState {
  */
 class GameInstanceTest : public ::testing::Test {
  public:
+  /** @brief A game that applies each input in the tick that reads it. */
   GameInstanceTest();
 
  protected:
+  /** @brief A game that holds each input for @p inputDelayTicks ticks. */
+  explicit GameInstanceTest(std::size_t inputDelayTicks);
+
   /**
    * @brief Connects the player number @p index + 1, under @p sessionToken, and
    * hands it to the game.
@@ -114,8 +118,16 @@ class GameInstanceTest : public ::testing::Test {
   /** @brief Queues the ReadyState described by @p sent for the next tick. */
   void sendReady(const SentReadyState& sent);
 
+  /** @brief Queues a GameLoaded from the player at @p player for the next
+   * tick, under its session token and @p sequence. */
+  void sendLoaded(std::size_t player, std::uint16_t sequence);
+
   /** @brief Queues @p datagram for the next tick. */
   void queue(network::IncomingDatagram datagram);
+
+  /** @brief Every player of the roster has told the game it shows the game
+   * screen, as the datagram of a GameLoaded does. */
+  void loadEveryPlayer();
 
   /** @brief Runs one tick with what was queued, then a Heartbeat from each
    * player not silenced, then empties the queue. */
@@ -175,6 +187,9 @@ class GameInstanceInputTest : public GameInstanceTest {
  protected:
   GameInstanceInputTest();
 
+  /** @brief The same game, holding each input for @p inputDelayTicks ticks. */
+  explicit GameInstanceInputTest(std::size_t inputDelayTicks);
+
   /**
    * @returns The datagram of the next input of @p player, holding @p actions,
    * under @p header.
@@ -221,6 +236,13 @@ class GameInstanceInputTest : public GameInstanceTest {
  private:
   UnreliableNetwork network_;
   std::array<std::uint32_t, PLAYER_SESSION_TOKENS.size()> inputsSent_{};
+};
+
+/** @brief The input fixture, with a game that holds each input for
+ * INPUT_DELAY_TICKS ticks. */
+class GameInstanceInputDelayTest : public GameInstanceInputTest {
+ protected:
+  GameInstanceInputDelayTest();
 };
 
 /**

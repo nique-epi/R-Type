@@ -4,6 +4,7 @@ target_include_directories(rtype_server_ready_keeper PUBLIC ${CMAKE_CURRENT_SOUR
 
 target_link_libraries(rtype_server_ready_keeper
   PUBLIC
+    rtype_network_game_loaded
     rtype_network_ready_state
     rtype_server_player_roster
 )

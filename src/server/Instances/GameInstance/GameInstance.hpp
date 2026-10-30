@@ -5,6 +5,7 @@
 #include <span>
 #include <vector>
 #include "ConnectedPlayer.hpp"
+#include "DelayedInputs.hpp"
 #include "Endpoint.hpp"
 #include "GameContext.hpp"
 #include "GameInstanceParts.hpp"
@@ -40,17 +41,19 @@ namespace rtype::server {
  * belong to GameSessions. The game gives it three things: a ReadyState counts
  * only while the game waits for players (IGameFlow::state); each PlayerInput
  * newer than the one kept goes to the SessionHooks::newerInput functions of the
- * modules before it replaces it; and a player whose session closes goes to
- * their SessionHooks::closing functions. A player who joins goes to their
- * SessionHooks::joined functions (see onPlayerJoined()). takeDepartedPlayers()
- * hands the players whose session closed over to whoever must forget them
- * outside the game.
+ * modules before it replaces it, once it was held for
+ * GameSettings::inputDelayTicks ticks, the same for every player; and a player
+ * whose session closes goes to their SessionHooks::closing functions. A player
+ * who joins goes to their SessionHooks::joined functions (see
+ * onPlayerJoined()). takeDepartedPlayers() hands the players whose session
+ * closed over to whoever must forget them outside the game.
  *
- * A tick runs three stages, in order: GAME_INPUT_STAGE reads the datagrams and
- * closes the silent sessions, GAME_SIMULATION_STAGE runs the work the modules
- * added, and GAME_OUTPUT_STAGE sends the Heartbeats. The work of the game
- * itself is added before the modules are installed, so it runs first in the
- * input and output stages, ahead of the work of the modules.
+ * A tick runs three stages, in order: GAME_INPUT_STAGE reads the datagrams,
+ * applies the inputs whose delay is over and closes the silent sessions,
+ * GAME_SIMULATION_STAGE runs the work the modules added, and GAME_OUTPUT_STAGE
+ * sends the Heartbeats. The work of the game itself is added before the modules
+ * are installed, so it runs first in the input and output stages, ahead of the
+ * work of the modules.
  *
  * Not thread-safe: use it from the simulation thread only.
  */
@@ -131,6 +134,7 @@ class GameInstance {
  private:
   SessionHooks hooks_;
   engine::SystemScheduler systems_;
+  DelayedInputs delayedInputs_;
   GameSessions sessions_;
   GameContext context_;
   std::span<const network::IncomingDatagram> datagrams_;

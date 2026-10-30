@@ -24,6 +24,7 @@
 #include "GameInstance.hpp"
 #include "GameInstanceParts.hpp"
 #include "GameInstanceTestConstants.hpp"
+#include "GameLoaded.hpp"
 #include "GameSettings.hpp"
 #include "GameState.hpp"
 #include "IGameModule.hpp"
@@ -112,13 +113,17 @@ std::vector<std::unique_ptr<IGameModule>> modulesWithRulesAt(
 
 }  // namespace
 
-GameInstanceTest::GameInstanceTest()
+GameInstanceTest::GameInstanceTest() : GameInstanceTest(NO_INPUT_DELAY_TICKS) {}
+
+GameInstanceTest::GameInstanceTest(std::size_t inputDelayTicks)
     : game_(GameInstanceParts{.send =
                                   [this](network::OutgoingDatagram datagram) {
                                     sent_.push_back(std::move(datagram));
                                   },
                               .settings = GameSettings{.seed = SOME_SEED,
-                                                       .waves = testWavePlan()},
+                                                       .waves = testWavePlan(),
+                                                       .inputDelayTicks =
+                                                           inputDelayTicks},
                               .events = events_,
                               .timers = timers_},
             modulesWithRulesAt(rules_)) {}
@@ -179,6 +184,21 @@ void GameInstanceTest::sendReady(const SentReadyState& sent) {
           header, network::ReadyState{.ready = sent.ready})});
 }
 
+void GameInstanceTest::sendLoaded(std::size_t player, std::uint16_t sequence) {
+  network::PacketHeader header;
+  header.sessionToken = SESSION_TOKEN;
+  header.sequence = sequence;
+  queue(network::IncomingDatagram{.sender = playerEndpoint(player),
+                                  .payload = network::DatagramCodec::encode(
+                                      header, network::GameLoaded{})});
+}
+
+void GameInstanceTest::loadEveryPlayer() {
+  for (ConnectedPlayer* const player : game().roster().connected()) {
+    player->loaded = true;
+  }
+}
+
 void GameInstanceTest::queue(network::IncomingDatagram datagram) {
   incoming_.push_back(std::move(datagram));
 }
@@ -208,6 +228,9 @@ void GameInstanceTest::startGameWith(
     sendReady({.player = index, .ready = true, .sequence = FIRST_SEQUENCE});
   }
   tick();
+  ASSERT_EQ(game().state(), GameState::Starting);
+  loadEveryPlayer();
+  tick();
   ASSERT_EQ(game().state(), GameState::InProgress);
 }
 
@@ -235,7 +258,14 @@ GameInstance& GameInstanceTest::game() { return game_; }
 
 engine::EventBus& GameInstanceTest::events() { return events_; }
 
-GameInstanceInputTest::GameInstanceInputTest() {
+GameInstanceInputTest::GameInstanceInputTest()
+    : GameInstanceInputTest(NO_INPUT_DELAY_TICKS) {}
+
+GameInstanceInputDelayTest::GameInstanceInputDelayTest()
+    : GameInstanceInputTest(INPUT_DELAY_TICKS) {}
+
+GameInstanceInputTest::GameInstanceInputTest(std::size_t inputDelayTicks)
+    : GameInstanceTest(inputDelayTicks) {
   for (const std::size_t player : {FIRST_PLAYER, SECOND_PLAYER}) {
     join(player, PLAYER_SESSION_TOKENS.at(player));
   }
@@ -347,6 +377,9 @@ void GameInstanceMovementTest::startGame() {
                .sequence = FIRST_SEQUENCE,
                .sessionToken = PLAYER_SESSION_TOKENS.at(player)});
   }
+  tick();
+  ASSERT_EQ(game().state(), GameState::Starting);
+  loadEveryPlayer();
   tick();
   ASSERT_EQ(game().state(), GameState::InProgress);
 }

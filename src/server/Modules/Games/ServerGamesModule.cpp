@@ -70,7 +70,8 @@ void ServerGamesModule::start() {
                                              GAME_SEED_STRIDE)
                         : std::random_device{}(),
             .waves = waves,
-            .statesPerSecond = settings_.statesPerSecond});
+            .statesPerSecond = settings_.statesPerSecond,
+            .inputDelayTicks = settings_.inputDelayTicks});
     games_.add(std::move(events), std::move(created));
   }
 }

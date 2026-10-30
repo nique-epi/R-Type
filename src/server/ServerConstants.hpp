@@ -141,6 +141,34 @@ constexpr std::size_t LOWEST_WORLD_STATES_PER_SECOND = 2;
 constexpr std::size_t HIGHEST_WORLD_STATES_PER_SECOND =
     engine::SIMULATION_TICKS_PER_SECOND;
 
+/**
+ * @brief Launch option followed by the ticks the server holds each PlayerInput
+ * before it applies it, a whole number from LOWEST_INPUT_DELAY_TICKS to
+ * HIGHEST_INPUT_DELAY_TICKS. The same delay holds for every player.
+ */
+constexpr std::string_view INPUT_DELAY_OPTION = "--input-delay";
+
+/**
+ * @brief Ticks an input is held when INPUT_DELAY_OPTION is not given: 50 ms.
+ */
+constexpr std::size_t DEFAULT_INPUT_DELAY_TICKS = 3;
+
+/**
+ * @brief The fewest ticks INPUT_DELAY_OPTION accepts: 0 applies an input in the
+ * tick that reads it.
+ */
+constexpr std::size_t LOWEST_INPUT_DELAY_TICKS = 0;
+
+/**
+ * @brief The most ticks INPUT_DELAY_OPTION accepts: half a second.
+ */
+constexpr std::size_t HIGHEST_INPUT_DELAY_TICKS =
+    engine::SIMULATION_TICKS_PER_SECOND / 2;
+
+static_assert(DEFAULT_INPUT_DELAY_TICKS >= LOWEST_INPUT_DELAY_TICKS &&
+                  DEFAULT_INPUT_DELAY_TICKS <= HIGHEST_INPUT_DELAY_TICKS,
+              "the default input delay must be one the option accepts");
+
 static_assert(DEFAULT_WORLD_STATES_PER_SECOND >=
                       LOWEST_WORLD_STATES_PER_SECOND &&
                   DEFAULT_WORLD_STATES_PER_SECOND <=

@@ -20,6 +20,7 @@
 #include "EntityReplicatorTestConstants.hpp"
 #include "EntitySpawned.hpp"
 #include "GameEvent.hpp"
+#include "GameLoaded.hpp"
 #include "GameStarted.hpp"
 #include "Heartbeat.hpp"
 #include "LobbyState.hpp"
@@ -1581,6 +1582,90 @@ TEST_F(ServerConnectionFixture, SendsReadyAgainAfterAnEndedGame) {
   connection().setReady(true);
 
   EXPECT_EQ(sentCountOf<network::ReadyState>(), 1U);
+}
+
+/**
+ * Given a session that learned the game started
+ * When the game sends its first input
+ * Then the server is sent a GameLoaded, then the input
+ */
+TEST_F(ServerConnectionFixture,
+       TellsTheServerTheGameIsLoadedWithTheFirstInput) {
+  connectAndGetAccepted();
+  deliverInSession(network::GameStarted{}, FIRST_SEQUENCE);
+  update();
+
+  connection().sendPlayerInput(upHeld());
+
+  EXPECT_EQ(sentCountOf<network::GameLoaded>(), 1U);
+  EXPECT_TRUE(holds<network::PlayerInput>(sent().back()));
+  EXPECT_TRUE(holds<network::GameLoaded>(sent().at(sent().size() - 2)));
+}
+
+/**
+ * Given a session whose game did not start
+ * When the game sends an input
+ * Then no GameLoaded is sent
+ */
+TEST_F(ServerConnectionFixture, SendsNoGameLoadedBeforeTheGameStarted) {
+  connectAndGetAccepted();
+
+  connection().sendPlayerInput(upHeld());
+
+  EXPECT_EQ(sentCountOf<network::GameLoaded>(), 0U);
+}
+
+/**
+ * Given a session whose game started and which sent its GameLoaded
+ * When the first WorldState arrives and the game sends another input
+ * Then no other GameLoaded is sent
+ */
+TEST_F(ServerConnectionFixture, StopsSendingGameLoadedOnceTheWorldArrives) {
+  connectAndGetAccepted();
+  deliverInSession(network::GameStarted{}, FIRST_SEQUENCE);
+  update();
+  connection().sendPlayerInput(upHeld());
+  deliverWorldStateInSession(stateListing(APPLIED_TICK, {}), SECOND_SEQUENCE);
+  update();
+
+  connection().sendPlayerInput(upHeld());
+
+  EXPECT_EQ(sentCountOf<network::GameLoaded>(), 1U);
+}
+
+/**
+ * Given a session whose game started and which sent an input and its
+ * GameLoaded before the first WorldState arrived
+ * When GAME_LOADED_INTERVAL passes and the game sends another input
+ * Then a second GameLoaded is sent, so a lost copy is corrected by the next
+ */
+TEST_F(ServerConnectionFixture, RepeatsGameLoadedUntilTheWorldArrives) {
+  connectAndGetAccepted();
+  deliverInSession(network::GameStarted{}, FIRST_SEQUENCE);
+  update();
+  connection().sendPlayerInput(upHeld());
+  update(GAME_LOADED_INTERVAL);
+
+  connection().sendPlayerInput(upHeld());
+
+  EXPECT_EQ(sentCountOf<network::GameLoaded>(), 2U);
+}
+
+/**
+ * Given a session whose game started and which sent an input and its
+ * GameLoaded
+ * When the game sends another input in the same frame
+ * Then no second GameLoaded is sent
+ */
+TEST_F(ServerConnectionFixture, SendsGameLoadedOnceEveryInterval) {
+  connectAndGetAccepted();
+  deliverInSession(network::GameStarted{}, FIRST_SEQUENCE);
+  update();
+  connection().sendPlayerInput(upHeld());
+
+  connection().sendPlayerInput(upHeld());
+
+  EXPECT_EQ(sentCountOf<network::GameLoaded>(), 1U);
 }
 
 }  // namespace rtype::client
