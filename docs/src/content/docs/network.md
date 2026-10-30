@@ -5,6 +5,8 @@ description: What the network library does, how its parts fit together and where
 
 The network library, `rtype_network`, carries datagrams between the programs. Today it opens UDP sockets, sends datagrams and hands over the ones it receives, with their sender, through queues when another thread uses them. It knows nothing about entities or the rules of the game, and it is the only library that includes Asio: the client and the server use it through classes that never name an Asio type (see [Project layout](/R-Type/project-layout/#network)). It also turns every message of the protocol into bytes and back, one field at a time, and hands each message of a received datagram to the code registered for its type. What the datagrams contain is described in [Protocol](/R-Type/protocol/).
 
+The network of the game takes three layers: transport, sessions and replication. This library holds the transport and what the other two share; the sessions and the replication are written in the server and the client, and [Transport, sessions and replication](#transport-sessions-and-replication) shows where each layer lives.
+
 This page tells you where to look when you need to change something. It describes what exists today and says plainly what does not exist yet.
 
 | Part | State | Where |
@@ -17,8 +19,50 @@ This page tells you where to look when you need to change something. It describe
 | Serialization | Available | `src/network/Serialization/` |
 | Protocol messages, datagram header, dispatch by type | Available | `src/network/Protocol/` |
 | Connection cookies | Available | `src/network/Handshake/` |
-| Rate limit of the requests, sessions, reliability, history of states, statistics | Not yet written | — |
+| Sessions: admission, session token, sequence, heartbeats, timeouts | Available, written in the server and the client | `src/server/Lobby/`, `src/server/Sessions/`, `src/client/Connection/` |
+| Replication: entities to messages, and back | Available, written in the server and the client | `src/server/Replication/`, `src/client/Replication/` |
+| Rate limit of the requests, reliability, history of states, statistics | Not yet written | — |
 | Test tool that sends malformed datagrams | Available, never shipped | `tests/tools/` |
+
+## Transport, sessions and replication
+
+`rtype_network` never links the engine, so its messages carry plain data, ids, types and quantized positions, never a component (see [Project layout](/R-Type/project-layout/#who-may-link-what)). The sessions, which hold the players of a game, and the replication, which reads the components of a world, are therefore written in each program, on top of this library.
+
+The path of a world state, from a game of the server to the screen of a client:
+
+```mermaid
+%%{init: {"flowchart": {"rankSpacing": 30}}}%%
+flowchart TB
+  accTitle: The layers a world state crosses
+  accDescr: On the server, the replication layer turns the entities of a game into a world state, the session layer gives each datagram the session token and the next sequence of its player, and the transport layer sends it over UDP. On the client, the transport layer receives it, the session layer checks its token and its sequence, and the replication layer applies it to the entities of the game screen.
+  ServerReplication[Server replication] --> ServerSessions[Server sessions]
+  ServerSessions --> ServerTransport[Server transport]
+  ServerTransport -->|UDP| ClientTransport[Client transport]
+  ClientTransport --> ClientSessions[Client sessions]
+  ClientSessions --> ClientReplication[Client replication]
+```
+
+An input of the player takes the other way through the transport and the sessions only: `ServerConnection` sends it, and the `GameSessions` of the game keeps the newest input of each player (see [Server](/R-Type/server/#player-inputs)).
+
+### Transport
+
+Transport carries datagrams and knows nothing of players. Each program runs its socket on a network thread of its own, so its game never waits on the network, and exchanges datagrams with the thread of the game through bounded queues (see [Concurrency](/R-Type/concurrency/)). The parts are in this library and described below: `NetworkContext`, `UdpSocket` and `DatagramRelay`. The server assembles them in `ServerApplication` (`src/server/Application/`, see [Server](/R-Type/server/#threads-serverapplication)), the client in `NetworkThread` (`src/client/Connection/NetworkThread/`, see [Client](/R-Type/client/#network-networkthread)).
+
+### Sessions
+
+A session starts when the server accepts a player and ends when the player leaves or stays silent too long. Every datagram of a session carries the session token of the player and the next sequence of its sender, so each side drops a forged datagram, which lacks the token, and a late copy, which is not newer than the newest datagram it read (see [Protocol](/R-Type/protocol/#a-session)).
+
+- On the server, `ConnectionAcceptor` (`src/server/Lobby/`) answers the connection requests and gives a place only to a sender that sends back its cookie (`CookieIssuer`, below). `DatagramSorter` checks the token on the network thread, before any queue. The `GameSessions` of each game (`src/server/Sessions/`) checks the sequence, keeps the ready state and the newest input of each player, sends the heartbeats and closes the session of a player it hears nothing from (see [Server](/R-Type/server/#sessions-of-a-game-gamesessions)); `SessionDatagram` gives every datagram to a player its header.
+- On the client, `ServerConnection` (`src/client/Connection/ServerConnection/`) holds the one session with the server it joined: it sends the request, answers the challenge, checks the token and the sequence, sends the heartbeats, and takes the server for lost after `SESSION_SILENCE_LIMIT` (20 s) without a datagram (see [Client](/R-Type/client/#joining-a-server-serverconnection)).
+- Both programs read the same delays, `HEARTBEAT_INTERVAL` (1 s), `SESSION_TIMEOUT` (5 s) and `RECONNECTION_GRACE` (15 s), in `src/network/Protocol/ProtocolConstants.hpp`. They are **provisional**, like every delay of the protocol: code must read them.
+
+### Replication
+
+Replication turns the entities of a game into messages on the server, and the messages back into entities on the client. The server decides where everything is; the client draws the newest state it received and does not predict its own ship yet.
+
+- On the server, `src/server/Replication/` announces each entity as it appears (`sendEntitySpawned`), sends the world state at the rate set at launch (`WorldStateSender`, see [Server](/R-Type/server/#world-state-worldstatesender)), turns the events of the game into `EntityDestroyed`, `GameEvent` and `PlayerLeft` (`GameEventBroadcaster`), and tells the waiting room and the end of a game (`LobbyStateAnnouncer`, `GameEndAnnouncer`). Each datagram leaves under the header of its player.
+- On the client, `ServerConnection` keeps the messages about entities in the order they arrived until the game screen takes them, and `EntityReplicator` (`src/client/Replication/`) applies them to the entities of the game screen; `WorldStateFilter` drops a world state older than the newest one applied (see [Client](/R-Type/client/#entities-from-the-server-entityreplicator)).
+- The messages and the codec of the world state are in this library (`src/network/Protocol/`, below).
 
 ## Event loop: `NetworkContext`
 
@@ -55,7 +99,7 @@ socket.startReceiving([&socket](const rtype::network::Endpoint& sender,
 network.run();
 ```
 
-`r-type_server` opens such a socket on the port given at launch, `DEFAULT_SERVER_PORT` (4242) by default, on every IPv4 interface, sorts each datagram on its network thread, and hands the datagrams of admitted players and the connection requests to its simulation thread, which answers the requests, reads the `ReadyState` and the `PlayerInput` of the players and nothing else yet (see [Server](/R-Type/server/#sorting-the-datagrams-datagramsorter)). The client runs its socket on a thread of its own, `NetworkThread`, described in [Client](/R-Type/client/#network-networkthread).
+`r-type_server` opens such a socket on the port given at launch, `DEFAULT_SERVER_PORT` (4242) by default, on every IPv4 interface, sorts each datagram on its network thread, and hands the datagrams of admitted players and the connection requests to its simulation thread, which answers the requests and reads the `ReadyState`, `PlayerInput`, `Heartbeat` and `Disconnection` of the players (see [Server](/R-Type/server/#sorting-the-datagrams-datagramsorter)). The client runs its socket on a thread of its own, `NetworkThread`, described in [Client](/R-Type/client/#network-networkthread).
 
 ## Ports and addresses written as text: `portFromText`, `ipv4AddressFromText`
 
@@ -236,6 +280,10 @@ Measured on 27 October 2026 on an Apple M4 Pro under macOS 27.0, with the server
 | Change how often a rejected datagram or message is logged | `REJECTION_LINE_INTERVAL` in `src/network/NetworkConstants.hpp`, read by the network and the server (see [Logging](/R-Type/logging/#repeated-events-throttledlog)) |
 | Handle a received message | `registerHandler<Message>()` on a `MessageDispatcher` |
 | Change how a connection cookie is computed, or how long it lives | `CookieIssuer` in `src/network/Handshake/CookieIssuer/`, `COOKIE_WINDOW_DURATION` in `src/network/Handshake/HandshakeConstants.hpp` |
+| Change how a player is let in, challenged or refused | `ConnectionAcceptor` in `src/server/Lobby/ConnectionAcceptor/` and `ServerConnection` in `src/client/Connection/ServerConnection/`, then the [Protocol](/R-Type/protocol/#connection) page |
+| Change what a session checks on a received datagram | `DatagramSorter` (`src/server/Application/DatagramSorter/`) for the token, `DatagramReader` and `ArrivalLedger` (`src/server/Sessions/`) for the sequence; `ServerConnection` on the client |
+| Change the heartbeats or the session timeout | `HEARTBEAT_INTERVAL`, `SESSION_TIMEOUT` and `RECONNECTION_GRACE` in `src/network/Protocol/ProtocolConstants.hpp`, and their tick counts in `src/server/Sessions/SessionConstants.hpp` |
+| Send the clients something new about an entity | the sender in `src/server/Replication/`, `EntityReplicator` in `src/client/Replication/`, and the message in `src/network/Protocol/` |
 | Add a network error | `src/network/Exceptions/NetworkException.hpp` |
 | Test code against a real socket | `tests/UdpSocketTest.cpp`: a plain Asio client on the loopback address |
 | Test code that uses a socket without the network | `tests/doubles/RecordingDatagramSocket.hpp`, as `tests/network/Transport/DatagramRelayTest.cpp` does |
