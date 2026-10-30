@@ -24,6 +24,8 @@ This page tells you where to look when you need to change something. It describe
 
 ```mermaid
 flowchart LR
+  accTitle: How the parts of the engine fit together
+  accDescr: The clock feeds the fixed timestep, which tells the tick loop how many ticks to simulate. Once per tick, the tick loop runs the timer scheduler and the system scheduler. The systems read the component registry, which sits on the entity registry.
   Clock[IClock] --> Step[FixedTimestep]
   Step -- "ticks to simulate" --> Loop["tick loop"]
   Loop -- "once per tick" --> Timers[TimerScheduler]

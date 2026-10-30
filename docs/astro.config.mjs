@@ -23,6 +23,28 @@ export default defineConfig({
       editLink: {
         baseUrl: 'https://github.com/nique-epi/R-Type/edit/main/docs/',
       },
+      head: [
+        {
+          // A table or a code block wider than the page scrolls; the keyboard
+          // reaches it only if it can take the focus.
+          tag: 'script',
+          content: `
+            const makeScrollablesFocusable = () => {
+              document
+                .querySelectorAll('.sl-markdown-content table, .expressive-code pre')
+                .forEach((element) => {
+                  if (element.scrollWidth > element.clientWidth) {
+                    element.tabIndex = 0;
+                  } else {
+                    element.removeAttribute('tabindex');
+                  }
+                });
+            };
+            addEventListener('DOMContentLoaded', makeScrollablesFocusable);
+            addEventListener('load', makeScrollablesFocusable);
+            addEventListener('resize', makeScrollablesFocusable);`,
+        },
+      ],
       plugins: [starlightLinksValidator()],
     }),
   ],

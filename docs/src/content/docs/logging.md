@@ -130,6 +130,8 @@ Lowering the level at launch below the build level has no effect, since those ca
 
 ```mermaid
 sequenceDiagram
+    accTitle: The path of a log call
+    accDescr: The caller calls the level method of the logger. Below the build level, no code is generated. Otherwise the method calls log, which drops the call without formatting when it is below the run-time level, and otherwise streams the arguments and asks emitLine to write the line, which locks, adds the timestamp and the file, and writes to standard error.
     autonumber
     participant Caller
     participant M as logger_.debug(...)
