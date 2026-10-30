@@ -25,8 +25,8 @@ struct ConnectionStatus {
     Unreachable,
     /**
      * @brief The server accepted the player, then sent nothing that passed
-     * the checks of the session for SESSION_TIMEOUT: the client closed the
-     * session without telling the server.
+     * the checks of the session for SESSION_SILENCE_LIMIT: the client closed
+     * the session without telling the server.
      */
     Lost,
   };

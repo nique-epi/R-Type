@@ -8,6 +8,7 @@
 #include "Endpoint.hpp"
 #include "EntityIdConstants.hpp"
 #include "LivesConstants.hpp"
+#include "TimeConstants.hpp"
 
 namespace rtype::server {
 
@@ -69,10 +70,11 @@ struct ConnectedPlayer {
    * and lives are kept, its input number is cleared and it does not count for
    * the ready check. The next datagram read from the player clears it. */
   bool away{false};
-  /** @brief Ticks that ended since the server last sent the player a datagram;
-   * a Heartbeat goes out once it reaches TICKS_PER_HEARTBEAT.
-   * nextSessionHeader() sets it back to 0. */
-  std::size_t ticksSinceSent{0};
+  /** @brief The real time since the server last sent the player a datagram,
+   * added at the start of each tick, a stall of the server included, since
+   * the client waits in real time: a Heartbeat goes out once it reaches
+   * SILENCE_BEFORE_HEARTBEAT. nextSessionHeader() sets it back to zero. */
+  engine::Duration sinceSent{};
 };
 
 }  // namespace rtype::server

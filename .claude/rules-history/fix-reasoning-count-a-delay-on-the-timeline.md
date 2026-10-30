@@ -42,3 +42,17 @@ Before writing a delay in ticks, frames, round trips or messages, write the time
 
 - ❌ **Before (wrong)**: "the death is announced 2 ticks after the collision".
 - ✅ **After (right)**: "tick N: collision published, then delivered, death published; tick N+1: death delivered" → "1 tick (16.7 ms) after the collision".
+
+## Update (2026-10-29) — a write placed in the wrong stage of the tick
+
+### Context
+RTY-213: the server counted the time since its last datagram to each player in ticks, so a stall of the server delayed its first datagram after it. The plan replaced the count with real time read on a clock and said that, while the server runs on time, the heartbeats keep the timing of the old code.
+
+### Mistake
+The plan added the time at the end of each tick (`GameSessions::endTick()`, in `GAME_OUTPUT_STAGE`) and counted as if every datagram to a player left after that point. The rules module sends the room, the start, the world state and the end of a game from `GAME_SIMULATION_STAGE`, before it: each send set the count to zero, then the end of the tick added a whole tick. The first heartbeat after a send and every heartbeat after another came 61 ticks apart instead of 60, and `SendsAHeartbeatEverySecondWhileNothingElseGoesOut` counted 2 heartbeats in 180 ticks instead of 3.
+
+### Root cause
+The timeline of the plan placed the sends from what they are for ("outputs"), not from the `addWork` calls that put them in a stage.
+
+### Fix
+The time since the previous tick is added when the tick starts (`GameSessions::startTick()`, first in `GAME_INPUT_STAGE`), before anything is sent in it, and the heartbeat goes once the server sent nothing for `HEARTBEAT_INTERVAL` rounded down to whole ticks (60 ticks, 999 999 960 ns): every 60 ticks again, a stall included in full.

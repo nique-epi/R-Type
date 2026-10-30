@@ -30,7 +30,8 @@ void GamesFixture::addGame() {
                   .seed = SOME_SEED,
                   .waves = rtype::server::testing::testWavePlan()},
           .events = *events,
-          .timers = timers_},
+          .timers = timers_,
+          .clock = clock_},
       rtype::server::rtypeGameModules());
   games_.add(std::move(events), std::move(game));
 }

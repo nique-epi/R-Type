@@ -26,6 +26,8 @@
 #include "Position.hpp"
 #include "RtypeRulesModule.hpp"
 #include "ServerLobbyTestConstants.hpp"
+#include "SimulatedClock.hpp"
+#include "TimeConstants.hpp"
 #include "TimerScheduler.hpp"
 #include "UnreliableNetwork.hpp"
 #include "World.hpp"
@@ -117,9 +119,12 @@ class GameInstanceTest : public ::testing::Test {
   /** @brief Queues @p datagram for the next tick. */
   void queue(network::IncomingDatagram datagram);
 
-  /** @brief Runs one tick with what was queued, then a Heartbeat from each
-   * player not silenced, then empties the queue. */
-  void tick();
+  /** @brief Moves the clock of the game on by @p sincePreviousTick, one tick
+   * unless the test makes the server stall, then runs one tick with what was
+   * queued, then a Heartbeat from each player not silenced, then empties the
+   * queue. */
+  void tick(
+      engine::Duration sincePreviousTick = engine::SIMULATION_TICK_DURATION);
 
   void runTicks(std::size_t count);
 
@@ -161,6 +166,8 @@ class GameInstanceTest : public ::testing::Test {
   std::vector<std::size_t> livePlayers_;
   engine::EventBus events_;
   engine::TimerScheduler timers_;
+  /** @brief The clock the game reads real time on; tick() moves it on. */
+  SimulatedClock clock_;
   RtypeRulesModule* rules_{nullptr};
   GameInstance game_;
   std::vector<network::IncomingDatagram> incoming_;
