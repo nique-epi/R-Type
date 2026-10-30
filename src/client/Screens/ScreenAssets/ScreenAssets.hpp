@@ -21,8 +21,10 @@ class AssetLibrary;
  * player enters it: the entity sheet, the effect sheet, the HUD sheet and the
  * plug icon of the status band, and the sheet of the flight log, so the end
  * screen opens without loading; the end screen keeps them all, so the next
- * game opens without loading too; and the professor sheet, so the help of the
- * waiting room after the game has it. */
+ * game opens without loading too; the professor sheet, so the help of the
+ * waiting room after the game has it; and the logo, so with those every asset
+ * of the title is kept, and a title built after a game opens without a loading
+ * screen, which would close what is pushed over it when it gives way. */
 [[nodiscard]] AssetList gameAssets();
 
 /**

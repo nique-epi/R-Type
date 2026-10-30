@@ -40,8 +40,8 @@ AssetList titleAssets() {
 }
 
 AssetList gameAssets() {
-  return AssetList{.textures = {ENTITY_SHEET_ID, EFFECT_SHEET_ID, HUD_SHEET_ID,
-                                PLUG_ICON_ID, FLIGHT_LOG_SHEET_ID,
+  return AssetList{.textures = {LOGO_ID, ENTITY_SHEET_ID, EFFECT_SHEET_ID,
+                                HUD_SHEET_ID, PLUG_ICON_ID, FLIGHT_LOG_SHEET_ID,
                                 PROFESSOR_SHEET_ID}};
 }
 
