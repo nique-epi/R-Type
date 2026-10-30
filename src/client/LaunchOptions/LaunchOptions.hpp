@@ -3,6 +3,7 @@
 #include <span>
 #include <string>
 #include <string_view>
+#include "AudioMode.hpp"
 #include "Endpoint.hpp"
 
 namespace rtype::client {
@@ -10,17 +11,18 @@ namespace rtype::client {
 /**
  * @brief What the client is told at launch: the address and the port of the
  * server to join and the nickname of the player, which the connection screen
- * starts with, or a request for its usage.
+ * starts with, whether it makes sound, or a request for its usage.
  */
 class LaunchOptions {
  public:
   /**
-   * @brief Reads `-h <address>`, `-p <port>`, `-n <nickname>` and `--help` from
-   * @p arguments, the arguments the logging options left (see
+   * @brief Reads `-h <address>`, `-p <port>`, `-n <nickname>`, `--no-sound`
+   * and `--help` from @p arguments, the arguments the logging options left (see
    * logging::LogLaunchOptions).
    *
    * Without `-h` the address is DEFAULT_SERVER_ADDRESS, without `-p` the
-   * port is DEFAULT_SERVER_PORT, without `-n` the nickname is DEFAULT_NICKNAME.
+   * port is DEFAULT_SERVER_PORT, without `-n` the nickname is DEFAULT_NICKNAME,
+   * without `--no-sound` the client makes sound.
    * The last of each option wins.
    *
    * @throws engine::UnknownLaunchArgumentException for any other argument.
@@ -49,6 +51,10 @@ class LaunchOptions {
   /** @returns the nickname of the player, UTF-8. */
   [[nodiscard]] const std::string& nickname() const;
 
+  /** @returns AudioMode::Disabled when `--no-sound` was given, otherwise
+   * AudioMode::Enabled. */
+  [[nodiscard]] AudioMode audioMode() const;
+
   /**
    * @returns whether `--help` was given: the client then prints its usage
    *          and opens no window.
@@ -62,6 +68,7 @@ class LaunchOptions {
   network::Endpoint serverEndpoint_;
   std::string nickname_;
   bool helpRequested_;
+  AudioMode audioMode_{AudioMode::Enabled};
 };
 
 }  // namespace rtype::client

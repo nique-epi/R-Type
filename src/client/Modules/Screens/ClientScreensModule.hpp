@@ -9,6 +9,7 @@
 #include "EventListeners.hpp"
 #include "FrameLoop.hpp"
 #include "GameWindow.hpp"
+#include "IAudioService.hpp"
 #include "IModule.hpp"
 #include "ISettingsStorage.hpp"
 #include "InstallContext.hpp"
@@ -24,7 +25,7 @@ namespace rtype::client {
  * (ClientScreens), listed last, until modules register screens of their own.
  *
  * install() requires the services of every module listed before it and adds
- * two works. In UPDATE_STAGE, the music, the sky and every screen are updated,
+ * two works. In UPDATE_STAGE, the sky and every screen are updated,
  * then the frame loop stops once no screen is left. In RENDER_STAGE, the sky
  * is drawn, then the screens over it.
  *
@@ -46,7 +47,7 @@ class ClientScreensModule final : public engine::IModule {
   /** @returns SCREENS_MODULE_NAME. */
   [[nodiscard]] std::string name() const override;
   /** @returns The modules whose services the screens are built from: the
-   * assets, the settings, the window and the connection. */
+   * assets, the settings, the sound, the window and the connection. */
   [[nodiscard]] std::vector<std::string> dependencies() const override;
   /** @throws MissingServiceException if a module listed before does not
    * provide a service the screens need. */
@@ -66,6 +67,7 @@ class ClientScreensModule final : public engine::IModule {
   PlayerSettings* settings_{nullptr};
   ISettingsStorage* storage_{nullptr};
   AssetLibrary* assets_{nullptr};
+  IAudioService* audio_{nullptr};
   GameWindow* window_{nullptr};
   ServerConnection* connection_{nullptr};
   FrameLoop* loop_{nullptr};

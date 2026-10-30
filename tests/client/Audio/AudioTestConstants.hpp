@@ -2,9 +2,14 @@
 
 #include <chrono>
 #include <cstddef>
+#include <string_view>
 #include "TimeConstants.hpp"
 
 namespace rtype::client::testing {
+
+/** @brief An id no sound of the client has, so a player that tries to find
+ * it fails and one that plays nothing does not. */
+constexpr std::string_view UNKNOWN_SOUND_ID = "sounds/none.ogg";
 
 /** @brief A small limit of voices, so a test lists every voice. */
 constexpr std::size_t THREE_VOICES = 3;
