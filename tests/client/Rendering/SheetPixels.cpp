@@ -105,6 +105,24 @@ int changedPixelCount(const sf::Image& image, SpriteFrame frame,
   return changed;
 }
 
+int mirrorMismatchCount(const sf::Image& image, SpriteFrame frame,
+                        SpriteFrame mirror) {
+  int mismatched = 0;
+  for (int row = 0; row < frame.height; ++row) {
+    for (int column = 0; column < frame.width; ++column) {
+      const sf::Vector2u pixel{static_cast<unsigned int>(frame.left + column),
+                               static_cast<unsigned int>(frame.top + row)};
+      const sf::Vector2u mirroredPixel{
+          static_cast<unsigned int>(mirror.left + mirror.width - 1 - column),
+          static_cast<unsigned int>(mirror.top + row)};
+      if (image.getPixel(pixel) != image.getPixel(mirroredPixel)) {
+        ++mismatched;
+      }
+    }
+  }
+  return mismatched;
+}
+
 int visiblePixelCount(const sf::Image& image, SpriteFrame frame) {
   int visible = 0;
   for (int row = frame.top; row < frame.top + frame.height; ++row) {

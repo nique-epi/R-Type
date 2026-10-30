@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstddef>
 #include <cstdint>
 #include <memory>
 #include "ComponentRegistry.hpp"
@@ -32,8 +33,12 @@ class GameReplication final : public IGameReplication {
   /**
    * @param roster The players the announcements go to; it must outlive this.
    * @param send Called for each datagram to send. Must not be empty.
+   * @param statesPerSecond The world states each player is sent per second,
+   * from LOWEST_WORLD_STATES_PER_SECOND to HIGHEST_WORLD_STATES_PER_SECOND.
+   * @throws InvalidStateRateException when it is outside that range.
    */
-  GameReplication(PlayerRoster& roster, SendDatagram send);
+  GameReplication(PlayerRoster& roster, SendDatagram send,
+                  std::size_t statesPerSecond);
 
   GameReplication(const GameReplication&) = delete;
   GameReplication& operator=(const GameReplication&) = delete;

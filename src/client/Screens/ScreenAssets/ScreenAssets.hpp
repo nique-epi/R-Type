@@ -12,14 +12,17 @@ class AssetLibrary;
 [[nodiscard]] AssetList interfaceAssets();
 
 /** @brief The assets of the title screen: its logo, and the entity sheet its
- * squadron is drawn from. */
+ * squadron is drawn from; with those of the screens pushed over it, so the
+ * waiting room opens without loading: the HUD sheet and the professor sheet
+ * its help draws. */
 [[nodiscard]] AssetList titleAssets();
 
 /** @brief The assets a game needs, loaded by the loading screen when the
  * player enters it: the entity sheet, the effect sheet, the HUD sheet and the
  * plug icon of the status band, and the sheet of the flight log, so the end
  * screen opens without loading; the end screen keeps them all, so the next
- * game opens without loading too. */
+ * game opens without loading too; and the professor sheet, so the help of the
+ * waiting room after the game has it. */
 [[nodiscard]] AssetList gameAssets();
 
 /**

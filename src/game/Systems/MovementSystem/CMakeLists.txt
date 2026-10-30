@@ -7,6 +7,7 @@ target_link_libraries(rtype_game_movement_system
     rtype_engine_systems
     rtype_engine_component_registry
     rtype_game_components
+    rtype_game_ship_control
 )
 
 rtype_enable_warnings(rtype_game_movement_system)

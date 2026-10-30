@@ -4,6 +4,7 @@
 #include "AssetList.hpp"
 #include "IInterfaceCanvas.hpp"
 #include "IScreen.hpp"
+#include "ISoundPlayer.hpp"
 #include "PlayfieldMapping.hpp"
 #include "ScreenCatalogParts.hpp"
 #include "ScreenId.hpp"
@@ -69,6 +70,9 @@ class ScreenCatalog {
 
   /** @brief Gives the point of the playfield under a pixel of the window. */
   [[nodiscard]] PlayfieldMapping playfieldMapping() const;
+
+  /** @returns The player of the short sounds of the audio service. */
+  [[nodiscard]] ISoundPlayer& sounds() const;
 
   ScreenCatalogParts parts_;
 };

@@ -10,9 +10,9 @@ namespace rtype::server {
 /**
  * @brief Keeps whether each player declared itself ready.
  *
- * A ReadyState counts only while the game accepts it, and only when its
- * sequence is newer than the newest one accepted from that player (see
- * network::isNewerSequence), so a late copy never undoes a newer one.
+ * A ReadyState counts only while the game accepts it. DatagramReader
+ * already refused the datagrams that are not newer than the newest accepted
+ * from that player, so a late copy never undoes a newer one.
  *
  * Not thread-safe: use it from the simulation thread only.
  */
@@ -27,7 +27,7 @@ class ReadyKeeper {
 
   /**
    * @brief Records @p message for the player who sent it, when readyAccepted
-   * says it counts, the sender is a player and its sequence is newer.
+   * says it counts and the sender is a player.
    */
   void apply(const network::MessageOrigin& origin,
              const network::ReadyState& message);

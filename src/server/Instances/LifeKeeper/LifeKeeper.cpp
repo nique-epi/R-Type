@@ -11,8 +11,10 @@
 #include "EntityIdConstants.hpp"
 #include "EventBus.hpp"
 #include "GameInstanceConstants.hpp"
+#include "Invulnerable.hpp"
 #include "LifeKeeperConstants.hpp"
 #include "LifeKeeperParts.hpp"
+#include "Lives.hpp"
 #include "Logger.hpp"
 #include "MissileHit.hpp"
 #include "NetworkIdentity.hpp"
@@ -31,6 +33,7 @@ namespace {
 struct DoomedShip {
   ConnectedPlayer* player{nullptr};
   std::uint32_t shipId{0};
+  std::uint8_t livesBefore{0};
 };
 
 /** @brief A contact that costs a life, read before anything is destroyed. */
@@ -40,21 +43,18 @@ struct CostlyContact {
   std::uint32_t enemyId{0};
 };
 
-/** @returns The connected player of @p roster whose ship is @p shipId, or
- * nullptr when none has it. */
-ConnectedPlayer* ownerOf(PlayerRoster& roster, std::uint32_t shipId) {
-  for (ConnectedPlayer* const player : roster.connected()) {
-    if (player->shipEntityId == shipId) {
-      return player;
-    }
+/** @returns The lives of the ship @p shipId of @p world when it can be hit: it
+ * has a life left and is not invulnerable. Nothing otherwise. */
+std::optional<std::uint8_t> livesOfAHittableShip(game::World& world,
+                                                 std::uint32_t shipId) {
+  const game::Lives* const lives = world.shipComponentOf<game::Lives>(shipId);
+  const game::Invulnerable* const protection =
+      world.shipComponentOf<game::Invulnerable>(shipId);
+  if (lives == nullptr || protection == nullptr || lives->count == 0 ||
+      protection->ticksLeft != 0) {
+    return std::nullopt;
   }
-  return nullptr;
-}
-
-/** @returns Whether the ship of @p player can be hit: the player has a life
- * left and is not invulnerable. */
-bool canBeHit(const ConnectedPlayer& player) {
-  return player.lives > 0 && player.invulnerableTicksLeft == 0;
+  return lives->count;
 }
 
 /**
@@ -69,11 +69,17 @@ std::optional<DoomedShip> doomedShipOf(game::World& world, PlayerRoster& roster,
   if (identity == nullptr) {
     return std::nullopt;
   }
-  ConnectedPlayer* const player = ownerOf(roster, identity->networkId);
-  if (player == nullptr || !canBeHit(*player)) {
+  ConnectedPlayer* const player = roster.findByShip(identity->networkId);
+  if (player == nullptr) {
     return std::nullopt;
   }
-  return DoomedShip{.player = player, .shipId = identity->networkId};
+  const std::optional<std::uint8_t> lives =
+      livesOfAHittableShip(world, identity->networkId);
+  if (!lives.has_value()) {
+    return std::nullopt;
+  }
+  return DoomedShip{
+      .player = player, .shipId = identity->networkId, .livesBefore = *lives};
 }
 
 /**
@@ -103,12 +109,15 @@ void destroyBoth(game::World& world, const CostlyContact& contact) {
   world.components().destroy(contact.enemy);
 }
 
-/** @brief Takes a life and the ship from @p player, and makes a player with a
- * life left wait RESPAWN_DELAY_TICKS ticks for a new ship. */
-void takeLifeFrom(ConnectedPlayer& player) {
-  --player.lives;
+/** @brief Takes a life and the ship from the player of @p ship, who keeps the
+ * lives the ship had, one less, for its next ship, and makes a player with a
+ * life left wait RESPAWN_DELAY_TICKS ticks for it. */
+void takeLifeFrom(const DoomedShip& ship) {
+  ConnectedPlayer& player = *ship.player;
+  player.livesWithoutShip = static_cast<std::uint8_t>(ship.livesBefore - 1);
   player.shipEntityId = identifiers::NO_ENTITY_ID;
-  player.ticksUntilRespawn = player.lives > 0 ? RESPAWN_DELAY_TICKS : 0;
+  player.ticksUntilRespawn =
+      player.livesWithoutShip > 0 ? RESPAWN_DELAY_TICKS : 0;
 }
 
 /** @brief Publishes on @p events the EntityDestruction (Killed) of the entity
@@ -124,21 +133,25 @@ void announceLifeLost(engine::EventBus& events, const logging::Logger& logger,
                       const ConnectedPlayer& player) {
   events.publish(game::PlayerHit{.playerNumber = player.playerNumber});
   const auto playerNumber = static_cast<unsigned int>(player.playerNumber);
-  if (player.lives > 0) {
+  if (player.livesWithoutShip > 0) {
     logger.info("player ", playerNumber, " lost a life, ",
-                static_cast<unsigned int>(player.lives), " left");
+                static_cast<unsigned int>(player.livesWithoutShip), " left");
     return;
   }
   events.publish(game::PlayerElimination{.playerNumber = player.playerNumber});
   logger.info("player ", playerNumber, " lost its last life and now watches");
 }
 
-/** @brief Counts one tick of invulnerability of @p player down, when it has
- * some left. */
-void countInvulnerabilityDown(ConnectedPlayer& player) {
-  if (player.invulnerableTicksLeft > 0) {
-    --player.invulnerableTicksLeft;
-  }
+/** @brief Counts one tick of invulnerability down on every ship of
+ * @p components that has some left. */
+void countInvulnerabilityDown(engine::ComponentRegistry& components) {
+  components.forEach<game::Invulnerable, game::Invulnerable>(
+      [](engine::Entity, game::Invulnerable& protection,
+         const game::Invulnerable&) {
+        if (protection.ticksLeft > 0) {
+          --protection.ticksLeft;
+        }
+      });
 }
 
 }  // namespace
@@ -162,8 +175,8 @@ LifeKeeper::~LifeKeeper() {
 }
 
 void LifeKeeper::onTick() {
+  countInvulnerabilityDown(world_.components());
   for (ConnectedPlayer* const player : roster_.connected()) {
-    countInvulnerabilityDown(*player);
     countWaitDown(*player);
   }
 }
@@ -175,7 +188,7 @@ void LifeKeeper::onShipContact(const game::ShipContact& contact) {
     return;
   }
   destroyBoth(world_, *costly);
-  takeLifeFrom(*costly->ship.player);
+  takeLifeFrom(costly->ship);
   announceKill(events_, costly->ship.shipId);
   announceKill(events_, costly->enemyId);
   announceLifeLost(events_, logger_, *costly->ship.player);
@@ -188,7 +201,7 @@ void LifeKeeper::onMissileHit(const game::MissileHit& hit) {
     return;
   }
   world_.removePlayer(ship->shipId);
-  takeLifeFrom(*ship->player);
+  takeLifeFrom(*ship);
   announceKill(events_, ship->shipId);
   announceLifeLost(events_, logger_, *ship->player);
 }
@@ -211,7 +224,11 @@ void LifeKeeper::respawn(ConnectedPlayer& player) {
                  " gets no new ship: every network id was given");
     return;
   }
-  player.invulnerableTicksLeft = INVULNERABILITY_TICKS;
+  auto* const protection =
+      world_.shipComponentOf<game::Invulnerable>(player.shipEntityId);
+  if (protection != nullptr) {
+    protection->ticksLeft = INVULNERABILITY_TICKS;
+  }
 }
 
 }  // namespace rtype::server

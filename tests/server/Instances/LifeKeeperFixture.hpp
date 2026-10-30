@@ -49,6 +49,9 @@ class LifeKeeperFixture : public ::testing::Test {
    */
   std::uint32_t touchABydo(const ConnectedPlayer& player);
 
+  /** @returns The world of the keeper. */
+  [[nodiscard]] game::World& world();
+
   /** @brief Runs @p count ticks of the keeper. */
   void runTicks(std::size_t count);
 

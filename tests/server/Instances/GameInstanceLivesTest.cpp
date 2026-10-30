@@ -18,7 +18,7 @@
 #include "OutgoingDatagram.hpp"
 #include "Replication/GameEndAnnouncerTestConstants.hpp"
 #include "SentDatagrams.hpp"
-#include "ServerConstants.hpp"
+#include "ServerTestConstants.hpp"
 
 namespace rtype::server::testing {
 
@@ -32,7 +32,7 @@ TEST_F(GameInstanceLivesFixture, TakesALifeWhenAShipTouchesABydo) {
 
   hitTheShipOf(FIRST_PLAYER);
 
-  EXPECT_EQ(playerAt(FIRST_PLAYER).lives, THREE_LIVES - 1);
+  EXPECT_EQ(livesOf(FIRST_PLAYER), THREE_LIVES - 1);
 }
 
 /**
@@ -98,7 +98,7 @@ TEST_F(GameInstanceLivesFixture, GivesThreeLivesBackWithANewWorld) {
   runTicksDispatching(FINISHED_STATE_TICKS);
 
   ASSERT_EQ(game().state(), GameState::WaitingForPlayers);
-  EXPECT_EQ(playerAt(FIRST_PLAYER).lives, THREE_LIVES);
+  EXPECT_EQ(livesOf(FIRST_PLAYER), THREE_LIVES);
 }
 
 /**
@@ -114,7 +114,7 @@ TEST_F(GameInstanceLivesFixture, ForgetsTheWaitOfThePreviousGame) {
   runTicksDispatching(FINISHED_STATE_TICKS);
   startTheNextGame();
 
-  runTicksDispatching(ONE_SECOND_IN_TICKS + TICKS_PER_WORLD_STATE);
+  runTicksDispatching(ONE_SECOND_IN_TICKS + DEFAULT_TICKS_PER_WORLD_STATE);
 
   EXPECT_FALSE(newestStateOf(FIRST_PLAYER).invulnerable);
 }
@@ -128,7 +128,7 @@ TEST_F(GameInstanceLivesFixture, ListsTheLivesLeftInTheWorldState) {
   startGame();
   hitTheShipOf(FIRST_PLAYER);
 
-  runTicksDispatching(TICKS_PER_WORLD_STATE);
+  runTicksDispatching(DEFAULT_TICKS_PER_WORLD_STATE);
 
   EXPECT_EQ(newestStateOf(FIRST_PLAYER).lives, THREE_LIVES - 1);
 }
@@ -142,7 +142,7 @@ TEST_F(GameInstanceLivesFixture, ListsTheShipThatCameBackAsInvulnerable) {
   startGame();
   hitTheShipOf(FIRST_PLAYER);
 
-  runTicksDispatching(ONE_SECOND_IN_TICKS + TICKS_PER_WORLD_STATE);
+  runTicksDispatching(ONE_SECOND_IN_TICKS + DEFAULT_TICKS_PER_WORLD_STATE);
 
   EXPECT_TRUE(newestStateOf(FIRST_PLAYER).invulnerable);
 }
@@ -157,7 +157,7 @@ TEST_F(GameInstanceLivesFixture, TakesALifeWhenAnEnemyMissileHitsAShip) {
 
   shootTheShipOf(FIRST_PLAYER);
 
-  EXPECT_EQ(playerAt(FIRST_PLAYER).lives, THREE_LIVES - 1);
+  EXPECT_EQ(livesOf(FIRST_PLAYER), THREE_LIVES - 1);
 }
 
 /**
@@ -213,7 +213,7 @@ TEST_F(GameInstanceLivesFixture, SparesTheShipThatCameBackFromAMissile) {
 
   shootTheShipOf(FIRST_PLAYER);
 
-  EXPECT_EQ(playerAt(FIRST_PLAYER).lives, THREE_LIVES - 1);
+  EXPECT_EQ(livesOf(FIRST_PLAYER), THREE_LIVES - 1);
 }
 
 /**

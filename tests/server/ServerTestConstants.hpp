@@ -19,6 +19,20 @@ constexpr std::size_t CLIENT_PAYLOAD_SIZE = 3;
 constexpr std::byte CLIENT_PAYLOAD_BYTE{0x2A};
 
 /**
+ * @brief Simulation ticks between two world states at the default state rate,
+ * which divides the tick rate.
+ */
+constexpr std::size_t DEFAULT_TICKS_PER_WORLD_STATE =
+    rtype::engine::SIMULATION_TICKS_PER_SECOND /
+    rtype::server::DEFAULT_WORLD_STATES_PER_SECOND;
+
+static_assert(rtype::engine::SIMULATION_TICKS_PER_SECOND %
+                      rtype::server::DEFAULT_WORLD_STATES_PER_SECOND ==
+                  0,
+              "the tests that count ticks between states need a default rate "
+              "that divides the tick rate");
+
+/**
  * @brief Half of one simulation tick: SIMULATION_TICK_DURATION is an even
  * number of nanoseconds, so two halves make exactly one tick.
  */

@@ -9,7 +9,6 @@
 #include "BydoSpawnerParts.hpp"
 #include "CollisionRules.hpp"
 #include "ConnectedPlayer.hpp"
-#include "ConnectedPlayerConstants.hpp"
 #include "ConnectedPlayers.hpp"
 #include "DamageRules.hpp"
 #include "EntityIdConstants.hpp"
@@ -20,16 +19,15 @@
 #include "IGameReplication.hpp"
 #include "LifeKeeper.hpp"
 #include "LifeKeeperParts.hpp"
+#include "LivesConstants.hpp"
 #include "Logger.hpp"
 #include "OutgoingDatagram.hpp"
+#include "PlayerController.hpp"
+#include "PlayerLives.hpp"
 #include "PlayerRoster.hpp"
-#include "Position.hpp"
-#include "ProtocolConstants.hpp"
 #include "SessionDatagram.hpp"
-#include "ShipControl.hpp"
-#include "ShipInput.hpp"
-#include "ShipMotion.hpp"
 #include "TimeConstants.hpp"
+#include "WeaponSystem.hpp"
 #include "World.hpp"
 #include "WorldSlot.hpp"
 
@@ -38,80 +36,21 @@ namespace rtype::server {
 namespace {
 
 /**
- * @returns The connected players of @p roster whose newest input holds shoot.
- */
-ConnectedPlayers shootersIn(PlayerRoster& roster) {
-  ConnectedPlayers shooters;
-  for (ConnectedPlayer* const player : roster.connected()) {
-    if (player->newestInput.has_value() &&
-        holdsActionAt(*player->newestInput,
-                      network::SHOOT_ACTION_BIT_POSITION)) {
-      shooters.append(player);
-    }
-  }
-  return shooters;
-}
-
-/** @brief A ship to move this tick, how it moves, and the directions its
- * player holds. */
-struct ShipMove {
-  game::Position* ship{nullptr};
-  game::ShipMotion* motion{nullptr};
-  game::ShipDirections held;
-};
-
-/**
- * @returns The ship of @p player in @p world, its motion and the directions
- * its newest input holds; nothing when the player has no ship in that world or
- * sent no input yet.
- */
-std::optional<ShipMove> shipMoveOf(game::World& world,
-                                   const ConnectedPlayer& player) {
-  game::Position* const ship = world.shipPositionOf(player.shipEntityId);
-  game::ShipMotion* const motion = world.shipMotionOf(player.shipEntityId);
-  if (ship == nullptr || motion == nullptr || !player.newestInput.has_value()) {
-    return std::nullopt;
-  }
-  return ShipMove{.ship = ship,
-                  .motion = motion,
-                  .held = directionsOf(*player.newestInput)};
-}
-
-/** @brief Moves the ship of @p move by one tick of the directions it holds. */
-void moveOneTick(const ShipMove& move) {
-  const game::MovingShip moved = game::shipAfter(
-      game::MovingShip{.position = *move.ship, .motion = *move.motion},
-      move.held, engine::SIMULATION_TICK_DURATION);
-  *move.ship = moved.position;
-  *move.motion = moved.motion;
-}
-
-/**
- * @brief Moves the ship of every player of @p roster who sent an input, in
- * @p world, by one tick of what that input holds.
- */
-void moveShips(game::World& world, PlayerRoster& roster) {
-  for (const ConnectedPlayer* const player : roster.connected()) {
-    const std::optional<ShipMove> move = shipMoveOf(world, *player);
-    if (move.has_value()) {
-      moveOneTick(*move);
-    }
-  }
-}
-
-/**
  * @returns Whether @p player has a life left, the one of a ship it waits for
  * included.
  */
-bool hasALifeLeft(const ConnectedPlayer* player) { return player->lives > 0; }
+bool hasALifeLeft(game::World& world, const ConnectedPlayer* player) {
+  return livesOf(world, *player) > 0;
+}
 
 /**
- * @returns Why a game in @p state, played by @p roster, must finish now: it is
- * in progress with no player left in it, or with no player left who has a
- * life. Nothing otherwise.
+ * @returns Why a game in @p state, played by @p roster in @p world, must
+ * finish now: it is in progress with no player left in it, or with no player
+ * left who has a life. Nothing otherwise.
  */
 std::optional<std::string_view> reasonToFinish(GameState state,
-                                               PlayerRoster& roster) {
+                                               PlayerRoster& roster,
+                                               game::World& world) {
   if (state != GameState::InProgress) {
     return std::nullopt;
   }
@@ -119,7 +58,9 @@ std::optional<std::string_view> reasonToFinish(GameState state,
   if (players.empty()) {
     return NO_PLAYER_LEFT_FINISH_REASON;
   }
-  if (std::ranges::none_of(players, hasALifeLeft)) {
+  if (std::ranges::none_of(players, [&world](const ConnectedPlayer* player) {
+        return hasALifeLeft(world, player);
+      })) {
     return NO_LIFE_LEFT_FINISH_REASON;
   }
   return std::nullopt;
@@ -178,11 +119,10 @@ void GameFlow::advanceState() {
     case GameState::InProgress: {
       game::World& currentWorld = world();
       ++tick_;
-      moveShips(currentWorld, game_.roster.get());
+      silenceAwayShips(currentWorld, game_.roster.get());
       game_.systems.get().run(currentWorld.components(),
                               engine::SIMULATION_TICK_DURATION);
-      missileLauncher_->onTick(shootersIn(game_.roster.get()));
-      bydoGunner_->onTick();
+      weaponSystem_->onTick();
       bydoSpawner_->onTick();
       lifeKeeper_->onTick();
       break;
@@ -208,7 +148,7 @@ void GameFlow::finish() {
 
 void GameFlow::finishIfOver() {
   const std::optional<std::string_view> reason =
-      reasonToFinish(state_, game_.roster.get());
+      reasonToFinish(state_, game_.roster.get(), world());
   if (!reason.has_value()) {
     return;
   }
@@ -230,10 +170,8 @@ void GameFlow::buildWorld() {
                        .send = game_.send,
                        .seed = game_.settings.seed + worldsBuilt_,
                        .waves = game_.settings.waves});
-  missileLauncher_ =
-      std::make_unique<MissileLauncher>(world, game_.roster.get(), game_.send);
-  bydoGunner_ =
-      std::make_unique<BydoGunner>(world, game_.roster.get(), game_.send);
+  weaponSystem_ =
+      std::make_unique<WeaponSystem>(world, game_.roster.get(), game_.send);
   lifeKeeper_ = std::make_unique<LifeKeeper>(
       LifeKeeperParts{.events = game_.events.get(),
                       .world = world,
@@ -251,9 +189,8 @@ void GameFlow::startNewWorld() {
   for (ConnectedPlayer* const player : game_.roster.get().connected()) {
     player->ready = false;
     player->score = 0;
-    player->lives = STARTING_LIVES;
+    player->livesWithoutShip = game::STARTING_LIVES;
     player->ticksUntilRespawn = 0;
-    player->invulnerableTicksLeft = 0;
     player->shipEntityId = identifiers::NO_ENTITY_ID;
     replication_.onPlayerJoined(*player);
   }

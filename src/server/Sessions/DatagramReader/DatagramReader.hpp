@@ -15,7 +15,10 @@ namespace rtype::server {
 /**
  * @brief Reads the datagrams of the players of a game: a datagram is readable
  * when its header carries this protocol and version with no flag set, its
- * messages add up to its end, and its sender is in the roster.
+ * messages add up to its end, its sender is in the roster and its sequence is
+ * newer than the newest one accepted from that sender (ArrivalLedger), so a
+ * duplicate or a late datagram is dropped before any of its messages is read.
+ * Reading a datagram records its sequence.
  *
  * A datagram that is not readable is logged with its sender and why at the
  * debug level, at most once per REJECTION_LINE_INTERVAL of ticks counted, with

@@ -9,8 +9,12 @@
 #include "EntitySizeConstants.hpp"
 #include "EntityType.hpp"
 #include "Gun.hpp"
+#include "GunConstants.hpp"
 #include "Health.hpp"
 #include "HealthConstants.hpp"
+#include "Intent.hpp"
+#include "Invulnerable.hpp"
+#include "Lives.hpp"
 #include "MissileConstants.hpp"
 #include "MissileOwner.hpp"
 #include "MovementPattern.hpp"
@@ -25,11 +29,17 @@
 
 namespace rtype::game {
 
-std::uint32_t World::spawnPlayer(Position position) {
+std::uint32_t World::spawnPlayer(Position position, std::uint8_t lives) {
   const std::uint32_t networkId = networkIds_.allocate();
   const engine::Entity ship = registry_.create();
   components_.add(ship, position);
   components_.add(ship, ShipMotion{});
+  components_.add(ship, Intent{});
+  components_.add(ship, Lives{.count = lives});
+  components_.add(ship, Invulnerable{});
+  components_.add(ship, Gun{.intervalTicks = SHOT_INTERVAL_TICKS,
+                            .ticksUntilReady = 0,
+                            .projectile = EntityType::PlayerMissile});
   components_.add(ship,
                   CollisionBox{.width = SHIP_WIDTH, .height = SHIP_HEIGHT});
   components_.add(ship, EntityType::Player);
@@ -62,7 +72,10 @@ std::uint32_t World::spawnBydo(Position position, BydoKind kind) {
   components_.add(bydo, EntityType::Enemy);
   components_.add(bydo, Health{.points = BYDO_HEALTH});
   components_.add(bydo, ScoreValue{.points = pointsOf(kind)});
-  components_.add(bydo, Gun{.ticksSinceLastShot = 0});
+  components_.add(bydo, Intent{});
+  components_.add(bydo, Gun{.intervalTicks = ENEMY_SHOT_INTERVAL_TICKS,
+                            .ticksUntilReady = ENEMY_SHOT_INTERVAL_TICKS,
+                            .projectile = EntityType::EnemyMissile});
   components_.add(bydo, NetworkIdentity{.networkId = networkId});
   return networkId;
 }
@@ -98,19 +111,11 @@ std::size_t World::entityCount() const { return registry_.size(); }
 engine::ComponentRegistry& World::components() { return components_; }
 
 Position* World::shipPositionOf(std::uint32_t shipId) {
-  const std::optional<engine::Entity> ship = shipByNetworkId_.find(shipId);
-  if (!ship.has_value()) {
-    return nullptr;
-  }
-  return components_.get<Position>(*ship);
+  return shipComponentOf<Position>(shipId);
 }
 
 ShipMotion* World::shipMotionOf(std::uint32_t shipId) {
-  const std::optional<engine::Entity> ship = shipByNetworkId_.find(shipId);
-  if (!ship.has_value()) {
-    return nullptr;
-  }
-  return components_.get<ShipMotion>(*ship);
+  return shipComponentOf<ShipMotion>(shipId);
 }
 
 }  // namespace rtype::game

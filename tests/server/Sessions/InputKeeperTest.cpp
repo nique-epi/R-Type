@@ -23,7 +23,7 @@ using testing::SOME_INPUT_NUMBER;
 /**
  * Given a player who sent no input yet
  * When its first input arrives
- * Then it is the newest input of the player
+ * Then its number is the newest input number of the player
  */
 TEST(InputKeeper, KeepsTheFirstInput) {
   PlayerRoster roster;
@@ -33,13 +33,13 @@ TEST(InputKeeper, KeepsTheFirstInput) {
   keeper.keepIfNewer(originOf(0),
                      inputNumbered(SOME_INPUT_NUMBER, SOME_ACTIONS));
 
-  EXPECT_EQ(player.newestInput, inputNumbered(SOME_INPUT_NUMBER, SOME_ACTIONS));
+  EXPECT_EQ(player.newestInputNumber, SOME_INPUT_NUMBER);
 }
 
 /**
  * Given a player whose newest input is numbered 100
  * When an input numbered 101 arrives
- * Then it replaces the newest input
+ * Then its number replaces the newest input number
  */
 TEST(InputKeeper, ReplacesTheNewestInputWithAHigherNumber) {
   PlayerRoster roster;
@@ -51,14 +51,13 @@ TEST(InputKeeper, ReplacesTheNewestInputWithAHigherNumber) {
   keeper.keepIfNewer(originOf(0),
                      inputNumbered(NEWER_INPUT_NUMBER, OTHER_ACTIONS));
 
-  EXPECT_EQ(player.newestInput,
-            inputNumbered(NEWER_INPUT_NUMBER, OTHER_ACTIONS));
+  EXPECT_EQ(player.newestInputNumber, NEWER_INPUT_NUMBER);
 }
 
 /**
  * Given a player whose newest input is numbered 100
  * When an input numbered 99 arrives
- * Then the newest input is unchanged
+ * Then the newest input number is unchanged
  */
 TEST(InputKeeper, IgnoresAnInputWithALowerNumber) {
   PlayerRoster roster;
@@ -70,13 +69,13 @@ TEST(InputKeeper, IgnoresAnInputWithALowerNumber) {
   keeper.keepIfNewer(originOf(0),
                      inputNumbered(OLDER_INPUT_NUMBER, OTHER_ACTIONS));
 
-  EXPECT_EQ(player.newestInput, inputNumbered(SOME_INPUT_NUMBER, SOME_ACTIONS));
+  EXPECT_EQ(player.newestInputNumber, SOME_INPUT_NUMBER);
 }
 
 /**
  * Given a player whose newest input is numbered 100
  * When another input numbered 100 arrives
- * Then the newest input is unchanged
+ * Then the newest input number is unchanged
  */
 TEST(InputKeeper, IgnoresAnInputNumberedLikeTheNewest) {
   PlayerRoster roster;
@@ -88,13 +87,13 @@ TEST(InputKeeper, IgnoresAnInputNumberedLikeTheNewest) {
   keeper.keepIfNewer(originOf(0),
                      inputNumbered(SOME_INPUT_NUMBER, OTHER_ACTIONS));
 
-  EXPECT_EQ(player.newestInput, inputNumbered(SOME_INPUT_NUMBER, SOME_ACTIONS));
+  EXPECT_EQ(player.newestInputNumber, SOME_INPUT_NUMBER);
 }
 
 /**
  * Given a roster without the sender
  * When an input arrives from that sender
- * Then no player keeps it, and the game is not shown it
+ * Then no player keeps its number, and the game is not shown it
  */
 TEST(InputKeeper, IgnoresAnInputFromAnAddressNoPlayerSendsFrom) {
   PlayerRoster roster;
@@ -105,14 +104,14 @@ TEST(InputKeeper, IgnoresAnInputFromAnAddressNoPlayerSendsFrom) {
   keeper.keepIfNewer(originOf(1),
                      inputNumbered(SOME_INPUT_NUMBER, SOME_ACTIONS));
 
-  EXPECT_FALSE(player.newestInput.has_value());
+  EXPECT_FALSE(player.newestInputNumber.has_value());
   EXPECT_TRUE(shown.empty());
 }
 
 /**
  * Given a player whose newest input is numbered 100
  * When an input numbered 101 arrives
- * Then the game is shown that input while the one numbered 100 is still kept
+ * Then the game is shown that input while the number 100 is still kept
  */
 TEST(InputKeeper, ShowsTheGameANewerInputBeforeKeepingIt) {
   PlayerRoster roster;
@@ -128,8 +127,7 @@ TEST(InputKeeper, ShowsTheGameANewerInputBeforeKeepingIt) {
   ASSERT_EQ(shown.size(), 2U);
   EXPECT_EQ(shown.back().input,
             inputNumbered(NEWER_INPUT_NUMBER, OTHER_ACTIONS));
-  EXPECT_EQ(shown.back().keptBefore,
-            inputNumbered(SOME_INPUT_NUMBER, SOME_ACTIONS));
+  EXPECT_EQ(shown.back().numberKeptBefore, SOME_INPUT_NUMBER);
 }
 
 /**

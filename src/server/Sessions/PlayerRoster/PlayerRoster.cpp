@@ -10,6 +10,7 @@
 #include "ConnectedPlayer.hpp"
 #include "ConnectedPlayers.hpp"
 #include "Endpoint.hpp"
+#include "EntityIdConstants.hpp"
 #include "ProtocolConstants.hpp"
 
 namespace rtype::server {
@@ -26,6 +27,18 @@ ConnectedPlayer* PlayerRoster::find(const network::Endpoint& endpoint) {
 ConnectedPlayer* PlayerRoster::findByNumber(std::uint8_t playerNumber) {
   for (std::optional<ConnectedPlayer>& seat : seats_) {
     if (seat.has_value() && seat->playerNumber == playerNumber) {
+      return &seat.value();
+    }
+  }
+  return nullptr;
+}
+
+ConnectedPlayer* PlayerRoster::findByShip(std::uint32_t shipId) {
+  if (shipId == identifiers::NO_ENTITY_ID) {
+    return nullptr;
+  }
+  for (std::optional<ConnectedPlayer>& seat : seats_) {
+    if (seat.has_value() && seat->shipEntityId == shipId) {
       return &seat.value();
     }
   }
@@ -96,8 +109,8 @@ ConnectedPlayer* PlayerRoster::add(const network::Endpoint& endpoint,
                           .endpoint = endpoint,
                           .sessionToken = sessionToken,
                           .nextSequence = 0,
-                          .newestReceivedSequence = std::nullopt,
-                          .newestInput = std::nullopt});
+                          .arrivals = ArrivalLedger{},
+                          .newestInputNumber = std::nullopt});
     }
   }
   return nullptr;

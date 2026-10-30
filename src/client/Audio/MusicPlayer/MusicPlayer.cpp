@@ -32,12 +32,10 @@ sf::Music::TimeSpan loopOf(const MusicTrack& track) {
 
 }  // namespace
 
-MusicPlayer::MusicPlayer(AssetLibrary& library, const SettingsService& settings,
-                         MusicTrack track)
+MusicPlayer::MusicPlayer(const SettingsService& settings, MusicTrack track)
     : settings_(&settings),
       track_(track),
-      logger_(std::string{AUDIO_LOG_MODULE_NAME}),
-      opened_(open(library)) {}
+      logger_(std::string{AUDIO_LOG_MODULE_NAME}) {}
 
 void MusicPlayer::start() {
   if (!opened_ || music_.getStatus() == sf::SoundSource::Status::Playing) {
@@ -66,19 +64,20 @@ std::optional<engine::Duration> MusicPlayer::playingOffset() const {
          track_.firstBeat;
 }
 
-bool MusicPlayer::open(AssetLibrary& library) {
+void MusicPlayer::open(AssetLibrary& library) {
+  opened_ = false;
   if (library.load(AssetKind::Music, track_.assetId) !=
       AssetLoadResult::Loaded) {
     logger_.warn("no music file ", track_.assetId,
                  ": the client plays without it");
-    return false;
+    return;
   }
   if (!music_.openFromFile(library.musicFile(track_.assetId))) {
     logger_.warn("the music file ", track_.assetId,
                  " cannot be read: the client plays without it");
-    return false;
+    return;
   }
-  return true;
+  opened_ = true;
 }
 
 void MusicPlayer::applyVolume() {

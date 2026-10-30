@@ -3,7 +3,6 @@
 #include <cstddef>
 #include <cstdint>
 #include <memory>
-#include "BydoGunner.hpp"
 #include "BydoSpawner.hpp"
 #include "CollisionRules.hpp"
 #include "DamageRules.hpp"
@@ -13,7 +12,7 @@
 #include "IGameReplication.hpp"
 #include "LifeKeeper.hpp"
 #include "Logger.hpp"
-#include "MissileLauncher.hpp"
+#include "WeaponSystem.hpp"
 #include "World.hpp"
 #include "WorldSlot.hpp"
 
@@ -42,17 +41,19 @@ namespace rtype::server {
  * result at the first tick of the end, then every GAME_ENDED_INTERVAL until
  * the game waits for players again; no WorldState goes out meanwhile.
  *
- * While the game is in progress, each tick first moves the ship of every player
- * who sent an input, by the directions its newest input holds (see
- * game::shipAfter), then runs the systems of the world (PatternSystem,
- * MovementSystem, PlayfieldExitSystem, which removes a Bydo or a missile of a
- * Bydo that left on the left, or a missile of a player that left on the right,
- * and announces it on the event bus, then CollisionSystem), then lets the ship
- * of every player whose newest input holds shoot fire a missile, at most one
- * every SHOT_INTERVAL_TICKS ticks (see MissileLauncher), then lets every Bydo
- * fire a missile to the left every ENEMY_SHOT_INTERVAL (see BydoGunner), then
- * lets the Bydos of the current wave appear (see BydoSpawner), then counts the
- * waits and the protections of the lives (see LifeKeeper). The ships and
+ * While the game is in progress, each tick first makes the ship of every away
+ * player want nothing (see silenceAwayShips) and writes the Intent of every
+ * Bydo (see BydoControlSystem, one of the systems of the world), while the
+ * Intent of the ship of a player is its last
+ * input (see steerShipByInput), then runs
+ * the systems of the world (PatternSystem, MovementSystem, PlayfieldExitSystem,
+ * which removes a Bydo or a missile of a Bydo that left on the left, or a
+ * missile of a player that left on the right, and announces it on the event
+ * bus, then CollisionSystem), then fires the Gun of every ship and Bydo whose
+ * Intent wants to shoot: a ship at most one missile every SHOT_INTERVAL_TICKS
+ * ticks, a Bydo one to the left every ENEMY_SHOT_INTERVAL (see WeaponSystem),
+ * then lets the Bydos of the current wave appear (see BydoSpawner), then counts
+ * the waits and the protections of the lives (see LifeKeeper). The ships and
  * the Bydos move and fire in no other state. Each world starts its random draws
  * from a seed of its own, the seed of the game plus the number of worlds built
  * before it, so the seed of the game is enough to replay every world of a
@@ -119,9 +120,10 @@ class GameFlow final : public IGameFlow {
    * @brief Runs one tick: ends a game in progress that no player is left in, or
    * that no player left in has a life, then moves the game along its states.
    * While it waits, the players are told the room; while it is in progress, the
-   * tick is counted, the ships move, the systems run, the ships whose players
-   * hold shoot fire, the Bydos fire, the Bydos appear, the waits and
-   * protections of the lives are counted and the world is sent; while it is
+   * tick is counted, the systems run (they move the ships and the Bydos by
+   * their Intent), every Gun whose Intent wants to shoot fires, the Bydos
+   * appear, the waits and protections of the lives are counted and the world
+   * is sent; while it is
    * finished, the players are told the result.
    */
   void onTick();
@@ -147,10 +149,10 @@ class GameFlow final : public IGameFlow {
 
   /** @brief Builds a new world, and every part of the game that works on one
    * world: the rules that judge its collisions, the spawner of its Bydos, the
-   * launcher of its missiles, the gunner of its Bydos and the keeper of the
-   * lives, after telling the replication about the new world. DamageRules is
-   * built before LifeKeeper, so the bus hands each MissileHit to DamageRules
-   * first (see LifeKeeper). */
+   * weapon system of its missiles and the keeper of the lives, after telling
+   * the replication about the new world. DamageRules is built before
+   * LifeKeeper, so the bus hands each MissileHit to DamageRules first (see
+   * LifeKeeper). */
   void buildWorld();
 
   void startNewWorld();
@@ -159,8 +161,7 @@ class GameFlow final : public IGameFlow {
   WorldSlot& worldSlot_;
   IGameReplication& replication_;
   std::unique_ptr<BydoSpawner> bydoSpawner_;
-  std::unique_ptr<MissileLauncher> missileLauncher_;
-  std::unique_ptr<BydoGunner> bydoGunner_;
+  std::unique_ptr<WeaponSystem> weaponSystem_;
   std::unique_ptr<game::CollisionRules> collisionRules_;
   std::unique_ptr<game::DamageRules> damageRules_;
   std::unique_ptr<LifeKeeper> lifeKeeper_;

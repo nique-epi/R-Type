@@ -28,6 +28,7 @@
 #include "GameState.hpp"
 #include "IGameModule.hpp"
 #include "IncomingDatagram.hpp"
+#include "Intent.hpp"
 #include "LobbyState.hpp"
 #include "MessageType.hpp"
 #include "OutgoingDatagram.hpp"
@@ -129,15 +130,12 @@ ConnectedPlayer& GameInstanceTest::join(std::size_t index,
   ConnectedPlayer* const player = game().roster().add(
       playerEndpoint(index), std::string{PLAYER_NICKNAME}, sessionToken);
   game().onPlayerJoined(*player);
-  livePlayers_.push_back(
-      LivePlayer{.index = index, .sessionToken = sessionToken});
+  livePlayers_.push_back(index);
   return *player;
 }
 
 void GameInstanceTest::silence(std::size_t index) {
-  std::erase_if(livePlayers_, [index](const LivePlayer& player) {
-    return player.index == index;
-  });
+  std::erase(livePlayers_, index);
 }
 
 void GameInstanceTest::leave(std::size_t index) {
@@ -146,8 +144,10 @@ void GameInstanceTest::leave(std::size_t index) {
 }
 
 void GameInstanceTest::queueDisconnectionFrom(std::size_t index) {
-  queue(network::IncomingDatagram{.sender = playerEndpoint(index),
-                                  .payload = disconnectionDatagram()});
+  queue(network::IncomingDatagram{
+      .sender = playerEndpoint(index),
+      .payload = disconnectionDatagram(
+          network::PacketHeader{.sequence = DISCONNECTION_SEQUENCE})});
 }
 
 engine::TimerScheduler& GameInstanceTest::timers() { return timers_; }
@@ -184,11 +184,12 @@ void GameInstanceTest::queue(network::IncomingDatagram datagram) {
 }
 
 void GameInstanceTest::tick() {
-  for (const LivePlayer& player : livePlayers_) {
-    network::PacketHeader header;
-    header.sessionToken = player.sessionToken;
-    queue(network::IncomingDatagram{.sender = playerEndpoint(player.index),
-                                    .payload = heartbeatDatagram(header)});
+  for (const std::size_t index : livePlayers_) {
+    ConnectedPlayer* const player = game().roster().find(playerEndpoint(index));
+    if (player != nullptr) {
+      player->ticksSinceReceived = 0;
+      player->away = false;
+    }
   }
   game().onTick(incoming_);
   incoming_.clear();
@@ -244,10 +245,13 @@ std::vector<std::byte> GameInstanceInputTest::nextInputDatagram(
     std::size_t player, std::uint8_t actions,
     const network::PacketHeader& header) {
   ++inputsSent_.at(player);
+  network::PacketHeader numbered = header;
+  numbered.sequence =
+      static_cast<std::uint16_t>(LAST_READY_SEQUENCE + inputsSent_.at(player));
   return inputDatagram(
       network::PlayerInput{.inputNumber = inputsSent_.at(player),
                            .actions = actions},
-      header);
+      numbered);
 }
 
 void GameInstanceInputTest::send(std::size_t player, std::uint8_t actions) {
@@ -289,7 +293,7 @@ std::uint32_t GameInstanceInputTest::lastInputNumber(std::size_t player) const {
   return inputsSent_.at(player);
 }
 
-std::optional<network::PlayerInput> GameInstanceInputTest::newestInputOf(
+std::optional<std::uint32_t> GameInstanceInputTest::newestInputNumberOf(
     std::size_t player) {
   const ConnectedPlayer* const connected =
       game().roster().find(playerEndpoint(player));
@@ -297,16 +301,39 @@ std::optional<network::PlayerInput> GameInstanceInputTest::newestInputOf(
     ADD_FAILURE() << "player " << player << " is not in the roster";
     return std::nullopt;
   }
-  return connected->newestInput;
+  return connected->newestInputNumber;
 }
 
 std::optional<std::uint8_t> GameInstanceInputTest::heldActions(
     std::size_t player) {
-  const std::optional<network::PlayerInput> newest = newestInputOf(player);
-  if (!newest.has_value()) {
+  if (!newestInputNumberOf(player).has_value()) {
     return std::nullopt;
   }
-  return newest->actions;
+  const ConnectedPlayer* const connected =
+      game().roster().find(playerEndpoint(player));
+  const game::Intent* const intent =
+      world().shipComponentOf<game::Intent>(connected->shipEntityId);
+  if (intent == nullptr) {
+    ADD_FAILURE() << "player " << player << " has no ship";
+    return std::nullopt;
+  }
+  unsigned int actions = 0U;
+  if (intent->directions.up) {
+    actions |= static_cast<unsigned int>(HOLDS_UP);
+  }
+  if (intent->directions.down) {
+    actions |= static_cast<unsigned int>(HOLDS_DOWN);
+  }
+  if (intent->directions.left) {
+    actions |= static_cast<unsigned int>(HOLDS_LEFT);
+  }
+  if (intent->directions.right) {
+    actions |= static_cast<unsigned int>(HOLDS_RIGHT);
+  }
+  if (intent->shooting) {
+    actions |= static_cast<unsigned int>(HOLDS_SHOOT);
+  }
+  return static_cast<std::uint8_t>(actions);
 }
 
 const UnreliableNetwork& GameInstanceInputTest::network() const {
