@@ -9,12 +9,14 @@
 #include "Logger.hpp"
 #include "PlayerSettings.hpp"
 #include "SettingsFile.hpp"
+#include "SettingsService.hpp"
 
 namespace rtype::client {
 
 /**
  * @brief The module of the settings of the player: the PlayerSettings every
- * module reads, and the ISettingsStorage the options screen saves them to.
+ * module reads, and the SettingsService every module changes them through,
+ * which saves them to the settings file.
  *
  * install() provides both, the settings still at their defaults. start()
  * writes the settings file in the journal, or that the system tells no
@@ -45,6 +47,7 @@ class ClientSettingsModule final : public engine::IModule {
   std::optional<std::filesystem::path> file_;
   SettingsFile storage_;
   PlayerSettings settings_;
+  SettingsService service_;
   logging::Logger logger_;
 };
 

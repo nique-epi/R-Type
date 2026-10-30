@@ -37,8 +37,8 @@ class IAudioService {
    * without file stays silent. */
   virtual void open() = 0;
 
-  /** @brief Called each frame: the volumes follow the settings, and the
-   * silence before the music of a game moves on by @p elapsed. */
+  /** @brief Called each frame: the silence before the music of a game moves
+   * on by @p elapsed. */
   virtual void update(engine::Duration elapsed) = 0;
 };
 

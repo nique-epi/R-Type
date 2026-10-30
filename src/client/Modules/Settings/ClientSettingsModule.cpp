@@ -5,13 +5,13 @@
 #include <vector>
 #include "AssetIds.hpp"
 #include "ClientConstants.hpp"
-#include "ISettingsStorage.hpp"
 #include "InstallContext.hpp"
 #include "ModuleConstants.hpp"
 #include "PlayerSettings.hpp"
 #include "ReducedMotion.hpp"
 #include "SettingsConstants.hpp"
 #include "SettingsFolder.hpp"
+#include "SettingsService.hpp"
 
 namespace rtype::client {
 
@@ -40,6 +40,7 @@ std::optional<std::filesystem::path> settingsFileLocation() {
 ClientSettingsModule::ClientSettingsModule()
     : file_(settingsFileLocation()),
       storage_(file_),
+      service_(settings_, storage_),
       logger_(std::string{CLIENT_LOGGER_NAME}) {}
 
 std::string ClientSettingsModule::name() const {
@@ -52,7 +53,7 @@ std::vector<std::string> ClientSettingsModule::dependencies() const {
 
 void ClientSettingsModule::install(engine::InstallContext& context) {
   context.provide(settings_);
-  context.provide<ISettingsStorage>(storage_);
+  context.provide(service_);
 }
 
 void ClientSettingsModule::start() {

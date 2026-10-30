@@ -6,7 +6,7 @@ target_link_libraries(rtype_client_audio_module
   PUBLIC
     rtype_client_asset_library
     rtype_client_audio_interfaces
-    rtype_client_settings
+    rtype_client_settings_service
     rtype_engine_modules
     rtype_logging
   PRIVATE

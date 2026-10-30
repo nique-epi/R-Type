@@ -9,7 +9,7 @@
 #include "IAudioService.hpp"
 #include "InstallContext.hpp"
 #include "ModuleConstants.hpp"
-#include "PlayerSettings.hpp"
+#include "SettingsService.hpp"
 #include "SilentAudioService.hpp"
 #include "TimeConstants.hpp"
 
@@ -29,7 +29,7 @@ std::vector<std::string> ClientAudioModule::dependencies() const {
 void ClientAudioModule::install(engine::InstallContext& context) {
   if (mode_ == AudioMode::Enabled) {
     service_ = std::make_unique<AudioService>(
-        context.require<AssetLibrary>(), context.require<PlayerSettings>());
+        context.require<AssetLibrary>(), context.require<SettingsService>());
   } else {
     service_ = std::make_unique<SilentAudioService>();
   }

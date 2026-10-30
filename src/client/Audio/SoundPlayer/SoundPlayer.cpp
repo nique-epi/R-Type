@@ -9,27 +9,35 @@
 #include "AssetLibrary.hpp"
 #include "AudioConstants.hpp"
 #include "AudioVolume.hpp"
-#include "PlayerSettings.hpp"
+#include "SettingId.hpp"
+#include "SettingsService.hpp"
 #include "VoiceChoice.hpp"
 #include "VoiceState.hpp"
 
 namespace rtype::client {
 
 SoundPlayer::SoundPlayer(const AssetLibrary& library,
-                         const PlayerSettings& settings)
-    : library_(&library), settings_(&settings) {
+                         const SettingsService& settings)
+    : library_(&library),
+      settings_(&settings),
+      volume_(effectsVolumeOf(settings.settings())) {
   voices_.reserve(SOUND_VOICE_LIMIT);
   startRanks_.reserve(SOUND_VOICE_LIMIT);
 }
 
 void SoundPlayer::play(std::string_view soundId) {
-  const float volume = effectsVolumeOf(*settings_);
-  if (volume <= 0.0F) {
+  if (volume_ <= 0.0F) {
     return;
   }
   sf::Sound& voice = voiceFor(library_->sound(soundId));
-  voice.setVolume(volume);
+  voice.setVolume(volume_);
   voice.play();
+}
+
+void SoundPlayer::settingChanged(SettingId changed) {
+  if (changesEffectsVolume(changed)) {
+    volume_ = effectsVolumeOf(settings_->settings());
+  }
 }
 
 std::array<VoiceState, SOUND_VOICE_LIMIT> SoundPlayer::voiceStates() const {

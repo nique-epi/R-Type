@@ -172,8 +172,7 @@ std::unique_ptr<IScreen> ScreenCatalog::optionsScreen(ScreenId screen) {
                          .place = screen == ScreenId::GameOptions
                                       ? OptionsPlace::OverGame
                                       : OptionsPlace::OverTitle,
-                         .settings = parts_.services.settings.get(),
-                         .storage = parts_.services.storage.get(),
+                         .settings = parts_.services.settingsService.get(),
                          .window = parts_.services.window.get(),
                          .keyName = localizedKeyName,
                          .playfieldPointAt = playfieldMapping()},

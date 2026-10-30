@@ -14,11 +14,11 @@
 #include "FrameLoop.hpp"
 #include "GameWindow.hpp"
 #include "IAudioService.hpp"
-#include "ISettingsStorage.hpp"
 #include "InstallContext.hpp"
 #include "ModuleConstants.hpp"
 #include "PlayerSettings.hpp"
 #include "ServerConnection.hpp"
+#include "SettingsService.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::client {
@@ -39,7 +39,7 @@ std::vector<std::string> ClientScreensModule::dependencies() const {
 
 void ClientScreensModule::install(engine::InstallContext& context) {
   settings_ = &context.require<PlayerSettings>();
-  storage_ = &context.require<ISettingsStorage>();
+  settingsService_ = &context.require<SettingsService>();
   assets_ = &context.require<AssetLibrary>();
   audio_ = &context.require<IAudioService>();
   window_ = &context.require<GameWindow>();
@@ -57,7 +57,7 @@ void ClientScreensModule::install(engine::InstallContext& context) {
 void ClientScreensModule::start() {
   screens_ = std::make_unique<ClientScreens>(
       ClientScreensParts{.settings = *settings_,
-                         .storage = *storage_,
+                         .settingsService = *settingsService_,
                          .assets = *assets_,
                          .audio = *audio_,
                          .window = *window_,

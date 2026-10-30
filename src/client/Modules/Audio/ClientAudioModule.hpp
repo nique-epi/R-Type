@@ -18,8 +18,8 @@ namespace rtype::client {
  *
  * install() builds the service, the one that plays for AudioMode::Enabled and
  * the one that plays nothing for AudioMode::Disabled, provides it, and adds
- * its work to UPDATE_STAGE, before the screens: the volumes follow the
- * settings and the silence before the music of a game moves on. start()
+ * its work to UPDATE_STAGE, before the screens: the silence before the music
+ * of a game moves on. The volumes follow the settings service. start()
  * opens the music files, or writes in the journal that the client runs
  * without sound. Nothing stays open after stop(): the music stops when the
  * module is destroyed, after every screen.
