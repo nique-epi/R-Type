@@ -1523,6 +1523,73 @@ TEST_F(ServerConnectionFixture, StaysLostWhenALateAcceptanceArrives) {
 }
 
 /**
+ * Given a game lost to the silence of its server
+ * When the server comes back from a stall and a WorldState of the lost session
+ * arrives
+ * Then the connection hands nothing over: the client left that game
+ */
+TEST_F(ServerConnectionFixture, KeepsNothingFromAServerThatComesBack) {
+  accept();
+  deliverInSession(network::GameStarted{}, FIRST_SEQUENCE);
+  update();
+  update(PROTOCOL_SILENCE_LIMIT);
+
+  deliverWorldStateInSession(
+      stateListing(APPLIED_TICK,
+                   {listed(SHIP_ID, network::WireEntityType::PlayerShip,
+                           FIRST_POSITION)}),
+      SECOND_SEQUENCE);
+  update();
+
+  EXPECT_THAT(drainedEntityMessages(), IsEmpty());
+}
+
+/**
+ * Given a waiting room lost to the silence of its server
+ * When the server comes back from a stall and a LobbyState of the lost session
+ * arrives
+ * Then the room stays empty: the client left that room
+ */
+TEST_F(ServerConnectionFixture, ShowsNoRoomFromAServerThatComesBack) {
+  accept();
+  update(PROTOCOL_SILENCE_LIMIT);
+
+  deliverInSession(
+      network::LobbyState{
+          .players = {{.playerNumber = ACCEPTED_PLAYER_NUMBER,
+                       .ready = false,
+                       .nickname = std::string{NICKNAME}},
+                      {.playerNumber = OTHER_PLAYER_NUMBER,
+                       .ready = false,
+                       .nickname = std::string{OTHER_NICKNAME}}}},
+      FIRST_SEQUENCE);
+  update();
+
+  EXPECT_THAT(connection().lobbyPlayers(), IsEmpty());
+}
+
+/**
+ * Given a game lost to the silence of its server
+ * When the server comes back from a stall with a WorldState, the game screen
+ * sends its input, then a heartbeat interval passes
+ * Then nothing goes to the server, which closes the session as timed out
+ */
+TEST_F(ServerConnectionFixture, SendsNothingToAServerThatComesBack) {
+  accept();
+  deliverInSession(network::GameStarted{}, FIRST_SEQUENCE);
+  update();
+  update(PROTOCOL_SILENCE_LIMIT);
+  const std::size_t sentWhenLost = sent().size();
+
+  deliverWorldStateInSession(stateListing(APPLIED_TICK, {}), SECOND_SEQUENCE);
+  update();
+  connection().sendPlayerInput(upHeld());
+  update(PROTOCOL_HEARTBEAT_INTERVAL);
+
+  EXPECT_EQ(sent().size(), sentWhenLost);
+}
+
+/**
  * Given a session the server opened, then sent nothing more
  * When the silence limit passes
  * Then the journal names the server and the delay it stayed silent for
