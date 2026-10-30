@@ -31,7 +31,7 @@ The repository builds three programs on six libraries. Programs link libraries, 
 
 Ask the questions in order. The first "yes" decides.
 
-| | Question | If yes |
+| Order | Question | If yes |
 |---|---|---|
 | 1 | Does it draw, play a sound or read the keyboard or a gamepad? | `src/client` |
 | 2 | Is it a message two programs exchange, or code that encodes or transports messages? | `src/network` |
@@ -249,6 +249,8 @@ This is the path the design aims for, and only its server half runs today. The i
 
 ```mermaid
 sequenceDiagram
+  accTitle: A key press, from client A to client B
+  accDescr: Client A moves its ship at once and sends its inputs to the server network thread, which queues them for the game thread. The game thread runs a tick and hands a snapshot to the network thread, which sends it to client A, who corrects its ship, and to client B, who draws the ship of A.
   participant A as Client A
   participant N as Server network thread
   participant G as Server game thread
