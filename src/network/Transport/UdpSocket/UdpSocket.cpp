@@ -13,6 +13,7 @@
 #include <system_error>
 #include <utility>
 #include <vector>
+#include "AsioEndpoint.hpp"
 #include "Endpoint.hpp"
 #include "IDatagramSocket.hpp"
 #include "Logger.hpp"
@@ -24,20 +25,6 @@
 namespace rtype::network {
 
 namespace {
-
-/**
- * @throws InvalidAddressException when the address of @p endpoint is not an
- *         IP address.
- */
-asio::ip::udp::endpoint toAsioEndpoint(const Endpoint& endpoint) {
-  std::error_code error;
-  const asio::ip::address address =
-      asio::ip::make_address(endpoint.address, error);
-  if (error) {
-    throw InvalidAddressException(endpoint.address);
-  }
-  return {address, endpoint.port};
-}
 
 Endpoint toEndpoint(const asio::ip::udp::endpoint& endpoint) {
   return Endpoint{.address = endpoint.address().to_string(),

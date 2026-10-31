@@ -1,25 +1,16 @@
 #include "EndpointText.hpp"
 #include <algorithm>
-#include <charconv>
 #include <cstddef>
 #include <cstdint>
 #include <string>
 #include <string_view>
-#include <system_error>
 #include "NetworkConstants.hpp"
 #include "NetworkException.hpp"
+#include "WholeNumberText.hpp"
 
 namespace rtype::network {
 
 namespace {
-
-template <class Number>
-bool readsWholeNumber(std::string_view text, Number& number) {
-  const char* const begin = text.data();
-  const char* const end = begin + text.size();
-  const auto [parsedEnd, error] = std::from_chars(begin, end, number);
-  return error == std::errc{} && parsedEnd == end;
-}
 
 bool isIpv4AddressPart(std::string_view part) {
   if (part.size() > 1 && part.front() == '0') {
