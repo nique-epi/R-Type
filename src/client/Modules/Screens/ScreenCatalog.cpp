@@ -7,6 +7,8 @@
 #include "AssetList.hpp"
 #include "ConnectionScreen.hpp"
 #include "ConnectionScreenParts.hpp"
+#include "DialogMenus.hpp"
+#include "DialogScreen.hpp"
 #include "EndScreen.hpp"
 #include "EndScreenParts.hpp"
 #include "EntityLayer.hpp"
@@ -24,6 +26,7 @@
 #include "LobbyScreen.hpp"
 #include "LobbyScreenParts.hpp"
 #include "LocalizedKeyName.hpp"
+#include "Menu.hpp"
 #include "MotionPreference.hpp"
 #include "OptionsPlace.hpp"
 #include "OptionsScreen.hpp"
@@ -31,8 +34,6 @@
 #include "PlayerPreferences.hpp"
 #include "PlayerSettings.hpp"
 #include "PlayfieldMapping.hpp"
-#include "QuitConfirmationScreen.hpp"
-#include "QuitConfirmationScreenParts.hpp"
 #include "ReducedMotion.hpp"
 #include "ScreenAssets.hpp"
 #include "ScreenCatalogParts.hpp"
@@ -53,6 +54,33 @@ MotionPreference motionPreference() {
                                       : MotionPreference::Full;
 }
 
+/** @returns A new picture for a menu, written with the fonts of the asset
+ * library. */
+std::unique_ptr<IInterfaceCanvas> interfaceCanvas(
+    const ScreenCatalogParts& parts) {
+  return std::make_unique<InterfaceCanvas>(parts.services.assets.get());
+}
+
+/** @returns The player of the short sounds of the audio service. */
+ISoundPlayer& sounds(const ScreenCatalogParts& parts) {
+  return parts.services.audio.get().sounds();
+}
+
+/** @returns What gives the point of the playfield under a pixel of the
+ * window. */
+PlayfieldMapping playfieldMapping(const ScreenCatalogParts& parts) {
+  const GameWindow& window = parts.services.window.get();
+  return
+      [&window](sf::Vector2i pixel) { return window.playfieldPointAt(pixel); };
+}
+
+/** @returns A dialog screen that shows @p menu. */
+std::unique_ptr<IScreen> dialogScreen(const ScreenCatalogParts& parts,
+                                      Menu menu) {
+  return std::make_unique<DialogScreen>(
+      std::move(menu), playfieldMapping(parts), interfaceCanvas(parts));
+}
+
 }  // namespace
 
 ScreenCatalog::ScreenCatalog(ScreenCatalogParts parts)
@@ -66,14 +94,7 @@ ScreenId ScreenCatalog::firstScreen() {
 std::unique_ptr<IScreen> ScreenCatalog::create(ScreenId screen) {
   switch (screen) {
     case ScreenId::Intro:
-      return std::make_unique<IntroScreen>(
-          IntroScreenParts{.navigator = parts_.navigator.get(),
-                           .settings = parts_.services.settings.get(),
-                           .sky = parts_.sky.get(),
-                           .sounds = sounds(),
-                           .music = parts_.services.audio.get().theme(),
-                           .seed = std::random_device{}()},
-          interfaceCanvas());
+      return introScreen();
     case ScreenId::Title:
     case ScreenId::TitleAfterIntro:
       return titleScreen(screen);
@@ -83,45 +104,64 @@ std::unique_ptr<IScreen> ScreenCatalog::create(ScreenId screen) {
     case ScreenId::GameOptions:
       return optionsScreen(screen);
     case ScreenId::QuitConfirmation:
-      return std::make_unique<QuitConfirmationScreen>(
-          QuitConfirmationScreenParts{.navigator = parts_.navigator.get(),
-                                      .sounds = sounds(),
-                                      .playfieldPointAt = playfieldMapping()},
-          interfaceCanvas());
+      return dialogScreen(
+          parts_, quitConfirmationMenu(parts_.navigator.get(), sounds(parts_)));
     case ScreenId::Connection:
-      return std::make_unique<ConnectionScreen>(
-          ConnectionScreenParts{.navigator = parts_.navigator.get(),
-                                .sounds = sounds(),
-                                .connection = parts_.services.connection.get(),
-                                .playfieldPointAt = playfieldMapping(),
-                                .server = parts_.services.server,
-                                .nickname = parts_.services.nickname},
-          interfaceCanvas());
+      return connectionScreen();
     case ScreenId::Lobby:
     case ScreenId::LobbyAfterGame:
       return lobbyScreen(screen);
-    case ScreenId::End: {
-      std::unique_ptr<IScreen> loading =
-          loadingScreenUnlessLoaded(gameAssets(), screen);
-      if (loading != nullptr) {
-        return loading;
-      }
-      const PlayerSettings& settings = parts_.services.settings.get();
-      return std::make_unique<EndScreen>(
-          EndScreenParts{.navigator = parts_.navigator.get(),
-                         .sounds = sounds(),
-                         .connection = parts_.services.connection.get(),
-                         .result = parts_.gameResult.get(),
-                         .previousTaunt = parts_.previousTaunt.get(),
-                         .playfieldPointAt = playfieldMapping(),
-                         .seed = std::random_device{}(),
-                         .motion = motionPreference(),
-                         .flashes = flashPreferenceOf(settings),
-                         .palette = playerPaletteOf(settings)},
-          interfaceCanvas());
-    }
+    case ScreenId::ConnectionLost:
+      return dialogScreen(
+          parts_,
+          connectionLostMenu(parts_.navigator.get(), sounds(parts_),
+                             parts_.services.connection.get().status().phase));
+    case ScreenId::End:
+      return endScreen();
   }
   return nullptr;
+}
+
+std::unique_ptr<IScreen> ScreenCatalog::introScreen() const {
+  return std::make_unique<IntroScreen>(
+      IntroScreenParts{.navigator = parts_.navigator.get(),
+                       .settings = parts_.services.settings.get(),
+                       .sky = parts_.sky.get(),
+                       .sounds = sounds(parts_),
+                       .music = parts_.services.audio.get().theme(),
+                       .seed = std::random_device{}()},
+      interfaceCanvas(parts_));
+}
+
+std::unique_ptr<IScreen> ScreenCatalog::connectionScreen() const {
+  return std::make_unique<ConnectionScreen>(
+      ConnectionScreenParts{.navigator = parts_.navigator.get(),
+                            .sounds = sounds(parts_),
+                            .connection = parts_.services.connection.get(),
+                            .playfieldPointAt = playfieldMapping(parts_),
+                            .choice = parts_.serverChoice.get()},
+      interfaceCanvas(parts_));
+}
+
+std::unique_ptr<IScreen> ScreenCatalog::endScreen() const {
+  std::unique_ptr<IScreen> loading =
+      loadingScreenUnlessLoaded(gameAssets(), ScreenId::End);
+  if (loading != nullptr) {
+    return loading;
+  }
+  const PlayerSettings& settings = parts_.services.settings.get();
+  return std::make_unique<EndScreen>(
+      EndScreenParts{.navigator = parts_.navigator.get(),
+                     .sounds = sounds(parts_),
+                     .connection = parts_.services.connection.get(),
+                     .result = parts_.gameResult.get(),
+                     .previousTaunt = parts_.previousTaunt.get(),
+                     .playfieldPointAt = playfieldMapping(parts_),
+                     .seed = std::random_device{}(),
+                     .motion = motionPreference(),
+                     .flashes = flashPreferenceOf(settings),
+                     .palette = playerPaletteOf(settings)},
+      interfaceCanvas(parts_));
 }
 
 std::unique_ptr<IScreen> ScreenCatalog::titleScreen(ScreenId screen) {
@@ -133,15 +173,15 @@ std::unique_ptr<IScreen> ScreenCatalog::titleScreen(ScreenId screen) {
   }
   return std::make_unique<TitleScreen>(
       TitleScreenParts{.navigator = parts_.navigator.get(),
-                       .sounds = sounds(),
+                       .sounds = sounds(parts_),
                        .settings = parts_.services.settings.get(),
-                       .playfieldPointAt = playfieldMapping(),
+                       .playfieldPointAt = playfieldMapping(parts_),
                        .motion = motionPreference(),
                        .seed = std::random_device{}(),
                        .squadronStart = screen == ScreenId::TitleAfterIntro
                                             ? SquadronStart::InPlace
                                             : SquadronStart::FlyingIn},
-      interfaceCanvas());
+      interfaceCanvas(parts_));
 }
 
 std::unique_ptr<IScreen> ScreenCatalog::gameScreen() {
@@ -159,16 +199,16 @@ std::unique_ptr<IScreen> ScreenCatalog::gameScreen() {
                       .entityMessages = connection,
                       .connection = connection,
                       .sky = parts_.sky.get(),
-                      .sounds = sounds(),
+                      .sounds = sounds(parts_),
                       .result = parts_.gameResult.get()},
       std::make_unique<EntityLayer>(parts_.services.assets.get()),
-      interfaceCanvas());
+      interfaceCanvas(parts_));
 }
 
 std::unique_ptr<IScreen> ScreenCatalog::optionsScreen(ScreenId screen) {
   return std::make_unique<OptionsScreen>(
       OptionsScreenParts{.navigator = parts_.navigator.get(),
-                         .sounds = sounds(),
+                         .sounds = sounds(parts_),
                          .place = screen == ScreenId::GameOptions
                                       ? OptionsPlace::OverGame
                                       : OptionsPlace::OverTitle,
@@ -176,8 +216,8 @@ std::unique_ptr<IScreen> ScreenCatalog::optionsScreen(ScreenId screen) {
                          .storage = parts_.services.storage.get(),
                          .window = parts_.services.window.get(),
                          .keyName = localizedKeyName,
-                         .playfieldPointAt = playfieldMapping()},
-      interfaceCanvas());
+                         .playfieldPointAt = playfieldMapping(parts_)},
+      interfaceCanvas(parts_));
 }
 
 std::unique_ptr<IScreen> ScreenCatalog::lobbyScreen(ScreenId screen) {
@@ -188,16 +228,16 @@ std::unique_ptr<IScreen> ScreenCatalog::lobbyScreen(ScreenId screen) {
   const PlayerSettings& settings = parts_.services.settings.get();
   return std::make_unique<LobbyScreen>(
       LobbyScreenParts{.navigator = parts_.navigator.get(),
-                       .sounds = sounds(),
+                       .sounds = sounds(parts_),
                        .connection = parts_.services.connection.get(),
-                       .playfieldPointAt = playfieldMapping(),
+                       .playfieldPointAt = playfieldMapping(parts_),
                        .keys = settings.keys,
                        .keyName = localizedKeyName,
                        .palette = playerPaletteOf(settings),
                        .motion = motionPreference(),
                        .place = afterGame ? LobbyPlace::AfterGame
                                           : LobbyPlace::AfterConnection},
-      interfaceCanvas());
+      interfaceCanvas(parts_));
 }
 
 std::unique_ptr<IScreen> ScreenCatalog::loadingScreenUnlessLoaded(
@@ -209,20 +249,6 @@ std::unique_ptr<IScreen> ScreenCatalog::loadingScreenUnlessLoaded(
   }
   library.releaseAllExcept(assets);
   return nullptr;
-}
-
-std::unique_ptr<IInterfaceCanvas> ScreenCatalog::interfaceCanvas() const {
-  return std::make_unique<InterfaceCanvas>(parts_.services.assets.get());
-}
-
-ISoundPlayer& ScreenCatalog::sounds() const {
-  return parts_.services.audio.get().sounds();
-}
-
-PlayfieldMapping ScreenCatalog::playfieldMapping() const {
-  const GameWindow& window = parts_.services.window.get();
-  return
-      [&window](sf::Vector2i pixel) { return window.playfieldPointAt(pixel); };
 }
 
 }  // namespace rtype::client

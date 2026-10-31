@@ -57,12 +57,10 @@ constexpr engine::Duration LEADER_TIME = std::chrono::milliseconds(250);
 constexpr engine::Duration ROW_COUNT_TIME = std::chrono::milliseconds(450);
 constexpr engine::Duration MEDAL_TIME = std::chrono::milliseconds(400);
 
-/** @brief The call to play again, typed after the last row, then blinking:
- * shown BLINK_STEPS - 1 steps, hidden one. */
+/** @brief The call to play again starts PROMPT_DELAY after the last row; its
+ * letters and its blinking are those of every call (GlowingCallConstants.hpp).
+ */
 constexpr engine::Duration PROMPT_DELAY = std::chrono::milliseconds(200);
-constexpr engine::Duration PROMPT_LETTER_TIME = std::chrono::milliseconds(20);
-constexpr engine::Duration BLINK_STEP = std::chrono::milliseconds(300);
-constexpr std::int64_t BLINK_STEPS = 3;
 
 /** @brief After a choice, the book closes, then slides off to the right
  * (PLAY AGAIN) or falls off (QUIT). */
