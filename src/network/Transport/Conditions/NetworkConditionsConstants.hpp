@@ -71,8 +71,12 @@ constexpr NetworkConditions BAD_NETWORK{.lag = std::chrono::milliseconds{300},
                                         .duplicatePercent = 2,
                                         .reorderPercent = 5};
 
-/** @brief Every scenario `--network` knows, in the order the usage lists
- * them. */
+/**
+ * @brief Every scenario `--network` knows, in the order the usage lists them.
+ * SCENARIOS in tests/tools/network-conditions/conditions.sh lists them too, for
+ * the scripts that apply them from the system, and the test
+ * network_condition_scenarios checks that both agree.
+ */
 constexpr std::array NETWORK_SCENARIOS{
     NetworkScenario{.name = MOBILE_4G_SCENARIO_NAME,
                     .conditions = MOBILE_4G_NETWORK},
