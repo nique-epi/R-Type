@@ -32,6 +32,7 @@
 #include "IDatagramLink.hpp"
 #include "IncomingDatagram.hpp"
 #include "LobbyState.hpp"
+#include "MessageDispatcher.hpp"
 #include "MessageFrame.hpp"
 #include "MessageOrigin.hpp"
 #include "MessageType.hpp"
