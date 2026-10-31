@@ -150,7 +150,7 @@ Alternative considered: peer to peer, with every peer running the game. It needs
 
 - **Losses.** Nothing is guaranteed in version 1. State messages repeat what they say, so they correct themselves; the messages that show something once are sent three times, 50 ms apart. If all three copies are lost, a sound or an effect is missed, and lives, scores and players stay right through the states (see [Losses](/R-Type/protocol/#losses)).
 - **Latency.** The client neither predicts its own ship nor interpolates the others: it draws what the last state says, so a key shows after a round trip plus up to one state interval (50 ms at 20 states per second), and a ship moves at the pace of the states.
-- **Measures.** The rates and delays are **provisional**. The only capture is a local game: no loss, no latency, and the network simulator that would add them does not exist yet (see [Network](/R-Type/network/)).
+- **Measures.** The rates and delays are **provisional**. The only capture is a local game, with no loss and no latency. The network simulator now adds them on demand (see [Network simulator](/R-Type/network/#network-simulator-simulatednetworksocket)), but no measurement has been taken with it yet.
 
 The second part answers each point (see [Version 2](/R-Type/protocol/#version-2)): guaranteed messages replace the three copies, an input is repeated until the server confirms it, and the state confirms the last input applied, which is what lets the client replay its newest inputs on top of a state and correct its ship. Prediction and interpolation themselves are client work, placed in `client/Prediction` (see [Project layout](/R-Type/project-layout/)).
 

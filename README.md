@@ -62,7 +62,15 @@ The server reads the waves of Bydos from `assets/waves/waves.toml` in the folder
 
 The client is given the IPv4 address and the port of the server, `127.0.0.1` and 4242 by default, and the nickname of the player, `PILOT` by default; its connection screen starts with them. CONNECT on that screen joins the server, so start the server first: without one, the screen shows `SERVER UNREACHABLE` after 5 seconds.
 
-`--no-sound` starts the client without sound: the screens and the volumes work as usual, and nothing plays. `--help` prints the options of either program. An invalid argument stops it with a message and exit code 1.
+`--no-sound` starts the client without sound: the screens and the volumes work as usual, and nothing plays.
+
+```bash
+./r-type_client --network bad
+```
+
+The client's datagrams cross a simulated bad network: 300 ms more ping, 10 % of the datagrams lost, some doubled or out of order. Both programs take `--network` with `4g`, `wifi-busy` or `bad`, and `--lag`, `--jitter`, `--loss`, `--duplicates` and `--reorder` to set one value; the journal warns that the network is simulated (see [the network page](https://nique-epi.github.io/R-Type/network/)).
+
+`--help` prints the options of either program. An invalid argument stops it with a message and exit code 1.
 
 ## Tests
 
