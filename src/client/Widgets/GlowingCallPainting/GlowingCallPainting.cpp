@@ -47,6 +47,14 @@ bool isBlinkedOut(const GlowingCall& call, std::size_t letters) {
                         CALL_BLINK_STEPS - 1;
 }
 
+/** @returns How many letters of @p call are written now: the letters typed so
+ * far, or 0 before the first one and while the call blinks out. */
+std::size_t lettersShownOf(const GlowingCall& call) {
+  const std::size_t letters = lettersTypedAt(call.sinceTyping, CALL_LETTER_TIME,
+                                             letterCountOf(call.text));
+  return isBlinkedOut(call, letters) ? 0 : letters;
+}
+
 /** @returns The offsets of a glow of @p radius around a letter: every offset
  * at most @p radius steps away along the grid, the letter itself left out. */
 std::vector<sf::Vector2i> glowOffsetsOf(int radius) {
@@ -79,12 +87,6 @@ void paintGlowingCall(IInterfaceCanvas& canvas, const GlowingCall& call) {
                  {.font = TextFont::Regular, .color = colors.around});
   }
   canvas.write(shown, anchor, {.font = TextFont::Regular, .color = colors.ink});
-}
-
-std::size_t lettersShownOf(const GlowingCall& call) {
-  const std::size_t letters = lettersTypedAt(call.sinceTyping, CALL_LETTER_TIME,
-                                             letterCountOf(call.text));
-  return isBlinkedOut(call, letters) ? 0 : letters;
 }
 
 engine::Duration callTypingTimeOf(std::string_view text) {

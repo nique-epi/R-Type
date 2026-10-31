@@ -1,6 +1,5 @@
 #pragma once
 
-#include <cstddef>
 #include <string_view>
 #include "GlowingCall.hpp"
 #include "TimeConstants.hpp"
@@ -19,12 +18,6 @@ class IInterfaceCanvas;
  * is written before its first letter.
  */
 void paintGlowingCall(IInterfaceCanvas& canvas, const GlowingCall& call);
-
-/** @returns How many letters of @p call paintGlowingCall() writes now: the
- * letters typed so far, or 0 before the first one and while the call blinks
- * out. Two calls that show as many letters in the same state paint the same
- * picture. */
-[[nodiscard]] std::size_t lettersShownOf(const GlowingCall& call);
 
 /** @returns How long a call of @p text takes to type, from its first letter
  * to its last, CALL_LETTER_TIME a letter. */
