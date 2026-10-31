@@ -7,8 +7,10 @@
 #include <thread>
 #include <utility>
 #include <vector>
+#include "Endpoint.hpp"
 #include "IModule.hpp"
 #include "ModuleConstants.hpp"
+#include "NetworkConstants.hpp"
 #include "ServerLoggerModule.hpp"
 #include "ServerModuleTestConstants.hpp"
 #include "ServerNetworkModule.hpp"
@@ -60,4 +62,11 @@ bool ServerNetworkModuleFixture::waitForPasses(const std::atomic<int>& passes,
 
 rtype::server::StopRequest& ServerNetworkModuleFixture::stopRequest() {
   return stopRequest_;
+}
+
+rtype::network::Endpoint ServerNetworkModuleFixture::loopbackOnPort(
+    std::uint16_t port) {
+  return rtype::network::Endpoint{
+      .address = std::string{rtype::network::LOOPBACK_IPV4_ADDRESS},
+      .port = port};
 }

@@ -23,11 +23,7 @@ using rtype::server::LaunchOptions;
 using rtype::server::SEED_OPTION;
 using rtype::server::STATE_RATE_OPTION;
 
-namespace {
-
 using Arguments = std::vector<std::string_view>;
-
-}  // namespace
 
 /**
  * Given no argument

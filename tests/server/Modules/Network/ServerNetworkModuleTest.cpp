@@ -31,15 +31,6 @@ using rtype::engine::ModuleStartFailedException;
 using rtype::network::Endpoint;
 using rtype::server::SERVER_LOOP_STAGES;
 
-namespace {
-
-Endpoint loopbackOnPort(std::uint16_t port) {
-  return Endpoint{.address = std::string{rtype::network::LOOPBACK_IPV4_ADDRESS},
-                  .port = port};
-}
-
-}  // namespace
-
 /**
  * Given a port and a module listed after the network module that tries to bind
  * that port while it installs

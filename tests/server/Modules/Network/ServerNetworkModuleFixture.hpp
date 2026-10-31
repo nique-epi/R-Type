@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <memory>
 #include <vector>
+#include "Endpoint.hpp"
 #include "IModule.hpp"
 #include "ServerModuleFixture.hpp"
 #include "StageWork.hpp"
@@ -43,6 +44,10 @@ class ServerNetworkModuleFixture : public ServerModuleFixture {
                                           int wanted);
 
   [[nodiscard]] rtype::server::StopRequest& stopRequest();
+
+  /** @returns The loopback address on @p port. */
+  [[nodiscard]] static rtype::network::Endpoint loopbackOnPort(
+      std::uint16_t port);
 
  private:
   rtype::server::StopRequest stopRequest_;
