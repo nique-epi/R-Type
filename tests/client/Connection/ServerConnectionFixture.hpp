@@ -5,8 +5,8 @@
 #include <cstddef>
 #include <cstdint>
 #include <vector>
+#include "ConnectionPhase.hpp"
 #include "ConnectionRequest.hpp"
-#include "ConnectionStatus.hpp"
 #include "DatagramCodec.hpp"
 #include "Endpoint.hpp"
 #include "EntityMessage.hpp"
@@ -45,7 +45,7 @@ class ServerConnectionFixture : public ::testing::Test {
    * carrying SESSION_TOKEN. */
   void connectAndGetAccepted();
 
-  [[nodiscard]] ConnectionStatus::Phase phase() const;
+  [[nodiscard]] ConnectionPhase phase() const;
 
   [[nodiscard]] ServerConnection& connection();
 

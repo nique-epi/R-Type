@@ -2,10 +2,7 @@
 
 #include <memory>
 #include "AssetList.hpp"
-#include "IInterfaceCanvas.hpp"
 #include "IScreen.hpp"
-#include "ISoundPlayer.hpp"
-#include "PlayfieldMapping.hpp"
 #include "ScreenCatalogParts.hpp"
 #include "ScreenId.hpp"
 
@@ -33,6 +30,16 @@ class ScreenCatalog {
   [[nodiscard]] static ScreenId firstScreen();
 
  private:
+  /** @brief The intro the client opens on. */
+  [[nodiscard]] std::unique_ptr<IScreen> introScreen() const;
+
+  /** @brief The server to join and the nickname to join it with. */
+  [[nodiscard]] std::unique_ptr<IScreen> connectionScreen() const;
+
+  /** @brief The loading screen of gameAssets() while some are not loaded, the
+   * end screen once they all are. */
+  [[nodiscard]] std::unique_ptr<IScreen> endScreen() const;
+
   /** @brief The loading screen of titleAssets() while some are not loaded,
    * the title screen once they all are; its squadron is still when the system
    * asks for less motion, and starts in place for ScreenId::TitleAfterIntro.
@@ -63,16 +70,6 @@ class ScreenCatalog {
    */
   [[nodiscard]] std::unique_ptr<IScreen> loadingScreenUnlessLoaded(
       const AssetList& assets, ScreenId screen) const;
-
-  /** @brief A new picture for a menu, written with the fonts of the asset
-   * library. */
-  [[nodiscard]] std::unique_ptr<IInterfaceCanvas> interfaceCanvas() const;
-
-  /** @brief Gives the point of the playfield under a pixel of the window. */
-  [[nodiscard]] PlayfieldMapping playfieldMapping() const;
-
-  /** @returns The player of the short sounds of the audio service. */
-  [[nodiscard]] ISoundPlayer& sounds() const;
 
   ScreenCatalogParts parts_;
 };

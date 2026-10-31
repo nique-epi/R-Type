@@ -5,7 +5,6 @@
 #include <string_view>
 #include "ConnectionScreenParts.hpp"
 #include "ConnectionStatus.hpp"
-#include "Endpoint.hpp"
 #include "IInterfaceCanvas.hpp"
 #include "IScreen.hpp"
 #include "IScreenNavigator.hpp"
@@ -13,6 +12,7 @@
 #include "ISoundPlayer.hpp"
 #include "Menu.hpp"
 #include "PlayfieldMapping.hpp"
+#include "ServerChoice.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::client {
@@ -23,7 +23,8 @@ namespace rtype::client {
  * line that tells how the attempt stands.
  *
  * Building it drops any earlier attempt, so it always starts from no attempt,
- * and its fields start with the values given at launch. MENU_CONFIRM_KEY on a
+ * and its fields start with the values of the last attempt the player started,
+ * those given at launch before any. MENU_CONFIRM_KEY on a
  * field, or CONNECT, checks the fields: an address that is not IPv4, a port
  * outside LOWEST_PORT to HIGHEST_PORT or an empty nickname is named on the
  * status line, and the attempt in progress is dropped without a new one.
@@ -52,8 +53,8 @@ class ConnectionScreen : public IScreen {
   [[nodiscard]] bool hidesScreensBelow() const override;
 
  private:
-  [[nodiscard]] Menu buildMenu(const network::Endpoint& server,
-                               std::string_view nickname, ISoundPlayer& sounds);
+  /** @brief Builds the form, its fields filled with the choice of server. */
+  [[nodiscard]] Menu buildMenu(ISoundPlayer& sounds);
 
   /** @brief Starts an attempt with the values of the fields, or names the field
    * to fix. */
@@ -68,7 +69,8 @@ class ConnectionScreen : public IScreen {
                         engine::Duration elapsed);
 
   /** @returns The line naming the field to fix, or telling how the attempt
-   * stands; empty when there is no attempt, and once a session was lost. */
+   * stands; empty when there is no attempt, and once a session was lost or
+   * closed. */
   [[nodiscard]] std::string statusLine(const ConnectionStatus& status) const;
 
   /** @brief Paints the menu, its status line telling how the attempt stands,
@@ -78,6 +80,7 @@ class ConnectionScreen : public IScreen {
 
   IScreenNavigator* navigator_{};
   IServerConnection* connection_{};
+  ServerChoice* choice_{};
   std::unique_ptr<IInterfaceCanvas> canvas_;
   PlayfieldMapping playfieldPointAt_;
   std::string_view fieldProblem_;
