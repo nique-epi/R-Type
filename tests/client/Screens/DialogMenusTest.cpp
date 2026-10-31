@@ -1,12 +1,10 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include <SFML/Window/Keyboard.hpp>
-#include <cstring>
 #include <optional>
 #include "ConnectionLostInTheStackFixture.hpp"
 #include "ConnectionPhase.hpp"
 #include "DialogMenusFixture.hpp"
-#include "InterfaceConstants.hpp"
 #include "RecordingInterfaceCanvas.hpp"
 #include "RecordingNavigator.hpp"
 #include "RecordingScreen.hpp"
@@ -15,6 +13,7 @@
 #include "ScreenId.hpp"
 #include "SoundConstants.hpp"
 #include "WidgetConstants.hpp"
+#include "WidgetText.hpp"
 
 using rtype::client::CLICK_SOUND_ID;
 using rtype::client::CLOSED_SERVER_MESSAGE;
@@ -22,8 +21,9 @@ using rtype::client::CONNECTION_LOST_HEADING;
 using rtype::client::ConnectionPhase;
 using rtype::client::DIALOG_MESSAGE_OFFSET;
 using rtype::client::DIALOG_SIZE;
-using rtype::client::REGULAR_FONT_ADVANCE;
+using rtype::client::regularTextWidth;
 using rtype::client::ScreenId;
+using rtype::client::SIDES_PER_AXIS;
 using rtype::client::SILENT_SERVER_MESSAGE;
 using ::testing::ElementsAre;
 
@@ -118,14 +118,11 @@ TEST_F(DialogMenusFixture, AClosedServerShutDown) {
  * Then it stays inside the panel, its margin kept on both sides
  */
 TEST(DialogMenus, TheReasonsOfALostConnectionFitTheirPanel) {
-  const int widestLine = DIALOG_SIZE.x - (2 * DIALOG_MESSAGE_OFFSET.x);
+  const int widestLine =
+      DIALOG_SIZE.x - (SIDES_PER_AXIS * DIALOG_MESSAGE_OFFSET.x);
 
-  EXPECT_LE(static_cast<int>(std::strlen(SILENT_SERVER_MESSAGE)) *
-                REGULAR_FONT_ADVANCE,
-            widestLine);
-  EXPECT_LE(static_cast<int>(std::strlen(CLOSED_SERVER_MESSAGE)) *
-                REGULAR_FONT_ADVANCE,
-            widestLine);
+  EXPECT_LE(regularTextWidth(SILENT_SERVER_MESSAGE), widestLine);
+  EXPECT_LE(regularTextWidth(CLOSED_SERVER_MESSAGE), widestLine);
 }
 
 /**

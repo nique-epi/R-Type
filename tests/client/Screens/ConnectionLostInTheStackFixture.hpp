@@ -21,15 +21,15 @@ class ConnectionLostInTheStackFixture : public ::testing::Test {
  protected:
   ConnectionLostInTheStackFixture();
 
-  /** @brief Presses and releases a key, lets the press last, then applies what
-   * the dialog asked for. */
+  /** @brief Presses and releases a key, lets the press last, applies what the
+   * dialog asked for, then forgets what happened to the recording screens so
+   * far. */
   void answerWith(sf::Keyboard::Key key);
 
   /** @brief Gives an event to the screen on top. */
   void sendAnEvent();
 
-  /** @returns What happened to the recording screens since the dialog
-   * opened. */
+  /** @returns What happened to the recording screens since the answer. */
   [[nodiscard]] const std::vector<JournalEntry>& journal() const;
 
  private:

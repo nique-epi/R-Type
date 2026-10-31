@@ -3,10 +3,10 @@
 #include <memory>
 #include "DialogScreen.hpp"
 #include "DialogScreenTestConstants.hpp"
-#include "KeyPress.hpp"
 #include "MenuBuilder.hpp"
 #include "PointerEvents.hpp"
 #include "RecordingInterfaceCanvas.hpp"
+#include "ScreenInputs.hpp"
 
 using rtype::client::DialogScreen;
 using rtype::client::MenuBuilder;
@@ -30,7 +30,4 @@ const InterfaceCanvasRecord& DialogScreenFixture::canvas() const {
 
 int DialogScreenFixture::activations() const { return activations_; }
 
-void DialogScreenFixture::tap(sf::Keyboard::Key key) {
-  dialog_.handleEvent(keyPress(key));
-  dialog_.handleEvent(keyRelease(key));
-}
+void DialogScreenFixture::tap(sf::Keyboard::Key key) { tapKey(dialog_, key); }

@@ -26,7 +26,6 @@ ConnectionLostInTheStackFixture::ConnectionLostInTheStackFixture()
   screens_.replaceAll(ScreenId::Title);
   screens_.push(ScreenId::ConnectionLost);
   screens_.applyPendingChanges();
-  journal_.clear();
 }
 
 void ConnectionLostInTheStackFixture::answerWith(sf::Keyboard::Key key) {

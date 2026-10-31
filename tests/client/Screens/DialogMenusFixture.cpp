@@ -8,6 +8,7 @@
 #include "RecordingInterfaceCanvas.hpp"
 #include "RecordingNavigator.hpp"
 #include "RecordingSoundPlayer.hpp"
+#include "ScreenInputs.hpp"
 #include "WidgetConstants.hpp"
 
 using rtype::client::connectionLostMenu;
@@ -42,9 +43,6 @@ void DialogMenusFixture::press(sf::Keyboard::Key key) {
   dialog_->handleEvent(keyPress(key));
 }
 
-void DialogMenusFixture::tap(sf::Keyboard::Key key) {
-  dialog_->handleEvent(keyPress(key));
-  dialog_->handleEvent(keyRelease(key));
-}
+void DialogMenusFixture::tap(sf::Keyboard::Key key) { tapKey(*dialog_, key); }
 
 void DialogMenusFixture::letThePressLast() { dialog_->update(PRESS_DURATION); }
