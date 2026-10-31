@@ -24,6 +24,8 @@ target_link_libraries(rtype_client_screens_module
   PRIVATE
     rtype_client_connection_screen
     rtype_client_constants
+    rtype_client_dialog_menus
+    rtype_client_dialog_screen
     rtype_client_end_screen
     rtype_client_entity_layer
     rtype_client_frame_picture
@@ -38,7 +40,6 @@ target_link_libraries(rtype_client_screens_module
     rtype_client_options_screen
     rtype_client_platform
     rtype_client_player_preferences
-    rtype_client_quit_confirmation_screen
     rtype_client_screen_assets
     rtype_client_title_screen
 )

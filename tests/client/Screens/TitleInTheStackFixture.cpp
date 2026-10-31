@@ -1,11 +1,11 @@
 #include "TitleInTheStackFixture.hpp"
 #include <SFML/System/Vector2.hpp>
 #include <memory>
+#include "DialogMenus.hpp"
+#include "DialogScreen.hpp"
 #include "IScreen.hpp"
 #include "MotionPreference.hpp"
 #include "PointerEvents.hpp"
-#include "QuitConfirmationScreen.hpp"
-#include "QuitConfirmationScreenParts.hpp"
 #include "RecordingInterfaceCanvas.hpp"
 #include "RecordingNavigator.hpp"
 #include "RecordingScreen.hpp"
@@ -16,11 +16,11 @@
 #include "TitleScreenTestConstants.hpp"
 #include "WidgetConstants.hpp"
 
+using rtype::client::DialogScreen;
 using rtype::client::IScreen;
 using rtype::client::MotionPreference;
 using rtype::client::PRESS_DURATION;
-using rtype::client::QuitConfirmationScreen;
-using rtype::client::QuitConfirmationScreenParts;
+using rtype::client::quitConfirmationMenu;
 using rtype::client::ScreenId;
 using rtype::client::ScreenStack;
 using rtype::client::TitleScreen;
@@ -70,10 +70,8 @@ std::unique_ptr<IScreen> TitleInTheStackFixture::build(ScreenId screen) {
         std::make_unique<RecordingInterfaceCanvas>(titleCanvas_));
   }
   if (screen == ScreenId::QuitConfirmation) {
-    return std::make_unique<QuitConfirmationScreen>(
-        QuitConfirmationScreenParts{.navigator = dialogNavigator_,
-                                    .sounds = sounds_,
-                                    .playfieldPointAt = samePlayfieldPoint},
+    return std::make_unique<DialogScreen>(
+        quitConfirmationMenu(dialogNavigator_, sounds_), samePlayfieldPoint,
         std::make_unique<RecordingInterfaceCanvas>(dialogCanvas_));
   }
   auto options = std::make_unique<RecordingScreen>(screen, journal_);

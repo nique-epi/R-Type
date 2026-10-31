@@ -2,15 +2,12 @@
 #include <gtest/gtest.h>
 #include <SFML/Window/Keyboard.hpp>
 #include <optional>
-#include "KeyPress.hpp"
-#include "QuitConfirmationScreenFixture.hpp"
+#include "DialogMenusFixture.hpp"
 #include "RecordingNavigator.hpp"
 #include "RecordingSoundPlayer.hpp"
 #include "SoundConstants.hpp"
-#include "WidgetConstants.hpp"
 
 using rtype::client::CLICK_SOUND_ID;
-using rtype::client::PRESS_DURATION;
 using ::testing::ElementsAre;
 
 /**
@@ -18,10 +15,11 @@ using ::testing::ElementsAre;
  * When Enter is pressed and released, and the press lasts
  * Then NO answers: the dialog asks to close itself
  */
-TEST_F(QuitConfirmationScreenFixture, NoIsChosenAtFirst) {
-  tap(sf::Keyboard::Key::Enter);
+TEST_F(DialogMenusFixture, NoIsChosenAtFirstOnTheQuitConfirmation) {
+  openQuitConfirmation();
 
-  dialog().update(PRESS_DURATION);
+  tap(sf::Keyboard::Key::Enter);
+  letThePressLast();
 
   EXPECT_THAT(navigator().calls(),
               ElementsAre(NavigatorCall{.request = NavigatorRequest::Pop,
@@ -33,7 +31,9 @@ TEST_F(QuitConfirmationScreenFixture, NoIsChosenAtFirst) {
  * When Escape is pressed and released
  * Then NO answers at once
  */
-TEST_F(QuitConfirmationScreenFixture, EscapeAnswersNo) {
+TEST_F(DialogMenusFixture, EscapeAnswersNoOnTheQuitConfirmation) {
+  openQuitConfirmation();
+
   tap(sf::Keyboard::Key::Escape);
 
   EXPECT_THAT(navigator().calls(),
@@ -46,11 +46,12 @@ TEST_F(QuitConfirmationScreenFixture, EscapeAnswersNo) {
  * When the right arrow selects YES and Enter activates it
  * Then every screen is asked to close, which closes the client
  */
-TEST_F(QuitConfirmationScreenFixture, YesClosesTheClient) {
-  dialog().handleEvent(keyPress(sf::Keyboard::Key::Right));
-  tap(sf::Keyboard::Key::Enter);
+TEST_F(DialogMenusFixture, YesClosesTheClient) {
+  openQuitConfirmation();
 
-  dialog().update(PRESS_DURATION);
+  press(sf::Keyboard::Key::Right);
+  tap(sf::Keyboard::Key::Enter);
+  letThePressLast();
 
   EXPECT_THAT(navigator().calls(),
               ElementsAre(NavigatorCall{.request = NavigatorRequest::CloseAll,
@@ -62,7 +63,9 @@ TEST_F(QuitConfirmationScreenFixture, YesClosesTheClient) {
  * When Escape answers NO
  * Then the click of NO plays once
  */
-TEST_F(QuitConfirmationScreenFixture, AnsweringPlaysTheClick) {
+TEST_F(DialogMenusFixture, AnsweringTheQuitConfirmationPlaysTheClick) {
+  openQuitConfirmation();
+
   tap(sf::Keyboard::Key::Escape);
 
   EXPECT_THAT(sounds().played(), ElementsAre(CLICK_SOUND_ID));

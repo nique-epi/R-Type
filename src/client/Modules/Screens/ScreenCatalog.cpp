@@ -7,6 +7,8 @@
 #include "AssetList.hpp"
 #include "ConnectionScreen.hpp"
 #include "ConnectionScreenParts.hpp"
+#include "DialogMenus.hpp"
+#include "DialogScreen.hpp"
 #include "EndScreen.hpp"
 #include "EndScreenParts.hpp"
 #include "EntityLayer.hpp"
@@ -33,8 +35,6 @@
 #include "PlayerPreferences.hpp"
 #include "PlayerSettings.hpp"
 #include "PlayfieldMapping.hpp"
-#include "QuitConfirmationScreen.hpp"
-#include "QuitConfirmationScreenParts.hpp"
 #include "ReducedMotion.hpp"
 #include "ScreenAssets.hpp"
 #include "ScreenCatalogParts.hpp"
@@ -85,11 +85,9 @@ std::unique_ptr<IScreen> ScreenCatalog::create(ScreenId screen) {
     case ScreenId::GameOptions:
       return optionsScreen(screen);
     case ScreenId::QuitConfirmation:
-      return std::make_unique<QuitConfirmationScreen>(
-          QuitConfirmationScreenParts{.navigator = parts_.navigator.get(),
-                                      .sounds = sounds(),
-                                      .playfieldPointAt = playfieldMapping()},
-          interfaceCanvas());
+      return std::make_unique<DialogScreen>(
+          quitConfirmationMenu(parts_.navigator.get(), sounds()),
+          playfieldMapping(), interfaceCanvas());
     case ScreenId::Connection:
       return std::make_unique<ConnectionScreen>(
           ConnectionScreenParts{.navigator = parts_.navigator.get(),
