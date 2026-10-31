@@ -3,6 +3,7 @@
 #include <chrono>
 #include <cstddef>
 #include <cstdint>
+#include <functional>
 #include <iterator>
 #include <optional>
 #include <span>
@@ -48,6 +49,25 @@
 #include "WorldState.hpp"
 
 namespace rtype::client {
+
+namespace {
+
+/** @brief Hands every EntitySpawned, EntityDestroyed and PlayerLeft that
+ * arrives to @p keep. */
+void keepEntityChanges(network::MessageDispatcher& dispatcher,
+                       const std::function<void(EntityMessage)>& keep) {
+  dispatcher.registerHandler<network::EntitySpawned>(
+      [keep](const network::MessageOrigin&,
+             const network::EntitySpawned& spawned) { keep(spawned); });
+  dispatcher.registerHandler<network::EntityDestroyed>(
+      [keep](const network::MessageOrigin&,
+             const network::EntityDestroyed& destroyed) { keep(destroyed); });
+  dispatcher.registerHandler<network::PlayerLeft>(
+      [keep](const network::MessageOrigin&,
+             const network::PlayerLeft& departure) { keep(departure); });
+}
+
+}  // namespace
 
 ServerConnection::ServerConnection(IDatagramLink& link)
     : link_(&link), logger_(std::string{CONNECTION_LOGGER_NAME}) {
@@ -213,16 +233,9 @@ void ServerConnection::registerSessionMessages() {
         startGame();
         keepEntityMessage(state);
       });
-  dispatcher_.registerHandler<network::EntitySpawned>(
-      [this](const network::MessageOrigin&,
-             const network::EntitySpawned& spawned) {
-        keepEntityMessage(spawned);
-      });
-  dispatcher_.registerHandler<network::EntityDestroyed>(
-      [this](const network::MessageOrigin&,
-             const network::EntityDestroyed& destroyed) {
-        keepEntityMessage(destroyed);
-      });
+  keepEntityChanges(dispatcher_, [this](EntityMessage message) {
+    keepEntityMessage(std::move(message));
+  });
   dispatcher_.registerHandler<network::GameEvent>(
       [this](const network::MessageOrigin&, const network::GameEvent& event) {
         if (gameEvents_.isFirstCopy(event.eventNumber)) {
@@ -242,11 +255,6 @@ void ServerConnection::registerSessionMessages() {
         if (isAccepted()) {
           giveUp(ConnectionPhase::Closed);
         }
-      });
-  dispatcher_.registerHandler<network::PlayerLeft>(
-      [this](const network::MessageOrigin&,
-             const network::PlayerLeft& departure) {
-        keepEntityMessage(departure);
       });
 }
 
