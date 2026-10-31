@@ -1,5 +1,6 @@
 #pragma once
 
+#include <chrono>
 #include <cstddef>
 #include <cstdint>
 #include <stdexcept>
@@ -200,6 +201,17 @@ class InvalidSimulatorOptionException : public NetworkException {
 class MissingSimulatorOptionValueException : public NetworkException {
  public:
   explicit MissingSimulatorOptionValueException(const std::string& option);
+};
+
+/**
+ * @brief The conditions of a simulated network have a negative lag or jitter:
+ * no network makes a datagram wait less than nothing, and no wait can be
+ * drawn from a negative jitter.
+ */
+class NegativeSimulatedDelayException : public NetworkException {
+ public:
+  NegativeSimulatedDelayException(std::chrono::milliseconds lag,
+                                  std::chrono::milliseconds jitter);
 };
 
 }  // namespace rtype::network

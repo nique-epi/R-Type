@@ -49,6 +49,13 @@ constexpr rtype::network::NetworkConditions EVERY_DEFECT{
     .duplicatePercent = 10,
     .reorderPercent = 10};
 
+/** @brief A lag and a jitter one millisecond below zero, the first value no
+ * network shows. */
+constexpr rtype::network::NetworkConditions LAG_JUST_BELOW_ZERO{
+    .lag = std::chrono::milliseconds{-1}};
+constexpr rtype::network::NetworkConditions JITTER_JUST_BELOW_ZERO{
+    .jitter = std::chrono::milliseconds{-1}};
+
 /** @brief How much longer the plan holds a reordered datagram. */
 constexpr std::chrono::milliseconds HOLD_OF_A_REORDERED_DATAGRAM{75};
 

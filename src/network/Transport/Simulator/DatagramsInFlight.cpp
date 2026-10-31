@@ -13,6 +13,7 @@
 #include "Endpoint.hpp"
 #include "NetworkConditions.hpp"
 #include "NetworkConditionsConstants.hpp"
+#include "NetworkException.hpp"
 #include "SimulatorConstants.hpp"
 
 namespace rtype::network {
@@ -28,11 +29,24 @@ std::chrono::steady_clock::duration perCrossing(
          CROSSINGS_PER_ROUND_TRIP;
 }
 
+/**
+ * @returns A copy of @p conditions, once their lag and jitter are known not to
+ * be negative.
+ * @throws NegativeSimulatedDelayException when either is.
+ */
+NetworkConditions checkedConditions(const NetworkConditions& conditions) {
+  if (conditions.lag < std::chrono::milliseconds::zero() ||
+      conditions.jitter < std::chrono::milliseconds::zero()) {
+    throw NegativeSimulatedDelayException(conditions.lag, conditions.jitter);
+  }
+  return conditions;
+}
+
 }  // namespace
 
 DatagramsInFlight::DatagramsInFlight(const NetworkConditions& conditions,
                                      std::uint32_t seed)
-    : conditions_(conditions), generator_(seed) {}
+    : conditions_(checkedConditions(conditions)), generator_(seed) {}
 
 void DatagramsInFlight::add(const Endpoint& peer,
                             std::span<const std::byte> payload,

@@ -86,7 +86,7 @@ Either program can make its datagrams cross a simulated network, to show on one 
 - a share of the datagrams never arrives, another share arrives twice, and a lost datagram is never copied;
 - a share is held `REORDER_HOLD` (75 ms) longer, so the ones handed over just after it arrive first.
 
-The draws start from fixed seeds (`SENT_DATAGRAMS_SEED`, `RECEIVED_DATAGRAMS_SEED`), so two runs that hand over the same datagrams at the same times lose the same ones. A datagram the real socket would refuse is refused at once, as `IDatagramSocket::send()` promises, and one still in flight when the socket is destroyed never arrives.
+The draws start from fixed seeds (`SENT_DATAGRAMS_SEED`, `RECEIVED_DATAGRAMS_SEED`), so two runs that hand over the same datagrams at the same times lose the same ones. A datagram the real socket would refuse is refused at once, as `IDatagramSocket::send()` promises, and one still in flight when the socket is destroyed never arrives. A lag or a jitter below zero, which the options below never give, is refused when the simulated network is built (`NegativeSimulatedDelayException`, from `DatagramsInFlight`): no wait can be drawn from a negative jitter.
 
 Both programs read these options with `SimulatorLaunchOptions` before their own, in the order given, so an option written after `--network` changes one value of its scenario. As with the logging options, a value of another option spelled like one of them, a nickname `--lag` for example, is read as that option.
 

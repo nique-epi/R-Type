@@ -18,6 +18,8 @@ namespace rtype::network {
  * conditions, so a journal shows the network was simulated.
  *
  * @throws InvalidAddressException or SocketOpenException, as UdpSocket does.
+ * @throws NegativeSimulatedDelayException, as DatagramsInFlight does, when
+ * the lag or the jitter of @p conditions is negative.
  */
 [[nodiscard]] std::unique_ptr<IDatagramSocket> openDatagramSocket(
     NetworkContext& context, const Endpoint& localEndpoint,

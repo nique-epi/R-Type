@@ -8,6 +8,7 @@
 #include "DatagramsInFlightFixtures.hpp"
 #include "DatagramsInFlightTestConstants.hpp"
 #include "NetworkConditions.hpp"
+#include "NetworkException.hpp"
 #include "NetworkSimulatorTestConstants.hpp"
 #include "SimulatorFixtures.hpp"
 #include "SimulatorTestConstants.hpp"
@@ -15,7 +16,28 @@
 
 using rtype::network::DatagramInFlight;
 using rtype::network::DatagramsInFlight;
+using rtype::network::NegativeSimulatedDelayException;
 using rtype::network::NetworkConditions;
+
+/**
+ * Given network conditions whose jitter is one millisecond below zero
+ * When the datagrams in flight are built from them
+ * Then they are refused: no wait can be drawn from a negative jitter
+ */
+TEST(DatagramsInFlight, RefusesANegativeJitter) {
+  EXPECT_THROW(DatagramsInFlight(JITTER_JUST_BELOW_ZERO, SOME_SEED),
+               NegativeSimulatedDelayException);
+}
+
+/**
+ * Given network conditions whose lag is one millisecond below zero
+ * When the datagrams in flight are built from them
+ * Then they are refused: no network makes a datagram wait less than nothing
+ */
+TEST(DatagramsInFlight, RefusesANegativeLag) {
+  EXPECT_THROW(DatagramsInFlight(LAG_JUST_BELOW_ZERO, SOME_SEED),
+               NegativeSimulatedDelayException);
+}
 
 /**
  * Given a perfect network

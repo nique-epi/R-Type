@@ -1,4 +1,5 @@
 #include "NetworkException.hpp"
+#include <chrono>
 #include <cstddef>
 #include <cstdint>
 #include <stdexcept>
@@ -110,5 +111,12 @@ InvalidSimulatorOptionException::InvalidSimulatorOptionException(
 MissingSimulatorOptionValueException::MissingSimulatorOptionValueException(
     const std::string& option)
     : NetworkException("Missing value after the option " + option) {}
+
+NegativeSimulatedDelayException::NegativeSimulatedDelayException(
+    std::chrono::milliseconds lag, std::chrono::milliseconds jitter)
+    : NetworkException(
+          "A simulated network needs a lag and a jitter of 0 ms or more, not " +
+          std::to_string(lag.count()) + " ms and " +
+          std::to_string(jitter.count()) + " ms") {}
 
 }  // namespace rtype::network
