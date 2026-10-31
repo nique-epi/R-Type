@@ -156,3 +156,10 @@ add_executable(malformed_datagrams tools/main.cpp tools/LoopbackPeer.cpp tools/S
 target_link_libraries(malformed_datagrams PRIVATE malformed_datagram_builder rtype_network_asio rtype_engine_launch_arguments)
 set_target_properties(malformed_datagrams PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 rtype_enable_warnings(malformed_datagrams)
+
+# The scripts of tools/network-conditions/ are POSIX shell: their checks run
+# where a shell does.
+if(UNIX)
+  add_test(NAME network_condition_scenarios COMMAND sh ${CMAKE_CURRENT_SOURCE_DIR}/tools/network-conditions/check-scenarios.sh $<TARGET_FILE:r-type_server>)
+  add_test(NAME network_condition_commands COMMAND sh ${CMAKE_CURRENT_SOURCE_DIR}/tools/network-conditions/check-printed-commands.sh)
+endif()
