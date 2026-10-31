@@ -13,3 +13,4 @@ rtype_enable_warnings(rtype_network_transport)
 
 add_subdirectory(UdpSocket)
 add_subdirectory(DatagramRelay)
+add_subdirectory(Simulator)
