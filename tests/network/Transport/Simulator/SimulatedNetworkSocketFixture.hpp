@@ -2,6 +2,7 @@
 
 #include <gtest/gtest.h>
 #include <chrono>
+#include <cstddef>
 #include <memory>
 #include <vector>
 #include "Endpoint.hpp"
@@ -37,6 +38,11 @@ class SimulatedNetworkSocketFixture : public ::testing::Test {
 
   /** @brief Runs the event loop until it has no work left. */
   void runUntilIdle();
+
+  /** @brief Runs the event loop until the recording socket was handed
+   * @p count datagrams, for DATAGRAM_TIMEOUT at most.
+   * @returns Whether it was. */
+  [[nodiscard]] bool runUntilSent(std::size_t count);
 
   /** @returns A handler that appends every datagram it gets to @p received. */
   [[nodiscard]] static rtype::network::DatagramHandler recordInto(

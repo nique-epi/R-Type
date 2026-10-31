@@ -3,6 +3,7 @@
 #include <chrono>
 #include <cstddef>
 #include <cstdint>
+#include <deque>
 #include <optional>
 #include <random>
 #include <span>
@@ -49,12 +50,12 @@ class DatagramsInFlight {
   nextArrival() const;
 
   /**
-   * @brief Moves every datagram that arrived at @p now or before to the end of
-   * @p destination, in the order they arrive; those that arrive at the same
+   * @brief Takes out every datagram that arrived at @p now or before.
+   * @returns Them, in the order they arrive; those that arrive at the same
    * time keep the order they were added in.
    */
-  void takeArrived(std::chrono::steady_clock::time_point now,
-                   std::vector<DatagramInFlight>& destination);
+  [[nodiscard]] std::vector<DatagramInFlight> takeArrived(
+      std::chrono::steady_clock::time_point now);
 
  private:
   /** @returns How many times the next datagram arrives: 0 when it is lost,
@@ -75,12 +76,10 @@ class DatagramsInFlight {
    * time or before it. */
   void keep(DatagramInFlight datagram);
 
-  std::chrono::steady_clock::duration lagPerCrossing_;
-  std::chrono::steady_clock::duration jitterPerCrossing_;
   NetworkConditions conditions_;
   std::mt19937 generator_;
   std::chrono::steady_clock::time_point latestInOrder_;
-  std::vector<DatagramInFlight> inFlight_;
+  std::deque<DatagramInFlight> inFlight_;
 };
 
 }  // namespace rtype::network

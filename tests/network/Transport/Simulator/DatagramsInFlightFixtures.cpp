@@ -25,9 +25,7 @@ void handNumbered(rtype::network::DatagramsInFlight& inFlight,
 
 std::vector<rtype::network::DatagramInFlight> everyArrival(
     rtype::network::DatagramsInFlight& inFlight) {
-  std::vector<rtype::network::DatagramInFlight> arrivals;
-  inFlight.takeArrived(std::chrono::steady_clock::time_point::max(), arrivals);
-  return arrivals;
+  return inFlight.takeArrived(std::chrono::steady_clock::time_point::max());
 }
 
 std::size_t numberOf(const rtype::network::DatagramInFlight& datagram) {

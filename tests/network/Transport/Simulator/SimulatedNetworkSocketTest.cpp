@@ -82,6 +82,30 @@ TEST_F(SimulatedNetworkSocketFixture, SendsTheBytesAsTheyWereHandedOver) {
 }
 
 /**
+ * Given a simulated socket with a lag of 200 ms
+ * When it is handed a second datagram 50 ms after the first, while the first
+ * is in flight
+ * Then the real socket sends both, in the order they were handed over
+ */
+TEST_F(SimulatedNetworkSocketFixture,
+       SendsADatagramHandedOverWhileAnotherIsInFlight) {
+  const auto socket = overRecording(LAGGING_NETWORK);
+  const std::vector<std::byte> second{SECOND_DATAGRAM_BYTE};
+
+  socket->send(peer(), CROSSING_BYTES);
+  runAtMostOneHandlerFor(LESS_THAN_HALF_OF_THE_LAG);
+  socket->send(peer(), second);
+  const bool sentBoth = runUntilSent(BOTH_DATAGRAMS);
+
+  ASSERT_TRUE(sentBoth);
+  EXPECT_EQ(
+      recording().sent(),
+      (std::vector<OutgoingDatagram>{
+          OutgoingDatagram{.destination = peer(), .payload = crossingBytes()},
+          OutgoingDatagram{.destination = peer(), .payload = second}}));
+}
+
+/**
  * Given a simulated socket with a lag of 200 ms, receiving
  * When the real socket receives a datagram and the event loop runs for 50 ms
  * Then the handler got nothing yet

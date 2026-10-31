@@ -7,7 +7,6 @@
 #include <span>
 #include <system_error>
 #include <utility>
-#include <vector>
 #include "DatagramInFlight.hpp"
 #include "DatagramsInFlight.hpp"
 #include "Endpoint.hpp"
@@ -25,8 +24,12 @@ DelayedDelivery::DelayedDelivery(NetworkContext& context,
 
 void DelayedDelivery::add(const Endpoint& peer,
                           std::span<const std::byte> payload) {
+  const std::optional<std::chrono::steady_clock::time_point> previousNext =
+      inFlight_.nextArrival();
   inFlight_.add(peer, payload, std::chrono::steady_clock::now());
-  waitForNextArrival();
+  if (inFlight_.nextArrival() != previousNext) {
+    waitForNextArrival();
+  }
 }
 
 void DelayedDelivery::close() {
@@ -49,9 +52,8 @@ void DelayedDelivery::waitForNextArrival() {
 }
 
 void DelayedDelivery::deliverArrived() {
-  std::vector<DatagramInFlight> arrived;
-  inFlight_.takeArrived(std::chrono::steady_clock::now(), arrived);
-  for (const DatagramInFlight& datagram : arrived) {
+  for (const DatagramInFlight& datagram :
+       inFlight_.takeArrived(std::chrono::steady_clock::now())) {
     if (closed_) {
       return;
     }

@@ -45,6 +45,16 @@ void SimulatedNetworkSocketFixture::runAtMostOneHandlerFor(
 
 void SimulatedNetworkSocketFixture::runUntilIdle() { context_.run(); }
 
+bool SimulatedNetworkSocketFixture::runUntilSent(std::size_t count) {
+  const auto deadline = std::chrono::steady_clock::now() + DATAGRAM_TIMEOUT;
+  while (recording_->sent().size() < count) {
+    if (context_.ioContext().run_one_until(deadline) == 0) {
+      return false;
+    }
+  }
+  return true;
+}
+
 rtype::network::DatagramHandler SimulatedNetworkSocketFixture::recordInto(
     std::vector<rtype::network::IncomingDatagram>& received) {
   return [&received](const rtype::network::Endpoint& sender,

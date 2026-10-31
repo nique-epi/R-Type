@@ -22,10 +22,10 @@ using rtype::network::NetworkConditions;
  */
 TEST(DatagramsInFlight, HandsADatagramAtOnceOverAPerfectNetwork) {
   DatagramsInFlight inFlight{NetworkConditions{}, SOME_SEED};
-  std::vector<DatagramInFlight> arrived;
 
   inFlight.add(peer(), CROSSING_BYTES, HAND_OVER_START);
-  inFlight.takeArrived(HAND_OVER_START, arrived);
+  const std::vector<DatagramInFlight> arrived =
+      inFlight.takeArrived(HAND_OVER_START);
 
   EXPECT_EQ(arrived, (std::vector<DatagramInFlight>{
                          DatagramInFlight{.arrival = HAND_OVER_START,
@@ -40,11 +40,10 @@ TEST(DatagramsInFlight, HandsADatagramAtOnceOverAPerfectNetwork) {
  */
 TEST(DatagramsInFlight, HoldsADatagramUntilHalfTheLagPassed) {
   DatagramsInFlight inFlight{LAG_OF_100_MS, SOME_SEED};
-  std::vector<DatagramInFlight> arrived;
 
   inFlight.add(peer(), CROSSING_BYTES, HAND_OVER_START);
-  inFlight.takeArrived(HAND_OVER_START + HALF_OF_100_MS - ONE_NANOSECOND,
-                       arrived);
+  const std::vector<DatagramInFlight> arrived =
+      inFlight.takeArrived(HAND_OVER_START + HALF_OF_100_MS - ONE_NANOSECOND);
 
   EXPECT_TRUE(arrived.empty());
 }
@@ -56,10 +55,10 @@ TEST(DatagramsInFlight, HoldsADatagramUntilHalfTheLagPassed) {
  */
 TEST(DatagramsInFlight, HandsADatagramOnceHalfTheLagPassed) {
   DatagramsInFlight inFlight{LAG_OF_100_MS, SOME_SEED};
-  std::vector<DatagramInFlight> arrived;
 
   inFlight.add(peer(), CROSSING_BYTES, HAND_OVER_START);
-  inFlight.takeArrived(HAND_OVER_START + HALF_OF_100_MS, arrived);
+  const std::vector<DatagramInFlight> arrived =
+      inFlight.takeArrived(HAND_OVER_START + HALF_OF_100_MS);
 
   EXPECT_EQ(arrived.size(), 1U);
 }
@@ -98,11 +97,10 @@ TEST(DatagramsInFlight, HasNoNextArrivalOnceEverythingArrived) {
  */
 TEST(DatagramsInFlight, KeepsTheDatagramsThatHaveNotArrivedYet) {
   DatagramsInFlight inFlight{LAG_OF_100_MS, SOME_SEED};
-  std::vector<DatagramInFlight> arrived;
   inFlight.add(peer(), CROSSING_BYTES, HAND_OVER_START);
   inFlight.add(peer(), CROSSING_BYTES, HAND_OVER_START + SECOND_HAND_OVER);
 
-  inFlight.takeArrived(HAND_OVER_START + HALF_OF_100_MS, arrived);
+  static_cast<void>(inFlight.takeArrived(HAND_OVER_START + HALF_OF_100_MS));
 
   EXPECT_EQ(inFlight.nextArrival(),
             HAND_OVER_START + SECOND_HAND_OVER + HALF_OF_100_MS);

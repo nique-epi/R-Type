@@ -1,5 +1,4 @@
 #include "SimulatorLaunchOptions.hpp"
-#include <algorithm>
 #include <array>
 #include <chrono>
 #include <cstddef>
@@ -20,10 +19,11 @@ namespace rtype::network {
 namespace {
 
 /** @brief An option of the simulator, and how it writes its value into the
- * conditions. */
+ * conditions; the record gets the name of the option, for its errors. */
 struct SimulatorOption {
   std::string_view name;
-  void (*record)(NetworkConditions& conditions, std::string_view value);
+  void (*record)(NetworkConditions& conditions, std::string_view option,
+                 std::string_view value);
 };
 
 /**
@@ -56,41 +56,59 @@ int percentFrom(std::string_view option, std::string_view value) {
 
 /**
  * @returns The conditions of the scenario named @p name.
- * @throws InvalidSimulatorOptionException when NETWORK_SCENARIOS has none of
- * that name.
+ * @throws InvalidSimulatorOptionException naming @p option when
+ * NETWORK_SCENARIOS has none of that name.
  */
-NetworkConditions scenarioNamed(std::string_view name) {
-  const auto scenario =
-      std::ranges::find(NETWORK_SCENARIOS, name, &NetworkScenario::name);
-  if (scenario == NETWORK_SCENARIOS.end()) {
-    throw InvalidSimulatorOptionException(std::string(NETWORK_OPTION),
-                                          std::string(name));
+NetworkConditions scenarioNamed(std::string_view option,
+                                std::string_view name) {
+  for (const NetworkScenario& scenario : NETWORK_SCENARIOS) {
+    if (scenario.name == name) {
+      return scenario.conditions;
+    }
   }
-  return scenario->conditions;
+  throw InvalidSimulatorOptionException(std::string(option), std::string(name));
 }
 
-void recordScenario(NetworkConditions& conditions, std::string_view name) {
-  conditions = scenarioNamed(name);
+/** @returns The option of @p options named @p argument; nothing when none
+ * is. */
+const SimulatorOption* optionNamed(std::span<const SimulatorOption> options,
+                                   std::string_view argument) {
+  for (const SimulatorOption& option : options) {
+    if (option.name == argument) {
+      return &option;
+    }
+  }
+  return nullptr;
 }
 
-void recordLag(NetworkConditions& conditions, std::string_view value) {
-  conditions.lag = delayFrom(LAG_OPTION, value);
+void recordScenario(NetworkConditions& conditions, std::string_view option,
+                    std::string_view name) {
+  conditions = scenarioNamed(option, name);
 }
 
-void recordJitter(NetworkConditions& conditions, std::string_view value) {
-  conditions.jitter = delayFrom(JITTER_OPTION, value);
+void recordLag(NetworkConditions& conditions, std::string_view option,
+               std::string_view value) {
+  conditions.lag = delayFrom(option, value);
 }
 
-void recordLoss(NetworkConditions& conditions, std::string_view value) {
-  conditions.lossPercent = percentFrom(LOSS_OPTION, value);
+void recordJitter(NetworkConditions& conditions, std::string_view option,
+                  std::string_view value) {
+  conditions.jitter = delayFrom(option, value);
 }
 
-void recordDuplicates(NetworkConditions& conditions, std::string_view value) {
-  conditions.duplicatePercent = percentFrom(DUPLICATES_OPTION, value);
+void recordLoss(NetworkConditions& conditions, std::string_view option,
+                std::string_view value) {
+  conditions.lossPercent = percentFrom(option, value);
 }
 
-void recordReorder(NetworkConditions& conditions, std::string_view value) {
-  conditions.reorderPercent = percentFrom(REORDER_OPTION, value);
+void recordDuplicates(NetworkConditions& conditions, std::string_view option,
+                      std::string_view value) {
+  conditions.duplicatePercent = percentFrom(option, value);
+}
+
+void recordReorder(NetworkConditions& conditions, std::string_view option,
+                   std::string_view value) {
+  conditions.reorderPercent = percentFrom(option, value);
 }
 
 /**
@@ -150,12 +168,12 @@ SimulatorLaunchOptions SimulatorLaunchOptions::read(
   NetworkConditions conditions = PERFECT_NETWORK;
   std::vector<std::string_view> otherArguments;
   for (std::size_t index = 0; index < arguments.size(); ++index) {
-    const auto option =
-        std::ranges::find(options, arguments[index], &SimulatorOption::name);
-    if (option == options.end()) {
+    const SimulatorOption* const option =
+        optionNamed(options, arguments[index]);
+    if (option == nullptr) {
       otherArguments.push_back(arguments[index]);
     } else {
-      option->record(conditions, valueAfter(arguments, index));
+      option->record(conditions, option->name, valueAfter(arguments, index));
     }
   }
   return SimulatorLaunchOptions{conditions, std::move(otherArguments)};

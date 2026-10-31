@@ -16,6 +16,10 @@ namespace rtype::network {
  * NetworkContext: the datagrams in flight, and a timer that hands each to its
  * delivery when it arrives.
  *
+ * While a datagram is in flight and the object is not closed, the timer waits
+ * for the earliest arrival; it is armed again only when that arrival changes,
+ * so a datagram that arrives after the earliest one costs no new wait.
+ *
  * Every call must run on the thread that runs the context, or before that
  * thread starts. The handler of the timer keeps the object alive, as the
  * operations of a UdpSocket keep its state, so a deadline that falls after

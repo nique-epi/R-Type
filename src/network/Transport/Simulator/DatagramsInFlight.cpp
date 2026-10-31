@@ -32,10 +32,7 @@ std::chrono::steady_clock::duration perCrossing(
 
 DatagramsInFlight::DatagramsInFlight(const NetworkConditions& conditions,
                                      std::uint32_t seed)
-    : lagPerCrossing_(perCrossing(conditions.lag)),
-      jitterPerCrossing_(perCrossing(conditions.jitter)),
-      conditions_(conditions),
-      generator_(seed) {}
+    : conditions_(conditions), generator_(seed) {}
 
 void DatagramsInFlight::add(const Endpoint& peer,
                             std::span<const std::byte> payload,
@@ -56,14 +53,15 @@ DatagramsInFlight::nextArrival() const {
   return inFlight_.front().arrival;
 }
 
-void DatagramsInFlight::takeArrived(
-    std::chrono::steady_clock::time_point now,
-    std::vector<DatagramInFlight>& destination) {
+std::vector<DatagramInFlight> DatagramsInFlight::takeArrived(
+    std::chrono::steady_clock::time_point now) {
   const auto firstLater =
       std::ranges::upper_bound(inFlight_, now, {}, &DatagramInFlight::arrival);
-  std::ranges::move(inFlight_.begin(), firstLater,
-                    std::back_inserter(destination));
+  std::vector<DatagramInFlight> arrived{
+      std::make_move_iterator(inFlight_.begin()),
+      std::make_move_iterator(firstLater)};
   inFlight_.erase(inFlight_.begin(), firstLater);
+  return arrived;
 }
 
 int DatagramsInFlight::arrivalCount() {
@@ -75,8 +73,8 @@ int DatagramsInFlight::arrivalCount() {
 
 std::chrono::steady_clock::time_point DatagramsInFlight::arrivalOf(
     std::chrono::steady_clock::time_point now) {
-  latestInOrder_ =
-      std::max(now + lagPerCrossing_ + jitterDrawn(), latestInOrder_);
+  latestInOrder_ = std::max(now + perCrossing(conditions_.lag) + jitterDrawn(),
+                            latestInOrder_);
   if (drawn(conditions_.reorderPercent)) {
     return latestInOrder_ + REORDER_HOLD;
   }
@@ -90,7 +88,7 @@ bool DatagramsInFlight::drawn(int percent) {
 
 std::chrono::steady_clock::duration DatagramsInFlight::jitterDrawn() {
   std::uniform_int_distribution<std::chrono::steady_clock::duration::rep> extra{
-      0, jitterPerCrossing_.count()};
+      0, perCrossing(conditions_.jitter).count()};
   return std::chrono::steady_clock::duration{extra(generator_)};
 }
 
