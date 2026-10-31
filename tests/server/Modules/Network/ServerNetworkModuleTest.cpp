@@ -201,7 +201,8 @@ TEST_F(ServerNetworkModuleFixture, FailsToStartWhenThePortIsTaken) {
  * Given a server whose network module crosses a simulated network with a lag
  * of 200 ms, and a client on the loopback address
  * When a module queues a datagram for the client
- * Then the client receives it no sooner than 100 ms after it was queued
+ * Then the client receives the queued bytes, no sooner than 100 ms after they
+ * were queued
  */
 TEST_F(ServerNetworkModuleFixture, DelaysWhatItSendsByHalfTheSimulatedLag) {
   auto probeModule = probeRunning([](rtype::engine::Duration) {});
@@ -220,5 +221,6 @@ TEST_F(ServerNetworkModuleFixture, DelaysWhatItSendsByHalfTheSimulatedLag) {
   application.stop();
 
   ASSERT_EQ(received.size(), 1U);
+  EXPECT_EQ(received.front().payload, std::vector<std::byte>{QUEUED_BYTE});
   EXPECT_GE(received.front().time - queuedAt, HALF_OF_THE_LAG);
 }

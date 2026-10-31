@@ -215,7 +215,8 @@ TEST(DatagramsInFlight, CopiesAboutTheShareOfTheDuplicates) {
 /**
  * Given a loss of 50 % and duplicates at 100 %
  * When 1000 datagrams are handed over
- * Then each arrives twice or never, never once: a lost datagram is not copied
+ * Then each arrives twice or never, never once, and some arrive twice: a lost
+ * datagram is not copied, and one not lost is
  */
 TEST(DatagramsInFlight, NeverCopiesALostDatagram) {
   DatagramsInFlight inFlight{HALF_LOSS_FULL_DUPLICATES, SOME_SEED};
@@ -226,23 +227,27 @@ TEST(DatagramsInFlight, NeverCopiesALostDatagram) {
 
   EXPECT_TRUE(std::ranges::none_of(
       counts, [](std::size_t count) { return count == 1; }));
+  EXPECT_TRUE(std::ranges::any_of(counts, [](std::size_t count) {
+    return count == ARRIVALS_OF_A_COPIED_DATAGRAM;
+  }));
 }
 
 /**
  * Given reordering at 100 % and no lag
  * When 1000 datagrams are handed over 100 ms apart
- * Then each waits exactly 75 ms
+ * Then every one arrives, each after exactly 75 ms
  */
 TEST(DatagramsInFlight, HoldsAReorderedDatagramForTheReorderHold) {
   DatagramsInFlight inFlight{FULL_REORDER, SOME_SEED};
 
   handNumbered(inFlight, THOUSAND_DATAGRAMS, HUNDRED_MILLISECONDS_APART);
+  const std::vector<DatagramInFlight> arrivals = everyArrival(inFlight);
 
-  EXPECT_TRUE(std::ranges::all_of(
-      waitsOf(everyArrival(inFlight), HUNDRED_MILLISECONDS_APART),
-      [](std::chrono::steady_clock::duration wait) {
-        return wait == HOLD_OF_A_REORDERED_DATAGRAM;
-      }));
+  ASSERT_EQ(arrivals.size(), THOUSAND_DATAGRAMS);
+  EXPECT_TRUE(std::ranges::all_of(waitsOf(arrivals, HUNDRED_MILLISECONDS_APART),
+                                  [](std::chrono::steady_clock::duration wait) {
+                                    return wait == HOLD_OF_A_REORDERED_DATAGRAM;
+                                  }));
 }
 
 /**
