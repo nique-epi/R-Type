@@ -6,11 +6,11 @@
 #include "IDatagramSocket.hpp"
 #include "Logger.hpp"
 #include "NetworkConditions.hpp"
+#include "NetworkConditionsConstants.hpp"
 #include "NetworkConditionsText.hpp"
 #include "NetworkConstants.hpp"
 #include "NetworkContext.hpp"
 #include "SimulatedNetworkSocket.hpp"
-#include "SimulatorConstants.hpp"
 #include "UdpSocket.hpp"
 
 namespace rtype::network {

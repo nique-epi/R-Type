@@ -3,14 +3,13 @@ add_library(rtype_network_simulator STATIC
   DelayedDelivery.cpp
   SimulatedNetworkSocket.cpp
   DatagramSocketOpening.cpp
-  NetworkConditionsText.cpp
-  SimulatorLaunchOptions.cpp
 )
 
 target_include_directories(rtype_network_simulator PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
 target_link_libraries(rtype_network_simulator
   PUBLIC
+    rtype_network_conditions
     rtype_network_context
     rtype_network_transport
     rtype_network_udp_socket

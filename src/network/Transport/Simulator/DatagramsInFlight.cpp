@@ -12,6 +12,7 @@
 #include "DatagramInFlight.hpp"
 #include "Endpoint.hpp"
 #include "NetworkConditions.hpp"
+#include "NetworkConditionsConstants.hpp"
 #include "SimulatorConstants.hpp"
 
 namespace rtype::network {

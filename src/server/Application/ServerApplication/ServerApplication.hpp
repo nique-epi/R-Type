@@ -19,7 +19,6 @@
 #include "NetworkConditions.hpp"
 #include "NetworkContext.hpp"
 #include "OutgoingDatagram.hpp"
-#include "SimulatorConstants.hpp"
 #include "SystemClock.hpp"
 
 namespace rtype::server {
@@ -79,11 +78,10 @@ class ServerApplication final : public IDatagramSender,
    * is called; port 0 lets the system pick a free port. Binds nothing.
    * @param handleTick Must not be empty.
    * @param conditions The network its datagrams cross, see
-   * network::openDatagramSocket().
+   * network::openDatagramSocket(); a perfect network unless given.
    */
-  ServerApplication(
-      network::Endpoint localEndpoint, TickHandler handleTick,
-      network::NetworkConditions conditions = network::PERFECT_NETWORK);
+  ServerApplication(network::Endpoint localEndpoint, TickHandler handleTick,
+                    const network::NetworkConditions& conditions = {});
 
   ServerApplication(const ServerApplication&) = delete;
   ServerApplication& operator=(const ServerApplication&) = delete;

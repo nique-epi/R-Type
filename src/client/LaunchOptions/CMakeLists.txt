@@ -7,8 +7,8 @@ target_link_libraries(rtype_client_launch_options
     rtype_client_audio_interfaces
     rtype_client_exceptions
     rtype_engine_launch_arguments
+    rtype_network_conditions
     rtype_network_exceptions
-    rtype_network_simulator
     rtype_network_transport
   PRIVATE
     rtype_client_constants

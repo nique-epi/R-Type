@@ -9,10 +9,10 @@
 #include <utility>
 #include <vector>
 #include "NetworkConditions.hpp"
+#include "NetworkConditionsConstants.hpp"
 #include "NetworkConditionsText.hpp"
 #include "NetworkException.hpp"
 #include "NetworkScenario.hpp"
-#include "SimulatorConstants.hpp"
 #include "WholeNumberText.hpp"
 
 namespace rtype::network {

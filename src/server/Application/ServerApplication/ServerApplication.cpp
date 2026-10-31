@@ -37,9 +37,9 @@ std::string firstSenderText(const std::optional<network::Endpoint>& sender) {
 
 }  // namespace
 
-ServerApplication::ServerApplication(network::Endpoint localEndpoint,
-                                     TickHandler handleTick,
-                                     network::NetworkConditions conditions)
+ServerApplication::ServerApplication(
+    network::Endpoint localEndpoint, TickHandler handleTick,
+    const network::NetworkConditions& conditions)
     : logger_(std::string{SERVER_LOGGER_NAME}),
       listeningEndpoint_(std::move(localEndpoint)),
       conditions_(conditions),
