@@ -3,7 +3,6 @@
 #include <chrono>
 #include <cstddef>
 #include <cstdint>
-#include <functional>
 #include <iterator>
 #include <optional>
 #include <span>
@@ -52,19 +51,14 @@ namespace rtype::client {
 
 namespace {
 
-/** @brief Hands every EntitySpawned, EntityDestroyed and PlayerLeft that
- * arrives to @p keep. */
-void keepEntityChanges(network::MessageDispatcher& dispatcher,
-                       const std::function<void(EntityMessage)>& keep) {
-  dispatcher.registerHandler<network::EntitySpawned>(
-      [keep](const network::MessageOrigin&,
-             const network::EntitySpawned& spawned) { keep(spawned); });
-  dispatcher.registerHandler<network::EntityDestroyed>(
-      [keep](const network::MessageOrigin&,
-             const network::EntityDestroyed& destroyed) { keep(destroyed); });
-  dispatcher.registerHandler<network::PlayerLeft>(
-      [keep](const network::MessageOrigin&,
-             const network::PlayerLeft& departure) { keep(departure); });
+/** @brief Hands every message of these types that arrives to @p keep. */
+template <typename... Messages, typename Keep>
+void keepEachOf(network::MessageDispatcher& dispatcher, Keep keep) {
+  (dispatcher.registerHandler<Messages>(
+       [keep](const network::MessageOrigin&, const Messages& message) {
+         keep(message);
+       }),
+   ...);
 }
 
 }  // namespace
@@ -233,7 +227,8 @@ void ServerConnection::registerSessionMessages() {
         startGame();
         keepEntityMessage(state);
       });
-  keepEntityChanges(dispatcher_, [this](EntityMessage message) {
+  keepEachOf<network::EntitySpawned, network::EntityDestroyed,
+             network::PlayerLeft>(dispatcher_, [this](EntityMessage message) {
     keepEntityMessage(std::move(message));
   });
   dispatcher_.registerHandler<network::GameEvent>(
