@@ -283,12 +283,7 @@ jobs:
           shellcheck --shell=sh --external-sources tests/tools/network-conditions/*.sh
 
       - name: Load netem
-        run: |
-          if ! sudo modprobe sch_netem; then
-            sudo apt-get update
-            sudo apt-get install -y "linux-modules-extra-$(uname -r)"
-            sudo modprobe sch_netem
-          fi
+        run: sudo modprobe sch_netem
 
       - name: Measure what netem.sh does to the loopback interface
         run: sudo sh tests/tools/network-conditions/check-netem.sh
