@@ -5,6 +5,7 @@
 #include <string_view>
 #include "AudioMode.hpp"
 #include "Endpoint.hpp"
+#include "NetworkConditions.hpp"
 
 namespace rtype::client {
 
@@ -23,7 +24,10 @@ class LaunchOptions {
    * Without `-h` the address is DEFAULT_SERVER_ADDRESS, without `-p` the
    * port is DEFAULT_SERVER_PORT, without `-n` the nickname is DEFAULT_NICKNAME,
    * without `--no-sound` the client makes sound.
-   * The last of each option wins.
+   * The last of each option wins. The options of the network simulator are
+   * read first and may stand anywhere (see
+   * network::SimulatorLaunchOptions::read(), whose exceptions this throws
+   * too).
    *
    * @throws engine::UnknownLaunchArgumentException for any other argument.
    * @throws engine::MissingLaunchOptionValueException when `-h`, `-p` or `-n`
@@ -61,6 +65,13 @@ class LaunchOptions {
    */
   [[nodiscard]] bool helpRequested() const;
 
+  /**
+   * @returns The network the datagrams of the client cross, from the options
+   * of the network simulator (see network::SimulatorLaunchOptions):
+   * PERFECT_NETWORK when none was given.
+   */
+  [[nodiscard]] const network::NetworkConditions& networkConditions() const;
+
  private:
   LaunchOptions(network::Endpoint serverEndpoint, std::string nickname,
                 bool helpRequested);
@@ -69,6 +80,7 @@ class LaunchOptions {
   std::string nickname_;
   bool helpRequested_;
   AudioMode audioMode_{AudioMode::Enabled};
+  network::NetworkConditions networkConditions_;
 };
 
 }  // namespace rtype::client

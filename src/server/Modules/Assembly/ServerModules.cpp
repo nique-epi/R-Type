@@ -20,8 +20,8 @@ std::vector<std::unique_ptr<engine::IModule>> serverModules(
     const LaunchOptions& launchOptions, StopRequest& stopRequest) {
   std::vector<std::unique_ptr<engine::IModule>> modules;
   modules.push_back(std::make_unique<ServerLoggerModule>(logOptions));
-  modules.push_back(
-      std::make_unique<ServerNetworkModule>(launchOptions.port(), stopRequest));
+  modules.push_back(std::make_unique<ServerNetworkModule>(
+      launchOptions.port(), stopRequest, launchOptions.networkConditions()));
   modules.push_back(std::make_unique<ServerGamesModule>(
       GamesSettings{.seed = launchOptions.seed(),
                     .wavesFile = std::filesystem::path{WAVE_FILE_PATH},

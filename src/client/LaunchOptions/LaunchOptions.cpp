@@ -14,17 +14,22 @@
 #include "LaunchOption.hpp"
 #include "LogLaunchOptions.hpp"
 #include "LoggingConstants.hpp"
+#include "NetworkConditions.hpp"
 #include "NetworkConstants.hpp"
 #include "ProtocolConstants.hpp"
+#include "SimulatorLaunchOptions.hpp"
 #include "WireTypes.hpp"
 
 namespace rtype::client {
 
 LaunchOptions LaunchOptions::read(std::span<const std::string_view> arguments) {
+  const network::SimulatorLaunchOptions simulatorOptions =
+      network::SimulatorLaunchOptions::read(arguments);
   LaunchOptions options{
       network::Endpoint{.address = std::string(DEFAULT_SERVER_ADDRESS),
                         .port = network::DEFAULT_SERVER_PORT},
       std::string(DEFAULT_NICKNAME), false};
+  options.networkConditions_ = simulatorOptions.conditions();
   const std::array launchOptions{
       engine::LaunchOption{.name = ADDRESS_OPTION,
                            .takesValue = true,
@@ -65,7 +70,7 @@ LaunchOptions LaunchOptions::read(std::span<const std::string_view> arguments) {
                 options.helpRequested_ = true;
               }},
   };
-  engine::readLaunchArguments(arguments, launchOptions);
+  engine::readLaunchArguments(simulatorOptions.otherArguments(), launchOptions);
   return options;
 }
 
@@ -92,6 +97,8 @@ std::string LaunchOptions::usage() {
   text += engine::usageEntry(engine::HELP_OPTION,
                              "Print this help and open no window.");
   text += '\n';
+  text += network::SimulatorLaunchOptions::usage();
+  text += '\n';
   text += logging::LogLaunchOptions::usage(logging::CLIENT_LOG_FILE_NAME);
   return text;
 }
@@ -105,6 +112,10 @@ const std::string& LaunchOptions::nickname() const { return nickname_; }
 AudioMode LaunchOptions::audioMode() const { return audioMode_; }
 
 bool LaunchOptions::helpRequested() const { return helpRequested_; }
+
+const network::NetworkConditions& LaunchOptions::networkConditions() const {
+  return networkConditions_;
+}
 
 LaunchOptions::LaunchOptions(network::Endpoint serverEndpoint,
                              std::string nickname, bool helpRequested)

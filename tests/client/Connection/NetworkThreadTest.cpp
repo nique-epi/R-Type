@@ -1,4 +1,5 @@
 #include <gtest/gtest.h>
+#include <chrono>
 #include <cstddef>
 #include <cstdint>
 #include <future>
@@ -7,9 +8,11 @@
 #include <vector>
 #include "Endpoint.hpp"
 #include "IncomingDatagram.hpp"
+#include "NetworkConditions.hpp"
 #include "NetworkConstants.hpp"
 #include "NetworkContext.hpp"
 #include "NetworkException.hpp"
+#include "NetworkSimulatorTestConstants.hpp"
 #include "NetworkTestConstants.hpp"
 #include "NetworkThread.hpp"
 #include "NetworkThreadFixtures.hpp"
@@ -22,6 +25,7 @@ using rtype::client::NetworkThread;
 using rtype::network::ANY_PORT;
 using rtype::network::Endpoint;
 using rtype::network::IncomingDatagram;
+using rtype::network::NetworkConditions;
 using rtype::network::NetworkContext;
 using rtype::network::OutgoingDatagram;
 using rtype::network::UdpSocket;
@@ -33,7 +37,7 @@ using rtype::network::UdpSocket;
  * its sender
  */
 TEST(NetworkThread, HandsEachReceivedDatagramToTheDrainingThread) {
-  NetworkThread networkThread{loopbackOnPort(ANY_PORT)};
+  NetworkThread networkThread{loopbackOnPort(ANY_PORT), NetworkConditions{}};
   networkThread.open();
   NetworkContext peerContext;
   UdpSocket peer{peerContext, loopbackOnPort(ANY_PORT)};
@@ -54,7 +58,7 @@ TEST(NetworkThread, HandsEachReceivedDatagramToTheDrainingThread) {
  * Then the peer receives its bytes, sent from the network thread's port
  */
 TEST(NetworkThread, SendsEachHandedDatagramToItsDestination) {
-  NetworkThread networkThread{loopbackOnPort(ANY_PORT)};
+  NetworkThread networkThread{loopbackOnPort(ANY_PORT), NetworkConditions{}};
   networkThread.open();
   NetworkContext peerContext;
   UdpSocket peer{peerContext, loopbackOnPort(ANY_PORT)};
@@ -107,7 +111,7 @@ TEST(NetworkThread, SendsWhatWaitsBeforeItStops) {
 
   for (std::size_t created = 0; created < SENDING_THREADS_DESTROYED_AT_ONCE;
        ++created) {
-    NetworkThread networkThread{loopbackOnPort(ANY_PORT)};
+    NetworkThread networkThread{loopbackOnPort(ANY_PORT), NetworkConditions{}};
     networkThread.open();
     networkThread.send(OutgoingDatagram{.destination = peerEndpoint,
                                         .payload = exchangedBytes()});
@@ -124,7 +128,7 @@ TEST(NetworkThread, SendsWhatWaitsBeforeItStops) {
  * Then the call returns without adding anything
  */
 TEST(NetworkThread, DrainingReturnsAtOnceWhenNothingArrived) {
-  NetworkThread networkThread{loopbackOnPort(ANY_PORT)};
+  NetworkThread networkThread{loopbackOnPort(ANY_PORT), NetworkConditions{}};
   networkThread.open();
   std::vector<IncomingDatagram> received;
 
@@ -140,7 +144,7 @@ TEST(NetworkThread, DrainingReturnsAtOnceWhenNothingArrived) {
  * DatagramTooLargeException
  */
 TEST(NetworkThread, DrainingThrowsWhatStoppedTheNetworkThread) {
-  NetworkThread networkThread{loopbackOnPort(ANY_PORT)};
+  NetworkThread networkThread{loopbackOnPort(ANY_PORT), NetworkConditions{}};
   networkThread.open();
 
   networkThread.send(OutgoingDatagram{
@@ -160,7 +164,7 @@ TEST(NetworkThread, DrainingThrowsWhatStoppedTheNetworkThread) {
  */
 TEST(NetworkThread, StopsEvenWhenDestroyedBeforeItsThreadRuns) {
   for (int created = 0; created < IMMEDIATE_DESTRUCTION_COUNT; ++created) {
-    NetworkThread networkThread{loopbackOnPort(ANY_PORT)};
+    NetworkThread networkThread{loopbackOnPort(ANY_PORT), NetworkConditions{}};
     networkThread.open();
   }
 
@@ -175,7 +179,7 @@ TEST(NetworkThread, StopsEvenWhenDestroyedBeforeItsThreadRuns) {
 TEST(NetworkThread, BindsNothingBeforeItIsOpened) {
   const std::uint16_t port = freeUdpPort();
 
-  const NetworkThread networkThread{anyInterfaceOn(port)};
+  const NetworkThread networkThread{anyInterfaceOn(port), NetworkConditions{}};
 
   EXPECT_TRUE(udpPortIsFree(port));
 }
@@ -187,7 +191,7 @@ TEST(NetworkThread, BindsNothingBeforeItIsOpened) {
  * Then that port is free again
  */
 TEST(NetworkThread, FreesItsPortOnceClosed) {
-  NetworkThread networkThread{anyInterfaceOn(ANY_PORT)};
+  NetworkThread networkThread{anyInterfaceOn(ANY_PORT), NetworkConditions{}};
   networkThread.open();
   const std::uint16_t port = networkThread.localEndpoint().port;
   ASSERT_FALSE(udpPortIsFree(port));
@@ -195,4 +199,36 @@ TEST(NetworkThread, FreesItsPortOnceClosed) {
   networkThread.close();
 
   EXPECT_TRUE(udpPortIsFree(port));
+}
+
+/**
+ * Given a network thread opened over a simulated network with a lag of
+ * 200 ms, and a peer listening on the loopback address
+ * When the test thread hands the network thread a datagram for the peer
+ * Then the peer receives it no sooner than 100 ms after it was handed over
+ */
+TEST(NetworkThread, DelaysWhatItSendsByHalfTheSimulatedLag) {
+  NetworkThread networkThread{loopbackOnPort(ANY_PORT), LAGGING_NETWORK};
+  networkThread.open();
+  NetworkContext peerContext;
+  UdpSocket peer{peerContext, loopbackOnPort(ANY_PORT)};
+  std::promise<std::chrono::steady_clock::time_point> arrival;
+  std::future<std::chrono::steady_clock::time_point> arrived =
+      arrival.get_future();
+  peer.startReceiving([&arrival, &peerContext](
+                          [[maybe_unused]] const Endpoint& sender,
+                          [[maybe_unused]] std::span<const std::byte> payload) {
+    arrival.set_value(std::chrono::steady_clock::now());
+    peerContext.stop();
+  });
+  const std::jthread peerThread{[&peerContext] { peerContext.run(); }};
+  const auto handedAt = std::chrono::steady_clock::now();
+
+  networkThread.send(OutgoingDatagram{.destination = peer.localEndpoint(),
+                                      .payload = exchangedBytes()});
+  const std::future_status status = arrived.wait_for(DATAGRAM_TIMEOUT);
+  peerContext.stop();
+
+  ASSERT_EQ(status, std::future_status::ready);
+  EXPECT_GE(arrived.get() - handedAt, HALF_OF_THE_LAG);
 }

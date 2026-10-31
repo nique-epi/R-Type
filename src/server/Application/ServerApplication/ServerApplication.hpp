@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <functional>
+#include <memory>
 #include <optional>
 #include <span>
 #include <vector>
@@ -11,13 +12,15 @@
 #include "DatagramSorter.hpp"
 #include "Endpoint.hpp"
 #include "IDatagramSender.hpp"
+#include "IDatagramSocket.hpp"
 #include "IPlayerAdmission.hpp"
 #include "IncomingDatagram.hpp"
 #include "Logger.hpp"
+#include "NetworkConditions.hpp"
 #include "NetworkContext.hpp"
 #include "OutgoingDatagram.hpp"
+#include "SimulatorConstants.hpp"
 #include "SystemClock.hpp"
-#include "UdpSocket.hpp"
 
 namespace rtype::server {
 
@@ -75,8 +78,12 @@ class ServerApplication final : public IDatagramSender,
    * @brief Prepares a server that will listen on @p localEndpoint once open()
    * is called; port 0 lets the system pick a free port. Binds nothing.
    * @param handleTick Must not be empty.
+   * @param conditions The network its datagrams cross, see
+   * network::openDatagramSocket().
    */
-  ServerApplication(network::Endpoint localEndpoint, TickHandler handleTick);
+  ServerApplication(
+      network::Endpoint localEndpoint, TickHandler handleTick,
+      network::NetworkConditions conditions = network::PERFECT_NETWORK);
 
   ServerApplication(const ServerApplication&) = delete;
   ServerApplication& operator=(const ServerApplication&) = delete;
@@ -138,16 +145,17 @@ class ServerApplication final : public IDatagramSender,
 
  private:
   /** @throws ServerNotOpenException when open() was not called. */
-  [[nodiscard]] network::UdpSocket& openSocket();
-  [[nodiscard]] const network::UdpSocket& openSocket() const;
+  [[nodiscard]] network::IDatagramSocket& openSocket();
+  [[nodiscard]] const network::IDatagramSocket& openSocket() const;
   void simulateTick();
   void reportDiscardedDatagrams();
 
   logging::Logger logger_;
   engine::SystemClock clock_;
   network::Endpoint listeningEndpoint_;
+  network::NetworkConditions conditions_;
   network::NetworkContext network_;
-  std::optional<network::UdpSocket> socket_;
+  std::unique_ptr<network::IDatagramSocket> socket_;
   concurrency::BoundedQueue<network::IncomingDatagram> incoming_;
   concurrency::BoundedQueue<network::IncomingDatagram> connectionRequests_;
   concurrency::BoundedQueue<network::OutgoingDatagram> outgoing_;

@@ -9,10 +9,8 @@ constexpr std::string_view PORT_OPTION_TEXT = "-p";
 constexpr std::string_view PORT_ARGUMENT = "4243";
 constexpr std::string_view NO_SOUND_OPTION_TEXT = "--no-sound";
 
-/** @brief Values the tests give, and the conditions each makes. */
-constexpr std::string_view LAG_ARGUMENT = "100";
-constexpr rtype::network::NetworkConditions LAG_OF_LAG_ARGUMENT{
-    .lag = std::chrono::milliseconds{100}};
+/** @brief Values the tests give, and the conditions each makes; the lag is in
+ * NetworkSimulatorTestConstants.hpp, which the programs' tests share. */
 constexpr std::string_view JITTER_ARGUMENT = "40";
 constexpr rtype::network::NetworkConditions JITTER_OF_JITTER_ARGUMENT{
     .jitter = std::chrono::milliseconds{40}};

@@ -56,3 +56,6 @@ constexpr std::size_t SECOND_GAME = 1;
 /** @brief Numbers of games a test starts the server with. */
 constexpr std::size_t ONE_GAME = 1;
 constexpr std::size_t THREE_GAMES = 3;
+
+/** @brief The only byte of the datagram a test queues for its client. */
+constexpr std::byte QUEUED_BYTE{0x2A};

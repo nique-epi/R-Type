@@ -10,6 +10,7 @@
 #include "Endpoint.hpp"
 #include "IModule.hpp"
 #include "ModuleConstants.hpp"
+#include "NetworkConditions.hpp"
 #include "NetworkConstants.hpp"
 #include "ServerLoggerModule.hpp"
 #include "ServerModuleTestConstants.hpp"
@@ -22,11 +23,19 @@
 std::vector<std::unique_ptr<rtype::engine::IModule>>
 ServerNetworkModuleFixture::networkModulesThen(
     std::uint16_t port, std::unique_ptr<rtype::engine::IModule> probe) {
+  return networkModulesOver(port, rtype::network::NetworkConditions{},
+                            std::move(probe));
+}
+
+std::vector<std::unique_ptr<rtype::engine::IModule>>
+ServerNetworkModuleFixture::networkModulesOver(
+    std::uint16_t port, const rtype::network::NetworkConditions& conditions,
+    std::unique_ptr<rtype::engine::IModule> probe) {
   std::vector<std::unique_ptr<rtype::engine::IModule>> modules;
   modules.push_back(
       std::make_unique<rtype::server::ServerLoggerModule>(journalOptions()));
-  modules.push_back(
-      std::make_unique<rtype::server::ServerNetworkModule>(port, stopRequest_));
+  modules.push_back(std::make_unique<rtype::server::ServerNetworkModule>(
+      port, stopRequest_, conditions));
   modules.push_back(std::move(probe));
   return modules;
 }

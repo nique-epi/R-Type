@@ -11,8 +11,10 @@
 #include "LaunchOptions.hpp"
 #include "LaunchOptionsTestConstants.hpp"
 #include "LoggingConstants.hpp"
+#include "NetworkConditions.hpp"
 #include "NetworkConstants.hpp"
 #include "NetworkException.hpp"
+#include "NetworkSimulatorTestConstants.hpp"
 
 using rtype::client::ADDRESS_OPTION;
 using rtype::client::AudioMode;
@@ -337,4 +339,41 @@ TEST(ClientLaunchOptions, NicknameOptionWithoutValueIsRejected) {
 TEST(ClientLaunchOptions, UsageGivesTheDefaultNickname) {
   EXPECT_NE(LaunchOptions::usage().find(DEFAULT_NICKNAME_LINE),
             std::string::npos);
+}
+
+/**
+ * Given no argument
+ * When the launch options are read
+ * Then the network of the client is perfect: nothing is simulated
+ */
+TEST(ClientLaunchOptions, NoArgumentSimulatesNoNetwork) {
+  EXPECT_EQ(LaunchOptions::read(Arguments{}).networkConditions(),
+            rtype::network::NetworkConditions{});
+}
+
+/**
+ * Given the address option and an address, then the lag option and a lag
+ * When the launch options are read
+ * Then the client joins that address, behind a network with that lag
+ */
+TEST(ClientLaunchOptions, ReadsTheNetworkSimulatorOptionsBesideItsOwn) {
+  const LaunchOptions options = LaunchOptions::read(Arguments{
+      ADDRESS_OPTION, ADDRESS_ARGUMENT, LAG_OPTION_TEXT, LAG_ARGUMENT});
+
+  EXPECT_EQ(options.serverEndpoint().address, ADDRESS_ARGUMENT);
+  EXPECT_EQ(options.networkConditions(), LAG_OF_LAG_ARGUMENT);
+}
+
+/**
+ * Given nothing
+ * When the usage is built
+ * Then it starts a line with each option of the network simulator
+ */
+TEST(ClientLaunchOptions, UsageNamesEveryOptionOfTheNetworkSimulator) {
+  const std::string usage = LaunchOptions::usage();
+
+  for (const std::string_view option : SIMULATOR_OPTION_TEXTS) {
+    SCOPED_TRACE(option);
+    EXPECT_NE(usage.find("\n  " + std::string(option)), std::string::npos);
+  }
 }

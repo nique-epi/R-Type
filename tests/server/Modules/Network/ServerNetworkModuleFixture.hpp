@@ -7,6 +7,7 @@
 #include <vector>
 #include "Endpoint.hpp"
 #include "IModule.hpp"
+#include "NetworkConditions.hpp"
 #include "ServerModuleFixture.hpp"
 #include "StageWork.hpp"
 #include "StopRequest.hpp"
@@ -25,6 +26,16 @@ class ServerNetworkModuleFixture : public ServerModuleFixture {
    */
   [[nodiscard]] std::vector<std::unique_ptr<rtype::engine::IModule>>
   networkModulesThen(std::uint16_t port,
+                     std::unique_ptr<rtype::engine::IModule> probe);
+
+  /**
+   * @returns The logger module, the network module on @p port over the
+   * network @p conditions describe, then @p probe, which depends on the
+   * network module.
+   */
+  [[nodiscard]] std::vector<std::unique_ptr<rtype::engine::IModule>>
+  networkModulesOver(std::uint16_t port,
+                     const rtype::network::NetworkConditions& conditions,
                      std::unique_ptr<rtype::engine::IModule> probe);
 
   /** @returns A probe listed after the network module that runs @p work in the

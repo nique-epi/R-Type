@@ -49,3 +49,8 @@ constexpr rtype::network::NetworkConditions BAD_OF_THE_TABLE{
 constexpr rtype::network::NetworkConditions LAGGING_NETWORK{
     .lag = std::chrono::milliseconds{200}};
 constexpr std::chrono::milliseconds HALF_OF_THE_LAG{100};
+
+/** @brief A lag given after `--lag`, and the conditions it alone makes. */
+constexpr std::string_view LAG_ARGUMENT = "100";
+constexpr rtype::network::NetworkConditions LAG_OF_LAG_ARGUMENT{
+    .lag = std::chrono::milliseconds{100}};

@@ -15,8 +15,10 @@
 #include "LaunchOption.hpp"
 #include "LogLaunchOptions.hpp"
 #include "LoggingConstants.hpp"
+#include "NetworkConditions.hpp"
 #include "NetworkConstants.hpp"
 #include "ServerConstants.hpp"
+#include "SimulatorLaunchOptions.hpp"
 
 namespace rtype::server {
 
@@ -66,7 +68,10 @@ std::size_t stateRateFromText(std::string_view text) {
 }  // namespace
 
 LaunchOptions LaunchOptions::read(std::span<const std::string_view> arguments) {
+  const network::SimulatorLaunchOptions simulatorOptions =
+      network::SimulatorLaunchOptions::read(arguments);
   LaunchOptions options{network::DEFAULT_SERVER_PORT, false};
+  options.networkConditions_ = simulatorOptions.conditions();
   const std::array launchOptions{
       engine::LaunchOption{.name = engine::PORT_OPTION,
                            .takesValue = true,
@@ -94,7 +99,7 @@ LaunchOptions LaunchOptions::read(std::span<const std::string_view> arguments) {
                 options.helpRequested_ = true;
               }},
   };
-  engine::readLaunchArguments(arguments, launchOptions);
+  engine::readLaunchArguments(simulatorOptions.otherArguments(), launchOptions);
   return options;
 }
 
@@ -121,6 +126,8 @@ std::string LaunchOptions::usage() {
   text += engine::usageEntry(engine::HELP_OPTION,
                              "Print this help and start nothing.");
   text += '\n';
+  text += network::SimulatorLaunchOptions::usage();
+  text += '\n';
   text += logging::LogLaunchOptions::usage(logging::SERVER_LOG_FILE_NAME);
   return text;
 }
@@ -132,6 +139,10 @@ std::optional<std::uint32_t> LaunchOptions::seed() const { return seed_; }
 std::size_t LaunchOptions::stateRate() const { return stateRate_; }
 
 bool LaunchOptions::helpRequested() const { return helpRequested_; }
+
+const network::NetworkConditions& LaunchOptions::networkConditions() const {
+  return networkConditions_;
+}
 
 LaunchOptions::LaunchOptions(std::uint16_t port, bool helpRequested)
     : port_(port),

@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 #include <atomic>
+#include <chrono>
 #include <cstddef>
 #include <cstdint>
 #include <memory>
@@ -14,6 +15,8 @@
 #include "ModuleConstants.hpp"
 #include "NetworkConstants.hpp"
 #include "NetworkContext.hpp"
+#include "NetworkSimulatorTestConstants.hpp"
+#include "OutgoingDatagram.hpp"
 #include "PacketHeader.hpp"
 #include "PortProbeModule.hpp"
 #include "ServerConstants.hpp"
@@ -24,6 +27,7 @@
 #include "StopReason.hpp"
 #include "TimeConstants.hpp"
 #include "UdpSocket.hpp"
+#include "UdpTestClient.hpp"
 
 using rtype::engine::Application;
 using rtype::engine::LoopStages;
@@ -191,4 +195,30 @@ TEST_F(ServerNetworkModuleFixture, FailsToStartWhenThePortIsTaken) {
 
   EXPECT_THROW(application.start(), ModuleStartFailedException);
   EXPECT_FALSE(portIsFree(holder.localEndpoint().port));
+}
+
+/**
+ * Given a server whose network module crosses a simulated network with a lag
+ * of 200 ms, and a client on the loopback address
+ * When a module queues a datagram for the client
+ * Then the client receives it no sooner than 100 ms after it was queued
+ */
+TEST_F(ServerNetworkModuleFixture, DelaysWhatItSendsByHalfTheSimulatedLag) {
+  auto probeModule = probeRunning([](rtype::engine::Duration) {});
+  const ServiceProbeModule* probe = probeModule.get();
+  Application application(LoopStages(SERVER_LOOP_STAGES),
+                          networkModulesOver(freeUdpPort(), LAGGING_NETWORK,
+                                             std::move(probeModule)));
+  application.start();
+  UdpTestClient client;
+  const auto queuedAt = std::chrono::steady_clock::now();
+
+  probe->sender()->queueDatagram(rtype::network::OutgoingDatagram{
+      .destination = client.localEndpoint(), .payload = {QUEUED_BYTE}});
+  const std::vector<ReceivedAt> received =
+      client.waitForDatagrams(1, WAIT_FOR_ANSWER);
+  application.stop();
+
+  ASSERT_EQ(received.size(), 1U);
+  EXPECT_GE(received.front().time - queuedAt, HALF_OF_THE_LAG);
 }
