@@ -14,12 +14,8 @@ constexpr std::uint32_t OTHER_SEED = 8;
 constexpr std::chrono::steady_clock::time_point HAND_OVER_START{
     std::chrono::hours{1}};
 
-/** @brief A lag of 100 ms, the half each datagram waits, and the time of a
- * second hand over while the first datagram is in flight. */
-constexpr rtype::network::NetworkConditions LAG_OF_100_MS{
-    .lag = std::chrono::milliseconds{100}};
-constexpr std::chrono::milliseconds HALF_OF_100_MS{50};
-constexpr std::chrono::nanoseconds ONE_NANOSECOND{1};
+/** @brief The time of a second hand over while the first datagram is in
+ * flight: less than half the lag of LAGGING_NETWORK. */
 constexpr std::chrono::milliseconds SECOND_HAND_OVER{20};
 
 /**

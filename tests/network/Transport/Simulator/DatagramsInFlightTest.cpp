@@ -8,8 +8,10 @@
 #include "DatagramsInFlightFixtures.hpp"
 #include "DatagramsInFlightTestConstants.hpp"
 #include "NetworkConditions.hpp"
+#include "NetworkSimulatorTestConstants.hpp"
 #include "SimulatorFixtures.hpp"
 #include "SimulatorTestConstants.hpp"
+#include "TimeTestConstants.hpp"
 
 using rtype::network::DatagramInFlight;
 using rtype::network::DatagramsInFlight;
@@ -34,46 +36,46 @@ TEST(DatagramsInFlight, HandsADatagramAtOnceOverAPerfectNetwork) {
 }
 
 /**
- * Given a lag of 100 ms
+ * Given a lag of 200 ms
  * When a datagram is handed over
- * Then it has not arrived one nanosecond before 50 ms passed
+ * Then it has not arrived one nanosecond before 100 ms passed
  */
 TEST(DatagramsInFlight, HoldsADatagramUntilHalfTheLagPassed) {
-  DatagramsInFlight inFlight{LAG_OF_100_MS, SOME_SEED};
+  DatagramsInFlight inFlight{LAGGING_NETWORK, SOME_SEED};
 
   inFlight.add(peer(), CROSSING_BYTES, HAND_OVER_START);
   const std::vector<DatagramInFlight> arrived =
-      inFlight.takeArrived(HAND_OVER_START + HALF_OF_100_MS - ONE_NANOSECOND);
+      inFlight.takeArrived(HAND_OVER_START + HALF_OF_THE_LAG - ONE_NANOSECOND);
 
   EXPECT_TRUE(arrived.empty());
 }
 
 /**
- * Given a lag of 100 ms
+ * Given a lag of 200 ms
  * When a datagram is handed over
- * Then it arrives once 50 ms passed
+ * Then it arrives once 100 ms passed
  */
 TEST(DatagramsInFlight, HandsADatagramOnceHalfTheLagPassed) {
-  DatagramsInFlight inFlight{LAG_OF_100_MS, SOME_SEED};
+  DatagramsInFlight inFlight{LAGGING_NETWORK, SOME_SEED};
 
   inFlight.add(peer(), CROSSING_BYTES, HAND_OVER_START);
   const std::vector<DatagramInFlight> arrived =
-      inFlight.takeArrived(HAND_OVER_START + HALF_OF_100_MS);
+      inFlight.takeArrived(HAND_OVER_START + HALF_OF_THE_LAG);
 
   EXPECT_EQ(arrived.size(), 1U);
 }
 
 /**
- * Given a lag of 100 ms
+ * Given a lag of 200 ms
  * When a datagram is handed over
- * Then the next arrival is 50 ms after the hand over
+ * Then the next arrival is 100 ms after the hand over
  */
 TEST(DatagramsInFlight, GivesHalfTheLagAsTheNextArrival) {
-  DatagramsInFlight inFlight{LAG_OF_100_MS, SOME_SEED};
+  DatagramsInFlight inFlight{LAGGING_NETWORK, SOME_SEED};
 
   inFlight.add(peer(), CROSSING_BYTES, HAND_OVER_START);
 
-  EXPECT_EQ(inFlight.nextArrival(), HAND_OVER_START + HALF_OF_100_MS);
+  EXPECT_EQ(inFlight.nextArrival(), HAND_OVER_START + HALF_OF_THE_LAG);
 }
 
 /**
@@ -82,7 +84,7 @@ TEST(DatagramsInFlight, GivesHalfTheLagAsTheNextArrival) {
  * Then nothing is left in flight: there is no next arrival
  */
 TEST(DatagramsInFlight, HasNoNextArrivalOnceEverythingArrived) {
-  DatagramsInFlight inFlight{LAG_OF_100_MS, SOME_SEED};
+  DatagramsInFlight inFlight{LAGGING_NETWORK, SOME_SEED};
   inFlight.add(peer(), CROSSING_BYTES, HAND_OVER_START);
 
   static_cast<void>(everyArrival(inFlight));
@@ -91,19 +93,19 @@ TEST(DatagramsInFlight, HasNoNextArrivalOnceEverythingArrived) {
 }
 
 /**
- * Given a lag of 100 ms and two datagrams handed over 20 ms apart
+ * Given a lag of 200 ms and two datagrams handed over 20 ms apart
  * When the first arrived and was taken
- * Then the second is still in flight, due 50 ms after its own hand over
+ * Then the second is still in flight, due 100 ms after its own hand over
  */
 TEST(DatagramsInFlight, KeepsTheDatagramsThatHaveNotArrivedYet) {
-  DatagramsInFlight inFlight{LAG_OF_100_MS, SOME_SEED};
+  DatagramsInFlight inFlight{LAGGING_NETWORK, SOME_SEED};
   inFlight.add(peer(), CROSSING_BYTES, HAND_OVER_START);
   inFlight.add(peer(), CROSSING_BYTES, HAND_OVER_START + SECOND_HAND_OVER);
 
-  static_cast<void>(inFlight.takeArrived(HAND_OVER_START + HALF_OF_100_MS));
+  static_cast<void>(inFlight.takeArrived(HAND_OVER_START + HALF_OF_THE_LAG));
 
   EXPECT_EQ(inFlight.nextArrival(),
-            HAND_OVER_START + SECOND_HAND_OVER + HALF_OF_100_MS);
+            HAND_OVER_START + SECOND_HAND_OVER + HALF_OF_THE_LAG);
 }
 
 /**
@@ -132,7 +134,8 @@ TEST(DatagramsInFlight, JitterDelaysEachDatagramByAtMostHalfOfIt) {
   handNumbered(inFlight, THOUSAND_DATAGRAMS, HUNDRED_MILLISECONDS_APART);
   const std::vector<DatagramInFlight> arrivals = everyArrival(inFlight);
 
-  EXPECT_LE(longestWait(arrivals, HUNDRED_MILLISECONDS_APART), HALF_OF_60_MS);
+  EXPECT_LE(std::ranges::max(waitsOf(arrivals, HUNDRED_MILLISECONDS_APART)),
+            HALF_OF_60_MS);
 }
 
 /**
@@ -144,11 +147,11 @@ TEST(DatagramsInFlight, JitterSpreadsTheWaitsOverHalfOfIt) {
   DatagramsInFlight inFlight{JITTER_OF_60_MS, SOME_SEED};
 
   handNumbered(inFlight, THOUSAND_DATAGRAMS, HUNDRED_MILLISECONDS_APART);
-  const std::vector<DatagramInFlight> arrivals = everyArrival(inFlight);
+  const std::vector<std::chrono::steady_clock::duration> waits =
+      waitsOf(everyArrival(inFlight), HUNDRED_MILLISECONDS_APART);
 
-  EXPECT_LT(shortestWait(arrivals, HUNDRED_MILLISECONDS_APART), NEAR_NO_WAIT);
-  EXPECT_GT(longestWait(arrivals, HUNDRED_MILLISECONDS_APART),
-            NEAR_HALF_OF_60_MS);
+  EXPECT_LT(std::ranges::min(waits), NEAR_NO_WAIT);
+  EXPECT_GT(std::ranges::max(waits), NEAR_HALF_OF_60_MS);
 }
 
 /**
@@ -235,9 +238,11 @@ TEST(DatagramsInFlight, HoldsAReorderedDatagramForTheReorderHold) {
 
   handNumbered(inFlight, THOUSAND_DATAGRAMS, HUNDRED_MILLISECONDS_APART);
 
-  EXPECT_EQ(countWaiting(everyArrival(inFlight), HOLD_OF_A_REORDERED_DATAGRAM,
-                         HUNDRED_MILLISECONDS_APART),
-            THOUSAND_DATAGRAMS);
+  EXPECT_TRUE(std::ranges::all_of(
+      waitsOf(everyArrival(inFlight), HUNDRED_MILLISECONDS_APART),
+      [](std::chrono::steady_clock::duration wait) {
+        return wait == HOLD_OF_A_REORDERED_DATAGRAM;
+      }));
 }
 
 /**
@@ -262,16 +267,15 @@ TEST(DatagramsInFlight, HoldsOnlyTheDrawnDatagrams) {
   DatagramsInFlight inFlight{HALF_REORDER, SOME_SEED};
 
   handNumbered(inFlight, THOUSAND_DATAGRAMS, HUNDRED_MILLISECONDS_APART);
-  const std::vector<DatagramInFlight> arrivals = everyArrival(inFlight);
-  const std::size_t held = countWaiting(arrivals, HOLD_OF_A_REORDERED_DATAGRAM,
-                                        HUNDRED_MILLISECONDS_APART);
-  const std::size_t onTime =
-      countWaiting(arrivals, std::chrono::steady_clock::duration::zero(),
-                   HUNDRED_MILLISECONDS_APART);
+  const std::vector<std::chrono::steady_clock::duration> waits =
+      waitsOf(everyArrival(inFlight), HUNDRED_MILLISECONDS_APART);
+  const auto held = std::ranges::count(waits, HOLD_OF_A_REORDERED_DATAGRAM);
+  const auto onTime =
+      std::ranges::count(waits, std::chrono::steady_clock::duration::zero());
 
-  EXPECT_EQ(held + onTime, THOUSAND_DATAGRAMS);
-  EXPECT_GT(held, 0U);
-  EXPECT_GT(onTime, 0U);
+  EXPECT_EQ(static_cast<std::size_t>(held + onTime), THOUSAND_DATAGRAMS);
+  EXPECT_GT(held, 0);
+  EXPECT_GT(onTime, 0);
 }
 
 /**

@@ -20,6 +20,7 @@
 #include "OutgoingDatagram.hpp"
 #include "UdpPortProbe.hpp"
 #include "UdpSocket.hpp"
+#include "UdpTestClient.hpp"
 
 using rtype::client::NetworkThread;
 using rtype::network::ANY_PORT;
@@ -210,25 +211,14 @@ TEST(NetworkThread, FreesItsPortOnceClosed) {
 TEST(NetworkThread, DelaysWhatItSendsByHalfTheSimulatedLag) {
   NetworkThread networkThread{loopbackOnPort(ANY_PORT), LAGGING_NETWORK};
   networkThread.open();
-  NetworkContext peerContext;
-  UdpSocket peer{peerContext, loopbackOnPort(ANY_PORT)};
-  std::promise<std::chrono::steady_clock::time_point> arrival;
-  std::future<std::chrono::steady_clock::time_point> arrived =
-      arrival.get_future();
-  peer.startReceiving([&arrival, &peerContext](
-                          [[maybe_unused]] const Endpoint& sender,
-                          [[maybe_unused]] std::span<const std::byte> payload) {
-    arrival.set_value(std::chrono::steady_clock::now());
-    peerContext.stop();
-  });
-  const std::jthread peerThread{[&peerContext] { peerContext.run(); }};
+  UdpTestClient peer;
   const auto handedAt = std::chrono::steady_clock::now();
 
   networkThread.send(OutgoingDatagram{.destination = peer.localEndpoint(),
                                       .payload = exchangedBytes()});
-  const std::future_status status = arrived.wait_for(DATAGRAM_TIMEOUT);
-  peerContext.stop();
+  const std::vector<ReceivedAt> received =
+      peer.waitForDatagrams(1, DATAGRAM_TIMEOUT);
 
-  ASSERT_EQ(status, std::future_status::ready);
-  EXPECT_GE(arrived.get() - handedAt, HALF_OF_THE_LAG);
+  ASSERT_EQ(received.size(), 1U);
+  EXPECT_GE(received.front().time - handedAt, HALF_OF_THE_LAG);
 }

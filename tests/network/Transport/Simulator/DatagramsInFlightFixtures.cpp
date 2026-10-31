@@ -5,7 +5,6 @@
 #include <chrono>
 #include <cstddef>
 #include <cstdint>
-#include <ranges>
 #include <vector>
 #include "DatagramInFlight.hpp"
 #include "DatagramsInFlight.hpp"
@@ -42,37 +41,15 @@ std::chrono::steady_clock::duration waitOf(
           spacing * static_cast<std::int64_t>(numberOf(datagram)));
 }
 
-std::chrono::steady_clock::duration longestWait(
+std::vector<std::chrono::steady_clock::duration> waitsOf(
     const std::vector<rtype::network::DatagramInFlight>& arrivals,
     std::chrono::milliseconds spacing) {
-  return std::ranges::max(
-      arrivals |
-      std::views::transform(
-          [spacing](const rtype::network::DatagramInFlight& datagram) {
-            return waitOf(datagram, spacing);
-          }));
-}
-
-std::chrono::steady_clock::duration shortestWait(
-    const std::vector<rtype::network::DatagramInFlight>& arrivals,
-    std::chrono::milliseconds spacing) {
-  return std::ranges::min(
-      arrivals |
-      std::views::transform(
-          [spacing](const rtype::network::DatagramInFlight& datagram) {
-            return waitOf(datagram, spacing);
-          }));
-}
-
-std::size_t countWaiting(
-    const std::vector<rtype::network::DatagramInFlight>& arrivals,
-    std::chrono::steady_clock::duration wait,
-    std::chrono::milliseconds spacing) {
-  return static_cast<std::size_t>(std::ranges::count_if(
-      arrivals,
-      [wait, spacing](const rtype::network::DatagramInFlight& datagram) {
-        return waitOf(datagram, spacing) == wait;
-      }));
+  std::vector<std::chrono::steady_clock::duration> waits;
+  waits.reserve(arrivals.size());
+  for (const rtype::network::DatagramInFlight& datagram : arrivals) {
+    waits.push_back(waitOf(datagram, spacing));
+  }
+  return waits;
 }
 
 std::vector<std::size_t> arrivalsByNumber(

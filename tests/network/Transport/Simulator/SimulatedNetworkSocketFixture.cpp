@@ -4,14 +4,12 @@
 #include <cstddef>
 #include <memory>
 #include <span>
-#include <string>
 #include <utility>
 #include <vector>
 #include "Endpoint.hpp"
 #include "IDatagramSocket.hpp"
 #include "IncomingDatagram.hpp"
 #include "NetworkConditions.hpp"
-#include "NetworkConstants.hpp"
 #include "NetworkContext.hpp"
 #include "NetworkTestConstants.hpp"
 #include "RecordingDatagramSocket.hpp"
@@ -62,10 +60,4 @@ rtype::network::DatagramHandler SimulatedNetworkSocketFixture::recordInto(
     received.push_back(rtype::network::IncomingDatagram{
         .sender = sender, .payload = {payload.begin(), payload.end()}});
   };
-}
-
-rtype::network::Endpoint SimulatedNetworkSocketFixture::loopbackOnAnyPort() {
-  return rtype::network::Endpoint{
-      .address = std::string{rtype::network::LOOPBACK_IPV4_ADDRESS},
-      .port = rtype::network::ANY_PORT};
 }

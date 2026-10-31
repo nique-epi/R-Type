@@ -26,20 +26,10 @@ void handNumbered(rtype::network::DatagramsInFlight& inFlight,
     const rtype::network::DatagramInFlight& datagram,
     std::chrono::milliseconds spacing);
 
-/** @returns The longest and the shortest wait of @p arrivals, handed over by
- * handNumbered() with @p spacing. */
-[[nodiscard]] std::chrono::steady_clock::duration longestWait(
+/** @returns How long each of @p arrivals, handed over by handNumbered() with
+ * @p spacing, waited before it arrived, in the order of @p arrivals. */
+[[nodiscard]] std::vector<std::chrono::steady_clock::duration> waitsOf(
     const std::vector<rtype::network::DatagramInFlight>& arrivals,
-    std::chrono::milliseconds spacing);
-[[nodiscard]] std::chrono::steady_clock::duration shortestWait(
-    const std::vector<rtype::network::DatagramInFlight>& arrivals,
-    std::chrono::milliseconds spacing);
-
-/** @returns How many of @p arrivals, handed over by handNumbered() with
- * @p spacing, waited exactly @p wait. */
-[[nodiscard]] std::size_t countWaiting(
-    const std::vector<rtype::network::DatagramInFlight>& arrivals,
-    std::chrono::steady_clock::duration wait,
     std::chrono::milliseconds spacing);
 
 /** @returns For each number from 0 to @p count - 1, how many times it is in

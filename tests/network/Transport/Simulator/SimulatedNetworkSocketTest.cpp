@@ -4,6 +4,7 @@
 #include <cstddef>
 #include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 #include "Endpoint.hpp"
 #include "IncomingDatagram.hpp"
@@ -19,6 +20,7 @@
 #include "SimulatorTestConstants.hpp"
 #include "UdpSocket.hpp"
 
+using rtype::network::ANY_PORT;
 using rtype::network::DatagramTooLargeException;
 using rtype::network::Endpoint;
 using rtype::network::IncomingDatagram;
@@ -211,7 +213,8 @@ TEST_F(SimulatedNetworkSocketFixture, DeliversNothingOnceDestroyed) {
  * Then it is the address and port of the UDP socket
  */
 TEST_F(SimulatedNetworkSocketFixture, IsBoundWhereTheRealSocketIs) {
-  auto udpSocket = std::make_unique<UdpSocket>(context(), loopbackOnAnyPort());
+  auto udpSocket =
+      std::make_unique<UdpSocket>(context(), loopbackOnPort(ANY_PORT));
   const Endpoint bound = udpSocket->localEndpoint();
 
   const SimulatedNetworkSocket socket{context(), std::move(udpSocket),
@@ -227,7 +230,8 @@ TEST_F(SimulatedNetworkSocketFixture, IsBoundWhereTheRealSocketIs) {
  */
 TEST_F(SimulatedNetworkSocketFixture, StartsReceivingOnlyOnce) {
   SimulatedNetworkSocket socket{
-      context(), std::make_unique<UdpSocket>(context(), loopbackOnAnyPort()),
+      context(),
+      std::make_unique<UdpSocket>(context(), loopbackOnPort(ANY_PORT)),
       LAGGING_NETWORK};
   std::vector<IncomingDatagram> received;
   socket.startReceiving(recordInto(received));

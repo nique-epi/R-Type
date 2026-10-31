@@ -12,6 +12,7 @@
 #include "NetworkException.hpp"
 #include "NetworkSimulatorTestConstants.hpp"
 #include "ServerConstants.hpp"
+#include "SimulatorLaunchOptions.hpp"
 
 using rtype::engine::HELP_OPTION;
 using rtype::engine::InvalidLaunchOptionValueException;
@@ -363,13 +364,10 @@ TEST(ServerLaunchOptions, ReadsTheNetworkSimulatorOptionsBesideItsOwn) {
 /**
  * Given nothing
  * When the usage is built
- * Then it starts a line with each option of the network simulator
+ * Then it holds the whole part that describes the network simulator
  */
-TEST(ServerLaunchOptions, UsageNamesEveryOptionOfTheNetworkSimulator) {
-  const std::string usage = LaunchOptions::usage();
-
-  for (const std::string_view option : SIMULATOR_OPTION_TEXTS) {
-    SCOPED_TRACE(option);
-    EXPECT_NE(usage.find("\n  " + std::string(option)), std::string::npos);
-  }
+TEST(ServerLaunchOptions, UsageHoldsTheNetworkSimulatorOptions) {
+  EXPECT_NE(LaunchOptions::usage().find(
+                rtype::network::SimulatorLaunchOptions::usage()),
+            std::string::npos);
 }

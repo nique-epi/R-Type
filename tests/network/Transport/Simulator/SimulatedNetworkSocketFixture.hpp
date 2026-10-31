@@ -5,7 +5,6 @@
 #include <cstddef>
 #include <memory>
 #include <vector>
-#include "Endpoint.hpp"
 #include "IDatagramSocket.hpp"
 #include "IncomingDatagram.hpp"
 #include "NetworkConditions.hpp"
@@ -47,9 +46,6 @@ class SimulatedNetworkSocketFixture : public ::testing::Test {
   /** @returns A handler that appends every datagram it gets to @p received. */
   [[nodiscard]] static rtype::network::DatagramHandler recordInto(
       std::vector<rtype::network::IncomingDatagram>& received);
-
-  /** @returns The loopback address on a port the system picks. */
-  [[nodiscard]] static rtype::network::Endpoint loopbackOnAnyPort();
 
  private:
   rtype::network::NetworkContext context_;
