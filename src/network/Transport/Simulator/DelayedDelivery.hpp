@@ -1,6 +1,5 @@
 #pragma once
 
-#include <asio/steady_timer.hpp>
 #include <cstddef>
 #include <memory>
 #include <span>
@@ -10,6 +9,8 @@
 #include "NetworkContext.hpp"
 
 namespace rtype::network {
+
+struct DelayedDeliveryState;
 
 /**
  * @brief One direction of a simulated network on the event loop of a
@@ -21,13 +22,12 @@ namespace rtype::network {
  * so a datagram that arrives after the earliest one costs no new wait.
  *
  * Every call must run on the thread that runs the context, or before that
- * thread starts. The handler of the timer keeps the object alive, as the
- * operations of a UdpSocket keep its state, so a deadline that falls after
- * the socket is destroyed touches no freed memory. That is the only reason
- * for the base enable_shared_from_this: build it with std::make_shared.
+ * thread starts. Its state is a DelayedDeliveryState it shares with the
+ * handler of the timer, as the operations of a UdpSocket share its state, so a
+ * deadline that falls after the object is destroyed touches no freed memory
+ * and, the object being closed by then, delivers nothing.
  */
-class DelayedDelivery final
-    : public std::enable_shared_from_this<DelayedDelivery> {
+class DelayedDelivery final {
  public:
   /**
    * @param deliver Called once per arrival, on the thread that runs
@@ -36,6 +36,18 @@ class DelayedDelivery final
    */
   DelayedDelivery(NetworkContext& context, DatagramsInFlight inFlight,
                   DatagramHandler deliver);
+
+  /**
+   * @brief Marks it closed, so a deadline that falls later delivers nothing.
+   * The timer is left to its deadline: cancelling it, as close() does, may
+   * throw, and a destructor must not.
+   */
+  ~DelayedDelivery();
+
+  DelayedDelivery(const DelayedDelivery&) = delete;
+  DelayedDelivery& operator=(const DelayedDelivery&) = delete;
+  DelayedDelivery(DelayedDelivery&&) = delete;
+  DelayedDelivery& operator=(DelayedDelivery&&) = delete;
 
   /**
    * @brief Hands @p payload, for @p peer, to the simulated network: it reaches
@@ -47,17 +59,7 @@ class DelayedDelivery final
   void close();
 
  private:
-  /** @brief Arms the timer for the next arrival, unless closed or nothing is
-   * in flight. */
-  void waitForNextArrival();
-
-  /** @brief Delivers what arrived, then waits for the next arrival. */
-  void deliverArrived();
-
-  DatagramsInFlight inFlight_;
-  asio::steady_timer timer_;
-  DatagramHandler deliver_;
-  bool closed_{false};
+  std::shared_ptr<DelayedDeliveryState> state_;
 };
 
 }  // namespace rtype::network

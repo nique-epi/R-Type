@@ -32,12 +32,11 @@ SimulatedNetworkSocket::SimulatedNetworkSocket(
     : context_(&context),
       conditions_(conditions),
       socket_(std::move(socket)),
-      sends_(std::make_shared<DelayedDelivery>(
-          context, DatagramsInFlight{conditions, SENT_DATAGRAMS_SEED},
-          sendingThrough(*socket_))) {}
+      sends_(context, DatagramsInFlight{conditions, SENT_DATAGRAMS_SEED},
+             sendingThrough(*socket_)) {}
 
 SimulatedNetworkSocket::~SimulatedNetworkSocket() {
-  sends_->close();
+  sends_.close();
   if (receives_) {
     receives_->close();
   }
@@ -57,7 +56,7 @@ void SimulatedNetworkSocket::startReceiving(DatagramHandler handler) {
 void SimulatedNetworkSocket::send(const Endpoint& destination,
                                   std::span<const std::byte> payload) {
   static_cast<void>(sendableDestination(destination, payload));
-  sends_->add(destination, payload);
+  sends_.add(destination, payload);
 }
 
 Endpoint SimulatedNetworkSocket::localEndpoint() const {

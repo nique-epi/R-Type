@@ -3,14 +3,13 @@
 #include <cstddef>
 #include <memory>
 #include <span>
+#include "DelayedDelivery.hpp"
 #include "Endpoint.hpp"
 #include "IDatagramSocket.hpp"
 #include "NetworkConditions.hpp"
 #include "NetworkContext.hpp"
 
 namespace rtype::network {
-
-class DelayedDelivery;
 
 /**
  * @brief A socket whose datagrams cross a simulated network: it hands what it
@@ -63,7 +62,7 @@ class SimulatedNetworkSocket final : public IDatagramSocket {
   NetworkContext* context_;
   NetworkConditions conditions_;
   std::unique_ptr<IDatagramSocket> socket_;
-  std::shared_ptr<DelayedDelivery> sends_;
+  DelayedDelivery sends_;
   std::shared_ptr<DelayedDelivery> receives_;
 };
 
