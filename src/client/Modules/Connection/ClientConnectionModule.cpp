@@ -8,6 +8,7 @@
 #include "Endpoint.hpp"
 #include "InstallContext.hpp"
 #include "ModuleConstants.hpp"
+#include "NetworkConditions.hpp"
 #include "NetworkConstants.hpp"
 #include "TimeConstants.hpp"
 
@@ -23,8 +24,9 @@ network::Endpoint anyInterfaceAnyPort() {
 
 }  // namespace
 
-ClientConnectionModule::ClientConnectionModule()
-    : network_(anyInterfaceAnyPort()),
+ClientConnectionModule::ClientConnectionModule(
+    const network::NetworkConditions& conditions)
+    : network_(anyInterfaceAnyPort(), conditions),
       connection_(network_),
       logger_(std::string{CONNECTION_LOGGER_NAME}) {}
 

@@ -13,7 +13,7 @@ This page tells you where to look when you need to change something. It describe
 | UDP socket | Available | `src/network/Transport/` |
 | Ports and addresses written as text | Available | `src/network/Transport/EndpointText.hpp` |
 | Relay between a socket and the queues of another thread | Available | `src/network/Transport/DatagramRelay/` |
-| Lag and loss simulator | Not yet written | — |
+| Network simulator: lag, jitter, loss, duplicates and reordering, off by default | Available | `src/network/Transport/Simulator/`, `src/network/Transport/Conditions/` |
 | Serialization | Available | `src/network/Serialization/` |
 | Protocol messages, datagram header, dispatch by type | Available | `src/network/Protocol/` |
 | Connection cookies | Available | `src/network/Handshake/` |
@@ -30,7 +30,7 @@ Asio is linked privately to the network targets, so the headers other modules in
 
 ## Sockets: `UdpSocket`
 
-`UdpSocket` (`src/network/Transport/UdpSocket/`) implements `IDatagramSocket`. It opens a UDP socket on an `Endpoint`, sends datagrams and hands every datagram received to a handler. None of its calls blocks. Code that only sends and receives can take an `IDatagramSocket&`, so a lag and loss simulator or a test double can stand in for the real socket.
+`UdpSocket` (`src/network/Transport/UdpSocket/`) implements `IDatagramSocket`. It opens a UDP socket on an `Endpoint`, sends datagrams and hands every datagram received to a handler. None of its calls blocks. Code that only sends and receives can take an `IDatagramSocket&`, so the [network simulator](#network-simulator-simulatednetworksocket) or a test double stands in for the real socket.
 
 - An `Endpoint` is an IP address written as text, `"127.0.0.1"` or `"::1"`, and a port. Host names are never resolved: `"localhost"` throws `InvalidAddressException`. Port 0 (`ANY_PORT`) lets the system pick a free port, which `localEndpoint()` returns. A port already taken throws `SocketOpenException`.
 - `startReceiving(handler)` is called once; a second call throws `ReceivingAlreadyStartedException`. The handler gets the sender and a `std::span` of the bytes, valid only during the call. It must not throw: an exception leaves `run()` and the socket stops receiving.
@@ -75,6 +75,37 @@ They do not ask Asio, which hands the text to the system: `inet_pton` on Linux a
 - The other thread drains the incoming queue and pushes to the outgoing one; to get what it pushed sent, it hands `sendWaiting()` to the network thread with `NetworkContext::post()`.
 
 The server only sends through one: it receives through its own `DatagramSorter`, which splits the datagrams between two queues (see [Server](/R-Type/server/#sorting-the-datagrams-datagramsorter)).
+
+## Network simulator: `SimulatedNetworkSocket`
+
+Either program can make its datagrams cross a simulated network, to show on one machine what a poor connection does. `openDatagramSocket()` (`src/network/Transport/Simulator/`) opens the socket of the server (`ServerApplication::open()`) and of the client (`NetworkThread::open()`). For `PERFECT_NETWORK`, every value at zero, it returns the `UdpSocket` itself, so a program launched without the options below pays nothing. Otherwise it returns a `SimulatedNetworkSocket` over the `UdpSocket` and logs a warning such as `network simulated: ping +300 ms, up to 50 ms more, 10 % lost, 2 % duplicated, 5 % reordered`, so a journal tells whether a measurement was taken on a simulated network.
+
+`NetworkConditions` (`src/network/Transport/Conditions/`) holds what the ping shows. Every datagram the program sends or receives crosses the simulated network once, so a client alone given `--lag 100` sees its ping grow by 100 ms, and a server given options adds its own:
+
+- it waits half the lag, then up to half the jitter more, drawn at random, but never arrives before the datagram handed over before it: the jitter bunches datagrams and never reorders them;
+- a share of the datagrams never arrives, another share arrives twice, and a lost datagram is never copied;
+- a share is held `REORDER_HOLD` (75 ms) longer, so the ones handed over just after it arrive first.
+
+The draws start from fixed seeds (`SENT_DATAGRAMS_SEED`, `RECEIVED_DATAGRAMS_SEED`), so two runs that hand over the same datagrams at the same times lose the same ones. A datagram the real socket would refuse is refused at once, as `IDatagramSocket::send()` promises, and one still in flight when the socket is destroyed never arrives.
+
+Both programs read these options with `SimulatorLaunchOptions` before their own, in the order given, so an option written after `--network` changes one value of its scenario. As with the logging options, a value of another option spelled like one of them, a nickname `--lag` for example, is read as that option.
+
+| Option | Effect |
+|---|---|
+| `--network <name>` | The five values of a scenario of `NETWORK_SCENARIOS`, below. |
+| `--lag <ms>` | What the ping gains, from 0 to `MAXIMUM_SIMULATED_DELAY` (10000). |
+| `--jitter <ms>` | How much the ping may vary, from 0 to 10000. |
+| `--loss <percent>` | The share of the datagrams lost, from 0 to `MAXIMUM_PERCENT` (100). |
+| `--duplicates <percent>` | The share of the datagrams that arrive twice, from 0 to 100. |
+| `--reorder <percent>` | The share of the datagrams held longer, from 0 to 100. |
+
+| Scenario | Ping | Jitter | Lost | Duplicated | Reordered |
+|---|---|---|---|---|---|
+| `4g` | +60 ms | 20 ms | 1 % | 0 % | 0 % |
+| `wifi-busy` | +30 ms | 60 ms | 3 % | 1 % | 2 % |
+| `bad` | +300 ms | 50 ms | 10 % | 2 % | 5 % |
+
+The values of the scenarios were chosen for the demonstrations, not measured on real networks.
 
 ## Serialization: `ByteWriter` and `ByteReader`
 
@@ -226,6 +257,9 @@ Measured on 27 October 2026 on an Apple M4 Pro under macOS 27.0, with the server
 | Change which ports or addresses a program accepts at launch | `portFromText()` and `ipv4AddressFromText()` in `src/network/Transport/EndpointText.cpp`, `LOWEST_PORT` in `NetworkConstants.hpp` |
 | Change how datagrams are received or sent | `src/network/Transport/UdpSocket/` |
 | Change how datagrams go between the socket and the queues | `src/network/Transport/DatagramRelay/` |
+| Run a program over a simulated network | the options of [Network simulator](#network-simulator-simulatednetworksocket) |
+| Change a scenario of the simulator, or add one | `NETWORK_SCENARIOS` and its entries in `src/network/Transport/Conditions/NetworkConditionsConstants.hpp` |
+| Change what the simulator does to a datagram | `DatagramsInFlight` in `src/network/Transport/Simulator/` |
 | Write a class that needs Asio | A folder in `src/network` whose target links `rtype_network_asio` privately |
 | Change how an integer, a float or a string is encoded | `src/network/Serialization/ByteWriter/` and `ByteReader/`, then the [Protocol](/R-Type/protocol/#encoding) page |
 | Change the string length limit or the sizes | `src/network/Serialization/SerializationConstants.hpp` |

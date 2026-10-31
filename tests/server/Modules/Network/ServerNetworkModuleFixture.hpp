@@ -5,7 +5,9 @@
 #include <cstdint>
 #include <memory>
 #include <vector>
+#include "Endpoint.hpp"
 #include "IModule.hpp"
+#include "NetworkConditions.hpp"
 #include "ServerModuleFixture.hpp"
 #include "StageWork.hpp"
 #include "StopRequest.hpp"
@@ -26,6 +28,16 @@ class ServerNetworkModuleFixture : public ServerModuleFixture {
   networkModulesThen(std::uint16_t port,
                      std::unique_ptr<rtype::engine::IModule> probe);
 
+  /**
+   * @returns The logger module, the network module on @p port over the
+   * network @p conditions describe, then @p probe, which depends on the
+   * network module.
+   */
+  [[nodiscard]] std::vector<std::unique_ptr<rtype::engine::IModule>>
+  networkModulesOver(std::uint16_t port,
+                     const rtype::network::NetworkConditions& conditions,
+                     std::unique_ptr<rtype::engine::IModule> probe);
+
   /** @returns A probe listed after the network module that runs @p work in the
    * simulation stage; the test keeps it to read what it found. */
   [[nodiscard]] static std::unique_ptr<ServiceProbeModule> probeRunning(
@@ -43,6 +55,10 @@ class ServerNetworkModuleFixture : public ServerModuleFixture {
                                           int wanted);
 
   [[nodiscard]] rtype::server::StopRequest& stopRequest();
+
+  /** @returns The loopback address on @p port. */
+  [[nodiscard]] static rtype::network::Endpoint loopbackOnPort(
+      std::uint16_t port);
 
  private:
   rtype::server::StopRequest stopRequest_;

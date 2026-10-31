@@ -7,9 +7,12 @@
 #include "LaunchOptions.hpp"
 #include "LaunchOptionsTestConstants.hpp"
 #include "LoggingConstants.hpp"
+#include "NetworkConditions.hpp"
 #include "NetworkConstants.hpp"
 #include "NetworkException.hpp"
+#include "NetworkSimulatorTestConstants.hpp"
 #include "ServerConstants.hpp"
+#include "SimulatorLaunchOptions.hpp"
 
 using rtype::engine::HELP_OPTION;
 using rtype::engine::InvalidLaunchOptionValueException;
@@ -23,11 +26,7 @@ using rtype::server::LaunchOptions;
 using rtype::server::SEED_OPTION;
 using rtype::server::STATE_RATE_OPTION;
 
-namespace {
-
 using Arguments = std::vector<std::string_view>;
-
-}  // namespace
 
 /**
  * Given no argument
@@ -336,5 +335,39 @@ TEST(ServerLaunchOptions, StateRateOptionWithoutValueIsRefused) {
  */
 TEST(ServerLaunchOptions, UsageNamesTheStateRateOption) {
   EXPECT_NE(LaunchOptions::usage().find(std::string(STATE_RATE_OPTION)),
+            std::string::npos);
+}
+
+/**
+ * Given no argument
+ * When the launch options are read
+ * Then the network of the server is perfect: nothing is simulated
+ */
+TEST(ServerLaunchOptions, NoArgumentSimulatesNoNetwork) {
+  EXPECT_EQ(LaunchOptions::read(Arguments{}).networkConditions(),
+            rtype::network::NetworkConditions{});
+}
+
+/**
+ * Given the port option and a port, then the network option and a scenario
+ * When the launch options are read
+ * Then the server listens on that port, behind the network of that scenario
+ */
+TEST(ServerLaunchOptions, ReadsTheNetworkSimulatorOptionsBesideItsOwn) {
+  const LaunchOptions options = LaunchOptions::read(Arguments{
+      PORT_OPTION, PORT_ARGUMENT, NETWORK_OPTION_TEXT, BAD_NAME_TEXT});
+
+  EXPECT_EQ(options.port(), PORT_OF_PORT_ARGUMENT);
+  EXPECT_EQ(options.networkConditions(), BAD_OF_THE_TABLE);
+}
+
+/**
+ * Given nothing
+ * When the usage is built
+ * Then it holds the whole part that describes the network simulator
+ */
+TEST(ServerLaunchOptions, UsageHoldsTheNetworkSimulatorOptions) {
+  EXPECT_NE(LaunchOptions::usage().find(
+                rtype::network::SimulatorLaunchOptions::usage()),
             std::string::npos);
 }

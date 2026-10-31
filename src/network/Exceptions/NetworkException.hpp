@@ -183,4 +183,23 @@ class DuplicateMessageHandlerException : public NetworkException {
   explicit DuplicateMessageHandlerException(std::uint8_t messageType);
 };
 
+/**
+ * @brief The value after an option of the network simulator is not one it
+ * takes: an unknown scenario, or a number out of its range.
+ */
+class InvalidSimulatorOptionException : public NetworkException {
+ public:
+  InvalidSimulatorOptionException(const std::string& option,
+                                  const std::string& value);
+};
+
+/**
+ * @brief An option of the network simulator is the last argument, without
+ * its value.
+ */
+class MissingSimulatorOptionValueException : public NetworkException {
+ public:
+  explicit MissingSimulatorOptionValueException(const std::string& option);
+};
+
 }  // namespace rtype::network

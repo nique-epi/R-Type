@@ -102,4 +102,13 @@ DuplicateMessageHandlerException::DuplicateMessageHandlerException(
     : NetworkException("Message type " + std::to_string(messageType) +
                        " already has a handler") {}
 
+InvalidSimulatorOptionException::InvalidSimulatorOptionException(
+    const std::string& option, const std::string& value)
+    : NetworkException("Invalid value \"" + value + "\" after the option " +
+                       option) {}
+
+MissingSimulatorOptionValueException::MissingSimulatorOptionValueException(
+    const std::string& option)
+    : NetworkException("Missing value after the option " + option) {}
+
 }  // namespace rtype::network

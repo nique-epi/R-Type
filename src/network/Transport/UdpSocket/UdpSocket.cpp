@@ -13,6 +13,7 @@
 #include <system_error>
 #include <utility>
 #include <vector>
+#include "AsioEndpoint.hpp"
 #include "Endpoint.hpp"
 #include "IDatagramSocket.hpp"
 #include "Logger.hpp"
@@ -24,20 +25,6 @@
 namespace rtype::network {
 
 namespace {
-
-/**
- * @throws InvalidAddressException when the address of @p endpoint is not an
- *         IP address.
- */
-asio::ip::udp::endpoint toAsioEndpoint(const Endpoint& endpoint) {
-  std::error_code error;
-  const asio::ip::address address =
-      asio::ip::make_address(endpoint.address, error);
-  if (error) {
-    throw InvalidAddressException(endpoint.address);
-  }
-  return {address, endpoint.port};
-}
 
 Endpoint toEndpoint(const asio::ip::udp::endpoint& endpoint) {
   return Endpoint{.address = endpoint.address().to_string(),
@@ -143,10 +130,8 @@ void UdpSocket::startReceiving(DatagramHandler handler) {
 
 void UdpSocket::send(const Endpoint& destination,
                      std::span<const std::byte> payload) {
-  if (payload.size() > MAX_DATAGRAM_SIZE) {
-    throw DatagramTooLargeException(payload.size());
-  }
-  const asio::ip::udp::endpoint asioDestination = toAsioEndpoint(destination);
+  const asio::ip::udp::endpoint asioDestination =
+      sendableDestination(destination, payload);
   auto bytes = std::make_shared<const std::vector<std::byte>>(payload.begin(),
                                                               payload.end());
   implementation_->socket.async_send_to(

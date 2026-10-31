@@ -1,6 +1,7 @@
 #pragma once
 
 #include <exception>
+#include <memory>
 #include <mutex>
 #include <optional>
 #include <thread>
@@ -9,10 +10,11 @@
 #include "DatagramRelay.hpp"
 #include "Endpoint.hpp"
 #include "IDatagramLink.hpp"
+#include "IDatagramSocket.hpp"
 #include "IncomingDatagram.hpp"
+#include "NetworkConditions.hpp"
 #include "NetworkContext.hpp"
 #include "OutgoingDatagram.hpp"
-#include "UdpSocket.hpp"
 
 namespace rtype::client {
 
@@ -36,10 +38,13 @@ namespace rtype::client {
 class NetworkThread : public IDatagramLink {
  public:
   /**
-   * @brief Keeps @p localEndpoint for open(), and binds nothing. Port 0 lets
-   * the system pick a free port when the socket opens.
+   * @brief Keeps @p localEndpoint and @p conditions for open(), and binds
+   * nothing. Port 0 lets the system pick a free port when the socket opens.
+   * @param conditions The network the datagrams cross, see
+   * network::openDatagramSocket().
    */
-  explicit NetworkThread(network::Endpoint localEndpoint);
+  NetworkThread(network::Endpoint localEndpoint,
+                const network::NetworkConditions& conditions);
 
   /** @brief Closes the network thread and the socket, as close() does. */
   ~NetworkThread() override;
@@ -100,7 +105,7 @@ class NetworkThread : public IDatagramLink {
  private:
   /** @brief Starts receiving on @p socket, just opened, then starts the
    * network thread. */
-  void startNetwork(network::UdpSocket& socket);
+  void startNetwork(network::IDatagramSocket& socket);
 
   /** @brief Runs the network until it is stopped, and keeps the error that
    * stopped it, if any. */
@@ -110,8 +115,9 @@ class NetworkThread : public IDatagramLink {
   void rethrowNetworkError() const;
 
   network::Endpoint listeningEndpoint_;
+  network::NetworkConditions conditions_;
   network::NetworkContext network_;
-  std::optional<network::UdpSocket> socket_;
+  std::unique_ptr<network::IDatagramSocket> socket_;
   network::Endpoint localEndpoint_;
   concurrency::BoundedQueue<network::IncomingDatagram> incoming_;
   concurrency::BoundedQueue<network::OutgoingDatagram> outgoing_;

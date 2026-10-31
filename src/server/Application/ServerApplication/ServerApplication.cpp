@@ -2,14 +2,18 @@
 #include <cstddef>
 #include <cstdint>
 #include <exception>
+#include <memory>
 #include <optional>
 #include <span>
 #include <stop_token>
 #include <string>
 #include <thread>
 #include <utility>
+#include "DatagramSocketOpening.hpp"
 #include "DatagramSorter.hpp"
 #include "Endpoint.hpp"
+#include "IDatagramSocket.hpp"
+#include "NetworkConditions.hpp"
 #include "OutgoingDatagram.hpp"
 #include "ServerConstants.hpp"
 #include "ServerException.hpp"
@@ -33,10 +37,12 @@ std::string firstSenderText(const std::optional<network::Endpoint>& sender) {
 
 }  // namespace
 
-ServerApplication::ServerApplication(network::Endpoint localEndpoint,
-                                     TickHandler handleTick)
+ServerApplication::ServerApplication(
+    network::Endpoint localEndpoint, TickHandler handleTick,
+    const network::NetworkConditions& conditions)
     : logger_(std::string{SERVER_LOGGER_NAME}),
       listeningEndpoint_(std::move(localEndpoint)),
+      conditions_(conditions),
       incoming_(INCOMING_DATAGRAM_QUEUE_CAPACITY),
       connectionRequests_(CONNECTION_REQUEST_QUEUE_CAPACITY),
       outgoing_(OUTGOING_DATAGRAM_QUEUE_CAPACITY),
@@ -47,10 +53,11 @@ ServerApplication::ServerApplication(network::Endpoint localEndpoint,
       handleTick_(std::move(handleTick)) {}
 
 void ServerApplication::open() {
-  if (socket_.has_value()) {
+  if (socket_) {
     throw ServerAlreadyOpenException();
   }
-  socket_.emplace(network_, listeningEndpoint_);
+  socket_ =
+      network::openDatagramSocket(network_, listeningEndpoint_, conditions_);
   relay_.emplace(*socket_, incoming_, outgoing_);
 }
 
@@ -107,15 +114,15 @@ network::Endpoint ServerApplication::localEndpoint() const {
   return openSocket().localEndpoint();
 }
 
-network::UdpSocket& ServerApplication::openSocket() {
-  if (!socket_.has_value()) {
+network::IDatagramSocket& ServerApplication::openSocket() {
+  if (!socket_) {
     throw ServerNotOpenException();
   }
   return *socket_;
 }
 
-const network::UdpSocket& ServerApplication::openSocket() const {
-  if (!socket_.has_value()) {
+const network::IDatagramSocket& ServerApplication::openSocket() const {
+  if (!socket_) {
     throw ServerNotOpenException();
   }
   return *socket_;

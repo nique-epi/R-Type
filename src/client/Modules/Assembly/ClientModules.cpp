@@ -24,7 +24,8 @@ std::vector<std::unique_ptr<engine::IModule>> clientModules(
   modules.push_back(std::make_unique<ClientAssetsModule>());
   modules.push_back(std::make_unique<ClientSettingsModule>());
   modules.push_back(std::make_unique<ClientWindowModule>(loop));
-  modules.push_back(std::make_unique<ClientConnectionModule>());
+  modules.push_back(std::make_unique<ClientConnectionModule>(
+      launchOptions.networkConditions()));
   modules.push_back(
       std::make_unique<ClientAudioModule>(launchOptions.audioMode()));
   modules.push_back(std::make_unique<ClientScreensModule>(

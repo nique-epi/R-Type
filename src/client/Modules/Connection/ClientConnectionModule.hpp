@@ -5,6 +5,7 @@
 #include "IModule.hpp"
 #include "InstallContext.hpp"
 #include "Logger.hpp"
+#include "NetworkConditions.hpp"
 #include "NetworkThread.hpp"
 #include "ServerConnection.hpp"
 
@@ -26,7 +27,9 @@ namespace rtype::client {
  */
 class ClientConnectionModule final : public engine::IModule {
  public:
-  ClientConnectionModule();
+  /** @param conditions The network the datagrams of the client cross, read at
+   * launch. */
+  explicit ClientConnectionModule(const network::NetworkConditions& conditions);
 
   /** @returns CONNECTION_MODULE_NAME. */
   [[nodiscard]] std::string name() const override;
