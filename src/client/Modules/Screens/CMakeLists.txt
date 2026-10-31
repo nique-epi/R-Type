@@ -28,12 +28,10 @@ target_link_libraries(rtype_client_screens_module
     rtype_client_dialog_screen
     rtype_client_end_screen
     rtype_client_entity_layer
-    rtype_client_frame_picture
     rtype_client_game_screen
     rtype_client_interface_canvas
     rtype_client_intro_screen
     rtype_client_loading_screen
-    rtype_client_lost_screen
     rtype_client_lobby_screen
     rtype_client_localized_key_name
     rtype_client_module_constants

@@ -1,6 +1,5 @@
 #pragma once
 
-#include <SFML/Graphics/Texture.hpp>
 #include <cstddef>
 #include <functional>
 #include <optional>
@@ -30,7 +29,6 @@ struct ScreenCatalogParts {
   std::reference_wrapper<GameResult> gameResult;
   std::reference_wrapper<std::optional<std::size_t>> previousTaunt;
   std::reference_wrapper<ServerChoice> serverChoice;
-  std::reference_wrapper<sf::Texture> lostPicture;
 };
 
 }  // namespace rtype::client

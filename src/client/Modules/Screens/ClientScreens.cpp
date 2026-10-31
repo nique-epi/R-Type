@@ -3,7 +3,6 @@
 #include <SFML/Window/Event.hpp>
 #include <random>
 #include "ClientScreensParts.hpp"
-#include "FramePicture.hpp"
 #include "ScreenCatalog.hpp"
 #include "ScreenCatalogParts.hpp"
 #include "ScreenId.hpp"
@@ -23,8 +22,7 @@ ClientScreens::ClientScreens(const ClientScreensParts& parts)
                                   .sky = background_,
                                   .gameResult = gameResult_,
                                   .previousTaunt = previousTaunt_,
-                                  .serverChoice = serverChoice_,
-                                  .lostPicture = lostPicture_}) {
+                                  .serverChoice = serverChoice_}) {
   screens_.replaceAll(ScreenCatalog::firstScreen());
   screens_.applyPendingChanges();
 }
@@ -38,14 +36,15 @@ void ClientScreens::update(engine::Duration elapsed) {
   background_.advance(elapsed);
   screens_.update(elapsed);
   if (sessionLoss_.endsTheSession(connection_->status())) {
-    lostPicture_ = framePictureOf(background_, screens_);
-    screens_.replaceAll(ScreenId::Lost);
+    screens_.replaceAll(ScreenId::Title);
+    screens_.push(ScreenId::ConnectionLost);
   }
   screens_.applyPendingChanges();
 }
 
 void ClientScreens::draw(sf::RenderTarget& target) {
-  drawFrame(target, background_, screens_);
+  background_.draw(target);
+  screens_.draw(target);
 }
 
 bool ClientScreens::isEmpty() const { return screens_.isEmpty(); }

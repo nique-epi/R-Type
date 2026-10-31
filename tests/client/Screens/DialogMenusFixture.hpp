@@ -3,6 +3,7 @@
 #include <gtest/gtest.h>
 #include <SFML/Window/Keyboard.hpp>
 #include <optional>
+#include "ConnectionPhase.hpp"
 #include "DialogScreen.hpp"
 #include "RecordingInterfaceCanvas.hpp"
 #include "RecordingNavigator.hpp"
@@ -15,7 +16,13 @@ class DialogMenusFixture : public ::testing::Test {
   /** @brief Opens the quit confirmation. */
   void openQuitConfirmation();
 
+  /** @brief Opens the dialog of a session ended this way. */
+  void openConnectionLost(rtype::client::ConnectionPhase ending);
+
   [[nodiscard]] const RecordingNavigator& navigator() const;
+
+  /** @returns What the dialog painted. */
+  [[nodiscard]] const InterfaceCanvasRecord& canvas() const;
 
   /** @returns The sounds the dialog played. */
   [[nodiscard]] const RecordingSoundPlayer& sounds() const;

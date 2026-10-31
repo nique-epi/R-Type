@@ -26,8 +26,6 @@
 #include "LobbyScreen.hpp"
 #include "LobbyScreenParts.hpp"
 #include "LocalizedKeyName.hpp"
-#include "LostScreen.hpp"
-#include "LostScreenParts.hpp"
 #include "MotionPreference.hpp"
 #include "OptionsPlace.hpp"
 #include "OptionsScreen.hpp"
@@ -99,17 +97,11 @@ std::unique_ptr<IScreen> ScreenCatalog::create(ScreenId screen) {
     case ScreenId::Lobby:
     case ScreenId::LobbyAfterGame:
       return lobbyScreen(screen);
-    case ScreenId::Lost:
-      return std::make_unique<LostScreen>(
-          LostScreenParts{
-              .navigator = parts_.navigator.get(),
-              .sounds = sounds(),
-              .picture = std::move(parts_.lostPicture.get()),
-              .ending = parts_.services.connection.get().status().phase,
-              .playfieldPointAt = playfieldMapping(),
-              .motion = motionPreference(),
-              .flashes = flashPreferenceOf(parts_.services.settings.get())},
-          interfaceCanvas());
+    case ScreenId::ConnectionLost:
+      return std::make_unique<DialogScreen>(
+          connectionLostMenu(parts_.navigator.get(), sounds(),
+                             parts_.services.connection.get().status().phase),
+          playfieldMapping(), interfaceCanvas());
     case ScreenId::End: {
       std::unique_ptr<IScreen> loading =
           loadingScreenUnlessLoaded(gameAssets(), screen);

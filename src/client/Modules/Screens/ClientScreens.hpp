@@ -1,7 +1,6 @@
 #pragma once
 
 #include <SFML/Graphics/RenderTarget.hpp>
-#include <SFML/Graphics/Texture.hpp>
 #include <SFML/Window/Event.hpp>
 #include <cstddef>
 #include <optional>
@@ -25,9 +24,9 @@ namespace rtype::client {
  * by a game, a silence after stopping the theme. When the server ends a game,
  * the game screen writes its result here and gives way to the end screen, from
  * which the player plays again in the waiting room or quits to the title.
- * When the session with the server ends, lost or closed, the NO SIGNAL card
- * takes the place of every screen, on the last picture they showed; the
- * screens of the session stop there.
+ * When the session with the server ends, lost or closed, the title takes the
+ * place of every screen, with the dialog that says so over it; the screens of
+ * the session stop there.
  *
  * Each frame, the events go to the screen on top, the sky and every screen are
  * updated, then the sky is drawn and every screen over it, from the
@@ -63,8 +62,6 @@ class ClientScreens {
    * @brief Updates the sky and every screen by @p elapsed, then
    * applies the changes the screens asked for.
    * @throws AssetLoadingException when an asset of the game cannot be loaded.
-   * @throws RenderTextureNotCreatedException when the last picture of the
-   * screens of a session that ended cannot be made.
    */
   void update(engine::Duration elapsed);
 
@@ -88,9 +85,6 @@ class ClientScreens {
   /** @brief Notices, once per end, a session the server let go silent or
    * closed. */
   SessionLossWatch sessionLoss_;
-  /** @brief The last picture of the screens of a session that ended, taken
-   * before the NO SIGNAL card replaces them, which it moves into it. */
-  sf::Texture lostPicture_;
   ScreenStack screens_;
   ScreenCatalog catalog_;
 };
