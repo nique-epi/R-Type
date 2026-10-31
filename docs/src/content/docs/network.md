@@ -14,6 +14,7 @@ This page tells you where to look when you need to change something. It describe
 | Ports and addresses written as text | Available | `src/network/Transport/EndpointText.hpp` |
 | Relay between a socket and the queues of another thread | Available | `src/network/Transport/DatagramRelay/` |
 | Network simulator: lag, jitter, loss, duplicates and reordering, off by default | Available | `src/network/Transport/Simulator/`, `src/network/Transport/Conditions/` |
+| Network conditions applied by the system: netem on Linux, dummynet on macOS | Available, never shipped | `tests/tools/network-conditions/` |
 | Serialization | Available | `src/network/Serialization/` |
 | Protocol messages, datagram header, dispatch by type | Available | `src/network/Protocol/` |
 | Connection cookies | Available | `src/network/Handshake/` |
@@ -106,6 +107,39 @@ Both programs read these options with `SimulatorLaunchOptions` before their own,
 | `bad` | +300 ms | 50 ms | 10 % | 2 % | 5 % |
 
 The values of the scenarios were chosen for the demonstrations, not measured on real networks.
+
+## Network conditions from the system: `tests/tools/network-conditions/`
+
+The same scenarios can be applied by the operating system instead of the programs: every packet that leaves the loopback interface then crosses the poor network, so a server and its clients on one machine play over it with no option of their own, and none of the code of the simulator is involved. `netem.sh` (Linux) and `dummynet.sh` (macOS) are test tools, never shipped. They take the options of the simulator, read in the same order and with the same bounds, and need root:
+
+```bash
+sudo tests/tools/network-conditions/netem.sh apply --network bad
+sudo tests/tools/network-conditions/netem.sh clear
+```
+
+`apply` replaces what an earlier `apply` set; `clear` removes it and does nothing when nothing is applied; `print` prints the commands `apply` would run, without root, and runs none. While the conditions are applied, everything on the loopback interface is slowed down, not only the game. A packet between two programs of the machine leaves the interface once, so each one waits half the lag, as in the simulator, and a ping to 127.0.0.1 gains the whole lag. `pfctl` warns that `-f` could flush the main ruleset on every `apply` of `dummynet.sh`: the script loads only its own anchor, `com.apple/rtype-network-conditions`.
+
+Each tool applies the values as follows. What a tool cannot do is left out, and `dummynet.sh` warns about it; `netem.sh` refuses `--reorder` without `--lag` or `--jitter`, since netem reorders only the packets it delays:
+
+| Value | Simulator | netem | dummynet | clumsy |
+|---|---|---|---|---|
+| Lag | half on each datagram | `delay`: half on each packet | `delay`: half, rounded up to the millisecond, then by dnctl to its clock tick | `--lag-time`: half |
+| Jitter | up to half more, never reordering | the jitter of `delay`, drawn uniformly; `rate 10gbit` keeps the packets in order | none | none |
+| Loss | a share of the datagrams | `loss` | `plr` | `--drop-chance` |
+| Duplicates | a second arrival, never of a lost datagram | `duplicate`; the copy can be lost too | none | `--duplicate-chance`, `--duplicate-count 2` |
+| Reordering | a share held 75 ms longer | `reorder`: the share is sent at once, ahead of the delayed packets | none | `--ood-chance`: a packet held until the next ones passed |
+
+Their draws come from the kernel or from clumsy, not from fixed seeds, so two runs lose different packets.
+
+With the other tests on Linux and macOS, `network_condition_scenarios` checks that the scenarios of `conditions.sh` are those `r-type_server --help` lists, value for value, and `network_condition_commands` checks the commands both scripts print for given options. The CI job `network-condition-scripts` lints the scripts with ShellCheck and runs `check-netem.sh` on a runner: it applies `4g` without its loss and measures with ping that each round trip gains at least 60 ms and under 80 ms on average, that a jitter of 200 ms keeps the packets in order, that a full loss lets nothing through and that `clear` gives the interface its speed back. No CI job runs on macOS: `dummynet.sh` is checked by hand.
+
+On Windows, [clumsy](https://jagt.github.io/clumsy/) does the same from its window, run as administrator. It takes its settings on its command line and starts with them; this applies `bad` to the loopback address, without its jitter:
+
+```bat
+clumsy.exe --filter "outbound and ip.DstAddr >= 127.0.0.1 and ip.DstAddr <= 127.255.255.255" --lag on --lag-time 150 --drop on --drop-chance 10 --duplicate on --duplicate-chance 2 --duplicate-count 2 --ood on --ood-chance 5
+```
+
+The filter is the "loopback packets" filter of clumsy: a packet between two programs of the machine is seen once, as it leaves. Stop, in its window, ends the conditions.
 
 ## Serialization: `ByteWriter` and `ByteReader`
 
@@ -258,7 +292,8 @@ Measured on 27 October 2026 on an Apple M4 Pro under macOS 27.0, with the server
 | Change how datagrams are received or sent | `src/network/Transport/UdpSocket/` |
 | Change how datagrams go between the socket and the queues | `src/network/Transport/DatagramRelay/` |
 | Run a program over a simulated network | the options of [Network simulator](#network-simulator-simulatednetworksocket) |
-| Change a scenario of the simulator, or add one | `NETWORK_SCENARIOS` and its entries in `src/network/Transport/Conditions/NetworkConditionsConstants.hpp` |
+| Run the game over a network the system degrades | `tests/tools/network-conditions/`, see [Network conditions from the system](#network-conditions-from-the-system-teststoolsnetwork-conditions) |
+| Change a scenario of the simulator, or add one | `NETWORK_SCENARIOS` and its entries in `src/network/Transport/Conditions/NetworkConditionsConstants.hpp`, then `SCENARIOS` in `tests/tools/network-conditions/conditions.sh`, which `network_condition_scenarios` compares |
 | Change what the simulator does to a datagram | `DatagramsInFlight` in `src/network/Transport/Simulator/` |
 | Write a class that needs Asio | A folder in `src/network` whose target links `rtype_network_asio` privately |
 | Change how an integer, a float or a string is encoded | `src/network/Serialization/ByteWriter/` and `ByteReader/`, then the [Protocol](/R-Type/protocol/#encoding) page |
