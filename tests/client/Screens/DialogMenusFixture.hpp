@@ -2,7 +2,7 @@
 
 #include <gtest/gtest.h>
 #include <SFML/Window/Keyboard.hpp>
-#include <optional>
+#include <memory>
 #include "ConnectionPhase.hpp"
 #include "DialogScreen.hpp"
 #include "RecordingInterfaceCanvas.hpp"
@@ -40,5 +40,5 @@ class DialogMenusFixture : public ::testing::Test {
   RecordingNavigator navigator_;
   InterfaceCanvasRecord canvas_;
   RecordingSoundPlayer sounds_;
-  std::optional<rtype::client::DialogScreen> dialog_;
+  std::unique_ptr<rtype::client::DialogScreen> dialog_;
 };
