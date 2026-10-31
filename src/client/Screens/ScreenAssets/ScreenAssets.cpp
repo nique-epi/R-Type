@@ -40,9 +40,11 @@ AssetList titleAssets() {
 }
 
 AssetList gameAssets() {
-  return AssetList{.textures = {LOGO_ID, ENTITY_SHEET_ID, EFFECT_SHEET_ID,
-                                HUD_SHEET_ID, PLUG_ICON_ID, FLIGHT_LOG_SHEET_ID,
-                                PROFESSOR_SHEET_ID}};
+  AssetList assets = titleAssets();
+  assets.textures.emplace_back(EFFECT_SHEET_ID);
+  assets.textures.emplace_back(PLUG_ICON_ID);
+  assets.textures.emplace_back(FLIGHT_LOG_SHEET_ID);
+  return assets;
 }
 
 void loadInterfaceAssets(AssetLibrary& library) {
