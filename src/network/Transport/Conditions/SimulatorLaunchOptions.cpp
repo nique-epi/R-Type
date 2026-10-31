@@ -2,6 +2,7 @@
 #include <array>
 #include <chrono>
 #include <cstddef>
+#include <optional>
 #include <span>
 #include <string>
 #include <string_view>
@@ -32,13 +33,12 @@ struct SimulatorOption {
  */
 int wholeNumberUpTo(std::string_view option, std::string_view value,
                     int maximum) {
-  unsigned int number = 0;
-  if (!readsWholeNumber(value, number) ||
-      number > static_cast<unsigned int>(maximum)) {
+  const std::optional<unsigned int> number = wholeNumberIn<unsigned int>(value);
+  if (!number.has_value() || std::cmp_greater(*number, maximum)) {
     throw InvalidSimulatorOptionException(std::string(option),
                                           std::string(value));
   }
-  return static_cast<int>(number);
+  return static_cast<int>(*number);
 }
 
 /** @returns The lag or jitter @p value writes, in milliseconds up to

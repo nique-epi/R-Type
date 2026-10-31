@@ -1,13 +1,11 @@
 #include "LaunchOptions.hpp"
 #include <array>
-#include <charconv>
 #include <cstddef>
 #include <cstdint>
 #include <optional>
 #include <span>
 #include <string>
 #include <string_view>
-#include <system_error>
 #include "EndpointText.hpp"
 #include "EngineException.hpp"
 #include "LaunchArguments.hpp"
@@ -19,6 +17,7 @@
 #include "NetworkConstants.hpp"
 #include "ServerConstants.hpp"
 #include "SimulatorLaunchOptions.hpp"
+#include "WholeNumberText.hpp"
 
 namespace rtype::server {
 
@@ -31,15 +30,12 @@ namespace {
  */
 template <typename Number>
 Number wholeNumberFromText(std::string_view option, std::string_view text) {
-  Number number = 0;
-  const std::string digits{text};
-  const char* const end = digits.data() + digits.size();
-  const auto [stop, error] = std::from_chars(digits.data(), end, number);
-  if (digits.empty() || error != std::errc{} || stop != end) {
+  const std::optional<Number> number = network::wholeNumberIn<Number>(text);
+  if (!number.has_value()) {
     throw engine::InvalidLaunchOptionValueException(std::string(option),
                                                     std::string(text));
   }
-  return number;
+  return *number;
 }
 
 /**
