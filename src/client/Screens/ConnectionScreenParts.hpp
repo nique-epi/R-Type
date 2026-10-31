@@ -1,12 +1,11 @@
 #pragma once
 
 #include <functional>
-#include <string>
-#include "Endpoint.hpp"
 #include "IScreenNavigator.hpp"
 #include "IServerConnection.hpp"
 #include "ISoundPlayer.hpp"
 #include "PlayfieldMapping.hpp"
+#include "ServerChoice.hpp"
 
 namespace rtype::client {
 
@@ -22,10 +21,10 @@ struct ConnectionScreenParts {
   std::reference_wrapper<IServerConnection> connection;
   /** @brief Gives the point of the playfield under a pixel of the window. */
   PlayfieldMapping playfieldPointAt;
-  /** @brief Address and port the fields start with. */
-  network::Endpoint server;
-  /** @brief Nickname the field starts with. */
-  std::string nickname;
+  /** @brief Address, port and nickname the fields start with; the screen
+   * replaces them with those of each attempt it starts. It must outlive the
+   * screen. */
+  std::reference_wrapper<ServerChoice> choice;
 };
 
 }  // namespace rtype::client

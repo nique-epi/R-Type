@@ -10,7 +10,7 @@ namespace rtype::client {
 
 /**
  * @brief Asset id of the sheet of the status band: the lives and the markers
- * of the players.
+ * of the players, then the icons of the notices of a game.
  *
  * Its sprites are at their native size, SPRITE_SPACING apart, like those of
  * the entity sheet: one pixel of the sheet is one pixel of the interface
@@ -53,5 +53,22 @@ constexpr std::array MARKER_FRAMES =
  * a square of 64 pixels, so a tint gives it its color.
  */
 constexpr const char* PLUG_ICON_ID = "icons/phosphor/plugs_bold.png";
+
+/**
+ * @brief The third row of the sheet, under the markers: the door a pilot
+ * left through, beside LEFT THE GAME in the feed of departures, and the bars
+ * of a weak signal, the first one lit, beside WAITING FOR THE SERVER. Both
+ * are pale and dark blue with an ink outline, so no palette recolors them.
+ */
+constexpr game::SpriteFrame LEFT_GAME_FRAME{
+    .left = 0,
+    .top = bottomOf(MARKER_FRAME) + SPRITE_SPACING,
+    .width = 9,
+    .height = 11};
+constexpr game::SpriteFrame WEAK_SIGNAL_FRAME{
+    .left = LEFT_GAME_FRAME.left + LEFT_GAME_FRAME.width + SPRITE_SPACING,
+    .top = LEFT_GAME_FRAME.top,
+    .width = 13,
+    .height = 10};
 
 }  // namespace rtype::client

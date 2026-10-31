@@ -7,7 +7,7 @@ namespace rtype::client {
 /**
  * @brief The screens the client can show.
  *
- * Every value has one case in Application::createScreen(), which builds the
+ * Every value has one case in ScreenCatalog::create(), which builds the
  * screen; a value without a case does not compile with -Wswitch.
  */
 enum class ScreenId : std::uint8_t {
@@ -48,6 +48,11 @@ enum class ScreenId : std::uint8_t {
   /** @brief The waiting room after a game, entered through replaceAll()
    * only: alone on the stack, its BACK leaves the server for the title. */
   LobbyAfterGame,
+  /** @brief The dialog that says the session with the server ended, lost or
+   * closed, which ClientScreens pushes over the title it puts in place of every
+   * screen; RETRY opens the connection screen over the title, OK leaves the
+   * title. */
+  ConnectionLost,
 };
 
 }  // namespace rtype::client

@@ -8,6 +8,7 @@
 #include "FlightLogSchedule.hpp"
 #include "FlightLogTextConstants.hpp"
 #include "FlightLogTimingConstants.hpp"
+#include "GlowingCallPainting.hpp"
 #include "SoundConstants.hpp"
 #include "TimeConstants.hpp"
 #include "Typing.hpp"
@@ -33,15 +34,13 @@ FlightLogSchedule flightLogScheduleOf(std::span<const FinalPilot> pilots,
   const std::size_t laterRows = pilots.empty() ? 0 : pilots.size() - 1;
   const engine::Duration promptStart =
       rowsStart + times(ROW_STEP, laterRows) + ROW_TIME + PROMPT_DELAY;
-  return FlightLogSchedule{
-      .openStart = openStart,
-      .opened = opened,
-      .stamped = opened + STAMP_DELAY,
-      .rowsStart = rowsStart,
-      .promptStart = promptStart,
-      .ready =
-          promptStart + typingTimeOf(PROMPT_LETTER_TIME, PROMPT_TEXT.size()),
-      .rowCount = pilots.size()};
+  return FlightLogSchedule{.openStart = openStart,
+                           .opened = opened,
+                           .stamped = opened + STAMP_DELAY,
+                           .rowsStart = rowsStart,
+                           .promptStart = promptStart,
+                           .ready = promptStart + callTypingTimeOf(PROMPT_TEXT),
+                           .rowCount = pilots.size()};
 }
 
 engine::Duration rowStartOf(const FlightLogSchedule& schedule,

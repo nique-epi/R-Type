@@ -36,6 +36,8 @@ const char* nameOf(ScreenId screen) {
       return "end";
     case ScreenId::LobbyAfterGame:
       return "lobby after a game";
+    case ScreenId::ConnectionLost:
+      return "connection lost";
   }
   return "unknown screen";
 }

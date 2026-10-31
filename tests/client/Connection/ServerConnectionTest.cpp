@@ -8,6 +8,7 @@
 #include "ConnectionAccepted.hpp"
 #include "ConnectionChallenge.hpp"
 #include "ConnectionConstants.hpp"
+#include "ConnectionPhase.hpp"
 #include "ConnectionRefused.hpp"
 #include "ConnectionRequest.hpp"
 #include "ConnectionStatus.hpp"
@@ -26,6 +27,7 @@
 #include "NetworkTestConstants.hpp"
 #include "PacketHeader.hpp"
 #include "PlayerInput.hpp"
+#include "PlayerLeft.hpp"
 #include "ReadyState.hpp"
 #include "ServerConnection.hpp"
 #include "ServerConnectionFixture.hpp"
@@ -88,8 +90,6 @@ using testing::stateListing;
 using testing::THIRD_SEQUENCE;
 using testing::upHeld;
 
-using Phase = ConnectionStatus::Phase;
-
 /**
  * Given the delays of the protocol page
  * When the connection's request interval and timeout are read
@@ -106,7 +106,7 @@ TEST(ServerConnectionDelays, AreThoseOfTheProtocolPage) {
  * Then there is no attempt
  */
 TEST_F(ServerConnectionFixture, StartsWithNoAttempt) {
-  EXPECT_EQ(phase(), Phase::Idle);
+  EXPECT_EQ(phase(), ConnectionPhase::Idle);
 }
 
 /**
@@ -123,7 +123,7 @@ TEST_F(ServerConnectionFixture, SendsARequestWithoutCookieAtOnce) {
   EXPECT_EQ(lastRequest(),
             (network::ConnectionRequest{.cookie = 0,
                                         .nickname = std::string{NICKNAME}}));
-  EXPECT_EQ(phase(), Phase::Connecting);
+  EXPECT_EQ(phase(), ConnectionPhase::Connecting);
 }
 
 /**
@@ -214,7 +214,7 @@ TEST_F(ServerConnectionFixture, IsAcceptedWithThePlayerNumberOfTheServer) {
   update();
 
   EXPECT_EQ(connection().status(),
-            (ConnectionStatus{.phase = Phase::Accepted,
+            (ConnectionStatus{.phase = ConnectionPhase::Accepted,
                               .playerNumber = ACCEPTED_PLAYER_NUMBER}));
 }
 
@@ -273,7 +273,7 @@ TEST_F(ServerConnectionFixture, IsRefusedWithTheReasonOfTheServer) {
   update();
 
   EXPECT_EQ(connection().status(),
-            (ConnectionStatus{.phase = Phase::Refused,
+            (ConnectionStatus{.phase = ConnectionPhase::Refused,
                               .refusal = network::RefusalReason::GameFull,
                               .serverVersion = SERVER_VERSION}));
 }
@@ -303,7 +303,7 @@ TEST_F(ServerConnectionFixture, KeepsTryingUntilTheTimeout) {
 
   update(CONNECTION_ATTEMPT_TIMEOUT - ONE_NANOSECOND);
 
-  EXPECT_EQ(phase(), Phase::Connecting);
+  EXPECT_EQ(phase(), ConnectionPhase::Connecting);
 }
 
 /**
@@ -316,7 +316,7 @@ TEST_F(ServerConnectionFixture, GivesUpAtTheTimeout) {
 
   update(CONNECTION_ATTEMPT_TIMEOUT);
 
-  EXPECT_EQ(phase(), Phase::Unreachable);
+  EXPECT_EQ(phase(), ConnectionPhase::Unreachable);
 }
 
 /**
@@ -347,7 +347,7 @@ TEST_F(ServerConnectionFixture, ChallengeDoesNotRestartTheTimeout) {
 
   update(ONE_NANOSECOND);
 
-  EXPECT_EQ(phase(), Phase::Unreachable);
+  EXPECT_EQ(phase(), ConnectionPhase::Unreachable);
 }
 
 /**
@@ -362,7 +362,7 @@ TEST_F(ServerConnectionFixture, IgnoresAnAnswerFromAnotherSender) {
 
   update();
 
-  EXPECT_EQ(phase(), Phase::Connecting);
+  EXPECT_EQ(phase(), ConnectionPhase::Connecting);
 }
 
 /**
@@ -379,7 +379,7 @@ TEST_F(ServerConnectionFixture, IgnoresATruncatedDatagram) {
   deliverBytes(std::move(datagram));
 
   EXPECT_NO_THROW(update());
-  EXPECT_EQ(phase(), Phase::Connecting);
+  EXPECT_EQ(phase(), ConnectionPhase::Connecting);
 }
 
 /**
@@ -400,7 +400,7 @@ TEST_F(ServerConnectionFixture, IsRefusedByAnAnswerOfAnotherVersion) {
 
   EXPECT_EQ(
       connection().status(),
-      (ConnectionStatus{.phase = Phase::Refused,
+      (ConnectionStatus{.phase = ConnectionPhase::Refused,
                         .refusal = network::RefusalReason::IncompatibleVersion,
                         .serverVersion = NEXT_PROTOCOL_VERSION}));
 }
@@ -441,7 +441,7 @@ TEST_F(ServerConnectionFixture, IgnoresAnotherVersionFromAnotherSender) {
 
   update();
 
-  EXPECT_EQ(phase(), Phase::Connecting);
+  EXPECT_EQ(phase(), ConnectionPhase::Connecting);
 }
 
 /**
@@ -458,7 +458,7 @@ TEST_F(ServerConnectionFixture, KeepsTheSessionWhenAnotherVersionArrives) {
 
   update();
 
-  EXPECT_EQ(phase(), Phase::Accepted);
+  EXPECT_EQ(phase(), ConnectionPhase::Accepted);
 }
 
 /**
@@ -472,7 +472,7 @@ TEST_F(ServerConnectionFixture, SendsNothingOnceCancelled) {
   connection().cancel();
   update(CONNECTION_REQUEST_INTERVAL);
 
-  EXPECT_EQ(phase(), Phase::Idle);
+  EXPECT_EQ(phase(), ConnectionPhase::Idle);
   EXPECT_EQ(sent().size(), 1);
 }
 
@@ -488,7 +488,7 @@ TEST_F(ServerConnectionFixture, IgnoresALateAnswerOnceCancelled) {
 
   update();
 
-  EXPECT_EQ(phase(), Phase::Idle);
+  EXPECT_EQ(phase(), ConnectionPhase::Idle);
 }
 
 /**
@@ -507,7 +507,7 @@ TEST_F(ServerConnectionFixture, StartsANewAttemptWithoutStaleAnswers) {
   connect();
   update();
 
-  EXPECT_EQ(phase(), Phase::Connecting);
+  EXPECT_EQ(phase(), ConnectionPhase::Connecting);
   EXPECT_EQ(lastRequest().cookie, 0);
 }
 
@@ -1270,7 +1270,7 @@ TEST_F(ServerConnectionFixture, KeepsTheSessionAndItsHeartbeatsPastTheTimeout) {
 
   update(PROTOCOL_SESSION_TIMEOUT);
 
-  EXPECT_EQ(phase(), Phase::Accepted);
+  EXPECT_EQ(phase(), ConnectionPhase::Accepted);
   EXPECT_GE(sentCountOf<network::Heartbeat>(), 1U);
 }
 
@@ -1288,7 +1288,7 @@ TEST_F(ServerConnectionFixture, ResumesWhenTheServerAnswersDuringTheGrace) {
 
   update(PROTOCOL_SESSION_TIMEOUT);
 
-  EXPECT_EQ(phase(), Phase::Accepted);
+  EXPECT_EQ(phase(), ConnectionPhase::Accepted);
 }
 
 /**
@@ -1301,7 +1301,7 @@ TEST_F(ServerConnectionFixture, KeepsTheSessionUntilTheServerTimeout) {
 
   update(PROTOCOL_SILENCE_LIMIT - ONE_NANOSECOND);
 
-  EXPECT_EQ(phase(), Phase::Accepted);
+  EXPECT_EQ(phase(), ConnectionPhase::Accepted);
 }
 
 /**
@@ -1314,7 +1314,7 @@ TEST_F(ServerConnectionFixture, LosesTheServerAtTheTimeoutWithoutADatagram) {
 
   update(PROTOCOL_SILENCE_LIMIT);
 
-  EXPECT_EQ(phase(), Phase::Lost);
+  EXPECT_EQ(phase(), ConnectionPhase::Lost);
 }
 
 /**
@@ -1331,7 +1331,7 @@ TEST_F(ServerConnectionFixture, AHeartbeatOfTheServerRestartsTheTimeout) {
 
   update(PROTOCOL_SILENCE_LIMIT - ONE_NANOSECOND);
 
-  EXPECT_EQ(phase(), Phase::Accepted);
+  EXPECT_EQ(phase(), ConnectionPhase::Accepted);
 }
 
 /**
@@ -1353,7 +1353,7 @@ TEST_F(ServerConnectionFixture, AWorldStateRestartsTheTimeout) {
 
   update(PROTOCOL_SILENCE_LIMIT - ONE_NANOSECOND);
 
-  EXPECT_EQ(phase(), Phase::Accepted);
+  EXPECT_EQ(phase(), ConnectionPhase::Accepted);
 }
 
 /**
@@ -1373,7 +1373,7 @@ TEST_F(ServerConnectionFixture, ADatagramWithAnotherTokenKeepsNoSessionAlive) {
 
   update(ONE_NANOSECOND);
 
-  EXPECT_EQ(phase(), Phase::Lost);
+  EXPECT_EQ(phase(), ConnectionPhase::Lost);
 }
 
 /**
@@ -1392,7 +1392,7 @@ TEST_F(ServerConnectionFixture, ACopyOfADatagramReadKeepsNoSessionAlive) {
 
   update(ONE_NANOSECOND);
 
-  EXPECT_EQ(phase(), Phase::Lost);
+  EXPECT_EQ(phase(), ConnectionPhase::Lost);
 }
 
 /**
@@ -1413,7 +1413,7 @@ TEST_F(ServerConnectionFixture, ATruncatedDatagramKeepsNoSessionAlive) {
 
   update(ONE_NANOSECOND);
 
-  EXPECT_EQ(phase(), Phase::Lost);
+  EXPECT_EQ(phase(), ConnectionPhase::Lost);
 }
 
 /**
@@ -1428,7 +1428,7 @@ TEST_F(ServerConnectionFixture, AFrameLongerThanTheTimeoutLosesNoSession) {
 
   update(PROTOCOL_SILENCE_LIMIT + ONE_NANOSECOND);
 
-  EXPECT_EQ(phase(), Phase::Accepted);
+  EXPECT_EQ(phase(), ConnectionPhase::Accepted);
 }
 
 /**
@@ -1449,7 +1449,7 @@ TEST_F(ServerConnectionFixture, KeepsASessionOpenedAfterAnIdleWait) {
 
   update(PROTOCOL_SILENCE_LIMIT - ONE_NANOSECOND);
 
-  EXPECT_EQ(phase(), Phase::Accepted);
+  EXPECT_EQ(phase(), ConnectionPhase::Accepted);
 }
 
 /**
@@ -1470,7 +1470,7 @@ TEST_F(ServerConnectionFixture, KeepsASessionOpenedAfterALostOne) {
 
   update(PROTOCOL_SILENCE_LIMIT - ONE_NANOSECOND);
 
-  EXPECT_EQ(phase(), Phase::Accepted);
+  EXPECT_EQ(phase(), ConnectionPhase::Accepted);
 }
 
 /**
@@ -1519,7 +1519,74 @@ TEST_F(ServerConnectionFixture, StaysLostWhenALateAcceptanceArrives) {
       FIRST_SEQUENCE);
   update();
 
-  EXPECT_EQ(phase(), Phase::Lost);
+  EXPECT_EQ(phase(), ConnectionPhase::Lost);
+}
+
+/**
+ * Given a game lost to the silence of its server
+ * When the server comes back from a stall and a WorldState of the lost session
+ * arrives
+ * Then the connection hands nothing over: the client left that game
+ */
+TEST_F(ServerConnectionFixture, KeepsNothingFromAServerThatComesBack) {
+  accept();
+  deliverInSession(network::GameStarted{}, FIRST_SEQUENCE);
+  update();
+  update(PROTOCOL_SILENCE_LIMIT);
+
+  deliverWorldStateInSession(
+      stateListing(APPLIED_TICK,
+                   {listed(SHIP_ID, network::WireEntityType::PlayerShip,
+                           FIRST_POSITION)}),
+      SECOND_SEQUENCE);
+  update();
+
+  EXPECT_THAT(drainedEntityMessages(), IsEmpty());
+}
+
+/**
+ * Given a waiting room lost to the silence of its server
+ * When the server comes back from a stall and a LobbyState of the lost session
+ * arrives
+ * Then the room stays empty: the client left that room
+ */
+TEST_F(ServerConnectionFixture, ShowsNoRoomFromAServerThatComesBack) {
+  accept();
+  update(PROTOCOL_SILENCE_LIMIT);
+
+  deliverInSession(
+      network::LobbyState{
+          .players = {{.playerNumber = ACCEPTED_PLAYER_NUMBER,
+                       .ready = false,
+                       .nickname = std::string{NICKNAME}},
+                      {.playerNumber = OTHER_PLAYER_NUMBER,
+                       .ready = false,
+                       .nickname = std::string{OTHER_NICKNAME}}}},
+      FIRST_SEQUENCE);
+  update();
+
+  EXPECT_THAT(connection().lobbyPlayers(), IsEmpty());
+}
+
+/**
+ * Given a game lost to the silence of its server
+ * When the server comes back from a stall with a WorldState, the game screen
+ * sends its input, then a heartbeat interval passes
+ * Then nothing goes to the server, which closes the session as timed out
+ */
+TEST_F(ServerConnectionFixture, SendsNothingToAServerThatComesBack) {
+  accept();
+  deliverInSession(network::GameStarted{}, FIRST_SEQUENCE);
+  update();
+  update(PROTOCOL_SILENCE_LIMIT);
+  const std::size_t sentWhenLost = sent().size();
+
+  deliverWorldStateInSession(stateListing(APPLIED_TICK, {}), SECOND_SEQUENCE);
+  update();
+  connection().sendPlayerInput(upHeld());
+  update(PROTOCOL_HEARTBEAT_INTERVAL);
+
+  EXPECT_EQ(sent().size(), sentWhenLost);
 }
 
 /**
@@ -1581,6 +1648,86 @@ TEST_F(ServerConnectionFixture, SendsReadyAgainAfterAnEndedGame) {
   connection().setReady(true);
 
   EXPECT_EQ(sentCountOf<network::ReadyState>(), 1U);
+}
+
+/**
+ * Given a session the server opened
+ * When the server sends a Disconnection in the session
+ * Then the session is closed
+ */
+TEST_F(ServerConnectionFixture, ADisconnectionOfTheServerClosesTheSession) {
+  accept();
+  deliverInSession(network::Disconnection{}, FIRST_SEQUENCE);
+
+  update();
+
+  EXPECT_EQ(phase(), ConnectionPhase::Closed);
+}
+
+/**
+ * Given a session the server opened
+ * When a Disconnection arrives with another session token
+ * Then the session holds: only the server of the session may close it
+ */
+TEST_F(ServerConnectionFixture, IgnoresADisconnectionWithAnotherToken) {
+  accept();
+  network::PacketHeader forged = sessionHeader(FIRST_SEQUENCE);
+  forged.sessionToken = OTHER_SESSION_TOKEN;
+  deliver(network::Disconnection{}, server(), forged);
+
+  update();
+
+  EXPECT_EQ(phase(), ConnectionPhase::Accepted);
+}
+
+/**
+ * Given an attempt the server has not accepted yet
+ * When a Disconnection arrives from the address of the server
+ * Then the attempt goes on: there is no session to close
+ */
+TEST_F(ServerConnectionFixture, IgnoresADisconnectionBeforeTheAcceptance) {
+  connect();
+  deliver(network::Disconnection{});
+
+  update();
+
+  EXPECT_EQ(phase(), ConnectionPhase::Connecting);
+}
+
+/**
+ * Given a session the server closed with a Disconnection
+ * When a heartbeat interval passes
+ * Then nothing went back to the server: no Disconnection, no Heartbeat
+ */
+TEST_F(ServerConnectionFixture, SendsNothingToAServerThatClosedTheSession) {
+  accept();
+  const std::size_t sentWhenAccepted = sent().size();
+  deliverInSession(network::Disconnection{}, FIRST_SEQUENCE);
+  update();
+
+  update(PROTOCOL_HEARTBEAT_INTERVAL);
+
+  EXPECT_EQ(sent().size(), sentWhenAccepted);
+}
+
+/**
+ * Given a game started
+ * When the server says twice that a player left
+ * Then the game screen gets both copies, in order
+ */
+TEST_F(ServerConnectionFixture, HandsOverEveryCopyOfAPlayerLeft) {
+  accept();
+  deliverInSession(network::GameStarted{}, FIRST_SEQUENCE);
+  const network::PlayerLeft departure{
+      .playerNumber = OTHER_PLAYER_NUMBER,
+      .reason = network::DepartureReason::TimedOut};
+  deliverInSession(departure, SECOND_SEQUENCE);
+  deliverInSession(departure, THIRD_SEQUENCE);
+
+  update();
+
+  EXPECT_THAT(drainedEntityMessages(),
+              ElementsAre(EntityMessage{departure}, EntityMessage{departure}));
 }
 
 }  // namespace rtype::client

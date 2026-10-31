@@ -7,6 +7,7 @@
 #include "GameResult.hpp"
 #include "IScreenNavigator.hpp"
 #include "ScrollingBackground.hpp"
+#include "ServerChoice.hpp"
 
 namespace rtype::client {
 
@@ -27,6 +28,7 @@ struct ScreenCatalogParts {
   std::reference_wrapper<ScrollingBackground> sky;
   std::reference_wrapper<GameResult> gameResult;
   std::reference_wrapper<std::optional<std::size_t>> previousTaunt;
+  std::reference_wrapper<ServerChoice> serverChoice;
 };
 
 }  // namespace rtype::client

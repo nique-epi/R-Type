@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <string_view>
+#include "ConnectionPhase.hpp"
 #include "ConnectionStatus.hpp"
 #include "RecordingServerConnection.hpp"
 
@@ -18,6 +19,12 @@ constexpr std::string_view LAUNCH_NICKNAME = "ACE";
 constexpr std::u32string_view TYPED_PORT_TEXT = U"5000";
 constexpr std::uint16_t TYPED_PORT = 5000;
 
+/** @brief A nickname the player types, as typed and as read, and an emptied
+ * nickname field, which the screen refuses. */
+constexpr std::u32string_view TYPED_NICKNAME_TEXT = U"NOVA";
+constexpr std::string_view TYPED_NICKNAME = "NOVA";
+constexpr std::u32string_view NO_NICKNAME_TEXT{};
+
 /** @brief A port one below the lowest port. */
 constexpr std::u32string_view PORT_ZERO_TEXT = U"0";
 
@@ -30,7 +37,7 @@ constexpr std::uint8_t FIRST_PLAYER = 1;
 /** @brief What the connection says once the server accepted the player
  * as the first one. */
 constexpr ConnectionStatus ACCEPTED_AS_FIRST_PLAYER{
-    .phase = ConnectionStatus::Phase::Accepted, .playerNumber = FIRST_PLAYER};
+    .phase = ConnectionPhase::Accepted, .playerNumber = FIRST_PLAYER};
 
 /** @brief The cancel the screen sends when it is built, before any request of
  * a test. */

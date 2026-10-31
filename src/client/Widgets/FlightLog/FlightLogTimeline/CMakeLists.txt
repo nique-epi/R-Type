@@ -7,6 +7,7 @@ target_link_libraries(rtype_client_flight_log_timeline
     rtype_client_flight_log_interfaces
   PRIVATE
     rtype_client_audio_interfaces
+    rtype_client_glowing_call_painting
     rtype_client_typing
 )
 

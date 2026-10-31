@@ -12,7 +12,9 @@ target_link_libraries(rtype_client_screens_module
     rtype_client_replication_interfaces
     rtype_client_screen_stack
     rtype_client_scrolling_background
+    rtype_client_screen_interfaces
     rtype_client_server_connection
+    rtype_client_session_loss_watch
     rtype_client_settings
     rtype_client_window
     rtype_client_window_module
@@ -22,6 +24,8 @@ target_link_libraries(rtype_client_screens_module
   PRIVATE
     rtype_client_connection_screen
     rtype_client_constants
+    rtype_client_dialog_menus
+    rtype_client_dialog_screen
     rtype_client_end_screen
     rtype_client_entity_layer
     rtype_client_game_screen
@@ -34,7 +38,6 @@ target_link_libraries(rtype_client_screens_module
     rtype_client_options_screen
     rtype_client_platform
     rtype_client_player_preferences
-    rtype_client_quit_confirmation_screen
     rtype_client_screen_assets
     rtype_client_title_screen
 )

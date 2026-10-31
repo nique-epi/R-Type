@@ -2,13 +2,11 @@
 #include <SFML/Window/Keyboard.hpp>
 #include <cstddef>
 #include <memory>
-#include <string>
 #include <string_view>
 #include "ConnectionScreen.hpp"
+#include "ConnectionScreenFixtures.hpp"
 #include "ConnectionScreenParts.hpp"
-#include "ConnectionScreenTestConstants.hpp"
 #include "ConnectionStatus.hpp"
-#include "Endpoint.hpp"
 #include "KeyPress.hpp"
 #include "PointerEvents.hpp"
 #include "RecordingInterfaceCanvas.hpp"
@@ -22,22 +20,15 @@ using rtype::client::ConnectionScreen;
 using rtype::client::ConnectionScreenParts;
 using rtype::client::ConnectionStatus;
 using rtype::client::PRESS_DURATION;
-using rtype::client::testing::LAUNCH_ADDRESS;
-using rtype::client::testing::LAUNCH_NICKNAME;
-using rtype::client::testing::LAUNCH_PORT;
-using rtype::network::Endpoint;
 
 ConnectionScreenFixture::ConnectionScreenFixture()
-    : screen_(
-          ConnectionScreenParts{
-              .navigator = navigator_,
-              .sounds = sounds_,
-              .connection = connection_,
-              .playfieldPointAt = samePlayfieldPoint,
-              .server = Endpoint{.address = std::string(LAUNCH_ADDRESS),
-                                 .port = LAUNCH_PORT},
-              .nickname = std::string(LAUNCH_NICKNAME)},
-          std::make_unique<RecordingInterfaceCanvas>(canvas_)) {}
+    : choice_(launchChoice()),
+      screen_(ConnectionScreenParts{.navigator = navigator_,
+                                    .sounds = sounds_,
+                                    .connection = connection_,
+                                    .playfieldPointAt = samePlayfieldPoint,
+                                    .choice = choice_},
+              std::make_unique<RecordingInterfaceCanvas>(canvas_)) {}
 
 const RecordingNavigator& ConnectionScreenFixture::navigator() const {
   return navigator_;
