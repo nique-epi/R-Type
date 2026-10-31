@@ -130,10 +130,8 @@ void UdpSocket::startReceiving(DatagramHandler handler) {
 
 void UdpSocket::send(const Endpoint& destination,
                      std::span<const std::byte> payload) {
-  if (payload.size() > MAX_DATAGRAM_SIZE) {
-    throw DatagramTooLargeException(payload.size());
-  }
-  const asio::ip::udp::endpoint asioDestination = toAsioEndpoint(destination);
+  const asio::ip::udp::endpoint asioDestination =
+      sendableDestination(destination, payload);
   auto bytes = std::make_shared<const std::vector<std::byte>>(payload.begin(),
                                                               payload.end());
   implementation_->socket.async_send_to(

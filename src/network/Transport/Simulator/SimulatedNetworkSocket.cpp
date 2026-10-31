@@ -9,28 +9,12 @@
 #include "Endpoint.hpp"
 #include "IDatagramSocket.hpp"
 #include "NetworkConditions.hpp"
-#include "NetworkConstants.hpp"
 #include "NetworkContext.hpp"
-#include "NetworkException.hpp"
 #include "SimulatorConstants.hpp"
 
 namespace rtype::network {
 
 namespace {
-
-/**
- * @throws DatagramTooLargeException or InvalidAddressException for a datagram
- * the real socket would refuse, as UdpSocket::send() does: a held datagram is
- * refused when it is handed over, not when its delay ends on the network
- * thread.
- */
-void refuseWhatTheSocketWould(const Endpoint& destination,
-                              std::span<const std::byte> payload) {
-  if (payload.size() > MAX_DATAGRAM_SIZE) {
-    throw DatagramTooLargeException(payload.size());
-  }
-  static_cast<void>(toAsioEndpoint(destination));
-}
 
 /** @returns What hands a datagram whose delay ended to @p socket. */
 DatagramHandler sendingThrough(IDatagramSocket& socket) {
@@ -72,7 +56,7 @@ void SimulatedNetworkSocket::startReceiving(DatagramHandler handler) {
 
 void SimulatedNetworkSocket::send(const Endpoint& destination,
                                   std::span<const std::byte> payload) {
-  refuseWhatTheSocketWould(destination, payload);
+  static_cast<void>(sendableDestination(destination, payload));
   sends_->add(destination, payload);
 }
 
