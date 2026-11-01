@@ -92,7 +92,9 @@ std::string LaunchOptions::usage() {
   text += engine::usageEntry(engine::HELP_OPTION,
                              "Print this help and open no window.");
   text += '\n';
-  text += logging::LogLaunchOptions::usage(logging::CLIENT_LOG_FILE_NAME);
+  text += logging::LogLaunchOptions::usage(
+      std::string(logging::CLIENT_LOG_FILE_NAME) +
+      std::string(logging::DEFAULT_JOURNAL_PLACE));
   return text;
 }
 

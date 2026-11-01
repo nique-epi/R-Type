@@ -133,11 +133,10 @@ void announceJournal(const LogOutput& output) {
 
 LogLaunchOptions LogLaunchOptions::read(
     std::span<const std::string_view> arguments,
-    std::string_view defaultFileName) {
+    const std::filesystem::path& defaultJournal) {
   LaunchSettings settings{
       .level = std::nullopt,
-      .output = LogOutput{.toStderr = true,
-                          .filePath = std::filesystem::path(defaultFileName)}};
+      .output = LogOutput{.toStderr = true, .filePath = defaultJournal}};
   std::vector<std::string_view> otherArguments;
   for (std::size_t index = 0; index < arguments.size(); ++index) {
     const std::string_view argument = arguments[index];
@@ -159,12 +158,12 @@ LogLaunchOptions LogLaunchOptions::read(
 
 LogLaunchOptions LogLaunchOptions::readFromProcess(
     int argumentCount, const char* const* arguments,
-    std::string_view defaultFileName) {
+    const std::filesystem::path& defaultJournal) {
   std::vector<std::string_view> processArguments;
   for (int index = 1; index < argumentCount; ++index) {
     processArguments.emplace_back(arguments[index]);
   }
-  return read(processArguments, defaultFileName);
+  return read(processArguments, defaultJournal);
 }
 
 void LogLaunchOptions::apply() const {
@@ -179,7 +178,7 @@ std::span<const std::string_view> LogLaunchOptions::otherArguments() const {
   return otherArguments_;
 }
 
-std::string LogLaunchOptions::usage(std::string_view defaultFileName) {
+std::string LogLaunchOptions::usage(std::string_view defaultJournal) {
   std::string text = "Logging options:\n";
   appendUsageEntry(text, std::string(LEVEL_OPTION) + " <name>",
                    "Level: trace, debug, info, warn, error or silent. "
@@ -189,7 +188,7 @@ std::string LogLaunchOptions::usage(std::string_view defaultFileName) {
                        std::string(INFO_NAME) + ".");
   appendUsageEntry(
       text, std::string(FILE_OPTION) + " <path>",
-      "Journal to append to. Default: " + std::string(defaultFileName) + ".");
+      "Journal to append to. Default: " + std::string(defaultJournal) + ".");
   appendUsageEntry(text, NO_FILE_OPTION, "Write no journal.");
   appendUsageEntry(text, STDERR_OPTION,
                    "Write to standard error too. This is the default.");
