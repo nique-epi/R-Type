@@ -5,6 +5,7 @@ target_include_directories(rtype_client_game_screen PUBLIC ${CMAKE_CURRENT_SOURC
 target_link_libraries(rtype_client_game_screen
   PUBLIC
     rtype_client_connection
+    rtype_client_departure_feed
     rtype_client_entity_replicator
     rtype_client_mission_banner
     rtype_client_player_commands
@@ -12,6 +13,7 @@ target_link_libraries(rtype_client_game_screen
     rtype_client_drawing
     rtype_client_score_board
     rtype_client_screen_assets
+    rtype_client_silence_warning
     rtype_engine
     rtype_logging
     SFML::Graphics

@@ -18,10 +18,18 @@ Why: a layout described in words or ASCII is approved without being seen; the us
 1. **An input rule shared by a menu (the pointer selects what it moves over, a click presses) is reread for each new kind of control**: does it still serve what the player does with that control? A control the player types into keeps the keyboard until the player moves it on purpose (a click, Tab, an arrow), as in any form: a pointer passing over another bar must not take the typing away.
 2. **"It is the rule of every menu" is never the reason to keep a behavior on a new kind of control.** Write in the plan, for each shared input rule, whether it applies to the new control and why, so the user can see it before the code.
 
+### A new screen takes the input rules of the screen it repeats
+
+1. **Before writing the key and pointer handling of a new screen, read the `handleEvent()` of the screen whose behavior it repeats** (`EndScreen` for a screen that skips an opening, then acts on Enter) and list its input rules: a key held down acts once, a click anywhere skips the opening, which keys act and when.
+2. **Keep each rule through the shared helper** (`releasesHeldKey()`, `src/client/Screens/HeldKey/`), never by leaving it out; a rule the new screen drops on purpose is written in its doc comment with the reason.
+3. **Test the held key**: a second `KeyPressed` of the same key with no release in between acts on nothing.
+
 ### Example (behavior)
 
 - ❌ **Before (wrong)**: the plan kept "the pointer selects the bar it moves over" for the text fields of the connection screen, "the rule of every menu"; on screen, the field being typed in changed as soon as the pointer moved.
 - ✅ **After (right)**: a form selects a bar on a click only; pages and dialogs, made of buttons, keep the selection under the pointer.
+- ❌ **Before (wrong)**: `LostScreen` acted on every `KeyPressed`; the system repeats the press of a held key, so holding Enter skipped the closing, then pressed RECONNECT by itself.
+- ✅ **After (right)**: `LostScreen` keeps the key pressed last, as `EndScreen` does, and forgets it on `releasesHeldKey()`; `AHeldEnterActsOnce` checks it.
 
 ## Example
 

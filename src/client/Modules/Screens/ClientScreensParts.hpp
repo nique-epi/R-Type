@@ -15,8 +15,8 @@ namespace rtype::client {
 /**
  * @brief What the screens of the client are built from: the services of the
  * modules listed before the screens module (the sound included), and the server
- * and the nickname the connection screen starts with. Every reference must
- * outlive the screens.
+ * and the nickname the first connection screen starts with. Every reference
+ * must outlive the screens.
  *
  * A std::reference_wrapper has no default constructor, so this struct is
  * only ever built with designated initializers naming every member: the

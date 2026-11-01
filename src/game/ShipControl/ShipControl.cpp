@@ -10,6 +10,7 @@
 #include "PlayfieldConstants.hpp"
 #include "Position.hpp"
 #include "ShipControlConstants.hpp"
+#include "ShipDirections.hpp"
 #include "ShipMotion.hpp"
 #include "TimeConstants.hpp"
 

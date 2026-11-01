@@ -9,6 +9,9 @@
 #include "ScreenCatalog.hpp"
 #include "ScreenStack.hpp"
 #include "ScrollingBackground.hpp"
+#include "ServerChoice.hpp"
+#include "ServerConnection.hpp"
+#include "SessionLossWatch.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::client {
@@ -21,6 +24,9 @@ namespace rtype::client {
  * by a game, a silence after stopping the theme. When the server ends a game,
  * the game screen writes its result here and gives way to the end screen, from
  * which the player plays again in the waiting room or quits to the title.
+ * When the session with the server ends, lost or closed, the title takes the
+ * place of every screen, with the dialog that says so over it; the screens of
+ * the session stop there.
  *
  * Each frame, the events go to the screen on top, the sky and every screen are
  * updated, then the sky is drawn and every screen over it, from the
@@ -69,9 +75,16 @@ class ClientScreens {
   [[nodiscard]] bool isEmpty() const;
 
  private:
+  const ServerConnection* connection_;
   ScrollingBackground background_;
   GameResult gameResult_;
   std::optional<std::size_t> previousTaunt_;
+  /** @brief The server and the nickname every connection screen starts
+   * with: those of launch, then those of the last attempt. */
+  ServerChoice serverChoice_;
+  /** @brief Notices, once per end, a session the server let go silent or
+   * closed. */
+  SessionLossWatch sessionLoss_;
   ScreenStack screens_;
   ScreenCatalog catalog_;
 };
