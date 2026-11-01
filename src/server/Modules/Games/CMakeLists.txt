@@ -23,7 +23,6 @@ target_link_libraries(rtype_server_games_module
     rtype_server_rtype_rules_module
     rtype_server_network_module
   PRIVATE
-    rtype_engine_paths
     rtype_network_disconnection
     rtype_server_game_placement
     rtype_server_module_constants

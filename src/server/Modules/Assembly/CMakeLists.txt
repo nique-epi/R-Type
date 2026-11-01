@@ -14,7 +14,6 @@ target_link_libraries(rtype_server_modules
     rtype_server_network_module
     rtype_server_stop_request
   PRIVATE
-    rtype_engine_paths
     rtype_server_constants
 )
 
