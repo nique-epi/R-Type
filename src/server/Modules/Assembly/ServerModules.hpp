@@ -19,6 +19,8 @@ namespace rtype::server {
  * seed of the first game.
  * @param stopRequest Told by the network module when the server fails; it must
  * outlive the modules.
+ * @throws EngineException when the system does not tell where the executable
+ * is, or no assets folder lies next to it or in the folder above.
  */
 [[nodiscard]] std::vector<std::unique_ptr<engine::IModule>> serverModules(
     const logging::LogLaunchOptions& logOptions,

@@ -44,6 +44,23 @@ TEST_F(ServerModulesFixture, ListsTheLoggerTheNetworkTheGamesAndTheLobby) {
 }
 
 /**
+ * Given a server started from an empty folder, its waves file next to its
+ * executable
+ * When the application starts
+ * Then it finds the waves file and starts
+ */
+TEST_F(ServerModulesFixture,
+       FindsItsWavesFromItsExecutableNotFromTheStartFolder) {
+  Application application(
+      LoopStages(rtype::server::SERVER_LOOP_STAGES),
+      serverModules(journalOptions(), launchOptions(), stopRequest()));
+
+  ASSERT_NO_THROW(application.start());
+
+  application.stop();
+}
+
+/**
  * Given a server whose modules started and a client that joined it
  * When the application stops
  * Then the client receives the three copies of a Disconnection, about

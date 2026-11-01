@@ -33,8 +33,7 @@ ServerModulesFixture::ServerModulesFixture()
       portText_(std::to_string(port_)),
       arguments_(launchArguments(portText_)),
       launchOptions_(rtype::server::LaunchOptions::read(arguments_)) {
-  std::filesystem::current_path(
-      std::filesystem::path{RTYPE_SOURCE_ASSETS_FOLDER}.parent_path());
+  std::filesystem::current_path(workingFolder_.path());
 }
 
 ServerModulesFixture::~ServerModulesFixture() {

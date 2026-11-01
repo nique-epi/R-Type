@@ -108,12 +108,8 @@ constexpr std::string_view NO_ENEMY = "[]";
 constexpr std::string_view ENEMY_OUTSIDE_A_LIST = R"("drifter")";
 constexpr std::string_view NUMBER_AS_AN_ENEMY = "[1]";
 
-/**
- * @brief A waves file no test writes, and the shipped one, from the assets
- * folder.
- */
+/** @brief A waves file no test writes. */
 constexpr std::string_view MISSING_FILE = "no-such-folder/waves.toml";
-constexpr std::string_view SHIPPED_FILE_IN_ASSETS = "waves/waves.toml";
 
 /**
  * @brief What the errors say. A value of `first_wave_bydos = ` starts on
