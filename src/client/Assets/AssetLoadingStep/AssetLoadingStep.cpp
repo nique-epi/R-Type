@@ -2,12 +2,12 @@
 #include <cstddef>
 #include <string>
 #include <vector>
-#include "AssetIds.hpp"
 #include "AssetKind.hpp"
 #include "AssetLibrary.hpp"
 #include "AssetList.hpp"
 #include "AssetLoadResult.hpp"
 #include "ClientException.hpp"
+#include "PathText.hpp"
 
 namespace rtype::client {
 
@@ -48,7 +48,8 @@ void AssetLoadingStep::loadNext() {
   record(asset, library_->load(asset.kind, asset.assetId));
   ++processedCount_;
   if (isFinished() && hasProblems(problems_)) {
-    throw AssetLoadingException(genericText(library_->folder()), problems_);
+    throw AssetLoadingException(engine::genericText(library_->folder()),
+                                problems_);
   }
 }
 
@@ -70,11 +71,11 @@ void AssetLoadingStep::record(const PendingAsset& asset,
       return;
     case AssetLoadResult::MissingFile:
       problems_.missingFiles.push_back(
-          genericText(library_->fileOf(asset.assetId)));
+          engine::genericText(library_->fileOf(asset.assetId)));
       return;
     case AssetLoadResult::UnreadableFile:
       problems_.unreadableFiles.push_back(
-          genericText(library_->fileOf(asset.assetId)));
+          engine::genericText(library_->fileOf(asset.assetId)));
       return;
   }
 }

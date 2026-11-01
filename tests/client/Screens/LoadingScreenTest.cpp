@@ -4,13 +4,13 @@
 #include <filesystem>
 #include <memory>
 #include <vector>
-#include "AssetIds.hpp"
 #include "AssetKind.hpp"
 #include "AssetLibrary.hpp"
 #include "AssetList.hpp"
 #include "ClientException.hpp"
 #include "IScreen.hpp"
 #include "LoadingScreen.hpp"
+#include "PathText.hpp"
 #include "RecordingScreen.hpp"
 #include "ScreenId.hpp"
 #include "ScreenStack.hpp"
@@ -22,11 +22,11 @@ using rtype::client::AssetKind;
 using rtype::client::AssetLibrary;
 using rtype::client::AssetList;
 using rtype::client::AssetLoadingException;
-using rtype::client::genericText;
 using rtype::client::IScreen;
 using rtype::client::LoadingScreen;
 using rtype::client::ScreenId;
 using rtype::client::ScreenStack;
+using rtype::engine::genericText;
 using ::testing::ElementsAre;
 using ::testing::HasSubstr;
 using ::testing::IsEmpty;

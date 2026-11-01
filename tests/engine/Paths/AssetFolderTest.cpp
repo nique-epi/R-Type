@@ -2,23 +2,17 @@
 #include <gtest/gtest.h>
 #include <filesystem>
 #include "AssetFolder.hpp"
-#include "AssetIds.hpp"
-#include "ClientException.hpp"
+#include "AssetFolderTestConstants.hpp"
+#include "EngineException.hpp"
+#include "PathText.hpp"
 #include "TemporaryFolder.hpp"
 
-using rtype::client::AssetFolderNotFoundException;
-using rtype::client::findAssetFolder;
-using rtype::client::genericText;
+using rtype::engine::AssetFolderNotFoundException;
+using rtype::engine::findAssetFolder;
+using rtype::engine::genericText;
 using ::testing::AllOf;
 using ::testing::HasSubstr;
 using ::testing::ThrowsMessage;
-
-namespace {
-
-constexpr const char* ASSETS_FOLDER = "assets";
-constexpr const char* VISUAL_STUDIO_OUTPUT_FOLDER = "Release";
-
-}  // namespace
 
 /**
  * Given an assets folder next to the executable folder

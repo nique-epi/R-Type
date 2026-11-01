@@ -5,6 +5,7 @@ target_include_directories(rtype_client_asset_loading_step PUBLIC ${CMAKE_CURREN
 target_link_libraries(rtype_client_asset_loading_step
   PUBLIC
     rtype_client_asset_library
+    rtype_engine_paths
 )
 
 rtype_enable_warnings(rtype_client_asset_loading_step)

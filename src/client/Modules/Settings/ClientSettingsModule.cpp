@@ -3,11 +3,11 @@
 #include <optional>
 #include <string>
 #include <vector>
-#include "AssetIds.hpp"
 #include "ClientConstants.hpp"
 #include "ISettingsStorage.hpp"
 #include "InstallContext.hpp"
 #include "ModuleConstants.hpp"
+#include "PathText.hpp"
 #include "PlayerSettings.hpp"
 #include "ReducedMotion.hpp"
 #include "SettingsConstants.hpp"
@@ -67,7 +67,7 @@ void ClientSettingsModule::logFileLocation() const {
     logger_.warn("no settings folder, the settings last for this launch only");
     return;
   }
-  logger_.info("settings file: ", genericText(*file_));
+  logger_.info("settings file: ", engine::genericText(*file_));
 }
 
 }  // namespace rtype::client
