@@ -83,7 +83,7 @@ The client and the server read the same options:
 | Option | Effect |
 |---|---|
 | `--log-level <name>` | The level: `trace`, `debug`, `info`, `warn`, `error` or `silent`, in any case. |
-| `--log-file <path>` | The journal. The default is `r-type_server.log` or `r-type_client.log` in the current directory. |
+| `--log-file <path>` | The journal. The default is `r-type_server.log` or `r-type_client.log` next to the executable, whatever folder the program was started in. A relative path given after `--log-file` is read from the folder the program was started in. |
 | `--no-log-file` | No journal. |
 | `--log-stderr` | Write to standard error too. This is the default. |
 | `--no-log-stderr` | Nothing on standard error. |
