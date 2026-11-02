@@ -33,9 +33,10 @@ std::unique_ptr<IDatagramSocket> openDatagramSocket(
   if (conditions == PERFECT_NETWORK) {
     return socket;
   }
+  auto simulated = std::make_unique<SimulatedNetworkSocket>(
+      context, std::move(socket), conditions);
   announceSimulatedNetwork(conditions);
-  return std::make_unique<SimulatedNetworkSocket>(context, std::move(socket),
-                                                  conditions);
+  return simulated;
 }
 
 }  // namespace rtype::network
