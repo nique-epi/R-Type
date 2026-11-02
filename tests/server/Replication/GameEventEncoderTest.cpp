@@ -2,13 +2,13 @@
 #include <cstddef>
 #include <cstdint>
 #include <vector>
-#include "EncodedMessage.hpp"
 #include "EntityDamage.hpp"
 #include "EntityDestroyed.hpp"
 #include "EntityDestruction.hpp"
 #include "EntitySpawn.hpp"
 #include "EntitySpawned.hpp"
 #include "EntityType.hpp"
+#include "EventMessage.hpp"
 #include "GameEvent.hpp"
 #include "GameEventConstants.hpp"
 #include "GameEventEncoder.hpp"
@@ -31,7 +31,7 @@ namespace rtype::server::testing {
  * position, sent once
  */
 TEST(GameEventEncoderTest, EncodesASpawnAsOneCopy) {
-  const EncodedMessage message = GameEventEncoder::encode(
+  const EventMessage message = GameEventEncoder::encode(
       game::EntitySpawn{.networkId = MONSTER_NETWORK_ID,
                         .type = game::EntityType::Enemy,
                         .x = MONSTER_X,
@@ -53,10 +53,10 @@ TEST(GameEventEncoderTest, EncodesASpawnAsOneCopy) {
  * Removed, each sent three times
  */
 TEST(GameEventEncoderTest, EncodesAKillAndARemovalWithTheirReason) {
-  const EncodedMessage kill = GameEventEncoder::encode(
+  const EventMessage kill = GameEventEncoder::encode(
       game::EntityDestruction{.networkId = MONSTER_NETWORK_ID,
                               .cause = game::DestructionCause::Killed});
-  const EncodedMessage removal = GameEventEncoder::encode(
+  const EventMessage removal = GameEventEncoder::encode(
       game::EntityDestruction{.networkId = MONSTER_NETWORK_ID,
                               .cause = game::DestructionCause::Removed});
 
@@ -83,11 +83,11 @@ TEST(GameEventEncoderTest, EncodesAKillAndARemovalWithTheirReason) {
 TEST(GameEventEncoderTest, EncodesEachKindOfGameEventWithItsFields) {
   GameEventEncoder encoder;
 
-  const EncodedMessage damaged =
+  const EventMessage damaged =
       encoder.encode(game::EntityDamage{.networkId = MONSTER_NETWORK_ID});
-  const EncodedMessage hit =
+  const EventMessage hit =
       encoder.encode(game::PlayerHit{.playerNumber = SECOND_PLAYER_NUMBER});
-  const EncodedMessage eliminated = encoder.encode(
+  const EventMessage eliminated = encoder.encode(
       game::PlayerElimination{.playerNumber = SECOND_PLAYER_NUMBER});
 
   EXPECT_EQ(damaged.type, network::MessageType::GameEvent);
@@ -117,10 +117,10 @@ TEST(GameEventEncoderTest, EncodesEachKindOfGameEventWithItsFields) {
  * reason Left and the reason TimedOut, each sent three times
  */
 TEST(GameEventEncoderTest, EncodesADepartureWithItsReason) {
-  const EncodedMessage left = GameEventEncoder::encode(
+  const EventMessage left = GameEventEncoder::encode(
       game::PlayerDeparture{.playerNumber = SECOND_PLAYER_NUMBER,
                             .cause = game::DepartureCause::Left});
-  const EncodedMessage timedOut = GameEventEncoder::encode(
+  const EventMessage timedOut = GameEventEncoder::encode(
       game::PlayerDeparture{.playerNumber = SECOND_PLAYER_NUMBER,
                             .cause = game::DepartureCause::TimedOut});
 
@@ -146,7 +146,7 @@ TEST(GameEventEncoderTest, WrapsTheEventNumberFromTheMaximumToZero) {
   std::vector<std::uint16_t> numbers;
 
   for (std::size_t event = 0; event < EVENTS_PAST_THE_WRAP; ++event) {
-    const EncodedMessage message =
+    const EventMessage message =
         encoder.encode(game::PlayerHit{.playerNumber = SECOND_PLAYER_NUMBER});
     numbers.push_back(
         network::decodeMessage<network::GameEvent>(message.payload)
@@ -173,7 +173,7 @@ TEST(GameEventEncoderTest, KeepsTheEventNumberWhenAnEventIsRefused) {
       static_cast<void>(encoder.encode(game::EntityDamage{.networkId = 0})),
       network::InvalidFieldValueException);
 
-  const EncodedMessage next =
+  const EventMessage next =
       encoder.encode(game::EntityDamage{.networkId = MONSTER_NETWORK_ID});
   EXPECT_EQ(
       network::decodeMessage<network::GameEvent>(next.payload).eventNumber,

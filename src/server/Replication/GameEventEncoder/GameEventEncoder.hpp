@@ -1,10 +1,10 @@
 #pragma once
 
 #include <cstdint>
-#include "EncodedMessage.hpp"
 #include "EntityDamage.hpp"
 #include "EntityDestruction.hpp"
 #include "EntitySpawn.hpp"
+#include "EventMessage.hpp"
 #include "GameEvent.hpp"
 #include "GameEventConstants.hpp"
 #include "PlayerDeparture.hpp"
@@ -26,43 +26,42 @@ class GameEventEncoder {
   /**
    * @returns An EntitySpawned, sent SINGLE_COPY time.
    */
-  [[nodiscard]] static EncodedMessage encode(const game::EntitySpawn& event);
+  [[nodiscard]] static EventMessage encode(const game::EntitySpawn& event);
 
   /**
    * @returns An EntityDestroyed, sent REPEATED_MESSAGE_COPIES times.
    */
-  [[nodiscard]] static EncodedMessage encode(
+  [[nodiscard]] static EventMessage encode(
       const game::EntityDestruction& event);
 
   /**
    * @returns A GameEvent of kind EntityDamaged with the next event number,
    * sent REPEATED_MESSAGE_COPIES times.
    */
-  [[nodiscard]] EncodedMessage encode(const game::EntityDamage& event);
+  [[nodiscard]] EventMessage encode(const game::EntityDamage& event);
 
   /**
    * @returns A GameEvent of kind PlayerHit with the next event number, sent
    * REPEATED_MESSAGE_COPIES times.
    */
-  [[nodiscard]] EncodedMessage encode(const game::PlayerHit& event);
+  [[nodiscard]] EventMessage encode(const game::PlayerHit& event);
 
   /**
    * @returns A GameEvent of kind PlayerEliminated with the next event number,
    * sent REPEATED_MESSAGE_COPIES times.
    */
-  [[nodiscard]] EncodedMessage encode(const game::PlayerElimination& event);
+  [[nodiscard]] EventMessage encode(const game::PlayerElimination& event);
 
   /**
    * @returns A PlayerLeft with the number of the player and why it left, sent
    * REPEATED_MESSAGE_COPIES times.
    */
-  [[nodiscard]] static EncodedMessage encode(
-      const game::PlayerDeparture& event);
+  [[nodiscard]] static EventMessage encode(const game::PlayerDeparture& event);
 
  private:
-  [[nodiscard]] EncodedMessage encodeGameEvent(network::GameEventKind kind,
-                                               std::uint8_t playerNumber,
-                                               std::uint32_t entityId);
+  [[nodiscard]] EventMessage encodeGameEvent(network::GameEventKind kind,
+                                             std::uint8_t playerNumber,
+                                             std::uint32_t entityId);
 
   std::uint16_t nextEventNumber_{FIRST_EVENT_NUMBER};
 };

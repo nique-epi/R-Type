@@ -7,12 +7,12 @@
 #include <utility>
 #include <vector>
 #include "DatagramCodec.hpp"
-#include "EncodedMessage.hpp"
 #include "Endpoint.hpp"
 #include "EntityDamage.hpp"
 #include "EntityDestruction.hpp"
 #include "EntitySpawn.hpp"
 #include "EventBus.hpp"
+#include "EventMessage.hpp"
 #include "GameEventConstants.hpp"
 #include "MessageType.hpp"
 #include "NetworkException.hpp"
@@ -31,8 +31,7 @@ template <typename Event>
 void GameEventBroadcaster::subscribeTo(std::string_view eventName) {
   subscriptions_.push_back(
       events_.subscribe<Event>([this, eventName](const Event& event) {
-        const std::optional<EncodedMessage> message =
-            tryEncode(event, eventName);
+        const std::optional<EventMessage> message = tryEncode(event, eventName);
         if (message.has_value()) {
           broadcast(*message);
         }
@@ -40,7 +39,7 @@ void GameEventBroadcaster::subscribeTo(std::string_view eventName) {
 }
 
 template <typename Event>
-std::optional<EncodedMessage> GameEventBroadcaster::tryEncode(
+std::optional<EventMessage> GameEventBroadcaster::tryEncode(
     const Event& event, std::string_view eventName) {
   try {
     return encoder_.encode(event);
@@ -71,7 +70,7 @@ GameEventBroadcaster::~GameEventBroadcaster() {
   }
 }
 
-void GameEventBroadcaster::broadcast(const EncodedMessage& message) {
+void GameEventBroadcaster::broadcast(const EventMessage& message) {
   const std::vector<network::Endpoint> recipients = recipients_();
   if (recipients.empty()) {
     return;

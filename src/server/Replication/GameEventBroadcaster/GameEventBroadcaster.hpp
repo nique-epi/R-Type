@@ -5,9 +5,9 @@
 #include <optional>
 #include <string_view>
 #include <vector>
-#include "EncodedMessage.hpp"
 #include "Endpoint.hpp"
 #include "EventBus.hpp"
+#include "EventMessage.hpp"
 #include "GameEventEncoder.hpp"
 #include "Logger.hpp"
 #include "MessageType.hpp"
@@ -69,10 +69,10 @@ class GameEventBroadcaster {
   void subscribeTo(std::string_view eventName);
 
   template <typename Event>
-  std::optional<EncodedMessage> tryEncode(const Event& event,
-                                          std::string_view eventName);
+  std::optional<EventMessage> tryEncode(const Event& event,
+                                        std::string_view eventName);
 
-  void broadcast(const EncodedMessage& message);
+  void broadcast(const EventMessage& message);
   void sendCopy(const std::vector<network::Endpoint>& recipients,
                 network::MessageType type,
                 const std::vector<std::byte>& payload) const;

@@ -7,10 +7,10 @@
 namespace rtype::server {
 
 /**
- * @brief A message ready to send: its type, the bytes of its payload, and how
- * many times it is sent.
+ * @brief The message an event of the match is written as, ready to send: its
+ * type, the bytes of its payload, and how many times it is sent.
  */
-struct EncodedMessage {
+struct EventMessage {
   network::MessageType type;
   std::vector<std::byte> payload;
   std::size_t copies;
