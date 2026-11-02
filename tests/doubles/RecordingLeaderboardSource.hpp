@@ -11,7 +11,7 @@
 class RecordingLeaderboardSource : public rtype::client::ILeaderboardSource {
  public:
   void ask(const rtype::network::LeaderboardRequest& filter) override;
-  void stopAsking() override;
+  void stopAsking() noexcept override;
   [[nodiscard]] const rtype::client::LeaderboardPage& page() const override;
 
   /** @brief Sets the page, under a new revision. */

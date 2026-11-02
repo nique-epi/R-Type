@@ -31,7 +31,7 @@ class ServerLeaderboard final : public ILeaderboardSource,
   explicit ServerLeaderboard(network::MessageDispatcher& dispatcher);
 
   void ask(const network::LeaderboardRequest& request) override;
-  void stopAsking() override;
+  void stopAsking() noexcept override;
   [[nodiscard]] const LeaderboardPage& page() const override;
 
   void sessionOpened(const network::LobbyPlayer& ownPlayer,

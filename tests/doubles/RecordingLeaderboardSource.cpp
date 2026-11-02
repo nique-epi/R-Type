@@ -11,7 +11,7 @@ void RecordingLeaderboardSource::ask(const LeaderboardRequest& filter) {
   asked_.push_back(filter);
 }
 
-void RecordingLeaderboardSource::stopAsking() { ++stopCount_; }
+void RecordingLeaderboardSource::stopAsking() noexcept { ++stopCount_; }
 
 const LeaderboardPage& RecordingLeaderboardSource::page() const {
   return page_;

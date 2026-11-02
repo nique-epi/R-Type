@@ -17,8 +17,9 @@ class ILeaderboardSource {
   /** @brief Starts reading a leaderboard, in place of any read under way. */
   virtual void ask(const network::LeaderboardRequest& request) = 0;
 
-  /** @brief Stops the read under way: the screen left. */
-  virtual void stopAsking() = 0;
+  /** @brief Stops the read under way. It never throws: a screen calls it from
+   * its destructor. */
+  virtual void stopAsking() noexcept = 0;
 
   /** @returns How the read stands. Valid until the next call to ask(). */
   [[nodiscard]] virtual const LeaderboardPage& page() const = 0;

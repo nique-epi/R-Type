@@ -29,7 +29,7 @@ void ServerLeaderboard::ask(const network::LeaderboardRequest& request) {
   sendRequest(request);
 }
 
-void ServerLeaderboard::stopAsking() { asked_.reset(); }
+void ServerLeaderboard::stopAsking() noexcept { asked_.reset(); }
 
 const LeaderboardPage& ServerLeaderboard::page() const { return page_; }
 
