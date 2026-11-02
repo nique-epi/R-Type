@@ -56,10 +56,11 @@ constexpr std::string_view WRONG_TOKEN_DROP_REASON =
     "it carries another session token than the player of that address";
 
 /**
- * @brief Where the server reads the waves of each difficulty, from the folder
- * it is started in: the root of the repository, where the build puts it.
+ * @brief Where the server reads the waves of each difficulty, inside the
+ * assets folder it finds from its executable, whatever folder it was started
+ * from.
  */
-constexpr std::string_view WAVE_FILE_PATH = "assets/waves/waves.toml";
+constexpr std::string_view WAVE_FILE_IN_ASSETS = "waves/waves.toml";
 
 /**
  * @brief The difficulty every game is played at, until the rules of a game can

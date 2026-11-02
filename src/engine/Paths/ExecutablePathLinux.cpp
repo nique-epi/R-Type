@@ -2,9 +2,9 @@
 #include <optional>
 #include <system_error>
 #include "ExecutablePath.hpp"
-#include "PlatformConstants.hpp"
+#include "PathConstants.hpp"
 
-namespace rtype::client {
+namespace rtype::engine {
 
 std::optional<std::filesystem::path> executablePath() {
   std::error_code error;
@@ -16,4 +16,4 @@ std::optional<std::filesystem::path> executablePath() {
   return executable;
 }
 
-}  // namespace rtype::client
+}  // namespace rtype::engine

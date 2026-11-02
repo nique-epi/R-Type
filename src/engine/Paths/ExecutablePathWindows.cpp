@@ -3,9 +3,9 @@
 #include <optional>
 #include <string>
 #include "ExecutablePath.hpp"
-#include "PlatformConstants.hpp"
+#include "PathConstants.hpp"
 
-namespace rtype::client {
+namespace rtype::engine {
 
 std::optional<std::filesystem::path> executablePath() {
   std::wstring reported(MAXIMUM_WINDOWS_PATH_LENGTH, L'\0');
@@ -18,4 +18,4 @@ std::optional<std::filesystem::path> executablePath() {
   return std::filesystem::path(reported);
 }
 
-}  // namespace rtype::client
+}  // namespace rtype::engine

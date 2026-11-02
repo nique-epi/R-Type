@@ -5,11 +5,6 @@
 
 namespace rtype::client {
 
-constexpr const char* LINUX_EXECUTABLE_LINK = "/proc/self/exe";
-
-/** @brief Longest path Windows returns for a module, in characters. */
-constexpr std::size_t MAXIMUM_WINDOWS_PATH_LENGTH = 32768;
-
 /**
  * @brief Objective-C names of the macOS property that tells whether "Reduce
  * motion" is on: accessibilityDisplayShouldReduceMotion of the shared

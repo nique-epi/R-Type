@@ -6,7 +6,7 @@
 #include <system_error>
 #include "ExecutablePath.hpp"
 
-namespace rtype::client {
+namespace rtype::engine {
 
 std::optional<std::filesystem::path> executablePath() {
   std::uint32_t length = 0;
@@ -24,4 +24,4 @@ std::optional<std::filesystem::path> executablePath() {
   return executable;
 }
 
-}  // namespace rtype::client
+}  // namespace rtype::engine

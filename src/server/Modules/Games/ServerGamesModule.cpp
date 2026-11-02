@@ -20,6 +20,7 @@
 #include "IPlayerAdmission.hpp"
 #include "InstallContext.hpp"
 #include "ModuleConstants.hpp"
+#include "PathText.hpp"
 #include "PlayerDatagrams.hpp"
 #include "RtypeGameModules.hpp"
 #include "ServerConstants.hpp"
@@ -86,7 +87,7 @@ void ServerGamesModule::stop() {
 WavePlan ServerGamesModule::readWaves() const {
   const WaveCatalog catalog = WaveCatalog::fromFile(settings_.wavesFile);
   WavePlan waves = catalog.planOf(DEFAULT_DIFFICULTY);
-  logger_.info("waves file ", settings_.wavesFile.string(), ": ",
+  logger_.info("waves file ", engine::genericText(settings_.wavesFile), ": ",
                catalog.difficulties().size(), " difficulties, games play ",
                DEFAULT_DIFFICULTY);
   return waves;

@@ -30,7 +30,7 @@ cmake --workflow --preset build
 
 The first configure builds every dependency and takes a few minutes. The `r-type_server` and `r-type_client` binaries are written at the repository root, or in `Release/` with the Visual Studio generator.
 
-The client reads its files from `assets/`, next to its executable or in the folder above it, wherever it is launched from. It stops with exit code 1, naming both folders, when it finds neither.
+The client and the server read their files from `assets/`, next to their executable or in the folder above it, wherever they are launched from. Each stops with exit code 1, naming both folders, when it finds neither.
 
 If the repository was cloned without its submodules, run `git submodule update --init` first.
 
@@ -60,7 +60,7 @@ Every player's input is held for the same few ticks before it moves the ship (3 
 
 The server sends each player 30 world states per second instead of 20, from 2 to 60: more states move the other ships more smoothly and use more bandwidth (about 350 bytes per state with four players and thirty entities, see [the server page](https://nique-epi.github.io/R-Type/server/)).
 
-The server reads the waves of Bydos from `assets/waves/waves.toml` in the folder it is started in, so start it from the repository root. A missing or invalid file stops it with exit code 1, naming the file, the line and the key at fault; the format is described in [Writing the waves file](https://nique-epi.github.io/R-Type/waves-file/).
+The server reads the waves of Bydos from `assets/waves/waves.toml`, in the `assets/` folder it finds next to its executable or in the folder above it. A missing or invalid file stops it with exit code 1, naming the file, the line and the key at fault; the format is described in [Writing the waves file](https://nique-epi.github.io/R-Type/waves-file/).
 
 ```bash
 ./r-type_client -h 192.168.1.20 -p 4243 -n ACE
@@ -84,7 +84,7 @@ Once the test preset is built, this sends the server running on port 4242 of the
 
 ## Logging
 
-The client and the server write a timestamped journal, `r-type_server.log` or `r-type_client.log` in the current directory, and show the same lines in the terminal; the first line gives the absolute path of the journal. The level and the output are chosen at launch:
+The client and the server write a timestamped journal, `r-type_server.log` or `r-type_client.log` next to their executable, and show the same lines in the terminal; the first line gives the absolute path of the journal. The level and the output are chosen at launch:
 
 ```bash
 ./r-type_server --log-level debug
