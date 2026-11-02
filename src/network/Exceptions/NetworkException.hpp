@@ -206,8 +206,9 @@ class MissingSimulatorOptionValueException : public NetworkException {
 /**
  * @brief The conditions of a simulated network have a lag or a jitter below
  * zero or over the longest the simulator takes: no network makes a datagram
- * wait less than nothing, no wait can be drawn from a negative jitter, and a
- * longer wait would overflow the clock of the simulator.
+ * wait less than nothing, no wait can be drawn from a negative jitter, and the
+ * longest keeps every wait far below one that would overflow the clock the
+ * waits are counted on.
  */
 class SimulatedDelayOutOfRangeException : public NetworkException {
  public:

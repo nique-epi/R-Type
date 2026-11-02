@@ -17,8 +17,9 @@ constexpr int COPIED_DATAGRAM_ARRIVALS = 2;
 /**
  * @brief Most datagrams one direction of a simulated network holds at once,
  * copies included. One handed over when that many wait is lost, as in the full
- * queue of a router, so a flood holds at most this many times MAX_DATAGRAM_SIZE
- * bytes of payload, about 10 MB.
+ * queue of a router, so a flood in one direction holds at most this many times
+ * MAX_DATAGRAM_SIZE bytes of payload, about 10 MB, and one in both directions
+ * about 20 MB.
  *
  * At the longest wait, half of MAXIMUM_SIMULATED_DELAY of lag and of jitter
  * plus REORDER_HOLD (10.075 s, about 605 ticks), it leaves 13 datagrams a
