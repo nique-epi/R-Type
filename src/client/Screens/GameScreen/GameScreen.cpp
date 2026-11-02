@@ -35,6 +35,7 @@
 #include "PlayerLeft.hpp"
 #include "PlayerPalette.hpp"
 #include "PlayerPreferences.hpp"
+#include "PositionInterpolation.hpp"
 #include "PredictedShipPlacement.hpp"
 #include "ShipFlightSystem.hpp"
 // NOLINTNEXTLINE(misc-include-cleaner)
@@ -130,6 +131,7 @@ void GameScreen::update(engine::Duration elapsed) {
     loggedActions_ = held.bits();
   }
   systems_.run(components_, elapsed);
+  interpolationClock_.advance(elapsed);
   const FlashPreference preference = flashPreferenceOf(*settings_);
   const engine::Duration sinceTheWorld =
       worldSeen_ ? elapsed : engine::Duration::zero();
@@ -140,6 +142,7 @@ void GameScreen::update(engine::Duration elapsed) {
   departures_.advance(elapsed);
   silence_.advance(sinceTheWorld);
   applyEntityMessages();
+  placeInterpolatedPositions(interpolationClock_, components_);
   if (settings_->clientPrediction) {
     placePredictedShip(prediction_, replicator_, components_);
   }
@@ -171,6 +174,7 @@ void GameScreen::applyEntityMessages() {
     if (const auto* state = std::get_if<network::WorldState>(&message)) {
       worldSeen_ = true;
       scoreBoard_.apply(*state);
+      interpolationClock_.observe(state->tick);
       if (settings_->clientPrediction) {
         prediction_.apply(*state);
       }

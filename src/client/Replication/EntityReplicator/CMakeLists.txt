@@ -6,6 +6,7 @@ target_link_libraries(rtype_client_entity_replicator
   PUBLIC
     rtype_client_effect_spawner
     rtype_client_last_listed_ticks
+    rtype_client_position_history
     rtype_client_replication_interfaces
     rtype_client_world_state_filter
     rtype_engine

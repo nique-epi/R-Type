@@ -14,6 +14,7 @@ target_link_libraries(rtype_client_replication_constants
 
 add_subdirectory(WorldStateFilter)
 add_subdirectory(LastListedTicks)
+add_subdirectory(PositionHistory)
 add_subdirectory(EntityReplicator)
 add_subdirectory(ScoreBoard)
 add_subdirectory(FinalRanking)
