@@ -46,6 +46,9 @@ class UdpTestClient {
   [[nodiscard]] std::vector<ReceivedAt> waitForDatagrams(
       std::size_t count, std::chrono::milliseconds timeout);
 
+  /** @returns The loopback address and the port the client receives on. */
+  [[nodiscard]] rtype::network::Endpoint localEndpoint() const;
+
  private:
   rtype::network::NetworkContext context_;
   rtype::network::UdpSocket socket_;

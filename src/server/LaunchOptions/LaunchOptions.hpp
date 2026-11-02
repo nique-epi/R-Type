@@ -7,6 +7,7 @@
 #include <span>
 #include <string>
 #include <string_view>
+#include "NetworkConditions.hpp"
 
 namespace rtype::server {
 
@@ -22,7 +23,9 @@ class LaunchOptions {
    *
    * Without `-p` the port is DEFAULT_SERVER_PORT. The last `-p` wins, and so
    * does the last `--seed`, the last `--state-rate`, the last `--input-delay`
-   * and the last `--database`.
+   * and the last `--database`. The options of the network simulator are read
+   * first and may stand anywhere (see network::SimulatorLaunchOptions::read(),
+   * whose exceptions this throws too).
    *
    * @throws engine::UnknownLaunchArgumentException for any other argument,
    *         `-h` included: the server takes no address.
@@ -81,6 +84,13 @@ class LaunchOptions {
    */
   [[nodiscard]] bool helpRequested() const;
 
+  /**
+   * @returns The network the datagrams of the server cross, from the options
+   * of the network simulator (see network::SimulatorLaunchOptions):
+   * PERFECT_NETWORK when none was given.
+   */
+  [[nodiscard]] const network::NetworkConditions& networkConditions() const;
+
  private:
   LaunchOptions(std::uint16_t port, bool helpRequested);
 
@@ -90,6 +100,7 @@ class LaunchOptions {
   std::size_t stateRate_;
   std::size_t inputDelay_;
   std::optional<std::filesystem::path> databaseFile_;
+  network::NetworkConditions networkConditions_;
 };
 
 }  // namespace rtype::server

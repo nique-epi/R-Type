@@ -1,0 +1,104 @@
+#pragma once
+
+#include <chrono>
+#include <cstddef>
+#include <cstdint>
+#include "NetworkConditions.hpp"
+
+/** @brief The seed of most tests, and another to compare with. */
+constexpr std::uint32_t SOME_SEED = 7;
+constexpr std::uint32_t OTHER_SEED = 8;
+
+/** @brief When the tests hand their first datagram over: any time of the
+ * steady clock. */
+constexpr std::chrono::steady_clock::time_point HAND_OVER_START{
+    std::chrono::hours{1}};
+
+/** @brief The time of a second hand over while the first datagram is in
+ * flight: less than half the lag of LAGGING_NETWORK. */
+constexpr std::chrono::milliseconds SECOND_HAND_OVER{20};
+
+/**
+ * @brief A jitter of 60 ms, the half a datagram may wait more, and two waits
+ * that 1000 draws all but surely go below and above: the chance that none of
+ * them waits less than 5 ms of the 30 ms is (25/30)^1000.
+ */
+constexpr rtype::network::NetworkConditions JITTER_OF_60_MS{
+    .jitter = std::chrono::milliseconds{60}};
+constexpr std::chrono::milliseconds HALF_OF_60_MS{30};
+constexpr std::chrono::milliseconds NEAR_NO_WAIT{5};
+constexpr std::chrono::milliseconds NEAR_HALF_OF_60_MS{25};
+
+/** @brief The shares of loss, duplicates and reordering the tests set. */
+constexpr rtype::network::NetworkConditions FULL_LOSS{.lossPercent = 100};
+constexpr rtype::network::NetworkConditions TENTH_LOSS{.lossPercent = 10};
+constexpr rtype::network::NetworkConditions FULL_DUPLICATES{.duplicatePercent =
+                                                                100};
+constexpr rtype::network::NetworkConditions TENTH_DUPLICATES{.duplicatePercent =
+                                                                 10};
+constexpr rtype::network::NetworkConditions HALF_LOSS_FULL_DUPLICATES{
+    .lossPercent = 50, .duplicatePercent = 100};
+constexpr rtype::network::NetworkConditions FULL_REORDER{.reorderPercent = 100};
+constexpr rtype::network::NetworkConditions HALF_REORDER{.reorderPercent = 50};
+
+/** @brief Every defect at once, to compare the draws of two seeds. */
+constexpr rtype::network::NetworkConditions EVERY_DEFECT{
+    .lag = std::chrono::milliseconds{100},
+    .jitter = std::chrono::milliseconds{60},
+    .lossPercent = 10,
+    .duplicatePercent = 10,
+    .reorderPercent = 10};
+
+/** @brief A time one second before the epoch of the steady clock, where a
+ * time point built with no value lies. */
+constexpr std::chrono::steady_clock::time_point BEFORE_THE_CLOCK_EPOCH{
+    std::chrono::seconds{-1}};
+
+/** @brief A lag and a jitter one millisecond below zero, the first value no
+ * network shows. */
+constexpr rtype::network::NetworkConditions LAG_JUST_BELOW_ZERO{
+    .lag = std::chrono::milliseconds{-1}};
+constexpr rtype::network::NetworkConditions JITTER_JUST_BELOW_ZERO{
+    .jitter = std::chrono::milliseconds{-1}};
+
+/** @brief A lag and a jitter of ten seconds, the longest the simulator takes.
+ */
+constexpr rtype::network::NetworkConditions LAG_AND_JITTER_OF_TEN_SECONDS{
+    .lag = std::chrono::milliseconds{10000},
+    .jitter = std::chrono::milliseconds{10000}};
+
+/** @brief A lag and a jitter one millisecond over ten seconds, the first
+ * value the simulator refuses. */
+constexpr rtype::network::NetworkConditions LAG_JUST_OVER_TEN_SECONDS{
+    .lag = std::chrono::milliseconds{10001}};
+constexpr rtype::network::NetworkConditions JITTER_JUST_OVER_TEN_SECONDS{
+    .jitter = std::chrono::milliseconds{10001}};
+
+/** @brief How much longer the plan holds a reordered datagram. */
+constexpr std::chrono::milliseconds HOLD_OF_A_REORDERED_DATAGRAM{75};
+
+/** @brief How many datagrams the tests hand over, and how far apart: closer
+ * than the jitter, closer than the reorder hold, or farther than both. */
+constexpr std::size_t THOUSAND_DATAGRAMS = 1000;
+constexpr std::size_t TEN_THOUSAND_DATAGRAMS = 10000;
+constexpr std::chrono::milliseconds ONE_MILLISECOND_APART{1};
+
+/** @brief How many datagrams one direction of a simulated network holds at
+ * once, one more, and a single datagram. */
+constexpr std::size_t DATAGRAMS_A_FULL_NETWORK_HOLDS = 8192;
+constexpr std::size_t ONE_DATAGRAM_MORE_THAN_IT_HOLDS = 8193;
+constexpr std::size_t ONE_DATAGRAM = 1;
+constexpr std::chrono::milliseconds TEN_MILLISECONDS_APART{10};
+constexpr std::chrono::milliseconds HUNDRED_MILLISECONDS_APART{100};
+
+/**
+ * @brief The arrivals of 10 000 datagrams at a tenth of loss or of duplicates,
+ * and the gap the tests allow: five standard deviations of 10 000 draws at
+ * 10 %, sqrt(10000 * 0.1 * 0.9) = 30.
+ */
+constexpr double ARRIVALS_AT_A_TENTH_LOSS = 9000.0;
+constexpr double ARRIVALS_AT_A_TENTH_DUPLICATES = 11000.0;
+constexpr double DRAW_TOLERANCE = 150.0;
+
+/** @brief How many times a copied datagram arrives. */
+constexpr std::size_t ARRIVALS_OF_A_COPIED_DATAGRAM = 2;

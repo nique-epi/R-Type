@@ -55,3 +55,7 @@ std::vector<ReceivedAt> UdpTestClient::waitForDatagrams(
                     [this, count] { return received_.size() >= count; });
   return received_;
 }
+
+rtype::network::Endpoint UdpTestClient::localEndpoint() const {
+  return socket_.localEndpoint();
+}
