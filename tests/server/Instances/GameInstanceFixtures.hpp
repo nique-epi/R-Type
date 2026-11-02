@@ -28,7 +28,6 @@
 #include "ServerLobbyTestConstants.hpp"
 #include "SimulatedClock.hpp"
 #include "TimeConstants.hpp"
-#include "TimerScheduler.hpp"
 #include "UnreliableNetwork.hpp"
 #include "World.hpp"
 #include "WorldState.hpp"
@@ -101,12 +100,6 @@ class GameInstanceTest : public ::testing::Test {
    * tick, as one of the copies its client sends. */
   void queueDisconnectionFrom(std::size_t index);
 
-  /**
-   * @returns The timers the game plans the later copies of its events on:
-   * advancing them sends those copies.
-   */
-  [[nodiscard]] engine::TimerScheduler& timers();
-
   /** @returns Every datagram the game sent, oldest first. */
   [[nodiscard]] const std::vector<network::OutgoingDatagram>& sentDatagrams()
       const;
@@ -177,7 +170,6 @@ class GameInstanceTest : public ::testing::Test {
    * without a datagram whose sequence would have to follow the others. */
   std::vector<std::size_t> livePlayers_;
   engine::EventBus events_;
-  engine::TimerScheduler timers_;
   /** @brief The clock the game reads real time on; tick() moves it on. */
   SimulatedClock clock_;
   RtypeRulesModule* rules_{nullptr};

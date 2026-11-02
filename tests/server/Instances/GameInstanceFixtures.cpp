@@ -48,7 +48,6 @@
 #include "ServerLobbyTestConstants.hpp"
 #include "Spawning/WavePlanFixtures.hpp"
 #include "TimeConstants.hpp"
-#include "TimerScheduler.hpp"
 #include "UnreliableNetwork.hpp"
 #include "World.hpp"
 #include "WorldState.hpp"
@@ -132,7 +131,6 @@ GameInstanceTest::GameInstanceTest(std::size_t inputDelayTicks)
                                                        .inputDelayTicks =
                                                            inputDelayTicks},
                               .events = events_,
-                              .timers = timers_,
                               .clock = clock_},
             modulesWithRulesAt(rules_)) {}
 
@@ -162,8 +160,6 @@ void GameInstanceTest::queueDisconnectionFrom(std::size_t index) {
       .payload = disconnectionDatagram(
           network::PacketHeader{.sequence = DISCONNECTION_SEQUENCE})});
 }
-
-engine::TimerScheduler& GameInstanceTest::timers() { return timers_; }
 
 const std::vector<network::OutgoingDatagram>& GameInstanceTest::sentDatagrams()
     const {

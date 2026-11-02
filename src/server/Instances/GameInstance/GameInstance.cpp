@@ -52,7 +52,6 @@ GameInstance::GameInstance(GameInstanceParts parts,
                 delayedInputs_.push(player.playerNumber, input);
               }}),
       context_{.events = parts.events,
-               .timers = parts.timers,
                .systems = systems_,
                .roster = sessions_.roster(),
                .hooks = hooks_,

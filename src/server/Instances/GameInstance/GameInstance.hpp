@@ -24,7 +24,7 @@ namespace rtype::server {
 
 /**
  * @brief One game: the context its modules work in (its players, its event
- * bus, its timers, its systems and its settings) and its tick, run in stages.
+ * bus, its systems and its settings) and its tick, run in stages.
  *
  * A game knows nothing of the rules it plays. Its modules (see IGameModule)
  * carry them out: the game installs them in the order they are listed, then

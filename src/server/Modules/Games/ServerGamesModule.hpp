@@ -17,26 +17,25 @@
 #include "SystemClock.hpp"
 #include "TickDatagrams.hpp"
 #include "TimeConstants.hpp"
-#include "TimerScheduler.hpp"
 #include "WavePlan.hpp"
 
 namespace rtype::server {
 
 /**
  * @brief The module that runs the games: GamesSettings::gameCount games, each
- * with its own bus, and the timers they share.
+ * with its own bus.
  *
  * Every game runs on the simulation thread, one after the other in each tick:
  * no state is shared between games, so nothing needs a lock, but an exception
  * in one game stops the server and a slow game slows the others. In the
  * simulation stage, each game reads the datagrams of its own players (see
  * keepDatagramsOf()) and moves on, and the players whose session closed are
- * forgotten by the network. In the outputs stage, the timers advance and the
- * bus of each game delivers the events of the tick. The lobby module adds its
+ * forgotten by the network. In the outputs stage, the bus of each game delivers
+ * the events of the tick. The lobby module adds its
  * work to the simulation stage after this one. Each game reads real time on the
  * clock of the module for its Heartbeats.
  *
- * install() builds the timers and the empty list of games and provides Games.
+ * install() builds the empty list of games and provides Games.
  * start() reads the waves file once, then creates the games, each subscribing
  * its rules and its broadcaster to its own bus. A finished game waits for
  * players again, so the games are never replaced. stop() tells every player
@@ -73,11 +72,10 @@ class ServerGamesModule final : public engine::IModule {
   [[nodiscard]] std::unique_ptr<GameInstance> createGame(
       engine::EventBus& events, GameSettings settings);
   void playGames();
-  void deliverEvents(engine::Duration elapsed);
+  void deliverEvents();
 
   GamesSettings settings_;
   logging::Logger logger_;
-  engine::TimerScheduler timers_;
   engine::SystemClock clock_;
   Games games_;
   IDatagramSender* sender_{nullptr};

@@ -41,7 +41,6 @@
 #include "ServerLobbyTestConstants.hpp"
 #include "ServerTestConstants.hpp"
 #include "TimeConstants.hpp"
-#include "TimerScheduler.hpp"
 #include "UnreliableNetwork.hpp"
 #include "WorldState.hpp"
 #include "game/ShipControl/ShipControlTestConstants.hpp"

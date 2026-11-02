@@ -7,7 +7,6 @@
 #include "PlayerRoster.hpp"
 #include "SessionHooks.hpp"
 #include "SystemScheduler.hpp"
-#include "TimerScheduler.hpp"
 
 namespace rtype::server {
 
@@ -18,9 +17,6 @@ namespace rtype::server {
 struct GameContext {
   /** @brief Where the game publishes what happens in it. */
   std::reference_wrapper<engine::EventBus> events;
-  /** @brief Runs what must happen later, such as the repeated copies of a
-   * message. */
-  std::reference_wrapper<engine::TimerScheduler> timers;
   /** @brief The systems that run on the world each tick; modules add theirs
    * when they are installed. */
   std::reference_wrapper<engine::SystemScheduler> systems;
