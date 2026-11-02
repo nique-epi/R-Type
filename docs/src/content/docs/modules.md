@@ -3,7 +3,7 @@ title: Modules
 description: How a program is built from modules, what each module does at each moment of its life, how modules talk, and how to turn one on or off.
 ---
 
-Both programs are built the same way: a list of **modules** that an `Application` installs, starts, runs and stops. A module is one part of a program with a single job: the logger, the network, the games, the lobby on the server; the window, the connection, the sound, the screens on the client. This page tells you what a module is, when its code runs, how it reaches the others and how to switch one off. To write one, follow the [tutorial](/R-Type/tutorial-write-a-module/).
+Both programs are built the same way: a list of **modules** that an `Application` installs, starts, runs and stops. A module is one part of a program with a single job: the logger, the network, the games, the lobby, the metrics on the server; the window, the connection, the sound, the screens on the client. This page tells you what a module is, when its code runs, how it reaches the others and how to switch one off. To write one, follow the [tutorial](/R-Type/tutorial-write-a-module/).
 
 The word has two meanings in this repository. A **module** on this page is a class implementing `IModule` (or `IGameModule`). A **module folder** in [Project layout](/R-Type/project-layout/#adding-a-class) is a folder with one CMake library. A module of this page usually lives in a module folder of its own, such as `src/server/Modules/Lobby/`, but the two are not the same thing.
 

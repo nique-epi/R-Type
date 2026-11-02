@@ -8,7 +8,9 @@
 #include "Endpoint.hpp"
 #include "InstallContext.hpp"
 #include "ModuleConstants.hpp"
+#include "NetworkConditions.hpp"
 #include "NetworkConstants.hpp"
+#include "ServerSessionParts.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::client {
@@ -23,9 +25,17 @@ network::Endpoint anyInterfaceAnyPort() {
 
 }  // namespace
 
-ClientConnectionModule::ClientConnectionModule()
-    : network_(anyInterfaceAnyPort()),
-      connection_(network_),
+ClientConnectionModule::ClientConnectionModule(
+    const network::NetworkConditions& conditions)
+    : network_(anyInterfaceAnyPort(), conditions),
+      router_(network_),
+      waitingRoom_(dispatcher_, gameLoaded_),
+      entityMessages_(dispatcher_, waitingRoom_, gameLoaded_),
+      session_(ServerSessionParts{
+          .link = router_.addRoute(),
+          .dispatcher = dispatcher_,
+          .gameLoaded = gameLoaded_,
+          .observers = {waitingRoom_, entityMessages_, gameLoaded_}}),
       logger_(std::string{CONNECTION_LOGGER_NAME}) {}
 
 std::string ClientConnectionModule::name() const {
@@ -37,9 +47,12 @@ std::vector<std::string> ClientConnectionModule::dependencies() const {
 }
 
 void ClientConnectionModule::install(engine::InstallContext& context) {
-  context.provide(connection_);
+  context.provide(session_);
+  context.provide(waitingRoom_);
+  context.provide(entityMessages_);
   context.addWork(NETWORK_STAGE, [this](engine::Duration elapsed) {
-    connection_.update(elapsed);
+    entityMessages_.advance(elapsed);
+    session_.update(elapsed);
   });
 }
 
@@ -55,10 +68,10 @@ void ClientConnectionModule::stop() {
 }
 
 void ClientConnectionModule::leaveServer() {
-  connection_.cancel();
-  while (connection_.isLeaving()) {
+  session_.cancel();
+  while (session_.isLeaving()) {
     std::this_thread::sleep_for(DISCONNECTION_COPY_INTERVAL);
-    connection_.update(DISCONNECTION_COPY_INTERVAL);
+    session_.update(DISCONNECTION_COPY_INTERVAL);
   }
 }
 

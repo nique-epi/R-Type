@@ -9,6 +9,7 @@
 #include "GameInstanceConstants.hpp"
 #include "IGameFlow.hpp"
 #include "IGameReplication.hpp"
+#include "IGameWorld.hpp"
 #include "InstallContext.hpp"
 #include "PlayerController.hpp"
 #include "PlayerInput.hpp"
@@ -31,6 +32,7 @@ void RtypeRulesModule::install(GameContext& game,
   replication_ = &install.require<IGameReplication>();
   flow_ = std::make_unique<GameFlow>(game, world_, *replication_);
   install.provide<IGameFlow>(*flow_);
+  install.provide<IGameWorld>(world_);
   install.addWork(
       GAME_SIMULATION_STAGE,
       [this]([[maybe_unused]] engine::Duration elapsed) { flow_->onTick(); });

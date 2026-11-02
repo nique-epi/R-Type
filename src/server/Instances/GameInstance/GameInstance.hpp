@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstddef>
 #include <cstdint>
 #include <memory>
 #include <span>
@@ -14,6 +15,7 @@
 #include "GameState.hpp"
 #include "IGameFlow.hpp"
 #include "IGameModule.hpp"
+#include "IGameWorld.hpp"
 #include "IncomingDatagram.hpp"
 #include "PacketHeader.hpp"
 #include "PlayerRoster.hpp"
@@ -62,10 +64,10 @@ class GameInstance {
   /**
    * @param parts What the game sends with, is defined by and publishes on.
    * @param modules The modules of the game, in the order they are installed.
-   * Must not hold a null pointer, and one of them must provide IGameFlow,
-   * after the modules whose services it requires.
+   * Must not hold a null pointer, and they must provide IGameFlow and
+   * IGameWorld, after the modules whose services these require.
    * @throws engine::MissingServiceException when a module requires a service
-   * no module before it provides, or none provides IGameFlow.
+   * no module before it provides, or none provides IGameFlow or IGameWorld.
    */
   GameInstance(GameInstanceParts parts,
                std::vector<std::unique_ptr<IGameModule>> modules);
@@ -83,6 +85,15 @@ class GameInstance {
    * waits for players, and again once it waits after a game.
    */
   [[nodiscard]] std::uint32_t tick() const;
+
+  /** @returns How many entities the world of the game holds now. */
+  [[nodiscard]] std::size_t entityCount() const;
+
+  /**
+   * @returns The systems of the game, which run while it is in progress; they
+   * stay at the same address for the life of the game.
+   */
+  [[nodiscard]] engine::SystemScheduler& systems();
 
   /**
    * @returns The players of the game; it stays at the same address for the
@@ -140,6 +151,7 @@ class GameInstance {
   GameContext context_;
   std::span<const network::IncomingDatagram> datagrams_;
   IGameFlow* flow_{nullptr};
+  IGameWorld* world_{nullptr};
   GameModules modules_;
 };
 

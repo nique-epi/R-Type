@@ -1,4 +1,5 @@
 #include "GameInstance.hpp"
+#include <cstddef>
 #include <cstdint>
 #include <memory>
 #include <span>
@@ -13,10 +14,12 @@
 #include "GameState.hpp"
 #include "IGameFlow.hpp"
 #include "IGameModule.hpp"
+#include "IGameWorld.hpp"
 #include "IncomingDatagram.hpp"
 #include "PacketHeader.hpp"
 #include "PlayerInput.hpp"
 #include "PlayerRoster.hpp"
+#include "SystemScheduler.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::server {
@@ -77,11 +80,16 @@ GameInstance::GameInstance(GameInstanceParts parts,
                    });
   modules_.installAndStart(context_);
   flow_ = &modules_.require<IGameFlow>();
+  world_ = &modules_.require<IGameWorld>();
 }
 
 GameState GameInstance::state() const { return flow_->state(); }
 
 std::uint32_t GameInstance::tick() const { return flow_->tick(); }
+
+std::size_t GameInstance::entityCount() const { return world_->entityCount(); }
+
+engine::SystemScheduler& GameInstance::systems() { return systems_; }
 
 PlayerRoster& GameInstance::roster() { return sessions_.roster(); }
 

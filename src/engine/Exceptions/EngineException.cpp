@@ -1,8 +1,24 @@
 #include "EngineException.hpp"
 #include <stdexcept>
 #include <string>
+#include <vector>
 
 namespace rtype::engine {
+
+namespace {
+
+std::string joinedFolders(const std::vector<std::string>& folders) {
+  std::string joined;
+  for (const std::string& folder : folders) {
+    if (!joined.empty()) {
+      joined += ", ";
+    }
+    joined += folder;
+  }
+  return joined;
+}
+
+}  // namespace
 
 EngineException::EngineException(const std::string& message)
     : std::runtime_error(message) {}
@@ -79,5 +95,15 @@ MissingServiceException::MissingServiceException(const std::string& moduleName,
     : EngineException("The module \"" + moduleName +
                       "\" requires the service " + serviceName +
                       ", which no module installed before it provides") {}
+
+UnknownExecutablePathException::UnknownExecutablePathException()
+    : EngineException(
+          "The system did not tell where the running executable is, so the "
+          "files next to it cannot be found") {}
+
+AssetFolderNotFoundException::AssetFolderNotFoundException(
+    const std::vector<std::string>& searchedFolders)
+    : EngineException("No assets folder found, searched: " +
+                      joinedFolders(searchedFolders)) {}
 
 }  // namespace rtype::engine

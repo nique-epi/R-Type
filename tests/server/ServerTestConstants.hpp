@@ -40,6 +40,12 @@ constexpr rtype::engine::Duration HALF_TICK =
     rtype::engine::SIMULATION_TICK_DURATION / 2;
 
 /**
+ * @brief The ticks of a report on the simulation: ten seconds at 60 ticks per
+ * second.
+ */
+constexpr std::size_t TICKS_IN_TEN_SECONDS = 600;
+
+/**
  * @brief Ticks a running loop must have run before a test stops it.
  */
 constexpr int TICKS_BEFORE_STOP = 3;

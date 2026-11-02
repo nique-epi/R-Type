@@ -13,7 +13,7 @@ This page tells you where to look when you need to change something. It describe
 |---|---|---|
 | Network thread and simulation thread | Available | `src/server/Application/` |
 | Timer resolution on Windows | Available | `src/server/Platform/` |
-| The server assembled from modules (logger, network, games, lobby), stopped on Ctrl-C or SIGTERM with a `Disconnection` to every player | Available | `src/server/Modules/`, `src/server/Platform/StopSignals/` |
+| The server assembled from modules (logger, network, games, lobby, metrics), stopped on Ctrl-C or SIGTERM with a `Disconnection` to every player | Available | `src/server/Modules/`, `src/server/Platform/StopSignals/` |
 | Sorting the datagrams before the queues, session token checked | Available; no limit per address yet | `src/server/Application/DatagramSorter/` |
 | World state sent to the players of a game, at a rate set at launch (`--state-rate`) | Available | `src/server/Replication/WorldStateSender/`, `src/server/Instances/GameFlow/` |
 | Every player's input applied after the same delay, set at launch (`--input-delay`) | Available | `src/server/Sessions/DelayedInputs/` |
@@ -27,6 +27,7 @@ This page tells you where to look when you need to change something. It describe
 | A nickname unique on the server, held with the seat | Available: a second request for the same nickname gets `NicknameTaken` | `src/server/Sessions/PlayerRoster/`, `src/server/Lobby/` |
 | Waiting room and start of the game sent to the players (`LobbyState`, `GameStarted`) | Available | `src/server/Replication/LobbyStateAnnouncer/`, `src/server/Instances/GameFlow/` |
 | End of a game sent to the players (`GameEnded`) | Available: once no player has a life left, with the score of each, until the game waits for players again | `src/server/Replication/GameEndAnnouncer/`, `src/server/Instances/GameFlow/` |
+| Metrics in the journal every 10 s: duration of the ticks, time of each system, games, players and entities | Available; throughput, losses and ping are not measured yet | `src/server/Metrics/`, `src/server/Modules/Metrics/` |
 | Master link | Not yet written | — |
 | Components (`Position`, `Velocity`, `CollisionBox`, `Health`, `EntityType`, `Sprite`, `Layer`) | Available | `src/game/Components/` |
 | Movement, run by each game tick: Bydos and missiles by `Velocity`, ships by `Intent` | Available | `src/game/Systems/MovementSystem/`, `src/server/Instances/GameFlow/` |
@@ -44,7 +45,7 @@ This page tells you where to look when you need to change something. It describe
 
 ## Launch options: `LaunchOptions`
 
-`LaunchOptions` (`src/server/LaunchOptions/`) reads what the server is told at launch. `main()` first reads the logging options (see [Logging](/R-Type/logging/#choosing-the-level-and-the-output-at-launch)), then hands the other arguments to `LaunchOptions::read()`, which reads them with the engine's `readLaunchArguments` (see [Engine](/R-Type/engine/#launch-arguments-readlauncharguments)):
+`LaunchOptions` (`src/server/LaunchOptions/`) reads what the server is told at launch. `main()` first reads the logging options (see [Logging](/R-Type/logging/#choosing-the-level-and-the-output-at-launch)), then hands the other arguments to `LaunchOptions::read()`, which takes out the options of the network simulator (see [Network](/R-Type/network/#network-simulator-simulatednetworksocket)) and reads the rest with the engine's `readLaunchArguments` (see [Engine](/R-Type/engine/#launch-arguments-readlauncharguments)):
 
 | Option | Effect |
 |---|---|
@@ -52,10 +53,11 @@ This page tells you where to look when you need to change something. It describe
 | `--seed <seed>` | The number the random draws of the games start from, a whole number from 0 to 4294967295. Default: drawn at random. See [Bydos](#bydos-bydospawner). |
 | `--state-rate <states>` | The world states sent to each player per second, a whole number from 2 to 60. Default: `DEFAULT_WORLD_STATES_PER_SECOND` (20). More states move the other ships more smoothly and use more bandwidth; see [World state](#world-state-worldstatesender). |
 | `--input-delay <ticks>` | The ticks every player's input is held before it is applied to its ship, a whole number from 0 to 30. Default: `DEFAULT_INPUT_DELAY_TICKS` (3, 50 ms). The same delay holds for every player; see [Player inputs](#player-inputs). |
-| `--help` | Prints the usage, the logging options included, on standard output, then exits with code 0 without starting anything or opening the journal. |
+| `--network <name>`, `--lag <ms>`, `--jitter <ms>`, `--loss <percent>`, `--duplicates <percent>`, `--reorder <percent>` | The simulated network every datagram of the server crosses, for all its players (see [Network](/R-Type/network/#network-simulator-simulatednetworksocket)). Default: none, the network is not simulated. |
+| `--help` | Prints the usage, the simulator and logging options included, on standard output, then exits with code 0 without starting anything or opening the journal. |
 
 - The server listens on every IPv4 interface (`ANY_IPV4_ADDRESS`) and takes no address: `-h`, the client's address option, is an unknown argument here. The last `-p` wins, and so do the last `--seed`, the last `--state-rate` and the last `--input-delay`.
-- An unknown argument, a `-p`, `--seed`, `--state-rate` or `--input-delay` without a value, an invalid port, a seed that is not a whole number from 0 to 4294967295, a state rate that is not a whole number from 2 to 60 or an input delay that is not a whole number from 0 to 30 stops the server before anything starts: it prints `r-type_server:`, the reason and how to see the usage on standard error, then exits with code 1.
+- An unknown argument, a `-p`, `--seed`, `--state-rate` or `--input-delay` without a value, an invalid port, a seed that is not a whole number from 0 to 4294967295, a state rate that is not a whole number from 2 to 60, an input delay that is not a whole number from 0 to 30, or a simulator option without a value or with one out of its range stops the server before anything starts: it prints `r-type_server:`, the reason and how to see the usage on standard error, then exits with code 1.
 
 ```bash
 ./r-type_server -p 4243
@@ -80,7 +82,7 @@ The player queue and the outgoing queue hold `INCOMING_DATAGRAM_QUEUE_CAPACITY` 
 - A flood of connection requests, or of datagrams from strangers, never pushes a player's datagram out of its queue. It still delays the requests of new players: nothing limits the requests of one address yet (see [Flood protection](#flood-protection)).
 - The outgoing queue also discards its oldest datagram when full, but nothing reports it yet.
 
-`ServerApplication` implements `IDatagramSender` (`queueDatagram()`) and `IPlayerAdmission` (`admit()`, `forget()`), the two interfaces the other parts of the server use to reach it. Building it binds nothing: `open()` binds the socket (`ServerAlreadyOpenException` when it is already bound), and `run()` and `localEndpoint()` throw `ServerNotOpenException` before it. `close()` unbinds it, so the port is free again once `run()` returned.
+`ServerApplication` implements `IDatagramSender` (`queueDatagram()`) and `IPlayerAdmission` (`admit()`, `forget()`), the two interfaces the other parts of the server use to reach it. Building it binds nothing: `open()` binds the socket, behind the simulated network the launch options describe if any (`ServerAlreadyOpenException` when it is already bound), and `run()` and `localEndpoint()` throw `ServerNotOpenException` before it. `close()` unbinds it, so the port is free again once `run()` returned.
 
 `stop()` makes `run()` return, from any thread: the network thread stops at once, the simulation thread when its current sleep ends, about one tick later. An exception thrown on either thread, by the tick handler for instance, stops both, and `run()` rethrows it.
 
@@ -122,8 +124,9 @@ The player queue stays as the last safety net. It discards its oldest datagram, 
 | `network` | owns the `ServerApplication`: binds the socket and runs the server on a thread when it starts, gives the port back when it stops; provides `IDatagramSender`, `IPlayerAdmission` and `TickDatagrams` (the datagrams of the tick) | `src/server/Modules/Network/` |
 | `games` | the games (`GamesSettings::gameCount`, `DEFAULT_HOSTED_GAME_COUNT` = 8), an `EventBus` for each; reads the waves file when it starts; provides `Games` | `src/server/Modules/Games/` |
 | `lobby` | one `ConnectionAcceptor` per game, built on the roster of that game | `src/server/Modules/Lobby/` |
+| `metrics` | measures the ticks and the systems of the games, and writes a report to the journal every `TICKS_PER_REPORT` ticks; provides `LatestMetrics` | `src/server/Modules/Metrics/` |
 
-Each tick runs the stages of `SERVER_LOOP_STAGES` once, with `SIMULATION_TICK_DURATION`. In `simulation`, the games module runs `onTick()` on each game with the datagrams of its own players (`keepDatagramsOf()`) and makes the network forget the players whose session closed, then the lobby module answers the connection requests, so a request is placed and refused by the state the games just reached. In `outputs`, the bus of each game delivers its events, and the guaranteed messages among them leave at once (see [Guaranteed messages](#guaranteed-messages-messagedelivery)). The `inputs` stage is empty: `onTick()` reads the datagrams and moves the game in one step.
+Each tick runs the stages of `SERVER_LOOP_STAGES` once, with `SIMULATION_TICK_DURATION`. In `simulation`, the games module runs `onTick()` on each game with the datagrams of its own players (`keepDatagramsOf()`) and makes the network forget the players whose session closed, then the lobby module answers the connection requests, so a request is placed and refused by the state the games just reached. In `outputs`, the bus of each game delivers its events, and the guaranteed messages among them leave at once (see [Guaranteed messages](#guaranteed-messages-messagedelivery)). Only the metrics module works in `inputs`, where it starts measuring the tick, since `onTick()` reads the datagrams and moves the game in one step; it ends its measure in `outputs`, after the games module.
 
 ### Several games at once
 
@@ -141,7 +144,7 @@ The rule itself is `firstJoinableGame()` (`src/server/Lobby/GamePlacement/`), wh
 
 Each game has its own `EventBus`, since its rules and its broadcaster subscribe to it: with one bus, a game would apply the collisions of another to its own entities and send its events to the wrong players. The seed of game n, from 0, is the seed given plus n times `GAME_SEED_STRIDE` (65536), so a game can be played again; without a seed, each game draws its own.
 
-Every game runs on the simulation thread, one after the other in each tick, and the network thread stays the only other one. No state is shared between games, so nothing needs a lock, and the queues between the two threads do not change. The cost of a tick grows with the number of games and is not measured yet: the tick loop reports its late ticks every 10 s. An exception in one game stops the server, and a slow game slows the others; running each game in a process of its own would isolate them.
+Every game runs on the simulation thread, one after the other in each tick, and the network thread stays the only other one. No state is shared between games, so nothing needs a lock, and the queues between the two threads do not change. The cost of a tick grows with the number of games: the journal gives it every 10 s (see [Metrics](#metrics-servermetricsmodule)), and the tick loop reports its late ticks at the same rate. An exception in one game stops the server, and a slow game slows the others; running each game in a process of its own would isolate them.
 
 The waves file is read when the games module starts, after the logger module started, so a missing or wrong file stops the start with an error that names the games module, the file, the line and the key, and the line "waves file …" reaches the journal.
 
@@ -152,7 +155,7 @@ The waves file is read when the games module starts, after the logger module sta
 - Linux and macOS: `SIGINT` (Ctrl-C) and `SIGTERM`. `StopSignals` blocks them in the main thread before any other thread exists, so every thread inherits the mask, and one thread takes them with `sigwait()`: nothing runs inside a signal handler. A signal that arrives before it is built, while the program starts, has its default action.
 - Windows: `SetConsoleCtrlHandler`. The system runs the handler on a new thread. Ctrl-C and Ctrl-Break have no time limit; closing the console window gives the process 5 seconds, so that handler waits for the program to finish stopping, at most `CONSOLE_CLOSE_WAIT` (4 s), before it returns. Logoff and shutdown only reach services, and are handled the same way. This file is checked by the Windows job of the CI only.
 
-On a request, `main()` calls `Application::stop()`. It first stops the stages: it waits for the tick in progress, and no work runs after it. Then the modules stop in the reverse order. The games module tells every player that the server shuts down, with `FAREWELL_COPIES` (3) copies of a `Disconnection`, `FAREWELL_COPY_INTERVAL` (50 ms) apart (`src/server/Modules/ModuleConstants.hpp`), each under the next session header of its player (see `FarewellSender`), then waits `FAREWELL_FLUSH_WAIT` (two ticks) so the last copy leaves; the whole stop takes about 130 ms with a player connected (two intervals and two ticks). The network module then stops the server and closes the socket, and the journal logs "server stopped". The client closes its session as soon as it reads one, and shows the player that the server shut down (see [Client](/R-Type/client/#lost-connection-a-dialog-over-the-title) and [Protocol](/R-Type/protocol/#a-peer-disappears)).
+On a request, `main()` calls `Application::stop()`. It first stops the stages: it waits for the tick in progress, and no work runs after it. Then the modules stop in the reverse order. The games module tells every player that the server shuts down, with `FAREWELL_COPIES` (3) copies of a `Disconnection`, `FAREWELL_COPY_INTERVAL` (50 ms) apart (`src/server/Modules/ModuleConstants.hpp`), each under the next session header of its player (see `FarewellSender`), then waits `FAREWELL_FLUSH_WAIT` (two ticks) so the last copy leaves; the whole stop takes about 130 ms with a player connected (two intervals and two ticks). The network module then stops the server and closes the socket, and the journal logs "server stopped". Over a simulated network, a copy still in flight when the socket closes never arrives (see [Network](/R-Type/network/#network-simulator-simulatednetworksocket)): each copy waits half the lag, and the socket closes about 130 ms after the first, so with a lag over about 270 ms (the `bad` scenario's 300 ms included) a player gets none. The client closes its session as soon as it reads one, and shows the player that the server shut down (see [Client](/R-Type/client/#lost-connection-a-dialog-over-the-title) and [Protocol](/R-Type/protocol/#a-peer-disappears)).
 
 ## Tick loop: `TickLoop`
 
@@ -185,6 +188,42 @@ How late a tick starts depends on how precisely the system wakes a sleeping thre
 - On Windows, MSVC's `sleep_for` ends in `Sleep`, whose documentation says that a wait longer than one tick of the system clock but shorter than two "can be anywhere between one and two ticks". While it runs, the loop holds a `FineTimerResolution` (`src/server/Platform/`), which asks Windows for `FINE_TIMER_RESOLUTION_MILLISECONDS` (1 ms). If Windows refuses, the loop logs a warning and runs anyway.
 - On macOS, measured on an Apple Silicon laptop, a sleep wakes later the longer it is: 0.5 ms late on average for a 1 ms sleep, 5.6 ms for a 16.7 ms sleep. Timer coalescing, enabled on that machine, is the likely cause. Over several 30-second runs, ticks started 3.8 to 4.5 ms late on average and at most 9.1 ms late, with no client as with four clients sending 60 datagrams per second each, and 600 ticks still ran every ten seconds.
 - On Linux and Windows, the lateness is not measured yet.
+
+## Metrics: `ServerMetricsModule`
+
+The `metrics` module (`src/server/Modules/Metrics/`) tells an administrator whether the server keeps up. Every `TICKS_PER_REPORT` ticks (600, so 10 s while the server keeps its pace; a stall makes it longer, since it counts ticks), it writes two lines at the `info` level, shown with no option, to the terminal and to the journal. Measured on a server with no player:
+
+```
+[INFO ] [Metrics] - 600 ticks lasted 0.0269 ms on average, 0.0215 ms at the median, 0.046458 ms at the 95th percentile and 0.244708 ms at most, for a budget of 16.6667 ms; games in progress: 0 of 8; players connected: 0; entities: 0
+[INFO ] [Metrics] - average time per tick: BydoControlSystem 0 ms, PatternSystem 0 ms, MovementSystem 0 ms, PlayfieldExitSystem 0 ms, CollisionSystem 0 ms
+```
+
+| Figure | What it says |
+|---|---|
+| Ticks | How long the stages of each tick lasted, from the `inputs` stage to the end of the `outputs` stage. A percentile is the duration of a real tick, at the nearest rank |
+| Budget | `SIMULATION_TICK_DURATION`: a tick that lasts longer leaves the next one late |
+| Games in progress | The games in `GameState::InProgress`, out of the games the server hosts |
+| Players connected | The players seated in a game, in progress or not |
+| Entities | The entities of the worlds of every game |
+| Average time per tick | The time of each system in all the games, shared between the ticks of the report. A system runs only in a game in progress |
+
+The measure leaves out what `ServerApplication` does around the stages, emptying the queues of datagrams and handing over what to send, and the report itself, which runs after the measure of its tick. Whether the ticks fall behind as a whole is told by the lines of the tick loop (see [Tick loop](#tick-loop-tickloop)).
+
+The newest report stays in memory as a `MetricsReport` in the service `LatestMetrics` (`src/server/Metrics/`). A module finds it with `context.find<LatestMetrics>()`, which gives `nullptr` when the metrics module is not listed. Any thread may call `report()`, which gives a copy and changes nothing, so readers at different rates all see the same report; nothing in the server reads it yet. Throughput, losses and ping are not measured yet.
+
+No module requires this one, and it reads no clock when it is not listed, so removing its line from `serverModules()` changes nothing else. It is listed last: a module listed after it would not be counted, and neither would work another module adds to `inputs`. `--log-level warn` hides the two lines and leaves the measure running.
+
+Measured on an Apple M3 Pro with Apple clang 21.0.0 at `-O2`, median of 7 runs of a throwaway program that is not part of the repository:
+
+| Work | When | Cost |
+|---|---|---|
+| A tick with no game in progress | each tick | 33 ns |
+| A tick with 8 games in progress, 5 systems each | each tick | 0.68 µs, 0.0041 % of a tick |
+| Sorting and summarizing 600 ticks | each report | 4.2 µs |
+| Building the two lines | each report | 1.8 µs |
+| Writing the two lines | each report | 7.4 µs to the journal alone, 11 µs with standard error sent to `/dev/null` |
+
+These numbers say nothing about a terminal, GCC, MSVC, Linux or Windows. A report adds about 440 bytes to the journal, so about 3.8 MB per day, and the logger never rotates its file.
 
 ## World state: `WorldStateSender`
 
@@ -342,7 +381,7 @@ rtype::server::GameInstance game{
 
 ## Silent players: heartbeats and timeouts
 
-A client that crashes, is killed or loses the network sends nothing more, and nothing in UDP says so. Each game's `GameSessions` therefore counts, for each of its players, the ticks since it last read one of its datagrams (`ConnectedPlayer::ticksSinceReceived`). Any datagram the game reads counts, which leaves out one dropped for its sequence: an input, a `ReadyState`, or the `Heartbeat` a client sends after `HEARTBEAT_INTERVAL` (1 s) without sending anything else (see [Client](/R-Type/client/#joining-a-server-serverconnection)). When the count reaches `SESSION_TIMEOUT_TICKS` (300 ticks, the `SESSION_TIMEOUT` of 5 s), the player is **away**: `ConnectedPlayer::away` is set, its newest input is cleared so the ship stops, and the game logs `player <n> is away` at the `info` level under `Sessions`. The seat, the number, the session token, the ship, the score and the lives are kept, the ship stays in the world and can be hit, and `DatagramSorter` still admits the address, so the player is back with the first datagram it sends from the same address and port: the game clears `away` and restarts the count. An away player does not count in `ReadyKeeper::everyPlayerIsReady()`, so it does not hold back the start of the game, and it still holds its nickname. When the count reaches `SESSION_CLOSING_TICKS` (1200 ticks, the `SESSION_SILENCE_LIMIT` of 20 s: `SESSION_TIMEOUT` plus the `RECONNECTION_GRACE` of 15 s), the session closes in that tick, after the datagrams are read and before the game moves along its states:
+A client that crashes, is killed or loses the network sends nothing more, and nothing in UDP says so. Each game's `GameSessions` therefore counts, for each of its players, the ticks since it last read one of its datagrams (`ConnectedPlayer::ticksSinceReceived`). Any datagram the game reads counts, which leaves out one dropped for its sequence: an input, a `ReadyState`, or the `Heartbeat` a client sends after `HEARTBEAT_INTERVAL` (1 s) without sending anything else (see [Client](/R-Type/client/#joining-a-server-serversession-waitingroom-entitymessagequeue)). When the count reaches `SESSION_TIMEOUT_TICKS` (300 ticks, the `SESSION_TIMEOUT` of 5 s), the player is **away**: `ConnectedPlayer::away` is set, its newest input is cleared so the ship stops, and the game logs `player <n> is away` at the `info` level under `Sessions`. The seat, the number, the session token, the ship, the score and the lives are kept, the ship stays in the world and can be hit, and `DatagramSorter` still admits the address, so the player is back with the first datagram it sends from the same address and port: the game clears `away` and restarts the count. An away player does not count in `ReadyKeeper::everyPlayerIsReady()`, so it does not hold back the start of the game, and it still holds its nickname. When the count reaches `SESSION_CLOSING_TICKS` (1200 ticks, the `SESSION_SILENCE_LIMIT` of 20 s: `SESSION_TIMEOUT` plus the `RECONNECTION_GRACE` of 15 s), the session closes in that tick, after the datagrams are read and before the game moves along its states:
 
 1. the seat and the number are freed (`PlayerRoster::remove`), so a client killed and started again, which comes back from another port, takes a free seat instead of a fifth one; the steps below read the copy of the player the roster hands back;
 2. the ship leaves the world (`World::removePlayer`) and, when the world held it, is published as an `EntityDestruction` (`Removed`), so the clients make it disappear without an explosion;
@@ -354,7 +393,7 @@ A client that crashes, is killed or loses the network sends nothing more, and no
 - The rest of the tick runs without the player: a waiting room whose other players are all ready starts waiting for the clients to load in that tick, and the world state of that tick no longer lists the ship.
 - A game in progress whose last player timed out or left ends in that tick, after the sessions close and before the game moves along its states, as `finish()` ends it: it takes no new player until the finished state is over, `FINISHED_STATE_TICKS` (300) ticks counted from that tick, then waits for players with a new world. The game logs `game finished: no player left` at the `info` level under `Instances`. A waiting room whose last player timed out keeps waiting.
 
-A player who leaves does not wait for the timeout. Its client sends a `Disconnection` when the player leaves the waiting room or closes the window (see [Client](/R-Type/client/#joining-a-server-serverconnection)), and the session closes in the tick that reads it, through the same three steps, with a `PlayerDeparture` (`Left`): the others get `PlayerLeft` (`Left`) at once. The game logs `player <n> left from <address> port <port>` at the `info` level under `Sessions`. The two copies the client sends after the first are dropped: by the sorter once it forgot the address, or by the games module, which hands a datagram only to the game whose roster holds its sender, so no game reads them and no line is logged.
+A player who leaves does not wait for the timeout. Its client sends a `Disconnection` when the player leaves the waiting room or closes the window (see [Client](/R-Type/client/#joining-a-server-serversession-waitingroom-entitymessagequeue)), and the session closes in the tick that reads it, through the same three steps, with a `PlayerDeparture` (`Left`): the others get `PlayerLeft` (`Left`) at once. The game logs `player <n> left from <address> port <port>` at the `info` level under `Sessions`. The two copies the client sends after the first are dropped: by the sorter once it forgot the address, or by the games module, which hands a datagram only to the game whose roster holds its sender, so no game reads them and no line is logged.
 
 The server sends heartbeats too, and counts them in real time rather than in ticks, since a client waits in real time. When a tick starts, before anything is sent in it, a game reads its clock (`GameInstanceParts::clock`, the `engine::SystemClock` of the games module) and adds the time since the previous tick started, a stall included, to the time since each player was sent a datagram (`ConnectedPlayer::sinceSent`). At the end of the tick, it sends a `Heartbeat` to each player that no datagram reached for `SILENCE_BEFORE_HEARTBEAT`, whoever sent the last one: every datagram to a player takes its header from `nextSessionHeader()`, which sets that time back to zero. `SILENCE_BEFORE_HEARTBEAT` is `HEARTBEAT_INTERVAL` rounded down to whole ticks, 60 ticks (999.99996 ms), so while the server runs on time two datagrams to a player are never further apart than 1 s; waiting for the whole second would wait 61 ticks. The waiting room (every 500 ms), a game in progress (20 states per second) and a game that ended by itself (`GameEnded` every 500 ms) already send more often, so on time only a game ended by `finish()` sends heartbeats. After a stall, see [A long stall and the clients](#a-long-stall-and-the-clients).
 
@@ -362,7 +401,7 @@ The server sends heartbeats too, and counts them in real time rather than in tic
 
 ### A long stall and the clients
 
-A client takes the server for lost once `SESSION_SILENCE_LIMIT` (20 s, `SESSION_TIMEOUT` plus `RECONNECTION_GRACE`) passed since the last datagram it read, then sends nothing more and ignores what the server sends afterwards (see [Client](/R-Type/client/#joining-a-server-serverconnection)). Its wait starts with the last datagram the server sent before the stall. Since a stall counts in full in the time since a player was sent a datagram, the first tick after a stall of 1 s or more sends a `Heartbeat` to every player it sends nothing else: a server that comes back before its clients waited 20 s keeps them, in the waiting room, in a game and once it ended, provided that datagram reaches them in time. One sent just under the limit may still arrive too late, as section 10.1.1 of RFC 9000 says of QUIC. The server closes the sessions of the clients that gave up `SESSION_CLOSING_TICKS` (1200) ticks after the last datagram it read from each.
+A client takes the server for lost once `SESSION_SILENCE_LIMIT` (20 s, `SESSION_TIMEOUT` plus `RECONNECTION_GRACE`) passed since the last datagram it read, then sends nothing more and ignores what the server sends afterwards (see [Client](/R-Type/client/#joining-a-server-serversession-waitingroom-entitymessagequeue)). Its wait starts with the last datagram the server sent before the stall. Since a stall counts in full in the time since a player was sent a datagram, the first tick after a stall of 1 s or more sends a `Heartbeat` to every player it sends nothing else: a server that comes back before its clients waited 20 s keeps them, in the waiting room, in a game and once it ended, provided that datagram reaches them in time. One sent just under the limit may still arrive too late, as section 10.1.1 of RFC 9000 says of QUIC. The server closes the sessions of the clients that gave up `SESSION_CLOSING_TICKS` (1200) ticks after the last datagram it read from each.
 
 ## Waiting room: `LobbyStateAnnouncer`
 
@@ -533,14 +572,15 @@ Each tick of a game in progress, `GameFlow` makes the ships of away players want
 
 ## Waves file: `WaveCatalog`
 
-`WaveCatalog` (`src/server/Spawning/WaveCatalog/`, `rtype_server_wave_catalog`) reads the waves of each difficulty from a TOML file with toml++. It is the only target that links toml++, and only the server links it, so no client target can read the levels. When the games module starts, it reads `WAVE_FILE_PATH` (`assets/waves/waves.toml`) from the folder the server is started in, takes the `WavePlan` of `DEFAULT_DIFFICULTY` (`normal`) and gives it to the game in its `GameSettings`, with the seed. A `WavePlan` holds a `WaveCurve` and the kinds its Bydos take in turn.
+`WaveCatalog` (`src/server/Spawning/WaveCatalog/`, `rtype_server_wave_catalog`) reads the waves of each difficulty from a TOML file with toml++. It is the only target that links toml++, and only the server links it, so no client target can read the levels. `serverModules()` hands the games module `WAVE_FILE_IN_ASSETS` (`waves/waves.toml`) in the `assets/` folder that `locateAssetFolder()` finds next to the executable or one level above it, whatever folder the server was started in (see [Engine](/R-Type/engine/#files-next-to-the-executable-locateassetfolder)). When the games module starts, it reads that file, takes the `WavePlan` of `DEFAULT_DIFFICULTY` (`normal`) and gives it to the game in its `GameSettings`, with the seed. A `WavePlan` holds a `WaveCurve` and the kinds its Bydos take in turn.
 
 Every key, value and enemy name of every difficulty is checked. The first error throws a `ServerException` (`src/server/Exceptions/`) naming the file, the line and the column, and the dotted name of the key; `runServer` prints it and returns 1. The format, the ranges, the shipped difficulties and every error are in [Writing the waves file](/R-Type/waves-file/).
 
 ```cpp
 const rtype::server::WaveCatalog catalog =
     rtype::server::WaveCatalog::fromFile(
-        std::filesystem::path{rtype::server::WAVE_FILE_PATH});
+        rtype::engine::locateAssetFolder() /
+        rtype::server::WAVE_FILE_IN_ASSETS);
 rtype::server::WavePlan waves =
     catalog.planOf(rtype::server::DEFAULT_DIFFICULTY);
 ```
@@ -680,7 +720,7 @@ A game ended by `finish()`, or by the departure of its last player, tells no one
 | Change what the server does when it stops | `ServerGamesModule::stop()` and `FarewellSender`, in `src/server/Modules/Games/` |
 | Change which datagrams reach the tick | `DatagramSorter::sort` in `src/server/Application/DatagramSorter/DatagramSorter.cpp` |
 | Change how many connection requests a tick answers | `CONNECTION_REQUEST_QUEUE_CAPACITY` in `src/server/ServerConstants.hpp` |
-| Add a launch option | The options listed in `LaunchOptions::read()` and `usage()`, in `src/server/LaunchOptions/LaunchOptions.cpp`; a name the client uses too goes in `src/engine/LaunchArguments/LaunchArgumentsConstants.hpp` |
+| Add a launch option | A function that returns its `LaunchOption` and its entry in the list of `LaunchOptions::read()`, and `usage()`, in `src/server/LaunchOptions/LaunchOptions.cpp`; a name the client uses too goes in `src/engine/LaunchArguments/LaunchArgumentsConstants.hpp`. An option of the network simulator goes in `SimulatorLaunchOptions` instead, which the server and the client both read before their own (see [Network](/R-Type/network/#network-simulator-simulatednetworksocket)) |
 | Change the port the server listens on by default | `DEFAULT_SERVER_PORT` in `src/network/NetworkConstants.hpp`, shared with the client |
 | Change how many ticks an input is held by default | `DEFAULT_INPUT_DELAY_TICKS` in `src/server/ServerConstants.hpp`; the host sets it at launch with `--input-delay` |
 | Change how often the world state is sent by default | `DEFAULT_WORLD_STATES_PER_SECOND` in `src/server/ServerConstants.hpp`; the host sets it at launch with `--state-rate` |
@@ -709,7 +749,7 @@ A game ended by `finish()`, or by the departure of its last player, tells no one
 | Change how a wave follows the one before | `bydoWaveAfter` in `src/game/Waves/WaveProgression/WaveProgression.cpp` |
 | Change when the next wave starts | `WaveDirector::advance` in `src/game/Waves/WaveDirector/WaveDirector.cpp` |
 | Add a key to the waves file, or a kind of enemy the file can name | the keys, ranges and `ENEMY_NAMES` in `src/server/Spawning/WaveFileConstants.hpp`, read by `src/server/Spawning/WaveCatalog/WaveCatalog.cpp` |
-| Change which difficulty the games play, or where the server finds the waves file | `DEFAULT_DIFFICULTY` and `WAVE_FILE_PATH` in `src/server/ServerConstants.hpp` |
+| Change which difficulty the games play, or where the server finds the waves file | `DEFAULT_DIFFICULTY` and `WAVE_FILE_IN_ASSETS` in `src/server/ServerConstants.hpp`; the `assets/` folder itself is found by `findAssetFolder()` in `src/engine/Paths/AssetFolder.cpp` |
 | Change where a Bydo appears | `bydoSpawnPosition` and the margins in `src/game/Spawning/` |
 | Change how fast a Bydo moves, or the height and period of a wave | `BYDO_SPEED`, `WAVE_AMPLITUDE`, `WAVE_PERIOD_SECONDS` in `src/game/Systems/PatternSystem/PatternConstants.hpp` |
 | Change which pattern a kind of Bydo follows | `patternShapeOf` in `src/game/Spawning/BydoKind/BydoKind.cpp` |
@@ -732,7 +772,8 @@ A game ended by `finish()`, or by the departure of its last player, tells no one
 | Change what happens when the session of a player closes | `Departures::close` in `src/server/Sessions/Departures/Departures.cpp`, `RtypeRulesModule::removeShipOf` in `src/server/Instances/RtypeRulesModule/RtypeRulesModule.cpp`, and `playGames()` in `src/server/Modules/Games/ServerGamesModule.cpp` |
 | Change the size of the queues between threads | `INCOMING_DATAGRAM_QUEUE_CAPACITY` and `OUTGOING_DATAGRAM_QUEUE_CAPACITY` in `src/server/ServerConstants.hpp` |
 | Change the simulation rate | `SIMULATION_TICKS_PER_SECOND` in `src/engine/Time/TimeConstants.hpp` |
-| Change how often the simulation reports | `REPORT_SECONDS` in `src/server/ServerConstants.hpp` |
+| Change how often the simulation reports | `REPORT_SECONDS` in `src/server/ServerConstants.hpp`, for the tick loop and the metrics |
+| Change what the metrics report | `reportTheTicks()` in `src/server/Modules/Metrics/ServerMetricsModule.cpp`, `censusOf()` in `GamesMeasures.cpp` beside it, and `ticksLineOf()` in `src/server/Metrics/MetricsLines.cpp` |
 | Change how many ticks the server catches up after a stall | `MAXIMUM_TICKS_PER_ADVANCE` in `src/engine/Time/TimeConstants.hpp`, read by every `FixedTimestep` |
 | Write code that differs between Windows and the other systems | `src/server/Platform/`: a `Windows.cpp` file and a `Posix.cpp` file per class, chosen in its `CMakeLists.txt` |
 | Test code that uses a socket without the network | `tests/doubles/RecordingDatagramSocket.hpp` |

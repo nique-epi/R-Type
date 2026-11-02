@@ -22,9 +22,9 @@ The assets of the interface, which any screen may use at any time, in a game or 
 
 When an id breaks the rule, or its file is missing or cannot be read, the client stops once every file of the list was tried, and names every one of them. Music is only located: its file is read while it plays.
 
-## How the client finds this folder
+## How the programs find this folder
 
-The client looks for `assets/` next to its executable, then in the folder above it, where the Visual Studio generator writes `Release/` and `Debug/`. The folder it was launched from does not matter.
+The client and the server look for `assets/` next to their executable, then in the folder above it, where the Visual Studio generator writes `Release/` and `Debug/`. The folder they were launched from does not matter. The server reads only `waves/waves.toml` from it.
 
 ## Where the files come from
 

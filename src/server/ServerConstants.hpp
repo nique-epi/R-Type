@@ -56,10 +56,11 @@ constexpr std::string_view WRONG_TOKEN_DROP_REASON =
     "it carries another session token than the player of that address";
 
 /**
- * @brief Where the server reads the waves of each difficulty, from the folder
- * it is started in: the root of the repository, where the build puts it.
+ * @brief Where the server reads the waves of each difficulty, inside the
+ * assets folder it finds from its executable, whatever folder it was started
+ * from.
  */
-constexpr std::string_view WAVE_FILE_PATH = "assets/waves/waves.toml";
+constexpr std::string_view WAVE_FILE_IN_ASSETS = "waves/waves.toml";
 
 /**
  * @brief The difficulty every game is played at, until the rules of a game can
@@ -103,7 +104,8 @@ constexpr std::size_t OUTGOING_DATAGRAM_QUEUE_CAPACITY = 256;
 
 /**
  * @brief Seconds between two reports on the simulation: how late its ticks
- * started, and how many received datagrams were discarded.
+ * started, how many received datagrams were discarded, and the metrics of the
+ * server.
  */
 constexpr std::size_t REPORT_SECONDS = 10;
 
@@ -230,6 +232,10 @@ constexpr engine::Duration CONSOLE_CLOSE_WAIT = std::chrono::seconds(4);
  * @brief The stages of the server's loop, in the order each tick runs them:
  * the datagrams received are read, the game is simulated, then what changed is
  * sent. A module adds its work to one of them during its install().
+ *
+ * The metrics module starts measuring a tick in INPUT_STAGE and is listed last,
+ * so what another module adds to that stage runs before the measure and is not
+ * counted.
  */
 constexpr std::string_view INPUT_STAGE = "inputs";
 constexpr std::string_view SIMULATION_STAGE = "simulation";

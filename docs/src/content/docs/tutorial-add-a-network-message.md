@@ -563,9 +563,9 @@ A pull request that changes the wire says so in its title, with `!` after the ty
 
 | You want a message that… | Change |
 |---|---|
-| The client sends | A public function in `ServerConnection` (`src/client/Connection/ServerConnection/`), next to `sendReadyState()`, calling `sendToServer(network::Emote{…})`. `sendToServer` writes the session token and the next sequence |
-| The server sends | `send(sessionDatagram(player, network::Emote{…}))`, as `FarewellSender` and `GameFlow` do, so the header carries the token and the next sequence of that player. Add the row to [Server to client](/R-Type/protocol/#server-to-client) |
-| The client receives | A `dispatcher_.registerHandler<…>` call in `ServerConnection`, next to the others |
+| The client sends | `sendMessage(outbox, network::Emote{…})` on the `ISessionOutbox` a part of the session is given, as `WaitingRoom::setReady()` does (`src/client/Connection/WaitingRoom/`). `SessionOutbox` writes the session token, the next sequence and the acknowledgement |
+| The server sends | `send(sessionDatagram(player, network::Emote{…}))`, as `FarewellSender` and `GameFlow` do, so the header carries the token, the next sequence and the acknowledgement of that player. Add the row to [Server to client](/R-Type/protocol/#server-to-client) |
+| The client receives | A `registerHandler<…>` call on the `MessageDispatcher` of the session, as `WaitingRoom` and `EntityMessageQueue` do |
 | The players must all see | The server sends it once to each player of the game with `sendToEveryPlayer` (`src/server/Sessions/MessageDelivery/`), or guarantees it with `guaranteeToEveryPlayer` when its loss would show: see [Guaranteed messages](/R-Type/protocol/#guaranteed-messages) |
 | Must never be lost, or must always reflect the current state | From the server, guarantee it with `guaranteeToEveryPlayer`, once its receiver reads it twice the same way (see [Guaranteed messages](/R-Type/protocol/#guaranteed-messages)); the client sends no guaranteed message yet. A state is repeated until the state message shows it, as `ReadyState` does with `LobbyState` |
 | Holds a list or a string | Check the count before anything is sized from it, as `LobbyState` does; a client must not make the server allocate in proportion to a value it controls |

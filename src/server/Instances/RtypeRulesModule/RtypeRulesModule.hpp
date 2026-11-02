@@ -19,7 +19,7 @@ struct GameContext;
  * @brief The module of a game that carries out the rules of R-Type: its
  * systems, its shots, its damage, its lives, its score and its waves, and the
  * way the game unfolds (see GameFlow). It owns the world of the game and
- * provides the flow to the game as IGameFlow.
+ * provides the flow to the game as IGameFlow, and its world as IGameWorld.
  *
  * It requires the IGameReplication of the module before it, which tells the
  * players what the rules do. install() builds the GameFlow, which opens

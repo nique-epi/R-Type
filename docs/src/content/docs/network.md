@@ -15,7 +15,7 @@ This page tells you where to look when you need to change something. It describe
 | UDP socket | Available | `src/network/Transport/` |
 | Ports and addresses written as text | Available | `src/network/Transport/EndpointText.hpp` |
 | Relay between a socket and the queues of another thread | Available | `src/network/Transport/DatagramRelay/` |
-| Lag and loss simulator | Not yet written | — |
+| Network simulator: lag, jitter, loss, duplicates and reordering, off by default | Available | `src/network/Transport/Simulator/`, `src/network/Transport/Conditions/` |
 | Serialization | Available | `src/network/Serialization/` |
 | Protocol messages, datagram header, dispatch by type | Available | `src/network/Protocol/` |
 | Connection cookies | Available | `src/network/Handshake/` |
@@ -43,7 +43,7 @@ flowchart TB
   ClientSessions --> ClientReplication[Client replication]
 ```
 
-An input of the player takes the other way through the transport and the sessions only: `ServerConnection` sends it, and the `GameSessions` of the game keeps the newest input of each player (see [Server](/R-Type/server/#player-inputs)).
+An input of the player takes the other way through the transport and the sessions only: `ServerSession` sends it, and the `GameSessions` of the game keeps the newest input of each player (see [Server](/R-Type/server/#player-inputs)).
 
 ### Transport
 
@@ -54,7 +54,7 @@ Transport carries datagrams and knows nothing of players. Each program runs its 
 A session starts when the server accepts a player and ends when the player leaves or stays silent too long. Every datagram of a session carries the session token of the player, the next sequence of its sender and the acknowledgement of the datagrams its sender accepted, so each side drops a forged datagram, which lacks the token, and a late copy, which is not newer than the newest datagram it read (see [Protocol](/R-Type/protocol/#a-session)), and the server knows which guaranteed messages arrived.
 
 - On the server, `ConnectionAcceptor` (`src/server/Lobby/`) answers the connection requests and gives a place only to a sender that sends back its cookie (`CookieIssuer`, below). `DatagramSorter` checks the token on the network thread, before any queue. The `GameSessions` of each game (`src/server/Sessions/`) checks the sequence, drops the guaranteed messages a datagram acknowledges and sends again the others, keeps the ready state and the newest input of each player, sends the heartbeats and closes the session of a player it hears nothing from (see [Server](/R-Type/server/#sessions-of-a-game-gamesessions)); `SessionDatagram` gives every datagram to a player its header.
-- On the client, `ServerConnection` (`src/client/Connection/ServerConnection/`) holds the one session with the server it joined: it sends the request, answers the challenge, checks the token and the sequence, acknowledges what it accepted, sends the heartbeats, and takes the server for lost after `SESSION_SILENCE_LIMIT` (20 s) without a datagram (see [Client](/R-Type/client/#joining-a-server-serverconnection)).
+- On the client, `ServerSession` (`src/client/Connection/ServerSession/`) holds the one session with the server it joined: it sends the request, answers the challenge, checks the token and the sequence, acknowledges what it accepted, sends the heartbeats, and takes the server for lost after `SESSION_SILENCE_LIMIT` (20 s) without a datagram (see [Client](/R-Type/client/#joining-a-server-serversession-waitingroom-entitymessagequeue)).
 - Both programs read the same delays, `HEARTBEAT_INTERVAL` (1 s), `SESSION_TIMEOUT` (5 s) and `RECONNECTION_GRACE` (15 s), in `src/network/Protocol/ProtocolConstants.hpp`. They are **provisional**, like every delay of the protocol: code must read them.
 
 ### Replication
@@ -62,7 +62,7 @@ A session starts when the server accepts a player and ends when the player leave
 Replication turns the entities of a game into messages on the server, and the messages back into entities on the client. The server decides where everything is; the client draws the newest state it received and does not predict its own ship yet.
 
 - On the server, `src/server/Replication/` announces each entity as it appears (`sendEntitySpawned`), sends the world state at the rate set at launch (`WorldStateSender`, see [Server](/R-Type/server/#world-state-worldstatesender)), turns the events of the game into `EntityDestroyed`, `GameEvent` and `PlayerLeft` (`GameEventBroadcaster`), which `MessageDelivery` guarantees, and tells the waiting room and the end of a game (`LobbyStateAnnouncer`, `GameEndAnnouncer`). Each datagram leaves under the header of its player.
-- On the client, `ServerConnection` keeps the messages about entities in the order they arrived until the game screen takes them, and `EntityReplicator` (`src/client/Replication/`) applies them to the entities of the game screen; `WorldStateFilter` drops a world state older than the newest one applied (see [Client](/R-Type/client/#entities-from-the-server-entityreplicator)).
+- On the client, `EntityMessageQueue` keeps the messages about entities in the order they arrived until the game screen takes them, and `EntityReplicator` (`src/client/Replication/`) applies them to the entities of the game screen; `WorldStateFilter` drops a world state older than the newest one applied (see [Client](/R-Type/client/#entities-from-the-server-entityreplicator)).
 - The messages and the codec of the world state are in this library (`src/network/Protocol/`, below).
 
 ## Event loop: `NetworkContext`
@@ -75,7 +75,7 @@ Asio is linked privately to the network targets, so the headers other modules in
 
 ## Sockets: `UdpSocket`
 
-`UdpSocket` (`src/network/Transport/UdpSocket/`) implements `IDatagramSocket`. It opens a UDP socket on an `Endpoint`, sends datagrams and hands every datagram received to a handler. None of its calls blocks. Code that only sends and receives can take an `IDatagramSocket&`, so a lag and loss simulator or a test double can stand in for the real socket.
+`UdpSocket` (`src/network/Transport/UdpSocket/`) implements `IDatagramSocket`. It opens a UDP socket on an `Endpoint`, sends datagrams and hands every datagram received to a handler. None of its calls blocks. Code that only sends and receives can take an `IDatagramSocket&`, so the [network simulator](#network-simulator-simulatednetworksocket) or a test double stands in for the real socket.
 
 - An `Endpoint` is an IP address written as text, `"127.0.0.1"` or `"::1"`, and a port. Host names are never resolved: `"localhost"` throws `InvalidAddressException`. Port 0 (`ANY_PORT`) lets the system pick a free port, which `localEndpoint()` returns. A port already taken throws `SocketOpenException`.
 - `startReceiving(handler)` is called once; a second call throws `ReceivingAlreadyStartedException`. The handler gets the sender and a `std::span` of the bytes, valid only during the call. It must not throw: an exception leaves `run()` and the socket stops receiving.
@@ -121,6 +121,37 @@ They do not ask Asio, which hands the text to the system: `inet_pton` on Linux a
 
 The server only sends through one: it receives through its own `DatagramSorter`, which splits the datagrams between two queues (see [Server](/R-Type/server/#sorting-the-datagrams-datagramsorter)).
 
+## Network simulator: `SimulatedNetworkSocket`
+
+Either program can make its datagrams cross a simulated network, to show on one machine what a poor connection does. `openDatagramSocket()` (`src/network/Transport/Simulator/`) opens the socket of the server (`ServerApplication::open()`) and of the client (`NetworkThread::open()`). For `PERFECT_NETWORK`, every value at zero, it returns the `UdpSocket` itself, so a program launched without the options below pays nothing. Otherwise it returns a `SimulatedNetworkSocket` over the `UdpSocket` and logs a warning such as `network simulated: ping +300 ms, up to 50 ms more, 10 % lost, 2 % duplicated, 5 % reordered`, so a journal tells whether a measurement was taken on a simulated network.
+
+`NetworkConditions` (`src/network/Transport/Conditions/`) holds what the ping shows. Every datagram the program sends or receives crosses the simulated network once, so a client alone given `--lag 100` sees its ping grow by 100 ms, and a server given options adds its own:
+
+- it waits half the lag, then up to half the jitter more, drawn at random, but never arrives before the datagram handed over before it: the jitter bunches datagrams and never reorders them;
+- a share of the datagrams never arrives, another share arrives twice, and a lost datagram is never copied;
+- a share is held `REORDER_HOLD` (75 ms) longer, so the ones handed over just after it arrive first.
+
+The draws start from fixed seeds (`SENT_DATAGRAMS_SEED`, `RECEIVED_DATAGRAMS_SEED`), so two runs that hand over the same datagrams at the same times lose the same ones. A datagram the real socket would refuse is refused at once, as `IDatagramSocket::send()` promises, and one still in flight when the socket is destroyed never arrives. One direction holds at most `MAXIMUM_DATAGRAMS_IN_FLIGHT` (8192) datagrams, copies included, and loses one handed over when that many wait, as a full router queue does: a flood cannot make one direction hold more than about 10 MB, nor a program, with its two directions, more than about 20 MB. A lag or a jitter below zero or over `MAXIMUM_SIMULATED_DELAY` (10 s), which the options below never give, is refused when the simulated network is built (`SimulatedDelayOutOfRangeException`, from `DatagramsInFlight`): no wait can be drawn from a negative jitter, and a far longer one would overflow the clock the waits are counted on.
+
+Both programs read these options with `SimulatorLaunchOptions` before their own, in the order given, so an option written after `--network` changes one value of its scenario. As with the logging options, a value of another option spelled like one of them, a nickname `--lag` for example, is read as that option.
+
+| Option | Effect |
+|---|---|
+| `--network <name>` | The five values of a scenario of `NETWORK_SCENARIOS`, below. |
+| `--lag <ms>` | What the ping gains, from 0 to `MAXIMUM_SIMULATED_DELAY` (10000). |
+| `--jitter <ms>` | How much the ping may vary, from 0 to 10000. |
+| `--loss <percent>` | The share of the datagrams lost, from 0 to `MAXIMUM_PERCENT` (100). |
+| `--duplicates <percent>` | The share of the datagrams that arrive twice, from 0 to 100. |
+| `--reorder <percent>` | The share of the datagrams held longer, from 0 to 100. |
+
+| Scenario | Ping | Jitter | Lost | Duplicated | Reordered |
+|---|---|---|---|---|---|
+| `4g` | +60 ms | 20 ms | 1 % | 0 % | 0 % |
+| `wifi-busy` | +30 ms | 60 ms | 3 % | 1 % | 2 % |
+| `bad` | +300 ms | 50 ms | 10 % | 2 % | 5 % |
+
+The values of the scenarios were chosen for the demonstrations, not measured on real networks.
+
 ## Serialization: `ByteWriter` and `ByteReader`
 
 `ByteWriter` appends values to a `std::vector<std::byte>` and `ByteReader` reads them back from a buffer. Every value is written field by field, never copied from a struct in memory, so neither padding nor the byte order of the machine reaches the wire.
@@ -161,7 +192,7 @@ const auto decodedName = reader.readString();
 - `decodeHeader(datagram)` reads the header without judging it, so a datagram of another version still gives its version. Fewer than 22 bytes throws `MalformedDatagramException`.
 - `splitMessages(datagram)` returns the `MessageFrame`s that follow the header: the type byte as it arrived, and a view of the payload into the datagram. Either the sizes add up exactly to the end of the datagram, or it throws `MalformedDatagramException` and returns nothing: a datagram without a message, with a size running past its end, or with bytes after its last message is refused whole. Calling it on a temporary buffer does not compile.
 
-Reading the header and splitting the messages are two calls because a receiver checks the version before it trusts the rest. `speaksThisProtocol(header)` is that check: `protocolId` and `version` are those of this code, and `flags` holds no bit outside `KNOWN_FLAGS` (`ACKNOWLEDGES_FLAG` and `GUARANTEED_FLAG`). The server's `ConnectionAcceptor` and `GameInstance` and the client's `ServerConnection` call it before splitting. Of the checks of [Receiving a datagram](/R-Type/protocol/#receiving-a-datagram) that follow, the server's `DatagramSorter` checks the session token of every datagram from the address of an admitted player (see [Server](/R-Type/server/#sorting-the-datagrams-datagramsorter)) and its `DatagramReader` the sequence of every datagram of a player (see [Server](/R-Type/server/#order-and-loss-arrivalledger)); the client's `ServerConnection`, once accepted, checks the session token and drops a datagram whose `sequence` is not newer than the newest one it accepted (`ReceivedSequences`, see [Guaranteed messages](#guaranteed-messages-srcnetworkreliability)).
+Reading the header and splitting the messages are two calls because a receiver checks the version before it trusts the rest. `speaksThisProtocol(header)` is that check: `protocolId` and `version` are those of this code, and `flags` holds no bit outside `KNOWN_FLAGS` (`ACKNOWLEDGES_FLAG` and `GUARANTEED_FLAG`). The server's `ConnectionAcceptor` and `GameInstance` and the client's `SessionInbound` call it before splitting. Of the checks of [Receiving a datagram](/R-Type/protocol/#receiving-a-datagram) that follow, the server's `DatagramSorter` checks the session token of every datagram from the address of an admitted player (see [Server](/R-Type/server/#sorting-the-datagrams-datagramsorter)) and its `DatagramReader` the sequence of every datagram of a player (see [Server](/R-Type/server/#order-and-loss-arrivalledger)); the client's `SessionInbound`, once accepted, checks the session token and drops a datagram whose `sequence` is not newer than the newest one it accepted (`SessionAcknowledgements`, see [Guaranteed messages](#guaranteed-messages-srcnetworkreliability)).
 
 ## Messages: `src/network/Protocol/Messages/`
 
@@ -190,7 +221,7 @@ const std::vector<std::byte> datagram = rtype::network::DatagramCodec::encode(
 - `dispatch(origin, messages)` reads each payload, then calls its handler, in order. A message whose type has no handler, which includes the type bytes no message has, is skipped; a message whose payload is refused is dropped. Both are counted (`skippedMessageCount()`, `malformedMessageCount()`) and logged at the `debug` level with the sender and why, at most once per `REJECTION_LINE_INTERVAL` (10 s), with how many since the previous line (see [Logging](/R-Type/logging/#repeated-events-throttledlog)); the next message is handled.
 - No exception caused by the content of a message leaves `dispatch()`, so one forged message cannot stop the server. An exception thrown by a handler does: it is a fault of the program.
 - A sender it does not know yet must be answered at most once per datagram: ninety 13-byte `ConnectionRequest` fit in one datagram, and an answer to each would send more bytes than were received. A handler cannot tell which messages shared a datagram, so the code that receives must enforce it before dispatching.
-- It is not thread-safe. The client's `ServerConnection` hands it the datagrams of the server it contacts, and each server `GameInstance` the datagrams of its players; the server's `ConnectionAcceptor` does not use it, since it reads the first `ConnectionRequest` of each datagram itself, which keeps it to one answer per datagram.
+- It is not thread-safe. The client's `ServerSession` hands it the datagrams of the server it contacts, and each server `GameInstance` the datagrams of its players; the server's `ConnectionAcceptor` does not use it, since it reads the first `ConnectionRequest` of each datagram itself, which keeps it to one answer per datagram.
 
 ```cpp
 rtype::network::MessageDispatcher dispatcher;
@@ -212,7 +243,7 @@ dispatcher.dispatch(
 
 `rtype_network_reliability` (`src/network/Reliability/`) holds what both sides need to guarantee a message, as [Protocol](/R-Type/protocol/#guaranteed-messages) describes; the server and the client decide when to call it.
 
-- `ReceivedSequences` keeps the datagrams one side accepted from its peer. `accept(sequence)` is true for a sequence newer than the newest accepted, so a duplicate or a late datagram is refused and never acknowledged. `acknowledgeIn(header)` writes `ACKNOWLEDGES`, the newest sequence and the bits of the `ACKNOWLEDGEMENT_BIT_COUNT` (32) datagrams before it; before the first datagram it writes nothing. The server's `ArrivalLedger` and the client's `ServerConnection` each hold one.
+- `ReceivedSequences` keeps the datagrams one side accepted from its peer. `accept(sequence)` is true for a sequence newer than the newest accepted, so a duplicate or a late datagram is refused and never acknowledged. `acknowledgeIn(header)` writes `ACKNOWLEDGES`, the newest sequence and the bits of the `ACKNOWLEDGEMENT_BIT_COUNT` (32) datagrams before it; before the first datagram it writes nothing. The server's `ArrivalLedger` and the client's `SessionAcknowledgements` each hold one.
 - `UnacknowledgedMessages` keeps the guaranteed messages one side sent its peer. `add()` makes a message due at once, `takeDue(sequence)` gives the due messages that fit one datagram, oldest first, and records the sequence that carries them, and `acknowledge(header)` drops every message one of whose datagrams the header acknowledges. `advance(elapsed)` ages them: a message is due again `GUARANTEED_RESEND_DELAY` (100 ms) after its last send and is dropped at `GUARANTEED_MESSAGE_LIFETIME` (1 s). A message too large for a datagram alone throws `DatagramTooLargeException` at `add()`, so `takeDue()` always has room for the first message due.
 - `acknowledges(header, sequence)`, `holdsGuaranteedMessages(header)` and `markGuaranteed(header)` (`GuaranteedDelivery.hpp`) read and write the two flags.
 
@@ -296,6 +327,10 @@ Measured on 27 October 2026 on an Apple M4 Pro under macOS 27.0, with the server
 | Change which ports or addresses a program accepts at launch | `portFromText()` and `ipv4AddressFromText()` in `src/network/Transport/EndpointText.cpp`, `LOWEST_PORT` in `NetworkConstants.hpp` |
 | Change how datagrams are received or sent | `src/network/Transport/UdpSocket/` |
 | Change how datagrams go between the socket and the queues | `src/network/Transport/DatagramRelay/` |
+| Run a program over a simulated network | the options of [Network simulator](#network-simulator-simulatednetworksocket) |
+| Add an option of the network simulator | `SimulatorLaunchOptions::read()` and `usage()` in `src/network/Transport/Conditions/SimulatorLaunchOptions.cpp`, its name in `NetworkConditionsConstants.hpp`; the client and the server both read it before their own options |
+| Change a scenario of the simulator, or add one | `NETWORK_SCENARIOS` and its entries in `src/network/Transport/Conditions/NetworkConditionsConstants.hpp` |
+| Change what the simulator does to a datagram | `DatagramsInFlight` in `src/network/Transport/Simulator/` |
 | Write a class that needs Asio | A folder in `src/network` whose target links `rtype_network_asio` privately |
 | Change how an integer, a float or a string is encoded | `src/network/Serialization/ByteWriter/` and `ByteReader/`, then the [Protocol](/R-Type/protocol/#encoding) page |
 | Change the string length limit or the sizes | `src/network/Serialization/SerializationConstants.hpp` |
@@ -306,11 +341,11 @@ Measured on 27 October 2026 on an Apple M4 Pro under macOS 27.0, with the server
 | Change how often a rejected datagram or message is logged | `REJECTION_LINE_INTERVAL` in `src/network/NetworkConstants.hpp`, read by the network and the server (see [Logging](/R-Type/logging/#repeated-events-throttledlog)) |
 | Handle a received message | `registerHandler<Message>()` on a `MessageDispatcher` |
 | Change how a connection cookie is computed, or how long it lives | `CookieIssuer` in `src/network/Handshake/CookieIssuer/`, `COOKIE_WINDOW_DURATION` in `src/network/Handshake/HandshakeConstants.hpp` |
-| Change how a player is let in, challenged or refused | `ConnectionAcceptor` in `src/server/Lobby/ConnectionAcceptor/` and `ServerConnection` in `src/client/Connection/ServerConnection/`, then the [Protocol](/R-Type/protocol/#connection) page |
-| Change what a session checks on a received datagram | `DatagramSorter` (`src/server/Application/DatagramSorter/`) for the token, `DatagramReader` and `ArrivalLedger` (`src/server/Sessions/`) for the sequence; `ServerConnection` on the client |
+| Change how a player is let in, challenged or refused | `ConnectionAcceptor` in `src/server/Lobby/ConnectionAcceptor/` and `ServerSession` in `src/client/Connection/ServerSession/`, then the [Protocol](/R-Type/protocol/#connection) page |
+| Change what a session checks on a received datagram | `DatagramSorter` (`src/server/Application/DatagramSorter/`) for the token, `DatagramReader` and `ArrivalLedger` (`src/server/Sessions/`) for the sequence; `SessionInbound` on the client |
 | Change how soon a guaranteed message is sent again, or how long it is kept | `GUARANTEED_RESEND_DELAY` and `GUARANTEED_MESSAGE_LIFETIME` in `src/network/Protocol/ProtocolConstants.hpp`, `UnacknowledgedMessages` in `src/network/Reliability/`, then the [Protocol](/R-Type/protocol/#guaranteed-messages) page |
 | Make another message guaranteed | its `EventMessage` in `GameEventEncoder` (`src/server/Replication/GameEventEncoder/`), after checking that its receiver reads it twice the same way ([Protocol](/R-Type/protocol/#guaranteed-messages)) |
-| Change how long the client waits before a `Heartbeat` that acknowledges | `ACKNOWLEDGEMENT_DELAY` in `src/network/Protocol/ProtocolConstants.hpp`, read by `ServerConnection` |
+| Change how long the client waits before a `Heartbeat` that acknowledges | `ACKNOWLEDGEMENT_DELAY` in `src/network/Protocol/ProtocolConstants.hpp`, read by `SessionAcknowledgements` |
 | Change the heartbeats or the session timeout | `HEARTBEAT_INTERVAL`, `SESSION_TIMEOUT` and `RECONNECTION_GRACE` in `src/network/Protocol/ProtocolConstants.hpp`, and their tick counts in `src/server/Sessions/SessionConstants.hpp` |
 | Send the clients something new about an entity | the sender in `src/server/Replication/`, `EntityReplicator` in `src/client/Replication/`, and the message in `src/network/Protocol/` |
 | Add a network error | `src/network/Exceptions/NetworkException.hpp` |

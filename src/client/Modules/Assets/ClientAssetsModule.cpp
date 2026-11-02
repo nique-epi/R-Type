@@ -3,11 +3,11 @@
 #include <string>
 #include <vector>
 #include "AssetFolder.hpp"
-#include "AssetIds.hpp"
 #include "AssetLibrary.hpp"
 #include "ClientConstants.hpp"
 #include "InstallContext.hpp"
 #include "ModuleConstants.hpp"
+#include "PathText.hpp"
 #include "ScreenAssets.hpp"
 
 namespace rtype::client {
@@ -24,12 +24,12 @@ std::vector<std::string> ClientAssetsModule::dependencies() const {
 }
 
 void ClientAssetsModule::install(engine::InstallContext& context) {
-  library_ = std::make_unique<AssetLibrary>(locateAssetFolder());
+  library_ = std::make_unique<AssetLibrary>(engine::locateAssetFolder());
   context.provide(*library_);
 }
 
 void ClientAssetsModule::start() {
-  logger_.info("assets folder: ", genericText(library_->folder()));
+  logger_.info("assets folder: ", engine::genericText(library_->folder()));
   loadInterfaceAssets(*library_);
   loadIntroAssets(*library_);
 }

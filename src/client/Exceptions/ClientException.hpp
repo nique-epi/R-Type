@@ -22,19 +22,6 @@ class ClientException : public std::runtime_error {
   explicit ClientException(const std::string& message);
 };
 
-/** @brief The system did not tell where the running executable is. */
-class UnknownExecutablePathException : public ClientException {
- public:
-  UnknownExecutablePathException();
-};
-
-/** @brief None of the searched folders is an assets folder. */
-class AssetFolderNotFoundException : public ClientException {
- public:
-  explicit AssetFolderNotFoundException(
-      const std::vector<std::string>& searchedFolders);
-};
-
 /** @brief A loading step ended with assets it could not load. */
 class AssetLoadingException : public ClientException {
  public:

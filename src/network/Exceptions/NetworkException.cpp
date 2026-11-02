@@ -1,4 +1,5 @@
 #include "NetworkException.hpp"
+#include <chrono>
 #include <cstddef>
 #include <cstdint>
 #include <stdexcept>
@@ -104,5 +105,23 @@ DuplicateMessageHandlerException::DuplicateMessageHandlerException(
     std::uint8_t messageType)
     : NetworkException("Message type " + std::to_string(messageType) +
                        " already has a handler") {}
+
+InvalidSimulatorOptionException::InvalidSimulatorOptionException(
+    const std::string& option, const std::string& value)
+    : NetworkException("Invalid value \"" + value + "\" after the option " +
+                       option) {}
+
+MissingSimulatorOptionValueException::MissingSimulatorOptionValueException(
+    const std::string& option)
+    : NetworkException("Missing value after the option " + option) {}
+
+SimulatedDelayOutOfRangeException::SimulatedDelayOutOfRangeException(
+    std::chrono::milliseconds lag, std::chrono::milliseconds jitter,
+    std::chrono::milliseconds longest)
+    : NetworkException(
+          "A simulated network needs a lag and a jitter from 0 to " +
+          std::to_string(longest.count()) + " ms, not " +
+          std::to_string(lag.count()) + " ms and " +
+          std::to_string(jitter.count()) + " ms") {}
 
 }  // namespace rtype::network

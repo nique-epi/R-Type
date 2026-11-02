@@ -2,6 +2,7 @@
 #include <iostream>
 #include <string>
 #include "Application.hpp"
+#include "ExecutablePath.hpp"
 #include "LaunchArguments.hpp"
 #include "LaunchOptions.hpp"
 #include "LogLaunchOptions.hpp"
@@ -63,7 +64,9 @@ int main(int argumentCount, char** arguments) {
   try {
     const rtype::logging::LogLaunchOptions logOptions =
         rtype::logging::LogLaunchOptions::readFromProcess(
-            argumentCount, arguments, rtype::logging::SERVER_LOG_FILE_NAME);
+            argumentCount, arguments,
+            rtype::engine::executableFolder() /
+                rtype::logging::SERVER_LOG_FILE_NAME);
     const rtype::server::LaunchOptions launchOptions =
         rtype::server::LaunchOptions::read(logOptions.otherArguments());
     if (launchOptions.helpRequested()) {
