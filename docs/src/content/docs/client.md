@@ -620,7 +620,7 @@ While AUTO-FIRE is on (`PlayerSettings::autoFire`), `playerActions()` holds shoo
 
 ## Configuration: `client.cfg`
 
-The client reads `client.cfg`, in the folder it is started from, between the install and the start of its modules (see [Engine](/R-Type/engine/#commands-and-configuration-commandinterpreter)), with the same commands as the server. It is not `settings.ini`, which keeps the settings the player changes in the options; `client.cfg` is written by hand.
+The client reads `client.cfg`, in the folder it is started from, between the install and the start of its modules (see [Engine](/R-Type/engine/#commands-and-configuration-commandinterpreter)), with the same commands as the server (listed in [Configuration commands](/R-Type/commands/)). It is not `settings.ini`, which keeps the settings the player changes in the options; `client.cfg` is written by hand.
 
 | Command | Effect |
 |---|---|
