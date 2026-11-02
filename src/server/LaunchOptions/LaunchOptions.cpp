@@ -75,6 +75,57 @@ std::size_t inputDelayFromText(std::string_view text) {
   return delay;
 }
 
+/** @returns `-p <port>`, which writes a checked port into @p port. */
+engine::LaunchOption portOption(std::uint16_t& port) {
+  return engine::LaunchOption{.name = engine::PORT_OPTION,
+                              .takesValue = true,
+                              .record = [&port](std::string_view text) {
+                                port = network::portFromText(text);
+                              }};
+}
+
+/** @returns `--seed <seed>`, which writes a checked seed into @p seed. */
+engine::LaunchOption seedOption(std::optional<std::uint32_t>& seed) {
+  return engine::LaunchOption{
+      .name = SEED_OPTION,
+      .takesValue = true,
+      .record = [&seed](std::string_view text) { seed = seedFromText(text); }};
+}
+
+/**
+ * @returns `--state-rate <states>`, which writes a checked rate into
+ * @p stateRate.
+ */
+engine::LaunchOption stateRateOption(std::size_t& stateRate) {
+  return engine::LaunchOption{.name = STATE_RATE_OPTION,
+                              .takesValue = true,
+                              .record = [&stateRate](std::string_view text) {
+                                stateRate = stateRateFromText(text);
+                              }};
+}
+
+/**
+ * @returns `--input-delay <ticks>`, which writes a checked delay into
+ * @p inputDelay.
+ */
+engine::LaunchOption inputDelayOption(std::size_t& inputDelay) {
+  return engine::LaunchOption{.name = INPUT_DELAY_OPTION,
+                              .takesValue = true,
+                              .record = [&inputDelay](std::string_view text) {
+                                inputDelay = inputDelayFromText(text);
+                              }};
+}
+
+/** @returns `--help`, which sets @p helpRequested. */
+engine::LaunchOption helpOption(bool& helpRequested) {
+  return engine::LaunchOption{
+      .name = engine::HELP_OPTION,
+      .takesValue = false,
+      .record = [&helpRequested]([[maybe_unused]] std::string_view value) {
+        helpRequested = true;
+      }};
+}
+
 }  // namespace
 
 LaunchOptions LaunchOptions::read(std::span<const std::string_view> arguments) {
@@ -82,40 +133,11 @@ LaunchOptions LaunchOptions::read(std::span<const std::string_view> arguments) {
       network::SimulatorLaunchOptions::read(arguments);
   LaunchOptions options{network::DEFAULT_SERVER_PORT, false};
   options.networkConditions_ = simulatorOptions.conditions();
-  const std::array launchOptions{
-      engine::LaunchOption{.name = engine::PORT_OPTION,
-                           .takesValue = true,
-                           .record =
-                               [&options](std::string_view port) {
-                                 options.port_ = network::portFromText(port);
-                               }},
-      engine::LaunchOption{.name = SEED_OPTION,
-                           .takesValue = true,
-                           .record =
-                               [&options](std::string_view seed) {
-                                 options.seed_ = seedFromText(seed);
-                               }},
-      engine::LaunchOption{.name = STATE_RATE_OPTION,
-                           .takesValue = true,
-                           .record =
-                               [&options](std::string_view rate) {
-                                 options.stateRate_ = stateRateFromText(rate);
-                               }},
-      engine::LaunchOption{.name = INPUT_DELAY_OPTION,
-                           .takesValue = true,
-                           .record =
-                               [&options](std::string_view delay) {
-                                 options.inputDelay_ =
-                                     inputDelayFromText(delay);
-                               }},
-      engine::LaunchOption{
-          .name = engine::HELP_OPTION,
-          .takesValue = false,
-          .record =
-              [&options]([[maybe_unused]] std::string_view value) {
-                options.helpRequested_ = true;
-              }},
-  };
+  const std::array launchOptions{portOption(options.port_),
+                                 seedOption(options.seed_),
+                                 stateRateOption(options.stateRate_),
+                                 inputDelayOption(options.inputDelay_),
+                                 helpOption(options.helpRequested_)};
   engine::readLaunchArguments(simulatorOptions.otherArguments(), launchOptions);
   return options;
 }
