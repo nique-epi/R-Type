@@ -7,11 +7,13 @@
 #include <string>
 #include <system_error>
 #include <utility>
+#include <vector>
 #include "CommandDefinition.hpp"
 #include "CommandInterpreter.hpp"
 #include "CommandsConstants.hpp"
 #include "EngineException.hpp"
 #include "IntegerSettingDefinition.hpp"
+#include "NameList.hpp"
 #include "SettingValue.hpp"
 #include "TextSettingDefinition.hpp"
 
@@ -20,7 +22,6 @@ namespace rtype::engine {
 namespace {
 
 constexpr std::size_t SET_ARGUMENT_COUNT = 2;
-constexpr char NAME_SEPARATOR = ',';
 
 /**
  * @returns The whole number @p text is made of, digits only.
@@ -122,15 +123,12 @@ void ConfigurationRegistry::setText(const TextSettingDefinition& definition,
 }
 
 std::string ConfigurationRegistry::knownNames() const {
-  std::string names;
+  std::vector<std::string> names;
+  names.reserve(values_.size());
   for (const auto& entry : values_) {
-    if (!names.empty()) {
-      names += NAME_SEPARATOR;
-      names += ' ';
-    }
-    names += entry.first;
+    names.push_back(entry.first);
   }
-  return names;
+  return joinedNames(names);
 }
 
 }  // namespace rtype::engine

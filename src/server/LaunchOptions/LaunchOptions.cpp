@@ -64,21 +64,6 @@ std::size_t stateRateFromText(std::string_view text) {
   return rate;
 }
 
-/**
- * @returns The line that gives the setting @p assignment names its value.
- * @throws engine::InvalidLaunchOptionValueException naming @p option when
- * @p assignment is not `name=value`.
- */
-std::string settingLineFrom(std::string_view option,
-                            std::string_view assignment) {
-  try {
-    return engine::settingLineFromAssignment(assignment);
-  } catch (const engine::CommandRefusedException&) {
-    throw engine::InvalidLaunchOptionValueException(std::string(option),
-                                                    std::string(assignment));
-  }
-}
-
 }  // namespace
 
 LaunchOptions LaunchOptions::read(std::span<const std::string_view> arguments) {
@@ -110,13 +95,14 @@ LaunchOptions LaunchOptions::read(std::span<const std::string_view> arguments) {
                     STATE_RATE_SETTING_NAME,
                     std::to_string(stateRateFromText(rate))));
               }},
-      engine::LaunchOption{.name = engine::SET_OPTION,
-                           .takesValue = true,
-                           .record =
-                               [&options](std::string_view assignment) {
-                                 options.forcedLines_.push_back(settingLineFrom(
-                                     engine::SET_OPTION, assignment));
-                               }},
+      engine::LaunchOption{
+          .name = engine::SET_OPTION,
+          .takesValue = true,
+          .record =
+              [&options](std::string_view assignment) {
+                options.forcedLines_.push_back(
+                    engine::settingLineFromSetOption(assignment));
+              }},
       engine::LaunchOption{
           .name = engine::HELP_OPTION,
           .takesValue = false,

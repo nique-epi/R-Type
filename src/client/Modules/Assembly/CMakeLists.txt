@@ -1,4 +1,4 @@
-add_library(rtype_client_modules STATIC ClientConfiguration.cpp ClientModules.cpp)
+add_library(rtype_client_modules STATIC ClientModules.cpp)
 
 target_include_directories(rtype_client_modules PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
@@ -11,7 +11,6 @@ target_link_libraries(rtype_client_modules
     rtype_engine_modules
     rtype_logging
   PRIVATE
-    rtype_client_constants
     rtype_client_assets_module
     rtype_client_audio_module
     rtype_client_connection_module

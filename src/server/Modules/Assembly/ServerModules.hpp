@@ -14,7 +14,7 @@ namespace rtype::server {
  * and the lobby. This is the one place that lists them.
  *
  * The port, the seed and the state rate are settings the modules declare; the
- * configuration (see serverConfiguration()) gives them their values.
+ * configuration (see engine::configurationStep()) gives them their values.
  *
  * @param logOptions Applied by the logger module when it starts.
  * @param stopRequest Told by the network module when the server fails; it must

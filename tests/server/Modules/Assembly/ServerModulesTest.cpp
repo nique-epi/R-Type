@@ -1,17 +1,18 @@
 #include <gtest/gtest.h>
 #include <chrono>
 #include <cstdint>
+#include <filesystem>
 #include <memory>
 #include <string>
 #include <vector>
 #include "Application.hpp"
+#include "ConfigurationReader.hpp"
 #include "ConfigurationReport.hpp"
 #include "DatagramCodec.hpp"
 #include "IModule.hpp"
 #include "LoopStages.hpp"
 #include "MessageType.hpp"
 #include "ModuleConstants.hpp"
-#include "ServerConfiguration.hpp"
 #include "ServerConstants.hpp"
 #include "ServerModuleTestConstants.hpp"
 #include "ServerModules.hpp"
@@ -21,7 +22,6 @@
 using rtype::engine::Application;
 using rtype::engine::LoopStages;
 using rtype::network::MessageType;
-using rtype::server::serverConfiguration;
 using rtype::server::serverModules;
 
 /**
@@ -54,9 +54,12 @@ TEST_F(ServerModulesFixture, ListsTheLoggerTheNetworkTheGamesAndTheLobby) {
  */
 TEST_F(ServerModulesFixture, SaysGoodbyeToAJoinedPlayerWhenItStops) {
   rtype::engine::ConfigurationReport report;
-  Application application(LoopStages(rtype::server::SERVER_LOOP_STAGES),
-                          serverModules(journalOptions(), stopRequest()),
-                          serverConfiguration(launchOptions(), report));
+  Application application(
+      LoopStages(rtype::server::SERVER_LOOP_STAGES),
+      serverModules(journalOptions(), stopRequest()),
+      rtype::engine::configurationStep(
+          std::filesystem::path{rtype::server::SERVER_CONFIGURATION_FILE_NAME},
+          launchOptions().forcedLines(), report));
   application.start();
   const std::uint64_t token = joinWithTheClient();
 

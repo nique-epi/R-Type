@@ -10,13 +10,13 @@
 #include "CommandsConstants.hpp"
 #include "EngineException.hpp"
 #include "IModule.hpp"
+#include "NameList.hpp"
 
 namespace rtype::engine {
 
 namespace {
 
 constexpr std::size_t SWITCH_ARGUMENT_COUNT = 2;
-constexpr char NAME_SEPARATOR = ',';
 
 bool dependsOn(const IModule& module, const std::string& name) {
   const std::vector<std::string> dependencies = module.dependencies();
@@ -93,15 +93,12 @@ const IModule& ModuleSwitches::listed(const std::string& name) const {
 }
 
 std::string ModuleSwitches::listedNames() const {
-  std::string names;
+  std::vector<std::string> names;
+  names.reserve(modules_.size());
   for (const std::unique_ptr<IModule>& listedModule : modules_) {
-    if (!names.empty()) {
-      names += NAME_SEPARATOR;
-      names += ' ';
-    }
-    names += listedModule->name();
+    names.push_back(listedModule->name());
   }
-  return names;
+  return joinedNames(names);
 }
 
 }  // namespace rtype::engine

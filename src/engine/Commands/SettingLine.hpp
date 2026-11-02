@@ -24,4 +24,11 @@ namespace rtype::engine {
 [[nodiscard]] std::string settingLineFromAssignment(
     std::string_view assignment);
 
+/**
+ * @brief Builds the line of the assignment a `--set` launch option carries.
+ * @throws InvalidLaunchOptionValueException naming the set option if
+ * @p assignment is not `name=value`.
+ */
+[[nodiscard]] std::string settingLineFromSetOption(std::string_view assignment);
+
 }  // namespace rtype::engine

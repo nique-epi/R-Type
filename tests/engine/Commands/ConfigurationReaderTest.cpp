@@ -1,9 +1,12 @@
 #include <gtest/gtest.h>
 #include <string>
 #include <vector>
+#include "ConfigurationReader.hpp"
 #include "ConfigurationReaderFixture.hpp"
 #include "ConfigurationReaderTestConstants.hpp"
 #include "ConfigurationRegistryTestConstants.hpp"
+#include "ConfigurationReport.hpp"
+#include "ConfigurationStep.hpp"
 
 /**
  * Given a file of commands that exists
@@ -100,4 +103,22 @@ TEST_F(ConfigurationReaderFixture, WindowsLineEndsAreAccepted) {
   const auto report = read(file(), {});
   EXPECT_TRUE(report.refusals.empty());
   EXPECT_EQ(port_->integer(), FILE_PORT);
+}
+
+/**
+ * Given the step of a program built on a file and a forced line
+ * When it runs
+ * Then it fills the report it was given and the settings hold the values
+ */
+TEST_F(ConfigurationReaderFixture, StepReadsTheFileAndFillsItsReport) {
+  writeFile(FILE_SETTING_PORT);
+  rtype::engine::ConfigurationReport report;
+  const rtype::engine::ConfigurationStep step =
+      rtype::engine::configurationStep(file(), {std::string(FORCED_PORT_LINE)},
+                                       report);
+
+  step(interpreter_);
+
+  EXPECT_TRUE(report.fileFound);
+  EXPECT_EQ(port_->integer(), FORCED_PORT);
 }

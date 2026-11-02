@@ -6,10 +6,12 @@
 #include <string>
 #include <string_view>
 #include <utility>
+#include <vector>
 #include "CommandInterpreter.hpp"
 #include "CommandLine.hpp"
 #include "CommandResult.hpp"
 #include "ConfigurationReport.hpp"
+#include "ConfigurationStep.hpp"
 
 namespace rtype::engine {
 
@@ -69,6 +71,15 @@ ConfigurationReport readConfiguration(const std::filesystem::path& file,
     runner.run(line, std::string(FORCED_LINE_ORIGIN));
   }
   return runner.finish();
+}
+
+ConfigurationStep configurationStep(std::filesystem::path file,
+                                    std::vector<std::string> forcedLines,
+                                    ConfigurationReport& report) {
+  return [file = std::move(file), forcedLines = std::move(forcedLines),
+          &report](CommandInterpreter& interpreter) {
+    report = readConfiguration(file, forcedLines, interpreter);
+  };
 }
 
 }  // namespace rtype::engine

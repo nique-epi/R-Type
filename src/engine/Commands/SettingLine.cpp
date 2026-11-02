@@ -6,6 +6,7 @@
 #include <string_view>
 #include "CommandsConstants.hpp"
 #include "EngineException.hpp"
+#include "LaunchArgumentsConstants.hpp"
 
 namespace rtype::engine {
 
@@ -48,6 +49,15 @@ std::string settingLineFromAssignment(std::string_view assignment) {
     throw CommandRefusedException("expected: <setting>=<value>");
   }
   return settingLine(assignment.substr(0, mark), assignment.substr(mark + 1));
+}
+
+std::string settingLineFromSetOption(std::string_view assignment) {
+  try {
+    return settingLineFromAssignment(assignment);
+  } catch (const CommandRefusedException&) {
+    throw InvalidLaunchOptionValueException(std::string(SET_OPTION),
+                                            std::string(assignment));
+  }
 }
 
 }  // namespace rtype::engine

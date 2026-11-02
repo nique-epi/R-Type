@@ -115,7 +115,7 @@ The player queue stays as the last safety net. It discards its oldest datagram, 
 
 ## Configuration: `server.cfg`
 
-The server reads `server.cfg`, in the folder it is started from, between the install and the start of its modules (see [Engine](/R-Type/engine/#commands-and-configuration-commandinterpreter)). The file is a list of commands, one per line; `#` starts a comment. `serverConfiguration()` (`src/server/Modules/Assembly/`) builds the step that reads it, then runs the lines the launch options force.
+The server reads `server.cfg`, in the folder it is started from, between the install and the start of its modules (see [Engine](/R-Type/engine/#commands-and-configuration-commandinterpreter)). The file is a list of commands, one per line; `#` starts a comment. `main()` builds the step with `engine::configurationStep()`: it reads `server.cfg`, then runs the lines the launch options force (`LaunchOptions::forcedLines()`).
 
 | Command | Effect |
 |---|---|

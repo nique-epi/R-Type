@@ -1,8 +1,10 @@
 #include <exception>
+#include <filesystem>
 #include <iostream>
 #include <string>
 #include "Application.hpp"
 #include "ConfigurationLog.hpp"
+#include "ConfigurationReader.hpp"
 #include "ConfigurationReport.hpp"
 #include "LaunchArguments.hpp"
 #include "LaunchOptions.hpp"
@@ -10,7 +12,6 @@
 #include "Logger.hpp"
 #include "LoggingConstants.hpp"
 #include "LoopStages.hpp"
-#include "ServerConfiguration.hpp"
 #include "ServerConstants.hpp"
 #include "ServerModules.hpp"
 #include "StopReason.hpp"
@@ -46,7 +47,10 @@ int runServer(const rtype::logging::LogLaunchOptions& logOptions,
     rtype::engine::Application application{
         rtype::engine::LoopStages{rtype::server::SERVER_LOOP_STAGES},
         rtype::server::serverModules(logOptions, stopRequest),
-        rtype::server::serverConfiguration(launchOptions, configurationReport)};
+        rtype::engine::configurationStep(
+            std::filesystem::path{
+                rtype::server::SERVER_CONFIGURATION_FILE_NAME},
+            launchOptions.forcedLines(), configurationReport)};
     application.start();
     rtype::engine::logConfigurationReport(
         configurationReport, rtype::server::SERVER_CONFIGURATION_FILE_NAME,

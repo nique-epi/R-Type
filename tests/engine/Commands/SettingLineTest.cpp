@@ -7,8 +7,10 @@
 #include "SettingLineTestConstants.hpp"
 
 using rtype::engine::CommandRefusedException;
+using rtype::engine::InvalidLaunchOptionValueException;
 using rtype::engine::settingLine;
 using rtype::engine::settingLineFromAssignment;
+using rtype::engine::settingLineFromSetOption;
 using rtype::engine::splitCommandLine;
 
 /**
@@ -143,4 +145,24 @@ TEST(SettingLine, AssignmentWithoutANameIsRefused) {
   EXPECT_THROW(
       static_cast<void>(settingLineFromAssignment(ASSIGNMENT_WITHOUT_NAME)),
       CommandRefusedException);
+}
+
+/**
+ * Given the assignment a set launch option carries
+ * When the line is built
+ * Then it is the line of that name and value
+ */
+TEST(SettingLine, SetOptionAssignmentGivesTheLineOfItsNameAndValue) {
+  EXPECT_EQ(settingLineFromSetOption(ASSIGNMENT), LINE_FOR_PLAIN_VALUE);
+}
+
+/**
+ * Given an assignment a set launch option cannot carry
+ * When the line is built
+ * Then it is refused as an invalid value of the launch option
+ */
+TEST(SettingLine, SetOptionAssignmentWithoutAMarkIsAnInvalidOptionValue) {
+  EXPECT_THROW(
+      static_cast<void>(settingLineFromSetOption(ASSIGNMENT_WITHOUT_MARK)),
+      InvalidLaunchOptionValueException);
 }

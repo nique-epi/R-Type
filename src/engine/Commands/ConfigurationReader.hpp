@@ -3,8 +3,10 @@
 #include <filesystem>
 #include <span>
 #include <string>
+#include <vector>
 #include "CommandInterpreter.hpp"
 #include "ConfigurationReport.hpp"
+#include "ConfigurationStep.hpp"
 
 namespace rtype::engine {
 
@@ -24,5 +26,19 @@ namespace rtype::engine {
 [[nodiscard]] ConfigurationReport readConfiguration(
     const std::filesystem::path& file, std::span<const std::string> forcedLines,
     const CommandInterpreter& interpreter);
+
+/**
+ * @brief The configuration step of a program: it reads @p file, then runs
+ * @p forcedLines, as readConfiguration() does, and keeps what happened in
+ * @p report.
+ *
+ * @param file The file of commands, one per line.
+ * @param forcedLines Lines run after the file, built from the launch options.
+ * @param report Filled when the step runs, for the program to log once the
+ * journal is open; it must outlive the application.
+ */
+[[nodiscard]] ConfigurationStep configurationStep(
+    std::filesystem::path file, std::vector<std::string> forcedLines,
+    ConfigurationReport& report);
 
 }  // namespace rtype::engine

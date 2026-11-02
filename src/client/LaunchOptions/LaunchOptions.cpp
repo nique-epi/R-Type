@@ -23,24 +23,6 @@
 
 namespace rtype::client {
 
-namespace {
-
-/**
- * @returns The line that gives the setting @p assignment names its value.
- * @throws engine::InvalidLaunchOptionValueException naming the set option when
- * @p assignment is not `name=value`.
- */
-std::string settingLineFrom(std::string_view assignment) {
-  try {
-    return engine::settingLineFromAssignment(assignment);
-  } catch (const engine::CommandRefusedException&) {
-    throw engine::InvalidLaunchOptionValueException(
-        std::string(engine::SET_OPTION), std::string(assignment));
-  }
-}
-
-}  // namespace
-
 LaunchOptions LaunchOptions::read(std::span<const std::string_view> arguments) {
   LaunchOptions options{
       network::Endpoint{.address = std::string(DEFAULT_SERVER_ADDRESS),
@@ -80,13 +62,14 @@ LaunchOptions LaunchOptions::read(std::span<const std::string_view> arguments) {
                 options.forcedLines_.push_back(
                     engine::settingLine(NICKNAME_SETTING_NAME, nickname));
               }},
-      engine::LaunchOption{.name = engine::SET_OPTION,
-                           .takesValue = true,
-                           .record =
-                               [&options](std::string_view assignment) {
-                                 options.forcedLines_.push_back(
-                                     settingLineFrom(assignment));
-                               }},
+      engine::LaunchOption{
+          .name = engine::SET_OPTION,
+          .takesValue = true,
+          .record =
+              [&options](std::string_view assignment) {
+                options.forcedLines_.push_back(
+                    engine::settingLineFromSetOption(assignment));
+              }},
       engine::LaunchOption{
           .name = NO_SOUND_OPTION,
           .takesValue = false,
