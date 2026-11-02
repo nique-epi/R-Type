@@ -85,6 +85,10 @@ std::optional<ItemRow> pinnedRowOf(const LeaderboardPage& page) {
   return rowOf(*page.ownRow, true);
 }
 
+std::string pinnedNoteOf(const LeaderboardPage& page) {
+  return page.rows.empty() || page.ownRow.has_value() ? "" : NO_OWN_SCORE_TEXT;
+}
+
 std::optional<LeaderboardMessage> messageOf(const LeaderboardPage& page) {
   switch (page.phase) {
     case LeaderboardPhase::Answered:

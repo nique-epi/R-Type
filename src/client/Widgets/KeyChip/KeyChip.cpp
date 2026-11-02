@@ -55,14 +55,16 @@ void KeyChip::paint(IInterfaceCanvas& canvas) const {
 
 bool KeyChip::pointerEvent(const sf::Event& event,
                            const PlayfieldMapping& playfieldPointAt) {
+  const auto isOver = [&](sf::Vector2i position) {
+    return button_.contains(interfacePixelAt(playfieldPointAt(position)));
+  };
   if (const auto* moved = event.getIf<sf::Event::MouseMoved>()) {
-    hovered_ =
-        button_.contains(interfacePixelAt(playfieldPointAt(moved->position)));
+    hovered_ = isOver(moved->position);
     return false;
   }
   if (const auto* pressed = event.getIf<sf::Event::MouseButtonPressed>();
       pressed != nullptr && pressed->button == sf::Mouse::Button::Left &&
-      button_.contains(interfacePixelAt(playfieldPointAt(pressed->position)))) {
+      isOver(pressed->position)) {
     pointerHeld_ = button_.isEnabled();
     return true;
   }
@@ -72,8 +74,7 @@ bool KeyChip::pointerEvent(const sf::Event& event,
     return false;
   }
   pointerHeld_ = false;
-  if (button_.contains(
-          interfacePixelAt(playfieldPointAt(released->position)))) {
+  if (isOver(released->position)) {
     activate();
   }
   return true;

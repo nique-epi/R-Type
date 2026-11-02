@@ -23,7 +23,6 @@
 #include "InterfaceConstants.hpp"
 #include "InterfacePixel.hpp"
 #include "ItemList.hpp"
-#include "ItemListConstants.hpp"
 #include "KeyChipParts.hpp"
 #include "KeyNames.hpp"
 #include "LeaderboardFigure.hpp"
@@ -186,17 +185,6 @@ void paintMessage(IInterfaceCanvas& canvas, LeaderboardMessage message) {
                 .alignment = TextAlignment::Center});
 }
 
-/** @brief Under the rows of a player without a score: a dashed line, and the
- * note that says so. */
-void paintNoOwnScore(IInterfaceCanvas& canvas, const ItemList& list) {
-  list.paintSeparator(canvas);
-  canvas.write(NO_OWN_SCORE_TEXT,
-               {MESSAGE_LINE_ANCHOR.x, list.rowsEnd() + ITEM_PINNED_ROW_DROP},
-               {.font = TextFont::Small,
-                .color = MESSAGE_DETAIL_COLOR,
-                .alignment = TextAlignment::Center});
-}
-
 }  // namespace
 
 LeaderboardScreen::LeaderboardScreen(LeaderboardScreenParts parts,
@@ -234,7 +222,7 @@ LeaderboardScreen::~LeaderboardScreen() {
 }
 
 void LeaderboardScreen::handleEvent(const sf::Event& event) {
-  repaintDue_ = true;
+  untilRepaint_ = engine::Duration{};
   if (filterDialog_.isOpen()) {
     filterDialog_.handleEvent(event, playfieldPointAt_);
     return;
@@ -253,14 +241,14 @@ void LeaderboardScreen::handleEvent(const sf::Event& event) {
 
 void LeaderboardScreen::update(engine::Duration elapsed) {
   elapsed_ += elapsed;
-  sinceRepaint_ += elapsed;
+  untilRepaint_ -= elapsed;
   filterDialog_.advance(elapsed);
   const LeaderboardPage& page = shownPage();
   if (shownRevision_ != page.revision) {
     showPage(page);
-    repaintDue_ = true;
+    untilRepaint_ = engine::Duration{};
   }
-  if (repaintDue_ || sinceRepaint_ >= LEADERBOARD_REPAINT_TIME) {
+  if (untilRepaint_ <= engine::Duration{}) {
     repaint();
   }
 }
@@ -302,6 +290,7 @@ void LeaderboardScreen::showPage(const LeaderboardPage& page) {
   shownRevision_ = page.revision;
   list_.setRows(itemRowsOf(page));
   list_.setPinnedRow(pinnedRowOf(page));
+  list_.setPinnedNote(pinnedNoteOf(page));
   filterChip_.setEnabled(canBeFiltered(page));
   joinChip_.setEnabled(page.phase == LeaderboardPhase::NotOnServer);
 }
@@ -320,10 +309,6 @@ void LeaderboardScreen::repaint() {
     paintMessage(*canvas_, *message);
   }
   list_.paint(*canvas_);
-  if (page.phase == LeaderboardPhase::Answered && !page.rows.empty() &&
-      !page.ownRow.has_value()) {
-    paintNoOwnScore(*canvas_, list_);
-  }
   if (page.phase == LeaderboardPhase::NotOnServer) {
     joinChip_.paint(*canvas_);
   }
@@ -335,8 +320,7 @@ void LeaderboardScreen::repaint() {
   }
   filterDialog_.paint(*canvas_);
   canvas_->display();
-  sinceRepaint_ = engine::Duration{};
-  repaintDue_ = false;
+  untilRepaint_ = LEADERBOARD_REPAINT_TIME;
 }
 
 }  // namespace rtype::client

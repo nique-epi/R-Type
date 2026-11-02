@@ -37,10 +37,18 @@ constexpr sf::IntRect FIRST_ROW_HIGHLIGHT({96, 48}, {208, 12});
 constexpr int PIN_LINE_ROW = 61;
 constexpr sf::Vector2i PINNED_ROW_SECOND_CELL(130, 65);
 
+/** @brief The line runs over 208 pixels: a dot every 2 makes 104, and its two
+ * ends make 2 more, one fill each, since its top side is its bottom side. */
+constexpr std::size_t PIN_LINE_FILL_COUNT = 106;
+
 /** @brief The tag of ACE, 24 wide in the regular font, 3 after it and 1 above
- * the row; its word, 18 wide in the small font of the recording canvas, 3 in.
- */
+ * the row; its word, 18 wide in the small font of the recording canvas, 3 in
+ * and 1 down. */
 constexpr sf::IntRect ACE_TAG({157, 49}, {23, 9});
-constexpr sf::Vector2i ACE_TAG_WORD(160, 49);
+constexpr sf::Vector2i ACE_TAG_WORD(160, 50);
+
+/** @brief With one row, a note stands 2 under the row after it, in the middle
+ * of a list 200 wide. */
+constexpr sf::Vector2i NOTE_ANCHOR(200, 65);
 
 }  // namespace rtype::client::testing

@@ -19,11 +19,8 @@ ServerLeaderboard::ServerLeaderboard(network::MessageDispatcher& dispatcher) {
 }
 
 void ServerLeaderboard::ask(const network::LeaderboardRequest& request) {
-  page_.rows.clear();
-  page_.ownRow.reset();
   if (outbox_ == nullptr) {
-    asked_.reset();
-    become(LeaderboardPhase::NotOnServer);
+    sessionClosed();
     return;
   }
   asked_ = request;
@@ -44,8 +41,6 @@ void ServerLeaderboard::sessionOpened(const network::LobbyPlayer&,
 void ServerLeaderboard::sessionClosed() {
   outbox_ = nullptr;
   asked_.reset();
-  page_.rows.clear();
-  page_.ownRow.reset();
   become(LeaderboardPhase::NotOnServer);
 }
 
@@ -67,9 +62,9 @@ void ServerLeaderboard::receive(const network::LeaderboardAnswer& answer) {
       answer.asked != *asked_) {
     return;
   }
+  become(LeaderboardPhase::Answered);
   page_.rows = answer.rows;
   page_.ownRow = answer.ownRow;
-  become(LeaderboardPhase::Answered);
 }
 
 void ServerLeaderboard::sendRequest() {
@@ -78,6 +73,8 @@ void ServerLeaderboard::sendRequest() {
 }
 
 void ServerLeaderboard::become(LeaderboardPhase phase) {
+  page_.rows.clear();
+  page_.ownRow.reset();
   page_.phase = phase;
   ++page_.revision;
 }

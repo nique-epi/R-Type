@@ -24,11 +24,15 @@ void Outline::paint(IInterfaceCanvas& canvas, sf::Color color) const {
   const sf::Vector2i dot(BORDER_THICKNESS, BORDER_THICKNESS);
   for (int column = left; column <= right; column += DASH_PERIOD) {
     canvas.fill({{column, top}, dot}, color);
-    canvas.fill({{column, bottom}, dot}, color);
+    if (bottom != top) {
+      canvas.fill({{column, bottom}, dot}, color);
+    }
   }
   for (int row = top; row <= bottom; row += DASH_PERIOD) {
     canvas.fill({{left, row}, dot}, color);
-    canvas.fill({{right, row}, dot}, color);
+    if (right != left) {
+      canvas.fill({{right, row}, dot}, color);
+    }
   }
 }
 

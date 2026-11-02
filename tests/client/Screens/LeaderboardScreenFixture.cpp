@@ -3,7 +3,6 @@
 #include <memory>
 #include <utility>
 #include <vector>
-#include "KeyPress.hpp"
 #include "LeaderboardFilterChoice.hpp"
 #include "LeaderboardPage.hpp"
 #include "LeaderboardPhase.hpp"
@@ -14,6 +13,7 @@
 #include "OptionsScreenFixtures.hpp"
 #include "PointerEvents.hpp"
 #include "RecordingInterfaceCanvas.hpp"
+#include "ScreenInputs.hpp"
 #include "ScreenTestConstants.hpp"
 
 using rtype::client::LeaderboardFilterChoice;
@@ -37,8 +37,7 @@ LeaderboardScreenFixture::LeaderboardScreenFixture(MotionPreference motion)
           std::make_unique<RecordingInterfaceCanvas>(canvas_)) {}
 
 void LeaderboardScreenFixture::tap(sf::Keyboard::Key key) {
-  screen_.handleEvent(keyPress(key));
-  screen_.handleEvent(keyRelease(key));
+  tapKey(screen_, key);
 }
 
 void LeaderboardScreenFixture::show(LeaderboardPage page) {

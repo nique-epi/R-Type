@@ -3,7 +3,6 @@
 #include <cstddef>
 #include <cstdint>
 #include <memory>
-#include <optional>
 #include <vector>
 #include "IInterfaceCanvas.hpp"
 #include "IScreen.hpp"
@@ -96,10 +95,9 @@ class LeaderboardScreen : public IScreen {
   KeyChip joinChip_;
   LeaderboardPage pageWithoutSource_{.phase = LeaderboardPhase::OutOfReach};
   std::size_t openTab_ = 0;
-  std::optional<std::uint32_t> shownRevision_;
+  std::uint32_t shownRevision_{};
   engine::Duration elapsed_{};
-  engine::Duration sinceRepaint_{};
-  bool repaintDue_ = false;
+  engine::Duration untilRepaint_{};
 };
 
 }  // namespace rtype::client

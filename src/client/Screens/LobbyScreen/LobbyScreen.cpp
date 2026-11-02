@@ -107,22 +107,24 @@ sf::IntRect backChipArea() {
       {.label = BACK_LABEL, .keyName = CANCEL_KEY_NAME});
 }
 
-/** @returns Where the room paints HELP: a chip like BACK, BUTTON_GAP to its
- * left. */
-sf::IntRect helpChipArea() {
-  sf::IntRect help =
-      MenuBuilder::chipArea({.label = HELP_LABEL, .keyName = HELP_KEY_NAME});
-  help.position.x = backChipArea().position.x - BUTTON_GAP - help.size.x;
-  return help;
+/** @returns Where a chip with this text lies: like BACK, BUTTON_GAP to the left
+ * of another chip. */
+sf::IntRect chipLeftOf(sf::IntRect neighbour, const Button::Text& text) {
+  sf::IntRect chip = MenuBuilder::chipArea(text);
+  chip.position.x = neighbour.position.x - BUTTON_GAP - chip.size.x;
+  return chip;
 }
 
-/** @returns Where the room paints RANKING: a chip like BACK, BUTTON_GAP to the
- * left of HELP. */
+/** @returns Where the room paints HELP. */
+sf::IntRect helpChipArea() {
+  return chipLeftOf(backChipArea(),
+                    {.label = HELP_LABEL, .keyName = HELP_KEY_NAME});
+}
+
+/** @returns Where the room paints RANKING. */
 sf::IntRect leaderboardChipArea() {
-  sf::IntRect chip = MenuBuilder::chipArea(
-      {.label = LEADERBOARD_LABEL, .keyName = LEADERBOARD_KEY_NAME});
-  chip.position.x = helpChipArea().position.x - BUTTON_GAP - chip.size.x;
-  return chip;
+  return chipLeftOf(helpChipArea(), {.label = LEADERBOARD_LABEL,
+                                     .keyName = LEADERBOARD_KEY_NAME});
 }
 
 /** @returns The slot of the bay of the local player, or nothing while the

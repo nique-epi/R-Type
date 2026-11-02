@@ -1,7 +1,7 @@
 #pragma once
 
-#include <cstddef>
 #include <optional>
+#include <string>
 #include <vector>
 #include "IInterfaceCanvas.hpp"
 #include "ItemListLayout.hpp"
@@ -15,7 +15,8 @@ namespace rtype::client {
  *
  * It only paints. Rows past its capacity are left out, and a cell without a
  * column too. A pinned row stands under the rows, past a dashed line, for an
- * item that belongs with them without being one of them.
+ * item that belongs with them without being one of them; a note stands there,
+ * centered in small print, when there is no such row.
  */
 class ItemList {
  public:
@@ -24,22 +25,22 @@ class ItemList {
   void setRows(std::vector<ItemRow> rows);
   void setPinnedRow(std::optional<ItemRow> row);
 
-  /** @returns The row of pixels where a row after the last one shown would
-   * start: where a screen writes what it adds under the rows. */
-  [[nodiscard]] int rowsEnd() const;
+  /** @brief Sets the note shown without a pinned row; empty for none. */
+  void setPinnedNote(std::string note);
 
   void paint(IInterfaceCanvas& canvas) const;
 
-  /** @brief Paints the dashed line under the rows, as paint() does above a
-   * pinned row: for a screen that writes something else there. */
-  void paintSeparator(IInterfaceCanvas& canvas) const;
-
  private:
+  /** @returns The row of pixels where a row after the last one shown would
+   * start. */
+  [[nodiscard]] int rowsEnd() const;
+  void paintSeparator(IInterfaceCanvas& canvas) const;
   void paintRow(IInterfaceCanvas& canvas, const ItemRow& row, int top) const;
 
   ItemListLayout layout_;
   std::vector<ItemRow> rows_;
   std::optional<ItemRow> pinned_;
+  std::string pinnedNote_;
 };
 
 }  // namespace rtype::client

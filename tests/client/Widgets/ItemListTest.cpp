@@ -23,6 +23,8 @@ using rtype::client::testing::FIRST_ROW_FIRST_CELL;
 using rtype::client::testing::FIRST_ROW_HIGHLIGHT;
 using rtype::client::testing::FIRST_ROW_SECOND_CELL;
 using rtype::client::testing::HIGHLIGHT_COLOR;
+using rtype::client::testing::NOTE_ANCHOR;
+using rtype::client::testing::PIN_LINE_FILL_COUNT;
 using rtype::client::testing::PIN_LINE_ROW;
 using rtype::client::testing::PINNED_ROW_SECOND_CELL;
 using rtype::client::testing::SECOND_ROW_SECOND_CELL;
@@ -109,6 +111,35 @@ TEST(ItemList, APinnedRowStandsUnderADashedLine) {
   EXPECT_TRUE(lit.contains({FIRST_ROW_HIGHLIGHT.position.x, PIN_LINE_ROW}));
   EXPECT_FALSE(
       lit.contains({FIRST_ROW_HIGHLIGHT.position.x + 1, PIN_LINE_ROW}));
+}
+
+/**
+ * Given a row and a pinned row, none with a highlight or a tag
+ * When they are painted
+ * Then the only fills are those of the line, one per dot: the line is one pixel
+ * tall, so its top side and its bottom side are the same pixels
+ */
+TEST(ItemList, TheDashedLineFillsEachDotOnce) {
+  const InterfaceCanvasRecord record =
+      paintedList({rowNamed("ACE")}, rowNamed("KIRA"));
+
+  EXPECT_EQ(record.fills.size(), PIN_LINE_FILL_COUNT);
+}
+
+/**
+ * Given a row and a note, and no pinned row
+ * When they are painted
+ * Then the note is centered under the rows, past the dashed line
+ */
+TEST(ItemList, ANoteStandsUnderADashedLine) {
+  const InterfaceCanvasRecord record = paintedListWithNote("NO SCORE");
+
+  const RecordedWriting* note = writingOf(record, "NO SCORE");
+  ASSERT_NE(note, nullptr);
+  EXPECT_EQ(note->anchor, NOTE_ANCHOR);
+  EXPECT_EQ(note->style.alignment, TextAlignment::Center);
+  EXPECT_TRUE(litPixelsOf(record).contains(
+      {FIRST_ROW_HIGHLIGHT.position.x, PIN_LINE_ROW}));
 }
 
 /**

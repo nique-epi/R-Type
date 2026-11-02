@@ -1,6 +1,5 @@
 #pragma once
 
-#include <SFML/System/Vector2.hpp>
 #include <cstdint>
 #include <optional>
 #include <string>
@@ -25,6 +24,10 @@ namespace rtype::client {
 /** @returns The row of the player when it is not among the entries; nothing
  * when it is, or when the player has none. */
 [[nodiscard]] std::optional<ItemRow> pinnedRowOf(const LeaderboardPage& page);
+
+/** @returns The note under the rows of a player without a score; empty
+ * otherwise. */
+[[nodiscard]] std::string pinnedNoteOf(const LeaderboardPage& page);
 
 /** @returns What the panel says in place of rows: nothing while it shows rows
  * or asks. */

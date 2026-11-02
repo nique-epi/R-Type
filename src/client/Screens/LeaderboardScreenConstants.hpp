@@ -86,10 +86,12 @@ constexpr TextStyle LEADERBOARD_TITLE_STYLE{.font = TextFont::Regular,
                                             .scale = 2};
 
 /** @brief The rule under the title, the tabs, and the panel under them. */
-constexpr sf::IntRect LEADERBOARD_RULE({80, 40}, {320, 1});
-constexpr sf::Vector2i LEADERBOARD_TABS_TOP_LEFT(80, 50);
-constexpr int LEADERBOARD_TABS_WIDTH = 320;
 constexpr sf::IntRect LEADERBOARD_PANEL({80, 66}, {320, 150});
+constexpr sf::IntRect LEADERBOARD_RULE({LEADERBOARD_PANEL.position.x, 40},
+                                       {LEADERBOARD_PANEL.size.x, 1});
+constexpr sf::Vector2i LEADERBOARD_TABS_TOP_LEFT(LEADERBOARD_PANEL.position.x,
+                                                 50);
+constexpr int LEADERBOARD_TABS_WIDTH = LEADERBOARD_PANEL.size.x;
 
 /** @brief The columns of the list: the rank ends at 24; the pilot starts at 28
  * and the score ends at 240, so the longest nickname and YOU stop before a
@@ -165,8 +167,9 @@ constexpr sf::IntRect JOIN_BAR({160, 160}, BUTTON_SIZE);
 /** @brief The chips under the panel, against its right side, and the summary of
  * the filter on their row. */
 constexpr int LEADERBOARD_CHIPS_TOP = 224;
-constexpr int LEADERBOARD_CHIPS_RIGHT = 400;
-constexpr sf::Vector2i FILTER_SUMMARY_ANCHOR(80, 228);
+constexpr int LEADERBOARD_CHIPS_RIGHT =
+    LEADERBOARD_PANEL.position.x + LEADERBOARD_PANEL.size.x;
+constexpr sf::Vector2i FILTER_SUMMARY_ANCHOR(LEADERBOARD_PANEL.position.x, 228);
 constexpr TextStyle FILTER_SUMMARY_STYLE{
     .font = TextFont::Small, .color = PALE_BLUE, .outlined = true};
 

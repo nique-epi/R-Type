@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <cstddef>
 #include <optional>
+#include <string>
 #include <utility>
 #include <vector>
 #include "IInterfaceCanvas.hpp"
@@ -20,6 +21,12 @@ namespace rtype::client {
 
 namespace {
 
+/** @returns A band across the rows of a list, past their sides. */
+sf::IntRect bandOf(const ItemListLayout& layout, int top, int height) {
+  return {{layout.topLeft.x - ITEM_ROW_MARGIN, top},
+          {layout.width + (SIDES_PER_AXIS * ITEM_ROW_MARGIN), height}};
+}
+
 /** @brief Writes the tag of a cell on ink, right after its text. */
 void paintTag(IInterfaceCanvas& canvas, const ItemCell& cell,
               sf::Vector2i anchor) {
@@ -31,7 +38,7 @@ void paintTag(IInterfaceCanvas& canvas, const ItemCell& cell,
                                 ITEM_TAG_PADDING,
                             ITEM_TAG_HEIGHT}),
       ITEM_TAG_COLOR);
-  canvas.write(cell.tag, topLeft + sf::Vector2i(ITEM_TAG_TEXT_LEFT, 0),
+  canvas.write(cell.tag, topLeft + ITEM_TAG_TEXT_OFFSET,
                {.font = TextFont::Small, .color = cell.color});
 }
 
@@ -43,6 +50,10 @@ void ItemList::setRows(std::vector<ItemRow> rows) { rows_ = std::move(rows); }
 
 void ItemList::setPinnedRow(std::optional<ItemRow> row) {
   pinned_ = std::move(row);
+}
+
+void ItemList::setPinnedNote(std::string note) {
+  pinnedNote_ = std::move(note);
 }
 
 int ItemList::rowsEnd() const {
@@ -59,23 +70,27 @@ void ItemList::paint(IInterfaceCanvas& canvas) const {
   if (pinned_.has_value()) {
     paintSeparator(canvas);
     paintRow(canvas, *pinned_, rowsEnd() + ITEM_PINNED_ROW_DROP);
+  } else if (!pinnedNote_.empty()) {
+    paintSeparator(canvas);
+    canvas.write(pinnedNote_,
+                 {layout_.topLeft.x + (layout_.width / SIDES_PER_AXIS),
+                  rowsEnd() + ITEM_PINNED_ROW_DROP},
+                 {.font = TextFont::Small,
+                  .color = ITEM_NOTE_COLOR,
+                  .alignment = TextAlignment::Center});
   }
 }
 
 void ItemList::paintSeparator(IInterfaceCanvas& canvas) const {
-  const sf::IntRect line(
-      {layout_.topLeft.x - ITEM_ROW_MARGIN, rowsEnd() - ITEM_PIN_LINE_RISE},
-      {layout_.width + (SIDES_PER_AXIS * ITEM_ROW_MARGIN), 1});
-  Outline(line, Outline::Line::Dashed).paint(canvas, ITEM_PIN_LINE_COLOR);
+  Outline(bandOf(layout_, rowsEnd() - ITEM_PIN_LINE_RISE, 1),
+          Outline::Line::Dashed)
+      .paint(canvas, ITEM_PIN_LINE_COLOR);
 }
 
 void ItemList::paintRow(IInterfaceCanvas& canvas, const ItemRow& row,
                         int top) const {
   if (row.highlight.has_value()) {
-    canvas.fill(sf::IntRect({layout_.topLeft.x - ITEM_ROW_MARGIN,
-                             top - ITEM_ROW_SPACE_ABOVE},
-                            {layout_.width + (SIDES_PER_AXIS * ITEM_ROW_MARGIN),
-                             ITEM_ROW_HEIGHT}),
+    canvas.fill(bandOf(layout_, top - ITEM_ROW_SPACE_ABOVE, ITEM_ROW_HEIGHT),
                 *row.highlight);
   }
   const std::size_t cells = std::min(row.cells.size(), layout_.columns.size());

@@ -26,6 +26,7 @@ using rtype::client::LEADERBOARD_RANK_COLOR;
 using rtype::client::LeaderboardMessage;
 using rtype::client::LeaderboardPage;
 using rtype::client::messageOf;
+using rtype::client::pinnedNoteOf;
 using rtype::client::pinnedRowOf;
 using rtype::client::STAR_WHITE;
 using rtype::client::testing::FIRST_SECOND;
@@ -148,6 +149,35 @@ TEST(LeaderboardPresentation, AnOwnEntryOutsideTheBestIsPinned) {
 TEST(LeaderboardPresentation, NoOwnEntryPinsNothing) {
   EXPECT_FALSE(pinnedRowOf(answeredPage({entryOf(1, "KIRA")}, std::nullopt))
                    .has_value());
+}
+
+/**
+ * Given rows and a player without a score
+ * When the note under the rows is asked for
+ * Then it says the player has no score here
+ */
+TEST(LeaderboardPresentation, APlayerWithoutAScoreGetsANote) {
+  EXPECT_EQ(pinnedNoteOf(answeredPage({entryOf(1, "KIRA")}, std::nullopt)),
+            "YOU HAVE NO SCORE IN THIS MODE YET");
+}
+
+/**
+ * Given rows and a player with a score
+ * When the note under the rows is asked for
+ * Then there is none
+ */
+TEST(LeaderboardPresentation, APlayerWithAScoreGetsNoNote) {
+  EXPECT_EQ(
+      pinnedNoteOf(answeredPage({entryOf(1, "KIRA")}, entryOf(1, "KIRA"))), "");
+}
+
+/**
+ * Given no rows at all
+ * When the note under the rows is asked for
+ * Then there is none: the message of the panel says it
+ */
+TEST(LeaderboardPresentation, NoRowsGetNoNote) {
+  EXPECT_EQ(pinnedNoteOf(answeredPage({}, std::nullopt)), "");
 }
 
 /**

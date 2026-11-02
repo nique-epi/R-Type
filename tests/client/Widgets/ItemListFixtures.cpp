@@ -20,6 +20,16 @@ ItemRow rowNamed(const std::string& name) {
                            ItemCell{.text = name, .color = CELL_COLOR}}};
 }
 
+InterfaceCanvasRecord paintedListWithNote(const std::string& note) {
+  InterfaceCanvasRecord record;
+  RecordingInterfaceCanvas canvas(record);
+  ItemList list(LIST_LAYOUT);
+  list.setRows({rowNamed("ACE")});
+  list.setPinnedNote(note);
+  list.paint(canvas);
+  return record;
+}
+
 InterfaceCanvasRecord paintedList(std::vector<ItemRow> rows,
                                   std::optional<ItemRow> pinned) {
   InterfaceCanvasRecord record;

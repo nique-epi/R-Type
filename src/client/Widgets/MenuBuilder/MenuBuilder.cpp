@@ -128,6 +128,39 @@ void placeFormBars(Menu::Content& content, std::vector<PendingButton>& bars,
   }
 }
 
+/** @brief Where the rows and the bars of a menu lie: the rows down from the
+ * first, the bars rightwards from the first. */
+struct RowsAndBars {
+  sf::Vector2i firstRow;
+  sf::Vector2i rowSize;
+  sf::Vector2i firstBar;
+  sf::Vector2i barSize;
+  int barGap{};
+};
+
+/** @returns Where the next row and the next bar would go. */
+PanelCursor placeRowsAndBarsOf(Menu::Content& content,
+                               std::vector<PendingButton>& bars,
+                               const RowsAndBars& place) {
+  PanelCursor cursor{.rowTop = place.firstRow.y, .barLeft = place.firstBar.x};
+  for (PendingButton& pending : bars) {
+    if (pending.control != nullptr) {
+      content.buttons.emplace_back(
+          std::move(pending.text),
+          sf::IntRect({place.firstRow.x, cursor.rowTop}, place.rowSize),
+          std::move(pending.control));
+      cursor.rowTop += place.rowSize.y + ROW_GAP;
+    } else {
+      content.buttons.emplace_back(
+          std::move(pending.text),
+          sf::IntRect({cursor.barLeft, place.firstBar.y}, place.barSize),
+          std::move(pending.action), std::move(pending.field));
+      cursor.barLeft += place.barSize.x + place.barGap;
+    }
+  }
+  return cursor;
+}
+
 /** @brief Places the rows of a dialog under its heading and its buttons in a
  * centered row; rows keep Left and Right to step their values. */
 void placeDialogBars(Menu::Content& content, std::vector<PendingButton>& bars,
@@ -139,25 +172,16 @@ void placeDialogBars(Menu::Content& content, std::vector<PendingButton>& bars,
   const int barCount = static_cast<int>(bars.size()) - rowCount;
   const int rowWidth =
       barRowWidth(barCount, DIALOG_BUTTON_SIZE, DIALOG_BUTTON_GAP);
-  const int barsTop = panel.y + (rowCount > 0 ? DIALOG_BUTTONS_TOP_UNDER_ROWS
-                                              : DIALOG_BUTTONS_TOP);
-  int rowTop = panel.y + DIALOG_ROWS_TOP;
-  int left = panel.x + ((DIALOG_SIZE.x - rowWidth) / SIDES_PER_AXIS);
-  for (PendingButton& pending : bars) {
-    if (pending.control != nullptr) {
-      content.buttons.emplace_back(
-          std::move(pending.text),
-          sf::IntRect({panel.x + DIALOG_ROW_INSET, rowTop}, DIALOG_ROW_SIZE),
-          std::move(pending.control));
-      rowTop += DIALOG_ROW_SIZE.y + ROW_GAP;
-    } else {
-      content.buttons.emplace_back(
-          std::move(pending.text),
-          sf::IntRect({left, barsTop}, DIALOG_BUTTON_SIZE),
-          std::move(pending.action), std::move(pending.field));
-      left += DIALOG_BUTTON_SIZE.x + DIALOG_BUTTON_GAP;
-    }
-  }
+  placeRowsAndBarsOf(
+      content, bars,
+      RowsAndBars{
+          .firstRow = {panel.x + DIALOG_ROW_INSET, panel.y + DIALOG_ROWS_TOP},
+          .rowSize = DIALOG_ROW_SIZE,
+          .firstBar = {panel.x + ((DIALOG_SIZE.x - rowWidth) / SIDES_PER_AXIS),
+                       panel.y + (rowCount > 0 ? DIALOG_BUTTONS_TOP_UNDER_ROWS
+                                               : DIALOG_BUTTONS_TOP)},
+          .barSize = DIALOG_BUTTON_SIZE,
+          .barGap = DIALOG_BUTTON_GAP});
   if (rowCount > 0) {
     content.nextKeys = PANEL_NEXT_KEYS;
     content.previousKeys = PANEL_PREVIOUS_KEYS;
@@ -394,23 +418,13 @@ void MenuBuilder::placeRowsPanel(Menu::Content& content) {
 }
 
 PanelCursor MenuBuilder::placeRowsAndBars(Menu::Content& content) {
-  PanelCursor cursor{.rowTop = FIRST_ROW_TOP_LEFT.y, .barLeft = SAFE_MARGIN};
-  for (PendingButton& pending : buttons_) {
-    if (pending.control != nullptr) {
-      content.buttons.emplace_back(
-          std::move(pending.text),
-          sf::IntRect({FIRST_ROW_TOP_LEFT.x, cursor.rowTop}, ROW_SIZE),
-          std::move(pending.control));
-      cursor.rowTop += ROW_SIZE.y + ROW_GAP;
-    } else {
-      content.buttons.emplace_back(
-          std::move(pending.text),
-          sf::IntRect({cursor.barLeft, PANEL_BARS_TOP}, PANEL_BAR_SIZE),
-          std::move(pending.action), std::move(pending.field));
-      cursor.barLeft += PANEL_BAR_SIZE.x + SPACE_BESIDE_PANEL_BARS;
-    }
-  }
-  return cursor;
+  return placeRowsAndBarsOf(
+      content, buttons_,
+      RowsAndBars{.firstRow = FIRST_ROW_TOP_LEFT,
+                  .rowSize = ROW_SIZE,
+                  .firstBar = {SAFE_MARGIN, PANEL_BARS_TOP},
+                  .barSize = PANEL_BAR_SIZE,
+                  .barGap = SPACE_BESIDE_PANEL_BARS});
 }
 
 void MenuBuilder::placeDescriptionAndIllustration(Menu::Content& content,
