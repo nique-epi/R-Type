@@ -554,7 +554,7 @@ FILTER opens `LeaderboardFilterDialog` (`src/client/Screens/LeaderboardFilterDia
 
 Two banners and two guards stand around the panel, rectangles of one sheet, `assets/sprites/leaderboard.png`, loaded with the title (`titleAssets()`) since the screen opens without a loading screen. A banner shows 32 frames of `FLAG_FRAME_TIME` (50 ms), the last leading to the first without a jump. The figures are out of step, and stay on their first frame when the system asks for less motion. Each is one `drawImage` per repaint, and nothing computes its pixels.
 
-The screen repaints on an event, on a new page and every `LEADERBOARD_REPAINT_TIME` (50 ms), not each frame; it rebuilds its rows only for a new page. Measured on one Mac (Apple M3 Pro) in a Release build, the four figures take 0.009 ms of the processor per repaint, 0.05 % of a frame at 60 Hz, and the time of a picture with the graphics card included does not tell them apart from an empty one. A whole repaint with 11 rows takes 0.52 ms, so 0.17 ms per frame on average. Over the waiting room, the room goes on repainting behind it, 0.45 ms each frame.
+The screen repaints on an event, on a new page and every `LEADERBOARD_REPAINT_TIME` (50 ms), not each frame; it rebuilds its rows only for a new page. Measured on one Mac (Apple M3 Pro) in a Release build, the four figures take 0.008 ms of the processor per repaint, 0.05 % of a frame at 60 Hz, and the time of a picture with the graphics card included does not tell them apart from an empty one. A whole repaint with 11 rows takes 0.50 ms, so 0.17 ms per frame on average. Over the waiting room, the room goes on repainting behind it, 0.43 ms each frame.
 
 ## Joining a server: `ServerSession`, `WaitingRoom`, `EntityMessageQueue`
 
