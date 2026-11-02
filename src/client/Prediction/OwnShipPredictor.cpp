@@ -60,6 +60,9 @@ void OwnShipPredictor::apply(const network::WorldState& state) {
 }
 
 void OwnShipPredictor::stop() {
+  if (!prediction_.isStarted() && uncounted_ == engine::Duration::zero()) {
+    return;
+  }
   prediction_ = ShipPrediction{};
   shipEntityId_.reset();
   uncounted_ = engine::Duration::zero();

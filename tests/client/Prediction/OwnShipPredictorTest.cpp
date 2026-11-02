@@ -127,3 +127,19 @@ TEST(OwnShipPredictor, StopsFollowingTheShipWhenStopped) {
 
   EXPECT_FALSE(predictor.shipEntityId().has_value());
 }
+
+/**
+ * Given a predictor that counted half a tick it has not used yet
+ * When it is stopped, then advances by half a tick
+ * Then it sends nothing, since the stop forgot the first half
+ */
+TEST(OwnShipPredictor, StopForgetsTheTimeNotYetCounted) {
+  OwnShipPredictor predictor(OWN_PLAYER_NUMBER);
+  RecordingPlayerInputLink link;
+  predictor.advance(HALF_A_TICK, ActionSet{}, link);
+
+  predictor.stop();
+  predictor.advance(HALF_A_TICK, ActionSet{}, link);
+
+  EXPECT_TRUE(link.sentActions().empty());
+}
