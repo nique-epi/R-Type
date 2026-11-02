@@ -1,11 +1,14 @@
 #pragma once
 
-#include <cstddef>
 #include <memory>
 #include <mutex>
 #include <vector>
+#include "CommandInterpreter.hpp"
+#include "ConfigurationRegistry.hpp"
+#include "ConfigurationStep.hpp"
 #include "IModule.hpp"
 #include "LoopStages.hpp"
+#include "ModuleSwitches.hpp"
 #include "ServiceRegistry.hpp"
 #include "TimeConstants.hpp"
 
@@ -23,12 +26,19 @@ namespace rtype::engine {
  * of the modules installed before it, and the application itself: a module
  * that drives the loop (the one that owns the thread a program ticks on) asks
  * for the Application to call runStages().
+ *
+ * The application owns the CommandInterpreter and the ConfigurationRegistry of
+ * the program and provides both as services, so a module registers its commands
+ * and declares its settings while it installs. Between the installs and the
+ * starts, the configuration step reads the configuration and runs it as
+ * commands; the `module` command it may run turns modules off, and a module
+ * that is off is installed and never started.
  */
 class Application {
  public:
   /**
-   * @brief Builds an application whose loop has no stage, as a program that
-   * runs no work through it does.
+   * @brief Builds an application whose loop has no stage and that reads no
+   * configuration, as a program that runs no work through it does.
    *
    * @throws NullModuleException if a module is null.
    * @throws MissingDependencyException if a dependency of a module is not
@@ -44,11 +54,14 @@ class Application {
    * still without work: the modules add theirs while they install.
    * @param modules The modules of the program, in the order they install and
    * start.
+   * @param configure Run by start() once every module is installed and before
+   * any is started; empty to read no configuration.
    * @throws NullModuleException if a module is null.
    * @throws MissingDependencyException if a dependency of a module is not
    * listed before it.
    */
-  Application(LoopStages stages, std::vector<std::unique_ptr<IModule>> modules);
+  Application(LoopStages stages, std::vector<std::unique_ptr<IModule>> modules,
+              ConfigurationStep configure = {});
 
   /**
    * @brief Stops the modules still started, as stop() does, then destroys the
@@ -63,14 +76,15 @@ class Application {
   Application& operator=(Application&&) = delete;
 
   /**
-   * @brief Installs every module, then starts every module, in list order.
+   * @brief Installs every module, runs the configuration step, then starts
+   * every module that is on, in list order.
    *
    * Only the first call does anything: a later call, even after stop(),
    * installs and starts nothing. When a module throws from start(), the modules
    * started before it are stopped, the last started first, then the error is
    * thrown; the module that threw is not stopped. An exception thrown by
-   * install() goes through unchanged, no later module is installed and no
-   * module is started.
+   * install() or by the configuration step goes through unchanged: no later
+   * module is installed and no module is started.
    *
    * @throws ModuleStartFailedException if a module throws from start(); its
    * message names the module and gives the reason.
@@ -106,7 +120,12 @@ class Application {
   LoopStages stages_;
   ServiceRegistry services_;
   std::vector<std::unique_ptr<IModule>> modules_;
-  std::size_t startedCount_{0};
+  CommandInterpreter commands_;
+  ConfigurationRegistry configuration_{commands_};
+  ModuleSwitches switches_{modules_};
+  ConfigurationStep configure_;
+  /** The modules started, in the order they started. */
+  std::vector<IModule*> started_;
   bool startCalled_{false};
   /** Held while a pass of runStages() runs, and while running_ changes. */
   mutable std::mutex stagesMutex_;
