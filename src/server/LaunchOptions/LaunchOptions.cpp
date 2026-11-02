@@ -126,25 +126,10 @@ engine::LaunchOption helpOption(bool& helpRequested) {
       }};
 }
 
-}  // namespace
-
-LaunchOptions LaunchOptions::read(std::span<const std::string_view> arguments) {
-  const network::SimulatorLaunchOptions simulatorOptions =
-      network::SimulatorLaunchOptions::read(arguments);
-  LaunchOptions options{network::DEFAULT_SERVER_PORT, false};
-  options.networkConditions_ = simulatorOptions.conditions();
-  const std::array launchOptions{portOption(options.port_),
-                                 seedOption(options.seed_),
-                                 stateRateOption(options.stateRate_),
-                                 inputDelayOption(options.inputDelay_),
-                                 helpOption(options.helpRequested_)};
-  engine::readLaunchArguments(simulatorOptions.otherArguments(), launchOptions);
-  return options;
-}
-
-std::string LaunchOptions::usage() {
-  std::string text = engine::usageHeader(PROGRAM_NAME);
-  text += engine::usageEntry(
+/** @returns The lines of the usage that describe the options of the server
+ * itself, `--help` included. */
+std::string serverOptionEntries() {
+  std::string text = engine::usageEntry(
       std::string(engine::PORT_OPTION) + " <port>",
       "UDP port to listen on, from " + std::to_string(network::LOWEST_PORT) +
           " to " + std::to_string(network::HIGHEST_PORT) +
@@ -172,6 +157,28 @@ std::string LaunchOptions::usage() {
           std::to_string(DEFAULT_INPUT_DELAY_TICKS) + ".");
   text += engine::usageEntry(engine::HELP_OPTION,
                              "Print this help and start nothing.");
+  return text;
+}
+
+}  // namespace
+
+LaunchOptions LaunchOptions::read(std::span<const std::string_view> arguments) {
+  const network::SimulatorLaunchOptions simulatorOptions =
+      network::SimulatorLaunchOptions::read(arguments);
+  LaunchOptions options{network::DEFAULT_SERVER_PORT, false};
+  options.networkConditions_ = simulatorOptions.conditions();
+  const std::array launchOptions{portOption(options.port_),
+                                 seedOption(options.seed_),
+                                 stateRateOption(options.stateRate_),
+                                 inputDelayOption(options.inputDelay_),
+                                 helpOption(options.helpRequested_)};
+  engine::readLaunchArguments(simulatorOptions.otherArguments(), launchOptions);
+  return options;
+}
+
+std::string LaunchOptions::usage() {
+  std::string text = engine::usageHeader(PROGRAM_NAME);
+  text += serverOptionEntries();
   text += '\n';
   text += network::SimulatorLaunchOptions::usage();
   text += '\n';
