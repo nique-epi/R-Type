@@ -52,6 +52,9 @@ struct ConnectedPlayer {
   /** @brief Whether the player declared itself ready to start; cleared when the
    * game waits for players again. */
   bool ready{false};
+  /** @brief Whether the player told the game it shows the game screen, since
+   * the game last started waiting for it; cleared when the game does. */
+  bool loaded{false};
   /** @brief The sequence of the newest datagram accepted from the player, and
    * how many of the datagrams it sent never arrived. DatagramReader keeps it.
    */
@@ -70,6 +73,12 @@ struct ConnectedPlayer {
    * and lives are kept, its input number is cleared and it does not count for
    * the ready check. The next datagram read from the player clears it. */
   bool away{false};
+  /** @brief Whether an input of the player was applied to its ship, after being
+   * held for the input delay; cleared with newestInputNumber. It tells an input
+   * that follows earlier ones from the first of the session, which
+   * newestInputNumber cannot, since it runs ahead by the input delay.
+   * DelayedInputs keeps it. */
+  bool inputApplied{false};
   /** @brief The real time since the server last sent the player a datagram,
    * added at the start of each tick, a stall of the server included, since
    * the client waits in real time: a Heartbeat goes out once it reaches

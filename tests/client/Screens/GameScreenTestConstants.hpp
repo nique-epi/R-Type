@@ -11,6 +11,10 @@
 /** @brief A key that is not the options key. */
 constexpr sf::Keyboard::Key OTHER_KEY = sf::Keyboard::Key::Space;
 
+/** @brief How long a slower player can keep the server from sending the first
+ * WorldState: the wait the server allows is 10 s, and this is under it. */
+constexpr rtype::engine::Duration LONG_LOADING_WAIT = std::chrono::seconds(8);
+
 /** @brief How many presses the system repeats while a key is held down. */
 constexpr int KEY_REPEATS = 3;
 

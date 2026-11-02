@@ -18,7 +18,9 @@ using rtype::engine::PORT_OPTION;
 using rtype::engine::UnknownLaunchArgumentException;
 using rtype::network::DEFAULT_SERVER_PORT;
 using rtype::network::InvalidPortException;
+using rtype::server::DEFAULT_INPUT_DELAY_TICKS;
 using rtype::server::DEFAULT_WORLD_STATES_PER_SECOND;
+using rtype::server::INPUT_DELAY_OPTION;
 using rtype::server::LaunchOptions;
 using rtype::server::SEED_OPTION;
 using rtype::server::STATE_RATE_OPTION;
@@ -336,5 +338,94 @@ TEST(ServerLaunchOptions, StateRateOptionWithoutValueIsRefused) {
  */
 TEST(ServerLaunchOptions, UsageNamesTheStateRateOption) {
   EXPECT_NE(LaunchOptions::usage().find(std::string(STATE_RATE_OPTION)),
+            std::string::npos);
+}
+
+/**
+ * Given no input delay option
+ * When the launch options are read
+ * Then each input is held for the default number of ticks
+ */
+TEST(ServerLaunchOptions, NoInputDelayOptionGivesTheDefaultDelay) {
+  const LaunchOptions options = LaunchOptions::read(Arguments{});
+
+  EXPECT_EQ(options.inputDelay(), DEFAULT_INPUT_DELAY_TICKS);
+}
+
+/**
+ * Given the input delay option and a delay
+ * When the launch options are read
+ * Then each input is held for that many ticks
+ */
+TEST(ServerLaunchOptions, InputDelayOptionSetsTheDelay) {
+  const LaunchOptions options =
+      LaunchOptions::read(Arguments{INPUT_DELAY_OPTION, INPUT_DELAY_ARGUMENT});
+
+  EXPECT_EQ(options.inputDelay(), DELAY_OF_INPUT_DELAY_ARGUMENT);
+}
+
+/**
+ * Given the input delay option given twice
+ * When the launch options are read
+ * Then the last delay wins
+ */
+TEST(ServerLaunchOptions, LastInputDelayOptionWins) {
+  const LaunchOptions options = LaunchOptions::read(
+      Arguments{INPUT_DELAY_OPTION, INPUT_DELAY_ARGUMENT, INPUT_DELAY_OPTION,
+                OTHER_INPUT_DELAY_ARGUMENT});
+
+  EXPECT_EQ(options.inputDelay(), DELAY_OF_OTHER_INPUT_DELAY_ARGUMENT);
+}
+
+/**
+ * Given the lowest delay, none, and the highest delay the server accepts
+ * When the launch options are read
+ * Then each is accepted
+ */
+TEST(ServerLaunchOptions, InputDelayOptionAcceptsBothEnds) {
+  const LaunchOptions lowest = LaunchOptions::read(
+      Arguments{INPUT_DELAY_OPTION, LOWEST_INPUT_DELAY_ARGUMENT});
+  const LaunchOptions highest = LaunchOptions::read(
+      Arguments{INPUT_DELAY_OPTION, HIGHEST_INPUT_DELAY_ARGUMENT});
+
+  EXPECT_EQ(lowest.inputDelay(), LOWEST_INPUT_DELAY);
+  EXPECT_EQ(highest.inputDelay(), HIGHEST_INPUT_DELAY);
+}
+
+/**
+ * Given a delay over the highest, negative, not a number or empty
+ * When the launch options are read
+ * Then each is refused as an invalid value of the option
+ */
+TEST(ServerLaunchOptions, InputDelayOptionRefusesADelayOutOfRange) {
+  for (const std::string_view delay :
+       {TOO_HIGH_INPUT_DELAY_ARGUMENT, NEGATIVE_INPUT_DELAY_ARGUMENT,
+        NOT_A_NUMBER_INPUT_DELAY_ARGUMENT, EMPTY_INPUT_DELAY_ARGUMENT}) {
+    SCOPED_TRACE(delay);
+
+    EXPECT_THROW(static_cast<void>(
+                     LaunchOptions::read(Arguments{INPUT_DELAY_OPTION, delay})),
+                 InvalidLaunchOptionValueException);
+  }
+}
+
+/**
+ * Given the input delay option as the last argument
+ * When the launch options are read
+ * Then the missing value is reported
+ */
+TEST(ServerLaunchOptions, InputDelayOptionWithoutValueIsRefused) {
+  EXPECT_THROW(
+      static_cast<void>(LaunchOptions::read(Arguments{INPUT_DELAY_OPTION})),
+      MissingLaunchOptionValueException);
+}
+
+/**
+ * Given nothing
+ * When the usage is asked for
+ * Then it names the input delay option
+ */
+TEST(ServerLaunchOptions, UsageNamesTheInputDelayOption) {
+  EXPECT_NE(LaunchOptions::usage().find(std::string(INPUT_DELAY_OPTION)),
             std::string::npos);
 }

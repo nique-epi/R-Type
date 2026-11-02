@@ -52,6 +52,12 @@ The Bydos appear at heights drawn from the seed; without `--seed` the server dra
 ./r-type_server --state-rate 30
 ```
 
+Every player's input is held for the same few ticks before it moves the ship (3 ticks, 50 ms, by default); `--input-delay` changes it, from 0 to 30 ticks.
+
+```bash
+./r-type_server --input-delay 5
+```
+
 The server sends each player 30 world states per second instead of 20, from 2 to 60: more states move the other ships more smoothly and use more bandwidth (about 350 bytes per state with four players and thirty entities, see [the server page](https://nique-epi.github.io/R-Type/server/)).
 
 The server reads the waves of Bydos from `assets/waves/waves.toml`, in the `assets/` folder it finds next to its executable or in the folder above it. A missing or invalid file stops it with exit code 1, naming the file, the line and the key at fault; the format is described in [Writing the waves file](https://nique-epi.github.io/R-Type/waves-file/).
@@ -112,7 +118,7 @@ cmake --build build --target format
 
 ## Documentation
 
-The documentation site is built with [Starlight](https://starlight.astro.build) and published at <https://nique-epi.github.io/R-Type/>. Each page is a Markdown file in `docs/src/content/docs/`.
+The documentation site is built with [Starlight](https://starlight.astro.build) and published at <https://nique-epi.github.io/R-Type/>. Each page is a Markdown file in `docs/src/content/docs/`. To add a part to the server or the client, start with the [Modules](https://nique-epi.github.io/R-Type/modules/) page and the [tutorial](https://nique-epi.github.io/R-Type/tutorial-write-a-module/). Two more tutorials [add a network message](https://nique-epi.github.io/R-Type/tutorial-add-a-network-message/) and [run a server with several games](https://nique-epi.github.io/R-Type/tutorial-run-several-games/).
 
 To preview it locally, with Node.js 22.12 or newer:
 

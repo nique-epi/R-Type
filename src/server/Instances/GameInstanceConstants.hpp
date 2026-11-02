@@ -19,6 +19,25 @@ constexpr std::size_t FINISHED_STATE_TICKS =
     FINISHED_STATE_SECONDS * engine::SIMULATION_TICKS_PER_SECOND;
 
 /**
+ * @brief How long a game waits, once every player is ready, for every player to
+ * tell it the game screen is shown, before it starts without the others.
+ */
+constexpr std::size_t START_BARRIER_SECONDS = 10;
+
+/**
+ * @brief START_BARRIER_SECONDS, in simulation ticks.
+ */
+constexpr std::size_t START_BARRIER_TICKS =
+    START_BARRIER_SECONDS * engine::SIMULATION_TICKS_PER_SECOND;
+
+/**
+ * @brief Ticks between two copies of GameStarted sent to the players who did
+ * not yet tell the game they are loaded: half a second.
+ */
+constexpr std::size_t GAME_STARTED_REPEAT_TICKS =
+    engine::SIMULATION_TICKS_PER_SECOND / 2;
+
+/**
  * @brief Module name the games write their log lines under.
  */
 constexpr std::string_view INSTANCES_LOGGER_NAME = "Instances";

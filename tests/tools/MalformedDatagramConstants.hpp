@@ -54,10 +54,10 @@ constexpr std::uint32_t SAMPLE_TICK = 1;
 
 /**
  * @brief The smallest type byte an UnknownType message carries: one above
- * ConnectionChallenge, the highest type of version 0 on the protocol page.
+ * GameLoaded, the highest type of version 0 on the protocol page.
  */
 constexpr std::uint8_t FIRST_UNKNOWN_MESSAGE_TYPE =
-    static_cast<std::uint8_t>(network::MessageType::ConnectionChallenge) + 1;
+    static_cast<std::uint8_t>(network::MessageType::GameLoaded) + 1;
 
 /**
  * @brief The most bytes the payload of an UnknownType message holds.

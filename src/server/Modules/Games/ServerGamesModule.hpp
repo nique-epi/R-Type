@@ -57,8 +57,8 @@ class ServerGamesModule final : public engine::IModule {
 
   /**
    * @brief Reads the waves file and creates the games. With a seed, game n
-   * (from 0) starts from the seed plus n, so each game can be played again;
-   * without one, each game draws its own.
+   * (from 0) starts from the seed plus n times GAME_SEED_STRIDE, so each game
+   * can be played again; without one, each game draws its own.
    * @throws ServerException (or a class derived from it) naming the file, the
    * line and the key when the file cannot be read, does not describe the
    * difficulties as the server expects them, or has no DEFAULT_DIFFICULTY.

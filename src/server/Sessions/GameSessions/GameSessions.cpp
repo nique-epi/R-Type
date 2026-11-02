@@ -6,6 +6,7 @@
 #include "ConnectedPlayer.hpp"
 #include "Disconnection.hpp"
 #include "Endpoint.hpp"
+#include "GameLoaded.hpp"
 #include "GameSessionsParts.hpp"
 #include "Heartbeat.hpp"
 #include "Heartbeats.hpp"
@@ -34,6 +35,11 @@ GameSessions::GameSessions(GameSessionsParts parts)
   dispatcher_.registerHandler<network::ReadyState>(
       [this](const network::MessageOrigin& origin,
              const network::ReadyState& message) {
+        readyKeeper_.apply(origin, message);
+      });
+  dispatcher_.registerHandler<network::GameLoaded>(
+      [this](const network::MessageOrigin& origin,
+             const network::GameLoaded& message) {
         readyKeeper_.apply(origin, message);
       });
   dispatcher_.registerHandler<network::PlayerInput>(

@@ -27,6 +27,7 @@
 #include "GameEnded.hpp"
 #include "GameEvent.hpp"
 #include "GameEventHistory.hpp"
+#include "GameLoaded.hpp"
 #include "GameStarted.hpp"
 #include "Heartbeat.hpp"
 #include "IDatagramLink.hpp"
@@ -118,6 +119,7 @@ bool ServerConnection::gameStarted() const { return gameStarted_; }
 void ServerConnection::update(engine::Duration elapsed) {
   gameEvents_.advance(elapsed);
   sinceReceived_ += elapsed;
+  sinceGameLoaded_ += elapsed;
   readReceived();
   repeatDeparture(elapsed);
   if (isAccepted()) {
@@ -160,6 +162,11 @@ void ServerConnection::continueAttempt(engine::Duration elapsed) {
 void ServerConnection::sendPlayerInput(ActionSet held) {
   if (status_.phase != ConnectionPhase::Accepted) {
     return;
+  }
+  if (gameStarted_ && !worldStateSeen_ &&
+      sinceGameLoaded_ >= GAME_LOADED_INTERVAL) {
+    sendToServer(network::GameLoaded{});
+    sinceGameLoaded_ = engine::Duration::zero();
   }
   sendToServer(network::PlayerInput{.inputNumber = nextInputNumber_,
                                     .actions = held.bits()});
@@ -225,6 +232,7 @@ void ServerConnection::registerSessionMessages() {
       });
   dispatcher_.registerHandler<network::WorldState>(
       [this](const network::MessageOrigin&, const network::WorldState& state) {
+        worldStateSeen_ = true;
         startGame();
         keepEntityMessage(state);
       });
@@ -243,6 +251,7 @@ void ServerConnection::registerSessionMessages() {
         if (gameStarted_) {
           keepEntityMessage(ended);
           gameStarted_ = false;
+          worldStateSeen_ = false;
           logger_.info("the game ended");
         }
       });
@@ -324,6 +333,7 @@ bool ServerConnection::passesSessionChecks(
 void ServerConnection::startGame() {
   if (isAccepted() && !gameStarted_) {
     gameStarted_ = true;
+    sinceGameLoaded_ = GAME_LOADED_INTERVAL;
     requestedReady_.reset();
     logger_.info("the game started");
   }
@@ -406,6 +416,7 @@ void ServerConnection::forgetSession() {
   requestedReady_.reset();
   sinceReadyState_ = engine::Duration::zero();
   gameStarted_ = false;
+  worldStateSeen_ = false;
   entityMessages_.clear();
   gameEvents_.forget();
 }

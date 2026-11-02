@@ -7,7 +7,7 @@
 void PrintTo(const NavigatorCall& call, std::ostream* output) {
   *output << "request " << static_cast<int>(call.request);
   if (call.screen.has_value()) {
-    *output << " of screen " << static_cast<int>(*call.screen);
+    *output << " of screen " << call.screen->name();
   }
 }
 
