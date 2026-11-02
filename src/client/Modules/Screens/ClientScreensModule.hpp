@@ -75,6 +75,7 @@ class ClientScreensModule final : public engine::IModule {
   ServerSession* connection_{nullptr};
   WaitingRoom* waitingRoom_{nullptr};
   EntityMessageQueue* entityMessages_{nullptr};
+  ServerLeaderboard* leaderboard_{nullptr};
   FrameLoop* loop_{nullptr};
   EventListeners* listeners_{nullptr};
   ScreenRegistry* registry_{nullptr};

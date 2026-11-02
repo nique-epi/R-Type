@@ -55,6 +55,8 @@ ServerSession& ServerSessionFixture::session() { return session_; }
 
 WaitingRoom& ServerSessionFixture::waitingRoom() { return waitingRoom_; }
 
+ServerLeaderboard& ServerSessionFixture::leaderboard() { return leaderboard_; }
+
 const std::vector<network::OutgoingDatagram>& ServerSessionFixture::sent()
     const {
   return link_.sent();

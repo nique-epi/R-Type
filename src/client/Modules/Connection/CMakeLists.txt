@@ -8,6 +8,7 @@ target_link_libraries(rtype_client_connection_module
     rtype_client_entity_message_queue
     rtype_client_game_loaded_reminder
     rtype_client_network_thread
+    rtype_client_server_leaderboard
     rtype_client_server_session
     rtype_client_waiting_room
     rtype_engine_modules

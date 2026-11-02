@@ -19,6 +19,7 @@
 #include "PacketHeader.hpp"
 #include "PlayerInput.hpp"
 #include "RecordingDatagramLink.hpp"
+#include "ServerLeaderboard.hpp"
 #include "ServerSession.hpp"
 #include "ServerSessionFixtures.hpp"
 #include "ServerSessionParts.hpp"
@@ -59,6 +60,8 @@ class ServerSessionFixture : public ::testing::Test {
   [[nodiscard]] ServerSession& session();
 
   [[nodiscard]] WaitingRoom& waitingRoom();
+
+  [[nodiscard]] ServerLeaderboard& leaderboard();
 
   [[nodiscard]] const std::vector<network::OutgoingDatagram>& sent() const;
 
@@ -108,11 +111,12 @@ class ServerSessionFixture : public ::testing::Test {
   GameLoadedReminder gameLoaded_;
   WaitingRoom waitingRoom_{dispatcher_, gameLoaded_};
   EntityMessageQueue entityMessages_{dispatcher_, waitingRoom_, gameLoaded_};
+  ServerLeaderboard leaderboard_{dispatcher_};
   ServerSession session_{ServerSessionParts{
       .link = link_,
       .dispatcher = dispatcher_,
       .gameLoaded = gameLoaded_,
-      .observers = {waitingRoom_, entityMessages_, gameLoaded_}}};
+      .observers = {waitingRoom_, entityMessages_, gameLoaded_, leaderboard_}}};
 };
 
 }  // namespace rtype::client::testing
