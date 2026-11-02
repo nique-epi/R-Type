@@ -1,5 +1,4 @@
 #include "ArrivalLedger.hpp"
-#include <cstddef>
 #include <cstdint>
 #include <optional>
 #include "ArrivalLedgerConstants.hpp"
