@@ -14,6 +14,12 @@ constexpr sf::Keyboard::Key OTHER_KEY = sf::Keyboard::Key::Space;
 /** @brief How many presses the system repeats while a key is held down. */
 constexpr int KEY_REPEATS = 3;
 
+/** @brief A frame as long as three simulation ticks: with PREDICTION on, one
+ * input goes out for each of them. */
+constexpr rtype::engine::Duration THREE_TICKS =
+    rtype::engine::SIMULATION_TICK_DURATION * 3;
+constexpr std::size_t INPUTS_IN_THREE_TICKS = 3;
+
 /** @brief How many times the entity layer is painted: when the game screen is
  * built, then after its first update. */
 constexpr int PAINTS_AT_CONSTRUCTION = 1;

@@ -157,13 +157,15 @@ void ServerConnection::continueAttempt(engine::Duration elapsed) {
   }
 }
 
-void ServerConnection::sendPlayerInput(ActionSet held) {
+std::optional<std::uint32_t> ServerConnection::sendPlayerInput(ActionSet held) {
   if (status_.phase != ConnectionPhase::Accepted) {
-    return;
+    return std::nullopt;
   }
-  sendToServer(network::PlayerInput{.inputNumber = nextInputNumber_,
-                                    .actions = held.bits()});
+  const std::uint32_t number = nextInputNumber_;
+  sendToServer(
+      network::PlayerInput{.inputNumber = number, .actions = held.bits()});
   ++nextInputNumber_;
+  return number;
 }
 
 void ServerConnection::drainEntityMessages(

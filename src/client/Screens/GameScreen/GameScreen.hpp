@@ -24,6 +24,7 @@
 #include "ISky.hpp"
 #include "Logger.hpp"
 #include "MissionBanner.hpp"
+#include "OwnShipPredictor.hpp"
 #include "PlayerCommands.hpp"
 #include "PlayerInputPacer.hpp"
 #include "PlayerPalette.hpp"
@@ -86,10 +87,13 @@ struct PlayerSettings;
  * screen on top receives events, which is why opening the options releases
  * what is held. The actions held are logged each time they change.
  *
- * Each update sends the actions held to the server when the PlayerInputPacer
- * says an input is due, the first update included. The game goes on behind the
- * options, so it keeps sending them there, with nothing held but shoot while
- * AUTO-FIRE is on, and keeps applying what the server announces.
+ * Each update sends the actions held to the server, the first update included.
+ * With PREDICTION on, one input goes out for each simulation tick that passed
+ * and the own ship moves at once by the same code as the server (see
+ * OwnShipPredictor); with it off, the PlayerInputPacer says when an input is
+ * due and the ship stays where the last world state put it. The game goes on
+ * behind the options, so it keeps sending them there, with nothing held but
+ * shoot while AUTO-FIRE is on, and keeps applying what the server announces.
  *
  * AUTO-FIRE is read in the settings at each call of playerActions(), so a
  * change in the options applies at once. The server keeps its own rate of
@@ -162,6 +166,7 @@ class GameScreen : public IScreen {
   std::vector<EntityMessage> receivedEntityMessages_;
   ScoreBoard scoreBoard_;
   GameResult* result_;
+  OwnShipPredictor prediction_;
   std::optional<engine::Duration> endedAt_;
   std::uint32_t paintedStatusRevision_{};
   PlayerInputPacer inputPacer_;

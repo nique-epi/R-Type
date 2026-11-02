@@ -147,7 +147,7 @@ class ServerConnection : public IServerConnection,
    */
   void update(engine::Duration elapsed);
 
-  void sendPlayerInput(ActionSet held) override;
+  std::optional<std::uint32_t> sendPlayerInput(ActionSet held) override;
 
   void drainEntityMessages(std::vector<EntityMessage>& destination) override;
 

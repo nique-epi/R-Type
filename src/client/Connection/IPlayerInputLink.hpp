@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstdint>
+#include <optional>
 #include "ActionSet.hpp"
 
 namespace rtype::client {
@@ -15,8 +17,10 @@ class IPlayerInputLink {
   /**
    * @brief Sends the server a PlayerInput holding @p held, numbered after the
    * previous one, or nothing while the server has not accepted the player.
+   * @returns The number the input was sent under, or nothing when none was
+   * sent.
    */
-  virtual void sendPlayerInput(ActionSet held) = 0;
+  virtual std::optional<std::uint32_t> sendPlayerInput(ActionSet held) = 0;
 };
 
 }  // namespace rtype::client
