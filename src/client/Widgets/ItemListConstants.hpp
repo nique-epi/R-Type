@@ -2,7 +2,6 @@
 
 #include <SFML/Graphics/Color.hpp>
 #include "BackgroundColorConstants.hpp"
-#include "InterfaceColorConstants.hpp"
 
 namespace rtype::client {
 

@@ -5,7 +5,6 @@
 #include <algorithm>
 #include <optional>
 #include "KeyPress.hpp"
-#include "LeaderboardPage.hpp"
 #include "LeaderboardPhase.hpp"
 #include "LeaderboardPresentationFixtures.hpp"
 #include "LeaderboardRequest.hpp"
@@ -21,7 +20,6 @@
 
 using rtype::client::CONNECTION_SCREEN;
 using rtype::client::LEADERBOARD_SHEET_ID;
-using rtype::client::LeaderboardPage;
 using rtype::client::LeaderboardPhase;
 using rtype::client::PRESS_DURATION;
 using rtype::client::testing::BANNER_FRAME;
