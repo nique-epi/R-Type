@@ -194,13 +194,13 @@ Measured by `StateRateMeasurementTest` (`tests/server/Replication/`), on ten sec
 
 | States per second | Bytes per second to one player | Longest time without a state | With one datagram in ten lost |
 |---|---|---|---|
-| 2 | 698 | 500 ms | 1000 ms |
-| 10 | 3490 | 100 ms | 300 ms |
-| 20 (default) | 6980 | 50 ms | 150 ms |
-| 30 | 10470 | 33 ms | 100 ms |
-| 60 | 20940 | 17 ms | 50 ms |
+| 2 | 730 | 500 ms | 1000 ms |
+| 10 | 3650 | 100 ms | 300 ms |
+| 20 (default) | 7300 | 50 ms | 150 ms |
+| 30 | 10950 | 33 ms | 100 ms |
+| 60 | 21900 | 17 ms | 50 ms |
 
-The bytes grow in proportion to the rate, since each state holds the same entities: 349 bytes per state here, and about as many more as the screen holds more entities. The time without a state is one rate-th of a second, rounded up to whole ticks. The test measures the interval between states, not what a player sees: it models neither latency nor a link that is too slow, and how smooth the ships look at a given interval is judged on screen.
+The bytes grow in proportion to the rate, since each state holds the same entities: 365 bytes per state here, and about as many more as the screen holds more entities. The time without a state is one rate-th of a second, rounded up to whole ticks. The test measures the interval between states, not what a player sees: it models neither latency nor a link that is too slow, and how smooth the ships look at a given interval is judged on screen.
 - Nothing is built when no player is connected. An entity without a network id, or without a type, is not listed.
 - An entity whose position is not a finite number (NaN or infinite), which only a game bug can produce, is left out of the state instead of stopping the server. A warning under the `Replication` module gives how many entities were left out, each time that number changes, so a stuck entity is reported once rather than 20 times per second.
 - The state lists every connected player with its number, ship, and score. `lives` is what the player has left, `invulnerable` is true while its ship, back after a hit, cannot be hit (see [Lives](#lives-lifekeeper)), and `motion` holds the directions of its newest input and whether its ship rolls or dashes, so every client can draw what each pilot does. The score is the points the player earned in the current game: a missile with a `MissileOwner` that destroys an enemy with a `ScoreValue` makes `DamageRules` publish `EnemyKilled`, and the `ScoreKeeper` adds the points (`DRIFTER_POINTS` 100, `WEAVER_POINTS` 200, both provisional) to the player's score, which stops at its largest value and goes back to 0 with each new world. The ship of each player has a `NetworkIdentity` (see [Player ships](#player-ships-shipspawnannouncer)), so it is listed as an entity too.
