@@ -2,6 +2,7 @@
 #include <filesystem>
 #include <memory>
 #include <vector>
+#include "AssetFolder.hpp"
 #include "GamesSettings.hpp"
 #include "IModule.hpp"
 #include "LaunchOptions.hpp"
@@ -24,11 +25,11 @@ std::vector<std::unique_ptr<engine::IModule>> serverModules(
   modules.push_back(std::make_unique<ServerLoggerModule>(logOptions));
   modules.push_back(std::make_unique<ServerNetworkModule>(
       launchOptions.port(), stopRequest, launchOptions.networkConditions()));
-  modules.push_back(std::make_unique<ServerGamesModule>(
-      GamesSettings{.seed = launchOptions.seed(),
-                    .wavesFile = std::filesystem::path{WAVE_FILE_PATH},
-                    .statesPerSecond = launchOptions.stateRate(),
-                    .inputDelayTicks = launchOptions.inputDelay()}));
+  modules.push_back(std::make_unique<ServerGamesModule>(GamesSettings{
+      .seed = launchOptions.seed(),
+      .wavesFile = engine::locateAssetFolder() / WAVE_FILE_IN_ASSETS,
+      .statesPerSecond = launchOptions.stateRate(),
+      .inputDelayTicks = launchOptions.inputDelay()}));
   modules.push_back(std::make_unique<ServerLobbyModule>());
   modules.push_back(std::make_unique<ServerMetricsModule>(
       std::make_shared<engine::SystemClock>()));

@@ -3,12 +3,12 @@
 #include <SFML/Audio/SoundBuffer.hpp>
 #include <cstddef>
 #include <cstdint>
-#include "AssetIds.hpp"
 #include "AssetKind.hpp"
 #include "AssetLibrary.hpp"
 #include "AssetList.hpp"
 #include "AssetLoadingStep.hpp"
 #include "ClientException.hpp"
+#include "PathText.hpp"
 #include "SilentSound.hpp"
 #include "TemporaryFolder.hpp"
 
@@ -18,7 +18,7 @@ using rtype::client::AssetList;
 using rtype::client::AssetLoadingException;
 using rtype::client::AssetLoadingStep;
 using rtype::client::AssetNotLoadedException;
-using rtype::client::genericText;
+using rtype::engine::genericText;
 using ::testing::AllOf;
 using ::testing::HasSubstr;
 using ::testing::ThrowsMessage;
