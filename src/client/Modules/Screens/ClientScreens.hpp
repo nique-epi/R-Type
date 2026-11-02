@@ -11,7 +11,7 @@
 #include "ScreenStack.hpp"
 #include "ScrollingBackground.hpp"
 #include "ServerChoice.hpp"
-#include "ServerConnection.hpp"
+#include "ServerSession.hpp"
 #include "SessionLossWatch.hpp"
 #include "TimeConstants.hpp"
 
@@ -77,7 +77,7 @@ class ClientScreens {
   [[nodiscard]] bool isEmpty() const;
 
  private:
-  const ServerConnection* connection_;
+  const ServerSession* connection_;
   ScrollingBackground background_;
   GameResult gameResult_;
   std::optional<std::size_t> previousTaunt_;

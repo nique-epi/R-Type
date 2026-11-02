@@ -5,7 +5,6 @@
 #include <SFML/Window/Keyboard.hpp>
 #include <cstdint>
 #include "PointerEvents.hpp"
-#include "RecordingServerConnection.hpp"
 
 namespace rtype::client::testing {
 
@@ -35,15 +34,7 @@ constexpr sf::Vector2i BACK_CHIP_MIDDLE =
 constexpr sf::Keyboard::Scancode READY_KEY = sf::Keyboard::Scan::R;
 
 /** @brief The two ready states a test expects the waiting room to ask. */
-const ServerConnectionCall ASK_READY{
-    .request = ServerConnectionCall::Request::SetReady,
-    .server = {},
-    .nickname = {},
-    .ready = true};
-const ServerConnectionCall ASK_NOT_READY{
-    .request = ServerConnectionCall::Request::SetReady,
-    .server = {},
-    .nickname = {},
-    .ready = false};
+constexpr bool ASK_READY = true;
+constexpr bool ASK_NOT_READY = false;
 
 }  // namespace rtype::client::testing

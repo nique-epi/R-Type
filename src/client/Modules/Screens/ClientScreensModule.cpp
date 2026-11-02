@@ -8,6 +8,7 @@
 #include "ClientConstants.hpp"
 #include "ClientScreens.hpp"
 #include "Endpoint.hpp"
+#include "EntityMessageQueue.hpp"
 #include "EventListeners.hpp"
 #include "EventUse.hpp"
 #include "FrameLoop.hpp"
@@ -18,9 +19,10 @@
 #include "PlayerSettings.hpp"
 #include "ScreenRegistry.hpp"
 #include "ScreenServices.hpp"
-#include "ServerConnection.hpp"
+#include "ServerSession.hpp"
 #include "SettingsService.hpp"
 #include "TimeConstants.hpp"
+#include "WaitingRoom.hpp"
 
 namespace rtype::client {
 
@@ -50,7 +52,9 @@ void ClientScreensModule::install(engine::InstallContext& context) {
   assets_ = &context.require<AssetLibrary>();
   audio_ = &context.require<IAudioService>();
   window_ = &context.require<GameWindow>();
-  connection_ = &context.require<ServerConnection>();
+  connection_ = &context.require<ServerSession>();
+  waitingRoom_ = &context.require<WaitingRoom>();
+  entityMessages_ = &context.require<EntityMessageQueue>();
   loop_ = &context.require<FrameLoop>();
   listeners_ = &context.require<EventListeners>();
   registry_ = &context.require<ScreenRegistry>();
@@ -70,6 +74,8 @@ void ClientScreensModule::start() {
                      .audio = *audio_,
                      .window = *window_,
                      .connection = *connection_,
+                     .waitingRoom = *waitingRoom_,
+                     .entityMessages = *entityMessages_,
                      .server = server_,
                      .nickname = nickname_},
       *registry_);
