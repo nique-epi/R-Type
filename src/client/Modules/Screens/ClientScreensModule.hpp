@@ -11,10 +11,10 @@
 #include "GameWindow.hpp"
 #include "IAudioService.hpp"
 #include "IModule.hpp"
-#include "ISettingsStorage.hpp"
 #include "InstallContext.hpp"
 #include "PlayerSettings.hpp"
 #include "ServerConnection.hpp"
+#include "SettingsService.hpp"
 #include "SubscriptionHandle.hpp"
 #include "TimeConstants.hpp"
 
@@ -65,7 +65,7 @@ class ClientScreensModule final : public engine::IModule {
   network::Endpoint server_;
   std::string nickname_;
   PlayerSettings* settings_{nullptr};
-  ISettingsStorage* storage_{nullptr};
+  SettingsService* settingsService_{nullptr};
   AssetLibrary* assets_{nullptr};
   IAudioService* audio_{nullptr};
   GameWindow* window_{nullptr};

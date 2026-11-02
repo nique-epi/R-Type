@@ -6,9 +6,9 @@
 #include "Endpoint.hpp"
 #include "GameWindow.hpp"
 #include "IAudioService.hpp"
-#include "ISettingsStorage.hpp"
 #include "PlayerSettings.hpp"
 #include "ServerConnection.hpp"
+#include "SettingsService.hpp"
 
 namespace rtype::client {
 
@@ -26,7 +26,7 @@ namespace rtype::client {
 // NOLINTNEXTLINE(cppcoreguidelines-pro-type-member-init,hicpp-member-init)
 struct ClientScreensParts {
   std::reference_wrapper<PlayerSettings> settings;
-  std::reference_wrapper<ISettingsStorage> storage;
+  std::reference_wrapper<SettingsService> settingsService;
   std::reference_wrapper<AssetLibrary> assets;
   std::reference_wrapper<IAudioService> audio;
   std::reference_wrapper<GameWindow> window;
