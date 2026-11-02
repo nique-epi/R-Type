@@ -10,7 +10,6 @@
 #include "EntitySpawned.hpp"
 #include "EventMessage.hpp"
 #include "GameEvent.hpp"
-#include "GameEventConstants.hpp"
 #include "MessagePayload.hpp"
 #include "PlayerDeparture.hpp"
 #include "PlayerElimination.hpp"

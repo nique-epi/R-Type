@@ -12,7 +12,6 @@
 #include "DatagramQueues.hpp"
 #include "Endpoint.hpp"
 #include "IClock.hpp"
-#include "IncomingDatagram.hpp"
 #include "PacketHeader.hpp"
 #include "ThrottledLog.hpp"
 

@@ -47,6 +47,14 @@ class ReceivedSequences {
   void acknowledgeIn(PacketHeader& header) const;
 
  private:
+  /**
+   * @brief Moves the bits of the datagrams before the newest once the newest
+   * moves @p distance ahead, 1 to 32767: the former newest takes bit
+   * @p distance - 1, each datagram the bits named moves @p distance bits up,
+   * and what moves past ACKNOWLEDGEMENT_BIT_COUNT is no longer named.
+   */
+  void moveEarlierBy(std::uint16_t distance);
+
   std::optional<std::uint16_t> newest_;
   std::uint32_t earlier_{0};
 };
