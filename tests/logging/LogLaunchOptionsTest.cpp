@@ -1,7 +1,6 @@
 #include <gtest/gtest.h>
 #include <array>
 #include <filesystem>
-#include <fstream>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -21,13 +20,12 @@ using rtype::logging::LogFileOpenException;
 using rtype::logging::Logger;
 using rtype::logging::LogLaunchOptions;
 using rtype::logging::LogLevel;
-using rtype::logging::LogOutput;
 using rtype::logging::MissingLogOptionValueException;
 using rtype::logging::NO_FILE_OPTION;
 using rtype::logging::NO_STDERR_OPTION;
 using rtype::logging::STDERR_OPTION;
 using rtype::logging::UnknownLogLevelException;
-using rtype::logging::testing::RELATIVE_JOURNAL;
+using rtype::logging::testing::MISSING_JOURNAL;
 using rtype::logging::testing::UNUSED_JOURNAL;
 
 using Arguments = std::vector<std::string_view>;
@@ -40,7 +38,7 @@ using Arguments = std::vector<std::string_view>;
 TEST_F(LogLaunchOptionsFixture, DefaultsWriteToTheJournalAndStandardError) {
   const JournalFile journal;
 
-  LogLaunchOptions::read(Arguments{}, journal.path().string()).apply();
+  LogLaunchOptions::read(Arguments{}, journal.path()).apply();
   Logger("Launch").warn("hello");
 
   EXPECT_EQ(Logger::level(), LogLevel::Warn);
@@ -56,8 +54,7 @@ TEST_F(LogLaunchOptionsFixture, DefaultsWriteToTheJournalAndStandardError) {
 TEST_F(LogLaunchOptionsFixture, NoStderrOptionWritesToTheJournalOnly) {
   const JournalFile journal;
 
-  LogLaunchOptions::read(Arguments{"--no-log-stderr"}, journal.path().string())
-      .apply();
+  LogLaunchOptions::read(Arguments{"--no-log-stderr"}, journal.path()).apply();
   Logger("Launch").warn("hello");
 
   EXPECT_EQ(journal.lines().size(), 1U);
@@ -89,7 +86,7 @@ TEST_F(LogLaunchOptionsFixture,
   const JournalFile journal;
 
   LogLaunchOptions::read(Arguments{"--log-stderr", "--no-log-stderr"},
-                         journal.path().string())
+                         journal.path())
       .apply();
   Logger("Launch").warn("hidden");
 
@@ -122,24 +119,18 @@ TEST_F(LogLaunchOptionsFixture, FirstLineNamesTheJournal) {
  */
 TEST_F(LogLaunchOptionsFixture,
        FirstLineNamesARelativeJournalByItsAbsolutePath) {
-  const CurrentDirectoryChange directory{
-      std::filesystem::temp_directory_path()};
-  const std::filesystem::path relativeJournal{RELATIVE_JOURNAL};
+  const JournalFile journal;
+  const CurrentDirectoryChange directory{journal.path().parent_path()};
+  const std::filesystem::path relativeJournal = journal.path().filename();
+
+  LogLaunchOptions::read(Arguments{"--log-level", "info"}, relativeJournal)
+      .apply();
+
+  const std::vector<std::string> lines = journal.lines();
+  ASSERT_FALSE(lines.empty());
   const std::filesystem::path absoluteJournal =
       std::filesystem::current_path() / relativeJournal;
-  std::filesystem::remove(absoluteJournal);
-
-  LogLaunchOptions::read(Arguments{"--log-level", "info"},
-                         relativeJournal.string())
-      .apply();
-  Logger::setOutput(LogOutput{});
-
-  std::ifstream journal{absoluteJournal};
-  std::string firstLine;
-  std::getline(journal, firstLine);
-  journal.close();
-  std::filesystem::remove(absoluteJournal);
-  EXPECT_NE(firstLine.find("journal: " + absoluteJournal.string()),
+  EXPECT_NE(lines.front().find("journal: " + absoluteJournal.string()),
             std::string::npos);
 }
 
@@ -164,8 +155,7 @@ TEST_F(LogLaunchOptionsFixture, AnnouncesThatThereIsNoJournal) {
 TEST_F(LogLaunchOptionsFixture, LevelOptionSetsTheLevel) {
   const JournalFile journal;
 
-  LogLaunchOptions::read(Arguments{"--log-level", "debug"},
-                         journal.path().string())
+  LogLaunchOptions::read(Arguments{"--log-level", "debug"}, journal.path())
       .apply();
 
   EXPECT_EQ(Logger::level(), LogLevel::Debug);
@@ -179,8 +169,7 @@ TEST_F(LogLaunchOptionsFixture, LevelOptionSetsTheLevel) {
 TEST_F(LogLaunchOptionsFixture, NoFileOptionWritesToStandardErrorOnly) {
   const JournalFile journal;
 
-  LogLaunchOptions::read(Arguments{"--no-log-file"}, journal.path().string())
-      .apply();
+  LogLaunchOptions::read(Arguments{"--no-log-file"}, journal.path()).apply();
   Logger("Launch").warn("shown");
 
   EXPECT_FALSE(std::filesystem::exists(journal.path()));
@@ -196,7 +185,7 @@ TEST_F(LogLaunchOptionsFixture, NoFileAndNoStderrOptionsWriteNothing) {
   const JournalFile journal;
 
   LogLaunchOptions::read(Arguments{"--no-log-file", "--no-log-stderr"},
-                         journal.path().string())
+                         journal.path())
       .apply();
   Logger("Launch").warn("lost");
 
@@ -213,7 +202,7 @@ TEST_F(LogLaunchOptionsFixture, StderrOptionWritesToStandardError) {
   const JournalFile journal;
 
   LogLaunchOptions::read(Arguments{"--no-log-file", "--log-stderr"},
-                         journal.path().string())
+                         journal.path())
       .apply();
   Logger("Launch").warn("shown");
 
@@ -264,10 +253,9 @@ TEST_F(LogLaunchOptionsFixture, UnknownLevelIsRejectedAndChangesNothing) {
   const JournalFile journal;
   ASSERT_EQ(Logger::level(), LogLevel::Warn);
 
-  EXPECT_THROW(
-      static_cast<void>(LogLaunchOptions::read(
-          Arguments{"--log-level", "verbose"}, journal.path().string())),
-      UnknownLogLevelException);
+  EXPECT_THROW(static_cast<void>(LogLaunchOptions::read(
+                   Arguments{"--log-level", "verbose"}, journal.path())),
+               UnknownLogLevelException);
 
   EXPECT_EQ(Logger::level(), LogLevel::Warn);
   Logger("Launch").warn("still on stderr");
@@ -281,7 +269,8 @@ TEST_F(LogLaunchOptionsFixture, UnknownLevelIsRejectedAndChangesNothing) {
  * Then the error is raised and neither the level nor the output changed
  */
 TEST_F(LogLaunchOptionsFixture, UnopenableJournalChangesNothing) {
-  const std::string missing = missingJournalPath().string();
+  const std::string missing =
+      (std::filesystem::temp_directory_path() / MISSING_JOURNAL).string();
   const LogLaunchOptions options = LogLaunchOptions::read(
       Arguments{"--log-level", "debug", "--log-file", missing}, UNUSED_JOURNAL);
   ASSERT_EQ(Logger::level(), LogLevel::Warn);
@@ -362,8 +351,7 @@ TEST_F(LogLaunchOptionsFixture, OtherArgumentsAreKeptInOrder) {
 TEST_F(LogLaunchOptionsFixture, OtherArgumentsLeaveTheDefaults) {
   const JournalFile journal;
 
-  LogLaunchOptions::read(Arguments{"--port", "4242", "-v"},
-                         journal.path().string())
+  LogLaunchOptions::read(Arguments{"--port", "4242", "-v"}, journal.path())
       .apply();
   Logger("Launch").warn("hello");
 
@@ -382,7 +370,7 @@ TEST_F(LogLaunchOptionsFixture, ProcessArgumentsApplyAfterTheProgramName) {
                                              "error"};
 
   LogLaunchOptions::readFromProcess(static_cast<int>(arguments.size()),
-                                    arguments.data(), journal.path().string())
+                                    arguments.data(), journal.path())
       .apply();
 
   EXPECT_EQ(Logger::level(), LogLevel::Error);

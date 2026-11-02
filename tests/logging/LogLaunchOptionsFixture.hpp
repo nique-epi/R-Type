@@ -1,7 +1,6 @@
 #pragma once
 
 #include <gtest/gtest.h>
-#include <filesystem>
 #include <sstream>
 #include <streambuf>
 #include <string>
@@ -15,9 +14,6 @@ class LogLaunchOptionsFixture : public ::testing::Test {
   void TearDown() override;
 
   [[nodiscard]] std::string standardError() const;
-
-  /** @returns A journal that cannot be opened, its folder being missing. */
-  [[nodiscard]] static std::filesystem::path missingJournalPath();
 
  private:
   rtype::logging::LogLevel savedLevel_{rtype::logging::LogLevel::Info};
