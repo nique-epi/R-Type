@@ -46,7 +46,7 @@ A module lives at one of two scopes.
 The two follow the same five moments, the same order and the same rules. They differ in three ways:
 
 - A game module has no `dependencies()`: it is listed after the modules whose services it requires, and a missing service throws `MissingServiceException` when the game is built. The games module builds the games in its `start()`, so at program level the error reaches you as a `ModuleStartFailedException` naming `games` and carrying the message of the `MissingServiceException`.
-- Its `install()` also receives a `GameContext` (the game's event bus, timers, players and settings), because several games run at once and each has its own.
+- Its `install()` also receives a `GameContext` (the game's event bus, players and settings), because several games run at once and each has its own.
 - The program-scope `Application` runs the stages of the program; a game runs its own, three per tick, inside the work the games module adds to the simulation stage.
 
 The server therefore has modules inside a module: the games module of the program creates the games, and each game installs its own modules. The client has the program scope only. The game scope is described in [Server](/R-Type/server/#modules-of-a-game-igamemodule).

@@ -148,7 +148,7 @@ Everything else comes from a library: the hash tables and the sort from the stan
 | Sparse set with swap removal | `EntityIndexMap`, `ComponentStorage` | constant per operation | see [Components](#components) | sparse array, archetypes |
 | Free list of indices with generations | `EntityRegistry` | constant per operation | an index is reused, so the arrays stay short, and a stale handle is told apart | never reusing an index: the arrays grow for as long as the game lasts |
 | Accumulator with a limit | `FixedTimestep` | constant per call | see [Time](#time) | a variable step |
-| Search of the earliest timer in a list | `TimerScheduler` | linear in the timers, per search | three places outside the engine schedule timers, and the first of equal times in the list is the oldest, which gives creation order for free | a binary heap: logarithmic, but it needs a counter to keep that order, and cancelling stays linear |
+| Search of the earliest timer in a list | `TimerScheduler` | linear in the timers, per search | two places outside the engine schedule timers, both in `WaveDirector`, and the first of equal times in the list is the oldest, which gives creation order for free | a binary heap: logarithmic, but it needs a counter to keep that order, and cancelling stays linear |
 | Queue delivered by a scan of the subscriptions | `EventBus` | linear in the subscriptions, per event | six subscriptions exist in the code; finding the next one by identifier after each call lets a subscriber unsubscribe during a delivery | one list per event type: faster with many subscribers |
 | Ring buffer that discards the oldest | `BoundedQueue` | constant per `push()` | see [Queues between threads](#queues-between-threads) | a lock-free queue, a writer that waits |
 | Test of every pair of boxes | `CollisionSystem`, `overlaps()` | quadratic in the boxes | see below | a grid or a sweep along one axis |
@@ -202,7 +202,7 @@ TCP delivers every byte, in order. After a loss it holds back everything that fo
 | Header on top of IP | 8 bytes | 20 bytes at least |
 | Connection | none: the protocol builds its own session | opened by the system |
 
-The cost is that the protocol does the work TCP does. Version 1 already drops a duplicate or a late datagram (`sequence`), checks who sends (`sessionToken`, and a cookie before a seat is given) and repeats the messages that matter. Guaranteed delivery is the work of the second part.
+The cost is that the protocol does the work TCP does. It drops a duplicate or a late datagram (`sequence`), checks who sends (`sessionToken`, and a cookie before a seat is given), and from version 2 sends the messages that matter until they are acknowledged (see [Guaranteed messages](/R-Type/protocol/#guaranteed-messages)).
 
 Alternative considered: TCP for the lobby and UDP for the game. The lobby needs no speed, but it would take a second port and a second connection to open, and the lobby messages already survive losses by being repeated over the one UDP socket.
 
@@ -231,15 +231,15 @@ Alternative considered: peer to peer, with every peer running the game. It needs
 
 ### Known limits of the proof of concept
 
-- **Losses.** Nothing is guaranteed in version 1. State messages repeat what they say, so they correct themselves; the messages that show something once are sent three times, 50 ms apart. If all three copies are lost, a sound or an effect is missed, and lives, scores and players stay right through the states (see [Losses](/R-Type/protocol/#losses)).
+- **Losses.** State messages repeat what they say, so they correct themselves. `EntityDestroyed`, `GameEvent` and `PlayerLeft` are guaranteed: sent again every 116.7 ms until acknowledged, for 1 s at most. With 20 % of datagrams lost, about one in two million is still lost; a sound or an effect is then missed, and lives, scores and players stay right through the states (see [Guaranteed messages](/R-Type/protocol/#guaranteed-messages)).
 - **Latency.** The client neither predicts its own ship nor interpolates the others: it draws what the last state says, so a key shows after a round trip plus up to one state interval (50 ms at 20 states per second), and a ship moves at the pace of the states.
 - **Measures.** The rates and delays are **provisional**. The only capture is a local game: no loss, no latency, and the network simulator that would add them does not exist yet (see [Network](/R-Type/network/)).
 
-The second part answers each point (see [Version 2](/R-Type/protocol/#version-2)): guaranteed messages replace the three copies, an input is repeated until the server confirms it, and the state confirms the last input applied, which is what lets the client replay its newest inputs on top of a state and correct its ship. Prediction and interpolation themselves are client work, placed in `client/Prediction` (see [Project layout](/R-Type/project-layout/)).
+The second part answers each point (see [Version 2](/R-Type/protocol/#version-2)): guaranteed messages replaced the three copies in version 2; an input is to be repeated until the server confirms it, and the state is to confirm the last input applied, which is what lets the client replay its newest inputs on top of a state and correct its ship. Prediction and interpolation themselves are client work, placed in `client/Prediction` (see [Project layout](/R-Type/project-layout/)).
 
 ## Consequences
 
-- `EntityRegistry`, `ComponentRegistry`, `ISystem`, `SystemScheduler`, `EventBus` and `BoundedQueue` exist today. The game screen of the client calls a scheduler once per frame to play its animations; the tick of the server runs the stages of its `Application`: the games move on and run their systems, the connection requests are answered, the timers advance and the events of the bus are delivered.
+- `EntityRegistry`, `ComponentRegistry`, `ISystem`, `SystemScheduler`, `EventBus` and `BoundedQueue` exist today. The game screen of the client calls a scheduler once per frame to play its animations; the tick of the server runs the stages of its `Application`: the games move on and run their systems and their timers, the connection requests are answered, and the events of the bus are delivered.
 - Any new target declares its links explicitly; a link that breaks the table above fails the configure step.
 
 ## Validation
