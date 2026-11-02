@@ -4,6 +4,7 @@
 #include "ConnectedPlayer.hpp"
 #include "Disconnection.hpp"
 #include "Endpoint.hpp"
+#include "FarewellPause.hpp"
 #include "Games.hpp"
 #include "IDatagramSender.hpp"
 #include "ModuleConstants.hpp"
@@ -12,7 +13,7 @@
 
 namespace rtype::server {
 
-FarewellSender::FarewellSender(IDatagramSender& sender, Pause pause)
+FarewellSender::FarewellSender(IDatagramSender& sender, FarewellPause pause)
     : sender_(&sender), pause_(std::move(pause)) {}
 
 void FarewellSender::sayGoodbyeTo(const Games& games) {

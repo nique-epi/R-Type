@@ -1,10 +1,9 @@
 #pragma once
 
 #include <cstddef>
-#include <functional>
+#include "FarewellPause.hpp"
 #include "Games.hpp"
 #include "IDatagramSender.hpp"
-#include "TimeConstants.hpp"
 
 namespace rtype::server {
 
@@ -21,12 +20,8 @@ namespace rtype::server {
  */
 class FarewellSender {
  public:
-  /** @brief Waits for the given time; the server sleeps, a test only writes the
-   * time down. */
-  using Pause = std::function<void(engine::Duration)>;
-
   /** @param sender, pause Both must outlive the object. */
-  FarewellSender(IDatagramSender& sender, Pause pause);
+  FarewellSender(IDatagramSender& sender, FarewellPause pause);
 
   /** @brief Sends the copies to every player of @p games; sends nothing and
    * waits for nothing when no game holds a player. */
@@ -37,7 +32,7 @@ class FarewellSender {
   [[nodiscard]] std::size_t queueOneCopy(const Games& games);
 
   IDatagramSender* sender_;
-  Pause pause_;
+  FarewellPause pause_;
 };
 
 }  // namespace rtype::server
