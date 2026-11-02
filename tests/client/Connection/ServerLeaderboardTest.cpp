@@ -30,7 +30,7 @@ TEST_F(ServerLeaderboardFixture, WithoutASessionItSaysNotOnServer) {
   leaderboard().ask(askedRequest());
 
   EXPECT_EQ(leaderboard().page().phase, LeaderboardPhase::NotOnServer);
-  EXPECT_EQ(sentCountOf<network::LeaderboardRequest>(), 0);
+  EXPECT_EQ(sentRequestCount(), 0);
 }
 
 /**
@@ -61,7 +61,7 @@ TEST_F(ServerLeaderboardFixture, TheRequestWaitsItsInterval) {
 
   update(ASK_INTERVAL - SMALLEST_TIME);
 
-  EXPECT_EQ(sentCountOf<network::LeaderboardRequest>(), 1);
+  EXPECT_EQ(sentRequestCount(), 1);
 }
 
 /**
@@ -75,7 +75,7 @@ TEST_F(ServerLeaderboardFixture, AnUnansweredRequestIsSentAgain) {
 
   update(ASK_INTERVAL);
 
-  EXPECT_EQ(sentCountOf<network::LeaderboardRequest>(), 2);
+  EXPECT_EQ(sentRequestCount(), 2);
 }
 
 /**
@@ -96,7 +96,7 @@ TEST_F(ServerLeaderboardFixture, TheAnswerFillsThePage) {
   ASSERT_EQ(page.rows.size(), 1);
   EXPECT_EQ(page.rows.front().nickname, TOP_NICKNAME);
   EXPECT_NE(page.revision, revision);
-  EXPECT_EQ(sentCountOf<network::LeaderboardRequest>(), 1);
+  EXPECT_EQ(sentRequestCount(), 1);
 }
 
 /**
@@ -159,7 +159,7 @@ TEST_F(ServerLeaderboardFixture, AfterFiveSecondsTheClientGivesUp) {
   update(ASK_INTERVAL);
 
   EXPECT_EQ(leaderboard().page().phase, LeaderboardPhase::NoAnswer);
-  EXPECT_EQ(sentCountOf<network::LeaderboardRequest>(), 1);
+  EXPECT_EQ(sentRequestCount(), 1);
 }
 
 /**
@@ -190,7 +190,7 @@ TEST_F(ServerLeaderboardFixture, StoppingEndsTheRequests) {
   leaderboard().stopAsking();
   update(ASK_INTERVAL);
 
-  EXPECT_EQ(sentCountOf<network::LeaderboardRequest>(), 1);
+  EXPECT_EQ(sentRequestCount(), 1);
 }
 
 /**
