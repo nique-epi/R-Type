@@ -3,6 +3,7 @@
 #include <chrono>
 #include <cstddef>
 #include <cstdint>
+#include <string_view>
 
 /** @brief The names of the probe modules the tests list after the modules of
  * the server. */
@@ -56,3 +57,14 @@ constexpr std::size_t SECOND_GAME = 1;
 /** @brief Numbers of games a test starts the server with. */
 constexpr std::size_t ONE_GAME = 1;
 constexpr std::size_t THREE_GAMES = 3;
+
+/**
+ * @brief A line that gives the state rate setting a rate above the highest one.
+ */
+constexpr std::string_view STATE_RATE_ABOVE_THE_HIGHEST_LINE =
+    "set state-rate 1000";
+
+/**
+ * @brief A line that clears the seed setting.
+ */
+constexpr std::string_view CLEAR_THE_SEED_LINE = "set seed none";

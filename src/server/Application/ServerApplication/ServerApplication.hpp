@@ -85,7 +85,15 @@ class ServerApplication final : public IDatagramSender,
   ~ServerApplication() override = default;
 
   /**
-   * @brief Binds the UDP socket on the endpoint given to the constructor.
+   * @brief Changes the endpoint open() binds, from the one the constructor
+   * was given. Binds nothing.
+   * @throws ServerAlreadyOpenException when the socket is already bound.
+   */
+  void listenOn(network::Endpoint localEndpoint);
+
+  /**
+   * @brief Binds the UDP socket on the endpoint given to the constructor, or
+   * to listenOn() when it was called.
    * @throws ServerAlreadyOpenException when the socket is already bound.
    * @throws InvalidAddressException when the address is not an IP address.
    * @throws SocketOpenException when the system refuses the port.

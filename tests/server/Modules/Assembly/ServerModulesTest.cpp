@@ -5,11 +5,13 @@
 #include <string>
 #include <vector>
 #include "Application.hpp"
+#include "ConfigurationReport.hpp"
 #include "DatagramCodec.hpp"
 #include "IModule.hpp"
 #include "LoopStages.hpp"
 #include "MessageType.hpp"
 #include "ModuleConstants.hpp"
+#include "ServerConfiguration.hpp"
 #include "ServerConstants.hpp"
 #include "ServerModuleTestConstants.hpp"
 #include "ServerModules.hpp"
@@ -19,6 +21,7 @@
 using rtype::engine::Application;
 using rtype::engine::LoopStages;
 using rtype::network::MessageType;
+using rtype::server::serverConfiguration;
 using rtype::server::serverModules;
 
 /**
@@ -28,8 +31,7 @@ using rtype::server::serverModules;
  * they start
  */
 TEST_F(ServerModulesFixture, ListsTheLoggerTheNetworkTheGamesAndTheLobby) {
-  const auto modules =
-      serverModules(journalOptions(), launchOptions(), stopRequest());
+  const auto modules = serverModules(journalOptions(), stopRequest());
 
   std::vector<std::string> names;
   names.reserve(modules.size());
@@ -51,9 +53,10 @@ TEST_F(ServerModulesFixture, ListsTheLoggerTheNetworkTheGamesAndTheLobby) {
  * free again
  */
 TEST_F(ServerModulesFixture, SaysGoodbyeToAJoinedPlayerWhenItStops) {
-  Application application(
-      LoopStages(rtype::server::SERVER_LOOP_STAGES),
-      serverModules(journalOptions(), launchOptions(), stopRequest()));
+  rtype::engine::ConfigurationReport report;
+  Application application(LoopStages(rtype::server::SERVER_LOOP_STAGES),
+                          serverModules(journalOptions(), stopRequest()),
+                          serverConfiguration(launchOptions(), report));
   application.start();
   const std::uint64_t token = joinWithTheClient();
 

@@ -15,10 +15,9 @@ using rtype::engine::HELP_OPTION;
 using rtype::engine::InvalidLaunchOptionValueException;
 using rtype::engine::MissingLaunchOptionValueException;
 using rtype::engine::PORT_OPTION;
+using rtype::engine::SET_OPTION;
 using rtype::engine::UnknownLaunchArgumentException;
-using rtype::network::DEFAULT_SERVER_PORT;
 using rtype::network::InvalidPortException;
-using rtype::server::DEFAULT_WORLD_STATES_PER_SECOND;
 using rtype::server::LaunchOptions;
 using rtype::server::SEED_OPTION;
 using rtype::server::STATE_RATE_OPTION;
@@ -26,18 +25,19 @@ using rtype::server::STATE_RATE_OPTION;
 namespace {
 
 using Arguments = std::vector<std::string_view>;
+using Lines = std::vector<std::string>;
 
 }  // namespace
 
 /**
  * Given no argument
  * When the launch options are read
- * Then the server listens on the default port
+ * Then no setting is forced, so the configuration file and the defaults decide
  */
-TEST(ServerLaunchOptions, NoArgumentGivesTheDefaultPort) {
+TEST(ServerLaunchOptions, NoArgumentForcesNoSetting) {
   const LaunchOptions options = LaunchOptions::read(Arguments{});
 
-  EXPECT_EQ(options.port(), DEFAULT_SERVER_PORT);
+  EXPECT_TRUE(options.forcedLines().empty());
 }
 
 /**
@@ -54,25 +54,27 @@ TEST(ServerLaunchOptions, NoArgumentStartsTheServer) {
 /**
  * Given the port option and a port
  * When the launch options are read
- * Then the server listens on that port
+ * Then the port setting is forced to that port
  */
-TEST(ServerLaunchOptions, PortOptionSetsThePort) {
+TEST(ServerLaunchOptions, PortOptionForcesThePort) {
   const LaunchOptions options =
       LaunchOptions::read(Arguments{PORT_OPTION, PORT_ARGUMENT});
 
-  EXPECT_EQ(options.port(), PORT_OF_PORT_ARGUMENT);
+  EXPECT_EQ(options.forcedLines(), Lines{std::string(PORT_LINE)});
 }
 
 /**
  * Given the port option twice
  * When the launch options are read
- * Then the last port wins
+ * Then both lines are forced in the order given, so the last port wins when
+ * they run
  */
-TEST(ServerLaunchOptions, LastPortOptionWins) {
+TEST(ServerLaunchOptions, PortOptionTwiceForcesBothInOrder) {
   const LaunchOptions options = LaunchOptions::read(
       Arguments{PORT_OPTION, PORT_ARGUMENT, PORT_OPTION, OTHER_PORT_ARGUMENT});
 
-  EXPECT_EQ(options.port(), PORT_OF_OTHER_PORT_ARGUMENT);
+  EXPECT_EQ(options.forcedLines(),
+            (Lines{std::string(PORT_LINE), std::string(OTHER_PORT_LINE)}));
 }
 
 /**
@@ -166,52 +168,42 @@ TEST(ServerLaunchOptions, UsageGivesTheDefaultPort) {
 }
 
 /**
- * Given no argument
- * When the launch options are read
- * Then no seed is given, so the server draws one
- */
-TEST(ServerLaunchOptions, NoArgumentGivesNoSeed) {
-  const LaunchOptions options = LaunchOptions::read(Arguments{});
-
-  EXPECT_FALSE(options.seed().has_value());
-}
-
-/**
  * Given the seed option and a seed
  * When the launch options are read
- * Then the seed is that number
+ * Then the seed setting is forced to that number
  */
-TEST(ServerLaunchOptions, SeedOptionSetsTheSeed) {
+TEST(ServerLaunchOptions, SeedOptionForcesTheSeed) {
   const LaunchOptions options =
       LaunchOptions::read(Arguments{SEED_OPTION, SEED_ARGUMENT});
 
-  EXPECT_EQ(options.seed(), SEED_OF_SEED_ARGUMENT);
+  EXPECT_EQ(options.forcedLines(), Lines{std::string(SEED_LINE)});
 }
 
 /**
  * Given the seed option twice
  * When the launch options are read
- * Then the last seed wins
+ * Then both lines are forced in the order given
  */
-TEST(ServerLaunchOptions, LastSeedOptionWins) {
+TEST(ServerLaunchOptions, SeedOptionTwiceForcesBothInOrder) {
   const LaunchOptions options = LaunchOptions::read(
       Arguments{SEED_OPTION, SEED_ARGUMENT, SEED_OPTION, OTHER_SEED_ARGUMENT});
 
-  EXPECT_EQ(options.seed(), SEED_OF_OTHER_SEED_ARGUMENT);
+  EXPECT_EQ(options.forcedLines(),
+            (Lines{std::string(SEED_LINE), std::string(OTHER_SEED_LINE)}));
 }
 
 /**
  * Given the seeds 0 and 4294967295, the two ends of the range
  * When the launch options are read
- * Then both are accepted
+ * Then both are accepted and forced
  */
 TEST(ServerLaunchOptions, SeedAcceptsBothEndsOfTheRange) {
-  EXPECT_EQ(
-      LaunchOptions::read(Arguments{SEED_OPTION, LOWEST_SEED_ARGUMENT}).seed(),
-      0U);
-  EXPECT_EQ(
-      LaunchOptions::read(Arguments{SEED_OPTION, HIGHEST_SEED_ARGUMENT}).seed(),
-      HIGHEST_SEED);
+  EXPECT_EQ(LaunchOptions::read(Arguments{SEED_OPTION, LOWEST_SEED_ARGUMENT})
+                .forcedLines(),
+            Lines{std::string(LOWEST_SEED_LINE)});
+  EXPECT_EQ(LaunchOptions::read(Arguments{SEED_OPTION, HIGHEST_SEED_ARGUMENT})
+                .forcedLines(),
+            Lines{std::string(HIGHEST_SEED_LINE)});
 }
 
 /**
@@ -240,63 +232,53 @@ TEST(ServerLaunchOptions, SeedOptionWithoutValueIsRejected) {
 }
 
 /**
- * Given no state rate option
- * When the launch options are read
- * Then each player is sent the default number of states per second
- */
-TEST(ServerLaunchOptions, NoStateRateOptionGivesTheDefaultRate) {
-  const LaunchOptions options = LaunchOptions::read(Arguments{});
-
-  EXPECT_EQ(options.stateRate(), DEFAULT_WORLD_STATES_PER_SECOND);
-}
-
-/**
  * Given the state rate option and a rate
  * When the launch options are read
- * Then each player is sent that many states per second
+ * Then the state rate setting is forced to that rate
  */
-TEST(ServerLaunchOptions, StateRateOptionSetsTheRate) {
+TEST(ServerLaunchOptions, StateRateOptionForcesTheRate) {
   const LaunchOptions options =
       LaunchOptions::read(Arguments{STATE_RATE_OPTION, STATE_RATE_ARGUMENT});
 
-  EXPECT_EQ(options.stateRate(), RATE_OF_STATE_RATE_ARGUMENT);
+  EXPECT_EQ(options.forcedLines(), Lines{std::string(STATE_RATE_LINE)});
 }
 
 /**
  * Given the state rate option given twice
  * When the launch options are read
- * Then the last rate wins
+ * Then both lines are forced in the order given
  */
-TEST(ServerLaunchOptions, LastStateRateOptionWins) {
+TEST(ServerLaunchOptions, StateRateOptionTwiceForcesBothInOrder) {
   const LaunchOptions options = LaunchOptions::read(
       Arguments{STATE_RATE_OPTION, STATE_RATE_ARGUMENT, STATE_RATE_OPTION,
                 OTHER_STATE_RATE_ARGUMENT});
 
-  EXPECT_EQ(options.stateRate(), RATE_OF_OTHER_STATE_RATE_ARGUMENT);
+  EXPECT_EQ(options.forcedLines(), (Lines{std::string(STATE_RATE_LINE),
+                                          std::string(OTHER_STATE_RATE_LINE)}));
 }
 
 /**
  * Given the lowest rate the server accepts
  * When the launch options are read
- * Then it is accepted
+ * Then it is accepted and forced
  */
 TEST(ServerLaunchOptions, StateRateOptionAcceptsTheLowestRate) {
   const LaunchOptions options = LaunchOptions::read(
       Arguments{STATE_RATE_OPTION, LOWEST_STATE_RATE_ARGUMENT});
 
-  EXPECT_EQ(options.stateRate(), LOWEST_STATE_RATE);
+  EXPECT_EQ(options.forcedLines(), Lines{std::string(LOWEST_STATE_RATE_LINE)});
 }
 
 /**
  * Given the highest rate the server accepts, one state per tick
  * When the launch options are read
- * Then it is accepted
+ * Then it is accepted and forced
  */
 TEST(ServerLaunchOptions, StateRateOptionAcceptsTheHighestRate) {
   const LaunchOptions options = LaunchOptions::read(
       Arguments{STATE_RATE_OPTION, HIGHEST_STATE_RATE_ARGUMENT});
 
-  EXPECT_EQ(options.stateRate(), HIGHEST_STATE_RATE);
+  EXPECT_EQ(options.forcedLines(), Lines{std::string(HIGHEST_STATE_RATE_LINE)});
 }
 
 /**
@@ -336,5 +318,68 @@ TEST(ServerLaunchOptions, StateRateOptionWithoutValueIsRefused) {
  */
 TEST(ServerLaunchOptions, UsageNamesTheStateRateOption) {
   EXPECT_NE(LaunchOptions::usage().find(std::string(STATE_RATE_OPTION)),
+            std::string::npos);
+}
+
+/**
+ * Given the set option and `name=value`
+ * When the launch options are read
+ * Then the line that gives the setting that value is forced
+ */
+TEST(ServerLaunchOptions, SetOptionForcesTheSettingItNames) {
+  const LaunchOptions options =
+      LaunchOptions::read(Arguments{SET_OPTION, ASSIGNMENT_ARGUMENT});
+
+  EXPECT_EQ(options.forcedLines(), Lines{std::string(ASSIGNMENT_LINE)});
+}
+
+/**
+ * Given the port option, the set option and the seed option
+ * When the launch options are read
+ * Then the lines are forced in the order the options were given
+ */
+TEST(ServerLaunchOptions, ForcedLinesKeepTheOrderOfTheOptions) {
+  const LaunchOptions options = LaunchOptions::read(
+      Arguments{PORT_OPTION, PORT_ARGUMENT, SET_OPTION, ASSIGNMENT_ARGUMENT,
+                SEED_OPTION, SEED_ARGUMENT});
+
+  EXPECT_EQ(options.forcedLines(),
+            (Lines{std::string(PORT_LINE), std::string(ASSIGNMENT_LINE),
+                   std::string(SEED_LINE)}));
+}
+
+/**
+ * Given a set option whose value is not `name=value`, or holds a quote
+ * When the launch options are read
+ * Then each is refused as an invalid value of the option
+ */
+TEST(ServerLaunchOptions, SetOptionRefusesAnInvalidAssignment) {
+  for (const std::string_view assignment :
+       {ASSIGNMENT_WITHOUT_MARK, ASSIGNMENT_WITHOUT_NAME,
+        ASSIGNMENT_WITH_QUOTE}) {
+    EXPECT_THROW(static_cast<void>(
+                     LaunchOptions::read(Arguments{SET_OPTION, assignment})),
+                 InvalidLaunchOptionValueException)
+        << assignment;
+  }
+}
+
+/**
+ * Given the set option as the last argument
+ * When the launch options are read
+ * Then the missing value is reported
+ */
+TEST(ServerLaunchOptions, SetOptionWithoutValueIsRefused) {
+  EXPECT_THROW(static_cast<void>(LaunchOptions::read(Arguments{SET_OPTION})),
+               MissingLaunchOptionValueException);
+}
+
+/**
+ * Given the usage
+ * When it is read
+ * Then it names the set option
+ */
+TEST(ServerLaunchOptions, UsageNamesTheSetOption) {
+  EXPECT_NE(LaunchOptions::usage().find(std::string(SET_OPTION)),
             std::string::npos);
 }

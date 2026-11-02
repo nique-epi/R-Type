@@ -30,7 +30,9 @@ using rtype::network::IncomingDatagram;
 using rtype::server::ConnectedPlayer;
 using rtype::server::testing::playerEndpoint;
 
-void ServerGamesFixture::startWith(rtype::server::GamesSettings settings) {
+void ServerGamesFixture::startWith(
+    rtype::server::GamesSettings settings,
+    rtype::engine::ConfigurationStep configuration) {
   std::vector<std::unique_ptr<rtype::engine::IModule>> modules;
   modules.push_back(
       std::make_unique<rtype::server::ServerLoggerModule>(journalOptions()));
@@ -50,7 +52,7 @@ void ServerGamesFixture::startWith(rtype::server::GamesSettings settings) {
   modules.push_back(std::move(probe));
   application_ = std::make_unique<rtype::engine::Application>(
       rtype::engine::LoopStages(rtype::server::SERVER_LOOP_STAGES),
-      std::move(modules));
+      std::move(modules), std::move(configuration));
   application().start();
 }
 

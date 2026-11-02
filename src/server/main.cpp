@@ -2,12 +2,15 @@
 #include <iostream>
 #include <string>
 #include "Application.hpp"
+#include "ConfigurationLog.hpp"
+#include "ConfigurationReport.hpp"
 #include "LaunchArguments.hpp"
 #include "LaunchOptions.hpp"
 #include "LogLaunchOptions.hpp"
 #include "Logger.hpp"
 #include "LoggingConstants.hpp"
 #include "LoopStages.hpp"
+#include "ServerConfiguration.hpp"
 #include "ServerConstants.hpp"
 #include "ServerModules.hpp"
 #include "StopReason.hpp"
@@ -39,10 +42,15 @@ int runServer(const rtype::logging::LogLaunchOptions& logOptions,
   const rtype::server::StopSignals stopSignals{stopRequest};
   int exitCode = 0;
   try {
+    rtype::engine::ConfigurationReport configurationReport;
     rtype::engine::Application application{
         rtype::engine::LoopStages{rtype::server::SERVER_LOOP_STAGES},
-        rtype::server::serverModules(logOptions, launchOptions, stopRequest)};
+        rtype::server::serverModules(logOptions, stopRequest),
+        rtype::server::serverConfiguration(launchOptions, configurationReport)};
     application.start();
+    rtype::engine::logConfigurationReport(
+        configurationReport, rtype::server::SERVER_CONFIGURATION_FILE_NAME,
+        rtype::logging::Logger{std::string{rtype::server::SERVER_LOGGER_NAME}});
     const rtype::server::StopReason reason = stopRequest.wait();
     application.stop();
     if (reason.failed) {

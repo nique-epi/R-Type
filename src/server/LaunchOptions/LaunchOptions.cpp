@@ -3,11 +3,11 @@
 #include <charconv>
 #include <cstddef>
 #include <cstdint>
-#include <optional>
 #include <span>
 #include <string>
 #include <string_view>
 #include <system_error>
+#include <vector>
 #include "EndpointText.hpp"
 #include "EngineException.hpp"
 #include "LaunchArguments.hpp"
@@ -17,6 +17,7 @@
 #include "LoggingConstants.hpp"
 #include "NetworkConstants.hpp"
 #include "ServerConstants.hpp"
+#include "SettingLine.hpp"
 
 namespace rtype::server {
 
@@ -63,28 +64,58 @@ std::size_t stateRateFromText(std::string_view text) {
   return rate;
 }
 
+/**
+ * @returns The line that gives the setting @p assignment names its value.
+ * @throws engine::InvalidLaunchOptionValueException naming @p option when
+ * @p assignment is not `name=value` with a value holding no quote.
+ */
+std::string settingLineFrom(std::string_view option,
+                            std::string_view assignment) {
+  try {
+    return engine::settingLineFromAssignment(assignment);
+  } catch (const engine::CommandRefusedException&) {
+    throw engine::InvalidLaunchOptionValueException(std::string(option),
+                                                    std::string(assignment));
+  }
+}
+
 }  // namespace
 
 LaunchOptions LaunchOptions::read(std::span<const std::string_view> arguments) {
-  LaunchOptions options{network::DEFAULT_SERVER_PORT, false};
+  LaunchOptions options;
   const std::array launchOptions{
-      engine::LaunchOption{.name = engine::PORT_OPTION,
+      engine::LaunchOption{
+          .name = engine::PORT_OPTION,
+          .takesValue = true,
+          .record =
+              [&options](std::string_view port) {
+                options.forcedLines_.push_back(engine::settingLine(
+                    PORT_SETTING_NAME,
+                    std::to_string(network::portFromText(port))));
+              }},
+      engine::LaunchOption{
+          .name = SEED_OPTION,
+          .takesValue = true,
+          .record =
+              [&options](std::string_view seed) {
+                options.forcedLines_.push_back(engine::settingLine(
+                    SEED_SETTING_NAME, std::to_string(seedFromText(seed))));
+              }},
+      engine::LaunchOption{
+          .name = STATE_RATE_OPTION,
+          .takesValue = true,
+          .record =
+              [&options](std::string_view rate) {
+                options.forcedLines_.push_back(engine::settingLine(
+                    STATE_RATE_SETTING_NAME,
+                    std::to_string(stateRateFromText(rate))));
+              }},
+      engine::LaunchOption{.name = engine::SET_OPTION,
                            .takesValue = true,
                            .record =
-                               [&options](std::string_view port) {
-                                 options.port_ = network::portFromText(port);
-                               }},
-      engine::LaunchOption{.name = SEED_OPTION,
-                           .takesValue = true,
-                           .record =
-                               [&options](std::string_view seed) {
-                                 options.seed_ = seedFromText(seed);
-                               }},
-      engine::LaunchOption{.name = STATE_RATE_OPTION,
-                           .takesValue = true,
-                           .record =
-                               [&options](std::string_view rate) {
-                                 options.stateRate_ = stateRateFromText(rate);
+                               [&options](std::string_view assignment) {
+                                 options.forcedLines_.push_back(settingLineFrom(
+                                     engine::SET_OPTION, assignment));
                                }},
       engine::LaunchOption{
           .name = engine::HELP_OPTION,
@@ -118,6 +149,15 @@ std::string LaunchOptions::usage() {
           ". More states move the other ships more smoothly and use more "
           "bandwidth. Default: " +
           std::to_string(DEFAULT_WORLD_STATES_PER_SECOND) + ".");
+  text += engine::usageEntry(
+      std::string(engine::SET_OPTION) + " <name>=<value>",
+      "Gives a setting a value, as the line `set <name> <value>` of " +
+          std::string(SERVER_CONFIGURATION_FILE_NAME) +
+          " does. It wins over that file and can be given several times. "
+          "Settings: " +
+          std::string(PORT_SETTING_NAME) + ", " +
+          std::string(SEED_SETTING_NAME) + ", " +
+          std::string(STATE_RATE_SETTING_NAME) + ".");
   text += engine::usageEntry(engine::HELP_OPTION,
                              "Print this help and start nothing.");
   text += '\n';
@@ -125,17 +165,10 @@ std::string LaunchOptions::usage() {
   return text;
 }
 
-std::uint16_t LaunchOptions::port() const { return port_; }
-
-std::optional<std::uint32_t> LaunchOptions::seed() const { return seed_; }
-
-std::size_t LaunchOptions::stateRate() const { return stateRate_; }
+const std::vector<std::string>& LaunchOptions::forcedLines() const {
+  return forcedLines_;
+}
 
 bool LaunchOptions::helpRequested() const { return helpRequested_; }
-
-LaunchOptions::LaunchOptions(std::uint16_t port, bool helpRequested)
-    : port_(port),
-      helpRequested_(helpRequested),
-      stateRate_(DEFAULT_WORLD_STATES_PER_SECOND) {}
 
 }  // namespace rtype::server

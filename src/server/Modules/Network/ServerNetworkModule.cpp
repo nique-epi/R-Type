@@ -6,10 +6,12 @@
 #include <thread>
 #include <vector>
 #include "Application.hpp"
+#include "ConfigurationRegistry.hpp"
 #include "Endpoint.hpp"
 #include "IDatagramSender.hpp"
 #include "IPlayerAdmission.hpp"
 #include "InstallContext.hpp"
+#include "IntegerSettingDefinition.hpp"
 #include "ModuleConstants.hpp"
 #include "NetworkConstants.hpp"
 #include "ServerApplication.hpp"
@@ -56,12 +58,22 @@ void ServerNetworkModule::install(engine::InstallContext& context) {
         application.runStages(engine::SIMULATION_TICK_DURATION);
         tickDatagrams_.end();
       });
+  portSetting_ =
+      &context.require<engine::ConfigurationRegistry>().declareInteger(
+          engine::IntegerSettingDefinition{
+              .name = std::string{PORT_SETTING_NAME},
+              .defaultValue = port_,
+              .lowest = network::LOWEST_PORT,
+              .highest = network::HIGHEST_PORT,
+              .help = "UDP port to listen on"});
   context.provide<IDatagramSender>(*server_);
   context.provide<IPlayerAdmission>(*server_);
   context.provide(tickDatagrams_);
 }
 
 void ServerNetworkModule::start() {
+  server_->listenOn(listeningEndpoint(
+      static_cast<std::uint16_t>(portSetting_->integer().value_or(port_))));
   server_->open();
   try {
     serverThread_ = std::jthread{[this] { runServer(); }};
