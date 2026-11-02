@@ -56,7 +56,9 @@ NetworkConditions checkedConditions(const NetworkConditions& conditions) {
 
 DatagramsInFlight::DatagramsInFlight(const NetworkConditions& conditions,
                                      std::uint32_t seed)
-    : conditions_(checkedConditions(conditions)), generator_(seed) {}
+    : conditions_(checkedConditions(conditions)),
+      generator_(seed),
+      latestInOrder_(std::chrono::steady_clock::time_point::min()) {}
 
 void DatagramsInFlight::add(const Endpoint& peer,
                             std::span<const std::byte> payload,

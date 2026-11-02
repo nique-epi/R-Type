@@ -49,6 +49,11 @@ constexpr rtype::network::NetworkConditions EVERY_DEFECT{
     .duplicatePercent = 10,
     .reorderPercent = 10};
 
+/** @brief A time one second before the epoch of the steady clock, where a
+ * time point built with no value lies. */
+constexpr std::chrono::steady_clock::time_point BEFORE_THE_CLOCK_EPOCH{
+    std::chrono::seconds{-1}};
+
 /** @brief A lag and a jitter one millisecond below zero, the first value no
  * network shows. */
 constexpr rtype::network::NetworkConditions LAG_JUST_BELOW_ZERO{

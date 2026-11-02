@@ -20,6 +20,19 @@ using rtype::network::NetworkConditions;
 using rtype::network::SimulatedDelayOutOfRangeException;
 
 /**
+ * Given a perfect simulated network
+ * When a datagram is handed over one second before the epoch of the clock
+ * Then it arrives at once, at that time, and not at the epoch
+ */
+TEST(DatagramsInFlight, HandsOverADatagramBeforeTheClockEpochAtOnce) {
+  DatagramsInFlight inFlight{NetworkConditions{}, SOME_SEED};
+
+  inFlight.add(peer(), CROSSING_BYTES, BEFORE_THE_CLOCK_EPOCH);
+
+  EXPECT_EQ(inFlight.nextArrival(), BEFORE_THE_CLOCK_EPOCH);
+}
+
+/**
  * Given network conditions whose jitter is one millisecond below zero
  * When the datagrams in flight are built from them
  * Then they are refused: no wait can be drawn from a negative jitter
