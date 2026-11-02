@@ -4,7 +4,6 @@
 #include <optional>
 #include <set>
 #include <utility>
-#include "ItemCell.hpp"
 #include "ItemListConstants.hpp"
 #include "ItemListFixtures.hpp"
 #include "ItemListTestConstants.hpp"

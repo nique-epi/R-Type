@@ -12,6 +12,7 @@
 #include <string>
 #include <utility>
 #include "BoundAction.hpp"
+#include "Button.hpp"
 #include "GameScreenIdConstants.hpp"
 #include "HangarBay.hpp"
 #include "HangarBayConstants.hpp"

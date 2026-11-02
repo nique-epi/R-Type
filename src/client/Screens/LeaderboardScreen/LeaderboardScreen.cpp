@@ -37,6 +37,7 @@
 #include "LeaderboardTab.hpp"
 #include "MenuBuilder.hpp"
 #include "MenuScreenIdConstants.hpp"
+#include "MotionPreference.hpp"
 #include "PlayfieldMapping.hpp"
 #include "ScreenConstants.hpp"
 #include "SoundConstants.hpp"

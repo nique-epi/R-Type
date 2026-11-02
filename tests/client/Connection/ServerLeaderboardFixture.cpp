@@ -34,7 +34,7 @@ network::LeaderboardAnswer ServerLeaderboardFixture::answerFor(
           network::LeaderboardRequest{.playerCount = ASKED_PILOTS,
                                       .difficulty = std::string{difficulty}},
       .rows = {network::LeaderboardRow{.rank = 1,
-                                       .score = 1000,
+                                       .score = TOP_SCORE,
                                        .playedAt = 0,
                                        .nickname = std::string{TOP_NICKNAME}}},
       .ownRow = std::nullopt};

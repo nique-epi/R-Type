@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 #include <SFML/Window/Keyboard.hpp>
+#include <cstddef>
 #include <optional>
 #include "KeyPress.hpp"
 #include "Menu.hpp"

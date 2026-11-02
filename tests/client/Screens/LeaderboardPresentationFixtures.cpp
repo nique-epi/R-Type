@@ -11,12 +11,13 @@
 
 using rtype::client::LeaderboardPage;
 using rtype::client::LeaderboardPhase;
+using rtype::client::testing::ENTRY_SCORE;
 using rtype::client::testing::OCTOBER_18_2026_SECONDS;
 using rtype::network::LeaderboardRow;
 
 LeaderboardRow entryOf(std::uint32_t rank, const std::string& name) {
   return LeaderboardRow{.rank = rank,
-                        .score = 1000,
+                        .score = ENTRY_SCORE,
                         .playedAt = OCTOBER_18_2026_SECONDS,
                         .nickname = name};
 }

@@ -26,15 +26,16 @@ void ServerLeaderboard::ask(const network::LeaderboardRequest& request) {
   asked_ = request;
   sinceAsked_ = engine::Duration::zero();
   become(LeaderboardPhase::Asking);
-  sendRequest();
+  sendRequest(request);
 }
 
 void ServerLeaderboard::stopAsking() { asked_.reset(); }
 
 const LeaderboardPage& ServerLeaderboard::page() const { return page_; }
 
-void ServerLeaderboard::sessionOpened(const network::LobbyPlayer&,
-                                      ISessionOutbox& outbox) {
+void ServerLeaderboard::sessionOpened(
+    [[maybe_unused]] const network::LobbyPlayer& ownPlayer,
+    ISessionOutbox& outbox) {
   outbox_ = &outbox;
 }
 
@@ -53,7 +54,7 @@ void ServerLeaderboard::sessionHeld(engine::Duration elapsed) {
   if (sinceAsked_ >= LEADERBOARD_GIVE_UP_TIME) {
     become(LeaderboardPhase::NoAnswer);
   } else if (sinceRequest_ >= LEADERBOARD_ASK_INTERVAL) {
-    sendRequest();
+    sendRequest(*asked_);
   }
 }
 
@@ -67,8 +68,9 @@ void ServerLeaderboard::receive(const network::LeaderboardAnswer& answer) {
   page_.ownRow = answer.ownRow;
 }
 
-void ServerLeaderboard::sendRequest() {
-  sendMessage(*outbox_, *asked_);
+void ServerLeaderboard::sendRequest(
+    const network::LeaderboardRequest& request) {
+  sendMessage(*outbox_, request);
   sinceRequest_ = engine::Duration::zero();
 }
 

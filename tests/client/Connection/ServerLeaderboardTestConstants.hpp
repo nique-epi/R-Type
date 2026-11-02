@@ -11,6 +11,7 @@ constexpr std::uint8_t ASKED_PILOTS = 2;
 constexpr std::string_view ASKED_DIFFICULTY = "normal";
 constexpr std::string_view OTHER_DIFFICULTY = "hard";
 constexpr std::string_view TOP_NICKNAME = "KIRA";
+constexpr std::uint32_t TOP_SCORE = 1000;
 
 /** @brief As the protocol page writes them: half a second between two requests,
  * and five seconds before the client gives up. */

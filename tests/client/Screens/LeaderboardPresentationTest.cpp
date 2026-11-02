@@ -1,12 +1,16 @@
 #include <gtest/gtest.h>
 #include <optional>
 #include <vector>
+#include "BackgroundColorConstants.hpp"
+#include "FireColorConstants.hpp"
 #include "ItemListConstants.hpp"
 #include "ItemRow.hpp"
+#include "LeaderboardMessage.hpp"
 #include "LeaderboardPage.hpp"
 #include "LeaderboardPresentation.hpp"
 #include "LeaderboardPresentationFixtures.hpp"
 #include "LeaderboardPresentationTestConstants.hpp"
+#include "LeaderboardRequest.hpp"
 #include "LeaderboardScreenConstants.hpp"
 
 using rtype::client::dateTextOf;

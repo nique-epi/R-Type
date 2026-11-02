@@ -19,6 +19,7 @@
 #include "PlayerSettings.hpp"
 #include "ScreenRegistry.hpp"
 #include "ScreenServices.hpp"
+#include "ServerLeaderboard.hpp"
 #include "ServerSession.hpp"
 #include "SettingsService.hpp"
 #include "TimeConstants.hpp"

@@ -59,7 +59,7 @@ std::string dateTextOf(std::int64_t secondsSince1970) {
   }
   const std::chrono::sys_seconds moment{std::chrono::seconds{secondsSince1970}};
   const std::chrono::year_month_day date{
-      std::chrono::floor<std::chrono::days>(moment)};
+      std::chrono::floor<std::chrono::sys_days::duration>(moment)};
   const auto month =
       static_cast<std::size_t>(static_cast<unsigned int>(date.month()) - 1);
   const auto year = static_cast<unsigned int>(static_cast<int>(date.year()) %

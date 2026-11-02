@@ -11,7 +11,6 @@
 #include <string_view>
 #include "BackgroundColorConstants.hpp"
 #include "FireColorConstants.hpp"
-#include "InterfaceConstants.hpp"
 #include "ItemListColumn.hpp"
 #include "ItemListLayout.hpp"
 #include "LeaderboardFigure.hpp"

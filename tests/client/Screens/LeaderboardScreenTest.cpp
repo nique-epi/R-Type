@@ -1,8 +1,8 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include <SFML/Graphics/Rect.hpp>
 #include <SFML/Window/Keyboard.hpp>
 #include <algorithm>
-#include <memory>
 #include <optional>
 #include "KeyPress.hpp"
 #include "LeaderboardPage.hpp"

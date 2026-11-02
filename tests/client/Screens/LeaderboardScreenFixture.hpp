@@ -2,7 +2,6 @@
 
 #include <gtest/gtest.h>
 #include <SFML/Window/Keyboard.hpp>
-#include "InterfaceConstants.hpp"
 #include "LeaderboardPage.hpp"
 #include "LeaderboardScreen.hpp"
 #include "MotionPreference.hpp"

@@ -7,6 +7,9 @@
 
 namespace rtype::client::testing {
 
+/** @brief The score of an entry, which no test here reads. */
+constexpr std::uint32_t ENTRY_SCORE = 1000;
+
 /** @brief 18 October 2026 at 12:00 UTC, and the first second of 1970. */
 constexpr std::int64_t OCTOBER_18_2026_SECONDS = 1792324800;
 constexpr std::string_view OCTOBER_18_2026_TEXT = "18 OCT 26";

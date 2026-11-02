@@ -15,6 +15,7 @@
 #include "InstallContext.hpp"
 #include "PlayerSettings.hpp"
 #include "ScreenRegistry.hpp"
+#include "ServerLeaderboard.hpp"
 #include "ServerSession.hpp"
 #include "SettingsService.hpp"
 #include "SubscriptionHandle.hpp"

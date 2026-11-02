@@ -2,10 +2,8 @@
 #include <SFML/Window/Keyboard.hpp>
 #include <memory>
 #include <utility>
-#include <vector>
 #include "LeaderboardFilterChoice.hpp"
 #include "LeaderboardPage.hpp"
-#include "LeaderboardPhase.hpp"
 #include "LeaderboardScreen.hpp"
 #include "LeaderboardScreenParts.hpp"
 #include "LeaderboardTab.hpp"
@@ -13,6 +11,8 @@
 #include "OptionsScreenFixtures.hpp"
 #include "PointerEvents.hpp"
 #include "RecordingInterfaceCanvas.hpp"
+#include "RecordingLeaderboardSource.hpp"
+#include "RecordingNavigator.hpp"
 #include "ScreenInputs.hpp"
 #include "ScreenTestConstants.hpp"
 
