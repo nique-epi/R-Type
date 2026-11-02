@@ -7,7 +7,7 @@ This tutorial runs one `r-type_server` that hosts several games at once, fills a
 
 Every server command below was run before this page was written, and the lines come from the journals of those runs; the players of those runs were scripted over UDP, speaking the [protocol](/R-Type/protocol/), rather than client windows. You need the project built (see the [README](https://github.com/nique-epi/R-Type#readme)).
 
-The server has **no dashboard yet**: the journal is the only way to see its games, and it does not number them. A dashboard needs the master server and the server metrics, which do not exist yet; this page will gain its steps once they do.
+The server has **no dashboard yet**: the journal is the only way to see its games, and it does not number them, though it gives how many are in progress every 10 s (see [Metrics](/R-Type/server/#metrics-servermetricsmodule)). A dashboard needs the master server, which does not exist yet; this page will gain its steps once it does.
 
 ## What you will have at the end
 
@@ -96,7 +96,7 @@ cmake --workflow --preset build
 
 The server now creates two games, so the `BydoSpawner` line appears twice, and the ninth player is refused. Put the value back before you commit. A test that needs another number sets `GamesSettings::gameCount` itself, so no test depends on this constant.
 
-More games cost more per tick, and that cost is not measured yet. Every game runs on the simulation thread, one after the other, so a slow game slows the others, and an exception in one stops the server. The tick loop writes a line at the `warn` level when ticks stall; if you see `stalls since the previous report` in the journal, the server is holding more than the machine can run.
+More games cost more per tick, and the journal gives that cost every 10 s (see [Metrics](/R-Type/server/#metrics-servermetricsmodule)). Every game runs on the simulation thread, one after the other, so a slow game slows the others, and an exception in one stops the server. The tick loop writes a line at the `warn` level when ticks stall; if you see `stalls since the previous report` in the journal, the server is holding more than the machine can run.
 
 ## Step 5: run two servers side by side
 

@@ -3,6 +3,7 @@
 #include <filesystem>
 #include <fstream>
 #include <string>
+#include <string_view>
 #include <system_error>
 #include <vector>
 #include "Logger.hpp"
@@ -32,4 +33,15 @@ std::vector<std::string> JournalFile::lines() const {
     lines.push_back(line);
   }
   return lines;
+}
+
+std::vector<std::string> JournalFile::linesHolding(
+    std::string_view text) const {
+  std::vector<std::string> found;
+  for (const std::string& line : lines()) {
+    if (line.find(text) != std::string::npos) {
+      found.push_back(line);
+    }
+  }
+  return found;
 }

@@ -14,11 +14,5 @@ DebugJournal::~DebugJournal() { rtype::logging::Logger::setLevel(savedLevel_); }
 
 std::vector<std::string> DebugJournal::linesHolding(
     std::string_view text) const {
-  std::vector<std::string> found;
-  for (const std::string& line : journal_.lines()) {
-    if (line.find(text) != std::string::npos) {
-      found.push_back(line);
-    }
-  }
-  return found;
+  return journal_.linesHolding(text);
 }

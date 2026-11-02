@@ -172,7 +172,7 @@ void ServerTickReportModule::countTick() {
 | `countTick()` | run | It runs once per tick, in the `simulation` stage. It touches no service: it uses only its own members |
 | `stop()` | stop | It writes the last count and does not throw |
 
-The other stages are `inputs` and `outputs` (`SERVER_LOOP_STAGES`, `src/server/ServerConstants.hpp`). Work added to a stage runs in the order of the modules in the list, so the tick report, listed last, runs last in `simulation`.
+The other stages are `inputs` and `outputs` (`SERVER_LOOP_STAGES`, `src/server/ServerConstants.hpp`). Work added to a stage runs in the order of the modules in the list, so the tick report, listed after the lobby, runs after it in `simulation`.
 
 ## Step 3: declare its library
 
@@ -201,14 +201,14 @@ The libraries that the **header** names (`IModule`, `Logger`) are `PUBLIC`: whoe
 The parent folder calls the new one. In `src/server/Modules/CMakeLists.txt`, before `Assembly`:
 
 ```cmake
-add_subdirectory(Lobby)
+add_subdirectory(Metrics)
 add_subdirectory(TickReport)
 add_subdirectory(Assembly)
 ```
 
 ## Step 4: put it in the server's list
 
-`serverModules()` in `src/server/Modules/Assembly/ServerModules.cpp` is the one place that lists the modules of the server. Add the include and the line, last:
+`serverModules()` in `src/server/Modules/Assembly/ServerModules.cpp` is the one place that lists the modules of the server. Add the include, and the line before the metrics module, which stays last so that its measure of a tick covers your work:
 
 ```cpp
 #include "ServerNetworkModule.hpp"
@@ -218,6 +218,8 @@ add_subdirectory(Assembly)
 ```cpp
   modules.push_back(std::make_unique<ServerLobbyModule>());
   modules.push_back(std::make_unique<ServerTickReportModule>());
+  modules.push_back(std::make_unique<ServerMetricsModule>(
+      std::make_shared<engine::SystemClock>()));
   return modules;
 ```
 
@@ -240,11 +242,12 @@ The first build of a branch takes a few minutes. When it ends, the server is lis
 
 Tests mirror the sources: the tests of `src/server/Modules/TickReport/` go in `tests/server/Modules/TickReport/`. Each test says what it checks in a Given / When / Then comment.
 
-First, the existing test that lists the modules. In `tests/server/Modules/Assembly/ServerModulesTest.cpp`, add the new name at the end of the expected list, and add it to the sentence of the comment above the test:
+First, the existing test that lists the modules. In `tests/server/Modules/Assembly/ServerModulesTest.cpp`, add the new name before the metrics in the expected list, and add it to the sentence of the comment above the test:
 
 ```cpp
                        std::string{rtype::server::LOBBY_MODULE_NAME},
-                       std::string{rtype::server::TICK_REPORT_MODULE_NAME}}));
+                       std::string{rtype::server::TICK_REPORT_MODULE_NAME},
+                       std::string{rtype::server::METRICS_MODULE_NAME}}));
 ```
 
 Then the tests of the module. A `…Test.cpp` holds only its tests: its constants and its fixture are files of their own, as in `tests/server/Modules/Lobby/` (`ServerLobbyFixture.{hpp,cpp}` and `ServerLobbyModuleTest.cpp`). A module is tested inside a real `Application`, with the modules it depends on; `ServerModuleFixture` gives the logger options that write to a journal of the test only.
