@@ -21,13 +21,13 @@ The server has **no dashboard yet**: the journal is the only way to see its game
 
 ## Step 1: start the server
 
-From the repository root, where `assets/waves/waves.toml` (`WAVE_FILE_PATH`) is found:
+From the repository root, where the build writes `r-type_server`:
 
 ```bash
 ./r-type_server -p 4242 --seed 42
 ```
 
-There is nothing to ask for: a server always hosts `DEFAULT_HOSTED_GAME_COUNT` (8) games, created when it starts and kept until it stops. `--seed` is optional and makes the Bydos come out the same way at each launch. Each line goes both to the terminal and to the journal `r-type_server.log` (each line starts with a time, left out here):
+There is nothing to ask for: a server always hosts `DEFAULT_HOSTED_GAME_COUNT` (8) games, created when it starts and kept until it stops. `--seed` is optional and makes the Bydos come out the same way at each launch. Each line goes both to the terminal and to the journal `r-type_server.log`, next to the executable (each line starts with a time, left out here):
 
 ```text
 [INFO ] [Server] - server starting
@@ -128,7 +128,7 @@ Two servers know nothing of each other: a nickname is unique per server, and a f
 | You see | Cause | Fix |
 |---|---|---|
 | `Cannot open a UDP socket on 0.0.0.0 port 4242: Address already in use`, exit code 1 | Another server holds the port | Give another port with `-p`, or stop the other server |
-| The server stops at launch, naming `waves.toml` | It was not started from the repository root | Start it from there: see [Writing the waves file](/R-Type/waves-file/) |
+| The server stops at launch, naming `waves.toml` or `No assets folder found` | `assets/waves/waves.toml` was moved, or the executable was copied away from `assets/` | Put them back: see [Writing the waves file](/R-Type/waves-file/) |
 | `SERVER UNREACHABLE` on the client after 5 seconds | The server is not running, or the client names another port | Check `listening on UDP port` in the journal, and `-p` on the client |
 | `REFUSED: CALLSIGN TAKEN` on the client | Another player of that server holds it, or left less than 20 s ago without saying so | Pick another nickname, or wait for the seat to be freed |
-| The lines of two servers in one journal | Both write to the default `r-type_server.log` in one folder | Give each its own `--log-file` |
+| The lines of two servers in one journal | Both write to the default `r-type_server.log` next to the executable, whatever folder they were started in | Give each its own `--log-file` |
