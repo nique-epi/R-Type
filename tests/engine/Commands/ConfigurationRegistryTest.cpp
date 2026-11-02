@@ -14,7 +14,7 @@ using rtype::engine::IntegerSettingDefinition;
  * Then the value is the default
  */
 TEST_F(ConfigurationRegistryFixture, ValueIsTheDefaultBeforeAnySet) {
-  EXPECT_EQ(port_->integer(), DEFAULT_PORT_VALUE);
+  EXPECT_EQ(port().integer(), DEFAULT_PORT_VALUE);
 }
 
 /**
@@ -24,7 +24,7 @@ TEST_F(ConfigurationRegistryFixture, ValueIsTheDefaultBeforeAnySet) {
  */
 TEST_F(ConfigurationRegistryFixture, SetInBoundsKeepsTheValue) {
   EXPECT_TRUE(set(PORT_SETTING, PORT_TEXT_IN_BOUNDS).accepted);
-  EXPECT_EQ(port_->integer(), PORT_VALUE_IN_BOUNDS);
+  EXPECT_EQ(port().integer(), PORT_VALUE_IN_BOUNDS);
 }
 
 /**
@@ -34,7 +34,7 @@ TEST_F(ConfigurationRegistryFixture, SetInBoundsKeepsTheValue) {
  */
 TEST_F(ConfigurationRegistryFixture, LowestValueIsAccepted) {
   EXPECT_TRUE(set(PORT_SETTING, PORT_TEXT_LOWEST).accepted);
-  EXPECT_EQ(port_->integer(), LOWEST_PORT_VALUE);
+  EXPECT_EQ(port().integer(), LOWEST_PORT_VALUE);
 }
 
 /**
@@ -44,7 +44,7 @@ TEST_F(ConfigurationRegistryFixture, LowestValueIsAccepted) {
  */
 TEST_F(ConfigurationRegistryFixture, HighestValueIsAccepted) {
   EXPECT_TRUE(set(PORT_SETTING, PORT_TEXT_HIGHEST).accepted);
-  EXPECT_EQ(port_->integer(), HIGHEST_PORT_VALUE);
+  EXPECT_EQ(port().integer(), HIGHEST_PORT_VALUE);
 }
 
 /**
@@ -58,7 +58,7 @@ TEST_F(ConfigurationRegistryFixture, OneBelowTheLowestIsRefused) {
   EXPECT_FALSE(result.accepted);
   EXPECT_NE(result.message.find(std::string(PORT_BOUNDS_TEXT)),
             std::string::npos);
-  EXPECT_EQ(port_->integer(), DEFAULT_PORT_VALUE);
+  EXPECT_EQ(port().integer(), DEFAULT_PORT_VALUE);
 }
 
 /**
@@ -68,7 +68,7 @@ TEST_F(ConfigurationRegistryFixture, OneBelowTheLowestIsRefused) {
  */
 TEST_F(ConfigurationRegistryFixture, OneAboveTheHighestIsRefused) {
   EXPECT_FALSE(set(PORT_SETTING, PORT_TEXT_ABOVE_HIGHEST).accepted);
-  EXPECT_EQ(port_->integer(), DEFAULT_PORT_VALUE);
+  EXPECT_EQ(port().integer(), DEFAULT_PORT_VALUE);
 }
 
 /**
@@ -78,7 +78,7 @@ TEST_F(ConfigurationRegistryFixture, OneAboveTheHighestIsRefused) {
  */
 TEST_F(ConfigurationRegistryFixture, NonNumericValueIsRefused) {
   EXPECT_FALSE(set(PORT_SETTING, NOT_A_NUMBER).accepted);
-  EXPECT_EQ(port_->integer(), DEFAULT_PORT_VALUE);
+  EXPECT_EQ(port().integer(), DEFAULT_PORT_VALUE);
 }
 
 /**
@@ -88,7 +88,7 @@ TEST_F(ConfigurationRegistryFixture, NonNumericValueIsRefused) {
  */
 TEST_F(ConfigurationRegistryFixture, NumberTooLargeIsRefused) {
   EXPECT_FALSE(set(PORT_SETTING, NUMBER_TOO_LARGE).accepted);
-  EXPECT_EQ(port_->integer(), DEFAULT_PORT_VALUE);
+  EXPECT_EQ(port().integer(), DEFAULT_PORT_VALUE);
 }
 
 /**
@@ -111,7 +111,7 @@ TEST_F(ConfigurationRegistryFixture,
  * Then the line is refused and the message shows the expected shape
  */
 TEST_F(ConfigurationRegistryFixture, SetWithOneWordIsRefused) {
-  const auto result = interpreter_.execute("set port");
+  const auto result = interpreter().execute("set port");
   EXPECT_FALSE(result.accepted);
   EXPECT_NE(result.message.find("expected: set <setting> <value>"),
             std::string::npos);
@@ -123,9 +123,9 @@ TEST_F(ConfigurationRegistryFixture, SetWithOneWordIsRefused) {
  * Then the setting holds nothing
  */
 TEST_F(ConfigurationRegistryFixture, NoneClearsASettingThatAllowsIt) {
-  set(SEED_SETTING, SEED_TEXT);
+  static_cast<void>(set(SEED_SETTING, SEED_TEXT));
   EXPECT_TRUE(set(SEED_SETTING, CLEARING_WORD).accepted);
-  EXPECT_FALSE(seed_->integer().has_value());
+  EXPECT_FALSE(seed().integer().has_value());
 }
 
 /**
@@ -135,7 +135,7 @@ TEST_F(ConfigurationRegistryFixture, NoneClearsASettingThatAllowsIt) {
  */
 TEST_F(ConfigurationRegistryFixture, NoneIsRefusedWhereNotAllowed) {
   EXPECT_FALSE(set(PORT_SETTING, CLEARING_WORD).accepted);
-  EXPECT_EQ(port_->integer(), DEFAULT_PORT_VALUE);
+  EXPECT_EQ(port().integer(), DEFAULT_PORT_VALUE);
 }
 
 /**
@@ -145,7 +145,7 @@ TEST_F(ConfigurationRegistryFixture, NoneIsRefusedWhereNotAllowed) {
  */
 TEST_F(ConfigurationRegistryFixture, AcceptedTextIsKept) {
   EXPECT_TRUE(set(NICKNAME_SETTING, ACCEPTED_NICKNAME).accepted);
-  EXPECT_EQ(nickname_->text(), ACCEPTED_NICKNAME);
+  EXPECT_EQ(nickname().text(), ACCEPTED_NICKNAME);
 }
 
 /**
@@ -158,7 +158,7 @@ TEST_F(ConfigurationRegistryFixture, RefusedTextKeepsTheOldOneWithTheReason) {
   EXPECT_FALSE(result.accepted);
   EXPECT_NE(result.message.find(std::string(NICKNAME_REFUSAL)),
             std::string::npos);
-  EXPECT_EQ(nickname_->text(), DEFAULT_NICKNAME);
+  EXPECT_EQ(nickname().text(), DEFAULT_NICKNAME);
 }
 
 /**
@@ -168,7 +168,11 @@ TEST_F(ConfigurationRegistryFixture, RefusedTextKeepsTheOldOneWithTheReason) {
  */
 TEST_F(ConfigurationRegistryFixture,
        SecondDeclarationWithTheSameNameIsRefused) {
-  EXPECT_THROW(registry_.declareInteger(
-                   IntegerSettingDefinition{.name = std::string(PORT_SETTING)}),
+  EXPECT_THROW(registry().declareInteger(
+                   IntegerSettingDefinition{.name = std::string(PORT_SETTING),
+                                            .defaultValue = DEFAULT_PORT_VALUE,
+                                            .lowest = LOWEST_PORT_VALUE,
+                                            .highest = HIGHEST_PORT_VALUE,
+                                            .help = std::string(PORT_SETTING)}),
                DuplicateSettingException);
 }

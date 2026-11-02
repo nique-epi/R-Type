@@ -27,6 +27,7 @@
 #include "RtypeGameModules.hpp"
 #include "ServerConstants.hpp"
 #include "ServerException.hpp"
+#include "SettingValue.hpp"
 #include "TickDatagrams.hpp"
 #include "TimeConstants.hpp"
 #include "WaveCatalog.hpp"
@@ -65,8 +66,7 @@ void ServerGamesModule::install(engine::InstallContext& context) {
   sender_ = &context.require<IDatagramSender>();
   admission_ = &context.require<IPlayerAdmission>();
   tickDatagrams_ = &context.require<TickDatagrams>();
-  engine::ConfigurationRegistry& configuration =
-      context.require<engine::ConfigurationRegistry>();
+  auto& configuration = context.require<engine::ConfigurationRegistry>();
   seedSetting_ = &configuration.declareInteger(engine::IntegerSettingDefinition{
       .name = std::string{SEED_SETTING_NAME},
       .defaultValue = settings_.seed,

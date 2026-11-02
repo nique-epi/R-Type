@@ -7,7 +7,6 @@
 #include "Application.hpp"
 #include "ConfigurationStep.hpp"
 #include "ConnectedPlayer.hpp"
-#include "GameInstance.hpp"
 #include "GamesSettings.hpp"
 #include "IModule.hpp"
 #include "IncomingDatagram.hpp"

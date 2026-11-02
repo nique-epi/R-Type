@@ -25,11 +25,24 @@ class ConfigurationReaderFixture : public ::testing::Test {
   /** @returns The path of the configuration file of the tests. */
   [[nodiscard]] std::filesystem::path file() const;
 
+  /** @returns The folder the files of the tests are written in. */
+  [[nodiscard]] const TemporaryFolder& folder() const;
+
+  /** @returns The interpreter the `set` command is registered in. */
+  [[nodiscard]] rtype::engine::CommandInterpreter& interpreter();
+
+  /** @returns The port setting. */
+  [[nodiscard]] const rtype::engine::SettingValue& port() const;
+
+  /** @returns The nickname setting. */
+  [[nodiscard]] const rtype::engine::SettingValue& nickname() const;
+
   /** @returns The report of reading @p path then running @p forcedLines. */
   [[nodiscard]] rtype::engine::ConfigurationReport read(
       const std::filesystem::path& path,
-      const std::vector<std::string>& forcedLines) const;
+      const std::vector<std::string>& forcedLines);
 
+ private:
   TemporaryFolder folder_;
   rtype::engine::CommandInterpreter interpreter_;
   rtype::engine::ConfigurationRegistry registry_{interpreter_};

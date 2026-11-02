@@ -14,8 +14,10 @@ using rtype::engine::logConfigurationReport;
  * Then the journal says the file was not found and the defaults apply
  */
 TEST_F(ConfigurationLogFixture, MissingFileIsSaidAndTheDefaultsApply) {
-  logConfigurationReport(ConfigurationReport{.fileFound = false},
-                         LOGGED_FILE_NAME, logger_);
+  logConfigurationReport(
+      ConfigurationReport{
+          .fileFound = false, .executedLines = 0, .refusals = {}},
+      LOGGED_FILE_NAME, logger());
 
   ASSERT_EQ(lines().size(), 1U);
   EXPECT_NE(lines().front().find(std::string(NOT_FOUND_TEXT)),
@@ -30,8 +32,9 @@ TEST_F(ConfigurationLogFixture, MissingFileIsSaidAndTheDefaultsApply) {
 TEST_F(ConfigurationLogFixture, FoundFileIsLoggedWithItsCommandCount) {
   logConfigurationReport(
       ConfigurationReport{.fileFound = true,
-                          .executedLines = LOGGED_EXECUTED_LINES},
-      LOGGED_FILE_NAME, logger_);
+                          .executedLines = LOGGED_EXECUTED_LINES,
+                          .refusals = {}},
+      LOGGED_FILE_NAME, logger());
 
   ASSERT_EQ(lines().size(), 1U);
   EXPECT_NE(lines().front().find(std::string(EXECUTED_TEXT)),
@@ -48,8 +51,9 @@ TEST_F(ConfigurationLogFixture, FoundFileIsLoggedWithItsCommandCount) {
 TEST_F(ConfigurationLogFixture, RefusedLineIsLoggedAsAWarning) {
   logConfigurationReport(
       ConfigurationReport{.fileFound = true,
+                          .executedLines = 0,
                           .refusals = {std::string(LOGGED_REFUSAL)}},
-      LOGGED_FILE_NAME, logger_);
+      LOGGED_FILE_NAME, logger());
 
   ASSERT_EQ(lines().size(), 2U);
   EXPECT_NE(lines().back().find(std::string(LOGGED_REFUSAL)),

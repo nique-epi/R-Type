@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 #include <string>
 #include <vector>
+#include "CommandDefinition.hpp"
 #include "CommandInterpreter.hpp"
 #include "CommandInterpreterFixtures.hpp"
 #include "CommandInterpreterTestConstants.hpp"
@@ -18,8 +19,10 @@ using rtype::engine::DuplicateCommandException;
 TEST(CommandInterpreter, KnownCommandRunsWithItsWords) {
   CommandInterpreter interpreter;
   std::vector<std::string> received;
-  interpreter.add(CommandDefinition{.name = std::string(ECHO_COMMAND)},
-                  recordingHandler(received));
+  interpreter.add(
+      CommandDefinition{
+          .name = std::string(ECHO_COMMAND), .arguments = {}, .help = {}},
+      recordingHandler(received));
   const auto result = interpreter.execute(lineRunning(ECHO_COMMAND));
   EXPECT_TRUE(result.accepted);
   EXPECT_EQ(received, (std::vector<std::string>{std::string(FIRST_ARGUMENT),
@@ -49,8 +52,10 @@ TEST(CommandInterpreter, UnknownCommandIsRefusedNamingCommandAndLine) {
  */
 TEST(CommandInterpreter, RefusingHandlerGivesCommandLineAndReason) {
   CommandInterpreter interpreter;
-  interpreter.add(CommandDefinition{.name = std::string(ECHO_COMMAND)},
-                  refusingHandler(REFUSAL_REASON));
+  interpreter.add(
+      CommandDefinition{
+          .name = std::string(ECHO_COMMAND), .arguments = {}, .help = {}},
+      refusingHandler(REFUSAL_REASON));
   const std::string line = lineRunning(ECHO_COMMAND);
   const auto result = interpreter.execute(line);
   EXPECT_FALSE(result.accepted);
@@ -68,8 +73,10 @@ TEST(CommandInterpreter, RefusingHandlerGivesCommandLineAndReason) {
 TEST(CommandInterpreter, BlankLineIsAcceptedAndRunsNothing) {
   CommandInterpreter interpreter;
   std::vector<std::string> received;
-  interpreter.add(CommandDefinition{.name = std::string(ECHO_COMMAND)},
-                  recordingHandler(received));
+  interpreter.add(
+      CommandDefinition{
+          .name = std::string(ECHO_COMMAND), .arguments = {}, .help = {}},
+      recordingHandler(received));
   EXPECT_TRUE(interpreter.execute(BLANK_LINE).accepted);
   EXPECT_TRUE(received.empty());
 }
@@ -82,8 +89,10 @@ TEST(CommandInterpreter, BlankLineIsAcceptedAndRunsNothing) {
 TEST(CommandInterpreter, CommentLineRunsNothing) {
   CommandInterpreter interpreter;
   std::vector<std::string> received;
-  interpreter.add(CommandDefinition{.name = std::string(ECHO_COMMAND)},
-                  recordingHandler(received));
+  interpreter.add(
+      CommandDefinition{
+          .name = std::string(ECHO_COMMAND), .arguments = {}, .help = {}},
+      recordingHandler(received));
   EXPECT_TRUE(interpreter.execute(COMMENT_LINE).accepted);
   EXPECT_TRUE(received.empty());
 }
@@ -96,11 +105,15 @@ TEST(CommandInterpreter, CommentLineRunsNothing) {
 TEST(CommandInterpreter, SecondCommandWithTheSameNameIsRefused) {
   CommandInterpreter interpreter;
   std::vector<std::string> received;
-  interpreter.add(CommandDefinition{.name = std::string(ECHO_COMMAND)},
-                  recordingHandler(received));
+  interpreter.add(
+      CommandDefinition{
+          .name = std::string(ECHO_COMMAND), .arguments = {}, .help = {}},
+      recordingHandler(received));
   EXPECT_THROW(
-      interpreter.add(CommandDefinition{.name = std::string(ECHO_COMMAND)},
-                      recordingHandler(received)),
+      interpreter.add(
+          CommandDefinition{
+              .name = std::string(ECHO_COMMAND), .arguments = {}, .help = {}},
+          recordingHandler(received)),
       DuplicateCommandException);
 }
 
@@ -118,6 +131,7 @@ TEST(CommandInterpreter, HelpListsEachCommandSortedByName) {
                                     .help = std::string(ECHO_HELP)},
                   recordingHandler(received));
   interpreter.add(CommandDefinition{.name = std::string(ALPHA_COMMAND),
+                                    .arguments = {},
                                     .help = std::string(ALPHA_HELP)},
                   recordingHandler(received));
   EXPECT_EQ(interpreter.help(),

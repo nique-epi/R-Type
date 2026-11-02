@@ -35,13 +35,13 @@ constexpr std::string_view LINE_FOR_EMPTY_VALUE = "set port \"\"";
  * @brief A value holding a quote, and the line it gives.
  */
 constexpr std::string_view LINE_QUOTED_VALUE = "a\"b";
-constexpr std::string_view LINE_FOR_QUOTED_VALUE = "set port \"a\\\"b\"";
+constexpr std::string_view LINE_FOR_QUOTED_VALUE = R"(set port "a\"b")";
 
 /**
  * @brief A value holding a backslash and a space, and the line it gives.
  */
 constexpr std::string_view LINE_BACKSLASH_VALUE = "a\\b c";
-constexpr std::string_view LINE_FOR_BACKSLASH_VALUE = "set port \"a\\\\b c\"";
+constexpr std::string_view LINE_FOR_BACKSLASH_VALUE = R"(set port "a\\b c")";
 
 /**
  * @brief A value holding a backslash and nothing that needs quotes, and the

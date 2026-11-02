@@ -1,5 +1,6 @@
 #include "Application.hpp"
 #include <algorithm>
+#include <cstddef>
 #include <exception>
 #include <memory>
 #include <mutex>
@@ -8,6 +9,7 @@
 #include <string_view>
 #include <utility>
 #include <vector>
+#include "ConfigurationStep.hpp"
 #include "EngineException.hpp"
 #include "IModule.hpp"
 #include "InstallContext.hpp"

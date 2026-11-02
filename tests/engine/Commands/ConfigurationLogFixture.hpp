@@ -11,7 +11,7 @@
  * logger output and level back when the test ends.
  */
 class ConfigurationLogFixture : public ::testing::Test {
- protected:
+ public:
   ConfigurationLogFixture();
   ~ConfigurationLogFixture() override;
 
@@ -20,12 +20,15 @@ class ConfigurationLogFixture : public ::testing::Test {
   ConfigurationLogFixture(ConfigurationLogFixture&&) = delete;
   ConfigurationLogFixture& operator=(ConfigurationLogFixture&&) = delete;
 
+ protected:
   /** @returns The lines the journal holds. */
   [[nodiscard]] std::vector<std::string> lines() const;
 
-  rtype::logging::Logger logger_;
+  /** @returns The logger whose lines go to the journal. */
+  [[nodiscard]] const rtype::logging::Logger& logger() const;
 
  private:
+  rtype::logging::Logger logger_;
   JournalFile journal_;
   rtype::logging::LogLevel previousLevel_;
 };

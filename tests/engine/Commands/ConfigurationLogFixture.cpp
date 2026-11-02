@@ -19,3 +19,7 @@ ConfigurationLogFixture::~ConfigurationLogFixture() {
 std::vector<std::string> ConfigurationLogFixture::lines() const {
   return journal_.lines();
 }
+
+const rtype::logging::Logger& ConfigurationLogFixture::logger() const {
+  return logger_;
+}

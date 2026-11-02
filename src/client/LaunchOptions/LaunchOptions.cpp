@@ -10,7 +10,6 @@
 #include "ClientException.hpp"
 #include "Endpoint.hpp"
 #include "EndpointText.hpp"
-#include "EngineException.hpp"
 #include "LaunchArguments.hpp"
 #include "LaunchArgumentsConstants.hpp"
 #include "LaunchOption.hpp"
@@ -54,13 +53,13 @@ LaunchOptions LaunchOptions::read(std::span<const std::string_view> arguments) {
           .name = NICKNAME_OPTION,
           .takesValue = true,
           .record =
-              [&options](std::string_view nickname) {
-                if (!network::isValidNickname(nickname)) {
-                  throw InvalidNicknameOptionException(nickname);
+              [&options](std::string_view callsign) {
+                if (!network::isValidNickname(callsign)) {
+                  throw InvalidNicknameOptionException(callsign);
                 }
-                options.nickname_ = std::string(nickname);
+                options.nickname_ = std::string(callsign);
                 options.forcedLines_.push_back(
-                    engine::settingLine(NICKNAME_SETTING_NAME, nickname));
+                    engine::settingLine(NICKNAME_SETTING_NAME, callsign));
               }},
       engine::LaunchOption{
           .name = engine::SET_OPTION,

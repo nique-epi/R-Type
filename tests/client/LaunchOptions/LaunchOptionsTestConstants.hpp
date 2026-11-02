@@ -99,7 +99,7 @@ constexpr std::string_view NICKNAME_LINE = "set nickname ACE";
  */
 constexpr std::string_view AWKWARD_NICKNAME_ARGUMENT = "A \"C\" E";
 constexpr std::string_view AWKWARD_NICKNAME_LINE =
-    "set nickname \"A \\\"C\\\" E\"";
+    R"(set nickname "A \"C\" E")";
 
 /**
  * @brief A value of the set option, and the line it forces.

@@ -7,6 +7,7 @@
 #include <utility>
 #include <vector>
 #include "Application.hpp"
+#include "ConfigurationStep.hpp"
 #include "ConnectedPlayer.hpp"
 #include "DatagramCodec.hpp"
 #include "GamePlayers.hpp"

@@ -20,8 +20,8 @@ TEST_F(ConfigurationReaderFixture, FileOfCommandsIsRun) {
   EXPECT_TRUE(report.fileFound);
   EXPECT_EQ(report.executedLines, TWO_SETTINGS_FILE_RUNNABLE_LINES);
   EXPECT_TRUE(report.refusals.empty());
-  EXPECT_EQ(port_->integer(), FILE_PORT);
-  EXPECT_EQ(nickname_->text(), ACCEPTED_NICKNAME);
+  EXPECT_EQ(port().integer(), FILE_PORT);
+  EXPECT_EQ(nickname().text(), ACCEPTED_NICKNAME);
 }
 
 /**
@@ -32,10 +32,10 @@ TEST_F(ConfigurationReaderFixture, FileOfCommandsIsRun) {
  */
 TEST_F(ConfigurationReaderFixture, MissingFileIsNotAnError) {
   const auto report =
-      read(folder_.path() / std::string(MISSING_CONFIGURATION_FILE), {});
+      read(folder().path() / std::string(MISSING_CONFIGURATION_FILE), {});
   EXPECT_FALSE(report.fileFound);
   EXPECT_TRUE(report.refusals.empty());
-  EXPECT_EQ(port_->integer(), DEFAULT_PORT_VALUE);
+  EXPECT_EQ(port().integer(), DEFAULT_PORT_VALUE);
 }
 
 /**
@@ -52,7 +52,7 @@ TEST_F(ConfigurationReaderFixture, RefusedLineDoesNotStopTheReading) {
             std::string::npos);
   EXPECT_NE(report.refusals.front().find(std::string(BAD_LINE_POSITION)),
             std::string::npos);
-  EXPECT_EQ(port_->integer(), FILE_PORT);
+  EXPECT_EQ(port().integer(), FILE_PORT);
 }
 
 /**
@@ -63,7 +63,7 @@ TEST_F(ConfigurationReaderFixture, RefusedLineDoesNotStopTheReading) {
 TEST_F(ConfigurationReaderFixture, ForcedLineOverridesTheFile) {
   writeFile(FILE_SETTING_PORT);
   static_cast<void>(read(file(), {std::string(FORCED_PORT_LINE)}));
-  EXPECT_EQ(port_->integer(), FORCED_PORT);
+  EXPECT_EQ(port().integer(), FORCED_PORT);
 }
 
 /**
@@ -73,9 +73,9 @@ TEST_F(ConfigurationReaderFixture, ForcedLineOverridesTheFile) {
  */
 TEST_F(ConfigurationReaderFixture, ForcedLineRunsWithoutAFile) {
   static_cast<void>(
-      read(folder_.path() / std::string(MISSING_CONFIGURATION_FILE),
+      read(folder().path() / std::string(MISSING_CONFIGURATION_FILE),
            {std::string(FORCED_PORT_LINE)}));
-  EXPECT_EQ(port_->integer(), FORCED_PORT);
+  EXPECT_EQ(port().integer(), FORCED_PORT);
 }
 
 /**
@@ -85,12 +85,12 @@ TEST_F(ConfigurationReaderFixture, ForcedLineRunsWithoutAFile) {
  */
 TEST_F(ConfigurationReaderFixture, RefusedForcedLineNamesTheLaunchOption) {
   const auto report =
-      read(folder_.path() / std::string(MISSING_CONFIGURATION_FILE),
+      read(folder().path() / std::string(MISSING_CONFIGURATION_FILE),
            {std::string(FORCED_BAD_PORT_LINE)});
   ASSERT_EQ(report.refusals.size(), 1U);
   EXPECT_NE(report.refusals.front().find(std::string(FORCED_LINE_ORIGIN_TEXT)),
             std::string::npos);
-  EXPECT_EQ(port_->integer(), DEFAULT_PORT_VALUE);
+  EXPECT_EQ(port().integer(), DEFAULT_PORT_VALUE);
 }
 
 /**
@@ -102,7 +102,7 @@ TEST_F(ConfigurationReaderFixture, WindowsLineEndsAreAccepted) {
   writeFile(FILE_WITH_WINDOWS_LINE_ENDS);
   const auto report = read(file(), {});
   EXPECT_TRUE(report.refusals.empty());
-  EXPECT_EQ(port_->integer(), FILE_PORT);
+  EXPECT_EQ(port().integer(), FILE_PORT);
 }
 
 /**
@@ -117,8 +117,8 @@ TEST_F(ConfigurationReaderFixture, StepReadsTheFileAndFillsItsReport) {
       rtype::engine::configurationStep(file(), {std::string(FORCED_PORT_LINE)},
                                        report);
 
-  step(interpreter_);
+  step(interpreter());
 
   EXPECT_TRUE(report.fileFound);
-  EXPECT_EQ(port_->integer(), FORCED_PORT);
+  EXPECT_EQ(port().integer(), FORCED_PORT);
 }
