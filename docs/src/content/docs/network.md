@@ -302,6 +302,7 @@ Measured on 27 October 2026 on an Apple M4 Pro under macOS 27.0, with the server
 | Change how datagrams are received or sent | `src/network/Transport/UdpSocket/` |
 | Change how datagrams go between the socket and the queues | `src/network/Transport/DatagramRelay/` |
 | Run a program over a simulated network | the options of [Network simulator](#network-simulator-simulatednetworksocket) |
+| Add an option of the network simulator | `SimulatorLaunchOptions::read()` and `usage()` in `src/network/Transport/Conditions/SimulatorLaunchOptions.cpp`, its name in `NetworkConditionsConstants.hpp`; the client and the server both read it before their own options |
 | Change a scenario of the simulator, or add one | `NETWORK_SCENARIOS` and its entries in `src/network/Transport/Conditions/NetworkConditionsConstants.hpp` |
 | Change what the simulator does to a datagram | `DatagramsInFlight` in `src/network/Transport/Simulator/` |
 | Write a class that needs Asio | A folder in `src/network` whose target links `rtype_network_asio` privately |
