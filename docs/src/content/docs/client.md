@@ -453,7 +453,7 @@ builder.row({.label = MUSIC_LABEL},
 
 ### Lists: `ItemList`
 
-`ItemList` (`rtype_client_item_list`, `src/client/Widgets/ItemList/`) paints rows under one another, each a cell per column, from an `ItemListLayout`: where the first row lies, how wide a row is, the pixels between two rows, how many rows it shows at most, and its columns, each with an anchor, a font and a side of that anchor. Rows past the capacity and cells without a column are left out. A row may fill a color behind it (`ItemRow::highlight`), and a cell may add a word on ink after its text (`ItemCell::tag`). `setPinnedRow()` shows a row under the others, past a dashed line; `setPinnedNote()` shows a line of small print there when there is no such row. It only paints: selection and scrolling do not exist yet. `client_widget_piece_tests` checks it.
+`ItemList` (`rtype_client_item_list`, `src/client/Widgets/ItemList/`) paints rows under one another, each a cell per column, from an `ItemListLayout`: where the first row lies, how wide a row is, the pixels between two rows, how many rows it shows at most, and its columns, each with an anchor, a font and a side of that anchor. Rows past the capacity and cells without a column are left out. A row may fill a color behind it (`ItemRow::highlight`), and a cell may add a word on ink after its text (`ItemCell::tag`), painted by `paintInkTag()` (`rtype_client_ink_tag`), like YOU in the flight log. `setPinnedRow()` shows a row under the others, past a dashed line; `setPinnedNote()` shows a line of small print there when there is no such row. It only paints: selection and scrolling do not exist yet. `client_widget_piece_tests` checks it.
 
 ```cpp
 constexpr std::array COLUMNS{
@@ -474,7 +474,7 @@ The columns must outlive the list: a constant array does.
 
 ### A button alone: `KeyChip`
 
-`KeyChip` (`rtype_client_key_chip`, `src/client/Widgets/KeyChip/`) is a `Button` with its key, standing alone on a screen whose menu does not hold it: RANKING in the waiting room, BACK, FILTER and JOIN A SERVER on the leaderboard. It plays `CLICK_SOUND_ID` and runs its action when its key, or the left button over it, is released after its press, with the rules of a menu: the release of a key pressed on another screen does nothing, a key held down acts once, losing the focus drops a press, and a disabled chip runs nothing. `handleEvent()` returns whether the event was the chip's. `client_interface_tests` checks it. HELP does not use it: `HelpWalkthrough` keeps its own chip.
+`KeyChip` (`rtype_client_key_chip`, `src/client/Widgets/KeyChip/`) is a `Button` with its key, standing alone on a screen whose menu does not hold it: RANKING in the waiting room, BACK, FILTER and JOIN A SERVER on the leaderboard. It plays `CLICK_SOUND_ID` and runs its action when its key, or the left button over it, is released after its press, with the rules of a menu: the release of a key pressed on another screen does nothing, a key held down acts once, losing the focus drops a press, and a disabled chip runs nothing. `handleEvent()` returns whether the event was the chip's. `FocusLost` makes it forget the key, the button and the pointer, so a screen that stops giving it events gives it that one first: the leaderboard when its filter opens, the room when its help or the leaderboard opens. `client_interface_tests` checks it. HELP does not use it: `HelpWalkthrough` keeps its own chip.
 
 ### How a menu is drawn: `InterfaceCanvas`
 
@@ -524,7 +524,7 @@ The screen holds no menu, since each action has its key or its chip. `TabStrip::
 |---|---|---|
 | Escape (`MENU_CANCEL_KEY`) | BACK | closes the screen |
 | F (`FILTER_KEY`) | FILTER | opens the filter, unless the tab has nothing to ask |
-| Q and E (`PREVIOUS_TAB_KEY`, `NEXT_TAB_KEY`), by their place on the keyboard | a click on a tab | changes tab and asks its source |
+| Q and E (`PREVIOUS_TAB_KEY`, `NEXT_TAB_KEY`), by their place on the keyboard | a click on a tab | changes tab and asks its source, once however long the key is held |
 | Enter (`MENU_CONFIRM_KEY`) | JOIN A SERVER | without a session only: replaces the screen by the connection screen |
 
 | Phase of the page (`LeaderboardPhase`) | The panel shows |
@@ -544,11 +544,11 @@ The screen reads each tab through `ILeaderboardSource` (`src/client/Connection/`
 - `ask()` sends a `LeaderboardRequest` at once, then again every `LEADERBOARD_ASK_INTERVAL` (500 ms) while no answer came, and gives up after `LEADERBOARD_GIVE_UP_TIME` (5 s): 10 datagrams at most. Without a session it sends nothing and says `NotOnServer`.
 - Only the first `LeaderboardAnswer` whose `asked` equals the request counts, so a late answer to an older filter and a copy of the answer change nothing. An answer that arrives after giving up still shows.
 - The server ignores a request less than 500 ms after its last answer to that player, so the answer to a filter changed at once comes with the next request, at most 500 ms later.
-- `stopAsking()` ends the requests; the screen calls it when it leaves.
+- `stopAsking()` ends the requests; the screen calls it when it leaves, and for the tab it leaves.
 
 ### The filter: `LeaderboardFilterDialog`
 
-FILTER opens `LeaderboardFilterDialog` (`src/client/Screens/LeaderboardFilterDialog/`), a dialog holding the rows DIFFICULTY (EASY, NORMAL, HARD) and PILOTS (1 to 4), which takes every event until it closes. Its rows change a copy of the choice: APPLY asks the source for it, BACK and Escape change nothing. There is no ALL, since two difficulties never mix. The screen opens on NORMAL (`DEFAULT_DIFFICULTY_CHOICE`) and on as many pilots as the waiting room lists, one on the title. Every game plays `DEFAULT_DIFFICULTY` (normal) today, so EASY and HARD read NO SCORE IN THIS MODE YET.
+FILTER opens `LeaderboardFilterDialog` (`src/client/Screens/LeaderboardFilterDialog/`), a dialog holding the rows DIFFICULTY (EASY, NORMAL, HARD) and PILOTS (1 to 4), which takes every event until it closes. Its rows change a copy of the choice: APPLY asks the source for it, BACK and Escape change nothing. There is no ALL, since two difficulties never mix. The screen opens on NORMAL (`DEFAULT_DIFFICULTY_CHOICE`) and on as many pilots as the waiting room lists, one on the title and four at most (`openingChoiceOf()`). Every game plays `DEFAULT_DIFFICULTY` (normal) today, so EASY and HARD read NO SCORE IN THIS MODE YET.
 
 ### Banners and guards: `LEADERBOARD_FIGURES`
 
