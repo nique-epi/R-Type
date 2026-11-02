@@ -194,6 +194,42 @@ TEST_F(SettingsServiceFixture, KeysWindowSizeAndDisplayModeAreAppliedAndTold) {
 }
 
 /**
+ * Given a service with a listener, over the settings of a first launch
+ * When settings kept by an earlier launch are restored
+ * Then the settings hold them and the listener is told every setting
+ */
+TEST_F(SettingsServiceFixture, RestoringTakesTheSettingsAndTellsEveryOne) {
+  PlayerSettings kept;
+  kept.effectsVolume = A_VOLUME;
+  kept.muted = true;
+
+  service().restore(kept);
+
+  EXPECT_EQ(settings(), kept);
+  EXPECT_EQ(listener().changes(),
+            (std::vector<SettingId>{
+                SettingId::MusicVolume, SettingId::EffectsVolume,
+                SettingId::Muted, SettingId::WindowSize, SettingId::DisplayMode,
+                SettingId::Keys, SettingId::ColorMode, SettingId::ReduceFlashes,
+                SettingId::SoundCues, SettingId::AutoFire}));
+}
+
+/**
+ * Given a service over the settings of a first launch
+ * When settings kept by an earlier launch are restored
+ * Then there is nothing to save: the storage already holds them
+ */
+TEST_F(SettingsServiceFixture, RestoringLeavesNothingToSave) {
+  PlayerSettings kept;
+  kept.muted = true;
+
+  service().restore(kept);
+
+  EXPECT_FALSE(service().saveIfChanged().has_value());
+  EXPECT_TRUE(storage().saves().empty());
+}
+
+/**
  * Given a service whose listener was subscribed and then unsubscribed
  * When a volume is set
  * Then the listener is told nothing

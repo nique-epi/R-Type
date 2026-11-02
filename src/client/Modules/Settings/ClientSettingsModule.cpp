@@ -58,7 +58,7 @@ void ClientSettingsModule::install(engine::InstallContext& context) {
 
 void ClientSettingsModule::start() {
   logFileLocation();
-  settings_ = storage_.load(firstLaunchSettings());
+  service_.restore(storage_.load(firstLaunchSettings()));
 }
 
 void ClientSettingsModule::stop() {}

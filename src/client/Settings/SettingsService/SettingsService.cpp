@@ -9,6 +9,7 @@
 #include "KeyBindings.hpp"
 #include "PlayerSettings.hpp"
 #include "Setting.hpp"
+#include "SettingDefinitionConstants.hpp"
 #include "SettingId.hpp"
 #include "SettingRange.hpp"
 
@@ -33,6 +34,21 @@ bool accepts(const Setting<Value>& setting, Value value) {
   }
 }
 
+/** @brief Tells each of @p listeners that @p setting holds its value. */
+void tellListeners(const std::vector<ISettingsListener*>& listeners,
+                   SettingId setting) {
+  for (ISettingsListener* listener : listeners) {
+    listener->settingChanged(setting);
+  }
+}
+
+/** @brief Tells each of @p listeners about every setting. */
+void tellEverySetting(const std::vector<ISettingsListener*>& listeners) {
+  for (const SettingId setting : ALL_SETTING_IDS) {
+    tellListeners(listeners, setting);
+  }
+}
+
 }  // namespace
 
 SettingsService::SettingsService(PlayerSettings& settings,
@@ -47,6 +63,11 @@ void SettingsService::subscribe(ISettingsListener& listener) {
 
 void SettingsService::unsubscribe(ISettingsListener& listener) {
   std::erase(listeners_, &listener);
+}
+
+void SettingsService::restore(const PlayerSettings& kept) {
+  *settings_ = kept;
+  tellEverySetting(listeners_);
 }
 
 template <typename Value>
@@ -98,9 +119,7 @@ std::optional<bool> SettingsService::saveIfChanged() {
 
 void SettingsService::changed(SettingId changedSetting) {
   unsaved_ = true;
-  for (ISettingsListener* listener : listeners_) {
-    listener->settingChanged(changedSetting);
-  }
+  tellListeners(listeners_, changedSetting);
 }
 
 }  // namespace rtype::client

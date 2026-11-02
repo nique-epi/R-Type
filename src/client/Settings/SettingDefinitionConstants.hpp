@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <optional>
 #include "ColorMode.hpp"
 #include "DisplayMode.hpp"
@@ -48,5 +49,13 @@ constexpr Setting<bool> SOUND_CUES_SETTING{.member = &PlayerSettings::soundCues,
 constexpr Setting<bool> AUTO_FIRE_SETTING{.member = &PlayerSettings::autoFire,
                                           .id = SettingId::AutoFire,
                                           .range = std::nullopt};
+
+/** @brief Every setting a listener can be told about. */
+constexpr std::array ALL_SETTING_IDS{
+    SettingId::MusicVolume, SettingId::EffectsVolume, SettingId::Muted,
+    SettingId::WindowSize,  SettingId::DisplayMode,   SettingId::Keys,
+    SettingId::ColorMode,   SettingId::ReduceFlashes, SettingId::SoundCues,
+    SettingId::AutoFire,
+};
 
 }  // namespace rtype::client

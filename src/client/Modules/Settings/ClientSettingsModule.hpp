@@ -21,8 +21,10 @@ namespace rtype::client {
  * install() provides both, the settings still at their defaults. start()
  * writes the settings file in the journal, or that the system tells no
  * settings folder, then reads the file over the settings of a first launch,
- * whose flashes are reduced when the system asks for less motion. Nothing
- * stays open: the file is read and closed, and written again by a save only.
+ * whose flashes are reduced when the system asks for less motion, and hands
+ * them to the service, which tells the listeners subscribed while installing.
+ * Nothing stays open: the file is read and closed, and written again by a save
+ * only.
  */
 class ClientSettingsModule final : public engine::IModule {
  public:

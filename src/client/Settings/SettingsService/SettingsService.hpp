@@ -34,6 +34,13 @@ class SettingsService {
   void unsubscribe(ISettingsListener& listener);
 
   /**
+   * @brief Takes the settings @p kept, as read from the storage at launch, and
+   * tells the listeners about every setting, moved or not, so a listener built
+   * before the read follows them. It leaves nothing new to save.
+   */
+  void restore(const PlayerSettings& kept);
+
+  /**
    * @brief Gives @p setting the value @p value and tells the listeners.
    * @returns Whether it was applied; a value out of the range of the setting,
    * ends included, changes nothing and tells nobody.
