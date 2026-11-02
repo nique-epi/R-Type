@@ -56,6 +56,19 @@ constexpr rtype::network::NetworkConditions LAG_JUST_BELOW_ZERO{
 constexpr rtype::network::NetworkConditions JITTER_JUST_BELOW_ZERO{
     .jitter = std::chrono::milliseconds{-1}};
 
+/** @brief A lag and a jitter of ten seconds, the longest the simulator takes.
+ */
+constexpr rtype::network::NetworkConditions LAG_AND_JITTER_OF_TEN_SECONDS{
+    .lag = std::chrono::milliseconds{10000},
+    .jitter = std::chrono::milliseconds{10000}};
+
+/** @brief A lag and a jitter one millisecond over ten seconds, the first
+ * value the simulator refuses. */
+constexpr rtype::network::NetworkConditions LAG_JUST_OVER_TEN_SECONDS{
+    .lag = std::chrono::milliseconds{10001}};
+constexpr rtype::network::NetworkConditions JITTER_JUST_OVER_TEN_SECONDS{
+    .jitter = std::chrono::milliseconds{10001}};
+
 /** @brief How much longer the plan holds a reordered datagram. */
 constexpr std::chrono::milliseconds HOLD_OF_A_REORDERED_DATAGRAM{75};
 

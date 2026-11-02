@@ -16,8 +16,8 @@
 
 using rtype::network::DatagramInFlight;
 using rtype::network::DatagramsInFlight;
-using rtype::network::NegativeSimulatedDelayException;
 using rtype::network::NetworkConditions;
+using rtype::network::SimulatedDelayOutOfRangeException;
 
 /**
  * Given network conditions whose jitter is one millisecond below zero
@@ -26,7 +26,7 @@ using rtype::network::NetworkConditions;
  */
 TEST(DatagramsInFlight, RefusesANegativeJitter) {
   EXPECT_THROW(DatagramsInFlight(JITTER_JUST_BELOW_ZERO, SOME_SEED),
-               NegativeSimulatedDelayException);
+               SimulatedDelayOutOfRangeException);
 }
 
 /**
@@ -36,7 +36,40 @@ TEST(DatagramsInFlight, RefusesANegativeJitter) {
  */
 TEST(DatagramsInFlight, RefusesANegativeLag) {
   EXPECT_THROW(DatagramsInFlight(LAG_JUST_BELOW_ZERO, SOME_SEED),
-               NegativeSimulatedDelayException);
+               SimulatedDelayOutOfRangeException);
+}
+
+/**
+ * Given network conditions whose lag is one millisecond over ten seconds
+ * When the datagrams in flight are built from them
+ * Then they are refused: no wait that long is simulated
+ */
+TEST(DatagramsInFlight, RefusesALagOverTenSeconds) {
+  EXPECT_THROW(DatagramsInFlight(LAG_JUST_OVER_TEN_SECONDS, SOME_SEED),
+               SimulatedDelayOutOfRangeException);
+}
+
+/**
+ * Given network conditions whose jitter is one millisecond over ten seconds
+ * When the datagrams in flight are built from them
+ * Then they are refused: no wait that long is simulated
+ */
+TEST(DatagramsInFlight, RefusesAJitterOverTenSeconds) {
+  EXPECT_THROW(DatagramsInFlight(JITTER_JUST_OVER_TEN_SECONDS, SOME_SEED),
+               SimulatedDelayOutOfRangeException);
+}
+
+/**
+ * Given network conditions whose lag and jitter are ten seconds each
+ * When the datagrams in flight are built from them and handed 1000 datagrams
+ * Then they are accepted, and every datagram arrives
+ */
+TEST(DatagramsInFlight, AcceptsALagAndAJitterOfTenSeconds) {
+  DatagramsInFlight inFlight{LAG_AND_JITTER_OF_TEN_SECONDS, SOME_SEED};
+
+  handNumbered(inFlight, THOUSAND_DATAGRAMS, ONE_MILLISECOND_APART);
+
+  EXPECT_EQ(everyArrival(inFlight).size(), THOUSAND_DATAGRAMS);
 }
 
 /**

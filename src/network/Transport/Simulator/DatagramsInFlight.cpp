@@ -30,14 +30,24 @@ std::chrono::steady_clock::duration perCrossing(
 }
 
 /**
- * @returns A copy of @p conditions, once their lag and jitter are known not to
- * be negative.
- * @throws NegativeSimulatedDelayException when either is.
+ * @returns Whether @p delay is from 0 to MAXIMUM_SIMULATED_DELAY, so half of
+ * it converts to the clock of the simulator without overflow.
+ */
+bool isSimulatedDelay(std::chrono::milliseconds delay) {
+  return delay >= std::chrono::milliseconds::zero() &&
+         delay <= MAXIMUM_SIMULATED_DELAY;
+}
+
+/**
+ * @returns A copy of @p conditions, once their lag and jitter are known to be
+ * from 0 to MAXIMUM_SIMULATED_DELAY.
+ * @throws SimulatedDelayOutOfRangeException when either is not.
  */
 NetworkConditions checkedConditions(const NetworkConditions& conditions) {
-  if (conditions.lag < std::chrono::milliseconds::zero() ||
-      conditions.jitter < std::chrono::milliseconds::zero()) {
-    throw NegativeSimulatedDelayException(conditions.lag, conditions.jitter);
+  if (!isSimulatedDelay(conditions.lag) ||
+      !isSimulatedDelay(conditions.jitter)) {
+    throw SimulatedDelayOutOfRangeException(conditions.lag, conditions.jitter,
+                                            MAXIMUM_SIMULATED_DELAY);
   }
   return conditions;
 }

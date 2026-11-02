@@ -112,10 +112,12 @@ MissingSimulatorOptionValueException::MissingSimulatorOptionValueException(
     const std::string& option)
     : NetworkException("Missing value after the option " + option) {}
 
-NegativeSimulatedDelayException::NegativeSimulatedDelayException(
-    std::chrono::milliseconds lag, std::chrono::milliseconds jitter)
+SimulatedDelayOutOfRangeException::SimulatedDelayOutOfRangeException(
+    std::chrono::milliseconds lag, std::chrono::milliseconds jitter,
+    std::chrono::milliseconds longest)
     : NetworkException(
-          "A simulated network needs a lag and a jitter of 0 ms or more, not " +
+          "A simulated network needs a lag and a jitter from 0 to " +
+          std::to_string(longest.count()) + " ms, not " +
           std::to_string(lag.count()) + " ms and " +
           std::to_string(jitter.count()) + " ms") {}
 
