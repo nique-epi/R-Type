@@ -1,27 +1,18 @@
 #include "TickLoop.hpp"
 #include <algorithm>
-#include <chrono>
 #include <cstddef>
 #include <functional>
-#include <ratio>
 #include <stop_token>
 #include <string>
 #include <thread>
 #include <utility>
+#include "DurationConversion.hpp"
 #include "FineTimerResolution.hpp"
 #include "IClock.hpp"
 #include "ServerConstants.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::server {
-
-namespace {
-
-double inMilliseconds(engine::Duration duration) {
-  return std::chrono::duration<double, std::milli>(duration).count();
-}
-
-}  // namespace
 
 TickLoop::TickLoop(const engine::IClock& clock, std::function<void()> tick)
     : clock_(&clock),
@@ -89,10 +80,10 @@ void TickLoop::recordStall(engine::Duration droppedTime) {
 void TickLoop::reportLateness() {
   const Lateness lateness = takeLateness();
   const engine::Duration average =
-      lateness.total / static_cast<engine::Duration::rep>(lateness.tickCount);
+      engine::averageOf(lateness.total, lateness.tickCount);
   logger_.debug(lateness.tickCount, " ticks started on average ",
-                inMilliseconds(average), " ms late, at most ",
-                inMilliseconds(lateness.maximum), " ms");
+                engine::inMilliseconds(average), " ms late, at most ",
+                engine::inMilliseconds(lateness.maximum), " ms");
 }
 
 void TickLoop::reportStalls() {
@@ -100,10 +91,11 @@ void TickLoop::reportStalls() {
   if (stalls.count == 0) {
     return;
   }
-  logger_.warn("stalls since the previous report: ", stalls.count,
-               ", game time dropped: ", inMilliseconds(stalls.totalDropped),
-               " ms, the longest: ", inMilliseconds(stalls.longestDropped),
-               " ms; the game froze instead of catching up");
+  logger_.warn(
+      "stalls since the previous report: ", stalls.count,
+      ", game time dropped: ", engine::inMilliseconds(stalls.totalDropped),
+      " ms, the longest: ", engine::inMilliseconds(stalls.longestDropped),
+      " ms; the game froze instead of catching up");
 }
 
 }  // namespace rtype::server
