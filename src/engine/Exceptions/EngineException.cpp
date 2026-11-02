@@ -80,4 +80,12 @@ MissingServiceException::MissingServiceException(const std::string& moduleName,
                       "\" requires the service " + serviceName +
                       ", which no module installed before it provides") {}
 
+DuplicateCommandException::DuplicateCommandException(
+    const std::string& commandName)
+    : EngineException("The command \"" + commandName +
+                      "\" is already registered") {}
+
+CommandRefusedException::CommandRefusedException(const std::string& reason)
+    : EngineException(reason) {}
+
 }  // namespace rtype::engine

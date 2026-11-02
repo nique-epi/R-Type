@@ -167,4 +167,21 @@ class MissingServiceException : public EngineException {
                           const std::string& serviceName);
 };
 
+/**
+ * @brief A command was registered under a name another command already has.
+ */
+class DuplicateCommandException : public EngineException {
+ public:
+  explicit DuplicateCommandException(const std::string& commandName);
+};
+
+/**
+ * @brief What a command handler throws to refuse the words it was given; the
+ * interpreter turns it into a message naming the command and the line.
+ */
+class CommandRefusedException : public EngineException {
+ public:
+  explicit CommandRefusedException(const std::string& reason);
+};
+
 }  // namespace rtype::engine

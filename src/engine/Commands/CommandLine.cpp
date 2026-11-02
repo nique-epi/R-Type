@@ -1,0 +1,47 @@
+#include "CommandLine.hpp"
+#include <cctype>
+#include <string>
+#include <string_view>
+#include <utility>
+#include <vector>
+#include "CommandsConstants.hpp"
+
+namespace rtype::engine {
+
+namespace {
+
+bool isSpace(char character) {
+  return std::isspace(static_cast<unsigned char>(character)) != 0;
+}
+
+}  // namespace
+
+std::vector<std::string> splitCommandLine(std::string_view line) {
+  std::vector<std::string> words;
+  std::string word;
+  bool inQuotes = false;
+  bool inWord = false;
+  for (const char character : line) {
+    if (!inQuotes && character == COMMENT_START) {
+      break;
+    }
+    if (character == QUOTE) {
+      inQuotes = !inQuotes;
+      inWord = true;
+    } else if (!inQuotes && isSpace(character)) {
+      if (inWord) {
+        words.push_back(std::exchange(word, std::string{}));
+        inWord = false;
+      }
+    } else {
+      word.push_back(character);
+      inWord = true;
+    }
+  }
+  if (inWord) {
+    words.push_back(std::move(word));
+  }
+  return words;
+}
+
+}  // namespace rtype::engine
