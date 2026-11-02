@@ -98,7 +98,8 @@ std::unique_ptr<GameInstance> ServerGamesModule::createGame(
           .send = std::bind_front(&IDatagramSender::queueDatagram, sender_),
           .settings = std::move(settings),
           .events = events,
-          .timers = timers_},
+          .timers = timers_,
+          .clock = clock_},
       rtypeGameModules());
 }
 
