@@ -2,15 +2,14 @@
 #include <array>
 #include <filesystem>
 #include <fstream>
-#include <iostream>
-#include <sstream>
-#include <streambuf>
 #include <string>
 #include <string_view>
-#include <system_error>
 #include <vector>
+#include "CurrentDirectoryChange.hpp"
 #include "JournalFile.hpp"
 #include "LogLaunchOptions.hpp"
+#include "LogLaunchOptionsFixture.hpp"
+#include "LogLaunchOptionsTestConstants.hpp"
 #include "Logger.hpp"
 #include "LoggingConstants.hpp"
 #include "LoggingException.hpp"
@@ -28,71 +27,17 @@ using rtype::logging::NO_FILE_OPTION;
 using rtype::logging::NO_STDERR_OPTION;
 using rtype::logging::STDERR_OPTION;
 using rtype::logging::UnknownLogLevelException;
-
-namespace {
+using rtype::logging::testing::RELATIVE_JOURNAL;
+using rtype::logging::testing::UNUSED_JOURNAL;
 
 using Arguments = std::vector<std::string_view>;
-
-class LogLaunchOptionsTest : public ::testing::Test {
- protected:
-  void SetUp() override {
-    savedLevel_ = Logger::level();
-    Logger::setLevel(LogLevel::Warn);
-    Logger::setOutput(LogOutput{});
-    originalBuffer_ = std::cerr.rdbuf(standardError_.rdbuf());
-  }
-
-  void TearDown() override {
-    std::cerr.rdbuf(originalBuffer_);
-    Logger::setLevel(savedLevel_);
-    Logger::setOutput(LogOutput{});
-  }
-
-  [[nodiscard]] std::string standardError() const {
-    return standardError_.str();
-  }
-
- private:
-  LogLevel savedLevel_{LogLevel::Info};
-  std::ostringstream standardError_;
-  std::streambuf* originalBuffer_{nullptr};
-};
-
-std::filesystem::path missingJournalPath() {
-  return std::filesystem::temp_directory_path() / "rtype_missing_directory" /
-         "journal.log";
-}
-
-/** @brief Makes a directory the current one until it is destroyed. */
-class CurrentDirectoryChange {
- public:
-  explicit CurrentDirectoryChange(const std::filesystem::path& directory)
-      : previous_(std::filesystem::current_path()) {
-    std::filesystem::current_path(directory);
-  }
-
-  ~CurrentDirectoryChange() {
-    std::error_code error;
-    std::filesystem::current_path(previous_, error);
-  }
-
-  CurrentDirectoryChange(const CurrentDirectoryChange&) = delete;
-  CurrentDirectoryChange& operator=(const CurrentDirectoryChange&) = delete;
-  CurrentDirectoryChange(CurrentDirectoryChange&&) = delete;
-  CurrentDirectoryChange& operator=(CurrentDirectoryChange&&) = delete;
-
- private:
-  std::filesystem::path previous_;
-};
-
-}  // namespace
 
 /**
  * Given no option and a default journal
  * When the options are applied and a warning is logged
  * Then the level is untouched, and the line is in the journal and on stderr
  */
-TEST_F(LogLaunchOptionsTest, DefaultsWriteToTheJournalAndStandardError) {
+TEST_F(LogLaunchOptionsFixture, DefaultsWriteToTheJournalAndStandardError) {
   const JournalFile journal;
 
   LogLaunchOptions::read(Arguments{}, journal.path().string()).apply();
@@ -108,7 +53,7 @@ TEST_F(LogLaunchOptionsTest, DefaultsWriteToTheJournalAndStandardError) {
  * When the options are applied and a warning is logged
  * Then the journal holds the line and stderr stays empty
  */
-TEST_F(LogLaunchOptionsTest, NoStderrOptionWritesToTheJournalOnly) {
+TEST_F(LogLaunchOptionsFixture, NoStderrOptionWritesToTheJournalOnly) {
   const JournalFile journal;
 
   LogLaunchOptions::read(Arguments{"--no-log-stderr"}, journal.path().string())
@@ -124,10 +69,10 @@ TEST_F(LogLaunchOptionsTest, NoStderrOptionWritesToTheJournalOnly) {
  * When a line is logged
  * Then the last option wins and stderr holds the line
  */
-TEST_F(LogLaunchOptionsTest, StderrOptionAfterNoStderrOptionWritesToStderr) {
+TEST_F(LogLaunchOptionsFixture, StderrOptionAfterNoStderrOptionWritesToStderr) {
   LogLaunchOptions::read(
       Arguments{"--no-log-file", "--no-log-stderr", "--log-stderr"},
-      "unused.log")
+      UNUSED_JOURNAL)
       .apply();
   Logger("Launch").warn("shown");
 
@@ -139,7 +84,8 @@ TEST_F(LogLaunchOptionsTest, StderrOptionAfterNoStderrOptionWritesToStderr) {
  * When a line is logged
  * Then the last option wins and stderr stays empty
  */
-TEST_F(LogLaunchOptionsTest, NoStderrOptionAfterStderrOptionKeepsStderrEmpty) {
+TEST_F(LogLaunchOptionsFixture,
+       NoStderrOptionAfterStderrOptionKeepsStderrEmpty) {
   const JournalFile journal;
 
   LogLaunchOptions::read(Arguments{"--log-stderr", "--no-log-stderr"},
@@ -155,12 +101,12 @@ TEST_F(LogLaunchOptionsTest, NoStderrOptionAfterStderrOptionKeepsStderrEmpty) {
  * When the options are applied
  * Then the first line of the journal names that path
  */
-TEST_F(LogLaunchOptionsTest, FirstLineNamesTheJournal) {
+TEST_F(LogLaunchOptionsFixture, FirstLineNamesTheJournal) {
   const JournalFile journal;
 
   LogLaunchOptions::read(
       Arguments{"--log-level", "info", "--log-file", journal.path().string()},
-      "unused.log")
+      UNUSED_JOURNAL)
       .apply();
 
   const std::vector<std::string> lines = journal.lines();
@@ -174,11 +120,11 @@ TEST_F(LogLaunchOptionsTest, FirstLineNamesTheJournal) {
  * When the options are applied at the info level
  * Then the first line of the journal names it by its absolute path
  */
-TEST_F(LogLaunchOptionsTest, FirstLineNamesARelativeJournalByItsAbsolutePath) {
+TEST_F(LogLaunchOptionsFixture,
+       FirstLineNamesARelativeJournalByItsAbsolutePath) {
   const CurrentDirectoryChange directory{
       std::filesystem::temp_directory_path()};
-  const std::filesystem::path relativeJournal{
-      "LogLaunchOptionsTest_relative_journal.log"};
+  const std::filesystem::path relativeJournal{RELATIVE_JOURNAL};
   const std::filesystem::path absoluteJournal =
       std::filesystem::current_path() / relativeJournal;
   std::filesystem::remove(absoluteJournal);
@@ -202,9 +148,9 @@ TEST_F(LogLaunchOptionsTest, FirstLineNamesARelativeJournalByItsAbsolutePath) {
  * When the options are applied
  * Then stderr says that there is no journal file
  */
-TEST_F(LogLaunchOptionsTest, AnnouncesThatThereIsNoJournal) {
+TEST_F(LogLaunchOptionsFixture, AnnouncesThatThereIsNoJournal) {
   LogLaunchOptions::read(Arguments{"--log-level", "info", "--no-log-file"},
-                         "unused.log")
+                         UNUSED_JOURNAL)
       .apply();
 
   EXPECT_NE(standardError().find("no journal file"), std::string::npos);
@@ -215,7 +161,7 @@ TEST_F(LogLaunchOptionsTest, AnnouncesThatThereIsNoJournal) {
  * When the options are applied
  * Then the logger has the level given by the option
  */
-TEST_F(LogLaunchOptionsTest, LevelOptionSetsTheLevel) {
+TEST_F(LogLaunchOptionsFixture, LevelOptionSetsTheLevel) {
   const JournalFile journal;
 
   LogLaunchOptions::read(Arguments{"--log-level", "debug"},
@@ -230,7 +176,7 @@ TEST_F(LogLaunchOptionsTest, LevelOptionSetsTheLevel) {
  * When the options are applied and a line is logged
  * Then no journal is created and stderr holds the line
  */
-TEST_F(LogLaunchOptionsTest, NoFileOptionWritesToStandardErrorOnly) {
+TEST_F(LogLaunchOptionsFixture, NoFileOptionWritesToStandardErrorOnly) {
   const JournalFile journal;
 
   LogLaunchOptions::read(Arguments{"--no-log-file"}, journal.path().string())
@@ -246,7 +192,7 @@ TEST_F(LogLaunchOptionsTest, NoFileOptionWritesToStandardErrorOnly) {
  * When the options are applied and a line is logged
  * Then no journal is created and stderr stays empty
  */
-TEST_F(LogLaunchOptionsTest, NoFileAndNoStderrOptionsWriteNothing) {
+TEST_F(LogLaunchOptionsFixture, NoFileAndNoStderrOptionsWriteNothing) {
   const JournalFile journal;
 
   LogLaunchOptions::read(Arguments{"--no-log-file", "--no-log-stderr"},
@@ -263,7 +209,7 @@ TEST_F(LogLaunchOptionsTest, NoFileAndNoStderrOptionsWriteNothing) {
  * When a line is logged
  * Then stderr holds it and no journal exists
  */
-TEST_F(LogLaunchOptionsTest, StderrOptionWritesToStandardError) {
+TEST_F(LogLaunchOptionsFixture, StderrOptionWritesToStandardError) {
   const JournalFile journal;
 
   LogLaunchOptions::read(Arguments{"--no-log-file", "--log-stderr"},
@@ -280,12 +226,12 @@ TEST_F(LogLaunchOptionsTest, StderrOptionWritesToStandardError) {
  * When a line is logged
  * Then the last option wins and the line goes to the file
  */
-TEST_F(LogLaunchOptionsTest, FileOptionAfterNoFileOptionWritesToTheFile) {
+TEST_F(LogLaunchOptionsFixture, FileOptionAfterNoFileOptionWritesToTheFile) {
   const JournalFile journal;
   const std::string path = journal.path().string();
 
   LogLaunchOptions::read(Arguments{"--no-log-file", "--log-file", path},
-                         "unused.log")
+                         UNUSED_JOURNAL)
       .apply();
   Logger("Launch").warn("kept");
 
@@ -297,12 +243,12 @@ TEST_F(LogLaunchOptionsTest, FileOptionAfterNoFileOptionWritesToTheFile) {
  * When a line is logged
  * Then the last option wins and no journal is created
  */
-TEST_F(LogLaunchOptionsTest, NoFileOptionAfterFileOptionWritesNothing) {
+TEST_F(LogLaunchOptionsFixture, NoFileOptionAfterFileOptionWritesNothing) {
   const JournalFile journal;
   const std::string path = journal.path().string();
 
   LogLaunchOptions::read(Arguments{"--log-file", path, "--no-log-file"},
-                         "unused.log")
+                         UNUSED_JOURNAL)
       .apply();
   Logger("Launch").warn("lost");
 
@@ -314,7 +260,7 @@ TEST_F(LogLaunchOptionsTest, NoFileOptionAfterFileOptionWritesNothing) {
  * When the options are read
  * Then it is rejected and neither the level nor the output changed
  */
-TEST_F(LogLaunchOptionsTest, UnknownLevelIsRejectedAndChangesNothing) {
+TEST_F(LogLaunchOptionsFixture, UnknownLevelIsRejectedAndChangesNothing) {
   const JournalFile journal;
   ASSERT_EQ(Logger::level(), LogLevel::Warn);
 
@@ -334,10 +280,10 @@ TEST_F(LogLaunchOptionsTest, UnknownLevelIsRejectedAndChangesNothing) {
  * When the options are applied
  * Then the error is raised and neither the level nor the output changed
  */
-TEST_F(LogLaunchOptionsTest, UnopenableJournalChangesNothing) {
+TEST_F(LogLaunchOptionsFixture, UnopenableJournalChangesNothing) {
   const std::string missing = missingJournalPath().string();
   const LogLaunchOptions options = LogLaunchOptions::read(
-      Arguments{"--log-level", "debug", "--log-file", missing}, "unused.log");
+      Arguments{"--log-level", "debug", "--log-file", missing}, UNUSED_JOURNAL);
   ASSERT_EQ(Logger::level(), LogLevel::Warn);
 
   EXPECT_THROW(options.apply(), LogFileOpenException);
@@ -352,12 +298,12 @@ TEST_F(LogLaunchOptionsTest, UnopenableJournalChangesNothing) {
  * When the options are read
  * Then the missing value is reported
  */
-TEST_F(LogLaunchOptionsTest, OptionWithoutValueIsRejected) {
+TEST_F(LogLaunchOptionsFixture, OptionWithoutValueIsRejected) {
   EXPECT_THROW(static_cast<void>(LogLaunchOptions::read(
-                   Arguments{"--log-level"}, "unused.log")),
+                   Arguments{"--log-level"}, UNUSED_JOURNAL)),
                MissingLogOptionValueException);
   EXPECT_THROW(static_cast<void>(LogLaunchOptions::read(Arguments{"--log-file"},
-                                                        "unused.log")),
+                                                        UNUSED_JOURNAL)),
                MissingLogOptionValueException);
 }
 
@@ -366,12 +312,12 @@ TEST_F(LogLaunchOptionsTest, OptionWithoutValueIsRejected) {
  * When the options are read
  * Then it is rejected
  */
-TEST_F(LogLaunchOptionsTest, UnknownLoggingOptionIsRejected) {
+TEST_F(LogLaunchOptionsFixture, UnknownLoggingOptionIsRejected) {
   EXPECT_THROW(static_cast<void>(LogLaunchOptions::read(
-                   Arguments{"--log-levle", "debug"}, "unused.log")),
+                   Arguments{"--log-levle", "debug"}, UNUSED_JOURNAL)),
                InvalidLogOptionException);
   EXPECT_THROW(static_cast<void>(LogLaunchOptions::read(
-                   Arguments{"--no-log-level"}, "unused.log")),
+                   Arguments{"--no-log-level"}, UNUSED_JOURNAL)),
                InvalidLogOptionException);
 }
 
@@ -380,12 +326,12 @@ TEST_F(LogLaunchOptionsTest, UnknownLoggingOptionIsRejected) {
  * When the options are only read
  * Then the level is untouched and no journal is created
  */
-TEST_F(LogLaunchOptionsTest, ReadingAloneChangesNothing) {
+TEST_F(LogLaunchOptionsFixture, ReadingAloneChangesNothing) {
   const JournalFile journal;
   const std::string path = journal.path().string();
 
   static_cast<void>(LogLaunchOptions::read(
-      Arguments{"--log-level", "error", "--log-file", path}, "unused.log"));
+      Arguments{"--log-level", "error", "--log-file", path}, UNUSED_JOURNAL));
 
   EXPECT_EQ(Logger::level(), LogLevel::Warn);
   EXPECT_FALSE(std::filesystem::exists(journal.path()));
@@ -397,11 +343,11 @@ TEST_F(LogLaunchOptionsTest, ReadingAloneChangesNothing) {
  * Then the program's arguments are kept in order, without the logging
  *      options or their values
  */
-TEST_F(LogLaunchOptionsTest, OtherArgumentsAreKeptInOrder) {
+TEST_F(LogLaunchOptionsFixture, OtherArgumentsAreKeptInOrder) {
   const LogLaunchOptions options =
       LogLaunchOptions::read(Arguments{"-p", "4243", "--log-level", "debug",
                                        "-h", "127.0.0.1", "--log-stderr"},
-                             "unused.log");
+                             UNUSED_JOURNAL);
 
   const Arguments otherArguments(options.otherArguments().begin(),
                                  options.otherArguments().end());
@@ -413,7 +359,7 @@ TEST_F(LogLaunchOptionsTest, OtherArgumentsAreKeptInOrder) {
  * When the options are read and applied
  * Then the defaults apply
  */
-TEST_F(LogLaunchOptionsTest, OtherArgumentsLeaveTheDefaults) {
+TEST_F(LogLaunchOptionsFixture, OtherArgumentsLeaveTheDefaults) {
   const JournalFile journal;
 
   LogLaunchOptions::read(Arguments{"--port", "4242", "-v"},
@@ -430,7 +376,7 @@ TEST_F(LogLaunchOptionsTest, OtherArgumentsLeaveTheDefaults) {
  * When the options are read from the process and applied
  * Then the options after the program name apply
  */
-TEST_F(LogLaunchOptionsTest, ProcessArgumentsApplyAfterTheProgramName) {
+TEST_F(LogLaunchOptionsFixture, ProcessArgumentsApplyAfterTheProgramName) {
   const JournalFile journal;
   const std::array<const char*, 3> arguments{"r-type_server", "--log-level",
                                              "error"};
@@ -447,11 +393,11 @@ TEST_F(LogLaunchOptionsTest, ProcessArgumentsApplyAfterTheProgramName) {
  * When the options are read from the process
  * Then the program name is not among the other arguments
  */
-TEST_F(LogLaunchOptionsTest, ProcessArgumentsLeaveTheProgramNameOut) {
+TEST_F(LogLaunchOptionsFixture, ProcessArgumentsLeaveTheProgramNameOut) {
   const std::array<const char*, 3> arguments{"r-type_server", "-p", "4243"};
 
   const LogLaunchOptions options = LogLaunchOptions::readFromProcess(
-      static_cast<int>(arguments.size()), arguments.data(), "unused.log");
+      static_cast<int>(arguments.size()), arguments.data(), UNUSED_JOURNAL);
 
   const Arguments otherArguments(options.otherArguments().begin(),
                                  options.otherArguments().end());
@@ -464,7 +410,7 @@ TEST_F(LogLaunchOptionsTest, ProcessArgumentsLeaveTheProgramNameOut) {
  * Then each option starts a line of it
  */
 TEST(LogLaunchOptionsUsage, NamesEveryLoggingOption) {
-  const std::string usage = LogLaunchOptions::usage("unused.log");
+  const std::string usage = LogLaunchOptions::usage(UNUSED_JOURNAL);
 
   for (const std::string_view option :
        {LEVEL_OPTION, FILE_OPTION, NO_FILE_OPTION, STDERR_OPTION,

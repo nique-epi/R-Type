@@ -2,10 +2,10 @@
 
 #include <cstddef>
 #include <cstdint>
-#include <filesystem>
 #include <string>
 #include <string_view>
 #include <vector>
+#include "CurrentDirectoryChange.hpp"
 #include "LaunchOptions.hpp"
 #include "MessageType.hpp"
 #include "ServerModuleFixture.hpp"
@@ -20,12 +20,6 @@
 class ServerModulesFixture : public ServerModuleFixture {
  public:
   ServerModulesFixture();
-  ~ServerModulesFixture() override;
-
-  ServerModulesFixture(const ServerModulesFixture&) = delete;
-  ServerModulesFixture& operator=(const ServerModulesFixture&) = delete;
-  ServerModulesFixture(ServerModulesFixture&&) = delete;
-  ServerModulesFixture& operator=(ServerModulesFixture&&) = delete;
 
  protected:
   /** @brief Has the client join the server through the whole handshake.
@@ -48,7 +42,7 @@ class ServerModulesFixture : public ServerModuleFixture {
   rtype::server::StopRequest stopRequest_;
   UdpTestClient client_;
   TemporaryFolder workingFolder_;
-  std::filesystem::path previousFolder_;
+  CurrentDirectoryChange workingFolderChange_;
   std::string portText_;
   std::vector<std::string_view> arguments_;
   rtype::server::LaunchOptions launchOptions_;
