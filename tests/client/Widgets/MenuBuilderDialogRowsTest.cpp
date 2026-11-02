@@ -48,6 +48,35 @@ TEST(MenuBuilderDialogRows, RightStepsTheValueOfTheSelectedRow) {
 
 /**
  * Given a dialog holding two rows, the first one selected
+ * When the left arrow is pressed, which its control does not use
+ * Then the selection stays: only up, down and Tab move between the bars
+ */
+TEST(MenuBuilderDialogRows, AnArrowTheRowDoesNotUseMovesNothing) {
+  RowControlRecord first;
+  RowControlRecord second;
+  Menu menu = dialogWithRows(first, second);
+
+  menu.handleEvent(keyPress(sf::Keyboard::Key::Left), samePlayfieldPoint);
+
+  EXPECT_EQ(menu.selectedButton(), std::optional<std::size_t>(0));
+}
+
+/**
+ * Given a dialog without a row, its first button selected
+ * When the right arrow is pressed
+ * Then the next button is selected: only rows take the left and right arrows
+ * away from the bars
+ */
+TEST(MenuBuilderDialogRows, ADialogWithoutRowsKeepsItsArrows) {
+  Menu menu = dialogWithoutRows();
+
+  menu.handleEvent(keyPress(sf::Keyboard::Key::Right), samePlayfieldPoint);
+
+  EXPECT_EQ(menu.selectedButton(), std::optional<std::size_t>(1));
+}
+
+/**
+ * Given a dialog holding two rows, the first one selected
  * When the down arrow is pressed
  * Then the second row is selected
  */

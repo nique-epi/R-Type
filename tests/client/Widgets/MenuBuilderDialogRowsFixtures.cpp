@@ -9,6 +9,15 @@
 using rtype::client::Menu;
 using rtype::client::MenuBuilder;
 
+Menu dialogWithoutRows() {
+  return MenuBuilder(MenuBuilder::Frame::Dialog)
+      .heading("CONFIRM")
+      .message("ARE YOU SURE?")
+      .cancelButton({.label = "NO"}, [] {})
+      .button({.label = "YES"}, [] {})
+      .build();
+}
+
 Menu dialogWithRows(RowControlRecord& first, RowControlRecord& second) {
   const std::vector<sf::Keyboard::Key> used{sf::Keyboard::Key::Right};
   return MenuBuilder(MenuBuilder::Frame::Dialog)
