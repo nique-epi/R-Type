@@ -3,11 +3,13 @@
 #include <charconv>
 #include <cstddef>
 #include <cstdint>
+#include <functional>
 #include <optional>
 #include <span>
 #include <string>
 #include <string_view>
 #include <system_error>
+#include <utility>
 #include "EndpointText.hpp"
 #include "EngineException.hpp"
 #include "LaunchArguments.hpp"
@@ -77,56 +79,16 @@ std::size_t inputDelayFromText(std::string_view text) {
   return delay;
 }
 
-}  // namespace
-
-LaunchOptions LaunchOptions::read(std::span<const std::string_view> arguments) {
-  LaunchOptions options{network::DEFAULT_SERVER_PORT, false};
-  const std::array launchOptions{
-      engine::LaunchOption{.name = engine::PORT_OPTION,
-                           .takesValue = true,
-                           .record =
-                               [&options](std::string_view port) {
-                                 options.port_ = network::portFromText(port);
-                               }},
-      engine::LaunchOption{.name = SEED_OPTION,
-                           .takesValue = true,
-                           .record =
-                               [&options](std::string_view seed) {
-                                 options.seed_ = seedFromText(seed);
-                               }},
-      engine::LaunchOption{.name = STATE_RATE_OPTION,
-                           .takesValue = true,
-                           .record =
-                               [&options](std::string_view rate) {
-                                 options.stateRate_ = stateRateFromText(rate);
-                               }},
-      engine::LaunchOption{.name = INPUT_DELAY_OPTION,
-                           .takesValue = true,
-                           .record =
-                               [&options](std::string_view delay) {
-                                 options.inputDelay_ =
-                                     inputDelayFromText(delay);
-                               }},
-      engine::LaunchOption{
-          .name = engine::HELP_OPTION,
-          .takesValue = false,
-          .record =
-              [&options]([[maybe_unused]] std::string_view value) {
-                options.helpRequested_ = true;
-              }},
-  };
-  engine::readLaunchArguments(arguments, launchOptions);
-  return options;
+/** @returns An option followed by a value, which @p record reads. */
+engine::LaunchOption valueOption(std::string_view name,
+                                 std::function<void(std::string_view)> record) {
+  return engine::LaunchOption{
+      .name = name, .takesValue = true, .record = std::move(record)};
 }
 
-std::string LaunchOptions::usage() {
-  std::string text = engine::usageHeader(PROGRAM_NAME);
-  text += engine::usageEntry(
-      std::string(engine::PORT_OPTION) + " <port>",
-      "UDP port to listen on, from " + std::to_string(network::LOWEST_PORT) +
-          " to " + std::to_string(network::HIGHEST_PORT) +
-          ". Default: " + std::to_string(network::DEFAULT_SERVER_PORT) + ".");
-  text += engine::usageEntry(
+/** @returns The usage of the options that set how the games are played. */
+std::string gameOptionsUsage() {
+  std::string text = engine::usageEntry(
       std::string(SEED_OPTION) + " <seed>",
       "Whole number the random draws of the games start from, from 0 to "
       "4294967295. Default: drawn at random, and logged when a game starts so "
@@ -147,6 +109,50 @@ std::string LaunchOptions::usage() {
           ". The same delay holds for every player, so it adds the same lag to "
           "all of them. Default: " +
           std::to_string(DEFAULT_INPUT_DELAY_TICKS) + ".");
+  return text;
+}
+
+}  // namespace
+
+LaunchOptions LaunchOptions::read(std::span<const std::string_view> arguments) {
+  LaunchOptions options{network::DEFAULT_SERVER_PORT, false};
+  const std::array launchOptions{
+      valueOption(engine::PORT_OPTION,
+                  [&options](std::string_view port) {
+                    options.port_ = network::portFromText(port);
+                  }),
+      valueOption(SEED_OPTION,
+                  [&options](std::string_view seed) {
+                    options.seed_ = seedFromText(seed);
+                  }),
+      valueOption(STATE_RATE_OPTION,
+                  [&options](std::string_view rate) {
+                    options.stateRate_ = stateRateFromText(rate);
+                  }),
+      valueOption(INPUT_DELAY_OPTION,
+                  [&options](std::string_view delay) {
+                    options.inputDelay_ = inputDelayFromText(delay);
+                  }),
+      engine::LaunchOption{
+          .name = engine::HELP_OPTION,
+          .takesValue = false,
+          .record =
+              [&options]([[maybe_unused]] std::string_view value) {
+                options.helpRequested_ = true;
+              }},
+  };
+  engine::readLaunchArguments(arguments, launchOptions);
+  return options;
+}
+
+std::string LaunchOptions::usage() {
+  std::string text = engine::usageHeader(PROGRAM_NAME);
+  text += engine::usageEntry(
+      std::string(engine::PORT_OPTION) + " <port>",
+      "UDP port to listen on, from " + std::to_string(network::LOWEST_PORT) +
+          " to " + std::to_string(network::HIGHEST_PORT) +
+          ". Default: " + std::to_string(network::DEFAULT_SERVER_PORT) + ".");
+  text += gameOptionsUsage();
   text += engine::usageEntry(engine::HELP_OPTION,
                              "Print this help and start nothing.");
   text += '\n';
