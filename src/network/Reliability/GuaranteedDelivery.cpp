@@ -25,4 +25,8 @@ bool holdsGuaranteedMessages(const PacketHeader& header) {
   return (header.flags & GUARANTEED_FLAG) != 0;
 }
 
+void markGuaranteed(PacketHeader& header) {
+  header.flags = static_cast<std::uint8_t>(header.flags | GUARANTEED_FLAG);
+}
+
 }  // namespace rtype::network

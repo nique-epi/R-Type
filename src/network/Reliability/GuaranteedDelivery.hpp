@@ -24,4 +24,10 @@ namespace rtype::network {
  */
 [[nodiscard]] bool holdsGuaranteedMessages(const PacketHeader& header);
 
+/**
+ * @brief Sets GUARANTEED_FLAG in @p header, next to the flags it has: its
+ * datagram holds guaranteed messages.
+ */
+void markGuaranteed(PacketHeader& header);
+
 }  // namespace rtype::network

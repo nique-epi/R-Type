@@ -118,6 +118,20 @@ TEST(GuaranteedDelivery, TellsADatagramThatOnlyAcknowledges) {
 }
 
 /**
+ * Given a header that already acknowledges
+ * When it is marked as holding guaranteed messages
+ * Then it carries both flags
+ */
+TEST(GuaranteedDelivery, MarksADatagramThatHoldsGuaranteedMessages) {
+  PacketHeader header;
+  header.flags = PROTOCOL_ACKNOWLEDGES_FLAG;
+
+  markGuaranteed(header);
+
+  EXPECT_EQ(header.flags, PROTOCOL_BOTH_FLAGS);
+}
+
+/**
  * Given the protocol page
  * When the constants of guaranteed delivery are read
  * Then they are its values: flags 0x01 and 0x02, 32 bits, 100 ms, 1 s, 40 ms,
