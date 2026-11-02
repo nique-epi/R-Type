@@ -47,3 +47,26 @@ Compute the guarded and the unguarded value at each candidate size, test at a si
 
 - ❌ **Before (wrong)**: `ONE_ROW_BOX({10, 20}, {30, 1})`.
 - ✅ **After (right)**: `CLOSED_BOX({10, 20}, {30, 0})`; without the guard the bottom strokes land on row 19.
+
+## Update (2026-11-02) — A guard before a shift is computed in the width of the shift
+
+### Context
+
+`ReceivedSequences` moves the bits of the earlier datagrams when a newer one arrives: `earlierAfterMoving` returns 0 past a distance of 32, then shifts `(earlier << 1) | 1` by `distance - 1` in 64 bits and cuts the result to 32.
+
+### Mistake
+
+The plan predicted that `ForgetsTheDatagramThirtyThreeBeforeTheNewest` would turn red without the bound. The red proof removed it and no test turned red: at a distance of 33 to 64 the shift moves every bit past bit 31, so the cut result is 0 either way.
+
+### Root cause
+
+The guarded and the unguarded value were compared in the 32 bits of the result, not in the 64 bits the shift is done in.
+
+### Rule
+
+Compute both values in the type the code computes in; when they differ only where the unguarded code is undefined behavior, test there and say so.
+
+### Example
+
+- ❌ **Before (wrong)**: a jump of 33 sequences.
+- ✅ **After (right)**: a jump of 65 (`ForgetsEveryEarlierDatagramAfterAJumpOfSixtyFive`); without the bound the shift is by 64, which arm64 wraps to 0, and the test turns red.
