@@ -5,6 +5,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <optional>
+#include <span>
 #include "InterpolationConstants.hpp"
 #include "PositionHistoryConstants.hpp"
 #include "TimeConstants.hpp"
@@ -58,8 +59,8 @@ double InterpolationClock::intervalTicks() const {
   if (gapCount_ == 0) {
     return ASSUMED_STATE_INTERVAL_TICKS;
   }
-  const std::uint32_t* const first = gaps_.data();
-  return static_cast<double>(*std::min_element(first, first + gapCount_));
+  const std::span<const std::uint32_t> kept{gaps_.data(), gapCount_};
+  return static_cast<double>(*std::ranges::min_element(kept));
 }
 
 void InterpolationClock::recordGap(std::uint32_t gap) {

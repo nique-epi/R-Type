@@ -4,6 +4,7 @@
 #include <cstddef>
 #include <iterator>
 #include <optional>
+#include <span>
 #include "Position.hpp"
 #include "PositionHistoryConstants.hpp"
 #include "PositionSample.hpp"
@@ -48,24 +49,23 @@ std::optional<game::Position> PositionHistory::at(double tick) const {
   if (count_ == 0) {
     return std::nullopt;
   }
-  const PositionSample* const first = samples_.data();
-  const PositionSample* const end = first + count_;
-  const PositionSample* const after =
-      std::find_if(first, end, [tick](const PositionSample& sample) {
+  const std::span<const PositionSample> kept{samples_.data(), count_};
+  const auto after =
+      std::ranges::find_if(kept, [tick](const PositionSample& sample) {
         return static_cast<double>(sample.tick) > tick;
       });
-  if (after == first) {
-    return first->position;
+  if (after == kept.begin()) {
+    return kept.front().position;
   }
-  if (after != end) {
+  if (after != kept.end()) {
     const PositionSample& before = *std::prev(after);
     return moved(before, *after, shareOf(before, *after, tick));
   }
-  const PositionSample& newest = *std::prev(end);
+  const PositionSample& newest = kept.back();
   if (count_ == 1) {
     return newest.position;
   }
-  const PositionSample& previous = *std::prev(end, 2);
+  const PositionSample& previous = kept[count_ - 2];
   const double ahead = std::min(tick - static_cast<double>(newest.tick),
                                 MAXIMUM_EXTRAPOLATION_TICKS);
   return moved(
