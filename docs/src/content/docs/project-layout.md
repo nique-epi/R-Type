@@ -134,7 +134,7 @@ src/network/
 ```
 src/server/
 ├── Application/      starts and stops the threads
-├── Modules/          one folder per module (logger, network, games, lobby) and the list that assembles them
+├── Modules/          one folder per module (logger, network, games, lobby, metrics) and the list that assembles them
 ├── Exceptions/       the root exception of the server, errors of the waves file
 ├── Platform/         what differs between Windows, macOS and Linux, and the stop signals
 ├── LaunchOptions/    port, name, limits, master address
@@ -145,11 +145,11 @@ src/server/
 ├── Spawning/         when and where the enemies and missiles appear
 ├── MasterLink/       registration and heartbeat
 ├── AdminConsole/     kick and close a game from the terminal
-├── Metrics/          tick time and traffic, sent in the heartbeat
+├── Metrics/          tick time, counts of games, players and entities; traffic and the heartbeat to come
 └── Storage/          this server's SQLite file: leaderboard, statistics
 ```
 
-`Application`, `Modules` (the logger, network, games and lobby modules, the list that assembles them, and the farewell the games module sends when the server stops), `Replication` (the world state sender, the waiting room announcer, the announcer of the end of a game, the announcement of the ship of each new player, and the encoder and broadcaster of the game events), `Platform`, `LaunchOptions`, `Lobby` (the answers to connection requests only), `Spawning` (the Bydo spawner, the reader of the waves file and the weapon system), `Exceptions`, `Sessions` (the roster of the players of a game, the session header of every datagram to a player, and the classes that read their datagrams, keep their ready state and newest input, close their sessions and send their heartbeats; no other folder of `src/server` is linked by it) and `Instances` (one `GameInstance` for now, run on the simulation thread like the rest, which installs the modules of a game: the `RtypeRulesModule` holds its states, its tick and its rules with `GameFlow`, runs the systems of the world, and keeps the score and the lives of its players, and the replication module in `Replication` tells the players) exist today: the network thread and the simulation thread, the waiting room, the start of the game, the world state, the game events and the end of a game sent to the players (see [Server](/R-Type/server/)), the timer resolution the server asks Windows for, the port and seed read at launch, the players let in, the Bydos appearing and moving, the missiles the players fire, and a game with its states, its ready rule and the newest input of each player, which moves its ship.
+`Application`, `Metrics` (the durations of the ticks, the newest report and its lines in the journal), `Modules` (the logger, network, games, lobby and metrics modules, the list that assembles them, and the farewell the games module sends when the server stops), `Replication` (the world state sender, the waiting room announcer, the announcer of the end of a game, the announcement of the ship of each new player, and the encoder and broadcaster of the game events), `Platform`, `LaunchOptions`, `Lobby` (the answers to connection requests only), `Spawning` (the Bydo spawner, the reader of the waves file and the weapon system), `Exceptions`, `Sessions` (the roster of the players of a game, the session header of every datagram to a player, and the classes that read their datagrams, keep their ready state and newest input, close their sessions and send their heartbeats; no other folder of `src/server` is linked by it) and `Instances` (one `GameInstance` for now, run on the simulation thread like the rest, which installs the modules of a game: the `RtypeRulesModule` holds its states, its tick and its rules with `GameFlow`, runs the systems of the world, and keeps the score and the lives of its players, and the replication module in `Replication` tells the players) exist today: the network thread and the simulation thread, the waiting room, the start of the game, the world state, the game events and the end of a game sent to the players (see [Server](/R-Type/server/)), the timer resolution the server asks Windows for, the port and seed read at launch, the players let in, the Bydos appearing and moving, the missiles the players fire, a game with its states, its ready rule and the newest input of each player, which moves its ship, and the metrics of the server in its journal.
 
 ### Client
 
