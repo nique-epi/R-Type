@@ -25,9 +25,25 @@ using rtype::logging::LogLevel;
 using rtype::logging::MissingLogOptionValueException;
 using rtype::logging::NO_FILE_OPTION;
 using rtype::logging::NO_STDERR_OPTION;
+using rtype::logging::SERVER_LOG_FILE_NAME;
 using rtype::logging::STDERR_OPTION;
 using rtype::logging::UnknownLogLevelException;
+using rtype::logging::testing::DEFAULT_SERVER_JOURNAL_TEXT;
+using rtype::logging::testing::ERROR_LEVEL_ARGUMENT;
+using rtype::logging::testing::HELLO_LINE;
+using rtype::logging::testing::HIDDEN_LINE;
+using rtype::logging::testing::INFO_LEVEL_ARGUMENT;
+using rtype::logging::testing::JOURNAL_LINE_START;
+using rtype::logging::testing::KEPT_LINE;
+using rtype::logging::testing::LAUNCH_LOGGER_NAME;
+using rtype::logging::testing::LOST_LINE;
 using rtype::logging::testing::MISSING_JOURNAL;
+using rtype::logging::testing::NO_JOURNAL_LINE;
+using rtype::logging::testing::NO_LEVEL_OPTION;
+using rtype::logging::testing::NOT_A_LEVEL_ARGUMENT;
+using rtype::logging::testing::OPTION_LINE_START;
+using rtype::logging::testing::SHOWN_LINE;
+using rtype::logging::testing::STILL_ON_STDERR_LINE;
 using rtype::logging::testing::UNUSED_JOURNAL;
 
 using Arguments = std::vector<std::string_view>;
@@ -41,11 +57,11 @@ TEST_F(LogLaunchOptionsFixture, DefaultsWriteToTheJournalAndStandardError) {
   const JournalFile journal;
 
   logOptionsOf(Arguments{}, journal.path()).apply();
-  Logger("Launch").warn("hello");
+  Logger(std::string(LAUNCH_LOGGER_NAME)).warn(HELLO_LINE);
 
   EXPECT_EQ(Logger::level(), LogLevel::Warn);
   EXPECT_EQ(journal.lines().size(), 1U);
-  EXPECT_NE(standardError().find("hello"), std::string::npos);
+  EXPECT_NE(standardError().find(HELLO_LINE), std::string::npos);
 }
 
 /**
@@ -56,8 +72,8 @@ TEST_F(LogLaunchOptionsFixture, DefaultsWriteToTheJournalAndStandardError) {
 TEST_F(LogLaunchOptionsFixture, NoStderrOptionWritesToTheJournalOnly) {
   const JournalFile journal;
 
-  logOptionsOf(Arguments{"--no-log-stderr"}, journal.path()).apply();
-  Logger("Launch").warn("hello");
+  logOptionsOf(Arguments{NO_STDERR_OPTION}, journal.path()).apply();
+  Logger(std::string(LAUNCH_LOGGER_NAME)).warn(HELLO_LINE);
 
   EXPECT_EQ(journal.lines().size(), 1U);
   EXPECT_TRUE(standardError().empty());
@@ -69,12 +85,12 @@ TEST_F(LogLaunchOptionsFixture, NoStderrOptionWritesToTheJournalOnly) {
  * Then the last option wins and stderr holds the line
  */
 TEST_F(LogLaunchOptionsFixture, StderrOptionAfterNoStderrOptionWritesToStderr) {
-  logOptionsOf(Arguments{"--no-log-file", "--no-log-stderr", "--log-stderr"},
+  logOptionsOf(Arguments{NO_FILE_OPTION, NO_STDERR_OPTION, STDERR_OPTION},
                UNUSED_JOURNAL)
       .apply();
-  Logger("Launch").warn("shown");
+  Logger(std::string(LAUNCH_LOGGER_NAME)).warn(SHOWN_LINE);
 
-  EXPECT_NE(standardError().find("shown"), std::string::npos);
+  EXPECT_NE(standardError().find(SHOWN_LINE), std::string::npos);
 }
 
 /**
@@ -86,9 +102,9 @@ TEST_F(LogLaunchOptionsFixture,
        NoStderrOptionAfterStderrOptionKeepsStderrEmpty) {
   const JournalFile journal;
 
-  logOptionsOf(Arguments{"--log-stderr", "--no-log-stderr"}, journal.path())
+  logOptionsOf(Arguments{STDERR_OPTION, NO_STDERR_OPTION}, journal.path())
       .apply();
-  Logger("Launch").warn("hidden");
+  Logger(std::string(LAUNCH_LOGGER_NAME)).warn(HIDDEN_LINE);
 
   EXPECT_TRUE(standardError().empty());
 }
@@ -101,14 +117,15 @@ TEST_F(LogLaunchOptionsFixture,
 TEST_F(LogLaunchOptionsFixture, FirstLineNamesTheJournal) {
   const JournalFile journal;
 
-  logOptionsOf(
-      Arguments{"--log-level", "info", "--log-file", journal.path().string()},
-      UNUSED_JOURNAL)
+  logOptionsOf(Arguments{LEVEL_OPTION, INFO_LEVEL_ARGUMENT, FILE_OPTION,
+                         journal.path().string()},
+               UNUSED_JOURNAL)
       .apply();
 
   const std::vector<std::string> lines = journal.lines();
   ASSERT_FALSE(lines.empty());
-  EXPECT_NE(lines.front().find("journal: " + journal.path().string()),
+  EXPECT_NE(lines.front().find(std::string(JOURNAL_LINE_START) +
+                               journal.path().string()),
             std::string::npos);
 }
 
@@ -123,13 +140,15 @@ TEST_F(LogLaunchOptionsFixture,
   const CurrentDirectoryChange directory{journal.path().parent_path()};
   const std::filesystem::path relativeJournal = journal.path().filename();
 
-  logOptionsOf(Arguments{"--log-level", "info"}, relativeJournal).apply();
+  logOptionsOf(Arguments{LEVEL_OPTION, INFO_LEVEL_ARGUMENT}, relativeJournal)
+      .apply();
 
   const std::vector<std::string> lines = journal.lines();
   ASSERT_FALSE(lines.empty());
   const std::filesystem::path absoluteJournal =
       std::filesystem::current_path() / relativeJournal;
-  EXPECT_NE(lines.front().find("journal: " + absoluteJournal.string()),
+  EXPECT_NE(lines.front().find(std::string(JOURNAL_LINE_START) +
+                               absoluteJournal.string()),
             std::string::npos);
 }
 
@@ -139,11 +158,11 @@ TEST_F(LogLaunchOptionsFixture,
  * Then stderr says that there is no journal file
  */
 TEST_F(LogLaunchOptionsFixture, AnnouncesThatThereIsNoJournal) {
-  logOptionsOf(Arguments{"--log-level", "info", "--no-log-file"},
+  logOptionsOf(Arguments{LEVEL_OPTION, INFO_LEVEL_ARGUMENT, NO_FILE_OPTION},
                UNUSED_JOURNAL)
       .apply();
 
-  EXPECT_NE(standardError().find("no journal file"), std::string::npos);
+  EXPECT_NE(standardError().find(NO_JOURNAL_LINE), std::string::npos);
 }
 
 /**
@@ -154,7 +173,8 @@ TEST_F(LogLaunchOptionsFixture, AnnouncesThatThereIsNoJournal) {
 TEST_F(LogLaunchOptionsFixture, LevelOptionSetsTheLevel) {
   const JournalFile journal;
 
-  logOptionsOf(Arguments{"--log-level", "debug"}, journal.path()).apply();
+  logOptionsOf(Arguments{LEVEL_OPTION, DEBUG_LEVEL_ARGUMENT}, journal.path())
+      .apply();
 
   EXPECT_EQ(Logger::level(), LogLevel::Debug);
 }
@@ -167,11 +187,11 @@ TEST_F(LogLaunchOptionsFixture, LevelOptionSetsTheLevel) {
 TEST_F(LogLaunchOptionsFixture, NoFileOptionWritesToStandardErrorOnly) {
   const JournalFile journal;
 
-  logOptionsOf(Arguments{"--no-log-file"}, journal.path()).apply();
-  Logger("Launch").warn("shown");
+  logOptionsOf(Arguments{NO_FILE_OPTION}, journal.path()).apply();
+  Logger(std::string(LAUNCH_LOGGER_NAME)).warn(SHOWN_LINE);
 
   EXPECT_FALSE(std::filesystem::exists(journal.path()));
-  EXPECT_NE(standardError().find("shown"), std::string::npos);
+  EXPECT_NE(standardError().find(SHOWN_LINE), std::string::npos);
 }
 
 /**
@@ -182,9 +202,9 @@ TEST_F(LogLaunchOptionsFixture, NoFileOptionWritesToStandardErrorOnly) {
 TEST_F(LogLaunchOptionsFixture, NoFileAndNoStderrOptionsWriteNothing) {
   const JournalFile journal;
 
-  logOptionsOf(Arguments{"--no-log-file", "--no-log-stderr"}, journal.path())
+  logOptionsOf(Arguments{NO_FILE_OPTION, NO_STDERR_OPTION}, journal.path())
       .apply();
-  Logger("Launch").warn("lost");
+  Logger(std::string(LAUNCH_LOGGER_NAME)).warn(LOST_LINE);
 
   EXPECT_FALSE(std::filesystem::exists(journal.path()));
   EXPECT_TRUE(standardError().empty());
@@ -198,11 +218,11 @@ TEST_F(LogLaunchOptionsFixture, NoFileAndNoStderrOptionsWriteNothing) {
 TEST_F(LogLaunchOptionsFixture, StderrOptionWritesToStandardError) {
   const JournalFile journal;
 
-  logOptionsOf(Arguments{"--no-log-file", "--log-stderr"}, journal.path())
+  logOptionsOf(Arguments{NO_FILE_OPTION, STDERR_OPTION}, journal.path())
       .apply();
-  Logger("Launch").warn("shown");
+  Logger(std::string(LAUNCH_LOGGER_NAME)).warn(SHOWN_LINE);
 
-  EXPECT_NE(standardError().find("shown"), std::string::npos);
+  EXPECT_NE(standardError().find(SHOWN_LINE), std::string::npos);
   EXPECT_FALSE(std::filesystem::exists(journal.path()));
 }
 
@@ -215,9 +235,9 @@ TEST_F(LogLaunchOptionsFixture, FileOptionAfterNoFileOptionWritesToTheFile) {
   const JournalFile journal;
   const std::string path = journal.path().string();
 
-  logOptionsOf(Arguments{"--no-log-file", "--log-file", path}, UNUSED_JOURNAL)
+  logOptionsOf(Arguments{NO_FILE_OPTION, FILE_OPTION, path}, UNUSED_JOURNAL)
       .apply();
-  Logger("Launch").warn("kept");
+  Logger(std::string(LAUNCH_LOGGER_NAME)).warn(KEPT_LINE);
 
   EXPECT_EQ(journal.lines().size(), 1U);
 }
@@ -231,9 +251,9 @@ TEST_F(LogLaunchOptionsFixture, NoFileOptionAfterFileOptionWritesNothing) {
   const JournalFile journal;
   const std::string path = journal.path().string();
 
-  logOptionsOf(Arguments{"--log-file", path, "--no-log-file"}, UNUSED_JOURNAL)
+  logOptionsOf(Arguments{FILE_OPTION, path, NO_FILE_OPTION}, UNUSED_JOURNAL)
       .apply();
-  Logger("Launch").warn("lost");
+  Logger(std::string(LAUNCH_LOGGER_NAME)).warn(LOST_LINE);
 
   EXPECT_FALSE(std::filesystem::exists(journal.path()));
 }
@@ -247,13 +267,14 @@ TEST_F(LogLaunchOptionsFixture, UnknownLevelIsRejectedAndChangesNothing) {
   const JournalFile journal;
   ASSERT_EQ(Logger::level(), LogLevel::Warn);
 
-  EXPECT_THROW(static_cast<void>(logOptionsOf(
-                   Arguments{"--log-level", "verbose"}, journal.path())),
-               UnknownLogLevelException);
+  EXPECT_THROW(
+      static_cast<void>(logOptionsOf(
+          Arguments{LEVEL_OPTION, NOT_A_LEVEL_ARGUMENT}, journal.path())),
+      UnknownLogLevelException);
 
   EXPECT_EQ(Logger::level(), LogLevel::Warn);
-  Logger("Launch").warn("still on stderr");
-  EXPECT_NE(standardError().find("still on stderr"), std::string::npos);
+  Logger(std::string(LAUNCH_LOGGER_NAME)).warn(STILL_ON_STDERR_LINE);
+  EXPECT_NE(standardError().find(STILL_ON_STDERR_LINE), std::string::npos);
   EXPECT_FALSE(std::filesystem::exists(journal.path()));
 }
 
@@ -266,14 +287,15 @@ TEST_F(LogLaunchOptionsFixture, UnopenableJournalChangesNothing) {
   const std::string missing =
       (std::filesystem::temp_directory_path() / MISSING_JOURNAL).string();
   const LogLaunchOptions options = logOptionsOf(
-      Arguments{"--log-level", "debug", "--log-file", missing}, UNUSED_JOURNAL);
+      Arguments{LEVEL_OPTION, DEBUG_LEVEL_ARGUMENT, FILE_OPTION, missing},
+      UNUSED_JOURNAL);
   ASSERT_EQ(Logger::level(), LogLevel::Warn);
 
   EXPECT_THROW(options.apply(), LogFileOpenException);
 
   EXPECT_EQ(Logger::level(), LogLevel::Warn);
-  Logger("Launch").warn("still on stderr");
-  EXPECT_NE(standardError().find("still on stderr"), std::string::npos);
+  Logger(std::string(LAUNCH_LOGGER_NAME)).warn(STILL_ON_STDERR_LINE);
+  EXPECT_NE(standardError().find(STILL_ON_STDERR_LINE), std::string::npos);
 }
 
 /**
@@ -283,10 +305,10 @@ TEST_F(LogLaunchOptionsFixture, UnopenableJournalChangesNothing) {
  */
 TEST_F(LogLaunchOptionsFixture, OptionWithoutValueIsRejected) {
   EXPECT_THROW(
-      static_cast<void>(logOptionsOf(Arguments{"--log-level"}, UNUSED_JOURNAL)),
+      static_cast<void>(logOptionsOf(Arguments{LEVEL_OPTION}, UNUSED_JOURNAL)),
       MissingLogOptionValueException);
   EXPECT_THROW(
-      static_cast<void>(logOptionsOf(Arguments{"--log-file"}, UNUSED_JOURNAL)),
+      static_cast<void>(logOptionsOf(Arguments{FILE_OPTION}, UNUSED_JOURNAL)),
       MissingLogOptionValueException);
 }
 
@@ -296,11 +318,12 @@ TEST_F(LogLaunchOptionsFixture, OptionWithoutValueIsRejected) {
  * Then it is rejected
  */
 TEST_F(LogLaunchOptionsFixture, UnknownLoggingOptionIsRejected) {
-  EXPECT_THROW(static_cast<void>(logOptionsOf(Arguments{"--log-levle", "debug"},
-                                              UNUSED_JOURNAL)),
+  EXPECT_THROW(static_cast<void>(logOptionsOf(
+                   Arguments{MISSPELLED_LEVEL_OPTION, DEBUG_LEVEL_ARGUMENT},
+                   UNUSED_JOURNAL)),
                InvalidLogOptionException);
   EXPECT_THROW(static_cast<void>(
-                   logOptionsOf(Arguments{"--no-log-level"}, UNUSED_JOURNAL)),
+                   logOptionsOf(Arguments{NO_LEVEL_OPTION}, UNUSED_JOURNAL)),
                InvalidLogOptionException);
 }
 
@@ -314,7 +337,8 @@ TEST_F(LogLaunchOptionsFixture, ReadingAloneChangesNothing) {
   const std::string path = journal.path().string();
 
   static_cast<void>(logOptionsOf(
-      Arguments{"--log-level", "error", "--log-file", path}, UNUSED_JOURNAL));
+      Arguments{LEVEL_OPTION, ERROR_LEVEL_ARGUMENT, FILE_OPTION, path},
+      UNUSED_JOURNAL));
 
   EXPECT_EQ(Logger::level(), LogLevel::Warn);
   EXPECT_FALSE(std::filesystem::exists(journal.path()));
@@ -392,7 +416,7 @@ TEST_F(LogLaunchOptionsFixture,
 
   static_cast<void>(options.readOption(Arguments{DEBUG_LEVEL_ARGUMENT}));
   options.apply();
-  Logger("Launch").warn("hello");
+  Logger(std::string(LAUNCH_LOGGER_NAME)).warn(HELLO_LINE);
 
   EXPECT_EQ(Logger::level(), LogLevel::Warn);
   EXPECT_EQ(journal.lines().size(), 1U);
@@ -410,7 +434,8 @@ TEST(LogLaunchOptionsUsage, NamesEveryLoggingOption) {
        {LEVEL_OPTION, FILE_OPTION, NO_FILE_OPTION, STDERR_OPTION,
         NO_STDERR_OPTION}) {
     SCOPED_TRACE(option);
-    EXPECT_NE(usage.find("\n  " + std::string(option)), std::string::npos);
+    EXPECT_NE(usage.find(std::string(OPTION_LINE_START) + std::string(option)),
+              std::string::npos);
   }
 }
 
@@ -420,8 +445,7 @@ TEST(LogLaunchOptionsUsage, NamesEveryLoggingOption) {
  * Then it names that journal and says it sits next to the executable
  */
 TEST(LogLaunchOptionsUsage, NamesTheDefaultJournalAndItsPlace) {
-  const std::string usage = LogLaunchOptions::usage("r-type_server.log");
+  const std::string usage = LogLaunchOptions::usage(SERVER_LOG_FILE_NAME);
 
-  EXPECT_NE(usage.find("Default: r-type_server.log next to the executable."),
-            std::string::npos);
+  EXPECT_NE(usage.find(DEFAULT_SERVER_JOURNAL_TEXT), std::string::npos);
 }
