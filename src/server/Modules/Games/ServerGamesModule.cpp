@@ -70,7 +70,8 @@ void ServerGamesModule::start() {
                                              GAME_SEED_STRIDE)
                         : std::random_device{}(),
             .waves = waves,
-            .statesPerSecond = settings_.statesPerSecond});
+            .statesPerSecond = settings_.statesPerSecond,
+            .inputDelayTicks = settings_.inputDelayTicks});
     games_.add(std::move(events), std::move(created));
   }
 }
@@ -98,7 +99,8 @@ std::unique_ptr<GameInstance> ServerGamesModule::createGame(
           .send = std::bind_front(&IDatagramSender::queueDatagram, sender_),
           .settings = std::move(settings),
           .events = events,
-          .timers = timers_},
+          .timers = timers_,
+          .clock = clock_},
       rtypeGameModules());
 }
 

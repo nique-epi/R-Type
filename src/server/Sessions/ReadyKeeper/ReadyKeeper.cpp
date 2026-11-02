@@ -4,6 +4,7 @@
 #include <utility>
 #include "ConnectedPlayer.hpp"
 #include "ConnectedPlayers.hpp"
+#include "GameLoaded.hpp"
 #include "MessageOrigin.hpp"
 #include "PlayerRoster.hpp"
 #include "ReadyState.hpp"
@@ -21,6 +22,14 @@ void ReadyKeeper::apply(const network::MessageOrigin& origin,
     return;
   }
   player->ready = message.ready;
+}
+
+void ReadyKeeper::apply(const network::MessageOrigin& origin,
+                        [[maybe_unused]] const network::GameLoaded& message) {
+  ConnectedPlayer* const player = roster_.find(origin.sender);
+  if (player != nullptr) {
+    player->loaded = true;
+  }
 }
 
 bool ReadyKeeper::everyPlayerIsReady() {

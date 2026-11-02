@@ -14,6 +14,7 @@
 #include "IncomingDatagram.hpp"
 #include "InstallContext.hpp"
 #include "Logger.hpp"
+#include "SystemClock.hpp"
 #include "TickDatagrams.hpp"
 #include "TimeConstants.hpp"
 #include "TimerScheduler.hpp"
@@ -32,7 +33,8 @@ namespace rtype::server {
  * keepDatagramsOf()) and moves on, and the players whose session closed are
  * forgotten by the network. In the outputs stage, the timers advance and the
  * bus of each game delivers the events of the tick. The lobby module adds its
- * work to the simulation stage after this one.
+ * work to the simulation stage after this one. Each game reads real time on the
+ * clock of the module for its Heartbeats.
  *
  * install() builds the timers and the empty list of games and provides Games.
  * start() reads the waves file once, then creates the games, each subscribing
@@ -55,8 +57,8 @@ class ServerGamesModule final : public engine::IModule {
 
   /**
    * @brief Reads the waves file and creates the games. With a seed, game n
-   * (from 0) starts from the seed plus n, so each game can be played again;
-   * without one, each game draws its own.
+   * (from 0) starts from the seed plus n times GAME_SEED_STRIDE, so each game
+   * can be played again; without one, each game draws its own.
    * @throws ServerException (or a class derived from it) naming the file, the
    * line and the key when the file cannot be read, does not describe the
    * difficulties as the server expects them, or has no DEFAULT_DIFFICULTY.
@@ -76,6 +78,7 @@ class ServerGamesModule final : public engine::IModule {
   GamesSettings settings_;
   logging::Logger logger_;
   engine::TimerScheduler timers_;
+  engine::SystemClock clock_;
   Games games_;
   IDatagramSender* sender_{nullptr};
   IPlayerAdmission* admission_{nullptr};

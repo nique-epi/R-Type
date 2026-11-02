@@ -19,6 +19,8 @@ struct GamesSettings {
   std::size_t gameCount{DEFAULT_HOSTED_GAME_COUNT};
   /** @brief The world states each player of a game is sent per second. */
   std::size_t statesPerSecond{DEFAULT_WORLD_STATES_PER_SECOND};
+  /** @brief The ticks a game holds each input before it applies it. */
+  std::size_t inputDelayTicks{DEFAULT_INPUT_DELAY_TICKS};
 };
 
 }  // namespace rtype::server

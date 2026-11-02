@@ -77,6 +77,7 @@ Paths below are relative to `.claude/rules/`.
 - `architecture/fix-architecture-a-function-does-one-kind-of-step.md`
 - `architecture/fix-architecture-a-module-install-keeps-nothing-open.md`
 - `architecture/fix-architecture-a-module-start-that-throws-closes-what-it-opened.md`
+- `architecture/fix-architecture-at-most-35-lines-per-function.md`
 - `architecture/fix-architecture-at-most-ten-methods-per-class.md`
 - `architecture/fix-architecture-at-most-three-parameters.md`
 - `architecture/fix-architecture-inherit-interfaces-compose-implementations.md`

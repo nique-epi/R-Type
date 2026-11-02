@@ -28,6 +28,7 @@
 #include "IntroTimeline.hpp"
 #include "IntroTimelineConstants.hpp"
 #include "Logger.hpp"
+#include "MenuScreenIdConstants.hpp"
 #include "PlayerPreferences.hpp"
 #include "ScreenConstants.hpp"
 #include "ScreenId.hpp"
@@ -112,7 +113,7 @@ void IntroScreen::update(engine::Duration elapsed) {
   if (real >= INTRO_TITLE) {
     if (!titleAsked_) {
       logGiveWay(logger_, clock_.gapToMusic());
-      askForTheTitle(ScreenId::TitleAfterIntro);
+      askForTheTitle(TITLE_AFTER_INTRO_SCREEN);
     }
     return;
   }
@@ -135,11 +136,11 @@ bool IntroScreen::hidesScreensBelow() const { return true; }
 void IntroScreen::skip() {
   const float now = secondsOf(clock_.now());
   if (now < 0.0F) {
-    askForTheTitle(ScreenId::Title);
+    askForTheTitle(TITLE_SCREEN);
     return;
   }
   if (skipped_ || now >= INTRO_SLAM) {
-    askForTheTitle(ScreenId::TitleAfterIntro);
+    askForTheTitle(TITLE_AFTER_INTRO_SCREEN);
     return;
   }
   skipped_ = true;

@@ -7,6 +7,7 @@
 #include "DialogScreen.hpp"
 #include "IScreen.hpp"
 #include "KeyPress.hpp"
+#include "MenuScreenIdConstants.hpp"
 #include "PointerEvents.hpp"
 #include "RecordingInterfaceCanvas.hpp"
 #include "RecordingScreen.hpp"
@@ -14,17 +15,19 @@
 #include "ScreenStack.hpp"
 #include "WidgetConstants.hpp"
 
+using rtype::client::CONNECTION_LOST_SCREEN;
 using rtype::client::connectionLostMenu;
 using rtype::client::ConnectionPhase;
 using rtype::client::DialogScreen;
 using rtype::client::IScreen;
 using rtype::client::PRESS_DURATION;
 using rtype::client::ScreenId;
+using rtype::client::TITLE_SCREEN;
 
 ConnectionLostInTheStackFixture::ConnectionLostInTheStackFixture()
     : screens_([this](ScreenId screen) { return build(screen); }) {
-  screens_.replaceAll(ScreenId::Title);
-  screens_.push(ScreenId::ConnectionLost);
+  screens_.replaceAll(TITLE_SCREEN);
+  screens_.push(CONNECTION_LOST_SCREEN);
   screens_.applyPendingChanges();
 }
 
@@ -48,7 +51,7 @@ const std::vector<JournalEntry>& ConnectionLostInTheStackFixture::journal()
 
 std::unique_ptr<IScreen> ConnectionLostInTheStackFixture::build(
     ScreenId screen) {
-  if (screen == ScreenId::ConnectionLost) {
+  if (screen == CONNECTION_LOST_SCREEN) {
     return std::make_unique<DialogScreen>(
         connectionLostMenu(screens_, sounds_, ConnectionPhase::Lost),
         samePlayfieldPoint,

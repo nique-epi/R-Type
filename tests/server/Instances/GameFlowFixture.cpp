@@ -59,6 +59,11 @@ void GameFlowFixture::startGameWith(
     join(index).ready = true;
   }
   tick();
+  ASSERT_EQ(flow_.state(), GameState::Starting);
+  for (const std::size_t index : indexes) {
+    roster_.find(playerEndpoint(index))->loaded = true;
+  }
+  tick();
   ASSERT_EQ(flow_.state(), GameState::InProgress);
 }
 
