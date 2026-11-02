@@ -243,7 +243,7 @@ A datagram of this protocol with another version is answered with `ConnectionRef
 
 Every datagram the server sends a connected player starts with the session token and the next sequence of that player, whatever its message, because the client drops a datagram that carries another token or that is not newer than the newest one it read (see [Protocol](/R-Type/protocol/#datagram)). The free functions of `SessionDatagram.hpp` (`src/server/Sessions/SessionDatagram/`) are the one place that reads and moves `ConnectedPlayer::nextSequence`. They take the server's `ConnectedPlayer`, so they live in the server, in the sessions folder, rather than with the session checks of `rtype_network`:
 
-- `nextSessionHeader(player)` gives the header and moves the sequence on by one, wrapping from 65535 to 0. It also starts over the count of ticks since a datagram was sent to that player (`ConnectedPlayer::ticksSinceSent`), from which the game sends its heartbeats (see [Silent players](#silent-players-heartbeats-and-timeouts)).
+- `nextSessionHeader(player)` gives the header and moves the sequence on by one, wrapping from 65535 to 0. It also sets the time since a datagram was sent to that player (`ConnectedPlayer::sinceSent`) back to zero, from which the game sends its heartbeats (see [Silent players](#silent-players-heartbeats-and-timeouts)).
 - `sessionDatagram(player, message)` builds the datagram to the address of the player; an overload takes a message type and a payload already encoded, as the world state needs.
 - `sessionHeaderFor(roster, endpoint)` gives the header of the player who sends from that address, or a header without session (token 0, sequence 0) when no player does.
 
@@ -255,7 +255,7 @@ send(rtype::server::sessionDatagram(player, rtype::network::GameStarted{}));
 
 ## Sessions of a game: `GameSessions`
 
-`GameSessions` (`src/server/Sessions/GameSessions/`) holds the players of one game and the sessions the server keeps with them. `Sessions/` links no other folder of `src/server`, so `Instances/`, `Lobby/`, `Replication/` and `Spawning/` link it and never the other way round. It is not yet free of R-Type: `ConnectedPlayer` still carries the ship, the score and the lives without a ship of a player, and `Departures` publishes the `PlayerDeparture` of `src/game`. A game gives it a `GameSessionsParts`: the event bus, the send function, `readyAccepted`, which says whether a `ReadyState` counts right now, `onClosing`, which receives each player whose session closes, and `onNewerInput`, which is shown each `PlayerInput` newer than the number kept, before the number is kept.
+`GameSessions` (`src/server/Sessions/GameSessions/`) holds the players of one game and the sessions the server keeps with them. `Sessions/` links no other folder of `src/server`, so `Instances/`, `Lobby/`, `Replication/` and `Spawning/` link it and never the other way round. It is not yet free of R-Type: `ConnectedPlayer` still carries the ship, the score and the lives without a ship of a player, and `Departures` publishes the `PlayerDeparture` of `src/game`. A game gives it a `GameSessionsParts`: the event bus, the send function, the clock it reads when each tick starts (see [Silent players](#silent-players-heartbeats-and-timeouts)), `readyAccepted`, which says whether a `ReadyState` counts right now, `onClosing`, which receives each player whose session closes, and `onNewerInput`, which is shown each `PlayerInput` newer than the number kept, before the number is kept.
 
 | Class or function | Does |
 |---|---|
@@ -264,9 +264,9 @@ send(rtype::server::sessionDatagram(player, rtype::network::GameStarted{}));
 | `ReadyKeeper` | keeps whether each player is ready, and whether all of them are |
 | `InputKeeper` | keeps the newest `PlayerInput` of each player, after showing it to `onNewerInput` |
 | `Departures` | closes the session of a player who left or fell silent, and keeps it for `takeDepartedPlayers()` |
-| `sendHeartbeats` | sends a `Heartbeat` to a player the server sent nothing for `TICKS_PER_HEARTBEAT` ticks |
+| `addTimeSinceSent`, `sendHeartbeats` | add the real time since the previous tick to the time since each player was sent a datagram, then send a `Heartbeat` to a player the server sent nothing for `SILENCE_BEFORE_HEARTBEAT` |
 
-- `GameInstance` calls `readDatagrams`, `closeSilentSessions`, `endTick` (the heartbeats, then the tick is counted) and `takeDepartedPlayers`; `GameFlow` calls `everyPlayerIsReady` through the function `GameInstance` gives it; the rest of this page tells what each does.
+- `GameInstance` calls `startTick` (the time since the previous tick, read on its clock), `readDatagrams`, `closeSilentSessions`, `endTick` (the heartbeats, then the tick is counted) and `takeDepartedPlayers`; `GameFlow` calls `everyPlayerIsReady` through the function `GameInstance` gives it; the rest of this page tells what each does.
 - When a session closes, `Departures` frees the seat, calls `onClosing` with a copy of the player (the game removes its ship there), then logs and publishes the `PlayerDeparture`, in that order.
 - The log lines of the sessions are written under `Sessions`.
 
@@ -313,7 +313,7 @@ A game installs modules instead of building the rules of R-Type itself, so a rul
 
 - `install()` takes what the module needs from the `GameContext` (the bus, the timers, the systems, the roster, the session hooks, the settings (a copy of the seed and the waves), the send function and the ready rule), provides its services and adds its work to the stages of the tick. It keeps nothing open: subscriptions and the parts that work on the world are made in `start()` and released in `stop()`.
 - A module that needs the service of another must be listed after it: `install.require<IGameReplication>()` throws `MissingServiceException` otherwise.
-- A tick runs three stages, in order: `GAME_INPUT_STAGE` reads the datagrams and closes the silent sessions, `GAME_SIMULATION_STAGE` runs what the modules added, `GAME_OUTPUT_STAGE` sends the heartbeats.
+- A tick runs three stages, in order: `GAME_INPUT_STAGE` counts the time since the previous tick for the heartbeats, reads the datagrams and closes the silent sessions, `GAME_SIMULATION_STAGE` runs what the modules added, `GAME_OUTPUT_STAGE` sends the heartbeats.
 - One module must provide `IGameFlow` (`state()`, `tick()`, `finish()`); the game answers its own functions through it.
 - `RtypeRulesModule` builds its `GameFlow` in `install()`, which opens nothing, and `start()` calls `GameFlow::begin()`, which builds the first world and subscribes the rules to the bus. Until then the flow answers as a game that waits for players at tick 0. `stop()` destroys the flow, then the `ScoreKeeper`, which give their subscriptions back to the bus.
 - What happens to a player goes through `SessionHooks` (`src/server/Instances/SessionHooks.hpp`), in the `GameContext`: three lists of functions, `joined`, `closing` and `newerInput`. A module adds its functions in `start()`, and the game calls them in the order of the modules, so any module can follow a player joining, a session closing or an input being kept, without a change to `GameInstance`. The lists are not emptied by `stop()`: the game is destroyed right after its modules stop and calls no hook in between.
@@ -330,7 +330,8 @@ rtype::server::GameInstance game{
     rtype::server::GameInstanceParts{.send = send,
                                      .settings = settings,
                                      .events = events,
-                                     .timers = timers},
+                                     .timers = timers,
+                                     .clock = clock},
     rtype::server::rtypeGameModules()};
 ```
 
@@ -344,19 +345,19 @@ A client that crashes, is killed or loses the network sends nothing more, and no
 
 `takeDepartedPlayers()` hands each departed player over once. The games module then calls `IPlayerAdmission::forget()`. The game events go to the players of the roster, so the next ones reach the others only (see [Game events](#game-events-gameeventencoder-and-gameeventbroadcaster)). The game logs `player <n> timed out: nothing received from <address> port <port> for 5 s` at the `info` level under `Sessions`.
 
-- The game counts the ticks it runs, not the time that passes: during a stall of the server, the datagrams wait in the player queue and are read at the next tick, so a stall closes no session by itself. A stall long enough for the clients to take the server for lost closes each of their sessions all the same, `SESSION_CLOSING_TICKS` (1200) ticks after the last datagram the server read from its client (see [A long stall and the clients](#a-long-stall-and-the-clients)).
+- For the silence of its players, the game counts the ticks it runs, not the time that passes: during a stall of the server, the datagrams wait in the player queue and are read at the next tick, so a stall closes no session by itself. A stall long enough for the clients to take the server for lost closes each of their sessions all the same, `SESSION_CLOSING_TICKS` (1200) ticks after the last datagram the server read from its client (see [A long stall and the clients](#a-long-stall-and-the-clients)).
 - The rest of the tick runs without the player: a waiting room whose other players are all ready starts the game in that tick, and the world state of that tick no longer lists the ship.
 - A game in progress whose last player timed out or left ends in that tick, after the sessions close and before the game moves along its states, as `finish()` ends it: it takes no new player until the finished state is over, `FINISHED_STATE_TICKS` (300) ticks counted from that tick, then waits for players with a new world. The game logs `game finished: no player left` at the `info` level under `Instances`. A waiting room whose last player timed out keeps waiting.
 
 A player who leaves does not wait for the timeout. Its client sends a `Disconnection` when the player leaves the waiting room or closes the window (see [Client](/R-Type/client/#joining-a-server-serverconnection)), and the session closes in the tick that reads it, through the same three steps, with a `PlayerDeparture` (`Left`): the others get `PlayerLeft` (`Left`) at once. The game logs `player <n> left from <address> port <port>` at the `info` level under `Sessions`. The two copies the client sends after the first are dropped: by the sorter once it forgot the address, or by the games module, which hands a datagram only to the game whose roster holds its sender, so no game reads them and no line is logged.
 
-The server sends heartbeats too. At the end of each tick, a game sends a `Heartbeat` to each player that no datagram reached for `TICKS_PER_HEARTBEAT` (60) ticks, whoever sent the last one: every datagram to a player takes its header from `nextSessionHeader()`, which starts that count over. The waiting room (every 500 ms), a game in progress (20 states per second) and a game that ended by itself (`GameEnded` every 500 ms) already send more often, so only a game ended by `finish()` sends heartbeats.
+The server sends heartbeats too, and counts them in real time rather than in ticks, since a client waits in real time. When a tick starts, before anything is sent in it, a game reads its clock (`GameInstanceParts::clock`, the `engine::SystemClock` of the games module) and adds the time since the previous tick started, a stall included, to the time since each player was sent a datagram (`ConnectedPlayer::sinceSent`). At the end of the tick, it sends a `Heartbeat` to each player that no datagram reached for `SILENCE_BEFORE_HEARTBEAT`, whoever sent the last one: every datagram to a player takes its header from `nextSessionHeader()`, which sets that time back to zero. `SILENCE_BEFORE_HEARTBEAT` is `HEARTBEAT_INTERVAL` rounded down to whole ticks, 60 ticks (999.99996 ms), so while the server runs on time two datagrams to a player are never further apart than 1 s; waiting for the whole second would wait 61 ticks. The waiting room (every 500 ms), a game in progress (20 states per second) and a game that ended by itself (`GameEnded` every 500 ms) already send more often, so on time only a game ended by `finish()` sends heartbeats. After a stall, see [A long stall and the clients](#a-long-stall-and-the-clients).
 
-`HEARTBEAT_INTERVAL`, `SESSION_TIMEOUT` and `RECONNECTION_GRACE` (`src/network/Protocol/ProtocolConstants.hpp`) are **provisional**, like every delay of the protocol. Code must read them, or their tick counts in `src/server/Sessions/SessionConstants.hpp`, and never repeat 1, 5, 15, 60, 300 or 1200.
+`HEARTBEAT_INTERVAL`, `SESSION_TIMEOUT` and `RECONNECTION_GRACE` (`src/network/Protocol/ProtocolConstants.hpp`) are **provisional**, like every delay of the protocol. Code must read them, or their tick counts and `SILENCE_BEFORE_HEARTBEAT` in `src/server/Sessions/SessionConstants.hpp`, and never repeat 1, 5, 15, 300 or 1200.
 
 ### A long stall and the clients
 
-A client takes the server for lost once `SESSION_SILENCE_LIMIT` (20 s, `SESSION_TIMEOUT` plus `RECONNECTION_GRACE`) passed since the last datagram it read, then sends nothing more (see [Client](/R-Type/client/#joining-a-server-serverconnection)). That datagram left before the stall began, so a stall somewhat shorter than `SESSION_SILENCE_LIMIT` can already be enough. The server then closes each of those sessions `SESSION_CLOSING_TICKS` (1200) ticks after the last datagram it read from that client.
+A client takes the server for lost once `SESSION_SILENCE_LIMIT` (20 s, `SESSION_TIMEOUT` plus `RECONNECTION_GRACE`) passed since the last datagram it read, then sends nothing more and ignores what the server sends afterwards (see [Client](/R-Type/client/#joining-a-server-serverconnection)). Its wait starts with the last datagram the server sent before the stall. Since a stall counts in full in the time since a player was sent a datagram, the first tick after a stall of 1 s or more sends a `Heartbeat` to every player it sends nothing else: a server that comes back before its clients waited 20 s keeps them, in the waiting room, in a game and once it ended, provided that datagram reaches them in time. One sent just under the limit may still arrive too late, as section 10.1.1 of RFC 9000 says of QUIC. The server closes the sessions of the clients that gave up `SESSION_CLOSING_TICKS` (1200) ticks after the last datagram it read from each.
 
 ## Waiting room: `LobbyStateAnnouncer`
 

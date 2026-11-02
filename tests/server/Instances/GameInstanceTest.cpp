@@ -95,6 +95,7 @@ using testing::SHUFFLE_SEED_COUNT;
 using testing::SHUFFLED_INPUT_COUNT;
 using testing::SOME_POINTS;
 using testing::SOME_TICKS;
+using testing::STALL_SHORTER_THAN_THE_SILENCE_LIMIT;
 using testing::STRANGER;
 using testing::THIRD_PLAYER;
 using testing::THIRD_SENT;
@@ -1098,6 +1099,77 @@ TEST_F(GameInstanceTest, SendsNoHeartbeatWhileTheRoomGoesOut) {
 
   EXPECT_TRUE(
       ofType(network::MessageType::Heartbeat, sentTo(FIRST_PLAYER)).empty());
+}
+
+/**
+ * Given a waiting room, which sends its player the room every 500 ms
+ * When the server stalls for 19.6 s, then runs a tick
+ * Then that tick sends the player a Heartbeat, so its client, which waits
+ * 20 s for a datagram of its server, does not take it for lost
+ */
+TEST_F(GameInstanceTest, SendsTheRoomAHeartbeatAtTheFirstTickAfterAStall) {
+  join(FIRST_PLAYER);
+  tick();
+
+  tick(STALL_SHORTER_THAN_THE_SILENCE_LIMIT);
+
+  EXPECT_EQ(
+      ofType(network::MessageType::Heartbeat, sentTo(FIRST_PLAYER)).size(), 1U);
+}
+
+/**
+ * Given a game in progress, which sends its player the world state 20 times
+ * per second
+ * When the server stalls for 19.6 s, then runs a tick
+ * Then that tick sends the player a Heartbeat
+ */
+TEST_F(GameInstanceTest,
+       SendsAGameInProgressAHeartbeatAtTheFirstTickAfterAStall) {
+  startGameWithOnePlayer();
+
+  tick(STALL_SHORTER_THAN_THE_SILENCE_LIMIT);
+
+  EXPECT_EQ(
+      ofType(network::MessageType::Heartbeat, sentTo(FIRST_PLAYER)).size(), 1U);
+}
+
+/**
+ * Given a game that finish() ended, which sends its player nothing but its
+ * Heartbeats
+ * When the server stalls for 19.6 s, then runs a tick
+ * Then that tick sends the player a Heartbeat
+ */
+TEST_F(GameInstanceTest,
+       SendsAFinishedGameAHeartbeatAtTheFirstTickAfterAStall) {
+  startGameWithOnePlayer();
+  game().finish();
+
+  tick(STALL_SHORTER_THAN_THE_SILENCE_LIMIT);
+
+  EXPECT_EQ(
+      ofType(network::MessageType::Heartbeat, sentTo(FIRST_PLAYER)).size(), 1U);
+}
+
+/**
+ * Given a waiting room whose player the server has heard nothing from for
+ * 4 s of ticks, one second short of the 5 s after which a player is away
+ * When the server stalls for 19.6 s, then runs a tick
+ * Then the player is not away: during a stall, the datagrams of a client
+ * wait in the queue of the server, so only the ticks the game runs count as
+ * the silence of a player
+ */
+TEST_F(GameInstanceTest, AStallIsNotTheSilenceOfAPlayer) {
+  join(FIRST_PLAYER);
+  silence(FIRST_PLAYER);
+  runTicks(PROTOCOL_SESSION_TIMEOUT_TICKS -
+           engine::SIMULATION_TICKS_PER_SECOND);
+
+  tick(STALL_SHORTER_THAN_THE_SILENCE_LIMIT);
+
+  const ConnectedPlayer* const player =
+      game().roster().find(playerEndpoint(FIRST_PLAYER));
+  ASSERT_NE(player, nullptr);
+  EXPECT_FALSE(player->away);
 }
 
 /**

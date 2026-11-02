@@ -1,5 +1,6 @@
 #pragma once
 
+#include <chrono>
 #include <cstddef>
 #include <cstdint>
 
@@ -35,5 +36,25 @@ constexpr std::uint8_t OTHER_ACTIONS = 0x04;
  * @brief How many players the keepers are given.
  */
 constexpr std::size_t TWO_PLAYERS = 2;
+
+/**
+ * @brief The 1 s of the protocol page after which a side sends a Heartbeat
+ * when it sent nothing else, rounded down to the 60 whole ticks of
+ * 16 666 666 ns that fit in it: the server sends at the last tick that does
+ * not pass the second.
+ */
+constexpr std::chrono::nanoseconds PROTOCOL_HEARTBEAT_SILENCE{999'999'960};
+
+/**
+ * @brief The real time a tick of the server took, about one sixtieth of a
+ * second.
+ */
+constexpr std::chrono::milliseconds SOME_TICK_TIME{17};
+
+/**
+ * @brief A stall of the server longer than the 1 s between two Heartbeats:
+ * no tick ran for 3 s.
+ */
+constexpr std::chrono::seconds SOME_STALL{3};
 
 }  // namespace rtype::server::testing

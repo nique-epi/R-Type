@@ -15,8 +15,8 @@ namespace rtype::server {
 /**
  * @brief Gives the header of the next datagram of the session of
  * @p recipient: its session token and its next sequence, which then moves on
- * by one, wrapping from 65535 to 0. The ticks since a datagram was sent to
- * @p recipient start again from 0, since one is about to be.
+ * by one, wrapping from 65535 to 0. The time since a datagram was sent to
+ * @p recipient starts again from zero, since one is about to be.
  *
  * Every datagram the server sends a connected player takes its header here,
  * whatever its message, so the sequences a player receives grow by one from 0
