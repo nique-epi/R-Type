@@ -166,7 +166,7 @@ TEST(DatagramsInFlight, KeepsTheDatagramsThatHaveNotArrivedYet) {
 /**
  * Given a jitter of 60 ms and 1000 datagrams handed over 1 ms apart
  * When every datagram arrived
- * Then they arrived in the order they were handed over
+ * Then each arrived once, in the order they were handed over
  */
 TEST(DatagramsInFlight, JitterNeverMakesADatagramArriveBeforeAnEarlierOne) {
   DatagramsInFlight inFlight{JITTER_OF_60_MS, SOME_SEED};
@@ -176,6 +176,9 @@ TEST(DatagramsInFlight, JitterNeverMakesADatagramArriveBeforeAnEarlierOne) {
 
   ASSERT_EQ(arrivals.size(), THOUSAND_DATAGRAMS);
   EXPECT_TRUE(std::ranges::is_sorted(arrivals, {}, numberOf));
+  EXPECT_TRUE(
+      std::ranges::all_of(arrivalsByNumber(arrivals, THOUSAND_DATAGRAMS),
+                          [](std::size_t count) { return count == 1; }));
 }
 
 /**
