@@ -1,13 +1,13 @@
 #include <gtest/gtest.h>
 #include "GameEventHistory.hpp"
 #include "GameEventHistoryTestConstants.hpp"
+#include "NetworkTestConstants.hpp"
 #include "ServerConnectionTestConstants.hpp"
 #include "TimeTestConstants.hpp"
 
 using rtype::client::GameEventHistory;
 using rtype::client::testing::EVENT_MEMORY_REQUIRED;
 using rtype::client::testing::EVENT_NUMBER;
-using rtype::client::testing::RESEND_GAP;
 
 /**
  * Given an event already seen
@@ -18,9 +18,9 @@ TEST(GameEventHistory, TheOtherCopiesOfAnEventAreNotNew) {
   GameEventHistory history;
   ASSERT_TRUE(history.isFirstCopy(EVENT_NUMBER));
 
-  history.advance(RESEND_GAP);
+  history.advance(PROTOCOL_RESEND_DELAY);
   const bool second = history.isFirstCopy(EVENT_NUMBER);
-  history.advance(RESEND_GAP);
+  history.advance(PROTOCOL_RESEND_DELAY);
   const bool third = history.isFirstCopy(EVENT_NUMBER);
 
   EXPECT_FALSE(second);

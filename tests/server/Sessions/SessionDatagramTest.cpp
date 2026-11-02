@@ -11,6 +11,7 @@
 #include "MessageFrame.hpp"
 #include "MessagePayload.hpp"
 #include "MessageType.hpp"
+#include "NetworkTestConstants.hpp"
 #include "OutgoingDatagram.hpp"
 #include "PacketHeader.hpp"
 #include "PlayerRoster.hpp"
@@ -30,7 +31,6 @@ using testing::OTHER_SESSION_TOKEN;
 using testing::PLAYER_NICKNAME;
 using testing::PLAYER_SEQUENCE;
 using testing::playerEndpoint;
-using testing::PROTOCOL_ACKNOWLEDGES_FLAG;
 using testing::SESSION_TOKEN;
 using testing::SessionDatagramFixture;
 using testing::SOME_NEXT_SEQUENCE;

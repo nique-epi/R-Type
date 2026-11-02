@@ -20,10 +20,8 @@ constexpr std::size_t TICKS_BEFORE_A_RESEND = 7;
 constexpr std::size_t TICKS_OF_A_LIFETIME = 61;
 constexpr std::size_t SENDS_IN_A_LIFETIME = 9;
 
-/** @brief The flags of the protocol page: 0x01 acknowledges, 0x02 holds
+/** @brief The flags of a header that neither acknowledges nor holds
  * guaranteed messages. */
-constexpr std::uint8_t PROTOCOL_ACKNOWLEDGES_FLAG = 0x01;
-constexpr std::uint8_t PROTOCOL_GUARANTEED_FLAG = 0x02;
 constexpr std::uint8_t NO_FLAG = 0;
 
 }  // namespace rtype::server::testing

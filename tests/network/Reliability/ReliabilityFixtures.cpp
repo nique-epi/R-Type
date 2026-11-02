@@ -6,6 +6,7 @@
 #include "ByteWriter.hpp"
 #include "EncodedMessage.hpp"
 #include "MessageType.hpp"
+#include "NetworkTestConstants.hpp"
 #include "PacketHeader.hpp"
 #include "ReliabilityTestConstants.hpp"
 

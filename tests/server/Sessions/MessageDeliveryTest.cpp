@@ -7,6 +7,7 @@
 #include "MessageDeliveryFixture.hpp"
 #include "MessageDeliveryFixtures.hpp"
 #include "MessageDeliveryTestConstants.hpp"
+#include "NetworkTestConstants.hpp"
 #include "OutgoingDatagram.hpp"
 #include "PlayerRoster.hpp"
 #include "SequenceOrder.hpp"

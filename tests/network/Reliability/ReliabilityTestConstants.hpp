@@ -3,18 +3,15 @@
 #include <chrono>
 #include <cstddef>
 #include <cstdint>
+#include "ProtocolTestConstants.hpp"
 
 namespace rtype::network::testing {
 
-/** @brief The values of the protocol page: the two flags, the bits of
- * acknowledgementBits, the three delays and the version. */
-constexpr std::uint8_t PROTOCOL_ACKNOWLEDGES_FLAG = 0x01;
-constexpr std::uint8_t PROTOCOL_GUARANTEED_FLAG = 0x02;
-constexpr std::uint8_t PROTOCOL_BOTH_FLAGS = 0x03;
+/** @brief The values of the protocol page only these tests read: the bits of
+ * acknowledgementBits, the lifetime of a guaranteed message and the version;
+ * the flags and the other delays are in NetworkTestConstants.hpp. */
 constexpr std::size_t PROTOCOL_ACKNOWLEDGEMENT_BIT_COUNT = 32;
-constexpr std::chrono::milliseconds PROTOCOL_RESEND_DELAY{100};
 constexpr std::chrono::seconds PROTOCOL_MESSAGE_LIFETIME{1};
-constexpr std::chrono::milliseconds PROTOCOL_ACKNOWLEDGEMENT_DELAY{40};
 constexpr std::uint8_t PROTOCOL_VERSION_TWO = 2;
 
 /** @brief A first sequence of a session, any one. */
@@ -50,11 +47,10 @@ constexpr std::uint16_t SECOND_SEND = 9;
 constexpr std::uint16_t FIRST_MESSAGE = 1;
 constexpr std::uint16_t SECOND_MESSAGE = 2;
 
-/** @brief Payload sizes: 1175 is the largest one message carries alone
- * (1200 - 22 - 3), 1176 one too many, and two of 600 never share a datagram
+/** @brief Payload sizes: one byte more than the largest one message carries
+ * alone (DATAGRAM_PAYLOAD_LIMIT), and two of 600 never share a datagram
  * (22 + 2 * 603 = 1228). */
-constexpr std::size_t LARGEST_PAYLOAD_SIZE = 1175;
-constexpr std::size_t OVERSIZED_PAYLOAD_SIZE = 1176;
+constexpr std::size_t PAYLOAD_ONE_BYTE_TOO_LARGE = DATAGRAM_PAYLOAD_LIMIT + 1;
 constexpr std::size_t HALF_DATAGRAM_PAYLOAD_SIZE = 600;
 
 /** @brief The demonstration of the issue: one datagram in five lost each way,

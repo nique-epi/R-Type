@@ -1,4 +1,5 @@
 #include <gtest/gtest.h>
+#include "NetworkTestConstants.hpp"
 #include "PacketHeader.hpp"
 #include "ReceivedSequences.hpp"
 #include "ReliabilityTestConstants.hpp"

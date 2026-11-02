@@ -98,10 +98,6 @@ constexpr std::uint8_t SOME_FLAGS = 0x0C;
 constexpr std::uint16_t SOME_ACKNOWLEDGED_SEQUENCE = 0x0D0E;
 constexpr std::uint32_t SOME_ACKNOWLEDGEMENT_BITS = 0x0F101112;
 
-/** @brief Both flags of version 2: ACKNOWLEDGES (0x01) and GUARANTEED
- * (0x02). */
-constexpr std::uint8_t BOTH_FLAGS_OF_VERSION_TWO = 0x03;
-
 /**
  * @brief The 22 bytes of a default header: RTYP, version 2, then zeros.
  */
@@ -227,5 +223,11 @@ constexpr std::size_t REJECTED_MESSAGE_COUNT = 3;
  * tell those lines apart from the others.
  */
 constexpr std::string_view REJECTED_MESSAGE_LINE_TEXT = "a message of type";
+
+/**
+ * @brief Bytes of the largest payload a datagram carries: 1200, less the 22
+ * bytes of the packet header and the 3 of the message prefix.
+ */
+constexpr std::size_t DATAGRAM_PAYLOAD_LIMIT = 1175;
 
 }  // namespace rtype::network::testing

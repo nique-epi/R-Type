@@ -16,6 +16,7 @@
 #include "MessageFrame.hpp"
 #include "MessageType.hpp"
 #include "NetworkException.hpp"
+#include "NetworkTestConstants.hpp"
 #include "PacketHeader.hpp"
 #include "ProtocolConstants.hpp"
 #include "ProtocolFixtures.hpp"
@@ -23,7 +24,6 @@
 
 namespace rtype::network {
 
-using testing::BOTH_FLAGS_OF_VERSION_TWO;
 using testing::byteSequence;
 using testing::DatagramCodecFixture;
 using testing::datagramOf;
@@ -181,7 +181,7 @@ TEST(DatagramCodec, SaysAnotherProtocolIdDoesNotSpeakThisProtocol) {
  */
 TEST(DatagramCodec, SaysAHeaderWithTheFlagsOfThisVersionSpeaksThisProtocol) {
   PacketHeader header;
-  header.flags = BOTH_FLAGS_OF_VERSION_TWO;
+  header.flags = PROTOCOL_BOTH_FLAGS;
 
   EXPECT_TRUE(DatagramCodec::speaksThisProtocol(header));
 }

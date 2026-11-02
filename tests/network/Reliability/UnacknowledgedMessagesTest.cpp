@@ -2,7 +2,9 @@
 #include <vector>
 #include "EncodedMessage.hpp"
 #include "NetworkException.hpp"
+#include "NetworkTestConstants.hpp"
 #include "PacketHeader.hpp"
+#include "ProtocolTestConstants.hpp"
 #include "ReliabilityFixtures.hpp"
 #include "ReliabilityTestConstants.hpp"
 #include "TimeTestConstants.hpp"
@@ -185,7 +187,7 @@ TEST(UnacknowledgedMessages, TakesNothingWhenNothingIsDue) {
 TEST(UnacknowledgedMessages, KeepsTheLargestMessageADatagramHolds) {
   UnacknowledgedMessages messages;
 
-  messages.add(messageOfSize(LARGEST_PAYLOAD_SIZE));
+  messages.add(messageOfSize(DATAGRAM_PAYLOAD_LIMIT));
 
   EXPECT_EQ(messages.count(), 1U);
 }
@@ -198,7 +200,7 @@ TEST(UnacknowledgedMessages, KeepsTheLargestMessageADatagramHolds) {
 TEST(UnacknowledgedMessages, RefusesAMessageTooLargeForADatagram) {
   UnacknowledgedMessages messages;
 
-  EXPECT_THROW(messages.add(messageOfSize(OVERSIZED_PAYLOAD_SIZE)),
+  EXPECT_THROW(messages.add(messageOfSize(PAYLOAD_ONE_BYTE_TOO_LARGE)),
                DatagramTooLargeException);
   EXPECT_EQ(messages.count(), 0U);
 }

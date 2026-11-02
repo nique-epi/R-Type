@@ -910,7 +910,7 @@ TEST_F(GameInstanceTest, StopsSendingAPlayerLeftItsClientAcknowledged) {
   ASSERT_TRUE(told.has_value());
   network::PacketHeader acknowledgement;
   acknowledgement.sessionToken = first.sessionToken;
-  acknowledgement.flags = testing::PROTOCOL_ACKNOWLEDGES_FLAG;
+  acknowledgement.flags = PROTOCOL_ACKNOWLEDGES_FLAG;
   acknowledgement.acknowledgedSequence = *told;
 
   queue(network::IncomingDatagram{.sender = first.endpoint,

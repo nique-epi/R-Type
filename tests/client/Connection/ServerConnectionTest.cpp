@@ -68,8 +68,6 @@ using testing::OTHER_NICKNAME;
 using testing::OTHER_PLAYER_NUMBER;
 using testing::OTHER_SESSION_TOKEN;
 using testing::otherSender;
-using testing::PROTOCOL_ACKNOWLEDGEMENT_DELAY;
-using testing::PROTOCOL_ACKNOWLEDGES_FLAG;
 using testing::PROTOCOL_ATTEMPT_TIMEOUT;
 using testing::PROTOCOL_DISCONNECTION_COPY_COUNT;
 using testing::PROTOCOL_DISCONNECTION_COPY_INTERVAL;

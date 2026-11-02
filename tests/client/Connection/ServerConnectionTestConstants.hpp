@@ -66,13 +66,7 @@ constexpr std::uint16_t FOURTH_SEQUENCE = 4;
  * bit 2 (0) set. */
 constexpr std::uint32_t BITS_OF_THE_FIRST_AND_THE_ACCEPTANCE = 0b110;
 
-/** @brief The flag of the protocol page that says a header acknowledges, and
- * the most a receiver lets an acknowledgement of guaranteed messages wait. */
-constexpr std::uint8_t PROTOCOL_ACKNOWLEDGES_FLAG = 0x01;
-constexpr std::chrono::milliseconds PROTOCOL_ACKNOWLEDGEMENT_DELAY{40};
-
-/** @brief Number of the GameEvent the tests send, the same in its three
- * copies. */
+/** @brief Number of the GameEvent the tests send, the same in every copy. */
 constexpr std::uint16_t EVENT_NUMBER = 42;
 
 /** @brief Another player of the waiting room. */

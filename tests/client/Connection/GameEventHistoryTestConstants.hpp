@@ -5,10 +5,6 @@
 
 namespace rtype::client::testing {
 
-/** @brief Time between two copies of a GameEvent: the protocol page sends a
- * guaranteed message again 100 ms or more after its last send. */
-constexpr engine::Duration RESEND_GAP = std::chrono::milliseconds(100);
-
 /** @brief How long the number of a GameEvent must be remembered: the protocol
  * page says the numbers of the last 2 s are enough, the lifetime of a
  * guaranteed message (1 s) and 1 s for copies whose delays differ. */

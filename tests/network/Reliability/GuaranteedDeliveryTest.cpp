@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 #include "GuaranteedDelivery.hpp"
+#include "NetworkTestConstants.hpp"
 #include "PacketHeader.hpp"
 #include "ProtocolConstants.hpp"
 #include "ReliabilityFixtures.hpp"

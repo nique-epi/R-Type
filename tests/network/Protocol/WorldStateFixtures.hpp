@@ -18,12 +18,6 @@ constexpr std::uint32_t SOME_TICK = 3;
 constexpr std::uint32_t LATE_TICK = 4000000000U;
 
 /**
- * @brief Bytes of the largest payload a datagram carries: 1200, less the 22
- * bytes of the packet header and the 3 of the message prefix.
- */
-constexpr std::size_t DATAGRAM_PAYLOAD_LIMIT = 1175;
-
-/**
  * @brief Entities one payload holds next to four players: (1175 - 6 - 4 * 12)
  * / 9, rounded down.
  */

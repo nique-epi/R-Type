@@ -8,6 +8,7 @@
 #include "GuaranteedMessageTestConstants.hpp"
 #include "MessageDelivery.hpp"
 #include "MessageDeliveryTestConstants.hpp"
+#include "NetworkTestConstants.hpp"
 #include "OutgoingDatagram.hpp"
 #include "PacketHeader.hpp"
 #include "PlayerRoster.hpp"
