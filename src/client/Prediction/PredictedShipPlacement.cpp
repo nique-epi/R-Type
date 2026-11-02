@@ -21,7 +21,7 @@ void placePredictedShip(const OwnShipPredictor& predictor,
   if (!ship.has_value()) {
     return;
   }
-  if (game::Position* const position = components.get<game::Position>(*ship)) {
+  if (auto* const position = components.get<game::Position>(*ship)) {
     *position = predictor.position();
   }
 }

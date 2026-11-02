@@ -16,11 +16,11 @@ float distanceBetween(game::Position first, game::Position second) {
   return std::hypot(first.x - second.x, first.y - second.y);
 }
 
-/** @returns @p ship one tick later, @p held pressed now after @p before. */
-game::MovingShip oneTickLater(game::MovingShip ship, game::HeldChange change,
-                              game::ShipDirections held) {
+/** @returns @p ship one tick later, after the input @p change: the presses it
+ * records first, then the tick holding the directions it holds now. */
+game::MovingShip oneTickLater(game::MovingShip ship, game::HeldChange change) {
   ship.motion = game::motionAfterInput(ship.motion, change);
-  return game::shipAfter(ship, held, engine::SIMULATION_TICK_DURATION);
+  return game::shipAfter(ship, change.now, engine::SIMULATION_TICK_DURATION);
 }
 
 }  // namespace
@@ -37,11 +37,10 @@ void ShipPrediction::predict(game::ShipDirections held,
   if (!started_) {
     return;
   }
-  current_ = oneTickLater(
-      current_,
-      game::HeldChange{
-          .before = lastHeld_, .now = held, .inputNumber = inputNumber},
-      held);
+  current_ =
+      oneTickLater(current_, game::HeldChange{.before = lastHeld_,
+                                              .now = held,
+                                              .inputNumber = inputNumber});
   lastHeld_ = held;
   pending_.push_back(PendingCommand{
       .inputNumber = inputNumber, .held = held, .after = current_});
@@ -80,12 +79,10 @@ void ShipPrediction::replayAfterFront(game::MovingShip restart) {
   game::ShipDirections before = pending_.front().held;
   for (std::size_t index = 1; index < pending_.size(); ++index) {
     PendingCommand& command = pending_[index];
-    replayed =
-        oneTickLater(replayed,
-                     game::HeldChange{.before = before,
-                                      .now = command.held,
-                                      .inputNumber = command.inputNumber},
-                     command.held);
+    replayed = oneTickLater(
+        replayed, game::HeldChange{.before = before,
+                                   .now = command.held,
+                                   .inputNumber = command.inputNumber});
     command.after = replayed;
     before = command.held;
   }
