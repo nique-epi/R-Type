@@ -29,6 +29,9 @@ constexpr std::uint32_t BITS_OF_ELEVEN_AND_TEN = 0b110;
 constexpr std::uint16_t ZERO_SEQUENCE = 0;
 constexpr std::uint16_t THIRTY_TWO_LATER = 32;
 constexpr std::uint16_t THIRTY_THREE_LATER = 33;
+/** @brief 65 after 0: the bits are moved in 64 bits, so 65 is the first
+ * distance that would move them past that width without the bound on 32. */
+constexpr std::uint16_t SIXTY_FIVE_LATER = 65;
 constexpr std::uint16_t LAST_SEQUENCE = 65535;
 
 /** @brief Bits of acknowledgementBits the tests write or expect. */

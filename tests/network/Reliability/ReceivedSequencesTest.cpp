@@ -142,6 +142,22 @@ TEST(ReceivedSequences, ForgetsTheDatagramThirtyThreeBeforeTheNewest) {
 }
 
 /**
+ * Given sequences that accepted 0
+ * When 65 arrives, after a long loss
+ * Then no bit names an earlier datagram
+ */
+TEST(ReceivedSequences, ForgetsEveryEarlierDatagramAfterAJumpOfSixtyFive) {
+  ReceivedSequences sequences;
+  ASSERT_TRUE(sequences.accept(ZERO_SEQUENCE));
+  ASSERT_TRUE(sequences.accept(SIXTY_FIVE_LATER));
+  PacketHeader header;
+
+  sequences.acknowledgeIn(header);
+
+  EXPECT_EQ(header.acknowledgementBits, NO_BIT);
+}
+
+/**
  * Given sequences whose newest is 65535
  * When 0 arrives
  * Then it is accepted, and 65535 is acknowledged by bit 0
