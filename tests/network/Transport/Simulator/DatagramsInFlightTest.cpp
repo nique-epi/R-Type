@@ -16,8 +16,21 @@
 
 using rtype::network::DatagramInFlight;
 using rtype::network::DatagramsInFlight;
-using rtype::network::NegativeSimulatedDelayException;
 using rtype::network::NetworkConditions;
+using rtype::network::SimulatedDelayOutOfRangeException;
+
+/**
+ * Given a perfect simulated network
+ * When a datagram is handed over one second before the epoch of the clock
+ * Then it arrives at once, at that time, and not at the epoch
+ */
+TEST(DatagramsInFlight, HandsOverADatagramBeforeTheClockEpochAtOnce) {
+  DatagramsInFlight inFlight{NetworkConditions{}, SOME_SEED};
+
+  inFlight.add(peer(), CROSSING_BYTES, BEFORE_THE_CLOCK_EPOCH);
+
+  EXPECT_EQ(inFlight.nextArrival(), BEFORE_THE_CLOCK_EPOCH);
+}
 
 /**
  * Given network conditions whose jitter is one millisecond below zero
@@ -26,7 +39,7 @@ using rtype::network::NetworkConditions;
  */
 TEST(DatagramsInFlight, RefusesANegativeJitter) {
   EXPECT_THROW(DatagramsInFlight(JITTER_JUST_BELOW_ZERO, SOME_SEED),
-               NegativeSimulatedDelayException);
+               SimulatedDelayOutOfRangeException);
 }
 
 /**
@@ -36,7 +49,40 @@ TEST(DatagramsInFlight, RefusesANegativeJitter) {
  */
 TEST(DatagramsInFlight, RefusesANegativeLag) {
   EXPECT_THROW(DatagramsInFlight(LAG_JUST_BELOW_ZERO, SOME_SEED),
-               NegativeSimulatedDelayException);
+               SimulatedDelayOutOfRangeException);
+}
+
+/**
+ * Given network conditions whose lag is one millisecond over ten seconds
+ * When the datagrams in flight are built from them
+ * Then they are refused: no wait that long is simulated
+ */
+TEST(DatagramsInFlight, RefusesALagOverTenSeconds) {
+  EXPECT_THROW(DatagramsInFlight(LAG_JUST_OVER_TEN_SECONDS, SOME_SEED),
+               SimulatedDelayOutOfRangeException);
+}
+
+/**
+ * Given network conditions whose jitter is one millisecond over ten seconds
+ * When the datagrams in flight are built from them
+ * Then they are refused: no wait that long is simulated
+ */
+TEST(DatagramsInFlight, RefusesAJitterOverTenSeconds) {
+  EXPECT_THROW(DatagramsInFlight(JITTER_JUST_OVER_TEN_SECONDS, SOME_SEED),
+               SimulatedDelayOutOfRangeException);
+}
+
+/**
+ * Given network conditions whose lag and jitter are ten seconds each
+ * When the datagrams in flight are built from them and handed 1000 datagrams
+ * Then they are accepted, and every datagram arrives
+ */
+TEST(DatagramsInFlight, AcceptsALagAndAJitterOfTenSeconds) {
+  DatagramsInFlight inFlight{LAG_AND_JITTER_OF_TEN_SECONDS, SOME_SEED};
+
+  handNumbered(inFlight, THOUSAND_DATAGRAMS, ONE_MILLISECOND_APART);
+
+  EXPECT_EQ(everyArrival(inFlight).size(), THOUSAND_DATAGRAMS);
 }
 
 /**
@@ -133,7 +179,7 @@ TEST(DatagramsInFlight, KeepsTheDatagramsThatHaveNotArrivedYet) {
 /**
  * Given a jitter of 60 ms and 1000 datagrams handed over 1 ms apart
  * When every datagram arrived
- * Then they arrived in the order they were handed over
+ * Then each arrived once, in the order they were handed over
  */
 TEST(DatagramsInFlight, JitterNeverMakesADatagramArriveBeforeAnEarlierOne) {
   DatagramsInFlight inFlight{JITTER_OF_60_MS, SOME_SEED};
@@ -143,6 +189,9 @@ TEST(DatagramsInFlight, JitterNeverMakesADatagramArriveBeforeAnEarlierOne) {
 
   ASSERT_EQ(arrivals.size(), THOUSAND_DATAGRAMS);
   EXPECT_TRUE(std::ranges::is_sorted(arrivals, {}, numberOf));
+  EXPECT_TRUE(
+      std::ranges::all_of(arrivalsByNumber(arrivals, THOUSAND_DATAGRAMS),
+                          [](std::size_t count) { return count == 1; }));
 }
 
 /**
@@ -191,16 +240,17 @@ TEST(DatagramsInFlight, LosesEveryDatagramAtAFullLoss) {
 
 /**
  * Given a loss of 10 %
- * When 10 000 datagrams are handed over
+ * When 10 000 datagrams are handed over, each taken out once it arrived
  * Then about 9000 arrive
  */
 TEST(DatagramsInFlight, LosesAboutTheShareOfTheLoss) {
   DatagramsInFlight inFlight{TENTH_LOSS, SOME_SEED};
 
-  handNumbered(inFlight, TEN_THOUSAND_DATAGRAMS, ONE_MILLISECOND_APART);
+  const std::vector<DatagramInFlight> arrivals = arrivalsWhileHanding(
+      inFlight, TEN_THOUSAND_DATAGRAMS, ONE_MILLISECOND_APART);
 
-  EXPECT_NEAR(static_cast<double>(everyArrival(inFlight).size()),
-              ARRIVALS_AT_A_TENTH_LOSS, DRAW_TOLERANCE);
+  EXPECT_NEAR(static_cast<double>(arrivals.size()), ARRIVALS_AT_A_TENTH_LOSS,
+              DRAW_TOLERANCE);
 }
 
 /**
@@ -221,16 +271,20 @@ TEST(DatagramsInFlight, CopiesEveryDatagramAtFullDuplicates) {
 }
 
 /**
- * Given duplicates at 10 %
- * When 10 000 datagrams are handed over
- * Then about 11 000 arrive
+ * Given duplicates at 10 % and no loss
+ * When 10 000 datagrams are handed over, each taken out once it arrived
+ * Then every one arrives at least once, and about 11 000 arrive in all
  */
 TEST(DatagramsInFlight, CopiesAboutTheShareOfTheDuplicates) {
   DatagramsInFlight inFlight{TENTH_DUPLICATES, SOME_SEED};
 
-  handNumbered(inFlight, TEN_THOUSAND_DATAGRAMS, ONE_MILLISECOND_APART);
+  const std::vector<DatagramInFlight> arrivals = arrivalsWhileHanding(
+      inFlight, TEN_THOUSAND_DATAGRAMS, ONE_MILLISECOND_APART);
 
-  EXPECT_NEAR(static_cast<double>(everyArrival(inFlight).size()),
+  EXPECT_TRUE(
+      std::ranges::all_of(arrivalsByNumber(arrivals, TEN_THOUSAND_DATAGRAMS),
+                          [](std::size_t count) { return count >= 1; }));
+  EXPECT_NEAR(static_cast<double>(arrivals.size()),
               ARRIVALS_AT_A_TENTH_DUPLICATES, DRAW_TOLERANCE);
 }
 
@@ -257,7 +311,7 @@ TEST(DatagramsInFlight, NeverCopiesALostDatagram) {
 /**
  * Given reordering at 100 % and no lag
  * When 1000 datagrams are handed over 100 ms apart
- * Then every one arrives, each after exactly 75 ms
+ * Then every one arrives once, each after exactly 75 ms
  */
 TEST(DatagramsInFlight, HoldsAReorderedDatagramForTheReorderHold) {
   DatagramsInFlight inFlight{FULL_REORDER, SOME_SEED};
@@ -266,6 +320,9 @@ TEST(DatagramsInFlight, HoldsAReorderedDatagramForTheReorderHold) {
   const std::vector<DatagramInFlight> arrivals = everyArrival(inFlight);
 
   ASSERT_EQ(arrivals.size(), THOUSAND_DATAGRAMS);
+  EXPECT_TRUE(
+      std::ranges::all_of(arrivalsByNumber(arrivals, THOUSAND_DATAGRAMS),
+                          [](std::size_t count) { return count == 1; }));
   EXPECT_TRUE(std::ranges::all_of(waitsOf(arrivals, HUNDRED_MILLISECONDS_APART),
                                   [](std::chrono::steady_clock::duration wait) {
                                     return wait == HOLD_OF_A_REORDERED_DATAGRAM;
@@ -333,4 +390,39 @@ TEST(DatagramsInFlight, DrawsAnotherFateFromAnotherSeed) {
   handNumbered(second, THOUSAND_DATAGRAMS, ONE_MILLISECOND_APART);
 
   EXPECT_NE(everyArrival(first), everyArrival(second));
+}
+
+/**
+ * Given a perfect simulated network handed 8193 datagrams before any arrived
+ * When every datagram arrived
+ * Then the first 8192 arrived and the last was lost: the network was full
+ */
+TEST(DatagramsInFlight, LosesADatagramHandedOverWhenFull) {
+  DatagramsInFlight inFlight{NetworkConditions{}, SOME_SEED};
+
+  handNumbered(inFlight, ONE_DATAGRAM_MORE_THAN_IT_HOLDS,
+               ONE_MILLISECOND_APART);
+  const std::vector<DatagramInFlight> arrivals = everyArrival(inFlight);
+
+  ASSERT_EQ(arrivals.size(), DATAGRAMS_A_FULL_NETWORK_HOLDS);
+  const std::vector<std::size_t> counts =
+      arrivalsByNumber(arrivals, ONE_DATAGRAM_MORE_THAN_IT_HOLDS);
+  EXPECT_EQ(static_cast<std::size_t>(std::ranges::count(counts, ONE_DATAGRAM)),
+            DATAGRAMS_A_FULL_NETWORK_HOLDS);
+  EXPECT_EQ(counts.back(), std::size_t{0});
+}
+
+/**
+ * Given a perfect simulated network whose 8192 held datagrams arrived
+ * When one more datagram is handed over, then every datagram arrived
+ * Then that datagram arrives too: an arrival makes room for another
+ */
+TEST(DatagramsInFlight, TakesADatagramAgainOnceTheHeldOnesArrived) {
+  DatagramsInFlight inFlight{NetworkConditions{}, SOME_SEED};
+  handNumbered(inFlight, DATAGRAMS_A_FULL_NETWORK_HOLDS, ONE_MILLISECOND_APART);
+  static_cast<void>(everyArrival(inFlight));
+
+  handNumbered(inFlight, ONE_DATAGRAM, ONE_MILLISECOND_APART);
+
+  EXPECT_EQ(everyArrival(inFlight).size(), ONE_DATAGRAM);
 }

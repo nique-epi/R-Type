@@ -34,14 +34,16 @@ class DatagramsInFlight {
    * @param conditions What the ping shows: each datagram that crosses here
    * waits half their lag and up to half their jitter.
    * @param seed The start of the draws.
-   * @throws NegativeSimulatedDelayException when the lag or the jitter of
-   * @p conditions is negative.
+   * @throws SimulatedDelayOutOfRangeException when the lag or the jitter of
+   * @p conditions is below zero or over MAXIMUM_SIMULATED_DELAY.
    */
   DatagramsInFlight(const NetworkConditions& conditions, std::uint32_t seed);
 
   /**
    * @brief Draws the fate of a datagram handed over at @p now for @p peer, and
    * keeps a copy of @p payload for each time it arrives: none, once or twice.
+   * A copy that would make more than MAXIMUM_DATAGRAMS_IN_FLIGHT held at once
+   * is lost.
    */
   void add(const Endpoint& peer, std::span<const std::byte> payload,
            std::chrono::steady_clock::time_point now);

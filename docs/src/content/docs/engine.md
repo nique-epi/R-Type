@@ -19,6 +19,7 @@ This page tells you where to look when you need to change something. It describe
 | Collisions | Available: the overlap test and the event; the system that detects them is in the game | `src/engine/Collision/` |
 | Launch arguments | Available; used by the server and the client | `src/engine/LaunchArguments/` |
 | Modules and application | Available; the server and the client are built from modules | `src/engine/Modules/` |
+| Files next to the executable | Available; used by the server and the client | `src/engine/Paths/` |
 
 ## How the parts fit together
 
@@ -128,6 +129,8 @@ components.forEach<rtype::game::Position, rtype::game::Velocity>(
 
 `SystemScheduler` runs systems in the order they were added with `add()`. The order never changes, so every `run(components, elapsed)` calls the systems in the same sequence. A system added later sees what the earlier ones did, including the entities they destroyed. `add()` must not be called from inside a system, and a null system throws `NullSystemException`.
 
+It can measure its systems. After `measureWith(clock)`, each `run()` reads the clock between two systems, allocating nothing, and `takeSystemTimes()` gives how long each one ran since the previous call, as a `SystemTime` under the name given to `add()`, then starts again from zero. A name is a text that outlives the scheduler, such as a constant, and it is empty unless given. `measureWith(nullptr)` stops measuring, and a scheduler given no clock reads none. The server reads these times in its metrics (see [Server](/R-Type/server/#metrics-servermetricsmodule)).
+
 ## Game loop: time
 
 The simulation runs at a fixed rate, `SIMULATION_TICKS_PER_SECOND` (60), whatever the rendering rate (`TimeConstants.hpp`).
@@ -204,6 +207,16 @@ const std::array options{rtype::engine::LaunchOption{
 rtype::engine::readLaunchArguments(logOptions.otherArguments(), options);
 ```
 
+## Files next to the executable: `locateAssetFolder`
+
+`src/engine/Paths/` (`rtype_engine_paths`) finds the files a program ships with, and the folder it writes its journal in, from the folder of its executable, never from the folder it was started in, which is wherever the terminal or the file manager happened to be.
+
+- `executableFolder()` is the folder of the running executable, built on `executablePath()`. Each system has its own source file, `ExecutablePathLinux.cpp`, `ExecutablePathMacOs.cpp` and `ExecutablePathWindows.cpp`, and CMake builds only the one that matches. When the system does not tell, it throws `UnknownExecutablePathException`.
+- `locateAssetFolder()` returns the `assets/` folder (`ASSETS_FOLDER_NAME`) next to the executable, or in the folder above it, where the Visual Studio generator writes `Release/` and `Debug/`. When neither exists, it throws `AssetFolderNotFoundException`, which names both folders.
+- `genericText()` writes a path in UTF-8 with `/` between folders on every system, for logs and errors.
+
+The client loads its assets from that folder and the server reads its waves file there (`WAVE_FILE_IN_ASSETS`, see [Server and game](/R-Type/server/#waves-file-wavecatalog)); both write their default journal in `executableFolder()` (see [Logging](/R-Type/logging/#choosing-the-level-and-the-output-at-launch)).
+
 ## Modules: `Application` and `IModule`
 
 `src/engine/Modules/` (`rtype_engine_modules`, `rtype_engine_application`) gives a program one place to plug each of its parts in. A part is a **module**: a class implementing `IModule`, with a `name()`, its `dependencies()` (the names of the modules it needs), and three steps. `install(InstallContext&)` prepares it and keeps nothing open when it returns: it may read a file and close it, but it never binds a socket, starts a thread or subscribes to an event. Through the context it adds its work to a loop stage and provides or looks up services (below). `start()` opens what must live until `stop()` (a socket, a thread, a file kept open, an event subscription) and throws a `std::exception` when it cannot; `stop()` closes it and must not throw.
@@ -262,6 +275,7 @@ The five moments of a module, the two scopes, how modules talk and how to turn o
 | Run a module's work every tick, frame or pass of the loop | `InstallContext::addWork()`, called from the module's `install()` |
 | Hand an object to the modules installed after | `InstallContext::provide()`; the other modules call `require<>()` or `find<>()` |
 | Change the stages of a program | `SERVER_LOOP_STAGES` or `CLIENT_LOOP_STAGES` |
+| Change where the programs look for `assets/`, or how the executable is found | `findAssetFolder()` in `src/engine/Paths/AssetFolder.cpp`, `src/engine/Paths/ExecutablePath.cpp` |
 | Add an engine error | `src/engine/Exceptions/EngineException.hpp` |
 | Write a test that depends on time | `tests/SimulatedClock.hpp`, `tests/engine/Time/FixedTimestepTest.cpp` |
 

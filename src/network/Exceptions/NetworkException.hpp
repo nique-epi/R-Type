@@ -204,14 +204,17 @@ class MissingSimulatorOptionValueException : public NetworkException {
 };
 
 /**
- * @brief The conditions of a simulated network have a negative lag or jitter:
- * no network makes a datagram wait less than nothing, and no wait can be
- * drawn from a negative jitter.
+ * @brief The conditions of a simulated network have a lag or a jitter below
+ * zero or over the longest the simulator takes: no network makes a datagram
+ * wait less than nothing, no wait can be drawn from a negative jitter, and the
+ * longest keeps every wait far below one that would overflow the clock the
+ * waits are counted on.
  */
-class NegativeSimulatedDelayException : public NetworkException {
+class SimulatedDelayOutOfRangeException : public NetworkException {
  public:
-  NegativeSimulatedDelayException(std::chrono::milliseconds lag,
-                                  std::chrono::milliseconds jitter);
+  SimulatedDelayOutOfRangeException(std::chrono::milliseconds lag,
+                                    std::chrono::milliseconds jitter,
+                                    std::chrono::milliseconds longest);
 };
 
 }  // namespace rtype::network

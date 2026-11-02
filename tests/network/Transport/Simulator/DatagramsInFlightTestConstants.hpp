@@ -49,12 +49,30 @@ constexpr rtype::network::NetworkConditions EVERY_DEFECT{
     .duplicatePercent = 10,
     .reorderPercent = 10};
 
+/** @brief A time one second before the epoch of the steady clock, where a
+ * time point built with no value lies. */
+constexpr std::chrono::steady_clock::time_point BEFORE_THE_CLOCK_EPOCH{
+    std::chrono::seconds{-1}};
+
 /** @brief A lag and a jitter one millisecond below zero, the first value no
  * network shows. */
 constexpr rtype::network::NetworkConditions LAG_JUST_BELOW_ZERO{
     .lag = std::chrono::milliseconds{-1}};
 constexpr rtype::network::NetworkConditions JITTER_JUST_BELOW_ZERO{
     .jitter = std::chrono::milliseconds{-1}};
+
+/** @brief A lag and a jitter of ten seconds, the longest the simulator takes.
+ */
+constexpr rtype::network::NetworkConditions LAG_AND_JITTER_OF_TEN_SECONDS{
+    .lag = std::chrono::milliseconds{10000},
+    .jitter = std::chrono::milliseconds{10000}};
+
+/** @brief A lag and a jitter one millisecond over ten seconds, the first
+ * value the simulator refuses. */
+constexpr rtype::network::NetworkConditions LAG_JUST_OVER_TEN_SECONDS{
+    .lag = std::chrono::milliseconds{10001}};
+constexpr rtype::network::NetworkConditions JITTER_JUST_OVER_TEN_SECONDS{
+    .jitter = std::chrono::milliseconds{10001}};
 
 /** @brief How much longer the plan holds a reordered datagram. */
 constexpr std::chrono::milliseconds HOLD_OF_A_REORDERED_DATAGRAM{75};
@@ -64,6 +82,12 @@ constexpr std::chrono::milliseconds HOLD_OF_A_REORDERED_DATAGRAM{75};
 constexpr std::size_t THOUSAND_DATAGRAMS = 1000;
 constexpr std::size_t TEN_THOUSAND_DATAGRAMS = 10000;
 constexpr std::chrono::milliseconds ONE_MILLISECOND_APART{1};
+
+/** @brief How many datagrams one direction of a simulated network holds at
+ * once, one more, and a single datagram. */
+constexpr std::size_t DATAGRAMS_A_FULL_NETWORK_HOLDS = 8192;
+constexpr std::size_t ONE_DATAGRAM_MORE_THAN_IT_HOLDS = 8193;
+constexpr std::size_t ONE_DATAGRAM = 1;
 constexpr std::chrono::milliseconds TEN_MILLISECONDS_APART{10};
 constexpr std::chrono::milliseconds HUNDRED_MILLISECONDS_APART{100};
 

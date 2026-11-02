@@ -7,7 +7,7 @@ target_link_libraries(rtype_client_settings_file
     rtype_client_settings_text
     rtype_logging
   PRIVATE
-    rtype_client_assets
+    rtype_engine_paths
 )
 
 rtype_enable_warnings(rtype_client_settings_file)

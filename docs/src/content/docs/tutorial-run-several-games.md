@@ -7,7 +7,7 @@ This tutorial runs one `r-type_server` that hosts several games at once, fills a
 
 Every server command below was run before this page was written, and the lines come from the journals of those runs; the players of those runs were scripted over UDP, speaking the [protocol](/R-Type/protocol/), rather than client windows. You need the project built (see the [README](https://github.com/nique-epi/R-Type#readme)).
 
-The server has **no dashboard yet**: the journal is the only way to see its games, and it does not number them. A dashboard needs the master server and the server metrics, which do not exist yet; this page will gain its steps once they do.
+The server has **no dashboard yet**: the journal is the only way to see its games, and it does not number them, though it gives how many are in progress every 10 s (see [Metrics](/R-Type/server/#metrics-servermetricsmodule)). A dashboard needs the master server, which does not exist yet; this page will gain its steps once it does.
 
 ## What you will have at the end
 
@@ -21,13 +21,13 @@ The server has **no dashboard yet**: the journal is the only way to see its game
 
 ## Step 1: start the server
 
-From the repository root, where `assets/waves/waves.toml` (`WAVE_FILE_PATH`) is found:
+From the repository root, where the build writes `r-type_server`:
 
 ```bash
 ./r-type_server -p 4242 --seed 42
 ```
 
-There is nothing to ask for: a server always hosts `DEFAULT_HOSTED_GAME_COUNT` (8) games, created when it starts and kept until it stops. `--seed` is optional and makes the Bydos come out the same way at each launch. Each line goes both to the terminal and to the journal `r-type_server.log` (each line starts with a time, left out here):
+There is nothing to ask for: a server always hosts `DEFAULT_HOSTED_GAME_COUNT` (8) games, created when it starts and kept until it stops. `--seed` is optional and makes the Bydos come out the same way at each launch. Each line goes both to the terminal and to the journal `r-type_server.log`, next to the executable (each line starts with a time, left out here):
 
 ```text
 [INFO ] [Server] - server starting
@@ -96,7 +96,7 @@ cmake --workflow --preset build
 
 The server now creates two games, so the `BydoSpawner` line appears twice, and the ninth player is refused. Put the value back before you commit. A test that needs another number sets `GamesSettings::gameCount` itself, so no test depends on this constant.
 
-More games cost more per tick, and that cost is not measured yet. Every game runs on the simulation thread, one after the other, so a slow game slows the others, and an exception in one stops the server. The tick loop writes a line at the `warn` level when ticks stall; if you see `stalls since the previous report` in the journal, the server is holding more than the machine can run.
+More games cost more per tick, and the journal gives that cost every 10 s (see [Metrics](/R-Type/server/#metrics-servermetricsmodule)). Every game runs on the simulation thread, one after the other, so a slow game slows the others, and an exception in one stops the server. The tick loop writes a line at the `warn` level when ticks stall; if you see `stalls since the previous report` in the journal, the server is holding more than the machine can run.
 
 ## Step 5: run two servers side by side
 
@@ -128,7 +128,7 @@ Two servers know nothing of each other: a nickname is unique per server, and a f
 | You see | Cause | Fix |
 |---|---|---|
 | `Cannot open a UDP socket on 0.0.0.0 port 4242: Address already in use`, exit code 1 | Another server holds the port | Give another port with `-p`, or stop the other server |
-| The server stops at launch, naming `waves.toml` | It was not started from the repository root | Start it from there: see [Writing the waves file](/R-Type/waves-file/) |
+| The server stops at launch, naming `waves.toml` or `No assets folder found` | `assets/waves/waves.toml` was moved, or the executable was copied away from `assets/` | Put them back: see [Writing the waves file](/R-Type/waves-file/) |
 | `SERVER UNREACHABLE` on the client after 5 seconds | The server is not running, or the client names another port | Check `listening on UDP port` in the journal, and `-p` on the client |
 | `REFUSED: CALLSIGN TAKEN` on the client | Another player of that server holds it, or left less than 20 s ago without saying so | Pick another nickname, or wait for the seat to be freed |
-| The lines of two servers in one journal | Both write to the default `r-type_server.log` in one folder | Give each its own `--log-file` |
+| The lines of two servers in one journal | Both write to the default `r-type_server.log` next to the executable, whatever folder they were started in | Give each its own `--log-file` |

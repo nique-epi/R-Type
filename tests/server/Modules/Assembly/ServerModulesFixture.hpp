@@ -1,30 +1,24 @@
 #pragma once
 
-#include <cstddef>
 #include <cstdint>
-#include <filesystem>
 #include <string>
 #include <string_view>
 #include <vector>
+#include "CurrentDirectoryChange.hpp"
 #include "LaunchOptions.hpp"
 #include "MessageType.hpp"
 #include "ServerModuleFixture.hpp"
 #include "StopRequest.hpp"
+#include "TemporaryFolder.hpp"
 #include "UdpTestClient.hpp"
 
 /** @brief The base of the tests of the whole server: the launch options of a
- * server on a free port, the folder of the repository as the working folder
- * (the server reads assets/waves/waves.toml from there), and a client that
- * can join. */
+ * server on a free port, an empty folder as the working folder (the server
+ * finds its assets from its executable, next to which the build copies the
+ * waves file), and a client that can join. */
 class ServerModulesFixture : public ServerModuleFixture {
  public:
   ServerModulesFixture();
-  ~ServerModulesFixture() override;
-
-  ServerModulesFixture(const ServerModulesFixture&) = delete;
-  ServerModulesFixture& operator=(const ServerModulesFixture&) = delete;
-  ServerModulesFixture(ServerModulesFixture&&) = delete;
-  ServerModulesFixture& operator=(ServerModulesFixture&&) = delete;
 
  protected:
   /** @brief Has the client join the server through the whole handshake.
@@ -46,7 +40,8 @@ class ServerModulesFixture : public ServerModuleFixture {
   std::uint16_t port_;
   rtype::server::StopRequest stopRequest_;
   UdpTestClient client_;
-  std::filesystem::path previousFolder_;
+  TemporaryFolder workingFolder_;
+  CurrentDirectoryChange workingFolderChange_;
   std::string portText_;
   std::vector<std::string_view> arguments_;
   rtype::server::LaunchOptions launchOptions_;

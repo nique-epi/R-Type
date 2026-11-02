@@ -1,8 +1,6 @@
 #include "AssetIds.hpp"
 #include <algorithm>
 #include <cstddef>
-#include <filesystem>
-#include <string>
 #include <string_view>
 #include "AssetConstants.hpp"
 
@@ -40,14 +38,6 @@ bool isValidAssetId(std::string_view assetId) {
     }
     remaining.remove_prefix(separator + 1);
   }
-}
-
-std::string genericText(const std::filesystem::path& path) {
-  std::string text;
-  for (const char8_t character : path.generic_u8string()) {
-    text.push_back(static_cast<char>(character));
-  }
-  return text;
 }
 
 }  // namespace rtype::client

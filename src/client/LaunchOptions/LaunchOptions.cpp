@@ -1,5 +1,6 @@
 #include "LaunchOptions.hpp"
 #include <array>
+#include <cstdint>
 #include <span>
 #include <string>
 #include <string_view>
@@ -22,6 +23,68 @@
 
 namespace rtype::client {
 
+namespace {
+
+/**
+ * @returns `-h <address>`, which writes a checked IPv4 address into
+ * @p address.
+ */
+engine::LaunchOption addressOption(std::string& address) {
+  return engine::LaunchOption{.name = ADDRESS_OPTION,
+                              .takesValue = true,
+                              .record = [&address](std::string_view text) {
+                                address = network::ipv4AddressFromText(text);
+                              }};
+}
+
+/** @returns `-p <port>`, which writes a checked port into @p port. */
+engine::LaunchOption portOption(std::uint16_t& port) {
+  return engine::LaunchOption{.name = engine::PORT_OPTION,
+                              .takesValue = true,
+                              .record = [&port](std::string_view text) {
+                                port = network::portFromText(text);
+                              }};
+}
+
+/**
+ * @returns `-n <nickname>`, which writes the nickname into @p nickname.
+ * Its record throws InvalidNicknameOptionException for a nickname the
+ * protocol refuses.
+ */
+engine::LaunchOption nicknameOption(std::string& nickname) {
+  return engine::LaunchOption{
+      .name = NICKNAME_OPTION,
+      .takesValue = true,
+      .record = [&nickname](std::string_view callsign) {
+        if (!network::isValidNickname(callsign)) {
+          throw InvalidNicknameOptionException(callsign);
+        }
+        nickname = std::string(callsign);
+      }};
+}
+
+/** @returns `--no-sound`, which writes AudioMode::Disabled into @p mode. */
+engine::LaunchOption noSoundOption(AudioMode& mode) {
+  return engine::LaunchOption{
+      .name = NO_SOUND_OPTION,
+      .takesValue = false,
+      .record = [&mode]([[maybe_unused]] std::string_view value) {
+        mode = AudioMode::Disabled;
+      }};
+}
+
+/** @returns `--help`, which sets @p helpRequested. */
+engine::LaunchOption helpOption(bool& helpRequested) {
+  return engine::LaunchOption{
+      .name = engine::HELP_OPTION,
+      .takesValue = false,
+      .record = [&helpRequested]([[maybe_unused]] std::string_view value) {
+        helpRequested = true;
+      }};
+}
+
+}  // namespace
+
 LaunchOptions LaunchOptions::read(std::span<const std::string_view> arguments) {
   const network::SimulatorLaunchOptions simulatorOptions =
       network::SimulatorLaunchOptions::read(arguments);
@@ -30,46 +93,11 @@ LaunchOptions LaunchOptions::read(std::span<const std::string_view> arguments) {
                         .port = network::DEFAULT_SERVER_PORT},
       std::string(DEFAULT_NICKNAME), false};
   options.networkConditions_ = simulatorOptions.conditions();
-  const std::array launchOptions{
-      engine::LaunchOption{.name = ADDRESS_OPTION,
-                           .takesValue = true,
-                           .record =
-                               [&options](std::string_view address) {
-                                 options.serverEndpoint_.address =
-                                     network::ipv4AddressFromText(address);
-                               }},
-      engine::LaunchOption{.name = engine::PORT_OPTION,
-                           .takesValue = true,
-                           .record =
-                               [&options](std::string_view port) {
-                                 options.serverEndpoint_.port =
-                                     network::portFromText(port);
-                               }},
-      engine::LaunchOption{.name = NICKNAME_OPTION,
-                           .takesValue = true,
-                           .record =
-                               [&options](std::string_view nickname) {
-                                 if (!network::isValidNickname(nickname)) {
-                                   throw InvalidNicknameOptionException(
-                                       nickname);
-                                 }
-                                 options.nickname_ = std::string(nickname);
-                               }},
-      engine::LaunchOption{
-          .name = NO_SOUND_OPTION,
-          .takesValue = false,
-          .record =
-              [&options]([[maybe_unused]] std::string_view value) {
-                options.audioMode_ = AudioMode::Disabled;
-              }},
-      engine::LaunchOption{
-          .name = engine::HELP_OPTION,
-          .takesValue = false,
-          .record =
-              [&options]([[maybe_unused]] std::string_view value) {
-                options.helpRequested_ = true;
-              }},
-  };
+  const std::array launchOptions{addressOption(options.serverEndpoint_.address),
+                                 portOption(options.serverEndpoint_.port),
+                                 nicknameOption(options.nickname_),
+                                 noSoundOption(options.audioMode_),
+                                 helpOption(options.helpRequested_)};
   engine::readLaunchArguments(simulatorOptions.otherArguments(), launchOptions);
   return options;
 }

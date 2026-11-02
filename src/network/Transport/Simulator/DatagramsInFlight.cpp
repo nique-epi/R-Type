@@ -30,14 +30,24 @@ std::chrono::steady_clock::duration perCrossing(
 }
 
 /**
- * @returns A copy of @p conditions, once their lag and jitter are known not to
- * be negative.
- * @throws NegativeSimulatedDelayException when either is.
+ * @returns Whether @p delay is from 0 to MAXIMUM_SIMULATED_DELAY, so half of
+ * it converts to the clock of the simulator without overflow.
+ */
+bool isSimulatedDelay(std::chrono::milliseconds delay) {
+  return delay >= std::chrono::milliseconds::zero() &&
+         delay <= MAXIMUM_SIMULATED_DELAY;
+}
+
+/**
+ * @returns A copy of @p conditions, once their lag and jitter are known to be
+ * from 0 to MAXIMUM_SIMULATED_DELAY.
+ * @throws SimulatedDelayOutOfRangeException when either is not.
  */
 NetworkConditions checkedConditions(const NetworkConditions& conditions) {
-  if (conditions.lag < std::chrono::milliseconds::zero() ||
-      conditions.jitter < std::chrono::milliseconds::zero()) {
-    throw NegativeSimulatedDelayException(conditions.lag, conditions.jitter);
+  if (!isSimulatedDelay(conditions.lag) ||
+      !isSimulatedDelay(conditions.jitter)) {
+    throw SimulatedDelayOutOfRangeException(conditions.lag, conditions.jitter,
+                                            MAXIMUM_SIMULATED_DELAY);
   }
   return conditions;
 }
@@ -46,13 +56,17 @@ NetworkConditions checkedConditions(const NetworkConditions& conditions) {
 
 DatagramsInFlight::DatagramsInFlight(const NetworkConditions& conditions,
                                      std::uint32_t seed)
-    : conditions_(checkedConditions(conditions)), generator_(seed) {}
+    : conditions_(checkedConditions(conditions)),
+      generator_(seed),
+      latestInOrder_(std::chrono::steady_clock::time_point::min()) {}
 
 void DatagramsInFlight::add(const Endpoint& peer,
                             std::span<const std::byte> payload,
                             std::chrono::steady_clock::time_point now) {
   const int arrivals = arrivalCount();
-  for (int arrival = 0; arrival < arrivals; ++arrival) {
+  for (int arrival = 0;
+       arrival < arrivals && inFlight_.size() < MAXIMUM_DATAGRAMS_IN_FLIGHT;
+       ++arrival) {
     keep(DatagramInFlight{.arrival = arrivalOf(now),
                           .peer = peer,
                           .payload = {payload.begin(), payload.end()}});

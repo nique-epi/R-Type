@@ -11,6 +11,16 @@
 void handNumbered(rtype::network::DatagramsInFlight& inFlight,
                   std::size_t count, std::chrono::milliseconds spacing);
 
+/**
+ * @brief Hands @p count datagrams as handNumbered() does, and takes out what
+ * arrived after each one, as the timer of a DelayedDelivery does, so the
+ * datagrams held at once are only those still on their way.
+ * @returns Every arrival, in the order they arrived.
+ */
+[[nodiscard]] std::vector<rtype::network::DatagramInFlight>
+arrivalsWhileHanding(rtype::network::DatagramsInFlight& inFlight,
+                     std::size_t count, std::chrono::milliseconds spacing);
+
 /** @returns Every datagram in flight, in the order they arrive, however
  * late. */
 [[nodiscard]] std::vector<rtype::network::DatagramInFlight> everyArrival(

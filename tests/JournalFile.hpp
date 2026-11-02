@@ -2,6 +2,7 @@
 
 #include <filesystem>
 #include <string>
+#include <string_view>
 #include <vector>
 
 /**
@@ -24,6 +25,10 @@ class JournalFile {
 
   /** @return the journal, one string per line; empty when it does not exist. */
   [[nodiscard]] std::vector<std::string> lines() const;
+
+  /** @return the lines of the journal that hold @p text, oldest first. */
+  [[nodiscard]] std::vector<std::string> linesHolding(
+      std::string_view text) const;
 
  private:
   std::filesystem::path path_;

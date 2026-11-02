@@ -3,6 +3,7 @@
 #include <filesystem>
 #include <string>
 #include <vector>
+#include "ServerConstants.hpp"
 #include "ServerException.hpp"
 #include "WaveCatalog.hpp"
 #include "WaveCatalogFixtures.hpp"
@@ -14,6 +15,7 @@ using rtype::server::UnknownDifficultyException;
 using rtype::server::UnknownEnemyException;
 using rtype::server::UnknownWaveFileKeyException;
 using rtype::server::UnreadableWaveFileException;
+using rtype::server::WAVE_FILE_IN_ASSETS;
 using rtype::server::WaveCatalog;
 using rtype::server::WaveFileSyntaxException;
 using rtype::server::WaveFileTableExpectedException;
@@ -44,7 +46,6 @@ using rtype::server::testing::NOT_A_TABLE_TEXT;
 using rtype::server::testing::NOT_A_TOML_VALUE;
 using rtype::server::testing::NUMBER_AS_AN_ENEMY;
 using rtype::server::testing::ONE_BYDO_TOO_MANY;
-using rtype::server::testing::SHIPPED_FILE_IN_ASSETS;
 using rtype::server::testing::SHORTEST_EQUAL_TO_THE_FIRST;
 using rtype::server::testing::SHORTEST_LONGER_THAN_THE_FIRST;
 using rtype::server::testing::STORM_CURVE;
@@ -359,14 +360,13 @@ TEST(WaveCatalog, AMissingFileIsNamedByItsAbsolutePath) {
 }
 
 /**
- * Given the waves file the game ships
- * When it is read
+ * Given the waves file the game ships in its assets folder
+ * When the file the server reads in that folder is read
  * Then it describes easy, hard and normal, the difficulty every game plays
  */
 TEST(WaveCatalog, TheShippedFileDescribesEasyNormalAndHard) {
-  const WaveCatalog catalog =
-      WaveCatalog::fromFile(std::filesystem::path{RTYPE_SOURCE_ASSETS_FOLDER} /
-                            SHIPPED_FILE_IN_ASSETS);
+  const WaveCatalog catalog = WaveCatalog::fromFile(
+      std::filesystem::path{RTYPE_SOURCE_ASSETS_FOLDER} / WAVE_FILE_IN_ASSETS);
 
   EXPECT_EQ(catalog.difficulties(),
             (std::vector<std::string>{"easy", "hard", "normal"}));

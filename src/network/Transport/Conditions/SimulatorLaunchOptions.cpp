@@ -153,6 +153,41 @@ void appendUsageEntry(std::string& text, std::string_view option,
   text += '\n';
 }
 
+/** @brief Appends to the usage @p text the options followed by milliseconds:
+ * the lag and the jitter. */
+void appendDelayEntries(std::string& text) {
+  const std::string longestDelay =
+      std::to_string(MAXIMUM_SIMULATED_DELAY.count());
+  appendUsageEntry(text, std::string(LAG_OPTION) + " <ms>",
+                   "Milliseconds the ping gains, from 0 to " + longestDelay +
+                       ": each datagram sent or received waits half of them. "
+                       "Default: 0.");
+  appendUsageEntry(
+      text, std::string(JITTER_OPTION) + " <ms>",
+      "Milliseconds the ping may vary by, from 0 to " + longestDelay +
+          ": each datagram waits up to half of them more, drawn at random, "
+          "and never arrives before the one sent before it. Default: 0.");
+}
+
+/** @brief Appends to the usage @p text the options followed by a share of
+ * the datagrams: the loss, the duplicates and the reordering. */
+void appendShareEntries(std::string& text) {
+  const std::string largestShare = std::to_string(MAXIMUM_PERCENT);
+  appendUsageEntry(text, std::string(LOSS_OPTION) + " <percent>",
+                   "Percent of the datagrams sent or received that never "
+                   "arrive, from 0 to " +
+                       largestShare + ". Default: 0.");
+  appendUsageEntry(text, std::string(DUPLICATES_OPTION) + " <percent>",
+                   "Percent of the datagrams that arrive twice, from 0 to " +
+                       largestShare + ". Default: 0.");
+  appendUsageEntry(
+      text, std::string(REORDER_OPTION) + " <percent>",
+      "Percent of the datagrams held " + std::to_string(REORDER_HOLD.count()) +
+          " ms more, so the ones sent just after them arrive first, from 0 "
+          "to " +
+          largestShare + ". Default: 0.");
+}
+
 }  // namespace
 
 SimulatorLaunchOptions SimulatorLaunchOptions::read(
@@ -189,9 +224,6 @@ std::span<const std::string_view> SimulatorLaunchOptions::otherArguments()
 }
 
 std::string SimulatorLaunchOptions::usage() {
-  const std::string longestDelay =
-      std::to_string(MAXIMUM_SIMULATED_DELAY.count());
-  const std::string largestShare = std::to_string(MAXIMUM_PERCENT);
   std::string text{SIMULATOR_USAGE_TITLE};
   text += '\n';
   appendUsageEntry(
@@ -200,28 +232,8 @@ std::string SimulatorLaunchOptions::usage() {
           scenarioList() +
           ". An option given after it changes one of its values. Default: "
           "none, the network is not simulated.");
-  appendUsageEntry(text, std::string(LAG_OPTION) + " <ms>",
-                   "Milliseconds the ping gains, from 0 to " + longestDelay +
-                       ": each datagram sent or received waits half of them. "
-                       "Default: 0.");
-  appendUsageEntry(
-      text, std::string(JITTER_OPTION) + " <ms>",
-      "Milliseconds the ping may vary by, from 0 to " + longestDelay +
-          ": each datagram waits up to half of them more, drawn at random, "
-          "and never arrives before the one sent before it. Default: 0.");
-  appendUsageEntry(text, std::string(LOSS_OPTION) + " <percent>",
-                   "Percent of the datagrams sent or received that never "
-                   "arrive, from 0 to " +
-                       largestShare + ". Default: 0.");
-  appendUsageEntry(text, std::string(DUPLICATES_OPTION) + " <percent>",
-                   "Percent of the datagrams that arrive twice, from 0 to " +
-                       largestShare + ". Default: 0.");
-  appendUsageEntry(
-      text, std::string(REORDER_OPTION) + " <percent>",
-      "Percent of the datagrams held " + std::to_string(REORDER_HOLD.count()) +
-          " ms more, so the ones sent just after them arrive first, from 0 "
-          "to " +
-          largestShare + ". Default: 0.");
+  appendDelayEntries(text);
+  appendShareEntries(text);
   return text;
 }
 

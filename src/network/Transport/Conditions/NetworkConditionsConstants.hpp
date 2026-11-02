@@ -28,8 +28,9 @@ constexpr std::string_view DUPLICATES_OPTION = "--duplicates";
 constexpr std::string_view REORDER_OPTION = "--reorder";
 
 /**
- * @brief Longest lag or jitter the options take: ten seconds, far past any
- * playable ping. The bound only refuses a mistyped value.
+ * @brief Longest lag or jitter the simulator takes, from the options or not:
+ * ten seconds, far past any playable ping, and far below a wait that would
+ * overflow the clock the waits are counted on.
  */
 constexpr std::chrono::milliseconds MAXIMUM_SIMULATED_DELAY{10000};
 

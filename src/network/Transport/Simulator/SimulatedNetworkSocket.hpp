@@ -25,7 +25,7 @@ class SimulatedNetworkSocket final : public IDatagramSocket {
  public:
   /**
    * @param socket The real socket the datagrams go through; it is owned.
-   * @throws NegativeSimulatedDelayException as DatagramsInFlight does.
+   * @throws SimulatedDelayOutOfRangeException as DatagramsInFlight does.
    */
   SimulatedNetworkSocket(NetworkContext& context,
                          std::unique_ptr<IDatagramSocket> socket,
