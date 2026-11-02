@@ -11,6 +11,8 @@ target_link_libraries(rtype_client_connection
     rtype_network_entity_spawned
     rtype_network_game_ended
     rtype_network_game_event
+    rtype_network_leaderboard_answer
+    rtype_network_leaderboard_request
     rtype_network_lobby_state
     rtype_network_player_left
     rtype_network_protocol
