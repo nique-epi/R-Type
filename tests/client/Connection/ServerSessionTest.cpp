@@ -1278,6 +1278,22 @@ TEST_F(ServerSessionFixture, AcknowledgesNothingWhileItConnects) {
 }
 
 /**
+ * Given a session that accepted a datagram of the server
+ * When the player connects again
+ * Then the request of the new attempt acknowledges nothing of the session left
+ */
+TEST_F(ServerSessionFixture,
+       AcknowledgesNothingOfTheSessionLeftWhenItConnects) {
+  accept();
+  deliverInSession(network::Heartbeat{}, FIRST_SEQUENCE);
+  update();
+
+  connect();
+
+  EXPECT_EQ(lastHeader().flags, 0);
+}
+
+/**
  * Given a session whose server sent FIRST_SEQUENCE and THIRD_SEQUENCE after
  * the acceptance (ACCEPTANCE_SEQUENCE), SECOND_SEQUENCE being lost
  * When the player changes its ready state

@@ -147,22 +147,36 @@ TEST(SessionAcknowledgements, KeepTheWaitOfTheOldestGuarantee) {
 }
 
 /**
- * Given a session that accepted a datagram holding guaranteed messages
- * When the session closes, and ACKNOWLEDGEMENT_DELAY passes
- * Then nothing is due, and a header acknowledges nothing
+ * Given a session that accepted a datagram
+ * When the session closes
+ * Then a header acknowledges nothing
  */
-TEST(SessionAcknowledgements, ForgetEverythingWhenTheSessionCloses) {
+TEST(SessionAcknowledgements, ForgetTheSequencesWhenTheSessionCloses) {
   SessionAcknowledgements acknowledgements;
   acknowledgements.open(ACCEPTANCE_SEQUENCE);
-  ASSERT_TRUE(acknowledgements.accept(guaranteedSessionHeader(FIRST_SEQUENCE)));
+  ASSERT_TRUE(acknowledgements.accept(sessionHeader(FIRST_SEQUENCE)));
   network::PacketHeader header;
 
   acknowledgements.close();
-  acknowledgements.advance(PROTOCOL_ACKNOWLEDGEMENT_DELAY);
   acknowledgements.acknowledgeIn(header);
 
-  EXPECT_FALSE(acknowledgements.isAcknowledgementDue());
   EXPECT_EQ(header, network::PacketHeader{});
+}
+
+/**
+ * Given a session that accepted a datagram holding guaranteed messages
+ * When the session closes, and ACKNOWLEDGEMENT_DELAY passes
+ * Then no acknowledgement is due
+ */
+TEST(SessionAcknowledgements, ForgetTheWaitWhenTheSessionCloses) {
+  SessionAcknowledgements acknowledgements;
+  acknowledgements.open(ACCEPTANCE_SEQUENCE);
+  ASSERT_TRUE(acknowledgements.accept(guaranteedSessionHeader(FIRST_SEQUENCE)));
+
+  acknowledgements.close();
+  acknowledgements.advance(PROTOCOL_ACKNOWLEDGEMENT_DELAY);
+
+  EXPECT_FALSE(acknowledgements.isAcknowledgementDue());
 }
 
 }  // namespace rtype::client
