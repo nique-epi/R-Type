@@ -76,6 +76,7 @@ Paths below are relative to `.claude/rules/`.
 - `architecture/fix-architecture-a-function-does-one-kind-of-step.md`
 - `architecture/fix-architecture-a-module-install-keeps-nothing-open.md`
 - `architecture/fix-architecture-a-module-start-that-throws-closes-what-it-opened.md`
+- `architecture/fix-architecture-at-most-35-lines-per-function.md`
 - `architecture/fix-architecture-at-most-ten-methods-per-class.md`
 - `architecture/fix-architecture-at-most-three-parameters.md`
 - `architecture/fix-architecture-inherit-interfaces-compose-implementations.md`
@@ -94,7 +95,9 @@ Paths below are relative to `.claude/rules/`.
 - `code-style/code-style-private-members-trailing-underscore.md`
 - `code-style/code-style-tests-given-when-then.md`
 - `code-style/fix-format-a-constants-header-ends-in-constants.md`
+- `code-style/fix-format-a-sum-over-a-range-is-a-loop.md`
 - `code-style/fix-format-a-test-file-holds-only-tests.md`
+- `code-style/fix-format-a-test-reads-an-optional-with-value-or.md`
 - `code-style/fix-format-designated-initializers-for-aggregates.md`
 - `code-style/fix-format-name-after-data-not-process.md`
 - `code-style/fix-reasoning-a-pointer-into-a-temporary-dies-with-it.md`

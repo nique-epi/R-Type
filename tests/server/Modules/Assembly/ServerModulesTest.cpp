@@ -24,10 +24,10 @@ using rtype::server::serverModules;
 /**
  * Given the modules of the server
  * When they are listed
- * Then they are the journal, the network, the games and the lobby, in the order
- * they start
+ * Then they are the journal, the network, the games, the lobby and the metrics,
+ * in the order they start
  */
-TEST_F(ServerModulesFixture, ListsTheLoggerTheNetworkTheGamesAndTheLobby) {
+TEST_F(ServerModulesFixture, ListsTheServerModulesWithTheMetricsLast) {
   const auto modules =
       serverModules(journalOptions(), launchOptions(), stopRequest());
 
@@ -40,7 +40,8 @@ TEST_F(ServerModulesFixture, ListsTheLoggerTheNetworkTheGamesAndTheLobby) {
                        std::string{rtype::server::LOGGER_MODULE_NAME},
                        std::string{rtype::server::NETWORK_MODULE_NAME},
                        std::string{rtype::server::GAMES_MODULE_NAME},
-                       std::string{rtype::server::LOBBY_MODULE_NAME}}));
+                       std::string{rtype::server::LOBBY_MODULE_NAME},
+                       std::string{rtype::server::METRICS_MODULE_NAME}}));
 }
 
 /**

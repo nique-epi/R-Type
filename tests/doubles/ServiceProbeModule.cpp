@@ -6,6 +6,7 @@
 #include "IDatagramSender.hpp"
 #include "IPlayerAdmission.hpp"
 #include "InstallContext.hpp"
+#include "LatestMetrics.hpp"
 #include "ServerConstants.hpp"
 #include "StageWork.hpp"
 #include "TickDatagrams.hpp"
@@ -28,6 +29,7 @@ void ServiceProbeModule::install(rtype::engine::InstallContext& context) {
   admission_ = context.find<rtype::server::IPlayerAdmission>();
   tickDatagrams_ = context.find<rtype::server::TickDatagrams>();
   games_ = context.find<rtype::server::Games>();
+  latestMetrics_ = context.find<rtype::server::LatestMetrics>();
   context.addWork(rtype::server::SIMULATION_STAGE, work_);
 }
 
@@ -48,3 +50,7 @@ rtype::server::TickDatagrams* ServiceProbeModule::tickDatagrams() const {
 }
 
 rtype::server::Games* ServiceProbeModule::games() const { return games_; }
+
+rtype::server::LatestMetrics* ServiceProbeModule::latestMetrics() const {
+  return latestMetrics_;
+}

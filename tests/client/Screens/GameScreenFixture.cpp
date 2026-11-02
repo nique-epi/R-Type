@@ -34,6 +34,7 @@ GameScreenFixture::GameScreenFixture()
                               .inputs = inputs_,
                               .entityMessages = entityMessages_,
                               .connection = connection_,
+                              .waitingRoom = waitingRoom_,
                               .sky = sky_,
                               .sounds = sounds_,
                               .result = result_},
@@ -44,7 +45,7 @@ GameScreenFixture::GameScreenFixture()
       }) {}
 
 void GameScreenFixture::SetUp() {
-  seatThreePilots(connection_);
+  seatThreePilots(connection_, waitingRoom_);
   layerRecord_.drawJournal = &drawJournal_;
   statusCanvas_.drawJournal = &drawJournal_;
   screens_.push(GAME_SCREEN);

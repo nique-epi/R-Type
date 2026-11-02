@@ -128,6 +128,8 @@ components.forEach<rtype::game::Position, rtype::game::Velocity>(
 
 `SystemScheduler` runs systems in the order they were added with `add()`. The order never changes, so every `run(components, elapsed)` calls the systems in the same sequence. A system added later sees what the earlier ones did, including the entities they destroyed. `add()` must not be called from inside a system, and a null system throws `NullSystemException`.
 
+It can measure its systems. After `measureWith(clock)`, each `run()` reads the clock between two systems, allocating nothing, and `takeSystemTimes()` gives how long each one ran since the previous call, as a `SystemTime` under the name given to `add()`, then starts again from zero. A name is a text that outlives the scheduler, such as a constant, and it is empty unless given. `measureWith(nullptr)` stops measuring, and a scheduler given no clock reads none. The server reads these times in its metrics (see [Server](/R-Type/server/#metrics-servermetricsmodule)).
+
 ## Game loop: time
 
 The simulation runs at a fixed rate, `SIMULATION_TICKS_PER_SECOND` (60), whatever the rendering rate (`TimeConstants.hpp`).
