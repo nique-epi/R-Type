@@ -24,7 +24,7 @@ using rtype::client::LeaderboardTab;
 using rtype::client::MotionPreference;
 
 LeaderboardScreenFixture::LeaderboardScreenFixture(MotionPreference motion)
-    : screen_(
+    : screen_(std::make_unique<LeaderboardScreen>(
           LeaderboardScreenParts{
               .navigator = navigator_,
               .sounds = sounds_,
@@ -34,15 +34,15 @@ LeaderboardScreenFixture::LeaderboardScreenFixture(MotionPreference motion)
               .playfieldPointAt = samePlayfieldPoint,
               .keyName = nameInTheFile,
               .motion = motion},
-          std::make_unique<RecordingInterfaceCanvas>(canvas_)) {}
+          std::make_unique<RecordingInterfaceCanvas>(canvas_))) {}
 
 void LeaderboardScreenFixture::tap(sf::Keyboard::Key key) {
-  tapKey(screen_, key);
+  tapKey(*screen_, key);
 }
 
 void LeaderboardScreenFixture::show(LeaderboardPage page) {
   source_.setPage(std::move(page));
-  screen_.update(ONE_FRAME);
+  screen_->update(ONE_FRAME);
 }
 
 const RecordingNavigator& LeaderboardScreenFixture::navigator() const {
@@ -57,7 +57,9 @@ const InterfaceCanvasRecord& LeaderboardScreenFixture::canvas() const {
   return canvas_;
 }
 
-LeaderboardScreen& LeaderboardScreenFixture::screen() { return screen_; }
+LeaderboardScreen& LeaderboardScreenFixture::screen() { return *screen_; }
+
+void LeaderboardScreenFixture::closeScreen() { screen_.reset(); }
 
 StillLeaderboardFixture::StillLeaderboardFixture()
     : LeaderboardScreenFixture(MotionPreference::Reduced) {}

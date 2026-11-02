@@ -2,6 +2,7 @@
 
 #include <gtest/gtest.h>
 #include <SFML/Window/Keyboard.hpp>
+#include <memory>
 #include "LeaderboardPage.hpp"
 #include "LeaderboardScreen.hpp"
 #include "MotionPreference.hpp"
@@ -28,12 +29,15 @@ class LeaderboardScreenFixture : public ::testing::Test {
   [[nodiscard]] const InterfaceCanvasRecord& canvas() const;
   [[nodiscard]] rtype::client::LeaderboardScreen& screen();
 
+  /** @brief Destroys the screen, as the stack does when it leaves. */
+  void closeScreen();
+
  private:
   RecordingNavigator navigator_;
   RecordingSoundPlayer sounds_;
   RecordingLeaderboardSource source_;
   InterfaceCanvasRecord canvas_;
-  rtype::client::LeaderboardScreen screen_;
+  std::unique_ptr<rtype::client::LeaderboardScreen> screen_;
 };
 
 /** @brief The same screen while the system asks for less motion. */

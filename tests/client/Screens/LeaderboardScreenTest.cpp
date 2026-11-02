@@ -17,11 +17,13 @@
 #include "RecordingInterfaceCanvas.hpp"
 #include "RecordingNavigator.hpp"
 #include "ScreenTestConstants.hpp"
+#include "WidgetConstants.hpp"
 
 using rtype::client::CONNECTION_SCREEN;
 using rtype::client::LEADERBOARD_SHEET_ID;
 using rtype::client::LeaderboardPage;
 using rtype::client::LeaderboardPhase;
+using rtype::client::PRESS_DURATION;
 using rtype::client::testing::BANNER_FRAME;
 using rtype::client::testing::FIRST_NAME;
 using rtype::client::testing::LEFT_BANNER;
@@ -40,6 +42,66 @@ using ::testing::IsEmpty;
 TEST_F(LeaderboardScreenFixture, ItAsksTheOpenTabAtOnce) {
   EXPECT_THAT(source().asked(), ElementsAre(LeaderboardRequest{
                                     .playerCount = 2, .difficulty = "normal"}));
+}
+
+/**
+ * Given a screen on NORMAL and two pilots, its filter open
+ * When the player steps the difficulty, reaches APPLY and presses it
+ * Then the source is asked for the leaderboard the player picked
+ */
+TEST_F(LeaderboardScreenFixture, ApplyingAFilterAsksAgain) {
+  tap(sf::Keyboard::Key::F);
+  tap(sf::Keyboard::Key::Right);
+  tap(sf::Keyboard::Key::Down);
+  tap(sf::Keyboard::Key::Down);
+  tap(sf::Keyboard::Key::Down);
+
+  tap(sf::Keyboard::Key::Enter);
+  screen().update(PRESS_DURATION);
+
+  EXPECT_THAT(
+      source().asked(),
+      ElementsAre(LeaderboardRequest{.playerCount = 2, .difficulty = "normal"},
+                  LeaderboardRequest{.playerCount = 2, .difficulty = "hard"}));
+}
+
+/**
+ * Given a screen whose filter opened, and a value stepped
+ * When Escape closes the filter
+ * Then the source was asked nothing more
+ */
+TEST_F(LeaderboardScreenFixture, ClosingTheFilterAsksNothing) {
+  tap(sf::Keyboard::Key::F);
+  tap(sf::Keyboard::Key::Right);
+
+  tap(sf::Keyboard::Key::Escape);
+  screen().update(ONE_FRAME);
+
+  EXPECT_EQ(source().asked().size(), 1);
+}
+
+/**
+ * Given a screen that went to the tab without a source
+ * When the player comes back to the first tab
+ * Then its source is asked again
+ */
+TEST_F(LeaderboardScreenFixture, ComingBackToATabAsksAgain) {
+  screen().handleEvent(keyPress(sf::Keyboard::Key::E, sf::Keyboard::Scan::E));
+
+  screen().handleEvent(keyPress(sf::Keyboard::Key::Q, sf::Keyboard::Scan::Q));
+
+  EXPECT_EQ(source().asked().size(), 2);
+}
+
+/**
+ * Given a screen reading its source
+ * When the screen is destroyed
+ * Then the source stops asking: no request outlives the screen
+ */
+TEST_F(LeaderboardScreenFixture, LeavingStopsAsking) {
+  closeScreen();
+
+  EXPECT_EQ(source().stopCount(), 1);
 }
 
 /**
