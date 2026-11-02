@@ -13,13 +13,13 @@
 #include "FrameLoop.hpp"
 #include "GameWindow.hpp"
 #include "IAudioService.hpp"
-#include "ISettingsStorage.hpp"
 #include "InstallContext.hpp"
 #include "ModuleConstants.hpp"
 #include "PlayerSettings.hpp"
 #include "ScreenRegistry.hpp"
 #include "ScreenServices.hpp"
 #include "ServerConnection.hpp"
+#include "SettingsService.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::client {
@@ -46,7 +46,7 @@ std::vector<std::string> ClientScreensModule::dependencies() const {
 
 void ClientScreensModule::install(engine::InstallContext& context) {
   settings_ = &context.require<PlayerSettings>();
-  storage_ = &context.require<ISettingsStorage>();
+  settingsService_ = &context.require<SettingsService>();
   assets_ = &context.require<AssetLibrary>();
   audio_ = &context.require<IAudioService>();
   window_ = &context.require<GameWindow>();
@@ -63,16 +63,16 @@ void ClientScreensModule::install(engine::InstallContext& context) {
 }
 
 void ClientScreensModule::start() {
-  screens_ =
-      std::make_unique<ClientScreens>(ScreenServices{.settings = *settings_,
-                                                     .storage = *storage_,
-                                                     .assets = *assets_,
-                                                     .audio = *audio_,
-                                                     .window = *window_,
-                                                     .connection = *connection_,
-                                                     .server = server_,
-                                                     .nickname = nickname_},
-                                      *registry_);
+  screens_ = std::make_unique<ClientScreens>(
+      ScreenServices{.settings = *settings_,
+                     .settingsService = *settingsService_,
+                     .assets = *assets_,
+                     .audio = *audio_,
+                     .window = *window_,
+                     .connection = *connection_,
+                     .server = server_,
+                     .nickname = nickname_},
+      *registry_);
   listenerHandle_ = listeners_->add([this](const sf::Event& event) {
     screens_->handleEvent(event);
     return EventUse::Kept;

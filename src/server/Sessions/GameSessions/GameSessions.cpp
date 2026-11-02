@@ -9,6 +9,7 @@
 #include "GameSessionsParts.hpp"
 #include "Heartbeat.hpp"
 #include "Heartbeats.hpp"
+#include "IClock.hpp"
 #include "IncomingDatagram.hpp"
 #include "MessageOrigin.hpp"
 #include "PacketHeader.hpp"
@@ -18,11 +19,14 @@
 #include "PlayerRoster.hpp"
 #include "ReadyState.hpp"
 #include "SessionDatagram.hpp"
+#include "TimeConstants.hpp"
 
 namespace rtype::server {
 
 GameSessions::GameSessions(GameSessionsParts parts)
     : send_(std::move(parts.send)),
+      clock_(&parts.clock.get()),
+      previousTickStart_(clock_->now()),
       reader_(roster_),
       readyKeeper_(roster_, std::move(parts.readyAccepted)),
       inputKeeper_(roster_, std::move(parts.onNewerInput)),
@@ -59,6 +63,12 @@ void GameSessions::closeSilentSessions() { departures_.closeSilentSessions(); }
 
 bool GameSessions::everyPlayerIsReady() {
   return readyKeeper_.everyPlayerIsReady();
+}
+
+void GameSessions::startTick() {
+  const engine::Duration tickStart = clock_->now();
+  addTimeSinceSent(roster_,
+                   tickStart - std::exchange(previousTickStart_, tickStart));
 }
 
 void GameSessions::endTick() {
