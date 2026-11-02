@@ -35,13 +35,13 @@ constexpr double TWELVE_TICKS_BEHIND_THE_FIFTH_STATE = 72.0;
 constexpr double TWELVE_TICKS_BEHIND_THE_FAR_STATE = 588.0;
 constexpr double SIX_TICKS_AFTER_THE_FIRST_STATE = 66.0;
 
-/** @brief SIMULATION_TICK_DURATION holds whole nanoseconds, so a frame of
- * "one tick" is 4e-8 of a tick short: the shown tick is checked to a
- * hundred-thousandth of a tick. */
 /** @brief What a test reads when the clock shows nothing: a tick no test
  * expects. */
 constexpr double NO_SHOWN_TICK = -1.0e9;
 
+/** @brief SIMULATION_TICK_DURATION holds whole nanoseconds, so a frame of
+ * "one tick" is 4e-8 of a tick short: the shown tick is checked to a
+ * hundred-thousandth of a tick. */
 constexpr double SHOWN_TICK_TOLERANCE = 1e-5;
 
 /** @brief An entity with two samples, at ticks 48 and 60: halfway between them
