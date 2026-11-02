@@ -6,6 +6,7 @@
 #include <vector>
 #include "AudioMode.hpp"
 #include "Endpoint.hpp"
+#include "LaunchValues.hpp"
 
 namespace rtype::client {
 
@@ -75,14 +76,9 @@ class LaunchOptions {
   [[nodiscard]] bool helpRequested() const;
 
  private:
-  LaunchOptions(network::Endpoint serverEndpoint, std::string nickname,
-                bool helpRequested);
+  explicit LaunchOptions(LaunchValues values);
 
-  network::Endpoint serverEndpoint_;
-  std::string nickname_;
-  bool helpRequested_;
-  AudioMode audioMode_{AudioMode::Enabled};
-  std::vector<std::string> forcedLines_;
+  LaunchValues values_;
 };
 
 }  // namespace rtype::client

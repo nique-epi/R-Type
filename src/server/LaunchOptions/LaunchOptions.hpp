@@ -4,6 +4,7 @@
 #include <string>
 #include <string_view>
 #include <vector>
+#include "LaunchValues.hpp"
 
 namespace rtype::server {
 
@@ -58,8 +59,9 @@ class LaunchOptions {
   [[nodiscard]] bool helpRequested() const;
 
  private:
-  std::vector<std::string> forcedLines_;
-  bool helpRequested_{false};
+  explicit LaunchOptions(LaunchValues values);
+
+  LaunchValues values_;
 };
 
 }  // namespace rtype::server

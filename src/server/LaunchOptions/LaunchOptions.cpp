@@ -7,12 +7,14 @@
 #include <string>
 #include <string_view>
 #include <system_error>
+#include <utility>
 #include <vector>
 #include "EndpointText.hpp"
 #include "EngineException.hpp"
 #include "LaunchArguments.hpp"
 #include "LaunchArgumentsConstants.hpp"
 #include "LaunchOption.hpp"
+#include "LaunchValues.hpp"
 #include "LogLaunchOptions.hpp"
 #include "LoggingConstants.hpp"
 #include "NetworkConstants.hpp"
@@ -64,55 +66,76 @@ std::size_t stateRateFromText(std::string_view text) {
   return rate;
 }
 
+/**
+ * @returns `-p <port>`, which forces the port setting to a checked port.
+ */
+engine::LaunchOption portOption(LaunchValues& values) {
+  return engine::LaunchOption{
+      .name = engine::PORT_OPTION,
+      .takesValue = true,
+      .record = [&values](std::string_view port) {
+        values.forcedLines.push_back(engine::settingLine(
+            PORT_SETTING_NAME, std::to_string(network::portFromText(port))));
+      }};
+}
+
+/**
+ * @returns `--seed <seed>`, which forces the seed setting to a checked seed.
+ */
+engine::LaunchOption seedOption(LaunchValues& values) {
+  return engine::LaunchOption{
+      .name = SEED_OPTION,
+      .takesValue = true,
+      .record = [&values](std::string_view seed) {
+        values.forcedLines.push_back(engine::settingLine(
+            SEED_SETTING_NAME, std::to_string(seedFromText(seed))));
+      }};
+}
+
+/**
+ * @returns `--state-rate <states>`, which forces the state rate setting to a
+ * checked rate.
+ */
+engine::LaunchOption stateRateOption(LaunchValues& values) {
+  return engine::LaunchOption{
+      .name = STATE_RATE_OPTION,
+      .takesValue = true,
+      .record = [&values](std::string_view rate) {
+        values.forcedLines.push_back(engine::settingLine(
+            STATE_RATE_SETTING_NAME, std::to_string(stateRateFromText(rate))));
+      }};
+}
+
+/** @returns `--set <name>=<value>`, which forces any setting. */
+engine::LaunchOption setOption(LaunchValues& values) {
+  return engine::LaunchOption{
+      .name = engine::SET_OPTION,
+      .takesValue = true,
+      .record = [&values](std::string_view assignment) {
+        values.forcedLines.push_back(
+            engine::settingLineFromSetOption(assignment));
+      }};
+}
+
+/** @returns `--help`, which asks for the usage. */
+engine::LaunchOption helpOption(LaunchValues& values) {
+  return engine::LaunchOption{
+      .name = engine::HELP_OPTION,
+      .takesValue = false,
+      .record = [&values]([[maybe_unused]] std::string_view value) {
+        values.helpRequested = true;
+      }};
+}
+
 }  // namespace
 
 LaunchOptions LaunchOptions::read(std::span<const std::string_view> arguments) {
-  LaunchOptions options;
-  const std::array launchOptions{
-      engine::LaunchOption{
-          .name = engine::PORT_OPTION,
-          .takesValue = true,
-          .record =
-              [&options](std::string_view port) {
-                options.forcedLines_.push_back(engine::settingLine(
-                    PORT_SETTING_NAME,
-                    std::to_string(network::portFromText(port))));
-              }},
-      engine::LaunchOption{
-          .name = SEED_OPTION,
-          .takesValue = true,
-          .record =
-              [&options](std::string_view seed) {
-                options.forcedLines_.push_back(engine::settingLine(
-                    SEED_SETTING_NAME, std::to_string(seedFromText(seed))));
-              }},
-      engine::LaunchOption{
-          .name = STATE_RATE_OPTION,
-          .takesValue = true,
-          .record =
-              [&options](std::string_view rate) {
-                options.forcedLines_.push_back(engine::settingLine(
-                    STATE_RATE_SETTING_NAME,
-                    std::to_string(stateRateFromText(rate))));
-              }},
-      engine::LaunchOption{
-          .name = engine::SET_OPTION,
-          .takesValue = true,
-          .record =
-              [&options](std::string_view assignment) {
-                options.forcedLines_.push_back(
-                    engine::settingLineFromSetOption(assignment));
-              }},
-      engine::LaunchOption{
-          .name = engine::HELP_OPTION,
-          .takesValue = false,
-          .record =
-              [&options]([[maybe_unused]] std::string_view value) {
-                options.helpRequested_ = true;
-              }},
-  };
+  LaunchValues values{.forcedLines = {}, .helpRequested = false};
+  const std::array launchOptions{portOption(values), seedOption(values),
+                                 stateRateOption(values), setOption(values),
+                                 helpOption(values)};
   engine::readLaunchArguments(arguments, launchOptions);
-  return options;
+  return LaunchOptions{std::move(values)};
 }
 
 std::string LaunchOptions::usage() {
@@ -152,9 +175,12 @@ std::string LaunchOptions::usage() {
 }
 
 const std::vector<std::string>& LaunchOptions::forcedLines() const {
-  return forcedLines_;
+  return values_.forcedLines;
 }
 
-bool LaunchOptions::helpRequested() const { return helpRequested_; }
+bool LaunchOptions::helpRequested() const { return values_.helpRequested; }
+
+LaunchOptions::LaunchOptions(LaunchValues values)
+    : values_(std::move(values)) {}
 
 }  // namespace rtype::server
