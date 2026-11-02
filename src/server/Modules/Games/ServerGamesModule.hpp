@@ -11,6 +11,7 @@
 #include "IDatagramSender.hpp"
 #include "IModule.hpp"
 #include "IPlayerAdmission.hpp"
+#include "IResultsArchive.hpp"
 #include "IncomingDatagram.hpp"
 #include "InstallContext.hpp"
 #include "Logger.hpp"
@@ -51,7 +52,8 @@ class ServerGamesModule final : public engine::IModule {
 
   /**
    * @throws MissingServiceException when the network module did not provide
-   * the sender, the admission or the datagrams of the tick.
+   * the sender, the admission or the datagrams of the tick, or the storage
+   * module the results archive.
    */
   void install(engine::InstallContext& context) override;
 
@@ -82,6 +84,7 @@ class ServerGamesModule final : public engine::IModule {
   Games games_;
   IDatagramSender* sender_{nullptr};
   IPlayerAdmission* admission_{nullptr};
+  IResultsArchive* results_{nullptr};
   TickDatagrams* tickDatagrams_{nullptr};
   std::vector<network::IncomingDatagram> datagramsOfGame_;
 };

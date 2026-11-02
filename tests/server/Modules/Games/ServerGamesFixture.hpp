@@ -6,7 +6,6 @@
 #include <vector>
 #include "Application.hpp"
 #include "ConnectedPlayer.hpp"
-#include "GameInstance.hpp"
 #include "GamesSettings.hpp"
 #include "IModule.hpp"
 #include "IncomingDatagram.hpp"
@@ -14,6 +13,7 @@
 #include "RecordingNetworkModule.hpp"
 #include "ServerModuleFixture.hpp"
 #include "ServiceProbeModule.hpp"
+#include "TemporaryFolder.hpp"
 
 /** @brief The base of the tests of the games module: the logger module, a
  * network module that records, the games module on the shipped waves file, and
@@ -54,6 +54,7 @@ class ServerGamesFixture : public ServerModuleFixture {
   [[nodiscard]] ServiceProbeModule& probe();
 
  private:
+  TemporaryFolder databaseFolder_;
   std::unique_ptr<rtype::engine::Application> application_;
   RecordingNetworkModule* network_{nullptr};
   ServiceProbeModule* probe_{nullptr};

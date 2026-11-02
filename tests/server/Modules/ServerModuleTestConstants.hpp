@@ -3,11 +3,15 @@
 #include <chrono>
 #include <cstddef>
 #include <cstdint>
+#include <string_view>
 
 /** @brief The names of the probe modules the tests list after the modules of
  * the server. */
 constexpr const char* PROBE_MODULE = "probe";
 constexpr const char* PORT_PROBE_MODULE = "port probe";
+
+/** @brief The database of a server a test starts, in a folder of the test. */
+constexpr std::string_view TEST_DATABASE_FILE = "results.db";
 
 /** @brief The text the failing stage work of the tests throws. */
 constexpr const char* STAGE_FAILURE_TEXT = "a stage failed";

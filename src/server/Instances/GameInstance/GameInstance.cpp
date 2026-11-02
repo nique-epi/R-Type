@@ -75,6 +75,7 @@ GameContext contextOf(GameInstanceParts parts, GameSessions& sessions,
                      .systems = own.systems,
                      .roster = sessions.roster(),
                      .hooks = own.hooks,
+                     .messages = sessions.messages(),
                      .settings = std::move(parts.settings),
                      .send = std::move(parts.send),
                      .everyPlayerIsReady = [&sessions] {

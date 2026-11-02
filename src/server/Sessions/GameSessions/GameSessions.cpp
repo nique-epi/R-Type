@@ -12,6 +12,7 @@
 #include "Heartbeats.hpp"
 #include "IClock.hpp"
 #include "IncomingDatagram.hpp"
+#include "MessageDispatcher.hpp"
 #include "MessageOrigin.hpp"
 #include "PacketHeader.hpp"
 #include "PlayerDatagram.hpp"
@@ -57,6 +58,8 @@ GameSessions::GameSessions(GameSessionsParts parts)
 }
 
 PlayerRoster& GameSessions::roster() { return roster_; }
+
+network::MessageDispatcher& GameSessions::messages() { return dispatcher_; }
 
 void GameSessions::readDatagrams(
     std::span<const network::IncomingDatagram> datagrams) {

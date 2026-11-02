@@ -3,6 +3,7 @@
 #include <functional>
 #include "EventBus.hpp"
 #include "GameSettings.hpp"
+#include "MessageDispatcher.hpp"
 #include "OutgoingDatagram.hpp"
 #include "PlayerRoster.hpp"
 #include "SessionHooks.hpp"
@@ -29,6 +30,11 @@ struct GameContext {
   /** @brief What the game calls when a player joins, leaves or sends an
    * input; modules add their functions to it. */
   std::reference_wrapper<SessionHooks> hooks;
+  /** @brief Reads the messages of the players once the sessions checked them; a
+   * module registers the handler of a message it deals with in start(). A
+   * handler stays registered: the game is destroyed right after its modules
+   * stop, and reads no datagram in between. */
+  std::reference_wrapper<network::MessageDispatcher> messages;
   /** @brief The seed and the waves the game was defined with. */
   GameSettings settings;
   /** @brief What is called for each datagram to send. */

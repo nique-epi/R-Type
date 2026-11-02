@@ -3,6 +3,7 @@
 #include <charconv>
 #include <cstddef>
 #include <cstdint>
+#include <filesystem>
 #include <functional>
 #include <optional>
 #include <span>
@@ -133,6 +134,10 @@ LaunchOptions LaunchOptions::read(std::span<const std::string_view> arguments) {
                   [&options](std::string_view delay) {
                     options.inputDelay_ = inputDelayFromText(delay);
                   }),
+      valueOption(DATABASE_OPTION,
+                  [&options](std::string_view file) {
+                    options.databaseFile_ = std::filesystem::path{file};
+                  }),
       engine::LaunchOption{
           .name = engine::HELP_OPTION,
           .takesValue = false,
@@ -153,6 +158,12 @@ std::string LaunchOptions::usage() {
           " to " + std::to_string(network::HIGHEST_PORT) +
           ". Default: " + std::to_string(network::DEFAULT_SERVER_PORT) + ".");
   text += gameOptionsUsage();
+  text += engine::usageEntry(
+      std::string(DATABASE_OPTION) + " <file>",
+      "File the leaderboard of this server is kept in, on a local disk. "
+      "Default: " +
+          std::string(DATABASE_FILE_PREFIX) + "<port>" +
+          std::string(DATABASE_FILE_SUFFIX) + " next to the executable.");
   text += engine::usageEntry(engine::HELP_OPTION,
                              "Print this help and start nothing.");
   text += '\n';
@@ -167,6 +178,11 @@ std::optional<std::uint32_t> LaunchOptions::seed() const { return seed_; }
 std::size_t LaunchOptions::stateRate() const { return stateRate_; }
 
 std::size_t LaunchOptions::inputDelay() const { return inputDelay_; }
+
+const std::optional<std::filesystem::path>& LaunchOptions::databaseFile()
+    const {
+  return databaseFile_;
+}
 
 bool LaunchOptions::helpRequested() const { return helpRequested_; }
 

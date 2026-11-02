@@ -6,6 +6,7 @@ target_link_libraries(rtype_server_instances
   INTERFACE
     rtype_engine
     rtype_game
+    rtype_network_message_dispatcher
     rtype_network_transport
     rtype_server_constants
     rtype_server_player_roster
@@ -25,4 +26,5 @@ add_subdirectory(GameReplication)
 add_subdirectory(ReplicationModule)
 add_subdirectory(RtypeSystems)
 add_subdirectory(RtypeRulesModule)
+add_subdirectory(ResultsModule)
 add_subdirectory(GameInstance)

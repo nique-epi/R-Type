@@ -62,6 +62,13 @@ class GameSessions {
   [[nodiscard]] PlayerRoster& roster();
 
   /**
+   * @returns What hands the messages the sessions read to their handlers, for
+   * the parts of a game that deal with a message of their own; it stays at the
+   * same address for the life of the sessions.
+   */
+  [[nodiscard]] network::MessageDispatcher& messages();
+
+  /**
    * @brief Starts the tick, before anything is sent in it: adds the time on the
    * clock since the start of the previous tick, or since the sessions were
    * built, to ConnectedPlayer::sinceSent of each player.

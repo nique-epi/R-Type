@@ -5,6 +5,12 @@
 #include <string_view>
 
 /**
+ * @brief Two files given after `--database`.
+ */
+constexpr std::string_view SOME_DATABASE_FILE = "some.db";
+constexpr std::string_view LAST_DATABASE_FILE = "last.db";
+
+/**
  * @brief A port given after `-p`, written in digits.
  */
 constexpr std::string_view PORT_ARGUMENT = "4243";

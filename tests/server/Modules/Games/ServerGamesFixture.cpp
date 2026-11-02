@@ -23,6 +23,7 @@
 #include "ServerGamesModule.hpp"
 #include "ServerLoggerModule.hpp"
 #include "ServerModuleTestConstants.hpp"
+#include "ServerStorageModule.hpp"
 #include "ServiceProbeModule.hpp"
 #include "TimeConstants.hpp"
 
@@ -37,6 +38,8 @@ void ServerGamesFixture::startWith(rtype::server::GamesSettings settings) {
   auto network = std::make_unique<RecordingNetworkModule>();
   network_ = network.get();
   modules.push_back(std::move(network));
+  modules.push_back(std::make_unique<rtype::server::ServerStorageModule>(
+      databaseFolder_.path() / TEST_DATABASE_FILE));
   modules.push_back(
       std::make_unique<rtype::server::ServerGamesModule>(std::move(settings)));
   for (auto& moduleAfterTheGames : modulesAfterTheGames()) {

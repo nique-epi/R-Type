@@ -18,6 +18,7 @@
 #include "GamesSettings.hpp"
 #include "IDatagramSender.hpp"
 #include "IPlayerAdmission.hpp"
+#include "IResultsArchive.hpp"
 #include "InstallContext.hpp"
 #include "ModuleConstants.hpp"
 #include "PathText.hpp"
@@ -41,12 +42,13 @@ std::string ServerGamesModule::name() const {
 }
 
 std::vector<std::string> ServerGamesModule::dependencies() const {
-  return {std::string{NETWORK_MODULE_NAME}};
+  return {std::string{NETWORK_MODULE_NAME}, std::string{STORAGE_MODULE_NAME}};
 }
 
 void ServerGamesModule::install(engine::InstallContext& context) {
   sender_ = &context.require<IDatagramSender>();
   admission_ = &context.require<IPlayerAdmission>();
+  results_ = &context.require<IResultsArchive>();
   tickDatagrams_ = &context.require<TickDatagrams>();
   context.provide(games_);
   context.addWork(
@@ -102,7 +104,7 @@ std::unique_ptr<GameInstance> ServerGamesModule::createGame(
           .events = events,
           .timers = timers_,
           .clock = clock_},
-      rtypeGameModules());
+      rtypeGameModules(*results_));
 }
 
 void ServerGamesModule::playGames() {

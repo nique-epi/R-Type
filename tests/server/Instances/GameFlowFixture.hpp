@@ -8,6 +8,7 @@
 #include "GameContext.hpp"
 #include "GameFlow.hpp"
 #include "GameReplication.hpp"
+#include "MessageDispatcher.hpp"
 #include "PlayerRoster.hpp"
 #include "ReadyKeeper.hpp"
 #include "SessionHooks.hpp"
@@ -59,6 +60,7 @@ class GameFlowFixture : public ::testing::Test {
   PlayerRoster roster_;
   ReadyKeeper readyKeeper_;
   GameReplication replication_;
+  network::MessageDispatcher messages_;
   GameContext context_;
   GameFlow flow_;
 };

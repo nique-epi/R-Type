@@ -1,6 +1,7 @@
 #pragma once
 
 #include <array>
+#include <chrono>
 #include <cstddef>
 #include <string_view>
 #include "TimeConstants.hpp"
@@ -45,6 +46,20 @@ constexpr std::string_view INSTANCES_LOGGER_NAME = "Instances";
 constexpr std::string_view GAME_INSTALL_NAME = "game";
 constexpr std::string_view RTYPE_RULES_MODULE_NAME = "rtype rules";
 constexpr std::string_view REPLICATION_MODULE_NAME = "replication";
+constexpr std::string_view RESULTS_MODULE_NAME = "results";
+
+/**
+ * @brief The least time between two answers to the same player: the time after
+ * which its client asks again. Provisional, see the protocol page.
+ */
+constexpr engine::Duration LEADERBOARD_ANSWER_INTERVAL =
+    std::chrono::milliseconds(500);
+
+/**
+ * @brief LEADERBOARD_ANSWER_INTERVAL, in whole simulation ticks.
+ */
+constexpr std::size_t TICKS_BETWEEN_LEADERBOARD_ANSWERS =
+    engine::wholeTicksIn(LEADERBOARD_ANSWER_INTERVAL);
 
 constexpr std::string_view GAME_INPUT_STAGE = "game inputs";
 constexpr std::string_view GAME_SIMULATION_STAGE = "game simulation";

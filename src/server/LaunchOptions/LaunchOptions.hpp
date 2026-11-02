@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <filesystem>
 #include <optional>
 #include <span>
 #include <string>
@@ -20,8 +21,8 @@ class LaunchOptions {
    * the logging options left (see logging::LogLaunchOptions).
    *
    * Without `-p` the port is DEFAULT_SERVER_PORT. The last `-p` wins, and so
-   * does the last `--seed`, the last `--state-rate` and the last
-   * `--input-delay`.
+   * does the last `--seed`, the last `--state-rate`, the last `--input-delay`
+   * and the last `--database`.
    *
    * @throws engine::UnknownLaunchArgumentException for any other argument,
    *         `-h` included: the server takes no address.
@@ -68,6 +69,13 @@ class LaunchOptions {
   [[nodiscard]] std::size_t inputDelay() const;
 
   /**
+   * @returns the file given after `--database`, nothing when it was not given:
+   * the server then uses the one of its port, next to its executable.
+   */
+  [[nodiscard]] const std::optional<std::filesystem::path>& databaseFile()
+      const;
+
+  /**
    * @returns whether `--help` was given: the server then prints its usage
    *          and starts nothing.
    */
@@ -81,6 +89,7 @@ class LaunchOptions {
   std::optional<std::uint32_t> seed_;
   std::size_t stateRate_;
   std::size_t inputDelay_;
+  std::optional<std::filesystem::path> databaseFile_;
 };
 
 }  // namespace rtype::server

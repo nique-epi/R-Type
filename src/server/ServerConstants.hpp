@@ -69,6 +69,19 @@ constexpr std::string_view WAVE_FILE_IN_ASSETS = "waves/waves.toml";
 constexpr std::string_view DEFAULT_DIFFICULTY = "normal";
 
 /**
+ * @brief Launch option followed by the path of the database of the server.
+ */
+constexpr std::string_view DATABASE_OPTION = "--database";
+
+/**
+ * @brief The name of the database of a server when DATABASE_OPTION is not
+ * given: the prefix, its port, the suffix. Two servers on one machine listen on
+ * two ports, so they never merge their leaderboards by accident.
+ */
+constexpr std::string_view DATABASE_FILE_PREFIX = "r-type_server_";
+constexpr std::string_view DATABASE_FILE_SUFFIX = ".db";
+
+/**
  * @brief Module name the simulation thread writes its tick reports under.
  */
 constexpr std::string_view SIMULATION_LOGGER_NAME = "Simulation";

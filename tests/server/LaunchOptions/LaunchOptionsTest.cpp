@@ -1,4 +1,5 @@
 #include <gtest/gtest.h>
+#include <filesystem>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -18,6 +19,7 @@ using rtype::engine::PORT_OPTION;
 using rtype::engine::UnknownLaunchArgumentException;
 using rtype::network::DEFAULT_SERVER_PORT;
 using rtype::network::InvalidPortException;
+using rtype::server::DATABASE_OPTION;
 using rtype::server::DEFAULT_INPUT_DELAY_TICKS;
 using rtype::server::DEFAULT_WORLD_STATES_PER_SECOND;
 using rtype::server::INPUT_DELAY_OPTION;
@@ -424,4 +426,38 @@ TEST(ServerLaunchOptions, InputDelayOptionWithoutValueIsRefused) {
 TEST(ServerLaunchOptions, UsageNamesTheInputDelayOption) {
   EXPECT_NE(LaunchOptions::usage().find(std::string(INPUT_DELAY_OPTION)),
             std::string::npos);
+}
+
+/**
+ * Given no argument
+ * When the launch options are read
+ * Then no database file is named: the server uses the one of its port
+ */
+TEST(ServerLaunchOptions, NoArgumentNamesNoDatabaseFile) {
+  const LaunchOptions options = LaunchOptions::read(Arguments{});
+
+  EXPECT_FALSE(options.databaseFile().has_value());
+}
+
+/**
+ * Given two files after the database option
+ * When the launch options are read
+ * Then the last one wins, like the other options
+ */
+TEST(ServerLaunchOptions, TheLastDatabaseOptionWins) {
+  const LaunchOptions options =
+      LaunchOptions::read(Arguments{DATABASE_OPTION, SOME_DATABASE_FILE,
+                                    DATABASE_OPTION, LAST_DATABASE_FILE});
+
+  EXPECT_EQ(options.databaseFile(), std::filesystem::path{LAST_DATABASE_FILE});
+}
+
+/**
+ * Given the database option as the last argument
+ * When the launch options are read
+ * Then the value is missing
+ */
+TEST(ServerLaunchOptions, TheDatabaseOptionNeedsAValue) {
+  EXPECT_THROW((void)LaunchOptions::read(Arguments{DATABASE_OPTION}),
+               MissingLaunchOptionValueException);
 }
