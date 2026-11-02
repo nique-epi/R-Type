@@ -1,4 +1,5 @@
 #include "WorldSlot.hpp"
+#include <cstddef>
 #include <memory>
 #include "World.hpp"
 
@@ -12,5 +13,7 @@ game::World& WorldSlot::renew() {
   world_ = std::make_unique<game::World>();
   return *world_;
 }
+
+std::size_t WorldSlot::entityCount() const { return world_->entityCount(); }
 
 }  // namespace rtype::server
