@@ -34,7 +34,7 @@ TEST_F(ResultsDatabaseFixture, SavesARowWithEveryFieldOfTheResult) {
                                          .deaths = TWO_DEATHS}},
                            SOME_DATE));
 
-  const SQLite::Database reader{file()};
+  const SQLite::Database reader{file().string()};
   SQLite::Statement row{reader, std::string{SELECT_ROW_OF_ACE}};
   ASSERT_TRUE(row.executeStep());
   EXPECT_EQ(row.getColumn("game_id").getString().size(), GAME_ID_SIZE);
@@ -60,7 +60,7 @@ TEST_F(ResultsDatabaseFixture, GivesEachGameOneIdentifierOfItsOwn) {
   database.save(normalGame(players, SOME_DATE));
   database.save(normalGame(players, LATER_DATE));
 
-  SQLite::Database reader{file()};
+  SQLite::Database reader{file().string()};
   EXPECT_EQ(reader.execAndGet(std::string{COUNT_GAME_IDS}).getInt(), 2);
 }
 
@@ -303,7 +303,7 @@ TEST_F(ResultsDatabaseFixture, AddsUpEveryGameOfAPlayerInItsStatistics) {
   hard.difficulty = std::string{HARD};
   database.save(hard);
 
-  const SQLite::Database reader{file()};
+  const SQLite::Database reader{file().string()};
   SQLite::Statement statistics{reader, std::string{SELECT_STATISTICS_OF_ACE}};
   ASSERT_TRUE(statistics.executeStep());
   EXPECT_EQ(statistics.getColumn("games_played").getInt(), 2);
@@ -327,7 +327,7 @@ TEST_F(ResultsDatabaseFixture,
       normalGame({playerNamed(ACE, LOW_SCORE), playerNamed(BOB, LOW_SCORE),
                   playerNamed(CID, LOW_SCORE)},
                  SOME_DATE));
-  SQLite::Database writer{file(), SQLite::OPEN_READWRITE};
+  SQLite::Database writer{file().string(), SQLite::OPEN_READWRITE};
   writer.exec(std::string{GIVE_ROWS_OF_BOB_AND_CID_AN_ACCOUNT});
 
   EXPECT_EQ(writer.execAndGet(std::string{COUNT_STATISTICS}).getInt(), 2);
