@@ -22,7 +22,9 @@ TEST(OwnShip, ReadsTheShipOfThePlayerFromTheState) {
                                            START, ACKNOWLEDGED_COMMAND),
                              OWN_PLAYER_NUMBER);
 
-  ASSERT_TRUE(own.has_value());
+  if (!own.has_value()) {
+    FAIL() << "the state lists the ship, so it was found";
+  }
   EXPECT_EQ(own->shipEntityId, OWN_SHIP_ID);
   EXPECT_FLOAT_EQ(own->position.x, START.x);
   EXPECT_FLOAT_EQ(own->position.y, START.y);

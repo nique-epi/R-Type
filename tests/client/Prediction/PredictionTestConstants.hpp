@@ -22,7 +22,6 @@ constexpr std::uint32_t OLDER_THAN_ANY_KEPT_COMMAND = 0;
 constexpr std::uint32_t COMMAND_AFTER_THE_DOUBLE_TAP_WINDOW =
     FIRST_COMMAND + game::DOUBLE_TAP_INPUTS + 1;
 
-constexpr std::size_t THREE_COMMANDS = 3;
 constexpr std::size_t TWO_COMMANDS = 2;
 
 /** @brief Offsets of a server position from the ship predicted after a

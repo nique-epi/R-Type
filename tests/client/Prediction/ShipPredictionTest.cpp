@@ -19,7 +19,6 @@ using rtype::client::testing::shiftedRight;
 using rtype::client::testing::shipAfterCommands;
 using rtype::client::testing::START;
 using rtype::client::testing::THIRD_COMMAND;
-using rtype::client::testing::THREE_COMMANDS;
 using rtype::client::testing::TWO_COMMANDS;
 
 /**

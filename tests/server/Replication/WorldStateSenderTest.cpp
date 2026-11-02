@@ -358,7 +358,7 @@ TEST_F(WorldStateSenderFixture, ListsAPlayerWithProtectionLeftAsInvulnerable) {
 TEST_F(WorldStateSenderFixture, ListsTheNewestInputNumberOfEachPlayer) {
   rtype::server::ConnectedPlayer& sender =
       connect(FIRST_CLIENT_PORT, SESSION_TOKEN);
-  rtype::server::ConnectedPlayer& silent =
+  const rtype::server::ConnectedPlayer& silent =
       connect(SECOND_CLIENT_PORT, OTHER_SESSION_TOKEN);
   sender.newestInputNumber = NEWEST_INPUT_NUMBER;
 
