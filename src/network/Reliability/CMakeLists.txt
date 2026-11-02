@@ -10,7 +10,6 @@ target_link_libraries(rtype_network_reliability
   PUBLIC
     rtype_network_protocol
   PRIVATE
-    rtype_network_datagram_codec
     rtype_network_exceptions
     rtype_network_sequence_order
 )
