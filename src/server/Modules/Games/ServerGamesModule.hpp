@@ -16,7 +16,6 @@
 #include "Logger.hpp"
 #include "SystemClock.hpp"
 #include "TickDatagrams.hpp"
-#include "TimeConstants.hpp"
 #include "WavePlan.hpp"
 
 namespace rtype::server {
@@ -72,7 +71,6 @@ class ServerGamesModule final : public engine::IModule {
   [[nodiscard]] std::unique_ptr<GameInstance> createGame(
       engine::EventBus& events, GameSettings settings);
   void playGames();
-  void deliverEvents();
 
   GamesSettings settings_;
   logging::Logger logger_;

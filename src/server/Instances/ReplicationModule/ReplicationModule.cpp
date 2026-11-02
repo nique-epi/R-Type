@@ -1,5 +1,4 @@
 #include "ReplicationModule.hpp"
-#include <functional>
 #include <memory>
 #include <string>
 #include "EncodedMessage.hpp"
@@ -11,8 +10,6 @@
 #include "IGameReplication.hpp"
 #include "InstallContext.hpp"
 #include "MessageDelivery.hpp"
-#include "OutgoingDatagram.hpp"
-#include "PlayerRoster.hpp"
 
 namespace rtype::server {
 
@@ -29,18 +26,16 @@ void ReplicationModule::install(GameContext& game,
 }
 
 void ReplicationModule::start() {
-  PlayerRoster& roster = game_->roster.get();
-  const std::function<void(network::OutgoingDatagram)> send = game_->send;
   broadcaster_ =
       std::make_unique<GameEventBroadcaster>(GameEventBroadcasterParts{
           .events = game_->events,
           .sendToEveryPlayer =
-              [&roster, send](const network::EncodedMessage& message) {
-                sendToEveryPlayer(roster, send, message);
+              [game = game_](const network::EncodedMessage& message) {
+                sendToEveryPlayer(game->roster.get(), game->send, message);
               },
           .guaranteeToEveryPlayer =
-              [&roster, send](const network::EncodedMessage& message) {
-                guaranteeToEveryPlayer(roster, send, message);
+              [game = game_](const network::EncodedMessage& message) {
+                guaranteeToEveryPlayer(game->roster.get(), game->send, message);
               }});
 }
 

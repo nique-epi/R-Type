@@ -51,9 +51,10 @@ void ServerGamesModule::install(engine::InstallContext& context) {
   context.addWork(
       SIMULATION_STAGE,
       [this]([[maybe_unused]] engine::Duration elapsed) { playGames(); });
-  context.addWork(
-      OUTPUT_STAGE,
-      [this]([[maybe_unused]] engine::Duration elapsed) { deliverEvents(); });
+  context.addWork(OUTPUT_STAGE,
+                  [this]([[maybe_unused]] engine::Duration elapsed) {
+                    games_.dispatchEvents();
+                  });
 }
 
 void ServerGamesModule::start() {
@@ -114,7 +115,5 @@ void ServerGamesModule::playGames() {
     }
   }
 }
-
-void ServerGamesModule::deliverEvents() { games_.dispatchEvents(); }
 
 }  // namespace rtype::server
