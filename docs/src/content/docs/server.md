@@ -28,7 +28,7 @@ This page tells you where to look when you need to change something. It describe
 | Waiting room and start of the game sent to the players (`LobbyState`, `GameStarted`) | Available | `src/server/Replication/LobbyStateAnnouncer/`, `src/server/Instances/GameFlow/` |
 | End of a game sent to the players (`GameEnded`) | Available: once no player has a life left, with the score of each, until the game waits for players again | `src/server/Replication/GameEndAnnouncer/`, `src/server/Instances/GameFlow/` |
 | Metrics in the journal every 10 s: duration of the ticks, time of each system, games, players and entities | Available; throughput, losses and ping are not measured yet | `src/server/Metrics/`, `src/server/Modules/Metrics/` |
-| Results of each game kept in a SQLite file, with statistics, and a leaderboard read with `LeaderboardRequest` | Available; the client does not ask yet, and nothing in the game shows the statistics | `src/server/Instances/ResultsModule/`, `src/server/Storage/`, `src/storage/` |
+| Results of each game kept in a SQLite file, with statistics, and a leaderboard read with `LeaderboardRequest` | Available; the leaderboard of the client reads it, and nothing in the game shows the statistics | `src/server/Instances/ResultsModule/`, `src/server/Storage/`, `src/storage/` |
 | Master link | Not yet written | — |
 | Components (`Position`, `Velocity`, `CollisionBox`, `Health`, `EntityType`, `Sprite`, `Layer`) | Available | `src/game/Components/` |
 | Movement, run by each game tick: Bydos and missiles by `Velocity`, ships by `Intent` | Available | `src/game/Systems/MovementSystem/`, `src/server/Instances/GameFlow/` |
@@ -760,7 +760,7 @@ A read ranks the whole leaderboard. Measured on one Mac in a Release build, with
 - The storage thread encodes the answer, so a stored row the protocol refuses costs a line in the journal and no exception on the simulation thread. Each game drains its own queue of answers once per tick.
 - An answer goes out only to a player still in the session it was asked in. Another player on the same address gets nothing, and the answer never goes to an address no session proves.
 
-The client does not send the request yet.
+The client sends the request from its leaderboard screen (see [Client](/R-Type/client/#leaderboard-leaderboardscreen-ileaderboardsource)).
 
 ## Where to intervene
 

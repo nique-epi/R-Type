@@ -104,14 +104,18 @@ The rectangles are written once, in `src/client/Rendering/Interface/HudSpriteCon
 
 `sprites/professor.png` is 50 × 58 pixels, laid out like the entity sheet: native size, frames and rows 2 pixels apart, transparent outside the frames. The help of the waiting room draws it twice its size.
 
-`sprites/leaderboard.png` is 1726 × 163 pixels: a row of 32 banners of 52 × 99 pixels at the top, 2 pixels apart, a frame every 50 ms; under them, 2 pixels lower, the guard of 28 × 30 pixels, two frames 2 pixels apart, a frame every 250 ms; then the same two mirrored, as the interface canvas cannot mirror an image. The last banner leads to the first without a jump.
-
 | Row | Frames | Frame size | Top |
 |---|---|---|---|
 | Professor Bydo facing left, as the entity sheet draws the Bydo | 2 | 24 × 28 | 0 |
 | The same frames mirrored, facing right, since the interface canvas cannot mirror an image | 2 | 24 × 28 | 30 |
 
 Each row shows its two frames in turn, 250 ms each, as the Bydo. The rectangles and the animations are written once, in `src/client/Rendering/Interface/ProfessorSpriteConstants.hpp`. `client_rendering_tests` checks them against the shipped file: every frame lies inside the sheet, shows a visible pixel and cuts no drawing, and the second row is the first mirrored. The sheet is listed in `titleAssets()` and `gameAssets()`.
+
+## The leaderboard sheet
+
+`sprites/leaderboard.png` is 1726 × 163 pixels: a row of 32 banners of 52 × 99 pixels at the top, 2 pixels apart, a frame every 50 ms; under them, 2 pixels lower, the guard of 28 × 30 pixels, two frames 2 pixels apart, a frame every 250 ms; then the same two mirrored, as the interface canvas cannot mirror an image. The last banner leads to the first without a jump.
+
+The rectangles and the animations are written once, in `src/client/Rendering/Interface/LeaderboardSpriteConstants.hpp`. `client_rendering_tests` checks each frame against the sheet, the mirror of the guards, and that the loop of the banner closes without a jump.
 
 ## The flight log sheet
 
