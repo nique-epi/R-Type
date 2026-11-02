@@ -153,6 +153,29 @@ std::optional<SettingLine> settingLineOf(std::string_view line) {
                      .value = trimmed(line.substr(separator + 1))};
 }
 
+/** @returns What became of a setting that is an on or off switch, or nothing
+ * when the line names another kind of setting. */
+std::optional<LineOutcome> applySwitch(PlayerSettings& settings,
+                                       SettingLine setting) {
+  const auto [name, value] = setting;
+  if (name == MUTED_NAME) {
+    return assign(switchOf(value), settings.muted);
+  }
+  if (name == REDUCE_FLASHES_NAME) {
+    return assign(switchOf(value), settings.reduceFlashes);
+  }
+  if (name == SOUND_CUES_NAME) {
+    return assign(switchOf(value), settings.soundCues);
+  }
+  if (name == AUTO_FIRE_NAME) {
+    return assign(switchOf(value), settings.autoFire);
+  }
+  if (name == CLIENT_PREDICTION_NAME) {
+    return assign(switchOf(value), settings.clientPrediction);
+  }
+  return std::nullopt;
+}
+
 /** @returns What became of a setting written into the settings: applied, or
  * left out with the reason. */
 LineOutcome applySetting(PlayerSettings& settings, SettingLine setting) {
@@ -167,9 +190,6 @@ LineOutcome applySetting(PlayerSettings& settings, SettingLine setting) {
   if (name == EFFECTS_VOLUME_NAME) {
     return assign(volumeOf(value), settings.effectsVolume);
   }
-  if (name == MUTED_NAME) {
-    return assign(switchOf(value), settings.muted);
-  }
   if (name == WINDOW_SIZE_NAME) {
     return assign(windowSizeOf(value), settings.windowSize);
   }
@@ -181,17 +201,9 @@ LineOutcome applySetting(PlayerSettings& settings, SettingLine setting) {
     return assign(valueNamed(value, COLOR_MODE_VALUES, COLOR_MODES),
                   settings.colorMode);
   }
-  if (name == REDUCE_FLASHES_NAME) {
-    return assign(switchOf(value), settings.reduceFlashes);
-  }
-  if (name == SOUND_CUES_NAME) {
-    return assign(switchOf(value), settings.soundCues);
-  }
-  if (name == AUTO_FIRE_NAME) {
-    return assign(switchOf(value), settings.autoFire);
-  }
-  if (name == CLIENT_PREDICTION_NAME) {
-    return assign(switchOf(value), settings.clientPrediction);
+  if (const std::optional<LineOutcome> outcome =
+          applySwitch(settings, setting)) {
+    return *outcome;
   }
   const std::optional<BoundAction> action =
       valueNamed(name, BOUND_ACTION_KEY_NAMES, BOUND_ACTIONS);
