@@ -25,20 +25,22 @@ report() {
   fi
 }
 
-listed=0
 while read -r name; do
   use_scenario "$name"
   scenario="$name ($(conditions_text))"
   printf '%s\n' "$help" | grep -q -F -e "$scenario" && found=0 || found=1
   report "the help lists $scenario" "$found"
-  listed=$((listed + 1))
 done <<EOF
 $(scenario_names)
 EOF
 
-in_help=$(printf '%s\n' "$help" | grep -o -F -e '(ping +' | grep -c . || true)
-[ "$in_help" -eq "$listed" ] && same=0 || same=1
-report "the help lists $in_help scenarios, the scripts $listed" "$same"
+# The help names the same scenarios in the same order, which the usage of the
+# scripts follows too.
+in_help=$(printf '%s\n' "$help" | grep -o -E '[a-z0-9-]+ \(ping \+' |
+  sed 's/ (ping +$//' | paste -s -d ' ' -)
+in_scripts=$(scenario_names | paste -s -d ' ' -)
+[ "$in_help" = "$in_scripts" ] && same=0 || same=1
+report "the help names $in_help, the scripts $in_scripts" "$same"
 
 # Each option takes its bound and refuses the value after it.
 for bound in "--lag $MAXIMUM_DELAY_MS" "--jitter $MAXIMUM_DELAY_MS" \
