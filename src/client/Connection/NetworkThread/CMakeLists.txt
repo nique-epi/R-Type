@@ -8,8 +8,8 @@ target_link_libraries(rtype_client_network_thread
     rtype_concurrency_bounded_queue
     rtype_network_context
     rtype_network_datagram_relay
+    rtype_network_simulator
     rtype_network_transport
-    rtype_network_udp_socket
 )
 
 rtype_enable_warnings(rtype_client_network_thread)

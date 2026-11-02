@@ -9,6 +9,7 @@
 #include "InstallContext.hpp"
 #include "Logger.hpp"
 #include "MessageDispatcher.hpp"
+#include "NetworkConditions.hpp"
 #include "NetworkThread.hpp"
 #include "ServerLeaderboard.hpp"
 #include "ServerSession.hpp"
@@ -29,12 +30,15 @@ namespace rtype::client {
  * system picks, and starts the network thread. stop() leaves the session with
  * the server, if any: it returns once every copy of the Disconnection went
  * out, DISCONNECTION_COPY_INTERVAL apart, so the server frees the place of the
- * player at once; then it closes the socket. A failure while leaving is
- * logged, never thrown.
+ * player at once; then it closes the socket. Over a simulated network, the
+ * copies still in flight then never arrive (see NetworkThread::close()). A
+ * failure while leaving is logged, never thrown.
  */
 class ClientConnectionModule final : public engine::IModule {
  public:
-  ClientConnectionModule();
+  /** @param conditions The network the datagrams of the client cross, read at
+   * launch. */
+  explicit ClientConnectionModule(const network::NetworkConditions& conditions);
 
   /** @returns CONNECTION_MODULE_NAME. */
   [[nodiscard]] std::string name() const override;

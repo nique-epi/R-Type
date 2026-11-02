@@ -8,6 +8,7 @@
 #include "IModule.hpp"
 #include "InstallContext.hpp"
 #include "Logger.hpp"
+#include "NetworkConditions.hpp"
 #include "ServerApplication.hpp"
 #include "StopRequest.hpp"
 #include "TickDatagrams.hpp"
@@ -31,8 +32,11 @@ class ServerNetworkModule final : public engine::IModule {
   /** @param port The UDP port to listen on, on every IPv4 interface; 0 lets
    * the system pick one.
    * @param stopRequest Told when the server stops on an error; it must outlive
-   * the module. */
-  ServerNetworkModule(std::uint16_t port, StopRequest& stopRequest);
+   * the module.
+   * @param conditions The network the datagrams of the server cross, read at
+   * launch. */
+  ServerNetworkModule(std::uint16_t port, StopRequest& stopRequest,
+                      const network::NetworkConditions& conditions);
 
   [[nodiscard]] std::string name() const override;
   [[nodiscard]] std::vector<std::string> dependencies() const override;
@@ -57,6 +61,7 @@ class ServerNetworkModule final : public engine::IModule {
 
   std::uint16_t port_;
   StopRequest* stopRequest_;
+  network::NetworkConditions conditions_;
   logging::Logger logger_;
   TickDatagrams tickDatagrams_;
   std::unique_ptr<ServerApplication> server_;

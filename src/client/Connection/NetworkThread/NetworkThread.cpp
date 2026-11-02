@@ -7,28 +7,33 @@
 #include "BoundedQueue.hpp"
 #include "ConnectionConstants.hpp"
 #include "DatagramRelay.hpp"
+#include "DatagramSocketOpening.hpp"
 #include "Endpoint.hpp"
+#include "IDatagramSocket.hpp"
 #include "IncomingDatagram.hpp"
+#include "NetworkConditions.hpp"
 #include "NetworkContext.hpp"
 #include "OutgoingDatagram.hpp"
-#include "UdpSocket.hpp"
 
 namespace rtype::client {
 
-NetworkThread::NetworkThread(network::Endpoint localEndpoint)
+NetworkThread::NetworkThread(network::Endpoint localEndpoint,
+                             const network::NetworkConditions& conditions)
     : listeningEndpoint_(std::move(localEndpoint)),
+      conditions_(conditions),
       incoming_(INCOMING_DATAGRAM_QUEUE_CAPACITY),
       outgoing_(OUTGOING_DATAGRAM_QUEUE_CAPACITY) {}
 
 NetworkThread::~NetworkThread() { close(); }
 
 void NetworkThread::open() {
-  if (socket_.has_value()) {
+  if (socket_) {
     return;
   }
-  network::UdpSocket& socket = socket_.emplace(network_, listeningEndpoint_);
+  socket_ =
+      network::openDatagramSocket(network_, listeningEndpoint_, conditions_);
   try {
-    startNetwork(socket);
+    startNetwork(*socket_);
   } catch (...) {
     relay_.reset();
     socket_.reset();
@@ -64,7 +69,7 @@ network::Endpoint NetworkThread::localEndpoint() const {
   return localEndpoint_;
 }
 
-void NetworkThread::startNetwork(network::UdpSocket& socket) {
+void NetworkThread::startNetwork(network::IDatagramSocket& socket) {
   localEndpoint_ = socket.localEndpoint();
   relay_.emplace(socket, incoming_, outgoing_).startReceiving();
   thread_ = std::jthread{[this] { runNetwork(); }};

@@ -1,16 +1,12 @@
 #include "LaunchOptions.hpp"
 #include <array>
-#include <charconv>
 #include <cstddef>
 #include <cstdint>
 #include <filesystem>
-#include <functional>
 #include <optional>
 #include <span>
 #include <string>
 #include <string_view>
-#include <system_error>
-#include <utility>
 #include "EndpointText.hpp"
 #include "EngineException.hpp"
 #include "LaunchArguments.hpp"
@@ -18,8 +14,11 @@
 #include "LaunchOption.hpp"
 #include "LogLaunchOptions.hpp"
 #include "LoggingConstants.hpp"
+#include "NetworkConditions.hpp"
 #include "NetworkConstants.hpp"
 #include "ServerConstants.hpp"
+#include "SimulatorLaunchOptions.hpp"
+#include "WholeNumberText.hpp"
 
 namespace rtype::server {
 
@@ -32,15 +31,12 @@ namespace {
  */
 template <typename Number>
 Number wholeNumberFromText(std::string_view option, std::string_view text) {
-  Number number = 0;
-  const std::string digits{text};
-  const char* const end = digits.data() + digits.size();
-  const auto [stop, error] = std::from_chars(digits.data(), end, number);
-  if (digits.empty() || error != std::errc{} || stop != end) {
+  const std::optional<Number> number = network::wholeNumberIn<Number>(text);
+  if (!number.has_value()) {
     throw engine::InvalidLaunchOptionValueException(std::string(option),
                                                     std::string(text));
   }
-  return number;
+  return *number;
 }
 
 /**
@@ -80,15 +76,69 @@ std::size_t inputDelayFromText(std::string_view text) {
   return delay;
 }
 
-/** @returns An option followed by a value, which @p record reads. */
-engine::LaunchOption valueOption(std::string_view name,
-                                 std::function<void(std::string_view)> record) {
-  return engine::LaunchOption{
-      .name = name, .takesValue = true, .record = std::move(record)};
+/** @returns `-p <port>`, which writes a checked port into @p port. */
+engine::LaunchOption portOption(std::uint16_t& port) {
+  return engine::LaunchOption{.name = engine::PORT_OPTION,
+                              .takesValue = true,
+                              .record = [&port](std::string_view text) {
+                                port = network::portFromText(text);
+                              }};
 }
 
-/** @returns The usage of the options that set how the games are played. */
-std::string gameOptionsUsage() {
+/** @returns `--seed <seed>`, which writes a checked seed into @p seed. */
+engine::LaunchOption seedOption(std::optional<std::uint32_t>& seed) {
+  return engine::LaunchOption{
+      .name = SEED_OPTION,
+      .takesValue = true,
+      .record = [&seed](std::string_view text) { seed = seedFromText(text); }};
+}
+
+/**
+ * @returns `--state-rate <states>`, which writes a checked rate into
+ * @p stateRate.
+ */
+engine::LaunchOption stateRateOption(std::size_t& stateRate) {
+  return engine::LaunchOption{.name = STATE_RATE_OPTION,
+                              .takesValue = true,
+                              .record = [&stateRate](std::string_view text) {
+                                stateRate = stateRateFromText(text);
+                              }};
+}
+
+/**
+ * @returns `--input-delay <ticks>`, which writes a checked delay into
+ * @p inputDelay.
+ */
+engine::LaunchOption inputDelayOption(std::size_t& inputDelay) {
+  return engine::LaunchOption{.name = INPUT_DELAY_OPTION,
+                              .takesValue = true,
+                              .record = [&inputDelay](std::string_view text) {
+                                inputDelay = inputDelayFromText(text);
+                              }};
+}
+
+/** @returns `--database <file>`, which writes the file into @p databaseFile. */
+engine::LaunchOption databaseOption(
+    std::optional<std::filesystem::path>& databaseFile) {
+  return engine::LaunchOption{.name = DATABASE_OPTION,
+                              .takesValue = true,
+                              .record = [&databaseFile](std::string_view file) {
+                                databaseFile = std::filesystem::path{file};
+                              }};
+}
+
+/** @returns `--help`, which sets @p helpRequested. */
+engine::LaunchOption helpOption(bool& helpRequested) {
+  return engine::LaunchOption{
+      .name = engine::HELP_OPTION,
+      .takesValue = false,
+      .record = [&helpRequested]([[maybe_unused]] std::string_view value) {
+        helpRequested = true;
+      }};
+}
+
+/** @returns The lines of the usage that describe how the games are played. */
+std::string gameOptionEntries() {
   std::string text = engine::usageEntry(
       std::string(SEED_OPTION) + " <seed>",
       "Whole number the random draws of the games start from, from 0 to "
@@ -113,51 +163,15 @@ std::string gameOptionsUsage() {
   return text;
 }
 
-}  // namespace
-
-LaunchOptions LaunchOptions::read(std::span<const std::string_view> arguments) {
-  LaunchOptions options{network::DEFAULT_SERVER_PORT, false};
-  const std::array launchOptions{
-      valueOption(engine::PORT_OPTION,
-                  [&options](std::string_view port) {
-                    options.port_ = network::portFromText(port);
-                  }),
-      valueOption(SEED_OPTION,
-                  [&options](std::string_view seed) {
-                    options.seed_ = seedFromText(seed);
-                  }),
-      valueOption(STATE_RATE_OPTION,
-                  [&options](std::string_view rate) {
-                    options.stateRate_ = stateRateFromText(rate);
-                  }),
-      valueOption(INPUT_DELAY_OPTION,
-                  [&options](std::string_view delay) {
-                    options.inputDelay_ = inputDelayFromText(delay);
-                  }),
-      valueOption(DATABASE_OPTION,
-                  [&options](std::string_view file) {
-                    options.databaseFile_ = std::filesystem::path{file};
-                  }),
-      engine::LaunchOption{
-          .name = engine::HELP_OPTION,
-          .takesValue = false,
-          .record =
-              [&options]([[maybe_unused]] std::string_view value) {
-                options.helpRequested_ = true;
-              }},
-  };
-  engine::readLaunchArguments(arguments, launchOptions);
-  return options;
-}
-
-std::string LaunchOptions::usage() {
-  std::string text = engine::usageHeader(PROGRAM_NAME);
-  text += engine::usageEntry(
+/** @returns The lines of the usage that describe the options of the server
+ * itself, `--help` included. */
+std::string serverOptionEntries() {
+  std::string text = engine::usageEntry(
       std::string(engine::PORT_OPTION) + " <port>",
       "UDP port to listen on, from " + std::to_string(network::LOWEST_PORT) +
           " to " + std::to_string(network::HIGHEST_PORT) +
           ". Default: " + std::to_string(network::DEFAULT_SERVER_PORT) + ".");
-  text += gameOptionsUsage();
+  text += gameOptionEntries();
   text += engine::usageEntry(
       std::string(DATABASE_OPTION) + " <file>",
       "File the leaderboard of this server is kept in, on a local disk. "
@@ -166,6 +180,31 @@ std::string LaunchOptions::usage() {
           std::string(DATABASE_FILE_SUFFIX) + " next to the executable.");
   text += engine::usageEntry(engine::HELP_OPTION,
                              "Print this help and start nothing.");
+  return text;
+}
+
+}  // namespace
+
+LaunchOptions LaunchOptions::read(std::span<const std::string_view> arguments) {
+  const network::SimulatorLaunchOptions simulatorOptions =
+      network::SimulatorLaunchOptions::read(arguments);
+  LaunchOptions options{network::DEFAULT_SERVER_PORT, false};
+  options.networkConditions_ = simulatorOptions.conditions();
+  const std::array launchOptions{portOption(options.port_),
+                                 seedOption(options.seed_),
+                                 stateRateOption(options.stateRate_),
+                                 inputDelayOption(options.inputDelay_),
+                                 databaseOption(options.databaseFile_),
+                                 helpOption(options.helpRequested_)};
+  engine::readLaunchArguments(simulatorOptions.otherArguments(), launchOptions);
+  return options;
+}
+
+std::string LaunchOptions::usage() {
+  std::string text = engine::usageHeader(PROGRAM_NAME);
+  text += serverOptionEntries();
+  text += '\n';
+  text += network::SimulatorLaunchOptions::usage();
   text += '\n';
   text += logging::LogLaunchOptions::usage(logging::SERVER_LOG_FILE_NAME);
   return text;
@@ -185,6 +224,10 @@ const std::optional<std::filesystem::path>& LaunchOptions::databaseFile()
 }
 
 bool LaunchOptions::helpRequested() const { return helpRequested_; }
+
+const network::NetworkConditions& LaunchOptions::networkConditions() const {
+  return networkConditions_;
+}
 
 LaunchOptions::LaunchOptions(std::uint16_t port, bool helpRequested)
     : port_(port),

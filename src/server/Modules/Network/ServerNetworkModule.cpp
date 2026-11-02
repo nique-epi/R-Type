@@ -11,6 +11,7 @@
 #include "IPlayerAdmission.hpp"
 #include "InstallContext.hpp"
 #include "ModuleConstants.hpp"
+#include "NetworkConditions.hpp"
 #include "NetworkConstants.hpp"
 #include "ServerApplication.hpp"
 #include "ServerConstants.hpp"
@@ -32,10 +33,12 @@ network::Endpoint listeningEndpoint(std::uint16_t port) {
 
 }  // namespace
 
-ServerNetworkModule::ServerNetworkModule(std::uint16_t port,
-                                         StopRequest& stopRequest)
+ServerNetworkModule::ServerNetworkModule(
+    std::uint16_t port, StopRequest& stopRequest,
+    const network::NetworkConditions& conditions)
     : port_(port),
       stopRequest_(&stopRequest),
+      conditions_(conditions),
       logger_(std::string{SERVER_LOGGER_NAME}) {}
 
 std::string ServerNetworkModule::name() const {
@@ -55,7 +58,8 @@ void ServerNetworkModule::install(engine::InstallContext& context) {
         tickDatagrams_.begin(received);
         application.runStages(engine::SIMULATION_TICK_DURATION);
         tickDatagrams_.end();
-      });
+      },
+      conditions_);
   context.provide<IDatagramSender>(*server_);
   context.provide<IPlayerAdmission>(*server_);
   context.provide(tickDatagrams_);
