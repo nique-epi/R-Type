@@ -22,6 +22,22 @@ constexpr std::string_view PROGRAM_NAME = "r-type_server";
 constexpr std::string_view SEED_OPTION = "--seed";
 
 /**
+ * @brief How many games the server hosts at once, unless told otherwise. They
+ * are all created when the server starts and reused: a finished game waits for
+ * players again.
+ */
+constexpr std::size_t DEFAULT_HOSTED_GAME_COUNT = 8;
+
+/**
+ * @brief The gap between the seeds of two games started from the same seed.
+ *
+ * A game draws the seed of each world it builds as its own seed plus the count
+ * of worlds built, so a gap of 65536 keeps the worlds of one game away from
+ * those of the next for 65536 worlds.
+ */
+constexpr std::uint32_t GAME_SEED_STRIDE = 65536;
+
+/**
  * @brief Module name the server writes its log lines under.
  */
 constexpr std::string_view SERVER_LOGGER_NAME = "Server";

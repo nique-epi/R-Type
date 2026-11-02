@@ -23,6 +23,12 @@ constexpr ScreenId OPTIONS_SCREEN{"options"};
  * dimmed. */
 constexpr ScreenId GAME_OPTIONS_SCREEN{"game options"};
 
+/** @brief The dialog that says the session with the server ended, lost or
+ * closed, which ClientScreens pushes over the title it puts in place of every
+ * screen; RETRY opens the connection screen over the title, OK leaves the
+ * title. */
+constexpr ScreenId CONNECTION_LOST_SCREEN{"connection lost"};
+
 /** @brief The question asked before closing the client, pushed over the
  * title. */
 constexpr ScreenId QUIT_CONFIRMATION_SCREEN{"quit confirmation"};

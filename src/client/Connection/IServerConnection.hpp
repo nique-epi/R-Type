@@ -35,14 +35,14 @@ class IServerConnection {
 
   /**
    * @brief Drops the attempt, wherever it stands: the status goes back to
-   * ConnectionStatus::Phase::Idle. A session the server accepted is left: the
-   * server is told, and the waiting room, the ready state asked for and the
-   * start of the game are forgotten.
+   * ConnectionPhase::Idle. A session the server accepted is left: the server
+   * is told, and the waiting room, the ready state asked for and the start of
+   * the game are forgotten.
    */
   virtual void cancel() = 0;
 
-  /** @returns How the attempt stands: ConnectionStatus::Phase::Lost once the
-   * server of a session went silent for SESSION_TIMEOUT, until the next
+  /** @returns How the attempt stands: ConnectionPhase::Lost once the server
+   * of a session went silent for SESSION_SILENCE_LIMIT, until the next
    * connect() or cancel(). */
   [[nodiscard]] virtual ConnectionStatus status() const = 0;
 

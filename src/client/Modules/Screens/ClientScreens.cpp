@@ -2,18 +2,23 @@
 #include <SFML/Graphics/RenderTarget.hpp>
 #include <SFML/Window/Event.hpp>
 #include <random>
+#include "MenuScreenIdConstants.hpp"
 #include "OpeningScreen.hpp"
 #include "ScreenContext.hpp"
 #include "ScreenId.hpp"
 #include "ScreenRegistry.hpp"
 #include "ScreenServices.hpp"
+#include "ServerChoice.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::client {
 
 ClientScreens::ClientScreens(const ScreenServices& parts,
                              const ScreenRegistry& registry)
-    : background_(std::random_device{}()),
+    : connection_(&parts.connection.get()),
+      background_(std::random_device{}()),
+      serverChoice_(
+          ServerChoice{.server = parts.server, .nickname = parts.nickname}),
       screens_([this, &registry](ScreenId screen) {
         return registry.create(screen, context_);
       }),
@@ -21,7 +26,8 @@ ClientScreens::ClientScreens(const ScreenServices& parts,
                              .navigator = screens_,
                              .sky = background_,
                              .gameResult = gameResult_,
-                             .previousTaunt = previousTaunt_}) {
+                             .previousTaunt = previousTaunt_,
+                             .serverChoice = serverChoice_}) {
   screens_.replaceAll(openingScreen());
   screens_.applyPendingChanges();
 }
@@ -34,6 +40,10 @@ void ClientScreens::handleEvent(const sf::Event& event) {
 void ClientScreens::update(engine::Duration elapsed) {
   background_.advance(elapsed);
   screens_.update(elapsed);
+  if (sessionLoss_.endsTheSession(connection_->status())) {
+    screens_.replaceAll(TITLE_SCREEN);
+    screens_.push(CONNECTION_LOST_SCREEN);
+  }
   screens_.applyPendingChanges();
 }
 

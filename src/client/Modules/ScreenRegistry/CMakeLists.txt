@@ -12,6 +12,7 @@ target_link_libraries(rtype_client_screen_registry
     rtype_client_exceptions
     rtype_client_game_window
     rtype_client_interface
+    rtype_client_menu
     rtype_client_music_player
     rtype_client_replication_interfaces
     rtype_client_screen_interfaces
@@ -24,6 +25,7 @@ target_link_libraries(rtype_client_screen_registry
     rtype_engine_modules
     rtype_network_transport
   PRIVATE
+    rtype_client_dialog_screen
     rtype_client_interface_canvas
     rtype_client_loading_screen
     rtype_client_module_constants

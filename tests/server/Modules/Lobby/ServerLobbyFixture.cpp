@@ -6,6 +6,7 @@
 #include "ConnectionChallenge.hpp"
 #include "IModule.hpp"
 #include "IncomingDatagram.hpp"
+#include "PacketHeader.hpp"
 #include "SentDatagrams.hpp"
 #include "ServerDatagrams.hpp"
 #include "ServerLobbyModule.hpp"
@@ -26,6 +27,13 @@ rtype::network::IncomingDatagram ServerLobbyFixture::requestFrom(
   return rtype::network::IncomingDatagram{
       .sender = playerEndpoint(index),
       .payload = cookie == 0 ? requestDatagram() : requestDatagram(cookie)};
+}
+
+void ServerLobbyFixture::sayReady(std::size_t index) {
+  rtype::network::PacketHeader header;
+  header.sessionToken = tokenOf(index);
+  runTick({rtype::network::IncomingDatagram{.sender = playerEndpoint(index),
+                                            .payload = readyDatagram(header)}});
 }
 
 std::uint64_t ServerLobbyFixture::challengeCookieOf(std::size_t index) {

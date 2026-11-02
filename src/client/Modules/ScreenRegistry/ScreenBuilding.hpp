@@ -5,6 +5,7 @@
 #include "IInterfaceCanvas.hpp"
 #include "IScreen.hpp"
 #include "ISoundPlayer.hpp"
+#include "Menu.hpp"
 #include "MotionPreference.hpp"
 #include "PlayfieldMapping.hpp"
 #include "ScreenContext.hpp"
@@ -26,6 +27,10 @@ namespace rtype::client {
 
 /** @returns The point of the playfield under a pixel of the window. */
 [[nodiscard]] PlayfieldMapping playfieldMappingOf(const ScreenContext& context);
+
+/** @returns A dialog screen that shows @p menu over the screens below. */
+[[nodiscard]] std::unique_ptr<IScreen> dialogScreenOf(
+    const ScreenContext& context, Menu menu);
 
 /**
  * @brief The loading screen of a list while some of its assets are not

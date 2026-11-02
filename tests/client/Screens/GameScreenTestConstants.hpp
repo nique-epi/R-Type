@@ -5,6 +5,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <string_view>
+#include "PlayerLeft.hpp"
 #include "TimeConstants.hpp"
 
 /** @brief A key that is not the options key. */
@@ -60,3 +61,10 @@ constexpr rtype::engine::Duration END_WAIT = std::chrono::milliseconds(1000);
 /** @brief How many times the status canvas is displayed when the game screen
  * is built. */
 constexpr int DISPLAYS_AT_CONSTRUCTION = 1;
+
+/** @brief The server says the third pilot left, three times, as it repeats
+ * a PlayerLeft. */
+constexpr rtype::network::PlayerLeft THIRD_PILOT_LEFT{
+    .playerNumber = THIRD_PILOT,
+    .reason = rtype::network::DepartureReason::Left};
+constexpr int PLAYER_LEFT_COPIES = 3;

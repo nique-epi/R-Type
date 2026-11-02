@@ -1,7 +1,9 @@
 #include "ServerLobbyModule.hpp"
+#include <cstddef>
 #include <cstdint>
 #include <functional>
 #include <memory>
+#include <span>
 #include <string>
 #include <vector>
 #include "ConnectedPlayer.hpp"
@@ -12,6 +14,7 @@
 #include "Games.hpp"
 #include "IDatagramSender.hpp"
 #include "IPlayerAdmission.hpp"
+#include "IncomingDatagram.hpp"
 #include "InstallContext.hpp"
 #include "ModuleConstants.hpp"
 #include "ServerConstants.hpp"
@@ -40,26 +43,34 @@ void ServerLobbyModule::install(engine::InstallContext& context) {
 }
 
 void ServerLobbyModule::start() {
-  GameInstance& joinable = games_->joinable();
   IPlayerAdmission* const admission = admission_;
-  acceptor_ = std::make_unique<ConnectionAcceptor>(
-      joinable.roster(),
-      std::bind_front(&IDatagramSender::queueDatagram, sender_),
-      [admission](const network::Endpoint& player, std::uint64_t sessionToken) {
-        admission->admit(player, sessionToken);
-      },
-      [&joinable](ConnectedPlayer& player) {
-        joinable.onPlayerJoined(player);
-      });
+  for (const std::unique_ptr<GameInstance>& game : games_->all()) {
+    GameInstance* const seating = game.get();
+    acceptors_.push_back(std::make_unique<ConnectionAcceptor>(
+        seating->roster(),
+        std::bind_front(&IDatagramSender::queueDatagram, sender_),
+        [admission](const network::Endpoint& player,
+                    std::uint64_t sessionToken) {
+          admission->admit(player, sessionToken);
+        },
+        [seating](ConnectedPlayer& player) {
+          seating->onPlayerJoined(player);
+        }));
+  }
 }
 
-void ServerLobbyModule::stop() { acceptor_.reset(); }
+void ServerLobbyModule::stop() { acceptors_.clear(); }
 
 void ServerLobbyModule::answerConnectionRequests() {
-  const GameInstance& joinable = games_->joinable();
-  acceptor_->setGameInProgress(joinable.state() !=
+  const engine::Duration now = clock_.now();
+  for (const network::IncomingDatagram& request :
+       tickDatagrams_->connectionRequests()) {
+    const std::size_t game = games_->placeOf(request.sender);
+    ConnectionAcceptor& acceptor = *acceptors_.at(game);
+    acceptor.setGameInProgress(games_->all()[game]->state() !=
                                GameState::WaitingForPlayers);
-  acceptor_->receive(tickDatagrams_->connectionRequests(), clock_.now());
+    acceptor.receive(std::span{&request, 1}, now);
+  }
 }
 
 }  // namespace rtype::server

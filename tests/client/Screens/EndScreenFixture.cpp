@@ -1,7 +1,6 @@
 #include "EndScreenFixture.hpp"
 #include <SFML/System/Vector2.hpp>
 #include <SFML/Window/Keyboard.hpp>
-#include <algorithm>
 #include <cstddef>
 #include <memory>
 #include <optional>
@@ -12,14 +11,13 @@
 #include "FinalPilot.hpp"
 #include "FlashPreference.hpp"
 #include "InterfaceColorConstants.hpp"
-#include "KeyPress.hpp"
 #include "MotionPreference.hpp"
 #include "PointerEvents.hpp"
 #include "RecordingInterfaceCanvas.hpp"
 #include "RecordingNavigator.hpp"
 #include "RecordingServerConnection.hpp"
 #include "RecordingSoundPlayer.hpp"
-#include "ScreenTestConstants.hpp"
+#include "ScreenInputs.hpp"
 #include "TimeConstants.hpp"
 
 using rtype::client::EndScreen;
@@ -75,21 +73,14 @@ void EndScreenFixture::rebuildWith(MotionPreference motion) {
       std::make_unique<RecordingInterfaceCanvas>(canvas_));
 }
 
-void EndScreenFixture::tap(sf::Keyboard::Key key) {
-  screen().handleEvent(keyPress(key));
-  screen().handleEvent(keyRelease(key));
-}
+void EndScreenFixture::tap(sf::Keyboard::Key key) { tapKey(screen(), key); }
 
 void EndScreenFixture::click(sf::Vector2i interfacePixel) {
-  screen().handleEvent(leftPress(interfacePixel * INTERFACE_PIXEL));
+  clickInterfacePixel(screen(), interfacePixel);
 }
 
 void EndScreenFixture::advance(rtype::engine::Duration duration) {
-  while (duration > rtype::engine::Duration::zero()) {
-    const rtype::engine::Duration step = std::min(duration, ONE_FRAME);
-    screen().update(step);
-    duration -= step;
-  }
+  advanceFrameByFrame(screen(), duration);
 }
 
 EndScreen& EndScreenFixture::screen() { return *screen_; }

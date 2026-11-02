@@ -1,8 +1,10 @@
 #include "ScreenBuilding.hpp"
 #include <SFML/System/Vector2.hpp>
 #include <memory>
+#include <utility>
 #include "AssetLibrary.hpp"
 #include "AssetList.hpp"
+#include "DialogScreen.hpp"
 #include "GameWindow.hpp"
 #include "IInterfaceCanvas.hpp"
 #include "IScreen.hpp"
@@ -10,6 +12,7 @@
 #include "InterfaceCanvas.hpp"
 #include "LoadingScreen.hpp"
 #include "LoadingScreenParts.hpp"
+#include "Menu.hpp"
 #include "MotionPreference.hpp"
 #include "PlayfieldMapping.hpp"
 #include "ReducedMotion.hpp"
@@ -36,6 +39,12 @@ PlayfieldMapping playfieldMappingOf(const ScreenContext& context) {
   const GameWindow& window = context.services.window.get();
   return
       [&window](sf::Vector2i pixel) { return window.playfieldPointAt(pixel); };
+}
+
+std::unique_ptr<IScreen> dialogScreenOf(const ScreenContext& context,
+                                        Menu menu) {
+  return std::make_unique<DialogScreen>(
+      std::move(menu), playfieldMappingOf(context), interfaceCanvasOf(context));
 }
 
 std::unique_ptr<IScreen> loadingScreenUnlessLoaded(const ScreenContext& context,

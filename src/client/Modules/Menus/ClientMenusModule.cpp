@@ -5,6 +5,7 @@
 #include <vector>
 #include "ConnectionScreen.hpp"
 #include "ConnectionScreenParts.hpp"
+#include "DialogMenus.hpp"
 #include "IScreen.hpp"
 #include "InstallContext.hpp"
 #include "IntroScreen.hpp"
@@ -15,8 +16,6 @@
 #include "OptionsPlace.hpp"
 #include "OptionsScreen.hpp"
 #include "OptionsScreenParts.hpp"
-#include "QuitConfirmationScreen.hpp"
-#include "QuitConfirmationScreenParts.hpp"
 #include "ScreenAssets.hpp"
 #include "ScreenBuilding.hpp"
 #include "ScreenContext.hpp"
@@ -80,12 +79,16 @@ std::unique_ptr<IScreen> buildOptionsScreen(const ScreenContext& context,
 
 std::unique_ptr<IScreen> buildQuitConfirmationScreen(
     const ScreenContext& context) {
-  return std::make_unique<QuitConfirmationScreen>(
-      QuitConfirmationScreenParts{
-          .navigator = context.navigator.get(),
-          .sounds = soundsOf(context),
-          .playfieldPointAt = playfieldMappingOf(context)},
-      interfaceCanvasOf(context));
+  return dialogScreenOf(context, quitConfirmationMenu(context.navigator.get(),
+                                                      soundsOf(context)));
+}
+
+std::unique_ptr<IScreen> buildConnectionLostScreen(
+    const ScreenContext& context) {
+  return dialogScreenOf(
+      context,
+      connectionLostMenu(context.navigator.get(), soundsOf(context),
+                         context.services.connection.get().status().phase));
 }
 
 std::unique_ptr<IScreen> buildConnectionScreen(const ScreenContext& context) {
@@ -94,8 +97,7 @@ std::unique_ptr<IScreen> buildConnectionScreen(const ScreenContext& context) {
                             .sounds = soundsOf(context),
                             .connection = context.services.connection.get(),
                             .playfieldPointAt = playfieldMappingOf(context),
-                            .server = context.services.server,
-                            .nickname = context.services.nickname},
+                            .choice = context.serverChoice.get()},
       interfaceCanvasOf(context));
 }
 
@@ -127,6 +129,7 @@ void ClientMenusModule::install(engine::InstallContext& context) {
   });
   registry.add(QUIT_CONFIRMATION_SCREEN, buildQuitConfirmationScreen);
   registry.add(CONNECTION_SCREEN, buildConnectionScreen);
+  registry.add(CONNECTION_LOST_SCREEN, buildConnectionLostScreen);
 }
 
 void ClientMenusModule::start() {}
