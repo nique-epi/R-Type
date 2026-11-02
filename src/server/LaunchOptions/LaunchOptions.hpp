@@ -34,8 +34,7 @@ class LaunchOptions {
    *         `--seed` is not a whole number from 0 to 4294967295, the value of
    *         `--state-rate` is not a whole number from
    *         LOWEST_WORLD_STATES_PER_SECOND to HIGHEST_WORLD_STATES_PER_SECOND,
-   *         or the value of `--set` is not `name=value` with a value holding
-   *         no quote.
+   *         or the value of `--set` is not `name=value`.
    */
   [[nodiscard]] static LaunchOptions read(
       std::span<const std::string_view> arguments);

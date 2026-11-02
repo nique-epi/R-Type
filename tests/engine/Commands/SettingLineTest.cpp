@@ -1,4 +1,7 @@
 #include <gtest/gtest.h>
+#include <string>
+#include <string_view>
+#include "CommandLine.hpp"
 #include "EngineException.hpp"
 #include "SettingLine.hpp"
 #include "SettingLineTestConstants.hpp"
@@ -6,6 +9,7 @@
 using rtype::engine::CommandRefusedException;
 using rtype::engine::settingLine;
 using rtype::engine::settingLineFromAssignment;
+using rtype::engine::splitCommandLine;
 
 /**
  * Given a name and a plain value
@@ -49,12 +53,45 @@ TEST(SettingLine, EmptyValueIsQuoted) {
 /**
  * Given a value holding a quote
  * When the line is built
- * Then it is refused
+ * Then the value is quoted with the quote escaped
  */
-TEST(SettingLine, ValueWithAQuoteIsRefused) {
-  EXPECT_THROW(
-      static_cast<void>(settingLine(LINE_SETTING_NAME, LINE_QUOTED_VALUE)),
-      CommandRefusedException);
+TEST(SettingLine, ValueWithAQuoteIsQuotedAndEscaped) {
+  EXPECT_EQ(settingLine(LINE_SETTING_NAME, LINE_QUOTED_VALUE),
+            LINE_FOR_QUOTED_VALUE);
+}
+
+/**
+ * Given a value holding a backslash and a space
+ * When the line is built
+ * Then the value is quoted with the backslash escaped
+ */
+TEST(SettingLine, BackslashInAQuotedValueIsEscaped) {
+  EXPECT_EQ(settingLine(LINE_SETTING_NAME, LINE_BACKSLASH_VALUE),
+            LINE_FOR_BACKSLASH_VALUE);
+}
+
+/**
+ * Given a value holding a backslash and nothing that needs quotes
+ * When the line is built
+ * Then the value is written as is
+ */
+TEST(SettingLine, BackslashInAnUnquotedValueIsKept) {
+  EXPECT_EQ(settingLine(LINE_SETTING_NAME, LINE_PLAIN_BACKSLASH_VALUE),
+            LINE_FOR_PLAIN_BACKSLASH_VALUE);
+}
+
+/**
+ * Given values that need quotes, escapes, or none
+ * When each line is built and split back into words
+ * Then the last word is the value, exactly as given
+ */
+TEST(SettingLine, SplittingTheLineGivesTheValueBack) {
+  for (const std::string_view value :
+       {LINE_PLAIN_VALUE, LINE_SPACED_VALUE, LINE_MARKED_VALUE,
+        LINE_QUOTED_VALUE, LINE_BACKSLASH_VALUE, LINE_PLAIN_BACKSLASH_VALUE}) {
+    EXPECT_EQ(splitCommandLine(settingLine(LINE_SETTING_NAME, value)).back(),
+              std::string(value));
+  }
 }
 
 /**

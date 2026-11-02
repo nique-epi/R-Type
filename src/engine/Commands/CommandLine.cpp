@@ -1,5 +1,6 @@
 #include "CommandLine.hpp"
 #include <cctype>
+#include <cstddef>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -14,6 +15,10 @@ bool isSpace(char character) {
   return std::isspace(static_cast<unsigned char>(character)) != 0;
 }
 
+bool isEscapable(char character) {
+  return character == QUOTE || character == ESCAPE;
+}
+
 }  // namespace
 
 std::vector<std::string> splitCommandLine(std::string_view line) {
@@ -21,11 +26,16 @@ std::vector<std::string> splitCommandLine(std::string_view line) {
   std::string word;
   bool inQuotes = false;
   bool inWord = false;
-  for (const char character : line) {
+  for (std::size_t position = 0; position < line.size(); ++position) {
+    const char character = line[position];
     if (!inQuotes && character == COMMENT_START) {
       break;
     }
-    if (character == QUOTE) {
+    if (inQuotes && character == ESCAPE && position + 1 < line.size() &&
+        isEscapable(line[position + 1])) {
+      ++position;
+      word.push_back(line[position]);
+    } else if (character == QUOTE) {
       inQuotes = !inQuotes;
       inWord = true;
     } else if (!inQuotes && isSpace(character)) {

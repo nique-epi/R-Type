@@ -16,26 +16,30 @@ constexpr char ASSIGNMENT_MARK = '=';
 bool needsQuotes(std::string_view value) {
   return value.empty() || std::ranges::any_of(value, [](char character) {
            return std::isspace(static_cast<unsigned char>(character)) != 0 ||
-                  character == COMMENT_START;
+                  character == COMMENT_START || character == QUOTE;
          });
+}
+
+/**
+ * @returns @p value between quotes, each quote and backslash of it escaped.
+ */
+std::string quoted(std::string_view value) {
+  std::string text(1, QUOTE);
+  for (const char character : value) {
+    if (character == QUOTE || character == ESCAPE) {
+      text += ESCAPE;
+    }
+    text += character;
+  }
+  text += QUOTE;
+  return text;
 }
 
 }  // namespace
 
 std::string settingLine(std::string_view name, std::string_view value) {
-  if (value.find(QUOTE) != std::string_view::npos) {
-    throw CommandRefusedException("a value cannot hold a quote");
-  }
-  std::string line =
-      std::string(SET_COMMAND_NAME) + " " + std::string(name) + " ";
-  if (needsQuotes(value)) {
-    line += QUOTE;
-    line += value;
-    line += QUOTE;
-  } else {
-    line += value;
-  }
-  return line;
+  return std::string(SET_COMMAND_NAME) + " " + std::string(name) + " " +
+         (needsQuotes(value) ? quoted(value) : std::string(value));
 }
 
 std::string settingLineFromAssignment(std::string_view assignment) {

@@ -16,6 +16,12 @@ constexpr char COMMENT_START = '#';
 constexpr char QUOTE = '"';
 
 /**
+ * @brief The character that, inside quotes, makes the quote or the backslash
+ * after it part of the word.
+ */
+constexpr char ESCAPE = '\\';
+
+/**
  * @brief The command that gives a declared setting a value.
  */
 constexpr std::string_view SET_COMMAND_NAME = "set";

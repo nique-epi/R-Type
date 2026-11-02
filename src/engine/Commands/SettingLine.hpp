@@ -8,11 +8,9 @@ namespace rtype::engine {
 /**
  * @brief Builds the line `set <name> <value>`.
  *
- * The value is wrapped in quotes when it is empty or holds a space or a
- * comment mark, so it reaches the `set` command as one word.
- *
- * @throws CommandRefusedException if the value holds a quote, which a line of
- * commands cannot carry inside a word.
+ * The value is wrapped in quotes when it is empty or holds a space, a comment
+ * mark or a quote, with each quote and backslash escaped by a backslash, so it
+ * reaches the `set` command as one word, exactly as given.
  */
 [[nodiscard]] std::string settingLine(std::string_view name,
                                       std::string_view value);
@@ -21,8 +19,7 @@ namespace rtype::engine {
  * @brief Builds the line `set <name> <value>` from @p assignment, written
  * `name=value` as a launch option gives it; the first `=` ends the name.
  *
- * @throws CommandRefusedException if there is no `=`, if the name is empty, or
- * if the value holds a quote.
+ * @throws CommandRefusedException if there is no `=` or if the name is empty.
  */
 [[nodiscard]] std::string settingLineFromAssignment(
     std::string_view assignment);

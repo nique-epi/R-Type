@@ -31,3 +31,24 @@ constexpr std::string_view OPEN_QUOTE_LINE = "set nickname \"Captain Star";
  * @brief A line holding an empty quoted word.
  */
 constexpr std::string_view EMPTY_QUOTED_LINE = "set nickname \"\"";
+
+/**
+ * @brief A quoted word holding an escaped quote.
+ */
+constexpr std::string_view ESCAPED_QUOTE_LINE = "set nickname \"a\\\"b\"";
+
+/**
+ * @brief A quoted word holding an escaped backslash before the closing quote.
+ */
+constexpr std::string_view ESCAPED_BACKSLASH_LINE = "set nickname \"a\\\\\"";
+
+/**
+ * @brief A quoted word holding a backslash before an ordinary character.
+ */
+constexpr std::string_view PLAIN_BACKSLASH_IN_QUOTES_LINE =
+    "set nickname \"a\\b c\"";
+
+/**
+ * @brief A word outside quotes holding a backslash.
+ */
+constexpr std::string_view BACKSLASH_OUTSIDE_QUOTES_LINE = "set path a\\b";

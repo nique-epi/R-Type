@@ -108,4 +108,3 @@ constexpr std::string_view ASSIGNMENT_LINE = "set nickname ace";
  */
 constexpr std::string_view ASSIGNMENT_WITHOUT_MARK = "nickname";
 constexpr std::string_view ASSIGNMENT_WITHOUT_NAME = "=ace";
-constexpr std::string_view ASSIGNMENT_WITH_QUOTE = "nickname=a\"b";

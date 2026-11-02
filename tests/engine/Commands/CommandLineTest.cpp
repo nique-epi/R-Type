@@ -74,3 +74,43 @@ TEST(CommandLine, EmptyQuotesGiveAnEmptyWord) {
 TEST(CommandLine, EmptyLineHasNoWord) {
   EXPECT_TRUE(splitCommandLine("").empty());
 }
+
+/**
+ * Given a quoted word holding an escaped quote
+ * When it is split
+ * Then the quote is part of the word and does not end it
+ */
+TEST(CommandLine, EscapedQuoteIsPartOfTheWord) {
+  EXPECT_EQ(splitCommandLine(ESCAPED_QUOTE_LINE),
+            (Words{"set", "nickname", "a\"b"}));
+}
+
+/**
+ * Given a quoted word holding an escaped backslash before the closing quote
+ * When it is split
+ * Then the backslash is part of the word and the quote ends it
+ */
+TEST(CommandLine, EscapedBackslashIsPartOfTheWord) {
+  EXPECT_EQ(splitCommandLine(ESCAPED_BACKSLASH_LINE),
+            (Words{"set", "nickname", "a\\"}));
+}
+
+/**
+ * Given a quoted word holding a backslash before an ordinary character
+ * When it is split
+ * Then the backslash stays in the word
+ */
+TEST(CommandLine, BackslashBeforeAnOrdinaryCharacterIsPlain) {
+  EXPECT_EQ(splitCommandLine(PLAIN_BACKSLASH_IN_QUOTES_LINE),
+            (Words{"set", "nickname", "a\\b c"}));
+}
+
+/**
+ * Given a word outside quotes holding a backslash
+ * When it is split
+ * Then the backslash stays in the word
+ */
+TEST(CommandLine, BackslashOutsideQuotesIsPlain) {
+  EXPECT_EQ(splitCommandLine(BACKSLASH_OUTSIDE_QUOTES_LINE),
+            (Words{"set", "path", "a\\b"}));
+}

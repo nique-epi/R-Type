@@ -349,14 +349,13 @@ TEST(ServerLaunchOptions, ForcedLinesKeepTheOrderOfTheOptions) {
 }
 
 /**
- * Given a set option whose value is not `name=value`, or holds a quote
+ * Given a set option whose value is not `name=value`
  * When the launch options are read
  * Then each is refused as an invalid value of the option
  */
 TEST(ServerLaunchOptions, SetOptionRefusesAnInvalidAssignment) {
   for (const std::string_view assignment :
-       {ASSIGNMENT_WITHOUT_MARK, ASSIGNMENT_WITHOUT_NAME,
-        ASSIGNMENT_WITH_QUOTE}) {
+       {ASSIGNMENT_WITHOUT_MARK, ASSIGNMENT_WITHOUT_NAME}) {
     EXPECT_THROW(static_cast<void>(
                      LaunchOptions::read(Arguments{SET_OPTION, assignment})),
                  InvalidLaunchOptionValueException)

@@ -67,7 +67,7 @@ std::size_t stateRateFromText(std::string_view text) {
 /**
  * @returns The line that gives the setting @p assignment names its value.
  * @throws engine::InvalidLaunchOptionValueException naming @p option when
- * @p assignment is not `name=value` with a value holding no quote.
+ * @p assignment is not `name=value`.
  */
 std::string settingLineFrom(std::string_view option,
                             std::string_view assignment) {
