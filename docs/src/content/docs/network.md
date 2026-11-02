@@ -132,7 +132,7 @@ Either program can make its datagrams cross a simulated network, to show on one 
 
 The draws start from fixed seeds (`SENT_DATAGRAMS_SEED`, `RECEIVED_DATAGRAMS_SEED`), so two runs that hand over the same datagrams at the same times lose the same ones. A datagram the real socket would refuse is refused at once, as `IDatagramSocket::send()` promises, and one still in flight when the socket is destroyed never arrives. One direction holds at most `MAXIMUM_DATAGRAMS_IN_FLIGHT` (8192) datagrams, copies included, and loses one handed over when that many wait, as a full router queue does: a flood cannot make one direction hold more than about 10 MB, nor a program, with its two directions, more than about 20 MB. A lag or a jitter below zero or over `MAXIMUM_SIMULATED_DELAY` (10 s), which the options below never give, is refused when the simulated network is built (`SimulatedDelayOutOfRangeException`, from `DatagramsInFlight`): no wait can be drawn from a negative jitter, and a far longer one would overflow the clock the waits are counted on.
 
-Both programs read these options with `SimulatorLaunchOptions` before their own, in the order given, so an option written after `--network` changes one value of its scenario. As with the logging options, a value of another option spelled like one of them, a nickname `--lag` for example, is read as that option.
+Both programs read these options with `SimulatorLaunchOptions` in the same pass as their own and the logging options, in the order given, so an option written after `--network` changes one value of its scenario. The argument after an option that takes a value is always its value: `-n --lag` is the nickname `--lag`, and `--seed --lag 20` refuses `--lag` as a seed.
 
 | Option | Effect |
 |---|---|
@@ -302,7 +302,7 @@ Measured on 27 October 2026 on an Apple M4 Pro under macOS 27.0, with the server
 | Change how datagrams are received or sent | `src/network/Transport/UdpSocket/` |
 | Change how datagrams go between the socket and the queues | `src/network/Transport/DatagramRelay/` |
 | Run a program over a simulated network | the options of [Network simulator](#network-simulator-simulatednetworksocket) |
-| Add an option of the network simulator | `SimulatorLaunchOptions::read()` and `usage()` in `src/network/Transport/Conditions/SimulatorLaunchOptions.cpp`, its name in `NetworkConditionsConstants.hpp`; the client and the server both read it before their own options |
+| Add an option of the network simulator | `SimulatorLaunchOptions::readOption()` and `usage()` in `src/network/Transport/Conditions/SimulatorLaunchOptions.cpp`, its name in `NetworkConditionsConstants.hpp`; the client and the server both read it among their own options |
 | Change a scenario of the simulator, or add one | `NETWORK_SCENARIOS` and its entries in `src/network/Transport/Conditions/NetworkConditionsConstants.hpp` |
 | Change what the simulator does to a datagram | `DatagramsInFlight` in `src/network/Transport/Simulator/` |
 | Write a class that needs Asio | A folder in `src/network` whose target links `rtype_network_asio` privately |

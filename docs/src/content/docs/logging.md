@@ -92,23 +92,19 @@ Without options, every line goes both to the journal and to standard error, so a
 
 The level can also come from the `RT_LOG_LEVEL` environment variable; `--log-level` wins over it. A value of `RT_LOG_LEVEL` that is not a level is ignored, while a `--log-level` that is not a level is an error.
 
-The last of `--log-file` and `--no-log-file` wins, and so does the last of `--log-stderr` and `--no-log-stderr`. With `--no-log-file` and `--no-log-stderr`, nothing is written. Arguments that do not start with `--log-` or `--no-log-` are left to the program, which rejects the ones it does not know either (see [Server](/R-Type/server/#launch-options-launchoptions) and [Client](/R-Type/client/#launch-options-launchoptions)); a `--log-` option that does not exist is an error, so a typo is never silent.
+The last of `--log-file` and `--no-log-file` wins, and so does the last of `--log-stderr` and `--no-log-stderr`. With `--no-log-file` and `--no-log-stderr`, nothing is written. A program reads all its arguments once, in order, and hands the logging options only the ones that are neither its own options nor the value of one, so the value of an option is never read as a logging option: `r-type_client -n --no-log-file` starts with the nickname `--no-log-file` and keeps its journal. Any other argument is left to the program, which rejects the ones it does not know either (see [Server](/R-Type/server/#launch-options-launchoptions) and [Client](/R-Type/client/#launch-options-launchoptions)); a `--log-` option that does not exist is an error, so a typo is never silent.
 
-`LogLaunchOptions` reads and applies in two steps. `read()` checks every logging option, keeps the other arguments for `otherArguments()`, and touches nothing; `apply()` opens the journal, sets the level, then writes the line that names the journal. A program reads its own options in between, so an invalid argument, or `--help`, stops it before any journal is created. With an invalid option, or a journal that cannot be opened, the program stops with a message and exit code 1. `LogLaunchOptions::usage()` writes the part of a program's `--help` that lists these options.
+`LogLaunchOptions` reads and applies in two steps. `readOption()` reads the logging option the arguments start with, returns how many arguments it took (see [Engine](/R-Type/engine/#launch-arguments-readlauncharguments)), and touches nothing; `apply()` opens the journal, sets the level, then writes the line that names the journal. `server::LaunchOptions` and `client::LaunchOptions` read the logging options with their own and keep them (`logOptions()`), so an invalid argument, or `--help`, stops the program before any journal is created. With an invalid option, or a journal that cannot be opened, the program stops with a message and exit code 1. `LogLaunchOptions::usage()` writes the part of a program's `--help` that lists these options.
 
 ```cpp
-const rtype::logging::LogLaunchOptions logOptions =
-    rtype::logging::LogLaunchOptions::readFromProcess(
-        argumentCount, arguments,
-        rtype::engine::executableFolder() /
-            rtype::logging::SERVER_LOG_FILE_NAME);
 const rtype::server::LaunchOptions launchOptions =
-    rtype::server::LaunchOptions::read(logOptions.otherArguments());
+    rtype::server::LaunchOptions::read(
+        rtype::engine::processArguments(argumentCount, arguments));
 if (launchOptions.helpRequested()) {
   std::cout << rtype::server::LaunchOptions::usage();
   return 0;
 }
-logOptions.apply();
+launchOptions.logOptions().apply();
 ```
 
 The journal is opened in append mode, so a second launch keeps the lines of the first, and it is flushed after every line, so it is complete even if the program crashes. `NO_COLOR` or `RT_LOG_NO_COLOR` turns the color of standard error off.
