@@ -25,9 +25,6 @@ struct MalformedDatagram {
   std::vector<std::byte> bytes;
 };
 
-/** @returns The bytes of a default header, less its last one. */
-[[nodiscard]] std::vector<std::byte> headerOneByteShort();
-
 /** @returns One datagram for each fault splitMessages() refuses. */
 [[nodiscard]] std::vector<MalformedDatagram> malformedDatagrams();
 

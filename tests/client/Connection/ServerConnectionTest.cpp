@@ -86,6 +86,7 @@ using testing::SERVER_VERSION;
 using testing::ServerConnectionFixture;
 using testing::ServerConnectionLogFixture;
 using testing::SESSION_TOKEN;
+using testing::sessionHeader;
 using testing::SHIP_ID;
 using ::testing::SizeIs;
 using testing::spawned;

@@ -45,10 +45,15 @@ network::GameEnded endOfOnePilot() {
                                          .score = PILOT_FINAL_SCORE}}};
 }
 
-network::PacketHeader guaranteedSessionHeader(std::uint16_t sequence) {
+network::PacketHeader sessionHeader(std::uint16_t sequence) {
   network::PacketHeader header;
   header.sessionToken = SESSION_TOKEN;
   header.sequence = sequence;
+  return header;
+}
+
+network::PacketHeader guaranteedSessionHeader(std::uint16_t sequence) {
+  network::PacketHeader header = sessionHeader(sequence);
   header.flags = network::GUARANTEED_FLAG;
   return header;
 }

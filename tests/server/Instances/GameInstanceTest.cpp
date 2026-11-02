@@ -913,9 +913,8 @@ TEST_F(GameInstanceTest, StopsSendingAPlayerLeftItsClientAcknowledged) {
   acknowledgement.flags = PROTOCOL_ACKNOWLEDGES_FLAG;
   acknowledgement.acknowledgedSequence = *told;
 
-  queue(network::IncomingDatagram{.sender = first.endpoint,
-                                  .payload = network::DatagramCodec::encode(
-                                      acknowledgement, network::Heartbeat{})});
+  queue(network::IncomingDatagram{
+      .sender = first.endpoint, .payload = heartbeatDatagram(acknowledgement)});
   tick();
   runTicks(testing::TICKS_BEFORE_A_RESEND);
 

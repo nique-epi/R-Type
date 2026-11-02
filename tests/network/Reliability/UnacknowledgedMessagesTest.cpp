@@ -4,6 +4,7 @@
 #include "NetworkException.hpp"
 #include "NetworkTestConstants.hpp"
 #include "PacketHeader.hpp"
+#include "ProtocolFixtures.hpp"
 #include "ProtocolTestConstants.hpp"
 #include "ReliabilityFixtures.hpp"
 #include "ReliabilityTestConstants.hpp"

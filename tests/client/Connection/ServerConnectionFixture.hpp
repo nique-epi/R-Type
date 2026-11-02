@@ -80,10 +80,6 @@ class ServerConnectionFixture : public ::testing::Test {
         std::ranges::count_if(link_.sent(), holds<Message>));
   }
 
-  /** @returns A header of the server carrying this sequence and
-   * SESSION_TOKEN. */
-  static network::PacketHeader sessionHeader(std::uint16_t sequence);
-
   [[nodiscard]] network::PlayerInput lastInput() const;
 
   [[nodiscard]] network::PacketHeader lastHeader() const;

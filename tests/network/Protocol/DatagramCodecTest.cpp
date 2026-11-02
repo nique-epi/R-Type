@@ -32,6 +32,7 @@ using testing::EMPTY_MESSAGE_DATAGRAM_SIZE;
 using testing::FILLING_PAYLOAD_SIZE;
 using testing::LARGEST_DATAGRAM_SIZE;
 using testing::malformedDatagrams;
+using testing::messageOfSize;
 using testing::nameOfFault;
 using testing::OVERFILLING_PAYLOAD_SIZE;
 using testing::SOME_ACKNOWLEDGED_SEQUENCE;
@@ -483,9 +484,7 @@ TEST(DatagramCodec, EncodesSeveralMessagesInOrder) {
  */
 TEST(DatagramCodec, EncodesSeveralMessagesThatFillADatagram) {
   const std::vector<EncodedMessage> messages(
-      2,
-      EncodedMessage{.type = MessageType::GameEvent,
-                     .payload = std::vector<std::byte>(FILLING_PAYLOAD_SIZE)});
+      2, messageOfSize(FILLING_PAYLOAD_SIZE));
 
   EXPECT_EQ(DatagramCodec::encode(PacketHeader{}, messages).size(),
             LARGEST_DATAGRAM_SIZE);
@@ -498,11 +497,8 @@ TEST(DatagramCodec, EncodesSeveralMessagesThatFillADatagram) {
  */
 TEST(DatagramCodec, RefusesSeveralMessagesOneByteTooLarge) {
   const std::vector<EncodedMessage> messages{
-      EncodedMessage{.type = MessageType::GameEvent,
-                     .payload = std::vector<std::byte>(FILLING_PAYLOAD_SIZE)},
-      EncodedMessage{
-          .type = MessageType::GameEvent,
-          .payload = std::vector<std::byte>(OVERFILLING_PAYLOAD_SIZE)}};
+      messageOfSize(FILLING_PAYLOAD_SIZE),
+      messageOfSize(OVERFILLING_PAYLOAD_SIZE)};
 
   EXPECT_THROW(
       static_cast<void>(DatagramCodec::encode(PacketHeader{}, messages)),

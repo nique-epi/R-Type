@@ -6,8 +6,6 @@
 
 namespace rtype::server::testing {
 
-constexpr std::uint16_t FIRST_CLIENT_PORT = 4000;
-constexpr std::uint16_t SECOND_CLIENT_PORT = 4001;
 constexpr std::uint32_t MONSTER_NETWORK_ID = 7;
 constexpr float MONSTER_X = 100.0F;
 constexpr float MONSTER_Y = 50.0F;

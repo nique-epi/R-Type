@@ -24,11 +24,6 @@ std::uint16_t numberOf(const EncodedMessage& message) {
   return reader.readUint16();
 }
 
-EncodedMessage messageOfSize(std::size_t size) {
-  return EncodedMessage{.type = MessageType::GameEvent,
-                        .payload = std::vector<std::byte>(size)};
-}
-
 PacketHeader acknowledgingHeader(std::uint16_t acknowledgedSequence,
                                  std::uint32_t bits) {
   PacketHeader header;

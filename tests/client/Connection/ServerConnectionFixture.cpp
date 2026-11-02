@@ -83,14 +83,6 @@ std::vector<EntityMessage> ServerConnectionFixture::drainedEntityMessages() {
   return drained;
 }
 
-network::PacketHeader ServerConnectionFixture::sessionHeader(
-    std::uint16_t sequence) {
-  network::PacketHeader header;
-  header.sessionToken = SESSION_TOKEN;
-  header.sequence = sequence;
-  return header;
-}
-
 network::PlayerInput ServerConnectionFixture::lastInput() const {
   return inputOf(link_.sent().back());
 }

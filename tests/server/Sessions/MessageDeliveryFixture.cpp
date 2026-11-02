@@ -12,6 +12,7 @@
 #include "OutgoingDatagram.hpp"
 #include "PacketHeader.hpp"
 #include "PlayerRoster.hpp"
+#include "SentDatagrams.hpp"
 #include "SessionsFixtures.hpp"
 #include "TimeConstants.hpp"
 
@@ -44,14 +45,7 @@ void MessageDeliveryFixture::endTicks(std::size_t count) {
 
 std::vector<network::OutgoingDatagram> MessageDeliveryFixture::sentTo(
     std::size_t index) const {
-  const network::Endpoint destination = originOf(index).sender;
-  std::vector<network::OutgoingDatagram> received;
-  for (const network::OutgoingDatagram& datagram : sent_) {
-    if (datagram.destination == destination) {
-      received.push_back(datagram);
-    }
-  }
-  return received;
+  return testing::sentTo(sent_, playerEndpoint(index));
 }
 
 void MessageDeliveryFixture::acknowledgeFrom(std::size_t index,
@@ -59,7 +53,7 @@ void MessageDeliveryFixture::acknowledgeFrom(std::size_t index,
   network::PacketHeader header;
   header.flags = PROTOCOL_ACKNOWLEDGES_FLAG;
   header.acknowledgedSequence = sequence;
-  roster_.find(originOf(index).sender)->unacknowledged.acknowledge(header);
+  roster_.find(playerEndpoint(index))->unacknowledged.acknowledge(header);
 }
 
 }  // namespace rtype::server::testing

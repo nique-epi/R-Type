@@ -24,11 +24,16 @@ static_assert(!SplittableAs<const std::vector<std::byte>>,
 static_assert(!SplittableAs<std::array<std::byte, EMPTY_MESSAGE_DATAGRAM_SIZE>>,
               "a temporary array cannot be split either");
 
+namespace {
+
+/** @returns The bytes of a default header, less its last one. */
 std::vector<std::byte> headerOneByteShort() {
   auto bytes = defaultHeaderBytes();
   bytes.pop_back();
   return bytes;
 }
+
+}  // namespace
 
 std::vector<MalformedDatagram> malformedDatagrams() {
   return {

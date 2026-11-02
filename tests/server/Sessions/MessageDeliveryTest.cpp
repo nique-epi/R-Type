@@ -10,6 +10,7 @@
 #include "NetworkTestConstants.hpp"
 #include "OutgoingDatagram.hpp"
 #include "PlayerRoster.hpp"
+#include "SentDatagrams.hpp"
 #include "SequenceOrder.hpp"
 #include "SessionsFixtures.hpp"
 

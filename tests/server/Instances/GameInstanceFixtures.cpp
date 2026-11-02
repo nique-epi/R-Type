@@ -4,6 +4,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <initializer_list>
+#include <iterator>
 #include <memory>
 #include <optional>
 #include <ostream>
@@ -31,8 +32,6 @@
 #include "IncomingDatagram.hpp"
 #include "Intent.hpp"
 #include "LobbyState.hpp"
-#include "MessageFrame.hpp"
-#include "MessagePayload.hpp"
 #include "MessageType.hpp"
 #include "OutgoingDatagram.hpp"
 #include "PacketHeader.hpp"
@@ -59,11 +58,7 @@ std::vector<network::OutgoingDatagram> ofType(
     const std::vector<network::OutgoingDatagram>& datagrams) {
   std::vector<network::OutgoingDatagram> kept;
   for (const network::OutgoingDatagram& datagram : datagrams) {
-    if (std::ranges::any_of(
-            network::DatagramCodec::splitMessages(datagram.payload),
-            [type](const network::MessageFrame& frame) {
-              return frame.type == static_cast<std::uint8_t>(type);
-            })) {
+    if (holdsMessageOfType(datagram, type)) {
       kept.push_back(datagram);
     }
   }
@@ -172,14 +167,8 @@ std::vector<network::PlayerLeft> GameInstanceTest::playerLeftSentTo(
   std::vector<network::PlayerLeft> received;
   for (const network::OutgoingDatagram& datagram :
        testing::sentTo(datagrams, playerEndpoint(index))) {
-    for (const network::MessageFrame& frame :
-         network::DatagramCodec::splitMessages(datagram.payload)) {
-      if (frame.type ==
-          static_cast<std::uint8_t>(network::MessageType::PlayerLeft)) {
-        received.push_back(
-            network::decodeMessage<network::PlayerLeft>(frame.payload));
-      }
-    }
+    std::ranges::copy(messagesIn<network::PlayerLeft>(datagram),
+                      std::back_inserter(received));
   }
   return received;
 }
