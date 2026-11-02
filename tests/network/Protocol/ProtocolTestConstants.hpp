@@ -213,6 +213,13 @@ constexpr std::uint8_t TYPE_ABOVE_THE_LAST = 17;
 constexpr std::uint8_t LARGEST_TYPE_BYTE = 255;
 
 /**
+ * @brief The type bytes of a Heartbeat (5) and of a ReadyState (6), as the
+ * malformed datagrams of the codec tests write them.
+ */
+constexpr std::uint8_t HEARTBEAT_TYPE_BYTE = 0x05;
+constexpr std::uint8_t READY_STATE_TYPE_BYTE = 0x06;
+
+/**
  * @brief How many messages a test has a dispatcher reject at once, to check
  * that they share one log line.
  */

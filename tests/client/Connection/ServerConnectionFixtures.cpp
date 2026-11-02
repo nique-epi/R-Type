@@ -1,5 +1,6 @@
 #include "ServerConnectionFixtures.hpp"
 #include <gtest/gtest.h>
+#include <cstdint>
 #include <string>
 #include <vector>
 #include "ActionSet.hpp"

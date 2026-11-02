@@ -5,7 +5,6 @@
 #include <vector>
 #include "ConnectedPlayer.hpp"
 #include "EncodedMessage.hpp"
-#include "GuaranteedMessageTestConstants.hpp"
 #include "MessageDelivery.hpp"
 #include "MessageDeliveryTestConstants.hpp"
 #include "NetworkTestConstants.hpp"

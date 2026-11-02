@@ -41,14 +41,17 @@ std::vector<MalformedDatagram> malformedDatagrams() {
                         .bytes = headerOneByteShort()},
       MalformedDatagram{.fault = "HeaderAlone", .bytes = defaultHeaderBytes()},
       MalformedDatagram{.fault = "PrefixCutShort",
-                        .bytes = datagramOf({0x05, 0x00})},
-      MalformedDatagram{.fault = "SizePastTheEnd",
-                        .bytes = datagramOf({0x06, 0x00, 0x02, 0x01})},
-      MalformedDatagram{.fault = "BytesAfterTheLastMessage",
-                        .bytes = datagramOf({0x06, 0x00, 0x01, 0x01, 0x00})},
+                        .bytes = datagramOf({HEARTBEAT_TYPE_BYTE, 0x00})},
+      MalformedDatagram{
+          .fault = "SizePastTheEnd",
+          .bytes = datagramOf({READY_STATE_TYPE_BYTE, 0x00, 0x02, 0x01})},
+      MalformedDatagram{
+          .fault = "BytesAfterTheLastMessage",
+          .bytes = datagramOf({READY_STATE_TYPE_BYTE, 0x00, 0x01, 0x01, 0x00})},
       MalformedDatagram{
           .fault = "SecondMessageCutShort",
-          .bytes = datagramOf({0x06, 0x00, 0x01, 0x01, 0x06, 0x00, 0x01})}};
+          .bytes = datagramOf({READY_STATE_TYPE_BYTE, 0x00, 0x01, 0x01,
+                               READY_STATE_TYPE_BYTE, 0x00, 0x01})}};
 }
 
 std::string nameOfFault(

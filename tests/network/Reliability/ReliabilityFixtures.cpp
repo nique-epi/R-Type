@@ -1,14 +1,12 @@
 #include "ReliabilityFixtures.hpp"
 #include <cstddef>
 #include <cstdint>
-#include <vector>
 #include "ByteReader.hpp"
 #include "ByteWriter.hpp"
 #include "EncodedMessage.hpp"
 #include "MessageType.hpp"
 #include "NetworkTestConstants.hpp"
 #include "PacketHeader.hpp"
-#include "ReliabilityTestConstants.hpp"
 
 namespace rtype::network::testing {
 
@@ -24,6 +22,7 @@ std::uint16_t numberOf(const EncodedMessage& message) {
   return reader.readUint16();
 }
 
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
 PacketHeader acknowledgingHeader(std::uint16_t acknowledgedSequence,
                                  std::uint32_t bits) {
   PacketHeader header;

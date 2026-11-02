@@ -1,7 +1,6 @@
 #pragma once
 
 #include <cstddef>
-#include <cstdint>
 #include "EntityDestroyed.hpp"
 #include "PlayerLeft.hpp"
 

@@ -1,9 +1,7 @@
 #include "MessageDeliveryFixtures.hpp"
 #include "EncodedMessage.hpp"
-#include "EntityDestroyed.hpp"
 #include "MessageDeliveryTestConstants.hpp"
 #include "MessagePayload.hpp"
-#include "PlayerLeft.hpp"
 
 namespace rtype::server::testing {
 

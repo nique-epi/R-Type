@@ -22,7 +22,6 @@
 #include "GameInstanceTestConstants.hpp"
 #include "GameState.hpp"
 #include "GuaranteedMessageTestConstants.hpp"
-#include "Heartbeat.hpp"
 #include "IncomingDatagram.hpp"
 #include "LobbyState.hpp"
 #include "MessageType.hpp"
@@ -911,7 +910,7 @@ TEST_F(GameInstanceTest, StopsSendingAPlayerLeftItsClientAcknowledged) {
   network::PacketHeader acknowledgement;
   acknowledgement.sessionToken = first.sessionToken;
   acknowledgement.flags = PROTOCOL_ACKNOWLEDGES_FLAG;
-  acknowledgement.acknowledgedSequence = *told;
+  acknowledgement.acknowledgedSequence = told.value_or(0);
 
   queue(network::IncomingDatagram{
       .sender = first.endpoint, .payload = heartbeatDatagram(acknowledgement)});
