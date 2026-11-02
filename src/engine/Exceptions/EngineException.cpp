@@ -85,6 +85,11 @@ DuplicateCommandException::DuplicateCommandException(
     : EngineException("The command \"" + commandName +
                       "\" is already registered") {}
 
+DuplicateSettingException::DuplicateSettingException(
+    const std::string& settingName)
+    : EngineException("The setting \"" + settingName +
+                      "\" is already declared") {}
+
 CommandRefusedException::CommandRefusedException(const std::string& reason)
     : EngineException(reason) {}
 

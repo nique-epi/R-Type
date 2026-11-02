@@ -176,6 +176,14 @@ class DuplicateCommandException : public EngineException {
 };
 
 /**
+ * @brief A setting was declared under a name another setting already has.
+ */
+class DuplicateSettingException : public EngineException {
+ public:
+  explicit DuplicateSettingException(const std::string& settingName);
+};
+
+/**
  * @brief What a command handler throws to refuse the words it was given; the
  * interpreter turns it into a message naming the command and the line.
  */
