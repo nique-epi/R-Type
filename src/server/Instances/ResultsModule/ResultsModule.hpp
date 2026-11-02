@@ -18,9 +18,9 @@ struct GameContext;
  * leaderboard requests of its players.
  *
  * It is installed after the module that provides IGameFlow, so its work runs
- * right after the rules in the same tick. start() adds its hook and its
- * handler, which stay registered after stop(): the game is destroyed right
- * after its modules stop, and neither is called in between.
+ * right after the rules in the same tick. start() adds its functions to the
+ * hooks of the game, which stay there after stop(): the game is destroyed right
+ * after its modules stop, and calls no hook in between.
  */
 class ResultsModule final : public IGameModule {
  public:

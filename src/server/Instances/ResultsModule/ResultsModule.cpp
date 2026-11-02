@@ -10,7 +10,6 @@
 #include "InstallContext.hpp"
 #include "LeaderboardDesk.hpp"
 #include "LeaderboardRequest.hpp"
-#include "MessageOrigin.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::server {
@@ -41,14 +40,10 @@ void ResultsModule::start() {
       [this](const ConnectedPlayer& departed) {
         keeper_->onPlayerClosing(departed);
       });
-  game_->messages.get().registerHandler<network::LeaderboardRequest>(
-      [this](const network::MessageOrigin& origin,
+  game_->hooks.get().leaderboardRequested.emplace_back(
+      [this](const ConnectedPlayer& player,
              const network::LeaderboardRequest& request) {
-        const ConnectedPlayer* const player =
-            game_->roster.get().find(origin.sender);
-        if (player != nullptr) {
-          desk_->onAsked(*player, request);
-        }
+        desk_->onAsked(player, request);
       });
 }
 

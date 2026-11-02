@@ -30,7 +30,6 @@ GameFlowFixture::GameFlowFixture()
           .systems = systems_,
           .roster = roster_,
           .hooks = hooks_,
-          .messages = messages_,
           .settings = GameSettings{.seed = SOME_SEED, .waves = testWavePlan()},
           .send = [](const network::OutgoingDatagram&) {},
           .everyPlayerIsReady =
