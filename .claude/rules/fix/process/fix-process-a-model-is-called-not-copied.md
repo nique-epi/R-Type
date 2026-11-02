@@ -11,6 +11,10 @@ trigger: always_on
 2. **Search the neighbouring folders before writing a helper**: the reuse dimension of `core/code-review.md` applies while writing, not only at review.
 3. **The extracted function follows the placement rules**: a free-function header and its target, in a folder every caller may link (`fix/architecture/fix-architecture-a-link-never-points-back-at-a-folder-that-links-it.md`). A caller that would have to link back keeps its own code, and the report says why.
 
+### A comment that names the model is the symptom
+
+1. **Before writing a comment such as "as YOU on the ink of the flight log" next to steps or values**, share them: the comment says the copy exists and will drift. The shared values go in one constants header, and the comment goes away.
+
 ## Example
 
 - ❌ **Before (wrong)**: `SfmlDrawSurface::loadFlashShader()` written "on the model of `InterfaceCanvas::loadCrispText()`": the same fifteen lines with other names.

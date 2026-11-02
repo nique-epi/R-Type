@@ -30,6 +30,11 @@ Why: a review asked "why does this class have so many methods and structs" about
    - A class with no `.cpp` (a fixture or a struct in a header) is counted by reading its body against point 1.
 5. **A class over the limit that the change does not give a member function is reported, not split** (`fix-process-rework-preexisting-inconsistencies.md`). Measured on `origin/main` at `56a7019`: `GameInstance` 31, `OptionsScreen` 31, `MenuBuilder` 27, `Menu` 26, `Button` 20, `Dropdown` 20, `Slider` 16, `ScreenStack` 15, among others.
 
+### A shared test fixture counts
+
+1. **A fixture or a test double the change gives a member function is measured like a production class**, in the list of point 4. An accessor for a new part is a new member function.
+2. **When the shared fixture is over the limit, the new tests get a fixture of their own**, holding only what they follow.
+
 ## Example
 
 - ❌ **Before (wrong)**: `EffectSpawner` with 33 member functions and nine members: the flash preference and budget, the kill chain, the gains, the camera shake, the pixel effects, the registries and the time since the start.
