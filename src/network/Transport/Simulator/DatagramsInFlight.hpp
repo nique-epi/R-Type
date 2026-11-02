@@ -34,6 +34,8 @@ class DatagramsInFlight {
    * @param conditions What the ping shows: each datagram that crosses here
    * waits half their lag and up to half their jitter.
    * @param seed The start of the draws.
+   * @throws NegativeSimulatedDelayException when the lag or the jitter of
+   * @p conditions is negative.
    */
   DatagramsInFlight(const NetworkConditions& conditions, std::uint32_t seed);
 

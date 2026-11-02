@@ -18,8 +18,11 @@
 #include "FlightLogPainting.hpp"
 #include "FlightLogTimeline.hpp"
 #include "FlightLogTimingConstants.hpp"
+#include "HeldKey.hpp"
 #include "IInterfaceCanvas.hpp"
 #include "InterfacePixel.hpp"
+#include "LobbyScreenIdConstants.hpp"
+#include "MenuScreenIdConstants.hpp"
 #include "MotionPreference.hpp"
 #include "ScreenId.hpp"
 #include "SoundConstants.hpp"
@@ -52,15 +55,6 @@ std::optional<EndChoice> choiceOfKey(sf::Keyboard::Key key) {
     return EndChoice::Quit;
   }
   return std::nullopt;
-}
-
-/** @returns Whether @p event lets go of the key held: its release, or the
- * window losing the focus, which hides that release. */
-bool releasesHeldKey(const sf::Event& event,
-                     std::optional<sf::Keyboard::Key> heldKey) {
-  const auto* released = event.getIf<sf::Event::KeyReleased>();
-  return event.is<sf::Event::FocusLost>() ||
-         (released != nullptr && heldKey == released->code);
 }
 
 }  // namespace
@@ -155,10 +149,10 @@ void EndScreen::advanceExit(engine::Duration elapsed) {
 void EndScreen::leave(EndChoice choice) {
   if (choice == EndChoice::Quit) {
     connection_->cancel();
-    navigator_->replaceAll(ScreenId::Title);
+    navigator_->replaceAll(TITLE_SCREEN);
     return;
   }
-  navigator_->replaceAll(ScreenId::LobbyAfterGame);
+  navigator_->replaceAll(LOBBY_AFTER_GAME_SCREEN);
 }
 
 FlightLogLook EndScreen::lookNow() const {

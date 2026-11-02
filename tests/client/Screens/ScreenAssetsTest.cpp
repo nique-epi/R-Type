@@ -158,6 +158,16 @@ TEST(ScreenAssets, AGameKeepsTheProfessorSheetForTheWaitingRoomAfterIt) {
 }
 
 /**
+ * Given the assets of a game and those of the title screen
+ * When their textures are listed
+ * Then a game keeps every texture of the title, so a title built after a game
+ * opens without a loading screen, which would close what is pushed over it
+ */
+TEST(ScreenAssets, AGameKeepsEveryTextureOfTheTitle) {
+  EXPECT_THAT(gameAssets().textures, IsSupersetOf(titleAssets().textures));
+}
+
+/**
  * Given the assets of the intro
  * When their textures are listed
  * Then they hold those of the title, which follows it, and the effect sheet

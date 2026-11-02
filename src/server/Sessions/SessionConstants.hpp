@@ -13,8 +13,9 @@ namespace rtype::server {
  * a stall of the server, during which the datagrams of the players wait in
  * their queue, closes no session by itself; a stall long enough for the
  * clients to take the server for lost closes each of their sessions,
- * SESSION_TIMEOUT_TICKS ticks after the last datagram the server read from its
- * client, since those clients send nothing more.
+ * SESSION_CLOSING_TICKS ticks after the last datagram the server read from its
+ * client, since those clients send nothing more. The Heartbeats are counted in
+ * real time instead (see ConnectedPlayer::sinceSent).
  */
 constexpr std::size_t SESSION_TIMEOUT_TICKS =
     engine::wholeTicksIn(network::SESSION_TIMEOUT);
@@ -34,13 +35,19 @@ static_assert(SESSION_CLOSING_TICKS > SESSION_TIMEOUT_TICKS,
               "RECONNECTION_GRACE must last at least one simulation tick");
 
 /**
- * @brief HEARTBEAT_INTERVAL in whole simulation ticks, rounded down: 60 ticks
- * at 60 per second.
+ * @brief The time the server lets pass without sending a player anything
+ * before it sends a Heartbeat: HEARTBEAT_INTERVAL rounded down to whole
+ * simulation ticks, 60 ticks or 999.99996 ms at 60 per second, so two
+ * datagrams to a player are never further apart than the interval while the
+ * server runs on time. Waiting for the whole interval would wait 61 ticks,
+ * 1016.7 ms.
  */
-constexpr std::size_t TICKS_PER_HEARTBEAT =
-    engine::wholeTicksIn(network::HEARTBEAT_INTERVAL);
+constexpr engine::Duration SILENCE_BEFORE_HEARTBEAT =
+    engine::SIMULATION_TICK_DURATION *
+    static_cast<engine::Duration::rep>(
+        engine::wholeTicksIn(network::HEARTBEAT_INTERVAL));
 
-static_assert(TICKS_PER_HEARTBEAT >= 1,
+static_assert(SILENCE_BEFORE_HEARTBEAT > engine::Duration::zero(),
               "HEARTBEAT_INTERVAL must last at least one simulation tick");
 
 /**

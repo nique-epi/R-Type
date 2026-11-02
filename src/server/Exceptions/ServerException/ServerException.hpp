@@ -140,4 +140,12 @@ class InvalidStateRateException : public ServerException {
   explicit InvalidStateRateException(std::size_t statesPerSecond);
 };
 
+/** @brief A game was set up with a number of ticks to hold each input that
+ * the server cannot hold. */
+class InvalidInputDelayException : public ServerException {
+ public:
+  /** @param delayTicks The number given, in the message. */
+  explicit InvalidInputDelayException(std::size_t delayTicks);
+};
+
 }  // namespace rtype::server

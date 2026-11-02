@@ -11,7 +11,8 @@ namespace rtype::network {
  * Every datagram the program sends or receives crosses the simulated network
  * once, so a program alone gives a round trip the whole lag and jitter: half
  * on the way out, half on the way back. The shares count datagrams, in either
- * direction.
+ * direction. The lag and the jitter are never negative: DatagramsInFlight
+ * refuses them.
  */
 struct NetworkConditions {
   /** @brief What the ping gains: each datagram waits half of it. */

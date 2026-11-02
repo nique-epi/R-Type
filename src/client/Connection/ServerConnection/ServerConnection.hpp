@@ -8,6 +8,7 @@
 #include <string_view>
 #include <vector>
 #include "ActionSet.hpp"
+#include "ConnectionPhase.hpp"
 #include "ConnectionStatus.hpp"
 #include "Endpoint.hpp"
 #include "EntityMessage.hpp"
@@ -54,7 +55,10 @@ namespace rtype::client {
  * sends a ReadyState at once, then again every READY_STATE_INTERVAL while the
  * waiting room shows another value. While the attempt is Accepted,
  * sendPlayerInput() sends the inputs of the game, numbered from
- * FIRST_INPUT_NUMBER; otherwise it sends nothing. While the attempt is
+ * FIRST_INPUT_NUMBER, preceded by a GameLoaded, at most one every
+ * GAME_LOADED_INTERVAL, until the first WorldState of the game arrives, so the
+ * server starts the game once this client shows it;
+ * otherwise it sends nothing. While the attempt is
  * Accepted, a Heartbeat goes out once HEARTBEAT_INTERVAL passed without any
  * other datagram to the server, so the server knows the player is still there
  * while nothing else is due. A session whose server sent nothing for
@@ -63,7 +67,10 @@ namespace rtype::client {
  * server, not even a Disconnection. Before that the session holds, with its
  * token, and the Heartbeats keep going out: the server keeps the seat for
  * RECONNECTION_GRACE after SESSION_TIMEOUT, and the first datagram of the
- * server that gets through gives the session back as it was. Every datagram
+ * server that gets through gives the session back as it was. A Disconnection
+ * of the server within the session, which it sends when it shuts down, closes
+ * it: the status becomes Closed, the session is forgotten, and nothing goes
+ * back. Every datagram
  * of the server that the checks of this comment let through counts, whatever
  * it holds: from that server, of this protocol and version, with the token of
  * the session, newer than the newest one read, and whose messages add up to its
@@ -81,8 +88,9 @@ namespace rtype::client {
  * isLeaving() is true; connect() then starts a new session: sequence 0, token 0
  * and inputs from FIRST_INPUT_NUMBER again.
  *
- * From the start of the game, it keeps the EntitySpawned, WorldState and
- * EntityDestroyed of the server, and the first copy of each GameEvent (see
+ * From the start of the game, it keeps the EntitySpawned, WorldState,
+ * EntityDestroyed and every copy of PlayerLeft of the server, and the first
+ * copy of each GameEvent (see
  * GameEventHistory), in the order they arrived, until drainEntityMessages()
  * hands them over; leaving the session drops those not handed over and
  * forgets the events seen. The game screen drains them every frame, behind
@@ -181,11 +189,12 @@ class ServerConnection : public IServerConnection,
    * CONNECTION_REQUEST_INTERVAL. */
   void continueAttempt(engine::Duration elapsed);
 
-  /** @brief Ends the attempt as Unreachable, or the session as Lost, as
-   * @p ending says; forgets the session, sends nothing, and logs that the
-   * server did not answer for the delay that ran out: SESSION_SILENCE_LIMIT for
-   * Lost, CONNECTION_ATTEMPT_TIMEOUT for Unreachable. */
-  void giveUp(ConnectionStatus::Phase ending);
+  /** @brief Ends the attempt as Unreachable, or the session as Lost or
+   * Closed, as @p ending says; forgets the session, sends nothing, and logs
+   * that the server did not answer for the delay that ran out
+   * (SESSION_SILENCE_LIMIT for Lost, CONNECTION_ATTEMPT_TIMEOUT for
+   * Unreachable), or that it closed the session. */
+  void giveUp(ConnectionPhase ending);
 
   /** @brief Ends the attempt in progress as Refused (IncompatibleVersion),
    * since the server answered in @p serverVersion, which it keeps, and logs
@@ -278,12 +287,14 @@ class ServerConnection : public IServerConnection,
   engine::Duration sinceRequest_{};
   engine::Duration sinceConnect_{};
   engine::Duration sinceReadyState_{};
+  engine::Duration sinceGameLoaded_{};
   engine::Duration sinceSent_{};
   engine::Duration sinceReceived_{};
   ConnectionStatus status_;
   std::vector<network::LobbyPlayer> lobbyPlayers_;
   std::optional<bool> requestedReady_;
   bool gameStarted_ = false;
+  bool worldStateSeen_ = false;
   std::optional<PendingDeparture> departure_;
   std::vector<network::IncomingDatagram> received_;
   std::vector<EntityMessage> entityMessages_;

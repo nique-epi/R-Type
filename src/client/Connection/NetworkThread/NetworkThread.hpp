@@ -67,9 +67,10 @@ class NetworkThread : public IDatagramLink {
   /**
    * @brief Has the network thread send what waits in the outgoing queue, then
    * stop, waits for it, and closes the socket, so a datagram handed to send()
-   * before is not lost and the port is free again. Does nothing when it was
-   * never opened. When an error already stopped that thread, what waits is
-   * lost.
+   * before reaches the socket and the port is free again. Over a simulated
+   * network, a datagram still in flight when the socket closes never arrives
+   * (see network::SimulatedNetworkSocket). Does nothing when it was never
+   * opened. When an error already stopped that thread, what waits is lost.
    */
   void close();
 

@@ -5,10 +5,15 @@
 #include <cstddef>
 #include <cstdint>
 #include <string_view>
+#include "PlayerLeft.hpp"
 #include "TimeConstants.hpp"
 
 /** @brief A key that is not the options key. */
 constexpr sf::Keyboard::Key OTHER_KEY = sf::Keyboard::Key::Space;
+
+/** @brief How long a slower player can keep the server from sending the first
+ * WorldState: the wait the server allows is 10 s, and this is under it. */
+constexpr rtype::engine::Duration LONG_LOADING_WAIT = std::chrono::seconds(8);
 
 /** @brief How many presses the system repeats while a key is held down. */
 constexpr int KEY_REPEATS = 3;
@@ -60,3 +65,10 @@ constexpr rtype::engine::Duration END_WAIT = std::chrono::milliseconds(1000);
 /** @brief How many times the status canvas is displayed when the game screen
  * is built. */
 constexpr int DISPLAYS_AT_CONSTRUCTION = 1;
+
+/** @brief The server says the third pilot left, three times, as it repeats
+ * a PlayerLeft. */
+constexpr rtype::network::PlayerLeft THIRD_PILOT_LEFT{
+    .playerNumber = THIRD_PILOT,
+    .reason = rtype::network::DepartureReason::Left};
+constexpr int PLAYER_LEFT_COPIES = 3;

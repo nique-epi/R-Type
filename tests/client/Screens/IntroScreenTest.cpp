@@ -6,15 +6,16 @@
 #include "IntroScreenFixture.hpp"
 #include "IntroScreenTestConstants.hpp"
 #include "KeyPress.hpp"
+#include "MenuScreenIdConstants.hpp"
 #include "RecordingNavigator.hpp"
-#include "ScreenId.hpp"
 #include "ScreenTestConstants.hpp"
 #include "SoundConstants.hpp"
 
 using rtype::client::BYDO_GROWL_SOUND_ID;
 using rtype::client::ENTRY_WHOOSH_SOUND_ID;
 using rtype::client::LOGO_IMPACT_SOUND_ID;
-using rtype::client::ScreenId;
+using rtype::client::TITLE_AFTER_INTRO_SCREEN;
+using rtype::client::TITLE_SCREEN;
 using rtype::client::testing::AFTER_THE_SKIPPED_LANDING;
 using rtype::client::testing::BEFORE_THE_SKIPPED_LANDING;
 using rtype::client::testing::FRAMES_AFTER_THE_RELEASE;
@@ -96,7 +97,7 @@ TEST_F(IntroScreenFixture, APressDuringTheBlackSecondOpensTheTitle) {
 
   EXPECT_THAT(navigator().calls(),
               ElementsAre(NavigatorCall{.request = NavigatorRequest::ReplaceAll,
-                                        .screen = ScreenId::Title}));
+                                        .screen = TITLE_SCREEN}));
 }
 
 /**
@@ -126,7 +127,7 @@ TEST_F(IntroScreenFixture, TheIntroGivesWayToTheTitleAfterTenBeats) {
 
   EXPECT_THAT(navigator().calls(),
               ElementsAre(NavigatorCall{.request = NavigatorRequest::ReplaceAll,
-                                        .screen = ScreenId::TitleAfterIntro}));
+                                        .screen = TITLE_AFTER_INTRO_SCREEN}));
 }
 
 /**
@@ -142,7 +143,7 @@ TEST_F(IntroScreenFixture, WithItsMusicTheIntroGivesWayAfterTenBeats) {
 
   EXPECT_THAT(navigator().calls(),
               ElementsAre(NavigatorCall{.request = NavigatorRequest::ReplaceAll,
-                                        .screen = ScreenId::TitleAfterIntro}));
+                                        .screen = TITLE_AFTER_INTRO_SCREEN}));
 }
 
 /**
@@ -173,7 +174,7 @@ TEST_F(IntroScreenFixture, ASecondPressOpensTheTitle) {
 
   EXPECT_THAT(navigator().calls(),
               ElementsAre(NavigatorCall{.request = NavigatorRequest::ReplaceAll,
-                                        .screen = ScreenId::TitleAfterIntro}));
+                                        .screen = TITLE_AFTER_INTRO_SCREEN}));
 }
 
 /**
@@ -191,7 +192,7 @@ TEST_F(IntroScreenFixture, ThePressesAfterTheTitleAskNothingMore) {
 
   EXPECT_THAT(navigator().calls(),
               ElementsAre(NavigatorCall{.request = NavigatorRequest::ReplaceAll,
-                                        .screen = ScreenId::TitleAfterIntro}));
+                                        .screen = TITLE_AFTER_INTRO_SCREEN}));
 }
 
 /**

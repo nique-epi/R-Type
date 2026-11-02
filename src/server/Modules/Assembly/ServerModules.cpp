@@ -25,7 +25,8 @@ std::vector<std::unique_ptr<engine::IModule>> serverModules(
   modules.push_back(std::make_unique<ServerGamesModule>(
       GamesSettings{.seed = launchOptions.seed(),
                     .wavesFile = std::filesystem::path{WAVE_FILE_PATH},
-                    .statesPerSecond = launchOptions.stateRate()}));
+                    .statesPerSecond = launchOptions.stateRate(),
+                    .inputDelayTicks = launchOptions.inputDelay()}));
   modules.push_back(std::make_unique<ServerLobbyModule>());
   return modules;
 }

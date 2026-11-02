@@ -203,6 +203,8 @@ TEST_F(GameInstanceShootingFixture, DestroysABydoInTheNextGameToo) {
                .sessionToken = PLAYER_SESSION_TOKENS.at(player)});
   }
   tick();
+  loadEveryPlayer();
+  tick();
   ASSERT_EQ(game().state(), GameState::InProgress);
   const std::uint32_t drifter = aimAtADrifter();
 

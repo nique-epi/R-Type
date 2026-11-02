@@ -14,6 +14,7 @@
 #include "ConnectionAccepted.hpp"
 #include "ConnectionChallenge.hpp"
 #include "ConnectionConstants.hpp"
+#include "ConnectionPhase.hpp"
 #include "ConnectionRefused.hpp"
 #include "ConnectionRequest.hpp"
 #include "ConnectionStatus.hpp"
@@ -26,11 +27,13 @@
 #include "GameEnded.hpp"
 #include "GameEvent.hpp"
 #include "GameEventHistory.hpp"
+#include "GameLoaded.hpp"
 #include "GameStarted.hpp"
 #include "Heartbeat.hpp"
 #include "IDatagramLink.hpp"
 #include "IncomingDatagram.hpp"
 #include "LobbyState.hpp"
+#include "MessageDispatcher.hpp"
 #include "MessageFrame.hpp"
 #include "MessageOrigin.hpp"
 #include "MessageType.hpp"
@@ -39,6 +42,7 @@
 #include "PacketHeader.hpp"
 #include "PendingDeparture.hpp"
 #include "PlayerInput.hpp"
+#include "PlayerLeft.hpp"
 #include "ProtocolConstants.hpp"
 #include "ReadyState.hpp"
 #include "SequenceOrder.hpp"
@@ -46,6 +50,20 @@
 #include "WorldState.hpp"
 
 namespace rtype::client {
+
+namespace {
+
+/** @brief Hands every message of these types that arrives to @p keep. */
+template <typename... Messages, typename Keep>
+void keepEachOf(network::MessageDispatcher& dispatcher, Keep keep) {
+  (dispatcher.registerHandler<Messages>(
+       [keep](const network::MessageOrigin&, const Messages& message) {
+         keep(message);
+       }),
+   ...);
+}
+
+}  // namespace
 
 ServerConnection::ServerConnection(IDatagramLink& link)
     : link_(&link), logger_(std::string{CONNECTION_LOGGER_NAME}) {
@@ -66,7 +84,7 @@ void ServerConnection::connect(const network::Endpoint& server,
   sinceConnect_ = engine::Duration::zero();
   sinceReceived_ = engine::Duration::zero();
   sendRequest();
-  status_ = {.phase = ConnectionStatus::Phase::Connecting};
+  status_ = {.phase = ConnectionPhase::Connecting};
   logger_.info("connecting to ", server_.address, " port ", server_.port);
 }
 
@@ -101,6 +119,7 @@ bool ServerConnection::gameStarted() const { return gameStarted_; }
 void ServerConnection::update(engine::Duration elapsed) {
   gameEvents_.advance(elapsed);
   sinceReceived_ += elapsed;
+  sinceGameLoaded_ += elapsed;
   readReceived();
   repeatDeparture(elapsed);
   if (isAccepted()) {
@@ -120,7 +139,7 @@ void ServerConnection::readReceived() {
 
 void ServerConnection::holdSession(engine::Duration elapsed) {
   if (sinceReceived_ >= network::SESSION_SILENCE_LIMIT) {
-    giveUp(ConnectionStatus::Phase::Lost);
+    giveUp(ConnectionPhase::Lost);
     return;
   }
   sinceSent_ += elapsed;
@@ -131,7 +150,7 @@ void ServerConnection::holdSession(engine::Duration elapsed) {
 void ServerConnection::continueAttempt(engine::Duration elapsed) {
   sinceConnect_ += elapsed;
   if (sinceConnect_ >= CONNECTION_ATTEMPT_TIMEOUT) {
-    giveUp(ConnectionStatus::Phase::Unreachable);
+    giveUp(ConnectionPhase::Unreachable);
     return;
   }
   sinceRequest_ += elapsed;
@@ -141,8 +160,13 @@ void ServerConnection::continueAttempt(engine::Duration elapsed) {
 }
 
 void ServerConnection::sendPlayerInput(ActionSet held) {
-  if (status_.phase != ConnectionStatus::Phase::Accepted) {
+  if (status_.phase != ConnectionPhase::Accepted) {
     return;
+  }
+  if (gameStarted_ && !worldStateSeen_ &&
+      sinceGameLoaded_ >= GAME_LOADED_INTERVAL) {
+    sendToServer(network::GameLoaded{});
+    sinceGameLoaded_ = engine::Duration::zero();
   }
   sendToServer(network::PlayerInput{.inputNumber = nextInputNumber_,
                                     .actions = held.bits()});
@@ -168,7 +192,7 @@ void ServerConnection::registerAnswers() {
       [this](const network::MessageOrigin& origin,
              const network::ConnectionAccepted& accepted) {
         if (isConnecting()) {
-          status_ = {.phase = ConnectionStatus::Phase::Accepted,
+          status_ = {.phase = ConnectionPhase::Accepted,
                      .playerNumber = accepted.playerNumber};
           sessionToken_ = origin.header.sessionToken;
           newestReceivedSequence_ = origin.header.sequence;
@@ -184,7 +208,7 @@ void ServerConnection::registerAnswers() {
       [this](const network::MessageOrigin& origin,
              const network::ConnectionRefused& refused) {
         if (isConnecting()) {
-          status_ = {.phase = ConnectionStatus::Phase::Refused,
+          status_ = {.phase = ConnectionPhase::Refused,
                      .refusal = refused.reason,
                      .serverVersion = origin.header.version};
           logger_.info("refused, reason ",
@@ -208,19 +232,14 @@ void ServerConnection::registerSessionMessages() {
       });
   dispatcher_.registerHandler<network::WorldState>(
       [this](const network::MessageOrigin&, const network::WorldState& state) {
+        worldStateSeen_ = true;
         startGame();
         keepEntityMessage(state);
       });
-  dispatcher_.registerHandler<network::EntitySpawned>(
-      [this](const network::MessageOrigin&,
-             const network::EntitySpawned& spawned) {
-        keepEntityMessage(spawned);
-      });
-  dispatcher_.registerHandler<network::EntityDestroyed>(
-      [this](const network::MessageOrigin&,
-             const network::EntityDestroyed& destroyed) {
-        keepEntityMessage(destroyed);
-      });
+  keepEachOf<network::EntitySpawned, network::EntityDestroyed,
+             network::PlayerLeft>(dispatcher_, [this](EntityMessage message) {
+    keepEntityMessage(std::move(message));
+  });
   dispatcher_.registerHandler<network::GameEvent>(
       [this](const network::MessageOrigin&, const network::GameEvent& event) {
         if (gameEvents_.isFirstCopy(event.eventNumber)) {
@@ -232,17 +251,28 @@ void ServerConnection::registerSessionMessages() {
         if (gameStarted_) {
           keepEntityMessage(ended);
           gameStarted_ = false;
+          worldStateSeen_ = false;
           logger_.info("the game ended");
+        }
+      });
+  dispatcher_.registerHandler<network::Disconnection>(
+      [this](const network::MessageOrigin&, const network::Disconnection&) {
+        if (isAccepted()) {
+          giveUp(ConnectionPhase::Closed);
         }
       });
 }
 
-void ServerConnection::giveUp(ConnectionStatus::Phase ending) {
-  const std::chrono::seconds silence = ending == ConnectionStatus::Phase::Lost
-                                           ? network::SESSION_SILENCE_LIMIT
-                                           : CONNECTION_ATTEMPT_TIMEOUT;
+void ServerConnection::giveUp(ConnectionPhase ending) {
   status_ = {.phase = ending};
   forgetSession();
+  if (ending == ConnectionPhase::Closed) {
+    logger_.warn("closed by ", server_.address, " port ", server_.port);
+    return;
+  }
+  const std::chrono::seconds silence = ending == ConnectionPhase::Lost
+                                           ? network::SESSION_SILENCE_LIMIT
+                                           : CONNECTION_ATTEMPT_TIMEOUT;
   logger_.warn("no answer from ", server_.address, " port ", server_.port,
                " for ", silence.count(), " s");
 }
@@ -251,7 +281,7 @@ void ServerConnection::endAttemptForServerVersion(std::uint8_t serverVersion) {
   if (!isConnecting()) {
     return;
   }
-  status_ = {.phase = ConnectionStatus::Phase::Refused,
+  status_ = {.phase = ConnectionPhase::Refused,
              .refusal = network::RefusalReason::IncompatibleVersion,
              .serverVersion = serverVersion};
   logger_.warn("refused: the server speaks protocol version ",
@@ -303,6 +333,7 @@ bool ServerConnection::passesSessionChecks(
 void ServerConnection::startGame() {
   if (isAccepted() && !gameStarted_) {
     gameStarted_ = true;
+    sinceGameLoaded_ = GAME_LOADED_INTERVAL;
     requestedReady_.reset();
     logger_.info("the game started");
   }
@@ -385,6 +416,7 @@ void ServerConnection::forgetSession() {
   requestedReady_.reset();
   sinceReadyState_ = engine::Duration::zero();
   gameStarted_ = false;
+  worldStateSeen_ = false;
   entityMessages_.clear();
   gameEvents_.forget();
 }
@@ -417,11 +449,11 @@ std::size_t ServerConnection::wrongTokenCount() const {
 bool ServerConnection::isLeaving() const { return departure_.has_value(); }
 
 bool ServerConnection::isConnecting() const {
-  return status_.phase == ConnectionStatus::Phase::Connecting;
+  return status_.phase == ConnectionPhase::Connecting;
 }
 
 bool ServerConnection::isAccepted() const {
-  return status_.phase == ConnectionStatus::Phase::Accepted;
+  return status_.phase == ConnectionPhase::Accepted;
 }
 
 bool ServerConnection::roomShowsReady(bool ready) const {

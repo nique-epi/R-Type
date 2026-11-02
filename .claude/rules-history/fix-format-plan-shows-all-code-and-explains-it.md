@@ -49,3 +49,21 @@ With a file argument, clang-format looks for `.clang-format` from that file's ow
 ### Rule (added)
 
 Feed the scratch file on standard input, from the repository root: `clang-format --style=file --assume-filename=<its future path> < <scratch file>`. Given as an argument, a file outside the repository is formatted with the style found from its own folder, which is clang-format's default, not the project's.
+
+## Update (2026-11-02) — a plan starts from how the industry solves the problem
+
+### Context
+
+The user asked for the plan rule to make every plan search the web for how the industry solves the problem at hand before designing a solution.
+
+### Mistake
+
+Plans were designed from the code of the repository and from memory: a design could reinvent a mechanism the industry already settled (prediction, interpolation, a fixed time step), and the user only learned of the established approach at review.
+
+### Root cause
+
+No rule required a plan to look outside the repository before proposing a design; `fix-process-do-not-over-engineer-step-back.md` asks for the library's documentation, not for how others solved the same problem.
+
+### Rule (added)
+
+Before designing the solution, search the web for how the industry already solves the same problem, and open the plan with a "How the industry does it" section: the established approaches with their sources and costs, then the one retained and why. A homemade design is stated as such, with the reason no known practice fits.

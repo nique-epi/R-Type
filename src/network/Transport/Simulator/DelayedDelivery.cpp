@@ -3,63 +3,78 @@
 #include <asio/steady_timer.hpp>
 #include <chrono>
 #include <cstddef>
+#include <memory>
 #include <optional>
 #include <span>
 #include <system_error>
 #include <utility>
 #include "DatagramInFlight.hpp"
 #include "DatagramsInFlight.hpp"
+#include "DelayedDeliveryState.hpp"
 #include "Endpoint.hpp"
 #include "IDatagramSocket.hpp"
 #include "NetworkContext.hpp"
 
 namespace rtype::network {
 
-DelayedDelivery::DelayedDelivery(NetworkContext& context,
-                                 DatagramsInFlight inFlight,
-                                 DatagramHandler deliver)
-    : inFlight_(std::move(inFlight)),
-      timer_(context.ioContext()),
-      deliver_(std::move(deliver)) {}
+namespace {
 
-void DelayedDelivery::add(const Endpoint& peer,
-                          std::span<const std::byte> payload) {
-  const std::optional<std::chrono::steady_clock::time_point> previousNext =
-      inFlight_.nextArrival();
-  inFlight_.add(peer, payload, std::chrono::steady_clock::now());
-  if (inFlight_.nextArrival() != previousNext) {
-    waitForNextArrival();
-  }
-}
+void deliverArrived(const std::shared_ptr<DelayedDeliveryState>& state);
 
-void DelayedDelivery::close() {
-  closed_ = true;
-  timer_.cancel();
-}
-
-void DelayedDelivery::waitForNextArrival() {
+/** @brief Arms the timer of @p state for the next arrival, unless it is closed
+ * or nothing is in flight; the handler of the timer holds @p state. */
+void waitForNextArrival(const std::shared_ptr<DelayedDeliveryState>& state) {
   const std::optional<std::chrono::steady_clock::time_point> next =
-      inFlight_.nextArrival();
-  if (closed_ || !next.has_value()) {
+      state->inFlight.nextArrival();
+  if (state->closed || !next.has_value()) {
     return;
   }
-  timer_.expires_at(*next);
-  timer_.async_wait([self = shared_from_this()](const std::error_code& error) {
+  state->timer.expires_at(*next);
+  state->timer.async_wait([state](const std::error_code& error) {
     if (error != asio::error::operation_aborted) {
-      self->deliverArrived();
+      deliverArrived(state);
     }
   });
 }
 
-void DelayedDelivery::deliverArrived() {
+/** @brief Delivers what arrived in @p state, then waits for the next
+ * arrival. */
+void deliverArrived(const std::shared_ptr<DelayedDeliveryState>& state) {
   for (const DatagramInFlight& datagram :
-       inFlight_.takeArrived(std::chrono::steady_clock::now())) {
-    if (closed_) {
+       state->inFlight.takeArrived(std::chrono::steady_clock::now())) {
+    if (state->closed) {
       return;
     }
-    deliver_(datagram.peer, datagram.payload);
+    state->deliver(datagram.peer, datagram.payload);
   }
-  waitForNextArrival();
+  waitForNextArrival(state);
+}
+
+}  // namespace
+
+DelayedDelivery::DelayedDelivery(NetworkContext& context,
+                                 DatagramsInFlight inFlight,
+                                 DatagramHandler deliver)
+    : state_(std::make_shared<DelayedDeliveryState>(
+          DelayedDeliveryState{.inFlight = std::move(inFlight),
+                               .timer = asio::steady_timer{context.ioContext()},
+                               .deliver = std::move(deliver)})) {}
+
+DelayedDelivery::~DelayedDelivery() { state_->closed = true; }
+
+void DelayedDelivery::add(const Endpoint& peer,
+                          std::span<const std::byte> payload) {
+  const std::optional<std::chrono::steady_clock::time_point> previousNext =
+      state_->inFlight.nextArrival();
+  state_->inFlight.add(peer, payload, std::chrono::steady_clock::now());
+  if (state_->inFlight.nextArrival() != previousNext) {
+    waitForNextArrival(state_);
+  }
+}
+
+void DelayedDelivery::close() {
+  state_->closed = true;
+  state_->timer.cancel();
 }
 
 }  // namespace rtype::network

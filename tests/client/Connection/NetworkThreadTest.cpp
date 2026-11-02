@@ -206,7 +206,8 @@ TEST(NetworkThread, FreesItsPortOnceClosed) {
  * Given a network thread opened over a simulated network with a lag of
  * 200 ms, and a peer listening on the loopback address
  * When the test thread hands the network thread a datagram for the peer
- * Then the peer receives it no sooner than 100 ms after it was handed over
+ * Then the peer receives the bytes handed over, no sooner than 100 ms after
+ * the hand over
  */
 TEST(NetworkThread, DelaysWhatItSendsByHalfTheSimulatedLag) {
   NetworkThread networkThread{loopbackOnPort(ANY_PORT), LAGGING_NETWORK};
@@ -220,5 +221,6 @@ TEST(NetworkThread, DelaysWhatItSendsByHalfTheSimulatedLag) {
       peer.waitForDatagrams(1, DATAGRAM_TIMEOUT);
 
   ASSERT_EQ(received.size(), 1U);
+  EXPECT_EQ(received.front().payload, exchangedBytes());
   EXPECT_GE(received.front().time - handedAt, HALF_OF_THE_LAG);
 }

@@ -21,10 +21,10 @@ class LaunchOptions {
    * the logging options left (see logging::LogLaunchOptions).
    *
    * Without `-p` the port is DEFAULT_SERVER_PORT. The last `-p` wins, and so
-   * does the last `--seed` and the last `--state-rate`. The options of the
-   * network simulator are read first and may stand anywhere (see
-   * network::SimulatorLaunchOptions::read(), whose exceptions this throws
-   * too).
+   * does the last `--seed`, the last `--state-rate` and the last
+   * `--input-delay`. The options of the network simulator are read first and
+   * may stand anywhere (see network::SimulatorLaunchOptions::read(), whose
+   * exceptions this throws too).
    *
    * @throws engine::UnknownLaunchArgumentException for any other argument,
    *         `-h` included: the server takes no address.
@@ -35,7 +35,9 @@ class LaunchOptions {
    * @throws engine::InvalidLaunchOptionValueException when the value of
    *         `--seed` is not a whole number from 0 to 4294967295, or the value
    *         of `--state-rate` is not a whole number from
-   *         LOWEST_WORLD_STATES_PER_SECOND to HIGHEST_WORLD_STATES_PER_SECOND.
+   *         LOWEST_WORLD_STATES_PER_SECOND to HIGHEST_WORLD_STATES_PER_SECOND,
+   *         or the value of `--input-delay` is not a whole number from
+   *         LOWEST_INPUT_DELAY_TICKS to HIGHEST_INPUT_DELAY_TICKS.
    */
   [[nodiscard]] static LaunchOptions read(
       std::span<const std::string_view> arguments);
@@ -63,6 +65,12 @@ class LaunchOptions {
   [[nodiscard]] std::size_t stateRate() const;
 
   /**
+   * @returns the ticks each input is held before it is applied, the value given
+   * after `--input-delay`; DEFAULT_INPUT_DELAY_TICKS when it was not given.
+   */
+  [[nodiscard]] std::size_t inputDelay() const;
+
+  /**
    * @returns whether `--help` was given: the server then prints its usage
    *          and starts nothing.
    */
@@ -82,6 +90,7 @@ class LaunchOptions {
   bool helpRequested_;
   std::optional<std::uint32_t> seed_;
   std::size_t stateRate_;
+  std::size_t inputDelay_;
   network::NetworkConditions networkConditions_;
 };
 

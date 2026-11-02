@@ -11,12 +11,13 @@
 #include "FlightLogTextConstants.hpp"
 #include "FlightLogTimingConstants.hpp"
 #include "KeyPress.hpp"
+#include "LobbyScreenIdConstants.hpp"
+#include "MenuScreenIdConstants.hpp"
 #include "MotionPreference.hpp"
 #include "PointerEvents.hpp"
 #include "RecordingInterfaceCanvas.hpp"
 #include "RecordingNavigator.hpp"
 #include "RecordingServerConnection.hpp"
-#include "ScreenId.hpp"
 #include "ScreenTestConstants.hpp"
 #include "SoundConstants.hpp"
 #include "WidgetConstants.hpp"
@@ -24,11 +25,12 @@
 using rtype::client::EXIT_TIME;
 using rtype::client::HEAVY_IMPACT_SOUND_ID;
 using rtype::client::HOVERED_QUIT_INK;
+using rtype::client::LOBBY_AFTER_GAME_SCREEN;
 using rtype::client::MotionPreference;
 using rtype::client::PRESS_DURATION;
 using rtype::client::PROMPT_TEXT;
 using rtype::client::QUIT_TEXT;
-using rtype::client::ScreenId;
+using rtype::client::TITLE_SCREEN;
 using rtype::client::testing::ACE_NICKNAME;
 using rtype::client::testing::DESIGN_LANDING;
 using rtype::client::testing::NOVA_NICKNAME;
@@ -68,7 +70,7 @@ TEST_F(EndScreenFixture, EnterOpensTheWaitingRoomOnceTheBookLeft) {
 
   EXPECT_THAT(navigator().calls(),
               ElementsAre(NavigatorCall{.request = NavigatorRequest::ReplaceAll,
-                                        .screen = ScreenId::LobbyAfterGame}));
+                                        .screen = LOBBY_AFTER_GAME_SCREEN}));
   EXPECT_THAT(connection().calls(), IsEmpty());
 }
 
@@ -102,7 +104,7 @@ TEST_F(EndScreenFixture, EscapeLeavesTheServerForTheTitle) {
             ServerConnectionCall::Request::Cancel);
   EXPECT_THAT(navigator().calls(),
               ElementsAre(NavigatorCall{.request = NavigatorRequest::ReplaceAll,
-                                        .screen = ScreenId::Title}));
+                                        .screen = TITLE_SCREEN}));
 }
 
 /**
@@ -118,7 +120,7 @@ TEST_F(EndScreenFixture, AClickOnQuitQuits) {
 
   EXPECT_THAT(navigator().calls(),
               ElementsAre(NavigatorCall{.request = NavigatorRequest::ReplaceAll,
-                                        .screen = ScreenId::Title}));
+                                        .screen = TITLE_SCREEN}));
 }
 
 /**
@@ -135,7 +137,7 @@ TEST_F(EndScreenFixture, AClickOnTheCallReplays) {
 
   EXPECT_THAT(navigator().calls(),
               ElementsAre(NavigatorCall{.request = NavigatorRequest::ReplaceAll,
-                                        .screen = ScreenId::LobbyAfterGame}));
+                                        .screen = LOBBY_AFTER_GAME_SCREEN}));
 }
 
 /**
@@ -154,7 +156,7 @@ TEST_F(EndScreenFixture, AKeyHeldWhenTheFocusWasLostActsAgain) {
 
   EXPECT_THAT(navigator().calls(),
               ElementsAre(NavigatorCall{.request = NavigatorRequest::ReplaceAll,
-                                        .screen = ScreenId::LobbyAfterGame}));
+                                        .screen = LOBBY_AFTER_GAME_SCREEN}));
 }
 
 /**
@@ -244,5 +246,5 @@ TEST_F(EndScreenFixture, ReducedMotionOpensOnTheChoicesAndLeavesAtOnce) {
 
   EXPECT_THAT(navigator().calls(),
               ElementsAre(NavigatorCall{.request = NavigatorRequest::ReplaceAll,
-                                        .screen = ScreenId::LobbyAfterGame}));
+                                        .screen = LOBBY_AFTER_GAME_SCREEN}));
 }
