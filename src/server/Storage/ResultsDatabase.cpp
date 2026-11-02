@@ -1,0 +1,87 @@
+#include "ResultsDatabase.hpp"
+#include <SQLiteCpp/Column.h>
+#include <SQLiteCpp/Database.h>
+#include <SQLiteCpp/Statement.h>
+#include <SQLiteCpp/Transaction.h>
+#include <cstdint>
+#include <filesystem>
+#include <optional>
+#include <string>
+#include "DatabaseFile.hpp"
+#include "GameResult.hpp"
+#include "LeaderboardAnswer.hpp"
+#include "LeaderboardRequest.hpp"
+#include "PathText.hpp"
+#include "ProtocolConstants.hpp"
+#include "ResultsDatabaseConstants.hpp"
+
+namespace rtype::server {
+
+namespace {
+
+void bindGame(SQLite::Statement& insert, const GameResult& result,
+              const std::string& gameId) {
+  insert.bind(GAME_ID_PARAMETER, gameId);
+  insert.bind(PLAYED_AT_PARAMETER, result.endedAt);
+  insert.bind(DIFFICULTY_PARAMETER, result.difficulty);
+  insert.bind(PLAYER_COUNT_PARAMETER, result.playerCount);
+}
+
+void bindPlayer(SQLite::Statement& insert, const PlayerResult& player) {
+  insert.bind(NICKNAME_PARAMETER, player.nickname);
+  insert.bind(SCORE_PARAMETER, player.score);
+  insert.bind(DEATHS_PARAMETER, player.deaths);
+}
+
+network::LeaderboardRow rowOf(const SQLite::Statement& query) {
+  return network::LeaderboardRow{
+      .rank = query.getColumn(BOARD_RANK_COLUMN).getUInt(),
+      .score = query.getColumn(SCORE_COLUMN).getUInt(),
+      .playedAt = query.getColumn(PLAYED_AT_COLUMN).getInt64(),
+      .nickname = query.getColumn(NICKNAME_COLUMN).getString()};
+}
+
+}  // namespace
+
+ResultsDatabase::ResultsDatabase(const std::filesystem::path& file)
+    : database_(storage::openDatabaseFile(engine::genericText(file),
+                                          RESULTS_MIGRATIONS)) {}
+
+void ResultsDatabase::save(const GameResult& result) {
+  SQLite::Transaction transaction{database_,
+                                  SQLite::TransactionBehavior::IMMEDIATE};
+  SQLite::Statement insert{database_, std::string{INSERT_RESULT_STATEMENT}};
+  bindGame(insert, result,
+           database_.execAndGet(std::string{NEW_GAME_ID_QUERY}).getString());
+  for (const PlayerResult& player : result.players) {
+    bindPlayer(insert, player);
+    insert.exec();
+    insert.reset();
+  }
+  transaction.commit();
+}
+
+network::LeaderboardAnswer ResultsDatabase::leaderboard(
+    const network::LeaderboardRequest& request,
+    const std::string& asker) const {
+  SQLite::Statement query{database_, std::string{LEADERBOARD_QUERY}};
+  query.bind(DIFFICULTY_PARAMETER, request.difficulty);
+  query.bind(PLAYER_COUNT_PARAMETER, request.playerCount);
+  query.bind(ASKER_PARAMETER, asker);
+  query.bind(TOP_ROWS_PARAMETER,
+             static_cast<std::int64_t>(network::MAXIMUM_LEADERBOARD_ROWS));
+  network::LeaderboardAnswer answer{
+      .asked = request, .rows = {}, .ownRow = std::nullopt};
+  while (query.executeStep()) {
+    const network::LeaderboardRow row = rowOf(query);
+    if (answer.rows.size() < network::MAXIMUM_LEADERBOARD_ROWS) {
+      answer.rows.push_back(row);
+    }
+    if (query.getColumn(IS_ASKER_COLUMN).getInt() != 0) {
+      answer.ownRow = row;
+    }
+  }
+  return answer;
+}
+
+}  // namespace rtype::server
