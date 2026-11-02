@@ -68,11 +68,12 @@ src/engine/
 ├── Time/             fixed timestep, clocks, timers
 ├── NetworkIds/       entity to network id, and back
 ├── LaunchArguments/  options read at launch, usage and errors
+├── Commands/         named commands, declared settings, the configuration file
 ├── Modules/          installs, starts and stops a program's modules, in list order; runs their work in named stages and hands services between them
 └── Exceptions/
 ```
 
-`EntityRegistry`, `Components`, `Systems`, `Events`, `Collision`, `Time`, `NetworkIds`, `LaunchArguments`, `Modules` and `Exceptions` exist.
+`EntityRegistry`, `Components`, `Systems`, `Events`, `Collision`, `Time`, `NetworkIds`, `LaunchArguments`, `Commands`, `Modules` and `Exceptions` exist.
 
 ### Logging
 

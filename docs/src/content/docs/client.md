@@ -618,6 +618,19 @@ const std::uint8_t actions = held.bits();
 
 While AUTO-FIRE is on (`PlayerSettings::autoFire`), `playerActions()` holds shoot as well, whatever the keys: releasing the shoot key, losing the focus or opening the options leaves it held, so the ship goes on firing without a key. The setting is read at each call, so a change in the options applies at the next input. The server fires at most `SHOTS_PER_SECOND` (3) missiles per second per ship, whatever the inputs say (see [Server and game](/R-Type/server/#shooting-weaponsystem)), so auto-fire fires no faster than the key held.
 
+## Configuration: `client.cfg`
+
+The client reads `client.cfg`, in the folder it is started from, between the install and the start of its modules (see [Engine](/R-Type/engine/#commands-and-configuration-commandinterpreter)), with the same commands as the server. It is not `settings.ini`, which keeps the settings the player changes in the options; `client.cfg` is written by hand.
+
+| Command | Effect |
+|---|---|
+| `module <name> on\|off` | Turns a module of the client on or off. Refused when a module that stays on depends on it. |
+| `set nickname <nickname>` | The nickname the connection screen starts with, 1 to 16 bytes of UTF-8. Default: `PILOT`. Quote it when it holds a space. |
+| `set server-address <address>` | The IPv4 address the connection screen starts with. Default: `127.0.0.1`. |
+| `set server-port <port>` | The UDP port the connection screen starts with, from 1 to 65535. Default: 4242. |
+
+A missing file is not an error and a refused line does not stop the client; the journal says so at the `info` and `warn` levels. The screens module reads the settings when it starts, so a line only changes what the connection screen offers first.
+
 ## Launch options: `LaunchOptions`
 
 `LaunchOptions` (`src/client/LaunchOptions/`) reads the address and the port of the server and the nickname of the player, given at launch, from the arguments the logging options left (see [Logging](/R-Type/logging/#choosing-the-level-and-the-output-at-launch)), with the engine's `readLaunchArguments` (see [Engine](/R-Type/engine/#launch-arguments-readlauncharguments)):
@@ -627,11 +640,13 @@ While AUTO-FIRE is on (`PlayerSettings::autoFire`), `playerActions()` holds shoo
 | `-h <address>` | The IPv4 address of the server, four numbers such as `127.0.0.1` (see [Network](/R-Type/network/#ports-and-addresses-written-as-text-portfromtext-ipv4addressfromtext)). Default: `DEFAULT_SERVER_ADDRESS` (`127.0.0.1`), a server on the same machine. |
 | `-p <port>` | The UDP port of the server, from 1 to 65535. Default: `DEFAULT_SERVER_PORT` (4242). |
 | `-n <nickname>` | The nickname of the player, 1 to 16 bytes of UTF-8 without a control character (`MAXIMUM_NICKNAME_SIZE`, see [Protocol](/R-Type/protocol/#connection)). Default: `DEFAULT_NICKNAME` (`PILOT`). The connection screen leaves out the characters its field refuses. |
+| `--set <name>=<value>` | Gives a setting a value, as the line `set <name> <value>` of `client.cfg` does (see [Configuration](#configuration-clientcfg)). Can be given several times. |
 | `--help` | Prints the usage, the logging options included, on standard output, then exits with code 0 without opening the window or the journal. |
 
+- `-h`, `-p` and `-n` also force the settings `server-address`, `server-port` and `nickname`, so they win over `client.cfg`.
 - A host name such as `localhost` is refused, not resolved: a resolution can block for seconds, so it must run on the network thread once the connection exists. An IPv6 address is refused too, since the server only listens over IPv4.
 - The last of each option wins. An unknown argument, an option without its value, an invalid address, an invalid port or an invalid nickname (`InvalidNicknameOptionException`) stops the client before the window opens: it prints `r-type_client:`, the reason and how to see the usage on standard error, then exits with code 1.
-- The logger module logs `server: <address> port <port>` at the `info` level once the journal is open, and `clientModules()` hands the server and the nickname to the screens module and the sound choice to the sound module, which starts the connection screen with them. CONNECT on that screen joins the server (see [Joining a server](#joining-a-server-serverconnection)).
+- The screens module logs `server: <address> port <port>` at the `info` level when it starts, and `clientModules()` hands the server and the nickname to the screens module and the sound choice to the sound module, which starts the connection screen with them. CONNECT on that screen joins the server (see [Joining a server](#joining-a-server-serverconnection)).
 - On Windows, the arguments are not passed in UTF-8, so a nickname with an accent may be refused at launch; it can be typed on the connection screen instead.
 
 ```bash
@@ -849,6 +864,7 @@ The dialog is a `DialogScreen` (`src/client/Screens/DialogScreen/`), which shows
 | Add a part of the client that works each frame, or a global key | A class implementing `IModule` in a folder of `src/client/Modules/`, listed in `clientModules()` (`src/client/Modules/Assembly/ClientModules.cpp`) after its dependencies; it adds its work to a stage of `CLIENT_LOOP_STAGES` in its `install()`, and its listener to `EventListeners` in its `start()` |
 | Change the default server address or port | `DEFAULT_SERVER_ADDRESS` in `src/client/ClientConstants.hpp`, `DEFAULT_SERVER_PORT` in `src/network/NetworkConstants.hpp` |
 | Change the default nickname | `DEFAULT_NICKNAME` in `src/client/ClientConstants.hpp` |
+| Add a setting the host can set | `declareInteger()` or `declareText()` in the `install()` of the module that uses it, read in its `start()`; name it in `src/client/ClientConstants.hpp` |
 | Add a launch option | The options listed in `LaunchOptions::read()` and `usage()`, in `src/client/LaunchOptions/LaunchOptions.cpp`; its name in `src/client/ClientConstants.hpp`, or in `src/engine/LaunchArguments/LaunchArgumentsConstants.hpp` when the server uses it too |
 | Send or receive datagrams | `NetworkThread` in `src/client/Connection/NetworkThread/` |
 | Change how many datagrams wait between the frame loop and the network thread | `INCOMING_DATAGRAM_QUEUE_CAPACITY` and `OUTGOING_DATAGRAM_QUEUE_CAPACITY` in `src/client/Connection/ConnectionConstants.hpp` |

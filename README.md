@@ -49,6 +49,18 @@ The server listens on UDP port 4243 of every IPv4 interface; without `-p`, on po
 The Bydos appear at heights drawn from the seed; without `--seed` the server draws one, and the journal records it (`Bydo spawning starts from the seed ...`) so the same game can be replayed.
 
 ```bash
+./r-type_server --set state-rate=30
+```
+
+`--set <name>=<value>` forces any setting of the server and wins over `server.cfg`, a file of commands the server reads from the folder it is started from. A missing file is fine; the defaults apply.
+
+```
+# server.cfg
+set port 4300
+module lobby off
+```
+
+```bash
 ./r-type_server --state-rate 30
 ```
 
@@ -94,7 +106,7 @@ The client and the server write a timestamped journal, `r-type_server.log` or `r
 
 The build option `-DLOG_LEVEL=<name>` removes the calls below a level from the binaries. See [the logging page](docs/src/content/docs/logging.md).
 
-The client keeps the player's settings in `settings.ini`: in `$XDG_CONFIG_HOME/r-type` (or `~/.config/r-type`) on Linux, `~/Library/Application Support/R-Type` on macOS, `%LOCALAPPDATA%\R-Type` on Windows. Its path is logged at launch; deleting it brings back the settings of a first launch.
+The client reads `client.cfg` the same way (`set nickname`, `set server-address`, `set server-port`, `module <name> on|off`, and `--set` to force a setting). It keeps the player's settings in `settings.ini`: in `$XDG_CONFIG_HOME/r-type` (or `~/.config/r-type`) on Linux, `~/Library/Application Support/R-Type` on macOS, `%LOCALAPPDATA%\R-Type` on Windows. Its path is logged at launch; deleting it brings back the settings of a first launch.
 
 ## Code style
 
