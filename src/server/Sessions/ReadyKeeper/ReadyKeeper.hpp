@@ -1,6 +1,7 @@
 #pragma once
 
 #include <functional>
+#include "GameLoaded.hpp"
 #include "MessageOrigin.hpp"
 #include "PlayerRoster.hpp"
 #include "ReadyState.hpp"
@@ -8,7 +9,8 @@
 namespace rtype::server {
 
 /**
- * @brief Keeps whether each player declared itself ready.
+ * @brief Keeps whether each player declared itself ready, and whether it told
+ * the game it shows the game screen.
  *
  * A ReadyState counts only while the game accepts it. DatagramReader
  * already refused the datagrams that are not newer than the newest accepted
@@ -31,6 +33,13 @@ class ReadyKeeper {
    */
   void apply(const network::MessageOrigin& origin,
              const network::ReadyState& message);
+
+  /**
+   * @brief Records that the player who sent @p message is loaded, in any state
+   * of the game; does nothing when the sender is not a player.
+   */
+  void apply(const network::MessageOrigin& origin,
+             const network::GameLoaded& message);
 
   /**
    * @returns Whether at least one player is connected and every connected

@@ -38,6 +38,8 @@
 #include "PredictedShipPlacement.hpp"
 #include "ShipFlightSystem.hpp"
 // NOLINTNEXTLINE(misc-include-cleaner)
+#include "GameScreenIdConstants.hpp"
+#include "MenuScreenIdConstants.hpp"
 #include "PlayerSettings.hpp"
 #include "ScreenConstants.hpp"
 #include "ScreenId.hpp"
@@ -100,7 +102,7 @@ void GameScreen::handleEvent(const sf::Event& event) {
   const auto* released = event.getIf<sf::Event::KeyReleased>();
   if (released != nullptr && released->code == OPTIONS_KEY) {
     playerCommands_.releaseAll();
-    navigator_->push(ScreenId::GameOptions);
+    navigator_->push(GAME_OPTIONS_SCREEN);
   }
   if (const auto* keyPressed = event.getIf<sf::Event::KeyPressed>()) {
     playerCommands_.keyPressed(keyPressed->scancode);
@@ -129,12 +131,14 @@ void GameScreen::update(engine::Duration elapsed) {
   }
   systems_.run(components_, elapsed);
   const FlashPreference preference = flashPreferenceOf(*settings_);
-  effects_.advance(elapsed,
+  const engine::Duration sinceTheWorld =
+      worldSeen_ ? elapsed : engine::Duration::zero();
+  effects_.advance(sinceTheWorld,
                    EffectPreferences{.flashes = preference,
                                      .shades = pilotShadesOf(*settings_),
                                      .soundCues = settings_->soundCues});
   departures_.advance(elapsed);
-  silence_.advance(elapsed);
+  silence_.advance(sinceTheWorld);
   applyEntityMessages();
   if (settings_->clientPrediction) {
     placePredictedShip(prediction_, replicator_, components_);
@@ -165,6 +169,7 @@ void GameScreen::applyEntityMessages() {
         },
         message);
     if (const auto* state = std::get_if<network::WorldState>(&message)) {
+      worldSeen_ = true;
       scoreBoard_.apply(*state);
       if (settings_->clientPrediction) {
         prediction_.apply(*state);
@@ -177,6 +182,7 @@ void GameScreen::applyEntityMessages() {
 void GameScreen::recordEnd(const network::GameEnded& ended) {
   *result_ = GameResult{
       .pilots = rankedPilots(finalPilotsOf(scoreBoard_.pilots(), ended))};
+  worldSeen_ = true;
   endedAt_ = effects_.sinceStart();
   silence_.stop();
 }
@@ -187,7 +193,7 @@ void GameScreen::askForTheEndWhenDue() {
     return;
   }
   endedAt_.reset();
-  navigator_->replaceAll(ScreenId::End);
+  navigator_->replaceAll(END_SCREEN);
 }
 
 void GameScreen::repaintStatusWhenChanged() {

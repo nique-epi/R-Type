@@ -4,6 +4,7 @@
 #include "ISoundPlayer.hpp"
 #include "Menu.hpp"
 #include "MenuBuilder.hpp"
+#include "MenuScreenIdConstants.hpp"
 #include "ScreenConstants.hpp"
 #include "ScreenId.hpp"
 
@@ -27,7 +28,7 @@ Menu connectionLostMenu(IScreenNavigator& navigator, ISoundPlayer& sounds,
       .button({.label = RETRY_LABEL},
               [&navigator] {
                 navigator.pop();
-                navigator.push(ScreenId::Connection);
+                navigator.push(CONNECTION_SCREEN);
               })
       .cancelButton({.label = OK_LABEL}, [&navigator] { navigator.pop(); })
       .build();

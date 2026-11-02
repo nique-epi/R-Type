@@ -15,12 +15,11 @@ target_link_libraries(rtype_server_game_flow
     rtype_server_weapon_system
     rtype_server_player_lives
     rtype_server_player_roster
+    rtype_server_start_barrier
     rtype_server_world_slot
   PRIVATE
     rtype_server_player_controller
     rtype_identifiers
-    rtype_network_game_started
-    rtype_server_session_datagram
 )
 
 rtype_enable_warnings(rtype_server_game_flow)

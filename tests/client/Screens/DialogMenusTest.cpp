@@ -5,12 +5,12 @@
 #include "ConnectionLostInTheStackFixture.hpp"
 #include "ConnectionPhase.hpp"
 #include "DialogMenusFixture.hpp"
+#include "MenuScreenIdConstants.hpp"
 #include "RecordingInterfaceCanvas.hpp"
 #include "RecordingNavigator.hpp"
 #include "RecordingScreen.hpp"
 #include "RecordingSoundPlayer.hpp"
 #include "ScreenConstants.hpp"
-#include "ScreenId.hpp"
 #include "SoundConstants.hpp"
 #include "WidgetConstants.hpp"
 #include "WidgetText.hpp"
@@ -18,13 +18,14 @@
 using rtype::client::CLICK_SOUND_ID;
 using rtype::client::CLOSED_SERVER_MESSAGE;
 using rtype::client::CONNECTION_LOST_HEADING;
+using rtype::client::CONNECTION_SCREEN;
 using rtype::client::ConnectionPhase;
 using rtype::client::DIALOG_MESSAGE_OFFSET;
 using rtype::client::DIALOG_SIZE;
 using rtype::client::regularTextWidth;
-using rtype::client::ScreenId;
 using rtype::client::SIDES_PER_AXIS;
 using rtype::client::SILENT_SERVER_MESSAGE;
+using rtype::client::TITLE_SCREEN;
 using ::testing::ElementsAre;
 
 /**
@@ -140,7 +141,7 @@ TEST_F(DialogMenusFixture, RetryIsChosenAtFirstOnALostConnection) {
               ElementsAre(NavigatorCall{.request = NavigatorRequest::Pop,
                                         .screen = std::nullopt},
                           NavigatorCall{.request = NavigatorRequest::Push,
-                                        .screen = ScreenId::Connection}));
+                                        .screen = CONNECTION_SCREEN}));
 }
 
 /**
@@ -200,7 +201,7 @@ TEST_F(ConnectionLostInTheStackFixture, RetryOpensTheConnectionOverTheTitle) {
   sendAnEvent();
 
   EXPECT_THAT(journal(),
-              ElementsAre(JournalEntry{.screen = ScreenId::Connection,
+              ElementsAre(JournalEntry{.screen = CONNECTION_SCREEN,
                                        .call = ScreenCall::HandleEvent}));
 }
 
@@ -215,6 +216,6 @@ TEST_F(ConnectionLostInTheStackFixture, EscapeLeavesTheTitleOnTop) {
   sendAnEvent();
 
   EXPECT_THAT(journal(),
-              ElementsAre(JournalEntry{.screen = ScreenId::Title,
+              ElementsAre(JournalEntry{.screen = TITLE_SCREEN,
                                        .call = ScreenCall::HandleEvent}));
 }

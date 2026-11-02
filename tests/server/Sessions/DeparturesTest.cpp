@@ -92,7 +92,6 @@ TEST_F(DeparturesFixture, ClosesASilentSessionOnceTheGraceIsOver) {
  */
 TEST_F(DeparturesFixture, MarksAPlayerAwayOnceTheTimeoutIsReached) {
   player().newestInputNumber = SOME_INPUT_NUMBER;
-  player().appliedInputNumber = SOME_INPUT_NUMBER;
   for (std::size_t tick = 0; tick < SESSION_TIMEOUT_TICKS - 1; ++tick) {
     departures().closeSilentSessions();
   }
@@ -102,9 +101,22 @@ TEST_F(DeparturesFixture, MarksAPlayerAwayOnceTheTimeoutIsReached) {
 
   EXPECT_TRUE(player().away);
   EXPECT_FALSE(player().newestInputNumber.has_value());
-  EXPECT_FALSE(player().appliedInputNumber.has_value());
   EXPECT_NE(roster().find(playerEndpoint(0)), nullptr);
   EXPECT_TRUE(announced().empty());
+}
+
+/**
+ * Given a player with an input applied, silent until its timeout is reached
+ * When one more tick of silence is counted
+ * Then the number of its newest applied input is cleared
+ */
+TEST_F(DeparturesFixture, ClearsTheAppliedInputNumberOfAPlayerWhoIsAway) {
+  player().appliedInputNumber = SOME_INPUT_NUMBER;
+  for (std::size_t tick = 0; tick < SESSION_TIMEOUT_TICKS; ++tick) {
+    departures().closeSilentSessions();
+  }
+
+  EXPECT_FALSE(player().appliedInputNumber.has_value());
 }
 
 /**
