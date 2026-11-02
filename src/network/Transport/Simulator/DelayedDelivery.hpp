@@ -37,11 +37,7 @@ class DelayedDelivery final {
   DelayedDelivery(NetworkContext& context, DatagramsInFlight inFlight,
                   DatagramHandler deliver);
 
-  /**
-   * @brief Marks it closed, so a deadline that falls later delivers nothing.
-   * The timer is left to its deadline: cancelling it, as close() does, may
-   * throw, and a destructor must not.
-   */
+  /** @brief Closes it, so a deadline that falls later delivers nothing. */
   ~DelayedDelivery();
 
   DelayedDelivery(const DelayedDelivery&) = delete;
@@ -55,8 +51,15 @@ class DelayedDelivery final {
    */
   void add(const Endpoint& peer, std::span<const std::byte> payload);
 
-  /** @brief Stops every delivery for good: what is in flight never arrives. */
-  void close();
+  /**
+   * @brief Stops every delivery for good: what is in flight never arrives.
+   *
+   * The timer is left to its deadline, whose handler then delivers nothing:
+   * cancelling it may throw, since Asio is built with ASIO_NO_DEPRECATED,
+   * which leaves only the throwing steady_timer::cancel(), and the destructors
+   * of this class and of SimulatedNetworkSocket call this.
+   */
+  void close() noexcept;
 
  private:
   std::shared_ptr<DelayedDeliveryState> state_;

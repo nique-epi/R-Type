@@ -60,7 +60,7 @@ DelayedDelivery::DelayedDelivery(NetworkContext& context,
                                .timer = asio::steady_timer{context.ioContext()},
                                .deliver = std::move(deliver)})) {}
 
-DelayedDelivery::~DelayedDelivery() { state_->closed = true; }
+DelayedDelivery::~DelayedDelivery() { close(); }
 
 void DelayedDelivery::add(const Endpoint& peer,
                           std::span<const std::byte> payload) {
@@ -72,9 +72,6 @@ void DelayedDelivery::add(const Endpoint& peer,
   }
 }
 
-void DelayedDelivery::close() {
-  state_->closed = true;
-  state_->timer.cancel();
-}
+void DelayedDelivery::close() noexcept { state_->closed = true; }
 
 }  // namespace rtype::network
