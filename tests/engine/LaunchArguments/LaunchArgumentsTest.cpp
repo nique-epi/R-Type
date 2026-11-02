@@ -12,6 +12,7 @@
 using rtype::engine::launchErrorText;
 using rtype::engine::LaunchOption;
 using rtype::engine::MissingLaunchOptionValueException;
+using rtype::engine::processArguments;
 using rtype::engine::readLaunchArguments;
 using rtype::engine::UnknownLaunchArgumentException;
 using rtype::engine::usageEntry;
@@ -153,6 +154,96 @@ TEST(LaunchArguments, LetsARecordRefuseItsValue) {
   EXPECT_THROW(
       readLaunchArguments(Arguments{VALUE_OPTION, FIRST_VALUE}, options),
       RefusedValue);
+}
+
+/**
+ * Given an option of the program and its value, an option a reader takes and
+ * its value, then another option of the program
+ * When the arguments are read
+ * Then each option is recorded with its value, in the order given
+ */
+TEST(LaunchArguments, HandsTheReadersAnArgumentNoOptionNames) {
+  std::vector<RecordedCall> calls;
+  const std::array readers{recordingReader(calls)};
+
+  readLaunchArguments(Arguments{VALUE_OPTION, FIRST_VALUE, READER_OPTION,
+                                SECOND_VALUE, FLAG_OPTION},
+                      recordingOptions(calls), readers);
+
+  EXPECT_EQ(calls, (std::vector<RecordedCall>{
+                       {.option = std::string(VALUE_OPTION),
+                        .value = std::string(FIRST_VALUE)},
+                       {.option = std::string(READER_OPTION),
+                        .value = std::string(SECOND_VALUE)},
+                       {.option = std::string(FLAG_OPTION), .value = ""}}));
+}
+
+/**
+ * Given an option of the program that takes a value, then an option a reader
+ * takes
+ * When the arguments are read
+ * Then the reader's option is the value, and the reader never gets it
+ */
+TEST(LaunchArguments, NeverHandsTheValueOfAnOptionToAReader) {
+  std::vector<RecordedCall> calls;
+  const std::array readers{recordingReader(calls)};
+
+  readLaunchArguments(Arguments{VALUE_OPTION, READER_OPTION},
+                      recordingOptions(calls), readers);
+
+  EXPECT_EQ(calls,
+            (std::vector<RecordedCall>{{.option = std::string(VALUE_OPTION),
+                                        .value = std::string(READER_OPTION)}}));
+}
+
+/**
+ * Given an argument that names no option and that no reader takes
+ * When the arguments are read
+ * Then it is rejected
+ */
+TEST(LaunchArguments, RejectsAnArgumentNoReaderTakes) {
+  std::vector<RecordedCall> calls;
+  const std::array readers{recordingReader(calls)};
+
+  EXPECT_THROW(readLaunchArguments(Arguments{UNKNOWN_ARGUMENT},
+                                   recordingOptions(calls), readers),
+               UnknownLaunchArgumentException);
+}
+
+/**
+ * Given an option a reader takes, given last without its value
+ * When the arguments are read
+ * Then the reader's exception reaches the caller
+ */
+TEST(LaunchArguments, LetsAReaderRefuseAnOption) {
+  std::vector<RecordedCall> calls;
+  const std::array readers{recordingReader(calls)};
+
+  EXPECT_THROW(readLaunchArguments(Arguments{READER_OPTION},
+                                   recordingOptions(calls), readers),
+               RefusedValue);
+}
+
+/**
+ * Given the arguments of a process, its name first
+ * When they are read from the process
+ * Then every argument after its name is kept, in order
+ */
+TEST(LaunchArguments, ProcessArgumentsLeaveTheProgramNameOut) {
+  EXPECT_EQ(processArguments(static_cast<int>(PROCESS_ARGUMENTS.size()),
+                             PROCESS_ARGUMENTS.data()),
+            Arguments(PROCESS_ARGUMENTS.begin() + 1, PROCESS_ARGUMENTS.end()));
+}
+
+/**
+ * Given a process launched with its name only
+ * When its arguments are read
+ * Then there is none
+ */
+TEST(LaunchArguments, ProcessLaunchedWithItsNameOnlyHasNoArgument) {
+  EXPECT_TRUE(processArguments(static_cast<int>(PROGRAM_NAME_ONLY.size()),
+                               PROGRAM_NAME_ONLY.data())
+                  .empty());
 }
 
 /**
