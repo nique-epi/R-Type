@@ -12,15 +12,11 @@
 namespace rtype::server::testing {
 
 network::EncodedMessage playerLeftMessage() {
-  return network::EncodedMessage{
-      .type = network::PlayerLeft::TYPE,
-      .payload = network::encodeMessage(SECOND_PLAYER_LEFT)};
+  return network::encodedMessage(SECOND_PLAYER_LEFT);
 }
 
 network::EncodedMessage entityDestroyedMessage() {
-  return network::EncodedMessage{
-      .type = network::EntityDestroyed::TYPE,
-      .payload = network::encodeMessage(MONSTER_KILLED)};
+  return network::encodedMessage(MONSTER_KILLED);
 }
 
 network::PacketHeader headerOf(const network::OutgoingDatagram& datagram) {

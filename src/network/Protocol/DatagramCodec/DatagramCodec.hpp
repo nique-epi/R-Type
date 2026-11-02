@@ -63,12 +63,6 @@ class DatagramCodec {
       const PacketHeader& header, std::span<const EncodedMessage> messages);
 
   /**
-   * @returns The bytes @p message takes in a datagram: its type, the size of
-   * its payload and its payload.
-   */
-  [[nodiscard]] static std::size_t encodedSize(const EncodedMessage& message);
-
-  /**
    * @brief Reads the header at the start of @p datagram without judging its
    * fields: checking the protocol id, the version and the flags is left to
    * the caller.

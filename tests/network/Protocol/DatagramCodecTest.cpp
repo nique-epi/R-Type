@@ -29,7 +29,6 @@ using testing::DatagramCodecFixture;
 using testing::datagramOf;
 using testing::defaultHeaderBytes;
 using testing::EMPTY_MESSAGE_DATAGRAM_SIZE;
-using testing::ENCODED_FILLING_MESSAGE_SIZE;
 using testing::FILLING_PAYLOAD_SIZE;
 using testing::LARGEST_DATAGRAM_SIZE;
 using testing::malformedDatagrams;
@@ -520,18 +519,6 @@ TEST(DatagramCodec, RefusesADatagramWithoutAMessage) {
 
   EXPECT_THROW(static_cast<void>(DatagramCodec::encode(PacketHeader{}, none)),
                EmptyDatagramException);
-}
-
-/**
- * Given a message of FILLING_PAYLOAD_SIZE bytes of payload
- * When its size in a datagram is asked
- * Then it is its type, its size and its payload: 589 bytes
- */
-TEST(DatagramCodec, CountsThePrefixAndThePayloadOfAMessage) {
-  EXPECT_EQ(DatagramCodec::encodedSize(EncodedMessage{
-                .type = MessageType::GameEvent,
-                .payload = std::vector<std::byte>(FILLING_PAYLOAD_SIZE)}),
-            ENCODED_FILLING_MESSAGE_SIZE);
 }
 
 /**

@@ -52,9 +52,9 @@ void requireSendable(std::span<const EncodedMessage> messages) {
   if (messages.empty()) {
     throw EmptyDatagramException();
   }
-  const std::size_t size = std::transform_reduce(
-      messages.begin(), messages.end(), PACKET_HEADER_SIZE, std::plus<>{},
-      &DatagramCodec::encodedSize);
+  const std::size_t size =
+      std::transform_reduce(messages.begin(), messages.end(),
+                            PACKET_HEADER_SIZE, std::plus<>{}, &encodedSize);
   if (size > MAX_DATAGRAM_SIZE) {
     throw DatagramTooLargeException(size);
   }
@@ -113,10 +113,6 @@ std::vector<std::byte> DatagramCodec::encode(
     writeMessage(writer, message.type, message.payload);
   }
   return writer.bytes();
-}
-
-std::size_t DatagramCodec::encodedSize(const EncodedMessage& message) {
-  return MESSAGE_PREFIX_SIZE + message.payload.size();
 }
 
 PacketHeader DatagramCodec::decodeHeader(std::span<const std::byte> datagram) {

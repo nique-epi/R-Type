@@ -17,14 +17,6 @@ namespace rtype::network {
 
 namespace {
 
-/**
- * @returns The bytes @p message takes in a datagram: its type and the size of
- * its payload (MESSAGE_PREFIX_SIZE), then its payload.
- */
-std::size_t bytesInADatagram(const EncodedMessage& message) {
-  return MESSAGE_PREFIX_SIZE + message.payload.size();
-}
-
 bool isDue(const UnacknowledgedMessage& kept) {
   return kept.sentIn.empty() || kept.sinceSent >= GUARANTEED_RESEND_DELAY;
 }
@@ -32,9 +24,8 @@ bool isDue(const UnacknowledgedMessage& kept) {
 }  // namespace
 
 void UnacknowledgedMessages::add(EncodedMessage message) {
-  const std::size_t alone = PACKET_HEADER_SIZE + bytesInADatagram(message);
-  if (alone > MAX_DATAGRAM_SIZE) {
-    throw DatagramTooLargeException(alone);
+  if (message.payload.size() > MESSAGE_PAYLOAD_LIMIT) {
+    throw DatagramTooLargeException(PACKET_HEADER_SIZE + encodedSize(message));
   }
   messages_.push_back(
       UnacknowledgedMessage{.message = std::move(message), .sentIn = {}});
@@ -67,7 +58,7 @@ std::vector<EncodedMessage> UnacknowledgedMessages::takeDue(
   std::vector<EncodedMessage> taken;
   std::size_t size = PACKET_HEADER_SIZE;
   for (UnacknowledgedMessage& kept : messages_) {
-    const std::size_t messageSize = bytesInADatagram(kept.message);
+    const std::size_t messageSize = encodedSize(kept.message);
     if (!isDue(kept) || size + messageSize > MAX_DATAGRAM_SIZE) {
       continue;
     }
