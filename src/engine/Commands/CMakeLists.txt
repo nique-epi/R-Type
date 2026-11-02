@@ -1,4 +1,4 @@
-add_library(rtype_engine_commands STATIC CommandLine.cpp CommandInterpreter.cpp ConfigurationRegistry.cpp ConfigurationReader.cpp SettingValue.cpp)
+add_library(rtype_engine_commands STATIC CommandLine.cpp CommandInterpreter.cpp ConfigurationRegistry.cpp ConfigurationReader.cpp SettingLine.cpp SettingValue.cpp)
 
 target_include_directories(rtype_engine_commands PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
