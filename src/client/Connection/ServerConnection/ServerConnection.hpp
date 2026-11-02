@@ -26,6 +26,7 @@
 #include "PacketHeader.hpp"
 #include "PendingDeparture.hpp"
 #include "ProtocolConstants.hpp"
+#include "ReceivedSequences.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::client {
@@ -88,16 +89,22 @@ namespace rtype::client {
  * isLeaving() is true; connect() then starts a new session: sequence 0, token 0
  * and inputs from FIRST_INPUT_NUMBER again.
  *
+ * Within a session, every datagram to the server acknowledges the datagrams of
+ * the server accepted so far (see network::ReceivedSequences). Once a datagram
+ * that holds guaranteed messages is accepted, a Heartbeat carries that
+ * acknowledgement when ACKNOWLEDGEMENT_DELAY passed without another datagram to
+ * the server; during a game the next PlayerInput carries it first.
+ *
  * From the start of the game, it keeps the EntitySpawned, WorldState,
- * EntityDestroyed and every copy of PlayerLeft of the server, and the first
- * copy of each GameEvent (see
- * GameEventHistory), in the order they arrived, until drainEntityMessages()
- * hands them over; leaving the session drops those not handed over and
- * forgets the events seen. The game screen drains them every frame, behind
- * the options too, so they never pile up for longer than the loading of the
- * game. The first GameEnded of a game goes to the game screen with them, and
- * the session is no longer in a game: the waiting room can be entered again,
- * and ready asked again; the copies the server repeats are dropped.
+ * EntityDestroyed and PlayerLeft of the server, every copy of them, and the
+ * first copy of each GameEvent (see GameEventHistory), in the order they
+ * arrived, until drainEntityMessages() hands them over; leaving the session
+ * drops those not handed over and forgets the events seen. The game screen
+ * drains them every frame, behind the options too, so they never pile up for
+ * longer than the loading of the game. The first GameEnded of a game goes to
+ * the game screen with them, and the session is no longer in a game: the
+ * waiting room can be entered again, and ready asked again; the copies the
+ * server repeats are dropped.
  *
  * Only datagrams from the server being contacted, of this protocol and version
  * and whose messages add up to their end, are read; any other is ignored, with
@@ -256,10 +263,11 @@ class ServerConnection : public IServerConnection,
     sendToServer(Message::TYPE, network::encodeMessage(message));
   }
 
-  /** @returns A header carrying the token of the session, 0 before it, and
-   * the next sequence, which it uses up. Every datagram to the server takes
+  /** @returns A header carrying the token of the session, 0 before it, the
+   * next sequence, which it uses up, and the acknowledgement of the datagrams
+   * of the server accepted in the session. Every datagram to the server takes
    * its header here, so the delay before the next Heartbeat starts again from
-   * it. */
+   * it, and no acknowledgement is left waiting. */
   [[nodiscard]] network::PacketHeader nextHeader();
 
   /** @returns A header carrying @p token and @p sequence, which then moves on
@@ -282,7 +290,7 @@ class ServerConnection : public IServerConnection,
   std::uint64_t sessionToken_{network::NO_SESSION_TOKEN};
   std::size_t wrongTokenCount_{0};
   std::uint16_t nextSequence_{0};
-  std::uint16_t newestReceivedSequence_{0};
+  network::ReceivedSequences receivedSequences_;
   std::uint32_t nextInputNumber_{network::FIRST_INPUT_NUMBER};
   engine::Duration sinceRequest_{};
   engine::Duration sinceConnect_{};
@@ -290,6 +298,7 @@ class ServerConnection : public IServerConnection,
   engine::Duration sinceGameLoaded_{};
   engine::Duration sinceSent_{};
   engine::Duration sinceReceived_{};
+  std::optional<engine::Duration> acknowledgementWait_;
   ConnectionStatus status_;
   std::vector<network::LobbyPlayer> lobbyPlayers_;
   std::optional<bool> requestedReady_;

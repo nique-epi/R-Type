@@ -20,8 +20,9 @@ enum class DepartureReason : std::uint8_t {
 };
 
 /**
- * @brief Tells the other players that one left. Sent three times, 50 ms
- * apart; a copy naming a player the client no longer lists is ignored.
+ * @brief Tells the other players that one left. Guaranteed: sent again until
+ * acknowledged, for GUARANTEED_MESSAGE_LIFETIME at most; a second copy of the
+ * departure of a player changes nothing on the client.
  */
 struct PlayerLeft {
   static constexpr MessageType TYPE = MessageType::PlayerLeft;

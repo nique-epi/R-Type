@@ -1,8 +1,7 @@
 #include "GameEventEncoder.hpp"
-#include <cstddef>
 #include <cstdint>
 #include <utility>
-#include <vector>
+#include "EncodedMessage.hpp"
 #include "EntityDamage.hpp"
 #include "EntityDestroyed.hpp"
 #include "EntityDestruction.hpp"
@@ -44,6 +43,13 @@ network::DepartureReason toWireReason(game::DepartureCause cause) {
   return network::DepartureReason::TimedOut;
 }
 
+/** @returns @p message encoded with its type. */
+template <network::EncodableMessage Message>
+network::EncodedMessage encodedMessage(const Message& message) {
+  return network::EncodedMessage{.type = Message::TYPE,
+                                 .payload = network::encodeMessage(message)};
+}
+
 }  // namespace
 
 EventMessage GameEventEncoder::encode(const game::EntitySpawn& event) {
@@ -52,17 +58,13 @@ EventMessage GameEventEncoder::encode(const game::EntitySpawn& event) {
       .entityType = toWireEntityType(event.type),
       .x = event.x,
       .y = event.y};
-  return EventMessage{.type = network::EntitySpawned::TYPE,
-                      .payload = network::encodeMessage(message),
-                      .copies = SINGLE_COPY};
+  return EventMessage{.message = encodedMessage(message), .guaranteed = false};
 }
 
 EventMessage GameEventEncoder::encode(const game::EntityDestruction& event) {
   const network::EntityDestroyed message{.entityId = event.networkId,
                                          .reason = toWireReason(event.cause)};
-  return EventMessage{.type = network::EntityDestroyed::TYPE,
-                      .payload = network::encodeMessage(message),
-                      .copies = REPEATED_MESSAGE_COPIES};
+  return EventMessage{.message = encodedMessage(message), .guaranteed = true};
 }
 
 EventMessage GameEventEncoder::encode(const game::EntityDamage& event) {
@@ -83,9 +85,7 @@ EventMessage GameEventEncoder::encode(const game::PlayerElimination& event) {
 EventMessage GameEventEncoder::encode(const game::PlayerDeparture& event) {
   const network::PlayerLeft message{.playerNumber = event.playerNumber,
                                     .reason = toWireReason(event.cause)};
-  return EventMessage{.type = network::PlayerLeft::TYPE,
-                      .payload = network::encodeMessage(message),
-                      .copies = REPEATED_MESSAGE_COPIES};
+  return EventMessage{.message = encodedMessage(message), .guaranteed = true};
 }
 
 EventMessage GameEventEncoder::encodeGameEvent(network::GameEventKind kind,
@@ -95,11 +95,9 @@ EventMessage GameEventEncoder::encodeGameEvent(network::GameEventKind kind,
                                    .kind = kind,
                                    .playerNumber = playerNumber,
                                    .entityId = entityId};
-  std::vector<std::byte> payload = network::encodeMessage(message);
+  network::EncodedMessage encoded = encodedMessage(message);
   ++nextEventNumber_;
-  return EventMessage{.type = network::GameEvent::TYPE,
-                      .payload = std::move(payload),
-                      .copies = REPEATED_MESSAGE_COPIES};
+  return EventMessage{.message = std::move(encoded), .guaranteed = true};
 }
 
 }  // namespace rtype::server

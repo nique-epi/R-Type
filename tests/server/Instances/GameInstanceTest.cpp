@@ -21,6 +21,8 @@
 #include "GameInstanceFixtures.hpp"
 #include "GameInstanceTestConstants.hpp"
 #include "GameState.hpp"
+#include "GuaranteedMessageTestConstants.hpp"
+#include "Heartbeat.hpp"
 #include "IncomingDatagram.hpp"
 #include "LobbyState.hpp"
 #include "MessageType.hpp"
@@ -33,7 +35,6 @@
 #include "PlayerRoster.hpp"
 #include "Position.hpp"
 #include "ProtocolConstants.hpp"
-#include "Replication/GameEventTestConstants.hpp"
 #include "SentDatagrams.hpp"
 #include "ServerConstants.hpp"
 #include "ServerDatagrams.hpp"
@@ -829,9 +830,9 @@ TEST_F(GameInstanceTest, TheOthersPlayOnWhenOneOfThreePlayersTimesOut) {
 /**
  * Given three players, the second of whom goes silent, and the broadcaster of
  * the game events wired to the roster as the server wires it
- * When the timeout runs, the bus delivers the events and every copy comes due
- * Then the first and the third player get three PlayerLeft naming player 2,
- * timed out, and the second player gets none
+ * When the timeout runs and the bus delivers the events
+ * Then the first and the third player get a PlayerLeft naming player 2, timed
+ * out, and the second player gets none
  */
 TEST_F(GameInstanceTest, TellsOnlyTheOthersThatAPlayerTimedOut) {
   for (const std::size_t player : {FIRST_PLAYER, SECOND_PLAYER, THIRD_PLAYER}) {
@@ -840,12 +841,10 @@ TEST_F(GameInstanceTest, TellsOnlyTheOthersThatAPlayerTimedOut) {
 
   timeOut(SECOND_PLAYER);
   events().dispatch();
-  timers().advance(testing::ALL_COPIES_SENT);
 
-  const std::vector expected(
-      testing::PROTOCOL_REPEATED_MESSAGE_COPIES,
+  const std::vector expected{
       network::PlayerLeft{.playerNumber = network::FIRST_PLAYER_NUMBER + 1,
-                          .reason = network::DepartureReason::TimedOut});
+                          .reason = network::DepartureReason::TimedOut}};
   EXPECT_EQ(playerLeftSentTo(sentDatagrams(), FIRST_PLAYER), expected);
   EXPECT_EQ(playerLeftSentTo(sentDatagrams(), THIRD_PLAYER), expected);
   EXPECT_TRUE(playerLeftSentTo(sentDatagrams(), SECOND_PLAYER).empty());
@@ -854,10 +853,9 @@ TEST_F(GameInstanceTest, TellsOnlyTheOthersThatAPlayerTimedOut) {
 /**
  * Given three players, and the broadcaster of the game events wired to the
  * roster as the server wires it
- * When the second sends a Disconnection, the bus delivers the events and every
- * copy comes due
- * Then the first and the third player get three PlayerLeft naming player 2,
- * left, and the second player gets none
+ * When the second sends a Disconnection and the bus delivers the events
+ * Then the first and the third player get a PlayerLeft naming player 2, left,
+ * and the second player gets none
  */
 TEST_F(GameInstanceTest, TellsOnlyTheOthersThatAPlayerLeft) {
   for (const std::size_t player : {FIRST_PLAYER, SECOND_PLAYER, THIRD_PLAYER}) {
@@ -867,15 +865,62 @@ TEST_F(GameInstanceTest, TellsOnlyTheOthersThatAPlayerLeft) {
   leave(SECOND_PLAYER);
   tick();
   events().dispatch();
-  timers().advance(testing::ALL_COPIES_SENT);
 
-  const std::vector expected(
-      testing::PROTOCOL_REPEATED_MESSAGE_COPIES,
+  const std::vector expected{
       network::PlayerLeft{.playerNumber = network::FIRST_PLAYER_NUMBER + 1,
-                          .reason = network::DepartureReason::Left});
+                          .reason = network::DepartureReason::Left}};
   EXPECT_EQ(playerLeftSentTo(sentDatagrams(), FIRST_PLAYER), expected);
   EXPECT_EQ(playerLeftSentTo(sentDatagrams(), THIRD_PLAYER), expected);
   EXPECT_TRUE(playerLeftSentTo(sentDatagrams(), SECOND_PLAYER).empty());
+}
+
+/**
+ * Given two players, the second of whom leaves, and the PlayerLeft the first
+ * got once the bus delivered the events
+ * When TICKS_BEFORE_A_RESEND ticks run and the first acknowledges nothing
+ * Then the first got it a second time
+ */
+TEST_F(GameInstanceTest, SendsAPlayerLeftAgainWhileItIsNotAcknowledged) {
+  join(FIRST_PLAYER);
+  join(SECOND_PLAYER);
+  leave(SECOND_PLAYER);
+  tick();
+  events().dispatch();
+
+  runTicks(testing::TICKS_BEFORE_A_RESEND);
+
+  EXPECT_EQ(playerLeftSentTo(sentDatagrams(), FIRST_PLAYER).size(), 2U);
+}
+
+/**
+ * Given two players, the second of whom leaves, and the PlayerLeft the first
+ * got once the bus delivered the events
+ * When the first sends a Heartbeat that acknowledges the datagram of that
+ * PlayerLeft, then TICKS_BEFORE_A_RESEND more ticks run
+ * Then the first got it once: the game read the acknowledgement and stopped
+ * sending it
+ */
+TEST_F(GameInstanceTest, StopsSendingAPlayerLeftItsClientAcknowledged) {
+  const ConnectedPlayer& first = join(FIRST_PLAYER);
+  join(SECOND_PLAYER);
+  leave(SECOND_PLAYER);
+  tick();
+  events().dispatch();
+  const std::optional<std::uint16_t> told = testing::lastSequenceHolding(
+      sentTo(FIRST_PLAYER), network::MessageType::PlayerLeft);
+  ASSERT_TRUE(told.has_value());
+  network::PacketHeader acknowledgement;
+  acknowledgement.sessionToken = first.sessionToken;
+  acknowledgement.flags = testing::PROTOCOL_ACKNOWLEDGES_FLAG;
+  acknowledgement.acknowledgedSequence = *told;
+
+  queue(network::IncomingDatagram{.sender = first.endpoint,
+                                  .payload = network::DatagramCodec::encode(
+                                      acknowledgement, network::Heartbeat{})});
+  tick();
+  runTicks(testing::TICKS_BEFORE_A_RESEND);
+
+  EXPECT_EQ(playerLeftSentTo(sentDatagrams(), FIRST_PLAYER).size(), 1U);
 }
 
 /**

@@ -10,8 +10,9 @@ namespace rtype::network {
  * of the Datagram section of the protocol page.
  *
  * The default values make a header of the version this code speaks, with no
- * session yet: a sender sets the session token and the sequence it knows.
- * flags, acknowledgedSequence and acknowledgementBits stay 0 in version 1.
+ * session, no flag and no acknowledgement yet: a sender sets the session token
+ * and the sequence it knows, and ReceivedSequences::acknowledgeIn() the
+ * acknowledgement of what it accepted.
  */
 struct PacketHeader {
   std::uint32_t protocolId{PROTOCOL_ID};

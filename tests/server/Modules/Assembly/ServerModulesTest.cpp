@@ -47,7 +47,7 @@ TEST_F(ServerModulesFixture, ListsTheLoggerTheNetworkTheGamesAndTheLobby) {
  * Given a server whose modules started and a client that joined it
  * When the application stops
  * Then the client receives the three copies of a Disconnection, about
- * REPEATED_MESSAGE_INTERVAL apart, under its session token, and the port is
+ * FAREWELL_COPY_INTERVAL apart, under its session token, and the port is
  * free again
  */
 TEST_F(ServerModulesFixture, SaysGoodbyeToAJoinedPlayerWhenItStops) {

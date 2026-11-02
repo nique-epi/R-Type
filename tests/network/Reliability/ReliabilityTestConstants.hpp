@@ -7,7 +7,7 @@
 namespace rtype::network::testing {
 
 /** @brief The values of the protocol page: the two flags, the bits of
- * acknowledgementBits and the three delays. */
+ * acknowledgementBits, the three delays and the version. */
 constexpr std::uint8_t PROTOCOL_ACKNOWLEDGES_FLAG = 0x01;
 constexpr std::uint8_t PROTOCOL_GUARANTEED_FLAG = 0x02;
 constexpr std::uint8_t PROTOCOL_BOTH_FLAGS = 0x03;
@@ -15,6 +15,7 @@ constexpr std::size_t PROTOCOL_ACKNOWLEDGEMENT_BIT_COUNT = 32;
 constexpr std::chrono::milliseconds PROTOCOL_RESEND_DELAY{100};
 constexpr std::chrono::seconds PROTOCOL_MESSAGE_LIFETIME{1};
 constexpr std::chrono::milliseconds PROTOCOL_ACKNOWLEDGEMENT_DELAY{40};
+constexpr std::uint8_t PROTOCOL_VERSION_TWO = 2;
 
 /** @brief A first sequence of a session, any one. */
 constexpr std::uint16_t FIRST_RECEIVED = 500;

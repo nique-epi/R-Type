@@ -1,62 +1,35 @@
 #pragma once
 
-#include <cstddef>
 #include <functional>
 #include <optional>
 #include <string_view>
 #include <vector>
-#include "Endpoint.hpp"
+#include "EncodedMessage.hpp"
 #include "EventBus.hpp"
 #include "EventMessage.hpp"
+#include "GameEventBroadcasterParts.hpp"
 #include "GameEventEncoder.hpp"
 #include "Logger.hpp"
-#include "MessageType.hpp"
-#include "OutgoingDatagram.hpp"
-#include "PacketHeader.hpp"
 #include "SubscriptionHandle.hpp"
-#include "TimerScheduler.hpp"
 
 namespace rtype::server {
 
 /**
- * @brief Sends the events of the match to every recipient, as the messages
- * GameEventEncoder writes, each one as many times as it asks.
- *
- * The copies after the first are sent REPEATED_MESSAGE_INTERVAL apart, to the
- * recipients there were when the bus delivered the event. Nothing is sent or
- * scheduled when there is no recipient.
+ * @brief Hands the events of the match to the players of the game, as the
+ * messages GameEventEncoder writes: once when the encoder says a later state
+ * message corrects their loss, guaranteed otherwise.
  *
  * An event the encoder refuses (a position that is not a number, an entity id
  * of 0, a player number outside 1 to 4) is skipped and logged as a warning:
- * nothing is sent, no copy is scheduled, and the next event goes out. It never
- * stops the tick, which would stop the server for every player.
+ * nothing is sent, and the next event goes out. It never stops the tick, which
+ * would stop the server for every player.
  *
  * The broadcaster keeps the handle of each of its subscriptions and gives them
  * back to the bus when it is destroyed, so the bus never calls it after that.
- * The copies it planned on the timer scheduler are not cancelled: it must
- * outlive the last advance() of the timer scheduler, which calls back into it.
  */
 class GameEventBroadcaster {
  public:
-  /** @brief What a broadcaster is built from. */
-  struct Wiring {
-    /** @brief Where the events are published; the broadcaster subscribes to
-     * it. */
-    std::reference_wrapper<engine::EventBus> events;
-    /** @brief Runs the later copies. */
-    std::reference_wrapper<engine::TimerScheduler> timers;
-    /** @brief Gives the clients of the game when the bus delivers an event;
-     * the later copies of that event go to the same clients. Must not be
-     * empty. */
-    std::function<std::vector<network::Endpoint>()> recipients;
-    /** @brief Gives the header of the next datagram for a recipient: its
-     * session token and its next sequence number. Must not be empty. */
-    std::function<network::PacketHeader(const network::Endpoint&)> headerFor;
-    /** @brief Called for each datagram to send. Must not be empty. */
-    std::function<void(network::OutgoingDatagram)> send;
-  };
-
-  explicit GameEventBroadcaster(Wiring wiring);
+  explicit GameEventBroadcaster(GameEventBroadcasterParts parts);
 
   GameEventBroadcaster(const GameEventBroadcaster&) = delete;
   GameEventBroadcaster& operator=(const GameEventBroadcaster&) = delete;
@@ -72,16 +45,11 @@ class GameEventBroadcaster {
   std::optional<EventMessage> tryEncode(const Event& event,
                                         std::string_view eventName);
 
-  void broadcast(const EventMessage& message);
-  void sendCopy(const std::vector<network::Endpoint>& recipients,
-                network::MessageType type,
-                const std::vector<std::byte>& payload) const;
+  void broadcast(const EventMessage& event) const;
 
   engine::EventBus& events_;
-  engine::TimerScheduler& timers_;
-  std::function<std::vector<network::Endpoint>()> recipients_;
-  std::function<network::PacketHeader(const network::Endpoint&)> headerFor_;
-  std::function<void(network::OutgoingDatagram)> send_;
+  std::function<void(const network::EncodedMessage&)> sendToEveryPlayer_;
+  std::function<void(const network::EncodedMessage&)> guaranteeToEveryPlayer_;
   GameEventEncoder encoder_;
   logging::Logger logger_;
   std::vector<engine::SubscriptionHandle> subscriptions_;

@@ -29,6 +29,7 @@
 #include "GameEventHistory.hpp"
 #include "GameLoaded.hpp"
 #include "GameStarted.hpp"
+#include "GuaranteedDelivery.hpp"
 #include "Heartbeat.hpp"
 #include "IDatagramLink.hpp"
 #include "IncomingDatagram.hpp"
@@ -45,7 +46,7 @@
 #include "PlayerLeft.hpp"
 #include "ProtocolConstants.hpp"
 #include "ReadyState.hpp"
-#include "SequenceOrder.hpp"
+#include "ReceivedSequences.hpp"
 #include "TimeConstants.hpp"
 #include "WorldState.hpp"
 
@@ -143,6 +144,9 @@ void ServerConnection::holdSession(engine::Duration elapsed) {
     return;
   }
   sinceSent_ += elapsed;
+  if (acknowledgementWait_.has_value()) {
+    *acknowledgementWait_ += elapsed;
+  }
   repeatReadyState(elapsed);
   sendHeartbeatWhenSilent();
 }
@@ -195,7 +199,8 @@ void ServerConnection::registerAnswers() {
           status_ = {.phase = ConnectionPhase::Accepted,
                      .playerNumber = accepted.playerNumber};
           sessionToken_ = origin.header.sessionToken;
-          newestReceivedSequence_ = origin.header.sequence;
+          receivedSequences_ =
+              network::ReceivedSequences::startingAt(origin.header.sequence);
           lobbyPlayers_ = {
               network::LobbyPlayer{.playerNumber = accepted.playerNumber,
                                    .ready = false,
@@ -307,6 +312,10 @@ void ServerConnection::receive(const network::IncomingDatagram& datagram) {
     const std::vector<network::MessageFrame> messages =
         network::DatagramCodec::splitMessages(datagram.payload);
     sinceReceived_ = engine::Duration::zero();
+    if (isAccepted() && network::holdsGuaranteedMessages(header) &&
+        !acknowledgementWait_.has_value()) {
+      acknowledgementWait_ = engine::Duration::zero();
+    }
     dispatcher_.dispatch({.sender = datagram.sender, .header = header},
                          messages);
   } catch (const network::MalformedDatagramException&) {
@@ -323,11 +332,7 @@ bool ServerConnection::passesSessionChecks(
     ++wrongTokenCount_;
     return false;
   }
-  if (!network::isNewerSequence(header.sequence, newestReceivedSequence_)) {
-    return false;
-  }
-  newestReceivedSequence_ = header.sequence;
-  return true;
+  return receivedSequences_.accept(header.sequence);
 }
 
 void ServerConnection::startGame() {
@@ -367,7 +372,10 @@ void ServerConnection::repeatReadyState(engine::Duration elapsed) {
 }
 
 void ServerConnection::sendHeartbeatWhenSilent() {
-  if (sinceSent_ < network::HEARTBEAT_INTERVAL) {
+  const bool acknowledgementWaited =
+      acknowledgementWait_.has_value() &&
+      *acknowledgementWait_ >= network::ACKNOWLEDGEMENT_DELAY;
+  if (sinceSent_ < network::HEARTBEAT_INTERVAL && !acknowledgementWaited) {
     return;
   }
   sendToServer(network::Heartbeat{});
@@ -411,7 +419,8 @@ void ServerConnection::repeatDeparture(engine::Duration elapsed) {
 
 void ServerConnection::forgetSession() {
   sessionToken_ = network::NO_SESSION_TOKEN;
-  newestReceivedSequence_ = 0;
+  receivedSequences_ = network::ReceivedSequences{};
+  acknowledgementWait_.reset();
   lobbyPlayers_.clear();
   requestedReady_.reset();
   sinceReadyState_ = engine::Duration::zero();
@@ -430,7 +439,10 @@ void ServerConnection::sendToServer(network::MessageType type,
 
 network::PacketHeader ServerConnection::nextHeader() {
   sinceSent_ = engine::Duration::zero();
-  return headerOf(sessionToken_, nextSequence_);
+  acknowledgementWait_.reset();
+  network::PacketHeader header = headerOf(sessionToken_, nextSequence_);
+  receivedSequences_.acknowledgeIn(header);
+  return header;
 }
 
 network::PacketHeader ServerConnection::headerOf(std::uint64_t token,

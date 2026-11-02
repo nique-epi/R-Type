@@ -43,8 +43,8 @@ struct SentReadyState {
   std::uint64_t sessionToken{SESSION_TOKEN};
 };
 
-/** @returns Those of @p datagrams whose only message is of type @p type, in
- * order. */
+/** @returns Those of @p datagrams that hold a message of type @p type, in
+ * order: a resend may group several guaranteed messages in one datagram. */
 [[nodiscard]] std::vector<network::OutgoingDatagram> ofType(
     network::MessageType type,
     const std::vector<network::OutgoingDatagram>& datagrams);

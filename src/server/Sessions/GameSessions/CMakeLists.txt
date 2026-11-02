@@ -17,6 +17,7 @@ target_link_libraries(rtype_server_game_sessions
     rtype_network_disconnection
     rtype_network_heartbeat
     rtype_server_heartbeats
+    rtype_server_message_delivery
     rtype_server_session_datagram
 )
 

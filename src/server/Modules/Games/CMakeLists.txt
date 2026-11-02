@@ -26,7 +26,6 @@ target_link_libraries(rtype_server_games_module
     rtype_network_disconnection
     rtype_server_game_placement
     rtype_server_module_constants
-    rtype_server_replication_constants
     rtype_server_session_datagram
     rtype_server_wave_catalog
 )

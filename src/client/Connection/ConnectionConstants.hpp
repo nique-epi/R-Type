@@ -3,6 +3,7 @@
 #include <chrono>
 #include <cstddef>
 #include <string_view>
+#include "ProtocolConstants.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::client {
@@ -70,9 +71,17 @@ constexpr engine::Duration PLAYER_INPUT_INTERVAL =
     std::chrono::duration_cast<engine::Duration>(std::chrono::seconds(1)) /
     PLAYER_INPUTS_PER_SECOND;
 
-/** @brief How long the number of a GameEvent is remembered: its three copies
- * come 50 ms apart, and the protocol page says a second is enough. */
-constexpr engine::Duration GAME_EVENT_MEMORY = std::chrono::seconds(1);
+/** @brief How much later than its first copy a copy of a GameEvent may arrive,
+ * beyond the lifetime of a guaranteed message: two copies take different
+ * delays, far less than this apart on the worst network of the scenarios
+ * (50 ms of jitter). */
+constexpr engine::Duration GAME_EVENT_DELAY_SPREAD = std::chrono::seconds(1);
+
+/** @brief How long the number of a GameEvent is remembered: the server sends a
+ * guaranteed message again for up to GUARANTEED_MESSAGE_LIFETIME, and a copy
+ * may travel GAME_EVENT_DELAY_SPREAD longer than the first. */
+constexpr engine::Duration GAME_EVENT_MEMORY =
+    network::GUARANTEED_MESSAGE_LIFETIME + GAME_EVENT_DELAY_SPREAD;
 
 /** @brief Module name the connection to a server writes its log lines under. */
 constexpr std::string_view CONNECTION_LOGGER_NAME = "Connection";

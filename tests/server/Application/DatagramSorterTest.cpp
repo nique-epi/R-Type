@@ -28,11 +28,11 @@ using rtype::server::DatagramSorter;
 using rtype::server::testing::DROPPED_DATAGRAM_LINE_TEXT;
 using rtype::server::testing::DROPPED_TOGETHER_COUNT;
 using rtype::server::testing::NEXT_PROTOCOL_VERSION;
-using rtype::server::testing::ONE_FLAG_SET;
 using rtype::server::testing::OTHER_PROTOCOL_ID;
 using rtype::server::testing::OTHER_SESSION_TOKEN;
 using rtype::server::testing::REFUSAL_DATAGRAM_SIZE;
 using rtype::server::testing::SESSION_TOKEN;
+using rtype::server::testing::UNKNOWN_FLAG;
 
 namespace {
 
@@ -278,12 +278,13 @@ TEST_F(DatagramSorterTest, DropsAStrangersRequestOfAnotherProtocol) {
 
 /**
  * Given a sorter that admitted nobody
- * When a stranger sends a connection request with a flag set
+ * When a stranger sends a connection request with a flag version 2 does not
+ * know
  * Then the request reaches no queue
  */
-TEST_F(DatagramSorterTest, DropsAStrangersRequestWithAFlagSet) {
+TEST_F(DatagramSorterTest, DropsAStrangersRequestWithAnUnknownFlag) {
   rtype::network::PacketHeader header;
-  header.flags = ONE_FLAG_SET;
+  header.flags = UNKNOWN_FLAG;
 
   sort(stranger(), requestDatagram(header));
 

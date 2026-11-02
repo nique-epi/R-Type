@@ -3,6 +3,7 @@
 #include <gtest/gtest.h>
 #include <cstddef>
 #include <cstdint>
+#include <optional>
 #include <span>
 #include <vector>
 #include "DatagramCodec.hpp"
@@ -33,6 +34,14 @@ namespace rtype::server::testing {
  */
 [[nodiscard]] network::MessageType onlyMessageTypeOf(
     const network::OutgoingDatagram& datagram);
+
+/**
+ * @returns The sequence of the last of @p datagrams that holds a message of
+ * type @p type; nothing when none does.
+ */
+[[nodiscard]] std::optional<std::uint16_t> lastSequenceHolding(
+    std::span<const network::OutgoingDatagram> datagrams,
+    network::MessageType type);
 
 /**
  * @returns The only message of @p datagram, read as a Message. The test fails

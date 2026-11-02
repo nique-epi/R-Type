@@ -88,20 +88,25 @@ constexpr std::uint64_t SOME_SESSION_TOKEN = 0x0102030405060708;
 constexpr std::uint16_t SOME_SEQUENCE = 0x0A0B;
 
 /**
- * @brief Values for the header fields version 1 leaves at 0, all different,
- * so a round trip shows each one at its place.
+ * @brief Values for the header fields, all different, so a round trip shows
+ * each one at its place. SOME_FLAGS sets bits 2 and 3, which version 2 does
+ * not know.
  */
-constexpr std::uint8_t SOME_OTHER_VERSION = 2;
+constexpr std::uint8_t SOME_OTHER_VERSION = 3;
 constexpr std::uint32_t SOME_OTHER_PROTOCOL_ID = 0x52545951;
 constexpr std::uint8_t SOME_FLAGS = 0x0C;
 constexpr std::uint16_t SOME_ACKNOWLEDGED_SEQUENCE = 0x0D0E;
 constexpr std::uint32_t SOME_ACKNOWLEDGEMENT_BITS = 0x0F101112;
 
+/** @brief Both flags of version 2: ACKNOWLEDGES (0x01) and GUARANTEED
+ * (0x02). */
+constexpr std::uint8_t BOTH_FLAGS_OF_VERSION_TWO = 0x03;
+
 /**
- * @brief The 22 bytes of a default header: RTYP, version 1, then zeros.
+ * @brief The 22 bytes of a default header: RTYP, version 2, then zeros.
  */
 constexpr auto DEFAULT_HEADER_BYTES = std::to_array<std::uint8_t>(
-    {0x52, 0x54, 0x59, 0x50, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    {0x52, 0x54, 0x59, 0x50, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00});
 
 /**

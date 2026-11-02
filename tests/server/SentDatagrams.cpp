@@ -1,6 +1,8 @@
 #include "SentDatagrams.hpp"
 #include <gtest/gtest.h>
 #include <cstddef>
+#include <cstdint>
+#include <optional>
 #include <span>
 #include <string>
 #include <vector>
@@ -36,6 +38,22 @@ network::MessageType onlyMessageTypeOf(
       network::DatagramCodec::splitMessages(datagram.payload);
   EXPECT_EQ(frames.size(), 1U);
   return static_cast<network::MessageType>(frames.at(0).type);
+}
+
+std::optional<std::uint16_t> lastSequenceHolding(
+    std::span<const network::OutgoingDatagram> datagrams,
+    network::MessageType type) {
+  std::optional<std::uint16_t> sequence;
+  for (const network::OutgoingDatagram& datagram : datagrams) {
+    for (const network::MessageFrame& frame :
+         network::DatagramCodec::splitMessages(datagram.payload)) {
+      if (frame.type == static_cast<std::uint8_t>(type)) {
+        sequence =
+            network::DatagramCodec::decodeHeader(datagram.payload).sequence;
+      }
+    }
+  }
+  return sequence;
 }
 
 }  // namespace rtype::server::testing

@@ -19,8 +19,9 @@ enum class DestructionReason : std::uint8_t {
 };
 
 /**
- * @brief An entity disappears. Sent three times, 50 ms apart; a copy naming
- * an entity the client no longer has changes nothing.
+ * @brief An entity disappears. Guaranteed: sent again until acknowledged, for
+ * GUARANTEED_MESSAGE_LIFETIME at most, and a copy naming an entity the client
+ * no longer has changes nothing.
  */
 struct EntityDestroyed {
   static constexpr MessageType TYPE = MessageType::EntityDestroyed;

@@ -11,7 +11,7 @@ namespace rtype::server {
 /**
  * @brief Tells every player of the games that the server shuts down, with the
  * Disconnection the protocol sends the clients in that case:
- * REPEATED_MESSAGE_COPIES copies, REPEATED_MESSAGE_INTERVAL apart, each under
+ * FAREWELL_COPIES copies, FAREWELL_COPY_INTERVAL apart, each under
  * the next session header of its player.
  *
  * It runs on the thread that stops the server, after the loop stopped

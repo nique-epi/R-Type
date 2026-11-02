@@ -14,8 +14,8 @@
 namespace rtype::server {
 
 /**
- * @brief Writes the events of the match as the messages of the protocol, and
- * numbers the GameEvents of a game.
+ * @brief Writes the events of the match as the messages of the protocol, says
+ * which of them are guaranteed, and numbers the GameEvents of a game.
  *
  * Every encode() throws what the encodePayload() of its message throws,
  * InvalidFieldValueException for an entity id of 0, and changes nothing then:
@@ -23,39 +23,28 @@ namespace rtype::server {
  */
 class GameEventEncoder {
  public:
-  /**
-   * @returns An EntitySpawned, sent SINGLE_COPY time.
-   */
+  /** @returns An EntitySpawned, sent once: the next WorldState creates the
+   * entity when it is lost. */
   [[nodiscard]] static EventMessage encode(const game::EntitySpawn& event);
 
-  /**
-   * @returns An EntityDestroyed, sent REPEATED_MESSAGE_COPIES times.
-   */
+  /** @returns An EntityDestroyed, guaranteed. */
   [[nodiscard]] static EventMessage encode(
       const game::EntityDestruction& event);
 
-  /**
-   * @returns A GameEvent of kind EntityDamaged with the next event number,
-   * sent REPEATED_MESSAGE_COPIES times.
-   */
+  /** @returns A GameEvent of kind EntityDamaged with the next event number,
+   * guaranteed. */
   [[nodiscard]] EventMessage encode(const game::EntityDamage& event);
 
-  /**
-   * @returns A GameEvent of kind PlayerHit with the next event number, sent
-   * REPEATED_MESSAGE_COPIES times.
-   */
+  /** @returns A GameEvent of kind PlayerHit with the next event number,
+   * guaranteed. */
   [[nodiscard]] EventMessage encode(const game::PlayerHit& event);
 
-  /**
-   * @returns A GameEvent of kind PlayerEliminated with the next event number,
-   * sent REPEATED_MESSAGE_COPIES times.
-   */
+  /** @returns A GameEvent of kind PlayerEliminated with the next event number,
+   * guaranteed. */
   [[nodiscard]] EventMessage encode(const game::PlayerElimination& event);
 
-  /**
-   * @returns A PlayerLeft with the number of the player and why it left, sent
-   * REPEATED_MESSAGE_COPIES times.
-   */
+  /** @returns A PlayerLeft with the number of the player and why it left,
+   * guaranteed. */
   [[nodiscard]] static EventMessage encode(const game::PlayerDeparture& event);
 
  private:

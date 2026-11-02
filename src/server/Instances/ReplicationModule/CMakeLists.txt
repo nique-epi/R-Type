@@ -9,7 +9,7 @@ target_link_libraries(rtype_server_replication_module
     rtype_server_game_replication
     rtype_server_instances
   PRIVATE
-    rtype_server_session_datagram
+    rtype_server_message_delivery
 )
 
 rtype_enable_warnings(rtype_server_replication_module)

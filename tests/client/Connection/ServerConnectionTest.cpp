@@ -45,6 +45,7 @@ namespace rtype::client {
 using testing::ACCEPTANCE_SEQUENCE;
 using testing::ACCEPTED_PLAYER_NUMBER;
 using testing::APPLIED_TICK;
+using testing::BITS_OF_THE_FIRST_AND_THE_ACCEPTANCE;
 using testing::CHALLENGE_COOKIE;
 using testing::damaged;
 using ::testing::ElementsAre;
@@ -54,6 +55,7 @@ using testing::EVENT_NUMBER;
 using testing::FIRST_POSITION;
 using testing::FIRST_SEQUENCE;
 using testing::FOURTH_SEQUENCE;
+using testing::guaranteedSessionHeader;
 using testing::holds;
 using ::testing::IsEmpty;
 using testing::killed;
@@ -66,6 +68,8 @@ using testing::OTHER_NICKNAME;
 using testing::OTHER_PLAYER_NUMBER;
 using testing::OTHER_SESSION_TOKEN;
 using testing::otherSender;
+using testing::PROTOCOL_ACKNOWLEDGEMENT_DELAY;
+using testing::PROTOCOL_ACKNOWLEDGES_FLAG;
 using testing::PROTOCOL_ATTEMPT_TIMEOUT;
 using testing::PROTOCOL_DISCONNECTION_COPY_COUNT;
 using testing::PROTOCOL_DISCONNECTION_COPY_INTERVAL;
@@ -1838,6 +1842,105 @@ TEST_F(ServerConnectionFixture, HandsOverEveryCopyOfAPlayerLeft) {
 
   EXPECT_THAT(drainedEntityMessages(),
               ElementsAre(EntityMessage{departure}, EntityMessage{departure}));
+}
+
+/**
+ * Given an attempt in progress
+ * When its request is sent
+ * Then its header acknowledges nothing: the client received nothing of a
+ * session yet
+ */
+TEST_F(ServerConnectionFixture, AcknowledgesNothingWhileItConnects) {
+  connect();
+
+  EXPECT_EQ(lastHeader().flags, 0);
+}
+
+/**
+ * Given a session whose server sent FIRST_SEQUENCE and THIRD_SEQUENCE after
+ * the acceptance (ACCEPTANCE_SEQUENCE), SECOND_SEQUENCE being lost
+ * When the player changes its ready state
+ * Then the ReadyState acknowledges THIRD_SEQUENCE, then FIRST_SEQUENCE (bit 1)
+ * and the acceptance (bit 2), not SECOND_SEQUENCE (bit 0)
+ */
+TEST_F(ServerConnectionFixture, AcknowledgesTheDatagramsOfTheServerItAccepted) {
+  accept();
+  deliverInSession(network::Heartbeat{}, FIRST_SEQUENCE);
+  deliverInSession(network::Heartbeat{}, THIRD_SEQUENCE);
+  update();
+
+  connection().setReady(true);
+
+  const network::PacketHeader header = lastHeader();
+  EXPECT_EQ(header.flags, PROTOCOL_ACKNOWLEDGES_FLAG);
+  EXPECT_EQ(header.acknowledgedSequence, THIRD_SEQUENCE);
+  EXPECT_EQ(header.acknowledgementBits, BITS_OF_THE_FIRST_AND_THE_ACCEPTANCE);
+}
+
+/**
+ * Given a session, and a datagram of the server that holds guaranteed messages
+ * When ACKNOWLEDGEMENT_DELAY passes with nothing else sent
+ * Then one Heartbeat goes out to carry the acknowledgement
+ */
+TEST_F(ServerConnectionFixture,
+       SendsAHeartbeatToAcknowledgeGuaranteedMessages) {
+  accept();
+  const std::size_t heartbeatsBefore = sentCountOf<network::Heartbeat>();
+  deliver(network::Heartbeat{}, server(),
+          guaranteedSessionHeader(FIRST_SEQUENCE));
+
+  update(PROTOCOL_ACKNOWLEDGEMENT_DELAY);
+
+  EXPECT_EQ(sentCountOf<network::Heartbeat>(), heartbeatsBefore + 1);
+}
+
+/**
+ * Given a session, and a datagram of the server that holds guaranteed messages
+ * When one nanosecond less than ACKNOWLEDGEMENT_DELAY passes
+ * Then no Heartbeat goes out yet
+ */
+TEST_F(ServerConnectionFixture, WaitsTheAcknowledgementDelayBeforeAHeartbeat) {
+  accept();
+  const std::size_t heartbeatsBefore = sentCountOf<network::Heartbeat>();
+  deliver(network::Heartbeat{}, server(),
+          guaranteedSessionHeader(FIRST_SEQUENCE));
+
+  update(PROTOCOL_ACKNOWLEDGEMENT_DELAY - ONE_NANOSECOND);
+
+  EXPECT_EQ(sentCountOf<network::Heartbeat>(), heartbeatsBefore);
+}
+
+/**
+ * Given a session, and a datagram of the server that holds guaranteed messages
+ * When an input goes out, then ACKNOWLEDGEMENT_DELAY passes
+ * Then no Heartbeat goes out: the input carried the acknowledgement
+ */
+TEST_F(ServerConnectionFixture, LetsAnInputCarryTheAcknowledgement) {
+  accept();
+  const std::size_t heartbeatsBefore = sentCountOf<network::Heartbeat>();
+  deliver(network::Heartbeat{}, server(),
+          guaranteedSessionHeader(FIRST_SEQUENCE));
+  update();
+
+  connection().sendPlayerInput(upHeld());
+  update(PROTOCOL_ACKNOWLEDGEMENT_DELAY);
+
+  EXPECT_EQ(sentCountOf<network::Heartbeat>(), heartbeatsBefore);
+}
+
+/**
+ * Given a session, and a datagram of the server without guaranteed messages
+ * When ACKNOWLEDGEMENT_DELAY passes
+ * Then no Heartbeat goes out: the next datagram will acknowledge it
+ */
+TEST_F(ServerConnectionFixture, AsksNoHeartbeatForADatagramWithoutGuarantee) {
+  accept();
+  const std::size_t heartbeatsBefore = sentCountOf<network::Heartbeat>();
+  deliverInSession(network::Heartbeat{}, FIRST_SEQUENCE);
+
+  update(PROTOCOL_ACKNOWLEDGEMENT_DELAY);
+
+  EXPECT_EQ(sentCountOf<network::Heartbeat>(), heartbeatsBefore);
 }
 
 }  // namespace rtype::client

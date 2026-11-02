@@ -19,9 +19,11 @@ constexpr std::size_t INT16_WIRE_SIZE = sizeof(std::int16_t);
 constexpr std::uint32_t PROTOCOL_ID = 0x52545950;
 
 /**
- * @brief The version of the protocol this code speaks.
+ * @brief The version of the protocol this code speaks. Version 2 guarantees
+ * the messages no state message repeats, see the Guaranteed messages section
+ * of the protocol page.
  */
-constexpr std::uint8_t PROTOCOL_VERSION = 1;
+constexpr std::uint8_t PROTOCOL_VERSION = 2;
 
 /**
  * @brief The session token of a datagram sent before the connection is
@@ -215,8 +217,8 @@ static_assert(GUARANTEED_RESEND_DELAY < GUARANTEED_MESSAGE_LIFETIME,
 
 /**
  * @brief How long the client keeps an entity no WorldState lists any more:
- * past it, the server destroyed the entity and every copy of its
- * EntityDestroyed was lost, so the client removes it, without an effect.
+ * past it, the server destroyed the entity and its EntityDestroyed never
+ * arrived, so the client removes it, without an effect.
  * Provisional, see the protocol page.
  */
 constexpr std::chrono::milliseconds UNLISTED_ENTITY_TIMEOUT{900};

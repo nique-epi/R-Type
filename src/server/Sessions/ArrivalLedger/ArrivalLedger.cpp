@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <optional>
 #include "ArrivalLedgerConstants.hpp"
+#include "PacketHeader.hpp"
 
 namespace rtype::server {
 
@@ -17,6 +18,10 @@ bool ArrivalLedger::accept(std::uint16_t sequence) {
   ++received_;
   closeWindowWhenFull();
   return true;
+}
+
+void ArrivalLedger::acknowledgeIn(network::PacketHeader& header) const {
+  sequences_.acknowledgeIn(header);
 }
 
 std::optional<double> ArrivalLedger::lossRate() const { return lossRate_; }

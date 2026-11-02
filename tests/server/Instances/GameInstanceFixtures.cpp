@@ -31,6 +31,8 @@
 #include "IncomingDatagram.hpp"
 #include "Intent.hpp"
 #include "LobbyState.hpp"
+#include "MessageFrame.hpp"
+#include "MessagePayload.hpp"
 #include "MessageType.hpp"
 #include "OutgoingDatagram.hpp"
 #include "PacketHeader.hpp"
@@ -58,7 +60,11 @@ std::vector<network::OutgoingDatagram> ofType(
     const std::vector<network::OutgoingDatagram>& datagrams) {
   std::vector<network::OutgoingDatagram> kept;
   for (const network::OutgoingDatagram& datagram : datagrams) {
-    if (onlyMessageTypeOf(datagram) == type) {
+    if (std::ranges::any_of(
+            network::DatagramCodec::splitMessages(datagram.payload),
+            [type](const network::MessageFrame& frame) {
+              return frame.type == static_cast<std::uint8_t>(type);
+            })) {
       kept.push_back(datagram);
     }
   }
@@ -169,9 +175,15 @@ std::vector<network::PlayerLeft> GameInstanceTest::playerLeftSentTo(
     std::size_t index) {
   std::vector<network::PlayerLeft> received;
   for (const network::OutgoingDatagram& datagram :
-       ofType(network::MessageType::PlayerLeft,
-              testing::sentTo(datagrams, playerEndpoint(index)))) {
-    received.push_back(onlyMessageIn<network::PlayerLeft>(datagram));
+       testing::sentTo(datagrams, playerEndpoint(index))) {
+    for (const network::MessageFrame& frame :
+         network::DatagramCodec::splitMessages(datagram.payload)) {
+      if (frame.type ==
+          static_cast<std::uint8_t>(network::MessageType::PlayerLeft)) {
+        received.push_back(
+            network::decodeMessage<network::PlayerLeft>(frame.payload));
+      }
+    }
   }
   return received;
 }

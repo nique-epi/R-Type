@@ -3,13 +3,15 @@
 #include <cstddef>
 #include <cstdint>
 #include <optional>
+#include "PacketHeader.hpp"
 #include "ReceivedSequences.hpp"
 
 namespace rtype::server {
 
 /**
- * @brief Keeps, for one player, the datagrams accepted from it and how many of
- * the datagrams it sent never arrived.
+ * @brief Keeps, for one player, the datagrams accepted from it, which every
+ * datagram to the player acknowledges, and how many of the datagrams it sent
+ * never arrived.
  *
  * A datagram is accepted when its sequence is newer than the newest accepted
  * (see network::ReceivedSequences); a duplicate or an older one is refused, so
@@ -27,6 +29,13 @@ class ArrivalLedger {
    * one is always newer. A refused datagram changes nothing.
    */
   [[nodiscard]] bool accept(std::uint16_t sequence);
+
+  /**
+   * @brief Writes the acknowledgement of the datagrams accepted into
+   * @p header, as network::ReceivedSequences::acknowledgeIn() does: nothing
+   * before the first one.
+   */
+  void acknowledgeIn(network::PacketHeader& header) const;
 
   /**
    * @returns The share of datagrams lost over the last complete window of

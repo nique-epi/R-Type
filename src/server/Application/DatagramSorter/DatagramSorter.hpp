@@ -24,12 +24,12 @@ namespace rtype::server {
  * push the datagrams of the players out of their queue. A player that floods
  * with its own token still can: the players share one queue.
  *
- * A datagram whose header is of this protocol and version, with no flag set,
- * and whose messages add up to its end, is kept only if, coming from the
- * address and port of an admitted player, it carries the session token of
- * that player, or NO_SESSION_TOKEN when it holds a ConnectionRequest; any
- * other token drops it, counted apart from the other drops. A datagram kept
- * goes:
+ * A datagram whose header is of this protocol and version, with no flag this
+ * version does not know, and whose messages add up to its end, is kept only
+ * if, coming from the address and port of an admitted player, it carries the
+ * session token of that player, or NO_SESSION_TOKEN when it holds a
+ * ConnectionRequest; any other token drops it, counted apart from the other
+ * drops. A datagram kept goes:
  *
  * - to the connection request queue when it holds a ConnectionRequest: a
  *   player whose acceptance was lost asks again;

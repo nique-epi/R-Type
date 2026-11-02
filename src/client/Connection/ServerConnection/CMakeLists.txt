@@ -9,6 +9,7 @@ target_link_libraries(rtype_client_server_connection
     rtype_engine_time
     rtype_logging
     rtype_network_message_dispatcher
+    rtype_network_reliability
     rtype_network_transport
   PRIVATE
     rtype_network_connection_accepted
@@ -22,7 +23,6 @@ target_link_libraries(rtype_client_server_connection
     rtype_network_heartbeat
     rtype_network_player_input
     rtype_network_ready_state
-    rtype_network_sequence_order
     rtype_network_world_state_codec
 )
 

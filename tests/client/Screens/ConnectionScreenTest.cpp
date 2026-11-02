@@ -383,7 +383,7 @@ TEST_F(ConnectionScreenFixture, AVersionRefusalNamesBothVersions) {
         .refusal = RefusalReason::IncompatibleVersion,
         .serverVersion = NEXT_PROTOCOL_VERSION});
 
-  EXPECT_NE(writingOf(canvas(), "REFUSED: YOU V1, SERVER V2"), nullptr);
+  EXPECT_NE(writingOf(canvas(), "REFUSED: YOU V2, SERVER V3"), nullptr);
 }
 
 /**

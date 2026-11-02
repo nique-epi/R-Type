@@ -120,8 +120,8 @@ TEST(GuaranteedDelivery, TellsADatagramThatOnlyAcknowledges) {
 /**
  * Given the protocol page
  * When the constants of guaranteed delivery are read
- * Then they are its values: flags 0x01 and 0x02, 32 bits, 100 ms, 1 s and
- * 40 ms
+ * Then they are its values: flags 0x01 and 0x02, 32 bits, 100 ms, 1 s, 40 ms,
+ * version 2
  */
 TEST(GuaranteedDeliveryConstants, AreThoseOfTheProtocolPage) {
   EXPECT_EQ(ACKNOWLEDGES_FLAG, PROTOCOL_ACKNOWLEDGES_FLAG);
@@ -130,6 +130,7 @@ TEST(GuaranteedDeliveryConstants, AreThoseOfTheProtocolPage) {
   EXPECT_EQ(GUARANTEED_RESEND_DELAY, PROTOCOL_RESEND_DELAY);
   EXPECT_EQ(GUARANTEED_MESSAGE_LIFETIME, PROTOCOL_MESSAGE_LIFETIME);
   EXPECT_EQ(ACKNOWLEDGEMENT_DELAY, PROTOCOL_ACKNOWLEDGEMENT_DELAY);
+  EXPECT_EQ(PROTOCOL_VERSION, PROTOCOL_VERSION_TWO);
 }
 
 }  // namespace rtype::network::testing

@@ -80,8 +80,8 @@ class DatagramCodec {
 
   /**
    * @returns Whether @p header carries the protocol id and the version this
-   * code speaks, with no flag set: the first checks of a received datagram,
-   * before anything else in it is trusted.
+   * code speaks, with no flag but those of KNOWN_FLAGS: the first checks of a
+   * received datagram, before anything else in it is trusted.
    */
   [[nodiscard]] static bool speaksThisProtocol(const PacketHeader& header);
 

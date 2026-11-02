@@ -5,22 +5,22 @@
 #include "TimeTestConstants.hpp"
 
 using rtype::client::GameEventHistory;
-using rtype::client::testing::COPY_GAP;
 using rtype::client::testing::EVENT_MEMORY_REQUIRED;
 using rtype::client::testing::EVENT_NUMBER;
+using rtype::client::testing::RESEND_GAP;
 
 /**
  * Given an event already seen
- * When its next two copies come 50 ms apart
+ * When its next two copies come 100 ms apart
  * Then neither is a first copy
  */
 TEST(GameEventHistory, TheOtherCopiesOfAnEventAreNotNew) {
   GameEventHistory history;
   ASSERT_TRUE(history.isFirstCopy(EVENT_NUMBER));
 
-  history.advance(COPY_GAP);
+  history.advance(RESEND_GAP);
   const bool second = history.isFirstCopy(EVENT_NUMBER);
-  history.advance(COPY_GAP);
+  history.advance(RESEND_GAP);
   const bool third = history.isFirstCopy(EVENT_NUMBER);
 
   EXPECT_FALSE(second);
@@ -29,10 +29,10 @@ TEST(GameEventHistory, TheOtherCopiesOfAnEventAreNotNew) {
 
 /**
  * Given an event seen
- * When its number comes back one nanosecond less than a second later
+ * When its number comes back one nanosecond less than two seconds later
  * Then it is still a copy
  */
-TEST(GameEventHistory, ANumberIsRememberedForASecond) {
+TEST(GameEventHistory, ANumberIsRememberedForTwoSeconds) {
   GameEventHistory history;
   ASSERT_TRUE(history.isFirstCopy(EVENT_NUMBER));
 
@@ -43,10 +43,10 @@ TEST(GameEventHistory, ANumberIsRememberedForASecond) {
 
 /**
  * Given an event seen
- * When its number comes back a second later
+ * When its number comes back two seconds later
  * Then it is new: another event, after the numbers went round
  */
-TEST(GameEventHistory, ANumberIsForgottenAfterASecond) {
+TEST(GameEventHistory, ANumberIsForgottenAfterTwoSeconds) {
   GameEventHistory history;
   ASSERT_TRUE(history.isFirstCopy(EVENT_NUMBER));
 

@@ -9,8 +9,10 @@
 #include "MessageFrame.hpp"
 #include "MessagePayload.hpp"
 #include "OutgoingDatagram.hpp"
+#include "PacketHeader.hpp"
 #include "PlayerAction.hpp"
 #include "PlayerInput.hpp"
+#include "ProtocolConstants.hpp"
 #include "ServerConnectionTestConstants.hpp"
 
 namespace rtype::client::testing {
@@ -41,6 +43,14 @@ ActionSet upHeld() {
 network::GameEnded endOfOnePilot() {
   return network::GameEnded{.players = {{.playerNumber = ACCEPTED_PLAYER_NUMBER,
                                          .score = PILOT_FINAL_SCORE}}};
+}
+
+network::PacketHeader guaranteedSessionHeader(std::uint16_t sequence) {
+  network::PacketHeader header;
+  header.sessionToken = SESSION_TOKEN;
+  header.sequence = sequence;
+  header.flags = network::GUARANTEED_FLAG;
+  return header;
 }
 
 }  // namespace rtype::client::testing

@@ -35,10 +35,10 @@ constexpr std::uint32_t PILOT_FINAL_SCORE = 1200;
  * not speak.
  */
 constexpr std::uint64_t SESSION_TOKEN = 0x0123456789abcdef;
-constexpr std::uint8_t NEXT_PROTOCOL_VERSION = 2;
+constexpr std::uint8_t NEXT_PROTOCOL_VERSION = 3;
 
 /** @brief The version a server of this protocol writes in its headers. */
-constexpr std::uint8_t SERVER_VERSION = 1;
+constexpr std::uint8_t SERVER_VERSION = 2;
 
 /**
  * @brief Another session token, as a datagram forging the address of the
@@ -60,6 +60,16 @@ constexpr std::uint16_t FIRST_SEQUENCE = 1;
 constexpr std::uint16_t SECOND_SEQUENCE = 2;
 constexpr std::uint16_t THIRD_SEQUENCE = 3;
 constexpr std::uint16_t FOURTH_SEQUENCE = 4;
+
+/** @brief The acknowledgement bits after the acceptance (0), FIRST_SEQUENCE and
+ * THIRD_SEQUENCE, SECOND_SEQUENCE being lost: bit 0 (2) clear, bit 1 (1) and
+ * bit 2 (0) set. */
+constexpr std::uint32_t BITS_OF_THE_FIRST_AND_THE_ACCEPTANCE = 0b110;
+
+/** @brief The flag of the protocol page that says a header acknowledges, and
+ * the most a receiver lets an acknowledgement of guaranteed messages wait. */
+constexpr std::uint8_t PROTOCOL_ACKNOWLEDGES_FLAG = 0x01;
+constexpr std::chrono::milliseconds PROTOCOL_ACKNOWLEDGEMENT_DELAY{40};
 
 /** @brief Number of the GameEvent the tests send, the same in its three
  * copies. */

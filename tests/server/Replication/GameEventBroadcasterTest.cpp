@@ -1,9 +1,5 @@
 #include <gtest/gtest.h>
-#include <cstddef>
-#include <cstdint>
 #include <vector>
-#include "DatagramCodec.hpp"
-#include "Endpoint.hpp"
 #include "EntityDamage.hpp"
 #include "EntityDestroyed.hpp"
 #include "EntityDestruction.hpp"
@@ -14,8 +10,6 @@
 #include "GameEventBroadcasterFixture.hpp"
 #include "GameEventConstants.hpp"
 #include "GameEventTestConstants.hpp"
-#include "OutgoingDatagram.hpp"
-#include "PacketHeader.hpp"
 #include "PlayerDeparture.hpp"
 #include "PlayerElimination.hpp"
 #include "PlayerHit.hpp"
@@ -25,165 +19,82 @@
 namespace rtype::server::testing {
 
 /**
- * Given two clients
- * When a monster spawn is published and a second goes by
- * Then each client gets one EntitySpawned with the monster's id, type and
- * position, and no copy follows
+ * Given a broadcaster
+ * When a monster spawn is published
+ * Then one EntitySpawned with its id, type and position is sent once to every
+ * player, and nothing is guaranteed
  */
-TEST_F(GameEventBroadcasterFixture, SendsASpawnOnceToEachClient) {
+TEST_F(GameEventBroadcasterFixture, SendsASpawnOnce) {
   publishAndDispatch(game::EntitySpawn{.networkId = MONSTER_NETWORK_ID,
                                        .type = game::EntityType::Enemy,
                                        .x = MONSTER_X,
                                        .y = MONSTER_Y});
-  advanceTimers(ALL_COPIES_SENT);
 
   const std::vector<network::EntitySpawned> expected{
       {.entityId = MONSTER_NETWORK_ID,
        .entityType = network::WireEntityType::Bydo,
        .x = MONSTER_X,
        .y = MONSTER_Y}};
-  EXPECT_EQ(receivedBy<network::EntitySpawned>(firstClient()), expected);
-  EXPECT_EQ(receivedBy<network::EntitySpawned>(secondClient()), expected);
+  EXPECT_EQ(sentOnce<network::EntitySpawned>(), expected);
+  EXPECT_TRUE(guaranteed<network::EntitySpawned>().empty());
 }
 
 /**
- * Given two clients
- * When a destruction is published and time advances
- * Then each client gets the first copy at once, the second at one interval,
- * the third at two, and none after, all identical
+ * Given a broadcaster
+ * When a kill is published
+ * Then one EntityDestroyed, Killed, is guaranteed to every player, and none is
+ * sent once
  */
-TEST_F(GameEventBroadcasterFixture, RepeatsADestructionThreeTimes) {
+TEST_F(GameEventBroadcasterFixture, GuaranteesADestruction) {
   publishAndDispatch(
       game::EntityDestruction{.networkId = MONSTER_NETWORK_ID,
                               .cause = game::DestructionCause::Killed});
-  EXPECT_EQ(receivedBy<network::EntityDestroyed>(firstClient()).size(), 1U);
 
-  advanceTimers(JUST_BEFORE_ONE_INTERVAL);
-  EXPECT_EQ(receivedBy<network::EntityDestroyed>(firstClient()).size(), 1U);
-
-  advanceTimers(ONE_INTERVAL - JUST_BEFORE_ONE_INTERVAL);
-  EXPECT_EQ(receivedBy<network::EntityDestroyed>(firstClient()).size(), 2U);
-
-  advanceTimers(ONE_INTERVAL);
-  advanceTimers(ALL_COPIES_SENT);
-  const std::vector<network::EntityDestroyed> expectedCopies(
-      PROTOCOL_REPEATED_MESSAGE_COPIES,
-      network::EntityDestroyed{.entityId = MONSTER_NETWORK_ID,
-                               .reason = network::DestructionReason::Killed});
-  EXPECT_EQ(receivedBy<network::EntityDestroyed>(firstClient()),
-            expectedCopies);
-  EXPECT_EQ(receivedBy<network::EntityDestroyed>(secondClient()),
-            expectedCopies);
+  const std::vector<network::EntityDestroyed> expected{
+      {.entityId = MONSTER_NETWORK_ID,
+       .reason = network::DestructionReason::Killed}};
+  EXPECT_EQ(guaranteed<network::EntityDestroyed>(), expected);
+  EXPECT_TRUE(sentOnce<network::EntityDestroyed>().empty());
 }
 
 /**
- * Given two clients
- * When a player hit is published and a second goes by
- * Then each client gets three GameEvents, all with the same number
+ * Given a broadcaster
+ * When a player hit is published
+ * Then one GameEvent of kind PlayerHit, numbered FIRST_EVENT_NUMBER, is
+ * guaranteed
  */
-TEST_F(GameEventBroadcasterFixture, RepeatsAGameEventWithTheSameNumber) {
+TEST_F(GameEventBroadcasterFixture, GuaranteesAGameEventWithTheFirstNumber) {
   publishAndDispatch(game::PlayerHit{.playerNumber = SECOND_PLAYER_NUMBER});
-  advanceTimers(ALL_COPIES_SENT);
 
-  const std::vector<network::GameEvent> expected(
-      PROTOCOL_REPEATED_MESSAGE_COPIES,
-      network::GameEvent{.eventNumber = FIRST_EVENT_NUMBER,
-                         .kind = network::GameEventKind::PlayerHit,
-                         .playerNumber = SECOND_PLAYER_NUMBER,
-                         .entityId = 0});
-  EXPECT_EQ(receivedBy<network::GameEvent>(firstClient()), expected);
-  EXPECT_EQ(receivedBy<network::GameEvent>(secondClient()), expected);
+  const std::vector<network::GameEvent> expected{
+      {.eventNumber = FIRST_EVENT_NUMBER,
+       .kind = network::GameEventKind::PlayerHit,
+       .playerNumber = SECOND_PLAYER_NUMBER,
+       .entityId = 0}};
+  EXPECT_EQ(guaranteed<network::GameEvent>(), expected);
 }
 
 /**
- * Given two clients
- * When a destruction is published and every copy comes due
- * Then, for each client, the sequence number of each copy is greater than the
- * one of the copy before
+ * Given a broadcaster
+ * When a player that timed out is published
+ * Then one PlayerLeft naming that player, TimedOut, is guaranteed
  */
-TEST_F(GameEventBroadcasterFixture, GivesEachCopyANewerSequenceNumber) {
+TEST_F(GameEventBroadcasterFixture, GuaranteesADeparture) {
   publishAndDispatch(
-      game::EntityDestruction{.networkId = MONSTER_NETWORK_ID,
-                              .cause = game::DestructionCause::Killed});
-  advanceTimers(ALL_COPIES_SENT);
+      game::PlayerDeparture{.playerNumber = SECOND_PLAYER_NUMBER,
+                            .cause = game::DepartureCause::TimedOut});
 
-  const std::vector<network::Endpoint> clients{firstClient(), secondClient()};
-  for (const network::Endpoint& client : clients) {
-    std::vector<std::uint16_t> sequences;
-    for (const network::OutgoingDatagram& datagram : sentDatagrams()) {
-      if (datagram.destination == client) {
-        sequences.push_back(
-            network::DatagramCodec::decodeHeader(datagram.payload).sequence);
-      }
-    }
-    ASSERT_EQ(sequences.size(), PROTOCOL_REPEATED_MESSAGE_COPIES);
-    for (std::size_t copy = 1; copy < sequences.size(); ++copy) {
-      EXPECT_GT(sequences.at(copy), sequences.at(copy - 1));
-    }
-  }
+  const std::vector<network::PlayerLeft> expected{
+      {.playerNumber = SECOND_PLAYER_NUMBER,
+       .reason = network::DepartureReason::TimedOut}};
+  EXPECT_EQ(guaranteed<network::PlayerLeft>(), expected);
 }
 
 /**
- * Given one client when a destruction is published, and a second client that
- * joins right after
- * When the later copies come due
- * Then the newcomer gets none of them, and the first client gets all three
- */
-TEST_F(GameEventBroadcasterFixture, SendsTheCopiesOnlyToTheClientsOfTheEvent) {
-  setRecipients({firstClient()});
-  publishAndDispatch(
-      game::EntityDestruction{.networkId = MONSTER_NETWORK_ID,
-                              .cause = game::DestructionCause::Killed});
-
-  setRecipients({firstClient(), secondClient()});
-  advanceTimers(ALL_COPIES_SENT);
-
-  EXPECT_EQ(receivedBy<network::EntityDestroyed>(firstClient()).size(),
-            PROTOCOL_REPEATED_MESSAGE_COPIES);
-  EXPECT_TRUE(receivedBy<network::EntityDestroyed>(secondClient()).empty());
-}
-
-/**
- * Given no client
- * When events are published and a second goes by
- * Then nothing is sent
- */
-TEST_F(GameEventBroadcasterFixture, SendsNothingWithoutAClient) {
-  setRecipients({});
-  publishAndDispatch(game::PlayerHit{.playerNumber = SECOND_PLAYER_NUMBER});
-  advanceTimers(ALL_COPIES_SENT);
-
-  EXPECT_TRUE(sentDatagrams().empty());
-}
-
-/**
- * Given two clients
- * When a spawn is published
- * Then each of the two datagrams carries the header asked for its own
- * recipient, and the two do not share a sequence number
- */
-TEST_F(GameEventBroadcasterFixture, AsksForTheHeaderOfEachDatagramRecipient) {
-  publishAndDispatch(game::EntitySpawn{.networkId = MONSTER_NETWORK_ID,
-                                       .type = game::EntityType::Enemy,
-                                       .x = MONSTER_X,
-                                       .y = MONSTER_Y});
-
-  ASSERT_EQ(sentDatagrams().size(), 2U);
-  const network::PacketHeader first =
-      network::DatagramCodec::decodeHeader(sentDatagrams().at(0).payload);
-  const network::PacketHeader second =
-      network::DatagramCodec::decodeHeader(sentDatagrams().at(1).payload);
-  EXPECT_EQ(first.sessionToken, FIRST_CLIENT_PORT);
-  EXPECT_EQ(second.sessionToken, SECOND_CLIENT_PORT);
-  EXPECT_EQ(first.sequence, 1U);
-  EXPECT_EQ(second.sequence, 2U);
-}
-
-/**
- * Given two clients
+ * Given a broadcaster
  * When a spawn whose position is not a number is published, then a valid spawn
  * Then dispatching does not throw, the first spawn sends nothing, and the
- * second reaches both clients
+ * second is sent once
  */
 TEST_F(GameEventBroadcasterFixture, SkipsASpawnWhoseCoordinateIsNotANumber) {
   EXPECT_NO_THROW(
@@ -191,85 +102,58 @@ TEST_F(GameEventBroadcasterFixture, SkipsASpawnWhoseCoordinateIsNotANumber) {
                                            .type = game::EntityType::Enemy,
                                            .x = NOT_A_NUMBER,
                                            .y = MONSTER_Y}));
-  advanceTimers(ALL_COPIES_SENT);
-  EXPECT_TRUE(sentDatagrams().empty());
+  EXPECT_EQ(messageCount(), 0U);
 
   publishAndDispatch(game::EntitySpawn{.networkId = MONSTER_NETWORK_ID,
                                        .type = game::EntityType::Enemy,
                                        .x = MONSTER_X,
                                        .y = MONSTER_Y});
 
-  EXPECT_EQ(receivedBy<network::EntitySpawned>(firstClient()).size(), 1U);
-  EXPECT_EQ(receivedBy<network::EntitySpawned>(secondClient()).size(), 1U);
+  EXPECT_EQ(sentOnce<network::EntitySpawned>().size(), 1U);
 }
 
 /**
- * Given two clients
+ * Given a broadcaster
  * When an entity damage naming the network id 0 is published, then a player
  * hit
- * Then dispatching does not throw, no copy of the damage is ever sent, and the
- * player hit carries the first event number
+ * Then dispatching does not throw, the damage is never sent, and the player
+ * hit carries the first event number
  */
 TEST_F(GameEventBroadcasterFixture,
        SkipsAnEventWithoutAnEntityIdAndKeepsItsNumber) {
   EXPECT_NO_THROW(publishAndDispatch(
       game::EntityDamage{.networkId = UNASSIGNED_NETWORK_ID}));
-  advanceTimers(ALL_COPIES_SENT);
-  EXPECT_TRUE(sentDatagrams().empty());
+  EXPECT_EQ(messageCount(), 0U);
 
   publishAndDispatch(game::PlayerHit{.playerNumber = SECOND_PLAYER_NUMBER});
 
   const std::vector<network::GameEvent> received =
-      receivedBy<network::GameEvent>(firstClient());
+      guaranteed<network::GameEvent>();
   ASSERT_EQ(received.size(), 1U);
   EXPECT_EQ(received.front().eventNumber, FIRST_EVENT_NUMBER);
   EXPECT_EQ(received.front().kind, network::GameEventKind::PlayerHit);
 }
 
 /**
- * Given two clients
+ * Given a broadcaster
  * When a player hit for a player outside the game is published, then a player
  * elimination for a player of the game
  * Then dispatching does not throw, the hit sends nothing, and the elimination
- * reaches both clients
+ * is guaranteed
  */
 TEST_F(GameEventBroadcasterFixture, SkipsAPlayerEventOfAPlayerOutsideTheGame) {
   EXPECT_NO_THROW(publishAndDispatch(
       game::PlayerHit{.playerNumber = PLAYER_NUMBER_OUTSIDE_THE_GAME}));
-  advanceTimers(ALL_COPIES_SENT);
-  EXPECT_TRUE(sentDatagrams().empty());
+  EXPECT_EQ(messageCount(), 0U);
 
   publishAndDispatch(
       game::PlayerElimination{.playerNumber = SECOND_PLAYER_NUMBER});
-  advanceTimers(ALL_COPIES_SENT);
 
-  EXPECT_EQ(receivedBy<network::GameEvent>(firstClient()).size(),
-            PROTOCOL_REPEATED_MESSAGE_COPIES);
-  EXPECT_EQ(receivedBy<network::GameEvent>(secondClient()).size(),
-            PROTOCOL_REPEATED_MESSAGE_COPIES);
+  EXPECT_EQ(guaranteed<network::GameEvent>().size(), 1U);
 }
 
 /**
- * Given two clients
- * When a player that timed out is published and every copy comes due
- * Then each client gets three identical PlayerLeft naming that player
- */
-TEST_F(GameEventBroadcasterFixture, RepeatsADepartureThreeTimes) {
-  publishAndDispatch(
-      game::PlayerDeparture{.playerNumber = SECOND_PLAYER_NUMBER,
-                            .cause = game::DepartureCause::TimedOut});
-  advanceTimers(ALL_COPIES_SENT);
-
-  const std::vector<network::PlayerLeft> expected(
-      PROTOCOL_REPEATED_MESSAGE_COPIES,
-      network::PlayerLeft{.playerNumber = SECOND_PLAYER_NUMBER,
-                          .reason = network::DepartureReason::TimedOut});
-  EXPECT_EQ(receivedBy<network::PlayerLeft>(firstClient()), expected);
-  EXPECT_EQ(receivedBy<network::PlayerLeft>(secondClient()), expected);
-}
-
-/**
- * Given two clients
+ * Given a broadcaster
  * When the departure of a player outside the game is published
  * Then dispatching does not throw and nothing is sent
  */
@@ -277,13 +161,12 @@ TEST_F(GameEventBroadcasterFixture, SkipsTheDepartureOfAPlayerOutsideTheGame) {
   EXPECT_NO_THROW(publishAndDispatch(
       game::PlayerDeparture{.playerNumber = PLAYER_NUMBER_OUTSIDE_THE_GAME,
                             .cause = game::DepartureCause::TimedOut}));
-  advanceTimers(ALL_COPIES_SENT);
 
-  EXPECT_TRUE(sentDatagrams().empty());
+  EXPECT_EQ(messageCount(), 0U);
 }
 
 /**
- * Given two clients and a broadcaster that was destroyed
+ * Given a broadcaster that was destroyed
  * When a destruction is published and the bus delivers it
  * Then nothing is sent
  */
@@ -293,9 +176,8 @@ TEST_F(GameEventBroadcasterFixture, StopsListeningOnceDestroyed) {
   publishAndDispatch(
       game::EntityDestruction{.networkId = MONSTER_NETWORK_ID,
                               .cause = game::DestructionCause::Killed});
-  advanceTimers(ALL_COPIES_SENT);
 
-  EXPECT_TRUE(sentDatagrams().empty());
+  EXPECT_EQ(messageCount(), 0U);
 }
 
 }  // namespace rtype::server::testing

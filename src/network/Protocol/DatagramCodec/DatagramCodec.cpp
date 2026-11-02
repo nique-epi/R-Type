@@ -135,7 +135,7 @@ bool DatagramCodec::speaksThisProtocol(const PacketHeader& header) {
   const PacketHeader thisProtocol;
   return header.protocolId == thisProtocol.protocolId &&
          header.version == thisProtocol.version &&
-         header.flags == thisProtocol.flags;
+         (header.flags | KNOWN_FLAGS) == KNOWN_FLAGS;
 }
 
 bool DatagramCodec::speaksAnotherVersion(const PacketHeader& header) {

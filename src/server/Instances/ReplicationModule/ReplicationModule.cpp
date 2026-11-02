@@ -1,15 +1,18 @@
 #include "ReplicationModule.hpp"
+#include <functional>
 #include <memory>
 #include <string>
-#include "Endpoint.hpp"
+#include "EncodedMessage.hpp"
 #include "GameContext.hpp"
 #include "GameEventBroadcaster.hpp"
+#include "GameEventBroadcasterParts.hpp"
 #include "GameInstanceConstants.hpp"
 #include "GameReplication.hpp"
 #include "IGameReplication.hpp"
 #include "InstallContext.hpp"
+#include "MessageDelivery.hpp"
+#include "OutgoingDatagram.hpp"
 #include "PlayerRoster.hpp"
-#include "SessionDatagram.hpp"
 
 namespace rtype::server {
 
@@ -27,16 +30,18 @@ void ReplicationModule::install(GameContext& game,
 
 void ReplicationModule::start() {
   PlayerRoster& roster = game_->roster.get();
+  const std::function<void(network::OutgoingDatagram)> send = game_->send;
   broadcaster_ =
-      std::make_unique<GameEventBroadcaster>(GameEventBroadcaster::Wiring{
+      std::make_unique<GameEventBroadcaster>(GameEventBroadcasterParts{
           .events = game_->events,
-          .timers = game_->timers,
-          .recipients = [&roster] { return roster.endpoints(); },
-          .headerFor =
-              [&roster](const network::Endpoint& recipient) {
-                return sessionHeaderFor(roster, recipient);
+          .sendToEveryPlayer =
+              [&roster, send](const network::EncodedMessage& message) {
+                sendToEveryPlayer(roster, send, message);
               },
-          .send = game_->send});
+          .guaranteeToEveryPlayer =
+              [&roster, send](const network::EncodedMessage& message) {
+                guaranteeToEveryPlayer(roster, send, message);
+              }});
 }
 
 void ReplicationModule::stop() { broadcaster_.reset(); }

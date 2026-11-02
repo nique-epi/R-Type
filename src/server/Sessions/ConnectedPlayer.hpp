@@ -9,6 +9,7 @@
 #include "EntityIdConstants.hpp"
 #include "LivesConstants.hpp"
 #include "TimeConstants.hpp"
+#include "UnacknowledgedMessages.hpp"
 
 namespace rtype::server {
 
@@ -55,9 +56,9 @@ struct ConnectedPlayer {
   /** @brief Whether the player told the game it shows the game screen, since
    * the game last started waiting for it; cleared when the game does. */
   bool loaded{false};
-  /** @brief The sequence of the newest datagram accepted from the player, and
-   * how many of the datagrams it sent never arrived. DatagramReader keeps it.
-   */
+  /** @brief The datagrams accepted from the player, which every datagram to it
+   * acknowledges, and how many of the datagrams it sent never arrived.
+   * DatagramReader keeps it. */
   ArrivalLedger arrivals;
   /** @brief The highest inputNumber the player sent during the session, the
    * key that tells a newer input from a late one; empty until the first input
@@ -84,6 +85,11 @@ struct ConnectedPlayer {
    * the client waits in real time: a Heartbeat goes out once it reaches
    * SILENCE_BEFORE_HEARTBEAT. nextSessionHeader() sets it back to zero. */
   engine::Duration sinceSent{};
+  /** @brief The guaranteed messages sent to the player that it has not
+   * acknowledged yet. GameSessions drops those the datagrams of the player
+   * acknowledge, and makes them older at the start of each tick;
+   * guaranteeToEveryPlayer() and resendGuaranteedMessages() send them. */
+  network::UnacknowledgedMessages unacknowledged;
 };
 
 }  // namespace rtype::server

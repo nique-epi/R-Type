@@ -81,37 +81,25 @@ TEST_F(ServerGamesFixture, MakesTheNetworkForgetAPlayerWhoseSessionClosed) {
 
 /**
  * Given two players in the first game
- * When one of them leaves, and the loop goes on for a few ticks
- * Then the other one is told it left once by the tick that closed the session,
- * and the later copies follow as the timers advance and the bus delivers
+ * When one of them leaves
+ * Then the other one is told it left by the tick that closed the session: the
+ * bus delivers the departure and the PlayerLeft is guaranteed at once
  */
-TEST_F(ServerGamesFixture, TellsTheOthersThatAPlayerLeftAsTimersAndBusRun) {
+TEST_F(ServerGamesFixture, TellsTheOthersThatAPlayerLeftInTheSameTick) {
   startWith(shippedWaves());
   join(0);
   join(1);
 
   runTick({disconnectionFrom(0)});
-  const std::size_t afterTheLeavingTick =
-      datagramsTo(1, MessageType::PlayerLeft);
-  for (int tick = 0; tick < TICKS_FOR_ONE_MORE_COPY; ++tick) {
-    runTick({});
-  }
-  const std::size_t afterOneMoreInterval =
-      datagramsTo(1, MessageType::PlayerLeft);
-  for (int tick = 0; tick < TICKS_FOR_THE_LAST_COPY; ++tick) {
-    runTick({});
-  }
 
-  EXPECT_EQ(afterTheLeavingTick, 1U);
-  EXPECT_EQ(afterOneMoreInterval, 2U);
-  EXPECT_EQ(datagramsTo(1, MessageType::PlayerLeft), 3U);
+  EXPECT_EQ(datagramsTo(1, MessageType::PlayerLeft), 1U);
 }
 
 /**
  * Given two players in the second game
- * When one of them leaves, and the loop goes on for a few ticks
- * Then the other one gets every copy of PlayerLeft: the second game reads the
- * datagrams of its players, and its own bus delivers its events
+ * When one of them leaves
+ * Then the other one is told it left: the second game reads the datagrams of
+ * its players, and its own bus delivers its events
  */
 TEST_F(ServerGamesFixture, RunsTheSecondGameWithItsOwnPlayersAndBus) {
   startWith(shippedWaves());
@@ -119,17 +107,13 @@ TEST_F(ServerGamesFixture, RunsTheSecondGameWithItsOwnPlayersAndBus) {
   seatPlayerIn(*probe().games()->all()[SECOND_GAME], 1);
 
   runTick({disconnectionFrom(0)});
-  for (int tick = 0; tick < TICKS_FOR_THE_LAST_COPY; ++tick) {
-    runTick({});
-  }
 
-  EXPECT_EQ(datagramsTo(1, MessageType::PlayerLeft), 3U);
+  EXPECT_EQ(datagramsTo(1, MessageType::PlayerLeft), 1U);
 }
 
 /**
  * Given one player in the first game and one in the second
- * When the player of the first game leaves, and the loop goes on for a few
- * ticks
+ * When the player of the first game leaves
  * Then the player of the second game is told nothing: the games do not share
  * a bus
  */
@@ -139,9 +123,6 @@ TEST_F(ServerGamesFixture, KeepsTheEventsOfAGameAwayFromTheOtherGames) {
   seatPlayerIn(*probe().games()->all()[SECOND_GAME], 1);
 
   runTick({disconnectionFrom(0)});
-  for (int tick = 0; tick < TICKS_FOR_THE_LAST_COPY; ++tick) {
-    runTick({});
-  }
 
   EXPECT_EQ(datagramsTo(1, MessageType::PlayerLeft), 0U);
 }

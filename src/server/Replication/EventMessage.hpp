@@ -1,19 +1,17 @@
 #pragma once
 
-#include <cstddef>
-#include <vector>
-#include "MessageType.hpp"
+#include "EncodedMessage.hpp"
 
 namespace rtype::server {
 
 /**
- * @brief The message an event of the match is written as, ready to send: its
- * type, the bytes of its payload, and how many times it is sent.
+ * @brief The message an event of the match is written as, and how it reaches
+ * the players: sent once when a later state message corrects its loss,
+ * guaranteed when no state message repeats what it shows.
  */
 struct EventMessage {
-  network::MessageType type;
-  std::vector<std::byte> payload;
-  std::size_t copies;
+  network::EncodedMessage message;
+  bool guaranteed{false};
 };
 
 }  // namespace rtype::server
