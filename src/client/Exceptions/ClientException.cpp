@@ -71,6 +71,10 @@ RenderTextureNotCreatedException::RenderTextureNotCreatedException(
     : ClientException("A render texture could not be created, size " +
                       std::to_string(width) + " x " + std::to_string(height)) {}
 
+DuplicateScreenException::DuplicateScreenException(std::string_view screenName)
+    : ClientException("Two modules registered the screen \"" +
+                      std::string(screenName) + "\"") {}
+
 InvalidNicknameOptionException::InvalidNicknameOptionException(
     std::string_view nickname)
     : ClientException(

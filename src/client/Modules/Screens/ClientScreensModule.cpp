@@ -9,7 +9,6 @@
 #include "AssetLibrary.hpp"
 #include "ClientConstants.hpp"
 #include "ClientScreens.hpp"
-#include "ClientScreensParts.hpp"
 #include "ConfigurationRegistry.hpp"
 #include "Endpoint.hpp"
 #include "EndpointText.hpp"
@@ -26,6 +25,8 @@
 #include "NetworkException.hpp"
 #include "PlayerSettings.hpp"
 #include "ProtocolConstants.hpp"
+#include "ScreenRegistry.hpp"
+#include "ScreenServices.hpp"
 #include "ServerConnection.hpp"
 #include "SettingsService.hpp"
 #include "TextSettingDefinition.hpp"
@@ -74,9 +75,15 @@ std::string ClientScreensModule::name() const {
 }
 
 std::vector<std::string> ClientScreensModule::dependencies() const {
-  return {std::string{ASSETS_MODULE_NAME}, std::string{SETTINGS_MODULE_NAME},
-          std::string{AUDIO_MODULE_NAME}, std::string{WINDOW_MODULE_NAME},
-          std::string{CONNECTION_MODULE_NAME}};
+  return {std::string{ASSETS_MODULE_NAME},
+          std::string{SETTINGS_MODULE_NAME},
+          std::string{AUDIO_MODULE_NAME},
+          std::string{WINDOW_MODULE_NAME},
+          std::string{CONNECTION_MODULE_NAME},
+          std::string{SCREEN_REGISTRY_MODULE_NAME},
+          std::string{MENUS_MODULE_NAME},
+          std::string{LOBBY_MODULE_NAME},
+          std::string{GAME_MODULE_NAME}};
 }
 
 void ClientScreensModule::install(engine::InstallContext& context) {
@@ -88,6 +95,7 @@ void ClientScreensModule::install(engine::InstallContext& context) {
   connection_ = &context.require<ServerConnection>();
   loop_ = &context.require<FrameLoop>();
   listeners_ = &context.require<EventListeners>();
+  registry_ = &context.require<ScreenRegistry>();
   declareSettings(context.require<engine::ConfigurationRegistry>());
   context.addWork(UPDATE_STAGE,
                   [this](engine::Duration elapsed) { update(elapsed); });
@@ -127,14 +135,15 @@ void ClientScreensModule::start() {
   const network::Endpoint server = configuredServer();
   logger_.info("server: ", server.address, " port ", server.port);
   screens_ = std::make_unique<ClientScreens>(
-      ClientScreensParts{.settings = *settings_,
-                         .settingsService = *settingsService_,
-                         .assets = *assets_,
-                         .audio = *audio_,
-                         .window = *window_,
-                         .connection = *connection_,
-                         .server = server,
-                         .nickname = nicknameSetting_->text()});
+      ScreenServices{.settings = *settings_,
+                     .settingsService = *settingsService_,
+                     .assets = *assets_,
+                     .audio = *audio_,
+                     .window = *window_,
+                     .connection = *connection_,
+                     .server = server,
+                     .nickname = nicknameSetting_->text()},
+      *registry_);
   listenerHandle_ = listeners_->add([this](const sf::Event& event) {
     screens_->handleEvent(event);
     return EventUse::Kept;
