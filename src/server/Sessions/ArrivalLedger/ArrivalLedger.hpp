@@ -3,16 +3,17 @@
 #include <cstddef>
 #include <cstdint>
 #include <optional>
+#include "ReceivedSequences.hpp"
 
 namespace rtype::server {
 
 /**
- * @brief Keeps, for one player, the sequence of the newest datagram accepted
- * and how many of the datagrams the player sent never arrived.
+ * @brief Keeps, for one player, the datagrams accepted from it and how many of
+ * the datagrams it sent never arrived.
  *
  * A datagram is accepted when its sequence is newer than the newest accepted
- * (see network::isNewerSequence); a duplicate or an older one is refused, so a
- * late copy never undoes a newer one. Each accepted datagram stands for the
+ * (see network::ReceivedSequences); a duplicate or an older one is refused, so
+ * a late copy never undoes a newer one. Each accepted datagram stands for the
  * sequences it skipped over: those are counted as lost, so a datagram that
  * arrives late and is refused stays counted as lost.
  *
@@ -37,7 +38,7 @@ class ArrivalLedger {
  private:
   void closeWindowWhenFull();
 
-  std::optional<std::uint16_t> newest_;
+  network::ReceivedSequences sequences_;
   std::size_t expected_{0};
   std::size_t received_{0};
   std::optional<double> lossRate_;

@@ -3,25 +3,18 @@
 #include <cstdint>
 #include <optional>
 #include "ArrivalLedgerConstants.hpp"
-#include "SequenceOrder.hpp"
 
 namespace rtype::server {
 
-namespace {
-
-constexpr std::size_t FIRST_DATAGRAM_DISTANCE = 1;
-
-}  // namespace
-
 bool ArrivalLedger::accept(std::uint16_t sequence) {
-  if (newest_.has_value() && !network::isNewerSequence(sequence, *newest_)) {
+  const std::optional<std::uint16_t> previous = sequences_.newest();
+  if (!sequences_.accept(sequence)) {
     return false;
   }
-  expected_ += newest_.has_value()
-                   ? static_cast<std::uint16_t>(sequence - *newest_)
+  expected_ += previous.has_value()
+                   ? static_cast<std::uint16_t>(sequence - *previous)
                    : FIRST_DATAGRAM_DISTANCE;
   ++received_;
-  newest_ = sequence;
   closeWindowWhenFull();
   return true;
 }

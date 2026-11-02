@@ -2,6 +2,9 @@ add_library(rtype_server_arrival_ledger STATIC ArrivalLedger.cpp)
 
 target_include_directories(rtype_server_arrival_ledger PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
-target_link_libraries(rtype_server_arrival_ledger PRIVATE rtype_network_sequence_order)
+target_link_libraries(rtype_server_arrival_ledger
+  PUBLIC
+    rtype_network_reliability
+)
 
 rtype_enable_warnings(rtype_server_arrival_ledger)
