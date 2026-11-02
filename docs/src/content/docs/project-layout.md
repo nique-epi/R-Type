@@ -253,9 +253,9 @@ A module here is a class implementing `IModule`, installed and started with its 
 | is a rule or a service of one game, and each game has its own | `src/server/Instances/<Name>Module/` | `rtypeGameModules()`, `src/server/Modules/Games/RtypeGameModules.cpp` |
 | would serve a program that is neither (the master) | the folder `Modules/` of that program, once it exists | its own list, built the same way |
 
-- The folder is a module folder like any other (see [Adding a class](#adding-a-class)): one `CMakeLists.txt`, one library `rtype_<owner>_<name>_module`, the class `<Owner><Name>Module` as a `.hpp` and `.cpp` pair.
+- The folder is a module folder like any other (see [Adding a class](#adding-a-class)): one `CMakeLists.txt`, one library `rtype_<owner>_<name>_module`, the class `<Owner><Name>Module` as a `.hpp` and `.cpp` pair (`ServerLobbyModule`; the class of a game module is `<Name>Module`, as `ReplicationModule` and `RtypeRulesModule` are).
 - The name other modules depend on is a constant in `ModuleConstants.hpp`, next to the other names, in `src/server/Modules/` or `src/client/Modules/`.
-- The class a module wraps stays in the folder of its feature (`Lobby/`, `Sessions/`, `Connection/`): the module in `Modules/` only installs it, starts it and stops it. Code that must be tested without a program is in the feature folder, and the module is a thin layer over it.
+- The code a module works with sits in one of two places today. The classes only that module uses are in its own folder (`Modules/Games/` holds `Games` and `FarewellSender`, `Modules/Network/` holds `TickDatagrams`, `Modules/Window/` holds `FrameLoop`). The classes other parts of the program use or test without a program are in the folder of their feature (`Lobby/`, `Sessions/`, `Connection/`). Put a new class in the feature folder when anything else needs it, and in the folder of the module otherwise.
 - A module of the program never goes in `src/engine`, unless every game would need it unchanged. `IModule` itself lives there; the modules of R-Type do not.
 
 ## A key press, from one screen to another

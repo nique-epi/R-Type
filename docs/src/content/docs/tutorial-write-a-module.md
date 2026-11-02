@@ -15,7 +15,7 @@ Every file below was built and its tests were run on a copy of the repository be
 | 2 | The class and its constant | `src/server/Modules/TickReport/` |
 | 3 | The library of the folder | `src/server/Modules/TickReport/CMakeLists.txt`, `src/server/Modules/CMakeLists.txt` |
 | 4 | The module in the server's list | `src/server/Modules/Assembly/` |
-| 5 | Three tests | `tests/server/Modules/TickReport/` |
+| 5 | Three tests, their fixture and their constants | `tests/server/Modules/TickReport/` |
 | 6 | A run, and the three checks of the project | the terminal |
 
 ## Step 0: choose the place
@@ -40,7 +40,7 @@ constexpr std::string_view TICK_REPORT_MODULE_NAME = "tick-report";
 
 Create `src/server/Modules/TickReport/` with three files.
 
-The constant first. A number written in the code is named in a `<Concept>Constants.hpp` that holds constants only. `TickReportConstants.hpp`:
+The constant first. A number written in the code is named in a `<Concept>Constants.hpp` that holds constants only, the ten seconds included. `TickReportConstants.hpp`:
 
 ```cpp
 #pragma once
@@ -50,10 +50,12 @@ The constant first. A number written in the code is named in a `<Concept>Constan
 
 namespace rtype::server {
 
-/** @brief How many ticks pass between two lines of the tick report: ten
- * seconds of the simulation. */
+/** @brief Seconds between two lines of the tick report. */
+constexpr std::size_t TICK_REPORT_SECONDS = 10;
+
+/** @brief How many ticks pass between two lines of the tick report. */
 constexpr std::size_t TICKS_PER_TICK_REPORT =
-    10 * engine::SIMULATION_TICKS_PER_SECOND;
+    TICK_REPORT_SECONDS * engine::SIMULATION_TICKS_PER_SECOND;
 
 }  // namespace rtype::server
 ```
@@ -79,8 +81,8 @@ namespace rtype::server {
  * in the journal every TICKS_PER_TICK_REPORT ticks.
  *
  * It depends on the logger module, so the journal is open when it writes. Its
- * work is added to the simulation stage in install(); start() sets the count to
- * zero and stop() writes the final count.
+ * work is added to the simulation stage in install(); stop() writes the final
+ * count.
  */
 class ServerTickReportModule final : public engine::IModule {
  public:
@@ -92,13 +94,13 @@ class ServerTickReportModule final : public engine::IModule {
   /** @brief Adds the counting to the simulation stage; opens nothing. */
   void install(engine::InstallContext& context) override;
 
-  /** @brief Sets the count to zero and logs that the counting begins. */
+  /** @brief Logs that the counting begins. */
   void start() override;
 
   /** @brief Logs how many ticks were counted. */
   void stop() override;
 
-  /** @returns How many ticks were counted since start(). */
+  /** @returns How many ticks were counted since the module was built. */
   [[nodiscard]] std::size_t tickCount() const;
 
  private:
@@ -143,10 +145,7 @@ void ServerTickReportModule::install(engine::InstallContext& context) {
       [this]([[maybe_unused]] engine::Duration elapsed) { countTick(); });
 }
 
-void ServerTickReportModule::start() {
-  tickCount_ = 0;
-  logger_.info("counting the ticks");
-}
+void ServerTickReportModule::start() { logger_.info("counting the ticks"); }
 
 void ServerTickReportModule::stop() {
   logger_.info("counted ", tickCount_, " ticks");
@@ -169,7 +168,7 @@ void ServerTickReportModule::countTick() {
 | Constructor | before any moment | The logger is built with the name the server's other lines carry (`SERVER_LOGGER_NAME`); nothing is opened |
 | `name()`, `dependencies()` | when the `Application` is built | The module is listed after `logger`: the check refuses a list that puts it first |
 | `install()` | install | It adds work to the `simulation` stage and opens nothing. The work captures `this`, which stays valid because the `Application` destroys the module after the loop stops |
-| `start()` | start | It sets the count to zero, so a second start counts from zero. The logger module opened the journal in its own `start()`, which ran before |
+| `start()` | start | It writes a line, which needs the journal: the logger module opened it in its own `start()`, which ran before |
 | `countTick()` | run | It runs once per tick, in the `simulation` stage. It touches no service: it uses only its own members |
 | `stop()` | stop | It writes the last count and does not throw |
 
@@ -248,10 +247,68 @@ First, the existing test that lists the modules. In `tests/server/Modules/Assemb
                        std::string{rtype::server::TICK_REPORT_MODULE_NAME}}));
 ```
 
-Then `tests/server/Modules/TickReport/ServerTickReportModuleTest.cpp`. A module is tested inside a real `Application`, with the modules it depends on; `ServerModuleFixture` gives the logger options that write to a journal of the test only.
+Then the tests of the module. A `…Test.cpp` holds only its tests: its constants and its fixture are files of their own, as in `tests/server/Modules/Lobby/` (`ServerLobbyFixture.{hpp,cpp}` and `ServerLobbyModuleTest.cpp`). A module is tested inside a real `Application`, with the modules it depends on; `ServerModuleFixture` gives the logger options that write to a journal of the test only.
+
+`tests/server/Modules/TickReport/ServerTickReportModuleTestConstants.hpp`:
 
 ```cpp
-#include <gtest/gtest.h>
+#pragma once
+
+#include <cstddef>
+
+/** @brief How many passes of the loop the tests run to count a few ticks. */
+constexpr std::size_t THREE_PASSES = 3;
+
+/** @brief What follows the count in the line the report writes. */
+constexpr const char* REPORT_LINE_ENDING = " ticks so far";
+```
+
+`ServerTickReportFixture.hpp` declares the base of the tests. It builds the application and keeps what the tests read:
+
+```cpp
+#pragma once
+
+#include <cstddef>
+#include <memory>
+#include <string>
+#include <vector>
+#include "Application.hpp"
+#include "IModule.hpp"
+#include "ServerModuleFixture.hpp"
+#include "ServerTickReportModule.hpp"
+
+/** @brief The base of the tests of the tick report module: an application
+ * made of the logger module and the tick report module. */
+class ServerTickReportFixture : public ServerModuleFixture {
+ protected:
+  /** @returns An application that lists the logger, then the tick report. */
+  [[nodiscard]] rtype::engine::Application applicationWithTheTickReport();
+
+  /** @returns A list holding the tick report module only. */
+  [[nodiscard]] static std::vector<std::unique_ptr<rtype::engine::IModule>>
+  tickReportWithoutTheLogger();
+
+  /** @brief Runs @p passes passes of the loop of @p application, each lasting
+   * one tick. */
+  static void runPasses(rtype::engine::Application& application,
+                        std::size_t passes);
+
+  /** @returns How many ticks the tick report module of the application built
+   * last has counted. */
+  [[nodiscard]] std::size_t countedTicks() const;
+
+  /** @returns Whether a line of the journal holds @p text. */
+  [[nodiscard]] bool journalHolds(const std::string& text) const;
+
+ private:
+  const rtype::server::ServerTickReportModule* tickReport_{nullptr};
+};
+```
+
+`ServerTickReportFixture.cpp` defines it:
+
+```cpp
+#include "ServerTickReportFixture.hpp"
 #include <algorithm>
 #include <cstddef>
 #include <memory>
@@ -259,44 +316,80 @@ Then `tests/server/Modules/TickReport/ServerTickReportModuleTest.cpp`. A module 
 #include <utility>
 #include <vector>
 #include "Application.hpp"
-#include "EngineException.hpp"
 #include "IModule.hpp"
 #include "LoopStages.hpp"
 #include "ServerConstants.hpp"
 #include "ServerLoggerModule.hpp"
-#include "ServerModuleFixture.hpp"
 #include "ServerTickReportModule.hpp"
-#include "TickReportConstants.hpp"
 #include "TimeConstants.hpp"
+
+rtype::engine::Application
+ServerTickReportFixture::applicationWithTheTickReport() {
+  auto tickReport = std::make_unique<rtype::server::ServerTickReportModule>();
+  tickReport_ = tickReport.get();
+  std::vector<std::unique_ptr<rtype::engine::IModule>> modules;
+  modules.push_back(
+      std::make_unique<rtype::server::ServerLoggerModule>(journalOptions()));
+  modules.push_back(std::move(tickReport));
+  return rtype::engine::Application(
+      rtype::engine::LoopStages(rtype::server::SERVER_LOOP_STAGES),
+      std::move(modules));
+}
+
+std::vector<std::unique_ptr<rtype::engine::IModule>>
+ServerTickReportFixture::tickReportWithoutTheLogger() {
+  std::vector<std::unique_ptr<rtype::engine::IModule>> modules;
+  modules.push_back(std::make_unique<rtype::server::ServerTickReportModule>());
+  return modules;
+}
+
+void ServerTickReportFixture::runPasses(rtype::engine::Application& application,
+                                        std::size_t passes) {
+  for (std::size_t pass = 0; pass < passes; ++pass) {
+    application.runStages(rtype::engine::SIMULATION_TICK_DURATION);
+  }
+}
+
+std::size_t ServerTickReportFixture::countedTicks() const {
+  return tickReport_->tickCount();
+}
+
+bool ServerTickReportFixture::journalHolds(const std::string& text) const {
+  return std::ranges::any_of(journal().lines(),
+                             [&text](const std::string& line) {
+                               return line.find(text) != std::string::npos;
+                             });
+}
+```
+
+`ServerTickReportModuleTest.cpp` holds the three tests, each with a Given / When / Then comment:
+
+```cpp
+#include <gtest/gtest.h>
+#include <string>
+#include "Application.hpp"
+#include "EngineException.hpp"
+#include "LoopStages.hpp"
+#include "ServerConstants.hpp"
+#include "ServerTickReportFixture.hpp"
+#include "ServerTickReportModuleTestConstants.hpp"
+#include "TickReportConstants.hpp"
 
 using rtype::engine::Application;
 using rtype::engine::LoopStages;
-using rtype::server::ServerLoggerModule;
-using rtype::server::ServerTickReportModule;
-
-class ServerTickReportModuleTest : public ServerModuleFixture {};
 
 /**
  * Given a server application whose modules started
  * When the loop runs three passes
  * Then the tick report module counted three ticks
  */
-TEST_F(ServerTickReportModuleTest, CountsOneTickPerPassOfTheLoop) {
-  auto tickReport = std::make_unique<ServerTickReportModule>();
-  const ServerTickReportModule& counter = *tickReport;
-  std::vector<std::unique_ptr<rtype::engine::IModule>> modules;
-  modules.push_back(std::make_unique<ServerLoggerModule>(journalOptions()));
-  modules.push_back(std::move(tickReport));
-  Application application(LoopStages(rtype::server::SERVER_LOOP_STAGES),
-                          std::move(modules));
+TEST_F(ServerTickReportFixture, CountsOneTickPerPassOfTheLoop) {
+  Application application = applicationWithTheTickReport();
   application.start();
-  const std::size_t passes = 3;
 
-  for (std::size_t pass = 0; pass < passes; ++pass) {
-    application.runStages(rtype::engine::SIMULATION_TICK_DURATION);
-  }
+  runPasses(application, THREE_PASSES);
 
-  EXPECT_EQ(counter.tickCount(), passes);
+  EXPECT_EQ(countedTicks(), THREE_PASSES);
 }
 
 /**
@@ -304,25 +397,15 @@ TEST_F(ServerTickReportModuleTest, CountsOneTickPerPassOfTheLoop) {
  * When the loop runs TICKS_PER_TICK_REPORT passes
  * Then the journal holds the line of the report with that count
  */
-TEST_F(ServerTickReportModuleTest, WritesTheCountInTheJournalEveryInterval) {
-  std::vector<std::unique_ptr<rtype::engine::IModule>> modules;
-  modules.push_back(std::make_unique<ServerLoggerModule>(journalOptions()));
-  modules.push_back(std::make_unique<ServerTickReportModule>());
-  Application application(LoopStages(rtype::server::SERVER_LOOP_STAGES),
-                          std::move(modules));
+TEST_F(ServerTickReportFixture, WritesTheCountInTheJournalEveryInterval) {
+  Application application = applicationWithTheTickReport();
   application.start();
 
-  for (std::size_t pass = 0; pass < rtype::server::TICKS_PER_TICK_REPORT;
-       ++pass) {
-    application.runStages(rtype::engine::SIMULATION_TICK_DURATION);
-  }
+  runPasses(application, rtype::server::TICKS_PER_TICK_REPORT);
 
-  const std::string expectedLine =
-      std::to_string(rtype::server::TICKS_PER_TICK_REPORT) + " ticks so far";
-  EXPECT_TRUE(std::ranges::any_of(
-      journal().lines(), [&expectedLine](const std::string& line) {
-        return line.find(expectedLine) != std::string::npos;
-      }));
+  EXPECT_TRUE(
+      journalHolds(std::to_string(rtype::server::TICKS_PER_TICK_REPORT) +
+                   REPORT_LINE_ENDING));
 }
 
 /**
@@ -330,19 +413,16 @@ TEST_F(ServerTickReportModuleTest, WritesTheCountInTheJournalEveryInterval) {
  * When the application is built
  * Then it is refused before anything is installed
  */
-TEST_F(ServerTickReportModuleTest, IsRefusedWhenTheLoggerIsNotListedBeforeIt) {
-  std::vector<std::unique_ptr<rtype::engine::IModule>> modules;
-  modules.push_back(std::make_unique<ServerTickReportModule>());
-
+TEST_F(ServerTickReportFixture, IsRefusedWhenTheLoggerIsNotListedBeforeIt) {
   EXPECT_THROW(Application(LoopStages(rtype::server::SERVER_LOOP_STAGES),
-                           std::move(modules)),
+                           tickReportWithoutTheLogger()),
                rtype::engine::MissingDependencyException);
 }
 ```
 
 `Application::runStages()` is what the server's network thread calls once per tick, so a test that calls it three times plays three ticks without a socket or a clock.
 
-Register the file in `tests/CMakeLists.txt`: add `server/Modules/TickReport/ServerTickReportModuleTest.cpp` to the `SOURCES` of `server_module_tests`, right after `server/Modules/Assembly/ServerModulesTest.cpp`. Its include folders come from `rtype_server_modules`, which links your library `PUBLIC`.
+Register both `.cpp` files in `tests/CMakeLists.txt`: add `server/Modules/TickReport/ServerTickReportFixture.cpp` and `server/Modules/TickReport/ServerTickReportModuleTest.cpp` to the `SOURCES` of `server_module_tests`, right after `server/Modules/Assembly/ServerModulesTest.cpp`. Its include folders come from `rtype_server_modules`, which links your library `PUBLIC`.
 
 Run the tests of the module:
 
@@ -353,7 +433,7 @@ cmake --workflow --preset test
 The suite ends green with no warning. To run only yours, once the build is done:
 
 ```bash
-./build/tests/server_module_tests --gtest_filter='ServerTickReportModuleTest.*'
+./build/tests/server_module_tests --gtest_filter='ServerTickReportFixture.*'
 ```
 
 Three tests pass.

@@ -14,7 +14,7 @@ This page tells you where to look when you need to change something. It describe
 | Fixed timestep and timers | Available | `src/engine/Time/` |
 | Network identifiers | Available | `src/engine/NetworkIds/` |
 | Systems and queries | Available | `src/engine/Systems/`, `ComponentRegistry::forEach` |
-| Game loop | Server only: ticks run at a fixed rate, no system runs in them yet | `src/server/Application/TickLoop/` |
+| Game loop | Server only: ticks run at a fixed rate, and the tick of a game in progress runs the systems of its world | `src/server/Application/TickLoop/` |
 | Event bus | Available | `src/engine/Events/` |
 | Collisions | Available: the overlap test and the event; the system that detects them is in the game | `src/engine/Collision/` |
 | Launch arguments | Available; used by the server and the client | `src/engine/LaunchArguments/` |
@@ -145,7 +145,7 @@ for (std::size_t tick = 0; tick < ticks; ++tick) {
 }
 ```
 
-The server runs ticks at this rate on its simulation thread, in `TickLoop` (see [Server](/R-Type/server/#tick-loop-tickloop)), but its tick only advances the timers and delivers the events of the bus: no tick runs systems yet. The client frame loop, `FrameLoop` (`src/client/Modules/Window/`), reads `SystemClock` and hands the real time of each frame to the scrolling background (see [Client](/R-Type/client/#scrolling-background-scrollingbackground)) and to the screens; it runs no tick. The game screen runs its systems, which play the animations, once per frame with that real time, not at a fixed step (see [Client](/R-Type/client/#animations-animation-animationsystem)).
+The server runs ticks at this rate on its simulation thread, in `TickLoop` (see [Server](/R-Type/server/#tick-loop-tickloop)), and each tick runs the stages of the server: in a game in progress, the tick of the game runs the systems of its world (see [Server](/R-Type/server/#modules-of-a-game-igamemodule)), then the timers advance and the events of the bus are delivered in the output stage. The client frame loop, `FrameLoop` (`src/client/Modules/Window/`), reads `SystemClock` and hands the real time of each frame to the scrolling background (see [Client](/R-Type/client/#scrolling-background-scrollingbackground)) and to the screens; it runs no tick. The game screen runs its systems, which play the animations, once per frame with that real time, not at a fixed step (see [Client](/R-Type/client/#animations-animation-animationsystem)).
 
 ## Event bus: `EventBus`
 

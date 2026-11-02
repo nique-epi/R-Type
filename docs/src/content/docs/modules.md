@@ -28,7 +28,7 @@ What each moment guarantees follows from this table:
 - When a `start()` throws, the modules started before it are stopped, the last started first, then `start()` throws `ModuleStartFailedException`, naming the module and the reason. The module that threw is not stopped, so its `start()` releases what it had opened before throwing.
 - Stopping first stops the loop: the application waits for the pass in flight, and no work runs while the modules stop. A module is stopped once. The destructor of `Application` stops the modules still started, then destroys them from the last listed to the first, so a module outlives the modules that hold its services.
 
-Which thread runs the loop belongs to a module too. On the server, the network module runs the tick on its thread and calls `runStages()` once per tick. On the client, the window module provides the `FrameLoop`, which `main()` runs on the main thread, where SFML reads the events.
+Which thread runs the loop belongs to a module too. On the server, the network module runs the tick on its thread and calls `runStages()` once per tick. On the client, `main()` builds the `FrameLoop` and hands it to the window module, which provides it as a service; `main()` runs it on the main thread, where SFML reads the events.
 
 ## Two scopes: the program and the game
 
@@ -45,7 +45,7 @@ A module lives at one of two scopes.
 
 The two follow the same five moments, the same order and the same rules. They differ in three ways:
 
-- A game module has no `dependencies()`: it is listed after the modules whose services it requires, and a missing service throws `MissingServiceException` when the game is built.
+- A game module has no `dependencies()`: it is listed after the modules whose services it requires, and a missing service throws `MissingServiceException` when the game is built. The games module builds the games in its `start()`, so at program level the error reaches you as a `ModuleStartFailedException` naming `games` and carrying the message of the `MissingServiceException`.
 - Its `install()` also receives a `GameContext` (the game's event bus, timers, players and settings), because several games run at once and each has its own.
 - The program-scope `Application` runs the stages of the program; a game runs its own, three per tick, inside the work the games module adds to the simulation stage.
 
@@ -53,7 +53,7 @@ The server therefore has modules inside a module: the games module of the progra
 
 ## How modules talk
 
-Modules never call each other directly and never include each other's headers. They meet through three channels.
+Modules never call each other directly, and only `Assembly` includes the class of a module. A module includes the header of each service it requires, which often sits in the folder of the module that provides it. They meet through three channels.
 
 | Channel | What it carries | Where it is set up |
 |---|---|---|
@@ -82,7 +82,7 @@ A module is switched on or off at one of three moments. Only the first two exist
 
 | How | Exists | How it works |
 |---|---|---|
-| At compile time | Yes | The module is in the list of `serverModules()` or `clientModules()`, and its library is linked by the `CMakeLists.txt` of that folder. Remove both lines to remove the module |
+| At compile time | Yes | The module is in the list of `serverModules()` or `clientModules()`, and its library is linked by `Assembly/CMakeLists.txt`. Remove the three lines the [tutorial](/R-Type/tutorial-write-a-module/#step-4-put-it-in-the-servers-list) adds: the `#include` and the `push_back` in `ServerModules.cpp` or `ClientModules.cpp`, and the library in `Assembly/CMakeLists.txt`. On the server, the list of names that `tests/server/Modules/Assembly/ServerModulesTest.cpp` expects changes too |
 | At launch, by configuration | Yes | The module stays in the list; a launch option chooses what it does. `--no-sound` gives `ClientAudioModule` an `AudioMode::Disabled`: it still provides an `IAudioService`, one that plays nothing |
 | At run time, by plugin | No | No module is loaded from a file while the program runs. A module is compiled into its program |
 
@@ -91,7 +91,7 @@ Two rules decide which one fits:
 - **Take a module out of the list only when nothing depends on it.** Removing `audio` while `screens` requires an `IAudioService` stops the program before anything starts, with a message naming both modules. Take the dependents out with it.
 - **Prefer configuration for a module others use.** A module that can be turned off keeps providing its service, with an implementation that does nothing, so the modules that use it never test whether it is on. The sound is the model: `SilentAudioService` answers every call and plays nothing, and the screens do not know which one they got.
 
-Adding a launch option that turns a module off is three changes: the option in `LaunchOptions::read()` and `usage()` of the program (see [Server](/R-Type/server/#where-to-intervene) and [Client](/R-Type/client/#where-to-intervene)), a value the options hand to `clientModules()` or `serverModules()`, and the module's constructor taking it.
+`--no-sound` is the complete example of a launch option that turns a module off: the constant of its name (`NO_SOUND_OPTION`, `src/client/ClientConstants.hpp`), the option in `LaunchOptions::read()` and `usage()` (see [Server](/R-Type/server/#where-to-intervene) and [Client](/R-Type/client/#where-to-intervene)), an accessor (`LaunchOptions::audioMode()`) whose value `clientModules()` hands to `ClientAudioModule`, and the constructor of the module taking it.
 
 ## Where to intervene
 
@@ -104,4 +104,4 @@ Adding a launch option that turns a module off is three changes: the option in `
 | Add a rule to a game | An `IGameModule` listed in `rtypeGameModules()` |
 | Give a module a name others can depend on | `src/server/Modules/ModuleConstants.hpp` or `src/client/Modules/ModuleConstants.hpp` |
 | Change what happens when a module fails to start | `Application::startModules()` in `src/engine/Modules/Application/Application.cpp` |
-| Test a module | An `Application` built from the module and the ones it depends on, as `tests/server/Modules/Logger/ServerLoggerModuleTest.cpp` does |
+| Test a module | An `Application` built from the module and the ones it depends on, as `tests/server/Modules/Lobby/ServerLobbyModuleTest.cpp` does, with its fixture `ServerLobbyFixture` |
