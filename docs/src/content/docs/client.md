@@ -3,9 +3,45 @@ title: Client
 description: What the client does, how its parts fit together and where to find them in the code.
 ---
 
-The client, `r-type_client` (`src/client/`), shows the game, plays its sounds and reads the player's input; the server decides what happens in the match (see [Architecture](/R-Type/architecture/)). Today it finds its assets folder, loads the assets of its interface, opens a window and runs its screens over a scrolling starfield: an intro of 5.5 s set to the beats of its theme, which it opens on, the title screen, a connection screen, a waiting room, a loading screen, the game screen, which draws the entities the server announces from one sprite sheet, animated, and their effects from another, on a ladder of intensity from a shot to a ship destroyed, and opens each game with MISSION START, an end screen, an options screen and a quit confirmation, the menus all built from the same widgets. The game screen reads the player's actions through the keys the player chose, the arrows and the space bar at first; the options change them, with the volumes, the display mode, the window size and the accessibility settings, and save them in a file for the next launch. It reads the server's address and port and the player's nickname at launch, shows them on its connection screen, and joins the server from there: it sends the connection request of the protocol, on a network thread opened at launch, until the server accepts or refuses it. Once accepted, it opens a waiting room that lists the players of the server and where the player says it is ready, then the game when the server announces its start, where the ships and Bydos appear, move and disappear as the server says, over a status band that shows the nickname, the lives and the score of each pilot. When the server ends the game, the end screen opens a second later: a flight log that ranks every pilot, then PRESS ENTER TO REPLAY, back to the waiting room, or QUIT, back to the title. During a game, a line in the top-left corner tells when a teammate leaves or loses its signal, and WAITING FOR THE SERVER shows after a second without news of the server. When the session ends, the server silent for 20 s or shut down, the title replaces every screen with a dialog over it that says so, and its RETRY opens the connection screen again with the same address, port and nickname. From launch it plays its theme in a loop, the sounds of the intro and of what the server announces, and a click on the buttons and tabs of its menus.
+The client, `r-type_client` (`src/client/`), shows the game, plays its sounds and reads the player's input; the server decides what happens in the match (see [Architecture](/R-Type/architecture/)).
 
 This page tells you where to look when you need to change something. It describes what exists today and says plainly what does not exist yet.
+
+## How the parts fit together
+
+Four parts do most of the work: the screens, the rendering, the assets (the resources of the client) and the inputs. `FrameLoop` (`src/client/Modules/Window/`) hands the events to the screens, then updates and draws them, once per frame on the main thread (see [Modules and frame loop](#modules-and-frame-loop-clientmodules-frameloop)). The diagram answers one question: what does a screen rely on, from a key press to the picture?
+
+```mermaid
+flowchart TB
+  accTitle: What a screen relies on
+  accDescr: The window events go to the screen stack. From there, the game screen reads the keys through PlayerCommands, which gives actions to ServerSession. The screens draw through EntityLayer and InterfaceCanvas, which take their textures and fonts from AssetLibrary.
+  Events["window events"] --> Stack[ScreenStack]
+  Stack -- "game screen" --> Commands[PlayerCommands]
+  Commands -- "actions" --> Session[ServerSession]
+  Stack -- "draw" --> Drawing["EntityLayer, InterfaceCanvas"]
+  Drawing -- "textures, fonts" --> Library[AssetLibrary]
+```
+
+What the server says comes back to the game screen through `EntityMessageQueue` (see [Joining a server](#joining-a-server-serversession-waitingroom-entitymessagequeue)).
+
+- [**Screens**](#screens-screenstack-screenregistry) decide what is shown. The stack hands each event to the screen on top only and updates every screen; a screen opens another by its `ScreenId`, and each module registers the screens it owns.
+  - Key classes: `IScreen`, `ScreenStack`, `ScreenRegistry`, `ClientScreens`, `IScreenNavigator`.
+  - Folders: `src/client/Screens/`, `src/client/Application/ScreenStack/`, `src/client/Modules/Screens/`, `src/client/Modules/ScreenRegistry/`.
+- [**Rendering**](#assets-in-the-game-from-an-entity-to-the-screen) paints the frame from the bottom up: the [sky](#scrolling-background-scrollingbackground), then the screens, with their entities on a pixel canvas and their [menus](#how-a-menu-is-drawn-interfacecanvas).
+  - Key classes: `GameWindow`, `ScrollingBackground`, `EntityLayer`, `RenderSystem`, `SfmlDrawSurface`, `PixelCanvas`, `InterfaceCanvas`.
+  - Folders: `src/client/Window/`, `src/client/Rendering/`, `src/client/Widgets/`.
+- [**Assets**](#assets-the-folder-and-the-ids) find and load the files of `assets/`, named by asset id, at the three moments listed in [Assets: loading](#assets-loading).
+  - Key classes: `AssetLibrary`, `AssetLoadingStep`; the lists `interfaceAssets()`, `introAssets()`, `titleAssets()`, `gameAssets()`.
+  - Folders: `assets/`, `src/client/Assets/`, `src/client/Screens/ScreenAssets/`.
+- [**Inputs**](#player-commands-playercommands) turn the key and focus events of the game into actions, through the keys the player chose, so the game never sees a key. Menus read their own keys (see [Keys and pointer](#keys-and-pointer)).
+  - Key classes: `EventListeners`, `KeyBindings`, `PlayerCommands`, `ActionSet`.
+  - Folders: `src/client/Modules/Window/`, `src/client/Input/`.
+
+To change something precise, [Where to intervene](#where-to-intervene) lists each case.
+
+## What exists today
+
+Today it finds its assets folder, loads the assets of its interface, opens a window and runs its screens over a scrolling starfield: an intro of 5.5 s set to the beats of its theme, which it opens on, the title screen, a connection screen, a waiting room, a loading screen, the game screen, which draws the entities the server announces from one sprite sheet, animated, and their effects from another, on a ladder of intensity from a shot to a ship destroyed, and opens each game with MISSION START, an end screen, an options screen and a quit confirmation, the menus all built from the same widgets. The game screen reads the player's actions through the keys the player chose, the arrows and the space bar at first; the options change them, with the volumes, the display mode, the window size and the accessibility settings, and save them in a file for the next launch. It reads the server's address and port and the player's nickname at launch, shows them on its connection screen, and joins the server from there: it sends the connection request of the protocol, on a network thread opened at launch, until the server accepts or refuses it. Once accepted, it opens a waiting room that lists the players of the server and where the player says it is ready, then the game when the server announces its start, where the ships and Bydos appear, move and disappear as the server says, over a status band that shows the nickname, the lives and the score of each pilot. When the server ends the game, the end screen opens a second later: a flight log that ranks every pilot, then PRESS ENTER TO REPLAY, back to the waiting room, or QUIT, back to the title. During a game, a line in the top-left corner tells when a teammate leaves or loses its signal, and WAITING FOR THE SERVER shows after a second without news of the server. When the session ends, the server silent for 20 s or shut down, the title replaces every screen with a dialog over it that says so, and its RETRY opens the connection screen again with the same address, port and nickname. From launch it plays its theme in a loop, the sounds of the intro and of what the server announces, and a click on the buttons and tabs of its menus.
 
 | Part | State | Where |
 |---|---|---|
