@@ -27,12 +27,13 @@ network::Endpoint anyInterfaceAnyPort() {
 ClientConnectionModule::ClientConnectionModule()
     : network_(anyInterfaceAnyPort()),
       router_(network_),
-      waitingRoom_(dispatcher_),
-      entityMessages_(dispatcher_, waitingRoom_),
-      session_(
-          ServerSessionParts{.link = router_.addRoute(),
-                             .dispatcher = dispatcher_,
-                             .observers = {waitingRoom_, entityMessages_}}),
+      waitingRoom_(dispatcher_, gameLoaded_),
+      entityMessages_(dispatcher_, waitingRoom_, gameLoaded_),
+      session_(ServerSessionParts{
+          .link = router_.addRoute(),
+          .dispatcher = dispatcher_,
+          .gameLoaded = gameLoaded_,
+          .observers = {waitingRoom_, entityMessages_, gameLoaded_}}),
       logger_(std::string{CONNECTION_LOGGER_NAME}) {}
 
 std::string ClientConnectionModule::name() const {

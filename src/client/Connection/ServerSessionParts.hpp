@@ -2,6 +2,7 @@
 
 #include <functional>
 #include <vector>
+#include "GameLoadedReminder.hpp"
 #include "IRoutedLink.hpp"
 #include "ISessionObserver.hpp"
 #include "MessageDispatcher.hpp"
@@ -25,6 +26,8 @@ struct ServerSessionParts {
   /** @brief Hands the messages of the server to their handlers: the session
    * registers those of the handshake, the observers the others. */
   std::reference_wrapper<network::MessageDispatcher> dispatcher;
+  /** @brief Sends the GameLoaded that goes before the inputs of a game. */
+  std::reference_wrapper<GameLoadedReminder> gameLoaded;
   /** @brief The parts that follow the session, told when it opens, closes and
    * holds. */
   std::vector<std::reference_wrapper<ISessionObserver>> observers;

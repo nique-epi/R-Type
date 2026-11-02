@@ -48,6 +48,13 @@ constexpr const char* QUIT_QUESTION = "ARE YOU SURE YOU WANT TO QUIT?";
 constexpr const char* NO_LABEL = "NO";
 constexpr const char* YES_LABEL = "YES";
 
+/** @brief Texts of the dialog shown once the session with the server ended. */
+constexpr const char* CONNECTION_LOST_HEADING = "CONNECTION LOST";
+constexpr const char* SILENT_SERVER_MESSAGE = "THE SERVER STOPPED ANSWERING.";
+constexpr const char* CLOSED_SERVER_MESSAGE = "THE SERVER SHUT DOWN.";
+constexpr const char* RETRY_LABEL = "RETRY";
+constexpr const char* OK_LABEL = "OK";
+
 /**
  * @brief Size of the progress bar of the loading screen, centered in the
  * playfield, and thickness of its border, in playfield units.

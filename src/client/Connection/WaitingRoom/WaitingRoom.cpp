@@ -6,6 +6,7 @@
 #include <string>
 #include <vector>
 #include "ConnectionConstants.hpp"
+#include "GameLoadedReminder.hpp"
 #include "GameStarted.hpp"
 #include "ISessionOutbox.hpp"
 #include "LobbyState.hpp"
@@ -29,8 +30,9 @@ bool roomShowsReady(std::span<const network::LobbyPlayer> players,
 
 }  // namespace
 
-WaitingRoom::WaitingRoom(network::MessageDispatcher& dispatcher)
-    : logger_(std::string{CONNECTION_LOGGER_NAME}) {
+WaitingRoom::WaitingRoom(network::MessageDispatcher& dispatcher,
+                         GameLoadedReminder& reminder)
+    : logger_(std::string{CONNECTION_LOGGER_NAME}), reminder_(&reminder) {
   dispatcher.registerHandler<network::LobbyState>(
       [this](const network::MessageOrigin&, const network::LobbyState& lobby) {
         if (outbox_ != nullptr) {
@@ -90,6 +92,7 @@ void WaitingRoom::sessionHeld(engine::Duration elapsed) {
 void WaitingRoom::startGame() {
   if (outbox_ != nullptr && !gameStarted_) {
     gameStarted_ = true;
+    reminder_->begin();
     requestedReady_.reset();
     logger_.info("the game started");
   }
@@ -97,6 +100,7 @@ void WaitingRoom::startGame() {
 
 void WaitingRoom::endGame() {
   gameStarted_ = false;
+  reminder_->end();
   logger_.info("the game ended");
 }
 

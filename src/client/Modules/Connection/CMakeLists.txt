@@ -6,6 +6,7 @@ target_link_libraries(rtype_client_connection_module
   PUBLIC
     rtype_client_datagram_router
     rtype_client_entity_message_queue
+    rtype_client_game_loaded_reminder
     rtype_client_network_thread
     rtype_client_server_session
     rtype_client_waiting_room

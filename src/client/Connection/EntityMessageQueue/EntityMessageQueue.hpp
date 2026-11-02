@@ -3,6 +3,7 @@
 #include <vector>
 #include "EntityMessage.hpp"
 #include "GameEventHistory.hpp"
+#include "GameLoadedReminder.hpp"
 #include "IEntityMessageSource.hpp"
 #include "ISessionObserver.hpp"
 #include "ISessionOutbox.hpp"
@@ -15,12 +16,12 @@ namespace rtype::client {
 
 /**
  * @brief The entity messages of the game: from the start of the game, it keeps
- * the EntitySpawned, WorldState and EntityDestroyed of the server, and the
- * first copy of each GameEvent (see GameEventHistory), in the order they
- * arrived, until drainEntityMessages() hands them over; leaving the session
- * drops those not handed over and forgets the events seen. The game screen
- * drains them every frame, behind the options too, so they never pile up for
- * longer than the loading of the game.
+ * the EntitySpawned, WorldState, EntityDestroyed and every copy of PlayerLeft
+ * of the server, and the first copy of each GameEvent (see GameEventHistory),
+ * in the order they arrived, until drainEntityMessages() hands them over;
+ * leaving the session drops those not handed over and forgets the events seen.
+ * The game screen drains them every frame, behind the options too, so they
+ * never pile up for longer than the loading of the game.
  *
  * The game starts with a GameStarted, or with a WorldState when the
  * GameStarted was lost: the WorldState tells the waiting room. The first
@@ -37,8 +38,10 @@ class EntityMessageQueue final : public IEntityMessageSource,
    * registered; it must outlive the queue.
    * @param room Tells whether the game started, and is told that it did and
    * that it ended; it must outlive the queue.
+   * @param reminder Told when a WorldState arrives; it must outlive the queue.
    */
-  EntityMessageQueue(network::MessageDispatcher& dispatcher, WaitingRoom& room);
+  EntityMessageQueue(network::MessageDispatcher& dispatcher, WaitingRoom& room,
+                     GameLoadedReminder& reminder);
 
   /** @brief Counts @p elapsed against the memory of the game events. */
   void advance(engine::Duration elapsed);
@@ -59,6 +62,7 @@ class EntityMessageQueue final : public IEntityMessageSource,
   void keep(EntityMessage message);
 
   WaitingRoom* room_;
+  GameLoadedReminder* reminder_;
   std::vector<EntityMessage> messages_;
   GameEventHistory gameEvents_;
 };

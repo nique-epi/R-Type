@@ -1,5 +1,5 @@
 ---
-description: An implementation plan shows all the new code, a usage example of each new feature, explains each block simply, and leaves the on-screen check to the user
+description: An implementation plan starts from how the industry solves the problem, shows all the new code, a usage example of each new feature, explains each block simply, and leaves the on-screen check to the user
 trigger: always_on
 ---
 
@@ -28,9 +28,18 @@ Why: the user validates the plan on the code they will read, not on a descriptio
 2. **Say which `clang-format` produced it** (`clang-format --version`), and whether it is the version the CI runs.
 3. **"These tests will fail without the fix" is a prediction until it is run.** Write it as one in the plan, then report the measured list, including the tests that did not behave as predicted and why.
 
+### A plan starts from how the industry solves the problem
+
+1. **Before designing the solution, search the web for how the industry already solves the same problem**: the reference documentation of the library or the protocol, the engineering write-ups and talks of studios and engines (networked games, game loops, rendering), the RFCs and standards, and mature open source projects that faced it. Run several searches, not one, and read the sources rather than their snippets.
+2. **The plan opens with a "How the industry does it" section**, before the code: the two to four established approaches found, each with its source (link, title, author), what it costs and where it is used. Then the approach retained and why it fits this project, or why the plan departs from the common practice.
+3. **A plan never presents a homemade design as the only option** when an established one exists: an approach that no source supports is stated as such, with the reason no known practice fits.
+4. **What a source says is quoted apart from what I conclude from it**, and its qualifiers are kept (`fix-process-instrument-before-reasoning-docs-are-truth.md`, point 6).
+
 ## Example
 
 - ❌ **Before (wrong)**: "add `isReady()` to `Lobby`" with no code, a "Why" made of six technical bullets, and a section "check by launching two clients".
 - ✅ **After (right)**: the full code of `isReady()`; "Why: the server needs a rule that says when a game may start"; "What we do: add `isReady()` to `Lobby`"; a reading that says what it returns and where `players_` and `minimumPlayers` come from; a table of checks the user runs in the game (action → expected on screen → expected in the server log).
 - ❌ **Before (wrong)**: a section with the code of `WorldStateFilter` and its truth table, and nothing showing the client calling it before it applies a state.
 - ✅ **After (right)**: the same section with "How it is used": the four lines of the client that decode, ask `accept(state.tick)`, then apply, marked as an illustration because the client screen that receives states is another issue.
+- ❌ **Before (wrong)**: a plan for hiding the network latency of the player's ship designs its own correction scheme from scratch, and the user learns from a review that client-side prediction with server reconciliation is the established answer.
+- ✅ **After (right)**: the plan opens with "How the industry does it": client-side prediction and server reconciliation, entity interpolation and lag compensation, each with its source (Gabriel Gambetta's *Fast-Paced Multiplayer*, Valve's *Source Multiplayer Networking*, Glenn Fiedler's *Gaffer On Games*), then the approach kept for R-Type and why.

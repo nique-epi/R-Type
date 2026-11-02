@@ -5,6 +5,7 @@ target_include_directories(rtype_client_waiting_room PUBLIC ${CMAKE_CURRENT_SOUR
 target_link_libraries(rtype_client_waiting_room
   PUBLIC
     rtype_client_connection
+    rtype_client_game_loaded_reminder
     rtype_engine_time
     rtype_logging
     rtype_network_lobby_state

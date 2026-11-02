@@ -4,6 +4,7 @@
 #include <vector>
 #include "DatagramRouter.hpp"
 #include "EntityMessageQueue.hpp"
+#include "GameLoadedReminder.hpp"
 #include "IModule.hpp"
 #include "InstallContext.hpp"
 #include "Logger.hpp"
@@ -55,6 +56,7 @@ class ClientConnectionModule final : public engine::IModule {
   NetworkThread network_;
   DatagramRouter router_;
   network::MessageDispatcher dispatcher_;
+  GameLoadedReminder gameLoaded_;
   WaitingRoom waitingRoom_;
   EntityMessageQueue entityMessages_;
   ServerSession session_;

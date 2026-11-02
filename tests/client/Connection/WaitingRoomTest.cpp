@@ -5,7 +5,6 @@
 #include <string>
 #include <vector>
 #include "ConnectionConstants.hpp"
-#include "ConnectionStatus.hpp"
 #include "DatagramCodec.hpp"
 #include "EntityAnnouncements.hpp"
 #include "GameStarted.hpp"
@@ -28,18 +27,18 @@ using ::testing::ElementsAreArray;
 using testing::endOfOnePilot;
 using testing::FIRST_SEQUENCE;
 using testing::holds;
+using ::testing::IsEmpty;
 using testing::NICKNAME;
 using testing::onlyMessageOf;
 using testing::OTHER_NICKNAME;
 using testing::OTHER_PLAYER_NUMBER;
 using testing::OTHER_SESSION_TOKEN;
+using testing::PROTOCOL_SILENCE_LIMIT;
 using testing::SECOND_SEQUENCE;
 using testing::server;
 using testing::SESSION_TOKEN;
 using testing::stateListing;
 using testing::WaitingRoomFixture;
-
-using Phase = ConnectionStatus::Phase;
 
 /**
  * Given an attempt the server just accepted as player 3
@@ -263,6 +262,30 @@ TEST_F(WaitingRoomFixture, LeavingForgetsTheSession) {
   EXPECT_TRUE(waitingRoom().lobbyPlayers().empty());
   EXPECT_EQ(waitingRoom().requestedReady(), std::nullopt);
   EXPECT_FALSE(waitingRoom().gameStarted());
+}
+
+/**
+ * Given a waiting room lost to the silence of its server
+ * When the server comes back from a stall and a LobbyState of the lost session
+ * arrives
+ * Then the room stays empty: the client left that room
+ */
+TEST_F(WaitingRoomFixture, ShowsNoRoomFromAServerThatComesBack) {
+  accept();
+  update(PROTOCOL_SILENCE_LIMIT);
+
+  deliverInSession(
+      network::LobbyState{
+          .players = {{.playerNumber = ACCEPTED_PLAYER_NUMBER,
+                       .ready = false,
+                       .nickname = std::string{NICKNAME}},
+                      {.playerNumber = OTHER_PLAYER_NUMBER,
+                       .ready = false,
+                       .nickname = std::string{OTHER_NICKNAME}}}},
+      FIRST_SEQUENCE);
+  update();
+
+  EXPECT_THAT(waitingRoom().lobbyPlayers(), IsEmpty());
 }
 
 /**

@@ -3,25 +3,31 @@
 #include <SFML/System/Vector2.hpp>
 #include <SFML/Window/Event.hpp>
 #include <SFML/Window/Keyboard.hpp>
+#include <algorithm>
 #include <memory>
+#include <string>
 #include "BlankRenderTarget.hpp"
 #include "BoundAction.hpp"
 #include "ColorMode.hpp"
 #include "ConnectionConstants.hpp"
+#include "DepartureFeedTestConstants.hpp"
 #include "DrawJournal.hpp"
 #include "EffectConstants.hpp"
 #include "EffectTestConstants.hpp"
 #include "EntityAnnouncements.hpp"
 #include "EntityReplicatorTestConstants.hpp"
 #include "FakeEntityMessageSource.hpp"
+#include "GameEnded.hpp"
 #include "GameResult.hpp"
 #include "GameScreen.hpp"
 #include "GameScreenFixture.hpp"
 #include "GameScreenFixtures.hpp"
+#include "GameScreenIdConstants.hpp"
 #include "GameScreenTestConstants.hpp"
 #include "IgnoringEntityLayer.hpp"
 #include "KeyPress.hpp"
 #include "LoneGameParts.hpp"
+#include "MenuScreenIdConstants.hpp"
 #include "PlayerPaletteTestConstants.hpp"
 #include "PlayerSettings.hpp"
 #include "RecordingEntityLayer.hpp"
@@ -31,24 +37,26 @@
 #include "RecordingScreen.hpp"
 #include "RecordingSky.hpp"
 #include "ScreenConstants.hpp"
-#include "ScreenId.hpp"
 #include "ScreenStack.hpp"
 #include "ScreenTestConstants.hpp"
+#include "SilenceWarningTestConstants.hpp"
 #include "SoundConstants.hpp"
 #include "TimeConstants.hpp"
+#include "TimeTestConstants.hpp"
 #include "WorldState.hpp"
 #include "WorldStateFilterTestConstants.hpp"
 
 using rtype::client::BoundAction;
 using rtype::client::BYDO_EXPLOSION_FRAME;
 using rtype::client::ColorMode;
+using rtype::client::END_SCREEN;
+using rtype::client::GAME_OPTIONS_SCREEN;
 using rtype::client::GameScreen;
 using rtype::client::OPTIONS_KEY;
 using rtype::client::PLAYER_INPUT_INTERVAL;
 using rtype::client::PLAYER_MUZZLE_FLASH_FRAME;
 using rtype::client::PLAYER_MUZZLE_FLASH_WITHOUT_FLASH_FRAME;
 using rtype::client::PLAYER_SHOT_SOUND_ID;
-using rtype::client::ScreenId;
 using rtype::client::testing::APPLIED_TICK;
 using rtype::client::testing::BYDO_ID;
 using rtype::client::testing::BYDO_POSITION;
@@ -64,6 +72,7 @@ using rtype::client::testing::SHIP_POSITION;
 using rtype::client::testing::spawned;
 using rtype::client::testing::stateListing;
 using rtype::engine::Duration;
+using rtype::engine::testing::ONE_SECOND;
 using rtype::network::WireEntityType;
 using ::testing::Contains;
 using ::testing::ElementsAre;
@@ -78,9 +87,8 @@ TEST_F(GameScreenFixture, ReleasingTheOptionsKeyOpensTheOptions) {
   screens().handleEvent(keyRelease(OPTIONS_KEY));
   screens().applyPendingChanges();
 
-  EXPECT_THAT(journal(),
-              ElementsAre(JournalEntry{.screen = ScreenId::GameOptions,
-                                       .call = ScreenCall::Built}));
+  EXPECT_THAT(journal(), ElementsAre(JournalEntry{.screen = GAME_OPTIONS_SCREEN,
+                                                  .call = ScreenCall::Built}));
 }
 
 /**
@@ -622,34 +630,42 @@ TEST(GameScreenAutoFireTest, TurningItOffDuringTheGameStopsAtTheNextInput) {
 }
 
 /**
- * Given a game just started
+ * Given a game whose first WorldState arrived
  * When 117 ms pass
  * Then the stars of the sky go 12 times their speed
  */
 TEST_F(GameScreenFixture, TheStarsWarpAtTheStartOfTheGame) {
+  entityMessages().queue(rtype::network::WorldState{});
+  screens().update(ONE_FRAME);
+
   screens().update(WARP_TOP_TIME);
 
   EXPECT_NEAR(sky().lastSpeedFactor(), TOP_WARP_SPEED, WARP_FACTOR_TOLERANCE);
 }
 
 /**
- * Given a game just started
+ * Given a game whose first WorldState arrived
  * When 600 ms pass
  * Then the stars go their own speed again
  */
 TEST_F(GameScreenFixture, TheStarsSlowDownToTheirSpeed) {
+  entityMessages().queue(rtype::network::WorldState{});
+  screens().update(ONE_FRAME);
+
   screens().update(WARP_END_TIME);
 
   EXPECT_NEAR(sky().lastSpeedFactor(), OWN_SPEED, WARP_FACTOR_TOLERANCE);
 }
 
 /**
- * Given a player who reduced flashes
- * When the game starts and 117 ms pass
+ * Given a player who reduced flashes and a game whose first WorldState arrived
+ * When 117 ms pass
  * Then the stars keep their own speed
  */
 TEST_F(GameScreenFixture, WithFlashesReducedTheStarsDoNotWarp) {
   settings().reduceFlashes = true;
+  entityMessages().queue(rtype::network::WorldState{});
+  screens().update(ONE_FRAME);
 
   screens().update(WARP_TOP_TIME);
 
@@ -672,11 +688,66 @@ TEST_F(GameScreenFixture, LeavingTheGamePutsTheSkyBack) {
 }
 
 /**
- * Given a game just started
+ * Given a game whose first WorldState arrived
  * When 1 s passes
  * Then the status canvas is written "M", the first letter of the banner
  */
 TEST_F(GameScreenFixture, TheBannerStartsAtOneSecond) {
+  entityMessages().queue(rtype::network::WorldState{});
+  screens().update(ONE_FRAME);
+
+  screens().update(BANNER_START_TIME);
+
+  EXPECT_NE(writingOf(statusCanvas(), "M"), nullptr);
+}
+
+/**
+ * Given a game whose server waits for a slow player and sent no WorldState
+ * When 117 ms pass, the time the warp is at its top speed
+ * Then the stars keep their own speed
+ */
+TEST_F(GameScreenFixture, NoWarpBeforeTheFirstWorldState) {
+  screens().update(WARP_TOP_TIME);
+
+  EXPECT_EQ(sky().lastSpeedFactor(), OWN_SPEED);
+}
+
+/**
+ * Given a game whose server waits for a slow player and sent no WorldState
+ * When 1 s passes, the time the banner starts
+ * Then the banner is not written
+ */
+TEST_F(GameScreenFixture, NoBannerBeforeTheFirstWorldState) {
+  screens().update(BANNER_START_TIME);
+
+  EXPECT_EQ(writingOf(statusCanvas(), "M"), nullptr);
+}
+
+/**
+ * Given a game that waited 8 s for its first WorldState
+ * When the WorldState arrives and 117 ms pass
+ * Then the stars warp: the start of the game counts from the WorldState
+ */
+TEST_F(GameScreenFixture, TheWarpStartsWithTheFirstWorldState) {
+  screens().update(LONG_LOADING_WAIT);
+  entityMessages().queue(rtype::network::WorldState{});
+  screens().update(ONE_FRAME);
+
+  screens().update(WARP_TOP_TIME);
+
+  EXPECT_NEAR(sky().lastSpeedFactor(), TOP_WARP_SPEED, WARP_FACTOR_TOLERANCE);
+}
+
+/**
+ * Given a game that waited 8 s for its first WorldState
+ * When the WorldState arrives and 1 s passes
+ * Then the banner starts: the start of the game counts from the WorldState
+ */
+TEST_F(GameScreenFixture, TheBannerStartsOneSecondAfterTheFirstWorldState) {
+  screens().update(LONG_LOADING_WAIT);
+  entityMessages().queue(rtype::network::WorldState{});
+  screens().update(ONE_FRAME);
+
   screens().update(BANNER_START_TIME);
 
   EXPECT_NE(writingOf(statusCanvas(), "M"), nullptr);
@@ -762,7 +833,7 @@ TEST(GameScreenEndTest, TheEndScreenReplacesTheGameASecondLater) {
 
   EXPECT_THAT(doubles.navigator.calls(),
               ElementsAre(NavigatorCall{.request = NavigatorRequest::ReplaceAll,
-                                        .screen = ScreenId::End}));
+                                        .screen = END_SCREEN}));
 }
 
 /**
@@ -779,4 +850,102 @@ TEST_F(GameScreenFixture, ChangingTheColorModeRepaintsTheStatusBand) {
   const RecordedWriting* name = writingOf(statusCanvas(), THIRD_PILOT_NICKNAME);
   ASSERT_NE(name, nullptr);
   EXPECT_EQ(name->style.color, LIGHT_BLUISH_GREEN);
+}
+
+/**
+ * Given a game of three pilots
+ * When the server says the third one left
+ * Then the feed writes LEFT THE GAME
+ */
+TEST_F(GameScreenFixture, APilotWhoLeftGetsALineInTheFeed) {
+  entityMessages().queue(THIRD_PILOT_LEFT);
+
+  screens().update(ONE_FRAME);
+
+  EXPECT_NE(writingOf(statusCanvas(), FEED_LEFT_WORDS), nullptr);
+}
+
+/**
+ * Given a game of three pilots
+ * When the three copies of a PlayerLeft of the third one arrive
+ * Then the feed writes one line
+ */
+TEST_F(GameScreenFixture, ThreeCopiesOfAPlayerLeftWriteOneLine) {
+  for (int copy = 0; copy < PLAYER_LEFT_COPIES; ++copy) {
+    entityMessages().queue(THIRD_PILOT_LEFT);
+  }
+
+  screens().update(ONE_FRAME);
+
+  EXPECT_EQ(
+      std::ranges::count(statusCanvas().writings, std::string{FEED_LEFT_WORDS},
+                         &RecordedWriting::text),
+      1);
+}
+
+/**
+ * Given a line in the feed
+ * When five seconds pass
+ * Then the line is gone
+ */
+TEST_F(GameScreenFixture, TheLineGoesAfterItsTime) {
+  entityMessages().queue(THIRD_PILOT_LEFT);
+  screens().update(ONE_FRAME);
+
+  screens().update(LINE_TIME);
+
+  EXPECT_EQ(writingOf(statusCanvas(), FEED_LEFT_WORDS), nullptr);
+}
+
+/**
+ * Given a game whose server sent a WorldState, then nothing
+ * When one second passes
+ * Then WAITING FOR THE SERVER shows
+ */
+TEST_F(GameScreenFixture, ASecondWithoutMessagesShowsTheWarning) {
+  entityMessages().queue(rtype::network::WorldState{});
+  screens().update(ONE_FRAME);
+
+  screens().update(ONE_SECOND);
+
+  EXPECT_NE(writingOf(statusCanvas(), WARNING_WORDS), nullptr);
+}
+
+/**
+ * Given a game whose server waits for a slow player and sent no WorldState
+ * When the wait goes on for 8 s
+ * Then no warning shows: the server is quiet on purpose
+ */
+TEST_F(GameScreenFixture, NoWarningWhileTheServerWaitsForTheOtherPlayers) {
+  screens().update(LONG_LOADING_WAIT);
+
+  EXPECT_EQ(writingOf(statusCanvas(), WARNING_WORDS), nullptr);
+}
+
+/**
+ * Given the warning shown
+ * When a message of the server arrives
+ * Then the warning is gone
+ */
+TEST_F(GameScreenFixture, AMessageOfTheServerHidesTheWarning) {
+  screens().update(ONE_SECOND);
+  entityMessages().queue(rtype::network::WorldState{});
+
+  screens().update(ONE_FRAME);
+
+  EXPECT_EQ(writingOf(statusCanvas(), WARNING_WORDS), nullptr);
+}
+
+/**
+ * Given a game the server ended
+ * When one second passes without a message
+ * Then no warning shows: the server is quiet on purpose
+ */
+TEST_F(GameScreenFixture, NoWarningOnceTheGameEnded) {
+  entityMessages().queue(rtype::network::GameEnded{});
+  screens().update(ONE_FRAME);
+
+  screens().update(ONE_SECOND);
+
+  EXPECT_EQ(writingOf(statusCanvas(), WARNING_WORDS), nullptr);
 }

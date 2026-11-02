@@ -57,6 +57,12 @@ class RenderTextureNotCreatedException : public ClientException {
   RenderTextureNotCreatedException(unsigned int width, unsigned int height);
 };
 
+/** @brief Two modules registered a screen under the same identifier. */
+class DuplicateScreenException : public ClientException {
+ public:
+  explicit DuplicateScreenException(std::string_view screenName);
+};
+
 /**
  * @brief The nickname given at launch is not one the protocol accepts: an
  * error of the arguments, unlike network::InvalidNicknameException, which

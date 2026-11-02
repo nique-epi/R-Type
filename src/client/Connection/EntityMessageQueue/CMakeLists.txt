@@ -6,9 +6,11 @@ target_link_libraries(rtype_client_entity_message_queue
   PUBLIC
     rtype_client_connection
     rtype_client_game_event_history
+    rtype_client_game_loaded_reminder
     rtype_client_waiting_room
     rtype_engine_time
     rtype_network_message_dispatcher
+    rtype_network_player_left
   PRIVATE
     rtype_network_world_state_codec
 )

@@ -6,6 +6,7 @@ target_link_libraries(rtype_client_server_session
   PUBLIC
     rtype_client_connection
     rtype_client_connection_attempt
+    rtype_client_game_loaded_reminder
     rtype_client_handshake_answers
     rtype_client_session_departure
     rtype_client_session_inbound
@@ -16,6 +17,7 @@ target_link_libraries(rtype_client_server_session
     rtype_network_message_dispatcher
     rtype_network_transport
   PRIVATE
+    rtype_network_disconnection
     rtype_network_player_input
 )
 

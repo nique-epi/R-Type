@@ -4,6 +4,7 @@
 #include <optional>
 #include <span>
 #include <vector>
+#include "GameLoadedReminder.hpp"
 #include "ISessionObserver.hpp"
 #include "ISessionOutbox.hpp"
 #include "IWaitingRoom.hpp"
@@ -29,9 +30,14 @@ namespace rtype::client {
  */
 class WaitingRoom final : public IWaitingRoom, public ISessionObserver {
  public:
-  /** @param dispatcher Where the handlers of LobbyState and GameStarted are
-   * registered; it must outlive the room. */
-  explicit WaitingRoom(network::MessageDispatcher& dispatcher);
+  /**
+   * @param dispatcher Where the handlers of LobbyState and GameStarted are
+   * registered; it must outlive the room.
+   * @param reminder Told when the game starts and ends; it must outlive the
+   * room.
+   */
+  WaitingRoom(network::MessageDispatcher& dispatcher,
+              GameLoadedReminder& reminder);
 
   [[nodiscard]] std::span<const network::LobbyPlayer> lobbyPlayers()
       const override;
@@ -65,6 +71,7 @@ class WaitingRoom final : public IWaitingRoom, public ISessionObserver {
   void sendReadyState(bool ready);
 
   logging::Logger logger_;
+  GameLoadedReminder* reminder_;
   ISessionOutbox* outbox_{nullptr};
   std::vector<network::LobbyPlayer> players_;
   std::uint8_t ownPlayerNumber_{0};

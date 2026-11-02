@@ -4,7 +4,11 @@
 #include "ClientAssetsModule.hpp"
 #include "ClientAudioModule.hpp"
 #include "ClientConnectionModule.hpp"
+#include "ClientGameModule.hpp"
+#include "ClientLobbyModule.hpp"
 #include "ClientLoggerModule.hpp"
+#include "ClientMenusModule.hpp"
+#include "ClientScreenRegistryModule.hpp"
 #include "ClientScreensModule.hpp"
 #include "ClientSettingsModule.hpp"
 #include "ClientWindowModule.hpp"
@@ -27,6 +31,10 @@ std::vector<std::unique_ptr<engine::IModule>> clientModules(
   modules.push_back(std::make_unique<ClientConnectionModule>());
   modules.push_back(
       std::make_unique<ClientAudioModule>(launchOptions.audioMode()));
+  modules.push_back(std::make_unique<ClientScreenRegistryModule>());
+  modules.push_back(std::make_unique<ClientMenusModule>());
+  modules.push_back(std::make_unique<ClientLobbyModule>());
+  modules.push_back(std::make_unique<ClientGameModule>());
   modules.push_back(std::make_unique<ClientScreensModule>(
       launchOptions.serverEndpoint(), launchOptions.nickname()));
   return modules;

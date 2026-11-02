@@ -7,13 +7,16 @@
 #include "ActionSet.hpp"
 #include "AttemptProgress.hpp"
 #include "ConnectionConstants.hpp"
+#include "ConnectionPhase.hpp"
 #include "ConnectionRefused.hpp"
 #include "ConnectionStatus.hpp"
+#include "Disconnection.hpp"
 #include "Endpoint.hpp"
 #include "HandshakeAnswersParts.hpp"
 #include "ISessionOutbox.hpp"
 #include "IncomingDatagram.hpp"
 #include "Logger.hpp"
+#include "MessageOrigin.hpp"
 #include "PlayerInput.hpp"
 #include "ProtocolConstants.hpp"
 #include "Reception.hpp"
@@ -33,7 +36,7 @@ ConnectionStatus refusedForVersion(logging::Logger& logger,
               static_cast<unsigned int>(serverVersion), ", this client ",
               static_cast<unsigned int>(network::PROTOCOL_VERSION));
   return ConnectionStatus{
-      .phase = ConnectionStatus::Phase::Refused,
+      .phase = ConnectionPhase::Refused,
       .refusal = network::RefusalReason::IncompatibleVersion,
       .serverVersion = serverVersion};
 }
@@ -45,6 +48,7 @@ ServerSession::ServerSession(ServerSessionParts parts)
       inbound_(parts.link.get()),
       observers_(std::move(parts.observers)),
       dispatcher_(&parts.dispatcher.get()),
+      gameLoaded_(&parts.gameLoaded.get()),
       logger_(std::string{CONNECTION_LOGGER_NAME}),
       answers_(HandshakeAnswersParts{.dispatcher = parts.dispatcher,
                                      .status = status_,
@@ -52,7 +56,14 @@ ServerSession::ServerSession(ServerSessionParts parts)
                                      .outbox = outbox_,
                                      .inbound = inbound_,
                                      .observers = observers_,
-                                     .logger = logger_}) {}
+                                     .logger = logger_}) {
+  dispatcher_->registerHandler<network::Disconnection>(
+      [this](const network::MessageOrigin&, const network::Disconnection&) {
+        if (status_.phase == ConnectionPhase::Accepted) {
+          giveUp(ConnectionPhase::Closed);
+        }
+      });
+}
 
 void ServerSession::connect(const network::Endpoint& server,
                             std::string_view nickname) {
@@ -62,12 +73,12 @@ void ServerSession::connect(const network::Endpoint& server,
   attempt_.begin(nickname);
   nextInputNumber_ = network::FIRST_INPUT_NUMBER;
   attempt_.sendRequest(outbox_);
-  status_ = {.phase = ConnectionStatus::Phase::Connecting};
+  status_ = {.phase = ConnectionPhase::Connecting};
   logger_.info("connecting to ", server.address, " port ", server.port);
 }
 
 void ServerSession::cancel() {
-  if (status_.phase == ConnectionStatus::Phase::Accepted) {
+  if (status_.phase == ConnectionPhase::Accepted) {
     departure_.leave(outbox_);
   }
   status_ = {};
@@ -80,24 +91,25 @@ void ServerSession::update(engine::Duration elapsed) {
   inbound_.advance(elapsed);
   readReceived();
   departure_.update(elapsed);
-  if (status_.phase == ConnectionStatus::Phase::Accepted) {
+  if (status_.phase == ConnectionPhase::Accepted) {
     if (inbound_.isSilentTooLong()) {
-      giveUp(ConnectionStatus::Phase::Lost);
+      giveUp(ConnectionPhase::Lost);
       return;
     }
     outbox_.advance(elapsed);
     observers_.held(elapsed);
     outbox_.sendHeartbeatWhenSilent();
-  } else if (status_.phase == ConnectionStatus::Phase::Connecting &&
+  } else if (status_.phase == ConnectionPhase::Connecting &&
              attempt_.advance(elapsed, outbox_) == AttemptProgress::TimedOut) {
-    giveUp(ConnectionStatus::Phase::Unreachable);
+    giveUp(ConnectionPhase::Unreachable);
   }
 }
 
 void ServerSession::sendPlayerInput(ActionSet held) {
-  if (status_.phase != ConnectionStatus::Phase::Accepted) {
+  if (status_.phase != ConnectionPhase::Accepted) {
     return;
   }
+  gameLoaded_->sendWhenDue(outbox_);
   sendMessage(outbox_, network::PlayerInput{.inputNumber = nextInputNumber_,
                                             .actions = held.bits()});
   ++nextInputNumber_;
@@ -113,18 +125,23 @@ void ServerSession::readReceived() {
           {.sender = datagram.sender, .header = reception.header},
           reception.messages);
     } else if (reception.kind == ReceptionKind::AnotherVersion &&
-               status_.phase == ConnectionStatus::Phase::Connecting) {
+               status_.phase == ConnectionPhase::Connecting) {
       status_ = refusedForVersion(logger_, reception.header.version);
     }
   }
 }
 
-void ServerSession::giveUp(ConnectionStatus::Phase ending) {
-  const std::chrono::seconds silence = ending == ConnectionStatus::Phase::Lost
-                                           ? network::SESSION_SILENCE_LIMIT
-                                           : CONNECTION_ATTEMPT_TIMEOUT;
+void ServerSession::giveUp(ConnectionPhase ending) {
   status_ = {.phase = ending};
   forgetSession();
+  if (ending == ConnectionPhase::Closed) {
+    logger_.warn("closed by ", outbox_.server().address, " port ",
+                 outbox_.server().port);
+    return;
+  }
+  const std::chrono::seconds silence = ending == ConnectionPhase::Lost
+                                           ? network::SESSION_SILENCE_LIMIT
+                                           : CONNECTION_ATTEMPT_TIMEOUT;
   logger_.warn("no answer from ", outbox_.server().address, " port ",
                outbox_.server().port, " for ", silence.count(), " s");
 }

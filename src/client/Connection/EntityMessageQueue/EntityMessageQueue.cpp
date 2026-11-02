@@ -8,30 +8,45 @@
 #include "EntitySpawned.hpp"
 #include "GameEnded.hpp"
 #include "GameEvent.hpp"
+#include "GameLoadedReminder.hpp"
 #include "ISessionOutbox.hpp"
 #include "LobbyState.hpp"
 #include "MessageDispatcher.hpp"
 #include "MessageOrigin.hpp"
+#include "PlayerLeft.hpp"
 #include "TimeConstants.hpp"
 #include "WaitingRoom.hpp"
 #include "WorldState.hpp"
 
 namespace rtype::client {
 
+namespace {
+
+/** @brief Hands every message of these types that arrives to @p keep. */
+template <typename... Messages, typename Keep>
+void keepEachOf(network::MessageDispatcher& dispatcher, Keep keep) {
+  (dispatcher.registerHandler<Messages>(
+       [keep](const network::MessageOrigin&, const Messages& message) {
+         keep(message);
+       }),
+   ...);
+}
+
+}  // namespace
+
 EntityMessageQueue::EntityMessageQueue(network::MessageDispatcher& dispatcher,
-                                       WaitingRoom& room)
-    : room_(&room) {
+                                       WaitingRoom& room,
+                                       GameLoadedReminder& reminder)
+    : room_(&room), reminder_(&reminder) {
   dispatcher.registerHandler<network::WorldState>(
       [this](const network::MessageOrigin&, const network::WorldState& state) {
+        reminder_->worldStateArrived();
         room_->startGame();
         keep(state);
       });
-  dispatcher.registerHandler<network::EntitySpawned>(
-      [this](const network::MessageOrigin&,
-             const network::EntitySpawned& spawned) { keep(spawned); });
-  dispatcher.registerHandler<network::EntityDestroyed>(
-      [this](const network::MessageOrigin&,
-             const network::EntityDestroyed& destroyed) { keep(destroyed); });
+  keepEachOf<network::EntitySpawned, network::EntityDestroyed,
+             network::PlayerLeft>(
+      dispatcher, [this](EntityMessage message) { keep(std::move(message)); });
   dispatcher.registerHandler<network::GameEvent>(
       [this](const network::MessageOrigin&, const network::GameEvent& event) {
         if (gameEvents_.isFirstCopy(event.eventNumber)) {

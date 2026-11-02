@@ -7,6 +7,7 @@
 #include <vector>
 #include "ActionSet.hpp"
 #include "ComponentRegistry.hpp"
+#include "DepartureFeed.hpp"
 #include "EffectSpawner.hpp"
 #include "EntityMessage.hpp"
 #include "EntityRegistry.hpp"
@@ -28,6 +29,7 @@
 #include "PlayerPalette.hpp"
 #include "ScoreBoard.hpp"
 #include "ScreenConstants.hpp"
+#include "SilenceWarning.hpp"
 #include "SystemScheduler.hpp"
 #include "TimeConstants.hpp"
 
@@ -52,16 +54,29 @@ struct PlayerSettings;
  * never moves.
  *
  * Each update also moves the effects on (see EffectSpawner), then sets the
- * sky: the speed of its stars from the start of the game (see
- * warpSpeedFactorAt(), 1 when the player reduced flashes), and the shake of
- * the camera, which also shifts the entity layer, never the status band. The
- * sky is put back at its speed and place when the screen goes.
+ * sky. The time of the game, which the warp, the MISSION START banner and the
+ * end delay count, and the silence of the server start with the first
+ * WorldState or the end of the game, not with the screen: the server sends none
+ * while it waits for the other players to load, up to START_BARRIER_SECONDS, so
+ * until then the stars keep their own speed, no banner shows and no warning
+ * appears. The sky: the speed of its stars from the start of the game (see
+ * warpSpeedFactorAt(), 1 when the player reduced flashes), and the shake of the
+ * camera, which also shifts the entity layer, never the status band. The sky is
+ * put back at its speed and place when the screen goes.
  *
  * The status band of the players lies over the entities: it is painted when
  * the screen is built, from the waiting room the game started from, then
- * again whenever a world state changes a pilot (see ScoreBoard) or the
- * MISSION START banner changes (see missionBannerAt()), never at every frame
- * otherwise.
+ * again whenever a world state or a PlayerLeft changes a pilot (see
+ * ScoreBoard) or the MISSION START banner changes (see missionBannerAt()),
+ * never at every frame otherwise. A PlayerLeft marks its pilot as gone: LEFT,
+ * or SIGNAL LOST when the server timed it out.
+ *
+ * The feed of departures lies over the entities with the band: a line for
+ * each pilot the band shows gone (see DepartureFeed). From
+ * SILENCE_WARNING_DELAY without any message of the server, until the next
+ * one, WAITING FOR THE SERVER shows in the top-right corner (see
+ * SilenceWarning); never once the game ended. Both are painted with the band,
+ * only when they change.
  *
  * Releasing OPTIONS_KEY releases every action held, then puts the options over
  * the game, which goes on running behind them, dimmed. The release, not the
@@ -160,6 +175,11 @@ class GameScreen : public IScreen {
   ISky* sky_;
   MissionBannerLook paintedBanner_;
   std::optional<PlayerPalette> paintedPalette_;
+  DepartureFeed departures_;
+  SilenceWarning silence_;
+  std::uint32_t paintedDepartures_{};
+  bool paintedSilence_ = false;
+  bool worldSeen_ = false;
 };
 
 }  // namespace rtype::client

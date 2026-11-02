@@ -12,6 +12,7 @@
 #include <string>
 #include <utility>
 #include "BoundAction.hpp"
+#include "GameScreenIdConstants.hpp"
 #include "HangarBay.hpp"
 #include "HangarBayConstants.hpp"
 #include "HelpWalkthrough.hpp"
@@ -30,6 +31,7 @@
 #include "LobbyState.hpp"
 #include "Menu.hpp"
 #include "MenuBuilder.hpp"
+#include "MenuScreenIdConstants.hpp"
 #include "PilotColor.hpp"
 #include "PlayfieldMapping.hpp"
 #include "ScreenId.hpp"
@@ -202,7 +204,7 @@ void LobbyScreen::update(engine::Duration elapsed) {
   elapsed_ += elapsed;
   if (!gameAsked_ && waitingRoom_->gameStarted()) {
     gameAsked_ = true;
-    navigator_->replaceAll(ScreenId::Game);
+    navigator_->replaceAll(GAME_SCREEN);
   }
   repaint();
 }
@@ -228,7 +230,7 @@ void LobbyScreen::toggleReady() { waitingRoom_->setReady(!wantsReady()); }
 void LobbyScreen::leave() {
   connection_->cancel();
   if (place_ == LobbyPlace::AfterGame) {
-    navigator_->replaceAll(ScreenId::Title);
+    navigator_->replaceAll(TITLE_SCREEN);
     return;
   }
   navigator_->pop();

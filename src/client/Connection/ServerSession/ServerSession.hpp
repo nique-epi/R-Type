@@ -4,8 +4,10 @@
 #include <string_view>
 #include "ActionSet.hpp"
 #include "ConnectionAttempt.hpp"
+#include "ConnectionPhase.hpp"
 #include "ConnectionStatus.hpp"
 #include "Endpoint.hpp"
+#include "GameLoadedReminder.hpp"
 #include "HandshakeAnswers.hpp"
 #include "IPlayerInputLink.hpp"
 #include "IServerConnection.hpp"
@@ -56,6 +58,11 @@ namespace rtype::client {
  * the version the server wrote. Within a session, such a datagram is ignored,
  * so a forged one cannot end it.
  *
+ * A Disconnection of the server within the session, which it sends when it
+ * shuts down, closes it: the status becomes Closed, the session is forgotten,
+ * and nothing goes back. From the start of the game, the inputs are preceded by
+ * a GameLoaded until the first WorldState arrives (see GameLoadedReminder).
+ *
  * update() reads what arrived and sends what is due, once per frame;
  * sendPlayerInput() sends at once. Call them on the thread of the frame loop.
  */
@@ -99,11 +106,13 @@ class ServerSession final : public IServerConnection, public IPlayerInputLink {
    * hands the messages of those that pass the checks to the dispatcher. */
   void readReceived();
 
-  /** @brief Ends the attempt as Unreachable, or the session as Lost, as
+  /** @brief Ends the attempt as Unreachable, or the session as Lost or Closed,
+   * as
    * @p ending says; forgets the session, sends nothing, and logs that the
    * server did not answer for the delay that ran out: SESSION_SILENCE_LIMIT for
-   * Lost, CONNECTION_ATTEMPT_TIMEOUT for Unreachable. */
-  void giveUp(ConnectionStatus::Phase ending);
+   * Lost, CONNECTION_ATTEMPT_TIMEOUT for Unreachable, or that it closed the
+   * session, for Closed. */
+  void giveUp(ConnectionPhase ending);
 
   /** @brief Forgets the token, the sequences, and tells the observers the
    * session is closed. */
@@ -115,6 +124,7 @@ class ServerSession final : public IServerConnection, public IPlayerInputLink {
   ConnectionAttempt attempt_;
   SessionObservers observers_;
   network::MessageDispatcher* dispatcher_;
+  GameLoadedReminder* gameLoaded_;
   logging::Logger logger_;
   ConnectionStatus status_;
   HandshakeAnswers answers_;

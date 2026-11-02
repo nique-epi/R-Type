@@ -4,6 +4,7 @@
 #include <SFML/System/Vector2.hpp>
 #include <array>
 #include <cstdint>
+#include "CallArea.hpp"
 #include "DustGrain.hpp"
 #include "FlightLogSheetConstants.hpp"
 #include "FlightLogTextConstants.hpp"
@@ -142,20 +143,16 @@ constexpr float GRAIN_THIN_SHARE = 0.8F;
 constexpr sf::Vector2i SHAKE_OFFSET(2, 1);
 constexpr std::int64_t SHAKE_SIDES = 2;
 
-/** @brief The call to play again, centered on PROMPT_TOP, with a glow of
- * PROMPT_GLOW pixels; the pointer presses it over PROMPT_AREA. QUIT is a
- * small button under the bottom-right corner of the open book. */
+/** @brief The call to play again, centered on PROMPT_TOP; the pointer presses
+ * it over PROMPT_AREA, CALL_HIT_MARGIN around its letters. QUIT is a small
+ * button under the bottom-right corner of the open book. */
 constexpr int PROMPT_TOP = 244;
 constexpr int PROMPT_WIDTH =
     static_cast<int>(PROMPT_TEXT.size()) * REGULAR_FONT_ADVANCE;
 constexpr int PROMPT_LEFT =
     (INTERFACE_AREA.size.x - PROMPT_WIDTH) / SIDES_PER_AXIS;
-constexpr sf::Vector2i PROMPT_HIT_MARGIN(6, 4);
-constexpr sf::IntRect PROMPT_AREA(
-    {PROMPT_LEFT - PROMPT_HIT_MARGIN.x, PROMPT_TOP - PROMPT_HIT_MARGIN.y},
-    {PROMPT_WIDTH + (SIDES_PER_AXIS * PROMPT_HIT_MARGIN.x),
-     TEXT_LINE_HEIGHT + (SIDES_PER_AXIS * PROMPT_HIT_MARGIN.y)});
-constexpr int PROMPT_GLOW = 2;
+constexpr sf::IntRect PROMPT_AREA =
+    callArea({PROMPT_LEFT, PROMPT_TOP}, PROMPT_WIDTH);
 constexpr sf::Vector2i QUIT_SIZE(54, 14);
 constexpr sf::IntRect QUIT_BUTTON({OPEN_HINGE + BOOK_HALF_SIZE.x - QUIT_SIZE.x,
                                    224},

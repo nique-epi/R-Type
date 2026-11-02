@@ -1,8 +1,8 @@
 #include "HandshakeAnswers.hpp"
 #include "ConnectionAccepted.hpp"
 #include "ConnectionChallenge.hpp"
+#include "ConnectionPhase.hpp"
 #include "ConnectionRefused.hpp"
-#include "ConnectionStatus.hpp"
 #include "HandshakeAnswersParts.hpp"
 #include "Heartbeat.hpp"
 #include "LobbyState.hpp"
@@ -34,7 +34,7 @@ HandshakeAnswers::HandshakeAnswers(HandshakeAnswersParts parts)
 }
 
 bool HandshakeAnswers::isConnecting() const {
-  return parts_.status.get().phase == ConnectionStatus::Phase::Connecting;
+  return parts_.status.get().phase == ConnectionPhase::Connecting;
 }
 
 void HandshakeAnswers::onChallenge(
@@ -49,7 +49,7 @@ void HandshakeAnswers::onAccepted(const network::MessageOrigin& origin,
   if (!isConnecting()) {
     return;
   }
-  parts_.status.get() = {.phase = ConnectionStatus::Phase::Accepted,
+  parts_.status.get() = {.phase = ConnectionPhase::Accepted,
                          .playerNumber = accepted.playerNumber};
   parts_.outbox.get().openSession(origin.header.sessionToken);
   parts_.inbound.get().open(origin.header);
@@ -67,7 +67,7 @@ void HandshakeAnswers::onRefused(const network::MessageOrigin& origin,
   if (!isConnecting()) {
     return;
   }
-  parts_.status.get() = {.phase = ConnectionStatus::Phase::Refused,
+  parts_.status.get() = {.phase = ConnectionPhase::Refused,
                          .refusal = refused.reason,
                          .serverVersion = origin.header.version};
   parts_.logger.get().info("refused, reason ",

@@ -7,20 +7,22 @@
 #include <string_view>
 #include <tuple>
 #include <vector>
+#include "ConnectionPhase.hpp"
 #include "ConnectionRefusalFixture.hpp"
 #include "ConnectionRefused.hpp"
 #include "ConnectionScreen.hpp"
+#include "ConnectionScreenChoiceFixture.hpp"
 #include "ConnectionScreenConstants.hpp"
 #include "ConnectionScreenFixture.hpp"
 #include "ConnectionScreenFixtures.hpp"
 #include "ConnectionScreenTestConstants.hpp"
 #include "ConnectionStatus.hpp"
 #include "Endpoint.hpp"
+#include "LobbyScreenIdConstants.hpp"
 #include "RecordingInterfaceCanvas.hpp"
 #include "RecordingNavigator.hpp"
 #include "RecordingServerConnection.hpp"
 #include "RecordingSoundPlayer.hpp"
-#include "ScreenId.hpp"
 #include "ScreenTestConstants.hpp"
 #include "ServerSessionTestConstants.hpp"
 #include "SoundConstants.hpp"
@@ -28,14 +30,14 @@
 using rtype::client::ACCEPTED_STATUS_DURATION;
 using rtype::client::CLICK_SOUND_ID;
 using rtype::client::CONNECTING_STATUS;
-using rtype::client::ConnectionStatus;
+using rtype::client::ConnectionPhase;
 using rtype::client::GAME_FULL_STATUS;
 using rtype::client::GAME_IN_PROGRESS_STATUS;
 using rtype::client::INVALID_ADDRESS_STATUS;
 using rtype::client::INVALID_PORT_STATUS;
+using rtype::client::LOBBY_SCREEN;
 using rtype::client::MISSING_NICKNAME_STATUS;
 using rtype::client::NICKNAME_TAKEN_STATUS;
-using rtype::client::ScreenId;
 using rtype::client::UNREACHABLE_STATUS;
 using rtype::client::testing::ACCEPTED_AS_FIRST_PLAYER;
 using rtype::client::testing::CANCEL;
@@ -45,8 +47,11 @@ using rtype::client::testing::LAUNCH_NICKNAME;
 using rtype::client::testing::LAUNCH_PORT;
 using rtype::client::testing::LAUNCH_PORT_TEXT;
 using rtype::client::testing::NEXT_PROTOCOL_VERSION;
+using rtype::client::testing::NO_NICKNAME_TEXT;
 using rtype::client::testing::PORT_ZERO_TEXT;
 using rtype::client::testing::THIRD_PLAYER;
+using rtype::client::testing::TYPED_NICKNAME;
+using rtype::client::testing::TYPED_NICKNAME_TEXT;
 using rtype::client::testing::TYPED_PORT;
 using rtype::client::testing::TYPED_PORT_TEXT;
 using rtype::network::RefusalReason;
@@ -187,7 +192,7 @@ TEST_F(ConnectionScreenFixture, AFixedFieldIsNoLongerNamed) {
  * Then the status line says the client is connecting
  */
 TEST_F(ConnectionScreenFixture, ConnectingIsShown) {
-  show({.phase = ConnectionStatus::Phase::Connecting});
+  show({.phase = ConnectionPhase::Connecting});
 
   EXPECT_NE(writingOf(canvas(), CONNECTING_STATUS), nullptr);
 }
@@ -198,8 +203,7 @@ TEST_F(ConnectionScreenFixture, ConnectingIsShown) {
  * Then the status line gives that number
  */
 TEST_F(ConnectionScreenFixture, AnAcceptedPlayerSeesItsNumber) {
-  show({.phase = ConnectionStatus::Phase::Accepted,
-        .playerNumber = THIRD_PLAYER});
+  show({.phase = ConnectionPhase::Accepted, .playerNumber = THIRD_PLAYER});
 
   EXPECT_NE(writingOf(canvas(), "CONNECTED AS PLAYER 3"), nullptr);
 }
@@ -210,7 +214,7 @@ TEST_F(ConnectionScreenFixture, AnAcceptedPlayerSeesItsNumber) {
  * Then the status line says the server cannot be reached
  */
 TEST_F(ConnectionScreenFixture, AnUnreachableServerIsShown) {
-  show({.phase = ConnectionStatus::Phase::Unreachable});
+  show({.phase = ConnectionPhase::Unreachable});
 
   EXPECT_NE(writingOf(canvas(), UNREACHABLE_STATUS), nullptr);
 }
@@ -221,12 +225,29 @@ TEST_F(ConnectionScreenFixture, AnUnreachableServerIsShown) {
  * Then nothing is written where the status line goes
  */
 TEST_F(ConnectionScreenFixture, ALostSessionShowsNoStatusLine) {
-  show({.phase = ConnectionStatus::Phase::Unreachable});
+  show({.phase = ConnectionPhase::Unreachable});
   const RecordedWriting* unreachable = writingOf(canvas(), UNREACHABLE_STATUS);
   ASSERT_NE(unreachable, nullptr);
   const sf::Vector2i statusAnchor = unreachable->anchor;
 
-  show({.phase = ConnectionStatus::Phase::Lost});
+  show({.phase = ConnectionPhase::Lost});
+
+  EXPECT_THAT(canvas().writings,
+              Not(Contains(Field(&RecordedWriting::anchor, statusAnchor))));
+}
+
+/**
+ * Given a screen whose status line said the server cannot be reached
+ * When the connection reports a session the server closed
+ * Then nothing is written where the status line goes
+ */
+TEST_F(ConnectionScreenFixture, AClosedSessionShowsNoStatusLine) {
+  show({.phase = ConnectionPhase::Unreachable});
+  const RecordedWriting* unreachable = writingOf(canvas(), UNREACHABLE_STATUS);
+  ASSERT_NE(unreachable, nullptr);
+  const sf::Vector2i statusAnchor = unreachable->anchor;
+
+  show({.phase = ConnectionPhase::Closed});
 
   EXPECT_THAT(canvas().writings,
               Not(Contains(Field(&RecordedWriting::anchor, statusAnchor))));
@@ -257,7 +278,7 @@ TEST_F(ConnectionScreenFixture, TheWaitingRoomOpensOnceTheAcceptanceShowed) {
 
   EXPECT_THAT(navigator().calls(),
               ElementsAre(NavigatorCall{.request = NavigatorRequest::Push,
-                                        .screen = ScreenId::Lobby}));
+                                        .screen = LOBBY_SCREEN}));
 }
 
 /**
@@ -290,7 +311,7 @@ TEST_F(ConnectionScreenFixture, AnotherAttemptOpensTheWaitingRoomAgain) {
   screen().update(ACCEPTED_STATUS_DURATION);
 
   const NavigatorCall openLobby{.request = NavigatorRequest::Push,
-                                .screen = ScreenId::Lobby};
+                                .screen = LOBBY_SCREEN};
   EXPECT_THAT(navigator().calls(), ElementsAre(openLobby, openLobby));
 }
 
@@ -326,7 +347,7 @@ TEST_F(ConnectionScreenFixture, EscapeClosesTheScreen) {
 TEST_P(ConnectionRefusalFixture, ARefusalShowsItsReason) {
   const auto [reason, line] = GetParam();
 
-  show({.phase = ConnectionStatus::Phase::Refused, .refusal = reason});
+  show({.phase = ConnectionPhase::Refused, .refusal = reason});
 
   EXPECT_NE(writingOf(canvas(), line), nullptr);
 }
@@ -358,9 +379,44 @@ INSTANTIATE_TEST_SUITE_P(
  * Then the status line names both versions, the client's first
  */
 TEST_F(ConnectionScreenFixture, AVersionRefusalNamesBothVersions) {
-  show({.phase = ConnectionStatus::Phase::Refused,
+  show({.phase = ConnectionPhase::Refused,
         .refusal = RefusalReason::IncompatibleVersion,
         .serverVersion = NEXT_PROTOCOL_VERSION});
 
   EXPECT_NE(writingOf(canvas(), "REFUSED: YOU V1, SERVER V2"), nullptr);
+}
+
+/**
+ * Given a connection screen whose player connected as NOVA
+ * When a new connection screen opens and the player chooses Enter at once
+ * Then the attempt goes out as NOVA, to the server of the launch values
+ */
+TEST_F(ConnectionScreenChoiceFixture, ANewScreenStartsWithTheLastAttempt) {
+  connectAs(TYPED_NICKNAME_TEXT);
+
+  reopen();
+  chooseEnter();
+
+  EXPECT_EQ(
+      connectAttemptsOf(connection()).back(),
+      (ServerConnectionCall{.request = ServerConnectionCall::Request::Connect,
+                            .server = {.address = std::string(LAUNCH_ADDRESS),
+                                       .port = LAUNCH_PORT},
+                            .nickname = std::string(TYPED_NICKNAME)}));
+}
+
+/**
+ * Given a connection screen whose nickname field was emptied, then Enter
+ * chosen, which the empty nickname refuses
+ * When a new connection screen opens and Enter is chosen
+ * Then the attempt goes out with the launch nickname: a refused attempt
+ * leaves the choice
+ */
+TEST_F(ConnectionScreenChoiceFixture, AnAttemptTheFieldsRefuseKeepsTheChoice) {
+  connectAs(NO_NICKNAME_TEXT);
+
+  reopen();
+  chooseEnter();
+
+  EXPECT_EQ(connectAttemptsOf(connection()).back().nickname, LAUNCH_NICKNAME);
 }

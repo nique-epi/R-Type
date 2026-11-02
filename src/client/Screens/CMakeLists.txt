@@ -6,16 +6,24 @@ target_link_libraries(rtype_client_screen_interfaces
   INTERFACE
     rtype_client_audio_interfaces
     rtype_engine_time
+    rtype_network_transport
 )
 
 add_subdirectory(ScreenAssets)
+add_subdirectory(HeldKey)
 add_subdirectory(PlayerPreferences)
 add_subdirectory(ConnectionScreen)
 add_subdirectory(GameScreen)
 add_subdirectory(IntroScreen)
 add_subdirectory(LoadingScreen)
 add_subdirectory(LobbyScreen)
+add_subdirectory(OptionsRows)
+add_subdirectory(OptionsDescriptions)
+add_subdirectory(OptionsTabs)
+add_subdirectory(SavedStamp)
+add_subdirectory(ResetDialog)
 add_subdirectory(OptionsScreen)
 add_subdirectory(TitleScreen)
-add_subdirectory(QuitConfirmationScreen)
+add_subdirectory(DialogScreen)
+add_subdirectory(DialogMenus)
 add_subdirectory(EndScreen)

@@ -6,12 +6,13 @@
 #include <cstdint>
 #include <optional>
 #include <vector>
+#include "ConnectionPhase.hpp"
 #include "ConnectionRequest.hpp"
-#include "ConnectionStatus.hpp"
 #include "DatagramCodec.hpp"
 #include "Endpoint.hpp"
 #include "EntityMessage.hpp"
 #include "EntityMessageQueue.hpp"
+#include "GameLoadedReminder.hpp"
 #include "IncomingDatagram.hpp"
 #include "MessageDispatcher.hpp"
 #include "OutgoingDatagram.hpp"
@@ -53,7 +54,7 @@ class ServerSessionFixture : public ::testing::Test {
    * carrying SESSION_TOKEN. */
   void connectAndGetAccepted();
 
-  [[nodiscard]] ConnectionStatus::Phase phase() const;
+  [[nodiscard]] ConnectionPhase phase() const;
 
   [[nodiscard]] ServerSession& session();
 
@@ -104,12 +105,14 @@ class ServerSessionFixture : public ::testing::Test {
  private:
   RecordingDatagramLink link_;
   network::MessageDispatcher dispatcher_;
-  WaitingRoom waitingRoom_{dispatcher_};
-  EntityMessageQueue entityMessages_{dispatcher_, waitingRoom_};
-  ServerSession session_{
-      ServerSessionParts{.link = link_,
-                         .dispatcher = dispatcher_,
-                         .observers = {waitingRoom_, entityMessages_}}};
+  GameLoadedReminder gameLoaded_;
+  WaitingRoom waitingRoom_{dispatcher_, gameLoaded_};
+  EntityMessageQueue entityMessages_{dispatcher_, waitingRoom_, gameLoaded_};
+  ServerSession session_{ServerSessionParts{
+      .link = link_,
+      .dispatcher = dispatcher_,
+      .gameLoaded = gameLoaded_,
+      .observers = {waitingRoom_, entityMessages_, gameLoaded_}}};
 };
 
 }  // namespace rtype::client::testing

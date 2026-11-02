@@ -3,14 +3,16 @@
 #include <SFML/Audio/Music.hpp>
 #include <optional>
 #include "IMusicPlayer.hpp"
+#include "ISettingsListener.hpp"
 #include "Logger.hpp"
 #include "MusicTrack.hpp"
+#include "SettingId.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::client {
 
 class AssetLibrary;
-struct PlayerSettings;
+class SettingsService;
 
 /**
  * @brief A music of the client, THEME_TRACK or GAME_TRACK: its file, read
@@ -24,13 +26,14 @@ struct PlayerSettings;
  * start() never restarts a music that plays, so the title screen and the
  * options leave it where it is.
  */
-class MusicPlayer : public IMusicPlayer {
+class MusicPlayer : public IMusicPlayer, public ISettingsListener {
  public:
   /**
-   * @param settings The volumes of the player; they must outlive the player.
+   * @param settings Holds the volumes of the player; it must outlive the
+   * player, and tell it through subscribe().
    * @param track The music to play and the part of it that loops.
    */
-  MusicPlayer(const PlayerSettings& settings, MusicTrack track);
+  MusicPlayer(const SettingsService& settings, MusicTrack track);
 
   /** @brief Opens the music file that @p library locates, for start() to
    * play; writes why not when the file is missing or cannot be read. */
@@ -43,14 +46,16 @@ class MusicPlayer : public IMusicPlayer {
 
   void stop() override;
 
-  /** @brief Sets the volume the settings ask for: called each frame, so the
-   * options change it at once. */
-  void update();
+  /** @brief Sets the volume the settings now hold when @p changed moves it, so
+   * the options change the music at once; ignores the other settings. */
+  void settingChanged(SettingId changed) override;
 
   [[nodiscard]] std::optional<engine::Duration> playingOffset() const override;
 
  private:
-  const PlayerSettings* settings_;
+  void applyVolume();
+
+  const SettingsService* settings_;
   MusicTrack track_;
   logging::Logger logger_;
   sf::Music music_;

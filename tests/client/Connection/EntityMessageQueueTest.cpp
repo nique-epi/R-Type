@@ -2,7 +2,6 @@
 #include <gtest/gtest.h>
 #include <cstddef>
 #include <vector>
-#include "ConnectionStatus.hpp"
 #include "EntityAnnouncements.hpp"
 #include "EntityDestroyed.hpp"
 #include "EntityMessage.hpp"
@@ -11,8 +10,10 @@
 #include "EntitySpawned.hpp"
 #include "GameEvent.hpp"
 #include "GameStarted.hpp"
+#include "PlayerLeft.hpp"
 #include "ServerSessionFixtures.hpp"
 #include "ServerSessionTestConstants.hpp"
+#include "TimeConstants.hpp"
 #include "WorldState.hpp"
 #include "WorldStateFilterTestConstants.hpp"
 
@@ -30,6 +31,8 @@ using testing::FOURTH_SEQUENCE;
 using ::testing::IsEmpty;
 using testing::killed;
 using testing::listed;
+using testing::OTHER_PLAYER_NUMBER;
+using testing::PROTOCOL_SILENCE_LIMIT;
 using testing::SECOND_POSITION;
 using testing::SECOND_SEQUENCE;
 using testing::SHIP_ID;
@@ -37,8 +40,6 @@ using ::testing::SizeIs;
 using testing::spawned;
 using testing::stateListing;
 using testing::THIRD_SEQUENCE;
-
-using Phase = ConnectionStatus::Phase;
 
 /**
  * Given a game started in the session
@@ -192,6 +193,28 @@ TEST_F(EntityMessageQueueFixture, ANewSessionForgetsTheEventsSeen) {
 }
 
 /**
+ * Given a game lost to the silence of its server
+ * When the server comes back from a stall and a WorldState of the lost session
+ * arrives
+ * Then the connection hands nothing over: the client left that game
+ */
+TEST_F(EntityMessageQueueFixture, KeepsNothingFromAServerThatComesBack) {
+  accept();
+  deliverInSession(network::GameStarted{}, FIRST_SEQUENCE);
+  update();
+  update(PROTOCOL_SILENCE_LIMIT);
+
+  deliverWorldStateInSession(
+      stateListing(APPLIED_TICK,
+                   {listed(SHIP_ID, network::WireEntityType::PlayerShip,
+                           FIRST_POSITION)}),
+      SECOND_SEQUENCE);
+  update();
+
+  EXPECT_THAT(drainedEntityMessages(), IsEmpty());
+}
+
+/**
  * Given a game in progress
  * When the server ends it, then repeats the end
  * Then the game gets the end once
@@ -206,6 +229,26 @@ TEST_F(EntityMessageQueueFixture, HandsOverTheEndOfTheGameOnce) {
 
   EXPECT_THAT(drainedEntityMessages(),
               ElementsAre(EntityMessage{endOfOnePilot()}));
+}
+
+/**
+ * Given a game started
+ * When the server says twice that a player left
+ * Then the game screen gets both copies, in order
+ */
+TEST_F(EntityMessageQueueFixture, HandsOverEveryCopyOfAPlayerLeft) {
+  accept();
+  deliverInSession(network::GameStarted{}, FIRST_SEQUENCE);
+  const network::PlayerLeft departure{
+      .playerNumber = OTHER_PLAYER_NUMBER,
+      .reason = network::DepartureReason::TimedOut};
+  deliverInSession(departure, SECOND_SEQUENCE);
+  deliverInSession(departure, THIRD_SEQUENCE);
+
+  update();
+
+  EXPECT_THAT(drainedEntityMessages(),
+              ElementsAre(EntityMessage{departure}, EntityMessage{departure}));
 }
 
 }  // namespace rtype::client
