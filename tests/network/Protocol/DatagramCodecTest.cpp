@@ -10,6 +10,8 @@
 #include <vector>
 #include "ByteSequence.hpp"
 #include "DatagramCodec.hpp"
+#include "DatagramCodecFixture.hpp"
+#include "DatagramCodecFixtures.hpp"
 #include "EncodedMessage.hpp"
 #include "MessageFrame.hpp"
 #include "MessageType.hpp"
@@ -20,15 +22,17 @@
 #include "ProtocolTestConstants.hpp"
 
 namespace rtype::network {
-namespace {
 
 using testing::byteSequence;
+using testing::DatagramCodecFixture;
 using testing::datagramOf;
 using testing::defaultHeaderBytes;
 using testing::EMPTY_MESSAGE_DATAGRAM_SIZE;
 using testing::ENCODED_FILLING_MESSAGE_SIZE;
 using testing::FILLING_PAYLOAD_SIZE;
 using testing::LARGEST_DATAGRAM_SIZE;
+using testing::malformedDatagrams;
+using testing::nameOfFault;
 using testing::OVERFILLING_PAYLOAD_SIZE;
 using testing::SOME_ACKNOWLEDGED_SEQUENCE;
 using testing::SOME_ACKNOWLEDGEMENT_BITS;
@@ -37,25 +41,6 @@ using testing::SOME_OTHER_PROTOCOL_ID;
 using testing::SOME_OTHER_VERSION;
 using testing::someSessionHeader;
 using testing::VERSION_OFFSET;
-
-template <typename Buffer>
-concept SplittableAs = requires(Buffer&& buffer) {
-  DatagramCodec::splitMessages(std::forward<Buffer>(buffer));
-};
-
-static_assert(SplittableAs<std::vector<std::byte>&>,
-              "a datagram kept by the caller can be split");
-static_assert(SplittableAs<const std::vector<std::byte>&>,
-              "a constant datagram kept by the caller can be split");
-static_assert(SplittableAs<std::span<const std::byte>>,
-              "a view of a datagram kept by the caller can be split");
-static_assert(!SplittableAs<std::vector<std::byte>>,
-              "a temporary datagram cannot be split: its payloads would "
-              "point into a destroyed buffer");
-static_assert(!SplittableAs<const std::vector<std::byte>>,
-              "a constant temporary datagram cannot be split either");
-static_assert(!SplittableAs<std::array<std::byte, EMPTY_MESSAGE_DATAGRAM_SIZE>>,
-              "a temporary array cannot be split either");
 
 /**
  * Given a default header
@@ -536,52 +521,20 @@ TEST(DatagramCodec, CountsThePrefixAndThePayloadOfAMessage) {
             ENCODED_FILLING_MESSAGE_SIZE);
 }
 
-/** @brief Bytes splitMessages() refuses, named after their fault. */
-struct MalformedDatagram {
-  const char* fault;
-  std::vector<std::byte> bytes;
-};
-
-std::vector<std::byte> headerOneByteShort() {
-  auto bytes = defaultHeaderBytes();
-  bytes.pop_back();
-  return bytes;
-}
-
-class DatagramCodecMalformedDatagram
-    : public ::testing::TestWithParam<MalformedDatagram> {};
-
 /**
  * Given bytes splitMessages() refuses
  * When their message types are read
  * Then there are none, and nothing is thrown
  */
-TEST_P(DatagramCodecMalformedDatagram, HasNoMessageTypes) {
+TEST_P(DatagramCodecFixture, HasNoMessageTypes) {
   ASSERT_THROW((void)DatagramCodec::splitMessages(GetParam().bytes),
                MalformedDatagramException);
 
   EXPECT_EQ(DatagramCodec::messageTypes(GetParam().bytes), std::nullopt);
 }
 
-INSTANTIATE_TEST_SUITE_P(
-    EveryFaultOfSplitMessages, DatagramCodecMalformedDatagram,
-    ::testing::Values(
-        MalformedDatagram{.fault = "HeaderOneByteShort",
-                          .bytes = headerOneByteShort()},
-        MalformedDatagram{.fault = "HeaderAlone",
-                          .bytes = defaultHeaderBytes()},
-        MalformedDatagram{.fault = "PrefixCutShort",
-                          .bytes = datagramOf({0x05, 0x00})},
-        MalformedDatagram{.fault = "SizePastTheEnd",
-                          .bytes = datagramOf({0x06, 0x00, 0x02, 0x01})},
-        MalformedDatagram{.fault = "BytesAfterTheLastMessage",
-                          .bytes = datagramOf({0x06, 0x00, 0x01, 0x01, 0x00})},
-        MalformedDatagram{
-            .fault = "SecondMessageCutShort",
-            .bytes = datagramOf({0x06, 0x00, 0x01, 0x01, 0x06, 0x00, 0x01})}),
-    [](const ::testing::TestParamInfo<MalformedDatagram>& info) {
-      return std::string{info.param.fault};
-    });
+INSTANTIATE_TEST_SUITE_P(EveryFaultOfSplitMessages, DatagramCodecFixture,
+                         ::testing::ValuesIn(malformedDatagrams()),
+                         nameOfFault);
 
-}  // namespace
 }  // namespace rtype::network
