@@ -41,6 +41,7 @@ constexpr game::Position ENEMY_MISSILE_POSITION{.x = 13.0F, .y = 23.0F};
 constexpr std::uint32_t FIRST_SHIP_ID = 11;
 constexpr std::uint32_t SECOND_SHIP_ID = 12;
 constexpr std::uint32_t FIRST_SCORE = 300;
+constexpr std::uint32_t NEWEST_INPUT_NUMBER = 7;
 constexpr std::uint32_t SECOND_SCORE = 100;
 
 /**
