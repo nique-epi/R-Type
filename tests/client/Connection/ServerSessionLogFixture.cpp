@@ -1,9 +1,9 @@
-#include "ServerConnectionLogFixture.hpp"
+#include "ServerSessionLogFixture.hpp"
 #include "DebugJournal.hpp"
 
 namespace rtype::client::testing {
 
-const DebugJournal& ServerConnectionLogFixture::journal() const {
+const DebugJournal& ServerSessionLogFixture::journal() const {
   return journal_;
 }
 

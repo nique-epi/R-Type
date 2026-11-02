@@ -1,7 +1,6 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include <cstddef>
-#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
@@ -16,11 +15,7 @@
 #include "DebugJournal.hpp"
 #include "Disconnection.hpp"
 #include "EntityAnnouncements.hpp"
-#include "EntityDestroyed.hpp"
-#include "EntityMessage.hpp"
 #include "EntityReplicatorTestConstants.hpp"
-#include "EntitySpawned.hpp"
-#include "GameEvent.hpp"
 #include "GameLoaded.hpp"
 #include "GameStarted.hpp"
 #include "Heartbeat.hpp"
@@ -28,13 +23,10 @@
 #include "NetworkTestConstants.hpp"
 #include "PacketHeader.hpp"
 #include "PlayerInput.hpp"
-#include "PlayerLeft.hpp"
-#include "ReadyState.hpp"
-#include "ServerConnection.hpp"
-#include "ServerConnectionFixture.hpp"
-#include "ServerConnectionFixtures.hpp"
-#include "ServerConnectionLogFixture.hpp"
-#include "ServerConnectionTestConstants.hpp"
+#include "ServerSessionFixture.hpp"
+#include "ServerSessionFixtures.hpp"
+#include "ServerSessionLogFixture.hpp"
+#include "ServerSessionTestConstants.hpp"
 #include "TimeConstants.hpp"
 #include "TimeTestConstants.hpp"
 #include "WorldState.hpp"
@@ -46,26 +38,14 @@ using testing::ACCEPTANCE_SEQUENCE;
 using testing::ACCEPTED_PLAYER_NUMBER;
 using testing::APPLIED_TICK;
 using testing::CHALLENGE_COOKIE;
-using testing::damaged;
-using ::testing::ElementsAre;
-using ::testing::ElementsAreArray;
-using testing::endOfOnePilot;
-using testing::EVENT_NUMBER;
 using testing::FIRST_POSITION;
 using testing::FIRST_SEQUENCE;
-using testing::FOURTH_SEQUENCE;
 using testing::holds;
-using ::testing::IsEmpty;
-using testing::killed;
 using testing::listed;
 using testing::LOST_SERVER_LINE_TEXT;
 using testing::NEXT_PROTOCOL_VERSION;
 using testing::NICKNAME;
-using testing::onlyMessageOf;
-using testing::OTHER_NICKNAME;
-using testing::OTHER_PLAYER_NUMBER;
 using testing::OTHER_SESSION_TOKEN;
-using testing::otherSender;
 using testing::PROTOCOL_ATTEMPT_TIMEOUT;
 using testing::PROTOCOL_DISCONNECTION_COPY_COUNT;
 using testing::PROTOCOL_DISCONNECTION_COPY_INTERVAL;
@@ -77,18 +57,15 @@ using testing::PROTOCOL_REQUEST_INTERVAL;
 using testing::PROTOCOL_SESSION_TIMEOUT;
 using testing::PROTOCOL_SILENCE_LIMIT;
 using testing::PROTOCOL_UP_ACTION_BIT;
-using testing::SECOND_POSITION;
 using testing::SECOND_SEQUENCE;
 using testing::server;
 using testing::SERVER_VERSION;
-using testing::ServerConnectionFixture;
-using testing::ServerConnectionLogFixture;
+using testing::ServerSessionFixture;
+using testing::ServerSessionLogFixture;
 using testing::SESSION_TOKEN;
 using testing::SHIP_ID;
 using ::testing::SizeIs;
-using testing::spawned;
 using testing::stateListing;
-using testing::THIRD_SEQUENCE;
 using testing::upHeld;
 
 /**
@@ -96,9 +73,20 @@ using testing::upHeld;
  * When the connection's request interval and timeout are read
  * Then they are 500 ms and 5 s
  */
-TEST(ServerConnectionDelays, AreThoseOfTheProtocolPage) {
+TEST(ServerSessionDelays, AreThoseOfTheProtocolPage) {
   EXPECT_EQ(CONNECTION_REQUEST_INTERVAL, PROTOCOL_REQUEST_INTERVAL);
   EXPECT_EQ(CONNECTION_ATTEMPT_TIMEOUT, PROTOCOL_ATTEMPT_TIMEOUT);
+}
+
+/**
+ * Given a session with no attempt
+ * When it connects to a server
+ * Then its link listens to that server's datagrams and no other's
+ */
+TEST_F(ServerSessionFixture, ListensToTheServerItConnectsTo) {
+  connect();
+
+  EXPECT_EQ(listenedTo(), server());
 }
 
 /**
@@ -106,7 +94,7 @@ TEST(ServerConnectionDelays, AreThoseOfTheProtocolPage) {
  * When its status is read
  * Then there is no attempt
  */
-TEST_F(ServerConnectionFixture, StartsWithNoAttempt) {
+TEST_F(ServerSessionFixture, StartsWithNoAttempt) {
   EXPECT_EQ(phase(), ConnectionPhase::Idle);
 }
 
@@ -116,7 +104,7 @@ TEST_F(ServerConnectionFixture, StartsWithNoAttempt) {
  * Then a request without a cookie, carrying the nickname, goes to that server
  * at once
  */
-TEST_F(ServerConnectionFixture, SendsARequestWithoutCookieAtOnce) {
+TEST_F(ServerSessionFixture, SendsARequestWithoutCookieAtOnce) {
   connect();
 
   ASSERT_EQ(sent().size(), 1);
@@ -132,7 +120,7 @@ TEST_F(ServerConnectionFixture, SendsARequestWithoutCookieAtOnce) {
  * When one request interval minus one nanosecond passes without an answer
  * Then the request is not sent again yet
  */
-TEST_F(ServerConnectionFixture, WaitsOneIntervalBeforeSendingAgain) {
+TEST_F(ServerSessionFixture, WaitsOneIntervalBeforeSendingAgain) {
   connect();
 
   update(CONNECTION_REQUEST_INTERVAL - ONE_NANOSECOND);
@@ -145,7 +133,7 @@ TEST_F(ServerConnectionFixture, WaitsOneIntervalBeforeSendingAgain) {
  * When one request interval passes without an answer
  * Then the request is sent again, since UDP may have lost it
  */
-TEST_F(ServerConnectionFixture, SendsTheRequestAgainAfterOneInterval) {
+TEST_F(ServerSessionFixture, SendsTheRequestAgainAfterOneInterval) {
   connect();
 
   update(CONNECTION_REQUEST_INTERVAL);
@@ -158,7 +146,7 @@ TEST_F(ServerConnectionFixture, SendsTheRequestAgainAfterOneInterval) {
  * When the headers of the two requests are read
  * Then they carry the sequences 0 and 1
  */
-TEST_F(ServerConnectionFixture, NumbersEachRequestWithTheNextSequence) {
+TEST_F(ServerSessionFixture, NumbersEachRequestWithTheNextSequence) {
   connect();
   update(CONNECTION_REQUEST_INTERVAL);
 
@@ -174,7 +162,7 @@ TEST_F(ServerConnectionFixture, NumbersEachRequestWithTheNextSequence) {
  * When the server answers with a challenge
  * Then the request goes again at once, carrying the cookie of the challenge
  */
-TEST_F(ServerConnectionFixture, AnswersAChallengeAtOnceWithItsCookie) {
+TEST_F(ServerSessionFixture, AnswersAChallengeAtOnceWithItsCookie) {
   connect();
   deliver(network::ConnectionChallenge{.cookie = CHALLENGE_COOKIE});
 
@@ -189,7 +177,7 @@ TEST_F(ServerConnectionFixture, AnswersAChallengeAtOnceWithItsCookie) {
  * When one more interval passes without an answer
  * Then the request sent again still carries the cookie
  */
-TEST_F(ServerConnectionFixture, KeepsTheCookieForTheRequestsThatFollow) {
+TEST_F(ServerSessionFixture, KeepsTheCookieForTheRequestsThatFollow) {
   connect();
   deliver(network::ConnectionChallenge{.cookie = CHALLENGE_COOKIE});
   update();
@@ -205,7 +193,7 @@ TEST_F(ServerConnectionFixture, KeepsTheCookieForTheRequestsThatFollow) {
  * When the server accepts it as player 3
  * Then the status says accepted as player 3
  */
-TEST_F(ServerConnectionFixture, IsAcceptedWithThePlayerNumberOfTheServer) {
+TEST_F(ServerSessionFixture, IsAcceptedWithThePlayerNumberOfTheServer) {
   connect();
   network::PacketHeader header;
   header.sessionToken = SESSION_TOKEN;
@@ -214,51 +202,9 @@ TEST_F(ServerConnectionFixture, IsAcceptedWithThePlayerNumberOfTheServer) {
 
   update();
 
-  EXPECT_EQ(connection().status(),
+  EXPECT_EQ(session().status(),
             (ConnectionStatus{.phase = ConnectionPhase::Accepted,
                               .playerNumber = ACCEPTED_PLAYER_NUMBER}));
-}
-
-/**
- * Given an attempt the server accepted with a session token
- * When a datagram of the server then carries another token
- * Then it is dropped and counted
- */
-TEST_F(ServerConnectionFixture, CountsADatagramWithAnotherTokenOnceAccepted) {
-  connect();
-  network::PacketHeader accepted;
-  accepted.sessionToken = SESSION_TOKEN;
-  deliver(network::ConnectionAccepted{.playerNumber = ACCEPTED_PLAYER_NUMBER},
-          server(), accepted);
-  update();
-  network::PacketHeader forged;
-  forged.sessionToken = OTHER_SESSION_TOKEN;
-
-  deliver(network::ConnectionAccepted{.playerNumber = ACCEPTED_PLAYER_NUMBER},
-          server(), forged);
-  update();
-
-  EXPECT_EQ(connection().wrongTokenCount(), 1);
-}
-
-/**
- * Given an attempt the server accepted with a session token
- * When a datagram of the server then carries the same token
- * Then nothing is counted, the acceptance included
- */
-TEST_F(ServerConnectionFixture, CountsNothingForTheTokenOfTheAcceptance) {
-  connect();
-  network::PacketHeader header;
-  header.sessionToken = SESSION_TOKEN;
-  deliver(network::ConnectionAccepted{.playerNumber = ACCEPTED_PLAYER_NUMBER},
-          server(), header);
-  update();
-
-  deliver(network::ConnectionAccepted{.playerNumber = ACCEPTED_PLAYER_NUMBER},
-          server(), header);
-  update();
-
-  EXPECT_EQ(connection().wrongTokenCount(), 0);
 }
 
 /**
@@ -266,14 +212,14 @@ TEST_F(ServerConnectionFixture, CountsNothingForTheTokenOfTheAcceptance) {
  * When the server refuses it because the game is full
  * Then the status says refused because the game is full
  */
-TEST_F(ServerConnectionFixture, IsRefusedWithTheReasonOfTheServer) {
+TEST_F(ServerSessionFixture, IsRefusedWithTheReasonOfTheServer) {
   connect();
   deliver(
       network::ConnectionRefused{.reason = network::RefusalReason::GameFull});
 
   update();
 
-  EXPECT_EQ(connection().status(),
+  EXPECT_EQ(session().status(),
             (ConnectionStatus{.phase = ConnectionPhase::Refused,
                               .refusal = network::RefusalReason::GameFull,
                               .serverVersion = SERVER_VERSION}));
@@ -284,7 +230,7 @@ TEST_F(ServerConnectionFixture, IsRefusedWithTheReasonOfTheServer) {
  * When two more intervals pass
  * Then no request is sent again
  */
-TEST_F(ServerConnectionFixture, SendsNoRequestOnceAccepted) {
+TEST_F(ServerSessionFixture, SendsNoRequestOnceAccepted) {
   connect();
   deliver(network::ConnectionAccepted{.playerNumber = ACCEPTED_PLAYER_NUMBER});
   update();
@@ -299,7 +245,7 @@ TEST_F(ServerConnectionFixture, SendsNoRequestOnceAccepted) {
  * When the attempt timeout minus one nanosecond has passed
  * Then it is still connecting
  */
-TEST_F(ServerConnectionFixture, KeepsTryingUntilTheTimeout) {
+TEST_F(ServerSessionFixture, KeepsTryingUntilTheTimeout) {
   connect();
 
   update(CONNECTION_ATTEMPT_TIMEOUT - ONE_NANOSECOND);
@@ -312,7 +258,7 @@ TEST_F(ServerConnectionFixture, KeepsTryingUntilTheTimeout) {
  * When the attempt timeout has passed
  * Then the server is unreachable
  */
-TEST_F(ServerConnectionFixture, GivesUpAtTheTimeout) {
+TEST_F(ServerSessionFixture, GivesUpAtTheTimeout) {
   connect();
 
   update(CONNECTION_ATTEMPT_TIMEOUT);
@@ -325,7 +271,7 @@ TEST_F(ServerConnectionFixture, GivesUpAtTheTimeout) {
  * When another interval passes
  * Then no request is sent again
  */
-TEST_F(ServerConnectionFixture, SendsNothingOnceItGaveUp) {
+TEST_F(ServerSessionFixture, SendsNothingOnceItGaveUp) {
   connect();
   update(CONNECTION_ATTEMPT_TIMEOUT);
   const std::size_t sentWhenGivingUp = sent().size();
@@ -340,7 +286,7 @@ TEST_F(ServerConnectionFixture, SendsNothingOnceItGaveUp) {
  * When the rest of the timeout passes without acceptance or refusal
  * Then it gives up: a challenge does not restart the timeout
  */
-TEST_F(ServerConnectionFixture, ChallengeDoesNotRestartTheTimeout) {
+TEST_F(ServerSessionFixture, ChallengeDoesNotRestartTheTimeout) {
   connect();
   update(CONNECTION_ATTEMPT_TIMEOUT - ONE_NANOSECOND);
   deliver(network::ConnectionChallenge{.cookie = CHALLENGE_COOKIE});
@@ -353,25 +299,10 @@ TEST_F(ServerConnectionFixture, ChallengeDoesNotRestartTheTimeout) {
 
 /**
  * Given an attempt in progress
- * When another sender on the server's address accepts it
- * Then the attempt is still connecting
- */
-TEST_F(ServerConnectionFixture, IgnoresAnAnswerFromAnotherSender) {
-  connect();
-  deliver(network::ConnectionAccepted{.playerNumber = ACCEPTED_PLAYER_NUMBER},
-          otherSender());
-
-  update();
-
-  EXPECT_EQ(phase(), ConnectionPhase::Connecting);
-}
-
-/**
- * Given an attempt in progress
  * When the server's acceptance arrives with its last byte cut off
  * Then the attempt is still connecting, and nothing is thrown
  */
-TEST_F(ServerConnectionFixture, IgnoresATruncatedDatagram) {
+TEST_F(ServerSessionFixture, IgnoresATruncatedDatagram) {
   connect();
   std::vector<std::byte> datagram = network::DatagramCodec::encode(
       network::PacketHeader{},
@@ -390,7 +321,7 @@ TEST_F(ServerConnectionFixture, IgnoresATruncatedDatagram) {
  * Then the attempt is refused as IncompatibleVersion, with the version the
  * server wrote, and nothing in the datagram is read
  */
-TEST_F(ServerConnectionFixture, IsRefusedByAnAnswerOfAnotherVersion) {
+TEST_F(ServerSessionFixture, IsRefusedByAnAnswerOfAnotherVersion) {
   connect();
   network::PacketHeader header;
   header.version = NEXT_PROTOCOL_VERSION;
@@ -400,7 +331,7 @@ TEST_F(ServerConnectionFixture, IsRefusedByAnAnswerOfAnotherVersion) {
   update();
 
   EXPECT_EQ(
-      connection().status(),
+      session().status(),
       (ConnectionStatus{.phase = ConnectionPhase::Refused,
                         .refusal = network::RefusalReason::IncompatibleVersion,
                         .serverVersion = NEXT_PROTOCOL_VERSION}));
@@ -411,7 +342,7 @@ TEST_F(ServerConnectionFixture, IsRefusedByAnAnswerOfAnotherVersion) {
  * When two more intervals pass
  * Then no request is sent again
  */
-TEST_F(ServerConnectionFixture, SendsNoRequestOnceRefusedForItsVersion) {
+TEST_F(ServerSessionFixture, SendsNoRequestOnceRefusedForItsVersion) {
   connect();
   network::PacketHeader header;
   header.version = NEXT_PROTOCOL_VERSION;
@@ -427,30 +358,11 @@ TEST_F(ServerConnectionFixture, SendsNoRequestOnceRefusedForItsVersion) {
 }
 
 /**
- * Given an attempt in progress
- * When a datagram of another protocol version comes from another sender
- * Then the attempt is still connecting
- */
-TEST_F(ServerConnectionFixture, IgnoresAnotherVersionFromAnotherSender) {
-  connect();
-  network::PacketHeader header;
-  header.version = NEXT_PROTOCOL_VERSION;
-  deliver(
-      network::ConnectionRefused{
-          .reason = network::RefusalReason::IncompatibleVersion},
-      otherSender(), header);
-
-  update();
-
-  EXPECT_EQ(phase(), ConnectionPhase::Connecting);
-}
-
-/**
  * Given a session the server accepted
  * When a datagram of another protocol version comes from the server
  * Then the session goes on: only an attempt ends this way
  */
-TEST_F(ServerConnectionFixture, KeepsTheSessionWhenAnotherVersionArrives) {
+TEST_F(ServerSessionFixture, KeepsTheSessionWhenAnotherVersionArrives) {
   accept();
   network::PacketHeader header;
   header.version = NEXT_PROTOCOL_VERSION;
@@ -467,10 +379,10 @@ TEST_F(ServerConnectionFixture, KeepsTheSessionWhenAnotherVersionArrives) {
  * When it is cancelled and another interval passes
  * Then there is no attempt and no request is sent again
  */
-TEST_F(ServerConnectionFixture, SendsNothingOnceCancelled) {
+TEST_F(ServerSessionFixture, SendsNothingOnceCancelled) {
   connect();
 
-  connection().cancel();
+  session().cancel();
   update(CONNECTION_REQUEST_INTERVAL);
 
   EXPECT_EQ(phase(), ConnectionPhase::Idle);
@@ -482,9 +394,9 @@ TEST_F(ServerConnectionFixture, SendsNothingOnceCancelled) {
  * When the server's acceptance arrives late
  * Then there is still no attempt
  */
-TEST_F(ServerConnectionFixture, IgnoresALateAnswerOnceCancelled) {
+TEST_F(ServerSessionFixture, IgnoresALateAnswerOnceCancelled) {
   connect();
-  connection().cancel();
+  session().cancel();
   deliver(network::ConnectionAccepted{.playerNumber = ACCEPTED_PLAYER_NUMBER});
 
   update();
@@ -498,7 +410,7 @@ TEST_F(ServerConnectionFixture, IgnoresALateAnswerOnceCancelled) {
  * When the client connects again
  * Then the new attempt is connecting, unmoved by the stale answer
  */
-TEST_F(ServerConnectionFixture, StartsANewAttemptWithoutStaleAnswers) {
+TEST_F(ServerSessionFixture, StartsANewAttemptWithoutStaleAnswers) {
   connect();
   deliver(
       network::ConnectionRefused{.reason = network::RefusalReason::GameFull});
@@ -517,217 +429,10 @@ TEST_F(ServerConnectionFixture, StartsANewAttemptWithoutStaleAnswers) {
  * When the connection's ReadyState interval and Disconnection copies are read
  * Then they are 500 ms, three copies, and 50 ms
  */
-TEST(ServerConnectionDelays, SessionRepetitionsAreThoseOfTheProtocolPage) {
+TEST(ServerSessionDelays, SessionRepetitionsAreThoseOfTheProtocolPage) {
   EXPECT_EQ(READY_STATE_INTERVAL, PROTOCOL_READY_STATE_INTERVAL);
   EXPECT_EQ(DISCONNECTION_COPY_COUNT, PROTOCOL_DISCONNECTION_COPY_COUNT);
   EXPECT_EQ(DISCONNECTION_COPY_INTERVAL, PROTOCOL_DISCONNECTION_COPY_INTERVAL);
-}
-
-/**
- * Given an attempt the server just accepted as player 3
- * When the waiting room is read before any LobbyState
- * Then it holds player 3 alone, not ready, with the nickname it connected with
- */
-TEST_F(ServerConnectionFixture, TheRoomHoldsThePlayerAloneOnceAccepted) {
-  accept();
-
-  EXPECT_THAT(
-      connection().lobbyPlayers(),
-      ElementsAre(network::LobbyPlayer{.playerNumber = ACCEPTED_PLAYER_NUMBER,
-                                       .ready = false,
-                                       .nickname = std::string{NICKNAME}}));
-}
-
-/**
- * Given a session the server opened with its token
- * When the player asks to be ready
- * Then a ReadyState saying ready goes at once, carrying the token
- */
-TEST_F(ServerConnectionFixture, SendsReadyStateAtOnceWithTheSessionToken) {
-  accept();
-
-  connection().setReady(true);
-
-  ASSERT_TRUE(holds<network::ReadyState>(sent().back()));
-  EXPECT_EQ(onlyMessageOf<network::ReadyState>(sent().back()),
-            network::ReadyState{.ready = true});
-  EXPECT_EQ(
-      network::DatagramCodec::decodeHeader(sent().back().payload).sessionToken,
-      SESSION_TOKEN);
-}
-
-/**
- * Given an attempt the server has not answered
- * When the player asks to be ready
- * Then nothing is sent and nothing is asked
- */
-TEST_F(ServerConnectionFixture, IgnoresReadyBeforeTheAcceptance) {
-  connect();
-
-  connection().setReady(true);
-
-  EXPECT_EQ(sentCountOf<network::ReadyState>(), 0U);
-  EXPECT_EQ(connection().requestedReady(), std::nullopt);
-}
-
-/**
- * Given a player who asked to be ready, whom the room still shows not ready
- * When one interval minus one nanosecond passes
- * Then the ReadyState is not sent again yet
- */
-TEST_F(ServerConnectionFixture, WaitsOneIntervalBeforeSendingReadyStateAgain) {
-  accept();
-  connection().setReady(true);
-
-  update(READY_STATE_INTERVAL - ONE_NANOSECOND);
-
-  EXPECT_EQ(sentCountOf<network::ReadyState>(), 1U);
-}
-
-/**
- * Given a player who asked to be ready, whom the room still shows not ready
- * When one interval passes
- * Then the ReadyState is sent again, since UDP may have lost it
- */
-TEST_F(ServerConnectionFixture, SendsReadyStateAgainWhileTheRoomShowsOther) {
-  accept();
-  connection().setReady(true);
-
-  update(READY_STATE_INTERVAL);
-
-  EXPECT_EQ(sentCountOf<network::ReadyState>(), 2U);
-}
-
-/**
- * Given a player who asked to be ready
- * When a LobbyState shows the player ready, then two intervals pass
- * Then the ReadyState is not sent again
- */
-TEST_F(ServerConnectionFixture, StopsSendingReadyStateOnceTheRoomShowsIt) {
-  accept();
-  connection().setReady(true);
-  deliverInSession(
-      network::LobbyState{.players = {{.playerNumber = ACCEPTED_PLAYER_NUMBER,
-                                       .ready = true,
-                                       .nickname = std::string{NICKNAME}}}},
-      FIRST_SEQUENCE);
-  update();
-
-  update(2 * READY_STATE_INTERVAL);
-
-  EXPECT_EQ(sentCountOf<network::ReadyState>(), 1U);
-}
-
-/**
- * Given a session
- * When the server sends a LobbyState listing two players
- * Then the waiting room is those two players
- */
-TEST_F(ServerConnectionFixture, KeepsTheLobbyStateOfTheSession) {
-  accept();
-  const network::LobbyState lobby{
-      .players = {{.playerNumber = OTHER_PLAYER_NUMBER,
-                   .ready = true,
-                   .nickname = std::string{OTHER_NICKNAME}},
-                  {.playerNumber = ACCEPTED_PLAYER_NUMBER,
-                   .ready = false,
-                   .nickname = std::string{NICKNAME}}}};
-  deliverInSession(lobby, FIRST_SEQUENCE);
-
-  update();
-
-  EXPECT_THAT(connection().lobbyPlayers(), ElementsAreArray(lobby.players));
-}
-
-/**
- * Given a session
- * When a LobbyState arrives with another token
- * Then the waiting room still holds the player alone
- */
-TEST_F(ServerConnectionFixture, IgnoresALobbyStateWithAnotherToken) {
-  accept();
-  network::PacketHeader forged = sessionHeader(FIRST_SEQUENCE);
-  forged.sessionToken = OTHER_SESSION_TOKEN;
-  deliver(network::LobbyState{.players = {{.playerNumber = OTHER_PLAYER_NUMBER,
-                                           .ready = true,
-                                           .nickname =
-                                               std::string{OTHER_NICKNAME}}}},
-          server(), forged);
-
-  update();
-
-  ASSERT_EQ(connection().lobbyPlayers().size(), 1U);
-  EXPECT_EQ(connection().lobbyPlayers().front().playerNumber,
-            ACCEPTED_PLAYER_NUMBER);
-}
-
-/**
- * Given a session that read the LobbyState of sequence 2
- * When the LobbyState of sequence 1 arrives late
- * Then the waiting room is still the one of sequence 2
- */
-TEST_F(ServerConnectionFixture, IgnoresALateLobbyState) {
-  accept();
-  const network::LobbyState newer{
-      .players = {{.playerNumber = ACCEPTED_PLAYER_NUMBER,
-                   .ready = true,
-                   .nickname = std::string{NICKNAME}}}};
-  const network::LobbyState older{
-      .players = {{.playerNumber = ACCEPTED_PLAYER_NUMBER,
-                   .ready = false,
-                   .nickname = std::string{NICKNAME}}}};
-  deliverInSession(newer, SECOND_SEQUENCE);
-  deliverInSession(older, FIRST_SEQUENCE);
-
-  update();
-
-  EXPECT_THAT(connection().lobbyPlayers(), ElementsAreArray(newer.players));
-}
-
-/**
- * Given a session
- * When the server announces the start of the game
- * Then the connection says the game started
- */
-TEST_F(ServerConnectionFixture, LearnsThatTheGameStarted) {
-  accept();
-  deliverInSession(network::GameStarted{}, FIRST_SEQUENCE);
-
-  update();
-
-  EXPECT_TRUE(connection().gameStarted());
-}
-
-/**
- * Given a session whose GameStarted was lost
- * When the first WorldState arrives
- * Then the connection says the game started
- */
-TEST_F(ServerConnectionFixture,
-       AWorldStateStartsTheGameWhenGameStartedWasLost) {
-  accept();
-  deliverWorldStateInSession(stateListing(APPLIED_TICK, {}), FIRST_SEQUENCE);
-
-  update();
-
-  EXPECT_TRUE(connection().gameStarted());
-}
-
-/**
- * Given a player who asked to be ready
- * When the game starts and an interval passes
- * Then the request is forgotten and no ReadyState goes out again
- */
-TEST_F(ServerConnectionFixture, ForgetsTheReadyRequestOnceTheGameStarted) {
-  accept();
-  connection().setReady(true);
-  deliverInSession(network::GameStarted{}, FIRST_SEQUENCE);
-  update();
-
-  update(READY_STATE_INTERVAL);
-
-  EXPECT_EQ(connection().requestedReady(), std::nullopt);
-  EXPECT_EQ(sentCountOf<network::ReadyState>(), 1U);
 }
 
 /**
@@ -735,10 +440,10 @@ TEST_F(ServerConnectionFixture, ForgetsTheReadyRequestOnceTheGameStarted) {
  * When the player leaves it, then time passes, step by step
  * Then a Disconnection goes at once, then every 50 ms, three in all
  */
-TEST_F(ServerConnectionFixture, LeavingSendsThreeDisconnections50MsApart) {
+TEST_F(ServerSessionFixture, LeavingSendsThreeDisconnections50MsApart) {
   accept();
 
-  connection().cancel();
+  session().cancel();
   EXPECT_EQ(sentCountOf<network::Disconnection>(), 1U);
   update(DISCONNECTION_COPY_INTERVAL - ONE_NANOSECOND);
   EXPECT_EQ(sentCountOf<network::Disconnection>(), 1U);
@@ -756,16 +461,16 @@ TEST_F(ServerConnectionFixture, LeavingSendsThreeDisconnections50MsApart) {
  * Then the connection is leaving until the third Disconnection went out, and
  * no longer once it did
  */
-TEST_F(ServerConnectionFixture, IsLeavingUntilTheLastDisconnectionWentOut) {
+TEST_F(ServerSessionFixture, IsLeavingUntilTheLastDisconnectionWentOut) {
   accept();
 
-  connection().cancel();
-  EXPECT_TRUE(connection().isLeaving());
+  session().cancel();
+  EXPECT_TRUE(session().isLeaving());
   update(DISCONNECTION_COPY_INTERVAL);
-  EXPECT_TRUE(connection().isLeaving());
+  EXPECT_TRUE(session().isLeaving());
   update(DISCONNECTION_COPY_INTERVAL);
 
-  EXPECT_FALSE(connection().isLeaving());
+  EXPECT_FALSE(session().isLeaving());
   EXPECT_EQ(sentCountOf<network::Disconnection>(), 3U);
 }
 
@@ -775,12 +480,12 @@ TEST_F(ServerConnectionFixture, IsLeavingUntilTheLastDisconnectionWentOut) {
  * Then the connection is not leaving: no session was open, so no
  * Disconnection is due
  */
-TEST_F(ServerConnectionFixture, IsNotLeavingAnAttemptNeverAccepted) {
+TEST_F(ServerSessionFixture, IsNotLeavingAnAttemptNeverAccepted) {
   connect();
 
-  connection().cancel();
+  session().cancel();
 
-  EXPECT_FALSE(connection().isLeaving());
+  EXPECT_FALSE(session().isLeaving());
 }
 
 /**
@@ -788,10 +493,10 @@ TEST_F(ServerConnectionFixture, IsNotLeavingAnAttemptNeverAccepted) {
  * When the player leaves it
  * Then the Disconnection goes to that server, with the token of the session
  */
-TEST_F(ServerConnectionFixture, TheDisconnectionCarriesTheTokenOfTheSession) {
+TEST_F(ServerSessionFixture, TheDisconnectionCarriesTheTokenOfTheSession) {
   accept();
 
-  connection().cancel();
+  session().cancel();
 
   ASSERT_TRUE(holds<network::Disconnection>(sent().back()));
   EXPECT_EQ(sent().back().destination, server());
@@ -801,29 +506,11 @@ TEST_F(ServerConnectionFixture, TheDisconnectionCarriesTheTokenOfTheSession) {
 }
 
 /**
- * Given a session with a room, a request and a started game
- * When the player leaves it
- * Then the room, the request and the start are forgotten
- */
-TEST_F(ServerConnectionFixture, LeavingForgetsTheSession) {
-  accept();
-  connection().setReady(true);
-  deliverInSession(network::GameStarted{}, FIRST_SEQUENCE);
-  update();
-
-  connection().cancel();
-
-  EXPECT_TRUE(connection().lobbyPlayers().empty());
-  EXPECT_EQ(connection().requestedReady(), std::nullopt);
-  EXPECT_FALSE(connection().gameStarted());
-}
-
-/**
  * Given a session
  * When the client connects again
  * Then a Disconnection to the session left goes before the new request
  */
-TEST_F(ServerConnectionFixture, ConnectingAgainLeavesTheSessionFirst) {
+TEST_F(ServerSessionFixture, ConnectingAgainLeavesTheSessionFirst) {
   accept();
 
   connect();
@@ -838,10 +525,10 @@ TEST_F(ServerConnectionFixture, ConnectingAgainLeavesTheSessionFirst) {
  * When the game sends an input
  * Then nothing is sent but the request
  */
-TEST_F(ServerConnectionFixture, SendsNoInputBeforeTheServerAccepts) {
+TEST_F(ServerSessionFixture, SendsNoInputBeforeTheServerAccepts) {
   connect();
 
-  connection().sendPlayerInput(upHeld());
+  session().sendPlayerInput(upHeld());
 
   EXPECT_EQ(sent().size(), 1);
 }
@@ -851,10 +538,10 @@ TEST_F(ServerConnectionFixture, SendsNoInputBeforeTheServerAccepts) {
  * When the game sends an input with up held
  * Then the server gets a PlayerInput numbered 1 with only the bit of up
  */
-TEST_F(ServerConnectionFixture, SendsTheFirstInputOnceAccepted) {
+TEST_F(ServerSessionFixture, SendsTheFirstInputOnceAccepted) {
   connectAndGetAccepted();
 
-  connection().sendPlayerInput(upHeld());
+  session().sendPlayerInput(upHeld());
 
   ASSERT_EQ(sent().size(), 2);
   EXPECT_EQ(sent().back().destination, server());
@@ -868,10 +555,10 @@ TEST_F(ServerConnectionFixture, SendsTheFirstInputOnceAccepted) {
  * When the game sends an input
  * Then the header of the input carries that token
  */
-TEST_F(ServerConnectionFixture, InputsCarryTheSessionTokenOfTheAcceptance) {
+TEST_F(ServerSessionFixture, InputsCarryTheSessionTokenOfTheAcceptance) {
   connectAndGetAccepted();
 
-  connection().sendPlayerInput(upHeld());
+  session().sendPlayerInput(upHeld());
 
   EXPECT_EQ(lastHeader().sessionToken, SESSION_TOKEN);
 }
@@ -881,11 +568,11 @@ TEST_F(ServerConnectionFixture, InputsCarryTheSessionTokenOfTheAcceptance) {
  * When the game sends another input
  * Then that input is numbered 2
  */
-TEST_F(ServerConnectionFixture, NumbersEachInputAfterThePreviousOne) {
+TEST_F(ServerSessionFixture, NumbersEachInputAfterThePreviousOne) {
   connectAndGetAccepted();
-  connection().sendPlayerInput(upHeld());
+  session().sendPlayerInput(upHeld());
 
-  connection().sendPlayerInput(upHeld());
+  session().sendPlayerInput(upHeld());
 
   EXPECT_EQ(lastInput().inputNumber, PROTOCOL_FIRST_INPUT_NUMBER + 1);
 }
@@ -895,10 +582,10 @@ TEST_F(ServerConnectionFixture, NumbersEachInputAfterThePreviousOne) {
  * When the game sends an input
  * Then the input carries sequence 1: requests and inputs share one counter
  */
-TEST_F(ServerConnectionFixture, InputsTakeTheSequenceAfterTheRequests) {
+TEST_F(ServerSessionFixture, InputsTakeTheSequenceAfterTheRequests) {
   connectAndGetAccepted();
 
-  connection().sendPlayerInput(upHeld());
+  session().sendPlayerInput(upHeld());
 
   EXPECT_EQ(lastHeader().sequence, 1);
 }
@@ -908,7 +595,7 @@ TEST_F(ServerConnectionFixture, InputsTakeTheSequenceAfterTheRequests) {
  * When the client connects again
  * Then the new request carries token 0, as every request does
  */
-TEST_F(ServerConnectionFixture, ANewAttemptDropsTheTokenOfTheOldSession) {
+TEST_F(ServerSessionFixture, ANewAttemptDropsTheTokenOfTheOldSession) {
   connectAndGetAccepted();
 
   connect();
@@ -921,13 +608,13 @@ TEST_F(ServerConnectionFixture, ANewAttemptDropsTheTokenOfTheOldSession) {
  * When the client connects again, is accepted, and the game sends an input
  * Then that input is numbered 1: a new session numbers its inputs from 1
  */
-TEST_F(ServerConnectionFixture, ANewSessionNumbersItsInputsFromOne) {
+TEST_F(ServerSessionFixture, ANewSessionNumbersItsInputsFromOne) {
   connectAndGetAccepted();
-  connection().sendPlayerInput(upHeld());
-  connection().sendPlayerInput(upHeld());
+  session().sendPlayerInput(upHeld());
+  session().sendPlayerInput(upHeld());
   connectAndGetAccepted();
 
-  connection().sendPlayerInput(upHeld());
+  session().sendPlayerInput(upHeld());
 
   EXPECT_EQ(lastInput().inputNumber, PROTOCOL_FIRST_INPUT_NUMBER);
 }
@@ -937,13 +624,13 @@ TEST_F(ServerConnectionFixture, ANewSessionNumbersItsInputsFromOne) {
  * When the game sends an input
  * Then nothing is sent but the request
  */
-TEST_F(ServerConnectionFixture, SendsNoInputOnceRefused) {
+TEST_F(ServerSessionFixture, SendsNoInputOnceRefused) {
   connect();
   deliver(
       network::ConnectionRefused{.reason = network::RefusalReason::GameFull});
   update();
 
-  connection().sendPlayerInput(upHeld());
+  session().sendPlayerInput(upHeld());
 
   EXPECT_EQ(sent().size(), 1);
 }
@@ -954,164 +641,13 @@ TEST_F(ServerConnectionFixture, SendsNoInputOnceRefused) {
  * Then no input is sent: only the request and the Disconnection of the
  * session left went out
  */
-TEST_F(ServerConnectionFixture, SendsNoInputOnceCancelled) {
+TEST_F(ServerSessionFixture, SendsNoInputOnceCancelled) {
   connectAndGetAccepted();
-  connection().cancel();
+  session().cancel();
 
-  connection().sendPlayerInput(upHeld());
+  session().sendPlayerInput(upHeld());
 
   EXPECT_EQ(sentCountOf<network::PlayerInput>(), 0U);
-}
-
-/**
- * Given a game started in the session
- * When an EntitySpawned, a WorldState and an EntityDestroyed arrive, in that
- * order
- * Then the connection hands over the three, in the order they arrived
- */
-TEST_F(ServerConnectionFixture, HandsOverTheEntityMessagesOfTheGameInOrder) {
-  accept();
-  deliverInSession(network::GameStarted{}, FIRST_SEQUENCE);
-  const network::EntitySpawned spawn =
-      spawned(SHIP_ID, network::WireEntityType::PlayerShip, FIRST_POSITION);
-  const network::WorldState state = stateListing(
-      APPLIED_TICK,
-      {listed(SHIP_ID, network::WireEntityType::PlayerShip, SECOND_POSITION)});
-  const network::EntityDestroyed kill = killed(SHIP_ID);
-  deliverInSession(spawn, SECOND_SEQUENCE);
-  deliverWorldStateInSession(state, THIRD_SEQUENCE);
-  deliverInSession(kill, FOURTH_SEQUENCE);
-
-  update();
-
-  EXPECT_THAT(drainedEntityMessages(),
-              ElementsAre(EntityMessage{spawn}, EntityMessage{state},
-                          EntityMessage{kill}));
-}
-
-/**
- * Given a session whose game has not started
- * When an EntitySpawned arrives, as for the ship of a player who joins
- * Then the connection keeps nothing: the first WorldState of the game will
- * list that ship
- */
-TEST_F(ServerConnectionFixture, KeepsNoEntityMessageBeforeTheGameStarts) {
-  accept();
-  deliverInSession(
-      spawned(SHIP_ID, network::WireEntityType::PlayerShip, FIRST_POSITION),
-      FIRST_SEQUENCE);
-
-  update();
-
-  EXPECT_THAT(drainedEntityMessages(), IsEmpty());
-}
-
-/**
- * Given a session whose GameStarted was lost
- * When the first WorldState arrives
- * Then the connection hands it over: the state that starts the game is the
- * first of the game
- */
-TEST_F(ServerConnectionFixture, HandsOverTheWorldStateThatStartsTheGame) {
-  accept();
-  const network::WorldState state = stateListing(
-      APPLIED_TICK,
-      {listed(SHIP_ID, network::WireEntityType::PlayerShip, FIRST_POSITION)});
-  deliverWorldStateInSession(state, FIRST_SEQUENCE);
-
-  update();
-
-  EXPECT_THAT(drainedEntityMessages(), ElementsAre(EntityMessage{state}));
-}
-
-/**
- * Given a game started, and an EntitySpawned already handed over
- * When the connection is drained again
- * Then it hands over nothing
- */
-TEST_F(ServerConnectionFixture, HandsOverEachEntityMessageOnce) {
-  accept();
-  deliverInSession(network::GameStarted{}, FIRST_SEQUENCE);
-  deliverInSession(
-      spawned(SHIP_ID, network::WireEntityType::PlayerShip, FIRST_POSITION),
-      SECOND_SEQUENCE);
-  update();
-  ASSERT_THAT(drainedEntityMessages(), SizeIs(1));
-
-  EXPECT_THAT(drainedEntityMessages(), IsEmpty());
-}
-
-/**
- * Given a game started, and an EntitySpawned not handed over yet
- * When the player leaves the session
- * Then the connection hands over nothing
- */
-TEST_F(ServerConnectionFixture, LeavingDropsTheEntityMessagesNotHandedOver) {
-  accept();
-  deliverInSession(network::GameStarted{}, FIRST_SEQUENCE);
-  deliverInSession(
-      spawned(SHIP_ID, network::WireEntityType::PlayerShip, FIRST_POSITION),
-      SECOND_SEQUENCE);
-  update();
-
-  connection().cancel();
-
-  EXPECT_THAT(drainedEntityMessages(), IsEmpty());
-}
-
-/**
- * Given a game started in the session
- * When the three copies of a GameEvent arrive, each in its own datagram
- * Then the connection hands over one GameEvent
- */
-TEST_F(ServerConnectionFixture, KeepsTheFirstCopyOfAGameEventOnly) {
-  accept();
-  deliverInSession(network::GameStarted{}, FIRST_SEQUENCE);
-  const network::GameEvent event = damaged(EVENT_NUMBER, SHIP_ID);
-  deliverInSession(event, SECOND_SEQUENCE);
-  deliverInSession(event, THIRD_SEQUENCE);
-  deliverInSession(event, FOURTH_SEQUENCE);
-
-  update();
-
-  EXPECT_THAT(drainedEntityMessages(), ElementsAre(EntityMessage{event}));
-}
-
-/**
- * Given a session whose game has not started
- * When a GameEvent arrives
- * Then the connection hands over nothing
- */
-TEST_F(ServerConnectionFixture, IgnoresAGameEventBeforeTheGame) {
-  accept();
-  deliverInSession(damaged(EVENT_NUMBER, SHIP_ID), FIRST_SEQUENCE);
-
-  update();
-
-  EXPECT_THAT(drainedEntityMessages(), IsEmpty());
-}
-
-/**
- * Given a session that handed over an event, then was left, and a new
- * session whose game started
- * When an event of the same number arrives
- * Then it is handed over: a new session numbers its events again
- */
-TEST_F(ServerConnectionFixture, ANewSessionForgetsTheEventsSeen) {
-  accept();
-  deliverInSession(network::GameStarted{}, FIRST_SEQUENCE);
-  const network::GameEvent event = damaged(EVENT_NUMBER, SHIP_ID);
-  deliverInSession(event, SECOND_SEQUENCE);
-  update();
-  ASSERT_THAT(drainedEntityMessages(), SizeIs(1));
-  connection().cancel();
-  accept();
-  deliverInSession(network::GameStarted{}, FIRST_SEQUENCE);
-  deliverInSession(event, SECOND_SEQUENCE);
-
-  update();
-
-  EXPECT_THAT(drainedEntityMessages(), ElementsAre(EntityMessage{event}));
 }
 
 /**
@@ -1119,7 +655,7 @@ TEST_F(ServerConnectionFixture, ANewSessionForgetsTheEventsSeen) {
  * When the heartbeat interval minus one nanosecond passes without sending
  * Then no Heartbeat is sent yet
  */
-TEST_F(ServerConnectionFixture, WaitsOneIntervalBeforeTheFirstHeartbeat) {
+TEST_F(ServerSessionFixture, WaitsOneIntervalBeforeTheFirstHeartbeat) {
   accept();
 
   update(PROTOCOL_HEARTBEAT_INTERVAL - ONE_NANOSECOND);
@@ -1132,7 +668,7 @@ TEST_F(ServerConnectionFixture, WaitsOneIntervalBeforeTheFirstHeartbeat) {
  * When the heartbeat interval passes without sending anything
  * Then a Heartbeat goes to the server, so it knows the player is still there
  */
-TEST_F(ServerConnectionFixture, SendsAHeartbeatAfterAnIntervalWithoutSending) {
+TEST_F(ServerSessionFixture, SendsAHeartbeatAfterAnIntervalWithoutSending) {
   accept();
 
   update(PROTOCOL_HEARTBEAT_INTERVAL);
@@ -1146,7 +682,7 @@ TEST_F(ServerConnectionFixture, SendsAHeartbeatAfterAnIntervalWithoutSending) {
  * When a Heartbeat goes out
  * Then it carries that token
  */
-TEST_F(ServerConnectionFixture, TheHeartbeatCarriesTheTokenOfTheSession) {
+TEST_F(ServerSessionFixture, TheHeartbeatCarriesTheTokenOfTheSession) {
   accept();
 
   update(PROTOCOL_HEARTBEAT_INTERVAL);
@@ -1160,7 +696,7 @@ TEST_F(ServerConnectionFixture, TheHeartbeatCarriesTheTokenOfTheSession) {
  * When a Heartbeat goes out
  * Then it carries sequence 1: it takes the counter of every other datagram
  */
-TEST_F(ServerConnectionFixture, TheHeartbeatTakesTheSequenceAfterTheRequest) {
+TEST_F(ServerSessionFixture, TheHeartbeatTakesTheSequenceAfterTheRequest) {
   accept();
 
   update(PROTOCOL_HEARTBEAT_INTERVAL);
@@ -1174,10 +710,10 @@ TEST_F(ServerConnectionFixture, TheHeartbeatTakesTheSequenceAfterTheRequest) {
  * When the interval minus one nanosecond passes after that input
  * Then no Heartbeat is sent: the delay counts from the last datagram sent
  */
-TEST_F(ServerConnectionFixture, AnInputSentRestartsTheHeartbeatDelay) {
+TEST_F(ServerSessionFixture, AnInputSentRestartsTheHeartbeatDelay) {
   accept();
   update(PROTOCOL_HEARTBEAT_INTERVAL / 2);
-  connection().sendPlayerInput(upHeld());
+  session().sendPlayerInput(upHeld());
 
   update(PROTOCOL_HEARTBEAT_INTERVAL - ONE_NANOSECOND);
 
@@ -1189,7 +725,7 @@ TEST_F(ServerConnectionFixture, AnInputSentRestartsTheHeartbeatDelay) {
  * When the interval minus one nanosecond passes
  * Then no second Heartbeat is sent: a Heartbeat starts its own delay over
  */
-TEST_F(ServerConnectionFixture, AHeartbeatStartsItsOwnDelayOver) {
+TEST_F(ServerSessionFixture, AHeartbeatStartsItsOwnDelayOver) {
   accept();
   update(PROTOCOL_HEARTBEAT_INTERVAL);
   ASSERT_EQ(sentCountOf<network::Heartbeat>(), 1U);
@@ -1204,7 +740,7 @@ TEST_F(ServerConnectionFixture, AHeartbeatStartsItsOwnDelayOver) {
  * When three intervals pass, one per update
  * Then a Heartbeat goes out after each of them
  */
-TEST_F(ServerConnectionFixture, SendsAHeartbeatEveryIntervalWhileSilent) {
+TEST_F(ServerSessionFixture, SendsAHeartbeatEveryIntervalWhileSilent) {
   accept();
 
   update(PROTOCOL_HEARTBEAT_INTERVAL);
@@ -1219,7 +755,7 @@ TEST_F(ServerConnectionFixture, SendsAHeartbeatEveryIntervalWhileSilent) {
  * When the heartbeat interval passes
  * Then no Heartbeat is sent: there is no session
  */
-TEST_F(ServerConnectionFixture, SendsNoHeartbeatOnceRefused) {
+TEST_F(ServerSessionFixture, SendsNoHeartbeatOnceRefused) {
   connect();
   deliver(
       network::ConnectionRefused{.reason = network::RefusalReason::GameFull});
@@ -1235,9 +771,9 @@ TEST_F(ServerConnectionFixture, SendsNoHeartbeatOnceRefused) {
  * When the heartbeat interval passes twice
  * Then no Heartbeat is sent to the session left
  */
-TEST_F(ServerConnectionFixture, SendsNoHeartbeatOnceCancelled) {
+TEST_F(ServerSessionFixture, SendsNoHeartbeatOnceCancelled) {
   accept();
-  connection().cancel();
+  session().cancel();
 
   update(PROTOCOL_HEARTBEAT_INTERVAL);
   update(PROTOCOL_HEARTBEAT_INTERVAL);
@@ -1251,7 +787,7 @@ TEST_F(ServerConnectionFixture, SendsNoHeartbeatOnceCancelled) {
  * Then the journal holds no line about a message without a handler: a
  * Heartbeat only says that the server is still there
  */
-TEST_F(ServerConnectionLogFixture, ReadsAHeartbeatOfTheServerWithoutLoggingIt) {
+TEST_F(ServerSessionLogFixture, ReadsAHeartbeatOfTheServerWithoutLoggingIt) {
   accept();
   deliverInSession(network::Heartbeat{}, FIRST_SEQUENCE);
 
@@ -1266,7 +802,7 @@ TEST_F(ServerConnectionLogFixture, ReadsAHeartbeatOfTheServerWithoutLoggingIt) {
  * Then the session holds, and a Heartbeat has gone to the server: the server
  * keeps the seat for the reconnection grace
  */
-TEST_F(ServerConnectionFixture, KeepsTheSessionAndItsHeartbeatsPastTheTimeout) {
+TEST_F(ServerSessionFixture, KeepsTheSessionAndItsHeartbeatsPastTheTimeout) {
   accept();
 
   update(PROTOCOL_SESSION_TIMEOUT);
@@ -1280,7 +816,7 @@ TEST_F(ServerConnectionFixture, KeepsTheSessionAndItsHeartbeatsPastTheTimeout) {
  * When a Heartbeat of the server in the session is read
  * Then the session holds, and survives a further timeout of silence
  */
-TEST_F(ServerConnectionFixture, ResumesWhenTheServerAnswersDuringTheGrace) {
+TEST_F(ServerSessionFixture, ResumesWhenTheServerAnswersDuringTheGrace) {
   accept();
   update(PROTOCOL_SESSION_TIMEOUT + PROTOCOL_RECONNECTION_GRACE -
          ONE_NANOSECOND);
@@ -1297,7 +833,7 @@ TEST_F(ServerConnectionFixture, ResumesWhenTheServerAnswersDuringTheGrace) {
  * When the silence limit minus one nanosecond passes
  * Then the session holds
  */
-TEST_F(ServerConnectionFixture, KeepsTheSessionUntilTheServerTimeout) {
+TEST_F(ServerSessionFixture, KeepsTheSessionUntilTheServerTimeout) {
   accept();
 
   update(PROTOCOL_SILENCE_LIMIT - ONE_NANOSECOND);
@@ -1310,7 +846,7 @@ TEST_F(ServerConnectionFixture, KeepsTheSessionUntilTheServerTimeout) {
  * When the silence limit passes
  * Then the connection is lost
  */
-TEST_F(ServerConnectionFixture, LosesTheServerAtTheTimeoutWithoutADatagram) {
+TEST_F(ServerSessionFixture, LosesTheServerAtTheTimeoutWithoutADatagram) {
   accept();
 
   update(PROTOCOL_SILENCE_LIMIT);
@@ -1324,7 +860,7 @@ TEST_F(ServerConnectionFixture, LosesTheServerAtTheTimeoutWithoutADatagram) {
  * When the silence limit minus one nanosecond passes again
  * Then the session holds: the Heartbeat started the delay over
  */
-TEST_F(ServerConnectionFixture, AHeartbeatOfTheServerRestartsTheTimeout) {
+TEST_F(ServerSessionFixture, AHeartbeatOfTheServerRestartsTheTimeout) {
   accept();
   update(PROTOCOL_SILENCE_LIMIT - ONE_NANOSECOND);
   deliverInSession(network::Heartbeat{}, FIRST_SEQUENCE);
@@ -1342,7 +878,7 @@ TEST_F(ServerConnectionFixture, AHeartbeatOfTheServerRestartsTheTimeout) {
  * When the silence limit minus one nanosecond passes again
  * Then the session holds: any datagram of the session starts the delay over
  */
-TEST_F(ServerConnectionFixture, AWorldStateRestartsTheTimeout) {
+TEST_F(ServerSessionFixture, AWorldStateRestartsTheTimeout) {
   accept();
   update(PROTOCOL_SILENCE_LIMIT - ONE_NANOSECOND);
   deliverWorldStateInSession(
@@ -1363,7 +899,7 @@ TEST_F(ServerConnectionFixture, AWorldStateRestartsTheTimeout) {
  * When one more nanosecond passes
  * Then the connection is lost: a forged datagram keeps no session alive
  */
-TEST_F(ServerConnectionFixture, ADatagramWithAnotherTokenKeepsNoSessionAlive) {
+TEST_F(ServerSessionFixture, ADatagramWithAnotherTokenKeepsNoSessionAlive) {
   accept();
   update(PROTOCOL_SILENCE_LIMIT - ONE_NANOSECOND);
   network::PacketHeader forged;
@@ -1383,7 +919,7 @@ TEST_F(ServerConnectionFixture, ADatagramWithAnotherTokenKeepsNoSessionAlive) {
  * When one more nanosecond passes
  * Then the connection is lost: a copy says nothing newer than the original
  */
-TEST_F(ServerConnectionFixture, ACopyOfADatagramReadKeepsNoSessionAlive) {
+TEST_F(ServerSessionFixture, ACopyOfADatagramReadKeepsNoSessionAlive) {
   accept();
   deliverInSession(network::Heartbeat{}, FIRST_SEQUENCE);
   update();
@@ -1403,7 +939,7 @@ TEST_F(ServerConnectionFixture, ACopyOfADatagramReadKeepsNoSessionAlive) {
  * Then the connection is lost: a datagram whose messages do not add up to its
  * end is dropped, and proves nothing
  */
-TEST_F(ServerConnectionFixture, ATruncatedDatagramKeepsNoSessionAlive) {
+TEST_F(ServerSessionFixture, ATruncatedDatagramKeepsNoSessionAlive) {
   accept();
   update(PROTOCOL_SILENCE_LIMIT - ONE_NANOSECOND);
   std::vector<std::byte> datagram = network::DatagramCodec::encode(
@@ -1423,7 +959,7 @@ TEST_F(ServerConnectionFixture, ATruncatedDatagramKeepsNoSessionAlive) {
  * Then the session holds: the Heartbeat that arrived during that frame is
  * read before the silence is judged
  */
-TEST_F(ServerConnectionFixture, AFrameLongerThanTheTimeoutLosesNoSession) {
+TEST_F(ServerSessionFixture, AFrameLongerThanTheTimeoutLosesNoSession) {
   accept();
   deliverInSession(network::Heartbeat{}, FIRST_SEQUENCE);
 
@@ -1439,7 +975,7 @@ TEST_F(ServerConnectionFixture, AFrameLongerThanTheTimeoutLosesNoSession) {
  * Then the session holds: neither the idle time nor the wait of the attempt
  * counts as silence of the session
  */
-TEST_F(ServerConnectionFixture, KeepsASessionOpenedAfterAnIdleWait) {
+TEST_F(ServerSessionFixture, KeepsASessionOpenedAfterAnIdleWait) {
   update(PROTOCOL_SILENCE_LIMIT);
   connect();
   update(PROTOCOL_REQUEST_INTERVAL);
@@ -1459,7 +995,7 @@ TEST_F(ServerConnectionFixture, KeepsASessionOpenedAfterAnIdleWait) {
  * When the silence limit minus one nanosecond passes
  * Then the new session holds: the silence of the lost one does not carry over
  */
-TEST_F(ServerConnectionFixture, KeepsASessionOpenedAfterALostOne) {
+TEST_F(ServerSessionFixture, KeepsASessionOpenedAfterALostOne) {
   accept();
   update(PROTOCOL_SILENCE_LIMIT);
   connect();
@@ -1480,7 +1016,7 @@ TEST_F(ServerConnectionFixture, KeepsASessionOpenedAfterALostOne) {
  * Then nothing goes to the server: no Heartbeat, and no Disconnection, so
  * the server closes the session as timed out
  */
-TEST_F(ServerConnectionFixture, SendsNothingToALostServer) {
+TEST_F(ServerSessionFixture, SendsNothingToALostServer) {
   accept();
   const std::size_t sentWhenAccepted = sent().size();
 
@@ -1495,15 +1031,15 @@ TEST_F(ServerConnectionFixture, SendsNothingToALostServer) {
  * When the server stays silent for the session timeout
  * Then the room and the start of the game are forgotten
  */
-TEST_F(ServerConnectionFixture, LosingTheServerForgetsTheSession) {
+TEST_F(ServerSessionFixture, LosingTheServerForgetsTheSession) {
   accept();
   deliverInSession(network::GameStarted{}, FIRST_SEQUENCE);
   update();
 
   update(PROTOCOL_SILENCE_LIMIT);
 
-  EXPECT_TRUE(connection().lobbyPlayers().empty());
-  EXPECT_FALSE(connection().gameStarted());
+  EXPECT_TRUE(waitingRoom().lobbyPlayers().empty());
+  EXPECT_FALSE(waitingRoom().gameStarted());
 }
 
 /**
@@ -1511,7 +1047,7 @@ TEST_F(ServerConnectionFixture, LosingTheServerForgetsTheSession) {
  * When a late copy of the acceptance of the server arrives
  * Then the connection stays lost: only a new attempt opens a session
  */
-TEST_F(ServerConnectionFixture, StaysLostWhenALateAcceptanceArrives) {
+TEST_F(ServerSessionFixture, StaysLostWhenALateAcceptanceArrives) {
   accept();
   update(PROTOCOL_SILENCE_LIMIT);
 
@@ -1525,57 +1061,11 @@ TEST_F(ServerConnectionFixture, StaysLostWhenALateAcceptanceArrives) {
 
 /**
  * Given a game lost to the silence of its server
- * When the server comes back from a stall and a WorldState of the lost session
- * arrives
- * Then the connection hands nothing over: the client left that game
- */
-TEST_F(ServerConnectionFixture, KeepsNothingFromAServerThatComesBack) {
-  accept();
-  deliverInSession(network::GameStarted{}, FIRST_SEQUENCE);
-  update();
-  update(PROTOCOL_SILENCE_LIMIT);
-
-  deliverWorldStateInSession(
-      stateListing(APPLIED_TICK,
-                   {listed(SHIP_ID, network::WireEntityType::PlayerShip,
-                           FIRST_POSITION)}),
-      SECOND_SEQUENCE);
-  update();
-
-  EXPECT_THAT(drainedEntityMessages(), IsEmpty());
-}
-
-/**
- * Given a waiting room lost to the silence of its server
- * When the server comes back from a stall and a LobbyState of the lost session
- * arrives
- * Then the room stays empty: the client left that room
- */
-TEST_F(ServerConnectionFixture, ShowsNoRoomFromAServerThatComesBack) {
-  accept();
-  update(PROTOCOL_SILENCE_LIMIT);
-
-  deliverInSession(
-      network::LobbyState{
-          .players = {{.playerNumber = ACCEPTED_PLAYER_NUMBER,
-                       .ready = false,
-                       .nickname = std::string{NICKNAME}},
-                      {.playerNumber = OTHER_PLAYER_NUMBER,
-                       .ready = false,
-                       .nickname = std::string{OTHER_NICKNAME}}}},
-      FIRST_SEQUENCE);
-  update();
-
-  EXPECT_THAT(connection().lobbyPlayers(), IsEmpty());
-}
-
-/**
- * Given a game lost to the silence of its server
  * When the server comes back from a stall with a WorldState, the game screen
  * sends its input, then a heartbeat interval passes
  * Then nothing goes to the server, which closes the session as timed out
  */
-TEST_F(ServerConnectionFixture, SendsNothingToAServerThatComesBack) {
+TEST_F(ServerSessionFixture, SendsNothingToAServerThatComesBack) {
   accept();
   deliverInSession(network::GameStarted{}, FIRST_SEQUENCE);
   update();
@@ -1584,7 +1074,7 @@ TEST_F(ServerConnectionFixture, SendsNothingToAServerThatComesBack) {
 
   deliverWorldStateInSession(stateListing(APPLIED_TICK, {}), SECOND_SEQUENCE);
   update();
-  connection().sendPlayerInput(upHeld());
+  session().sendPlayerInput(upHeld());
   update(PROTOCOL_HEARTBEAT_INTERVAL);
 
   EXPECT_EQ(sent().size(), sentWhenLost);
@@ -1597,7 +1087,7 @@ TEST_F(ServerConnectionFixture, SendsNothingToAServerThatComesBack) {
  * Then the connection stays lost, keeps no room and sends the server
  * nothing, so the server closes the session as timed out
  */
-TEST_F(ServerConnectionFixture, IgnoresAServerThatComesBackAfterTheLoss) {
+TEST_F(ServerSessionFixture, IgnoresAServerThatComesBackAfterTheLoss) {
   accept();
   update(PROTOCOL_SILENCE_LIMIT);
   const std::size_t sentWhenLost = sent().size();
@@ -1611,7 +1101,7 @@ TEST_F(ServerConnectionFixture, IgnoresAServerThatComesBackAfterTheLoss) {
   update(PROTOCOL_HEARTBEAT_INTERVAL);
 
   EXPECT_EQ(phase(), ConnectionPhase::Lost);
-  EXPECT_TRUE(connection().lobbyPlayers().empty());
+  EXPECT_TRUE(waitingRoom().lobbyPlayers().empty());
   EXPECT_EQ(sent().size(), sentWhenLost);
 }
 
@@ -1620,7 +1110,7 @@ TEST_F(ServerConnectionFixture, IgnoresAServerThatComesBackAfterTheLoss) {
  * When the silence limit passes
  * Then the journal names the server and the delay it stayed silent for
  */
-TEST_F(ServerConnectionLogFixture, LogsTheServerItLost) {
+TEST_F(ServerSessionLogFixture, LogsTheServerItLost) {
   accept();
 
   update(PROTOCOL_SILENCE_LIMIT);
@@ -1629,65 +1119,16 @@ TEST_F(ServerConnectionLogFixture, LogsTheServerItLost) {
 }
 
 /**
- * Given a game in progress
- * When the server ends it, then repeats the end
- * Then the game gets the end once
- */
-TEST_F(ServerConnectionFixture, HandsOverTheEndOfTheGameOnce) {
-  accept();
-  deliverInSession(network::GameStarted{}, FIRST_SEQUENCE);
-  deliverInSession(endOfOnePilot(), SECOND_SEQUENCE);
-  deliverInSession(endOfOnePilot(), THIRD_SEQUENCE);
-
-  update();
-
-  EXPECT_THAT(drainedEntityMessages(),
-              ElementsAre(EntityMessage{endOfOnePilot()}));
-}
-
-/**
- * Given a game the server ended
- * When the connection is asked whether a game runs
- * Then none does
- */
-TEST_F(ServerConnectionFixture, AnEndedGameIsNoLongerStarted) {
-  accept();
-  deliverInSession(network::GameStarted{}, FIRST_SEQUENCE);
-  deliverInSession(endOfOnePilot(), SECOND_SEQUENCE);
-
-  update();
-
-  EXPECT_FALSE(connection().gameStarted());
-}
-
-/**
- * Given a game the server ended
- * When the player asks to be ready again
- * Then a ReadyState is sent
- */
-TEST_F(ServerConnectionFixture, SendsReadyAgainAfterAnEndedGame) {
-  accept();
-  deliverInSession(network::GameStarted{}, FIRST_SEQUENCE);
-  deliverInSession(endOfOnePilot(), SECOND_SEQUENCE);
-  update();
-
-  connection().setReady(true);
-
-  EXPECT_EQ(sentCountOf<network::ReadyState>(), 1U);
-}
-
-/**
  * Given a session that learned the game started
  * When the game sends its first input
  * Then the server is sent a GameLoaded, then the input
  */
-TEST_F(ServerConnectionFixture,
-       TellsTheServerTheGameIsLoadedWithTheFirstInput) {
+TEST_F(ServerSessionFixture, TellsTheServerTheGameIsLoadedWithTheFirstInput) {
   connectAndGetAccepted();
   deliverInSession(network::GameStarted{}, FIRST_SEQUENCE);
   update();
 
-  connection().sendPlayerInput(upHeld());
+  session().sendPlayerInput(upHeld());
 
   EXPECT_EQ(sentCountOf<network::GameLoaded>(), 1U);
   EXPECT_TRUE(holds<network::PlayerInput>(sent().back()));
@@ -1699,10 +1140,10 @@ TEST_F(ServerConnectionFixture,
  * When the game sends an input
  * Then no GameLoaded is sent
  */
-TEST_F(ServerConnectionFixture, SendsNoGameLoadedBeforeTheGameStarted) {
+TEST_F(ServerSessionFixture, SendsNoGameLoadedBeforeTheGameStarted) {
   connectAndGetAccepted();
 
-  connection().sendPlayerInput(upHeld());
+  session().sendPlayerInput(upHeld());
 
   EXPECT_EQ(sentCountOf<network::GameLoaded>(), 0U);
 }
@@ -1712,15 +1153,15 @@ TEST_F(ServerConnectionFixture, SendsNoGameLoadedBeforeTheGameStarted) {
  * When the first WorldState arrives and the game sends another input
  * Then no other GameLoaded is sent
  */
-TEST_F(ServerConnectionFixture, StopsSendingGameLoadedOnceTheWorldArrives) {
+TEST_F(ServerSessionFixture, StopsSendingGameLoadedOnceTheWorldArrives) {
   connectAndGetAccepted();
   deliverInSession(network::GameStarted{}, FIRST_SEQUENCE);
   update();
-  connection().sendPlayerInput(upHeld());
+  session().sendPlayerInput(upHeld());
   deliverWorldStateInSession(stateListing(APPLIED_TICK, {}), SECOND_SEQUENCE);
   update();
 
-  connection().sendPlayerInput(upHeld());
+  session().sendPlayerInput(upHeld());
 
   EXPECT_EQ(sentCountOf<network::GameLoaded>(), 1U);
 }
@@ -1731,14 +1172,14 @@ TEST_F(ServerConnectionFixture, StopsSendingGameLoadedOnceTheWorldArrives) {
  * When GAME_LOADED_INTERVAL passes and the game sends another input
  * Then a second GameLoaded is sent, so a lost copy is corrected by the next
  */
-TEST_F(ServerConnectionFixture, RepeatsGameLoadedUntilTheWorldArrives) {
+TEST_F(ServerSessionFixture, RepeatsGameLoadedUntilTheWorldArrives) {
   connectAndGetAccepted();
   deliverInSession(network::GameStarted{}, FIRST_SEQUENCE);
   update();
-  connection().sendPlayerInput(upHeld());
+  session().sendPlayerInput(upHeld());
   update(GAME_LOADED_INTERVAL);
 
-  connection().sendPlayerInput(upHeld());
+  session().sendPlayerInput(upHeld());
 
   EXPECT_EQ(sentCountOf<network::GameLoaded>(), 2U);
 }
@@ -1749,13 +1190,13 @@ TEST_F(ServerConnectionFixture, RepeatsGameLoadedUntilTheWorldArrives) {
  * When the game sends another input in the same frame
  * Then no second GameLoaded is sent
  */
-TEST_F(ServerConnectionFixture, SendsGameLoadedOnceEveryInterval) {
+TEST_F(ServerSessionFixture, SendsGameLoadedOnceEveryInterval) {
   connectAndGetAccepted();
   deliverInSession(network::GameStarted{}, FIRST_SEQUENCE);
   update();
-  connection().sendPlayerInput(upHeld());
+  session().sendPlayerInput(upHeld());
 
-  connection().sendPlayerInput(upHeld());
+  session().sendPlayerInput(upHeld());
 
   EXPECT_EQ(sentCountOf<network::GameLoaded>(), 1U);
 }
@@ -1765,7 +1206,7 @@ TEST_F(ServerConnectionFixture, SendsGameLoadedOnceEveryInterval) {
  * When the server sends a Disconnection in the session
  * Then the session is closed
  */
-TEST_F(ServerConnectionFixture, ADisconnectionOfTheServerClosesTheSession) {
+TEST_F(ServerSessionFixture, ADisconnectionOfTheServerClosesTheSession) {
   accept();
   deliverInSession(network::Disconnection{}, FIRST_SEQUENCE);
 
@@ -1779,7 +1220,7 @@ TEST_F(ServerConnectionFixture, ADisconnectionOfTheServerClosesTheSession) {
  * When a Disconnection arrives with another session token
  * Then the session holds: only the server of the session may close it
  */
-TEST_F(ServerConnectionFixture, IgnoresADisconnectionWithAnotherToken) {
+TEST_F(ServerSessionFixture, IgnoresADisconnectionWithAnotherToken) {
   accept();
   network::PacketHeader forged = sessionHeader(FIRST_SEQUENCE);
   forged.sessionToken = OTHER_SESSION_TOKEN;
@@ -1795,7 +1236,7 @@ TEST_F(ServerConnectionFixture, IgnoresADisconnectionWithAnotherToken) {
  * When a Disconnection arrives from the address of the server
  * Then the attempt goes on: there is no session to close
  */
-TEST_F(ServerConnectionFixture, IgnoresADisconnectionBeforeTheAcceptance) {
+TEST_F(ServerSessionFixture, IgnoresADisconnectionBeforeTheAcceptance) {
   connect();
   deliver(network::Disconnection{});
 
@@ -1809,7 +1250,7 @@ TEST_F(ServerConnectionFixture, IgnoresADisconnectionBeforeTheAcceptance) {
  * When a heartbeat interval passes
  * Then nothing went back to the server: no Disconnection, no Heartbeat
  */
-TEST_F(ServerConnectionFixture, SendsNothingToAServerThatClosedTheSession) {
+TEST_F(ServerSessionFixture, SendsNothingToAServerThatClosedTheSession) {
   accept();
   const std::size_t sentWhenAccepted = sent().size();
   deliverInSession(network::Disconnection{}, FIRST_SEQUENCE);
@@ -1818,26 +1259,6 @@ TEST_F(ServerConnectionFixture, SendsNothingToAServerThatClosedTheSession) {
   update(PROTOCOL_HEARTBEAT_INTERVAL);
 
   EXPECT_EQ(sent().size(), sentWhenAccepted);
-}
-
-/**
- * Given a game started
- * When the server says twice that a player left
- * Then the game screen gets both copies, in order
- */
-TEST_F(ServerConnectionFixture, HandsOverEveryCopyOfAPlayerLeft) {
-  accept();
-  deliverInSession(network::GameStarted{}, FIRST_SEQUENCE);
-  const network::PlayerLeft departure{
-      .playerNumber = OTHER_PLAYER_NUMBER,
-      .reason = network::DepartureReason::TimedOut};
-  deliverInSession(departure, SECOND_SEQUENCE);
-  deliverInSession(departure, THIRD_SEQUENCE);
-
-  update();
-
-  EXPECT_THAT(drainedEntityMessages(),
-              ElementsAre(EntityMessage{departure}, EntityMessage{departure}));
 }
 
 }  // namespace rtype::client
