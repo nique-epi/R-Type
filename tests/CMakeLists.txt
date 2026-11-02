@@ -90,6 +90,8 @@ rtype_add_test(NAME server_metrics_tests SOURCES server/Metrics/TickDurationsTes
 target_include_directories(server_metrics_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/server)
 rtype_add_test(NAME server_platform_tests SOURCES server/Platform/FineTimerResolutionTest.cpp server/Platform/StopRequestTest.cpp server/Platform/StopSignalsTest.cpp LIBS rtype_server_fine_timer_resolution rtype_server_stop_signals)
 target_include_directories(server_platform_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/server/Platform)
+rtype_add_test(NAME storage_tests SOURCES storage/DatabaseFileTest.cpp storage/DatabaseFileFixture.cpp TemporaryFolder.cpp LIBS rtype_storage)
+target_include_directories(storage_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 rtype_add_test(NAME server_launch_options_tests SOURCES server/LaunchOptions/LaunchOptionsTest.cpp LIBS rtype_server_launch_options rtype_server_constants rtype_network_constants rtype_logging)
 rtype_add_test(NAME logging_tests SOURCES LoggerTest.cpp logging/LogLaunchOptionsTest.cpp logging/LogLaunchOptionsFixture.cpp logging/ThrottledLogTest.cpp CurrentDirectoryChange.cpp JournalFile.cpp DebugJournal.cpp LIBS rtype_logging)
 target_include_directories(logging_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
