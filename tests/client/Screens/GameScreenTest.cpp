@@ -630,34 +630,42 @@ TEST(GameScreenAutoFireTest, TurningItOffDuringTheGameStopsAtTheNextInput) {
 }
 
 /**
- * Given a game just started
+ * Given a game whose first WorldState arrived
  * When 117 ms pass
  * Then the stars of the sky go 12 times their speed
  */
 TEST_F(GameScreenFixture, TheStarsWarpAtTheStartOfTheGame) {
+  entityMessages().queue(rtype::network::WorldState{});
+  screens().update(ONE_FRAME);
+
   screens().update(WARP_TOP_TIME);
 
   EXPECT_NEAR(sky().lastSpeedFactor(), TOP_WARP_SPEED, WARP_FACTOR_TOLERANCE);
 }
 
 /**
- * Given a game just started
+ * Given a game whose first WorldState arrived
  * When 600 ms pass
  * Then the stars go their own speed again
  */
 TEST_F(GameScreenFixture, TheStarsSlowDownToTheirSpeed) {
+  entityMessages().queue(rtype::network::WorldState{});
+  screens().update(ONE_FRAME);
+
   screens().update(WARP_END_TIME);
 
   EXPECT_NEAR(sky().lastSpeedFactor(), OWN_SPEED, WARP_FACTOR_TOLERANCE);
 }
 
 /**
- * Given a player who reduced flashes
- * When the game starts and 117 ms pass
+ * Given a player who reduced flashes and a game whose first WorldState arrived
+ * When 117 ms pass
  * Then the stars keep their own speed
  */
 TEST_F(GameScreenFixture, WithFlashesReducedTheStarsDoNotWarp) {
   settings().reduceFlashes = true;
+  entityMessages().queue(rtype::network::WorldState{});
+  screens().update(ONE_FRAME);
 
   screens().update(WARP_TOP_TIME);
 
@@ -680,11 +688,66 @@ TEST_F(GameScreenFixture, LeavingTheGamePutsTheSkyBack) {
 }
 
 /**
- * Given a game just started
+ * Given a game whose first WorldState arrived
  * When 1 s passes
  * Then the status canvas is written "M", the first letter of the banner
  */
 TEST_F(GameScreenFixture, TheBannerStartsAtOneSecond) {
+  entityMessages().queue(rtype::network::WorldState{});
+  screens().update(ONE_FRAME);
+
+  screens().update(BANNER_START_TIME);
+
+  EXPECT_NE(writingOf(statusCanvas(), "M"), nullptr);
+}
+
+/**
+ * Given a game whose server waits for a slow player and sent no WorldState
+ * When 117 ms pass, the time the warp is at its top speed
+ * Then the stars keep their own speed
+ */
+TEST_F(GameScreenFixture, NoWarpBeforeTheFirstWorldState) {
+  screens().update(WARP_TOP_TIME);
+
+  EXPECT_EQ(sky().lastSpeedFactor(), OWN_SPEED);
+}
+
+/**
+ * Given a game whose server waits for a slow player and sent no WorldState
+ * When 1 s passes, the time the banner starts
+ * Then the banner is not written
+ */
+TEST_F(GameScreenFixture, NoBannerBeforeTheFirstWorldState) {
+  screens().update(BANNER_START_TIME);
+
+  EXPECT_EQ(writingOf(statusCanvas(), "M"), nullptr);
+}
+
+/**
+ * Given a game that waited 8 s for its first WorldState
+ * When the WorldState arrives and 117 ms pass
+ * Then the stars warp: the start of the game counts from the WorldState
+ */
+TEST_F(GameScreenFixture, TheWarpStartsWithTheFirstWorldState) {
+  screens().update(LONG_LOADING_WAIT);
+  entityMessages().queue(rtype::network::WorldState{});
+  screens().update(ONE_FRAME);
+
+  screens().update(WARP_TOP_TIME);
+
+  EXPECT_NEAR(sky().lastSpeedFactor(), TOP_WARP_SPEED, WARP_FACTOR_TOLERANCE);
+}
+
+/**
+ * Given a game that waited 8 s for its first WorldState
+ * When the WorldState arrives and 1 s passes
+ * Then the banner starts: the start of the game counts from the WorldState
+ */
+TEST_F(GameScreenFixture, TheBannerStartsOneSecondAfterTheFirstWorldState) {
+  screens().update(LONG_LOADING_WAIT);
+  entityMessages().queue(rtype::network::WorldState{});
+  screens().update(ONE_FRAME);
+
   screens().update(BANNER_START_TIME);
 
   EXPECT_NE(writingOf(statusCanvas(), "M"), nullptr);
@@ -835,14 +898,28 @@ TEST_F(GameScreenFixture, TheLineGoesAfterItsTime) {
 }
 
 /**
- * Given a game whose server sent nothing
+ * Given a game whose server sent a WorldState, then nothing
  * When one second passes
  * Then WAITING FOR THE SERVER shows
  */
 TEST_F(GameScreenFixture, ASecondWithoutMessagesShowsTheWarning) {
+  entityMessages().queue(rtype::network::WorldState{});
+  screens().update(ONE_FRAME);
+
   screens().update(ONE_SECOND);
 
   EXPECT_NE(writingOf(statusCanvas(), WARNING_WORDS), nullptr);
+}
+
+/**
+ * Given a game whose server waits for a slow player and sent no WorldState
+ * When the wait goes on for 8 s
+ * Then no warning shows: the server is quiet on purpose
+ */
+TEST_F(GameScreenFixture, NoWarningWhileTheServerWaitsForTheOtherPlayers) {
+  screens().update(LONG_LOADING_WAIT);
+
+  EXPECT_EQ(writingOf(statusCanvas(), WARNING_WORDS), nullptr);
 }
 
 /**
