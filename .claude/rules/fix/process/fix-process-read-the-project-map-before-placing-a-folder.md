@@ -24,6 +24,12 @@ Why: a plan put the starfield in a new `src/client/Background/` while `project-l
 1. **The test of a class or a header of `src/<path>/` goes in `tests/<path>/`, every level of the path included**: the tests of `src/client/Rendering/Effects/` go in `tests/client/Rendering/Effects/`, as those of `Rendering/Background/` sit in `tests/client/Rendering/Background/`. A helper shared with the tests of the parent folder stays there and is reached through the include folders of the test target.
 2. **Write, next to each test file of the plan's tree, the source folder it tests**, and check that the two paths match.
 
+### A new library reads "Who may link what" before its first link
+
+1. **Before writing `target_link_libraries` for a new library of `src/`**, read the section "Who may link what" of `project-layout.md`: between libraries, the only links it allows are the ones it lists. A helper a library would like to reuse does not make the link legal.
+2. **When the helper sits in a library the new one may not link, the caller does the work and passes the result**: the program converts the path and hands over its text.
+3. **Add the `rtype_forbid_links` line of the new library in the same change**, naming every library the map forbids, so the configure step refuses the link from then on.
+
 ## Example
 
 - ❌ **Before (wrong)**: plan with `src/client/Background/`, approved and coded; `project-layout.md` said `Rendering/  sprites, starfield, HUD, effects, lagometer`.
@@ -31,4 +37,6 @@ Why: a plan put the starfield in a new `src/client/Background/` while `project-l
 - ❌ **Before (wrong)**: `RecordingRowControl`, a `RowControl` subclass recording the keys that reach it, written in `tests/client/Widgets/` because `RecordingInterfaceCanvas` sits in `tests/client/Rendering/`.
 - ✅ **After (right)**: `tests/doubles/RecordingRowControl.{hpp,cpp}`, next to `RecordingSettingsStorage`; the doubles left in `tests/client/` reported.
 - ❌ **Before (wrong)**: `EffectSpawnerTest.cpp` and `EffectConstantsTest.cpp` written in `tests/client/Rendering/`, next to the other rendering tests, while they test `src/client/Rendering/Effects/`.
+- ❌ **Before (wrong)**: `rtype_storage` links `rtype_engine_paths` to turn a path into text, while the map allows a library only `rtype_logging`, `rtype_concurrency` and `rtype_identifiers`.
+- ✅ **After (right)**: `openDatabaseFile()` takes the path as UTF-8 text, the server calls `genericText()`, and `rtype_forbid_links(rtype_storage …)` names `rtype_engine`.
 - ✅ **After (right)**: both in `tests/client/Rendering/Effects/`; `SheetPixels.hpp`, shared with `EntitySpritesTest.cpp`, stays in `tests/client/Rendering/`, added to the include folders of `client_animation_tests`.
