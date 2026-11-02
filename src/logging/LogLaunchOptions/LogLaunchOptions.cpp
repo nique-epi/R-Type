@@ -189,7 +189,7 @@ std::string LogLaunchOptions::usage(std::string_view defaultJournalName) {
   appendUsageEntry(
       text, std::string(FILE_OPTION) + " <path>",
       "Journal to append to. Default: " + std::string(defaultJournalName) +
-          std::string(DEFAULT_JOURNAL_PLACE) + ".");
+          " next to the executable.");
   appendUsageEntry(text, NO_FILE_OPTION, "Write no journal.");
   appendUsageEntry(text, STDERR_OPTION,
                    "Write to standard error too. This is the default.");
