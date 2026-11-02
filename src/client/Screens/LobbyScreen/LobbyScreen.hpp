@@ -12,6 +12,7 @@
 #include "IServerConnection.hpp"
 #include "ISoundPlayer.hpp"
 #include "IWaitingRoom.hpp"
+#include "KeyChip.hpp"
 #include "LobbyPlace.hpp"
 #include "LobbyScreenParts.hpp"
 #include "LobbyState.hpp"
@@ -51,6 +52,12 @@ struct HangarBay;
  * (HelpWalkthrough) over it: while it is open it takes every event but the
  * release of a key, the room keeps updating under it, and the game, once it
  * starts, replaces both.
+ *
+ * RANKING, a chip beside HELP, or LEADERBOARD_KEY opens the leaderboard over
+ * the room, which stays below: the player stays on the server, and the game,
+ * once it starts, replaces both. Since only the screen on top receives events,
+ * the chip first drops what the room held, as losing the focus does; otherwise
+ * the room would never see the release of a key held down at that moment.
  */
 class LobbyScreen : public IScreen {
  public:
@@ -118,6 +125,7 @@ class LobbyScreen : public IScreen {
   bool gameAsked_ = false;
   Menu menu_;
   HelpWalkthrough help_;
+  KeyChip leaderboardChip_;
 };
 
 }  // namespace rtype::client

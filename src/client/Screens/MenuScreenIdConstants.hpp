@@ -37,4 +37,8 @@ constexpr ScreenId QUIT_CONFIRMATION_SCREEN{"quit confirmation"};
  * attempt stands, pushed over the title. */
 constexpr ScreenId CONNECTION_SCREEN{"connection"};
 
+/** @brief The best scores of a server, pushed over the title or the waiting
+ * room. */
+constexpr ScreenId LEADERBOARD_SCREEN{"leaderboard"};
+
 }  // namespace rtype::client

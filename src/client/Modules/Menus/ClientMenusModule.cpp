@@ -1,4 +1,6 @@
 #include "ClientMenusModule.hpp"
+#include <algorithm>
+#include <cstddef>
 #include <memory>
 #include <random>
 #include <string>
@@ -10,6 +12,11 @@
 #include "InstallContext.hpp"
 #include "IntroScreen.hpp"
 #include "IntroScreenParts.hpp"
+#include "LeaderboardFilterChoice.hpp"
+#include "LeaderboardScreen.hpp"
+#include "LeaderboardScreenConstants.hpp"
+#include "LeaderboardScreenParts.hpp"
+#include "LeaderboardTab.hpp"
 #include "LocalizedKeyName.hpp"
 #include "MenuScreenIdConstants.hpp"
 #include "ModuleConstants.hpp"
@@ -100,6 +107,27 @@ std::unique_ptr<IScreen> buildConnectionScreen(const ScreenContext& context) {
       interfaceCanvasOf(context));
 }
 
+/** @returns The leaderboard, opened on the normal difficulty and on as many
+ * pilots as the waiting room lists, one on the title. */
+std::unique_ptr<IScreen> buildLeaderboardScreen(const ScreenContext& context) {
+  const std::size_t listed =
+      context.services.waitingRoom.get().lobbyPlayers().size();
+  return std::make_unique<LeaderboardScreen>(
+      LeaderboardScreenParts{
+          .navigator = context.navigator.get(),
+          .sounds = soundsOf(context),
+          .tabs = {LeaderboardTab{
+                       .label = SERVER_TAB_LABEL,
+                       .source = &context.services.leaderboard.get()},
+                   LeaderboardTab{.label = GLOBAL_TAB_LABEL}},
+          .choice = {.difficulty = DEFAULT_DIFFICULTY_CHOICE,
+                     .pilots = std::max<std::size_t>(listed, 1) - 1},
+          .playfieldPointAt = playfieldMappingOf(context),
+          .keyName = localizedKeyName,
+          .motion = motionPreference()},
+      interfaceCanvasOf(context));
+}
+
 }  // namespace
 
 std::string ClientMenusModule::name() const {
@@ -128,6 +156,7 @@ void ClientMenusModule::install(engine::InstallContext& context) {
   });
   registry.add(QUIT_CONFIRMATION_SCREEN, buildQuitConfirmationScreen);
   registry.add(CONNECTION_SCREEN, buildConnectionScreen);
+  registry.add(LEADERBOARD_SCREEN, buildLeaderboardScreen);
   registry.add(CONNECTION_LOST_SCREEN, buildConnectionLostScreen);
 }
 

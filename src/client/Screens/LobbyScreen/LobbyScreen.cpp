@@ -24,6 +24,7 @@
 #include "ISoundPlayer.hpp"
 #include "IWaitingRoom.hpp"
 #include "InterfaceConstants.hpp"
+#include "KeyChipParts.hpp"
 #include "LobbyPartAreas.hpp"
 #include "LobbyPlace.hpp"
 #include "LobbyScreenConstants.hpp"
@@ -34,6 +35,7 @@
 #include "MenuScreenIdConstants.hpp"
 #include "PilotColor.hpp"
 #include "PlayfieldMapping.hpp"
+#include "ScreenConstants.hpp"
 #include "ScreenId.hpp"
 #include "SoundConstants.hpp"
 #include "TimeConstants.hpp"
@@ -114,6 +116,15 @@ sf::IntRect helpChipArea() {
   return help;
 }
 
+/** @returns Where the room paints RANKING: a chip like BACK, BUTTON_GAP to the
+ * left of HELP. */
+sf::IntRect leaderboardChipArea() {
+  sf::IntRect chip = MenuBuilder::chipArea(
+      {.label = LEADERBOARD_LABEL, .keyName = LEADERBOARD_KEY_NAME});
+  chip.position.x = helpChipArea().position.x - BUTTON_GAP - chip.size.x;
+  return chip;
+}
+
 /** @returns The slot of the bay of the local player, or nothing while the
  * server lists no player with its number. */
 std::optional<int> ownSlotOf(std::span<const network::LobbyPlayer> players,
@@ -170,7 +181,17 @@ LobbyScreen::LobbyScreen(LobbyScreenParts parts,
                                  .keyName = parts.keyName,
                                  .palette = parts.palette,
                                  .motion = parts.motion,
-                                 .chipArea = helpChipArea()}) {
+                                 .chipArea = helpChipArea()}),
+      leaderboardChip_(KeyChipParts{
+          .text = {.label = LEADERBOARD_LABEL, .keyName = LEADERBOARD_KEY_NAME},
+          .area = leaderboardChipArea(),
+          .key = LEADERBOARD_KEY,
+          .action =
+              [this] {
+                handleEvent(sf::Event::FocusLost{});
+                navigator_->push(LEADERBOARD_SCREEN);
+              },
+          .sounds = parts.sounds}) {
   repaint();
 }
 
@@ -194,6 +215,9 @@ void LobbyScreen::handleEvent(const sf::Event& event) {
   }
   if (event.is<sf::Event::FocusLost>()) {
     readyKeyHeld_ = false;
+  }
+  if (leaderboardChip_.handleEvent(event, playfieldPointAt_)) {
+    return;
   }
   menu_.handleEvent(event, playfieldPointAt_);
 }
@@ -263,6 +287,7 @@ void LobbyScreen::repaint() {
     paintBays();
     canvas_->write(pilotCount(players.size()), PILOT_COUNT_ANCHOR,
                    PILOT_COUNT_STYLE);
+    leaderboardChip_.paint(*canvas_);
   }
   help_.paint(*canvas_, parts);
   canvas_->display();

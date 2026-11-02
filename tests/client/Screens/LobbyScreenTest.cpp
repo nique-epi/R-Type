@@ -30,6 +30,7 @@
 using rtype::client::CLICK_SOUND_ID;
 using rtype::client::GAME_SCREEN;
 using rtype::client::HELP_STEPS;
+using rtype::client::LEADERBOARD_SCREEN;
 using rtype::client::PRESS_DURATION;
 using rtype::client::STAR_GOLD;
 using rtype::client::TITLE_SCREEN;
@@ -41,6 +42,7 @@ using rtype::client::testing::FIRST_BAY_LOCAL_TAG;
 using rtype::client::testing::FIRST_BAY_NICKNAME;
 using rtype::client::testing::FIRST_STEP_WORD;
 using rtype::client::testing::HELP_CHIP_MIDDLE;
+using rtype::client::testing::LEADERBOARD_CHIP_MIDDLE;
 using rtype::client::testing::OTHER_NICKNAME;
 using rtype::client::testing::OTHER_NUMBER;
 using rtype::client::testing::OWN_NICKNAME;
@@ -49,6 +51,7 @@ using rtype::client::testing::READY_KEY;
 using rtype::client::testing::THIRD_BAY_NICKNAME;
 using ::testing::Contains;
 using ::testing::ElementsAre;
+using ::testing::IsEmpty;
 
 /**
  * Given the server lists players 1 and 3
@@ -398,4 +401,79 @@ TEST_F(LobbyScreenFixture, ClosingTheHelpWithEnterPressesNothing) {
   screen().update(PRESS_DURATION);
 
   EXPECT_TRUE(readyRequests().empty());
+}
+
+/**
+ * Given a waiting room
+ * When L is pressed and released
+ * Then the leaderboard opens over it, and the player stays in the room
+ */
+TEST_F(LobbyScreenFixture, TheLeaderboardKeyOpensTheLeaderboard) {
+  tap(sf::Keyboard::Key::L, sf::Keyboard::Scan::L);
+
+  EXPECT_THAT(navigator().calls(),
+              ElementsAre(NavigatorCall{.request = NavigatorRequest::Push,
+                                        .screen = LEADERBOARD_SCREEN}));
+}
+
+/**
+ * Given a waiting room
+ * When the RANKING chip is clicked
+ * Then the leaderboard opens over it
+ */
+TEST_F(LobbyScreenFixture, TheLeaderboardChipOpensTheLeaderboard) {
+  screen().handleEvent(leftPress(LEADERBOARD_CHIP_MIDDLE));
+  screen().handleEvent(leftRelease(LEADERBOARD_CHIP_MIDDLE));
+
+  EXPECT_THAT(navigator().calls(),
+              ElementsAre(NavigatorCall{.request = NavigatorRequest::Push,
+                                        .screen = LEADERBOARD_SCREEN}));
+}
+
+/**
+ * Given the key of READY held down when L opens the leaderboard, its release
+ * going to that screen
+ * When the key of READY is pressed again, once back in the room
+ * Then it asks again: nothing stayed held
+ */
+TEST_F(LobbyScreenFixture, AKeyHeldAcrossTheLeaderboardDoesNotStick) {
+  screen().handleEvent(keyPress(sf::Keyboard::Key::R, READY_KEY));
+  tap(sf::Keyboard::Key::L, sf::Keyboard::Scan::L);
+
+  screen().handleEvent(keyPress(sf::Keyboard::Key::R, READY_KEY));
+
+  EXPECT_THAT(readyRequests(), ElementsAre(ASK_READY, ASK_NOT_READY));
+}
+
+/**
+ * Given Enter held on READY when L opens the leaderboard, its release going to
+ * that screen
+ * When Escape is pressed and released, once back in the room
+ * Then BACK leaves: the press of the bar did not block the menu
+ */
+TEST_F(LobbyScreenFixture, ABarHeldAcrossTheLeaderboardDoesNotBlockTheMenu) {
+  screen().handleEvent(keyPress(sf::Keyboard::Key::Enter));
+  tap(sf::Keyboard::Key::L, sf::Keyboard::Scan::L);
+
+  screen().handleEvent(keyPress(sf::Keyboard::Key::Escape));
+  screen().handleEvent(keyRelease(sf::Keyboard::Key::Escape));
+
+  EXPECT_THAT(navigator().calls(),
+              ElementsAre(NavigatorCall{.request = NavigatorRequest::Push,
+                                        .screen = LEADERBOARD_SCREEN},
+                          NavigatorCall{.request = NavigatorRequest::Pop,
+                                        .screen = std::nullopt}));
+}
+
+/**
+ * Given a waiting room whose help is open
+ * When L is pressed and released
+ * Then nothing opens: the help takes the keys
+ */
+TEST_F(LobbyScreenFixture, TheLeaderboardKeyIsIgnoredWhileTheHelpIsOpen) {
+  tap(sf::Keyboard::Key::H, sf::Keyboard::Scan::H);
+
+  tap(sf::Keyboard::Key::L, sf::Keyboard::Scan::L);
+
+  EXPECT_THAT(navigator().calls(), IsEmpty());
 }
