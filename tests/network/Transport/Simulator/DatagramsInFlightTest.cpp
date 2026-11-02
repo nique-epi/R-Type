@@ -271,9 +271,9 @@ TEST(DatagramsInFlight, CopiesEveryDatagramAtFullDuplicates) {
 }
 
 /**
- * Given duplicates at 10 %
+ * Given duplicates at 10 % and no loss
  * When 10 000 datagrams are handed over, each taken out once it arrived
- * Then about 11 000 arrive
+ * Then every one arrives at least once, and about 11 000 arrive in all
  */
 TEST(DatagramsInFlight, CopiesAboutTheShareOfTheDuplicates) {
   DatagramsInFlight inFlight{TENTH_DUPLICATES, SOME_SEED};
@@ -281,6 +281,9 @@ TEST(DatagramsInFlight, CopiesAboutTheShareOfTheDuplicates) {
   const std::vector<DatagramInFlight> arrivals = arrivalsWhileHanding(
       inFlight, TEN_THOUSAND_DATAGRAMS, ONE_MILLISECOND_APART);
 
+  EXPECT_TRUE(
+      std::ranges::all_of(arrivalsByNumber(arrivals, TEN_THOUSAND_DATAGRAMS),
+                          [](std::size_t count) { return count >= 1; }));
   EXPECT_NEAR(static_cast<double>(arrivals.size()),
               ARRIVALS_AT_A_TENTH_DUPLICATES, DRAW_TOLERANCE);
 }
@@ -308,7 +311,7 @@ TEST(DatagramsInFlight, NeverCopiesALostDatagram) {
 /**
  * Given reordering at 100 % and no lag
  * When 1000 datagrams are handed over 100 ms apart
- * Then every one arrives, each after exactly 75 ms
+ * Then every one arrives once, each after exactly 75 ms
  */
 TEST(DatagramsInFlight, HoldsAReorderedDatagramForTheReorderHold) {
   DatagramsInFlight inFlight{FULL_REORDER, SOME_SEED};
@@ -317,6 +320,9 @@ TEST(DatagramsInFlight, HoldsAReorderedDatagramForTheReorderHold) {
   const std::vector<DatagramInFlight> arrivals = everyArrival(inFlight);
 
   ASSERT_EQ(arrivals.size(), THOUSAND_DATAGRAMS);
+  EXPECT_TRUE(
+      std::ranges::all_of(arrivalsByNumber(arrivals, THOUSAND_DATAGRAMS),
+                          [](std::size_t count) { return count == 1; }));
   EXPECT_TRUE(std::ranges::all_of(waitsOf(arrivals, HUNDRED_MILLISECONDS_APART),
                                   [](std::chrono::steady_clock::duration wait) {
                                     return wait == HOLD_OF_A_REORDERED_DATAGRAM;
@@ -399,8 +405,11 @@ TEST(DatagramsInFlight, LosesADatagramHandedOverWhenFull) {
   const std::vector<DatagramInFlight> arrivals = everyArrival(inFlight);
 
   ASSERT_EQ(arrivals.size(), DATAGRAMS_A_FULL_NETWORK_HOLDS);
-  EXPECT_EQ(arrivalsByNumber(arrivals, ONE_DATAGRAM_MORE_THAN_IT_HOLDS).back(),
-            std::size_t{0});
+  const std::vector<std::size_t> counts =
+      arrivalsByNumber(arrivals, ONE_DATAGRAM_MORE_THAN_IT_HOLDS);
+  EXPECT_EQ(static_cast<std::size_t>(std::ranges::count(counts, ONE_DATAGRAM)),
+            DATAGRAMS_A_FULL_NETWORK_HOLDS);
+  EXPECT_EQ(counts.back(), std::size_t{0});
 }
 
 /**
