@@ -2,7 +2,6 @@
 #include <algorithm>
 #include <chrono>
 #include <cmath>
-#include <cstddef>
 #include <cstdint>
 #include <optional>
 #include <span>

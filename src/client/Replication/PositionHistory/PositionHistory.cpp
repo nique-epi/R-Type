@@ -1,7 +1,6 @@
 #include "PositionHistory.hpp"
 #include <algorithm>
 #include <cmath>
-#include <cstddef>
 #include <iterator>
 #include <optional>
 #include <span>
