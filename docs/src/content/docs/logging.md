@@ -99,7 +99,9 @@ The last of `--log-file` and `--no-log-file` wins, and so does the last of `--lo
 ```cpp
 const rtype::logging::LogLaunchOptions logOptions =
     rtype::logging::LogLaunchOptions::readFromProcess(
-        argumentCount, arguments, rtype::logging::SERVER_LOG_FILE_NAME);
+        argumentCount, arguments,
+        rtype::engine::executableFolder() /
+            rtype::logging::SERVER_LOG_FILE_NAME);
 const rtype::server::LaunchOptions launchOptions =
     rtype::server::LaunchOptions::read(logOptions.otherArguments());
 if (launchOptions.helpRequested()) {
