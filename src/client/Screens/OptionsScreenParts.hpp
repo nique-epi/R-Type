@@ -2,21 +2,18 @@
 
 #include <functional>
 #include "IScreenNavigator.hpp"
-#include "ISettingsStorage.hpp"
 #include "ISizableWindow.hpp"
 #include "ISoundPlayer.hpp"
 #include "KeyNames.hpp"
 #include "OptionsPlace.hpp"
 #include "PlayfieldMapping.hpp"
+#include "SettingsService.hpp"
 
 namespace rtype::client {
 
-struct PlayerSettings;
-
 /**
  * @brief What the options are built from, but the picture they own. The
- * navigator, the settings, the storage and the window must outlive the
- * screen.
+ * navigator, the settings service and the window must outlive the screen.
  *
  * A std::reference_wrapper has no default constructor, so this struct is
  * only ever built with designated initializers naming every member without
@@ -31,10 +28,8 @@ struct OptionsScreenParts {
   std::reference_wrapper<ISoundPlayer> sounds;
   /** @brief What the options are opened over. */
   OptionsPlace place{};
-  /** @brief What the rows read and change. */
-  std::reference_wrapper<PlayerSettings> settings;
-  /** @brief Where a change is saved. */
-  std::reference_wrapper<ISettingsStorage> storage;
+  /** @brief What the rows read, change through and save with. */
+  std::reference_wrapper<SettingsService> settings;
   /** @brief Window whose display mode and size DISPLAY picks. */
   std::reference_wrapper<ISizableWindow> window;
   /** @brief Gives the name drawn on the keycap of a key. */

@@ -22,12 +22,12 @@ using rtype::client::OptionsScreenParts;
 using rtype::client::PlayerSettings;
 
 OptionsScreenFixture::OptionsScreenFixture(OptionsPlace place)
-    : window_(rtype::client::testing::DESKTOP),
+    : service_(settings_, storage_),
+      window_(rtype::client::testing::DESKTOP),
       screen_(OptionsScreenParts{.navigator = navigator_,
                                  .sounds = sounds_,
                                  .place = place,
-                                 .settings = settings_,
-                                 .storage = storage_,
+                                 .settings = service_,
                                  .window = window_,
                                  .keyName = nameInTheFile,
                                  .playfieldPointAt = samePlayfieldPoint},

@@ -11,7 +11,8 @@
 #include "AudioConstants.hpp"
 #include "AudioVolume.hpp"
 #include "MusicTrack.hpp"
-#include "PlayerSettings.hpp"
+#include "SettingId.hpp"
+#include "SettingsService.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::client {
@@ -31,7 +32,7 @@ sf::Music::TimeSpan loopOf(const MusicTrack& track) {
 
 }  // namespace
 
-MusicPlayer::MusicPlayer(const PlayerSettings& settings, MusicTrack track)
+MusicPlayer::MusicPlayer(const SettingsService& settings, MusicTrack track)
     : settings_(&settings),
       track_(track),
       logger_(std::string{AUDIO_LOG_MODULE_NAME}) {}
@@ -42,13 +43,17 @@ void MusicPlayer::start() {
   }
   music_.setLoopPoints(loopOf(track_));
   music_.setLooping(true);
-  update();
+  applyVolume();
   music_.play();
 }
 
 void MusicPlayer::stop() { music_.stop(); }
 
-void MusicPlayer::update() { music_.setVolume(musicVolumeOf(*settings_)); }
+void MusicPlayer::settingChanged(SettingId changed) {
+  if (changesMusicVolume(changed)) {
+    applyVolume();
+  }
+}
 
 std::optional<engine::Duration> MusicPlayer::playingOffset() const {
   if (music_.getStatus() != sf::SoundSource::Status::Playing) {
@@ -73,6 +78,10 @@ void MusicPlayer::open(AssetLibrary& library) {
     return;
   }
   opened_ = true;
+}
+
+void MusicPlayer::applyVolume() {
+  music_.setVolume(musicVolumeOf(settings_->settings()));
 }
 
 }  // namespace rtype::client
