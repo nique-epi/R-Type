@@ -2,8 +2,11 @@
 #include <iostream>
 #include <string>
 #include "Application.hpp"
+#include "ClientConfiguration.hpp"
 #include "ClientConstants.hpp"
 #include "ClientModules.hpp"
+#include "ConfigurationLog.hpp"
+#include "ConfigurationReport.hpp"
 #include "FrameLoop.hpp"
 #include "LaunchArguments.hpp"
 #include "LaunchOptions.hpp"
@@ -27,10 +30,15 @@ int runClient(const rtype::logging::LogLaunchOptions& logOptions,
   try {
     const rtype::engine::SystemClock clock;
     rtype::client::FrameLoop loop{clock};
+    rtype::engine::ConfigurationReport configurationReport;
     rtype::engine::Application application{
         rtype::engine::LoopStages{rtype::client::CLIENT_LOOP_STAGES},
-        rtype::client::clientModules(logOptions, launchOptions, loop)};
+        rtype::client::clientModules(logOptions, launchOptions, loop),
+        rtype::client::clientConfiguration(launchOptions, configurationReport)};
     application.start();
+    rtype::engine::logConfigurationReport(
+        configurationReport, rtype::client::CLIENT_CONFIGURATION_FILE_NAME,
+        rtype::logging::Logger{std::string{rtype::client::CLIENT_LOGGER_NAME}});
     loop.run(application);
     application.stop();
     const rtype::logging::Logger logger{

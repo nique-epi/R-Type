@@ -19,8 +19,7 @@ std::vector<std::unique_ptr<engine::IModule>> clientModules(
     const logging::LogLaunchOptions& logOptions,
     const LaunchOptions& launchOptions, FrameLoop& loop) {
   std::vector<std::unique_ptr<engine::IModule>> modules;
-  modules.push_back(std::make_unique<ClientLoggerModule>(
-      logOptions, launchOptions.serverEndpoint()));
+  modules.push_back(std::make_unique<ClientLoggerModule>(logOptions));
   modules.push_back(std::make_unique<ClientAssetsModule>());
   modules.push_back(std::make_unique<ClientSettingsModule>());
   modules.push_back(std::make_unique<ClientWindowModule>(loop));

@@ -35,6 +35,19 @@ constexpr std::string_view NICKNAME_OPTION = "-n";
 constexpr std::string_view DEFAULT_NICKNAME = "PILOT";
 
 /**
+ * @brief The file of commands the client reads when it starts; a missing file
+ * is not an error.
+ */
+constexpr std::string_view CLIENT_CONFIGURATION_FILE_NAME = "client.cfg";
+
+/**
+ * @brief The names the settings of the client go by in `set` and in `--set`.
+ */
+constexpr std::string_view NICKNAME_SETTING_NAME = "nickname";
+constexpr std::string_view SERVER_ADDRESS_SETTING_NAME = "server-address";
+constexpr std::string_view SERVER_PORT_SETTING_NAME = "server-port";
+
+/**
  * @brief Launch option that starts the client without sound.
  */
 constexpr std::string_view NO_SOUND_OPTION = "--no-sound";

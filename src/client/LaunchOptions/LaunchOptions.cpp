@@ -4,11 +4,13 @@
 #include <string>
 #include <string_view>
 #include <utility>
+#include <vector>
 #include "AudioMode.hpp"
 #include "ClientConstants.hpp"
 #include "ClientException.hpp"
 #include "Endpoint.hpp"
 #include "EndpointText.hpp"
+#include "EngineException.hpp"
 #include "LaunchArguments.hpp"
 #include "LaunchArgumentsConstants.hpp"
 #include "LaunchOption.hpp"
@@ -16,9 +18,28 @@
 #include "LoggingConstants.hpp"
 #include "NetworkConstants.hpp"
 #include "ProtocolConstants.hpp"
+#include "SettingLine.hpp"
 #include "WireTypes.hpp"
 
 namespace rtype::client {
+
+namespace {
+
+/**
+ * @returns The line that gives the setting @p assignment names its value.
+ * @throws engine::InvalidLaunchOptionValueException naming the set option when
+ * @p assignment is not `name=value`.
+ */
+std::string settingLineFrom(std::string_view assignment) {
+  try {
+    return engine::settingLineFromAssignment(assignment);
+  } catch (const engine::CommandRefusedException&) {
+    throw engine::InvalidLaunchOptionValueException(
+        std::string(engine::SET_OPTION), std::string(assignment));
+  }
+}
+
+}  // namespace
 
 LaunchOptions LaunchOptions::read(std::span<const std::string_view> arguments) {
   LaunchOptions options{
@@ -32,23 +53,39 @@ LaunchOptions LaunchOptions::read(std::span<const std::string_view> arguments) {
                                [&options](std::string_view address) {
                                  options.serverEndpoint_.address =
                                      network::ipv4AddressFromText(address);
+                                 options.forcedLines_.push_back(
+                                     engine::settingLine(
+                                         SERVER_ADDRESS_SETTING_NAME,
+                                         options.serverEndpoint_.address));
                                }},
-      engine::LaunchOption{.name = engine::PORT_OPTION,
+      engine::LaunchOption{
+          .name = engine::PORT_OPTION,
+          .takesValue = true,
+          .record =
+              [&options](std::string_view port) {
+                options.serverEndpoint_.port = network::portFromText(port);
+                options.forcedLines_.push_back(engine::settingLine(
+                    SERVER_PORT_SETTING_NAME,
+                    std::to_string(options.serverEndpoint_.port)));
+              }},
+      engine::LaunchOption{
+          .name = NICKNAME_OPTION,
+          .takesValue = true,
+          .record =
+              [&options](std::string_view nickname) {
+                if (!network::isValidNickname(nickname)) {
+                  throw InvalidNicknameOptionException(nickname);
+                }
+                options.nickname_ = std::string(nickname);
+                options.forcedLines_.push_back(
+                    engine::settingLine(NICKNAME_SETTING_NAME, nickname));
+              }},
+      engine::LaunchOption{.name = engine::SET_OPTION,
                            .takesValue = true,
                            .record =
-                               [&options](std::string_view port) {
-                                 options.serverEndpoint_.port =
-                                     network::portFromText(port);
-                               }},
-      engine::LaunchOption{.name = NICKNAME_OPTION,
-                           .takesValue = true,
-                           .record =
-                               [&options](std::string_view nickname) {
-                                 if (!network::isValidNickname(nickname)) {
-                                   throw InvalidNicknameOptionException(
-                                       nickname);
-                                 }
-                                 options.nickname_ = std::string(nickname);
+                               [&options](std::string_view assignment) {
+                                 options.forcedLines_.push_back(
+                                     settingLineFrom(assignment));
                                }},
       engine::LaunchOption{
           .name = NO_SOUND_OPTION,
@@ -87,6 +124,15 @@ std::string LaunchOptions::usage() {
           std::to_string(network::MINIMUM_NICKNAME_SIZE) + " to " +
           std::to_string(network::MAXIMUM_NICKNAME_SIZE) +
           " bytes of UTF-8. Default: " + std::string(DEFAULT_NICKNAME) + ".");
+  text += engine::usageEntry(
+      std::string(engine::SET_OPTION) + " <name>=<value>",
+      "Gives a setting a value, as the line `set <name> <value>` of " +
+          std::string(CLIENT_CONFIGURATION_FILE_NAME) +
+          " does. It wins over that file and can be given several times. "
+          "Settings: " +
+          std::string(NICKNAME_SETTING_NAME) + ", " +
+          std::string(SERVER_ADDRESS_SETTING_NAME) + ", " +
+          std::string(SERVER_PORT_SETTING_NAME) + ".");
   text += engine::usageEntry(std::string(NO_SOUND_OPTION),
                              "Start the client without sound.");
   text += engine::usageEntry(engine::HELP_OPTION,
@@ -98,6 +144,10 @@ std::string LaunchOptions::usage() {
 
 const network::Endpoint& LaunchOptions::serverEndpoint() const {
   return serverEndpoint_;
+}
+
+const std::vector<std::string>& LaunchOptions::forcedLines() const {
+  return forcedLines_;
 }
 
 const std::string& LaunchOptions::nickname() const { return nickname_; }

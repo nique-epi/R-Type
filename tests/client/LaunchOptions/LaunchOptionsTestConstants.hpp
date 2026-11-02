@@ -86,3 +86,28 @@ constexpr std::string_view SEVENTEEN_BYTE_NICKNAME = "ABCDEFGHIJKLMNOPQ";
  */
 constexpr std::string_view DEFAULT_NICKNAME_LINE =
     "Callsign of the player, 1 to 16 bytes of UTF-8. Default: PILOT.";
+
+/**
+ * @brief The lines the launch options force.
+ */
+constexpr std::string_view ADDRESS_LINE = "set server-address 192.168.1.20";
+constexpr std::string_view PORT_LINE = "set server-port 4243";
+constexpr std::string_view NICKNAME_LINE = "set nickname ACE";
+
+/**
+ * @brief A nickname holding a space and a quote, and the line that forces it.
+ */
+constexpr std::string_view AWKWARD_NICKNAME_ARGUMENT = "A \"C\" E";
+constexpr std::string_view AWKWARD_NICKNAME_LINE =
+    "set nickname \"A \\\"C\\\" E\"";
+
+/**
+ * @brief A value of the set option, and the line it forces.
+ */
+constexpr std::string_view ASSIGNMENT_ARGUMENT = "nickname=ACE";
+
+/**
+ * @brief Values of the set option that are refused.
+ */
+constexpr std::string_view ASSIGNMENT_WITHOUT_MARK = "nickname";
+constexpr std::string_view ASSIGNMENT_WITHOUT_NAME = "=ACE";

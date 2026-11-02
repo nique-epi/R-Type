@@ -22,8 +22,10 @@ using rtype::client::LaunchOptions;
 using rtype::client::NICKNAME_OPTION;
 using rtype::client::NO_SOUND_OPTION;
 using rtype::engine::HELP_OPTION;
+using rtype::engine::InvalidLaunchOptionValueException;
 using rtype::engine::MissingLaunchOptionValueException;
 using rtype::engine::PORT_OPTION;
+using rtype::engine::SET_OPTION;
 using rtype::engine::UnknownLaunchArgumentException;
 using rtype::network::DEFAULT_SERVER_PORT;
 using rtype::network::Endpoint;
@@ -31,6 +33,7 @@ using rtype::network::InvalidIpv4AddressException;
 using rtype::network::InvalidPortException;
 
 using Arguments = std::vector<std::string_view>;
+using Lines = std::vector<std::string>;
 
 /**
  * Given no argument
@@ -336,5 +339,80 @@ TEST(ClientLaunchOptions, NicknameOptionWithoutValueIsRejected) {
  */
 TEST(ClientLaunchOptions, UsageGivesTheDefaultNickname) {
   EXPECT_NE(LaunchOptions::usage().find(DEFAULT_NICKNAME_LINE),
+            std::string::npos);
+}
+
+/**
+ * Given no argument
+ * When the launch options are read
+ * Then no setting is forced, so the configuration file and the defaults decide
+ */
+TEST(ClientLaunchOptions, NoArgumentForcesNoSetting) {
+  const LaunchOptions options = LaunchOptions::read(Arguments{});
+
+  EXPECT_TRUE(options.forcedLines().empty());
+}
+
+/**
+ * Given the address, the port and the nickname options
+ * When the launch options are read
+ * Then each setting is forced, in the order the options were given
+ */
+TEST(ClientLaunchOptions, EachOptionForcesTheSettingItGives) {
+  const LaunchOptions options = LaunchOptions::read(
+      Arguments{ADDRESS_OPTION, ADDRESS_ARGUMENT, PORT_OPTION, PORT_ARGUMENT,
+                NICKNAME_OPTION, NICKNAME_ARGUMENT});
+
+  EXPECT_EQ(options.forcedLines(),
+            (Lines{std::string(ADDRESS_LINE), std::string(PORT_LINE),
+                   std::string(NICKNAME_LINE)}));
+}
+
+/**
+ * Given a nickname holding a space and quotes
+ * When the launch options are read
+ * Then the forced line quotes and escapes it
+ */
+TEST(ClientLaunchOptions, NicknameWithSpacesAndQuotesIsForcedWhole) {
+  const LaunchOptions options = LaunchOptions::read(
+      Arguments{NICKNAME_OPTION, AWKWARD_NICKNAME_ARGUMENT});
+
+  EXPECT_EQ(options.forcedLines(), Lines{std::string(AWKWARD_NICKNAME_LINE)});
+}
+
+/**
+ * Given the set option and `name=value`
+ * When the launch options are read
+ * Then the line that gives the setting that value is forced
+ */
+TEST(ClientLaunchOptions, SetOptionForcesTheSettingItNames) {
+  const LaunchOptions options =
+      LaunchOptions::read(Arguments{SET_OPTION, ASSIGNMENT_ARGUMENT});
+
+  EXPECT_EQ(options.forcedLines(), Lines{std::string(NICKNAME_LINE)});
+}
+
+/**
+ * Given a set option whose value is not `name=value`
+ * When the launch options are read
+ * Then each is refused as an invalid value of the option
+ */
+TEST(ClientLaunchOptions, SetOptionRefusesAnInvalidAssignment) {
+  for (const std::string_view assignment :
+       {ASSIGNMENT_WITHOUT_MARK, ASSIGNMENT_WITHOUT_NAME}) {
+    EXPECT_THROW(static_cast<void>(
+                     LaunchOptions::read(Arguments{SET_OPTION, assignment})),
+                 InvalidLaunchOptionValueException)
+        << assignment;
+  }
+}
+
+/**
+ * Given the usage
+ * When it is read
+ * Then it names the set option
+ */
+TEST(ClientLaunchOptions, UsageNamesTheSetOption) {
+  EXPECT_NE(LaunchOptions::usage().find(std::string(SET_OPTION)),
             std::string::npos);
 }
