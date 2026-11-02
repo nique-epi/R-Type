@@ -48,6 +48,10 @@ GameInstance::GameInstance(GameInstanceParts parts,
               [this](const ConnectedPlayer& player,
                      const network::PlayerInput& input) {
                 callAll(hooks_.newerInput, player, input);
+                if (ConnectedPlayer* const applied =
+                        sessions_.roster().findByNumber(player.playerNumber)) {
+                  applied->appliedInputNumber = input.inputNumber;
+                }
               }}),
       context_{.events = parts.events,
                .timers = parts.timers,

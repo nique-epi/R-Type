@@ -33,8 +33,8 @@ struct PlayerState {
    * their bits of the actions (DIRECTION_ACTION_BITS), and the maneuver of its
    * ship (ROLLING_MOTION_BIT_POSITION, DASHING_MOTION_BIT_POSITION). */
   std::uint8_t motion{};
-  /** @brief The inputNumber of the newest PlayerInput the server received from
-   * this player, 0 while it received none. */
+  /** @brief The inputNumber of the newest PlayerInput the server applied to
+   * the ship of this player, 0 while it applied none. */
   std::uint32_t acknowledgedInput{};
 
   bool operator==(const PlayerState&) const = default;

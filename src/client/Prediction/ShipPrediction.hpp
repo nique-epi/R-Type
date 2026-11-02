@@ -42,7 +42,7 @@ class ShipPrediction {
   void predict(game::ShipDirections held, std::uint32_t inputNumber);
 
   /** @brief Takes into account the server putting the ship at @p server after
-   * the newest command it received, @p acknowledged. Nothing for 0, for a
+   * the newest command it applied, @p acknowledged. Nothing for 0, for a
    * number no pending command carries, or before restart(). */
   void reconcile(game::Position server, std::uint32_t acknowledged);
 

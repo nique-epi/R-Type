@@ -92,6 +92,7 @@ TEST_F(DeparturesFixture, ClosesASilentSessionOnceTheGraceIsOver) {
  */
 TEST_F(DeparturesFixture, MarksAPlayerAwayOnceTheTimeoutIsReached) {
   player().newestInputNumber = SOME_INPUT_NUMBER;
+  player().appliedInputNumber = SOME_INPUT_NUMBER;
   for (std::size_t tick = 0; tick < SESSION_TIMEOUT_TICKS - 1; ++tick) {
     departures().closeSilentSessions();
   }
@@ -101,6 +102,7 @@ TEST_F(DeparturesFixture, MarksAPlayerAwayOnceTheTimeoutIsReached) {
 
   EXPECT_TRUE(player().away);
   EXPECT_FALSE(player().newestInputNumber.has_value());
+  EXPECT_FALSE(player().appliedInputNumber.has_value());
   EXPECT_NE(roster().find(playerEndpoint(0)), nullptr);
   EXPECT_TRUE(announced().empty());
 }

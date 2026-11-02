@@ -44,6 +44,7 @@ using rtype::server::testing::PLAYER_MISSILE_NETWORK_ID;
 using rtype::server::testing::PLAYER_MISSILE_POSITION;
 using rtype::server::testing::PLAYER_NETWORK_ID;
 using rtype::server::testing::PLAYER_POSITION;
+using rtype::server::testing::RECEIVED_INPUT_NUMBER;
 using rtype::server::testing::REFUSED_STATE_RATES;
 using rtype::server::testing::SECOND_CLIENT_PORT;
 using rtype::server::testing::SECOND_LIVES;
@@ -351,16 +352,18 @@ TEST_F(WorldStateSenderFixture, ListsAPlayerWithProtectionLeftAsInvulnerable) {
 }
 
 /**
- * Given a player who sent inputs up to number 7, and one who sent none
+ * Given a player whose input 9 arrived but whose ship only applied input 7,
+ * and one who sent none
  * When the first state is due
  * Then the state lists 7 for the first and 0 for the second
  */
-TEST_F(WorldStateSenderFixture, ListsTheNewestInputNumberOfEachPlayer) {
+TEST_F(WorldStateSenderFixture, ListsTheAppliedInputNumberOfEachPlayer) {
   rtype::server::ConnectedPlayer& sender =
       connect(FIRST_CLIENT_PORT, SESSION_TOKEN);
   const rtype::server::ConnectedPlayer& silent =
       connect(SECOND_CLIENT_PORT, OTHER_SESSION_TOKEN);
-  sender.newestInputNumber = NEWEST_INPUT_NUMBER;
+  sender.newestInputNumber = RECEIVED_INPUT_NUMBER;
+  sender.appliedInputNumber = NEWEST_INPUT_NUMBER;
 
   runTicks(DEFAULT_TICKS_PER_WORLD_STATE);
 

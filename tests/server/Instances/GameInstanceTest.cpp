@@ -1219,6 +1219,22 @@ TEST_F(GameInstanceInputTest, KeepsTheFirstInputOfAPlayer) {
 }
 
 /**
+ * Given a player who sent one input holding up
+ * When a tick reads it
+ * Then the input is recorded as applied to the ship of the player
+ */
+TEST_F(GameInstanceInputTest, RecordsTheInputAppliedToTheShip) {
+  send(FIRST_PLAYER, HOLDS_UP);
+
+  deliver({FIRST_SENT});
+
+  const ConnectedPlayer* const connected =
+      game().roster().find(playerEndpoint(FIRST_PLAYER));
+  ASSERT_NE(connected, nullptr);
+  EXPECT_EQ(connected->appliedInputNumber, lastInputNumber(FIRST_PLAYER));
+}
+
+/**
  * Given a player who sent up, then down, and whose up arrived in a tick
  * When down arrives in the next tick
  * Then the player holds down

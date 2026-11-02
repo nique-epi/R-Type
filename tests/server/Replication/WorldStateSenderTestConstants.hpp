@@ -42,6 +42,7 @@ constexpr std::uint32_t FIRST_SHIP_ID = 11;
 constexpr std::uint32_t SECOND_SHIP_ID = 12;
 constexpr std::uint32_t FIRST_SCORE = 300;
 constexpr std::uint32_t NEWEST_INPUT_NUMBER = 7;
+constexpr std::uint32_t RECEIVED_INPUT_NUMBER = 9;
 constexpr std::uint32_t SECOND_SCORE = 100;
 
 /**

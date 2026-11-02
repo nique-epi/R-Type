@@ -8,7 +8,7 @@
 namespace rtype::client {
 
 /** @brief What a WorldState says of the ship of one player: its entity, where
- * it is and the newest input the server received from the player. */
+ * it is and the newest input the server applied to it. */
 struct OwnShip {
   std::uint32_t shipEntityId{};
   game::Position position{};
