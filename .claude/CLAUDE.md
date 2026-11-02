@@ -74,6 +74,7 @@ Paths below are relative to `.claude/rules/`.
 - `architecture/architecture-pure-virtual-interfaces.md`
 - `architecture/fix-architecture-a-class-the-tests-build-opens-no-opengl-context.md`
 - `architecture/fix-architecture-a-function-does-one-kind-of-step.md`
+- `architecture/fix-architecture-a-new-case-takes-the-path-of-its-precedent.md`
 - `architecture/fix-architecture-a-module-install-keeps-nothing-open.md`
 - `architecture/fix-architecture-a-module-start-that-throws-closes-what-it-opened.md`
 - `architecture/fix-architecture-at-most-35-lines-per-function.md`
@@ -152,6 +153,7 @@ Paths below are relative to `.claude/rules/`.
 **Execution (shell, git, build) — `fix/execution/`**
 - `fix/execution/fix-execution-a-script-reading-repository-text-names-its-encoding.md`
 - `fix/execution/fix-execution-a-split-commit-carries-its-own-links.md`
+- `fix/execution/fix-execution-a-dll-exports-what-its-own-standard-compiled.md`
 - `fix/execution/fix-execution-a-static-library-reached-twice-on-the-link-line.md`
 - `fix/execution/fix-execution-a-test-added-to-an-executable-links-what-it-uses.md`
 - `fix/execution/fix-execution-an-edit-of-a-shared-text-checks-it-is-unchanged.md`
