@@ -27,10 +27,10 @@ class SettingsService;
  *
  * A voice is an sf::Sound, created the first time it is needed and kept; the
  * next sound takes the voice voiceForNextSound() gives, so a sound started
- * while every voice plays cuts the one that started first. The volumes are
- * of a sound is the one the settings had when the last of them changed, so
- * the options change the next sound. The voices are reserved at once, so a
- * voice never moves while it plays.
+ * while every voice plays cuts the one that started first. The volume of a
+ * sound is the one the settings service last told, so the options change the
+ * next sound. The voices are reserved at once, so a voice never moves while it
+ * plays.
  */
 class SoundPlayer : public ISoundPlayer, public ISettingsListener {
  public:

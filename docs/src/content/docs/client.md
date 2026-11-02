@@ -53,7 +53,7 @@ This page tells you where to look when you need to change something. It describe
 |---|---|---|
 | `logger` | applies the logging options when it starts, then logs "client starting" and the server given at launch | `src/client/Modules/Logger/` |
 | `assets` | finds the assets folder when it installs and provides the `AssetLibrary`; loads the assets of the interface and of the intro when it starts | `src/client/Modules/Assets/` |
-| `settings` | provides the `PlayerSettings` and the `SettingsService`; reads the settings file when it starts | `src/client/Modules/Settings/` |
+| `settings` | provides the `PlayerSettings` and the `SettingsService`; reads the settings file when it starts and hands what it read to the service | `src/client/Modules/Settings/` |
 | `window` | provides the `GameWindow`, the `EventListeners` and the `FrameLoop`; opens the window at the saved size when it starts, closes it when it stops | `src/client/Modules/Window/` |
 | `connection` | provides the `ServerConnection`; opens the socket and its network thread when it starts; leaves the server, then closes the socket, when it stops | `src/client/Modules/Connection/` |
 | `audio` | provides the `IAudioService`: the sounds, the theme and the music of a game, or a service that plays nothing with `--no-sound`; opens the music files when it starts | `src/client/Modules/Audio/` |
@@ -65,7 +65,7 @@ This page tells you where to look when you need to change something. It describe
 |---|---|
 | `events` | the window hands each of its events to the listeners |
 | `network` | the connection reads what the server sent and sends what is due |
-| `update` | the volumes follow the settings, then the sky and every screen are updated; once no screen is left, the loop stops |
+| `update` | the silence before the music of a game moves on, then the sky and every screen are updated; once no screen is left, the loop stops |
 | `render` | the window is cleared, then the sky and the screens are drawn |
 | `display` | the window shows the frame |
 
@@ -552,7 +552,7 @@ service.apply(MUSIC_VOLUME_SETTING, 75);   // true: applied, saved at the next s
 service.apply(MUSIC_VOLUME_SETTING, 101);  // false: out of range, nothing changes
 ```
 
-`apply()` accepts a value inside the range, both ends included (0 and 100 for a volume), and refuses any other without changing anything or telling anybody. A change marks the settings unsaved and tells every `ISettingsListener` subscribed which `SettingId` changed; the listener reads the new value from `settings()`. `bindKey()`, `resetSound()` and `resetKeys()` do the same for the keys and the sound. `saveIfChanged()` saves through the `ISettingsStorage` when a change is not saved yet and answers whether the storage kept them, or nothing when there was nothing to save; a refused save is not retried until the next change. `client_settings_tests` checks the ends of the ranges, the notifications and the saves with a recording listener and storage from `tests/doubles/`.
+`apply()` accepts a value inside the range, both ends included (0 and 100 for a volume), and refuses any other without changing anything or telling anybody. A change marks the settings unsaved and tells every `ISettingsListener` subscribed which `SettingId` changed; the listener reads the new value from `settings()`. `bindKey()`, `resetSound()` and `resetKeys()` do the same for the keys and the sound. `restore()` takes the settings read from the file at launch and tells every listener about every setting, since the sounds and the music are built before the file is read; it leaves nothing new to save. `saveIfChanged()` saves through the `ISettingsStorage` when a change is not saved yet and answers whether the storage kept them, or nothing when there was nothing to save; a refused save is not retried until the next change. `client_settings_tests` checks the ends of the ranges, the notifications and the saves with a recording listener and storage from `tests/doubles/`.
 
 `SettingsFile` (`rtype_client_settings_file`, `src/client/Settings/SettingsFile/`) keeps them in a text file, one `name=value` per line, readable and editable by hand, whose text `settingsText()` and `readSettingsText()` write and read (`rtype_client_settings_text`, `src/client/Settings/SettingsText/`). A first launch writes:
 
@@ -820,7 +820,7 @@ The dialog is a `DialogScreen` (`src/client/Screens/DialogScreen/`), which shows
 | Change where the parts of the menus go | `MenuBuilder::placeColumn()`, `placeDialog()`, `placeForm()`, `placeTabbedPanel()` and `placeRoom()`, `src/client/Widgets/WidgetConstants.hpp` |
 | Add a control to a row | A class deriving from `RowControl` in its own folder under `src/client/Widgets/RowControls/`, its sizes in `RowControlConstants.hpp`, added with `MenuBuilder::row()` |
 | Change the rows, texts or tabs of the options | `src/client/Screens/OptionsScreenConstants.hpp`, the tab functions of `src/client/Screens/OptionsTabs/`, the rows of `OptionsRows/` and the descriptions of `OptionsDescriptions/` |
-| Add a setting | A member of `PlayerSettings`, its name in `src/client/Settings/SettingsConstants.hpp`, its line in `settingsText()` and `applySetting()` (`src/client/Settings/SettingsText/SettingsText.cpp`), its `Setting` constant in `SettingDefinitionConstants.hpp` and a `SettingId`, its row in `OptionsRows/` and `OptionsTabs/`; a setting of a type no `SettingsService::apply()` instantiation covers (`int`, `bool`, `ColorMode`, `DisplayMode`, `std::optional<PixelSize>`) needs one more line in `SettingsService.cpp` |
+| Add a setting | A member of `PlayerSettings`, its name in `src/client/Settings/SettingsConstants.hpp`, its line in `settingsText()` and `applySetting()` (`src/client/Settings/SettingsText/SettingsText.cpp`), its `Setting` constant in `SettingDefinitionConstants.hpp`, a `SettingId` and its place in `ALL_SETTING_IDS`, its row in `OptionsRows/` and `OptionsTabs/`; a setting of a type no `SettingsService::apply()` instantiation covers (`int`, `bool`, `ColorMode`, `DisplayMode`, `std::optional<PixelSize>`) needs one more line in `SettingsService.cpp` |
 | Change where the settings file is kept | `settingsFolder()` in `src/client/Platform/`, `SETTINGS_FILE_NAME` in `SettingsConstants.hpp` |
 | Change how a bar looks | `Button::lookOf()`, `src/client/Widgets/WidgetColors.hpp` |
 | Change the keys of the menus, or how long a press shows | `MENU_NEXT_KEYS`, `MENU_PREVIOUS_KEYS`, `MENU_TAB_KEY`, `MENU_CONFIRM_KEY`, `MENU_CANCEL_KEY`, `FIELD_ERASE_KEY`, `PRESS_DURATION` in `WidgetConstants.hpp` |
