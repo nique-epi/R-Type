@@ -32,7 +32,8 @@ class ISoundPlayer;
  * line describing the selected bar and the status line under it; its
  * illustration sits against the right side of the margin, its footer in the
  * bottom-right corner. A dialog is a panel centered on the picture: its
- * heading, its message, then its buttons in a centered row. A form is a panel
+ * heading, its message or at most DIALOG_ROW_CAPACITY rows, then its buttons in
+ * a centered row. A form is a panel
  * centered on the picture too: its heading, its fields one under the other,
  * its buttons in a centered row, then the line describing the selected bar
  * and the status line under it; the pointer selects one of its bars only by
@@ -99,7 +100,7 @@ class MenuBuilder {
   /**
    * @brief Adds a text field after the previous bars, FIELD_SIZE large: in the
    * column of a form, or of a page. MENU_CONFIRM_KEY runs its action, as on a
-   * button. A dialog, which asks a question, must hold buttons only.
+   * button. A dialog must hold no text field.
    */
   MenuBuilder& textField(Button::Text text, TextField field,
                          std::function<void()> action);
@@ -122,8 +123,9 @@ class MenuBuilder {
   /** @brief Small line in the bottom-right corner of a page. */
   MenuBuilder& footer(std::string text);
 
-  /** @brief Adds a row to a tabbed panel, after the previous ones: its label
-   * on the left, its control on the right. Only a tabbed panel holds rows. */
+  /** @brief Adds a row to a tabbed panel or a dialog, after the previous ones:
+   * its label on the left, its control on the right. Only those two hold rows;
+   * Left and Right then step its value, Up, Down and Tab move between bars. */
   MenuBuilder& row(Button::Text text, std::unique_ptr<RowControl> control);
 
   /**

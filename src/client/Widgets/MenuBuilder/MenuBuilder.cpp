@@ -128,6 +128,42 @@ void placeFormBars(Menu::Content& content, std::vector<PendingButton>& bars,
   }
 }
 
+/** @brief Places the rows of a dialog under its heading and its buttons in a
+ * centered row; rows keep Left and Right to step their values. */
+void placeDialogBars(Menu::Content& content, std::vector<PendingButton>& bars,
+                     sf::Vector2i panel) {
+  const int rowCount = static_cast<int>(
+      std::ranges::count_if(bars, [](const PendingButton& pending) noexcept {
+        return pending.control != nullptr;
+      }));
+  const int barCount = static_cast<int>(bars.size()) - rowCount;
+  const int rowWidth =
+      barRowWidth(barCount, DIALOG_BUTTON_SIZE, DIALOG_BUTTON_GAP);
+  const int barsTop = panel.y + (rowCount > 0 ? DIALOG_BUTTONS_TOP_UNDER_ROWS
+                                              : DIALOG_BUTTONS_TOP);
+  int rowTop = panel.y + DIALOG_ROWS_TOP;
+  int left = panel.x + ((DIALOG_SIZE.x - rowWidth) / SIDES_PER_AXIS);
+  for (PendingButton& pending : bars) {
+    if (pending.control != nullptr) {
+      content.buttons.emplace_back(
+          std::move(pending.text),
+          sf::IntRect({panel.x + DIALOG_ROW_INSET, rowTop}, DIALOG_ROW_SIZE),
+          std::move(pending.control));
+      rowTop += DIALOG_ROW_SIZE.y + ROW_GAP;
+    } else {
+      content.buttons.emplace_back(
+          std::move(pending.text),
+          sf::IntRect({left, barsTop}, DIALOG_BUTTON_SIZE),
+          std::move(pending.action), std::move(pending.field));
+      left += DIALOG_BUTTON_SIZE.x + DIALOG_BUTTON_GAP;
+    }
+  }
+  if (rowCount > 0) {
+    content.nextKeys = PANEL_NEXT_KEYS;
+    content.previousKeys = PANEL_PREVIOUS_KEYS;
+  }
+}
+
 }  // namespace
 
 MenuBuilder::MenuBuilder(Frame frame, ISoundPlayer* sounds)
@@ -296,18 +332,7 @@ void MenuBuilder::placeDialog(Menu::Content& content) {
                                 panelTopLeft + DIALOG_MESSAGE_OFFSET,
                                 DIALOG_MESSAGE_STYLE);
   }
-  const int count = static_cast<int>(buttons_.size());
-  const int rowWidth =
-      barRowWidth(count, DIALOG_BUTTON_SIZE, DIALOG_BUTTON_GAP);
-  int left = panelTopLeft.x + ((DIALOG_SIZE.x - rowWidth) / SIDES_PER_AXIS);
-  for (PendingButton& pending : buttons_) {
-    content.buttons.emplace_back(
-        std::move(pending.text),
-        sf::IntRect({left, panelTopLeft.y + DIALOG_BUTTONS_TOP},
-                    DIALOG_BUTTON_SIZE),
-        std::move(pending.action), std::move(pending.field));
-    left += DIALOG_BUTTON_SIZE.x + DIALOG_BUTTON_GAP;
-  }
+  placeDialogBars(content, buttons_, panelTopLeft);
 }
 
 void MenuBuilder::placeForm(Menu::Content& content) {
