@@ -6,6 +6,7 @@
 #include <utility>
 #include <vector>
 #include "BoundedQueue.hpp"
+#include "DatagramQueues.hpp"
 #include "DatagramSorter.hpp"
 #include "DebugJournal.hpp"
 #include "Endpoint.hpp"
@@ -24,6 +25,7 @@ using rtype::concurrency::BoundedQueue;
 using rtype::network::Endpoint;
 using rtype::network::IncomingDatagram;
 using rtype::network::NO_SESSION_TOKEN;
+using rtype::server::DatagramQueues;
 using rtype::server::DatagramSorter;
 using rtype::server::testing::DROPPED_DATAGRAM_LINE_TEXT;
 using rtype::server::testing::DROPPED_TOGETHER_COUNT;
@@ -116,8 +118,8 @@ class DatagramSorterTest : public ::testing::Test {
       rtype::server::CONNECTION_REQUEST_QUEUE_CAPACITY};
   SimulatedClock clock_;
   DatagramSorter sorter_{
-      DatagramSorter::Destinations{.players = &players_,
-                                   .connectionRequests = &connectionRequests_},
+      DatagramQueues{.players = &players_,
+                     .connectionRequests = &connectionRequests_},
       clock_};
 };
 

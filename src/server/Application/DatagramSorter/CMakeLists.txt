@@ -9,6 +9,7 @@ target_link_libraries(rtype_server_datagram_sorter
     rtype_logging
     rtype_network_protocol
     rtype_network_transport
+    rtype_server_application_interfaces
   PRIVATE
     rtype_network_constants
     rtype_network_datagram_codec
