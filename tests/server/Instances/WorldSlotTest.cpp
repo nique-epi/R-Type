@@ -33,4 +33,41 @@ TEST(WorldSlot, RenewGivesTheWorldItNowHolds) {
   EXPECT_EQ(&renewed, &slot.current());
 }
 
+/**
+ * Given a new slot
+ * When its entities are counted
+ * Then there is none
+ */
+TEST(WorldSlot, ANewSlotHoldsNoEntity) {
+  const WorldSlot slot;
+
+  EXPECT_EQ(slot.entityCount(), 0U);
+}
+
+/**
+ * Given a slot whose world holds the ship of a player
+ * When its entities are counted
+ * Then there is one
+ */
+TEST(WorldSlot, CountsTheEntitiesOfItsWorld) {
+  WorldSlot slot;
+  slot.current().spawnPlayer(testing::SHIP_START);
+
+  EXPECT_EQ(slot.entityCount(), 1U);
+}
+
+/**
+ * Given a slot whose world holds the ship of a player
+ * When the slot is renewed
+ * Then it counts the entities of the new world, none
+ */
+TEST(WorldSlot, CountsTheEntitiesOfTheNewWorldOnceRenewed) {
+  WorldSlot slot;
+  slot.current().spawnPlayer(testing::SHIP_START);
+
+  slot.renew();
+
+  EXPECT_EQ(slot.entityCount(), 0U);
+}
+
 }  // namespace rtype::server

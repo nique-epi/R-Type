@@ -11,8 +11,8 @@ namespace rtype::server {
 
 /**
  * @brief The modules of the server, in the order an Application installs and
- * starts them (and stops them in reverse): the logger, the network, the games
- * and the lobby. This is the one place that lists them.
+ * starts them (and stops them in reverse): the logger, the network, the games,
+ * the lobby and the metrics. This is the one place that lists them.
  *
  * @param logOptions Applied by the logger module when it starts.
  * @param launchOptions Give the port the network module listens on and the
