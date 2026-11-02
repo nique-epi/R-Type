@@ -5,30 +5,41 @@
 #include <string_view>
 #include "AudioMode.hpp"
 #include "Endpoint.hpp"
+#include "LogLaunchOptions.hpp"
 #include "NetworkConditions.hpp"
+#include "SimulatorLaunchOptions.hpp"
 
 namespace rtype::client {
 
 /**
  * @brief What the client is told at launch: the address and the port of the
  * server to join and the nickname of the player, which the connection screen
- * starts with, whether it makes sound, or a request for its usage.
+ * starts with, whether it makes sound, the network simulated and the logging
+ * options, or a request for its usage.
  */
 class LaunchOptions {
  public:
   /**
-   * @brief Reads `-h <address>`, `-p <port>`, `-n <nickname>`, `--no-sound`
-   * and `--help` from @p arguments, the arguments the logging options left (see
-   * logging::LogLaunchOptions).
+   * @brief Reads every option of the client from @p arguments, the arguments
+   * it was launched with, without its name, in one pass from the first to the
+   * last: `-h <address>`, `-p <port>`, `-n <nickname>`, `--no-sound` and
+   * `--help`, the options of the network simulator (see
+   * network::SimulatorLaunchOptions::readOption()) and the logging options
+   * (see logging::LogLaunchOptions::readOption()), whose exceptions this
+   * throws too.
    *
-   * Without `-h` the address is DEFAULT_SERVER_ADDRESS, without `-p` the
-   * port is DEFAULT_SERVER_PORT, without `-n` the nickname is DEFAULT_NICKNAME,
-   * without `--no-sound` the client makes sound.
-   * The last of each option wins. The options of the network simulator are
-   * read first and may stand anywhere (see
-   * network::SimulatorLaunchOptions::read(), whose exceptions this throws
-   * too).
+   * The argument after an option that takes a value is always its value, even
+   * when it is spelled as an option of the client, of the simulator or of the
+   * logging: `-n --lag` is the nickname `--lag`. Without `-h` the address is
+   * DEFAULT_SERVER_ADDRESS, without `-p` the port is DEFAULT_SERVER_PORT,
+   * without `-n` the nickname is DEFAULT_NICKNAME, without `--no-sound` the
+   * client makes sound, and without a logging option the journal is
+   * CLIENT_LOG_FILE_NAME next to the executable. The last of each option
+   * wins.
    *
+   * @throws engine::UnknownExecutablePathException when the system does not
+   *         tell where the executable is, so the default journal has no
+   *         folder.
    * @throws engine::UnknownLaunchArgumentException for any other argument.
    * @throws engine::MissingLaunchOptionValueException when `-h`, `-p` or `-n`
    *         is the last argument.
@@ -72,6 +83,12 @@ class LaunchOptions {
    */
   [[nodiscard]] const network::NetworkConditions& networkConditions() const;
 
+  /**
+   * @returns The logging options given at launch, which the logger module
+   * applies when the client starts (see logging::LogLaunchOptions::apply()).
+   */
+  [[nodiscard]] const logging::LogLaunchOptions& logOptions() const;
+
  private:
   LaunchOptions(network::Endpoint serverEndpoint, std::string nickname,
                 bool helpRequested);
@@ -80,7 +97,8 @@ class LaunchOptions {
   std::string nickname_;
   bool helpRequested_;
   AudioMode audioMode_{AudioMode::Enabled};
-  network::NetworkConditions networkConditions_;
+  network::SimulatorLaunchOptions simulatorOptions_;
+  logging::LogLaunchOptions logOptions_;
 };
 
 }  // namespace rtype::client

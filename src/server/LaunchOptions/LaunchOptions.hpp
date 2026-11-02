@@ -6,30 +6,43 @@
 #include <span>
 #include <string>
 #include <string_view>
+#include "LogLaunchOptions.hpp"
 #include "NetworkConditions.hpp"
+#include "SimulatorLaunchOptions.hpp"
 
 namespace rtype::server {
 
 /**
- * @brief What the server is told at launch: the UDP port to listen on, or a
- * request for its usage.
+ * @brief What the server is told at launch: the UDP port to listen on, its
+ * game settings, the network simulated and the logging options, or a request
+ * for its usage.
  */
 class LaunchOptions {
  public:
   /**
-   * @brief Reads `-p <port>` and `--help` from @p arguments, the arguments
-   * the logging options left (see logging::LogLaunchOptions).
+   * @brief Reads every option of the server from @p arguments, the arguments
+   * it was launched with, without its name, in one pass from the first to the
+   * last: `-p <port>`, `--seed <seed>`, `--state-rate <states>`,
+   * `--input-delay <ticks>` and `--help`, the options of the network
+   * simulator (see network::SimulatorLaunchOptions::readOption()) and the
+   * logging options (see logging::LogLaunchOptions::readOption()), whose
+   * exceptions this throws too.
    *
+   * The argument after an option that takes a value is always its value, even
+   * when it is spelled as an option of the server, of the simulator or of the
+   * logging: `--seed --log-level debug 123` refuses `--log-level` as a seed.
    * Without `-p` the port is DEFAULT_SERVER_PORT. The last `-p` wins, and so
    * does the last `--seed`, the last `--state-rate` and the last
-   * `--input-delay`. The options of the network simulator are read first and
-   * may stand anywhere (see network::SimulatorLaunchOptions::read(), whose
-   * exceptions this throws too).
+   * `--input-delay`. Without a logging option the journal is
+   * SERVER_LOG_FILE_NAME next to the executable.
    *
+   * @throws engine::UnknownExecutablePathException when the system does not
+   *         tell where the executable is, so the default journal has no
+   *         folder.
    * @throws engine::UnknownLaunchArgumentException for any other argument,
    *         `-h` included: the server takes no address.
-   * @throws engine::MissingLaunchOptionValueException when `-p` is the last
-   *         argument.
+   * @throws engine::MissingLaunchOptionValueException when `-p`, `--seed`,
+   *         `--state-rate` or `--input-delay` is the last argument.
    * @throws network::InvalidPortException when the value of `-p` is not a
    *         port from LOWEST_PORT to HIGHEST_PORT.
    * @throws engine::InvalidLaunchOptionValueException when the value of
@@ -83,6 +96,12 @@ class LaunchOptions {
    */
   [[nodiscard]] const network::NetworkConditions& networkConditions() const;
 
+  /**
+   * @returns The logging options given at launch, which the logger module
+   * applies when the server starts (see logging::LogLaunchOptions::apply()).
+   */
+  [[nodiscard]] const logging::LogLaunchOptions& logOptions() const;
+
  private:
   LaunchOptions(std::uint16_t port, bool helpRequested);
 
@@ -91,7 +110,8 @@ class LaunchOptions {
   std::optional<std::uint32_t> seed_;
   std::size_t stateRate_;
   std::size_t inputDelay_;
-  network::NetworkConditions networkConditions_;
+  network::SimulatorLaunchOptions simulatorOptions_;
+  logging::LogLaunchOptions logOptions_;
 };
 
 }  // namespace rtype::server

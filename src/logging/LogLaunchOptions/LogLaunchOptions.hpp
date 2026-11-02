@@ -1,11 +1,11 @@
 #pragma once
 
+#include <cstddef>
 #include <filesystem>
 #include <optional>
 #include <span>
 #include <string>
 #include <string_view>
-#include <vector>
 #include "Logger.hpp"
 
 namespace rtype::logging {
@@ -20,34 +20,37 @@ namespace rtype::logging {
 class LogLaunchOptions {
  public:
   /**
-   * @brief Reads `--log-level <name>`, `--log-file <path>`, `--no-log-file`,
-   *        `--log-stderr` and `--no-log-stderr` from @p arguments.
-   *
-   * Without options the journal is @p defaultJournal and standard error is
-   * on, so a program launched from a terminal shows its lines there. The last
-   * of `--log-file` and `--no-log-file` wins, and so does the last of
-   * `--log-stderr` and `--no-log-stderr`. Arguments that do not start with
-   * `--log-` or `--no-log-` are kept for the program, see otherArguments().
-   * A relative path, given here or after `--log-file`, is read from the
-   * folder the program was started in.
-   *
-   * @param arguments the arguments after the program name. The options keep
-   *        views on these strings: they must outlive the options.
-   * @param defaultJournal the journal used unless an option changes it.
-   * @throws UnknownLogLevelException, InvalidLogOptionException,
-   *         MissingLogOptionValueException
+   * @brief The options of a launch that gives no logging option: the journal
+   *        is @p defaultJournal and standard error is on, so a program
+   *        launched from a terminal shows its lines there.
    */
-  [[nodiscard]] static LogLaunchOptions read(
-      std::span<const std::string_view> arguments,
-      const std::filesystem::path& defaultJournal);
+  explicit LogLaunchOptions(const std::filesystem::path& defaultJournal);
 
   /**
-   * @brief Same as read() for the running process: the program name, the
-   *        first argument, is skipped.
+   * @brief Reads the logging option @p arguments starts with, if it is one:
+   *        `--log-level <name>`, `--log-file <path>`, `--no-log-file`,
+   *        `--log-stderr` or `--no-log-stderr`.
+   *
+   * The value of `--log-level` or `--log-file` is the argument after it, even
+   * when it looks like an option. A program reads its arguments once, in
+   * order, and hands this the ones that are neither its own options nor the
+   * value of one, so the last of `--log-file` and `--no-log-file` wins, and
+   * so does the last of `--log-stderr` and `--no-log-stderr`. A relative path
+   * after `--log-file` is read from the folder the program was started in.
+   *
+   * @returns how many arguments the option took: 2 for an option and its
+   *          value, 1 for an option alone, and 0 when @p arguments is empty
+   *          or starts with another argument, which reads nothing.
+   * @throws UnknownLogLevelException when the value of `--log-level` names no
+   *         level.
+   * @throws InvalidLogOptionException when the first argument starts with
+   *         `--log-` or `--no-log-` but names no logging option, so a typo is
+   *         never silent.
+   * @throws MissingLogOptionValueException when `--log-level` or
+   *         `--log-file` is the last argument.
    */
-  [[nodiscard]] static LogLaunchOptions readFromProcess(
-      int argumentCount, const char* const* arguments,
-      const std::filesystem::path& defaultJournal);
+  [[nodiscard]] std::size_t readOption(
+      std::span<const std::string_view> arguments);
 
   /**
    * @brief Configures the Logger with the options read, then writes at the
@@ -61,12 +64,6 @@ class LogLaunchOptions {
   void apply() const;
 
   /**
-   * @returns the arguments that are not logging options, in the order they
-   *          were given, for the program to read.
-   */
-  [[nodiscard]] std::span<const std::string_view> otherArguments() const;
-
-  /**
    * @returns the part of a program's usage that describes the logging
    *          options: each option on a line, its effect indented on the next.
    * @param defaultJournalName the name of the journal the program writes next
@@ -75,12 +72,8 @@ class LogLaunchOptions {
   [[nodiscard]] static std::string usage(std::string_view defaultJournalName);
 
  private:
-  LogLaunchOptions(std::optional<LogLevel> level, LogOutput output,
-                   std::vector<std::string_view> otherArguments);
-
   std::optional<LogLevel> level_;
   LogOutput output_;
-  std::vector<std::string_view> otherArguments_;
 };
 
 }  // namespace rtype::logging
