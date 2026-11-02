@@ -130,7 +130,7 @@ constexpr std::array<const char*, 12> MONTH_NAMES{"JAN", "FEB", "MAR", "APR",
                                                   "SEP", "OCT", "NOV", "DEC"};
 constexpr std::int64_t LAST_SHOWN_DATE_SECONDS = 4102444799;
 constexpr const char* UNKNOWN_DATE_TEXT = "-- --- --";
-constexpr unsigned int FIRST_DAY_OF_TWO_DIGITS = 10;
+constexpr unsigned int FIRST_NUMBER_OF_TWO_DIGITS = 10;
 constexpr int YEARS_PER_CENTURY = 100;
 
 /** @brief What the panel says in place of rows. */

@@ -3,23 +3,27 @@
 #include <vector>
 #include "BackgroundColorConstants.hpp"
 #include "FireColorConstants.hpp"
+#include "InkTagConstants.hpp"
 #include "ItemListConstants.hpp"
 #include "ItemRow.hpp"
+#include "LeaderboardFilterChoice.hpp"
 #include "LeaderboardMessage.hpp"
 #include "LeaderboardPage.hpp"
+#include "LeaderboardPhase.hpp"
 #include "LeaderboardPresentation.hpp"
 #include "LeaderboardPresentationFixtures.hpp"
 #include "LeaderboardPresentationTestConstants.hpp"
 #include "LeaderboardRequest.hpp"
 #include "LeaderboardScreenConstants.hpp"
 
+using rtype::client::canBeFiltered;
 using rtype::client::dateTextOf;
 using rtype::client::EMPTY_LEADERBOARD_MESSAGE;
 using rtype::client::filterOf;
 using rtype::client::filterSummaryOf;
 using rtype::client::FIRE_GOLD;
+using rtype::client::INK_TAG_PADDING;
 using rtype::client::ITEM_TAG_GAP;
-using rtype::client::ITEM_TAG_PADDING;
 using rtype::client::ItemRow;
 using rtype::client::itemRowsOf;
 using rtype::client::LEADERBOARD_BRONZE;
@@ -27,9 +31,12 @@ using rtype::client::LEADERBOARD_COLUMNS;
 using rtype::client::LEADERBOARD_LIST;
 using rtype::client::LEADERBOARD_OWN_ROW_COLOR;
 using rtype::client::LEADERBOARD_RANK_COLOR;
+using rtype::client::LeaderboardFilterChoice;
 using rtype::client::LeaderboardMessage;
 using rtype::client::LeaderboardPage;
+using rtype::client::LeaderboardPhase;
 using rtype::client::messageOf;
+using rtype::client::openingChoiceOf;
 using rtype::client::pinnedNoteOf;
 using rtype::client::pinnedRowOf;
 using rtype::client::STAR_WHITE;
@@ -193,7 +200,7 @@ TEST(LeaderboardPresentation, TheLongestRowKeepsItsCellsApart) {
   const int left = LEADERBOARD_LIST.topLeft.x;
   const int tagEnd = left + LEADERBOARD_COLUMNS.at(NAME_COLUMN).anchor +
                      LONGEST_NICKNAME_WIDTH + ITEM_TAG_GAP +
-                     YOU_WIDTH_IN_SMALL_FONT + ITEM_TAG_PADDING;
+                     YOU_WIDTH_IN_SMALL_FONT + INK_TAG_PADDING;
   const int scoreStart =
       left + LEADERBOARD_COLUMNS.at(SCORE_COLUMN).anchor - SEVEN_DIGITS_WIDTH;
 
@@ -211,6 +218,94 @@ TEST(LeaderboardPresentation, AnEmptyAnswerSaysSo) {
   ASSERT_TRUE(message.has_value());
   EXPECT_STREQ(message.value_or(LeaderboardMessage{}).line,
                EMPTY_LEADERBOARD_MESSAGE.line);
+}
+
+/**
+ * Given a page that gave up
+ * When the panel asks what to say
+ * Then it says how to ask again
+ */
+TEST(LeaderboardPresentation, NoAnswerSaysHowToAskAgain) {
+  const LeaderboardMessage message =
+      messageOf(pageIn(LeaderboardPhase::NoAnswer))
+          .value_or(LeaderboardMessage{});
+
+  EXPECT_STREQ(message.line, "NO ANSWER FROM THE SERVER");
+  EXPECT_STREQ(message.detail, "APPLY A FILTER TO ASK AGAIN");
+}
+
+/**
+ * Given a page without a session
+ * When the panel asks what to say
+ * Then it says the player is on no server
+ */
+TEST(LeaderboardPresentation, NoSessionSaysSo) {
+  EXPECT_STREQ(messageOf(pageIn(LeaderboardPhase::NotOnServer))
+                   .value_or(LeaderboardMessage{})
+                   .line,
+               "NOT ON A SERVER");
+}
+
+/**
+ * Given a page still asking, or answered with rows
+ * When the panel asks what to say
+ * Then it has no message: the panel shows the rows or its dots
+ */
+TEST(LeaderboardPresentation, AskingAndRowsHaveNoMessage) {
+  EXPECT_FALSE(messageOf(pageIn(LeaderboardPhase::Asking)).has_value());
+  EXPECT_FALSE(
+      messageOf(answeredPage({entryOf(1, "KIRA")}, std::nullopt)).has_value());
+}
+
+/**
+ * Given the phases where a source can be asked
+ * When the screen asks whether it can be filtered
+ * Then it can
+ */
+TEST(LeaderboardPresentation, ASourceThatCanBeAskedCanBeFiltered) {
+  EXPECT_TRUE(canBeFiltered(pageIn(LeaderboardPhase::Asking)));
+  EXPECT_TRUE(canBeFiltered(pageIn(LeaderboardPhase::Answered)));
+  EXPECT_TRUE(canBeFiltered(pageIn(LeaderboardPhase::NoAnswer)));
+}
+
+/**
+ * Given the phases where nothing can be asked
+ * When the screen asks whether it can be filtered
+ * Then it cannot
+ */
+TEST(LeaderboardPresentation, NothingToAskCannotBeFiltered) {
+  EXPECT_FALSE(canBeFiltered(pageIn(LeaderboardPhase::NotOnServer)));
+  EXPECT_FALSE(canBeFiltered(pageIn(LeaderboardPhase::OutOfReach)));
+}
+
+/**
+ * Given a waiting room that lists nobody, as on the title
+ * When the screen asks which filter it opens on
+ * Then it is one pilot, on the normal difficulty
+ */
+TEST(LeaderboardPresentation, NobodyListedOpensOnOnePilot) {
+  EXPECT_EQ(openingChoiceOf(0),
+            (LeaderboardFilterChoice{.difficulty = 1, .pilots = 0}));
+}
+
+/**
+ * Given a waiting room that lists one pilot, then the largest room
+ * When the screen asks which filter it opens on
+ * Then it opens on that many pilots
+ */
+TEST(LeaderboardPresentation, TheFilterOpensOnThePilotsListed) {
+  EXPECT_EQ(openingChoiceOf(1).pilots, 0);
+  EXPECT_EQ(openingChoiceOf(4).pilots, 3);
+}
+
+/**
+ * Given a server that lists more pilots than a game holds
+ * When the screen asks which filter it opens on
+ * Then it stays on the last choice: a server cannot make it read past its
+ * labels
+ */
+TEST(LeaderboardPresentation, MorePilotsThanAGameHoldsStayOnTheLastChoice) {
+  EXPECT_EQ(openingChoiceOf(5).pilots, 3);
 }
 
 /**

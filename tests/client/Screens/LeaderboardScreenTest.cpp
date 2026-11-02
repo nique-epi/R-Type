@@ -87,6 +87,7 @@ TEST_F(LeaderboardScreenFixture, ClosingTheFilterAsksNothing) {
  */
 TEST_F(LeaderboardScreenFixture, ComingBackToATabAsksAgain) {
   screen().handleEvent(keyPress(sf::Keyboard::Key::E, sf::Keyboard::Scan::E));
+  screen().handleEvent(keyRelease(sf::Keyboard::Key::E, sf::Keyboard::Scan::E));
 
   screen().handleEvent(keyPress(sf::Keyboard::Key::Q, sf::Keyboard::Scan::Q));
 
@@ -102,6 +103,99 @@ TEST_F(LeaderboardScreenFixture, LeavingStopsAsking) {
   closeScreen();
 
   EXPECT_EQ(source().stopCount(), 1);
+}
+
+/**
+ * Given a screen that reads its source
+ * When the player goes to the other tab
+ * Then the source stops asking: nobody shows what it would answer
+ */
+TEST_F(LeaderboardScreenFixture, LeavingATabStopsItsRequests) {
+  screen().handleEvent(keyPress(sf::Keyboard::Key::E, sf::Keyboard::Scan::E));
+
+  EXPECT_EQ(source().stopCount(), 1);
+}
+
+/**
+ * Given the key of the next tab held down, whose press the system repeats
+ * When its press comes again
+ * Then the tab changed once: the other tab stays open, and nothing is asked
+ */
+TEST_F(LeaderboardScreenFixture, AHeldTabKeyChangesTabOnce) {
+  screen().handleEvent(keyPress(sf::Keyboard::Key::E, sf::Keyboard::Scan::E));
+
+  screen().handleEvent(keyPress(sf::Keyboard::Key::E, sf::Keyboard::Scan::E));
+  screen().update(ONE_FRAME);
+
+  EXPECT_EQ(source().asked().size(), 1);
+  EXPECT_NE(writingOf(canvas(), "THE MASTER IS OUT OF REACH"), nullptr);
+}
+
+/**
+ * Given the key of the next tab pressed and released
+ * When it is pressed again
+ * Then the tab changes again
+ */
+TEST_F(LeaderboardScreenFixture, AReleasedTabKeyChangesTabAgain) {
+  screen().handleEvent(keyPress(sf::Keyboard::Key::E, sf::Keyboard::Scan::E));
+  screen().handleEvent(keyRelease(sf::Keyboard::Key::E, sf::Keyboard::Scan::E));
+
+  screen().handleEvent(keyPress(sf::Keyboard::Key::E, sf::Keyboard::Scan::E));
+
+  EXPECT_EQ(source().asked().size(), 2);
+}
+
+/**
+ * Given Escape held down when F opens the filter, its release going to the
+ * filter
+ * When the filter is closed, and Escape is released on the screen
+ * Then the screen stays: BACK forgot the press when the filter took the events
+ */
+TEST_F(LeaderboardScreenFixture, TheFilterDropsWhatTheChipsHeld) {
+  screen().handleEvent(keyPress(sf::Keyboard::Key::Escape));
+  tap(sf::Keyboard::Key::F);
+  tap(sf::Keyboard::Key::Escape);
+
+  screen().handleEvent(keyRelease(sf::Keyboard::Key::Escape));
+
+  EXPECT_THAT(navigator().calls(), IsEmpty());
+}
+
+/**
+ * Given a source with no session to ask through
+ * When the screen updates
+ * Then it offers to join a server
+ */
+TEST_F(LeaderboardScreenFixture, WithoutAServerTheBarToJoinShows) {
+  show(pageIn(LeaderboardPhase::NotOnServer));
+
+  EXPECT_NE(writingOf(canvas(), "NOT ON A SERVER"), nullptr);
+  EXPECT_NE(writingOf(canvas(), "JOIN A SERVER"), nullptr);
+}
+
+/**
+ * Given a source that answered
+ * When the screen updates
+ * Then the bar to join a server is not painted
+ */
+TEST_F(LeaderboardScreenFixture, OnAServerTheBarToJoinIsGone) {
+  show(answeredPage({entryOf(1, "KIRA")}, std::nullopt));
+
+  EXPECT_EQ(writingOf(canvas(), "JOIN A SERVER"), nullptr);
+}
+
+/**
+ * Given a source with no session to ask through
+ * When F is pressed and released, and the screen repaints
+ * Then the filter does not open
+ */
+TEST_F(LeaderboardScreenFixture, WithoutAServerFOpensNothing) {
+  show(pageIn(LeaderboardPhase::NotOnServer));
+
+  tap(sf::Keyboard::Key::F);
+  screen().update(ONE_FRAME);
+
+  EXPECT_EQ(writingOf(canvas(), "PILOTS"), nullptr);
 }
 
 /**
@@ -132,7 +226,7 @@ TEST_F(LeaderboardScreenFixture, APlayerWithoutAScoreIsTold) {
  * Then it says it is asking
  */
 TEST_F(LeaderboardScreenFixture, AskingIsSaid) {
-  show(LeaderboardPage{.phase = LeaderboardPhase::Asking});
+  show(pageIn(LeaderboardPhase::Asking));
 
   EXPECT_NE(writingOf(canvas(), "ASKING THE SERVER"), nullptr);
 }
@@ -222,7 +316,7 @@ TEST_F(LeaderboardScreenFixture, TheGlobalTabSaysWhyItIsEmpty) {
  * Then the connection screen replaces this one
  */
 TEST_F(LeaderboardScreenFixture, WithoutAServerEnterJoinsOne) {
-  show(LeaderboardPage{.phase = LeaderboardPhase::NotOnServer});
+  show(pageIn(LeaderboardPhase::NotOnServer));
 
   tap(sf::Keyboard::Key::Enter);
 

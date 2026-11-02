@@ -8,6 +8,7 @@
 #include <utility>
 #include <vector>
 #include "IInterfaceCanvas.hpp"
+#include "InkTag.hpp"
 #include "ItemCell.hpp"
 #include "ItemListColumn.hpp"
 #include "ItemListConstants.hpp"
@@ -27,19 +28,18 @@ sf::IntRect bandOf(const ItemListLayout& layout, int top, int height) {
           {layout.width + (SIDES_PER_AXIS * ITEM_ROW_MARGIN), height}};
 }
 
-/** @brief Writes the tag of a cell on ink, right after its text. */
+/** @brief Writes the tag of a cell, when it has one, on ink right after its
+ * text. */
 void paintTag(IInterfaceCanvas& canvas, const ItemCell& cell,
               sf::Vector2i anchor) {
+  if (!cell.tag.has_value()) {
+    return;
+  }
   const int left =
       anchor.x + canvas.textWidth(cell.text, TextFont::Regular) + ITEM_TAG_GAP;
-  const sf::Vector2i topLeft(left, anchor.y - ITEM_TAG_RISE);
-  canvas.fill(
-      sf::IntRect(topLeft, {canvas.textWidth(cell.tag, TextFont::Small) +
-                                ITEM_TAG_PADDING,
-                            ITEM_TAG_HEIGHT}),
-      ITEM_TAG_COLOR);
-  canvas.write(cell.tag, topLeft + ITEM_TAG_TEXT_OFFSET,
-               {.font = TextFont::Small, .color = cell.color});
+  paintInkTag(canvas, InkTag{.word = *cell.tag,
+                             .topLeft = {left, anchor.y - ITEM_TAG_RISE},
+                             .wordColor = cell.color});
 }
 
 }  // namespace
@@ -101,9 +101,7 @@ void ItemList::paintRow(IInterfaceCanvas& canvas, const ItemRow& row,
                  {.font = column.font,
                   .color = row.cells[cell].color,
                   .alignment = column.alignment});
-    if (!row.cells[cell].tag.empty()) {
-      paintTag(canvas, row.cells[cell], anchor);
-    }
+    paintTag(canvas, row.cells[cell], anchor);
   }
 }
 

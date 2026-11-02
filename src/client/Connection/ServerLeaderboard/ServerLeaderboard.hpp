@@ -50,7 +50,7 @@ class ServerLeaderboard final : public ILeaderboardSource,
 
   ISessionOutbox* outbox_{nullptr};
   std::optional<network::LeaderboardRequest> asked_;
-  LeaderboardPage page_{.phase = LeaderboardPhase::NotOnServer};
+  LeaderboardPage page_{.phase = LeaderboardPhase::NotOnServer, .rows = {}};
   engine::Duration sinceAsked_{};
   engine::Duration sinceRequest_{};
 };

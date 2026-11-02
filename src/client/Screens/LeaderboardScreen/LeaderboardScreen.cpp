@@ -135,6 +135,22 @@ std::optional<std::size_t> tabAskedBy(const sf::Event& event,
   return strip.tabOpenedAt(interfacePixelAt(pointAt(click->position)));
 }
 
+/** @returns Whether the event presses a key of the tabs. */
+bool pressesATabKey(const sf::Event& event) {
+  const auto* key = event.getIf<sf::Event::KeyPressed>();
+  return key != nullptr &&
+         (key->scancode == PREVIOUS_TAB_KEY || key->scancode == NEXT_TAB_KEY);
+}
+
+/** @returns Whether a key of the tabs is held no more after the event: it was
+ * released, or the focus was lost. */
+bool endsTheHoldOfATabKey(const sf::Event& event) {
+  const auto* key = event.getIf<sf::Event::KeyReleased>();
+  return event.is<sf::Event::FocusLost>() ||
+         (key != nullptr &&
+          (key->scancode == PREVIOUS_TAB_KEY || key->scancode == NEXT_TAB_KEY));
+}
+
 /** @brief Paints the banners and the guards: each is a rectangle of one sheet,
  * so the moves cost no work on their pixels.
  * @param time The time the animations are shown at; none shows their first
@@ -233,6 +249,12 @@ void LeaderboardScreen::handleEvent(const sf::Event& event) {
       joinChip_.handleEvent(event, playfieldPointAt_)) {
     return;
   }
+  if (endsTheHoldOfATabKey(event)) {
+    tabKeyHeld_ = false;
+  }
+  if (pressesATabKey(event) && std::exchange(tabKeyHeld_, true)) {
+    return;
+  }
   const std::optional<std::size_t> tab =
       tabAskedBy(event, tabStrip_, playfieldPointAt_);
   if (tab.has_value() && *tab != openTab_) {
@@ -269,6 +291,9 @@ void LeaderboardScreen::ask() {
 
 void LeaderboardScreen::openTab(std::size_t tab) {
   sounds_->play(CLICK_SOUND_ID);
+  if (ILeaderboardSource* left = tabs_.at(openTab_).source; left != nullptr) {
+    left->stopAsking();
+  }
   openTab_ = tab;
   tabStrip_ = tabStripOf(tabs_, tab, keyName_);
   ask();
@@ -276,6 +301,10 @@ void LeaderboardScreen::openTab(std::size_t tab) {
 }
 
 void LeaderboardScreen::openFilter() {
+  for (KeyChip* chip : {&backChip_, &filterChip_, &joinChip_}) {
+    chip->handleEvent(sf::Event::FocusLost{}, playfieldPointAt_);
+  }
+  tabKeyHeld_ = false;
   filterDialog_.open(choice_, [this](LeaderboardFilterChoice picked) {
     choice_ = picked;
     ask();

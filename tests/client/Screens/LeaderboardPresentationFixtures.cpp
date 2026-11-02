@@ -22,6 +22,10 @@ LeaderboardRow entryOf(std::uint32_t rank, const std::string& name) {
                         .nickname = name};
 }
 
+LeaderboardPage pageIn(LeaderboardPhase phase) {
+  return LeaderboardPage{.phase = phase, .rows = {}};
+}
+
 LeaderboardPage answeredPage(std::vector<LeaderboardRow> rows,
                              std::optional<LeaderboardRow> own) {
   return LeaderboardPage{.phase = LeaderboardPhase::Answered,

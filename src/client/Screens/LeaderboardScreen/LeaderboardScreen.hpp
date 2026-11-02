@@ -31,9 +31,9 @@ namespace rtype::client {
  *
  * The screen reads its rows through ILeaderboardSource, one per tab.
  * MENU_CANCEL_KEY closes it, FILTER_KEY opens the filter, PREVIOUS_TAB_KEY and
- * NEXT_TAB_KEY change tab; with no server to read, MENU_CONFIRM_KEY opens the
- * connection screen. Each has its chip or its tab to click. While the filter is
- * open, it takes every event.
+ * NEXT_TAB_KEY change tab, once however long they are held; with no server to
+ * read, MENU_CONFIRM_KEY opens the connection screen. Each has its chip or its
+ * tab to click. While the filter is open, it takes every event.
  *
  * The picture changes no faster than the banners move: it is repainted on an
  * event, on a new page, and every LEADERBOARD_REPAINT_TIME, rather than each
@@ -93,11 +93,13 @@ class LeaderboardScreen : public IScreen {
   KeyChip backChip_;
   KeyChip filterChip_;
   KeyChip joinChip_;
-  LeaderboardPage pageWithoutSource_{.phase = LeaderboardPhase::OutOfReach};
+  LeaderboardPage pageWithoutSource_{.phase = LeaderboardPhase::OutOfReach,
+                                     .rows = {}};
   std::size_t openTab_ = 0;
   std::uint32_t shownRevision_{};
   engine::Duration elapsed_{};
   engine::Duration untilRepaint_{};
+  bool tabKeyHeld_ = false;
 };
 
 }  // namespace rtype::client

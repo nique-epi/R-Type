@@ -25,6 +25,7 @@ bool KeyChip::handleEvent(const sf::Event& event,
   if (event.is<sf::Event::FocusLost>()) {
     keyHeld_ = false;
     pointerHeld_ = false;
+    hovered_ = false;
     return false;
   }
   if (const auto* pressed = event.getIf<sf::Event::KeyPressed>();

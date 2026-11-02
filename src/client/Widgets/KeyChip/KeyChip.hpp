@@ -30,7 +30,10 @@ class KeyChip {
 
   /** @returns Whether the event was the chip's: its key, or a press or release
    * of the left button it saw. Moving the pointer and losing the focus are told
-   * to it, and left to the others. */
+   * to it, and left to the others. Losing the focus drops everything it knows
+   * of the input, so a screen that stops giving it events gives it that one
+   * first.
+   */
   bool handleEvent(const sf::Event& event,
                    const PlayfieldMapping& playfieldPointAt);
 

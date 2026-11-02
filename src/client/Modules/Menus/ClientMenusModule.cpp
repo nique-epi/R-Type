@@ -12,6 +12,7 @@
 #include "InstallContext.hpp"
 #include "IntroScreen.hpp"
 #include "IntroScreenParts.hpp"
+#include "LeaderboardPresentation.hpp"
 #include "LeaderboardScreen.hpp"
 #include "LeaderboardScreenConstants.hpp"
 #include "LeaderboardScreenParts.hpp"
@@ -106,11 +107,9 @@ std::unique_ptr<IScreen> buildConnectionScreen(const ScreenContext& context) {
       interfaceCanvasOf(context));
 }
 
-/** @returns The leaderboard, opened on the normal difficulty and on as many
- * pilots as the waiting room lists, one on the title. */
+/** @returns The leaderboard, opened on the filter the waiting room calls for.
+ */
 std::unique_ptr<IScreen> buildLeaderboardScreen(const ScreenContext& context) {
-  const std::size_t listed =
-      context.services.waitingRoom.get().lobbyPlayers().size();
   return std::make_unique<LeaderboardScreen>(
       LeaderboardScreenParts{
           .navigator = context.navigator.get(),
@@ -119,8 +118,8 @@ std::unique_ptr<IScreen> buildLeaderboardScreen(const ScreenContext& context) {
                        .label = SERVER_TAB_LABEL,
                        .source = &context.services.leaderboard.get()},
                    LeaderboardTab{.label = GLOBAL_TAB_LABEL}},
-          .choice = {.difficulty = DEFAULT_DIFFICULTY_CHOICE,
-                     .pilots = std::max<std::size_t>(listed, 1) - 1},
+          .choice = openingChoiceOf(
+              context.services.waitingRoom.get().lobbyPlayers().size()),
           .playfieldPointAt = playfieldMappingOf(context),
           .keyName = localizedKeyName,
           .motion = motionPreference()},

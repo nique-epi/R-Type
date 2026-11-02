@@ -10,6 +10,7 @@ target_link_libraries(rtype_client_leaderboard_screen
     rtype_client_item_list
     rtype_client_key_chip
     rtype_client_leaderboard_filter_dialog
+    rtype_client_leaderboard_presentation
     rtype_client_screen_interfaces
     rtype_client_tab_strip
     rtype_client_window
@@ -20,7 +21,6 @@ target_link_libraries(rtype_client_leaderboard_screen
     rtype_client_effect_interfaces
     rtype_client_entity_sprites
     rtype_client_interface_pixel
-    rtype_client_leaderboard_presentation
     rtype_client_menu_builder
     rtype_network_protocol
 )

@@ -6,10 +6,15 @@
 #include <vector>
 #include "LeaderboardAnswer.hpp"
 #include "LeaderboardPage.hpp"
+#include "LeaderboardPhase.hpp"
 
 /** @returns An entry of a leaderboard, played on 18 October 2026. */
 [[nodiscard]] rtype::network::LeaderboardRow entryOf(std::uint32_t rank,
                                                      const std::string& name);
+
+/** @returns A page in this phase, without an entry. */
+[[nodiscard]] rtype::client::LeaderboardPage pageIn(
+    rtype::client::LeaderboardPhase phase);
 
 /** @returns A page answered with these entries and this entry of the player. */
 [[nodiscard]] rtype::client::LeaderboardPage answeredPage(

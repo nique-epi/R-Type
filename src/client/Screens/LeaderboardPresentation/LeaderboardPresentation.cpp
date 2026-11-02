@@ -24,7 +24,8 @@ namespace rtype::client {
 namespace {
 
 std::string twoDigits(unsigned int value) {
-  return (value < FIRST_DAY_OF_TWO_DIGITS ? "0" : "") + std::to_string(value);
+  return (value < FIRST_NUMBER_OF_TWO_DIGITS ? "0" : "") +
+         std::to_string(value);
 }
 
 sf::Color rankColorOf(std::uint32_t rank) {
@@ -40,9 +41,11 @@ ItemRow rowOf(const network::LeaderboardRow& entry, bool isOwn) {
   return ItemRow{
       .cells = {ItemCell{.text = std::to_string(entry.rank),
                          .color = isOwn ? text : rankColorOf(entry.rank)},
-                ItemCell{.text = entry.nickname,
-                         .color = text,
-                         .tag = isOwn ? LOCAL_PLAYER_TAG : ""},
+                ItemCell{
+                    .text = entry.nickname,
+                    .color = text,
+                    .tag = isOwn ? std::optional<std::string>(LOCAL_PLAYER_TAG)
+                                 : std::nullopt},
                 ItemCell{.text = std::to_string(entry.score), .color = text},
                 ItemCell{.text = dateTextOf(entry.playedAt),
                          .color = isOwn ? LEADERBOARD_OWN_DATE_COLOR
@@ -109,6 +112,14 @@ std::optional<LeaderboardMessage> messageOf(const LeaderboardPage& page) {
 bool canBeFiltered(const LeaderboardPage& page) {
   return page.phase != LeaderboardPhase::NotOnServer &&
          page.phase != LeaderboardPhase::OutOfReach;
+}
+
+LeaderboardFilterChoice openingChoiceOf(std::size_t listedPilots) {
+  return LeaderboardFilterChoice{
+      .difficulty = DEFAULT_DIFFICULTY_CHOICE,
+      .pilots = std::clamp<std::size_t>(listedPilots, 1,
+                                        LEADERBOARD_PILOT_LABELS.size()) -
+                1};
 }
 
 network::LeaderboardRequest filterOf(LeaderboardFilterChoice choice) {

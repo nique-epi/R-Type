@@ -200,6 +200,7 @@ LobbyScreen::LobbyScreen(LobbyScreenParts parts,
 
 void LobbyScreen::handleEvent(const sf::Event& event) {
   if (help_.handleEvent(event, playfieldPointAt_)) {
+    leaderboardChip_.handleEvent(sf::Event::FocusLost{}, playfieldPointAt_);
     return;
   }
   if (const auto* pressed = event.getIf<sf::Event::KeyPressed>();

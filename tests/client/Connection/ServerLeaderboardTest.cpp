@@ -13,11 +13,14 @@ using testing::ASK_INTERVAL;
 using testing::ASKED_DIFFICULTY;
 using testing::ASKED_PILOTS;
 using testing::FIRST_SEQUENCE;
+using testing::FRAMES_UNTIL_GIVING_UP;
 using testing::GIVE_UP_TIME;
 using testing::onlyMessageOf;
 using testing::OTHER_DIFFICULTY;
+using testing::REQUESTS_BEFORE_GIVING_UP;
 using testing::SECOND_SEQUENCE;
 using testing::ServerLeaderboardFixture;
+using testing::SHORT_FRAME;
 using testing::SMALLEST_TIME;
 using testing::TOP_NICKNAME;
 
@@ -160,6 +163,40 @@ TEST_F(ServerLeaderboardFixture, AfterFiveSecondsTheClientGivesUp) {
 
   EXPECT_EQ(leaderboard().page().phase, LeaderboardPhase::NoAnswer);
   EXPECT_EQ(sentRequestCount(), 1);
+}
+
+/**
+ * Given a request the server never answers
+ * When short frames go by until the client gives up
+ * Then the requests went out every half second, ten in all
+ */
+TEST_F(ServerLeaderboardFixture, TheClientSendsTenRequestsAtMost) {
+  connectAndGetAccepted();
+  leaderboard().ask(askedRequest());
+
+  for (int frame = 0; frame < FRAMES_UNTIL_GIVING_UP; ++frame) {
+    update(SHORT_FRAME);
+  }
+
+  EXPECT_EQ(leaderboard().page().phase, LeaderboardPhase::NoAnswer);
+  EXPECT_EQ(sentRequestCount(), REQUESTS_BEFORE_GIVING_UP);
+}
+
+/**
+ * Given a client that gave up
+ * When the player asks again, and an interval goes by
+ * Then the client still asks: it has its whole time again
+ */
+TEST_F(ServerLeaderboardFixture, AskingAgainAfterGivingUpAsksAgain) {
+  connectAndGetAccepted();
+  leaderboard().ask(askedRequest());
+  update(GIVE_UP_TIME);
+
+  leaderboard().ask(askedRequest());
+  update(ASK_INTERVAL);
+
+  EXPECT_EQ(leaderboard().page().phase, LeaderboardPhase::Asking);
+  EXPECT_EQ(sentRequestCount(), 3);
 }
 
 /**

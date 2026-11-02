@@ -10,7 +10,7 @@
 #include "WidgetColors.hpp"
 
 using rtype::client::CLICK_SOUND_ID;
-using rtype::client::SELECTED_BAR_INSIDE_COLOR;
+using rtype::client::SELECTED_BAR_BORDER_COLOR;
 using rtype::client::testing::CHIP_KEY;
 using rtype::client::testing::OFF_THE_CHIP;
 using rtype::client::testing::ON_THE_CHIP;
@@ -18,6 +18,7 @@ using rtype::client::testing::OTHER_KEY;
 using ::testing::Contains;
 using ::testing::ElementsAre;
 using ::testing::Field;
+using ::testing::Not;
 
 /**
  * Given a chip
@@ -131,6 +132,24 @@ TEST_F(KeyChipFixture, LosingTheFocusDropsThePress) {
 }
 
 /**
+ * Given the pointer over a chip
+ * When the focus is lost
+ * Then it looks selected no more: nothing tells it where the pointer goes
+ */
+TEST_F(KeyChipFixture, LosingTheFocusForgetsThePointer) {
+  give(pointerMove(ON_THE_CHIP));
+
+  give(sf::Event::FocusLost{});
+
+  InterfaceCanvasRecord record;
+  RecordingInterfaceCanvas canvas(record);
+  chip().paint(canvas);
+  EXPECT_THAT(
+      record.fills,
+      Not(Contains(Field(&RecordedFill::color, SELECTED_BAR_BORDER_COLOR))));
+}
+
+/**
  * Given a chip
  * When the pointer moves over it
  * Then it looks selected, and the move is left to the others
@@ -142,5 +161,5 @@ TEST_F(KeyChipFixture, ThePointerOverItLooksSelected) {
   RecordingInterfaceCanvas canvas(record);
   chip().paint(canvas);
   EXPECT_THAT(record.fills,
-              Contains(Field(&RecordedFill::color, SELECTED_BAR_INSIDE_COLOR)));
+              Contains(Field(&RecordedFill::color, SELECTED_BAR_BORDER_COLOR)));
 }

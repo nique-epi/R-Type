@@ -466,6 +466,20 @@ TEST_F(LobbyScreenFixture, ABarHeldAcrossTheLeaderboardDoesNotBlockTheMenu) {
 }
 
 /**
+ * Given L held down when H opens the help
+ * When L is released
+ * Then nothing opens: the help took the keys while it was held
+ */
+TEST_F(LobbyScreenFixture, AKeyHeldWhenTheHelpOpensDoesNotOpenTheLeaderboard) {
+  screen().handleEvent(keyPress(sf::Keyboard::Key::L, sf::Keyboard::Scan::L));
+  tap(sf::Keyboard::Key::H, sf::Keyboard::Scan::H);
+
+  screen().handleEvent(keyRelease(sf::Keyboard::Key::L, sf::Keyboard::Scan::L));
+
+  EXPECT_THAT(navigator().calls(), IsEmpty());
+}
+
+/**
  * Given a waiting room whose help is open
  * When L is pressed and released
  * Then nothing opens: the help takes the keys

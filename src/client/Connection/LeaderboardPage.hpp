@@ -13,8 +13,7 @@ namespace rtype::client {
 struct LeaderboardPage {
   LeaderboardPhase phase{};
   /** @brief The best scores, the best first. */
-  // NOLINTNEXTLINE(readability-redundant-member-init)
-  std::vector<network::LeaderboardRow> rows{};
+  std::vector<network::LeaderboardRow> rows;
   /** @brief The row of the player, whether or not it is among them. */
   std::optional<network::LeaderboardRow> ownRow = std::nullopt;
   /** @brief Changes whenever anything else here changes, so a reader rebuilds

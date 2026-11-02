@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstddef>
 #include <cstdint>
 #include <optional>
 #include <string>
@@ -37,6 +38,11 @@ namespace rtype::client {
 /** @returns Whether the player can filter what the page shows: a source is
  * there to ask. */
 [[nodiscard]] bool canBeFiltered(const LeaderboardPage& page);
+
+/** @returns The filter a screen opens on: the normal difficulty and as many
+ * pilots as a waiting room lists, within what the filter offers: one where it
+ * lists none, on the title. */
+[[nodiscard]] LeaderboardFilterChoice openingChoiceOf(std::size_t listedPilots);
 
 /** @returns The leaderboard a choice of the player asks for. */
 [[nodiscard]] network::LeaderboardRequest filterOf(

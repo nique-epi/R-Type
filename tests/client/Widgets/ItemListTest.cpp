@@ -4,14 +4,14 @@
 #include <optional>
 #include <set>
 #include <utility>
-#include "ItemListConstants.hpp"
+#include "InkTagConstants.hpp"
 #include "ItemListFixtures.hpp"
 #include "ItemListTestConstants.hpp"
 #include "ItemRow.hpp"
 #include "RecordingInterfaceCanvas.hpp"
 #include "TextStyle.hpp"
 
-using rtype::client::ITEM_TAG_COLOR;
+using rtype::client::INK_TAG_COLOR;
 using rtype::client::ItemRow;
 using rtype::client::TextAlignment;
 using rtype::client::TextFont;
@@ -115,10 +115,10 @@ TEST(ItemList, APinnedRowStandsUnderADashedLine) {
 /**
  * Given a row and a pinned row, none with a highlight or a tag
  * When they are painted
- * Then the only fills are those of the line, one per dot: the line is one pixel
- * tall, so its top side and its bottom side are the same pixels
+ * Then the only fills are one side of the line and its two ends: the line is
+ * one pixel tall, so its top side and its bottom side are the same pixels
  */
-TEST(ItemList, TheDashedLineFillsEachDotOnce) {
+TEST(ItemList, ALineOnePixelTallFillsOneSideOnly) {
   const InterfaceCanvasRecord record =
       paintedList({rowNamed("ACE")}, rowNamed("KIRA"));
 
@@ -164,7 +164,7 @@ TEST(ItemList, ATagFollowsItsCell) {
   const InterfaceCanvasRecord record = paintedList({std::move(row)});
 
   EXPECT_THAT(record.fills,
-              Contains(RecordedFill{.area = ACE_TAG, .color = ITEM_TAG_COLOR}));
+              Contains(RecordedFill{.area = ACE_TAG, .color = INK_TAG_COLOR}));
   const RecordedWriting* word = writingOf(record, "YOU");
   ASSERT_NE(word, nullptr);
   EXPECT_EQ(word->anchor, ACE_TAG_WORD);
