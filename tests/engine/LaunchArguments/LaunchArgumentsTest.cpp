@@ -1,11 +1,11 @@
 #include <gtest/gtest.h>
 #include <array>
-#include <exception>
 #include <string>
 #include <string_view>
 #include <vector>
 #include "EngineException.hpp"
 #include "LaunchArguments.hpp"
+#include "LaunchArgumentsFixtures.hpp"
 #include "LaunchArgumentsTestConstants.hpp"
 #include "LaunchOption.hpp"
 
@@ -17,51 +17,7 @@ using rtype::engine::UnknownLaunchArgumentException;
 using rtype::engine::usageEntry;
 using rtype::engine::usageHeader;
 
-namespace {
-
 using Arguments = std::vector<std::string_view>;
-
-/**
- * @brief One call of a record: the option it belongs to and the value it got.
- */
-struct RecordedCall {
-  std::string option;
-  std::string value;
-
-  bool operator==(const RecordedCall&) const = default;
-};
-
-/**
- * @brief What a record of the tests throws to refuse its value.
- */
-class RefusedValue final : public std::exception {};
-
-/**
- * @returns VALUE_OPTION and FLAG_OPTION, whose records append each call to
- *          @p calls.
- */
-std::array<LaunchOption, 2> recordingOptions(std::vector<RecordedCall>& calls) {
-  return {
-      LaunchOption{.name = VALUE_OPTION,
-                   .takesValue = true,
-                   .record =
-                       [&calls](std::string_view value) {
-                         calls.push_back(
-                             RecordedCall{.option = std::string(VALUE_OPTION),
-                                          .value = std::string(value)});
-                       }},
-      LaunchOption{.name = FLAG_OPTION,
-                   .takesValue = false,
-                   .record =
-                       [&calls](std::string_view value) {
-                         calls.push_back(
-                             RecordedCall{.option = std::string(FLAG_OPTION),
-                                          .value = std::string(value)});
-                       }},
-  };
-}
-
-}  // namespace
 
 /**
  * Given no argument
