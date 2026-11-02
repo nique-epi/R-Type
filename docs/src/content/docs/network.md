@@ -167,7 +167,7 @@ sudo tests/tools/network-conditions/netem.sh clear
 - On every `apply`, a warning that `-f` could flush the main ruleset: the script loads only its own anchor, `com.apple/rtype-network-conditions`.
 - On `clear`, `1 more pf enable reference(s) remaining, pf still enabled` when another program also holds pf enabled: the script releases only the reference its `apply` took, so pf stays as that program wants it.
 
-Each tool applies the values as follows. What a tool cannot do is left out, and `dummynet.sh` warns about it; `netem.sh` refuses `--reorder` without `--lag` or `--jitter`, since netem reorders only the packets it delays:
+Each tool applies the values as follows. What a tool cannot do is left out, and `dummynet.sh` warns about it; `netem.sh` refuses `--reorder` unless `--lag` or `--jitter` is above 0, since netem reorders only the packets it delays:
 
 | Value | Simulator | netem | dummynet | clumsy |
 |---|---|---|---|---|

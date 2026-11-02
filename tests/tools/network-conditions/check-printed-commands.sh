@@ -52,9 +52,13 @@ expect 'netem gives a jitter alone 0 to 20 ms on each packet' netem \
   'tc qdisc replace dev lo root netem delay 10000us 10000us loss 0% duplicate 0% rate 10gbit
 exit 0' --jitter 40
 
-expect 'netem refuses to reorder packets it does not delay' netem \
-  'netem.sh: netem reorders only delayed packets: give --lag or --jitter too
-exit 1' --reorder 5
+expect 'netem refuses to reorder packets a lag of 0 does not delay' netem \
+  'netem.sh: netem reorders only delayed packets: give a --lag or --jitter above 0
+exit 1' --lag 0 --reorder 5
+
+expect 'netem reorders packets the shortest lag delays' netem \
+  'tc qdisc replace dev lo root netem delay 500us 0us loss 0% duplicate 0% reorder 5% rate 10gbit
+exit 0' --lag 1 --reorder 5
 
 # The bounds and the errors are those of the programs.
 expect 'the longest lag is taken' netem \

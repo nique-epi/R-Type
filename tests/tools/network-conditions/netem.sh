@@ -32,7 +32,7 @@ LINK_RATE=10gbit
 apply_conditions() {
   delay_us=$((lag * 500 + jitter * 250))
   if [ "$reorder" -gt 0 ] && [ "$delay_us" -eq 0 ]; then
-    fail 'netem reorders only delayed packets: give --lag or --jitter too'
+    fail 'netem reorders only delayed packets: give a --lag or --jitter above 0'
   fi
   set -- delay "${delay_us}us" "$((jitter * 250))us" \
     loss "${loss}%" duplicate "${duplicates}%"
