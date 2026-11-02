@@ -629,7 +629,7 @@ The client reads `client.cfg`, in the folder it is started from, between the ins
 | `set server-address <address>` | The IPv4 address the connection screen starts with. Default: `127.0.0.1`. |
 | `set server-port <port>` | The UDP port the connection screen starts with, from 1 to 65535. Default: 4242. |
 
-A missing file is not an error and a refused line does not stop the client; the journal says so at the `info` and `warn` levels. The screens module reads the settings when it starts, so a line only changes what the connection screen offers first.
+A missing file is not an error and a refused line does not stop the client; the journal says so at the `info` and `warn` levels. The screens module reads the settings when it starts, so a line only changes what the connection screen offers first. `client.cfg.example`, at the root of the repository, lists every setting with its default; it is not read by the client: copy it to `client.cfg`.
 
 ## Launch options: `LaunchOptions`
 

@@ -52,7 +52,7 @@ The Bydos appear at heights drawn from the seed; without `--seed` the server dra
 ./r-type_server --set state-rate=30
 ```
 
-`--set <name>=<value>` forces any setting of the server and wins over `server.cfg`, a file of commands the server reads from the folder it is started from. A missing file is fine; the defaults apply.
+`--set <name>=<value>` forces any setting of the server and wins over `server.cfg`, a file of commands the server reads from the folder it is started from. A missing file is fine; the defaults apply. `server.cfg.example`, at the root of the repository, lists every setting with its default and its bounds: copy it to `server.cfg`.
 
 ```
 # server.cfg
@@ -106,7 +106,7 @@ The client and the server write a timestamped journal, `r-type_server.log` or `r
 
 The build option `-DLOG_LEVEL=<name>` removes the calls below a level from the binaries. See [the logging page](docs/src/content/docs/logging.md).
 
-The client reads `client.cfg` the same way (`set nickname`, `set server-address`, `set server-port`, `module <name> on|off`, and `--set` to force a setting). It keeps the player's settings in `settings.ini`: in `$XDG_CONFIG_HOME/r-type` (or `~/.config/r-type`) on Linux, `~/Library/Application Support/R-Type` on macOS, `%LOCALAPPDATA%\R-Type` on Windows. Its path is logged at launch; deleting it brings back the settings of a first launch.
+The client reads `client.cfg` the same way, and `client.cfg.example` is its model (`set nickname`, `set server-address`, `set server-port`, `module <name> on|off`, and `--set` to force a setting). It keeps the player's settings in `settings.ini`: in `$XDG_CONFIG_HOME/r-type` (or `~/.config/r-type`) on Linux, `~/Library/Application Support/R-Type` on macOS, `%LOCALAPPDATA%\R-Type` on Windows. Its path is logged at launch; deleting it brings back the settings of a first launch.
 
 ## Code style
 

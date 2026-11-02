@@ -1,0 +1,18 @@
+# Example of server.cfg. Copy it to server.cfg, in the folder the server is
+# started from. One command per line; '#' starts a comment.
+# Every value below is the default, so this file changes nothing as it is.
+# A launch option (-p, --seed, --state-rate, --set <name>=<value>) wins over it.
+
+# The UDP port, from 1 to 65535.
+set port 4242
+
+# The seed of the first game, from 0 to 4294967295, or 'none' to draw one.
+set seed none
+
+# The world states sent to each player per second, from 2 to 60.
+set state-rate 20
+
+# Turn a module off (it is installed and never started). Refused when a module
+# that stays on depends on it: games needs network, lobby needs games, all need
+# logger.
+# module lobby off
