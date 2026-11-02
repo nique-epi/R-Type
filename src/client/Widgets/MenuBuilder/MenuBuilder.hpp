@@ -12,6 +12,8 @@
 #include "Button.hpp"
 #include "IScreenNavigator.hpp"
 #include "Menu.hpp"
+#include "PanelCursor.hpp"
+#include "PendingButton.hpp"
 #include "RowControl.hpp"
 #include "TabStrip.hpp"
 #include "TextField.hpp"
@@ -154,22 +156,6 @@ class MenuBuilder {
   [[nodiscard]] static sf::IntRect chipArea(const Button::Text& text);
 
  private:
-  /** @brief A bar asked for, not placed yet: a button, or a field when it holds
-   * one. */
-  struct PendingButton {
-    Button::Text text;
-    std::function<void()> action;
-    std::optional<TextField> field;
-    std::unique_ptr<RowControl> control;
-  };
-
-  /** @brief Where the next row and the next bar of a tabbed panel go: rows
-   * down its panel, bars rightwards under it. */
-  struct PanelCursor {
-    int rowTop{};
-    int barLeft{};
-  };
-
   void placeColumn(Menu::Content& content);
   void placeDialog(Menu::Content& content);
   void placeForm(Menu::Content& content);
