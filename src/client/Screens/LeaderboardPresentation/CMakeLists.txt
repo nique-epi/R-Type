@@ -9,7 +9,7 @@ target_link_libraries(rtype_client_leaderboard_presentation
     rtype_client_interface
     rtype_client_screen_interfaces
     rtype_client_widgets
-    rtype_network_constants
+    rtype_network_protocol
   PRIVATE
     rtype_client_animation
 )
