@@ -18,7 +18,7 @@
 #include "ScreenBuilding.hpp"
 #include "ScreenContext.hpp"
 #include "ScreenRegistry.hpp"
-#include "ServerConnection.hpp"
+#include "ServerSession.hpp"
 
 namespace rtype::client {
 
@@ -33,13 +33,14 @@ std::unique_ptr<IScreen> buildGameScreen(const ScreenContext& context) {
   if (loading != nullptr) {
     return loading;
   }
-  ServerConnection& connection = context.services.connection.get();
+  ServerSession& connection = context.services.connection.get();
   return std::make_unique<GameScreen>(
       GameScreenParts{.navigator = context.navigator.get(),
                       .settings = context.services.settings.get(),
                       .inputs = connection,
-                      .entityMessages = connection,
+                      .entityMessages = context.services.entityMessages.get(),
                       .connection = connection,
+                      .waitingRoom = context.services.waitingRoom.get(),
                       .sky = context.sky.get(),
                       .sounds = soundsOf(context),
                       .result = context.gameResult.get()},

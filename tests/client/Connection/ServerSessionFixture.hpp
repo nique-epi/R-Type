@@ -4,26 +4,33 @@
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>
+#include <optional>
 #include <vector>
 #include "ConnectionPhase.hpp"
 #include "ConnectionRequest.hpp"
 #include "DatagramCodec.hpp"
 #include "Endpoint.hpp"
 #include "EntityMessage.hpp"
+#include "EntityMessageQueue.hpp"
+#include "GameLoadedReminder.hpp"
 #include "IncomingDatagram.hpp"
+#include "MessageDispatcher.hpp"
 #include "OutgoingDatagram.hpp"
 #include "PacketHeader.hpp"
 #include "PlayerInput.hpp"
 #include "RecordingDatagramLink.hpp"
-#include "ServerConnection.hpp"
-#include "ServerConnectionFixtures.hpp"
+#include "ServerSession.hpp"
+#include "ServerSessionFixtures.hpp"
+#include "ServerSessionParts.hpp"
 #include "TimeConstants.hpp"
+#include "WaitingRoom.hpp"
 #include "WorldState.hpp"
 
 namespace rtype::client::testing {
 
-/** @brief A connection whose datagrams go through a recording link. */
-class ServerConnectionFixture : public ::testing::Test {
+/** @brief A session, its waiting room and its entity message queue wired as
+ * the connection module wires them, over a recording link. */
+class ServerSessionFixture : public ::testing::Test {
  protected:
   void connect();
 
@@ -39,6 +46,8 @@ class ServerConnectionFixture : public ::testing::Test {
 
   void deliverBytes(std::vector<std::byte> datagram);
 
+  /** @brief Runs one frame of the network stage, as the connection module
+   * does: the queue counts the time, then the session reads and sends. */
   void update(engine::Duration elapsed = engine::Duration::zero());
 
   /** @brief Connects, then has the server accept the attempt, its acceptance
@@ -47,7 +56,9 @@ class ServerConnectionFixture : public ::testing::Test {
 
   [[nodiscard]] ConnectionPhase phase() const;
 
-  [[nodiscard]] ServerConnection& connection();
+  [[nodiscard]] ServerSession& session();
+
+  [[nodiscard]] WaitingRoom& waitingRoom();
 
   [[nodiscard]] const std::vector<network::OutgoingDatagram>& sent() const;
 
@@ -69,7 +80,7 @@ class ServerConnectionFixture : public ::testing::Test {
   void deliverWorldStateInSession(const network::WorldState& state,
                                   std::uint16_t sequence);
 
-  /** @returns The entity messages the connection hands over now. */
+  /** @returns The entity messages the queue hands over now. */
   [[nodiscard]] std::vector<EntityMessage> drainedEntityMessages();
 
   /** @returns How many datagrams sent so far hold a message of type
@@ -84,13 +95,24 @@ class ServerConnectionFixture : public ::testing::Test {
    * SESSION_TOKEN. */
   static network::PacketHeader sessionHeader(std::uint16_t sequence);
 
+  /** @returns The sender the link was last told to listen to. */
+  [[nodiscard]] const std::optional<network::Endpoint>& listenedTo() const;
+
   [[nodiscard]] network::PlayerInput lastInput() const;
 
   [[nodiscard]] network::PacketHeader lastHeader() const;
 
  private:
   RecordingDatagramLink link_;
-  ServerConnection connection_{link_};
+  network::MessageDispatcher dispatcher_;
+  GameLoadedReminder gameLoaded_;
+  WaitingRoom waitingRoom_{dispatcher_, gameLoaded_};
+  EntityMessageQueue entityMessages_{dispatcher_, waitingRoom_, gameLoaded_};
+  ServerSession session_{ServerSessionParts{
+      .link = link_,
+      .dispatcher = dispatcher_,
+      .gameLoaded = gameLoaded_,
+      .observers = {waitingRoom_, entityMessages_, gameLoaded_}}};
 };
 
 }  // namespace rtype::client::testing
