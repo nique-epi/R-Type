@@ -125,7 +125,8 @@ TEST(PositionHistory, StaysWhereASingleSampleIsAfterIt) {
 /**
  * Given samples at ticks 6 and 9
  * When a sample of tick 7 arrives late, then another of tick 9 again
- * Then neither changes where the entity is at tick 7.5
+ * Then the entity, asked for at tick 10.5, after the newest sample, is still
+ * moved on at the speed of the samples of ticks 6 and 9
  */
 TEST(PositionHistory, IgnoresASampleThatIsNotNewerThanTheNewest) {
   PositionHistory history;
@@ -136,10 +137,12 @@ TEST(PositionHistory, IgnoresASampleThatIsNotNewerThanTheNewest) {
   history.record(
       PositionSample{.tick = SECOND_SAMPLE.tick, .position = LATE_POSITION});
 
-  const auto position = history.at(HALFWAY_TICK);
+  const auto position = history.at(ONE_AND_A_HALF_TICKS_AHEAD_TICK);
   ASSERT_TRUE(position.has_value());
-  EXPECT_FLOAT_EQ(position.value_or(NO_POSITION).x, HALFWAY_POSITION.x);
-  EXPECT_FLOAT_EQ(position.value_or(NO_POSITION).y, HALFWAY_POSITION.y);
+  EXPECT_FLOAT_EQ(position.value_or(NO_POSITION).x,
+                  ONE_AND_A_HALF_TICKS_AHEAD_POSITION.x);
+  EXPECT_FLOAT_EQ(position.value_or(NO_POSITION).y,
+                  ONE_AND_A_HALF_TICKS_AHEAD_POSITION.y);
 }
 
 /**
