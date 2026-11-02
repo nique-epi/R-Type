@@ -178,7 +178,7 @@ std::span<const std::string_view> LogLaunchOptions::otherArguments() const {
   return otherArguments_;
 }
 
-std::string LogLaunchOptions::usage(std::string_view defaultJournal) {
+std::string LogLaunchOptions::usage(std::string_view defaultJournalName) {
   std::string text = "Logging options:\n";
   appendUsageEntry(text, std::string(LEVEL_OPTION) + " <name>",
                    "Level: trace, debug, info, warn, error or silent. "
@@ -188,7 +188,8 @@ std::string LogLaunchOptions::usage(std::string_view defaultJournal) {
                        std::string(INFO_NAME) + ".");
   appendUsageEntry(
       text, std::string(FILE_OPTION) + " <path>",
-      "Journal to append to. Default: " + std::string(defaultJournal) + ".");
+      "Journal to append to. Default: " + std::string(defaultJournalName) +
+          std::string(DEFAULT_JOURNAL_PLACE) + ".");
   appendUsageEntry(text, NO_FILE_OPTION, "Write no journal.");
   appendUsageEntry(text, STDERR_OPTION,
                    "Write to standard error too. This is the default.");

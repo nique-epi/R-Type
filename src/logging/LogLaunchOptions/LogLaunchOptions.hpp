@@ -69,10 +69,10 @@ class LogLaunchOptions {
   /**
    * @returns the part of a program's usage that describes the logging
    *          options: each option on a line, its effect indented on the next.
-   * @param defaultJournal how the usage names the journal used unless an
-   *        option changes it.
+   * @param defaultJournalName the name of the journal the program writes next
+   *        to its executable unless an option changes it.
    */
-  [[nodiscard]] static std::string usage(std::string_view defaultJournal);
+  [[nodiscard]] static std::string usage(std::string_view defaultJournalName);
 
  private:
   LogLaunchOptions(std::optional<LogLevel> level, LogOutput output,

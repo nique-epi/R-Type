@@ -421,12 +421,13 @@ TEST(LogLaunchOptionsUsage, NamesEveryLoggingOption) {
 }
 
 /**
- * Given a default journal
+ * Given the name of a default journal
  * When the usage of the logging options is built
- * Then it names that journal
+ * Then it names that journal and says it sits next to the executable
  */
-TEST(LogLaunchOptionsUsage, NamesTheDefaultJournal) {
+TEST(LogLaunchOptionsUsage, NamesTheDefaultJournalAndItsPlace) {
   const std::string usage = LogLaunchOptions::usage("r-type_server.log");
 
-  EXPECT_NE(usage.find("Default: r-type_server.log."), std::string::npos);
+  EXPECT_NE(usage.find("Default: r-type_server.log next to the executable."),
+            std::string::npos);
 }
