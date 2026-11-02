@@ -131,6 +131,25 @@ class InvalidNicknameException : public MalformedMessageException {
 };
 
 /**
+ * @brief A difficulty that is empty, longer than the protocol allows, not
+ * UTF-8, or holding a control character, read from a payload or about to be
+ * written into one.
+ */
+class InvalidDifficultyException : public MalformedMessageException {
+ public:
+  explicit InvalidDifficultyException(std::size_t size);
+};
+
+/**
+ * @brief A LeaderboardAnswer lists more rows than the protocol allows.
+ */
+class TooManyLeaderboardRowsException : public MalformedMessageException {
+ public:
+  TooManyLeaderboardRowsException(std::size_t rowCount,
+                                  std::size_t maximumCount);
+};
+
+/**
  * @brief A field holds a value the protocol page does not list for it, read
  * from a payload or about to be written into one. The field is named as on
  * the protocol page.

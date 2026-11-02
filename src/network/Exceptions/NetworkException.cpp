@@ -88,6 +88,17 @@ DuplicatePlayerNumberException::DuplicatePlayerNumberException(
     : MalformedMessageException(
           "player number " + std::to_string(playerNumber) + " appears twice") {}
 
+InvalidDifficultyException::InvalidDifficultyException(std::size_t size)
+    : MalformedMessageException("a difficulty of " + std::to_string(size) +
+                                " byte(s) is empty, too long, not UTF-8 or "
+                                "holds a control character") {}
+
+TooManyLeaderboardRowsException::TooManyLeaderboardRowsException(
+    std::size_t rowCount, std::size_t maximumCount)
+    : MalformedMessageException("a leaderboard lists at most " +
+                                std::to_string(maximumCount) + " rows, not " +
+                                std::to_string(rowCount)) {}
+
 TooManyPlayersException::TooManyPlayersException(std::size_t playerCount,
                                                  std::size_t maximumCount)
     : MalformedMessageException(
