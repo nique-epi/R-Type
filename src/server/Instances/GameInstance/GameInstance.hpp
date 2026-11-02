@@ -40,15 +40,17 @@ namespace rtype::server {
  *
  * The players and their sessions (the datagrams read, who is ready, the newest
  * input, the silence that closes a session, the departures and the Heartbeats)
- * belong to GameSessions. The game gives it three things: a ReadyState counts
+ * belong to GameSessions. The game gives it four things: a ReadyState counts
  * only while the game waits for players (IGameFlow::state); each PlayerInput
  * newer than the one kept goes to the SessionHooks::newerInput functions of the
  * modules before it replaces it, once it was held for
- * GameSettings::inputDelayTicks ticks, the same for every player; and a player
- * whose session closes goes to their SessionHooks::closing functions. A player
- * who joins goes to their SessionHooks::joined functions (see
- * onPlayerJoined()). takeDepartedPlayers() hands the players whose session
- * closed over to whoever must forget them outside the game.
+ * GameSettings::inputDelayTicks ticks, the same for every player; each
+ * LeaderboardRequest goes to their SessionHooks::leaderboardRequested
+ * functions; and a player whose session closes goes to their
+ * SessionHooks::closing functions. A player who joins goes to their
+ * SessionHooks::joined functions (see onPlayerJoined()). takeDepartedPlayers()
+ * hands the players whose session closed over to whoever must forget them
+ * outside the game.
  *
  * A tick runs three stages, in order: GAME_INPUT_STAGE counts the time since
  * the previous tick for the Heartbeats, reads the datagrams, applies the inputs

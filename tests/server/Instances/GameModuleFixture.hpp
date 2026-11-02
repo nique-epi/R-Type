@@ -10,7 +10,6 @@
 #include "GameInstanceConstants.hpp"
 #include "IGameModule.hpp"
 #include "LoopStages.hpp"
-#include "MessageDispatcher.hpp"
 #include "OutgoingDatagram.hpp"
 #include "PlayerRoster.hpp"
 #include "ServiceRegistry.hpp"
@@ -78,7 +77,6 @@ class GameModuleFixture : public ::testing::Test {
   engine::ServiceRegistry services_;
   engine::LoopStages stages_{GAME_STAGES};
   std::vector<network::OutgoingDatagram> sent_;
-  network::MessageDispatcher messages_;
   GameContext context_;
 };
 

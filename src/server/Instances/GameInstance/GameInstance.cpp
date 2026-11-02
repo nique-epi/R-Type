@@ -20,6 +20,7 @@
 #include "IGameModule.hpp"
 #include "IGameWorld.hpp"
 #include "IncomingDatagram.hpp"
+#include "LeaderboardRequest.hpp"
 #include "PacketHeader.hpp"
 #include "PlayerInput.hpp"
 #include "PlayerRoster.hpp"
@@ -64,6 +65,11 @@ GameSessionsParts sessionPartsOf(const GameInstanceParts& parts,
           [own](const ConnectedPlayer& player,
                 const network::PlayerInput& input) {
             own.delayedInputs.get().push(player.playerNumber, input);
+          },
+      .onLeaderboardRequest =
+          [own](const ConnectedPlayer& player,
+                const network::LeaderboardRequest& request) {
+            callAll(own.hooks.get().leaderboardRequested, player, request);
           }};
 }
 
@@ -75,7 +81,6 @@ GameContext contextOf(GameInstanceParts parts, GameSessions& sessions,
                      .systems = own.systems,
                      .roster = sessions.roster(),
                      .hooks = own.hooks,
-                     .messages = sessions.messages(),
                      .settings = std::move(parts.settings),
                      .send = std::move(parts.send),
                      .everyPlayerIsReady = [&sessions] {

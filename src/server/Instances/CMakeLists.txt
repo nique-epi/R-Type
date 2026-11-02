@@ -6,7 +6,6 @@ target_link_libraries(rtype_server_instances
   INTERFACE
     rtype_engine
     rtype_game
-    rtype_network_message_dispatcher
     rtype_network_transport
     rtype_server_constants
     rtype_server_player_roster
