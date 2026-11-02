@@ -11,7 +11,7 @@ Most folders below do not exist yet. Each section says which ones do; the story 
 
 ## Who may link what
 
-The repository builds three programs on six libraries. Programs link libraries, never the reverse. Between libraries, the only links are `rtype_game` to `rtype_engine`, and any library to `rtype_logging`, `rtype_concurrency` and `rtype_identifiers`.
+The repository builds three programs on seven libraries. Programs link libraries, never the reverse. Between libraries, the only links are `rtype_game` to `rtype_engine`, and any library to `rtype_logging`, `rtype_concurrency` and `rtype_identifiers`.
 
 | Target | Holds | Never links |
 |---|---|---|
@@ -24,6 +24,7 @@ The repository builds three programs on six libraries. Programs link libraries, 
 | `rtype_logging` | log lines; every other target may link it | anything else |
 | `rtype_concurrency` | queues between threads; every other target may link it | anything but `rtype_logging` |
 | `rtype_identifiers` | the values the engine and the wire must agree on; every other target may link it | anything else |
+| `rtype_storage` | opening a SQLite file and applying its numbered migrations; the programs that keep a database link it | anything else, but SQLiteCpp |
 
 `rtype_logging`, `rtype_concurrency` and `rtype_identifiers` stand alone because `rtype_network` may not link `rtype_engine`, and code on both sides of that line writes logs, hands data from one thread to another and names entities by the same ids. A forbidden link fails the CMake configure step (`rtype_forbid_links` in the root `CMakeLists.txt`).
 
@@ -47,6 +48,7 @@ The cases where people hesitate:
 | Damage after a collision | `src/game/Systems` | it is a rule of the match, even though only the server runs it |
 | A queue between two threads | `src/concurrency` | the client, the server and `rtype_network` all need it, and `rtype_network` may not link `rtype_engine` |
 | Finding an entity from its network id | `src/engine/NetworkIds` | `rtype_network` may not know entities |
+| Opening a SQLite file and migrating it | `src/storage` | the server and the master each keep a file, and neither links the other |
 | The entity id no entity has | `src/identifiers` | the engine hands out entity ids and the protocol carries them, and `rtype_network` may not link `rtype_engine` |
 | The heartbeat sent to the master | `src/server/MasterLink` | only the server sends it; the message format lives in `src/network/Master` |
 | A new protocol message | `src/network/Protocol` | one struct per message, its encoding next to it, then a row in [Protocol](/R-Type/protocol/#messages) |
@@ -83,6 +85,10 @@ src/engine/
 ### Concurrency
 
 `src/concurrency` builds `rtype_concurrency`: what threads use to hand data to each other (see [Concurrency](/R-Type/concurrency/)). **Never** an R-Type word, SFML or Asio. Like `rtype_logging`, it links nothing else of the repository, so `rtype_network` can use it as well as the engine and the programs. `BoundedQueue/` and `Exceptions/` exist.
+
+### Storage
+
+`src/storage` builds `rtype_storage`: `openDatabaseFile()`, the one way every program opens a SQLite file, with its settings and its numbered migrations. **Never** a table or an R-Type word: the tables belong to the program. It links SQLiteCpp and nothing else of the repository, and it exists today, with the server as its only user (see [Server](/R-Type/server/#the-file-resultsdatabase)).
 
 ### Identifiers
 
@@ -135,7 +141,7 @@ src/network/
 ```
 src/server/
 ├── Application/      starts and stops the threads
-├── Modules/          one folder per module (logger, network, games, lobby, metrics) and the list that assembles them
+├── Modules/          one folder per module (logger, network, storage, games, lobby, metrics) and the list that assembles them
 ├── Exceptions/       the root exception of the server, errors of the waves file
 ├── Platform/         what differs between Windows, macOS and Linux, and the stop signals
 ├── LaunchOptions/    port, name, limits, master address
@@ -147,10 +153,10 @@ src/server/
 ├── MasterLink/       registration and heartbeat
 ├── AdminConsole/     kick and close a game from the terminal
 ├── Metrics/          tick time, counts of games, players and entities; traffic and the heartbeat to come
-└── Storage/          this server's SQLite file: leaderboard, statistics
+└── Storage/          this server's SQLite file and the thread that owns it: results, leaderboard, statistics
 ```
 
-`Application`, `Metrics` (the durations of the ticks, the newest report and its lines in the journal), `Modules` (the logger, network, games, lobby and metrics modules, the list that assembles them, and the farewell the games module sends when the server stops), `Replication` (the world state sender, the waiting room announcer, the announcer of the end of a game, the announcement of the ship of each new player, and the encoder and broadcaster of the game events), `Platform`, `LaunchOptions`, `Lobby` (the answers to connection requests only), `Spawning` (the Bydo spawner, the reader of the waves file and the weapon system), `Exceptions`, `Sessions` (the roster of the players of a game, the session header of every datagram to a player, and the classes that read their datagrams, keep their ready state and newest input, close their sessions and send their heartbeats; no other folder of `src/server` is linked by it) and `Instances` (one `GameInstance` for now, run on the simulation thread like the rest, which installs the modules of a game: the `RtypeRulesModule` holds its states, its tick and its rules with `GameFlow`, runs the systems of the world, and keeps the score and the lives of its players, and the replication module in `Replication` tells the players) exist today: the network thread and the simulation thread, the waiting room, the start of the game, the world state, the game events and the end of a game sent to the players (see [Server](/R-Type/server/)), the timer resolution the server asks Windows for, the port and seed read at launch, the players let in, the Bydos appearing and moving, the missiles the players fire, a game with its states, its ready rule and the newest input of each player, which moves its ship, and the metrics of the server in its journal.
+`Application`, `Metrics` (the durations of the ticks, the newest report and its lines in the journal), `Modules` (the logger, network, storage, games, lobby and metrics modules, the list that assembles them, and the farewell the games module sends when the server stops), `Replication` (the world state sender, the waiting room announcer, the announcer of the end of a game, the announcement of the ship of each new player, and the encoder and broadcaster of the game events), `Platform`, `LaunchOptions`, `Lobby` (the answers to connection requests only), `Spawning` (the Bydo spawner, the reader of the waves file and the weapon system), `Storage` (the SQLite file of the server, its queries and the thread that owns it), `Exceptions`, `Sessions` (the roster of the players of a game, the session header of every datagram to a player, and the classes that read their datagrams, keep their ready state and newest input, close their sessions and send their heartbeats; no other folder of `src/server` is linked by it) and `Instances` (one `GameInstance` for now, run on the simulation thread like the rest, which installs the modules of a game: the `RtypeRulesModule` holds its states, its tick and its rules with `GameFlow`, runs the systems of the world, and keeps the score and the lives of its players, and the replication module in `Replication` tells the players) exist today: the network thread and the simulation thread, the waiting room, the start of the game, the world state, the game events and the end of a game sent to the players (see [Server](/R-Type/server/)), the timer resolution the server asks Windows for, the port and seed read at launch, the players let in, the Bydos appearing and moving, the missiles the players fire, a game with its states, its ready rule and the newest input of each player, which moves its ship, and the metrics of the server in its journal.
 
 ### Client
 
@@ -203,7 +209,7 @@ src/client/
 ```
 src/master/
 ├── Http/             routes, server key and admin secret check
-├── Storage/          SQLite connection and migrations
+├── Storage/          its tables and queries, on the connection and migrations of rtype_storage
 ├── GameServers/      registration, heartbeats, status, top 10 of each server
 ├── Administration/   bans, kicks, maintenance, audit log
 ├── Matchmaking/      quick play
