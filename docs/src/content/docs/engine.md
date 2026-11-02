@@ -244,7 +244,7 @@ The reasoning behind the order is in [Architecture](/R-Type/architecture/#module
 
 ## Commands and configuration: `CommandInterpreter`
 
-`src/engine/Commands/` (`rtype_engine_commands`) runs a line of text as a named command. `Application` owns the `CommandInterpreter` and the `ConfigurationRegistry` and provides both as services, so a module registers its commands and declares its settings in `install()`.
+`src/engine/Commands/` (`rtype_engine_commands`) runs a line of text as a named command. It has three folders, each a library of its own: `Interpreter/` (`CommandInterpreter` and the cutting of a line into words), `Settings/` (the declared settings and the `set` command) and `Configuration/` (reading `server.cfg` and `client.cfg`, and logging what was read). `Application` owns the `CommandInterpreter` and the `ConfigurationRegistry` and provides both as services, so a module registers its commands and declares its settings in `install()`.
 
 - `CommandInterpreter::add(definition, handler)` registers a command: its name, the shape of its arguments and one sentence of help. `execute(line)` splits the line into words (`splitCommandLine`: spaces separate words, quotes keep spaces in a word, `#` starts a comment, and inside quotes `\"` and `\\` stand for a quote and a backslash), runs the command and answers with a `CommandResult`. A bad line is never thrown: an unknown command or a handler that throws `CommandRefusedException` gives `accepted = false` and a message naming the command and the line. A blank line or a comment is accepted and runs nothing.
 - `ConfigurationRegistry` holds the settings and the `set <name> <value>` command. A module declares a whole number with bounds (`IntegerSettingDefinition`, which may allow `none`) or a text with a validator (`TextSettingDefinition`), and keeps the `SettingValue` it gets back. A `set` checks the value before it keeps it, so a refused line leaves the old value.
@@ -284,7 +284,7 @@ The same language is meant for the administration console and the orders of the 
 | Hand data from one thread to another | `BoundedQueue`, in its own library: see [Concurrency](/R-Type/concurrency/) |
 | Change how the launch options are read, or how the usage and the launch errors read | `src/engine/LaunchArguments/`; each program's own options are in its `LaunchOptions` |
 | Add a command or a setting a program can configure | `CommandInterpreter::add()` or `ConfigurationRegistry::declareInteger()` / `declareText()`, called from a module's `install()`; the module reads the setting in `start()` |
-| Change how the configuration file is read | `readConfiguration()` in `src/engine/Commands/ConfigurationReader.cpp`; the file names are in `src/server/ServerConstants.hpp` and `src/client/ClientConstants.hpp` |
+| Change how the configuration file is read | `readConfiguration()` in `src/engine/Commands/Configuration/ConfigurationReader.cpp`; the file names are in `src/server/ServerConstants.hpp` and `src/client/ClientConstants.hpp` |
 | Add a part a program can switch on or off | A class implementing `IModule` (declared in `src/engine/Modules/IModule.hpp`), written in the program or library it belongs to, listed after its dependencies in the list given to `Application` |
 | Run a module's work every tick, frame or pass of the loop | `InstallContext::addWork()`, called from the module's `install()` |
 | Hand an object to the modules installed after | `InstallContext::provide()`; the other modules call `require<>()` or `find<>()` |

@@ -4,9 +4,10 @@
 #include <cstddef>
 #include <string>
 #include <string_view>
-#include "CommandsConstants.hpp"
+#include "CommandLineConstants.hpp"
 #include "EngineException.hpp"
 #include "LaunchArgumentsConstants.hpp"
+#include "SettingCommandConstants.hpp"
 
 namespace rtype::engine {
 

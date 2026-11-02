@@ -1,16 +1,12 @@
-add_library(rtype_engine_commands STATIC
-  CommandInterpreter.cpp
-  CommandLine.cpp
-  ConfigurationLog.cpp
-  ConfigurationReader.cpp
-  ConfigurationRegistry.cpp
-  NameList.cpp
-  SettingLine.cpp
-  SettingValue.cpp
+add_subdirectory(Interpreter)
+add_subdirectory(Settings)
+add_subdirectory(Configuration)
+
+add_library(rtype_engine_commands INTERFACE)
+
+target_link_libraries(rtype_engine_commands
+  INTERFACE
+    rtype_engine_command_interpreter
+    rtype_engine_command_settings
+    rtype_engine_command_configuration
 )
-
-target_include_directories(rtype_engine_commands PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
-
-target_link_libraries(rtype_engine_commands PUBLIC rtype_engine_exceptions rtype_engine_launch_arguments rtype_logging)
-
-rtype_enable_warnings(rtype_engine_commands)

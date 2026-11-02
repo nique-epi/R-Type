@@ -7,9 +7,9 @@
 #include <vector>
 #include "CommandDefinition.hpp"
 #include "CommandInterpreter.hpp"
-#include "CommandsConstants.hpp"
 #include "EngineException.hpp"
 #include "IModule.hpp"
+#include "ModuleSwitchesConstants.hpp"
 #include "NameList.hpp"
 
 namespace rtype::engine {

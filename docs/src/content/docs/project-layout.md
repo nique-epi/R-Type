@@ -69,6 +69,9 @@ src/engine/
 ├── NetworkIds/       entity to network id, and back
 ├── LaunchArguments/  options read at launch, usage and errors
 ├── Commands/         named commands, declared settings, the configuration file
+│   ├── Interpreter/  the command table and the cutting of a line into words
+│   ├── Settings/     declared settings and the set command
+│   └── Configuration/ reading the file of commands, its report and its log
 ├── Modules/          installs, starts and stops a program's modules, in list order; runs their work in named stages and hands services between them
 └── Exceptions/
 ```

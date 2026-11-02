@@ -10,10 +10,10 @@
 #include <vector>
 #include "CommandDefinition.hpp"
 #include "CommandInterpreter.hpp"
-#include "CommandsConstants.hpp"
 #include "EngineException.hpp"
 #include "IntegerSettingDefinition.hpp"
 #include "NameList.hpp"
+#include "SettingCommandConstants.hpp"
 #include "SettingValue.hpp"
 #include "TextSettingDefinition.hpp"
 
