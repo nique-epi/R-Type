@@ -23,6 +23,10 @@ INTERFACE=lo0
 # number, the default port of the server, is only unlikely to be taken.
 PIPE=4242
 
+# Where apply records that the pipe is its own, so a later apply configures it
+# again and clear deletes it, while a pipe another program made is left alone.
+PIPE_FILE=/var/run/rtype-network-conditions.pipe
+
 # The pf anchor of the rule. /etc/pf.conf evaluates the dummynet rules of every
 # anchor under com.apple (dummynet-anchor "com.apple/*"), so the rule needs no
 # change to the main ruleset.
@@ -58,7 +62,20 @@ load_rule() {
   fi
 }
 
-# Enables pf, once: an apply that follows another keeps the first token.
+# Claims the pipe before configuring it: refuses a pipe that exists without the
+# record of an earlier apply, since another program made it.
+claim_pipe() {
+  if [ "$printing" = yes ] || [ -e "$PIPE_FILE" ]; then
+    return 0
+  fi
+  if dnctl pipe show "$PIPE" | grep -q .; then
+    fail "dummynet pipe $PIPE belongs to another program: nothing applied"
+  fi
+  : >"$PIPE_FILE"
+}
+
+# Enables pf, once: an apply that follows another keeps the first token. A
+# token that cannot be kept is released at once, since clear could not.
 enable_pf() {
   if [ "$printing" = yes ]; then
     printf 'pfctl -E\n'
@@ -66,7 +83,11 @@ enable_pf() {
     enabled=$(pfctl -E 2>&1)
     token=$(printf '%s\n' "$enabled" | sed -n 's/^Token : //p')
     [ -n "$token" ] || fail "pfctl -E gave no token: $enabled"
-    printf '%s\n' "$token" >"$TOKEN_FILE"
+    if ! printf '%s\n' "$token" >"$TOKEN_FILE"; then
+      pfctl -X "$token" ||
+        fail "could not write $TOKEN_FILE nor release the pf reference $token"
+      fail "could not write $TOKEN_FILE: the pf reference it was for is released"
+    fi
   fi
 }
 
@@ -74,19 +95,21 @@ enable_pf() {
 # the loss, then sends every packet leaving the interface through it.
 apply_conditions() {
   warn_about_what_dummynet_lacks
+  claim_pipe
   run dnctl pipe "$PIPE" config delay "$(((lag + 1) / 2))" \
     plr "$(packet_loss_rate)"
   load_rule "dummynet out quick on $INTERFACE from any to any pipe $PIPE"
   enable_pf
 }
 
-# Empties the anchor, deletes the pipe and releases the reference apply took
-# on pf.
+# Empties the anchor, deletes the pipe apply made and releases the reference
+# apply took on pf.
 remove_conditions() {
   pfctl -a "$ANCHOR" -F all
-  if dnctl pipe show "$PIPE" | grep -q .; then
+  if [ -e "$PIPE_FILE" ] && dnctl pipe show "$PIPE" | grep -q .; then
     dnctl pipe delete "$PIPE"
   fi
+  rm -f "$PIPE_FILE"
   if [ -s "$TOKEN_FILE" ]; then
     pfctl -X "$(cat "$TOKEN_FILE")"
     rm -f "$TOKEN_FILE"

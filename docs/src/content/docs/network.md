@@ -161,7 +161,7 @@ sudo tests/tools/network-conditions/netem.sh apply --network bad
 sudo tests/tools/network-conditions/netem.sh clear
 ```
 
-`apply` replaces what an earlier `apply` set; `clear` removes it and does nothing when nothing is applied; `print` prints the commands `apply` would run, without root, and runs none. While the conditions are applied, everything on the loopback interface is slowed down, not only the game. A packet between two programs of the machine leaves the interface once, so each one waits half the lag, as in the simulator, and a ping to 127.0.0.1 gains the whole lag. `pfctl` writes three messages around those of `dummynet.sh`, none of them an error:
+`apply` replaces what an earlier `apply` set; `clear` removes it and does nothing when nothing is applied; `print` prints the commands `apply` would run, without root, and runs none. `dummynet.sh` undoes only what its `apply` did: it refuses a dummynet pipe 4242 that another program made, deletes only the pipe it made, and releases at once a pf reference whose token it cannot keep. While the conditions are applied, everything on the loopback interface is slowed down, not only the game. A packet between two programs of the machine leaves the interface once, so each one waits half the lag, as in the simulator, and a ping to 127.0.0.1 gains the whole lag. `pfctl` writes three messages around those of `dummynet.sh`, none of them an error:
 
 - `No ALTQ support in kernel`, on every call: the kernel of macOS has no ALTQ, a packet queueing system the script does not use.
 - On every `apply`, a warning that `-f` could flush the main ruleset: the script loads only its own anchor, `com.apple/rtype-network-conditions`.
