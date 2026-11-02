@@ -38,6 +38,7 @@ GameInstance::GameInstance(GameInstanceParts parts,
       sessions_(GameSessionsParts{
           .events = parts.events,
           .send = parts.send,
+          .clock = parts.clock,
           .readyAccepted =
               [this] { return flow_->state() == GameState::WaitingForPlayers; },
           .onClosing =
@@ -62,6 +63,7 @@ GameInstance::GameInstance(GameInstanceParts parts,
       modules_(std::move(modules)) {
   modules_.addWork(
       GAME_INPUT_STAGE, [this]([[maybe_unused]] engine::Duration elapsed) {
+        sessions_.startTick();
         sessions_.readDatagrams(datagrams_);
         delayedInputs_.release(sessions_.roster(),
                                [this](const ConnectedPlayer& player,

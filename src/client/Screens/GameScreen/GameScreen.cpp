@@ -30,10 +30,13 @@
 #include "MissionStart.hpp"
 #include "PlayerAction.hpp"
 #include "PlayerInputPacer.hpp"
+#include "PlayerLeft.hpp"
 #include "PlayerPalette.hpp"
 #include "PlayerPreferences.hpp"
 #include "ShipFlightSystem.hpp"
 // NOLINTNEXTLINE(misc-include-cleaner)
+#include "GameScreenIdConstants.hpp"
+#include "MenuScreenIdConstants.hpp"
 #include "PlayerSettings.hpp"
 #include "ScreenConstants.hpp"
 #include "ScreenId.hpp"
@@ -95,7 +98,7 @@ void GameScreen::handleEvent(const sf::Event& event) {
   const auto* released = event.getIf<sf::Event::KeyReleased>();
   if (released != nullptr && released->code == OPTIONS_KEY) {
     playerCommands_.releaseAll();
-    navigator_->push(ScreenId::GameOptions);
+    navigator_->push(GAME_OPTIONS_SCREEN);
   }
   if (const auto* keyPressed = event.getIf<sf::Event::KeyPressed>()) {
     playerCommands_.keyPressed(keyPressed->scancode);
@@ -123,6 +126,8 @@ void GameScreen::update(engine::Duration elapsed) {
                    EffectPreferences{.flashes = preference,
                                      .shades = pilotShadesOf(*settings_),
                                      .soundCues = settings_->soundCues});
+  departures_.advance(elapsed);
+  silence_.advance(elapsed);
   applyEntityMessages();
   askForTheEndWhenDue();
   moveSky(*sky_, effects_, preference);
@@ -132,12 +137,18 @@ void GameScreen::update(engine::Duration elapsed) {
 
 void GameScreen::applyEntityMessages() {
   entityMessageSource_->drainEntityMessages(receivedEntityMessages_);
+  if (!receivedEntityMessages_.empty()) {
+    silence_.hear();
+  }
   for (const EntityMessage& message : receivedEntityMessages_) {
     std::visit(
         [this](const auto& announced) {
-          if constexpr (std::is_same_v<std::decay_t<decltype(announced)>,
-                                       network::GameEnded>) {
+          using Announced = std::decay_t<decltype(announced)>;
+          if constexpr (std::is_same_v<Announced, network::GameEnded>) {
             recordEnd(announced);
+          } else if constexpr (std::is_same_v<Announced, network::PlayerLeft>) {
+            scoreBoard_.apply(announced);
+            departures_.follow(scoreBoard_.pilots());
           } else {
             replicator_.apply(announced);
           }
@@ -154,6 +165,7 @@ void GameScreen::recordEnd(const network::GameEnded& ended) {
   *result_ = GameResult{
       .pilots = rankedPilots(finalPilotsOf(scoreBoard_.pilots(), ended))};
   endedAt_ = effects_.sinceStart();
+  silence_.stop();
 }
 
 void GameScreen::askForTheEndWhenDue() {
@@ -162,13 +174,15 @@ void GameScreen::askForTheEndWhenDue() {
     return;
   }
   endedAt_.reset();
-  navigator_->replaceAll(ScreenId::End);
+  navigator_->replaceAll(END_SCREEN);
 }
 
 void GameScreen::repaintStatusWhenChanged() {
   if (scoreBoard_.revision() != paintedStatusRevision_ ||
       missionBannerAt(effects_.sinceStart()) != paintedBanner_ ||
-      paintedPalette_ != playerPaletteOf(*settings_)) {
+      paintedPalette_ != playerPaletteOf(*settings_) ||
+      departures_.revision() != paintedDepartures_ ||
+      silence_.isShown() != paintedSilence_) {
     repaintStatus();
   }
 }
@@ -179,10 +193,14 @@ void GameScreen::repaintStatus() {
   statusCanvas_->clear();
   paintStatusBand(*statusCanvas_, scoreBoard_.pilots(), palette);
   paintMissionBanner(*statusCanvas_, banner);
+  departures_.paint(*statusCanvas_, palette);
+  silence_.paint(*statusCanvas_);
   statusCanvas_->display();
   paintedStatusRevision_ = scoreBoard_.revision();
   paintedBanner_ = banner;
   paintedPalette_ = palette;
+  paintedDepartures_ = departures_.revision();
+  paintedSilence_ = silence_.isShown();
 }
 
 ActionSet GameScreen::playerActions() const {

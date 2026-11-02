@@ -3,25 +3,31 @@
 #include <SFML/System/Vector2.hpp>
 #include <SFML/Window/Event.hpp>
 #include <SFML/Window/Keyboard.hpp>
+#include <algorithm>
 #include <memory>
+#include <string>
 #include "BlankRenderTarget.hpp"
 #include "BoundAction.hpp"
 #include "ColorMode.hpp"
 #include "ConnectionConstants.hpp"
+#include "DepartureFeedTestConstants.hpp"
 #include "DrawJournal.hpp"
 #include "EffectConstants.hpp"
 #include "EffectTestConstants.hpp"
 #include "EntityAnnouncements.hpp"
 #include "EntityReplicatorTestConstants.hpp"
 #include "FakeEntityMessageSource.hpp"
+#include "GameEnded.hpp"
 #include "GameResult.hpp"
 #include "GameScreen.hpp"
 #include "GameScreenFixture.hpp"
 #include "GameScreenFixtures.hpp"
+#include "GameScreenIdConstants.hpp"
 #include "GameScreenTestConstants.hpp"
 #include "IgnoringEntityLayer.hpp"
 #include "KeyPress.hpp"
 #include "LoneGameParts.hpp"
+#include "MenuScreenIdConstants.hpp"
 #include "PlayerPaletteTestConstants.hpp"
 #include "PlayerSettings.hpp"
 #include "RecordingEntityLayer.hpp"
@@ -31,24 +37,26 @@
 #include "RecordingScreen.hpp"
 #include "RecordingSky.hpp"
 #include "ScreenConstants.hpp"
-#include "ScreenId.hpp"
 #include "ScreenStack.hpp"
 #include "ScreenTestConstants.hpp"
+#include "SilenceWarningTestConstants.hpp"
 #include "SoundConstants.hpp"
 #include "TimeConstants.hpp"
+#include "TimeTestConstants.hpp"
 #include "WorldState.hpp"
 #include "WorldStateFilterTestConstants.hpp"
 
 using rtype::client::BoundAction;
 using rtype::client::BYDO_EXPLOSION_FRAME;
 using rtype::client::ColorMode;
+using rtype::client::END_SCREEN;
+using rtype::client::GAME_OPTIONS_SCREEN;
 using rtype::client::GameScreen;
 using rtype::client::OPTIONS_KEY;
 using rtype::client::PLAYER_INPUT_INTERVAL;
 using rtype::client::PLAYER_MUZZLE_FLASH_FRAME;
 using rtype::client::PLAYER_MUZZLE_FLASH_WITHOUT_FLASH_FRAME;
 using rtype::client::PLAYER_SHOT_SOUND_ID;
-using rtype::client::ScreenId;
 using rtype::client::testing::APPLIED_TICK;
 using rtype::client::testing::BYDO_ID;
 using rtype::client::testing::BYDO_POSITION;
@@ -64,6 +72,7 @@ using rtype::client::testing::SHIP_POSITION;
 using rtype::client::testing::spawned;
 using rtype::client::testing::stateListing;
 using rtype::engine::Duration;
+using rtype::engine::testing::ONE_SECOND;
 using rtype::network::WireEntityType;
 using ::testing::Contains;
 using ::testing::ElementsAre;
@@ -78,9 +87,8 @@ TEST_F(GameScreenFixture, ReleasingTheOptionsKeyOpensTheOptions) {
   screens().handleEvent(keyRelease(OPTIONS_KEY));
   screens().applyPendingChanges();
 
-  EXPECT_THAT(journal(),
-              ElementsAre(JournalEntry{.screen = ScreenId::GameOptions,
-                                       .call = ScreenCall::Built}));
+  EXPECT_THAT(journal(), ElementsAre(JournalEntry{.screen = GAME_OPTIONS_SCREEN,
+                                                  .call = ScreenCall::Built}));
 }
 
 /**
@@ -762,7 +770,7 @@ TEST(GameScreenEndTest, TheEndScreenReplacesTheGameASecondLater) {
 
   EXPECT_THAT(doubles.navigator.calls(),
               ElementsAre(NavigatorCall{.request = NavigatorRequest::ReplaceAll,
-                                        .screen = ScreenId::End}));
+                                        .screen = END_SCREEN}));
 }
 
 /**
@@ -779,4 +787,88 @@ TEST_F(GameScreenFixture, ChangingTheColorModeRepaintsTheStatusBand) {
   const RecordedWriting* name = writingOf(statusCanvas(), THIRD_PILOT_NICKNAME);
   ASSERT_NE(name, nullptr);
   EXPECT_EQ(name->style.color, LIGHT_BLUISH_GREEN);
+}
+
+/**
+ * Given a game of three pilots
+ * When the server says the third one left
+ * Then the feed writes LEFT THE GAME
+ */
+TEST_F(GameScreenFixture, APilotWhoLeftGetsALineInTheFeed) {
+  entityMessages().queue(THIRD_PILOT_LEFT);
+
+  screens().update(ONE_FRAME);
+
+  EXPECT_NE(writingOf(statusCanvas(), FEED_LEFT_WORDS), nullptr);
+}
+
+/**
+ * Given a game of three pilots
+ * When the three copies of a PlayerLeft of the third one arrive
+ * Then the feed writes one line
+ */
+TEST_F(GameScreenFixture, ThreeCopiesOfAPlayerLeftWriteOneLine) {
+  for (int copy = 0; copy < PLAYER_LEFT_COPIES; ++copy) {
+    entityMessages().queue(THIRD_PILOT_LEFT);
+  }
+
+  screens().update(ONE_FRAME);
+
+  EXPECT_EQ(
+      std::ranges::count(statusCanvas().writings, std::string{FEED_LEFT_WORDS},
+                         &RecordedWriting::text),
+      1);
+}
+
+/**
+ * Given a line in the feed
+ * When five seconds pass
+ * Then the line is gone
+ */
+TEST_F(GameScreenFixture, TheLineGoesAfterItsTime) {
+  entityMessages().queue(THIRD_PILOT_LEFT);
+  screens().update(ONE_FRAME);
+
+  screens().update(LINE_TIME);
+
+  EXPECT_EQ(writingOf(statusCanvas(), FEED_LEFT_WORDS), nullptr);
+}
+
+/**
+ * Given a game whose server sent nothing
+ * When one second passes
+ * Then WAITING FOR THE SERVER shows
+ */
+TEST_F(GameScreenFixture, ASecondWithoutMessagesShowsTheWarning) {
+  screens().update(ONE_SECOND);
+
+  EXPECT_NE(writingOf(statusCanvas(), WARNING_WORDS), nullptr);
+}
+
+/**
+ * Given the warning shown
+ * When a message of the server arrives
+ * Then the warning is gone
+ */
+TEST_F(GameScreenFixture, AMessageOfTheServerHidesTheWarning) {
+  screens().update(ONE_SECOND);
+  entityMessages().queue(rtype::network::WorldState{});
+
+  screens().update(ONE_FRAME);
+
+  EXPECT_EQ(writingOf(statusCanvas(), WARNING_WORDS), nullptr);
+}
+
+/**
+ * Given a game the server ended
+ * When one second passes without a message
+ * Then no warning shows: the server is quiet on purpose
+ */
+TEST_F(GameScreenFixture, NoWarningOnceTheGameEnded) {
+  entityMessages().queue(rtype::network::GameEnded{});
+  screens().update(ONE_FRAME);
+
+  screens().update(ONE_SECOND);
+
+  EXPECT_EQ(writingOf(statusCanvas(), WARNING_WORDS), nullptr);
 }

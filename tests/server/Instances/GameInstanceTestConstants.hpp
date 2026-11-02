@@ -44,6 +44,13 @@ constexpr std::size_t PROTOCOL_SESSION_CLOSING_TICKS = 1200;
 constexpr std::size_t PROTOCOL_HEARTBEAT_TICKS = 60;
 
 /**
+ * @brief A stall of the server 400 ms shorter than the 20 s a client waits
+ * for a datagram of its server before it takes the server for lost (the
+ * SESSION_SILENCE_LIMIT of the protocol page): no tick runs for 19.6 s.
+ */
+constexpr std::chrono::milliseconds STALL_SHORTER_THAN_THE_SILENCE_LIMIT{19600};
+
+/**
  * @brief What the line about the second player timing out holds.
  */
 constexpr std::string_view SECOND_PLAYER_TIMED_OUT_LINE_TEXT =

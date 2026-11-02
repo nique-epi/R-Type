@@ -117,7 +117,7 @@ A file you touch that already breaks one of these rules is fixed, not extended: 
 
 ### Writing a module
 
-A module that implements `IModule` is installed, started and stopped in the order of its program's list:
+The [Modules](https://nique-epi.github.io/R-Type/modules/) page explains them, and the [tutorial](https://nique-epi.github.io/R-Type/tutorial-write-a-module/) writes one step by step. A module that implements `IModule` is installed, started and stopped in the order of its program's list:
 
 - `install()` prepares and checks, and keeps nothing open: it may read a file and close it, build the objects the module owns, or throw on a wrong configuration.
 - `start()` opens what must live until `stop()`: a socket, a thread, an open file, an event subscription, a timer. A `start()` that opens several things releases the ones already open before an exception leaves it, because `Application` never calls `stop()` on the module whose `start()` threw.

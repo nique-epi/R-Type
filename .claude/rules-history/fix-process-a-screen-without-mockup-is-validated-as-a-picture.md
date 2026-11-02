@@ -45,3 +45,27 @@ See the core file, subsection "A new kind of control takes its behavior from its
 
 - ❌ Hovering PORT while typing in ADDRESS moves the typing to PORT.
 - ✅ In a form, only a click (or a key) moves the selection.
+
+## Update (28 October 2026) — A new screen takes the input rules of the screen it repeats
+
+### Context
+
+RTY-125, the NO SIGNAL screen (`LostScreen`): it skips its closing on Enter or a click, then Enter presses PRESS ENTER TO RECONNECT, like the end screen skips its opening then presses PLAY AGAIN.
+
+### Mistake
+
+The screen acted on every `KeyPressed` and on a click inside the call only. A review found that the system repeats the press of a held key, so holding Enter skipped the closing, then pressed RECONNECT with the repeat; and that a click during the closing did nothing, since the call was not drawn yet. `EndScreen` already filtered the repeat (`releasesHeldKey()` and the repeat check) and skipped on any click.
+
+### Root cause
+
+The plan copied the look and the timing of the end screen's call, and wrote the input handling from scratch, without reading the input rules of the screen it repeated.
+
+### Rule
+
+See the core file, subsection "A new screen takes the input rules of the screen it repeats".
+
+### Example
+
+- ❌ Holding Enter on the NO SIGNAL card reconnects by itself.
+- ✅ `releasesHeldKey()` moved to `Screens/HeldKey/`, shared by both screens; a held Enter acts once.
+

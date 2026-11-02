@@ -45,6 +45,7 @@
 #include "ServerDatagrams.hpp"
 #include "ServerLobbyTestConstants.hpp"
 #include "Spawning/WavePlanFixtures.hpp"
+#include "TimeConstants.hpp"
 #include "TimerScheduler.hpp"
 #include "UnreliableNetwork.hpp"
 #include "World.hpp"
@@ -125,7 +126,8 @@ GameInstanceTest::GameInstanceTest(std::size_t inputDelayTicks)
                                                        .inputDelayTicks =
                                                            inputDelayTicks},
                               .events = events_,
-                              .timers = timers_},
+                              .timers = timers_,
+                              .clock = clock_},
             modulesWithRulesAt(rules_)) {}
 
 game::World& GameInstanceTest::world() { return rules_->world(); }
@@ -203,7 +205,8 @@ void GameInstanceTest::queue(network::IncomingDatagram datagram) {
   incoming_.push_back(std::move(datagram));
 }
 
-void GameInstanceTest::tick() {
+void GameInstanceTest::tick(engine::Duration sincePreviousTick) {
+  clock_.advance(sincePreviousTick);
   for (const std::size_t index : livePlayers_) {
     ConnectedPlayer* const player = game().roster().find(playerEndpoint(index));
     if (player != nullptr) {

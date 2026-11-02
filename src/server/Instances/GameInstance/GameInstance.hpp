@@ -48,12 +48,12 @@ namespace rtype::server {
  * onPlayerJoined()). takeDepartedPlayers() hands the players whose session
  * closed over to whoever must forget them outside the game.
  *
- * A tick runs three stages, in order: GAME_INPUT_STAGE reads the datagrams,
- * applies the inputs whose delay is over and closes the silent sessions,
- * GAME_SIMULATION_STAGE runs the work the modules added, and GAME_OUTPUT_STAGE
- * sends the Heartbeats. The work of the game itself is added before the modules
- * are installed, so it runs first in the input and output stages, ahead of the
- * work of the modules.
+ * A tick runs three stages, in order: GAME_INPUT_STAGE counts the time since
+ * the previous tick for the Heartbeats, reads the datagrams, applies the inputs
+ * whose delay is over and closes the silent sessions, GAME_SIMULATION_STAGE
+ * runs the work the modules added, and GAME_OUTPUT_STAGE sends the Heartbeats.
+ * The work of the game itself is added before the modules are installed, so it
+ * runs first in the input and output stages, ahead of the work of the modules.
  *
  * Not thread-safe: use it from the simulation thread only.
  */
@@ -112,8 +112,9 @@ class GameInstance {
    * and closes the session of each player who sent a Disconnection, among
    * @p datagrams, oldest first, closes the session of every player not heard
    * from for SESSION_TIMEOUT_TICKS ticks, then runs the work of the modules.
-   * Last, a player sent nothing for TICKS_PER_HEARTBEAT ticks is sent a
-   * Heartbeat. Nothing caused by the content of a datagram makes it throw.
+   * Last, a player the game sent nothing for SILENCE_BEFORE_HEARTBEAT (see
+   * ConnectedPlayer::sinceSent) is sent a Heartbeat.
+   * Nothing caused by the content of a datagram makes it throw.
    * @p datagrams must stay valid until the call returns.
    */
   void onTick(std::span<const network::IncomingDatagram> datagrams);
