@@ -77,6 +77,12 @@ constexpr std::chrono::milliseconds HOLD_OF_A_REORDERED_DATAGRAM{75};
 constexpr std::size_t THOUSAND_DATAGRAMS = 1000;
 constexpr std::size_t TEN_THOUSAND_DATAGRAMS = 10000;
 constexpr std::chrono::milliseconds ONE_MILLISECOND_APART{1};
+
+/** @brief How many datagrams one direction of a simulated network holds at
+ * once, one more, and a single datagram. */
+constexpr std::size_t DATAGRAMS_A_FULL_NETWORK_HOLDS = 8192;
+constexpr std::size_t ONE_DATAGRAM_MORE_THAN_IT_HOLDS = 8193;
+constexpr std::size_t ONE_DATAGRAM = 1;
 constexpr std::chrono::milliseconds TEN_MILLISECONDS_APART{10};
 constexpr std::chrono::milliseconds HUNDRED_MILLISECONDS_APART{100};
 

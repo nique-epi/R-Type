@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstddef>
 #include <cstdint>
 
 namespace rtype::network {
@@ -12,6 +13,19 @@ constexpr int CROSSINGS_PER_ROUND_TRIP = 2;
 
 /** @brief How many times a copied datagram arrives. */
 constexpr int COPIED_DATAGRAM_ARRIVALS = 2;
+
+/**
+ * @brief Most datagrams one direction of a simulated network holds at once,
+ * copies included. One handed over when that many wait is lost, as in the full
+ * queue of a router, so a flood holds at most this many times MAX_DATAGRAM_SIZE
+ * bytes of payload, about 10 MB.
+ *
+ * At the longest wait, half of MAXIMUM_SIMULATED_DELAY of lag and of jitter
+ * plus REORDER_HOLD (10.075 s, about 605 ticks), it leaves 13 datagrams a
+ * tick, where a server receives at most MAXIMUM_PLAYERS inputs a tick, 8 when
+ * each is copied.
+ */
+constexpr std::size_t MAXIMUM_DATAGRAMS_IN_FLIGHT = 8192;
 
 /**
  * @brief Seeds of the draws for the datagrams a program sends and for those

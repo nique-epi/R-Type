@@ -42,6 +42,8 @@ class DatagramsInFlight {
   /**
    * @brief Draws the fate of a datagram handed over at @p now for @p peer, and
    * keeps a copy of @p payload for each time it arrives: none, once or twice.
+   * A copy that would make more than MAXIMUM_DATAGRAMS_IN_FLIGHT held at once
+   * is lost.
    */
   void add(const Endpoint& peer, std::span<const std::byte> payload,
            std::chrono::steady_clock::time_point now);

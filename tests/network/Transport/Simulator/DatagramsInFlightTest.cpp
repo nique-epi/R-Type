@@ -227,16 +227,17 @@ TEST(DatagramsInFlight, LosesEveryDatagramAtAFullLoss) {
 
 /**
  * Given a loss of 10 %
- * When 10 000 datagrams are handed over
+ * When 10 000 datagrams are handed over, each taken out once it arrived
  * Then about 9000 arrive
  */
 TEST(DatagramsInFlight, LosesAboutTheShareOfTheLoss) {
   DatagramsInFlight inFlight{TENTH_LOSS, SOME_SEED};
 
-  handNumbered(inFlight, TEN_THOUSAND_DATAGRAMS, ONE_MILLISECOND_APART);
+  const std::vector<DatagramInFlight> arrivals = arrivalsWhileHanding(
+      inFlight, TEN_THOUSAND_DATAGRAMS, ONE_MILLISECOND_APART);
 
-  EXPECT_NEAR(static_cast<double>(everyArrival(inFlight).size()),
-              ARRIVALS_AT_A_TENTH_LOSS, DRAW_TOLERANCE);
+  EXPECT_NEAR(static_cast<double>(arrivals.size()), ARRIVALS_AT_A_TENTH_LOSS,
+              DRAW_TOLERANCE);
 }
 
 /**
@@ -258,15 +259,16 @@ TEST(DatagramsInFlight, CopiesEveryDatagramAtFullDuplicates) {
 
 /**
  * Given duplicates at 10 %
- * When 10 000 datagrams are handed over
+ * When 10 000 datagrams are handed over, each taken out once it arrived
  * Then about 11 000 arrive
  */
 TEST(DatagramsInFlight, CopiesAboutTheShareOfTheDuplicates) {
   DatagramsInFlight inFlight{TENTH_DUPLICATES, SOME_SEED};
 
-  handNumbered(inFlight, TEN_THOUSAND_DATAGRAMS, ONE_MILLISECOND_APART);
+  const std::vector<DatagramInFlight> arrivals = arrivalsWhileHanding(
+      inFlight, TEN_THOUSAND_DATAGRAMS, ONE_MILLISECOND_APART);
 
-  EXPECT_NEAR(static_cast<double>(everyArrival(inFlight).size()),
+  EXPECT_NEAR(static_cast<double>(arrivals.size()),
               ARRIVALS_AT_A_TENTH_DUPLICATES, DRAW_TOLERANCE);
 }
 
@@ -369,4 +371,36 @@ TEST(DatagramsInFlight, DrawsAnotherFateFromAnotherSeed) {
   handNumbered(second, THOUSAND_DATAGRAMS, ONE_MILLISECOND_APART);
 
   EXPECT_NE(everyArrival(first), everyArrival(second));
+}
+
+/**
+ * Given a perfect simulated network handed 8193 datagrams before any arrived
+ * When every datagram arrived
+ * Then the first 8192 arrived and the last was lost: the network was full
+ */
+TEST(DatagramsInFlight, LosesADatagramHandedOverWhenFull) {
+  DatagramsInFlight inFlight{NetworkConditions{}, SOME_SEED};
+
+  handNumbered(inFlight, ONE_DATAGRAM_MORE_THAN_IT_HOLDS,
+               ONE_MILLISECOND_APART);
+  const std::vector<DatagramInFlight> arrivals = everyArrival(inFlight);
+
+  ASSERT_EQ(arrivals.size(), DATAGRAMS_A_FULL_NETWORK_HOLDS);
+  EXPECT_EQ(arrivalsByNumber(arrivals, ONE_DATAGRAM_MORE_THAN_IT_HOLDS).back(),
+            std::size_t{0});
+}
+
+/**
+ * Given a perfect simulated network whose 8192 held datagrams arrived
+ * When one more datagram is handed over, then every datagram arrived
+ * Then that datagram arrives too: an arrival makes room for another
+ */
+TEST(DatagramsInFlight, TakesADatagramAgainOnceTheHeldOnesArrived) {
+  DatagramsInFlight inFlight{NetworkConditions{}, SOME_SEED};
+  handNumbered(inFlight, DATAGRAMS_A_FULL_NETWORK_HOLDS, ONE_MILLISECOND_APART);
+  static_cast<void>(everyArrival(inFlight));
+
+  handNumbered(inFlight, ONE_DATAGRAM, ONE_MILLISECOND_APART);
+
+  EXPECT_EQ(everyArrival(inFlight).size(), ONE_DATAGRAM);
 }

@@ -62,7 +62,9 @@ void DatagramsInFlight::add(const Endpoint& peer,
                             std::span<const std::byte> payload,
                             std::chrono::steady_clock::time_point now) {
   const int arrivals = arrivalCount();
-  for (int arrival = 0; arrival < arrivals; ++arrival) {
+  for (int arrival = 0;
+       arrival < arrivals && inFlight_.size() < MAXIMUM_DATAGRAMS_IN_FLIGHT;
+       ++arrival) {
     keep(DatagramInFlight{.arrival = arrivalOf(now),
                           .peer = peer,
                           .payload = {payload.begin(), payload.end()}});
