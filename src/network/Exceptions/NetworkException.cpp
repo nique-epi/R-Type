@@ -39,6 +39,9 @@ DatagramTooLargeException::DatagramTooLargeException(std::size_t size)
                        std::to_string(MAX_DATAGRAM_SIZE) + " bytes, not " +
                        std::to_string(size)) {}
 
+EmptyDatagramException::EmptyDatagramException()
+    : NetworkException("A datagram holds at least one message") {}
+
 ReceivingAlreadyStartedException::ReceivingAlreadyStartedException()
     : NetworkException("The socket already hands its datagrams to a handler") {}
 

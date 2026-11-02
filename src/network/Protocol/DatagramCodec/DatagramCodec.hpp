@@ -6,6 +6,7 @@
 #include <ranges>
 #include <span>
 #include <vector>
+#include "EncodedMessage.hpp"
 #include "MessageFrame.hpp"
 #include "MessagePayload.hpp"
 #include "MessageType.hpp"
@@ -50,6 +51,22 @@ class DatagramCodec {
                                                      const Message& message) {
     return encode(header, Message::TYPE, encodeMessage(message));
   }
+
+  /**
+   * @brief Encodes one datagram holding @p header and every message of
+   * @p messages, in order.
+   * @throws EmptyDatagramException when @p messages is empty, and
+   * DatagramTooLargeException when the datagram would hold more than
+   * MAX_DATAGRAM_SIZE bytes; nothing is encoded then.
+   */
+  [[nodiscard]] static std::vector<std::byte> encode(
+      const PacketHeader& header, std::span<const EncodedMessage> messages);
+
+  /**
+   * @returns The bytes @p message takes in a datagram: its type, the size of
+   * its payload and its payload.
+   */
+  [[nodiscard]] static std::size_t encodedSize(const EncodedMessage& message);
 
   /**
    * @brief Reads the header at the start of @p datagram without judging its

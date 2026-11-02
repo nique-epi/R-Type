@@ -10,6 +10,8 @@
 #include <vector>
 #include "ByteSequence.hpp"
 #include "DatagramCodec.hpp"
+#include "EncodedMessage.hpp"
+#include "MessageFrame.hpp"
 #include "MessageType.hpp"
 #include "NetworkException.hpp"
 #include "PacketHeader.hpp"
@@ -24,7 +26,10 @@ using testing::byteSequence;
 using testing::datagramOf;
 using testing::defaultHeaderBytes;
 using testing::EMPTY_MESSAGE_DATAGRAM_SIZE;
+using testing::ENCODED_FILLING_MESSAGE_SIZE;
+using testing::FILLING_PAYLOAD_SIZE;
 using testing::LARGEST_DATAGRAM_SIZE;
+using testing::OVERFILLING_PAYLOAD_SIZE;
 using testing::SOME_ACKNOWLEDGED_SEQUENCE;
 using testing::SOME_ACKNOWLEDGEMENT_BITS;
 using testing::SOME_FLAGS;
@@ -446,6 +451,89 @@ TEST(DatagramCodec, ReadsTheTypesOfEveryMessage) {
   expected.set(static_cast<std::size_t>(MessageType::ReadyState));
 
   EXPECT_EQ(DatagramCodec::messageTypes(datagram), expected);
+}
+
+/**
+ * Given a Heartbeat and an EntityDestroyed payload
+ * When they are encoded in one datagram
+ * Then it splits back into both, in order, with their payloads
+ */
+TEST(DatagramCodec, EncodesSeveralMessagesInOrder) {
+  const std::vector<EncodedMessage> messages{
+      EncodedMessage{.type = MessageType::Heartbeat, .payload = {}},
+      EncodedMessage{.type = MessageType::EntityDestroyed,
+                     .payload = std::vector<std::byte>(FILLING_PAYLOAD_SIZE)}};
+
+  const std::vector<std::byte> datagram =
+      DatagramCodec::encode(PacketHeader{}, messages);
+
+  const std::vector<MessageFrame> frames =
+      DatagramCodec::splitMessages(datagram);
+  ASSERT_EQ(frames.size(), 2U);
+  EXPECT_EQ(frames.front().type,
+            static_cast<std::uint8_t>(MessageType::Heartbeat));
+  EXPECT_TRUE(frames.front().payload.empty());
+  EXPECT_EQ(frames.back().type,
+            static_cast<std::uint8_t>(MessageType::EntityDestroyed));
+  EXPECT_EQ(frames.back().payload.size(), FILLING_PAYLOAD_SIZE);
+}
+
+/**
+ * Given two messages that make exactly LARGEST_DATAGRAM_SIZE bytes with the
+ * header
+ * When they are encoded
+ * Then the datagram is LARGEST_DATAGRAM_SIZE bytes
+ */
+TEST(DatagramCodec, EncodesSeveralMessagesThatFillADatagram) {
+  const std::vector<EncodedMessage> messages(
+      2,
+      EncodedMessage{.type = MessageType::GameEvent,
+                     .payload = std::vector<std::byte>(FILLING_PAYLOAD_SIZE)});
+
+  EXPECT_EQ(DatagramCodec::encode(PacketHeader{}, messages).size(),
+            LARGEST_DATAGRAM_SIZE);
+}
+
+/**
+ * Given two messages that make one byte more than LARGEST_DATAGRAM_SIZE
+ * When they are encoded
+ * Then DatagramTooLargeException is thrown
+ */
+TEST(DatagramCodec, RefusesSeveralMessagesOneByteTooLarge) {
+  const std::vector<EncodedMessage> messages{
+      EncodedMessage{.type = MessageType::GameEvent,
+                     .payload = std::vector<std::byte>(FILLING_PAYLOAD_SIZE)},
+      EncodedMessage{
+          .type = MessageType::GameEvent,
+          .payload = std::vector<std::byte>(OVERFILLING_PAYLOAD_SIZE)}};
+
+  EXPECT_THROW(
+      static_cast<void>(DatagramCodec::encode(PacketHeader{}, messages)),
+      DatagramTooLargeException);
+}
+
+/**
+ * Given no message
+ * When a datagram of them is encoded
+ * Then EmptyDatagramException is thrown
+ */
+TEST(DatagramCodec, RefusesADatagramWithoutAMessage) {
+  const std::vector<EncodedMessage> none;
+
+  EXPECT_THROW(static_cast<void>(DatagramCodec::encode(PacketHeader{}, none)),
+               EmptyDatagramException);
+}
+
+/**
+ * Given a message of FILLING_PAYLOAD_SIZE bytes of payload
+ * When its size in a datagram is asked
+ * Then it is its type, its size and its payload: 589 bytes
+ */
+TEST(DatagramCodec, CountsThePrefixAndThePayloadOfAMessage) {
+  EXPECT_EQ(DatagramCodec::encodedSize(EncodedMessage{
+                .type = MessageType::GameEvent,
+                .payload = std::vector<std::byte>(FILLING_PAYLOAD_SIZE)}),
+            ENCODED_FILLING_MESSAGE_SIZE);
 }
 
 /** @brief Bytes splitMessages() refuses, named after their fault. */

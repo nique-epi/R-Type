@@ -57,6 +57,27 @@ static_assert(PACKET_HEADER_SIZE == UINT32_WIRE_SIZE + UINT8_WIRE_SIZE +
               "sequence, acknowledgedSequence and acknowledgementBits");
 
 /**
+ * @brief The flags of the packet header, one bit each. ACKNOWLEDGES_FLAG says
+ * that acknowledgedSequence and acknowledgementBits name the datagrams the
+ * sender accepted from its peer. GUARANTEED_FLAG says that the datagram holds
+ * guaranteed messages, which its receiver acknowledges within
+ * ACKNOWLEDGEMENT_DELAY. A header with a bit outside KNOWN_FLAGS is not of this
+ * version.
+ */
+constexpr std::uint8_t ACKNOWLEDGES_FLAG = 0x01;
+constexpr std::uint8_t GUARANTEED_FLAG = 0x02;
+constexpr auto KNOWN_FLAGS =
+    static_cast<std::uint8_t>(ACKNOWLEDGES_FLAG | GUARANTEED_FLAG);
+
+/**
+ * @brief The datagrams before acknowledgedSequence that acknowledgementBits
+ * names, one bit each: bit 0 for the one just before, bit 31 for the one 32
+ * before.
+ */
+constexpr std::size_t ACKNOWLEDGEMENT_BIT_COUNT =
+    std::numeric_limits<std::uint32_t>::digits;
+
+/**
  * @brief Bytes before the payload of each message: its type (one byte) and its
  * payload size (two bytes).
  */
@@ -161,6 +182,36 @@ constexpr std::chrono::seconds RECONNECTION_GRACE{15};
  */
 constexpr std::chrono::seconds SESSION_SILENCE_LIMIT =
     SESSION_TIMEOUT + RECONNECTION_GRACE;
+
+/**
+ * @brief The least time between two sends of a guaranteed message its receiver
+ * has not acknowledged, the resend time of the reliable channel of yojimbo.
+ * Provisional, see the protocol page.
+ */
+constexpr std::chrono::milliseconds GUARANTEED_RESEND_DELAY{100};
+
+/**
+ * @brief How long a guaranteed message is sent again while it is not
+ * acknowledged, counted from the moment it was given; past it, it is dropped,
+ * since what it shows no longer holds: the client removes an entity no
+ * WorldState lists after UNLISTED_ENTITY_TIMEOUT. Provisional, see the protocol
+ * page.
+ */
+constexpr std::chrono::seconds GUARANTEED_MESSAGE_LIFETIME{1};
+
+/**
+ * @brief The longest a receiver keeps the acknowledgement of a datagram that
+ * holds guaranteed messages before it sends a Heartbeat to carry it, when no
+ * other datagram went out meanwhile. It is longer than the time between two
+ * PlayerInput at 30 frames per second and more, so during a game the next
+ * input carries it. Provisional, see the protocol page.
+ */
+constexpr std::chrono::milliseconds ACKNOWLEDGEMENT_DELAY{40};
+
+static_assert(ACKNOWLEDGEMENT_DELAY < GUARANTEED_RESEND_DELAY,
+              "an acknowledgement goes back before the message is sent again");
+static_assert(GUARANTEED_RESEND_DELAY < GUARANTEED_MESSAGE_LIFETIME,
+              "a guaranteed message is sent more than once in its lifetime");
 
 /**
  * @brief How long the client keeps an entity no WorldState lists any more:

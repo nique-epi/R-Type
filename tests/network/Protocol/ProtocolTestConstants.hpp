@@ -105,6 +105,15 @@ constexpr auto DEFAULT_HEADER_BYTES = std::to_array<std::uint8_t>(
      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00});
 
 /**
+ * @brief Two payloads of 586 bytes make a datagram of exactly 1200 bytes with
+ * the header and their two prefixes (22 + 2 * 3 + 2 * 586); one of 587 makes
+ * it 1201. A message of 586 bytes takes 589 in a datagram.
+ */
+constexpr std::size_t FILLING_PAYLOAD_SIZE = 586;
+constexpr std::size_t OVERFILLING_PAYLOAD_SIZE = 587;
+constexpr std::size_t ENCODED_FILLING_MESSAGE_SIZE = 589;
+
+/**
  * @brief The offset of the version byte in a datagram.
  */
 constexpr std::size_t VERSION_OFFSET = 4;
