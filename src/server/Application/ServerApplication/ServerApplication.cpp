@@ -2,14 +2,18 @@
 #include <cstddef>
 #include <cstdint>
 #include <exception>
+#include <memory>
 #include <optional>
 #include <span>
 #include <stop_token>
 #include <string>
 #include <thread>
 #include <utility>
+#include "DatagramSocketOpening.hpp"
 #include "DatagramSorter.hpp"
 #include "Endpoint.hpp"
+#include "IDatagramSocket.hpp"
+#include "NetworkConditions.hpp"
 #include "OutgoingDatagram.hpp"
 #include "ServerConstants.hpp"
 #include "ServerException.hpp"
@@ -31,12 +35,24 @@ std::string firstSenderText(const std::optional<network::Endpoint>& sender) {
          std::to_string(sender->port);
 }
 
+/**
+ * @returns How many events @p current counts beyond @p reported, which then
+ * holds @p current: the events not yet reported.
+ */
+std::size_t countedSince(std::size_t current, std::size_t& reported) {
+  const std::size_t fresh = current - reported;
+  reported = current;
+  return fresh;
+}
+
 }  // namespace
 
-ServerApplication::ServerApplication(network::Endpoint localEndpoint,
-                                     TickHandler handleTick)
+ServerApplication::ServerApplication(
+    network::Endpoint localEndpoint, TickHandler handleTick,
+    const network::NetworkConditions& conditions)
     : logger_(std::string{SERVER_LOGGER_NAME}),
       listeningEndpoint_(std::move(localEndpoint)),
+      conditions_(conditions),
       incoming_(INCOMING_DATAGRAM_QUEUE_CAPACITY),
       connectionRequests_(CONNECTION_REQUEST_QUEUE_CAPACITY),
       outgoing_(OUTGOING_DATAGRAM_QUEUE_CAPACITY),
@@ -47,10 +63,11 @@ ServerApplication::ServerApplication(network::Endpoint localEndpoint,
       handleTick_(std::move(handleTick)) {}
 
 void ServerApplication::open() {
-  if (socket_.has_value()) {
+  if (socket_) {
     throw ServerAlreadyOpenException();
   }
-  socket_.emplace(network_, listeningEndpoint_);
+  socket_ =
+      network::openDatagramSocket(network_, listeningEndpoint_, conditions_);
   relay_.emplace(*socket_, incoming_, outgoing_);
 }
 
@@ -107,15 +124,15 @@ network::Endpoint ServerApplication::localEndpoint() const {
   return openSocket().localEndpoint();
 }
 
-network::UdpSocket& ServerApplication::openSocket() {
-  if (!socket_.has_value()) {
+network::IDatagramSocket& ServerApplication::openSocket() {
+  if (!socket_) {
     throw ServerNotOpenException();
   }
   return *socket_;
 }
 
-const network::UdpSocket& ServerApplication::openSocket() const {
-  if (!socket_.has_value()) {
+const network::IDatagramSocket& ServerApplication::openSocket() const {
+  if (!socket_) {
     throw ServerNotOpenException();
   }
   return *socket_;
@@ -142,39 +159,33 @@ void ServerApplication::reportDiscardedDatagrams() {
     return;
   }
   ticksSinceDiscardReport_ = 0;
-  const std::size_t discardCount = incoming_.discardedCount();
-  if (discardCount != reportedDiscardCount_) {
-    logger_.warn(discardCount - reportedDiscardCount_,
-                 " datagrams of players discarded in the last ", REPORT_SECONDS,
-                 " s: more than ", INCOMING_DATAGRAM_QUEUE_CAPACITY,
+  if (const std::size_t fresh =
+          countedSince(incoming_.discardedCount(), reportedDiscardCount_)) {
+    logger_.warn(fresh, " datagrams of players discarded in the last ",
+                 REPORT_SECONDS, " s: more than ",
+                 INCOMING_DATAGRAM_QUEUE_CAPACITY,
                  " arrived between two ticks");
-    reportedDiscardCount_ = discardCount;
   }
-  const std::size_t requestDiscardCount = connectionRequests_.discardedCount();
-  if (requestDiscardCount != reportedRequestDiscardCount_) {
-    logger_.warn(requestDiscardCount - reportedRequestDiscardCount_,
-                 " connection requests discarded in the last ", REPORT_SECONDS,
-                 " s: more than ", CONNECTION_REQUEST_QUEUE_CAPACITY,
+  if (const std::size_t fresh = countedSince(
+          connectionRequests_.discardedCount(), reportedRequestDiscardCount_)) {
+    logger_.warn(fresh, " connection requests discarded in the last ",
+                 REPORT_SECONDS, " s: more than ",
+                 CONNECTION_REQUEST_QUEUE_CAPACITY,
                  " arrived between two ticks");
-    reportedRequestDiscardCount_ = requestDiscardCount;
   }
-  const std::size_t droppedCount = sorter_.droppedCount();
-  if (droppedCount != reportedDroppedCount_) {
-    logger_.warn(droppedCount - reportedDroppedCount_,
-                 " datagrams dropped before any queue in the last ",
+  if (const std::size_t fresh =
+          countedSince(sorter_.droppedCount(), reportedDroppedCount_)) {
+    logger_.warn(fresh, " datagrams dropped before any queue in the last ",
                  REPORT_SECONDS,
                  " s: not of this protocol and version, malformed, or from a "
                  "sender that was not admitted");
-    reportedDroppedCount_ = droppedCount;
   }
-  const std::size_t wrongTokenCount = sorter_.wrongTokenCount();
-  if (wrongTokenCount != reportedWrongTokenCount_) {
-    logger_.warn(wrongTokenCount - reportedWrongTokenCount_,
-                 " datagrams dropped in the last ", REPORT_SECONDS,
+  if (const std::size_t fresh =
+          countedSince(sorter_.wrongTokenCount(), reportedWrongTokenCount_)) {
+    logger_.warn(fresh, " datagrams dropped in the last ", REPORT_SECONDS,
                  " s: sent from the address of a player with another session "
                  "token",
                  firstSenderText(sorter_.takeWrongTokenSender()));
-    reportedWrongTokenCount_ = wrongTokenCount;
   }
 }
 

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <chrono>
 #include <cstddef>
 #include <cstdint>
 #include <stdexcept>
@@ -181,6 +182,39 @@ class EmptyMessageHandlerException : public NetworkException {
 class DuplicateMessageHandlerException : public NetworkException {
  public:
   explicit DuplicateMessageHandlerException(std::uint8_t messageType);
+};
+
+/**
+ * @brief The value after an option of the network simulator is not one it
+ * takes: an unknown scenario, or a number out of its range.
+ */
+class InvalidSimulatorOptionException : public NetworkException {
+ public:
+  InvalidSimulatorOptionException(const std::string& option,
+                                  const std::string& value);
+};
+
+/**
+ * @brief An option of the network simulator is the last argument, without
+ * its value.
+ */
+class MissingSimulatorOptionValueException : public NetworkException {
+ public:
+  explicit MissingSimulatorOptionValueException(const std::string& option);
+};
+
+/**
+ * @brief The conditions of a simulated network have a lag or a jitter below
+ * zero or over the longest the simulator takes: no network makes a datagram
+ * wait less than nothing, no wait can be drawn from a negative jitter, and the
+ * longest keeps every wait far below one that would overflow the clock the
+ * waits are counted on.
+ */
+class SimulatedDelayOutOfRangeException : public NetworkException {
+ public:
+  SimulatedDelayOutOfRangeException(std::chrono::milliseconds lag,
+                                    std::chrono::milliseconds jitter,
+                                    std::chrono::milliseconds longest);
 };
 
 }  // namespace rtype::network

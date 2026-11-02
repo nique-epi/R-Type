@@ -8,6 +8,7 @@
 #include "Endpoint.hpp"
 #include "InstallContext.hpp"
 #include "ModuleConstants.hpp"
+#include "NetworkConditions.hpp"
 #include "NetworkConstants.hpp"
 #include "ServerSessionParts.hpp"
 #include "TimeConstants.hpp"
@@ -24,8 +25,9 @@ network::Endpoint anyInterfaceAnyPort() {
 
 }  // namespace
 
-ClientConnectionModule::ClientConnectionModule()
-    : network_(anyInterfaceAnyPort()),
+ClientConnectionModule::ClientConnectionModule(
+    const network::NetworkConditions& conditions)
+    : network_(anyInterfaceAnyPort(), conditions),
       router_(network_),
       waitingRoom_(dispatcher_, gameLoaded_),
       entityMessages_(dispatcher_, waitingRoom_, gameLoaded_),
