@@ -54,10 +54,15 @@ struct PlayerSettings;
  * never moves.
  *
  * Each update also moves the effects on (see EffectSpawner), then sets the
- * sky: the speed of its stars from the start of the game (see
- * warpSpeedFactorAt(), 1 when the player reduced flashes), and the shake of
- * the camera, which also shifts the entity layer, never the status band. The
- * sky is put back at its speed and place when the screen goes.
+ * sky. The time of the game, which the warp, the MISSION START banner and the
+ * end delay count, and the silence of the server start with the first
+ * WorldState or the end of the game, not with the screen: the server sends none
+ * while it waits for the other players to load, up to START_BARRIER_SECONDS, so
+ * until then the stars keep their own speed, no banner shows and no warning
+ * appears. The sky: the speed of its stars from the start of the game (see
+ * warpSpeedFactorAt(), 1 when the player reduced flashes), and the shake of the
+ * camera, which also shifts the entity layer, never the status band. The sky is
+ * put back at its speed and place when the screen goes.
  *
  * The status band of the players lies over the entities: it is painted when
  * the screen is built, from the waiting room the game started from, then
@@ -174,6 +179,7 @@ class GameScreen : public IScreen {
   SilenceWarning silence_;
   std::uint32_t paintedDepartures_{};
   bool paintedSilence_ = false;
+  bool worldSeen_ = false;
 };
 
 }  // namespace rtype::client

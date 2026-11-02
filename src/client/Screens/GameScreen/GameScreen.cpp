@@ -122,12 +122,14 @@ void GameScreen::update(engine::Duration elapsed) {
   }
   systems_.run(components_, elapsed);
   const FlashPreference preference = flashPreferenceOf(*settings_);
-  effects_.advance(elapsed,
+  const engine::Duration sinceTheWorld =
+      worldSeen_ ? elapsed : engine::Duration::zero();
+  effects_.advance(sinceTheWorld,
                    EffectPreferences{.flashes = preference,
                                      .shades = pilotShadesOf(*settings_),
                                      .soundCues = settings_->soundCues});
   departures_.advance(elapsed);
-  silence_.advance(elapsed);
+  silence_.advance(sinceTheWorld);
   applyEntityMessages();
   askForTheEndWhenDue();
   moveSky(*sky_, effects_, preference);
@@ -155,6 +157,7 @@ void GameScreen::applyEntityMessages() {
         },
         message);
     if (const auto* state = std::get_if<network::WorldState>(&message)) {
+      worldSeen_ = true;
       scoreBoard_.apply(*state);
     }
   }
@@ -164,6 +167,7 @@ void GameScreen::applyEntityMessages() {
 void GameScreen::recordEnd(const network::GameEnded& ended) {
   *result_ = GameResult{
       .pilots = rankedPilots(finalPilotsOf(scoreBoard_.pilots(), ended))};
+  worldSeen_ = true;
   endedAt_ = effects_.sinceStart();
   silence_.stop();
 }

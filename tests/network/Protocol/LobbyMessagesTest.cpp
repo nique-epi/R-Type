@@ -7,6 +7,7 @@
 #include "ByteWriter.hpp"
 #include "DatagramCodec.hpp"
 #include "GameEnded.hpp"
+#include "GameLoaded.hpp"
 #include "GameStarted.hpp"
 #include "LobbyState.hpp"
 #include "MessagePayload.hpp"
@@ -305,6 +306,37 @@ TEST(GameStarted, RefusesAnyByteInThePayload) {
   const auto bytes = byteSequence({0x00});
 
   EXPECT_THROW((void)decodeMessage<GameStarted>(bytes), TrailingBytesException);
+}
+
+/**
+ * Given a client that shows the game screen
+ * When its GameLoaded is encoded
+ * Then the payload is empty
+ */
+TEST(GameLoaded, EncodesAnEmptyPayload) {
+  EXPECT_TRUE(encodeMessage(GameLoaded{}).empty());
+}
+
+/**
+ * Given an empty payload
+ * When it is decoded as GameLoaded
+ * Then GameLoaded comes back
+ */
+TEST(GameLoaded, DecodesAnEmptyPayload) {
+  const std::vector<std::byte> empty;
+
+  EXPECT_EQ(decodeMessage<GameLoaded>(empty), GameLoaded{});
+}
+
+/**
+ * Given a payload of one byte
+ * When it is decoded as GameLoaded
+ * Then a TrailingBytesException is raised
+ */
+TEST(GameLoaded, RefusesAnyByteInThePayload) {
+  const auto bytes = byteSequence({0x00});
+
+  EXPECT_THROW((void)decodeMessage<GameLoaded>(bytes), TrailingBytesException);
 }
 
 /**
