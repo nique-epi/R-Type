@@ -5,6 +5,7 @@
 #include "BlankRenderTarget.hpp"
 #include "EntitySpriteConstants.hpp"
 #include "KeyPress.hpp"
+#include "MenuScreenIdConstants.hpp"
 #include "MotionPreference.hpp"
 #include "PlayerSettings.hpp"
 #include "PointerEvents.hpp"
@@ -12,7 +13,6 @@
 #include "RecordingNavigator.hpp"
 #include "RecordingSoundPlayer.hpp"
 #include "ScreenConstants.hpp"
-#include "ScreenId.hpp"
 #include "SoundConstants.hpp"
 #include "SquadronStart.hpp"
 #include "SquadronTestConstants.hpp"
@@ -23,11 +23,13 @@
 #include "TitleScreenTestConstants.hpp"
 
 using rtype::client::CLICK_SOUND_ID;
+using rtype::client::CONNECTION_SCREEN;
 using rtype::client::ENTITY_SHEET_ID;
 using rtype::client::LOGO_ID;
 using rtype::client::MotionPreference;
+using rtype::client::OPTIONS_SCREEN;
 using rtype::client::PlayerSettings;
-using rtype::client::ScreenId;
+using rtype::client::QUIT_CONFIRMATION_SCREEN;
 using rtype::client::SquadronStart;
 using rtype::client::TitleScreen;
 using rtype::client::TitleScreenParts;
@@ -87,7 +89,7 @@ TEST_F(TitleScreenFixture, PlayOpensTheConnectionScreen) {
 
   EXPECT_THAT(navigator().calls(),
               ElementsAre(NavigatorCall{.request = NavigatorRequest::Push,
-                                        .screen = ScreenId::Connection}));
+                                        .screen = CONNECTION_SCREEN}));
 }
 
 /**
@@ -102,7 +104,7 @@ TEST_F(TitleScreenFixture, SettingsOpensTheOptionsOverTheTitle) {
 
   EXPECT_THAT(navigator().calls(),
               ElementsAre(NavigatorCall{.request = NavigatorRequest::Push,
-                                        .screen = ScreenId::Options}));
+                                        .screen = OPTIONS_SCREEN}));
 }
 
 /**
@@ -117,7 +119,7 @@ TEST_F(TitleScreenFixture, QuitOpensTheConfirmation) {
 
   EXPECT_THAT(navigator().calls(),
               ElementsAre(NavigatorCall{.request = NavigatorRequest::Push,
-                                        .screen = ScreenId::QuitConfirmation}));
+                                        .screen = QUIT_CONFIRMATION_SCREEN}));
 }
 
 /**
@@ -131,7 +133,7 @@ TEST_F(TitleScreenFixture, EscapeOpensTheConfirmation) {
 
   EXPECT_THAT(navigator().calls(),
               ElementsAre(NavigatorCall{.request = NavigatorRequest::Push,
-                                        .screen = ScreenId::QuitConfirmation}));
+                                        .screen = QUIT_CONFIRMATION_SCREEN}));
 }
 
 /**
@@ -154,7 +156,7 @@ TEST_F(TitleScreenFixture, DrawingLaysItsPicture) {
  */
 TEST_F(TitleInTheStackFixture, TheOptionsHideTheTitle) {
   BlankRenderTarget target;
-  open(ScreenId::Options);
+  open(OPTIONS_SCREEN);
 
   screens().draw(target);
 
@@ -168,7 +170,7 @@ TEST_F(TitleInTheStackFixture, TheOptionsHideTheTitle) {
  */
 TEST_F(TitleInTheStackFixture, TheQuitConfirmationLeavesTheTitleShown) {
   BlankRenderTarget target;
-  open(ScreenId::QuitConfirmation);
+  open(QUIT_CONFIRMATION_SCREEN);
 
   screens().draw(target);
 
@@ -183,7 +185,7 @@ TEST_F(TitleInTheStackFixture, TheQuitConfirmationLeavesTheTitleShown) {
  */
 TEST_F(TitleInTheStackFixture,
        AClickInTheOptionsNeverPressesAButtonOfTheTitle) {
-  open(ScreenId::Options);
+  open(OPTIONS_SCREEN);
 
   click(PLAY_BAR_MIDDLE);
 
@@ -197,14 +199,14 @@ TEST_F(TitleInTheStackFixture,
  * Then the title asks for the connection screen
  */
 TEST_F(TitleInTheStackFixture, OnceTheOptionsAreClosedAClickReachesTheTitle) {
-  open(ScreenId::Options);
+  open(OPTIONS_SCREEN);
   closeTheScreenOnTop();
 
   click(PLAY_BAR_MIDDLE);
 
   EXPECT_THAT(titleNavigator().calls(),
               ElementsAre(NavigatorCall{.request = NavigatorRequest::Push,
-                                        .screen = ScreenId::Connection}));
+                                        .screen = CONNECTION_SCREEN}));
 }
 
 /**

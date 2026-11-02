@@ -4,10 +4,9 @@
 #include <SFML/Graphics/RenderTarget.hpp>
 #include <SFML/System/Vector2.hpp>
 #include <SFML/Window/Event.hpp>
-#include "AssetLibrary.hpp"
-#include "AssetList.hpp"
 #include "AssetLoadingStep.hpp"
 #include "IScreenNavigator.hpp"
+#include "LoadingScreenParts.hpp"
 #include "PlayfieldConstants.hpp"
 #include "ScreenColors.hpp"
 #include "ScreenConstants.hpp"
@@ -32,11 +31,10 @@ float loadedFraction(const AssetLoadingStep& loading) {
 
 }  // namespace
 
-LoadingScreen::LoadingScreen(IScreenNavigator& navigator, AssetLibrary& library,
-                             const AssetList& assets, ScreenId nextScreen)
-    : navigator_(&navigator),
-      loading_(library, assets),
-      nextScreen_(nextScreen),
+LoadingScreen::LoadingScreen(const LoadingScreenParts& parts)
+    : navigator_(&parts.navigator.get()),
+      loading_(parts.library.get(), parts.assets.get()),
+      nextScreen_(parts.nextScreen),
       barOutline_({LOADING_BAR_WIDTH, LOADING_BAR_HEIGHT}) {
   const sf::Vector2f barTopLeft =
       centerOf({game::PLAYFIELD_WIDTH, game::PLAYFIELD_HEIGHT}) -
