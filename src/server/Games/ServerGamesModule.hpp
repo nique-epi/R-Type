@@ -2,6 +2,7 @@
 
 #include <memory>
 #include <string>
+#include <string_view>
 #include <vector>
 #include "ConfigurationRegistry.hpp"
 #include "EventBus.hpp"
@@ -74,7 +75,8 @@ class ServerGamesModule final : public engine::IModule {
   void stop() override;
 
  private:
-  [[nodiscard]] WavePlan readWaves() const;
+  /** @returns The waves of @p difficulty in the waves file. */
+  [[nodiscard]] WavePlan readWaves(std::string_view difficulty) const;
   [[nodiscard]] std::unique_ptr<GameInstance> createGame(
       engine::EventBus& events, GameSettings settings);
   void declareSettings(engine::ConfigurationRegistry& configuration);

@@ -6,6 +6,7 @@
 #include <optional>
 #include <random>
 #include <string>
+#include <string_view>
 #include <thread>
 #include <utility>
 #include <vector>
@@ -107,7 +108,8 @@ void ServerGamesModule::start() {
   if (settings_.gameCount == 0) {
     throw NoJoinableGameException();
   }
-  const WavePlan waves = readWaves();
+  const std::string_view difficulty = DEFAULT_DIFFICULTY;
+  const WavePlan waves = readWaves(difficulty);
   const std::optional<std::uint32_t> seed = seedOf(*seedSetting_);
   const auto statesPerSecond =
       static_cast<std::size_t>(stateRateSetting_->integer().value_or(
@@ -124,7 +126,8 @@ void ServerGamesModule::start() {
                                   : std::random_device{}(),
                      .waves = waves,
                      .statesPerSecond = statesPerSecond,
-                     .inputDelayTicks = inputDelayTicks});
+                     .inputDelayTicks = inputDelayTicks,
+                     .difficulty = std::string{difficulty}});
     games_.add(std::move(events), std::move(created));
   }
 }
@@ -136,12 +139,12 @@ void ServerGamesModule::stop() {
   farewell.sayGoodbyeTo(games_);
 }
 
-WavePlan ServerGamesModule::readWaves() const {
+WavePlan ServerGamesModule::readWaves(std::string_view difficulty) const {
   const WaveCatalog catalog = WaveCatalog::fromFile(settings_.wavesFile);
-  WavePlan waves = catalog.planOf(DEFAULT_DIFFICULTY);
+  WavePlan waves = catalog.planOf(difficulty);
   logger_.info("waves file ", engine::genericText(settings_.wavesFile), ": ",
                catalog.difficulties().size(), " difficulties, games play ",
-               DEFAULT_DIFFICULTY);
+               difficulty);
   return waves;
 }
 
