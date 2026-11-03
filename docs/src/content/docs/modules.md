@@ -78,12 +78,12 @@ An example of each channel, in the server today:
 
 ## Required or optional
 
-Every module is one or the other, and [the list of modules](/R-Type/project-layout/#the-list-of-modules) says which. Two are optional today: the sound on the client and the metrics on the server.
+Every module is one or the other, and [the list of modules](/R-Type/project-layout/#the-list-of-modules) says which.
 
 - A required module may be included by the code that needs it: the lobby and the metrics include `Games.hpp`, from the module `games`.
-- An optional module is reached only through its `Contract/` sub-folder, which stays compiled when the module is removed. No `Contract/` exists yet: the headers others need from the sound still sit at the root of `src/client/Audio/`, until the client is tidied.
+- An optional module is reached only through its `Contract/` sub-folder, which stays compiled when the module is removed.
 
-The test of an optional module is to remove it: take out its folder, except `Contract/`, and its line in the list; the program compiles, starts, and its binary is smaller. **No module passes this test yet**; [Project layout](/R-Type/project-layout/#modules-and-libraries) says what stops the sound and the metrics. Taking a module out of the list, below, is a smaller thing: its library is no longer linked, but its folder stays in the build.
+The test of an optional module is to remove it: take out its folder, except `Contract/`, and its line in the list; the program compiles, starts, and its binary is smaller. **No module passes this test yet**, and no `Contract/` exists yet: [Project layout](/R-Type/project-layout/#modules-and-libraries) says what stops the sound and the metrics, and what stays tolerated until the client and the server are tidied. Taking a module out of the list, below, is a smaller thing: its library is no longer linked, but its folder stays in the build.
 
 ## Turning a module on or off
 

@@ -26,7 +26,7 @@ Three questions decide what your module is and where it goes.
 - **Which scope?** A module of the program (`IModule`) lives as long as the server runs. A module of a game (`IGameModule`) lives as long as one game, and there are several games at once. Counting server ticks is a matter of the program, so this is an `IModule`.
 - **Required or optional?** The code that needs a required module may include it; an optional module is reached only through its `Contract/` sub-folder, and the program must work without it. The server does its job without a tick report and no other code needs it, so this one is optional, and it has no `Contract/` since nothing would go in it.
 
-A module is one folder holding one library, named after what it does: `src/server/TickReport/`. The class is `ServerTickReportModule`, like `ServerLobbyModule` in `src/server/Modules/Lobby/`. Open that folder first: it is the smallest module that depends on others, and the model for this one. It sits under `Modules/` because it was written before a module held its code in its own folder. A new module goes straight in its own folder, and `Modules/` only receives its line in the list and the constant of its name.
+A module is one folder holding one CMake library, named after what it does: `src/server/TickReport/`. The class is `ServerTickReportModule`, like `ServerLobbyModule` in `src/server/Modules/Lobby/`. Open that folder first: it is the smallest module that depends on others, and the model for this one. It sits under `Modules/` because it was written before a module held its code in its own folder.
 
 ## Step 1: give it a name
 

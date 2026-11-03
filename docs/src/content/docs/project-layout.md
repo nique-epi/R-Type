@@ -78,7 +78,7 @@ src/engine/
 
 ### Logging
 
-`src/logging` builds `rtype_logging`: one `Logger` per class that writes lines, writing timestamped lines to the terminal and to a file, with the level chosen at launch. It links nothing else of the repository. It is being written, with `Logger/`, `LogLaunchOptions/` and `ThrottledLog/` (see [Logging](/R-Type/logging/#repeated-events-throttledlog)).
+`src/logging` builds `rtype_logging`: one `Logger` per class that logs, writing timestamped lines to the terminal and to a file, with the level chosen at launch. It links nothing else of the repository. It is being written, with `Logger/`, `LogLaunchOptions/` and `ThrottledLog/` (see [Logging](/R-Type/logging/#repeated-events-throttledlog)).
 
 ### Concurrency
 
@@ -135,7 +135,7 @@ src/network/
 ```
 src/server/
 ├── Application/      starts and stops the threads
-├── Modules/          the list of modules, and the class of each module written so far, until it joins its code
+├── Modules/          the list of modules and, for now, their classes
 ├── Exceptions/       the root exception of the server, errors of the waves file
 ├── Platform/         what differs between Windows, macOS and Linux, and the stop signals
 ├── LaunchOptions/    port, name, limits, master address
@@ -158,7 +158,7 @@ src/server/
 
 ```
 src/client/
-├── Modules/          the list of modules, the class of each module written so far, until it joins its code, and the frame loop
+├── Modules/          the list of modules, for now their classes, and the frame loop
 ├── Application/      the screen stack (the program's `Application` is the engine's, built in `main()`)
 ├── Window/           the SFML window, its display mode and its size
 ├── Assets/           assets found by id, loaded at launch or entering a game
@@ -220,14 +220,9 @@ Each folder splits its classes into a controller (HTTP in and out), a service (t
 
 ## Modules and libraries
 
-A **module** is a feature you can switch on, switch off or replace. It is a folder with one class implementing `IModule` or `IGameModule` at its root. Everything the folder holds belongs to the module, sub-folders included: the class builds those objects and hands them to the others with `provide()`. A folder without that class is a **library**: code with no life cycle, such as `src/client/Widgets/` or `src/game/Waves/`. A system (`ISystem`) and a service are not modules. What a module does at each moment is on the [Modules](/R-Type/modules/) page.
+A **module** is a feature you can switch on, switch off or replace: a folder with one class implementing `IModule` or `IGameModule` at its root, which owns everything the folder holds. A folder without that class is a **library**: code with no life cycle, such as `src/client/Widgets/` or `src/game/Waves/`. The [Modules](/R-Type/modules/#required-or-optional) page says what a required and an optional module may do, and gives the removal test.
 
-A module is required or optional:
-
-- A **required** module may be included by the code that needs it.
-- An **optional** module is reached only through its `Contract/` sub-folder, which stays compiled when the module is removed.
-
-The test of an optional module is to remove it: take out its folder, except `Contract/`, and its line in the list; the program compiles, starts, and its binary is smaller. **No module passes this test yet.** The sound fails it: `screens` lists `audio` in its `dependencies()`, the screens, the widgets and the replication include headers of `src/client/Audio/`, and `AssetLibrary` links `SFML::Audio`. The metrics come closer: only the list includes them, but their code sits in two folders that three `CMakeLists.txt` name, and `BUILD_TESTS` is the only CMake option.
+**No module passes the removal test yet.** The sound fails it: `screens` lists `audio` in its `dependencies()`, the screens, the widgets and the replication include headers of `src/client/Audio/`, and `AssetLibrary` links `SFML::Audio`. The metrics come closer: only the list includes them, but their code sits in two folders that three `CMakeLists.txt` name, and `BUILD_TESTS` is the only CMake option.
 
 ### The list of modules
 
@@ -285,13 +280,13 @@ src/game/Waves/
 └── WaveProgression.cpp
 ```
 
-- A folder has one `CMakeLists.txt` and one library. It holds the `.hpp` and `.cpp` of its classes, and of its free functions, side by side, at most ten `.cpp`. A sub-folder with a library of its own exists only when the folder would pass ten `.cpp`, when a group of classes needs a dependency the rest must not link, or for the `Contract/` of an optional module; never deeper than that.
+- A folder has one `CMakeLists.txt` and one CMake library. It holds the `.hpp` and `.cpp` of its classes, and of its free functions, side by side, at most ten `.cpp`. A sub-folder with a CMake library of its own exists only when the folder would pass ten `.cpp`, when a group of classes needs a dependency the rest must not link, or for the `Contract/` of an optional module; never deeper than that.
 - Interfaces (`IWaveSource`), plain structs and constants headers (`WaveConstants.hpp`) sit in the same folder as the classes.
 - Two classes of a folder never include each other, directly or through a third.
 - A folder written before this convention keeps a folder per class until it is flattened, in a commit of its own; a folder never holds both layouts. Tidying the client and the server flattens them all, except `Widgets/` and `Rendering/`.
 - A class declares no type inside it: a struct it uses has a header of its own, in the same folder. A class declares at most ten member functions besides its constructors and its destructor.
 - A header of constants is named `<Concept>Constants.hpp` and holds constants only.
-- The library of a folder is `rtype_<owner>_<folder_in_snake_case>`, linked by the aggregate of its library (`rtype_game`) or by its program.
+- The CMake library of a folder is `rtype_<owner>_<folder_in_snake_case>`, linked by the aggregate of its library (`rtype_game`) or by its program.
 - The namespace is `rtype::<owner>`: `rtype::game` here.
 - An error is a subclass of the owner's root exception, in `<owner>/Exceptions/`: `GameException` here.
 
@@ -299,16 +294,16 @@ This follows our previous projects: shared code in libraries and one folder per 
 
 ## Adding a module
 
-A new module is written directly in its own folder, class and code together; the [Modules](/R-Type/modules/) page explains what it does, and the [tutorial](/R-Type/tutorial-write-a-module/) writes one. It goes where this table says:
+A new module is written directly in its own folder, `src/<program>/<Name>/`, class and code together; the [Modules](/R-Type/modules/) page explains what it does, and the [tutorial](/R-Type/tutorial-write-a-module/) writes one. It is listed where this table says:
 
-| The module… | Goes in | Listed in |
-|---|---|---|
-| belongs to the server and lives as long as the program | `src/server/<Name>/` | `serverModules()`, `src/server/Modules/Assembly/ServerModules.cpp` |
-| belongs to the client | `src/client/<Name>/` | `clientModules()`, `src/client/Modules/Assembly/ClientModules.cpp` |
-| is a rule or a service of one game, and each game has its own | `src/server/<Name>/` | `rtypeGameModules()`, `src/server/Modules/Games/RtypeGameModules.cpp` |
-| would serve a program that is neither (the master) | a folder of that program, once it exists | its own list, built the same way |
+| The module… | Listed in |
+|---|---|
+| belongs to the server and lives as long as the program | `serverModules()`, `src/server/Modules/Assembly/ServerModules.cpp` |
+| belongs to the client | `clientModules()`, `src/client/Modules/Assembly/ClientModules.cpp` |
+| is a rule or a service of one game, and each game has its own | `rtypeGameModules()`, `src/server/Modules/Games/RtypeGameModules.cpp` |
+| would serve a program that is neither (the master) | its own list, built the same way |
 
-- The folder follows [Adding a class](#adding-a-class): one `CMakeLists.txt`, one library `rtype_<owner>_<name>_module`, the class `<Owner><Name>Module` as a `.hpp` and `.cpp` pair (`ServerLobbyModule`; the class of a game module is `<Name>Module`, as `ReplicationModule` and `RtypeRulesModule` are).
+- The folder follows [Adding a class](#adding-a-class): one `CMakeLists.txt`, one CMake library `rtype_<owner>_<name>_module`, the class `<Owner><Name>Module` as a `.hpp` and `.cpp` pair (`ServerLobbyModule`; the class of a game module is `<Name>Module`, as `ReplicationModule` and `RtypeRulesModule` are).
 - `Modules/` receives nothing but its line in the list and the constant of its name, in `ModuleConstants.hpp` next to the other names, in `src/server/Modules/` or `src/client/Modules/`.
 - Its pull request adds its row to [the list of modules](#the-list-of-modules), required or optional. An optional module puts what others need in its `Contract/`, and nothing else includes it.
 - A module of the program never goes in `src/engine`, unless every game would need it unchanged. `IModule` itself lives there; the modules of R-Type do not.
