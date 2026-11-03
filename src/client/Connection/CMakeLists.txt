@@ -13,11 +13,12 @@ target_link_libraries(rtype_client_connection
     rtype_network_game_event
     rtype_network_lobby_state
     rtype_network_player_left
+    rtype_client_transport
     rtype_network_protocol
     rtype_network_transport
 )
 
-add_subdirectory(NetworkThread)
+add_subdirectory(Transport)
 add_subdirectory(GameEventHistory)
 add_subdirectory(SessionOutbox)
 add_subdirectory(SessionDeparture)
@@ -29,6 +30,4 @@ add_subdirectory(ServerSession)
 add_subdirectory(GameLoadedReminder)
 add_subdirectory(WaitingRoom)
 add_subdirectory(EntityMessageQueue)
-add_subdirectory(DatagramRoute)
-add_subdirectory(DatagramRouter)
 add_subdirectory(SessionLossWatch)
