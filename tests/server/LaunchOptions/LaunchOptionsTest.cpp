@@ -6,6 +6,8 @@
 #include "LaunchArgumentsConstants.hpp"
 #include "LaunchOptions.hpp"
 #include "LaunchOptionsTestConstants.hpp"
+#include "LogLaunchOptionsFixture.hpp"
+#include "Logger.hpp"
 #include "LoggingConstants.hpp"
 #include "LoggingException.hpp"
 #include "LoggingOptionTestConstants.hpp"
@@ -23,7 +25,11 @@ using rtype::engine::PORT_OPTION;
 using rtype::engine::UnknownLaunchArgumentException;
 using rtype::logging::InvalidLogOptionException;
 using rtype::logging::LEVEL_OPTION;
+using rtype::logging::Logger;
+using rtype::logging::LogLevel;
 using rtype::logging::MissingLogOptionValueException;
+using rtype::logging::NO_FILE_OPTION;
+using rtype::logging::NO_STDERR_OPTION;
 using rtype::network::DEFAULT_SERVER_PORT;
 using rtype::network::InvalidPortException;
 using rtype::server::DEFAULT_INPUT_DELAY_TICKS;
@@ -394,15 +400,20 @@ TEST(ServerLaunchOptions, SeedOptionTakesASimulatorOptionAsItsValue) {
 }
 
 /**
- * Given the port option and a port, then the logging level option and a level
- * When the launch options are read
- * Then the server listens on that port, the logging option being read beside
+ * Given the port option and a port, then the logging level option and a
+ * level, with no journal and nothing on standard error
+ * When the launch options are read and their logging options applied
+ * Then the server listens on that port and the logger is at that level
  */
-TEST(ServerLaunchOptions, ReadsTheLoggingOptionsBesideItsOwn) {
-  const LaunchOptions options = LaunchOptions::read(Arguments{
-      PORT_OPTION, PORT_ARGUMENT, LEVEL_OPTION, DEBUG_LEVEL_ARGUMENT});
+TEST_F(LogLaunchOptionsFixture, ServerReadsTheLoggingOptionsBesideItsOwn) {
+  const LaunchOptions options = LaunchOptions::read(
+      Arguments{PORT_OPTION, PORT_ARGUMENT, LEVEL_OPTION, DEBUG_LEVEL_ARGUMENT,
+                NO_FILE_OPTION, NO_STDERR_OPTION});
+
+  options.logOptions().apply();
 
   EXPECT_EQ(options.port(), PORT_OF_PORT_ARGUMENT);
+  EXPECT_EQ(Logger::level(), LogLevel::Debug);
 }
 
 /**
