@@ -3,14 +3,50 @@ title: Client
 description: What the client does, how its parts fit together and where to find them in the code.
 ---
 
-The client, `r-type_client` (`src/client/`), shows the game, plays its sounds and reads the player's input; the server decides what happens in the match (see [Architecture](/R-Type/architecture/)). Today it finds its assets folder, loads the assets of its interface, opens a window and runs its screens over a scrolling starfield: an intro of 5.5 s set to the beats of its theme, which it opens on, the title screen, a connection screen, a waiting room, a loading screen, the game screen, which draws the entities the server announces from one sprite sheet, animated, and their effects from another, on a ladder of intensity from a shot to a ship destroyed, and opens each game with MISSION START, an end screen, an options screen and a quit confirmation, the menus all built from the same widgets. The game screen reads the player's actions through the keys the player chose, the arrows and the space bar at first; the options change them, with the volumes, the display mode, the window size and the accessibility settings, and save them in a file for the next launch. It reads the server's address and port and the player's nickname at launch, shows them on its connection screen, and joins the server from there: it sends the connection request of the protocol, on a network thread opened at launch, until the server accepts or refuses it. Once accepted, it opens a waiting room that lists the players of the server and where the player says it is ready, then the game when the server announces its start, where the ships and Bydos appear, move and disappear as the server says, over a status band that shows the nickname, the lives and the score of each pilot. When the server ends the game, the end screen opens a second later: a flight log that ranks every pilot, then PRESS ENTER TO REPLAY, back to the waiting room, or QUIT, back to the title. During a game, a line in the top-left corner tells when a teammate leaves or loses its signal, and WAITING FOR THE SERVER shows after a second without news of the server. When the session ends, the server silent for 20 s or shut down, the title replaces every screen with a dialog over it that says so, and its RETRY opens the connection screen again with the same address, port and nickname. From launch it plays its theme in a loop, the sounds of the intro and of what the server announces, and a click on the buttons and tabs of its menus.
+The client, `r-type_client` (`src/client/`), shows the game, plays its sounds and reads the player's input; the server decides what happens in the match (see [Architecture](/R-Type/architecture/)).
 
 This page tells you where to look when you need to change something. It describes what exists today and says plainly what does not exist yet.
+
+## How the parts fit together
+
+Four parts do most of the work: the screens, the rendering, the assets (the resources of the client) and the inputs. `FrameLoop` (`src/client/Modules/Window/`) hands the events to the screens, then updates and draws them, once per frame on the main thread (see [Modules and frame loop](#modules-and-frame-loop-clientmodules-frameloop)). The diagram answers one question: what does a screen rely on, from a key press to the picture?
+
+```mermaid
+flowchart TB
+  accTitle: What a screen relies on
+  accDescr: The window events go to the screen stack. From there, the game screen reads the keys through PlayerCommands, which gives actions to ServerSession. The screens draw through EntityLayer and InterfaceCanvas, which take their textures and fonts from AssetLibrary.
+  Events["window events"] --> Stack[ScreenStack]
+  Stack -- "game screen" --> Commands[PlayerCommands]
+  Commands -- "actions" --> Session[ServerSession]
+  Stack -- "draw" --> Drawing["EntityLayer, InterfaceCanvas"]
+  Drawing -- "textures, fonts" --> Library[AssetLibrary]
+```
+
+What the server says comes back to the game screen through `EntityMessageQueue` (see [Joining a server](#joining-a-server-serversession-waitingroom-entitymessagequeue)).
+
+- [**Screens**](#screens-screenstack-screenregistry) decide what is shown. The stack hands each event to the screen on top only and updates every screen; a screen opens another by its `ScreenId`, and each module registers the screens it owns.
+  - Key classes: `IScreen`, `ScreenStack`, `ScreenRegistry`, `ClientScreens`, `IScreenNavigator`.
+  - Folders: `src/client/Screens/`, `src/client/Application/ScreenStack/`, `src/client/Modules/Screens/`, `src/client/Modules/ScreenRegistry/`.
+- [**Rendering**](#assets-in-the-game-from-an-entity-to-the-screen) paints the frame from the bottom up: the [sky](#scrolling-background-scrollingbackground), then the screens, with their entities on a pixel canvas and their [menus](#how-a-menu-is-drawn-interfacecanvas).
+  - Key classes: `GameWindow`, `ScrollingBackground`, `EntityLayer`, `RenderSystem`, `SfmlDrawSurface`, `PixelCanvas`, `InterfaceCanvas`.
+  - Folders: `src/client/Window/`, `src/client/Rendering/`, `src/client/Widgets/`.
+- [**Assets**](#assets-the-folder-and-the-ids) find and load the files of `assets/`, named by asset id, at the three moments listed in [Assets: loading](#assets-loading).
+  - Key classes: `AssetLibrary`, `AssetLoadingStep`; the lists `interfaceAssets()`, `introAssets()`, `titleAssets()`, `gameAssets()`.
+  - Folders: `assets/`, `src/client/Assets/`, `src/client/Screens/ScreenAssets/`.
+- [**Inputs**](#player-commands-playercommands) turn the key and focus events of the game into actions, through the keys the player chose, so the game never sees a key. Menus read their own keys (see [Keys and pointer](#keys-and-pointer)).
+  - Key classes: `EventListeners`, `KeyBindings`, `PlayerCommands`, `ActionSet`.
+  - Folders: `src/client/Modules/Window/`, `src/client/Input/`.
+
+To change something precise, [Where to intervene](#where-to-intervene) lists each case.
+
+## What exists today
+
+Today it finds its assets folder, loads the assets of its interface, opens a window and runs its screens over a scrolling starfield: an intro of 5.5 s set to the beats of its theme, which it opens on, the title screen, a connection screen, a waiting room, a loading screen, the game screen, which draws the entities the server announces from one sprite sheet, animated, and their effects from another, on a ladder of intensity from a shot to a ship destroyed, and opens each game with MISSION START, an end screen, an options screen and a quit confirmation, the menus all built from the same widgets. The game screen reads the player's actions through the keys the player chose, the arrows and the space bar at first; the options change them, with the volumes, the display mode, the window size and the accessibility settings, and save them in a file for the next launch. It reads the server's address and port and the player's nickname at launch, shows them on its connection screen, and joins the server from there: it sends the connection request of the protocol, on a network thread opened at launch, until the server accepts or refuses it. Once accepted, it opens a waiting room that lists the players of the server and where the player says it is ready, then the game when the server announces its start, where the ships and Bydos appear, move and disappear as the server says, over a status band that shows the nickname, the lives and the score of each pilot. When the server ends the game, the end screen opens a second later: a flight log that ranks every pilot, then PRESS ENTER TO REPLAY, back to the waiting room, or QUIT, back to the title. During a game, a line in the top-left corner tells when a teammate leaves or loses its signal, and WAITING FOR THE SERVER shows after a second without news of the server. When the session ends, the server silent for 20 s or shut down, the title replaces every screen with a dialog over it that says so, and its RETRY opens the connection screen again with the same address, port and nickname. From launch it plays its theme in a loop, the sounds of the intro and of what the server announces, and a click on the buttons and tabs of its menus.
 
 | Part | State | Where |
 |---|---|---|
 | Window | Available: windowed, or borderless over the whole screen | `src/client/Window/` |
-| Modules of the client and frame loop | Available: logger, assets, settings, window, connection, sound and screens, over five stages | `src/client/Modules/` |
+| Modules of the client and frame loop | Available: logger, assets, settings, window, connection, sound, screen registry, menus, lobby, game and screens, over five stages | `src/client/Modules/` |
 | Screen stack | Available | `src/client/Application/ScreenStack/` |
 | Screens | Available: intro, title, connection, waiting room, loading, game, end, options, and the dialogs of the quit confirmation and of a lost connection | `src/client/Screens/` |
 | Lost connection: a dialog over the title | Available: shown once a session is lost or closed | `src/client/Screens/DialogMenus/`, `src/client/Screens/DialogScreen/`, `src/client/Connection/SessionLossWatch/` |
@@ -25,7 +61,7 @@ This page tells you where to look when you need to change something. It describe
 | Player settings and their file | Available; every change goes through the `SettingsService`, which tells the sounds and the music when a volume or MUTE ALL changes; the game reads the flashes setting, the sound cues and auto-fire, and every screen that paints a pilot reads the color mode | `src/client/Settings/` |
 | Color modes: the pilots in a palette for protanopia, deuteranopia or tritanopia | Available; read by the status band, the waiting room, the title, the intro, the flight log and the effects | `src/client/Rendering/Interface/PlayerPaletteConstants.hpp`, `src/client/Screens/PlayerPreferences/` |
 | Drawing entities | Available; drawn by the game screen | `src/client/Rendering/Drawing/EntityLayer/`, `src/client/Rendering/Drawing/RenderSystem/`, `src/client/Rendering/Drawing/SfmlDrawSurface/`, `src/client/Rendering/Sprites/AssetTextureSource/` |
-| Sprites of the ships, Bydos and missiles | Available, animated | `assets/sprites/entities.png`, `src/client/Rendering/Sprites/EntitySprites.cpp` |
+| Sprites of the ships, Bydos and missiles | Available, animated | `assets/sprites/entities.png`, `src/client/Rendering/Sprites/EntitySprites/EntitySprites.cpp` |
 | Animations | Available; played by the game screen | `src/client/Rendering/Sprites/Animation/`, `src/client/Rendering/Sprites/AnimationSystem/` |
 | Effects: explosions, impacts, muzzle flashes, hit flashes, debris, shockwaves, camera shake, figures of gains, arrivals, invulnerability | Available; played when the server says an entity was killed or hit, when a missile or a ship appears, and when a world state says a ship cannot be hit, which it does for 2 s after a ship comes back from a hit (see [Server](/R-Type/server/#lives-lifekeeper)) | `assets/sprites/effects.png`, `src/client/Rendering/Effects/`, `src/client/Rendering/SpriteLook/HitFlashSystem/` |
 | MISSION START: the warp of the stars and the banner | Available; played by the game screen at the start of each game | `src/client/Rendering/Effects/MissionStart/MissionStart.cpp`, `src/client/Widgets/MissionBanner/` |
@@ -57,6 +93,10 @@ This page tells you where to look when you need to change something. It describe
 | `window` | provides the `GameWindow`, the `EventListeners` and the `FrameLoop`; opens the window at the saved size when it starts, closes it when it stops | `src/client/Modules/Window/` |
 | `connection` | provides the `ServerSession`, the `WaitingRoom` and the `EntityMessageQueue`; opens the socket and its network thread when it starts; leaves the server, then closes the socket, when it stops | `src/client/Modules/Connection/` |
 | `audio` | provides the `IAudioService`: the sounds, the theme and the music of a game, or a service that plays nothing with `--no-sound`; opens the music files when it starts | `src/client/Modules/Audio/` |
+| `screen-registry` | provides the `ScreenRegistry`, empty, for the next three modules | `src/client/Modules/ScreenRegistry/` |
+| `menus` | adds its screens to the registry when it installs (see [Screens](#screens-screenstack-screenregistry)) | `src/client/Modules/Menus/` |
+| `lobby` | adds its screens to the registry when it installs | `src/client/Modules/Lobby/` |
+| `game` | adds its screens to the registry when it installs | `src/client/Modules/Game/` |
 | `screens` | the screens and what they share (`ClientScreens`), built when it starts, on the intro or on the title | `src/client/Modules/Screens/` |
 
 `main()` then runs a `FrameLoop` (`src/client/Modules/Window/`) on the main thread, where SFML reads the window events. Each pass runs the stages of `CLIENT_LOOP_STAGES` (`src/client/ClientConstants.hpp`) once, with the real time since the previous pass, read from `engine::SystemClock`:
@@ -820,15 +860,15 @@ The dialog is a `DialogScreen` (`src/client/Screens/DialogScreen/`), which shows
 | Add an asset | A file in `assets/sprites/`, `sounds/`, `music/` or `fonts/`, or in `assets/icons/<set>/` next to the license of the set, and its id in `gameAssets()`, in `titleAssets()` for the title screen, in `introAssets()` for the intro, or in `interfaceAssets()` for a font or a sound any screen may use (`src/client/Screens/ScreenAssets/ScreenAssets.cpp`), a sound also in `ALL_SOUND_IDS` (`src/client/Audio/SoundConstants.hpp`); `client_screen_tests` loads `interfaceAssets()` for real, and the CI cannot create a texture |
 | Change the asset id rule | `isValidAssetId()` in `src/client/Assets/AssetIds.cpp`, `ASSET_ID_PUNCTUATION` in `AssetConstants.hpp`, and `assets/README.md` |
 | Change where the client looks for `assets/` | `findAssetFolder()` in `src/engine/Paths/AssetFolder.cpp`, shared with the server |
-| Show a new image in the game | `assets/sprites/`, its rectangle in `src/client/Rendering/Sprites/EntitySpriteConstants.hpp`, `gameAssets()`, `spriteOf` and `animationOf` in `src/client/Rendering/Sprites/EntitySprites.cpp` |
-| Change how an entity type looks or animates | `spriteOf` and `animationOf` in `src/client/Rendering/Sprites/EntitySprites.cpp`, the rectangles, frame times and animations in `EntitySpriteConstants.hpp`, `assets/sprites/entities.png` |
+| Show a new image in the game | `assets/sprites/`, its rectangle in `src/client/Rendering/Sprites/EntitySpriteConstants.hpp`, `gameAssets()`, `spriteOf` and `animationOf` in `src/client/Rendering/Sprites/EntitySprites/EntitySprites.cpp` |
+| Change how an entity type looks or animates | `spriteOf` and `animationOf` in `src/client/Rendering/Sprites/EntitySprites/EntitySprites.cpp`, the rectangles, frame times and animations in `EntitySpriteConstants.hpp`, `assets/sprites/entities.png` |
 | Change an effect, its frames or its length | `src/client/Rendering/Effects/EffectConstants.hpp`, `assets/sprites/effects.png` (see `assets/README.md`) |
 | Add an effect | Its two rows in `assets/sprites/effects.png`, standard and without flash; its frames and `EffectAnimations` in `EffectConstants.hpp`; a method of the family it belongs to (`HitEffects`, `ShotEffects`, `KillEffects`, `PilotEffects`, in `src/client/Rendering/Effects/`) and its case in `EffectSpawner` |
 | Change a tier of the effects: its hold, its drops, its shockwave, its shake | `EffectTierConstants.hpp` and `EffectConstants.hpp` in `src/client/Rendering/Effects/`, `CameraShakeConstants.hpp` in `src/client/Rendering/Effects/Camera/`, `KillEffects::playKill()` and `playShipDown()` |
 | Change how much white may show at once | `FLASH_AREA_MAXIMUM` and the flash areas in `EffectConstants.hpp`; `EffectConstantsTest.cpp` rereads the areas in the sheets |
 | Change the colors of the debris and the shockwaves | `src/client/Rendering/Effects/EffectColorConstants.hpp` |
 | Change a sound cue: its text, its life, its gap above its sprite | `SHOT_CUE_TEXT`, `HIT_CUE_TEXT`, `SHOT_CUE_LIFE`, `HIT_CUE_LIFE` and `CUE_GAP` in `src/client/Rendering/Effects/EffectConstants.hpp`; `SoundCues` in `src/client/Rendering/Effects/SoundCues/` |
-| Change the drawing order | `Layer` in `src/game/Components/Layer.hpp`, `layerOf()` in `src/client/Rendering/Sprites/EntitySprites.cpp` |
+| Change the drawing order | `Layer` in `src/game/Components/Layer.hpp`, `layerOf()` in `src/client/Rendering/Sprites/EntitySprites/EntitySprites.cpp` |
 | Change MISSION START | `MissionStartConstants.hpp` (the warp, the arrival of the pilots) in `src/client/Rendering/Effects/MissionStart/`, `MissionBannerConstants.hpp` (the banner) in `src/client/Widgets/` |
 | Change how a hit looks | `FLASH_COLOR` and `SHADE_TINT` in `src/client/Rendering/SpriteLook/SpriteToneColorConstants.hpp`, `FlashShaderConstants.hpp`, `HIT_FLASH_DURATION` in `EffectConstants.hpp`, `SfmlDrawSurface::drawFlash()` |
 | Run a system in the game screen each frame | `systems_.add()` in the constructor of `GameScreen` (`src/client/Screens/GameScreen/`), and its library in that folder's `CMakeLists.txt` |
