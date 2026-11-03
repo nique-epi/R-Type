@@ -14,7 +14,7 @@
 #include "OutgoingDatagram.hpp"
 #include "PlayerLives.hpp"
 #include "Replication/GameEndAnnouncerTestConstants.hpp"
-#include "Rules/LifeKeeperTestConstants.hpp"
+#include "Rules/Players/LifeKeeperTestConstants.hpp"
 #include "SentDatagrams.hpp"
 #include "World.hpp"
 #include "WorldState.hpp"
