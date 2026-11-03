@@ -3,9 +3,9 @@ title: Modules
 description: How a program is built from modules, what each module does at each moment of its life, how modules talk, and how to turn one on or off.
 ---
 
-Both programs are built the same way: a list of **modules** that an `Application` installs, starts, runs and stops. A module is one part of a program with a single job: the logger, the network, the games, the lobby, the metrics on the server; the window, the connection, the sound, the screens on the client. This page tells you what a module is, when its code runs, how it reaches the others and how to switch one off. To write one, follow the [tutorial](/R-Type/tutorial-write-a-module/).
+Both programs are built the same way: a list of **modules** that an `Application` installs, starts, runs and stops. A module is a feature you can switch on, switch off or replace: the logger, the network, the games, the lobby, the metrics on the server; the window, the connection, the sound, the screens on the client. This page tells you what a module is, when its code runs, how it reaches the others and how to switch one off. To write one, follow the [tutorial](/R-Type/tutorial-write-a-module/).
 
-The word has two meanings in this repository. A **module** on this page is a class implementing `IModule` (or `IGameModule`). A **module folder** in [Project layout](/R-Type/project-layout/#adding-a-class) is a folder with one CMake library. A module of this page usually lives in a module folder of its own, such as `src/server/Modules/Lobby/`, but the two are not the same thing.
+A module is a folder with one class implementing `IModule` (or `IGameModule`) at its root. Everything the folder holds belongs to it, sub-folders included: the class builds those objects and hands them to the others with `provide()`. A folder without that class is a library: code with no life cycle. A system (`ISystem`) and a service are not modules. [Project layout](/R-Type/project-layout/#modules-and-libraries) lists the modules and says where their code goes.
 
 The reasons for the design are in [Architecture](/R-Type/architecture/#modules). The classes are described in [Engine](/R-Type/engine/#modules-application-and-imodule).
 
@@ -53,7 +53,7 @@ The server therefore has modules inside a module: the games module of the progra
 
 ## How modules talk
 
-Modules never call each other directly, and only `Assembly` includes the class of a module. A module includes the header of each service it requires, which often sits in the folder of the module that provides it. They meet through three channels.
+Modules never call each other directly, and only the list of a program (`Assembly`, `rtypeGameModules()`) includes the class of a module. A module includes the header of each service it requires, as the next section allows. They meet through three channels.
 
 | Channel | What it carries | Where it is set up |
 |---|---|---|
@@ -76,6 +76,15 @@ An example of each channel, in the server today:
 - The games module adds its work to the `simulation` stage; the lobby module adds its own to the same stage and runs after it, because it is listed after.
 - A game's rules publish an event on its bus; the replication module subscribed to it in `start()` and sends the matching message to the players.
 
+## Required or optional
+
+Every module is one or the other, and [the list of modules](/R-Type/project-layout/#the-list-of-modules) says which. Two are optional today: the sound on the client and the metrics on the server.
+
+- A required module may be included by the code that needs it: the lobby and the metrics include `Games.hpp`, from the module `games`.
+- An optional module is reached only through its `Contract/` sub-folder, which stays compiled when the module is removed. No `Contract/` exists yet: the headers others need from the sound still sit at the root of `src/client/Audio/`, until the client is tidied.
+
+The test of an optional module is to remove it: take out its folder, except `Contract/`, and its line in the list; the program compiles, starts, and its binary is smaller. **No module passes this test yet**; [Project layout](/R-Type/project-layout/#modules-and-libraries) says what stops the sound and the metrics. Taking a module out of the list, below, is a smaller thing: its library is no longer linked, but its folder stays in the build.
+
 ## Turning a module on or off
 
 A module is switched on or off at one of three moments. Only the first two exist.
@@ -97,8 +106,9 @@ Two rules decide which one fits:
 
 | You want to… | Look at |
 |---|---|
-| Add a part to the server | A new folder in `src/server/Modules/`, and a line in `serverModules()`: the [tutorial](/R-Type/tutorial-write-a-module/) does it step by step |
-| Add a part to the client | A new folder in `src/client/Modules/`, and a line in `clientModules()` |
+| Add a module to the server | A new folder `src/server/<Name>/`, a line in `serverModules()` and a row in [the list of modules](/R-Type/project-layout/#the-list-of-modules): the [tutorial](/R-Type/tutorial-write-a-module/) does it step by step |
+| Add a module to the client | A new folder `src/client/<Name>/`, a line in `clientModules()` and a row in the list of modules |
+| Place code of a module that another folder needs | [The code of a module used elsewhere](/R-Type/project-layout/#the-code-of-a-module-used-elsewhere) |
 | Change the order modules start in | The order of the lines of `serverModules()` or `clientModules()`: a module comes after every module it depends on |
 | Add a stage to a loop | `SERVER_LOOP_STAGES` (`src/server/ServerConstants.hpp`) or `CLIENT_LOOP_STAGES` (`src/client/ClientConstants.hpp`) |
 | Add a rule to a game | An `IGameModule` listed in `rtypeGameModules()` |
