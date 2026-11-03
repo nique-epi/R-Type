@@ -1,7 +1,6 @@
 #pragma once
 
 #include <chrono>
-#include <cstddef>
 #include <cstdint>
 #include <string_view>
 
@@ -116,16 +115,5 @@ constexpr std::chrono::seconds PROTOCOL_SILENCE_LIMIT{20};
  */
 constexpr std::string_view LOST_SERVER_LINE_TEXT =
     "no answer from 192.0.2.30 port 4242 for 20 s";
-
-/**
- * @brief The rate of the inputs the protocol page gives: 60 per second.
- */
-constexpr std::size_t PROTOCOL_INPUTS_PER_SECOND = 60;
-
-/**
- * @brief How many intervals between two inputs a stall of the frame loop lasts
- * in the tests.
- */
-constexpr int INTERVALS_OF_A_STALL = 3;
 
 }  // namespace rtype::client::testing

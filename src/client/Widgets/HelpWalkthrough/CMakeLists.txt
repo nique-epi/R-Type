@@ -4,13 +4,12 @@ target_include_directories(rtype_client_help_walkthrough PUBLIC ${CMAKE_CURRENT_
 
 target_link_libraries(rtype_client_help_walkthrough
   PUBLIC
-    rtype_client_audio_interfaces
-    rtype_client_button
-    rtype_client_input
-    rtype_client_key_bindings
-    rtype_client_widgets
-    rtype_client_window
     SFML::Window
+    rtype_client_audio_contract_sounds
+    rtype_client_button
+    rtype_client_input_keys
+    rtype_client_widgets
+    rtype_client_window_display
   PRIVATE
     rtype_client_animation
     rtype_client_box_corners

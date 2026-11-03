@@ -8,7 +8,7 @@ target_link_libraries(rtype_client_mission_log_page
   PRIVATE
     rtype_client_easing
     rtype_client_entity_sprites
-    rtype_client_final_ranking
+    rtype_client_pilots
     rtype_client_outline
     rtype_client_padded_score
     rtype_client_pilot_color

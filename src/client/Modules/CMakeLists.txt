@@ -1,16 +1,25 @@
-add_library(rtype_client_module_constants INTERFACE)
+add_library(rtype_client_modules STATIC ClientModules.cpp)
 
-target_include_directories(rtype_client_module_constants INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories(rtype_client_modules PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
-add_subdirectory(Logger)
-add_subdirectory(Assets)
-add_subdirectory(Settings)
-add_subdirectory(Window)
-add_subdirectory(Connection)
-add_subdirectory(Audio)
-add_subdirectory(ScreenRegistry)
-add_subdirectory(Menus)
-add_subdirectory(Lobby)
-add_subdirectory(Game)
-add_subdirectory(Screens)
-add_subdirectory(Assembly)
+target_link_libraries(rtype_client_modules
+  PUBLIC
+    rtype_client_launch_options
+    rtype_client_window_module
+    rtype_engine_application
+    rtype_engine_commands
+    rtype_engine_modules
+    rtype_logging
+  PRIVATE
+    rtype_client_assets_module
+    rtype_client_audio_module
+    rtype_client_connection_module
+    rtype_client_game_module
+    rtype_client_lobby_module
+    rtype_client_logger_module
+    rtype_client_menus_module
+    rtype_client_screens_module
+    rtype_client_settings_module
+)
+
+rtype_enable_warnings(rtype_client_modules)

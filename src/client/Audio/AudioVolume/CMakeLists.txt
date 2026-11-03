@@ -1,7 +1,0 @@
-add_library(rtype_client_audio_volume STATIC AudioVolume.cpp)
-
-target_include_directories(rtype_client_audio_volume PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
-
-target_link_libraries(rtype_client_audio_volume PUBLIC rtype_client_settings)
-
-rtype_enable_warnings(rtype_client_audio_volume)
