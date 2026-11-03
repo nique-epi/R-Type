@@ -44,6 +44,5 @@ target_link_libraries(rtype_network
     rtype_network_udp_socket
     rtype_network_datagram_relay
     rtype_network_handshake
-    rtype_network_cookie_issuer
     rtype_network_statistics
 )

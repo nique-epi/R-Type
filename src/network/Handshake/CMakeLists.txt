@@ -1,12 +1,8 @@
-add_library(rtype_network_handshake STATIC SipHash.cpp)
+add_subdirectory(Cookies)
 
-target_include_directories(rtype_network_handshake PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+add_library(rtype_network_handshake INTERFACE)
 
 target_link_libraries(rtype_network_handshake
-  PUBLIC
-    rtype_network_byte_writer
+  INTERFACE
+    rtype_network_handshake_cookies
 )
-
-rtype_enable_warnings(rtype_network_handshake)
-
-add_subdirectory(CookieIssuer)
