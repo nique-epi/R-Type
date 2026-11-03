@@ -12,7 +12,7 @@ target_link_libraries(rtype_client_entity_layer
     rtype_client_sfml_draw_surface
     rtype_client_text_writer
   PRIVATE
-    rtype_client_assets_module
+    rtype_client_asset_library
     rtype_client_ground_effects
     rtype_client_shifted_view
 )

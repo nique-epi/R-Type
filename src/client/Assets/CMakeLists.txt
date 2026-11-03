@@ -1,7 +1,7 @@
+add_subdirectory(Library)
+add_subdirectory(Loading)
+
 add_library(rtype_client_assets_module STATIC
-  AssetIds.cpp
-  AssetLibrary.cpp
-  AssetLoadingStep.cpp
   ClientAssetsModule.cpp
 )
 
@@ -9,9 +9,9 @@ target_include_directories(rtype_client_assets_module PUBLIC ${CMAKE_CURRENT_SOU
 
 target_link_libraries(rtype_client_assets_module
   PUBLIC
-    SFML::Audio
-    SFML::Graphics
-    rtype_client_exceptions
+    rtype_client_asset_library
+    rtype_client_asset_loading
+    rtype_engine_install_context
     rtype_engine_modules
     rtype_logging
   PRIVATE

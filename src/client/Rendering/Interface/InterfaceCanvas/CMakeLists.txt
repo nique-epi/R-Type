@@ -11,7 +11,7 @@ target_link_libraries(rtype_client_interface_canvas
     rtype_logging
     SFML::Graphics
   PRIVATE
-    rtype_client_assets_module
+    rtype_client_asset_library
     rtype_client_shaders
 )
 

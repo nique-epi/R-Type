@@ -15,7 +15,8 @@ target_link_libraries(rtype_client_screens_module
   PUBLIC
     SFML::Graphics
     rtype_client_application
-    rtype_client_assets_module
+    rtype_client_asset_library
+    rtype_client_asset_loading
     rtype_client_audio_contract
     rtype_client_effect_interfaces
     rtype_client_entity_messages
