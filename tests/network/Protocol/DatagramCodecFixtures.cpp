@@ -1,8 +1,7 @@
 #include "DatagramCodecFixtures.hpp"
 #include <gtest/gtest.h>
-#include <array>
 #include <cstddef>
-#include <span>
+#include <ostream>
 #include <string>
 #include <vector>
 #include "ProtocolFixtures.hpp"
@@ -10,30 +9,15 @@
 
 namespace rtype::network::testing {
 
-static_assert(SplittableAs<std::vector<std::byte>&>,
-              "a datagram kept by the caller can be split");
-static_assert(SplittableAs<const std::vector<std::byte>&>,
-              "a constant datagram kept by the caller can be split");
-static_assert(SplittableAs<std::span<const std::byte>>,
-              "a view of a datagram kept by the caller can be split");
-static_assert(!SplittableAs<std::vector<std::byte>>,
-              "a temporary datagram cannot be split: its payloads would "
-              "point into a destroyed buffer");
-static_assert(!SplittableAs<const std::vector<std::byte>>,
-              "a constant temporary datagram cannot be split either");
-static_assert(!SplittableAs<std::array<std::byte, EMPTY_MESSAGE_DATAGRAM_SIZE>>,
-              "a temporary array cannot be split either");
+void PrintTo(const MalformedDatagram& datagram, std::ostream* output) {
+  *output << datagram.fault;
+}
 
-namespace {
-
-/** @returns The bytes of a default header, less its last one. */
 std::vector<std::byte> headerOneByteShort() {
   auto bytes = defaultHeaderBytes();
   bytes.pop_back();
   return bytes;
 }
-
-}  // namespace
 
 std::vector<MalformedDatagram> malformedDatagrams() {
   return {

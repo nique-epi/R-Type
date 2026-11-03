@@ -7,7 +7,6 @@
 #include <string>
 #include <string_view>
 #include <utility>
-#include <vector>
 #include "NetworkConditions.hpp"
 #include "NetworkConditionsConstants.hpp"
 #include "NetworkConditionsText.hpp"
@@ -190,7 +189,10 @@ void appendShareEntries(std::string& text) {
 
 }  // namespace
 
-SimulatorLaunchOptions SimulatorLaunchOptions::read(
+SimulatorLaunchOptions::SimulatorLaunchOptions()
+    : conditions_(PERFECT_NETWORK) {}
+
+std::size_t SimulatorLaunchOptions::readOption(
     std::span<const std::string_view> arguments) {
   const std::array options{
       SimulatorOption{.name = NETWORK_OPTION, .record = recordScenario},
@@ -200,27 +202,18 @@ SimulatorLaunchOptions SimulatorLaunchOptions::read(
       SimulatorOption{.name = DUPLICATES_OPTION, .record = recordDuplicates},
       SimulatorOption{.name = REORDER_OPTION, .record = recordReorder},
   };
-  NetworkConditions conditions = PERFECT_NETWORK;
-  std::vector<std::string_view> otherArguments;
-  for (std::size_t index = 0; index < arguments.size(); ++index) {
-    const SimulatorOption* const option =
-        optionNamed(options, arguments[index]);
-    if (option == nullptr) {
-      otherArguments.push_back(arguments[index]);
-    } else {
-      option->record(conditions, option->name, valueAfter(arguments, index));
-    }
+  const SimulatorOption* const option =
+      arguments.empty() ? nullptr : optionNamed(options, arguments.front());
+  if (option == nullptr) {
+    return 0;
   }
-  return SimulatorLaunchOptions{conditions, std::move(otherArguments)};
+  std::size_t index = 0;
+  option->record(conditions_, option->name, valueAfter(arguments, index));
+  return index + 1;
 }
 
 const NetworkConditions& SimulatorLaunchOptions::conditions() const {
   return conditions_;
-}
-
-std::span<const std::string_view> SimulatorLaunchOptions::otherArguments()
-    const {
-  return otherArguments_;
 }
 
 std::string SimulatorLaunchOptions::usage() {
@@ -236,9 +229,5 @@ std::string SimulatorLaunchOptions::usage() {
   appendShareEntries(text);
   return text;
 }
-
-SimulatorLaunchOptions::SimulatorLaunchOptions(
-    NetworkConditions conditions, std::vector<std::string_view> otherArguments)
-    : conditions_(conditions), otherArguments_(std::move(otherArguments)) {}
 
 }  // namespace rtype::network

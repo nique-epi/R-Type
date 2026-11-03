@@ -3,9 +3,11 @@
 #include <span>
 #include <string>
 #include <string_view>
+#include <vector>
 #include "EngineException.hpp"
 #include "LaunchArgumentsConstants.hpp"
 #include "LaunchOption.hpp"
+#include "LaunchOptionReader.hpp"
 
 namespace rtype::engine {
 
@@ -31,20 +33,59 @@ std::string_view valueAfter(std::span<const std::string_view> arguments,
   return arguments[valueIndex];
 }
 
+/**
+ * @brief Calls the record of @p option, the first of @p arguments, with the
+ * argument after it when the option takes a value.
+ * @returns how many arguments the option took, its value included.
+ * @throws MissingLaunchOptionValueException when it takes a value and is the
+ * last of @p arguments.
+ */
+std::size_t recordOption(const LaunchOption& option,
+                         std::span<const std::string_view> arguments) {
+  std::size_t index = 0;
+  const std::string_view value =
+      option.takesValue ? valueAfter(arguments, index) : std::string_view{};
+  option.record(value);
+  return index + 1;
+}
+
+/**
+ * @returns how many arguments the first of @p readers that takes the first of
+ * @p arguments took.
+ * @throws UnknownLaunchArgumentException when none of them takes it.
+ */
+std::size_t readWithReaders(std::span<const std::string_view> arguments,
+                            std::span<const LaunchOptionReader> readers) {
+  for (const LaunchOptionReader& reader : readers) {
+    const std::size_t taken = reader(arguments);
+    if (taken != 0) {
+      return taken;
+    }
+  }
+  throw UnknownLaunchArgumentException(std::string(arguments.front()));
+}
+
 }  // namespace
 
 void readLaunchArguments(std::span<const std::string_view> arguments,
-                         std::span<const LaunchOption> options) {
-  for (std::size_t index = 0; index < arguments.size(); ++index) {
-    const LaunchOption* const option =
-        findLaunchOption(options, arguments[index]);
-    if (option == nullptr) {
-      throw UnknownLaunchArgumentException(std::string(arguments[index]));
-    }
-    const std::string_view value =
-        option->takesValue ? valueAfter(arguments, index) : std::string_view{};
-    option->record(value);
+                         std::span<const LaunchOption> options,
+                         std::span<const LaunchOptionReader> readers) {
+  std::size_t index = 0;
+  while (index < arguments.size()) {
+    const std::span<const std::string_view> rest = arguments.subspan(index);
+    const LaunchOption* const option = findLaunchOption(options, rest.front());
+    index += option != nullptr ? recordOption(*option, rest)
+                               : readWithReaders(rest, readers);
   }
+}
+
+std::vector<std::string_view> processArguments(int argumentCount,
+                                               const char* const* arguments) {
+  std::vector<std::string_view> launchArguments;
+  for (int index = 1; index < argumentCount; ++index) {
+    launchArguments.emplace_back(arguments[index]);
+  }
+  return launchArguments;
 }
 
 std::string usageHeader(std::string_view programName) {

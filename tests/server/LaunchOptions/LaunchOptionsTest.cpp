@@ -6,7 +6,11 @@
 #include "LaunchArgumentsConstants.hpp"
 #include "LaunchOptions.hpp"
 #include "LaunchOptionsTestConstants.hpp"
+#include "LogLaunchOptionsFixture.hpp"
+#include "Logger.hpp"
 #include "LoggingConstants.hpp"
+#include "LoggingException.hpp"
+#include "LoggingOptionTestConstants.hpp"
 #include "NetworkConditions.hpp"
 #include "NetworkConstants.hpp"
 #include "NetworkException.hpp"
@@ -19,6 +23,13 @@ using rtype::engine::InvalidLaunchOptionValueException;
 using rtype::engine::MissingLaunchOptionValueException;
 using rtype::engine::PORT_OPTION;
 using rtype::engine::UnknownLaunchArgumentException;
+using rtype::logging::InvalidLogOptionException;
+using rtype::logging::LEVEL_OPTION;
+using rtype::logging::Logger;
+using rtype::logging::LogLevel;
+using rtype::logging::MissingLogOptionValueException;
+using rtype::logging::NO_FILE_OPTION;
+using rtype::logging::NO_STDERR_OPTION;
 using rtype::network::DEFAULT_SERVER_PORT;
 using rtype::network::InvalidPortException;
 using rtype::server::DEFAULT_INPUT_DELAY_TICKS;
@@ -361,6 +372,69 @@ TEST(ServerLaunchOptions, ReadsTheNetworkSimulatorOptionsBesideItsOwn) {
 
   EXPECT_EQ(options.port(), PORT_OF_PORT_ARGUMENT);
   EXPECT_EQ(options.networkConditions(), BAD_OF_THE_TABLE);
+}
+
+/**
+ * Given the seed option, then a logging option and its value, then a seed
+ * When the launch options are read
+ * Then the logging option is the value of the seed option, and is refused as
+ *      a seed
+ */
+TEST(ServerLaunchOptions, SeedOptionTakesALoggingOptionAsItsValue) {
+  EXPECT_THROW(
+      static_cast<void>(LaunchOptions::read(Arguments{
+          SEED_OPTION, LEVEL_OPTION, DEBUG_LEVEL_ARGUMENT, SEED_ARGUMENT})),
+      InvalidLaunchOptionValueException);
+}
+
+/**
+ * Given the seed option, then a simulator option and its value, then a seed
+ * When the launch options are read
+ * Then the simulator option is the value of the seed option, and is refused
+ *      as a seed
+ */
+TEST(ServerLaunchOptions, SeedOptionTakesASimulatorOptionAsItsValue) {
+  EXPECT_THROW(static_cast<void>(LaunchOptions::read(Arguments{
+                   SEED_OPTION, LAG_OPTION_TEXT, LAG_ARGUMENT, SEED_ARGUMENT})),
+               InvalidLaunchOptionValueException);
+}
+
+/**
+ * Given the port option and a port, then the logging level option and a
+ * level, with no journal and nothing on standard error
+ * When the launch options are read and their logging options applied
+ * Then the server listens on that port and the logger is at that level
+ */
+TEST_F(LogLaunchOptionsFixture, ServerReadsTheLoggingOptionsBesideItsOwn) {
+  const LaunchOptions options = LaunchOptions::read(
+      Arguments{PORT_OPTION, PORT_ARGUMENT, LEVEL_OPTION, DEBUG_LEVEL_ARGUMENT,
+                NO_FILE_OPTION, NO_STDERR_OPTION});
+
+  options.logOptions().apply();
+
+  EXPECT_EQ(options.port(), PORT_OF_PORT_ARGUMENT);
+  EXPECT_EQ(Logger::level(), LogLevel::Debug);
+}
+
+/**
+ * Given the logging level option, misspelled
+ * When the launch options are read
+ * Then it is refused as a logging option that does not exist
+ */
+TEST(ServerLaunchOptions, RefusesAMisspelledLoggingOption) {
+  EXPECT_THROW(static_cast<void>(LaunchOptions::read(
+                   Arguments{MISSPELLED_LEVEL_OPTION, DEBUG_LEVEL_ARGUMENT})),
+               InvalidLogOptionException);
+}
+
+/**
+ * Given the logging level option as the last argument
+ * When the launch options are read
+ * Then the missing value is reported as the logging options report it
+ */
+TEST(ServerLaunchOptions, LoggingOptionWithoutValueIsRefused) {
+  EXPECT_THROW(static_cast<void>(LaunchOptions::read(Arguments{LEVEL_OPTION})),
+               MissingLogOptionValueException);
 }
 
 /**

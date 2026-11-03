@@ -17,7 +17,6 @@ target_link_libraries(rtype_client_modules
     rtype_client_lobby_module
     rtype_client_logger_module
     rtype_client_menus_module
-    rtype_client_screen_registry
     rtype_client_screens_module
     rtype_client_settings_module
 )

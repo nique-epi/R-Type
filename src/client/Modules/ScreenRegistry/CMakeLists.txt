@@ -1,7 +1,4 @@
-add_library(rtype_client_screen_registry STATIC
-  ClientScreenRegistryModule.cpp
-  ScreenBuilding.cpp
-)
+add_library(rtype_client_screen_registry STATIC ScreenBuilding.cpp)
 
 target_include_directories(rtype_client_screen_registry PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
@@ -24,13 +21,11 @@ target_link_libraries(rtype_client_screen_registry
     rtype_client_sound_player
     rtype_client_soundtrack
     rtype_client_window
-    rtype_engine_modules
     rtype_network_transport
   PRIVATE
     rtype_client_dialog_screen
     rtype_client_interface_canvas
     rtype_client_loading_screen
-    rtype_client_module_constants
     rtype_client_platform
 )
 

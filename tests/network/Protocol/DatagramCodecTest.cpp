@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 #include <algorithm>
+#include <array>
 #include <cstddef>
 #include <cstdint>
 #include <optional>
@@ -38,7 +39,41 @@ using testing::SOME_FLAGS;
 using testing::SOME_OTHER_PROTOCOL_ID;
 using testing::SOME_OTHER_VERSION;
 using testing::someSessionHeader;
+using testing::SplittableAs;
 using testing::VERSION_OFFSET;
+
+/**
+ * Given a datagram its caller keeps, constant or not, or a view of one
+ * When it is handed to splitMessages()
+ * Then the call compiles
+ */
+TEST(DatagramCodec, SplitsADatagramItsCallerKeeps) {
+  static_assert(SplittableAs<std::vector<std::byte>&>,
+                "a datagram kept by the caller can be split");
+  static_assert(SplittableAs<const std::vector<std::byte>&>,
+                "a constant datagram kept by the caller can be split");
+  static_assert(SplittableAs<std::span<const std::byte>>,
+                "a view of a datagram kept by the caller can be split");
+  SUCCEED();
+}
+
+/**
+ * Given a temporary datagram, constant or not, or a temporary array
+ * When it is handed to splitMessages()
+ * Then the call does not compile: its payloads would point into a destroyed
+ * buffer
+ */
+TEST(DatagramCodec, RefusesToSplitATemporaryDatagram) {
+  static_assert(!SplittableAs<std::vector<std::byte>>,
+                "a temporary datagram cannot be split: its payloads would "
+                "point into a destroyed buffer");
+  static_assert(!SplittableAs<const std::vector<std::byte>>,
+                "a constant temporary datagram cannot be split either");
+  static_assert(
+      !SplittableAs<std::array<std::byte, EMPTY_MESSAGE_DATAGRAM_SIZE>>,
+      "a temporary array cannot be split either");
+  SUCCEED();
+}
 
 /**
  * Given a default header
