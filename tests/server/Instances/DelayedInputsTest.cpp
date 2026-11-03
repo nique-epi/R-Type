@@ -6,7 +6,7 @@
 #include "DelayedInputsTestConstants.hpp"
 #include "PlayerRoster.hpp"
 #include "ServerException.hpp"
-#include "SessionsFixtures.hpp"
+#include "Sessions/SessionsFixtures.hpp"
 
 namespace rtype::server {
 
