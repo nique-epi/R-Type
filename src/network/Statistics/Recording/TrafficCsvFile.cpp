@@ -3,7 +3,7 @@
 #include <ostream>
 #include <string_view>
 #include "NetworkException.hpp"
-#include "StatisticsConstants.hpp"
+#include "TrafficRecordingConstants.hpp"
 
 namespace rtype::network {
 

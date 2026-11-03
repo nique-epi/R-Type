@@ -20,7 +20,7 @@ This page tells you where to look when you need to change something. It describe
 | Serialization | Available | `src/network/Serialization/` |
 | Protocol messages, datagram header, dispatch by type | Available | `src/network/Protocol/` |
 | Connection cookies | Available | `src/network/Handshake/` |
-| Traffic counters: datagrams and bytes by peer and by message type, journal and CSV file | Available | `src/network/Statistics/` |
+| Traffic counters: datagrams and bytes by peer and by message type, journal and CSV file | Available | `src/network/Statistics/`: `Counting/` and `Recording/` |
 | Sessions: admission, session token, sequence, heartbeats, timeouts | Available, written in the server and the client | `src/server/Lobby/`, `src/server/Sessions/`, `src/client/Connection/` |
 | Replication: entities to messages, and back | Available, written in the server and the client | `src/server/Replication/`, `src/client/Replication/` |
 | Rate limit of the requests, reliability, history of states | Not yet written | — |
@@ -192,7 +192,7 @@ The filter is the "loopback packets" filter of clumsy: a packet between two prog
 
 ## Traffic counters: `TrafficCounters`
 
-Both programs count what crosses their socket, with the classes of `rtype_network_statistics` (`src/network/Statistics/`). `CountingDatagramSocket` wraps the socket the way `SimulatedNetworkSocket` does and hands each datagram to `TrafficCounters`. It sits above the simulator, which plays the part of the network: a datagram lost on the way out was sent, and one lost on the way in was never received, so comparing what a sender counted with what its receiver counted shows what the network lost or copied.
+Both programs count what crosses their socket, with the classes of `rtype_network_statistics` (`src/network/Statistics/`): `Counting/` counts and adds up, `Recording/` writes the journal line and the file. `CountingDatagramSocket` wraps the socket the way `SimulatedNetworkSocket` does and hands each datagram to `TrafficCounters`. It sits above the simulator, which plays the part of the network: a datagram lost on the way out was sent, and one lost on the way in was never received, so comparing what a sender counted with what its receiver counted shows what the network lost or copied.
 
 `report()` gives a copy of a `TrafficReport`, from any thread: totals since the program started, which only grow. A datagram is in exactly one of its three rows:
 
@@ -293,7 +293,7 @@ Each message of the protocol page is a struct of the same name (`ConnectionReque
 - Writing runs the same checks before the first byte, so a refused message leaves the writer untouched, and whatever was read can be written back: a nickname accepted from a `ConnectionRequest` never makes a `LobbyState` throw.
 - Reading a refused message throws an exception derived from `MalformedMessageException`, or `BufferUnderflowException` for a payload cut short. Writing one throws the same exceptions, except for a coordinate that is NaN, which throws `InvalidCoordinateException`; `WorldStateSender` leaves such an entity out before encoding (see [Server](/R-Type/server/#world-state-worldstatesender)).
 
-The [tutorial](/R-Type/tutorial-add-a-network-message/) adds a message step by step. Adding a message takes a folder of `Messages/` holding its struct, with its `TYPE` and its two functions, and its library, listed in `Messages/CMakeLists.txt`; then its value in `MessageType`, its name in `MESSAGE_TYPE_NAMES` (`src/network/Statistics/StatisticsConstants.hpp`) and its row on the protocol page. Nothing that receives datagrams changes.
+The [tutorial](/R-Type/tutorial-add-a-network-message/) adds a message step by step. Adding a message takes a folder of `Messages/` holding its struct, with its `TYPE` and its two functions, and its library, listed in `Messages/CMakeLists.txt`; then its value in `MessageType`, its name in `MESSAGE_TYPE_NAMES` (`src/network/Statistics/Counting/MessageSlotConstants.hpp`) and its row on the protocol page. Nothing that receives datagrams changes.
 
 ```cpp
 rtype::network::PacketHeader header;
@@ -394,8 +394,8 @@ Measured on 27 October 2026 on an Apple M4 Pro under macOS 27.0, with the server
 | Change which ports or addresses a program accepts at launch | `portFromText()` and `ipv4AddressFromText()` in `src/network/Transport/EndpointText.cpp`, `LOWEST_PORT` in `NetworkConstants.hpp` |
 | Change how datagrams are received or sent | `src/network/Transport/UdpSocket/` |
 | Change how datagrams go between the socket and the queues | `src/network/Transport/DatagramRelay/` |
-| Change what is counted, or the rows of a report | `TrafficCounters` in `src/network/Statistics/` |
-| Change how often the traffic is written, or the columns of the file | `TRAFFIC_LINE_PERIOD`, `TRAFFIC_CSV_PERIOD` and `TRAFFIC_CSV_HEADER` in `src/network/Statistics/StatisticsConstants.hpp`, and `trafficCsvRowsOf()` |
+| Change what is counted, or the rows of a report | `TrafficCounters` in `src/network/Statistics/Counting/` |
+| Change how often the traffic is written, or the columns of the file | `TRAFFIC_LINE_PERIOD`, `TRAFFIC_CSV_PERIOD` and `TRAFFIC_CSV_HEADER` in `src/network/Statistics/Recording/TrafficRecordingConstants.hpp`, and `trafficCsvRowsOf()` |
 | Read the traffic from a part of a program | `context.require<network::TrafficCounters>()` in a module listed after the one that provides it |
 | Run a program over a simulated network | the options of [Network simulator](#network-simulator-simulatednetworksocket) |
 | Run the game over a network the system degrades | `tests/tools/network-conditions/`, see [Network conditions from the system](#network-conditions-from-the-system-teststoolsnetwork-conditions) |

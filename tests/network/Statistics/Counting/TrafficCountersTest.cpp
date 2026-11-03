@@ -6,10 +6,10 @@
 #include <vector>
 #include "DatagramCodec.hpp"
 #include "DirectionTraffic.hpp"
+#include "MessageSlotConstants.hpp"
 #include "MessageType.hpp"
 #include "PacketHeader.hpp"
 #include "ProtocolConstants.hpp"
-#include "StatisticsConstants.hpp"
 #include "TrafficCounters.hpp"
 #include "TrafficFigures.hpp"
 #include "TrafficFixtures.hpp"

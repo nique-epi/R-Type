@@ -9,8 +9,8 @@
 #include "Endpoint.hpp"
 #include "MessageTypeText.hpp"
 #include "PeerTraffic.hpp"
-#include "StatisticsConstants.hpp"
 #include "TrafficFigures.hpp"
+#include "TrafficRecordingConstants.hpp"
 #include "TrafficReport.hpp"
 #include "TwoWayTraffic.hpp"
 

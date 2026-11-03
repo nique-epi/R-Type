@@ -1,7 +1,7 @@
 #pragma once
 
 #include <array>
-#include "StatisticsConstants.hpp"
+#include "MessageSlotConstants.hpp"
 #include "TrafficFigures.hpp"
 
 namespace rtype::network {

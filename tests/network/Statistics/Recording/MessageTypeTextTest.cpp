@@ -1,8 +1,8 @@
 #include <gtest/gtest.h>
 #include <cstddef>
+#include "MessageSlotConstants.hpp"
 #include "MessageType.hpp"
 #include "MessageTypeText.hpp"
-#include "StatisticsConstants.hpp"
 
 using rtype::network::MESSAGE_SLOT_COUNT;
 using rtype::network::MessageType;

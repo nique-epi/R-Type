@@ -3,10 +3,10 @@
 #include <filesystem>
 #include <optional>
 #include <string>
-#include "StatisticsConstants.hpp"
 #include "TrafficCounters.hpp"
 #include "TrafficCsvRows.hpp"
 #include "TrafficLine.hpp"
+#include "TrafficRecordingConstants.hpp"
 #include "TrafficTotals.hpp"
 
 namespace rtype::network {

@@ -1,24 +1,10 @@
-add_library(rtype_network_statistics STATIC
-  CountingDatagramSocket.cpp
-  MessageTypeText.cpp
-  TrafficCounters.cpp
-  TrafficCsvFile.cpp
-  TrafficCsvRows.cpp
-  TrafficLine.cpp
-  TrafficRecorder.cpp
-  TrafficTotals.cpp
-)
+add_subdirectory(Counting)
+add_subdirectory(Recording)
 
-target_include_directories(rtype_network_statistics PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+add_library(rtype_network_statistics INTERFACE)
 
 target_link_libraries(rtype_network_statistics
-  PUBLIC
-    rtype_logging
-    rtype_network_protocol
-    rtype_network_transport
-  PRIVATE
-    rtype_network_datagram_codec
-    rtype_network_exceptions
+  INTERFACE
+    rtype_network_statistics_counting
+    rtype_network_statistics_recording
 )
-
-rtype_enable_warnings(rtype_network_statistics)

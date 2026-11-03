@@ -3,8 +3,8 @@
 #include <cstddef>
 #include <span>
 #include <string>
+#include "MessageSlotConstants.hpp"
 #include "MessageType.hpp"
-#include "StatisticsConstants.hpp"
 #include "TimeTestConstants.hpp"
 #include "TrafficCounters.hpp"
 #include "TrafficCsvRows.hpp"

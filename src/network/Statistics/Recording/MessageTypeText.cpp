@@ -1,7 +1,8 @@
 #include "MessageTypeText.hpp"
 #include <cstddef>
 #include <string_view>
-#include "StatisticsConstants.hpp"
+#include "MessageSlotConstants.hpp"
+#include "TrafficRecordingConstants.hpp"
 
 namespace rtype::network {
 
