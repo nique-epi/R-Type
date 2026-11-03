@@ -23,7 +23,7 @@ This page tells you where to look when you need to change something. It describe
 | Sessions: admission, session token, sequence, heartbeats, timeouts | Available, written in the server and the client | `src/server/Lobby/`, `src/server/Sessions/`, `src/client/Connection/` |
 | Replication: entities to messages, and back | Available, written in the server and the client | `src/server/Replication/`, `src/client/Replication/` |
 | Rate limit of the requests, reliability, history of states, statistics | Not yet written | — |
-| Test tool that sends malformed datagrams | Available, never shipped | `tests/tools/` |
+| Test tool that sends malformed datagrams | Available, never shipped | `tests/tools/MalformedDatagrams/` |
 
 ## Transport, sessions and replication
 
@@ -306,7 +306,7 @@ const rtype::network::WorldState received =
 
 ## Malformed datagrams: `malformed_datagrams`
 
-Anyone can send a datagram to the server, and a client reads whatever comes from the address of its server, so both must survive bytes that are not a valid message. The unit tests check each reader on its own; `malformed_datagrams` checks the programs as they run. It is a test tool in `tests/tools/`, built with the `test` preset into `build/tests/` and never shipped, and it only talks to the loopback address, 127.0.0.1.
+Anyone can send a datagram to the server, and a client reads whatever comes from the address of its server, so both must survive bytes that are not a valid message. The unit tests check each reader on its own; `malformed_datagrams` checks the programs as they run. It is a test tool in `tests/tools/MalformedDatagrams/`, built with the `test` preset into `build/tests/` and never shipped, and it only talks to the loopback address, 127.0.0.1.
 
 For `FLOOD_DURATION` (60 s) it sends `FLOOD_DATAGRAMS_PER_SECOND` (1000) datagrams per second, seven kinds in turn, written by `MalformedDatagramBuilder` from a fixed seed (`FLOOD_SEED`), so a run can be replayed. Every kind but oversized and random bytes starts from a valid message of the protocol and breaks it in one way:
 
@@ -362,6 +362,6 @@ Measured on 27 October 2026 on an Apple M4 Pro under macOS 27.0, with the server
 | Test code against a real socket | `tests/UdpSocketTest.cpp`: a plain Asio client on the loopback address |
 | Test code that uses a socket without the network | `tests/doubles/RecordingDatagramSocket.hpp`, as `tests/network/Transport/DatagramRelayTest.cpp` does |
 | Build the bytes of a datagram in a test | `datagramOf()` and `defaultHeaderBytes()` in `tests/network/Protocol/ProtocolFixtures.hpp` |
-| Check that a change survives malformed datagrams | `malformed_datagrams` (`tests/tools/`), see [Malformed datagrams](#malformed-datagrams-malformed_datagrams) |
+| Check that a change survives malformed datagrams | `malformed_datagrams` (`tests/tools/MalformedDatagrams/`), see [Malformed datagrams](#malformed-datagrams-malformed_datagrams) |
 
 Each folder has its own `CMakeLists.txt` declaring one library, linked into `rtype_network` by `src/network/CMakeLists.txt`.
