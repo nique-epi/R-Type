@@ -88,7 +88,8 @@ rtype_forbid_links(rtype_network_datagram_relay "SFML::" "asio::" "rtype_network
 rtype_forbid_links(rtype_server_platform "SFML::" "asio::" "rtype_network_asio" "rtype_client")
 rtype_forbid_links(rtype_server_launch_options "SFML::" "asio::" "rtype_network_asio" "rtype_client")
 rtype_forbid_links(rtype_server_replication_module "SFML::" "asio::" "rtype_network_asio" "rtype_client")
-rtype_forbid_links(rtype_server_replication_announcements "SFML::" "asio::" "rtype_network_asio" "rtype_client")
+rtype_forbid_links(rtype_server_replication_announcements_milestones "SFML::" "asio::" "rtype_network_asio" "rtype_client")
+rtype_forbid_links(rtype_server_replication_announcements_streams "SFML::" "asio::" "rtype_network_asio" "rtype_client")
 rtype_forbid_links(rtype_server_replication_wire "SFML::" "asio::" "rtype_network_asio" "rtype_client")
 
 if(BUILD_TESTS)

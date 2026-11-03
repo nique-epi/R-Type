@@ -15,7 +15,7 @@
 #include "GameState.hpp"
 #include "MessageType.hpp"
 #include "OutgoingDatagram.hpp"
-#include "Replication/Announcements/GameEndAnnouncerTestConstants.hpp"
+#include "Replication/Announcements/Milestones/GameEndAnnouncerTestConstants.hpp"
 #include "Rules/Players/LifeKeeperTestConstants.hpp"
 #include "SentDatagrams.hpp"
 #include "ServerTestConstants.hpp"

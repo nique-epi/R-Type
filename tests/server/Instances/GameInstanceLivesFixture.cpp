@@ -13,7 +13,7 @@
 #include "MessageType.hpp"
 #include "OutgoingDatagram.hpp"
 #include "PlayerLives.hpp"
-#include "Replication/Announcements/GameEndAnnouncerTestConstants.hpp"
+#include "Replication/Announcements/Milestones/GameEndAnnouncerTestConstants.hpp"
 #include "Rules/Players/LifeKeeperTestConstants.hpp"
 #include "SentDatagrams.hpp"
 #include "World.hpp"
