@@ -15,3 +15,7 @@ Two checks pull in opposite directions (tidy wants no initializer on a class-typ
 ## Rule and example
 
 See the core file of the same name in `.claude/rules/fix/execution/`.
+
+## Update (3 November 2026) — a construction with a name
+
+`MetricsReport` gained a member with no default. The one `MetricsReport{` the search found was fixed, and the build and the 2916 tests stayed green under Apple clang, which is silent on it. An independent review found the three `const MetricsReport report{…}` of `MetricsLinesTest.cpp`, which would have failed the Linux job. Homebrew clang 21 with `-Wmissing-designated-field-initializers` reports them, so it gives a local check where the rule had said no local Clang could.

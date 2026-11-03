@@ -20,3 +20,7 @@ Before writing an exception to a check, play the forger step by step (forged add
 
 - ❌ **Before (wrong)**: "a `ConnectionRequest` may carry token 0" → forged requests take the four slots and keep them.
 - ✅ **After (right)**: a stateless cookie challenge before any slot is given; only a datagram carrying the token keeps a session alive.
+
+## Update (3 November 2026) — a figure per value of a byte
+
+The traffic counters kept a figure per value of the type byte, read before any authentication. The memory was bounded, the rows of a stranger were not created, and the plan had walked the forger on memory only. An independent review walked it on the file: one forged datagram of 790 bytes holding the 256 values makes 256 figures non-zero for good, each a line written every second. The figures now have one slot per message of the protocol and one for every other byte, which also took a row from 8 KB to 672 bytes.
