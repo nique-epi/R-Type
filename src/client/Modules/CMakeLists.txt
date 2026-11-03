@@ -1,4 +1,3 @@
-add_subdirectory(Logger)
 add_subdirectory(Settings)
 add_subdirectory(Window)
 add_subdirectory(Connection)

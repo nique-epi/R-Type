@@ -7,6 +7,7 @@ target_include_directories(rtype_client_constants INTERFACE ${CMAKE_CURRENT_SOUR
 target_link_libraries(rtype_client_constants INTERFACE rtype_network_constants)
 
 add_subdirectory(Exceptions)
+add_subdirectory(Logger)
 add_subdirectory(Platform)
 add_subdirectory(Assets)
 add_subdirectory(Input)
