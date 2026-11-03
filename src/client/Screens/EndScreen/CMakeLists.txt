@@ -4,7 +4,7 @@ target_include_directories(rtype_client_end_screen PUBLIC ${CMAKE_CURRENT_SOURCE
 
 target_link_libraries(rtype_client_end_screen
   PUBLIC
-    rtype_client_connection
+    rtype_client_session
     rtype_client_flight_log_interfaces
     rtype_client_interface
     rtype_client_screen_interfaces

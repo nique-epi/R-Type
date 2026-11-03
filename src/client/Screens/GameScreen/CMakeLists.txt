@@ -5,7 +5,7 @@ target_include_directories(rtype_client_game_screen PUBLIC ${CMAKE_CURRENT_SOURC
 target_link_libraries(rtype_client_game_screen
   PUBLIC
     SFML::Graphics
-    rtype_client_connection
+    rtype_client_session
     rtype_client_departure_feed
     rtype_client_drawing
     rtype_client_entities

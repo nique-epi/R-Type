@@ -4,7 +4,7 @@ target_include_directories(rtype_client_connection_screen PUBLIC ${CMAKE_CURRENT
 
 target_link_libraries(rtype_client_connection_screen
   PUBLIC
-    rtype_client_connection
+    rtype_client_session
     rtype_client_menu
     rtype_client_interface
     rtype_client_screen_assets

@@ -1,31 +1,21 @@
-add_library(rtype_client_connection INTERFACE)
+add_subdirectory(Transport)
+add_subdirectory(Session)
 
-target_include_directories(rtype_client_connection INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
+add_library(rtype_client_connection_module STATIC ClientConnectionModule.cpp)
 
-target_link_libraries(rtype_client_connection
-  INTERFACE
-    rtype_client_input
-    rtype_engine_time
-    rtype_network_connection_refused
-    rtype_network_entity_destroyed
-    rtype_network_entity_spawned
-    rtype_network_game_ended
-    rtype_network_game_event
-    rtype_network_lobby_state
-    rtype_network_player_left
+target_include_directories(rtype_client_connection_module PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+
+target_link_libraries(rtype_client_connection_module
+  PUBLIC
+    rtype_client_entity_messages
+    rtype_client_session
     rtype_client_transport
-    rtype_network_protocol
+    rtype_engine_modules
+    rtype_logging
+  PRIVATE
+    rtype_client_constants
+    rtype_network_constants
     rtype_network_transport
 )
 
-add_subdirectory(Transport)
-add_subdirectory(SessionOutbox)
-add_subdirectory(SessionDeparture)
-add_subdirectory(SessionInbound)
-add_subdirectory(ConnectionAttempt)
-add_subdirectory(SessionObservers)
-add_subdirectory(HandshakeAnswers)
-add_subdirectory(ServerSession)
-add_subdirectory(GameLoadedReminder)
-add_subdirectory(WaitingRoom)
-add_subdirectory(SessionLossWatch)
+rtype_enable_warnings(rtype_client_connection_module)
