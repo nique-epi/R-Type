@@ -19,6 +19,7 @@
 #include "NetworkContext.hpp"
 #include "OutgoingDatagram.hpp"
 #include "SystemClock.hpp"
+#include "TrafficCounters.hpp"
 
 namespace rtype::server {
 
@@ -140,6 +141,13 @@ class ServerApplication final : public IDatagramSender,
    */
   [[nodiscard]] network::Endpoint localEndpoint() const;
 
+  /**
+   * @returns What the socket of the server sent and received, by player and by
+   * type of message, since the object was built. Safe from any thread; it lives
+   * as long as this object, across close() and open().
+   */
+  [[nodiscard]] network::TrafficCounters& traffic();
+
  private:
   void simulateTick();
 
@@ -147,6 +155,7 @@ class ServerApplication final : public IDatagramSender,
   network::Endpoint listeningEndpoint_;
   network::NetworkConditions conditions_;
   network::NetworkContext network_;
+  network::TrafficCounters traffic_;
   std::unique_ptr<network::IDatagramSocket> socket_;
   concurrency::BoundedQueue<network::IncomingDatagram> incoming_;
   concurrency::BoundedQueue<network::IncomingDatagram> connectionRequests_;

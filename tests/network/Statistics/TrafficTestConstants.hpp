@@ -48,5 +48,9 @@ constexpr std::string_view HEADER_LINE =
 constexpr std::string_view TRAFFIC_LINE_MARK = "[Traffic]";
 constexpr std::string_view UNWRITABLE_FILE_MARK = "cannot be written";
 
+/** @brief How a row of a traffic file ends, for a datagram of one byte sent to
+ * someone nobody follows. */
+constexpr std::string_view ONE_BYTE_SENT_ROW_END = ",others,sent,all,1,1\n";
+
 /** @brief A device that refuses every write, where the system has one. */
 constexpr std::string_view FULL_DISK_DEVICE = "/dev/full";

@@ -8,6 +8,7 @@
 #include "RecordingDatagramSender.hpp"
 #include "RecordingPlayerAdmission.hpp"
 #include "TickDatagrams.hpp"
+#include "TrafficCounters.hpp"
 
 std::string RecordingNetworkModule::name() const {
   return std::string{rtype::server::NETWORK_MODULE_NAME};
@@ -21,6 +22,7 @@ void RecordingNetworkModule::install(rtype::engine::InstallContext& context) {
   context.provide<rtype::server::IDatagramSender>(sender_);
   context.provide<rtype::server::IPlayerAdmission>(admission_);
   context.provide(tickDatagrams_);
+  context.provide(traffic_);
 }
 
 void RecordingNetworkModule::start() {}
@@ -35,4 +37,8 @@ RecordingPlayerAdmission& RecordingNetworkModule::admission() {
 
 rtype::server::TickDatagrams& RecordingNetworkModule::tickDatagrams() {
   return tickDatagrams_;
+}
+
+rtype::network::TrafficCounters& RecordingNetworkModule::traffic() {
+  return traffic_;
 }

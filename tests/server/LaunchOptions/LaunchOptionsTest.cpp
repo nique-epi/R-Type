@@ -1,4 +1,5 @@
 #include <gtest/gtest.h>
+#include <filesystem>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -21,6 +22,7 @@ using rtype::engine::PORT_OPTION;
 using rtype::engine::UnknownLaunchArgumentException;
 using rtype::network::DEFAULT_SERVER_PORT;
 using rtype::network::InvalidPortException;
+using rtype::network::TRAFFIC_CSV_OPTION;
 using rtype::server::DEFAULT_INPUT_DELAY_TICKS;
 using rtype::server::DEFAULT_WORLD_STATES_PER_SECOND;
 using rtype::server::INPUT_DELAY_OPTION;
@@ -461,4 +463,60 @@ TEST(ServerLaunchOptions, UsageHoldsTheNetworkSimulatorOptions) {
 TEST(ServerLaunchOptions, UsageNamesTheInputDelayOption) {
   EXPECT_NE(LaunchOptions::usage().find(std::string(INPUT_DELAY_OPTION)),
             std::string::npos);
+}
+
+/**
+ * Given no argument
+ * When the launch options are read
+ * Then no traffic file is asked for
+ */
+TEST(ServerLaunchOptions, NoArgumentAsksForNoTrafficFile) {
+  EXPECT_FALSE(LaunchOptions::read(Arguments{}).trafficCsvFile().has_value());
+}
+
+/**
+ * Given the traffic option and a file
+ * When the launch options are read
+ * Then the file is the one given
+ */
+TEST(ServerLaunchOptions, TrafficOptionGivesTheFile) {
+  const LaunchOptions options =
+      LaunchOptions::read(Arguments{TRAFFIC_CSV_OPTION, TRAFFIC_FILE_ARGUMENT});
+
+  EXPECT_EQ(options.trafficCsvFile().value_or(std::filesystem::path{}),
+            std::filesystem::path{TRAFFIC_FILE_ARGUMENT});
+}
+
+/**
+ * Given the traffic option twice
+ * When the launch options are read
+ * Then the last file wins
+ */
+TEST(ServerLaunchOptions, TheLastTrafficOptionWins) {
+  const LaunchOptions options = LaunchOptions::read(
+      Arguments{TRAFFIC_CSV_OPTION, FIRST_TRAFFIC_FILE_ARGUMENT,
+                TRAFFIC_CSV_OPTION, TRAFFIC_FILE_ARGUMENT});
+
+  EXPECT_EQ(options.trafficCsvFile().value_or(std::filesystem::path{}),
+            std::filesystem::path{TRAFFIC_FILE_ARGUMENT});
+}
+
+/**
+ * Given the traffic option as the last argument
+ * When the launch options are read
+ * Then the value is reported missing
+ */
+TEST(ServerLaunchOptions, TrafficOptionWithoutAFileIsRefused) {
+  EXPECT_THROW(
+      static_cast<void>(LaunchOptions::read(Arguments{TRAFFIC_CSV_OPTION})),
+      MissingLaunchOptionValueException);
+}
+
+/**
+ * Given the usage of the server
+ * When it is read
+ * Then it lists the traffic option
+ */
+TEST(ServerLaunchOptions, UsageListsTheTrafficOption) {
+  EXPECT_NE(LaunchOptions::usage().find(TRAFFIC_CSV_OPTION), std::string::npos);
 }

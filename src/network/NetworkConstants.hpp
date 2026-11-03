@@ -95,4 +95,14 @@ constexpr std::chrono::seconds REJECTION_LINE_INTERVAL{10};
 constexpr std::string_view FOREIGN_HEADER_DROP_REASON =
     "its header is not of this protocol and version, or has a flag set";
 
+/**
+ * @brief Launch option of both programs followed by the file their traffic goes
+ * to, and what their usage says of it. See TrafficRecorder.
+ */
+constexpr std::string_view TRAFFIC_CSV_OPTION = "--traffic-csv";
+constexpr std::string_view TRAFFIC_CSV_USAGE =
+    "File the traffic of the program goes to every second, by peer and by "
+    "message type, as totals since the launch; it is emptied at launch. "
+    "Default: no file, and a summary in the journal every 10 s.";
+
 }  // namespace rtype::network

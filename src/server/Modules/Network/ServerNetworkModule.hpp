@@ -18,8 +18,8 @@ namespace rtype::server {
 /**
  * @brief The module that owns the two threads of the server and its UDP
  * socket. It provides to the modules installed after it the IDatagramSender,
- * the IPlayerAdmission and the TickDatagrams, and runs the stages of the loop
- * once per tick.
+ * the IPlayerAdmission, the TickDatagrams and the network::TrafficCounters of
+ * its socket, and runs the stages of the loop once per tick.
  *
  * install() builds the ServerApplication, which binds nothing. start() binds
  * the socket on the port given to the constructor and runs the server on a

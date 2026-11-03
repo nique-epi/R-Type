@@ -9,6 +9,7 @@ target_link_libraries(rtype_server_application
     rtype_network_context
     rtype_network_datagram_relay
     rtype_network_simulator
+    rtype_network_statistics
     rtype_network_transport
     rtype_server_application_interfaces
     rtype_server_datagram_sorter

@@ -2,6 +2,7 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include <filesystem>
 #include <optional>
 #include <span>
 #include <string>
@@ -155,6 +156,9 @@ std::string serverOptionEntries() {
           ". The same delay holds for every player, so it adds the same lag to "
           "all of them. Default: " +
           std::to_string(DEFAULT_INPUT_DELAY_TICKS) + ".");
+  text +=
+      engine::usageEntry(std::string(network::TRAFFIC_CSV_OPTION) + " <file>",
+                         network::TRAFFIC_CSV_USAGE);
   text += engine::usageEntry(engine::HELP_OPTION,
                              "Print this help and start nothing.");
   return text;
@@ -167,11 +171,13 @@ LaunchOptions LaunchOptions::read(std::span<const std::string_view> arguments) {
       network::SimulatorLaunchOptions::read(arguments);
   LaunchOptions options{network::DEFAULT_SERVER_PORT, false};
   options.networkConditions_ = simulatorOptions.conditions();
-  const std::array launchOptions{portOption(options.port_),
-                                 seedOption(options.seed_),
-                                 stateRateOption(options.stateRate_),
-                                 inputDelayOption(options.inputDelay_),
-                                 helpOption(options.helpRequested_)};
+  const std::array launchOptions{
+      portOption(options.port_),
+      seedOption(options.seed_),
+      stateRateOption(options.stateRate_),
+      inputDelayOption(options.inputDelay_),
+      engine::pathOption(network::TRAFFIC_CSV_OPTION, options.trafficCsvFile_),
+      helpOption(options.helpRequested_)};
   engine::readLaunchArguments(simulatorOptions.otherArguments(), launchOptions);
   return options;
 }
@@ -198,6 +204,11 @@ bool LaunchOptions::helpRequested() const { return helpRequested_; }
 
 const network::NetworkConditions& LaunchOptions::networkConditions() const {
   return networkConditions_;
+}
+
+const std::optional<std::filesystem::path>& LaunchOptions::trafficCsvFile()
+    const {
+  return trafficCsvFile_;
 }
 
 LaunchOptions::LaunchOptions(std::uint16_t port, bool helpRequested)

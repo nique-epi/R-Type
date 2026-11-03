@@ -7,6 +7,7 @@
 #include <stop_token>
 #include <thread>
 #include <utility>
+#include "CountingDatagramSocket.hpp"
 #include "DatagramSocketOpening.hpp"
 #include "DatagramSorter.hpp"
 #include "Endpoint.hpp"
@@ -16,6 +17,7 @@
 #include "ServerConstants.hpp"
 #include "ServerException.hpp"
 #include "TickLoop.hpp"
+#include "TrafficCounters.hpp"
 
 namespace rtype::server {
 
@@ -54,8 +56,9 @@ void ServerApplication::open() {
   if (socket_) {
     throw ServerAlreadyOpenException();
   }
-  socket_ =
-      network::openDatagramSocket(network_, listeningEndpoint_, conditions_);
+  socket_ = std::make_unique<network::CountingDatagramSocket>(
+      network::openDatagramSocket(network_, listeningEndpoint_, conditions_),
+      traffic_);
   relay_.emplace(*socket_, incoming_, outgoing_);
 }
 
@@ -95,13 +98,16 @@ void ServerApplication::admit(const network::Endpoint& player,
                               std::uint64_t sessionToken) {
   network_.post([this, admitted = player, sessionToken] {
     sorter_.admit(admitted, sessionToken);
+    traffic_.follow(admitted);
   });
 }
 
 void ServerApplication::forget(const network::Endpoint& player,
                                std::uint64_t sessionToken) {
   network_.post([this, forgotten = player, sessionToken] {
-    sorter_.forget(forgotten, sessionToken);
+    if (sorter_.forget(forgotten, sessionToken)) {
+      traffic_.unfollow(forgotten);
+    }
   });
 }
 
@@ -112,6 +118,8 @@ void ServerApplication::queueDatagram(network::OutgoingDatagram datagram) {
 network::Endpoint ServerApplication::localEndpoint() const {
   return requireOpen(socket_).localEndpoint();
 }
+
+network::TrafficCounters& ServerApplication::traffic() { return traffic_; }
 
 void ServerApplication::simulateTick() {
   received_.clear();

@@ -63,6 +63,7 @@ void ServerNetworkModule::install(engine::InstallContext& context) {
   context.provide<IDatagramSender>(*server_);
   context.provide<IPlayerAdmission>(*server_);
   context.provide(tickDatagrams_);
+  context.provide(server_->traffic());
 }
 
 void ServerNetworkModule::start() {

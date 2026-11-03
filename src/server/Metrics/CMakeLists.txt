@@ -9,6 +9,7 @@ target_include_directories(rtype_server_metrics PUBLIC ${CMAKE_CURRENT_SOURCE_DI
 target_link_libraries(rtype_server_metrics
   PUBLIC
     rtype_engine_systems
+    rtype_network_statistics
   PRIVATE
     rtype_server_constants
 )

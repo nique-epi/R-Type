@@ -32,7 +32,7 @@ std::vector<std::unique_ptr<engine::IModule>> serverModules(
       .inputDelayTicks = launchOptions.inputDelay()}));
   modules.push_back(std::make_unique<ServerLobbyModule>());
   modules.push_back(std::make_unique<ServerMetricsModule>(
-      std::make_shared<engine::SystemClock>()));
+      std::make_shared<engine::SystemClock>(), launchOptions.trafficCsvFile()));
   return modules;
 }
 

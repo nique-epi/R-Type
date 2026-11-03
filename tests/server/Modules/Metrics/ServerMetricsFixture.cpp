@@ -1,5 +1,6 @@
 #include "ServerMetricsFixture.hpp"
 #include <cstddef>
+#include <filesystem>
 #include <memory>
 #include <optional>
 #include <string>
@@ -23,13 +24,14 @@
 #include "ServiceProbeModule.hpp"
 #include "SystemScheduler.hpp"
 #include "TimeConstants.hpp"
+#include "TrafficTestConstants.hpp"
 
 std::vector<std::unique_ptr<rtype::engine::IModule>>
 ServerMetricsFixture::modulesAfterTheGames() const {
   std::vector<std::unique_ptr<rtype::engine::IModule>> modules =
       ServerLobbyFixture::modulesAfterTheGames();
-  modules.push_back(
-      std::make_unique<rtype::server::ServerMetricsModule>(clock_));
+  modules.push_back(std::make_unique<rtype::server::ServerMetricsModule>(
+      clock_, trafficFile_));
   modules.push_back(std::make_unique<ServiceProbeModule>(
       METRICS_CLOCK_PROBE_MODULE,
       std::vector<std::string>{std::string{rtype::server::GAMES_MODULE_NAME}},
@@ -53,6 +55,14 @@ void ServerMetricsFixture::runTicks(std::size_t count) {
 
 std::size_t ServerMetricsFixture::metricsLinesInTheJournal() const {
   return journal().linesHolding(METRICS_LINE_MARK).size();
+}
+
+std::size_t ServerMetricsFixture::trafficLinesInTheJournal() const {
+  return journal().linesHolding(TRAFFIC_LINE_MARK).size();
+}
+
+void ServerMetricsFixture::writeTrafficTo(std::filesystem::path file) {
+  trafficFile_ = std::move(file);
 }
 
 std::optional<rtype::server::MetricsReport>

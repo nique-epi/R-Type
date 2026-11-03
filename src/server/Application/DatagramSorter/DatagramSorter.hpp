@@ -89,8 +89,10 @@ class DatagramSorter {
    * stranger's, unless it was admitted again since with another token than
    * @p sessionToken: forgetting a session that was replaced leaves the new one
    * alone, whatever order the two calls come in.
+   * @returns Whether @p player held a place under @p sessionToken, so is
+   * forgotten now.
    */
-  void forget(const network::Endpoint& player, std::uint64_t sessionToken);
+  bool forget(const network::Endpoint& player, std::uint64_t sessionToken);
 
   /**
    * @returns How many datagrams sort() dropped since the sorter was built,

@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <filesystem>
 #include <optional>
 #include <span>
 #include <string>
@@ -21,8 +22,9 @@ class LaunchOptions {
    * the logging options left (see logging::LogLaunchOptions).
    *
    * Without `-p` the port is DEFAULT_SERVER_PORT. The last `-p` wins, and so
-   * does the last `--seed`, the last `--state-rate` and the last
-   * `--input-delay`. The options of the network simulator are read first and
+   * does the last `--seed`, the last `--state-rate`, the last `--input-delay`
+   * and the last `--traffic-csv`. The options of the network simulator are read
+   * first and
    * may stand anywhere (see network::SimulatorLaunchOptions::read(), whose
    * exceptions this throws too).
    *
@@ -83,6 +85,11 @@ class LaunchOptions {
    */
   [[nodiscard]] const network::NetworkConditions& networkConditions() const;
 
+  /** @returns The file given after `--traffic-csv`, nothing when it was not
+   * given. */
+  [[nodiscard]] const std::optional<std::filesystem::path>& trafficCsvFile()
+      const;
+
  private:
   LaunchOptions(std::uint16_t port, bool helpRequested);
 
@@ -92,6 +99,7 @@ class LaunchOptions {
   std::size_t stateRate_;
   std::size_t inputDelay_;
   network::NetworkConditions networkConditions_;
+  std::optional<std::filesystem::path> trafficCsvFile_;
 };
 
 }  // namespace rtype::server

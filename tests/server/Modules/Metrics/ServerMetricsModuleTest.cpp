@@ -1,7 +1,11 @@
 #include <gtest/gtest.h>
+#include <cstddef>
+#include <filesystem>
 #include <optional>
+#include <string>
 #include <vector>
 #include "ComponentRegistry.hpp"
+#include "EngineException.hpp"
 #include "EntityRegistry.hpp"
 #include "GameInstance.hpp"
 #include "GamesCensus.hpp"
@@ -13,9 +17,15 @@
 #include "ServerTestConstants.hpp"
 #include "SystemScheduler.hpp"
 #include "SystemTime.hpp"
+#include "TemporaryFolder.hpp"
 #include "TickDurationSummary.hpp"
 #include "TimeConstants.hpp"
+#include "TrafficFixtures.hpp"
+#include "TrafficTestConstants.hpp"
 
+using rtype::engine::ModuleStartFailedException;
+using rtype::network::testing::peerOnPort;
+using rtype::network::testing::textOf;
 using rtype::server::GamesCensus;
 using rtype::server::MetricsReport;
 using rtype::server::TickDurationSummary;
@@ -137,4 +147,68 @@ TEST_F(ServerMetricsFixture, StopsMeasuringTheSystemsWhenItStops) {
   const std::vector<rtype::engine::SystemTime> times =
       game.systems().takeSystemTimes();
   EXPECT_EQ(times.back().total, rtype::engine::Duration::zero());
+}
+
+/**
+ * Given a server whose network counted a datagram
+ * When it ran the ticks of ten seconds
+ * Then the report holds it
+ */
+TEST_F(ServerMetricsFixture, TheReportHoldsTheTraffic) {
+  startWithGames(ONE_GAME);
+  network().traffic().countSent(peerOnPort(PEER_PORT),
+                                std::vector<std::byte>(1));
+
+  runTicks(TICKS_IN_TEN_SECONDS);
+
+  const std::optional<MetricsReport> report = latestReport();
+  ASSERT_TRUE(report.has_value());
+  EXPECT_EQ(
+      report.value_or(MetricsReport{}).traffic.others.sent.datagrams.count, 1U);
+}
+
+/**
+ * Given a server
+ * When its clock went just under ten seconds, then past them
+ * Then the journal holds no traffic line, then one
+ */
+TEST_F(ServerMetricsFixture, WritesTheTrafficLineAfterTenSecondsOfTheClock) {
+  startWithGames(ONE_GAME);
+
+  runTicks(TICKS_JUST_BEFORE_THE_TRAFFIC_LINE);
+  EXPECT_EQ(trafficLinesInTheJournal(), 0U);
+
+  runTicks(1);
+  EXPECT_EQ(trafficLinesInTheJournal(), 1U);
+}
+
+/**
+ * Given a server told to write its traffic to a file, whose network counted a
+ * datagram
+ * When its clock went past a second
+ * Then the file holds the row of that datagram
+ */
+TEST_F(ServerMetricsFixture, WritesTheTrafficToTheFileItWasGiven) {
+  const TemporaryFolder folder;
+  const std::filesystem::path file = folder.path() / TRAFFIC_FILE_NAME;
+  writeTrafficTo(file);
+  startWithGames(ONE_GAME);
+  network().traffic().countSent(peerOnPort(PEER_PORT),
+                                std::vector<std::byte>(1));
+
+  runTicks(TICKS_TO_THE_TRAFFIC_ROWS);
+
+  EXPECT_NE(textOf(file).find(ONE_BYTE_SENT_ROW_END), std::string::npos);
+}
+
+/**
+ * Given a server told to write its traffic to a folder
+ * When it starts
+ * Then it refuses
+ */
+TEST_F(ServerMetricsFixture, RefusesATrafficFileItCannotOpen) {
+  const TemporaryFolder folder;
+  writeTrafficTo(folder.path());
+
+  EXPECT_THROW(startWithGames(ONE_GAME), ModuleStartFailedException);
 }

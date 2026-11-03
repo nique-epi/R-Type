@@ -7,11 +7,12 @@
 #include "RecordingDatagramSender.hpp"
 #include "RecordingPlayerAdmission.hpp"
 #include "TickDatagrams.hpp"
+#include "TrafficCounters.hpp"
 
 /** @brief Module double that stands in for the network module: it provides, as
  * the real one does, a datagram sender and a player admission that record what
- * they receive, and the datagrams of the tick, which the test sets. It opens no
- * socket and runs no thread. */
+ * they receive, the datagrams of the tick, which the test sets, and the
+ * traffic, which the test counts. It opens no socket and runs no thread. */
 class RecordingNetworkModule : public rtype::engine::IModule {
  public:
   [[nodiscard]] std::string name() const override;
@@ -23,9 +24,11 @@ class RecordingNetworkModule : public rtype::engine::IModule {
   [[nodiscard]] RecordingDatagramSender& sender();
   [[nodiscard]] RecordingPlayerAdmission& admission();
   [[nodiscard]] rtype::server::TickDatagrams& tickDatagrams();
+  [[nodiscard]] rtype::network::TrafficCounters& traffic();
 
  private:
   RecordingDatagramSender sender_;
   RecordingPlayerAdmission admission_;
   rtype::server::TickDatagrams tickDatagrams_;
+  rtype::network::TrafficCounters traffic_;
 };

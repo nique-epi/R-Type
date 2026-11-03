@@ -116,12 +116,13 @@ void DatagramSorter::admit(const network::Endpoint& player,
       AdmittedPlayer{.endpoint = player, .sessionToken = sessionToken});
 }
 
-void DatagramSorter::forget(const network::Endpoint& player,
+bool DatagramSorter::forget(const network::Endpoint& player,
                             std::uint64_t sessionToken) {
-  std::erase_if(admitted_, [&player,
-                            sessionToken](const AdmittedPlayer& admitted) {
-    return admitted.endpoint == player && admitted.sessionToken == sessionToken;
-  });
+  return std::erase_if(admitted_,
+                       [&player, sessionToken](const AdmittedPlayer& admitted) {
+                         return admitted.endpoint == player &&
+                                admitted.sessionToken == sessionToken;
+                       }) > 0;
 }
 
 std::size_t DatagramSorter::droppedCount() const {
