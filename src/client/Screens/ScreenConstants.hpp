@@ -9,7 +9,7 @@
 
 namespace rtype::client {
 
-/** @brief Module name the game screen writes its log lines under. */
+/** @brief Logger name the game screen writes its log lines under. */
 constexpr std::string_view GAME_SCREEN_LOGGER_NAME = "GameScreen";
 
 /** @brief Key whose release opens the options during a game: the key that
@@ -25,8 +25,8 @@ constexpr engine::Duration END_SCREEN_DELAY = std::chrono::milliseconds(1000);
 constexpr const char* LOGO_ID = "sprites/logo.png";
 constexpr sf::Vector2i LOGO_SIZE(210, 42);
 
-/** @brief Module name the intro writes its log line under. */
-constexpr std::string_view INTRO_LOG_MODULE_NAME = "Intro";
+/** @brief Logger name the intro writes its log line under. */
+constexpr std::string_view INTRO_LOGGER_NAME = "Intro";
 
 /**
  * @brief Texts of the title screen. The copyright sign is written as its two

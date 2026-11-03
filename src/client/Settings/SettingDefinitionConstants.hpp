@@ -49,13 +49,17 @@ constexpr Setting<bool> SOUND_CUES_SETTING{.member = &PlayerSettings::soundCues,
 constexpr Setting<bool> AUTO_FIRE_SETTING{.member = &PlayerSettings::autoFire,
                                           .id = SettingId::AutoFire,
                                           .range = std::nullopt};
+constexpr Setting<bool> CLIENT_PREDICTION_SETTING{
+    .member = &PlayerSettings::clientPrediction,
+    .id = SettingId::ClientPrediction,
+    .range = std::nullopt};
 
 /** @brief Every setting a listener can be told about. */
 constexpr std::array ALL_SETTING_IDS{
-    SettingId::MusicVolume, SettingId::EffectsVolume, SettingId::Muted,
-    SettingId::WindowSize,  SettingId::DisplayMode,   SettingId::Keys,
-    SettingId::ColorMode,   SettingId::ReduceFlashes, SettingId::SoundCues,
-    SettingId::AutoFire,
+    SettingId::MusicVolume, SettingId::EffectsVolume,    SettingId::Muted,
+    SettingId::WindowSize,  SettingId::DisplayMode,      SettingId::Keys,
+    SettingId::ColorMode,   SettingId::ReduceFlashes,    SettingId::SoundCues,
+    SettingId::AutoFire,    SettingId::ClientPrediction,
 };
 
 }  // namespace rtype::client

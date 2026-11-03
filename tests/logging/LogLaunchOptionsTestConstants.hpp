@@ -21,7 +21,7 @@ constexpr std::string_view NOT_A_LEVEL_ARGUMENT = "verbose";
  */
 constexpr std::string_view NO_LEVEL_OPTION = "--no-log-level";
 
-/** @brief The module the tests log under, and the lines they log. */
+/** @brief The name of the logger of the tests, and the lines they log. */
 constexpr std::string_view LAUNCH_LOGGER_NAME = "Launch";
 constexpr std::string_view HELLO_LINE = "hello";
 constexpr std::string_view SHOWN_LINE = "shown";

@@ -55,6 +55,7 @@ TEST(SettingsTextTest, EveryChangedSettingReadsBack) {
   settings.reduceFlashes = true;
   settings.soundCues = true;
   settings.autoFire = true;
+  settings.clientPrediction = false;
 
   EXPECT_EQ(readSettingsText(settingsText(settings), PlayerSettings{}).settings,
             settings);

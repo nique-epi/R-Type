@@ -16,7 +16,7 @@
 namespace rtype::client {
 
 SettingsFile::SettingsFile(std::optional<std::filesystem::path> path)
-    : path_(std::move(path)), logger_(std::string(SETTINGS_LOG_MODULE_NAME)) {}
+    : path_(std::move(path)), logger_(std::string(SETTINGS_LOGGER_NAME)) {}
 
 PlayerSettings SettingsFile::load(const PlayerSettings& defaults) const {
   if (!path_.has_value()) {

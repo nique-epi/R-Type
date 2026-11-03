@@ -1,8 +1,8 @@
-add_library(rtype_client_menus STATIC ClientMenusModule.cpp OpeningScreen.cpp)
+add_library(rtype_client_menus_module STATIC ClientMenusModule.cpp OpeningScreen.cpp)
 
-target_include_directories(rtype_client_menus PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories(rtype_client_menus_module PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
-target_link_libraries(rtype_client_menus
+target_link_libraries(rtype_client_menus_module
   PUBLIC
     rtype_client_interface
     rtype_client_screen_interfaces
@@ -19,4 +19,4 @@ target_link_libraries(rtype_client_menus
     rtype_client_title_screen
 )
 
-rtype_enable_warnings(rtype_client_menus)
+rtype_enable_warnings(rtype_client_menus_module)

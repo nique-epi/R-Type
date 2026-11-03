@@ -7,9 +7,9 @@
 namespace rtype::logging::testing {
 
 /**
- * @brief The module name and the interval of the throttled log of the tests.
+ * @brief The logger name and the interval of the throttled log of the tests.
  */
-constexpr std::string_view THROTTLED_MODULE = "Throttled";
+constexpr std::string_view THROTTLED_LOGGER_NAME = "Throttled";
 constexpr std::chrono::nanoseconds THROTTLED_INTERVAL =
     std::chrono::seconds{10};
 constexpr std::chrono::nanoseconds HALF_INTERVAL = THROTTLED_INTERVAL / 2;

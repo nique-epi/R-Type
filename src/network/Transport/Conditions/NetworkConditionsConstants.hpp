@@ -72,8 +72,12 @@ constexpr NetworkConditions BAD_NETWORK{.lag = std::chrono::milliseconds{300},
                                         .duplicatePercent = 2,
                                         .reorderPercent = 5};
 
-/** @brief Every scenario `--network` knows, in the order the usage lists
- * them. */
+/**
+ * @brief Every scenario `--network` knows, in the order the usage lists them.
+ * SCENARIOS in tests/tools/network-conditions/conditions.sh lists them too, for
+ * the scripts that apply them from the system, and the test
+ * network_condition_scenarios checks that both agree.
+ */
 constexpr std::array NETWORK_SCENARIOS{
     NetworkScenario{.name = MOBILE_4G_SCENARIO_NAME,
                     .conditions = MOBILE_4G_NETWORK},
@@ -89,7 +93,7 @@ constexpr std::string_view SIMULATOR_USAGE_TITLE = "Network simulator options:";
 /**
  * @brief What starts the line of an option, and the line that describes it,
  * in that part of a usage: the same as engine::USAGE_OPTION_INDENT and
- * engine::USAGE_DESCRIPTION_INDENT, which the network module cannot include.
+ * engine::USAGE_DESCRIPTION_INDENT, which the network library cannot include.
  */
 constexpr std::string_view SIMULATOR_USAGE_OPTION_INDENT = "  ";
 constexpr std::string_view SIMULATOR_USAGE_DESCRIPTION_INDENT = "      ";

@@ -35,7 +35,7 @@ SfmlDrawSurface::SfmlDrawSurface(sf::RenderTarget& canvas,
     : canvas_(canvas),
       textures_(textures),
       writer_(writer),
-      logger_(std::string(LOG_MODULE_NAME)),
+      logger_(std::string(RENDERING_LOGGER_NAME)),
       flashShader_(loadFragmentShader(FLASH_SHADER, logger_)),
       ghostShader_(loadFragmentShader(GHOST_SHADER, logger_)) {}
 

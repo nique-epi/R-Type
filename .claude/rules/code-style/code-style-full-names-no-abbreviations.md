@@ -8,7 +8,7 @@ paths:
 
 ## Goal
 
-An abbreviation that is idiomatic to someone who knows the domain is opaque to every other reader — a teammate discovering the network module, the Epitech jury. Code is read far more often than written: the cost when writing is negligible, the readability gain lasts.
+An abbreviation that is idiomatic to someone who knows the domain is opaque to every other reader — a teammate discovering the network library, the Epitech jury. Code is read far more often than written: the cost when writing is negligible, the readability gain lasts.
 
 ## Rules
 

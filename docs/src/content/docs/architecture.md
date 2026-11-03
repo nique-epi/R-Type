@@ -6,7 +6,7 @@ sidebar:
 
 ## Context
 
-The client renders with SFML, the server talks over the network with Asio, and both must run the same game logic. If rendering, networking and logic live in one place, no part can be changed or tested alone, and the server would be forced to link a graphics library.
+The client renders with SFML, the server talks over the network with Asio (the reasons for these tools are in [Technology choices](/R-Type/technology-choices/)), and both must run the same game logic. If rendering, networking and logic live in one place, no part can be changed or tested alone, and the server would be forced to link a graphics library.
 
 ## Decision
 
@@ -92,11 +92,15 @@ Alternative considered: a numeric priority on each system, sorted by the schedul
 
 ## Modules
 
+A module is a feature a program can switch on, switch off or replace. The subject expects an engine to take no more space than needed, on disk and in memory, and gives modularization as a good way to get there: choosing what is compiled, linked or loaded at run time. So code with no life cycle, a system or a service is not a module; the [Modules](/R-Type/modules/) page gives the definition.
+
 A program is a list of modules, objects implementing `IModule`, handed to an `Application`. The application installs them all, then starts them all, in list order, and stops them in the reverse order, so a module is stopped before its dependencies. The list is checked when the application is built: a module whose dependency is not listed before it is refused before anything is installed, so a missing module never leaves a socket or a thread half open. When a start fails, the modules already started are stopped before the error goes up. Stopping first stops the loop: the application waits for the pass in flight, so no work of a stage runs while the modules stop.
 
 A program also declares the named stages of its loop, and a module adds its work to one of them while it installs; within a stage, the work runs in the order of the list. A module hands an object to the modules installed after it as a service found by type during install only, so what a module depends on shows in its constructors; a required service no earlier module provides stops the program before it starts, while an optional one is found to be absent.
 
 Alternative considered: sorting the modules by their dependencies. A module could then be listed anywhere, but the order would be computed instead of read in one place, and two modules that do not depend on each other would have no defined order. As with systems, the list is the one place that says what starts after what.
+
+Alternative considered: calling any folder with a CMake library a module. Nothing would need deciding, but the word would say nothing of what a program can leave out, and a folder called a module could hold nothing with a life cycle.
 
 What a module does at each moment, and how to write one, is on the [Modules](/R-Type/modules/) page.
 
@@ -213,9 +217,9 @@ A message is its fields written one after the other at a fixed size, so its size
 | Datagram | Binary | JSON |
 |---|---|---|
 | `PlayerInput` (60 per second) | 30 bytes | 196 bytes |
-| `WorldState`, 2 players and 6 entities (20 per second) | 105 bytes | 722 bytes |
+| `WorldState`, 2 players and 6 entities (20 per second) | 113 bytes | 722 bytes |
 
-The binary `PlayerInput` is the output of `DatagramCodec::encode`. The binary `WorldState` is the average of the capture described in [Protocol](/R-Type/protocol/#world-state), and its JSON is a constructed example, not a capture. That is about 1.8 kB per second against 11.8 kB for the inputs of one player, and 2.1 kB against 14.4 kB for the states sent to one: roughly seven times less.
+The binary `PlayerInput` is the output of `DatagramCodec::encode`. The binary `WorldState` is the average of the capture described in [Protocol](/R-Type/protocol/#world-state), 105 bytes, plus the 4 bytes per player of `acknowledgedInput` that were added after it (2 × 4 = 8, not captured again). Its JSON is a constructed example, not a capture, and was not rewritten with that field. That is about 1.8 kB per second against 11.8 kB for the inputs of one player, and 2.3 kB against 14.4 kB for the states sent to one: between six and seven times less.
 
 The cost is that nobody reads a capture without the specification. The protocol page therefore gives every field byte by byte, in big-endian order so a number reads in a capture the way it is written, and a new field changes the version.
 
@@ -232,10 +236,10 @@ Alternative considered: peer to peer, with every peer running the game. It needs
 ### Known limits of the proof of concept
 
 - **Losses.** Nothing is guaranteed in version 1. State messages repeat what they say, so they correct themselves; the messages that show something once are sent three times, 50 ms apart. If all three copies are lost, a sound or an effect is missed, and lives, scores and players stay right through the states (see [Losses](/R-Type/protocol/#losses)).
-- **Latency.** The client neither predicts its own ship nor interpolates the others: it draws what the last state says, so a key shows after a round trip plus up to one state interval (50 ms at 20 states per second), and a ship moves at the pace of the states.
-- **Measures.** The rates and delays are **provisional**. The only capture is a local game, with no loss and no latency. The network simulator now adds them on demand (see [Network simulator](/R-Type/network/#network-simulator-simulatednetworksocket)), but no measurement has been taken with it yet.
+- **Latency.** The client predicts its own ship (PREDICTION in the options, on by default) but does not interpolate the others: a key shows at once, while the other ships show what the last state says, so they move at the pace of the states (one every 50 ms at 20 states per second). With PREDICTION off, a key shows after a round trip plus up to one state interval.
+- **Measures.** The rates and delays are **provisional**. The only capture is a local game, with no loss and no latency. The network simulator now adds them on demand (see [Network simulator](/R-Type/network/#network-simulator-simulatednetworksocket)), and so can the system, with the scripts of `tests/tools/network-conditions/` (see [Network conditions from the system](/R-Type/network/#network-conditions-from-the-system-teststoolsnetwork-conditions)), but no measurement of the game has been taken with either yet.
 
-The second part answers each point (see [Version 2](/R-Type/protocol/#version-2)): guaranteed messages replace the three copies, an input is repeated until the server confirms it, and the state confirms the last input applied, which is what lets the client replay its newest inputs on top of a state and correct its ship. Prediction and interpolation themselves are client work, placed in `client/Prediction` (see [Project layout](/R-Type/project-layout/)).
+The second part answers each point (see [Version 2](/R-Type/protocol/#version-2)): guaranteed messages replace the three copies, an input is repeated until the server confirms it, and states are sent as differences. The state already confirms the newest input of each player, which is what lets the client replay its newest inputs on top of a state and correct its ship. Prediction and interpolation themselves are client work, placed in `client/Prediction` (see [Project layout](/R-Type/project-layout/)).
 
 ## Consequences
 

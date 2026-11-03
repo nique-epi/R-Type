@@ -279,7 +279,7 @@ cmake --workflow --preset build
 
 On the connection screen of the client, press CONNECT (the server is at `127.0.0.1`, port 4242, by default), press ready in the waiting room, and wait for the first wave. Each Bydo goes left while it dips and rises every second, 48 units each way, and shooting one adds 300 points to your score. The server prints the wave as it starts (`wave 1: 3 Bydos, one every 2000 ms`).
 
-What to look at, and why: **the Zigzagger is drawn as every other Bydo**. The server tells the client "a Bydo appeared", then sends the position of each Bydo twenty times a second; the kind never leaves the server, which is why the client needed no change to show the new path. The client chooses a sprite from the type of the entity (`entityAnimationOf` in `src/client/Rendering/Sprites/EntitySprites/EntitySprites.cpp`), and every Bydo is an `EntityType::Enemy`.
+What to look at, and why: **the Zigzagger is drawn as every other Bydo**. The server tells the client "a Bydo appeared", then sends the position of each Bydo twenty times a second; the kind never leaves the server, which is why the client needed no change to show the new path. The client chooses a sprite from the type of the entity (`entityAnimationOf` in `src/client/Rendering/Sprites/EntitySprites/EntitySprites/EntitySprites.cpp`), and every Bydo is an `EntityType::Enemy`.
 
 ### Giving the enemy its own look
 

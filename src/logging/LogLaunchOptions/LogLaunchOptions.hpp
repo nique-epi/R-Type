@@ -54,7 +54,7 @@ class LogLaunchOptions {
 
   /**
    * @brief Configures the Logger with the options read, then writes at the
-   *        info level, under the module LOGGING_LOGGER_NAME, the absolute path
+   *        info level, under LOGGING_LOGGER_NAME, the absolute path
    *        of the journal, or that there is none.
    *
    * @throws LogFileOpenException when the journal cannot be opened. The level
