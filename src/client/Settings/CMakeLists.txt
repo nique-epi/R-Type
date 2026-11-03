@@ -1,4 +1,5 @@
 add_subdirectory(Values)
+add_subdirectory(Definitions)
 add_subdirectory(Storage)
 
 add_library(rtype_client_settings_module STATIC
@@ -12,6 +13,7 @@ target_link_libraries(rtype_client_settings_module
   PUBLIC
     SFML::Window
     rtype_client_input_keys
+    rtype_client_settings_definitions
     rtype_client_settings_storage
     rtype_client_settings_values
     rtype_engine_install_context
