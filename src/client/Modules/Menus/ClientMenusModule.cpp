@@ -3,6 +3,7 @@
 #include <random>
 #include <string>
 #include <vector>
+#include "ConnectionGoal.hpp"
 #include "ConnectionScreen.hpp"
 #include "ConnectionScreenParts.hpp"
 #include "DialogMenus.hpp"
@@ -95,13 +96,15 @@ std::unique_ptr<IScreen> buildConnectionLostScreen(
                          context.services.connection.get().status().phase));
 }
 
-std::unique_ptr<IScreen> buildConnectionScreen(const ScreenContext& context) {
+std::unique_ptr<IScreen> buildConnectionScreen(const ScreenContext& context,
+                                               ConnectionGoal goal) {
   return std::make_unique<ConnectionScreen>(
       ConnectionScreenParts{.navigator = context.navigator.get(),
                             .sounds = soundsOf(context),
                             .connection = context.services.connection.get(),
                             .playfieldPointAt = playfieldMappingOf(context),
-                            .choice = context.serverChoice.get()},
+                            .choice = context.serverChoice.get(),
+                            .goal = goal},
       interfaceCanvasOf(context));
 }
 
@@ -112,6 +115,7 @@ std::unique_ptr<IScreen> buildLeaderboardScreen(const ScreenContext& context) {
       LeaderboardScreenParts{
           .navigator = context.navigator.get(),
           .sounds = soundsOf(context),
+          .connection = context.services.connection.get(),
           .tabs = {LeaderboardTab{
                        .label = SERVER_TAB_LABEL,
                        .source = &context.services.leaderboard.get()},
@@ -151,7 +155,13 @@ void ClientMenusModule::install(engine::InstallContext& context) {
     return buildOptionsScreen(screens, OptionsPlace::OverGame);
   });
   registry.add(QUIT_CONFIRMATION_SCREEN, buildQuitConfirmationScreen);
-  registry.add(CONNECTION_SCREEN, buildConnectionScreen);
+  registry.add(CONNECTION_SCREEN, [](const ScreenContext& screens) {
+    return buildConnectionScreen(screens, ConnectionGoal::WaitingRoom);
+  });
+  registry.add(
+      CONNECTION_FOR_LEADERBOARD_SCREEN, [](const ScreenContext& screens) {
+        return buildConnectionScreen(screens, ConnectionGoal::ScreenBelow);
+      });
   registry.add(LEADERBOARD_SCREEN, buildLeaderboardScreen);
   registry.add(CONNECTION_LOST_SCREEN, buildConnectionLostScreen);
 }

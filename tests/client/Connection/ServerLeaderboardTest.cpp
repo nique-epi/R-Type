@@ -37,6 +37,50 @@ TEST_F(ServerLeaderboardFixture, WithoutASessionItSaysNotOnServer) {
 }
 
 /**
+ * Given a leaderboard asked for without a session
+ * When a session opens
+ * Then the request goes out, and the page says it is asking
+ */
+TEST_F(ServerLeaderboardFixture, ARequestWithoutASessionWaitsForOne) {
+  leaderboard().ask(askedRequest());
+
+  connectAndGetAccepted();
+
+  EXPECT_EQ(leaderboard().page().phase, LeaderboardPhase::Asking);
+  EXPECT_EQ(sentRequestCount(), 1);
+}
+
+/**
+ * Given a leaderboard asked for without a session, and an attempt dropped, as a
+ * connection screen does when it opens
+ * When a session opens
+ * Then the request goes out all the same
+ */
+TEST_F(ServerLeaderboardFixture, ADroppedAttemptKeepsTheRequest) {
+  leaderboard().ask(askedRequest());
+  session().cancel();
+
+  connectAndGetAccepted();
+
+  EXPECT_EQ(sentRequestCount(), 1);
+}
+
+/**
+ * Given a leaderboard asked for without a session, then a screen that left
+ * When a session opens
+ * Then nothing goes out: nobody reads the answer
+ */
+TEST_F(ServerLeaderboardFixture, StoppingWithoutASessionForgetsTheRequest) {
+  leaderboard().ask(askedRequest());
+  leaderboard().stopAsking();
+
+  connectAndGetAccepted();
+
+  EXPECT_EQ(leaderboard().page().phase, LeaderboardPhase::NotOnServer);
+  EXPECT_EQ(sentRequestCount(), 0);
+}
+
+/**
  * Given a session
  * When the leaderboard is asked for
  * Then the request goes out at once, for that leaderboard

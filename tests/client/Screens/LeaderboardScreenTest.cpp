@@ -15,10 +15,11 @@
 #include "PointerEvents.hpp"
 #include "RecordingInterfaceCanvas.hpp"
 #include "RecordingNavigator.hpp"
+#include "RecordingServerConnection.hpp"
 #include "ScreenTestConstants.hpp"
 #include "WidgetConstants.hpp"
 
-using rtype::client::CONNECTION_SCREEN;
+using rtype::client::CONNECTION_FOR_LEADERBOARD_SCREEN;
 using rtype::client::LEADERBOARD_SHEET_ID;
 using rtype::client::LeaderboardPhase;
 using rtype::client::PRESS_DURATION;
@@ -30,6 +31,7 @@ using rtype::client::testing::ON_THE_SECOND_TAB;
 using rtype::client::testing::RIGHT_BANNER;
 using rtype::network::LeaderboardRequest;
 using ::testing::ElementsAre;
+using ::testing::Field;
 using ::testing::IsEmpty;
 
 /**
@@ -311,18 +313,66 @@ TEST_F(LeaderboardScreenFixture, TheGlobalTabSaysWhyItIsEmpty) {
 /**
  * Given a source with no session to ask through
  * When Enter is pressed and released
- * Then the connection screen replaces this one
+ * Then the connection screen opens over this one, which it comes back to
  */
-TEST_F(LeaderboardScreenFixture, WithoutAServerEnterJoinsOne) {
+TEST_F(LeaderboardScreenFixture, WithoutAServerEnterOpensTheConnectionOverIt) {
   show(pageIn(LeaderboardPhase::NotOnServer));
 
   tap(sf::Keyboard::Key::Enter);
 
-  EXPECT_THAT(navigator().calls(),
-              ElementsAre(NavigatorCall{.request = NavigatorRequest::Pop,
-                                        .screen = std::nullopt},
-                          NavigatorCall{.request = NavigatorRequest::Push,
-                                        .screen = CONNECTION_SCREEN}));
+  EXPECT_THAT(
+      navigator().calls(),
+      ElementsAre(NavigatorCall{.request = NavigatorRequest::Push,
+                                .screen = CONNECTION_FOR_LEADERBOARD_SCREEN}));
+}
+
+/**
+ * Given a server joined from this screen, whose scores it now shows
+ * When Escape is pressed and released
+ * Then the session ends with the screen: nothing on the title holds it
+ */
+TEST_F(LeaderboardScreenFixture, BackLeavesAServerJoinedFromHere) {
+  show(pageIn(LeaderboardPhase::NotOnServer));
+  tap(sf::Keyboard::Key::Enter);
+  show(answeredPage({entryOf(1, "KIRA")}, std::nullopt));
+
+  tap(sf::Keyboard::Key::Escape);
+
+  EXPECT_THAT(connection().calls(),
+              ElementsAre(Field(&ServerConnectionCall::request,
+                                ServerConnectionCall::Request::Cancel)));
+  EXPECT_THAT(navigator().calls().back(),
+              (NavigatorCall{.request = NavigatorRequest::Pop,
+                             .screen = std::nullopt}));
+}
+
+/**
+ * Given a server joined elsewhere, from the waiting room
+ * When Escape is pressed and released
+ * Then the player stays on the server
+ */
+TEST_F(LeaderboardScreenFixture, BackStaysOnAServerJoinedElsewhere) {
+  show(answeredPage({entryOf(1, "KIRA")}, std::nullopt));
+
+  tap(sf::Keyboard::Key::Escape);
+
+  EXPECT_THAT(connection().calls(), IsEmpty());
+}
+
+/**
+ * Given Escape held down when Enter opens the connection screen, its release
+ * going to that screen
+ * When Escape is released on this one, once back
+ * Then the screen stays: BACK forgot the press when the events went elsewhere
+ */
+TEST_F(LeaderboardScreenFixture, JoiningDropsWhatTheChipsHeld) {
+  show(pageIn(LeaderboardPhase::NotOnServer));
+  screen().handleEvent(keyPress(sf::Keyboard::Key::Escape));
+  tap(sf::Keyboard::Key::Enter);
+
+  screen().handleEvent(keyRelease(sf::Keyboard::Key::Escape));
+
+  EXPECT_EQ(navigator().calls().size(), 1);
 }
 
 /**

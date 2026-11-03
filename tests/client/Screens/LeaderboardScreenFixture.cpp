@@ -13,6 +13,7 @@
 #include "RecordingInterfaceCanvas.hpp"
 #include "RecordingLeaderboardSource.hpp"
 #include "RecordingNavigator.hpp"
+#include "RecordingServerConnection.hpp"
 #include "ScreenInputs.hpp"
 #include "ScreenTestConstants.hpp"
 
@@ -28,6 +29,7 @@ LeaderboardScreenFixture::LeaderboardScreenFixture(MotionPreference motion)
           LeaderboardScreenParts{
               .navigator = navigator_,
               .sounds = sounds_,
+              .connection = connection_,
               .tabs = {LeaderboardTab{.label = "SERVER", .source = &source_},
                        LeaderboardTab{.label = "GLOBAL"}},
               .choice = LeaderboardFilterChoice{.difficulty = 1, .pilots = 1},
@@ -58,6 +60,10 @@ const InterfaceCanvasRecord& LeaderboardScreenFixture::canvas() const {
 }
 
 LeaderboardScreen& LeaderboardScreenFixture::screen() { return *screen_; }
+
+const RecordingServerConnection& LeaderboardScreenFixture::connection() const {
+  return connection_;
+}
 
 void LeaderboardScreenFixture::closeScreen() { screen_.reset(); }
 

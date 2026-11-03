@@ -7,6 +7,7 @@
 #include "IInterfaceCanvas.hpp"
 #include "IScreen.hpp"
 #include "IScreenNavigator.hpp"
+#include "IServerConnection.hpp"
 #include "ISoundPlayer.hpp"
 #include "ItemList.hpp"
 #include "KeyChip.hpp"
@@ -32,8 +33,10 @@ namespace rtype::client {
  * The screen reads its rows through ILeaderboardSource, one per tab.
  * MENU_CANCEL_KEY closes it, FILTER_KEY opens the filter, PREVIOUS_TAB_KEY and
  * NEXT_TAB_KEY change tab, once however long they are held; with no server to
- * read, MENU_CONFIRM_KEY opens the connection screen. Each has its chip or its
- * tab to click. While the filter is open, it takes every event.
+ * read, MENU_CONFIRM_KEY opens the connection screen over it, which comes back
+ * here once the server accepted the player. Closing the screen then leaves that
+ * server, since nothing else on the title holds the session. Each has its chip
+ * or its tab to click. While the filter is open, it takes every event.
  *
  * The picture changes no faster than the banners move: it is repainted on an
  * event, on a new page, and every LEADERBOARD_REPAINT_TIME, rather than each
@@ -81,6 +84,7 @@ class LeaderboardScreen : public IScreen {
 
   IScreenNavigator* navigator_;
   ISoundPlayer* sounds_;
+  IServerConnection* connection_;
   std::vector<LeaderboardTab> tabs_;
   LeaderboardFilterChoice choice_;
   std::unique_ptr<IInterfaceCanvas> canvas_;
@@ -100,6 +104,7 @@ class LeaderboardScreen : public IScreen {
   engine::Duration elapsed_{};
   engine::Duration untilRepaint_{};
   bool tabKeyHeld_ = false;
+  bool joinedFromHere_ = false;
 };
 
 }  // namespace rtype::client

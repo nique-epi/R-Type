@@ -20,8 +20,9 @@ namespace rtype::client {
  * LeaderboardAnswer that lists the same leaderboard arrives, for
  * LEADERBOARD_GIVE_UP_TIME at most. Only that first answer counts, so a late
  * copy or the answer to an older filter changes nothing. The server answers
- * only the players it admitted, so without a session it says NotOnServer and
- * sends nothing.
+ * only the players it admitted, so without a session it says NotOnServer, sends
+ * nothing, and keeps the request for the next session: it goes out as soon as
+ * one opens, unless stopAsking() came first.
  */
 class ServerLeaderboard final : public ILeaderboardSource,
                                 public ISessionObserver {

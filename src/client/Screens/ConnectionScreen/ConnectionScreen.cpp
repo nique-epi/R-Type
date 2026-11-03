@@ -65,6 +65,7 @@ ConnectionScreen::ConnectionScreen(ConnectionScreenParts parts,
     : navigator_(&parts.navigator.get()),
       connection_(&parts.connection.get()),
       choice_(&parts.choice.get()),
+      goal_(parts.goal),
       canvas_(std::move(canvas)),
       playfieldPointAt_(std::move(parts.playfieldPointAt)),
       menu_(buildMenu(parts.sounds.get())) {
@@ -115,7 +116,7 @@ Menu ConnectionScreen::buildMenu(ISoundPlayer& sounds) {
 void ConnectionScreen::connect() {
   connection_->cancel();
   acceptedFor_ = engine::Duration::zero();
-  lobbyAsked_ = false;
+  goalReached_ = false;
   try {
     const network::Endpoint server{
         .address = network::ipv4AddressFromText(menu_.fieldText(ADDRESS_ENTRY)),
@@ -148,9 +149,13 @@ void ConnectionScreen::followConnection(const ConnectionStatus& status,
     return;
   }
   acceptedFor_ += elapsed;
-  if (!lobbyAsked_ && acceptedFor_ >= ACCEPTED_STATUS_DURATION) {
-    lobbyAsked_ = true;
-    navigator_->push(LOBBY_SCREEN);
+  if (!goalReached_ && acceptedFor_ >= ACCEPTED_STATUS_DURATION) {
+    goalReached_ = true;
+    if (goal_ == ConnectionGoal::ScreenBelow) {
+      navigator_->pop();
+    } else {
+      navigator_->push(LOBBY_SCREEN);
+    }
   }
 }
 

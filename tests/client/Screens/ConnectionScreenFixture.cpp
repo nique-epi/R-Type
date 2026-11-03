@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <memory>
 #include <string_view>
+#include "ConnectionGoal.hpp"
 #include "ConnectionScreen.hpp"
 #include "ConnectionScreenFixtures.hpp"
 #include "ConnectionScreenParts.hpp"
@@ -16,19 +17,24 @@
 #include "ScreenTestConstants.hpp"
 #include "WidgetConstants.hpp"
 
+using rtype::client::ConnectionGoal;
 using rtype::client::ConnectionScreen;
 using rtype::client::ConnectionScreenParts;
 using rtype::client::ConnectionStatus;
 using rtype::client::PRESS_DURATION;
 
-ConnectionScreenFixture::ConnectionScreenFixture()
+ConnectionScreenFixture::ConnectionScreenFixture(ConnectionGoal goal)
     : choice_(launchChoice()),
       screen_(ConnectionScreenParts{.navigator = navigator_,
                                     .sounds = sounds_,
                                     .connection = connection_,
                                     .playfieldPointAt = samePlayfieldPoint,
-                                    .choice = choice_},
+                                    .choice = choice_,
+                                    .goal = goal},
               std::make_unique<RecordingInterfaceCanvas>(canvas_)) {}
+
+ConnectionForTheScreenBelowFixture::ConnectionForTheScreenBelowFixture()
+    : ConnectionScreenFixture(ConnectionGoal::ScreenBelow) {}
 
 const RecordingNavigator& ConnectionScreenFixture::navigator() const {
   return navigator_;

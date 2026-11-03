@@ -3,6 +3,7 @@
 #include <functional>
 #include <vector>
 #include "IScreenNavigator.hpp"
+#include "IServerConnection.hpp"
 #include "ISoundPlayer.hpp"
 #include "KeyNames.hpp"
 #include "LeaderboardFilterChoice.hpp"
@@ -26,6 +27,9 @@ struct LeaderboardScreenParts {
   std::reference_wrapper<IScreenNavigator> navigator;
   /** @brief Plays the click, which must outlive the screen. */
   std::reference_wrapper<ISoundPlayer> sounds;
+  /** @brief The session BACK leaves when this screen sent the player to open
+   * it; it must outlive the screen. */
+  std::reference_wrapper<IServerConnection> connection;
   /** @brief The tabs, left to right, at least one; the first opens. */
   std::vector<LeaderboardTab> tabs;
   /** @brief The filter it opens on. */

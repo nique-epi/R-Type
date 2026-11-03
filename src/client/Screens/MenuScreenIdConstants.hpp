@@ -37,6 +37,11 @@ constexpr ScreenId QUIT_CONFIRMATION_SCREEN{"quit confirmation"};
  * attempt stands, pushed over the title. */
 constexpr ScreenId CONNECTION_SCREEN{"connection"};
 
+/** @brief The same screen, pushed over the leaderboard: once the server
+ * accepted the player, it closes, back to the leaderboard. */
+constexpr ScreenId CONNECTION_FOR_LEADERBOARD_SCREEN{
+    "connection for the leaderboard"};
+
 /** @brief The best scores of a server, pushed over the title or the waiting
  * room. */
 constexpr ScreenId LEADERBOARD_SCREEN{"leaderboard"};

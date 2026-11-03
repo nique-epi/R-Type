@@ -19,11 +19,11 @@ ServerLeaderboard::ServerLeaderboard(network::MessageDispatcher& dispatcher) {
 }
 
 void ServerLeaderboard::ask(const network::LeaderboardRequest& request) {
+  asked_ = request;
   if (outbox_ == nullptr) {
-    sessionClosed();
+    become(LeaderboardPhase::NotOnServer);
     return;
   }
-  asked_ = request;
   sinceAsked_ = engine::Duration::zero();
   become(LeaderboardPhase::Asking);
   sendRequest(request);
@@ -37,11 +37,15 @@ void ServerLeaderboard::sessionOpened(
     [[maybe_unused]] const network::LobbyPlayer& ownPlayer,
     ISessionOutbox& outbox) {
   outbox_ = &outbox;
+  if (asked_.has_value()) {
+    sinceAsked_ = engine::Duration::zero();
+    sinceRequest_ = LEADERBOARD_ASK_INTERVAL;
+    become(LeaderboardPhase::Asking);
+  }
 }
 
 void ServerLeaderboard::sessionClosed() {
   outbox_ = nullptr;
-  asked_.reset();
   become(LeaderboardPhase::NotOnServer);
 }
 

@@ -9,6 +9,7 @@
 #include "RecordingInterfaceCanvas.hpp"
 #include "RecordingLeaderboardSource.hpp"
 #include "RecordingNavigator.hpp"
+#include "RecordingServerConnection.hpp"
 #include "RecordingSoundPlayer.hpp"
 
 /** @brief A leaderboard of a recording SERVER tab and a GLOBAL tab without a
@@ -28,6 +29,7 @@ class LeaderboardScreenFixture : public ::testing::Test {
   [[nodiscard]] RecordingLeaderboardSource& source();
   [[nodiscard]] const InterfaceCanvasRecord& canvas() const;
   [[nodiscard]] rtype::client::LeaderboardScreen& screen();
+  [[nodiscard]] const RecordingServerConnection& connection() const;
 
   /** @brief Destroys the screen, as the stack does when it leaves. */
   void closeScreen();
@@ -35,6 +37,7 @@ class LeaderboardScreenFixture : public ::testing::Test {
  private:
   RecordingNavigator navigator_;
   RecordingSoundPlayer sounds_;
+  RecordingServerConnection connection_;
   RecordingLeaderboardSource source_;
   InterfaceCanvasRecord canvas_;
   std::unique_ptr<rtype::client::LeaderboardScreen> screen_;

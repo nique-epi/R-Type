@@ -18,6 +18,7 @@
 #include "EntitySprites.hpp"
 #include "IInterfaceCanvas.hpp"
 #include "ILeaderboardSource.hpp"
+#include "IServerConnection.hpp"
 #include "ISoundPlayer.hpp"
 #include "ImagePlacement.hpp"
 #include "InterfaceConstants.hpp"
@@ -208,6 +209,7 @@ LeaderboardScreen::LeaderboardScreen(LeaderboardScreenParts parts,
                                      std::unique_ptr<IInterfaceCanvas> canvas)
     : navigator_(&parts.navigator.get()),
       sounds_(&parts.sounds.get()),
+      connection_(&parts.connection.get()),
       tabs_(std::move(parts.tabs)),
       choice_(parts.choice),
       canvas_(std::move(canvas)),
@@ -217,12 +219,20 @@ LeaderboardScreen::LeaderboardScreen(LeaderboardScreenParts parts,
       filterDialog_(parts.sounds.get()),
       tabStrip_(tabStripOf(tabs_, 0, keyName_)),
       list_(LEADERBOARD_LIST),
-      backChip_(backChipParts([this] { navigator_->pop(); }, parts.sounds)),
+      backChip_(backChipParts(
+          [this] {
+            if (joinedFromHere_) {
+              connection_->cancel();
+            }
+            navigator_->pop();
+          },
+          parts.sounds)),
       filterChip_(filterChipParts([this] { openFilter(); }, parts.sounds)),
       joinChip_(joinBarParts(
           [this] {
-            navigator_->pop();
-            navigator_->push(CONNECTION_SCREEN);
+            handleEvent(sf::Event::FocusLost{});
+            joinedFromHere_ = true;
+            navigator_->push(CONNECTION_FOR_LEADERBOARD_SCREEN);
           },
           parts.sounds)) {
   ask();
@@ -301,10 +311,7 @@ void LeaderboardScreen::openTab(std::size_t tab) {
 }
 
 void LeaderboardScreen::openFilter() {
-  for (KeyChip* chip : {&backChip_, &filterChip_, &joinChip_}) {
-    chip->handleEvent(sf::Event::FocusLost{}, playfieldPointAt_);
-  }
-  tabKeyHeld_ = false;
+  handleEvent(sf::Event::FocusLost{});
   filterDialog_.open(choice_, [this](LeaderboardFilterChoice picked) {
     choice_ = picked;
     ask();
