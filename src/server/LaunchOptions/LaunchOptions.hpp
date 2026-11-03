@@ -15,10 +15,10 @@ namespace rtype::server {
  * @brief What the server is told at launch: the settings it is forced to, the
  * network simulated and the logging options, or a request for its usage.
  *
- * `-p`, `--seed`, `--state-rate`, `--input-delay` and `--set` do not hold a
- * value of their own: each becomes the line of the command `set` that gives
- * the setting that value, and the lines run after server.cfg, so a launch
- * option wins over the file.
+ * `-p`, `--seed`, `--state-rate`, `--input-delay`, `--database` and `--set`
+ * do not hold a value of their own: each becomes the line of the command
+ * `set` that gives the setting that value, and the lines run after
+ * server.cfg, so a launch option wins over the file.
  */
 class LaunchOptions {
  public:
@@ -26,8 +26,8 @@ class LaunchOptions {
    * @brief Reads every option of the server from @p arguments, the arguments
    * it was launched with, without its name, in one pass from the first to the
    * last: `-p <port>`, `--seed <seed>`, `--state-rate <states>`,
-   * `--input-delay <ticks>`, `--set <name>=<value>` and `--help`, the options
-   * of the network simulator (see
+   * `--input-delay <ticks>`, `--database <file>`, `--set <name>=<value>` and
+   * `--help`, the options of the network simulator (see
    * network::SimulatorLaunchOptions::readOption()) and the logging options
    * (see logging::LogLaunchOptions::readOption()), whose exceptions this
    * throws too.

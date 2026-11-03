@@ -24,6 +24,7 @@
 #include "PlayerInput.hpp"
 #include "PlayerLeft.hpp"
 #include "Position.hpp"
+#include "RecordingResultsArchive.hpp"
 #include "RtypeRulesModule.hpp"
 #include "ServerLobbyTestConstants.hpp"
 #include "SimulatedClock.hpp"
@@ -170,6 +171,9 @@ class GameInstanceTest : public ::testing::Test {
   [[nodiscard]] game::World& world();
   [[nodiscard]] engine::EventBus& events();
 
+  /** @returns What the game handed its results and leaderboard requests to. */
+  [[nodiscard]] RecordingResultsArchive& results();
+
  private:
   std::vector<network::OutgoingDatagram> sent_;
   /** @brief The indexes of the players the game hears from before each tick:
@@ -180,6 +184,7 @@ class GameInstanceTest : public ::testing::Test {
   engine::TimerScheduler timers_;
   /** @brief The clock the game reads real time on; tick() moves it on. */
   SimulatedClock clock_;
+  RecordingResultsArchive results_;
   RtypeRulesModule* rules_{nullptr};
   GameInstance game_;
   std::vector<network::IncomingDatagram> incoming_;

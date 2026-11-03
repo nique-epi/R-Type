@@ -3,6 +3,7 @@
 #include <memory>
 #include <string>
 #include <string_view>
+#include "ConnectionGoal.hpp"
 #include "ConnectionScreenParts.hpp"
 #include "ConnectionStatus.hpp"
 #include "IInterfaceCanvas.hpp"
@@ -18,9 +19,10 @@
 namespace rtype::client {
 
 /**
- * @brief The screen PLAY opens over the title, which it hides: the address, the
- * port and the nickname to join a server with, CONNECT and BACK, then a status
- * line that tells how the attempt stands.
+ * @brief The screen PLAY opens over the title, and JOIN A SERVER over the
+ * leaderboard, which it hides: the address, the port and the nickname to join a
+ * server with, CONNECT and BACK, then a status line that tells how the attempt
+ * stands.
  *
  * Building it drops any earlier attempt, so it always starts from no attempt,
  * and its fields start with the values of the last attempt the player started,
@@ -30,9 +32,9 @@ namespace rtype::client {
  * status line, and the attempt in progress is dropped without a new one.
  * Otherwise a new attempt replaces it. At each update the status line shows the
  * status of the connection; once the server has accepted the player for
- * ACCEPTED_STATUS_DURATION, the screen opens the waiting room over itself,
- * once per attempt. BACK, or MENU_CANCEL_KEY, drops the attempt and closes
- * the screen.
+ * ACCEPTED_STATUS_DURATION, the screen follows its ConnectionGoal, once per
+ * attempt: it opens the waiting room over itself, or closes. BACK, or
+ * MENU_CANCEL_KEY, drops the attempt and closes the screen.
  */
 class ConnectionScreen : public IScreen {
  public:
@@ -63,8 +65,8 @@ class ConnectionScreen : public IScreen {
   /** @brief Drops the attempt, then asks for the screen to be closed. */
   void leave();
 
-  /** @brief Opens the waiting room once the server has accepted the player
-   * for ACCEPTED_STATUS_DURATION. */
+  /** @brief Follows the goal once the server has accepted the player for
+   * ACCEPTED_STATUS_DURATION. */
   void followConnection(const ConnectionStatus& status,
                         engine::Duration elapsed);
 
@@ -74,18 +76,18 @@ class ConnectionScreen : public IScreen {
   [[nodiscard]] std::string statusLine(const ConnectionStatus& status) const;
 
   /** @brief Paints the menu, its status line telling how the attempt stands,
-   * read once per update so the line and the opening of the waiting room
-   * agree. */
+   * read once per update so the line and what the goal asks agree. */
   void repaint(const ConnectionStatus& status);
 
   IScreenNavigator* navigator_{};
   IServerConnection* connection_{};
   ServerChoice* choice_{};
+  ConnectionGoal goal_;
   std::unique_ptr<IInterfaceCanvas> canvas_;
   PlayfieldMapping playfieldPointAt_;
   std::string_view fieldProblem_;
   engine::Duration acceptedFor_{};
-  bool lobbyAsked_ = false;
+  bool goalReached_ = false;
   Menu menu_;
 };
 

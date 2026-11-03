@@ -41,19 +41,21 @@ To change something precise, [Where to intervene](#where-to-intervene) lists eac
 
 ## What exists today
 
-Today it finds its assets folder, loads the assets of its interface, opens a window and runs its screens over a scrolling starfield: an intro of 5.5 s set to the beats of its theme, which it opens on, the title screen, a connection screen, a waiting room, a loading screen, the game screen, which draws the entities the server announces from one sprite sheet, animated, and their effects from another, on a ladder of intensity from a shot to a ship destroyed, and opens each game with MISSION START, an end screen, an options screen and a quit confirmation, the menus all built from the same widgets. The game screen reads the player's actions through the keys the player chose, the arrows and the space bar at first; the options change them, with the volumes, the display mode, the window size and the accessibility settings, and save them in a file for the next launch. It reads the server's address and port and the player's nickname at launch, shows them on its connection screen, and joins the server from there: it sends the connection request of the protocol, on a network thread opened at launch, until the server accepts or refuses it. Once accepted, it opens a waiting room that lists the players of the server and where the player says it is ready, then the game when the server announces its start, where the ships and Bydos appear, move and disappear as the server says, over a status band that shows the nickname, the lives and the score of each pilot. When the server ends the game, the end screen opens a second later: a flight log that ranks every pilot, then PRESS ENTER TO REPLAY, back to the waiting room, or QUIT, back to the title. During a game, a line in the top-left corner tells when a teammate leaves or loses its signal, and WAITING FOR THE SERVER shows after a second without news of the server. When the session ends, the server silent for 20 s or shut down, the title replaces every screen with a dialog over it that says so, and its RETRY opens the connection screen again with the same address, port and nickname. From launch it plays its theme in a loop, the sounds of the intro and of what the server announces, and a click on the buttons and tabs of its menus.
+Today it finds its assets folder, loads the assets of its interface, opens a window and runs its screens over a scrolling starfield: an intro of 5.5 s set to the beats of its theme, which it opens on, the title screen, a connection screen, a waiting room, a loading screen, the game screen, which draws the entities the server announces from one sprite sheet, animated, and their effects from another, on a ladder of intensity from a shot to a ship destroyed, and opens each game with MISSION START, an end screen, an options screen, the leaderboard of a server and a quit confirmation, the menus all built from the same widgets. The game screen reads the player's actions through the keys the player chose, the arrows and the space bar at first; the options change them, with the volumes, the display mode, the window size and the accessibility settings, and save them in a file for the next launch. It reads the server's address and port and the player's nickname at launch, shows them on its connection screen, and joins the server from there: it sends the connection request of the protocol, on a network thread opened at launch, until the server accepts or refuses it. Once accepted, it opens a waiting room that lists the players of the server and where the player says it is ready, then the game when the server announces its start, where the ships and Bydos appear, move and disappear as the server says, over a status band that shows the nickname, the lives and the score of each pilot. When the server ends the game, the end screen opens a second later: a flight log that ranks every pilot, then PRESS ENTER TO REPLAY, back to the waiting room, or QUIT, back to the title. During a game, a line in the top-left corner tells when a teammate leaves or loses its signal, and WAITING FOR THE SERVER shows after a second without news of the server. When the session ends, the server silent for 20 s or shut down, the title replaces every screen with a dialog over it that says so, and its RETRY opens the connection screen again with the same address, port and nickname. From launch it plays its theme in a loop, the sounds of the intro and of what the server announces, and a click on the buttons and tabs of its menus.
 
 | Part | State | Where |
 |---|---|---|
 | Window | Available: windowed, or borderless over the whole screen | `src/client/Window/` |
 | Modules of the client and frame loop | Available: logger, assets, settings, window, connection, sound, screens, menus, lobby and game, over five stages | `src/client/Modules/` lists them; each has a folder of its own (see [Modules and frame loop](#modules-and-frame-loop-clientmodules-frameloop)) |
 | Screen stack | Available | `src/client/Application/` |
-| Screens | Available: intro, title, connection, waiting room, loading, game, end, options, and the dialogs of the quit confirmation and of a lost connection | `src/client/Screens/`, `src/client/Menus/`, `src/client/Lobby/`, `src/client/Game/` |
+| Screens | Available: intro, title, connection, waiting room, loading, game, end, options, leaderboard, and the dialogs of the quit confirmation and of a lost connection | `src/client/Screens/`, `src/client/Menus/`, `src/client/Lobby/`, `src/client/Game/` |
 | Lost connection: a dialog over the title | Available: shown once a session is lost or closed | `src/client/Menus/Title/`, `src/client/Screens/`, `src/client/Connection/Handshake/` |
 | End screen: the flight log of a game, its scores and its choices | Available: it replaces the game a second after the server ends it | `src/client/Game/`, `src/client/Widgets/FlightLog/`, `assets/sprites/flight_log.png` |
-| Menu widgets and their builder | Available; used by the title, the connection screen, the waiting room, the options and the dialogs | `src/client/Widgets/` |
+| Menu widgets and their builder | Available; used by the title, the connection screen, the waiting room, the options, the leaderboard and the dialogs | `src/client/Widgets/` |
 | Text field | Available; used by the connection screen | `src/client/Widgets/TextField/` |
 | Help of the waiting room: Professor Bydo explains the room, then a moment of a game | Available; opened from the waiting room only, by its HELP chip or `HELP_KEY` (H) | `src/client/Widgets/HelpWalkthrough/`, `assets/sprites/professor.png` |
+| Leaderboard: the best scores of a server, the row of the player and a filter | Available; opened from the title and the waiting room; its GLOBAL tab has no source yet | `src/client/Menus/Leaderboard/`, `src/client/Connection/Leaderboard/`, `assets/sprites/leaderboard.png` |
+| List of items, and a button standing alone with its key | Available; used by the leaderboard and the waiting room | `src/client/Widgets/ItemList/`, `src/client/Widgets/KeyChip/` |
 | Controls of a row: slider, switch, selector, list, key slot, link | Available; used by the options | `src/client/Widgets/RowControls/` |
 | Assets folder and asset ids | Available | `src/client/Assets/`, `assets/README.md` |
 | Asset loading | Available; used at launch for the interface assets, and by the loading screen | `src/client/Assets/` |
@@ -126,10 +128,12 @@ Screens are asked for by identifier: `push()` and `replaceAll()` take a `ScreenI
 | Screen | Shows | Leaves the stack when |
 |---|---|---|
 | `IntroScreen` | the intro, a second of black then 5.5 s of trailer over the scrolling background (see [Launch intro](#launch-intro-introscreen)) | after ten beats of the theme, or on a press from its ninth beat on, it asks `replaceAll(TITLE_AFTER_INTRO_SCREEN)`, the title with its squadron in place; a press during the black second asks `replaceAll(TITLE_SCREEN)` |
-| `TitleScreen` | the logo, PLAY, SETTINGS and QUIT, and the squadron, over the scrolling background; PLAY pushes the connection screen over it | the waiting room asks `replaceAll(GAME_SCREEN)` |
+| `TitleScreen` | the logo, PLAY, RANKING, SETTINGS and QUIT, and the squadron, over the scrolling background; PLAY pushes the connection screen over it, RANKING the leaderboard | the waiting room asks `replaceAll(GAME_SCREEN)` |
 | `ConnectionScreen` | over the title, which it hides: a form centered on the picture, DIRECT CONNECT, the fields ADDRESS, PORT and PILOT, CONNECT and BACK, then a status line | BACK or Escape drops the attempt and closes it; once the server has accepted the player for `ACCEPTED_STATUS_DURATION` (1 s), it pushes the waiting room over it (`LOBBY_SCREEN`), and leaves with it when the game starts |
-| `LobbyScreen` | over the connection screen, which it hides: WAITING ROOM, the number of pilots, a bay per player number, READY and the status line, HELP and BACK in the corner (see [Waiting room](#waiting-room-lobbyscreen)) | BACK or Escape leaves the server and closes it; HELP or H opens its help over it; once the connection learns that the game started, it asks `replaceAll(GAME_SCREEN)` |
+| `LobbyScreen` | over the connection screen, which it hides: WAITING ROOM, the number of pilots, a bay per player number, READY and the status line, RANKING, HELP and BACK in the corner (see [Waiting room](#waiting-room-lobbyscreen)) | BACK or Escape leaves the server and closes it; RANKING or L pushes the leaderboard over it; HELP or H opens its help over it; once the connection learns that the game started, it asks `replaceAll(GAME_SCREEN)` |
 | `LobbyScreen` after a game | alone, opened by PLAY AGAIN of the end screen (`LOBBY_AFTER_GAME_SCREEN`), the same room, the theme playing again | BACK or Escape leaves the server and asks `replaceAll(TITLE_SCREEN)`; the start of the next game asks `replaceAll(GAME_SCREEN)` |
+| `LeaderboardScreen` | over the title or the waiting room, which it hides and which go on behind it: RANKING, two banners and two guards, the tabs SERVER and GLOBAL, the best scores, FILTER and BACK (see [Leaderboard](#leaderboard-leaderboardscreen-ileaderboardsource)) | BACK or Escape closes it, and leaves a server joined from it; without a session, JOIN A SERVER or Enter opens the connection screen over it; over the waiting room, the start of a game removes it with the rest |
+| `ConnectionScreen` from the leaderboard | over the leaderboard, which it hides (`CONNECTION_FOR_LEADERBOARD_SCREEN`), the same form | BACK or Escape drops the attempt and closes it, back to the leaderboard; once the server has accepted the player for `ACCEPTED_STATUS_DURATION`, it closes the same way, and no waiting room opens |
 | `LoadingScreen` | a progress bar; one file is loaded per frame | every file is loaded: it asks again, with `replaceAll()`, for the screen it loads for, whose builder then finds the assets loaded and builds the screen itself |
 | `GameScreen` | the entities the server announces, animated, and their effects, over the scrolling background; releasing `OPTIONS_KEY` (Escape) releases what the player holds and pushes the options over it (`GAME_OPTIONS_SCREEN`) | once the server ends the game, it asks `replaceAll(END_SCREEN)` `END_SCREEN_DELAY` (1 s) later, so the last explosion plays |
 | `EndScreen` | the flight log of the game: the scores, the ranking, then PRESS ENTER TO REPLAY and QUIT (see [End screen](#end-screen-endscreen-paintflightlog)) | once the player chose: PLAY AGAIN asks `replaceAll(LOBBY_AFTER_GAME_SCREEN)`, QUIT leaves the server and asks `replaceAll(TITLE_SCREEN)` |
@@ -420,7 +424,7 @@ return MenuBuilder(MenuBuilder::Frame::Dialog, &sounds)
 | Frame | Layout |
 |---|---|
 | `Page` | a column against the left side of the safe margin (`SAFE_MARGIN`, 24 pixels): version, logo or heading, subtitle, a rule, the bars (`BUTTON_SIZE`, 160 × 20, `BUTTON_GAP` 8 apart; a text field is `FIELD_SIZE`, 208 × 26), then the description of the selected bar; an illustration against the right side of the margin, a footer in the bottom-right corner |
-| `Dialog` | a panel (`DIALOG_SIZE`, 272 × 96) centered over a dimmed layer (`DIM_LAYER_COLOR`, the sky at 72 % opacity): heading, message, then the bars in a centered row |
+| `Dialog` | a panel (`DIALOG_SIZE`, 272 × 96) centered over a dimmed layer (`DIM_LAYER_COLOR`, the sky at 72 % opacity): heading, a message or at most `DIALOG_ROW_CAPACITY` (2) rows (`DIALOG_ROW_SIZE`, 256 × 16, `DIALOG_ROWS_TOP` (28) down the panel), then the bars in a centered row, `DIALOG_BUTTONS_TOP_UNDER_ROWS` (66) down the panel under rows |
 | `Form` | a panel `FORM_WIDTH` (240) wide, as tall as its parts, centered over the sky: heading, the text fields one under the other (`FIELD_SIZE`, 208 × 26, `SPACE_BETWEEN_FIELDS` 4 apart), the bars in a centered row (`FORM_BUTTON_SIZE`, 80 × 20), then the description of the selected bar in small print and, `SPACE_BELOW_DESCRIPTION` (8) pixels under it, the status line; the pointer selects a bar only by clicking it |
 | `TabbedPanel` | the heading and its rule as on a page; under the rule the tabs (`TAB_STRIP_TOP_LEFT`, (24, 50)) between the keycaps of `PREVIOUS_TAB_KEY` and `NEXT_TAB_KEY`; a panel of rows (`ROWS_PANEL_SIZE`, 432 × 150, at (24, 66); rows of `ROW_SIZE`, 424 × 16, `ROW_GAP` 2 apart); the bars under the panel (`PANEL_BAR_SIZE`, 80 × 20, at y `PANEL_BARS_TOP`, 224) and the description of the selected row on their right; an illustration in the panel under the rows, a notice in the top-right corner, the status line at the end of the rule (`STAMP_STYLE`); left and right step the value of the selected row |
 | `Room` | the heading and a rule across the safe margin (`ROOM_RULE_SIZE`, 432 × 1); an illustration as wide from y `ROOM_ILLUSTRATION_TOP` (50); the bars in a centered row `SPACE_ABOVE_ROOM_BARS` (12) under it, then the status line centered `BUTTON_GAP` (8) under them; the cancel button as a chip in the bottom-right corner of the safe margin, `CHIP_HEIGHT` (16) tall and as wide as its label and the keycap of Escape (`ESC`); no description |
@@ -435,7 +439,7 @@ Positions are in pixels of the 480 × 270 grid of the sky, one pixel covering 4 
 - Enter, or the left mouse button on a bar, presses it; once released (over the same bar for the mouse), the bar is activated as soon as it has looked pressed for `PRESS_DURATION` (140 ms). A row is pressed only when its control can be activated: Enter on a slider does nothing.
 - Escape selects the cancel button and activates it at once.
 - A release counts only when the menu saw the press, so the release of the key that opened a screen does nothing on it; losing the focus drops a press not released yet.
-- On a row, a key other than Enter and Escape goes first to its control, and a left press over the control too; in a tabbed panel, Left and Right that the control does not use do nothing, since only Up and Down move between its rows (`Menu::Content::nextKeys` and `previousKeys`). While the control holds the input (a list open, a key awaited, a thumb dragged), every key, pointer and focus event goes to it alone, so Escape closes the list, not the menu. The tabs open on a click, or on the keys at the place of Q and E (`PREVIOUS_TAB_KEY`, `NEXT_TAB_KEY`), read by their place on the keyboard so they stay under the same fingers on AZERTY.
+- On a row, a key other than Enter and Escape goes first to its control, and a left press over the control too; in a tabbed panel or a dialog holding rows, Left and Right that the control does not use do nothing, since only Up and Down move between its rows (`Menu::Content::nextKeys` and `previousKeys`). While the control holds the input (a list open, a key awaited, a thumb dragged), every key, pointer and focus event goes to it alone, so Escape closes the list, not the menu. The tabs open on a click, or on the keys at the place of Q and E (`PREVIOUS_TAB_KEY`, `NEXT_TAB_KEY`), read by their place on the keyboard so they stay under the same fingers on AZERTY.
 - A menu built with a sound player (`MenuBuilder(frame, &sounds)`) plays `CLICK_SOUND_ID` when it activates a bar or asks for a tab; a row and a field are activated without it.
 - On a text field, the characters typed and Backspace (`FIELD_ERASE_KEY`) go to the field while no bar is pressed; every other key keeps its meaning, so Enter runs the action of the field. The left mouse button selects a field without pressing it, so a click on a field never runs its action.
 
@@ -488,6 +492,31 @@ builder.row({.label = MUSIC_LABEL},
 
 `client_row_control_tests` checks every control without a screen, and `client_widget_piece_tests` the pieces they are drawn with.
 
+### Lists: `ItemList`
+
+`ItemList` (`rtype_client_item_list`, `src/client/Widgets/ItemList/`) paints rows under one another, each a cell per column, from an `ItemListLayout`: where the first row lies, how wide a row is, the pixels between two rows, how many rows it shows at most, and its columns, each with an anchor, a font and a side of that anchor. Rows past the capacity and cells without a column are left out. A row may fill a color behind it (`ItemRow::highlight`), and a cell may add a word on ink after its text (`ItemCell::tag`), painted by `paintInkTag()` (`rtype_client_ink_tag`), like YOU in the flight log. `setPinnedRow()` shows a row under the others, past a dashed line; `setPinnedNote()` shows a line of small print there when there is no such row. It only paints: selection and scrolling do not exist yet. `client_widget_piece_tests` checks it.
+
+```cpp
+constexpr std::array COLUMNS{
+    ItemListColumn{.anchor = 24, .alignment = TextAlignment::Right},
+    ItemListColumn{.anchor = 28}};
+
+ItemList list(ItemListLayout{.topLeft = {92, 73},
+                             .width = 296,
+                             .rowPitch = 13,
+                             .rowCapacity = 10,
+                             .columns = COLUMNS});
+list.setRows({ItemRow{.cells = {ItemCell{.text = "1", .color = FIRE_GOLD},
+                                ItemCell{.text = "KIRA", .color = STAR_WHITE}}}});
+list.paint(canvas);
+```
+
+The columns must outlive the list: a constant array does.
+
+### A button alone: `KeyChip`
+
+`KeyChip` (`rtype_client_key_chip`, `src/client/Widgets/KeyChip/`) is a `Button` with its key, standing alone on a screen whose menu does not hold it: RANKING in the waiting room, BACK, FILTER and JOIN A SERVER on the leaderboard. It plays `CLICK_SOUND_ID` and runs its action when its key, or the left button over it, is released after its press, with the rules of a menu: the release of a key pressed on another screen does nothing, a key held down acts once, losing the focus drops a press, and a disabled chip runs nothing. `handleEvent()` returns whether the event was the chip's. `FocusLost` makes it forget the key, the button and the pointer, so a screen that stops giving it events gives it that one first: the leaderboard when its filter opens, the room when its help or the leaderboard opens. `client_interface_tests` checks it. HELP does not use it: `HelpWalkthrough` keeps its own chip.
+
 ### How a menu is drawn: `InterfaceCanvas`
 
 A menu paints through `IInterfaceCanvas` (`src/client/Rendering/Interface/`): rectangles, lines of text anchored by their left end, their right end or their middle (`TextAlignment`), and rectangles of a loaded texture, each pixel enlarged a whole number of times (`NATIVE_SCALE`, 1, for none) and cut to a visible area; a pixel of the texture the area cuts is left out whole, so nothing is painted outside it. `InterfaceCanvas` paints them on a `PixelCanvas` of its own, so menus have the square, sharp pixels of the sky. Text uses two pixel fonts under the SIL Open Font License, at the 8 pixels they are drawn for: Press Start 2P (`REGULAR_FONT_ID`) and Silkscreen (`SMALL_FONT_ID`, the small print). SFML leaves partly covered pixels on Silkscreen at that size, so text goes through a shader (`CrispTextShaderConstants.hpp`) that lights a pixel only when at least half of it is covered. Without shaders, text is drawn smoothed and the reason is logged once. A drawing whose curves must stay smooth, the plug of the status band, is laid with `drawSmoothImage()` instead: `InterfaceCanvas` lays it over the pixel picture when it shows it, stretched over its area at the resolution of the window from a smoothed copy of its texture with mipmaps, each pixel multiplied by a tint, so a white icon takes the tint. `textWidth()` gives the width of a line as `write()` places it, for text that must leave room to another, since Silkscreen is proportional. A screen owns its canvas behind the interface, so its tests give it a recording double.
@@ -512,6 +541,8 @@ READY, or the key of `BoundAction::Ready` (R at first) from anywhere on the scre
 
 HELP, a chip `BUTTON_GAP` (8) pixels left of BACK, or `HELP_KEY` (H) opens the help of the room (see [Help of the waiting room](#help-of-the-waiting-room-helpwalkthrough)). H is a fixed key, like Escape: a binding the player gives H loses to the help in the waiting room. The room reads the bindings (`LobbyScreenParts::keys`) and names a key with `LobbyScreenParts::keyName`, for READY and for the keycaps of its help.
 
+RANKING, a chip `BUTTON_GAP` (8) pixels left of HELP, or `LEADERBOARD_KEY` (L) pushes the leaderboard over the room (see [Leaderboard](#leaderboard-leaderboardscreen-ileaderboardsource)), and the player stays on the server. The key of READY goes first, so a binding the player gives L asks for READY and leaves RANKING to its click. Only the screen on top receives events, so the chip first gives the room `sf::Event::FocusLost`: without it, a key held at that moment would stay held in the room, its release going to the leaderboard.
+
 The server sends the room each time it changes, and at least every 500 ms, then `GameStarted` in the tick every connected player is ready (see [Server](/R-Type/server/#waiting-room-lobbystateannouncer)), so the screens of all the players leave the room together.
 
 ### Help of the waiting room: `HelpWalkthrough`
@@ -522,16 +553,63 @@ A step dims the picture with `DIM_LAYER_COLOR` but for the part it explains, fra
 
 The room tells the help where it paints each part (`LobbyPartAreas`): the bays from its menu, READY and the status line with the arithmetic of `MenuBuilder::placeRoom`, since `Menu` gives the area of no bar.
 
+## Leaderboard: `LeaderboardScreen`, `ILeaderboardSource`
+
+`LeaderboardScreen` (`src/client/Menus/Leaderboard/`) shows the best scores of a server. The menus module adds it to the registry as `LEADERBOARD_SCREEN`, and RANKING pushes it from the title and from the waiting room. It hides the screen below, which goes on running: in the waiting room, the start of a game still asks `replaceAll(GAME_SCREEN)`, which removes the leaderboard with the rest, and leaving the leaderboard does not leave the server.
+
+Under RANKING and the tabs SERVER and GLOBAL, an `ItemList` shows at most 10 rows (`LEADERBOARD_LIST`): rank, pilot, score and the date of the game in UTC, such as `18 OCT 26`, the first three ranks in gold, white and bronze. The row of the player turns yellow on blue with `YOU`, in its place among the rows or pinned under them; a player without a score reads a note there. A date before 1970 or after 2099, which only a broken server sends, reads `-- --- --`. The pure functions of `LeaderboardPresentation` turn a page into these rows.
+
+The screen holds no menu, since each action has its key or its chip. `TabStrip::setWidth()` narrows the tabs to the panel (`LEADERBOARD_TABS_WIDTH`, 320 pixels).
+
+| Key | Chip or tab | Does |
+|---|---|---|
+| Escape (`MENU_CANCEL_KEY`) | BACK | closes the screen |
+| F (`FILTER_KEY`) | FILTER | opens the filter, unless the tab has nothing to ask |
+| Q and E (`PREVIOUS_TAB_KEY`, `NEXT_TAB_KEY`), by their place on the keyboard | a click on a tab | changes tab and asks its source, once however long the key is held |
+| Enter (`MENU_CONFIRM_KEY`) | JOIN A SERVER | without a session only: opens the connection screen over the screen |
+
+Reaching a server from the title keeps the player on this screen: JOIN A SERVER leaves it under the connection screen, which closes once the server has accepted the player, and the screen then shows the scores of that server. BACK then also ends the session, since nothing on the title holds it. Until then the player holds a place on the server, listed and not ready, so `GameStarted` waits for them as for anyone in the waiting room.
+
+| Phase of the page (`LeaderboardPhase`) | The panel shows |
+|---|---|
+| `Asking` | ASKING THE SERVER, a dot more every `ASKING_DOT_TIME` (300 ms) |
+| `Answered` | the rows; without any, NO SCORE IN THIS MODE YET |
+| `NoAnswer` | NO ANSWER FROM THE SERVER, APPLY A FILTER TO ASK AGAIN |
+| `NotOnServer` | NOT ON A SERVER and the bar JOIN A SERVER; FILTER is disabled |
+| `OutOfReach` | THE MASTER IS OUT OF REACH, on a tab without a source; FILTER is disabled |
+
+### Reading the rows: `ILeaderboardSource`, `ServerLeaderboard`
+
+The screen reads each tab through `ILeaderboardSource` (`src/client/Connection/Leaderboard/`). `ask()` returns at once, so a frame never waits; `page()` holds what is known so far, with a `revision` that changes whenever anything else in it changes, so the screen rebuilds its rows only then. `RecordingLeaderboardSource` (`tests/doubles/`) stands in for it in the tests. The GLOBAL tab has no source yet (`LeaderboardTab::source` is null): a source for the master only has to implement this interface and be set on its tab, in `buildLeaderboardScreen()` (`src/client/Menus/`).
+
+`ServerLeaderboard` (`rtype_client_connection_leaderboard`, `src/client/Connection/Leaderboard/`) is the source of a server. The connection module owns it, and it follows the session like the waiting room (see [Protocol](/R-Type/protocol/#leaderboard)):
+
+- `ask()` sends a `LeaderboardRequest` at once, then again every `LEADERBOARD_ASK_INTERVAL` (500 ms) while no answer came, and gives up after `LEADERBOARD_GIVE_UP_TIME` (5 s): 10 datagrams at most. Without a session it sends nothing, says `NotOnServer`, and keeps the request: it goes out as soon as a session opens, unless `stopAsking()` came first.
+- Only the first `LeaderboardAnswer` whose `asked` equals the request counts, so a late answer to an older filter and a copy of the answer change nothing. An answer that arrives after giving up still shows.
+- The server ignores a request less than 500 ms after its last answer to that player, so the answer to a filter changed at once comes with the next request, at most 500 ms later.
+- `stopAsking()` ends the requests; the screen calls it when it leaves, and for the tab it leaves.
+
+### The filter: `LeaderboardFilterDialog`
+
+FILTER opens `LeaderboardFilterDialog` (`src/client/Menus/Leaderboard/`), a dialog holding the rows DIFFICULTY (EASY, NORMAL, HARD) and PILOTS (1 to 4), which takes every event until it closes. Its rows change a copy of the choice: APPLY asks the source for it, BACK and Escape change nothing. There is no ALL, since two difficulties never mix. The screen opens on NORMAL (`DEFAULT_DIFFICULTY_CHOICE`) and on as many pilots as the waiting room lists, one on the title and four at most (`openingChoiceOf()`). Every game plays `DEFAULT_DIFFICULTY` (normal) today, so EASY and HARD read NO SCORE IN THIS MODE YET.
+
+### Banners and guards: `LEADERBOARD_FIGURES`
+
+Two banners and two guards stand around the panel, rectangles of one sheet, `assets/sprites/leaderboard.png`, loaded with the title (`titleAssets()`) since the screen opens without a loading screen. A banner shows 32 frames of `FLAG_FRAME_TIME` (50 ms), the last leading to the first without a jump. The figures are out of step, and stay on their first frame when the system asks for less motion. Each is one `drawImage` per repaint, and nothing computes its pixels.
+
+The screen repaints on an event, on a new page and every `LEADERBOARD_REPAINT_TIME` (50 ms), not each frame; it rebuilds its rows only for a new page. Measured on one Mac (Apple M3 Pro) in a Release build, the four figures take 0.008 ms of the processor per repaint, 0.05 % of a frame at 60 Hz, and the time of a picture with the graphics card included does not tell them apart from an empty one. A whole repaint with 11 rows takes 0.50 ms, so 0.17 ms per frame on average. Over the waiting room, the room goes on repainting behind it, 0.43 ms each frame.
+
 ## Joining a server: `ServerSession`, `WaitingRoom`, `EntityMessageQueue`
 
-Three classes share the connection of the protocol (see [Protocol](/R-Type/protocol/#connection)): the session in `src/client/Connection/` and the waiting room in `src/client/Connection/WaitingRoom/`, the queue of the entity messages in `src/client/Replication/EntityMessages/`, which the game reads:
+Four classes share the connection of the protocol (see [Protocol](/R-Type/protocol/#connection)): the session in `src/client/Connection/`, the waiting room in `src/client/Connection/WaitingRoom/`, the leaderboard of the server in `src/client/Connection/Leaderboard/`, and the queue of the entity messages in `src/client/Replication/EntityMessages/`, which the game reads:
 
 - `ServerSession` (`rtype_client_connection_module`) implements `IServerConnection` and `IPlayerInputLink`: the attempt, the session, the inputs and the departure. It builds on `ConnectionAttempt` (the request and its delays) and `HandshakeAnswers` (what each answer of the server to the attempt does), in `Connection/Handshake/`, and on `SessionOutbox` (the token and the sequences of every datagram sent, and the heartbeat), `SessionInbound` (the checks on what the server sent, and the silence) and `SessionDeparture` (the copies of the `Disconnection`), in `Connection/Session/`.
 - `WaitingRoom` (`rtype_client_waiting_room`) implements `IWaitingRoom`: the players, the ready state and the start of the game.
 - `EntityMessageQueue` (`rtype_client_entity_messages`) implements `IEntityMessageSource`: the entity messages of the game.
+- `ServerLeaderboard` (`rtype_client_connection_leaderboard`) implements `ILeaderboardSource`: the best scores of the server (see [Leaderboard](#leaderboard-leaderboardscreen-ileaderboardsource)).
 - `GameLoadedReminder` (`rtype_client_waiting_room`) sends the `GameLoaded` that goes before the inputs until the first `WorldState` of the game; the waiting room starts it and the queue ends it.
 
-The waiting room and the queue follow the session through `ISessionObserver` (it opens, it closes, a frame of it goes by), and register the handlers of their messages on the `MessageDispatcher` the session dispatches to. The connection module (`src/client/Connection/`) owns the three and calls `EntityMessageQueue::advance(elapsed)`, then `ServerSession::update(elapsed)`, once per frame, in the `network` stage, before the screens: it reads what arrived and sends what is due, so the frame loop never waits on the server.
+The waiting room, the queue and the leaderboard follow the session through `ISessionObserver` (it opens, it closes, a frame of it goes by), and register the handlers of their messages on the `MessageDispatcher` the session dispatches to. The connection module (`src/client/Connection/`) owns the four and calls `EntityMessageQueue::advance(elapsed)`, then `ServerSession::update(elapsed)`, once per frame, in the `network` stage, before the screens: it reads what arrived and sends what is due, so the frame loop never waits on the server.
 
 - `connect()` sends a `ConnectionRequest` without a cookie at once, and drops the answers left from an earlier attempt. While nothing answers, the request goes out again every `CONNECTION_REQUEST_INTERVAL` (500 ms).
 - A `ConnectionChallenge` is answered at once with the request carrying its cookie; every later request carries it too.
@@ -875,6 +953,10 @@ The dialog is a `DialogScreen` (`src/client/Screens/Common/`), which shows any m
 | You want to… | Look at |
 |---|---|
 | Change the flame, the flight lines, the roll or the afterimages of a ship | `ShipFlightConstants.hpp` and `ShipFlightSystem` in `src/client/Rendering/SpriteLook/`; the `FLAME_` and `FLIGHT_LINE_` constants in `src/client/Rendering/Effects/Ground/GroundEffectConstants.hpp` |
+| Change the columns, the rows or the colors of the leaderboard | `LEADERBOARD_COLUMNS` and `LEADERBOARD_LIST` in `src/client/Menus/Leaderboard/LeaderboardScreenConstants.hpp`, and `LeaderboardPresentation` |
+| Give a tab of the leaderboard a source, such as the master | A class that implements `ILeaderboardSource`, set on its tab in `buildLeaderboardScreen()` in `src/client/Menus/ClientMenusModule.cpp` |
+| Change the banners and the guards of the leaderboard | `assets/sprites/leaderboard.png`, `src/client/Rendering/Interface/LeaderboardSpriteConstants.hpp`, and `LEADERBOARD_FIGURES` |
+| Change how often the client asks a server for a leaderboard | `LEADERBOARD_ASK_INTERVAL` and `LEADERBOARD_GIVE_UP_TIME` in `src/client/Connection/Session/ConnectionConstants.hpp`, and [Protocol](/R-Type/protocol/#leaderboard) |
 | Change the steps of the help of the waiting room, their sentences or their parts | `HELP_STEPS` in `src/client/Widgets/HelpWalkthroughConstants.hpp`; where the room paints its parts, `partAreasOf` in `src/client/Lobby/LobbyScreen.cpp` |
 | Change which world states the client ignores | `WorldStateFilter::accept` in `src/client/Replication/Entities/` |
 | Change how the client applies the entities the server announces, or the effects they play | `EntityReplicator` in `src/client/Replication/Entities/` |

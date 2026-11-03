@@ -232,9 +232,9 @@ Reading the header and splitting the messages are two calls because a receiver c
 
 ## Messages: `src/network/Protocol/Messages/`
 
-Each message of the protocol page is a struct of the same name (`ConnectionRequest`, `ReadyState`, `PlayerInput`…), plain data that holds its `MessageType` in `TYPE`. Next to it, `encodePayload(writer, message)` writes its payload, and `decodeMessage<Message>(payload)` reads one. The fifteen messages other than `WorldState` live in `Messages/`, one folder and one library each (`Messages/LobbyState/`, target `rtype_network_lobby_state`), gathered by `rtype_network_messages`; `WorldState` keeps its codec (below), and `decodeMessage<WorldState>` reads one of its payloads.
+Each message of the protocol page is a struct of the same name (`ConnectionRequest`, `ReadyState`, `PlayerInput`…), plain data that holds its `MessageType` in `TYPE`. Next to it, `encodePayload(writer, message)` writes its payload, and `decodeMessage<Message>(payload)` reads one. The eighteen messages other than `WorldState` live in `Messages/`, one folder and one library each (`Messages/LobbyState/`, target `rtype_network_lobby_state`), gathered by `rtype_network_messages`; `WorldState` keeps its codec (below), and `decodeMessage<WorldState>` reads one of its payloads.
 
-- Every value of these fifteen messages is checked as the protocol page lists it: a `bool` is 0 or 1, an enumeration holds a listed value, a player number is 1 to 4 and appears once in a list, a nickname is 1 to 16 bytes of UTF-8 without a control character, no action bit above the five actions is set, no entity id is 0, and the player or the entity a `GameEvent` names matches its kind. A count is checked before anything is sized from it, and a byte left after the last field refuses the message.
+- Every value of these eighteen messages is checked as the protocol page lists it: a `bool` is 0 or 1, an enumeration holds a listed value, a player number is 1 to 4 and appears once in a list, a nickname is 1 to 16 bytes of UTF-8 without a control character, no action bit above the five actions is set, no entity id is 0, and the player or the entity a `GameEvent` names matches its kind. A count is checked before anything is sized from it, and a byte left after the last field refuses the message.
 - Writing runs the same checks before the first byte, so a refused message leaves the writer untouched, and whatever was read can be written back: a nickname accepted from a `ConnectionRequest` never makes a `LobbyState` throw.
 - Reading a refused message throws an exception derived from `MalformedMessageException`, or `BufferUnderflowException` for a payload cut short. Writing one throws the same exceptions, except for a coordinate that is NaN, which throws `InvalidCoordinateException`; `WorldStateSender` leaves such an entity out before encoding (see [Server](/R-Type/server/#world-state-worldstatesender)).
 
@@ -315,7 +315,7 @@ For `FLOOD_DURATION` (60 s) it sends `FLOOD_DATAGRAMS_PER_SECOND` (1000) datagra
 | Truncated | a valid message, cut before its last byte | splitting the messages |
 | Too long | a valid message followed by random bytes, counted in its size | the reader of its type |
 | Oversized | 1201 to 2400 random bytes | the socket |
-| Unknown type | a message of type 17 to 255, holding up to 64 random bytes | no reader: skipped |
+| Unknown type | a message of type 20 to 255, holding up to 64 random bytes | no reader: skipped |
 | Lying size | a valid message whose size announces more bytes than follow it | splitting the messages |
 | Extreme value | a valid message whose bounded one-byte field (a bool, a player number, a reason, a count of players) holds 255 | the reader of its type |
 | Random bytes | up to 1200 random bytes | almost always the header |

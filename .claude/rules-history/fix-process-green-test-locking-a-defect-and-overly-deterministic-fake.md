@@ -47,3 +47,7 @@ See the core file, subsection "One input per test when the faulty code reaches t
 
 - ❌ `tap(Key::A, Scan::Q); tap(Key::Q, Scan::A); EXPECT_EQ(opened(), std::vector{LAST_TAB});`.
 - ✅ Two tests: `tap(Key::A, Scan::Q)` asks for the last tab; `tap(Key::Q, Scan::A)` asks for none. The variant turns both red.
+
+## Update (3 November 2026) — A timer walked in one step, and a color two states share
+
+The tests of `ServerLeaderboard` jumped five seconds in one `update()`: removing either timer reset of the class left them green, while the client would have sent a request each frame. `ThePointerOverItLooksSelected` looked for `SELECTED_BAR_INSIDE_COLOR`, which is `EDGE_BLUE`, the border of a chip at rest too, so it could not fail; writing the opposite test, with the focus lost, showed it.
