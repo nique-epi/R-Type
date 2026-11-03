@@ -1,17 +1,20 @@
-add_library(rtype_server_sessions INTERFACE)
+add_subdirectory(Roster)
+add_subdirectory(Tracking)
 
-target_include_directories(rtype_server_sessions INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
+add_library(rtype_server_sessions STATIC GameSessions.cpp)
 
-target_link_libraries(rtype_server_sessions INTERFACE rtype_engine_event_bus rtype_network_transport rtype_identifiers rtype_network_player_input rtype_network_protocol rtype_engine_time rtype_game_components rtype_server_arrival_ledger)
+target_include_directories(rtype_server_sessions PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
-add_subdirectory(ArrivalLedger)
-add_subdirectory(ConnectedPlayers)
-add_subdirectory(PlayerRoster)
-add_subdirectory(SessionDatagram)
-add_subdirectory(DatagramReader)
-add_subdirectory(ReadyKeeper)
-add_subdirectory(InputKeeper)
-add_subdirectory(DelayedInputs)
-add_subdirectory(Departures)
-add_subdirectory(Heartbeats)
-add_subdirectory(GameSessions)
+target_link_libraries(rtype_server_sessions
+  PUBLIC
+    rtype_engine_event_bus
+    rtype_network_message_dispatcher
+    rtype_network_transport
+    rtype_server_sessions_roster
+    rtype_server_sessions_tracking
+  PRIVATE
+    rtype_network_disconnection
+    rtype_network_heartbeat
+)
+
+rtype_enable_warnings(rtype_server_sessions)

@@ -138,23 +138,26 @@ src/network/
 
 ```
 src/server/
-├── Application/      starts and stops the threads
-├── Modules/          the list of modules and, for now, their classes
+├── Modules/          the list of modules, nothing else
+├── Logger/           the logger module
+├── Network/          the network module: the socket, the network thread and the simulation thread
+├── Games/            the games module: the games, where a new player goes, the modules of each game
+├── Lobby/            the lobby module: players not in a game; list, create, join, chat
+├── Metrics/          the metrics module: Measures/, tick time, counts of games, players and entities; Report/, the report and its lines; traffic and the heartbeat to come
+├── Instances/        one GameInstance per game, what a game hosts whatever its rules; Context/, what it shares with its modules, split into Interfaces/ and Setup/
+├── Rules/            the rtype rules module: Match/, the states, the tick and the world of a match; Players/, the lives, score and ship of each player
+├── Replication/      the replication module: Announcements/, what the players are told, once (Milestones/) or all through a match (Streams/); Wire/, how it is written
+├── Sessions/         the players of a game and their sessions (still carries a player's ship, score and lives): Roster/, what the server knows of each one; Tracking/, what it follows of each session
+├── Spawning/         when and where the enemies and missiles appear
 ├── Exceptions/       the root exception of the server, errors of the waves file
 ├── Platform/         what differs between Windows, macOS and Linux, and the stop signals
 ├── LaunchOptions/    port, name, limits, master address
-├── Lobby/            players not in a game: list, create, join, chat
-├── Instances/        one GameInstance per game, the context its modules work in; the rules of the match are the RtypeRulesModule, with its GameFlow
-├── Sessions/         the players of a game and their sessions (still carries a player's ship, score and lives)
-├── Replication/      world to snapshots and game events
-├── Spawning/         when and where the enemies and missiles appear
 ├── MasterLink/       registration and heartbeat
 ├── AdminConsole/     kick and close a game from the terminal
-├── Metrics/          tick time, counts of games, players and entities; traffic and the heartbeat to come
 └── Storage/          this server's SQLite file: leaderboard, statistics
 ```
 
-`Application`, `Metrics` (the durations of the ticks, the newest report and its lines in the journal), `Modules` (the logger, network, games, lobby and metrics modules, the list that assembles them, and the farewell the games module sends when the server stops), `Replication` (the world state sender, the waiting room announcer, the announcer of the end of a game, the announcement of the ship of each new player, and the encoder and broadcaster of the game events), `Platform`, `LaunchOptions`, `Lobby` (the answers to connection requests only), `Spawning` (the Bydo spawner, the reader of the waves file and the weapon system), `Exceptions`, `Sessions` (the roster of the players of a game, the session header of every datagram to a player, and the classes that read their datagrams, keep their ready state and newest input, close their sessions and send their heartbeats; no other folder of `src/server` is linked by it) and `Instances` (one `GameInstance` for now, run on the simulation thread like the rest, which installs the modules of a game: the `RtypeRulesModule` holds its states, its tick and its rules with `GameFlow`, runs the systems of the world, and keeps the score and the lives of its players, and the replication module in `Replication` tells the players) exist today: the network thread and the simulation thread, the waiting room, the start of the game, the world state, the game events and the end of a game sent to the players (see [Server](/R-Type/server/)), the timer resolution the server asks Windows for, the port and seed read at launch, the players let in, the Bydos appearing and moving, the missiles the players fire, a game with its states, its ready rule and the newest input of each player, which moves its ship, and the metrics of the server in its journal.
+`Modules` (the list that assembles the modules), `Logger`, `Network` (the network module, which starts and stops the threads), `Games` (the games module, the rule that places a new player, the modules of each game, and the farewell it sends when the server stops), `Lobby` (the lobby module, which answers the connection requests only), `Metrics` (the metrics module: in `Measures/` the durations of the ticks and the census of the games, in `Report/` the newest report and its lines in the journal), `Instances` (one `GameInstance` per game, run on the simulation thread like the rest, which installs the modules of a game and holds the inputs of its players for the input delay, and in `Context/` what a game shares with its modules: the interfaces of the modules in `Interfaces/`, the context, settings and hooks a game gives them in `Setup/`), `Rules` (the `RtypeRulesModule`, which holds the states of a game, its tick and its rules with `GameFlow`, runs the systems of the world, and keeps the score and the lives of its players), `Replication` (the replication module, which tells the players: in `Announcements/Milestones/` the waiting room announcer, the announcement of the ship of each new player and the announcer of the end of a game, in `Announcements/Streams/` the world state sender and the broadcaster of the game events, and in `Wire/` how they are written), `Sessions` (in `Tracking/` the classes that read the datagrams of the players of a game, keep their ready state and newest input, close their sessions and send their heartbeats, and in `Roster/` the roster of the players and the session header of every datagram to a player; no other folder of `src/server` is linked by it), `Spawning` (the Bydo spawner, the reader of the waves file and the weapon system), `Platform`, `LaunchOptions` and `Exceptions` exist today; the names of the modules sit in `ModuleConstants.hpp`, next to `ServerConstants.hpp` in `src/server/`. Together they hold the network thread and the simulation thread, the waiting room, the start of the game, the world state, the game events and the end of a game sent to the players (see [Server](/R-Type/server/)), the timer resolution the server asks Windows for, the port and seed read at launch, the players let in, the Bydos appearing and moving, the missiles the players fire, a game with its states, its ready rule and the newest input of each player, which moves its ship, and the metrics of the server in its journal.
 
 ### Client
 
@@ -226,7 +229,7 @@ Each folder splits its classes into a controller (HTTP in and out), a service (t
 
 A **module** is a feature you can switch on, switch off or replace: a folder with one class implementing `IModule` or `IGameModule` at its root, which owns everything the folder holds. A folder without that class is a **library**: code with no life cycle, such as `src/client/Widgets/` or `src/game/Waves/`. The [Modules](/R-Type/modules/#required-or-optional) page says what a required and an optional module may do, and gives the removal test.
 
-**No module passes the removal test yet.** The sound fails it: `screens` lists `audio` in its `dependencies()`, the screens, the widgets and the replication include headers of `src/client/Audio/`, and `AssetLibrary` links `SFML::Audio`. The metrics come closer: only the list includes them, but their code sits in two folders that three `CMakeLists.txt` name, and `BUILD_TESTS` is the only CMake option.
+**No module passes the removal test yet.** The sound fails it: `screens` lists `audio` in its `dependencies()`, the screens, the widgets and the replication include headers of `src/client/Audio/`, and `AssetLibrary` links `SFML::Audio`. The metrics come closer: only the list includes them and their code sits in one folder, but `src/server/CMakeLists.txt` adds that folder, `src/server/Modules/CMakeLists.txt` links its library, and `BUILD_TESTS` is the only CMake option.
 
 ### The list of modules
 
@@ -234,16 +237,16 @@ This list describes the code as it is today. A pull request that adds, removes o
 
 | Module of the server program | Class | Folder | Kind |
 |---|---|---|---|
-| `logger` | `ServerLoggerModule` | `src/server/Modules/Logger/` | required |
-| `network` | `ServerNetworkModule` | `src/server/Modules/Network/` | required |
-| `games` | `ServerGamesModule` | `src/server/Modules/Games/` | required |
-| `lobby` | `ServerLobbyModule` | `src/server/Modules/Lobby/` | required |
-| `metrics` | `ServerMetricsModule` | `src/server/Modules/Metrics/` | optional |
+| `logger` | `ServerLoggerModule` | `src/server/Logger/` | required |
+| `network` | `ServerNetworkModule` | `src/server/Network/` | required |
+| `games` | `ServerGamesModule` | `src/server/Games/` | required |
+| `lobby` | `ServerLobbyModule` | `src/server/Lobby/` | required |
+| `metrics` | `ServerMetricsModule` | `src/server/Metrics/` | optional |
 
 | Module of a game | Class | Folder | Kind |
 |---|---|---|---|
-| `replication` | `ReplicationModule` | `src/server/Instances/ReplicationModule/` | required |
-| `rtype rules` | `RtypeRulesModule` | `src/server/Instances/RtypeRulesModule/` | required |
+| `replication` | `ReplicationModule` | `src/server/Replication/` | required |
+| `rtype rules` | `RtypeRulesModule` | `src/server/Rules/` | required |
 
 | Module of the client | Class | Folder | Kind |
 |---|---|---|---|
@@ -258,7 +261,7 @@ This list describes the code as it is today. A pull request that adds, removes o
 | `lobby` | `ClientLobbyModule` | `src/client/Modules/Lobby/` | required |
 | `game` | `ClientGameModule` | `src/client/Modules/Game/` | required |
 
-These folders are where the classes sit today, and most of the code of a module is still elsewhere, in a folder of the feature (`src/client/Audio/`, `src/server/Metrics/`). This is tolerated until the client and the server are tidied: each class then joins the code it owns, and `Modules/` keeps only the list of the program.
+On the server, the class of each module sits in the folder of the code it owns, and `Modules/` keeps only the list. On the client, the classes still sit in `src/client/Modules/`, and most of the code of a module is elsewhere, in a folder of the feature (`src/client/Audio/`). This is tolerated until the client is tidied: each class then joins the code it owns, and `Modules/` keeps only the list of the program.
 
 ### The code of a module used elsewhere
 
@@ -266,7 +269,7 @@ When another folder needs code of a module, the first row that fits decides.
 
 | Order | The code… | Then |
 |---|---|---|
-| 1 | belongs to a required module | it stays there, and the code that needs it includes it: `Modules/Lobby/` and `Modules/Metrics/` include `Games.hpp`, `Widgets/` includes `PlayfieldMapping.hpp` |
+| 1 | belongs to a required module | it stays there, and the code that needs it includes it: `Lobby/` and `Metrics/` include `Games.hpp`, `Widgets/` includes `PlayfieldMapping.hpp` |
 | 2 | belongs to an optional module | it goes in the `Contract/` of that module: `ISoundPlayer`, still at the root of `Audio/` until the client is tidied |
 | 3 | has no owner and serves several folders | it goes in a library: `Widgets/`, `Rendering/` |
 
@@ -286,10 +289,10 @@ src/game/Waves/
 - A folder has one `CMakeLists.txt` and one CMake library. It holds the `.hpp` and `.cpp` of its classes, and of its free functions, side by side. A folder whose classes fall into categories of three classes or more has a sub-folder for each, with a CMake library of its own; a sub-folder also exists when a group of classes needs a dependency the rest must not link, or for the `Contract/` of an optional module. Never one per class, and never deeper than three levels: a sub-folder splits again only when it holds two categories of its own.
 - Interfaces (`IWaveSource`), plain structs and constants headers (`WaveConstants.hpp`) sit in the same folder as the classes.
 - Two classes of a folder never include each other, directly or through a third.
-- A folder written before this convention keeps a folder per class until it is flattened, in a commit of its own; a folder never holds both layouts. Tidying the client and the server flattens them all, except `Widgets/` and `Rendering/`.
+- A folder written before this convention keeps a folder per class until it is flattened, in a commit of its own; a folder never holds both layouts. The server is tidied; tidying the client flattens the rest, except `Widgets/` and `Rendering/`.
 - A class declares no type inside it: a struct it uses has a header of its own, in the same folder. A class declares at most ten member functions besides its constructors and its destructor.
 - A header of constants is named `<Concept>Constants.hpp` and holds constants only.
-- The CMake library of a folder is `rtype_<owner>_<folder_in_snake_case>`, ended by `_module` for a module, linked by the aggregate of its library (`rtype_game`) or by its program.
+- The CMake library of a folder is `rtype_<owner>_<folder_in_snake_case>`, ended by `_module` for a module, linked by the aggregate of its library (`rtype_game`) or by its program. The library of a category sub-folder adds its name to its parent's: `rtype_server_rules_match` for `src/server/Rules/Match/`.
 - The namespace is `rtype::<owner>`: `rtype::game` here.
 - An error is a subclass of the owner's root exception, in `<owner>/Exceptions/`: `GameException` here.
 
@@ -301,13 +304,13 @@ A new module is written directly in its own folder, `src/<program>/<Name>/`, cla
 
 | The module… | Listed in |
 |---|---|
-| belongs to the server and lives as long as the program | `serverModules()`, `src/server/Modules/Assembly/ServerModules.cpp` |
+| belongs to the server and lives as long as the program | `serverModules()`, `src/server/Modules/ServerModules.cpp` |
 | belongs to the client | `clientModules()`, `src/client/Modules/Assembly/ClientModules.cpp` |
-| is a rule or a service of one game, and each game has its own | `rtypeGameModules()`, `src/server/Modules/Games/RtypeGameModules.cpp` |
+| is a rule or a service of one game, and each game has its own | `rtypeGameModules()`, `src/server/Games/RtypeGameModules.cpp` |
 | would serve a program that is neither (the master) | its own list, built the same way |
 
 - The folder follows [Adding a class](#adding-a-class): one `CMakeLists.txt`, one CMake library `rtype_<owner>_<name>_module`, the class `<Owner><Name>Module` as a `.hpp` and `.cpp` pair (`ServerLobbyModule`; the class of a game module is `<Name>Module`, as `ReplicationModule` and `RtypeRulesModule` are).
-- `Modules/` receives nothing but its line in the list and the constant of its name, in `ModuleConstants.hpp` next to the other names, in `src/server/Modules/` or `src/client/Modules/`.
+- `Modules/` receives nothing but its line in the list, and `ModuleConstants.hpp` the constant of its name, next to the other names: in `src/server/` or `src/client/Modules/`.
 - Its pull request adds its row to [the list of modules](#the-list-of-modules), required or optional. An optional module puts what others need in its `Contract/`, and nothing else includes it.
 - A module of the program never goes in `src/engine`, unless every game would need it unchanged. `IModule` itself lives there; the modules of R-Type do not.
 
