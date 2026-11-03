@@ -14,10 +14,11 @@ This page tells you where to look when you need to change something. It describe
 | Fixed timestep and timers | Available | `src/engine/Time/` |
 | Network identifiers | Available | `src/engine/NetworkIds/` |
 | Systems and queries | Available | `src/engine/Systems/`, `ComponentRegistry::forEach` |
-| Game loop | Server only: ticks run at a fixed rate, and the tick of a game in progress runs the systems of its world | `src/server/Application/TickLoop/` |
+| Game loop | Server only: ticks run at a fixed rate, and the tick of a game in progress runs the systems of its world | `src/server/Network/` |
 | Event bus | Available | `src/engine/Events/` |
 | Collisions | Available: the overlap test and the event; the system that detects them is in the game | `src/engine/Collision/` |
 | Launch arguments | Available; used by the server and the client | `src/engine/LaunchArguments/` |
+| Commands and configuration | Available; the server and the client read `server.cfg` and `client.cfg` with it | `src/engine/Commands/` |
 | Modules and application | Available; the server and the client are built from modules | `src/engine/Modules/` |
 | Files next to the executable | Available; used by the server and the client | `src/engine/Paths/` |
 
@@ -150,7 +151,7 @@ for (std::size_t tick = 0; tick < ticks; ++tick) {
 }
 ```
 
-The server runs ticks at this rate on its simulation thread, in `TickLoop` (see [Server](/R-Type/server/#tick-loop-tickloop)), and each tick runs the stages of the server: in a game in progress, the tick of the game runs the systems of its world (see [Server](/R-Type/server/#modules-of-a-game-igamemodule)), then the timers advance and the events of the bus are delivered in the output stage. The client frame loop, `FrameLoop` (`src/client/Modules/Window/`), reads `SystemClock` and hands the real time of each frame to the scrolling background (see [Client](/R-Type/client/#scrolling-background-scrollingbackground)) and to the screens; it runs no tick. The game screen runs its systems, which play the animations, once per frame with that real time, not at a fixed step (see [Client](/R-Type/client/#animations-animation-animationsystem)).
+The server runs ticks at this rate on its simulation thread, in `TickLoop` (see [Server](/R-Type/server/#tick-loop-tickloop)), and each tick runs the stages of the server: in a game in progress, the tick of the game runs the systems of its world (see [Server](/R-Type/server/#modules-of-a-game-igamemodule)), then the timers advance and the events of the bus are delivered in the output stage. The client frame loop, `FrameLoop` (`src/client/Window/Loop/`), reads `SystemClock` and hands the real time of each frame to the scrolling background (see [Client](/R-Type/client/#scrolling-background-scrollingbackground)) and to the screens; it runs no tick. The game screen runs its systems, which play the animations, once per frame with that real time, not at a fixed step (see [Client](/R-Type/client/#animations-animation-animationsystem)).
 
 ## Event bus: `EventBus`
 
@@ -191,20 +192,27 @@ The engine has no system that walks the entities: it cannot read `Position` or `
 `src/engine/LaunchArguments/` (`rtype_engine_launch_arguments`) reads the options a program is given at launch. The server and the client both use it, each with its own options (see [Server](/R-Type/server/#launch-options-launchoptions) and [Client](/R-Type/client/#launch-options-launchoptions)).
 
 - A program describes each option as a `LaunchOption`: its `name`, whether it `takesValue`, and a `record` called with the value, or with an empty view for an option that takes none. A record may throw to refuse its value, as the programs do through `portFromText()`.
-- `readLaunchArguments(arguments, options)` reads the arguments in order. The argument after an option that takes a value is always that value, even when it looks like an option. An option given twice is recorded twice, so the last one wins. An argument that names no option throws `UnknownLaunchArgumentException`; an option that takes a value, given last, throws `MissingLaunchOptionValueException`.
+- `readLaunchArguments(arguments, options, readers)` reads the arguments once, from the first to the last. The argument after an option that takes a value is always that value, even when it looks like an option. An option given twice is recorded twice, so the last one wins. An argument that names no option is handed to `readers`, in their order, until one takes it; one that none takes throws `UnknownLaunchArgumentException`, and an option that takes a value, given last, throws `MissingLaunchOptionValueException`.
+- `processArguments(argumentCount, arguments)` returns the arguments of the running process without its name, as views into the strings of `argv`.
 - `usageHeader()`, `usageEntry()` and `launchErrorText()` write the usage and the launch error the same way for every program. `PORT_OPTION` (`-p`) and `HELP_OPTION` (`--help`) are the names the server and the client share.
 
-The logging options do not go through it: `rtype_logging` links nothing else of the repository, so `LogLaunchOptions` reads its own and leaves the other arguments to the program (see [Logging](/R-Type/logging/#choosing-the-level-and-the-output-at-launch)).
+The logging and the network simulator read their own options, since `rtype_logging` and `rtype_network` may not link the engine. Each lends the program a `LaunchOptionReader` (`LaunchOptionReader.hpp`): a function handed the arguments from the one reached to the last, which reads the first one when it is one of its options and returns how many arguments it took, 1, or 2 with its value, or 0 when it is none of them. The reading stays one pass, so no reader is ever handed the value of an option: `--seed --log-level debug 123` refuses `--log-level` as a seed instead of reading it as a logging option (see [Logging](/R-Type/logging/#choosing-the-level-and-the-output-at-launch) and [Network](/R-Type/network/#network-simulator-simulatednetworksocket)).
 
 ```cpp
 std::uint16_t port = rtype::network::DEFAULT_SERVER_PORT;
+rtype::logging::LogLaunchOptions logOptions{defaultJournal};
 const std::array options{rtype::engine::LaunchOption{
     .name = rtype::engine::PORT_OPTION,
     .takesValue = true,
     .record = [&port](std::string_view value) {
       port = rtype::network::portFromText(value);
     }}};
-rtype::engine::readLaunchArguments(logOptions.otherArguments(), options);
+const std::array readers{rtype::engine::LaunchOptionReader{
+    [&logOptions](std::span<const std::string_view> rest) {
+      return logOptions.readOption(rest);
+    }}};
+rtype::engine::readLaunchArguments(
+    rtype::engine::processArguments(argumentCount, arguments), options, readers);
 ```
 
 ## Files next to the executable: `locateAssetFolder`
@@ -219,10 +227,10 @@ The client loads its assets from that folder and the server reads its waves file
 
 ## Modules: `Application` and `IModule`
 
-`src/engine/Modules/` (`rtype_engine_modules`, `rtype_engine_application`) gives a program one place to plug each of its parts in. A part is a **module**: a class implementing `IModule`, with a `name()`, its `dependencies()` (the names of the modules it needs), and three steps. `install(InstallContext&)` prepares it and keeps nothing open when it returns: it may read a file and close it, but it never binds a socket, starts a thread or subscribes to an event. Through the context it adds its work to a loop stage and provides or looks up services (below). `start()` opens what must live until `stop()` (a socket, a thread, a file kept open, an event subscription) and throws a `std::exception` when it cannot; `stop()` closes it and must not throw.
+`src/engine/Modules/` (`rtype_engine_modules`, `rtype_engine_application`) gives a program one place to plug in each feature it can switch on, off or replace. Such a feature is a **module**: a folder around a class implementing `IModule`, with a `name()`, its `dependencies()` (the names of the modules it needs), and three steps. `install(InstallContext&)` prepares it and keeps nothing open when it returns: it may read a file and close it, but it never binds a socket, starts a thread or subscribes to an event. Through the context it adds its work to a loop stage and provides or looks up services (below). `start()` opens what must live until `stop()` (a socket, a thread, a file kept open, an event subscription) and throws a `std::exception` when it cannot; `stop()` closes it and must not throw.
 
 - `Application` takes the list of modules once, when it is built, and checks it before anything is installed. A null module throws `NullModuleException`. A module whose dependency is not listed **before** it throws `MissingDependencyException`, whose message names both modules. So a missing module stops the program before any socket, thread or file is opened.
-- `start()` installs every module in list order, then starts every module in list order. Only the first call does anything.
+- `start()` installs every module in list order, runs the configuration step (see [Commands and configuration](#commands-and-configuration-commandinterpreter)), then starts every module that is on, in list order. Only the first call does anything. A module the configuration turned off is installed and never started, so it is never stopped either.
 - `stop()` stops the started modules in the reverse order, so a module is stopped before its dependencies. Each module is stopped once, and the destructor of `Application` stops the modules still started. Before stopping any module it takes the lock that `runStages()` holds, so `stop()` waits for the pass of the loop in flight and no work of a stage runs after it: a loop on another thread and `stop()` are safe together. Call `stop()` from a thread that is not running a stage.
 - When a module throws from `start()`, the modules started before it are stopped in the reverse order, then `start()` throws `ModuleStartFailedException`, whose message names the module and gives the reason. The module that threw is not stopped, so its `start()` closes what it had already opened before it throws.
 
@@ -254,6 +262,30 @@ application.stop();
 
 The five moments of a module, the two scopes, how modules talk and how to turn one off are on the [Modules](/R-Type/modules/) page; the [tutorial](/R-Type/tutorial-write-a-module/) writes one from start to finish. The reasoning behind the order is in [Architecture](/R-Type/architecture/#modules).
 
+## Commands and configuration: `CommandInterpreter`
+
+`src/engine/Commands/` (`rtype_engine_commands`) runs a line of text as a named command. It has three folders, one per category, each with a library of its own: `Interpreter/` (`CommandInterpreter` and the cutting of a line into words), `Settings/` (the declared settings and the `set` command) and `Configuration/` (reading `server.cfg` and `client.cfg`, and logging what was read); `rtype_engine_commands` links the three. `Application` owns the `CommandInterpreter` and the `ConfigurationRegistry` and provides both as services, so a module registers its commands and declares its settings in `install()`.
+
+- `CommandInterpreter::add(definition, handler)` registers a command: its name, the shape of its arguments and one sentence of help. `execute(line)` splits the line into words (`splitCommandLine`: spaces separate words, quotes keep spaces in a word, `#` starts a comment, and inside quotes `\"` and `\\` stand for a quote and a backslash), runs the command and answers with a `CommandResult`. A bad line is never thrown: an unknown command or a handler that throws `CommandRefusedException` gives `accepted = false` and a message naming the command and the line. A blank line or a comment is accepted and runs nothing.
+- `ConfigurationRegistry` holds the settings and the `set <name> <value>` command. A module declares a whole number with bounds (`IntegerSettingDefinition`, which may allow `none`) or a text with a validator (`TextSettingDefinition`), and keeps the `SettingValue` it gets back. A `set` checks the value before it keeps it, so a refused line leaves the old value.
+- `module <name> on|off` is registered by `Application`. It refuses an unknown module, turning off a module that a module still on depends on, and turning on a module whose dependency is off.
+- `Application(stages, modules, configure)` runs `configure`, a `ConfigurationStep`, once every module is installed and before any is started. By then the commands and settings of every module exist. A module reads its settings in `start()`, never in `install()`: the configuration was not read yet.
+- `configurationStep(file, forcedLines, report)` builds the step of a program; it calls `readConfiguration(file, forcedLines, interpreter)`. A missing file is not an error: the report says it was not found and the defaults apply. A refused line goes in the report and the next line runs. The forced lines (`settingLine`, `settingLineFromAssignment`) run after the file, so a launch option wins. `logConfigurationReport()` writes the report in the journal at the `info` level, and each refusal at `warn`.
+
+```cpp
+// install()
+port_ = &context.require<engine::ConfigurationRegistry>().declareInteger(
+    engine::IntegerSettingDefinition{.name = "port",
+                                     .defaultValue = 4242,
+                                     .lowest = 1,
+                                     .highest = 65535,
+                                     .help = "UDP port to listen on"});
+// start(), once server.cfg was read
+const auto port = port_->integer().value_or(4242);
+```
+
+The same language is meant for the administration console and the orders of the master; they call `execute()` with the line.
+
 ## Where to intervene
 
 | You want to… | Look at |
@@ -271,7 +303,9 @@ The five moments of a module, the two scopes, how modules talk and how to turn o
 | Announce that something happened, or react to it | `EventBus` in `src/engine/Events/EventBus/`: `publish` the event, `subscribe<Event>` to it |
 | Hand data from one thread to another | `BoundedQueue`, in its own library: see [Concurrency](/R-Type/concurrency/) |
 | Change how the launch options are read, or how the usage and the launch errors read | `src/engine/LaunchArguments/`; each program's own options are in its `LaunchOptions` |
-| Add a part a program can switch on or off | A class implementing `IModule` (declared in `src/engine/Modules/IModule.hpp`), written in the program or library it belongs to, listed after its dependencies in the list given to `Application` |
+| Add a command or a setting a program can configure | `CommandInterpreter::add()` or `ConfigurationRegistry::declareInteger()` / `declareText()`, called from a module's `install()`; the module reads the setting in `start()` |
+| Change how the configuration file is read | `readConfiguration()` in `src/engine/Commands/Configuration/ConfigurationReader.cpp`; the file names are in `src/server/ServerConstants.hpp` and `src/client/ClientConstants.hpp` |
+| Add a feature a program can switch on or off | A module: a class implementing `IModule` (declared in `src/engine/Modules/IModule.hpp`), in a folder of its own in the program it belongs to, listed after its dependencies in the list given to `Application` |
 | Run a module's work every tick, frame or pass of the loop | `InstallContext::addWork()`, called from the module's `install()` |
 | Hand an object to the modules installed after | `InstallContext::provide()`; the other modules call `require<>()` or `find<>()` |
 | Change the stages of a program | `SERVER_LOOP_STAGES` or `CLIENT_LOOP_STAGES` |

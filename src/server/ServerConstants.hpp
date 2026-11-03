@@ -16,6 +16,25 @@ namespace rtype::server {
 constexpr std::string_view PROGRAM_NAME = "r-type_server";
 
 /**
+ * @brief The file of commands the server reads when it starts; a missing file
+ * is not an error.
+ */
+constexpr std::string_view SERVER_CONFIGURATION_FILE_NAME = "server.cfg";
+
+/**
+ * @brief The names the settings of the server go by in `set` and in `--set`.
+ */
+constexpr std::string_view PORT_SETTING_NAME = "port";
+constexpr std::string_view SEED_SETTING_NAME = "seed";
+constexpr std::string_view STATE_RATE_SETTING_NAME = "state-rate";
+constexpr std::string_view INPUT_DELAY_SETTING_NAME = "input-delay";
+
+/**
+ * @brief The highest seed: the seed of a game is 32 bits.
+ */
+constexpr std::int64_t HIGHEST_SEED = 4294967295;
+
+/**
  * @brief Launch option followed by the seed the random draws of the games start
  * from, a whole number from 0 to 4294967295.
  */
@@ -38,7 +57,7 @@ constexpr std::size_t DEFAULT_HOSTED_GAME_COUNT = 8;
 constexpr std::uint32_t GAME_SEED_STRIDE = 65536;
 
 /**
- * @brief Module name the server writes its log lines under.
+ * @brief Logger name the server writes its log lines under.
  */
 constexpr std::string_view SERVER_LOGGER_NAME = "Server";
 
@@ -69,7 +88,7 @@ constexpr std::string_view WAVE_FILE_IN_ASSETS = "waves/waves.toml";
 constexpr std::string_view DEFAULT_DIFFICULTY = "normal";
 
 /**
- * @brief Module name the simulation thread writes its tick reports under.
+ * @brief Logger name the simulation thread writes its tick reports under.
  */
 constexpr std::string_view SIMULATION_LOGGER_NAME = "Simulation";
 

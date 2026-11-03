@@ -13,7 +13,7 @@ Why: a review asked, for eleven places of one pull request, to move the constant
 1. **A `…Test.cpp` holds its `#include` lines, its `using` declarations, and its `TEST`, `TEST_F` and `TEST_P` blocks with their Given / When / Then comments. Nothing else**: no anonymous namespace, no constant, no struct, class or enum, no free function, no lambda at namespace scope.
 2. **Its constants go in `<Subject>TestConstants.hpp`**, in the same folder as the test, `<Subject>` being the class or header under test: `GameEventHistoryTestConstants.hpp` for `GameEventHistoryTest.cpp`.
    - Search the shared test headers first (`fix-architecture-magic-values-as-named-constants.md`, "A test constant is searched for before it is defined"). A value two test files need goes in the shared header of their common folder, never in both.
-   - The header holds constants only (`fix-format-a-constants-header-ends-in-constants.md`) and uses the namespace the test headers of its folder use: `rtype::<module>::testing` where they do, none where they do not.
+   - The header holds constants only (`fix-format-a-constants-header-ends-in-constants.md`) and uses the namespace the test headers of its folder use: `rtype::<owner>::testing` where they do, none where they do not.
    - Two constants of the same name and different values must never be reachable from one test: give each a name that says what it is (`WHERE_THE_BYDO_DIED`, not `WHERE_IT_DIED` twice).
 3. **Its fixtures go in files of their own**, next to the test, each `.hpp` declaring and its `.cpp` defining (`architecture-hpp-declarations-cpp-definitions.md`; template bodies stay in the header):
    - a `TEST_F` class → `<Subject>Fixture.{hpp,cpp}`, the class named `<Subject>Fixture` and used as the suite name;
@@ -26,7 +26,7 @@ Why: a review asked, for eleven places of one pull request, to move the constant
    ```bash
    git grep -n -E '^namespace \{|^(struct|class|union|enum( class)?) [A-Za-z_]|^(inline )?(constexpr|const) |^(template ?<[^>]*> ?)?(\[\[nodiscard\]\] )?(static )?[A-Za-z_][A-Za-z0-9_:<>, ]*[ *&]+[a-z][A-Za-z0-9_]*\([^;]*$' -- <changed *Test.cpp files>
    ```
-   It must print nothing. Calibration: on `git show '275b065:tests/client/Rendering/Effects/Camera/CameraShakeTest.cpp'` it prints the anonymous namespace, eight constants, `struct ShakeOverASecond` and `shakeKeeping`; on `git show 'origin/main:tests/server/Replication/WorldStateSenderTest.cpp'` it prints nothing.
+   It must print nothing. Calibration: on `git show '275b065:tests/client/Rendering/Effects/Camera/CameraShakeTest.cpp'` it prints the anonymous namespace, eight constants, `struct ShakeOverASecond` and `shakeKeeping`; on `git show 'origin/main:tests/server/Replication/Announcements/Streams/WorldStateSenderTest.cpp'` it prints nothing.
 
 ## Example
 

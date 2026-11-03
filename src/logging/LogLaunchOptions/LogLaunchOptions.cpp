@@ -8,7 +8,6 @@
 #include <string_view>
 #include <system_error>
 #include <utility>
-#include <vector>
 #include "Logger.hpp"
 #include "LoggingConstants.hpp"
 #include "LoggingException.hpp"
@@ -54,21 +53,20 @@ void recordNoStderr(LaunchSettings& settings,
   settings.output.toStderr = false;
 }
 
-constexpr std::array launchOptions{
-    LaunchOption{
-        .name = LEVEL_OPTION, .takesValue = true, .record = recordLevel},
-    LaunchOption{
-        .name = FILE_OPTION, .takesValue = true, .record = recordFilePath},
-    LaunchOption{
-        .name = NO_FILE_OPTION, .takesValue = false, .record = recordNoFile},
-    LaunchOption{
-        .name = STDERR_OPTION, .takesValue = false, .record = recordStderr},
-    LaunchOption{.name = NO_STDERR_OPTION,
-                 .takesValue = false,
-                 .record = recordNoStderr},
-};
-
 std::optional<LaunchOption> findLaunchOption(std::string_view argument) {
+  constexpr std::array launchOptions{
+      LaunchOption{
+          .name = LEVEL_OPTION, .takesValue = true, .record = recordLevel},
+      LaunchOption{
+          .name = FILE_OPTION, .takesValue = true, .record = recordFilePath},
+      LaunchOption{
+          .name = NO_FILE_OPTION, .takesValue = false, .record = recordNoFile},
+      LaunchOption{
+          .name = STDERR_OPTION, .takesValue = false, .record = recordStderr},
+      LaunchOption{.name = NO_STDERR_OPTION,
+                   .takesValue = false,
+                   .record = recordNoStderr},
+  };
   for (const LaunchOption& option : launchOptions) {
     if (option.name == argument) {
       return option;
@@ -80,6 +78,25 @@ std::optional<LaunchOption> findLaunchOption(std::string_view argument) {
 bool isLoggingOption(std::string_view argument) {
   return argument.starts_with(LOG_OPTION_PREFIX) ||
          argument.starts_with(NO_LOG_OPTION_PREFIX);
+}
+
+/**
+ * @returns the logging option @p arguments starts with; nothing when it is
+ * empty or starts with another argument.
+ * @throws InvalidLogOptionException when its first argument starts with
+ * `--log-` or `--no-log-` but names no logging option.
+ */
+std::optional<LaunchOption> optionStarting(
+    std::span<const std::string_view> arguments) {
+  if (arguments.empty()) {
+    return std::nullopt;
+  }
+  const std::optional<LaunchOption> option =
+      findLaunchOption(arguments.front());
+  if (!option.has_value() && isLoggingOption(arguments.front())) {
+    throw InvalidLogOptionException(std::string(arguments.front()));
+  }
+  return option;
 }
 
 void appendUsageEntry(std::string& text, std::string_view option,
@@ -131,39 +148,23 @@ void announceJournal(const LogOutput& output) {
 
 }  // namespace
 
-LogLaunchOptions LogLaunchOptions::read(
-    std::span<const std::string_view> arguments,
-    const std::filesystem::path& defaultJournal) {
-  LaunchSettings settings{
-      .level = std::nullopt,
-      .output = LogOutput{.toStderr = true, .filePath = defaultJournal}};
-  std::vector<std::string_view> otherArguments;
-  for (std::size_t index = 0; index < arguments.size(); ++index) {
-    const std::string_view argument = arguments[index];
-    const std::optional<LaunchOption> option = findLaunchOption(argument);
-    if (option.has_value()) {
-      const std::string_view value = option->takesValue
-                                         ? valueAfter(arguments, index)
-                                         : std::string_view{};
-      option->record(settings, value);
-    } else if (isLoggingOption(argument)) {
-      throw InvalidLogOptionException(std::string(argument));
-    } else {
-      otherArguments.push_back(argument);
-    }
-  }
-  return LogLaunchOptions{settings.level, settings.output,
-                          std::move(otherArguments)};
-}
+LogLaunchOptions::LogLaunchOptions(const std::filesystem::path& defaultJournal)
+    : output_{.toStderr = true, .filePath = defaultJournal} {}
 
-LogLaunchOptions LogLaunchOptions::readFromProcess(
-    int argumentCount, const char* const* arguments,
-    const std::filesystem::path& defaultJournal) {
-  std::vector<std::string_view> processArguments;
-  for (int index = 1; index < argumentCount; ++index) {
-    processArguments.emplace_back(arguments[index]);
+std::size_t LogLaunchOptions::readOption(
+    std::span<const std::string_view> arguments) {
+  const std::optional<LaunchOption> option = optionStarting(arguments);
+  if (!option.has_value()) {
+    return 0;
   }
-  return read(processArguments, defaultJournal);
+  std::size_t index = 0;
+  const std::string_view value =
+      option->takesValue ? valueAfter(arguments, index) : std::string_view{};
+  LaunchSettings settings{.level = level_, .output = output_};
+  option->record(settings, value);
+  level_ = settings.level;
+  output_ = std::move(settings.output);
+  return index + 1;
 }
 
 void LogLaunchOptions::apply() const {
@@ -172,10 +173,6 @@ void LogLaunchOptions::apply() const {
     Logger::setLevel(*level_);
   }
   announceJournal(output_);
-}
-
-std::span<const std::string_view> LogLaunchOptions::otherArguments() const {
-  return otherArguments_;
 }
 
 std::string LogLaunchOptions::usage(std::string_view defaultJournalName) {
@@ -196,12 +193,5 @@ std::string LogLaunchOptions::usage(std::string_view defaultJournalName) {
   appendUsageEntry(text, NO_STDERR_OPTION, "Write nothing to standard error.");
   return text;
 }
-
-LogLaunchOptions::LogLaunchOptions(std::optional<LogLevel> level,
-                                   LogOutput output,
-                                   std::vector<std::string_view> otherArguments)
-    : level_(level),
-      output_(std::move(output)),
-      otherArguments_(std::move(otherArguments)) {}
 
 }  // namespace rtype::logging

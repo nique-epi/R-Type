@@ -4,11 +4,13 @@ target_include_directories(rtype_server_launch_options PUBLIC ${CMAKE_CURRENT_SO
 
 target_link_libraries(rtype_server_launch_options
   PUBLIC
+    rtype_engine_commands
     rtype_engine_launch_arguments
+    rtype_logging
     rtype_network_conditions
     rtype_network_exceptions
   PRIVATE
-    rtype_logging
+    rtype_engine_paths
     rtype_network_constants
     rtype_network_transport
     rtype_server_constants

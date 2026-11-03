@@ -1,25 +1,30 @@
 #include "LaunchOptions.hpp"
 #include <array>
-#include <cstdint>
 #include <filesystem>
+#include <functional>
 #include <optional>
 #include <span>
 #include <string>
 #include <string_view>
 #include <utility>
+#include <vector>
 #include "AudioMode.hpp"
 #include "ClientConstants.hpp"
 #include "ClientException.hpp"
 #include "Endpoint.hpp"
 #include "EndpointText.hpp"
+#include "ExecutablePath.hpp"
 #include "LaunchArguments.hpp"
 #include "LaunchArgumentsConstants.hpp"
 #include "LaunchOption.hpp"
+#include "LaunchOptionReader.hpp"
+#include "LaunchValues.hpp"
 #include "LogLaunchOptions.hpp"
 #include "LoggingConstants.hpp"
 #include "NetworkConditions.hpp"
 #include "NetworkConstants.hpp"
 #include "ProtocolConstants.hpp"
+#include "SettingLine.hpp"
 #include "SimulatorLaunchOptions.hpp"
 #include "WireTypes.hpp"
 
@@ -28,86 +33,89 @@ namespace rtype::client {
 namespace {
 
 /**
- * @returns `-h <address>`, which writes a checked IPv4 address into
- * @p address.
+ * @returns `-h <address>`, which sets the address of the server and forces the
+ * setting of the same name.
  */
-engine::LaunchOption addressOption(std::string& address) {
-  return engine::LaunchOption{.name = ADDRESS_OPTION,
-                              .takesValue = true,
-                              .record = [&address](std::string_view text) {
-                                address = network::ipv4AddressFromText(text);
-                              }};
-}
-
-/** @returns `-p <port>`, which writes a checked port into @p port. */
-engine::LaunchOption portOption(std::uint16_t& port) {
-  return engine::LaunchOption{.name = engine::PORT_OPTION,
-                              .takesValue = true,
-                              .record = [&port](std::string_view text) {
-                                port = network::portFromText(text);
-                              }};
+engine::LaunchOption addressOption(LaunchValues& values) {
+  return engine::LaunchOption{
+      .name = ADDRESS_OPTION,
+      .takesValue = true,
+      .record = [&values](std::string_view address) {
+        values.serverEndpoint.address = network::ipv4AddressFromText(address);
+        values.forcedLines.push_back(engine::settingLine(
+            SERVER_ADDRESS_SETTING_NAME, values.serverEndpoint.address));
+      }};
 }
 
 /**
- * @returns `-n <nickname>`, which writes the nickname into @p nickname.
- * Its record throws InvalidNicknameOptionException for a nickname the
- * protocol refuses.
+ * @returns `-p <port>`, which sets the port of the server and forces the
+ * setting of the same name.
  */
-engine::LaunchOption nicknameOption(std::string& nickname) {
+engine::LaunchOption portOption(LaunchValues& values) {
+  return engine::LaunchOption{
+      .name = engine::PORT_OPTION,
+      .takesValue = true,
+      .record = [&values](std::string_view port) {
+        values.serverEndpoint.port = network::portFromText(port);
+        values.forcedLines.push_back(
+            engine::settingLine(SERVER_PORT_SETTING_NAME,
+                                std::to_string(values.serverEndpoint.port)));
+      }};
+}
+
+/**
+ * @returns `-n <nickname>`, which sets the nickname and forces the setting of
+ * the same name.
+ */
+engine::LaunchOption nicknameOption(LaunchValues& values) {
   return engine::LaunchOption{
       .name = NICKNAME_OPTION,
       .takesValue = true,
-      .record = [&nickname](std::string_view callsign) {
+      .record = [&values](std::string_view callsign) {
         if (!network::isValidNickname(callsign)) {
           throw InvalidNicknameOptionException(callsign);
         }
-        nickname = std::string(callsign);
+        values.nickname = std::string(callsign);
+        values.forcedLines.push_back(
+            engine::settingLine(NICKNAME_SETTING_NAME, callsign));
       }};
 }
 
-/** @returns `--no-sound`, which writes AudioMode::Disabled into @p mode. */
-engine::LaunchOption noSoundOption(AudioMode& mode) {
+/** @returns `--set <name>=<value>`, which forces any setting. */
+engine::LaunchOption setOption(LaunchValues& values) {
+  return engine::LaunchOption{
+      .name = engine::SET_OPTION,
+      .takesValue = true,
+      .record = [&values](std::string_view assignment) {
+        values.forcedLines.push_back(
+            engine::settingLineFromSetOption(assignment));
+      }};
+}
+
+/** @returns `--no-sound`, which starts the client without sound. */
+engine::LaunchOption noSoundOption(LaunchValues& values) {
   return engine::LaunchOption{
       .name = NO_SOUND_OPTION,
       .takesValue = false,
-      .record = [&mode]([[maybe_unused]] std::string_view value) {
-        mode = AudioMode::Disabled;
+      .record = [&values]([[maybe_unused]] std::string_view value) {
+        values.audioMode = AudioMode::Disabled;
       }};
 }
 
-/** @returns `--help`, which sets @p helpRequested. */
-engine::LaunchOption helpOption(bool& helpRequested) {
+/** @returns `--help`, which asks for the usage. */
+engine::LaunchOption helpOption(LaunchValues& values) {
   return engine::LaunchOption{
       .name = engine::HELP_OPTION,
       .takesValue = false,
-      .record = [&helpRequested]([[maybe_unused]] std::string_view value) {
-        helpRequested = true;
+      .record = [&values]([[maybe_unused]] std::string_view value) {
+        values.helpRequested = true;
       }};
 }
 
-}  // namespace
-
-LaunchOptions LaunchOptions::read(std::span<const std::string_view> arguments) {
-  const network::SimulatorLaunchOptions simulatorOptions =
-      network::SimulatorLaunchOptions::read(arguments);
-  LaunchOptions options{
-      network::Endpoint{.address = std::string(DEFAULT_SERVER_ADDRESS),
-                        .port = network::DEFAULT_SERVER_PORT},
-      std::string(DEFAULT_NICKNAME), false};
-  options.networkConditions_ = simulatorOptions.conditions();
-  const std::array launchOptions{
-      addressOption(options.serverEndpoint_.address),
-      portOption(options.serverEndpoint_.port),
-      nicknameOption(options.nickname_),
-      noSoundOption(options.audioMode_),
-      engine::pathOption(network::TRAFFIC_CSV_OPTION, options.trafficCsvFile_),
-      helpOption(options.helpRequested_)};
-  engine::readLaunchArguments(simulatorOptions.otherArguments(), launchOptions);
-  return options;
-}
-
-std::string LaunchOptions::usage() {
-  std::string text = engine::usageHeader(PROGRAM_NAME);
+/** @returns The lines of the usage that describe the options that name the
+ * server to join, the player and the settings. */
+std::string connectionOptionEntries() {
+  std::string text;
   text += engine::usageEntry(std::string(ADDRESS_OPTION) + " <address>",
                              "IPv4 address of the server, such as " +
                                  std::string(network::LOOPBACK_IPV4_ADDRESS) +
@@ -124,6 +132,51 @@ std::string LaunchOptions::usage() {
           std::to_string(network::MINIMUM_NICKNAME_SIZE) + " to " +
           std::to_string(network::MAXIMUM_NICKNAME_SIZE) +
           " bytes of UTF-8. Default: " + std::string(DEFAULT_NICKNAME) + ".");
+  text += engine::usageEntry(
+      std::string(engine::SET_OPTION) + " <name>=<value>",
+      "Gives a setting a value, as the line `set <name> <value>` of " +
+          std::string(CLIENT_CONFIGURATION_FILE_NAME) +
+          " does. It wins over that file and can be given several times. "
+          "Settings: " +
+          std::string(NICKNAME_SETTING_NAME) + ", " +
+          std::string(SERVER_ADDRESS_SETTING_NAME) + ", " +
+          std::string(SERVER_PORT_SETTING_NAME) + ".");
+  return text;
+}
+
+}  // namespace
+
+LaunchOptions LaunchOptions::read(std::span<const std::string_view> arguments) {
+  LaunchOptions options{LaunchValues{
+      .serverEndpoint =
+          network::Endpoint{.address = std::string(DEFAULT_SERVER_ADDRESS),
+                            .port = network::DEFAULT_SERVER_PORT},
+      .nickname = std::string(DEFAULT_NICKNAME),
+      .audioMode = AudioMode::Enabled,
+      .trafficCsvFile = std::nullopt,
+      .forcedLines = {},
+      .helpRequested = false}};
+  const std::array launchOptions{
+      addressOption(options.values_),
+      portOption(options.values_),
+      nicknameOption(options.values_),
+      setOption(options.values_),
+      noSoundOption(options.values_),
+      engine::pathOption(network::TRAFFIC_CSV_OPTION,
+                         options.values_.trafficCsvFile),
+      helpOption(options.values_)};
+  const std::array<engine::LaunchOptionReader, 2> readers{
+      std::bind_front(&network::SimulatorLaunchOptions::readOption,
+                      &options.simulatorOptions_),
+      std::bind_front(&logging::LogLaunchOptions::readOption,
+                      &options.logOptions_)};
+  engine::readLaunchArguments(arguments, launchOptions, readers);
+  return options;
+}
+
+std::string LaunchOptions::usage() {
+  std::string text = engine::usageHeader(PROGRAM_NAME);
+  text += connectionOptionEntries();
   text += engine::usageEntry(std::string(NO_SOUND_OPTION),
                              "Start the client without sound.");
   text += engine::usageEntry(network::TRAFFIC_CSV_OPTION_WITH_VALUE,
@@ -138,28 +191,34 @@ std::string LaunchOptions::usage() {
 }
 
 const network::Endpoint& LaunchOptions::serverEndpoint() const {
-  return serverEndpoint_;
+  return values_.serverEndpoint;
 }
 
-const std::string& LaunchOptions::nickname() const { return nickname_; }
+const std::vector<std::string>& LaunchOptions::forcedLines() const {
+  return values_.forcedLines;
+}
 
-AudioMode LaunchOptions::audioMode() const { return audioMode_; }
+const std::string& LaunchOptions::nickname() const { return values_.nickname; }
 
-bool LaunchOptions::helpRequested() const { return helpRequested_; }
+AudioMode LaunchOptions::audioMode() const { return values_.audioMode; }
+
+bool LaunchOptions::helpRequested() const { return values_.helpRequested; }
 
 const network::NetworkConditions& LaunchOptions::networkConditions() const {
-  return networkConditions_;
+  return simulatorOptions_.conditions();
+}
+
+const logging::LogLaunchOptions& LaunchOptions::logOptions() const {
+  return logOptions_;
 }
 
 const std::optional<std::filesystem::path>& LaunchOptions::trafficCsvFile()
     const {
-  return trafficCsvFile_;
+  return values_.trafficCsvFile;
 }
 
-LaunchOptions::LaunchOptions(network::Endpoint serverEndpoint,
-                             std::string nickname, bool helpRequested)
-    : serverEndpoint_(std::move(serverEndpoint)),
-      nickname_(std::move(nickname)),
-      helpRequested_(helpRequested) {}
+LaunchOptions::LaunchOptions(LaunchValues values)
+    : values_(std::move(values)),
+      logOptions_(engine::executableFolder() / logging::CLIENT_LOG_FILE_NAME) {}
 
 }  // namespace rtype::client

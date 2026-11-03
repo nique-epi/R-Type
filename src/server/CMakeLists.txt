@@ -6,12 +6,15 @@ target_link_libraries(rtype_server_constants INTERFACE rtype_engine_time)
 
 add_subdirectory(Exceptions)
 add_subdirectory(Platform)
-add_subdirectory(Application)
+add_subdirectory(Network)
+add_subdirectory(Logger)
 add_subdirectory(LaunchOptions)
 add_subdirectory(Sessions)
 add_subdirectory(Replication)
 add_subdirectory(Spawning)
 add_subdirectory(Instances)
+add_subdirectory(Rules)
+add_subdirectory(Games)
 add_subdirectory(Lobby)
 add_subdirectory(Metrics)
 add_subdirectory(Modules)
@@ -23,7 +26,6 @@ target_link_libraries(r-type_server
     rtype_logging
     rtype_server_constants
     rtype_server_modules
-    rtype_server_stop_signals
 )
 
 rtype_enable_warnings(r-type_server)

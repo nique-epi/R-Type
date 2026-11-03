@@ -3,8 +3,6 @@
 #include <exception>
 #include <iostream>
 #include <optional>
-#include <string_view>
-#include <vector>
 #include "DatagramFlood.hpp"
 #include "FloodConstants.hpp"
 #include "FloodLaunch.hpp"
@@ -111,12 +109,8 @@ int runFlood(rtype::tools::FloodMode mode, std::uint16_t port) {
 
 int main(int argumentCount, char** arguments) {
   try {
-    std::vector<std::string_view> launchArguments;
-    for (int index = 1; index < argumentCount; ++index) {
-      launchArguments.emplace_back(arguments[index]);
-    }
-    const rtype::tools::FloodLaunch launch =
-        rtype::tools::readFloodLaunch(launchArguments);
+    const rtype::tools::FloodLaunch launch = rtype::tools::readFloodLaunch(
+        rtype::engine::processArguments(argumentCount, arguments));
     if (launch.helpRequested) {
       std::cout << rtype::tools::floodUsage();
       return 0;

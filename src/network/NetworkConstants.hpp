@@ -76,7 +76,7 @@ constexpr unsigned int IPV4_ADDRESS_PART_MAXIMUM =
 constexpr char IPV4_ADDRESS_SEPARATOR = '.';
 
 /**
- * @brief Module name the network classes write their log lines under.
+ * @brief Logger name the network classes write their log lines under.
  */
 constexpr std::string_view NETWORK_LOGGER_NAME = "Network";
 

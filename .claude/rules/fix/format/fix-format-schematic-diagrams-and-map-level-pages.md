@@ -18,8 +18,8 @@ trigger: always_on
 
 ### Pages about structure (layout, architecture, codemap)
 
-1. **Map level, not atlas level.** Name the coarse modules, what each holds, what it never holds (its invariants), and where to look. No list of every future class, no table of fifty cases.
-2. **Each module in a few lines**: a one-sentence role, its invariant, a folder tree one or two levels deep with a short comment per line.
+1. **Map level, not atlas level.** Name the coarse folders, what each holds, what it never holds (its invariants), and where to look. No list of every future class, no table of fifty cases.
+2. **Each folder in a few lines**: a one-sentence role, its invariant, a folder tree one or two levels deep with a short comment per line.
 3. **Show one worked example** of a convention rather than a table of every rule.
 4. **Before writing a kind of page not yet written in this project**, read how reference documentation does it (ARCHITECTURE.md codemap, C4 diagram checklist, a mature project's architecture page) and follow that shape.
 

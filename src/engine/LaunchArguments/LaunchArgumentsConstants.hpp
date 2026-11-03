@@ -11,6 +11,12 @@ namespace rtype::engine {
 constexpr std::string_view PORT_OPTION = "-p";
 
 /**
+ * @brief Launch option followed by `name=value`, which forces a setting to a
+ * value over the configuration file.
+ */
+constexpr std::string_view SET_OPTION = "--set";
+
+/**
  * @brief Launch option that prints the usage and starts nothing.
  */
 constexpr std::string_view HELP_OPTION = "--help";

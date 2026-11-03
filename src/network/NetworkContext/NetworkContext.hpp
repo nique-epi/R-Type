@@ -13,7 +13,7 @@ namespace rtype::network {
  * @brief Owns the Asio event loop used by every network component.
  *
  * Asio is only declared here, never included: the code outside the network
- * module never sees an Asio type.
+ * library never sees an Asio type.
  */
 class NetworkContext {
  public:
@@ -43,9 +43,9 @@ class NetworkContext {
   void post(std::function<void()> task);
 
   /**
-   * @brief The event loop itself, for the classes of the network module and
+   * @brief The event loop itself, for the classes of the network library and
    *        their tests: using it requires including Asio, which the other
-   *        modules cannot do.
+   *        libraries cannot do.
    */
   asio::io_context& ioContext();
 

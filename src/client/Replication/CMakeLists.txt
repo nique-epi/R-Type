@@ -1,19 +1,12 @@
-add_library(rtype_client_replication_interfaces INTERFACE)
+add_subdirectory(Entities)
+add_subdirectory(EntityMessages)
+add_subdirectory(Pilots)
 
-target_include_directories(rtype_client_replication_interfaces INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
+add_library(rtype_client_replication INTERFACE)
 
-add_library(rtype_client_replication_constants INTERFACE)
-
-target_include_directories(rtype_client_replication_constants INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
-
-target_link_libraries(rtype_client_replication_constants
+target_link_libraries(rtype_client_replication
   INTERFACE
-    rtype_engine_time
-    rtype_network_protocol
+    rtype_client_entities
+    rtype_client_entity_messages
+    rtype_client_pilots
 )
-
-add_subdirectory(WorldStateFilter)
-add_subdirectory(LastListedTicks)
-add_subdirectory(EntityReplicator)
-add_subdirectory(ScoreBoard)
-add_subdirectory(FinalRanking)

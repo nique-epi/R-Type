@@ -54,7 +54,7 @@ constexpr int REGULAR_FONT_ADVANCE = static_cast<int>(TEXT_CHARACTER_SIZE);
 constexpr int REGULAR_FONT_BASELINE_ROW = 8;
 constexpr int SMALL_FONT_BASELINE_ROW = 7;
 
-constexpr std::string_view INTERFACE_LOG_MODULE_NAME = "Interface";
+constexpr std::string_view INTERFACE_LOGGER_NAME = "Interface";
 
 /** @brief How a player is named on screen: P and its number, on every bay of
  * the waiting room, in the status band where no nickname is shown, and before
