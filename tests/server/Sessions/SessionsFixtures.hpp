@@ -29,6 +29,10 @@ namespace rtype::server::testing {
  */
 ConnectedPlayer& addPlayer(PlayerRoster& roster, std::size_t index = 0);
 
+/** @brief Connects the players at indexes 0 to @p count - 1 to @p roster, as
+ * addPlayer() does. */
+void addPlayers(PlayerRoster& roster, std::size_t count);
+
 /** @brief What an InputKeeper showed the game: an input, and the input number
  * the player kept when it was shown. */
 struct ShownInput {
