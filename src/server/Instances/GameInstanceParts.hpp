@@ -5,7 +5,6 @@
 #include "GameSettings.hpp"
 #include "IClock.hpp"
 #include "OutgoingDatagram.hpp"
-#include "TimerScheduler.hpp"
 
 namespace rtype::server {
 
@@ -19,11 +18,9 @@ struct GameInstanceParts {
   /** @brief Where the game publishes what happens in it; it must outlive the
    * game, and its owner dispatches it after each onTick(). */
   std::reference_wrapper<engine::EventBus> events;
-  /** @brief Runs what the modules plan for later; it must outlive the game,
-   * and its owner advances it after each onTick(). */
-  std::reference_wrapper<engine::TimerScheduler> timers;
-  /** @brief Read at the start of each tick for the Heartbeats (see
-   * ConnectedPlayer::sinceSent); it must outlive the game. */
+  /** @brief Read at the start of each tick for the Heartbeats and the
+   * guaranteed messages (see ConnectedPlayer::sinceSent); it must outlive the
+   * game. */
   std::reference_wrapper<const engine::IClock> clock;
 };
 

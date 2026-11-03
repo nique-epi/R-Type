@@ -9,7 +9,8 @@ namespace rtype::client {
 
 /**
  * @brief The numbers of the GameEvents seen in the last GAME_EVENT_MEMORY, so
- * the second and third copies of an event are told from the first.
+ * a copy the server sends again, when the acknowledgement of the first was
+ * lost, is told from the first.
  */
 class GameEventHistory {
  public:

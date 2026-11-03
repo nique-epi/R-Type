@@ -1,17 +1,16 @@
 #pragma once
 
 #include <cstddef>
-#include <functional>
+#include "FarewellPause.hpp"
 #include "Games.hpp"
 #include "IDatagramSender.hpp"
-#include "TimeConstants.hpp"
 
 namespace rtype::server {
 
 /**
  * @brief Tells every player of the games that the server shuts down, with the
  * Disconnection the protocol sends the clients in that case:
- * REPEATED_MESSAGE_COPIES copies, REPEATED_MESSAGE_INTERVAL apart, each under
+ * FAREWELL_COPIES copies, FAREWELL_COPY_INTERVAL apart, each under
  * the next session header of its player.
  *
  * It runs on the thread that stops the server, after the loop stopped
@@ -21,12 +20,8 @@ namespace rtype::server {
  */
 class FarewellSender {
  public:
-  /** @brief Waits for the given time; the server sleeps, a test only writes the
-   * time down. */
-  using Pause = std::function<void(engine::Duration)>;
-
   /** @param sender, pause Both must outlive the object. */
-  FarewellSender(IDatagramSender& sender, Pause pause);
+  FarewellSender(IDatagramSender& sender, FarewellPause pause);
 
   /** @brief Sends the copies to every player of @p games; sends nothing and
    * waits for nothing when no game holds a player. */
@@ -37,7 +32,7 @@ class FarewellSender {
   [[nodiscard]] std::size_t queueOneCopy(const Games& games);
 
   IDatagramSender* sender_;
-  Pause pause_;
+  FarewellPause pause_;
 };
 
 }  // namespace rtype::server

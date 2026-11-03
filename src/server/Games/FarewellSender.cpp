@@ -4,7 +4,7 @@
 #include "ConnectedPlayer.hpp"
 #include "Disconnection.hpp"
 #include "Endpoint.hpp"
-#include "GameEventConstants.hpp"
+#include "FarewellPause.hpp"
 #include "Games.hpp"
 #include "IDatagramSender.hpp"
 #include "ModuleConstants.hpp"
@@ -13,15 +13,15 @@
 
 namespace rtype::server {
 
-FarewellSender::FarewellSender(IDatagramSender& sender, Pause pause)
+FarewellSender::FarewellSender(IDatagramSender& sender, FarewellPause pause)
     : sender_(&sender), pause_(std::move(pause)) {}
 
 void FarewellSender::sayGoodbyeTo(const Games& games) {
   if (queueOneCopy(games) == 0) {
     return;
   }
-  for (std::size_t copy = 1; copy < REPEATED_MESSAGE_COPIES; ++copy) {
-    pause_(REPEATED_MESSAGE_INTERVAL);
+  for (std::size_t copy = 1; copy < FAREWELL_COPIES; ++copy) {
+    pause_(FAREWELL_COPY_INTERVAL);
     static_cast<void>(queueOneCopy(games));
   }
   pause_(FAREWELL_FLUSH_WAIT);

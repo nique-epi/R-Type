@@ -1,6 +1,9 @@
 #include "SentDatagrams.hpp"
 #include <gtest/gtest.h>
+#include <algorithm>
 #include <cstddef>
+#include <cstdint>
+#include <optional>
 #include <span>
 #include <string>
 #include <vector>
@@ -9,6 +12,7 @@
 #include "MessageFrame.hpp"
 #include "MessageType.hpp"
 #include "OutgoingDatagram.hpp"
+#include "PacketHeader.hpp"
 #include "ServerLobbyTestConstants.hpp"
 
 namespace rtype::server::testing {
@@ -36,6 +40,35 @@ network::MessageType onlyMessageTypeOf(
       network::DatagramCodec::splitMessages(datagram.payload);
   EXPECT_EQ(frames.size(), 1U);
   return static_cast<network::MessageType>(frames.at(0).type);
+}
+
+network::PacketHeader headerOf(const network::OutgoingDatagram& datagram) {
+  return network::DatagramCodec::decodeHeader(datagram.payload);
+}
+
+std::size_t messageCountIn(const network::OutgoingDatagram& datagram) {
+  return network::DatagramCodec::splitMessages(datagram.payload).size();
+}
+
+bool holdsMessageOfType(const network::OutgoingDatagram& datagram,
+                        network::MessageType type) {
+  return std::ranges::any_of(
+      network::DatagramCodec::splitMessages(datagram.payload),
+      [type](const network::MessageFrame& frame) {
+        return frame.type == static_cast<std::uint8_t>(type);
+      });
+}
+
+std::optional<std::uint16_t> lastSequenceHolding(
+    std::span<const network::OutgoingDatagram> datagrams,
+    network::MessageType type) {
+  std::optional<std::uint16_t> sequence;
+  for (const network::OutgoingDatagram& datagram : datagrams) {
+    if (holdsMessageOfType(datagram, type)) {
+      sequence = headerOf(datagram).sequence;
+    }
+  }
+  return sequence;
 }
 
 }  // namespace rtype::server::testing

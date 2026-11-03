@@ -23,7 +23,8 @@ This page tells you where to look when you need to change something. It describe
 | Traffic counters: datagrams and bytes by peer and by message type, journal and CSV file | Available | `src/network/Statistics/`: `Counting/` and `Recording/` |
 | Sessions: admission, session token, sequence, heartbeats, timeouts | Available, written in the server and the client | `src/server/Lobby/`, `src/server/Sessions/`, `src/client/Connection/` |
 | Replication: entities to messages, and back | Available, written in the server and the client | `src/server/Replication/`, `src/client/Replication/` |
-| Rate limit of the requests, reliability, history of states | Not yet written | — |
+| Guaranteed messages: acknowledgements, sending again | Available | `src/network/Reliability/` |
+| Rate limit of the requests, history of states | Not yet written | — |
 | Test tool that sends malformed datagrams | Available, never shipped | `tests/tools/` |
 
 ## Transport, sessions and replication
@@ -52,17 +53,17 @@ Transport carries datagrams and knows nothing of players. Each program runs its 
 
 ### Sessions
 
-A session starts when the server accepts a player and ends when the player leaves or stays silent too long. Every datagram of a session carries the session token of the player and the next sequence of its sender, so each side drops a forged datagram, which lacks the token, and a late copy, which is not newer than the newest datagram it read (see [Protocol](/R-Type/protocol/#a-session)).
+A session starts when the server accepts a player and ends when the player leaves or stays silent too long. Every datagram of a session carries the session token of the player, the next sequence of its sender and the acknowledgement of the datagrams its sender accepted, so each side drops a forged datagram, which lacks the token, and a late copy, which is not newer than the newest datagram it read (see [Protocol](/R-Type/protocol/#a-session)), and the server knows which guaranteed messages arrived.
 
-- On the server, `ConnectionAcceptor` (`src/server/Lobby/`) answers the connection requests and gives a place only to a sender that sends back its cookie (`CookieIssuer`, below). `DatagramSorter` checks the token on the network thread, before any queue. The `GameSessions` of each game (`src/server/Sessions/`) checks the sequence, keeps the ready state and the newest input of each player, sends the heartbeats and closes the session of a player it hears nothing from (see [Server](/R-Type/server/#sessions-of-a-game-gamesessions)); `SessionDatagram` gives every datagram to a player its header.
-- On the client, `ServerSession` (`src/client/Connection/`) holds the one session with the server it joined: it sends the request, answers the challenge, checks the token and the sequence, sends the heartbeats, and takes the server for lost after `SESSION_SILENCE_LIMIT` (20 s) without a datagram (see [Client](/R-Type/client/#joining-a-server-serversession-waitingroom-entitymessagequeue)).
+- On the server, `ConnectionAcceptor` (`src/server/Lobby/`) answers the connection requests and gives a place only to a sender that sends back its cookie (`CookieIssuer`, below). `DatagramSorter` checks the token on the network thread, before any queue. The `GameSessions` of each game (`src/server/Sessions/`) checks the sequence, drops the guaranteed messages a datagram acknowledges and sends again the others, keeps the ready state and the newest input of each player, sends the heartbeats and closes the session of a player it hears nothing from (see [Server](/R-Type/server/#sessions-of-a-game-gamesessions)); `SessionDatagram` gives every datagram to a player its header.
+- On the client, `ServerSession` (`src/client/Connection/`) holds the one session with the server it joined: it sends the request, answers the challenge, checks the token and the sequence, acknowledges what it accepted, sends the heartbeats, and takes the server for lost after `SESSION_SILENCE_LIMIT` (20 s) without a datagram (see [Client](/R-Type/client/#joining-a-server-serversession-waitingroom-entitymessagequeue)).
 - Both programs read the same delays, `HEARTBEAT_INTERVAL` (1 s), `SESSION_TIMEOUT` (5 s) and `RECONNECTION_GRACE` (15 s), in `src/network/Protocol/ProtocolConstants.hpp`. They are **provisional**, like every delay of the protocol: code must read them.
 
 ### Replication
 
 Replication turns the entities of a game into messages on the server, and the messages back into entities on the client. The server decides where everything is; the client draws the newest state it received and does not predict its own ship yet.
 
-- On the server, `src/server/Replication/` announces each entity as it appears (`sendEntitySpawned`), sends the world state at the rate set at launch (`WorldStateSender`, see [Server](/R-Type/server/#world-state-worldstatesender)), turns the events of the game into `EntityDestroyed`, `GameEvent` and `PlayerLeft` (`GameEventBroadcaster`), and tells the waiting room and the end of a game (`LobbyStateAnnouncer`, `GameEndAnnouncer`). Each datagram leaves under the header of its player.
+- On the server, `src/server/Replication/` announces each entity as it appears (`sendEntitySpawned`), sends the world state at the rate set at launch (`WorldStateSender`, see [Server](/R-Type/server/#world-state-worldstatesender)), turns the events of the game into `EntityDestroyed`, `GameEvent` and `PlayerLeft` (`GameEventBroadcaster`), which `MessageDelivery` guarantees, and tells the waiting room and the end of a game (`LobbyStateAnnouncer`, `GameEndAnnouncer`). Each datagram leaves under the header of its player.
 - On the client, `EntityMessageQueue` keeps the messages about entities in the order they arrived until the game screen takes them, and `EntityReplicator` (`src/client/Replication/Entities/`) applies them to the entities of the game screen; `WorldStateFilter` drops a world state older than the newest one applied (see [Client](/R-Type/client/#entities-from-the-server-entityreplicator)).
 - The messages and the codec of the world state are in this library (`src/network/Protocol/`, below).
 
@@ -254,7 +255,7 @@ These numbers say nothing about a disk, GCC, MSVC, Linux or Windows. A row weigh
 | `writeString` | one length byte, then the characters, at most `MAX_SHORT_STRING_LENGTH` (255) |
 | `writeBytes` | the bytes as they are, without a length |
 
-The build fails on a platform where `float` is not binary32. Version 1 of the protocol sends no float (positions are quantized integers), so `writeFloat` is there for later use.
+The build fails on a platform where `float` is not binary32. The protocol sends no float (positions are quantized integers), so `writeFloat` is there for later use.
 
 `ByteReader` does not own its buffer: the caller keeps the bytes alive while it reads, and `readBytes(count)` returns a view into it, not a copy. Every read first compares what it needs with `remaining()`. A read that needs more throws `BufferUnderflowException`, and the position does not move, so a truncated or forged datagram is rejected without reading outside the buffer. A string announcing more characters than follow is rejected the same way, before anything is allocated.
 
@@ -276,18 +277,19 @@ const auto decodedName = reader.readString();
 
 ## Datagrams: `DatagramCodec`
 
-`DatagramCodec` (`src/network/Protocol/DatagramCodec/`) turns a header and one message into the bytes of a datagram, and a received datagram back into its header and its messages; the layout is in [Protocol](/R-Type/protocol/#datagram).
+`DatagramCodec` (`src/network/Protocol/DatagramCodec/`) turns a header and one or more messages into the bytes of a datagram, and a received datagram back into its header and its messages; the layout is in [Protocol](/R-Type/protocol/#datagram).
 
-- `encode(header, message)` writes the `PACKET_HEADER_SIZE` (22) bytes of the `PacketHeader`, the type of the message, the size of its payload on two bytes, then the payload. A payload over `MESSAGE_PAYLOAD_LIMIT` (1175 bytes) throws `DatagramTooLargeException`. A default `PacketHeader` is version 1 without a session; the sender sets `sessionToken` and `sequence`.
+- `encode(header, message)` writes the `PACKET_HEADER_SIZE` (22) bytes of the `PacketHeader`, the type of the message, the size of its payload on two bytes, then the payload. A payload over `MESSAGE_PAYLOAD_LIMIT` (1175 bytes) throws `DatagramTooLargeException`. A default `PacketHeader` is version 2 without a session, a flag or an acknowledgement; the sender sets `sessionToken` and `sequence`, and `ReceivedSequences::acknowledgeIn()` the acknowledgement.
+- `encode(header, messages)` writes the header, then each `EncodedMessage` of the span in order. An empty span throws `EmptyDatagramException`, and more than `MAX_DATAGRAM_SIZE` (1200) bytes in all throws `DatagramTooLargeException`; nothing is encoded then.
 - `decodeHeader(datagram)` reads the header without judging it, so a datagram of another version still gives its version. Fewer than 22 bytes throws `MalformedDatagramException`.
 - `forEachMessage(datagram, onMessage)` hands each message that follows the header to a function, and throws and allocates nothing. It returns whether the sizes add up exactly to the end of the datagram; when they do not, the function may already have seen the messages before the fault.
 - `splitMessages(datagram)` returns the `MessageFrame`s that follow the header: the type byte as it arrived, and a view of the payload into the datagram. Either the sizes add up exactly to the end of the datagram, or it throws `MalformedDatagramException` and returns nothing: a datagram without a message, with a size running past its end, or with bytes after its last message is refused whole. Calling it on a temporary buffer does not compile.
 
-Reading the header and splitting the messages are two calls because a receiver checks the version before it trusts the rest. `speaksThisProtocol(header)` is that check: `protocolId`, `version` and `flags` are those of this code. The server's `ConnectionAcceptor` and `GameInstance` and the client's `SessionInbound` call it before splitting. Of the checks of [Receiving a datagram](/R-Type/protocol/#receiving-a-datagram) that follow, the server's `DatagramSorter` checks the session token of every datagram from the address of an admitted player (see [Server](/R-Type/server/#sorting-the-datagrams-datagramsorter)) and its `DatagramReader` the sequence of every datagram of a player (see [Server](/R-Type/server/#order-and-loss-arrivalledger)); the client's `SessionInbound`, once accepted, checks the session token and drops a datagram whose `sequence` is not newer than the newest one it accepted (`isNewerSequence`).
+Reading the header and splitting the messages are two calls because a receiver checks the version before it trusts the rest. `speaksThisProtocol(header)` is that check: `protocolId` and `version` are those of this code, and `flags` holds no bit outside `KNOWN_FLAGS` (`ACKNOWLEDGES_FLAG` and `GUARANTEED_FLAG`). The server's `ConnectionAcceptor` and `GameInstance` and the client's `SessionInbound` call it before splitting. Of the checks of [Receiving a datagram](/R-Type/protocol/#receiving-a-datagram) that follow, the server's `DatagramSorter` checks the session token of every datagram from the address of an admitted player (see [Server](/R-Type/server/#sorting-the-datagrams-datagramsorter)) and its `DatagramReader` the sequence of every datagram of a player (see [Server](/R-Type/server/#order-and-loss-arrivalledger)); the client's `SessionInbound`, once accepted, checks the session token and drops a datagram whose `sequence` is not newer than the newest one it accepted (`SessionAcknowledgements`, see [Guaranteed messages](#guaranteed-messages-srcnetworkreliability)).
 
 ## Messages: `src/network/Protocol/Messages/`
 
-Each message of the protocol page is a struct of the same name (`ConnectionRequest`, `ReadyState`, `PlayerInput`…), plain data that holds its `MessageType` in `TYPE`. Next to it, `encodePayload(writer, message)` writes its payload, and `decodeMessage<Message>(payload)` reads one. The eighteen messages other than `WorldState` live in `Messages/`, one folder and one library each (`Messages/LobbyState/`, target `rtype_network_lobby_state`), gathered by `rtype_network_messages`; `WorldState` keeps its codec (below), and `decodeMessage<WorldState>` reads one of its payloads.
+Each message of the protocol page is a struct of the same name (`ConnectionRequest`, `ReadyState`, `PlayerInput`…), plain data that holds its `MessageType` in `TYPE`. Next to it, `encodePayload(writer, message)` writes its payload, and `decodeMessage<Message>(payload)` reads one. `encodedMessage(message)` (`MessagePayload.hpp`) returns it as an `EncodedMessage`, its type and its payload ready to send, and `encodedSize()` the bytes it takes in a datagram. The eighteen messages other than `WorldState` live in `Messages/`, one folder and one library each (`Messages/LobbyState/`, target `rtype_network_lobby_state`), gathered by `rtype_network_messages`; `WorldState` keeps its codec (below), and `decodeMessage<WorldState>` reads one of its payloads.
 
 - Every value of these eighteen messages is checked as the protocol page lists it: a `bool` is 0 or 1, an enumeration holds a listed value, a player number is 1 to 4 and appears once in a list, a nickname is 1 to 16 bytes of UTF-8 without a control character, no action bit above the five actions is set, no entity id is 0, and the player or the entity a `GameEvent` names matches its kind. A count is checked before anything is sized from it, and a byte left after the last field refuses the message.
 - Writing runs the same checks before the first byte, so a refused message leaves the writer untouched, and whatever was read can be written back: a nickname accepted from a `ConnectionRequest` never makes a `LobbyState` throw.
@@ -329,6 +331,30 @@ dispatcher.dispatch(
 ```
 
 `lobby` stands for the code that will handle the waiting room; `received` is an `IncomingDatagram`. `decodeHeader` and `splitMessages` throw `MalformedDatagramException` for bytes that are not a header followed by whole messages: the code that receives must catch it and drop the datagram, or one forged datagram would stop the server. `messageTypes(datagram)` runs the checks of `splitMessages` without throwing or allocating, and returns the set of message types the datagram holds, or nothing: the server sorts every datagram it receives with it, since throwing and catching an exception costs about 4 µs, a hundred times the cost of sorting a datagram.
+
+## Guaranteed messages: `src/network/Reliability/`
+
+`rtype_network_reliability` (`src/network/Reliability/`) holds what both sides need to guarantee a message, as [Protocol](/R-Type/protocol/#guaranteed-messages) describes; the server and the client decide when to call it.
+
+- `ReceivedSequences` keeps the datagrams one side accepted from its peer. `accept(sequence)` is true for a sequence newer than the newest accepted, so a duplicate or a late datagram is refused and never acknowledged. `acknowledgeIn(header)` writes `ACKNOWLEDGES`, the newest sequence and the bits of the `ACKNOWLEDGEMENT_BIT_COUNT` (32) datagrams before it; before the first datagram it writes nothing. The server's `ArrivalLedger` and the client's `SessionAcknowledgements` each hold one.
+- `UnacknowledgedMessages` keeps the guaranteed messages one side sent its peer. `add()` makes a message due at once, `takeDue(sequence)` gives the due messages that fit one datagram, oldest first, and records the sequence that carries them, and `acknowledge(header)` drops every message one of whose datagrams the header acknowledges. `advance(elapsed)` ages them: a message is due again `GUARANTEED_RESEND_DELAY` (100 ms) after its last send and is dropped at `GUARANTEED_MESSAGE_LIFETIME` (1 s). A message too large for a datagram alone throws `DatagramTooLargeException` at `add()`, so `takeDue()` always has room for the first message due.
+- `acknowledges(header, sequence)`, `holdsGuaranteedMessages(header)` and `markGuaranteed(header)` (`GuaranteedDelivery.hpp`) read and write the two flags.
+
+A sender sends what is due until nothing is left, each datagram under a new header (`nextHeader` and `send` stand for the caller's own):
+
+```cpp
+unacknowledged.add(rtype::network::encodedMessage(rtype::network::PlayerLeft{
+    .playerNumber = 2, .reason = rtype::network::DepartureReason::Left}));
+while (unacknowledged.hasDue()) {
+  rtype::network::PacketHeader header = nextHeader();
+  rtype::network::markGuaranteed(header);
+  const std::vector<rtype::network::EncodedMessage> due =
+      unacknowledged.takeDue(header.sequence);
+  send(rtype::network::DatagramCodec::encode(header, due));
+}
+```
+
+The tests run it under losses: `UnacknowledgedMessagesFixture` links a sender and a receiver through two `SeededLoss` (`tests/doubles/`), one datagram in five lost each way from fixed seeds, and every one of 200 messages arrives. A datagram that would come late or twice is refused by `ReceivedSequences` as a lost one is, so the losses stand for the reordering and the duplicates of UDP too.
 
 ## Connection cookies: `CookieIssuer`
 
@@ -414,11 +440,15 @@ Measured on 27 October 2026 on an Apple M4 Pro under macOS 27.0, with the server
 | Change how a connection cookie is computed, or how long it lives | `CookieIssuer` in `src/network/Handshake/CookieIssuer/`, `COOKIE_WINDOW_DURATION` in `src/network/Handshake/HandshakeConstants.hpp` |
 | Change how a player is let in, challenged or refused | `ConnectionAcceptor` in `src/server/Lobby/` and `ServerSession` in `src/client/Connection/`, then the [Protocol](/R-Type/protocol/#connection) page |
 | Change what a session checks on a received datagram | `DatagramSorter` (`src/server/Network/`) for the token, `DatagramReader` and `ArrivalLedger` (`src/server/Sessions/Tracking/`, `src/server/Sessions/Roster/`) for the sequence; `SessionInbound` on the client |
+| Change how soon a guaranteed message is sent again, or how long it is kept | `GUARANTEED_RESEND_DELAY` and `GUARANTEED_MESSAGE_LIFETIME` in `src/network/Protocol/ProtocolConstants.hpp`, `UnacknowledgedMessages` in `src/network/Reliability/`, then the [Protocol](/R-Type/protocol/#guaranteed-messages) page |
+| Make another message guaranteed | its `EventMessage` in `GameEventEncoder` (`src/server/Replication/Wire/`), after checking that its receiver reads it twice the same way ([Protocol](/R-Type/protocol/#guaranteed-messages)) |
+| Change how long the client waits before a `Heartbeat` that acknowledges | `ACKNOWLEDGEMENT_DELAY` in `src/network/Protocol/ProtocolConstants.hpp`, read by `SessionAcknowledgements` |
 | Change the heartbeats or the session timeout | `HEARTBEAT_INTERVAL`, `SESSION_TIMEOUT` and `RECONNECTION_GRACE` in `src/network/Protocol/ProtocolConstants.hpp`, and their tick counts in `src/server/Sessions/Tracking/SessionConstants.hpp` |
 | Send the clients something new about an entity | the sender in `src/server/Replication/`, `EntityReplicator` in `src/client/Replication/Entities/`, and the message in `src/network/Protocol/` |
 | Add a network error | `src/network/Exceptions/NetworkException.hpp` |
 | Test code against a real socket | `tests/UdpSocketTest.cpp`: a plain Asio client on the loopback address |
 | Test code that uses a socket without the network | `tests/doubles/RecordingDatagramSocket.hpp`, as `tests/network/Transport/DatagramRelayTest.cpp` does |
+| Test code under losses drawn from a seed | `tests/doubles/SeededLoss.hpp`, as `tests/network/Reliability/UnacknowledgedMessagesFixture.cpp` does |
 | Build the bytes of a datagram in a test | `datagramOf()` and `defaultHeaderBytes()` in `tests/network/Protocol/ProtocolFixtures.hpp` |
 | Check that a change survives malformed datagrams | `malformed_datagrams` (`tests/tools/`), see [Malformed datagrams](#malformed-datagrams-malformed_datagrams) |
 

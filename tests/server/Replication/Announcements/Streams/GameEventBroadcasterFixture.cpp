@@ -1,59 +1,31 @@
 #include "GameEventBroadcasterFixture.hpp"
+#include <cstddef>
 #include <memory>
-#include <utility>
-#include <vector>
-#include "Endpoint.hpp"
+#include "EncodedMessage.hpp"
 #include "GameEventBroadcaster.hpp"
-#include "GameEventTestConstants.hpp"
-#include "OutgoingDatagram.hpp"
-#include "PacketHeader.hpp"
-#include "TimeConstants.hpp"
+#include "GameEventBroadcasterParts.hpp"
 
 namespace rtype::server::testing {
 
 GameEventBroadcasterFixture::GameEventBroadcasterFixture()
-    : recipients_{firstClient(), secondClient()},
-      broadcaster_(
-          std::make_unique<GameEventBroadcaster>(GameEventBroadcaster::Wiring{
+    : broadcaster_(
+          std::make_unique<GameEventBroadcaster>(GameEventBroadcasterParts{
               .events = events_,
-              .timers = timers_,
-              .recipients = [this] { return recipients_; },
-              .headerFor =
-                  [this](const network::Endpoint& recipient) {
-                    network::PacketHeader header;
-                    header.sessionToken = recipient.port;
-                    header.sequence = nextSequence_++;
-                    return header;
+              .sendToEveryPlayer =
+                  [this](const network::EncodedMessage& message) {
+                    sentOnce_.push_back(message);
                   },
-              .send =
-                  [this](network::OutgoingDatagram datagram) {
-                    sent_.push_back(std::move(datagram));
+              .guaranteeToEveryPlayer =
+                  [this](const network::EncodedMessage& message) {
+                    guaranteed_.push_back(message);
                   }})) {}
-
-network::Endpoint GameEventBroadcasterFixture::firstClient() {
-  return network::Endpoint{.address = "127.0.0.1", .port = FIRST_CLIENT_PORT};
-}
-
-network::Endpoint GameEventBroadcasterFixture::secondClient() {
-  return network::Endpoint{.address = "127.0.0.1", .port = SECOND_CLIENT_PORT};
-}
-
-void GameEventBroadcasterFixture::setRecipients(
-    std::vector<network::Endpoint> recipients) {
-  recipients_ = std::move(recipients);
-}
 
 void GameEventBroadcasterFixture::dispatch() { events_.dispatch(); }
 
-void GameEventBroadcasterFixture::advanceTimers(engine::Duration elapsed) {
-  timers_.advance(elapsed);
-}
-
 void GameEventBroadcasterFixture::destroyBroadcaster() { broadcaster_.reset(); }
 
-const std::vector<network::OutgoingDatagram>&
-GameEventBroadcasterFixture::sentDatagrams() const {
-  return sent_;
+std::size_t GameEventBroadcasterFixture::messageCount() const {
+  return sentOnce_.size() + guaranteed_.size();
 }
 
 }  // namespace rtype::server::testing

@@ -4,6 +4,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <initializer_list>
+#include <iterator>
 #include <memory>
 #include <optional>
 #include <ostream>
@@ -48,7 +49,6 @@
 #include "ServerLobbyTestConstants.hpp"
 #include "Spawning/WavePlanFixtures.hpp"
 #include "TimeConstants.hpp"
-#include "TimerScheduler.hpp"
 #include "UnreliableNetwork.hpp"
 #include "World.hpp"
 #include "WorldState.hpp"
@@ -60,7 +60,7 @@ std::vector<network::OutgoingDatagram> ofType(
     const std::vector<network::OutgoingDatagram>& datagrams) {
   std::vector<network::OutgoingDatagram> kept;
   for (const network::OutgoingDatagram& datagram : datagrams) {
-    if (onlyMessageTypeOf(datagram) == type) {
+    if (holdsMessageOfType(datagram, type)) {
       kept.push_back(datagram);
     }
   }
@@ -128,7 +128,6 @@ GameInstanceTest::GameInstanceTest(std::size_t inputDelayTicks)
                                                        .inputDelayTicks =
                                                            inputDelayTicks},
                               .events = events_,
-                              .timers = timers_,
                               .clock = clock_},
             modulesWithRulesAt(rules_, results_)) {}
 
@@ -161,8 +160,6 @@ void GameInstanceTest::queueDisconnectionFrom(std::size_t index) {
           network::PacketHeader{.sequence = DISCONNECTION_SEQUENCE})});
 }
 
-engine::TimerScheduler& GameInstanceTest::timers() { return timers_; }
-
 const std::vector<network::OutgoingDatagram>& GameInstanceTest::sentDatagrams()
     const {
   return sent_;
@@ -173,9 +170,9 @@ std::vector<network::PlayerLeft> GameInstanceTest::playerLeftSentTo(
     std::size_t index) {
   std::vector<network::PlayerLeft> received;
   for (const network::OutgoingDatagram& datagram :
-       ofType(network::MessageType::PlayerLeft,
-              testing::sentTo(datagrams, playerEndpoint(index)))) {
-    received.push_back(onlyMessageIn<network::PlayerLeft>(datagram));
+       testing::sentTo(datagrams, playerEndpoint(index))) {
+    std::ranges::copy(messagesIn<network::PlayerLeft>(datagram),
+                      std::back_inserter(received));
   }
   return received;
 }

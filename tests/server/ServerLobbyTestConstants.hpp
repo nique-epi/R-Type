@@ -55,9 +55,10 @@ constexpr std::uint8_t NEXT_PROTOCOL_VERSION = network::PROTOCOL_VERSION + 1;
 constexpr std::size_t REFUSAL_DATAGRAM_SIZE = 26;
 
 /**
- * @brief A flags byte with one flag set; version 0 of the protocol sets none.
+ * @brief A flags byte with a flag version 2 of the protocol does not know: it
+ * knows only 0x01 and 0x02.
  */
-constexpr std::uint8_t ONE_FLAG_SET = 0x01;
+constexpr std::uint8_t UNKNOWN_FLAG = 0x04;
 
 /**
  * @brief Words of every log line about a datagram the server drops, which tell

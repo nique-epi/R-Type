@@ -1,13 +1,12 @@
 #include <gtest/gtest.h>
 #include <cstddef>
-#include <cstdint>
 #include <optional>
 #include <string>
 #include <utility>
 #include <vector>
-#include "BoundedQueue.hpp"
-#include "DatagramSorter.hpp"
-#include "DebugJournal.hpp"
+#include "DatagramSorterFixture.hpp"
+#include "DatagramSorterFixtures.hpp"
+#include "DatagramSorterLogFixture.hpp"
 #include "Endpoint.hpp"
 #include "IncomingDatagram.hpp"
 #include "NetworkConstants.hpp"
@@ -17,123 +16,17 @@
 #include "ServerDatagrams.hpp"
 #include "ServerLobbyTestConstants.hpp"
 #include "ServerTestConstants.hpp"
-#include "SimulatedClock.hpp"
-#include "TimeConstants.hpp"
 
-using rtype::concurrency::BoundedQueue;
 using rtype::network::Endpoint;
 using rtype::network::IncomingDatagram;
 using rtype::network::NO_SESSION_TOKEN;
-using rtype::server::DatagramSorter;
-using rtype::server::testing::DROPPED_DATAGRAM_LINE_TEXT;
 using rtype::server::testing::DROPPED_TOGETHER_COUNT;
 using rtype::server::testing::NEXT_PROTOCOL_VERSION;
-using rtype::server::testing::ONE_FLAG_SET;
 using rtype::server::testing::OTHER_PROTOCOL_ID;
 using rtype::server::testing::OTHER_SESSION_TOKEN;
 using rtype::server::testing::REFUSAL_DATAGRAM_SIZE;
 using rtype::server::testing::SESSION_TOKEN;
-
-namespace {
-
-Endpoint player() {
-  return Endpoint{.address = std::string{SORTED_SENDER_ADDRESS},
-                  .port = PLAYER_PORT};
-}
-
-Endpoint stranger() {
-  return Endpoint{.address = std::string{SORTED_SENDER_ADDRESS},
-                  .port = STRANGER_PORT};
-}
-
-Endpoint secondPlayer() {
-  return Endpoint{.address = std::string{SORTED_SENDER_ADDRESS},
-                  .port = SECOND_PLAYER_PORT};
-}
-
-/** @returns A header carrying @p sessionToken, as an admitted player sends. */
-rtype::network::PacketHeader playerHeader(
-    std::uint64_t sessionToken = SESSION_TOKEN) {
-  rtype::network::PacketHeader header;
-  header.sessionToken = sessionToken;
-  return header;
-}
-
-/** @returns A ReadyState carrying @p sessionToken. */
-std::vector<std::byte> playerReady(std::uint64_t sessionToken = SESSION_TOKEN) {
-  return readyDatagram(playerHeader(sessionToken));
-}
-
-/** @brief A sorter in front of two queues of the server's sizes. */
-class DatagramSorterTest : public ::testing::Test {
- protected:
-  void sort(const Endpoint& sender, const std::vector<std::byte>& datagram) {
-    sorter_.sort(sender, datagram);
-  }
-
-  void admit(const Endpoint& endpoint,
-             std::uint64_t sessionToken = SESSION_TOKEN) {
-    sorter_.admit(endpoint, sessionToken);
-  }
-
-  void forget(const Endpoint& endpoint,
-              std::uint64_t sessionToken = SESSION_TOKEN) {
-    sorter_.forget(endpoint, sessionToken);
-  }
-
-  void advanceClock(rtype::engine::Duration elapsed) {
-    clock_.advance(elapsed);
-  }
-
-  [[nodiscard]] std::size_t droppedCount() const {
-    return sorter_.droppedCount();
-  }
-
-  [[nodiscard]] std::size_t wrongTokenCount() const {
-    return sorter_.wrongTokenCount();
-  }
-
-  [[nodiscard]] std::optional<Endpoint> takeWrongTokenSender() {
-    return sorter_.takeWrongTokenSender();
-  }
-
-  [[nodiscard]] std::vector<IncomingDatagram> drainPlayers() {
-    std::vector<IncomingDatagram> drained;
-    players_.drainInto(drained);
-    return drained;
-  }
-
-  [[nodiscard]] std::vector<IncomingDatagram> drainRequests() {
-    std::vector<IncomingDatagram> drained;
-    connectionRequests_.drainInto(drained);
-    return drained;
-  }
-
- private:
-  BoundedQueue<IncomingDatagram> players_{
-      rtype::server::INCOMING_DATAGRAM_QUEUE_CAPACITY};
-  BoundedQueue<IncomingDatagram> connectionRequests_{
-      rtype::server::CONNECTION_REQUEST_QUEUE_CAPACITY};
-  SimulatedClock clock_;
-  DatagramSorter sorter_{
-      DatagramSorter::Destinations{.players = &players_,
-                                   .connectionRequests = &connectionRequests_},
-      clock_};
-};
-
-/** @brief The sorter, with the log written to a journal the test reads. */
-class DatagramSorterLogTest : public DatagramSorterTest {
- protected:
-  /** @returns The lines of the journal about a datagram dropped. */
-  [[nodiscard]] std::vector<std::string> dropLines() const {
-    return journal_.linesHolding(DROPPED_DATAGRAM_LINE_TEXT);
-  }
-
- private:
-  DebugJournal journal_;
-};
-
-}  // namespace
+using rtype::server::testing::UNKNOWN_FLAG;
 
 /**
  * Given a sorter that admitted nobody
@@ -141,7 +34,7 @@ class DatagramSorterLogTest : public DatagramSorterTest {
  * Then the request goes to the request queue, with its sender, and nothing to
  * the player queue
  */
-TEST_F(DatagramSorterTest, SendsAStrangersRequestToTheRequestQueue) {
+TEST_F(DatagramSorterFixture, SendsAStrangersRequestToTheRequestQueue) {
   sort(stranger(), requestDatagram());
 
   EXPECT_EQ(drainRequests(),
@@ -155,7 +48,7 @@ TEST_F(DatagramSorterTest, SendsAStrangersRequestToTheRequestQueue) {
  * When a stranger sends anything but a connection request
  * Then the datagram reaches no queue
  */
-TEST_F(DatagramSorterTest, DropsAStrangersOtherDatagram) {
+TEST_F(DatagramSorterFixture, DropsAStrangersOtherDatagram) {
   sort(stranger(), readyDatagram());
 
   EXPECT_TRUE(drainPlayers().empty());
@@ -167,7 +60,7 @@ TEST_F(DatagramSorterTest, DropsAStrangersOtherDatagram) {
  * When the player sends a datagram that is not a connection request
  * Then it goes to the player queue
  */
-TEST_F(DatagramSorterTest, SendsAPlayersDatagramToThePlayerQueue) {
+TEST_F(DatagramSorterFixture, SendsAPlayersDatagramToThePlayerQueue) {
   admit(player());
 
   sort(player(), playerReady());
@@ -182,7 +75,7 @@ TEST_F(DatagramSorterTest, SendsAPlayersDatagramToThePlayerQueue) {
  * When the player sends its connection request again
  * Then the request goes to the request queue, where it is answered
  */
-TEST_F(DatagramSorterTest, SendsAPlayersRequestToTheRequestQueue) {
+TEST_F(DatagramSorterFixture, SendsAPlayersRequestToTheRequestQueue) {
   admit(player());
 
   sort(player(), requestDatagram());
@@ -196,7 +89,7 @@ TEST_F(DatagramSorterTest, SendsAPlayersRequestToTheRequestQueue) {
  * When the player sends a datagram of another protocol version
  * Then the datagram reaches no queue
  */
-TEST_F(DatagramSorterTest, DropsADatagramOfAnotherVersion) {
+TEST_F(DatagramSorterFixture, DropsADatagramOfAnotherVersion) {
   admit(player());
   rtype::network::PacketHeader header = playerHeader();
   header.version = NEXT_PROTOCOL_VERSION;
@@ -213,7 +106,8 @@ TEST_F(DatagramSorterTest, DropsADatagramOfAnotherVersion) {
  * Then the request goes to the request queue, where it is refused, and
  * nothing to the player queue
  */
-TEST_F(DatagramSorterTest, SendsAStrangersRequestOfAnotherVersionToBeRefused) {
+TEST_F(DatagramSorterFixture,
+       SendsAStrangersRequestOfAnotherVersionToBeRefused) {
   rtype::network::PacketHeader header;
   header.version = NEXT_PROTOCOL_VERSION;
 
@@ -231,7 +125,8 @@ TEST_F(DatagramSorterTest, SendsAStrangersRequestOfAnotherVersionToBeRefused) {
  * the refusal, whatever it holds
  * Then it goes to the request queue
  */
-TEST_F(DatagramSorterTest, SendsADatagramOfAnotherVersionAsLongAsTheRefusal) {
+TEST_F(DatagramSorterFixture,
+       SendsADatagramOfAnotherVersionAsLongAsTheRefusal) {
   rtype::network::PacketHeader header;
   header.version = NEXT_PROTOCOL_VERSION;
   const std::vector<std::byte> datagram = readyDatagram(header);
@@ -248,7 +143,7 @@ TEST_F(DatagramSorterTest, SendsADatagramOfAnotherVersionAsLongAsTheRefusal) {
  * than the refusal
  * Then it reaches no queue: a refusal would send more bytes than it received
  */
-TEST_F(DatagramSorterTest,
+TEST_F(DatagramSorterFixture,
        DropsADatagramOfAnotherVersionShorterThanTheRefusal) {
   rtype::network::PacketHeader header;
   header.version = NEXT_PROTOCOL_VERSION;
@@ -266,7 +161,7 @@ TEST_F(DatagramSorterTest,
  * When a stranger sends a connection request of another protocol id
  * Then the request reaches no queue
  */
-TEST_F(DatagramSorterTest, DropsAStrangersRequestOfAnotherProtocol) {
+TEST_F(DatagramSorterFixture, DropsAStrangersRequestOfAnotherProtocol) {
   rtype::network::PacketHeader header;
   header.protocolId = OTHER_PROTOCOL_ID;
 
@@ -278,12 +173,13 @@ TEST_F(DatagramSorterTest, DropsAStrangersRequestOfAnotherProtocol) {
 
 /**
  * Given a sorter that admitted nobody
- * When a stranger sends a connection request with a flag set
+ * When a stranger sends a connection request with a flag version 2 does not
+ * know
  * Then the request reaches no queue
  */
-TEST_F(DatagramSorterTest, DropsAStrangersRequestWithAFlagSet) {
+TEST_F(DatagramSorterFixture, DropsAStrangersRequestWithAnUnknownFlag) {
   rtype::network::PacketHeader header;
-  header.flags = ONE_FLAG_SET;
+  header.flags = UNKNOWN_FLAG;
 
   sort(stranger(), requestDatagram(header));
 
@@ -296,7 +192,7 @@ TEST_F(DatagramSorterTest, DropsAStrangersRequestWithAFlagSet) {
  * When the player's datagram arrives with its last byte cut off
  * Then it reaches no queue, and nothing is thrown
  */
-TEST_F(DatagramSorterTest, DropsATruncatedDatagram) {
+TEST_F(DatagramSorterFixture, DropsATruncatedDatagram) {
   admit(player());
   std::vector<std::byte> datagram = playerReady();
   datagram.pop_back();
@@ -310,7 +206,7 @@ TEST_F(DatagramSorterTest, DropsATruncatedDatagram) {
  * When bytes shorter than a header arrive from the player
  * Then they reach no queue, and nothing is thrown
  */
-TEST_F(DatagramSorterTest, DropsBytesShorterThanAHeader) {
+TEST_F(DatagramSorterFixture, DropsBytesShorterThanAHeader) {
   admit(player());
   const std::vector<std::byte> bytes(CLIENT_PAYLOAD_SIZE, CLIENT_PAYLOAD_BYTE);
 
@@ -325,7 +221,7 @@ TEST_F(DatagramSorterTest, DropsBytesShorterThanAHeader) {
  * request and a datagram of the player
  * Then the sorter counts the four datagrams it dropped, and only those
  */
-TEST_F(DatagramSorterTest, CountsEveryDatagramItDrops) {
+TEST_F(DatagramSorterFixture, CountsEveryDatagramItDrops) {
   admit(player());
   std::vector<std::byte> truncated = playerReady();
   truncated.pop_back();
@@ -354,7 +250,7 @@ TEST_F(DatagramSorterTest, CountsEveryDatagramItDrops) {
  * Then the player's datagram is still the one in the player queue, and the
  * request queue holds no more than its room
  */
-TEST_F(DatagramSorterTest, KeepsAPlayersDatagramThroughAFloodOfRequests) {
+TEST_F(DatagramSorterFixture, KeepsAPlayersDatagramThroughAFloodOfRequests) {
   admit(player());
   sort(player(), playerReady());
 
@@ -374,7 +270,7 @@ TEST_F(DatagramSorterTest, KeepsAPlayersDatagramThroughAFloodOfRequests) {
  * When the player sends one datagram
  * Then the player queue holds it once
  */
-TEST_F(DatagramSorterTest, GivesAPlayerAdmittedTwiceEachDatagramOnce) {
+TEST_F(DatagramSorterFixture, GivesAPlayerAdmittedTwiceEachDatagramOnce) {
   admit(player());
   admit(player());
 
@@ -388,7 +284,7 @@ TEST_F(DatagramSorterTest, GivesAPlayerAdmittedTwiceEachDatagramOnce) {
  * When a datagram from its address carries another session token
  * Then it reaches no queue, and it is counted as a wrong token only
  */
-TEST_F(DatagramSorterTest, DropsAPlayersDatagramWithAnotherToken) {
+TEST_F(DatagramSorterFixture, DropsAPlayersDatagramWithAnotherToken) {
   admit(player());
 
   sort(player(), playerReady(OTHER_SESSION_TOKEN));
@@ -403,7 +299,7 @@ TEST_F(DatagramSorterTest, DropsAPlayersDatagramWithAnotherToken) {
  * When a datagram from its address carries no session token
  * Then it reaches no queue, and it is counted as a wrong token
  */
-TEST_F(DatagramSorterTest, DropsAPlayersDatagramWithoutToken) {
+TEST_F(DatagramSorterFixture, DropsAPlayersDatagramWithoutToken) {
   admit(player());
 
   sort(player(), playerReady(NO_SESSION_TOKEN));
@@ -417,7 +313,8 @@ TEST_F(DatagramSorterTest, DropsAPlayersDatagramWithoutToken) {
  * When it sends a connection request carrying its session token
  * Then the request goes to the request queue
  */
-TEST_F(DatagramSorterTest, SendsAPlayersRequestWithItsTokenToTheRequestQueue) {
+TEST_F(DatagramSorterFixture,
+       SendsAPlayersRequestWithItsTokenToTheRequestQueue) {
   admit(player());
 
   sort(player(), requestDatagram(playerHeader()));
@@ -430,7 +327,7 @@ TEST_F(DatagramSorterTest, SendsAPlayersRequestWithItsTokenToTheRequestQueue) {
  * When a connection request from its address carries another session token
  * Then the request reaches no queue, and it is counted as a wrong token
  */
-TEST_F(DatagramSorterTest, DropsAPlayersRequestWithAnotherToken) {
+TEST_F(DatagramSorterFixture, DropsAPlayersRequestWithAnotherToken) {
   admit(player());
 
   sort(player(), requestDatagram(playerHeader(OTHER_SESSION_TOKEN)));
@@ -444,7 +341,7 @@ TEST_F(DatagramSorterTest, DropsAPlayersRequestWithAnotherToken) {
  * When datagrams carrying each token arrive from it
  * Then only the one carrying the newer token reaches the player queue
  */
-TEST_F(DatagramSorterTest, KeepsOnlyTheNewerTokenOfAPlayerAdmittedAgain) {
+TEST_F(DatagramSorterFixture, KeepsOnlyTheNewerTokenOfAPlayerAdmittedAgain) {
   admit(player(), SESSION_TOKEN);
   admit(player(), OTHER_SESSION_TOKEN);
 
@@ -463,7 +360,7 @@ TEST_F(DatagramSorterTest, KeepsOnlyTheNewerTokenOfAPlayerAdmittedAgain) {
  * When it sends a datagram that is not a connection request
  * Then the datagram reaches no queue, and it is counted like a stranger's
  */
-TEST_F(DatagramSorterTest, DropsAForgottenPlayersDatagramLikeAStrangers) {
+TEST_F(DatagramSorterFixture, DropsAForgottenPlayersDatagramLikeAStrangers) {
   admit(player());
   forget(player());
 
@@ -479,7 +376,7 @@ TEST_F(DatagramSorterTest, DropsAForgottenPlayersDatagramLikeAStrangers) {
  * When a connection request without token comes from its address
  * Then the request goes to the request queue, as a stranger's does
  */
-TEST_F(DatagramSorterTest, SendsAForgottenPlayersRequestToTheRequestQueue) {
+TEST_F(DatagramSorterFixture, SendsAForgottenPlayersRequestToTheRequestQueue) {
   admit(player());
   forget(player());
 
@@ -493,7 +390,7 @@ TEST_F(DatagramSorterTest, SendsAForgottenPlayersRequestToTheRequestQueue) {
  * When the session of the first token is forgotten
  * Then the datagrams carrying the newer token still reach the player queue
  */
-TEST_F(DatagramSorterTest, KeepsTheNewerSessionWhenTheOlderIsForgotten) {
+TEST_F(DatagramSorterFixture, KeepsTheNewerSessionWhenTheOlderIsForgotten) {
   admit(player(), SESSION_TOKEN);
   admit(player(), OTHER_SESSION_TOKEN);
   forget(player(), SESSION_TOKEN);
@@ -508,7 +405,7 @@ TEST_F(DatagramSorterTest, KeepsTheNewerSessionWhenTheOlderIsForgotten) {
  * When the first is forgotten
  * Then the datagrams of the second still reach the player queue
  */
-TEST_F(DatagramSorterTest, ForgetsOnlyThePlayerItIsGiven) {
+TEST_F(DatagramSorterFixture, ForgetsOnlyThePlayerItIsGiven) {
   admit(player());
   admit(secondPlayer());
   forget(player());
@@ -523,7 +420,7 @@ TEST_F(DatagramSorterTest, ForgetsOnlyThePlayerItIsGiven) {
  * When it sends a datagram carrying the new token
  * Then the datagram reaches the player queue
  */
-TEST_F(DatagramSorterTest, AdmitsAForgottenPlayerAgain) {
+TEST_F(DatagramSorterFixture, AdmitsAForgottenPlayerAgain) {
   admit(player(), SESSION_TOKEN);
   forget(player(), SESSION_TOKEN);
   admit(player(), OTHER_SESSION_TOKEN);
@@ -539,7 +436,7 @@ TEST_F(DatagramSorterTest, AdmitsAForgottenPlayerAgain) {
  * the first player's first
  * Then the sorter names the first player as the sender
  */
-TEST_F(DatagramSorterTest, NamesTheFirstSenderWithAnotherToken) {
+TEST_F(DatagramSorterFixture, NamesTheFirstSenderWithAnotherToken) {
   admit(player());
   admit(secondPlayer());
 
@@ -555,7 +452,7 @@ TEST_F(DatagramSorterTest, NamesTheFirstSenderWithAnotherToken) {
  * When a datagram with another token comes from the second
  * Then the sorter names the second: each take starts afresh
  */
-TEST_F(DatagramSorterTest, NamesTheFirstSenderSinceThePreviousTake) {
+TEST_F(DatagramSorterFixture, NamesTheFirstSenderSinceThePreviousTake) {
   admit(player());
   admit(secondPlayer());
   sort(player(), playerReady(OTHER_SESSION_TOKEN));
@@ -571,7 +468,7 @@ TEST_F(DatagramSorterTest, NamesTheFirstSenderSinceThePreviousTake) {
  * When a stranger sends a datagram, which is dropped
  * Then the sorter names no sender: only a wrong session token is named
  */
-TEST_F(DatagramSorterTest, NamesNoSenderForAnotherDrop) {
+TEST_F(DatagramSorterFixture, NamesNoSenderForAnotherDrop) {
   admit(player());
 
   sort(stranger(), playerReady(OTHER_SESSION_TOKEN));
@@ -585,7 +482,7 @@ TEST_F(DatagramSorterTest, NamesNoSenderForAnotherDrop) {
  * Then the journal holds a line about the datagram dropped that names the
  * address and the port of the stranger
  */
-TEST_F(DatagramSorterLogTest, LogsADroppedDatagramWithItsSender) {
+TEST_F(DatagramSorterLogFixture, LogsADroppedDatagramWithItsSender) {
   sort(stranger(), playerReady());
 
   const std::vector<std::string> lines = dropLines();
@@ -600,7 +497,7 @@ TEST_F(DatagramSorterLogTest, LogsADroppedDatagramWithItsSender) {
  * Then the journal holds a line about the datagram dropped that names that
  * address and port
  */
-TEST_F(DatagramSorterLogTest, LogsADatagramWithAnotherTokenWithItsSender) {
+TEST_F(DatagramSorterLogFixture, LogsADatagramWithAnotherTokenWithItsSender) {
   admit(player());
 
   sort(player(), playerReady(OTHER_SESSION_TOKEN));
@@ -616,7 +513,7 @@ TEST_F(DatagramSorterLogTest, LogsADatagramWithAnotherTokenWithItsSender) {
  * Then the journal holds no line about a datagram dropped: both went to a
  * queue
  */
-TEST_F(DatagramSorterLogTest, LogsNothingForTheDatagramsItQueues) {
+TEST_F(DatagramSorterLogFixture, LogsNothingForTheDatagramsItQueues) {
   admit(player());
 
   sort(player(), playerReady());
@@ -631,7 +528,7 @@ TEST_F(DatagramSorterLogTest, LogsNothingForTheDatagramsItQueues) {
  * Then the journal holds one line about them, not one per datagram: whoever
  * floods the server cannot flood the log
  */
-TEST_F(DatagramSorterLogTest, WritesOneLineForDatagramsDroppedTogether) {
+TEST_F(DatagramSorterLogFixture, WritesOneLineForDatagramsDroppedTogether) {
   for (std::size_t sent = 0; sent < DROPPED_TOGETHER_COUNT; ++sent) {
     sort(stranger(), playerReady());
   }
@@ -646,7 +543,7 @@ TEST_F(DatagramSorterLogTest, WritesOneLineForDatagramsDroppedTogether) {
  * Then the journal holds a second line: the interval is measured on that
  * clock
  */
-TEST_F(DatagramSorterLogTest, WritesTheNextLineOnceTheIntervalIsOver) {
+TEST_F(DatagramSorterLogFixture, WritesTheNextLineOnceTheIntervalIsOver) {
   sort(stranger(), playerReady());
 
   advanceClock(rtype::network::REJECTION_LINE_INTERVAL);

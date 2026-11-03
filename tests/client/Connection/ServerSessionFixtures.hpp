@@ -10,6 +10,7 @@
 #include "MessageFrame.hpp"
 #include "MessagePayload.hpp"
 #include "OutgoingDatagram.hpp"
+#include "PacketHeader.hpp"
 #include "PlayerInput.hpp"
 
 namespace rtype::client::testing {
@@ -43,6 +44,14 @@ bool holds(const network::OutgoingDatagram& datagram) {
 
 /** @returns The input @p datagram holds, its only message. */
 network::PlayerInput inputOf(const network::OutgoingDatagram& datagram);
+
+/** @returns A header of the server carrying this sequence and
+ * SESSION_TOKEN. */
+network::PacketHeader sessionHeader(std::uint16_t sequence);
+
+/** @returns A header of the server carrying this sequence and SESSION_TOKEN,
+ * that says its datagram holds guaranteed messages. */
+network::PacketHeader guaranteedSessionHeader(std::uint16_t sequence);
 
 /** @returns The actions of a player who holds up only. */
 ActionSet upHeld();

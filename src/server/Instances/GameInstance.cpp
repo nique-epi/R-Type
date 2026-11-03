@@ -77,7 +77,6 @@ GameSessionsParts sessionPartsOf(const GameInstanceParts& parts,
 GameContext contextOf(GameInstanceParts parts, GameSessions& sessions,
                       GameOwnParts own) {
   return GameContext{.events = parts.events,
-                     .timers = parts.timers,
                      .systems = own.systems,
                      .roster = sessions.roster(),
                      .hooks = own.hooks,

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstddef>
+#include "DatagramQueues.hpp"
 #include "DatagramSorter.hpp"
 #include "Logger.hpp"
 
@@ -16,7 +17,7 @@ namespace rtype::server {
 class DiscardReport {
  public:
   /** @param queues, sorter What the report reads; they must outlive it. */
-  DiscardReport(DatagramSorter::Destinations queues, DatagramSorter& sorter);
+  DiscardReport(DatagramQueues queues, DatagramSorter& sorter);
 
   /** @brief Counts one tick, and reports when it ends a report. */
   void countTick();
@@ -25,7 +26,7 @@ class DiscardReport {
   void report();
 
   logging::Logger logger_;
-  DatagramSorter::Destinations queues_;
+  DatagramQueues queues_;
   DatagramSorter* sorter_;
   std::size_t ticksSinceReport_{0};
   std::size_t reportedDiscardCount_{0};
