@@ -5,12 +5,17 @@
 #include "ApplicationConfigurationFixtures.hpp"
 #include "ApplicationConfigurationTestConstants.hpp"
 #include "ApplicationFixtures.hpp"
+#include "ApplicationLoopFixtures.hpp"
+#include "ApplicationLoopTestConstants.hpp"
 #include "ApplicationTestConstants.hpp"
 #include "CommandInterpreter.hpp"
 #include "JournalModule.hpp"
+#include "LoopStages.hpp"
+#include "StageTestConstants.hpp"
 
 using rtype::engine::Application;
 using rtype::engine::CommandInterpreter;
+using rtype::engine::LoopStages;
 using Lines = std::vector<std::string>;
 
 /**
@@ -177,4 +182,25 @@ TEST(ApplicationConfiguration, InterpreterHoldsModuleAndSetCommands) {
   ASSERT_EQ(help.size(), 2U);
   EXPECT_EQ(help[0].rfind(MODULE_HELP_START, 0), 0U);
   EXPECT_EQ(help[1].rfind(SET_HELP_START, 0), 0U);
+}
+
+/**
+ * Given three modules that each add a simulation work and a step that turns
+ * the second off
+ * When the started application runs its stages
+ * Then the works of the first and the third run and the work of the second,
+ * which was added in its install, does not
+ */
+TEST(ApplicationConfiguration, ModuleTurnedOffRunsNoWork) {
+  JournalModule journal;
+  Lines refusals;
+  Application application(LoopStages(TEST_LOOP_STAGES),
+                          threeModulesInSimulation(journal),
+                          runningLines({TURN_SECOND_OFF}, journal, refusals));
+  application.start();
+  journal.calls.clear();
+
+  application.runStages(ELAPSED_TIME);
+
+  EXPECT_EQ(journal.calls, (Lines{SIMULATION_OF_FIRST, SIMULATION_OF_THIRD}));
 }

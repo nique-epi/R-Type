@@ -77,7 +77,8 @@ class Application {
 
   /**
    * @brief Installs every module, runs the configuration step, then starts
-   * every module that is on, in list order.
+   * every module that is on, in list order. The work a module that is off
+   * added in install() is taken out of the stages, so it never runs.
    *
    * Only the first call does anything: a later call, even after stop(),
    * installs and starts nothing. When a module throws from start(), the modules
@@ -115,6 +116,7 @@ class Application {
 
  private:
   void installModules();
+  void dropWorkOfModulesThatAreOff();
   void startModules();
 
   LoopStages stages_;

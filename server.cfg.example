@@ -15,7 +15,7 @@ set state-rate 20
 # The ticks every player's input is held before it is applied, from 0 to 30.
 set input-delay 3
 
-# Turn a module off (it is installed and never started). Refused when a module
+# Turn a module off (it is installed, never started, and runs no work). Refused when a module
 # that stays on depends on it: games needs network, lobby and metrics need
 # games, all need logger.
 # module lobby off

@@ -78,6 +78,7 @@ void Application::start() {
   if (configure_) {
     configure_(commands_);
   }
+  dropWorkOfModulesThatAreOff();
   startModules();
 }
 
@@ -104,6 +105,14 @@ void Application::installModules() {
   for (const std::unique_ptr<IModule>& listedModule : modules_) {
     InstallContext context(listedModule->name(), services_, stages_);
     listedModule->install(context);
+  }
+}
+
+void Application::dropWorkOfModulesThatAreOff() {
+  for (const std::unique_ptr<IModule>& listedModule : modules_) {
+    if (!switches_.isOn(listedModule->name())) {
+      stages_.removeWorkOf(listedModule->name());
+    }
   }
 }
 

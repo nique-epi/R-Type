@@ -56,7 +56,7 @@ The client settings only change what the connection screen offers first: the pla
 
 ### `module`
 
-`module` takes exactly two words: the name of a module and `on` or `off`. A module that is off is installed and never started, so it opens nothing and does nothing. Every module is on until a line turns it off.
+`module` takes exactly two words: the name of a module and `on` or `off`. A module that is off is installed and never started, and the work it added to the loop in `install()` is taken out, so it opens nothing and runs nothing. Every module is on until a line turns it off.
 
 A module cannot be turned off while a module that stays on needs it, and cannot be turned on while a module it needs is off. The check uses the state at the time of the line, so turn off the dependents first and turn on the dependencies first.
 
