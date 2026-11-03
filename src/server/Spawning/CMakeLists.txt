@@ -13,7 +13,7 @@ target_link_libraries(rtype_server_spawning
     rtype_game_waves
     rtype_logging
     rtype_server_replication_wire
-    rtype_server_instances
+    rtype_server_instances_context
     rtype_server_sessions_roster
   PRIVATE
     rtype_game_enemy_missile_start_position

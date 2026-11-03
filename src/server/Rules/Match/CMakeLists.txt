@@ -14,7 +14,7 @@ target_link_libraries(rtype_server_rules_match
     rtype_game
     rtype_logging
     rtype_network_transport
-    rtype_server_instances
+    rtype_server_instances_context
     rtype_server_sessions_roster
     rtype_server_rules_players
     rtype_server_spawning

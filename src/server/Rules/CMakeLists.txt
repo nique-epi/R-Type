@@ -8,7 +8,7 @@ target_include_directories(rtype_server_rules_module PUBLIC ${CMAKE_CURRENT_SOUR
 target_link_libraries(rtype_server_rules_module
   PUBLIC
     rtype_engine_install_context
-    rtype_server_instances
+    rtype_server_instances_context
     rtype_server_rules_match
     rtype_server_rules_players
 )
