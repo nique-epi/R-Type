@@ -23,12 +23,18 @@ target_link_libraries(rtype_client_screens_module
     rtype_client_settings_service
     rtype_client_window
     rtype_client_window_module
+    rtype_engine_commands
     rtype_engine_events
     rtype_engine_modules
+    rtype_logging
     rtype_network_transport
   PRIVATE
     rtype_client_constants
     rtype_client_module_constants
+    rtype_network_constants
+    rtype_network_exceptions
+    rtype_network_protocol
+    rtype_network_wire_types
 )
 
 rtype_enable_warnings(rtype_client_screens_module)

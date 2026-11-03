@@ -2,7 +2,7 @@
 
 #include <string>
 #include <vector>
-#include "StageWork.hpp"
+#include "ModuleWork.hpp"
 
 namespace rtype::engine {
 
@@ -10,7 +10,7 @@ namespace rtype::engine {
  * they were added. */
 struct LoopStage {
   std::string name;
-  std::vector<StageWork> works;
+  std::vector<ModuleWork> works;
 };
 
 }  // namespace rtype::engine

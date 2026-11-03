@@ -69,12 +69,16 @@ src/engine/
 ├── Time/             fixed timestep, clocks, timers
 ├── NetworkIds/       entity to network id, and back
 ├── LaunchArguments/  options read at launch, usage and errors
+├── Commands/         named commands, declared settings, the configuration file
+│   ├── Interpreter/  the command table and the cutting of a line into words
+│   ├── Settings/     declared settings and the set command
+│   └── Configuration/ reading the file of commands, its report and its log
 ├── Modules/          installs, starts and stops a program's modules, in list order; runs their work in named stages and hands services between them
 ├── Paths/            the executable's folder and the assets/ next to it
 └── Exceptions/
 ```
 
-`EntityRegistry`, `Components`, `Systems`, `Events`, `Collision`, `Time`, `NetworkIds`, `LaunchArguments`, `Modules`, `Paths` and `Exceptions` exist.
+`EntityRegistry`, `Components`, `Systems`, `Events`, `Collision`, `Time`, `NetworkIds`, `LaunchArguments`, `Commands`, `Modules`, `Paths` and `Exceptions` exist.
 
 ### Logging
 
@@ -279,7 +283,7 @@ src/game/Waves/
 └── WaveProgression.cpp
 ```
 
-- A folder has one `CMakeLists.txt` and one CMake library. It holds the `.hpp` and `.cpp` of its classes, and of its free functions, side by side, at most ten `.cpp`. A sub-folder with a CMake library of its own exists only when the folder would pass ten `.cpp`, when a group of classes needs a dependency the rest must not link, or for the `Contract/` of an optional module; never deeper than that.
+- A folder has one `CMakeLists.txt` and one CMake library. It holds the `.hpp` and `.cpp` of its classes, and of its free functions, side by side. A folder whose classes fall into categories of three classes or more has a sub-folder for each, with a CMake library of its own; a sub-folder also exists when a group of classes needs a dependency the rest must not link, or for the `Contract/` of an optional module. Never one per class, and never deeper than two levels.
 - Interfaces (`IWaveSource`), plain structs and constants headers (`WaveConstants.hpp`) sit in the same folder as the classes.
 - Two classes of a folder never include each other, directly or through a third.
 - A folder written before this convention keeps a folder per class until it is flattened, in a commit of its own; a folder never holds both layouts. Tidying the client and the server flattens them all, except `Widgets/` and `Rendering/`.

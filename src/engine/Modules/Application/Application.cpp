@@ -9,6 +9,7 @@
 #include <string_view>
 #include <utility>
 #include <vector>
+#include "ConfigurationStep.hpp"
 #include "EngineException.hpp"
 #include "IModule.hpp"
 #include "InstallContext.hpp"
@@ -48,11 +49,17 @@ Application::Application(std::vector<std::unique_ptr<IModule>> modules)
                   std::move(modules)) {}
 
 Application::Application(LoopStages stages,
-                         std::vector<std::unique_ptr<IModule>> modules)
-    : stages_(std::move(stages)), modules_(std::move(modules)) {
+                         std::vector<std::unique_ptr<IModule>> modules,
+                         ConfigurationStep configure)
+    : stages_(std::move(stages)),
+      modules_(std::move(modules)),
+      configure_(std::move(configure)) {
   requireNoNullModule<IModule>(modules_);
   requireDependenciesListedBefore(modules_);
   services_.provide(*this);
+  services_.provide(commands_);
+  services_.provide(configuration_);
+  switches_.registerCommand(commands_);
 }
 
 Application::~Application() {
@@ -68,6 +75,10 @@ void Application::start() {
   }
   startCalled_ = true;
   installModules();
+  if (configure_) {
+    configure_(commands_);
+  }
+  dropWorkOfModulesThatAreOff();
   startModules();
 }
 
@@ -76,9 +87,10 @@ void Application::stop() {
     const std::scoped_lock lock{stagesMutex_};
     running_ = false;
   }
-  while (startedCount_ > 0) {
-    --startedCount_;
-    modules_[startedCount_]->stop();
+  while (!started_.empty()) {
+    IModule* const lastStarted = started_.back();
+    started_.pop_back();
+    lastStarted->stop();
   }
 }
 
@@ -96,15 +108,26 @@ void Application::installModules() {
   }
 }
 
+void Application::dropWorkOfModulesThatAreOff() {
+  for (const std::unique_ptr<IModule>& listedModule : modules_) {
+    if (!switches_.isOn(listedModule->name())) {
+      stages_.removeWorkOf(listedModule->name());
+    }
+  }
+}
+
 void Application::startModules() {
   for (const std::unique_ptr<IModule>& listedModule : modules_) {
+    if (!switches_.isOn(listedModule->name())) {
+      continue;
+    }
     try {
       listedModule->start();
     } catch (const std::exception& error) {
       stop();
       throw ModuleStartFailedException(listedModule->name(), error.what());
     }
-    ++startedCount_;
+    started_.push_back(listedModule.get());
   }
   const std::scoped_lock lock{stagesMutex_};
   running_ = true;

@@ -7,6 +7,7 @@ target_link_libraries(rtype_client_modules
     rtype_client_launch_options
     rtype_client_window_module
     rtype_engine_application
+    rtype_engine_commands
     rtype_engine_modules
     rtype_logging
   PRIVATE
