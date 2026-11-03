@@ -27,7 +27,7 @@ target_link_libraries(rtype_server_games_module
     rtype_server_module_constants
     rtype_server_replication_constants
     rtype_server_session_datagram
-    rtype_server_wave_catalog
+    rtype_server_spawning
 )
 
 rtype_enable_warnings(rtype_server_games_module)

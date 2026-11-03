@@ -9,7 +9,7 @@ target_link_libraries(rtype_server_instances
     rtype_network_transport
     rtype_server_constants
     rtype_server_player_roster
-    rtype_server_wave_plan
+    rtype_server_spawning
 )
 
 add_subdirectory(WorldSlot)
