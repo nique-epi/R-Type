@@ -21,9 +21,7 @@ target_link_libraries(rtype_client_game_module
     rtype_client_mission_banner
     rtype_client_pilots
     rtype_client_prediction
-    rtype_client_screen_assets
-    rtype_client_screen_interfaces
-    rtype_client_screen_registry
+    rtype_client_screens_module
     rtype_client_session
     rtype_client_silence_warning
     rtype_client_window_module
@@ -41,7 +39,6 @@ target_link_libraries(rtype_client_game_module
     rtype_client_hit_flash_system
     rtype_client_interface_pixel
     rtype_client_mission_start
-    rtype_client_player_preferences
     rtype_client_settings_module
     rtype_client_ship_flight_system
     rtype_client_sprite_effect_system

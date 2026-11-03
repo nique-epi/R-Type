@@ -8,7 +8,7 @@ target_link_libraries(rtype_client_saved_stamp
     rtype_client_settings_module
     rtype_client_slider
     rtype_client_window_module
-    rtype_client_screen_assets
+    rtype_client_screens_module
     rtype_engine_time
 )
 

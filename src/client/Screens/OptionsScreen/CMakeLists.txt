@@ -10,7 +10,7 @@ target_link_libraries(rtype_client_options_screen
     rtype_client_options_tabs
     rtype_client_reset_dialog
     rtype_client_saved_stamp
-    rtype_client_screen_assets
+    rtype_client_screens_module
     rtype_client_settings_module
     rtype_client_window_module
   PRIVATE

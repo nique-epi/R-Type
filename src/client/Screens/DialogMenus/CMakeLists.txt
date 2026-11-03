@@ -6,7 +6,7 @@ target_link_libraries(rtype_client_dialog_menus
   PUBLIC
     rtype_client_session
     rtype_client_menu
-    rtype_client_screen_interfaces
+    rtype_client_screens_module
   PRIVATE
     rtype_client_menu_builder
 )

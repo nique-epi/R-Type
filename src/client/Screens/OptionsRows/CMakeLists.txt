@@ -6,7 +6,7 @@ target_link_libraries(rtype_client_options_rows
   PUBLIC
     rtype_client_input
     rtype_client_row_control
-    rtype_client_screen_assets
+    rtype_client_screens_module
     rtype_client_settings_module
     rtype_client_window_module
   PRIVATE
