@@ -26,7 +26,7 @@ Why: the subject (page 16) makes an engine modular through what a developer choo
 
    | Order | The code… | Then |
    |---|---|---|
-   | 1 | belongs to a required module | it stays there, and the code that needs it includes it: `Modules/Lobby/` and `Modules/Metrics/` include `Games.hpp`, `Widgets/` includes `PlayfieldMapping.hpp` |
+   | 1 | belongs to a required module | it stays there, and the code that needs it includes it: `Lobby/` and `Metrics/` include `Games.hpp`, `Widgets/` includes `PlayfieldMapping.hpp` |
    | 2 | belongs to an optional module | it goes in the `Contract/` of that module: `ISoundPlayer` |
    | 3 | has no owner and serves several folders | it goes in a library: `Widgets/`, `Rendering/` |
 
@@ -46,7 +46,7 @@ Why: the subject (page 16) makes an engine modular through what a developer choo
 
 ### A new module, and what stays tolerated
 
-12. **A new module is written directly in its own folder, `src/<program>/<Name>/`**, class and code together. `Modules/` receives nothing but its line in the list and the constant of its name. Its pull request adds its row to the list of modules, required or optional.
+12. **A new module is written directly in its own folder, `src/<program>/<Name>/`**, class and code together. `Modules/` receives nothing but its line in the list, and `ModuleConstants.hpp` the constant of its name. Its pull request adds its row to the list of modules, required or optional.
 13. **Two layouts stay tolerated until the client and the server are tidied**; those two changes end the tolerance, except for the class folders of `Widgets/` and `Rendering/`:
     - a module whose class sits in `Modules/<Name>/`, or in `Instances/<Name>Module/` for a game module, with its code in a folder of the feature (`src/client/Audio/`);
     - a folder made of class folders. A folder holds either class folders or flat pairs, never both. A change that adds a class to such a folder either gives it a folder like its siblings, or flattens the folder first in its own `refactor` commit (includes unchanged, targets merged, `CMakeLists.txt` and docs updated, `fix-process-grep-every-page-for-what-the-feature-replaced.md`); the pull request says which. A folder the change does not touch is reported, not reworked.

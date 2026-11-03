@@ -39,7 +39,7 @@ A module lives at one of two scopes.
 | Interface | `IModule` (`src/engine/Modules/IModule.hpp`) | `IGameModule` (`src/server/Instances/IGameModule.hpp`) |
 | Owner | `Application`, one per program run | `GameInstance`, one per game hosted by the server |
 | Lives | from the start of the program to its end | from the creation of the game to its destruction |
-| Listed in | `serverModules()` (`src/server/Modules/Assembly/`), `clientModules()` (`src/client/Modules/Assembly/`) | `rtypeGameModules()` (`src/server/Modules/Games/RtypeGameModules.cpp`) |
+| Listed in | `serverModules()` (`src/server/Modules/`), `clientModules()` (`src/client/Modules/Assembly/`) | `rtypeGameModules()` (`src/server/Games/RtypeGameModules.cpp`) |
 | Stages | `SERVER_LOOP_STAGES`, `CLIENT_LOOP_STAGES` | `GAME_STAGES` |
 | Example | the lobby, the sound | the rules of R-Type, the replication of the world |
 
@@ -53,7 +53,7 @@ The server therefore has modules inside a module: the games module of the progra
 
 ## How modules talk
 
-Modules never call each other directly, and only the list of a program (`Assembly`, `rtypeGameModules()`) includes the class of a module. A module includes the header of each service it requires, as the next section allows. They meet through three channels.
+Modules never call each other directly, and only the list of a program (`serverModules()`, `clientModules()`, `rtypeGameModules()`) includes the class of a module. A module includes the header of each service it requires, as the next section allows. They meet through three channels.
 
 | Channel | What it carries | Where it is set up |
 |---|---|---|
@@ -91,7 +91,7 @@ A module is switched on or off at one of three moments. Only the first two exist
 
 | How | Exists | How it works |
 |---|---|---|
-| At compile time | Yes | The module is in the list of `serverModules()` or `clientModules()`, and its library is linked by `Assembly/CMakeLists.txt`. Remove the three lines the [tutorial](/R-Type/tutorial-write-a-module/#step-4-put-it-in-the-servers-list) adds: the `#include` and the `push_back` in `ServerModules.cpp` or `ClientModules.cpp`, and the library in `Assembly/CMakeLists.txt`. On the server, the list of names that `tests/server/Modules/Assembly/ServerModulesTest.cpp` expects changes too |
+| At compile time | Yes | The module is in the list of `serverModules()` or `clientModules()`, and its library is linked by the `CMakeLists.txt` beside that list (`src/server/Modules/`, `src/client/Modules/Assembly/`). Remove the three lines the [tutorial](/R-Type/tutorial-write-a-module/#step-4-put-it-in-the-servers-list) adds: the `#include` and the `push_back` in `ServerModules.cpp` or `ClientModules.cpp`, and the library in that `CMakeLists.txt`. On the server, the list of names that `tests/server/Modules/ServerModulesTest.cpp` expects changes too |
 | At launch, by configuration | Yes | The module stays in the list; a launch option chooses what it does. `--no-sound` gives `ClientAudioModule` an `AudioMode::Disabled`: it still provides an `IAudioService`, one that plays nothing |
 | At run time, by plugin | No | No module is loaded from a file while the program runs. A module is compiled into its program |
 
@@ -112,6 +112,6 @@ Two rules decide which one fits:
 | Change the order modules start in | The order of the lines of `serverModules()` or `clientModules()`: a module comes after every module it depends on |
 | Add a stage to a loop | `SERVER_LOOP_STAGES` (`src/server/ServerConstants.hpp`) or `CLIENT_LOOP_STAGES` (`src/client/ClientConstants.hpp`) |
 | Add a rule to a game | An `IGameModule` listed in `rtypeGameModules()` |
-| Give a module a name others can depend on | `src/server/Modules/ModuleConstants.hpp` or `src/client/Modules/ModuleConstants.hpp` |
+| Give a module a name others can depend on | `src/server/ModuleConstants.hpp` or `src/client/Modules/ModuleConstants.hpp` |
 | Change what happens when a module fails to start | `Application::startModules()` in `src/engine/Modules/Application/Application.cpp` |
-| Test a module | An `Application` built from the module and the ones it depends on, as `tests/server/Modules/Lobby/ServerLobbyModuleTest.cpp` does, with its fixture `ServerLobbyFixture` |
+| Test a module | An `Application` built from the module and the ones it depends on, as `tests/server/Lobby/ServerLobbyModuleTest.cpp` does, with its fixture `ServerLobbyFixture` |
