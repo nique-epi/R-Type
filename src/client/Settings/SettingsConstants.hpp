@@ -53,6 +53,7 @@ constexpr std::string_view COLOR_MODE_NAME = "color_mode";
 constexpr std::string_view REDUCE_FLASHES_NAME = "reduce_flashes";
 constexpr std::string_view SOUND_CUES_NAME = "sound_cues";
 constexpr std::string_view AUTO_FIRE_NAME = "auto_fire";
+constexpr std::string_view CLIENT_PREDICTION_NAME = "client_prediction";
 
 /** @brief Names of the keys of the bound actions, in the order of
  * BOUND_ACTIONS. */

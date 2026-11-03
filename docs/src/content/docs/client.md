@@ -527,12 +527,13 @@ The session sends and receives through an `IRoutedLink` (`src/client/Connection/
 
 The game screen sends the actions the player holds to the server through an `IPlayerInputLink` (`src/client/Connection/`): `ServerSession` in the client, which the builder of the game screen hands to it, and `RecordingPlayerInputLink` (`tests/doubles/`) in the tests.
 
-- Each `GameScreen::update()` asks `PlayerInputPacer` (`rtype_client_player_input_pacer`, `src/client/Connection/PlayerInputPacer/`) whether an input is due, and if so sends `playerActions()`. The first update sends at once, then one input goes out every `PLAYER_INPUT_INTERVAL`, a sixtieth of a second (`PLAYER_INPUTS_PER_SECOND`, 60).
-- The time a frame lasts beyond the interval counts toward the next input, so frames of 16 or 17 ms still send 60 inputs per second. Never two in one frame: below 60 frames per second the client sends one input per frame, and a stall of the frame loop sends one input, not a burst.
-- `ServerSession::sendPlayerInput()` sends a `PlayerInput` numbered after the previous one, a 30-byte datagram carrying the session token, only while the attempt is `Accepted`; otherwise it sends nothing.
+- With PREDICTION on, each `GameScreen::update()` sends one input for each simulation tick that passed, so the rate is that of the simulation, `SIMULATION_TICKS_PER_SECOND` (60), and a frame that lasts several ticks sends several inputs, at most `MAXIMUM_TICKS_PER_ADVANCE` (5); the time past them is dropped (see [Own ship prediction](#own-ship-prediction-ownshippredictor-shipprediction)). `PLAYER_INPUTS_PER_SECOND` is not read in this mode.
+- With PREDICTION off, `GameScreen::update()` asks `PlayerInputPacer` (`rtype_client_player_input_pacer`, `src/client/Connection/PlayerInputPacer/`) whether an input is due, and if so sends `playerActions()`. The first update sends at once, then one input goes out every `PLAYER_INPUT_INTERVAL`, a sixtieth of a second (`PLAYER_INPUTS_PER_SECOND`, 60).
+- With PREDICTION off, the time a frame lasts beyond the interval counts toward the next input, so frames of 16 or 17 ms still send 60 inputs per second. Never two in one frame: below 60 frames per second the client sends one input per frame, and a stall of the frame loop sends one input, not a burst.
+- `ServerSession::sendPlayerInput()` sends a `PlayerInput` numbered after the previous one, a 30-byte datagram carrying the session token, only while the attempt is `Accepted`, and returns the number it used; otherwise it sends nothing and returns nothing.
 - The game goes on behind the options, so it keeps sending them there, with nothing held, or shoot alone while AUTO-FIRE is on.
 
-The rate is **provisional**, like every rate of the protocol page: code must read `PLAYER_INPUTS_PER_SECOND` and `PLAYER_INPUT_INTERVAL` in `src/client/Connection/ConnectionConstants.hpp`. The server keeps the newest input of each player and moves its ship with it at each tick of a game in progress (see [Server and game](/R-Type/server/#moving-the-ships-shipcontrol)), and fires its missiles while it holds shoot (see [Server and game](/R-Type/server/#shooting-weaponsystem)).
+The rate with PREDICTION off is **provisional**, like every rate of the protocol page: code must read `PLAYER_INPUTS_PER_SECOND` and `PLAYER_INPUT_INTERVAL` in `src/client/Connection/ConnectionConstants.hpp`. The server keeps the newest input of each player and moves its ship with it at each tick of a game in progress (see [Server and game](/R-Type/server/#moving-the-ships-shipcontrol)), and fires its missiles while it holds shoot (see [Server and game](/R-Type/server/#shooting-weaponsystem)).
 
 ## Options: `OptionsScreen`
 
@@ -541,7 +542,7 @@ The rate is **provisional**, like every rate of the protocol page: code must rea
 | Tab | Rows |
 |---|---|
 | SOUND | MUSIC and EFFECTS, sliders from 0 to 100 % by `VOLUME_STEP` (5); MUTE ALL; DEFAULT SOUND |
-| CONTROLS | MOVE UP, MOVE DOWN, MOVE LEFT, MOVE RIGHT, SHOOT and READY, one key slot each; DEFAULT KEYS |
+| CONTROLS | MOVE UP, MOVE DOWN, MOVE LEFT, MOVE RIGHT, SHOOT and READY, one key slot each; DEFAULT KEYS; PREDICTION, a switch |
 | DISPLAY | DISPLAY MODE, a list of WINDOWED and BORDERLESS; WINDOW SIZE, a list, and under it every size of `WINDOW_SIZES` drawn to scale. While the window is borderless, WINDOW SIZE is disabled and shows the size of the screen, and the chart is not drawn |
 | ACCESS | COLOR MODE, a selector; REDUCE FLASHES, SOUND CUES, AUTO-FIRE |
 
@@ -549,7 +550,7 @@ Every row reads the `PlayerSettings` that the settings module owns and changes t
 
 The description of the selected row follows its state: the keys of an open list, `> PRESS THE NEW KEY. ESC CANCELS` while a key is awaited, `> THIS KEY CANNOT BE BOUND` after a key that cannot be bound, `> SAME KEY AS SHOOT: CHANGE ONE` when two actions share a key, `> SOUND MUTED: SEE MUTE ALL` on a muted volume, `> BORDERLESS COVERS THE WHOLE SCREEN` on a borderless window, and the sizes too large for the desktop, which the list shows dashed and never takes. Every description fits right of BACK, 43 characters at most.
 
-REDUCE FLASHES is read by the game: its effects show no white and a hit shades the entity instead of whitening it (see [Reduced flashes](#reduced-flashes-flashpreference)). AUTO-FIRE is read by the game at once: while it is on, every input holds shoot (see [Player commands](#player-commands-playercommands)). The READY key is read by the waiting room. The volumes and MUTE ALL reach the sounds and the music at once, because the service tells them (see [Sounds and music](#sounds-and-music-iaudioservice-soundplayer-musicplayer)). The color mode is read by every screen that paints a pilot (see [Color modes](#color-modes-playerpalette)). SOUND CUES is read by the game at once: the shot of a Bydo and a pilot hit show on screen (see [Sound cues](#sound-cues-soundcues)).
+REDUCE FLASHES is read by the game: its effects show no white and a hit shades the entity instead of whitening it (see [Reduced flashes](#reduced-flashes-flashpreference)). AUTO-FIRE is read by the game at once: while it is on, every input holds shoot (see [Player commands](#player-commands-playercommands)). PREDICTION is read by the game at once too: turning it off sends the ship back to where the last state puts it, turning it on starts the prediction again from the next state (see [Own ship prediction](#own-ship-prediction-ownshippredictor-shipprediction)). The READY key is read by the waiting room. The volumes and MUTE ALL reach the sounds and the music at once, because the service tells them (see [Sounds and music](#sounds-and-music-iaudioservice-soundplayer-musicplayer)). The color mode is read by every screen that paints a pilot (see [Color modes](#color-modes-playerpalette)). SOUND CUES is read by the game at once: the shot of a Bydo and a pilot hit show on screen (see [Sound cues](#sound-cues-soundcues)).
 
 Over the title (`OPTIONS_SCREEN`) the options hide it. Over a game (`GAME_OPTIONS_SCREEN`) the game goes on running, dimmed under them, and THE GAME GOES ON is written in the top-right corner. The texts are in `src/client/Screens/OptionsScreenConstants.hpp`. The screen takes the window as an `ISizableWindow` (`src/client/Window/`) and the `SettingsService`, which saves through an `ISettingsStorage` (`src/client/Settings/`), so `client_screen_tests` checks it with a fake window and a recording storage from `tests/doubles/`.
 
@@ -559,7 +560,7 @@ The chart of the window sizes is `paintWindowSizeChart()` (`rtype_client_window_
 
 ## Settings: `PlayerSettings`, `SettingsService`, `SettingsFile`
 
-`PlayerSettings` (`rtype_client_settings`, `src/client/Settings/`) holds what the player sets: the music and effects volumes, in percent from `MINIMUM_VOLUME` (0) to `MAXIMUM_VOLUME` (100), mute, the window size, empty until the player picks one, the display mode, windowed at first, the keys (`KeyBindings`), the color mode, reduce flashes, sound cues and auto-fire. A default-built value holds the settings of a first launch; the settings module then takes reduce flashes from the system (`systemPrefersReducedMotion()`).
+`PlayerSettings` (`rtype_client_settings`, `src/client/Settings/`) holds what the player sets: the music and effects volumes, in percent from `MINIMUM_VOLUME` (0) to `MAXIMUM_VOLUME` (100), mute, the window size, empty until the player picks one, the display mode, windowed at first, the keys (`KeyBindings`), the color mode, reduce flashes, sound cues, auto-fire and client prediction (on at first). A default-built value holds the settings of a first launch; the settings module then takes reduce flashes from the system (`systemPrefersReducedMotion()`).
 
 `SettingsService` (`rtype_client_settings_service`, `src/client/Settings/SettingsService/`) is the one way to change them: the options screen and any other module go through it. Each setting is a constant naming its field, its `SettingId` and, for an integer, its range (`MUSIC_VOLUME_SETTING`, `MUTED_SETTING`, `AUTO_FIRE_SETTING`, in `SettingDefinitionConstants.hpp`):
 
@@ -589,6 +590,7 @@ color_mode=off
 reduce_flashes=off
 sound_cues=off
 auto_fire=off
+client_prediction=on
 ```
 
 `window_size=1920x1080` comes between `mute_all` and `display_mode` once a size is picked; `display_mode` is `windowed` or `borderless`. `readSettingsText()` reads a file over the settings of a first launch: a line that is missing, unknown or invalid leaves the default of that setting only, and is logged as a warning with its number (`line 3: unknown setting`); spaces around a name or a value, a final `\r` and lines starting with `#` are ignored; a file larger than `MAXIMUM_SETTINGS_FILE_SIZE` (65536 bytes) is ignored whole. A save writes `settings.ini.tmp` next to the file, then renames it over the file, so the file is always the previous one or the new one. The folder is created on the first save, open to its owner only.
@@ -630,9 +632,30 @@ const ActionSet held = gameScreen.playerActions();
 const std::uint8_t actions = held.bits();
 ```
 
-`GameScreen::playerActions()` is the only way out, since the window hands the key and focus events to the screen on top. The game screen sends it to the server at each input due (see [Inputs to the server](#inputs-to-the-server-playerinputpacer-iplayerinputlink)); the client does not move the player's ship itself yet: it shows it where the world state of the server puts it. The game screen logs `actions held: <byte>` at trace level each time the byte changes. It assumes the window has the focus when it is built and learns otherwise from the focus events. Only the screen on top receives events, so opening the options releases every action held (`PlayerCommands::releaseAll()`): a key changed in the options would otherwise never release its action.
+`GameScreen::playerActions()` is the only way out, since the window hands the key and focus events to the screen on top. The game screen sends it to the server at each input due (see [Inputs to the server](#inputs-to-the-server-playerinputpacer-iplayerinputlink)); with PREDICTION on, the client moves the player's ship itself (see [Own ship prediction](#own-ship-prediction-ownshippredictor-shipprediction)); with it off, it shows the ship where the world state of the server puts it. The game screen logs `actions held: <byte>` at trace level each time the byte changes. It assumes the window has the focus when it is built and learns otherwise from the focus events. Only the screen on top receives events, so opening the options releases every action held (`PlayerCommands::releaseAll()`): a key changed in the options would otherwise never release its action.
 
 While AUTO-FIRE is on (`PlayerSettings::autoFire`), `playerActions()` holds shoot as well, whatever the keys: releasing the shoot key, losing the focus or opening the options leaves it held, so the ship goes on firing without a key. The setting is read at each call, so a change in the options applies at the next input. The server fires at most `SHOTS_PER_SECOND` (3) missiles per second per ship, whatever the inputs say (see [Server and game](/R-Type/server/#shooting-weaponsystem)), so auto-fire fires no faster than the key held.
+
+## Own ship prediction: `OwnShipPredictor`, `ShipPrediction`
+
+Without prediction, a key shows after the input reached the server, the server moved the ship and a state came back: a round trip plus up to one state interval. With PREDICTION on (the default, `PlayerSettings::clientPrediction`), the client moves its own ship at once with the code the server runs, and corrects it from what the server confirms.
+
+| | PREDICTION off | PREDICTION on |
+|---|---|---|
+| Own ship | where the last state puts it | moved at once by `shipAfter`, corrected from the states |
+| Inputs sent | one per `PLAYER_INPUT_INTERVAL`, at most one per frame | one per simulation tick, up to `MAXIMUM_TICKS_PER_ADVANCE` (5) per frame |
+| Cost | none | the ship can be wrong for a moment; the correction can show as a jump |
+
+The technique is the one described by Gabriel Gambetta in *Client-Side Prediction and Server Reconciliation*: number each input, keep it until the server confirms it, and replay the unconfirmed ones on top of the server state. It needs a deterministic movement, which is why the client runs `shipAfter` (`rtype_game_ship_control`) and not its own copy. The article notes that a prediction is usually right and not always.
+
+- `OwnShipPredictor` (`src/client/Prediction/`) counts the time of each update into whole simulation ticks, as the server does, because the drift of `shipAfter` depends on the length of the step. For each tick it sends the actions held through `IPlayerInputLink::sendPlayerInput()` and predicts the number it was sent under. Time past `MAXIMUM_TICKS_PER_ADVANCE` ticks is dropped.
+- `ShipPrediction` keeps each command, its number, its directions and the ship predicted right after it, until the server confirms a newer one. Each `WorldState` carries `acknowledgedInput` (see [Protocol](/R-Type/protocol/#world-state)); `OwnShip` reads it with the position of the own ship. A state cut into several datagrams lists every player in each part and the entities in one of them, so only the part that lists the ship reconciles.
+- Reconciling drops the commands before the confirmed one, then compares its predicted position with the position of the server. Within `RECONCILIATION_TOLERANCE` (two ticks at full speed, 16 units) nothing changes, so the ship does not jump for a small difference: the server can be a tick ahead, since it repeats the directions of a tick that brought no input. Beyond it, the prediction restarts from the server position with the motion kept after the confirmed command, and replays the commands after it.
+- The velocity and the maneuver of the ship are not in the state, so the client keeps its own after each command and restarts from that.
+- `placePredictedShip()` puts the predicted position on the entity of the own ship after the state was applied, so the position of the last state never shows.
+- The prediction starts from the first state that lists the ship, and starts again from a ship with another entity id: the player came back after a hit.
+
+The movement of the other ships is not predicted: they are drawn where the last state puts them.
 
 ## Launch options: `LaunchOptions`
 
@@ -816,7 +839,8 @@ The dialog is a `DialogScreen` (`src/client/Screens/DialogScreen/`), which shows
 | Add a text field to a menu | `MenuBuilder::textField()` with a `TextField` (`src/client/Widgets/TextField/`), then `Menu::fieldText()`, as `ConnectionScreen` does |
 | Change the characters a field accepts | `TextField::Characters` and `TextField::accepts()`; the ranges in `src/client/Widgets/WidgetConstants.hpp` |
 | Change how the client joins a server, or how it holds the session | `ServerSession`, `WaitingRoom` and their helpers in `src/client/Connection/`; `CONNECTION_REQUEST_INTERVAL`, `CONNECTION_ATTEMPT_TIMEOUT`, `READY_STATE_INTERVAL`, `DISCONNECTION_COPY_COUNT` and `DISCONNECTION_COPY_INTERVAL` in `src/client/Connection/ConnectionConstants.hpp`; `HEARTBEAT_INTERVAL`, `SESSION_TIMEOUT` and `RECONNECTION_GRACE`, shared with the server, in `src/network/Protocol/ProtocolConstants.hpp` |
-| Change how often the client sends its inputs | `PLAYER_INPUTS_PER_SECOND` in `src/client/Connection/ConnectionConstants.hpp`, `PlayerInputPacer` in `src/client/Connection/PlayerInputPacer/` |
+| Change how often the client sends its inputs | With PREDICTION off: `PLAYER_INPUTS_PER_SECOND` in `src/client/Connection/ConnectionConstants.hpp`, `PlayerInputPacer` in `src/client/Connection/PlayerInputPacer/`. With PREDICTION on, one input per simulation tick: `OwnShipPredictor::advance()` in `src/client/Prediction/` |
+| Change how the own ship is predicted, or when the client takes the server position back | `ShipPrediction` and `PredictionConstants.hpp` (`RECONCILIATION_TOLERANCE`) in `src/client/Prediction/`; the movement itself is `shipAfter` in `src/game/ShipControl/` |
 | Change what an input carries | `ServerSession::sendPlayerInput()` in `src/client/Connection/ServerSession/`, `GameScreen::update()` and `GameScreen::playerActions()`, which adds the shoot of AUTO-FIRE, in `src/client/Screens/GameScreen/` |
 | Change the texts, sizes or checks of the connection screen | `src/client/Screens/ConnectionScreenConstants.hpp`, `ConnectionScreen::connect()` |
 | Change what the fields of the connection screen start with | `ServerChoice` (`src/client/Screens/ServerChoice.hpp`), written by `ConnectionScreen::connect()`, kept by `ClientScreens` |

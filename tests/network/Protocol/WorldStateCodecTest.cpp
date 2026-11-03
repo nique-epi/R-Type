@@ -65,18 +65,19 @@ using rtype::network::testing::UNROUNDED_Y;
 /**
  * Given a state with one player and one entity
  * When it is encoded
- * Then the payload is the 27 bytes of the protocol page: tick, playerCount,
- * the player, entityCount, the entity with x and y in eighths of a unit
+ * Then the payload is the 31 bytes of the protocol page: tick, playerCount,
+ * the player with the newest input number it is served up to, entityCount, the
+ * entity with x and y in eighths of a unit
  */
 TEST(WorldStateCodec, EncodesTheLayoutOfTheProtocolPage) {
   const auto payloads = WorldStateCodec::encode(oneShipState());
 
   ASSERT_EQ(payloads.size(), 1U);
-  EXPECT_EQ(
-      payloads.front(),
-      byteSequence({0x00, 0x00, 0x00, 0x03, 0x01, 0x01, 0x00, 0x00, 0x00,
-                    0x07, 0x03, 0x00, 0x00, 0x00, 0x64, 0x00, 0x00, 0x01,
-                    0x00, 0x00, 0x00, 0x09, 0x01, 0x03, 0x20, 0x01, 0x94}));
+  EXPECT_EQ(payloads.front(),
+            byteSequence({0x00, 0x00, 0x00, 0x03, 0x01, 0x01, 0x00, 0x00,
+                          0x00, 0x07, 0x03, 0x00, 0x00, 0x00, 0x64, 0x00,
+                          0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00,
+                          0x00, 0x09, 0x01, 0x03, 0x20, 0x01, 0x94}));
 }
 
 /**
@@ -94,7 +95,8 @@ TEST(WorldStateCodec, KeepsTheLargestValueOfEachField) {
                               .lives = LARGEST_U8,
                               .score = LARGEST_U32,
                               .invulnerable = true,
-                              .motion = LARGEST_MOTION}},
+                              .motion = LARGEST_MOTION,
+                              .acknowledgedInput = LARGEST_U32}},
       .entities = {EntityState{.entityId = LARGEST_U32,
                                .entityType = WireEntityType::EnemyMissile,
                                .x = SMALLEST_WIRE_COORDINATE,
@@ -170,9 +172,9 @@ TEST(WorldStateCodec, ClampsAPositionToTheRangeOfTheWire) {
 }
 
 /**
- * Given four players and 124 entities, the most one datagram holds
+ * Given four players and 122 entities, the most one datagram holds
  * When the state is encoded
- * Then one payload of 1170 bytes is produced, within the 1175 a datagram
+ * Then one payload of 1168 bytes is produced, within the 1175 a datagram
  * carries
  */
 TEST(WorldStateCodec, KeepsTheLargestStateThatFitsInOnePayload) {
@@ -188,10 +190,10 @@ TEST(WorldStateCodec, KeepsTheLargestStateThatFitsInOnePayload) {
 }
 
 /**
- * Given four players and 125 entities, one more than a datagram holds
+ * Given four players and 123 entities, one more than a datagram holds
  * When the state is encoded
  * Then two payloads are produced, each with the same tick and the four
- * players, holding 124 then 1 entities in their order, and none exceeds 1175
+ * players, holding 122 then 1 entities in their order, and none exceeds 1175
  * bytes
  */
 TEST(WorldStateCodec, SplitsEntitiesThatDoNotFitIntoSeveralPayloads) {
@@ -360,8 +362,11 @@ TEST(WorldStateCodec, RefusesAnEntityWithoutAnId) {
  */
 TEST(WorldStateCodec, RefusesAPlayerNumberOutsideOneToFour) {
   const auto withNumber = [](unsigned int number) {
-    return byteSequence({0, 0, 0, 1, 1, number, 0, 0, 0, EXAMPLE_PLAYER_SHIP_ID,
-                         SOME_LIVES, 0, 0, 0, SOME_SCORE, 0, 0, 0});
+    return byteSequence({0,          0, 0, 1, 1,
+                         number,     0, 0, 0, EXAMPLE_PLAYER_SHIP_ID,
+                         SOME_LIVES, 0, 0, 0, SOME_SCORE,
+                         0,          0, 0, 0, 0,
+                         0,          0});
   };
 
   EXPECT_THROW((void)WorldStateCodec::decode(
@@ -386,12 +391,16 @@ TEST(WorldStateCodec, RefusesTheSamePlayerTwice) {
                                      SOME_LIVES, 0,
                                      0,          0,
                                      SOME_SCORE, 0,
+                                     0,          0,
+                                     0,          0,
                                      0,          1,
                                      0,          0,
                                      0,          EXAMPLE_PLAYER_SHIP_ID,
                                      SOME_LIVES, 0,
                                      0,          0,
                                      SOME_SCORE, 0,
+                                     0,          0,
+                                     0,          0,
                                      0,          0});
 
   EXPECT_THROW((void)WorldStateCodec::decode(payload),

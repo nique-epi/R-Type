@@ -37,7 +37,7 @@ struct HeldChange {
  * started outside comes back the least needed.
  *
  * The server runs it for each ship at every tick of a game in progress. The
- * client is meant to run it to predict its own ship, and does not yet.
+ * client runs it to predict its own ship, one tick per input.
  *
  * @param elapsed Zero or more.
  */

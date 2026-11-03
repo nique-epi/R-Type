@@ -94,6 +94,9 @@ Menu controlsTab(const OptionsTabsParts& parts, OptionsRowHandles& handles) {
       {.label = DEFAULT_KEYS_LABEL, .description = DEFAULT_KEYS_DESCRIPTION},
       resetLink(parts, DEFAULT_KEYS_QUESTION,
                 [&service] { service.resetKeys(); }));
+  builder.row(
+      {.label = PREDICTION_LABEL, .description = PREDICTION_DESCRIPTION},
+      settingSwitch(service, CLIENT_PREDICTION_SETTING));
   return withBack(parts, builder);
 }
 

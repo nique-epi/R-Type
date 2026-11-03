@@ -323,23 +323,22 @@ void EntityReplicator::applyPlayers(
     std::span<const network::PlayerState> players) {
   for (const network::PlayerState& player : players) {
     const std::optional<int> pilotColor = pilotColorOf(player.playerNumber);
-    if (pilotColor.has_value()) {
-      markShip(player, *pilotColor);
-      feedback_.effects.get().noteScore(*pilotColor, player.score);
+    if (!pilotColor.has_value()) {
+      continue;
     }
+    if (const std::optional<engine::Entity> ship =
+            shipEntityOf(player.shipEntityId)) {
+      components_->add(*ship, PilotShip{.color = *pilotColor});
+      components_->add(*ship, flightOf(*components_, *ship, player));
+      feedback_.effects.get().setInvulnerable(*ship, player.invulnerable);
+    }
+    feedback_.effects.get().noteScore(*pilotColor, player.score);
   }
 }
 
-void EntityReplicator::markShip(const network::PlayerState& player,
-                                int pilotColor) {
-  const std::optional<engine::Entity> ship =
-      shipOf(entityByNetworkId_, *components_, player.shipEntityId);
-  if (!ship.has_value()) {
-    return;
-  }
-  components_->add(*ship, PilotShip{.color = pilotColor});
-  components_->add(*ship, flightOf(*components_, *ship, player));
-  feedback_.effects.get().setInvulnerable(*ship, player.invulnerable);
+std::optional<engine::Entity> EntityReplicator::shipEntityOf(
+    std::uint32_t networkId) const {
+  return shipOf(entityByNetworkId_, *components_, networkId);
 }
 
 void EntityReplicator::removeUnlistedAt(std::uint32_t tick) {

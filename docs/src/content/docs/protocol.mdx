@@ -183,7 +183,7 @@ A nickname is unique on the server: a request whose nickname a player already ho
 `WorldState` lists every player and every entity of the game, in full each time. The payload of a state with one player and one entity, byte by byte:
 
 <ByteLayout
-  label="A WorldState with one player and one entity: tick on bytes 0 to 3, playerCount on byte 4, the player on bytes 5 to 16 (playerNumber, shipEntityId, lives, score, invulnerable, motion), entityCount on byte 17, the entity on bytes 18 to 26 (entityId, entityType, x, y)."
+  label="A WorldState with one player and one entity: tick on bytes 0 to 3, playerCount on byte 4, the player on bytes 5 to 20 (playerNumber, shipEntityId, lives, score, invulnerable, motion, acknowledgedInput), entityCount on byte 21, the entity on bytes 22 to 30 (entityId, entityType, x, y)."
   rows={[
     {
       fields: [
@@ -199,6 +199,7 @@ A nickname is unique on the server: a request whose nickname a player already ho
         { name: 'score', bytes: 4, tone: 'blue' },
         { name: 'invulnerable', bytes: 1, tone: 'blue' },
         { name: 'motion', bytes: 1, tone: 'blue' },
+        { name: 'acknowledgedInput', bytes: 4, tone: 'blue' },
       ],
       note: 'One player, repeated playerCount times.',
     },
@@ -221,11 +222,11 @@ A nickname is unique on the server: a request whose nickname a player already ho
 |---|---|
 | `tick` | `u32`, the simulation tick of the server, counted from the start of the game |
 | `playerCount` | `u8` (1 to 4) |
-| each player | `playerNumber` `u8`, `shipEntityId` `u32` (0 while the player has no ship), `lives` `u8`, `score` `u32`, `invulnerable` `bool`, `motion` `u8` |
+| each player | `playerNumber` `u8`, `shipEntityId` `u32` (0 while the player has no ship), `lives` `u8`, `score` `u32`, `invulnerable` `bool`, `motion` `u8`, `acknowledgedInput` `u32` |
 | `entityCount` | `u8` |
 | each entity | `entityId` `u32`, `entityType` `u8`, `position` |
 
-`motion` says what the pilot does, one bit each from bit 0: the directions its newest `PlayerInput` holds, at their bits of `actions` (0 up, 1 down, 2 left, 3 right), then 4 its ship rolls, 5 its ship dashes. Bits 6 and 7 are 0, otherwise the message is invalid. A player takes 12 bytes and an entity 9, so one datagram holds up to 124 entities with 4 players. When the entities do not fit, the server sends several `WorldState` with the same `tick`, each in its own datagram, each with every player and a part of the entities. The client:
+`motion` says what the pilot does, one bit each from bit 0: the directions its newest `PlayerInput` holds, at their bits of `actions` (0 up, 1 down, 2 left, 3 right), then 4 its ship rolls, 5 its ship dashes. Bits 6 and 7 are 0, otherwise the message is invalid. `acknowledgedInput` is the `inputNumber` of the newest `PlayerInput` the server applied to the ship of the player, 0 while it applied none (an input the server holds before applying it is not confirmed yet, so the ship it reads is never ahead of the number): a client that predicts its own ship drops the inputs up to it and replays the others on top of the position it reads (see [Client](/R-Type/client/#own-ship-prediction-ownshippredictor-shipprediction)). The field was added to version 1 without changing `PROTOCOL_VERSION`, so a client and a server of different builds misread each other's states: both come from the same build. A player takes 16 bytes and an entity 9, so one datagram holds up to 122 entities with 4 players. When the entities do not fit, the server sends several `WorldState` with the same `tick`, each in its own datagram, each with every player and a part of the entities. The client:
 
 - ignores a `WorldState` whose `tick` is lower than the last one applied; an equal `tick` is another part of the same state. The `tick` is compared as a plain 32-bit integer, without wrap-around: it takes 2.27 years at 60 ticks per second to reach 2³². The sender checks come first, so a forged datagram cannot raise the last `tick` applied;
 - creates an entity it does not know, from its type, with its appearance effect (the shot sound of a missile, for instance);
@@ -233,7 +234,7 @@ A nickname is unique on the server: a request whose nickname a player already ho
 
 An `EntityDestroyed` naming an entity the client does not know, and an `EntitySpawned` naming one it already has, change nothing.
 
-Measured on October 24, 2026, on a local game of two players lasting about 70 seconds (a `tcpdump` capture of the server port): each player received 20.0 `WorldState` per second, each state in a single datagram of 105 bytes of UDP payload on average and 116 at most, for 6 entities on average. That is about 2.1 kB per second and per player for the states alone. The players could not shoot yet, so the game held only ships and Bydos: a game with missiles sends larger states.
+Measured on October 24, 2026, before `acknowledgedInput` added 4 bytes per player, on a local game of two players lasting about 70 seconds (a `tcpdump` capture of the server port): each player received 20.0 `WorldState` per second, each state in a single datagram of 105 bytes of UDP payload on average and 116 at most, for 6 entities on average. That is about 2.1 kB per second and per player for the states alone. The players could not shoot yet, so the game held only ships and Bydos: a game with missiles sends larger states.
 
 `entityId` is given by the server, unique during a game, and never 0. A `u16` would wrap after about 22 minutes at 50 new entities per second, hence 32 bits.
 
@@ -390,7 +391,7 @@ The second part of the project changes the protocol as follows:
 - The client measures the loss rate of the server from the gaps in `sequence`, as the server does for each player: nothing changes on the wire.
 - Guaranteed messages use `flags`, `acknowledgedSequence` and `acknowledgementBits` and replace the three copies: same layout, new meaning, so `version` becomes 2.
 - Several messages share a datagram: receivers of version 1 already accept it, and a sender of version 2 may use it.
-- `PlayerInput` repeats the inputs not yet confirmed, `WorldState` confirms the last input applied to each player, and states are sent as differences from the last one received: these payloads change in version 2.
+- `PlayerInput` repeats the inputs not yet confirmed, and states are sent as differences from the last one received: these payloads change in version 2. The confirmation of the newest input of each player already travels in `acknowledgedInput`.
 
 A client and a server of different versions never play together: the connection is refused with `IncompatibleVersion`.
 
