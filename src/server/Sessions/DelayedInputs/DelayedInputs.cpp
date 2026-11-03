@@ -30,7 +30,7 @@ void DelayedInputs::release(PlayerRoster& roster, const InputSink& sink) {
     ConnectedPlayer* const player = roster.findByNumber(due.playerNumber);
     if (player != nullptr) {
       sink(*player, due.input);
-      player->inputApplied = true;
+      player->appliedInputNumber = due.input.inputNumber;
     }
   }
   ++currentTick_;

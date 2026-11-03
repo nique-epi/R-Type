@@ -14,7 +14,7 @@ The `k` prefix is a Google convention that adds nothing beyond what `constexpr`,
 
 - Constants (`constexpr`, `const`, `enum class` values) are **never prefixed with `k`**.
 - Default naming is `lowerCamelCase`: `tickRate`, `maxPlayers`, `epsilon`.
-- `UPPER_SNAKE_CASE` is accepted for a **public** constant exposed in a header and shared across modules (`DEFAULT_SERVER_PORT`).
+- `UPPER_SNAKE_CASE` is accepted for a **public** constant exposed in a header and shared across folders (`DEFAULT_SERVER_PORT`).
 - `enum class` values in `PascalCase`: `PacketType::PlayerInput`.
 - Any existing `kFoo` constant is renamed as soon as the file is touched.
 
@@ -30,6 +30,6 @@ The `k` prefix is a Google convention that adds nothing beyond what `constexpr`,
   constexpr int tickRate = 60;
   constexpr std::size_t maxPlayers = 4;
 
-  // Public constant shared across modules
+  // Public constant shared across folders
   constexpr std::uint16_t DEFAULT_SERVER_PORT = 4242;
   ```

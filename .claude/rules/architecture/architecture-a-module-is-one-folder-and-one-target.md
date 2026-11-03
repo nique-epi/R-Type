@@ -1,48 +1,75 @@
 ---
-description: "A module is one folder and one library target holding the .hpp/.cpp pairs of its classes flat, at most 10 .cpp; a sub-module is a sub-folder with a target of its own, only for a real sub-group"
+description: "A module is a feature one can switch on, off or replace: one folder and one target around one IModule or IGameModule class, which owns all the folder holds; a folder without that class is a library"
 paths:
   - "**/*.{cpp,hpp,tpp}"
 ---
 
-# RULE: A module is one folder and one target — its classes sit flat inside, a sub-module is the exception
+# RULE: A module is one folder and one target around one module class; a folder without that class is a library
 
-Why: the user asked for it; a folder and a `CMakeLists.txt` per class made 14 of the 70 files of the waves pull request pure wiring, and every new class cost three files before it held a line.
+Why: the subject (page 16) makes an engine modular through what a developer chooses to compile, link or load, so the word must name what can be left out; a word that names any folder with a target says nothing of that.
 
 ## Rule
 
-1. **A module is a folder of `src/` that groups the classes of one feature** (`src/server/Spawning/`, `src/game/Waves/`). It has one `CMakeLists.txt` declaring one library named `rtype_<owner>_<module in snake_case>`, which lists the `.cpp` of every class of the folder and exposes the folder (`fix-architecture-one-cmakelists-per-folder.md`). The word names a folder and a target: it is not `IModule`, and a module folder may hold a class implementing `IModule` or none.
-2. **Inside a module, everything is a file of the module folder, never a folder of its own**: a concrete class, an abstract class, free functions, an exception, an interface, a plain struct, a constants header. `Spawning/WaveCatalog.hpp`, `Spawning/WaveCatalog.cpp`, `Spawning/WaveFileConstants.hpp`. One class per `.hpp`/`.cpp` pair, named after it (`code-style-file-named-after-its-class.md`); a helper class a class needs is a pair of the same module, never a type nested in it (`fix-architecture-no-type-nested-in-a-class.md`).
-3. **A module holds at most 10 `.cpp` files**, the per-platform files of one class (`BorderlessScreenLinux.cpp`, `…MacOs.cpp`, `…Windows.cpp`, or a `Windows.cpp` and a `Posix.cpp`) counting as one. A module the change adds or flattens stays at 10 or fewer; one that would pass 10 is split into sub-modules (point 4) or into sibling modules. Measured on `origin/feat/server-modules` at `3ad9929`, counting the `.cpp` two levels under each folder: of 57 folders, 8 hold more than 8 class folders, 6 more than 10 and 4 more than 12 (`src/client/Widgets` 19, `src/network/Protocol/Messages` 15, `src/client/Rendering/Effects` 13, and `src/client` 20, a count that also takes in flat files). Those are not reworked by this rule alone (point 7).
-4. **A sub-module is a sub-folder of a module with a `CMakeLists.txt` and a library of its own**, created only when a group of the module's classes meets one of:
-   - the module would pass 10 `.cpp` and the group has a reason to change of its own;
-   - the group needs a dependency the rest of the module must not link (a file parser, a platform API);
-   - another module reuses the group.
+### What a module is
 
-   Never one per class, and never deeper than two levels: a sub-module has no sub-module. The parent links the sub-module and never the other way round (`fix-architecture-a-link-never-points-back-at-a-folder-that-links-it.md`).
-5. **Inside one module, the build no longer stops a class from including the class that includes it.** Two classes of a module never include each other, directly or through a third: when both need the same thing, it moves to an interface or a plain struct they both include.
-6. **Tests mirror the module folder** (`tests/server/Spawning/`), one test file per class, as before; a test double stays in `tests/doubles/`.
-7. **An existing layout with a folder per class stays valid until its module is flattened.** A folder holds either class folders or flat pairs, never both. A change that adds a class to a module still made of class folders either gives it a folder like its siblings, or flattens the module first in its own `refactor` commit (includes unchanged, targets merged into the module's, `CMakeLists.txt` and docs updated, `fix-process-grep-every-page-for-what-the-feature-replaced.md`); the pull request says which. A module the change does not touch is reported, not reworked.
-8. **Check every module the change adds or changes, before the push**:
-   ```bash
-   git ls-files -- 'src/*.cpp' | sed -E 's#(Linux|MacOs|Windows|Posix)\.cpp$#.cpp#' | sort -u | sed -E 's#/[^/]*$##' | sort | uniq -c | awk '$1 > 10'
-   ```
-   It must print nothing for the folders the change touches. Calibration: with `> 3` instead of `> 10` it prints `src/client/Platform` (4 classes, 12 files before the per-platform names are merged); with `> 10` it prints nothing today, because every module is still made of class folders.
+1. **A module is a feature one can switch on, switch off or replace.** It is a folder with one class at its root implementing `IModule` (it lives as long as its program) or `IGameModule` (as long as one game). Everything the folder holds belongs to it, sub-folders included: the class builds those objects and hands them to the others with `provide()`.
+2. **A folder without that class is a library: code with no life cycle** (`src/client/Widgets/`, `src/game/Waves/`). A system (`ISystem`) and a service are not modules: a list of systems runs the first, a module provides the second.
+
+### Required or optional
+
+3. **Every module is required or optional, and the list of modules in `docs/src/content/docs/project-layout.md` says which.** A required module may be included by the code that needs it. An optional module is reached only through its `Contract/` sub-folder, which stays compiled when the module is removed. In `src/`, the class of a module is included by the list that names it (`serverModules()`, `clientModules()`, `rtypeGameModules()`) and nothing else.
+4. **The removal test, for an optional module**: remove its folder, except `Contract/`, and its line in the list; the program compiles, starts, and its binary is smaller. **No module passes it yet**; `project-layout.md` says what stops the sound and the metrics.
+
+### The code of a module used elsewhere
+
+5. **When another folder needs code of a module, the first row that fits decides**, and a link never points back at a folder that links its folder (`fix-architecture-a-link-never-points-back-at-a-folder-that-links-it.md`):
+
+   | Order | The code… | Then |
+   |---|---|---|
+   | 1 | belongs to a required module | it stays there, and the code that needs it includes it: `Modules/Lobby/` and `Modules/Metrics/` include `Games.hpp`, `Widgets/` includes `PlayfieldMapping.hpp` |
+   | 2 | belongs to an optional module | it goes in the `Contract/` of that module: `ISoundPlayer` |
+   | 3 | has no owner and serves several folders | it goes in a library: `Widgets/`, `Rendering/` |
+
+### Inside a folder
+
+6. **A folder has one `CMakeLists.txt` declaring one target** named `rtype_<owner>_<folder in snake_case>`, ended by `_module` for a module (`rtype_server_metrics_module`). It lists the `.cpp` of every class of the folder and exposes the folder (`fix-architecture-one-cmakelists-per-folder.md`).
+7. **Inside a folder, everything is a file of that folder, never a folder of its own**: a concrete class, an abstract class, free functions, an exception, an interface, a plain struct, a constants header. One class per `.hpp`/`.cpp` pair, named after it (`code-style-file-named-after-its-class.md`); a helper class a class needs is a pair of the same folder, never a type nested in it (`fix-architecture-no-type-nested-in-a-class.md`).
+8. **A folder holds at most 10 `.cpp` files**, the per-platform files of one class (`BorderlessScreenLinux.cpp`, `…MacOs.cpp`, `…Windows.cpp`, or a `Windows.cpp` and a `Posix.cpp`) counting as one.
+9. **A sub-folder exists only in three cases**, with a `CMakeLists.txt` and a target of its own:
+   - the folder would pass 10 `.cpp`;
+   - a group of classes needs a dependency the rest must not link (a file parser, a platform API);
+   - it is the `Contract/` of an optional module.
+
+   Never one per class, and never deeper than two levels. The parent links the sub-folder and never the other way round.
+10. **Two classes of a folder never include each other**, directly or through a third, since the build no longer stops them: when both need the same thing, it moves to an interface or a plain struct they both include.
+11. **Tests mirror the folder** (`tests/server/Spawning/`), one test file per class; a test double stays in `tests/doubles/`.
+
+### A new module, and what stays tolerated
+
+12. **A new module is written directly in its own folder, `src/<program>/<Name>/`**, class and code together. `Modules/` receives nothing but its line in the list and the constant of its name. Its pull request adds its row to the list of modules, required or optional.
+13. **Two layouts stay tolerated until the client and the server are tidied**; those two changes end the tolerance, except for the class folders of `Widgets/` and `Rendering/`:
+    - a module whose class sits in `Modules/<Name>/`, or in `Instances/<Name>Module/` for a game module, with its code in a folder of the feature (`src/client/Audio/`);
+    - a folder made of class folders. A folder holds either class folders or flat pairs, never both. A change that adds a class to such a folder either gives it a folder like its siblings, or flattens the folder first in its own `refactor` commit (includes unchanged, targets merged, `CMakeLists.txt` and docs updated, `fix-process-grep-every-page-for-what-the-feature-replaced.md`); the pull request says which. A folder the change does not touch is reported, not reworked.
+14. **The layout holds through this rule, the map and review.** No CI job checks it, and `rtype_forbid_links` gets no check for it. Before the push, count the `.cpp` of each folder the change adds or flattens, against point 8.
 
 ## Example
 
-- ❌ **Before (wrong)**: two classes of `Spawning/` as `Spawning/WaveCatalog/{CMakeLists.txt,WaveCatalog.hpp,WaveCatalog.cpp}` and `Spawning/BydoSpawner/{CMakeLists.txt,BydoSpawner.hpp,BydoSpawner.cpp}`: six files, three of them `CMakeLists.txt`.
-- ✅ **After (right)**:
+- ❌ **Before (wrong)**: `src/game/Waves/` called a module because it has a target, and a new tick report written in `src/server/Modules/TickReport/`.
+- ✅ **After (right)**: `src/game/Waves/` is a library, since no class of it implements `IModule`; the tick report is written in `src/server/TickReport/`, with a line in `serverModules()` and a row in the list of modules.
+- ❌ **Before (wrong, tolerated today)**: the class `ClientAudioModule` in `src/client/Modules/Audio/`, its code in `src/client/Audio/`, and `ISoundPlayer.hpp` next to the classes only the module needs, so nothing tells what stays when the sound is removed.
+- ✅ **After (right)**: the shape the sound takes once the client is tidied:
   ```
-  src/server/Spawning/
-  ├── CMakeLists.txt        add_library(rtype_server_spawning STATIC BydoSpawner.cpp WaveDirector.cpp)
-  ├── BydoSpawner.hpp
-  ├── BydoSpawner.cpp
-  ├── WaveDirector.hpp
-  ├── WaveDirector.cpp
-  └── WaveFile/             sub-module: the class that reads the waves file
-      ├── CMakeLists.txt    add_library(rtype_server_wave_file STATIC WaveCatalog.cpp)
-      ├── WaveCatalog.hpp
-      ├── WaveCatalog.cpp
-      └── WaveFileConstants.hpp
+  src/client/Audio/            the module audio, optional
+  ├── CMakeLists.txt           add_library(rtype_client_audio_module STATIC ClientAudioModule.cpp AudioService.cpp …)
+  ├── ClientAudioModule.hpp
+  ├── ClientAudioModule.cpp
+  ├── AudioService.hpp
+  ├── AudioService.cpp
+  ├── …
+  └── Contract/                what other folders may include, compiled without the module
+      ├── CMakeLists.txt
+      ├── IAudioService.hpp
+      ├── ISoundPlayer.hpp
+      └── …
   ```
-  `Spawning` links `rtype_server_wave_file`; `WaveFile/` links nothing from `Spawning/`.
+  `rtype_client_audio_module` links `Contract/`; `Contract/` links nothing from `Audio/`.

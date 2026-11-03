@@ -64,6 +64,15 @@ struct ConnectedPlayer {
    * arrives. The input itself is held by the Intent of the ship of the player.
    * InputKeeper keeps it. */
   std::optional<std::uint32_t> newestInputNumber;
+  /** @brief The inputNumber of the newest input applied to the ship of the
+   * player, which the world state confirms to its client; empty until one is
+   * applied and cleared with newestInputNumber. An input is applied when the
+   * hooks of the game see it, so this number never runs ahead of the ship, as
+   * newestInputNumber does when inputs are held before they are applied.
+   * It also tells an input that follows earlier ones from the first of the
+   * session, which newestInputNumber cannot, since it runs ahead by the input
+   * delay. DelayedInputs keeps it. */
+  std::optional<std::uint32_t> appliedInputNumber;
   /** @brief Ticks the game ran since it last read a datagram of the player;
    * the player is away once it reaches SESSION_TIMEOUT_TICKS, and the session
    * closes once it reaches SESSION_CLOSING_TICKS.
@@ -73,12 +82,6 @@ struct ConnectedPlayer {
    * and lives are kept, its input number is cleared and it does not count for
    * the ready check. The next datagram read from the player clears it. */
   bool away{false};
-  /** @brief Whether an input of the player was applied to its ship, after being
-   * held for the input delay; cleared with newestInputNumber. It tells an input
-   * that follows earlier ones from the first of the session, which
-   * newestInputNumber cannot, since it runs ahead by the input delay.
-   * DelayedInputs keeps it. */
-  bool inputApplied{false};
   /** @brief The real time since the server last sent the player a datagram,
    * added at the start of each tick, a stall of the server included, since
    * the client waits in real time: a Heartbeat goes out once it reaches

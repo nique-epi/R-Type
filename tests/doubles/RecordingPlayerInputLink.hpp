@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <optional>
 #include <vector>
 #include "ActionSet.hpp"
 #include "IPlayerInputLink.hpp"
@@ -11,7 +12,9 @@
  */
 class RecordingPlayerInputLink : public rtype::client::IPlayerInputLink {
  public:
-  void sendPlayerInput(rtype::client::ActionSet held) override;
+  /** @returns The number of an input sent, counted from FIRST_INPUT_NUMBER. */
+  std::optional<std::uint32_t> sendPlayerInput(
+      rtype::client::ActionSet held) override;
 
   /** @returns The actions byte of every input sent, oldest first. */
   [[nodiscard]] const std::vector<std::uint8_t>& sentActions() const;

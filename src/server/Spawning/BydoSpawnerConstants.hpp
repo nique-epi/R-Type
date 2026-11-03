@@ -5,7 +5,7 @@
 namespace rtype::server {
 
 /**
- * @brief Module name the spawner writes its log lines under.
+ * @brief Logger name the spawner writes its log lines under.
  */
 constexpr std::string_view BYDO_SPAWNER_LOGGER_NAME = "BydoSpawner";
 

@@ -35,7 +35,7 @@ TextWriter::TextWriter(const AssetLibrary& library)
                    .baselineRow = REGULAR_FONT_BASELINE_ROW},
       smallFont_{.font = &library.font(SMALL_FONT_ID),
                  .baselineRow = SMALL_FONT_BASELINE_ROW},
-      logger_(std::string(INTERFACE_LOG_MODULE_NAME)),
+      logger_(std::string(INTERFACE_LOGGER_NAME)),
       crispText_(loadFragmentShader(CRISP_TEXT_SHADER, logger_)) {}
 
 void TextWriter::write(sf::RenderTarget& target, const TextLine& line) const {

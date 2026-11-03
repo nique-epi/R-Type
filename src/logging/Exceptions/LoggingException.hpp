@@ -6,7 +6,7 @@
 namespace rtype::logging {
 
 /**
- * @brief Root of every error raised by the logging module.
+ * @brief Root of every error raised by the logging library.
  */
 class LoggingException : public std::runtime_error {
  public:

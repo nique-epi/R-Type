@@ -43,7 +43,7 @@ The cases where people hesitate:
 
 | Code | Goes in | Because |
 |---|---|---|
-| Moving the ship from the player's input: its drift, its roll and its dash | `src/game/ShipControl` | the server runs it, and the client will run the same code to predict its own ship |
+| Moving the ship from the player's input: its drift, its roll and its dash | `src/game/ShipControl` | the server runs it, and the client runs the same code to predict its own ship |
 | Damage after a collision | `src/game/Systems` | it is a rule of the match, even though only the server runs it |
 | A queue between two threads | `src/concurrency` | the client, the server and `rtype_network` all need it, and `rtype_network` may not link `rtype_engine` |
 | Finding an entity from its network id | `src/engine/NetworkIds` | `rtype_network` may not know entities |
@@ -51,7 +51,7 @@ The cases where people hesitate:
 | The heartbeat sent to the master | `src/server/MasterLink` | only the server sends it; the message format lives in `src/network/Master` |
 | A new protocol message | `src/network/Protocol` | one struct per message, its encoding next to it, then a row in [Protocol](/R-Type/protocol/#messages) |
 | A fake transport that loses datagrams | `tests/doubles` | test doubles are never built into a program |
-| A part of the server or the client that is installed, started and stopped with it (a sound, a lobby, a metrics reporter) | `src/server/Modules/<Name>/` or `src/client/Modules/<Name>/` | it implements `IModule` and is listed in `serverModules()` or `clientModules()`: see [Adding a module](#adding-a-module) |
+| A feature of the server or the client you can switch on, off or replace (a sound, a lobby, a metrics reporter) | `src/server/<Name>/` or `src/client/<Name>/` | it is a module: its class implements `IModule` and is listed in `serverModules()` or `clientModules()`, see [Adding a module](#adding-a-module) |
 
 ## The libraries
 
@@ -78,7 +78,7 @@ src/engine/
 
 ### Logging
 
-`src/logging` builds `rtype_logging`: one `Logger` per module, writing timestamped lines to the terminal and to a file, with the level chosen at launch. It links nothing else of the repository. It is being written, with `Logger/`, `LogLaunchOptions/` and `ThrottledLog/` (see [Logging](/R-Type/logging/#repeated-events-throttledlog)).
+`src/logging` builds `rtype_logging`: one `Logger` per class that logs, writing timestamped lines to the terminal and to a file, with the level chosen at launch. It links nothing else of the repository. It is being written, with `Logger/`, `LogLaunchOptions/` and `ThrottledLog/` (see [Logging](/R-Type/logging/#repeated-events-throttledlog)).
 
 ### Concurrency
 
@@ -90,7 +90,7 @@ src/engine/
 
 ### Game
 
-`src/game` builds `rtype_game`, the rules of a match: what moves, what collides, what dies, what scores. The server runs all of it; the client will only run `ShipControl`, to predict its own ship, and does not run it yet. **Never** SFML, Asio or a network message.
+`src/game` builds `rtype_game`, the rules of a match: what moves, what collides, what dies, what scores. The server runs all of it; the client only runs `ShipControl`, to predict its own ship. **Never** SFML, Asio or a network message.
 
 ```
 src/game/
@@ -135,7 +135,7 @@ src/network/
 ```
 src/server/
 ├── Application/      starts and stops the threads
-├── Modules/          one folder per module (logger, network, games, lobby, metrics) and the list that assembles them
+├── Modules/          the list of modules and, for now, their classes
 ├── Exceptions/       the root exception of the server, errors of the waves file
 ├── Platform/         what differs between Windows, macOS and Linux, and the stop signals
 ├── LaunchOptions/    port, name, limits, master address
@@ -158,7 +158,7 @@ src/server/
 
 ```
 src/client/
-├── Modules/          the modules of the client, the frame loop and their list
+├── Modules/          the list of modules, for now their classes, and the frame loop
 ├── Application/      the screen stack (the program's `Application` is the engine's, built in `main()`)
 ├── Window/           the SFML window, its display mode and its size
 ├── Assets/           assets found by id, loaded at launch or entering a game
@@ -210,7 +210,7 @@ src/master/
 └── Accounts/         optional, with Tickets/
 ```
 
-Each module splits its classes into a controller (HTTP in and out), a service (the rules) and repositories (the only place with SQL). Nothing exists yet.
+Each folder splits its classes into a controller (HTTP in and out), a service (the rules) and repositories (the only place with SQL). Nothing exists yet.
 
 ### Tests, web frontend, assets
 
@@ -218,9 +218,57 @@ Each module splits its classes into a controller (HTTP in and out), a service (t
 - **`web/`** is the React frontend served by the master: `src/api/` (one function per route), `src/pages/`, `src/components/`.
 - **`assets/`** holds the files read at run time: `sprites/`, `sounds/`, `music/`, `fonts/` and `icons/` for the client, `waves/` for the server (`waves.toml`, see [Writing the waves file](/R-Type/waves-file/)).
 
+## Modules and libraries
+
+A **module** is a feature you can switch on, switch off or replace: a folder with one class implementing `IModule` or `IGameModule` at its root, which owns everything the folder holds. A folder without that class is a **library**: code with no life cycle, such as `src/client/Widgets/` or `src/game/Waves/`. The [Modules](/R-Type/modules/#required-or-optional) page says what a required and an optional module may do, and gives the removal test.
+
+**No module passes the removal test yet.** The sound fails it: `screens` lists `audio` in its `dependencies()`, the screens, the widgets and the replication include headers of `src/client/Audio/`, and `AssetLibrary` links `SFML::Audio`. The metrics come closer: only the list includes them, but their code sits in two folders that three `CMakeLists.txt` name, and `BUILD_TESTS` is the only CMake option.
+
+### The list of modules
+
+This list describes the code as it is today. A pull request that adds, removes or moves a module updates it.
+
+| Module of the server program | Class | Folder | Kind |
+|---|---|---|---|
+| `logger` | `ServerLoggerModule` | `src/server/Modules/Logger/` | required |
+| `network` | `ServerNetworkModule` | `src/server/Modules/Network/` | required |
+| `games` | `ServerGamesModule` | `src/server/Modules/Games/` | required |
+| `lobby` | `ServerLobbyModule` | `src/server/Modules/Lobby/` | required |
+| `metrics` | `ServerMetricsModule` | `src/server/Modules/Metrics/` | optional |
+
+| Module of a game | Class | Folder | Kind |
+|---|---|---|---|
+| `replication` | `ReplicationModule` | `src/server/Instances/ReplicationModule/` | required |
+| `rtype rules` | `RtypeRulesModule` | `src/server/Instances/RtypeRulesModule/` | required |
+
+| Module of the client | Class | Folder | Kind |
+|---|---|---|---|
+| `logger` | `ClientLoggerModule` | `src/client/Modules/Logger/` | required |
+| `assets` | `ClientAssetsModule` | `src/client/Modules/Assets/` | required |
+| `settings` | `ClientSettingsModule` | `src/client/Modules/Settings/` | required |
+| `window` | `ClientWindowModule` | `src/client/Modules/Window/` | required |
+| `connection` | `ClientConnectionModule` | `src/client/Modules/Connection/` | required |
+| `audio` | `ClientAudioModule` | `src/client/Modules/Audio/` | optional |
+| `screens` | `ClientScreensModule` | `src/client/Modules/Screens/` | required |
+| `menus` | `ClientMenusModule` | `src/client/Modules/Menus/` | required |
+| `lobby` | `ClientLobbyModule` | `src/client/Modules/Lobby/` | required |
+| `game` | `ClientGameModule` | `src/client/Modules/Game/` | required |
+
+These folders are where the classes sit today, and most of the code of a module is still elsewhere, in a folder of the feature (`src/client/Audio/`, `src/server/Metrics/`). This is tolerated until the client and the server are tidied: each class then joins the code it owns, and `Modules/` keeps only the list of the program.
+
+### The code of a module used elsewhere
+
+When another folder needs code of a module, the first row that fits decides.
+
+| Order | The code… | Then |
+|---|---|---|
+| 1 | belongs to a required module | it stays there, and the code that needs it includes it: `Modules/Lobby/` and `Modules/Metrics/` include `Games.hpp`, `Widgets/` includes `PlayfieldMapping.hpp` |
+| 2 | belongs to an optional module | it goes in the `Contract/` of that module: `ISoundPlayer`, still at the root of `Audio/` until the client is tidied |
+| 3 | has no owner and serves several folders | it goes in a library: `Widgets/`, `Rendering/` |
+
 ## Adding a class
 
-Adding `WaveDirector` to `src/game/Waves`, a module that already holds `WaveProgression`:
+Adding `WaveDirector` to `src/game/Waves`, a folder that already holds `WaveProgression`, in the flat layout every new folder follows:
 
 ```
 src/game/Waves/
@@ -231,39 +279,39 @@ src/game/Waves/
 └── WaveProgression.cpp
 ```
 
-- A module is a folder with one `CMakeLists.txt` and one library. It holds the `.hpp` and `.cpp` of its classes, and of its free functions, side by side, at most ten `.cpp`. A sub-folder with a library of its own, a sub-module, exists only for a group of classes that needs a dependency the rest of the module must not link, or that another module reuses, or when the module would pass ten `.cpp`; never deeper than that.
+- A folder has one `CMakeLists.txt` and one CMake library. It holds the `.hpp` and `.cpp` of its classes, and of its free functions, side by side, at most ten `.cpp`. A sub-folder with a CMake library of its own exists only when the folder would pass ten `.cpp`, when a group of classes needs a dependency the rest must not link, or for the `Contract/` of an optional module; never deeper than that.
 - Interfaces (`IWaveSource`), plain structs and constants headers (`WaveConstants.hpp`) sit in the same folder as the classes.
-- Two classes of a module never include each other, directly or through a third.
-- A module written before this convention keeps a folder per class until it is flattened, in a commit of its own; a folder never holds both layouts.
-- A class declares no type inside it: a struct it uses has a header of its own, in the same module. A class declares at most ten member functions besides its constructors and its destructor.
+- Two classes of a folder never include each other, directly or through a third.
+- A folder written before this convention keeps a folder per class until it is flattened, in a commit of its own; a folder never holds both layouts. Tidying the client and the server flattens them all, except `Widgets/` and `Rendering/`.
+- A class declares no type inside it: a struct it uses has a header of its own, in the same folder. A class declares at most ten member functions besides its constructors and its destructor.
 - A header of constants is named `<Concept>Constants.hpp` and holds constants only.
-- The module library is `rtype_<owner>_<module_in_snake_case>`, linked by the aggregate of its library (`rtype_game`) or by its program.
+- The CMake library of a folder is `rtype_<owner>_<folder_in_snake_case>`, ended by `_module` for a module, linked by the aggregate of its library (`rtype_game`) or by its program.
 - The namespace is `rtype::<owner>`: `rtype::game` here.
 - An error is a subclass of the owner's root exception, in `<owner>/Exceptions/`: `GameException` here.
 
-This follows our previous projects: shared code in libraries and one folder per program, like Zappy; one library per module, interfaces next to their implementations and tests that mirror the sources, like the Raytracer. One thing differs: folders are `PascalCase`.
+This follows our previous projects: shared code in libraries and one folder per program, like Zappy; one library per folder, interfaces next to their implementations and tests that mirror the sources, like the Raytracer. One thing differs: folders are `PascalCase`.
 
 ## Adding a module
 
-A module here is a class implementing `IModule`, installed and started with its program; the page [Modules](/R-Type/modules/) explains what that means, and the [tutorial](/R-Type/tutorial-write-a-module/) writes one. It goes where this table says:
+A new module is written directly in its own folder, `src/<program>/<Name>/`, class and code together; the [Modules](/R-Type/modules/) page explains what it does, and the [tutorial](/R-Type/tutorial-write-a-module/) writes one. It is listed where this table says:
 
-| The module… | Goes in | Listed in |
-|---|---|---|
-| belongs to the server and lives as long as the program | `src/server/Modules/<Name>/` | `serverModules()`, `src/server/Modules/Assembly/ServerModules.cpp` |
-| belongs to the client | `src/client/Modules/<Name>/` | `clientModules()`, `src/client/Modules/Assembly/ClientModules.cpp` |
-| is a rule or a service of one game, and each game has its own | `src/server/Instances/<Name>Module/` | `rtypeGameModules()`, `src/server/Modules/Games/RtypeGameModules.cpp` |
-| would serve a program that is neither (the master) | the folder `Modules/` of that program, once it exists | its own list, built the same way |
+| The module… | Listed in |
+|---|---|
+| belongs to the server and lives as long as the program | `serverModules()`, `src/server/Modules/Assembly/ServerModules.cpp` |
+| belongs to the client | `clientModules()`, `src/client/Modules/Assembly/ClientModules.cpp` |
+| is a rule or a service of one game, and each game has its own | `rtypeGameModules()`, `src/server/Modules/Games/RtypeGameModules.cpp` |
+| would serve a program that is neither (the master) | its own list, built the same way |
 
-- The folder is a module folder like any other (see [Adding a class](#adding-a-class)): one `CMakeLists.txt`, one library `rtype_<owner>_<name>_module`, the class `<Owner><Name>Module` as a `.hpp` and `.cpp` pair (`ServerLobbyModule`; the class of a game module is `<Name>Module`, as `ReplicationModule` and `RtypeRulesModule` are).
-- The name other modules depend on is a constant in `ModuleConstants.hpp`, next to the other names, in `src/server/Modules/` or `src/client/Modules/`.
-- The code a module works with sits in one of two places today. The classes only that module uses are in its own folder (`Modules/Games/` holds `Games` and `FarewellSender`, `Modules/Network/` holds `TickDatagrams`, `Modules/Window/` holds `FrameLoop`). The classes other parts of the program use or test without a program are in the folder of their feature (`Lobby/`, `Sessions/`, `Connection/`). Put a new class in the feature folder when anything else needs it, and in the folder of the module otherwise.
+- The folder follows [Adding a class](#adding-a-class): one `CMakeLists.txt`, one CMake library `rtype_<owner>_<name>_module`, the class `<Owner><Name>Module` as a `.hpp` and `.cpp` pair (`ServerLobbyModule`; the class of a game module is `<Name>Module`, as `ReplicationModule` and `RtypeRulesModule` are).
+- `Modules/` receives nothing but its line in the list and the constant of its name, in `ModuleConstants.hpp` next to the other names, in `src/server/Modules/` or `src/client/Modules/`.
+- Its pull request adds its row to [the list of modules](#the-list-of-modules), required or optional. An optional module puts what others need in its `Contract/`, and nothing else includes it.
 - A module of the program never goes in `src/engine`, unless every game would need it unchanged. `IModule` itself lives there; the modules of R-Type do not.
 
 ## A key press, from one screen to another
 
 Player A holds the Up arrow and player B sees A's ship move. Each step happens in one place.
 
-This is the path the design aims for, and only its server half runs today. The inputs of client A reach its game, each tick of a game in progress moves the ships by their `Intent` with `ShipControl` in `MovementSystem`, and the world state goes to every player 20 times per second by default, as many as the host chose with `--state-rate`. Client A does not move its ship before the server answers and replays no input: `client/Prediction` does not exist yet. Both clients draw each ship where the newest world state puts it, without the 100 ms delay. `network/Sessions` and `network/Snapshots` do not exist either: the session token is checked by `DatagramSorter` and the sequence by `DatagramReader`, both in `src/server/`, and the world state is written by `WorldStateCodec` in `network/Protocol`.
+This is the path the design aims for; the server half and the prediction of the own ship run today. The inputs of client A reach its game, each tick of a game in progress moves the ships by their `Intent` with `ShipControl` in `MovementSystem`, and the world state goes to every player 20 times per second by default, as many as the host chose with `--state-rate`. Client A moves its ship at once with `ShipControl`, one input per tick, and when a world state confirms an input at a position far from the predicted one it restarts from the server position and replays the inputs after it (`client/Prediction`, with PREDICTION on); the other ships are not interpolated yet. Both clients draw the other ships where the newest world state puts them, without the 100 ms delay. `network/Sessions` and `network/Snapshots` do not exist either: the session token is checked by `DatagramSorter` and the sequence by `DatagramReader`, both in `src/server/`, and the world state is written by `WorldStateCodec` in `network/Protocol`.
 
 ```mermaid
 sequenceDiagram
@@ -302,11 +350,11 @@ A few files predate these conventions. Each move is a `refactor` pull request th
 |---|---|
 | `src/game/World.cpp` | `src/game/World/` |
 | `src/engine/Components/ComponentStorage.hpp` | `src/engine/Components/ComponentStorage/` |
-| `tests/*.cpp`, `tests/SimulatedClock.hpp` | `tests/<owner>/<Module>/`, `tests/doubles/` |
+| `tests/*.cpp`, `tests/SimulatedClock.hpp` | `tests/<owner>/<Folder>/`, `tests/doubles/` |
 
 `rtype_forbid_links` also reads only the direct links of a target: a class library inside `rtype_engine` that linked SFML would pass. It must walk the links recursively.
 
 ## Not decided yet
 
 - **HTTP or UDP between the programs and the master.** Only the inside of `src/network/Master` changes.
-- **Track 1** (the engine as its own project, scripting). It would add folders to `src/engine`; nothing on this page depends on it.
+- **Track 1** (the engine as its own project, scripting). It would add folders to `src/engine`; until it is decided, the sound, the window and the rendering stay in `src/client`.

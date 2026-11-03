@@ -16,7 +16,7 @@ namespace rtype::client {
  * @brief The one way to change the settings of the player: it applies a
  * value, remembers that it is not saved yet, and tells the listeners.
  *
- * The options, and any other module that changes a setting, go through it, so
+ * The options, and any other class that changes a setting, go through it, so
  * the volume of the sounds follows by notification instead of by reading the
  * settings again. The settings and the storage must outlive the service, and
  * so must the listeners subscribed to it, which it never unsubscribes.

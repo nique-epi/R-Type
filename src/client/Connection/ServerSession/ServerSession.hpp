@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <optional>
 #include <string_view>
 #include "ActionSet.hpp"
 #include "ConnectionAttempt.hpp"
@@ -92,7 +93,7 @@ class ServerSession final : public IServerConnection, public IPlayerInputLink {
    */
   void update(engine::Duration elapsed);
 
-  void sendPlayerInput(ActionSet held) override;
+  std::optional<std::uint32_t> sendPlayerInput(ActionSet held) override;
 
   /**
    * @returns Whether copies of a Disconnection are still due to a server the

@@ -144,7 +144,7 @@ constexpr float HALO_KERNEL_DEVIATIONS = 3.0F;
 constexpr int HALO_KERNEL_RADIUS =
     static_cast<int>(HALO_KERNEL_DEVIATIONS * HALO_STANDARD_DEVIATION);
 
-constexpr std::string_view BACKGROUND_LOG_MODULE_NAME = "Background";
+constexpr std::string_view BACKGROUND_LOGGER_NAME = "Background";
 
 /** @brief A star moving more than STREAK_SPEED_FACTOR times its own speed is
  * drawn with the streak it covers in one SIMULATION_TICK_DURATION. */

@@ -10,7 +10,7 @@
 namespace rtype::network {
 
 /**
- * @brief Root of every error raised by the network module.
+ * @brief Root of every error raised by the network library.
  */
 class NetworkException : public std::runtime_error {
  public:
