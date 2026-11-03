@@ -14,7 +14,7 @@ Networked multiplayer remake of the R-Type shoot'em up, on a custom C++ game eng
 | Targets | `r-type_server` (Asio only, never SFML), `r-type_client` (SFML), `harness_tests` |
 | Style | `.clang-format` (Google base, 2-space indent, 80 columns), `.clang-tidy` (warnings = errors) |
 
-The `src/server`, `src/client`, `tests` layout is provisional: the engine/game organization is not decided yet. Read the repository before assuming a structure.
+Where code goes is on the map, `docs/src/content/docs/project-layout.md`, which lists the modules. `.claude/rules/architecture/architecture-a-module-is-one-folder-and-one-target.md` defines a module and a library. Read the repository before assuming a structure.
 
 ## Commands
 
@@ -42,9 +42,9 @@ Paths below are relative to `.claude/rules/`.
 
 | Situation | Apply |
 |---|---|
-| Writing C++ | `architecture/`, `code-style/` |
+| Writing C++ | `architecture/architecture-a-module-is-one-folder-and-one-target.md`, then the rest of `architecture/` and `code-style/` |
 | Writing a test | `code-style/code-style-tests-given-when-then.md`, `code-style/fix-format-a-test-file-holds-only-tests.md`, `fix/process/fix-process-green-test-locking-a-defect-and-overly-deterministic-fake.md` |
-| Writing a module (`IModule`) | `architecture/fix-architecture-a-module-install-keeps-nothing-open.md`, `architecture/fix-architecture-a-module-start-that-throws-closes-what-it-opened.md` |
+| Writing a module (`IModule`, `IGameModule`) | `architecture/architecture-a-module-is-one-folder-and-one-target.md`, `architecture/fix-architecture-a-module-install-keeps-nothing-open.md`, `architecture/fix-architecture-a-module-start-that-throws-closes-what-it-opened.md` |
 | Touching the network | security section of `core/code-review.md`, `fix/reasoning/fix-reasoning-an-exception-to-a-check-is-read-as-the-forger.md`, `fix/reasoning/fix-reasoning-last-received-is-not-newest-over-udp.md` |
 | Creating a branch | `fix/process/fix-process-branch-before-first-commit.md`, `fix/execution/fix-execution-checkout-b-starts-from-head-not-main.md`, `fix/process/fix-process-reread-rules-after-switching-branch.md` |
 | Finishing the application of a plan | `core/simplify-after-plan.md` — `/simplify` before the final gates |
@@ -69,7 +69,7 @@ Paths below are relative to `.claude/rules/`.
 
 **C++ architecture — `architecture/` (loaded when a C++ file is read)**
 - `architecture/architecture-a-module-is-one-folder-and-one-target.md`
-- `architecture/architecture-custom-exceptions-per-module.md`
+- `architecture/architecture-custom-exceptions-per-owner.md`
 - `architecture/architecture-hpp-declarations-cpp-definitions.md`
 - `architecture/architecture-pure-virtual-interfaces.md`
 - `architecture/fix-architecture-a-class-the-tests-build-opens-no-opengl-context.md`

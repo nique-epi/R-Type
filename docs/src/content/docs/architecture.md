@@ -92,11 +92,15 @@ Alternative considered: a numeric priority on each system, sorted by the schedul
 
 ## Modules
 
+A module is a feature a program can switch on, switch off or replace. The subject expects an engine to take no more space than needed, on disk and in memory, and gives modularization as a good way to get there: choosing what is compiled, linked or loaded at run time. So code with no life cycle, a system or a service is not a module; the [Modules](/R-Type/modules/) page gives the definition.
+
 A program is a list of modules, objects implementing `IModule`, handed to an `Application`. The application installs them all, then starts them all, in list order, and stops them in the reverse order, so a module is stopped before its dependencies. The list is checked when the application is built: a module whose dependency is not listed before it is refused before anything is installed, so a missing module never leaves a socket or a thread half open. When a start fails, the modules already started are stopped before the error goes up. Stopping first stops the loop: the application waits for the pass in flight, so no work of a stage runs while the modules stop.
 
 A program also declares the named stages of its loop, and a module adds its work to one of them while it installs; within a stage, the work runs in the order of the list. A module hands an object to the modules installed after it as a service found by type during install only, so what a module depends on shows in its constructors; a required service no earlier module provides stops the program before it starts, while an optional one is found to be absent.
 
 Alternative considered: sorting the modules by their dependencies. A module could then be listed anywhere, but the order would be computed instead of read in one place, and two modules that do not depend on each other would have no defined order. As with systems, the list is the one place that says what starts after what.
+
+Alternative considered: calling any folder with a CMake library a module. Nothing would need deciding, but the word would say nothing of what a program can leave out, and a folder called a module could hold nothing with a life cycle.
 
 What a module does at each moment, and how to write one, is on the [Modules](/R-Type/modules/) page.
 
