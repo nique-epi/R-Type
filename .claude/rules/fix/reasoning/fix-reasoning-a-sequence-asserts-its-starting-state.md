@@ -13,7 +13,14 @@ trigger: always_on
 4. **Replaying is the nominal case.** Facing any state kept between two runs (game in progress, packet queue, sequence counter), ask: *what does the second run look like if the first stopped halfway?*
 5. **A silent inversion is worse than a failure**: when two values of the same type differ only by their origin (source/destination, old/new, client/server), guarantee the origin through the type or the construction.
 
+### Applying the state already in force does nothing
+
+1. **An action that applies a choice** (a filter, a setting, a tab) **compares it with the state in force first**, and does nothing when they are equal: no new request, no list emptied and filled again.
+2. **Test it with the choice left as it is**: confirming an unchanged dialog sends nothing.
+
 ## Example
 
 - ❌ **Before (wrong)**: `toggleReady()` on each click on "Ready" → one lost packet inverts the state between client and server for the rest of the game.
 - ✅ **After (right)**: the client sends `setReady(true)` / `setReady(false)`, an absolute state, and the server sends back the applied state.
+- ❌ **Before (wrong)**: APPLY on an unchanged leaderboard filter asked the server again, and the list blinked while the same rows came back.
+- ✅ **After (right)**: `if (picked == choice_) { return; }` before `ask()`, and a test that applies the same filter and sees one request.

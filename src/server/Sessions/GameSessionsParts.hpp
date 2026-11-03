@@ -4,6 +4,7 @@
 #include "ConnectedPlayer.hpp"
 #include "EventBus.hpp"
 #include "IClock.hpp"
+#include "LeaderboardRequest.hpp"
 #include "OutgoingDatagram.hpp"
 #include "PlayerInput.hpp"
 
@@ -30,6 +31,11 @@ struct GameSessionsParts {
    * empty. */
   std::function<void(const ConnectedPlayer&, const network::PlayerInput&)>
       onNewerInput;
+  /** @brief Called with the player and each LeaderboardRequest it sends, for
+   * whoever answers it (the results of the game). Must not be empty. */
+  std::function<void(const ConnectedPlayer&,
+                     const network::LeaderboardRequest&)>
+      onLeaderboardRequest;
 };
 
 }  // namespace rtype::server

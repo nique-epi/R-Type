@@ -105,4 +105,9 @@ DrawnEntity effectAt(game::SpriteFrame firstFrame, game::Position position);
 [[nodiscard]] std::size_t announcedEntityCount(
     engine::ComponentRegistry& components);
 
+/** @returns Where the history of the only entity that has one puts it at
+ * @p tick, nothing when no entity has one. */
+[[nodiscard]] std::optional<game::Position> historyPositionAt(
+    engine::ComponentRegistry& components, double tick);
+
 }  // namespace rtype::client::testing

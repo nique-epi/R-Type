@@ -58,3 +58,7 @@ Their tests were written in `tests/client/Rendering/`, next to the other renderi
 
 ### Root cause
 The plan placed each test file by its neighbouring tests, never next to the folder of the code it tests.
+
+## Update (2026-11-02) — A new library links what the map forbids
+
+The first version of `rtype_storage` linked `rtype_engine_paths` to reuse `genericText()`. `project-layout.md`, section "Who may link what", allows a library only `rtype_logging`, `rtype_concurrency` and `rtype_identifiers`, besides `rtype_game` to `rtype_engine`. An architecture review found it before any commit: the plan had read the section on where a folder goes, not the one on links. `openDatabaseFile()` now takes the path as UTF-8 text, the server converts it, and `rtype_forbid_links(rtype_storage …)` names `rtype_engine`.

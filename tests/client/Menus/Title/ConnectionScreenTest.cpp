@@ -282,6 +282,36 @@ TEST_F(ConnectionScreenFixture, TheWaitingRoomOpensOnceTheAcceptanceShowed) {
 }
 
 /**
+ * Given an attempt from a screen that waits below, just accepted by the server
+ * When frames go by until the acceptance showed long enough
+ * Then the screen closes, and no waiting room opens
+ */
+TEST_F(ConnectionForTheScreenBelowFixture,
+       TheScreenClosesOnceTheAcceptanceShowed) {
+  show(ACCEPTED_AS_FIRST_PLAYER);
+
+  screen().update(ACCEPTED_STATUS_DURATION - ONE_FRAME);
+
+  EXPECT_THAT(navigator().calls(),
+              ElementsAre(NavigatorCall{.request = NavigatorRequest::Pop,
+                                        .screen = std::nullopt}));
+}
+
+/**
+ * Given the screen already asked to close after an acceptance
+ * When more frames go by
+ * Then it asked once only
+ */
+TEST_F(ConnectionForTheScreenBelowFixture, TheScreenClosesOnce) {
+  show(ACCEPTED_AS_FIRST_PLAYER);
+  screen().update(ACCEPTED_STATUS_DURATION);
+
+  screen().update(ACCEPTED_STATUS_DURATION);
+
+  EXPECT_EQ(navigator().calls().size(), 1);
+}
+
+/**
  * Given the waiting room already opened after an acceptance
  * When more frames go by
  * Then the waiting room is opened once only

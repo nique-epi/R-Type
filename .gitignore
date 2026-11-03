@@ -5,6 +5,7 @@ Testing/
 /r-type_server
 /r-type_client
 *.log
+/r-type_server_*.db*
 /Debug/
 /Release/
 /RelWithDebInfo/

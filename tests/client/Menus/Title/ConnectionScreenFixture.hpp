@@ -4,6 +4,7 @@
 #include <SFML/Window/Keyboard.hpp>
 #include <cstddef>
 #include <string_view>
+#include "ConnectionGoal.hpp"
 #include "ConnectionScreen.hpp"
 #include "ConnectionStatus.hpp"
 #include "RecordingInterfaceCanvas.hpp"
@@ -16,7 +17,9 @@
  * and canvas, its fields started with the launch values. */
 class ConnectionScreenFixture : public ::testing::Test {
  protected:
-  ConnectionScreenFixture();
+  explicit ConnectionScreenFixture(
+      rtype::client::ConnectionGoal goal =
+          rtype::client::ConnectionGoal::WaitingRoom);
 
   [[nodiscard]] const RecordingNavigator& navigator() const;
   RecordingServerConnection& connection();
@@ -49,4 +52,10 @@ class ConnectionScreenFixture : public ::testing::Test {
   RecordingSoundPlayer sounds_;
   rtype::client::ServerChoice choice_;
   rtype::client::ConnectionScreen screen_;
+};
+
+/** @brief The same screen, pushed over the screen the player came from. */
+class ConnectionForTheScreenBelowFixture : public ConnectionScreenFixture {
+ protected:
+  ConnectionForTheScreenBelowFixture();
 };

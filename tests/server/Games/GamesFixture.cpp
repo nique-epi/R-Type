@@ -32,7 +32,7 @@ void GamesFixture::addGame() {
           .events = *events,
           .timers = timers_,
           .clock = clock_},
-      rtype::server::rtypeGameModules());
+      rtype::server::rtypeGameModules(results_));
   games_.add(std::move(events), std::move(game));
 }
 

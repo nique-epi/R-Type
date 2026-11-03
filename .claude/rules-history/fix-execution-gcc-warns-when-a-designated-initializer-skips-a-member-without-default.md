@@ -15,3 +15,7 @@ Two checks pull in opposite directions (tidy wants no initializer on a class-typ
 ## Rule and example
 
 See the core file of the same name in `.claude/rules/fix/execution/`.
+
+## Update (3 November 2026) — A NOLINT over the same braces
+
+`LeaderboardPage::rows` and `ItemCell::tag` wrote `{}` with a `NOLINT` for `readability-redundant-member-init`, the way out point 2 forbids, copied from `Button.hpp`. The page now names `.rows = {}` where it is built, and the tag is an optional.

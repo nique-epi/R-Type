@@ -9,6 +9,7 @@
 #include "ConfigurationRegistry.hpp"
 #include "Endpoint.hpp"
 #include "IDatagramSender.hpp"
+#include "IListeningPort.hpp"
 #include "IPlayerAdmission.hpp"
 #include "InstallContext.hpp"
 #include "IntegerSettingDefinition.hpp"
@@ -73,11 +74,11 @@ void ServerNetworkModule::install(engine::InstallContext& context) {
   context.provide<IDatagramSender>(*server_);
   context.provide<IPlayerAdmission>(*server_);
   context.provide(tickDatagrams_);
+  context.provide<IListeningPort>(*this);
 }
 
 void ServerNetworkModule::start() {
-  server_->listenOn(listeningEndpoint(
-      static_cast<std::uint16_t>(portSetting_->integer().value_or(port_))));
+  server_->listenOn(listeningEndpoint(listeningPort()));
   server_->open();
   try {
     serverThread_ = std::jthread{[this] { runServer(); }};
@@ -92,6 +93,10 @@ void ServerNetworkModule::stop() {
   server_->stop();
   serverThread_.join();
   server_->close();
+}
+
+std::uint16_t ServerNetworkModule::listeningPort() const {
+  return static_cast<std::uint16_t>(portSetting_->integer().value_or(port_));
 }
 
 void ServerNetworkModule::runServer() {

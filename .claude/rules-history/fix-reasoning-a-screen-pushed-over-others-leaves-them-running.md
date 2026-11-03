@@ -27,3 +27,7 @@ The plan kept the screens alive for one need, the picture, and never listed what
 
 - ❌ `push(ScreenId::Lost)` over the game: the end screen asked by the game replaces the card.
 - ✅ `framePictureOf()` after the update, then `replaceAll(ScreenId::Lost)`.
+
+## Update (3 November 2026) — What stops receiving events drops what it holds
+
+The waiting room gave itself `FocusLost` before pushing the leaderboard, but the leaderboard gave its chips nothing before its filter took the events, and the room gave its chip nothing before its help took them. A review measured BACK drawn pressed after Escape was held across F, and FILTER drawn selected under the panel after a click; a release after the help opened pushed the leaderboard over it. The rule of the push had been applied to the push alone.

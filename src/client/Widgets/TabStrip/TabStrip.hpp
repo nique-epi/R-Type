@@ -7,6 +7,7 @@
 #include <string>
 #include <vector>
 #include "IInterfaceCanvas.hpp"
+#include "WidgetConstants.hpp"
 
 namespace rtype::client {
 
@@ -14,11 +15,11 @@ namespace rtype::client {
  * @brief The tabs over a panel of rows, between the keycaps of the keys that
  * open the previous and the next tab.
  *
- * The strip is TAB_STRIP_WIDTH wide and TAB_HEIGHT tall; its tabs share
- * what the keycaps leave, TAB_GAP apart. The open tab has a cyan border and
- * no bottom edge, and is one pixel taller than the others: painted after the
- * panel, it covers the panel's border under it and opens into it. A closed
- * tab stands on that border.
+ * The strip is TAB_STRIP_WIDTH wide unless told otherwise, and TAB_HEIGHT tall;
+ * its tabs share what the keycaps leave, TAB_GAP apart. The open tab has a cyan
+ * border and no bottom edge, and is one pixel taller than the others: painted
+ * after the panel, it covers the panel's border under it and opens into it. A
+ * closed tab stands on that border.
  */
 class TabStrip {
  public:
@@ -35,6 +36,10 @@ class TabStrip {
    */
   TabStrip(std::vector<std::string> labels, std::size_t openTab, KeyNames keys,
            sf::Vector2i topLeft);
+
+  /** @brief Sets how wide the strip is, TAB_STRIP_WIDTH until then, for a panel
+   * narrower than the safe margin. */
+  void setWidth(int width);
 
   void paint(IInterfaceCanvas& canvas) const;
 
@@ -58,6 +63,7 @@ class TabStrip {
   std::size_t openTab_;
   KeyNames keys_;
   sf::Vector2i topLeft_;
+  int width_ = TAB_STRIP_WIDTH;
 };
 
 }  // namespace rtype::client
