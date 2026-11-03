@@ -11,7 +11,7 @@ target_link_libraries(rtype_client_menu
     rtype_client_tab_strip
     rtype_client_text_field
     rtype_client_widgets
-    rtype_client_window_module
+    rtype_client_window_display
   PRIVATE
     rtype_client_cut_corner_box
     rtype_client_interface_pixel

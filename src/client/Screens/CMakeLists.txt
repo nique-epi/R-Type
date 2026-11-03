@@ -29,7 +29,8 @@ target_link_libraries(rtype_client_screens_module
     rtype_client_session
     rtype_client_settings_module
     rtype_client_widgets
-    rtype_client_window_module
+    rtype_client_window_display
+    rtype_client_window_loop
     rtype_engine_commands
     rtype_engine_events
     rtype_engine_modules

@@ -19,7 +19,7 @@ target_link_libraries(rtype_client_options
     rtype_client_screens_module
     rtype_client_settings_module
     rtype_client_slider
-    rtype_client_window_module
+    rtype_client_window_display
     rtype_engine_time
   PRIVATE
     rtype_client_choice_selector

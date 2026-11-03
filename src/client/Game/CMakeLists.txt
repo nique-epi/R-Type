@@ -22,7 +22,7 @@ target_link_libraries(rtype_client_game_module
     rtype_client_screens_module
     rtype_client_session
     rtype_client_silence_warning
-    rtype_client_window_module
+    rtype_client_window_display
     rtype_engine
     rtype_engine_modules
     rtype_logging

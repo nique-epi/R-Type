@@ -9,7 +9,7 @@ target_link_libraries(rtype_client_help_walkthrough
     rtype_client_button
     rtype_client_input
     rtype_client_widgets
-    rtype_client_window_module
+    rtype_client_window_display
   PRIVATE
     rtype_client_animation
     rtype_client_box_corners

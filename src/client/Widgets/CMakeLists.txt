@@ -15,7 +15,7 @@ add_library(rtype_client_window_size_chart STATIC WindowSizeChart.cpp)
 target_link_libraries(rtype_client_window_size_chart
   PUBLIC
     rtype_client_widgets
-    rtype_client_window_module
+    rtype_client_window_display
   PRIVATE
     rtype_client_outline
 )

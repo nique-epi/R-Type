@@ -13,7 +13,7 @@ target_link_libraries(rtype_client_lobby_module
     rtype_client_menu
     rtype_client_screens_module
     rtype_client_session
-    rtype_client_window_module
+    rtype_client_window_display
     rtype_engine_modules
   PRIVATE
     rtype_client_constants
