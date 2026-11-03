@@ -60,4 +60,15 @@ WaveCatalog shippedCatalog() {
       std::filesystem::path{RTYPE_SOURCE_ASSETS_FOLDER} / WAVE_FILE_IN_ASSETS);
 }
 
+std::string withCrlfLineEndings(std::string_view text) {
+  std::string converted;
+  for (const char character : text) {
+    if (character == '\n') {
+      converted += '\r';
+    }
+    converted += character;
+  }
+  return converted;
+}
+
 }  // namespace rtype::server::testing

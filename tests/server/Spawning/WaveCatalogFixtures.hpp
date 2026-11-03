@@ -32,4 +32,8 @@ namespace rtype::server::testing {
  * the assets folder of the sources. */
 [[nodiscard]] WaveCatalog shippedCatalog();
 
+/** @returns @p text with each line ending in CRLF, as a Windows checkout that
+ * converts line endings writes it. */
+[[nodiscard]] std::string withCrlfLineEndings(std::string_view text);
+
 }  // namespace rtype::server::testing

@@ -60,6 +60,7 @@ using rtype::server::testing::UNKNOWN_ENEMY;
 using rtype::server::testing::UNKNOWN_ENEMY_MESSAGE;
 using rtype::server::testing::UNREADABLE_FILE_START;
 using rtype::server::testing::WHOLE_FLOAT;
+using rtype::server::testing::withCrlfLineEndings;
 
 /**
  * Given a waves file describing storm, then calm
@@ -397,4 +398,19 @@ TEST(WaveCatalog, AnAddedCommentChangesTheFingerprint) {
 
   EXPECT_EQ(commented.difficulties(), plain.difficulties());
   EXPECT_NE(commented.fingerprint(), plain.fingerprint());
+}
+
+/**
+ * Given a waves file, and the same file with CRLF line endings
+ * When both are read
+ * Then they describe the same difficulties, under two fingerprints, which is
+ * why .gitattributes keeps the shipped file in LF
+ */
+TEST(WaveCatalog, CrlfLineEndingsChangeTheFingerprint) {
+  const WaveCatalog plain = WaveCatalog::fromText(calmFile(), TEST_FILE_NAME);
+  const WaveCatalog crlf =
+      WaveCatalog::fromText(withCrlfLineEndings(calmFile()), TEST_FILE_NAME);
+
+  EXPECT_EQ(crlf.difficulties(), plain.difficulties());
+  EXPECT_NE(crlf.fingerprint(), plain.fingerprint());
 }
