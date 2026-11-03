@@ -5,8 +5,8 @@
 
 namespace rtype::server {
 
-/** @brief A player whose datagrams a DatagramSorter puts in the player queue.
- */
+/** @brief A player whose datagrams the DatagramSorter hands to the player
+ * queue: where it sends from, and the session token its datagrams carry. */
 struct AdmittedPlayer {
   network::Endpoint endpoint;
   std::uint64_t sessionToken{};

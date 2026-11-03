@@ -8,6 +8,7 @@
 #include <thread>
 #include <utility>
 #include "CountingDatagramSocket.hpp"
+#include "DatagramQueues.hpp"
 #include "DatagramSocketOpening.hpp"
 #include "DatagramSorter.hpp"
 #include "Endpoint.hpp"

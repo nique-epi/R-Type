@@ -1,9 +1,13 @@
 #include "RoundTripWatchFixture.hpp"
+#include <gtest/gtest.h>
 #include <algorithm>
 #include <cstddef>
 #include <string>
+#include "GuaranteedDelivery.hpp"
 #include "Heartbeat.hpp"
 #include "LobbyState.hpp"
+#include "PacketHeader.hpp"
+#include "ProtocolConstants.hpp"
 #include "RoundTripWatch.hpp"
 #include "RoundTripWatchTestConstants.hpp"
 #include "ServerSessionFixtures.hpp"
@@ -26,6 +30,15 @@ void RoundTripWatchFixture::openSession() {
 void RoundTripWatchFixture::hold(engine::Duration elapsed) {
   clock_.advance(elapsed);
   watch_.sessionHeld(elapsed);
+}
+
+void RoundTripWatchFixture::oweAnAcknowledgement() {
+  acknowledgements_.open(SERVER_ACCEPTANCE_SEQUENCE);
+  network::PacketHeader guaranteed;
+  guaranteed.sequence = SERVER_GUARANTEED_SEQUENCE;
+  network::markGuaranteed(guaranteed);
+  ASSERT_TRUE(acknowledgements_.accept(guaranteed));
+  outbox_.advance(network::ACKNOWLEDGEMENT_DELAY);
 }
 
 RoundTripWatch& RoundTripWatchFixture::watch() { return watch_; }

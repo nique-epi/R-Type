@@ -18,6 +18,7 @@ add_subdirectory(Exceptions)
 add_subdirectory(NetworkContext)
 add_subdirectory(Serialization)
 add_subdirectory(Protocol)
+add_subdirectory(Reliability)
 add_subdirectory(Transport)
 add_subdirectory(Handshake)
 add_subdirectory(Statistics)
@@ -38,6 +39,7 @@ target_link_libraries(rtype_network
     rtype_network_datagram_codec
     rtype_network_messages
     rtype_network_message_dispatcher
+    rtype_network_reliability
     rtype_network_transport
     rtype_network_udp_socket
     rtype_network_datagram_relay

@@ -45,8 +45,8 @@ ConnectionStatus refusedForVersion(logging::Logger& logger,
 }  // namespace
 
 ServerSession::ServerSession(ServerSessionParts parts)
-    : outbox_(parts.link.get()),
-      inbound_(parts.link.get()),
+    : outbox_(parts.link.get(), acknowledgements_),
+      inbound_(parts.link.get(), acknowledgements_),
       observers_(std::move(parts.observers)),
       dispatcher_(&parts.dispatcher.get()),
       gameLoaded_(&parts.gameLoaded.get()),
@@ -97,6 +97,7 @@ void ServerSession::update(engine::Duration elapsed) {
       giveUp(ConnectionPhase::Lost);
       return;
     }
+    outbox_.advance(elapsed);
     observers_.held(elapsed);
   } else if (status_.phase == ConnectionPhase::Connecting &&
              attempt_.advance(elapsed, outbox_) == AttemptProgress::TimedOut) {

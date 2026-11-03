@@ -13,6 +13,7 @@
 #include "IClock.hpp"
 #include "IncomingDatagram.hpp"
 #include "LeaderboardRequest.hpp"
+#include "MessageDelivery.hpp"
 #include "MessageOrigin.hpp"
 #include "PacketHeader.hpp"
 #include "PlayerDatagram.hpp"
@@ -90,11 +91,14 @@ bool GameSessions::everyPlayerIsReady() {
 
 void GameSessions::startTick() {
   const engine::Duration tickStart = clock_->now();
-  addTimeSinceHeartbeat(
-      roster_, tickStart - std::exchange(previousTickStart_, tickStart));
+  const engine::Duration elapsed =
+      tickStart - std::exchange(previousTickStart_, tickStart);
+  addTimeSinceHeartbeat(roster_, elapsed);
+  ageGuaranteedMessages(roster_, elapsed);
 }
 
 void GameSessions::endTick() {
+  resendGuaranteedMessages(roster_, send_);
   sendHeartbeats(roster_, clock_->now(), send_);
   reader_.countTick();
 }
@@ -115,6 +119,7 @@ void GameSessions::readDatagram(const network::IncomingDatagram& datagram) {
   }
   readable->player->ticksSinceReceived = 0;
   readable->player->away = false;
+  readable->player->unacknowledged.acknowledge(readable->origin.header);
   dispatcher_.dispatch(readable->origin, readable->messages);
 }
 

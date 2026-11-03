@@ -16,6 +16,7 @@ using testing::ECHO_ARRIVAL;
 using testing::FIRST_HEARTBEAT_SENT_AT;
 using testing::HELD_BY_THE_SERVER;
 using testing::HELD_UNTIL_THE_CLIENT_SENDS;
+using testing::ONE_FRAME;
 using testing::OTHER_PLAYER_NUMBER;
 using testing::OWN_PLAYER_NUMBER;
 using testing::OWN_ROUND_TRIP;
@@ -25,6 +26,7 @@ using testing::REPORTED_JITTER_DURATION;
 using testing::REPORTED_ROUND_TRIP;
 using testing::REPORTED_ROUND_TRIP_DURATION;
 using testing::RoundTripWatchFixture;
+using testing::SENT_AT_A_FRAME_AFTER_THE_OPENING;
 using testing::SERVER_HEARTBEAT_ARRIVAL;
 using testing::SERVER_HEARTBEAT_SENT_AT;
 using testing::UNREPORTED_PLAYER_NUMBER;
@@ -86,6 +88,24 @@ TEST_F(RoundTripWatchFixture, TheHeartbeatCarriesTheTimeOnTheClock) {
   EXPECT_EQ(lastSentHeartbeat(),
             (network::Heartbeat{.sentAt = FIRST_HEARTBEAT_SENT_AT,
                                 .echo = std::nullopt}));
+}
+
+/**
+ * Given a session that opened at 3.5 s, where the outbox owes the server the
+ * acknowledgement of guaranteed messages
+ * When a frame of 1 ms goes by, far short of the interval
+ * Then a Heartbeat goes out at once, carrying 3501000 µs: the acknowledgement
+ * of the guaranteed messages also measures the round trip
+ */
+TEST_F(RoundTripWatchFixture, SendsATimedHeartbeatOnceAnAcknowledgementIsDue) {
+  advanceClock(CLOCK_WHEN_THE_SESSION_OPENS);
+  openSession();
+  oweAnAcknowledgement();
+
+  hold(ONE_FRAME);
+
+  ASSERT_EQ(heartbeatsSent(), 1U);
+  EXPECT_EQ(lastSentHeartbeat().sentAt, SENT_AT_A_FRAME_AFTER_THE_OPENING);
 }
 
 /**

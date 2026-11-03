@@ -90,10 +90,12 @@ constexpr std::chrono::seconds REJECTION_LINE_INTERVAL{10};
 
 /**
  * @brief Why a receiver drops a datagram whose header is not of this protocol
- * and version, or has a flag set, as its rejection lines say.
+ * and version, or has a flag this version does not know, as its rejection
+ * lines say.
  */
 constexpr std::string_view FOREIGN_HEADER_DROP_REASON =
-    "its header is not of this protocol and version, or has a flag set";
+    "its header is not of this protocol and version, or has a flag this "
+    "version does not know";
 
 /**
  * @brief Launch option of both programs followed by the file their traffic goes

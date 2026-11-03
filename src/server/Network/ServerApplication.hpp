@@ -7,7 +7,7 @@
 #include <span>
 #include <vector>
 #include "BoundedQueue.hpp"
-#include "DatagramDestinations.hpp"
+#include "DatagramQueues.hpp"
 #include "DatagramRelay.hpp"
 #include "DatagramSorter.hpp"
 #include "DiscardReport.hpp"
@@ -165,7 +165,7 @@ class ServerApplication final : public IDatagramSender,
   concurrency::BoundedQueue<network::IncomingDatagram> incoming_;
   concurrency::BoundedQueue<network::IncomingDatagram> connectionRequests_;
   concurrency::BoundedQueue<network::OutgoingDatagram> outgoing_;
-  DatagramDestinations destinations_;
+  DatagramQueues destinations_;
   DatagramSorter sorter_;
   DiscardReport discardReport_;
   std::optional<network::DatagramRelay> relay_;

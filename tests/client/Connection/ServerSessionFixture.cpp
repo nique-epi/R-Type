@@ -88,14 +88,6 @@ std::vector<EntityMessage> ServerSessionFixture::drainedEntityMessages() {
   return drained;
 }
 
-network::PacketHeader ServerSessionFixture::sessionHeader(
-    std::uint16_t sequence) {
-  network::PacketHeader header;
-  header.sessionToken = SESSION_TOKEN;
-  header.sequence = sequence;
-  return header;
-}
-
 const std::optional<network::Endpoint>& ServerSessionFixture::listenedTo()
     const {
   return link_.listenedTo();

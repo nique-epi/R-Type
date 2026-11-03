@@ -22,7 +22,9 @@ namespace rtype::client {
  *
  * While a session is open, it sends the server a Heartbeat every
  * HEARTBEAT_INTERVAL, counted on the frames the session holds, whatever else
- * the client sends: its RoundTripMeter builds it at the time on the clock and
+ * the client sends, and one at once when the outbox says an acknowledgement
+ * is due (see ISessionOutbox::isAcknowledgementDue()): its RoundTripMeter
+ * builds it at the time on the clock and
  * echoes the newest Heartbeat of the server. Each Heartbeat of the server goes
  * to that meter with the time its datagram arrived, and each RoundTrips
  * replaces the round trips of the others. All of it is forgotten when the
@@ -46,7 +48,8 @@ class RoundTripWatch final : public ISessionObserver, public IPlayerRoundTrips {
                      ISessionOutbox& outbox) override;
   void sessionClosed() override;
   /** @brief Sends a Heartbeat once HEARTBEAT_INTERVAL passed since the
-   * previous one, or since the session opened. */
+   * previous one, or since the session opened, or once an acknowledgement is
+   * due; the interval then starts over. */
   void sessionHeld(engine::Duration elapsed) override;
   [[nodiscard]] std::optional<network::RoundTripFigures> roundTripOf(
       std::uint8_t playerNumber) const override;

@@ -1,4 +1,5 @@
 add_library(rtype_client_session STATIC
+  SessionAcknowledgements.cpp
   SessionDeparture.cpp
   SessionInbound.cpp
   SessionObservers.cpp
@@ -18,13 +19,13 @@ target_link_libraries(rtype_client_session
     rtype_network_protocol
     rtype_network_round_trips
     rtype_network_statistics_round_trip
+    rtype_network_reliability
     rtype_network_transport
   PRIVATE
     rtype_network_datagram_codec
     rtype_network_disconnection
     rtype_network_exceptions
     rtype_network_heartbeat
-    rtype_network_sequence_order
 )
 
 rtype_enable_warnings(rtype_client_session)

@@ -14,10 +14,10 @@ target_link_libraries(rtype_server_sessions_roster
     rtype_identifiers
     rtype_network_protocol
     rtype_network_statistics_round_trip
+    rtype_network_reliability
     rtype_network_transport
   PRIVATE
     rtype_network_datagram_codec
-    rtype_network_sequence_order
 )
 
 rtype_enable_warnings(rtype_server_sessions_roster)

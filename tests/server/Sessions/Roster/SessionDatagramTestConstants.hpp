@@ -13,6 +13,11 @@ namespace rtype::server::testing {
 constexpr std::uint16_t SOME_NEXT_SEQUENCE = 7;
 
 /**
+ * @brief The sequence of a datagram a player sent, which the server accepts.
+ */
+constexpr std::uint16_t PLAYER_SEQUENCE = 40;
+
+/**
  * @brief A time the server sent a player no Heartbeat for, short of the next
  * one.
  */

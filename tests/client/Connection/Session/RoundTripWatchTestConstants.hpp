@@ -28,6 +28,20 @@ constexpr std::chrono::milliseconds CLOCK_WHEN_THE_SESSION_OPENS{3500};
 constexpr std::uint32_t FIRST_HEARTBEAT_SENT_AT = 4'000'000;
 
 /**
+ * @brief The sequence of the acceptance of the server, then of a datagram of
+ * the server that holds guaranteed messages, accepted after it.
+ */
+constexpr std::uint16_t SERVER_ACCEPTANCE_SEQUENCE = 0;
+constexpr std::uint16_t SERVER_GUARANTEED_SEQUENCE = 1;
+
+/**
+ * @brief A frame of 1 ms, far short of the interval, and the time a Heartbeat
+ * sent at its end carries: 3.501 s, in microseconds.
+ */
+constexpr std::chrono::milliseconds ONE_FRAME{1};
+constexpr std::uint32_t SENT_AT_A_FRAME_AFTER_THE_OPENING = 3'501'000;
+
+/**
  * @brief A Heartbeat of the server sent at 9 µs on its clock, which arrives
  * 10 ms before the first Heartbeat of the client leaves, so it is held
  * 10000 µs.

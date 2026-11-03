@@ -23,22 +23,23 @@ namespace rtype::server {
 
 /**
  * @brief The players of one game and the sessions the server keeps with them:
- * who they are, whether they are ready, their newest input, the silence that
- * closes a session, their departure and the Heartbeats that keep it open.
- * Nothing in it belongs to one game: the game gives it the things that do (see
- * GameSessionsParts).
+ * who they are, whether they are ready, their newest input, the guaranteed
+ * messages they have not acknowledged, the silence that closes a session, their
+ * departure and the Heartbeats that keep it open. Nothing in it belongs to one
+ * game: the game gives it the things that do (see GameSessionsParts).
  *
  * A datagram of the players is read when its header carries this protocol and
- * version with no flag set, its messages add up to its end, and its sender is
- * in the roster (see DatagramReader). Reading one resets the silence of its
- * sender, whatever it holds. Its ReadyState is kept by a ReadyKeeper, its
- * PlayerInput by an InputKeeper, its LeaderboardRequest goes to
+ * version with no flag this version does not know, its messages add up to its
+ * end, and its sender is in the roster (see DatagramReader). Reading one resets
+ * the silence of its sender, whatever it holds, and drops the guaranteed
+ * messages its header acknowledges. Its ReadyState is kept by a ReadyKeeper,
+ * its PlayerInput by an InputKeeper, its LeaderboardRequest goes to
  * GameSessionsParts::onLeaderboardRequest with the player who sent it, and a
  * Disconnection closes the session of its sender at once, with a
- * PlayerDeparture (Left): the copies of that
- * Disconnection the client sends after it come from an address the roster no
- * longer holds, so they change nothing. A Heartbeat measures the round trip of
- * its sender (see readHeartbeat()).
+ * PlayerDeparture (Left): the copies of that Disconnection the client sends
+ * after it come from an address the roster no longer holds, so they change
+ * nothing. A Heartbeat measures the round trip of its sender (see
+ * readHeartbeat()).
  *
  * The silence of a player is counted in the ticks the game runs, and the time
  * since the server last sent a player a Heartbeat in real time, read on the
@@ -68,7 +69,8 @@ class GameSessions {
   /**
    * @brief Starts the tick, before anything is sent in it: adds the time on the
    * clock since the start of the previous tick, or since the sessions were
-   * built, to ConnectedPlayer::sinceHeartbeat of each player.
+   * built, to ConnectedPlayer::sinceHeartbeat of each player, and makes its
+   * guaranteed messages that much older (see ageGuaranteedMessages()).
    */
   void startTick();
 
@@ -89,8 +91,9 @@ class GameSessions {
   [[nodiscard]] bool everyPlayerIsReady();
 
   /**
-   * @brief Ends the tick: sends a Heartbeat and RoundTrips to every player
-   * due one (see sendHeartbeats()), then counts the tick.
+   * @brief Ends the tick: sends each player its guaranteed messages due again
+   * (see resendGuaranteedMessages()), then a Heartbeat and RoundTrips to
+   * every player due one (see sendHeartbeats()), then counts the tick.
    */
   void endTick();
 

@@ -13,7 +13,7 @@
 #include "AdmittedPlayer.hpp"
 #include "BoundedQueue.hpp"
 #include "DatagramCodec.hpp"
-#include "DatagramDestinations.hpp"
+#include "DatagramQueues.hpp"
 #include "Endpoint.hpp"
 #include "IClock.hpp"
 #include "IncomingDatagram.hpp"
@@ -53,7 +53,7 @@ network::IncomingDatagram copyOf(const network::Endpoint& sender,
 
 }  // namespace
 
-DatagramSorter::DatagramSorter(DatagramDestinations destinations,
+DatagramSorter::DatagramSorter(DatagramQueues destinations,
                                const engine::IClock& clock)
     : destinations_(destinations),
       clock_(&clock),

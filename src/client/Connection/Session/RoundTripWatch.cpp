@@ -51,7 +51,8 @@ void RoundTripWatch::sessionClosed() {
 
 void RoundTripWatch::sessionHeld(engine::Duration elapsed) {
   sinceHeartbeat_ += elapsed;
-  if (outbox_ == nullptr || sinceHeartbeat_ < network::HEARTBEAT_INTERVAL) {
+  if (outbox_ == nullptr || (sinceHeartbeat_ < network::HEARTBEAT_INTERVAL &&
+                             !outbox_->isAcknowledgementDue())) {
     return;
   }
   sinceHeartbeat_ = engine::Duration::zero();

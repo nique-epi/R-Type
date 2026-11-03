@@ -16,6 +16,7 @@
 #include "MessageDispatcher.hpp"
 #include "ProtocolConstants.hpp"
 #include "ServerSessionParts.hpp"
+#include "SessionAcknowledgements.hpp"
 #include "SessionDeparture.hpp"
 #include "SessionInbound.hpp"
 #include "SessionObservers.hpp"
@@ -28,8 +29,9 @@ namespace rtype::client {
  * @brief The attempt of the client to join a server, as the Connection section
  * of the protocol page describes, and the session the server opens: the
  * handshake (see ConnectionAttempt), then the token, the sequences, the
- * heartbeats and the silence of the server (see SessionOutbox and
- * SessionInbound), and the departure (see SessionDeparture). The waiting room
+ * acknowledgements, the heartbeats and the silence of the server (see
+ * SessionOutbox, SessionInbound and SessionAcknowledgements), and the
+ * departure (see SessionDeparture). The waiting room
  * and the entity messages of the game are other parts, told through
  * ISessionObserver and fed through the dispatcher.
  *
@@ -42,7 +44,9 @@ namespace rtype::client {
  * into every datagram it sends. While the attempt is Accepted,
  * sendPlayerInput() sends the inputs of the game, numbered from
  * FIRST_INPUT_NUMBER; otherwise it sends nothing. A Heartbeat goes out every
- * HEARTBEAT_INTERVAL, sent by an observer (see RoundTripWatch). A session
+ * HEARTBEAT_INTERVAL, and once the acknowledgement of a datagram that holds
+ * guaranteed messages waited ACKNOWLEDGEMENT_DELAY for one, sent by an
+ * observer (see RoundTripWatch). A session
  * whose server sent nothing for SESSION_SILENCE_LIMIT (SESSION_TIMEOUT plus
  * RECONNECTION_GRACE) is lost: the status becomes Lost, the session is
  * forgotten and nothing more goes to the server, not even a Disconnection.
@@ -118,6 +122,7 @@ class ServerSession final : public IServerConnection, public IPlayerInputLink {
    * session is closed. */
   void forgetSession();
 
+  SessionAcknowledgements acknowledgements_;
   SessionOutbox outbox_;
   SessionInbound inbound_;
   SessionDeparture departure_;

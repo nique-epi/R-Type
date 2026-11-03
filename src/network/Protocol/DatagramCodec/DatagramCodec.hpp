@@ -9,6 +9,7 @@
 #include <span>
 #include <vector>
 #include "ByteReader.hpp"
+#include "EncodedMessage.hpp"
 #include "MessageFrame.hpp"
 #include "MessagePayload.hpp"
 #include "MessageType.hpp"
@@ -55,6 +56,16 @@ class DatagramCodec {
   }
 
   /**
+   * @brief Encodes one datagram holding @p header and every message of
+   * @p messages, in order.
+   * @throws EmptyDatagramException when @p messages is empty, and
+   * DatagramTooLargeException when the datagram would hold more than
+   * MAX_DATAGRAM_SIZE bytes; nothing is encoded then.
+   */
+  [[nodiscard]] static std::vector<std::byte> encode(
+      const PacketHeader& header, std::span<const EncodedMessage> messages);
+
+  /**
    * @brief Reads the header at the start of @p datagram without judging its
    * fields: checking the protocol id, the version and the flags is left to
    * the caller.
@@ -66,8 +77,8 @@ class DatagramCodec {
 
   /**
    * @returns Whether @p header carries the protocol id and the version this
-   * code speaks, with no flag set: the first checks of a received datagram,
-   * before anything else in it is trusted.
+   * code speaks, with no flag but those of KNOWN_FLAGS: the first checks of a
+   * received datagram, before anything else in it is trusted.
    */
   [[nodiscard]] static bool speaksThisProtocol(const PacketHeader& header);
 

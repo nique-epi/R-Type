@@ -6,6 +6,7 @@
 #include "PacketHeader.hpp"
 #include "Reception.hpp"
 #include "RecordingDatagramLink.hpp"
+#include "SessionAcknowledgements.hpp"
 #include "SessionInbound.hpp"
 
 namespace rtype::client::testing {
@@ -31,7 +32,8 @@ class SessionInboundFixture : public ::testing::Test {
   [[nodiscard]] Reception receive(const network::PacketHeader& header);
 
   RecordingDatagramLink link_;
-  SessionInbound inbound_{link_};
+  SessionAcknowledgements acknowledgements_;
+  SessionInbound inbound_{link_, acknowledgements_};
 };
 
 }  // namespace rtype::client::testing

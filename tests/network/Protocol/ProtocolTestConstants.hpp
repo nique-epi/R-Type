@@ -89,21 +89,31 @@ constexpr std::uint64_t SOME_SESSION_TOKEN = 0x0102030405060708;
 constexpr std::uint16_t SOME_SEQUENCE = 0x0A0B;
 
 /**
- * @brief Values for the header fields version 1 leaves at 0, all different,
- * so a round trip shows each one at its place.
+ * @brief Values for the header fields, all different, so a round trip shows
+ * each one at its place. SOME_FLAGS sets bits 2 and 3, which version 2 does
+ * not know.
  */
-constexpr std::uint8_t SOME_OTHER_VERSION = 2;
+constexpr std::uint8_t SOME_OTHER_VERSION = 3;
 constexpr std::uint32_t SOME_OTHER_PROTOCOL_ID = 0x52545951;
 constexpr std::uint8_t SOME_FLAGS = 0x0C;
 constexpr std::uint16_t SOME_ACKNOWLEDGED_SEQUENCE = 0x0D0E;
 constexpr std::uint32_t SOME_ACKNOWLEDGEMENT_BITS = 0x0F101112;
 
 /**
- * @brief The 22 bytes of a default header: RTYP, version 1, then zeros.
+ * @brief The 22 bytes of a default header: RTYP, version 2, then zeros.
  */
 constexpr auto DEFAULT_HEADER_BYTES = std::to_array<std::uint8_t>(
-    {0x52, 0x54, 0x59, 0x50, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    {0x52, 0x54, 0x59, 0x50, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00});
+
+/**
+ * @brief Two payloads of 586 bytes make a datagram of exactly 1200 bytes with
+ * the header and their two prefixes (22 + 2 * 3 + 2 * 586); one of 587 makes
+ * it 1201. A message of 586 bytes takes 589 in a datagram.
+ */
+constexpr std::size_t FILLING_PAYLOAD_SIZE = 586;
+constexpr std::size_t OVERFILLING_PAYLOAD_SIZE = 587;
+constexpr std::size_t ENCODED_FILLING_MESSAGE_SIZE = 589;
 
 /**
  * @brief The offset of the version byte in a datagram.
@@ -223,6 +233,13 @@ constexpr std::uint8_t TYPE_ABOVE_THE_LAST =
 constexpr std::uint8_t LARGEST_TYPE_BYTE = 255;
 
 /**
+ * @brief The type bytes of a Heartbeat (5) and of a ReadyState (6), as the
+ * malformed datagrams of the codec tests write them.
+ */
+constexpr std::uint8_t HEARTBEAT_TYPE_BYTE = 0x05;
+constexpr std::uint8_t READY_STATE_TYPE_BYTE = 0x06;
+
+/**
  * @brief How many messages a test has a dispatcher reject at once, to check
  * that they share one log line.
  */
@@ -233,5 +250,11 @@ constexpr std::size_t REJECTED_MESSAGE_COUNT = 3;
  * tell those lines apart from the others.
  */
 constexpr std::string_view REJECTED_MESSAGE_LINE_TEXT = "a message of type";
+
+/**
+ * @brief Bytes of the largest payload a datagram carries: 1200, less the 22
+ * bytes of the packet header and the 3 of the message prefix.
+ */
+constexpr std::size_t DATAGRAM_PAYLOAD_LIMIT = 1175;
 
 }  // namespace rtype::network::testing

@@ -3,16 +3,19 @@
 #include <cstddef>
 #include <cstdint>
 #include <optional>
+#include "PacketHeader.hpp"
+#include "ReceivedSequences.hpp"
 
 namespace rtype::server {
 
 /**
- * @brief Keeps, for one player, the sequence of the newest datagram accepted
- * and how many of the datagrams the player sent never arrived.
+ * @brief Keeps, for one player, the datagrams accepted from it, which every
+ * datagram to the player acknowledges, and how many of the datagrams it sent
+ * never arrived.
  *
  * A datagram is accepted when its sequence is newer than the newest accepted
- * (see network::isNewerSequence); a duplicate or an older one is refused, so a
- * late copy never undoes a newer one. Each accepted datagram stands for the
+ * (see network::ReceivedSequences); a duplicate or an older one is refused, so
+ * a late copy never undoes a newer one. Each accepted datagram stands for the
  * sequences it skipped over: those are counted as lost, so a datagram that
  * arrives late and is refused stays counted as lost.
  *
@@ -28,6 +31,13 @@ class ArrivalLedger {
   [[nodiscard]] bool accept(std::uint16_t sequence);
 
   /**
+   * @brief Writes the acknowledgement of the datagrams accepted into
+   * @p header, as network::ReceivedSequences::acknowledgeIn() does: nothing
+   * before the first one.
+   */
+  void acknowledgeIn(network::PacketHeader& header) const;
+
+  /**
    * @returns The share of datagrams lost over the last complete window of
    * LOSS_WINDOW_SIZE datagrams, from 0 (none lost) to 1 (all lost but the
    * ones that closed the window); nothing until the first window is complete.
@@ -37,7 +47,7 @@ class ArrivalLedger {
  private:
   void closeWindowWhenFull();
 
-  std::optional<std::uint16_t> newest_;
+  network::ReceivedSequences sequences_;
   std::size_t expected_{0};
   std::size_t received_{0};
   std::optional<double> lossRate_;

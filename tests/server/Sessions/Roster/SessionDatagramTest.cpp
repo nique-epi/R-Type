@@ -7,9 +7,11 @@
 #include "ConnectedPlayer.hpp"
 #include "ConnectionAccepted.hpp"
 #include "DatagramCodec.hpp"
+#include "GuaranteedMessageTestConstants.hpp"
 #include "MessageFrame.hpp"
 #include "MessagePayload.hpp"
 #include "MessageType.hpp"
+#include "NetworkTestConstants.hpp"
 #include "OutgoingDatagram.hpp"
 #include "PacketHeader.hpp"
 #include "PlayerRoster.hpp"
@@ -24,8 +26,10 @@
 namespace rtype::server {
 
 using testing::LAST_SEQUENCE;
+using testing::NO_FLAG;
 using testing::OTHER_SESSION_TOKEN;
 using testing::PLAYER_NICKNAME;
+using testing::PLAYER_SEQUENCE;
 using testing::playerEndpoint;
 using testing::SESSION_TOKEN;
 using testing::SessionDatagramFixture;
@@ -156,6 +160,32 @@ TEST_F(SessionDatagramFixture, NumbersEveryKindOfMessageFromOneCounter) {
 
   EXPECT_EQ(network::DatagramCodec::decodeHeader(accepted.payload).sequence, 0);
   EXPECT_EQ(network::DatagramCodec::decodeHeader(started.payload).sequence, 1);
+}
+
+/**
+ * Given a player whose datagram PLAYER_SEQUENCE was accepted
+ * When the header of its next datagram is asked for
+ * Then it acknowledges that datagram
+ */
+TEST_F(SessionDatagramFixture, AcknowledgesTheDatagramsAcceptedFromThePlayer) {
+  ASSERT_TRUE(firstPlayer().arrivals.accept(PLAYER_SEQUENCE));
+
+  const network::PacketHeader header = nextSessionHeader(firstPlayer());
+
+  EXPECT_EQ(header.flags, PROTOCOL_ACKNOWLEDGES_FLAG);
+  EXPECT_EQ(header.acknowledgedSequence, PLAYER_SEQUENCE);
+}
+
+/**
+ * Given a player that sent nothing yet
+ * When the header of its next datagram is asked for
+ * Then it acknowledges nothing
+ */
+TEST_F(SessionDatagramFixture,
+       AcknowledgesNothingBeforeThePlayerSentADatagram) {
+  const network::PacketHeader header = nextSessionHeader(firstPlayer());
+
+  EXPECT_EQ(header.flags, NO_FLAG);
 }
 
 }  // namespace rtype::server

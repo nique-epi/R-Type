@@ -12,6 +12,7 @@
 #include "MessagePayload.hpp"
 #include "RecordingDatagramLink.hpp"
 #include "RoundTripWatch.hpp"
+#include "SessionAcknowledgements.hpp"
 #include "SessionOutbox.hpp"
 #include "SimulatedClock.hpp"
 #include "TimeConstants.hpp"
@@ -31,6 +32,11 @@ class RoundTripWatchFixture : public ::testing::Test {
   /** @brief Moves the clock by @p elapsed, then lets a frame of the session
    * go by. */
   void hold(engine::Duration elapsed);
+
+  /** @brief Makes the outbox owe the server an acknowledgement: a datagram of
+   * the server that holds guaranteed messages was accepted, and waited
+   * ACKNOWLEDGEMENT_DELAY. */
+  void oweAnAcknowledgement();
 
   /** @brief Hands the dispatcher @p message, as a datagram of the server that
    * arrived at @p receivedAt. */
@@ -58,7 +64,8 @@ class RoundTripWatchFixture : public ::testing::Test {
   SimulatedClock clock_;
   RoundTripWatch watch_{dispatcher_, clock_};
   RecordingDatagramLink link_;
-  SessionOutbox outbox_{link_};
+  SessionAcknowledgements acknowledgements_;
+  SessionOutbox outbox_{link_, acknowledgements_};
 };
 
 }  // namespace rtype::client::testing

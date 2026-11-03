@@ -11,7 +11,7 @@ namespace rtype::client {
  * @brief Remembers, for each entity the client has, the tick of the newest
  * WorldState that listed it, and names the entities no state listed for
  * UNLISTED_ENTITY_TICKS up to a closed tick: the server destroyed them and
- * every copy of their EntityDestroyed was lost, so they would stay on screen as
+ * their EntityDestroyed never arrived, so they would stay on screen as
  * ghosts.
  *
  * A state too big for one datagram comes in several parts with the same tick,

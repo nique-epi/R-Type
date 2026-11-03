@@ -21,7 +21,6 @@ namespace rtype::server::testing {
 GameModuleFixture::GameModuleFixture()
     : context_{
           .events = events_,
-          .timers = timers_,
           .systems = systems_,
           .roster = roster_,
           .hooks = hooks_,

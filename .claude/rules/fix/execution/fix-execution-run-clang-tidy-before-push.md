@@ -54,6 +54,7 @@ Why: the CI `Clang-tidy` job treats warnings as errors; a local failure put down
 3. **An include the CI reports is fixed in the file**, never put down to the environment: the CI verdict is the one that gates the merge.
 4. **An aggregate member filled with braces names no type**: `.systemTimes = {SystemTime{…}}` uses `std::vector` without naming it, so `<vector>` is unused in that file, and `misc-include-cleaner` reports it on both toolchains. Include what the file writes by name, not what the header of the struct uses.
 5. **Code moved out of a file takes its uses with it**: after constants, fixtures or helpers leave a file (into a `…TestConstants.hpp`, a fixture, a new class), match the standard includes left in that file against what it still names, with a script over every file the move touched, not by eye. `MissionBannerTest.cpp` kept `<cstddef>` after its `std::size_t` constant moved to `MissionBannerTestConstants.hpp`; the local run (libc++) passed it, the CI failed on it.
+5. **Before the first push of a branch, run that match over every file the branch changes**, not only the files of the last commits: a move made in an early commit is out of mind by the push. `ArrivalLedger.cpp` kept `<cstddef>` after `FIRST_DATAGRAM_DISTANCE` moved to `ArrivalLedgerConstants.hpp`, twenty commits before the push; the local run passed it, the CI failed on it.
 
 ### A configuration clang-tidy cannot read checks nothing
 

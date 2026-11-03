@@ -26,7 +26,6 @@ GameFlowFixture::GameFlowFixture()
           DEFAULT_WORLD_STATES_PER_SECOND),
       context_{
           .events = events_,
-          .timers = timers_,
           .systems = systems_,
           .roster = roster_,
           .hooks = hooks_,

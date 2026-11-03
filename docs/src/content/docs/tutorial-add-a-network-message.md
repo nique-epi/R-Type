@@ -29,7 +29,7 @@ Decide these on paper first: each answer becomes a sentence of the specification
 |---|---|---|
 | Who sends it? | The client | It decides which table of the page holds it, and who registers a handler |
 | Is it a state or a one-time event? | A one-time event, kept as the newest one | Over UDP, "the last received wins" needs an ordering key. The `sequence` of the header is that key: a datagram not newer than the newest one accepted is dropped before any handler runs |
-| What happens when it is lost? | Nothing corrects it | A message whose loss the player would notice is repeated (`ReadyState`) or sent three times (`GameEvent`). See [Losses](/R-Type/protocol/#losses) |
+| What happens when it is lost? | Nothing corrects it | A message whose loss the player would notice is repeated (`ReadyState`) or guaranteed (`GameEvent`). See [Losses](/R-Type/protocol/#losses) |
 | Can a peer of the same version ignore it? | Yes | A receiver skips a type it does not know, so a peer without the message keeps working. If the game cannot run when the other side skips it, `PROTOCOL_VERSION` must change, and the two versions never play together |
 
 Then play the forger: someone who forges an address, sends the message as often as they like, and never reads the answers. An emote from an address that holds no session is dropped before the queues, and one with the wrong token too, so only a real player reaches the handler. That player can still send a thousand a second, so the handler must allocate nothing and write no line. The server never answers an emote, so nothing here sends more bytes than it received.
@@ -556,11 +556,11 @@ A pull request that changes the wire says so in its title, with `!` after the ty
 
 | You want a message that… | Change |
 |---|---|
-| The client sends | A call to `sendMessage(outbox, network::Emote{…})` (`src/client/Connection/Session/ISessionOutbox.hpp`) in the part of the session the message belongs to, with the outbox the session hands it when it opens, as `WaitingRoom::sendReadyState()` does. `SessionOutbox` writes the session token and the next sequence |
-| The server sends | `send(sessionDatagram(player, network::Emote{…}))`, as `FarewellSender` and `GameFlow` do, so the header carries the token and the next sequence of that player. Add the row to [Server to client](/R-Type/protocol/#server-to-client) |
+| The client sends | A call to `sendMessage(outbox, network::Emote{…})` (`src/client/Connection/Session/ISessionOutbox.hpp`) in the part of the session the message belongs to, with the outbox the session hands it when it opens, as `WaitingRoom::sendReadyState()` does. `SessionOutbox` writes the session token, the next sequence and the acknowledgement |
+| The server sends | `send(sessionDatagram(player, network::Emote{…}))`, as `FarewellSender` and `GameFlow` do, so the header carries the token, the next sequence and the acknowledgement of that player. Add the row to [Server to client](/R-Type/protocol/#server-to-client) |
 | The client receives | A `registerHandler<…>` call on the `MessageDispatcher` the session dispatches to, as the constructor of `WaitingRoom` (`src/client/Connection/WaitingRoom/`) does |
-| The players must all see | The server sends it to each player of the game, as `FarewellSender` does. A one-time message goes three times, 50 ms apart (`REPEATED_MESSAGE_COPIES`): see [Losses](/R-Type/protocol/#losses) |
-| Must never be lost, or must always reflect the current state | Repeat it until the state message shows it, as `ReadyState` does with `LobbyState`. Guaranteed messages do not exist yet: they are part of [Version 2](/R-Type/protocol/#version-2) |
+| The players must all see | The server sends it once to each player of the game with `sendToEveryPlayer` (`src/server/Sessions/Tracking/`), or guarantees it with `guaranteeToEveryPlayer` when its loss would show: see [Guaranteed messages](/R-Type/protocol/#guaranteed-messages) |
+| Must never be lost, or must always reflect the current state | From the server, guarantee it with `guaranteeToEveryPlayer`, once its receiver reads it twice the same way (see [Guaranteed messages](/R-Type/protocol/#guaranteed-messages)); the client sends no guaranteed message yet. A state is repeated until the state message shows it, as `ReadyState` does with `LobbyState` |
 | Holds a list or a string | Check the count before anything is sized from it, as `LobbyState` does; a client must not make the server allocate in proportion to a value it controls |
 | An unknown sender may send | Read [Connection](/R-Type/protocol/#connection) first: `DatagramSorter` drops such a datagram before any queue, unless it holds a `ConnectionRequest`, and an answer must never hold more bytes than the datagram it answers |
 
