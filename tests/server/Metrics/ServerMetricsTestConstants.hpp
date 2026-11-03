@@ -24,3 +24,9 @@ constexpr std::size_t LINES_OF_TWO_REPORTS = 4;
 constexpr std::string_view TIMED_SYSTEM_NAME = "timed";
 constexpr std::chrono::milliseconds TIMED_SYSTEM_TIME{3};
 constexpr std::chrono::milliseconds TIMED_SYSTEM_TIME_IN_TWO_GAMES{6};
+
+/** @brief Each tick moves the clock by TICK_WORK_TIME (3 ms), so the traffic
+ * line, due at 10 s of the clock, comes after 3334 ticks (10.002 s), not 3333
+ * (9.999 s); the rows, due at 1 s, after 334 ticks (1.002 s). */
+constexpr std::size_t TICKS_JUST_BEFORE_THE_TRAFFIC_LINE = 3333;
+constexpr std::size_t TICKS_TO_THE_TRAFFIC_ROWS = 334;

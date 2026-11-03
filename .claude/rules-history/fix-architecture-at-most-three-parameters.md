@@ -69,3 +69,7 @@ No rule and no check set a limit. `.clang-tidy` does not enable a parameter thre
 ## Update (23 October 2026) — the struct of a constructor is no longer nested
 
 Yannis Lorang's review of pull request #103 asked for no struct inside a class. Point 2.2 prescribed the opposite for the dependencies of a constructor (`KeySlot::Wiring`, `LobbyScreen::Parts`), and `GameScreen::Parts` had grown a member in that branch. Point 2.2 now names the struct `<Class>Parts`, in `<Class>Parts.hpp` in the parent folder, and points to `fix-architecture-no-type-nested-in-a-class.md`; the example uses `LobbyScreenParts`. The structs nested before this update are pre-existing cases, moved when their class is touched, or reported and asked about when the same nesting spans many classes.
+
+## Update (3 November 2026) — two neighbouring parameters of one type
+
+The traffic counters held `rowOf(std::string_view start, std::string_view message, const TrafficFigures& figures)` and `DiscardReport(const BoundedQueue&, const BoundedQueue&, DatagramSorter&)`: three parameters each, within the limit, and both compiled without a warning. The plan that held them had been formatted and compiled from standard input, which runs no clang-tidy, and the tidy gate then reported `bugprone-easily-swappable-parameters` on both. The fix took the struct the sorter already has for the same two queues (`DatagramSorter::Destinations`, named so they cannot be swapped) and turned `rowOf` into `figuresText(figures)`, the caller joining the columns.

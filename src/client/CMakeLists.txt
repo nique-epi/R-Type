@@ -24,6 +24,7 @@ add_subdirectory(Lobby)
 add_subdirectory(Game)
 add_subdirectory(Application)
 add_subdirectory(Connection)
+add_subdirectory(Metrics)
 add_subdirectory(LaunchOptions)
 add_subdirectory(Modules)
 

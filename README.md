@@ -90,6 +90,12 @@ The client's datagrams cross a simulated bad network: 300 ms more ping, 10 % of 
 
 Without these options, `tests/tools/network-conditions/` applies the same scenarios to the loopback interface from the system: `sudo tests/tools/network-conditions/netem.sh apply --network bad` on Linux, `dummynet.sh` on macOS, then `clear` to remove them (see [the network page](https://nique-epi.github.io/R-Type/network/#network-conditions-from-the-system-teststoolsnetwork-conditions)).
 
+```bash
+./r-type_server --traffic-csv traffic.csv
+```
+
+Both programs write what crosses their socket to the journal every 10 s; with `--traffic-csv` they also write it to a file every second, by player and by message type, for a measurement campaign (see [the network page](https://nique-epi.github.io/R-Type/network/#traffic-counters-trafficcounters)).
+
 `--help` prints the options of either program. An invalid argument stops it with a message and exit code 1.
 
 ## Tests

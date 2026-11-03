@@ -1,4 +1,5 @@
 #include <gtest/gtest.h>
+#include <filesystem>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -12,10 +13,12 @@
 #include "LoggingException.hpp"
 #include "LoggingOptionTestConstants.hpp"
 #include "NetworkConditions.hpp"
+#include "NetworkConstants.hpp"
 #include "NetworkException.hpp"
 #include "NetworkSimulatorTestConstants.hpp"
 #include "ServerConstants.hpp"
 #include "SimulatorLaunchOptions.hpp"
+#include "TrafficFileTestConstants.hpp"
 
 using rtype::engine::HELP_OPTION;
 using rtype::engine::InvalidLaunchOptionValueException;
@@ -31,6 +34,7 @@ using rtype::logging::MissingLogOptionValueException;
 using rtype::logging::NO_FILE_OPTION;
 using rtype::logging::NO_STDERR_OPTION;
 using rtype::network::InvalidPortException;
+using rtype::network::TRAFFIC_CSV_OPTION;
 using rtype::server::DATABASE_OPTION;
 using rtype::server::INPUT_DELAY_OPTION;
 using rtype::server::LaunchOptions;
@@ -582,6 +586,37 @@ TEST(ServerLaunchOptions, UsageHoldsTheNetworkSimulatorOptions) {
 TEST(ServerLaunchOptions, UsageNamesTheInputDelayOption) {
   EXPECT_NE(LaunchOptions::usage().find(std::string(INPUT_DELAY_OPTION)),
             std::string::npos);
+}
+
+/**
+ * Given no argument
+ * When the launch options are read
+ * Then no traffic file is asked for
+ */
+TEST(ServerLaunchOptions, NoArgumentAsksForNoTrafficFile) {
+  EXPECT_FALSE(LaunchOptions::read(Arguments{}).trafficCsvFile().has_value());
+}
+
+/**
+ * Given the traffic option and a file
+ * When the launch options are read
+ * Then the file is the one given
+ */
+TEST(ServerLaunchOptions, TrafficOptionGivesTheFile) {
+  const LaunchOptions options =
+      LaunchOptions::read(Arguments{TRAFFIC_CSV_OPTION, TRAFFIC_FILE_NAME});
+
+  EXPECT_EQ(options.trafficCsvFile().value_or(std::filesystem::path{}),
+            std::filesystem::path{TRAFFIC_FILE_NAME});
+}
+
+/**
+ * Given the usage of the server
+ * When it is read
+ * Then it lists the traffic option
+ */
+TEST(ServerLaunchOptions, UsageListsTheTrafficOption) {
+  EXPECT_NE(LaunchOptions::usage().find(TRAFFIC_CSV_OPTION), std::string::npos);
 }
 
 /**

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <filesystem>
+#include <optional>
 #include <span>
 #include <string>
 #include <string_view>
@@ -26,18 +28,18 @@ class LaunchOptions {
    * @brief Reads every option of the server from @p arguments, the arguments
    * it was launched with, without its name, in one pass from the first to the
    * last: `-p <port>`, `--seed <seed>`, `--state-rate <states>`,
-   * `--input-delay <ticks>`, `--database <file>`, `--set <name>=<value>` and
-   * `--help`, the options of the network simulator (see
-   * network::SimulatorLaunchOptions::readOption()) and the logging options
+   * `--input-delay <ticks>`, `--database <file>`, `--set <name>=<value>`,
+   * `--traffic-csv <file>` and `--help`, the options of the network simulator
+   * (see network::SimulatorLaunchOptions::readOption()) and the logging options
    * (see logging::LogLaunchOptions::readOption()), whose exceptions this
    * throws too.
    *
    * The argument after an option that takes a value is always its value, even
    * when it is spelled as an option of the server, of the simulator or of the
    * logging: `--seed --log-level debug 123` refuses `--log-level` as a seed.
-   * The last option on a setting wins, since the lines run in the order given.
-   * Without a logging option the journal is SERVER_LOG_FILE_NAME next to the
-   * executable.
+   * The last option on a setting wins, since the lines run in the order given,
+   * and so does the last `--traffic-csv`. Without a logging option the journal
+   * is SERVER_LOG_FILE_NAME next to the executable.
    *
    * @throws engine::UnknownExecutablePathException when the system does not
    *         tell where the executable is, so the default journal has no
@@ -89,6 +91,11 @@ class LaunchOptions {
    * applies when the server starts (see logging::LogLaunchOptions::apply()).
    */
   [[nodiscard]] const logging::LogLaunchOptions& logOptions() const;
+
+  /** @returns The file given after `--traffic-csv`, nothing when it was not
+   * given. */
+  [[nodiscard]] const std::optional<std::filesystem::path>& trafficCsvFile()
+      const;
 
  private:
   explicit LaunchOptions(LaunchValues values);

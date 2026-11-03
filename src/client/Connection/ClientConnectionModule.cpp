@@ -52,6 +52,7 @@ void ClientConnectionModule::install(engine::InstallContext& context) {
   context.provide(waitingRoom_);
   context.provide(entityMessages_);
   context.provide(leaderboard_);
+  context.provide(network_.traffic());
   context.addWork(NETWORK_STAGE, [this](engine::Duration elapsed) {
     entityMessages_.advance(elapsed);
     session_.update(elapsed);

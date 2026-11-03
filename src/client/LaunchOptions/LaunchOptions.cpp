@@ -1,6 +1,8 @@
 #include "LaunchOptions.hpp"
 #include <array>
+#include <filesystem>
 #include <functional>
+#include <optional>
 #include <span>
 #include <string>
 #include <string_view>
@@ -151,12 +153,18 @@ LaunchOptions LaunchOptions::read(std::span<const std::string_view> arguments) {
                             .port = network::DEFAULT_SERVER_PORT},
       .nickname = std::string(DEFAULT_NICKNAME),
       .audioMode = AudioMode::Enabled,
+      .trafficCsvFile = std::nullopt,
       .forcedLines = {},
       .helpRequested = false}};
   const std::array launchOptions{
-      addressOption(options.values_),  portOption(options.values_),
-      nicknameOption(options.values_), setOption(options.values_),
-      noSoundOption(options.values_),  helpOption(options.values_)};
+      addressOption(options.values_),
+      portOption(options.values_),
+      nicknameOption(options.values_),
+      setOption(options.values_),
+      noSoundOption(options.values_),
+      engine::pathOption(network::TRAFFIC_CSV_OPTION,
+                         options.values_.trafficCsvFile),
+      helpOption(options.values_)};
   const std::array<engine::LaunchOptionReader, 2> readers{
       std::bind_front(&network::SimulatorLaunchOptions::readOption,
                       &options.simulatorOptions_),
@@ -171,6 +179,8 @@ std::string LaunchOptions::usage() {
   text += connectionOptionEntries();
   text += engine::usageEntry(std::string(NO_SOUND_OPTION),
                              "Start the client without sound.");
+  text += engine::usageEntry(network::TRAFFIC_CSV_OPTION_WITH_VALUE,
+                             network::TRAFFIC_CSV_USAGE);
   text += engine::usageEntry(engine::HELP_OPTION,
                              "Print this help and open no window.");
   text += '\n';
@@ -200,6 +210,11 @@ const network::NetworkConditions& LaunchOptions::networkConditions() const {
 
 const logging::LogLaunchOptions& LaunchOptions::logOptions() const {
   return logOptions_;
+}
+
+const std::optional<std::filesystem::path>& LaunchOptions::trafficCsvFile()
+    const {
+  return values_.trafficCsvFile;
 }
 
 LaunchOptions::LaunchOptions(LaunchValues values)

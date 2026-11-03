@@ -75,18 +75,19 @@ void ServerNetworkModule::install(engine::InstallContext& context) {
   context.provide<IPlayerAdmission>(*server_);
   context.provide(tickDatagrams_);
   context.provide<IListeningPort>(*this);
+  context.provide(server_->traffic());
 }
 
 void ServerNetworkModule::start() {
   server_->listenOn(listeningEndpoint(listeningPort()));
-  server_->open();
+  const network::Endpoint bound = server_->open();
   try {
     serverThread_ = std::jthread{[this] { runServer(); }};
   } catch (...) {
     server_->close();
     throw;
   }
-  logger_.info("listening on UDP port ", server_->localEndpoint().port);
+  logger_.info("listening on UDP port ", bound.port);
 }
 
 void ServerNetworkModule::stop() {

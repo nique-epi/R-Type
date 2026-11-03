@@ -5,6 +5,7 @@ target_include_directories(rtype_server_metrics_report PUBLIC ${CMAKE_CURRENT_SO
 target_link_libraries(rtype_server_metrics_report
   PUBLIC
     rtype_engine_systems
+    rtype_network_statistics
     rtype_server_metrics_measures
   PRIVATE
     rtype_server_constants

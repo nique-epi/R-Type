@@ -1,9 +1,12 @@
 #pragma once
 
 #include <cstdint>
+#include <memory>
 #include <string>
 #include <string_view>
 #include <vector>
+#include "Application.hpp"
+#include "ConfigurationReport.hpp"
 #include "CurrentDirectoryChange.hpp"
 #include "LaunchOptions.hpp"
 #include "MessageType.hpp"
@@ -36,6 +39,12 @@ class ServerModulesFixture : public ServerModuleFixture {
   [[nodiscard]] UdpTestClient& client();
   [[nodiscard]] const rtype::server::LaunchOptions& launchOptions() const;
 
+  /** @returns The modules of a whole server read from @p options, with the
+   * configuration step main() gives them, so the launch options set the port
+   * and the other settings through its forced lines. Start it once. */
+  [[nodiscard]] std::unique_ptr<rtype::engine::Application> serverApplication(
+      const rtype::server::LaunchOptions& options);
+
  private:
   std::uint16_t port_;
   rtype::server::StopRequest stopRequest_;
@@ -46,4 +55,5 @@ class ServerModulesFixture : public ServerModuleFixture {
   std::string databaseText_;
   std::vector<std::string_view> arguments_;
   rtype::server::LaunchOptions launchOptions_;
+  rtype::engine::ConfigurationReport configurationReport_;
 };
