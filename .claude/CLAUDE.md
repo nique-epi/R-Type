@@ -102,6 +102,7 @@ Paths below are relative to `.claude/rules/`.
 - `code-style/fix-format-a-test-reads-an-optional-with-value-or.md`
 - `code-style/fix-format-designated-initializers-for-aggregates.md`
 - `code-style/fix-format-name-after-data-not-process.md`
+- `code-style/fix-reasoning-a-date-keeps-the-standard-type-that-names-it.md`
 - `code-style/fix-reasoning-a-pointer-into-a-temporary-dies-with-it.md`
 
 **Process — `fix/process/`**
