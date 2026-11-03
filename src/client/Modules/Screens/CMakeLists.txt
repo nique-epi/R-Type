@@ -9,7 +9,7 @@ target_link_libraries(rtype_client_screens_module
     rtype_client_connection
     rtype_client_game_window
     rtype_client_interface
-    rtype_client_menus
+    rtype_client_menus_module
     rtype_client_replication_interfaces
     rtype_client_screen_registry
     rtype_client_screen_stack
