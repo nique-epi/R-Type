@@ -75,7 +75,8 @@ The server receives data from **untrusted** clients over the network.
 | Inheritance only from interfaces; code reused by holding an object, never by inheriting it | `fix-architecture-inherit-interfaces-compose-implementations.md` |
 | At most three parameters per function written or changed (`readability-function-size`, `ParameterThreshold: 3`) | `fix-architecture-at-most-three-parameters.md` |
 | One kind of step per function: checks that decide, writes that build and notifications go in separate functions | `fix-architecture-a-function-does-one-kind-of-step.md` |
-| Domain errors as custom per-module exceptions, never raw `throw std::…` | `architecture-custom-exceptions-per-module.md` |
+| A module is one folder around one `IModule` or `IGameModule` class; a new one is written in its own folder, with a row in the list of `project-layout.md`; an optional one is reached only through its `Contract/` | `architecture-a-module-is-one-folder-and-one-target.md` |
+| Domain errors as the custom exceptions of their library or program, never raw `throw std::…` | `architecture-custom-exceptions-per-owner.md` |
 | Naming: no `k` prefix, no abbreviations, trailing `member_`, file = class | `code-style/` |
 | Comments in English, outside function bodies, no ticket references | `code-style-comments-english-outside-bodies-no-tickets.md` |
 | Magic values as named constants | `fix-architecture-magic-values-as-named-constants.md` |
