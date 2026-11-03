@@ -17,6 +17,9 @@ struct BotReport {
   /** @brief The time it spent in a game, from the first world state of each
    * game to its GameEnded. */
   engine::Duration timeInGame{};
+  /** @brief The PlayerInput it sent during timeInGame: PLAYER_INPUTS_PER_SECOND
+   * per second when its frames keep the pace of a client. */
+  std::size_t inputsInGame{0};
 };
 
 }  // namespace rtype::tools

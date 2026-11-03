@@ -1,7 +1,6 @@
 #include "Bot.hpp"
 #include <cstdint>
 #include <string_view>
-#include <tuple>
 #include <variant>
 #include "ActionSet.hpp"
 #include "BotReport.hpp"
@@ -77,8 +76,12 @@ void Bot::play(engine::Duration elapsed) {
     return;
   }
   const client::ActionSet held = pilot_.advance(elapsed);
-  if (pacer_.advance(elapsed)) {
-    std::ignore = connection_.session().sendPlayerInput(held);
+  if (!pacer_.advance(elapsed)) {
+    return;
+  }
+  const bool sent = connection_.session().sendPlayerInput(held).has_value();
+  if (sent && newestTick_.has_value()) {
+    ++counts_.inputsInGame;
   }
 }
 

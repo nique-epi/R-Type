@@ -58,12 +58,11 @@ double secondsInGame(const BotReport& report) {
   return std::chrono::duration<double>(report.timeInGame).count();
 }
 
-/** @returns The world states @p report counts per second of game; 0 before
- * any game. */
-double statesPerSecond(const BotReport& report) {
+/** @returns @p count per second of the game time of @p report; 0 before any
+ * game. */
+double perSecondOfGame(std::size_t count, const BotReport& report) {
   const double seconds = secondsInGame(report);
-  return seconds > 0.0 ? static_cast<double>(report.worldStates) / seconds
-                       : 0.0;
+  return seconds > 0.0 ? static_cast<double>(count) / seconds : 0.0;
 }
 
 /** @brief Prints what @p launch asked, one line per bot of @p reports, then
@@ -78,8 +77,11 @@ void printReport(const BotLaunch& launch, std::span<const BotReport> reports) {
   for (const BotReport& report : reports) {
     std::cout << "bot " << number++ << ": " << phaseText(report.phase) << ", "
               << report.gamesEnded << " games ended, " << report.worldStates
-              << " world states in " << secondsInGame(report) << " s of game, "
-              << statesPerSecond(report) << " per second\n";
+              << " world states and " << report.inputsInGame << " inputs in "
+              << secondsInGame(report)
+              << " s of game: " << perSecondOfGame(report.worldStates, report)
+              << " and " << perSecondOfGame(report.inputsInGame, report)
+              << " per second\n";
   }
   std::cout << "in session at the end: " << inSessionCount(reports) << " of "
             << reports.size() << " bots\n";

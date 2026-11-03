@@ -23,8 +23,9 @@ namespace rtype::tools {
  * PLAYER_INPUT_INTERVAL, as the game screen does without client prediction;
  * the first input of a game also sends the GameLoaded the server waits for. It
  * drains the entity messages of the game at each update, as the game screen
- * does, and counts the world states and the ends of game among them. It asks
- * to be ready only when its squad tells it to (see asksReady()).
+ * does, and counts the world states and the ends of game among them, and the
+ * inputs it sent while in a game. It asks to be ready only when its squad
+ * tells it to (see asksReady()).
  */
 class Bot {
  public:
@@ -81,7 +82,7 @@ class Bot {
   void count(const client::EntityMessage& message);
 
   /** @brief Sends what the pilot holds when an input is due, once the game
-   * started. */
+   * started, and counts the inputs sent while in a game. */
   void play(engine::Duration elapsed);
 
   client::PlayerConnection connection_;
