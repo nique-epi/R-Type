@@ -79,14 +79,14 @@ void ServerNetworkModule::install(engine::InstallContext& context) {
 void ServerNetworkModule::start() {
   server_->listenOn(listeningEndpoint(
       static_cast<std::uint16_t>(portSetting_->integer().value_or(port_))));
-  server_->open();
+  const network::Endpoint bound = server_->open();
   try {
     serverThread_ = std::jthread{[this] { runServer(); }};
   } catch (...) {
     server_->close();
     throw;
   }
-  logger_.info("listening on UDP port ", server_->localEndpoint().port);
+  logger_.info("listening on UDP port ", bound.port);
 }
 
 void ServerNetworkModule::stop() {

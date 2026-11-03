@@ -12,6 +12,7 @@
 #include "ListenOnFixtures.hpp"
 #include "NetworkConstants.hpp"
 #include "NetworkContext.hpp"
+#include "NetworkException.hpp"
 #include "OutgoingDatagram.hpp"
 #include "ServerApplication.hpp"
 #include "ServerApplicationFixtures.hpp"
@@ -29,15 +30,16 @@ using rtype::server::ServerApplication;
 using rtype::server::testing::SESSION_TOKEN;
 
 /**
- * Given a server opened on port 0
- * When its address is asked
- * Then it names the port the system picked, not 0
+ * Given a server built on port 0
+ * When it opens
+ * Then the address it gives names the port the system picked, not 0
  */
 TEST(ServerApplication, ListensOnThePortTheSystemPicked) {
   ServerApplication server{loopbackEndpoint(ANY_PORT), ignoringTicks()};
-  server.open();
 
-  EXPECT_NE(server.localEndpoint().port, ANY_PORT);
+  const Endpoint bound = server.open();
+
+  EXPECT_NE(bound.port, ANY_PORT);
 }
 
 /**
@@ -102,12 +104,12 @@ TEST(ServerApplication, HandsAConnectionRequestToTheTick) {
           firstRequest.set_value(datagrams.connectionRequests.front());
         }
       }};
-  server.open();
+  const Endpoint bound = server.open();
   const std::jthread runner{[&server] { server.run(); }};
   rtype::network::NetworkContext clientContext;
   rtype::network::UdpSocket client{clientContext, loopbackEndpoint(ANY_PORT)};
 
-  client.send(loopbackEndpoint(server.localEndpoint().port), requestDatagram());
+  client.send(loopbackEndpoint(bound.port), requestDatagram());
   clientContext.run();
   const std::future_status status = received.wait_for(THREAD_TIMEOUT);
   server.stop();
@@ -139,10 +141,10 @@ TEST(ServerApplication, HandsAnAdmittedPlayersDatagramToTheTick) {
   rtype::network::NetworkContext clientContext;
   rtype::network::UdpSocket client{clientContext, loopbackEndpoint(ANY_PORT)};
   server.admit(loopbackEndpoint(client.localEndpoint().port), SESSION_TOKEN);
-  server.open();
+  const Endpoint bound = server.open();
   const std::jthread runner{[&server] { server.run(); }};
 
-  client.send(loopbackEndpoint(server.localEndpoint().port), playerReady());
+  client.send(loopbackEndpoint(bound.port), playerReady());
   clientContext.run();
   const std::future_status status = received.wait_for(THREAD_TIMEOUT);
   server.stop();
@@ -182,13 +184,13 @@ TEST(ServerApplication, HandsTheTickTheDatagramOfAPlayerItAdmitted) {
         }
       }};
   serverPointer = &server;
-  server.open();
+  const Endpoint bound = server.open();
   rtype::network::NetworkContext clientContext;
   rtype::network::UdpSocket client{clientContext, loopbackEndpoint(ANY_PORT)};
   client.startReceiving(
       []([[maybe_unused]] const Endpoint& sender,
          [[maybe_unused]] std::span<const std::byte> bytes) {});
-  const Endpoint serverEndpoint = loopbackEndpoint(server.localEndpoint().port);
+  const Endpoint serverEndpoint = loopbackEndpoint(bound.port);
   const std::jthread serverRunner{[&server] { server.run(); }};
   const std::jthread clientRunner{[&clientContext] { clientContext.run(); }};
 
@@ -307,18 +309,6 @@ TEST(ServerApplication, SendsTheDatagramsTheTickQueued) {
 
 /**
  * Given a server that was built and not opened
- * When its address is asked
- * Then a ServerNotOpenException is thrown: the socket is bound by open()
- */
-TEST(ServerApplication, HasNoAddressBeforeItIsOpened) {
-  const ServerApplication server{loopbackEndpoint(ANY_PORT), ignoringTicks()};
-
-  EXPECT_THROW(static_cast<void>(server.localEndpoint()),
-               rtype::server::ServerNotOpenException);
-}
-
-/**
- * Given a server that was built and not opened
  * When it runs
  * Then a ServerNotOpenException is thrown
  */
@@ -335,11 +325,12 @@ TEST(ServerApplication, RefusesToRunBeforeItIsOpened) {
  */
 TEST(ServerApplication, RefusesToOpenTwice) {
   ServerApplication server{loopbackEndpoint(ANY_PORT), ignoringTicks()};
-  server.open();
-  const std::uint16_t port = server.localEndpoint().port;
+  const std::uint16_t port = server.open().port;
 
   EXPECT_THROW(server.open(), rtype::server::ServerAlreadyOpenException);
-  EXPECT_EQ(server.localEndpoint().port, port);
+  rtype::network::NetworkContext otherContext;
+  EXPECT_THROW(rtype::network::UdpSocket(otherContext, loopbackEndpoint(port)),
+               rtype::network::SocketOpenException);
 }
 
 /**
@@ -349,8 +340,7 @@ TEST(ServerApplication, RefusesToOpenTwice) {
  */
 TEST(ServerApplication, GivesItsPortBackWhenClosed) {
   ServerApplication server{loopbackEndpoint(ANY_PORT), ignoringTicks()};
-  server.open();
-  const std::uint16_t port = server.localEndpoint().port;
+  const std::uint16_t port = server.open().port;
 
   server.close();
 

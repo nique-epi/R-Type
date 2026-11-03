@@ -101,9 +101,11 @@ class ServerApplication final : public IDatagramSender,
    * to listenOn() when it was called.
    * @throws ServerAlreadyOpenException when the socket is already bound.
    * @throws InvalidAddressException when the address is not an IP address.
+   * @returns The address and port the socket is bound to: on port 0, the port
+   * the system picked.
    * @throws SocketOpenException when the system refuses the port.
    */
-  void open();
+  network::Endpoint open();
 
   /**
    * @brief Unbinds the socket, so the port is free again. Call it once run()
@@ -142,12 +144,6 @@ class ServerApplication final : public IDatagramSender,
    * before the call took effect still reaches the tick handler. */
   void forget(const network::Endpoint& player,
               std::uint64_t sessionToken) override;
-
-  /**
-   * @returns The address and port the socket is bound to.
-   * @throws ServerNotOpenException when open() was not called.
-   */
-  [[nodiscard]] network::Endpoint localEndpoint() const;
 
   /**
    * @returns What the socket of the server sent and received, by player and by

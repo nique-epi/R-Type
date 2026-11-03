@@ -58,7 +58,7 @@ void ServerApplication::listenOn(network::Endpoint localEndpoint) {
   listeningEndpoint_ = std::move(localEndpoint);
 }
 
-void ServerApplication::open() {
+network::Endpoint ServerApplication::open() {
   if (socket_) {
     throw ServerAlreadyOpenException();
   }
@@ -66,6 +66,7 @@ void ServerApplication::open() {
       network::openDatagramSocket(network_, listeningEndpoint_, conditions_),
       traffic_);
   relay_.emplace(*socket_, incoming_, outgoing_);
+  return socket_->localEndpoint();
 }
 
 void ServerApplication::close() {
@@ -119,10 +120,6 @@ void ServerApplication::forget(const network::Endpoint& player,
 
 void ServerApplication::queueDatagram(network::OutgoingDatagram datagram) {
   outgoing_.push(std::move(datagram));
-}
-
-network::Endpoint ServerApplication::localEndpoint() const {
-  return requireOpen(socket_).localEndpoint();
 }
 
 network::TrafficCounters& ServerApplication::traffic() { return traffic_; }

@@ -72,11 +72,11 @@ SortedReadyState sortReadyStateThenRequest(
                            readyStateWatcher(watch, readyState)};
   rtype::network::NetworkContext clientContext;
   rtype::network::UdpSocket client{clientContext, loopbackEndpoint(ANY_PORT)};
-  server.open();
+  const Endpoint bound = server.open();
   prepare(server, loopbackEndpoint(client.localEndpoint().port));
   const std::jthread runner{[&server] { server.run(); }};
-  client.send(loopbackEndpoint(server.localEndpoint().port), readyState);
-  client.send(loopbackEndpoint(server.localEndpoint().port), requestDatagram());
+  client.send(loopbackEndpoint(bound.port), readyState);
+  client.send(loopbackEndpoint(bound.port), requestDatagram());
   clientContext.run();
   const std::future_status status = arrived.wait_for(THREAD_TIMEOUT);
   server.stop();

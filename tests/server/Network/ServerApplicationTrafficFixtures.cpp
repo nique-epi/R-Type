@@ -44,10 +44,10 @@ TrafficReport trafficAfterAReadyState(
   ServerApplication server{loopbackEndpoint(ANY_PORT), ignoringTicks()};
   rtype::network::NetworkContext clientContext;
   rtype::network::UdpSocket client{clientContext, loopbackEndpoint(ANY_PORT)};
-  server.open();
+  const Endpoint bound = server.open();
   prepare(server, loopbackEndpoint(client.localEndpoint().port));
   const std::jthread runner{[&server] { server.run(); }};
-  client.send(loopbackEndpoint(server.localEndpoint().port), playerReady());
+  client.send(loopbackEndpoint(bound.port), playerReady());
   clientContext.run();
   waitUntil(server, [](const TrafficTotals& totals) {
     return totals.received.count > 0;
@@ -59,10 +59,10 @@ TrafficReport trafficAfterAReadyState(
 TrafficReport trafficAfterAQueuedDatagram(const NetworkConditions& conditions) {
   ServerApplication server{loopbackEndpoint(ANY_PORT), ignoringTicks(),
                            conditions};
-  server.open();
+  const Endpoint bound = server.open();
   const std::jthread runner{[&server] { server.run(); }};
   server.queueDatagram(rtype::network::OutgoingDatagram{
-      .destination = loopbackEndpoint(server.localEndpoint().port),
+      .destination = loopbackEndpoint(bound.port),
       .payload = std::vector<std::byte>(1)});
   waitUntil(server,
             [](const TrafficTotals& totals) { return totals.sent.count > 0; });
