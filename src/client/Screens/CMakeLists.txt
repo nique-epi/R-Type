@@ -47,8 +47,3 @@ target_link_libraries(rtype_client_screens_module
 )
 
 rtype_enable_warnings(rtype_client_screens_module)
-
-add_subdirectory(ConnectionScreen)
-add_subdirectory(IntroScreen)
-add_subdirectory(TitleScreen)
-add_subdirectory(DialogMenus)
