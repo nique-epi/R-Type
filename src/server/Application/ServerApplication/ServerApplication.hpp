@@ -1,6 +1,5 @@
 #pragma once
 
-#include <cstddef>
 #include <cstdint>
 #include <functional>
 #include <memory>
@@ -10,12 +9,12 @@
 #include "BoundedQueue.hpp"
 #include "DatagramRelay.hpp"
 #include "DatagramSorter.hpp"
+#include "DiscardReport.hpp"
 #include "Endpoint.hpp"
 #include "IDatagramSender.hpp"
 #include "IDatagramSocket.hpp"
 #include "IPlayerAdmission.hpp"
 #include "IncomingDatagram.hpp"
-#include "Logger.hpp"
 #include "NetworkConditions.hpp"
 #include "NetworkContext.hpp"
 #include "OutgoingDatagram.hpp"
@@ -146,9 +145,7 @@ class ServerApplication final : public IDatagramSender,
   [[nodiscard]] network::IDatagramSocket& openSocket();
   [[nodiscard]] const network::IDatagramSocket& openSocket() const;
   void simulateTick();
-  void reportDiscardedDatagrams();
 
-  logging::Logger logger_;
   engine::SystemClock clock_;
   network::Endpoint listeningEndpoint_;
   network::NetworkConditions conditions_;
@@ -158,15 +155,11 @@ class ServerApplication final : public IDatagramSender,
   concurrency::BoundedQueue<network::IncomingDatagram> connectionRequests_;
   concurrency::BoundedQueue<network::OutgoingDatagram> outgoing_;
   DatagramSorter sorter_;
+  DiscardReport discardReport_;
   std::optional<network::DatagramRelay> relay_;
   TickHandler handleTick_;
   std::vector<network::IncomingDatagram> received_;
   std::vector<network::IncomingDatagram> receivedRequests_;
-  std::size_t ticksSinceDiscardReport_{0};
-  std::size_t reportedDiscardCount_{0};
-  std::size_t reportedRequestDiscardCount_{0};
-  std::size_t reportedDroppedCount_{0};
-  std::size_t reportedWrongTokenCount_{0};
 };
 
 }  // namespace rtype::server

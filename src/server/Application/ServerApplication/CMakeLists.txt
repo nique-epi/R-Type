@@ -6,13 +6,13 @@ target_link_libraries(rtype_server_application
   PUBLIC
     rtype_concurrency_bounded_queue
     rtype_engine_system_clock
-    rtype_logging
     rtype_network_context
     rtype_network_datagram_relay
     rtype_network_simulator
     rtype_network_transport
     rtype_server_application_interfaces
     rtype_server_datagram_sorter
+    rtype_server_discard_report
     rtype_server_tick_loop
   PRIVATE
     rtype_server_constants

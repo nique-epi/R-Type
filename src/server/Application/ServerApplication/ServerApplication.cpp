@@ -3,10 +3,8 @@
 #include <cstdint>
 #include <exception>
 #include <memory>
-#include <optional>
 #include <span>
 #include <stop_token>
-#include <string>
 #include <thread>
 #include <utility>
 #include "DatagramSocketOpening.hpp"
@@ -21,37 +19,10 @@
 
 namespace rtype::server {
 
-namespace {
-
-/**
- * @returns The end of the report line that names @p sender, or nothing when
- * there is no sender to name.
- */
-std::string firstSenderText(const std::optional<network::Endpoint>& sender) {
-  if (!sender.has_value()) {
-    return {};
-  }
-  return ", the first from " + sender->address + " port " +
-         std::to_string(sender->port);
-}
-
-/**
- * @returns How many events @p current counts beyond @p reported, which then
- * holds @p current: the events not yet reported.
- */
-std::size_t countedSince(std::size_t current, std::size_t& reported) {
-  const std::size_t fresh = current - reported;
-  reported = current;
-  return fresh;
-}
-
-}  // namespace
-
 ServerApplication::ServerApplication(
     network::Endpoint localEndpoint, TickHandler handleTick,
     const network::NetworkConditions& conditions)
-    : logger_(std::string{SERVER_LOGGER_NAME}),
-      listeningEndpoint_(std::move(localEndpoint)),
+    : listeningEndpoint_(std::move(localEndpoint)),
       conditions_(conditions),
       incoming_(INCOMING_DATAGRAM_QUEUE_CAPACITY),
       connectionRequests_(CONNECTION_REQUEST_QUEUE_CAPACITY),
@@ -60,6 +31,7 @@ ServerApplication::ServerApplication(
                                            .connectionRequests =
                                                &connectionRequests_},
               clock_),
+      discardReport_(incoming_, connectionRequests_, sorter_),
       handleTick_(std::move(handleTick)) {}
 
 void ServerApplication::open() {
@@ -145,48 +117,12 @@ void ServerApplication::simulateTick() {
   connectionRequests_.drainInto(receivedRequests_);
   handleTick_(ReceivedDatagrams{.players = received_,
                                 .connectionRequests = receivedRequests_});
-  reportDiscardedDatagrams();
+  discardReport_.countTick();
   network_.post([this] {
     if (relay_.has_value()) {
       relay_->sendWaiting();
     }
   });
-}
-
-void ServerApplication::reportDiscardedDatagrams() {
-  ++ticksSinceDiscardReport_;
-  if (ticksSinceDiscardReport_ < TICKS_PER_REPORT) {
-    return;
-  }
-  ticksSinceDiscardReport_ = 0;
-  if (const std::size_t fresh =
-          countedSince(incoming_.discardedCount(), reportedDiscardCount_)) {
-    logger_.warn(fresh, " datagrams of players discarded in the last ",
-                 REPORT_SECONDS, " s: more than ",
-                 INCOMING_DATAGRAM_QUEUE_CAPACITY,
-                 " arrived between two ticks");
-  }
-  if (const std::size_t fresh = countedSince(
-          connectionRequests_.discardedCount(), reportedRequestDiscardCount_)) {
-    logger_.warn(fresh, " connection requests discarded in the last ",
-                 REPORT_SECONDS, " s: more than ",
-                 CONNECTION_REQUEST_QUEUE_CAPACITY,
-                 " arrived between two ticks");
-  }
-  if (const std::size_t fresh =
-          countedSince(sorter_.droppedCount(), reportedDroppedCount_)) {
-    logger_.warn(fresh, " datagrams dropped before any queue in the last ",
-                 REPORT_SECONDS,
-                 " s: not of this protocol and version, malformed, or from a "
-                 "sender that was not admitted");
-  }
-  if (const std::size_t fresh =
-          countedSince(sorter_.wrongTokenCount(), reportedWrongTokenCount_)) {
-    logger_.warn(fresh, " datagrams dropped in the last ", REPORT_SECONDS,
-                 " s: sent from the address of a player with another session "
-                 "token",
-                 firstSenderText(sorter_.takeWrongTokenSender()));
-  }
 }
 
 }  // namespace rtype::server

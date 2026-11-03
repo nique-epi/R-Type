@@ -6,4 +6,5 @@ target_link_libraries(rtype_server_application_interfaces INTERFACE rtype_networ
 
 add_subdirectory(TickLoop)
 add_subdirectory(DatagramSorter)
+add_subdirectory(DiscardReport)
 add_subdirectory(ServerApplication)

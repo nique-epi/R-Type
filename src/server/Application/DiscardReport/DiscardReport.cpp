@@ -1,0 +1,90 @@
+#include "DiscardReport.hpp"
+#include <cstddef>
+#include <optional>
+#include <string>
+#include "BoundedQueue.hpp"
+#include "DatagramSorter.hpp"
+#include "Endpoint.hpp"
+#include "IncomingDatagram.hpp"
+#include "ServerConstants.hpp"
+
+namespace rtype::server {
+
+namespace {
+
+/**
+ * @returns The end of the report line that names @p sender, or nothing when
+ * there is no sender to name.
+ */
+std::string firstSenderText(const std::optional<network::Endpoint>& sender) {
+  if (!sender.has_value()) {
+    return {};
+  }
+  return ", the first from " + sender->address + " port " +
+         std::to_string(sender->port);
+}
+
+/**
+ * @returns How many events @p current counts beyond @p reported, which then
+ * holds @p current: the events not yet reported.
+ */
+std::size_t countedSince(std::size_t current, std::size_t& reported) {
+  const std::size_t fresh = current - reported;
+  reported = current;
+  return fresh;
+}
+
+}  // namespace
+
+DiscardReport::DiscardReport(
+    const concurrency::BoundedQueue<network::IncomingDatagram>& players,
+    const concurrency::BoundedQueue<network::IncomingDatagram>&
+        connectionRequests,
+    DatagramSorter& sorter)
+    : logger_(std::string{SERVER_LOGGER_NAME}),
+      players_(&players),
+      connectionRequests_(&connectionRequests),
+      sorter_(&sorter) {}
+
+void DiscardReport::countTick() {
+  ++ticksSinceReport_;
+  if (ticksSinceReport_ < TICKS_PER_REPORT) {
+    return;
+  }
+  ticksSinceReport_ = 0;
+  report();
+}
+
+void DiscardReport::report() {
+  if (const std::size_t fresh =
+          countedSince(players_->discardedCount(), reportedDiscardCount_)) {
+    logger_.warn(fresh, " datagrams of players discarded in the last ",
+                 REPORT_SECONDS, " s: more than ",
+                 INCOMING_DATAGRAM_QUEUE_CAPACITY,
+                 " arrived between two ticks");
+  }
+  if (const std::size_t fresh =
+          countedSince(connectionRequests_->discardedCount(),
+                       reportedRequestDiscardCount_)) {
+    logger_.warn(fresh, " connection requests discarded in the last ",
+                 REPORT_SECONDS, " s: more than ",
+                 CONNECTION_REQUEST_QUEUE_CAPACITY,
+                 " arrived between two ticks");
+  }
+  if (const std::size_t fresh =
+          countedSince(sorter_->droppedCount(), reportedDroppedCount_)) {
+    logger_.warn(fresh, " datagrams dropped before any queue in the last ",
+                 REPORT_SECONDS,
+                 " s: not of this protocol and version, malformed, or from a "
+                 "sender that was not admitted");
+  }
+  if (const std::size_t fresh =
+          countedSince(sorter_->wrongTokenCount(), reportedWrongTokenCount_)) {
+    logger_.warn(fresh, " datagrams dropped in the last ", REPORT_SECONDS,
+                 " s: sent from the address of a player with another session "
+                 "token",
+                 firstSenderText(sorter_->takeWrongTokenSender()));
+  }
+}
+
+}  // namespace rtype::server
