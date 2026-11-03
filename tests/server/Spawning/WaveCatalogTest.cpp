@@ -11,15 +11,16 @@
 
 using rtype::server::InvalidEnemyListException;
 using rtype::server::MissingWaveFileKeyException;
+using rtype::server::OFFICIAL_WAVES_FINGERPRINT;
 using rtype::server::UnknownDifficultyException;
 using rtype::server::UnknownEnemyException;
 using rtype::server::UnknownWaveFileKeyException;
 using rtype::server::UnreadableWaveFileException;
-using rtype::server::WAVE_FILE_IN_ASSETS;
 using rtype::server::WaveCatalog;
 using rtype::server::WaveFileSyntaxException;
 using rtype::server::WaveFileTableExpectedException;
 using rtype::server::WaveFileValueOutOfRangeException;
+using rtype::server::testing::A_COMMENT_LINE;
 using rtype::server::testing::CALM_CURVE;
 using rtype::server::testing::CALM_ENEMIES;
 using rtype::server::testing::calmFile;
@@ -46,6 +47,7 @@ using rtype::server::testing::NOT_A_TABLE_TEXT;
 using rtype::server::testing::NOT_A_TOML_VALUE;
 using rtype::server::testing::NUMBER_AS_AN_ENEMY;
 using rtype::server::testing::ONE_BYDO_TOO_MANY;
+using rtype::server::testing::shippedCatalog;
 using rtype::server::testing::SHORTEST_EQUAL_TO_THE_FIRST;
 using rtype::server::testing::SHORTEST_LONGER_THAN_THE_FIRST;
 using rtype::server::testing::STORM_CURVE;
@@ -365,9 +367,34 @@ TEST(WaveCatalog, AMissingFileIsNamedByItsAbsolutePath) {
  * Then it describes easy, hard and normal, the difficulty every game plays
  */
 TEST(WaveCatalog, TheShippedFileDescribesEasyNormalAndHard) {
-  const WaveCatalog catalog = WaveCatalog::fromFile(
-      std::filesystem::path{RTYPE_SOURCE_ASSETS_FOLDER} / WAVE_FILE_IN_ASSETS);
+  const WaveCatalog catalog = shippedCatalog();
 
   EXPECT_EQ(catalog.difficulties(),
             (std::vector<std::string>{"easy", "hard", "normal"}));
+}
+
+/**
+ * Given the waves file the game ships
+ * When the file the server reads in its assets folder is read
+ * Then its fingerprint is OFFICIAL_WAVES_FINGERPRINT, so a change of the file
+ * fails here until the constant follows it
+ */
+TEST(WaveCatalog, TheShippedFileHasTheOfficialFingerprint) {
+  const WaveCatalog catalog = shippedCatalog();
+
+  EXPECT_EQ(catalog.fingerprint(), OFFICIAL_WAVES_FINGERPRINT);
+}
+
+/**
+ * Given a waves file, and the same file with a comment added
+ * When both are read
+ * Then they describe the same difficulties, under two fingerprints
+ */
+TEST(WaveCatalog, AnAddedCommentChangesTheFingerprint) {
+  const WaveCatalog plain = WaveCatalog::fromText(calmFile(), TEST_FILE_NAME);
+  const WaveCatalog commented = WaveCatalog::fromText(
+      calmFile() + std::string{A_COMMENT_LINE}, TEST_FILE_NAME);
+
+  EXPECT_EQ(commented.difficulties(), plain.difficulties());
+  EXPECT_NE(commented.fingerprint(), plain.fingerprint());
 }

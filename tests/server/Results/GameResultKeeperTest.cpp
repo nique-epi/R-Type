@@ -45,6 +45,20 @@ TEST_F(GameResultKeeperFixture, CountsNoDeathForAPlayerWhoLostNoLife) {
 }
 
 /**
+ * Given a keeper of a vanilla game
+ * When the game finishes
+ * Then its result says the game was vanilla
+ */
+TEST_F(GameResultKeeperFixture, SaysTheResultOfAVanillaGameIsVanilla) {
+  seat(FIRST_PLAYER);
+  startTheGame();
+
+  finishTheGame();
+
+  EXPECT_TRUE(onlyResult().vanilla);
+}
+
+/**
  * Given three players at the start, one of whom leaves with a score
  * When the game finishes
  * Then the count of players stays 3, the three have a row, and the one who left

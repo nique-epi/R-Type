@@ -10,7 +10,8 @@
 
 namespace rtype::server::testing {
 
-/** @brief A keeper on a real roster, with an archive that records. */
+/** @brief A keeper of a vanilla game on a real roster, with an archive that
+ * records. */
 class GameResultKeeperFixture : public ::testing::Test {
  protected:
   GameResultKeeperFixture();

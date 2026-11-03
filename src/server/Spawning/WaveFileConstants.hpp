@@ -5,6 +5,7 @@
 #include <string_view>
 #include <utility>
 #include "BydoKind.hpp"
+#include "SipHash.hpp"
 #include "WholeNumberRange.hpp"
 
 namespace rtype::server {
@@ -86,5 +87,11 @@ constexpr WholeNumberRange SPAWN_INTERVAL_CUT_RANGE{
     .lowest = 0, .highest = LONGEST_WAVE_FILE_MILLISECONDS};
 constexpr WholeNumberRange WAVE_PAUSE_RANGE{
     .lowest = 0, .highest = LONGEST_WAVE_FILE_MILLISECONDS};
+
+/**
+ * @brief The key WaveCatalog::fingerprint() hashes a waves file under. Anyone
+ * may know it: the fingerprint tells two files apart, it keeps no secret.
+ */
+constexpr network::SipHashKey WAVES_FINGERPRINT_KEY{};
 
 }  // namespace rtype::server

@@ -89,6 +89,25 @@ constexpr std::string_view WAVE_FILE_IN_ASSETS = "waves/waves.toml";
 constexpr std::string_view DEFAULT_DIFFICULTY = "normal";
 
 /**
+ * @brief The fingerprint of the waves file the game ships, as
+ * WaveCatalog::fingerprint() gives it: games read from a file with another one
+ * are not vanilla. A test fails when the shipped file changes and this does
+ * not.
+ */
+constexpr std::uint64_t OFFICIAL_WAVES_FINGERPRINT = 0x53c3e852239fa5f0;
+
+/**
+ * @brief Why the games of a server are not vanilla, as the lines of its journal
+ * say: one per rule of a vanilla game they break (see vanillaBreaches()).
+ */
+constexpr std::string_view MODIFIED_WAVES_BREACH =
+    "the waves file is not the one the game ships";
+constexpr std::string_view IMPOSED_SEED_BREACH =
+    "a seed is set, so the waves can be known in advance";
+constexpr std::string_view CHANGED_INPUT_DELAY_BREACH =
+    "the input delay is not the default one";
+
+/**
  * @brief Launch option followed by the path of the database of the server: it
  * forces DATABASE_SETTING_NAME to that path.
  */

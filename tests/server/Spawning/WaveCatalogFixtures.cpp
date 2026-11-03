@@ -1,7 +1,9 @@
 #include "WaveCatalogFixtures.hpp"
 #include <gtest/gtest.h>
+#include <filesystem>
 #include <string>
 #include <string_view>
+#include "ServerConstants.hpp"
 #include "ServerException.hpp"
 #include "WaveCatalog.hpp"
 #include "WaveCatalogTestConstants.hpp"
@@ -51,6 +53,11 @@ std::string errorReading(std::string_view text) {
   }
   ADD_FAILURE() << "reading the file threw nothing";
   return {};
+}
+
+WaveCatalog shippedCatalog() {
+  return WaveCatalog::fromFile(
+      std::filesystem::path{RTYPE_SOURCE_ASSETS_FOLDER} / WAVE_FILE_IN_ASSETS);
 }
 
 }  // namespace rtype::server::testing

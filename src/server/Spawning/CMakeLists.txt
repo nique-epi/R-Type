@@ -19,6 +19,7 @@ target_link_libraries(rtype_server_spawning
   PRIVATE
     rtype_game_enemy_missile_start_position
     rtype_game_spawning
+    rtype_network_handshake
     tomlplusplus::tomlplusplus
 )
 

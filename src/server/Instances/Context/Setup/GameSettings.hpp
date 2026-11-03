@@ -11,7 +11,7 @@ namespace rtype::server {
 /**
  * @brief What one game is set up with: the seed its random draws start from,
  * the waves of its difficulty, the world states it sends per second, the ticks
- * it holds each input and the name of its difficulty.
+ * it holds each input, the name of its difficulty and whether it is vanilla.
  */
 struct GameSettings {
   std::uint32_t seed{};
@@ -21,6 +21,10 @@ struct GameSettings {
   /** @brief The name the results of the game are filed under; waves holds the
    * waves of that difficulty, not its name. */
   std::string difficulty{DEFAULT_DIFFICULTY};
+  /** @brief Whether the game is played by the rules the game ships with (see
+   * vanillaBreaches()): only the results of a vanilla game may leave this
+   * server. */
+  bool vanilla{false};
 };
 
 }  // namespace rtype::server

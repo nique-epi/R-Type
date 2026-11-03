@@ -2,6 +2,7 @@
 
 #include <string>
 #include <string_view>
+#include "WaveCatalog.hpp"
 
 namespace rtype::server::testing {
 
@@ -26,5 +27,9 @@ namespace rtype::server::testing {
  * text, after a failure, when it throws none.
  */
 [[nodiscard]] std::string errorReading(std::string_view text);
+
+/** @returns The waves file the game ships, read where the server finds it in
+ * the assets folder of the sources. */
+[[nodiscard]] WaveCatalog shippedCatalog();
 
 }  // namespace rtype::server::testing
