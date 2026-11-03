@@ -1,16 +1,27 @@
-add_library(rtype_client_audio_interfaces INTERFACE)
+add_subdirectory(Contract)
+add_subdirectory(Sounds)
+add_subdirectory(Music)
 
-target_include_directories(rtype_client_audio_interfaces INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
+add_library(rtype_client_audio_module STATIC
+  AudioService.cpp
+  ClientAudioModule.cpp
+)
 
-target_link_libraries(rtype_client_audio_interfaces INTERFACE rtype_engine_time)
+target_include_directories(rtype_client_audio_module PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
-add_subdirectory(VoiceChoice)
-add_subdirectory(AudioVolume)
-add_subdirectory(SyncedClock)
-add_subdirectory(SoundPlayer)
-add_subdirectory(MusicPlayer)
-add_subdirectory(Soundtrack)
-add_subdirectory(NullSoundPlayer)
-add_subdirectory(NullMusicPlayer)
-add_subdirectory(AudioService)
-add_subdirectory(SilentAudioService)
+target_link_libraries(rtype_client_audio_module
+  PUBLIC
+    rtype_client_asset_library
+    rtype_client_audio_contract
+    rtype_client_audio_music
+    rtype_client_audio_sounds
+    rtype_client_settings_module
+    rtype_engine_install_context
+    rtype_engine_modules
+    rtype_engine_time
+    rtype_logging
+  PRIVATE
+    rtype_client_constants
+)
+
+rtype_enable_warnings(rtype_client_audio_module)

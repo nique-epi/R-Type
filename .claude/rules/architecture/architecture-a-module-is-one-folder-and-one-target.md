@@ -47,9 +47,7 @@ Why: the subject (page 16) makes an engine modular through what a developer choo
 ### A new module, and what stays tolerated
 
 12. **A new module is written directly in its own folder, `src/<program>/<Name>/`**, class and code together. `Modules/` receives nothing but its line in the list, and `ModuleConstants.hpp` the constant of its name. Its pull request adds its row to the list of modules, required or optional.
-13. **Two layouts stay tolerated until the client and the server are tidied**; those two changes end the tolerance, except for the class folders of `Widgets/` and `Rendering/`:
-    - a module whose class sits in `Modules/<Name>/`, or in `Instances/<Name>Module/` for a game module, with its code in a folder of the feature (`src/client/Audio/`);
-    - a folder made of class folders. A folder holds either class folders or flat pairs, never both. A change that adds a class to such a folder either gives it a folder like its siblings, or flattens the folder first in its own `refactor` commit (includes unchanged, targets merged, `CMakeLists.txt` and docs updated, `fix-process-grep-every-page-for-what-the-feature-replaced.md`); the pull request says which. A folder the change does not touch is reported, not reworked.
+13. **Only the class folders of `src/client/Widgets/`, `src/client/Rendering/` and of the libraries `src/engine/`, `src/game/`, `src/network/`, `src/logging/` and `src/concurrency/` stay tolerated**, until each is flattened in a change of its own; the client and the server are tidied. Such a folder holds either class folders or flat pairs, never both. A change that adds a class to it either gives it a folder like its siblings, or flattens the folder first in its own `refactor` commit (includes unchanged, targets merged, `CMakeLists.txt` and docs updated, `fix-process-grep-every-page-for-what-the-feature-replaced.md`); the pull request says which. A folder the change does not touch is reported, not reworked.
 14. **The layout holds through this rule, the map and review.** No CI job checks it, and `rtype_forbid_links` gets no check for it. Before the push, name the categories of each folder the change adds or flattens, and check that every category of three classes or more has its sub-folder (point 8).
 
 ### How fine a category is
@@ -67,20 +65,21 @@ Why: the subject (page 16) makes an engine modular through what a developer choo
 - ✅ **After (right)**: `Rules/Match/` (`GameFlow`, `StartBarrier`, `WorldSlot`, `RtypeSystems`) and `Rules/Players/` (the lives, the score and the ship of each player), with `RtypeRulesModule` at the root; `GameFlow` includes `LifeKeeper` and `PlayerController`, so `Match/` includes `Players/`, and `Players/` includes nothing of `Match/`.
 - ❌ **Before (wrong)**: `src/game/Waves/` called a module because it has a target, and a new tick report written in `src/server/Modules/TickReport/`.
 - ✅ **After (right)**: `src/game/Waves/` is a library, since no class of it implements `IModule`; the tick report is written in `src/server/TickReport/`, with a line in `serverModules()` and a row in the list of modules.
-- ❌ **Before (wrong, tolerated today)**: the class `ClientAudioModule` in `src/client/Modules/Audio/`, its code in `src/client/Audio/`, and `ISoundPlayer.hpp` next to the classes only the module needs, so nothing tells what stays when the sound is removed.
-- ✅ **After (right)**: the shape the sound takes once the client is tidied:
+- ❌ **Before (wrong)**: the class `ClientAudioModule` in `src/client/Modules/Audio/`, its code in `src/client/Audio/`, and `ISoundPlayer.hpp` next to the classes only the module needs, so nothing tells what stays when the sound is removed.
+- ✅ **After (right)**: the shape the sound has since the client is tidied:
   ```
   src/client/Audio/            the module audio, optional
-  ├── CMakeLists.txt           add_library(rtype_client_audio_module STATIC ClientAudioModule.cpp AudioService.cpp …)
+  ├── CMakeLists.txt           add_library(rtype_client_audio_module STATIC AudioService.cpp ClientAudioModule.cpp)
   ├── ClientAudioModule.hpp
   ├── ClientAudioModule.cpp
   ├── AudioService.hpp
   ├── AudioService.cpp
-  ├── …
+  ├── Sounds/                  the players of the sounds
+  ├── Music/                   the player of the music
   └── Contract/                what other folders may include, compiled without the module
-      ├── CMakeLists.txt
-      ├── IAudioService.hpp
-      ├── ISoundPlayer.hpp
-      └── …
+      ├── CMakeLists.txt       add_library(rtype_client_audio_contract INTERFACE)
+      ├── Service/             IAudioService.hpp, …
+      ├── Sounds/              ISoundPlayer.hpp, …
+      └── Music/               IMusicPlayer.hpp, …
   ```
-  `rtype_client_audio_module` links `Contract/`; `Contract/` links nothing from `Audio/`.
+  `rtype_client_audio_module` links `Contract/`; `Contract/` links nothing of `Audio/` outside itself.
