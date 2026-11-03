@@ -1,8 +1,8 @@
-add_library(rtype_client_lobby STATIC ClientLobbyModule.cpp)
+add_library(rtype_client_lobby_module STATIC ClientLobbyModule.cpp)
 
-target_include_directories(rtype_client_lobby PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories(rtype_client_lobby_module PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
-target_link_libraries(rtype_client_lobby
+target_link_libraries(rtype_client_lobby_module
   PUBLIC
     rtype_client_screen_registry
     rtype_engine_modules
@@ -13,4 +13,4 @@ target_link_libraries(rtype_client_lobby
     rtype_client_player_preferences
 )
 
-rtype_enable_warnings(rtype_client_lobby)
+rtype_enable_warnings(rtype_client_lobby_module)

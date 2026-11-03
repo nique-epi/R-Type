@@ -21,7 +21,7 @@ constexpr std::uint32_t LATE_TICK = 4000000000U;
  * @brief Entities one payload holds next to four players: (1175 - 6 - 4 * 12)
  * / 9, rounded down.
  */
-constexpr std::size_t ENTITIES_FITTING_WITH_FOUR_PLAYERS = 124;
+constexpr std::size_t ENTITIES_FITTING_WITH_FOUR_PLAYERS = 122;
 
 /**
  * @brief Entities in a small state.

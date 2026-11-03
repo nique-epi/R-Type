@@ -22,7 +22,8 @@ constexpr const char* FIRST_LAUNCH_FILE =
     "color_mode=off\n"
     "reduce_flashes=off\n"
     "sound_cues=off\n"
-    "auto_fire=off\n";
+    "auto_fire=off\n"
+    "client_prediction=on\n";
 
 constexpr int ANY_VOLUME = 40;
 constexpr int CHANGED_MUSIC_VOLUME = 35;

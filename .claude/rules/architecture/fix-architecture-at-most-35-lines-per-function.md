@@ -12,7 +12,7 @@ Why: a limit read on the diff leaves every function that was already long alone,
 
 1. **Every function, constructor and lambda that has a name of its own in a `.cpp` or `.hpp` the change adds or changes is at most 35 lines**, from its signature to its closing brace. Test bodies (`TEST`, `TEST_F`, `TEST_P`) count like any function.
 2. **The count is taken on the file after the change.** "It was already that long" is not an exemption: a function over the limit in a file the change touches is split in the same pull request.
-   - Contained impact (the file or its module, same behavior, proved by the build and the tests): a `refactor` commit of its own (`fix-process-rework-preexisting-inconsistencies.md`).
+   - Contained impact (the file or its folder, same behavior, proved by the build and the tests): a `refactor` commit of its own (`fix-process-rework-preexisting-inconsistencies.md`).
    - High impact: ask first, as that rule says.
    - A file the change does not touch is reported, not reworked.
 3. **Split along the steps of the body** (`fix-architecture-a-function-does-one-kind-of-step.md`), never by cutting it in two arbitrary halves:

@@ -40,7 +40,7 @@ constexpr std::string_view DEFAULT_NICKNAME = "PILOT";
 constexpr std::string_view NO_SOUND_OPTION = "--no-sound";
 
 /**
- * @brief Module name the client writes the log lines of its launch under.
+ * @brief Logger name the client writes the log lines of its launch under.
  */
 constexpr std::string_view CLIENT_LOGGER_NAME = "Client";
 

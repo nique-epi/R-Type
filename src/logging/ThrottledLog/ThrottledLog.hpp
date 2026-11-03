@@ -24,10 +24,10 @@ namespace rtype::logging {
 class ThrottledLog {
  public:
   /**
-   * @param module The module name of the lines, as Logger takes it.
+   * @param name The logger name of the lines, as Logger takes it.
    * @param interval The shortest time between two lines.
    */
-  ThrottledLog(std::string module, std::chrono::nanoseconds interval);
+  ThrottledLog(std::string name, std::chrono::nanoseconds interval);
 
   /**
    * @brief Counts one event that happened at @p now and, when it gets a line,

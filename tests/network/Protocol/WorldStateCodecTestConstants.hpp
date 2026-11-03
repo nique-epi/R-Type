@@ -25,8 +25,8 @@ constexpr std::uint8_t MOTION_HIGHEST_BIT = 0x80;
 constexpr std::size_t FIRST_MOTION_OFFSET = 16;
 
 /** @brief Bytes of the payload of the largest state one datagram holds, four
- * players and ENTITIES_FITTING_WITH_FOUR_PLAYERS entities: 6 + 4 * 12 + 124
- * * 9. The 5 bytes left before 1175 hold no whole entity. */
-constexpr std::size_t LARGEST_STATE_PAYLOAD = 1170;
+ * players and ENTITIES_FITTING_WITH_FOUR_PLAYERS entities: 6 + 4 * 16 + 122
+ * * 9. The 7 bytes left before 1175 hold no whole entity. */
+constexpr std::size_t LARGEST_STATE_PAYLOAD = 1168;
 
 }  // namespace rtype::network::testing

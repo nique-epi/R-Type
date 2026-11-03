@@ -1273,6 +1273,22 @@ TEST_F(GameInstanceInputTest, KeepsTheFirstInputOfAPlayer) {
 }
 
 /**
+ * Given a player who sent one input holding up
+ * When a tick reads it
+ * Then the input is recorded as applied to the ship of the player
+ */
+TEST_F(GameInstanceInputTest, RecordsTheInputAppliedToTheShip) {
+  send(FIRST_PLAYER, HOLDS_UP);
+
+  deliver({FIRST_SENT});
+
+  const ConnectedPlayer* const connected =
+      game().roster().find(playerEndpoint(FIRST_PLAYER));
+  ASSERT_NE(connected, nullptr);
+  EXPECT_EQ(connected->appliedInputNumber, lastInputNumber(FIRST_PLAYER));
+}
+
+/**
  * Given a player who sent up, then down, and whose up arrived in a tick
  * When down arrives in the next tick
  * Then the player holds down
@@ -1913,6 +1929,28 @@ TEST_F(GameInstanceInputDelayTest, HoldsAnInputUntilItsDelayIsOver) {
   tick();
 
   EXPECT_EQ(heldActions(FIRST_PLAYER), HOLDS_NOTHING);
+}
+
+/**
+ * Given a game that holds each input for two ticks and a player who sent up
+ * When the tick that reads the input and the one after it run
+ * Then no input is confirmed to the player yet, and the number of its input
+ * once the delay is over
+ */
+TEST_F(GameInstanceInputDelayTest, ConfirmsAnInputOnlyOnceItIsApplied) {
+  send(FIRST_PLAYER, HOLDS_UP);
+  const ConnectedPlayer* const connected =
+      game().roster().find(playerEndpoint(FIRST_PLAYER));
+  ASSERT_NE(connected, nullptr);
+
+  deliver({FIRST_SENT});
+  tick();
+  const std::optional<std::uint32_t> beforeTheDelay =
+      connected->appliedInputNumber;
+  runTicks(INPUT_DELAY_TICKS);
+
+  EXPECT_FALSE(beforeTheDelay.has_value());
+  EXPECT_EQ(connected->appliedInputNumber, lastInputNumber(FIRST_PLAYER));
 }
 
 /**

@@ -83,7 +83,7 @@ constexpr engine::Duration GAME_EVENT_DELAY_SPREAD = std::chrono::seconds(1);
 constexpr engine::Duration GAME_EVENT_MEMORY =
     network::GUARANTEED_MESSAGE_LIFETIME + GAME_EVENT_DELAY_SPREAD;
 
-/** @brief Module name the connection to a server writes its log lines under. */
+/** @brief Logger name the connection to a server writes its log lines under. */
 constexpr std::string_view CONNECTION_LOGGER_NAME = "Connection";
 
 }  // namespace rtype::client

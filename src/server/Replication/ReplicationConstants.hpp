@@ -5,7 +5,7 @@
 namespace rtype::server {
 
 /**
- * @brief Module name the replication classes write their log lines under.
+ * @brief Logger name the replication classes write their log lines under.
  */
 constexpr std::string_view REPLICATION_LOGGER_NAME = "Replication";
 

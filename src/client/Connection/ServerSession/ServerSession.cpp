@@ -1,6 +1,7 @@
 #include "ServerSession.hpp"
 #include <chrono>
 #include <cstdint>
+#include <optional>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -105,14 +106,16 @@ void ServerSession::update(engine::Duration elapsed) {
   }
 }
 
-void ServerSession::sendPlayerInput(ActionSet held) {
+std::optional<std::uint32_t> ServerSession::sendPlayerInput(ActionSet held) {
   if (status_.phase != ConnectionPhase::Accepted) {
-    return;
+    return std::nullopt;
   }
   gameLoaded_->sendWhenDue(outbox_);
-  sendMessage(outbox_, network::PlayerInput{.inputNumber = nextInputNumber_,
+  const std::uint32_t number = nextInputNumber_;
+  sendMessage(outbox_, network::PlayerInput{.inputNumber = number,
                                             .actions = held.bits()});
   ++nextInputNumber_;
+  return number;
 }
 
 bool ServerSession::isLeaving() const { return departure_.isLeaving(); }

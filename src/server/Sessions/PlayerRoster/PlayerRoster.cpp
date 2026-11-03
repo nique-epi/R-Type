@@ -111,6 +111,7 @@ ConnectedPlayer* PlayerRoster::add(const network::Endpoint& endpoint,
                           .nextSequence = 0,
                           .arrivals = ArrivalLedger{},
                           .newestInputNumber = std::nullopt,
+                          .appliedInputNumber = std::nullopt,
                           .unacknowledged = network::UnacknowledgedMessages{}});
     }
   }
