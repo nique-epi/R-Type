@@ -27,3 +27,7 @@ The design started from the shortest way to reach the module, not from how a com
 ## Update (2 November 2026) — The precedent gives the shape of the code too
 
 The first version of the hook registered the handler through a free helper, `leaderboardRequestHandler()`, which moved a `std::function` into the lambda it returned, while the handlers next to it are `[this]` lambdas reading members. `clang-tidy` 21.1.8 reported `clang-analyzer-cplusplus.NewDeleteLeaks` ("Potential leak of memory pointed to by field '__f_'") at `MessageDispatcher.hpp:71` for `GameSessions.cpp`. No leak was shown: the report was not investigated further once a member callback, in the shape of the neighbours, made it disappear from the same command.
+
+## Update (3 November 2026) — A control beside others
+
+The waiting room shows three chips in one row. HELP was a `Button` the walkthrough opens on the press, without a hovered or a pressed look; BACK is a chip of `Menu`, which acts on the release. The leaderboard added RANKING as a new `KeyChip`, which acts on the release with both looks, so the row held three mechanisms. A review found it. The new subsection asks to read how the controls of a row react before writing one more, and to put an existing difference to the user instead of adding a third mechanism.
