@@ -11,6 +11,7 @@
 #include "ModuleConstants.hpp"
 #include "TimeConstants.hpp"
 #include "TrafficCounters.hpp"
+#include "TrafficRecorder.hpp"
 
 namespace rtype::client {
 
@@ -31,20 +32,17 @@ void ClientMetricsModule::install(engine::InstallContext& context) {
   traffic_ = &context.require<network::TrafficCounters>();
   context.addWork(NETWORK_STAGE,
                   [this]([[maybe_unused]] engine::Duration elapsed) {
-                    if (recorder_.has_value()) {
-                      recorder_->advance(clock_->now());
-                    }
+                    recorder_->advance(clock_->now());
                   });
 }
 
 void ClientMetricsModule::start() {
-  recorder_.emplace(*traffic_, trafficFile_, clock_->now());
+  recorder_ = std::make_unique<network::TrafficRecorder>(
+      *traffic_, trafficFile_, clock_->now());
 }
 
 void ClientMetricsModule::stop() {
-  if (recorder_.has_value()) {
-    recorder_->finish(clock_->now());
-  }
+  recorder_->finish(clock_->now());
   recorder_.reset();
 }
 

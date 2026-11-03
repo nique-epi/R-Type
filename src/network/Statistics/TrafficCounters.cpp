@@ -18,20 +18,21 @@ namespace rtype::network {
 namespace {
 
 void addOne(TrafficFigures& figures, std::size_t bytes) {
-  ++figures.count;
-  figures.bytes += bytes;
+  addFigures(figures, TrafficFigures{.count = 1, .bytes = bytes});
 }
 
 /**
  * @returns Whether @p datagram is of this protocol and version and its sizes
- * add up to its end, so splitMessages() will not throw. messageTypes() runs
- * first: it refuses a datagram too short for a header, which decodeHeader()
- * would throw on, and it costs a flood no allocation.
+ * add up to its end, so splitMessages() will not throw. The header comes
+ * first: reading it takes a fixed time and turns most foreign bytes away before
+ * messageTypes() walks them, and the size comes before it, since decodeHeader()
+ * throws on a datagram too short for a header.
  */
 bool holdsReadableMessages(std::span<const std::byte> datagram) {
-  return DatagramCodec::messageTypes(datagram).has_value() &&
+  return datagram.size() >= PACKET_HEADER_SIZE &&
          DatagramCodec::speaksThisProtocol(
-             DatagramCodec::decodeHeader(datagram));
+             DatagramCodec::decodeHeader(datagram)) &&
+         DatagramCodec::messageTypes(datagram).has_value();
 }
 
 void addDatagram(DirectionTraffic& traffic,

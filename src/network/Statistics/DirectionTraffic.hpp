@@ -21,8 +21,6 @@ struct DirectionTraffic {
   /** @brief The messages of the other datagrams, indexed by type byte, each
    * with its prefix and its payload; the packet header is in no type. */
   std::array<TrafficFigures, MESSAGE_TYPE_COUNT> messages;
-
-  bool operator==(const DirectionTraffic&) const = default;
 };
 
 }  // namespace rtype::network

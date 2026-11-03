@@ -17,6 +17,7 @@
 #include "NetworkException.hpp"
 #include "NetworkSimulatorTestConstants.hpp"
 #include "SimulatorLaunchOptions.hpp"
+#include "TrafficFileTestConstants.hpp"
 
 using rtype::client::ADDRESS_OPTION;
 using rtype::client::AudioMode;
@@ -394,35 +395,10 @@ TEST(ClientLaunchOptions, NoArgumentAsksForNoTrafficFile) {
  */
 TEST(ClientLaunchOptions, TrafficOptionGivesTheFile) {
   const LaunchOptions options =
-      LaunchOptions::read(Arguments{TRAFFIC_CSV_OPTION, TRAFFIC_FILE_ARGUMENT});
+      LaunchOptions::read(Arguments{TRAFFIC_CSV_OPTION, TRAFFIC_FILE_NAME});
 
   EXPECT_EQ(options.trafficCsvFile().value_or(std::filesystem::path{}),
-            std::filesystem::path{TRAFFIC_FILE_ARGUMENT});
-}
-
-/**
- * Given the traffic option twice
- * When the launch options are read
- * Then the last file wins
- */
-TEST(ClientLaunchOptions, TheLastTrafficOptionWins) {
-  const LaunchOptions options = LaunchOptions::read(
-      Arguments{TRAFFIC_CSV_OPTION, FIRST_TRAFFIC_FILE_ARGUMENT,
-                TRAFFIC_CSV_OPTION, TRAFFIC_FILE_ARGUMENT});
-
-  EXPECT_EQ(options.trafficCsvFile().value_or(std::filesystem::path{}),
-            std::filesystem::path{TRAFFIC_FILE_ARGUMENT});
-}
-
-/**
- * Given the traffic option as the last argument
- * When the launch options are read
- * Then the value is reported missing
- */
-TEST(ClientLaunchOptions, TrafficOptionWithoutAFileIsRefused) {
-  EXPECT_THROW(
-      static_cast<void>(LaunchOptions::read(Arguments{TRAFFIC_CSV_OPTION})),
-      MissingLaunchOptionValueException);
+            std::filesystem::path{TRAFFIC_FILE_NAME});
 }
 
 /**

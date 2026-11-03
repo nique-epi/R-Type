@@ -44,7 +44,7 @@ class ClientMetricsModule final : public engine::IModule {
   std::shared_ptr<const engine::IClock> clock_;
   std::optional<std::filesystem::path> trafficFile_;
   const network::TrafficCounters* traffic_{nullptr};
-  std::optional<network::TrafficRecorder> recorder_;
+  std::unique_ptr<network::TrafficRecorder> recorder_;
 };
 
 }  // namespace rtype::client

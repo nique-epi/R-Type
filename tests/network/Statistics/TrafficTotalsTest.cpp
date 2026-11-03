@@ -14,7 +14,7 @@ using rtype::network::TrafficReport;
 using rtype::network::TrafficTotals;
 using rtype::network::trafficTotalsOf;
 using rtype::network::testing::datagramHolding;
-using rtype::network::testing::peerOnPort;
+using rtype::network::testing::loopbackOnPort;
 
 /**
  * Given a report of nothing
@@ -33,12 +33,12 @@ TEST(TrafficTotals, AnEmptyReportTotalsNothing) {
 TEST(TrafficTotals, AddsUpEveryRow) {
   TrafficCounters counters;
   const auto datagram = datagramHolding(MessageType::Heartbeat, SMALL_PAYLOAD);
-  counters.follow(peerOnPort(PEER_PORT));
-  counters.countSent(peerOnPort(PEER_PORT), datagram);
-  counters.unfollow(peerOnPort(PEER_PORT));
-  counters.follow(peerOnPort(OTHER_PORT));
-  counters.countSent(peerOnPort(OTHER_PORT), datagram);
-  counters.countSent(peerOnPort(PEER_PORT), datagram);
+  counters.follow(loopbackOnPort(PEER_PORT));
+  counters.countSent(loopbackOnPort(PEER_PORT), datagram);
+  counters.unfollow(loopbackOnPort(PEER_PORT));
+  counters.follow(loopbackOnPort(OTHER_PORT));
+  counters.countSent(loopbackOnPort(OTHER_PORT), datagram);
+  counters.countSent(loopbackOnPort(PEER_PORT), datagram);
 
   EXPECT_EQ(trafficTotalsOf(counters.report()).sent,
             (TrafficFigures{

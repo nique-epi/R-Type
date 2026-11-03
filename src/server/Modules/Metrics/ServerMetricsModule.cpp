@@ -16,6 +16,7 @@
 #include "ServerConstants.hpp"
 #include "TimeConstants.hpp"
 #include "TrafficCounters.hpp"
+#include "TrafficRecorder.hpp"
 
 namespace rtype::server {
 
@@ -48,15 +49,14 @@ void ServerMetricsModule::install(engine::InstallContext& context) {
 }
 
 void ServerMetricsModule::start() {
-  trafficRecorder_.emplace(*traffic_, trafficFile_, clock_->now());
+  trafficRecorder_ = std::make_unique<network::TrafficRecorder>(
+      *traffic_, trafficFile_, clock_->now());
   measureSystemsOf(*games_, clock_.get());
 }
 
 void ServerMetricsModule::stop() {
   measureSystemsOf(*games_, nullptr);
-  if (trafficRecorder_.has_value()) {
-    trafficRecorder_->finish(clock_->now());
-  }
+  trafficRecorder_->finish(clock_->now());
   trafficRecorder_.reset();
 }
 
@@ -66,9 +66,7 @@ void ServerMetricsModule::endTick() {
   if (durations_.isFull()) {
     reportTheTicks();
   }
-  if (trafficRecorder_.has_value()) {
-    trafficRecorder_->advance(now);
-  }
+  trafficRecorder_->advance(now);
 }
 
 void ServerMetricsModule::reportTheTicks() {

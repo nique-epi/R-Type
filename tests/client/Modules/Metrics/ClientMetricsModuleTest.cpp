@@ -20,7 +20,7 @@ using rtype::engine::InstallContext;
 using rtype::engine::MissingServiceException;
 using rtype::network::DEFAULT_SERVER_PORT;
 using rtype::network::TrafficFileOpenException;
-using rtype::network::testing::peerOnPort;
+using rtype::network::testing::loopbackOnPort;
 using rtype::network::testing::textOf;
 
 /**
@@ -57,7 +57,7 @@ TEST_F(ClientMetricsModuleFixture, WritesTheTrafficInTheFrameLoop) {
   InstallContext installing = context();
   module.install(installing);
   module.start();
-  traffic().countSent(peerOnPort(DEFAULT_SERVER_PORT),
+  traffic().countSent(loopbackOnPort(DEFAULT_SERVER_PORT),
                       std::vector<std::byte>(1));
 
   runAFrameASecondLater();
@@ -77,7 +77,7 @@ TEST_F(ClientMetricsModuleFixture, StoppingWritesTheLastRows) {
   InstallContext installing = context();
   module.install(installing);
   module.start();
-  traffic().countSent(peerOnPort(DEFAULT_SERVER_PORT),
+  traffic().countSent(loopbackOnPort(DEFAULT_SERVER_PORT),
                       std::vector<std::byte>(1));
 
   module.stop();

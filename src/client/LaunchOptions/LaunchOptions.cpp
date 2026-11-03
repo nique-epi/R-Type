@@ -126,9 +126,8 @@ std::string LaunchOptions::usage() {
           " bytes of UTF-8. Default: " + std::string(DEFAULT_NICKNAME) + ".");
   text += engine::usageEntry(std::string(NO_SOUND_OPTION),
                              "Start the client without sound.");
-  text +=
-      engine::usageEntry(std::string(network::TRAFFIC_CSV_OPTION) + " <file>",
-                         network::TRAFFIC_CSV_USAGE);
+  text += engine::usageEntry(network::TRAFFIC_CSV_OPTION_WITH_VALUE,
+                             network::TRAFFIC_CSV_USAGE);
   text += engine::usageEntry(engine::HELP_OPTION,
                              "Print this help and open no window.");
   text += '\n';

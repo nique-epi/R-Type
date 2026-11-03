@@ -4,6 +4,7 @@
 #include "NetworkException.hpp"
 #include "TemporaryFolder.hpp"
 #include "TrafficCsvFile.hpp"
+#include "TrafficFileTestConstants.hpp"
 #include "TrafficFixtures.hpp"
 #include "TrafficTestConstants.hpp"
 

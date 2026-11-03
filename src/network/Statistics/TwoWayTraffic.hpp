@@ -8,8 +8,6 @@ namespace rtype::network {
 struct TwoWayTraffic {
   DirectionTraffic sent;
   DirectionTraffic received;
-
-  bool operator==(const TwoWayTraffic&) const = default;
 };
 
 }  // namespace rtype::network

@@ -1,9 +1,9 @@
 #include <gtest/gtest.h>
 #include "Endpoint.hpp"
+#include "NetworkSimulatorTestConstants.hpp"
 #include "ServerApplication.hpp"
 #include "ServerApplicationTrafficFixtures.hpp"
 #include "ServerLobbyTestConstants.hpp"
-#include "ServerTestConstants.hpp"
 #include "TrafficReport.hpp"
 
 using rtype::network::Endpoint;
@@ -77,4 +77,16 @@ TEST(ServerApplicationTraffic, ForgettingAReplacedSessionKeepsTheRow) {
 
   ASSERT_EQ(report.peers.size(), 1U);
   EXPECT_EQ(report.peers.front().traffic.received.datagrams.count, 1U);
+}
+
+/**
+ * Given a server over a network that loses everything
+ * When it sends a datagram
+ * Then the datagram counts as sent: the counters sit above the simulated
+ * network, as on a real network
+ */
+TEST(ServerApplicationTraffic, ADatagramLostOnTheNetworkCountsAsSent) {
+  const TrafficReport report = trafficAfterAQueuedDatagram(FULL_LOSS);
+
+  EXPECT_EQ(report.others.sent.datagrams.count, 1U);
 }

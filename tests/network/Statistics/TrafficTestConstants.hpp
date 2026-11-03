@@ -34,15 +34,12 @@ constexpr std::size_t REPORTS_WHILE_COUNTING = 1000;
 
 /** @brief Times on the clock of a recorder. */
 constexpr std::chrono::seconds RECORDER_START{5};
-constexpr std::chrono::nanoseconds ONE_NANOSECOND{1};
 constexpr std::chrono::milliseconds HALF_A_SECOND{500};
-constexpr std::chrono::seconds ONE_SECOND{1};
 constexpr std::chrono::seconds TEN_SECONDS{10};
 constexpr std::chrono::milliseconds ONE_AND_A_HALF_SECONDS{1500};
 
-/** @brief The name of a traffic file, its first line, and what marks a line of
- * the journal or a warning about the file. */
-constexpr std::string_view TRAFFIC_FILE_NAME = "traffic.csv";
+/** @brief The first line of a traffic file, and what marks a line of the
+ * journal or a warning about the file. */
 constexpr std::string_view HEADER_LINE =
     "seconds,peer,direction,message,count,bytes\n";
 constexpr std::string_view TRAFFIC_LINE_MARK = "[Traffic]";

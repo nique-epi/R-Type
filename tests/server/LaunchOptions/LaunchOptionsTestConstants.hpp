@@ -94,9 +94,3 @@ constexpr std::string_view TOO_HIGH_INPUT_DELAY_ARGUMENT = "31";
 constexpr std::string_view NEGATIVE_INPUT_DELAY_ARGUMENT = "-1";
 constexpr std::string_view NOT_A_NUMBER_INPUT_DELAY_ARGUMENT = "slow";
 constexpr std::string_view EMPTY_INPUT_DELAY_ARGUMENT{};
-
-/**
- * @brief Files given after `--traffic-csv`.
- */
-constexpr std::string_view FIRST_TRAFFIC_FILE_ARGUMENT = "first.csv";
-constexpr std::string_view TRAFFIC_FILE_ARGUMENT = "traffic.csv";

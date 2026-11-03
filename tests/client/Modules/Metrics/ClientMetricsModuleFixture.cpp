@@ -7,8 +7,9 @@
 #include "ModuleConstants.hpp"
 #include "SimulatedClock.hpp"
 #include "TimeConstants.hpp"
+#include "TimeTestConstants.hpp"
 #include "TrafficCounters.hpp"
-#include "TrafficTestConstants.hpp"
+#include "TrafficFileTestConstants.hpp"
 
 ClientMetricsModuleFixture::ClientMetricsModuleFixture()
     : stages_(rtype::client::CLIENT_LOOP_STAGES) {
@@ -26,7 +27,7 @@ ClientMetricsModuleFixture::contextWithoutServices() {
 }
 
 void ClientMetricsModuleFixture::runAFrameASecondLater() {
-  clock_->advance(ONE_SECOND);
+  clock_->advance(rtype::engine::testing::ONE_SECOND);
   stages_.run(rtype::engine::Duration::zero());
 }
 

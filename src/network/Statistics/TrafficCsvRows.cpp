@@ -1,7 +1,6 @@
 #include "TrafficCsvRows.hpp"
 #include <chrono>
 #include <cstddef>
-#include <cstdint>
 #include <iomanip>
 #include <ios>
 #include <sstream>
@@ -55,8 +54,7 @@ std::string directionRows(std::string_view start,
   }
   for (std::size_t type = 0; type < traffic.messages.size(); ++type) {
     if (traffic.messages[type].count > 0) {
-      rows += rowOf(start, messageTypeText(static_cast<std::uint8_t>(type)),
-                    traffic.messages[type]);
+      rows += rowOf(start, messageTypeText(type), traffic.messages[type]);
     }
   }
   return rows;

@@ -20,11 +20,12 @@
 #include "TemporaryFolder.hpp"
 #include "TickDurationSummary.hpp"
 #include "TimeConstants.hpp"
+#include "TrafficFileTestConstants.hpp"
 #include "TrafficFixtures.hpp"
 #include "TrafficTestConstants.hpp"
 
 using rtype::engine::ModuleStartFailedException;
-using rtype::network::testing::peerOnPort;
+using rtype::network::testing::loopbackOnPort;
 using rtype::network::testing::textOf;
 using rtype::server::GamesCensus;
 using rtype::server::MetricsReport;
@@ -156,7 +157,7 @@ TEST_F(ServerMetricsFixture, StopsMeasuringTheSystemsWhenItStops) {
  */
 TEST_F(ServerMetricsFixture, TheReportHoldsTheTraffic) {
   startWithGames(ONE_GAME);
-  network().traffic().countSent(peerOnPort(PEER_PORT),
+  network().traffic().countSent(loopbackOnPort(PEER_PORT),
                                 std::vector<std::byte>(1));
 
   runTicks(TICKS_IN_TEN_SECONDS);
@@ -193,7 +194,7 @@ TEST_F(ServerMetricsFixture, WritesTheTrafficToTheFileItWasGiven) {
   const std::filesystem::path file = folder.path() / TRAFFIC_FILE_NAME;
   writeTrafficTo(file);
   startWithGames(ONE_GAME);
-  network().traffic().countSent(peerOnPort(PEER_PORT),
+  network().traffic().countSent(loopbackOnPort(PEER_PORT),
                                 std::vector<std::byte>(1));
 
   runTicks(TICKS_TO_THE_TRAFFIC_ROWS);

@@ -156,9 +156,8 @@ std::string serverOptionEntries() {
           ". The same delay holds for every player, so it adds the same lag to "
           "all of them. Default: " +
           std::to_string(DEFAULT_INPUT_DELAY_TICKS) + ".");
-  text +=
-      engine::usageEntry(std::string(network::TRAFFIC_CSV_OPTION) + " <file>",
-                         network::TRAFFIC_CSV_USAGE);
+  text += engine::usageEntry(network::TRAFFIC_CSV_OPTION_WITH_VALUE,
+                             network::TRAFFIC_CSV_USAGE);
   text += engine::usageEntry(engine::HELP_OPTION,
                              "Print this help and start nothing.");
   return text;

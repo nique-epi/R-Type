@@ -2,6 +2,7 @@
 
 #include <functional>
 #include "Endpoint.hpp"
+#include "NetworkConditions.hpp"
 #include "ServerApplication.hpp"
 #include "TrafficReport.hpp"
 
@@ -14,3 +15,12 @@
 [[nodiscard]] rtype::network::TrafficReport trafficAfterAReadyState(
     const std::function<void(rtype::server::ServerApplication&,
                              const rtype::network::Endpoint&)>& prepare);
+
+/**
+ * @brief Runs a server over the network @p conditions describes, and has it
+ * send a datagram.
+ * @returns What the server counted once it counted that datagram, or after
+ * THREAD_TIMEOUT.
+ */
+[[nodiscard]] rtype::network::TrafficReport trafficAfterAQueuedDatagram(
+    const rtype::network::NetworkConditions& conditions);

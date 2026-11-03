@@ -6,17 +6,20 @@
 #include "MessageType.hpp"
 #include "NetworkException.hpp"
 #include "TemporaryFolder.hpp"
+#include "TimeTestConstants.hpp"
 #include "TrafficCounters.hpp"
+#include "TrafficFileTestConstants.hpp"
 #include "TrafficFixtures.hpp"
 #include "TrafficRecorder.hpp"
 #include "TrafficTestConstants.hpp"
 
+using rtype::engine::testing::ONE_SECOND;
 using rtype::network::MessageType;
 using rtype::network::TrafficCounters;
 using rtype::network::TrafficFileOpenException;
 using rtype::network::TrafficRecorder;
 using rtype::network::testing::datagramHolding;
-using rtype::network::testing::peerOnPort;
+using rtype::network::testing::loopbackOnPort;
 using rtype::network::testing::textOf;
 
 /**
@@ -29,7 +32,7 @@ TEST(TrafficRecorder, WritesNoRowBeforeASecond) {
   const std::filesystem::path file = folder.path() / TRAFFIC_FILE_NAME;
   TrafficCounters counters;
   TrafficRecorder recorder{counters, file, RECORDER_START};
-  counters.countSent(peerOnPort(PEER_PORT),
+  counters.countSent(loopbackOnPort(PEER_PORT),
                      datagramHolding(MessageType::Heartbeat, EMPTY_PAYLOAD));
 
   recorder.advance(RECORDER_START + ONE_SECOND - ONE_NANOSECOND);
@@ -47,7 +50,7 @@ TEST(TrafficRecorder, ARowGivesTheTimeSinceTheStart) {
   const std::filesystem::path file = folder.path() / TRAFFIC_FILE_NAME;
   TrafficCounters counters;
   TrafficRecorder recorder{counters, file, RECORDER_START};
-  counters.countSent(peerOnPort(PEER_PORT),
+  counters.countSent(loopbackOnPort(PEER_PORT),
                      datagramHolding(MessageType::Heartbeat, EMPTY_PAYLOAD));
 
   recorder.advance(RECORDER_START + ONE_SECOND);
@@ -67,7 +70,7 @@ TEST(TrafficRecorder, WritesOnceEachSecond) {
   const std::filesystem::path file = folder.path() / TRAFFIC_FILE_NAME;
   TrafficCounters counters;
   TrafficRecorder recorder{counters, file, RECORDER_START};
-  counters.countSent(peerOnPort(PEER_PORT),
+  counters.countSent(loopbackOnPort(PEER_PORT),
                      datagramHolding(MessageType::Heartbeat, EMPTY_PAYLOAD));
   recorder.advance(RECORDER_START + ONE_SECOND);
   const std::string afterTheFirst = textOf(file);
@@ -89,7 +92,7 @@ TEST(TrafficRecorder, FinishWritesTheLastRows) {
   const std::filesystem::path file = folder.path() / TRAFFIC_FILE_NAME;
   TrafficCounters counters;
   TrafficRecorder recorder{counters, file, RECORDER_START};
-  counters.countSent(peerOnPort(PEER_PORT),
+  counters.countSent(loopbackOnPort(PEER_PORT),
                      datagramHolding(MessageType::Heartbeat, EMPTY_PAYLOAD));
 
   recorder.finish(RECORDER_START + HALF_A_SECOND);
@@ -126,11 +129,11 @@ TEST(TrafficRecorder, EachLineCountsSinceThePreviousOne) {
   const DebugJournal journal;
   TrafficCounters counters;
   const auto datagram = datagramHolding(MessageType::Heartbeat, EMPTY_PAYLOAD);
-  counters.countSent(peerOnPort(PEER_PORT), datagram);
+  counters.countSent(loopbackOnPort(PEER_PORT), datagram);
   TrafficRecorder recorder{counters, std::nullopt, RECORDER_START};
-  counters.countSent(peerOnPort(PEER_PORT), datagram);
+  counters.countSent(loopbackOnPort(PEER_PORT), datagram);
   recorder.advance(RECORDER_START + TEN_SECONDS);
-  counters.countSent(peerOnPort(PEER_PORT), datagram);
+  counters.countSent(loopbackOnPort(PEER_PORT), datagram);
 
   recorder.advance(RECORDER_START + TEN_SECONDS + TEN_SECONDS);
 

@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include <cstdint>
+#include <cstddef>
 #include "MessageType.hpp"
 #include "MessageTypeText.hpp"
 
@@ -13,7 +13,7 @@ using rtype::network::messageTypeText;
  */
 TEST(MessageTypeText, EveryMessageHasItsName) {
   const auto textOf = [](MessageType type) {
-    return messageTypeText(static_cast<std::uint8_t>(type));
+    return messageTypeText(static_cast<std::size_t>(type));
   };
 
   EXPECT_EQ(textOf(MessageType::ConnectionRequest), "ConnectionRequest");

@@ -22,7 +22,7 @@ namespace rtype::network::testing {
     std::vector<std::byte> datagram, MessageType type, std::size_t payloadSize);
 
 /** @returns The loopback address on @p port. */
-[[nodiscard]] Endpoint peerOnPort(std::uint16_t port);
+[[nodiscard]] Endpoint loopbackOnPort(std::uint16_t port);
 
 /** @returns What @p traffic counted for the messages of @p type. */
 [[nodiscard]] TrafficFigures figuresOf(const DirectionTraffic& traffic,

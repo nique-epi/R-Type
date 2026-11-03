@@ -2,18 +2,20 @@
 #include <cstddef>
 #include <span>
 #include "MessageType.hpp"
+#include "TimeTestConstants.hpp"
 #include "TrafficCounters.hpp"
 #include "TrafficCsvRows.hpp"
 #include "TrafficFixtures.hpp"
 #include "TrafficReport.hpp"
 #include "TrafficTestConstants.hpp"
 
+using rtype::engine::testing::ONE_SECOND;
 using rtype::network::MessageType;
 using rtype::network::TrafficCounters;
 using rtype::network::trafficCsvRowsOf;
 using rtype::network::TrafficReport;
 using rtype::network::testing::datagramHolding;
-using rtype::network::testing::peerOnPort;
+using rtype::network::testing::loopbackOnPort;
 
 /**
  * Given a report of nothing
@@ -32,8 +34,8 @@ TEST(TrafficCsvRows, NothingCountedGivesNoRow) {
  */
 TEST(TrafficCsvRows, GivesARowForEachFigureOfAPeer) {
   TrafficCounters counters;
-  counters.follow(peerOnPort(PEER_PORT));
-  counters.countSent(peerOnPort(PEER_PORT),
+  counters.follow(loopbackOnPort(PEER_PORT));
+  counters.countSent(loopbackOnPort(PEER_PORT),
                      datagramHolding(MessageType::WorldState, LARGE_PAYLOAD));
 
   EXPECT_EQ(trafficCsvRowsOf(ONE_AND_A_HALF_SECONDS, counters.report()),
@@ -51,7 +53,7 @@ TEST(TrafficCsvRows, AnUnreadableDatagramOfAStrangerHasItsRow) {
   const auto datagram = datagramHolding(MessageType::Heartbeat, SMALL_PAYLOAD);
 
   counters.countReceived(
-      peerOnPort(PEER_PORT),
+      loopbackOnPort(PEER_PORT),
       std::span<const std::byte>{datagram}.first(FIVE_BYTES));
 
   EXPECT_EQ(trafficCsvRowsOf(ONE_SECOND, counters.report()),
@@ -69,13 +71,13 @@ TEST(TrafficCsvRows, AnUnreadableDatagramOfAStrangerHasItsRow) {
 TEST(TrafficCsvRows, ListsThePeersThenTheOthersThenTheDeparted) {
   TrafficCounters counters;
   const auto datagram = datagramHolding(MessageType::Heartbeat, EMPTY_PAYLOAD);
-  counters.follow(peerOnPort(PEER_PORT));
-  counters.countSent(peerOnPort(PEER_PORT), datagram);
-  counters.countReceived(peerOnPort(PEER_PORT), datagram);
-  counters.unfollow(peerOnPort(PEER_PORT));
-  counters.countSent(peerOnPort(PEER_PORT), datagram);
-  counters.follow(peerOnPort(OTHER_PORT));
-  counters.countSent(peerOnPort(OTHER_PORT), datagram);
+  counters.follow(loopbackOnPort(PEER_PORT));
+  counters.countSent(loopbackOnPort(PEER_PORT), datagram);
+  counters.countReceived(loopbackOnPort(PEER_PORT), datagram);
+  counters.unfollow(loopbackOnPort(PEER_PORT));
+  counters.countSent(loopbackOnPort(PEER_PORT), datagram);
+  counters.follow(loopbackOnPort(OTHER_PORT));
+  counters.countSent(loopbackOnPort(OTHER_PORT), datagram);
 
   EXPECT_EQ(trafficCsvRowsOf(ONE_SECOND, counters.report()),
             "1.000,127.0.0.1:5001,sent,all,1,25\n"

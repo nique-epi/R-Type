@@ -39,13 +39,12 @@ constexpr std::string_view UNKNOWN_MESSAGE_TYPE_PREFIX = "type-";
  */
 constexpr std::size_t FIRST_NAMED_MESSAGE_TYPE =
     static_cast<std::size_t>(MessageType::ConnectionRequest);
-constexpr std::array<std::string_view, 17> MESSAGE_TYPE_NAMES{
-    "ConnectionRequest",   "ConnectionAccepted", "ConnectionRefused",
-    "Disconnection",       "Heartbeat",          "ReadyState",
-    "LobbyState",          "GameStarted",        "PlayerInput",
-    "WorldState",          "EntitySpawned",      "EntityDestroyed",
-    "GameEvent",           "PlayerLeft",         "GameEnded",
-    "ConnectionChallenge", "GameLoaded"};
+constexpr auto MESSAGE_TYPE_NAMES = std::to_array<std::string_view>(
+    {"ConnectionRequest", "ConnectionAccepted", "ConnectionRefused",
+     "Disconnection", "Heartbeat", "ReadyState", "LobbyState", "GameStarted",
+     "PlayerInput", "WorldState", "EntitySpawned", "EntityDestroyed",
+     "GameEvent", "PlayerLeft", "GameEnded", "ConnectionChallenge",
+     "GameLoaded"});
 
 static_assert(FIRST_NAMED_MESSAGE_TYPE + MESSAGE_TYPE_NAMES.size() - 1 ==
                   static_cast<std::size_t>(MessageType::GameLoaded),

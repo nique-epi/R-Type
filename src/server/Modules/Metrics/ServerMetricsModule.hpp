@@ -44,9 +44,8 @@ class ServerMetricsModule final : public engine::IModule {
   /** @param clock Read at both ends of each tick and around each system.
    * @param trafficFile Where the rows of the traffic go, see
    * network::TrafficRecorder; nothing writes no rows. */
-  explicit ServerMetricsModule(
-      std::shared_ptr<const engine::IClock> clock,
-      std::optional<std::filesystem::path> trafficFile = std::nullopt);
+  ServerMetricsModule(std::shared_ptr<const engine::IClock> clock,
+                      std::optional<std::filesystem::path> trafficFile);
 
   [[nodiscard]] std::string name() const override;
   [[nodiscard]] std::vector<std::string> dependencies() const override;
@@ -79,7 +78,7 @@ class ServerMetricsModule final : public engine::IModule {
   engine::Duration tickStart_{};
   std::optional<std::filesystem::path> trafficFile_;
   const network::TrafficCounters* traffic_{nullptr};
-  std::optional<network::TrafficRecorder> trafficRecorder_;
+  std::unique_ptr<network::TrafficRecorder> trafficRecorder_;
 };
 
 }  // namespace rtype::server

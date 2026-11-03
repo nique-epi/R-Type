@@ -249,3 +249,21 @@ TEST(NetworkThread, CountsWhatItSendsAndReceives) {
   EXPECT_EQ(report.others.received.datagrams.count, 1U);
   EXPECT_EQ(report.others.sent.datagrams.count, 1U);
 }
+
+/**
+ * Given a network thread over a network that loses everything
+ * When it sends a datagram
+ * Then the datagram counts as sent: the counters sit above the simulated
+ * network, as on a real network
+ */
+TEST(NetworkThread, ADatagramLostOnTheNetworkCountsAsSent) {
+  NetworkThread networkThread{loopbackOnPort(ANY_PORT), FULL_LOSS};
+  networkThread.open();
+
+  networkThread.send(
+      OutgoingDatagram{.destination = networkThread.localEndpoint(),
+                       .payload = exchangedBytes()});
+  networkThread.close();
+
+  EXPECT_EQ(networkThread.traffic().report().others.sent.datagrams.count, 1U);
+}

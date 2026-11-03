@@ -7,10 +7,10 @@
 #include "CountingDatagramSocket.hpp"
 #include "Endpoint.hpp"
 #include "MessageType.hpp"
-#include "NetworkConditions.hpp"
 #include "NetworkConstants.hpp"
 #include "NetworkContext.hpp"
 #include "NetworkException.hpp"
+#include "NetworkSimulatorTestConstants.hpp"
 #include "RecordingDatagramSocket.hpp"
 #include "SimulatedNetworkSocket.hpp"
 #include "TrafficCounters.hpp"
@@ -22,12 +22,11 @@ using rtype::network::DatagramTooLargeException;
 using rtype::network::Endpoint;
 using rtype::network::MAX_DATAGRAM_SIZE;
 using rtype::network::MessageType;
-using rtype::network::NetworkConditions;
 using rtype::network::NetworkContext;
 using rtype::network::SimulatedNetworkSocket;
 using rtype::network::TrafficCounters;
 using rtype::network::testing::datagramHolding;
-using rtype::network::testing::peerOnPort;
+using rtype::network::testing::loopbackOnPort;
 
 /**
  * Given a counting socket
@@ -40,7 +39,7 @@ TEST(CountingDatagramSocket, SendsThenCounts) {
   const RecordingDatagramSocket& real = *recording;
   CountingDatagramSocket socket{std::move(recording), counters};
 
-  socket.send(peerOnPort(PEER_PORT),
+  socket.send(loopbackOnPort(PEER_PORT),
               datagramHolding(MessageType::Heartbeat, SMALL_PAYLOAD));
 
   EXPECT_EQ(real.sent().size(), 1U);
@@ -57,7 +56,7 @@ TEST(CountingDatagramSocket, ADatagramRefusedIsNotCounted) {
   CountingDatagramSocket socket{std::make_unique<RecordingDatagramSocket>(),
                                 counters};
 
-  EXPECT_THROW(socket.send(peerOnPort(PEER_PORT),
+  EXPECT_THROW(socket.send(loopbackOnPort(PEER_PORT),
                            std::vector<std::byte>(MAX_DATAGRAM_SIZE + 1)),
                DatagramTooLargeException);
 
@@ -83,10 +82,10 @@ TEST(CountingDatagramSocket, CountsThenHandsOnWhatItReceives) {
         countedWhenHandled = counters.report().others.received.datagrams.count;
       });
 
-  real.receive(peerOnPort(PEER_PORT),
+  real.receive(loopbackOnPort(PEER_PORT),
                datagramHolding(MessageType::Heartbeat, SMALL_PAYLOAD));
 
-  EXPECT_EQ(handledSender, peerOnPort(PEER_PORT));
+  EXPECT_EQ(handledSender, loopbackOnPort(PEER_PORT));
   EXPECT_EQ(countedWhenHandled, 1U);
 }
 
@@ -114,12 +113,11 @@ TEST(CountingDatagramSocket, ADatagramLostOnTheWayOutCountsAsSent) {
   TrafficCounters counters;
   auto recording = std::make_unique<RecordingDatagramSocket>();
   const RecordingDatagramSocket& real = *recording;
-  CountingDatagramSocket socket{
-      std::make_unique<SimulatedNetworkSocket>(
-          context, std::move(recording), NetworkConditions{.lossPercent = 100}),
-      counters};
+  CountingDatagramSocket socket{std::make_unique<SimulatedNetworkSocket>(
+                                    context, std::move(recording), FULL_LOSS),
+                                counters};
 
-  socket.send(peerOnPort(PEER_PORT),
+  socket.send(loopbackOnPort(PEER_PORT),
               datagramHolding(MessageType::Heartbeat, SMALL_PAYLOAD));
   context.run();
 
@@ -137,15 +135,14 @@ TEST(CountingDatagramSocket, ADatagramLostOnTheWayInIsNotCounted) {
   TrafficCounters counters;
   auto recording = std::make_unique<RecordingDatagramSocket>();
   RecordingDatagramSocket& real = *recording;
-  CountingDatagramSocket socket{
-      std::make_unique<SimulatedNetworkSocket>(
-          context, std::move(recording), NetworkConditions{.lossPercent = 100}),
-      counters};
+  CountingDatagramSocket socket{std::make_unique<SimulatedNetworkSocket>(
+                                    context, std::move(recording), FULL_LOSS),
+                                counters};
   socket.startReceiving(
       []([[maybe_unused]] const Endpoint& sender,
          [[maybe_unused]] std::span<const std::byte> payload) {});
 
-  real.receive(peerOnPort(PEER_PORT),
+  real.receive(loopbackOnPort(PEER_PORT),
                datagramHolding(MessageType::Heartbeat, SMALL_PAYLOAD));
   context.run();
 

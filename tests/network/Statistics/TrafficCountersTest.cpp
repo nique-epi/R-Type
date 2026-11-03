@@ -26,7 +26,7 @@ using rtype::network::TrafficFigures;
 using rtype::network::TrafficReport;
 using rtype::network::testing::datagramHolding;
 using rtype::network::testing::figuresOf;
-using rtype::network::testing::peerOnPort;
+using rtype::network::testing::loopbackOnPort;
 using rtype::network::testing::withMessage;
 
 /**
@@ -37,7 +37,7 @@ using rtype::network::testing::withMessage;
 TEST(TrafficCounters, CountsASentDatagramWithAllItsBytes) {
   TrafficCounters counters;
 
-  counters.countSent(peerOnPort(PEER_PORT),
+  counters.countSent(loopbackOnPort(PEER_PORT),
                      datagramHolding(MessageType::WorldState, LARGE_PAYLOAD));
 
   EXPECT_EQ(
@@ -58,7 +58,7 @@ TEST(TrafficCounters, CountsEachMessageUnderItsTypeWithoutTheHeader) {
       withMessage(datagramHolding(MessageType::WorldState, LARGE_PAYLOAD),
                   MessageType::GameEvent, SMALL_PAYLOAD);
 
-  counters.countSent(peerOnPort(PEER_PORT), datagram);
+  counters.countSent(loopbackOnPort(PEER_PORT), datagram);
 
   const DirectionTraffic sent = counters.report().others.sent;
   EXPECT_EQ(sent.datagrams.count, 1U);
@@ -84,7 +84,7 @@ TEST(TrafficCounters, ADatagramTooShortForAMessageIsUnreadable) {
     SCOPED_TRACE(size);
     TrafficCounters counters;
 
-    counters.countReceived(peerOnPort(PEER_PORT),
+    counters.countReceived(loopbackOnPort(PEER_PORT),
                            std::span<const std::byte>{whole}.first(size));
 
     const DirectionTraffic received = counters.report().others.received;
@@ -104,7 +104,7 @@ TEST(TrafficCounters, ADatagramOfAnotherVersionIsUnreadable) {
   header.version = static_cast<std::uint8_t>(PROTOCOL_VERSION + 1);
 
   counters.countReceived(
-      peerOnPort(PEER_PORT),
+      loopbackOnPort(PEER_PORT),
       DatagramCodec::encode(header, MessageType::WorldState,
                             std::vector<std::byte>(LARGE_PAYLOAD)));
 
@@ -125,7 +125,7 @@ TEST(TrafficCounters, ASizeRunningPastTheEndCountsNoMessageAtAll) {
                   MessageType::GameEvent, SMALL_PAYLOAD);
   datagram.pop_back();
 
-  counters.countReceived(peerOnPort(PEER_PORT), datagram);
+  counters.countReceived(loopbackOnPort(PEER_PORT), datagram);
 
   const DirectionTraffic received = counters.report().others.received;
   EXPECT_EQ(received.unreadable.count, 1U);
@@ -141,15 +141,15 @@ TEST(TrafficCounters, AFollowedPeerHasARowOfItsOwn) {
   TrafficCounters counters;
   const std::vector<std::byte> datagram =
       datagramHolding(MessageType::Heartbeat, SMALL_PAYLOAD);
-  counters.follow(peerOnPort(PEER_PORT));
+  counters.follow(loopbackOnPort(PEER_PORT));
 
-  counters.countSent(peerOnPort(PEER_PORT), datagram);
-  counters.countReceived(peerOnPort(PEER_PORT), datagram);
-  counters.countReceived(peerOnPort(OTHER_PORT), datagram);
+  counters.countSent(loopbackOnPort(PEER_PORT), datagram);
+  counters.countReceived(loopbackOnPort(PEER_PORT), datagram);
+  counters.countReceived(loopbackOnPort(OTHER_PORT), datagram);
 
   const TrafficReport report = counters.report();
   ASSERT_EQ(report.peers.size(), 1U);
-  EXPECT_EQ(report.peers.front().peer, peerOnPort(PEER_PORT));
+  EXPECT_EQ(report.peers.front().peer, loopbackOnPort(PEER_PORT));
   EXPECT_EQ(report.peers.front().traffic.sent.datagrams.count, 1U);
   EXPECT_EQ(report.peers.front().traffic.received.datagrams.count, 1U);
   EXPECT_EQ(report.others.sent.datagrams.count, 0U);
@@ -163,12 +163,12 @@ TEST(TrafficCounters, AFollowedPeerHasARowOfItsOwn) {
  */
 TEST(TrafficCounters, FollowingAPeerAgainKeepsItsRow) {
   TrafficCounters counters;
-  counters.follow(peerOnPort(PEER_PORT));
+  counters.follow(loopbackOnPort(PEER_PORT));
   counters.countReceived(
-      peerOnPort(PEER_PORT),
+      loopbackOnPort(PEER_PORT),
       datagramHolding(MessageType::Heartbeat, SMALL_PAYLOAD));
 
-  counters.follow(peerOnPort(PEER_PORT));
+  counters.follow(loopbackOnPort(PEER_PORT));
 
   const TrafficReport report = counters.report();
   ASSERT_EQ(report.peers.size(), 1U);
@@ -185,13 +185,13 @@ TEST(TrafficCounters, UnfollowingMovesARowToTheDepartedAndLeavesTheTotals) {
   TrafficCounters counters;
   const std::vector<std::byte> datagram =
       datagramHolding(MessageType::WorldState, LARGE_PAYLOAD);
-  counters.follow(peerOnPort(PEER_PORT));
-  counters.countSent(peerOnPort(PEER_PORT), datagram);
-  counters.countReceived(peerOnPort(PEER_PORT), datagram);
+  counters.follow(loopbackOnPort(PEER_PORT));
+  counters.countSent(loopbackOnPort(PEER_PORT), datagram);
+  counters.countReceived(loopbackOnPort(PEER_PORT), datagram);
   const rtype::network::TrafficTotals before =
       trafficTotalsOf(counters.report());
 
-  counters.unfollow(peerOnPort(PEER_PORT));
+  counters.unfollow(loopbackOnPort(PEER_PORT));
 
   const TrafficReport report = counters.report();
   EXPECT_TRUE(report.peers.empty());
@@ -210,7 +210,7 @@ TEST(TrafficCounters, UnfollowingMovesARowToTheDepartedAndLeavesTheTotals) {
 TEST(TrafficCounters, UnfollowingAStrangerChangesNothing) {
   TrafficCounters counters;
 
-  counters.unfollow(peerOnPort(PEER_PORT));
+  counters.unfollow(loopbackOnPort(PEER_PORT));
 
   const TrafficReport report = counters.report();
   EXPECT_TRUE(report.peers.empty());
@@ -228,7 +228,7 @@ TEST(TrafficCounters, AFloodOfStrangersAddsNoRow) {
       datagramHolding(MessageType::Heartbeat, SMALL_PAYLOAD);
 
   for (std::uint16_t port = 1; port <= FLOOD_SENDERS; ++port) {
-    counters.countReceived(peerOnPort(port), datagram);
+    counters.countReceived(loopbackOnPort(port), datagram);
   }
 
   const TrafficReport report = counters.report();
@@ -248,7 +248,7 @@ TEST(TrafficCounters, AReportReadWhileCountingHoldsWholeDatagrams) {
       datagramHolding(MessageType::WorldState, LARGE_PAYLOAD);
   const std::jthread writer{[&counters, &datagram] {
     for (std::size_t sent = 0; sent < DATAGRAMS_WHILE_READING; ++sent) {
-      counters.countSent(peerOnPort(PEER_PORT), datagram);
+      counters.countSent(loopbackOnPort(PEER_PORT), datagram);
     }
   }};
 

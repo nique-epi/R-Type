@@ -86,9 +86,3 @@ constexpr std::string_view SEVENTEEN_BYTE_NICKNAME = "ABCDEFGHIJKLMNOPQ";
  */
 constexpr std::string_view DEFAULT_NICKNAME_LINE =
     "Callsign of the player, 1 to 16 bytes of UTF-8. Default: PILOT.";
-
-/**
- * @brief Files given after `--traffic-csv`.
- */
-constexpr std::string_view FIRST_TRAFFIC_FILE_ARGUMENT = "first.csv";
-constexpr std::string_view TRAFFIC_FILE_ARGUMENT = "traffic.csv";

@@ -6,7 +6,6 @@
 #include <span>
 #include <sstream>
 #include <string>
-#include <utility>
 #include <vector>
 #include "DatagramCodec.hpp"
 #include "DirectionTraffic.hpp"
@@ -14,8 +13,8 @@
 #include "MessageType.hpp"
 #include "NetworkConstants.hpp"
 #include "PacketHeader.hpp"
+#include "ProtocolConstants.hpp"
 #include "TrafficFigures.hpp"
-#include "TrafficTestConstants.hpp"
 
 namespace rtype::network::testing {
 
@@ -29,12 +28,12 @@ std::vector<std::byte> withMessage(std::vector<std::byte> datagram,
                                    MessageType type, std::size_t payloadSize) {
   const std::vector<std::byte> other = datagramHolding(type, payloadSize);
   const std::span<const std::byte> message =
-      std::span<const std::byte>{other}.subspan(HEADER_BYTES);
+      std::span<const std::byte>{other}.subspan(PACKET_HEADER_SIZE);
   datagram.insert(datagram.end(), message.begin(), message.end());
   return datagram;
 }
 
-Endpoint peerOnPort(std::uint16_t port) {
+Endpoint loopbackOnPort(std::uint16_t port) {
   return Endpoint{.address = std::string{LOOPBACK_IPV4_ADDRESS}, .port = port};
 }
 
