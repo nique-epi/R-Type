@@ -215,7 +215,7 @@ The server reads `server.cfg`, in the folder it is started from, between the ins
 
 | Command | Effect |
 |---|---|
-| `module <name> on\|off` | Turns a module of the table below on or off. A module that is off is installed and never started, and its work never runs. Refused when a module that stays on depends on it (`games` needs `network` and `storage`, `lobby` and `metrics` need `games`, all need `logger`). |
+| `module <name> on\|off` | Turns a module of the table below on or off. A module that is off is installed and never started, and its work never runs. Refused when a module that stays on depends on it (`storage` needs `network`, `games` needs `network` and `storage`, `lobby` and `metrics` need `games`, all need `logger`). |
 | `set port <port>` | The UDP port, from 1 to 65535. Default: 4242. |
 | `set seed <seed>` or `set seed none` | The seed of the first game, a whole number from 0 to 4294967295; `none` draws one. Default: `none`. |
 | `set state-rate <states>` | The world states sent to each player per second, from 2 to 60. Default: 20. |
@@ -901,7 +901,7 @@ The view `player_statistics` adds up the rows of each player, every difficulty t
 
 - Results and requests have a queue each, `WAITING_RESULTS_CAPACITY` and `WAITING_ASKS_CAPACITY` (64 each), so a flood of requests never pushes a result out. A full queue discards its oldest message, and the journal reports a result lost that way. These sizes and the interval are **provisional**: code must read the constants.
 - An error on one result or one request is logged under `Storage`, and the next one is handled: a full disk costs results, not games.
-- `ServerStorageModule` (`src/server/Storage/`) is listed after the network module, whose port names the default file, and before the games module, so it starts before the games and stops after them. Stopping finishes what waits: a game over when the server stops is still saved.
+- `ServerStorageModule` (`src/server/Storage/`) depends on the network module, whose port names the default file, so the server refuses a list of modules without it; it is listed before the games module, so it starts before the games and stops after them. Stopping finishes what waits: a game over when the server stops is still saved.
 
 A read ranks the whole leaderboard. Measured on one Mac in a Release build, with SQLite 3.53.4, it takes 1.5 ms at 1,000 rows of one leaderboard, 14.5 ms at 10,000 and 112 ms at 100,000, on the storage thread only; saving a game of four takes about 0.05 ms there, without the flush to the disk macOS only does on request. Past about 10,000 rows, players asking as fast as they may can outrun the thread: answers wait, the oldest requests are discarded and their clients ask again, and neither a game nor a result is affected. A table of the best score per player, written in the transaction of the rows, is the way out if a server ever gets there. Linux and Windows are not measured.
 

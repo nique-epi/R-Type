@@ -3,8 +3,8 @@
 #include <cstdint>
 #include <string_view>
 
-/** @brief The file of the database when no module gives a port: the file of
- * the default port, 4242. */
+/** @brief The file of the default port, 4242, which a storage module given
+ * another port must not open. */
 constexpr std::string_view DEFAULT_PORT_DATABASE_FILE = "r-type_server_4242.db";
 
 /** @brief A port the double of the network gives, and the file it names. */

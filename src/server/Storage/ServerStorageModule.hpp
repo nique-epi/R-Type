@@ -19,12 +19,13 @@ namespace rtype::server {
  *
  * install() declares the `database` setting. While it is empty, the file is
  * `r-type_server_<port>.db` in the default folder, the port being the one the
- * IListeningPort of the network module gives, or DEFAULT_SERVER_PORT when no
- * module provides one; so two servers on one machine never share a file.
+ * IListeningPort of the network module gives; so two servers on one machine
+ * never share a file.
  *
- * It is listed after the network module, which it reads the port of, and
- * before the games module, so it stops after it: no game hands it anything
- * once it stops, and every game is still there when its thread ends.
+ * It depends on the network module, which it reads the port of, so the
+ * application refuses a list without it; it is listed before the games module,
+ * so it stops after it: no game hands it anything once it stops, and every game
+ * is still there when its thread ends.
  */
 class ServerStorageModule final : public engine::IModule {
  public:
@@ -36,7 +37,7 @@ class ServerStorageModule final : public engine::IModule {
   [[nodiscard]] std::vector<std::string> dependencies() const override;
 
   /**
-   * @brief Declares the `database` setting, finds the IListeningPort and
+   * @brief Declares the `database` setting, requires the IListeningPort and
    * provides the IResultsArchive; opens nothing.
    */
   void install(engine::InstallContext& context) override;

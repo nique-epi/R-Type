@@ -1,5 +1,4 @@
 #include "ServerStorageModule.hpp"
-#include <cstdint>
 #include <filesystem>
 #include <string>
 #include <utility>
@@ -9,7 +8,6 @@
 #include "IResultsArchive.hpp"
 #include "InstallContext.hpp"
 #include "ModuleConstants.hpp"
-#include "NetworkConstants.hpp"
 #include "PathText.hpp"
 #include "ResultsArchiveConstants.hpp"
 #include "ServerConstants.hpp"
@@ -26,7 +24,7 @@ std::string ServerStorageModule::name() const {
 }
 
 std::vector<std::string> ServerStorageModule::dependencies() const {
-  return {std::string{LOGGER_MODULE_NAME}};
+  return {std::string{LOGGER_MODULE_NAME}, std::string{NETWORK_MODULE_NAME}};
 }
 
 void ServerStorageModule::install(engine::InstallContext& context) {
@@ -39,7 +37,7 @@ void ServerStorageModule::install(engine::InstallContext& context) {
                       "in; empty for the file of its port next to the "
                       "executable",
               .validate = {}});
-  listeningPort_ = context.find<IListeningPort>();
+  listeningPort_ = &context.require<IListeningPort>();
   context.provide<IResultsArchive>(archive_);
 }
 
@@ -55,12 +53,9 @@ std::filesystem::path ServerStorageModule::databaseFile() const {
   if (!databaseSetting_->text().empty()) {
     return std::filesystem::path{databaseSetting_->text()};
   }
-  const std::uint16_t port = listeningPort_ != nullptr
-                                 ? listeningPort_->listeningPort()
-                                 : network::DEFAULT_SERVER_PORT;
-  return defaultFolder_ /
-         (std::string{DATABASE_FILE_PREFIX} + std::to_string(port) +
-          std::string{DATABASE_FILE_SUFFIX});
+  return defaultFolder_ / (std::string{DATABASE_FILE_PREFIX} +
+                           std::to_string(listeningPort_->listeningPort()) +
+                           std::string{DATABASE_FILE_SUFFIX});
 }
 
 }  // namespace rtype::server

@@ -12,7 +12,7 @@
 #include "TemporaryFolder.hpp"
 
 /** @brief The storage module on an empty folder, after the logger and, when a
- * test gives one, a double of the network that gives a port. */
+ * test gives a port, a double of the network that gives it. */
 class ServerStorageModuleFixture : public ServerModuleFixture {
  protected:
   /**

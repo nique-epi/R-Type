@@ -6,21 +6,19 @@
 #include "ServerStorageModuleFixture.hpp"
 #include "ServerStorageModuleTestConstants.hpp"
 
+using rtype::engine::MissingDependencyException;
 using rtype::engine::ModuleStartFailedException;
 
 /**
- * Given no module that gives a port, and the `database` setting left empty
- * When the storage module starts, then stops
- * Then it kept its results in the file of the default port, in its folder
+ * Given the storage module with no network module listed before it
+ * When the application is built
+ * Then it is refused: the file is named after the port of the network module,
+ * which nothing would give
  */
 TEST_F(ServerStorageModuleFixture,
-       TheStorageModuleUsesTheFileOfTheDefaultPortWithoutAPortGiven) {
-  const auto application = storageApplication(std::nullopt, {});
-
-  application->start();
-  application->stop();
-
-  EXPECT_TRUE(std::filesystem::exists(folder() / DEFAULT_PORT_DATABASE_FILE));
+       TheStorageModuleNeedsTheNetworkModuleBeforeIt) {
+  EXPECT_THROW((void)storageApplication(std::nullopt, {}),
+               MissingDependencyException);
 }
 
 /**
@@ -66,7 +64,7 @@ TEST_F(ServerStorageModuleFixture,
 TEST_F(ServerStorageModuleFixture,
        TheStorageModuleStopsTheStartWhenItCannotOpenItsFile) {
   const auto application = storageApplication(
-      std::nullopt,
+      LISTENING_PORT,
       {databaseLine(folder() / MISSING_FOLDER / TEST_DATABASE_FILE)});
 
   EXPECT_THROW(application->start(), ModuleStartFailedException);

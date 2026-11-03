@@ -22,6 +22,6 @@ set input-delay 3
 set database ""
 
 # Turn a module off (it is installed, never started, and runs no work). Refused when a module
-# that stays on depends on it: games needs network and storage, lobby and
-# metrics need games, all need logger.
+# that stays on depends on it: storage needs network, games needs network and
+# storage, lobby and metrics need games, all need logger.
 # module lobby off
