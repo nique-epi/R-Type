@@ -75,16 +75,15 @@ Client modules:
 | Module | Needs |
 |---|---|
 | `logger` | nothing |
-| `screen-registry` | nothing |
 | `assets` | `logger` |
 | `connection` | `logger` |
 | `settings` | `logger` |
 | `window` | `settings` |
 | `audio` | `assets`, `settings` |
-| `menus`, `lobby`, `game` | `screen-registry` |
-| `screens` | `assets`, `settings`, `audio`, `window`, `connection`, `screen-registry`, `menus`, `lobby`, `game` |
+| `screens` | `assets`, `settings`, `audio`, `window`, `connection` |
+| `menus`, `lobby`, `game` | `screens` |
 
-Turning off a module the program cannot run without is accepted when nothing that stays on needs it, and the program then does less. For example, `module lobby off` on the server leaves a server that accepts nobody. On the client, almost every module is needed by `screens`, so turning one off is refused unless `screens` goes off first.
+Turning off a module the program cannot run without is accepted when nothing that stays on needs it, and the program then does less. For example, `module lobby off` on the server leaves a server that accepts nobody. On the client, `menus`, `lobby` and `game` need `screens`, and `screens` needs five modules, so turning one of those off is refused until the modules that need it are off first.
 
 ## What happens to a bad line
 

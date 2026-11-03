@@ -78,7 +78,7 @@ std::string ClientGameModule::name() const {
 }
 
 std::vector<std::string> ClientGameModule::dependencies() const {
-  return {std::string{SCREEN_REGISTRY_MODULE_NAME}};
+  return {std::string{SCREENS_MODULE_NAME}};
 }
 
 void ClientGameModule::install(engine::InstallContext& context) {
