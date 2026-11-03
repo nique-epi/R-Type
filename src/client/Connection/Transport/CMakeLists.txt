@@ -12,6 +12,7 @@ target_link_libraries(rtype_client_transport
     rtype_network_context
     rtype_network_datagram_relay
     rtype_network_simulator
+    rtype_network_statistics
     rtype_network_transport
 )
 

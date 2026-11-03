@@ -22,7 +22,8 @@ namespace rtype::client {
  * NetworkThread, a DatagramRouter in front of it, and the four parts the
  * screens and the game use, which it provides to the modules installed after
  * it: the ServerSession (the attempt and the session), the WaitingRoom, the
- * EntityMessageQueue and the ServerLeaderboard.
+ * EntityMessageQueue and the ServerLeaderboard. It also provides the
+ * network::TrafficCounters of the socket.
  *
  * install() provides the four parts, over a socket still closed, and adds to
  * NETWORK_STAGE the work that reads what the server sent and sends what is

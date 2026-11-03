@@ -1,10 +1,12 @@
 #include <gtest/gtest.h>
+#include "Endpoint.hpp"
 #include "ListenOnFixtures.hpp"
 #include "NetworkConstants.hpp"
 #include "ServerApplication.hpp"
 #include "ServerException.hpp"
 
 using rtype::network::ANY_PORT;
+using rtype::network::Endpoint;
 using rtype::server::ServerAlreadyOpenException;
 using rtype::server::ServerApplication;
 
@@ -17,9 +19,9 @@ TEST(ServerApplicationListenOn, OpenBindsTheEndpointGivenToListenOn) {
   ServerApplication server{unusableEndpoint(), ignoringTicks()};
 
   server.listenOn(loopbackEndpoint(ANY_PORT));
-  server.open();
+  const Endpoint bound = server.open();
 
-  EXPECT_EQ(server.localEndpoint().address, loopbackEndpoint(ANY_PORT).address);
+  EXPECT_EQ(bound.address, loopbackEndpoint(ANY_PORT).address);
 }
 
 /**

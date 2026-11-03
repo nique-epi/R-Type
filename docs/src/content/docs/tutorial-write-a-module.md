@@ -219,7 +219,7 @@ add_subdirectory(Modules)
   modules.push_back(std::make_unique<ServerLobbyModule>());
   modules.push_back(std::make_unique<ServerTickReportModule>());
   modules.push_back(std::make_unique<ServerMetricsModule>(
-      std::make_shared<engine::SystemClock>()));
+      std::make_shared<engine::SystemClock>(), launchOptions.trafficCsvFile()));
   return modules;
 ```
 

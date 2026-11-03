@@ -245,4 +245,13 @@ class SimulatedDelayOutOfRangeException : public NetworkException {
                                     std::chrono::milliseconds longest);
 };
 
+/**
+ * @brief A file the traffic of a program should go to, and that the system
+ * refuses to open.
+ */
+class TrafficFileOpenException : public NetworkException {
+ public:
+  explicit TrafficFileOpenException(const std::string& path);
+};
+
 }  // namespace rtype::network

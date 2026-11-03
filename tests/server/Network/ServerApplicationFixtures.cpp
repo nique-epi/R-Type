@@ -1,10 +1,8 @@
 #include "ServerApplicationFixtures.hpp"
-#include <algorithm>
 #include <atomic>
 #include <cstddef>
 #include <functional>
 #include <future>
-#include <span>
 #include <thread>
 #include <vector>
 #include "Endpoint.hpp"
@@ -17,42 +15,40 @@
 #include "ServerTestConstants.hpp"
 #include "UdpSocket.hpp"
 
+using rtype::network::ANY_PORT;
+using rtype::network::Endpoint;
+using rtype::network::IncomingDatagram;
+using rtype::server::ServerApplication;
+
 namespace {
 
-/** @returns Whether one of @p datagrams carries @p payload. */
-bool holdsPayload(std::span<const rtype::network::IncomingDatagram> datagrams,
-                  const std::vector<std::byte>& payload) {
-  return std::ranges::any_of(
-      datagrams, [&payload](const rtype::network::IncomingDatagram& datagram) {
-        return datagram.payload == payload;
-      });
-}
-
-/** @brief What the ticks of a server saw: the first connection request, and
- * a ReadyState among any of the datagrams. */
-struct TickSightings {
+/** @brief What the ticks of a server saw, as readyStateWatcher() notes it. */
+struct ReadyStateWatch {
   std::promise<void> requestArrived;
-  std::atomic<bool> requestSeen{false};
+  std::atomic<bool> delivered{false};
   std::atomic<bool> readyStateSeen{false};
 };
 
 /**
- * @returns A tick handler that writes into @p sightings what reaches it:
- * @p readyState among the datagrams of the players or the requests, and the
- * first connection request. @p sightings and @p readyState must outlive it.
+ * @returns A tick handler that notes in @p watch whether a tick was handed
+ * @p readyState, and fulfils its promise at the first connection request.
+ * Both must outlive the server.
  */
-rtype::server::ServerApplication::TickHandler sightingTicks(
-    TickSightings& sightings, const std::vector<std::byte>& readyState) {
-  return [&sightings, &readyState](
-             const rtype::server::ServerApplication::ReceivedDatagrams&
-                 datagrams) {
-    if (holdsPayload(datagrams.players, readyState) ||
-        holdsPayload(datagrams.connectionRequests, readyState)) {
-      sightings.readyStateSeen = true;
+ServerApplication::TickHandler readyStateWatcher(
+    ReadyStateWatch& watch, const std::vector<std::byte>& readyState) {
+  return [&watch,
+          &readyState](const ServerApplication::ReceivedDatagrams& datagrams) {
+    for (const auto* list :
+         {&datagrams.players, &datagrams.connectionRequests}) {
+      for (const IncomingDatagram& datagram : *list) {
+        if (datagram.payload == readyState) {
+          watch.readyStateSeen = true;
+        }
+      }
     }
     if (!datagrams.connectionRequests.empty() &&
-        !sightings.requestSeen.exchange(true)) {
-      sightings.requestArrived.set_value();
+        !watch.delivered.exchange(true)) {
+      watch.requestArrived.set_value();
     }
   };
 }
@@ -60,26 +56,23 @@ rtype::server::ServerApplication::TickHandler sightingTicks(
 }  // namespace
 
 SortedReadyState sortReadyStateThenRequest(
-    const std::function<void(rtype::server::ServerApplication&,
-                             const rtype::network::Endpoint&)>& prepare,
+    const std::function<void(ServerApplication&, const Endpoint&)>& prepare,
     const std::vector<std::byte>& readyState) {
-  TickSightings sightings;
-  const std::future<void> arrived = sightings.requestArrived.get_future();
-  rtype::server::ServerApplication server{
-      loopbackEndpoint(rtype::network::ANY_PORT),
-      sightingTicks(sightings, readyState)};
+  ReadyStateWatch watch;
+  const std::future<void> arrived = watch.requestArrived.get_future();
+  ServerApplication server{loopbackEndpoint(ANY_PORT),
+                           readyStateWatcher(watch, readyState)};
   rtype::network::NetworkContext clientContext;
-  rtype::network::UdpSocket client{clientContext,
-                                   loopbackEndpoint(rtype::network::ANY_PORT)};
-  server.open();
+  rtype::network::UdpSocket client{clientContext, loopbackEndpoint(ANY_PORT)};
+  const Endpoint bound = server.open();
   prepare(server, loopbackEndpoint(client.localEndpoint().port));
   const std::jthread runner{[&server] { server.run(); }};
-  client.send(loopbackEndpoint(server.localEndpoint().port), readyState);
-  client.send(loopbackEndpoint(server.localEndpoint().port), requestDatagram());
+  client.send(loopbackEndpoint(bound.port), readyState);
+  client.send(loopbackEndpoint(bound.port), requestDatagram());
   clientContext.run();
   const std::future_status status = arrived.wait_for(THREAD_TIMEOUT);
   server.stop();
   return SortedReadyState{
       .requestReachedATick = status == std::future_status::ready,
-      .readyStateReachedATick = sightings.readyStateSeen};
+      .readyStateReachedATick = watch.readyStateSeen};
 }

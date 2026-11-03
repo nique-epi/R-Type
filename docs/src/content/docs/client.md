@@ -46,7 +46,7 @@ Today it finds its assets folder, loads the assets of its interface, opens a win
 | Part | State | Where |
 |---|---|---|
 | Window | Available: windowed, or borderless over the whole screen | `src/client/Window/` |
-| Modules of the client and frame loop | Available: logger, assets, settings, window, connection, sound, screens, menus, lobby and game, over five stages | `src/client/Modules/` lists them; each has a folder of its own (see [Modules and frame loop](#modules-and-frame-loop-clientmodules-frameloop)) |
+| Modules of the client and frame loop | Available: logger, assets, settings, window, connection, metrics, sound, screens, menus, lobby and game, over five stages | `src/client/Modules/` lists them; each has a folder of its own (see [Modules and frame loop](#modules-and-frame-loop-clientmodules-frameloop)) |
 | Screen stack | Available | `src/client/Application/` |
 | Screens | Available: intro, title, connection, waiting room, loading, game, end, options, leaderboard, and the dialogs of the quit confirmation and of a lost connection | `src/client/Screens/`, `src/client/Menus/`, `src/client/Lobby/`, `src/client/Game/` |
 | Lost connection: a dialog over the title | Available: shown once a session is lost or closed | `src/client/Menus/Title/`, `src/client/Screens/`, `src/client/Connection/Handshake/` |
@@ -80,7 +80,7 @@ Today it finds its assets folder, loads the assets of its interface, opens a win
 | Removing an entity no world state has listed for 900 ms (54 ticks), once a part of a newer tick closes the tick that left it out | Available; used by `EntityReplicator` | `src/client/Replication/Entities/` |
 | Status band of the game: nickname, lives and score of each pilot | Available; a `PlayerLeft` marks its pilot `LEFT` or `SIGNAL LOST` | `src/client/Widgets/StatusBand/`, `src/client/Replication/Pilots/`, `assets/sprites/hud.png` |
 | Notices of a game: a teammate gone, a silent server | Available; shown by the game screen | `src/client/Widgets/DepartureFeed/`, `src/client/Widgets/SilenceWarning/`, `assets/sprites/hud.png` |
-| Server address, port and nickname at launch, `--no-sound`, and the options of the network simulator | Available; the first three fill the first connection screen, the later ones show the last attempt; `--no-sound` starts the client without sound, and the simulator options make its datagrams cross a simulated network (see [Network](/R-Type/network/#network-simulator-simulatednetworksocket)) | `src/client/LaunchOptions/` |
+| Server address, port and nickname at launch, `--no-sound`, `--traffic-csv` and the options of the network simulator | Available; the first three fill the first connection screen, the later ones show the last attempt; `--no-sound` starts the client without sound, `--traffic-csv` writes its traffic to a file, and the simulator options make its datagrams cross a simulated network (see [Network](/R-Type/network/#network-simulator-simulatednetworksocket)) | `src/client/LaunchOptions/` |
 | Joining a server | Available: request, challenge, acceptance or refusal, then the waiting room, the ready state, the start of the game, the entity messages and the game events of the game, its end, leaving, and the end of a session the server lets go silent or closes | `src/client/Connection/`, `src/client/Replication/EntityMessages/` |
 | Sounds and music | Available: the theme in a loop from the end of the black second of the intro, the music of a game a second after a game starts, the sounds of the intro and of the messages of the server, the click of the menus, at most 16 at once | `src/client/Audio/`, `assets/sounds/kenney/`, `assets/music/` |
 
@@ -94,7 +94,8 @@ Today it finds its assets folder, loads the assets of its interface, opens a win
 | `assets` | finds the assets folder when it installs and provides the `AssetLibrary`; loads the assets of the interface and of the intro when it starts | `src/client/Assets/` |
 | `settings` | provides the `PlayerSettings` and the `SettingsService`; reads the settings file when it starts and hands what it read to the service | `src/client/Settings/` |
 | `window` | provides the `GameWindow`, the `EventListeners` and the `FrameLoop`; opens the window at the saved size when it starts, closes it when it stops | `src/client/Window/` |
-| `connection` | provides the `ServerSession`, the `WaitingRoom` and the `EntityMessageQueue`; opens the socket and its network thread when it starts; leaves the server, then closes the socket, when it stops | `src/client/Connection/` |
+| `connection` | provides the `ServerSession`, the `WaitingRoom`, the `EntityMessageQueue` and the `network::TrafficCounters` of the socket; opens the socket and its network thread when it starts; leaves the server, then closes the socket, when it stops | `src/client/Connection/` |
+| `metrics` | writes the traffic of the socket to the journal and, with `--traffic-csv`, to a file (see [Network](/R-Type/network/#traffic-counters-trafficcounters)); opens the file when it starts, closes it when it stops | `src/client/Metrics/` |
 | `audio` | provides the `IAudioService`: the sounds, the theme and the music of a game, or a service that plays nothing with `--no-sound`; opens the music files when it starts | `src/client/Audio/` |
 | `screens` | provides the `ScreenRegistry`; the screens and what they share (`ClientScreens`), built when it starts, on the intro or on the title | `src/client/Screens/` |
 | `menus` | adds the intro, the title, the options, the quit confirmation, the connection screen and the dialog of a lost connection to the `ScreenRegistry` when it installs (see [Screens](#screens-screenstack-screenregistry)); opens nothing | `src/client/Menus/` |
@@ -106,7 +107,7 @@ Today it finds its assets folder, loads the assets of its interface, opens a win
 | Stage | Work, in the order of the list of modules |
 |---|---|
 | `events` | the window hands each of its events to the listeners |
-| `network` | the connection reads what the server sent and sends what is due |
+| `network` | the connection reads what the server sent and sends what is due, then the metrics write the traffic when it is due |
 | `update` | the silence before the music of a game moves on, then the sky and every screen are updated; once no screen is left, the loop stops |
 | `render` | the window is cleared, then the sky and the screens are drawn |
 | `display` | the window shows the frame |
@@ -809,6 +810,7 @@ A missing file is not an error and a refused line does not stop the client; the 
 | `-p <port>` | The UDP port of the server, from 1 to 65535. Default: `DEFAULT_SERVER_PORT` (4242). |
 | `-n <nickname>` | The nickname of the player, 1 to 16 bytes of UTF-8 without a control character (`MAXIMUM_NICKNAME_SIZE`, see [Protocol](/R-Type/protocol/#connection)). Default: `DEFAULT_NICKNAME` (`PILOT`). The connection screen leaves out the characters its field refuses. |
 | `--set <name>=<value>` | Gives a setting a value, as the line `set <name> <value>` of `client.cfg` does (see [Configuration](#configuration-clientcfg)). Can be given several times. |
+| `--traffic-csv <file>` | The file the traffic of the client goes to every second (see [Network](/R-Type/network/#traffic-counters-trafficcounters)). Default: no file. |
 | `--help` | Prints the usage, the logging options included, on standard output, then exits with code 0 without opening the window or the journal. |
 
 - `-h`, `-p` and `-n` also force the settings `server-address`, `server-port` and `nickname`, so they win over `client.cfg`.

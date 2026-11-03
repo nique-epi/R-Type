@@ -23,5 +23,5 @@ set database ""
 
 # Turn a module off (it is installed, never started, and runs no work). Refused when a module
 # that stays on depends on it: storage needs network, games needs network and
-# storage, lobby and metrics need games, all need logger.
+# storage, lobby needs games, metrics needs games and network, all need logger.
 # module lobby off

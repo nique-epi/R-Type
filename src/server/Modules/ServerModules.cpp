@@ -37,7 +37,7 @@ std::vector<std::unique_ptr<engine::IModule>> serverModules(
       .wavesFile = engine::locateAssetFolder() / WAVE_FILE_IN_ASSETS}));
   modules.push_back(std::make_unique<ServerLobbyModule>());
   modules.push_back(std::make_unique<ServerMetricsModule>(
-      std::make_shared<engine::SystemClock>()));
+      std::make_shared<engine::SystemClock>(), launchOptions.trafficCsvFile()));
   return modules;
 }
 

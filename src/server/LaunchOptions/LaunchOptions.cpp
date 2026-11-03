@@ -2,6 +2,7 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include <filesystem>
 #include <functional>
 #include <optional>
 #include <span>
@@ -224,6 +225,8 @@ std::string generalOptionEntries() {
           std::string(STATE_RATE_SETTING_NAME) + ", " +
           std::string(INPUT_DELAY_SETTING_NAME) + ", " +
           std::string(DATABASE_SETTING_NAME) + ".");
+  text += engine::usageEntry(network::TRAFFIC_CSV_OPTION_WITH_VALUE,
+                             network::TRAFFIC_CSV_USAGE);
   text += engine::usageEntry(engine::HELP_OPTION,
                              "Print this help and start nothing.");
   return text;
@@ -232,12 +235,18 @@ std::string generalOptionEntries() {
 }  // namespace
 
 LaunchOptions LaunchOptions::read(std::span<const std::string_view> arguments) {
-  LaunchOptions options{
-      LaunchValues{.forcedLines = {}, .helpRequested = false}};
+  LaunchOptions options{LaunchValues{.forcedLines = {},
+                                     .trafficCsvFile = std::nullopt,
+                                     .helpRequested = false}};
   const std::array launchOptions{
-      portOption(options.values_),      seedOption(options.values_),
-      stateRateOption(options.values_), inputDelayOption(options.values_),
-      databaseOption(options.values_),  setOption(options.values_),
+      portOption(options.values_),
+      seedOption(options.values_),
+      stateRateOption(options.values_),
+      inputDelayOption(options.values_),
+      databaseOption(options.values_),
+      setOption(options.values_),
+      engine::pathOption(network::TRAFFIC_CSV_OPTION,
+                         options.values_.trafficCsvFile),
       helpOption(options.values_)};
   const std::array<engine::LaunchOptionReader, 2> readers{
       std::bind_front(&network::SimulatorLaunchOptions::readOption,
@@ -272,6 +281,11 @@ const network::NetworkConditions& LaunchOptions::networkConditions() const {
 
 const logging::LogLaunchOptions& LaunchOptions::logOptions() const {
   return logOptions_;
+}
+
+const std::optional<std::filesystem::path>& LaunchOptions::trafficCsvFile()
+    const {
+  return values_.trafficCsvFile;
 }
 
 LaunchOptions::LaunchOptions(LaunchValues values)
