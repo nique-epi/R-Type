@@ -33,14 +33,14 @@ Why: the subject (page 16) makes an engine modular through what a developer choo
 ### Inside a folder
 
 6. **A folder has one `CMakeLists.txt` declaring one target** named `rtype_<owner>_<folder in snake_case>`, ended by `_module` for a module (`rtype_server_metrics_module`). It lists the `.cpp` of every class of the folder and exposes the folder (`fix-architecture-one-cmakelists-per-folder.md`).
-7. **Inside a folder, everything is a file of that folder, never a folder of its own**: a concrete class, an abstract class, free functions, an exception, an interface, a plain struct, a constants header. One class per `.hpp`/`.cpp` pair, named after it (`code-style-file-named-after-its-class.md`); a helper class a class needs is a pair of the same folder, never a type nested in it (`fix-architecture-no-type-nested-in-a-class.md`).
-8. **A folder holds at most 10 `.cpp` files**, the per-platform files of one class (`BorderlessScreenLinux.cpp`, `…MacOs.cpp`, `…Windows.cpp`, or a `Windows.cpp` and a `Posix.cpp`) counting as one.
+7. **Inside a folder, everything is a file of that folder or of the sub-folder of its category (point 8), never a folder of its own**: a concrete class, an abstract class, free functions, an exception, an interface, a plain struct, a constants header. One class per `.hpp`/`.cpp` pair, named after it (`code-style-file-named-after-its-class.md`); a helper class a class needs is a pair of the same folder, never a type nested in it (`fix-architecture-no-type-nested-in-a-class.md`).
+8. **A folder whose classes fall into categories has a sub-folder for each.** A category is a group of at least three classes that change for the same reason and that a reader names in a few words: in `src/engine/Commands/`, the interpreter (the table of commands and the cutting of a line), the settings (the declared settings and `set`) and the configuration (reading `server.cfg` and `client.cfg`). The per-platform files of one class (`BorderlessScreenLinux.cpp`, `…MacOs.cpp`, `…Windows.cpp`) count as one class. What serves the whole folder stays at its root: the module class, the constants header and the interfaces several categories use. A folder with fewer than two categories stays flat, whatever it holds: there is no count of files to reach, the name of the category tells the reader where to look.
 9. **A sub-folder exists only in three cases**, with a `CMakeLists.txt` and a target of its own:
-   - the folder would pass 10 `.cpp`;
+   - it is a category (point 8);
    - a group of classes needs a dependency the rest must not link (a file parser, a platform API);
    - it is the `Contract/` of an optional module.
 
-   Never one per class, and never deeper than two levels. The parent links the sub-folder and never the other way round.
+   Never one per class, and never deeper than two levels: a sub-folder has no sub-folder of its own. The parent links the sub-folder and never the other way round.
 10. **Two classes of a folder never include each other**, directly or through a third, since the build no longer stops them: when both need the same thing, it moves to an interface or a plain struct they both include.
 11. **Tests mirror the folder** (`tests/server/Spawning/`), one test file per class; a test double stays in `tests/doubles/`.
 
@@ -50,10 +50,12 @@ Why: the subject (page 16) makes an engine modular through what a developer choo
 13. **Two layouts stay tolerated until the client and the server are tidied**; those two changes end the tolerance, except for the class folders of `Widgets/` and `Rendering/`:
     - a module whose class sits in `Modules/<Name>/`, or in `Instances/<Name>Module/` for a game module, with its code in a folder of the feature (`src/client/Audio/`);
     - a folder made of class folders. A folder holds either class folders or flat pairs, never both. A change that adds a class to such a folder either gives it a folder like its siblings, or flattens the folder first in its own `refactor` commit (includes unchanged, targets merged, `CMakeLists.txt` and docs updated, `fix-process-grep-every-page-for-what-the-feature-replaced.md`); the pull request says which. A folder the change does not touch is reported, not reworked.
-14. **The layout holds through this rule, the map and review.** No CI job checks it, and `rtype_forbid_links` gets no check for it. Before the push, count the `.cpp` of each folder the change adds or flattens, against point 8.
+14. **The layout holds through this rule, the map and review.** No CI job checks it, and `rtype_forbid_links` gets no check for it. Before the push, name the categories of each folder the change adds or flattens, and check that every category of three classes or more has its sub-folder (point 8).
 
 ## Example
 
+- ❌ **Before (wrong)**: `src/engine/Commands/` with its 26 files side by side: the command table, the cutting of a line, the settings, the reader of the file and its report, so a reader opens a list of names to find where `set` is.
+- ✅ **After (right)**: `Commands/Interpreter/`, `Commands/Settings/` and `Commands/Configuration/`, three folders of three to four classes each, each with its target; the `Commands/` target only links the three, so no caller changes.
 - ❌ **Before (wrong)**: `src/game/Waves/` called a module because it has a target, and a new tick report written in `src/server/Modules/TickReport/`.
 - ✅ **After (right)**: `src/game/Waves/` is a library, since no class of it implements `IModule`; the tick report is written in `src/server/TickReport/`, with a line in `serverModules()` and a row in the list of modules.
 - ❌ **Before (wrong, tolerated today)**: the class `ClientAudioModule` in `src/client/Modules/Audio/`, its code in `src/client/Audio/`, and `ISoundPlayer.hpp` next to the classes only the module needs, so nothing tells what stays when the sound is removed.
