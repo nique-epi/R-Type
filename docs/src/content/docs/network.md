@@ -21,6 +21,7 @@ This page tells you where to look when you need to change something. It describe
 | Protocol messages, datagram header, dispatch by type | Available | `src/network/Protocol/` |
 | Connection cookies | Available | `src/network/Handshake/` |
 | Traffic counters: datagrams and bytes by peer and by message type, journal and CSV file | Available | `src/network/Statistics/`: `Counting/` and `Recording/` |
+| Round trip and jitter of a session, measured from the heartbeats | Available | `src/network/Statistics/RoundTrip/` |
 | Sessions: admission, session token, sequence, heartbeats, timeouts | Available, written in the server and the client | `src/server/Lobby/`, `src/server/Sessions/`, `src/client/Connection/` |
 | Replication: entities to messages, and back | Available, written in the server and the client | `src/server/Replication/`, `src/client/Replication/` |
 | Rate limit of the requests, reliability, history of states | Not yet written | — |
@@ -54,9 +55,10 @@ Transport carries datagrams and knows nothing of players. Each program runs its 
 
 A session starts when the server accepts a player and ends when the player leaves or stays silent too long. Every datagram of a session carries the session token of the player and the next sequence of its sender, so each side drops a forged datagram, which lacks the token, and a late copy, which is not newer than the newest datagram it read (see [Protocol](/R-Type/protocol/#a-session)).
 
-- On the server, `ConnectionAcceptor` (`src/server/Lobby/`) answers the connection requests and gives a place only to a sender that sends back its cookie (`CookieIssuer`, below). `DatagramSorter` checks the token on the network thread, before any queue. The `GameSessions` of each game (`src/server/Sessions/`) checks the sequence, keeps the ready state and the newest input of each player, sends the heartbeats and closes the session of a player it hears nothing from (see [Server](/R-Type/server/#sessions-of-a-game-gamesessions)); `SessionDatagram` gives every datagram to a player its header.
-- On the client, `ServerSession` (`src/client/Connection/`) holds the one session with the server it joined: it sends the request, answers the challenge, checks the token and the sequence, sends the heartbeats, and takes the server for lost after `SESSION_SILENCE_LIMIT` (20 s) without a datagram (see [Client](/R-Type/client/#joining-a-server-serversession-waitingroom-entitymessagequeue)).
-- Both programs read the same delays, `HEARTBEAT_INTERVAL` (1 s), `SESSION_TIMEOUT` (5 s) and `RECONNECTION_GRACE` (15 s), in `src/network/Protocol/ProtocolConstants.hpp`. They are **provisional**, like every delay of the protocol: code must read them.
+- On the server, `ConnectionAcceptor` (`src/server/Lobby/`) answers the connection requests and gives a place only to a sender that sends back its cookie (`CookieIssuer`, below). `DatagramSorter` checks the token on the network thread, before any queue. The `GameSessions` of each game (`src/server/Sessions/`) checks the sequence, keeps the ready state and the newest input of each player, sends the heartbeats, measures the round trip of each player from their echoes and closes the session of a player it hears nothing from (see [Server](/R-Type/server/#sessions-of-a-game-gamesessions)); `SessionDatagram` gives every datagram to a player its header.
+- On the client, `ServerSession` (`src/client/Connection/`) holds the one session with the server it joined: it sends the request, answers the challenge, checks the token and the sequence, and takes the server for lost after `SESSION_SILENCE_LIMIT` (20 s) without a datagram (see [Client](/R-Type/client/#joining-a-server-serversession-waitingroom-entitymessagequeue)).
+- On the client, `RoundTripWatch` (`src/client/Connection/Session/`), an observer of the session, sends the heartbeats and measures the round trip (see [Client](/R-Type/client/#joining-a-server-serversession-waitingroom-entitymessagequeue)).
+- Both programs read the same delays, `HEARTBEAT_INTERVAL` (500 ms), `SESSION_TIMEOUT` (5 s) and `RECONNECTION_GRACE` (15 s), in `src/network/Protocol/ProtocolConstants.hpp`. They are **provisional**, like every delay of the protocol: code must read them.
 
 ### Replication
 
@@ -243,6 +245,14 @@ Measured on an Apple M3 Pro with Apple clang 21.0.0 at `-O2`, median of 7 runs o
 
 These numbers say nothing about a disk, GCC, MSVC, Linux or Windows. A row weighs 672 bytes. The line adds about 1.2 MB per day to the journal, which the logger never rotates; with nine figures per player, the file of a game of 4 grows by about 1.7 KB per second, 6 MB per hour.
 
+## Round trip and jitter: `RoundTripMeter`
+
+Both programs measure the round trip of each session with the classes of `rtype_network_statistics_round_trip` (`src/network/Statistics/RoundTrip/`), which `rtype_network_statistics` links. `RoundTripMeter` builds each `Heartbeat` to send with `nextHeartbeat(now)` and reads each one received with `receive(heartbeat, receivedAt)`; the fields and the rule of the echo are in [Protocol](/R-Type/protocol/#round-trip). Every time it takes is the time since the epoch of `std::chrono::steady_clock`, the clock `engine::SystemClock` reads: `DatagramRelay` and the server's `DatagramSorter` stamp each datagram on the network thread (`IncomingDatagram::receivedAt`), and the readers carry that time into `MessageOrigin::receivedAt`, so the wait for the next frame or tick is left out of the round trip.
+
+`RoundTripEstimator` turns the round trips into `RoundTripFigures`: the smoothed round trip, each round trip moving it by 1/`ROUND_TRIP_SMOOTHING_DIVISOR` (8) of its gap to it, as RFC 6298 smooths, and the jitter, the mean gap between two round trips in a row over the `JITTER_WINDOW_SIZE` (16) newest. `figures()` is empty before the first round trip, and the jitter is 0 after a single one. An echo that gives no round trip from 0 to `LONGEST_ROUND_TRIP` (20 s, `SESSION_SILENCE_LIMIT`) is ignored. `RoundTripWire` turns the figures to and from what `RoundTrips` carries, in whole microseconds. The constants are in `RoundTripConstants.hpp`, and they are **provisional**, like the delays of the protocol: code must read them.
+
+The server keeps one meter per player (see [Server](/R-Type/server/#silent-players-heartbeats-and-timeouts)), and the client keeps its own in `RoundTripWatch` (see [Client](/R-Type/client/#joining-a-server-serversession-waitingroom-entitymessagequeue)).
+
 ## Serialization: `ByteWriter` and `ByteReader`
 
 `ByteWriter` appends values to a `std::vector<std::byte>` and `ByteReader` reads them back from a buffer. Every value is written field by field, never copied from a struct in memory, so neither padding nor the byte order of the machine reaches the wire.
@@ -415,6 +425,8 @@ Measured on 27 October 2026 on an Apple M4 Pro under macOS 27.0, with the server
 | Change how a player is let in, challenged or refused | `ConnectionAcceptor` in `src/server/Lobby/` and `ServerSession` in `src/client/Connection/`, then the [Protocol](/R-Type/protocol/#connection) page |
 | Change what a session checks on a received datagram | `DatagramSorter` (`src/server/Network/`) for the token, `DatagramReader` and `ArrivalLedger` (`src/server/Sessions/Tracking/`, `src/server/Sessions/Roster/`) for the sequence; `SessionInbound` on the client |
 | Change the heartbeats or the session timeout | `HEARTBEAT_INTERVAL`, `SESSION_TIMEOUT` and `RECONNECTION_GRACE` in `src/network/Protocol/ProtocolConstants.hpp`, and their tick counts in `src/server/Sessions/Tracking/SessionConstants.hpp` |
+| Change how the round trip is smoothed, how many round trips the jitter covers, or the longest round trip accepted | `ROUND_TRIP_SMOOTHING_DIVISOR`, `JITTER_WINDOW_SIZE` and `LONGEST_ROUND_TRIP` in `src/network/Statistics/RoundTrip/RoundTripConstants.hpp` |
+| Read the round trip of a player | `ConnectedPlayer::roundTrip` on the server; on the client, `context.find<IPlayerRoundTrips>()` in a module listed after the connection module |
 | Send the clients something new about an entity | the sender in `src/server/Replication/`, `EntityReplicator` in `src/client/Replication/Entities/`, and the message in `src/network/Protocol/` |
 | Add a network error | `src/network/Exceptions/NetworkException.hpp` |
 | Test code against a real socket | `tests/UdpSocketTest.cpp`: a plain Asio client on the loopback address |

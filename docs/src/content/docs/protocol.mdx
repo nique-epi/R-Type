@@ -123,7 +123,7 @@ The type identifies a message in both directions: `Disconnection` and `Heartbeat
 |---|---|---|---|
 | 1 | `ConnectionRequest` | `cookie` `u64` (0 until the server gives one), `nickname` `string` (1 to 16 bytes) | every 500 ms until an answer; the client gives up after 5 s |
 | 4 | `Disconnection` | none | when the player closes the client, three times 50 ms apart |
-| 5 | `Heartbeat` | none | after 1 s without sending anything else |
+| 5 | `Heartbeat` | `sentAt` `u32`, `echoes` `bool`, `echo.sentAt` `u32`, `echo.heldFor` `u32` (see [Round trip](#round-trip)) | every 500 ms, whatever else it sends |
 | 6 | `ReadyState` | `ready` `bool` | when the player changes it, and again while `LobbyState` shows another value |
 | 9 | `PlayerInput` | `inputNumber` `u32`, `actions` `u8` | 60 times per second during a game |
 | 17 | `GameLoaded` | none | with a `PlayerInput`, at most every 100 ms, from the first one after `GameStarted` until the first `WorldState` arrives |
@@ -135,7 +135,7 @@ The type identifies a message in both directions: `Disconnection` and `Heartbeat
 | 2 | `ConnectionAccepted` | `playerNumber` `u8` (1 to 4) | in answer to a request; its header carries the session token |
 | 3 | `ConnectionRefused` | `reason` `u8`: 1 `GameFull`, 2 `GameInProgress`, 3 `IncompatibleVersion`, 4 `NicknameTaken` | in answer to a request |
 | 4 | `Disconnection` | none | when the server shuts down, three times 50 ms apart |
-| 5 | `Heartbeat` | none | after 1 s without sending anything else |
+| 5 | `Heartbeat` | `sentAt` `u32`, `echoes` `bool`, `echo.sentAt` `u32`, `echo.heldFor` `u32` (see [Round trip](#round-trip)) | every 500 ms, whatever else it sends |
 | 7 | `LobbyState` | `playerCount` `u8`, then per player `playerNumber` `u8`, `ready` `bool`, `nickname` `string` | on every change, and at least every 500 ms while no game runs |
 | 8 | `GameStarted` | none | when every connected player is ready, then every 500 ms to the players that did not send `GameLoaded` yet |
 | 10 | `WorldState` | see [World state](#world-state) | during a game, as many times per second as the server was told to (20 by default, from 2 to 60) |
@@ -145,6 +145,7 @@ The type identifies a message in both directions: `Disconnection` and `Heartbeat
 | 14 | `PlayerLeft` | `playerNumber` `u8`, `reason` `u8`: 1 `Left`, 2 `TimedOut` | to the other players, when one leaves or times out, three times 50 ms apart |
 | 15 | `GameEnded` | `playerCount` `u8`, then per player `playerNumber` `u8`, `score` `u32` | when no player has a life left, then every 500 ms until the server waits for players again |
 | 16 | `ConnectionChallenge` | `cookie` `u64` | in answer to a request without a valid cookie |
+| 18 | `RoundTrips` | `playerCount` `u8`, then per player `playerNumber` `u8`, `roundTrip` `u32`, `jitter` `u32`, in microseconds | right after each `Heartbeat` of the server (see [Round trip](#round-trip)) |
 
 ### Payload rules
 
@@ -160,7 +161,9 @@ A message is accepted only when its payload has exactly the size its fields add 
 | `EntitySpawned` | `entityId` is not 0, `entityType` is in the table of [World state](#world-state) |
 | `EntityDestroyed`, `PlayerLeft`, `ConnectionRefused` | `reason` is in the table of its message; `PlayerLeft` names a `playerNumber` of 1 to 4 |
 | `GameEvent` | `kind` is in the table of [Game events](#game-events), and `playerNumber` and `entityId` are 0 or a valid value as that table says |
-| `Disconnection`, `Heartbeat`, `GameStarted` | the payload is empty |
+| `RoundTrips` | at most 4 players, each `playerNumber` 1 to 4 and listed once |
+| `Heartbeat` | `echoes` is 0 or 1; when it is 0, `echo.sentAt` and `echo.heldFor` are 0 |
+| `Disconnection`, `GameStarted` | the payload is empty |
 
 A `LobbyState` or a `GameEnded` with no player is well formed; a `WorldState` too, while the game has none.
 
@@ -297,7 +300,13 @@ The end screen stays until the player chooses, whatever the server sends after `
 
 The server takes a `ReadyState` into account only in the first phase, from a connected player, with the same checks as every datagram: the session token, then the `sequence`. Once at least one player is connected and every connected player is ready, the server sends `GameStarted` and waits for the clients to show the game: the screen of a client that has the game assets to load is not ready on the tick the server sends it. A client that shows the game sends `GameLoaded` with its inputs, at most every 100 ms, until the first `WorldState` arrives. The game starts, and the first `WorldState` goes out, once every connected player that is not away has sent one, or after 10 s (`START_BARRIER_SECONDS`) without waiting any longer for the others. Until then the server sends no `WorldState`, and repeats `GameStarted` every 500 ms to the players not yet loaded. A `GameLoaded` outside this wait changes nothing. The message is new in version 1 and carries no field; a server that does not know it skips it as an unknown type.
 
-Each side sends a `Heartbeat` after 1 s without sending anything else; any datagram that passes the checks above proves its sender is alive. A player the server has heard nothing from for `SESSION_TIMEOUT` (5 s) may only have lost the network for a moment. The server then marks the player away and keeps its seat, its token, its ship, its score and its lives for `RECONNECTION_GRACE` (15 s) more. The ship stays in the world and can be hit, but the input of the player is cleared and the player does not count when the waiting room checks that everyone is ready. Any datagram carrying the token, from the same address and port, ends the absence: the player is back, nothing was lost, and a new `SESSION_TIMEOUT` starts. A player not heard from for `SESSION_TIMEOUT` plus `RECONNECTION_GRACE` (20 s) loses its seat: the server closes the session, removes the ship and sends `PlayerLeft` (`TimedOut`) to the others, only then. A client that comes back from another address or port is an unknown sender and starts again from the first request. The client keeps its session, and keeps sending its `Heartbeat`, for the same 20 s without a datagram from the server, then closes it and must tell the player that the connection is lost. A `Disconnection` frees the place at once, and the others get `PlayerLeft` (`Left`).
+Each side sends a `Heartbeat` every 500 ms, whatever else it sends; any datagram that passes the checks above proves its sender is alive. A player the server has heard nothing from for `SESSION_TIMEOUT` (5 s) may only have lost the network for a moment. The server then marks the player away and keeps its seat, its token, its ship, its score and its lives for `RECONNECTION_GRACE` (15 s) more. The ship stays in the world and can be hit, but the input of the player is cleared and the player does not count when the waiting room checks that everyone is ready. Any datagram carrying the token, from the same address and port, ends the absence: the player is back, nothing was lost, and a new `SESSION_TIMEOUT` starts. A player not heard from for `SESSION_TIMEOUT` plus `RECONNECTION_GRACE` (20 s) loses its seat: the server closes the session, removes the ship and sends `PlayerLeft` (`TimedOut`) to the others, only then. A client that comes back from another address or port is an unknown sender and starts again from the first request. The client keeps its session, and keeps sending its `Heartbeat`, for the same 20 s without a datagram from the server, then closes it and must tell the player that the connection is lost. A `Disconnection` frees the place at once, and the others get `PlayerLeft` (`Left`).
+
+## Round trip
+
+Each side measures the round trip of the session from the `Heartbeat`s, without a clock shared with its peer. A `Heartbeat` carries `sentAt`, the time it leaves on the clock of its sender, in microseconds modulo 2^32, and the echo of the newest `Heartbeat` its sender received: that one's `sentAt`, unchanged, and `echo.heldFor`, the microseconds from its arrival to this sending. When an echo comes back, the round trip is the time since the echoed `Heartbeat` left, read on the clock of the side that sent it, less `echo.heldFor`. A receiver dates each datagram as its socket hands it over, so the time a datagram waits for the next frame or tick counts as held, and is left out. An echo that gives a round trip below 0 or above 20 s is ignored, and a `Heartbeat` received more than 20 s earlier is no longer echoed.
+
+Each side smooths its round trips, each one moving the estimate by an eighth of its gap to it, and takes as the jitter the mean gap between two round trips in a row over the 16 newest, 8 s of `Heartbeat`s. Right after each of its `Heartbeat`s, the server sends the player `RoundTrips`: the smoothed round trip and the jitter, in microseconds, of each player of the game it measured; a player not measured yet is not listed.
 
 ## Errors
 
@@ -375,14 +384,15 @@ Nothing is guaranteed in version 1: a lost message is never resent on request. T
 | `GameStarted` | the copy sent every 500 ms, or the first `WorldState` | 500 ms |
 | `GameLoaded` | the next one, sent with an input | 100 ms |
 | `PlayerInput` | the next input | 17 ms |
-| `Heartbeat` | the next datagram | 1 s |
+| `Heartbeat` | the next one, whose echo measures the round trip again | 500 ms |
+| `RoundTrips` | the next one | 500 ms |
 | `EntitySpawned` | the next `WorldState` creates the entity, with its appearance effect | 50 ms at 20 per second |
 | `EntityDestroyed`, `GameEvent`, `PlayerLeft`, `Disconnection` | the next copy | 50 ms |
 | all three copies of `Disconnection` | the session times out: the others get `PlayerLeft` (`TimedOut`) instead of (`Left`) | 20 s |
 | all three copies of `EntityDestroyed` | the entity is removed once no `WorldState` has listed it for 900 ms up to a closed tick, without explosion | 950 ms at 20 per second |
 | all three copies of `GameEvent` or `PlayerLeft` | not corrected: the sound, effect or message on screen is missed; lives, scores and players stay right through the state messages | — |
 
-The rates and delays on this page (60 inputs and 20 states per second by default, 500 ms, 900 ms, 1 s, 5 s, 15 s, the 10-second cookie window) are **provisional**: they will be revised once measured on a real network. Code must name each of them as a constant and never repeat the number.
+The rates and delays on this page (60 inputs and 20 states per second by default, 500 ms, 900 ms, 5 s, 15 s, 20 s, the 10-second cookie window, and the eighth and the 16 round trips of [Round trip](#round-trip)) are **provisional**: they will be revised once measured on a real network. Code must name each of them as a constant and never repeat the number.
 
 ## Version 2
 
@@ -401,9 +411,9 @@ The code of this repository applies the rules above, with the exceptions listed 
 
 - `src/network` holds the pieces: the socket in `Transport` drops a datagram over 1200 bytes (see [Network](/R-Type/network/)), `Serialization` encodes integers and strings, and `Protocol` holds the header and every message of this page, each checked as listed here. A `WorldState` without players is accepted while the game has none (see [Network](/R-Type/network/#world-state-worldstatecodec)).
 - Both programs drop a datagram whose header is not of this protocol and version, or whose message sizes do not add up. The server drops on its network thread every datagram that is neither a connection request nor from a player it admitted, answers the requests as [Connection](#connection) describes, and answers a datagram of another version from an unknown sender with `ConnectionRefused` (`IncompatibleVersion`). The client reads only the server it contacts.
-- Within a session, each side writes the session token and its next sequence into every datagram it sends: the server in its acceptances, the `EntitySpawned` of the ships, the Bydos and the missiles, `LobbyState`, `GameStarted`, `WorldState`, the game events, `GameEnded` and `Heartbeat`; the client in its inputs, `ReadyState`, `Heartbeat` and `Disconnection`.
+- Within a session, each side writes the session token and its next sequence into every datagram it sends: the server in its acceptances, the `EntitySpawned` of the ships, the Bydos and the missiles, `LobbyState`, `GameStarted`, `WorldState`, the game events, `GameEnded`, `Heartbeat` and `RoundTrips`; the client in its inputs, `ReadyState`, `Heartbeat` and `Disconnection`.
 - The server checks the token of every datagram from the address of a player it admitted, on its network thread before any queue, and the sequence of every datagram it reads from a player, so a duplicate or a late one is dropped whatever its message. The client checks the token, then the sequence, of every datagram of the server.
-- Each side sends a `Heartbeat` after 1 s without sending anything else. The server keeps the seat of a silent player for 20 s in all, as [A session](#a-session) describes, and the client closes its session after 20 s without a datagram of the server.
+- Each side sends a `Heartbeat` every 500 ms and measures the round trip from its echo, and the server sends each player `RoundTrips` after each of its `Heartbeat`s, as [Round trip](#round-trip) describes. The server keeps the seat of a silent player for 20 s in all, as [A session](#a-session) describes, and the client closes its session after 20 s without a datagram of the server.
 
 What the programs do not do yet is listed at the end of [A peer disappears](#a-peer-disappears).
 
