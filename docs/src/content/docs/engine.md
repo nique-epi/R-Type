@@ -14,7 +14,7 @@ This page tells you where to look when you need to change something. It describe
 | Fixed timestep and timers | Available | `src/engine/Time/` |
 | Network identifiers | Available | `src/engine/NetworkIds/` |
 | Systems and queries | Available | `src/engine/Systems/`, `ComponentRegistry::forEach` |
-| Game loop | Server only: ticks run at a fixed rate, and the tick of a game in progress runs the systems of its world | `src/server/Application/TickLoop/` |
+| Game loop | Server only: ticks run at a fixed rate, and the tick of a game in progress runs the systems of its world | `src/server/Network/` |
 | Event bus | Available | `src/engine/Events/` |
 | Collisions | Available: the overlap test and the event; the system that detects them is in the game | `src/engine/Collision/` |
 | Launch arguments | Available; used by the server and the client | `src/engine/LaunchArguments/` |

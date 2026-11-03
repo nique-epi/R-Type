@@ -17,8 +17,8 @@ The tutorial ends at the handler on the server. Nothing in the client sends an e
 | 2 | Its type number | `src/network/Protocol/MessageType.hpp` |
 | 3 | The struct and its two functions | `src/network/Protocol/Messages/Emote/` |
 | 4 | The library of the folder | `Messages/Emote/CMakeLists.txt`, `Messages/CMakeLists.txt` |
-| 5 | The handler | `src/server/Sessions/EmoteKeeper/`, `src/server/Sessions/GameSessions/` |
-| 6 | Nine tests | `tests/network/Protocol/`, `tests/server/Sessions/`, `tests/server/Instances/` |
+| 5 | The handler | `src/server/Sessions/Tracking/`, `src/server/Sessions/`, `src/server/Sessions/Roster/` |
+| 6 | Nine tests | `tests/network/Protocol/`, `tests/server/Sessions/Tracking/`, `tests/server/Instances/` |
 | 7 | The three checks of the project | the terminal |
 
 ## Step 0: answer four questions
@@ -229,7 +229,7 @@ add_subdirectory(Emote)
 
 The code that receives datagrams does not change: a `MessageDispatcher` hands each message to the one handler registered for its type. Register yours where the messages of a player arrive, `GameSessions`, and keep the work in a class of its own, as `ReadyKeeper` does for `ReadyState`.
 
-The player keeps its newest emote. Add the member to `ConnectedPlayer` (`src/server/Sessions/ConnectedPlayer.hpp`), with `#include "Emote.hpp"`, right after `newestInputNumber`:
+The player keeps its newest emote. Add the member to `ConnectedPlayer` (`src/server/Sessions/Roster/ConnectedPlayer.hpp`), with `#include "Emote.hpp"`, right after `newestInputNumber`:
 
 ```cpp
   /** @brief The newest emote of the player; empty until the first one
@@ -237,20 +237,16 @@ The player keeps its newest emote. Add the member to `ConnectedPlayer` (`src/ser
   std::optional<network::EmoteKind> lastEmote;
 ```
 
-`PlayerRoster::add()` builds a `ConnectedPlayer` with designated initializers, in the order of the members. A member with no default must be listed there, or GCC fails the Linux build with `missing initializer for member` while Clang says nothing. In `src/server/Sessions/PlayerRoster/PlayerRoster.cpp`:
+`PlayerRoster::add()` builds a `ConnectedPlayer` with designated initializers, in the order of the members. A member with no default must be listed there, or GCC fails the Linux build with `missing initializer for member` while Clang says nothing. In `src/server/Sessions/Roster/PlayerRoster.cpp`:
 
 ```cpp
                           .newestInputNumber = std::nullopt,
                           .lastEmote = std::nullopt});
 ```
 
-`ConnectedPlayer.hpp` now includes `Emote.hpp`, so `rtype_server_sessions` must expose it. In `src/server/Sessions/CMakeLists.txt`, add `rtype_network_emote` to the libraries of that target, and call the new folder after `ReadyKeeper`:
+`ConnectedPlayer.hpp` now includes `Emote.hpp`, so `rtype_server_sessions_roster` must expose it. In `src/server/Sessions/Roster/CMakeLists.txt`, add `rtype_network_emote` to the `PUBLIC` libraries of that target.
 
-```cmake
-add_subdirectory(EmoteKeeper)
-```
-
-Then the class, in `src/server/Sessions/EmoteKeeper/`. `EmoteKeeper.hpp`:
+Then the class, in `src/server/Sessions/Tracking/`, beside `InputKeeper`. `EmoteKeeper.hpp`:
 
 ```cpp
 #pragma once
@@ -313,23 +309,17 @@ void EmoteKeeper::apply(const network::MessageOrigin& origin,
 }  // namespace rtype::server
 ```
 
-`CMakeLists.txt`:
+In `src/server/Sessions/Tracking/CMakeLists.txt`, add the file to the sources of `rtype_server_sessions_tracking`, in alphabetical order; the library reaches `rtype_network_emote` through the roster:
 
 ```cmake
-add_library(rtype_server_emote_keeper STATIC EmoteKeeper.cpp)
-
-target_include_directories(rtype_server_emote_keeper PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
-
-target_link_libraries(rtype_server_emote_keeper
-  PUBLIC
-    rtype_network_emote
-    rtype_server_player_roster
-)
-
-rtype_enable_warnings(rtype_server_emote_keeper)
+add_library(rtype_server_sessions_tracking STATIC
+  DatagramReader.cpp
+  Departures.cpp
+  EmoteKeeper.cpp
+  Heartbeats.cpp
 ```
 
-Finally, plug it in. In `src/server/Sessions/GameSessions/CMakeLists.txt`, add `rtype_server_emote_keeper` to the `PUBLIC` libraries, after `rtype_server_departures`. In `GameSessions.hpp`, include `EmoteKeeper.hpp` and add the member after `readyKeeper_`:
+Finally, plug it in. In `GameSessions.hpp`, include `EmoteKeeper.hpp` and add the member after `readyKeeper_`:
 
 ```cpp
   ReadyKeeper readyKeeper_;
@@ -432,7 +422,7 @@ TEST(Emote, RefusesBytesAfterTheKind) {
 }  // namespace rtype::network
 ```
 
-**The keeper**, in `tests/server/Sessions/EmoteKeeperTest.cpp`, built on the helpers of `SessionsFixtures.hpp`:
+**The keeper**, in `tests/server/Sessions/Tracking/EmoteKeeperTest.cpp`, built on the helpers of `SessionsFixtures.hpp`:
 
 ```cpp
 #include <gtest/gtest.h>
@@ -525,7 +515,7 @@ TEST_F(GameInstanceTest, KeepsTheEmoteAPlayerSends) {
 
 Check that it can fail: remove the `registerHandler<network::Emote>` call, build, and this test turns red; put it back.
 
-Register the files in `tests/CMakeLists.txt`: add `network/Protocol/EmoteTest.cpp` to the `SOURCES` of `network_tests`; add `server/Sessions/EmoteKeeperTest.cpp` to those of `server_sessions_tests`, and `rtype_server_emote_keeper` to its `LIBS`. `GameInstanceTest.cpp` is already listed.
+Register the files in `tests/CMakeLists.txt`: add `network/Protocol/EmoteTest.cpp` to the `SOURCES` of `network_tests`; add `server/Sessions/Tracking/EmoteKeeperTest.cpp` to those of `server_sessions_tests`, which links `rtype_server_sessions` already. `GameInstanceTest.cpp` is already listed.
 
 Run them:
 
@@ -566,7 +556,7 @@ A pull request that changes the wire says so in its title, with `!` after the ty
 | The client sends | `sendMessage(outbox, network::Emote{…})` on the `ISessionOutbox` a part of the session is given, as `WaitingRoom::setReady()` does (`src/client/Connection/WaitingRoom/`). `SessionOutbox` writes the session token, the next sequence and the acknowledgement |
 | The server sends | `send(sessionDatagram(player, network::Emote{…}))`, as `FarewellSender` and `GameFlow` do, so the header carries the token, the next sequence and the acknowledgement of that player. Add the row to [Server to client](/R-Type/protocol/#server-to-client) |
 | The client receives | A `registerHandler<…>` call on the `MessageDispatcher` of the session, as `WaitingRoom` and `EntityMessageQueue` do |
-| The players must all see | The server sends it once to each player of the game with `sendToEveryPlayer` (`src/server/Sessions/MessageDelivery/`), or guarantees it with `guaranteeToEveryPlayer` when its loss would show: see [Guaranteed messages](/R-Type/protocol/#guaranteed-messages) |
+| The players must all see | The server sends it once to each player of the game with `sendToEveryPlayer` (`src/server/Sessions/Tracking/`), or guarantees it with `guaranteeToEveryPlayer` when its loss would show: see [Guaranteed messages](/R-Type/protocol/#guaranteed-messages) |
 | Must never be lost, or must always reflect the current state | From the server, guarantee it with `guaranteeToEveryPlayer`, once its receiver reads it twice the same way (see [Guaranteed messages](/R-Type/protocol/#guaranteed-messages)); the client sends no guaranteed message yet. A state is repeated until the state message shows it, as `ReadyState` does with `LobbyState` |
 | Holds a list or a string | Check the count before anything is sized from it, as `LobbyState` does; a client must not make the server allocate in proportion to a value it controls |
 | An unknown sender may send | Read [Connection](/R-Type/protocol/#connection) first: `DatagramSorter` drops such a datagram before any queue, unless it holds a `ConnectionRequest`, and an answer must never hold more bytes than the datagram it answers |
