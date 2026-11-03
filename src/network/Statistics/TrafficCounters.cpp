@@ -50,7 +50,7 @@ void addDatagram(DirectionTraffic& traffic,
     return;
   }
   static_cast<void>(DatagramCodec::forEachMessage(
-      datagram, [&traffic](const MessageFrame& message) {
+      datagram, [&traffic](const MessageFrame& message) noexcept {
         addOne(traffic.messages[slotOf(message.type)],
                MESSAGE_PREFIX_SIZE + message.payload.size());
       }));
