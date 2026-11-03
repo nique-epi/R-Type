@@ -51,7 +51,7 @@ static_assert(SILENCE_BEFORE_HEARTBEAT > engine::Duration::zero(),
               "HEARTBEAT_INTERVAL must last at least one simulation tick");
 
 /**
- * @brief Module name the sessions write their log lines under.
+ * @brief Logger name the sessions write their log lines under.
  */
 constexpr std::string_view SESSIONS_LOGGER_NAME = "Sessions";
 

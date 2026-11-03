@@ -93,7 +93,7 @@ constexpr std::string_view SIMULATOR_USAGE_TITLE = "Network simulator options:";
 /**
  * @brief What starts the line of an option, and the line that describes it,
  * in that part of a usage: the same as engine::USAGE_OPTION_INDENT and
- * engine::USAGE_DESCRIPTION_INDENT, which the network module cannot include.
+ * engine::USAGE_DESCRIPTION_INDENT, which the network library cannot include.
  */
 constexpr std::string_view SIMULATOR_USAGE_OPTION_INDENT = "  ";
 constexpr std::string_view SIMULATOR_USAGE_DESCRIPTION_INDENT = "      ";

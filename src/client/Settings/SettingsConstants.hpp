@@ -78,7 +78,7 @@ constexpr std::string_view INVALID_SETTING_VALUE = "invalid value";
 constexpr std::string_view LINE_PREFIX = "line ";
 constexpr std::string_view LINE_REASON_SEPARATOR = ": ";
 
-/** @brief Module name of the log lines about the settings. */
-constexpr std::string_view SETTINGS_LOG_MODULE_NAME = "Settings";
+/** @brief Logger name the settings file writes its log lines under. */
+constexpr std::string_view SETTINGS_LOGGER_NAME = "Settings";
 
 }  // namespace rtype::client

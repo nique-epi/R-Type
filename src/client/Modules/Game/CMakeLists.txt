@@ -1,8 +1,8 @@
-add_library(rtype_client_game STATIC ClientGameModule.cpp)
+add_library(rtype_client_game_module STATIC ClientGameModule.cpp)
 
-target_include_directories(rtype_client_game PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories(rtype_client_game_module PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
-target_link_libraries(rtype_client_game
+target_link_libraries(rtype_client_game_module
   PUBLIC
     rtype_client_screen_registry
     rtype_engine_modules
@@ -15,4 +15,4 @@ target_link_libraries(rtype_client_game
     rtype_client_screen_assets
 )
 
-rtype_enable_warnings(rtype_client_game)
+rtype_enable_warnings(rtype_client_game_module)

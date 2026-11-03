@@ -16,7 +16,7 @@ using testing::FIRST_EVENT_TIME;
 using testing::FLOODED_EVENT_COUNT;
 using testing::HALF_INTERVAL;
 using testing::THROTTLED_INTERVAL;
-using testing::THROTTLED_MODULE;
+using testing::THROTTLED_LOGGER_NAME;
 
 /**
  * @returns The end of a line that stands for @p count events.
@@ -37,7 +37,7 @@ class ThrottledLogTest : public ::testing::Test {
 
  private:
   DebugJournal journal_;
-  ThrottledLog log_{std::string{THROTTLED_MODULE}, THROTTLED_INTERVAL};
+  ThrottledLog log_{std::string{THROTTLED_LOGGER_NAME}, THROTTLED_INTERVAL};
 };
 
 /**
