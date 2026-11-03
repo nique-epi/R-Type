@@ -49,6 +49,18 @@ The server listens on UDP port 4243 of every IPv4 interface; without `-p`, on po
 The Bydos appear at heights drawn from the seed; without `--seed` the server draws one, and the journal records it (`Bydo spawning starts from the seed ...`) so the same game can be replayed.
 
 ```bash
+./r-type_server --set state-rate=30
+```
+
+`--set <name>=<value>` forces any setting of the server and wins over `server.cfg`, a file of commands the server reads from the folder it is started from. A missing file is fine; the defaults apply. `server.cfg.example`, at the root of the repository, lists every setting with its default and its bounds: copy it to `server.cfg`. Every command and setting is described in [Configuration commands](https://nique-epi.github.io/R-Type/commands/).
+
+```
+# server.cfg
+set port 4300
+module lobby off
+```
+
+```bash
 ./r-type_server --state-rate 30
 ```
 
@@ -68,7 +80,17 @@ The server reads the waves of Bydos from `assets/waves/waves.toml`, in the `asse
 
 The client is given the IPv4 address and the port of the server, `127.0.0.1` and 4242 by default, and the nickname of the player, `PILOT` by default; its connection screen starts with them. CONNECT on that screen joins the server, so start the server first: without one, the screen shows `SERVER UNREACHABLE` after 5 seconds.
 
-`--no-sound` starts the client without sound: the screens and the volumes work as usual, and nothing plays. `--help` prints the options of either program. An invalid argument stops it with a message and exit code 1.
+`--no-sound` starts the client without sound: the screens and the volumes work as usual, and nothing plays.
+
+```bash
+./r-type_client --network bad
+```
+
+The client's datagrams cross a simulated bad network: 300 ms more ping, 10 % of the datagrams lost, some doubled or out of order. Both programs take `--network` with `4g`, `wifi-busy` or `bad`, and `--lag`, `--jitter`, `--loss`, `--duplicates` and `--reorder` to set one value; the journal warns that the network is simulated (see [the network page](https://nique-epi.github.io/R-Type/network/)).
+
+Without these options, `tests/tools/network-conditions/` applies the same scenarios to the loopback interface from the system: `sudo tests/tools/network-conditions/netem.sh apply --network bad` on Linux, `dummynet.sh` on macOS, then `clear` to remove them (see [the network page](https://nique-epi.github.io/R-Type/network/#network-conditions-from-the-system-teststoolsnetwork-conditions)).
+
+`--help` prints the options of either program. An invalid argument stops it with a message and exit code 1.
 
 ## Tests
 
@@ -100,7 +122,7 @@ The client and the server write a timestamped journal, `r-type_server.log` or `r
 
 The build option `-DLOG_LEVEL=<name>` removes the calls below a level from the binaries. See [the logging page](docs/src/content/docs/logging.md).
 
-The client keeps the player's settings in `settings.ini`: in `$XDG_CONFIG_HOME/r-type` (or `~/.config/r-type`) on Linux, `~/Library/Application Support/R-Type` on macOS, `%LOCALAPPDATA%\R-Type` on Windows. Its path is logged at launch; deleting it brings back the settings of a first launch.
+The client reads `client.cfg` the same way, and `client.cfg.example` is its model (`set nickname`, `set server-address`, `set server-port`, `module <name> on|off`, and `--set` to force a setting). It keeps the player's settings in `settings.ini`: in `$XDG_CONFIG_HOME/r-type` (or `~/.config/r-type`) on Linux, `~/Library/Application Support/R-Type` on macOS, `%LOCALAPPDATA%\R-Type` on Windows. Its path is logged at launch; deleting it brings back the settings of a first launch.
 
 ## Code style
 
@@ -118,7 +140,7 @@ cmake --build build --target format
 
 ## Documentation
 
-The documentation site is built with [Starlight](https://starlight.astro.build) and published at <https://nique-epi.github.io/R-Type/>. Each page is a Markdown file in `docs/src/content/docs/`. To add a part to the server or the client, start with the [Modules](https://nique-epi.github.io/R-Type/modules/) page and the [tutorial](https://nique-epi.github.io/R-Type/tutorial-write-a-module/). Two more tutorials [add a network message](https://nique-epi.github.io/R-Type/tutorial-add-a-network-message/) and [run a server with several games](https://nique-epi.github.io/R-Type/tutorial-run-several-games/).
+The documentation site is built with [Starlight](https://starlight.astro.build) and published at <https://nique-epi.github.io/R-Type/>. Each page is a Markdown file in `docs/src/content/docs/`. To add a module to the server or the client, start with the [Modules](https://nique-epi.github.io/R-Type/modules/) page and the [tutorial](https://nique-epi.github.io/R-Type/tutorial-write-a-module/). Two more tutorials [add a network message](https://nique-epi.github.io/R-Type/tutorial-add-a-network-message/) and [run a server with several games](https://nique-epi.github.io/R-Type/tutorial-run-several-games/).
 
 To preview it locally, with Node.js 22.12 or newer:
 

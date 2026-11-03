@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <string_view>
 
 /**
@@ -28,9 +29,23 @@ constexpr std::string_view SECOND_VALUE = "second";
 constexpr std::string_view UNKNOWN_ARGUMENT = "-x";
 
 /**
+ * @brief An option no option of the tests names, which the reader of the
+ * tests takes with a value.
+ */
+constexpr std::string_view READER_OPTION = "-r";
+
+/**
  * @brief The program name the usage and error tests use.
  */
 constexpr std::string_view TEST_PROGRAM_NAME = "r-type_test";
+
+/**
+ * @brief The arguments of a process launched as `r-type_test -v first`, its
+ * name first, as the system hands them to `main()`; and of one launched with
+ * its name only.
+ */
+constexpr std::array PROCESS_ARGUMENTS{"r-type_test", "-v", "first"};
+constexpr std::array PROGRAM_NAME_ONLY{"r-type_test"};
 
 /**
  * @brief What usageHeader() returns for TEST_PROGRAM_NAME.

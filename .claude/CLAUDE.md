@@ -14,7 +14,7 @@ Networked multiplayer remake of the R-Type shoot'em up, on a custom C++ game eng
 | Targets | `r-type_server` (Asio only, never SFML), `r-type_client` (SFML), `harness_tests` |
 | Style | `.clang-format` (Google base, 2-space indent, 80 columns), `.clang-tidy` (warnings = errors) |
 
-The `src/server`, `src/client`, `tests` layout is provisional: the engine/game organization is not decided yet. Read the repository before assuming a structure.
+Where code goes is on the map, `docs/src/content/docs/project-layout.md`, which lists the modules. `.claude/rules/architecture/architecture-a-module-is-one-folder-and-one-target.md` defines a module and a library. Read the repository before assuming a structure.
 
 ## Commands
 
@@ -42,9 +42,9 @@ Paths below are relative to `.claude/rules/`.
 
 | Situation | Apply |
 |---|---|
-| Writing C++ | `architecture/`, `code-style/` |
+| Writing C++ | `architecture/architecture-a-module-is-one-folder-and-one-target.md`, then the rest of `architecture/` and `code-style/` |
 | Writing a test | `code-style/code-style-tests-given-when-then.md`, `code-style/fix-format-a-test-file-holds-only-tests.md`, `fix/process/fix-process-green-test-locking-a-defect-and-overly-deterministic-fake.md` |
-| Writing a module (`IModule`) | `architecture/fix-architecture-a-module-install-keeps-nothing-open.md`, `architecture/fix-architecture-a-module-start-that-throws-closes-what-it-opened.md` |
+| Writing a module (`IModule`, `IGameModule`) | `architecture/architecture-a-module-is-one-folder-and-one-target.md`, `architecture/fix-architecture-a-module-install-keeps-nothing-open.md`, `architecture/fix-architecture-a-module-start-that-throws-closes-what-it-opened.md` |
 | Touching the network | security section of `core/code-review.md`, `fix/reasoning/fix-reasoning-an-exception-to-a-check-is-read-as-the-forger.md`, `fix/reasoning/fix-reasoning-last-received-is-not-newest-over-udp.md` |
 | Creating a branch | `fix/process/fix-process-branch-before-first-commit.md`, `fix/execution/fix-execution-checkout-b-starts-from-head-not-main.md`, `fix/process/fix-process-reread-rules-after-switching-branch.md` |
 | Finishing the application of a plan | `core/simplify-after-plan.md` — `/simplify` before the final gates |
@@ -53,7 +53,7 @@ Paths below are relative to `.claude/rules/`.
 | Opening a PR | `fix/format/fix-format-pull-requests-in-english.md`, `fix/format/fix-format-pr-links-its-linear-issue.md`, `fix/process/fix-process-pr-always-opened-as-draft.md`, the `document-feature` skill if the feature is not documented yet |
 | Commenting on a PR, answering the user | `fix/format/fix-format-french-in-the-conversation-and-pr-comments.md` |
 | Reviewing | `core/code-review.md` |
-| Announcing a green gate | `fix/execution/fix-execution-zsh-pipestatus.md`, `fix/execution/fix-execution-zero-warnings-proven-on-a-recompiling-build.md`, `fix/execution/fix-execution-run-clang-tidy-before-push.md` |
+| Announcing a green gate | `fix/execution/fix-execution-zsh-pipestatus.md`, `fix/execution/fix-execution-zero-warnings-proven-on-a-recompiling-build.md`, `fix/execution/fix-execution-run-clang-tidy-before-push.md`, `fix/execution/fix-execution-shellcheck-a-script-before-push.md` |
 | Writing a documentation page or a diagram | `fix/format/fix-format-schematic-diagrams-and-map-level-pages.md`, `fix/format/fix-format-context-before-the-deliverable.md`, the `document-feature` skill |
 | Making a mistake | `core/errors-learning.md` — a mistake in the code produces a new rule, a mistake outside it none |
 | Pausing, finishing a step | `core/context-continuity.md` |
@@ -69,10 +69,11 @@ Paths below are relative to `.claude/rules/`.
 
 **C++ architecture — `architecture/` (loaded when a C++ file is read)**
 - `architecture/architecture-a-module-is-one-folder-and-one-target.md`
-- `architecture/architecture-custom-exceptions-per-module.md`
+- `architecture/architecture-custom-exceptions-per-owner.md`
 - `architecture/architecture-hpp-declarations-cpp-definitions.md`
 - `architecture/architecture-pure-virtual-interfaces.md`
 - `architecture/fix-architecture-a-class-the-tests-build-opens-no-opengl-context.md`
+- `architecture/fix-architecture-a-destructor-calls-nothing-that-may-throw.md`
 - `architecture/fix-architecture-a-function-does-one-kind-of-step.md`
 - `architecture/fix-architecture-a-module-install-keeps-nothing-open.md`
 - `architecture/fix-architecture-a-module-start-that-throws-closes-what-it-opened.md`
@@ -165,6 +166,7 @@ Paths below are relative to `.claude/rules/`.
 - `fix/execution/fix-execution-git-stash-pop-without-effective-push.md`
 - `fix/execution/fix-execution-new-caller-keeps-existing-callers-guards.md`
 - `fix/execution/fix-execution-run-clang-tidy-before-push.md`
+- `fix/execution/fix-execution-shellcheck-a-script-before-push.md`
 - `fix/execution/fix-execution-silent-push-and-detached-head-compare-remote-sha.md`
 - `fix/execution/fix-execution-touch-recreates-deleted-files.md`
 - `fix/execution/fix-execution-unquoted-heredoc-runs-backticks.md`

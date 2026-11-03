@@ -6,10 +6,10 @@
 #include <optional>
 #include <span>
 #include <string>
-#include <utility>
 #include <vector>
 #include "ByteSequence.hpp"
 #include "DatagramCodec.hpp"
+#include "DatagramCodecFixtures.hpp"
 #include "MessageType.hpp"
 #include "NetworkException.hpp"
 #include "PacketHeader.hpp"
@@ -18,39 +18,56 @@
 #include "ProtocolTestConstants.hpp"
 
 namespace rtype::network {
-namespace {
 
 using testing::byteSequence;
+using testing::DatagramCodecMalformedDatagram;
 using testing::datagramOf;
 using testing::defaultHeaderBytes;
 using testing::EMPTY_MESSAGE_DATAGRAM_SIZE;
+using testing::headerOneByteShort;
 using testing::LARGEST_DATAGRAM_SIZE;
+using testing::MalformedDatagram;
 using testing::SOME_ACKNOWLEDGED_SEQUENCE;
 using testing::SOME_ACKNOWLEDGEMENT_BITS;
 using testing::SOME_FLAGS;
 using testing::SOME_OTHER_PROTOCOL_ID;
 using testing::SOME_OTHER_VERSION;
 using testing::someSessionHeader;
+using testing::SplittableAs;
 using testing::VERSION_OFFSET;
 
-template <typename Buffer>
-concept SplittableAs = requires(Buffer&& buffer) {
-  DatagramCodec::splitMessages(std::forward<Buffer>(buffer));
-};
+/**
+ * Given a datagram its caller keeps, constant or not, or a view of one
+ * When it is handed to splitMessages()
+ * Then the call compiles
+ */
+TEST(DatagramCodec, SplitsADatagramItsCallerKeeps) {
+  static_assert(SplittableAs<std::vector<std::byte>&>,
+                "a datagram kept by the caller can be split");
+  static_assert(SplittableAs<const std::vector<std::byte>&>,
+                "a constant datagram kept by the caller can be split");
+  static_assert(SplittableAs<std::span<const std::byte>>,
+                "a view of a datagram kept by the caller can be split");
+  SUCCEED();
+}
 
-static_assert(SplittableAs<std::vector<std::byte>&>,
-              "a datagram kept by the caller can be split");
-static_assert(SplittableAs<const std::vector<std::byte>&>,
-              "a constant datagram kept by the caller can be split");
-static_assert(SplittableAs<std::span<const std::byte>>,
-              "a view of a datagram kept by the caller can be split");
-static_assert(!SplittableAs<std::vector<std::byte>>,
-              "a temporary datagram cannot be split: its payloads would "
-              "point into a destroyed buffer");
-static_assert(!SplittableAs<const std::vector<std::byte>>,
-              "a constant temporary datagram cannot be split either");
-static_assert(!SplittableAs<std::array<std::byte, EMPTY_MESSAGE_DATAGRAM_SIZE>>,
-              "a temporary array cannot be split either");
+/**
+ * Given a temporary datagram, constant or not, or a temporary array
+ * When it is handed to splitMessages()
+ * Then the call does not compile: its payloads would point into a destroyed
+ * buffer
+ */
+TEST(DatagramCodec, RefusesToSplitATemporaryDatagram) {
+  static_assert(!SplittableAs<std::vector<std::byte>>,
+                "a temporary datagram cannot be split: its payloads would "
+                "point into a destroyed buffer");
+  static_assert(!SplittableAs<const std::vector<std::byte>>,
+                "a constant temporary datagram cannot be split either");
+  static_assert(
+      !SplittableAs<std::array<std::byte, EMPTY_MESSAGE_DATAGRAM_SIZE>>,
+      "a temporary array cannot be split either");
+  SUCCEED();
+}
 
 /**
  * Given a default header
@@ -448,21 +465,6 @@ TEST(DatagramCodec, ReadsTheTypesOfEveryMessage) {
   EXPECT_EQ(DatagramCodec::messageTypes(datagram), expected);
 }
 
-/** @brief Bytes splitMessages() refuses, named after their fault. */
-struct MalformedDatagram {
-  const char* fault;
-  std::vector<std::byte> bytes;
-};
-
-std::vector<std::byte> headerOneByteShort() {
-  auto bytes = defaultHeaderBytes();
-  bytes.pop_back();
-  return bytes;
-}
-
-class DatagramCodecMalformedDatagram
-    : public ::testing::TestWithParam<MalformedDatagram> {};
-
 /**
  * Given bytes splitMessages() refuses
  * When their message types are read
@@ -495,5 +497,4 @@ INSTANTIATE_TEST_SUITE_P(
       return std::string{info.param.fault};
     });
 
-}  // namespace
 }  // namespace rtype::network

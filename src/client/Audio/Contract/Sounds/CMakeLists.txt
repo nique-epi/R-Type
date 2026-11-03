@@ -1,0 +1,7 @@
+add_library(rtype_client_audio_contract_sounds STATIC
+  NullSoundPlayer.cpp
+)
+
+target_include_directories(rtype_client_audio_contract_sounds PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+
+rtype_enable_warnings(rtype_client_audio_contract_sounds)

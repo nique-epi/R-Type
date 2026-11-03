@@ -286,7 +286,7 @@ What to look at, and why: **the Zigzagger is drawn as every other Bydo**. The se
 A different sprite is a change of the protocol, not of the client alone, because the client only learns the type of an entity: the kind would have to travel too. Read it as a list of places to open, each found by following `Bydo` through the code, not as steps this tutorial ran:
 
 - the entity type of the protocol, `WireEntityType` and its list of valid values in `src/network/Protocol/Messages/EntitySpawned/EntitySpawned.cpp`, and the [Protocol](/R-Type/protocol/) page that lists it;
-- the two conversions, `toWireEntityType` on the server (`src/server/Replication/WireEntityTypeMapping/`) and `entityTypeOf` on the client (`src/client/Replication/EntityReplicator/`);
+- the two conversions, `toWireEntityType` on the server (`src/server/Replication/Wire/`) and `entityTypeOf` on the client (`src/client/Replication/Entities/`);
 - the sprite of the client, its frames on `sprites/entities.png` and the table of `assets/README.md`.
 
 Talk to the team before changing the protocol: a client and a server of different versions must keep understanding each other.

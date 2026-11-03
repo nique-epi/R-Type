@@ -1,22 +1,30 @@
 #include "LaunchOptions.hpp"
 #include <array>
-#include <charconv>
 #include <cstddef>
 #include <cstdint>
+#include <functional>
 #include <optional>
 #include <span>
 #include <string>
 #include <string_view>
-#include <system_error>
+#include <utility>
+#include <vector>
 #include "EndpointText.hpp"
 #include "EngineException.hpp"
+#include "ExecutablePath.hpp"
 #include "LaunchArguments.hpp"
 #include "LaunchArgumentsConstants.hpp"
 #include "LaunchOption.hpp"
+#include "LaunchOptionReader.hpp"
+#include "LaunchValues.hpp"
 #include "LogLaunchOptions.hpp"
 #include "LoggingConstants.hpp"
+#include "NetworkConditions.hpp"
 #include "NetworkConstants.hpp"
 #include "ServerConstants.hpp"
+#include "SettingLine.hpp"
+#include "SimulatorLaunchOptions.hpp"
+#include "WholeNumberText.hpp"
 
 namespace rtype::server {
 
@@ -29,15 +37,12 @@ namespace {
  */
 template <typename Number>
 Number wholeNumberFromText(std::string_view option, std::string_view text) {
-  Number number = 0;
-  const std::string digits{text};
-  const char* const end = digits.data() + digits.size();
-  const auto [stop, error] = std::from_chars(digits.data(), end, number);
-  if (digits.empty() || error != std::errc{} || stop != end) {
+  const std::optional<Number> number = network::wholeNumberIn<Number>(text);
+  if (!number.has_value()) {
     throw engine::InvalidLaunchOptionValueException(std::string(option),
                                                     std::string(text));
   }
-  return number;
+  return *number;
 }
 
 /**
@@ -77,51 +82,86 @@ std::size_t inputDelayFromText(std::string_view text) {
   return delay;
 }
 
-}  // namespace
-
-LaunchOptions LaunchOptions::read(std::span<const std::string_view> arguments) {
-  LaunchOptions options{network::DEFAULT_SERVER_PORT, false};
-  const std::array launchOptions{
-      engine::LaunchOption{.name = engine::PORT_OPTION,
-                           .takesValue = true,
-                           .record =
-                               [&options](std::string_view port) {
-                                 options.port_ = network::portFromText(port);
-                               }},
-      engine::LaunchOption{.name = SEED_OPTION,
-                           .takesValue = true,
-                           .record =
-                               [&options](std::string_view seed) {
-                                 options.seed_ = seedFromText(seed);
-                               }},
-      engine::LaunchOption{.name = STATE_RATE_OPTION,
-                           .takesValue = true,
-                           .record =
-                               [&options](std::string_view rate) {
-                                 options.stateRate_ = stateRateFromText(rate);
-                               }},
-      engine::LaunchOption{.name = INPUT_DELAY_OPTION,
-                           .takesValue = true,
-                           .record =
-                               [&options](std::string_view delay) {
-                                 options.inputDelay_ =
-                                     inputDelayFromText(delay);
-                               }},
-      engine::LaunchOption{
-          .name = engine::HELP_OPTION,
-          .takesValue = false,
-          .record =
-              [&options]([[maybe_unused]] std::string_view value) {
-                options.helpRequested_ = true;
-              }},
-  };
-  engine::readLaunchArguments(arguments, launchOptions);
-  return options;
+/**
+ * @returns `-p <port>`, which forces the port setting to a checked port.
+ */
+engine::LaunchOption portOption(LaunchValues& values) {
+  return engine::LaunchOption{
+      .name = engine::PORT_OPTION,
+      .takesValue = true,
+      .record = [&values](std::string_view port) {
+        values.forcedLines.push_back(engine::settingLine(
+            PORT_SETTING_NAME, std::to_string(network::portFromText(port))));
+      }};
 }
 
-std::string LaunchOptions::usage() {
-  std::string text = engine::usageHeader(PROGRAM_NAME);
-  text += engine::usageEntry(
+/**
+ * @returns `--seed <seed>`, which forces the seed setting to a checked seed.
+ */
+engine::LaunchOption seedOption(LaunchValues& values) {
+  return engine::LaunchOption{
+      .name = SEED_OPTION,
+      .takesValue = true,
+      .record = [&values](std::string_view seed) {
+        values.forcedLines.push_back(engine::settingLine(
+            SEED_SETTING_NAME, std::to_string(seedFromText(seed))));
+      }};
+}
+
+/**
+ * @returns `--state-rate <states>`, which forces the state rate setting to a
+ * checked rate.
+ */
+engine::LaunchOption stateRateOption(LaunchValues& values) {
+  return engine::LaunchOption{
+      .name = STATE_RATE_OPTION,
+      .takesValue = true,
+      .record = [&values](std::string_view rate) {
+        values.forcedLines.push_back(engine::settingLine(
+            STATE_RATE_SETTING_NAME, std::to_string(stateRateFromText(rate))));
+      }};
+}
+
+/**
+ * @returns `--input-delay <ticks>`, which forces the input delay setting to a
+ * checked delay.
+ */
+engine::LaunchOption inputDelayOption(LaunchValues& values) {
+  return engine::LaunchOption{
+      .name = INPUT_DELAY_OPTION,
+      .takesValue = true,
+      .record = [&values](std::string_view delay) {
+        values.forcedLines.push_back(
+            engine::settingLine(INPUT_DELAY_SETTING_NAME,
+                                std::to_string(inputDelayFromText(delay))));
+      }};
+}
+
+/** @returns `--set <name>=<value>`, which forces any setting. */
+engine::LaunchOption setOption(LaunchValues& values) {
+  return engine::LaunchOption{
+      .name = engine::SET_OPTION,
+      .takesValue = true,
+      .record = [&values](std::string_view assignment) {
+        values.forcedLines.push_back(
+            engine::settingLineFromSetOption(assignment));
+      }};
+}
+
+/** @returns `--help`, which asks for the usage. */
+engine::LaunchOption helpOption(LaunchValues& values) {
+  return engine::LaunchOption{
+      .name = engine::HELP_OPTION,
+      .takesValue = false,
+      .record = [&values]([[maybe_unused]] std::string_view value) {
+        values.helpRequested = true;
+      }};
+}
+
+/** @returns The lines of the usage that describe the options that give a
+ * setting a value of its own kind. */
+std::string settingOptionEntries() {
+  std::string text = engine::usageEntry(
       std::string(engine::PORT_OPTION) + " <port>",
       "UDP port to listen on, from " + std::to_string(network::LOWEST_PORT) +
           " to " + std::to_string(network::HIGHEST_PORT) +
@@ -147,27 +187,71 @@ std::string LaunchOptions::usage() {
           ". The same delay holds for every player, so it adds the same lag to "
           "all of them. Default: " +
           std::to_string(DEFAULT_INPUT_DELAY_TICKS) + ".");
+  return text;
+}
+
+/** @returns The lines of the usage that describe `--set` and `--help`. */
+std::string generalOptionEntries() {
+  std::string text = engine::usageEntry(
+      std::string(engine::SET_OPTION) + " <name>=<value>",
+      "Gives a setting a value, as the line `set <name> <value>` of " +
+          std::string(SERVER_CONFIGURATION_FILE_NAME) +
+          " does. It wins over that file and can be given several times. "
+          "Settings: " +
+          std::string(PORT_SETTING_NAME) + ", " +
+          std::string(SEED_SETTING_NAME) + ", " +
+          std::string(STATE_RATE_SETTING_NAME) + ", " +
+          std::string(INPUT_DELAY_SETTING_NAME) + ".");
   text += engine::usageEntry(engine::HELP_OPTION,
                              "Print this help and start nothing.");
+  return text;
+}
+
+}  // namespace
+
+LaunchOptions LaunchOptions::read(std::span<const std::string_view> arguments) {
+  LaunchOptions options{
+      LaunchValues{.forcedLines = {}, .helpRequested = false}};
+  const std::array launchOptions{
+      portOption(options.values_),      seedOption(options.values_),
+      stateRateOption(options.values_), inputDelayOption(options.values_),
+      setOption(options.values_),       helpOption(options.values_)};
+  const std::array<engine::LaunchOptionReader, 2> readers{
+      std::bind_front(&network::SimulatorLaunchOptions::readOption,
+                      &options.simulatorOptions_),
+      std::bind_front(&logging::LogLaunchOptions::readOption,
+                      &options.logOptions_)};
+  engine::readLaunchArguments(arguments, launchOptions, readers);
+  return options;
+}
+
+std::string LaunchOptions::usage() {
+  std::string text = engine::usageHeader(PROGRAM_NAME);
+  text += settingOptionEntries();
+  text += generalOptionEntries();
+  text += '\n';
+  text += network::SimulatorLaunchOptions::usage();
   text += '\n';
   text += logging::LogLaunchOptions::usage(logging::SERVER_LOG_FILE_NAME);
   return text;
 }
 
-std::uint16_t LaunchOptions::port() const { return port_; }
+const std::vector<std::string>& LaunchOptions::forcedLines() const {
+  return values_.forcedLines;
+}
 
-std::optional<std::uint32_t> LaunchOptions::seed() const { return seed_; }
+bool LaunchOptions::helpRequested() const { return values_.helpRequested; }
 
-std::size_t LaunchOptions::stateRate() const { return stateRate_; }
+const network::NetworkConditions& LaunchOptions::networkConditions() const {
+  return simulatorOptions_.conditions();
+}
 
-std::size_t LaunchOptions::inputDelay() const { return inputDelay_; }
+const logging::LogLaunchOptions& LaunchOptions::logOptions() const {
+  return logOptions_;
+}
 
-bool LaunchOptions::helpRequested() const { return helpRequested_; }
-
-LaunchOptions::LaunchOptions(std::uint16_t port, bool helpRequested)
-    : port_(port),
-      helpRequested_(helpRequested),
-      stateRate_(DEFAULT_WORLD_STATES_PER_SECOND),
-      inputDelay_(DEFAULT_INPUT_DELAY_TICKS) {}
+LaunchOptions::LaunchOptions(LaunchValues values)
+    : values_(std::move(values)),
+      logOptions_(engine::executableFolder() / logging::SERVER_LOG_FILE_NAME) {}
 
 }  // namespace rtype::server

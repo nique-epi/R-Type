@@ -11,25 +11,26 @@ Every file below was built and its tests were run on a copy of the repository be
 
 | Step | You add | In |
 |---|---|---|
-| 1 | The name of the module | `src/server/Modules/ModuleConstants.hpp` |
-| 2 | The class and its constant | `src/server/Modules/TickReport/` |
-| 3 | The library of the folder | `src/server/Modules/TickReport/CMakeLists.txt`, `src/server/Modules/CMakeLists.txt` |
-| 4 | The module in the server's list | `src/server/Modules/Assembly/` |
-| 5 | Three tests, their fixture and their constants | `tests/server/Modules/TickReport/` |
+| 1 | The name of the module | `src/server/ModuleConstants.hpp` |
+| 2 | The class and its constant | `src/server/TickReport/` |
+| 3 | The library of the folder | `src/server/TickReport/CMakeLists.txt`, `src/server/CMakeLists.txt` |
+| 4 | The module in the server's list, and its row in the list of modules | `src/server/Modules/`, `docs/src/content/docs/project-layout.md` |
+| 5 | Three tests, their fixture and their constants | `tests/server/TickReport/` |
 | 6 | A run, and the three checks of the project | the terminal |
 
 ## Step 0: choose the place
 
-Two questions decide where a module goes.
+Three questions decide what your module is and where it goes.
 
-- **Which program?** The tick report writes in the journal and counts server ticks, so it belongs to the server. Anything that draws, plays a sound or reads a key belongs to the client (`src/client/Modules/`). The table "Where does a new class go?" in [Project layout](/R-Type/project-layout/#where-does-a-new-class-go) decides the other cases.
+- **Which program?** The tick report writes in the journal and counts server ticks, so it belongs to the server. Anything that draws, plays a sound or reads a key belongs to the client (`src/client/`). The table "Where does a new class go?" in [Project layout](/R-Type/project-layout/#where-does-a-new-class-go) decides the other cases.
 - **Which scope?** A module of the program (`IModule`) lives as long as the server runs. A module of a game (`IGameModule`) lives as long as one game, and there are several games at once. Counting server ticks is a matter of the program, so this is an `IModule`.
+- **Required or optional?** The code that needs a required module may include it; an optional module is reached only through its `Contract/` sub-folder, and the program must work without it. The server does its job without a tick report and no other code needs it, so this one is optional, and it has no `Contract/` since nothing would go in it.
 
-A module is one folder holding one library, named after what it does: `src/server/Modules/TickReport/`. The class is `ServerTickReportModule`, like `ServerLobbyModule` in `src/server/Modules/Lobby/`. Open that folder first: it is the smallest module that depends on others, and the model for this one.
+A module is one folder holding one CMake library, named after what it does: `src/server/TickReport/`. The class is `ServerTickReportModule`, like `ServerLobbyModule` in `src/server/Lobby/`. Open that folder first: its class is the smallest module that depends on others, and the model for this one, beside the `ConnectionAcceptor` it builds.
 
 ## Step 1: give it a name
 
-Other modules name a module to depend on it, so its name is a constant that both sides read. Add a line to `src/server/Modules/ModuleConstants.hpp`, after the lobby:
+Other modules name a module to depend on it, so its name is a constant that both sides read. Add a line to `src/server/ModuleConstants.hpp`, after the lobby:
 
 ```cpp
 constexpr std::string_view LOBBY_MODULE_NAME = "lobby";
@@ -38,7 +39,7 @@ constexpr std::string_view TICK_REPORT_MODULE_NAME = "tick-report";
 
 ## Step 2: write the class
 
-Create `src/server/Modules/TickReport/` with three files.
+Create `src/server/TickReport/` with three files.
 
 The constant first. A number written in the code is named in a `<Concept>Constants.hpp` that holds constants only, the ten seconds included. `TickReportConstants.hpp`:
 
@@ -176,7 +177,7 @@ The other stages are `inputs` and `outputs` (`SERVER_LOOP_STAGES`, `src/server/S
 
 ## Step 3: declare its library
 
-A folder holds one `CMakeLists.txt` and declares one library. `src/server/Modules/TickReport/CMakeLists.txt`, written on the model of the one in `Lobby/`:
+A folder holds one `CMakeLists.txt` and declares one library. `src/server/TickReport/CMakeLists.txt`, written on the model of the one in `src/server/Lobby/`:
 
 ```cmake
 add_library(rtype_server_tick_report_module STATIC ServerTickReportModule.cpp)
@@ -190,7 +191,6 @@ target_link_libraries(rtype_server_tick_report_module
   PRIVATE
     rtype_engine_time
     rtype_server_constants
-    rtype_server_module_constants
 )
 
 rtype_enable_warnings(rtype_server_tick_report_module)
@@ -198,17 +198,17 @@ rtype_enable_warnings(rtype_server_tick_report_module)
 
 The libraries that the **header** names (`IModule`, `Logger`) are `PUBLIC`: whoever includes the header needs them. The ones only the `.cpp` and the constants use are `PRIVATE`. The server never links SFML, and the configure step stops if a library does.
 
-The parent folder calls the new one. In `src/server/Modules/CMakeLists.txt`, before `Assembly`:
+The parent folder calls the new one. In `src/server/CMakeLists.txt`, before `Modules`:
 
 ```cmake
 add_subdirectory(Metrics)
 add_subdirectory(TickReport)
-add_subdirectory(Assembly)
+add_subdirectory(Modules)
 ```
 
 ## Step 4: put it in the server's list
 
-`serverModules()` in `src/server/Modules/Assembly/ServerModules.cpp` is the one place that lists the modules of the server. Add the include, and the line before the metrics module, which stays last so that its measure of a tick covers your work:
+`serverModules()` in `src/server/Modules/ServerModules.cpp` is the one place that lists the modules of the server. Add the include, and the line before the metrics module, which stays last so that its measure of a tick covers your work:
 
 ```cpp
 #include "ServerNetworkModule.hpp"
@@ -223,11 +223,17 @@ add_subdirectory(Assembly)
   return modules;
 ```
 
-The module is only linked if its library is in the `CMakeLists.txt` of that folder. In `src/server/Modules/Assembly/CMakeLists.txt`, add it to the `PUBLIC` libraries of `rtype_server_modules`, in alphabetical order:
+The module is only linked if its library is in the `CMakeLists.txt` of that folder. In `src/server/Modules/CMakeLists.txt`, add it to the `PUBLIC` libraries of `rtype_server_modules`, in alphabetical order:
 
 ```cmake
-    rtype_server_stop_request
+    rtype_server_platform
     rtype_server_tick_report_module
+```
+
+Every new module also adds its row to [the list of modules](/R-Type/project-layout/#the-list-of-modules), in the same pull request. In the table of the server program, after `metrics`:
+
+```markdown
+| `tick-report` | `ServerTickReportModule` | `src/server/TickReport/` | optional |
 ```
 
 Build the server now:
@@ -240,9 +246,9 @@ The first build of a branch takes a few minutes. When it ends, the server is lis
 
 ## Step 5: test it
 
-Tests mirror the sources: the tests of `src/server/Modules/TickReport/` go in `tests/server/Modules/TickReport/`. Each test says what it checks in a Given / When / Then comment.
+Tests mirror the sources: the tests of `src/server/TickReport/` go in `tests/server/TickReport/`. Each test says what it checks in a Given / When / Then comment.
 
-First, the existing test that lists the modules. In `tests/server/Modules/Assembly/ServerModulesTest.cpp`, add the new name before the metrics in the expected list, and add it to the sentence of the comment above the test:
+First, the existing test that lists the modules. In `tests/server/Modules/ServerModulesTest.cpp`, add the new name before the metrics in the expected list, and add it to the sentence of the comment above the test:
 
 ```cpp
                        std::string{rtype::server::LOBBY_MODULE_NAME},
@@ -250,9 +256,9 @@ First, the existing test that lists the modules. In `tests/server/Modules/Assemb
                        std::string{rtype::server::METRICS_MODULE_NAME}}));
 ```
 
-Then the tests of the module. A `…Test.cpp` holds only its tests: its constants and its fixture are files of their own, as in `tests/server/Modules/Lobby/` (`ServerLobbyFixture.{hpp,cpp}` and `ServerLobbyModuleTest.cpp`). A module is tested inside a real `Application`, with the modules it depends on; `ServerModuleFixture` gives the logger options that write to a journal of the test only.
+Then the tests of the module. A `…Test.cpp` holds only its tests: its constants and its fixture are files of their own, as in `tests/server/Lobby/` (`ServerLobbyFixture.{hpp,cpp}` and `ServerLobbyModuleTest.cpp`). A module is tested inside a real `Application`, with the modules it depends on; `ServerModuleFixture` gives the logger options that write to a journal of the test only.
 
-`tests/server/Modules/TickReport/ServerTickReportModuleTestConstants.hpp`:
+`tests/server/TickReport/ServerTickReportModuleTestConstants.hpp`:
 
 ```cpp
 #pragma once
@@ -425,7 +431,7 @@ TEST_F(ServerTickReportFixture, IsRefusedWhenTheLoggerIsNotListedBeforeIt) {
 
 `Application::runStages()` is what the server's network thread calls once per tick, so a test that calls it three times plays three ticks without a socket or a clock.
 
-Register both `.cpp` files in `tests/CMakeLists.txt`: add `server/Modules/TickReport/ServerTickReportFixture.cpp` and `server/Modules/TickReport/ServerTickReportModuleTest.cpp` to the `SOURCES` of `server_module_tests`, right after `server/Modules/Assembly/ServerModulesTest.cpp`. Its include folders come from `rtype_server_modules`, which links your library `PUBLIC`.
+Register both `.cpp` files in `tests/CMakeLists.txt`: add `server/TickReport/ServerTickReportFixture.cpp` and `server/TickReport/ServerTickReportModuleTest.cpp` to the `SOURCES` of `server_module_tests`, right after `server/Modules/ServerModulesTest.cpp`. Its include folders come from `rtype_server_modules`, which links your library `PUBLIC`.
 
 Run the tests of the module:
 
@@ -478,8 +484,9 @@ cmake --build build --target tidy
 | Opens a socket, a thread or a file | In `start()`, never in `install()`. If `start()` opens two things and the second fails, close the first before the exception leaves, because `stop()` is not called on a module whose `start()` threw |
 | Reacts to an event | `bus.subscribe<Event>(…)` in `start()`, the `SubscriptionHandle` kept in a member, released in `stop()` |
 | Can be turned off at launch | A launch option read in `LaunchOptions`, a value handed to the module's constructor, and a module that provides the same service doing nothing: see [Turning a module on or off](/R-Type/modules/#turning-a-module-on-or-off) |
-| Belongs to the client | `src/client/Modules/`, listed in `clientModules()`, with the stages of `CLIENT_LOOP_STAGES` (`events`, `network`, `update`, `render`, `display`) |
-| Is part of the rules of one game | An `IGameModule` listed in `rtypeGameModules()`: see [Server](/R-Type/server/#modules-of-a-game-igamemodule) |
+| Belongs to the client | `src/client/<Name>/`, listed in `clientModules()`, with the stages of `CLIENT_LOOP_STAGES` (`events`, `network`, `update`, `render`, `display`) |
+| Is part of the rules of one game | An `IGameModule` in `src/server/<Name>/`, listed in `rtypeGameModules()`: see [Server](/R-Type/server/#modules-of-a-game-igamemodule) |
+| Holds code another folder needs | Required: that folder includes it. Optional: the code goes in its `Contract/` sub-folder. See [The code of a module used elsewhere](/R-Type/project-layout/#the-code-of-a-module-used-elsewhere) |
 
 ## If it does not work
 

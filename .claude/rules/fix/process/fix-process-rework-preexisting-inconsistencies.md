@@ -11,8 +11,8 @@ Why: "minimal diff" is about functional scope, not quality. Every extension of a
 
 1. **Any spotted inconsistency** (violation of the repository conventions or of `.claude/rules/`: method body in a `.hpp`, raw `throw std::`, magic value, off-convention naming, bypassed layer, SFML dependency on the server side…) **is dealt with, even if it predates the current work.** "The file already did it this way" is never a reason to extend it.
 2. **Assess the impact before acting**:
-   - **Contained impact** (current file or module, identical behavior, provable by the build and tests) → **refactor directly**, in a `refactor` commit separate from the functional change.
-   - **High impact** (several modules, network protocol, game loop, risk of behavior change, a teammate currently working on it) → **STOP, ask**, with the finding, the rework option and its cost.
+   - **Contained impact** (current file or folder, identical behavior, provable by the build and tests) → **refactor directly**, in a `refactor` commit separate from the functional change.
+   - **High impact** (several folders, network protocol, game loop, risk of behavior change, a teammate currently working on it) → **STOP, ask**, with the finding, the rework option and its cost.
    - **Unsure where the line is** → ask. Asking is always allowed; silently extending never is.
 3. **The inconsistency is always reported** in the PR or report, even when the rework is deferred by decision.
 4. Also applies to **subagents**: their briefs carry this rule.

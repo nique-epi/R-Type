@@ -1,5 +1,0 @@
-add_library(rtype_client_world_state_filter STATIC WorldStateFilter.cpp)
-
-target_include_directories(rtype_client_world_state_filter PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
-
-rtype_enable_warnings(rtype_client_world_state_filter)
