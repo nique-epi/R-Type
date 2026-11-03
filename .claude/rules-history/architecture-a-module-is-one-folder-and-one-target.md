@@ -34,7 +34,7 @@ Engine², which the kick-off cites, has the same shape: a core, and a folder per
 
 ## What the rewrite of 3 November dropped
 
-- Point 3 of the old version measured the number of `.cpp` per folder on `origin/feat/server-modules` at `3ad9929`, a branch since merged. The figures were stale, so they are gone.
-- The calibration of the old point 8 named `src/client/Platform`, which no longer prints at `> 3`. It was measured again on `a5adf3b9`.
+- Point 3 of the old version measured the number of `.cpp` per folder on `origin/feat/server-modules` at `3ad9929`, not on `main`. The figures say nothing of `main` today, so they are gone.
+- The command of the old point 8 is gone. It counts only the `.cpp` directly in a folder: on `a5adf3b9` it prints nothing, and `src/client/Widgets`, with 39 `.cpp` in class folders, never shows. Counting the folders a change adds or flattens does the same job.
 - "Another module reuses the group" no longer justifies a sub-folder: reused code stays in a required module, goes in a `Contract/` or goes in a library.
 - `project-layout.md` said the classes only one module uses sit in the folder of that module, with `FrameLoop` and `Games` as examples. At `da8b3256`, `FrameLoop` is included by `Modules/Assembly`, `Modules/Screens` and `main.cpp`, `Games` by `Modules/Lobby` and `Modules/Metrics`. The sentence is gone; the classes move when the client and the server are tidied.

@@ -1,18 +1,18 @@
 ---
-description: "Error handling: the custom exceptions of a library or program in its Exceptions/ folder, never a raw throw std:: nor a hard-coded message"
+description: "Error handling: the custom exceptions of an owner (a program or a top library of src/) in its Exceptions/ folder, never a raw throw std:: nor a hard-coded message"
 paths:
   - "**/*.{cpp,hpp,tpp}"
 ---
 
-# RULE: Domain errors are raised through the custom exceptions of their library or program, never a raw `throw std::…`
+# RULE: Domain errors are raised through the custom exceptions of their owner, never a raw `throw std::…`
 
 ## Goal
 
-A generic `std::` exception thrown from domain code carries no domain information: the caller cannot tell "unknown packet type" apart from another `std::invalid_argument` coming from elsewhere, nor catch *the family* of errors of a library in a single `catch`. A custom hierarchy gives one `catch` per family, centralized and testable messages, and keeps std exceptions from crossing library boundaries.
+A generic `std::` exception thrown from domain code carries no domain information: the caller cannot tell "unknown packet type" apart from another `std::invalid_argument` coming from elsewhere, nor catch *the family* of errors of an owner in a single `catch`. A custom hierarchy gives one `catch` per family, centralized and testable messages, and keeps std exceptions from crossing the boundaries of an owner.
 
 ## Rules
 
-- Each library and program of `src/`, its owner (`src/engine`, `src/network`, `src/server`…), has an **`Exceptions/`** folder with:
+- Each owner, that is each program and each top library of `src/` (`src/engine`, `src/network`, `src/server`…), has an **`Exceptions/`** folder with:
   - a **root exception** for that owner, deriving from `std::runtime_error`;
   - **specific subclasses** per error case.
 - **Directly throwing a standard library exception is forbidden** (`std::invalid_argument`, `std::runtime_error`, `std::out_of_range`, `std::logic_error`…).

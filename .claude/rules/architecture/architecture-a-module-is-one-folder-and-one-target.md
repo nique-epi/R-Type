@@ -18,7 +18,7 @@ Why: the subject (page 16) makes an engine modular through what a developer choo
 ### Required or optional
 
 3. **Every module is required or optional, and the list of modules in `docs/src/content/docs/project-layout.md` says which.** A required module may be included by the code that needs it. An optional module is reached only through its `Contract/` sub-folder, which stays compiled when the module is removed. In `src/`, the class of a module is included by the list that names it (`serverModules()`, `clientModules()`, `rtypeGameModules()`) and nothing else.
-4. **The removal test, for an optional module**: remove its folder, except `Contract/`, and its line in the list; the program compiles, starts, and its binary is smaller. **No module passes it yet.** The sound fails it: `screens` lists `audio` in its `dependencies()`, the screens, the widgets and the replication include headers of `src/client/Audio/`, and `AssetLibrary` links `SFML::Audio`. The metrics come closer: only the list includes them, but their code sits in two folders that three `CMakeLists.txt` name, and `BUILD_TESTS` is the only CMake option.
+4. **The removal test, for an optional module**: remove its folder, except `Contract/`, and its line in the list; the program compiles, starts, and its binary is smaller. **No module passes it yet**; `project-layout.md` says what stops the sound and the metrics.
 
 ### The code of a module used elsewhere
 
@@ -27,7 +27,7 @@ Why: the subject (page 16) makes an engine modular through what a developer choo
    | Order | The code… | Then |
    |---|---|---|
    | 1 | belongs to a required module | it stays there, and the code that needs it includes it: `Modules/Lobby/` and `Modules/Metrics/` include `Games.hpp`, `Widgets/` includes `PlayfieldMapping.hpp` |
-   | 2 | belongs to an optional module | it goes in the `Contract/` of that module: `ISoundPlayer`, still at the root of `Audio/` until the client is tidied |
+   | 2 | belongs to an optional module | it goes in the `Contract/` of that module: `ISoundPlayer` |
    | 3 | has no owner and serves several folders | it goes in a library: `Widgets/`, `Rendering/` |
 
 ### Inside a folder
@@ -50,11 +50,7 @@ Why: the subject (page 16) makes an engine modular through what a developer choo
 13. **Two layouts stay tolerated until the client and the server are tidied**; those two changes end the tolerance, except for the class folders of `Widgets/` and `Rendering/`:
     - a module whose class sits in `Modules/<Name>/`, or in `Instances/<Name>Module/` for a game module, with its code in a folder of the feature (`src/client/Audio/`);
     - a folder made of class folders. A folder holds either class folders or flat pairs, never both. A change that adds a class to such a folder either gives it a folder like its siblings, or flattens the folder first in its own `refactor` commit (includes unchanged, targets merged, `CMakeLists.txt` and docs updated, `fix-process-grep-every-page-for-what-the-feature-replaced.md`); the pull request says which. A folder the change does not touch is reported, not reworked.
-14. **The layout holds through this rule, the map and review.** No CI job checks it, and `rtype_forbid_links` gets no check for it. Before the push, run this on the folders the change adds or changes:
-    ```bash
-    git ls-files -- 'src/*.cpp' | sed -E 's#(Linux|MacOs|Windows|Posix)\.cpp$#.cpp#' | sort -u | sed -E 's#/[^/]*$##' | sort | uniq -c | awk '$1 > 10'
-    ```
-    It must print none of them. Calibration, on `a5adf3b9`: with `> 3` instead of `> 10` it prints `src/network/Transport/Simulator` (4) and `src/server/Modules/Games` (5); with `> 10` it prints nothing, because a folder made of class folders counts one `.cpp` per sub-folder.
+14. **The layout holds through this rule, the map and review.** No CI job checks it, and `rtype_forbid_links` gets no check for it. Before the push, count the `.cpp` of each folder the change adds or flattens, against point 8.
 
 ## Example
 

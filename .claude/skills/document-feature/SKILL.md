@@ -37,7 +37,7 @@ A feature usually touches two pages: the team page, and one of the others.
 | Team page: `engine.md` today; `network.md`, `server.md` (server and game) and `client.md` once their first feature lands | what exists in the subsystem, how to use it, where to change it | adds or changes anything in that subsystem (almost always) |
 | `architecture.md` | the decisions every team follows, each with its reasons and an "Alternative considered" | makes a design choice others must respect: a storage layout, a time model, a coordinate frame |
 | `project-layout.md` | the map: libraries, programs, folders, what exists, the list of modules | creates a folder, or makes a planned one exist: update the "… exist; … are being written" sentence of its section. Adds, removes or moves a module: update its row in the list of modules, its folder and whether it is required or optional |
-| `modules.md` | what a module is, its five moments, how modules talk, how one is turned off | changes one of those for every module |
+| `modules.md` | what a module is, required or optional, its five moments, how modules talk, how one is turned off | changes one of those for every module |
 | `protocol.mdx` | the wire format; byte layouts drawn with `ByteLayout` (`docs/src/components/`) | adds or changes a message, the header, a size or the byte order |
 | `README.md` | build, run, test | changes a command, an option or a requirement |
 
