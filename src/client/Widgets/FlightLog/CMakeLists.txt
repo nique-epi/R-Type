@@ -5,7 +5,7 @@ target_include_directories(rtype_client_flight_log_interfaces INTERFACE ${CMAKE_
 target_link_libraries(rtype_client_flight_log_interfaces
   INTERFACE
     rtype_client_effect_interfaces
-    rtype_client_replication_interfaces
+    rtype_client_pilots
     rtype_client_sprite_look
     rtype_client_widgets
     rtype_engine_time

@@ -10,7 +10,7 @@ target_include_directories(rtype_client_prediction PUBLIC ${CMAKE_CURRENT_SOURCE
 target_link_libraries(rtype_client_prediction
   PUBLIC
     rtype_client_connection
-    rtype_client_entity_replicator
+    rtype_client_entities
     rtype_engine
     rtype_engine_time
     rtype_game_components

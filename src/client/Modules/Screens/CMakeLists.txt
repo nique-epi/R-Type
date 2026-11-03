@@ -10,7 +10,7 @@ target_link_libraries(rtype_client_screens_module
     rtype_client_entity_message_queue
     rtype_client_interface
     rtype_client_menus_module
-    rtype_client_replication_interfaces
+    rtype_client_pilots
     rtype_client_screen_interfaces
     rtype_client_screen_registry
     rtype_client_application

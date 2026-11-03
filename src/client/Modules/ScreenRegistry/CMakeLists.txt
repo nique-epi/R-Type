@@ -11,7 +11,7 @@ target_link_libraries(rtype_client_screen_registry
     rtype_client_interface
     rtype_client_menu
     rtype_client_audio_contract
-    rtype_client_replication_interfaces
+    rtype_client_pilots
     rtype_client_screen_interfaces
     rtype_client_scrolling_background
     rtype_client_server_session
