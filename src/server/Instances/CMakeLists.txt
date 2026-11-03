@@ -8,7 +8,6 @@ target_link_libraries(rtype_server_instances
   PUBLIC
     rtype_engine
     rtype_engine_event_bus
-    rtype_game
     rtype_network_player_input
     rtype_network_transport
     rtype_server_constants

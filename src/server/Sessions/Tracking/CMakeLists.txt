@@ -14,7 +14,6 @@ target_link_libraries(rtype_server_sessions_tracking
     rtype_engine_time
     rtype_game_events
     rtype_logging
-    rtype_logging_throttled_log
     rtype_network_game_loaded
     rtype_network_player_input
     rtype_network_protocol
