@@ -16,7 +16,6 @@ target_link_libraries(rtype_client_assets_module
     rtype_logging
   PRIVATE
     rtype_client_constants
-    rtype_client_module_constants
     rtype_engine_paths
 )
 

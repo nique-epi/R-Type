@@ -8,7 +8,6 @@ target_link_libraries(rtype_client_logger_module
     rtype_logging
   PRIVATE
     rtype_client_constants
-    rtype_client_module_constants
 )
 
 rtype_enable_warnings(rtype_client_logger_module)

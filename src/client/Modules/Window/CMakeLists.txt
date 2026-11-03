@@ -13,7 +13,6 @@ target_link_libraries(rtype_client_window_module
     rtype_engine_time
   PRIVATE
     rtype_client_constants
-    rtype_client_module_constants
 )
 
 rtype_enable_warnings(rtype_client_window_module)

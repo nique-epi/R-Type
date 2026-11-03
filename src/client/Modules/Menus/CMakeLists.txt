@@ -13,7 +13,7 @@ target_link_libraries(rtype_client_menus_module
     rtype_client_dialog_menus
     rtype_client_intro_screen
     rtype_client_localized_key_name
-    rtype_client_module_constants
+    rtype_client_constants
     rtype_client_options_screen
     rtype_client_screen_assets
     rtype_client_title_screen

@@ -12,7 +12,6 @@ target_link_libraries(rtype_client_audio_module
   PRIVATE
     rtype_client_audio_service
     rtype_client_constants
-    rtype_client_module_constants
     rtype_client_silent_audio_service
 )
 

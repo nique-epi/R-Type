@@ -15,7 +15,6 @@ target_link_libraries(rtype_client_connection_module
   PRIVATE
     rtype_client_connection
     rtype_client_constants
-    rtype_client_module_constants
     rtype_network_constants
     rtype_network_transport
 )
