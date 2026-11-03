@@ -1,4 +1,4 @@
-add_library(rtype_network_udp_socket STATIC UdpSocket.cpp)
+add_library(rtype_network_udp_socket STATIC UdpSocket.cpp AsioEndpoint.cpp)
 
 target_include_directories(rtype_network_udp_socket PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
