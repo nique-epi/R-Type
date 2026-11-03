@@ -12,6 +12,8 @@ target_link_libraries(rtype_server_replication_module
     rtype_server_replication_announcements
     rtype_server_replication_wire
     rtype_server_sessions_roster
+  PRIVATE
+    rtype_server_sessions_tracking
 )
 
 rtype_enable_warnings(rtype_server_replication_module)

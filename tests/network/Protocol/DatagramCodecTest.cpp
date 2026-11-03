@@ -5,13 +5,16 @@
 #include <cstdint>
 #include <optional>
 #include <span>
-#include <string>
 #include <vector>
 #include "ByteSequence.hpp"
 #include "DatagramCodec.hpp"
+#include "DatagramCodecFixture.hpp"
 #include "DatagramCodecFixtures.hpp"
+#include "EncodedMessage.hpp"
+#include "MessageFrame.hpp"
 #include "MessageType.hpp"
 #include "NetworkException.hpp"
+#include "NetworkTestConstants.hpp"
 #include "PacketHeader.hpp"
 #include "ProtocolConstants.hpp"
 #include "ProtocolFixtures.hpp"
@@ -20,13 +23,16 @@
 namespace rtype::network {
 
 using testing::byteSequence;
-using testing::DatagramCodecMalformedDatagram;
+using testing::DatagramCodecFixture;
 using testing::datagramOf;
 using testing::defaultHeaderBytes;
 using testing::EMPTY_MESSAGE_DATAGRAM_SIZE;
-using testing::headerOneByteShort;
+using testing::FILLING_PAYLOAD_SIZE;
 using testing::LARGEST_DATAGRAM_SIZE;
-using testing::MalformedDatagram;
+using testing::malformedDatagrams;
+using testing::messageOfSize;
+using testing::nameOfFault;
+using testing::OVERFILLING_PAYLOAD_SIZE;
 using testing::SOME_ACKNOWLEDGED_SEQUENCE;
 using testing::SOME_ACKNOWLEDGEMENT_BITS;
 using testing::SOME_FLAGS;
@@ -72,9 +78,9 @@ TEST(DatagramCodec, RefusesToSplitATemporaryDatagram) {
 /**
  * Given a default header
  * When a datagram is encoded with it
- * Then it starts with RTYP, version 1, and zeros for every other field
+ * Then it starts with RTYP, version 2, and zeros for every other field
  */
-TEST(DatagramCodec, DefaultHeaderIsVersionOneWithoutSession) {
+TEST(DatagramCodec, DefaultHeaderIsVersionTwoWithoutSession) {
   const auto datagram =
       DatagramCodec::encode(PacketHeader{}, MessageType::Heartbeat, {});
 
@@ -94,7 +100,7 @@ TEST(DatagramCodec, EncodesTheHeaderAndOneMessageByteByByte) {
       someSessionHeader(), MessageType::ReadyState, byteSequence({0x01}));
 
   EXPECT_EQ(datagram,
-            byteSequence({0x52, 0x54, 0x59, 0x50, 0x01, 0x00, 0x01, 0x02, 0x03,
+            byteSequence({0x52, 0x54, 0x59, 0x50, 0x02, 0x00, 0x01, 0x02, 0x03,
                           0x04, 0x05, 0x06, 0x07, 0x08, 0x0A, 0x0B, 0x00, 0x00,
                           0x00, 0x00, 0x00, 0x00, 0x06, 0x00, 0x01, 0x01}));
 }
@@ -156,9 +162,9 @@ TEST(DatagramCodec, DecodesTheHeaderItEncoded) {
 }
 
 /**
- * Given a datagram whose version byte is 2
+ * Given a datagram whose version byte is 3
  * When its header is decoded
- * Then the version 2 is returned, so the receiver can name it
+ * Then the version 3 is returned, so the receiver can name it
  */
 TEST(DatagramCodec, DecodesTheHeaderOfAnotherVersion) {
   auto datagram =
@@ -202,11 +208,23 @@ TEST(DatagramCodec, SaysAnotherProtocolIdDoesNotSpeakThisProtocol) {
 }
 
 /**
- * Given a header with a flag set, which version 1 never sets
+ * Given a header with the two flags version 2 knows
+ * When it is checked
+ * Then it speaks this protocol
+ */
+TEST(DatagramCodec, SaysAHeaderWithTheFlagsOfThisVersionSpeaksThisProtocol) {
+  PacketHeader header;
+  header.flags = PROTOCOL_BOTH_FLAGS;
+
+  EXPECT_TRUE(DatagramCodec::speaksThisProtocol(header));
+}
+
+/**
+ * Given a header with a flag version 2 does not know
  * When it is checked
  * Then it does not speak this protocol
  */
-TEST(DatagramCodec, SaysAHeaderWithFlagsDoesNotSpeakThisProtocol) {
+TEST(DatagramCodec, SaysAHeaderWithAnUnknownFlagDoesNotSpeakThisProtocol) {
   PacketHeader header;
   header.flags = SOME_FLAGS;
 
@@ -466,35 +484,85 @@ TEST(DatagramCodec, ReadsTheTypesOfEveryMessage) {
 }
 
 /**
+ * Given a Heartbeat and an EntityDestroyed payload
+ * When they are encoded in one datagram
+ * Then it splits back into both, in order, with their payloads
+ */
+TEST(DatagramCodec, EncodesSeveralMessagesInOrder) {
+  const std::vector<EncodedMessage> messages{
+      EncodedMessage{.type = MessageType::Heartbeat, .payload = {}},
+      EncodedMessage{.type = MessageType::EntityDestroyed,
+                     .payload = std::vector<std::byte>(FILLING_PAYLOAD_SIZE)}};
+
+  const std::vector<std::byte> datagram =
+      DatagramCodec::encode(PacketHeader{}, messages);
+
+  const std::vector<MessageFrame> frames =
+      DatagramCodec::splitMessages(datagram);
+  ASSERT_EQ(frames.size(), 2U);
+  EXPECT_EQ(frames.front().type,
+            static_cast<std::uint8_t>(MessageType::Heartbeat));
+  EXPECT_TRUE(frames.front().payload.empty());
+  EXPECT_EQ(frames.back().type,
+            static_cast<std::uint8_t>(MessageType::EntityDestroyed));
+  EXPECT_EQ(frames.back().payload.size(), FILLING_PAYLOAD_SIZE);
+}
+
+/**
+ * Given two messages that make exactly LARGEST_DATAGRAM_SIZE bytes with the
+ * header
+ * When they are encoded
+ * Then the datagram is LARGEST_DATAGRAM_SIZE bytes
+ */
+TEST(DatagramCodec, EncodesSeveralMessagesThatFillADatagram) {
+  const std::vector<EncodedMessage> messages(
+      2, messageOfSize(FILLING_PAYLOAD_SIZE));
+
+  EXPECT_EQ(DatagramCodec::encode(PacketHeader{}, messages).size(),
+            LARGEST_DATAGRAM_SIZE);
+}
+
+/**
+ * Given two messages that make one byte more than LARGEST_DATAGRAM_SIZE
+ * When they are encoded
+ * Then DatagramTooLargeException is thrown
+ */
+TEST(DatagramCodec, RefusesSeveralMessagesOneByteTooLarge) {
+  const std::vector<EncodedMessage> messages{
+      messageOfSize(FILLING_PAYLOAD_SIZE),
+      messageOfSize(OVERFILLING_PAYLOAD_SIZE)};
+
+  EXPECT_THROW(
+      static_cast<void>(DatagramCodec::encode(PacketHeader{}, messages)),
+      DatagramTooLargeException);
+}
+
+/**
+ * Given no message
+ * When a datagram of them is encoded
+ * Then EmptyDatagramException is thrown
+ */
+TEST(DatagramCodec, RefusesADatagramWithoutAMessage) {
+  const std::vector<EncodedMessage> none;
+
+  EXPECT_THROW(static_cast<void>(DatagramCodec::encode(PacketHeader{}, none)),
+               EmptyDatagramException);
+}
+
+/**
  * Given bytes splitMessages() refuses
  * When their message types are read
  * Then there are none, and nothing is thrown
  */
-TEST_P(DatagramCodecMalformedDatagram, HasNoMessageTypes) {
+TEST_P(DatagramCodecFixture, HasNoMessageTypes) {
   ASSERT_THROW((void)DatagramCodec::splitMessages(GetParam().bytes),
                MalformedDatagramException);
 
   EXPECT_EQ(DatagramCodec::messageTypes(GetParam().bytes), std::nullopt);
 }
 
-INSTANTIATE_TEST_SUITE_P(
-    EveryFaultOfSplitMessages, DatagramCodecMalformedDatagram,
-    ::testing::Values(
-        MalformedDatagram{.fault = "HeaderOneByteShort",
-                          .bytes = headerOneByteShort()},
-        MalformedDatagram{.fault = "HeaderAlone",
-                          .bytes = defaultHeaderBytes()},
-        MalformedDatagram{.fault = "PrefixCutShort",
-                          .bytes = datagramOf({0x05, 0x00})},
-        MalformedDatagram{.fault = "SizePastTheEnd",
-                          .bytes = datagramOf({0x06, 0x00, 0x02, 0x01})},
-        MalformedDatagram{.fault = "BytesAfterTheLastMessage",
-                          .bytes = datagramOf({0x06, 0x00, 0x01, 0x01, 0x00})},
-        MalformedDatagram{
-            .fault = "SecondMessageCutShort",
-            .bytes = datagramOf({0x06, 0x00, 0x01, 0x01, 0x06, 0x00, 0x01})}),
-    [](const ::testing::TestParamInfo<MalformedDatagram>& info) {
-      return std::string{info.param.fault};
-    });
+INSTANTIATE_TEST_SUITE_P(EveryFaultOfSplitMessages, DatagramCodecFixture,
+                         ::testing::ValuesIn(malformedDatagrams()),
+                         nameOfFault);
 
 }  // namespace rtype::network

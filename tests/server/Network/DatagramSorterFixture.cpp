@@ -3,9 +3,19 @@
 #include <cstdint>
 #include <optional>
 #include <vector>
+#include "DatagramQueues.hpp"
 #include "Endpoint.hpp"
 #include "IncomingDatagram.hpp"
+#include "ServerConstants.hpp"
 #include "TimeConstants.hpp"
+
+DatagramSorterFixture::DatagramSorterFixture()
+    : players_(rtype::server::INCOMING_DATAGRAM_QUEUE_CAPACITY),
+      connectionRequests_(rtype::server::CONNECTION_REQUEST_QUEUE_CAPACITY),
+      sorter_(
+          rtype::server::DatagramQueues{
+              .players = &players_, .connectionRequests = &connectionRequests_},
+          clock_) {}
 
 void DatagramSorterFixture::sort(const rtype::network::Endpoint& sender,
                                  const std::vector<std::byte>& datagram) {

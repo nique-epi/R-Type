@@ -76,7 +76,9 @@ void ServerGamesModule::install(engine::InstallContext& context) {
       SIMULATION_STAGE,
       [this]([[maybe_unused]] engine::Duration elapsed) { playGames(); });
   context.addWork(OUTPUT_STAGE,
-                  [this](engine::Duration elapsed) { deliverEvents(elapsed); });
+                  [this]([[maybe_unused]] engine::Duration elapsed) {
+                    games_.dispatchEvents();
+                  });
 }
 
 void ServerGamesModule::declareSettings(
@@ -155,7 +157,6 @@ std::unique_ptr<GameInstance> ServerGamesModule::createGame(
           .send = std::bind_front(&IDatagramSender::queueDatagram, sender_),
           .settings = std::move(settings),
           .events = events,
-          .timers = timers_,
           .clock = clock_},
       rtypeGameModules(*results_));
 }
@@ -169,11 +170,6 @@ void ServerGamesModule::playGames() {
       admission_->forget(departed.endpoint, departed.sessionToken);
     }
   }
-}
-
-void ServerGamesModule::deliverEvents(engine::Duration elapsed) {
-  timers_.advance(elapsed);
-  games_.dispatchEvents();
 }
 
 }  // namespace rtype::server

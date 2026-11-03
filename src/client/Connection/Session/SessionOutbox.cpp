@@ -11,11 +11,14 @@
 #include "OutgoingDatagram.hpp"
 #include "PacketHeader.hpp"
 #include "ProtocolConstants.hpp"
+#include "SessionAcknowledgements.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::client {
 
-SessionOutbox::SessionOutbox(IDatagramLink& link) : link_(&link) {}
+SessionOutbox::SessionOutbox(IDatagramLink& link,
+                             SessionAcknowledgements& acknowledgements)
+    : link_(&link), acknowledgements_(&acknowledgements) {}
 
 void SessionOutbox::aim(const network::Endpoint& server) {
   server_ = server;
@@ -35,10 +38,14 @@ void SessionOutbox::sendToServer(network::MessageType type,
       .payload = network::DatagramCodec::encode(nextHeader(), type, payload)});
 }
 
-void SessionOutbox::advance(engine::Duration elapsed) { sinceSent_ += elapsed; }
+void SessionOutbox::advance(engine::Duration elapsed) {
+  sinceSent_ += elapsed;
+  acknowledgements_->advance(elapsed);
+}
 
 void SessionOutbox::sendHeartbeatWhenSilent() {
-  if (sinceSent_ < network::HEARTBEAT_INTERVAL) {
+  if (sinceSent_ < network::HEARTBEAT_INTERVAL &&
+      !acknowledgements_->isAcknowledgementDue()) {
     return;
   }
   sendMessage(*this, network::Heartbeat{});
@@ -52,6 +59,7 @@ network::PacketHeader SessionOutbox::nextHeader() {
   header.sessionToken = sessionToken_;
   header.sequence = nextSequence_;
   ++nextSequence_;
+  acknowledgements_->acknowledgeIn(header);
   return header;
 }
 

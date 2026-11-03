@@ -15,8 +15,8 @@ namespace rtype::client {
  * screen applies it: an entity appears, the state of the world at one tick,
  * an entity disappears, something happens to an entity or a player (the first
  * copy of a GameEvent only), a player left the game (every copy of
- * PlayerLeft), or the game is over, with every score (the first copy of
- * GameEnded only).
+ * PlayerLeft that arrives), or the game is over, with every score (the first
+ * copy of GameEnded only).
  */
 using EntityMessage = std::variant<network::EntitySpawned, network::WorldState,
                                    network::EntityDestroyed, network::GameEvent,

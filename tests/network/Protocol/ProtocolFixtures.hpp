@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <initializer_list>
 #include <vector>
+#include "EncodedMessage.hpp"
 #include "EntitySpawned.hpp"
 #include "PacketHeader.hpp"
 
@@ -29,5 +30,10 @@ std::vector<std::byte> datagramOf(
  * @returns The spawn of a Bydo of EXAMPLE_ENTITY_ID at EXAMPLE_X, EXAMPLE_Y.
  */
 EntitySpawned exampleBydo();
+
+/**
+ * @returns A GameEvent message whose payload holds @p size zero bytes.
+ */
+EncodedMessage messageOfSize(std::size_t size);
 
 }  // namespace rtype::network::testing

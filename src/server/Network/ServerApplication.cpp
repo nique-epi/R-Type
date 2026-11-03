@@ -9,6 +9,7 @@
 #include <string>
 #include <thread>
 #include <utility>
+#include "DatagramQueues.hpp"
 #include "DatagramSocketOpening.hpp"
 #include "DatagramSorter.hpp"
 #include "Endpoint.hpp"
@@ -56,9 +57,8 @@ ServerApplication::ServerApplication(
       incoming_(INCOMING_DATAGRAM_QUEUE_CAPACITY),
       connectionRequests_(CONNECTION_REQUEST_QUEUE_CAPACITY),
       outgoing_(OUTGOING_DATAGRAM_QUEUE_CAPACITY),
-      sorter_(DatagramSorter::Destinations{.players = &incoming_,
-                                           .connectionRequests =
-                                               &connectionRequests_},
+      sorter_(DatagramQueues{.players = &incoming_,
+                             .connectionRequests = &connectionRequests_},
               clock_),
       handleTick_(std::move(handleTick)) {}
 
