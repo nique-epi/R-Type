@@ -22,8 +22,9 @@ enum class GameEventKind : std::uint8_t {
 
 /**
  * @brief Something that drives a sound or an effect on the client, never a
- * game rule. eventNumber starts at 1 for each game and wraps from 65535 to 0;
- * the three copies of an event carry the same number.
+ * game rule. eventNumber starts at 1 for each game and wraps from 65535 to 0.
+ * Guaranteed: every copy of an event the server sends again carries the same
+ * number, so the client handles each number once.
  */
 struct GameEvent {
   static constexpr MessageType TYPE = MessageType::GameEvent;

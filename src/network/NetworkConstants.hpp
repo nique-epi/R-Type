@@ -90,9 +90,23 @@ constexpr std::chrono::seconds REJECTION_LINE_INTERVAL{10};
 
 /**
  * @brief Why a receiver drops a datagram whose header is not of this protocol
- * and version, or has a flag set, as its rejection lines say.
+ * and version, or has a flag this version does not know, as its rejection
+ * lines say.
  */
 constexpr std::string_view FOREIGN_HEADER_DROP_REASON =
-    "its header is not of this protocol and version, or has a flag set";
+    "its header is not of this protocol and version, or has a flag this "
+    "version does not know";
+
+/**
+ * @brief Launch option of both programs followed by the file their traffic goes
+ * to, as it is typed and as their usage shows it, and what their usage says of
+ * it. See TrafficRecorder.
+ */
+constexpr std::string_view TRAFFIC_CSV_OPTION = "--traffic-csv";
+constexpr std::string_view TRAFFIC_CSV_OPTION_WITH_VALUE =
+    "--traffic-csv <file>";
+constexpr std::string_view TRAFFIC_CSV_USAGE =
+    "File the traffic of the program goes to, by peer and by message type, as "
+    "totals since the launch; it is emptied at launch. Default: no file.";
 
 }  // namespace rtype::network

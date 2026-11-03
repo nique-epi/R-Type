@@ -2,7 +2,9 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include <filesystem>
 #include <functional>
+#include <optional>
 #include <span>
 #include <string>
 #include <string_view>
@@ -121,6 +123,17 @@ engine::LaunchOption inputDelayOption(LaunchValues& values) {
       }};
 }
 
+/** @returns `--database <file>`, which forces the database setting. */
+engine::LaunchOption databaseOption(LaunchValues& values) {
+  return engine::LaunchOption{
+      .name = DATABASE_OPTION,
+      .takesValue = true,
+      .record = [&values](std::string_view file) {
+        values.forcedLines.push_back(
+            engine::settingLine(DATABASE_SETTING_NAME, file));
+      }};
+}
+
 /** @returns `--set <name>=<value>`, which forces any setting. */
 engine::LaunchOption setOption(LaunchValues& values) {
   return engine::LaunchOption{
@@ -174,6 +187,16 @@ std::string settingOptionEntries() {
   return text;
 }
 
+/** @returns The line of the usage that describes `--database`. */
+std::string databaseOptionEntry() {
+  return engine::usageEntry(
+      std::string(DATABASE_OPTION) + " <file>",
+      "File the leaderboard of this server is kept in, on a local disk. "
+      "Default: " +
+          std::string(DATABASE_FILE_PREFIX) + "<port>" +
+          std::string(DATABASE_FILE_SUFFIX) + " next to the executable.");
+}
+
 /** @returns The lines of the usage that describe `--set` and `--help`. */
 std::string generalOptionEntries() {
   std::string text = engine::usageEntry(
@@ -185,7 +208,10 @@ std::string generalOptionEntries() {
           std::string(PORT_SETTING_NAME) + ", " +
           std::string(SEED_SETTING_NAME) + ", " +
           std::string(STATE_RATE_SETTING_NAME) + ", " +
-          std::string(INPUT_DELAY_SETTING_NAME) + ".");
+          std::string(INPUT_DELAY_SETTING_NAME) + ", " +
+          std::string(DATABASE_SETTING_NAME) + ".");
+  text += engine::usageEntry(network::TRAFFIC_CSV_OPTION_WITH_VALUE,
+                             network::TRAFFIC_CSV_USAGE);
   text += engine::usageEntry(engine::HELP_OPTION,
                              "Print this help and start nothing.");
   return text;
@@ -194,12 +220,19 @@ std::string generalOptionEntries() {
 }  // namespace
 
 LaunchOptions LaunchOptions::read(std::span<const std::string_view> arguments) {
-  LaunchOptions options{
-      LaunchValues{.forcedLines = {}, .helpRequested = false}};
+  LaunchOptions options{LaunchValues{.forcedLines = {},
+                                     .trafficCsvFile = std::nullopt,
+                                     .helpRequested = false}};
   const std::array launchOptions{
-      portOption(options.values_),      seedOption(options.values_),
-      stateRateOption(options.values_), inputDelayOption(options.values_),
-      setOption(options.values_),       helpOption(options.values_)};
+      portOption(options.values_),
+      seedOption(options.values_),
+      stateRateOption(options.values_),
+      inputDelayOption(options.values_),
+      databaseOption(options.values_),
+      setOption(options.values_),
+      engine::pathOption(network::TRAFFIC_CSV_OPTION,
+                         options.values_.trafficCsvFile),
+      helpOption(options.values_)};
   const std::array<engine::LaunchOptionReader, 2> readers{
       std::bind_front(&network::SimulatorLaunchOptions::readOption,
                       &options.simulatorOptions_),
@@ -212,6 +245,7 @@ LaunchOptions LaunchOptions::read(std::span<const std::string_view> arguments) {
 std::string LaunchOptions::usage() {
   std::string text = engine::usageHeader(PROGRAM_NAME);
   text += settingOptionEntries();
+  text += databaseOptionEntry();
   text += generalOptionEntries();
   text += '\n';
   text += network::SimulatorLaunchOptions::usage();
@@ -232,6 +266,11 @@ const network::NetworkConditions& LaunchOptions::networkConditions() const {
 
 const logging::LogLaunchOptions& LaunchOptions::logOptions() const {
   return logOptions_;
+}
+
+const std::optional<std::filesystem::path>& LaunchOptions::trafficCsvFile()
+    const {
+  return values_.trafficCsvFile;
 }
 
 LaunchOptions::LaunchOptions(LaunchValues values)

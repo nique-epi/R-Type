@@ -1,5 +1,7 @@
 #pragma once
 
+#include <filesystem>
+#include <optional>
 #include <span>
 #include <string>
 #include <string_view>
@@ -29,10 +31,11 @@ class LaunchOptions {
    * @brief Reads every option of the client from @p arguments, the arguments
    * it was launched with, without its name, in one pass from the first to the
    * last: `-h <address>`, `-p <port>`, `-n <nickname>`,
-   * `--set <name>=<value>`, `--no-sound` and `--help`, the options of the
-   * network simulator (see network::SimulatorLaunchOptions::readOption()) and
-   * the logging options (see logging::LogLaunchOptions::readOption()), whose
-   * exceptions this throws too.
+   * `--set <name>=<value>`, `--no-sound`, `--traffic-csv <file>` and `--help`,
+   * the options of the network simulator (see
+   * network::SimulatorLaunchOptions::readOption()) and the logging options
+   * (see logging::LogLaunchOptions::readOption()), whose exceptions this
+   * throws too.
    *
    * The argument after an option that takes a value is always its value, even
    * when it is spelled as an option of the client, of the simulator or of the
@@ -102,6 +105,11 @@ class LaunchOptions {
    * applies when the client starts (see logging::LogLaunchOptions::apply()).
    */
   [[nodiscard]] const logging::LogLaunchOptions& logOptions() const;
+
+  /** @returns The file given after `--traffic-csv`, nothing when it was not
+   * given. */
+  [[nodiscard]] const std::optional<std::filesystem::path>& trafficCsvFile()
+      const;
 
  private:
   explicit LaunchOptions(LaunchValues values);

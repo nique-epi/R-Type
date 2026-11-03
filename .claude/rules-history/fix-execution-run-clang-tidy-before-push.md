@@ -113,3 +113,27 @@ The tests of the metrics lines build a `MetricsReport` with `.systemTimes = {Sys
 ## Update (24 October 2026) — Code moved out of a file takes its uses with it
 
 The answer to a review moved the constants of the test files into `…TestConstants.hpp` headers. `MissionBannerTest.cpp` kept `#include <cstddef>`, whose only use, a `std::size_t` constant, had moved to `MissionBannerTestConstants.hpp`. The local clang-tidy (libc++) passed it; the CI's `misc-include-cleaner` (libstdc++) failed on it. Point 2 of the subsection already asked to match each include against what the file names: it was not applied to the files the move emptied. New point 4: after a move, match the standard includes left behind with a script over every touched file.
+
+## Update (2026-11-03) — The match of the includes runs over the whole branch before its first push
+
+### Context
+
+A branch moved `FIRST_DATAGRAM_DISTANCE` from an anonymous namespace of `ArrivalLedger.cpp` into `ArrivalLedgerConstants.hpp`, in its fifth commit of twenty-five.
+
+### Mistake
+
+`ArrivalLedger.cpp` kept `#include <cstddef>`, which only the constant had needed. The local `clang-tidy` (libc++) exited 0 on the 135 files of the branch; the CI `Clang-tidy` job (libstdc++) failed on `included header cstddef is not used directly`.
+
+### Root cause
+
+The match of the standard includes against what each file names was done for the files of the last commits, not for every file of the branch, so the move made twenty commits earlier was not checked again.
+
+### Rule
+
+Before the first push of a branch, run the match over every file the branch changes.
+
+### Example
+
+- ❌ **Before (wrong)**: the match run on the files of the last commits only.
+- ✅ **After (right)**: a script lists, for each of the 135 files, the standard headers it names nothing of; `ArrivalLedger.cpp` comes out with `<cstddef>`.
+

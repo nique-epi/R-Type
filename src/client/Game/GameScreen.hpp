@@ -22,6 +22,7 @@
 #include "IScreen.hpp"
 #include "IScreenNavigator.hpp"
 #include "ISky.hpp"
+#include "InterpolationClock.hpp"
 #include "Logger.hpp"
 #include "MissionBanner.hpp"
 #include "OwnShipPredictor.hpp"
@@ -172,6 +173,7 @@ class GameScreen : public IScreen {
   ScoreBoard scoreBoard_;
   GameResult* result_;
   OwnShipPredictor prediction_;
+  InterpolationClock interpolationClock_;
   std::optional<engine::Duration> endedAt_;
   std::uint32_t paintedStatusRevision_{};
   PlayerInputPacer inputPacer_;

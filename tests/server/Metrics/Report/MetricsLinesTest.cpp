@@ -42,7 +42,8 @@ TEST(MetricsLines, TheTicksLineGivesEachFigureAndTheBudgetOfATick) {
                            .inProgress = GAMES_IN_PROGRESS,
                            .players = PLAYERS_CONNECTED,
                            .entities = ENTITIES_ALIVE},
-      .systemTimes = {}};
+      .systemTimes = {},
+      .traffic = {}};
 
   EXPECT_EQ(ticksLineOf(report), EXPECTED_TICKS_LINE);
 }
@@ -59,7 +60,8 @@ TEST(MetricsLines, TheSystemsLineGivesTheAverageCostOfEachSystem) {
       .systemTimes = {engine::SystemTime{.name = FASTER_SYSTEM_NAME,
                                          .total = FASTER_SYSTEM_TOTAL},
                       engine::SystemTime{.name = SLOWER_SYSTEM_NAME,
-                                         .total = SLOWER_SYSTEM_TOTAL}}};
+                                         .total = SLOWER_SYSTEM_TOTAL}},
+      .traffic = {}};
 
   EXPECT_EQ(systemsLineOf(report), EXPECTED_SYSTEMS_LINE);
 }
@@ -74,7 +76,8 @@ TEST(MetricsLines, TheSystemsLineOfNoTickGivesZero) {
       .ticks = TickDurationSummary{},
       .games = GamesCensus{},
       .systemTimes = {engine::SystemTime{.name = FASTER_SYSTEM_NAME,
-                                         .total = FASTER_SYSTEM_TOTAL}}};
+                                         .total = FASTER_SYSTEM_TOTAL}},
+      .traffic = {}};
 
   EXPECT_EQ(systemsLineOf(report), EXPECTED_LINE_WITHOUT_TICKS);
 }

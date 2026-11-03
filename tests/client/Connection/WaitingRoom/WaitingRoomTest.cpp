@@ -37,6 +37,7 @@ using testing::PROTOCOL_SILENCE_LIMIT;
 using testing::SECOND_SEQUENCE;
 using testing::server;
 using testing::SESSION_TOKEN;
+using testing::sessionHeader;
 using testing::stateListing;
 using testing::WaitingRoomFixture;
 

@@ -1,6 +1,7 @@
 add_library(rtype_client_entities STATIC
   EntityReplicator.cpp
   LastListedTicks.cpp
+  PositionHistory.cpp
   WorldStateFilter.cpp
 )
 

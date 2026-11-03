@@ -11,4 +11,10 @@ namespace rtype::server {
  */
 constexpr std::size_t LOSS_WINDOW_SIZE = 100;
 
+/**
+ * @brief The datagrams the first accepted datagram of a player stands for:
+ * itself alone, since no sequence of the player is known before it.
+ */
+constexpr std::size_t FIRST_DATAGRAM_DISTANCE = 1;
+
 }  // namespace rtype::server

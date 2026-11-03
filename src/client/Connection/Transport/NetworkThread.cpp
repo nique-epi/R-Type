@@ -1,10 +1,12 @@
 #include "NetworkThread.hpp"
 #include <exception>
+#include <memory>
 #include <mutex>
 #include <thread>
 #include <utility>
 #include <vector>
 #include "BoundedQueue.hpp"
+#include "CountingDatagramSocket.hpp"
 #include "DatagramRelay.hpp"
 #include "DatagramSocketOpening.hpp"
 #include "Endpoint.hpp"
@@ -13,6 +15,7 @@
 #include "NetworkConditions.hpp"
 #include "NetworkContext.hpp"
 #include "OutgoingDatagram.hpp"
+#include "TrafficCounters.hpp"
 #include "TransportConstants.hpp"
 
 namespace rtype::client {
@@ -30,8 +33,9 @@ void NetworkThread::open() {
   if (socket_) {
     return;
   }
-  socket_ =
-      network::openDatagramSocket(network_, listeningEndpoint_, conditions_);
+  socket_ = std::make_unique<network::CountingDatagramSocket>(
+      network::openDatagramSocket(network_, listeningEndpoint_, conditions_),
+      traffic_);
   try {
     startNetwork(*socket_);
   } catch (...) {
@@ -68,6 +72,8 @@ void NetworkThread::drainReceived(
 network::Endpoint NetworkThread::localEndpoint() const {
   return localEndpoint_;
 }
+
+network::TrafficCounters& NetworkThread::traffic() { return traffic_; }
 
 void NetworkThread::startNetwork(network::IDatagramSocket& socket) {
   localEndpoint_ = socket.localEndpoint();

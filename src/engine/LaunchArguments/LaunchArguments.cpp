@@ -1,5 +1,7 @@
 #include "LaunchArguments.hpp"
 #include <cstddef>
+#include <filesystem>
+#include <optional>
 #include <span>
 #include <string>
 #include <string_view>
@@ -103,6 +105,15 @@ std::string launchErrorText(std::string_view programName,
   return std::string(programName) + ": " + std::string(message) + "\nRun " +
          std::string(programName) + " " + std::string(HELP_OPTION) +
          " to see the options.\n";
+}
+
+LaunchOption pathOption(std::string_view name,
+                        std::optional<std::filesystem::path>& path) {
+  return LaunchOption{.name = name,
+                      .takesValue = true,
+                      .record = [&path](std::string_view value) {
+                        path = std::filesystem::path{value};
+                      }};
 }
 
 }  // namespace rtype::engine

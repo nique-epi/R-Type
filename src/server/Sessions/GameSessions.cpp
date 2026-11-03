@@ -12,6 +12,8 @@
 #include "Heartbeats.hpp"
 #include "IClock.hpp"
 #include "IncomingDatagram.hpp"
+#include "LeaderboardRequest.hpp"
+#include "MessageDelivery.hpp"
 #include "MessageOrigin.hpp"
 #include "PacketHeader.hpp"
 #include "PlayerDatagram.hpp"
@@ -31,7 +33,12 @@ GameSessions::GameSessions(GameSessionsParts parts)
       reader_(roster_),
       readyKeeper_(roster_, std::move(parts.readyAccepted)),
       inputKeeper_(roster_, std::move(parts.onNewerInput)),
-      departures_(roster_, parts.events, std::move(parts.onClosing)) {
+      departures_(roster_, parts.events, std::move(parts.onClosing)),
+      onLeaderboardRequest_(std::move(parts.onLeaderboardRequest)) {
+  registerHandlers();
+}
+
+void GameSessions::registerHandlers() {
   dispatcher_.registerHandler<network::ReadyState>(
       [this](const network::MessageOrigin& origin,
              const network::ReadyState& message) {
@@ -46,6 +53,14 @@ GameSessions::GameSessions(GameSessionsParts parts)
       [this](const network::MessageOrigin& origin,
              const network::PlayerInput& input) {
         inputKeeper_.keepIfNewer(origin, input);
+      });
+  dispatcher_.registerHandler<network::LeaderboardRequest>(
+      [this](const network::MessageOrigin& origin,
+             const network::LeaderboardRequest& request) {
+        const ConnectedPlayer* const player = roster_.find(origin.sender);
+        if (player != nullptr) {
+          onLeaderboardRequest_(*player, request);
+        }
       });
   dispatcher_.registerHandler<network::Heartbeat>(
       [](const network::MessageOrigin&, const network::Heartbeat&) {});
@@ -73,11 +88,14 @@ bool GameSessions::everyPlayerIsReady() {
 
 void GameSessions::startTick() {
   const engine::Duration tickStart = clock_->now();
-  addTimeSinceSent(roster_,
-                   tickStart - std::exchange(previousTickStart_, tickStart));
+  const engine::Duration elapsed =
+      tickStart - std::exchange(previousTickStart_, tickStart);
+  addTimeSinceSent(roster_, elapsed);
+  ageGuaranteedMessages(roster_, elapsed);
 }
 
 void GameSessions::endTick() {
+  resendGuaranteedMessages(roster_, send_);
   sendHeartbeats(roster_, send_);
   reader_.countTick();
 }
@@ -98,6 +116,7 @@ void GameSessions::readDatagram(const network::IncomingDatagram& datagram) {
   }
   readable->player->ticksSinceReceived = 0;
   readable->player->away = false;
+  readable->player->unacknowledged.acknowledge(readable->origin.header);
   dispatcher_.dispatch(readable->origin, readable->messages);
 }
 

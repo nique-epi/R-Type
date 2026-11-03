@@ -5,6 +5,7 @@
 #include <string>
 #include <thread>
 #include <vector>
+#include "IListeningPort.hpp"
 #include "IModule.hpp"
 #include "InstallContext.hpp"
 #include "Logger.hpp"
@@ -19,7 +20,8 @@ namespace rtype::server {
 /**
  * @brief The module that owns the two threads of the server and its UDP
  * socket. It provides to the modules installed after it the IDatagramSender,
- * the IPlayerAdmission and the TickDatagrams, and runs the stages of the loop
+ * the IPlayerAdmission, the TickDatagrams, the network::TrafficCounters of its
+ * socket and itself as the IListeningPort, and runs the stages of the loop
  * once per tick.
  *
  * install() builds the ServerApplication, which binds nothing, and declares the
@@ -29,7 +31,8 @@ namespace rtype::server {
  * stops on an error, the module logs it and tells the StopRequest, which wakes
  * the thread that waits to stop the program.
  */
-class ServerNetworkModule final : public engine::IModule {
+class ServerNetworkModule final : public engine::IModule,
+                                  public IListeningPort {
  public:
   /** @param port The UDP port to listen on, on every IPv4 interface, unless
    * the configuration sets another; 0 lets the system pick one.
@@ -58,6 +61,10 @@ class ServerNetworkModule final : public engine::IModule {
 
   /** @brief Stops the server, waits for its threads and closes the socket. */
   void stop() override;
+
+  /** @returns The port the `port` setting holds, the one given at
+   * construction until the configuration sets another. */
+  [[nodiscard]] std::uint16_t listeningPort() const override;
 
  private:
   void runServer();

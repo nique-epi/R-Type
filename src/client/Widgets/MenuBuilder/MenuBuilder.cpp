@@ -15,14 +15,180 @@
 #include "InterfaceConstants.hpp"
 #include "KeyCap.hpp"
 #include "Menu.hpp"
+#include "PanelCursor.hpp"
+#include "PendingButton.hpp"
 #include "RowControl.hpp"
 #include "TabStrip.hpp"
 #include "TextField.hpp"
+#include "TextStyle.hpp"
 #include "WidgetConstants.hpp"
 #include "WidgetStyles.hpp"
 #include "WidgetText.hpp"
 
 namespace rtype::client {
+
+namespace {
+
+/** @brief A line of the column of a page: where it starts, how it is written,
+ * and the space it leaves under it. */
+struct ColumnLine {
+  int top{};
+  TextStyle style;
+  int spaceBelow{};
+};
+
+/** @brief Where the parts of a form lie, from the top of its panel, and how
+ * many of its bars are buttons. */
+struct FormLayout {
+  sf::Vector2i panelTopLeft;
+  sf::Vector2i panelSize;
+  int fieldsTop{};
+  int buttonsTop{};
+  int descriptionTop{};
+  int statusTop{};
+  int buttonCount{};
+};
+
+/** @returns The top of what comes under a line of a column, which is left out
+ * when it was not asked for. */
+int placeColumnLine(Menu::Content& content, std::optional<std::string>& text,
+                    const ColumnLine& line) {
+  if (!text.has_value()) {
+    return line.top;
+  }
+  content.labels.emplace_back(std::move(*text),
+                              sf::Vector2i(SAFE_MARGIN, line.top), line.style);
+  return line.top + TEXT_LINE_HEIGHT + line.spaceBelow;
+}
+
+/** @returns The top of what comes under the bars of a column. */
+int placeColumnBars(Menu::Content& content, std::vector<PendingButton>& bars,
+                    int top) {
+  for (PendingButton& pending : bars) {
+    const sf::Vector2i size =
+        pending.field.has_value() ? FIELD_SIZE : BUTTON_SIZE;
+    content.buttons.emplace_back(
+        std::move(pending.text), sf::IntRect({SAFE_MARGIN, top}, size),
+        std::move(pending.action), std::move(pending.field));
+    top += size.y + BUTTON_GAP;
+  }
+  return top;
+}
+
+/** @returns Where the parts of a form holding these bars lie. */
+FormLayout formLayoutOf(const std::vector<PendingButton>& bars) {
+  const int fieldCount = static_cast<int>(
+      std::ranges::count_if(bars, [](const PendingButton& pending) noexcept {
+        return pending.field.has_value();
+      }));
+  const int fieldsTop =
+      FORM_HEADING_OFFSET.y + TEXT_LINE_HEIGHT + SPACE_BELOW_FORM_HEADING;
+  const int buttonsTop = fieldsTop + (fieldCount * FIELD_SIZE.y) +
+                         ((fieldCount - 1) * SPACE_BETWEEN_FIELDS) +
+                         SPACE_AROUND_FORM_BUTTONS;
+  const int descriptionTop =
+      buttonsTop + FORM_BUTTON_SIZE.y + SPACE_AROUND_FORM_BUTTONS;
+  const int statusTop =
+      descriptionTop + TEXT_LINE_HEIGHT + SPACE_BELOW_DESCRIPTION;
+  const sf::Vector2i panelSize(
+      FORM_WIDTH, statusTop + TEXT_LINE_HEIGHT + FORM_HEADING_OFFSET.y);
+  return FormLayout{
+      .panelTopLeft = (INTERFACE_AREA.size - panelSize) / SIDES_PER_AXIS,
+      .panelSize = panelSize,
+      .fieldsTop = fieldsTop,
+      .buttonsTop = buttonsTop,
+      .descriptionTop = descriptionTop,
+      .statusTop = statusTop,
+      .buttonCount = static_cast<int>(bars.size()) - fieldCount};
+}
+
+/** @brief Places the fields of a form one under the other, its buttons in a
+ * centered row under them. */
+void placeFormBars(Menu::Content& content, std::vector<PendingButton>& bars,
+                   const FormLayout& layout) {
+  const sf::Vector2i panel = layout.panelTopLeft;
+  const int rowWidth =
+      barRowWidth(layout.buttonCount, FORM_BUTTON_SIZE, FORM_BUTTON_GAP);
+  int fieldTop = panel.y + layout.fieldsTop;
+  int buttonLeft = panel.x + ((FORM_WIDTH - rowWidth) / SIDES_PER_AXIS);
+  for (PendingButton& pending : bars) {
+    sf::IntRect area;
+    if (pending.field.has_value()) {
+      area =
+          sf::IntRect({panel.x + FORM_HEADING_OFFSET.x, fieldTop}, FIELD_SIZE);
+      fieldTop += FIELD_SIZE.y + SPACE_BETWEEN_FIELDS;
+    } else {
+      area = sf::IntRect({buttonLeft, panel.y + layout.buttonsTop},
+                         FORM_BUTTON_SIZE);
+      buttonLeft += FORM_BUTTON_SIZE.x + FORM_BUTTON_GAP;
+    }
+    content.buttons.emplace_back(std::move(pending.text), area,
+                                 std::move(pending.action),
+                                 std::move(pending.field));
+  }
+}
+
+/** @brief Where the rows and the bars of a menu lie: the rows down from the
+ * first, the bars rightwards from the first. */
+struct RowsAndBars {
+  sf::Vector2i firstRow;
+  sf::Vector2i rowSize;
+  sf::Vector2i firstBar;
+  sf::Vector2i barSize;
+  int barGap{};
+};
+
+/** @returns Where the next row and the next bar would go. */
+PanelCursor placeRowsAndBarsOf(Menu::Content& content,
+                               std::vector<PendingButton>& bars,
+                               const RowsAndBars& place) {
+  PanelCursor cursor{.rowTop = place.firstRow.y, .barLeft = place.firstBar.x};
+  for (PendingButton& pending : bars) {
+    if (pending.control != nullptr) {
+      content.buttons.emplace_back(
+          std::move(pending.text),
+          sf::IntRect({place.firstRow.x, cursor.rowTop}, place.rowSize),
+          std::move(pending.control));
+      cursor.rowTop += place.rowSize.y + ROW_GAP;
+    } else {
+      content.buttons.emplace_back(
+          std::move(pending.text),
+          sf::IntRect({cursor.barLeft, place.firstBar.y}, place.barSize),
+          std::move(pending.action), std::move(pending.field));
+      cursor.barLeft += place.barSize.x + place.barGap;
+    }
+  }
+  return cursor;
+}
+
+/** @brief Places the rows of a dialog under its heading and its buttons in a
+ * centered row; rows keep Left and Right to step their values. */
+void placeDialogBars(Menu::Content& content, std::vector<PendingButton>& bars,
+                     sf::Vector2i panel) {
+  const int rowCount = static_cast<int>(
+      std::ranges::count_if(bars, [](const PendingButton& pending) noexcept {
+        return pending.control != nullptr;
+      }));
+  const int barCount = static_cast<int>(bars.size()) - rowCount;
+  const int rowWidth =
+      barRowWidth(barCount, DIALOG_BUTTON_SIZE, DIALOG_BUTTON_GAP);
+  placeRowsAndBarsOf(
+      content, bars,
+      RowsAndBars{
+          .firstRow = {panel.x + DIALOG_ROW_INSET, panel.y + DIALOG_ROWS_TOP},
+          .rowSize = DIALOG_ROW_SIZE,
+          .firstBar = {panel.x + ((DIALOG_SIZE.x - rowWidth) / SIDES_PER_AXIS),
+                       panel.y + (rowCount > 0 ? DIALOG_BUTTONS_TOP_UNDER_ROWS
+                                               : DIALOG_BUTTONS_TOP)},
+          .barSize = DIALOG_BUTTON_SIZE,
+          .barGap = DIALOG_BUTTON_GAP});
+  if (rowCount > 0) {
+    content.nextKeys = PANEL_NEXT_KEYS;
+    content.previousKeys = PANEL_PREVIOUS_KEYS;
+  }
+}
+
+}  // namespace
 
 MenuBuilder::MenuBuilder(Frame frame, ISoundPlayer* sounds)
     : frame_(frame), sounds_(sounds) {}
@@ -144,39 +310,27 @@ Menu MenuBuilder::build() {
 }
 
 void MenuBuilder::placeColumn(Menu::Content& content) {
-  const int left = SAFE_MARGIN;
-  int top = SAFE_MARGIN;
-  if (version_.has_value()) {
-    content.labels.emplace_back(std::move(*version_), sf::Vector2i(left, top),
-                                VERSION_STYLE);
-    top += TEXT_LINE_HEIGHT + SPACE_BELOW_VERSION;
-  }
+  int top = placeColumnLine(content, version_,
+                            {.top = SAFE_MARGIN,
+                             .style = VERSION_STYLE,
+                             .spaceBelow = SPACE_BELOW_VERSION});
   if (logo_.has_value()) {
-    logo_->area.position = {left, top};
+    logo_->area.position = {SAFE_MARGIN, top};
     top += logo_->area.size.y + SPACE_BELOW_HEADING;
     content.picture = std::move(logo_);
   }
-  if (heading_.has_value()) {
-    content.labels.emplace_back(std::move(*heading_), sf::Vector2i(left, top),
-                                PAGE_LINE_STYLE);
-    top += TEXT_LINE_HEIGHT + SPACE_BELOW_HEADING;
-  }
-  if (subtitle_.has_value()) {
-    content.labels.emplace_back(std::move(*subtitle_), sf::Vector2i(left, top),
-                                PAGE_LINE_STYLE);
-    top += TEXT_LINE_HEIGHT + SPACE_BELOW_SUBTITLE;
-  }
-  content.rule = sf::IntRect({left, top}, RULE_SIZE);
-  top += RULE_SIZE.y + SPACE_BELOW_RULE;
-  for (PendingButton& pending : buttons_) {
-    const sf::Vector2i size =
-        pending.field.has_value() ? FIELD_SIZE : BUTTON_SIZE;
-    content.buttons.emplace_back(
-        std::move(pending.text), sf::IntRect({left, top}, size),
-        std::move(pending.action), std::move(pending.field));
-    top += size.y + BUTTON_GAP;
-  }
-  content.descriptionAnchor = sf::Vector2i(left, top);
+  top = placeColumnLine(content, heading_,
+                        {.top = top,
+                         .style = PAGE_LINE_STYLE,
+                         .spaceBelow = SPACE_BELOW_HEADING});
+  top = placeColumnLine(content, subtitle_,
+                        {.top = top,
+                         .style = PAGE_LINE_STYLE,
+                         .spaceBelow = SPACE_BELOW_SUBTITLE});
+  content.rule = sf::IntRect({SAFE_MARGIN, top}, RULE_SIZE);
+  top =
+      placeColumnBars(content, buttons_, top + RULE_SIZE.y + SPACE_BELOW_RULE);
+  content.descriptionAnchor = sf::Vector2i(SAFE_MARGIN, top);
   const int right = INTERFACE_AREA.size.x - SAFE_MARGIN;
   if (illustration_.has_value()) {
     content.illustration = sf::IntRect(
@@ -202,69 +356,25 @@ void MenuBuilder::placeDialog(Menu::Content& content) {
                                 panelTopLeft + DIALOG_MESSAGE_OFFSET,
                                 DIALOG_MESSAGE_STYLE);
   }
-  const int count = static_cast<int>(buttons_.size());
-  const int rowWidth =
-      barRowWidth(count, DIALOG_BUTTON_SIZE, DIALOG_BUTTON_GAP);
-  int left = panelTopLeft.x + ((DIALOG_SIZE.x - rowWidth) / SIDES_PER_AXIS);
-  for (PendingButton& pending : buttons_) {
-    content.buttons.emplace_back(
-        std::move(pending.text),
-        sf::IntRect({left, panelTopLeft.y + DIALOG_BUTTONS_TOP},
-                    DIALOG_BUTTON_SIZE),
-        std::move(pending.action), std::move(pending.field));
-    left += DIALOG_BUTTON_SIZE.x + DIALOG_BUTTON_GAP;
-  }
+  placeDialogBars(content, buttons_, panelTopLeft);
 }
 
 void MenuBuilder::placeForm(Menu::Content& content) {
-  const int fieldCount = static_cast<int>(std::ranges::count_if(
-      buttons_, [](const PendingButton& pending) noexcept {
-        return pending.field.has_value();
-      }));
-  const int buttonCount = static_cast<int>(buttons_.size()) - fieldCount;
-  const int fieldsTop =
-      FORM_HEADING_OFFSET.y + TEXT_LINE_HEIGHT + SPACE_BELOW_FORM_HEADING;
-  const int buttonsTop = fieldsTop + (fieldCount * FIELD_SIZE.y) +
-                         ((fieldCount - 1) * SPACE_BETWEEN_FIELDS) +
-                         SPACE_AROUND_FORM_BUTTONS;
-  const int descriptionTop =
-      buttonsTop + FORM_BUTTON_SIZE.y + SPACE_AROUND_FORM_BUTTONS;
-  const int statusTop =
-      descriptionTop + TEXT_LINE_HEIGHT + SPACE_BELOW_DESCRIPTION;
-  const sf::Vector2i panelSize(
-      FORM_WIDTH, statusTop + TEXT_LINE_HEIGHT + FORM_HEADING_OFFSET.y);
-  const sf::Vector2i panelTopLeft =
-      (INTERFACE_AREA.size - panelSize) / SIDES_PER_AXIS;
-  content.panel = sf::IntRect(panelTopLeft, panelSize);
+  const FormLayout layout = formLayoutOf(buttons_);
+  const sf::Vector2i panel = layout.panelTopLeft;
+  content.panel = sf::IntRect(panel, layout.panelSize);
   if (heading_.has_value()) {
     content.labels.emplace_back(std::move(*heading_),
-                                panelTopLeft + FORM_HEADING_OFFSET,
+                                panel + FORM_HEADING_OFFSET,
                                 DIALOG_HEADING_STYLE);
   }
-  const int left = panelTopLeft.x + FORM_HEADING_OFFSET.x;
-  const int rowWidth =
-      barRowWidth(buttonCount, FORM_BUTTON_SIZE, FORM_BUTTON_GAP);
-  int fieldTop = panelTopLeft.y + fieldsTop;
-  int buttonLeft = panelTopLeft.x + ((FORM_WIDTH - rowWidth) / SIDES_PER_AXIS);
-  for (PendingButton& pending : buttons_) {
-    sf::IntRect area;
-    if (pending.field.has_value()) {
-      area = sf::IntRect({left, fieldTop}, FIELD_SIZE);
-      fieldTop += FIELD_SIZE.y + SPACE_BETWEEN_FIELDS;
-    } else {
-      area = sf::IntRect({buttonLeft, panelTopLeft.y + buttonsTop},
-                         FORM_BUTTON_SIZE);
-      buttonLeft += FORM_BUTTON_SIZE.x + FORM_BUTTON_GAP;
-    }
-    content.buttons.emplace_back(std::move(pending.text), area,
-                                 std::move(pending.action),
-                                 std::move(pending.field));
-  }
+  placeFormBars(content, buttons_, layout);
+  const int left = panel.x + FORM_HEADING_OFFSET.x;
   content.descriptionAnchor =
-      sf::Vector2i(left, panelTopLeft.y + descriptionTop);
+      sf::Vector2i(left, panel.y + layout.descriptionTop);
   content.descriptionStyle = FORM_DESCRIPTION_STYLE;
   content.selectsOnHover = false;
-  content.statusAnchor = sf::Vector2i(left, panelTopLeft.y + statusTop);
+  content.statusAnchor = sf::Vector2i(left, panel.y + layout.statusTop);
 }
 
 void MenuBuilder::placeTabbedPanel(Menu::Content& content) {
@@ -307,24 +417,14 @@ void MenuBuilder::placeRowsPanel(Menu::Content& content) {
   content.previousKeys = PANEL_PREVIOUS_KEYS;
 }
 
-MenuBuilder::PanelCursor MenuBuilder::placeRowsAndBars(Menu::Content& content) {
-  PanelCursor cursor{.rowTop = FIRST_ROW_TOP_LEFT.y, .barLeft = SAFE_MARGIN};
-  for (PendingButton& pending : buttons_) {
-    if (pending.control != nullptr) {
-      content.buttons.emplace_back(
-          std::move(pending.text),
-          sf::IntRect({FIRST_ROW_TOP_LEFT.x, cursor.rowTop}, ROW_SIZE),
-          std::move(pending.control));
-      cursor.rowTop += ROW_SIZE.y + ROW_GAP;
-    } else {
-      content.buttons.emplace_back(
-          std::move(pending.text),
-          sf::IntRect({cursor.barLeft, PANEL_BARS_TOP}, PANEL_BAR_SIZE),
-          std::move(pending.action), std::move(pending.field));
-      cursor.barLeft += PANEL_BAR_SIZE.x + SPACE_BESIDE_PANEL_BARS;
-    }
-  }
-  return cursor;
+PanelCursor MenuBuilder::placeRowsAndBars(Menu::Content& content) {
+  return placeRowsAndBarsOf(
+      content, buttons_,
+      RowsAndBars{.firstRow = FIRST_ROW_TOP_LEFT,
+                  .rowSize = ROW_SIZE,
+                  .firstBar = {SAFE_MARGIN, PANEL_BARS_TOP},
+                  .barSize = PANEL_BAR_SIZE,
+                  .barGap = SPACE_BESIDE_PANEL_BARS});
 }
 
 void MenuBuilder::placeDescriptionAndIllustration(Menu::Content& content,
@@ -370,13 +470,14 @@ void MenuBuilder::placeRoom(Menu::Content& content) {
   content.statusStyle = ROOM_STATUS_STYLE;
 }
 
-sf::IntRect MenuBuilder::chipArea(const Button::Text& text) {
+sf::IntRect MenuBuilder::chipArea(const Button::Text& text,
+                                  std::optional<int> right) {
   const int width =
       BUTTON_TEXT_OFFSET.x + regularTextWidth(text.label) + CHIP_KEY_CAP_GAP +
       KeyCap(text.keyName, KeyCap::Edge::Plain).width() + BAR_KEY_CAP_INSET;
   const sf::Vector2i bottomRight =
       INTERFACE_AREA.size - sf::Vector2i(SAFE_MARGIN, SAFE_MARGIN);
-  return {{bottomRight.x - width, bottomRight.y - CHIP_HEIGHT},
+  return {{right.value_or(bottomRight.x) - width, bottomRight.y - CHIP_HEIGHT},
           {width, CHIP_HEIGHT}};
 }
 

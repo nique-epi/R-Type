@@ -62,6 +62,15 @@ class DatagramTooLargeException : public NetworkException {
 };
 
 /**
+ * @brief A datagram to send holds no message: every datagram holds at least
+ * one, and a receiver drops one that does not.
+ */
+class EmptyDatagramException : public NetworkException {
+ public:
+  EmptyDatagramException();
+};
+
+/**
  * @brief A socket was asked to start receiving a second time.
  */
 class ReceivingAlreadyStartedException : public NetworkException {
@@ -129,6 +138,25 @@ class TrailingBytesException : public MalformedMessageException {
 class InvalidNicknameException : public MalformedMessageException {
  public:
   explicit InvalidNicknameException(std::size_t size);
+};
+
+/**
+ * @brief A difficulty that is empty, longer than the protocol allows, not
+ * UTF-8, or holding a control character, read from a payload or about to be
+ * written into one.
+ */
+class InvalidDifficultyException : public MalformedMessageException {
+ public:
+  explicit InvalidDifficultyException(std::size_t size);
+};
+
+/**
+ * @brief A LeaderboardAnswer lists more rows than the protocol allows.
+ */
+class TooManyLeaderboardRowsException : public MalformedMessageException {
+ public:
+  TooManyLeaderboardRowsException(std::size_t rowCount,
+                                  std::size_t maximumCount);
 };
 
 /**
@@ -215,6 +243,15 @@ class SimulatedDelayOutOfRangeException : public NetworkException {
   SimulatedDelayOutOfRangeException(std::chrono::milliseconds lag,
                                     std::chrono::milliseconds jitter,
                                     std::chrono::milliseconds longest);
+};
+
+/**
+ * @brief A file the traffic of a program should go to, and that the system
+ * refuses to open.
+ */
+class TrafficFileOpenException : public NetworkException {
+ public:
+  explicit TrafficFileOpenException(const std::string& path);
 };
 
 }  // namespace rtype::network

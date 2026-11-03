@@ -18,6 +18,7 @@
 #include "NetworkThreadFixtures.hpp"
 #include "NetworkThreadTestConstants.hpp"
 #include "OutgoingDatagram.hpp"
+#include "TrafficReport.hpp"
 #include "UdpPortProbe.hpp"
 #include "UdpSocket.hpp"
 #include "UdpTestClient.hpp"
@@ -223,4 +224,46 @@ TEST(NetworkThread, DelaysWhatItSendsByHalfTheSimulatedLag) {
   ASSERT_EQ(received.size(), 1U);
   EXPECT_EQ(received.front().payload, exchangedBytes());
   EXPECT_GE(received.front().time - handedAt, HALF_OF_THE_LAG);
+}
+
+/**
+ * Given a network thread that received a datagram and sent one
+ * When it closed
+ * Then both are counted, with the others: the client follows nobody
+ */
+TEST(NetworkThread, CountsWhatItSendsAndReceives) {
+  NetworkThread networkThread{loopbackOnPort(ANY_PORT), NetworkConditions{}};
+  networkThread.open();
+  NetworkContext peerContext;
+  UdpSocket peer{peerContext, loopbackOnPort(ANY_PORT)};
+  peer.send(networkThread.localEndpoint(), exchangedBytes());
+  peerContext.run();
+  drainUntilReceived(networkThread);
+
+  networkThread.send(OutgoingDatagram{.destination = peer.localEndpoint(),
+                                      .payload = exchangedBytes()});
+  networkThread.close();
+
+  const rtype::network::TrafficReport report = networkThread.traffic().report();
+  EXPECT_TRUE(report.peers.empty());
+  EXPECT_EQ(report.others.received.datagrams.count, 1U);
+  EXPECT_EQ(report.others.sent.datagrams.count, 1U);
+}
+
+/**
+ * Given a network thread over a network that loses everything
+ * When it sends a datagram
+ * Then the datagram counts as sent: the counters sit above the simulated
+ * network, as on a real network
+ */
+TEST(NetworkThread, ADatagramLostOnTheNetworkCountsAsSent) {
+  NetworkThread networkThread{loopbackOnPort(ANY_PORT), FULL_LOSS};
+  networkThread.open();
+
+  networkThread.send(
+      OutgoingDatagram{.destination = networkThread.localEndpoint(),
+                       .payload = exchangedBytes()});
+  networkThread.close();
+
+  EXPECT_EQ(networkThread.traffic().report().others.sent.datagrams.count, 1U);
 }

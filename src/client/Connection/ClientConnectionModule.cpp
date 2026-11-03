@@ -27,12 +27,14 @@ void ClientConnectionModule::install(engine::InstallContext& context) {
   context.provide(connection_.session());
   context.provide(connection_.waitingRoom());
   context.provide(connection_.entityMessages());
+  context.provide(connection_.leaderboard());
+  context.provide(connection_.network().traffic());
   context.addWork(NETWORK_STAGE, [this](engine::Duration elapsed) {
     connection_.update(elapsed);
   });
 }
 
-void ClientConnectionModule::start() { connection_.open(); }
+void ClientConnectionModule::start() { connection_.network().open(); }
 
 void ClientConnectionModule::stop() {
   try {
@@ -40,7 +42,7 @@ void ClientConnectionModule::stop() {
   } catch (const std::exception& error) {
     logger_.warn("the server was not told the client leaves: ", error.what());
   }
-  connection_.close();
+  connection_.network().close();
 }
 
 }  // namespace rtype::client

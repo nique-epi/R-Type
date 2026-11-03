@@ -10,6 +10,7 @@
 #include "FlightLogSheetConstants.hpp"
 #include "HudSpriteConstants.hpp"
 #include "InterfaceConstants.hpp"
+#include "LeaderboardSpriteConstants.hpp"
 #include "ProfessorSpriteConstants.hpp"
 #include "ScreenAssets.hpp"
 #include "ScreenAssetsFixtures.hpp"
@@ -25,6 +26,7 @@ using rtype::client::FLIGHT_LOG_SHEET_ID;
 using rtype::client::gameAssets;
 using rtype::client::HUD_SHEET_ID;
 using rtype::client::introAssets;
+using rtype::client::LEADERBOARD_SHEET_ID;
 using rtype::client::loadInterfaceAssets;
 using rtype::client::LOGO_ID;
 using rtype::client::LOGO_SIZE;
@@ -139,6 +141,16 @@ TEST(ScreenAssets, TheTitleLoadsItsLogoAndTheEntitySheet) {
 /**
  * Given the assets of the title screen
  * When their textures are listed
+ * Then they hold the sheet of the leaderboard, since it is pushed over the
+ * title and the waiting room without loading
+ */
+TEST(ScreenAssets, TheTitleLoadsTheSheetOfTheLeaderboard) {
+  EXPECT_THAT(titleAssets().textures, IsSupersetOf({LEADERBOARD_SHEET_ID}));
+}
+
+/**
+ * Given the assets of the title screen
+ * When their textures are listed
  * Then they hold the sheets the help of the waiting room draws, since the
  * waiting room is pushed over the title without loading
  */
@@ -176,7 +188,8 @@ TEST(ScreenAssets, AGameKeepsEveryTextureOfTheTitle) {
 TEST(ScreenAssets, TheIntroLoadsTheTitleAndTheEffectSheet) {
   EXPECT_THAT(introAssets().textures,
               UnorderedElementsAre(LOGO_ID, ENTITY_SHEET_ID, HUD_SHEET_ID,
-                                   PROFESSOR_SHEET_ID, EFFECT_SHEET_ID));
+                                   PROFESSOR_SHEET_ID, LEADERBOARD_SHEET_ID,
+                                   EFFECT_SHEET_ID));
 }
 
 /**

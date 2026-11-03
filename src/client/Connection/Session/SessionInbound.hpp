@@ -10,6 +10,7 @@
 #include "PacketHeader.hpp"
 #include "ProtocolConstants.hpp"
 #include "Reception.hpp"
+#include "SessionAcknowledgements.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::client {
@@ -24,13 +25,17 @@ namespace rtype::client {
  * for the attempt to end. Once a session is open, a datagram is read only with
  * the token of the session, then only if newer than the newest one read, so a
  * late LobbyState never undoes a newer one; a datagram with another token is
- * counted by wrongTokenCount(). Every datagram read restarts the silence.
+ * counted by wrongTokenCount(). Every datagram read restarts the silence. The
+ * sequences it accepts are kept in a SessionAcknowledgements, from which
+ * SessionOutbox acknowledges them.
  */
 class SessionInbound {
  public:
   /** @param link Where the datagrams come from; it must outlive the
-   * inbound side. */
-  explicit SessionInbound(IRoutedLink& link);
+   * inbound side.
+   * @param acknowledgements Where the sequences of the session are accepted;
+   * it must outlive the inbound side too. */
+  SessionInbound(IRoutedLink& link, SessionAcknowledgements& acknowledgements);
 
   /** @brief From now on reads the datagrams of @p server, drops what the link
    * already held, and starts the silence over. */
@@ -64,13 +69,13 @@ class SessionInbound {
  private:
   /** @returns Whether a datagram of the server may be read: always before the
    * acceptance; then only with the token of the session, and newer than the
-   * newest one read, which it becomes. */
+   * newest one accepted (see SessionAcknowledgements::accept()). */
   [[nodiscard]] bool passesSessionChecks(const network::PacketHeader& header);
 
   IRoutedLink* link_;
+  SessionAcknowledgements* acknowledgements_;
   bool open_{false};
   std::uint64_t sessionToken_{network::NO_SESSION_TOKEN};
-  std::uint16_t newestReceivedSequence_{0};
   std::size_t wrongTokenCount_{0};
   engine::Duration sinceReceived_{};
   std::vector<network::IncomingDatagram> received_;

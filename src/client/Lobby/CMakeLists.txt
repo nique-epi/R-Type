@@ -11,6 +11,7 @@ target_link_libraries(rtype_client_lobby_module
     rtype_client_handshake
     rtype_client_help_walkthrough
     rtype_client_interface
+    rtype_client_key_chip
     rtype_client_menu
     rtype_client_screens_module
     rtype_client_waiting_room

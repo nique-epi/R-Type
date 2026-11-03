@@ -2,6 +2,7 @@ add_subdirectory(Transport)
 add_subdirectory(Session)
 add_subdirectory(Handshake)
 add_subdirectory(WaitingRoom)
+add_subdirectory(Leaderboard)
 
 add_library(rtype_client_connection_module STATIC
   ClientConnectionModule.cpp
@@ -13,6 +14,7 @@ target_include_directories(rtype_client_connection_module PUBLIC ${CMAKE_CURRENT
 
 target_link_libraries(rtype_client_connection_module
   PUBLIC
+    rtype_client_connection_leaderboard
     rtype_client_entity_messages
     rtype_client_handshake
     rtype_client_input_commands

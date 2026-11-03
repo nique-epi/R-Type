@@ -8,9 +8,9 @@
 #include "GameInstance.hpp"
 #include "Games.hpp"
 #include "RecordingDatagramSender.hpp"
+#include "RecordingResultsArchive.hpp"
 #include "SimulatedClock.hpp"
 #include "TimeConstants.hpp"
-#include "TimerScheduler.hpp"
 
 /** @brief The base of the tests of Games and FarewellSender: games of the
  * server built by hand, a sender that records, and a pause that only writes
@@ -38,8 +38,8 @@ class GamesFixture : public ::testing::Test {
   [[nodiscard]] const std::vector<rtype::engine::Duration>& pauses() const;
 
  private:
-  rtype::engine::TimerScheduler timers_;
   SimulatedClock clock_;
+  RecordingResultsArchive results_;
   rtype::server::Games games_;
   RecordingDatagramSender sender_;
   std::vector<rtype::engine::Duration> pauses_;

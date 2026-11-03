@@ -4,6 +4,7 @@
 #include "GamesCensus.hpp"
 #include "SystemTime.hpp"
 #include "TickDurationSummary.hpp"
+#include "TrafficReport.hpp"
 
 namespace rtype::server {
 
@@ -14,6 +15,9 @@ struct MetricsReport {
   GamesCensus games;
   /** @brief How long each system ran over those ticks, all games added up. */
   std::vector<engine::SystemTime> systemTimes;
+  /** @brief What crossed the socket since the server started, by player and by
+   * type of message. */
+  network::TrafficReport traffic;
 };
 
 }  // namespace rtype::server

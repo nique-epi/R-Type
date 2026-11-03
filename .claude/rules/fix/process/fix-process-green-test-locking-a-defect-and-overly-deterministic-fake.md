@@ -27,6 +27,18 @@ Why: an assertion copied from the output turns the current behavior into the spe
 
 1. **Before asserting only the end of a sequence of inputs**, play the sequence on the faulty reading: if it reaches the same end state through another input (the wrong key opens the tab the right key would have opened), the test cannot fail. Assert after each input, or give each input its own test.
 2. **The red proof is the check**: a variant that leaves such a test green means the test is split, never that the variant is dropped.
+3. **A call between the input and the assertion can undo what the assertion reads.** Before asserting a state, read every call the test makes after the input for one that resets that state: `acknowledgeIn()` ends the wait that `isAcknowledgementDue()` reads. Assert before such a call, or give each its own test.
+
+### A repeating timer is walked in short steps, and restarted
+
+1. **A test that jumps a whole delay in one update proves the end state, never the pace**: `update(GIVE_UP_TIME)` passes on a timer that is never reset. Walk short frames over the delay and count what went out, with the expected count written from the requirement.
+2. **A timer a new request restarts is tested after it expired**: ask again, and check it runs its whole time again.
+3. **The red proof removes each reset**, one at a time.
+
+### A color asserted is absent from the other states
+
+1. **Before asserting a look through a color, compare it with the colors of the other states of the widget** (`WidgetColors.hpp`): two constants can hold one color. `BAR_BORDER_COLOR` and `SELECTED_BAR_INSIDE_COLOR` are both `EDGE_BLUE`.
+2. **Write the opposite test too**: the state without that look must not contain the color. If it does, the first test could not fail.
 
 ## Example
 
@@ -40,3 +52,5 @@ Why: an assertion copied from the output turns the current behavior into the spe
   EXPECT_EQ(deserialize(serialize(snapshot)), snapshot);
   ```
   plus a test of the receiver under a fake transport that **reorders** datagrams, asserting that an older snapshot never overwrites a newer one.
+- ❌ **Before (wrong)**: `ForgetEverythingWhenTheSessionCloses` closed the session, let the delay pass, wrote the acknowledgement into a header, then asserted nothing was due; writing the acknowledgement ends the wait, so a `close()` that kept the wait left the test green.
+- ✅ **After (right)**: `ForgetTheWaitWhenTheSessionCloses` asserts the wait right after `close()` and the delay, and `ForgetTheSequencesWhenTheSessionCloses` asserts the header on its own.

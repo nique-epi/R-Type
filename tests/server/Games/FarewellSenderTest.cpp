@@ -4,7 +4,6 @@
 #include <vector>
 #include "DatagramCodec.hpp"
 #include "Disconnection.hpp"
-#include "GameEventConstants.hpp"
 #include "GamesFixture.hpp"
 #include "ModuleConstants.hpp"
 #include "OutgoingDatagram.hpp"
@@ -17,9 +16,9 @@ using rtype::network::DatagramCodec;
 using rtype::network::Disconnection;
 using rtype::network::OutgoingDatagram;
 using rtype::network::PacketHeader;
+using rtype::server::FAREWELL_COPIES;
+using rtype::server::FAREWELL_COPY_INTERVAL;
 using rtype::server::FAREWELL_FLUSH_WAIT;
-using rtype::server::REPEATED_MESSAGE_COPIES;
-using rtype::server::REPEATED_MESSAGE_INTERVAL;
 using rtype::server::testing::onlyMessageIn;
 using rtype::server::testing::playerEndpoint;
 using rtype::server::testing::sentTo;
@@ -27,7 +26,7 @@ using rtype::server::testing::sentTo;
 /**
  * Given a game with two players
  * When the server says goodbye
- * Then each player gets REPEATED_MESSAGE_COPIES datagrams, each one a
+ * Then each player gets FAREWELL_COPIES datagrams, each one a
  * Disconnection
  */
 TEST_F(GamesFixture, SendsEveryPlayerAllTheCopiesOfADisconnection) {
@@ -40,7 +39,7 @@ TEST_F(GamesFixture, SendsEveryPlayerAllTheCopiesOfADisconnection) {
   for (const std::size_t index : {0U, 1U}) {
     const std::vector<OutgoingDatagram> received =
         sentTo(sender().sent(), playerEndpoint(index));
-    ASSERT_EQ(received.size(), REPEATED_MESSAGE_COPIES);
+    ASSERT_EQ(received.size(), FAREWELL_COPIES);
     for (const OutgoingDatagram& datagram : received) {
       static_cast<void>(onlyMessageIn<Disconnection>(datagram));
     }
@@ -62,7 +61,7 @@ TEST_F(GamesFixture, WritesTheCopiesUnderTheSessionHeaderOfThePlayer) {
 
   const std::vector<OutgoingDatagram> received =
       sentTo(sender().sent(), playerEndpoint(0));
-  ASSERT_EQ(received.size(), REPEATED_MESSAGE_COPIES);
+  ASSERT_EQ(received.size(), FAREWELL_COPIES);
   for (std::size_t copy = 0; copy < received.size(); ++copy) {
     const PacketHeader header =
         DatagramCodec::decodeHeader(received[copy].payload);
@@ -74,7 +73,7 @@ TEST_F(GamesFixture, WritesTheCopiesUnderTheSessionHeaderOfThePlayer) {
 /**
  * Given a game with a player
  * When the server says goodbye
- * Then it waits REPEATED_MESSAGE_INTERVAL between two copies, then
+ * Then it waits FAREWELL_COPY_INTERVAL between two copies, then
  * FAREWELL_FLUSH_WAIT after the last one
  */
 TEST_F(GamesFixture, WaitsBetweenTheCopiesThenForTheLastOneToLeave) {
@@ -84,7 +83,7 @@ TEST_F(GamesFixture, WaitsBetweenTheCopiesThenForTheLastOneToLeave) {
   farewell().sayGoodbyeTo(games());
 
   EXPECT_EQ(pauses(), (std::vector<rtype::engine::Duration>{
-                          REPEATED_MESSAGE_INTERVAL, REPEATED_MESSAGE_INTERVAL,
+                          FAREWELL_COPY_INTERVAL, FAREWELL_COPY_INTERVAL,
                           FAREWELL_FLUSH_WAIT}));
 }
 

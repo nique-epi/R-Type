@@ -1,4 +1,5 @@
 #include <gtest/gtest.h>
+#include <filesystem>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -12,10 +13,12 @@
 #include "LoggingException.hpp"
 #include "LoggingOptionTestConstants.hpp"
 #include "NetworkConditions.hpp"
+#include "NetworkConstants.hpp"
 #include "NetworkException.hpp"
 #include "NetworkSimulatorTestConstants.hpp"
 #include "ServerConstants.hpp"
 #include "SimulatorLaunchOptions.hpp"
+#include "TrafficFileTestConstants.hpp"
 
 using rtype::engine::HELP_OPTION;
 using rtype::engine::InvalidLaunchOptionValueException;
@@ -31,6 +34,8 @@ using rtype::logging::MissingLogOptionValueException;
 using rtype::logging::NO_FILE_OPTION;
 using rtype::logging::NO_STDERR_OPTION;
 using rtype::network::InvalidPortException;
+using rtype::network::TRAFFIC_CSV_OPTION;
+using rtype::server::DATABASE_OPTION;
 using rtype::server::INPUT_DELAY_OPTION;
 using rtype::server::LaunchOptions;
 using rtype::server::SEED_OPTION;
@@ -160,9 +165,10 @@ TEST(ServerLaunchOptions, UsageNamesEveryOption) {
   const std::string usage = LaunchOptions::usage();
 
   for (const std::string_view option :
-       {PORT_OPTION, SEED_OPTION, HELP_OPTION, rtype::logging::LEVEL_OPTION,
-        rtype::logging::FILE_OPTION, rtype::logging::NO_FILE_OPTION,
-        rtype::logging::STDERR_OPTION, rtype::logging::NO_STDERR_OPTION}) {
+       {PORT_OPTION, SEED_OPTION, DATABASE_OPTION, HELP_OPTION,
+        rtype::logging::LEVEL_OPTION, rtype::logging::FILE_OPTION,
+        rtype::logging::NO_FILE_OPTION, rtype::logging::STDERR_OPTION,
+        rtype::logging::NO_STDERR_OPTION}) {
     SCOPED_TRACE(option);
     EXPECT_NE(usage.find("\n  " + std::string(option)), std::string::npos);
   }
@@ -580,4 +586,71 @@ TEST(ServerLaunchOptions, UsageHoldsTheNetworkSimulatorOptions) {
 TEST(ServerLaunchOptions, UsageNamesTheInputDelayOption) {
   EXPECT_NE(LaunchOptions::usage().find(std::string(INPUT_DELAY_OPTION)),
             std::string::npos);
+}
+
+/**
+ * Given no argument
+ * When the launch options are read
+ * Then no traffic file is asked for
+ */
+TEST(ServerLaunchOptions, NoArgumentAsksForNoTrafficFile) {
+  EXPECT_FALSE(LaunchOptions::read(Arguments{}).trafficCsvFile().has_value());
+}
+
+/**
+ * Given the traffic option and a file
+ * When the launch options are read
+ * Then the file is the one given
+ */
+TEST(ServerLaunchOptions, TrafficOptionGivesTheFile) {
+  const LaunchOptions options =
+      LaunchOptions::read(Arguments{TRAFFIC_CSV_OPTION, TRAFFIC_FILE_NAME});
+
+  EXPECT_EQ(options.trafficCsvFile().value_or(std::filesystem::path{}),
+            std::filesystem::path{TRAFFIC_FILE_NAME});
+}
+
+/**
+ * Given the usage of the server
+ * When it is read
+ * Then it lists the traffic option
+ */
+TEST(ServerLaunchOptions, UsageListsTheTrafficOption) {
+  EXPECT_NE(LaunchOptions::usage().find(TRAFFIC_CSV_OPTION), std::string::npos);
+}
+
+/**
+ * Given the database option and a file
+ * When the launch options are read
+ * Then the database setting is forced to that file
+ */
+TEST(ServerLaunchOptions, DatabaseOptionForcesTheDatabase) {
+  const LaunchOptions options =
+      LaunchOptions::read(Arguments{DATABASE_OPTION, DATABASE_ARGUMENT});
+
+  EXPECT_EQ(options.forcedLines(), Lines{std::string(DATABASE_LINE)});
+}
+
+/**
+ * Given the database option and a file whose name holds a space
+ * When the launch options are read
+ * Then the file reaches the setting as one quoted word
+ */
+TEST(ServerLaunchOptions, DatabaseOptionKeepsAFileWithASpaceWhole) {
+  const LaunchOptions options = LaunchOptions::read(
+      Arguments{DATABASE_OPTION, DATABASE_ARGUMENT_WITH_A_SPACE});
+
+  EXPECT_EQ(options.forcedLines(),
+            Lines{std::string(DATABASE_LINE_WITH_A_SPACE)});
+}
+
+/**
+ * Given the database option as the last argument
+ * When the launch options are read
+ * Then the missing file is reported
+ */
+TEST(ServerLaunchOptions, DatabaseOptionWithoutValueIsRejected) {
+  EXPECT_THROW(
+      static_cast<void>(LaunchOptions::read(Arguments{DATABASE_OPTION})),
+      MissingLaunchOptionValueException);
 }

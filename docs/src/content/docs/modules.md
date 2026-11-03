@@ -3,7 +3,7 @@ title: Modules
 description: How a program is built from modules, what each module does at each moment of its life, how modules talk, and how to turn one on or off.
 ---
 
-Both programs are built the same way: a list of **modules** that an `Application` installs, starts, runs and stops. A module is a feature you can switch on, switch off or replace: the logger, the network, the games, the lobby, the metrics on the server; the window, the connection, the sound, the screens on the client. This page tells you what a module is, when its code runs, how it reaches the others and how to switch one off. To write one, follow the [tutorial](/R-Type/tutorial-write-a-module/).
+Both programs are built the same way: a list of **modules** that an `Application` installs, starts, runs and stops. A module is a feature you can switch on, switch off or replace: the logger, the network, the games, the lobby, the metrics on the server; the window, the connection, the metrics, the sound, the screens on the client. This page tells you what a module is, when its code runs, how it reaches the others and how to switch one off. To write one, follow the [tutorial](/R-Type/tutorial-write-a-module/).
 
 A module is a folder with one class implementing `IModule` (or `IGameModule`) at its root. Everything the folder holds belongs to it, sub-folders included: the class builds those objects and hands them to the others with `provide()`. A folder without that class is a library: code with no life cycle. A system (`ISystem`) and a service are not modules. [Project layout](/R-Type/project-layout/#modules-and-libraries) lists the modules and says where their code goes.
 
@@ -46,7 +46,7 @@ A module lives at one of two scopes.
 The two follow the same five moments, the same order and the same rules. They differ in three ways:
 
 - A game module has no `dependencies()`: it is listed after the modules whose services it requires, and a missing service throws `MissingServiceException` when the game is built. The games module builds the games in its `start()`, so at program level the error reaches you as a `ModuleStartFailedException` naming `games` and carrying the message of the `MissingServiceException`.
-- Its `install()` also receives a `GameContext` (the game's event bus, timers, players and settings), because several games run at once and each has its own.
+- Its `install()` also receives a `GameContext` (the game's event bus, players and settings), because several games run at once and each has its own.
 - The program-scope `Application` runs the stages of the program; a game runs its own, three per tick, inside the work the games module adds to the simulation stage.
 
 The server therefore has modules inside a module: the games module of the program creates the games, and each game installs its own modules. The client has the program scope only. The game scope is described in [Server](/R-Type/server/#modules-of-a-game-igamemodule).

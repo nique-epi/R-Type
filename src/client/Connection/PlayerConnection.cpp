@@ -25,13 +25,12 @@ PlayerConnection::PlayerConnection(const network::NetworkConditions& conditions)
       router_(network_),
       waitingRoom_(dispatcher_, gameLoaded_),
       entityMessages_(dispatcher_, waitingRoom_, gameLoaded_),
-      session_(ServerSessionParts{
-          .link = router_.addRoute(),
-          .dispatcher = dispatcher_,
-          .gameLoaded = gameLoaded_,
-          .observers = {waitingRoom_, entityMessages_, gameLoaded_}}) {}
-
-void PlayerConnection::open() { network_.open(); }
+      leaderboard_(dispatcher_),
+      session_(ServerSessionParts{.link = router_.addRoute(),
+                                  .dispatcher = dispatcher_,
+                                  .gameLoaded = gameLoaded_,
+                                  .observers = {waitingRoom_, entityMessages_,
+                                                gameLoaded_, leaderboard_}}) {}
 
 void PlayerConnection::update(engine::Duration elapsed) {
   entityMessages_.advance(elapsed);
@@ -46,7 +45,7 @@ void PlayerConnection::leave() {
   }
 }
 
-void PlayerConnection::close() { network_.close(); }
+NetworkThread& PlayerConnection::network() { return network_; }
 
 ServerSession& PlayerConnection::session() { return session_; }
 
@@ -61,5 +60,7 @@ const WaitingRoom& PlayerConnection::waitingRoom() const {
 EntityMessageQueue& PlayerConnection::entityMessages() {
   return entityMessages_;
 }
+
+ServerLeaderboard& PlayerConnection::leaderboard() { return leaderboard_; }
 
 }  // namespace rtype::client

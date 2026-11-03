@@ -19,7 +19,7 @@ Bot::Bot(std::uint32_t seed)
     : connection_(network::PERFECT_NETWORK), pilot_(seed) {}
 
 void Bot::join(const network::Endpoint& server, std::string_view nickname) {
-  connection_.open();
+  connection_.network().open();
   connection_.session().connect(server, nickname);
 }
 
@@ -46,7 +46,7 @@ BotReport Bot::report() const {
 
 void Bot::leave() {
   connection_.leave();
-  connection_.close();
+  connection_.network().close();
 }
 
 void Bot::countReceived(engine::Duration elapsed) {

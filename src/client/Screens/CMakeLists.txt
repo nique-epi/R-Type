@@ -20,6 +20,7 @@ target_link_libraries(rtype_client_screens_module
     rtype_client_audio_contract_service
     rtype_client_audio_contract_sounds
     rtype_client_common_screens
+    rtype_client_connection_leaderboard
     rtype_client_connection_module
     rtype_client_effect_interfaces
     rtype_client_entity_messages

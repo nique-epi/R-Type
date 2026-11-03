@@ -4,7 +4,9 @@
 #include <initializer_list>
 #include <vector>
 #include "ByteSequence.hpp"
+#include "EncodedMessage.hpp"
 #include "EntitySpawned.hpp"
+#include "MessageType.hpp"
 #include "PacketHeader.hpp"
 #include "ProtocolTestConstants.hpp"
 #include "WorldState.hpp"
@@ -41,6 +43,11 @@ EntitySpawned exampleBydo() {
                        .entityType = WireEntityType::Bydo,
                        .x = EXAMPLE_X,
                        .y = EXAMPLE_Y};
+}
+
+EncodedMessage messageOfSize(std::size_t size) {
+  return EncodedMessage{.type = MessageType::GameEvent,
+                        .payload = std::vector<std::byte>(size)};
 }
 
 }  // namespace rtype::network::testing

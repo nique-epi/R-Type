@@ -6,6 +6,7 @@
 #include "MessageDispatcher.hpp"
 #include "NetworkConditions.hpp"
 #include "NetworkThread.hpp"
+#include "ServerLeaderboard.hpp"
 #include "ServerSession.hpp"
 #include "TimeConstants.hpp"
 #include "WaitingRoom.hpp"
@@ -14,24 +15,21 @@ namespace rtype::client {
 
 /**
  * @brief The connection of one player to a server: the UDP socket on its
- * NetworkThread, a DatagramRouter in front of it, and the three parts the
+ * NetworkThread, a DatagramRouter in front of it, and the four parts the
  * screens and the game use, the ServerSession (the attempt and the session),
- * the WaitingRoom and the EntityMessageQueue. ClientConnectionModule holds the
- * one of the client; each load-test bot holds its own.
+ * the WaitingRoom, the EntityMessageQueue and the ServerLeaderboard.
+ * ClientConnectionModule holds the one of the client; each load-test bot holds
+ * its own.
  *
- * Building it opens nothing: open() binds the socket on every IPv4 interface,
- * on a port the system picks, and starts the network thread. leave() tells the
- * server the player leaves and close() closes the socket; destroying it closes
- * the socket without telling the server.
+ * Building it opens nothing: network().open() binds the socket on every IPv4
+ * interface, on a port the system picks, and starts the network thread.
+ * leave() tells the server the player leaves and network().close() closes the
+ * socket; destroying it closes the socket without telling the server.
  */
 class PlayerConnection {
  public:
   /** @param conditions The network the datagrams of the player cross. */
   explicit PlayerConnection(const network::NetworkConditions& conditions);
-
-  /** @throws SocketOpenException when the system refuses to open the
-   * socket. */
-  void open();
 
   /**
    * @brief Counts @p elapsed against the memory of the game events, then
@@ -48,15 +46,16 @@ class PlayerConnection {
    */
   void leave();
 
-  /** @brief Stops the network thread and closes the socket (see
-   * NetworkThread::close()). */
-  void close();
+  /** @returns The socket on its network thread: open() it before the first
+   * update(), close() it after leave(), read its traffic(). */
+  [[nodiscard]] NetworkThread& network();
 
   [[nodiscard]] ServerSession& session();
   [[nodiscard]] const ServerSession& session() const;
   [[nodiscard]] WaitingRoom& waitingRoom();
   [[nodiscard]] const WaitingRoom& waitingRoom() const;
   [[nodiscard]] EntityMessageQueue& entityMessages();
+  [[nodiscard]] ServerLeaderboard& leaderboard();
 
  private:
   NetworkThread network_;
@@ -65,6 +64,7 @@ class PlayerConnection {
   GameLoadedReminder gameLoaded_;
   WaitingRoom waitingRoom_;
   EntityMessageQueue entityMessages_;
+  ServerLeaderboard leaderboard_;
   ServerSession session_;
 };
 

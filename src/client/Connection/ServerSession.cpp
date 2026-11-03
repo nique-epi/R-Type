@@ -45,8 +45,8 @@ ConnectionStatus refusedForVersion(logging::Logger& logger,
 }  // namespace
 
 ServerSession::ServerSession(ServerSessionParts parts)
-    : outbox_(parts.link.get()),
-      inbound_(parts.link.get()),
+    : outbox_(parts.link.get(), acknowledgements_),
+      inbound_(parts.link.get(), acknowledgements_),
       observers_(std::move(parts.observers)),
       dispatcher_(&parts.dispatcher.get()),
       gameLoaded_(&parts.gameLoaded.get()),
