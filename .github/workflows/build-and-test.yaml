@@ -258,7 +258,7 @@ jobs:
           -DCMAKE_CXX_COMPILER_LAUNCHER=sccache
 
       - name: Save vcpkg binary cache
-        if: steps.vcpkg-cache.outputs.cache-hit != 'true'
+        if: steps.vcpkg-cache.outputs.cache-hit != 'true' && matrix.preset != 'sanitize'
         uses: actions/cache/save@v4
         with:
           path: ${{ runner.temp }}/vcpkg-cache

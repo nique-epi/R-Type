@@ -42,8 +42,8 @@
     },
     {
       "name": "sanitize",
-      "configurePreset": "sanitize",
-      "configuration": "Debug"
+      "inherits": "test",
+      "configurePreset": "sanitize"
     }
   ],
   "testPresets": [
@@ -57,11 +57,8 @@
     },
     {
       "name": "sanitize",
-      "configurePreset": "sanitize",
-      "configuration": "Debug",
-      "output": {
-        "outputOnFailure": true
-      }
+      "inherits": "test",
+      "configurePreset": "sanitize"
     }
   ],
   "workflowPresets": [
