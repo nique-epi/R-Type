@@ -152,10 +152,14 @@ class MenuBuilder {
    * the actions move into the menu. */
   [[nodiscard]] Menu build();
 
-  /** @returns Where the chip of a room lies: as wide as its label and its
-   * keycap need, against the bottom-right corner of the safe margin; read by
-   * a room that lays another chip beside it. */
-  [[nodiscard]] static sf::IntRect chipArea(const Button::Text& text);
+  /**
+   * @returns Where the chip of a room lies: as wide as its label and its keycap
+   * need, on the bottom row of the safe margin, ending at @p right; by default
+   * against the bottom-right corner, where the room lays its cancel chip. A
+   * room lays another chip beside one by ending it BUTTON_GAP to its left.
+   */
+  [[nodiscard]] static sf::IntRect chipArea(
+      const Button::Text& text, std::optional<int> right = std::nullopt);
 
  private:
   void placeColumn(Menu::Content& content);

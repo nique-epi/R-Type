@@ -470,13 +470,14 @@ void MenuBuilder::placeRoom(Menu::Content& content) {
   content.statusStyle = ROOM_STATUS_STYLE;
 }
 
-sf::IntRect MenuBuilder::chipArea(const Button::Text& text) {
+sf::IntRect MenuBuilder::chipArea(const Button::Text& text,
+                                  std::optional<int> right) {
   const int width =
       BUTTON_TEXT_OFFSET.x + regularTextWidth(text.label) + CHIP_KEY_CAP_GAP +
       KeyCap(text.keyName, KeyCap::Edge::Plain).width() + BAR_KEY_CAP_INSET;
   const sf::Vector2i bottomRight =
       INTERFACE_AREA.size - sf::Vector2i(SAFE_MARGIN, SAFE_MARGIN);
-  return {{bottomRight.x - width, bottomRight.y - CHIP_HEIGHT},
+  return {{right.value_or(bottomRight.x) - width, bottomRight.y - CHIP_HEIGHT},
           {width, CHIP_HEIGHT}};
 }
 

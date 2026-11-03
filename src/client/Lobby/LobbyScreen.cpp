@@ -12,7 +12,6 @@
 #include <string>
 #include <utility>
 #include "BoundAction.hpp"
-#include "Button.hpp"
 #include "GameScreenIdConstants.hpp"
 #include "HangarBay.hpp"
 #include "HangarBayConstants.hpp"
@@ -108,24 +107,17 @@ sf::IntRect backChipArea() {
       {.label = BACK_LABEL, .keyName = CANCEL_KEY_NAME});
 }
 
-/** @returns Where a chip with this text lies: like BACK, BUTTON_GAP to the left
- * of another chip. */
-sf::IntRect chipLeftOf(sf::IntRect neighbour, const Button::Text& text) {
-  sf::IntRect chip = MenuBuilder::chipArea(text);
-  chip.position.x = neighbour.position.x - BUTTON_GAP - chip.size.x;
-  return chip;
-}
-
-/** @returns Where the room paints HELP. */
+/** @returns Where the room paints HELP, BUTTON_GAP to the left of BACK. */
 sf::IntRect helpChipArea() {
-  return chipLeftOf(backChipArea(),
-                    {.label = HELP_LABEL, .keyName = HELP_KEY_NAME});
+  return MenuBuilder::chipArea({.label = HELP_LABEL, .keyName = HELP_KEY_NAME},
+                               backChipArea().position.x - BUTTON_GAP);
 }
 
-/** @returns Where the room paints RANKING. */
+/** @returns Where the room paints RANKING, BUTTON_GAP to the left of HELP. */
 sf::IntRect leaderboardChipArea() {
-  return chipLeftOf(helpChipArea(), {.label = LEADERBOARD_LABEL,
-                                     .keyName = LEADERBOARD_KEY_NAME});
+  return MenuBuilder::chipArea(
+      {.label = LEADERBOARD_LABEL, .keyName = LEADERBOARD_KEY_NAME},
+      helpChipArea().position.x - BUTTON_GAP);
 }
 
 /** @returns The slot of the bay of the local player, or nothing while the
