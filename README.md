@@ -46,7 +46,7 @@ The server listens on UDP port 4243 of every IPv4 interface; without `-p`, on po
 ./r-type_server --seed 42
 ```
 
-The Bydos appear at heights drawn from the seed; without `--seed` the server draws one, and the journal records it (`Bydo spawning starts from the seed ...`) so the same game can be replayed.
+The Bydos appear at heights drawn from the seed; without `--seed` the server draws one, and the journal records it (`Bydo spawning starts from the seed ...`) so the same game can be replayed. A seed makes the games not vanilla: their scores stay on the leaderboard of the server.
 
 ```bash
 ./r-type_server --set state-rate=30
@@ -64,7 +64,7 @@ module lobby off
 ./r-type_server --state-rate 30
 ```
 
-Every player's input is held for the same few ticks before it moves the ship (3 ticks, 50 ms, by default); `--input-delay` changes it, from 0 to 30 ticks.
+Every player's input is held for the same few ticks before it moves the ship (3 ticks, 50 ms, by default); `--input-delay` changes it, from 0 to 30 ticks; any other delay than 3 makes the games not vanilla.
 
 ```bash
 ./r-type_server --input-delay 5
