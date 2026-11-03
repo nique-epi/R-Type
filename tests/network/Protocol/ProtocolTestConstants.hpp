@@ -199,6 +199,15 @@ constexpr std::uint32_t ECHOED_SENT_AT = 5;
 constexpr std::uint32_t ECHO_HELD_FOR = 3000;
 
 /**
+ * @brief The round trips of two players in a test, in microseconds, with
+ * their jitters.
+ */
+constexpr std::uint32_t FIRST_PLAYER_ROUND_TRIP = 42'000;
+constexpr std::uint32_t FIRST_PLAYER_JITTER = 3'200;
+constexpr std::uint32_t SECOND_PLAYER_ROUND_TRIP = 80'000;
+constexpr std::uint32_t SECOND_PLAYER_JITTER = 12'500;
+
+/**
  * @brief The port a test message is said to come from.
  */
 constexpr std::uint16_t SOME_SENDER_PORT = 50000;
@@ -210,7 +219,7 @@ constexpr std::uint16_t SOME_SENDER_PORT = 50000;
  */
 constexpr std::uint8_t TYPE_BELOW_THE_FIRST = 0;
 constexpr std::uint8_t TYPE_ABOVE_THE_LAST =
-    static_cast<std::uint8_t>(MessageType::GameLoaded) + 1;
+    static_cast<std::uint8_t>(MessageType::RoundTrips) + 1;
 constexpr std::uint8_t LARGEST_TYPE_BYTE = 255;
 
 /**

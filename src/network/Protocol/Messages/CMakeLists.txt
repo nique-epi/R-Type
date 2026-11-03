@@ -14,6 +14,7 @@ add_subdirectory(LobbyState)
 add_subdirectory(PlayerInput)
 add_subdirectory(PlayerLeft)
 add_subdirectory(ReadyState)
+add_subdirectory(RoundTrips)
 
 add_library(rtype_network_messages INTERFACE)
 
@@ -35,4 +36,5 @@ target_link_libraries(rtype_network_messages
     rtype_network_player_input
     rtype_network_player_left
     rtype_network_ready_state
+    rtype_network_round_trips
 )

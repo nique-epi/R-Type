@@ -32,6 +32,7 @@
 #include "PlayerLeft.hpp"
 #include "ProtocolConstants.hpp"
 #include "ReadyState.hpp"
+#include "RoundTrips.hpp"
 #include "SampleMessage.hpp"
 #include "WorldState.hpp"
 #include "WorldStateCodec.hpp"
@@ -96,6 +97,7 @@ std::vector<SampleMessage> sampleMessages() {
                                    .reason = network::DepartureReason::Left}),
       sampleOf(network::GameEnded{}),
       sampleOf(network::ConnectionChallenge{.cookie = SAMPLE_COOKIE}),
+      sampleOf(network::RoundTrips{}),
   };
 }
 
