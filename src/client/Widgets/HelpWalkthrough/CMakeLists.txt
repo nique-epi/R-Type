@@ -7,7 +7,7 @@ target_link_libraries(rtype_client_help_walkthrough
     SFML::Window
     rtype_client_audio_contract
     rtype_client_button
-    rtype_client_input
+    rtype_client_input_keys
     rtype_client_widgets
     rtype_client_window_display
   PRIVATE

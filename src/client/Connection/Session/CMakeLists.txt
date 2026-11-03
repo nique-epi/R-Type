@@ -15,7 +15,7 @@ target_include_directories(rtype_client_session PUBLIC ${CMAKE_CURRENT_SOURCE_DI
 
 target_link_libraries(rtype_client_session
   PUBLIC
-    rtype_client_input
+    rtype_client_input_commands
     rtype_client_transport
     rtype_engine_time
     rtype_logging

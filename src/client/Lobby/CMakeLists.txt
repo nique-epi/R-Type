@@ -18,7 +18,7 @@ target_link_libraries(rtype_client_lobby_module
   PRIVATE
     rtype_client_constants
     rtype_client_hangar_bay
-    rtype_client_input
+    rtype_client_input_keys
     rtype_client_menu_builder
     rtype_client_pilot_color
     rtype_network_protocol

@@ -1,5 +1,5 @@
 #include "PlayerInputPacer.hpp"
-#include "InputConstants.hpp"
+#include "PlayerCommandConstants.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::client {

@@ -1,19 +1,10 @@
-add_library(rtype_client_input STATIC
-  ActionSet.cpp
-  KeyBindings.cpp
-  KeyNames.cpp
-  LocalizedKeyName.cpp
-  PlayerCommands.cpp
-  PlayerInputPacer.cpp
-)
+add_subdirectory(Keys)
+add_subdirectory(Commands)
 
-target_include_directories(rtype_client_input PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+add_library(rtype_client_input INTERFACE)
 
 target_link_libraries(rtype_client_input
-  PUBLIC
-    SFML::Window
-    rtype_engine_time
-    rtype_network_protocol
+  INTERFACE
+    rtype_client_input_commands
+    rtype_client_input_keys
 )
-
-rtype_enable_warnings(rtype_client_input)

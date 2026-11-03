@@ -12,7 +12,7 @@ target_link_libraries(rtype_client_menus_module
     rtype_engine_modules
   PRIVATE
     rtype_client_constants
-    rtype_client_input
+    rtype_client_input_keys
     rtype_client_options
     rtype_client_title
 )
