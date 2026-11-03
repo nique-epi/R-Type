@@ -9,6 +9,7 @@
 #include "ConfigurationRegistry.hpp"
 #include "Endpoint.hpp"
 #include "IDatagramSender.hpp"
+#include "IListeningPort.hpp"
 #include "IPlayerAdmission.hpp"
 #include "InstallContext.hpp"
 #include "IntegerSettingDefinition.hpp"
