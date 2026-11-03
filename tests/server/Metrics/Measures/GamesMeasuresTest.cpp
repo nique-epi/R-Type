@@ -5,8 +5,8 @@
 #include "Games.hpp"
 #include "GamesCensus.hpp"
 #include "GamesMeasures.hpp"
-#include "ServerMetricsFixture.hpp"
-#include "ServerMetricsTestConstants.hpp"
+#include "Metrics/ServerMetricsFixture.hpp"
+#include "Metrics/ServerMetricsTestConstants.hpp"
 #include "ServerModuleTestConstants.hpp"
 #include "SystemTime.hpp"
 
