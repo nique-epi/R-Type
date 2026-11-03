@@ -22,7 +22,7 @@ Document what the code does on this branch, not what the issue hopes for. A page
 
 ## 2. Decide what needs documenting
 
-Document anything another team will call, configure or have to respect: a public class or component, a named constant that carries meaning (a rate, a size, a port), a behavior visible from outside (ordering, timing, errors), a new folder, a protocol message, a command or option, a build or run step.
+Document anything another team will call, configure or have to respect: a public class or component, a named constant that carries meaning (a rate, a size, a port), a behavior visible from outside (ordering, timing, errors), a new folder, a new module, a protocol message, a command or option, a build or run step.
 
 Skip a refactor that changes no behavior, a private helper, a test-only change, a rename. Say so in one line with the reason.
 
@@ -36,7 +36,8 @@ A feature usually touches two pages: the team page, and one of the others.
 |---|---|---|
 | Team page: `engine.md` today; `network.md`, `server.md` (server and game) and `client.md` once their first feature lands | what exists in the subsystem, how to use it, where to change it | adds or changes anything in that subsystem (almost always) |
 | `architecture.md` | the decisions every team follows, each with its reasons and an "Alternative considered" | makes a design choice others must respect: a storage layout, a time model, a coordinate frame |
-| `project-layout.md` | the map: libraries, programs, folders, what exists | creates a folder, or makes a planned one exist: update the "… exist; … are being written" sentence of its section |
+| `project-layout.md` | the map: libraries, programs, folders, what exists, the list of modules | creates a folder, or makes a planned one exist: update the "… exist; … are being written" sentence of its section. Adds, removes or moves a module: update its row in the list of modules, its folder and whether it is required or optional |
+| `modules.md` | what a module is, its five moments, how modules talk, how one is turned off | changes one of those for every module |
 | `protocol.mdx` | the wire format; byte layouts drawn with `ByteLayout` (`docs/src/components/`) | adds or changes a message, the header, a size or the byte order |
 | `README.md` | build, run, test | changes a command, an option or a requirement |
 
@@ -71,6 +72,7 @@ When using the thing is clearer shown than told, add one short code example (und
 - A constant is cited by its name, with its value the first time: "`SIMULATION_TICKS_PER_SECOND` (60)". The name is what the reader searches for; the value is what they need now.
 - Say where the thing lives: a folder in a table, or in parentheses in the text: "`FixedTimestep` (`rtype_engine`)".
 - Every quantity has its unit: logical units, units per second, ticks, bytes.
+- "Module" has one meaning: a feature one can switch on, off or replace, a folder with one `IModule` or `IGameModule` class at its root. A folder without that class is a library, and a system or a service is neither: never call them modules (`.claude/rules/architecture/architecture-a-module-is-one-folder-and-one-target.md`).
 
 ### Provisional values
 
