@@ -105,8 +105,8 @@ TEST(MessageDispatcher, HandsSeveralMessagesInOrder) {
 
 /**
  * Given a handler for ReadyState only
- * When messages of the types 0, 17 and 255, which no message has, then a
- * ReadyState are dispatched
+ * When messages of the type below the first, the type above the last and
+ * type 255, which no message has, then a ReadyState are dispatched
  * Then the three are skipped and counted, and the ReadyState is still handled
  */
 TEST(MessageDispatcher, SkipsUnknownTypesThenHandlesTheNextMessage) {

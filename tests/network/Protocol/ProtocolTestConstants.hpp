@@ -4,6 +4,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <string_view>
+#include "MessageType.hpp"
 
 namespace rtype::network::testing {
 
@@ -196,10 +197,12 @@ constexpr std::uint16_t SOME_SENDER_PORT = 50000;
 
 /**
  * @brief Message type bytes no message has: the byte before the first type,
- * the byte after the last, and the largest byte.
+ * the byte after the last, read from the list of types so that a new message
+ * moves it, and the largest byte.
  */
 constexpr std::uint8_t TYPE_BELOW_THE_FIRST = 0;
-constexpr std::uint8_t TYPE_ABOVE_THE_LAST = 17;
+constexpr std::uint8_t TYPE_ABOVE_THE_LAST =
+    static_cast<std::uint8_t>(MessageType::GameLoaded) + 1;
 constexpr std::uint8_t LARGEST_TYPE_BYTE = 255;
 
 /**
