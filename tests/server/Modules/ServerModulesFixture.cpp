@@ -1,18 +1,24 @@
 #include "ServerModulesFixture.hpp"
 #include <cstdint>
+#include <filesystem>
+#include <memory>
 #include <string>
 #include <string_view>
 #include <vector>
+#include "Application.hpp"
+#include "ConfigurationReader.hpp"
 #include "ConnectionChallenge.hpp"
 #include "DatagramCodec.hpp"
 #include "Endpoint.hpp"
 #include "LaunchOptions.hpp"
+#include "LoopStages.hpp"
 #include "MessagePayload.hpp"
 #include "MessageType.hpp"
 #include "NetworkConstants.hpp"
 #include "ServerConstants.hpp"
 #include "ServerDatagrams.hpp"
 #include "ServerModuleTestConstants.hpp"
+#include "ServerModules.hpp"
 #include "StopRequest.hpp"
 #include "UdpTestClient.hpp"
 
@@ -77,4 +83,15 @@ UdpTestClient& ServerModulesFixture::client() { return client_; }
 const rtype::server::LaunchOptions& ServerModulesFixture::launchOptions()
     const {
   return launchOptions_;
+}
+
+std::unique_ptr<rtype::engine::Application>
+ServerModulesFixture::serverApplication(
+    const rtype::server::LaunchOptions& options) {
+  return std::make_unique<rtype::engine::Application>(
+      rtype::engine::LoopStages(rtype::server::SERVER_LOOP_STAGES),
+      rtype::server::serverModules(journalOptions(), options, stopRequest_),
+      rtype::engine::configurationStep(
+          std::filesystem::path{rtype::server::SERVER_CONFIGURATION_FILE_NAME},
+          options.forcedLines(), configurationReport_));
 }
