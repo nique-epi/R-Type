@@ -1,6 +1,8 @@
 #include "LaunchOptions.hpp"
 #include <array>
 #include <cstdint>
+#include <filesystem>
+#include <optional>
 #include <span>
 #include <string>
 #include <string_view>
@@ -93,11 +95,13 @@ LaunchOptions LaunchOptions::read(std::span<const std::string_view> arguments) {
                         .port = network::DEFAULT_SERVER_PORT},
       std::string(DEFAULT_NICKNAME), false};
   options.networkConditions_ = simulatorOptions.conditions();
-  const std::array launchOptions{addressOption(options.serverEndpoint_.address),
-                                 portOption(options.serverEndpoint_.port),
-                                 nicknameOption(options.nickname_),
-                                 noSoundOption(options.audioMode_),
-                                 helpOption(options.helpRequested_)};
+  const std::array launchOptions{
+      addressOption(options.serverEndpoint_.address),
+      portOption(options.serverEndpoint_.port),
+      nicknameOption(options.nickname_),
+      noSoundOption(options.audioMode_),
+      engine::pathOption(network::TRAFFIC_CSV_OPTION, options.trafficCsvFile_),
+      helpOption(options.helpRequested_)};
   engine::readLaunchArguments(simulatorOptions.otherArguments(), launchOptions);
   return options;
 }
@@ -122,6 +126,9 @@ std::string LaunchOptions::usage() {
           " bytes of UTF-8. Default: " + std::string(DEFAULT_NICKNAME) + ".");
   text += engine::usageEntry(std::string(NO_SOUND_OPTION),
                              "Start the client without sound.");
+  text +=
+      engine::usageEntry(std::string(network::TRAFFIC_CSV_OPTION) + " <file>",
+                         network::TRAFFIC_CSV_USAGE);
   text += engine::usageEntry(engine::HELP_OPTION,
                              "Print this help and open no window.");
   text += '\n';
@@ -143,6 +150,11 @@ bool LaunchOptions::helpRequested() const { return helpRequested_; }
 
 const network::NetworkConditions& LaunchOptions::networkConditions() const {
   return networkConditions_;
+}
+
+const std::optional<std::filesystem::path>& LaunchOptions::trafficCsvFile()
+    const {
+  return trafficCsvFile_;
 }
 
 LaunchOptions::LaunchOptions(network::Endpoint serverEndpoint,

@@ -1,4 +1,5 @@
 #include <gtest/gtest.h>
+#include <filesystem>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -32,6 +33,7 @@ using rtype::network::DEFAULT_SERVER_PORT;
 using rtype::network::Endpoint;
 using rtype::network::InvalidIpv4AddressException;
 using rtype::network::InvalidPortException;
+using rtype::network::TRAFFIC_CSV_OPTION;
 
 using Arguments = std::vector<std::string_view>;
 
@@ -374,4 +376,60 @@ TEST(ClientLaunchOptions, UsageHoldsTheNetworkSimulatorOptions) {
   EXPECT_NE(LaunchOptions::usage().find(
                 rtype::network::SimulatorLaunchOptions::usage()),
             std::string::npos);
+}
+
+/**
+ * Given no argument
+ * When the launch options are read
+ * Then no traffic file is asked for
+ */
+TEST(ClientLaunchOptions, NoArgumentAsksForNoTrafficFile) {
+  EXPECT_FALSE(LaunchOptions::read(Arguments{}).trafficCsvFile().has_value());
+}
+
+/**
+ * Given the traffic option and a file
+ * When the launch options are read
+ * Then the file is the one given
+ */
+TEST(ClientLaunchOptions, TrafficOptionGivesTheFile) {
+  const LaunchOptions options =
+      LaunchOptions::read(Arguments{TRAFFIC_CSV_OPTION, TRAFFIC_FILE_ARGUMENT});
+
+  EXPECT_EQ(options.trafficCsvFile().value_or(std::filesystem::path{}),
+            std::filesystem::path{TRAFFIC_FILE_ARGUMENT});
+}
+
+/**
+ * Given the traffic option twice
+ * When the launch options are read
+ * Then the last file wins
+ */
+TEST(ClientLaunchOptions, TheLastTrafficOptionWins) {
+  const LaunchOptions options = LaunchOptions::read(
+      Arguments{TRAFFIC_CSV_OPTION, FIRST_TRAFFIC_FILE_ARGUMENT,
+                TRAFFIC_CSV_OPTION, TRAFFIC_FILE_ARGUMENT});
+
+  EXPECT_EQ(options.trafficCsvFile().value_or(std::filesystem::path{}),
+            std::filesystem::path{TRAFFIC_FILE_ARGUMENT});
+}
+
+/**
+ * Given the traffic option as the last argument
+ * When the launch options are read
+ * Then the value is reported missing
+ */
+TEST(ClientLaunchOptions, TrafficOptionWithoutAFileIsRefused) {
+  EXPECT_THROW(
+      static_cast<void>(LaunchOptions::read(Arguments{TRAFFIC_CSV_OPTION})),
+      MissingLaunchOptionValueException);
+}
+
+/**
+ * Given the usage of the client
+ * When it is read
+ * Then it lists the traffic option
+ */
+TEST(ClientLaunchOptions, UsageListsTheTrafficOption) {
+  EXPECT_NE(LaunchOptions::usage().find(TRAFFIC_CSV_OPTION), std::string::npos);
 }

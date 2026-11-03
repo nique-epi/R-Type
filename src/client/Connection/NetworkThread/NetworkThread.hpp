@@ -15,6 +15,7 @@
 #include "NetworkConditions.hpp"
 #include "NetworkContext.hpp"
 #include "OutgoingDatagram.hpp"
+#include "TrafficCounters.hpp"
 
 namespace rtype::client {
 
@@ -104,6 +105,10 @@ class NetworkThread : public IDatagramLink {
    */
   [[nodiscard]] network::Endpoint localEndpoint() const;
 
+  /** @returns What the socket sent and received, by type of message, since the
+   * object was built. Safe from any thread. */
+  [[nodiscard]] network::TrafficCounters& traffic();
+
  private:
   /** @brief Starts receiving on @p socket, just opened, then starts the
    * network thread. */
@@ -119,6 +124,7 @@ class NetworkThread : public IDatagramLink {
   network::Endpoint listeningEndpoint_;
   network::NetworkConditions conditions_;
   network::NetworkContext network_;
+  network::TrafficCounters traffic_;
   std::unique_ptr<network::IDatagramSocket> socket_;
   network::Endpoint localEndpoint_;
   concurrency::BoundedQueue<network::IncomingDatagram> incoming_;

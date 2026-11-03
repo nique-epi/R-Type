@@ -17,9 +17,11 @@ target_link_libraries(rtype_client_modules
     rtype_client_lobby
     rtype_client_logger_module
     rtype_client_menus
+    rtype_client_metrics_module
     rtype_client_screen_registry
     rtype_client_screens_module
     rtype_client_settings_module
+    rtype_engine_system_clock
 )
 
 rtype_enable_warnings(rtype_client_modules)

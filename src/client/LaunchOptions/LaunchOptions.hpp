@@ -1,5 +1,7 @@
 #pragma once
 
+#include <filesystem>
+#include <optional>
 #include <span>
 #include <string>
 #include <string_view>
@@ -17,9 +19,9 @@ namespace rtype::client {
 class LaunchOptions {
  public:
   /**
-   * @brief Reads `-h <address>`, `-p <port>`, `-n <nickname>`, `--no-sound`
-   * and `--help` from @p arguments, the arguments the logging options left (see
-   * logging::LogLaunchOptions).
+   * @brief Reads `-h <address>`, `-p <port>`, `-n <nickname>`, `--no-sound`,
+   * `--traffic-csv <file>` and `--help` from @p arguments, the arguments the
+   * logging options left (see logging::LogLaunchOptions).
    *
    * Without `-h` the address is DEFAULT_SERVER_ADDRESS, without `-p` the
    * port is DEFAULT_SERVER_PORT, without `-n` the nickname is DEFAULT_NICKNAME,
@@ -72,6 +74,11 @@ class LaunchOptions {
    */
   [[nodiscard]] const network::NetworkConditions& networkConditions() const;
 
+  /** @returns The file given after `--traffic-csv`, nothing when it was not
+   * given. */
+  [[nodiscard]] const std::optional<std::filesystem::path>& trafficCsvFile()
+      const;
+
  private:
   LaunchOptions(network::Endpoint serverEndpoint, std::string nickname,
                 bool helpRequested);
@@ -81,6 +88,7 @@ class LaunchOptions {
   bool helpRequested_;
   AudioMode audioMode_{AudioMode::Enabled};
   network::NetworkConditions networkConditions_;
+  std::optional<std::filesystem::path> trafficCsvFile_;
 };
 
 }  // namespace rtype::client
