@@ -9,7 +9,7 @@ target_link_libraries(rtype_client_screen_assets
     rtype_client_screen_interfaces
     rtype_client_widgets
   PRIVATE
-    rtype_client_audio_interfaces
+    rtype_client_audio_contract
     rtype_client_effect_interfaces
     rtype_client_interface
 )

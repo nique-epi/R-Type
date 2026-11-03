@@ -1,5 +1,4 @@
 add_subdirectory(Connection)
-add_subdirectory(Audio)
 add_subdirectory(ScreenRegistry)
 add_subdirectory(Menus)
 add_subdirectory(Lobby)

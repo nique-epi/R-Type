@@ -10,14 +10,12 @@ target_link_libraries(rtype_client_screen_registry
     rtype_client_exceptions
     rtype_client_interface
     rtype_client_menu
-    rtype_client_music_player
+    rtype_client_audio_contract
     rtype_client_replication_interfaces
     rtype_client_screen_interfaces
     rtype_client_scrolling_background
     rtype_client_server_session
     rtype_client_settings_module
-    rtype_client_sound_player
-    rtype_client_soundtrack
     rtype_client_waiting_room
     rtype_client_window_module
     rtype_network_transport

@@ -5,7 +5,7 @@ target_include_directories(rtype_client_screens_module PUBLIC ${CMAKE_CURRENT_SO
 target_link_libraries(rtype_client_screens_module
   PUBLIC
     rtype_client_assets_module
-    rtype_client_audio_interfaces
+    rtype_client_audio_contract
     rtype_client_connection
     rtype_client_entity_message_queue
     rtype_client_interface

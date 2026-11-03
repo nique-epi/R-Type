@@ -4,7 +4,7 @@ target_include_directories(rtype_client_help_walkthrough PUBLIC ${CMAKE_CURRENT_
 
 target_link_libraries(rtype_client_help_walkthrough
   PUBLIC
-    rtype_client_audio_interfaces
+    rtype_client_audio_contract
     rtype_client_button
     rtype_client_input
     rtype_client_key_bindings

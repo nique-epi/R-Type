@@ -4,7 +4,7 @@ target_include_directories(rtype_client_screen_interfaces INTERFACE ${CMAKE_CURR
 
 target_link_libraries(rtype_client_screen_interfaces
   INTERFACE
-    rtype_client_audio_interfaces
+    rtype_client_audio_contract
     rtype_engine_time
     rtype_network_transport
 )

@@ -8,7 +8,7 @@ target_link_libraries(rtype_client_intro_screen
     rtype_client_interface
     rtype_client_intro_interfaces
     rtype_client_screen_assets
-    rtype_client_synced_clock
+    rtype_client_audio_contract
     rtype_logging
     SFML::Graphics
   PRIVATE
