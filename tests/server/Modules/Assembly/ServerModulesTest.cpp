@@ -1,24 +1,33 @@
 #include <gtest/gtest.h>
 #include <chrono>
 #include <cstdint>
+#include <filesystem>
 #include <memory>
 #include <string>
+#include <string_view>
 #include <vector>
 #include "Application.hpp"
 #include "DatagramCodec.hpp"
 #include "IModule.hpp"
+#include "LaunchArgumentsConstants.hpp"
+#include "LaunchOptions.hpp"
 #include "LoopStages.hpp"
 #include "MessageType.hpp"
 #include "ModuleConstants.hpp"
+#include "NetworkConstants.hpp"
 #include "ServerConstants.hpp"
 #include "ServerModuleTestConstants.hpp"
 #include "ServerModules.hpp"
 #include "ServerModulesFixture.hpp"
+#include "TrafficFileTestConstants.hpp"
 #include "UdpTestClient.hpp"
 
 using rtype::engine::Application;
 using rtype::engine::LoopStages;
+using rtype::engine::PORT_OPTION;
 using rtype::network::MessageType;
+using rtype::network::TRAFFIC_CSV_OPTION;
+using rtype::server::LaunchOptions;
 using rtype::server::serverModules;
 
 /**
@@ -58,6 +67,26 @@ TEST_F(ServerModulesFixture,
 
   ASSERT_NO_THROW(application.start());
 
+  application.stop();
+}
+
+/**
+ * Given a server launched with the traffic option and a relative file
+ * When the application starts
+ * Then the file exists in the folder the server was started in
+ */
+TEST_F(ServerModulesFixture, OpensTheTrafficFileOfItsLaunchOption) {
+  const std::string portText = std::to_string(port());
+  const std::vector<std::string_view> arguments{
+      PORT_OPTION, portText, TRAFFIC_CSV_OPTION, TRAFFIC_FILE_NAME};
+  const LaunchOptions options = LaunchOptions::read(arguments);
+  Application application(
+      LoopStages(rtype::server::SERVER_LOOP_STAGES),
+      serverModules(journalOptions(), options, stopRequest()));
+
+  application.start();
+
+  EXPECT_TRUE(std::filesystem::exists(TRAFFIC_FILE_NAME));
   application.stop();
 }
 
