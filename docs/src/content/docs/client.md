@@ -92,7 +92,8 @@ Screens are asked for by identifier: `push()` and `replaceAll()` take a `ScreenI
 | `ConnectionScreen` | over the title, which it hides: a form centered on the picture, DIRECT CONNECT, the fields ADDRESS, PORT and PILOT, CONNECT and BACK, then a status line | BACK or Escape drops the attempt and closes it; once the server has accepted the player for `ACCEPTED_STATUS_DURATION` (1 s), it pushes the waiting room over it (`LOBBY_SCREEN`), and leaves with it when the game starts |
 | `LobbyScreen` | over the connection screen, which it hides: WAITING ROOM, the number of pilots, a bay per player number, READY and the status line, RANKING, HELP and BACK in the corner (see [Waiting room](#waiting-room-lobbyscreen)) | BACK or Escape leaves the server and closes it; RANKING or L pushes the leaderboard over it; HELP or H opens its help over it; once the connection learns that the game started, it asks `replaceAll(GAME_SCREEN)` |
 | `LobbyScreen` after a game | alone, opened by PLAY AGAIN of the end screen (`LOBBY_AFTER_GAME_SCREEN`), the same room, the theme playing again | BACK or Escape leaves the server and asks `replaceAll(TITLE_SCREEN)`; the start of the next game asks `replaceAll(GAME_SCREEN)` |
-| `LeaderboardScreen` | over the title or the waiting room, which it hides and which go on behind it: RANKING, two banners and two guards, the tabs SERVER and GLOBAL, the best scores, FILTER and BACK (see [Leaderboard](#leaderboard-leaderboardscreen-ileaderboardsource)) | BACK or Escape closes it; without a session, JOIN A SERVER or Enter replaces it by the connection screen; over the waiting room, the start of a game removes it with the rest |
+| `LeaderboardScreen` | over the title or the waiting room, which it hides and which go on behind it: RANKING, two banners and two guards, the tabs SERVER and GLOBAL, the best scores, FILTER and BACK (see [Leaderboard](#leaderboard-leaderboardscreen-ileaderboardsource)) | BACK or Escape closes it, and leaves a server joined from it; without a session, JOIN A SERVER or Enter opens the connection screen over it; over the waiting room, the start of a game removes it with the rest |
+| `ConnectionScreen` from the leaderboard | over the leaderboard, which it hides (`CONNECTION_FOR_LEADERBOARD_SCREEN`), the same form | BACK or Escape drops the attempt and closes it, back to the leaderboard; once the server has accepted the player for `ACCEPTED_STATUS_DURATION`, it closes the same way, and no waiting room opens |
 | `LoadingScreen` | a progress bar; one file is loaded per frame | every file is loaded: it asks again, with `replaceAll()`, for the screen it loads for, whose builder then finds the assets loaded and builds the screen itself |
 | `GameScreen` | the entities the server announces, animated, and their effects, over the scrolling background; releasing `OPTIONS_KEY` (Escape) releases what the player holds and pushes the options over it (`GAME_OPTIONS_SCREEN`) | once the server ends the game, it asks `replaceAll(END_SCREEN)` `END_SCREEN_DELAY` (1 s) later, so the last explosion plays |
 | `EndScreen` | the flight log of the game: the scores, the ranking, then PRESS ENTER TO REPLAY and QUIT (see [End screen](#end-screen-endscreen-paintflightlog)) | once the player chose: PLAY AGAIN asks `replaceAll(LOBBY_AFTER_GAME_SCREEN)`, QUIT leaves the server and asks `replaceAll(TITLE_SCREEN)` |
@@ -514,7 +515,7 @@ The room tells the help where it paints each part (`LobbyPartAreas`): the bays f
 
 ## Leaderboard: `LeaderboardScreen`, `ILeaderboardSource`
 
-`LeaderboardScreen` (`src/client/Screens/LeaderboardScreen/`) shows the best scores of a server. The menus module adds it to the registry as `LEADERBOARD_SCREEN`, and RANKING pushes it from the title and from the waiting room. It hides the screen below, which goes on running: in the waiting room, the start of a game still asks `replaceAll(GAME_SCREEN)`, which removes the leaderboard with the rest, and leaving the leaderboard never leaves the server.
+`LeaderboardScreen` (`src/client/Screens/LeaderboardScreen/`) shows the best scores of a server. The menus module adds it to the registry as `LEADERBOARD_SCREEN`, and RANKING pushes it from the title and from the waiting room. It hides the screen below, which goes on running: in the waiting room, the start of a game still asks `replaceAll(GAME_SCREEN)`, which removes the leaderboard with the rest, and leaving the leaderboard does not leave the server.
 
 Under RANKING and the tabs SERVER and GLOBAL, an `ItemList` shows at most 10 rows (`LEADERBOARD_LIST`): rank, pilot, score and the date of the game in UTC, such as `18 OCT 26`, the first three ranks in gold, white and bronze. The row of the player turns yellow on blue with `YOU`, in its place among the rows or pinned under them; a player without a score reads a note there. A date before 1970 or after 2099, which only a broken server sends, reads `-- --- --`. The pure functions of `LeaderboardPresentation` turn a page into these rows.
 
@@ -525,7 +526,9 @@ The screen holds no menu, since each action has its key or its chip. `TabStrip::
 | Escape (`MENU_CANCEL_KEY`) | BACK | closes the screen |
 | F (`FILTER_KEY`) | FILTER | opens the filter, unless the tab has nothing to ask |
 | Q and E (`PREVIOUS_TAB_KEY`, `NEXT_TAB_KEY`), by their place on the keyboard | a click on a tab | changes tab and asks its source, once however long the key is held |
-| Enter (`MENU_CONFIRM_KEY`) | JOIN A SERVER | without a session only: replaces the screen by the connection screen |
+| Enter (`MENU_CONFIRM_KEY`) | JOIN A SERVER | without a session only: opens the connection screen over the screen |
+
+Reaching a server from the title keeps the player on this screen: JOIN A SERVER leaves it under the connection screen, which closes once the server has accepted the player, and the screen then shows the scores of that server. BACK then also ends the session, since nothing on the title holds it. Until then the player holds a place on the server, listed and not ready, so `GameStarted` waits for them as for anyone in the waiting room.
 
 | Phase of the page (`LeaderboardPhase`) | The panel shows |
 |---|---|
@@ -541,7 +544,7 @@ The screen reads each tab through `ILeaderboardSource` (`src/client/Connection/`
 
 `ServerLeaderboard` (`rtype_client_server_leaderboard`, `src/client/Connection/ServerLeaderboard/`) is the source of a server. The connection module owns it, and it follows the session like the waiting room (see [Protocol](/R-Type/protocol/#leaderboard)):
 
-- `ask()` sends a `LeaderboardRequest` at once, then again every `LEADERBOARD_ASK_INTERVAL` (500 ms) while no answer came, and gives up after `LEADERBOARD_GIVE_UP_TIME` (5 s): 10 datagrams at most. Without a session it sends nothing and says `NotOnServer`.
+- `ask()` sends a `LeaderboardRequest` at once, then again every `LEADERBOARD_ASK_INTERVAL` (500 ms) while no answer came, and gives up after `LEADERBOARD_GIVE_UP_TIME` (5 s): 10 datagrams at most. Without a session it sends nothing, says `NotOnServer`, and keeps the request: it goes out as soon as a session opens, unless `stopAsking()` came first.
 - Only the first `LeaderboardAnswer` whose `asked` equals the request counts, so a late answer to an older filter and a copy of the answer change nothing. An answer that arrives after giving up still shows.
 - The server ignores a request less than 500 ms after its last answer to that player, so the answer to a filter changed at once comes with the next request, at most 500 ms later.
 - `stopAsking()` ends the requests; the screen calls it when it leaves, and for the tab it leaves.
