@@ -8,7 +8,7 @@ The code is split into engine, game and network libraries; see [the architecture
 
 ## Requirements
 
-- CMake 3.28 or newer
+- CMake 4.2 or newer
 - A C++20 compiler: GCC or Clang on Linux, MSVC (Visual Studio 2022) on Windows
 - Git
 
