@@ -3,6 +3,7 @@
 #include <optional>
 #include <string>
 #include "BoundedQueue.hpp"
+#include "DatagramDestinations.hpp"
 #include "DatagramSorter.hpp"
 #include "Endpoint.hpp"
 #include "ServerConstants.hpp"
@@ -35,7 +36,7 @@ std::size_t countedSince(std::size_t current, std::size_t& reported) {
 
 }  // namespace
 
-DiscardReport::DiscardReport(DatagramSorter::Destinations queues,
+DiscardReport::DiscardReport(DatagramDestinations queues,
                              DatagramSorter& sorter)
     : logger_(std::string{SERVER_LOGGER_NAME}),
       queues_(queues),

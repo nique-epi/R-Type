@@ -6,6 +6,7 @@
 #include <optional>
 #include <vector>
 #include "BoundedQueue.hpp"
+#include "DatagramDestinations.hpp"
 #include "DatagramSorter.hpp"
 #include "Endpoint.hpp"
 #include "IncomingDatagram.hpp"
@@ -47,7 +48,7 @@ class DatagramSorterFixture : public ::testing::Test {
       connectionRequests_{rtype::server::CONNECTION_REQUEST_QUEUE_CAPACITY};
   SimulatedClock clock_;
   rtype::server::DatagramSorter sorter_{
-      rtype::server::DatagramSorter::Destinations{
+      rtype::server::DatagramDestinations{
           .players = &players_, .connectionRequests = &connectionRequests_},
       clock_};
 };

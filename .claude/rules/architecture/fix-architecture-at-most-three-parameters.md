@@ -33,7 +33,7 @@ Why: a review flagged a seven-parameter constructor. The C++ Core Guidelines set
 ### Two neighbouring parameters of one type cannot be told apart
 
 1. **Before writing two neighbouring parameters of the same or a convertible type** (two `std::string_view`, two `const BoundedQueue&`), change the shape: `bugprone-easily-swappable-parameters` reports them, and the tidy gate fails. The compiler does not, so code that builds without a warning can still fail there.
-2. **Take the struct that already groups them** (`DatagramSorter::Destinations`), **or give the helper one value only and let the caller join the rest**: `start + messageTypeText(type) + figuresText(figures)`, not `rowOf(start, message, figures)`.
+2. **Take the struct that already groups them** (`DatagramDestinations`), **or give the helper one value only and let the caller join the rest**: `start + messageTypeText(type) + figuresText(figures)`, not `rowOf(start, message, figures)`.
 3. **A check of a plan's code by compiling it does not run tidy**: run the tidy gate on the code as soon as it is written, before calling a commit done.
 
 ## Example

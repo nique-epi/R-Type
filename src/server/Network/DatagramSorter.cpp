@@ -10,8 +10,10 @@
 #include <string_view>
 #include <utility>
 #include <vector>
+#include "AdmittedPlayer.hpp"
 #include "BoundedQueue.hpp"
 #include "DatagramCodec.hpp"
+#include "DatagramDestinations.hpp"
 #include "Endpoint.hpp"
 #include "IClock.hpp"
 #include "IncomingDatagram.hpp"
@@ -51,7 +53,7 @@ network::IncomingDatagram copyOf(const network::Endpoint& sender,
 
 }  // namespace
 
-DatagramSorter::DatagramSorter(Destinations destinations,
+DatagramSorter::DatagramSorter(DatagramDestinations destinations,
                                const engine::IClock& clock)
     : destinations_(destinations),
       clock_(&clock),
@@ -145,7 +147,7 @@ std::optional<network::Endpoint> DatagramSorter::takeWrongTokenSender() {
   return std::exchange(wrongTokenSender_, std::nullopt);
 }
 
-const DatagramSorter::AdmittedPlayer* DatagramSorter::findAdmitted(
+const AdmittedPlayer* DatagramSorter::findAdmitted(
     const network::Endpoint& sender) const {
   const auto admitted =
       std::ranges::find(admitted_, sender, &AdmittedPlayer::endpoint);
