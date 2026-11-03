@@ -4,29 +4,28 @@ target_include_directories(rtype_client_game_screen PUBLIC ${CMAKE_CURRENT_SOURC
 
 target_link_libraries(rtype_client_game_screen
   PUBLIC
+    SFML::Graphics
     rtype_client_connection
     rtype_client_departure_feed
-    rtype_client_entity_replicator
-    rtype_client_mission_banner
-    rtype_client_player_commands
-    rtype_client_player_input_pacer
-    rtype_client_prediction
     rtype_client_drawing
+    rtype_client_entity_replicator
+    rtype_client_input
+    rtype_client_mission_banner
+    rtype_client_prediction
     rtype_client_score_board
     rtype_client_screen_assets
     rtype_client_silence_warning
     rtype_engine
     rtype_logging
-    SFML::Graphics
   PRIVATE
     rtype_client_animation_system
     rtype_client_final_ranking
     rtype_client_ground_effect_system
     rtype_client_hit_flash_system
-    rtype_client_ship_flight_system
     rtype_client_mission_start
     rtype_client_player_preferences
     rtype_client_settings_module
+    rtype_client_ship_flight_system
     rtype_client_sprite_effect_system
     rtype_client_status_band
 )

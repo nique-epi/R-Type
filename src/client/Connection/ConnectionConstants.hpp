@@ -59,17 +59,6 @@ constexpr std::chrono::milliseconds GAME_LOADED_INTERVAL{100};
 constexpr int DISCONNECTION_COPY_COUNT = 3;
 constexpr std::chrono::milliseconds DISCONNECTION_COPY_INTERVAL{50};
 
-/**
- * @brief PlayerInput the game sends per second, one per frame at most.
- * Provisional, see the protocol page.
- */
-constexpr std::size_t PLAYER_INPUTS_PER_SECOND = 60;
-
-/** @brief Time between two PlayerInput of the game. */
-constexpr engine::Duration PLAYER_INPUT_INTERVAL =
-    std::chrono::duration_cast<engine::Duration>(std::chrono::seconds(1)) /
-    PLAYER_INPUTS_PER_SECOND;
-
 /** @brief How long the number of a GameEvent is remembered: its three copies
  * come 50 ms apart, and the protocol page says a second is enough. */
 constexpr engine::Duration GAME_EVENT_MEMORY = std::chrono::seconds(1);

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ConnectionConstants.hpp"
+#include "InputConstants.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::client {

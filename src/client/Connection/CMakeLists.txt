@@ -4,7 +4,7 @@ target_include_directories(rtype_client_connection INTERFACE ${CMAKE_CURRENT_SOU
 
 target_link_libraries(rtype_client_connection
   INTERFACE
-    rtype_client_action_set
+    rtype_client_input
     rtype_engine_time
     rtype_network_connection_refused
     rtype_network_entity_destroyed
@@ -18,7 +18,6 @@ target_link_libraries(rtype_client_connection
 )
 
 add_subdirectory(NetworkThread)
-add_subdirectory(PlayerInputPacer)
 add_subdirectory(GameEventHistory)
 add_subdirectory(SessionOutbox)
 add_subdirectory(SessionDeparture)

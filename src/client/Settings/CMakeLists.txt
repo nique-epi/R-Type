@@ -9,12 +9,11 @@ target_include_directories(rtype_client_settings_module PUBLIC ${CMAKE_CURRENT_S
 
 target_link_libraries(rtype_client_settings_module
   PUBLIC
-    rtype_client_key_bindings
+    rtype_client_input
     rtype_engine_modules
     rtype_logging
   PRIVATE
     rtype_client_constants
-    rtype_client_key_names
     rtype_client_platform
     rtype_engine_paths
 )

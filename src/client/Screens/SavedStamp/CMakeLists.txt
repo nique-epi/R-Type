@@ -4,7 +4,7 @@ target_include_directories(rtype_client_saved_stamp PUBLIC ${CMAKE_CURRENT_SOURC
 
 target_link_libraries(rtype_client_saved_stamp
   PUBLIC
-    rtype_client_key_bindings
+    rtype_client_input
     rtype_client_settings_module
     rtype_client_slider
     rtype_client_window_module

@@ -1,8 +1,8 @@
 #include <gtest/gtest.h>
 #include <chrono>
-#include "ConnectionConstants.hpp"
+#include "InputConstants.hpp"
 #include "PlayerInputPacer.hpp"
-#include "ServerSessionTestConstants.hpp"
+#include "PlayerInputPacerTestConstants.hpp"
 #include "TimeConstants.hpp"
 #include "TimeTestConstants.hpp"
 
