@@ -1,16 +1,58 @@
 #pragma once
 
+#include <atomic>
 #include <cstddef>
 #include <exception>
 #include <functional>
+#include <future>
 #include <vector>
 #include "Endpoint.hpp"
+#include "IDatagramSocket.hpp"
+#include "IncomingDatagram.hpp"
+#include "OutgoingDatagram.hpp"
 #include "ServerApplication.hpp"
 
 /**
  * @brief What a test tick handler throws to make the server stop.
  */
 class TickFailure final : public std::exception {};
+
+/** @returns A handler that reads nothing of what a socket receives. */
+[[nodiscard]] rtype::network::DatagramHandler ignoringWhatItReceives();
+
+/** @brief What a tick handler of admittingFirstRequester() writes down, from
+ * the simulation thread, for the test thread. */
+struct AdmissionWatch {
+  std::promise<void> admission;
+  std::promise<rtype::network::IncomingDatagram> firstDatagram;
+  std::atomic<bool> admissionDone{false};
+  std::atomic<bool> delivered{false};
+  /** @brief The server the handler admits on; set before it opens. */
+  rtype::server::ServerApplication* server{nullptr};
+};
+
+/**
+ * @returns A tick handler that admits, under SESSION_TOKEN, the sender of the
+ * first connection request it is handed, as the connection acceptor does, and
+ * hands @p watch the first datagram of a player it is handed. @p watch must
+ * outlive the handler.
+ */
+[[nodiscard]] rtype::server::ServerApplication::TickHandler
+admittingFirstRequester(AdmissionWatch& watch);
+
+/** @brief The datagram a tick handler of queueingOnce() queues, and whether
+ * it did. */
+struct QueuedOnce {
+  rtype::network::OutgoingDatagram datagram;
+  std::atomic<bool> queued{false};
+  /** @brief The server the handler queues on; set before it opens. */
+  rtype::server::ServerApplication* server{nullptr};
+};
+
+/** @returns A tick handler that queues the datagram of @p once on its server
+ * at the first tick only. @p once must outlive the handler. */
+[[nodiscard]] rtype::server::ServerApplication::TickHandler queueingOnce(
+    QueuedOnce& once);
 
 /** @brief What the ticks of a server were handed in
  * sortReadyStateThenRequest().
