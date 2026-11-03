@@ -1,15 +1,10 @@
-add_library(rtype_server_instances_context INTERFACE)
+add_subdirectory(Setup)
+add_subdirectory(Interfaces)
 
-target_include_directories(rtype_server_instances_context INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
+add_library(rtype_server_instances_context INTERFACE)
 
 target_link_libraries(rtype_server_instances_context
   INTERFACE
-    rtype_engine
-    rtype_game
-    rtype_game_bydo_kind
-    rtype_game_waves
-    rtype_network_player_input
-    rtype_network_transport
-    rtype_server_constants
-    rtype_server_sessions_roster
+    rtype_server_instances_context_interfaces
+    rtype_server_instances_context_setup
 )
