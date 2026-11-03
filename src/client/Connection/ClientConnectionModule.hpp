@@ -23,9 +23,10 @@ namespace rtype::client {
  * system picks, and starts the network thread. stop() leaves the session with
  * the server, if any (see PlayerConnection::leave()): it returns once every
  * copy of the Disconnection went out, so the server frees the place of the
- * player at once; then it closes the socket. Over a simulated network, the
- * copies still in flight then never arrive (see NetworkThread::close()). A
- * failure while leaving is logged, never thrown.
+ * player as soon as one copy reaches it; then it closes the socket. Over a
+ * simulated network, the copies still in flight then never arrive (see
+ * NetworkThread::close()), and the server frees the place once the player was
+ * silent for SESSION_TIMEOUT. A failure while leaving is logged, never thrown.
  */
 class ClientConnectionModule final : public engine::IModule {
  public:

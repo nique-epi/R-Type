@@ -42,7 +42,10 @@ class PlayerConnection {
    * @brief Leaves the session with the server, if any, and waits until every
    * copy of the Disconnection went out: after each wait of
    * DISCONNECTION_COPY_INTERVAL, the session moves by that interval and sends
-   * the next copy, so the server frees the place of the player at once.
+   * the next copy. The server frees the place of the player as soon as one
+   * copy reaches it. When none does, lost on the way, or still in flight over
+   * a simulated network when the socket closes (see NetworkThread::close()),
+   * it frees the place once the player was silent for SESSION_TIMEOUT.
    */
   void leave();
 
