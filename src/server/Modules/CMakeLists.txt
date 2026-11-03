@@ -4,5 +4,4 @@ target_include_directories(rtype_server_module_constants INTERFACE ${CMAKE_CURRE
 
 target_link_libraries(rtype_server_module_constants INTERFACE rtype_engine_time)
 
-add_subdirectory(Metrics)
 add_subdirectory(Assembly)
