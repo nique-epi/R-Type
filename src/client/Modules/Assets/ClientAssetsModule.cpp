@@ -1,19 +1,21 @@
 #include "ClientAssetsModule.hpp"
 #include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 #include "AssetFolder.hpp"
 #include "AssetLibrary.hpp"
+#include "AssetLoad.hpp"
 #include "ClientConstants.hpp"
 #include "InstallContext.hpp"
 #include "ModuleConstants.hpp"
 #include "PathText.hpp"
-#include "ScreenAssets.hpp"
 
 namespace rtype::client {
 
-ClientAssetsModule::ClientAssetsModule()
-    : logger_(std::string{CLIENT_LOGGER_NAME}) {}
+ClientAssetsModule::ClientAssetsModule(std::vector<AssetLoad> startupLoads)
+    : startupLoads_(std::move(startupLoads)),
+      logger_(std::string{CLIENT_LOGGER_NAME}) {}
 
 std::string ClientAssetsModule::name() const {
   return std::string{ASSETS_MODULE_NAME};
@@ -30,8 +32,9 @@ void ClientAssetsModule::install(engine::InstallContext& context) {
 
 void ClientAssetsModule::start() {
   logger_.info("assets folder: ", engine::genericText(library_->folder()));
-  loadInterfaceAssets(*library_);
-  loadIntroAssets(*library_);
+  for (const AssetLoad& load : startupLoads_) {
+    load(*library_);
+  }
 }
 
 void ClientAssetsModule::stop() {}

@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 #include "AssetLibrary.hpp"
+#include "AssetLoad.hpp"
 #include "IModule.hpp"
 #include "InstallContext.hpp"
 #include "Logger.hpp"
@@ -16,14 +17,15 @@ namespace rtype::client {
  *
  * install() finds the assets folder next to the program or in the folder
  * above, and builds the library, which loads nothing. start() writes the
- * folder in the journal, then loads the assets of the interface and of the
- * intro, permanent or kept until a game releases them. stop() releases
- * nothing: the library lives as long as the module, after every screen that
- * draws its textures.
+ * folder in the journal, then runs the loads it was built with, in their
+ * order. stop() releases nothing: the library lives as long as the module,
+ * after every screen that draws its textures.
  */
 class ClientAssetsModule final : public engine::IModule {
  public:
-  ClientAssetsModule();
+  /** @param startupLoads Run by start(), in this order, once the library is
+   * built. */
+  explicit ClientAssetsModule(std::vector<AssetLoad> startupLoads);
 
   /** @returns ASSETS_MODULE_NAME. */
   [[nodiscard]] std::string name() const override;
@@ -39,13 +41,14 @@ class ClientAssetsModule final : public engine::IModule {
    */
   void install(engine::InstallContext& context) override;
 
-  /** @throws AssetLoadingException when an asset of the interface or of the
-   * intro cannot be loaded. */
+  /** @throws AssetLoadingException when a load it runs cannot load an
+   * asset. */
   void start() override;
 
   void stop() override;
 
  private:
+  std::vector<AssetLoad> startupLoads_;
   std::unique_ptr<AssetLibrary> library_;
   logging::Logger logger_;
 };

@@ -10,7 +10,6 @@ target_link_libraries(rtype_client_assets_module
   PRIVATE
     rtype_client_constants
     rtype_client_module_constants
-    rtype_client_screen_assets
     rtype_engine_paths
 )
 
