@@ -1,12 +1,12 @@
+add_subdirectory(Common)
+add_subdirectory(Registry)
+
 add_library(rtype_client_screens_module STATIC
   ClientScreens.cpp
   ClientScreensModule.cpp
-  DialogScreen.cpp
-  LoadingScreen.cpp
   OpeningScreen.cpp
   PlayerPreferences.cpp
   ScreenAssets.cpp
-  ScreenBuilding.cpp
 )
 
 target_include_directories(rtype_client_screens_module PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
@@ -14,38 +14,38 @@ target_include_directories(rtype_client_screens_module PUBLIC ${CMAKE_CURRENT_SO
 target_link_libraries(rtype_client_screens_module
   PUBLIC
     SFML::Graphics
+    SFML::Window
     rtype_client_application
     rtype_client_asset_library
-    rtype_client_asset_loading
     rtype_client_audio_contract
+    rtype_client_common_screens
     rtype_client_effect_interfaces
     rtype_client_entity_messages
-    rtype_client_exceptions
     rtype_client_interface
-    rtype_client_menu
     rtype_client_pilots
     rtype_client_rendering_interfaces
+    rtype_client_screen_registry
     rtype_client_scrolling_background
     rtype_client_session
     rtype_client_settings_module
-    rtype_client_widgets
+    rtype_client_settings_values
     rtype_client_window_display
     rtype_client_window_loop
-    rtype_engine_commands
+    rtype_engine_command_settings
     rtype_engine_events
+    rtype_engine_install_context
     rtype_engine_modules
     rtype_engine_time
     rtype_logging
     rtype_network_transport
   PRIVATE
+    rtype_client_asset_loading
     rtype_client_constants
-    rtype_client_interface_canvas
-    rtype_client_platform
-    rtype_game_components
+    rtype_client_sprites
+    rtype_engine_exceptions
     rtype_network_constants
     rtype_network_exceptions
     rtype_network_protocol
-    rtype_network_wire_types
 )
 
 rtype_enable_warnings(rtype_client_screens_module)

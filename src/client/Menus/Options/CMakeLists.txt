@@ -12,11 +12,11 @@ target_include_directories(rtype_client_options PUBLIC ${CMAKE_CURRENT_SOURCE_DI
 target_link_libraries(rtype_client_options
   PUBLIC
     SFML::Graphics
+    rtype_client_common_screens
     rtype_client_input_keys
     rtype_client_interface
     rtype_client_menu
     rtype_client_row_control
-    rtype_client_screens_module
     rtype_client_settings_module
     rtype_client_slider
     rtype_client_window_display
