@@ -31,3 +31,7 @@ See the rule file of the same name in `.claude/rules/architecture/`: at most 10 
 
 - ❌ **Before (wrong)**: `EffectSpawner`, 33 member functions, the only class the replicator and the game screen call for any effect.
 - ✅ **After (right)**: `EffectSpawner` holds the classes the measured groups became and plays the ladder through them, each class at 10 member functions or fewer.
+
+## Update (3 November 2026) — A shared fixture counts
+
+A `leaderboard()` accessor went into `ServerSessionFixture`, which already held 19 member functions; the count of the classes of the change had listed only the production classes until the measure ran on it. The leaderboard tests now have a fixture of their own, with 9.

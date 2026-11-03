@@ -12,6 +12,7 @@
 #include <string>
 #include <utility>
 #include "BoundAction.hpp"
+#include "Button.hpp"
 #include "GameScreenIdConstants.hpp"
 #include "HangarBay.hpp"
 #include "HangarBayConstants.hpp"
@@ -24,6 +25,7 @@
 #include "ISoundPlayer.hpp"
 #include "IWaitingRoom.hpp"
 #include "InterfaceConstants.hpp"
+#include "KeyChipParts.hpp"
 #include "LobbyPartAreas.hpp"
 #include "LobbyPlace.hpp"
 #include "LobbyScreenConstants.hpp"
@@ -34,6 +36,7 @@
 #include "MenuScreenIdConstants.hpp"
 #include "PilotColor.hpp"
 #include "PlayfieldMapping.hpp"
+#include "ScreenConstants.hpp"
 #include "ScreenId.hpp"
 #include "SoundConstants.hpp"
 #include "TimeConstants.hpp"
@@ -105,13 +108,24 @@ sf::IntRect backChipArea() {
       {.label = BACK_LABEL, .keyName = CANCEL_KEY_NAME});
 }
 
-/** @returns Where the room paints HELP: a chip like BACK, BUTTON_GAP to its
- * left. */
+/** @returns Where a chip with this text lies: like BACK, BUTTON_GAP to the left
+ * of another chip. */
+sf::IntRect chipLeftOf(sf::IntRect neighbour, const Button::Text& text) {
+  sf::IntRect chip = MenuBuilder::chipArea(text);
+  chip.position.x = neighbour.position.x - BUTTON_GAP - chip.size.x;
+  return chip;
+}
+
+/** @returns Where the room paints HELP. */
 sf::IntRect helpChipArea() {
-  sf::IntRect help =
-      MenuBuilder::chipArea({.label = HELP_LABEL, .keyName = HELP_KEY_NAME});
-  help.position.x = backChipArea().position.x - BUTTON_GAP - help.size.x;
-  return help;
+  return chipLeftOf(backChipArea(),
+                    {.label = HELP_LABEL, .keyName = HELP_KEY_NAME});
+}
+
+/** @returns Where the room paints RANKING. */
+sf::IntRect leaderboardChipArea() {
+  return chipLeftOf(helpChipArea(), {.label = LEADERBOARD_LABEL,
+                                     .keyName = LEADERBOARD_KEY_NAME});
 }
 
 /** @returns The slot of the bay of the local player, or nothing while the
@@ -170,12 +184,23 @@ LobbyScreen::LobbyScreen(LobbyScreenParts parts,
                                  .keyName = parts.keyName,
                                  .palette = parts.palette,
                                  .motion = parts.motion,
-                                 .chipArea = helpChipArea()}) {
+                                 .chipArea = helpChipArea()}),
+      leaderboardChip_(KeyChipParts{
+          .text = {.label = LEADERBOARD_LABEL, .keyName = LEADERBOARD_KEY_NAME},
+          .area = leaderboardChipArea(),
+          .key = LEADERBOARD_KEY,
+          .action =
+              [this] {
+                handleEvent(sf::Event::FocusLost{});
+                navigator_->push(LEADERBOARD_SCREEN);
+              },
+          .sounds = parts.sounds}) {
   repaint();
 }
 
 void LobbyScreen::handleEvent(const sf::Event& event) {
   if (help_.handleEvent(event, playfieldPointAt_)) {
+    leaderboardChip_.handleEvent(sf::Event::FocusLost{}, playfieldPointAt_);
     return;
   }
   if (const auto* pressed = event.getIf<sf::Event::KeyPressed>();
@@ -194,6 +219,9 @@ void LobbyScreen::handleEvent(const sf::Event& event) {
   }
   if (event.is<sf::Event::FocusLost>()) {
     readyKeyHeld_ = false;
+  }
+  if (leaderboardChip_.handleEvent(event, playfieldPointAt_)) {
+    return;
   }
   menu_.handleEvent(event, playfieldPointAt_);
 }
@@ -263,6 +291,7 @@ void LobbyScreen::repaint() {
     paintBays();
     canvas_->write(pilotCount(players.size()), PILOT_COUNT_ANCHOR,
                    PILOT_COUNT_STYLE);
+    leaderboardChip_.paint(*canvas_);
   }
   help_.paint(*canvas_, parts);
   canvas_->display();

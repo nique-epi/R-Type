@@ -52,6 +52,9 @@ Menu TitleScreen::buildMenu(IScreenNavigator& navigator, ISoundPlayer& sounds) {
       .subtitle(TITLE_SUBTITLE)
       .button({.label = PLAY_LABEL, .description = PLAY_DESCRIPTION},
               [&navigator] { navigator.push(CONNECTION_SCREEN); })
+      .button(
+          {.label = LEADERBOARD_LABEL, .description = LEADERBOARD_DESCRIPTION},
+          [&navigator] { navigator.push(LEADERBOARD_SCREEN); })
       .button({.label = SETTINGS_LABEL, .description = SETTINGS_DESCRIPTION},
               [&navigator] { navigator.push(OPTIONS_SCREEN); })
       .cancelButton({.label = QUIT_LABEL, .description = QUIT_DESCRIPTION},

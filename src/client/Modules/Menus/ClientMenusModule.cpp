@@ -3,6 +3,7 @@
 #include <random>
 #include <string>
 #include <vector>
+#include "ConnectionGoal.hpp"
 #include "ConnectionScreen.hpp"
 #include "ConnectionScreenParts.hpp"
 #include "DialogMenus.hpp"
@@ -10,6 +11,11 @@
 #include "InstallContext.hpp"
 #include "IntroScreen.hpp"
 #include "IntroScreenParts.hpp"
+#include "LeaderboardPresentation.hpp"
+#include "LeaderboardScreen.hpp"
+#include "LeaderboardScreenConstants.hpp"
+#include "LeaderboardScreenParts.hpp"
+#include "LeaderboardTab.hpp"
 #include "LocalizedKeyName.hpp"
 #include "MenuScreenIdConstants.hpp"
 #include "ModuleConstants.hpp"
@@ -90,13 +96,35 @@ std::unique_ptr<IScreen> buildConnectionLostScreen(
                          context.services.connection.get().status().phase));
 }
 
-std::unique_ptr<IScreen> buildConnectionScreen(const ScreenContext& context) {
+std::unique_ptr<IScreen> buildConnectionScreen(const ScreenContext& context,
+                                               ConnectionGoal goal) {
   return std::make_unique<ConnectionScreen>(
       ConnectionScreenParts{.navigator = context.navigator.get(),
                             .sounds = soundsOf(context),
                             .connection = context.services.connection.get(),
                             .playfieldPointAt = playfieldMappingOf(context),
-                            .choice = context.serverChoice.get()},
+                            .choice = context.serverChoice.get(),
+                            .goal = goal},
+      interfaceCanvasOf(context));
+}
+
+/** @returns The leaderboard, opened on the filter the waiting room calls for.
+ */
+std::unique_ptr<IScreen> buildLeaderboardScreen(const ScreenContext& context) {
+  return std::make_unique<LeaderboardScreen>(
+      LeaderboardScreenParts{
+          .navigator = context.navigator.get(),
+          .sounds = soundsOf(context),
+          .connection = context.services.connection.get(),
+          .tabs = {LeaderboardTab{
+                       .label = SERVER_TAB_LABEL,
+                       .source = &context.services.leaderboard.get()},
+                   LeaderboardTab{.label = GLOBAL_TAB_LABEL}},
+          .choice = openingChoiceOf(
+              context.services.waitingRoom.get().lobbyPlayers().size()),
+          .playfieldPointAt = playfieldMappingOf(context),
+          .keyName = localizedKeyName,
+          .motion = motionPreference()},
       interfaceCanvasOf(context));
 }
 
@@ -127,7 +155,14 @@ void ClientMenusModule::install(engine::InstallContext& context) {
     return buildOptionsScreen(screens, OptionsPlace::OverGame);
   });
   registry.add(QUIT_CONFIRMATION_SCREEN, buildQuitConfirmationScreen);
-  registry.add(CONNECTION_SCREEN, buildConnectionScreen);
+  registry.add(CONNECTION_SCREEN, [](const ScreenContext& screens) {
+    return buildConnectionScreen(screens, ConnectionGoal::WaitingRoom);
+  });
+  registry.add(
+      CONNECTION_FOR_LEADERBOARD_SCREEN, [](const ScreenContext& screens) {
+        return buildConnectionScreen(screens, ConnectionGoal::ScreenBelow);
+      });
+  registry.add(LEADERBOARD_SCREEN, buildLeaderboardScreen);
   registry.add(CONNECTION_LOST_SCREEN, buildConnectionLostScreen);
 }
 

@@ -9,6 +9,7 @@
 #include "FlightLogSheetConstants.hpp"
 #include "HudSpriteConstants.hpp"
 #include "InterfaceConstants.hpp"
+#include "LeaderboardSpriteConstants.hpp"
 #include "ProfessorSpriteConstants.hpp"
 #include "ScreenConstants.hpp"
 #include "SoundConstants.hpp"
@@ -35,8 +36,8 @@ AssetList interfaceAssets() {
 }
 
 AssetList titleAssets() {
-  return AssetList{
-      .textures = {LOGO_ID, ENTITY_SHEET_ID, HUD_SHEET_ID, PROFESSOR_SHEET_ID}};
+  return AssetList{.textures = {LOGO_ID, ENTITY_SHEET_ID, HUD_SHEET_ID,
+                                PROFESSOR_SHEET_ID, LEADERBOARD_SHEET_ID}};
 }
 
 AssetList gameAssets() {

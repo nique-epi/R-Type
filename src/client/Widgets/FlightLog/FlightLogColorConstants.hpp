@@ -36,7 +36,6 @@ constexpr sf::Color TAPE_COLOR(STAR_WHITE.r, STAR_WHITE.g, STAR_WHITE.b,
 constexpr sf::Color POLAROID_COLOR = STAR_WHITE;
 constexpr sf::Color POLAROID_WINDOW_COLOR = SKY_COLOR;
 constexpr std::array POLAROID_STAR_COLORS{PALE_BLUE, STAR_WHITE, BLUE};
-constexpr sf::Color YOU_TAG_COLOR = INK;
 constexpr sf::Color YOU_TAG_TEXT_COLOR = STAR_WHITE;
 
 constexpr sf::Color RIBBON_COLOR = PLAYER_PINK;
