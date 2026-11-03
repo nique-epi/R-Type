@@ -816,6 +816,38 @@ Every game that ends leaves a row per player in the SQLite file of its server, a
 
 `ResultsDatabase` (`src/server/Storage/`) is the only place of the server that holds SQL, and every value reaches SQLite as a bound parameter, so a nickname is never read as SQL. Each game is one transaction: after a crash, all its rows are there or none is.
 
+The file holds one table, which every finished game writes, and one view, computed from that table each time it is read:
+
+```mermaid
+erDiagram
+  accTitle: The SQLite file of a server
+  accDescr: The table game_results holds one row per player of each finished game, keyed by game_id and nickname. The view player_statistics adds up the rows of each player and holds no data of its own.
+  direction LR
+  game_results {
+    TEXT game_id PK
+    TEXT nickname PK
+    TEXT account_id
+    INTEGER score
+    INTEGER deaths
+    INTEGER played_at
+    TEXT difficulty
+    INTEGER player_count
+    INTEGER vanilla
+    INTEGER sent_at
+  }
+  player_statistics {
+    TEXT player
+    INTEGER has_account
+    INTEGER games_played
+    INTEGER best_score
+    INTEGER total_score
+    INTEGER deaths
+  }
+  player_statistics ||--|{ game_results : "adds up"
+```
+
+The table is `STRICT`: SQLite refuses a value it cannot store in the declared type without loss, where an ordinary table would keep it as it came. Its key is `game_id` and `nickname` together, so a game holds one row per player. The index `game_results_of_a_leaderboard`, on `difficulty` and `player_count`, finds the rows of one leaderboard.
+
 | Column of `game_results` | Holds |
 |---|---|
 | `game_id` | 32 hexadecimal characters drawn by SQLite, not a counter, so a deleted file never reuses an identifier |
