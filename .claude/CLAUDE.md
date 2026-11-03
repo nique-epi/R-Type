@@ -128,6 +128,7 @@ Paths below are relative to `.claude/rules/`.
 - `fix/process/fix-process-visible-defect-never-minor-on-my-own.md`
 
 **Reasoning — `fix/reasoning/`**
+- `fix/reasoning/fix-reasoning-a-detour-comes-back-to-where-it-started.md`
 - `fix/reasoning/fix-reasoning-a-guard-after-the-write-is-only-an-alarm.md`
 - `fix/reasoning/fix-reasoning-a-sanitizer-sees-only-what-leaves-the-allocation.md`
 - `fix/reasoning/fix-reasoning-a-key-held-down-repeats-its-press.md`
