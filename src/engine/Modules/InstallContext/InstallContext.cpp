@@ -17,7 +17,7 @@ InstallContext::InstallContext(std::string moduleName,
       stages_(&stages) {}
 
 void InstallContext::addWork(std::string_view stageName, StageWork work) {
-  stages_->add(stageName, std::move(work));
+  stages_->add(stageName, moduleName_, std::move(work));
 }
 
 void InstallContext::refuseSecondProvider(std::type_index service) const {

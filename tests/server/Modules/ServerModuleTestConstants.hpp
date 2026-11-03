@@ -61,5 +61,16 @@ constexpr std::size_t SECOND_GAME = 1;
 constexpr std::size_t ONE_GAME = 1;
 constexpr std::size_t THREE_GAMES = 3;
 
+/**
+ * @brief A line that gives the state rate setting a rate above the highest one.
+ */
+constexpr std::string_view STATE_RATE_ABOVE_THE_HIGHEST_LINE =
+    "set state-rate 1000";
+
+/**
+ * @brief A line that clears the seed setting.
+ */
+constexpr std::string_view CLEAR_THE_SEED_LINE = "set seed none";
+
 /** @brief The only byte of the datagram a test queues for its client. */
 constexpr std::byte QUEUED_BYTE{0x2A};

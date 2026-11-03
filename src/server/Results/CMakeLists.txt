@@ -12,7 +12,7 @@ target_link_libraries(rtype_server_results_module
     rtype_server_instances
     rtype_server_storage_module
   PRIVATE
-    rtype_server_session_datagram
+    rtype_server_sessions_roster
 )
 
 rtype_enable_warnings(rtype_server_results_module)

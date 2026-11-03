@@ -1,29 +1,25 @@
-add_library(rtype_server_bydo_spawn_constants INTERFACE)
+find_package(tomlplusplus CONFIG REQUIRED)
 
-target_include_directories(rtype_server_bydo_spawn_constants INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
+add_library(rtype_server_spawning STATIC BydoSpawner.cpp WaveCatalog.cpp WeaponSystem.cpp)
 
-add_library(rtype_server_weapon_system_constants INTERFACE)
+target_include_directories(rtype_server_spawning PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
-target_include_directories(rtype_server_weapon_system_constants INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
+target_link_libraries(rtype_server_spawning
+  PUBLIC
+    rtype_game
+    rtype_game_bydo_kind
+    rtype_game_components
+    rtype_game_wave_director
+    rtype_game_waves
+    rtype_logging
+    rtype_server_exceptions
+    rtype_server_instances_context
+    rtype_server_replication_wire
+    rtype_server_sessions_roster
+  PRIVATE
+    rtype_game_enemy_missile_start_position
+    rtype_game_spawning
+    tomlplusplus::tomlplusplus
+)
 
-add_library(rtype_server_weapon_shot INTERFACE)
-
-target_include_directories(rtype_server_weapon_shot INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
-
-target_link_libraries(rtype_server_weapon_shot INTERFACE rtype_game_components)
-
-add_library(rtype_server_bydo_spawner_parts INTERFACE)
-
-target_include_directories(rtype_server_bydo_spawner_parts INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
-
-target_link_libraries(rtype_server_bydo_spawner_parts INTERFACE rtype_server_entity_spawn_sender rtype_server_wave_plan)
-
-add_library(rtype_server_wave_plan INTERFACE)
-
-target_include_directories(rtype_server_wave_plan INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
-
-target_link_libraries(rtype_server_wave_plan INTERFACE rtype_game_waves rtype_game_bydo_kind rtype_server_exception_parts)
-
-add_subdirectory(BydoSpawner)
-add_subdirectory(WaveCatalog)
-add_subdirectory(WeaponSystem)
+rtype_enable_warnings(rtype_server_spawning)

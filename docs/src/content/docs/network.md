@@ -47,14 +47,14 @@ An input of the player takes the other way through the transport and the session
 
 ### Transport
 
-Transport carries datagrams and knows nothing of players. Each program runs its socket on a network thread of its own, so its game never waits on the network, and exchanges datagrams with the thread of the game through bounded queues (see [Concurrency](/R-Type/concurrency/)). The parts are in this library and described below: `NetworkContext`, `UdpSocket` and `DatagramRelay`. The server assembles them in `ServerApplication` (`src/server/Application/`, see [Server](/R-Type/server/#threads-serverapplication)), the client in `NetworkThread` (`src/client/Connection/NetworkThread/`, see [Client](/R-Type/client/#network-networkthread)).
+Transport carries datagrams and knows nothing of players. Each program runs its socket on a network thread of its own, so its game never waits on the network, and exchanges datagrams with the thread of the game through bounded queues (see [Concurrency](/R-Type/concurrency/)). The parts are in this library and described below: `NetworkContext`, `UdpSocket` and `DatagramRelay`. The server assembles them in `ServerApplication` (`src/server/Network/`, see [Server](/R-Type/server/#threads-serverapplication)), the client in `NetworkThread` (`src/client/Connection/Transport/`, see [Client](/R-Type/client/#network-networkthread)).
 
 ### Sessions
 
 A session starts when the server accepts a player and ends when the player leaves or stays silent too long. Every datagram of a session carries the session token of the player and the next sequence of its sender, so each side drops a forged datagram, which lacks the token, and a late copy, which is not newer than the newest datagram it read (see [Protocol](/R-Type/protocol/#a-session)).
 
 - On the server, `ConnectionAcceptor` (`src/server/Lobby/`) answers the connection requests and gives a place only to a sender that sends back its cookie (`CookieIssuer`, below). `DatagramSorter` checks the token on the network thread, before any queue. The `GameSessions` of each game (`src/server/Sessions/`) checks the sequence, keeps the ready state and the newest input of each player, sends the heartbeats and closes the session of a player it hears nothing from (see [Server](/R-Type/server/#sessions-of-a-game-gamesessions)); `SessionDatagram` gives every datagram to a player its header.
-- On the client, `ServerSession` (`src/client/Connection/ServerSession/`) holds the one session with the server it joined: it sends the request, answers the challenge, checks the token and the sequence, sends the heartbeats, and takes the server for lost after `SESSION_SILENCE_LIMIT` (20 s) without a datagram (see [Client](/R-Type/client/#joining-a-server-serversession-waitingroom-entitymessagequeue)).
+- On the client, `ServerSession` (`src/client/Connection/`) holds the one session with the server it joined: it sends the request, answers the challenge, checks the token and the sequence, sends the heartbeats, and takes the server for lost after `SESSION_SILENCE_LIMIT` (20 s) without a datagram (see [Client](/R-Type/client/#joining-a-server-serversession-waitingroom-entitymessagequeue)).
 - Both programs read the same delays, `HEARTBEAT_INTERVAL` (1 s), `SESSION_TIMEOUT` (5 s) and `RECONNECTION_GRACE` (15 s), in `src/network/Protocol/ProtocolConstants.hpp`. They are **provisional**, like every delay of the protocol: code must read them.
 
 ### Replication
@@ -62,7 +62,7 @@ A session starts when the server accepts a player and ends when the player leave
 Replication turns the entities of a game into messages on the server, and the messages back into entities on the client. The server decides where everything is; the client draws the newest state it received and does not predict its own ship yet.
 
 - On the server, `src/server/Replication/` announces each entity as it appears (`sendEntitySpawned`), sends the world state at the rate set at launch (`WorldStateSender`, see [Server](/R-Type/server/#world-state-worldstatesender)), turns the events of the game into `EntityDestroyed`, `GameEvent` and `PlayerLeft` (`GameEventBroadcaster`), and tells the waiting room and the end of a game (`LobbyStateAnnouncer`, `GameEndAnnouncer`). Each datagram leaves under the header of its player.
-- On the client, `EntityMessageQueue` keeps the messages about entities in the order they arrived until the game screen takes them, and `EntityReplicator` (`src/client/Replication/`) applies them to the entities of the game screen; `WorldStateFilter` drops a world state older than the newest one applied (see [Client](/R-Type/client/#entities-from-the-server-entityreplicator)).
+- On the client, `EntityMessageQueue` keeps the messages about entities in the order they arrived until the game screen takes them, and `EntityReplicator` (`src/client/Replication/Entities/`) applies them to the entities of the game screen; `WorldStateFilter` drops a world state older than the newest one applied (see [Client](/R-Type/client/#entities-from-the-server-entityreplicator)).
 - The messages and the codec of the world state are in this library (`src/network/Protocol/`, below).
 
 ## Event loop: `NetworkContext`
@@ -354,10 +354,10 @@ Measured on 27 October 2026 on an Apple M4 Pro under macOS 27.0, with the server
 | Change how often a rejected datagram or message is logged | `REJECTION_LINE_INTERVAL` in `src/network/NetworkConstants.hpp`, read by the network and the server (see [Logging](/R-Type/logging/#repeated-events-throttledlog)) |
 | Handle a received message | `registerHandler<Message>()` on a `MessageDispatcher` |
 | Change how a connection cookie is computed, or how long it lives | `CookieIssuer` in `src/network/Handshake/CookieIssuer/`, `COOKIE_WINDOW_DURATION` in `src/network/Handshake/HandshakeConstants.hpp` |
-| Change how a player is let in, challenged or refused | `ConnectionAcceptor` in `src/server/Lobby/ConnectionAcceptor/` and `ServerSession` in `src/client/Connection/ServerSession/`, then the [Protocol](/R-Type/protocol/#connection) page |
-| Change what a session checks on a received datagram | `DatagramSorter` (`src/server/Application/DatagramSorter/`) for the token, `DatagramReader` and `ArrivalLedger` (`src/server/Sessions/`) for the sequence; `SessionInbound` on the client |
-| Change the heartbeats or the session timeout | `HEARTBEAT_INTERVAL`, `SESSION_TIMEOUT` and `RECONNECTION_GRACE` in `src/network/Protocol/ProtocolConstants.hpp`, and their tick counts in `src/server/Sessions/SessionConstants.hpp` |
-| Send the clients something new about an entity | the sender in `src/server/Replication/`, `EntityReplicator` in `src/client/Replication/`, and the message in `src/network/Protocol/` |
+| Change how a player is let in, challenged or refused | `ConnectionAcceptor` in `src/server/Lobby/` and `ServerSession` in `src/client/Connection/`, then the [Protocol](/R-Type/protocol/#connection) page |
+| Change what a session checks on a received datagram | `DatagramSorter` (`src/server/Network/`) for the token, `DatagramReader` and `ArrivalLedger` (`src/server/Sessions/Tracking/`, `src/server/Sessions/Roster/`) for the sequence; `SessionInbound` on the client |
+| Change the heartbeats or the session timeout | `HEARTBEAT_INTERVAL`, `SESSION_TIMEOUT` and `RECONNECTION_GRACE` in `src/network/Protocol/ProtocolConstants.hpp`, and their tick counts in `src/server/Sessions/Tracking/SessionConstants.hpp` |
+| Send the clients something new about an entity | the sender in `src/server/Replication/`, `EntityReplicator` in `src/client/Replication/Entities/`, and the message in `src/network/Protocol/` |
 | Add a network error | `src/network/Exceptions/NetworkException.hpp` |
 | Test code against a real socket | `tests/UdpSocketTest.cpp`: a plain Asio client on the loopback address |
 | Test code that uses a socket without the network | `tests/doubles/RecordingDatagramSocket.hpp`, as `tests/network/Transport/DatagramRelayTest.cpp` does |

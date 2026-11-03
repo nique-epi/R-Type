@@ -42,7 +42,7 @@ A generic `std::` exception thrown from domain code carries no domain informatio
   ```
 - ✅ **Instead**:
   ```cpp
-  // src/server/Exceptions/ServerException/ServerException.hpp
+  // src/server/Exceptions/ServerException.hpp
   namespace rtype::server {
 
   class ServerException : public std::runtime_error {

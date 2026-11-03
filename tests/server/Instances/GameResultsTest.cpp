@@ -9,7 +9,7 @@
 #include "LeaderboardSamples.hpp"
 #include "MessagePayload.hpp"
 #include "MessageType.hpp"
-#include "Replication/GameEndAnnouncerTestConstants.hpp"
+#include "Replication/Announcements/Milestones/GameEndAnnouncerTestConstants.hpp"
 #include "SentDatagrams.hpp"
 #include "ServerConstants.hpp"
 

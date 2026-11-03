@@ -4,8 +4,8 @@ target_include_directories(rtype_client_menu_builder PUBLIC ${CMAKE_CURRENT_SOUR
 
 target_link_libraries(rtype_client_menu_builder
   PUBLIC
+    rtype_client_application
     rtype_client_menu
-    rtype_client_screen_interfaces
   PRIVATE
     rtype_client_key_cap
     rtype_client_widget_text

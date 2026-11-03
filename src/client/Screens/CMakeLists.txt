@@ -1,32 +1,55 @@
-add_library(rtype_client_screen_interfaces INTERFACE)
+add_subdirectory(Common)
+add_subdirectory(Registry)
 
-target_include_directories(rtype_client_screen_interfaces INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
-
-target_link_libraries(rtype_client_screen_interfaces
-  INTERFACE
-    rtype_client_audio_interfaces
-    rtype_engine_time
-    rtype_network_transport
+add_library(rtype_client_screens_module STATIC
+  ClientScreens.cpp
+  ClientScreensModule.cpp
+  OpeningScreen.cpp
+  PlayerPreferences.cpp
+  ScreenAssets.cpp
 )
 
-add_subdirectory(ScreenAssets)
-add_subdirectory(HeldKey)
-add_subdirectory(PlayerPreferences)
-add_subdirectory(ConnectionScreen)
-add_subdirectory(GameScreen)
-add_subdirectory(IntroScreen)
-add_subdirectory(LoadingScreen)
-add_subdirectory(LobbyScreen)
-add_subdirectory(LeaderboardPresentation)
-add_subdirectory(LeaderboardFilterDialog)
-add_subdirectory(LeaderboardScreen)
-add_subdirectory(OptionsRows)
-add_subdirectory(OptionsDescriptions)
-add_subdirectory(OptionsTabs)
-add_subdirectory(SavedStamp)
-add_subdirectory(ResetDialog)
-add_subdirectory(OptionsScreen)
-add_subdirectory(TitleScreen)
-add_subdirectory(DialogScreen)
-add_subdirectory(DialogMenus)
-add_subdirectory(EndScreen)
+target_include_directories(rtype_client_screens_module PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+
+target_link_libraries(rtype_client_screens_module
+  PUBLIC
+    SFML::Graphics
+    SFML::Window
+    rtype_client_application
+    rtype_client_asset_library
+    rtype_client_audio_contract_service
+    rtype_client_audio_contract_sounds
+    rtype_client_common_screens
+    rtype_client_connection_leaderboard
+    rtype_client_connection_module
+    rtype_client_effect_interfaces
+    rtype_client_entity_messages
+    rtype_client_handshake
+    rtype_client_interface
+    rtype_client_pilots
+    rtype_client_rendering_interfaces
+    rtype_client_screen_registry
+    rtype_client_scrolling_background
+    rtype_client_settings_module
+    rtype_client_settings_values
+    rtype_client_waiting_room
+    rtype_client_window_display
+    rtype_client_window_loop
+    rtype_engine_command_settings
+    rtype_engine_events
+    rtype_engine_install_context
+    rtype_engine_modules
+    rtype_engine_time
+    rtype_logging
+    rtype_network_transport
+  PRIVATE
+    rtype_client_asset_loading
+    rtype_client_constants
+    rtype_client_sprites
+    rtype_engine_exceptions
+    rtype_network_constants
+    rtype_network_exceptions
+    rtype_network_protocol
+)
+
+rtype_enable_warnings(rtype_client_screens_module)

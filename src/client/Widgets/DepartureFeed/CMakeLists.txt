@@ -5,7 +5,7 @@ target_include_directories(rtype_client_departure_feed PUBLIC ${CMAKE_CURRENT_SO
 target_link_libraries(rtype_client_departure_feed
   PUBLIC
     rtype_client_interface
-    rtype_client_replication_interfaces
+    rtype_client_pilots
     rtype_client_widgets
   PRIVATE
     rtype_client_entity_sprites

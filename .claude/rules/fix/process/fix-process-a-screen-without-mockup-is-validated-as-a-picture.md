@@ -21,7 +21,7 @@ Why: a layout described in words or ASCII is approved without being seen; the us
 ### A new screen takes the input rules of the screen it repeats
 
 1. **Before writing the key and pointer handling of a new screen, read the `handleEvent()` of the screen whose behavior it repeats** (`EndScreen` for a screen that skips an opening, then acts on Enter) and list its input rules: a key held down acts once, a click anywhere skips the opening, which keys act and when.
-2. **Keep each rule through the shared helper** (`releasesHeldKey()`, `src/client/Screens/HeldKey/`), never by leaving it out; a rule the new screen drops on purpose is written in its doc comment with the reason.
+2. **Keep each rule through the shared helper** (`releasesHeldKey()`, `src/client/Game/HeldKey.hpp`), never by leaving it out; a rule the new screen drops on purpose is written in its doc comment with the reason.
 3. **Test the held key**: a second `KeyPressed` of the same key with no release in between acts on nothing.
 
 ### Example (behavior)

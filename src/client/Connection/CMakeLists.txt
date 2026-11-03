@@ -1,38 +1,39 @@
-add_library(rtype_client_connection INTERFACE)
+add_subdirectory(Transport)
+add_subdirectory(Session)
+add_subdirectory(Handshake)
+add_subdirectory(WaitingRoom)
+add_subdirectory(Leaderboard)
 
-target_include_directories(rtype_client_connection INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
-
-target_link_libraries(rtype_client_connection
-  INTERFACE
-    rtype_client_action_set
-    rtype_engine_time
-    rtype_network_connection_refused
-    rtype_network_entity_destroyed
-    rtype_network_entity_spawned
-    rtype_network_game_ended
-    rtype_network_game_event
-    rtype_network_leaderboard_answer
-    rtype_network_leaderboard_request
-    rtype_network_lobby_state
-    rtype_network_player_left
-    rtype_network_protocol
-    rtype_network_transport
+add_library(rtype_client_connection_module STATIC
+  ClientConnectionModule.cpp
+  ServerSession.cpp
 )
 
-add_subdirectory(NetworkThread)
-add_subdirectory(PlayerInputPacer)
-add_subdirectory(GameEventHistory)
-add_subdirectory(SessionOutbox)
-add_subdirectory(SessionDeparture)
-add_subdirectory(SessionInbound)
-add_subdirectory(ConnectionAttempt)
-add_subdirectory(SessionObservers)
-add_subdirectory(HandshakeAnswers)
-add_subdirectory(ServerSession)
-add_subdirectory(GameLoadedReminder)
-add_subdirectory(WaitingRoom)
-add_subdirectory(ServerLeaderboard)
-add_subdirectory(EntityMessageQueue)
-add_subdirectory(DatagramRoute)
-add_subdirectory(DatagramRouter)
-add_subdirectory(SessionLossWatch)
+target_include_directories(rtype_client_connection_module PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+
+target_link_libraries(rtype_client_connection_module
+  PUBLIC
+    rtype_client_connection_leaderboard
+    rtype_client_entity_messages
+    rtype_client_handshake
+    rtype_client_input_commands
+    rtype_client_session
+    rtype_client_transport
+    rtype_client_waiting_room
+    rtype_engine_install_context
+    rtype_engine_modules
+    rtype_engine_time
+    rtype_logging
+    rtype_network_conditions
+    rtype_network_message_dispatcher
+    rtype_network_protocol
+    rtype_network_transport
+  PRIVATE
+    rtype_client_constants
+    rtype_network_connection_refused
+    rtype_network_constants
+    rtype_network_disconnection
+    rtype_network_player_input
+)
+
+rtype_enable_warnings(rtype_client_connection_module)

@@ -5,10 +5,19 @@
 #include <string_view>
 
 /**
- * @brief Two files given after `--database`.
+ * @brief A file given after `--database`, and the line of the command `set`
+ * it becomes.
  */
-constexpr std::string_view SOME_DATABASE_FILE = "some.db";
-constexpr std::string_view LAST_DATABASE_FILE = "last.db";
+constexpr std::string_view DATABASE_ARGUMENT = "results.db";
+constexpr std::string_view DATABASE_LINE = "set database results.db";
+
+/**
+ * @brief A file whose name holds a space, and its line: the value is quoted,
+ * so `set` reads it as one word.
+ */
+constexpr std::string_view DATABASE_ARGUMENT_WITH_A_SPACE = "my results.db";
+constexpr std::string_view DATABASE_LINE_WITH_A_SPACE =
+    "set database \"my results.db\"";
 
 /**
  * @brief A port given after `-p`, written in digits.
@@ -88,14 +97,40 @@ constexpr std::string_view TOO_HIGH_STATE_RATE_ARGUMENT = "61";
 constexpr std::string_view NEGATIVE_STATE_RATE_ARGUMENT = "-30";
 constexpr std::string_view NOT_A_NUMBER_STATE_RATE_ARGUMENT = "fast";
 constexpr std::string_view EMPTY_STATE_RATE_ARGUMENT{};
+
+/**
+ * @brief The lines the launch options force.
+ */
+constexpr std::string_view PORT_LINE = "set port 4243";
+constexpr std::string_view OTHER_PORT_LINE = "set port 4244";
+constexpr std::string_view SEED_LINE = "set seed 1234";
+constexpr std::string_view OTHER_SEED_LINE = "set seed 5678";
+constexpr std::string_view LOWEST_SEED_LINE = "set seed 0";
+constexpr std::string_view HIGHEST_SEED_LINE = "set seed 4294967295";
+constexpr std::string_view STATE_RATE_LINE = "set state-rate 30";
+constexpr std::string_view OTHER_STATE_RATE_LINE = "set state-rate 45";
+constexpr std::string_view LOWEST_STATE_RATE_LINE = "set state-rate 2";
+constexpr std::string_view HIGHEST_STATE_RATE_LINE = "set state-rate 60";
+
+/**
+ * @brief A value of the set option, and the line it forces.
+ */
+constexpr std::string_view ASSIGNMENT_ARGUMENT = "nickname=ace";
+constexpr std::string_view ASSIGNMENT_LINE = "set nickname ace";
+
+/**
+ * @brief Values of the set option that are refused.
+ */
+constexpr std::string_view ASSIGNMENT_WITHOUT_MARK = "nickname";
+constexpr std::string_view ASSIGNMENT_WITHOUT_NAME = "=ace";
 constexpr std::string_view INPUT_DELAY_ARGUMENT = "5";
-constexpr std::size_t DELAY_OF_INPUT_DELAY_ARGUMENT = 5;
+constexpr std::string_view INPUT_DELAY_LINE = "set input-delay 5";
 constexpr std::string_view OTHER_INPUT_DELAY_ARGUMENT = "8";
-constexpr std::size_t DELAY_OF_OTHER_INPUT_DELAY_ARGUMENT = 8;
+constexpr std::string_view OTHER_INPUT_DELAY_LINE = "set input-delay 8";
 constexpr std::string_view LOWEST_INPUT_DELAY_ARGUMENT = "0";
-constexpr std::size_t LOWEST_INPUT_DELAY = 0;
+constexpr std::string_view LOWEST_INPUT_DELAY_LINE = "set input-delay 0";
 constexpr std::string_view HIGHEST_INPUT_DELAY_ARGUMENT = "30";
-constexpr std::size_t HIGHEST_INPUT_DELAY = 30;
+constexpr std::string_view HIGHEST_INPUT_DELAY_LINE = "set input-delay 30";
 constexpr std::string_view TOO_HIGH_INPUT_DELAY_ARGUMENT = "31";
 constexpr std::string_view NEGATIVE_INPUT_DELAY_ARGUMENT = "-1";
 constexpr std::string_view NOT_A_NUMBER_INPUT_DELAY_ARGUMENT = "slow";

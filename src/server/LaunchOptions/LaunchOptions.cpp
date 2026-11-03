@@ -2,12 +2,13 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
-#include <filesystem>
 #include <functional>
 #include <optional>
 #include <span>
 #include <string>
 #include <string_view>
+#include <utility>
+#include <vector>
 #include "EndpointText.hpp"
 #include "EngineException.hpp"
 #include "ExecutablePath.hpp"
@@ -15,11 +16,13 @@
 #include "LaunchArgumentsConstants.hpp"
 #include "LaunchOption.hpp"
 #include "LaunchOptionReader.hpp"
+#include "LaunchValues.hpp"
 #include "LogLaunchOptions.hpp"
 #include "LoggingConstants.hpp"
 #include "NetworkConditions.hpp"
 #include "NetworkConstants.hpp"
 #include "ServerConstants.hpp"
+#include "SettingLine.hpp"
 #include "SimulatorLaunchOptions.hpp"
 #include "WholeNumberText.hpp"
 
@@ -79,70 +82,102 @@ std::size_t inputDelayFromText(std::string_view text) {
   return delay;
 }
 
-/** @returns `-p <port>`, which writes a checked port into @p port. */
-engine::LaunchOption portOption(std::uint16_t& port) {
-  return engine::LaunchOption{.name = engine::PORT_OPTION,
-                              .takesValue = true,
-                              .record = [&port](std::string_view text) {
-                                port = network::portFromText(text);
-                              }};
-}
-
-/** @returns `--seed <seed>`, which writes a checked seed into @p seed. */
-engine::LaunchOption seedOption(std::optional<std::uint32_t>& seed) {
+/**
+ * @returns `-p <port>`, which forces the port setting to a checked port.
+ */
+engine::LaunchOption portOption(LaunchValues& values) {
   return engine::LaunchOption{
-      .name = SEED_OPTION,
+      .name = engine::PORT_OPTION,
       .takesValue = true,
-      .record = [&seed](std::string_view text) { seed = seedFromText(text); }};
-}
-
-/**
- * @returns `--state-rate <states>`, which writes a checked rate into
- * @p stateRate.
- */
-engine::LaunchOption stateRateOption(std::size_t& stateRate) {
-  return engine::LaunchOption{.name = STATE_RATE_OPTION,
-                              .takesValue = true,
-                              .record = [&stateRate](std::string_view text) {
-                                stateRate = stateRateFromText(text);
-                              }};
-}
-
-/**
- * @returns `--input-delay <ticks>`, which writes a checked delay into
- * @p inputDelay.
- */
-engine::LaunchOption inputDelayOption(std::size_t& inputDelay) {
-  return engine::LaunchOption{.name = INPUT_DELAY_OPTION,
-                              .takesValue = true,
-                              .record = [&inputDelay](std::string_view text) {
-                                inputDelay = inputDelayFromText(text);
-                              }};
-}
-
-/** @returns `--database <file>`, which writes the file into @p databaseFile. */
-engine::LaunchOption databaseOption(
-    std::optional<std::filesystem::path>& databaseFile) {
-  return engine::LaunchOption{.name = DATABASE_OPTION,
-                              .takesValue = true,
-                              .record = [&databaseFile](std::string_view file) {
-                                databaseFile = std::filesystem::path{file};
-                              }};
-}
-
-/** @returns `--help`, which sets @p helpRequested. */
-engine::LaunchOption helpOption(bool& helpRequested) {
-  return engine::LaunchOption{
-      .name = engine::HELP_OPTION,
-      .takesValue = false,
-      .record = [&helpRequested]([[maybe_unused]] std::string_view value) {
-        helpRequested = true;
+      .record = [&values](std::string_view port) {
+        values.forcedLines.push_back(engine::settingLine(
+            PORT_SETTING_NAME, std::to_string(network::portFromText(port))));
       }};
 }
 
-/** @returns The lines of the usage that describe how the games are played. */
-std::string gameOptionEntries() {
+/**
+ * @returns `--seed <seed>`, which forces the seed setting to a checked seed.
+ */
+engine::LaunchOption seedOption(LaunchValues& values) {
+  return engine::LaunchOption{
+      .name = SEED_OPTION,
+      .takesValue = true,
+      .record = [&values](std::string_view seed) {
+        values.forcedLines.push_back(engine::settingLine(
+            SEED_SETTING_NAME, std::to_string(seedFromText(seed))));
+      }};
+}
+
+/**
+ * @returns `--state-rate <states>`, which forces the state rate setting to a
+ * checked rate.
+ */
+engine::LaunchOption stateRateOption(LaunchValues& values) {
+  return engine::LaunchOption{
+      .name = STATE_RATE_OPTION,
+      .takesValue = true,
+      .record = [&values](std::string_view rate) {
+        values.forcedLines.push_back(engine::settingLine(
+            STATE_RATE_SETTING_NAME, std::to_string(stateRateFromText(rate))));
+      }};
+}
+
+/**
+ * @returns `--input-delay <ticks>`, which forces the input delay setting to a
+ * checked delay.
+ */
+engine::LaunchOption inputDelayOption(LaunchValues& values) {
+  return engine::LaunchOption{
+      .name = INPUT_DELAY_OPTION,
+      .takesValue = true,
+      .record = [&values](std::string_view delay) {
+        values.forcedLines.push_back(
+            engine::settingLine(INPUT_DELAY_SETTING_NAME,
+                                std::to_string(inputDelayFromText(delay))));
+      }};
+}
+
+/** @returns `--database <file>`, which forces the database setting. */
+engine::LaunchOption databaseOption(LaunchValues& values) {
+  return engine::LaunchOption{
+      .name = DATABASE_OPTION,
+      .takesValue = true,
+      .record = [&values](std::string_view file) {
+        values.forcedLines.push_back(
+            engine::settingLine(DATABASE_SETTING_NAME, file));
+      }};
+}
+
+/** @returns `--set <name>=<value>`, which forces any setting. */
+engine::LaunchOption setOption(LaunchValues& values) {
+  return engine::LaunchOption{
+      .name = engine::SET_OPTION,
+      .takesValue = true,
+      .record = [&values](std::string_view assignment) {
+        values.forcedLines.push_back(
+            engine::settingLineFromSetOption(assignment));
+      }};
+}
+
+/** @returns `--help`, which asks for the usage. */
+engine::LaunchOption helpOption(LaunchValues& values) {
+  return engine::LaunchOption{
+      .name = engine::HELP_OPTION,
+      .takesValue = false,
+      .record = [&values]([[maybe_unused]] std::string_view value) {
+        values.helpRequested = true;
+      }};
+}
+
+/** @returns The lines of the usage that describe the options that give a
+ * setting a value of its own kind. */
+std::string settingOptionEntries() {
   std::string text = engine::usageEntry(
+      std::string(engine::PORT_OPTION) + " <port>",
+      "UDP port to listen on, from " + std::to_string(network::LOWEST_PORT) +
+          " to " + std::to_string(network::HIGHEST_PORT) +
+          ". Default: " + std::to_string(network::DEFAULT_SERVER_PORT) + ".");
+  text += engine::usageEntry(
       std::string(SEED_OPTION) + " <seed>",
       "Whole number the random draws of the games start from, from 0 to "
       "4294967295. Default: drawn at random, and logged when a game starts so "
@@ -166,21 +201,29 @@ std::string gameOptionEntries() {
   return text;
 }
 
-/** @returns The lines of the usage that describe the options of the server
- * itself, `--help` included. */
-std::string serverOptionEntries() {
-  std::string text = engine::usageEntry(
-      std::string(engine::PORT_OPTION) + " <port>",
-      "UDP port to listen on, from " + std::to_string(network::LOWEST_PORT) +
-          " to " + std::to_string(network::HIGHEST_PORT) +
-          ". Default: " + std::to_string(network::DEFAULT_SERVER_PORT) + ".");
-  text += gameOptionEntries();
-  text += engine::usageEntry(
+/** @returns The line of the usage that describes `--database`. */
+std::string databaseOptionEntry() {
+  return engine::usageEntry(
       std::string(DATABASE_OPTION) + " <file>",
       "File the leaderboard of this server is kept in, on a local disk. "
       "Default: " +
           std::string(DATABASE_FILE_PREFIX) + "<port>" +
           std::string(DATABASE_FILE_SUFFIX) + " next to the executable.");
+}
+
+/** @returns The lines of the usage that describe `--set` and `--help`. */
+std::string generalOptionEntries() {
+  std::string text = engine::usageEntry(
+      std::string(engine::SET_OPTION) + " <name>=<value>",
+      "Gives a setting a value, as the line `set <name> <value>` of " +
+          std::string(SERVER_CONFIGURATION_FILE_NAME) +
+          " does. It wins over that file and can be given several times. "
+          "Settings: " +
+          std::string(PORT_SETTING_NAME) + ", " +
+          std::string(SEED_SETTING_NAME) + ", " +
+          std::string(STATE_RATE_SETTING_NAME) + ", " +
+          std::string(INPUT_DELAY_SETTING_NAME) + ", " +
+          std::string(DATABASE_SETTING_NAME) + ".");
   text += engine::usageEntry(engine::HELP_OPTION,
                              "Print this help and start nothing.");
   return text;
@@ -189,13 +232,13 @@ std::string serverOptionEntries() {
 }  // namespace
 
 LaunchOptions LaunchOptions::read(std::span<const std::string_view> arguments) {
-  LaunchOptions options{network::DEFAULT_SERVER_PORT, false};
-  const std::array launchOptions{portOption(options.port_),
-                                 seedOption(options.seed_),
-                                 stateRateOption(options.stateRate_),
-                                 inputDelayOption(options.inputDelay_),
-                                 databaseOption(options.databaseFile_),
-                                 helpOption(options.helpRequested_)};
+  LaunchOptions options{
+      LaunchValues{.forcedLines = {}, .helpRequested = false}};
+  const std::array launchOptions{
+      portOption(options.values_),      seedOption(options.values_),
+      stateRateOption(options.values_), inputDelayOption(options.values_),
+      databaseOption(options.values_),  setOption(options.values_),
+      helpOption(options.values_)};
   const std::array<engine::LaunchOptionReader, 2> readers{
       std::bind_front(&network::SimulatorLaunchOptions::readOption,
                       &options.simulatorOptions_),
@@ -207,7 +250,9 @@ LaunchOptions LaunchOptions::read(std::span<const std::string_view> arguments) {
 
 std::string LaunchOptions::usage() {
   std::string text = engine::usageHeader(PROGRAM_NAME);
-  text += serverOptionEntries();
+  text += settingOptionEntries();
+  text += databaseOptionEntry();
+  text += generalOptionEntries();
   text += '\n';
   text += network::SimulatorLaunchOptions::usage();
   text += '\n';
@@ -215,20 +260,11 @@ std::string LaunchOptions::usage() {
   return text;
 }
 
-std::uint16_t LaunchOptions::port() const { return port_; }
-
-std::optional<std::uint32_t> LaunchOptions::seed() const { return seed_; }
-
-std::size_t LaunchOptions::stateRate() const { return stateRate_; }
-
-std::size_t LaunchOptions::inputDelay() const { return inputDelay_; }
-
-const std::optional<std::filesystem::path>& LaunchOptions::databaseFile()
-    const {
-  return databaseFile_;
+const std::vector<std::string>& LaunchOptions::forcedLines() const {
+  return values_.forcedLines;
 }
 
-bool LaunchOptions::helpRequested() const { return helpRequested_; }
+bool LaunchOptions::helpRequested() const { return values_.helpRequested; }
 
 const network::NetworkConditions& LaunchOptions::networkConditions() const {
   return simulatorOptions_.conditions();
@@ -238,11 +274,8 @@ const logging::LogLaunchOptions& LaunchOptions::logOptions() const {
   return logOptions_;
 }
 
-LaunchOptions::LaunchOptions(std::uint16_t port, bool helpRequested)
-    : port_(port),
-      helpRequested_(helpRequested),
-      stateRate_(DEFAULT_WORLD_STATES_PER_SECOND),
-      inputDelay_(DEFAULT_INPUT_DELAY_TICKS),
+LaunchOptions::LaunchOptions(LaunchValues values)
+    : values_(std::move(values)),
       logOptions_(engine::executableFolder() / logging::SERVER_LOG_FILE_NAME) {}
 
 }  // namespace rtype::server

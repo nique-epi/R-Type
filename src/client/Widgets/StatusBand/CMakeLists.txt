@@ -4,7 +4,7 @@ target_include_directories(rtype_client_status_band PUBLIC ${CMAKE_CURRENT_SOURC
 
 target_link_libraries(rtype_client_status_band
   PUBLIC
-    rtype_client_replication_interfaces
+    rtype_client_pilots
     rtype_client_widgets
   PRIVATE
     rtype_client_cut_corner_box
