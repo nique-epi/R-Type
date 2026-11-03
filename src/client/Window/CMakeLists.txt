@@ -16,7 +16,7 @@ target_link_libraries(rtype_client_window_module
     SFML::Graphics
     SFML::System
     SFML::Window
-    rtype_client_settings_module
+    rtype_client_settings_values
     rtype_engine_application
     rtype_engine_events
     rtype_engine_modules

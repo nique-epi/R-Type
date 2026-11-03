@@ -153,7 +153,7 @@ rtype_add_test(NAME client_row_control_tests SOURCES client/Widgets/RowControls/
 target_include_directories(client_row_control_tests PRIVATE client/Screens doubles)
 rtype_add_test(NAME client_input_tests SOURCES client/Input/KeyBindingsTest.cpp client/Input/KeyNamesTest.cpp client/Input/ActionSetTest.cpp client/Input/PlayerCommandsTest.cpp client/Input/PlayerInputPacerTest.cpp LIBS rtype_client_input)
 target_include_directories(client_input_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
-rtype_add_test(NAME client_settings_tests SOURCES client/Settings/SettingsTextTest.cpp client/Settings/SettingsFileTest.cpp client/Settings/SettingsServiceTest.cpp client/Settings/SettingsServiceFixture.cpp doubles/RecordingSettingsStorage.cpp doubles/RecordingSettingsListener.cpp TemporaryFolder.cpp LIBS rtype_client_settings_module)
+rtype_add_test(NAME client_settings_tests SOURCES client/Settings/Storage/SettingsTextTest.cpp client/Settings/Storage/SettingsFileTest.cpp client/Settings/SettingsServiceTest.cpp client/Settings/SettingsServiceFixture.cpp doubles/RecordingSettingsStorage.cpp doubles/RecordingSettingsListener.cpp TemporaryFolder.cpp LIBS rtype_client_settings_module)
 target_include_directories(client_settings_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} doubles)
 rtype_add_test(NAME client_launch_options_tests SOURCES client/LaunchOptions/LaunchOptionsTest.cpp logging/LogLaunchOptionsFixture.cpp LIBS rtype_client_launch_options rtype_client_constants rtype_network_constants rtype_logging)
 target_include_directories(client_launch_options_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/logging)

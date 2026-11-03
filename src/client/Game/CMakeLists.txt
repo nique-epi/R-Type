@@ -37,7 +37,7 @@ target_link_libraries(rtype_client_game_module
     rtype_client_hit_flash_system
     rtype_client_interface_pixel
     rtype_client_mission_start
-    rtype_client_settings_module
+    rtype_client_settings_values
     rtype_client_ship_flight_system
     rtype_client_sprite_effect_system
     rtype_client_status_band
