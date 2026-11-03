@@ -15,6 +15,7 @@
 #include "InstallContext.hpp"
 #include "PlayerSettings.hpp"
 #include "ScreenRegistry.hpp"
+#include "ServerLeaderboard.hpp"
 #include "ServerSession.hpp"
 #include "SettingsService.hpp"
 #include "SubscriptionHandle.hpp"
@@ -77,6 +78,7 @@ class ClientScreensModule final : public engine::IModule {
   ServerSession* connection_{nullptr};
   WaitingRoom* waitingRoom_{nullptr};
   EntityMessageQueue* entityMessages_{nullptr};
+  ServerLeaderboard* leaderboard_{nullptr};
   FrameLoop* loop_{nullptr};
   EventListeners* listeners_{nullptr};
   /** @brief Declared before screens_, which keep a reference to it. */

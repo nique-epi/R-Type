@@ -22,3 +22,7 @@ The client animations draw a hit flash with a fragment shader. The approved plan
 
 - ❌ **Before (wrong)**: `SfmlDrawSurface::loadFlashShader()`, the same fifteen lines as `InterfaceCanvas::loadCrispText()`.
 - ✅ **After (right)**: `loadFragmentShader()` in `src/client/Rendering/FragmentShader.{hpp,cpp}`, called by both.
+
+## Update (3 November 2026) — A comment naming the model
+
+The YOU tag of `ItemList` copied the steps and the four values of the tag of the flight log, and its constants said so in a comment: "as YOU on the ink of the flight log". `paintInkTag()` now serves both.

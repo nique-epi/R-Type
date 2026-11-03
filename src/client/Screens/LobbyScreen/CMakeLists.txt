@@ -8,6 +8,7 @@ target_link_libraries(rtype_client_lobby_screen
     rtype_client_help_walkthrough
     rtype_client_menu
     rtype_client_interface
+    rtype_client_key_chip
     rtype_client_screen_assets
     rtype_client_window
     SFML::Graphics

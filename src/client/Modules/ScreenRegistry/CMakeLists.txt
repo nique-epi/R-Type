@@ -15,6 +15,7 @@ target_link_libraries(rtype_client_screen_registry
     rtype_client_screen_interfaces
     rtype_client_scrolling_background
     rtype_client_entity_message_queue
+    rtype_client_server_leaderboard
     rtype_client_server_session
     rtype_client_waiting_room
     rtype_client_settings

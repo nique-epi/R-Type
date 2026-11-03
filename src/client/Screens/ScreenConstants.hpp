@@ -40,6 +40,10 @@ constexpr const char* SETTINGS_LABEL = "SETTINGS";
 constexpr const char* SETTINGS_DESCRIPTION = "> SOUND, KEYS, ACCESS";
 constexpr const char* QUIT_LABEL = "QUIT";
 constexpr const char* QUIT_DESCRIPTION = "> LEAVE THE GAME";
+/** @brief Label of the entry on the title and in the waiting room, title of the
+ * screen it opens, and the line under the bar of the title. */
+constexpr const char* LEADERBOARD_LABEL = "RANKING";
+constexpr const char* LEADERBOARD_DESCRIPTION = "> THE BEST SCORES OF A SERVER";
 constexpr const char* COPYRIGHT_TEXT = "\xC2\xA9 2026 R-TYPE TEAM";
 
 /** @brief Texts of the quit confirmation. */

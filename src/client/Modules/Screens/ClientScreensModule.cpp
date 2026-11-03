@@ -18,6 +18,7 @@
 #include "ModuleConstants.hpp"
 #include "PlayerSettings.hpp"
 #include "ScreenServices.hpp"
+#include "ServerLeaderboard.hpp"
 #include "ServerSession.hpp"
 #include "SettingsService.hpp"
 #include "TimeConstants.hpp"
@@ -49,6 +50,7 @@ void ClientScreensModule::install(engine::InstallContext& context) {
   connection_ = &context.require<ServerSession>();
   waitingRoom_ = &context.require<WaitingRoom>();
   entityMessages_ = &context.require<EntityMessageQueue>();
+  leaderboard_ = &context.require<ServerLeaderboard>();
   loop_ = &context.require<FrameLoop>();
   listeners_ = &context.require<EventListeners>();
   context.addWork(UPDATE_STAGE,
@@ -69,6 +71,7 @@ void ClientScreensModule::start() {
                      .connection = *connection_,
                      .waitingRoom = *waitingRoom_,
                      .entityMessages = *entityMessages_,
+                     .leaderboard = *leaderboard_,
                      .server = server_,
                      .nickname = nickname_},
       registry_);
