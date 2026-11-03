@@ -27,7 +27,6 @@ target_link_libraries(rtype_server_network_module
     rtype_network_datagram_codec
     rtype_server_constants
     rtype_server_exceptions
-    rtype_server_module_constants
 )
 
 rtype_enable_warnings(rtype_server_network_module)

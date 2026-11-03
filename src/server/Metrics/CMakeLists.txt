@@ -16,7 +16,6 @@ target_link_libraries(rtype_server_metrics_module
     rtype_server_games_module
   PRIVATE
     rtype_server_constants
-    rtype_server_module_constants
 )
 
 rtype_enable_warnings(rtype_server_metrics_module)

@@ -22,7 +22,6 @@ target_link_libraries(rtype_server_lobby_module
     rtype_network_datagram_codec
     rtype_network_exceptions
     rtype_server_constants
-    rtype_server_module_constants
     rtype_server_session_datagram
 )
 

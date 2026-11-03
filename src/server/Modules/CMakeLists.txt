@@ -1,7 +1,21 @@
-add_library(rtype_server_module_constants INTERFACE)
+add_library(rtype_server_modules STATIC ServerModules.cpp)
 
-target_include_directories(rtype_server_module_constants INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories(rtype_server_modules PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
-target_link_libraries(rtype_server_module_constants INTERFACE rtype_engine_time)
+target_link_libraries(rtype_server_modules
+  PUBLIC
+    rtype_engine_application
+    rtype_logging
+    rtype_server_games_module
+    rtype_server_launch_options
+    rtype_server_lobby_module
+    rtype_server_logger_module
+    rtype_server_metrics_module
+    rtype_server_network_module
+    rtype_server_platform
+  PRIVATE
+    rtype_engine_system_clock
+    rtype_server_constants
+)
 
-add_subdirectory(Assembly)
+rtype_enable_warnings(rtype_server_modules)
