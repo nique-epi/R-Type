@@ -1,5 +1,6 @@
 add_library(rtype_network_handshake_cookies STATIC
   CookieIssuer.cpp
+  EndpointBytes.cpp
   SipHash.cpp
 )
 
