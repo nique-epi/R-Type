@@ -1,107 +1,77 @@
 #pragma once
 
 #include <gtest/gtest.h>
-#include <cstdint>
+#include <cstddef>
 #include <memory>
 #include <utility>
 #include <vector>
-#include "DatagramCodec.hpp"
-#include "Endpoint.hpp"
+#include "EncodedMessage.hpp"
 #include "EventBus.hpp"
 #include "GameEventBroadcaster.hpp"
-#include "MessageFrame.hpp"
 #include "MessagePayload.hpp"
-#include "OutgoingDatagram.hpp"
-#include "TimeConstants.hpp"
-#include "TimerScheduler.hpp"
 
 namespace rtype::server::testing {
 
 /**
- * @brief A broadcaster on a real event bus and a real timer scheduler, with
- * two clients, and the datagrams it sent, in order. Each header it is asked
- * for carries the port of its recipient as session token and the next sequence
- * number, so a test can tell the datagrams and their recipients apart.
+ * @brief A broadcaster on a real event bus, and the messages it handed to its
+ * two functions, in order: those sent once to every player and those
+ * guaranteed to every player.
  */
 class GameEventBroadcasterFixture : public ::testing::Test {
  public:
   GameEventBroadcasterFixture();
 
  protected:
-  [[nodiscard]] static network::Endpoint firstClient();
-  [[nodiscard]] static network::Endpoint secondClient();
-
-  /**
-   * @brief Replaces the clients of the game.
-   */
-  void setRecipients(std::vector<network::Endpoint> recipients);
-
-  /**
-   * @brief Queues @p event on the bus, without delivering it.
-   */
+  /** @brief Queues @p event on the bus, without delivering it. */
   template <typename Event>
   void publish(Event event) {
     events_.publish(std::move(event));
   }
 
-  /**
-   * @brief Delivers the queued events to the broadcaster.
-   */
+  /** @brief Delivers the queued events to the broadcaster. */
   void dispatch();
 
-  /**
-   * @brief Publishes @p event and delivers it.
-   */
+  /** @brief Publishes @p event and delivers it. */
   template <typename Event>
   void publishAndDispatch(Event event) {
     publish(std::move(event));
     dispatch();
   }
 
-  /**
-   * @brief Moves the timers forward by @p elapsed, sending the copies that
-   * come due.
-   */
-  void advanceTimers(engine::Duration elapsed);
-
   /** @brief Destroys the broadcaster, as a game does when its module stops. */
   void destroyBroadcaster();
 
-  /**
-   * @returns The datagrams the broadcaster handed to its send function, in
-   * order.
-   */
-  [[nodiscard]] const std::vector<network::OutgoingDatagram>& sentDatagrams()
-      const;
-
-  /**
-   * @returns The messages of type Message that went to @p destination, in
-   * the order they were sent.
-   */
+  /** @returns The messages of type Message sent once, in order. */
   template <network::DecodableMessage Message>
-  [[nodiscard]] std::vector<Message> receivedBy(
-      const network::Endpoint& destination) const {
-    std::vector<Message> received;
-    for (const network::OutgoingDatagram& datagram : sent_) {
-      if (!(datagram.destination == destination)) {
-        continue;
-      }
-      for (const network::MessageFrame& frame :
-           network::DatagramCodec::splitMessages(datagram.payload)) {
-        if (frame.type == static_cast<std::uint8_t>(Message::TYPE)) {
-          received.push_back(network::decodeMessage<Message>(frame.payload));
-        }
-      }
-    }
-    return received;
+  [[nodiscard]] std::vector<Message> sentOnce() const {
+    return decodedOf<Message>(sentOnce_);
   }
 
+  /** @returns The messages of type Message guaranteed, in order. */
+  template <network::DecodableMessage Message>
+  [[nodiscard]] std::vector<Message> guaranteed() const {
+    return decodedOf<Message>(guaranteed_);
+  }
+
+  /** @returns How many messages went out, once or guaranteed. */
+  [[nodiscard]] std::size_t messageCount() const;
+
  private:
+  template <network::DecodableMessage Message>
+  [[nodiscard]] static std::vector<Message> decodedOf(
+      const std::vector<network::EncodedMessage>& messages) {
+    std::vector<Message> decoded;
+    for (const network::EncodedMessage& message : messages) {
+      if (message.type == Message::TYPE) {
+        decoded.push_back(network::decodeMessage<Message>(message.payload));
+      }
+    }
+    return decoded;
+  }
+
   engine::EventBus events_;
-  engine::TimerScheduler timers_;
-  std::vector<network::Endpoint> recipients_;
-  std::vector<network::OutgoingDatagram> sent_;
-  std::uint16_t nextSequence_{1};
+  std::vector<network::EncodedMessage> sentOnce_;
+  std::vector<network::EncodedMessage> guaranteed_;
   std::unique_ptr<GameEventBroadcaster> broadcaster_;
 };
 

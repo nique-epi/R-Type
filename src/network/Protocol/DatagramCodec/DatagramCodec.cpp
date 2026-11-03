@@ -2,13 +2,17 @@
 #include <concepts>
 #include <cstddef>
 #include <cstdint>
+#include <functional>
+#include <numeric>
 #include <optional>
 #include <span>
 #include <vector>
 #include "ByteReader.hpp"
 #include "ByteWriter.hpp"
+#include "EncodedMessage.hpp"
 #include "MessageFrame.hpp"
 #include "MessageType.hpp"
+#include "NetworkConstants.hpp"
 #include "NetworkException.hpp"
 #include "PacketHeader.hpp"
 #include "ProtocolConstants.hpp"
@@ -30,6 +34,29 @@ void writeHeader(ByteWriter& writer, const PacketHeader& header) {
 void requireHeader(std::span<const std::byte> datagram) {
   if (datagram.size() < PACKET_HEADER_SIZE) {
     throw MalformedDatagramException(datagram.size());
+  }
+}
+
+void writeMessage(ByteWriter& writer, MessageType type,
+                  std::span<const std::byte> payload) {
+  writer.writeUint8(static_cast<std::uint8_t>(type));
+  writer.writeUint16(static_cast<std::uint16_t>(payload.size()));
+  writer.writeBytes(payload);
+}
+
+/**
+ * @brief Refuses @p messages when they cannot make one datagram: none of them,
+ * or more bytes than MAX_DATAGRAM_SIZE with the header.
+ */
+void requireSendable(std::span<const EncodedMessage> messages) {
+  if (messages.empty()) {
+    throw EmptyDatagramException();
+  }
+  const std::size_t size =
+      std::transform_reduce(messages.begin(), messages.end(),
+                            PACKET_HEADER_SIZE, std::plus<>{}, &encodedSize);
+  if (size > MAX_DATAGRAM_SIZE) {
+    throw DatagramTooLargeException(size);
   }
 }
 
@@ -73,9 +100,18 @@ std::vector<std::byte> DatagramCodec::encode(
   }
   ByteWriter writer;
   writeHeader(writer, header);
-  writer.writeUint8(static_cast<std::uint8_t>(type));
-  writer.writeUint16(static_cast<std::uint16_t>(payload.size()));
-  writer.writeBytes(payload);
+  writeMessage(writer, type, payload);
+  return writer.bytes();
+}
+
+std::vector<std::byte> DatagramCodec::encode(
+    const PacketHeader& header, std::span<const EncodedMessage> messages) {
+  requireSendable(messages);
+  ByteWriter writer;
+  writeHeader(writer, header);
+  for (const EncodedMessage& message : messages) {
+    writeMessage(writer, message.type, message.payload);
+  }
   return writer.bytes();
 }
 
@@ -95,7 +131,7 @@ bool DatagramCodec::speaksThisProtocol(const PacketHeader& header) {
   const PacketHeader thisProtocol;
   return header.protocolId == thisProtocol.protocolId &&
          header.version == thisProtocol.version &&
-         header.flags == thisProtocol.flags;
+         (header.flags | KNOWN_FLAGS) == KNOWN_FLAGS;
 }
 
 bool DatagramCodec::speaksAnotherVersion(const PacketHeader& header) {

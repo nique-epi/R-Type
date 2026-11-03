@@ -13,12 +13,14 @@
 #include "ProtocolConstants.hpp"
 #include "Reception.hpp"
 #include "ReceptionKind.hpp"
-#include "SequenceOrder.hpp"
+#include "SessionAcknowledgements.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::client {
 
-SessionInbound::SessionInbound(IRoutedLink& link) : link_(&link) {}
+SessionInbound::SessionInbound(IRoutedLink& link,
+                               SessionAcknowledgements& acknowledgements)
+    : link_(&link), acknowledgements_(&acknowledgements) {}
 
 void SessionInbound::listenTo(const network::Endpoint& server) {
   link_->listenTo(server);
@@ -36,13 +38,13 @@ bool SessionInbound::isSilentTooLong() const {
 void SessionInbound::open(const network::PacketHeader& acceptance) {
   open_ = true;
   sessionToken_ = acceptance.sessionToken;
-  newestReceivedSequence_ = acceptance.sequence;
+  acknowledgements_->open(acceptance.sequence);
 }
 
 void SessionInbound::close() {
   open_ = false;
   sessionToken_ = network::NO_SESSION_TOKEN;
-  newestReceivedSequence_ = 0;
+  acknowledgements_->close();
 }
 
 std::span<const network::IncomingDatagram> SessionInbound::drain() {
@@ -87,11 +89,7 @@ bool SessionInbound::passesSessionChecks(const network::PacketHeader& header) {
     ++wrongTokenCount_;
     return false;
   }
-  if (!network::isNewerSequence(header.sequence, newestReceivedSequence_)) {
-    return false;
-  }
-  newestReceivedSequence_ = header.sequence;
-  return true;
+  return acknowledgements_->accept(header);
 }
 
 }  // namespace rtype::client

@@ -6,6 +6,7 @@
 #include <type_traits>
 #include <vector>
 #include "ByteWriter.hpp"
+#include "EncodedMessage.hpp"
 #include "MessageType.hpp"
 
 namespace rtype::network {
@@ -46,6 +47,16 @@ std::vector<std::byte> encodeMessage(const Message& message) {
   ByteWriter writer;
   encodePayload(writer, message);
   return writer.bytes();
+}
+
+/**
+ * @returns @p message encoded with its type, ready to send.
+ * @throws What encodeMessage() throws.
+ */
+template <EncodableMessage Message>
+EncodedMessage encodedMessage(const Message& message) {
+  return EncodedMessage{.type = Message::TYPE,
+                        .payload = encodeMessage(message)};
 }
 
 /**

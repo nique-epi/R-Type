@@ -91,10 +91,6 @@ class ServerSessionFixture : public ::testing::Test {
         std::ranges::count_if(link_.sent(), holds<Message>));
   }
 
-  /** @returns A header of the server carrying this sequence and
-   * SESSION_TOKEN. */
-  static network::PacketHeader sessionHeader(std::uint16_t sequence);
-
   /** @returns The sender the link was last told to listen to. */
   [[nodiscard]] const std::optional<network::Endpoint>& listenedTo() const;
 

@@ -48,6 +48,29 @@ See the core file, subsection "One input per test when the faulty code reaches t
 - ❌ `tap(Key::A, Scan::Q); tap(Key::Q, Scan::A); EXPECT_EQ(opened(), std::vector{LAST_TAB});`.
 - ✅ Two tests: `tap(Key::A, Scan::Q)` asks for the last tab; `tap(Key::Q, Scan::A)` asks for none. The variant turns both red.
 
+## Update (2026-11-03) — A call after the input undid what the assertion read
+
+### Context
+
+`SessionAcknowledgements` keeps, on the client, the sequences of the session and the wait of an acknowledgement; `acknowledgeIn()` writes the acknowledgement into a header and ends the wait, and `close()` must forget both.
+
+### Mistake
+
+One test closed the session, let `ACKNOWLEDGEMENT_DELAY` pass, called `acknowledgeIn()`, then asserted that nothing was due and that the header acknowledged nothing. The red proof removed the reset of the wait from `close()` and the test stayed green: `acknowledgeIn()` had ended the wait before the assertion read it.
+
+### Root cause
+
+The test checked two facts after a sequence of calls without reading whether a later call reset the state of the first fact.
+
+### Rule
+
+Read every call between the input and the assertion for one that resets the state asserted; assert before it, or give each fact its own test.
+
+### Example
+
+- ❌ **Before (wrong)**: `close()`, `advance()`, `acknowledgeIn()`, then `EXPECT_FALSE(isAcknowledgementDue())`.
+- ✅ **After (right)**: two tests, one per fact, each red on its own variant.
+
 ## Update (3 November 2026) — A timer walked in one step, and a color two states share
 
 The tests of `ServerLeaderboard` jumped five seconds in one `update()`: removing either timer reset of the class left them green, while the client would have sent a request each frame. `ThePointerOverItLooksSelected` looked for `SELECTED_BAR_INSIDE_COLOR`, which is `EDGE_BLUE`, the border of a chip at rest too, so it could not fail; writing the opposite test, with the focus lost, showed it.

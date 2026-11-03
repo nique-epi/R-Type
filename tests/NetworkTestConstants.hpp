@@ -2,6 +2,7 @@
 
 #include <chrono>
 #include <cstddef>
+#include <cstdint>
 #include <string_view>
 #include "NetworkConstants.hpp"
 
@@ -51,3 +52,16 @@ constexpr std::string_view OVERSIZED_DATAGRAM_LINE_TEXT =
  * handler for its type.
  */
 constexpr std::string_view SKIPPED_MESSAGE_LINE_TEXT = "skipped a message";
+
+/**
+ * @brief Values of the Guaranteed messages section of the protocol page: the
+ * flag that says a header acknowledges, the flag that says its datagram holds
+ * guaranteed messages, both of them, the least time between two sends of a
+ * guaranteed message, and the longest a receiver lets its acknowledgement
+ * wait.
+ */
+constexpr std::uint8_t PROTOCOL_ACKNOWLEDGES_FLAG = 0x01;
+constexpr std::uint8_t PROTOCOL_GUARANTEED_FLAG = 0x02;
+constexpr std::uint8_t PROTOCOL_BOTH_FLAGS = 0x03;
+constexpr std::chrono::milliseconds PROTOCOL_RESEND_DELAY{100};
+constexpr std::chrono::milliseconds PROTOCOL_ACKNOWLEDGEMENT_DELAY{40};

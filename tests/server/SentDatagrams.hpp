@@ -3,6 +3,7 @@
 #include <gtest/gtest.h>
 #include <cstddef>
 #include <cstdint>
+#include <optional>
 #include <span>
 #include <vector>
 #include "DatagramCodec.hpp"
@@ -11,6 +12,7 @@
 #include "MessagePayload.hpp"
 #include "MessageType.hpp"
 #include "OutgoingDatagram.hpp"
+#include "PacketHeader.hpp"
 
 namespace rtype::server::testing {
 
@@ -34,6 +36,26 @@ namespace rtype::server::testing {
 [[nodiscard]] network::MessageType onlyMessageTypeOf(
     const network::OutgoingDatagram& datagram);
 
+/** @returns The header of @p datagram. */
+[[nodiscard]] network::PacketHeader headerOf(
+    const network::OutgoingDatagram& datagram);
+
+/** @returns How many messages @p datagram holds. */
+[[nodiscard]] std::size_t messageCountIn(
+    const network::OutgoingDatagram& datagram);
+
+/** @returns Whether @p datagram holds a message of type @p type. */
+[[nodiscard]] bool holdsMessageOfType(const network::OutgoingDatagram& datagram,
+                                      network::MessageType type);
+
+/**
+ * @returns The sequence of the last of @p datagrams that holds a message of
+ * type @p type; nothing when none does.
+ */
+[[nodiscard]] std::optional<std::uint16_t> lastSequenceHolding(
+    std::span<const network::OutgoingDatagram> datagrams,
+    network::MessageType type);
+
 /**
  * @returns The only message of @p datagram, read as a Message. The test fails
  * when the datagram holds another number of messages, or one of another type.
@@ -45,6 +67,20 @@ template <network::DecodableMessage Message>
   EXPECT_EQ(frames.size(), 1U);
   EXPECT_EQ(frames.at(0).type, static_cast<std::uint8_t>(Message::TYPE));
   return network::decodeMessage<Message>(frames.at(0).payload);
+}
+
+/** @returns Every message of type Message that @p datagram holds, in order. */
+template <network::DecodableMessage Message>
+[[nodiscard]] std::vector<Message> messagesIn(
+    const network::OutgoingDatagram& datagram) {
+  std::vector<Message> messages;
+  for (const network::MessageFrame& frame :
+       network::DatagramCodec::splitMessages(datagram.payload)) {
+    if (frame.type == static_cast<std::uint8_t>(Message::TYPE)) {
+      messages.push_back(network::decodeMessage<Message>(frame.payload));
+    }
+  }
+  return messages;
 }
 
 }  // namespace rtype::server::testing
