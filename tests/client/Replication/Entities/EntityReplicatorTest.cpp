@@ -43,8 +43,11 @@ using rtype::client::testing::effectAt;
 using rtype::client::testing::ENEMY_MISSILE_ID;
 using rtype::client::testing::ENEMY_MISSILE_POSITION;
 using rtype::client::testing::EntityReplicatorFixture;
+using rtype::client::testing::FIRST_LISTING_TICK;
 using rtype::client::testing::FIRST_POSITION;
 using rtype::client::testing::frozenPictureCount;
+using rtype::client::testing::HALFWAY_BETWEEN_THE_POSITIONS;
+using rtype::client::testing::historyPositionAt;
 using rtype::client::testing::isArriving;
 using rtype::client::testing::isFlashed;
 using rtype::client::testing::isInvulnerable;
@@ -53,6 +56,7 @@ using rtype::client::testing::LAST_KEPT_TICK;
 using rtype::client::testing::listed;
 using rtype::client::testing::LISTING_TICK;
 using rtype::client::testing::NEWER_TICK;
+using rtype::client::testing::NO_HISTORY_POSITION;
 using rtype::client::testing::OLDER_TICK;
 using rtype::client::testing::pilotColorOfThe;
 using rtype::client::testing::PLAYER_MISSILE_ID;
@@ -61,6 +65,7 @@ using rtype::client::testing::playerFlying;
 using rtype::client::testing::playerHit;
 using rtype::client::testing::REMOVAL_TICK;
 using rtype::client::testing::removed;
+using rtype::client::testing::SECOND_LISTING_TICK;
 using rtype::client::testing::SECOND_PLAYER_NUMBER;
 using rtype::client::testing::SECOND_POSITION;
 using rtype::client::testing::secondPilotFlying;
@@ -70,6 +75,7 @@ using rtype::client::testing::spawned;
 using rtype::client::testing::speedLineColors;
 using rtype::client::testing::stateListing;
 using rtype::client::testing::stateListingPlayers;
+using rtype::client::testing::TICK_BETWEEN_THE_LISTINGS;
 using rtype::client::testing::UNANNOUNCED_ID;
 using rtype::client::testing::WIRE_TYPE_AFTER_THE_LAST;
 using rtype::client::testing::WIRE_TYPE_BEFORE_THE_FIRST;
@@ -162,6 +168,51 @@ TEST_F(EntityReplicatorFixture, MovesAnEntityItHasWhereAStatePutsIt) {
   EXPECT_THAT(
       drawnEntities(components()),
       ElementsAre(drawnAs(EntityType::Player, SHIP_ID, SECOND_POSITION)));
+}
+
+/**
+ * Given a ship the client has, listed by a state of tick 10 at the first
+ * position and by a state of tick 12 at the second
+ * When the history of the ship is asked for tick 11, between the two
+ * Then it puts the ship halfway between the two positions: each state
+ * recorded its own tick
+ */
+TEST_F(EntityReplicatorFixture, RecordsThePositionOfAListedEntityAtItsTick) {
+  replicator().apply(
+      spawned(SHIP_ID, WireEntityType::PlayerShip, FIRST_POSITION));
+  replicator().apply(stateListing(
+      FIRST_LISTING_TICK,
+      {listed(SHIP_ID, WireEntityType::PlayerShip, FIRST_POSITION)}));
+  replicator().apply(stateListing(
+      SECOND_LISTING_TICK,
+      {listed(SHIP_ID, WireEntityType::PlayerShip, SECOND_POSITION)}));
+
+  const auto position =
+      historyPositionAt(components(), TICK_BETWEEN_THE_LISTINGS);
+
+  ASSERT_TRUE(position.has_value());
+  EXPECT_FLOAT_EQ(position.value_or(NO_HISTORY_POSITION).x,
+                  HALFWAY_BETWEEN_THE_POSITIONS.x);
+  EXPECT_FLOAT_EQ(position.value_or(NO_HISTORY_POSITION).y,
+                  HALFWAY_BETWEEN_THE_POSITIONS.y);
+}
+
+/**
+ * Given a client that has no Bydo
+ * When a WorldState lists one at the first position
+ * Then the Bydo created has that position as the first sample of its history
+ */
+TEST_F(EntityReplicatorFixture, RecordsTheFirstSampleOfAnEntityAStateCreates) {
+  replicator().apply(
+      stateListing(FIRST_LISTING_TICK,
+                   {listed(BYDO_ID, WireEntityType::Bydo, FIRST_POSITION)}));
+
+  const auto position =
+      historyPositionAt(components(), TICK_BETWEEN_THE_LISTINGS);
+
+  ASSERT_TRUE(position.has_value());
+  EXPECT_FLOAT_EQ(position.value_or(NO_HISTORY_POSITION).x, FIRST_POSITION.x);
+  EXPECT_FLOAT_EQ(position.value_or(NO_HISTORY_POSITION).y, FIRST_POSITION.y);
 }
 
 /**

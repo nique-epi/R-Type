@@ -21,6 +21,8 @@
 #include "NetworkEntityTable.hpp"
 #include "PilotShip.hpp"
 #include "Position.hpp"
+#include "PositionHistory.hpp"
+#include "PositionSample.hpp"
 #include "ProtocolConstants.hpp"
 #include "ShipFlight.hpp"
 #include "SoundConstants.hpp"
@@ -110,13 +112,16 @@ ShipFlight flightOf(engine::ComponentRegistry& components, engine::Entity ship,
   return flight;
 }
 
-/** @brief Puts the entity at the position; does nothing for an entity
- * without a Position. */
+/** @brief Puts the entity at the position of the sample and remembers the
+ * sample for interpolation; does nothing for what the entity lacks (a
+ * Position, a PositionHistory). */
 void moveEntity(engine::ComponentRegistry& components, engine::Entity entity,
-                game::Position position) {
-  auto* current = components.get<game::Position>(entity);
-  if (current != nullptr) {
-    *current = position;
+                PositionSample sample) {
+  if (auto* const current = components.get<game::Position>(entity)) {
+    *current = sample.position;
+  }
+  if (auto* const history = components.get<PositionHistory>(entity)) {
+    history->record(sample);
   }
 }
 
@@ -294,6 +299,7 @@ engine::Entity EntityReplicator::addEntity(game::EntityType type,
                                            AnimatedSprite look) {
   const engine::Entity entity = entities_->create();
   components_->add(entity, position);
+  components_->add(entity, PositionHistory{});
   components_->add(entity, type);
   components_->add(entity, std::move(look.sprite));
   components_->add(entity, look.animation);
@@ -304,14 +310,16 @@ std::vector<engine::Entity> EntityReplicator::applyEntities(
     std::span<const network::EntityState> entities, std::uint32_t tick) {
   std::vector<engine::Entity> created;
   for (const network::EntityState& listed : entities) {
+    const PositionSample sample{.tick = tick,
+                                .position = {.x = listed.x, .y = listed.y}};
     const std::optional<engine::Entity> known =
         entityByNetworkId_.find(listed.entityId);
     if (known.has_value()) {
-      moveEntity(*components_, *known,
-                 game::Position{.x = listed.x, .y = listed.y});
+      moveEntity(*components_, *known, sample);
       lastListedTicks_.listed(listed.entityId, tick);
     } else if (const std::optional<engine::Entity> entity = create(listed);
                entity.has_value()) {
+      moveEntity(*components_, *entity, sample);
       created.push_back(*entity);
       lastListedTicks_.listed(listed.entityId, tick);
     }
