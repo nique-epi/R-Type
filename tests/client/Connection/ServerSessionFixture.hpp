@@ -19,17 +19,20 @@
 #include "PacketHeader.hpp"
 #include "PlayerInput.hpp"
 #include "RecordingDatagramLink.hpp"
+#include "RoundTripWatch.hpp"
 #include "ServerSession.hpp"
 #include "ServerSessionFixtures.hpp"
 #include "ServerSessionParts.hpp"
+#include "SimulatedClock.hpp"
 #include "TimeConstants.hpp"
 #include "WaitingRoom.hpp"
 #include "WorldState.hpp"
 
 namespace rtype::client::testing {
 
-/** @brief A session, its waiting room and its entity message queue wired as
- * the connection module wires them, over a recording link. */
+/** @brief A session, its waiting room, its entity message queue and its round
+ * trip watch wired as the connection module wires them, over a recording link
+ * and a clock that moves with the frames. */
 class ServerSessionFixture : public ::testing::Test {
  protected:
   void connect();
@@ -47,7 +50,8 @@ class ServerSessionFixture : public ::testing::Test {
   void deliverBytes(std::vector<std::byte> datagram);
 
   /** @brief Runs one frame of the network stage, as the connection module
-   * does: the queue counts the time, then the session reads and sends. */
+   * does: the clock moves, the queue counts the time, then the session reads
+   * and sends. */
   void update(engine::Duration elapsed = engine::Duration::zero());
 
   /** @brief Connects, then has the server accept the attempt, its acceptance
@@ -108,11 +112,13 @@ class ServerSessionFixture : public ::testing::Test {
   GameLoadedReminder gameLoaded_;
   WaitingRoom waitingRoom_{dispatcher_, gameLoaded_};
   EntityMessageQueue entityMessages_{dispatcher_, waitingRoom_, gameLoaded_};
+  SimulatedClock clock_;
+  RoundTripWatch roundTrips_{dispatcher_, clock_};
   ServerSession session_{ServerSessionParts{
       .link = link_,
       .dispatcher = dispatcher_,
       .gameLoaded = gameLoaded_,
-      .observers = {waitingRoom_, entityMessages_, gameLoaded_}}};
+      .observers = {waitingRoom_, entityMessages_, gameLoaded_, roundTrips_}}};
 };
 
 }  // namespace rtype::client::testing

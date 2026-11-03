@@ -665,10 +665,10 @@ TEST_F(ServerSessionFixture, WaitsOneIntervalBeforeTheFirstHeartbeat) {
 
 /**
  * Given a session the server opened
- * When the heartbeat interval passes without sending anything
+ * When the heartbeat interval passes
  * Then a Heartbeat goes to the server, so it knows the player is still there
  */
-TEST_F(ServerSessionFixture, SendsAHeartbeatAfterAnIntervalWithoutSending) {
+TEST_F(ServerSessionFixture, SendsAHeartbeatAfterAnInterval) {
   accept();
 
   update(PROTOCOL_HEARTBEAT_INTERVAL);
@@ -707,17 +707,18 @@ TEST_F(ServerSessionFixture, TheHeartbeatTakesTheSequenceAfterTheRequest) {
 
 /**
  * Given a session in which half an interval passed, then an input went out
- * When the interval minus one nanosecond passes after that input
- * Then no Heartbeat is sent: the delay counts from the last datagram sent
+ * When the other half of the interval passes
+ * Then a Heartbeat goes out: the delay counts from the previous Heartbeat,
+ * so the round trip is measured while the inputs of a game go out too
  */
-TEST_F(ServerSessionFixture, AnInputSentRestartsTheHeartbeatDelay) {
+TEST_F(ServerSessionFixture, AnInputSentDoesNotDelayTheHeartbeat) {
   accept();
   update(PROTOCOL_HEARTBEAT_INTERVAL / 2);
   session().sendPlayerInput(upHeld());
 
-  update(PROTOCOL_HEARTBEAT_INTERVAL - ONE_NANOSECOND);
+  update(PROTOCOL_HEARTBEAT_INTERVAL / 2);
 
-  EXPECT_EQ(sentCountOf<network::Heartbeat>(), 0U);
+  EXPECT_EQ(sentCountOf<network::Heartbeat>(), 1U);
 }
 
 /**
@@ -740,7 +741,7 @@ TEST_F(ServerSessionFixture, AHeartbeatStartsItsOwnDelayOver) {
  * When three intervals pass, one per update
  * Then a Heartbeat goes out after each of them
  */
-TEST_F(ServerSessionFixture, SendsAHeartbeatEveryIntervalWhileSilent) {
+TEST_F(ServerSessionFixture, SendsAHeartbeatEveryInterval) {
   accept();
 
   update(PROTOCOL_HEARTBEAT_INTERVAL);

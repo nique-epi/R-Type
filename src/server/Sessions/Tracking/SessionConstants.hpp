@@ -36,10 +36,10 @@ static_assert(SESSION_CLOSING_TICKS > SESSION_TIMEOUT_TICKS,
 
 /**
  * @brief The time between two Heartbeats the server sends a player:
- * HEARTBEAT_INTERVAL rounded down to whole simulation ticks, 60 ticks or
- * 999.99996 ms at 60 per second, so two Heartbeats to a player are never
+ * HEARTBEAT_INTERVAL rounded down to whole simulation ticks, 30 ticks or
+ * 499.99998 ms at 60 per second, so two Heartbeats to a player are never
  * further apart than the interval while the server runs on time. Waiting for
- * the whole interval would wait 61 ticks, 1016.7 ms.
+ * the whole interval would wait 31 ticks, 516.7 ms.
  */
 constexpr engine::Duration TIME_BETWEEN_HEARTBEATS =
     engine::SIMULATION_TICK_DURATION *

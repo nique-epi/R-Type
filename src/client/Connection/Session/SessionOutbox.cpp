@@ -4,14 +4,11 @@
 #include <span>
 #include "DatagramCodec.hpp"
 #include "Endpoint.hpp"
-#include "Heartbeat.hpp"
 #include "IDatagramLink.hpp"
-#include "ISessionOutbox.hpp"
 #include "MessageType.hpp"
 #include "OutgoingDatagram.hpp"
 #include "PacketHeader.hpp"
 #include "ProtocolConstants.hpp"
-#include "TimeConstants.hpp"
 
 namespace rtype::client {
 
@@ -35,19 +32,9 @@ void SessionOutbox::sendToServer(network::MessageType type,
       .payload = network::DatagramCodec::encode(nextHeader(), type, payload)});
 }
 
-void SessionOutbox::advance(engine::Duration elapsed) { sinceSent_ += elapsed; }
-
-void SessionOutbox::sendHeartbeatWhenSilent() {
-  if (sinceSent_ < network::HEARTBEAT_INTERVAL) {
-    return;
-  }
-  sendMessage(*this, network::Heartbeat{});
-}
-
 const network::Endpoint& SessionOutbox::server() const { return server_; }
 
 network::PacketHeader SessionOutbox::nextHeader() {
-  sinceSent_ = engine::Duration::zero();
   network::PacketHeader header;
   header.sessionToken = sessionToken_;
   header.sequence = nextSequence_;

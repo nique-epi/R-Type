@@ -38,10 +38,10 @@ constexpr std::size_t PROTOCOL_RECONNECTION_GRACE_TICKS = 900;
 constexpr std::size_t PROTOCOL_SESSION_CLOSING_TICKS = 1200;
 
 /**
- * @brief The 1 s of the protocol page between two Heartbeats, at 60 ticks
+ * @brief The 500 ms of the protocol page between two Heartbeats, at 60 ticks
  * per second.
  */
-constexpr std::size_t PROTOCOL_HEARTBEAT_TICKS = 60;
+constexpr std::size_t PROTOCOL_HEARTBEAT_TICKS = 30;
 
 /**
  * @brief A stall of the server 400 ms shorter than the 20 s a client waits

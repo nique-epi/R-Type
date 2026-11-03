@@ -97,9 +97,7 @@ void ServerSession::update(engine::Duration elapsed) {
       giveUp(ConnectionPhase::Lost);
       return;
     }
-    outbox_.advance(elapsed);
     observers_.held(elapsed);
-    outbox_.sendHeartbeatWhenSilent();
   } else if (status_.phase == ConnectionPhase::Connecting &&
              attempt_.advance(elapsed, outbox_) == AttemptProgress::TimedOut) {
     giveUp(ConnectionPhase::Unreachable);

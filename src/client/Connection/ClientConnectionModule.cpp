@@ -6,6 +6,7 @@
 #include "ClientConstants.hpp"
 #include "ConnectionConstants.hpp"
 #include "Endpoint.hpp"
+#include "IPlayerRoundTrips.hpp"
 #include "InstallContext.hpp"
 #include "ModuleConstants.hpp"
 #include "NetworkConditions.hpp"
@@ -31,11 +32,12 @@ ClientConnectionModule::ClientConnectionModule(
       router_(network_),
       waitingRoom_(dispatcher_, gameLoaded_),
       entityMessages_(dispatcher_, waitingRoom_, gameLoaded_),
-      session_(ServerSessionParts{
-          .link = router_.addRoute(),
-          .dispatcher = dispatcher_,
-          .gameLoaded = gameLoaded_,
-          .observers = {waitingRoom_, entityMessages_, gameLoaded_}}),
+      roundTrips_(dispatcher_, clock_),
+      session_(ServerSessionParts{.link = router_.addRoute(),
+                                  .dispatcher = dispatcher_,
+                                  .gameLoaded = gameLoaded_,
+                                  .observers = {waitingRoom_, entityMessages_,
+                                                gameLoaded_, roundTrips_}}),
       logger_(std::string{CONNECTION_LOGGER_NAME}) {}
 
 std::string ClientConnectionModule::name() const {
@@ -51,6 +53,7 @@ void ClientConnectionModule::install(engine::InstallContext& context) {
   context.provide(waitingRoom_);
   context.provide(entityMessages_);
   context.provide(network_.traffic());
+  context.provide<IPlayerRoundTrips>(roundTrips_);
   context.addWork(NETWORK_STAGE, [this](engine::Duration elapsed) {
     entityMessages_.advance(elapsed);
     session_.update(elapsed);

@@ -38,12 +38,12 @@ constexpr std::uint8_t OTHER_ACTIONS = 0x04;
 constexpr std::size_t TWO_PLAYERS = 2;
 
 /**
- * @brief The 1 s of the protocol page between two Heartbeats, rounded down to
- * the 60 whole ticks of 16 666 666 ns that fit in it: the server sends at the
- * last tick that does not pass the second.
+ * @brief The 500 ms of the protocol page between two Heartbeats, rounded down
+ * to the 30 whole ticks of 16 666 666 ns that fit in it: the server sends at
+ * the last tick that does not pass the interval.
  */
 constexpr std::chrono::nanoseconds PROTOCOL_TIME_BETWEEN_HEARTBEATS{
-    999'999'960};
+    499'999'980};
 
 /**
  * @brief When the server sends a Heartbeat in a test, and that time as the

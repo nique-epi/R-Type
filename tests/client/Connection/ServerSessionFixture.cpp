@@ -34,6 +34,7 @@ void ServerSessionFixture::deliverBytes(std::vector<std::byte> datagram) {
 }
 
 void ServerSessionFixture::update(engine::Duration elapsed) {
+  clock_.advance(elapsed);
   entityMessages_.advance(elapsed);
   session_.update(elapsed);
 }

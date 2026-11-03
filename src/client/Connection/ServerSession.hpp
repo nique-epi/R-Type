@@ -41,8 +41,8 @@ namespace rtype::client {
  * Once accepted, the session keeps the token of the acceptance and writes it
  * into every datagram it sends. While the attempt is Accepted,
  * sendPlayerInput() sends the inputs of the game, numbered from
- * FIRST_INPUT_NUMBER; otherwise it sends nothing. A Heartbeat goes out once
- * HEARTBEAT_INTERVAL passed without any other datagram to the server. A session
+ * FIRST_INPUT_NUMBER; otherwise it sends nothing. A Heartbeat goes out every
+ * HEARTBEAT_INTERVAL, sent by an observer (see RoundTripWatch). A session
  * whose server sent nothing for SESSION_SILENCE_LIMIT (SESSION_TIMEOUT plus
  * RECONNECTION_GRACE) is lost: the status becomes Lost, the session is
  * forgotten and nothing more goes to the server, not even a Disconnection.
@@ -84,10 +84,9 @@ class ServerSession final : public IServerConnection, public IPlayerInputLink {
   /**
    * @brief Reads the datagrams received since the previous call, then sends
    * what is due: the request of an attempt, or its end; a copy of a
-   * Disconnection; what the observers send; a Heartbeat once HEARTBEAT_INTERVAL
-   * passed in a session without sending anything. A session whose server sent
-   * nothing for SESSION_SILENCE_LIMIT ends as Lost instead, and nothing goes to
-   * it.
+   * Disconnection; what the observers send, a Heartbeat among them. A session
+   * whose server sent nothing for SESSION_SILENCE_LIMIT ends as Lost instead,
+   * and nothing goes to it.
    *
    * @param elapsed Time since the previous call, or since connect().
    */

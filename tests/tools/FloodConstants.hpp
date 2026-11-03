@@ -74,11 +74,11 @@ constexpr std::uint16_t SEQUENCE_BEFORE_THE_FLOOD = 1;
 
 /**
  * @brief How long the tool waits, after a flood, for a datagram the client
- * sends in its session: a client in a session sends a Heartbeat after
- * HEARTBEAT_INTERVAL without sending anything else, so three intervals leave
- * room for a late one.
+ * sends in its session: a client in a session sends a Heartbeat every
+ * HEARTBEAT_INTERVAL, whatever else it sends, so three intervals leave room
+ * for a late one.
  */
-constexpr std::chrono::seconds CLIENT_SIGN_OF_LIFE_TIMEOUT =
+constexpr std::chrono::milliseconds CLIENT_SIGN_OF_LIFE_TIMEOUT =
     3 * network::HEARTBEAT_INTERVAL;
 
 }  // namespace rtype::tools
