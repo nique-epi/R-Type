@@ -55,16 +55,14 @@ std::optional<std::uint32_t> seedOf(const engine::SettingValue& setting) {
 }
 
 /**
- * @returns The waves file at @p file, which @p logger names with the count of
- * the difficulties it describes.
- * @throws what WaveCatalog::fromFile() throws.
+ * @brief Writes in the journal the waves file at @p file, read as @p catalog,
+ * with the count of the difficulties it describes.
  */
-WaveCatalog readWaves(const logging::Logger& logger,
-                      const std::filesystem::path& file) {
-  WaveCatalog catalog = WaveCatalog::fromFile(file);
+void logWavesFile(const logging::Logger& logger,
+                  const std::filesystem::path& file,
+                  const WaveCatalog& catalog) {
   logger.info("waves file ", engine::genericText(file), ": ",
               catalog.difficulties().size(), " difficulties");
-  return catalog;
 }
 
 /**
@@ -140,7 +138,8 @@ void ServerGamesModule::start() {
     throw NoJoinableGameException();
   }
   const std::string_view difficulty = DEFAULT_DIFFICULTY;
-  const WaveCatalog catalog = readWaves(logger_, settings_.wavesFile);
+  const WaveCatalog catalog = WaveCatalog::fromFile(settings_.wavesFile);
+  logWavesFile(logger_, settings_.wavesFile, catalog);
   const WavePlan& waves = catalog.planOf(difficulty);
   const std::optional<std::uint32_t> seed = seedOf(*seedSetting_);
   const auto statesPerSecond =
