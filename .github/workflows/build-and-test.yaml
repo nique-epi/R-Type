@@ -40,6 +40,9 @@ jobs:
           submodules: true
           fetch-depth: 0
 
+      - name: Install CMake 4.2
+        uses: lukka/get-cmake@v4.2.3
+
       - name: Install system dependencies
         run: |
           sudo apt-get update
@@ -159,6 +162,10 @@ jobs:
         if: steps.select.outputs.found == 'true'
         uses: ilammy/msvc-dev-cmd@v1
 
+      - name: Install CMake 4.2
+        if: steps.select.outputs.found == 'true'
+        uses: lukka/get-cmake@v4.2.3
+
       - name: Point vcpkg at a local binary cache
         if: steps.select.outputs.found == 'true'
         shell: bash
@@ -218,6 +225,9 @@ jobs:
       - name: Set up the MSVC environment
         if: runner.os == 'Windows'
         uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Install CMake 4.2
+        uses: lukka/get-cmake@v4.2.3
 
       - name: Set up sccache
         uses: mozilla-actions/sccache-action@v0.0.11
