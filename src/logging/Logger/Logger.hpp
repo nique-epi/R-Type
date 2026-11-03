@@ -81,8 +81,8 @@ struct LogOutput {
 class Logger {
  public:
   /**
-   * @brief Build a logger bound to @p name. The name is paid
-   *        once at construction and reused for every subsequent call.
+   * @brief Build a logger bound to @p name, paid once at construction and
+   *        reused for every subsequent call.
    */
   explicit Logger(std::string name);
 

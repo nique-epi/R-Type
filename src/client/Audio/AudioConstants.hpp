@@ -78,8 +78,7 @@ constexpr engine::Duration GAME_MUSIC_SILENCE = std::chrono::seconds(1);
 constexpr engine::Duration MUSIC_CATCH_UP_TIME = std::chrono::milliseconds(160);
 constexpr engine::Duration MUSIC_SYNC_SNAP = std::chrono::milliseconds(100);
 
-/** @brief Logger name the music and the sounds write their log lines
- * under. */
+/** @brief Logger name the music and the sounds write their log lines under. */
 constexpr std::string_view AUDIO_LOGGER_NAME = "Audio";
 
 }  // namespace rtype::client
