@@ -71,16 +71,17 @@ Why: the subject (page 16) makes an engine modular through what a developer choo
 - ✅ **After (right)**: the shape the sound takes once the client is tidied:
   ```
   src/client/Audio/            the module audio, optional
-  ├── CMakeLists.txt           add_library(rtype_client_audio_module STATIC ClientAudioModule.cpp AudioService.cpp …)
+  ├── CMakeLists.txt           add_library(rtype_client_audio_module STATIC AudioService.cpp ClientAudioModule.cpp)
   ├── ClientAudioModule.hpp
   ├── ClientAudioModule.cpp
   ├── AudioService.hpp
   ├── AudioService.cpp
-  ├── …
+  ├── Sounds/                  the players of the sounds
+  ├── Music/                   the player of the music
   └── Contract/                what other folders may include, compiled without the module
-      ├── CMakeLists.txt
-      ├── IAudioService.hpp
-      ├── ISoundPlayer.hpp
-      └── …
+      ├── CMakeLists.txt       add_library(rtype_client_audio_contract INTERFACE)
+      ├── Service/             IAudioService.hpp, …
+      ├── Sounds/              ISoundPlayer.hpp, …
+      └── Music/               IMusicPlayer.hpp, …
   ```
-  `rtype_client_audio_module` links `Contract/`; `Contract/` links nothing from `Audio/`.
+  `rtype_client_audio_module` links `Contract/`; `Contract/` links nothing of `Audio/` outside itself.
