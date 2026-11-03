@@ -9,7 +9,7 @@ target_link_libraries(rtype_server_tick_loop
     rtype_logging
   PRIVATE
     rtype_server_constants
-    rtype_server_fine_timer_resolution
+    rtype_server_platform
 )
 
 rtype_enable_warnings(rtype_server_tick_loop)

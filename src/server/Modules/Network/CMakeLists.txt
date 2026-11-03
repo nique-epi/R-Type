@@ -8,7 +8,7 @@ target_link_libraries(rtype_server_network_module
     rtype_logging
     rtype_network_transport
     rtype_server_application
-    rtype_server_stop_request
+    rtype_server_platform
   PRIVATE
     rtype_network_constants
     rtype_server_constants

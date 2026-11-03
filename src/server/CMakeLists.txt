@@ -23,7 +23,6 @@ target_link_libraries(r-type_server
     rtype_logging
     rtype_server_constants
     rtype_server_modules
-    rtype_server_stop_signals
 )
 
 rtype_enable_warnings(r-type_server)
