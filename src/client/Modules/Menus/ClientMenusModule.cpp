@@ -107,7 +107,7 @@ std::string ClientMenusModule::name() const {
 }
 
 std::vector<std::string> ClientMenusModule::dependencies() const {
-  return {std::string{SCREEN_REGISTRY_MODULE_NAME}};
+  return {std::string{SCREENS_MODULE_NAME}};
 }
 
 void ClientMenusModule::install(engine::InstallContext& context) {
