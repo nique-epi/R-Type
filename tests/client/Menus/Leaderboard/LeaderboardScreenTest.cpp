@@ -66,6 +66,23 @@ TEST_F(LeaderboardScreenFixture, ApplyingAFilterAsksAgain) {
 }
 
 /**
+ * Given a screen on NORMAL and two pilots, its filter open
+ * When the player reaches APPLY without changing a value and presses it
+ * Then the source was asked nothing more, so the list shown stays
+ */
+TEST_F(LeaderboardScreenFixture, ApplyingTheSameFilterAsksNothing) {
+  tap(sf::Keyboard::Key::F);
+  tap(sf::Keyboard::Key::Down);
+  tap(sf::Keyboard::Key::Down);
+  tap(sf::Keyboard::Key::Down);
+
+  tap(sf::Keyboard::Key::Enter);
+  screen().update(PRESS_DURATION);
+
+  EXPECT_EQ(source().asked().size(), 1);
+}
+
+/**
  * Given a screen whose filter opened, and a value stepped
  * When Escape closes the filter
  * Then the source was asked nothing more

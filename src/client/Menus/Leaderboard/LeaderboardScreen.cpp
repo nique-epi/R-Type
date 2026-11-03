@@ -313,6 +313,9 @@ void LeaderboardScreen::openTab(std::size_t tab) {
 void LeaderboardScreen::openFilter() {
   handleEvent(sf::Event::FocusLost{});
   filterDialog_.open(choice_, [this](LeaderboardFilterChoice picked) {
+    if (picked == choice_) {
+      return;
+    }
     choice_ = picked;
     ask();
   });
