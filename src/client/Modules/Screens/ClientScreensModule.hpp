@@ -25,19 +25,21 @@ namespace rtype::client {
 
 /**
  * @brief The module of the screens of the client and of what they share
- * (ClientScreens), listed last, until modules register screens of their own.
+ * (ClientScreens), and of the ScreenRegistry the modules listed after it add
+ * their screens to.
  *
- * install() requires the services of every module listed before it and adds
- * two works. In UPDATE_STAGE, the sky and every screen are updated,
- * then the frame loop stops once no screen is left. In RENDER_STAGE, the sky
- * is drawn, then the screens over it.
+ * install() provides the registry, still empty, requires the services of every
+ * module listed before it and adds two works. In UPDATE_STAGE, the sky and
+ * every screen are updated, then the frame loop stops once no screen is left.
+ * In RENDER_STAGE, the sky is drawn, then the screens over it.
  *
- * start() builds the screens, which open on the intro, or on the title when
- * the system asks for less motion, then adds its listener of the window
- * events: every event no module started after it keeps goes to the screen on
- * top. stop() removes that listener; the screens stay until the module is
- * destroyed, after every module stopped, so the music plays on while the
- * connection module leaves the server.
+ * start() builds the screens from the registry, which every module filled
+ * while it installed, since an Application installs every module before it
+ * starts any. They open on the intro, or on the title when the system asks for
+ * less motion. It then adds its listener of the window events: every event no
+ * module started after it keeps goes to the screen on top. stop() removes that
+ * listener; the screens stay until the module is destroyed, after every module
+ * stopped, so the music plays on while the connection module leaves the server.
  */
 class ClientScreensModule final : public engine::IModule {
  public:
@@ -77,7 +79,8 @@ class ClientScreensModule final : public engine::IModule {
   EntityMessageQueue* entityMessages_{nullptr};
   FrameLoop* loop_{nullptr};
   EventListeners* listeners_{nullptr};
-  ScreenRegistry* registry_{nullptr};
+  /** @brief Declared before screens_, which keep a reference to it. */
+  ScreenRegistry registry_;
   std::unique_ptr<ClientScreens> screens_;
   engine::SubscriptionHandle listenerHandle_{};
 };

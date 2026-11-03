@@ -17,7 +17,6 @@
 #include "InstallContext.hpp"
 #include "ModuleConstants.hpp"
 #include "PlayerSettings.hpp"
-#include "ScreenRegistry.hpp"
 #include "ScreenServices.hpp"
 #include "ServerSession.hpp"
 #include "SettingsService.hpp"
@@ -35,18 +34,13 @@ std::string ClientScreensModule::name() const {
 }
 
 std::vector<std::string> ClientScreensModule::dependencies() const {
-  return {std::string{ASSETS_MODULE_NAME},
-          std::string{SETTINGS_MODULE_NAME},
-          std::string{AUDIO_MODULE_NAME},
-          std::string{WINDOW_MODULE_NAME},
-          std::string{CONNECTION_MODULE_NAME},
-          std::string{SCREEN_REGISTRY_MODULE_NAME},
-          std::string{MENUS_MODULE_NAME},
-          std::string{LOBBY_MODULE_NAME},
-          std::string{GAME_MODULE_NAME}};
+  return {std::string{ASSETS_MODULE_NAME}, std::string{SETTINGS_MODULE_NAME},
+          std::string{AUDIO_MODULE_NAME}, std::string{WINDOW_MODULE_NAME},
+          std::string{CONNECTION_MODULE_NAME}};
 }
 
 void ClientScreensModule::install(engine::InstallContext& context) {
+  context.provide(registry_);
   settings_ = &context.require<PlayerSettings>();
   settingsService_ = &context.require<SettingsService>();
   assets_ = &context.require<AssetLibrary>();
@@ -57,7 +51,6 @@ void ClientScreensModule::install(engine::InstallContext& context) {
   entityMessages_ = &context.require<EntityMessageQueue>();
   loop_ = &context.require<FrameLoop>();
   listeners_ = &context.require<EventListeners>();
-  registry_ = &context.require<ScreenRegistry>();
   context.addWork(UPDATE_STAGE,
                   [this](engine::Duration elapsed) { update(elapsed); });
   context.addWork(RENDER_STAGE,
@@ -78,7 +71,7 @@ void ClientScreensModule::start() {
                      .entityMessages = *entityMessages_,
                      .server = server_,
                      .nickname = nickname_},
-      *registry_);
+      registry_);
   listenerHandle_ = listeners_->add([this](const sf::Event& event) {
     screens_->handleEvent(event);
     return EventUse::Kept;
