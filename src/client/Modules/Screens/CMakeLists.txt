@@ -8,7 +8,6 @@ target_link_libraries(rtype_client_screens_module
     rtype_client_audio_interfaces
     rtype_client_connection
     rtype_client_entity_message_queue
-    rtype_client_game_window
     rtype_client_interface
     rtype_client_menus_module
     rtype_client_replication_interfaces
@@ -20,7 +19,6 @@ target_link_libraries(rtype_client_screens_module
     rtype_client_session_loss_watch
     rtype_client_settings_module
     rtype_client_waiting_room
-    rtype_client_window
     rtype_client_window_module
     rtype_engine_commands
     rtype_engine_events

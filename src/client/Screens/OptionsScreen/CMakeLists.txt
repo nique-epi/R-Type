@@ -4,6 +4,7 @@ target_include_directories(rtype_client_options_screen PUBLIC ${CMAKE_CURRENT_SO
 
 target_link_libraries(rtype_client_options_screen
   PUBLIC
+    SFML::Graphics
     rtype_client_interface
     rtype_client_menu
     rtype_client_options_tabs
@@ -11,9 +12,7 @@ target_link_libraries(rtype_client_options_screen
     rtype_client_saved_stamp
     rtype_client_screen_assets
     rtype_client_settings_module
-    rtype_client_window
-    rtype_client_window_layout
-    SFML::Graphics
+    rtype_client_window_module
   PRIVATE
     rtype_client_dropdown
     rtype_client_window_size_chart

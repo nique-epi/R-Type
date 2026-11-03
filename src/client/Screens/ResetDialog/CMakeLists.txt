@@ -7,7 +7,7 @@ target_link_libraries(rtype_client_reset_dialog
     rtype_client_key_bindings
     rtype_client_settings_module
     rtype_client_slider
-    rtype_client_window
+    rtype_client_window_module
     rtype_client_interface
     rtype_client_menu
     rtype_client_screen_assets

@@ -8,7 +8,7 @@ target_link_libraries(rtype_client_end_screen
     rtype_client_flight_log_interfaces
     rtype_client_interface
     rtype_client_screen_interfaces
-    rtype_client_window
+    rtype_client_window_module
     SFML::Graphics
   PRIVATE
     rtype_client_end_choices

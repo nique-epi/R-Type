@@ -7,7 +7,7 @@ target_link_libraries(rtype_client_dialog_screen
     rtype_client_menu
     rtype_client_interface
     rtype_client_screen_interfaces
-    rtype_client_window
+    rtype_client_window_module
     SFML::Graphics
 )
 

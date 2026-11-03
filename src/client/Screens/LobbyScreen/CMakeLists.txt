@@ -9,7 +9,7 @@ target_link_libraries(rtype_client_lobby_screen
     rtype_client_menu
     rtype_client_interface
     rtype_client_screen_assets
-    rtype_client_window
+    rtype_client_window_module
     SFML::Graphics
   PRIVATE
     rtype_client_hangar_bay

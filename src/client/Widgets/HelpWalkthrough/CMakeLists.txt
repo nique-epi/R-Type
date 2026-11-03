@@ -9,7 +9,7 @@ target_link_libraries(rtype_client_help_walkthrough
     rtype_client_input
     rtype_client_key_bindings
     rtype_client_widgets
-    rtype_client_window
+    rtype_client_window_module
     SFML::Window
   PRIVATE
     rtype_client_animation

@@ -1,16 +1,30 @@
-add_library(rtype_client_window INTERFACE)
+add_library(rtype_client_window_module STATIC
+  ClientWindowModule.cpp
+  EventListeners.cpp
+  FrameLoop.cpp
+  GameWindow.cpp
+  PlayfieldViewport.cpp
+  WindowLayout.cpp
+  WindowSizeSelection.cpp
+  WindowSizeText.cpp
+)
 
-target_include_directories(rtype_client_window INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories(rtype_client_window_module PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
-target_link_libraries(rtype_client_window INTERFACE SFML::System rtype_client_settings_module)
+target_link_libraries(rtype_client_window_module
+  PUBLIC
+    SFML::Graphics
+    SFML::System
+    SFML::Window
+    rtype_client_settings_module
+    rtype_engine_application
+    rtype_engine_events
+    rtype_engine_modules
+    rtype_engine_time
+  PRIVATE
+    rtype_client_constants
+    rtype_client_platform
+    rtype_game
+)
 
-add_library(rtype_client_window_size_text STATIC WindowSizeText.cpp)
-
-target_link_libraries(rtype_client_window_size_text PUBLIC rtype_client_window)
-
-rtype_enable_warnings(rtype_client_window_size_text)
-
-add_subdirectory(PlayfieldViewport)
-add_subdirectory(WindowSizeSelection)
-add_subdirectory(WindowLayout)
-add_subdirectory(GameWindow)
+rtype_enable_warnings(rtype_client_window_module)

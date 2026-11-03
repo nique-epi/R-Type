@@ -5,12 +5,12 @@ target_include_directories(rtype_client_options_tabs PUBLIC ${CMAKE_CURRENT_SOUR
 target_link_libraries(rtype_client_options_tabs
   PUBLIC
     rtype_client_key_bindings
-    rtype_client_slider
     rtype_client_key_names
     rtype_client_menu
     rtype_client_screen_assets
     rtype_client_settings_module
-    rtype_client_window
+    rtype_client_slider
+    rtype_client_window_module
   PRIVATE
     rtype_client_dropdown
     rtype_client_key_slot
@@ -18,7 +18,6 @@ target_link_libraries(rtype_client_options_tabs
     rtype_client_menu_builder
     rtype_client_options_descriptions
     rtype_client_options_rows
-    rtype_client_window_layout
     rtype_client_window_size_chart
 )
 

@@ -9,15 +9,13 @@ target_link_libraries(rtype_client_options_rows
     rtype_client_row_control
     rtype_client_screen_assets
     rtype_client_settings_module
-    rtype_client_window
+    rtype_client_window_module
   PRIVATE
     rtype_client_choice_selector
     rtype_client_dropdown
     rtype_client_key_slot
     rtype_client_slider
     rtype_client_switch
-    rtype_client_window_layout
-    rtype_client_window_size_text
 )
 
 rtype_enable_warnings(rtype_client_options_rows)
