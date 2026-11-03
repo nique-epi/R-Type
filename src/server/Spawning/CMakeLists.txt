@@ -12,7 +12,7 @@ target_link_libraries(rtype_server_spawning
     rtype_game_wave_director
     rtype_game_waves
     rtype_logging
-    rtype_server_replication_module
+    rtype_server_replication_wire
     rtype_server_instances
     rtype_server_roster
   PRIVATE
