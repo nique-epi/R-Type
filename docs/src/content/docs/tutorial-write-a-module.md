@@ -431,7 +431,7 @@ TEST_F(ServerTickReportFixture, IsRefusedWhenTheLoggerIsNotListedBeforeIt) {
 
 `Application::runStages()` is what the server's network thread calls once per tick, so a test that calls it three times plays three ticks without a socket or a clock.
 
-Register both `.cpp` files in `tests/CMakeLists.txt`: add `server/TickReport/ServerTickReportFixture.cpp` and `server/TickReport/ServerTickReportModuleTest.cpp` to the `SOURCES` of `server_module_tests`, right after `server/Modules/Assembly/ServerModulesTest.cpp`. Its include folders come from `rtype_server_modules`, which links your library `PUBLIC`.
+Register both `.cpp` files in `tests/CMakeLists.txt`: add `server/TickReport/ServerTickReportFixture.cpp` and `server/TickReport/ServerTickReportModuleTest.cpp` to the `SOURCES` of `server_module_tests`, right after `server/Modules/ServerModulesTest.cpp`. Its include folders come from `rtype_server_modules`, which links your library `PUBLIC`.
 
 Run the tests of the module:
 
