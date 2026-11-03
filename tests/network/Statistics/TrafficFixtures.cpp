@@ -33,6 +33,24 @@ std::vector<std::byte> withMessage(std::vector<std::byte> datagram,
   return datagram;
 }
 
+std::vector<std::byte> datagramOfTypeByte(std::uint8_t typeByte,
+                                          std::size_t payloadSize) {
+  std::vector<std::byte> datagram =
+      datagramHolding(MessageType::Heartbeat, payloadSize);
+  datagram[PACKET_HEADER_SIZE] = static_cast<std::byte>(typeByte);
+  return datagram;
+}
+
+std::vector<std::byte> datagramOfEveryTypeByte() {
+  std::vector<std::byte> datagram = datagramOfTypeByte(0, 0);
+  for (std::size_t type = 1; type < MESSAGE_TYPE_COUNT; ++type) {
+    datagram.push_back(static_cast<std::byte>(type));
+    datagram.push_back(std::byte{0});
+    datagram.push_back(std::byte{0});
+  }
+  return datagram;
+}
+
 Endpoint loopbackOnPort(std::uint16_t port) {
   return Endpoint{.address = std::string{LOOPBACK_IPV4_ADDRESS}, .port = port};
 }

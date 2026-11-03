@@ -14,8 +14,10 @@ namespace rtype::network {
  * of message, in totals that only grow.
  *
  * Only the peers given to follow() get a row, so what a stranger sends costs no
- * memory, whatever address it claims: it goes in TrafficReport::others. Safe
- * from any thread: the lock is held to add one datagram or to copy the report.
+ * memory, whatever address it claims. A datagram is counted before anyone
+ * checks its sender: one forged from the address of a followed peer counts in
+ * its row, any other in TrafficReport::others. Safe from any thread: the lock
+ * is held to add one datagram or to copy the report.
  */
 class TrafficCounters {
  public:

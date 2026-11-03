@@ -37,7 +37,7 @@ namespace rtype::server {
  * start() has the schedulers of the games read its clock, which exist only once
  * the games module started; stop() takes the clock back. The games are never
  * replaced, so telling them once is enough. Everything runs on the simulation
- * thread, and a tick allocates nothing unless the traffic is due.
+ * thread, and a tick allocates nothing unless a report or the traffic is due.
  */
 class ServerMetricsModule final : public engine::IModule {
  public:

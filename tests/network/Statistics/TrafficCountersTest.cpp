@@ -9,6 +9,7 @@
 #include "MessageType.hpp"
 #include "PacketHeader.hpp"
 #include "ProtocolConstants.hpp"
+#include "StatisticsConstants.hpp"
 #include "TrafficCounters.hpp"
 #include "TrafficFigures.hpp"
 #include "TrafficFixtures.hpp"
@@ -18,13 +19,16 @@
 
 using rtype::network::DatagramCodec;
 using rtype::network::DirectionTraffic;
+using rtype::network::MESSAGE_SLOT_COUNT;
 using rtype::network::MessageType;
 using rtype::network::PacketHeader;
 using rtype::network::PROTOCOL_VERSION;
 using rtype::network::TrafficCounters;
 using rtype::network::TrafficFigures;
 using rtype::network::TrafficReport;
+using rtype::network::UNKNOWN_MESSAGE_SLOT;
 using rtype::network::testing::datagramHolding;
+using rtype::network::testing::datagramOfTypeByte;
 using rtype::network::testing::figuresOf;
 using rtype::network::testing::loopbackOnPort;
 using rtype::network::testing::withMessage;
@@ -130,6 +134,44 @@ TEST(TrafficCounters, ASizeRunningPastTheEndCountsNoMessageAtAll) {
   const DirectionTraffic received = counters.report().others.received;
   EXPECT_EQ(received.unreadable.count, 1U);
   EXPECT_EQ(figuresOf(received, MessageType::WorldState), TrafficFigures{});
+}
+
+/**
+ * Given messages of type bytes no message has: 0, the first byte after the last
+ * message, and the largest
+ * When they are received
+ * Then they count together, in the one slot of the unknown messages
+ */
+TEST(TrafficCounters, EveryTypeByteNoMessageHasCountsInOneSlot) {
+  TrafficCounters counters;
+
+  for (const std::uint8_t typeByte :
+       {NO_MESSAGE_TYPE_ZERO, static_cast<std::uint8_t>(MESSAGE_SLOT_COUNT),
+        LARGEST_TYPE_BYTE}) {
+    counters.countReceived(loopbackOnPort(PEER_PORT),
+                           datagramOfTypeByte(typeByte, SMALL_PAYLOAD));
+  }
+
+  EXPECT_EQ(counters.report().others.received.messages[UNKNOWN_MESSAGE_SLOT],
+            (TrafficFigures{.count = 3,
+                            .bytes = 3 * (PREFIX_BYTES + SMALL_PAYLOAD)}));
+}
+
+/**
+ * Given the last message of the protocol
+ * When it is received
+ * Then it counts under its own type, not with the unknown messages
+ */
+TEST(TrafficCounters, TheLastMessageOfTheProtocolHasItsOwnSlot) {
+  TrafficCounters counters;
+
+  counters.countReceived(
+      loopbackOnPort(PEER_PORT),
+      datagramHolding(MessageType::GameLoaded, SMALL_PAYLOAD));
+
+  const DirectionTraffic received = counters.report().others.received;
+  EXPECT_EQ(figuresOf(received, MessageType::GameLoaded).count, 1U);
+  EXPECT_EQ(received.messages[UNKNOWN_MESSAGE_SLOT], TrafficFigures{});
 }
 
 /**

@@ -1,7 +1,7 @@
 #pragma once
 
 #include <array>
-#include "ProtocolConstants.hpp"
+#include "StatisticsConstants.hpp"
 #include "TrafficFigures.hpp"
 
 namespace rtype::network {
@@ -18,9 +18,10 @@ struct DirectionTraffic {
   /** @brief The datagrams among them whose messages are not counted: not of
    * this protocol and version, or whose sizes do not add up to their end. */
   TrafficFigures unreadable;
-  /** @brief The messages of the other datagrams, indexed by type byte, each
-   * with its prefix and its payload; the packet header is in no type. */
-  std::array<TrafficFigures, MESSAGE_TYPE_COUNT> messages;
+  /** @brief The messages of the other datagrams, each with its prefix and its
+   * payload, at the slot of its type byte (see MESSAGE_SLOT_COUNT); the packet
+   * header is in no slot. */
+  std::array<TrafficFigures, MESSAGE_SLOT_COUNT> messages;
 };
 
 }  // namespace rtype::network

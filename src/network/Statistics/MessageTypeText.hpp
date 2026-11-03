@@ -1,14 +1,15 @@
 #pragma once
 
 #include <cstddef>
-#include <string>
+#include <string_view>
 
 namespace rtype::network {
 
 /**
- * @returns The name of the message whose type byte is @p type, as the protocol
- * page writes it, or `type-` and the number for a byte no message has.
+ * @returns What a traffic file calls the messages at @p slot of
+ * DirectionTraffic::messages: the name of the message, as the protocol page
+ * writes it, or UNKNOWN_MESSAGE_TEXT.
  */
-[[nodiscard]] std::string messageTypeText(std::size_t type);
+[[nodiscard]] std::string_view messageTypeText(std::size_t slot);
 
 }  // namespace rtype::network

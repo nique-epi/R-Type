@@ -71,7 +71,7 @@ Add the value to `src/network/Protocol/MessageType.hpp`:
   Emote = 17,
 ```
 
-Add its name at the end of `MESSAGE_TYPE_NAMES` in `src/network/Statistics/StatisticsConstants.hpp`, and name your value in the `static_assert` under it. Nothing fails if you forget: the traffic file then writes `type-` and the number of your message instead of its name.
+Add its name at the end of `MESSAGE_TYPE_NAMES` in `src/network/Statistics/StatisticsConstants.hpp`, and name your value in the `static_assert` under it. Nothing fails if you forget the name alone: the traffic counters then count your message as `unknown`.
 
 Two test constants name the first type byte no message holds, and both now point at your message. **Change them by hand: nothing fails if you forget.** The tests stay green, but they stop testing an unknown type.
 

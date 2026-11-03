@@ -1,6 +1,7 @@
 #include "TrafficCounters.hpp"
 #include <algorithm>
 #include <cstddef>
+#include <cstdint>
 #include <mutex>
 #include <span>
 #include "DatagramCodec.hpp"
@@ -9,6 +10,7 @@
 #include "MessageFrame.hpp"
 #include "PeerTraffic.hpp"
 #include "ProtocolConstants.hpp"
+#include "StatisticsConstants.hpp"
 #include "TrafficFigures.hpp"
 #include "TrafficReport.hpp"
 #include "TwoWayTraffic.hpp"
@@ -23,16 +25,21 @@ void addOne(TrafficFigures& figures, std::size_t bytes) {
 
 /**
  * @returns Whether @p datagram is of this protocol and version and its sizes
- * add up to its end, so splitMessages() will not throw. The header comes
- * first: reading it takes a fixed time and turns most foreign bytes away before
- * messageTypes() walks them, and the size comes before it, since decodeHeader()
- * throws on a datagram too short for a header.
+ * add up to its end, so forEachMessage() hands over all its messages or none.
+ * The header comes first: reading it takes a fixed time and turns most foreign
+ * bytes away before messageTypes() walks them, and the size comes before it,
+ * since decodeHeader() throws on a datagram too short for a header.
  */
 bool holdsReadableMessages(std::span<const std::byte> datagram) {
   return datagram.size() >= PACKET_HEADER_SIZE &&
          DatagramCodec::speaksThisProtocol(
              DatagramCodec::decodeHeader(datagram)) &&
          DatagramCodec::messageTypes(datagram).has_value();
+}
+
+/** @returns The slot of DirectionTraffic::messages for @p typeByte. */
+std::size_t slotOf(std::uint8_t typeByte) {
+  return typeByte < MESSAGE_SLOT_COUNT ? typeByte : UNKNOWN_MESSAGE_SLOT;
 }
 
 void addDatagram(DirectionTraffic& traffic,
@@ -42,17 +49,18 @@ void addDatagram(DirectionTraffic& traffic,
     addOne(traffic.unreadable, datagram.size());
     return;
   }
-  for (const MessageFrame& message : DatagramCodec::splitMessages(datagram)) {
-    addOne(traffic.messages[message.type],
-           MESSAGE_PREFIX_SIZE + message.payload.size());
-  }
+  static_cast<void>(DatagramCodec::forEachMessage(
+      datagram, [&traffic](const MessageFrame& message) {
+        addOne(traffic.messages[slotOf(message.type)],
+               MESSAGE_PREFIX_SIZE + message.payload.size());
+      }));
 }
 
 void addDirection(DirectionTraffic& total, const DirectionTraffic& part) {
   addFigures(total.datagrams, part.datagrams);
   addFigures(total.unreadable, part.unreadable);
-  for (std::size_t type = 0; type < MESSAGE_TYPE_COUNT; ++type) {
-    addFigures(total.messages[type], part.messages[type]);
+  for (std::size_t slot = 0; slot < MESSAGE_SLOT_COUNT; ++slot) {
+    addFigures(total.messages[slot], part.messages[slot]);
   }
 }
 

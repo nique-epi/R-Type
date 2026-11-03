@@ -1,16 +1,15 @@
 #include "MessageTypeText.hpp"
 #include <cstddef>
-#include <string>
+#include <string_view>
 #include "StatisticsConstants.hpp"
 
 namespace rtype::network {
 
-std::string messageTypeText(std::size_t type) {
-  if (type < FIRST_NAMED_MESSAGE_TYPE ||
-      type >= FIRST_NAMED_MESSAGE_TYPE + MESSAGE_TYPE_NAMES.size()) {
-    return std::string{UNKNOWN_MESSAGE_TYPE_PREFIX} + std::to_string(type);
+std::string_view messageTypeText(std::size_t slot) {
+  if (slot < FIRST_NAMED_MESSAGE_TYPE || slot >= MESSAGE_SLOT_COUNT) {
+    return UNKNOWN_MESSAGE_TEXT;
   }
-  return std::string{MESSAGE_TYPE_NAMES[type - FIRST_NAMED_MESSAGE_TYPE]};
+  return MESSAGE_TYPE_NAMES[slot - FIRST_NAMED_MESSAGE_TYPE];
 }
 
 }  // namespace rtype::network

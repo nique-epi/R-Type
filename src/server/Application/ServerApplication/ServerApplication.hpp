@@ -154,8 +154,8 @@ class ServerApplication final : public IDatagramSender,
   engine::SystemClock clock_;
   network::Endpoint listeningEndpoint_;
   network::NetworkConditions conditions_;
-  network::NetworkContext network_;
   network::TrafficCounters traffic_;
+  network::NetworkContext network_;
   std::unique_ptr<network::IDatagramSocket> socket_;
   concurrency::BoundedQueue<network::IncomingDatagram> incoming_;
   concurrency::BoundedQueue<network::IncomingDatagram> connectionRequests_;

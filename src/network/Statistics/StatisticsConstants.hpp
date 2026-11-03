@@ -30,8 +30,9 @@ constexpr std::string_view RECEIVED_DIRECTION_TEXT = "received";
 constexpr std::string_view ALL_MESSAGES_TEXT = "all";
 constexpr std::string_view UNREADABLE_MESSAGES_TEXT = "unreadable";
 
-/** @brief What stands before the number of a type byte no message has. */
-constexpr std::string_view UNKNOWN_MESSAGE_TYPE_PREFIX = "type-";
+/** @brief What a traffic file calls the messages of a type byte no message
+ * has. */
+constexpr std::string_view UNKNOWN_MESSAGE_TEXT = "unknown";
 
 /**
  * @brief The name of each message of the protocol page, in the order of the
@@ -49,5 +50,17 @@ constexpr auto MESSAGE_TYPE_NAMES = std::to_array<std::string_view>(
 static_assert(FIRST_NAMED_MESSAGE_TYPE + MESSAGE_TYPE_NAMES.size() - 1 ==
                   static_cast<std::size_t>(MessageType::GameLoaded),
               "every value of MessageType up to GameLoaded has its name");
+
+/**
+ * @brief The figures a DirectionTraffic keeps per type of message: one slot per
+ * message, at its type byte, and UNKNOWN_MESSAGE_SLOT for every byte no message
+ * has, so a forged byte never adds more than one figure.
+ */
+constexpr std::size_t UNKNOWN_MESSAGE_SLOT = 0;
+constexpr std::size_t MESSAGE_SLOT_COUNT =
+    FIRST_NAMED_MESSAGE_TYPE + MESSAGE_TYPE_NAMES.size();
+
+static_assert(UNKNOWN_MESSAGE_SLOT < FIRST_NAMED_MESSAGE_TYPE,
+              "no message holds the slot of the unknown messages");
 
 }  // namespace rtype::network

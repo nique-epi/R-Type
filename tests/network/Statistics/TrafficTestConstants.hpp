@@ -14,6 +14,12 @@ constexpr std::size_t LARGE_PAYLOAD = 100;
 constexpr std::size_t SMALL_PAYLOAD = 10;
 constexpr std::size_t EMPTY_PAYLOAD = 0;
 
+/** @brief Type bytes no message has, for as long as there are fewer messages
+ * than that. */
+constexpr std::uint8_t TYPE_NO_MESSAGE_HAS = 200;
+constexpr std::uint8_t LARGEST_TYPE_BYTE = 255;
+constexpr std::uint8_t NO_MESSAGE_TYPE_ZERO = 0;
+
 /** @brief A cut that leaves a datagram too short for a header. */
 constexpr std::size_t FIVE_BYTES = 5;
 

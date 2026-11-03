@@ -2,7 +2,9 @@
 #include <cstddef>
 #include "MessageType.hpp"
 #include "MessageTypeText.hpp"
+#include "StatisticsConstants.hpp"
 
+using rtype::network::MESSAGE_SLOT_COUNT;
 using rtype::network::MessageType;
 using rtype::network::messageTypeText;
 
@@ -36,12 +38,11 @@ TEST(MessageTypeText, EveryMessageHasItsName) {
 }
 
 /**
- * Given the type bytes next to the first and the last message, and the largest
+ * Given the slots next to the first and the last message
  * When their text is asked
- * Then it is the number: no message has them
+ * Then it says the message is unknown
  */
-TEST(MessageTypeText, AByteNoMessageHasGivesItsNumber) {
-  EXPECT_EQ(messageTypeText(0), "type-0");
-  EXPECT_EQ(messageTypeText(18), "type-18");
-  EXPECT_EQ(messageTypeText(255), "type-255");
+TEST(MessageTypeText, ASlotNoMessageHasIsUnknown) {
+  EXPECT_EQ(messageTypeText(0), "unknown");
+  EXPECT_EQ(messageTypeText(MESSAGE_SLOT_COUNT), "unknown");
 }

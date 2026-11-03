@@ -48,10 +48,10 @@ std::string directionRows(const std::string& start,
     rows += start + std::string{UNREADABLE_MESSAGES_TEXT} +
             figuresText(traffic.unreadable);
   }
-  for (std::size_t type = 0; type < traffic.messages.size(); ++type) {
-    if (traffic.messages[type].count > 0) {
-      rows +=
-          start + messageTypeText(type) + figuresText(traffic.messages[type]);
+  for (std::size_t slot = 0; slot < traffic.messages.size(); ++slot) {
+    if (traffic.messages[slot].count > 0) {
+      rows += start + std::string{messageTypeText(slot)} +
+              figuresText(traffic.messages[slot]);
     }
   }
   return rows;

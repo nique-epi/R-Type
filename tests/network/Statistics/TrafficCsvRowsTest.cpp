@@ -1,7 +1,10 @@
 #include <gtest/gtest.h>
+#include <algorithm>
 #include <cstddef>
 #include <span>
+#include <string>
 #include "MessageType.hpp"
+#include "StatisticsConstants.hpp"
 #include "TimeTestConstants.hpp"
 #include "TrafficCounters.hpp"
 #include "TrafficCsvRows.hpp"
@@ -10,11 +13,14 @@
 #include "TrafficTestConstants.hpp"
 
 using rtype::engine::testing::ONE_SECOND;
+using rtype::network::MESSAGE_SLOT_COUNT;
 using rtype::network::MessageType;
 using rtype::network::TrafficCounters;
 using rtype::network::trafficCsvRowsOf;
 using rtype::network::TrafficReport;
 using rtype::network::testing::datagramHolding;
+using rtype::network::testing::datagramOfEveryTypeByte;
+using rtype::network::testing::datagramOfTypeByte;
 using rtype::network::testing::loopbackOnPort;
 
 /**
@@ -59,6 +65,39 @@ TEST(TrafficCsvRows, AnUnreadableDatagramOfAStrangerHasItsRow) {
   EXPECT_EQ(trafficCsvRowsOf(ONE_SECOND, counters.report()),
             "1.000,others,received,all,1,5\n"
             "1.000,others,received,unreadable,1,5\n");
+}
+
+/**
+ * Given a message of a type byte no message has
+ * When the rows are asked
+ * Then it has a row called unknown
+ */
+TEST(TrafficCsvRows, AMessageOfAnUnknownTypeHasARowCalledUnknown) {
+  TrafficCounters counters;
+
+  counters.countReceived(
+      loopbackOnPort(PEER_PORT),
+      datagramOfTypeByte(TYPE_NO_MESSAGE_HAS, SMALL_PAYLOAD));
+
+  EXPECT_EQ(trafficCsvRowsOf(ONE_SECOND, counters.report()),
+            "1.000,others,received,all,1,35\n"
+            "1.000,others,received,unknown,1,13\n");
+}
+
+/**
+ * Given one datagram holding a message of every value of a type byte
+ * When the rows are asked
+ * Then there is one row per slot and one for the datagram: a forger cannot add
+ * a row per byte, written again every second
+ */
+TEST(TrafficCsvRows, ADatagramOfEveryTypeByteAddsARowPerSlotAtMost) {
+  TrafficCounters counters;
+
+  counters.countReceived(loopbackOnPort(PEER_PORT), datagramOfEveryTypeByte());
+
+  const std::string rows = trafficCsvRowsOf(ONE_SECOND, counters.report());
+  EXPECT_EQ(static_cast<std::size_t>(std::ranges::count(rows, '\n')),
+            MESSAGE_SLOT_COUNT + 1);
 }
 
 /**

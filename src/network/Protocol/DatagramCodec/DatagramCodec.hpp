@@ -1,11 +1,14 @@
 #pragma once
 
 #include <bitset>
+#include <concepts>
 #include <cstddef>
+#include <cstdint>
 #include <optional>
 #include <ranges>
 #include <span>
 #include <vector>
+#include "ByteReader.hpp"
 #include "MessageFrame.hpp"
 #include "MessagePayload.hpp"
 #include "MessageType.hpp"
@@ -100,6 +103,37 @@ class DatagramCodec {
    */
   [[nodiscard]] static std::optional<MessageTypes> messageTypes(
       std::span<const std::byte> datagram);
+
+  /**
+   * @brief Hands each message after the header of @p datagram to @p onMessage,
+   * in order, checking every size before reading what it announces. It throws
+   * and allocates nothing, so it costs a sender only the reading of its message
+   * prefixes.
+   * @returns Whether the datagram holds a header and at least one message, and
+   * its sizes add up exactly to its end. When it is false, @p onMessage may
+   * already have seen the messages before the faulty one.
+   */
+  template <std::invocable<const MessageFrame&> OnMessage>
+  [[nodiscard]] static bool forEachMessage(std::span<const std::byte> datagram,
+                                           OnMessage onMessage) {
+    if (datagram.size() <= PACKET_HEADER_SIZE) {
+      return false;
+    }
+    ByteReader reader{datagram.subspan(PACKET_HEADER_SIZE)};
+    while (reader.remaining() > 0) {
+      if (reader.remaining() < MESSAGE_PREFIX_SIZE) {
+        return false;
+      }
+      const std::uint8_t type = reader.readUint8();
+      const std::uint16_t payloadSize = reader.readUint16();
+      if (payloadSize > reader.remaining()) {
+        return false;
+      }
+      onMessage(
+          MessageFrame{.type = type, .payload = reader.readBytes(payloadSize)});
+    }
+    return true;
+  }
 
   /**
    * @brief Refused at compile time for a buffer destroyed at the end of the

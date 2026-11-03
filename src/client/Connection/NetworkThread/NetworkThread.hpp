@@ -123,8 +123,8 @@ class NetworkThread : public IDatagramLink {
 
   network::Endpoint listeningEndpoint_;
   network::NetworkConditions conditions_;
-  network::NetworkContext network_;
   network::TrafficCounters traffic_;
+  network::NetworkContext network_;
   std::unique_ptr<network::IDatagramSocket> socket_;
   network::Endpoint localEndpoint_;
   concurrency::BoundedQueue<network::IncomingDatagram> incoming_;

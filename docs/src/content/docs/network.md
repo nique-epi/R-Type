@@ -154,7 +154,7 @@ The values of the scenarios were chosen for the demonstrations, not measured on 
 
 ## Traffic counters: `TrafficCounters`
 
-Both programs count what crosses their socket, with the classes of `rtype_network_statistics` (`src/network/Statistics/`). `CountingDatagramSocket` wraps the socket the way `SimulatedNetworkSocket` does and hands each datagram to `TrafficCounters`. It sits above the simulator, which plays the part of the network: a datagram lost on the way out was sent, and one lost on the way in was never received, so what a sender counted less what its receiver counted is what the network lost.
+Both programs count what crosses their socket, with the classes of `rtype_network_statistics` (`src/network/Statistics/`). `CountingDatagramSocket` wraps the socket the way `SimulatedNetworkSocket` does and hands each datagram to `TrafficCounters`. It sits above the simulator, which plays the part of the network: a datagram lost on the way out was sent, and one lost on the way in was never received, so comparing what a sender counted with what its receiver counted shows what the network lost or copied.
 
 `report()` gives a copy of a `TrafficReport`, from any thread: totals since the program started, which only grow. A datagram is in exactly one of its three rows:
 
@@ -164,11 +164,11 @@ Both programs count what crosses their socket, with the classes of `rtype_networ
 | `others` | Anyone else. On the server, what comes from or goes to an address that holds no place; on the client, which follows nobody, everything |
 | `departed` | The peers no longer followed, added up |
 
-Only `follow()` adds a row, so a flood costs no memory, whatever addresses it claims. Each row holds `sent` and `received`, each a `DirectionTraffic`:
+Only `follow()` adds a row, so a flood costs no memory, whatever addresses it claims. A datagram is counted before anyone checks its sender, so one forged from the address of a player counts in the row of that player. Each row holds `sent` and `received`, each a `DirectionTraffic`:
 
 - `datagrams`: every datagram and all its bytes.
 - `unreadable`: the datagrams among them whose messages are not counted, because they are not of this protocol and version or their sizes do not add up to their end. A malformed datagram never adds to a type.
-- `messages`: a table indexed by the type byte. A message counts with its prefix and its payload; the `PACKET_HEADER_SIZE` (22) bytes of the header are in no type, so they are what `datagrams` holds beyond the types.
+- `messages`: a table indexed by the type byte, `MESSAGE_SLOT_COUNT` (18) figures long. A message counts with its prefix and its payload; the `PACKET_HEADER_SIZE` (22) bytes of the header are in no slot, so they are what `datagrams` holds beyond the slots. `UNKNOWN_MESSAGE_SLOT` (0) holds every byte no message has, so a datagram holding the 256 values of a type byte fills 18 figures, and adds at most one line per figure to the file.
 
 Bytes are those of the UDP payload: over IPv4, the headers of IP and UDP add at least 28 bytes per datagram. A datagram over `MAX_DATAGRAM_SIZE` is dropped by the socket and never counted.
 
@@ -180,7 +180,7 @@ To get a rate, compare two reports. `trafficTotalsOf()` adds up the rows, and it
 [INFO ] [Traffic] - traffic over 10 s: sent 2460 datagrams, 1104000 bytes (110400 B/s); received 1240 datagrams, 44640 bytes (4464 B/s)
 ```
 
-With `--traffic-csv <file>`, both programs also write the whole report to that file every `TRAFFIC_CSV_PERIOD` (1 s), one line per figure that is not zero, and once more when they stop:
+With `--traffic-csv <file>`, both programs also write the whole report to that file every `TRAFFIC_CSV_PERIOD` (1 s), one line per figure that is not zero, and once more when they stop, just before they say goodbye, so the last lines do not hold their farewell `Disconnection`:
 
 ```
 seconds,peer,direction,message,count,bytes
@@ -189,7 +189,7 @@ seconds,peer,direction,message,count,bytes
 1.000,others,received,all,3,120
 ```
 
-- `peer` is an address and a port, `others` or `departed`. `message` is the name of a message, `type-` and the number for a byte no message has, `all` for the whole datagrams, or `unreadable`. `count` counts datagrams on `all` and `unreadable`, messages otherwise.
+- `peer` is an address and a port, `others` or `departed`. `message` is the name of a message, `unknown` for a byte no message has, `all` for the whole datagrams, or `unreadable`. `count` counts datagrams on `all` and `unreadable`, messages otherwise.
 - The figures are totals: a rate is the difference between two lines of one peer, direction and message. A player's lines stop when it leaves, and `departed` jumps by what it held.
 - The file is emptied at launch: one file is one run. A relative path is read from the folder the program was started in. A file that cannot be opened stops the program; one that stops accepting lines is told once in the journal and left, so a full disk never stops a game.
 
@@ -197,12 +197,13 @@ Measured on an Apple M3 Pro with Apple clang 21.0.0 at `-O2`, median of 7 runs o
 
 | Work | When | Cost |
 |---|---|---|
-| Counting a datagram of 375 bytes | each datagram, on the network thread | 51 ns with no row, 53 ns for the last of 4 players, 116 ns for the last of 32 |
+| Counting a datagram of 375 bytes | each datagram, on the network thread | 33 ns with no row, 33 ns for the last of 4 players, 89 ns for the last of 32 |
 | Counting a malformed datagram, or 1198 foreign bytes | each such datagram | 19 ns, 16 ns |
-| Copying a report | every 10 s, and every second with a file | 0.76 µs for 4 players, 5.9 µs for 32 |
-| Building the lines of a report | every second with a file | 5.1 µs for 4 players, 36 µs for 32 |
+| Counting 1198 bytes of empty messages, the most a sender can make it read | each such datagram | 4.7 µs |
+| Copying a report | every 10 s, and every second with a file | 66 ns for 4 players, 0.28 µs for 32 |
+| Building the lines of a report | every second with a file | 4.2 µs for 4 players, 30 µs for 32 |
 
-These numbers say nothing about a disk, GCC, MSVC, Linux or Windows. A row weighs about 8 KB. The line adds about 1.2 MB per day to the journal, which the logger never rotates; with nine figures per player, the file of a game of 4 grows by about 1.7 KB per second, 6 MB per hour.
+These numbers say nothing about a disk, GCC, MSVC, Linux or Windows. A row weighs 672 bytes. The line adds about 1.2 MB per day to the journal, which the logger never rotates; with nine figures per player, the file of a game of 4 grows by about 1.7 KB per second, 6 MB per hour.
 
 ## Serialization: `ByteWriter` and `ByteReader`
 
@@ -241,6 +242,7 @@ const auto decodedName = reader.readString();
 
 - `encode(header, message)` writes the `PACKET_HEADER_SIZE` (22) bytes of the `PacketHeader`, the type of the message, the size of its payload on two bytes, then the payload. A payload over `MESSAGE_PAYLOAD_LIMIT` (1175 bytes) throws `DatagramTooLargeException`. A default `PacketHeader` is version 1 without a session; the sender sets `sessionToken` and `sequence`.
 - `decodeHeader(datagram)` reads the header without judging it, so a datagram of another version still gives its version. Fewer than 22 bytes throws `MalformedDatagramException`.
+- `forEachMessage(datagram, onMessage)` hands each message that follows the header to a function, and throws and allocates nothing. It returns whether the sizes add up exactly to the end of the datagram; when they do not, the function may already have seen the messages before the fault.
 - `splitMessages(datagram)` returns the `MessageFrame`s that follow the header: the type byte as it arrived, and a view of the payload into the datagram. Either the sizes add up exactly to the end of the datagram, or it throws `MalformedDatagramException` and returns nothing: a datagram without a message, with a size running past its end, or with bytes after its last message is refused whole. Calling it on a temporary buffer does not compile.
 
 Reading the header and splitting the messages are two calls because a receiver checks the version before it trusts the rest. `speaksThisProtocol(header)` is that check: `protocolId`, `version` and `flags` are those of this code. The server's `ConnectionAcceptor` and `GameInstance` and the client's `SessionInbound` call it before splitting. Of the checks of [Receiving a datagram](/R-Type/protocol/#receiving-a-datagram) that follow, the server's `DatagramSorter` checks the session token of every datagram from the address of an admitted player (see [Server](/R-Type/server/#sorting-the-datagrams-datagramsorter)) and its `DatagramReader` the sequence of every datagram of a player (see [Server](/R-Type/server/#order-and-loss-arrivalledger)); the client's `SessionInbound`, once accepted, checks the session token and drops a datagram whose `sequence` is not newer than the newest one it accepted (`isNewerSequence`).
