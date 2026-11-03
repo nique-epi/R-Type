@@ -8,11 +8,12 @@ target_include_directories(rtype_client_lobby_module PUBLIC ${CMAKE_CURRENT_SOUR
 target_link_libraries(rtype_client_lobby_module
   PUBLIC
     SFML::Graphics
+    rtype_client_handshake
     rtype_client_help_walkthrough
     rtype_client_interface
     rtype_client_menu
     rtype_client_screens_module
-    rtype_client_session
+    rtype_client_waiting_room
     rtype_client_window_display
     rtype_engine_modules
   PRIVATE

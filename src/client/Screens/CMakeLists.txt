@@ -20,16 +20,18 @@ target_link_libraries(rtype_client_screens_module
     rtype_client_audio_contract_service
     rtype_client_audio_contract_sounds
     rtype_client_common_screens
+    rtype_client_connection_module
     rtype_client_effect_interfaces
     rtype_client_entity_messages
+    rtype_client_handshake
     rtype_client_interface
     rtype_client_pilots
     rtype_client_rendering_interfaces
     rtype_client_screen_registry
     rtype_client_scrolling_background
-    rtype_client_session
     rtype_client_settings_module
     rtype_client_settings_values
+    rtype_client_waiting_room
     rtype_client_window_display
     rtype_client_window_loop
     rtype_engine_command_settings

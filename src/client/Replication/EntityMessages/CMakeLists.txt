@@ -8,6 +8,7 @@ target_include_directories(rtype_client_entity_messages PUBLIC ${CMAKE_CURRENT_S
 target_link_libraries(rtype_client_entity_messages
   PUBLIC
     rtype_client_session
+    rtype_client_waiting_room
     rtype_engine_time
     rtype_network_entity_destroyed
     rtype_network_entity_spawned

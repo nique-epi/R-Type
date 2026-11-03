@@ -9,7 +9,7 @@ target_include_directories(rtype_client_prediction PUBLIC ${CMAKE_CURRENT_SOURCE
 
 target_link_libraries(rtype_client_prediction
   PUBLIC
-    rtype_client_session
+    rtype_client_connection_module
     rtype_client_entities
     rtype_engine
     rtype_engine_time
