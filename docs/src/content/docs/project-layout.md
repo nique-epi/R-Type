@@ -162,24 +162,36 @@ src/server/
 
 ```
 src/client/
-├── Modules/          the list of modules, for now their classes, and the frame loop
-├── Application/      the screen stack (the program's `Application` is the engine's, built in `main()`)
-├── Window/           the SFML window, its display mode and its size
-├── Assets/           assets found by id, loaded at launch or entering a game
-├── Platform/         what differs between Windows, macOS and Linux
-├── LaunchOptions/    server address, port, nickname and sound on or off
-├── Screens/          title, loading, server list, lobby, game, end, options...
-├── Widgets/          labels, buttons, menus, text fields, lists, HUD
-├── Rendering/        sprites, starfield, HUD sprites, effects, lagometer
-├── Audio/            sounds and music
-├── Input/            keyboard and gamepad to player input, remapping
-├── Settings/         volumes, key bindings, accessibility, saved to disk
-├── Connection/       session with a server, server list from the master
-├── Replication/      applies snapshots to the local entities
-└── Prediction/       own ship predicted, other ships interpolated
+├── Modules/             the list of the modules, `clientModules()`
+├── Logger/              the journal of the client
+├── Assets/              assets found by id, loaded at launch or entering a game
+├── Settings/            volumes, keys, display, accessibility, saved to disk
+├── Window/              the SFML window, its size, the frame loop and its events
+├── Connection/          the network thread and the session with a server
+│   ├── Transport/       datagrams between the socket and the frame loop
+│   └── Session/         from the handshake to the departure
+├── Audio/               sounds and music
+│   └── Contract/        what other folders may use of the sound
+├── Screens/             the registry and what every screen module shares
+├── Menus/               the screens before a server
+│   ├── Title/           intro, title, connection screen, dialogs
+│   └── Options/         the options and their pieces
+├── Lobby/               the waiting room
+├── Game/                the game and the end screen
+├── Application/         the screen stack and the interfaces of a screen
+├── Replication/         what the server announces, applied to the game
+│   ├── Entities/        world states to local entities
+│   ├── EntityMessages/  what the session queues for the game
+│   └── Pilots/          scores and ranking of the pilots
+├── Prediction/          own ship predicted, other ships interpolated
+├── Input/               keyboard and gamepad to player input, remapping
+├── Platform/            what differs between Windows, macOS and Linux
+├── LaunchOptions/       server address, port, nickname and sound on or off
+├── Widgets/             labels, buttons, menus, text fields, lists, HUD
+└── Rendering/           sprites, starfield, HUD sprites, effects, lagometer
 ```
 
-`Modules` (the logger, assets, settings, window, connection, sound, screens, menus, lobby and game modules, the frame loop, the listeners of the window events and the list that assembles them), `Application` (the screen stack), `Window`, `Screens` (intro, title, connection, waiting room, loading, game, end, options, with its tabs, rows, descriptions, reset dialog and SAVED stamp in folders of their own, `DialogScreen` and the menus of `DialogMenus` it shows, the quit confirmation and a lost connection, and `PlayerPreferences`, the flash preference and the palette of the pilots the settings ask for, which the screens share), `Widgets`, `Rendering`, `Audio`, `Assets`, `Platform`, `Input`, `Settings`, `Connection`, `Replication` (the filter that ignores an old world state, `LastListedTicks`, which names the entities no world state has listed for 900 ms up to a closed tick, `EntityReplicator`, which applies the entities the server announces to the game screen, see [Client](/R-Type/client/#entities-from-the-server-entityreplicator), `ScoreBoard`, which keeps the score and the lives of each pilot for the status band, see [Client](/R-Type/client/#status-band-scoreboard-paintstatusband), and `FinalRanking`, which ranks the pilots of a game the server ended into the `GameResult` the end screen reads, see [Client](/R-Type/client/#end-screen-endscreen-paintflightlog)) and `LaunchOptions` exist today. `Input` holds the keys, their remapping and the held actions; the gamepad is not written yet. `Settings` holds what the player sets, the `SettingsService` every change goes through, which saves it and tells the listeners subscribed, and the file it is saved in; the game reads the flashes setting, the sound cues and auto-fire, every screen that paints a pilot reads the color mode, and the sounds and the music are told when a volume changes (see [Client](/R-Type/client/#settings-playersettings-settingsservice-settingsfile)). `Audio` holds the audio service the sound module provides, with its two kinds (the one that plays and the one that plays nothing), the player of the sounds, the player of a music, the `Soundtrack` that switches from the theme to the music of a game, and the clock the intro follows, with the interfaces the screens and their tests use (see [Client](/R-Type/client/#sounds-and-music-iaudioservice-soundplayer-musicplayer)). `Connection` holds the network thread the connection module opens when it starts (see [Client](/R-Type/client/#network-networkthread)) and the connection to a server, which the connection screen and the waiting room drive (see [Client](/R-Type/client/#joining-a-server-serversession-waitingroom-entitymessagequeue)) and through which the game takes the entities and the game events the server announces, one copy of each event (`GameEventHistory`), and sends the player's inputs at a fixed rate (see [Client](/R-Type/client/#inputs-to-the-server-playerinputpacer-iplayerinputlink)), and `SessionLossWatch`, which notices the end of a session so `ClientScreens` brings back the title with a dialog over it (see [Client](/R-Type/client/#lost-connection-a-dialog-over-the-title)). `Screens/HeldKey/` holds `releasesHeldKey()`, which the end screen uses so a key held down acts once.
+Every folder of this tree exists today; some of what the comments name is not written yet: the interpolation of the other ships, the gamepad, the lists of items and the lagometer. A module folder holds its class, `Client<Name>Module`, and the code it owns, side by side; a module with two categories or more gives each a sub-folder, which its folder links (see [The list of modules](#the-list-of-modules)). `Connection` holds the connection module, `Transport/`, the network thread and the routes of its datagrams (see [Client](/R-Type/client/#network-networkthread)), and `Session/`, the connection to a server the connection screen and the waiting room drive, with `SessionLossWatch`, which notices the end of a session so `ClientScreens` brings back the title with a dialog over it (see [Client](/R-Type/client/#joining-a-server-serversession-waitingroom-entitymessagequeue)). `Audio` holds the audio service the sound module provides, the player of the sounds, the player of a music and the `Soundtrack` that switches from the theme to the music of a game; `Audio/Contract/` holds what the screens, the widgets and the replication use of the sound: the interfaces, the constants of the sounds and of the music, the clock the intro follows and the service that plays nothing (see [Client](/R-Type/client/#sounds-and-music-iaudioservice-soundplayer-musicplayer)). `Screens` holds the screens module, its `ScreenRegistry`, `openingScreen()`, the screens any module shows (`DialogScreen`, `LoadingScreen`), `PlayerPreferences`, the flash preference and the palette of the pilots the screens share, and the identifiers of the screens, which several modules read. `Menus` holds the menus module with `Title/`, the intro, the title, the connection screen and the menus of the dialogs over the title, and `Options/`, the options screen with its tabs, rows, descriptions, reset dialog and SAVED stamp; `Lobby` holds the waiting room, and `Game` the game screen, the end screen and `releasesHeldKey()`, which the end screen uses so a key held down acts once. `Application` holds the screen stack and the interfaces of a screen. `Replication` holds no class of its own: `Entities/` holds the filter that ignores an old world state, `LastListedTicks`, which names the entities no world state has listed for 900 ms up to a closed tick, and `EntityReplicator`, which applies the entities the server announces to the game screen (see [Client](/R-Type/client/#entities-from-the-server-entityreplicator)); `EntityMessages/` holds the queue through which the game takes the entities and the game events the server announces, one copy of each event (`GameEventHistory`); `Pilots/` holds `ScoreBoard`, which keeps the score and the lives of each pilot for the status band (see [Client](/R-Type/client/#status-band-scoreboard-paintstatusband)), and `FinalRanking`, which ranks the pilots of a game the server ended into the `GameResult` the end screen reads (see [Client](/R-Type/client/#end-screen-endscreen-paintflightlog)). `Input` holds the keys, their remapping, the held actions and `PlayerInputPacer`, which sends them at a fixed rate (see [Client](/R-Type/client/#inputs-to-the-server-playerinputpacer-iplayerinputlink)). `Settings` holds what the player sets, with the display mode and the window sizes it names, the `SettingsService` every change goes through, which saves it and tells the listeners subscribed, and the file it is saved in; the game reads the flashes setting, the sound cues and auto-fire, every screen that paints a pilot reads the color mode, and the sounds and the music are told when a volume changes (see [Client](/R-Type/client/#settings-playersettings-settingsservice-settingsfile)).
 
 `Rendering` draws every entity that has a `Position` and a `Sprite` (an asset id, the rectangle of it to show and a layer), from the background layer to the interface layer; the game screen draws them through its `EntityLayer`. Its files are grouped by family, a folder each with its headers and its classes, and a family only depends on the families listed before it:
 
@@ -226,7 +238,7 @@ Each folder splits its classes into a controller (HTTP in and out), a service (t
 
 A **module** is a feature you can switch on, switch off or replace: a folder with one class implementing `IModule` or `IGameModule` at its root, which owns everything the folder holds. A folder without that class is a **library**: code with no life cycle, such as `src/client/Widgets/` or `src/game/Waves/`. The [Modules](/R-Type/modules/#required-or-optional) page says what a required and an optional module may do, and gives the removal test.
 
-**No module passes the removal test yet.** The sound fails it: `screens` lists `audio` in its `dependencies()`, the screens, the widgets and the replication include headers of `src/client/Audio/`, and `AssetLibrary` links `SFML::Audio`. The metrics come closer: only the list includes them, but their code sits in two folders that three `CMakeLists.txt` name, and `BUILD_TESTS` is the only CMake option.
+**No module passes the removal test yet.** The sound fails it: `screens` lists `audio` in its `dependencies()`, and `AssetLibrary` links `SFML::Audio`; the other folders include only its `Contract/`. The metrics come closer: only the list includes them, but their code sits in two folders that three `CMakeLists.txt` name, and `BUILD_TESTS` is the only CMake option.
 
 ### The list of modules
 
@@ -247,18 +259,18 @@ This list describes the code as it is today. A pull request that adds, removes o
 
 | Module of the client | Class | Folder | Kind |
 |---|---|---|---|
-| `logger` | `ClientLoggerModule` | `src/client/Modules/Logger/` | required |
-| `assets` | `ClientAssetsModule` | `src/client/Modules/Assets/` | required |
-| `settings` | `ClientSettingsModule` | `src/client/Modules/Settings/` | required |
-| `window` | `ClientWindowModule` | `src/client/Modules/Window/` | required |
-| `connection` | `ClientConnectionModule` | `src/client/Modules/Connection/` | required |
-| `audio` | `ClientAudioModule` | `src/client/Modules/Audio/` | optional |
-| `screens` | `ClientScreensModule` | `src/client/Modules/Screens/` | required |
-| `menus` | `ClientMenusModule` | `src/client/Modules/Menus/` | required |
-| `lobby` | `ClientLobbyModule` | `src/client/Modules/Lobby/` | required |
-| `game` | `ClientGameModule` | `src/client/Modules/Game/` | required |
+| `logger` | `ClientLoggerModule` | `src/client/Logger/` | required |
+| `assets` | `ClientAssetsModule` | `src/client/Assets/` | required |
+| `settings` | `ClientSettingsModule` | `src/client/Settings/` | required |
+| `window` | `ClientWindowModule` | `src/client/Window/` | required |
+| `connection` | `ClientConnectionModule` | `src/client/Connection/` | required |
+| `audio` | `ClientAudioModule` | `src/client/Audio/` | optional |
+| `screens` | `ClientScreensModule` | `src/client/Screens/` | required |
+| `menus` | `ClientMenusModule` | `src/client/Menus/` | required |
+| `lobby` | `ClientLobbyModule` | `src/client/Lobby/` | required |
+| `game` | `ClientGameModule` | `src/client/Game/` | required |
 
-These folders are where the classes sit today, and most of the code of a module is still elsewhere, in a folder of the feature (`src/client/Audio/`, `src/server/Metrics/`). This is tolerated until the client and the server are tidied: each class then joins the code it owns, and `Modules/` keeps only the list of the program.
+Each class of the client sits with the code it owns, and `src/client/Modules/` keeps only the list. The classes of the server still sit in `src/server/Modules/` and `src/server/Instances/`, most of their code in a folder of the feature (`src/server/Metrics/`); this is tolerated until the server is tidied.
 
 ### The code of a module used elsewhere
 
@@ -267,7 +279,7 @@ When another folder needs code of a module, the first row that fits decides.
 | Order | The code… | Then |
 |---|---|---|
 | 1 | belongs to a required module | it stays there, and the code that needs it includes it: `Modules/Lobby/` and `Modules/Metrics/` include `Games.hpp`, `Widgets/` includes `PlayfieldMapping.hpp` |
-| 2 | belongs to an optional module | it goes in the `Contract/` of that module: `ISoundPlayer`, still at the root of `Audio/` until the client is tidied |
+| 2 | belongs to an optional module | it goes in the `Contract/` of that module: `ISoundPlayer`, in `src/client/Audio/Contract/` |
 | 3 | has no owner and serves several folders | it goes in a library: `Widgets/`, `Rendering/` |
 
 ## Adding a class
@@ -286,7 +298,7 @@ src/game/Waves/
 - A folder has one `CMakeLists.txt` and one CMake library. It holds the `.hpp` and `.cpp` of its classes, and of its free functions, side by side. A folder whose classes fall into categories of three classes or more has a sub-folder for each, with a CMake library of its own; a sub-folder also exists when a group of classes needs a dependency the rest must not link, or for the `Contract/` of an optional module. Never one per class, and never deeper than two levels.
 - Interfaces (`IWaveSource`), plain structs and constants headers (`WaveConstants.hpp`) sit in the same folder as the classes.
 - Two classes of a folder never include each other, directly or through a third.
-- A folder written before this convention keeps a folder per class until it is flattened, in a commit of its own; a folder never holds both layouts. Tidying the client and the server flattens them all, except `Widgets/` and `Rendering/`.
+- A folder written before this convention keeps a folder per class until it is flattened, in a commit of its own; a folder never holds both layouts. The client is flattened, except `Widgets/` and `Rendering/`; tidying the server flattens its folders.
 - A class declares no type inside it: a struct it uses has a header of its own, in the same folder. A class declares at most ten member functions besides its constructors and its destructor.
 - A header of constants is named `<Concept>Constants.hpp` and holds constants only.
 - The CMake library of a folder is `rtype_<owner>_<folder_in_snake_case>`, ended by `_module` for a module, linked by the aggregate of its library (`rtype_game`) or by its program.
@@ -302,12 +314,12 @@ A new module is written directly in its own folder, `src/<program>/<Name>/`, cla
 | The module… | Listed in |
 |---|---|
 | belongs to the server and lives as long as the program | `serverModules()`, `src/server/Modules/Assembly/ServerModules.cpp` |
-| belongs to the client | `clientModules()`, `src/client/Modules/Assembly/ClientModules.cpp` |
+| belongs to the client | `clientModules()`, `src/client/Modules/ClientModules.cpp` |
 | is a rule or a service of one game, and each game has its own | `rtypeGameModules()`, `src/server/Modules/Games/RtypeGameModules.cpp` |
 | would serve a program that is neither (the master) | its own list, built the same way |
 
 - The folder follows [Adding a class](#adding-a-class): one `CMakeLists.txt`, one CMake library `rtype_<owner>_<name>_module`, the class `<Owner><Name>Module` as a `.hpp` and `.cpp` pair (`ServerLobbyModule`; the class of a game module is `<Name>Module`, as `ReplicationModule` and `RtypeRulesModule` are).
-- `Modules/` receives nothing but its line in the list and the constant of its name, in `ModuleConstants.hpp` next to the other names, in `src/server/Modules/` or `src/client/Modules/`.
+- `Modules/` receives nothing but its line in the list and the constant of its name, in `ModuleConstants.hpp` next to the other names, in `src/server/Modules/` or `src/client/`.
 - Its pull request adds its row to [the list of modules](#the-list-of-modules), required or optional. An optional module puts what others need in its `Contract/`, and nothing else includes it.
 - A module of the program never goes in `src/engine`, unless every game would need it unchanged. `IModule` itself lives there; the modules of R-Type do not.
 

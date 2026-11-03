@@ -563,9 +563,9 @@ A pull request that changes the wire says so in its title, with `!` after the ty
 
 | You want a message that… | Change |
 |---|---|
-| The client sends | A public function in `ServerConnection` (`src/client/Connection/ServerConnection/`), next to `sendReadyState()`, calling `sendToServer(network::Emote{…})`. `sendToServer` writes the session token and the next sequence |
+| The client sends | A call to `sendMessage(outbox, network::Emote{…})` (`src/client/Connection/Session/ISessionOutbox.hpp`) in the part of the session the message belongs to, with the outbox the session hands it when it opens, as `WaitingRoom::sendReadyState()` does. `SessionOutbox` writes the session token and the next sequence |
 | The server sends | `send(sessionDatagram(player, network::Emote{…}))`, as `FarewellSender` and `GameFlow` do, so the header carries the token and the next sequence of that player. Add the row to [Server to client](/R-Type/protocol/#server-to-client) |
-| The client receives | A `dispatcher_.registerHandler<…>` call in `ServerConnection`, next to the others |
+| The client receives | A `registerHandler<…>` call on the `MessageDispatcher` the session dispatches to, as the constructor of `WaitingRoom` (`src/client/Connection/Session/`) does |
 | The players must all see | The server sends it to each player of the game, as `FarewellSender` does. A one-time message goes three times, 50 ms apart (`REPEATED_MESSAGE_COPIES`): see [Losses](/R-Type/protocol/#losses) |
 | Must never be lost, or must always reflect the current state | Repeat it until the state message shows it, as `ReadyState` does with `LobbyState`. Guaranteed messages do not exist yet: they are part of [Version 2](/R-Type/protocol/#version-2) |
 | Holds a list or a string | Check the count before anything is sized from it, as `LobbyState` does; a client must not make the server allocate in proportion to a value it controls |
