@@ -121,4 +121,7 @@ SimulatedDelayOutOfRangeException::SimulatedDelayOutOfRangeException(
           std::to_string(lag.count()) + " ms and " +
           std::to_string(jitter.count()) + " ms") {}
 
+TrafficFileOpenException::TrafficFileOpenException(const std::string& path)
+    : NetworkException("Cannot open the traffic file " + path) {}
+
 }  // namespace rtype::network
