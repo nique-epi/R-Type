@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 #include <cstddef>
+#include <optional>
 #include <string>
 #include <vector>
 #include "ByteSequence.hpp"
@@ -21,7 +22,10 @@ namespace rtype::network {
 
 using testing::byteSequence;
 using testing::CHALLENGE_DATAGRAM_SIZE_ON_THE_PAGE;
+using testing::ECHO_HELD_FOR;
+using testing::ECHOED_SENT_AT;
 using testing::FOUR_ROCKETS;
+using testing::HEARTBEAT_SENT_AT;
 using testing::LAST_PLAYER_NUMBER;
 using testing::NICKNAME_WITH_LINE_FEED;
 using testing::ONE_BYTE_NICKNAME;
@@ -466,32 +470,131 @@ TEST(Disconnection, RefusesAnyByteInThePayload) {
 }
 
 /**
- * Given a heartbeat
+ * Given a heartbeat sent at 7 µs that echoes a heartbeat sent at 5 µs, held
+ * 3000 µs
  * When it is encoded
- * Then the payload is empty
+ * Then the payload is its time on four bytes, then 1, then the echoed time
+ * and the time held, four bytes each
  */
-TEST(Heartbeat, EncodesAnEmptyPayload) {
-  EXPECT_TRUE(encodeMessage(Heartbeat{}).empty());
+TEST(Heartbeat, EncodesItsTimeThenItsEcho) {
+  const auto expected = byteSequence({0x00, 0x00, 0x00, 0x07, 0x01, 0x00, 0x00,
+                                      0x00, 0x05, 0x00, 0x00, 0x0B, 0xB8});
+
+  EXPECT_EQ(
+      encodeMessage(Heartbeat{.sentAt = HEARTBEAT_SENT_AT,
+                              .echo = HeartbeatEcho{.sentAt = ECHOED_SENT_AT,
+                                                    .heldFor = ECHO_HELD_FOR}}),
+      expected);
 }
 
 /**
- * Given an empty payload
- * When it is decoded as a heartbeat
- * Then a heartbeat comes back
+ * Given a heartbeat sent at 7 µs that echoes nothing
+ * When it is encoded
+ * Then the payload is its time, then 0, then eight bytes of 0, so it has the
+ * size of a heartbeat with an echo
  */
-TEST(Heartbeat, DecodesAnEmptyPayload) {
+TEST(Heartbeat, EncodesAMissingEchoAsZeros) {
+  const auto expected = byteSequence({0x00, 0x00, 0x00, 0x07, 0x00, 0x00, 0x00,
+                                      0x00, 0x00, 0x00, 0x00, 0x00, 0x00});
+
+  EXPECT_EQ(encodeMessage(
+                Heartbeat{.sentAt = HEARTBEAT_SENT_AT, .echo = std::nullopt}),
+            expected);
+}
+
+/**
+ * Given a heartbeat with an echo
+ * When it is encoded then decoded
+ * Then the same heartbeat comes back
+ */
+TEST(Heartbeat, ReadsAHeartbeatWithAnEchoAsItWasWritten) {
+  const Heartbeat heartbeat{.sentAt = HEARTBEAT_SENT_AT,
+                            .echo = HeartbeatEcho{.sentAt = ECHOED_SENT_AT,
+                                                  .heldFor = ECHO_HELD_FOR}};
+
+  EXPECT_EQ(decodeMessage<Heartbeat>(encodeMessage(heartbeat)), heartbeat);
+}
+
+/**
+ * Given a heartbeat without an echo
+ * When it is encoded then decoded
+ * Then the same heartbeat comes back, still without an echo
+ */
+TEST(Heartbeat, ReadsAHeartbeatWithoutAnEchoAsItWasWritten) {
+  const Heartbeat heartbeat{.sentAt = HEARTBEAT_SENT_AT, .echo = std::nullopt};
+
+  EXPECT_EQ(decodeMessage<Heartbeat>(encodeMessage(heartbeat)), heartbeat);
+}
+
+/**
+ * Given a payload that says no echo follows, then an echoed time of 1
+ * When it is decoded as a heartbeat
+ * Then an InvalidFieldValueException is raised: a heartbeat has one encoding
+ */
+TEST(Heartbeat, RefusesAnEchoedTimeBehindAMissingEcho) {
+  const auto bytes = byteSequence({0x00, 0x00, 0x00, 0x07, 0x00, 0x00, 0x00,
+                                   0x00, 0x01, 0x00, 0x00, 0x00, 0x00});
+
+  EXPECT_THROW((void)decodeMessage<Heartbeat>(bytes),
+               InvalidFieldValueException);
+}
+
+/**
+ * Given a payload that says no echo follows, then a time held of 1
+ * When it is decoded as a heartbeat
+ * Then an InvalidFieldValueException is raised
+ */
+TEST(Heartbeat, RefusesATimeHeldBehindAMissingEcho) {
+  const auto bytes = byteSequence({0x00, 0x00, 0x00, 0x07, 0x00, 0x00, 0x00,
+                                   0x00, 0x00, 0x00, 0x00, 0x00, 0x01});
+
+  EXPECT_THROW((void)decodeMessage<Heartbeat>(bytes),
+               InvalidFieldValueException);
+}
+
+/**
+ * Given a payload whose byte that says whether an echo follows is 2
+ * When it is decoded as a heartbeat
+ * Then an InvalidBoolException is raised
+ */
+TEST(Heartbeat, RefusesAnEchoFlagThatIsNeitherTrueNorFalse) {
+  const auto bytes = byteSequence({0x00, 0x00, 0x00, 0x07, 0x02, 0x00, 0x00,
+                                   0x00, 0x00, 0x00, 0x00, 0x00, 0x00});
+
+  EXPECT_THROW((void)decodeMessage<Heartbeat>(bytes), InvalidBoolException);
+}
+
+/**
+ * Given a payload of 12 bytes, one fewer than a heartbeat
+ * When it is decoded as a heartbeat
+ * Then a BufferUnderflowException is raised
+ */
+TEST(Heartbeat, RefusesAPayloadCutShort) {
+  const auto bytes = byteSequence(
+      {0x00, 0x00, 0x00, 0x07, 0x01, 0x00, 0x00, 0x00, 0x05, 0x00, 0x00, 0x0B});
+
+  EXPECT_THROW((void)decodeMessage<Heartbeat>(bytes), BufferUnderflowException);
+}
+
+/**
+ * Given the empty payload a build older than the echo sends
+ * When it is decoded as a heartbeat
+ * Then a BufferUnderflowException is raised, so the dispatcher skips it
+ */
+TEST(Heartbeat, RefusesTheEmptyPayloadOfAnOlderBuild) {
   const std::vector<std::byte> empty;
 
-  EXPECT_EQ(decodeMessage<Heartbeat>(empty), Heartbeat{});
+  EXPECT_THROW((void)decodeMessage<Heartbeat>(empty), BufferUnderflowException);
 }
 
 /**
- * Given a payload of one byte
+ * Given a heartbeat followed by one more byte
  * When it is decoded as a heartbeat
  * Then a TrailingBytesException is raised
  */
-TEST(Heartbeat, RefusesAnyByteInThePayload) {
-  const auto bytes = byteSequence({0x00});
+TEST(Heartbeat, RefusesAByteAfterTheEcho) {
+  const auto bytes = byteSequence({0x00, 0x00, 0x00, 0x07, 0x01, 0x00, 0x00,
+                                   0x00, 0x05, 0x00, 0x00, 0x0B, 0xB8, 0x00});
 
   EXPECT_THROW((void)decodeMessage<Heartbeat>(bytes), TrailingBytesException);
 }

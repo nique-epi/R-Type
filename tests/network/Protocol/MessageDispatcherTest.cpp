@@ -92,9 +92,9 @@ TEST(MessageDispatcher, HandsSeveralMessagesInOrder) {
       [&handled](const MessageOrigin&, const ReadyState&) {
         handled.push_back(MessageType::ReadyState);
       });
-  const std::vector<std::byte> empty;
+  const std::vector<std::byte> heartbeat = encodeMessage(Heartbeat{});
   const auto ready = byteSequence({0x01});
-  const std::vector frames{frameOf(MessageType::Heartbeat, empty),
+  const std::vector frames{frameOf(MessageType::Heartbeat, heartbeat),
                            frameOf(MessageType::ReadyState, ready)};
 
   dispatcher.dispatch(someOrigin(), frames);

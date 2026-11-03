@@ -167,7 +167,7 @@ TEST_F(DatagramSorterFixture,
        DropsADatagramOfAnotherVersionShorterThanTheRefusal) {
   rtype::network::PacketHeader header;
   header.version = NEXT_PROTOCOL_VERSION;
-  const std::vector<std::byte> datagram = heartbeatDatagram(header);
+  const std::vector<std::byte> datagram = disconnectionDatagram(header);
   ASSERT_EQ(datagram.size(), REFUSAL_DATAGRAM_SIZE - 1);
 
   sort(stranger(), datagram);

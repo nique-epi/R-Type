@@ -247,6 +247,8 @@ constexpr std::string_view ENTITY_TYPE_FIELD = "entityType";
 constexpr std::string_view REASON_FIELD = "reason";
 constexpr std::string_view KIND_FIELD = "kind";
 constexpr std::string_view ACTIONS_FIELD = "actions";
+constexpr std::string_view ECHO_SENT_AT_FIELD = "echo.sentAt";
+constexpr std::string_view ECHO_HELD_FOR_FIELD = "echo.heldFor";
 constexpr std::string_view MOTION_FIELD = "motion";
 
 /**

@@ -191,6 +191,14 @@ constexpr std::uint32_t LARGEST_U32 = 0xFFFFFFFF;
 constexpr std::uint8_t SECOND_PLAYER_NUMBER = 2;
 
 /**
+ * @brief The times of a heartbeat in a test, in microseconds: when it was
+ * sent, when the heartbeat it echoes was sent, and how long that one was held.
+ */
+constexpr std::uint32_t HEARTBEAT_SENT_AT = 7;
+constexpr std::uint32_t ECHOED_SENT_AT = 5;
+constexpr std::uint32_t ECHO_HELD_FOR = 3000;
+
+/**
  * @brief The port a test message is said to come from.
  */
 constexpr std::uint16_t SOME_SENDER_PORT = 50000;
