@@ -1,5 +1,4 @@
 #include <gtest/gtest.h>
-#include <tuple>
 #include "BotLaunch.hpp"
 #include "BotLaunchOptions.hpp"
 #include "BotLaunchOptionsTestConstants.hpp"
@@ -36,7 +35,7 @@ TEST(BotLaunchOptions, FourFullGamesJoinByDefault) {
  * Then the count is refused
  */
 TEST(BotLaunchOptions, RefusesASquadOfNoBot) {
-  EXPECT_THROW(std::ignore = readBotLaunch(NO_BOT),
+  EXPECT_THROW(static_cast<void>(readBotLaunch(NO_BOT)),
                InvalidLaunchOptionValueException);
 }
 
@@ -68,7 +67,7 @@ TEST(BotLaunchOptions, AcceptsTheLargestSquad) {
  * Then the count is refused
  */
 TEST(BotLaunchOptions, RefusesOneBotTooMany) {
-  EXPECT_THROW(std::ignore = readBotLaunch(ONE_BOT_TOO_MANY),
+  EXPECT_THROW(static_cast<void>(readBotLaunch(ONE_BOT_TOO_MANY)),
                InvalidLaunchOptionValueException);
 }
 
@@ -78,7 +77,7 @@ TEST(BotLaunchOptions, RefusesOneBotTooMany) {
  * Then the duration is refused
  */
 TEST(BotLaunchOptions, RefusesARunOfNoSecond) {
-  EXPECT_THROW(std::ignore = readBotLaunch(NO_SECOND),
+  EXPECT_THROW(static_cast<void>(readBotLaunch(NO_SECOND)),
                InvalidLaunchOptionValueException);
 }
 
