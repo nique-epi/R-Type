@@ -1,6 +1,7 @@
 #pragma once
 
 #include <SFML/System/Vector2.hpp>
+#include <SFML/Window/Keyboard.hpp>
 #include <cstddef>
 #include "BarRowWidth.hpp"
 #include "EntitySpriteConstants.hpp"
@@ -19,6 +20,10 @@ namespace rtype::client {
 constexpr const char* LOBBY_HEADING = "WAITING ROOM";
 constexpr const char* READY_LABEL = "READY";
 constexpr const char* CANCEL_READY_LABEL = "CANCEL READY";
+
+/** @brief The key of the chip of the leaderboard, and what its keycap says. */
+constexpr sf::Keyboard::Key LEADERBOARD_KEY = sf::Keyboard::Key::L;
+constexpr const char* LEADERBOARD_KEY_NAME = "L";
 
 /** @brief Order of the main bar in the menu of the waiting room. */
 constexpr std::size_t READY_BUTTON = 0;
@@ -49,8 +54,6 @@ constexpr TextStyle PILOT_COUNT_STYLE{.font = TextFont::Regular,
                                       .color = PAGE_TEXT_COLOR,
                                       .outlined = true,
                                       .alignment = TextAlignment::Right};
-constexpr const char* ONE_PILOT_TEXT = " PILOT";
-constexpr const char* SEVERAL_PILOTS_TEXT = " PILOTS";
 
 /**
  * @brief The status line under the main bar: every listed pilot ready; the

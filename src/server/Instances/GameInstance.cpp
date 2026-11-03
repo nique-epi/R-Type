@@ -1,24 +1,30 @@
 #include "GameInstance.hpp"
 #include <cstddef>
 #include <cstdint>
+#include <functional>
 #include <memory>
 #include <span>
 #include <utility>
 #include <vector>
 #include "ConnectedPlayer.hpp"
+#include "DelayedInputs.hpp"
 #include "Endpoint.hpp"
+#include "GameContext.hpp"
 #include "GameInstanceConstants.hpp"
 #include "GameInstanceParts.hpp"
 #include "GameModules.hpp"
+#include "GameSessions.hpp"
 #include "GameSessionsParts.hpp"
 #include "GameState.hpp"
 #include "IGameFlow.hpp"
 #include "IGameModule.hpp"
 #include "IGameWorld.hpp"
 #include "IncomingDatagram.hpp"
+#include "LeaderboardRequest.hpp"
 #include "PacketHeader.hpp"
 #include "PlayerInput.hpp"
 #include "PlayerRoster.hpp"
+#include "SessionHooks.hpp"
 #include "SystemScheduler.hpp"
 #include "TimeConstants.hpp"
 
@@ -33,35 +39,69 @@ void callAll(const Hooks& hooks, Arguments&... arguments) {
   }
 }
 
+/** @brief What the game owns, for its sessions to call and its modules to work
+ * on. */
+struct GameOwnParts {
+  std::reference_wrapper<DelayedInputs> delayedInputs;
+  std::reference_wrapper<engine::SystemScheduler> systems;
+  std::reference_wrapper<SessionHooks> hooks;
+};
+
+/** @returns What the sessions of a game are built from. */
+GameSessionsParts sessionPartsOf(const GameInstanceParts& parts,
+                                 GameOwnParts own,
+                                 std::function<bool()> readyAccepted) {
+  return GameSessionsParts{
+      .events = parts.events,
+      .send = parts.send,
+      .clock = parts.clock,
+      .readyAccepted = std::move(readyAccepted),
+      .onClosing =
+          [own](const ConnectedPlayer& departed) {
+            own.delayedInputs.get().clear(departed.playerNumber);
+            callAll(own.hooks.get().closing, departed);
+          },
+      .onNewerInput =
+          [own](const ConnectedPlayer& player,
+                const network::PlayerInput& input) {
+            own.delayedInputs.get().push(player.playerNumber, input);
+          },
+      .onLeaderboardRequest =
+          [own](const ConnectedPlayer& player,
+                const network::LeaderboardRequest& request) {
+            callAll(own.hooks.get().leaderboardRequested, player, request);
+          }};
+}
+
+/** @returns What a game gives the modules it installs. */
+GameContext contextOf(GameInstanceParts parts, GameSessions& sessions,
+                      GameOwnParts own) {
+  return GameContext{.events = parts.events,
+                     .systems = own.systems,
+                     .roster = sessions.roster(),
+                     .hooks = own.hooks,
+                     .settings = std::move(parts.settings),
+                     .send = std::move(parts.send),
+                     .everyPlayerIsReady = [&sessions] {
+                       return sessions.everyPlayerIsReady();
+                     }};
+}
+
 }  // namespace
 
 GameInstance::GameInstance(GameInstanceParts parts,
                            std::vector<std::unique_ptr<IGameModule>> modules)
     : delayedInputs_(parts.settings.inputDelayTicks),
-      sessions_(GameSessionsParts{
-          .events = parts.events,
-          .send = parts.send,
-          .clock = parts.clock,
-          .readyAccepted =
-              [this] { return flow_->state() == GameState::WaitingForPlayers; },
-          .onClosing =
-              [this](const ConnectedPlayer& departed) {
-                delayedInputs_.clear(departed.playerNumber);
-                callAll(hooks_.closing, departed);
-              },
-          .onNewerInput =
-              [this](const ConnectedPlayer& player,
-                     const network::PlayerInput& input) {
-                delayedInputs_.push(player.playerNumber, input);
-              }}),
-      context_{.events = parts.events,
-               .systems = systems_,
-               .roster = sessions_.roster(),
-               .hooks = hooks_,
-               .settings = std::move(parts.settings),
-               .send = std::move(parts.send),
-               .everyPlayerIsReady =
-                   [this] { return sessions_.everyPlayerIsReady(); }},
+      sessions_(sessionPartsOf(
+          parts,
+          GameOwnParts{.delayedInputs = delayedInputs_,
+                       .systems = systems_,
+                       .hooks = hooks_},
+          [this] { return flow_->state() == GameState::WaitingForPlayers; })),
+      context_(contextOf(std::move(parts), sessions_,
+                         GameOwnParts{.delayedInputs = delayedInputs_,
+                                      .systems = systems_,
+                                      .hooks = hooks_})),
       modules_(std::move(modules)) {
   modules_.addWork(
       GAME_INPUT_STAGE, [this]([[maybe_unused]] engine::Duration elapsed) {

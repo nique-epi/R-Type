@@ -28,6 +28,7 @@ constexpr std::string_view PORT_SETTING_NAME = "port";
 constexpr std::string_view SEED_SETTING_NAME = "seed";
 constexpr std::string_view STATE_RATE_SETTING_NAME = "state-rate";
 constexpr std::string_view INPUT_DELAY_SETTING_NAME = "input-delay";
+constexpr std::string_view DATABASE_SETTING_NAME = "database";
 
 /**
  * @brief The highest seed: the seed of a game is 32 bits.
@@ -86,6 +87,20 @@ constexpr std::string_view WAVE_FILE_IN_ASSETS = "waves/waves.toml";
  * choose another one.
  */
 constexpr std::string_view DEFAULT_DIFFICULTY = "normal";
+
+/**
+ * @brief Launch option followed by the path of the database of the server: it
+ * forces DATABASE_SETTING_NAME to that path.
+ */
+constexpr std::string_view DATABASE_OPTION = "--database";
+
+/**
+ * @brief The name of the database of a server while DATABASE_SETTING_NAME is
+ * empty: the prefix, its port, the suffix. Two servers on one machine listen
+ * on two ports, so they never merge their leaderboards by accident.
+ */
+constexpr std::string_view DATABASE_FILE_PREFIX = "r-type_server_";
+constexpr std::string_view DATABASE_FILE_SUFFIX = ".db";
 
 /**
  * @brief Logger name the simulation thread writes its tick reports under.

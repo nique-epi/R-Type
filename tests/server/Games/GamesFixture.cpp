@@ -31,7 +31,7 @@ void GamesFixture::addGame() {
                   .waves = rtype::server::testing::testWavePlan()},
           .events = *events,
           .clock = clock_},
-      rtype::server::rtypeGameModules());
+      rtype::server::rtypeGameModules(results_));
   games_.add(std::move(events), std::move(game));
 }
 

@@ -29,6 +29,7 @@
 #include "GameSettings.hpp"
 #include "GameState.hpp"
 #include "IGameModule.hpp"
+#include "IResultsArchive.hpp"
 #include "IncomingDatagram.hpp"
 #include "Intent.hpp"
 #include "LobbyState.hpp"
@@ -40,6 +41,7 @@
 #include "Position.hpp"
 #include "ProtocolConstants.hpp"
 #include "ReadyState.hpp"
+#include "RecordingResultsArchive.hpp"
 #include "RtypeGameModules.hpp"
 #include "RtypeRulesModule.hpp"
 #include "SentDatagrams.hpp"
@@ -101,8 +103,8 @@ std::size_t bydosIn(game::World& world) {
 namespace {
 
 std::vector<std::unique_ptr<IGameModule>> modulesWithRulesAt(
-    RtypeRulesModule*& rules) {
-  std::vector<std::unique_ptr<IGameModule>> modules = rtypeGameModules();
+    RtypeRulesModule*& rules, IResultsArchive& results) {
+  std::vector<std::unique_ptr<IGameModule>> modules = rtypeGameModules(results);
   for (const std::unique_ptr<IGameModule>& listedModule : modules) {
     if (auto* const found = dynamic_cast<RtypeRulesModule*>(listedModule.get());
         found != nullptr) {
@@ -127,9 +129,11 @@ GameInstanceTest::GameInstanceTest(std::size_t inputDelayTicks)
                                                            inputDelayTicks},
                               .events = events_,
                               .clock = clock_},
-            modulesWithRulesAt(rules_)) {}
+            modulesWithRulesAt(rules_, results_)) {}
 
 game::World& GameInstanceTest::world() { return rules_->world(); }
+
+RecordingResultsArchive& GameInstanceTest::results() { return results_; }
 
 ConnectedPlayer& GameInstanceTest::join(std::size_t index,
                                         std::uint64_t sessionToken) {

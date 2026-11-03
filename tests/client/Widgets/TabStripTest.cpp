@@ -1,32 +1,22 @@
 #include <gtest/gtest.h>
-#include <SFML/System/Vector2.hpp>
-#include <cstddef>
 #include <optional>
 #include <vector>
 #include "RecordingInterfaceCanvas.hpp"
 #include "TabStrip.hpp"
+#include "TabStripFixtures.hpp"
+#include "TabStripTestConstants.hpp"
 
-using rtype::client::TabStrip;
-
-namespace {
-
-/** @brief The tabs of the options on the picture the team chose: four of 96
- * pixels at 42, 142, 242 and 342, the strip at (24, 50). */
-constexpr sf::Vector2i STRIP_TOP_LEFT(24, 50);
-constexpr int TAB_TOP_ROW = 55;
-constexpr std::size_t CONTROLS = 1;
-constexpr std::size_t ACCESS = 3;
-/** @brief The first row under the border of the panel, at row 66. */
-constexpr int UNDER_THE_PANEL_BORDER = 67;
-
-TabStrip optionsTabs(std::size_t open) {
-  return {{"SOUND", "CONTROLS", "DISPLAY", "ACCESS"},
-          open,
-          {.previous = "Q", .next = "E"},
-          STRIP_TOP_LEFT};
-}
-
-}  // namespace
+using rtype::client::testing::ACCESS;
+using rtype::client::testing::BETWEEN_THE_FIRST_OPTIONS_TABS;
+using rtype::client::testing::CONTROLS;
+using rtype::client::testing::IN_THE_SECOND_OPTIONS_TAB;
+using rtype::client::testing::IN_THE_SECOND_TAB;
+using rtype::client::testing::LEFT_OF_THE_SECOND_TAB;
+using rtype::client::testing::ON_THE_NEXT_KEYCAP;
+using rtype::client::testing::ON_THE_PREVIOUS_KEYCAP;
+using rtype::client::testing::RIGHT_OF_THE_STRIP;
+using rtype::client::testing::SECOND_TAB;
+using rtype::client::testing::UNDER_THE_PANEL_BORDER;
 
 /**
  * Given the four tabs of the options, SOUND open
@@ -34,7 +24,7 @@ TabStrip optionsTabs(std::size_t open) {
  * Then CONTROLS opens
  */
 TEST(TabStripTest, AClickOnATabOpensIt) {
-  EXPECT_EQ(optionsTabs(0).tabOpenedAt({150, TAB_TOP_ROW}), CONTROLS);
+  EXPECT_EQ(optionsTabs(0).tabOpenedAt(IN_THE_SECOND_OPTIONS_TAB), CONTROLS);
 }
 
 /**
@@ -43,7 +33,8 @@ TEST(TabStripTest, AClickOnATabOpensIt) {
  * Then no tab opens
  */
 TEST(TabStripTest, AClickBetweenTwoTabsOpensNothing) {
-  EXPECT_FALSE(optionsTabs(0).tabOpenedAt({140, TAB_TOP_ROW}).has_value());
+  EXPECT_FALSE(
+      optionsTabs(0).tabOpenedAt(BETWEEN_THE_FIRST_OPTIONS_TABS).has_value());
 }
 
 /**
@@ -52,7 +43,7 @@ TEST(TabStripTest, AClickBetweenTwoTabsOpensNothing) {
  * Then ACCESS, before SOUND when wrapping around, opens
  */
 TEST(TabStripTest, TheLeftKeyCapOpensThePreviousTabWrapping) {
-  EXPECT_EQ(optionsTabs(0).tabOpenedAt({30, TAB_TOP_ROW}), ACCESS);
+  EXPECT_EQ(optionsTabs(0).tabOpenedAt(ON_THE_PREVIOUS_KEYCAP), ACCESS);
 }
 
 /**
@@ -93,4 +84,40 @@ TEST(TabStripTest, TheOpenTabCoversTheBorderOfThePanel) {
         fill.area.position.y + fill.area.size.y == UNDER_THE_PANEL_BORDER;
   }
   EXPECT_TRUE(reachesThePanel);
+}
+
+/**
+ * Given a strip of two tabs, 320 pixels wide
+ * When the first pixel of its second tab is clicked
+ * Then that tab opens
+ */
+TEST(TabStripTest, TabsShareTheWidthGiven) {
+  EXPECT_EQ(narrowStrip().tabOpenedAt(IN_THE_SECOND_TAB), SECOND_TAB);
+}
+
+/**
+ * Given a strip of two tabs, 320 pixels wide
+ * When the pixel just left of its second tab is clicked
+ * Then no tab opens: it lies in the gap between the two
+ */
+TEST(TabStripTest, TheGapStaysBetweenTheTabs) {
+  EXPECT_EQ(narrowStrip().tabOpenedAt(LEFT_OF_THE_SECOND_TAB), std::nullopt);
+}
+
+/**
+ * Given a strip of two tabs, 320 pixels wide
+ * When the first pixel of the keycap of the next tab is clicked
+ * Then the next tab opens: the keycap moved with the width
+ */
+TEST(TabStripTest, TheNextKeycapEndsTheStrip) {
+  EXPECT_EQ(narrowStrip().tabOpenedAt(ON_THE_NEXT_KEYCAP), SECOND_TAB);
+}
+
+/**
+ * Given a strip of two tabs, 320 pixels wide
+ * When the pixel just right of the strip is clicked
+ * Then no tab opens
+ */
+TEST(TabStripTest, NothingOpensPastTheWidth) {
+  EXPECT_EQ(narrowStrip().tabOpenedAt(RIGHT_OF_THE_STRIP), std::nullopt);
 }

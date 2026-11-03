@@ -17,6 +17,7 @@
 #include "HudSpriteConstants.hpp"
 #include "IInterfaceCanvas.hpp"
 #include "ImagePlacement.hpp"
+#include "InkTag.hpp"
 #include "InterfaceConstants.hpp"
 #include "MotionPreference.hpp"
 #include "Outline.hpp"
@@ -48,7 +49,7 @@ struct RowPlace {
 
 /** @returns How wide the ink behind YOU is. */
 int youTagWidthOf(const IInterfaceCanvas& canvas) {
-  return canvas.textWidth(LOCAL_PLAYER_TAG, TextFont::Small) + YOU_TAG_PADDING;
+  return inkTagWidth(canvas, LOCAL_PLAYER_TAG);
 }
 
 /** @returns Where the leader of the row of @p pilot starts: after its marker,
@@ -79,11 +80,9 @@ void paintHeading(IInterfaceCanvas& canvas, engine::Duration sinceOpen,
 
 /** @brief YOU on ink, in the row whose top-left corner is @p rowTopLeft. */
 void paintYouTag(IInterfaceCanvas& canvas, sf::Vector2i rowTopLeft) {
-  canvas.fill(sf::IntRect(rowTopLeft + YOU_TAG_OFFSET,
-                          {youTagWidthOf(canvas), YOU_TAG_HEIGHT}),
-              YOU_TAG_COLOR);
-  canvas.write(LOCAL_PLAYER_TAG, rowTopLeft + YOU_TAG_OFFSET + YOU_TEXT_OFFSET,
-               {.font = TextFont::Small, .color = YOU_TAG_TEXT_COLOR});
+  paintInkTag(canvas, InkTag{.word = LOCAL_PLAYER_TAG,
+                             .topLeft = rowTopLeft + YOU_TAG_OFFSET,
+                             .wordColor = YOU_TAG_TEXT_COLOR});
 }
 
 /** @brief The rank, slamming in at one scale more for DIGIT_SLAM_TIME, the

@@ -8,6 +8,7 @@
 #include "GameInstance.hpp"
 #include "Games.hpp"
 #include "RecordingDatagramSender.hpp"
+#include "RecordingResultsArchive.hpp"
 #include "SimulatedClock.hpp"
 #include "TimeConstants.hpp"
 
@@ -38,6 +39,7 @@ class GamesFixture : public ::testing::Test {
 
  private:
   SimulatedClock clock_;
+  RecordingResultsArchive results_;
   rtype::server::Games games_;
   RecordingDatagramSender sender_;
   std::vector<rtype::engine::Duration> pauses_;

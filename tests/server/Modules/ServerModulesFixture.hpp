@@ -43,6 +43,7 @@ class ServerModulesFixture : public ServerModuleFixture {
   TemporaryFolder workingFolder_;
   CurrentDirectoryChange workingFolderChange_;
   std::string portText_;
+  std::string databaseText_;
   std::vector<std::string_view> arguments_;
   rtype::server::LaunchOptions launchOptions_;
 };

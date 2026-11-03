@@ -71,3 +71,6 @@ Read every call between the input and the assertion for one that resets the stat
 - ❌ **Before (wrong)**: `close()`, `advance()`, `acknowledgeIn()`, then `EXPECT_FALSE(isAcknowledgementDue())`.
 - ✅ **After (right)**: two tests, one per fact, each red on its own variant.
 
+## Update (3 November 2026) — A timer walked in one step, and a color two states share
+
+The tests of `ServerLeaderboard` jumped five seconds in one `update()`: removing either timer reset of the class left them green, while the client would have sent a request each frame. `ThePointerOverItLooksSelected` looked for `SELECTED_BAR_INSIDE_COLOR`, which is `EDGE_BLUE`, the border of a chip at rest too, so it could not fail; writing the opposite test, with the focus lost, showed it.

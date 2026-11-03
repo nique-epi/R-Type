@@ -291,6 +291,33 @@ constexpr std::size_t CONNECTION_REFUSED_DATAGRAM_SIZE =
     PACKET_HEADER_SIZE + MESSAGE_PREFIX_SIZE + UINT8_WIRE_SIZE;
 
 /**
+ * @brief The rows a LeaderboardAnswer lists at most, its own row aside.
+ */
+constexpr std::size_t MAXIMUM_LEADERBOARD_ROWS = 10;
+
+/**
+ * @brief The size of a row of a LeaderboardAnswer with the longest nickname:
+ * rank, score, date and nickname.
+ */
+constexpr std::size_t LARGEST_LEADERBOARD_ROW_SIZE =
+    UINT32_WIRE_SIZE + UINT32_WIRE_SIZE + UINT64_WIRE_SIZE +
+    SHORT_STRING_PREFIX_SIZE + MAXIMUM_NICKNAME_SIZE;
+
+/**
+ * @brief The size of the largest payload of a LeaderboardAnswer: the
+ * leaderboard asked for, the count of rows, every row, then the flag and the
+ * row of the player.
+ */
+constexpr std::size_t LARGEST_LEADERBOARD_ANSWER_SIZE =
+    UINT8_WIRE_SIZE + SHORT_STRING_PREFIX_SIZE + MAXIMUM_NICKNAME_SIZE +
+    UINT8_WIRE_SIZE +
+    (MAXIMUM_LEADERBOARD_ROWS * LARGEST_LEADERBOARD_ROW_SIZE) +
+    UINT8_WIRE_SIZE + LARGEST_LEADERBOARD_ROW_SIZE;
+
+static_assert(LARGEST_LEADERBOARD_ANSWER_SIZE <= MESSAGE_PAYLOAD_LIMIT,
+              "a LeaderboardAnswer always fits in one datagram");
+
+/**
  * @brief The names of the fields a refused message is reported by, as the
  * protocol page writes them.
  */
@@ -301,6 +328,8 @@ constexpr std::string_view REASON_FIELD = "reason";
 constexpr std::string_view KIND_FIELD = "kind";
 constexpr std::string_view ACTIONS_FIELD = "actions";
 constexpr std::string_view MOTION_FIELD = "motion";
+constexpr std::string_view PLAYER_COUNT_FIELD = "playerCount";
+constexpr std::string_view RANK_FIELD = "rank";
 
 /**
  * @brief Wire steps in one logical unit: a coordinate is sent in eighths of a

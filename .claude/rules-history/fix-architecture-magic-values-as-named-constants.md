@@ -29,3 +29,7 @@ Each test file was written on its own, without searching the existing test heade
 ## Update (23 October 2026) — a test constant never lives in the test file
 
 Yannis Lorang's review of pull request #103 asked to move the constants of the test files into files of their own. Point 2 already banned constants "in an anonymous namespace at the top of a `.cpp`", but the section on test constants only asked to search before defining one, so every test of that branch defined its constants in an anonymous namespace. Point 3 of that section now sends every test constant to `<Subject>TestConstants.hpp`, and `fix-format-a-test-file-holds-only-tests.md` gives the shape of a test file and its check.
+
+## Update (3 November 2026) — A value that must follow another
+
+A review found two values written apart from the value they must follow. The list of the leaderboard held `rowCapacity = 10`, a literal beside `MAXIMUM_LEADERBOARD_ROWS`: had the protocol listed more rows, the player ranked last would never have been painted. The games module chose the waves of `DEFAULT_DIFFICULTY` in `readWaves()`, while `GameSettings::difficulty`, the name the results are filed under, took the same constant as its default: changing the first would have filed the results under the wrong name. Both are now derived from the value they follow.

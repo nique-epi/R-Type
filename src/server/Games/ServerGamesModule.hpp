@@ -2,6 +2,7 @@
 
 #include <memory>
 #include <string>
+#include <string_view>
 #include <vector>
 #include "ConfigurationRegistry.hpp"
 #include "EventBus.hpp"
@@ -12,6 +13,7 @@
 #include "IDatagramSender.hpp"
 #include "IModule.hpp"
 #include "IPlayerAdmission.hpp"
+#include "IResultsArchive.hpp"
 #include "IncomingDatagram.hpp"
 #include "InstallContext.hpp"
 #include "Logger.hpp"
@@ -52,7 +54,8 @@ class ServerGamesModule final : public engine::IModule {
 
   /**
    * @throws MissingServiceException when the network module did not provide
-   * the sender, the admission or the datagrams of the tick.
+   * the sender, the admission or the datagrams of the tick, or the storage
+   * module the results archive.
    */
   void install(engine::InstallContext& context) override;
 
@@ -70,7 +73,8 @@ class ServerGamesModule final : public engine::IModule {
   void stop() override;
 
  private:
-  [[nodiscard]] WavePlan readWaves() const;
+  /** @returns The waves of @p difficulty in the waves file. */
+  [[nodiscard]] WavePlan readWaves(std::string_view difficulty) const;
   [[nodiscard]] std::unique_ptr<GameInstance> createGame(
       engine::EventBus& events, GameSettings settings);
   void declareSettings(engine::ConfigurationRegistry& configuration);
@@ -85,6 +89,7 @@ class ServerGamesModule final : public engine::IModule {
   Games games_;
   IDatagramSender* sender_{nullptr};
   IPlayerAdmission* admission_{nullptr};
+  IResultsArchive* results_{nullptr};
   TickDatagrams* tickDatagrams_{nullptr};
   std::vector<network::IncomingDatagram> datagramsOfGame_;
 };

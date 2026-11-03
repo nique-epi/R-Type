@@ -10,6 +10,7 @@ namespace rtype::server {
 /** @brief The names the modules of the server give to depend on each other. */
 constexpr std::string_view LOGGER_MODULE_NAME = "logger";
 constexpr std::string_view NETWORK_MODULE_NAME = "network";
+constexpr std::string_view STORAGE_MODULE_NAME = "storage";
 constexpr std::string_view GAMES_MODULE_NAME = "games";
 constexpr std::string_view LOBBY_MODULE_NAME = "lobby";
 constexpr std::string_view METRICS_MODULE_NAME = "metrics";

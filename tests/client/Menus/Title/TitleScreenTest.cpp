@@ -25,6 +25,7 @@
 using rtype::client::CLICK_SOUND_ID;
 using rtype::client::CONNECTION_SCREEN;
 using rtype::client::ENTITY_SHEET_ID;
+using rtype::client::LEADERBOARD_SCREEN;
 using rtype::client::LOGO_ID;
 using rtype::client::MotionPreference;
 using rtype::client::OPTIONS_SCREEN;
@@ -94,10 +95,11 @@ TEST_F(TitleScreenFixture, PlayOpensTheConnectionScreen) {
 
 /**
  * Given the title screen, PLAY selected
- * When the down arrow selects SETTINGS and Enter activates it
+ * When the down arrow selects SETTINGS, past RANKING, and Enter activates it
  * Then the options are asked for over the title
  */
 TEST_F(TitleScreenFixture, SettingsOpensTheOptionsOverTheTitle) {
+  title().handleEvent(keyPress(sf::Keyboard::Key::Down));
   title().handleEvent(keyPress(sf::Keyboard::Key::Down));
 
   choose(sf::Keyboard::Key::Enter);
@@ -105,6 +107,21 @@ TEST_F(TitleScreenFixture, SettingsOpensTheOptionsOverTheTitle) {
   EXPECT_THAT(navigator().calls(),
               ElementsAre(NavigatorCall{.request = NavigatorRequest::Push,
                                         .screen = OPTIONS_SCREEN}));
+}
+
+/**
+ * Given the title, PLAY selected
+ * When the down arrow selects RANKING and Enter activates it
+ * Then the leaderboard opens over the title
+ */
+TEST_F(TitleScreenFixture, RankingOpensTheLeaderboard) {
+  title().handleEvent(keyPress(sf::Keyboard::Key::Down));
+
+  choose(sf::Keyboard::Key::Enter);
+
+  EXPECT_THAT(navigator().calls(),
+              ElementsAre(NavigatorCall{.request = NavigatorRequest::Push,
+                                        .screen = LEADERBOARD_SCREEN}));
 }
 
 /**

@@ -223,6 +223,27 @@ constexpr int PANEL_BARS_TOP =
 constexpr int SPACE_BESIDE_PANEL_BARS = 8;
 constexpr int SPACE_ABOVE_PANEL_ILLUSTRATION = 10;
 
+/**
+ * @brief The rows a dialog may hold in place of a message: DIALOG_ROWS_TOP down
+ * its panel, DIALOG_ROW_INSET in from its sides, DIALOG_ROW_CAPACITY at most;
+ * its buttons then stand lower than under a message. As on the picture of the
+ * filter of the leaderboard the team chose.
+ */
+constexpr int DIALOG_ROWS_TOP = 28;
+constexpr int DIALOG_ROW_INSET = 8;
+constexpr int DIALOG_ROW_CAPACITY = 2;
+constexpr sf::Vector2i DIALOG_ROW_SIZE(DIALOG_SIZE.x -
+                                           (SIDES_PER_AXIS * DIALOG_ROW_INSET),
+                                       ROW_SIZE.y);
+constexpr int DIALOG_BUTTONS_TOP_UNDER_ROWS = 66;
+static_assert(DIALOG_ROWS_TOP + (DIALOG_ROW_CAPACITY * DIALOG_ROW_SIZE.y) +
+                      ROW_GAP <=
+                  DIALOG_BUTTONS_TOP_UNDER_ROWS,
+              "the rows of a dialog end above its buttons");
+static_assert(DIALOG_BUTTONS_TOP_UNDER_ROWS + DIALOG_BUTTON_SIZE.y <
+                  DIALOG_SIZE.y,
+              "the buttons under the rows of a dialog stay in its panel");
+
 /** @brief Every control of a row: its height, the gap between its parts, the
  * row of its text. */
 constexpr int CONTROL_HEIGHT = 12;

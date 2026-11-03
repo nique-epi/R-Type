@@ -42,6 +42,7 @@ TEST_F(ServerModulesFixture, ListsTheServerModulesWithTheMetricsLast) {
   EXPECT_EQ(names, (std::vector<std::string>{
                        std::string{rtype::server::LOGGER_MODULE_NAME},
                        std::string{rtype::server::NETWORK_MODULE_NAME},
+                       std::string{rtype::server::STORAGE_MODULE_NAME},
                        std::string{rtype::server::GAMES_MODULE_NAME},
                        std::string{rtype::server::LOBBY_MODULE_NAME},
                        std::string{rtype::server::METRICS_MODULE_NAME}}));
@@ -55,9 +56,13 @@ TEST_F(ServerModulesFixture, ListsTheServerModulesWithTheMetricsLast) {
  */
 TEST_F(ServerModulesFixture,
        FindsItsWavesFromItsExecutableNotFromTheStartFolder) {
+  rtype::engine::ConfigurationReport report;
   Application application(
       LoopStages(rtype::server::SERVER_LOOP_STAGES),
-      serverModules(journalOptions(), launchOptions(), stopRequest()));
+      serverModules(journalOptions(), launchOptions(), stopRequest()),
+      rtype::engine::configurationStep(
+          std::filesystem::path{rtype::server::SERVER_CONFIGURATION_FILE_NAME},
+          launchOptions().forcedLines(), report));
 
   ASSERT_NO_THROW(application.start());
 
