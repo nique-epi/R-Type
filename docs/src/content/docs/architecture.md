@@ -6,7 +6,7 @@ sidebar:
 
 ## Context
 
-The client renders with SFML, the server talks over the network with Asio, and both must run the same game logic. If rendering, networking and logic live in one place, no part can be changed or tested alone, and the server would be forced to link a graphics library.
+The client renders with SFML, the server talks over the network with Asio (the reasons for these tools are in [Technology choices](/R-Type/technology-choices/)), and both must run the same game logic. If rendering, networking and logic live in one place, no part can be changed or tested alone, and the server would be forced to link a graphics library.
 
 ## Decision
 
