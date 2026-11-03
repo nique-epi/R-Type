@@ -1,13 +1,15 @@
-add_library(rtype_server_storage STATIC
+add_library(rtype_server_storage_module STATIC
   ResultsArchive.cpp
   ResultsDatabase.cpp
+  ServerStorageModule.cpp
 )
 
-target_include_directories(rtype_server_storage PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories(rtype_server_storage_module PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
-target_link_libraries(rtype_server_storage
+target_link_libraries(rtype_server_storage_module
   PUBLIC
     rtype_concurrency
+    rtype_engine_application
     rtype_logging
     rtype_network_leaderboard_answer
     rtype_network_leaderboard_request
@@ -15,6 +17,7 @@ target_link_libraries(rtype_server_storage
     rtype_storage
   PRIVATE
     rtype_engine_paths
+    rtype_server_module_constants
 )
 
-rtype_enable_warnings(rtype_server_storage)
+rtype_enable_warnings(rtype_server_storage_module)

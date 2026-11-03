@@ -10,7 +10,7 @@ target_link_libraries(rtype_server_results_module
   PUBLIC
     rtype_engine_install_context
     rtype_server_instances
-    rtype_server_storage
+    rtype_server_storage_module
   PRIVATE
     rtype_server_session_datagram
 )

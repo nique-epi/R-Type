@@ -6,7 +6,6 @@ target_link_libraries(rtype_server_module_constants INTERFACE rtype_engine_time)
 
 add_subdirectory(Logger)
 add_subdirectory(Network)
-add_subdirectory(Storage)
 add_subdirectory(Games)
 add_subdirectory(Lobby)
 add_subdirectory(Metrics)

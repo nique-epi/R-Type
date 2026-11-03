@@ -24,7 +24,7 @@ constexpr std::size_t WAITING_ASKS_CAPACITY = 64;
  * an answer waits for it, on a screen a player opens by hand. */
 constexpr std::chrono::milliseconds STORAGE_POLL_INTERVAL{20};
 
-/** @brief Module name the storage writes its log lines under. */
+/** @brief Logger name the storage writes its log lines under. */
 constexpr std::string_view STORAGE_LOGGER_NAME = "Storage";
 
 }  // namespace rtype::server

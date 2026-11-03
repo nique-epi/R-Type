@@ -147,16 +147,17 @@ src/server/
 ├── LaunchOptions/    port, name, limits, master address
 ├── Lobby/            players not in a game: list, create, join, chat
 ├── Instances/        one GameInstance per game, the context its modules work in; the rules of the match are the RtypeRulesModule, with its GameFlow
+├── Results/          the module of a game that records its results and answers the leaderboard requests
 ├── Sessions/         the players of a game and their sessions (still carries a player's ship, score and lives)
 ├── Replication/      world to snapshots and game events
 ├── Spawning/         when and where the enemies and missiles appear
 ├── MasterLink/       registration and heartbeat
 ├── AdminConsole/     kick and close a game from the terminal
 ├── Metrics/          tick time, counts of games, players and entities; traffic and the heartbeat to come
-└── Storage/          this server's SQLite file and the thread that owns it: results, leaderboard, statistics
+└── Storage/          the storage module: this server's SQLite file and the thread that owns it
 ```
 
-`Application`, `Metrics` (the durations of the ticks, the newest report and its lines in the journal), `Modules` (the logger, network, storage, games, lobby and metrics modules, the list that assembles them, and the farewell the games module sends when the server stops), `Replication` (the world state sender, the waiting room announcer, the announcer of the end of a game, the announcement of the ship of each new player, and the encoder and broadcaster of the game events), `Platform`, `LaunchOptions`, `Lobby` (the answers to connection requests only), `Spawning` (the Bydo spawner, the reader of the waves file and the weapon system), `Storage` (the SQLite file of the server, its queries and the thread that owns it), `Exceptions`, `Sessions` (the roster of the players of a game, the session header of every datagram to a player, and the classes that read their datagrams, keep their ready state and newest input, close their sessions and send their heartbeats; no other folder of `src/server` is linked by it) and `Instances` (one `GameInstance` for now, run on the simulation thread like the rest, which installs the modules of a game: the `RtypeRulesModule` holds its states, its tick and its rules with `GameFlow`, runs the systems of the world, and keeps the score and the lives of its players, and the replication module in `Replication` tells the players) exist today: the network thread and the simulation thread, the waiting room, the start of the game, the world state, the game events and the end of a game sent to the players (see [Server](/R-Type/server/)), the timer resolution the server asks Windows for, the port and seed read at launch, the players let in, the Bydos appearing and moving, the missiles the players fire, a game with its states, its ready rule and the newest input of each player, which moves its ship, and the metrics of the server in its journal.
+`Application`, `Metrics` (the durations of the ticks, the newest report and its lines in the journal), `Modules` (the logger, network, games, lobby and metrics modules, the list that assembles them, and the farewell the games module sends when the server stops), `Replication` (the world state sender, the waiting room announcer, the announcer of the end of a game, the announcement of the ship of each new player, and the encoder and broadcaster of the game events), `Platform`, `LaunchOptions`, `Lobby` (the answers to connection requests only), `Spawning` (the Bydo spawner, the reader of the waves file and the weapon system), `Storage` (the storage module: the SQLite file of the server, its queries and the thread that owns it), `Results` (the module of a game that records what each game leaves and answers the leaderboard requests), `Exceptions`, `Sessions` (the roster of the players of a game, the session header of every datagram to a player, and the classes that read their datagrams, keep their ready state and newest input, close their sessions and send their heartbeats; no other folder of `src/server` is linked by it) and `Instances` (one `GameInstance` for now, run on the simulation thread like the rest, which installs the modules of a game: the `RtypeRulesModule` holds its states, its tick and its rules with `GameFlow`, runs the systems of the world, and keeps the score and the lives of its players, and the replication module in `Replication` tells the players) exist today: the network thread and the simulation thread, the waiting room, the start of the game, the world state, the game events and the end of a game sent to the players (see [Server](/R-Type/server/)), the timer resolution the server asks Windows for, the port and seed read at launch, the players let in, the Bydos appearing and moving, the missiles the players fire, a game with its states, its ready rule and the newest input of each player, which moves its ship, and the metrics of the server in its journal.
 
 ### Client
 
@@ -238,6 +239,7 @@ This list describes the code as it is today. A pull request that adds, removes o
 |---|---|---|---|
 | `logger` | `ServerLoggerModule` | `src/server/Modules/Logger/` | required |
 | `network` | `ServerNetworkModule` | `src/server/Modules/Network/` | required |
+| `storage` | `ServerStorageModule` | `src/server/Storage/` | required |
 | `games` | `ServerGamesModule` | `src/server/Modules/Games/` | required |
 | `lobby` | `ServerLobbyModule` | `src/server/Modules/Lobby/` | required |
 | `metrics` | `ServerMetricsModule` | `src/server/Modules/Metrics/` | optional |
@@ -246,6 +248,7 @@ This list describes the code as it is today. A pull request that adds, removes o
 |---|---|---|---|
 | `replication` | `ReplicationModule` | `src/server/Instances/ReplicationModule/` | required |
 | `rtype rules` | `RtypeRulesModule` | `src/server/Instances/RtypeRulesModule/` | required |
+| `results` | `ResultsModule` | `src/server/Results/` | required |
 
 | Module of the client | Class | Folder | Kind |
 |---|---|---|---|
@@ -261,7 +264,7 @@ This list describes the code as it is today. A pull request that adds, removes o
 | `game` | `ClientGameModule` | `src/client/Modules/Game/` | required |
 | `screens` | `ClientScreensModule` | `src/client/Modules/Screens/` | required |
 
-These folders are where the classes sit today, and most of the code of a module is still elsewhere, in a folder of the feature (`src/client/Audio/`, `src/server/Metrics/`). This is tolerated until the client and the server are tidied: each class then joins the code it owns, and `Modules/` keeps only the list of the program.
+These folders are where the classes sit today, and most of the code of a module is still elsewhere, in a folder of the feature (`src/client/Audio/`, `src/server/Metrics/`). This is tolerated until the client and the server are tidied: each class then joins the code it owns, and `Modules/` keeps only the list of the program. `storage` and `results`, written after this rule, already sit with their code.
 
 ### The code of a module used elsewhere
 
