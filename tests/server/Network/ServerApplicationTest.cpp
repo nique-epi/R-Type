@@ -13,7 +13,6 @@
 #include "NetworkConstants.hpp"
 #include "NetworkContext.hpp"
 #include "NetworkException.hpp"
-#include "OutgoingDatagram.hpp"
 #include "ServerApplication.hpp"
 #include "ServerApplicationFixtures.hpp"
 #include "ServerDatagrams.hpp"
