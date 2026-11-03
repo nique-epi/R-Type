@@ -83,7 +83,7 @@ Every module is one or the other, and [the list of modules](/R-Type/project-layo
 - A required module may be included by the code that needs it: the lobby and the metrics include `Games.hpp`, from the module `games`.
 - An optional module is reached only through its `Contract/` sub-folder, which stays compiled when the module is removed.
 
-The test of an optional module is to remove it: take out its folder, except `Contract/`, and its line in the list; the program compiles, starts, and its binary is smaller. **No module passes this test yet**, and no `Contract/` exists yet: [Project layout](/R-Type/project-layout/#modules-and-libraries) says what stops the sound and the metrics, and what stays tolerated until the server is tidied. Taking a module out of the list, below, is a smaller thing: its library is no longer linked, but its folder stays in the build.
+The test of an optional module is to remove it: take out its folder, except `Contract/`, and its line in the list; the program compiles, starts, and its binary is smaller. **No module passes this test yet**, and the sound has the only `Contract/` so far (`src/client/Audio/Contract/`): [Project layout](/R-Type/project-layout/#modules-and-libraries) says what stops the sound and the metrics, and what stays tolerated until the server is tidied. Taking a module out of the list, below, is a smaller thing: its library is no longer linked, but its folder stays in the build.
 
 ## Turning a module on or off
 
