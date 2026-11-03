@@ -1,5 +1,4 @@
 add_subdirectory(ScreenRegistry)
 add_subdirectory(Menus)
-add_subdirectory(Lobby)
 add_subdirectory(Screens)
 add_subdirectory(Assembly)
