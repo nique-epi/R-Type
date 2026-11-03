@@ -7,6 +7,7 @@
 #include <string>
 #include <string_view>
 #include <utility>
+#include "ConnectionGoal.hpp"
 #include "ConnectionPhase.hpp"
 #include "ConnectionRefused.hpp"
 #include "ConnectionScreenConstants.hpp"
