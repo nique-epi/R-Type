@@ -60,4 +60,19 @@ constexpr std::uint8_t AFTER_THE_LAST_PLAYER = 5;
 /** @brief The number of the game events the tests send. */
 constexpr std::uint16_t AN_EVENT_NUMBER = 7;
 
+/** @brief What a test reads when a history answers nothing: a position no
+ * test expects. */
+constexpr game::Position NO_HISTORY_POSITION{.x = -1.0e9F, .y = -1.0e9F};
+
+/**
+ * @brief Two states two ticks apart that list an entity at FIRST_POSITION then
+ * at SECOND_POSITION, the tick between them, and where an entity lies at that
+ * tick, halfway: (100 + 150.5) / 2 and (200 + 210.25) / 2.
+ */
+constexpr std::uint32_t FIRST_LISTING_TICK = 10;
+constexpr std::uint32_t SECOND_LISTING_TICK = 12;
+constexpr double TICK_BETWEEN_THE_LISTINGS = 11.0;
+constexpr game::Position HALFWAY_BETWEEN_THE_POSITIONS{.x = 125.25F,
+                                                       .y = 205.125F};
+
 }  // namespace rtype::client::testing
