@@ -104,6 +104,12 @@ cmake --workflow --preset test
 
 Once the test preset is built, this sends the server running on port 4242 of the same machine malformed datagrams for one minute, then checks that it still answers a connection request. `--client <port>` does the same to a client; see [Network](https://nique-epi.github.io/R-Type/network/#malformed-datagrams-malformed_datagrams).
 
+```bash
+./build/tests/load_test_bots --bots 32 --seconds 60
+```
+
+This has 32 players with no window join the server on port 4242 of the same machine, fill its eight games and play them for one minute, then prints the world states each one received per second; the server's journal gives the duration of its ticks every 10 s. See [Network](https://nique-epi.github.io/R-Type/network/#load-test-bots-load_test_bots).
+
 ## Logging
 
 The client and the server write a timestamped journal, `r-type_server.log` or `r-type_client.log` next to their executable, and show the same lines in the terminal; the first line gives the absolute path of the journal. The level and the output are chosen at launch:

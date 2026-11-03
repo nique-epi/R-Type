@@ -24,6 +24,7 @@ This page tells you where to look when you need to change something. It describe
 | Replication: entities to messages, and back | Available, written in the server and the client | `src/server/Replication/`, `src/client/Replication/` |
 | Rate limit of the requests, reliability, history of states, statistics | Not yet written | — |
 | Test tool that sends malformed datagrams | Available, never shipped | `tests/tools/MalformedDatagrams/` |
+| Load-test bots: players with no window that join a server and play | Available, never shipped | `tests/tools/LoadTestBots/` |
 
 ## Transport, sessions and replication
 
@@ -330,6 +331,31 @@ This joins the server listening on port 4242 as a player, so the datagrams carry
 
 Measured on 27 October 2026 on an Apple M4 Pro under macOS 27.0, with the server built in Release: the tool sent 59,999 datagrams in the minute, none refused by the system, and received 121 datagrams from the server meanwhile; the server only sends to the players of its game, so the session of the tool stayed open. The resident memory of the server was 2,576 KiB before the flood. It rose to 3,264 KiB during the first 25 seconds, then stayed at 3,264 KiB until 10 seconds after the flood. The server still answered a connection request, and its log held 48 lines, at most one per kind of rejection every 10 seconds. The client, built in Release and accepted by `--client` on the same machine, stayed connected for the whole minute and kept sending the tool about one datagram per second (59). Its resident memory rose from 101,120 KiB to 103,552 KiB in the first 15 seconds of the flood, then by about 16 KiB every 5 seconds. Without the flood, in the waiting room of a real server, it rises at the same pace (102,688 to 103,136 KiB over 65 seconds), so the flood adds no growth of its own after its first seconds.
 
+## Load-test bots: `load_test_bots`
+
+`load_test_bots` measures how the server holds several full games. It is a test tool in `tests/tools/LoadTestBots/`, built with the `test` preset into `build/tests/` and never shipped. Each bot is a player with no window: a `Bot` drives the `PlayerConnection` of the client (`src/client/Connection/`), as the game screen does without prediction, so it sends what a client sends: the request and its cookie, the heartbeats, the `GameLoaded`, a `PlayerInput` every `PLAYER_INPUT_INTERVAL` (60 per second) and its ready state as a value. One process runs every bot, each with its own socket and network thread, so the server sees as many players. The frames keep a fixed deadline, one `BOT_FRAME_DURATION` (a tick, 1/60 s) after the other, so a late wake-up never delays the inputs.
+
+- **Ready.** The server starts a game once every player connected to it is ready, from one player on, and puts a new player in the first game waiting with a free seat. No bot asks to be ready before every bot has the answer to its connection (`asksReady()`), so each game fills before it starts. When a game ends, its players stay connected and none is ready: each bot asks again, and the game starts full again.
+- **Play.** A `BotPilot` holds one action at a time, up, down, left, right or shoot, for a time drawn from `SHORTEST_HOLD` (200 ms) to `LONGEST_HOLD` (1 s). Bot n, from 0, draws from the seed plus n, so two launches with the same seed press the same keys on the same machine.
+
+```bash
+./build/tests/load_test_bots --bots 32 --seconds 60
+```
+
+`-h` and `-p` name the server, as for the client (127.0.0.1, port 4242 by default). `--bots` takes 1 to `MAXIMUM_BOT_COUNT` (36: the 32 seats of a server of `DEFAULT_HOSTED_GAME_COUNT` games, plus one game the full server refuses), 16 by default, four full games. `--seconds` is 60 and `--seed` 1 by default. Bot n is named `BOT<n>`, and a game refuses a nickname it already holds, so run one launch per server. The server keeps at most `CONNECTION_REQUEST_QUEUE_CAPACITY` (16) connection requests between two ticks, discards the oldest beyond and logs how many; a bot whose request was discarded sends it again `CONNECTION_REQUEST_INTERVAL` (500 ms) later. Once the time is up, the tool prints a line per bot: where its connection stands, the games it saw end and the world states it received per second of game. Then every bot leaves its session, and the exit code is 0 when every bot was still in session, 1 otherwise.
+
+The server writes how it holds in its journal every 10 s (see [Metrics](/R-Type/server/#metrics-servermetricsmodule)). A run holds when the 95th percentile of every line stays under the budget of a tick, 16.67 ms, and when every bot receives the world states the server sends, `DEFAULT_WORLD_STATES_PER_SECOND` (20) unless `--state-rate` says otherwise. On one machine, the bots share the processors of the server: read the time of the server process, not the load of the machine.
+
+Measured on 3 November 2026 on an Apple M4 Pro (12 cores) under macOS 27.0, the server and the bots built in Release on the same machine, each line of the journal covering 10 s:
+
+| Bots | Games | Ticks: median, 95th percentile, worst | World states per bot | Server CPU |
+|---|---|---|---|---|
+| 16, 60 s | 4 of 8 in progress; one ended and started full again | 0.14 to 0.19 ms, 0.25 to 0.41 ms, 0.99 to 1.52 ms | 20.0 per second | 2.3 s |
+| 32, 60 s, three runs | 8 of 8; one or two games ended and started full again in each run | 0.14 to 0.30 ms, 0.29 to 0.75 ms, 0.62 to 2.94 ms, plus one tick of 34.2 ms in one run and one of 24.3 ms in another | 20.0 per second | 3.9 s, 3.6 s and 3.5 s |
+| 36, 30 s | 8 of 8; 4 bots refused with `GameFull`, exit code 1 | 0.16 to 0.28 ms, 0.48 to 0.64 ms, 1.68 to 2.08 ms | 20.0 per second for the 32 in session | not taken |
+
+Every run held: the 95th percentile stayed under 0.8 ms, under 5 % of the budget. Two of the three runs of 32 bots each had one tick over the budget, 34.2 ms and 24.3 ms, in a single line of 10 s, with no warning in the journal; their cause is not known. With 32 or 36 bots the server discarded 16 to 24 connection requests in the first 10 s, and the bots got in on their next request. The 32 bots used about 13 % of one core (1.4 s of user and 6.6 s of system time in 64 s), most of it in their 32 network threads.
+
 ## Where to intervene
 
 | You want to… | Look at |
@@ -363,5 +389,6 @@ Measured on 27 October 2026 on an Apple M4 Pro under macOS 27.0, with the server
 | Test code that uses a socket without the network | `tests/doubles/RecordingDatagramSocket.hpp`, as `tests/network/Transport/DatagramRelayTest.cpp` does |
 | Build the bytes of a datagram in a test | `datagramOf()` and `defaultHeaderBytes()` in `tests/network/Protocol/ProtocolFixtures.hpp` |
 | Check that a change survives malformed datagrams | `malformed_datagrams` (`tests/tools/MalformedDatagrams/`), see [Malformed datagrams](#malformed-datagrams-malformed_datagrams) |
+| Measure how the server holds several full games | `load_test_bots` (`tests/tools/LoadTestBots/`), see [Load-test bots](#load-test-bots-load_test_bots) |
 
 Each folder has its own `CMakeLists.txt` declaring one library, linked into `rtype_network` by `src/network/CMakeLists.txt`.
