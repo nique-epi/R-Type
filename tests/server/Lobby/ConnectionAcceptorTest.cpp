@@ -1,4 +1,5 @@
 #include <gtest/gtest.h>
+#include <array>
 #include <cstddef>
 #include <cstdint>
 #include <span>
@@ -16,8 +17,10 @@
 #include "ConnectionRequest.hpp"
 #include "DatagramCodec.hpp"
 #include "Endpoint.hpp"
+#include "IncomingDatagram.hpp"
 #include "MessageType.hpp"
 #include "NetworkConstants.hpp"
+#include "NetworkException.hpp"
 #include "OutgoingDatagram.hpp"
 #include "PacketHeader.hpp"
 #include "PlayerRoster.hpp"
@@ -604,6 +607,44 @@ TEST_F(ConnectionAcceptorFixture, WritesTheNextLineOnceTheIntervalIsOver) {
           REQUEST_TIME + network::REJECTION_LINE_INTERVAL);
 
   EXPECT_EQ(journalLinesHolding(DROPPED_DATAGRAM_LINE_TEXT).size(), 2U);
+}
+
+/**
+ * Given an acceptor whose report of a joined player throws, and a sender
+ * that went through the challenge
+ * When that sender's request with its cookie and a request without a cookie
+ * from a second sender, under another nickname, arrive in the same tick
+ * Then the second sender is still challenged: only the datagram whose answer
+ * threw is dropped
+ */
+TEST(ConnectionAcceptor, AnswersTheNextRequestAfterOneWhoseAnswerThrew) {
+  PlayerRoster roster;
+  std::vector<network::OutgoingDatagram> answers;
+  ConnectionAcceptor acceptor{
+      roster,
+      [&answers](network::OutgoingDatagram datagram) {
+        answers.push_back(std::move(datagram));
+      },
+      [](const network::Endpoint&, std::uint64_t) {},
+      [](ConnectedPlayer&) { throw network::InvalidCoordinateException(); }};
+  const network::IncomingDatagram firstRequest{.sender = playerEndpoint(0),
+                                               .payload = requestDatagram(0)};
+  acceptor.receive(std::span{&firstRequest, 1}, REQUEST_TIME);
+  const std::uint64_t cookie =
+      messageOf<network::ConnectionChallenge>(answers.back()).cookie;
+  const std::array datagrams{
+      network::IncomingDatagram{.sender = playerEndpoint(0),
+                                .payload = requestDatagram(cookie)},
+      network::IncomingDatagram{
+          .sender = playerEndpoint(1),
+          .payload = requestDatagramOf(nicknameOf(1), 0)}};
+
+  acceptor.receive(datagrams, REQUEST_TIME);
+
+  EXPECT_EQ(answers.back().destination, playerEndpoint(1));
+  EXPECT_EQ(
+      messageTypeOf(answers.back()),
+      static_cast<std::uint8_t>(network::MessageType::ConnectionChallenge));
 }
 
 }  // namespace rtype::server

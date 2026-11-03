@@ -214,4 +214,9 @@ constexpr std::size_t REJECTED_MESSAGE_COUNT = 3;
  */
 constexpr std::string_view REJECTED_MESSAGE_LINE_TEXT = "a message of type";
 
+/**
+ * @brief Words of the log line about a message whose handler threw.
+ */
+constexpr std::string_view FAILED_HANDLER_LINE_TEXT = "its handler threw";
+
 }  // namespace rtype::network::testing

@@ -1,6 +1,7 @@
 #include "ConnectionAcceptor.hpp"
 #include <cstddef>
 #include <cstdint>
+#include <exception>
 #include <limits>
 #include <optional>
 #include <random>
@@ -76,11 +77,17 @@ void ConnectionAcceptor::receive(
     std::span<const network::IncomingDatagram> datagrams,
     engine::Duration now) {
   for (const network::IncomingDatagram& datagram : datagrams) {
-    if (isOfAnotherVersion(datagram.payload)) {
-      refuseAnotherVersion(datagram, now);
-    } else if (const std::optional<network::ConnectionRequest> request =
-                   readRequest(datagram, now)) {
-      answer(datagram.sender, *request, now);
+    try {
+      if (isOfAnotherVersion(datagram.payload)) {
+        refuseAnotherVersion(datagram, now);
+      } else if (const std::optional<network::ConnectionRequest> request =
+                     readRequest(datagram, now)) {
+        answer(datagram.sender, *request, now);
+      }
+    } catch (const std::exception& error) {
+      failureLog_.error(now, "dropped a datagram from ",
+                        datagram.sender.address, " port ", datagram.sender.port,
+                        ": answering it threw: ", error.what());
     }
   }
 }

@@ -17,6 +17,10 @@ class ThrottledLogFixture : public ::testing::Test {
   /** @brief Has the log count one event that happened at @p now. */
   void eventAt(std::chrono::nanoseconds now);
 
+  /** @brief Has the log count one event that happened at @p now, written at
+   * the error level when it gets a line. */
+  void errorAt(std::chrono::nanoseconds now);
+
   /** @returns The lines the throttled log wrote, oldest first. */
   [[nodiscard]] std::vector<std::string> lines() const;
 

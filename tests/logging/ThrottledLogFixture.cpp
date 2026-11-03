@@ -11,6 +11,10 @@ void ThrottledLogFixture::eventAt(std::chrono::nanoseconds now) {
   log_.debug(now, EVENT_TEXT);
 }
 
+void ThrottledLogFixture::errorAt(std::chrono::nanoseconds now) {
+  log_.error(now, EVENT_TEXT);
+}
+
 std::vector<std::string> ThrottledLogFixture::lines() const {
   return journal_.linesHolding(EVENT_TEXT);
 }

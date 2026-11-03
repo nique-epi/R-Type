@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <string>
 #include <vector>
+#include "LogLineTestConstants.hpp"
 #include "ThrottledLogFixture.hpp"
 #include "ThrottledLogTestConstants.hpp"
 #include "TimeTestConstants.hpp"
@@ -13,6 +14,20 @@ using rtype::logging::testing::FLOODED_EVENT_COUNT;
 using rtype::logging::testing::HALF_INTERVAL;
 using rtype::logging::testing::THROTTLED_INTERVAL;
 using rtype::logging::testing::ThrottledLogFixture;
+
+/**
+ * Given a throttled log that wrote nothing
+ * When one error event happens
+ * Then the journal holds one line at the error level with the text of the
+ * event
+ */
+TEST_F(ThrottledLogFixture, WritesAnErrorEventAtTheErrorLevel) {
+  errorAt(FIRST_EVENT_TIME);
+
+  const std::vector<std::string> written = lines();
+  ASSERT_EQ(written.size(), 1U);
+  EXPECT_NE(written.front().find(ERROR_LINE_MARK), std::string::npos);
+}
 
 /**
  * Given a throttled log that wrote nothing
