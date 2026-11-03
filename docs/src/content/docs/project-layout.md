@@ -88,7 +88,7 @@ src/engine/
 
 ### Storage
 
-`src/storage` builds `rtype_storage`: `openDatabaseFile()`, the one way every program opens a SQLite file, with its settings and its numbered migrations. **Never** a table or an R-Type word: the tables belong to the program. It links SQLiteCpp and nothing else of the repository, and it exists today, with the server as its only user (see [Server](/R-Type/server/#the-file-resultsdatabase)).
+`src/storage` builds `rtype_storage`: `openDatabaseFile()`, the one way every program opens a SQLite file, with its settings and its numbered migrations. **Never** a table or an R-Type word: the tables belong to the program. It links SQLiteCpp and nothing else of the repository, and it exists today, with the server as its only user (see [Server](/R-Type/server/#the-file-resultsdatabase)). Its errors derive from `StorageException`, in `Exceptions/`.
 
 ### Identifiers
 
