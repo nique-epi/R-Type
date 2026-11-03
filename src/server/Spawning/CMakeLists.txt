@@ -22,7 +22,7 @@ add_library(rtype_server_wave_plan INTERFACE)
 
 target_include_directories(rtype_server_wave_plan INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
 
-target_link_libraries(rtype_server_wave_plan INTERFACE rtype_game_waves rtype_game_bydo_kind rtype_server_exception_parts)
+target_link_libraries(rtype_server_wave_plan INTERFACE rtype_game_waves rtype_game_bydo_kind)
 
 add_subdirectory(BydoSpawner)
 add_subdirectory(WaveCatalog)
