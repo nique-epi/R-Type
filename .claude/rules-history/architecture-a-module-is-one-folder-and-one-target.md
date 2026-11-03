@@ -56,3 +56,24 @@ On `origin/main` at `68e69e74`, counting the `.cpp` and `.hpp` files of each fol
 - The check of point 14 names the categories instead of counting files, so it is a review, not a command. No command can decide that three classes change for the same reason.
 - Sub-folders stay two levels at most, and the three cases of point 9 stay the only ones.
 
+## Update (3 November 2026) — how fine a category is
+
+### Context
+
+The tidying of the server (pull request #192) and of the client (#193) applied points 8 and 14 right after the count of ten `.cpp` gave way to categories. The server kept every folder flat but `Sessions/`. The client split `Connection/`, `Menus/` and `Replication/`, and kept `Audio/`, `Window/`, `Screens/`, `Input/`, `Settings/` and `Assets/` flat. The user found almost no sub-folder in either.
+
+### Mistake
+
+Both tables of categories read "change for the same reason" at the finest grain:
+
+- In `src/server/Rules/`, the lives (two classes), the score (one) and the steering of a ship (two) were three reasons, so the folder had a single category, the course of a match, and stayed flat.
+- In `src/client/Audio/`, the sounds and the music were three types each only when a helper struct counted, so they were not counted; both also read `AudioVolume`, which a sub-folder cannot include from its parent, so the folder stayed flat.
+- In `src/client/Window/`, `EventListeners` and its two helper types were one class, and `FrameLoop` was alone.
+
+### Root cause
+
+Point 8 gives one example of the grain, `Commands/`, and says nothing of the helper types of a class nor of a class two categories share. The briefs of both changes relayed the rule without that grain, and the first table of categories was not read before the files moved.
+
+### Rule
+
+Points 15 to 18 of the rule: a category is a role a reader names; the helper types of a class count with it; a class two categories share goes down into one of them or into `Contract/`, and never keeps the folder flat; the table of categories is written before the first file moves, and a table of flat folders is read again at the grain of `Commands/`.
