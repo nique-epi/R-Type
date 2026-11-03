@@ -35,11 +35,18 @@ bool carriesSessionToken(const network::PacketHeader& header,
          (holdsRequest && header.sessionToken == network::NO_SESSION_TOKEN);
 }
 
-void pushCopy(concurrency::BoundedQueue<network::IncomingDatagram>& queue,
-              const network::Endpoint& sender,
-              std::span<const std::byte> datagram) {
-  queue.push(network::IncomingDatagram{
-      .sender = sender, .payload = {datagram.begin(), datagram.end()}});
+/**
+ * @returns A copy of @p datagram from @p sender, stamped with the time on
+ * @p clock: the time it arrived, since the sorter runs in the handler of the
+ * socket.
+ */
+network::IncomingDatagram copyOf(const network::Endpoint& sender,
+                                 std::span<const std::byte> datagram,
+                                 const engine::IClock& clock) {
+  return network::IncomingDatagram{
+      .sender = sender,
+      .payload = {datagram.begin(), datagram.end()},
+      .receivedAt = clock.now()};
 }
 
 }  // namespace
@@ -78,9 +85,9 @@ void DatagramSorter::sort(const network::Endpoint& sender,
     return;
   }
   if (holdsRequest) {
-    pushCopy(*destinations_.connectionRequests, sender, datagram);
+    destinations_.connectionRequests->push(copyOf(sender, datagram, *clock_));
   } else if (player != nullptr) {
-    pushCopy(*destinations_.players, sender, datagram);
+    destinations_.players->push(copyOf(sender, datagram, *clock_));
   } else {
     drop(sender, STRANGER_DROP_REASON);
   }
@@ -90,7 +97,7 @@ void DatagramSorter::sortForeignHeader(const network::Endpoint& sender,
                                        const network::PacketHeader& header,
                                        std::span<const std::byte> datagram) {
   if (isRefusedForItsVersion(sender, header, datagram.size())) {
-    pushCopy(*destinations_.connectionRequests, sender, datagram);
+    destinations_.connectionRequests->push(copyOf(sender, datagram, *clock_));
     return;
   }
   drop(sender, network::FOREIGN_HEADER_DROP_REASON);

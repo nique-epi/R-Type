@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 #include <algorithm>
+#include <chrono>
 #include <cstddef>
 #include <vector>
 #include "BoundedQueue.hpp"
@@ -27,9 +28,30 @@ TEST(DatagramRelay, CopiesEachReceivedDatagramIntoTheIncomingQueue) {
   setup.socket.receive(peerOnPort(PEER_PORT), receivedBytes());
   setup.incoming.drainInto(received);
 
-  EXPECT_EQ(received,
-            (std::vector<IncomingDatagram>{IncomingDatagram{
-                .sender = peerOnPort(PEER_PORT), .payload = receivedBytes()}}));
+  ASSERT_EQ(received.size(), 1U);
+  EXPECT_EQ(received.front().sender, peerOnPort(PEER_PORT));
+  EXPECT_EQ(received.front().payload, receivedBytes());
+}
+
+/**
+ * Given a relay that started receiving
+ * When the socket receives a datagram
+ * Then the queued datagram carries a time of the steady clock no earlier than
+ * just before the socket received it and no later than just after
+ */
+TEST(DatagramRelay, StampsEachDatagramWithTheTimeItArrived) {
+  RelayUnderTest setup;
+  setup.relay.startReceiving();
+  std::vector<IncomingDatagram> received;
+
+  const std::chrono::nanoseconds before = steadyClockNow();
+  setup.socket.receive(peerOnPort(PEER_PORT), receivedBytes());
+  const std::chrono::nanoseconds after = steadyClockNow();
+  setup.incoming.drainInto(received);
+
+  ASSERT_EQ(received.size(), 1U);
+  EXPECT_GE(received.front().receivedAt, before);
+  EXPECT_LE(received.front().receivedAt, after);
 }
 
 /**

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <chrono>
 #include <cstddef>
 #include <cstdint>
 #include <vector>
@@ -29,3 +30,7 @@ rtype::network::Endpoint peerOnPort(std::uint16_t port);
 
 /** @returns RELAY_PAYLOAD_SIZE bytes, each RECEIVED_BYTE. */
 std::vector<std::byte> receivedBytes();
+
+/** @returns The time on std::chrono::steady_clock, from its epoch, as the
+ * relay stamps a datagram. */
+std::chrono::nanoseconds steadyClockNow();

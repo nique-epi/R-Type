@@ -44,11 +44,11 @@ namespace rtype::server {
  * server reports, each drop is logged at the debug level with its sender and
  * why, at most once per REJECTION_LINE_INTERVAL (see ThrottledLog). The sorter
  * reads the header and the type of each message, never a payload, throws
- * nothing on a malformed datagram, and reads the clock only to drop one, so its
- * cost per datagram stays close to that of the copy into a queue, whatever the
- * datagram holds. Not thread-safe, except droppedCount(),
- * wrongTokenCount() and takeWrongTokenSender(): call the rest on the network
- * thread only.
+ * nothing on a malformed datagram, and reads the clock to stamp each datagram
+ * it keeps and to drop one, so its cost per datagram stays close to that of the
+ * copy into a queue, whatever the datagram holds. Not thread-safe, except
+ * droppedCount(), wrongTokenCount() and takeWrongTokenSender(): call the rest
+ * on the network thread only.
  */
 class DatagramSorter {
  public:

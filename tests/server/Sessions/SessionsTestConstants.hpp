@@ -46,6 +46,12 @@ constexpr std::size_t TWO_PLAYERS = 2;
 constexpr std::chrono::nanoseconds PROTOCOL_HEARTBEAT_SILENCE{999'999'960};
 
 /**
+ * @brief The time on the clock of the sessions when a datagram of a player
+ * arrived, 2 s after the clock started.
+ */
+constexpr std::chrono::seconds SOME_ARRIVAL_TIME{2};
+
+/**
  * @brief The real time a tick of the server took, about one sixtieth of a
  * second.
  */

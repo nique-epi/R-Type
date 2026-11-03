@@ -115,10 +115,9 @@ TEST(ServerApplication, HandsAConnectionRequestToTheTick) {
   server.stop();
 
   ASSERT_EQ(status, std::future_status::ready);
-  EXPECT_EQ(
-      received.get(),
-      (IncomingDatagram{.sender = loopbackEndpoint(client.localEndpoint().port),
-                        .payload = requestDatagram()}));
+  const IncomingDatagram request = received.get();
+  EXPECT_EQ(request.sender, loopbackEndpoint(client.localEndpoint().port));
+  EXPECT_EQ(request.payload, requestDatagram());
 }
 
 /**
@@ -150,10 +149,9 @@ TEST(ServerApplication, HandsAnAdmittedPlayersDatagramToTheTick) {
   server.stop();
 
   ASSERT_EQ(status, std::future_status::ready);
-  EXPECT_EQ(
-      received.get(),
-      (IncomingDatagram{.sender = loopbackEndpoint(client.localEndpoint().port),
-                        .payload = playerReady()}));
+  const IncomingDatagram datagram = received.get();
+  EXPECT_EQ(datagram.sender, loopbackEndpoint(client.localEndpoint().port));
+  EXPECT_EQ(datagram.payload, playerReady());
 }
 
 /**
@@ -190,10 +188,9 @@ TEST(ServerApplication, HandsTheTickTheDatagramOfAPlayerItAdmitted) {
 
   ASSERT_EQ(admissionStatus, std::future_status::ready);
   ASSERT_EQ(status, std::future_status::ready);
-  EXPECT_EQ(
-      received.get(),
-      (IncomingDatagram{.sender = loopbackEndpoint(client.localEndpoint().port),
-                        .payload = playerReady()}));
+  const IncomingDatagram datagram = received.get();
+  EXPECT_EQ(datagram.sender, loopbackEndpoint(client.localEndpoint().port));
+  EXPECT_EQ(datagram.payload, playerReady());
 }
 
 /**

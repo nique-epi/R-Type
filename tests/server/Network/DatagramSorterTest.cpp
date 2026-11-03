@@ -7,6 +7,7 @@
 #include "DatagramSorterFixture.hpp"
 #include "DatagramSorterFixtures.hpp"
 #include "DatagramSorterLogFixture.hpp"
+#include "DatagramSorterTestConstants.hpp"
 #include "Endpoint.hpp"
 #include "IncomingDatagram.hpp"
 #include "NetworkConstants.hpp"
@@ -69,6 +70,24 @@ TEST_F(DatagramSorterFixture, SendsAPlayersDatagramToThePlayerQueue) {
   EXPECT_EQ(drainPlayers(),
             (std::vector<IncomingDatagram>{
                 {.sender = player(), .payload = playerReady()}}));
+}
+
+/**
+ * Given an admitted player, and the clock of the sorter at
+ * SORTED_ARRIVAL_TIME
+ * When the player sends a datagram
+ * Then the datagram queued for the players carries that time, the time it
+ * arrived
+ */
+TEST_F(DatagramSorterFixture, StampsEachKeptDatagramWithItsClock) {
+  admit(player());
+  advanceClock(SORTED_ARRIVAL_TIME);
+
+  sort(player(), playerReady());
+
+  const std::vector<IncomingDatagram> players = drainPlayers();
+  ASSERT_EQ(players.size(), 1U);
+  EXPECT_EQ(players.front().receivedAt, SORTED_ARRIVAL_TIME);
 }
 
 /**
