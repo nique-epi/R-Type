@@ -6,7 +6,6 @@ target_link_libraries(rtype_client_logger_module
   PUBLIC
     rtype_engine_modules
     rtype_logging
-    rtype_network_transport
   PRIVATE
     rtype_client_constants
     rtype_client_module_constants

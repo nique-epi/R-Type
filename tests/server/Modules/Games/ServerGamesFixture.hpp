@@ -5,8 +5,8 @@
 #include <memory>
 #include <vector>
 #include "Application.hpp"
+#include "ConfigurationStep.hpp"
 #include "ConnectedPlayer.hpp"
-#include "GameInstance.hpp"
 #include "GamesSettings.hpp"
 #include "IModule.hpp"
 #include "IncomingDatagram.hpp"
@@ -20,9 +20,11 @@
  * a probe that finds the games, all started. */
 class ServerGamesFixture : public ServerModuleFixture {
  protected:
-  /** @brief Builds the modules listed above with @p settings and starts them.
+  /** @brief Builds the modules listed above with @p settings and starts them,
+   * running @p configuration between the installs and the starts.
    * @throws what Application::start() throws. */
-  void startWith(rtype::server::GamesSettings settings);
+  void startWith(rtype::server::GamesSettings settings,
+                 rtype::engine::ConfigurationStep configuration = {});
 
   /** @returns The modules listed after the games module and before the
    * probe; none unless a derived fixture lists some. */

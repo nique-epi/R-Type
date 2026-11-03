@@ -3,11 +3,13 @@
 #include <cstdint>
 #include <functional>
 #include <memory>
+#include <optional>
 #include <random>
 #include <string>
 #include <thread>
 #include <utility>
 #include <vector>
+#include "ConfigurationRegistry.hpp"
 #include "ConnectedPlayer.hpp"
 #include "EventBus.hpp"
 #include "FarewellSender.hpp"
@@ -19,18 +21,35 @@
 #include "IDatagramSender.hpp"
 #include "IPlayerAdmission.hpp"
 #include "InstallContext.hpp"
+#include "IntegerSettingDefinition.hpp"
 #include "ModuleConstants.hpp"
 #include "PathText.hpp"
 #include "PlayerDatagrams.hpp"
 #include "RtypeGameModules.hpp"
 #include "ServerConstants.hpp"
 #include "ServerException.hpp"
+#include "SettingValue.hpp"
 #include "TickDatagrams.hpp"
 #include "TimeConstants.hpp"
 #include "WaveCatalog.hpp"
 #include "WavePlan.hpp"
 
 namespace rtype::server {
+
+namespace {
+
+/**
+ * @returns The seed @p setting holds, nothing when it was cleared.
+ */
+std::optional<std::uint32_t> seedOf(const engine::SettingValue& setting) {
+  const std::optional<std::int64_t> value = setting.integer();
+  if (!value.has_value()) {
+    return std::nullopt;
+  }
+  return static_cast<std::uint32_t>(*value);
+}
+
+}  // namespace
 
 ServerGamesModule::ServerGamesModule(GamesSettings settings)
     : settings_(std::move(settings)),
@@ -48,6 +67,7 @@ void ServerGamesModule::install(engine::InstallContext& context) {
   sender_ = &context.require<IDatagramSender>();
   admission_ = &context.require<IPlayerAdmission>();
   tickDatagrams_ = &context.require<TickDatagrams>();
+  declareSettings(context.require<engine::ConfigurationRegistry>());
   context.provide(games_);
   context.addWork(
       SIMULATION_STAGE,
@@ -56,23 +76,53 @@ void ServerGamesModule::install(engine::InstallContext& context) {
                   [this](engine::Duration elapsed) { deliverEvents(elapsed); });
 }
 
+void ServerGamesModule::declareSettings(
+    engine::ConfigurationRegistry& configuration) {
+  seedSetting_ = &configuration.declareInteger(engine::IntegerSettingDefinition{
+      .name = std::string{SEED_SETTING_NAME},
+      .defaultValue = settings_.seed,
+      .lowest = 0,
+      .highest = HIGHEST_SEED,
+      .help = "Seed the random draws of the first game start from, or none",
+      .allowsNone = true});
+  stateRateSetting_ =
+      &configuration.declareInteger(engine::IntegerSettingDefinition{
+          .name = std::string{STATE_RATE_SETTING_NAME},
+          .defaultValue = static_cast<std::int64_t>(settings_.statesPerSecond),
+          .lowest = LOWEST_WORLD_STATES_PER_SECOND,
+          .highest = HIGHEST_WORLD_STATES_PER_SECOND,
+          .help = "World states sent to each player per second"});
+  inputDelaySetting_ =
+      &configuration.declareInteger(engine::IntegerSettingDefinition{
+          .name = std::string{INPUT_DELAY_SETTING_NAME},
+          .defaultValue = static_cast<std::int64_t>(settings_.inputDelayTicks),
+          .lowest = LOWEST_INPUT_DELAY_TICKS,
+          .highest = HIGHEST_INPUT_DELAY_TICKS,
+          .help = "Ticks every player's input is held before it is applied"});
+}
+
 void ServerGamesModule::start() {
   if (settings_.gameCount == 0) {
     throw NoJoinableGameException();
   }
   const WavePlan waves = readWaves();
+  const std::optional<std::uint32_t> seed = seedOf(*seedSetting_);
+  const auto statesPerSecond =
+      static_cast<std::size_t>(stateRateSetting_->integer().value_or(
+          static_cast<std::int64_t>(settings_.statesPerSecond)));
+  const auto inputDelayTicks =
+      static_cast<std::size_t>(inputDelaySetting_->integer().value_or(
+          static_cast<std::int64_t>(settings_.inputDelayTicks)));
   for (std::size_t game = 0; game < settings_.gameCount; ++game) {
     auto events = std::make_unique<engine::EventBus>();
     std::unique_ptr<GameInstance> created = createGame(
         *events,
-        GameSettings{
-            .seed = settings_.seed
-                        ? *settings_.seed + (static_cast<std::uint32_t>(game) *
+        GameSettings{.seed = seed ? *seed + (static_cast<std::uint32_t>(game) *
                                              GAME_SEED_STRIDE)
-                        : std::random_device{}(),
-            .waves = waves,
-            .statesPerSecond = settings_.statesPerSecond,
-            .inputDelayTicks = settings_.inputDelayTicks});
+                                  : std::random_device{}(),
+                     .waves = waves,
+                     .statesPerSecond = statesPerSecond,
+                     .inputDelayTicks = inputDelayTicks});
     games_.add(std::move(events), std::move(created));
   }
 }

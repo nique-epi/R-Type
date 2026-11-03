@@ -5,6 +5,7 @@
 #include <vector>
 #include "AssetLibrary.hpp"
 #include "ClientScreens.hpp"
+#include "ConfigurationRegistry.hpp"
 #include "Endpoint.hpp"
 #include "EntityMessageQueue.hpp"
 #include "EventListeners.hpp"
@@ -13,9 +14,11 @@
 #include "IAudioService.hpp"
 #include "IModule.hpp"
 #include "InstallContext.hpp"
+#include "Logger.hpp"
 #include "PlayerSettings.hpp"
 #include "ScreenRegistry.hpp"
 #include "ServerSession.hpp"
+#include "SettingValue.hpp"
 #include "SettingsService.hpp"
 #include "SubscriptionHandle.hpp"
 #include "TimeConstants.hpp"
@@ -33,7 +36,10 @@ namespace rtype::client {
  * every screen are updated, then the frame loop stops once no screen is left.
  * In RENDER_STAGE, the sky is drawn, then the screens over it.
  *
- * start() builds the screens from the registry, which every module filled
+ * install() also declares the `nickname`, `server-address` and `server-port`
+ * settings, whose defaults are the server and the nickname given to the
+ * constructor. start() reads them once the configuration was read, logs the
+ * server, and builds the screens from the registry, which every module filled
  * while it installed, since an Application installs every module before it
  * starts any. They open on the intro, or on the title when the system asks for
  * less motion. It then adds its listener of the window events: every event no
@@ -44,8 +50,10 @@ namespace rtype::client {
 class ClientScreensModule final : public engine::IModule {
  public:
   /**
-   * @param server The server the connection screen starts with.
-   * @param nickname The nickname the connection screen starts with.
+   * @param server The server the connection screen starts with, unless the
+   * configuration sets another.
+   * @param nickname The nickname the connection screen starts with, unless the
+   * configuration sets another.
    */
   ClientScreensModule(network::Endpoint server, std::string nickname);
 
@@ -67,8 +75,19 @@ class ClientScreensModule final : public engine::IModule {
    * no screen is left. */
   void update(engine::Duration elapsed);
 
+  /** @brief Declares the settings the connection screen starts from. */
+  void declareSettings(engine::ConfigurationRegistry& configuration);
+
+  /** @returns The server the settings hold, which the connection screen
+   * starts with. */
+  [[nodiscard]] network::Endpoint configuredServer() const;
+
   network::Endpoint server_;
   std::string nickname_;
+  const engine::SettingValue* nicknameSetting_{nullptr};
+  const engine::SettingValue* addressSetting_{nullptr};
+  const engine::SettingValue* portSetting_{nullptr};
+  logging::Logger logger_;
   PlayerSettings* settings_{nullptr};
   SettingsService* settingsService_{nullptr};
   AssetLibrary* assets_{nullptr};

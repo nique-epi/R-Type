@@ -31,6 +31,20 @@ class LoopStages {
    */
   void add(std::string_view stageName, StageWork work);
 
+  /**
+   * @brief Adds @p work at the end of the stage named @p stageName, as the
+   * work of the module named @p moduleName.
+   * @throws UnknownStageException if the loop declares no such stage.
+   */
+  void add(std::string_view stageName, std::string_view moduleName,
+           StageWork work);
+
+  /**
+   * @brief Takes out of every stage the works added as those of the module
+   * named @p moduleName, so they never run. The works no module owns stay.
+   */
+  void removeWorkOf(std::string_view moduleName);
+
   /** @brief Runs every stage in declared order, each work with @p elapsed. */
   void run(Duration elapsed) const;
 

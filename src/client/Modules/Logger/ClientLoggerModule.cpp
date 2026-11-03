@@ -3,18 +3,14 @@
 #include <utility>
 #include <vector>
 #include "ClientConstants.hpp"
-#include "Endpoint.hpp"
 #include "InstallContext.hpp"
 #include "LogLaunchOptions.hpp"
 #include "ModuleConstants.hpp"
 
 namespace rtype::client {
 
-ClientLoggerModule::ClientLoggerModule(logging::LogLaunchOptions options,
-                                       network::Endpoint server)
-    : options_(std::move(options)),
-      server_(std::move(server)),
-      logger_(std::string{CLIENT_LOGGER_NAME}) {}
+ClientLoggerModule::ClientLoggerModule(logging::LogLaunchOptions options)
+    : options_(std::move(options)), logger_(std::string{CLIENT_LOGGER_NAME}) {}
 
 std::string ClientLoggerModule::name() const {
   return std::string{LOGGER_MODULE_NAME};
@@ -28,7 +24,6 @@ void ClientLoggerModule::install(
 void ClientLoggerModule::start() {
   options_.apply();
   logger_.info("client starting");
-  logger_.info("server: ", server_.address, " port ", server_.port);
 }
 
 void ClientLoggerModule::stop() {}

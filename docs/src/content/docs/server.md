@@ -109,7 +109,8 @@ To change one of them, see [Where to intervene](#where-to-intervene).
 | Every player's input applied after the same delay, set at launch (`--input-delay`) | Available | `src/server/Sessions/DelayedInputs/` |
 | One header for every datagram to a player: session token and next sequence | Available | `src/server/Sessions/SessionDatagram/` |
 | Game events sent to the players | Available: the removal of a Bydo or a missile that leaves the playfield, the damage and destruction of a Bydo hit by missiles, and the loss of a ship and of a life when a ship touches a Bydo or a missile of a Bydo | `src/server/Replication/`, `src/game/Events/` |
-| Launch options | Available: the port, the seed, the state rate, the input delay and `--help` | `src/server/LaunchOptions/` |
+| Launch options | Available: the port, the seed, the state rate, the input delay, `--set` and `--help` | `src/server/LaunchOptions/` |
+| Configuration file | Available: `server.cfg` (`module`, `set`) | `src/server/Modules/Assembly/` |
 | Letting players in: challenge, acceptance or refusal | Available; a new player joins the first game waiting for players with a free seat, and is refused with `GameInProgress` or `GameFull` only when no game has one | `src/server/Lobby/`, `src/server/Sessions/` |
 | A game: states, ready rule, new world between two games | Available: eight games side by side, each ending once no player is left in it or no player left has a life | `src/server/Instances/GameFlow/` |
 | Newest input of each player, held by the `Intent` of its ship and acted on at each tick of a game in progress | Available: the arrows move the ship, shoot fires its missiles | `src/server/Sessions/InputKeeper/`, `src/server/Instances/PlayerController/`, `src/game/Components/Intent.hpp` |
@@ -143,11 +144,13 @@ To change one of them, see [Where to intervene](#where-to-intervene).
 | `--seed <seed>` | The number the random draws of the games start from, a whole number from 0 to 4294967295. Default: drawn at random. See [Bydos](#bydos-bydospawner). |
 | `--state-rate <states>` | The world states sent to each player per second, a whole number from 2 to 60. Default: `DEFAULT_WORLD_STATES_PER_SECOND` (20). More states move the other ships more smoothly and use more bandwidth; see [World state](#world-state-worldstatesender). |
 | `--input-delay <ticks>` | The ticks every player's input is held before it is applied to its ship, a whole number from 0 to 30. Default: `DEFAULT_INPUT_DELAY_TICKS` (3, 50 ms). The same delay holds for every player; see [Player inputs](#player-inputs). |
+| `--set <name>=<value>` | Gives a setting a value, as the line `set <name> <value>` of `server.cfg` does (see [Configuration](#configuration-servercfg)). Can be given several times. |
 | `--network <name>`, `--lag <ms>`, `--jitter <ms>`, `--loss <percent>`, `--duplicates <percent>`, `--reorder <percent>` | The simulated network every datagram of the server crosses, for all its players (see [Network](/R-Type/network/#network-simulator-simulatednetworksocket)). Default: none, the network is not simulated. |
 | `--help` | Prints the usage, the simulator and logging options included, on standard output, then exits with code 0 without starting anything or opening the journal. |
 
+- `-p`, `--seed`, `--state-rate` and `--input-delay` are shortcuts: each checks its value, then forces the setting `port`, `seed`, `state-rate` or `input-delay` with the line `set <name> <value>`. The forced lines run after `server.cfg`, so a launch option wins over the file.
 - The server listens on every IPv4 interface (`ANY_IPV4_ADDRESS`) and takes no address: `-h`, the client's address option, is an unknown argument here. The last `-p` wins, and so do the last `--seed`, the last `--state-rate` and the last `--input-delay`.
-- An unknown argument, a `-p`, `--seed`, `--state-rate` or `--input-delay` without a value, an invalid port, a seed that is not a whole number from 0 to 4294967295, a state rate that is not a whole number from 2 to 60, an input delay that is not a whole number from 0 to 30, a simulator option without a value or with one out of its range, or a logging option that does not exist or has no value, stops the server before anything starts: it prints `r-type_server:`, the reason and how to see the usage on standard error, then exits with code 1. When several arguments are wrong, the first one from the left is reported.
+- An unknown argument, a `-p`, `--seed`, `--state-rate` or `--input-delay` without a value, an invalid port, a seed that is not a whole number from 0 to 4294967295, a state rate that is not a whole number from 2 to 60, an input delay that is not a whole number from 0 to 30, a `--set` value that is not `name=value`, a simulator option without a value or with one out of its range, or a logging option that does not exist or has no value, stops the server before anything starts: it prints `r-type_server:`, the reason and how to see the usage on standard error, then exits with code 1. When several arguments are wrong, the first one from the left is reported.
 
 ```bash
 ./r-type_server -p 4243
@@ -204,6 +207,30 @@ The room of the player queue protects the server's memory; the sorter protects t
 
 The player queue stays as the last safety net. It discards its oldest datagram, where GameNetworkingSockets refuses the newest, because only the newest input of a player counts. Why threads only talk through queues is explained in [Architecture](/R-Type/architecture/#queues-between-threads).
 
+## Configuration: `server.cfg`
+
+The server reads `server.cfg`, in the folder it is started from, between the install and the start of its modules (see [Engine](/R-Type/engine/#commands-and-configuration-commandinterpreter)). The file is a list of commands, one per line; `#` starts a comment (every command and setting is listed in [Configuration commands](/R-Type/commands/)). `main()` builds the step with `engine::configurationStep()`: it reads `server.cfg`, then runs the lines the launch options force (`LaunchOptions::forcedLines()`).
+
+| Command | Effect |
+|---|---|
+| `module <name> on\|off` | Turns a module of the table below on or off. A module that is off is installed and never started, and its work never runs. Refused when a module that stays on depends on it (`games` needs `network`, `lobby` and `metrics` need `games`, all need `logger`). |
+| `set port <port>` | The UDP port, from 1 to 65535. Default: 4242. |
+| `set seed <seed>` or `set seed none` | The seed of the first game, a whole number from 0 to 4294967295; `none` draws one. Default: `none`. |
+| `set state-rate <states>` | The world states sent to each player per second, from 2 to 60. Default: 20. |
+| `set input-delay <ticks>` | The ticks every player's input is held before it is applied, from 0 to 30. Default: 3. |
+
+- A missing `server.cfg` is not an error: the defaults apply, and the journal says `server.cfg not found, the defaults apply`. A line that is refused (an unknown command, a value out of its bounds) does not stop the server: it is logged at the `warn` level, with its file and line number, and the next line runs.
+- The reading is logged once the journal is open, so the lines appear after the modules' own start lines. The `info` lines are hidden at the default level; start the server with `--log-level info` to see them.
+
+```
+# server.cfg
+set port 4300
+set state-rate 30
+module lobby off
+```
+
+`server.cfg.example`, at the root of the repository, lists every setting with its default and its bounds. It is not read by the server: copy it to `server.cfg`.
+
 ## Modules and stopping the server
 
 `src/server/main.cpp` reads the options and hands a list of modules to an `engine::Application` (see [Modules](/R-Type/modules/)). `serverModules()` (`src/server/Modules/Assembly/ServerModules.cpp`) is the one place that lists them; they start in this order and stop in the reverse one.
@@ -211,8 +238,8 @@ The player queue stays as the last safety net. It discards its oldest datagram, 
 | Module | Does | Where |
 |---|---|---|
 | `logger` | applies the logging options when it starts, logs "server starting" and "server stopped" | `src/server/Modules/Logger/` |
-| `network` | owns the `ServerApplication`: binds the socket and runs the server on a thread when it starts, gives the port back when it stops; provides `IDatagramSender`, `IPlayerAdmission` and `TickDatagrams` (the datagrams of the tick) | `src/server/Modules/Network/` |
-| `games` | the games (`GamesSettings::gameCount`, `DEFAULT_HOSTED_GAME_COUNT` = 8), an `EventBus` for each and the `TimerScheduler` they share; reads the waves file when it starts; provides `Games` | `src/server/Modules/Games/` |
+| `network` | declares the `port` setting; owns the `ServerApplication`: binds the socket and runs the server on a thread when it starts, gives the port back when it stops; provides `IDatagramSender`, `IPlayerAdmission` and `TickDatagrams` (the datagrams of the tick) | `src/server/Modules/Network/` |
+| `games` | declares the `seed`, `state-rate` and `input-delay` settings; the games (`GamesSettings::gameCount`, `DEFAULT_HOSTED_GAME_COUNT` = 8), an `EventBus` for each and the `TimerScheduler` they share; reads the waves file when it starts; provides `Games` | `src/server/Modules/Games/` |
 | `lobby` | one `ConnectionAcceptor` per game, built on the roster of that game | `src/server/Modules/Lobby/` |
 | `metrics` | measures the ticks and the systems of the games, and writes a report to the journal every `TICKS_PER_REPORT` ticks; provides `LatestMetrics` | `src/server/Modules/Metrics/` |
 
@@ -804,6 +831,7 @@ A game ended by `finish()`, or by the departure of its last player, tells no one
 | Change what the server does when it stops | `ServerGamesModule::stop()` and `FarewellSender`, in `src/server/Modules/Games/` |
 | Change which datagrams reach the tick | `DatagramSorter::sort` in `src/server/Application/DatagramSorter/DatagramSorter.cpp` |
 | Change how many connection requests a tick answers | `CONNECTION_REQUEST_QUEUE_CAPACITY` in `src/server/ServerConstants.hpp` |
+| Add a setting the host can set | `declareInteger()` or `declareText()` in the `install()` of the module that uses it, read in its `start()`; name it in `src/server/ServerConstants.hpp` |
 | Add a launch option | A function that returns its `LaunchOption` and its entry in the list of `LaunchOptions::read()`, and `usage()`, in `src/server/LaunchOptions/LaunchOptions.cpp`; a name the client uses too goes in `src/engine/LaunchArguments/LaunchArgumentsConstants.hpp`. An option of the network simulator goes in `SimulatorLaunchOptions` instead, which the server and the client both read among their own (see [Network](/R-Type/network/#network-simulator-simulatednetworksocket)) |
 | Change the port the server listens on by default | `DEFAULT_SERVER_PORT` in `src/network/NetworkConstants.hpp`, shared with the client |
 | Change how many ticks an input is held by default | `DEFAULT_INPUT_DELAY_TICKS` in `src/server/ServerConstants.hpp`; the host sets it at launch with `--input-delay` |

@@ -62,6 +62,13 @@ ServerApplication::ServerApplication(
               clock_),
       handleTick_(std::move(handleTick)) {}
 
+void ServerApplication::listenOn(network::Endpoint localEndpoint) {
+  if (socket_) {
+    throw ServerAlreadyOpenException();
+  }
+  listeningEndpoint_ = std::move(localEndpoint);
+}
+
 void ServerApplication::open() {
   if (socket_) {
     throw ServerAlreadyOpenException();

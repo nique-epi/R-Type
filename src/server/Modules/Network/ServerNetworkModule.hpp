@@ -10,6 +10,7 @@
 #include "Logger.hpp"
 #include "NetworkConditions.hpp"
 #include "ServerApplication.hpp"
+#include "SettingValue.hpp"
 #include "StopRequest.hpp"
 #include "TickDatagrams.hpp"
 
@@ -21,16 +22,17 @@ namespace rtype::server {
  * the IPlayerAdmission and the TickDatagrams, and runs the stages of the loop
  * once per tick.
  *
- * install() builds the ServerApplication, which binds nothing. start() binds
- * the socket on the port given to the constructor and runs the server on a
- * thread of its own; stop() stops it, joins the thread and gives the port
- * back. When the server stops on an error, the module logs it and tells the
- * StopRequest, which wakes the thread that waits to stop the program.
+ * install() builds the ServerApplication, which binds nothing, and declares the
+ * `port` setting. start() binds the socket on the port the setting holds once
+ * the configuration was read, and runs the server on a thread of its own;
+ * stop() stops it, joins the thread and gives the port back. When the server
+ * stops on an error, the module logs it and tells the StopRequest, which wakes
+ * the thread that waits to stop the program.
  */
 class ServerNetworkModule final : public engine::IModule {
  public:
-  /** @param port The UDP port to listen on, on every IPv4 interface; 0 lets
-   * the system pick one.
+  /** @param port The UDP port to listen on, on every IPv4 interface, unless
+   * the configuration sets another; 0 lets the system pick one.
    * @param stopRequest Told when the server stops on an error; it must outlive
    * the module.
    * @param conditions The network the datagrams of the server cross, read at
@@ -42,7 +44,8 @@ class ServerNetworkModule final : public engine::IModule {
   [[nodiscard]] std::vector<std::string> dependencies() const override;
 
   /**
-   * @brief Builds the server and provides its services; binds nothing.
+   * @brief Builds the server, declares the `port` setting and provides the
+   * services; binds nothing.
    * @throws MissingServiceException when the application is not provided.
    */
   void install(engine::InstallContext& context) override;
@@ -60,6 +63,7 @@ class ServerNetworkModule final : public engine::IModule {
   void runServer();
 
   std::uint16_t port_;
+  const engine::SettingValue* portSetting_{nullptr};
   StopRequest* stopRequest_;
   network::NetworkConditions conditions_;
   logging::Logger logger_;
