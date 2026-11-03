@@ -15,7 +15,7 @@
 namespace rtype::client {
 
 GaussianBlur::GaussianBlur()
-    : logger_(std::string(BACKGROUND_LOG_MODULE_NAME)),
+    : logger_(std::string(BACKGROUND_LOGGER_NAME)),
       available_(sf::Shader::isAvailable()) {
   createPass(horizontalPass_);
   createPass(verticalPass_);

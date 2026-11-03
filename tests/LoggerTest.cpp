@@ -159,16 +159,16 @@ std::vector<std::string> splitLines(const std::string& text) {
 }
 
 std::string plainLinePattern(const std::string& label,
-                             const std::string& module,
+                             const std::string& loggerName,
                              const std::string& body) {
   return R"(\[\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z\] \[)" + label +
-         R"(\] \[)" + module + R"(\] - )" + body;
+         R"(\] \[)" + loggerName + R"(\] - )" + body;
 }
 
 std::string standardErrorLinePattern(const std::string& label,
-                                     const std::string& module,
+                                     const std::string& loggerName,
                                      const std::string& body) {
-  return R"((\x1b\[\d+m)?)" + plainLinePattern(label, module, body) +
+  return R"((\x1b\[\d+m)?)" + plainLinePattern(label, loggerName, body) +
          R"((\x1b\[0m)?)";
 }
 

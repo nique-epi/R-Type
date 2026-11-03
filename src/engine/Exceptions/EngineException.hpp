@@ -2,6 +2,7 @@
 
 #include <stdexcept>
 #include <string>
+#include <vector>
 
 namespace rtype::engine {
 
@@ -165,6 +166,19 @@ class MissingServiceException : public EngineException {
  public:
   MissingServiceException(const std::string& moduleName,
                           const std::string& serviceName);
+};
+
+/** @brief The system did not tell where the running executable is. */
+class UnknownExecutablePathException : public EngineException {
+ public:
+  UnknownExecutablePathException();
+};
+
+/** @brief None of the searched folders is an assets folder. */
+class AssetFolderNotFoundException : public EngineException {
+ public:
+  explicit AssetFolderNotFoundException(
+      const std::vector<std::string>& searchedFolders);
 };
 
 }  // namespace rtype::engine

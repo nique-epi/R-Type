@@ -223,7 +223,7 @@ TEST(ByteReader, RejectsReadAfterTheEnd) {
 
 /**
  * Given a BufferUnderflowException
- * When it is caught as the module's root exception
+ * When it is caught as the network library's root exception
  * Then the catch succeeds
  */
 TEST(ByteReader, UnderflowIsCaughtAsNetworkException) {

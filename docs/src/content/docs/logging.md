@@ -6,7 +6,7 @@ sidebar:
 
 ## Context
 
-A network problem is diagnosed after the fact, from what the client and the server wrote down. Both programs therefore share one logger: every line is timestamped, carries a level and the name of the module that wrote it, and lines written by different threads never mix.
+A network problem is diagnosed after the fact, from what the client and the server wrote down. Both programs therefore share one logger: every line is timestamped, carries a level and the name of the logger that wrote it, and lines written by different threads never mix.
 
 The logger comes from the raytracer project and lives in `src/logging/`, in the `rtype_logging` library. It depends on nothing else of the repository, so the engine, the game, the network, the client and the server can all use it.
 
@@ -16,13 +16,13 @@ The logger comes from the raytracer project and lives in `src/logging/`, in the 
 [2026-10-06T14:03:21.159Z] [INFO ] [Server] - server starting
 ```
 
-The time is **UTC**, with the date, so the journals of two machines can be compared line by line. A line is the time, the level, the module, then the message.
+The time is **UTC**, with the date, so the journals of two machines can be compared line by line. A line is the time, the level, the name of the logger, then the message.
 
 When standard error is a terminal, its lines are colored by level. The file never contains color codes. Color is never used on Windows.
 
 ## Using the logger
 
-Each module owns a `Logger` built with its name:
+Each class that writes lines owns a `Logger` built with a name:
 
 ```cpp
 #include "Logger.hpp"
@@ -83,12 +83,12 @@ The client and the server read the same options:
 | Option | Effect |
 |---|---|
 | `--log-level <name>` | The level: `trace`, `debug`, `info`, `warn`, `error` or `silent`, in any case. |
-| `--log-file <path>` | The journal. The default is `r-type_server.log` or `r-type_client.log` in the current directory. |
+| `--log-file <path>` | The journal. The default is `r-type_server.log` or `r-type_client.log` next to the executable, whatever folder the program was started in. A relative path given after `--log-file` is read from the folder the program was started in. |
 | `--no-log-file` | No journal. |
 | `--log-stderr` | Write to standard error too. This is the default. |
 | `--no-log-stderr` | Nothing on standard error. |
 
-Without options, every line goes both to the journal and to standard error, so a program launched from a terminal shows its lines there. The first line, at the `info` level under the module `Logging`, gives the absolute path of the journal (`journal: /home/player/r-type/r-type_server.log`), or says `no journal file`.
+Without options, every line goes both to the journal and to standard error, so a program launched from a terminal shows its lines there. The first line, at the `info` level under the name `Logging`, gives the absolute path of the journal (`journal: /home/player/r-type/r-type_server.log`), or says `no journal file`.
 
 The level can also come from the `RT_LOG_LEVEL` environment variable; `--log-level` wins over it. A value of `RT_LOG_LEVEL` that is not a level is ignored, while a `--log-level` that is not a level is an error.
 
@@ -99,7 +99,9 @@ The last of `--log-file` and `--no-log-file` wins, and so does the last of `--lo
 ```cpp
 const rtype::logging::LogLaunchOptions logOptions =
     rtype::logging::LogLaunchOptions::readFromProcess(
-        argumentCount, arguments, rtype::logging::SERVER_LOG_FILE_NAME);
+        argumentCount, arguments,
+        rtype::engine::executableFolder() /
+            rtype::logging::SERVER_LOG_FILE_NAME);
 const rtype::server::LaunchOptions launchOptions =
     rtype::server::LaunchOptions::read(logOptions.otherArguments());
 if (launchOptions.helpRequested()) {

@@ -2,14 +2,10 @@
 #include <filesystem>
 #include <optional>
 #include "ExecutablePath.hpp"
+#include "ExecutablePathTestConstants.hpp"
 
-using rtype::client::executablePath;
-
-namespace {
-
-constexpr const char* TEST_EXECUTABLE_NAME = "client_tests";
-
-}  // namespace
+using rtype::engine::executableFolder;
+using rtype::engine::executablePath;
 
 /**
  * Given the running test executable
@@ -23,4 +19,14 @@ TEST(ExecutablePath, NamesTheRunningExecutable) {
   ASSERT_TRUE(executable.has_value());
   EXPECT_EQ(reported.stem(), TEST_EXECUTABLE_NAME);
   EXPECT_TRUE(std::filesystem::is_regular_file(reported));
+}
+
+/**
+ * Given the running test executable, which the build wrote in its tests folder
+ * When the folder of the executable is asked for
+ * Then it is that tests folder
+ */
+TEST(ExecutablePath, FolderIsWhereTheBuildWroteTheExecutable) {
+  EXPECT_TRUE(std::filesystem::equivalent(
+      executableFolder(), std::filesystem::path{RTYPE_TEST_EXECUTABLE_FOLDER}));
 }

@@ -9,17 +9,6 @@ namespace rtype::client {
 
 namespace {
 
-std::string joinedFolders(const std::vector<std::string>& folders) {
-  std::string joined;
-  for (const std::string& folder : folders) {
-    if (!joined.empty()) {
-      joined += ", ";
-    }
-    joined += folder;
-  }
-  return joined;
-}
-
 void appendProblemLines(std::string& message,
                         const std::vector<std::string>& subjects,
                         std::string_view reason) {
@@ -46,16 +35,6 @@ std::string assetLoadingMessage(std::string_view assetFolder,
 
 ClientException::ClientException(const std::string& message)
     : std::runtime_error(message) {}
-
-UnknownExecutablePathException::UnknownExecutablePathException()
-    : ClientException(
-          "The system did not tell where the client executable is, so its "
-          "assets folder cannot be found") {}
-
-AssetFolderNotFoundException::AssetFolderNotFoundException(
-    const std::vector<std::string>& searchedFolders)
-    : ClientException("No assets folder found, searched: " +
-                      joinedFolders(searchedFolders)) {}
 
 AssetLoadingException::AssetLoadingException(std::string_view assetFolder,
                                              const AssetProblems& problems)

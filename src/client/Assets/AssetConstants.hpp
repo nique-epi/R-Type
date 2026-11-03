@@ -4,8 +4,6 @@
 
 namespace rtype::client {
 
-constexpr std::string_view ASSETS_FOLDER_NAME = "assets";
-
 /** @brief Separates the folders of an asset id, on every platform. */
 constexpr char ASSET_ID_SEPARATOR = '/';
 

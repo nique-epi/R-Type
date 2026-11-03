@@ -2,23 +2,18 @@
 #include <algorithm>
 #include <filesystem>
 #include <iterator>
-#include <optional>
 #include <string>
 #include <system_error>
 #include <vector>
-#include "AssetConstants.hpp"
-#include "AssetIds.hpp"
-#include "ClientException.hpp"
+#include "EngineException.hpp"
 #include "ExecutablePath.hpp"
+#include "PathConstants.hpp"
+#include "PathText.hpp"
 
-namespace rtype::client {
+namespace rtype::engine {
 
 std::filesystem::path locateAssetFolder() {
-  const std::optional<std::filesystem::path> executable = executablePath();
-  if (!executable.has_value()) {
-    throw UnknownExecutablePathException();
-  }
-  return findAssetFolder(executable->parent_path());
+  return findAssetFolder(executableFolder());
 }
 
 std::filesystem::path findAssetFolder(
@@ -38,4 +33,4 @@ std::filesystem::path findAssetFolder(
   throw AssetFolderNotFoundException(searchedFolders);
 }
 
-}  // namespace rtype::client
+}  // namespace rtype::engine

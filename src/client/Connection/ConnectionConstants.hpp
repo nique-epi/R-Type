@@ -74,7 +74,7 @@ constexpr engine::Duration PLAYER_INPUT_INTERVAL =
  * come 50 ms apart, and the protocol page says a second is enough. */
 constexpr engine::Duration GAME_EVENT_MEMORY = std::chrono::seconds(1);
 
-/** @brief Module name the connection to a server writes its log lines under. */
+/** @brief Logger name the connection to a server writes its log lines under. */
 constexpr std::string_view CONNECTION_LOGGER_NAME = "Connection";
 
 }  // namespace rtype::client
