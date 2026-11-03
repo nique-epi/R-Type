@@ -2,10 +2,12 @@
 #include <string>
 #include <string_view>
 #include <vector>
+#include "LaunchOptionReadingTestConstants.hpp"
 #include "NetworkConditions.hpp"
 #include "NetworkException.hpp"
 #include "NetworkSimulatorTestConstants.hpp"
 #include "SimulatorLaunchOptions.hpp"
+#include "SimulatorLaunchOptionsFixtures.hpp"
 #include "SimulatorLaunchOptionsTestConstants.hpp"
 
 using rtype::network::InvalidSimulatorOptionException;
@@ -16,28 +18,64 @@ using rtype::network::SimulatorLaunchOptions;
 using Arguments = std::vector<std::string_view>;
 
 /**
- * Given no argument
- * When the simulator options are read
+ * Given no option
+ * When the simulator options are made
  * Then the network is perfect: nothing is simulated
  */
-TEST(SimulatorLaunchOptions, NoArgumentSimulatesNothing) {
-  EXPECT_EQ(SimulatorLaunchOptions::read(Arguments{}).conditions(),
-            NetworkConditions{});
+TEST(SimulatorLaunchOptions, NoOptionSimulatesNothing) {
+  const SimulatorLaunchOptions options;
+
+  EXPECT_EQ(options.conditions(), NetworkConditions{});
 }
 
 /**
- * Given arguments of the program around a simulator option
- * When the simulator options are read
- * Then the program gets every other argument, in the order given
+ * Given the lag option, a lag, then an option of the program
+ * When the simulator option the arguments start with is read
+ * Then it takes the option and its value
  */
-TEST(SimulatorLaunchOptions, KeepsEveryOtherArgumentInItsOrder) {
-  const SimulatorLaunchOptions options = SimulatorLaunchOptions::read(
-      Arguments{PORT_OPTION_TEXT, PORT_ARGUMENT, LAG_OPTION_TEXT, LAG_ARGUMENT,
-                NO_SOUND_OPTION_TEXT});
+TEST(SimulatorLaunchOptions, TakesAnOptionAndItsValue) {
+  SimulatorLaunchOptions options;
 
-  EXPECT_EQ(Arguments(options.otherArguments().begin(),
-                      options.otherArguments().end()),
-            (Arguments{PORT_OPTION_TEXT, PORT_ARGUMENT, NO_SOUND_OPTION_TEXT}));
+  EXPECT_EQ(options.readOption(
+                Arguments{LAG_OPTION_TEXT, LAG_ARGUMENT, PORT_OPTION_TEXT}),
+            AN_OPTION_AND_ITS_VALUE);
+}
+
+/**
+ * Given an option of the program and its value
+ * When the simulator option the arguments start with is read
+ * Then nothing is taken: it is left to the program
+ */
+TEST(SimulatorLaunchOptions, TakesNoArgumentOfTheProgram) {
+  SimulatorLaunchOptions options;
+
+  EXPECT_EQ(options.readOption(Arguments{PORT_OPTION_TEXT, PORT_ARGUMENT}),
+            NO_ARGUMENT_TAKEN);
+}
+
+/**
+ * Given no argument
+ * When the simulator option the arguments start with is read
+ * Then nothing is taken
+ */
+TEST(SimulatorLaunchOptions, TakesNothingFromNoArgument) {
+  SimulatorLaunchOptions options;
+
+  EXPECT_EQ(options.readOption(Arguments{}), NO_ARGUMENT_TAKEN);
+}
+
+/**
+ * Given the lag option followed by the jitter option
+ * When the simulator option the arguments start with is read
+ * Then the jitter option is the value of the lag option, and is refused as a
+ *      lag
+ */
+TEST(SimulatorLaunchOptions, TakesTheArgumentAfterAnOptionAsItsValue) {
+  SimulatorLaunchOptions options;
+
+  EXPECT_THROW(static_cast<void>(options.readOption(
+                   Arguments{LAG_OPTION_TEXT, JITTER_OPTION_TEXT})),
+               InvalidSimulatorOptionException);
 }
 
 /**
@@ -46,10 +84,8 @@ TEST(SimulatorLaunchOptions, KeepsEveryOtherArgumentInItsOrder) {
  * Then only the lag is set
  */
 TEST(SimulatorLaunchOptions, LagOptionSetsTheLag) {
-  EXPECT_EQ(
-      SimulatorLaunchOptions::read(Arguments{LAG_OPTION_TEXT, LAG_ARGUMENT})
-          .conditions(),
-      LAG_OF_LAG_ARGUMENT);
+  EXPECT_EQ(conditionsOf(Arguments{LAG_OPTION_TEXT, LAG_ARGUMENT}),
+            LAG_OF_LAG_ARGUMENT);
 }
 
 /**
@@ -58,9 +94,7 @@ TEST(SimulatorLaunchOptions, LagOptionSetsTheLag) {
  * Then only the jitter is set
  */
 TEST(SimulatorLaunchOptions, JitterOptionSetsTheJitter) {
-  EXPECT_EQ(SimulatorLaunchOptions::read(
-                Arguments{JITTER_OPTION_TEXT, JITTER_ARGUMENT})
-                .conditions(),
+  EXPECT_EQ(conditionsOf(Arguments{JITTER_OPTION_TEXT, JITTER_ARGUMENT}),
             JITTER_OF_JITTER_ARGUMENT);
 }
 
@@ -70,10 +104,8 @@ TEST(SimulatorLaunchOptions, JitterOptionSetsTheJitter) {
  * Then only the loss is set
  */
 TEST(SimulatorLaunchOptions, LossOptionSetsTheLoss) {
-  EXPECT_EQ(
-      SimulatorLaunchOptions::read(Arguments{LOSS_OPTION_TEXT, LOSS_ARGUMENT})
-          .conditions(),
-      LOSS_OF_LOSS_ARGUMENT);
+  EXPECT_EQ(conditionsOf(Arguments{LOSS_OPTION_TEXT, LOSS_ARGUMENT}),
+            LOSS_OF_LOSS_ARGUMENT);
 }
 
 /**
@@ -82,10 +114,9 @@ TEST(SimulatorLaunchOptions, LossOptionSetsTheLoss) {
  * Then only the duplicates are set
  */
 TEST(SimulatorLaunchOptions, DuplicatesOptionSetsTheDuplicates) {
-  EXPECT_EQ(SimulatorLaunchOptions::read(
-                Arguments{DUPLICATES_OPTION_TEXT, DUPLICATES_ARGUMENT})
-                .conditions(),
-            DUPLICATES_OF_DUPLICATES_ARGUMENT);
+  EXPECT_EQ(
+      conditionsOf(Arguments{DUPLICATES_OPTION_TEXT, DUPLICATES_ARGUMENT}),
+      DUPLICATES_OF_DUPLICATES_ARGUMENT);
 }
 
 /**
@@ -94,9 +125,7 @@ TEST(SimulatorLaunchOptions, DuplicatesOptionSetsTheDuplicates) {
  * Then only the reordering is set
  */
 TEST(SimulatorLaunchOptions, ReorderOptionSetsTheReordering) {
-  EXPECT_EQ(SimulatorLaunchOptions::read(
-                Arguments{REORDER_OPTION_TEXT, REORDER_ARGUMENT})
-                .conditions(),
+  EXPECT_EQ(conditionsOf(Arguments{REORDER_OPTION_TEXT, REORDER_ARGUMENT}),
             REORDER_OF_REORDER_ARGUMENT);
 }
 
@@ -106,9 +135,7 @@ TEST(SimulatorLaunchOptions, ReorderOptionSetsTheReordering) {
  * Then the five values are those of 4g in the table
  */
 TEST(SimulatorLaunchOptions, NetworkOptionSetsTheValuesOf4g) {
-  EXPECT_EQ(SimulatorLaunchOptions::read(
-                Arguments{NETWORK_OPTION_TEXT, MOBILE_4G_NAME_TEXT})
-                .conditions(),
+  EXPECT_EQ(conditionsOf(Arguments{NETWORK_OPTION_TEXT, MOBILE_4G_NAME_TEXT}),
             MOBILE_4G_OF_THE_TABLE);
 }
 
@@ -118,9 +145,7 @@ TEST(SimulatorLaunchOptions, NetworkOptionSetsTheValuesOf4g) {
  * Then the five values are those of wifi-busy in the table
  */
 TEST(SimulatorLaunchOptions, NetworkOptionSetsTheValuesOfABusyWifi) {
-  EXPECT_EQ(SimulatorLaunchOptions::read(
-                Arguments{NETWORK_OPTION_TEXT, BUSY_WIFI_NAME_TEXT})
-                .conditions(),
+  EXPECT_EQ(conditionsOf(Arguments{NETWORK_OPTION_TEXT, BUSY_WIFI_NAME_TEXT}),
             BUSY_WIFI_OF_THE_TABLE);
 }
 
@@ -130,9 +155,7 @@ TEST(SimulatorLaunchOptions, NetworkOptionSetsTheValuesOfABusyWifi) {
  * Then the five values are those of bad in the table
  */
 TEST(SimulatorLaunchOptions, NetworkOptionSetsTheValuesOfABadNetwork) {
-  EXPECT_EQ(SimulatorLaunchOptions::read(
-                Arguments{NETWORK_OPTION_TEXT, BAD_NAME_TEXT})
-                .conditions(),
+  EXPECT_EQ(conditionsOf(Arguments{NETWORK_OPTION_TEXT, BAD_NAME_TEXT}),
             BAD_OF_THE_TABLE);
 }
 
@@ -142,11 +165,9 @@ TEST(SimulatorLaunchOptions, NetworkOptionSetsTheValuesOfABadNetwork) {
  * Then the values are those of the scenario, with the loss given after it
  */
 TEST(SimulatorLaunchOptions, AnOptionAfterTheNetworkChangesOneOfItsValues) {
-  EXPECT_EQ(
-      SimulatorLaunchOptions::read(Arguments{NETWORK_OPTION_TEXT, BAD_NAME_TEXT,
-                                             LOSS_OPTION_TEXT, LOSS_ARGUMENT})
-          .conditions(),
-      BAD_WITH_LOSS_OF_LOSS_ARGUMENT);
+  EXPECT_EQ(conditionsOf(Arguments{NETWORK_OPTION_TEXT, BAD_NAME_TEXT,
+                                   LOSS_OPTION_TEXT, LOSS_ARGUMENT}),
+            BAD_WITH_LOSS_OF_LOSS_ARGUMENT);
 }
 
 /**
@@ -155,10 +176,8 @@ TEST(SimulatorLaunchOptions, AnOptionAfterTheNetworkChangesOneOfItsValues) {
  * Then the values are those of the scenario: it was given last
  */
 TEST(SimulatorLaunchOptions, TheNetworkAfterAnOptionReplacesItsValue) {
-  EXPECT_EQ(SimulatorLaunchOptions::read(
-                Arguments{LOSS_OPTION_TEXT, LOSS_ARGUMENT, NETWORK_OPTION_TEXT,
-                          BAD_NAME_TEXT})
-                .conditions(),
+  EXPECT_EQ(conditionsOf(Arguments{LOSS_OPTION_TEXT, LOSS_ARGUMENT,
+                                   NETWORK_OPTION_TEXT, BAD_NAME_TEXT}),
             BAD_OF_THE_TABLE);
 }
 
@@ -168,7 +187,7 @@ TEST(SimulatorLaunchOptions, TheNetworkAfterAnOptionReplacesItsValue) {
  * Then they are refused
  */
 TEST(SimulatorLaunchOptions, RefusesAnUnknownNetwork) {
-  EXPECT_THROW(static_cast<void>(SimulatorLaunchOptions::read(
+  EXPECT_THROW(static_cast<void>(conditionsOf(
                    Arguments{NETWORK_OPTION_TEXT, UNKNOWN_SCENARIO_ARGUMENT})),
                InvalidSimulatorOptionException);
 }
@@ -179,9 +198,7 @@ TEST(SimulatorLaunchOptions, RefusesAnUnknownNetwork) {
  * Then the lag is 10 000 milliseconds
  */
 TEST(SimulatorLaunchOptions, AcceptsTheLongestDelay) {
-  EXPECT_EQ(SimulatorLaunchOptions::read(
-                Arguments{LAG_OPTION_TEXT, LONGEST_DELAY_ARGUMENT})
-                .conditions(),
+  EXPECT_EQ(conditionsOf(Arguments{LAG_OPTION_TEXT, LONGEST_DELAY_ARGUMENT}),
             LONGEST_LAG);
 }
 
@@ -191,7 +208,7 @@ TEST(SimulatorLaunchOptions, AcceptsTheLongestDelay) {
  * Then they are refused
  */
 TEST(SimulatorLaunchOptions, RefusesADelayLongerThanTheLongest) {
-  EXPECT_THROW(static_cast<void>(SimulatorLaunchOptions::read(
+  EXPECT_THROW(static_cast<void>(conditionsOf(
                    Arguments{JITTER_OPTION_TEXT, TOO_LONG_DELAY_ARGUMENT})),
                InvalidSimulatorOptionException);
 }
@@ -202,9 +219,7 @@ TEST(SimulatorLaunchOptions, RefusesADelayLongerThanTheLongest) {
  * Then every datagram is lost
  */
 TEST(SimulatorLaunchOptions, AcceptsAFullShare) {
-  EXPECT_EQ(SimulatorLaunchOptions::read(
-                Arguments{LOSS_OPTION_TEXT, FULL_SHARE_ARGUMENT})
-                .conditions(),
+  EXPECT_EQ(conditionsOf(Arguments{LOSS_OPTION_TEXT, FULL_SHARE_ARGUMENT}),
             FULL_LOSS_OF_THE_OPTIONS);
 }
 
@@ -214,7 +229,7 @@ TEST(SimulatorLaunchOptions, AcceptsAFullShare) {
  * Then they are refused
  */
 TEST(SimulatorLaunchOptions, RefusesAShareAboveAHundred) {
-  EXPECT_THROW(static_cast<void>(SimulatorLaunchOptions::read(Arguments{
+  EXPECT_THROW(static_cast<void>(conditionsOf(Arguments{
                    DUPLICATES_OPTION_TEXT, TOO_LARGE_SHARE_ARGUMENT})),
                InvalidSimulatorOptionException);
 }
@@ -225,9 +240,7 @@ TEST(SimulatorLaunchOptions, RefusesAShareAboveAHundred) {
  * Then the network is perfect
  */
 TEST(SimulatorLaunchOptions, AcceptsZero) {
-  EXPECT_EQ(SimulatorLaunchOptions::read(
-                Arguments{REORDER_OPTION_TEXT, ZERO_ARGUMENT})
-                .conditions(),
+  EXPECT_EQ(conditionsOf(Arguments{REORDER_OPTION_TEXT, ZERO_ARGUMENT}),
             NetworkConditions{});
 }
 
@@ -237,8 +250,8 @@ TEST(SimulatorLaunchOptions, AcceptsZero) {
  * Then they are refused
  */
 TEST(SimulatorLaunchOptions, RefusesANegativeValue) {
-  EXPECT_THROW(static_cast<void>(SimulatorLaunchOptions::read(
-                   Arguments{LAG_OPTION_TEXT, NEGATIVE_ARGUMENT})),
+  EXPECT_THROW(static_cast<void>(
+                   conditionsOf(Arguments{LAG_OPTION_TEXT, NEGATIVE_ARGUMENT})),
                InvalidSimulatorOptionException);
 }
 
@@ -248,7 +261,7 @@ TEST(SimulatorLaunchOptions, RefusesANegativeValue) {
  * Then they are refused
  */
 TEST(SimulatorLaunchOptions, RefusesAValueThatIsNoNumber) {
-  EXPECT_THROW(static_cast<void>(SimulatorLaunchOptions::read(
+  EXPECT_THROW(static_cast<void>(conditionsOf(
                    Arguments{LOSS_OPTION_TEXT, NOT_A_NUMBER_ARGUMENT})),
                InvalidSimulatorOptionException);
 }
@@ -259,8 +272,8 @@ TEST(SimulatorLaunchOptions, RefusesAValueThatIsNoNumber) {
  * Then they are refused
  */
 TEST(SimulatorLaunchOptions, RefusesAnEmptyValue) {
-  EXPECT_THROW(static_cast<void>(SimulatorLaunchOptions::read(
-                   Arguments{LAG_OPTION_TEXT, EMPTY_ARGUMENT})),
+  EXPECT_THROW(static_cast<void>(
+                   conditionsOf(Arguments{LAG_OPTION_TEXT, EMPTY_ARGUMENT})),
                InvalidSimulatorOptionException);
 }
 
@@ -270,8 +283,7 @@ TEST(SimulatorLaunchOptions, RefusesAnEmptyValue) {
  * Then they are refused: the value is missing
  */
 TEST(SimulatorLaunchOptions, RefusesAnOptionWithoutItsValue) {
-  EXPECT_THROW(static_cast<void>(
-                   SimulatorLaunchOptions::read(Arguments{LAG_OPTION_TEXT})),
+  EXPECT_THROW(static_cast<void>(conditionsOf(Arguments{LAG_OPTION_TEXT})),
                MissingSimulatorOptionValueException);
 }
 

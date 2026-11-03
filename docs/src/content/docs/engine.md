@@ -191,20 +191,27 @@ The engine has no system that walks the entities: it cannot read `Position` or `
 `src/engine/LaunchArguments/` (`rtype_engine_launch_arguments`) reads the options a program is given at launch. The server and the client both use it, each with its own options (see [Server](/R-Type/server/#launch-options-launchoptions) and [Client](/R-Type/client/#launch-options-launchoptions)).
 
 - A program describes each option as a `LaunchOption`: its `name`, whether it `takesValue`, and a `record` called with the value, or with an empty view for an option that takes none. A record may throw to refuse its value, as the programs do through `portFromText()`.
-- `readLaunchArguments(arguments, options)` reads the arguments in order. The argument after an option that takes a value is always that value, even when it looks like an option. An option given twice is recorded twice, so the last one wins. An argument that names no option throws `UnknownLaunchArgumentException`; an option that takes a value, given last, throws `MissingLaunchOptionValueException`.
+- `readLaunchArguments(arguments, options, readers)` reads the arguments once, from the first to the last. The argument after an option that takes a value is always that value, even when it looks like an option. An option given twice is recorded twice, so the last one wins. An argument that names no option is handed to `readers`, in their order, until one takes it; one that none takes throws `UnknownLaunchArgumentException`, and an option that takes a value, given last, throws `MissingLaunchOptionValueException`.
+- `processArguments(argumentCount, arguments)` returns the arguments of the running process without its name, as views into the strings of `argv`.
 - `usageHeader()`, `usageEntry()` and `launchErrorText()` write the usage and the launch error the same way for every program. `PORT_OPTION` (`-p`) and `HELP_OPTION` (`--help`) are the names the server and the client share.
 
-The logging options do not go through it: `rtype_logging` links nothing else of the repository, so `LogLaunchOptions` reads its own and leaves the other arguments to the program (see [Logging](/R-Type/logging/#choosing-the-level-and-the-output-at-launch)).
+The logging and the network simulator read their own options, since `rtype_logging` and `rtype_network` may not link the engine. Each lends the program a `LaunchOptionReader` (`LaunchOptionReader.hpp`): a function handed the arguments from the one reached to the last, which reads the first one when it is one of its options and returns how many arguments it took, 1, or 2 with its value, or 0 when it is none of them. The reading stays one pass, so no reader is ever handed the value of an option: `--seed --log-level debug 123` refuses `--log-level` as a seed instead of reading it as a logging option (see [Logging](/R-Type/logging/#choosing-the-level-and-the-output-at-launch) and [Network](/R-Type/network/#network-simulator-simulatednetworksocket)).
 
 ```cpp
 std::uint16_t port = rtype::network::DEFAULT_SERVER_PORT;
+rtype::logging::LogLaunchOptions logOptions{defaultJournal};
 const std::array options{rtype::engine::LaunchOption{
     .name = rtype::engine::PORT_OPTION,
     .takesValue = true,
     .record = [&port](std::string_view value) {
       port = rtype::network::portFromText(value);
     }}};
-rtype::engine::readLaunchArguments(logOptions.otherArguments(), options);
+const std::array readers{rtype::engine::LaunchOptionReader{
+    [&logOptions](std::span<const std::string_view> rest) {
+      return logOptions.readOption(rest);
+    }}};
+rtype::engine::readLaunchArguments(
+    rtype::engine::processArguments(argumentCount, arguments), options, readers);
 ```
 
 ## Files next to the executable: `locateAssetFolder`

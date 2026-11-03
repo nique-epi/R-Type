@@ -4,10 +4,10 @@
 #include <string_view>
 #include "NetworkConditions.hpp"
 
-/** @brief Arguments of the programs that are not simulator options. */
+/** @brief An option of the programs that is no simulator option, and its
+ * value. */
 constexpr std::string_view PORT_OPTION_TEXT = "-p";
 constexpr std::string_view PORT_ARGUMENT = "4243";
-constexpr std::string_view NO_SOUND_OPTION_TEXT = "--no-sound";
 
 /** @brief Values the tests give, and the conditions each makes; the lag is in
  * NetworkSimulatorTestConstants.hpp, which the programs' tests share. */
