@@ -18,6 +18,15 @@
         "BUILD_TESTS": "ON",
         "VCPKG_MANIFEST_FEATURES": "tests"
       }
+    },
+    {
+      "name": "sanitize",
+      "inherits": "test",
+      "binaryDir": "${sourceDir}/build-sanitize",
+      "cacheVariables": {
+        "ENABLE_SANITIZERS": "ON",
+        "CMAKE_RUNTIME_OUTPUT_DIRECTORY": "${sourceDir}/build-sanitize"
+      }
     }
   ],
   "buildPresets": [
@@ -30,12 +39,25 @@
       "name": "test",
       "configurePreset": "test",
       "configuration": "Debug"
+    },
+    {
+      "name": "sanitize",
+      "configurePreset": "sanitize",
+      "configuration": "Debug"
     }
   ],
   "testPresets": [
     {
       "name": "test",
       "configurePreset": "test",
+      "configuration": "Debug",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "sanitize",
+      "configurePreset": "sanitize",
       "configuration": "Debug",
       "output": {
         "outputOnFailure": true
@@ -70,6 +92,23 @@
         {
           "type": "test",
           "name": "test"
+        }
+      ]
+    },
+    {
+      "name": "sanitize",
+      "steps": [
+        {
+          "type": "configure",
+          "name": "sanitize"
+        },
+        {
+          "type": "build",
+          "name": "sanitize"
+        },
+        {
+          "type": "test",
+          "name": "sanitize"
         }
       ]
     }

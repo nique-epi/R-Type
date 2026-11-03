@@ -192,7 +192,7 @@ jobs:
           xargs -0 -a "$RUNNER_TEMP/files-to-lint" "/c/Program Files/LLVM/bin/clang-tidy.exe" -p build --quiet
 
   build:
-    name: Build and test (${{ matrix.os }})
+    name: Build and test (${{ matrix.os }}${{ matrix.preset == 'sanitize' && ', sanitizers' || '' }})
     runs-on: ${{ matrix.os }}
     timeout-minutes: 60
     strategy:
@@ -200,8 +200,13 @@ jobs:
       matrix:
         include:
           - os: ubuntu-latest
+            preset: test
+            generator_arguments: ""
+          - os: ubuntu-latest
+            preset: sanitize
             generator_arguments: ""
           - os: windows-latest
+            preset: test
             # Ninja compiles every file in parallel; the Visual Studio generator does not.
             # /Z7 puts the debug information in the object files, which sccache can cache.
             generator_arguments: >-
@@ -247,7 +252,7 @@ jobs:
         env:
           VCPKG_SSL_REVOKE_BEST_EFFORT: ${{ runner.os == 'Windows' && '1' || '0' }}
         run: >-
-          cmake --preset test ${{ matrix.generator_arguments }}
+          cmake --preset ${{ matrix.preset }} ${{ matrix.generator_arguments }}
           -DCMAKE_COMPILE_WARNING_AS_ERROR=ON
           -DCMAKE_C_COMPILER_LAUNCHER=sccache
           -DCMAKE_CXX_COMPILER_LAUNCHER=sccache
@@ -260,7 +265,7 @@ jobs:
           key: ${{ steps.vcpkg-cache.outputs.cache-primary-key }}
 
       - name: Build
-        run: cmake --build --preset test --parallel
+        run: cmake --build --preset ${{ matrix.preset }} --parallel
 
       - name: Show the compiler cache statistics
         if: always()
@@ -268,7 +273,23 @@ jobs:
         run: ${SCCACHE_PATH} --show-stats
 
       - name: Test
-        run: ctest --preset test
+        run: ctest --preset ${{ matrix.preset }}
+
+      - name: Stop the server under the sanitizers
+        if: matrix.preset == 'sanitize'
+        timeout-minutes: 2
+        shell: bash
+        # Job control on, or bash starts the server with SIGINT ignored.
+        run: |
+          set -m
+          ./build-sanitize/r-type_server &
+          server=$!
+          sleep 5
+          kill -INT "$server"
+          code=0
+          wait "$server" || code=$?
+          echo "r-type_server exit code: $code"
+          test "$code" -eq 0
 
   network-condition-scripts:
     name: Network condition scripts
