@@ -17,7 +17,7 @@ target_link_libraries(rtype_server_rules_players
     rtype_logging
     rtype_network_player_input
     rtype_server_instances
-    rtype_server_roster
+    rtype_server_sessions_roster
   PRIVATE
     rtype_identifiers
     rtype_network_protocol

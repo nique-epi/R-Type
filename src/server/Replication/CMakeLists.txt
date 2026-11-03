@@ -11,7 +11,7 @@ target_link_libraries(rtype_server_replication_module
     rtype_server_instances
     rtype_server_replication_announcements
     rtype_server_replication_wire
-    rtype_server_roster
+    rtype_server_sessions_roster
 )
 
 rtype_enable_warnings(rtype_server_replication_module)

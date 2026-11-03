@@ -17,7 +17,7 @@ target_link_libraries(rtype_server_replication_wire
     rtype_network_protocol
     rtype_network_transport
     rtype_network_world_state_codec
-    rtype_server_roster
+    rtype_server_sessions_roster
 )
 
 rtype_enable_warnings(rtype_server_replication_wire)

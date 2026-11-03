@@ -21,7 +21,7 @@ target_link_libraries(rtype_server_replication_announcements
     rtype_server_constants
     rtype_server_exceptions
     rtype_server_replication_wire
-    rtype_server_roster
+    rtype_server_sessions_roster
   PRIVATE
     rtype_game_spawning
     rtype_identifiers

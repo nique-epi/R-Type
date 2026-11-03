@@ -15,7 +15,7 @@ target_link_libraries(rtype_server_lobby_module
     rtype_network_transport
     rtype_server_games_module
     rtype_server_network_module
-    rtype_server_roster
+    rtype_server_sessions_roster
   PRIVATE
     rtype_network_connection_accepted
     rtype_network_connection_challenge
