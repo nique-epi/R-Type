@@ -20,6 +20,7 @@ add_subdirectory(Serialization)
 add_subdirectory(Protocol)
 add_subdirectory(Transport)
 add_subdirectory(Handshake)
+add_subdirectory(Statistics)
 
 add_library(rtype_network INTERFACE)
 
@@ -42,4 +43,5 @@ target_link_libraries(rtype_network
     rtype_network_datagram_relay
     rtype_network_handshake
     rtype_network_cookie_issuer
+    rtype_network_statistics
 )
