@@ -2,7 +2,6 @@
 
 #include <chrono>
 #include <string_view>
-#include "TimeConstants.hpp"
 
 namespace rtype::client {
 
@@ -39,10 +38,6 @@ constexpr std::chrono::milliseconds GAME_LOADED_INTERVAL{100};
  */
 constexpr int DISCONNECTION_COPY_COUNT = 3;
 constexpr std::chrono::milliseconds DISCONNECTION_COPY_INTERVAL{50};
-
-/** @brief How long the number of a GameEvent is remembered: its three copies
- * come 50 ms apart, and the protocol page says a second is enough. */
-constexpr engine::Duration GAME_EVENT_MEMORY = std::chrono::seconds(1);
 
 /** @brief Logger name the connection to a server writes its log lines under. */
 constexpr std::string_view CONNECTION_LOGGER_NAME = "Connection";

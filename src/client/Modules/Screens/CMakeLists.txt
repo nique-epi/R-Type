@@ -7,7 +7,7 @@ target_link_libraries(rtype_client_screens_module
     rtype_client_assets_module
     rtype_client_audio_contract
     rtype_client_connection
-    rtype_client_entity_message_queue
+    rtype_client_entity_messages
     rtype_client_interface
     rtype_client_menus_module
     rtype_client_pilots

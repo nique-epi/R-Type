@@ -2,7 +2,7 @@
 #include <algorithm>
 #include <cstdint>
 #include <vector>
-#include "ConnectionConstants.hpp"
+#include "EntityMessageConstants.hpp"
 #include "SeenGameEvent.hpp"
 #include "TimeConstants.hpp"
 

@@ -19,7 +19,6 @@ target_link_libraries(rtype_client_connection
 )
 
 add_subdirectory(Transport)
-add_subdirectory(GameEventHistory)
 add_subdirectory(SessionOutbox)
 add_subdirectory(SessionDeparture)
 add_subdirectory(SessionInbound)
@@ -29,5 +28,4 @@ add_subdirectory(HandshakeAnswers)
 add_subdirectory(ServerSession)
 add_subdirectory(GameLoadedReminder)
 add_subdirectory(WaitingRoom)
-add_subdirectory(EntityMessageQueue)
 add_subdirectory(SessionLossWatch)

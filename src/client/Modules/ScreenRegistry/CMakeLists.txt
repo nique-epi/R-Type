@@ -6,7 +6,7 @@ target_link_libraries(rtype_client_screen_registry
   PUBLIC
     rtype_client_assets_module
     rtype_client_connection
-    rtype_client_entity_message_queue
+    rtype_client_entity_messages
     rtype_client_exceptions
     rtype_client_interface
     rtype_client_menu
