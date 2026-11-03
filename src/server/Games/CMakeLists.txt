@@ -1,5 +1,6 @@
 add_library(rtype_server_games_module STATIC
   FarewellSender.cpp
+  GamePlacement.cpp
   Games.cpp
   PlayerDatagrams.cpp
   RtypeGameModules.cpp
@@ -23,7 +24,6 @@ target_link_libraries(rtype_server_games_module
     rtype_server_network_module
   PRIVATE
     rtype_network_disconnection
-    rtype_server_game_placement
     rtype_server_module_constants
     rtype_server_session_datagram
     rtype_server_spawning
