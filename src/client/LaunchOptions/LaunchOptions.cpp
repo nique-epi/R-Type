@@ -1,6 +1,7 @@
 #include "LaunchOptions.hpp"
 #include <array>
 #include <cstdint>
+#include <functional>
 #include <span>
 #include <string>
 #include <string_view>
@@ -10,9 +11,11 @@
 #include "ClientException.hpp"
 #include "Endpoint.hpp"
 #include "EndpointText.hpp"
+#include "ExecutablePath.hpp"
 #include "LaunchArguments.hpp"
 #include "LaunchArgumentsConstants.hpp"
 #include "LaunchOption.hpp"
+#include "LaunchOptionReader.hpp"
 #include "LogLaunchOptions.hpp"
 #include "LoggingConstants.hpp"
 #include "NetworkConditions.hpp"
@@ -86,19 +89,21 @@ engine::LaunchOption helpOption(bool& helpRequested) {
 }  // namespace
 
 LaunchOptions LaunchOptions::read(std::span<const std::string_view> arguments) {
-  const network::SimulatorLaunchOptions simulatorOptions =
-      network::SimulatorLaunchOptions::read(arguments);
   LaunchOptions options{
       network::Endpoint{.address = std::string(DEFAULT_SERVER_ADDRESS),
                         .port = network::DEFAULT_SERVER_PORT},
       std::string(DEFAULT_NICKNAME), false};
-  options.networkConditions_ = simulatorOptions.conditions();
   const std::array launchOptions{addressOption(options.serverEndpoint_.address),
                                  portOption(options.serverEndpoint_.port),
                                  nicknameOption(options.nickname_),
                                  noSoundOption(options.audioMode_),
                                  helpOption(options.helpRequested_)};
-  engine::readLaunchArguments(simulatorOptions.otherArguments(), launchOptions);
+  const std::array<engine::LaunchOptionReader, 2> readers{
+      std::bind_front(&network::SimulatorLaunchOptions::readOption,
+                      &options.simulatorOptions_),
+      std::bind_front(&logging::LogLaunchOptions::readOption,
+                      &options.logOptions_)};
+  engine::readLaunchArguments(arguments, launchOptions, readers);
   return options;
 }
 
@@ -142,13 +147,18 @@ AudioMode LaunchOptions::audioMode() const { return audioMode_; }
 bool LaunchOptions::helpRequested() const { return helpRequested_; }
 
 const network::NetworkConditions& LaunchOptions::networkConditions() const {
-  return networkConditions_;
+  return simulatorOptions_.conditions();
+}
+
+const logging::LogLaunchOptions& LaunchOptions::logOptions() const {
+  return logOptions_;
 }
 
 LaunchOptions::LaunchOptions(network::Endpoint serverEndpoint,
                              std::string nickname, bool helpRequested)
     : serverEndpoint_(std::move(serverEndpoint)),
       nickname_(std::move(nickname)),
-      helpRequested_(helpRequested) {}
+      helpRequested_(helpRequested),
+      logOptions_(engine::executableFolder() / logging::CLIENT_LOG_FILE_NAME) {}
 
 }  // namespace rtype::client

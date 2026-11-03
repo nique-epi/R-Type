@@ -10,7 +10,10 @@
 #include "LaunchArgumentsConstants.hpp"
 #include "LaunchOptions.hpp"
 #include "LaunchOptionsTestConstants.hpp"
+#include "LogLaunchOptionsFixture.hpp"
+#include "Logger.hpp"
 #include "LoggingConstants.hpp"
+#include "LoggingOptionTestConstants.hpp"
 #include "NetworkConditions.hpp"
 #include "NetworkConstants.hpp"
 #include "NetworkException.hpp"
@@ -28,6 +31,11 @@ using rtype::engine::HELP_OPTION;
 using rtype::engine::MissingLaunchOptionValueException;
 using rtype::engine::PORT_OPTION;
 using rtype::engine::UnknownLaunchArgumentException;
+using rtype::logging::LEVEL_OPTION;
+using rtype::logging::Logger;
+using rtype::logging::LogLevel;
+using rtype::logging::NO_FILE_OPTION;
+using rtype::logging::NO_STDERR_OPTION;
 using rtype::network::DEFAULT_SERVER_PORT;
 using rtype::network::Endpoint;
 using rtype::network::InvalidIpv4AddressException;
@@ -363,6 +371,116 @@ TEST(ClientLaunchOptions, ReadsTheNetworkSimulatorOptionsBesideItsOwn) {
 
   EXPECT_EQ(options.serverEndpoint().address, ADDRESS_ARGUMENT);
   EXPECT_EQ(options.networkConditions(), LAG_OF_LAG_ARGUMENT);
+}
+
+/**
+ * Given the address option, then a logging option and its value, then an
+ * address
+ * When the launch options are read
+ * Then the logging option is the value of the address option, and is refused
+ *      as an address
+ */
+TEST(ClientLaunchOptions, AddressOptionTakesALoggingOptionAsItsValue) {
+  EXPECT_THROW(static_cast<void>(LaunchOptions::read(
+                   Arguments{ADDRESS_OPTION, LEVEL_OPTION, DEBUG_LEVEL_ARGUMENT,
+                             ADDRESS_ARGUMENT})),
+               InvalidIpv4AddressException);
+}
+
+/**
+ * Given the address option, then a simulator option and its value, then an
+ * address
+ * When the launch options are read
+ * Then the simulator option is the value of the address option, and is
+ *      refused as an address
+ */
+TEST(ClientLaunchOptions, AddressOptionTakesASimulatorOptionAsItsValue) {
+  EXPECT_THROW(
+      static_cast<void>(LaunchOptions::read(Arguments{
+          ADDRESS_OPTION, LAG_OPTION_TEXT, LAG_ARGUMENT, ADDRESS_ARGUMENT})),
+      InvalidIpv4AddressException);
+}
+
+/**
+ * Given the port option, then a logging option and its value, then a port
+ * When the launch options are read
+ * Then the logging option is the value of the port option, and is refused as
+ *      a port
+ */
+TEST(ClientLaunchOptions, PortOptionTakesALoggingOptionAsItsValue) {
+  EXPECT_THROW(
+      static_cast<void>(LaunchOptions::read(Arguments{
+          PORT_OPTION, LEVEL_OPTION, DEBUG_LEVEL_ARGUMENT, PORT_ARGUMENT})),
+      InvalidPortException);
+}
+
+/**
+ * Given the port option, then a simulator option and its value, then a port
+ * When the launch options are read
+ * Then the simulator option is the value of the port option, and is refused
+ *      as a port
+ */
+TEST(ClientLaunchOptions, PortOptionTakesASimulatorOptionAsItsValue) {
+  EXPECT_THROW(static_cast<void>(LaunchOptions::read(Arguments{
+                   PORT_OPTION, LAG_OPTION_TEXT, LAG_ARGUMENT, PORT_ARGUMENT})),
+               InvalidPortException);
+}
+
+/**
+ * Given the nickname option, then a logging option and its value, then a
+ * nickname
+ * When the launch options are read
+ * Then the logging option is the nickname, so the level after it is an
+ *      argument no option names, and is refused
+ */
+TEST(ClientLaunchOptions, NicknameOptionTakesALoggingOptionAsItsValue) {
+  EXPECT_THROW(static_cast<void>(LaunchOptions::read(
+                   Arguments{NICKNAME_OPTION, LEVEL_OPTION,
+                             DEBUG_LEVEL_ARGUMENT, NICKNAME_ARGUMENT})),
+               UnknownLaunchArgumentException);
+}
+
+/**
+ * Given the nickname option, then a simulator option and its value, then a
+ * nickname
+ * When the launch options are read
+ * Then the simulator option is the nickname, so the lag after it is an
+ *      argument no option names, and is refused
+ */
+TEST(ClientLaunchOptions, NicknameOptionTakesASimulatorOptionAsItsValue) {
+  EXPECT_THROW(
+      static_cast<void>(LaunchOptions::read(Arguments{
+          NICKNAME_OPTION, LAG_OPTION_TEXT, LAG_ARGUMENT, NICKNAME_ARGUMENT})),
+      UnknownLaunchArgumentException);
+}
+
+/**
+ * Given the nickname option, then a logging option that takes no value
+ * When the launch options are read
+ * Then the logging option is the nickname of the player
+ */
+TEST(ClientLaunchOptions, NicknameOptionTakesALoggingFlagAsTheNickname) {
+  const LaunchOptions options =
+      LaunchOptions::read(Arguments{NICKNAME_OPTION, NO_FILE_OPTION});
+
+  EXPECT_EQ(options.nickname(), NO_FILE_OPTION);
+}
+
+/**
+ * Given the port option and a port, then the logging level option and a
+ * level, with no journal and nothing on standard error
+ * When the launch options are read and their logging options applied
+ * Then the client joins that port and the logger is at that level
+ */
+TEST_F(LogLaunchOptionsFixture, ClientReadsTheLoggingOptionsBesideItsOwn) {
+  const LaunchOptions options = LaunchOptions::read(
+      Arguments{PORT_OPTION, PORT_ARGUMENT, LEVEL_OPTION, DEBUG_LEVEL_ARGUMENT,
+                NO_FILE_OPTION, NO_STDERR_OPTION});
+
+  options.logOptions().apply();
+
+  EXPECT_EQ(options.serverEndpoint().port, PORT_OF_PORT_ARGUMENT);
+  EXPECT_EQ(Logger::level(), LogLevel::Debug);
 }
 
 /**

@@ -699,7 +699,7 @@ The movement of the other ships is not predicted: they are drawn where the last 
 
 ## Launch options: `LaunchOptions`
 
-`LaunchOptions` (`src/client/LaunchOptions/`) reads the address and the port of the server and the nickname of the player, given at launch, from the arguments the logging options left (see [Logging](/R-Type/logging/#choosing-the-level-and-the-output-at-launch)), with the engine's `readLaunchArguments` (see [Engine](/R-Type/engine/#launch-arguments-readlauncharguments)):
+`LaunchOptions` (`src/client/LaunchOptions/`) reads the address and the port of the server and the nickname of the player, given at launch, with the engine's `readLaunchArguments` (see [Engine](/R-Type/engine/#launch-arguments-readlauncharguments)), in the same pass as the options of the network simulator (see [Network](/R-Type/network/#network-simulator-simulatednetworksocket)) and the logging options (see [Logging](/R-Type/logging/#choosing-the-level-and-the-output-at-launch)), which it keeps for the logger module (`logOptions()`):
 
 | Option | Effect |
 |---|---|
@@ -709,7 +709,7 @@ The movement of the other ships is not predicted: they are drawn where the last 
 | `--help` | Prints the usage, the logging options included, on standard output, then exits with code 0 without opening the window or the journal. |
 
 - A host name such as `localhost` is refused, not resolved: a resolution can block for seconds, so it must run on the network thread once the connection exists. An IPv6 address is refused too, since the server only listens over IPv4.
-- The last of each option wins. An unknown argument, an option without its value, an invalid address, an invalid port or an invalid nickname (`InvalidNicknameOptionException`) stops the client before the window opens: it prints `r-type_client:`, the reason and how to see the usage on standard error, then exits with code 1.
+- The last of each option wins. The argument after `-h`, `-p` or `-n` is always its value, even spelled as another option: `-n --no-log-file` is the nickname `--no-log-file`. An unknown argument, an option without its value, an invalid address, an invalid port or an invalid nickname (`InvalidNicknameOptionException`) stops the client before the window opens: it prints `r-type_client:`, the reason and how to see the usage on standard error, then exits with code 1. When several arguments are wrong, the first one from the left is reported.
 - The logger module logs `server: <address> port <port>` at the `info` level once the journal is open, and `clientModules()` hands the server and the nickname to the screens module and the sound choice to the sound module, which starts the connection screen with them. CONNECT on that screen joins the server (see [Joining a server](#joining-a-server-serversession-waitingroom-entitymessagequeue)).
 - On Windows, the arguments are not passed in UTF-8, so a nickname with an accent may be refused at launch; it can be typed on the connection screen instead.
 
@@ -929,7 +929,7 @@ The dialog is a `DialogScreen` (`src/client/Screens/DialogScreen/`), which shows
 | Add a part of the client that works each frame, or a global key | A class implementing `IModule` in a folder of its own, `src/client/<Name>/`, listed in `clientModules()` (`src/client/Modules/Assembly/ClientModules.cpp`) after its dependencies (the steps are those of the [tutorial](/R-Type/tutorial-write-a-module/), which writes a server module); it adds its work to a stage of `CLIENT_LOOP_STAGES` in its `install()`, and its listener to `EventListeners` in its `start()` |
 | Change the default server address or port | `DEFAULT_SERVER_ADDRESS` in `src/client/ClientConstants.hpp`, `DEFAULT_SERVER_PORT` in `src/network/NetworkConstants.hpp` |
 | Change the default nickname | `DEFAULT_NICKNAME` in `src/client/ClientConstants.hpp` |
-| Add a launch option | A function that returns its `LaunchOption` and its entry in the list of `LaunchOptions::read()`, and `usage()`, in `src/client/LaunchOptions/LaunchOptions.cpp`; its name in `src/client/ClientConstants.hpp`, or in `src/engine/LaunchArguments/LaunchArgumentsConstants.hpp` when the server uses it too. An option of the network simulator goes in `SimulatorLaunchOptions` instead, which the client and the server both read before their own (see [Network](/R-Type/network/#network-simulator-simulatednetworksocket)) |
+| Add a launch option | A function that returns its `LaunchOption` and its entry in the list of `LaunchOptions::read()`, and `usage()`, in `src/client/LaunchOptions/LaunchOptions.cpp`; its name in `src/client/ClientConstants.hpp`, or in `src/engine/LaunchArguments/LaunchArgumentsConstants.hpp` when the server uses it too. An option of the network simulator goes in `SimulatorLaunchOptions` instead, which the client and the server both read among their own (see [Network](/R-Type/network/#network-simulator-simulatednetworksocket)) |
 | Send or receive datagrams | `NetworkThread` in `src/client/Connection/NetworkThread/` |
 | Change how many datagrams wait between the frame loop and the network thread | `INCOMING_DATAGRAM_QUEUE_CAPACITY` and `OUTGOING_DATAGRAM_QUEUE_CAPACITY` in `src/client/Connection/ConnectionConstants.hpp` |
 | Test code that uses the network thread | `tests/client/Connection/NetworkThreadTest.cpp`: a peer socket on the loopback address |

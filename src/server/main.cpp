@@ -2,12 +2,9 @@
 #include <iostream>
 #include <string>
 #include "Application.hpp"
-#include "ExecutablePath.hpp"
 #include "LaunchArguments.hpp"
 #include "LaunchOptions.hpp"
-#include "LogLaunchOptions.hpp"
 #include "Logger.hpp"
-#include "LoggingConstants.hpp"
 #include "LoopStages.hpp"
 #include "ServerConstants.hpp"
 #include "ServerModules.hpp"
@@ -34,15 +31,15 @@ void reportFailure(const std::string& text) {
  * @returns the exit code: 0 once the server stopped when asked, 1 after an
  *          error, which is logged and printed. No exception leaves it.
  */
-int runServer(const rtype::logging::LogLaunchOptions& logOptions,
-              const rtype::server::LaunchOptions& launchOptions) {
+int runServer(const rtype::server::LaunchOptions& launchOptions) {
   rtype::server::StopRequest stopRequest;
   const rtype::server::StopSignals stopSignals{stopRequest};
   int exitCode = 0;
   try {
     rtype::engine::Application application{
         rtype::engine::LoopStages{rtype::server::SERVER_LOOP_STAGES},
-        rtype::server::serverModules(logOptions, launchOptions, stopRequest)};
+        rtype::server::serverModules(launchOptions.logOptions(), launchOptions,
+                                     stopRequest)};
     application.start();
     const rtype::server::StopReason reason = stopRequest.wait();
     application.stop();
@@ -62,18 +59,14 @@ int runServer(const rtype::logging::LogLaunchOptions& logOptions,
 
 int main(int argumentCount, char** arguments) {
   try {
-    const rtype::logging::LogLaunchOptions logOptions =
-        rtype::logging::LogLaunchOptions::readFromProcess(
-            argumentCount, arguments,
-            rtype::engine::executableFolder() /
-                rtype::logging::SERVER_LOG_FILE_NAME);
     const rtype::server::LaunchOptions launchOptions =
-        rtype::server::LaunchOptions::read(logOptions.otherArguments());
+        rtype::server::LaunchOptions::read(
+            rtype::engine::processArguments(argumentCount, arguments));
     if (launchOptions.helpRequested()) {
       std::cout << rtype::server::LaunchOptions::usage();
       return 0;
     }
-    return runServer(logOptions, launchOptions);
+    return runServer(launchOptions);
   } catch (const std::exception& error) {
     std::cerr << rtype::engine::launchErrorText(rtype::server::PROGRAM_NAME,
                                                 error.what());
