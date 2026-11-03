@@ -104,12 +104,16 @@ constexpr std::array LEADERBOARD_COLUMNS{
                    .alignment = TextAlignment::Right}};
 
 /** @brief The list in the panel, its 13 pixels between two rows reading better
- * than the 10 of the first versions of the design. */
-constexpr ItemListLayout LEADERBOARD_LIST{.topLeft = {92, 73},
-                                          .width = 296,
-                                          .rowPitch = 13,
-                                          .rowCapacity = 10,
-                                          .columns = LEADERBOARD_COLUMNS};
+ * than the 10 of the first versions of the design. It holds every row an answer
+ * lists, so the last of them is painted; ten rows end at y 203, in a panel that
+ * ends at 216: a protocol that lists more must be measured against the panel.
+ */
+constexpr ItemListLayout LEADERBOARD_LIST{
+    .topLeft = {92, 73},
+    .width = 296,
+    .rowPitch = 13,
+    .rowCapacity = network::MAXIMUM_LEADERBOARD_ROWS,
+    .columns = LEADERBOARD_COLUMNS};
 
 /** @brief Colors of a row; bronze is the one color the leaderboard adds to the
  * palette, 5.2:1 on the sky. */
