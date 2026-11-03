@@ -45,11 +45,10 @@ ServerApplication::ServerApplication(
       incoming_(INCOMING_DATAGRAM_QUEUE_CAPACITY),
       connectionRequests_(CONNECTION_REQUEST_QUEUE_CAPACITY),
       outgoing_(OUTGOING_DATAGRAM_QUEUE_CAPACITY),
-      sorter_(DatagramSorter::Destinations{.players = &incoming_,
-                                           .connectionRequests =
-                                               &connectionRequests_},
-              clock_),
-      discardReport_(incoming_, connectionRequests_, sorter_),
+      destinations_{.players = &incoming_,
+                    .connectionRequests = &connectionRequests_},
+      sorter_(destinations_, clock_),
+      discardReport_(destinations_, sorter_),
       handleTick_(std::move(handleTick)) {}
 
 void ServerApplication::open() {

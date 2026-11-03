@@ -1,9 +1,7 @@
 #pragma once
 
 #include <cstddef>
-#include "BoundedQueue.hpp"
 #include "DatagramSorter.hpp"
-#include "IncomingDatagram.hpp"
 #include "Logger.hpp"
 
 namespace rtype::server {
@@ -17,13 +15,8 @@ namespace rtype::server {
  */
 class DiscardReport {
  public:
-  /** @param players, connectionRequests, sorter What the report reads; they
-   * must outlive it. */
-  DiscardReport(
-      const concurrency::BoundedQueue<network::IncomingDatagram>& players,
-      const concurrency::BoundedQueue<network::IncomingDatagram>&
-          connectionRequests,
-      DatagramSorter& sorter);
+  /** @param queues, sorter What the report reads; they must outlive it. */
+  DiscardReport(DatagramSorter::Destinations queues, DatagramSorter& sorter);
 
   /** @brief Counts one tick, and reports when it ends a report. */
   void countTick();
@@ -32,9 +25,7 @@ class DiscardReport {
   void report();
 
   logging::Logger logger_;
-  const concurrency::BoundedQueue<network::IncomingDatagram>* players_;
-  const concurrency::BoundedQueue<network::IncomingDatagram>*
-      connectionRequests_;
+  DatagramSorter::Destinations queues_;
   DatagramSorter* sorter_;
   std::size_t ticksSinceReport_{0};
   std::size_t reportedDiscardCount_{0};

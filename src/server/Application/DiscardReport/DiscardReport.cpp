@@ -5,7 +5,6 @@
 #include "BoundedQueue.hpp"
 #include "DatagramSorter.hpp"
 #include "Endpoint.hpp"
-#include "IncomingDatagram.hpp"
 #include "ServerConstants.hpp"
 
 namespace rtype::server {
@@ -36,14 +35,10 @@ std::size_t countedSince(std::size_t current, std::size_t& reported) {
 
 }  // namespace
 
-DiscardReport::DiscardReport(
-    const concurrency::BoundedQueue<network::IncomingDatagram>& players,
-    const concurrency::BoundedQueue<network::IncomingDatagram>&
-        connectionRequests,
-    DatagramSorter& sorter)
+DiscardReport::DiscardReport(DatagramSorter::Destinations queues,
+                             DatagramSorter& sorter)
     : logger_(std::string{SERVER_LOGGER_NAME}),
-      players_(&players),
-      connectionRequests_(&connectionRequests),
+      queues_(queues),
       sorter_(&sorter) {}
 
 void DiscardReport::countTick() {
@@ -56,15 +51,15 @@ void DiscardReport::countTick() {
 }
 
 void DiscardReport::report() {
-  if (const std::size_t fresh =
-          countedSince(players_->discardedCount(), reportedDiscardCount_)) {
+  if (const std::size_t fresh = countedSince(queues_.players->discardedCount(),
+                                             reportedDiscardCount_)) {
     logger_.warn(fresh, " datagrams of players discarded in the last ",
                  REPORT_SECONDS, " s: more than ",
                  INCOMING_DATAGRAM_QUEUE_CAPACITY,
                  " arrived between two ticks");
   }
   if (const std::size_t fresh =
-          countedSince(connectionRequests_->discardedCount(),
+          countedSince(queues_.connectionRequests->discardedCount(),
                        reportedRequestDiscardCount_)) {
     logger_.warn(fresh, " connection requests discarded in the last ",
                  REPORT_SECONDS, " s: more than ",
