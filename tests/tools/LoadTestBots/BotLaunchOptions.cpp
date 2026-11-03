@@ -37,7 +37,7 @@ std::size_t botCountFrom(std::string_view text) {
   return count;
 }
 
-/** @returns The duration @p text writes in seconds, from 1. */
+/** @returns The duration @p text writes in seconds, from 1 to 4294967295. */
 std::chrono::seconds durationFrom(std::string_view text) {
   const auto seconds =
       server::wholeNumberFromText<std::uint32_t>(SECONDS_OPTION, text);

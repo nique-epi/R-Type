@@ -56,13 +56,28 @@ class Bot {
   void leave();
 
  private:
-  /** @brief Drains the entity messages, counts them, and adds @p elapsed to
+  /**
+   * @brief Drains the entity messages, counts them, and adds @p elapsed to
    * the time in game while a game it received a world state of runs: from that
-   * state to the GameEnded, or to the end of the session. */
+   * state to the GameEnded, or to the end of the session.
+   *
+   * The frame that drains the first world state counts, the one that drains
+   * the GameEnded does not. Each message arrived during the frame that drains
+   * it, so the start of a game counts up to a frame too much and its end up to
+   * a frame too little: they balance, where counting both frames would add a
+   * frame to every game.
+   */
   void countReceived(engine::Duration elapsed);
 
-  /** @brief Counts @p message when it is a world state of a new tick or the
-   * end of the game. */
+  /**
+   * @brief Counts @p message when it is a world state of a new tick or the
+   * end of the game.
+   *
+   * Comparing with the newest tick counted is enough: the server sends every
+   * part of a tick before the next tick, and the session drops a datagram that
+   * is not newer than the newest one it accepted, so a part of an older tick
+   * never arrives after a newer one.
+   */
   void count(const client::EntityMessage& message);
 
   /** @brief Sends what the pilot holds when an input is due, once the game
