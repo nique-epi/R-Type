@@ -4,7 +4,7 @@ target_include_directories(rtype_client_screen_registry PUBLIC ${CMAKE_CURRENT_S
 
 target_link_libraries(rtype_client_screen_registry
   PUBLIC
-    rtype_client_asset_library
+    rtype_client_assets_module
     rtype_client_connection
     rtype_client_exceptions
     rtype_client_game_window

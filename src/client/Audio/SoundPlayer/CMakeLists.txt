@@ -8,7 +8,7 @@ target_link_libraries(rtype_client_sound_player
     rtype_client_settings_service
     SFML::Audio
   PRIVATE
-    rtype_client_asset_library
+    rtype_client_assets_module
     rtype_client_audio_volume
     rtype_client_voice_choice
 )

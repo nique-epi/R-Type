@@ -4,7 +4,7 @@ target_include_directories(rtype_client_loading_screen PUBLIC ${CMAKE_CURRENT_SO
 
 target_link_libraries(rtype_client_loading_screen
   PUBLIC
-    rtype_client_asset_loading_step
+    rtype_client_assets_module
     rtype_client_screen_assets
     SFML::Graphics
   PRIVATE

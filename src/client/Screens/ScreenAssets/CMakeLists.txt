@@ -4,12 +4,11 @@ target_include_directories(rtype_client_screen_assets PUBLIC ${CMAKE_CURRENT_SOU
 
 target_link_libraries(rtype_client_screen_assets
   PUBLIC
-    rtype_client_assets
+    SFML::Graphics
+    rtype_client_assets_module
     rtype_client_screen_interfaces
     rtype_client_widgets
-    SFML::Graphics
   PRIVATE
-    rtype_client_asset_loading_step
     rtype_client_audio_interfaces
     rtype_client_effect_interfaces
     rtype_client_interface
