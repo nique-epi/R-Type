@@ -13,10 +13,10 @@
 #include "GameInstanceLivesFixture.hpp"
 #include "GameInstanceTestConstants.hpp"
 #include "GameState.hpp"
-#include "LifeKeeperTestConstants.hpp"
 #include "MessageType.hpp"
 #include "OutgoingDatagram.hpp"
 #include "Replication/GameEndAnnouncerTestConstants.hpp"
+#include "Rules/LifeKeeperTestConstants.hpp"
 #include "SentDatagrams.hpp"
 #include "ServerTestConstants.hpp"
 

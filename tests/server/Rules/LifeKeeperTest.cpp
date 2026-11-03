@@ -3,7 +3,7 @@
 #include <vector>
 #include "ConnectedPlayer.hpp"
 #include "EntityIdConstants.hpp"
-#include "GameInstanceTestConstants.hpp"
+#include "Instances/GameInstanceTestConstants.hpp"
 #include "LifeKeeperFixture.hpp"
 #include "LifeKeeperTestConstants.hpp"
 #include "Lives.hpp"

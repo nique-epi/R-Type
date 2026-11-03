@@ -1,11 +1,11 @@
 #include <gtest/gtest.h>
 #include "ConnectedPlayer.hpp"
 #include "EnemyKilled.hpp"
-#include "GameModuleTestConstants.hpp"
 #include "GameState.hpp"
 #include "IGameFlow.hpp"
+#include "Instances/GameModuleTestConstants.hpp"
+#include "Instances/RtypeGameFixture.hpp"
 #include "MessageType.hpp"
-#include "RtypeGameFixture.hpp"
 
 namespace rtype::server::testing {
 

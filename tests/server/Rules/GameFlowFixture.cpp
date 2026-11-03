@@ -5,9 +5,9 @@
 #include <string>
 #include "ConnectedPlayer.hpp"
 #include "GameFlow.hpp"
-#include "GameInstanceTestConstants.hpp"
 #include "GameSettings.hpp"
 #include "GameState.hpp"
+#include "Instances/GameInstanceTestConstants.hpp"
 #include "Lives.hpp"
 #include "OutgoingDatagram.hpp"
 #include "PlayerRoster.hpp"

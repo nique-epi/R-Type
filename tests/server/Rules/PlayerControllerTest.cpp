@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 #include <array>
 #include "ConnectedPlayer.hpp"
-#include "GameInstanceTestConstants.hpp"
+#include "Instances/GameInstanceTestConstants.hpp"
 #include "Intent.hpp"
 #include "ManeuverKind.hpp"
 #include "PlayerController.hpp"
