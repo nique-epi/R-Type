@@ -7,9 +7,8 @@
 
 namespace rtype::logging {
 
-ThrottledLog::ThrottledLog(std::string module,
-                           std::chrono::nanoseconds interval)
-    : logger_(std::move(module)), interval_(interval) {}
+ThrottledLog::ThrottledLog(std::string name, std::chrono::nanoseconds interval)
+    : logger_(std::move(name)), interval_(interval) {}
 
 std::optional<std::size_t> ThrottledLog::countEvent(
     std::chrono::nanoseconds now) {

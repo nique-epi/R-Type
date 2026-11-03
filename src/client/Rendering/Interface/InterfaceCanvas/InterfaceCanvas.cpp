@@ -94,7 +94,7 @@ sf::RenderStates statesFor(const std::optional<ShadeSwap>& recolor,
 InterfaceCanvas::InterfaceCanvas(const AssetLibrary& library)
     : textures_(library),
       writer_(library),
-      logger_(std::string(INTERFACE_LOG_MODULE_NAME)),
+      logger_(std::string(INTERFACE_LOGGER_NAME)),
       shadeSwap_(loadFragmentShader(SHADE_SWAP_SHADER, logger_)) {}
 
 void InterfaceCanvas::clear() {
