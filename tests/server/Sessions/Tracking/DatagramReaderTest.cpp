@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 #include <cstddef>
-#include <cstdint>
 #include "DatagramReader.hpp"
+#include "DatagramReaderFixtures.hpp"
 #include "IncomingDatagram.hpp"
 #include "PacketHeader.hpp"
 #include "PlayerRoster.hpp"
@@ -14,24 +14,12 @@ namespace rtype::server {
 
 using testing::addPlayer;
 using testing::FIRST_SEQUENCE;
+using testing::heartbeatOfSequence;
 using testing::LAST_SEQUENCE;
 using testing::NEWER_SEQUENCE;
 using testing::OLDER_SEQUENCE;
 using testing::playerEndpoint;
 using testing::SOME_SEQUENCE;
-
-namespace {
-
-/** @returns A Heartbeat the player at index 0 sends in the datagram of
- * sequence @p sequence. */
-network::IncomingDatagram heartbeatOfSequence(std::uint16_t sequence) {
-  return network::IncomingDatagram{
-      .sender = playerEndpoint(0),
-      .payload =
-          heartbeatDatagram(network::PacketHeader{.sequence = sequence})};
-}
-
-}  // namespace
 
 /**
  * Given a reader and a player who sent nothing yet

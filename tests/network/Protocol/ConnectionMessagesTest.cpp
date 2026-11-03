@@ -6,6 +6,7 @@
 #include "ByteWriter.hpp"
 #include "ConnectionAccepted.hpp"
 #include "ConnectionChallenge.hpp"
+#include "ConnectionMessagesFixtures.hpp"
 #include "ConnectionRefused.hpp"
 #include "ConnectionRequest.hpp"
 #include "DatagramCodec.hpp"
@@ -17,7 +18,6 @@
 #include "ProtocolTestConstants.hpp"
 
 namespace rtype::network {
-namespace {
 
 using testing::byteSequence;
 using testing::CHALLENGE_DATAGRAM_SIZE_ON_THE_PAGE;
@@ -29,12 +29,8 @@ using testing::PLAYER_NUMBER_ABOVE_THE_LAST;
 using testing::REFUSAL_REASON_ABOVE_THE_LAST;
 using testing::SEVENTEEN_BYTE_NICKNAME;
 using testing::SMALLEST_REQUEST_DATAGRAM_SIZE_ON_THE_PAGE;
+using testing::smallestRequest;
 using testing::SOME_COOKIE;
-
-ConnectionRequest smallestRequest() {
-  return ConnectionRequest{.cookie = 0,
-                           .nickname = std::string{ONE_BYTE_NICKNAME}};
-}
 
 /**
  * Given a request with a cookie and the nickname "A"
@@ -500,5 +496,4 @@ TEST(Heartbeat, RefusesAnyByteInThePayload) {
   EXPECT_THROW((void)decodeMessage<Heartbeat>(bytes), TrailingBytesException);
 }
 
-}  // namespace
 }  // namespace rtype::network
