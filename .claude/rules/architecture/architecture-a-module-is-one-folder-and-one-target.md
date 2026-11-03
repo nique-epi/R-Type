@@ -40,7 +40,7 @@ Why: the subject (page 16) makes an engine modular through what a developer choo
    - a group of classes needs a dependency the rest must not link (a file parser, a platform API);
    - it is the `Contract/` of an optional module.
 
-   Never one per class, and never deeper than two levels: a sub-folder has no sub-folder of its own. The parent links the sub-folder and never the other way round.
+   Never one per class, and never deeper than three levels: a sub-folder has sub-folders of its own only when it meets point 8 itself, at least two categories of three classes (`Menus/Options/` splits into the screen with its dialogs and the tabs with their rows), and a folder of the third level has none. At every level, the parent links the sub-folder and never the other way round.
 10. **Two classes of a folder never include each other**, directly or through a third, since the build no longer stops them: when both need the same thing, it moves to an interface or a plain struct they both include.
 11. **Tests mirror the folder** (`tests/server/Spawning/`), one test file per class; a test double stays in `tests/doubles/`.
 

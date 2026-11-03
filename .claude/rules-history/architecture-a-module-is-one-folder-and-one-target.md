@@ -77,3 +77,13 @@ Point 8 gives one example of the grain, `Commands/`, and says nothing of the hel
 ### Rule
 
 Points 15 to 18 of the rule: a category is a role a reader names; the helper types of a class count with it; a class two categories share goes down into one of them or into `Contract/`, and never keeps the folder flat; the table of categories is written before the first file moves, and a table of flat folders is read again at the grain of `Commands/`.
+
+## Update (3 November 2026) — a third level of folders
+
+### Context
+
+Reading the tidied client, the user asked why `Connection/Session/` does not group what belongs to the session apart from the handshake, and said the same holds for the options and everywhere. `Connection/Session/` could be split at the level of `Connection/` (`Session/`, `Handshake/`, `WaitingRoom/`) within two levels. `Menus/Options/` could not: its two categories, the screen with its dialogs (`OptionsScreen`, `ResetDialog`, `SavedStamp`) and the tabs with their rows (`OptionsTabs`, `OptionsRows`, `OptionsRowHandles`, `OptionsDescriptions`), sit inside a sub-folder, and point 9 forbade a sub-folder of a sub-folder.
+
+### Decision
+
+The user allowed a third level on 3 November 2026. A sub-folder splits again only when it meets point 8 itself, at least two categories of three classes, and the parent links its sub-folders at every level. A folder of the third level never splits.
