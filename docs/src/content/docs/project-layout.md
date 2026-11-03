@@ -279,7 +279,7 @@ src/game/Waves/
 └── WaveProgression.cpp
 ```
 
-- A folder has one `CMakeLists.txt` and one CMake library. It holds the `.hpp` and `.cpp` of its classes, and of its free functions, side by side, at most ten `.cpp`. A sub-folder with a CMake library of its own exists only when the folder would pass ten `.cpp`, when a group of classes needs a dependency the rest must not link, or for the `Contract/` of an optional module; never deeper than that.
+- A folder has one `CMakeLists.txt` and one CMake library. It holds the `.hpp` and `.cpp` of its classes, and of its free functions, side by side. A folder whose classes fall into categories of three classes or more has a sub-folder for each, with a CMake library of its own; a sub-folder also exists when a group of classes needs a dependency the rest must not link, or for the `Contract/` of an optional module. Never one per class, and never deeper than two levels.
 - Interfaces (`IWaveSource`), plain structs and constants headers (`WaveConstants.hpp`) sit in the same folder as the classes.
 - Two classes of a folder never include each other, directly or through a third.
 - A folder written before this convention keeps a folder per class until it is flattened, in a commit of its own; a folder never holds both layouts. Tidying the client and the server flattens them all, except `Widgets/` and `Rendering/`.
