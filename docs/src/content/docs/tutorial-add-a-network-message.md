@@ -17,8 +17,8 @@ The tutorial ends at the handler on the server. Nothing in the client sends an e
 | 2 | Its type number | `src/network/Protocol/MessageType.hpp` |
 | 3 | The struct and its two functions | `src/network/Protocol/Messages/Emote/` |
 | 4 | The library of the folder | `Messages/Emote/CMakeLists.txt`, `Messages/CMakeLists.txt` |
-| 5 | The handler | `src/server/Sessions/`, `src/server/Sessions/Roster/` |
-| 6 | Nine tests | `tests/network/Protocol/`, `tests/server/Sessions/`, `tests/server/Instances/` |
+| 5 | The handler | `src/server/Sessions/Tracking/`, `src/server/Sessions/`, `src/server/Sessions/Roster/` |
+| 6 | Nine tests | `tests/network/Protocol/`, `tests/server/Sessions/Tracking/`, `tests/server/Instances/` |
 | 7 | The three checks of the project | the terminal |
 
 ## Step 0: answer four questions
@@ -244,9 +244,9 @@ The player keeps its newest emote. Add the member to `ConnectedPlayer` (`src/ser
                           .lastEmote = std::nullopt});
 ```
 
-`ConnectedPlayer.hpp` now includes `Emote.hpp`, so `rtype_server_roster` must expose it. In `src/server/Sessions/Roster/CMakeLists.txt`, add `rtype_network_emote` to the `PUBLIC` libraries of that target.
+`ConnectedPlayer.hpp` now includes `Emote.hpp`, so `rtype_server_sessions_roster` must expose it. In `src/server/Sessions/Roster/CMakeLists.txt`, add `rtype_network_emote` to the `PUBLIC` libraries of that target.
 
-Then the class, in `src/server/Sessions/`, beside `InputKeeper`. `EmoteKeeper.hpp`:
+Then the class, in `src/server/Sessions/Tracking/`, beside `InputKeeper`. `EmoteKeeper.hpp`:
 
 ```cpp
 #pragma once
@@ -309,14 +309,14 @@ void EmoteKeeper::apply(const network::MessageOrigin& origin,
 }  // namespace rtype::server
 ```
 
-In `src/server/Sessions/CMakeLists.txt`, add the file to the sources of `rtype_server_sessions`, in alphabetical order; the library reaches `rtype_network_emote` through the roster:
+In `src/server/Sessions/Tracking/CMakeLists.txt`, add the file to the sources of `rtype_server_sessions_tracking`, in alphabetical order; the library reaches `rtype_network_emote` through the roster:
 
 ```cmake
-add_library(rtype_server_sessions STATIC
+add_library(rtype_server_sessions_tracking STATIC
   DatagramReader.cpp
   Departures.cpp
   EmoteKeeper.cpp
-  GameSessions.cpp
+  Heartbeats.cpp
 ```
 
 Finally, plug it in. In `GameSessions.hpp`, include `EmoteKeeper.hpp` and add the member after `readyKeeper_`:
@@ -422,7 +422,7 @@ TEST(Emote, RefusesBytesAfterTheKind) {
 }  // namespace rtype::network
 ```
 
-**The keeper**, in `tests/server/Sessions/EmoteKeeperTest.cpp`, built on the helpers of `SessionsFixtures.hpp`:
+**The keeper**, in `tests/server/Sessions/Tracking/EmoteKeeperTest.cpp`, built on the helpers of `SessionsFixtures.hpp`:
 
 ```cpp
 #include <gtest/gtest.h>
@@ -515,7 +515,7 @@ TEST_F(GameInstanceTest, KeepsTheEmoteAPlayerSends) {
 
 Check that it can fail: remove the `registerHandler<network::Emote>` call, build, and this test turns red; put it back.
 
-Register the files in `tests/CMakeLists.txt`: add `network/Protocol/EmoteTest.cpp` to the `SOURCES` of `network_tests`; add `server/Sessions/EmoteKeeperTest.cpp` to those of `server_sessions_tests`, which links `rtype_server_sessions` already. `GameInstanceTest.cpp` is already listed.
+Register the files in `tests/CMakeLists.txt`: add `network/Protocol/EmoteTest.cpp` to the `SOURCES` of `network_tests`; add `server/Sessions/Tracking/EmoteKeeperTest.cpp` to those of `server_sessions_tests`, which links `rtype_server_sessions` already. `GameInstanceTest.cpp` is already listed.
 
 Run them:
 

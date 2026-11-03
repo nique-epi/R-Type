@@ -36,7 +36,7 @@ A module lives at one of two scopes.
 
 | | Program | Game |
 |---|---|---|
-| Interface | `IModule` (`src/engine/Modules/IModule.hpp`) | `IGameModule` (`src/server/Instances/IGameModule.hpp`) |
+| Interface | `IModule` (`src/engine/Modules/IModule.hpp`) | `IGameModule` (`src/server/Instances/Context/IGameModule.hpp`) |
 | Owner | `Application`, one per program run | `GameInstance`, one per game hosted by the server |
 | Lives | from the start of the program to its end | from the creation of the game to its destruction |
 | Listed in | `serverModules()` (`src/server/Modules/`), `clientModules()` (`src/client/Modules/Assembly/`) | `rtypeGameModules()` (`src/server/Games/RtypeGameModules.cpp`) |

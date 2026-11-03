@@ -26,7 +26,7 @@ Why: a review asked, for eleven places of one pull request, to move the constant
    ```bash
    git grep -n -E '^namespace \{|^(struct|class|union|enum( class)?) [A-Za-z_]|^(inline )?(constexpr|const) |^(template ?<[^>]*> ?)?(\[\[nodiscard\]\] )?(static )?[A-Za-z_][A-Za-z0-9_:<>, ]*[ *&]+[a-z][A-Za-z0-9_]*\([^;]*$' -- <changed *Test.cpp files>
    ```
-   It must print nothing. Calibration: on `git show '275b065:tests/client/Rendering/Effects/Camera/CameraShakeTest.cpp'` it prints the anonymous namespace, eight constants, `struct ShakeOverASecond` and `shakeKeeping`; on `git show 'origin/main:tests/server/Replication/WorldStateSenderTest.cpp'` it prints nothing.
+   It must print nothing. Calibration: on `git show '275b065:tests/client/Rendering/Effects/Camera/CameraShakeTest.cpp'` it prints the anonymous namespace, eight constants, `struct ShakeOverASecond` and `shakeKeeping`; on `git show 'origin/main:tests/server/Replication/Announcements/WorldStateSenderTest.cpp'` it prints nothing.
 
 ## Example
 
