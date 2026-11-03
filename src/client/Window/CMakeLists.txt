@@ -2,7 +2,7 @@ add_library(rtype_client_window INTERFACE)
 
 target_include_directories(rtype_client_window INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
 
-target_link_libraries(rtype_client_window INTERFACE SFML::System)
+target_link_libraries(rtype_client_window INTERFACE SFML::System rtype_client_settings_module)
 
 add_library(rtype_client_window_size_text STATIC WindowSizeText.cpp)
 

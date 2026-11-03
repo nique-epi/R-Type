@@ -7,7 +7,7 @@ target_link_libraries(rtype_client_player_preferences
     rtype_client_effect_interfaces
     rtype_client_rendering_interfaces
   PRIVATE
-    rtype_client_settings
+    rtype_client_settings_module
 )
 
 rtype_enable_warnings(rtype_client_player_preferences)

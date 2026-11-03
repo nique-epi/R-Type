@@ -7,7 +7,7 @@ target_link_libraries(rtype_client_options_descriptions
     rtype_client_key_bindings
     rtype_client_slider
     rtype_client_screen_assets
-    rtype_client_settings
+    rtype_client_settings_module
     rtype_client_window
     rtype_client_window_layout
   PRIVATE

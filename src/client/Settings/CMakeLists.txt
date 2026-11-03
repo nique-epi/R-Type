@@ -1,13 +1,22 @@
-add_library(rtype_client_settings INTERFACE)
-
-target_include_directories(rtype_client_settings INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
-
-target_link_libraries(rtype_client_settings
-  INTERFACE
-    rtype_client_key_bindings
-    rtype_client_window
+add_library(rtype_client_settings_module STATIC
+  ClientSettingsModule.cpp
+  SettingsFile.cpp
+  SettingsService.cpp
+  SettingsText.cpp
 )
 
-add_subdirectory(SettingsText)
-add_subdirectory(SettingsFile)
-add_subdirectory(SettingsService)
+target_include_directories(rtype_client_settings_module PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+
+target_link_libraries(rtype_client_settings_module
+  PUBLIC
+    rtype_client_key_bindings
+    rtype_engine_modules
+    rtype_logging
+  PRIVATE
+    rtype_client_constants
+    rtype_client_key_names
+    rtype_client_platform
+    rtype_engine_paths
+)
+
+rtype_enable_warnings(rtype_client_settings_module)

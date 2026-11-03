@@ -6,7 +6,7 @@ target_link_libraries(rtype_client_window_module
   PUBLIC
     SFML::Window
     rtype_client_game_window
-    rtype_client_settings
+    rtype_client_settings_module
     rtype_engine_application
     rtype_engine_events
     rtype_engine_modules

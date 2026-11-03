@@ -9,7 +9,7 @@ target_link_libraries(rtype_client_options_tabs
     rtype_client_key_names
     rtype_client_menu
     rtype_client_screen_assets
-    rtype_client_settings_service
+    rtype_client_settings_module
     rtype_client_window
   PRIVATE
     rtype_client_dropdown

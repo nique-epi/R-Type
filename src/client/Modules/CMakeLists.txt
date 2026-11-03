@@ -1,4 +1,3 @@
-add_subdirectory(Settings)
 add_subdirectory(Window)
 add_subdirectory(Connection)
 add_subdirectory(Audio)

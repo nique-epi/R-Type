@@ -5,7 +5,7 @@ target_include_directories(rtype_client_sound_player PUBLIC ${CMAKE_CURRENT_SOUR
 target_link_libraries(rtype_client_sound_player
   PUBLIC
     rtype_client_audio_interfaces
-    rtype_client_settings_service
+    rtype_client_settings_module
     SFML::Audio
   PRIVATE
     rtype_client_assets_module
