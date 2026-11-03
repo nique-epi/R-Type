@@ -9,7 +9,7 @@ Networked multiplayer remake of the R-Type shoot'em up, on a custom C++ game eng
 | Item | Choice |
 |---|---|
 | Language | C++20, compiled by GCC/Clang (Linux) and MSVC (Windows) |
-| Build | CMake ≥ 3.28, presets (`default`, `test`), dependencies through vcpkg (pinned submodule) |
+| Build | CMake ≥ 4.2, presets (`default`, `test`), dependencies through vcpkg (pinned submodule) |
 | Libraries | SFML 3 (`graphics`, `window`, `audio`) on the client, standalone Asio on the server, GoogleTest for tests |
 | Targets | `r-type_server` (Asio only, never SFML), `r-type_client` (SFML), `harness_tests` |
 | Style | `.clang-format` (Google base, 2-space indent, 80 columns), `.clang-tidy` (warnings = errors) |
