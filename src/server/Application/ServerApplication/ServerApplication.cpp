@@ -19,6 +19,22 @@
 
 namespace rtype::server {
 
+namespace {
+
+/**
+ * @returns What @p socket holds.
+ * @throws ServerNotOpenException when it holds nothing: open() was not called.
+ */
+network::IDatagramSocket& requireOpen(
+    const std::unique_ptr<network::IDatagramSocket>& socket) {
+  if (!socket) {
+    throw ServerNotOpenException();
+  }
+  return *socket;
+}
+
+}  // namespace
+
 ServerApplication::ServerApplication(
     network::Endpoint localEndpoint, TickHandler handleTick,
     const network::NetworkConditions& conditions)
@@ -49,10 +65,11 @@ void ServerApplication::close() {
 }
 
 void ServerApplication::run() {
-  openSocket().startReceiving([this](const network::Endpoint& sender,
-                                     std::span<const std::byte> datagram) {
-    sorter_.sort(sender, datagram);
-  });
+  requireOpen(socket_).startReceiving(
+      [this](const network::Endpoint& sender,
+             std::span<const std::byte> datagram) {
+        sorter_.sort(sender, datagram);
+      });
   TickLoop simulation{clock_, [this] { simulateTick(); }};
   std::exception_ptr simulationError;
   {
@@ -93,21 +110,7 @@ void ServerApplication::queueDatagram(network::OutgoingDatagram datagram) {
 }
 
 network::Endpoint ServerApplication::localEndpoint() const {
-  return openSocket().localEndpoint();
-}
-
-network::IDatagramSocket& ServerApplication::openSocket() {
-  if (!socket_) {
-    throw ServerNotOpenException();
-  }
-  return *socket_;
-}
-
-const network::IDatagramSocket& ServerApplication::openSocket() const {
-  if (!socket_) {
-    throw ServerNotOpenException();
-  }
-  return *socket_;
+  return requireOpen(socket_).localEndpoint();
 }
 
 void ServerApplication::simulateTick() {

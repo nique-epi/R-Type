@@ -141,9 +141,6 @@ class ServerApplication final : public IDatagramSender,
   [[nodiscard]] network::Endpoint localEndpoint() const;
 
  private:
-  /** @throws ServerNotOpenException when open() was not called. */
-  [[nodiscard]] network::IDatagramSocket& openSocket();
-  [[nodiscard]] const network::IDatagramSocket& openSocket() const;
   void simulateTick();
 
   engine::SystemClock clock_;
