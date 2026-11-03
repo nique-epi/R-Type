@@ -1,8 +1,8 @@
 #include "ServerModuleFixture.hpp"
 #include <cstdint>
-#include <string_view>
 #include <vector>
 #include "LogLaunchOptions.hpp"
+#include "LogLaunchOptionsFixtures.hpp"
 #include "LoggingConstants.hpp"
 #include "UdpPortProbe.hpp"
 
@@ -12,8 +12,7 @@ ServerModuleFixture::ServerModuleFixture()
                  rtype::logging::NO_STDERR_OPTION} {}
 
 rtype::logging::LogLaunchOptions ServerModuleFixture::journalOptions() const {
-  return rtype::logging::LogLaunchOptions::read(
-      arguments_, rtype::logging::SERVER_LOG_FILE_NAME);
+  return logOptionsOf(arguments_, rtype::logging::SERVER_LOG_FILE_NAME);
 }
 
 std::uint16_t ServerModuleFixture::freeUdpPort() { return ::freeUdpPort(); }

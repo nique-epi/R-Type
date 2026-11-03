@@ -3,14 +3,50 @@ title: Client
 description: What the client does, how its parts fit together and where to find them in the code.
 ---
 
-The client, `r-type_client` (`src/client/`), shows the game, plays its sounds and reads the player's input; the server decides what happens in the match (see [Architecture](/R-Type/architecture/)). Today it finds its assets folder, loads the assets of its interface, opens a window and runs its screens over a scrolling starfield: an intro of 5.5 s set to the beats of its theme, which it opens on, the title screen, a connection screen, a waiting room, a loading screen, the game screen, which draws the entities the server announces from one sprite sheet, animated, and their effects from another, on a ladder of intensity from a shot to a ship destroyed, and opens each game with MISSION START, an end screen, an options screen and a quit confirmation, the menus all built from the same widgets. The game screen reads the player's actions through the keys the player chose, the arrows and the space bar at first; the options change them, with the volumes, the display mode, the window size and the accessibility settings, and save them in a file for the next launch. It reads the server's address and port and the player's nickname at launch, shows them on its connection screen, and joins the server from there: it sends the connection request of the protocol, on a network thread opened at launch, until the server accepts or refuses it. Once accepted, it opens a waiting room that lists the players of the server and where the player says it is ready, then the game when the server announces its start, where the ships and Bydos appear, move and disappear as the server says, over a status band that shows the nickname, the lives and the score of each pilot. When the server ends the game, the end screen opens a second later: a flight log that ranks every pilot, then PRESS ENTER TO REPLAY, back to the waiting room, or QUIT, back to the title. During a game, a line in the top-left corner tells when a teammate leaves or loses its signal, and WAITING FOR THE SERVER shows after a second without news of the server. When the session ends, the server silent for 20 s or shut down, the title replaces every screen with a dialog over it that says so, and its RETRY opens the connection screen again with the same address, port and nickname. From launch it plays its theme in a loop, the sounds of the intro and of what the server announces, and a click on the buttons and tabs of its menus.
+The client, `r-type_client` (`src/client/`), shows the game, plays its sounds and reads the player's input; the server decides what happens in the match (see [Architecture](/R-Type/architecture/)).
 
 This page tells you where to look when you need to change something. It describes what exists today and says plainly what does not exist yet.
+
+## How the parts fit together
+
+Four parts do most of the work: the screens, the rendering, the assets (the resources of the client) and the inputs. `FrameLoop` (`src/client/Modules/Window/`) hands the events to the screens, then updates and draws them, once per frame on the main thread (see [Modules and frame loop](#modules-and-frame-loop-clientmodules-frameloop)). The diagram answers one question: what does a screen rely on, from a key press to the picture?
+
+```mermaid
+flowchart TB
+  accTitle: What a screen relies on
+  accDescr: The window events go to the screen stack. From there, the game screen reads the keys through PlayerCommands, which gives actions to ServerSession. The screens draw through EntityLayer and InterfaceCanvas, which take their textures and fonts from AssetLibrary.
+  Events["window events"] --> Stack[ScreenStack]
+  Stack -- "game screen" --> Commands[PlayerCommands]
+  Commands -- "actions" --> Session[ServerSession]
+  Stack -- "draw" --> Drawing["EntityLayer, InterfaceCanvas"]
+  Drawing -- "textures, fonts" --> Library[AssetLibrary]
+```
+
+What the server says comes back to the game screen through `EntityMessageQueue` (see [Joining a server](#joining-a-server-serversession-waitingroom-entitymessagequeue)).
+
+- [**Screens**](#screens-screenstack-screenregistry) decide what is shown. The stack hands each event to the screen on top only and updates every screen; a screen opens another by its `ScreenId`, and each module registers the screens it owns.
+  - Key classes: `IScreen`, `ScreenStack`, `ScreenRegistry`, `ClientScreens`, `IScreenNavigator`.
+  - Folders: `src/client/Screens/`, `src/client/Application/ScreenStack/`, `src/client/Modules/Screens/`, `src/client/Modules/ScreenRegistry/`.
+- [**Rendering**](#assets-in-the-game-from-an-entity-to-the-screen) paints the frame from the bottom up: the [sky](#scrolling-background-scrollingbackground), then the screens, with their entities on a pixel canvas and their [menus](#how-a-menu-is-drawn-interfacecanvas).
+  - Key classes: `GameWindow`, `ScrollingBackground`, `EntityLayer`, `RenderSystem`, `SfmlDrawSurface`, `PixelCanvas`, `InterfaceCanvas`.
+  - Folders: `src/client/Window/`, `src/client/Rendering/`, `src/client/Widgets/`.
+- [**Assets**](#assets-the-folder-and-the-ids) find and load the files of `assets/`, named by asset id, at the three moments listed in [Assets: loading](#assets-loading).
+  - Key classes: `AssetLibrary`, `AssetLoadingStep`; the lists `interfaceAssets()`, `introAssets()`, `titleAssets()`, `gameAssets()`.
+  - Folders: `assets/`, `src/client/Assets/`, `src/client/Screens/ScreenAssets/`.
+- [**Inputs**](#player-commands-playercommands) turn the key and focus events of the game into actions, through the keys the player chose, so the game never sees a key. Menus read their own keys (see [Keys and pointer](#keys-and-pointer)).
+  - Key classes: `EventListeners`, `KeyBindings`, `PlayerCommands`, `ActionSet`.
+  - Folders: `src/client/Modules/Window/`, `src/client/Input/`.
+
+To change something precise, [Where to intervene](#where-to-intervene) lists each case.
+
+## What exists today
+
+Today it finds its assets folder, loads the assets of its interface, opens a window and runs its screens over a scrolling starfield: an intro of 5.5 s set to the beats of its theme, which it opens on, the title screen, a connection screen, a waiting room, a loading screen, the game screen, which draws the entities the server announces from one sprite sheet, animated, and their effects from another, on a ladder of intensity from a shot to a ship destroyed, and opens each game with MISSION START, an end screen, an options screen and a quit confirmation, the menus all built from the same widgets. The game screen reads the player's actions through the keys the player chose, the arrows and the space bar at first; the options change them, with the volumes, the display mode, the window size and the accessibility settings, and save them in a file for the next launch. It reads the server's address and port and the player's nickname at launch, shows them on its connection screen, and joins the server from there: it sends the connection request of the protocol, on a network thread opened at launch, until the server accepts or refuses it. Once accepted, it opens a waiting room that lists the players of the server and where the player says it is ready, then the game when the server announces its start, where the ships and Bydos appear, move and disappear as the server says, over a status band that shows the nickname, the lives and the score of each pilot. When the server ends the game, the end screen opens a second later: a flight log that ranks every pilot, then PRESS ENTER TO REPLAY, back to the waiting room, or QUIT, back to the title. During a game, a line in the top-left corner tells when a teammate leaves or loses its signal, and WAITING FOR THE SERVER shows after a second without news of the server. When the session ends, the server silent for 20 s or shut down, the title replaces every screen with a dialog over it that says so, and its RETRY opens the connection screen again with the same address, port and nickname. From launch it plays its theme in a loop, the sounds of the intro and of what the server announces, and a click on the buttons and tabs of its menus.
 
 | Part | State | Where |
 |---|---|---|
 | Window | Available: windowed, or borderless over the whole screen | `src/client/Window/` |
-| Modules of the client and frame loop | Available: logger, assets, settings, window, connection, sound and screens, over five stages | `src/client/Modules/` |
+| Modules of the client and frame loop | Available: logger, assets, settings, window, connection, sound, screen registry, menus, lobby, game and screens, over five stages | `src/client/Modules/` |
 | Screen stack | Available | `src/client/Application/ScreenStack/` |
 | Screens | Available: intro, title, connection, waiting room, loading, game, end, options, and the dialogs of the quit confirmation and of a lost connection | `src/client/Screens/` |
 | Lost connection: a dialog over the title | Available: shown once a session is lost or closed | `src/client/Screens/DialogMenus/`, `src/client/Screens/DialogScreen/`, `src/client/Connection/SessionLossWatch/` |
@@ -25,7 +61,7 @@ This page tells you where to look when you need to change something. It describe
 | Player settings and their file | Available; every change goes through the `SettingsService`, which tells the sounds and the music when a volume or MUTE ALL changes; the game reads the flashes setting, the sound cues and auto-fire, and every screen that paints a pilot reads the color mode | `src/client/Settings/` |
 | Color modes: the pilots in a palette for protanopia, deuteranopia or tritanopia | Available; read by the status band, the waiting room, the title, the intro, the flight log and the effects | `src/client/Rendering/Interface/PlayerPaletteConstants.hpp`, `src/client/Screens/PlayerPreferences/` |
 | Drawing entities | Available; drawn by the game screen | `src/client/Rendering/Drawing/EntityLayer/`, `src/client/Rendering/Drawing/RenderSystem/`, `src/client/Rendering/Drawing/SfmlDrawSurface/`, `src/client/Rendering/Sprites/AssetTextureSource/` |
-| Sprites of the ships, Bydos and missiles | Available, animated | `assets/sprites/entities.png`, `src/client/Rendering/Sprites/EntitySprites.cpp` |
+| Sprites of the ships, Bydos and missiles | Available, animated | `assets/sprites/entities.png`, `src/client/Rendering/Sprites/EntitySprites/EntitySprites.cpp` |
 | Animations | Available; played by the game screen | `src/client/Rendering/Sprites/Animation/`, `src/client/Rendering/Sprites/AnimationSystem/` |
 | Effects: explosions, impacts, muzzle flashes, hit flashes, debris, shockwaves, camera shake, figures of gains, arrivals, invulnerability | Available; played when the server says an entity was killed or hit, when a missile or a ship appears, and when a world state says a ship cannot be hit, which it does for 2 s after a ship comes back from a hit (see [Server](/R-Type/server/#lives-lifekeeper)) | `assets/sprites/effects.png`, `src/client/Rendering/Effects/`, `src/client/Rendering/SpriteLook/HitFlashSystem/` |
 | MISSION START: the warp of the stars and the banner | Available; played by the game screen at the start of each game | `src/client/Rendering/Effects/MissionStart/MissionStart.cpp`, `src/client/Widgets/MissionBanner/` |
@@ -57,6 +93,10 @@ This page tells you where to look when you need to change something. It describe
 | `window` | provides the `GameWindow`, the `EventListeners` and the `FrameLoop`; opens the window at the saved size when it starts, closes it when it stops | `src/client/Modules/Window/` |
 | `connection` | provides the `ServerSession`, the `WaitingRoom` and the `EntityMessageQueue`; opens the socket and its network thread when it starts; leaves the server, then closes the socket, when it stops | `src/client/Modules/Connection/` |
 | `audio` | provides the `IAudioService`: the sounds, the theme and the music of a game, or a service that plays nothing with `--no-sound`; opens the music files when it starts | `src/client/Modules/Audio/` |
+| `screen-registry` | provides the `ScreenRegistry`, empty, for the next three modules | `src/client/Modules/ScreenRegistry/` |
+| `menus` | adds its screens to the registry when it installs (see [Screens](#screens-screenstack-screenregistry)) | `src/client/Modules/Menus/` |
+| `lobby` | adds its screens to the registry when it installs | `src/client/Modules/Lobby/` |
+| `game` | adds its screens to the registry when it installs | `src/client/Modules/Game/` |
 | `screens` | the screens and what they share (`ClientScreens`), built when it starts, on the intro or on the title | `src/client/Modules/Screens/` |
 
 `main()` then runs a `FrameLoop` (`src/client/Modules/Window/`) on the main thread, where SFML reads the window events. Each pass runs the stages of `CLIENT_LOOP_STAGES` (`src/client/ClientConstants.hpp`) once, with the real time since the previous pass, read from `engine::SystemClock`:
@@ -527,12 +567,13 @@ The session sends and receives through an `IRoutedLink` (`src/client/Connection/
 
 The game screen sends the actions the player holds to the server through an `IPlayerInputLink` (`src/client/Connection/`): `ServerSession` in the client, which the builder of the game screen hands to it, and `RecordingPlayerInputLink` (`tests/doubles/`) in the tests.
 
-- Each `GameScreen::update()` asks `PlayerInputPacer` (`rtype_client_player_input_pacer`, `src/client/Connection/PlayerInputPacer/`) whether an input is due, and if so sends `playerActions()`. The first update sends at once, then one input goes out every `PLAYER_INPUT_INTERVAL`, a sixtieth of a second (`PLAYER_INPUTS_PER_SECOND`, 60).
-- The time a frame lasts beyond the interval counts toward the next input, so frames of 16 or 17 ms still send 60 inputs per second. Never two in one frame: below 60 frames per second the client sends one input per frame, and a stall of the frame loop sends one input, not a burst.
-- `ServerSession::sendPlayerInput()` sends a `PlayerInput` numbered after the previous one, a 30-byte datagram carrying the session token, only while the attempt is `Accepted`; otherwise it sends nothing.
+- With PREDICTION on, each `GameScreen::update()` sends one input for each simulation tick that passed, so the rate is that of the simulation, `SIMULATION_TICKS_PER_SECOND` (60), and a frame that lasts several ticks sends several inputs, at most `MAXIMUM_TICKS_PER_ADVANCE` (5); the time past them is dropped (see [Own ship prediction](#own-ship-prediction-ownshippredictor-shipprediction)). `PLAYER_INPUTS_PER_SECOND` is not read in this mode.
+- With PREDICTION off, `GameScreen::update()` asks `PlayerInputPacer` (`rtype_client_player_input_pacer`, `src/client/Connection/PlayerInputPacer/`) whether an input is due, and if so sends `playerActions()`. The first update sends at once, then one input goes out every `PLAYER_INPUT_INTERVAL`, a sixtieth of a second (`PLAYER_INPUTS_PER_SECOND`, 60).
+- With PREDICTION off, the time a frame lasts beyond the interval counts toward the next input, so frames of 16 or 17 ms still send 60 inputs per second. Never two in one frame: below 60 frames per second the client sends one input per frame, and a stall of the frame loop sends one input, not a burst.
+- `ServerSession::sendPlayerInput()` sends a `PlayerInput` numbered after the previous one, a 30-byte datagram carrying the session token, only while the attempt is `Accepted`, and returns the number it used; otherwise it sends nothing and returns nothing.
 - The game goes on behind the options, so it keeps sending them there, with nothing held, or shoot alone while AUTO-FIRE is on.
 
-The rate is **provisional**, like every rate of the protocol page: code must read `PLAYER_INPUTS_PER_SECOND` and `PLAYER_INPUT_INTERVAL` in `src/client/Connection/ConnectionConstants.hpp`. The server keeps the newest input of each player and moves its ship with it at each tick of a game in progress (see [Server and game](/R-Type/server/#moving-the-ships-shipcontrol)), and fires its missiles while it holds shoot (see [Server and game](/R-Type/server/#shooting-weaponsystem)).
+The rate with PREDICTION off is **provisional**, like every rate of the protocol page: code must read `PLAYER_INPUTS_PER_SECOND` and `PLAYER_INPUT_INTERVAL` in `src/client/Connection/ConnectionConstants.hpp`. The server keeps the newest input of each player and moves its ship with it at each tick of a game in progress (see [Server and game](/R-Type/server/#moving-the-ships-shipcontrol)), and fires its missiles while it holds shoot (see [Server and game](/R-Type/server/#shooting-weaponsystem)).
 
 ## Options: `OptionsScreen`
 
@@ -541,7 +582,7 @@ The rate is **provisional**, like every rate of the protocol page: code must rea
 | Tab | Rows |
 |---|---|
 | SOUND | MUSIC and EFFECTS, sliders from 0 to 100 % by `VOLUME_STEP` (5); MUTE ALL; DEFAULT SOUND |
-| CONTROLS | MOVE UP, MOVE DOWN, MOVE LEFT, MOVE RIGHT, SHOOT and READY, one key slot each; DEFAULT KEYS |
+| CONTROLS | MOVE UP, MOVE DOWN, MOVE LEFT, MOVE RIGHT, SHOOT and READY, one key slot each; DEFAULT KEYS; PREDICTION, a switch |
 | DISPLAY | DISPLAY MODE, a list of WINDOWED and BORDERLESS; WINDOW SIZE, a list, and under it every size of `WINDOW_SIZES` drawn to scale. While the window is borderless, WINDOW SIZE is disabled and shows the size of the screen, and the chart is not drawn |
 | ACCESS | COLOR MODE, a selector; REDUCE FLASHES, SOUND CUES, AUTO-FIRE |
 
@@ -549,7 +590,7 @@ Every row reads the `PlayerSettings` that the settings module owns and changes t
 
 The description of the selected row follows its state: the keys of an open list, `> PRESS THE NEW KEY. ESC CANCELS` while a key is awaited, `> THIS KEY CANNOT BE BOUND` after a key that cannot be bound, `> SAME KEY AS SHOOT: CHANGE ONE` when two actions share a key, `> SOUND MUTED: SEE MUTE ALL` on a muted volume, `> BORDERLESS COVERS THE WHOLE SCREEN` on a borderless window, and the sizes too large for the desktop, which the list shows dashed and never takes. Every description fits right of BACK, 43 characters at most.
 
-REDUCE FLASHES is read by the game: its effects show no white and a hit shades the entity instead of whitening it (see [Reduced flashes](#reduced-flashes-flashpreference)). AUTO-FIRE is read by the game at once: while it is on, every input holds shoot (see [Player commands](#player-commands-playercommands)). The READY key is read by the waiting room. The volumes and MUTE ALL reach the sounds and the music at once, because the service tells them (see [Sounds and music](#sounds-and-music-iaudioservice-soundplayer-musicplayer)). The color mode is read by every screen that paints a pilot (see [Color modes](#color-modes-playerpalette)). SOUND CUES is read by the game at once: the shot of a Bydo and a pilot hit show on screen (see [Sound cues](#sound-cues-soundcues)).
+REDUCE FLASHES is read by the game: its effects show no white and a hit shades the entity instead of whitening it (see [Reduced flashes](#reduced-flashes-flashpreference)). AUTO-FIRE is read by the game at once: while it is on, every input holds shoot (see [Player commands](#player-commands-playercommands)). PREDICTION is read by the game at once too: turning it off sends the ship back to where the last state puts it, turning it on starts the prediction again from the next state (see [Own ship prediction](#own-ship-prediction-ownshippredictor-shipprediction)). The READY key is read by the waiting room. The volumes and MUTE ALL reach the sounds and the music at once, because the service tells them (see [Sounds and music](#sounds-and-music-iaudioservice-soundplayer-musicplayer)). The color mode is read by every screen that paints a pilot (see [Color modes](#color-modes-playerpalette)). SOUND CUES is read by the game at once: the shot of a Bydo and a pilot hit show on screen (see [Sound cues](#sound-cues-soundcues)).
 
 Over the title (`OPTIONS_SCREEN`) the options hide it. Over a game (`GAME_OPTIONS_SCREEN`) the game goes on running, dimmed under them, and THE GAME GOES ON is written in the top-right corner. The texts are in `src/client/Screens/OptionsScreenConstants.hpp`. The screen takes the window as an `ISizableWindow` (`src/client/Window/`) and the `SettingsService`, which saves through an `ISettingsStorage` (`src/client/Settings/`), so `client_screen_tests` checks it with a fake window and a recording storage from `tests/doubles/`.
 
@@ -559,7 +600,7 @@ The chart of the window sizes is `paintWindowSizeChart()` (`rtype_client_window_
 
 ## Settings: `PlayerSettings`, `SettingsService`, `SettingsFile`
 
-`PlayerSettings` (`rtype_client_settings`, `src/client/Settings/`) holds what the player sets: the music and effects volumes, in percent from `MINIMUM_VOLUME` (0) to `MAXIMUM_VOLUME` (100), mute, the window size, empty until the player picks one, the display mode, windowed at first, the keys (`KeyBindings`), the color mode, reduce flashes, sound cues and auto-fire. A default-built value holds the settings of a first launch; the settings module then takes reduce flashes from the system (`systemPrefersReducedMotion()`).
+`PlayerSettings` (`rtype_client_settings`, `src/client/Settings/`) holds what the player sets: the music and effects volumes, in percent from `MINIMUM_VOLUME` (0) to `MAXIMUM_VOLUME` (100), mute, the window size, empty until the player picks one, the display mode, windowed at first, the keys (`KeyBindings`), the color mode, reduce flashes, sound cues, auto-fire and client prediction (on at first). A default-built value holds the settings of a first launch; the settings module then takes reduce flashes from the system (`systemPrefersReducedMotion()`).
 
 `SettingsService` (`rtype_client_settings_service`, `src/client/Settings/SettingsService/`) is the one way to change them: the options screen and any other module go through it. Each setting is a constant naming its field, its `SettingId` and, for an integer, its range (`MUSIC_VOLUME_SETTING`, `MUTED_SETTING`, `AUTO_FIRE_SETTING`, in `SettingDefinitionConstants.hpp`):
 
@@ -589,6 +630,7 @@ color_mode=off
 reduce_flashes=off
 sound_cues=off
 auto_fire=off
+client_prediction=on
 ```
 
 `window_size=1920x1080` comes between `mute_all` and `display_mode` once a size is picked; `display_mode` is `windowed` or `borderless`. `readSettingsText()` reads a file over the settings of a first launch: a line that is missing, unknown or invalid leaves the default of that setting only, and is logged as a warning with its number (`line 3: unknown setting`); spaces around a name or a value, a final `\r` and lines starting with `#` are ignored; a file larger than `MAXIMUM_SETTINGS_FILE_SIZE` (65536 bytes) is ignored whole. A save writes `settings.ini.tmp` next to the file, then renames it over the file, so the file is always the previous one or the new one. The folder is created on the first save, open to its owner only.
@@ -630,13 +672,34 @@ const ActionSet held = gameScreen.playerActions();
 const std::uint8_t actions = held.bits();
 ```
 
-`GameScreen::playerActions()` is the only way out, since the window hands the key and focus events to the screen on top. The game screen sends it to the server at each input due (see [Inputs to the server](#inputs-to-the-server-playerinputpacer-iplayerinputlink)); the client does not move the player's ship itself yet: it shows it where the world state of the server puts it. The game screen logs `actions held: <byte>` at trace level each time the byte changes. It assumes the window has the focus when it is built and learns otherwise from the focus events. Only the screen on top receives events, so opening the options releases every action held (`PlayerCommands::releaseAll()`): a key changed in the options would otherwise never release its action.
+`GameScreen::playerActions()` is the only way out, since the window hands the key and focus events to the screen on top. The game screen sends it to the server at each input due (see [Inputs to the server](#inputs-to-the-server-playerinputpacer-iplayerinputlink)); with PREDICTION on, the client moves the player's ship itself (see [Own ship prediction](#own-ship-prediction-ownshippredictor-shipprediction)); with it off, it shows the ship where the world state of the server puts it. The game screen logs `actions held: <byte>` at trace level each time the byte changes. It assumes the window has the focus when it is built and learns otherwise from the focus events. Only the screen on top receives events, so opening the options releases every action held (`PlayerCommands::releaseAll()`): a key changed in the options would otherwise never release its action.
 
 While AUTO-FIRE is on (`PlayerSettings::autoFire`), `playerActions()` holds shoot as well, whatever the keys: releasing the shoot key, losing the focus or opening the options leaves it held, so the ship goes on firing without a key. The setting is read at each call, so a change in the options applies at the next input. The server fires at most `SHOTS_PER_SECOND` (3) missiles per second per ship, whatever the inputs say (see [Server and game](/R-Type/server/#shooting-weaponsystem)), so auto-fire fires no faster than the key held.
 
+## Own ship prediction: `OwnShipPredictor`, `ShipPrediction`
+
+Without prediction, a key shows after the input reached the server, the server moved the ship and a state came back: a round trip plus up to one state interval. With PREDICTION on (the default, `PlayerSettings::clientPrediction`), the client moves its own ship at once with the code the server runs, and corrects it from what the server confirms.
+
+| | PREDICTION off | PREDICTION on |
+|---|---|---|
+| Own ship | where the last state puts it | moved at once by `shipAfter`, corrected from the states |
+| Inputs sent | one per `PLAYER_INPUT_INTERVAL`, at most one per frame | one per simulation tick, up to `MAXIMUM_TICKS_PER_ADVANCE` (5) per frame |
+| Cost | none | the ship can be wrong for a moment; the correction can show as a jump |
+
+The technique is the one described by Gabriel Gambetta in *Client-Side Prediction and Server Reconciliation*: number each input, keep it until the server confirms it, and replay the unconfirmed ones on top of the server state. It needs a deterministic movement, which is why the client runs `shipAfter` (`rtype_game_ship_control`) and not its own copy. The article notes that a prediction is usually right and not always.
+
+- `OwnShipPredictor` (`src/client/Prediction/`) counts the time of each update into whole simulation ticks, as the server does, because the drift of `shipAfter` depends on the length of the step. For each tick it sends the actions held through `IPlayerInputLink::sendPlayerInput()` and predicts the number it was sent under. Time past `MAXIMUM_TICKS_PER_ADVANCE` ticks is dropped.
+- `ShipPrediction` keeps each command, its number, its directions and the ship predicted right after it, until the server confirms a newer one. Each `WorldState` carries `acknowledgedInput` (see [Protocol](/R-Type/protocol/#world-state)); `OwnShip` reads it with the position of the own ship. A state cut into several datagrams lists every player in each part and the entities in one of them, so only the part that lists the ship reconciles.
+- Reconciling drops the commands before the confirmed one, then compares its predicted position with the position of the server. Within `RECONCILIATION_TOLERANCE` (two ticks at full speed, 16 units) nothing changes, so the ship does not jump for a small difference: the server can be a tick ahead, since it repeats the directions of a tick that brought no input. Beyond it, the prediction restarts from the server position with the motion kept after the confirmed command, and replays the commands after it.
+- The velocity and the maneuver of the ship are not in the state, so the client keeps its own after each command and restarts from that.
+- `placePredictedShip()` puts the predicted position on the entity of the own ship after the state was applied, so the position of the last state never shows.
+- The prediction starts from the first state that lists the ship, and starts again from a ship with another entity id: the player came back after a hit.
+
+The movement of the other ships is not predicted: they are drawn where the last state puts them.
+
 ## Launch options: `LaunchOptions`
 
-`LaunchOptions` (`src/client/LaunchOptions/`) reads the address and the port of the server and the nickname of the player, given at launch, from the arguments the logging options left (see [Logging](/R-Type/logging/#choosing-the-level-and-the-output-at-launch)), with the engine's `readLaunchArguments` (see [Engine](/R-Type/engine/#launch-arguments-readlauncharguments)):
+`LaunchOptions` (`src/client/LaunchOptions/`) reads the address and the port of the server and the nickname of the player, given at launch, with the engine's `readLaunchArguments` (see [Engine](/R-Type/engine/#launch-arguments-readlauncharguments)), in the same pass as the options of the network simulator (see [Network](/R-Type/network/#network-simulator-simulatednetworksocket)) and the logging options (see [Logging](/R-Type/logging/#choosing-the-level-and-the-output-at-launch)), which it keeps for the logger module (`logOptions()`):
 
 | Option | Effect |
 |---|---|
@@ -646,7 +709,7 @@ While AUTO-FIRE is on (`PlayerSettings::autoFire`), `playerActions()` holds shoo
 | `--help` | Prints the usage, the logging options included, on standard output, then exits with code 0 without opening the window or the journal. |
 
 - A host name such as `localhost` is refused, not resolved: a resolution can block for seconds, so it must run on the network thread once the connection exists. An IPv6 address is refused too, since the server only listens over IPv4.
-- The last of each option wins. An unknown argument, an option without its value, an invalid address, an invalid port or an invalid nickname (`InvalidNicknameOptionException`) stops the client before the window opens: it prints `r-type_client:`, the reason and how to see the usage on standard error, then exits with code 1.
+- The last of each option wins. The argument after `-h`, `-p` or `-n` is always its value, even spelled as another option: `-n --no-log-file` is the nickname `--no-log-file`. An unknown argument, an option without its value, an invalid address, an invalid port or an invalid nickname (`InvalidNicknameOptionException`) stops the client before the window opens: it prints `r-type_client:`, the reason and how to see the usage on standard error, then exits with code 1. When several arguments are wrong, the first one from the left is reported.
 - The logger module logs `server: <address> port <port>` at the `info` level once the journal is open, and `clientModules()` hands the server and the nickname to the screens module and the sound choice to the sound module, which starts the connection screen with them. CONNECT on that screen joins the server (see [Joining a server](#joining-a-server-serversession-waitingroom-entitymessagequeue)).
 - On Windows, the arguments are not passed in UTF-8, so a nickname with an accent may be refused at launch; it can be typed on the connection screen instead.
 
@@ -797,15 +860,15 @@ The dialog is a `DialogScreen` (`src/client/Screens/DialogScreen/`), which shows
 | Add an asset | A file in `assets/sprites/`, `sounds/`, `music/` or `fonts/`, or in `assets/icons/<set>/` next to the license of the set, and its id in `gameAssets()`, in `titleAssets()` for the title screen, in `introAssets()` for the intro, or in `interfaceAssets()` for a font or a sound any screen may use (`src/client/Screens/ScreenAssets/ScreenAssets.cpp`), a sound also in `ALL_SOUND_IDS` (`src/client/Audio/SoundConstants.hpp`); `client_screen_tests` loads `interfaceAssets()` for real, and the CI cannot create a texture |
 | Change the asset id rule | `isValidAssetId()` in `src/client/Assets/AssetIds.cpp`, `ASSET_ID_PUNCTUATION` in `AssetConstants.hpp`, and `assets/README.md` |
 | Change where the client looks for `assets/` | `findAssetFolder()` in `src/engine/Paths/AssetFolder.cpp`, shared with the server |
-| Show a new image in the game | `assets/sprites/`, its rectangle in `src/client/Rendering/Sprites/EntitySpriteConstants.hpp`, `gameAssets()`, `spriteOf` and `animationOf` in `src/client/Rendering/Sprites/EntitySprites.cpp` |
-| Change how an entity type looks or animates | `spriteOf` and `animationOf` in `src/client/Rendering/Sprites/EntitySprites.cpp`, the rectangles, frame times and animations in `EntitySpriteConstants.hpp`, `assets/sprites/entities.png` |
+| Show a new image in the game | `assets/sprites/`, its rectangle in `src/client/Rendering/Sprites/EntitySpriteConstants.hpp`, `gameAssets()`, `spriteOf` and `animationOf` in `src/client/Rendering/Sprites/EntitySprites/EntitySprites.cpp` |
+| Change how an entity type looks or animates | `spriteOf` and `animationOf` in `src/client/Rendering/Sprites/EntitySprites/EntitySprites.cpp`, the rectangles, frame times and animations in `EntitySpriteConstants.hpp`, `assets/sprites/entities.png` |
 | Change an effect, its frames or its length | `src/client/Rendering/Effects/EffectConstants.hpp`, `assets/sprites/effects.png` (see `assets/README.md`) |
 | Add an effect | Its two rows in `assets/sprites/effects.png`, standard and without flash; its frames and `EffectAnimations` in `EffectConstants.hpp`; a method of the family it belongs to (`HitEffects`, `ShotEffects`, `KillEffects`, `PilotEffects`, in `src/client/Rendering/Effects/`) and its case in `EffectSpawner` |
 | Change a tier of the effects: its hold, its drops, its shockwave, its shake | `EffectTierConstants.hpp` and `EffectConstants.hpp` in `src/client/Rendering/Effects/`, `CameraShakeConstants.hpp` in `src/client/Rendering/Effects/Camera/`, `KillEffects::playKill()` and `playShipDown()` |
 | Change how much white may show at once | `FLASH_AREA_MAXIMUM` and the flash areas in `EffectConstants.hpp`; `EffectConstantsTest.cpp` rereads the areas in the sheets |
 | Change the colors of the debris and the shockwaves | `src/client/Rendering/Effects/EffectColorConstants.hpp` |
 | Change a sound cue: its text, its life, its gap above its sprite | `SHOT_CUE_TEXT`, `HIT_CUE_TEXT`, `SHOT_CUE_LIFE`, `HIT_CUE_LIFE` and `CUE_GAP` in `src/client/Rendering/Effects/EffectConstants.hpp`; `SoundCues` in `src/client/Rendering/Effects/SoundCues/` |
-| Change the drawing order | `Layer` in `src/game/Components/Layer.hpp`, `layerOf()` in `src/client/Rendering/Sprites/EntitySprites.cpp` |
+| Change the drawing order | `Layer` in `src/game/Components/Layer.hpp`, `layerOf()` in `src/client/Rendering/Sprites/EntitySprites/EntitySprites.cpp` |
 | Change MISSION START | `MissionStartConstants.hpp` (the warp, the arrival of the pilots) in `src/client/Rendering/Effects/MissionStart/`, `MissionBannerConstants.hpp` (the banner) in `src/client/Widgets/` |
 | Change how a hit looks | `FLASH_COLOR` and `SHADE_TINT` in `src/client/Rendering/SpriteLook/SpriteToneColorConstants.hpp`, `FlashShaderConstants.hpp`, `HIT_FLASH_DURATION` in `EffectConstants.hpp`, `SfmlDrawSurface::drawFlash()` |
 | Run a system in the game screen each frame | `systems_.add()` in the constructor of `GameScreen` (`src/client/Screens/GameScreen/`), and its library in that folder's `CMakeLists.txt` |
@@ -816,7 +879,8 @@ The dialog is a `DialogScreen` (`src/client/Screens/DialogScreen/`), which shows
 | Add a text field to a menu | `MenuBuilder::textField()` with a `TextField` (`src/client/Widgets/TextField/`), then `Menu::fieldText()`, as `ConnectionScreen` does |
 | Change the characters a field accepts | `TextField::Characters` and `TextField::accepts()`; the ranges in `src/client/Widgets/WidgetConstants.hpp` |
 | Change how the client joins a server, or how it holds the session | `ServerSession`, `WaitingRoom` and their helpers in `src/client/Connection/`; `CONNECTION_REQUEST_INTERVAL`, `CONNECTION_ATTEMPT_TIMEOUT`, `READY_STATE_INTERVAL`, `DISCONNECTION_COPY_COUNT` and `DISCONNECTION_COPY_INTERVAL` in `src/client/Connection/ConnectionConstants.hpp`; `HEARTBEAT_INTERVAL`, `SESSION_TIMEOUT` and `RECONNECTION_GRACE`, shared with the server, in `src/network/Protocol/ProtocolConstants.hpp` |
-| Change how often the client sends its inputs | `PLAYER_INPUTS_PER_SECOND` in `src/client/Connection/ConnectionConstants.hpp`, `PlayerInputPacer` in `src/client/Connection/PlayerInputPacer/` |
+| Change how often the client sends its inputs | With PREDICTION off: `PLAYER_INPUTS_PER_SECOND` in `src/client/Connection/ConnectionConstants.hpp`, `PlayerInputPacer` in `src/client/Connection/PlayerInputPacer/`. With PREDICTION on, one input per simulation tick: `OwnShipPredictor::advance()` in `src/client/Prediction/` |
+| Change how the own ship is predicted, or when the client takes the server position back | `ShipPrediction` and `PredictionConstants.hpp` (`RECONCILIATION_TOLERANCE`) in `src/client/Prediction/`; the movement itself is `shipAfter` in `src/game/ShipControl/` |
 | Change what an input carries | `ServerSession::sendPlayerInput()` in `src/client/Connection/ServerSession/`, `GameScreen::update()` and `GameScreen::playerActions()`, which adds the shoot of AUTO-FIRE, in `src/client/Screens/GameScreen/` |
 | Change the texts, sizes or checks of the connection screen | `src/client/Screens/ConnectionScreenConstants.hpp`, `ConnectionScreen::connect()` |
 | Change what the fields of the connection screen start with | `ServerChoice` (`src/client/Screens/ServerChoice.hpp`), written by `ConnectionScreen::connect()`, kept by `ClientScreens` |
@@ -862,14 +926,14 @@ The dialog is a `DialogScreen` (`src/client/Screens/DialogScreen/`), which shows
 | Change the keys of a first launch, or which keys can be bound | `DEFAULT_KEYS` and `KEY_NAMES` in `src/client/Input/InputConstants.hpp` |
 | Add a bound action | `BoundAction` and `BOUND_ACTIONS` (`src/client/Input/BoundAction.hpp`), `DEFAULT_KEYS`, `KeyBindings::playerActionOf()` when it is a `PlayerAction` with its bit in the protocol, `BOUND_ACTION_KEY_NAMES` in `SettingsConstants.hpp`, `BOUND_ACTION_LABELS` in `OptionsScreenConstants.hpp` |
 | Change the window, its display modes, or when the background moves and is drawn | `src/client/Window/GameWindow/`, `src/client/Window/WindowLayout/`, `src/client/Platform/BorderlessScreen*.cpp`, `FrameLoop` and `ClientWindowModule` in `src/client/Modules/Window/`, `ClientScreens::draw()` in `src/client/Modules/Screens/` |
-| Add a part of the client that works each frame, or a global key | A class implementing `IModule` in a folder of `src/client/Modules/`, listed in `clientModules()` (`src/client/Modules/Assembly/ClientModules.cpp`) after its dependencies (the steps are those of the [tutorial](/R-Type/tutorial-write-a-module/), which writes a server module); it adds its work to a stage of `CLIENT_LOOP_STAGES` in its `install()`, and its listener to `EventListeners` in its `start()` |
+| Add a part of the client that works each frame, or a global key | A class implementing `IModule` in a folder of its own, `src/client/<Name>/`, listed in `clientModules()` (`src/client/Modules/Assembly/ClientModules.cpp`) after its dependencies (the steps are those of the [tutorial](/R-Type/tutorial-write-a-module/), which writes a server module); it adds its work to a stage of `CLIENT_LOOP_STAGES` in its `install()`, and its listener to `EventListeners` in its `start()` |
 | Change the default server address or port | `DEFAULT_SERVER_ADDRESS` in `src/client/ClientConstants.hpp`, `DEFAULT_SERVER_PORT` in `src/network/NetworkConstants.hpp` |
 | Change the default nickname | `DEFAULT_NICKNAME` in `src/client/ClientConstants.hpp` |
-| Add a launch option | A function that returns its `LaunchOption` and its entry in the list of `LaunchOptions::read()`, and `usage()`, in `src/client/LaunchOptions/LaunchOptions.cpp`; its name in `src/client/ClientConstants.hpp`, or in `src/engine/LaunchArguments/LaunchArgumentsConstants.hpp` when the server uses it too. An option of the network simulator goes in `SimulatorLaunchOptions` instead, which the client and the server both read before their own (see [Network](/R-Type/network/#network-simulator-simulatednetworksocket)) |
+| Add a launch option | A function that returns its `LaunchOption` and its entry in the list of `LaunchOptions::read()`, and `usage()`, in `src/client/LaunchOptions/LaunchOptions.cpp`; its name in `src/client/ClientConstants.hpp`, or in `src/engine/LaunchArguments/LaunchArgumentsConstants.hpp` when the server uses it too. An option of the network simulator goes in `SimulatorLaunchOptions` instead, which the client and the server both read among their own (see [Network](/R-Type/network/#network-simulator-simulatednetworksocket)) |
 | Send or receive datagrams | `NetworkThread` in `src/client/Connection/NetworkThread/` |
 | Change how many datagrams wait between the frame loop and the network thread | `INCOMING_DATAGRAM_QUEUE_CAPACITY` and `OUTGOING_DATAGRAM_QUEUE_CAPACITY` in `src/client/Connection/ConnectionConstants.hpp` |
 | Test code that uses the network thread | `tests/client/Connection/NetworkThreadTest.cpp`: a peer socket on the loopback address |
 | Test code that sends and receives without the network | `tests/doubles/RecordingDatagramLink.hpp`, as `tests/client/Connection/ServerSessionTest.cpp` does |
 | Add a client error | `src/client/Exceptions/ClientException.hpp` |
 
-Each folder has its own `CMakeLists.txt` declaring one library. In a module not yet flattened (see [Project layout](/R-Type/project-layout/#adding-a-class)), a class, or a header of free functions with its `.cpp`, has a folder of its own: `Sprites/EntitySprites/` declares `rtype_client_entity_sprites` for the table, `Shaders/FragmentShader/` declares `rtype_client_fragment_shader` (`loadFragmentShader()`, which compiles the shaders of the menus and of the hit flash and logs why one cannot be used). Each family folder of `src/client/Rendering/` declares the INTERFACE library of its headers: `rtype_client_shaders`, `rtype_client_sprites`, `rtype_client_interface`, `rtype_client_sprite_look` and `rtype_client_drawing`.
+Each folder has its own `CMakeLists.txt` declaring one CMake library. In a folder not yet flattened (see [Project layout](/R-Type/project-layout/#adding-a-class)), a class, or a header of free functions with its `.cpp`, has a folder of its own: `Sprites/EntitySprites/` declares `rtype_client_entity_sprites` for the table, `Shaders/FragmentShader/` declares `rtype_client_fragment_shader` (`loadFragmentShader()`, which compiles the shaders of the menus and of the hit flash and logs why one cannot be used). Each family folder of `src/client/Rendering/` declares the INTERFACE library of its headers: `rtype_client_shaders`, `rtype_client_sprites`, `rtype_client_interface`, `rtype_client_sprite_look` and `rtype_client_drawing`.

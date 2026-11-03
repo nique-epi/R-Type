@@ -9,7 +9,7 @@ Why: a plan put the starfield in a new `src/client/Background/` while `project-l
 
 ## Rule
 
-1. **Before a plan creates a folder, a module or a library**, read `docs/src/content/docs/project-layout.md`: the "Where does a new class go?" table and the tree of the program or library concerned. Search it for the feature's own words (`grep -n -i '<feature word>' docs/src/content/docs/*.md`).
+1. **Before a plan creates a folder, a module or a library**, read `docs/src/content/docs/project-layout.md`: the "Where does a new class go?" table, the tree of the program or library concerned and, for a module, the list of modules. Search it for the feature's own words (`grep -n -i '<feature word>' docs/src/content/docs/*.md`).
 2. **If the map already names a place for it, the plan uses that place**, or states in its decisions that it departs from the map, why, and that `project-layout.md` changes in the same pull request.
 3. **The plan's tree cites the map line it follows** ("`Rendering/`: sprites, starfield, HUD…", `project-layout.md:150`), so the user validates the placement with the map in front of them.
 
@@ -19,7 +19,7 @@ Why: a plan put the starfield in a new `src/client/Background/` while `project-l
 2. **A test helper that only builds values** (`KeyPress`, `PointerEvents`, `MenuPainting`) stays next to the tests that use it.
 3. **Decide which of the two a new test file is before creating it**, and say it in the plan's tree.
 
-### A test file mirrors the folder of its source, nested modules included
+### A test file mirrors the folder of its source, sub-folders included
 
 1. **The test of a class or a header of `src/<path>/` goes in `tests/<path>/`, every level of the path included**: the tests of `src/client/Rendering/Effects/` go in `tests/client/Rendering/Effects/`, as those of `Rendering/Background/` sit in `tests/client/Rendering/Background/`. A helper shared with the tests of the parent folder stays there and is reached through the include folders of the test target.
 2. **Write, next to each test file of the plan's tree, the source folder it tests**, and check that the two paths match.

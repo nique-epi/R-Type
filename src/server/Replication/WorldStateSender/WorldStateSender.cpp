@@ -169,7 +169,8 @@ std::vector<network::PlayerState> WorldStateSender::playerStatesOf(
         .lives = ship.lives.value_or(player->livesWithoutShip),
         .score = player->score,
         .invulnerable = ship.invulnerable,
-        .motion = ship.motion});
+        .motion = ship.motion,
+        .acknowledgedInput = player->appliedInputNumber.value_or(0)});
   }
   return states;
 }

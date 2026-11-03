@@ -172,11 +172,11 @@ constexpr std::chrono::milliseconds UNLISTED_ENTITY_TIMEOUT{900};
 
 /**
  * @brief Bytes of a player in a WorldState: playerNumber, shipEntityId, lives,
- * score, invulnerable and motion.
+ * score, invulnerable, motion and acknowledgedInput.
  */
 constexpr std::size_t PLAYER_STATE_WIRE_SIZE =
     UINT8_WIRE_SIZE + UINT32_WIRE_SIZE + UINT8_WIRE_SIZE + UINT32_WIRE_SIZE +
-    UINT8_WIRE_SIZE + UINT8_WIRE_SIZE;
+    UINT8_WIRE_SIZE + UINT8_WIRE_SIZE + UINT32_WIRE_SIZE;
 
 /**
  * @brief Bytes of an entity in a WorldState: entityId, entityType, x and y.

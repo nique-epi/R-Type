@@ -3,15 +3,18 @@
 #include <cstddef>
 #include <cstdint>
 #include <filesystem>
+#include <functional>
 #include <optional>
 #include <span>
 #include <string>
 #include <string_view>
 #include "EndpointText.hpp"
 #include "EngineException.hpp"
+#include "ExecutablePath.hpp"
 #include "LaunchArguments.hpp"
 #include "LaunchArgumentsConstants.hpp"
 #include "LaunchOption.hpp"
+#include "LaunchOptionReader.hpp"
 #include "LogLaunchOptions.hpp"
 #include "LoggingConstants.hpp"
 #include "NetworkConditions.hpp"
@@ -186,17 +189,19 @@ std::string serverOptionEntries() {
 }  // namespace
 
 LaunchOptions LaunchOptions::read(std::span<const std::string_view> arguments) {
-  const network::SimulatorLaunchOptions simulatorOptions =
-      network::SimulatorLaunchOptions::read(arguments);
   LaunchOptions options{network::DEFAULT_SERVER_PORT, false};
-  options.networkConditions_ = simulatorOptions.conditions();
   const std::array launchOptions{portOption(options.port_),
                                  seedOption(options.seed_),
                                  stateRateOption(options.stateRate_),
                                  inputDelayOption(options.inputDelay_),
                                  databaseOption(options.databaseFile_),
                                  helpOption(options.helpRequested_)};
-  engine::readLaunchArguments(simulatorOptions.otherArguments(), launchOptions);
+  const std::array<engine::LaunchOptionReader, 2> readers{
+      std::bind_front(&network::SimulatorLaunchOptions::readOption,
+                      &options.simulatorOptions_),
+      std::bind_front(&logging::LogLaunchOptions::readOption,
+                      &options.logOptions_)};
+  engine::readLaunchArguments(arguments, launchOptions, readers);
   return options;
 }
 
@@ -226,13 +231,18 @@ const std::optional<std::filesystem::path>& LaunchOptions::databaseFile()
 bool LaunchOptions::helpRequested() const { return helpRequested_; }
 
 const network::NetworkConditions& LaunchOptions::networkConditions() const {
-  return networkConditions_;
+  return simulatorOptions_.conditions();
+}
+
+const logging::LogLaunchOptions& LaunchOptions::logOptions() const {
+  return logOptions_;
 }
 
 LaunchOptions::LaunchOptions(std::uint16_t port, bool helpRequested)
     : port_(port),
       helpRequested_(helpRequested),
       stateRate_(DEFAULT_WORLD_STATES_PER_SECOND),
-      inputDelay_(DEFAULT_INPUT_DELAY_TICKS) {}
+      inputDelay_(DEFAULT_INPUT_DELAY_TICKS),
+      logOptions_(engine::executableFolder() / logging::SERVER_LOG_FILE_NAME) {}
 
 }  // namespace rtype::server

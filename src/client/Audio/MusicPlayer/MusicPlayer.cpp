@@ -35,7 +35,7 @@ sf::Music::TimeSpan loopOf(const MusicTrack& track) {
 MusicPlayer::MusicPlayer(const SettingsService& settings, MusicTrack track)
     : settings_(&settings),
       track_(track),
-      logger_(std::string{AUDIO_LOG_MODULE_NAME}) {}
+      logger_(std::string{AUDIO_LOGGER_NAME}) {}
 
 void MusicPlayer::start() {
   if (!opened_ || music_.getStatus() == sf::SoundSource::Status::Playing) {

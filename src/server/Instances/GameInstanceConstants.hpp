@@ -39,7 +39,7 @@ constexpr std::size_t GAME_STARTED_REPEAT_TICKS =
     engine::SIMULATION_TICKS_PER_SECOND / 2;
 
 /**
- * @brief Module name the games write their log lines under.
+ * @brief Logger name the games write their log lines under.
  */
 constexpr std::string_view INSTANCES_LOGGER_NAME = "Instances";
 

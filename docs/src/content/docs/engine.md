@@ -191,20 +191,27 @@ The engine has no system that walks the entities: it cannot read `Position` or `
 `src/engine/LaunchArguments/` (`rtype_engine_launch_arguments`) reads the options a program is given at launch. The server and the client both use it, each with its own options (see [Server](/R-Type/server/#launch-options-launchoptions) and [Client](/R-Type/client/#launch-options-launchoptions)).
 
 - A program describes each option as a `LaunchOption`: its `name`, whether it `takesValue`, and a `record` called with the value, or with an empty view for an option that takes none. A record may throw to refuse its value, as the programs do through `portFromText()`.
-- `readLaunchArguments(arguments, options)` reads the arguments in order. The argument after an option that takes a value is always that value, even when it looks like an option. An option given twice is recorded twice, so the last one wins. An argument that names no option throws `UnknownLaunchArgumentException`; an option that takes a value, given last, throws `MissingLaunchOptionValueException`.
+- `readLaunchArguments(arguments, options, readers)` reads the arguments once, from the first to the last. The argument after an option that takes a value is always that value, even when it looks like an option. An option given twice is recorded twice, so the last one wins. An argument that names no option is handed to `readers`, in their order, until one takes it; one that none takes throws `UnknownLaunchArgumentException`, and an option that takes a value, given last, throws `MissingLaunchOptionValueException`.
+- `processArguments(argumentCount, arguments)` returns the arguments of the running process without its name, as views into the strings of `argv`.
 - `usageHeader()`, `usageEntry()` and `launchErrorText()` write the usage and the launch error the same way for every program. `PORT_OPTION` (`-p`) and `HELP_OPTION` (`--help`) are the names the server and the client share.
 
-The logging options do not go through it: `rtype_logging` links nothing else of the repository, so `LogLaunchOptions` reads its own and leaves the other arguments to the program (see [Logging](/R-Type/logging/#choosing-the-level-and-the-output-at-launch)).
+The logging and the network simulator read their own options, since `rtype_logging` and `rtype_network` may not link the engine. Each lends the program a `LaunchOptionReader` (`LaunchOptionReader.hpp`): a function handed the arguments from the one reached to the last, which reads the first one when it is one of its options and returns how many arguments it took, 1, or 2 with its value, or 0 when it is none of them. The reading stays one pass, so no reader is ever handed the value of an option: `--seed --log-level debug 123` refuses `--log-level` as a seed instead of reading it as a logging option (see [Logging](/R-Type/logging/#choosing-the-level-and-the-output-at-launch) and [Network](/R-Type/network/#network-simulator-simulatednetworksocket)).
 
 ```cpp
 std::uint16_t port = rtype::network::DEFAULT_SERVER_PORT;
+rtype::logging::LogLaunchOptions logOptions{defaultJournal};
 const std::array options{rtype::engine::LaunchOption{
     .name = rtype::engine::PORT_OPTION,
     .takesValue = true,
     .record = [&port](std::string_view value) {
       port = rtype::network::portFromText(value);
     }}};
-rtype::engine::readLaunchArguments(logOptions.otherArguments(), options);
+const std::array readers{rtype::engine::LaunchOptionReader{
+    [&logOptions](std::span<const std::string_view> rest) {
+      return logOptions.readOption(rest);
+    }}};
+rtype::engine::readLaunchArguments(
+    rtype::engine::processArguments(argumentCount, arguments), options, readers);
 ```
 
 ## Files next to the executable: `locateAssetFolder`
@@ -219,7 +226,7 @@ The client loads its assets from that folder and the server reads its waves file
 
 ## Modules: `Application` and `IModule`
 
-`src/engine/Modules/` (`rtype_engine_modules`, `rtype_engine_application`) gives a program one place to plug each of its parts in. A part is a **module**: a class implementing `IModule`, with a `name()`, its `dependencies()` (the names of the modules it needs), and three steps. `install(InstallContext&)` prepares it and keeps nothing open when it returns: it may read a file and close it, but it never binds a socket, starts a thread or subscribes to an event. Through the context it adds its work to a loop stage and provides or looks up services (below). `start()` opens what must live until `stop()` (a socket, a thread, a file kept open, an event subscription) and throws a `std::exception` when it cannot; `stop()` closes it and must not throw.
+`src/engine/Modules/` (`rtype_engine_modules`, `rtype_engine_application`) gives a program one place to plug in each feature it can switch on, off or replace. Such a feature is a **module**: a folder around a class implementing `IModule`, with a `name()`, its `dependencies()` (the names of the modules it needs), and three steps. `install(InstallContext&)` prepares it and keeps nothing open when it returns: it may read a file and close it, but it never binds a socket, starts a thread or subscribes to an event. Through the context it adds its work to a loop stage and provides or looks up services (below). `start()` opens what must live until `stop()` (a socket, a thread, a file kept open, an event subscription) and throws a `std::exception` when it cannot; `stop()` closes it and must not throw.
 
 - `Application` takes the list of modules once, when it is built, and checks it before anything is installed. A null module throws `NullModuleException`. A module whose dependency is not listed **before** it throws `MissingDependencyException`, whose message names both modules. So a missing module stops the program before any socket, thread or file is opened.
 - `start()` installs every module in list order, then starts every module in list order. Only the first call does anything.
@@ -271,7 +278,7 @@ The five moments of a module, the two scopes, how modules talk and how to turn o
 | Announce that something happened, or react to it | `EventBus` in `src/engine/Events/EventBus/`: `publish` the event, `subscribe<Event>` to it |
 | Hand data from one thread to another | `BoundedQueue`, in its own library: see [Concurrency](/R-Type/concurrency/) |
 | Change how the launch options are read, or how the usage and the launch errors read | `src/engine/LaunchArguments/`; each program's own options are in its `LaunchOptions` |
-| Add a part a program can switch on or off | A class implementing `IModule` (declared in `src/engine/Modules/IModule.hpp`), written in the program or library it belongs to, listed after its dependencies in the list given to `Application` |
+| Add a feature a program can switch on or off | A module: a class implementing `IModule` (declared in `src/engine/Modules/IModule.hpp`), in a folder of its own in the program it belongs to, listed after its dependencies in the list given to `Application` |
 | Run a module's work every tick, frame or pass of the loop | `InstallContext::addWork()`, called from the module's `install()` |
 | Hand an object to the modules installed after | `InstallContext::provide()`; the other modules call `require<>()` or `find<>()` |
 | Change the stages of a program | `SERVER_LOOP_STAGES` or `CLIENT_LOOP_STAGES` |

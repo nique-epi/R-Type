@@ -4,7 +4,7 @@
 
 namespace rtype::client {
 
-/** @brief A module that wants to know when a setting changes. */
+/** @brief A class that wants to know when a setting changes. */
 class ISettingsListener {
  public:
   virtual ~ISettingsListener() = default;

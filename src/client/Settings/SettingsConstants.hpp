@@ -53,6 +53,7 @@ constexpr std::string_view COLOR_MODE_NAME = "color_mode";
 constexpr std::string_view REDUCE_FLASHES_NAME = "reduce_flashes";
 constexpr std::string_view SOUND_CUES_NAME = "sound_cues";
 constexpr std::string_view AUTO_FIRE_NAME = "auto_fire";
+constexpr std::string_view CLIENT_PREDICTION_NAME = "client_prediction";
 
 /** @brief Names of the keys of the bound actions, in the order of
  * BOUND_ACTIONS. */
@@ -78,7 +79,7 @@ constexpr std::string_view INVALID_SETTING_VALUE = "invalid value";
 constexpr std::string_view LINE_PREFIX = "line ";
 constexpr std::string_view LINE_REASON_SEPARATOR = ": ";
 
-/** @brief Module name of the log lines about the settings. */
-constexpr std::string_view SETTINGS_LOG_MODULE_NAME = "Settings";
+/** @brief Logger name the settings file writes its log lines under. */
+constexpr std::string_view SETTINGS_LOGGER_NAME = "Settings";
 
 }  // namespace rtype::client

@@ -76,6 +76,8 @@ The client is given the IPv4 address and the port of the server, `127.0.0.1` and
 
 The client's datagrams cross a simulated bad network: 300 ms more ping, 10 % of the datagrams lost, some doubled or out of order. Both programs take `--network` with `4g`, `wifi-busy` or `bad`, and `--lag`, `--jitter`, `--loss`, `--duplicates` and `--reorder` to set one value; the journal warns that the network is simulated (see [the network page](https://nique-epi.github.io/R-Type/network/)).
 
+Without these options, `tests/tools/network-conditions/` applies the same scenarios to the loopback interface from the system: `sudo tests/tools/network-conditions/netem.sh apply --network bad` on Linux, `dummynet.sh` on macOS, then `clear` to remove them (see [the network page](https://nique-epi.github.io/R-Type/network/#network-conditions-from-the-system-teststoolsnetwork-conditions)).
+
 `--help` prints the options of either program. An invalid argument stops it with a message and exit code 1.
 
 ## Tests
@@ -126,7 +128,7 @@ cmake --build build --target format
 
 ## Documentation
 
-The documentation site is built with [Starlight](https://starlight.astro.build) and published at <https://nique-epi.github.io/R-Type/>. Each page is a Markdown file in `docs/src/content/docs/`. To add a part to the server or the client, start with the [Modules](https://nique-epi.github.io/R-Type/modules/) page and the [tutorial](https://nique-epi.github.io/R-Type/tutorial-write-a-module/). Two more tutorials [add a network message](https://nique-epi.github.io/R-Type/tutorial-add-a-network-message/) and [run a server with several games](https://nique-epi.github.io/R-Type/tutorial-run-several-games/).
+The documentation site is built with [Starlight](https://starlight.astro.build) and published at <https://nique-epi.github.io/R-Type/>. Each page is a Markdown file in `docs/src/content/docs/`. To add a module to the server or the client, start with the [Modules](https://nique-epi.github.io/R-Type/modules/) page and the [tutorial](https://nique-epi.github.io/R-Type/tutorial-write-a-module/). Two more tutorials [add a network message](https://nique-epi.github.io/R-Type/tutorial-add-a-network-message/) and [run a server with several games](https://nique-epi.github.io/R-Type/tutorial-run-several-games/).
 
 To preview it locally, with Node.js 22.12 or newer:
 

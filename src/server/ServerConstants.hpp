@@ -38,7 +38,7 @@ constexpr std::size_t DEFAULT_HOSTED_GAME_COUNT = 8;
 constexpr std::uint32_t GAME_SEED_STRIDE = 65536;
 
 /**
- * @brief Module name the server writes its log lines under.
+ * @brief Logger name the server writes its log lines under.
  */
 constexpr std::string_view SERVER_LOGGER_NAME = "Server";
 
@@ -82,7 +82,7 @@ constexpr std::string_view DATABASE_FILE_PREFIX = "r-type_server_";
 constexpr std::string_view DATABASE_FILE_SUFFIX = ".db";
 
 /**
- * @brief Module name the simulation thread writes its tick reports under.
+ * @brief Logger name the simulation thread writes its tick reports under.
  */
 constexpr std::string_view SIMULATION_LOGGER_NAME = "Simulation";
 

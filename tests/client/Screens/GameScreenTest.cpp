@@ -464,6 +464,7 @@ TEST(GameScreenActionsTest, AKeyChangedInTheOptionsMovesTheShip) {
  */
 TEST(GameScreenInputsTest, TheFirstUpdateSendsTheActionsHeld) {
   LoneGameParts doubles;
+  doubles.settings.clientPrediction = false;
   GameScreen game(doubles.parts(), std::make_unique<IgnoringEntityLayer>(),
                   doubles.statusCanvasDouble());
   game.handleEvent(keyPress(sf::Keyboard::Key::Up, sf::Keyboard::Scan::Up));
@@ -481,6 +482,7 @@ TEST(GameScreenInputsTest, TheFirstUpdateSendsTheActionsHeld) {
 TEST(GameScreenInputsTest, AnUpdateWithinTheIntervalSendsNothingMore) {
   ASSERT_LT(ONE_FRAME + ONE_TICK, PLAYER_INPUT_INTERVAL);
   LoneGameParts doubles;
+  doubles.settings.clientPrediction = false;
   GameScreen game(doubles.parts(), std::make_unique<IgnoringEntityLayer>(),
                   doubles.statusCanvasDouble());
   game.update(ONE_FRAME);
@@ -497,6 +499,7 @@ TEST(GameScreenInputsTest, AnUpdateWithinTheIntervalSendsNothingMore) {
  */
 TEST(GameScreenInputsTest, BehindTheOptionsItSendsNothingHeld) {
   LoneGameParts doubles;
+  doubles.settings.clientPrediction = false;
   GameScreen game(doubles.parts(), std::make_unique<IgnoringEntityLayer>(),
                   doubles.statusCanvasDouble());
   game.handleEvent(keyPress(sf::Keyboard::Key::Up, sf::Keyboard::Scan::Up));
@@ -508,12 +511,44 @@ TEST(GameScreenInputsTest, BehindTheOptionsItSendsNothingHeld) {
 }
 
 /**
+ * Given the game with PREDICTION on, which it is at a first launch
+ * When a frame as long as three simulation ticks is updated
+ * Then three inputs are sent, one for each tick the ship was predicted
+ */
+TEST(GameScreenPredictionTest, SendsOneInputPerTickWhenItIsOn) {
+  LoneGameParts doubles;
+  GameScreen game(doubles.parts(), std::make_unique<IgnoringEntityLayer>(),
+                  doubles.statusCanvasDouble());
+
+  game.update(THREE_TICKS);
+
+  EXPECT_EQ(doubles.inputs.sentActions().size(), INPUTS_IN_THREE_TICKS);
+}
+
+/**
+ * Given the game with PREDICTION off
+ * When a frame as long as three simulation ticks is updated
+ * Then one input is sent, as the pacer says, the ship waiting for the server
+ */
+TEST(GameScreenPredictionTest, SendsOneInputForTheFrameWhenItIsOff) {
+  LoneGameParts doubles;
+  doubles.settings.clientPrediction = false;
+  GameScreen game(doubles.parts(), std::make_unique<IgnoringEntityLayer>(),
+                  doubles.statusCanvasDouble());
+
+  game.update(THREE_TICKS);
+
+  EXPECT_EQ(doubles.inputs.sentActions().size(), 1U);
+}
+
+/**
  * Given the game with AUTO-FIRE on and no key pressed
  * When its first frame is updated
  * Then the input sent holds shoot
  */
 TEST(GameScreenAutoFireTest, ShootsWithoutAKey) {
   LoneGameParts doubles;
+  doubles.settings.clientPrediction = false;
   doubles.settings.autoFire = true;
   GameScreen game(doubles.parts(), std::make_unique<IgnoringEntityLayer>(),
                   doubles.statusCanvasDouble());
@@ -565,6 +600,7 @@ TEST(GameScreenAutoFireTest, ReleasingTheShootKeyKeepsShooting) {
  */
 TEST(GameScreenAutoFireTest, ShootsBehindTheOptions) {
   LoneGameParts doubles;
+  doubles.settings.clientPrediction = false;
   doubles.settings.autoFire = true;
   GameScreen game(doubles.parts(), std::make_unique<IgnoringEntityLayer>(),
                   doubles.statusCanvasDouble());
@@ -582,6 +618,7 @@ TEST(GameScreenAutoFireTest, ShootsBehindTheOptions) {
  */
 TEST(GameScreenAutoFireTest, ShootsWithoutTheFocus) {
   LoneGameParts doubles;
+  doubles.settings.clientPrediction = false;
   doubles.settings.autoFire = true;
   GameScreen game(doubles.parts(), std::make_unique<IgnoringEntityLayer>(),
                   doubles.statusCanvasDouble());
@@ -599,6 +636,7 @@ TEST(GameScreenAutoFireTest, ShootsWithoutTheFocus) {
  */
 TEST(GameScreenAutoFireTest, TurningItOnDuringTheGameShootsAtTheNextInput) {
   LoneGameParts doubles;
+  doubles.settings.clientPrediction = false;
   GameScreen game(doubles.parts(), std::make_unique<IgnoringEntityLayer>(),
                   doubles.statusCanvasDouble());
   game.update(ONE_FRAME);
@@ -617,6 +655,7 @@ TEST(GameScreenAutoFireTest, TurningItOnDuringTheGameShootsAtTheNextInput) {
  */
 TEST(GameScreenAutoFireTest, TurningItOffDuringTheGameStopsAtTheNextInput) {
   LoneGameParts doubles;
+  doubles.settings.clientPrediction = false;
   doubles.settings.autoFire = true;
   GameScreen game(doubles.parts(), std::make_unique<IgnoringEntityLayer>(),
                   doubles.statusCanvasDouble());

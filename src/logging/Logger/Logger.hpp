@@ -2,8 +2,8 @@
  * @file Logger.hpp
  * @brief Pino/Nest-style structured logger, instance-based.
  *
- * Each module of the codebase owns a `Logger` instance whose module
- * name is supplied at construction:
+ * Each class that logs owns a `Logger` instance whose name is supplied at
+ * construction:
  *
  * ```cpp
  * class NetworkContext {
@@ -16,7 +16,7 @@
  * auto timer = logger_.scope("load assets");
  * ```
  *
- * Output line format: `[YYYY-MM-DDTHH:MM:SS.mmmZ] [LEVEL] [Module] - body`,
+ * Output line format: `[YYYY-MM-DDTHH:MM:SS.mmmZ] [LEVEL] [Name] - body`,
  * with the time in UTC. Lines go to the sinks set by `Logger::setOutput()`:
  * a file (appended to, flushed after every line) and/or standard error.
  *
@@ -81,10 +81,10 @@ struct LogOutput {
 class Logger {
  public:
   /**
-   * @brief Build a logger bound to @p module. The module name is paid
-   *        once at construction and reused for every subsequent call.
+   * @brief Build a logger bound to @p name, paid once at construction and
+   *        reused for every subsequent call.
    */
-  explicit Logger(std::string module);
+  explicit Logger(std::string name);
 
   static LogLevel level();
   static void setLevel(LogLevel newLevel);
@@ -142,7 +142,7 @@ class Logger {
 
   class ScopedTimer {
    public:
-    ScopedTimer(std::string module, std::string label, LogLevel level);
+    ScopedTimer(std::string name, std::string label, LogLevel level);
 
     /**
      * @brief Writes the elapsed time. A failure to read the level or to
@@ -156,7 +156,7 @@ class Logger {
     ScopedTimer& operator=(const ScopedTimer&) = delete;
 
    private:
-    std::string module_;
+    std::string name_;
     std::string label_;
     LogLevel level_;
     std::chrono::steady_clock::time_point begin_;
@@ -179,7 +179,7 @@ class Logger {
 
   void writeLine(LogLevel candidate, std::string_view body) const;
 
-  std::string module_;
+  std::string name_;
 };
 
 }  // namespace rtype::logging
