@@ -53,7 +53,7 @@ std::string ClientLobbyModule::name() const {
 }
 
 std::vector<std::string> ClientLobbyModule::dependencies() const {
-  return {std::string{SCREEN_REGISTRY_MODULE_NAME}};
+  return {std::string{SCREENS_MODULE_NAME}};
 }
 
 void ClientLobbyModule::install(engine::InstallContext& context) {
