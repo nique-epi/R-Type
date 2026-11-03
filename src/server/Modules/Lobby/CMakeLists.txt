@@ -6,7 +6,7 @@ target_link_libraries(rtype_server_lobby_module
   PUBLIC
     rtype_engine_application
     rtype_engine_system_clock
-    rtype_server_application_interfaces
+    rtype_server_network_module
     rtype_server_connection_acceptor
     rtype_server_games_module
   PRIVATE

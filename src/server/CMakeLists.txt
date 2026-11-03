@@ -6,7 +6,7 @@ target_link_libraries(rtype_server_constants INTERFACE rtype_engine_time)
 
 add_subdirectory(Exceptions)
 add_subdirectory(Platform)
-add_subdirectory(Application)
+add_subdirectory(Network)
 add_subdirectory(LaunchOptions)
 add_subdirectory(Sessions)
 add_subdirectory(Replication)
