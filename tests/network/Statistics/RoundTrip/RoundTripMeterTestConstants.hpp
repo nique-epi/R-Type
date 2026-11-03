@@ -45,6 +45,11 @@ constexpr std::chrono::microseconds ONE_MILLISECOND_BEFORE_THE_WRAP{
 constexpr std::uint32_t HELD_LONGER_THAN_THE_TRIP = 50'000;
 
 /**
+ * @brief The largest time held a Heartbeat carries, 2^32 - 1 µs.
+ */
+constexpr std::uint32_t LARGEST_TIME_HELD = 4'294'967'295;
+
+/**
  * @brief An echo that comes back at 30 s of a sentAt of 5 s, 25 s earlier:
  * longer than the 20 s a session lives without a datagram.
  */

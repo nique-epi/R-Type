@@ -32,6 +32,14 @@ constexpr std::chrono::milliseconds CALM_ROUND_TRIP{40};
 constexpr std::chrono::milliseconds JITTER_OF_ONE_SPIKE_IN_THE_WINDOW{4};
 
 /**
+ * @brief A window of 14 calm round trips of 40 ms, then a spike of 100 ms,
+ * then a round trip of 10 ms: gaps of 60 ms and 90 ms in 15, a jitter of
+ * 10 ms.
+ */
+constexpr std::chrono::milliseconds JITTER_OF_A_SPIKE_THEN_A_DROP_IN_THE_WINDOW{
+    10};
+
+/**
  * @brief The round trips the jitter is computed on, as RTY-94 asks: the 16
  * newest.
  */

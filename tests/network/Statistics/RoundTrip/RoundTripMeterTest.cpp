@@ -13,6 +13,7 @@ using testing::FIRST_SENDING_TIME;
 using testing::FIRST_SENDING_TIME_ON_THE_WIRE;
 using testing::HELD_LONGER_THAN_THE_TRIP;
 using testing::HELD_THE_LONGEST_ROUND_TRIP;
+using testing::LARGEST_TIME_HELD;
 using testing::LATE_ARRIVAL;
 using testing::MEASURED_ROUND_TRIP;
 using testing::MEASURED_SENDING_TIME;
@@ -122,6 +123,25 @@ TEST(RoundTripMeter, IgnoresAnEchoHeldLongerThanSinceItWasSent) {
                 .echo = HeartbeatEcho{.sentAt = sent.sentAt,
                                       .heldFor = HELD_LONGER_THAN_THE_TRIP}},
       MEASURED_SENDING_TIME + ECHO_BACK_AFTER);
+
+  EXPECT_FALSE(meter.figures().has_value());
+}
+
+/**
+ * Given a meter that sent a Heartbeat at 10 s
+ * When an echo of it held 4294967295 µs, the largest time a Heartbeat
+ * carries, arrives 45 ms after it left
+ * Then the meter measured nothing: the difference of the two times wraps to
+ * 45001 µs, which only the check of the time held refuses
+ */
+TEST(RoundTripMeter, IgnoresAnEchoHeldForTheLargestTime) {
+  RoundTripMeter meter;
+  const Heartbeat sent = meter.nextHeartbeat(MEASURED_SENDING_TIME);
+
+  meter.receive(Heartbeat{.sentAt = NEWER_PEER_SENT_AT,
+                          .echo = HeartbeatEcho{.sentAt = sent.sentAt,
+                                                .heldFor = LARGEST_TIME_HELD}},
+                MEASURED_SENDING_TIME + ECHO_BACK_AFTER);
 
   EXPECT_FALSE(meter.figures().has_value());
 }

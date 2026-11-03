@@ -198,6 +198,24 @@ TEST_F(RoundTripWatchFixture, ForgetsEverythingWhenTheSessionCloses) {
 }
 
 /**
+ * Given a session whose server reported another player, then closed
+ * When a new session opens
+ * Then the round trips of the session before are not kept
+ */
+TEST_F(RoundTripWatchFixture, ForgetsTheReportOfTheSessionBefore) {
+  openSession();
+  deliver(network::RoundTrips{.players = {{.playerNumber = OTHER_PLAYER_NUMBER,
+                                           .roundTrip = REPORTED_ROUND_TRIP,
+                                           .jitter = REPORTED_JITTER}}},
+          SERVER_HEARTBEAT_ARRIVAL);
+  watch().sessionClosed();
+
+  openSession();
+
+  EXPECT_FALSE(watch().roundTripOf(OTHER_PLAYER_NUMBER).has_value());
+}
+
+/**
  * Given a watch without a session, which the server's round trips reach
  * When a session opens
  * Then the round trips that came before it are not kept

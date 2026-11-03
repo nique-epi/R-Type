@@ -11,6 +11,7 @@ namespace rtype::network {
 using testing::CALM_ROUND_TRIP;
 using testing::FIRST_ROUND_TRIP;
 using testing::HIGH_ROUND_TRIP;
+using testing::JITTER_OF_A_SPIKE_THEN_A_DROP_IN_THE_WINDOW;
 using testing::JITTER_OF_ONE_SPIKE_IN_THE_WINDOW;
 using testing::JITTER_OF_THE_THREE;
 using testing::LOW_ROUND_TRIP;
@@ -125,21 +126,24 @@ TEST(RoundTripEstimator, DropsTheOldestRoundTripPastSixteen) {
 
 /**
  * Given an estimator given 16 round trips of 40 ms, a full window
- * When it is given a spike of 100 ms, which takes the place of the oldest
- * Then the jitter counts the spike as the newest: one gap of 60 ms in 15
+ * When it is given a spike of 100 ms, then a round trip of 10 ms, which take
+ * the places of the two oldest
+ * Then the jitter reads them as the two newest, after the calm ones: gaps of
+ * 60 ms and 90 ms in 15 make 10 ms
  */
-TEST(RoundTripEstimator, KeepsTheNewestRoundTripWhenTheWindowWraps) {
+TEST(RoundTripEstimator, KeepsTheNewestRoundTripsWhenTheWindowWraps) {
   RoundTripEstimator estimator;
   for (std::size_t added = 0; added < ROUND_TRIPS_IN_THE_WINDOW; ++added) {
     estimator.add(CALM_ROUND_TRIP);
   }
 
   estimator.add(SPIKE_ROUND_TRIP);
+  estimator.add(LOW_ROUND_TRIP);
 
   const std::optional<RoundTripFigures> figures = estimator.figures();
   ASSERT_TRUE(figures.has_value());
   EXPECT_EQ(figures.value_or(RoundTripFigures{}).jitter,
-            JITTER_OF_ONE_SPIKE_IN_THE_WINDOW);
+            JITTER_OF_A_SPIKE_THEN_A_DROP_IN_THE_WINDOW);
 }
 
 }  // namespace rtype::network
