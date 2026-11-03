@@ -1,10 +1,19 @@
-#include "TabStripWidthFixtures.hpp"
+#include "TabStripFixtures.hpp"
+#include <cstddef>
 #include "TabStrip.hpp"
-#include "TabStripWidthTestConstants.hpp"
+#include "TabStripTestConstants.hpp"
 
 using rtype::client::TabStrip;
 using rtype::client::testing::NARROW_TOP_LEFT;
 using rtype::client::testing::NARROW_WIDTH;
+using rtype::client::testing::STRIP_TOP_LEFT;
+
+TabStrip optionsTabs(std::size_t open) {
+  return {{"SOUND", "CONTROLS", "DISPLAY", "ACCESS"},
+          open,
+          {.previous = "Q", .next = "E"},
+          STRIP_TOP_LEFT};
+}
 
 TabStrip narrowStrip() {
   TabStrip strip({"SERVER", "GLOBAL"}, 0, {.previous = "Q", .next = "E"},
