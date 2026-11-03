@@ -188,7 +188,7 @@ The player queue and the outgoing queue hold `INCOMING_DATAGRAM_QUEUE_CAPACITY` 
 | The datagram… | Goes to |
 |---|---|
 | is of this protocol with another version, from a sender that was not admitted, and holds at least `CONNECTION_REFUSED_DATAGRAM_SIZE` (26) bytes | the request queue, where the `ConnectionAcceptor` refuses it |
-| is not of this protocol and version, has a flag set, or its message sizes do not add up | nowhere: dropped |
+| is not of this protocol and version, has a flag this version does not know, or its message sizes do not add up | nowhere: dropped |
 | comes from the address and port of an admitted player without the session token of that player (a `ConnectionRequest` may carry 0 instead) | nowhere: dropped, and counted apart |
 | holds a `ConnectionRequest`, whoever sent it | the request queue, where the `ConnectionAcceptor` answers it (see [Letting players in](#letting-players-in-connectionacceptor-playerroster)) |
 | comes from an admitted player | the player queue |
