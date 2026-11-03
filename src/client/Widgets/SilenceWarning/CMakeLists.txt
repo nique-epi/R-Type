@@ -7,7 +7,6 @@ target_link_libraries(rtype_client_silence_warning
     rtype_client_widgets
   PRIVATE
     rtype_client_entity_sprites
-    rtype_client_pilots
 )
 
 rtype_enable_warnings(rtype_client_silence_warning)

@@ -39,7 +39,7 @@ target_link_libraries(rtype_client_screens_module
     rtype_client_constants
     rtype_client_interface_canvas
     rtype_client_platform
-    rtype_game
+    rtype_game_components
     rtype_network_constants
     rtype_network_exceptions
     rtype_network_protocol

@@ -24,7 +24,7 @@ target_link_libraries(rtype_client_window_module
   PRIVATE
     rtype_client_constants
     rtype_client_platform
-    rtype_game
+    rtype_game_components
 )
 
 rtype_enable_warnings(rtype_client_window_module)

@@ -13,14 +13,12 @@ target_link_libraries(rtype_client_game_module
     SFML::Window
     rtype_client_departure_feed
     rtype_client_drawing
-    rtype_client_entities
-    rtype_client_entity_messages
     rtype_client_flight_log_interfaces
     rtype_client_input
     rtype_client_interface
     rtype_client_mission_banner
-    rtype_client_pilots
     rtype_client_prediction
+    rtype_client_replication
     rtype_client_screens_module
     rtype_client_session
     rtype_client_silence_warning

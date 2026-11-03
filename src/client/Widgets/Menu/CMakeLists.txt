@@ -4,6 +4,7 @@ target_include_directories(rtype_client_menu PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
 target_link_libraries(rtype_client_menu
   PUBLIC
+    rtype_client_audio_contract
     rtype_client_button
     rtype_client_label
     rtype_client_row_control
@@ -12,7 +13,6 @@ target_link_libraries(rtype_client_menu
     rtype_client_widgets
     rtype_client_window_module
   PRIVATE
-    rtype_client_audio_contract
     rtype_client_cut_corner_box
     rtype_client_interface_pixel
 )
