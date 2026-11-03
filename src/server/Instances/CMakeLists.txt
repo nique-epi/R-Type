@@ -1,17 +1,19 @@
-add_library(rtype_server_instances INTERFACE)
+add_library(rtype_server_instances STATIC GameInstance.cpp GameModules.cpp)
 
-target_include_directories(rtype_server_instances INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories(rtype_server_instances PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
 target_link_libraries(rtype_server_instances
-  INTERFACE
+  PUBLIC
     rtype_engine
+    rtype_engine_event_bus
     rtype_game
     rtype_game_bydo_kind
     rtype_game_waves
     rtype_network_transport
     rtype_server_constants
+    rtype_server_delayed_inputs
+    rtype_server_game_sessions
     rtype_server_player_roster
 )
 
-add_subdirectory(GameModules)
-add_subdirectory(GameInstance)
+rtype_enable_warnings(rtype_server_instances)

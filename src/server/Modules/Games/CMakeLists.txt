@@ -17,7 +17,7 @@ target_link_libraries(rtype_server_games_module
     rtype_logging
     rtype_server_exceptions
     rtype_server_constants
-    rtype_server_game_instance
+    rtype_server_instances
     rtype_server_replication_module
     rtype_server_rules_module
     rtype_server_network_module
