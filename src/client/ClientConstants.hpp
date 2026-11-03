@@ -53,7 +53,7 @@ constexpr std::string_view SERVER_PORT_SETTING_NAME = "server-port";
 constexpr std::string_view NO_SOUND_OPTION = "--no-sound";
 
 /**
- * @brief Module name the client writes the log lines of its launch under.
+ * @brief Logger name the client writes the log lines of its launch under.
  */
 constexpr std::string_view CLIENT_LOGGER_NAME = "Client";
 

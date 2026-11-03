@@ -127,6 +127,13 @@ class EntityReplicator {
    */
   void apply(const network::GameEvent& event);
 
+  /**
+   * @returns The ship the network id @p networkId names, or nothing when the
+   * client has no entity of that id or it is no ship.
+   */
+  [[nodiscard]] std::optional<engine::Entity> shipEntityOf(
+      std::uint32_t networkId) const;
+
  private:
   /**
    * @returns The entity created for an entity announced, with the sprite and
@@ -150,13 +157,10 @@ class EntityReplicator {
   std::vector<engine::Entity> applyEntities(
       std::span<const network::EntityState> entities, std::uint32_t tick);
 
-  /** @brief Marks the ship of each player and notes its score; see the
+  /** @brief Marks the ship of each player, with its pilot color and whether it
+   * can be hit when the client has that ship, and notes its score; see the
    * class. */
   void applyPlayers(std::span<const network::PlayerState> players);
-
-  /** @brief Marks the ship of a player with its pilot color and whether it
-   * can be hit, when the client has that ship. */
-  void markShip(const network::PlayerState& player, int pilotColor);
 
   /**
    * @brief Removes, without an effect, every entity unlisted for

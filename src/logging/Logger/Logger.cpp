@@ -180,12 +180,12 @@ std::string formatTimestamp() {
   return out.str();
 }
 
-void emitLine(LogLevel level, std::string_view module, std::string_view body) {
+void emitLine(LogLevel level, std::string_view name, std::string_view body) {
   Sinks& destination = sinks();
   const std::lock_guard<std::mutex> lock(destination.mutex);
   std::ostringstream line;
   line << '[' << formatTimestamp() << "] [" << labelForLevel(level) << "] ["
-       << module << "] - " << body;
+       << name << "] - " << body;
   const std::string text = line.str();
   if (destination.file.is_open()) {
     destination.file << text << '\n';
@@ -202,7 +202,7 @@ void emitLine(LogLevel level, std::string_view module, std::string_view body) {
 
 }  // namespace
 
-Logger::Logger(std::string module) : module_(std::move(module)) {}
+Logger::Logger(std::string name) : name_(std::move(name)) {}
 
 std::optional<LogLevel> Logger::parseLevel(std::string_view text) {
   const std::string lower = toLower(text);
@@ -243,22 +243,22 @@ void Logger::setOutput(const LogOutput& output) {
 }
 
 void Logger::writeLine(LogLevel candidate, std::string_view body) const {
-  emitLine(candidate, module_, body);
+  emitLine(candidate, name_, body);
 }
 
 Logger::ScopedTimer Logger::scope(std::string label, LogLevel level) const {
-  return {module_, std::move(label), level};
+  return {name_, std::move(label), level};
 }
 
-Logger::ScopedTimer::ScopedTimer(std::string module, std::string label,
+Logger::ScopedTimer::ScopedTimer(std::string name, std::string label,
                                  LogLevel level)
-    : module_(std::move(module)),
+    : name_(std::move(name)),
       label_(std::move(label)),
       level_(level),
       begin_(std::chrono::steady_clock::now()) {}
 
 Logger::ScopedTimer::ScopedTimer(ScopedTimer&& other) noexcept
-    : module_(std::move(other.module_)),
+    : name_(std::move(other.name_)),
       label_(std::move(other.label_)),
       level_(other.level_),
       begin_(other.begin_),
@@ -282,7 +282,7 @@ Logger::ScopedTimer::~ScopedTimer() {
     std::ostringstream out;
     out << label_ << " took " << std::fixed
         << std::setprecision(DURATION_DECIMALS) << milliseconds << " ms";
-    emitLine(level_, module_, out.str());
+    emitLine(level_, name_, out.str());
   } catch (...) {  // NOLINT(bugprone-empty-catch)
   }
 }

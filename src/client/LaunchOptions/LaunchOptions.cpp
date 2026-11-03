@@ -1,5 +1,6 @@
 #include "LaunchOptions.hpp"
 #include <array>
+#include <functional>
 #include <span>
 #include <string>
 #include <string_view>
@@ -10,15 +11,19 @@
 #include "ClientException.hpp"
 #include "Endpoint.hpp"
 #include "EndpointText.hpp"
+#include "ExecutablePath.hpp"
 #include "LaunchArguments.hpp"
 #include "LaunchArgumentsConstants.hpp"
 #include "LaunchOption.hpp"
+#include "LaunchOptionReader.hpp"
 #include "LaunchValues.hpp"
 #include "LogLaunchOptions.hpp"
 #include "LoggingConstants.hpp"
+#include "NetworkConditions.hpp"
 #include "NetworkConstants.hpp"
 #include "ProtocolConstants.hpp"
 #include "SettingLine.hpp"
+#include "SimulatorLaunchOptions.hpp"
 #include "WireTypes.hpp"
 
 namespace rtype::client {
@@ -105,26 +110,10 @@ engine::LaunchOption helpOption(LaunchValues& values) {
       }};
 }
 
-}  // namespace
-
-LaunchOptions LaunchOptions::read(std::span<const std::string_view> arguments) {
-  LaunchValues values{
-      .serverEndpoint =
-          network::Endpoint{.address = std::string(DEFAULT_SERVER_ADDRESS),
-                            .port = network::DEFAULT_SERVER_PORT},
-      .nickname = std::string(DEFAULT_NICKNAME),
-      .audioMode = AudioMode::Enabled,
-      .forcedLines = {},
-      .helpRequested = false};
-  const std::array launchOptions{addressOption(values),  portOption(values),
-                                 nicknameOption(values), setOption(values),
-                                 noSoundOption(values),  helpOption(values)};
-  engine::readLaunchArguments(arguments, launchOptions);
-  return LaunchOptions{std::move(values)};
-}
-
-std::string LaunchOptions::usage() {
-  std::string text = engine::usageHeader(PROGRAM_NAME);
+/** @returns The lines of the usage that describe the options that name the
+ * server to join, the player and the settings. */
+std::string connectionOptionEntries() {
+  std::string text;
   text += engine::usageEntry(std::string(ADDRESS_OPTION) + " <address>",
                              "IPv4 address of the server, such as " +
                                  std::string(network::LOOPBACK_IPV4_ADDRESS) +
@@ -150,10 +139,42 @@ std::string LaunchOptions::usage() {
           std::string(NICKNAME_SETTING_NAME) + ", " +
           std::string(SERVER_ADDRESS_SETTING_NAME) + ", " +
           std::string(SERVER_PORT_SETTING_NAME) + ".");
+  return text;
+}
+
+}  // namespace
+
+LaunchOptions LaunchOptions::read(std::span<const std::string_view> arguments) {
+  LaunchOptions options{LaunchValues{
+      .serverEndpoint =
+          network::Endpoint{.address = std::string(DEFAULT_SERVER_ADDRESS),
+                            .port = network::DEFAULT_SERVER_PORT},
+      .nickname = std::string(DEFAULT_NICKNAME),
+      .audioMode = AudioMode::Enabled,
+      .forcedLines = {},
+      .helpRequested = false}};
+  const std::array launchOptions{
+      addressOption(options.values_),  portOption(options.values_),
+      nicknameOption(options.values_), setOption(options.values_),
+      noSoundOption(options.values_),  helpOption(options.values_)};
+  const std::array<engine::LaunchOptionReader, 2> readers{
+      std::bind_front(&network::SimulatorLaunchOptions::readOption,
+                      &options.simulatorOptions_),
+      std::bind_front(&logging::LogLaunchOptions::readOption,
+                      &options.logOptions_)};
+  engine::readLaunchArguments(arguments, launchOptions, readers);
+  return options;
+}
+
+std::string LaunchOptions::usage() {
+  std::string text = engine::usageHeader(PROGRAM_NAME);
+  text += connectionOptionEntries();
   text += engine::usageEntry(std::string(NO_SOUND_OPTION),
                              "Start the client without sound.");
   text += engine::usageEntry(engine::HELP_OPTION,
                              "Print this help and open no window.");
+  text += '\n';
+  text += network::SimulatorLaunchOptions::usage();
   text += '\n';
   text += logging::LogLaunchOptions::usage(logging::CLIENT_LOG_FILE_NAME);
   return text;
@@ -173,7 +194,16 @@ AudioMode LaunchOptions::audioMode() const { return values_.audioMode; }
 
 bool LaunchOptions::helpRequested() const { return values_.helpRequested; }
 
+const network::NetworkConditions& LaunchOptions::networkConditions() const {
+  return simulatorOptions_.conditions();
+}
+
+const logging::LogLaunchOptions& LaunchOptions::logOptions() const {
+  return logOptions_;
+}
+
 LaunchOptions::LaunchOptions(LaunchValues values)
-    : values_(std::move(values)) {}
+    : values_(std::move(values)),
+      logOptions_(engine::executableFolder() / logging::CLIENT_LOG_FILE_NAME) {}
 
 }  // namespace rtype::client

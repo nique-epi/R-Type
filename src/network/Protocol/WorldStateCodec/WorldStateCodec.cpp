@@ -27,6 +27,7 @@ void writePlayers(ByteWriter& writer, const std::vector<PlayerState>& players) {
     writer.writeUint32(player.score);
     writeBool(writer, player.invulnerable);
     writer.writeUint8(player.motion);
+    writer.writeUint32(player.acknowledgedInput);
   }
 }
 
@@ -72,7 +73,8 @@ std::vector<PlayerState> readPlayers(ByteReader& reader) {
                                   .lives = reader.readUint8(),
                                   .score = reader.readUint32(),
                                   .invulnerable = readBool(reader),
-                                  .motion = readMotion(reader)});
+                                  .motion = readMotion(reader),
+                                  .acknowledgedInput = reader.readUint32()});
   }
   return players;
 }

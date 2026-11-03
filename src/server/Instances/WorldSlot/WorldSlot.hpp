@@ -1,6 +1,8 @@
 #pragma once
 
+#include <cstddef>
 #include <memory>
+#include "IGameWorld.hpp"
 #include "World.hpp"
 
 namespace rtype::server {
@@ -12,7 +14,7 @@ namespace rtype::server {
  * It always holds a world: the constructor builds the first one. Not
  * thread-safe: use it from the simulation thread only.
  */
-class WorldSlot {
+class WorldSlot final : public IGameWorld {
  public:
   WorldSlot();
 
@@ -28,6 +30,8 @@ class WorldSlot {
    * parts from it afterwards.
    */
   game::World& renew();
+
+  [[nodiscard]] std::size_t entityCount() const override;
 
  private:
   std::unique_ptr<game::World> world_;

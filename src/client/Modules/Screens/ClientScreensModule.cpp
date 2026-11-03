@@ -13,6 +13,7 @@
 #include "Endpoint.hpp"
 #include "EndpointText.hpp"
 #include "EngineException.hpp"
+#include "EntityMessageQueue.hpp"
 #include "EventListeners.hpp"
 #include "EventUse.hpp"
 #include "FrameLoop.hpp"
@@ -27,10 +28,11 @@
 #include "ProtocolConstants.hpp"
 #include "ScreenRegistry.hpp"
 #include "ScreenServices.hpp"
-#include "ServerConnection.hpp"
+#include "ServerSession.hpp"
 #include "SettingsService.hpp"
 #include "TextSettingDefinition.hpp"
 #include "TimeConstants.hpp"
+#include "WaitingRoom.hpp"
 #include "WireTypes.hpp"
 
 namespace rtype::client {
@@ -92,7 +94,9 @@ void ClientScreensModule::install(engine::InstallContext& context) {
   assets_ = &context.require<AssetLibrary>();
   audio_ = &context.require<IAudioService>();
   window_ = &context.require<GameWindow>();
-  connection_ = &context.require<ServerConnection>();
+  connection_ = &context.require<ServerSession>();
+  waitingRoom_ = &context.require<WaitingRoom>();
+  entityMessages_ = &context.require<EntityMessageQueue>();
   loop_ = &context.require<FrameLoop>();
   listeners_ = &context.require<EventListeners>();
   registry_ = &context.require<ScreenRegistry>();
@@ -141,6 +145,8 @@ void ClientScreensModule::start() {
                      .audio = *audio_,
                      .window = *window_,
                      .connection = *connection_,
+                     .waitingRoom = *waitingRoom_,
+                     .entityMessages = *entityMessages_,
                      .server = server,
                      .nickname = nicknameSetting_->text()},
       *registry_);

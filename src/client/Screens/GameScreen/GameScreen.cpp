@@ -4,6 +4,7 @@
 #include <memory>
 #include <optional>
 #include <random>
+#include <tuple>
 #include <type_traits>
 #include <utility>
 #include <variant>
@@ -28,11 +29,13 @@
 #include "ISky.hpp"
 #include "MissionBanner.hpp"
 #include "MissionStart.hpp"
+#include "OwnShipPredictor.hpp"
 #include "PlayerAction.hpp"
 #include "PlayerInputPacer.hpp"
 #include "PlayerLeft.hpp"
 #include "PlayerPalette.hpp"
 #include "PlayerPreferences.hpp"
+#include "PredictedShipPlacement.hpp"
 #include "ShipFlightSystem.hpp"
 // NOLINTNEXTLINE(misc-include-cleaner)
 #include "GameScreenIdConstants.hpp"
@@ -75,9 +78,10 @@ GameScreen::GameScreen(GameScreenParts parts,
       playerCommands_(true, parts.settings.get().keys),
       inputs_(&parts.inputs.get()),
       entityMessageSource_(&parts.entityMessages.get()),
-      scoreBoard_(parts.connection.get().lobbyPlayers(),
+      scoreBoard_(parts.waitingRoom.get().lobbyPlayers(),
                   parts.connection.get().status().playerNumber),
       result_(&parts.result.get()),
+      prediction_(parts.connection.get().status().playerNumber),
       sky_(&parts.sky.get()) {
   systems_.add(std::make_unique<AnimationSystem>());
   systems_.add(std::make_unique<HitFlashSystem>());
@@ -113,8 +117,13 @@ void GameScreen::handleEvent(const sf::Event& event) {
 
 void GameScreen::update(engine::Duration elapsed) {
   const ActionSet held = playerActions();
-  if (inputPacer_.advance(elapsed)) {
-    inputs_->sendPlayerInput(held);
+  if (settings_->clientPrediction) {
+    prediction_.advance(elapsed, held, *inputs_);
+  } else {
+    prediction_.stop();
+    if (inputPacer_.advance(elapsed)) {
+      std::ignore = inputs_->sendPlayerInput(held);
+    }
   }
   if (held.bits() != loggedActions_) {
     logger_.trace("actions held: ", static_cast<unsigned int>(held.bits()));
@@ -122,13 +131,18 @@ void GameScreen::update(engine::Duration elapsed) {
   }
   systems_.run(components_, elapsed);
   const FlashPreference preference = flashPreferenceOf(*settings_);
-  effects_.advance(elapsed,
+  const engine::Duration sinceTheWorld =
+      worldSeen_ ? elapsed : engine::Duration::zero();
+  effects_.advance(sinceTheWorld,
                    EffectPreferences{.flashes = preference,
                                      .shades = pilotShadesOf(*settings_),
                                      .soundCues = settings_->soundCues});
   departures_.advance(elapsed);
-  silence_.advance(elapsed);
+  silence_.advance(sinceTheWorld);
   applyEntityMessages();
+  if (settings_->clientPrediction) {
+    placePredictedShip(prediction_, replicator_, components_);
+  }
   askForTheEndWhenDue();
   moveSky(*sky_, effects_, preference);
   entityLayer_->paint(components_, effects_.cameraOffset());
@@ -155,7 +169,11 @@ void GameScreen::applyEntityMessages() {
         },
         message);
     if (const auto* state = std::get_if<network::WorldState>(&message)) {
+      worldSeen_ = true;
       scoreBoard_.apply(*state);
+      if (settings_->clientPrediction) {
+        prediction_.apply(*state);
+      }
     }
   }
   receivedEntityMessages_.clear();
@@ -164,6 +182,7 @@ void GameScreen::applyEntityMessages() {
 void GameScreen::recordEnd(const network::GameEnded& ended) {
   *result_ = GameResult{
       .pilots = rankedPilots(finalPilotsOf(scoreBoard_.pilots(), ended))};
+  worldSeen_ = true;
   endedAt_ = effects_.sinceStart();
   silence_.stop();
 }

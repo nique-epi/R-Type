@@ -36,6 +36,7 @@ using rtype::server::testing::FIRST_SCORE;
 using rtype::server::testing::FIRST_SHIP_ID;
 using rtype::server::testing::INFINITE_POSITION;
 using rtype::server::testing::MANY_ENTITIES;
+using rtype::server::testing::NEWEST_INPUT_NUMBER;
 using rtype::server::testing::NOT_A_NUMBER_POSITION;
 using rtype::server::testing::ONE_TICK_OF_PROTECTION;
 using rtype::server::testing::OTHER_SESSION_TOKEN;
@@ -43,6 +44,7 @@ using rtype::server::testing::PLAYER_MISSILE_NETWORK_ID;
 using rtype::server::testing::PLAYER_MISSILE_POSITION;
 using rtype::server::testing::PLAYER_NETWORK_ID;
 using rtype::server::testing::PLAYER_POSITION;
+using rtype::server::testing::RECEIVED_INPUT_NUMBER;
 using rtype::server::testing::REFUSED_STATE_RATES;
 using rtype::server::testing::SECOND_CLIENT_PORT;
 using rtype::server::testing::SECOND_LIVES;
@@ -347,6 +349,30 @@ TEST_F(WorldStateSenderFixture, ListsAPlayerWithProtectionLeftAsInvulnerable) {
   ASSERT_EQ(sentDatagrams().size(), 1U);
   ASSERT_EQ(decodedState(0).players.size(), 1U);
   EXPECT_TRUE(decodedState(0).players.front().invulnerable);
+}
+
+/**
+ * Given a player whose input 9 arrived but whose ship only applied input 7,
+ * and one who sent none
+ * When the first state is due
+ * Then the state lists 7 for the first and 0 for the second
+ */
+TEST_F(WorldStateSenderFixture, ListsTheAppliedInputNumberOfEachPlayer) {
+  rtype::server::ConnectedPlayer& sender =
+      connect(FIRST_CLIENT_PORT, SESSION_TOKEN);
+  const rtype::server::ConnectedPlayer& silent =
+      connect(SECOND_CLIENT_PORT, OTHER_SESSION_TOKEN);
+  sender.newestInputNumber = RECEIVED_INPUT_NUMBER;
+  sender.appliedInputNumber = NEWEST_INPUT_NUMBER;
+
+  runTicks(DEFAULT_TICKS_PER_WORLD_STATE);
+
+  const std::vector<PlayerState> players = decodedState(0).players;
+  ASSERT_EQ(players.size(), 2U);
+  EXPECT_EQ(players[0].playerNumber, sender.playerNumber);
+  EXPECT_EQ(players[0].acknowledgedInput, NEWEST_INPUT_NUMBER);
+  EXPECT_EQ(players[1].playerNumber, silent.playerNumber);
+  EXPECT_EQ(players[1].acknowledgedInput, 0U);
 }
 
 /**

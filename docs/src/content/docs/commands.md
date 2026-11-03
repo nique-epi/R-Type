@@ -42,6 +42,7 @@ Server settings:
 | `port` | 1 to 65535 | 4242 | The UDP port the server listens on. |
 | `seed` | 0 to 4294967295, or `none` | `none` | The seed of the first game; `none` draws one at random. |
 | `state-rate` | 2 to 60 | 20 | The world states sent to each player per second. |
+| `input-delay` | 0 to 30 | 3 | The ticks every player's input is held before it is applied. |
 
 Client settings:
 
@@ -67,6 +68,7 @@ Server modules:
 | `network` | `logger` | Owns the UDP socket and the network thread. |
 | `games` | `network` | Hosts the games. |
 | `lobby` | `network`, `games` | Answers the connection requests of the players. |
+| `metrics` | `games` | Measures the ticks and writes a report to the journal. |
 
 Client modules:
 
@@ -113,7 +115,7 @@ From the lowest priority to the highest:
 
 1. The default of the setting, written in the module that declares it.
 2. The file: `server.cfg` or `client.cfg`, in the folder the program is started from.
-3. The launch options. `-p`, `--seed` and `--state-rate` on the server, `-h`, `-p` and `-n` on the client, and `--set <name>=<value>` on both, are turned into `set` lines that run after the file. The last value given wins, so a launch option always wins over the file.
+3. The launch options. `-p`, `--seed`, `--state-rate` and `--input-delay` on the server, `-h`, `-p` and `-n` on the client, and `--set <name>=<value>` on both, are turned into `set` lines that run after the file. The last value given wins, so a launch option always wins over the file.
 
 A missing file is not an error: the defaults apply and the journal says `server.cfg not found, the defaults apply` (or `client.cfg`). The `info` lines are hidden at the default log level; start the program with `--log-level info` to see them.
 

@@ -68,3 +68,6 @@ constexpr std::string_view STATE_RATE_ABOVE_THE_HIGHEST_LINE =
  * @brief A line that clears the seed setting.
  */
 constexpr std::string_view CLEAR_THE_SEED_LINE = "set seed none";
+
+/** @brief The only byte of the datagram a test queues for its client. */
+constexpr std::byte QUEUED_BYTE{0x2A};

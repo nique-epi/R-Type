@@ -23,6 +23,7 @@
 #include "InstallContext.hpp"
 #include "IntegerSettingDefinition.hpp"
 #include "ModuleConstants.hpp"
+#include "PathText.hpp"
 #include "PlayerDatagrams.hpp"
 #include "RtypeGameModules.hpp"
 #include "ServerConstants.hpp"
@@ -66,7 +67,17 @@ void ServerGamesModule::install(engine::InstallContext& context) {
   sender_ = &context.require<IDatagramSender>();
   admission_ = &context.require<IPlayerAdmission>();
   tickDatagrams_ = &context.require<TickDatagrams>();
-  auto& configuration = context.require<engine::ConfigurationRegistry>();
+  declareSettings(context.require<engine::ConfigurationRegistry>());
+  context.provide(games_);
+  context.addWork(
+      SIMULATION_STAGE,
+      [this]([[maybe_unused]] engine::Duration elapsed) { playGames(); });
+  context.addWork(OUTPUT_STAGE,
+                  [this](engine::Duration elapsed) { deliverEvents(elapsed); });
+}
+
+void ServerGamesModule::declareSettings(
+    engine::ConfigurationRegistry& configuration) {
   seedSetting_ = &configuration.declareInteger(engine::IntegerSettingDefinition{
       .name = std::string{SEED_SETTING_NAME},
       .defaultValue = settings_.seed,
@@ -81,12 +92,13 @@ void ServerGamesModule::install(engine::InstallContext& context) {
           .lowest = LOWEST_WORLD_STATES_PER_SECOND,
           .highest = HIGHEST_WORLD_STATES_PER_SECOND,
           .help = "World states sent to each player per second"});
-  context.provide(games_);
-  context.addWork(
-      SIMULATION_STAGE,
-      [this]([[maybe_unused]] engine::Duration elapsed) { playGames(); });
-  context.addWork(OUTPUT_STAGE,
-                  [this](engine::Duration elapsed) { deliverEvents(elapsed); });
+  inputDelaySetting_ =
+      &configuration.declareInteger(engine::IntegerSettingDefinition{
+          .name = std::string{INPUT_DELAY_SETTING_NAME},
+          .defaultValue = static_cast<std::int64_t>(settings_.inputDelayTicks),
+          .lowest = LOWEST_INPUT_DELAY_TICKS,
+          .highest = HIGHEST_INPUT_DELAY_TICKS,
+          .help = "Ticks every player's input is held before it is applied"});
 }
 
 void ServerGamesModule::start() {
@@ -98,6 +110,9 @@ void ServerGamesModule::start() {
   const auto statesPerSecond =
       static_cast<std::size_t>(stateRateSetting_->integer().value_or(
           static_cast<std::int64_t>(settings_.statesPerSecond)));
+  const auto inputDelayTicks =
+      static_cast<std::size_t>(inputDelaySetting_->integer().value_or(
+          static_cast<std::int64_t>(settings_.inputDelayTicks)));
   for (std::size_t game = 0; game < settings_.gameCount; ++game) {
     auto events = std::make_unique<engine::EventBus>();
     std::unique_ptr<GameInstance> created = createGame(
@@ -106,7 +121,8 @@ void ServerGamesModule::start() {
                                              GAME_SEED_STRIDE)
                                   : std::random_device{}(),
                      .waves = waves,
-                     .statesPerSecond = statesPerSecond});
+                     .statesPerSecond = statesPerSecond,
+                     .inputDelayTicks = inputDelayTicks});
     games_.add(std::move(events), std::move(created));
   }
 }
@@ -121,7 +137,7 @@ void ServerGamesModule::stop() {
 WavePlan ServerGamesModule::readWaves() const {
   const WaveCatalog catalog = WaveCatalog::fromFile(settings_.wavesFile);
   WavePlan waves = catalog.planOf(DEFAULT_DIFFICULTY);
-  logger_.info("waves file ", settings_.wavesFile.string(), ": ",
+  logger_.info("waves file ", engine::genericText(settings_.wavesFile), ": ",
                catalog.difficulties().size(), " difficulties, games play ",
                DEFAULT_DIFFICULTY);
   return waves;

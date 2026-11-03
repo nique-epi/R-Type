@@ -9,14 +9,16 @@ target_link_libraries(rtype_client_screens_module
     rtype_client_connection
     rtype_client_game_window
     rtype_client_interface
-    rtype_client_menus
+    rtype_client_menus_module
     rtype_client_replication_interfaces
     rtype_client_screen_registry
     rtype_client_screen_stack
     rtype_client_scrolling_background
+    rtype_client_entity_message_queue
     rtype_client_screen_interfaces
-    rtype_client_server_connection
+    rtype_client_server_session
     rtype_client_session_loss_watch
+    rtype_client_waiting_room
     rtype_client_settings
     rtype_client_settings_service
     rtype_client_window

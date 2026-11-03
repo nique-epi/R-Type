@@ -52,6 +52,9 @@ struct ConnectedPlayer {
   /** @brief Whether the player declared itself ready to start; cleared when the
    * game waits for players again. */
   bool ready{false};
+  /** @brief Whether the player told the game it shows the game screen, since
+   * the game last started waiting for it; cleared when the game does. */
+  bool loaded{false};
   /** @brief The sequence of the newest datagram accepted from the player, and
    * how many of the datagrams it sent never arrived. DatagramReader keeps it.
    */
@@ -61,6 +64,15 @@ struct ConnectedPlayer {
    * arrives. The input itself is held by the Intent of the ship of the player.
    * InputKeeper keeps it. */
   std::optional<std::uint32_t> newestInputNumber;
+  /** @brief The inputNumber of the newest input applied to the ship of the
+   * player, which the world state confirms to its client; empty until one is
+   * applied and cleared with newestInputNumber. An input is applied when the
+   * hooks of the game see it, so this number never runs ahead of the ship, as
+   * newestInputNumber does when inputs are held before they are applied.
+   * It also tells an input that follows earlier ones from the first of the
+   * session, which newestInputNumber cannot, since it runs ahead by the input
+   * delay. DelayedInputs keeps it. */
+  std::optional<std::uint32_t> appliedInputNumber;
   /** @brief Ticks the game ran since it last read a datagram of the player;
    * the player is away once it reaches SESSION_TIMEOUT_TICKS, and the session
    * closes once it reaches SESSION_CLOSING_TICKS.

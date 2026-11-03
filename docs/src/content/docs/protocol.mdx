@@ -126,6 +126,7 @@ The type identifies a message in both directions: `Disconnection` and `Heartbeat
 | 5 | `Heartbeat` | none | after 1 s without sending anything else |
 | 6 | `ReadyState` | `ready` `bool` | when the player changes it, and again while `LobbyState` shows another value |
 | 9 | `PlayerInput` | `inputNumber` `u32`, `actions` `u8` | 60 times per second during a game |
+| 17 | `GameLoaded` | none | with a `PlayerInput`, at most every 100 ms, from the first one after `GameStarted` until the first `WorldState` arrives |
 
 ### Server to client
 
@@ -136,7 +137,7 @@ The type identifies a message in both directions: `Disconnection` and `Heartbeat
 | 4 | `Disconnection` | none | when the server shuts down, three times 50 ms apart |
 | 5 | `Heartbeat` | none | after 1 s without sending anything else |
 | 7 | `LobbyState` | `playerCount` `u8`, then per player `playerNumber` `u8`, `ready` `bool`, `nickname` `string` | on every change, and at least every 500 ms while no game runs |
-| 8 | `GameStarted` | none | when every connected player is ready |
+| 8 | `GameStarted` | none | when every connected player is ready, then every 500 ms to the players that did not send `GameLoaded` yet |
 | 10 | `WorldState` | see [World state](#world-state) | during a game, as many times per second as the server was told to (20 by default, from 2 to 60) |
 | 11 | `EntitySpawned` | `entityId` `u32`, `entityType` `u8`, `position` | when an entity appears; the ship of a player, when the player is accepted; the ship of a player again, when it comes back after a hit; a Bydo, every time one appears; a missile of a player, every time one is fired |
 | 12 | `EntityDestroyed` | `entityId` `u32`, `reason` `u8`: 1 `Killed` (explosion), 2 `Removed` (no effect) | when an entity disappears, three times 50 ms apart |
@@ -182,7 +183,7 @@ A nickname is unique on the server: a request whose nickname a player already ho
 `WorldState` lists every player and every entity of the game, in full each time. The payload of a state with one player and one entity, byte by byte:
 
 <ByteLayout
-  label="A WorldState with one player and one entity: tick on bytes 0 to 3, playerCount on byte 4, the player on bytes 5 to 16 (playerNumber, shipEntityId, lives, score, invulnerable, motion), entityCount on byte 17, the entity on bytes 18 to 26 (entityId, entityType, x, y)."
+  label="A WorldState with one player and one entity: tick on bytes 0 to 3, playerCount on byte 4, the player on bytes 5 to 20 (playerNumber, shipEntityId, lives, score, invulnerable, motion, acknowledgedInput), entityCount on byte 21, the entity on bytes 22 to 30 (entityId, entityType, x, y)."
   rows={[
     {
       fields: [
@@ -198,6 +199,7 @@ A nickname is unique on the server: a request whose nickname a player already ho
         { name: 'score', bytes: 4, tone: 'blue' },
         { name: 'invulnerable', bytes: 1, tone: 'blue' },
         { name: 'motion', bytes: 1, tone: 'blue' },
+        { name: 'acknowledgedInput', bytes: 4, tone: 'blue' },
       ],
       note: 'One player, repeated playerCount times.',
     },
@@ -220,11 +222,11 @@ A nickname is unique on the server: a request whose nickname a player already ho
 |---|---|
 | `tick` | `u32`, the simulation tick of the server, counted from the start of the game |
 | `playerCount` | `u8` (1 to 4) |
-| each player | `playerNumber` `u8`, `shipEntityId` `u32` (0 while the player has no ship), `lives` `u8`, `score` `u32`, `invulnerable` `bool`, `motion` `u8` |
+| each player | `playerNumber` `u8`, `shipEntityId` `u32` (0 while the player has no ship), `lives` `u8`, `score` `u32`, `invulnerable` `bool`, `motion` `u8`, `acknowledgedInput` `u32` |
 | `entityCount` | `u8` |
 | each entity | `entityId` `u32`, `entityType` `u8`, `position` |
 
-`motion` says what the pilot does, one bit each from bit 0: the directions its newest `PlayerInput` holds, at their bits of `actions` (0 up, 1 down, 2 left, 3 right), then 4 its ship rolls, 5 its ship dashes. Bits 6 and 7 are 0, otherwise the message is invalid. A player takes 12 bytes and an entity 9, so one datagram holds up to 124 entities with 4 players. When the entities do not fit, the server sends several `WorldState` with the same `tick`, each in its own datagram, each with every player and a part of the entities. The client:
+`motion` says what the pilot does, one bit each from bit 0: the directions its newest `PlayerInput` holds, at their bits of `actions` (0 up, 1 down, 2 left, 3 right), then 4 its ship rolls, 5 its ship dashes. Bits 6 and 7 are 0, otherwise the message is invalid. `acknowledgedInput` is the `inputNumber` of the newest `PlayerInput` the server applied to the ship of the player, 0 while it applied none (an input the server holds before applying it is not confirmed yet, so the ship it reads is never ahead of the number): a client that predicts its own ship drops the inputs up to it and replays the others on top of the position it reads (see [Client](/R-Type/client/#own-ship-prediction-ownshippredictor-shipprediction)). The field was added to version 1 without changing `PROTOCOL_VERSION`, so a client and a server of different builds misread each other's states: both come from the same build. A player takes 16 bytes and an entity 9, so one datagram holds up to 122 entities with 4 players. When the entities do not fit, the server sends several `WorldState` with the same `tick`, each in its own datagram, each with every player and a part of the entities. The client:
 
 - ignores a `WorldState` whose `tick` is lower than the last one applied; an equal `tick` is another part of the same state. The `tick` is compared as a plain 32-bit integer, without wrap-around: it takes 2.27 years at 60 ticks per second to reach 2³². The sender checks come first, so a forged datagram cannot raise the last `tick` applied;
 - creates an entity it does not know, from its type, with its appearance effect (the shot sound of a missile, for instance);
@@ -232,7 +234,7 @@ A nickname is unique on the server: a request whose nickname a player already ho
 
 An `EntityDestroyed` naming an entity the client does not know, and an `EntitySpawned` naming one it already has, change nothing.
 
-Measured on October 24, 2026, on a local game of two players lasting about 70 seconds (a `tcpdump` capture of the server port): each player received 20.0 `WorldState` per second, each state in a single datagram of 105 bytes of UDP payload on average and 116 at most, for 6 entities on average. That is about 2.1 kB per second and per player for the states alone. The players could not shoot yet, so the game held only ships and Bydos: a game with missiles sends larger states.
+Measured on October 24, 2026, before `acknowledgedInput` added 4 bytes per player, on a local game of two players lasting about 70 seconds (a `tcpdump` capture of the server port): each player received 20.0 `WorldState` per second, each state in a single datagram of 105 bytes of UDP payload on average and 116 at most, for 6 entities on average. That is about 2.1 kB per second and per player for the states alone. The players could not shoot yet, so the game held only ships and Bydos: a game with missiles sends larger states.
 
 `entityId` is given by the server, unique during a game, and never 0. A `u16` would wrap after about 22 minutes at 50 new entities per second, hence 32 bits.
 
@@ -276,7 +278,7 @@ sequenceDiagram
   S->>C: LobbyState (repeated)
   C->>S: ReadyState
   S->>C: GameStarted
-  C->>S: PlayerInput (60 per second)
+  C->>S: GameLoaded, PlayerInput (60 per second)
   S->>C: WorldState (20 per second by default), events
   S->>C: GameEnded (repeated)
   S->>C: LobbyState (repeated)
@@ -293,7 +295,7 @@ In each phase the server repeats one message, and the client shows the screen of
 
 The end screen stays until the player chooses, whatever the server sends after `GameEnded`: a player who plays again finds the waiting room, a player who quits leaves the server. Between `GameEnded` and the next `GameStarted`, the server must send no `WorldState`: the client reads a `WorldState` as the start of a game.
 
-The server takes a `ReadyState` into account only in the first phase, from a connected player, with the same checks as every datagram: the session token, then the `sequence`. The game starts when at least one player is connected and every connected player is ready.
+The server takes a `ReadyState` into account only in the first phase, from a connected player, with the same checks as every datagram: the session token, then the `sequence`. Once at least one player is connected and every connected player is ready, the server sends `GameStarted` and waits for the clients to show the game: the screen of a client that has the game assets to load is not ready on the tick the server sends it. A client that shows the game sends `GameLoaded` with its inputs, at most every 100 ms, until the first `WorldState` arrives. The game starts, and the first `WorldState` goes out, once every connected player that is not away has sent one, or after 10 s (`START_BARRIER_SECONDS`) without waiting any longer for the others. Until then the server sends no `WorldState`, and repeats `GameStarted` every 500 ms to the players not yet loaded. A `GameLoaded` outside this wait changes nothing. The message is new in version 1 and carries no field; a server that does not know it skips it as an unknown type.
 
 Each side sends a `Heartbeat` after 1 s without sending anything else; any datagram that passes the checks above proves its sender is alive. A player the server has heard nothing from for `SESSION_TIMEOUT` (5 s) may only have lost the network for a moment. The server then marks the player away and keeps its seat, its token, its ship, its score and its lives for `RECONNECTION_GRACE` (15 s) more. The ship stays in the world and can be hit, but the input of the player is cleared and the player does not count when the waiting room checks that everyone is ready. Any datagram carrying the token, from the same address and port, ends the absence: the player is back, nothing was lost, and a new `SESSION_TIMEOUT` starts. A player not heard from for `SESSION_TIMEOUT` plus `RECONNECTION_GRACE` (20 s) loses its seat: the server closes the session, removes the ship and sends `PlayerLeft` (`TimedOut`) to the others, only then. A client that comes back from another address or port is an unknown sender and starts again from the first request. The client keeps its session, and keeps sending its `Heartbeat`, for the same 20 s without a datagram from the server, then closes it and must tell the player that the connection is lost. A `Disconnection` frees the place at once, and the others get `PlayerLeft` (`Left`).
 
@@ -370,7 +372,8 @@ Nothing is guaranteed in version 1: a lost message is never resent on request. T
 | `ReadyState` | sent again while `LobbyState` shows another value | 500 ms |
 | `LobbyState`, `GameEnded` | the next one | 500 ms |
 | `WorldState` | the next one | 50 ms at the default 20 per second, one rate-th of a second at any other |
-| `GameStarted` | the first `WorldState` | 50 ms at 20 per second |
+| `GameStarted` | the copy sent every 500 ms, or the first `WorldState` | 500 ms |
+| `GameLoaded` | the next one, sent with an input | 100 ms |
 | `PlayerInput` | the next input | 17 ms |
 | `Heartbeat` | the next datagram | 1 s |
 | `EntitySpawned` | the next `WorldState` creates the entity, with its appearance effect | 50 ms at 20 per second |
@@ -388,7 +391,7 @@ The second part of the project changes the protocol as follows:
 - The client measures the loss rate of the server from the gaps in `sequence`, as the server does for each player: nothing changes on the wire.
 - Guaranteed messages use `flags`, `acknowledgedSequence` and `acknowledgementBits` and replace the three copies: same layout, new meaning, so `version` becomes 2.
 - Several messages share a datagram: receivers of version 1 already accept it, and a sender of version 2 may use it.
-- `PlayerInput` repeats the inputs not yet confirmed, `WorldState` confirms the last input applied to each player, and states are sent as differences from the last one received: these payloads change in version 2.
+- `PlayerInput` repeats the inputs not yet confirmed, and states are sent as differences from the last one received: these payloads change in version 2. The confirmation of the newest input of each player already travels in `acknowledgedInput`.
 
 A client and a server of different versions never play together: the connection is refused with `IncompatibleVersion`.
 

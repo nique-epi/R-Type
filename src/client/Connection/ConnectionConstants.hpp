@@ -46,6 +46,12 @@ constexpr std::chrono::seconds CONNECTION_ATTEMPT_TIMEOUT{5};
 constexpr std::chrono::milliseconds READY_STATE_INTERVAL{500};
 
 /**
+ * @brief Time between two GameLoaded while the game is started and no
+ * WorldState arrived yet. Provisional, see the protocol page.
+ */
+constexpr std::chrono::milliseconds GAME_LOADED_INTERVAL{100};
+
+/**
  * @brief How many times a Disconnection goes out when the player leaves a
  * server, and the time between two copies: nothing repeats it, so a lost copy
  * is made up by the next. Provisional, see the protocol page.
@@ -68,7 +74,7 @@ constexpr engine::Duration PLAYER_INPUT_INTERVAL =
  * come 50 ms apart, and the protocol page says a second is enough. */
 constexpr engine::Duration GAME_EVENT_MEMORY = std::chrono::seconds(1);
 
-/** @brief Module name the connection to a server writes its log lines under. */
+/** @brief Logger name the connection to a server writes its log lines under. */
 constexpr std::string_view CONNECTION_LOGGER_NAME = "Connection";
 
 }  // namespace rtype::client

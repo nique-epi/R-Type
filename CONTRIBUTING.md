@@ -100,24 +100,25 @@ clang-tidy -p build --extra-arg=-isysroot --extra-arg="$SDK" \
 | Rule | In short |
 |---|---|
 | Headers declare, sources define | No function body in a `.hpp`, one-line getters included. Only templates, `constexpr` and `= default` or `= delete` members stay there. |
-| A module is one folder and one library | A module groups the classes of one feature (`src/server/Spawning/`). Its `CMakeLists.txt` declares one library, `rtype_<owner>_<module>`, listing the `.cpp` of every class; each class is a `.hpp` and `.cpp` pair of the folder, never a folder of its own. A module holds at most 10 `.cpp`. A sub-folder with a library of its own, a sub-module, exists only for a group that needs a dependency the rest of the module must not link, that another module reuses, or when the module would pass ten. Two classes of a module never include each other. A module written before this layout keeps a folder per class until it is flattened in a `refactor` commit of its own. See [Adding a class](https://nique-epi.github.io/R-Type/project-layout/#adding-a-class). |
-| One `CMakeLists.txt` per folder | It declares the library of its folder (the one library of a module) and calls `rtype_enable_warnings()`; the parent adds it with `add_subdirectory`. |
+| A module is a feature you can switch on, off or replace | It is a folder with one `IModule` or `IGameModule` class at its root. A folder without that class is a library: code with no life cycle. A system (`ISystem`) and a service are not modules. A required module may be included by the code that needs it; an optional one is reached only through its `Contract/` sub-folder. See [Modules](https://nique-epi.github.io/R-Type/modules/#required-or-optional). |
+| A folder is flat, with one CMake library | Its `CMakeLists.txt` declares one CMake library, `rtype_<owner>_<folder>`, ended by `_module` for a module, listing the `.cpp` of every class; each class is a `.hpp` and `.cpp` pair of the folder, never a folder of its own. A folder holds at most 10 `.cpp`. A sub-folder with a CMake library of its own exists only when the folder would pass ten, when a group needs a dependency the rest must not link, or for a `Contract/`. Two classes of a folder never include each other. A folder written before this layout keeps a folder per class until it is flattened in a `refactor` commit of its own. See [Adding a class](https://nique-epi.github.io/R-Type/project-layout/#adding-a-class). |
+| One `CMakeLists.txt` per folder | It declares the library of its folder and calls `rtype_enable_warnings()`; the parent adds it with `add_subdirectory`. |
 | Who may link what | The server and the shared libraries never link SFML; the configure stops if they do. See [Who may link what](https://nique-epi.github.io/R-Type/project-layout/#who-may-link-what). |
 | Interfaces are pure | An interface holds only `= 0` methods and a `= default` virtual destructor: no body, no data. |
 | Inherit interfaces, compose the rest | A class derives only from interfaces. To reuse code, it holds an object as a member. No `protected` data. |
-| No type inside a class | No nested `struct`, `enum` or `using` alias: each type gets a header of its own, in the module folder next to the class that uses it. |
+| No type inside a class | No nested `struct`, `enum` or `using` alias: each type gets a header of its own, in the folder of the class that uses it. |
 | At most 10 member functions | Constructors, the destructor and `= default` members are not counted. A larger class is split along the state its functions share. |
 | At most 3 parameters | Pass the whole object, or a struct named after what the values are, built with designated initializers: `TextureArea{.assetId = …, .rectangle = …}`. |
 | One kind of step per function | Checks that decide, writes that build, and notifications (a sound, a message, a log) go in separate functions. |
 | No magic value | Every meaningful literal is a named constant in a `<Concept>Constants.hpp`, which holds constants only. `0`, `1`, `nullptr` and `true` are not magic. |
-| Errors are the module's exceptions | Each module has an `Exceptions/` folder with a root exception and a subclass per case. Never `throw std::runtime_error` or another standard exception directly. |
+| Errors are the exceptions of their owner | Each program and each top library of `src/` has an `Exceptions/` folder with a root exception and a subclass per case. Never `throw std::runtime_error` or another standard exception directly. |
 | Designated initializers | An aggregate of two members or more is built with `Type{.first = a, .second = b}`. |
 
-A file you touch that already breaks one of these rules is fixed, not extended: in a `refactor` commit of its own when the fix stays in the file or the module, or reported in the pull request and discussed first when it would spread across modules.
+A file you touch that already breaks one of these rules is fixed, not extended: in a `refactor` commit of its own when the fix stays in the file or the folder, or reported in the pull request and discussed first when it would spread across folders.
 
 ### Writing a module
 
-A module that implements `IModule` is installed, started and stopped in the order of its program's list:
+The [Modules](https://nique-epi.github.io/R-Type/modules/) page explains them, and the [tutorial](https://nique-epi.github.io/R-Type/tutorial-write-a-module/) writes one step by step. A new module is written directly in its own folder, and its pull request adds its row to the list of modules: see [Adding a module](https://nique-epi.github.io/R-Type/project-layout/#adding-a-module). A module is installed, started and stopped in the order of its program's list:
 
 - `install()` prepares and checks, and keeps nothing open: it may read a file and close it, build the objects the module owns, or throw on a wrong configuration.
 - `start()` opens what must live until `stop()`: a socket, a thread, an open file, an event subscription, a timer. A `start()` that opens several things releases the ones already open before an exception leaves it, because `Application` never calls `stop()` on the module whose `start()` threw.

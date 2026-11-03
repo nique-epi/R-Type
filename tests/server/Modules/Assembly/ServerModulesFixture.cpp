@@ -1,8 +1,5 @@
 #include "ServerModulesFixture.hpp"
-#include <chrono>
-#include <cstddef>
 #include <cstdint>
-#include <filesystem>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -29,17 +26,10 @@ std::vector<std::string_view> launchArguments(const std::string& portText) {
 
 ServerModulesFixture::ServerModulesFixture()
     : port_(freeUdpPort()),
-      previousFolder_(std::filesystem::current_path()),
+      workingFolderChange_(workingFolder_.path()),
       portText_(std::to_string(port_)),
       arguments_(launchArguments(portText_)),
-      launchOptions_(rtype::server::LaunchOptions::read(arguments_)) {
-  std::filesystem::current_path(
-      std::filesystem::path{RTYPE_SOURCE_ASSETS_FOLDER}.parent_path());
-}
-
-ServerModulesFixture::~ServerModulesFixture() {
-  std::filesystem::current_path(previousFolder_);
-}
+      launchOptions_(rtype::server::LaunchOptions::read(arguments_)) {}
 
 std::uint64_t ServerModulesFixture::joinWithTheClient() {
   const rtype::network::Endpoint server{

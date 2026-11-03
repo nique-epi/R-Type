@@ -8,6 +8,7 @@
 #include "AssetList.hpp"
 #include "AssetLoadResult.hpp"
 #include "ClientException.hpp"
+#include "PendingAsset.hpp"
 
 namespace rtype::client {
 
@@ -29,11 +30,9 @@ class AssetLoadingStep {
   [[nodiscard]] std::size_t assetCount() const;
 
  private:
-  struct PendingAsset {
-    AssetKind kind;
-    std::string assetId;
-  };
-
+  /** @brief Adds to what is left to load the assets of @p assetIds that the
+   * library does not hold yet. */
+  void queueMissing(AssetKind kind, const std::vector<std::string>& assetIds);
   void record(const PendingAsset& asset, AssetLoadResult result);
 
   AssetLibrary* library_;

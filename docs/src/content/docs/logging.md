@@ -6,7 +6,7 @@ sidebar:
 
 ## Context
 
-A network problem is diagnosed after the fact, from what the client and the server wrote down. Both programs therefore share one logger: every line is timestamped, carries a level and the name of the module that wrote it, and lines written by different threads never mix.
+A network problem is diagnosed after the fact, from what the client and the server wrote down. Both programs therefore share one logger: every line is timestamped, carries a level and the name of the logger that wrote it, and lines written by different threads never mix.
 
 The logger comes from the raytracer project and lives in `src/logging/`, in the `rtype_logging` library. It depends on nothing else of the repository, so the engine, the game, the network, the client and the server can all use it.
 
@@ -16,13 +16,13 @@ The logger comes from the raytracer project and lives in `src/logging/`, in the 
 [2026-10-06T14:03:21.159Z] [INFO ] [Server] - server starting
 ```
 
-The time is **UTC**, with the date, so the journals of two machines can be compared line by line. A line is the time, the level, the module, then the message.
+The time is **UTC**, with the date, so the journals of two machines can be compared line by line. A line is the time, the level, the name of the logger, then the message.
 
 When standard error is a terminal, its lines are colored by level. The file never contains color codes. Color is never used on Windows.
 
 ## Using the logger
 
-Each module owns a `Logger` built with its name:
+Each class that writes lines owns a `Logger` built with a name:
 
 ```cpp
 #include "Logger.hpp"
@@ -83,30 +83,28 @@ The client and the server read the same options:
 | Option | Effect |
 |---|---|
 | `--log-level <name>` | The level: `trace`, `debug`, `info`, `warn`, `error` or `silent`, in any case. |
-| `--log-file <path>` | The journal. The default is `r-type_server.log` or `r-type_client.log` in the current directory. |
+| `--log-file <path>` | The journal. The default is `r-type_server.log` or `r-type_client.log` next to the executable, whatever folder the program was started in. A relative path given after `--log-file` is read from the folder the program was started in. |
 | `--no-log-file` | No journal. |
 | `--log-stderr` | Write to standard error too. This is the default. |
 | `--no-log-stderr` | Nothing on standard error. |
 
-Without options, every line goes both to the journal and to standard error, so a program launched from a terminal shows its lines there. The first line, at the `info` level under the module `Logging`, gives the absolute path of the journal (`journal: /home/player/r-type/r-type_server.log`), or says `no journal file`.
+Without options, every line goes both to the journal and to standard error, so a program launched from a terminal shows its lines there. The first line, at the `info` level under the name `Logging`, gives the absolute path of the journal (`journal: /home/player/r-type/r-type_server.log`), or says `no journal file`.
 
 The level can also come from the `RT_LOG_LEVEL` environment variable; `--log-level` wins over it. A value of `RT_LOG_LEVEL` that is not a level is ignored, while a `--log-level` that is not a level is an error.
 
-The last of `--log-file` and `--no-log-file` wins, and so does the last of `--log-stderr` and `--no-log-stderr`. With `--no-log-file` and `--no-log-stderr`, nothing is written. Arguments that do not start with `--log-` or `--no-log-` are left to the program, which rejects the ones it does not know either (see [Server](/R-Type/server/#launch-options-launchoptions) and [Client](/R-Type/client/#launch-options-launchoptions)); a `--log-` option that does not exist is an error, so a typo is never silent.
+The last of `--log-file` and `--no-log-file` wins, and so does the last of `--log-stderr` and `--no-log-stderr`. With `--no-log-file` and `--no-log-stderr`, nothing is written. A program reads all its arguments once, in order, and hands the logging options only the ones that are neither its own options nor the value of one, so the value of an option is never read as a logging option: `r-type_client -n --no-log-file` starts with the nickname `--no-log-file` and keeps its journal. Any other argument is left to the program, which rejects the ones it does not know either (see [Server](/R-Type/server/#launch-options-launchoptions) and [Client](/R-Type/client/#launch-options-launchoptions)); a `--log-` option that does not exist is an error, so a typo is never silent.
 
-`LogLaunchOptions` reads and applies in two steps. `read()` checks every logging option, keeps the other arguments for `otherArguments()`, and touches nothing; `apply()` opens the journal, sets the level, then writes the line that names the journal. A program reads its own options in between, so an invalid argument, or `--help`, stops it before any journal is created. With an invalid option, or a journal that cannot be opened, the program stops with a message and exit code 1. `LogLaunchOptions::usage()` writes the part of a program's `--help` that lists these options.
+`LogLaunchOptions` reads and applies in two steps. `readOption()` reads the logging option the arguments start with, returns how many arguments it took (see [Engine](/R-Type/engine/#launch-arguments-readlauncharguments)), and touches nothing; `apply()` opens the journal, sets the level, then writes the line that names the journal. `server::LaunchOptions` and `client::LaunchOptions` read the logging options with their own and keep them (`logOptions()`), so an invalid argument, or `--help`, stops the program before any journal is created. With an invalid option, or a journal that cannot be opened, the program stops with a message and exit code 1. `LogLaunchOptions::usage()` writes the part of a program's `--help` that lists these options.
 
 ```cpp
-const rtype::logging::LogLaunchOptions logOptions =
-    rtype::logging::LogLaunchOptions::readFromProcess(
-        argumentCount, arguments, rtype::logging::SERVER_LOG_FILE_NAME);
 const rtype::server::LaunchOptions launchOptions =
-    rtype::server::LaunchOptions::read(logOptions.otherArguments());
+    rtype::server::LaunchOptions::read(
+        rtype::engine::processArguments(argumentCount, arguments));
 if (launchOptions.helpRequested()) {
   std::cout << rtype::server::LaunchOptions::usage();
   return 0;
 }
-logOptions.apply();
+launchOptions.logOptions().apply();
 ```
 
 The journal is opened in append mode, so a second launch keeps the lines of the first, and it is flushed after every line, so it is complete even if the program crashes. `NO_COLOR` or `RT_LOG_NO_COLOR` turns the color of standard error off.

@@ -108,3 +108,15 @@ constexpr std::string_view ASSIGNMENT_LINE = "set nickname ace";
  */
 constexpr std::string_view ASSIGNMENT_WITHOUT_MARK = "nickname";
 constexpr std::string_view ASSIGNMENT_WITHOUT_NAME = "=ace";
+constexpr std::string_view INPUT_DELAY_ARGUMENT = "5";
+constexpr std::string_view INPUT_DELAY_LINE = "set input-delay 5";
+constexpr std::string_view OTHER_INPUT_DELAY_ARGUMENT = "8";
+constexpr std::string_view OTHER_INPUT_DELAY_LINE = "set input-delay 8";
+constexpr std::string_view LOWEST_INPUT_DELAY_ARGUMENT = "0";
+constexpr std::string_view LOWEST_INPUT_DELAY_LINE = "set input-delay 0";
+constexpr std::string_view HIGHEST_INPUT_DELAY_ARGUMENT = "30";
+constexpr std::string_view HIGHEST_INPUT_DELAY_LINE = "set input-delay 30";
+constexpr std::string_view TOO_HIGH_INPUT_DELAY_ARGUMENT = "31";
+constexpr std::string_view NEGATIVE_INPUT_DELAY_ARGUMENT = "-1";
+constexpr std::string_view NOT_A_NUMBER_INPUT_DELAY_ARGUMENT = "slow";
+constexpr std::string_view EMPTY_INPUT_DELAY_ARGUMENT{};

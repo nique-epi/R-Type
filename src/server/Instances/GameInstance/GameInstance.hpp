@@ -1,10 +1,12 @@
 #pragma once
 
+#include <cstddef>
 #include <cstdint>
 #include <memory>
 #include <span>
 #include <vector>
 #include "ConnectedPlayer.hpp"
+#include "DelayedInputs.hpp"
 #include "Endpoint.hpp"
 #include "GameContext.hpp"
 #include "GameInstanceParts.hpp"
@@ -13,6 +15,7 @@
 #include "GameState.hpp"
 #include "IGameFlow.hpp"
 #include "IGameModule.hpp"
+#include "IGameWorld.hpp"
 #include "IncomingDatagram.hpp"
 #include "PacketHeader.hpp"
 #include "PlayerRoster.hpp"
@@ -40,18 +43,19 @@ namespace rtype::server {
  * belong to GameSessions. The game gives it three things: a ReadyState counts
  * only while the game waits for players (IGameFlow::state); each PlayerInput
  * newer than the one kept goes to the SessionHooks::newerInput functions of the
- * modules before it replaces it; and a player whose session closes goes to
- * their SessionHooks::closing functions. A player who joins goes to their
- * SessionHooks::joined functions (see onPlayerJoined()). takeDepartedPlayers()
- * hands the players whose session closed over to whoever must forget them
- * outside the game.
+ * modules before it replaces it, once it was held for
+ * GameSettings::inputDelayTicks ticks, the same for every player; and a player
+ * whose session closes goes to their SessionHooks::closing functions. A player
+ * who joins goes to their SessionHooks::joined functions (see
+ * onPlayerJoined()). takeDepartedPlayers() hands the players whose session
+ * closed over to whoever must forget them outside the game.
  *
  * A tick runs three stages, in order: GAME_INPUT_STAGE counts the time since
- * the previous tick for the Heartbeats, reads the datagrams and closes the
- * silent sessions, GAME_SIMULATION_STAGE runs the work the modules
- * added, and GAME_OUTPUT_STAGE sends the Heartbeats. The work of the game
- * itself is added before the modules are installed, so it runs first in the
- * input and output stages, ahead of the work of the modules.
+ * the previous tick for the Heartbeats, reads the datagrams, applies the inputs
+ * whose delay is over and closes the silent sessions, GAME_SIMULATION_STAGE
+ * runs the work the modules added, and GAME_OUTPUT_STAGE sends the Heartbeats.
+ * The work of the game itself is added before the modules are installed, so it
+ * runs first in the input and output stages, ahead of the work of the modules.
  *
  * Not thread-safe: use it from the simulation thread only.
  */
@@ -60,10 +64,10 @@ class GameInstance {
   /**
    * @param parts What the game sends with, is defined by and publishes on.
    * @param modules The modules of the game, in the order they are installed.
-   * Must not hold a null pointer, and one of them must provide IGameFlow,
-   * after the modules whose services it requires.
+   * Must not hold a null pointer, and they must provide IGameFlow and
+   * IGameWorld, after the modules whose services these require.
    * @throws engine::MissingServiceException when a module requires a service
-   * no module before it provides, or none provides IGameFlow.
+   * no module before it provides, or none provides IGameFlow or IGameWorld.
    */
   GameInstance(GameInstanceParts parts,
                std::vector<std::unique_ptr<IGameModule>> modules);
@@ -81,6 +85,15 @@ class GameInstance {
    * waits for players, and again once it waits after a game.
    */
   [[nodiscard]] std::uint32_t tick() const;
+
+  /** @returns How many entities the world of the game holds now. */
+  [[nodiscard]] std::size_t entityCount() const;
+
+  /**
+   * @returns The systems of the game, which run while it is in progress; they
+   * stay at the same address for the life of the game.
+   */
+  [[nodiscard]] engine::SystemScheduler& systems();
 
   /**
    * @returns The players of the game; it stays at the same address for the
@@ -133,10 +146,12 @@ class GameInstance {
  private:
   SessionHooks hooks_;
   engine::SystemScheduler systems_;
+  DelayedInputs delayedInputs_;
   GameSessions sessions_;
   GameContext context_;
   std::span<const network::IncomingDatagram> datagrams_;
   IGameFlow* flow_{nullptr};
+  IGameWorld* world_{nullptr};
   GameModules modules_;
 };
 

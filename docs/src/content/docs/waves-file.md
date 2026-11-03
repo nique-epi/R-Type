@@ -7,7 +7,7 @@ sidebar:
 
 The waves file, `assets/waves/waves.toml`, describes the waves of Bydos of each difficulty. This page is for whoever tunes them: it gives the keys, what each one does to a game, how to check a design and how to read the error the server prints, without opening the C++.
 
-Only the server reads the file, once, when it starts, from `assets/waves/waves.toml` in the folder it is started in: the repository root, where the build writes `r-type_server`. A client never reads it; it only draws the Bydos the server announces. An invalid file stops the server before it listens. Every game plays the difficulty `normal` (`DEFAULT_DIFFICULTY` in `src/server/ServerConstants.hpp`): the other difficulties are read and checked at startup, but nothing lets the players choose one yet. The file cannot describe a scripted list of waves, a background per wave or a boss: none of these exists yet. How the server runs the waves is in [Server and game](/R-Type/server/#waves-of-bydos-wavedirector).
+Only the server reads the file, once, when it starts, from `waves/waves.toml` in the `assets/` folder next to its executable, or one level above it, where the Visual Studio generator writes `Release/`. The folder the server is started from plays no part. A client never reads it; it only draws the Bydos the server announces. An invalid file stops the server before it listens. Every game plays the difficulty `normal` (`DEFAULT_DIFFICULTY` in `src/server/ServerConstants.hpp`): the other difficulties are read and checked at startup, but nothing lets the players choose one yet. The file cannot describe a scripted list of waves, a background per wave or a boss: none of these exists yet. How the server runs the waves is in [Server and game](/R-Type/server/#waves-of-bydos-wavedirector).
 
 ## A difficulty, key by key
 
@@ -71,15 +71,15 @@ The Bydos take the names of the list in turn, and the turn carries on from one w
 
 - Start from `normal` and change one key at a time, so the effect of each change is plain.
 - If none is killed, up to 8.5 seconds divided by the interval Bydos are on screen at once, and never more than the wave holds: the three Bydos of the first wave of `normal` are all on screen together, and at one Bydo per second, eight or nine are, once the waves hold that many.
-- A world state datagram carries 124 entities with four players, 128 with one, ships and missiles included (`WorldStateCodec`). Past that, every world state takes one more datagram per player, `--state-rate` times per second (20 by default).
+- A world state datagram carries 122 entities with four players, 128 with one, ships and missiles included (`WorldStateCodec`). Past that, every world state takes one more datagram per player, `--state-rate` times per second (20 by default).
 - `bydos_added_per_wave = 0` keeps every wave the size of the first; `shortest_spawn_interval_ms` equal to `first_spawn_interval_ms` keeps their pace.
-- Try a change by editing the file and starting the server again from the repository root; nothing is rebuilt and the client does not change:
+- Try a change by editing the file and starting the server again; nothing is rebuilt and the client does not change:
 
 ```bash
 ./r-type_server --seed 42
 ```
 
-The server logs the file it read (`waves file assets/waves/waves.toml: 3 difficulties, games play normal`), then each wave at the start of the pause before it (`wave 2: 4 Bydos, one every 1750 ms`). The seed fixes the heights of the Bydos, so the same file and the same seed replay the same game.
+The server logs the file it read, by its absolute path (`waves file /…/assets/waves/waves.toml: 3 difficulties, games play normal`), then each wave at the start of the pause before it (`wave 2: 4 Bydos, one every 1750 ms`). The seed fixes the heights of the Bydos, so the same file and the same seed replay the same game.
 
 ## When the server refuses the file
 
@@ -96,8 +96,9 @@ The server reads the whole file, every difficulty included, before it listens. O
 | an enemy the server does not know (`"bos"`) | `…/waves.toml:37:23: difficulty.normal.enemies: unknown enemy "bos"; known: drifter, weaver` |
 | no `normal` difficulty | `no difficulty normal in the waves file, which describes: easy, hard, medium` |
 | nothing: the file is missing | `cannot read the waves file /…/assets/waves/waves.toml` |
+| nothing: no `assets/` folder next to the executable or above it | `No assets folder found, searched: /…/bin/assets, /…/assets` |
 
-A missing file usually means the server was started from another folder: start it from the repository root.
+Neither of the last two depends on the folder the server is started from. No assets folder means the executable was copied away from the repository; a missing file means `assets/waves/waves.toml` was moved or renamed.
 
 ## Adding a kind of enemy
 

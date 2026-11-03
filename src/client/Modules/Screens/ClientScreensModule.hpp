@@ -7,6 +7,7 @@
 #include "ClientScreens.hpp"
 #include "ConfigurationRegistry.hpp"
 #include "Endpoint.hpp"
+#include "EntityMessageQueue.hpp"
 #include "EventListeners.hpp"
 #include "FrameLoop.hpp"
 #include "GameWindow.hpp"
@@ -16,11 +17,12 @@
 #include "Logger.hpp"
 #include "PlayerSettings.hpp"
 #include "ScreenRegistry.hpp"
-#include "ServerConnection.hpp"
+#include "ServerSession.hpp"
 #include "SettingValue.hpp"
 #include "SettingsService.hpp"
 #include "SubscriptionHandle.hpp"
 #include "TimeConstants.hpp"
+#include "WaitingRoom.hpp"
 
 namespace rtype::client {
 
@@ -89,7 +91,9 @@ class ClientScreensModule final : public engine::IModule {
   AssetLibrary* assets_{nullptr};
   IAudioService* audio_{nullptr};
   GameWindow* window_{nullptr};
-  ServerConnection* connection_{nullptr};
+  ServerSession* connection_{nullptr};
+  WaitingRoom* waitingRoom_{nullptr};
+  EntityMessageQueue* entityMessages_{nullptr};
   FrameLoop* loop_{nullptr};
   EventListeners* listeners_{nullptr};
   ScreenRegistry* registry_{nullptr};

@@ -105,6 +105,8 @@ constexpr const char* SOUND_CUES_LABEL = "SOUND CUES";
 constexpr const char* SOUND_CUES_DESCRIPTION = "> SOUNDS SHOWN ON SCREEN";
 constexpr const char* AUTO_FIRE_LABEL = "AUTO-FIRE";
 constexpr const char* AUTO_FIRE_DESCRIPTION = "> SHOOTS WITHOUT HOLDING";
+constexpr const char* PREDICTION_LABEL = "PREDICTION";
+constexpr const char* PREDICTION_DESCRIPTION = "> SHIP MOVES BEFORE THE SERVER";
 
 /** @brief BACK, and the stamp written after a save, SAVED for
  * SAVED_STAMP_DURATION, NOT SAVED until the next save. */

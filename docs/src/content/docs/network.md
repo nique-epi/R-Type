@@ -5,6 +5,8 @@ description: What the network library does, how its parts fit together and where
 
 The network library, `rtype_network`, carries datagrams between the programs. Today it opens UDP sockets, sends datagrams and hands over the ones it receives, with their sender, through queues when another thread uses them. It knows nothing about entities or the rules of the game, and it is the only library that includes Asio: the client and the server use it through classes that never name an Asio type (see [Project layout](/R-Type/project-layout/#network)). It also turns every message of the protocol into bytes and back, one field at a time, and hands each message of a received datagram to the code registered for its type. What the datagrams contain is described in [Protocol](/R-Type/protocol/).
 
+The network of the game takes three layers: transport, sessions and replication. This library holds the transport and what the other two share; the sessions and the replication are written in the server and the client, and [Transport, sessions and replication](#transport-sessions-and-replication) shows where each layer lives.
+
 This page tells you where to look when you need to change something. It describes what exists today and says plainly what does not exist yet.
 
 | Part | State | Where |
@@ -13,12 +15,55 @@ This page tells you where to look when you need to change something. It describe
 | UDP socket | Available | `src/network/Transport/` |
 | Ports and addresses written as text | Available | `src/network/Transport/EndpointText.hpp` |
 | Relay between a socket and the queues of another thread | Available | `src/network/Transport/DatagramRelay/` |
-| Lag and loss simulator | Not yet written | — |
+| Network simulator: lag, jitter, loss, duplicates and reordering, off by default | Available | `src/network/Transport/Simulator/`, `src/network/Transport/Conditions/` |
+| Network conditions applied by the system: netem on Linux, dummynet on macOS | Available, never shipped | `tests/tools/network-conditions/` |
 | Serialization | Available | `src/network/Serialization/` |
 | Protocol messages, datagram header, dispatch by type | Available | `src/network/Protocol/` |
 | Connection cookies | Available | `src/network/Handshake/` |
-| Rate limit of the requests, sessions, reliability, history of states, statistics | Not yet written | — |
+| Sessions: admission, session token, sequence, heartbeats, timeouts | Available, written in the server and the client | `src/server/Lobby/`, `src/server/Sessions/`, `src/client/Connection/` |
+| Replication: entities to messages, and back | Available, written in the server and the client | `src/server/Replication/`, `src/client/Replication/` |
+| Rate limit of the requests, reliability, history of states, statistics | Not yet written | — |
 | Test tool that sends malformed datagrams | Available, never shipped | `tests/tools/` |
+
+## Transport, sessions and replication
+
+`rtype_network` never links the engine, so its messages carry plain data, ids, types and quantized positions, never a component (see [Project layout](/R-Type/project-layout/#who-may-link-what)). The sessions, which hold the players of a game, and the replication, which reads the components of a world, are therefore written in each program, on top of this library.
+
+The path of a world state, from a game of the server to the screen of a client:
+
+```mermaid
+%%{init: {"flowchart": {"rankSpacing": 30}}}%%
+flowchart TB
+  accTitle: The layers a world state crosses
+  accDescr: On the server, the replication layer turns the entities of a game into a world state, the session layer gives each datagram the session token and the next sequence of its player, and the transport layer sends it over UDP. On the client, the transport layer receives it, the session layer checks its token and its sequence, and the replication layer applies it to the entities of the game screen.
+  ServerReplication[Server replication] --> ServerSessions[Server sessions]
+  ServerSessions --> ServerTransport[Server transport]
+  ServerTransport -->|UDP| ClientTransport[Client transport]
+  ClientTransport --> ClientSessions[Client sessions]
+  ClientSessions --> ClientReplication[Client replication]
+```
+
+An input of the player takes the other way through the transport and the sessions only: `ServerSession` sends it, and the `GameSessions` of the game keeps the newest input of each player (see [Server](/R-Type/server/#player-inputs)).
+
+### Transport
+
+Transport carries datagrams and knows nothing of players. Each program runs its socket on a network thread of its own, so its game never waits on the network, and exchanges datagrams with the thread of the game through bounded queues (see [Concurrency](/R-Type/concurrency/)). The parts are in this library and described below: `NetworkContext`, `UdpSocket` and `DatagramRelay`. The server assembles them in `ServerApplication` (`src/server/Application/`, see [Server](/R-Type/server/#threads-serverapplication)), the client in `NetworkThread` (`src/client/Connection/NetworkThread/`, see [Client](/R-Type/client/#network-networkthread)).
+
+### Sessions
+
+A session starts when the server accepts a player and ends when the player leaves or stays silent too long. Every datagram of a session carries the session token of the player and the next sequence of its sender, so each side drops a forged datagram, which lacks the token, and a late copy, which is not newer than the newest datagram it read (see [Protocol](/R-Type/protocol/#a-session)).
+
+- On the server, `ConnectionAcceptor` (`src/server/Lobby/`) answers the connection requests and gives a place only to a sender that sends back its cookie (`CookieIssuer`, below). `DatagramSorter` checks the token on the network thread, before any queue. The `GameSessions` of each game (`src/server/Sessions/`) checks the sequence, keeps the ready state and the newest input of each player, sends the heartbeats and closes the session of a player it hears nothing from (see [Server](/R-Type/server/#sessions-of-a-game-gamesessions)); `SessionDatagram` gives every datagram to a player its header.
+- On the client, `ServerSession` (`src/client/Connection/ServerSession/`) holds the one session with the server it joined: it sends the request, answers the challenge, checks the token and the sequence, sends the heartbeats, and takes the server for lost after `SESSION_SILENCE_LIMIT` (20 s) without a datagram (see [Client](/R-Type/client/#joining-a-server-serversession-waitingroom-entitymessagequeue)).
+- Both programs read the same delays, `HEARTBEAT_INTERVAL` (1 s), `SESSION_TIMEOUT` (5 s) and `RECONNECTION_GRACE` (15 s), in `src/network/Protocol/ProtocolConstants.hpp`. They are **provisional**, like every delay of the protocol: code must read them.
+
+### Replication
+
+Replication turns the entities of a game into messages on the server, and the messages back into entities on the client. The server decides where everything is; the client draws the newest state it received and does not predict its own ship yet.
+
+- On the server, `src/server/Replication/` announces each entity as it appears (`sendEntitySpawned`), sends the world state at the rate set at launch (`WorldStateSender`, see [Server](/R-Type/server/#world-state-worldstatesender)), turns the events of the game into `EntityDestroyed`, `GameEvent` and `PlayerLeft` (`GameEventBroadcaster`), and tells the waiting room and the end of a game (`LobbyStateAnnouncer`, `GameEndAnnouncer`). Each datagram leaves under the header of its player.
+- On the client, `EntityMessageQueue` keeps the messages about entities in the order they arrived until the game screen takes them, and `EntityReplicator` (`src/client/Replication/`) applies them to the entities of the game screen; `WorldStateFilter` drops a world state older than the newest one applied (see [Client](/R-Type/client/#entities-from-the-server-entityreplicator)).
+- The messages and the codec of the world state are in this library (`src/network/Protocol/`, below).
 
 ## Event loop: `NetworkContext`
 
@@ -26,11 +71,11 @@ This page tells you where to look when you need to change something. It describe
 
 `stop()` and `post(task)` may be called from any thread. `post()` queues a function to run on the thread that runs `run()`: this is how another thread gets a datagram sent, since a socket may only be used on that thread. A task still queued when the context is destroyed is destroyed without running.
 
-Asio is linked privately to the network targets, so the headers other modules include never include it, and `r-type_server` fails to build if it tries. A class that needs Asio lives in `src/network` and links `rtype_network_asio`, which also defines `ASIO_NO_DEPRECATED` and, on Windows, `_WIN32_WINNT`.
+Asio is linked privately to the network targets, so the headers other folders include never include it, and `r-type_server` fails to build if it tries. A class that needs Asio lives in `src/network` and links `rtype_network_asio`, which also defines `ASIO_NO_DEPRECATED` and, on Windows, `_WIN32_WINNT`.
 
 ## Sockets: `UdpSocket`
 
-`UdpSocket` (`src/network/Transport/UdpSocket/`) implements `IDatagramSocket`. It opens a UDP socket on an `Endpoint`, sends datagrams and hands every datagram received to a handler. None of its calls blocks. Code that only sends and receives can take an `IDatagramSocket&`, so a lag and loss simulator or a test double can stand in for the real socket.
+`UdpSocket` (`src/network/Transport/UdpSocket/`) implements `IDatagramSocket`. It opens a UDP socket on an `Endpoint`, sends datagrams and hands every datagram received to a handler. None of its calls blocks. Code that only sends and receives can take an `IDatagramSocket&`, so the [network simulator](#network-simulator-simulatednetworksocket) or a test double stands in for the real socket.
 
 - An `Endpoint` is an IP address written as text, `"127.0.0.1"` or `"::1"`, and a port. Host names are never resolved: `"localhost"` throws `InvalidAddressException`. Port 0 (`ANY_PORT`) lets the system pick a free port, which `localEndpoint()` returns. A port already taken throws `SocketOpenException`.
 - `startReceiving(handler)` is called once; a second call throws `ReceivingAlreadyStartedException`. The handler gets the sender and a `std::span` of the bytes, valid only during the call. It must not throw: an exception leaves `run()` and the socket stops receiving.
@@ -55,7 +100,7 @@ socket.startReceiving([&socket](const rtype::network::Endpoint& sender,
 network.run();
 ```
 
-`r-type_server` opens such a socket on the port given at launch, `DEFAULT_SERVER_PORT` (4242) by default, on every IPv4 interface, sorts each datagram on its network thread, and hands the datagrams of admitted players and the connection requests to its simulation thread, which answers the requests, reads the `ReadyState` and the `PlayerInput` of the players and nothing else yet (see [Server](/R-Type/server/#sorting-the-datagrams-datagramsorter)). The client runs its socket on a thread of its own, `NetworkThread`, described in [Client](/R-Type/client/#network-networkthread).
+`r-type_server` opens such a socket on the port given at launch, `DEFAULT_SERVER_PORT` (4242) by default, on every IPv4 interface, sorts each datagram on its network thread, and hands the datagrams of admitted players and the connection requests to its simulation thread, which answers the requests and reads the `ReadyState`, `PlayerInput`, `Heartbeat` and `Disconnection` of the players (see [Server](/R-Type/server/#sorting-the-datagrams-datagramsorter)). The client runs its socket on a thread of its own, `NetworkThread`, described in [Client](/R-Type/client/#network-networkthread).
 
 ## Ports and addresses written as text: `portFromText`, `ipv4AddressFromText`
 
@@ -75,6 +120,74 @@ They do not ask Asio, which hands the text to the system: `inet_pton` on Linux a
 - The other thread drains the incoming queue and pushes to the outgoing one; to get what it pushed sent, it hands `sendWaiting()` to the network thread with `NetworkContext::post()`.
 
 The server only sends through one: it receives through its own `DatagramSorter`, which splits the datagrams between two queues (see [Server](/R-Type/server/#sorting-the-datagrams-datagramsorter)).
+
+## Network simulator: `SimulatedNetworkSocket`
+
+Either program can make its datagrams cross a simulated network, to show on one machine what a poor connection does. `openDatagramSocket()` (`src/network/Transport/Simulator/`) opens the socket of the server (`ServerApplication::open()`) and of the client (`NetworkThread::open()`). For `PERFECT_NETWORK`, every value at zero, it returns the `UdpSocket` itself, so a program launched without the options below pays nothing. Otherwise it returns a `SimulatedNetworkSocket` over the `UdpSocket` and logs a warning such as `network simulated: ping +300 ms, up to 50 ms more, 10 % lost, 2 % duplicated, 5 % reordered`, so a journal tells whether a measurement was taken on a simulated network.
+
+`NetworkConditions` (`src/network/Transport/Conditions/`) holds what the ping shows. Every datagram the program sends or receives crosses the simulated network once, so a client alone given `--lag 100` sees its ping grow by 100 ms, and a server given options adds its own:
+
+- it waits half the lag, then up to half the jitter more, drawn at random, but never arrives before the datagram handed over before it: the jitter bunches datagrams and never reorders them;
+- a share of the datagrams never arrives, another share arrives twice, and a lost datagram is never copied;
+- a share is held `REORDER_HOLD` (75 ms) longer, so the ones handed over just after it arrive first.
+
+The draws start from fixed seeds (`SENT_DATAGRAMS_SEED`, `RECEIVED_DATAGRAMS_SEED`), so two runs that hand over the same datagrams at the same times lose the same ones. A datagram the real socket would refuse is refused at once, as `IDatagramSocket::send()` promises, and one still in flight when the socket is destroyed never arrives. One direction holds at most `MAXIMUM_DATAGRAMS_IN_FLIGHT` (8192) datagrams, copies included, and loses one handed over when that many wait, as a full router queue does: a flood cannot make one direction hold more than about 10 MB, nor a program, with its two directions, more than about 20 MB. A lag or a jitter below zero or over `MAXIMUM_SIMULATED_DELAY` (10 s), which the options below never give, is refused when the simulated network is built (`SimulatedDelayOutOfRangeException`, from `DatagramsInFlight`): no wait can be drawn from a negative jitter, and a far longer one would overflow the clock the waits are counted on.
+
+Both programs read these options with `SimulatorLaunchOptions` in the same pass as their own and the logging options, in the order given, so an option written after `--network` changes one value of its scenario. The argument after an option that takes a value is always its value: `-n --lag` is the nickname `--lag`, and `--seed --lag 20` refuses `--lag` as a seed.
+
+| Option | Effect |
+|---|---|
+| `--network <name>` | The five values of a scenario of `NETWORK_SCENARIOS`, below. |
+| `--lag <ms>` | What the ping gains, from 0 to `MAXIMUM_SIMULATED_DELAY` (10000). |
+| `--jitter <ms>` | How much the ping may vary, from 0 to 10000. |
+| `--loss <percent>` | The share of the datagrams lost, from 0 to `MAXIMUM_PERCENT` (100). |
+| `--duplicates <percent>` | The share of the datagrams that arrive twice, from 0 to 100. |
+| `--reorder <percent>` | The share of the datagrams held longer, from 0 to 100. |
+
+| Scenario | Ping | Jitter | Lost | Duplicated | Reordered |
+|---|---|---|---|---|---|
+| `4g` | +60 ms | 20 ms | 1 % | 0 % | 0 % |
+| `wifi-busy` | +30 ms | 60 ms | 3 % | 1 % | 2 % |
+| `bad` | +300 ms | 50 ms | 10 % | 2 % | 5 % |
+
+The values of the scenarios were chosen for the demonstrations, not measured on real networks.
+
+## Network conditions from the system: `tests/tools/network-conditions/`
+
+The same scenarios can be applied by the operating system instead of the programs: every packet that leaves the loopback interface then crosses the poor network, so a server and its clients on one machine play over it with no option of their own, and none of the code of the simulator is involved. `netem.sh` (Linux) and `dummynet.sh` (macOS) are test tools, never shipped. They take the options of the simulator, read in the same order and with the same bounds, and need root:
+
+```bash
+sudo tests/tools/network-conditions/netem.sh apply --network bad
+sudo tests/tools/network-conditions/netem.sh clear
+```
+
+`apply` replaces what an earlier `apply` set; `clear` removes it and does nothing when nothing is applied; `print` prints the commands `apply` would run, without root, and runs none. `dummynet.sh` undoes only what its `apply` did: it refuses a dummynet pipe 4242 that another program made, deletes only the pipe it made, and releases at once a pf reference whose token it cannot keep. While the conditions are applied, everything on the loopback interface is slowed down, not only the game. A packet between two programs of the machine leaves the interface once, so each one waits half the lag, as in the simulator, and a ping to 127.0.0.1 gains the whole lag. `pfctl` writes three messages around those of `dummynet.sh`, none of them an error:
+
+- `No ALTQ support in kernel`, on every call: the kernel of macOS has no ALTQ, a packet queueing system the script does not use.
+- On every `apply`, a warning that `-f` could flush the main ruleset: the script loads only its own anchor, `com.apple/rtype-network-conditions`.
+- On `clear`, `1 more pf enable reference(s) remaining, pf still enabled` when another program also holds pf enabled: the script releases only the reference its `apply` took, so pf stays as that program wants it.
+
+Each tool applies the values as follows. What a tool cannot do is left out, and `dummynet.sh` warns about it; `netem.sh` refuses `--reorder` unless `--lag` or `--jitter` is above 0, since netem reorders only the packets it delays:
+
+| Value | Simulator | netem | dummynet | clumsy |
+|---|---|---|---|---|
+| Lag | half on each datagram | `delay`: half on each packet | `delay`: half, rounded up to the millisecond, then by dnctl to its clock tick | `--lag-time`: half |
+| Jitter | up to half more, never reordering | the jitter of `delay`, drawn uniformly; `rate 10gbit` keeps the packets in order | none | none |
+| Loss | a share of the datagrams | `loss` | `plr` | `--drop-chance` |
+| Duplicates | a second arrival, never of a lost datagram | `duplicate`; the copy can be lost too | none | `--duplicate-chance`, `--duplicate-count 2` |
+| Reordering | a share held 75 ms longer | `reorder`: the share is sent at once, ahead of the delayed packets | none | `--ood-chance`: a packet held until the next ones passed |
+
+Their draws come from the kernel or from clumsy, not from fixed seeds, so two runs lose different packets.
+
+With the other tests on Linux and macOS, `network_condition_scenarios` checks that the scenarios of `conditions.sh` are those `r-type_server --help` lists, value for value and in the same order, and `network_condition_commands` checks the commands both scripts print for given options. The CI job `network-condition-scripts` lints the scripts with ShellCheck and runs `check-netem.sh` on a runner: it applies `4g` without its loss and measures with ping that each round trip gains at least 60 ms and under 80 ms on average, that a jitter of 200 ms spreads the round trips by 8 ms or more and keeps the packets in order, that a full loss lets nothing through and that `clear` gives the interface its speed back. A measurement counts only when ping sent every echo request it was asked to. No CI job runs on macOS: `dummynet.sh` is checked by hand.
+
+On Windows, [clumsy](https://jagt.github.io/clumsy/) does the same from its window, run as administrator. It takes its settings on its command line and starts with them; this applies `bad` to the loopback address, without its jitter:
+
+```bat
+clumsy.exe --filter "outbound and ip.DstAddr >= 127.0.0.1 and ip.DstAddr <= 127.255.255.255" --lag on --lag-time 150 --drop on --drop-chance 10 --duplicate on --duplicate-chance 2 --duplicate-count 2 --ood on --ood-chance 5
+```
+
+The filter is the "loopback packets" filter of clumsy: a packet between two programs of the machine is seen once, as it leaves. Stop, in its window, ends the conditions.
 
 ## Serialization: `ByteWriter` and `ByteReader`
 
@@ -115,7 +228,7 @@ const auto decodedName = reader.readString();
 - `decodeHeader(datagram)` reads the header without judging it, so a datagram of another version still gives its version. Fewer than 22 bytes throws `MalformedDatagramException`.
 - `splitMessages(datagram)` returns the `MessageFrame`s that follow the header: the type byte as it arrived, and a view of the payload into the datagram. Either the sizes add up exactly to the end of the datagram, or it throws `MalformedDatagramException` and returns nothing: a datagram without a message, with a size running past its end, or with bytes after its last message is refused whole. Calling it on a temporary buffer does not compile.
 
-Reading the header and splitting the messages are two calls because a receiver checks the version before it trusts the rest. `speaksThisProtocol(header)` is that check: `protocolId`, `version` and `flags` are those of this code. The server's `ConnectionAcceptor` and `GameInstance` and the client's `ServerConnection` call it before splitting. Of the checks of [Receiving a datagram](/R-Type/protocol/#receiving-a-datagram) that follow, the server's `DatagramSorter` checks the session token of every datagram from the address of an admitted player (see [Server](/R-Type/server/#sorting-the-datagrams-datagramsorter)) and its `DatagramReader` the sequence of every datagram of a player (see [Server](/R-Type/server/#order-and-loss-arrivalledger)); the client's `ServerConnection`, once accepted, checks the session token and drops a datagram whose `sequence` is not newer than the newest one it accepted (`isNewerSequence`).
+Reading the header and splitting the messages are two calls because a receiver checks the version before it trusts the rest. `speaksThisProtocol(header)` is that check: `protocolId`, `version` and `flags` are those of this code. The server's `ConnectionAcceptor` and `GameInstance` and the client's `SessionInbound` call it before splitting. Of the checks of [Receiving a datagram](/R-Type/protocol/#receiving-a-datagram) that follow, the server's `DatagramSorter` checks the session token of every datagram from the address of an admitted player (see [Server](/R-Type/server/#sorting-the-datagrams-datagramsorter)) and its `DatagramReader` the sequence of every datagram of a player (see [Server](/R-Type/server/#order-and-loss-arrivalledger)); the client's `SessionInbound`, once accepted, checks the session token and drops a datagram whose `sequence` is not newer than the newest one it accepted (`isNewerSequence`).
 
 ## Messages: `src/network/Protocol/Messages/`
 
@@ -125,7 +238,7 @@ Each message of the protocol page is a struct of the same name (`ConnectionReque
 - Writing runs the same checks before the first byte, so a refused message leaves the writer untouched, and whatever was read can be written back: a nickname accepted from a `ConnectionRequest` never makes a `LobbyState` throw.
 - Reading a refused message throws an exception derived from `MalformedMessageException`, or `BufferUnderflowException` for a payload cut short. Writing one throws the same exceptions, except for a coordinate that is NaN, which throws `InvalidCoordinateException`; `WorldStateSender` leaves such an entity out before encoding (see [Server](/R-Type/server/#world-state-worldstatesender)).
 
-Adding a message takes a folder of `Messages/` holding its struct, with its `TYPE` and its two functions, and its library, listed in `Messages/CMakeLists.txt`; then its value in `MessageType` and its row on the protocol page. Nothing that receives datagrams changes.
+The [tutorial](/R-Type/tutorial-add-a-network-message/) adds a message step by step. Adding a message takes a folder of `Messages/` holding its struct, with its `TYPE` and its two functions, and its library, listed in `Messages/CMakeLists.txt`; then its value in `MessageType` and its row on the protocol page. Nothing that receives datagrams changes.
 
 ```cpp
 rtype::network::PacketHeader header;
@@ -144,7 +257,7 @@ const std::vector<std::byte> datagram = rtype::network::DatagramCodec::encode(
 - `dispatch(origin, messages)` reads each payload, then calls its handler, in order. A message whose type has no handler, which includes the type bytes no message has, is skipped; a message whose payload is refused is dropped. Both are counted (`skippedMessageCount()`, `malformedMessageCount()`) and logged at the `debug` level with the sender and why, at most once per `REJECTION_LINE_INTERVAL` (10 s), with how many since the previous line (see [Logging](/R-Type/logging/#repeated-events-throttledlog)); the next message is handled.
 - No exception caused by the content of a message leaves `dispatch()`, so one forged message cannot stop the server. An exception thrown by a handler does: it is a fault of the program.
 - A sender it does not know yet must be answered at most once per datagram: ninety 13-byte `ConnectionRequest` fit in one datagram, and an answer to each would send more bytes than were received. A handler cannot tell which messages shared a datagram, so the code that receives must enforce it before dispatching.
-- It is not thread-safe. The client's `ServerConnection` hands it the datagrams of the server it contacts, and each server `GameInstance` the datagrams of its players; the server's `ConnectionAcceptor` does not use it, since it reads the first `ConnectionRequest` of each datagram itself, which keeps it to one answer per datagram.
+- It is not thread-safe. The client's `ServerSession` hands it the datagrams of the server it contacts, and each server `GameInstance` the datagrams of its players; the server's `ConnectionAcceptor` does not use it, since it reads the first `ConnectionRequest` of each datagram itself, which keeps it to one answer per datagram.
 
 ```cpp
 rtype::network::MessageDispatcher dispatcher;
@@ -176,7 +289,7 @@ dispatcher.dispatch(
 
 A `WorldState` (`src/network/Protocol/WorldState.hpp`) is the picture of the game at one server tick: the `tick`, the players, and every entity with its network id, a `WireEntityType` and its position in logical units. It is plain data and knows nothing of the game's components, so the server and the client each translate to and from their own. `WorldStateCodec` (`src/network/Protocol/WorldStateCodec/`) turns it into the payloads of the `WorldState` message and back; the byte layout is in [Protocol](/R-Type/protocol/#world-state).
 
-- `encode(state)` returns one payload per datagram. A payload holds at most 1175 bytes, the 1200 of `MAX_DATAGRAM_SIZE` less the 22-byte packet header and the 3-byte message prefix (`PACKET_HEADER_SIZE`, `MESSAGE_PREFIX_SIZE`), which is 124 entities next to 4 players. A state with more entities gives several payloads with the same tick, each with every player and a part of the entities, in order; a state without entities gives one payload. More than `MAXIMUM_PLAYERS` (4) players throws `TooManyPlayersException`.
+- `encode(state)` returns one payload per datagram. A payload holds at most 1175 bytes, the 1200 of `MAX_DATAGRAM_SIZE` less the 22-byte packet header and the 3-byte message prefix (`PACKET_HEADER_SIZE`, `MESSAGE_PREFIX_SIZE`), which is 122 entities next to 4 players. A state with more entities gives several payloads with the same tick, each with every player and a part of the entities, in order; a state without entities gives one payload. More than `MAXIMUM_PLAYERS` (4) players throws `TooManyPlayersException`.
 - A position is rounded to the nearest eighth of a unit and clamped to -4096 to 4095.875 units, the range of a wire coordinate. The clamp is a last resort, so a coordinate never wraps to the opposite edge; the server must still destroy an entity before it leaves the range (see [Protocol](/R-Type/protocol/#positions)).
 - `decode(payload)` throws `BufferUnderflowException` for a truncated payload, and `MalformedMessageException` for more than 4 players, a player number outside 1 to 4 or listed twice, a boolean other than 0 and 1, an entity of id 0, or bytes after the last entity. An entity of a type outside 1 to 4 is left out of the state and the others are decoded, so a server with a new kind of entity does not blind an older client. Whatever a payload announces, it makes the receiver allocate for at most 4 players and 255 entities. It accepts 0 players, where the protocol page says 1 to 4: the server sends none until the game has players.
 - The server puts each payload in its own datagram with `DatagramCodec::encode(header, MessageType::WorldState, payload)`, which adds the packet header and the message prefix; the header carries the session token and the next sequence of the player it goes to (see [Server](/R-Type/server/#session-headers-sessiondatagram)).
@@ -226,16 +339,25 @@ Measured on 27 October 2026 on an Apple M4 Pro under macOS 27.0, with the server
 | Change which ports or addresses a program accepts at launch | `portFromText()` and `ipv4AddressFromText()` in `src/network/Transport/EndpointText.cpp`, `LOWEST_PORT` in `NetworkConstants.hpp` |
 | Change how datagrams are received or sent | `src/network/Transport/UdpSocket/` |
 | Change how datagrams go between the socket and the queues | `src/network/Transport/DatagramRelay/` |
+| Run a program over a simulated network | the options of [Network simulator](#network-simulator-simulatednetworksocket) |
+| Run the game over a network the system degrades | `tests/tools/network-conditions/`, see [Network conditions from the system](#network-conditions-from-the-system-teststoolsnetwork-conditions) |
+| Add an option of the network simulator | `SimulatorLaunchOptions::readOption()` and `usage()` in `src/network/Transport/Conditions/SimulatorLaunchOptions.cpp`, its name in `NetworkConditionsConstants.hpp`; the client and the server both read it among their own options, and `read_conditions()` and `record_option()` in `tests/tools/network-conditions/conditions.sh` when netem or dummynet can apply it |
+| Change a scenario of the simulator, or add one | `NETWORK_SCENARIOS` and its entries in `src/network/Transport/Conditions/NetworkConditionsConstants.hpp`, then `SCENARIOS` in `tests/tools/network-conditions/conditions.sh`, which `network_condition_scenarios` compares |
+| Change what the simulator does to a datagram | `DatagramsInFlight` in `src/network/Transport/Simulator/` |
 | Write a class that needs Asio | A folder in `src/network` whose target links `rtype_network_asio` privately |
 | Change how an integer, a float or a string is encoded | `src/network/Serialization/ByteWriter/` and `ByteReader/`, then the [Protocol](/R-Type/protocol/#encoding) page |
 | Change the string length limit or the sizes | `src/network/Serialization/SerializationConstants.hpp` |
 | Change the layout or the limits of the world state | `src/network/Protocol/WorldStateCodec/`, the sizes in `src/network/Protocol/ProtocolConstants.hpp`, then the [Protocol](/R-Type/protocol/#world-state) page |
-| Add a message, or change the fields or the checks of one | `src/network/Protocol/Messages/`, its value in `src/network/Protocol/MessageType.hpp`, then the [Protocol](/R-Type/protocol/#messages) page |
+| Add a message, or change the fields or the checks of one | `src/network/Protocol/Messages/`, its value in `src/network/Protocol/MessageType.hpp`, then the [Protocol](/R-Type/protocol/#messages) page; the [tutorial](/R-Type/tutorial-add-a-network-message/) adds one from the specification to the handler |
 | Change the datagram header or how messages are framed | `src/network/Protocol/DatagramCodec/` and `PacketHeader.hpp`, then the [Protocol](/R-Type/protocol/#datagram) page |
 | Change how a `bool`, a position or a nickname is checked | `src/network/Protocol/WireTypes.hpp`, and `Utf8Constants.hpp` for UTF-8 |
 | Change how often a rejected datagram or message is logged | `REJECTION_LINE_INTERVAL` in `src/network/NetworkConstants.hpp`, read by the network and the server (see [Logging](/R-Type/logging/#repeated-events-throttledlog)) |
 | Handle a received message | `registerHandler<Message>()` on a `MessageDispatcher` |
 | Change how a connection cookie is computed, or how long it lives | `CookieIssuer` in `src/network/Handshake/CookieIssuer/`, `COOKIE_WINDOW_DURATION` in `src/network/Handshake/HandshakeConstants.hpp` |
+| Change how a player is let in, challenged or refused | `ConnectionAcceptor` in `src/server/Lobby/ConnectionAcceptor/` and `ServerSession` in `src/client/Connection/ServerSession/`, then the [Protocol](/R-Type/protocol/#connection) page |
+| Change what a session checks on a received datagram | `DatagramSorter` (`src/server/Application/DatagramSorter/`) for the token, `DatagramReader` and `ArrivalLedger` (`src/server/Sessions/`) for the sequence; `SessionInbound` on the client |
+| Change the heartbeats or the session timeout | `HEARTBEAT_INTERVAL`, `SESSION_TIMEOUT` and `RECONNECTION_GRACE` in `src/network/Protocol/ProtocolConstants.hpp`, and their tick counts in `src/server/Sessions/SessionConstants.hpp` |
+| Send the clients something new about an entity | the sender in `src/server/Replication/`, `EntityReplicator` in `src/client/Replication/`, and the message in `src/network/Protocol/` |
 | Add a network error | `src/network/Exceptions/NetworkException.hpp` |
 | Test code against a real socket | `tests/UdpSocketTest.cpp`: a plain Asio client on the loopback address |
 | Test code that uses a socket without the network | `tests/doubles/RecordingDatagramSocket.hpp`, as `tests/network/Transport/DatagramRelayTest.cpp` does |

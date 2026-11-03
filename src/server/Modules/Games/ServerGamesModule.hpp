@@ -3,6 +3,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include "ConfigurationRegistry.hpp"
 #include "EventBus.hpp"
 #include "GameInstance.hpp"
 #include "GameSettings.hpp"
@@ -37,9 +38,9 @@ namespace rtype::server {
  * work to the simulation stage after this one. Each game reads real time on the
  * clock of the module for its Heartbeats.
  *
- * install() builds the timers and the empty list of games, declares the `seed`
- * and `state-rate` settings and provides Games. start() reads the waves file
- * once, then creates the games with the values of the settings, each
+ * install() builds the timers and the empty list of games, declares the `seed`,
+ * `state-rate` and `input-delay` settings and provides Games. start() reads the
+ * waves file once, then creates the games with the values of the settings, each
  * subscribing its rules and its broadcaster to its own bus. A finished game
  * waits for players again, so the games are never replaced. stop() tells every
  * player the server shuts down (see FarewellSender).
@@ -59,8 +60,8 @@ class ServerGamesModule final : public engine::IModule {
 
   /**
    * @brief Reads the waves file and creates the games. With a seed, game n
-   * (from 0) starts from the seed plus n, so each game can be played again;
-   * without one, each game draws its own.
+   * (from 0) starts from the seed plus n times GAME_SEED_STRIDE, so each game
+   * can be played again; without one, each game draws its own.
    * @throws ServerException (or a class derived from it) naming the file, the
    * line and the key when the file cannot be read, does not describe the
    * difficulties as the server expects them, or has no DEFAULT_DIFFICULTY.
@@ -74,12 +75,14 @@ class ServerGamesModule final : public engine::IModule {
   [[nodiscard]] WavePlan readWaves() const;
   [[nodiscard]] std::unique_ptr<GameInstance> createGame(
       engine::EventBus& events, GameSettings settings);
+  void declareSettings(engine::ConfigurationRegistry& configuration);
   void playGames();
   void deliverEvents(engine::Duration elapsed);
 
   GamesSettings settings_;
   const engine::SettingValue* seedSetting_{nullptr};
   const engine::SettingValue* stateRateSetting_{nullptr};
+  const engine::SettingValue* inputDelaySetting_{nullptr};
   logging::Logger logger_;
   engine::TimerScheduler timers_;
   engine::SystemClock clock_;

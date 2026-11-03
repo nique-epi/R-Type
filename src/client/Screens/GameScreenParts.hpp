@@ -8,6 +8,7 @@
 #include "IServerConnection.hpp"
 #include "ISky.hpp"
 #include "ISoundPlayer.hpp"
+#include "IWaitingRoom.hpp"
 
 namespace rtype::client {
 
@@ -32,9 +33,12 @@ struct GameScreenParts {
   /** @brief Where the entity messages of the server come from, which must
    * outlive the screen. */
   std::reference_wrapper<IEntityMessageSource> entityMessages;
-  /** @brief The session the game started in: its waiting room and the
-   * number of this client, read when the screen is built. */
+  /** @brief The session the game started in: the number of this client,
+   * read when the screen is built. */
   std::reference_wrapper<const IServerConnection> connection;
+  /** @brief The waiting room of that session: its players, read when the
+   * screen is built. */
+  std::reference_wrapper<const IWaitingRoom> waitingRoom;
   /** @brief The sky behind the screens, which must outlive the screen: its
    * stars speed up at the start of the game, and it shakes with the
    * camera. */

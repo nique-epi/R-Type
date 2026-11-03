@@ -11,6 +11,7 @@
 #include "IScreenNavigator.hpp"
 #include "IServerConnection.hpp"
 #include "ISoundPlayer.hpp"
+#include "IWaitingRoom.hpp"
 #include "LobbyPlace.hpp"
 #include "LobbyScreenParts.hpp"
 #include "LobbyState.hpp"
@@ -104,6 +105,7 @@ class LobbyScreen : public IScreen {
 
   IScreenNavigator* navigator_{};
   IServerConnection* connection_{};
+  IWaitingRoom* waitingRoom_{};
   ISoundPlayer* sounds_{};
   std::unique_ptr<IInterfaceCanvas> canvas_;
   PlayfieldMapping playfieldPointAt_;

@@ -160,7 +160,7 @@ TEST(ByteWriter, AppendsValuesInCallOrder) {
 
 /**
  * Given a StringTooLongException
- * When it is caught as the module's root exception
+ * When it is caught as the network library's root exception
  * Then the catch succeeds
  */
 TEST(ByteWriter, StringErrorIsCaughtAsNetworkException) {

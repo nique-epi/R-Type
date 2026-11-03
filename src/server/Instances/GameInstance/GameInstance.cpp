@@ -1,4 +1,5 @@
 #include "GameInstance.hpp"
+#include <cstddef>
 #include <cstdint>
 #include <memory>
 #include <span>
@@ -13,10 +14,12 @@
 #include "GameState.hpp"
 #include "IGameFlow.hpp"
 #include "IGameModule.hpp"
+#include "IGameWorld.hpp"
 #include "IncomingDatagram.hpp"
 #include "PacketHeader.hpp"
 #include "PlayerInput.hpp"
 #include "PlayerRoster.hpp"
+#include "SystemScheduler.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::server {
@@ -34,7 +37,8 @@ void callAll(const Hooks& hooks, Arguments&... arguments) {
 
 GameInstance::GameInstance(GameInstanceParts parts,
                            std::vector<std::unique_ptr<IGameModule>> modules)
-    : sessions_(GameSessionsParts{
+    : delayedInputs_(parts.settings.inputDelayTicks),
+      sessions_(GameSessionsParts{
           .events = parts.events,
           .send = parts.send,
           .clock = parts.clock,
@@ -42,12 +46,13 @@ GameInstance::GameInstance(GameInstanceParts parts,
               [this] { return flow_->state() == GameState::WaitingForPlayers; },
           .onClosing =
               [this](const ConnectedPlayer& departed) {
+                delayedInputs_.clear(departed.playerNumber);
                 callAll(hooks_.closing, departed);
               },
           .onNewerInput =
               [this](const ConnectedPlayer& player,
                      const network::PlayerInput& input) {
-                callAll(hooks_.newerInput, player, input);
+                delayedInputs_.push(player.playerNumber, input);
               }}),
       context_{.events = parts.events,
                .timers = parts.timers,
@@ -59,23 +64,33 @@ GameInstance::GameInstance(GameInstanceParts parts,
                .everyPlayerIsReady =
                    [this] { return sessions_.everyPlayerIsReady(); }},
       modules_(std::move(modules)) {
-  modules_.addWork(GAME_INPUT_STAGE,
-                   [this]([[maybe_unused]] engine::Duration elapsed) {
-                     sessions_.startTick();
-                     sessions_.readDatagrams(datagrams_);
-                     sessions_.closeSilentSessions();
-                   });
+  modules_.addWork(
+      GAME_INPUT_STAGE, [this]([[maybe_unused]] engine::Duration elapsed) {
+        sessions_.startTick();
+        sessions_.readDatagrams(datagrams_);
+        delayedInputs_.release(sessions_.roster(),
+                               [this](const ConnectedPlayer& player,
+                                      const network::PlayerInput& input) {
+                                 callAll(hooks_.newerInput, player, input);
+                               });
+        sessions_.closeSilentSessions();
+      });
   modules_.addWork(GAME_OUTPUT_STAGE,
                    [this]([[maybe_unused]] engine::Duration elapsed) {
                      sessions_.endTick();
                    });
   modules_.installAndStart(context_);
   flow_ = &modules_.require<IGameFlow>();
+  world_ = &modules_.require<IGameWorld>();
 }
 
 GameState GameInstance::state() const { return flow_->state(); }
 
 std::uint32_t GameInstance::tick() const { return flow_->tick(); }
+
+std::size_t GameInstance::entityCount() const { return world_->entityCount(); }
+
+engine::SystemScheduler& GameInstance::systems() { return systems_; }
 
 PlayerRoster& GameInstance::roster() { return sessions_.roster(); }
 

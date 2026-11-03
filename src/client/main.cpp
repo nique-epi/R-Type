@@ -11,9 +11,7 @@
 #include "FrameLoop.hpp"
 #include "LaunchArguments.hpp"
 #include "LaunchOptions.hpp"
-#include "LogLaunchOptions.hpp"
 #include "Logger.hpp"
-#include "LoggingConstants.hpp"
 #include "LoopStages.hpp"
 #include "SystemClock.hpp"
 
@@ -26,15 +24,15 @@ namespace {
  * @returns the exit code: 0 once the client stopped, 1 after an error, which
  *          is logged and printed. No exception leaves it.
  */
-int runClient(const rtype::logging::LogLaunchOptions& logOptions,
-              const rtype::client::LaunchOptions& launchOptions) {
+int runClient(const rtype::client::LaunchOptions& launchOptions) {
   try {
     const rtype::engine::SystemClock clock;
     rtype::client::FrameLoop loop{clock};
     rtype::engine::ConfigurationReport configurationReport;
     rtype::engine::Application application{
         rtype::engine::LoopStages{rtype::client::CLIENT_LOOP_STAGES},
-        rtype::client::clientModules(logOptions, launchOptions, loop),
+        rtype::client::clientModules(launchOptions.logOptions(), launchOptions,
+                                     loop),
         rtype::engine::configurationStep(
             std::filesystem::path{
                 rtype::client::CLIENT_CONFIGURATION_FILE_NAME},
@@ -62,16 +60,14 @@ int runClient(const rtype::logging::LogLaunchOptions& logOptions,
 
 int main(int argumentCount, char** arguments) {
   try {
-    const rtype::logging::LogLaunchOptions logOptions =
-        rtype::logging::LogLaunchOptions::readFromProcess(
-            argumentCount, arguments, rtype::logging::CLIENT_LOG_FILE_NAME);
     const rtype::client::LaunchOptions launchOptions =
-        rtype::client::LaunchOptions::read(logOptions.otherArguments());
+        rtype::client::LaunchOptions::read(
+            rtype::engine::processArguments(argumentCount, arguments));
     if (launchOptions.helpRequested()) {
       std::cout << rtype::client::LaunchOptions::usage();
       return 0;
     }
-    return runClient(logOptions, launchOptions);
+    return runClient(launchOptions);
   } catch (const std::exception& error) {
     std::cerr << rtype::engine::launchErrorText(rtype::client::PROGRAM_NAME,
                                                 error.what());

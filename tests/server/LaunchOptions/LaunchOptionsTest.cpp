@@ -6,9 +6,16 @@
 #include "LaunchArgumentsConstants.hpp"
 #include "LaunchOptions.hpp"
 #include "LaunchOptionsTestConstants.hpp"
+#include "LogLaunchOptionsFixture.hpp"
+#include "Logger.hpp"
 #include "LoggingConstants.hpp"
+#include "LoggingException.hpp"
+#include "LoggingOptionTestConstants.hpp"
+#include "NetworkConditions.hpp"
 #include "NetworkException.hpp"
+#include "NetworkSimulatorTestConstants.hpp"
 #include "ServerConstants.hpp"
+#include "SimulatorLaunchOptions.hpp"
 
 using rtype::engine::HELP_OPTION;
 using rtype::engine::InvalidLaunchOptionValueException;
@@ -16,17 +23,21 @@ using rtype::engine::MissingLaunchOptionValueException;
 using rtype::engine::PORT_OPTION;
 using rtype::engine::SET_OPTION;
 using rtype::engine::UnknownLaunchArgumentException;
+using rtype::logging::InvalidLogOptionException;
+using rtype::logging::LEVEL_OPTION;
+using rtype::logging::Logger;
+using rtype::logging::LogLevel;
+using rtype::logging::MissingLogOptionValueException;
+using rtype::logging::NO_FILE_OPTION;
+using rtype::logging::NO_STDERR_OPTION;
 using rtype::network::InvalidPortException;
+using rtype::server::INPUT_DELAY_OPTION;
 using rtype::server::LaunchOptions;
 using rtype::server::SEED_OPTION;
 using rtype::server::STATE_RATE_OPTION;
 
-namespace {
-
 using Arguments = std::vector<std::string_view>;
 using Lines = std::vector<std::string>;
-
-}  // namespace
 
 /**
  * Given no argument
@@ -363,6 +374,163 @@ TEST(ServerLaunchOptions, SetOptionRefusesAnInvalidAssignment) {
 }
 
 /**
+ * Given no argument
+ * When the launch options are read
+ * Then the network of the server is perfect: nothing is simulated
+ */
+TEST(ServerLaunchOptions, NoArgumentSimulatesNoNetwork) {
+  EXPECT_EQ(LaunchOptions::read(Arguments{}).networkConditions(),
+            rtype::network::NetworkConditions{});
+}
+
+/**
+ * Given the port option and a port, then the network option and a scenario
+ * When the launch options are read
+ * Then the port is forced as a setting, behind the network of that scenario
+ */
+TEST(ServerLaunchOptions, ReadsTheNetworkSimulatorOptionsBesideItsOwn) {
+  const LaunchOptions options = LaunchOptions::read(Arguments{
+      PORT_OPTION, PORT_ARGUMENT, NETWORK_OPTION_TEXT, BAD_NAME_TEXT});
+
+  EXPECT_EQ(options.forcedLines(), Lines{std::string(PORT_LINE)});
+  EXPECT_EQ(options.networkConditions(), BAD_OF_THE_TABLE);
+}
+
+/**
+ * Given the seed option, then a logging option and its value, then a seed
+ * When the launch options are read
+ * Then the logging option is the value of the seed option, and is refused as
+ *      a seed
+ */
+TEST(ServerLaunchOptions, SeedOptionTakesALoggingOptionAsItsValue) {
+  EXPECT_THROW(
+      static_cast<void>(LaunchOptions::read(Arguments{
+          SEED_OPTION, LEVEL_OPTION, DEBUG_LEVEL_ARGUMENT, SEED_ARGUMENT})),
+      InvalidLaunchOptionValueException);
+}
+
+/**
+ * Given the seed option, then a simulator option and its value, then a seed
+ * When the launch options are read
+ * Then the simulator option is the value of the seed option, and is refused
+ *      as a seed
+ */
+TEST(ServerLaunchOptions, SeedOptionTakesASimulatorOptionAsItsValue) {
+  EXPECT_THROW(static_cast<void>(LaunchOptions::read(Arguments{
+                   SEED_OPTION, LAG_OPTION_TEXT, LAG_ARGUMENT, SEED_ARGUMENT})),
+               InvalidLaunchOptionValueException);
+}
+
+/**
+ * Given the port option and a port, then the logging level option and a
+ * level, with no journal and nothing on standard error
+ * When the launch options are read and their logging options applied
+ * Then the port is forced as a setting and the logger is at that level
+ */
+TEST_F(LogLaunchOptionsFixture, ServerReadsTheLoggingOptionsBesideItsOwn) {
+  const LaunchOptions options = LaunchOptions::read(
+      Arguments{PORT_OPTION, PORT_ARGUMENT, LEVEL_OPTION, DEBUG_LEVEL_ARGUMENT,
+                NO_FILE_OPTION, NO_STDERR_OPTION});
+
+  options.logOptions().apply();
+
+  EXPECT_EQ(options.forcedLines(), Lines{std::string(PORT_LINE)});
+  EXPECT_EQ(Logger::level(), LogLevel::Debug);
+}
+
+/**
+ * Given the logging level option, misspelled
+ * When the launch options are read
+ * Then it is refused as a logging option that does not exist
+ */
+TEST(ServerLaunchOptions, RefusesAMisspelledLoggingOption) {
+  EXPECT_THROW(static_cast<void>(LaunchOptions::read(
+                   Arguments{MISSPELLED_LEVEL_OPTION, DEBUG_LEVEL_ARGUMENT})),
+               InvalidLogOptionException);
+}
+
+/**
+ * Given the logging level option as the last argument
+ * When the launch options are read
+ * Then the missing value is reported as the logging options report it
+ */
+TEST(ServerLaunchOptions, LoggingOptionWithoutValueIsRefused) {
+  EXPECT_THROW(static_cast<void>(LaunchOptions::read(Arguments{LEVEL_OPTION})),
+               MissingLogOptionValueException);
+}
+
+/**
+ * Given no input delay option
+ * When the launch options are read
+ * Then no line is forced, so the setting keeps its default
+ */
+TEST(ServerLaunchOptions, NoInputDelayOptionForcesNoLine) {
+  const LaunchOptions options = LaunchOptions::read(Arguments{});
+
+  EXPECT_TRUE(options.forcedLines().empty());
+}
+
+/**
+ * Given the input delay option and a delay
+ * When the launch options are read
+ * Then the line that gives the input delay setting that delay is forced
+ */
+TEST(ServerLaunchOptions, InputDelayOptionForcesTheSetting) {
+  const LaunchOptions options =
+      LaunchOptions::read(Arguments{INPUT_DELAY_OPTION, INPUT_DELAY_ARGUMENT});
+
+  EXPECT_EQ(options.forcedLines(), Lines{std::string(INPUT_DELAY_LINE)});
+}
+
+/**
+ * Given the input delay option given twice
+ * When the launch options are read
+ * Then both lines are forced in order, so the last delay wins
+ */
+TEST(ServerLaunchOptions, LastInputDelayOptionWins) {
+  const LaunchOptions options = LaunchOptions::read(
+      Arguments{INPUT_DELAY_OPTION, INPUT_DELAY_ARGUMENT, INPUT_DELAY_OPTION,
+                OTHER_INPUT_DELAY_ARGUMENT});
+
+  EXPECT_EQ(options.forcedLines(),
+            (Lines{std::string(INPUT_DELAY_LINE),
+                   std::string(OTHER_INPUT_DELAY_LINE)}));
+}
+
+/**
+ * Given the lowest delay, none, and the highest delay the server accepts
+ * When the launch options are read
+ * Then each is accepted
+ */
+TEST(ServerLaunchOptions, InputDelayOptionAcceptsBothEnds) {
+  const LaunchOptions lowest = LaunchOptions::read(
+      Arguments{INPUT_DELAY_OPTION, LOWEST_INPUT_DELAY_ARGUMENT});
+  const LaunchOptions highest = LaunchOptions::read(
+      Arguments{INPUT_DELAY_OPTION, HIGHEST_INPUT_DELAY_ARGUMENT});
+
+  EXPECT_EQ(lowest.forcedLines(), Lines{std::string(LOWEST_INPUT_DELAY_LINE)});
+  EXPECT_EQ(highest.forcedLines(),
+            Lines{std::string(HIGHEST_INPUT_DELAY_LINE)});
+}
+
+/**
+ * Given a delay over the highest, negative, not a number or empty
+ * When the launch options are read
+ * Then each is refused as an invalid value of the option
+ */
+TEST(ServerLaunchOptions, InputDelayOptionRefusesADelayOutOfRange) {
+  for (const std::string_view delay :
+       {TOO_HIGH_INPUT_DELAY_ARGUMENT, NEGATIVE_INPUT_DELAY_ARGUMENT,
+        NOT_A_NUMBER_INPUT_DELAY_ARGUMENT, EMPTY_INPUT_DELAY_ARGUMENT}) {
+    SCOPED_TRACE(delay);
+
+    EXPECT_THROW(static_cast<void>(
+                     LaunchOptions::read(Arguments{INPUT_DELAY_OPTION, delay})),
+                 InvalidLaunchOptionValueException);
+  }
+}
+
+/**
  * Given the set option as the last argument
  * When the launch options are read
  * Then the missing value is reported
@@ -379,5 +547,37 @@ TEST(ServerLaunchOptions, SetOptionWithoutValueIsRefused) {
  */
 TEST(ServerLaunchOptions, UsageNamesTheSetOption) {
   EXPECT_NE(LaunchOptions::usage().find(std::string(SET_OPTION)),
+            std::string::npos);
+}
+
+/**
+ * Given the input delay option as the last argument
+ * When the launch options are read
+ * Then the missing value is reported
+ */
+TEST(ServerLaunchOptions, InputDelayOptionWithoutValueIsRefused) {
+  EXPECT_THROW(
+      static_cast<void>(LaunchOptions::read(Arguments{INPUT_DELAY_OPTION})),
+      MissingLaunchOptionValueException);
+}
+
+/**
+ * Given nothing
+ * When the usage is built
+ * Then it holds the whole part that describes the network simulator
+ */
+TEST(ServerLaunchOptions, UsageHoldsTheNetworkSimulatorOptions) {
+  EXPECT_NE(LaunchOptions::usage().find(
+                rtype::network::SimulatorLaunchOptions::usage()),
+            std::string::npos);
+}
+
+/**
+ * Given nothing
+ * When the usage is asked for
+ * Then it names the input delay option
+ */
+TEST(ServerLaunchOptions, UsageNamesTheInputDelayOption) {
+  EXPECT_NE(LaunchOptions::usage().find(std::string(INPUT_DELAY_OPTION)),
             std::string::npos);
 }
