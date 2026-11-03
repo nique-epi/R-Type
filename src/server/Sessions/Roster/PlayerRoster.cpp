@@ -69,29 +69,29 @@ std::vector<network::Endpoint> PlayerRoster::endpoints() const {
 
 std::size_t PlayerRoster::occupiedSeatCount() const {
   return static_cast<std::size_t>(std::ranges::count_if(
-      seats_, [](const std::optional<ConnectedPlayer>& seat) {
+      seats_, [](const std::optional<ConnectedPlayer>& seat) noexcept {
         return seat.has_value();
       }));
 }
 
 bool PlayerRoster::hasNickname(std::string_view nickname) const {
-  const auto lowered = [](char letter) {
+  const auto lowered = [](char letter) noexcept {
     return letter >= 'A' && letter <= 'Z'
                ? static_cast<char>(letter - 'A' + 'a')
                : letter;
   };
   return std::ranges::any_of(
-      seats_, [&](const std::optional<ConnectedPlayer>& seat) {
+      seats_, [&](const std::optional<ConnectedPlayer>& seat) noexcept {
         return seat.has_value() && std::ranges::equal(seat->nickname, nickname,
                                                       {}, lowered, lowered);
       });
 }
 
 bool PlayerRoster::isFull() const {
-  return std::ranges::all_of(seats_,
-                             [](const std::optional<ConnectedPlayer>& seat) {
-                               return seat.has_value();
-                             });
+  return std::ranges::all_of(
+      seats_, [](const std::optional<ConnectedPlayer>& seat) noexcept {
+        return seat.has_value();
+      });
 }
 
 ConnectedPlayer* PlayerRoster::add(const network::Endpoint& endpoint,
