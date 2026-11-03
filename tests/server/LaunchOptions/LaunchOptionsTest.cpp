@@ -12,7 +12,6 @@
 #include "LoggingException.hpp"
 #include "LoggingOptionTestConstants.hpp"
 #include "NetworkConditions.hpp"
-#include "NetworkConstants.hpp"
 #include "NetworkException.hpp"
 #include "NetworkSimulatorTestConstants.hpp"
 #include "ServerConstants.hpp"
@@ -22,6 +21,7 @@ using rtype::engine::HELP_OPTION;
 using rtype::engine::InvalidLaunchOptionValueException;
 using rtype::engine::MissingLaunchOptionValueException;
 using rtype::engine::PORT_OPTION;
+using rtype::engine::SET_OPTION;
 using rtype::engine::UnknownLaunchArgumentException;
 using rtype::logging::InvalidLogOptionException;
 using rtype::logging::LEVEL_OPTION;
@@ -30,26 +30,24 @@ using rtype::logging::LogLevel;
 using rtype::logging::MissingLogOptionValueException;
 using rtype::logging::NO_FILE_OPTION;
 using rtype::logging::NO_STDERR_OPTION;
-using rtype::network::DEFAULT_SERVER_PORT;
 using rtype::network::InvalidPortException;
-using rtype::server::DEFAULT_INPUT_DELAY_TICKS;
-using rtype::server::DEFAULT_WORLD_STATES_PER_SECOND;
 using rtype::server::INPUT_DELAY_OPTION;
 using rtype::server::LaunchOptions;
 using rtype::server::SEED_OPTION;
 using rtype::server::STATE_RATE_OPTION;
 
 using Arguments = std::vector<std::string_view>;
+using Lines = std::vector<std::string>;
 
 /**
  * Given no argument
  * When the launch options are read
- * Then the server listens on the default port
+ * Then no setting is forced, so the configuration file and the defaults decide
  */
-TEST(ServerLaunchOptions, NoArgumentGivesTheDefaultPort) {
+TEST(ServerLaunchOptions, NoArgumentForcesNoSetting) {
   const LaunchOptions options = LaunchOptions::read(Arguments{});
 
-  EXPECT_EQ(options.port(), DEFAULT_SERVER_PORT);
+  EXPECT_TRUE(options.forcedLines().empty());
 }
 
 /**
@@ -66,25 +64,27 @@ TEST(ServerLaunchOptions, NoArgumentStartsTheServer) {
 /**
  * Given the port option and a port
  * When the launch options are read
- * Then the server listens on that port
+ * Then the port setting is forced to that port
  */
-TEST(ServerLaunchOptions, PortOptionSetsThePort) {
+TEST(ServerLaunchOptions, PortOptionForcesThePort) {
   const LaunchOptions options =
       LaunchOptions::read(Arguments{PORT_OPTION, PORT_ARGUMENT});
 
-  EXPECT_EQ(options.port(), PORT_OF_PORT_ARGUMENT);
+  EXPECT_EQ(options.forcedLines(), Lines{std::string(PORT_LINE)});
 }
 
 /**
  * Given the port option twice
  * When the launch options are read
- * Then the last port wins
+ * Then both lines are forced in the order given, so the last port wins when
+ * they run
  */
-TEST(ServerLaunchOptions, LastPortOptionWins) {
+TEST(ServerLaunchOptions, PortOptionTwiceForcesBothInOrder) {
   const LaunchOptions options = LaunchOptions::read(
       Arguments{PORT_OPTION, PORT_ARGUMENT, PORT_OPTION, OTHER_PORT_ARGUMENT});
 
-  EXPECT_EQ(options.port(), PORT_OF_OTHER_PORT_ARGUMENT);
+  EXPECT_EQ(options.forcedLines(),
+            (Lines{std::string(PORT_LINE), std::string(OTHER_PORT_LINE)}));
 }
 
 /**
@@ -178,52 +178,42 @@ TEST(ServerLaunchOptions, UsageGivesTheDefaultPort) {
 }
 
 /**
- * Given no argument
- * When the launch options are read
- * Then no seed is given, so the server draws one
- */
-TEST(ServerLaunchOptions, NoArgumentGivesNoSeed) {
-  const LaunchOptions options = LaunchOptions::read(Arguments{});
-
-  EXPECT_FALSE(options.seed().has_value());
-}
-
-/**
  * Given the seed option and a seed
  * When the launch options are read
- * Then the seed is that number
+ * Then the seed setting is forced to that number
  */
-TEST(ServerLaunchOptions, SeedOptionSetsTheSeed) {
+TEST(ServerLaunchOptions, SeedOptionForcesTheSeed) {
   const LaunchOptions options =
       LaunchOptions::read(Arguments{SEED_OPTION, SEED_ARGUMENT});
 
-  EXPECT_EQ(options.seed(), SEED_OF_SEED_ARGUMENT);
+  EXPECT_EQ(options.forcedLines(), Lines{std::string(SEED_LINE)});
 }
 
 /**
  * Given the seed option twice
  * When the launch options are read
- * Then the last seed wins
+ * Then both lines are forced in the order given
  */
-TEST(ServerLaunchOptions, LastSeedOptionWins) {
+TEST(ServerLaunchOptions, SeedOptionTwiceForcesBothInOrder) {
   const LaunchOptions options = LaunchOptions::read(
       Arguments{SEED_OPTION, SEED_ARGUMENT, SEED_OPTION, OTHER_SEED_ARGUMENT});
 
-  EXPECT_EQ(options.seed(), SEED_OF_OTHER_SEED_ARGUMENT);
+  EXPECT_EQ(options.forcedLines(),
+            (Lines{std::string(SEED_LINE), std::string(OTHER_SEED_LINE)}));
 }
 
 /**
  * Given the seeds 0 and 4294967295, the two ends of the range
  * When the launch options are read
- * Then both are accepted
+ * Then both are accepted and forced
  */
 TEST(ServerLaunchOptions, SeedAcceptsBothEndsOfTheRange) {
-  EXPECT_EQ(
-      LaunchOptions::read(Arguments{SEED_OPTION, LOWEST_SEED_ARGUMENT}).seed(),
-      0U);
-  EXPECT_EQ(
-      LaunchOptions::read(Arguments{SEED_OPTION, HIGHEST_SEED_ARGUMENT}).seed(),
-      HIGHEST_SEED);
+  EXPECT_EQ(LaunchOptions::read(Arguments{SEED_OPTION, LOWEST_SEED_ARGUMENT})
+                .forcedLines(),
+            Lines{std::string(LOWEST_SEED_LINE)});
+  EXPECT_EQ(LaunchOptions::read(Arguments{SEED_OPTION, HIGHEST_SEED_ARGUMENT})
+                .forcedLines(),
+            Lines{std::string(HIGHEST_SEED_LINE)});
 }
 
 /**
@@ -252,63 +242,53 @@ TEST(ServerLaunchOptions, SeedOptionWithoutValueIsRejected) {
 }
 
 /**
- * Given no state rate option
- * When the launch options are read
- * Then each player is sent the default number of states per second
- */
-TEST(ServerLaunchOptions, NoStateRateOptionGivesTheDefaultRate) {
-  const LaunchOptions options = LaunchOptions::read(Arguments{});
-
-  EXPECT_EQ(options.stateRate(), DEFAULT_WORLD_STATES_PER_SECOND);
-}
-
-/**
  * Given the state rate option and a rate
  * When the launch options are read
- * Then each player is sent that many states per second
+ * Then the state rate setting is forced to that rate
  */
-TEST(ServerLaunchOptions, StateRateOptionSetsTheRate) {
+TEST(ServerLaunchOptions, StateRateOptionForcesTheRate) {
   const LaunchOptions options =
       LaunchOptions::read(Arguments{STATE_RATE_OPTION, STATE_RATE_ARGUMENT});
 
-  EXPECT_EQ(options.stateRate(), RATE_OF_STATE_RATE_ARGUMENT);
+  EXPECT_EQ(options.forcedLines(), Lines{std::string(STATE_RATE_LINE)});
 }
 
 /**
  * Given the state rate option given twice
  * When the launch options are read
- * Then the last rate wins
+ * Then both lines are forced in the order given
  */
-TEST(ServerLaunchOptions, LastStateRateOptionWins) {
+TEST(ServerLaunchOptions, StateRateOptionTwiceForcesBothInOrder) {
   const LaunchOptions options = LaunchOptions::read(
       Arguments{STATE_RATE_OPTION, STATE_RATE_ARGUMENT, STATE_RATE_OPTION,
                 OTHER_STATE_RATE_ARGUMENT});
 
-  EXPECT_EQ(options.stateRate(), RATE_OF_OTHER_STATE_RATE_ARGUMENT);
+  EXPECT_EQ(options.forcedLines(), (Lines{std::string(STATE_RATE_LINE),
+                                          std::string(OTHER_STATE_RATE_LINE)}));
 }
 
 /**
  * Given the lowest rate the server accepts
  * When the launch options are read
- * Then it is accepted
+ * Then it is accepted and forced
  */
 TEST(ServerLaunchOptions, StateRateOptionAcceptsTheLowestRate) {
   const LaunchOptions options = LaunchOptions::read(
       Arguments{STATE_RATE_OPTION, LOWEST_STATE_RATE_ARGUMENT});
 
-  EXPECT_EQ(options.stateRate(), LOWEST_STATE_RATE);
+  EXPECT_EQ(options.forcedLines(), Lines{std::string(LOWEST_STATE_RATE_LINE)});
 }
 
 /**
  * Given the highest rate the server accepts, one state per tick
  * When the launch options are read
- * Then it is accepted
+ * Then it is accepted and forced
  */
 TEST(ServerLaunchOptions, StateRateOptionAcceptsTheHighestRate) {
   const LaunchOptions options = LaunchOptions::read(
       Arguments{STATE_RATE_OPTION, HIGHEST_STATE_RATE_ARGUMENT});
 
-  EXPECT_EQ(options.stateRate(), HIGHEST_STATE_RATE);
+  EXPECT_EQ(options.forcedLines(), Lines{std::string(HIGHEST_STATE_RATE_LINE)});
 }
 
 /**
@@ -352,6 +332,48 @@ TEST(ServerLaunchOptions, UsageNamesTheStateRateOption) {
 }
 
 /**
+ * Given the set option and `name=value`
+ * When the launch options are read
+ * Then the line that gives the setting that value is forced
+ */
+TEST(ServerLaunchOptions, SetOptionForcesTheSettingItNames) {
+  const LaunchOptions options =
+      LaunchOptions::read(Arguments{SET_OPTION, ASSIGNMENT_ARGUMENT});
+
+  EXPECT_EQ(options.forcedLines(), Lines{std::string(ASSIGNMENT_LINE)});
+}
+
+/**
+ * Given the port option, the set option and the seed option
+ * When the launch options are read
+ * Then the lines are forced in the order the options were given
+ */
+TEST(ServerLaunchOptions, ForcedLinesKeepTheOrderOfTheOptions) {
+  const LaunchOptions options = LaunchOptions::read(
+      Arguments{PORT_OPTION, PORT_ARGUMENT, SET_OPTION, ASSIGNMENT_ARGUMENT,
+                SEED_OPTION, SEED_ARGUMENT});
+
+  EXPECT_EQ(options.forcedLines(),
+            (Lines{std::string(PORT_LINE), std::string(ASSIGNMENT_LINE),
+                   std::string(SEED_LINE)}));
+}
+
+/**
+ * Given a set option whose value is not `name=value`
+ * When the launch options are read
+ * Then each is refused as an invalid value of the option
+ */
+TEST(ServerLaunchOptions, SetOptionRefusesAnInvalidAssignment) {
+  for (const std::string_view assignment :
+       {ASSIGNMENT_WITHOUT_MARK, ASSIGNMENT_WITHOUT_NAME}) {
+    EXPECT_THROW(static_cast<void>(
+                     LaunchOptions::read(Arguments{SET_OPTION, assignment})),
+                 InvalidLaunchOptionValueException)
+        << assignment;
+  }
+}
+
+/**
  * Given no argument
  * When the launch options are read
  * Then the network of the server is perfect: nothing is simulated
@@ -364,13 +386,13 @@ TEST(ServerLaunchOptions, NoArgumentSimulatesNoNetwork) {
 /**
  * Given the port option and a port, then the network option and a scenario
  * When the launch options are read
- * Then the server listens on that port, behind the network of that scenario
+ * Then the port is forced as a setting, behind the network of that scenario
  */
 TEST(ServerLaunchOptions, ReadsTheNetworkSimulatorOptionsBesideItsOwn) {
   const LaunchOptions options = LaunchOptions::read(Arguments{
       PORT_OPTION, PORT_ARGUMENT, NETWORK_OPTION_TEXT, BAD_NAME_TEXT});
 
-  EXPECT_EQ(options.port(), PORT_OF_PORT_ARGUMENT);
+  EXPECT_EQ(options.forcedLines(), Lines{std::string(PORT_LINE)});
   EXPECT_EQ(options.networkConditions(), BAD_OF_THE_TABLE);
 }
 
@@ -403,7 +425,7 @@ TEST(ServerLaunchOptions, SeedOptionTakesASimulatorOptionAsItsValue) {
  * Given the port option and a port, then the logging level option and a
  * level, with no journal and nothing on standard error
  * When the launch options are read and their logging options applied
- * Then the server listens on that port and the logger is at that level
+ * Then the port is forced as a setting and the logger is at that level
  */
 TEST_F(LogLaunchOptionsFixture, ServerReadsTheLoggingOptionsBesideItsOwn) {
   const LaunchOptions options = LaunchOptions::read(
@@ -412,7 +434,7 @@ TEST_F(LogLaunchOptionsFixture, ServerReadsTheLoggingOptionsBesideItsOwn) {
 
   options.logOptions().apply();
 
-  EXPECT_EQ(options.port(), PORT_OF_PORT_ARGUMENT);
+  EXPECT_EQ(options.forcedLines(), Lines{std::string(PORT_LINE)});
   EXPECT_EQ(Logger::level(), LogLevel::Debug);
 }
 
@@ -440,37 +462,39 @@ TEST(ServerLaunchOptions, LoggingOptionWithoutValueIsRefused) {
 /**
  * Given no input delay option
  * When the launch options are read
- * Then each input is held for the default number of ticks
+ * Then no line is forced, so the setting keeps its default
  */
-TEST(ServerLaunchOptions, NoInputDelayOptionGivesTheDefaultDelay) {
+TEST(ServerLaunchOptions, NoInputDelayOptionForcesNoLine) {
   const LaunchOptions options = LaunchOptions::read(Arguments{});
 
-  EXPECT_EQ(options.inputDelay(), DEFAULT_INPUT_DELAY_TICKS);
+  EXPECT_TRUE(options.forcedLines().empty());
 }
 
 /**
  * Given the input delay option and a delay
  * When the launch options are read
- * Then each input is held for that many ticks
+ * Then the line that gives the input delay setting that delay is forced
  */
-TEST(ServerLaunchOptions, InputDelayOptionSetsTheDelay) {
+TEST(ServerLaunchOptions, InputDelayOptionForcesTheSetting) {
   const LaunchOptions options =
       LaunchOptions::read(Arguments{INPUT_DELAY_OPTION, INPUT_DELAY_ARGUMENT});
 
-  EXPECT_EQ(options.inputDelay(), DELAY_OF_INPUT_DELAY_ARGUMENT);
+  EXPECT_EQ(options.forcedLines(), Lines{std::string(INPUT_DELAY_LINE)});
 }
 
 /**
  * Given the input delay option given twice
  * When the launch options are read
- * Then the last delay wins
+ * Then both lines are forced in order, so the last delay wins
  */
 TEST(ServerLaunchOptions, LastInputDelayOptionWins) {
   const LaunchOptions options = LaunchOptions::read(
       Arguments{INPUT_DELAY_OPTION, INPUT_DELAY_ARGUMENT, INPUT_DELAY_OPTION,
                 OTHER_INPUT_DELAY_ARGUMENT});
 
-  EXPECT_EQ(options.inputDelay(), DELAY_OF_OTHER_INPUT_DELAY_ARGUMENT);
+  EXPECT_EQ(options.forcedLines(),
+            (Lines{std::string(INPUT_DELAY_LINE),
+                   std::string(OTHER_INPUT_DELAY_LINE)}));
 }
 
 /**
@@ -484,8 +508,9 @@ TEST(ServerLaunchOptions, InputDelayOptionAcceptsBothEnds) {
   const LaunchOptions highest = LaunchOptions::read(
       Arguments{INPUT_DELAY_OPTION, HIGHEST_INPUT_DELAY_ARGUMENT});
 
-  EXPECT_EQ(lowest.inputDelay(), LOWEST_INPUT_DELAY);
-  EXPECT_EQ(highest.inputDelay(), HIGHEST_INPUT_DELAY);
+  EXPECT_EQ(lowest.forcedLines(), Lines{std::string(LOWEST_INPUT_DELAY_LINE)});
+  EXPECT_EQ(highest.forcedLines(),
+            Lines{std::string(HIGHEST_INPUT_DELAY_LINE)});
 }
 
 /**
@@ -503,6 +528,26 @@ TEST(ServerLaunchOptions, InputDelayOptionRefusesADelayOutOfRange) {
                      LaunchOptions::read(Arguments{INPUT_DELAY_OPTION, delay})),
                  InvalidLaunchOptionValueException);
   }
+}
+
+/**
+ * Given the set option as the last argument
+ * When the launch options are read
+ * Then the missing value is reported
+ */
+TEST(ServerLaunchOptions, SetOptionWithoutValueIsRefused) {
+  EXPECT_THROW(static_cast<void>(LaunchOptions::read(Arguments{SET_OPTION})),
+               MissingLaunchOptionValueException);
+}
+
+/**
+ * Given the usage
+ * When it is read
+ * Then it names the set option
+ */
+TEST(ServerLaunchOptions, UsageNamesTheSetOption) {
+  EXPECT_NE(LaunchOptions::usage().find(std::string(SET_OPTION)),
+            std::string::npos);
 }
 
 /**

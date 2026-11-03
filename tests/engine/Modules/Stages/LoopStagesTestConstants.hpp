@@ -4,6 +4,8 @@
 constexpr const char* FIRST_WORK = "first work";
 constexpr const char* SECOND_WORK = "second work";
 constexpr const char* THIRD_WORK = "third work";
+constexpr const char* OWNER_OF_FIRST_WORK = "owner of first work";
+constexpr const char* OWNER_OF_SECOND_WORK = "owner of second work";
 
 /** @brief The error of a work added to UNKNOWN_STAGE. */
 constexpr const char* UNKNOWN_STAGE_MESSAGE =

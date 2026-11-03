@@ -78,7 +78,7 @@ Alternative considered: Conan. Its binary packages and its profiles give finer c
 
 ## Build: CMake
 
-CMake 3.28 or newer builds the project with C++20 and the presets `default` (Release) and `test` (Debug with the tests). The CI builds with GCC on Linux and MSVC on Windows.
+CMake 4.2 or newer builds the project with C++20 and the presets `default` (Release) and `test` (Debug with the tests). The CI builds with GCC on Linux and MSVC on Windows.
 
 | | CMake | Meson | Bazel |
 |---|---|---|---|
@@ -100,6 +100,6 @@ Alternative considered: Meson. Its language is easier to read and it configures 
 | SFML | `src/client/`, with the `window`, `graphics` and `audio` features of `vcpkg.json` | 3.0.2 |
 | Asio | `src/network/` only | 1.32.0 (standalone) |
 | vcpkg | `vcpkg.json`, the `vcpkg/` submodule, the toolchain file of `CMakePresets.json` | registry baseline `9e593bb` |
-| CMake | the `CMakeLists.txt` of each folder, `CMakePresets.json` | 3.28 or newer |
+| CMake | the `CMakeLists.txt` of each folder, `CMakePresets.json` | 4.2 or newer |
 
 A change of one of these four is a decision that touches every team. It starts as a proposal in [Architecture](/R-Type/architecture/), with the same four criteria.

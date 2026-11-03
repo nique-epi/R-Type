@@ -4,8 +4,8 @@ target_include_directories(rtype_client_asset_texture_source PUBLIC ${CMAKE_CURR
 
 target_link_libraries(rtype_client_asset_texture_source
   PUBLIC
-    rtype_client_sprites
     rtype_client_asset_library
+    rtype_client_sprites
 )
 
 rtype_enable_warnings(rtype_client_asset_texture_source)

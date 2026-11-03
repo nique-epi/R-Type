@@ -7,7 +7,7 @@ trigger: always_on
 
 ## Rule
 
-1. **Establish the version the target runs before validating**: the declared minimum (`cmake_minimum_required(VERSION 3.28)`, C++20), the CI compilers (GCC on `ubuntu-latest`, MSVC on `windows-latest`), the dependencies **pinned** by vcpkg (baseline in `vcpkg.json`: SFML 3, Asio, GoogleTest).
+1. **Establish the version the target runs before validating**: the declared minimum (`cmake_minimum_required(VERSION 4.2)`, C++20), the CI compilers (GCC on `ubuntu-latest`, MSVC on `windows-latest`), the dependencies **pinned** by vcpkg (baseline in `vcpkg.json`: SFML 3, Asio, GoogleTest).
 2. **For every "recent" feature** (CMake command, preset field, C++20/23 standard library feature, SFML API), check when it was introduced and whether all three compilers support it before adopting it. A recent `std::` feature that compiles with AppleClang may be missing from GCC 13 or MSVC.
 3. **State the validated version in the report**: "build green" means nothing; "build green under Apple clang <the number printed by the compiler `CMAKE_CXX_COMPILER` names, run by that path> and CMake <the number `cmake --version` printed>, Linux/Windows CI to be confirmed" is a result. Untested parity is stated as a residual risk.
 4. **The library headers used are the ones installed by vcpkg**, not those of a system install of another version (Homebrew, apt).

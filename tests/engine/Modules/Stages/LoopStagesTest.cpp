@@ -96,3 +96,56 @@ TEST(LoopStages, UnknownStageErrorNamesTheStage) {
     EXPECT_EQ(std::string{error.what()}, UNKNOWN_STAGE_MESSAGE);
   }
 }
+
+/**
+ * Given a work added by each of two modules to the same stage
+ * When the work of the first module is removed and the loop runs
+ * Then only the work of the second module runs
+ */
+TEST(LoopStages, RemovingTheWorkOfAModuleKeepsTheWorkOfTheOthers) {
+  LoopStages stages(TEST_LOOP_STAGES);
+  std::vector<std::string> ran;
+  stages.add(SIMULATION_STAGE, OWNER_OF_FIRST_WORK,
+             recordingWork(ran, FIRST_WORK));
+  stages.add(SIMULATION_STAGE, OWNER_OF_SECOND_WORK,
+             recordingWork(ran, SECOND_WORK));
+
+  stages.removeWorkOf(OWNER_OF_FIRST_WORK);
+  stages.run(ELAPSED_TIME);
+
+  EXPECT_EQ(ran, (std::vector<std::string>{SECOND_WORK}));
+}
+
+/**
+ * Given a module that added a work to inputs and a work to outputs
+ * When its work is removed and the loop runs
+ * Then neither work runs
+ */
+TEST(LoopStages, RemovingTheWorkOfAModuleTakesItOutOfEveryStage) {
+  LoopStages stages(TEST_LOOP_STAGES);
+  std::vector<std::string> ran;
+  stages.add(INPUT_STAGE, OWNER_OF_FIRST_WORK, recordingWork(ran, INPUT_STAGE));
+  stages.add(OUTPUT_STAGE, OWNER_OF_FIRST_WORK,
+             recordingWork(ran, OUTPUT_STAGE));
+
+  stages.removeWorkOf(OWNER_OF_FIRST_WORK);
+  stages.run(ELAPSED_TIME);
+
+  EXPECT_TRUE(ran.empty());
+}
+
+/**
+ * Given a work no module owns
+ * When the work of a module is removed and the loop runs
+ * Then the work no module owns still runs
+ */
+TEST(LoopStages, RemovingTheWorkOfAModuleKeepsTheWorkNoModuleOwns) {
+  LoopStages stages(TEST_LOOP_STAGES);
+  std::vector<std::string> ran;
+  stages.add(SIMULATION_STAGE, recordingWork(ran, FIRST_WORK));
+
+  stages.removeWorkOf(OWNER_OF_FIRST_WORK);
+  stages.run(ELAPSED_TIME);
+
+  EXPECT_EQ(ran, (std::vector<std::string>{FIRST_WORK}));
+}

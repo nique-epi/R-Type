@@ -1,0 +1,10 @@
+add_subdirectory(Milestones)
+add_subdirectory(Streams)
+
+add_library(rtype_server_replication_announcements INTERFACE)
+
+target_link_libraries(rtype_server_replication_announcements
+  INTERFACE
+    rtype_server_replication_announcements_milestones
+    rtype_server_replication_announcements_streams
+)

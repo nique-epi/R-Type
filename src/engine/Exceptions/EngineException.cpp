@@ -96,6 +96,19 @@ MissingServiceException::MissingServiceException(const std::string& moduleName,
                       "\" requires the service " + serviceName +
                       ", which no module installed before it provides") {}
 
+DuplicateCommandException::DuplicateCommandException(
+    const std::string& commandName)
+    : EngineException("The command \"" + commandName +
+                      "\" is already registered") {}
+
+DuplicateSettingException::DuplicateSettingException(
+    const std::string& settingName)
+    : EngineException("The setting \"" + settingName +
+                      "\" is already declared") {}
+
+CommandRefusedException::CommandRefusedException(const std::string& reason)
+    : EngineException(reason) {}
+
 UnknownExecutablePathException::UnknownExecutablePathException()
     : EngineException(
           "The system did not tell where the running executable is, so the "

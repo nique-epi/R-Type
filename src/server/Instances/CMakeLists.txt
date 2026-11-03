@@ -1,28 +1,21 @@
-add_library(rtype_server_instances INTERFACE)
+add_subdirectory(Context)
 
-target_include_directories(rtype_server_instances INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
+add_library(rtype_server_instances STATIC DelayedInputs.cpp GameInstance.cpp GameModules.cpp)
+
+target_include_directories(rtype_server_instances PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
 target_link_libraries(rtype_server_instances
-  INTERFACE
+  PUBLIC
     rtype_engine
-    rtype_game
+    rtype_engine_event_bus
+    rtype_network_player_input
     rtype_network_transport
     rtype_server_constants
-    rtype_server_player_roster
-    rtype_server_wave_plan
+    rtype_server_instances_context
+    rtype_server_sessions
+    rtype_server_sessions_roster
+  PRIVATE
+    rtype_server_exceptions
 )
 
-add_subdirectory(WorldSlot)
-add_subdirectory(ScoreKeeper)
-add_subdirectory(LifeKeeper)
-add_subdirectory(ShipInput)
-add_subdirectory(PlayerController)
-add_subdirectory(PlayerLives)
-add_subdirectory(StartBarrier)
-add_subdirectory(GameFlow)
-add_subdirectory(GameModules)
-add_subdirectory(GameReplication)
-add_subdirectory(ReplicationModule)
-add_subdirectory(RtypeSystems)
-add_subdirectory(RtypeRulesModule)
-add_subdirectory(GameInstance)
+rtype_enable_warnings(rtype_server_instances)
