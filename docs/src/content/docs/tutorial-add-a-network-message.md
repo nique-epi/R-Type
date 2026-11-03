@@ -14,7 +14,7 @@ The tutorial ends at the handler on the server. Nothing in the client sends an e
 | Step | You add | In |
 |---|---|---|
 | 1 | The rule of the message | `docs/src/content/docs/protocol.mdx` |
-| 2 | Its type number | `src/network/Protocol/MessageType.hpp` |
+| 2 | Its type number and its name | `src/network/Protocol/MessageType.hpp`, `src/network/Statistics/StatisticsConstants.hpp` |
 | 3 | The struct and its two functions | `src/network/Protocol/Messages/Emote/` |
 | 4 | The library of the folder | `Messages/Emote/CMakeLists.txt`, `Messages/CMakeLists.txt` |
 | 5 | The handler | `src/server/Sessions/EmoteKeeper/`, `src/server/Sessions/GameSessions/` |
@@ -70,6 +70,8 @@ Add the value to `src/network/Protocol/MessageType.hpp`:
   ConnectionChallenge = 16,
   Emote = 17,
 ```
+
+Add its name at the end of `MESSAGE_TYPE_NAMES` in `src/network/Statistics/StatisticsConstants.hpp`, and name your value in the `static_assert` under it. Nothing fails if you forget: the traffic file then writes `type-` and the number of your message instead of its name.
 
 Two test constants name the first type byte no message holds, and both now point at your message. **Change them by hand: nothing fails if you forget.** The tests stay green, but they stop testing an unknown type.
 
