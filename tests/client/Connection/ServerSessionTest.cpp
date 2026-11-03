@@ -652,7 +652,7 @@ TEST_F(ServerSessionFixture, SendsNoInputOnceCancelled) {
 
 /**
  * Given a session the server opened
- * When the heartbeat interval minus one nanosecond passes without sending
+ * When the heartbeat interval minus one nanosecond passes
  * Then no Heartbeat is sent yet
  */
 TEST_F(ServerSessionFixture, WaitsOneIntervalBeforeTheFirstHeartbeat) {
@@ -722,7 +722,7 @@ TEST_F(ServerSessionFixture, AnInputSentDoesNotDelayTheHeartbeat) {
 }
 
 /**
- * Given a session that just sent a Heartbeat after an interval of silence
+ * Given a session that just sent a Heartbeat, one interval after it opened
  * When the interval minus one nanosecond passes
  * Then no second Heartbeat is sent: a Heartbeat starts its own delay over
  */

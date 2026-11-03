@@ -25,6 +25,7 @@
 #include "ProtocolConstants.hpp"
 #include "ProtocolTestConstants.hpp"
 #include "ReadyState.hpp"
+#include "SentDatagrams.hpp"
 #include "ServerDatagrams.hpp"
 #include "ServerLobbyTestConstants.hpp"
 #include "TimeConstants.hpp"
@@ -36,14 +37,14 @@ using testing::ConnectionAcceptorLogFixture;
 using testing::COOKIE_EXPIRED_TIME;
 using testing::DROPPED_TOGETHER_COUNT;
 using testing::emptyNicknameRequestDatagram;
-using testing::messageOf;
-using testing::messageTypeOf;
 using testing::NEXT_PROTOCOL_VERSION;
 using testing::nicknameOf;
+using testing::onlyMessageIn;
+using testing::onlyMessageTypeOf;
 using testing::OTHER_PROTOCOL_ID;
+using testing::playerEndpoint;
 using testing::REFUSAL_DATAGRAM_SIZE;
 using testing::REQUEST_TIME;
-using testing::requesterEndpoint;
 using testing::SHORTEST_NICKNAME;
 
 /**
@@ -52,9 +53,9 @@ using testing::SHORTEST_NICKNAME;
  * Then the acceptor reports the player as joined once, not at the repeat
  */
 TEST_F(ConnectionAcceptorFixture, ReportsAJoinedPlayerOnlyOnce) {
-  const std::uint64_t cookie = challengeCookie(requesterEndpoint(0));
-  receive(requesterEndpoint(0), requestDatagram(cookie));
-  receive(requesterEndpoint(0), requestDatagram(cookie));
+  const std::uint64_t cookie = challengeCookie(playerEndpoint(0));
+  receive(playerEndpoint(0), requestDatagram(cookie));
+  receive(playerEndpoint(0), requestDatagram(cookie));
 
   EXPECT_EQ(joinedPlayers(), (std::vector<std::uint8_t>{1}));
 }
@@ -65,7 +66,7 @@ TEST_F(ConnectionAcceptorFixture, ReportsAJoinedPlayerOnlyOnce) {
  * Then no player is reported as joined: a challenge reserves nothing
  */
 TEST_F(ConnectionAcceptorFixture, ReportsNobodyForAChallengedSender) {
-  receive(requesterEndpoint(0), requestDatagram(0));
+  receive(playerEndpoint(0), requestDatagram(0));
 
   EXPECT_TRUE(joinedPlayers().empty());
 }
@@ -76,11 +77,12 @@ TEST_F(ConnectionAcceptorFixture, ReportsNobodyForAChallengedSender) {
  * Then it gets a challenge with a cookie, sent back to its address
  */
 TEST_F(ConnectionAcceptorFixture, ChallengesARequestWithoutCookie) {
-  receive(requesterEndpoint(0), requestDatagram(0));
+  receive(playerEndpoint(0), requestDatagram(0));
 
   ASSERT_EQ(answers().size(), 1);
-  EXPECT_EQ(lastAnswer().destination, requesterEndpoint(0));
-  EXPECT_NE(messageOf<network::ConnectionChallenge>(lastAnswer()).cookie, 0);
+  EXPECT_EQ(lastAnswer().destination, playerEndpoint(0));
+  EXPECT_NE(onlyMessageIn<network::ConnectionChallenge>(lastAnswer()).cookie,
+            0);
 }
 
 /**
@@ -89,9 +91,9 @@ TEST_F(ConnectionAcceptorFixture, ChallengesARequestWithoutCookie) {
  * Then nobody takes a place: a challenge reserves nothing
  */
 TEST_F(ConnectionAcceptorFixture, KeepsNothingForAChallengedSender) {
-  receive(requesterEndpoint(0), requestDatagram(0));
+  receive(playerEndpoint(0), requestDatagram(0));
 
-  EXPECT_EQ(roster().find(requesterEndpoint(0)), nullptr);
+  EXPECT_EQ(roster().find(playerEndpoint(0)), nullptr);
 }
 
 /**
@@ -105,7 +107,7 @@ TEST_F(ConnectionAcceptorFixture, NeverAnswersAnUnknownSenderWithMoreBytes) {
       network::ConnectionRequest{.cookie = 0,
                                  .nickname = std::string{SHORTEST_NICKNAME}});
 
-  receive(requesterEndpoint(0), request);
+  receive(playerEndpoint(0), request);
 
   ASSERT_EQ(answers().size(), 1);
   EXPECT_LE(lastAnswer().payload.size(), request.size());
@@ -117,10 +119,11 @@ TEST_F(ConnectionAcceptorFixture, NeverAnswersAnUnknownSenderWithMoreBytes) {
  * Then it is accepted as player 1, under a session token other than 0
  */
 TEST_F(ConnectionAcceptorFixture, AcceptsARequestCarryingItsCookie) {
-  connect(requesterEndpoint(0));
+  connect(playerEndpoint(0));
 
-  EXPECT_EQ(messageOf<network::ConnectionAccepted>(lastAnswer()).playerNumber,
-            network::FIRST_PLAYER_NUMBER);
+  EXPECT_EQ(
+      onlyMessageIn<network::ConnectionAccepted>(lastAnswer()).playerNumber,
+      network::FIRST_PLAYER_NUMBER);
   EXPECT_NE(
       network::DatagramCodec::decodeHeader(lastAnswer().payload).sessionToken,
       0);
@@ -133,13 +136,13 @@ TEST_F(ConnectionAcceptorFixture, AcceptsARequestCarryingItsCookie) {
  * acceptance carries
  */
 TEST_F(ConnectionAcceptorFixture, AnnouncesTheAddressAndTokenOfANewPlayer) {
-  connect(requesterEndpoint(0));
+  connect(playerEndpoint(0));
 
   const std::uint64_t acceptedToken =
       network::DatagramCodec::decodeHeader(lastAnswer().payload).sessionToken;
   EXPECT_EQ(admitted(),
             (std::vector<std::pair<network::Endpoint, std::uint64_t>>{
-                {requesterEndpoint(0), acceptedToken}}));
+                {playerEndpoint(0), acceptedToken}}));
 }
 
 /**
@@ -148,7 +151,7 @@ TEST_F(ConnectionAcceptorFixture, AnnouncesTheAddressAndTokenOfANewPlayer) {
  * Then nobody is announced as admitted
  */
 TEST_F(ConnectionAcceptorFixture, AnnouncesNobodyForAChallenge) {
-  receive(requesterEndpoint(0), requestDatagram(0));
+  receive(playerEndpoint(0), requestDatagram(0));
 
   EXPECT_TRUE(admitted().empty());
 }
@@ -159,9 +162,9 @@ TEST_F(ConnectionAcceptorFixture, AnnouncesNobodyForAChallenge) {
  * Then it is not announced a second time
  */
 TEST_F(ConnectionAcceptorFixture, AnnouncesAPlayerAcceptedAgainOnlyOnce) {
-  connect(requesterEndpoint(0));
+  connect(playerEndpoint(0));
 
-  connect(requesterEndpoint(0));
+  connect(playerEndpoint(0));
 
   EXPECT_EQ(admitted().size(), 1);
 }
@@ -173,10 +176,11 @@ TEST_F(ConnectionAcceptorFixture, AnnouncesAPlayerAcceptedAgainOnlyOnce) {
  */
 TEST_F(ConnectionAcceptorFixture, NumbersFourPlayersInTheOrderTheyConnect) {
   for (std::size_t player = 0; player < network::MAXIMUM_PLAYERS; ++player) {
-    connectAs(requesterEndpoint(player), nicknameOf(player));
+    connectAs(playerEndpoint(player), nicknameOf(player));
 
-    EXPECT_EQ(messageOf<network::ConnectionAccepted>(lastAnswer()).playerNumber,
-              network::FIRST_PLAYER_NUMBER + player);
+    EXPECT_EQ(
+        onlyMessageIn<network::ConnectionAccepted>(lastAnswer()).playerNumber,
+        network::FIRST_PLAYER_NUMBER + player);
   }
 }
 
@@ -187,13 +191,13 @@ TEST_F(ConnectionAcceptorFixture, NumbersFourPlayersInTheOrderTheyConnect) {
  */
 TEST_F(ConnectionAcceptorFixture, RefusesTheFifthPlayerBecauseTheGameIsFull) {
   for (std::size_t player = 0; player < network::MAXIMUM_PLAYERS; ++player) {
-    connectAs(requesterEndpoint(player), nicknameOf(player));
+    connectAs(playerEndpoint(player), nicknameOf(player));
   }
 
-  receive(requesterEndpoint(network::MAXIMUM_PLAYERS),
+  receive(playerEndpoint(network::MAXIMUM_PLAYERS),
           requestDatagramOf(nicknameOf(network::MAXIMUM_PLAYERS), 0));
 
-  EXPECT_EQ(messageOf<network::ConnectionRefused>(lastAnswer()).reason,
+  EXPECT_EQ(onlyMessageIn<network::ConnectionRefused>(lastAnswer()).reason,
             network::RefusalReason::GameFull);
 }
 
@@ -205,13 +209,13 @@ TEST_F(ConnectionAcceptorFixture, RefusesTheFifthPlayerBecauseTheGameIsFull) {
  */
 TEST_F(ConnectionAcceptorFixture,
        RefusesANicknameTakenWhateverTheCaseOfItsLetters) {
-  connectAs(requesterEndpoint(0), "Ace");
+  connectAs(playerEndpoint(0), "Ace");
 
-  receive(requesterEndpoint(1), requestDatagramOf("ACE", 0));
+  receive(playerEndpoint(1), requestDatagramOf("ACE", 0));
 
-  EXPECT_EQ(messageOf<network::ConnectionRefused>(lastAnswer()).reason,
+  EXPECT_EQ(onlyMessageIn<network::ConnectionRefused>(lastAnswer()).reason,
             network::RefusalReason::NicknameTaken);
-  EXPECT_EQ(roster().find(requesterEndpoint(1)), nullptr);
+  EXPECT_EQ(roster().find(playerEndpoint(1)), nullptr);
 }
 
 /**
@@ -220,12 +224,12 @@ TEST_F(ConnectionAcceptorFixture,
  * Then it is refused because the nickname is taken
  */
 TEST_F(ConnectionAcceptorFixture, RefusesTheNicknameOfAPlayerWhoseSeatIsHeld) {
-  connectAs(requesterEndpoint(0), "Ace");
-  roster().find(requesterEndpoint(0))->away = true;
+  connectAs(playerEndpoint(0), "Ace");
+  roster().find(playerEndpoint(0))->away = true;
 
-  receive(requesterEndpoint(1), requestDatagramOf("Ace", 0));
+  receive(playerEndpoint(1), requestDatagramOf("Ace", 0));
 
-  EXPECT_EQ(messageOf<network::ConnectionRefused>(lastAnswer()).reason,
+  EXPECT_EQ(onlyMessageIn<network::ConnectionRefused>(lastAnswer()).reason,
             network::RefusalReason::NicknameTaken);
 }
 
@@ -237,12 +241,11 @@ TEST_F(ConnectionAcceptorFixture, RefusesTheNicknameOfAPlayerWhoseSeatIsHeld) {
  */
 TEST_F(ConnectionAcceptorFixture,
        AcceptsAgainThePlayerWhoSendsItsRequestTwice) {
-  connectAs(requesterEndpoint(0), "Ace");
+  connectAs(playerEndpoint(0), "Ace");
 
-  connectAs(requesterEndpoint(0), "Ace");
+  connectAs(playerEndpoint(0), "Ace");
 
-  EXPECT_EQ(messageTypeOf(lastAnswer()),
-            static_cast<std::uint8_t>(network::ConnectionAccepted::TYPE));
+  EXPECT_EQ(onlyMessageTypeOf(lastAnswer()), network::ConnectionAccepted::TYPE);
 }
 
 /**
@@ -251,13 +254,12 @@ TEST_F(ConnectionAcceptorFixture,
  * Then it is accepted: the nickname is free again
  */
 TEST_F(ConnectionAcceptorFixture, GivesANicknameBackOnceItsPlayerLeft) {
-  connectAs(requesterEndpoint(0), "Ace");
-  static_cast<void>(roster().remove(requesterEndpoint(0)));
+  connectAs(playerEndpoint(0), "Ace");
+  static_cast<void>(roster().remove(playerEndpoint(0)));
 
-  connectAs(requesterEndpoint(1), "Ace");
+  connectAs(playerEndpoint(1), "Ace");
 
-  EXPECT_EQ(messageTypeOf(lastAnswer()),
-            static_cast<std::uint8_t>(network::ConnectionAccepted::TYPE));
+  EXPECT_EQ(onlyMessageTypeOf(lastAnswer()), network::ConnectionAccepted::TYPE);
 }
 
 /**
@@ -268,9 +270,9 @@ TEST_F(ConnectionAcceptorFixture, GivesANicknameBackOnceItsPlayerLeft) {
 TEST_F(ConnectionAcceptorFixture, RefusesANewPlayerWhileAGameIsInProgress) {
   acceptor().setGameInProgress(true);
 
-  receive(requesterEndpoint(0), requestDatagram(0));
+  receive(playerEndpoint(0), requestDatagram(0));
 
-  EXPECT_EQ(messageOf<network::ConnectionRefused>(lastAnswer()).reason,
+  EXPECT_EQ(onlyMessageIn<network::ConnectionRefused>(lastAnswer()).reason,
             network::RefusalReason::GameInProgress);
 }
 
@@ -283,11 +285,10 @@ TEST_F(ConnectionAcceptorFixture, LetsPlayersInAgainOnceTheGameIsOver) {
   acceptor().setGameInProgress(true);
   acceptor().setGameInProgress(false);
 
-  receive(requesterEndpoint(0), requestDatagram(0));
+  receive(playerEndpoint(0), requestDatagram(0));
 
-  EXPECT_EQ(
-      messageTypeOf(lastAnswer()),
-      static_cast<std::uint8_t>(network::MessageType::ConnectionChallenge));
+  EXPECT_EQ(onlyMessageTypeOf(lastAnswer()),
+            network::MessageType::ConnectionChallenge);
 }
 
 /**
@@ -296,13 +297,13 @@ TEST_F(ConnectionAcceptorFixture, LetsPlayersInAgainOnceTheGameIsOver) {
  * Then it gets the same number and the same session token again
  */
 TEST_F(ConnectionAcceptorFixture, AcceptsAConnectedPlayerAgainTheSameWay) {
-  connect(requesterEndpoint(0));
+  connect(playerEndpoint(0));
   const network::OutgoingDatagram first = lastAnswer();
 
-  connect(requesterEndpoint(0));
+  connect(playerEndpoint(0));
 
-  EXPECT_EQ(messageOf<network::ConnectionAccepted>(lastAnswer()),
-            messageOf<network::ConnectionAccepted>(first));
+  EXPECT_EQ(onlyMessageIn<network::ConnectionAccepted>(lastAnswer()),
+            onlyMessageIn<network::ConnectionAccepted>(first));
   EXPECT_EQ(
       network::DatagramCodec::decodeHeader(lastAnswer().payload).sessionToken,
       network::DatagramCodec::decodeHeader(first.payload).sessionToken);
@@ -314,11 +315,11 @@ TEST_F(ConnectionAcceptorFixture, AcceptsAConnectedPlayerAgainTheSameWay) {
  * Then the second acceptance carries the next sequence of the session
  */
 TEST_F(ConnectionAcceptorFixture, NumbersEachAcceptanceWithTheNextSequence) {
-  connect(requesterEndpoint(0));
+  connect(playerEndpoint(0));
   const std::uint16_t firstSequence =
       network::DatagramCodec::decodeHeader(lastAnswer().payload).sequence;
 
-  connect(requesterEndpoint(0));
+  connect(playerEndpoint(0));
 
   EXPECT_EQ(firstSequence, 0);
   EXPECT_EQ(network::DatagramCodec::decodeHeader(lastAnswer().payload).sequence,
@@ -331,13 +332,14 @@ TEST_F(ConnectionAcceptorFixture, NumbersEachAcceptanceWithTheNextSequence) {
  * Then it is accepted again, not refused: it already plays
  */
 TEST_F(ConnectionAcceptorFixture, AcceptsAConnectedPlayerDuringItsGame) {
-  connect(requesterEndpoint(0));
+  connect(playerEndpoint(0));
   acceptor().setGameInProgress(true);
 
-  connect(requesterEndpoint(0));
+  connect(playerEndpoint(0));
 
-  EXPECT_EQ(messageOf<network::ConnectionAccepted>(lastAnswer()).playerNumber,
-            network::FIRST_PLAYER_NUMBER);
+  EXPECT_EQ(
+      onlyMessageIn<network::ConnectionAccepted>(lastAnswer()).playerNumber,
+      network::FIRST_PLAYER_NUMBER);
 }
 
 /**
@@ -347,14 +349,13 @@ TEST_F(ConnectionAcceptorFixture, AcceptsAConnectedPlayerDuringItsGame) {
  */
 TEST_F(ConnectionAcceptorFixture,
        ChallengesAConnectedPlayerWithoutCookieDuringItsGame) {
-  connect(requesterEndpoint(0));
+  connect(playerEndpoint(0));
   acceptor().setGameInProgress(true);
 
-  receive(requesterEndpoint(0), requestDatagram(0));
+  receive(playerEndpoint(0), requestDatagram(0));
 
-  EXPECT_EQ(
-      messageTypeOf(lastAnswer()),
-      static_cast<std::uint8_t>(network::MessageType::ConnectionChallenge));
+  EXPECT_EQ(onlyMessageTypeOf(lastAnswer()),
+            network::MessageType::ConnectionChallenge);
 }
 
 /**
@@ -363,14 +364,13 @@ TEST_F(ConnectionAcceptorFixture,
  * Then it gets a new challenge and takes no place
  */
 TEST_F(ConnectionAcceptorFixture, ChallengesARequestWithAWrongCookie) {
-  const std::uint64_t cookie = challengeCookie(requesterEndpoint(0));
+  const std::uint64_t cookie = challengeCookie(playerEndpoint(0));
 
-  receive(requesterEndpoint(0), requestDatagram(cookie + 1));
+  receive(playerEndpoint(0), requestDatagram(cookie + 1));
 
-  EXPECT_EQ(
-      messageTypeOf(lastAnswer()),
-      static_cast<std::uint8_t>(network::MessageType::ConnectionChallenge));
-  EXPECT_EQ(roster().find(requesterEndpoint(0)), nullptr);
+  EXPECT_EQ(onlyMessageTypeOf(lastAnswer()),
+            network::MessageType::ConnectionChallenge);
+  EXPECT_EQ(roster().find(playerEndpoint(0)), nullptr);
 }
 
 /**
@@ -379,13 +379,12 @@ TEST_F(ConnectionAcceptorFixture, ChallengesARequestWithAWrongCookie) {
  * Then the cookie has expired: it gets a new challenge
  */
 TEST_F(ConnectionAcceptorFixture, ChallengesARequestWithAnExpiredCookie) {
-  const std::uint64_t cookie = challengeCookie(requesterEndpoint(0));
+  const std::uint64_t cookie = challengeCookie(playerEndpoint(0));
 
-  receive(requesterEndpoint(0), requestDatagram(cookie), COOKIE_EXPIRED_TIME);
+  receive(playerEndpoint(0), requestDatagram(cookie), COOKIE_EXPIRED_TIME);
 
-  EXPECT_EQ(
-      messageTypeOf(lastAnswer()),
-      static_cast<std::uint8_t>(network::MessageType::ConnectionChallenge));
+  EXPECT_EQ(onlyMessageTypeOf(lastAnswer()),
+            network::MessageType::ConnectionChallenge);
 }
 
 /**
@@ -395,11 +394,11 @@ TEST_F(ConnectionAcceptorFixture, ChallengesARequestWithAnExpiredCookie) {
  */
 TEST_F(ConnectionAcceptorFixture,
        RefusesThePlaceToASenderWithAnotherOnesCookie) {
-  const std::uint64_t cookie = challengeCookie(requesterEndpoint(0));
+  const std::uint64_t cookie = challengeCookie(playerEndpoint(0));
 
-  receive(requesterEndpoint(1), requestDatagram(cookie));
+  receive(playerEndpoint(1), requestDatagram(cookie));
 
-  EXPECT_EQ(roster().find(requesterEndpoint(1)), nullptr);
+  EXPECT_EQ(roster().find(playerEndpoint(1)), nullptr);
 }
 
 /**
@@ -409,12 +408,12 @@ TEST_F(ConnectionAcceptorFixture,
  */
 TEST_F(ConnectionAcceptorFixture,
        IgnoresAnythingButARequestFromAnUnknownSender) {
-  receive(requesterEndpoint(0),
+  receive(playerEndpoint(0),
           network::DatagramCodec::encode(network::PacketHeader{},
                                          network::ReadyState{.ready = true}));
 
   EXPECT_TRUE(answers().empty());
-  EXPECT_EQ(roster().find(requesterEndpoint(0)), nullptr);
+  EXPECT_EQ(roster().find(playerEndpoint(0)), nullptr);
 }
 
 /**
@@ -428,7 +427,7 @@ TEST_F(ConnectionAcceptorFixture, AnswersADatagramOnceWhateverItHolds) {
       datagram.begin() + network::PACKET_HEADER_SIZE, datagram.end()};
   datagram.insert(datagram.end(), secondMessage.begin(), secondMessage.end());
 
-  receive(requesterEndpoint(0), datagram);
+  receive(playerEndpoint(0), datagram);
 
   EXPECT_EQ(answers().size(), 1);
 }
@@ -442,7 +441,7 @@ TEST_F(ConnectionAcceptorFixture, IgnoresATruncatedDatagram) {
   std::vector<std::byte> datagram = requestDatagram(0);
   datagram.pop_back();
 
-  EXPECT_NO_THROW(receive(requesterEndpoint(0), datagram));
+  EXPECT_NO_THROW(receive(playerEndpoint(0), datagram));
   EXPECT_TRUE(answers().empty());
 }
 
@@ -452,8 +451,7 @@ TEST_F(ConnectionAcceptorFixture, IgnoresATruncatedDatagram) {
  * Then it gets no answer, and nothing is thrown
  */
 TEST_F(ConnectionAcceptorFixture, IgnoresARequestWithAnInvalidNickname) {
-  EXPECT_NO_THROW(
-      receive(requesterEndpoint(0), emptyNicknameRequestDatagram()));
+  EXPECT_NO_THROW(receive(playerEndpoint(0), emptyNicknameRequestDatagram()));
   EXPECT_TRUE(answers().empty());
 }
 
@@ -466,16 +464,16 @@ TEST_F(ConnectionAcceptorFixture, IgnoresARequestWithAnInvalidNickname) {
  */
 TEST_F(ConnectionAcceptorFixture, IgnoresARequestWhoseNicknameHoldsALineFeed) {
   network::ByteWriter payload;
-  payload.writeUint64(challengeCookie(requesterEndpoint(0)));
+  payload.writeUint64(challengeCookie(playerEndpoint(0)));
   payload.writeString(network::testing::NICKNAME_WITH_LINE_FEED);
 
-  receive(requesterEndpoint(0),
+  receive(playerEndpoint(0),
           network::DatagramCodec::encode(
               network::PacketHeader{}, network::MessageType::ConnectionRequest,
               payload.bytes()));
 
   EXPECT_EQ(answers().size(), 1U);
-  EXPECT_EQ(roster().find(requesterEndpoint(0)), nullptr);
+  EXPECT_EQ(roster().find(playerEndpoint(0)), nullptr);
 }
 
 /**
@@ -488,15 +486,15 @@ TEST_F(ConnectionAcceptorFixture, RefusesARequestOfAnotherVersion) {
   network::PacketHeader header;
   header.version = NEXT_PROTOCOL_VERSION;
 
-  receive(requesterEndpoint(0), requestDatagram(0, header));
+  receive(playerEndpoint(0), requestDatagram(0, header));
 
   ASSERT_EQ(answers().size(), 1U);
-  EXPECT_EQ(lastAnswer().destination, requesterEndpoint(0));
+  EXPECT_EQ(lastAnswer().destination, playerEndpoint(0));
   EXPECT_EQ(network::DatagramCodec::decodeHeader(lastAnswer().payload).version,
             network::PROTOCOL_VERSION);
-  EXPECT_EQ(messageOf<network::ConnectionRefused>(lastAnswer()).reason,
+  EXPECT_EQ(onlyMessageIn<network::ConnectionRefused>(lastAnswer()).reason,
             network::RefusalReason::IncompatibleVersion);
-  EXPECT_EQ(roster().find(requesterEndpoint(0)), nullptr);
+  EXPECT_EQ(roster().find(playerEndpoint(0)), nullptr);
 }
 
 /**
@@ -512,11 +510,11 @@ TEST_F(ConnectionAcceptorFixture,
   const std::vector<std::byte> datagram = readyDatagram(header);
   ASSERT_EQ(datagram.size(), REFUSAL_DATAGRAM_SIZE);
 
-  receive(requesterEndpoint(0), datagram);
+  receive(playerEndpoint(0), datagram);
 
   ASSERT_EQ(answers().size(), 1U);
   EXPECT_LE(lastAnswer().payload.size(), datagram.size());
-  EXPECT_EQ(messageOf<network::ConnectionRefused>(lastAnswer()).reason,
+  EXPECT_EQ(onlyMessageIn<network::ConnectionRefused>(lastAnswer()).reason,
             network::RefusalReason::IncompatibleVersion);
 }
 
@@ -532,7 +530,7 @@ TEST_F(ConnectionAcceptorFixture,
   const std::vector<std::byte> datagram = disconnectionDatagram(header);
   ASSERT_EQ(datagram.size(), REFUSAL_DATAGRAM_SIZE - 1);
 
-  receive(requesterEndpoint(0), datagram);
+  receive(playerEndpoint(0), datagram);
 
   EXPECT_TRUE(answers().empty());
 }
@@ -546,7 +544,7 @@ TEST_F(ConnectionAcceptorFixture, IgnoresADatagramOfAnotherProtocol) {
   network::PacketHeader header;
   header.protocolId = OTHER_PROTOCOL_ID;
 
-  receive(requesterEndpoint(0), requestDatagram(0, header));
+  receive(playerEndpoint(0), requestDatagram(0, header));
 
   EXPECT_TRUE(answers().empty());
 }
@@ -558,11 +556,11 @@ TEST_F(ConnectionAcceptorFixture, IgnoresADatagramOfAnotherProtocol) {
  * address and the port of its sender
  */
 TEST_F(ConnectionAcceptorLogFixture, LogsARefusedRequestWithItsSender) {
-  receive(requesterEndpoint(0), emptyNicknameRequestDatagram());
+  receive(playerEndpoint(0), emptyNicknameRequestDatagram());
 
   const std::vector<std::string> lines = dropLines();
   ASSERT_EQ(lines.size(), 1U);
-  EXPECT_NE(lines.front().find(senderText(requesterEndpoint(0))),
+  EXPECT_NE(lines.front().find(senderText(playerEndpoint(0))),
             std::string::npos);
 }
 
@@ -572,7 +570,7 @@ TEST_F(ConnectionAcceptorLogFixture, LogsARefusedRequestWithItsSender) {
  * Then the journal holds no line about a datagram dropped
  */
 TEST_F(ConnectionAcceptorLogFixture, LogsNothingForARequestItAnswers) {
-  receive(requesterEndpoint(0), requestDatagram(0));
+  receive(playerEndpoint(0), requestDatagram(0));
 
   ASSERT_EQ(answers().size(), 1U);
   EXPECT_TRUE(dropLines().empty());
@@ -586,7 +584,7 @@ TEST_F(ConnectionAcceptorLogFixture, LogsNothingForARequestItAnswers) {
  */
 TEST_F(ConnectionAcceptorLogFixture, WritesOneLineForRequestsDroppedTogether) {
   for (std::size_t sent = 0; sent < DROPPED_TOGETHER_COUNT; ++sent) {
-    receive(requesterEndpoint(0), emptyNicknameRequestDatagram());
+    receive(playerEndpoint(0), emptyNicknameRequestDatagram());
   }
 
   EXPECT_EQ(dropLines().size(), 1U);
@@ -599,9 +597,9 @@ TEST_F(ConnectionAcceptorLogFixture, WritesOneLineForRequestsDroppedTogether) {
  * the acceptor is given
  */
 TEST_F(ConnectionAcceptorLogFixture, WritesTheNextLineOnceTheIntervalIsOver) {
-  receive(requesterEndpoint(0), emptyNicknameRequestDatagram());
+  receive(playerEndpoint(0), emptyNicknameRequestDatagram());
 
-  receive(requesterEndpoint(0), emptyNicknameRequestDatagram(),
+  receive(playerEndpoint(0), emptyNicknameRequestDatagram(),
           REQUEST_TIME + network::REJECTION_LINE_INTERVAL);
 
   EXPECT_EQ(dropLines().size(), 2U);

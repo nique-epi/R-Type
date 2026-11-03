@@ -68,6 +68,7 @@ using testing::GameInstanceInputTest;
 using testing::GameInstanceLogTest;
 using testing::GameInstanceMovementTest;
 using testing::GameInstanceTest;
+using testing::heartbeatsIn;
 using testing::HeldArrow;
 using testing::HOLDS_DOWN;
 using testing::HOLDS_LEFT;
@@ -1021,28 +1022,20 @@ TEST_F(GameInstanceTest, TheOthersPlayOnWhenAPlayerLeaves) {
  */
 TEST_F(GameInstanceTest, SendsTheNextHeartbeatOneIntervalAfterThePrevious) {
   startGameWithOnePlayer();
-  const std::size_t before =
-      ofType(network::MessageType::Heartbeat, sentTo(FIRST_PLAYER)).size();
-  for (std::size_t ticks = 0;
-       ticks < PROTOCOL_HEARTBEAT_TICKS &&
-       ofType(network::MessageType::Heartbeat, sentTo(FIRST_PLAYER)).size() ==
-           before;
+  const std::size_t before = heartbeatsIn(sentTo(FIRST_PLAYER));
+  for (std::size_t ticks = 0; ticks < PROTOCOL_HEARTBEAT_TICKS &&
+                              heartbeatsIn(sentTo(FIRST_PLAYER)) == before;
        ++ticks) {
     tick();
   }
-  ASSERT_EQ(
-      ofType(network::MessageType::Heartbeat, sentTo(FIRST_PLAYER)).size(),
-      before + 1);
+  ASSERT_EQ(heartbeatsIn(sentTo(FIRST_PLAYER)), before + 1);
 
   runTicks(PROTOCOL_HEARTBEAT_TICKS - 1);
-  const std::size_t beforeTheLastTick =
-      ofType(network::MessageType::Heartbeat, sentTo(FIRST_PLAYER)).size();
+  const std::size_t beforeTheLastTick = heartbeatsIn(sentTo(FIRST_PLAYER));
   tick();
 
   EXPECT_EQ(beforeTheLastTick, before + 1);
-  EXPECT_EQ(
-      ofType(network::MessageType::Heartbeat, sentTo(FIRST_PLAYER)).size(),
-      before + 2);
+  EXPECT_EQ(heartbeatsIn(sentTo(FIRST_PLAYER)), before + 2);
 }
 
 /**
@@ -1055,14 +1048,11 @@ TEST_F(GameInstanceTest, SendsTheNextHeartbeatOneIntervalAfterThePrevious) {
 TEST_F(GameInstanceTest, SendsAHeartbeatWithinAnIntervalOfAFinishedGame) {
   startGameWithOnePlayer();
   game().finish();
-  const std::size_t before =
-      ofType(network::MessageType::Heartbeat, sentTo(FIRST_PLAYER)).size();
+  const std::size_t before = heartbeatsIn(sentTo(FIRST_PLAYER));
 
   runTicks(PROTOCOL_HEARTBEAT_TICKS);
 
-  EXPECT_EQ(
-      ofType(network::MessageType::Heartbeat, sentTo(FIRST_PLAYER)).size(),
-      before + 1);
+  EXPECT_EQ(heartbeatsIn(sentTo(FIRST_PLAYER)), before + 1);
 }
 
 /**
@@ -1092,14 +1082,11 @@ TEST_F(GameInstanceTest, SendsTheHeartbeatUnderTheSessionOfThePlayer) {
 TEST_F(GameInstanceTest, SendsAHeartbeatEveryIntervalWhileNothingElseGoesOut) {
   startGameWithOnePlayer();
   game().finish();
-  const std::size_t before =
-      ofType(network::MessageType::Heartbeat, sentTo(FIRST_PLAYER)).size();
+  const std::size_t before = heartbeatsIn(sentTo(FIRST_PLAYER));
 
   runTicks(3 * PROTOCOL_HEARTBEAT_TICKS);
 
-  EXPECT_EQ(
-      ofType(network::MessageType::Heartbeat, sentTo(FIRST_PLAYER)).size(),
-      before + 3);
+  EXPECT_EQ(heartbeatsIn(sentTo(FIRST_PLAYER)), before + 3);
 }
 
 /**
@@ -1112,14 +1099,11 @@ TEST_F(GameInstanceTest, SendsAHeartbeatEveryIntervalWhileNothingElseGoesOut) {
 TEST_F(GameInstanceTest,
        SendsAHeartbeatEveryIntervalWhileTheWorldStateGoesOut) {
   startGameWithOnePlayer();
-  const std::size_t before =
-      ofType(network::MessageType::Heartbeat, sentTo(FIRST_PLAYER)).size();
+  const std::size_t before = heartbeatsIn(sentTo(FIRST_PLAYER));
 
   runTicks(2 * PROTOCOL_HEARTBEAT_TICKS);
 
-  EXPECT_EQ(
-      ofType(network::MessageType::Heartbeat, sentTo(FIRST_PLAYER)).size(),
-      before + 2);
+  EXPECT_EQ(heartbeatsIn(sentTo(FIRST_PLAYER)), before + 2);
 }
 
 /**
@@ -1129,14 +1113,11 @@ TEST_F(GameInstanceTest,
  */
 TEST_F(GameInstanceTest, SendsAHeartbeatEveryIntervalWhileTheRoomGoesOut) {
   join(FIRST_PLAYER);
-  const std::size_t before =
-      ofType(network::MessageType::Heartbeat, sentTo(FIRST_PLAYER)).size();
+  const std::size_t before = heartbeatsIn(sentTo(FIRST_PLAYER));
 
   runTicks(2 * PROTOCOL_HEARTBEAT_TICKS);
 
-  EXPECT_EQ(
-      ofType(network::MessageType::Heartbeat, sentTo(FIRST_PLAYER)).size(),
-      before + 2);
+  EXPECT_EQ(heartbeatsIn(sentTo(FIRST_PLAYER)), before + 2);
 }
 
 /**
@@ -1151,8 +1132,7 @@ TEST_F(GameInstanceTest, SendsTheRoomAHeartbeatAtTheFirstTickAfterAStall) {
 
   tick(STALL_SHORTER_THAN_THE_SILENCE_LIMIT);
 
-  EXPECT_EQ(
-      ofType(network::MessageType::Heartbeat, sentTo(FIRST_PLAYER)).size(), 1U);
+  EXPECT_EQ(heartbeatsIn(sentTo(FIRST_PLAYER)), 1U);
 }
 
 /**
@@ -1167,8 +1147,7 @@ TEST_F(GameInstanceTest,
 
   tick(STALL_SHORTER_THAN_THE_SILENCE_LIMIT);
 
-  EXPECT_EQ(
-      ofType(network::MessageType::Heartbeat, sentTo(FIRST_PLAYER)).size(), 1U);
+  EXPECT_EQ(heartbeatsIn(sentTo(FIRST_PLAYER)), 1U);
 }
 
 /**
@@ -1184,8 +1163,7 @@ TEST_F(GameInstanceTest,
 
   tick(STALL_SHORTER_THAN_THE_SILENCE_LIMIT);
 
-  EXPECT_EQ(
-      ofType(network::MessageType::Heartbeat, sentTo(FIRST_PLAYER)).size(), 1U);
+  EXPECT_EQ(heartbeatsIn(sentTo(FIRST_PLAYER)), 1U);
 }
 
 /**

@@ -6,27 +6,19 @@
 #include "PeerStamp.hpp"
 #include "RoundTripConstants.hpp"
 #include "RoundTripFigures.hpp"
+#include "RoundTripWire.hpp"
 
 namespace rtype::network {
 
-namespace {
-
-/** @returns @p time in whole microseconds, modulo 2^32, as a Heartbeat
- * carries it. */
-std::uint32_t wireMicrosecondsOf(std::chrono::nanoseconds time) {
-  return static_cast<std::uint32_t>(
-      std::chrono::duration_cast<std::chrono::microseconds>(time).count());
-}
-
-}  // namespace
-
 Heartbeat RoundTripMeter::nextHeartbeat(std::chrono::nanoseconds now) const {
   Heartbeat heartbeat{.sentAt = wireMicrosecondsOf(now), .echo = std::nullopt};
-  if (newestReceived_.has_value() &&
-      now - newestReceived_->receivedAt <= LONGEST_ROUND_TRIP) {
-    heartbeat.echo = HeartbeatEcho{
-        .sentAt = newestReceived_->sentAt,
-        .heldFor = wireMicrosecondsOf(now - newestReceived_->receivedAt)};
+  if (!newestReceived_.has_value()) {
+    return heartbeat;
+  }
+  const std::chrono::nanoseconds held = now - newestReceived_->receivedAt;
+  if (held <= LONGEST_ROUND_TRIP) {
+    heartbeat.echo = HeartbeatEcho{.sentAt = newestReceived_->sentAt,
+                                   .heldFor = wireMicrosecondsOf(held)};
   }
   return heartbeat;
 }
@@ -46,8 +38,7 @@ std::optional<RoundTripFigures> RoundTripMeter::figures() const {
 
 void RoundTripMeter::measure(const HeartbeatEcho& echo,
                              std::chrono::nanoseconds receivedAt) {
-  const auto sinceSent =
-      static_cast<std::uint32_t>(wireMicrosecondsOf(receivedAt) - echo.sentAt);
+  const std::uint32_t sinceSent = wireMicrosecondsOf(receivedAt) - echo.sentAt;
   if (echo.heldFor > sinceSent) {
     return;
   }

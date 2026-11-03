@@ -1,7 +1,6 @@
 #include "Heartbeats.hpp"
 #include <chrono>
 #include <cstddef>
-#include <cstdint>
 #include <functional>
 #include <optional>
 #include <vector>
@@ -13,6 +12,7 @@
 #include "OutgoingDatagram.hpp"
 #include "PlayerRoster.hpp"
 #include "RoundTripFigures.hpp"
+#include "RoundTripWire.hpp"
 #include "RoundTrips.hpp"
 #include "SessionConstants.hpp"
 #include "SessionDatagram.hpp"
@@ -22,24 +22,17 @@ namespace rtype::server {
 
 namespace {
 
-/** @returns @p duration in whole microseconds, as RoundTrips carries it: at
- * most LONGEST_ROUND_TRIP, which fits in 32 bits. */
-std::uint32_t wireMicrosecondsOf(std::chrono::microseconds duration) {
-  return static_cast<std::uint32_t>(duration.count());
-}
-
 /** @returns The round trip of each player of @p players measured, in the
  * order given; a player measured nothing with yet is left out. */
 network::RoundTrips roundTripsOf(const ConnectedPlayers& players) {
   network::RoundTrips report;
+  report.players.reserve(players.size());
   for (const ConnectedPlayer* const player : players) {
     const std::optional<network::RoundTripFigures> figures =
         player->roundTrip.figures();
     if (figures.has_value()) {
-      report.players.push_back(network::PlayerRoundTrip{
-          .playerNumber = player->playerNumber,
-          .roundTrip = wireMicrosecondsOf(figures->roundTrip),
-          .jitter = wireMicrosecondsOf(figures->jitter)});
+      report.players.push_back(
+          network::playerRoundTripOf(player->playerNumber, *figures));
     }
   }
   return report;

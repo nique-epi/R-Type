@@ -12,6 +12,7 @@
 #include "ProtocolConstants.hpp"
 #include "RoundTripFigures.hpp"
 #include "RoundTripMeter.hpp"
+#include "RoundTripWire.hpp"
 #include "RoundTrips.hpp"
 #include "TimeConstants.hpp"
 
@@ -44,7 +45,6 @@ void RoundTripWatch::sessionOpened(const network::LobbyPlayer& ownPlayer,
 
 void RoundTripWatch::sessionClosed() {
   outbox_ = nullptr;
-  ownPlayerNumber_.reset();
   meter_ = network::RoundTripMeter{};
   reported_.clear();
 }
@@ -76,9 +76,7 @@ std::optional<network::RoundTripFigures> RoundTripWatch::reportedRoundTripOf(
   if (reported == reported_.end()) {
     return std::nullopt;
   }
-  return network::RoundTripFigures{
-      .roundTrip = std::chrono::microseconds{reported->roundTrip},
-      .jitter = std::chrono::microseconds{reported->jitter}};
+  return network::figuresOf(*reported);
 }
 
 }  // namespace rtype::client

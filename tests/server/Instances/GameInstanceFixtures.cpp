@@ -53,6 +53,11 @@
 
 namespace rtype::server::testing {
 
+std::size_t heartbeatsIn(
+    const std::vector<network::OutgoingDatagram>& datagrams) {
+  return ofType(network::MessageType::Heartbeat, datagrams).size();
+}
+
 std::vector<network::OutgoingDatagram> ofType(
     network::MessageType type,
     const std::vector<network::OutgoingDatagram>& datagrams) {

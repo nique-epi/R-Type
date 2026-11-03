@@ -49,6 +49,10 @@ struct SentReadyState {
     network::MessageType type,
     const std::vector<network::OutgoingDatagram>& datagrams);
 
+/** @returns How many of @p datagrams hold a Heartbeat. */
+[[nodiscard]] std::size_t heartbeatsIn(
+    const std::vector<network::OutgoingDatagram>& datagrams);
+
 /** @returns A header carrying the session token of @p player. */
 [[nodiscard]] network::PacketHeader sessionHeader(std::size_t player);
 

@@ -36,8 +36,9 @@ class RoundTripEstimator {
   [[nodiscard]] std::chrono::microseconds jitter() const;
 
   std::array<std::chrono::microseconds, JITTER_WINDOW_SIZE> newest_{};
-  std::size_t count_{0};
-  std::size_t next_{0};
+  /** @brief Every round trip added: the next one goes to added_ % size, and
+   * the newest min(added_, size) are kept. */
+  std::size_t added_{0};
   std::chrono::microseconds smoothed_{};
 };
 

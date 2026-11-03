@@ -1,7 +1,6 @@
 #include <gtest/gtest.h>
 #include <chrono>
 #include <optional>
-#include <utility>
 #include <vector>
 #include "ConnectedPlayer.hpp"
 #include "Heartbeat.hpp"
@@ -22,10 +21,9 @@
 namespace rtype::server {
 
 using testing::addPlayer;
-using testing::ECHO_ARRIVAL;
 using testing::HEARTBEAT_SENDING_TIME;
 using testing::HEARTBEAT_SENDING_TIME_ON_THE_WIRE;
-using testing::HELD_BY_THE_CLIENT;
+using testing::heartbeatsSentAt;
 using testing::HELD_UNTIL_THE_SERVER_SENDS;
 using testing::MEASURED_PLAYER_ROUND_TRIP;
 using testing::MEASURED_PLAYER_ROUND_TRIP_ON_THE_WIRE;
@@ -35,6 +33,7 @@ using testing::PLAYER_HEARTBEAT_ARRIVAL;
 using testing::PLAYER_HEARTBEAT_SENT_AT;
 using testing::playerEndpoint;
 using testing::PROTOCOL_TIME_BETWEEN_HEARTBEATS;
+using testing::readEchoFrom;
 using testing::sentTo;
 using testing::SOME_STALL;
 using testing::SOME_TICK_TIME;
@@ -68,12 +67,9 @@ TEST(Heartbeats, SendsNothingBeforeTheInterval) {
   PlayerRoster roster;
   ConnectedPlayer& player = addPlayer(roster);
   player.sinceHeartbeat = PROTOCOL_TIME_BETWEEN_HEARTBEATS - ONE_NANOSECOND;
-  std::vector<network::OutgoingDatagram> sent;
 
-  sendHeartbeats(roster, HEARTBEAT_SENDING_TIME,
-                 [&sent](network::OutgoingDatagram datagram) {
-                   sent.push_back(std::move(datagram));
-                 });
+  const std::vector<network::OutgoingDatagram> sent =
+      heartbeatsSentAt(roster, HEARTBEAT_SENDING_TIME);
 
   EXPECT_TRUE(sent.empty());
 }
@@ -89,12 +85,9 @@ TEST(Heartbeats, SendsAHeartbeatThenTheRoundTripsAtTheInterval) {
   PlayerRoster roster;
   ConnectedPlayer& player = addPlayer(roster);
   player.sinceHeartbeat = PROTOCOL_TIME_BETWEEN_HEARTBEATS;
-  std::vector<network::OutgoingDatagram> sent;
 
-  sendHeartbeats(roster, HEARTBEAT_SENDING_TIME,
-                 [&sent](network::OutgoingDatagram datagram) {
-                   sent.push_back(std::move(datagram));
-                 });
+  const std::vector<network::OutgoingDatagram> sent =
+      heartbeatsSentAt(roster, HEARTBEAT_SENDING_TIME);
 
   ASSERT_EQ(sent.size(), 2U);
   EXPECT_EQ(sent.front().destination, player.endpoint);
@@ -114,13 +107,10 @@ TEST(Heartbeats, AnotherDatagramDoesNotDelayTheHeartbeat) {
   PlayerRoster roster;
   ConnectedPlayer& player = addPlayer(roster);
   player.sinceHeartbeat = PROTOCOL_TIME_BETWEEN_HEARTBEATS;
-  std::vector<network::OutgoingDatagram> sent;
 
   static_cast<void>(nextSessionHeader(player));
-  sendHeartbeats(roster, HEARTBEAT_SENDING_TIME,
-                 [&sent](network::OutgoingDatagram datagram) {
-                   sent.push_back(std::move(datagram));
-                 });
+  const std::vector<network::OutgoingDatagram> sent =
+      heartbeatsSentAt(roster, HEARTBEAT_SENDING_TIME);
 
   ASSERT_FALSE(sent.empty());
   EXPECT_EQ(onlyMessageTypeOf(sent.front()), network::MessageType::Heartbeat);
@@ -136,12 +126,9 @@ TEST(Heartbeats, TheHeartbeatCarriesTheTimeItIsSent) {
   PlayerRoster roster;
   ConnectedPlayer& player = addPlayer(roster);
   player.sinceHeartbeat = PROTOCOL_TIME_BETWEEN_HEARTBEATS;
-  std::vector<network::OutgoingDatagram> sent;
 
-  sendHeartbeats(roster, HEARTBEAT_SENDING_TIME,
-                 [&sent](network::OutgoingDatagram datagram) {
-                   sent.push_back(std::move(datagram));
-                 });
+  const std::vector<network::OutgoingDatagram> sent =
+      heartbeatsSentAt(roster, HEARTBEAT_SENDING_TIME);
 
   ASSERT_FALSE(sent.empty());
   EXPECT_EQ(onlyMessageIn<network::Heartbeat>(sent.front()),
@@ -165,12 +152,9 @@ TEST(Heartbeats, TheHeartbeatEchoesTheNewestHeartbeatOfThePlayer) {
                 network::Heartbeat{.sentAt = PLAYER_HEARTBEAT_SENT_AT,
                                    .echo = std::nullopt});
   player.sinceHeartbeat = PROTOCOL_TIME_BETWEEN_HEARTBEATS;
-  std::vector<network::OutgoingDatagram> sent;
 
-  sendHeartbeats(roster, HEARTBEAT_SENDING_TIME,
-                 [&sent](network::OutgoingDatagram datagram) {
-                   sent.push_back(std::move(datagram));
-                 });
+  const std::vector<network::OutgoingDatagram> sent =
+      heartbeatsSentAt(roster, HEARTBEAT_SENDING_TIME);
 
   ASSERT_FALSE(sent.empty());
   EXPECT_EQ(onlyMessageIn<network::Heartbeat>(sent.front()).echo,
@@ -188,14 +172,7 @@ TEST(Heartbeats, ReadsTheRoundTripOfThePlayerFromItsEcho) {
   PlayerRoster roster;
   const ConnectedPlayer& player = addPlayer(roster);
 
-  readHeartbeat(
-      roster,
-      network::MessageOrigin{
-          .sender = player.endpoint, .header = {}, .receivedAt = ECHO_ARRIVAL},
-      network::Heartbeat{.sentAt = PLAYER_HEARTBEAT_SENT_AT,
-                         .echo = network::HeartbeatEcho{
-                             .sentAt = HEARTBEAT_SENDING_TIME_ON_THE_WIRE,
-                             .heldFor = HELD_BY_THE_CLIENT}});
+  readEchoFrom(roster, player.endpoint);
 
   const std::optional<network::RoundTripFigures> figures =
       player.roundTrip.figures();
@@ -213,15 +190,7 @@ TEST(Heartbeats, IgnoresAHeartbeatFromAStranger) {
   PlayerRoster roster;
   const ConnectedPlayer& player = addPlayer(roster, 0);
 
-  readHeartbeat(
-      roster,
-      network::MessageOrigin{.sender = playerEndpoint(1),
-                             .header = {},
-                             .receivedAt = ECHO_ARRIVAL},
-      network::Heartbeat{.sentAt = PLAYER_HEARTBEAT_SENT_AT,
-                         .echo = network::HeartbeatEcho{
-                             .sentAt = HEARTBEAT_SENDING_TIME_ON_THE_WIRE,
-                             .heldFor = HELD_BY_THE_CLIENT}});
+  readEchoFrom(roster, playerEndpoint(1));
 
   EXPECT_FALSE(player.roundTrip.figures().has_value());
 }
@@ -235,23 +204,12 @@ TEST(Heartbeats, TheRoundTripsListOnlyThePlayersMeasured) {
   PlayerRoster roster;
   ConnectedPlayer& measured = addPlayer(roster, 0);
   ConnectedPlayer& unmeasured = addPlayer(roster, 1);
-  readHeartbeat(
-      roster,
-      network::MessageOrigin{.sender = measured.endpoint,
-                             .header = {},
-                             .receivedAt = ECHO_ARRIVAL},
-      network::Heartbeat{.sentAt = PLAYER_HEARTBEAT_SENT_AT,
-                         .echo = network::HeartbeatEcho{
-                             .sentAt = HEARTBEAT_SENDING_TIME_ON_THE_WIRE,
-                             .heldFor = HELD_BY_THE_CLIENT}});
+  readEchoFrom(roster, measured.endpoint);
   measured.sinceHeartbeat = PROTOCOL_TIME_BETWEEN_HEARTBEATS;
   unmeasured.sinceHeartbeat = PROTOCOL_TIME_BETWEEN_HEARTBEATS;
-  std::vector<network::OutgoingDatagram> sent;
 
-  sendHeartbeats(roster, HEARTBEAT_SENDING_TIME,
-                 [&sent](network::OutgoingDatagram datagram) {
-                   sent.push_back(std::move(datagram));
-                 });
+  const std::vector<network::OutgoingDatagram> sent =
+      heartbeatsSentAt(roster, HEARTBEAT_SENDING_TIME);
 
   const std::vector<network::OutgoingDatagram> toUnmeasured =
       sentTo(sent, unmeasured.endpoint);
@@ -275,13 +233,10 @@ TEST(Heartbeats, SendsEveryPlayerAHeartbeatAfterAStall) {
   PlayerRoster roster;
   const ConnectedPlayer& first = addPlayer(roster, 0);
   const ConnectedPlayer& second = addPlayer(roster, 1);
-  std::vector<network::OutgoingDatagram> sent;
 
   addTimeSinceHeartbeat(roster, SOME_STALL);
-  sendHeartbeats(roster, HEARTBEAT_SENDING_TIME,
-                 [&sent](network::OutgoingDatagram datagram) {
-                   sent.push_back(std::move(datagram));
-                 });
+  const std::vector<network::OutgoingDatagram> sent =
+      heartbeatsSentAt(roster, HEARTBEAT_SENDING_TIME);
 
   EXPECT_EQ(sentTo(sent, first.endpoint).size(), 2U);
   EXPECT_EQ(sentTo(sent, second.endpoint).size(), 2U);

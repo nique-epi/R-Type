@@ -59,7 +59,7 @@ class RoundTripWatch final : public ISessionObserver, public IPlayerRoundTrips {
 
   const engine::IClock* clock_;
   ISessionOutbox* outbox_{nullptr};
-  std::optional<std::uint8_t> ownPlayerNumber_;
+  std::uint8_t ownPlayerNumber_{};
   engine::Duration sinceHeartbeat_{};
   network::RoundTripMeter meter_;
   std::vector<network::PlayerRoundTrip> reported_;

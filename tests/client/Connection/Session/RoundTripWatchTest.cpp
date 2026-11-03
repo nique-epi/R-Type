@@ -2,7 +2,6 @@
 #include <cstddef>
 #include <optional>
 #include "Heartbeat.hpp"
-#include "MessageType.hpp"
 #include "RoundTripFigures.hpp"
 #include "RoundTripWatchFixture.hpp"
 #include "RoundTripWatchTestConstants.hpp"
@@ -38,7 +37,7 @@ using testing::UNREPORTED_PLAYER_NUMBER;
 TEST_F(RoundTripWatchFixture, SendsNothingWithoutASession) {
   hold(PROTOCOL_HEARTBEAT_INTERVAL);
 
-  EXPECT_EQ(outbox().sentCountOf(network::MessageType::Heartbeat), 0U);
+  EXPECT_EQ(heartbeatsSent(), 0U);
 }
 
 /**
@@ -50,12 +49,11 @@ TEST_F(RoundTripWatchFixture, WaitsAnIntervalBeforeTheFirstHeartbeat) {
   openSession();
 
   hold(PROTOCOL_HEARTBEAT_INTERVAL - ONE_NANOSECOND);
-  const std::size_t sentBeforeTheInterval =
-      outbox().sentCountOf(network::MessageType::Heartbeat);
+  const std::size_t sentBeforeTheInterval = heartbeatsSent();
   hold(ONE_NANOSECOND);
 
   EXPECT_EQ(sentBeforeTheInterval, 0U);
-  EXPECT_EQ(outbox().sentCountOf(network::MessageType::Heartbeat), 1U);
+  EXPECT_EQ(heartbeatsSent(), 1U);
 }
 
 /**
@@ -70,7 +68,7 @@ TEST_F(RoundTripWatchFixture, SendsAHeartbeatEveryInterval) {
   hold(PROTOCOL_HEARTBEAT_INTERVAL);
   hold(PROTOCOL_HEARTBEAT_INTERVAL);
 
-  EXPECT_EQ(outbox().sentCountOf(network::MessageType::Heartbeat), 3U);
+  EXPECT_EQ(heartbeatsSent(), 3U);
 }
 
 /**
@@ -85,7 +83,7 @@ TEST_F(RoundTripWatchFixture, TheHeartbeatCarriesTheTimeOnTheClock) {
 
   hold(PROTOCOL_HEARTBEAT_INTERVAL);
 
-  EXPECT_EQ(outbox().lastSent<network::Heartbeat>(),
+  EXPECT_EQ(lastSentHeartbeat(),
             (network::Heartbeat{.sentAt = FIRST_HEARTBEAT_SENT_AT,
                                 .echo = std::nullopt}));
 }
@@ -105,7 +103,7 @@ TEST_F(RoundTripWatchFixture, EchoesTheNewestHeartbeatOfTheServer) {
 
   hold(PROTOCOL_HEARTBEAT_INTERVAL);
 
-  EXPECT_EQ(outbox().lastSent<network::Heartbeat>().echo,
+  EXPECT_EQ(lastSentHeartbeat().echo,
             (network::HeartbeatEcho{.sentAt = SERVER_HEARTBEAT_SENT_AT,
                                     .heldFor = HELD_UNTIL_THE_CLIENT_SENDS}));
 }
@@ -196,7 +194,7 @@ TEST_F(RoundTripWatchFixture, ForgetsEverythingWhenTheSessionCloses) {
   hold(PROTOCOL_HEARTBEAT_INTERVAL);
 
   EXPECT_FALSE(watch().roundTripOf(OTHER_PLAYER_NUMBER).has_value());
-  EXPECT_EQ(outbox().sentCountOf(network::MessageType::Heartbeat), 0U);
+  EXPECT_EQ(heartbeatsSent(), 0U);
 }
 
 /**

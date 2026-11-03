@@ -5,19 +5,21 @@
 #include <cstddef>
 #include <cstdint>
 #include <vector>
+#include "Heartbeat.hpp"
 #include "MessageDispatcher.hpp"
 #include "MessageFrame.hpp"
 #include "MessageOrigin.hpp"
 #include "MessagePayload.hpp"
-#include "RecordingSessionOutbox.hpp"
+#include "RecordingDatagramLink.hpp"
 #include "RoundTripWatch.hpp"
+#include "SessionOutbox.hpp"
 #include "SimulatedClock.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::client::testing {
 
-/** @brief A round trip watch over a recording outbox and a clock the test
- * moves. */
+/** @brief A round trip watch over a session outbox to a recording link, and
+ * a clock the test moves. */
 class RoundTripWatchFixture : public ::testing::Test {
  protected:
   /** @brief Moves the clock by @p elapsed, without a session. */
@@ -45,13 +47,18 @@ class RoundTripWatchFixture : public ::testing::Test {
 
   [[nodiscard]] RoundTripWatch& watch();
 
-  [[nodiscard]] const RecordingSessionOutbox& outbox() const;
+  /** @returns How many Heartbeats went out. */
+  [[nodiscard]] std::size_t heartbeatsSent() const;
+
+  /** @returns The newest datagram sent, read as its only Heartbeat. */
+  [[nodiscard]] network::Heartbeat lastSentHeartbeat() const;
 
  private:
   network::MessageDispatcher dispatcher_;
   SimulatedClock clock_;
   RoundTripWatch watch_{dispatcher_, clock_};
-  RecordingSessionOutbox outbox_;
+  RecordingDatagramLink link_;
+  SessionOutbox outbox_{link_};
 };
 
 }  // namespace rtype::client::testing

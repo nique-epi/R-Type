@@ -1,9 +1,12 @@
 #include "RoundTripWatchFixture.hpp"
+#include <algorithm>
+#include <cstddef>
 #include <string>
+#include "Heartbeat.hpp"
 #include "LobbyState.hpp"
-#include "RecordingSessionOutbox.hpp"
 #include "RoundTripWatch.hpp"
 #include "RoundTripWatchTestConstants.hpp"
+#include "ServerSessionFixtures.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::client::testing {
@@ -27,8 +30,13 @@ void RoundTripWatchFixture::hold(engine::Duration elapsed) {
 
 RoundTripWatch& RoundTripWatchFixture::watch() { return watch_; }
 
-const RecordingSessionOutbox& RoundTripWatchFixture::outbox() const {
-  return outbox_;
+std::size_t RoundTripWatchFixture::heartbeatsSent() const {
+  return static_cast<std::size_t>(
+      std::ranges::count_if(link_.sent(), holds<network::Heartbeat>));
+}
+
+network::Heartbeat RoundTripWatchFixture::lastSentHeartbeat() const {
+  return onlyMessageOf<network::Heartbeat>(link_.sent().back());
 }
 
 }  // namespace rtype::client::testing
