@@ -2,11 +2,14 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <string>
 #include <vector>
 #include "MessageDispatcher.hpp"
 #include "MessageFrame.hpp"
 #include "MessageOrigin.hpp"
+#include "MessagePayload.hpp"
 #include "MessageType.hpp"
+#include "NetworkException.hpp"
 #include "ReadyState.hpp"
 
 namespace rtype::network::testing {
@@ -36,5 +39,22 @@ struct ReadyStateRecord {
  * message and its origin to @p record; @p record must outlive the dispatches.
  */
 void recordReadyStates(MessageDispatcher& dispatcher, ReadyStateRecord& record);
+
+/**
+ * Registers a handler for Message on @p dispatcher that throws
+ * InvalidCoordinateException, a network error, whatever it gets.
+ */
+template <DecodableMessage Message>
+void registerThrowingHandler(MessageDispatcher& dispatcher) {
+  dispatcher.registerHandler<Message>([](const MessageOrigin&, const Message&) {
+    throw InvalidCoordinateException();
+  });
+}
+
+/**
+ * @returns How a log line names the sender of someOrigin(): its address and
+ * port.
+ */
+std::string someSenderText();
 
 }  // namespace rtype::network::testing

@@ -2,6 +2,7 @@
 
 #include <gtest/gtest.h>
 #include <string>
+#include <string_view>
 #include <vector>
 #include "DebugJournal.hpp"
 
@@ -13,7 +14,9 @@ class MessageDispatcherFixture : public ::testing::Test {
   /** @returns The lines of the journal about a rejected message. */
   [[nodiscard]] std::vector<std::string> rejectionLines() const;
 
-  [[nodiscard]] const DebugJournal& journal() const;
+  /** @returns The lines of the journal that hold @p text, oldest first. */
+  [[nodiscard]] std::vector<std::string> linesHolding(
+      std::string_view text) const;
 
  private:
   DebugJournal journal_;

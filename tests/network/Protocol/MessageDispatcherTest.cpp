@@ -5,7 +5,6 @@
 #include "ByteSequence.hpp"
 #include "ConnectionAccepted.hpp"
 #include "ConnectionRequest.hpp"
-#include "DebugJournal.hpp"
 #include "Heartbeat.hpp"
 #include "LogLineTestConstants.hpp"
 #include "MessageDispatcher.hpp"
@@ -15,7 +14,6 @@
 #include "MessageOrigin.hpp"
 #include "MessagePayload.hpp"
 #include "MessageType.hpp"
-#include "NetworkConstants.hpp"
 #include "NetworkException.hpp"
 #include "NetworkTestConstants.hpp"
 #include "ProtocolTestConstants.hpp"
@@ -34,10 +32,11 @@ using testing::MessageDispatcherFixture;
 using testing::oneShipState;
 using testing::ReadyStateRecord;
 using testing::recordReadyStates;
+using testing::registerThrowingHandler;
 using testing::REJECTED_MESSAGE_COUNT;
-using testing::SOME_SENDER_PORT;
 using testing::SOME_SESSION_TOKEN;
 using testing::someOrigin;
+using testing::someSenderText;
 using testing::TYPE_ABOVE_THE_LAST;
 using testing::TYPE_BELOW_THE_FIRST;
 
@@ -190,32 +189,11 @@ TEST(MessageDispatcher, DropsATruncatedPayloadWithoutThrowing) {
 /**
  * Given a handler for ConnectionAccepted that throws a network error
  * When a valid ConnectionAccepted is dispatched
- * Then the error does not leave dispatch: one faulty handler never stops
- * the program
- */
-TEST(MessageDispatcher, KeepsAHandlerErrorInside) {
-  MessageDispatcher dispatcher;
-  dispatcher.registerHandler<ConnectionAccepted>(
-      [](const MessageOrigin&, const ConnectionAccepted&) {
-        throw InvalidCoordinateException();
-      });
-  const auto playerOne = byteSequence({0x01});
-  const std::vector frames{frameOf(MessageType::ConnectionAccepted, playerOne)};
-
-  EXPECT_NO_THROW(dispatcher.dispatch(someOrigin(), frames));
-}
-
-/**
- * Given a handler for ConnectionAccepted that throws a network error
- * When a valid ConnectionAccepted is dispatched
  * Then the message is counted as dropped because its handler threw
  */
 TEST(MessageDispatcher, CountsAMessageWhoseHandlerThrew) {
   MessageDispatcher dispatcher;
-  dispatcher.registerHandler<ConnectionAccepted>(
-      [](const MessageOrigin&, const ConnectionAccepted&) {
-        throw InvalidCoordinateException();
-      });
+  registerThrowingHandler<ConnectionAccepted>(dispatcher);
   const auto playerOne = byteSequence({0x01});
   const std::vector frames{frameOf(MessageType::ConnectionAccepted, playerOne)};
 
@@ -231,10 +209,7 @@ TEST(MessageDispatcher, CountsAMessageWhoseHandlerThrew) {
  */
 TEST(MessageDispatcher, DoesNotCountAHandlerErrorAsMalformed) {
   MessageDispatcher dispatcher;
-  dispatcher.registerHandler<ConnectionAccepted>(
-      [](const MessageOrigin&, const ConnectionAccepted&) {
-        throw InvalidCoordinateException();
-      });
+  registerThrowingHandler<ConnectionAccepted>(dispatcher);
   const auto playerOne = byteSequence({0x01});
   const std::vector frames{frameOf(MessageType::ConnectionAccepted, playerOne)};
 
@@ -276,10 +251,7 @@ TEST(MessageDispatcher, KeepsWorkingAfterAHandlerThrew) {
  */
 TEST(MessageDispatcher, HandlesTheMessageAfterOneWhoseHandlerThrew) {
   MessageDispatcher dispatcher;
-  dispatcher.registerHandler<ReadyState>(
-      [](const MessageOrigin&, const ReadyState&) {
-        throw InvalidCoordinateException();
-      });
+  registerThrowingHandler<ReadyState>(dispatcher);
   std::size_t heartbeatCount = 0;
   dispatcher.registerHandler<Heartbeat>(
       [&heartbeatCount](const MessageOrigin&, const Heartbeat&) {
@@ -374,9 +346,7 @@ TEST_F(MessageDispatcherFixture, LogsASkippedMessageWithItsSender) {
 
   const std::vector<std::string> lines = rejectionLines();
   ASSERT_EQ(lines.size(), 1U);
-  EXPECT_NE(lines.front().find("from " + std::string{LOOPBACK_IPV4_ADDRESS} +
-                               " port " + std::to_string(SOME_SENDER_PORT)),
-            std::string::npos);
+  EXPECT_NE(lines.front().find(someSenderText()), std::string::npos);
 }
 
 /**
@@ -392,7 +362,7 @@ TEST_F(MessageDispatcherFixture, WritesTheWordsOfASkippedMessage) {
 
   dispatcher.dispatch(someOrigin(), frames);
 
-  EXPECT_EQ(journal().linesHolding(SKIPPED_MESSAGE_LINE_TEXT).size(), 1U);
+  EXPECT_EQ(linesHolding(SKIPPED_MESSAGE_LINE_TEXT).size(), 1U);
 }
 
 /**
@@ -421,17 +391,13 @@ TEST_F(MessageDispatcherFixture, WritesOneLineForMessagesRejectedTogether) {
  */
 TEST_F(MessageDispatcherFixture, LogsAThrowingHandlerAtTheErrorLevel) {
   MessageDispatcher dispatcher;
-  dispatcher.registerHandler<ConnectionAccepted>(
-      [](const MessageOrigin&, const ConnectionAccepted&) {
-        throw InvalidCoordinateException();
-      });
+  registerThrowingHandler<ConnectionAccepted>(dispatcher);
   const auto playerOne = byteSequence({0x01});
   const std::vector frames{frameOf(MessageType::ConnectionAccepted, playerOne)};
 
   dispatcher.dispatch(someOrigin(), frames);
 
-  const std::vector<std::string> lines =
-      journal().linesHolding(FAILED_HANDLER_LINE_TEXT);
+  const std::vector<std::string> lines = linesHolding(FAILED_HANDLER_LINE_TEXT);
   ASSERT_EQ(lines.size(), 1U);
   EXPECT_NE(lines.front().find(ERROR_LINE_MARK), std::string::npos);
 }
@@ -443,21 +409,15 @@ TEST_F(MessageDispatcherFixture, LogsAThrowingHandlerAtTheErrorLevel) {
  */
 TEST_F(MessageDispatcherFixture, LogsAThrowingHandlerWithItsSender) {
   MessageDispatcher dispatcher;
-  dispatcher.registerHandler<ConnectionAccepted>(
-      [](const MessageOrigin&, const ConnectionAccepted&) {
-        throw InvalidCoordinateException();
-      });
+  registerThrowingHandler<ConnectionAccepted>(dispatcher);
   const auto playerOne = byteSequence({0x01});
   const std::vector frames{frameOf(MessageType::ConnectionAccepted, playerOne)};
 
   dispatcher.dispatch(someOrigin(), frames);
 
-  const std::vector<std::string> lines =
-      journal().linesHolding(FAILED_HANDLER_LINE_TEXT);
+  const std::vector<std::string> lines = linesHolding(FAILED_HANDLER_LINE_TEXT);
   ASSERT_EQ(lines.size(), 1U);
-  EXPECT_NE(lines.front().find("from " + std::string{LOOPBACK_IPV4_ADDRESS} +
-                               " port " + std::to_string(SOME_SENDER_PORT)),
-            std::string::npos);
+  EXPECT_NE(lines.front().find(someSenderText()), std::string::npos);
 }
 
 }  // namespace rtype::network
