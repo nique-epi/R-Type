@@ -35,6 +35,7 @@ using rtype::logging::NO_FILE_OPTION;
 using rtype::logging::NO_STDERR_OPTION;
 using rtype::network::InvalidPortException;
 using rtype::network::TRAFFIC_CSV_OPTION;
+using rtype::server::DATABASE_OPTION;
 using rtype::server::INPUT_DELAY_OPTION;
 using rtype::server::LaunchOptions;
 using rtype::server::SEED_OPTION;
@@ -164,9 +165,10 @@ TEST(ServerLaunchOptions, UsageNamesEveryOption) {
   const std::string usage = LaunchOptions::usage();
 
   for (const std::string_view option :
-       {PORT_OPTION, SEED_OPTION, HELP_OPTION, rtype::logging::LEVEL_OPTION,
-        rtype::logging::FILE_OPTION, rtype::logging::NO_FILE_OPTION,
-        rtype::logging::STDERR_OPTION, rtype::logging::NO_STDERR_OPTION}) {
+       {PORT_OPTION, SEED_OPTION, DATABASE_OPTION, HELP_OPTION,
+        rtype::logging::LEVEL_OPTION, rtype::logging::FILE_OPTION,
+        rtype::logging::NO_FILE_OPTION, rtype::logging::STDERR_OPTION,
+        rtype::logging::NO_STDERR_OPTION}) {
     SCOPED_TRACE(option);
     EXPECT_NE(usage.find("\n  " + std::string(option)), std::string::npos);
   }
@@ -615,4 +617,40 @@ TEST(ServerLaunchOptions, TrafficOptionGivesTheFile) {
  */
 TEST(ServerLaunchOptions, UsageListsTheTrafficOption) {
   EXPECT_NE(LaunchOptions::usage().find(TRAFFIC_CSV_OPTION), std::string::npos);
+}
+
+/**
+ * Given the database option and a file
+ * When the launch options are read
+ * Then the database setting is forced to that file
+ */
+TEST(ServerLaunchOptions, DatabaseOptionForcesTheDatabase) {
+  const LaunchOptions options =
+      LaunchOptions::read(Arguments{DATABASE_OPTION, DATABASE_ARGUMENT});
+
+  EXPECT_EQ(options.forcedLines(), Lines{std::string(DATABASE_LINE)});
+}
+
+/**
+ * Given the database option and a file whose name holds a space
+ * When the launch options are read
+ * Then the file reaches the setting as one quoted word
+ */
+TEST(ServerLaunchOptions, DatabaseOptionKeepsAFileWithASpaceWhole) {
+  const LaunchOptions options = LaunchOptions::read(
+      Arguments{DATABASE_OPTION, DATABASE_ARGUMENT_WITH_A_SPACE});
+
+  EXPECT_EQ(options.forcedLines(),
+            Lines{std::string(DATABASE_LINE_WITH_A_SPACE)});
+}
+
+/**
+ * Given the database option as the last argument
+ * When the launch options are read
+ * Then the missing file is reported
+ */
+TEST(ServerLaunchOptions, DatabaseOptionWithoutValueIsRejected) {
+  EXPECT_THROW(
+      static_cast<void>(LaunchOptions::read(Arguments{DATABASE_OPTION})),
+      MissingLaunchOptionValueException);
 }

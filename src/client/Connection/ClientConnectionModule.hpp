@@ -12,6 +12,7 @@
 #include "NetworkConditions.hpp"
 #include "NetworkThread.hpp"
 #include "RoundTripWatch.hpp"
+#include "ServerLeaderboard.hpp"
 #include "ServerSession.hpp"
 #include "SystemClock.hpp"
 #include "WaitingRoom.hpp"
@@ -23,9 +24,9 @@ namespace rtype::client {
  * NetworkThread, a DatagramRouter in front of it, and the parts the screens
  * and the game use, which it provides to the modules installed after it: the
  * ServerSession (the attempt and the session), the WaitingRoom, the
- * EntityMessageQueue, and IPlayerRoundTrips, the round trip of each player
- * (see RoundTripWatch). It also provides the network::TrafficCounters of the
- * socket.
+ * EntityMessageQueue, the ServerLeaderboard, and IPlayerRoundTrips, the round
+ * trip of each player (see RoundTripWatch). It also provides the
+ * network::TrafficCounters of the socket.
  *
  * install() provides those parts, over a socket still closed, and adds to
  * NETWORK_STAGE the work that reads what the server sent and sends what is
@@ -69,6 +70,7 @@ class ClientConnectionModule final : public engine::IModule {
   EntityMessageQueue entityMessages_;
   engine::SystemClock clock_;
   RoundTripWatch roundTrips_;
+  ServerLeaderboard leaderboard_;
   ServerSession session_;
   logging::Logger logger_;
 };

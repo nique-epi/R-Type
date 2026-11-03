@@ -35,6 +35,8 @@ TEST(MessageTypeText, EveryMessageHasItsName) {
   EXPECT_EQ(textOf(MessageType::GameEnded), "GameEnded");
   EXPECT_EQ(textOf(MessageType::ConnectionChallenge), "ConnectionChallenge");
   EXPECT_EQ(textOf(MessageType::GameLoaded), "GameLoaded");
+  EXPECT_EQ(textOf(MessageType::LeaderboardRequest), "LeaderboardRequest");
+  EXPECT_EQ(textOf(MessageType::LeaderboardAnswer), "LeaderboardAnswer");
   EXPECT_EQ(textOf(MessageType::RoundTrips), "RoundTrips");
 }
 

@@ -2,7 +2,7 @@
 
 A networked multiplayer remake of the R-Type shoot'em up, built on a custom C++ game engine.
 
-The client plays its theme in a loop, then the music of a game a second after a game starts, the sounds of the intro and of the game, and a click on the buttons of its menus. It opens on a second of black and an intro of 5.5 s set to the beats of the theme, which a key or a click skips, then on its title screen, over a scrolling starfield: PLAY opens the connection screen, then the game, SETTINGS opens the options (sound, keys, display mode and window size, accessibility), QUIT asks before closing the client; Escape during a game opens the options over it. The server listens for UDP datagrams on port 4242, or on the port given at launch: it answers each connection request with a challenge, an acceptance with a player number from 1 to 4, or a refusal when the game is full, and logs the datagrams of the players it admitted at the `debug` level.
+The client plays its theme in a loop, then the music of a game a second after a game starts, the sounds of the intro and of the game, and a click on the buttons of its menus. It opens on a second of black and an intro of 5.5 s set to the beats of the theme, which a key or a click skips, then on its title screen, over a scrolling starfield: PLAY opens the connection screen, then the game, RANKING opens the best scores of a server, SETTINGS opens the options (sound, keys, display mode and window size, accessibility), QUIT asks before closing the client; Escape during a game opens the options over it. The server listens for UDP datagrams on port 4242, or on the port given at launch: it answers each connection request with a challenge, an acceptance with a player number from 1 to 4, or a refusal when the game is full, and logs the datagrams of the players it admitted at the `debug` level.
 
 The code is split into engine, game and network libraries; see [the architecture decision](docs/src/content/docs/architecture.md).
 
@@ -12,7 +12,7 @@ The code is split into engine, game and network libraries; see [the architecture
 - A C++20 compiler: GCC or Clang on Linux, MSVC (Visual Studio 2022) on Windows
 - Git
 
-Third-party libraries (SFML, Asio, toml++, GoogleTest) are built by [vcpkg](https://vcpkg.io), pinned as a Git submodule and bootstrapped automatically on the first configure.
+Third-party libraries (SFML, Asio, toml++, SQLiteCpp, GoogleTest) are built by [vcpkg](https://vcpkg.io), pinned as a Git submodule and bootstrapped automatically on the first configure.
 
 On Linux, SFML and vcpkg need a few system packages. On Ubuntu:
 

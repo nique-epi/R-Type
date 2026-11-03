@@ -127,6 +127,7 @@ The type identifies a message in both directions: `Disconnection` and `Heartbeat
 | 6 | `ReadyState` | `ready` `bool` | when the player changes it, and again while `LobbyState` shows another value |
 | 9 | `PlayerInput` | `inputNumber` `u32`, `actions` `u8` | 60 times per second during a game |
 | 17 | `GameLoaded` | none | with a `PlayerInput`, at most every 100 ms, from the first one after `GameStarted` until the first `WorldState` arrives |
+| 18 | `LeaderboardRequest` | `playerCount` `u8` (1 to 4), `difficulty` `string` | when the player opens or changes a leaderboard, then every 500 ms until an answer; the client gives up after 5 s |
 
 ### Server to client
 
@@ -145,7 +146,8 @@ The type identifies a message in both directions: `Disconnection` and `Heartbeat
 | 14 | `PlayerLeft` | `playerNumber` `u8`, `reason` `u8`: 1 `Left`, 2 `TimedOut` | to the other players, when one leaves or times out, three times 50 ms apart |
 | 15 | `GameEnded` | `playerCount` `u8`, then per player `playerNumber` `u8`, `score` `u32` | when no player has a life left, then every 500 ms until the server waits for players again |
 | 16 | `ConnectionChallenge` | `cookie` `u64` | in answer to a request without a valid cookie |
-| 18 | `RoundTrips` | `playerCount` `u8`, then per player `playerNumber` `u8`, `roundTrip` `u32`, `jitter` `u32`, in microseconds | right after each `Heartbeat` of the server (see [Round trip](#round-trip)) |
+| 19 | `LeaderboardAnswer` | `playerCount` `u8`, `difficulty` `string`, `rowCount` `u8` (0 to 10), then per row `rank` `u32`, `score` `u32`, `playedAt` `i64` (seconds since 1970 UTC), `nickname` `string`; then `hasOwnRow` `bool`, followed by one row when true | in answer to a request, to the player who sent it, at most once per 500 ms per player |
+| 20 | `RoundTrips` | `playerCount` `u8`, then per player `playerNumber` `u8`, `roundTrip` `u32`, `jitter` `u32`, in microseconds | right after each `Heartbeat` of the server (see [Round trip](#round-trip)) |
 
 ### Payload rules
 
@@ -164,8 +166,16 @@ A message is accepted only when its payload has exactly the size its fields add 
 | `RoundTrips` | at most 4 players, each `playerNumber` 1 to 4 and listed once |
 | `Heartbeat` | `echoes` is 0 or 1; when it is 0, `echo.sentAt` and `echo.heldFor` are 0 |
 | `Disconnection`, `GameStarted` | the payload is empty |
+| `LeaderboardRequest` | `playerCount` is 1 to 4; `difficulty` follows the rules of a nickname: 1 to 16 bytes of valid UTF-8, no control character |
+| `LeaderboardAnswer` | as `LeaderboardRequest` for its first two fields; at most 10 rows; each `rank` is at least 1 and each nickname is valid |
 
-A `LobbyState` or a `GameEnded` with no player is well formed; a `WorldState` too, while the game has none.
+A `LobbyState` or a `GameEnded` with no player is well formed; a `WorldState` too, while the game has none. A `LeaderboardAnswer` with no row is well formed.
+
+### Leaderboard
+
+A leaderboard belongs to one server, one difficulty and one number of players at the start of a game: two difficulties never mix. Each player appears once, with their best score. Equal scores share a rank and the next rank skips (1, 1, 3); among them, the earliest game comes first. The player who asks gets their own row whether or not it is among the 10 listed, so it may appear twice. A guest is recognized by nickname, with no proof that it is the same person.
+
+The server reads a request only from a player with a session, in any state of the game: it drops one from any other sender before reading it, so an answer larger than its request never goes to an unverified address. It answers a player at most once per 500 ms and ignores the other requests.
 
 ### Connection
 
@@ -339,6 +349,7 @@ A message that is valid but means nothing in the current state of its receiver c
 | `ConnectionRequest` from a player already accepted | its acceptance was lost | answers it as [Connection](#connection) says: the same `ConnectionAccepted` with a valid cookie, a `ConnectionChallenge` without one |
 | `ReadyState` while no game waits for players | the game has started or ended | ignores it (see [A session](#a-session)) |
 | `PlayerInput` while no game runs | the player holds keys before the start | keeps it as the newest input of that player, like any other (see [Inputs](#inputs)) |
+| A `LeaderboardRequest` less than 500 ms after the last one answered | the client asked again, or floods | ignores it (see [Leaderboard](#leaderboard)) |
 | `WorldState` with a `tick` lower than the last one applied | it arrived late | ignores it (see [World state](#world-state)) |
 | `EntitySpawned` naming an entity the client has; `EntityDestroyed` or `EntityDamaged` naming one it does not have | a copy, or a `WorldState` came first | changes nothing |
 | A second copy of a `GameEvent` (same `eventNumber`), or a `PlayerLeft` naming a player the client no longer lists | the message is sent three times (see [Losses](#losses)) | ignores it |
@@ -383,6 +394,7 @@ Nothing is guaranteed in version 1: a lost message is never resent on request. T
 | `WorldState` | the next one | 50 ms at the default 20 per second, one rate-th of a second at any other |
 | `GameStarted` | the copy sent every 500 ms, or the first `WorldState` | 500 ms |
 | `GameLoaded` | the next one, sent with an input | 100 ms |
+| `LeaderboardRequest`, or its answer | the client sends the request again, the server answers it again | 500 ms |
 | `PlayerInput` | the next input | 17 ms |
 | `Heartbeat` | the next one, whose echo measures the round trip again | 500 ms |
 | `RoundTrips` | the next one | 500 ms |
@@ -411,9 +423,11 @@ The code of this repository applies the rules above, with the exceptions listed 
 
 - `src/network` holds the pieces: the socket in `Transport` drops a datagram over 1200 bytes (see [Network](/R-Type/network/)), `Serialization` encodes integers and strings, and `Protocol` holds the header and every message of this page, each checked as listed here. A `WorldState` without players is accepted while the game has none (see [Network](/R-Type/network/#world-state-worldstatecodec)).
 - Both programs drop a datagram whose header is not of this protocol and version, or whose message sizes do not add up. The server drops on its network thread every datagram that is neither a connection request nor from a player it admitted, answers the requests as [Connection](#connection) describes, and answers a datagram of another version from an unknown sender with `ConnectionRefused` (`IncompatibleVersion`). The client reads only the server it contacts.
-- Within a session, each side writes the session token and its next sequence into every datagram it sends: the server in its acceptances, the `EntitySpawned` of the ships, the Bydos and the missiles, `LobbyState`, `GameStarted`, `WorldState`, the game events, `GameEnded`, `Heartbeat` and `RoundTrips`; the client in its inputs, `ReadyState`, `Heartbeat` and `Disconnection`.
+- Within a session, each side writes the session token and its next sequence into every datagram it sends: the server in its acceptances, the `EntitySpawned` of the ships, the Bydos and the missiles, `LobbyState`, `GameStarted`, `WorldState`, the game events, `GameEnded`, `LeaderboardAnswer`, `Heartbeat` and `RoundTrips`; the client in its inputs, `ReadyState`, `GameLoaded`, `LeaderboardRequest`, `Heartbeat` and `Disconnection`.
 - The server checks the token of every datagram from the address of a player it admitted, on its network thread before any queue, and the sequence of every datagram it reads from a player, so a duplicate or a late one is dropped whatever its message. The client checks the token, then the sequence, of every datagram of the server.
 - Each side sends a `Heartbeat` every 500 ms and measures the round trip from its echo, and the server sends each player `RoundTrips` after each of its `Heartbeat`s, as [Round trip](#round-trip) describes. The server keeps the seat of a silent player for 20 s in all, as [A session](#a-session) describes, and the client closes its session after 20 s without a datagram of the server.
+
+- The client sends `LeaderboardRequest` from its leaderboard screen, and the server answers it.
 
 What the programs do not do yet is listed at the end of [A peer disappears](#a-peer-disappears).
 

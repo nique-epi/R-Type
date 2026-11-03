@@ -33,11 +33,13 @@ ClientConnectionModule::ClientConnectionModule(
       waitingRoom_(dispatcher_, gameLoaded_),
       entityMessages_(dispatcher_, waitingRoom_, gameLoaded_),
       roundTrips_(dispatcher_, clock_),
-      session_(ServerSessionParts{.link = router_.addRoute(),
-                                  .dispatcher = dispatcher_,
-                                  .gameLoaded = gameLoaded_,
-                                  .observers = {waitingRoom_, entityMessages_,
-                                                gameLoaded_, roundTrips_}}),
+      leaderboard_(dispatcher_),
+      session_(ServerSessionParts{
+          .link = router_.addRoute(),
+          .dispatcher = dispatcher_,
+          .gameLoaded = gameLoaded_,
+          .observers = {waitingRoom_, entityMessages_, gameLoaded_, roundTrips_,
+                        leaderboard_}}),
       logger_(std::string{CONNECTION_LOGGER_NAME}) {}
 
 std::string ClientConnectionModule::name() const {
@@ -52,6 +54,7 @@ void ClientConnectionModule::install(engine::InstallContext& context) {
   context.provide(session_);
   context.provide(waitingRoom_);
   context.provide(entityMessages_);
+  context.provide(leaderboard_);
   context.provide(network_.traffic());
   context.provide<IPlayerRoundTrips>(roundTrips_);
   context.addWork(NETWORK_STAGE, [this](engine::Duration elapsed) {

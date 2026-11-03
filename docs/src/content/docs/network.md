@@ -208,7 +208,7 @@ Only `follow()` adds a row, so a flood costs no memory, whatever addresses it cl
 
 - `datagrams`: every datagram and all its bytes.
 - `unreadable`: the datagrams among them whose messages are not counted, because they are not of this protocol and version or their sizes do not add up to their end. A malformed datagram never adds to a type.
-- `messages`: a table indexed by the type byte, `MESSAGE_SLOT_COUNT` (18) figures long. A message counts with its prefix and its payload; the `PACKET_HEADER_SIZE` (22) bytes of the header are in no slot, so they are what `datagrams` holds beyond the slots. `UNKNOWN_MESSAGE_SLOT` (0) holds every byte no message has, so a datagram holding the 256 values of a type byte fills 18 figures, and adds at most one line per figure to the file.
+- `messages`: a table indexed by the type byte, `MESSAGE_SLOT_COUNT` (20) figures long. A message counts with its prefix and its payload; the `PACKET_HEADER_SIZE` (22) bytes of the header are in no slot, so they are what `datagrams` holds beyond the slots. `UNKNOWN_MESSAGE_SLOT` (0) holds every byte no message has, so a datagram holding the 256 values of a type byte fills 20 figures, and adds at most one line per figure to the file.
 
 Bytes are those of the UDP payload: over IPv4, the headers of IP and UDP add at least 28 bytes per datagram. A datagram over `MAX_DATAGRAM_SIZE` is dropped by the socket and never counted.
 
@@ -237,13 +237,13 @@ Measured on an Apple M3 Pro with Apple clang 21.0.0 at `-O2`, median of 7 runs o
 
 | Work | When | Cost |
 |---|---|---|
-| Counting a datagram of 375 bytes | each datagram, on the network thread | 33 ns with no row, 33 ns for the last of 4 players, 89 ns for the last of 32 |
+| Counting a datagram of 375 bytes | each datagram, on the network thread | 36 ns with no row, 33 ns for the last of 4 players, 92 ns for the last of 32 |
 | Counting a malformed datagram, or 1198 foreign bytes | each such datagram | 19 ns, 16 ns |
-| Counting 1198 bytes of empty messages, the most a sender can make it read | each such datagram | 4.7 µs |
-| Copying a report | every 10 s, and every second with a file | 66 ns for 4 players, 0.28 µs for 32 |
-| Building the lines of a report | every second with a file | 4.2 µs for 4 players, 30 µs for 32 |
+| Counting 1198 bytes of empty messages, the most a sender can make it read | each such datagram | 4.9 µs |
+| Copying a report | every 10 s, and every second with a file | 70 ns for 4 players, 0.32 µs for 32 |
+| Building the lines of a report | every second with a file | 4.3 µs for 4 players, 31 µs for 32 |
 
-These numbers say nothing about a disk, GCC, MSVC, Linux or Windows. A row weighs 672 bytes. The line adds about 1.2 MB per day to the journal, which the logger never rotates; with nine figures per player, the file of a game of 4 grows by about 1.7 KB per second, 6 MB per hour.
+These numbers say nothing about a disk, GCC, MSVC, Linux or Windows. A row weighs 736 bytes. The line adds about 1.2 MB per day to the journal, which the logger never rotates; with nine figures per player, the file of a game of 4 grows by about 1.7 KB per second, 6 MB per hour.
 
 ## Round trip and jitter: `RoundTripMeter`
 
@@ -297,9 +297,9 @@ Reading the header and splitting the messages are two calls because a receiver c
 
 ## Messages: `src/network/Protocol/Messages/`
 
-Each message of the protocol page is a struct of the same name (`ConnectionRequest`, `ReadyState`, `PlayerInput`…), plain data that holds its `MessageType` in `TYPE`. Next to it, `encodePayload(writer, message)` writes its payload, and `decodeMessage<Message>(payload)` reads one. The fifteen messages other than `WorldState` live in `Messages/`, one folder and one library each (`Messages/LobbyState/`, target `rtype_network_lobby_state`), gathered by `rtype_network_messages`; `WorldState` keeps its codec (below), and `decodeMessage<WorldState>` reads one of its payloads.
+Each message of the protocol page is a struct of the same name (`ConnectionRequest`, `ReadyState`, `PlayerInput`…), plain data that holds its `MessageType` in `TYPE`. Next to it, `encodePayload(writer, message)` writes its payload, and `decodeMessage<Message>(payload)` reads one. The eighteen messages other than `WorldState` live in `Messages/`, one folder and one library each (`Messages/LobbyState/`, target `rtype_network_lobby_state`), gathered by `rtype_network_messages`; `WorldState` keeps its codec (below), and `decodeMessage<WorldState>` reads one of its payloads.
 
-- Every value of these fifteen messages is checked as the protocol page lists it: a `bool` is 0 or 1, an enumeration holds a listed value, a player number is 1 to 4 and appears once in a list, a nickname is 1 to 16 bytes of UTF-8 without a control character, no action bit above the five actions is set, no entity id is 0, and the player or the entity a `GameEvent` names matches its kind. A count is checked before anything is sized from it, and a byte left after the last field refuses the message.
+- Every value of these eighteen messages is checked as the protocol page lists it: a `bool` is 0 or 1, an enumeration holds a listed value, a player number is 1 to 4 and appears once in a list, a nickname is 1 to 16 bytes of UTF-8 without a control character, no action bit above the five actions is set, no entity id is 0, and the player or the entity a `GameEvent` names matches its kind. A count is checked before anything is sized from it, and a byte left after the last field refuses the message.
 - Writing runs the same checks before the first byte, so a refused message leaves the writer untouched, and whatever was read can be written back: a nickname accepted from a `ConnectionRequest` never makes a `LobbyState` throw.
 - Reading a refused message throws an exception derived from `MalformedMessageException`, or `BufferUnderflowException` for a payload cut short. Writing one throws the same exceptions, except for a coordinate that is NaN, which throws `InvalidCoordinateException`; `WorldStateSender` leaves such an entity out before encoding (see [Server](/R-Type/server/#world-state-worldstatesender)).
 
@@ -380,7 +380,7 @@ For `FLOOD_DURATION` (60 s) it sends `FLOOD_DATAGRAMS_PER_SECOND` (1000) datagra
 | Truncated | a valid message, cut before its last byte | splitting the messages |
 | Too long | a valid message followed by random bytes, counted in its size | the reader of its type |
 | Oversized | 1201 to 2400 random bytes | the socket |
-| Unknown type | a message of type 17 to 255, holding up to 64 random bytes | no reader: skipped |
+| Unknown type | a message of type 20 to 255, holding up to 64 random bytes | no reader: skipped |
 | Lying size | a valid message whose size announces more bytes than follow it | splitting the messages |
 | Extreme value | a valid message whose bounded one-byte field (a bool, a player number, a reason, a count of players) holds 255 | the reader of its type |
 | Random bytes | up to 1200 random bytes | almost always the header |

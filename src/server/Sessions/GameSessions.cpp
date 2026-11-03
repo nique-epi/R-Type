@@ -12,6 +12,7 @@
 #include "Heartbeats.hpp"
 #include "IClock.hpp"
 #include "IncomingDatagram.hpp"
+#include "LeaderboardRequest.hpp"
 #include "MessageOrigin.hpp"
 #include "PacketHeader.hpp"
 #include "PlayerDatagram.hpp"
@@ -31,7 +32,12 @@ GameSessions::GameSessions(GameSessionsParts parts)
       reader_(roster_),
       readyKeeper_(roster_, std::move(parts.readyAccepted)),
       inputKeeper_(roster_, std::move(parts.onNewerInput)),
-      departures_(roster_, parts.events, std::move(parts.onClosing)) {
+      departures_(roster_, parts.events, std::move(parts.onClosing)),
+      onLeaderboardRequest_(std::move(parts.onLeaderboardRequest)) {
+  registerHandlers();
+}
+
+void GameSessions::registerHandlers() {
   dispatcher_.registerHandler<network::ReadyState>(
       [this](const network::MessageOrigin& origin,
              const network::ReadyState& message) {
@@ -46,6 +52,14 @@ GameSessions::GameSessions(GameSessionsParts parts)
       [this](const network::MessageOrigin& origin,
              const network::PlayerInput& input) {
         inputKeeper_.keepIfNewer(origin, input);
+      });
+  dispatcher_.registerHandler<network::LeaderboardRequest>(
+      [this](const network::MessageOrigin& origin,
+             const network::LeaderboardRequest& request) {
+        const ConnectedPlayer* const player = roster_.find(origin.sender);
+        if (player != nullptr) {
+          onLeaderboardRequest_(*player, request);
+        }
       });
   dispatcher_.registerHandler<network::Heartbeat>(
       [this](const network::MessageOrigin& origin,

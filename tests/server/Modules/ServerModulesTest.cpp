@@ -14,6 +14,7 @@
 #include "MessageType.hpp"
 #include "ModuleConstants.hpp"
 #include "NetworkConstants.hpp"
+#include "ServerConstants.hpp"
 #include "ServerModuleTestConstants.hpp"
 #include "ServerModules.hpp"
 #include "ServerModulesFixture.hpp"
@@ -23,6 +24,7 @@
 using rtype::engine::PORT_OPTION;
 using rtype::network::MessageType;
 using rtype::network::TRAFFIC_CSV_OPTION;
+using rtype::server::DATABASE_OPTION;
 using rtype::server::LaunchOptions;
 using rtype::server::serverModules;
 
@@ -44,6 +46,7 @@ TEST_F(ServerModulesFixture, ListsTheServerModulesWithTheMetricsLast) {
   EXPECT_EQ(names, (std::vector<std::string>{
                        std::string{rtype::server::LOGGER_MODULE_NAME},
                        std::string{rtype::server::NETWORK_MODULE_NAME},
+                       std::string{rtype::server::STORAGE_MODULE_NAME},
                        std::string{rtype::server::GAMES_MODULE_NAME},
                        std::string{rtype::server::LOBBY_MODULE_NAME},
                        std::string{rtype::server::METRICS_MODULE_NAME}}));
@@ -72,7 +75,8 @@ TEST_F(ServerModulesFixture,
 TEST_F(ServerModulesFixture, OpensTheTrafficFileOfItsLaunchOption) {
   const std::string portText = std::to_string(port());
   const std::vector<std::string_view> arguments{
-      PORT_OPTION, portText, TRAFFIC_CSV_OPTION, TRAFFIC_FILE_NAME};
+      PORT_OPTION,        portText,           DATABASE_OPTION,
+      TEST_DATABASE_FILE, TRAFFIC_CSV_OPTION, TRAFFIC_FILE_NAME};
   const auto application = serverApplication(LaunchOptions::read(arguments));
 
   application->start();

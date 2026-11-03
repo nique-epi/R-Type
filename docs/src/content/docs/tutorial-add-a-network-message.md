@@ -38,10 +38,10 @@ Then play the forger: someone who forges an address, sends the message as often 
 
 `docs/src/content/docs/protocol.mdx` is the specification: a developer who follows it can write a client without reading the code. Write the message there first, using the words of the page (MUST, SHOULD, MAY as in RFC 2119), so the review of the pull request can compare the code with it.
 
-The next free number is 19 (`RoundTrips` holds 18), and a number never changes once given. Add a row to the table of [Client to server](/R-Type/protocol/#client-to-server):
+The next free number is 21 (`RoundTrips` holds 20), and a number never changes once given. Add a row to the table of [Client to server](/R-Type/protocol/#client-to-server):
 
 ```md
-| 19 | `Emote` | `kind` `u8`: 1 `Salute`, 2 `Taunt` | when the player asks for one, once |
+| 21 | `Emote` | `kind` `u8`: 1 `Salute`, 2 `Taunt` | when the player asks for one, once |
 ```
 
 To [Payload rules](/R-Type/protocol/#payload-rules), what a receiver must refuse. The page already says that an enumeration value not listed is invalid, so this row only names the field:
@@ -67,8 +67,8 @@ Finally, [Implementation status](/R-Type/protocol/#implementation-status) must n
 Add the value to `src/network/Protocol/MessageType.hpp`:
 
 ```cpp
-  RoundTrips = 18,
-  Emote = 19,
+  RoundTrips = 20,
+  Emote = 21,
 ```
 
 Add its name at the end of `MESSAGE_TYPE_NAMES` in `src/network/Statistics/Counting/MessageSlotConstants.hpp`, and name your value in the `static_assert` under it. Nothing fails if you forget the name alone: the traffic counters then count your message as `unknown`.

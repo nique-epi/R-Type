@@ -103,13 +103,13 @@ To change one of them, see [Where to intervene](#where-to-intervene).
 |---|---|---|
 | Network thread and simulation thread | Available | `src/server/Network/` |
 | Timer resolution on Windows | Available | `src/server/Platform/` |
-| The server assembled from modules (logger, network, games, lobby, metrics), stopped on Ctrl-C or SIGTERM with a `Disconnection` to every player | Available | `src/server/Modules/`, `src/server/Platform/` |
+| The server assembled from modules (logger, network, storage, games, lobby, metrics), stopped on Ctrl-C or SIGTERM with a `Disconnection` to every player | Available | `src/server/Modules/`, `src/server/Platform/` |
 | Sorting the datagrams before the queues, session token checked | Available; no limit per address yet | `src/server/Network/` |
 | World state sent to the players of a game, at a rate set at launch (`--state-rate`) | Available | `src/server/Replication/Announcements/Streams/`, `src/server/Rules/Match/` |
 | Every player's input applied after the same delay, set at launch (`--input-delay`) | Available | `src/server/Instances/` |
 | One header for every datagram to a player: session token and next sequence | Available | `src/server/Sessions/Roster/` |
 | Game events sent to the players | Available: the removal of a Bydo or a missile that leaves the playfield, the damage and destruction of a Bydo hit by missiles, and the loss of a ship and of a life when a ship touches a Bydo or a missile of a Bydo | `src/server/Replication/`, `src/game/Events/` |
-| Launch options | Available: the port, the seed, the state rate, the input delay, `--set` and `--help` | `src/server/LaunchOptions/` |
+| Launch options | Available: the port, the seed, the state rate, the input delay, the database, `--set` and `--help` | `src/server/LaunchOptions/` |
 | Configuration file | Available: `server.cfg` (`module`, `set`) | `src/server/Modules/` |
 | Letting players in: challenge, acceptance or refusal | Available; a new player joins the first game waiting for players with a free seat, and is refused with `GameInProgress` or `GameFull` only when no game has one | `src/server/Lobby/`, `src/server/Sessions/` |
 | A game: states, ready rule, new world between two games | Available: eight games side by side, each ending once no player is left in it or no player left has a life | `src/server/Rules/Match/` |
@@ -119,6 +119,7 @@ To change one of them, see [Where to intervene](#where-to-intervene).
 | Waiting room and start of the game sent to the players (`LobbyState`, `GameStarted`) | Available | `src/server/Replication/Announcements/Milestones/`, `src/server/Rules/Match/` |
 | End of a game sent to the players (`GameEnded`) | Available: once no player has a life left, with the score of each, until the game waits for players again | `src/server/Replication/Announcements/Milestones/`, `src/server/Rules/Match/` |
 | Metrics in the journal every 10 s: duration of the ticks, time of each system, games, players, entities, round trip of each player and traffic | Available; losses are not measured yet | `src/server/Metrics/` |
+| Results of each game kept in a SQLite file, with statistics, and a leaderboard read with `LeaderboardRequest` | Available; the leaderboard of the client reads it, and nothing in the game shows the statistics | `src/server/Results/`, `src/server/Storage/`, `src/storage/` |
 | Master link | Not yet written | — |
 | Components (`Position`, `Velocity`, `CollisionBox`, `Health`, `EntityType`, `Sprite`, `Layer`) | Available | `src/game/Components/` |
 | Movement, run by each game tick: Bydos and missiles by `Velocity`, ships by `Intent` | Available | `src/game/Systems/MovementSystem/`, `src/server/Rules/Match/` |
@@ -144,14 +145,15 @@ To change one of them, see [Where to intervene](#where-to-intervene).
 | `--seed <seed>` | The number the random draws of the games start from, a whole number from 0 to 4294967295. Default: drawn at random. See [Bydos](#bydos-bydospawner). |
 | `--state-rate <states>` | The world states sent to each player per second, a whole number from 2 to 60. Default: `DEFAULT_WORLD_STATES_PER_SECOND` (20). More states move the other ships more smoothly and use more bandwidth; see [World state](#world-state-worldstatesender). |
 | `--input-delay <ticks>` | The ticks every player's input is held before it is applied to its ship, a whole number from 0 to 30. Default: `DEFAULT_INPUT_DELAY_TICKS` (3, 50 ms). The same delay holds for every player; see [Player inputs](#player-inputs). |
+| `--database <file>` | The SQLite file the leaderboard of this server is kept in, on a local disk, as the setting `database`. Default: empty, which keeps it in `r-type_server_<port>.db` next to the executable, so two servers on one machine never merge their leaderboards. See [Results and leaderboard](#results-and-leaderboard-resultsmodule-resultsarchive). |
 | `--set <name>=<value>` | Gives a setting a value, as the line `set <name> <value>` of `server.cfg` does (see [Configuration](#configuration-servercfg)). Can be given several times. |
 | `--network <name>`, `--lag <ms>`, `--jitter <ms>`, `--loss <percent>`, `--duplicates <percent>`, `--reorder <percent>` | The simulated network every datagram of the server crosses, for all its players (see [Network](/R-Type/network/#network-simulator-simulatednetworksocket)). Default: none, the network is not simulated. |
 | `--traffic-csv <file>` | The file the traffic of the server goes to every second (see [Network](/R-Type/network/#traffic-counters-trafficcounters)). Default: no file. |
 | `--help` | Prints the usage, the simulator and logging options included, on standard output, then exits with code 0 without starting anything or opening the journal. |
 
-- `-p`, `--seed`, `--state-rate` and `--input-delay` are shortcuts: each checks its value, then forces the setting `port`, `seed`, `state-rate` or `input-delay` with the line `set <name> <value>`. The forced lines run after `server.cfg`, so a launch option wins over the file. `--traffic-csv` is no setting: it names the file of this run only.
-- The server listens on every IPv4 interface (`ANY_IPV4_ADDRESS`) and takes no address: `-h`, the client's address option, is an unknown argument here. The last `-p` wins, and so do the last `--seed`, the last `--state-rate`, the last `--input-delay` and the last `--traffic-csv`.
-- An unknown argument, a `-p`, `--seed`, `--state-rate`, `--input-delay` or `--traffic-csv` without a value, an invalid port, a seed that is not a whole number from 0 to 4294967295, a state rate that is not a whole number from 2 to 60, an input delay that is not a whole number from 0 to 30, a `--set` value that is not `name=value`, a simulator option without a value or with one out of its range, or a logging option that does not exist or has no value, stops the server before anything starts: it prints `r-type_server:`, the reason and how to see the usage on standard error, then exits with code 1. When several arguments are wrong, the first one from the left is reported.
+- `-p`, `--seed`, `--state-rate`, `--input-delay` and `--database` are shortcuts: each forces the setting `port`, `seed`, `state-rate`, `input-delay` or `database` with the line `set <name> <value>`, the first four once their value is checked. The forced lines run after `server.cfg`, so a launch option wins over the file. `--traffic-csv` is no setting: it names the file of this run only.
+- The server listens on every IPv4 interface (`ANY_IPV4_ADDRESS`) and takes no address: `-h`, the client's address option, is an unknown argument here. The last `-p` wins, and so do the last `--seed`, the last `--state-rate`, the last `--input-delay`, the last `--database` and the last `--traffic-csv`.
+- An unknown argument, a `-p`, `--seed`, `--state-rate`, `--input-delay`, `--database` or `--traffic-csv` without a value, an invalid port, a seed that is not a whole number from 0 to 4294967295, a state rate that is not a whole number from 2 to 60, an input delay that is not a whole number from 0 to 30, a `--set` value that is not `name=value`, a simulator option without a value or with one out of its range, or a logging option that does not exist or has no value, stops the server before anything starts: it prints `r-type_server:`, the reason and how to see the usage on standard error, then exits with code 1. When several arguments are wrong, the first one from the left is reported.
 
 ```bash
 ./r-type_server -p 4243
@@ -214,11 +216,12 @@ The server reads `server.cfg`, in the folder it is started from, between the ins
 
 | Command | Effect |
 |---|---|
-| `module <name> on\|off` | Turns a module of the table below on or off. A module that is off is installed and never started, and its work never runs. Refused when a module that stays on depends on it (`games` needs `network`, `lobby` and `metrics` need `games`, all need `logger`). |
+| `module <name> on\|off` | Turns a module of the table below on or off. A module that is off is installed and never started, and its work never runs. Refused when a module that stays on depends on it (`storage` needs `network`, `games` needs `network` and `storage`, `lobby` and `metrics` need `games`, all need `logger`). |
 | `set port <port>` | The UDP port, from 1 to 65535. Default: 4242. |
 | `set seed <seed>` or `set seed none` | The seed of the first game, a whole number from 0 to 4294967295; `none` draws one. Default: `none`. |
 | `set state-rate <states>` | The world states sent to each player per second, from 2 to 60. Default: 20. |
 | `set input-delay <ticks>` | The ticks every player's input is held before it is applied, from 0 to 30. Default: 3. |
+| `set database <file>` | The SQLite file the leaderboard of this server is kept in, on a local disk; a name with a space goes in quotes. Default: empty, which keeps it in `r-type_server_<port>.db` next to the executable, with the port of `set port`. |
 
 - A missing `server.cfg` is not an error: the defaults apply, and the journal says `server.cfg not found, the defaults apply`. A line that is refused (an unknown command, a value out of its bounds) does not stop the server: it is logged at the `warn` level, with its file and line number, and the next line runs.
 - The reading is logged once the journal is open, so the lines appear after the modules' own start lines. The `info` lines are hidden at the default level; start the server with `--log-level info` to see them.
@@ -239,7 +242,8 @@ module lobby off
 | Module | Does | Where |
 |---|---|---|
 | `logger` | applies the logging options when it starts, logs "server starting" and "server stopped" | `src/server/Logger/` |
-| `network` | declares the `port` setting; owns the `ServerApplication`: binds the socket and runs the server on a thread when it starts, gives the port back when it stops; provides `IDatagramSender`, `IPlayerAdmission`, `TickDatagrams` (the datagrams of the tick) and `network::TrafficCounters` | `src/server/Network/` |
+| `network` | declares the `port` setting; owns the `ServerApplication`: binds the socket and runs the server on a thread when it starts, gives the port back when it stops; provides `IDatagramSender`, `IPlayerAdmission`, `TickDatagrams` (the datagrams of the tick), `IListeningPort` (the port of the `port` setting) and `network::TrafficCounters` | `src/server/Network/` |
+| `storage` | declares the `database` setting; opens the SQLite file of the server and starts the thread that owns it when it starts, finishes what waits and closes the file when it stops; provides `IResultsArchive` | `src/server/Storage/` |
 | `games` | declares the `seed`, `state-rate` and `input-delay` settings; the games (`GamesSettings::gameCount`, `DEFAULT_HOSTED_GAME_COUNT` = 8), an `EventBus` for each and the `TimerScheduler` they share; reads the waves file when it starts; provides `Games` | `src/server/Games/` |
 | `lobby` | one `ConnectionAcceptor` per game, built on the roster of that game | `src/server/Lobby/` |
 | `metrics` | measures the ticks and the systems of the games, and writes a report to the journal every `TICKS_PER_REPORT` ticks; writes the traffic of the socket; provides `LatestMetrics` | `src/server/Metrics/` |
@@ -273,7 +277,7 @@ The waves file is read when the games module starts, after the logger module sta
 - Linux and macOS: `SIGINT` (Ctrl-C) and `SIGTERM`. `StopSignals` blocks them in the main thread before any other thread exists, so every thread inherits the mask, and one thread takes them with `sigwait()`: nothing runs inside a signal handler. A signal that arrives before it is built, while the program starts, has its default action.
 - Windows: `SetConsoleCtrlHandler`. The system runs the handler on a new thread. Ctrl-C and Ctrl-Break have no time limit; closing the console window gives the process 5 seconds, so that handler waits for the program to finish stopping, at most `CONSOLE_CLOSE_WAIT` (4 s), before it returns. Logoff and shutdown only reach services, and are handled the same way. This file is checked by the Windows job of the CI only.
 
-On a request, `main()` calls `Application::stop()`. It first stops the stages: it waits for the tick in progress, and no work runs after it. Then the modules stop in the reverse order. The games module tells every player that the server shuts down, with `REPEATED_MESSAGE_COPIES` (3) copies of a `Disconnection`, `REPEATED_MESSAGE_INTERVAL` (50 ms) apart, each under the next session header of its player (see `FarewellSender`), then waits `FAREWELL_FLUSH_WAIT` (two ticks) so the last copy leaves; the whole stop takes about 130 ms with a player connected (two intervals and two ticks). The network module then stops the server and closes the socket, and the journal logs "server stopped". Over a simulated network, a copy still in flight when the socket closes never arrives (see [Network](/R-Type/network/#network-simulator-simulatednetworksocket)): each copy waits half the lag, and the socket closes about 130 ms after the first, so with a lag over about 270 ms (the `bad` scenario's 300 ms included) a player gets none. The client closes its session as soon as it reads one, and shows the player that the server shut down (see [Client](/R-Type/client/#lost-connection-a-dialog-over-the-title) and [Protocol](/R-Type/protocol/#a-peer-disappears)).
+On a request, `main()` calls `Application::stop()`. It first stops the stages: it waits for the tick in progress, and no work runs after it. Then the modules stop in the reverse order. The games module tells every player that the server shuts down, with `REPEATED_MESSAGE_COPIES` (3) copies of a `Disconnection`, `REPEATED_MESSAGE_INTERVAL` (50 ms) apart, each under the next session header of its player (see `FarewellSender`), then waits `FAREWELL_FLUSH_WAIT` (two ticks) so the last copy leaves; the whole stop takes about 130 ms with a player connected (two intervals and two ticks). The storage module then saves what waits and closes its file. The network module then stops the server and closes the socket, and the journal logs "server stopped". Over a simulated network, a copy still in flight when the socket closes never arrives (see [Network](/R-Type/network/#network-simulator-simulatednetworksocket)): each copy waits half the lag, and the socket closes about 130 ms after the first, so with a lag over about 270 ms (the `bad` scenario's 300 ms included) a player gets none. The client closes its session as soon as it reads one, and shows the player that the server shut down (see [Client](/R-Type/client/#lost-connection-a-dialog-over-the-title) and [Protocol](/R-Type/protocol/#a-peer-disappears)).
 
 ## Tick loop: `TickLoop`
 
@@ -484,17 +488,18 @@ The simulation stage runs these steps (see [Modules](#modules-and-stopping-the-s
 
 A game installs modules instead of building the rules of R-Type itself, so a rule is added without touching `GameInstance`, and a game of another kind lists its own modules. `IGameModule` (`src/server/Instances/Context/Interfaces/IGameModule.hpp`) has four functions: `name()`, `install(game, install)`, `start()` and `stop()`. `GameModules` (`src/server/Instances/`) installs them in the order they are listed, starts them in that order, and stops the started ones in the opposite order when the game is destroyed. A module whose `start()` throws is not stopped, and neither are those after it. A null module in the list throws `NullModuleException` before any module is installed, through the check `Application` makes on its own modules (`requireNoNullModule`, `src/engine/Modules/RequireNoNullModule.hpp`).
 
-- `install()` takes what the module needs from the `GameContext` (the bus, the timers, the systems, the roster, the session hooks, the settings (a copy of the seed and the waves), the send function and the ready rule), provides its services and adds its work to the stages of the tick. It keeps nothing open: subscriptions and the parts that work on the world are made in `start()` and released in `stop()`.
+- `install()` takes what the module needs from the `GameContext` (the bus, the timers, the systems, the roster, the session hooks, the settings (a copy of the seed, the waves and the name of the difficulty), the send function and the ready rule), provides its services and adds its work to the stages of the tick. It keeps nothing open: subscriptions and the parts that work on the world are made in `start()` and released in `stop()`.
 - A module that needs the service of another must be listed after it: `install.require<IGameReplication>()` throws `MissingServiceException` otherwise.
 - A tick runs three stages, in order: `GAME_INPUT_STAGE` counts the time since the previous tick for the heartbeats, reads the datagrams and closes the silent sessions, `GAME_SIMULATION_STAGE` runs what the modules added, `GAME_OUTPUT_STAGE` sends the heartbeats.
 - One module must provide `IGameFlow` (`state()`, `tick()`, `finish()`); the game answers its own functions through it.
 - `RtypeRulesModule` builds its `GameFlow` in `install()`, which opens nothing, and `start()` calls `GameFlow::begin()`, which builds the first world and subscribes the rules to the bus. Until then the flow answers as a game that waits for players at tick 0. `stop()` destroys the flow, then the `ScoreKeeper`, which give their subscriptions back to the bus.
-- What happens to a player goes through `SessionHooks` (`src/server/Instances/Context/Setup/SessionHooks.hpp`), in the `GameContext`: three lists of functions, `joined`, `closing` and `newerInput`. A module adds its functions in `start()`, and the game calls them in the order of the modules, so any module can follow a player joining, a session closing or an input being kept, without a change to `GameInstance`. The lists are not emptied by `stop()`: the game is destroyed right after its modules stop and calls no hook in between.
+- What happens to a player goes through `SessionHooks` (`src/server/Instances/Context/Setup/SessionHooks.hpp`), in the `GameContext`: four lists of functions, `joined`, `closing`, `newerInput` and `leaderboardRequested`. A module adds its functions in `start()`, and the game calls them in the order of the modules, so any module can follow a player joining, a session closing or an input being kept, without a change to `GameInstance`. The lists are not emptied by `stop()`: the game is destroyed right after its modules stop and calls no hook in between.
 
 | Module (`rtypeGameModules()`, in this order) | Provides | Holds |
 |---|---|---|
 | `ReplicationModule` (`src/server/Replication/`) | `IGameReplication` | `GameReplication` (the world state sender and the announcers of the room, the ships and the end of a game) and the `GameEventBroadcaster`, subscribed when the module starts |
 | `RtypeRulesModule` (`src/server/Rules/`) | `IGameFlow` | the world of the game (its `WorldSlot`), the systems of the world, the `GameFlow` with its rules, and the `ScoreKeeper` |
+| `ResultsModule` (`src/server/Results/`) | nothing | `GameResultKeeper` and `LeaderboardDesk` (see [Results and leaderboard](#results-and-leaderboard-resultsmodule-resultsarchive)) |
 
 `GameFlow` tells the players what happens through `IGameReplication`, never through the announcers: each call sends what it has to before it returns, so the order of the datagrams to a player is the order of the calls. The bus cannot carry these calls, because it delivers an event at the end of the tick, while creating a ship must set `ConnectedPlayer::shipEntityId` at once.
 
@@ -505,7 +510,7 @@ rtype::server::GameInstance game{
                                      .events = events,
                                      .timers = timers,
                                      .clock = clock},
-    rtype::server::rtypeGameModules()};
+    rtype::server::rtypeGameModules(results)};
 ```
 
 ## Silent players: heartbeats and timeouts
@@ -836,6 +841,94 @@ A game in progress ends once no player left in it has a life. `LifeKeeper` takes
 
 A game ended by `finish()`, or by the departure of its last player, tells no one a result.
 
+## Results and leaderboard: `ResultsModule`, `ResultsArchive`
+
+Every game that ends leaves a row per player in the SQLite file of its server, and a player can read the best scores of that server. Nothing here needs the master: without one, the leaderboard of the server is complete. The storage itself was chosen by a comparative study, which is not on this site yet.
+
+### What a game leaves: `GameResultKeeper`
+
+`GameResultKeeper` (`src/server/Results/`) reads `IGameFlow::state()` once per tick, right after the rules ran. When the game enters `InProgress`, it counts the connected players. When it goes from `InProgress` to `Finished`, it hands a `GameResult` to the archive.
+
+- A row goes to each player connected when the game started. A player who leaves keeps a row, with the score and the deaths it had when it left, so leaving does not erase a bad game. A player who leaves during `Starting` was never counted.
+- The score is read in the tick of the end, before the bus delivers anything more, so it is the score `GameEnded` tells the players.
+- Deaths are `STARTING_LIVES` minus `ConnectedPlayer::livesWithoutShip`, which holds the lives left even while the player has a ship.
+- A game ended by `finish()` or left by all its players is recorded like the others. A game with no row to write leaves nothing. A game the server stops in the middle has no end, so it leaves nothing either.
+
+### The file: `ResultsDatabase`
+
+`ResultsDatabase` (`src/server/Storage/Database/`) is the only place of the server that holds SQL, and every value reaches SQLite as a bound parameter, so a nickname is never read as SQL. Each game is one transaction: after a crash, all its rows are there or none is.
+
+The file holds one table, which every finished game writes, and one view, computed from that table each time it is read:
+
+```mermaid
+erDiagram
+  accTitle: The SQLite file of a server
+  accDescr: The table game_results holds one row per player of each finished game, keyed by game_id and nickname. The view player_statistics adds up the rows of each player and holds no data of its own.
+  direction LR
+  game_results {
+    TEXT game_id PK
+    TEXT nickname PK
+    TEXT account_id
+    INTEGER score
+    INTEGER deaths
+    INTEGER played_at
+    TEXT difficulty
+    INTEGER player_count
+    INTEGER vanilla
+    INTEGER sent_at
+  }
+  player_statistics {
+    TEXT player
+    INTEGER has_account
+    INTEGER games_played
+    INTEGER best_score
+    INTEGER total_score
+    INTEGER deaths
+  }
+  player_statistics ||--|{ game_results : "adds up"
+```
+
+The table is `STRICT`: SQLite refuses a value it cannot store in the declared type without loss, where an ordinary table would keep it as it came. Its key is `game_id` and `nickname` together, so a game holds one row per player. The index `game_results_of_a_leaderboard`, on `difficulty` and `player_count`, finds the rows of one leaderboard.
+
+| Column of `game_results` | Holds |
+|---|---|
+| `game_id` | 32 hexadecimal characters drawn by SQLite, not a counter, so a deleted file never reuses an identifier |
+| `nickname` | The nickname of the player; `NOCASE` folds ASCII letters only, as `PlayerRoster::hasNickname()` does, so `ACE` and `ace` are one player |
+| `account_id` | Empty: accounts do not exist yet |
+| `score`, `deaths` | What the player left the game with |
+| `played_at` | When the game ended, in seconds since 1970 UTC |
+| `difficulty`, `player_count` | `GameSettings::difficulty` (always `normal` for now) and the players connected at the start |
+| `vanilla` | 0: no definition of a vanilla game exists yet |
+| `sent_at` | Empty: nothing sends results to the master yet |
+
+The view `player_statistics` adds up the rows of each player, every difficulty together: `games_played`, `best_score`, `total_score` and `deaths`, under the account identifier when there is one and under the nickname otherwise. It holds no data of its own, so it cannot disagree with the rows. Nothing in the game reads it yet.
+
+`openDatabaseFile()` (`rtype_storage`, `src/storage/`) opens every connection: a write-ahead log, `synchronous` FULL, then the migrations the file does not hold, each committed with its number in `PRAGMA user_version`. A change adds a line to `RESULTS_MIGRATIONS`, never edits one. The file of a server is the setting `database` (`set database <file>` in `server.cfg`, or `--database <file>`); while it is empty, it is `r-type_server_<port>.db` next to the executable, the port being the one the network module gives through `IListeningPort`, or 4242 when no module gives one. A file that cannot be opened, cannot use a write-ahead log (a network file system) or was written by a newer program stops the start with an error that names it.
+
+- A process killed loses no committed game; a test saves a game and ends its process at once. What still waits in a queue is lost, at most one `STORAGE_POLL_INTERVAL` of work.
+- An operating system crash or a power cut rest on the SQLite documentation and on a disk that honors a flush: neither was tested.
+- The `-wal` file is part of the database while the server runs. A host who copies the file by hand while it runs can get a broken copy: `VACUUM INTO` makes a safe one.
+
+### The storage thread: `ResultsArchive`
+
+`ResultsArchive` (`src/server/Storage/Archive/`) owns the only connection, on a thread of its own, so a game never waits for the disk: a commit can last longer than a tick. `IResultsArchive::record()` and `ask()` push to a `BoundedQueue` and return at once. Every `STORAGE_POLL_INTERVAL` (20 ms), the thread saves the results that wait, then answers the requests that wait. It takes the requests off their queue first, so a request made after a result always reads that result.
+
+- Results and requests have a queue each, `WAITING_RESULTS_CAPACITY` and `WAITING_ASKS_CAPACITY` (64 each), so a flood of requests never pushes a result out. A full queue discards its oldest message, and the journal reports a result lost that way. These sizes and the interval are **provisional**: code must read the constants.
+- An error on one result or one request is logged under `Storage`, and the next one is handled: a full disk costs results, not games.
+- `ServerStorageModule` (`src/server/Storage/`) depends on the network module, whose port names the default file, so the server refuses a list of modules without it; it is listed before the games module, so it starts before the games and stops after them. Stopping finishes what waits: a game over when the server stops is still saved.
+
+A read ranks the whole leaderboard. Measured on one Mac in a Release build, with SQLite 3.53.4, it takes 1.5 ms at 1,000 rows of one leaderboard, 14.5 ms at 10,000 and 112 ms at 100,000, on the storage thread only; saving a game of four takes about 0.05 ms there, without the flush to the disk macOS only does on request. Past about 10,000 rows, players asking as fast as they may can outrun the thread: answers wait, the oldest requests are discarded and their clients ask again, and neither a game nor a result is affected. A table of the best score per player, written in the transaction of the rows, is the way out if a server ever gets there. Linux and Windows are not measured.
+
+### Reading a leaderboard: `LeaderboardDesk`
+
+`LeaderboardDesk` (`src/server/Results/`) takes a `LeaderboardRequest` to the archive and brings the `LeaderboardAnswer` back (see [Protocol](/R-Type/protocol/#leaderboard)). `GameSessions` reads the request like every message of a player, after the same checks (session token on the network thread, sequence on the simulation thread), and hands it with its sender to `SessionHooks::leaderboardRequested`, where `ResultsModule` listens, as a `PlayerInput` reaches `newerInput`.
+
+- A player gets at most one answer per `TICKS_BETWEEN_LEADERBOARD_ANSWERS` ticks (30, 500 ms), counted per player. The other requests are ignored, so a flood costs one read. These ticks are counted by the desk, since the tick of the game stays 0 while it waits for players.
+- The storage thread encodes the answer, so a stored row the protocol refuses costs a line in the journal and no exception on the simulation thread. Each game drains its own queue of answers once per tick.
+- An answer goes out only to a player still in the session it was asked in. Another player on the same address gets nothing, and the answer never goes to an address no session proves.
+
+The client sends the request from its leaderboard screen (see [Client](/R-Type/client/#leaderboard-leaderboardscreen-ileaderboardsource)).
+
 ## Where to intervene
 
 | You want to… | Look at |
@@ -854,6 +947,10 @@ A game ended by `finish()`, or by the departure of its last player, tells no one
 | Change what the waiting room lists | `roomOf` in `src/server/Replication/Announcements/Milestones/LobbyStateAnnouncer.cpp` |
 | Change when a game ends | `reasonToFinish` in `src/server/Rules/Match/GameFlow.cpp` |
 | Change how often the end of a game is sent again | `GAME_ENDED_INTERVAL` in `src/server/ServerConstants.hpp` |
+| Change what a game records when it ends | `GameResultKeeper` in `src/server/Results/` |
+| Change the tables of the results, or a query | A new line of `RESULTS_MIGRATIONS` and `LEADERBOARD_QUERY` in `src/server/Storage/Database/ResultsDatabaseConstants.hpp` |
+| Change how often a player is answered | `LEADERBOARD_ANSWER_INTERVAL` in `src/server/Instances/Context/Setup/GameInstanceConstants.hpp` |
+| Change how every SQLite connection is opened | `openDatabaseFile()` in `src/storage/DatabaseFile.cpp` |
 | Send a datagram to a player during a session | `sessionDatagram` in `src/server/Sessions/Roster/SessionDatagram.hpp`, then the send function of the game |
 | Announce something to every client | Publish one of the events of `src/game/Events/` on the `EventBus`; `GameEventBroadcaster` sends it |
 | Send a new kind of event | A struct in `src/game/Events/`, an `encode` overload in `GameEventEncoder`, a `subscribeTo` line in the `GameEventBroadcaster` constructor |

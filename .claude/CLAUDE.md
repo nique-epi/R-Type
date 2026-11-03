@@ -44,7 +44,7 @@ Paths below are relative to `.claude/rules/`.
 |---|---|
 | Writing C++ | `architecture/architecture-a-module-is-one-folder-and-one-target.md`, then the rest of `architecture/` and `code-style/` |
 | Writing a test | `code-style/code-style-tests-given-when-then.md`, `code-style/fix-format-a-test-file-holds-only-tests.md`, `fix/process/fix-process-green-test-locking-a-defect-and-overly-deterministic-fake.md` |
-| Writing a module (`IModule`, `IGameModule`) | `architecture/architecture-a-module-is-one-folder-and-one-target.md`, `architecture/fix-architecture-a-module-install-keeps-nothing-open.md`, `architecture/fix-architecture-a-module-start-that-throws-closes-what-it-opened.md` |
+| Writing a module (`IModule`, `IGameModule`) | `architecture/architecture-a-module-is-one-folder-and-one-target.md`, `architecture/fix-architecture-a-module-declares-the-modules-it-reads.md`, `architecture/fix-architecture-a-module-install-keeps-nothing-open.md`, `architecture/fix-architecture-a-module-start-that-throws-closes-what-it-opened.md` |
 | Touching the network | security section of `core/code-review.md`, `fix/reasoning/fix-reasoning-an-exception-to-a-check-is-read-as-the-forger.md`, `fix/reasoning/fix-reasoning-last-received-is-not-newest-over-udp.md` |
 | Creating a branch | `fix/process/fix-process-branch-before-first-commit.md`, `fix/execution/fix-execution-checkout-b-starts-from-head-not-main.md`, `fix/process/fix-process-reread-rules-after-switching-branch.md` |
 | Finishing the application of a plan | `core/simplify-after-plan.md` — `/simplify` before the final gates |
@@ -75,6 +75,8 @@ Paths below are relative to `.claude/rules/`.
 - `architecture/fix-architecture-a-class-the-tests-build-opens-no-opengl-context.md`
 - `architecture/fix-architecture-a-destructor-calls-nothing-that-may-throw.md`
 - `architecture/fix-architecture-a-function-does-one-kind-of-step.md`
+- `architecture/fix-architecture-a-module-declares-the-modules-it-reads.md`
+- `architecture/fix-architecture-a-new-case-takes-the-path-of-its-precedent.md`
 - `architecture/fix-architecture-a-module-install-keeps-nothing-open.md`
 - `architecture/fix-architecture-a-module-start-that-throws-closes-what-it-opened.md`
 - `architecture/fix-architecture-at-most-35-lines-per-function.md`
@@ -102,6 +104,7 @@ Paths below are relative to `.claude/rules/`.
 - `code-style/fix-format-an-expected-throw-casts-a-nodiscard-result-to-void.md`
 - `code-style/fix-format-designated-initializers-for-aggregates.md`
 - `code-style/fix-format-name-after-data-not-process.md`
+- `code-style/fix-reasoning-a-date-keeps-the-standard-type-that-names-it.md`
 - `code-style/fix-reasoning-a-pointer-into-a-temporary-dies-with-it.md`
 
 **Process — `fix/process/`**
@@ -128,8 +131,11 @@ Paths below are relative to `.claude/rules/`.
 - `fix/process/fix-process-visible-defect-never-minor-on-my-own.md`
 
 **Reasoning — `fix/reasoning/`**
+- `fix/reasoning/fix-reasoning-a-detour-comes-back-to-where-it-started.md`
 - `fix/reasoning/fix-reasoning-a-guard-after-the-write-is-only-an-alarm.md`
 - `fix/reasoning/fix-reasoning-a-sanitizer-sees-only-what-leaves-the-allocation.md`
+- `fix/reasoning/fix-reasoning-a-session-opened-to-read-holds-a-seat.md`
+- `fix/reasoning/fix-reasoning-a-key-held-down-repeats-its-press.md`
 - `fix/reasoning/fix-reasoning-a-screen-pushed-over-others-leaves-them-running.md`
 - `fix/reasoning/fix-reasoning-a-sequence-asserts-its-starting-state.md`
 - `fix/reasoning/fix-reasoning-an-error-type-is-not-a-diagnosis.md`
@@ -146,13 +152,16 @@ Paths below are relative to `.claude/rules/`.
 - `fix/reasoning/fix-reasoning-never-assume-unread-file-content.md`
 - `fix/reasoning/fix-reasoning-present-code-is-not-behavior.md`
 - `fix/reasoning/fix-reasoning-recheck-a-conclusion-after-the-design-changed.md`
+- `fix/reasoning/fix-reasoning-state-kept-per-seat-ends-with-its-player.md`
 - `fix/reasoning/fix-reasoning-use-measurements-to-falsify-before-coding.md`
+- `fix/reasoning/fix-reasoning-two-queues-are-drained-against-the-order-of-their-pushes.md`
 - `fix/reasoning/fix-reasoning-validate-the-instrument-before-reporting-a-count.md`
 - `fix/reasoning/fix-reasoning-verify-the-premise-before-fixing-downstream.md`
 
 **Execution (shell, git, build) — `fix/execution/`**
 - `fix/execution/fix-execution-a-script-reading-repository-text-names-its-encoding.md`
 - `fix/execution/fix-execution-a-split-commit-carries-its-own-links.md`
+- `fix/execution/fix-execution-a-dll-exports-what-its-own-standard-compiled.md`
 - `fix/execution/fix-execution-a-static-library-reached-twice-on-the-link-line.md`
 - `fix/execution/fix-execution-a-test-added-to-an-executable-links-what-it-uses.md`
 - `fix/execution/fix-execution-an-edit-of-a-shared-text-checks-it-is-unchanged.md`
