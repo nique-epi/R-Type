@@ -62,6 +62,20 @@ TEST_F(LeaderboardDeskFixture, CountsTheIntervalPerPlayer) {
 }
 
 /**
+ * Given a player answered just now, who leaves, and a new session on that seat
+ * When the new player asks in the same tick
+ * Then the request goes through: the wait belonged to the player who left
+ */
+TEST_F(LeaderboardDeskFixture, GivesTheNextPlayerOfASeatNoWait) {
+  ask(seat(FIRST_PLAYER));
+  leave(FIRST_PLAYER);
+
+  ask(seatAgainUnderANewToken(FIRST_PLAYER));
+
+  EXPECT_EQ(archive().asks().size(), 2U);
+}
+
+/**
  * Given a player who asked, and an answer ready
  * When a tick runs
  * Then the datagram goes to that player and holds that answer

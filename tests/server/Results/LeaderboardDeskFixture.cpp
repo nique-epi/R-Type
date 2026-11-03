@@ -1,5 +1,6 @@
 #include "LeaderboardDeskFixture.hpp"
 #include <cstddef>
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
@@ -24,12 +25,17 @@ ConnectedPlayer& LeaderboardDeskFixture::seat(std::size_t index) {
 }
 
 void LeaderboardDeskFixture::leave(std::size_t index) {
-  (void)roster_.remove(playerEndpoint(index));
+  const std::optional<ConnectedPlayer> departed =
+      roster_.remove(playerEndpoint(index));
+  if (departed.has_value()) {
+    desk_.onPlayerClosing(*departed);
+  }
 }
 
-void LeaderboardDeskFixture::seatAgainUnderANewToken(std::size_t index) {
-  (void)roster_.add(playerEndpoint(index), std::string{NICKNAMES.at(index)},
-                    OTHER_SESSION_TOKEN);
+ConnectedPlayer& LeaderboardDeskFixture::seatAgainUnderANewToken(
+    std::size_t index) {
+  return *roster_.add(playerEndpoint(index), std::string{NICKNAMES.at(index)},
+                      OTHER_SESSION_TOKEN);
 }
 
 void LeaderboardDeskFixture::ask(const ConnectedPlayer& player) {

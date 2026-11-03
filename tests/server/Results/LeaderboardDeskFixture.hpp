@@ -19,10 +19,12 @@ class LeaderboardDeskFixture : public ::testing::Test {
 
   /** @brief Seats the player at @p index, under a token of its own. */
   ConnectedPlayer& seat(std::size_t index);
+  /** @brief Frees the seat of the player at @p index, and tells the desk, as a
+   * session that closes. */
   void leave(std::size_t index);
   /** @brief Seats the player at @p index again, from the same address, under a
    * token no earlier session had. */
-  void seatAgainUnderANewToken(std::size_t index);
+  ConnectedPlayer& seatAgainUnderANewToken(std::size_t index);
   /** @brief The player asks for a leaderboard. */
   void ask(const ConnectedPlayer& player);
   void runTicks(std::size_t count);

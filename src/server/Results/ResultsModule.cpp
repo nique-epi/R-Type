@@ -39,6 +39,7 @@ void ResultsModule::start() {
   game_->hooks.get().closing.emplace_back(
       [this](const ConnectedPlayer& departed) {
         keeper_->onPlayerClosing(departed);
+        desk_->onPlayerClosing(departed);
       });
   game_->hooks.get().leaderboardRequested.emplace_back(
       [this](const ConnectedPlayer& player,

@@ -20,11 +20,13 @@ namespace rtype::server {
  * the answers back to them.
  *
  * A player gets at most one answer per TICKS_BETWEEN_LEADERBOARD_ANSWERS ticks,
- * so a flood costs one read. An answer goes out only to a player still in the
- * same session: the sorter let the request through because that session proved
- * its address, and only then may the server answer with more bytes than it
- * received. The ticks are counted here because the tick of the game stays 0
- * while it waits for players, when a player reads the leaderboard.
+ * so a flood costs one read. The wait belongs to the player, not to its seat:
+ * the next player on a seat freed by a departure does not inherit it. An answer
+ * goes out only to a player still in the same session: the sorter let the
+ * request through because that session proved its address, and only then may
+ * the server answer with more bytes than it received. The ticks are counted
+ * here because the tick of the game stays 0 while it waits for players, when a
+ * player reads the leaderboard.
  *
  * Not thread-safe, the queue of answers aside: use it from the simulation
  * thread only.
@@ -43,6 +45,9 @@ class LeaderboardDesk {
    * was answered too recently. */
   void onAsked(const ConnectedPlayer& player,
                const network::LeaderboardRequest& request);
+
+  /** @brief Forgets the wait of @p departed, whose seat is freed. */
+  void onPlayerClosing(const ConnectedPlayer& departed);
 
   /** @brief Counts a tick, and sends the answers that came back. */
   void onTick();

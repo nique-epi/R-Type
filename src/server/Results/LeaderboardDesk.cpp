@@ -16,6 +16,16 @@
 
 namespace rtype::server {
 
+namespace {
+
+/** @returns The place of @p player in the table of waits, from 0. */
+std::size_t seatIndexOf(const ConnectedPlayer& player) {
+  return static_cast<std::size_t>(player.playerNumber -
+                                  network::FIRST_PLAYER_NUMBER);
+}
+
+}  // namespace
+
 LeaderboardDesk::LeaderboardDesk(
     PlayerRoster& roster, IResultsArchive& archive,
     std::function<void(network::OutgoingDatagram)> send)
@@ -28,8 +38,7 @@ LeaderboardDesk::LeaderboardDesk(
 
 void LeaderboardDesk::onAsked(const ConnectedPlayer& player,
                               const network::LeaderboardRequest& request) {
-  std::size_t& nextAnswerTick = nextAnswerTicks_.at(static_cast<std::size_t>(
-      player.playerNumber - network::FIRST_PLAYER_NUMBER));
+  std::size_t& nextAnswerTick = nextAnswerTicks_.at(seatIndexOf(player));
   if (ticks_ < nextAnswerTick) {
     return;
   }
@@ -39,6 +48,10 @@ void LeaderboardDesk::onAsked(const ConnectedPlayer& player,
                               .asker = player.endpoint,
                               .sessionToken = player.sessionToken,
                               .replies = &replies_});
+}
+
+void LeaderboardDesk::onPlayerClosing(const ConnectedPlayer& departed) {
+  nextAnswerTicks_.at(seatIndexOf(departed)) = 0;
 }
 
 void LeaderboardDesk::onTick() {
