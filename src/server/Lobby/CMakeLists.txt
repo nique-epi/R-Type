@@ -15,14 +15,13 @@ target_link_libraries(rtype_server_lobby_module
     rtype_network_transport
     rtype_server_games_module
     rtype_server_network_module
-    rtype_server_player_roster
+    rtype_server_roster
   PRIVATE
     rtype_network_connection_accepted
     rtype_network_connection_challenge
     rtype_network_datagram_codec
     rtype_network_exceptions
     rtype_server_constants
-    rtype_server_session_datagram
 )
 
 rtype_enable_warnings(rtype_server_lobby_module)

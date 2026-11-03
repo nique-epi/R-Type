@@ -24,7 +24,7 @@ target_link_libraries(rtype_server_games_module
     rtype_server_network_module
   PRIVATE
     rtype_network_disconnection
-    rtype_server_session_datagram
+    rtype_server_roster
     rtype_server_spawning
 )
 

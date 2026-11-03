@@ -26,14 +26,12 @@ target_link_libraries(rtype_server_rules_module
     rtype_network_player_input
     rtype_network_transport
     rtype_server_instances
-    rtype_server_player_roster
-    rtype_server_sessions
+    rtype_server_roster
     rtype_server_spawning
   PRIVATE
     rtype_identifiers
     rtype_network_game_started
     rtype_network_protocol
-    rtype_server_session_datagram
 )
 
 rtype_enable_warnings(rtype_server_rules_module)

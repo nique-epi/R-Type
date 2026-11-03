@@ -12,8 +12,8 @@ target_link_libraries(rtype_server_instances
     rtype_network_player_input
     rtype_network_transport
     rtype_server_constants
-    rtype_server_game_sessions
-    rtype_server_player_roster
+    rtype_server_roster
+    rtype_server_sessions
   PRIVATE
     rtype_server_exceptions
 )

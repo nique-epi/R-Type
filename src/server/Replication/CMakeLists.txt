@@ -35,10 +35,9 @@ target_link_libraries(rtype_server_replication_module
     rtype_server_constants
     rtype_server_exceptions
     rtype_server_instances
-    rtype_server_player_roster
+    rtype_server_roster
   PRIVATE
     rtype_game_spawning
-    rtype_server_session_datagram
 )
 
 rtype_enable_warnings(rtype_server_replication_module)
