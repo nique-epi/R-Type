@@ -12,6 +12,7 @@
 #include "Endpoint.hpp"
 #include "EntityIdConstants.hpp"
 #include "ProtocolConstants.hpp"
+#include "RoundTripMeter.hpp"
 
 namespace rtype::server {
 
@@ -111,7 +112,8 @@ ConnectedPlayer* PlayerRoster::add(const network::Endpoint& endpoint,
                           .nextSequence = 0,
                           .arrivals = ArrivalLedger{},
                           .newestInputNumber = std::nullopt,
-                          .appliedInputNumber = std::nullopt});
+                          .appliedInputNumber = std::nullopt,
+                          .roundTrip = network::RoundTripMeter{}});
     }
   }
   return nullptr;

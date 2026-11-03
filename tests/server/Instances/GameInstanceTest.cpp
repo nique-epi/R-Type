@@ -1014,102 +1014,129 @@ TEST_F(GameInstanceTest, TheOthersPlayOnWhenAPlayerLeaves) {
 }
 
 /**
- * Given a game that one player started, then finished, which sends that
- * player nothing while it stays finished
- * When one second of ticks less one runs
- * Then the player is sent no Heartbeat yet
+ * Given a game in progress whose player was just sent a Heartbeat
+ * When the ticks of one interval less one run, then one more tick
+ * Then no Heartbeat goes out before that last tick, and one at it: each
+ * Heartbeat comes one interval after the previous one
  */
-TEST_F(GameInstanceTest, WaitsASecondWithoutDatagramBeforeAHeartbeat) {
+TEST_F(GameInstanceTest, SendsTheNextHeartbeatOneIntervalAfterThePrevious) {
   startGameWithOnePlayer();
-  game().finish();
+  const std::size_t before =
+      ofType(network::MessageType::Heartbeat, sentTo(FIRST_PLAYER)).size();
+  for (std::size_t ticks = 0;
+       ticks < PROTOCOL_HEARTBEAT_TICKS &&
+       ofType(network::MessageType::Heartbeat, sentTo(FIRST_PLAYER)).size() ==
+           before;
+       ++ticks) {
+    tick();
+  }
+  ASSERT_EQ(
+      ofType(network::MessageType::Heartbeat, sentTo(FIRST_PLAYER)).size(),
+      before + 1);
 
   runTicks(PROTOCOL_HEARTBEAT_TICKS - 1);
+  const std::size_t beforeTheLastTick =
+      ofType(network::MessageType::Heartbeat, sentTo(FIRST_PLAYER)).size();
+  tick();
 
-  EXPECT_TRUE(
-      ofType(network::MessageType::Heartbeat, sentTo(FIRST_PLAYER)).empty());
+  EXPECT_EQ(beforeTheLastTick, before + 1);
+  EXPECT_EQ(
+      ofType(network::MessageType::Heartbeat, sentTo(FIRST_PLAYER)).size(),
+      before + 2);
 }
 
 /**
  * Given a game that one player started, then finished, which sends that
- * player nothing while it stays finished
- * When one second of ticks runs
+ * player nothing else while it stays finished
+ * When the ticks of one interval run
  * Then the player is sent one Heartbeat, so its client knows the server is
  * still there
  */
-TEST_F(GameInstanceTest, SendsAHeartbeatAfterASecondWithoutDatagram) {
+TEST_F(GameInstanceTest, SendsAHeartbeatWithinAnIntervalOfAFinishedGame) {
   startGameWithOnePlayer();
   game().finish();
+  const std::size_t before =
+      ofType(network::MessageType::Heartbeat, sentTo(FIRST_PLAYER)).size();
 
   runTicks(PROTOCOL_HEARTBEAT_TICKS);
 
   EXPECT_EQ(
-      ofType(network::MessageType::Heartbeat, sentTo(FIRST_PLAYER)).size(), 1U);
+      ofType(network::MessageType::Heartbeat, sentTo(FIRST_PLAYER)).size(),
+      before + 1);
 }
 
 /**
- * Given a finished game, which sends its player nothing else
- * When the Heartbeat goes out
- * Then it carries the session token of the player and the sequence after the
- * datagram sent before it
+ * Given a finished game
+ * When the ticks of one interval run
+ * Then the Heartbeat the player is sent carries its session token
  */
 TEST_F(GameInstanceTest, SendsTheHeartbeatUnderTheSessionOfThePlayer) {
   startGameWithOnePlayer();
   game().finish();
-  const std::uint16_t sequenceBefore =
-      network::DatagramCodec::decodeHeader(sentTo(FIRST_PLAYER).back().payload)
-          .sequence;
 
   runTicks(PROTOCOL_HEARTBEAT_TICKS);
 
-  const network::PacketHeader header =
-      network::DatagramCodec::decodeHeader(sentTo(FIRST_PLAYER).back().payload);
-  EXPECT_EQ(header.sessionToken, testing::SESSION_TOKEN);
-  EXPECT_EQ(header.sequence, sequenceBefore + 1);
+  const std::vector<network::OutgoingDatagram> heartbeats =
+      ofType(network::MessageType::Heartbeat, sentTo(FIRST_PLAYER));
+  ASSERT_FALSE(heartbeats.empty());
+  EXPECT_EQ(network::DatagramCodec::decodeHeader(heartbeats.back().payload)
+                .sessionToken,
+            testing::SESSION_TOKEN);
 }
 
 /**
  * Given a finished game, which sends its player nothing else
- * When three seconds of ticks run
- * Then the player is sent a Heartbeat every second, three in all
+ * When the ticks of three intervals run
+ * Then the player is sent a Heartbeat every interval, three in all
  */
-TEST_F(GameInstanceTest, SendsAHeartbeatEverySecondWhileNothingElseGoesOut) {
+TEST_F(GameInstanceTest, SendsAHeartbeatEveryIntervalWhileNothingElseGoesOut) {
   startGameWithOnePlayer();
   game().finish();
+  const std::size_t before =
+      ofType(network::MessageType::Heartbeat, sentTo(FIRST_PLAYER)).size();
 
   runTicks(3 * PROTOCOL_HEARTBEAT_TICKS);
 
   EXPECT_EQ(
-      ofType(network::MessageType::Heartbeat, sentTo(FIRST_PLAYER)).size(), 3U);
+      ofType(network::MessageType::Heartbeat, sentTo(FIRST_PLAYER)).size(),
+      before + 3);
 }
 
 /**
  * Given a game in progress, which sends its player the world state 20 times
  * per second
- * When two seconds of ticks run
- * Then no Heartbeat is sent: the world states already prove the server is
- * there
+ * When the ticks of two intervals run
+ * Then the player is still sent a Heartbeat every interval, two in all: the
+ * round trip is measured during a game too
  */
-TEST_F(GameInstanceTest, SendsNoHeartbeatWhileTheWorldStateGoesOut) {
+TEST_F(GameInstanceTest,
+       SendsAHeartbeatEveryIntervalWhileTheWorldStateGoesOut) {
   startGameWithOnePlayer();
+  const std::size_t before =
+      ofType(network::MessageType::Heartbeat, sentTo(FIRST_PLAYER)).size();
 
   runTicks(2 * PROTOCOL_HEARTBEAT_TICKS);
 
-  EXPECT_TRUE(
-      ofType(network::MessageType::Heartbeat, sentTo(FIRST_PLAYER)).empty());
+  EXPECT_EQ(
+      ofType(network::MessageType::Heartbeat, sentTo(FIRST_PLAYER)).size(),
+      before + 2);
 }
 
 /**
  * Given a waiting room, which sends its player the room every 500 ms
- * When two seconds of ticks run
- * Then no Heartbeat is sent
+ * When the ticks of two intervals run
+ * Then the player is still sent a Heartbeat every interval, two in all
  */
-TEST_F(GameInstanceTest, SendsNoHeartbeatWhileTheRoomGoesOut) {
+TEST_F(GameInstanceTest, SendsAHeartbeatEveryIntervalWhileTheRoomGoesOut) {
   join(FIRST_PLAYER);
+  const std::size_t before =
+      ofType(network::MessageType::Heartbeat, sentTo(FIRST_PLAYER)).size();
 
   runTicks(2 * PROTOCOL_HEARTBEAT_TICKS);
 
-  EXPECT_TRUE(
-      ofType(network::MessageType::Heartbeat, sentTo(FIRST_PLAYER)).empty());
+  EXPECT_EQ(
+      ofType(network::MessageType::Heartbeat, sentTo(FIRST_PLAYER)).size(),
+      before + 2);
 }
 
 /**

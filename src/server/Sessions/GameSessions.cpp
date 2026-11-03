@@ -48,7 +48,10 @@ GameSessions::GameSessions(GameSessionsParts parts)
         inputKeeper_.keepIfNewer(origin, input);
       });
   dispatcher_.registerHandler<network::Heartbeat>(
-      [](const network::MessageOrigin&, const network::Heartbeat&) {});
+      [this](const network::MessageOrigin& origin,
+             const network::Heartbeat& heartbeat) {
+        readHeartbeat(roster_, origin, heartbeat);
+      });
   dispatcher_.registerHandler<network::Disconnection>(
       [this](const network::MessageOrigin& origin,
              const network::Disconnection&) {
@@ -73,12 +76,12 @@ bool GameSessions::everyPlayerIsReady() {
 
 void GameSessions::startTick() {
   const engine::Duration tickStart = clock_->now();
-  addTimeSinceSent(roster_,
-                   tickStart - std::exchange(previousTickStart_, tickStart));
+  addTimeSinceHeartbeat(
+      roster_, tickStart - std::exchange(previousTickStart_, tickStart));
 }
 
 void GameSessions::endTick() {
-  sendHeartbeats(roster_, send_);
+  sendHeartbeats(roster_, clock_->now(), send_);
   reader_.countTick();
 }
 

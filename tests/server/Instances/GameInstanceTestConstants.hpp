@@ -38,8 +38,8 @@ constexpr std::size_t PROTOCOL_RECONNECTION_GRACE_TICKS = 900;
 constexpr std::size_t PROTOCOL_SESSION_CLOSING_TICKS = 1200;
 
 /**
- * @brief The 1 s of the protocol page after which a side sends a Heartbeat
- * when it sent nothing else, at 60 ticks per second.
+ * @brief The 1 s of the protocol page between two Heartbeats, at 60 ticks
+ * per second.
  */
 constexpr std::size_t PROTOCOL_HEARTBEAT_TICKS = 60;
 
