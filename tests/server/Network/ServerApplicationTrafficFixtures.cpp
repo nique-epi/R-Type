@@ -5,16 +5,14 @@
 #include <thread>
 #include <vector>
 #include "Endpoint.hpp"
+#include "ListenOnFixtures.hpp"
 #include "NetworkConditions.hpp"
 #include "NetworkConstants.hpp"
 #include "NetworkContext.hpp"
 #include "OutgoingDatagram.hpp"
-#include "PacketHeader.hpp"
 #include "ServerApplication.hpp"
-#include "ServerDatagrams.hpp"
-#include "ServerLobbyTestConstants.hpp"
+#include "ServerApplicationFixtures.hpp"
 #include "ServerTestConstants.hpp"
-#include "TrafficFixtures.hpp"
 #include "TrafficReport.hpp"
 #include "TrafficTotals.hpp"
 #include "UdpSocket.hpp"
@@ -24,15 +22,9 @@ using rtype::network::Endpoint;
 using rtype::network::NetworkConditions;
 using rtype::network::TrafficReport;
 using rtype::network::TrafficTotals;
-using rtype::network::testing::loopbackOnPort;
 using rtype::server::ServerApplication;
 
 namespace {
-
-ServerApplication::TickHandler ignoringDatagrams() {
-  return []([[maybe_unused]] const ServerApplication::ReceivedDatagrams&
-                received) {};
-}
 
 /** @brief Waits until @p counted holds for what @p server counted, or for
  * THREAD_TIMEOUT. */
@@ -49,16 +41,13 @@ void waitUntil(ServerApplication& server,
 
 TrafficReport trafficAfterAReadyState(
     const std::function<void(ServerApplication&, const Endpoint&)>& prepare) {
-  ServerApplication server{loopbackOnPort(ANY_PORT), ignoringDatagrams()};
+  ServerApplication server{loopbackEndpoint(ANY_PORT), ignoringTicks()};
   rtype::network::NetworkContext clientContext;
-  rtype::network::UdpSocket client{clientContext, loopbackOnPort(ANY_PORT)};
+  rtype::network::UdpSocket client{clientContext, loopbackEndpoint(ANY_PORT)};
   server.open();
-  prepare(server, loopbackOnPort(client.localEndpoint().port));
+  prepare(server, loopbackEndpoint(client.localEndpoint().port));
   const std::jthread runner{[&server] { server.run(); }};
-  rtype::network::PacketHeader header;
-  header.sessionToken = rtype::server::testing::SESSION_TOKEN;
-  client.send(loopbackOnPort(server.localEndpoint().port),
-              readyDatagram(header));
+  client.send(loopbackEndpoint(server.localEndpoint().port), playerReady());
   clientContext.run();
   waitUntil(server, [](const TrafficTotals& totals) {
     return totals.received.count > 0;
@@ -68,12 +57,12 @@ TrafficReport trafficAfterAReadyState(
 }
 
 TrafficReport trafficAfterAQueuedDatagram(const NetworkConditions& conditions) {
-  ServerApplication server{loopbackOnPort(ANY_PORT), ignoringDatagrams(),
+  ServerApplication server{loopbackEndpoint(ANY_PORT), ignoringTicks(),
                            conditions};
   server.open();
   const std::jthread runner{[&server] { server.run(); }};
   server.queueDatagram(rtype::network::OutgoingDatagram{
-      .destination = loopbackOnPort(server.localEndpoint().port),
+      .destination = loopbackEndpoint(server.localEndpoint().port),
       .payload = std::vector<std::byte>(1)});
   waitUntil(server,
             [](const TrafficTotals& totals) { return totals.sent.count > 0; });
