@@ -168,6 +168,31 @@ class MissingServiceException : public EngineException {
                           const std::string& serviceName);
 };
 
+/**
+ * @brief A command was registered under a name another command already has.
+ */
+class DuplicateCommandException : public EngineException {
+ public:
+  explicit DuplicateCommandException(const std::string& commandName);
+};
+
+/**
+ * @brief A setting was declared under a name another setting already has.
+ */
+class DuplicateSettingException : public EngineException {
+ public:
+  explicit DuplicateSettingException(const std::string& settingName);
+};
+
+/**
+ * @brief What a command handler throws to refuse the words it was given; the
+ * interpreter turns it into a message naming the command and the line.
+ */
+class CommandRefusedException : public EngineException {
+ public:
+  explicit CommandRefusedException(const std::string& reason);
+};
+
 /** @brief The system did not tell where the running executable is. */
 class UnknownExecutablePathException : public EngineException {
  public:

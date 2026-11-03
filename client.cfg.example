@@ -1,0 +1,18 @@
+# Example of client.cfg. Copy it to client.cfg, in the folder the client is
+# started from. One command per line; '#' starts a comment.
+# Every value below is the default, so this file changes nothing as it is.
+# A launch option (-h, -p, -n, --set <name>=<value>) wins over it.
+
+# The nickname the connection screen starts with, 1 to 16 bytes of UTF-8.
+# Quote it when it holds a space.
+set nickname PILOT
+
+# The IPv4 address the connection screen starts with.
+set server-address 127.0.0.1
+
+# The UDP port the connection screen starts with, from 1 to 65535.
+set server-port 4242
+
+# Turn a module off (it is installed, never started, and runs no work). Refused when a module
+# that stays on depends on it.
+# module audio off

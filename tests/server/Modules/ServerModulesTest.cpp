@@ -1,10 +1,13 @@
 #include <gtest/gtest.h>
 #include <chrono>
 #include <cstdint>
+#include <filesystem>
 #include <memory>
 #include <string>
 #include <vector>
 #include "Application.hpp"
+#include "ConfigurationReader.hpp"
+#include "ConfigurationReport.hpp"
 #include "DatagramCodec.hpp"
 #include "IModule.hpp"
 #include "LoopStages.hpp"
@@ -69,9 +72,13 @@ TEST_F(ServerModulesFixture,
  * free again
  */
 TEST_F(ServerModulesFixture, SaysGoodbyeToAJoinedPlayerWhenItStops) {
+  rtype::engine::ConfigurationReport report;
   Application application(
       LoopStages(rtype::server::SERVER_LOOP_STAGES),
-      serverModules(journalOptions(), launchOptions(), stopRequest()));
+      serverModules(journalOptions(), launchOptions(), stopRequest()),
+      rtype::engine::configurationStep(
+          std::filesystem::path{rtype::server::SERVER_CONFIGURATION_FILE_NAME},
+          launchOptions().forcedLines(), report));
   application.start();
   const std::uint64_t token = joinWithTheClient();
 

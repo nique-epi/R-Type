@@ -38,3 +38,21 @@ Engine², which the kick-off cites, has the same shape: a core, and a folder per
 - The command of the old point 8 is gone. It counts only the `.cpp` directly in a folder: on `a5adf3b9` it prints nothing, and `src/client/Widgets`, with 39 `.cpp` in class folders, never shows. Counting the folders a change adds or flattens does the same job.
 - "Another module reuses the group" no longer justifies a sub-folder: reused code stays in a required module, goes in a `Contract/` or goes in a library.
 - `project-layout.md` said the classes only one module uses sit in the folder of that module, with `FrameLoop` and `Games` as examples. At `da8b3256`, `FrameLoop` is included by `Modules/Assembly`, `Modules/Screens` and `main.cpp`, `Games` by `Modules/Lobby` and `Modules/Metrics`. The sentence is gone; the classes move when the client and the server are tidied.
+
+## Update (3 November 2026) — folders by category instead of a count of ten
+
+### Context
+
+`src/engine/Commands/` holds eight `.cpp` and twenty-six files with the headers. The count of ten `.cpp` kept it flat, although its classes fall into three groups a reader names at once: the interpreter, the settings and the reading of the configuration file. A reviewer asked for sub-folders, and the author of the folder, who had split it into three and then flattened it to follow point 9, said a category is always more visible and cleaner than a count.
+
+### What was measured
+
+On `origin/main` at `68e69e74`, counting the `.cpp` and `.hpp` files of each folder of `src/`: 355 folders, 4 with more than 20 files, none with more than 30, and one with more than 8 `.cpp` (`src/client/Platform`, 9). A rule by category therefore touches few folders. Only `Commands/` was read to check that its categories are real: whether the other large folders (`Widgets/`, `Components/`, `Screens/`, `Rendering/`) split into categories of three classes or more was not measured.
+
+### Decision
+
+- The count of ten `.cpp` is gone from points 8 and 9. A folder whose classes fall into categories has a sub-folder for each; a category is a group of at least three classes that change for the same reason.
+- The number three is a choice of the author, not a measurement; it keeps a sub-folder from holding one or two classes, the case the first version of the rule feared with a folder per class.
+- The check of point 14 names the categories instead of counting files, so it is a review, not a command. No command can decide that three classes change for the same reason.
+- Sub-folders stay two levels at most, and the three cases of point 9 stay the only ones.
+

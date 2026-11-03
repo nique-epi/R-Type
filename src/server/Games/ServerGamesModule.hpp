@@ -3,6 +3,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include "ConfigurationRegistry.hpp"
 #include "EventBus.hpp"
 #include "GameInstance.hpp"
 #include "GameSettings.hpp"
@@ -14,6 +15,7 @@
 #include "IncomingDatagram.hpp"
 #include "InstallContext.hpp"
 #include "Logger.hpp"
+#include "SettingValue.hpp"
 #include "SystemClock.hpp"
 #include "TickDatagrams.hpp"
 #include "TimeConstants.hpp"
@@ -36,11 +38,12 @@ namespace rtype::server {
  * work to the simulation stage after this one. Each game reads real time on the
  * clock of the module for its Heartbeats.
  *
- * install() builds the timers and the empty list of games and provides Games.
- * start() reads the waves file once, then creates the games, each subscribing
- * its rules and its broadcaster to its own bus. A finished game waits for
- * players again, so the games are never replaced. stop() tells every player
- * the server shuts down (see FarewellSender).
+ * install() builds the timers and the empty list of games, declares the `seed`,
+ * `state-rate` and `input-delay` settings and provides Games. start() reads the
+ * waves file once, then creates the games with the values of the settings, each
+ * subscribing its rules and its broadcaster to its own bus. A finished game
+ * waits for players again, so the games are never replaced. stop() tells every
+ * player the server shuts down (see FarewellSender).
  */
 class ServerGamesModule final : public engine::IModule {
  public:
@@ -72,10 +75,14 @@ class ServerGamesModule final : public engine::IModule {
   [[nodiscard]] WavePlan readWaves() const;
   [[nodiscard]] std::unique_ptr<GameInstance> createGame(
       engine::EventBus& events, GameSettings settings);
+  void declareSettings(engine::ConfigurationRegistry& configuration);
   void playGames();
   void deliverEvents(engine::Duration elapsed);
 
   GamesSettings settings_;
+  const engine::SettingValue* seedSetting_{nullptr};
+  const engine::SettingValue* stateRateSetting_{nullptr};
+  const engine::SettingValue* inputDelaySetting_{nullptr};
   logging::Logger logger_;
   engine::TimerScheduler timers_;
   engine::SystemClock clock_;

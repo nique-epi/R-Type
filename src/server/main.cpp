@@ -1,7 +1,11 @@
 #include <exception>
+#include <filesystem>
 #include <iostream>
 #include <string>
 #include "Application.hpp"
+#include "ConfigurationLog.hpp"
+#include "ConfigurationReader.hpp"
+#include "ConfigurationReport.hpp"
 #include "LaunchArguments.hpp"
 #include "LaunchOptions.hpp"
 #include "Logger.hpp"
@@ -36,11 +40,19 @@ int runServer(const rtype::server::LaunchOptions& launchOptions) {
   const rtype::server::StopSignals stopSignals{stopRequest};
   int exitCode = 0;
   try {
+    rtype::engine::ConfigurationReport configurationReport;
     rtype::engine::Application application{
         rtype::engine::LoopStages{rtype::server::SERVER_LOOP_STAGES},
         rtype::server::serverModules(launchOptions.logOptions(), launchOptions,
-                                     stopRequest)};
+                                     stopRequest),
+        rtype::engine::configurationStep(
+            std::filesystem::path{
+                rtype::server::SERVER_CONFIGURATION_FILE_NAME},
+            launchOptions.forcedLines(), configurationReport)};
     application.start();
+    rtype::engine::logConfigurationReport(
+        configurationReport, rtype::server::SERVER_CONFIGURATION_FILE_NAME,
+        rtype::logging::Logger{std::string{rtype::server::SERVER_LOGGER_NAME}});
     const rtype::server::StopReason reason = stopRequest.wait();
     application.stop();
     if (reason.failed) {

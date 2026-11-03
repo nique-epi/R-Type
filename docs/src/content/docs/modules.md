@@ -87,17 +87,18 @@ The test of an optional module is to remove it: take out its folder, except `Con
 
 ## Turning a module on or off
 
-A module is switched on or off at one of three moments. Only the first two exist.
+A module is switched on or off at one of four moments. Only the first three exist.
 
 | How | Exists | How it works |
 |---|---|---|
 | At compile time | Yes | The module is in the list of `serverModules()` or `clientModules()`, and its library is linked by the `CMakeLists.txt` beside that list (`src/server/Modules/`, `src/client/Modules/Assembly/`). Remove the three lines the [tutorial](/R-Type/tutorial-write-a-module/#step-4-put-it-in-the-servers-list) adds: the `#include` and the `push_back` in `ServerModules.cpp` or `ClientModules.cpp`, and the library in that `CMakeLists.txt`. On the server, the list of names that `tests/server/Modules/ServerModulesTest.cpp` expects changes too |
 | At launch, by configuration | Yes | The module stays in the list; a launch option chooses what it does. `--no-sound` gives `ClientAudioModule` an `AudioMode::Disabled`: it still provides an `IAudioService`, one that plays nothing |
+| At launch, by the configuration file | Yes | The module stays in the list and is installed; the line `module <name> off` of `server.cfg` or `client.cfg` makes `Application` skip its `start()` and its `stop()` and take out of the stages the work it added in `install()`. The line is refused when a module that stays on needs it, so the program is never left with a missing service (see [Configuration commands](/R-Type/commands/#module)) |
 | At run time, by plugin | No | No module is loaded from a file while the program runs. A module is compiled into its program |
 
 Two rules decide which one fits:
 
-- **Take a module out of the list only when nothing depends on it.** Removing `audio` while `screens` requires an `IAudioService` stops the program before anything starts, with a message naming both modules. Take the dependents out with it.
+- **Take a module out of the list only when nothing depends on it.** Removing `audio` while `screens` requires an `IAudioService` stops the program before anything starts, with a message naming both modules. Take the dependents out with it. The line `module audio off` of the configuration file is refused the same way, with a message naming both modules, and the program starts anyway.
 - **Prefer configuration for a module others use.** A module that can be turned off keeps providing its service, with an implementation that does nothing, so the modules that use it never test whether it is on. The sound is the model: `SilentAudioService` answers every call and plays nothing, and the screens do not know which one they got.
 
 `--no-sound` is the complete example of a launch option that turns a module off: the constant of its name (`NO_SOUND_OPTION`, `src/client/ClientConstants.hpp`), the option in `LaunchOptions::read()` and `usage()` (see [Server](/R-Type/server/#where-to-intervene) and [Client](/R-Type/client/#where-to-intervene)), an accessor (`LaunchOptions::audioMode()`) whose value `clientModules()` hands to `ClientAudioModule`, and the constructor of the module taking it.

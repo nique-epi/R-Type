@@ -15,8 +15,8 @@ namespace rtype::client {
  * @brief The screens of the client by name: each module adds the ones it owns,
  * and the screen stack asks for them by identifier.
  *
- * A module adds its screens in install(), before the screens module is
- * installed; nothing is built until a screen is asked for. The registry is
+ * A module adds its screens in install(), after the screens module provided
+ * the registry; nothing is built until a screen is asked for. The registry is
  * generic over what a screen is built from, so that it can be tested without
  * the services of a running client: the client uses it as ScreenRegistry.
  *

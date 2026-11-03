@@ -3,6 +3,8 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include "CommandInterpreter.hpp"
+#include "CommandResult.hpp"
 #include "EngineException.hpp"
 #include "GamePlayers.hpp"
 #include "GameState.hpp"
@@ -170,4 +172,36 @@ TEST_F(ServerGamesFixture, SaysGoodbyeToThePlayersWhenTheApplicationStops) {
   application().stop();
 
   EXPECT_EQ(datagramsTo(0, MessageType::Disconnection), 3U);
+}
+
+/**
+ * Given the games module installed
+ * When the configuration gives the state rate a rate above the highest
+ * Then the line is refused, so the module declared the setting with its bounds
+ */
+TEST_F(ServerGamesFixture, DeclaresTheStateRateSettingWithItsBounds) {
+  rtype::engine::CommandResult result;
+
+  startWith(shippedWaves(),
+            [&result](rtype::engine::CommandInterpreter& commands) {
+              result = commands.execute(STATE_RATE_ABOVE_THE_HIGHEST_LINE);
+            });
+
+  EXPECT_FALSE(result.accepted);
+}
+
+/**
+ * Given the games module installed
+ * When the configuration clears the seed
+ * Then the line is accepted, so the module declared the seed setting
+ */
+TEST_F(ServerGamesFixture, DeclaresTheSeedSettingAndLetsItBeCleared) {
+  rtype::engine::CommandResult result;
+
+  startWith(shippedWaves(),
+            [&result](rtype::engine::CommandInterpreter& commands) {
+              result = commands.execute(CLEAR_THE_SEED_LINE);
+            });
+
+  EXPECT_TRUE(result.accepted);
 }

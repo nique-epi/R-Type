@@ -7,6 +7,7 @@ target_link_libraries(rtype_client_modules
     rtype_client_launch_options
     rtype_client_window_module
     rtype_engine_application
+    rtype_engine_commands
     rtype_engine_modules
     rtype_logging
   PRIVATE
@@ -17,7 +18,6 @@ target_link_libraries(rtype_client_modules
     rtype_client_lobby_module
     rtype_client_logger_module
     rtype_client_menus_module
-    rtype_client_screen_registry
     rtype_client_screens_module
     rtype_client_settings_module
 )

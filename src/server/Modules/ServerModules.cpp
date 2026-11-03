@@ -1,12 +1,14 @@
 #include "ServerModules.hpp"
 #include <filesystem>
 #include <memory>
+#include <optional>
 #include <vector>
 #include "AssetFolder.hpp"
 #include "GamesSettings.hpp"
 #include "IModule.hpp"
 #include "LaunchOptions.hpp"
 #include "LogLaunchOptions.hpp"
+#include "NetworkConstants.hpp"
 #include "ServerConstants.hpp"
 #include "ServerGamesModule.hpp"
 #include "ServerLobbyModule.hpp"
@@ -24,12 +26,11 @@ std::vector<std::unique_ptr<engine::IModule>> serverModules(
   std::vector<std::unique_ptr<engine::IModule>> modules;
   modules.push_back(std::make_unique<ServerLoggerModule>(logOptions));
   modules.push_back(std::make_unique<ServerNetworkModule>(
-      launchOptions.port(), stopRequest, launchOptions.networkConditions()));
+      network::DEFAULT_SERVER_PORT, stopRequest,
+      launchOptions.networkConditions()));
   modules.push_back(std::make_unique<ServerGamesModule>(GamesSettings{
-      .seed = launchOptions.seed(),
-      .wavesFile = engine::locateAssetFolder() / WAVE_FILE_IN_ASSETS,
-      .statesPerSecond = launchOptions.stateRate(),
-      .inputDelayTicks = launchOptions.inputDelay()}));
+      .seed = std::nullopt,
+      .wavesFile = engine::locateAssetFolder() / WAVE_FILE_IN_ASSETS}));
   modules.push_back(std::make_unique<ServerLobbyModule>());
   modules.push_back(std::make_unique<ServerMetricsModule>(
       std::make_shared<engine::SystemClock>()));
