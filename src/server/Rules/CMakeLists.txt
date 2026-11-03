@@ -17,7 +17,6 @@ target_link_libraries(rtype_server_rules_module
   PUBLIC
     rtype_engine_event_bus
     rtype_engine_install_context
-    rtype_engine_systems
     rtype_engine_time
     rtype_game
     rtype_game_events

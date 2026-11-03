@@ -24,10 +24,7 @@ target_link_libraries(rtype_server_replication_module
     rtype_identifiers
     rtype_logging
     rtype_network_datagram_codec
-    rtype_network_entity_spawned
     rtype_network_exceptions
-    rtype_network_game_ended
-    rtype_network_lobby_state
     rtype_network_messages
     rtype_network_protocol
     rtype_network_transport
