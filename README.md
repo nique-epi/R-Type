@@ -99,6 +99,12 @@ cmake --workflow --preset test
 ```
 
 ```bash
+cmake --workflow --preset sanitize
+```
+
+This builds everything in `build-sanitize/` with AddressSanitizer and UndefinedBehaviorSanitizer, then runs the tests; an error stops the test that caused it. It needs GCC or Clang, not MSVC, and LeakSanitizer reports leaks on Linux only. The Linux CI runs it, then starts `r-type_server`, stops it with SIGINT and requires exit code 0.
+
+```bash
 ./build/tests/malformed_datagrams --server 4242
 ```
 
