@@ -1,15 +1,15 @@
 #include <gtest/gtest.h>
 #include <cstddef>
-#include <cstdint>
 #include <string>
 #include <vector>
 #include "ByteSequence.hpp"
 #include "ConnectionAccepted.hpp"
 #include "ConnectionRequest.hpp"
 #include "DebugJournal.hpp"
-#include "Endpoint.hpp"
 #include "Heartbeat.hpp"
 #include "MessageDispatcher.hpp"
+#include "MessageDispatcherFixture.hpp"
+#include "MessageDispatcherFixtures.hpp"
 #include "MessageFrame.hpp"
 #include "MessageOrigin.hpp"
 #include "MessagePayload.hpp"
@@ -17,7 +17,6 @@
 #include "NetworkConstants.hpp"
 #include "NetworkException.hpp"
 #include "NetworkTestConstants.hpp"
-#include "ProtocolFixtures.hpp"
 #include "ProtocolTestConstants.hpp"
 #include "ReadyState.hpp"
 #include "WorldState.hpp"
@@ -25,55 +24,20 @@
 #include "WorldStateFixtures.hpp"
 
 namespace rtype::network {
-namespace {
 
 using testing::byteSequence;
+using testing::frameOf;
 using testing::LARGEST_TYPE_BYTE;
+using testing::MessageDispatcherFixture;
 using testing::oneShipState;
+using testing::ReadyStateRecord;
+using testing::recordReadyStates;
 using testing::REJECTED_MESSAGE_COUNT;
-using testing::REJECTED_MESSAGE_LINE_TEXT;
 using testing::SOME_SENDER_PORT;
 using testing::SOME_SESSION_TOKEN;
-using testing::someSessionHeader;
+using testing::someOrigin;
 using testing::TYPE_ABOVE_THE_LAST;
 using testing::TYPE_BELOW_THE_FIRST;
-
-MessageOrigin someOrigin() {
-  return MessageOrigin{
-      .sender = Endpoint{.address = std::string{LOOPBACK_IPV4_ADDRESS},
-                         .port = SOME_SENDER_PORT},
-      .header = someSessionHeader()};
-}
-
-MessageFrame frameOf(MessageType type, const std::vector<std::byte>& payload) {
-  return MessageFrame{.type = static_cast<std::uint8_t>(type),
-                      .payload = payload};
-}
-
-MessageFrame frameOf(std::uint8_t type, const std::vector<std::byte>& payload) {
-  return MessageFrame{.type = type, .payload = payload};
-}
-
-/**
- * The ReadyState messages a dispatcher handed over, with their origins.
- */
-struct ReadyStateRecord {
-  std::vector<ReadyState> messages;
-  std::vector<MessageOrigin> origins;
-};
-
-/**
- * Registers the ReadyState handler of @p dispatcher, which appends each
- * message and its origin to @p record; @p record must outlive the dispatches.
- */
-void recordReadyStates(MessageDispatcher& dispatcher,
-                       ReadyStateRecord& record) {
-  dispatcher.registerHandler<ReadyState>(
-      [&record](const MessageOrigin& origin, const ReadyState& message) {
-        record.origins.push_back(origin);
-        record.messages.push_back(message);
-      });
-}
 
 /**
  * Given a handler for ReadyState
@@ -348,27 +312,13 @@ TEST(MessageDispatcher, DoesNothingForNoMessage) {
   EXPECT_EQ(dispatcher.malformedMessageCount(), 0U);
 }
 
-/** @brief Dispatcher tests that read the log the dispatcher writes. */
-class MessageDispatcherLogTest : public ::testing::Test {
- protected:
-  /** @returns The lines of the journal about a rejected message. */
-  [[nodiscard]] std::vector<std::string> rejectionLines() const {
-    return journal_.linesHolding(REJECTED_MESSAGE_LINE_TEXT);
-  }
-
-  [[nodiscard]] const DebugJournal& journal() const { return journal_; }
-
- private:
-  DebugJournal journal_;
-};
-
 /**
  * Given a dispatcher without any handler
  * When a Heartbeat arrives from a sender
  * Then the journal holds a line about it that names the address and the port
  * of that sender
  */
-TEST_F(MessageDispatcherLogTest, LogsASkippedMessageWithItsSender) {
+TEST_F(MessageDispatcherFixture, LogsASkippedMessageWithItsSender) {
   MessageDispatcher dispatcher;
   const std::vector<std::byte> payload = encodeMessage(Heartbeat{});
   const std::vector frames{frameOf(MessageType::Heartbeat, payload)};
@@ -388,7 +338,7 @@ TEST_F(MessageDispatcherLogTest, LogsASkippedMessageWithItsSender) {
  * Then the journal holds one line holding SKIPPED_MESSAGE_LINE_TEXT, the words
  * the tests that expect no such line look for
  */
-TEST_F(MessageDispatcherLogTest, WritesTheWordsOfASkippedMessage) {
+TEST_F(MessageDispatcherFixture, WritesTheWordsOfASkippedMessage) {
   MessageDispatcher dispatcher;
   const std::vector<std::byte> payload = encodeMessage(Heartbeat{});
   const std::vector frames{frameOf(MessageType::Heartbeat, payload)};
@@ -404,7 +354,7 @@ TEST_F(MessageDispatcherLogTest, WritesTheWordsOfASkippedMessage) {
  * Then the journal holds one line about them, not one per message: whoever
  * floods the dispatcher cannot flood the log
  */
-TEST_F(MessageDispatcherLogTest, WritesOneLineForMessagesRejectedTogether) {
+TEST_F(MessageDispatcherFixture, WritesOneLineForMessagesRejectedTogether) {
   MessageDispatcher dispatcher;
   ReadyStateRecord record;
   recordReadyStates(dispatcher, record);
@@ -417,5 +367,4 @@ TEST_F(MessageDispatcherLogTest, WritesOneLineForMessagesRejectedTogether) {
   EXPECT_EQ(rejectionLines().size(), 1U);
 }
 
-}  // namespace
 }  // namespace rtype::network

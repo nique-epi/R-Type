@@ -3,42 +3,16 @@
 #include <cstddef>
 #include <string>
 #include <vector>
-#include "DebugJournal.hpp"
-#include "ThrottledLog.hpp"
+#include "ThrottledLogFixture.hpp"
 #include "ThrottledLogTestConstants.hpp"
 #include "TimeTestConstants.hpp"
 
-namespace rtype::logging {
-namespace {
-
-using testing::EVENT_TEXT;
-using testing::FIRST_EVENT_TIME;
-using testing::FLOODED_EVENT_COUNT;
-using testing::HALF_INTERVAL;
-using testing::THROTTLED_INTERVAL;
-using testing::THROTTLED_LOGGER_NAME;
-
-/**
- * @returns The end of a line that stands for @p count events.
- */
-std::string countEnding(std::size_t count) {
-  return " (" + std::to_string(count) + " since the previous line)";
-}
-
-/** @brief A throttled log, with the log written to a journal the test reads. */
-class ThrottledLogTest : public ::testing::Test {
- protected:
-  void eventAt(std::chrono::nanoseconds now) { log_.debug(now, EVENT_TEXT); }
-
-  /** @returns The lines the throttled log wrote, oldest first. */
-  [[nodiscard]] std::vector<std::string> lines() const {
-    return journal_.linesHolding(EVENT_TEXT);
-  }
-
- private:
-  DebugJournal journal_;
-  ThrottledLog log_{std::string{THROTTLED_LOGGER_NAME}, THROTTLED_INTERVAL};
-};
+using rtype::logging::testing::EVENT_TEXT;
+using rtype::logging::testing::FIRST_EVENT_TIME;
+using rtype::logging::testing::FLOODED_EVENT_COUNT;
+using rtype::logging::testing::HALF_INTERVAL;
+using rtype::logging::testing::THROTTLED_INTERVAL;
+using rtype::logging::testing::ThrottledLogFixture;
 
 /**
  * Given a throttled log that wrote nothing
@@ -46,7 +20,7 @@ class ThrottledLogTest : public ::testing::Test {
  * Then the journal holds one line with the text of the event, standing for
  * that one event
  */
-TEST_F(ThrottledLogTest, WritesALineForTheFirstEvent) {
+TEST_F(ThrottledLogFixture, WritesALineForTheFirstEvent) {
   eventAt(FIRST_EVENT_TIME);
 
   const std::vector<std::string> written = lines();
@@ -60,7 +34,7 @@ TEST_F(ThrottledLogTest, WritesALineForTheFirstEvent) {
  * When another event happens one nanosecond before the interval is over
  * Then no line is written for it
  */
-TEST_F(ThrottledLogTest, WritesNoLineBeforeTheIntervalIsOver) {
+TEST_F(ThrottledLogFixture, WritesNoLineBeforeTheIntervalIsOver) {
   eventAt(FIRST_EVENT_TIME);
 
   eventAt(FIRST_EVENT_TIME + THROTTLED_INTERVAL - ONE_NANOSECOND);
@@ -73,7 +47,7 @@ TEST_F(ThrottledLogTest, WritesNoLineBeforeTheIntervalIsOver) {
  * When another event happens exactly one interval later
  * Then a second line is written for it
  */
-TEST_F(ThrottledLogTest, WritesTheNextLineOnceTheIntervalIsOver) {
+TEST_F(ThrottledLogFixture, WritesTheNextLineOnceTheIntervalIsOver) {
   eventAt(FIRST_EVENT_TIME);
 
   eventAt(FIRST_EVENT_TIME + THROTTLED_INTERVAL);
@@ -86,7 +60,7 @@ TEST_F(ThrottledLogTest, WritesTheNextLineOnceTheIntervalIsOver) {
  * When an event happens once the interval is over
  * Then its line stands for the events without a line and for itself
  */
-TEST_F(ThrottledLogTest, CountsTheEventsWithoutALineInTheNextLine) {
+TEST_F(ThrottledLogFixture, CountsTheEventsWithoutALineInTheNextLine) {
   eventAt(FIRST_EVENT_TIME);
   for (std::size_t event = 0; event < FLOODED_EVENT_COUNT; ++event) {
     eventAt(FIRST_EVENT_TIME + THROTTLED_INTERVAL - ONE_NANOSECOND);
@@ -105,7 +79,7 @@ TEST_F(ThrottledLogTest, CountsTheEventsWithoutALineInTheNextLine) {
  * Then its line stands for that one event: the count starts again after each
  * line
  */
-TEST_F(ThrottledLogTest, CountsAgainFromZeroAfterEachLine) {
+TEST_F(ThrottledLogFixture, CountsAgainFromZeroAfterEachLine) {
   eventAt(FIRST_EVENT_TIME);
 
   eventAt(FIRST_EVENT_TIME + THROTTLED_INTERVAL);
@@ -122,7 +96,7 @@ TEST_F(ThrottledLogTest, CountsAgainFromZeroAfterEachLine) {
  * Then no line is written: the interval runs from the previous line, so two
  * lines are never closer than one interval
  */
-TEST_F(ThrottledLogTest, MeasuresTheIntervalFromThePreviousLine) {
+TEST_F(ThrottledLogFixture, MeasuresTheIntervalFromThePreviousLine) {
   eventAt(FIRST_EVENT_TIME);
   eventAt(FIRST_EVENT_TIME + THROTTLED_INTERVAL + HALF_INTERVAL);
 
@@ -130,6 +104,3 @@ TEST_F(ThrottledLogTest, MeasuresTheIntervalFromThePreviousLine) {
 
   EXPECT_EQ(lines().size(), 2U);
 }
-
-}  // namespace
-}  // namespace rtype::logging
