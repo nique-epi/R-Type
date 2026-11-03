@@ -62,6 +62,26 @@ bool isOfAnotherVersion(std::span<const std::byte> datagram) {
              network::DatagramCodec::decodeHeader(datagram));
 }
 
+/**
+ * @returns Why a sender that is not in @p roster is refused when it asks for
+ * @p nickname: a game in progress, a full roster, then a nickname taken, in
+ * that order; nothing when it may join.
+ */
+std::optional<network::RefusalReason> refusalOf(const PlayerRoster& roster,
+                                                bool gameInProgress,
+                                                std::string_view nickname) {
+  if (gameInProgress) {
+    return network::RefusalReason::GameInProgress;
+  }
+  if (roster.isFull()) {
+    return network::RefusalReason::GameFull;
+  }
+  if (roster.hasNickname(nickname)) {
+    return network::RefusalReason::NicknameTaken;
+  }
+  return std::nullopt;
+}
+
 }  // namespace
 
 ConnectionAcceptor::ConnectionAcceptor(PlayerRoster& roster, Send send,
@@ -138,16 +158,9 @@ void ConnectionAcceptor::answer(const network::Endpoint& sender,
     }
     return;
   }
-  if (gameInProgress_) {
-    refuse(sender, network::RefusalReason::GameInProgress);
-    return;
-  }
-  if (roster_->isFull()) {
-    refuse(sender, network::RefusalReason::GameFull);
-    return;
-  }
-  if (roster_->hasNickname(request.nickname)) {
-    refuse(sender, network::RefusalReason::NicknameTaken);
+  if (const std::optional<network::RefusalReason> reason =
+          refusalOf(*roster_, gameInProgress_, request.nickname)) {
+    refuse(sender, *reason);
     return;
   }
   if (!hasValidCookie) {
