@@ -13,6 +13,10 @@ constexpr BotStanding ACCEPTED_AND_WAITING{
 constexpr BotStanding ALREADY_ASKED{.phase = client::ConnectionPhase::Accepted,
                                     .gameStarted = false,
                                     .requestedReady = true};
+constexpr BotStanding ASKED_NOT_READY{
+    .phase = client::ConnectionPhase::Accepted,
+    .gameStarted = false,
+    .requestedReady = false};
 constexpr BotStanding IN_A_GAME{.phase = client::ConnectionPhase::Accepted,
                                 .gameStarted = true,
                                 .requestedReady = std::nullopt};

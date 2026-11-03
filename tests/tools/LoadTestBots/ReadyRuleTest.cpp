@@ -6,6 +6,7 @@ using rtype::tools::asksReady;
 using rtype::tools::testing::A_BOT_STILL_CONNECTING;
 using rtype::tools::testing::ACCEPTED_AND_WAITING;
 using rtype::tools::testing::ALREADY_ASKED;
+using rtype::tools::testing::ASKED_NOT_READY;
 using rtype::tools::testing::EVERY_BOT_ANSWERED;
 using rtype::tools::testing::IN_A_GAME;
 using rtype::tools::testing::REFUSED;
@@ -35,6 +36,15 @@ TEST(ReadyRule, NoBotAsksWhileAnotherStillConnects) {
  */
 TEST(ReadyRule, ABotThatAskedDoesNotAskAgain) {
   EXPECT_FALSE(asksReady(ALREADY_ASKED, EVERY_BOT_ANSWERED));
+}
+
+/**
+ * Given a bot that asked not to be ready in this waiting room
+ * When every bot has its answer
+ * Then it does not ask, since it already chose
+ */
+TEST(ReadyRule, ABotThatAskedNotToBeReadyDoesNotAsk) {
+  EXPECT_FALSE(asksReady(ASKED_NOT_READY, EVERY_BOT_ANSWERED));
 }
 
 /**

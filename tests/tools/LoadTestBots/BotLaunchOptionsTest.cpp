@@ -7,6 +7,9 @@
 using rtype::engine::InvalidLaunchOptionValueException;
 using rtype::tools::BotLaunch;
 using rtype::tools::readBotLaunch;
+using rtype::tools::testing::A_RUN_OF_TWO_SECONDS;
+using rtype::tools::testing::ANOTHER_SEED;
+using rtype::tools::testing::ANOTHER_SEED_VALUE;
 using rtype::tools::testing::ANOTHER_SERVER;
 using rtype::tools::testing::ANOTHER_SERVER_ADDRESS;
 using rtype::tools::testing::ANOTHER_SERVER_PORT;
@@ -17,6 +20,7 @@ using rtype::tools::testing::NO_BOT;
 using rtype::tools::testing::NO_SECOND;
 using rtype::tools::testing::ONE_BOT;
 using rtype::tools::testing::ONE_BOT_TOO_MANY;
+using rtype::tools::testing::TWO_SECONDS;
 
 /**
  * Given no argument
@@ -79,6 +83,28 @@ TEST(BotLaunchOptions, RefusesOneBotTooMany) {
 TEST(BotLaunchOptions, RefusesARunOfNoSecond) {
   EXPECT_THROW(static_cast<void>(readBotLaunch(NO_SECOND)),
                InvalidLaunchOptionValueException);
+}
+
+/**
+ * Given a run of two seconds
+ * When the tool reads its launch
+ * Then the bots play for two seconds
+ */
+TEST(BotLaunchOptions, PlaysForTheDurationItIsGiven) {
+  const BotLaunch launch = readBotLaunch(A_RUN_OF_TWO_SECONDS);
+
+  EXPECT_EQ(launch.duration, TWO_SECONDS);
+}
+
+/**
+ * Given a seed other than the default one
+ * When the tool reads its launch
+ * Then the bots draw from that seed
+ */
+TEST(BotLaunchOptions, DrawsFromTheSeedItIsGiven) {
+  const BotLaunch launch = readBotLaunch(ANOTHER_SEED);
+
+  EXPECT_EQ(launch.seed, ANOTHER_SEED_VALUE);
 }
 
 /**

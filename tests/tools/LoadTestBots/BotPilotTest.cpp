@@ -19,6 +19,7 @@ using rtype::tools::testing::A_FIFTH_OF_A_SECOND;
 using rtype::tools::testing::EVERY_BOT_ACTION;
 using rtype::tools::testing::FRAMES_IN_A_MINUTE;
 using rtype::tools::testing::heldOver;
+using rtype::tools::testing::OTHER_PILOT_SEED;
 using rtype::tools::testing::PILOT_SEED;
 
 /**
@@ -38,6 +39,23 @@ TEST(BotPilot, TwoPilotsOfOneSeedHoldTheSameActions) {
   for (std::size_t frame = 0; frame < firstHeld.size(); ++frame) {
     EXPECT_EQ(firstHeld[frame].bits(), secondHeld[frame].bits());
   }
+}
+
+/**
+ * Given two pilots built from two seeds, as two bots of a squad are
+ * When both are advanced by the same frames for a minute
+ * Then they hold different actions at some frame
+ */
+TEST(BotPilot, TwoPilotsOfTwoSeedsHoldDifferentActions) {
+  BotPilot first{PILOT_SEED};
+  BotPilot second{OTHER_PILOT_SEED};
+
+  const std::vector<ActionSet> firstHeld = heldOver(first, FRAMES_IN_A_MINUTE);
+  const std::vector<ActionSet> secondHeld =
+      heldOver(second, FRAMES_IN_A_MINUTE);
+
+  EXPECT_FALSE(std::ranges::equal(firstHeld, secondHeld, {}, &ActionSet::bits,
+                                  &ActionSet::bits));
 }
 
 /**
