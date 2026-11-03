@@ -2,8 +2,8 @@
 #include "ConnectedPlayer.hpp"
 #include "EntityIdConstants.hpp"
 #include "IGameReplication.hpp"
+#include "Instances/RtypeGameFixture.hpp"
 #include "MessageType.hpp"
-#include "RtypeGameFixture.hpp"
 
 namespace rtype::server::testing {
 

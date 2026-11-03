@@ -14,6 +14,4 @@ target_link_libraries(rtype_server_instances
 )
 
 add_subdirectory(GameModules)
-add_subdirectory(GameReplication)
-add_subdirectory(ReplicationModule)
 add_subdirectory(GameInstance)

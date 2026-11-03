@@ -12,14 +12,13 @@ target_link_libraries(rtype_server_spawning
     rtype_game_wave_director
     rtype_game_waves
     rtype_logging
-    rtype_server_entity_spawn_sender
+    rtype_server_replication_module
     rtype_server_instances
     rtype_server_player_roster
   PRIVATE
     rtype_game_enemy_missile_start_position
     rtype_game_spawning
     rtype_server_exceptions
-    rtype_server_wire_entity_type_mapping
     tomlplusplus::tomlplusplus
 )
 

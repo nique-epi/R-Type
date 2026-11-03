@@ -1,9 +1,9 @@
 #include <gtest/gtest.h>
 #include "EntityDestruction.hpp"
-#include "GameModuleTestConstants.hpp"
 #include "IGameReplication.hpp"
+#include "Instances/GameModuleTestConstants.hpp"
+#include "Instances/RtypeGameFixture.hpp"
 #include "MessageType.hpp"
-#include "RtypeGameFixture.hpp"
 
 namespace rtype::server::testing {
 
