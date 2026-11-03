@@ -10,7 +10,8 @@ target_include_directories(rtype_client_title PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}
 target_link_libraries(rtype_client_title
   PUBLIC
     SFML::Graphics
-    rtype_client_audio_contract
+    rtype_client_audio_contract_music
+    rtype_client_audio_contract_sounds
     rtype_client_camera_shake
     rtype_client_interface
     rtype_client_intro_interfaces

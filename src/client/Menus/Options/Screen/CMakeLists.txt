@@ -10,7 +10,7 @@ target_link_libraries(rtype_client_options_screen
   PUBLIC
     SFML::Window
     rtype_client_application
-    rtype_client_audio_contract
+    rtype_client_audio_contract_sounds
     rtype_client_input_keys
     rtype_client_interface
     rtype_client_menu

@@ -8,7 +8,7 @@ target_include_directories(rtype_client_entities PUBLIC ${CMAKE_CURRENT_SOURCE_D
 
 target_link_libraries(rtype_client_entities
   PUBLIC
-    rtype_client_audio_contract
+    rtype_client_audio_contract_sounds
     rtype_client_effect_spawner
     rtype_engine
     rtype_engine_time

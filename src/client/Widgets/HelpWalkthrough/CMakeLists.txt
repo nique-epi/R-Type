@@ -5,7 +5,7 @@ target_include_directories(rtype_client_help_walkthrough PUBLIC ${CMAKE_CURRENT_
 target_link_libraries(rtype_client_help_walkthrough
   PUBLIC
     SFML::Window
-    rtype_client_audio_contract
+    rtype_client_audio_contract_sounds
     rtype_client_button
     rtype_client_input_keys
     rtype_client_widgets

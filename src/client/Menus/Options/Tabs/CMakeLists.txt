@@ -8,7 +8,7 @@ target_include_directories(rtype_client_options_tabs PUBLIC ${CMAKE_CURRENT_SOUR
 
 target_link_libraries(rtype_client_options_tabs
   PUBLIC
-    rtype_client_audio_contract
+    rtype_client_audio_contract_sounds
     rtype_client_input_keys
     rtype_client_menu
     rtype_client_row_control

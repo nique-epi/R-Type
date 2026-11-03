@@ -9,7 +9,8 @@ target_include_directories(rtype_client_audio_sounds PUBLIC ${CMAKE_CURRENT_SOUR
 target_link_libraries(rtype_client_audio_sounds
   PUBLIC
     SFML::Audio
-    rtype_client_audio_contract
+    rtype_client_audio_contract_music
+    rtype_client_audio_contract_sounds
     rtype_client_settings_module
     rtype_client_settings_values
   PRIVATE

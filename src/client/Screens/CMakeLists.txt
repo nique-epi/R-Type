@@ -17,7 +17,8 @@ target_link_libraries(rtype_client_screens_module
     SFML::Window
     rtype_client_application
     rtype_client_asset_library
-    rtype_client_audio_contract
+    rtype_client_audio_contract_service
+    rtype_client_audio_contract_sounds
     rtype_client_common_screens
     rtype_client_effect_interfaces
     rtype_client_entity_messages

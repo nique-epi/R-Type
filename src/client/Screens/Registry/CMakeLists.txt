@@ -8,7 +8,8 @@ target_link_libraries(rtype_client_screen_registry
   PUBLIC
     rtype_client_application
     rtype_client_asset_library
-    rtype_client_audio_contract
+    rtype_client_audio_contract_service
+    rtype_client_audio_contract_sounds
     rtype_client_entity_messages
     rtype_client_exceptions
     rtype_client_interface

@@ -4,7 +4,7 @@ target_include_directories(rtype_client_menu PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
 target_link_libraries(rtype_client_menu
   PUBLIC
-    rtype_client_audio_contract
+    rtype_client_audio_contract_sounds
     rtype_client_button
     rtype_client_label
     rtype_client_row_control
