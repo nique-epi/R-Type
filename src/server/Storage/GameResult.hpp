@@ -1,5 +1,6 @@
 #pragma once
 
+#include <chrono>
 #include <cstdint>
 #include <string>
 #include <vector>
@@ -24,8 +25,8 @@ struct GameResult {
   std::string difficulty;
   /** @brief The players connected when the game started. */
   std::uint8_t playerCount{};
-  /** @brief When the game ended, in seconds since 1970 UTC. */
-  std::int64_t endedAt{};
+  /** @brief When the game ended, to the second. */
+  std::chrono::sys_seconds endedAt;
   std::vector<PlayerResult> players;
 };
 

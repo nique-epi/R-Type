@@ -1,6 +1,7 @@
 #pragma once
 
 #include <gtest/gtest.h>
+#include <chrono>
 #include <cstdint>
 #include <filesystem>
 #include <string_view>
@@ -18,7 +19,7 @@ namespace rtype::server::testing {
 /** @returns A game of two players at the normal difficulty, ended at
  * @p endedAt, with @p players. */
 [[nodiscard]] GameResult normalGame(std::vector<PlayerResult> players,
-                                    std::int64_t endedAt);
+                                    std::chrono::sys_seconds endedAt);
 
 /** @returns A request for the leaderboard of normalGame(). */
 [[nodiscard]] network::LeaderboardRequest normalBoard();

@@ -1,6 +1,5 @@
 #include <gtest/gtest.h>
 #include <chrono>
-#include <cstdint>
 #include <string>
 #include "ConnectedPlayer.hpp"
 #include "GameInstanceTestConstants.hpp"
@@ -177,19 +176,16 @@ TEST_F(GameResultKeeperFixture, RecordsNothingForAGameThatDidNotEnd) {
 TEST_F(GameResultKeeperFixture, DatesAndNamesTheResultAtTheEnd) {
   seat(FIRST_PLAYER);
   startTheGame();
-  const auto secondsNow = [] {
-    return std::chrono::duration_cast<std::chrono::seconds>(
-               std::chrono::system_clock::now().time_since_epoch())
-        .count();
-  };
-  const std::int64_t before = secondsNow();
+  const std::chrono::sys_seconds before =
+      std::chrono::floor<std::chrono::seconds>(
+          std::chrono::system_clock::now());
 
   finishTheGame();
 
   const GameResult result = onlyResult();
   EXPECT_EQ(result.difficulty, KEEPER_DIFFICULTY);
   EXPECT_GE(result.endedAt, before);
-  EXPECT_LE(result.endedAt, secondsNow());
+  EXPECT_LE(result.endedAt, std::chrono::system_clock::now());
 }
 
 }  // namespace rtype::server::testing

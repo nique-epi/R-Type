@@ -41,7 +41,8 @@ TEST_F(ResultsDatabaseFixture, SavesARowWithEveryFieldOfTheResult) {
   EXPECT_TRUE(row.getColumn("account_id").isNull());
   EXPECT_EQ(row.getColumn("score").getUInt(), HIGH_SCORE);
   EXPECT_EQ(row.getColumn("deaths").getUInt(), TWO_DEATHS);
-  EXPECT_EQ(row.getColumn("played_at").getInt64(), SOME_DATE);
+  EXPECT_EQ(row.getColumn("played_at").getInt64(),
+            SOME_DATE.time_since_epoch().count());
   EXPECT_EQ(row.getColumn("difficulty").getString(), NORMAL);
   EXPECT_EQ(row.getColumn("player_count").getInt(), TWO_PLAYERS);
   EXPECT_EQ(row.getColumn("vanilla").getInt(), 0);
@@ -118,7 +119,7 @@ TEST_F(ResultsDatabaseFixture, ListsEachPlayerOnceWithTheirBestScore) {
 
   ASSERT_EQ(answer.rows.size(), 1U);
   EXPECT_EQ(answer.rows.at(0).score, HIGH_SCORE);
-  EXPECT_EQ(answer.rows.at(0).playedAt, LATER_DATE);
+  EXPECT_EQ(answer.rows.at(0).playedAt, LATER_DATE.time_since_epoch().count());
 }
 
 /**

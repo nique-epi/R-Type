@@ -22,7 +22,9 @@ namespace {
 void bindGame(SQLite::Statement& insert, const GameResult& result,
               const std::string& gameId) {
   insert.bind(GAME_ID_PARAMETER, gameId);
-  insert.bind(PLAYED_AT_PARAMETER, result.endedAt);
+  insert.bind(
+      PLAYED_AT_PARAMETER,
+      static_cast<std::int64_t>(result.endedAt.time_since_epoch().count()));
   insert.bind(DIFFICULTY_PARAMETER, result.difficulty);
   insert.bind(PLAYER_COUNT_PARAMETER, result.playerCount);
 }

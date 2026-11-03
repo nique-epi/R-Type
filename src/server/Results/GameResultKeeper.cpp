@@ -28,12 +28,6 @@ PlayerResult resultOf(const ConnectedPlayer& player) {
                           game::STARTING_LIVES - player.livesWithoutShip)};
 }
 
-std::int64_t secondsSince1970() {
-  return std::chrono::duration_cast<std::chrono::seconds>(
-             std::chrono::system_clock::now().time_since_epoch())
-      .count();
-}
-
 }  // namespace
 
 GameResultKeeper::GameResultKeeper(PlayerRoster& roster,
@@ -69,10 +63,12 @@ void GameResultKeeper::recordTheGame() {
   if (players.empty()) {
     return;
   }
-  archive_.record(GameResult{.difficulty = difficulty_,
-                             .playerCount = playersAtStart_,
-                             .endedAt = secondsSince1970(),
-                             .players = std::move(players)});
+  archive_.record(
+      GameResult{.difficulty = difficulty_,
+                 .playerCount = playersAtStart_,
+                 .endedAt = std::chrono::floor<std::chrono::seconds>(
+                     std::chrono::system_clock::now()),
+                 .players = std::move(players)});
 }
 
 }  // namespace rtype::server

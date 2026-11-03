@@ -1,5 +1,6 @@
 #pragma once
 
+#include <chrono>
 #include <cstddef>
 #include <cstdint>
 #include <string_view>
@@ -11,9 +12,12 @@ constexpr std::string_view NORMAL = "normal";
 constexpr std::string_view HARD = "hard";
 constexpr std::uint8_t TWO_PLAYERS = 2;
 constexpr std::uint8_t THREE_PLAYERS = 3;
-constexpr std::int64_t SOME_DATE = 1'800'000'000;
-constexpr std::int64_t LATER_DATE = SOME_DATE + 60;
-constexpr std::int64_t EVEN_LATER_DATE = LATER_DATE + 60;
+constexpr std::chrono::sys_seconds SOME_DATE{
+    std::chrono::seconds{1'800'000'000}};
+constexpr std::chrono::sys_seconds LATER_DATE =
+    SOME_DATE + std::chrono::minutes{1};
+constexpr std::chrono::sys_seconds EVEN_LATER_DATE =
+    LATER_DATE + std::chrono::minutes{1};
 constexpr std::string_view ACE = "ACE";
 constexpr std::string_view ACE_IN_LOWERCASE = "ace";
 constexpr std::string_view BOB = "BOB";

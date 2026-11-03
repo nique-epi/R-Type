@@ -1,4 +1,5 @@
 #include "ResultsDatabaseFixture.hpp"
+#include <chrono>
 #include <cstdint>
 #include <cstdlib>
 #include <filesystem>
@@ -18,7 +19,8 @@ PlayerResult playerNamed(std::string_view nickname, std::uint32_t score) {
       .nickname = std::string{nickname}, .score = score, .deaths = 0};
 }
 
-GameResult normalGame(std::vector<PlayerResult> players, std::int64_t endedAt) {
+GameResult normalGame(std::vector<PlayerResult> players,
+                      std::chrono::sys_seconds endedAt) {
   return GameResult{.difficulty = std::string{NORMAL},
                     .playerCount = TWO_PLAYERS,
                     .endedAt = endedAt,
