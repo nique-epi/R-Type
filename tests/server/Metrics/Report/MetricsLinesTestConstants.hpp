@@ -2,6 +2,7 @@
 
 #include <chrono>
 #include <cstddef>
+#include <cstdint>
 #include <string_view>
 
 namespace rtype::server::testing {
@@ -37,5 +38,25 @@ constexpr std::string_view EXPECTED_SYSTEMS_LINE =
  * tick. */
 constexpr std::string_view EXPECTED_LINE_WITHOUT_TICKS =
     "average time per tick: MovementSystem 0 ms";
+
+/** @brief Two players a report measured: player 1 of game 1, ACE, and player
+ * 1 of game 2, BOB. */
+constexpr std::size_t FIRST_MEASURED_GAME = 1;
+constexpr std::size_t SECOND_MEASURED_GAME = 2;
+constexpr std::uint8_t MEASURED_PLAYER_NUMBER = 1;
+constexpr std::string_view FIRST_MEASURED_NICKNAME = "ACE";
+constexpr std::string_view SECOND_MEASURED_NICKNAME = "BOB";
+constexpr std::chrono::microseconds FIRST_MEASURED_ROUND_TRIP{42'100};
+constexpr std::chrono::microseconds FIRST_MEASURED_JITTER{3'200};
+constexpr std::chrono::milliseconds SECOND_MEASURED_ROUND_TRIP{80};
+constexpr std::chrono::microseconds SECOND_MEASURED_JITTER{12'500};
+
+/** @brief What the journal must read for those two players, and for a report
+ * that measured nobody. */
+constexpr std::string_view EXPECTED_ROUND_TRIPS_LINE =
+    "round trips: game 1 player 1 ACE 42.1 ms, jitter 3.2 ms; game 2 player 1 "
+    "BOB 80 ms, jitter 12.5 ms";
+constexpr std::string_view EXPECTED_LINE_WITHOUT_ROUND_TRIPS =
+    "round trips: no player measured";
 
 }  // namespace rtype::server::testing

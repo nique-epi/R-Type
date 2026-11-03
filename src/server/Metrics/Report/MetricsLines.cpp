@@ -5,6 +5,7 @@
 #include "DurationConversion.hpp"
 #include "GamesCensus.hpp"
 #include "MetricsReport.hpp"
+#include "PlayerRoundTripMeasure.hpp"
 #include "SystemTime.hpp"
 #include "TickDurationSummary.hpp"
 #include "TimeConstants.hpp"
@@ -38,6 +39,25 @@ std::string systemsLineOf(const MetricsReport& report) {
                 engine::averageOf(time.total, report.ticks.count))
          << " ms";
     separator = ", ";
+  }
+  return line.str();
+}
+
+std::string roundTripsLineOf(const MetricsReport& report) {
+  std::ostringstream line;
+  line << "round trips:";
+  if (report.roundTrips.empty()) {
+    line << " no player measured";
+    return line.str();
+  }
+  std::string_view separator = " ";
+  for (const PlayerRoundTripMeasure& measure : report.roundTrips) {
+    line << separator << "game " << measure.gameNumber << " player "
+         << static_cast<unsigned int>(measure.playerNumber) << ' '
+         << measure.nickname << ' '
+         << engine::inMilliseconds(measure.figures.roundTrip) << " ms, jitter "
+         << engine::inMilliseconds(measure.figures.jitter) << " ms";
+    separator = "; ";
   }
   return line.str();
 }

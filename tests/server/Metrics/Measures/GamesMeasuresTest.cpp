@@ -1,18 +1,26 @@
 #include <gtest/gtest.h>
 #include <algorithm>
+#include <chrono>
 #include <vector>
+#include "ConnectedPlayer.hpp"
 #include "GamePlayers.hpp"
 #include "Games.hpp"
 #include "GamesCensus.hpp"
 #include "GamesMeasures.hpp"
+#include "Heartbeat.hpp"
 #include "Metrics/ServerMetricsFixture.hpp"
 #include "Metrics/ServerMetricsTestConstants.hpp"
+#include "PlayerRoundTripMeasure.hpp"
+#include "RoundTripFigures.hpp"
 #include "ServerModuleTestConstants.hpp"
 #include "SystemTime.hpp"
 
 using rtype::server::censusOf;
+using rtype::server::ConnectedPlayer;
 using rtype::server::Games;
 using rtype::server::GamesCensus;
+using rtype::server::PlayerRoundTripMeasure;
+using rtype::server::roundTripsOf;
 using rtype::server::takeSystemTimesOf;
 
 /**
@@ -103,4 +111,45 @@ TEST_F(ServerMetricsFixture, AddsUpTheTimeOfASystemOverTheGamesInProgress) {
                                        &rtype::engine::SystemTime::name);
   ASSERT_NE(timed, times.end());
   EXPECT_EQ(timed->total, TIMED_SYSTEM_TIME_IN_TWO_GAMES);
+}
+
+/**
+ * Given three games, a player of the second game measured at a round trip of
+ * 42 ms
+ * When the round trips of the games are gathered
+ * Then that player is listed with the number of its game, 2, its number, its
+ * nickname and its figures
+ */
+TEST_F(ServerMetricsFixture, ListsTheRoundTripOfEveryPlayerMeasured) {
+  startWithGames(THREE_GAMES);
+  const Games& games = *probe().games();
+  ConnectedPlayer& player = seatPlayerIn(*games.all()[SECOND_GAME], 0);
+  player.roundTrip.receive(
+      rtype::network::Heartbeat{
+          .sentAt = 0,
+          .echo = rtype::network::HeartbeatEcho{.sentAt = 0, .heldFor = 0}},
+      MEASURED_ROUND_TRIP);
+
+  const std::vector<PlayerRoundTripMeasure> measures = roundTripsOf(games);
+
+  ASSERT_EQ(measures.size(), 1U);
+  EXPECT_EQ(measures.front().gameNumber, NUMBER_OF_THE_SECOND_GAME);
+  EXPECT_EQ(measures.front().playerNumber, player.playerNumber);
+  EXPECT_EQ(measures.front().nickname, player.nickname);
+  EXPECT_EQ(measures.front().figures,
+            (rtype::network::RoundTripFigures{
+                .roundTrip = MEASURED_ROUND_TRIP,
+                .jitter = std::chrono::microseconds::zero()}));
+}
+
+/**
+ * Given a game whose only player was measured nothing yet
+ * When the round trips of the games are gathered
+ * Then nobody is listed
+ */
+TEST_F(ServerMetricsFixture, LeavesOutAPlayerNotMeasuredYet) {
+  startWithGames(THREE_GAMES);
+  join(0);
+
+  EXPECT_TRUE(roundTripsOf(*probe().games()).empty());
 }

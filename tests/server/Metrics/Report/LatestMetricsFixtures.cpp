@@ -14,7 +14,8 @@ MetricsReport reportCounting(std::size_t count) {
       .ticks = TickDurationSummary{},
       .games = GamesCensus{.players = count, .entities = count},
       .systemTimes = std::vector<engine::SystemTime>(count % MOST_SYSTEM_TIMES),
-      .traffic = {}};
+      .traffic = {},
+      .roundTrips = {}};
 }
 
 }  // namespace rtype::server::testing
