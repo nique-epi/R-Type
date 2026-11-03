@@ -158,6 +158,7 @@ target_include_directories(client_settings_tests PRIVATE ${CMAKE_CURRENT_SOURCE_
 rtype_add_test(NAME client_launch_options_tests SOURCES client/LaunchOptions/LaunchOptionsTest.cpp logging/LogLaunchOptionsFixture.cpp LIBS rtype_client_launch_options rtype_client_constants rtype_network_constants rtype_logging)
 target_include_directories(client_launch_options_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/logging)
 add_subdirectory(tools/MalformedDatagrams)
+add_subdirectory(tools/LoadTestBots)
 
 # The scripts of tools/network-conditions/ are POSIX shell: their checks run
 # where a shell does.
