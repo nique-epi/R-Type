@@ -14,6 +14,7 @@ target_link_libraries(rtype_server_modules
     rtype_server_metrics_module
     rtype_server_network_module
     rtype_server_platform
+    rtype_server_storage_module
   PRIVATE
     rtype_engine_system_clock
     rtype_server_constants

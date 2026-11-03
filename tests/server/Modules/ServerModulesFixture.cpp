@@ -24,8 +24,14 @@
 
 namespace {
 
-std::vector<std::string_view> launchArguments(const std::string& portText) {
-  return {"-p", portText, rtype::server::SEED_OPTION, "1"};
+std::vector<std::string_view> launchArguments(const std::string& portText,
+                                              const std::string& databaseText) {
+  return {"-p",
+          portText,
+          rtype::server::SEED_OPTION,
+          "1",
+          rtype::server::DATABASE_OPTION,
+          databaseText};
 }
 
 }  // namespace
@@ -34,7 +40,8 @@ ServerModulesFixture::ServerModulesFixture()
     : port_(freeUdpPort()),
       workingFolderChange_(workingFolder_.path()),
       portText_(std::to_string(port_)),
-      arguments_(launchArguments(portText_)),
+      databaseText_((workingFolder_.path() / TEST_DATABASE_FILE).string()),
+      arguments_(launchArguments(portText_, databaseText_)),
       launchOptions_(rtype::server::LaunchOptions::read(arguments_)) {}
 
 std::uint64_t ServerModulesFixture::joinWithTheClient() {

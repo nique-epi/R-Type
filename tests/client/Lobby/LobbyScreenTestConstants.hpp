@@ -28,6 +28,11 @@ constexpr sf::IntRect FIRST_BAY_CELL_INSIDE({33, 137}, {84, 14});
 constexpr sf::Vector2i BACK_CHIP_MIDDLE =
     sf::Vector2i(415, 238) * INTERFACE_PIXEL;
 
+/** @brief The middle of RANKING: BACK starts at 374, HELP at 300, and RANKING,
+ * 90 wide, 8 to its left. */
+constexpr sf::Vector2i LEADERBOARD_CHIP_MIDDLE =
+    sf::Vector2i(247, 238) * INTERFACE_PIXEL;
+
 /** @brief The key READY is bound to in these tests: the key of a first
  * launch, DEFAULT_KEYS, since the fixture keeps the bindings of a first
  * launch. */

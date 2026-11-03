@@ -11,6 +11,7 @@
 #include "IClock.hpp"
 #include "IncomingDatagram.hpp"
 #include "InputKeeper.hpp"
+#include "LeaderboardRequest.hpp"
 #include "MessageDispatcher.hpp"
 #include "OutgoingDatagram.hpp"
 #include "PacketHeader.hpp"
@@ -31,8 +32,10 @@ namespace rtype::server {
  * version with no flag set, its messages add up to its end, and its sender is
  * in the roster (see DatagramReader). Reading one resets the silence of its
  * sender, whatever it holds. Its ReadyState is kept by a ReadyKeeper, its
- * PlayerInput by an InputKeeper, and a Disconnection closes the session of its
- * sender at once, with a PlayerDeparture (Left): the copies of that
+ * PlayerInput by an InputKeeper, its LeaderboardRequest goes to
+ * GameSessionsParts::onLeaderboardRequest with the player who sent it, and a
+ * Disconnection closes the session of its sender at once, with a
+ * PlayerDeparture (Left): the copies of that
  * Disconnection the client sends after it come from an address the roster no
  * longer holds, so they change nothing.
  *
@@ -109,6 +112,11 @@ class GameSessions {
  private:
   void readDatagram(const network::IncomingDatagram& datagram);
 
+  /** @brief Tells the dispatcher what handles each message of a player. A
+   * datagram may hold a Disconnection before a LeaderboardRequest, which frees
+   * the seat: the request of an address with no seat any more goes nowhere. */
+  void registerHandlers();
+
   std::function<void(network::OutgoingDatagram)> send_;
   const engine::IClock* clock_{nullptr};
   engine::Duration previousTickStart_{};
@@ -117,6 +125,9 @@ class GameSessions {
   ReadyKeeper readyKeeper_;
   InputKeeper inputKeeper_;
   Departures departures_;
+  std::function<void(const ConnectedPlayer&,
+                     const network::LeaderboardRequest&)>
+      onLeaderboardRequest_;
   network::MessageDispatcher dispatcher_;
 };
 

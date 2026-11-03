@@ -32,6 +32,7 @@ There is nothing to ask for: a server always hosts `DEFAULT_HOSTED_GAME_COUNT` (
 ```text
 [INFO ] [Server] - server starting
 [INFO ] [Server] - listening on UDP port 4242
+[INFO ] [Storage] - results database /path/to/r-type_server_4242.db
 [INFO ] [Server] - waves file assets/waves/waves.toml: 3 difficulties, games play normal
 [INFO ] [BydoSpawner] - Bydo spawning starts from the seed 42
 [INFO ] [BydoSpawner] - Bydo spawning starts from the seed 65578
@@ -100,7 +101,7 @@ More games cost more per tick, and the journal gives that cost every 10 s (see [
 
 ## Step 5: run two servers side by side
 
-Several servers can run on one machine, each on its own port, with nothing shared between them. Give each its own journal, or their lines mix in one file:
+Several servers can run on one machine, each on its own port, with nothing shared between them. Each keeps its leaderboard in a file named after its port, `r-type_server_4251.db` and `r-type_server_4252.db`, next to the executable. Give each its own journal, or their lines mix in one file:
 
 ```bash
 ./r-type_server -p 4251 --log-file first.log

@@ -138,6 +138,17 @@ engine::LaunchOption inputDelayOption(LaunchValues& values) {
       }};
 }
 
+/** @returns `--database <file>`, which forces the database setting. */
+engine::LaunchOption databaseOption(LaunchValues& values) {
+  return engine::LaunchOption{
+      .name = DATABASE_OPTION,
+      .takesValue = true,
+      .record = [&values](std::string_view file) {
+        values.forcedLines.push_back(
+            engine::settingLine(DATABASE_SETTING_NAME, file));
+      }};
+}
+
 /** @returns `--set <name>=<value>`, which forces any setting. */
 engine::LaunchOption setOption(LaunchValues& values) {
   return engine::LaunchOption{
@@ -191,6 +202,16 @@ std::string settingOptionEntries() {
   return text;
 }
 
+/** @returns The line of the usage that describes `--database`. */
+std::string databaseOptionEntry() {
+  return engine::usageEntry(
+      std::string(DATABASE_OPTION) + " <file>",
+      "File the leaderboard of this server is kept in, on a local disk. "
+      "Default: " +
+          std::string(DATABASE_FILE_PREFIX) + "<port>" +
+          std::string(DATABASE_FILE_SUFFIX) + " next to the executable.");
+}
+
 /** @returns The lines of the usage that describe `--set` and `--help`. */
 std::string generalOptionEntries() {
   std::string text = engine::usageEntry(
@@ -202,7 +223,8 @@ std::string generalOptionEntries() {
           std::string(PORT_SETTING_NAME) + ", " +
           std::string(SEED_SETTING_NAME) + ", " +
           std::string(STATE_RATE_SETTING_NAME) + ", " +
-          std::string(INPUT_DELAY_SETTING_NAME) + ".");
+          std::string(INPUT_DELAY_SETTING_NAME) + ", " +
+          std::string(DATABASE_SETTING_NAME) + ".");
   text += engine::usageEntry(network::TRAFFIC_CSV_OPTION_WITH_VALUE,
                              network::TRAFFIC_CSV_USAGE);
   text += engine::usageEntry(engine::HELP_OPTION,
@@ -221,6 +243,7 @@ LaunchOptions LaunchOptions::read(std::span<const std::string_view> arguments) {
       seedOption(options.values_),
       stateRateOption(options.values_),
       inputDelayOption(options.values_),
+      databaseOption(options.values_),
       setOption(options.values_),
       engine::pathOption(network::TRAFFIC_CSV_OPTION,
                          options.values_.trafficCsvFile),
@@ -237,6 +260,7 @@ LaunchOptions LaunchOptions::read(std::span<const std::string_view> arguments) {
 std::string LaunchOptions::usage() {
   std::string text = engine::usageHeader(PROGRAM_NAME);
   text += settingOptionEntries();
+  text += databaseOptionEntry();
   text += generalOptionEntries();
   text += '\n';
   text += network::SimulatorLaunchOptions::usage();

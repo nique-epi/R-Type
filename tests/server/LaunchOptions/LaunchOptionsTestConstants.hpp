@@ -5,6 +5,21 @@
 #include <string_view>
 
 /**
+ * @brief A file given after `--database`, and the line of the command `set`
+ * it becomes.
+ */
+constexpr std::string_view DATABASE_ARGUMENT = "results.db";
+constexpr std::string_view DATABASE_LINE = "set database results.db";
+
+/**
+ * @brief A file whose name holds a space, and its line: the value is quoted,
+ * so `set` reads it as one word.
+ */
+constexpr std::string_view DATABASE_ARGUMENT_WITH_A_SPACE = "my results.db";
+constexpr std::string_view DATABASE_LINE_WITH_A_SPACE =
+    "set database \"my results.db\"";
+
+/**
  * @brief A port given after `-p`, written in digits.
  */
 constexpr std::string_view PORT_ARGUMENT = "4243";
