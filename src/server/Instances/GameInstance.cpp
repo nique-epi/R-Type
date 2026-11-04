@@ -123,6 +123,10 @@ GameInstance::GameInstance(GameInstanceParts parts,
   world_ = &modules_.require<IGameWorld>();
 }
 
+const std::string& GameInstance::difficulty() const {
+  return context_.settings.difficulty;
+}
+
 GameState GameInstance::state() const { return flow_->state(); }
 
 std::uint32_t GameInstance::tick() const { return flow_->tick(); }

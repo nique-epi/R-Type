@@ -54,6 +54,12 @@ constexpr std::string_view SEED_OPTION = "--seed";
 constexpr std::size_t DEFAULT_HOSTED_GAME_COUNT = 8;
 
 /**
+ * @brief The name of game n, from 1, is this prefix and n: the name the master
+ * lists it by, until a game is named by the player who creates it.
+ */
+constexpr std::string_view GAME_NAME_PREFIX = "GAME ";
+
+/**
  * @brief The gap between the seeds of two games started from the same seed.
  *
  * A game draws the seed of each world it builds as its own seed plus the count

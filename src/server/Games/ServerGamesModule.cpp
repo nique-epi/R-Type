@@ -26,6 +26,7 @@
 #include "InstallContext.hpp"
 #include "IntegerSettingDefinition.hpp"
 #include "Logger.hpp"
+#include "MasterMessageConstants.hpp"
 #include "ModuleConstants.hpp"
 #include "PathText.hpp"
 #include "PlayerDatagrams.hpp"
@@ -75,6 +76,20 @@ void logHowGamesPlay(const logging::Logger& logger, std::string_view difficulty,
               breaches.empty() ? ", vanilla" : ", not vanilla");
   for (const std::string_view breach : breaches) {
     logger.info("not vanilla: ", breach);
+  }
+}
+
+/**
+ * @throws NoJoinableGameException when @p gameCount is 0.
+ * @throws TooManyGamesException when it is above MAXIMUM_HOSTED_GAMES, the most
+ * games a heartbeat lists.
+ */
+void requireGameCount(std::size_t gameCount) {
+  if (gameCount == 0) {
+    throw NoJoinableGameException();
+  }
+  if (gameCount > network::MAXIMUM_HOSTED_GAMES) {
+    throw TooManyGamesException(gameCount, network::MAXIMUM_HOSTED_GAMES);
   }
 }
 
@@ -134,9 +149,7 @@ void ServerGamesModule::declareSettings(
 }
 
 void ServerGamesModule::start() {
-  if (settings_.gameCount == 0) {
-    throw NoJoinableGameException();
-  }
+  requireGameCount(settings_.gameCount);
   const std::string_view difficulty = DEFAULT_DIFFICULTY;
   const WaveCatalog catalog = WaveCatalog::fromFile(settings_.wavesFile);
   logWavesFile(logger_, settings_.wavesFile, catalog);

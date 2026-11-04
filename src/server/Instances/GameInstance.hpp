@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <memory>
 #include <span>
+#include <string>
 #include <vector>
 #include "ConnectedPlayer.hpp"
 #include "DelayedInputs.hpp"
@@ -81,6 +82,9 @@ class GameInstance {
   ~GameInstance() = default;
 
   [[nodiscard]] GameState state() const;
+
+  /** @returns The name of the difficulty the game is played in. */
+  [[nodiscard]] const std::string& difficulty() const;
 
   /**
    * @returns How many ticks were simulated since the game started: 0 while it
