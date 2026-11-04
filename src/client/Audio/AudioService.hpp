@@ -5,7 +5,6 @@
 #include "IMusicPlayer.hpp"
 #include "ISoundPlayer.hpp"
 #include "MusicPlayer.hpp"
-#include "NullSoundPlayer.hpp"
 #include "SettingsService.hpp"
 #include "SoundBank.hpp"
 #include "SoundPlayer.hpp"
@@ -21,10 +20,7 @@ namespace rtype::client {
  * volumes follow the settings service, which tells them when one changes.
  *
  * Building it reads no file: open() reads the sounds and opens the music
- * files, as the window opens in open(). Until open() has read the sounds,
- * sounds() plays nothing and the music stays silent, so a sound module turned
- * off by the configuration, installed but never started, gives the screens a
- * service that plays nothing.
+ * files, as the window opens in open().
  */
 class AudioService final : public IAudioService {
  public:
@@ -42,8 +38,6 @@ class AudioService final : public IAudioService {
   AudioService& operator=(AudioService&&) = delete;
   ~AudioService() override;
 
-  /** @returns The player of the sounds once open() has read them, one that
-   * plays nothing before. */
   [[nodiscard]] ISoundPlayer& sounds() override;
   [[nodiscard]] IMusicPlayer& theme() override;
   void playTheme() override;
@@ -58,7 +52,6 @@ class AudioService final : public IAudioService {
   SettingsService* settings_;
   SoundBank bank_;
   SoundPlayer sounds_;
-  NullSoundPlayer silence_;
   MusicPlayer theme_;
   MusicPlayer gameMusic_;
   Soundtrack soundtrack_;

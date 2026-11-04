@@ -13,6 +13,7 @@
 #include "GameWindow.hpp"
 #include "IAudioService.hpp"
 #include "IModule.hpp"
+#include "IOptionalDependencies.hpp"
 #include "InstallContext.hpp"
 #include "Logger.hpp"
 #include "PlayerSettings.hpp"
@@ -52,7 +53,8 @@ namespace rtype::client {
  * listener; the screens stay until the module is destroyed, after every module
  * stopped, so the music plays on while the connection module leaves the server.
  */
-class ClientScreensModule final : public engine::IModule {
+class ClientScreensModule final : public engine::IModule,
+                                  public engine::IOptionalDependencies {
  public:
   /**
    * @param server The server the connection screen starts with, unless the
@@ -68,6 +70,9 @@ class ClientScreensModule final : public engine::IModule {
    * assets, the settings, the window and the connection. The sound is not
    * among them: the screens run without it. */
   [[nodiscard]] std::vector<std::string> dependencies() const override;
+  /** @returns AUDIO_MODULE_NAME: the sound, used when it is listed and on,
+   * and listed before the screens then. */
+  [[nodiscard]] std::vector<std::string> optionalDependencies() const override;
   /** @throws MissingServiceException if a module listed before does not
    * provide a service the screens need. */
   void install(engine::InstallContext& context) override;

@@ -27,9 +27,6 @@ class SoundBank {
    */
   void load(const AssetLibrary& library, std::span<const char* const> soundIds);
 
-  /** @returns Whether the bank holds no sound yet. */
-  [[nodiscard]] bool isEmpty() const;
-
   /** @throws AssetNotLoadedException for a sound the bank does not hold. */
   [[nodiscard]] const sf::SoundBuffer& sound(std::string_view soundId) const;
 

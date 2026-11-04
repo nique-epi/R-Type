@@ -81,6 +81,10 @@ std::vector<std::string> ClientScreensModule::dependencies() const {
           std::string{WINDOW_MODULE_NAME}, std::string{CONNECTION_MODULE_NAME}};
 }
 
+std::vector<std::string> ClientScreensModule::optionalDependencies() const {
+  return {std::string{AUDIO_MODULE_NAME}};
+}
+
 void ClientScreensModule::install(engine::InstallContext& context) {
   context.provide(registry_);
   settings_ = &context.require<PlayerSettings>();

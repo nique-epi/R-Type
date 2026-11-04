@@ -64,7 +64,7 @@ Master settings (see [Master](/R-Type/master/#configuration-mastercfg)):
 
 ### `module`
 
-`module` takes exactly two words: the name of a module and `on` or `off`. A module that is off is installed and never started, and the work it added to the loop in `install()` is taken out, so it opens nothing and runs nothing. Every module is on until a line turns it off.
+`module` takes exactly two words: the name of a module and `on` or `off`. A module that is off is never installed: the `module` lines run once before any install, so it provides no service, adds no work, opens nothing and runs nothing. The whole file then runs again once every module is installed, so a `set` line finds the settings the modules declared. Every module is on until a line turns it off.
 
 A module cannot be turned off while a module that stays on needs it, and cannot be turned on while a module it needs is off. The check uses the state at the time of the line, so turn off the dependents first and turn on the dependencies first.
 

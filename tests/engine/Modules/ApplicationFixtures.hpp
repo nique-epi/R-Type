@@ -13,6 +13,15 @@
 std::vector<std::unique_ptr<rtype::engine::IModule>> recordingModules(
     const std::vector<RecordingModuleSetup>& setups, JournalModule& journal);
 
+/** @returns SECOND_MODULE, which uses FIRST_MODULE when it is listed, then
+ * FIRST_MODULE: listed after the module that uses it. */
+std::vector<std::unique_ptr<rtype::engine::IModule>> optionalModuleListedAfter(
+    JournalModule& journal);
+
+/** @returns SECOND_MODULE alone, which uses FIRST_MODULE when it is
+ * listed. */
+std::vector<std::unique_ptr<rtype::engine::IModule>> optionalModuleAbsent();
+
 /** @returns FIRST_MODULE, SECOND_MODULE and THIRD_MODULE, which depend
  * on nothing. */
 std::vector<std::unique_ptr<rtype::engine::IModule>> threeModules(

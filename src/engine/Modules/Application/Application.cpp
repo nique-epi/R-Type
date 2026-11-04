@@ -12,6 +12,7 @@
 #include "ConfigurationStep.hpp"
 #include "EngineException.hpp"
 #include "IModule.hpp"
+#include "IOptionalDependencies.hpp"
 #include "InstallContext.hpp"
 #include "LoopStages.hpp"
 #include "RequireNoNullModule.hpp"
@@ -29,16 +30,39 @@ bool listsModule(std::span<const std::unique_ptr<IModule>> modules,
       });
 }
 
+std::vector<std::string> optionalDependenciesOf(const IModule& module) {
+  const auto* const optional =
+      dynamic_cast<const IOptionalDependencies*>(&module);
+  if (optional == nullptr) {
+    return {};
+  }
+  return optional->optionalDependencies();
+}
+
+/** @brief Throws for a dependency of the module at @p position that is not
+ * listed before it, or an optional one that is listed after it. */
+void requireListedBefore(std::span<const std::unique_ptr<IModule>> modules,
+                         std::size_t position) {
+  const std::span<const std::unique_ptr<IModule>> listedBefore =
+      modules.first(position);
+  const IModule& module = *modules[position];
+  for (const std::string& dependency : module.dependencies()) {
+    if (!listsModule(listedBefore, dependency)) {
+      throw MissingDependencyException(module.name(), dependency);
+    }
+  }
+  for (const std::string& dependency : optionalDependenciesOf(module)) {
+    if (listsModule(modules, dependency) &&
+        !listsModule(listedBefore, dependency)) {
+      throw MissingDependencyException(module.name(), dependency);
+    }
+  }
+}
+
 void requireDependenciesListedBefore(
     std::span<const std::unique_ptr<IModule>> modules) {
   for (std::size_t position = 0; position < modules.size(); ++position) {
-    const std::span<const std::unique_ptr<IModule>> listedBefore =
-        modules.first(position);
-    for (const std::string& dependency : modules[position]->dependencies()) {
-      if (!listsModule(listedBefore, dependency)) {
-        throw MissingDependencyException(modules[position]->name(), dependency);
-      }
-    }
+    requireListedBefore(modules, position);
   }
 }
 
@@ -74,11 +98,11 @@ void Application::start() {
     return;
   }
   startCalled_ = true;
+  settleSwitches();
   installModules();
   if (configure_) {
     configure_(commands_);
   }
-  dropWorkOfModulesThatAreOff();
   startModules();
 }
 
@@ -101,18 +125,22 @@ void Application::runStages(Duration elapsed) const {
   }
 }
 
-void Application::installModules() {
-  for (const std::unique_ptr<IModule>& listedModule : modules_) {
-    InstallContext context(listedModule->name(), services_, stages_);
-    listedModule->install(context);
+void Application::settleSwitches() {
+  if (!configure_) {
+    return;
   }
+  CommandInterpreter switchesOnly;
+  switches_.registerCommand(switchesOnly);
+  configure_(switchesOnly);
 }
 
-void Application::dropWorkOfModulesThatAreOff() {
+void Application::installModules() {
   for (const std::unique_ptr<IModule>& listedModule : modules_) {
     if (!switches_.isOn(listedModule->name())) {
-      stages_.removeWorkOf(listedModule->name());
+      continue;
     }
+    InstallContext context(listedModule->name(), services_, stages_);
+    listedModule->install(context);
   }
 }
 

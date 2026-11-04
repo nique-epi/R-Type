@@ -28,12 +28,7 @@ AudioService::~AudioService() {
   settings_->unsubscribe(sounds_);
 }
 
-ISoundPlayer& AudioService::sounds() {
-  if (bank_.isEmpty()) {
-    return silence_;
-  }
-  return sounds_;
-}
+ISoundPlayer& AudioService::sounds() { return sounds_; }
 
 IMusicPlayer& AudioService::theme() { return theme_; }
 

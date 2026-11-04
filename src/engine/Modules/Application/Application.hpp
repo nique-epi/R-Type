@@ -29,10 +29,13 @@ namespace rtype::engine {
  *
  * The application owns the CommandInterpreter and the ConfigurationRegistry of
  * the program and provides both as services, so a module registers its commands
- * and declares its settings while it installs. Between the installs and the
- * starts, the configuration step reads the configuration and runs it as
- * commands; the `module` command it may run turns modules off, and a module
- * that is off is installed and never started.
+ * and declares its settings while it installs. The configuration step runs
+ * twice: before the installs with the `module` command alone, so a module
+ * turned off is never installed, never started, and provides no service; then
+ * between the installs and the starts with every command, the settings the
+ * modules declared included. A module that uses another only when it is listed
+ * implements IOptionalDependencies: that other module may be off or absent,
+ * and when it is listed it must come first.
  */
 class Application {
  public:
@@ -58,7 +61,7 @@ class Application {
    * any is started; empty to read no configuration.
    * @throws NullModuleException if a module is null.
    * @throws MissingDependencyException if a dependency of a module is not
-   * listed before it.
+   * listed before it, or an optional dependency is listed after it.
    */
   Application(LoopStages stages, std::vector<std::unique_ptr<IModule>> modules,
               ConfigurationStep configure = {});
@@ -76,9 +79,10 @@ class Application {
   Application& operator=(Application&&) = delete;
 
   /**
-   * @brief Installs every module, runs the configuration step, then starts
-   * every module that is on, in list order. The work a module that is off
-   * added in install() is taken out of the stages, so it never runs.
+   * @brief Runs the `module` lines of the configuration step, installs every
+   * module that is on, runs the whole step, then starts every module that is
+   * on, in list order. A module that is off is never installed, so it adds no
+   * work and provides no service.
    *
    * Only the first call does anything: a later call, even after stop(),
    * installs and starts nothing. When a module throws from start(), the modules
@@ -115,8 +119,12 @@ class Application {
   void runStages(Duration elapsed) const;
 
  private:
+  /** @brief Runs the configuration step with the `module` command alone, so
+   * the modules turned off are known before any install; every other line is
+   * refused there and runs in the second pass, once the modules declared their
+   * settings. */
+  void settleSwitches();
   void installModules();
-  void dropWorkOfModulesThatAreOff();
   void startModules();
 
   LoopStages stages_;

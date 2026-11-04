@@ -18,8 +18,6 @@ void SoundBank::load(const AssetLibrary& library,
   problems.throwIfAny();
 }
 
-bool SoundBank::isEmpty() const { return sounds_.empty(); }
-
 const sf::SoundBuffer& SoundBank::sound(std::string_view soundId) const {
   return loadedAsset(sounds_, soundId);
 }
