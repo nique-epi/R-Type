@@ -15,11 +15,13 @@ namespace rtype::tools {
 
 namespace {
 
-/** @returns How many datagrams a flood sends in its first @p elapsed. */
-std::size_t dueCountAfter(std::chrono::steady_clock::duration elapsed) {
+/** @returns How many datagrams a flood of @p datagramsPerSecond sends in its
+ * first @p elapsed. */
+std::size_t dueCountAfter(std::chrono::steady_clock::duration elapsed,
+                          std::size_t datagramsPerSecond) {
   return static_cast<std::size_t>(
       std::chrono::duration<double>(elapsed).count() *
-      static_cast<double>(FLOOD_DATAGRAMS_PER_SECOND));
+      static_cast<double>(datagramsPerSecond));
 }
 
 }  // namespace
@@ -32,7 +34,7 @@ FloodReport DatagramFlood::run(LoopbackPeer& peer) {
   for (auto elapsed = std::chrono::steady_clock::duration::zero();
        elapsed < FLOOD_DURATION;
        elapsed = std::chrono::steady_clock::now() - start) {
-    while (sentCount_ < dueCountAfter(elapsed)) {
+    while (sentCount_ < dueCountAfter(elapsed, recipient_.datagramsPerSecond)) {
       sendNext(peer);
     }
     report_.receivedCount += peer.drainFrom(recipient_.port);

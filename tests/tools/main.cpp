@@ -49,8 +49,11 @@ int floodServer(std::uint16_t serverPort) {
     return 1;
   }
   rtype::tools::DatagramFlood flood{
-      rtype::tools::FloodRecipient{.port = serverPort,
-                                   .sessionToken = *sessionToken},
+      rtype::tools::FloodRecipient{
+          .port = serverPort,
+          .sessionToken = *sessionToken,
+          .datagramsPerSecond =
+              rtype::tools::SERVER_FLOOD_DATAGRAMS_PER_SECOND},
       rtype::tools::FLOOD_SEED};
   printReport(flood.run(peer));
   if (!rtype::tools::serverAnswers(serverPort)) {
@@ -79,7 +82,9 @@ int floodClient(std::uint16_t listeningPort) {
   rtype::tools::DatagramFlood flood{
       rtype::tools::FloodRecipient{
           .port = *clientPort,
-          .sessionToken = rtype::tools::TOOL_SESSION_TOKEN},
+          .sessionToken = rtype::tools::TOOL_SESSION_TOKEN,
+          .datagramsPerSecond =
+              rtype::tools::CLIENT_FLOOD_DATAGRAMS_PER_SECOND},
       rtype::tools::FLOOD_SEED};
   printReport(flood.run(peer));
   if (!rtype::tools::clientStillInSession(peer, *clientPort)) {

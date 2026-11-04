@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <string_view>
 #include "ProtocolConstants.hpp"
+#include "RateLimitConstants.hpp"
 
 namespace rtype::tools {
 
@@ -26,12 +27,25 @@ constexpr std::string_view CLIENT_OPTION = "--client";
 constexpr std::chrono::seconds FLOOD_DURATION{60};
 
 /**
- * @brief How many datagrams a flood sends per second. The server takes up to
- * INCOMING_DATAGRAM_QUEUE_CAPACITY (256) datagrams of its players per tick, at
- * 60 ticks per second, so a thousand per second reach its readers instead of
- * being discarded from a full queue.
+ * @brief How many datagrams a flood of the server sends per second: fewer than
+ * PLAYER_DATAGRAMS_PER_SECOND (120), whatever kinds pass its sorting, so the
+ * tool, a player with its own token, stays under its rate limit and tests the
+ * readers of the game rather than the limit.
  */
-constexpr std::size_t FLOOD_DATAGRAMS_PER_SECOND = 1000;
+constexpr std::size_t SERVER_FLOOD_DATAGRAMS_PER_SECOND = 100;
+
+static_assert(static_cast<std::int64_t>(SERVER_FLOOD_DATAGRAMS_PER_SECOND) <
+                  network::PLAYER_DATAGRAMS_PER_SECOND,
+              "a flood of the server must stay under the rate limit of a "
+              "player");
+
+/**
+ * @brief How many datagrams a flood of a client sends per second. A client
+ * limits nothing, and takes up to INCOMING_DATAGRAM_QUEUE_CAPACITY (256)
+ * datagrams of its server between two frames, so a thousand per second reach
+ * its readers.
+ */
+constexpr std::size_t CLIENT_FLOOD_DATAGRAMS_PER_SECOND = 1000;
 
 /**
  * @brief The seed of every flood: a run sends the same datagrams in the same

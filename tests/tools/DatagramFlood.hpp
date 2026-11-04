@@ -12,8 +12,9 @@
 namespace rtype::tools {
 
 /**
- * @brief Sends a recipient FLOOD_DATAGRAMS_PER_SECOND malformed datagrams per
- * second for FLOOD_DURATION, the kinds of MALFORMED_DATAGRAM_KINDS in turn.
+ * @brief Sends a recipient as many malformed datagrams per second as its
+ * datagramsPerSecond says, for FLOOD_DURATION, the kinds of
+ * MALFORMED_DATAGRAM_KINDS in turn.
  *
  * Each datagram carries the session token of the recipient and the next
  * sequence, so a server that admitted the tool, or a client that took it for
