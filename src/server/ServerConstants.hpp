@@ -89,6 +89,18 @@ constexpr std::string_view WAVE_FILE_IN_ASSETS = "waves/waves.toml";
 constexpr std::string_view DEFAULT_DIFFICULTY = "normal";
 
 /**
+ * @brief Launch option followed by the program the binary runs:
+ * SERVER_MODE_NAME, the default, or MASTER_MODE_NAME. It comes first, before
+ * every other option.
+ */
+constexpr std::string_view MODE_OPTION = "--mode";
+constexpr std::string_view SERVER_MODE_NAME = "server";
+constexpr std::string_view MASTER_MODE_NAME = "master";
+
+/** @brief How many arguments MODE_OPTION takes, its value included. */
+constexpr std::size_t MODE_ARGUMENT_COUNT = 2;
+
+/**
  * @brief Launch option followed by the path of the database of the server: it
  * forces DATABASE_SETTING_NAME to that path.
  */

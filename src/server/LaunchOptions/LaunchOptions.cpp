@@ -182,6 +182,20 @@ std::string databaseOptionEntry() {
           std::string(DATABASE_FILE_SUFFIX) + " next to the executable.");
 }
 
+/** @returns The line of the usage that describes `--mode`. */
+std::string modeOptionEntry() {
+  return engine::usageEntry(
+      std::string(MODE_OPTION) + " <" + std::string(SERVER_MODE_NAME) + "|" +
+          std::string(MASTER_MODE_NAME) + ">",
+      "Runs the game server (" + std::string(SERVER_MODE_NAME) +
+          ", the default) or the master that lists the game servers (" +
+          std::string(MASTER_MODE_NAME) +
+          "). It comes before every other option: `" +
+          std::string(MODE_OPTION) + " " + std::string(MASTER_MODE_NAME) + " " +
+          std::string(engine::HELP_OPTION) +
+          "` prints the options of the master.");
+}
+
 /** @returns The lines of the usage that describe `--set` and `--help`. */
 std::string generalOptionEntries() {
   std::string text = engine::usageEntry(
@@ -232,6 +246,7 @@ LaunchOptions LaunchOptions::read(std::span<const std::string_view> arguments) {
 
 std::string LaunchOptions::usage() {
   std::string text = engine::usageHeader(PROGRAM_NAME);
+  text += modeOptionEntry();
   text += settingOptionEntries();
   text += databaseOptionEntry();
   text += generalOptionEntries();
