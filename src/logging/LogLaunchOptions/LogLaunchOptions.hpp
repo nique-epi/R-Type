@@ -2,11 +2,10 @@
 
 #include <cstddef>
 #include <filesystem>
-#include <optional>
 #include <span>
 #include <string>
 #include <string_view>
-#include "Logger.hpp"
+#include "LogLaunchSettings.hpp"
 
 namespace rtype::logging {
 
@@ -57,9 +56,13 @@ class LogLaunchOptions {
    *        info level, under LOGGING_LOGGER_NAME, the absolute path
    *        of the journal, or that there is none.
    *
-   * @throws LogFileOpenException when the journal cannot be opened. The level
-   *         and the output of the Logger are then unchanged, and nothing is
-   *         written.
+   * When the default journal cannot be opened, as in an install folder the
+   * player cannot write to, the Logger writes to standard error alone, if it
+   * is on, after a warning that names that journal.
+   *
+   * @throws LogFileOpenException when a journal given with `--log-file`
+   *         cannot be opened. The level and the output of the Logger are then
+   *         unchanged, and nothing is written.
    */
   void apply() const;
 
@@ -67,13 +70,13 @@ class LogLaunchOptions {
    * @returns the part of a program's usage that describes the logging
    *          options: each option on a line, its effect indented on the next.
    * @param defaultJournalName the name of the journal the program writes next
-   *        to its executable unless an option changes it.
+   *        to its executable unless an option changes it, or when that file
+   *        cannot be opened.
    */
   [[nodiscard]] static std::string usage(std::string_view defaultJournalName);
 
  private:
-  std::optional<LogLevel> level_;
-  LogOutput output_;
+  LogLaunchSettings settings_;
 };
 
 }  // namespace rtype::logging
