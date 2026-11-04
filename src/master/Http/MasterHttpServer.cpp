@@ -2,7 +2,6 @@
 #include <httplib.h>
 #include <algorithm>
 #include <cctype>
-#include <cstddef>
 #include <cstdint>
 #include <exception>
 #include <memory>
