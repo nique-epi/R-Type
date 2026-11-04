@@ -2,6 +2,8 @@
 #include <chrono>
 #include <cstdint>
 #include "ComponentRegistry.hpp"
+#include "Direction.hpp"
+#include "DirectionConstants.hpp"
 #include "Entity.hpp"
 #include "EntityRegistry.hpp"
 #include "Intent.hpp"
@@ -10,7 +12,6 @@
 #include "MovementSystemTestConstants.hpp"
 #include "PlayfieldConstants.hpp"
 #include "Position.hpp"
-#include "ShipDirections.hpp"
 #include "ShipMotion.hpp"
 #include "TimeConstants.hpp"
 #include "TimeTestConstants.hpp"
@@ -22,11 +23,12 @@ using rtype::engine::Entity;
 using rtype::engine::EntityRegistry;
 using rtype::engine::SIMULATION_TICK_DURATION;
 using rtype::engine::testing::ONE_SECOND;
+using rtype::game::Direction;
+using rtype::game::FULL_STEERING;
 using rtype::game::Intent;
 using rtype::game::MovementSystem;
 using rtype::game::PLAYFIELD_WIDTH;
 using rtype::game::Position;
-using rtype::game::ShipDirections;
 using rtype::game::ShipMotion;
 using rtype::game::Velocity;
 using rtype::game::testing::HALF_SECOND;
@@ -156,7 +158,7 @@ TEST(MovementSystem, ShipMovesByTheDirectionsOfItsIntent) {
   const Entity ship = entities.create();
   components.add(ship, Position{.x = START_X, .y = START_Y});
   components.add(ship, ShipMotion{});
-  components.add(ship, Intent{.directions = ShipDirections{.right = true}});
+  components.add(ship, Intent{.direction = Direction{.x = FULL_STEERING}});
   MovementSystem movement;
 
   movement.update(components, SIMULATION_TICK_DURATION);

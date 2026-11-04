@@ -108,7 +108,9 @@ ShipReading readShip(engine::ComponentRegistry& components,
         reading.motion = maneuverBitOf(motion.maneuver);
         if (const game::Intent* const intent =
                 components.get<game::Intent>(ship)) {
-          reading.motion |= directionBitsOf(intent->directions);
+          reading.motion |=
+              directionBitsOf(intent->steered ? motion.heldAtLastInput
+                                              : game::ShipDirections{});
         }
         if (const game::Lives* const lives =
                 components.get<game::Lives>(ship)) {

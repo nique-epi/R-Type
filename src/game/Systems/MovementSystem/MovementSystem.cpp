@@ -43,7 +43,7 @@ void moveByIntent(engine::ComponentRegistry& components,
         }
         const MovingShip moved =
             shipAfter(MovingShip{.position = *position, .motion = motion},
-                      intent.directions, elapsed);
+                      heldDirectionsOf(intent.direction), elapsed);
         *position = moved.position;
         motion = moved.motion;
       });

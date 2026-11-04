@@ -642,10 +642,8 @@ TEST(World, ShipIsSpawnedWithAnIntentThatWantsNothing) {
       world.shipComponentOf<rtype::game::Intent>(shipId);
 
   ASSERT_NE(intent, nullptr);
-  EXPECT_FALSE(intent->directions.up);
-  EXPECT_FALSE(intent->directions.down);
-  EXPECT_FALSE(intent->directions.left);
-  EXPECT_FALSE(intent->directions.right);
+  EXPECT_EQ(intent->direction.x, 0.0F);
+  EXPECT_EQ(intent->direction.y, 0.0F);
   EXPECT_FALSE(intent->shooting);
   EXPECT_EQ(world.shipComponentOf<rtype::game::Intent>(shipId + 1), nullptr);
 }
