@@ -237,4 +237,9 @@ constexpr std::string_view REJECTED_MESSAGE_LINE_TEXT = "a message of type";
  */
 constexpr std::size_t DATAGRAM_PAYLOAD_LIMIT = 1175;
 
+/**
+ * @brief Words of the log line about a message whose handler threw.
+ */
+constexpr std::string_view FAILED_HANDLER_LINE_TEXT = "its handler threw";
+
 }  // namespace rtype::network::testing

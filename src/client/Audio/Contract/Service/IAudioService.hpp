@@ -33,8 +33,8 @@ class IAudioService {
    * unless it plays already or is about to. */
   virtual void playGameMusic() = 0;
 
-  /** @brief Opens the music files, once the assets folder is known; a music
-   * without file stays silent. */
+  /** @brief Reads the sounds and opens the music files, once the assets
+   * folder is known; a music without file stays silent. */
   virtual void open() = 0;
 
   /** @brief Called each frame: the silence before the music of a game moves

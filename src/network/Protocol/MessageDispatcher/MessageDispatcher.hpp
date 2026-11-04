@@ -4,6 +4,7 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include <exception>
 #include <functional>
 #include <span>
 #include <utility>
@@ -26,9 +27,12 @@ namespace rtype::network {
  * payload its reader refuses; each is counted, then logged at the debug level
  * with its sender at most once per REJECTION_LINE_INTERVAL (see ThrottledLog),
  * and the next message is handled. No exception caused by the content of a
- * message leaves dispatch(), so one forged message cannot stop the program. An
- * exception thrown by a handler does leave it: it is a fault of the program,
- * not of the datagram.
+ * message leaves dispatch(), so one forged message cannot stop the program.
+ * An exception a handler throws (any std::exception) is a fault of the program,
+ * not of the datagram: it is caught too, counted, logged at the error level
+ * with its sender at most once per REJECTION_LINE_INTERVAL, and that message is
+ * dropped; the next message is handled. What the handler changed before it
+ * threw is kept.
  *
  * Each message is handled on its own, and a handler cannot tell which
  * messages shared a datagram. A sender the server does not know yet must be
@@ -80,7 +84,6 @@ class MessageDispatcher {
    * @brief Hands each of @p messages, in order, to the handler of its type,
    * with @p origin. The payloads are read before their handler is called; a
    * message that cannot be read never reaches it.
-   * @throws What a handler throws; the messages after it are not handled.
    */
   void dispatch(const MessageOrigin& origin,
                 std::span<const MessageFrame> messages);
@@ -97,6 +100,11 @@ class MessageDispatcher {
    */
   [[nodiscard]] std::size_t malformedMessageCount() const;
 
+  /**
+   * @returns How many messages were dropped because their handler threw.
+   */
+  [[nodiscard]] std::size_t failedMessageCount() const;
+
  private:
   /**
    * @brief What a type's handler is made of: reading its payload into a
@@ -112,11 +120,15 @@ class MessageDispatcher {
   void skipUnhandled(const MessageOrigin& origin, std::uint8_t type);
   void dropMalformed(const MessageOrigin& origin, std::uint8_t type,
                      const NetworkException& error);
+  void dropFailed(const MessageOrigin& origin, std::uint8_t type,
+                  const std::exception& error);
 
   std::array<Route, MESSAGE_TYPE_COUNT> routes_;
   std::size_t skippedMessageCount_{0};
   std::size_t malformedMessageCount_{0};
   logging::ThrottledLog rejectionLog_;
+  std::size_t failedMessageCount_{0};
+  logging::ThrottledLog failureLog_;
 };
 
 }  // namespace rtype::network

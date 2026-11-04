@@ -258,3 +258,26 @@ TEST(Application, StopAfterAFailedStartStopsNothing) {
 
   EXPECT_TRUE(journal.calls.empty());
 }
+
+/**
+ * Given a list where second uses first when it is listed, and first comes
+ * after it
+ * When an application is built from it
+ * Then a MissingDependencyException is thrown: second would not find it
+ */
+TEST(Application, RefusesAnOptionalDependencyListedAfter) {
+  JournalModule journal;
+
+  EXPECT_THROW(
+      const Application application(optionalModuleListedAfter(journal)),
+      MissingDependencyException);
+}
+
+/**
+ * Given a list where second uses first when it is listed, and first is not
+ * When an application is built from it
+ * Then it is accepted
+ */
+TEST(Application, AcceptsAnOptionalDependencyLeftOut) {
+  EXPECT_NO_THROW(const Application application(optionalModuleAbsent()));
+}

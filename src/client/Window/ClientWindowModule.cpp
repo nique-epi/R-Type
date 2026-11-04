@@ -1,12 +1,14 @@
 #include "ClientWindowModule.hpp"
 #include <SFML/Graphics/RenderTarget.hpp>
 #include <SFML/Window/Event.hpp>
+#include <memory>
 #include <optional>
 #include <string>
 #include <vector>
 #include "ClientConstants.hpp"
 #include "EventListeners.hpp"
 #include "FrameLoop.hpp"
+#include "GameWindow.hpp"
 #include "InstallContext.hpp"
 #include "ModuleConstants.hpp"
 #include "PlayerSettings.hpp"
@@ -26,7 +28,8 @@ std::vector<std::string> ClientWindowModule::dependencies() const {
 
 void ClientWindowModule::install(engine::InstallContext& context) {
   settings_ = &context.require<PlayerSettings>();
-  context.provide(window_);
+  window_ = std::make_unique<GameWindow>();
+  context.provide(*window_);
   context.provide(listeners_);
   context.provide(*loop_);
   context.addWork(
@@ -34,24 +37,25 @@ void ClientWindowModule::install(engine::InstallContext& context) {
       [this]([[maybe_unused]] engine::Duration elapsed) { handleEvents(); });
   context.addWork(RENDER_STAGE,
                   [this]([[maybe_unused]] engine::Duration elapsed) {
-                    window_.renderTarget().clear();
+                    window_->renderTarget().clear();
                   });
-  context.addWork(
-      DISPLAY_STAGE,
-      [this]([[maybe_unused]] engine::Duration elapsed) { window_.display(); });
+  context.addWork(DISPLAY_STAGE,
+                  [this]([[maybe_unused]] engine::Duration elapsed) {
+                    window_->display();
+                  });
 }
 
 void ClientWindowModule::start() {
-  window_.open(settings_->windowSize, settings_->displayMode);
+  window_->open(settings_->windowSize, settings_->displayMode);
 }
 
-void ClientWindowModule::stop() { window_.close(); }
+void ClientWindowModule::stop() { window_->close(); }
 
 void ClientWindowModule::handleEvents() {
-  while (const std::optional<sf::Event> event = window_.pollScreenEvent()) {
+  while (const std::optional<sf::Event> event = window_->pollScreenEvent()) {
     listeners_.offer(*event);
   }
-  if (!window_.isOpen()) {
+  if (!window_->isOpen()) {
     loop_->stop();
   }
 }
