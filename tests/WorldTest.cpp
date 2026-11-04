@@ -21,9 +21,11 @@
 #include "ScoreValue.hpp"
 #include "Velocity.hpp"
 #include "World.hpp"
+#include "WorldFixtures.hpp"
 #include "WorldTestConstants.hpp"
 
 using rtype::game::testing::BYDO_SHOT_INTERVAL_TICKS;
+using rtype::game::testing::componentOf;
 using rtype::game::testing::ENEMY_MISSILE_UNITS_PER_SECOND;
 using rtype::game::testing::MISSILE_UNITS_PER_SECOND;
 using rtype::game::testing::OTHER_X;
@@ -33,29 +35,6 @@ using rtype::game::testing::SHIP_SHOT_INTERVAL_TICKS;
 using rtype::game::testing::SOME_X;
 using rtype::game::testing::SOME_Y;
 using rtype::game::testing::THREE_HEALTH_POINTS;
-
-namespace {
-
-/**
- * @returns The Component of the entity of @p world that carries @p networkId,
- * or nothing when no such entity has one.
- */
-template <typename Component>
-std::optional<Component> componentOf(rtype::game::World& world,
-                                     std::uint32_t networkId) {
-  std::optional<Component> found;
-  world.components().forEach<rtype::game::NetworkIdentity, Component>(
-      [&found, networkId](rtype::engine::Entity /*entity*/,
-                          const rtype::game::NetworkIdentity& identity,
-                          const Component& component) {
-        if (identity.networkId == networkId) {
-          found = component;
-        }
-      });
-  return found;
-}
-
-}  // namespace
 
 /**
  * Given an empty world
