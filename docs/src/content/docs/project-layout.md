@@ -130,11 +130,11 @@ src/network/
 ├── Reliability/      acknowledgements, ordered channel, fragments
 ├── Snapshots/        history and delta encoding of the world state
 ├── Statistics/       the traffic: Counting/ by peer and message type, Recording/ its line and file
-├── Master/           messages and client of the master
+├── Master/           the registration and heartbeat a server sends the master, in JSON
 └── Exceptions/
 ```
 
-`NetworkContext`, `Transport` (the UDP socket, the relay to queues and the network simulator), `Serialization`, `Exceptions`, `Protocol` (the datagram header, every message of version 2 and the dispatch by type), `Reliability` (the acknowledgements and the guaranteed messages; no ordered channel or fragments), `Handshake` (the connection cookies; no rate limit or version answer yet) and `Statistics` (in `Counting/` the traffic by peer and by message type, in `Recording/` its line in the journal and its file) exist; see [Network](/R-Type/network/). `Sessions` is not written: the heartbeat and session timeout delays are in `Protocol/ProtocolConstants.hpp`, and each program counts them itself, the server in `GameSessions` (`src/server/Sessions/`) and the client in `SessionOutbox` (see [Network](/R-Type/network/#transport-sessions-and-replication)).
+`NetworkContext`, `Transport` (the UDP socket, the relay to queues and the network simulator), `Serialization`, `Exceptions`, `Protocol` (the datagram header, every message of version 2 and the dispatch by type), `Reliability` (the acknowledgements and the guaranteed messages; no ordered channel or fragments), `Handshake` (the connection cookies; no rate limit or version answer yet) `Statistics` (in `Counting/` the traffic by peer and by message type, in `Recording/` its line in the journal and its file) and `Master` (the messages a server sends the master, read and written in JSON by `rtype_network_master`, which needs neither Asio nor the game) exist; see [Network](/R-Type/network/). `Sessions` is not written: the heartbeat and session timeout delays are in `Protocol/ProtocolConstants.hpp`, and each program counts them itself, the server in `GameSessions` (`src/server/Sessions/`) and the client in `SessionOutbox` (see [Network](/R-Type/network/#transport-sessions-and-replication)).
 
 ## The programs
 
@@ -247,22 +247,23 @@ Every folder of this tree exists today; some of what the comments name is not wr
 
 ### Master
 
-`src/master` holds the master, the program `r-type_server --mode master` runs: it will list the game servers and their games, record their heartbeats, run the administration and serve the web frontend. Its folders are libraries, and only the server binary links them, so the master never links SFML, Asio, `rtype_game` or the code of the server. Today it starts, opens its database and answers `GET /api/health` (see [Master](/R-Type/master/)).
+`src/master` holds the master, the program `r-type_server --mode master` runs: it will list the game servers and their games, record their heartbeats, run the administration and serve the web frontend. Its folders are libraries, and only the server binary links them, so the master never links SFML, Asio, `rtype_game` or the code of the server. Today it issues the keys of the game servers, takes their registration and their heartbeats, and answers `GET /api/health` (see [Master](/R-Type/master/)).
 
 ```
 src/master/
-├── LaunchOptions/    -p, --database, --set, --help after --mode master
+├── LaunchOptions/    -p, --database, --set, --new-server-key, --help after --mode master
 ├── Logger/           the module logger
 ├── Storage/          the module storage: the database, on the connection and migrations of rtype_storage
 ├── Http/             the module http: the HTTP server, its errors, GET /api/health
+├── ServerKeys/       the module server-keys: issue a key, recognize one
+├── Servers/          the module servers: registration, heartbeats, samples; status being written
 ├── Modules/          masterModules(), the list of the modules
-├── GameServers/      registration, heartbeats, status: being written
 ├── Administration/   bans, kicks, maintenance, audit log: being written
 ├── Matchmaking/      a server chosen to create a game: being written
 └── Accounts/         optional, with Tickets/: being written
 ```
 
-`LaunchOptions/`, `Logger/`, `Storage/`, `Http/` and `Modules/` exist; the others are being written. A folder of a feature splits its classes into a controller (HTTP in and out), a service (the rules) and repositories (the only place with SQL).
+`LaunchOptions/`, `Logger/`, `Storage/`, `Http/`, `ServerKeys/`, `Servers/` and `Modules/` exist; the others are being written. A folder of a feature splits its classes into a controller (HTTP in and out), a service (the rules) and repositories (the only place with SQL).
 
 ### Tests, web frontend, assets
 
@@ -300,7 +301,9 @@ This list describes the code as it is today. A pull request that adds, removes o
 |---|---|---|---|
 | `logger` | `MasterLoggerModule` | `src/master/Logger/` | required |
 | `storage` | `MasterStorageModule` | `src/master/Storage/` | required |
+| `server-keys` | `ServerKeysModule` | `src/master/ServerKeys/` | required |
 | `http` | `MasterHttpModule` | `src/master/Http/` | required |
+| `servers` | `ServersModule` | `src/master/Servers/` | required |
 
 | Module of the client | Class | Folder | Kind |
 |---|---|---|---|
