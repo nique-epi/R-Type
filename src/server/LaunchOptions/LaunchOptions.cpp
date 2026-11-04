@@ -13,6 +13,7 @@
 #include "EndpointText.hpp"
 #include "EngineException.hpp"
 #include "ExecutablePath.hpp"
+#include "ForcedSetting.hpp"
 #include "LaunchArguments.hpp"
 #include "LaunchArgumentsConstants.hpp"
 #include "LaunchOption.hpp"
@@ -24,6 +25,7 @@
 #include "NetworkConstants.hpp"
 #include "ServerConstants.hpp"
 #include "SettingLine.hpp"
+#include "SettingOptions.hpp"
 #include "SimulatorLaunchOptions.hpp"
 #include "WholeNumberText.hpp"
 
@@ -138,38 +140,6 @@ engine::LaunchOption inputDelayOption(LaunchValues& values) {
       }};
 }
 
-/** @returns `--database <file>`, which forces the database setting. */
-engine::LaunchOption databaseOption(LaunchValues& values) {
-  return engine::LaunchOption{
-      .name = DATABASE_OPTION,
-      .takesValue = true,
-      .record = [&values](std::string_view file) {
-        values.forcedLines.push_back(
-            engine::settingLine(DATABASE_SETTING_NAME, file));
-      }};
-}
-
-/** @returns `--set <name>=<value>`, which forces any setting. */
-engine::LaunchOption setOption(LaunchValues& values) {
-  return engine::LaunchOption{
-      .name = engine::SET_OPTION,
-      .takesValue = true,
-      .record = [&values](std::string_view assignment) {
-        values.forcedLines.push_back(
-            engine::settingLineFromSetOption(assignment));
-      }};
-}
-
-/** @returns `--help`, which asks for the usage. */
-engine::LaunchOption helpOption(LaunchValues& values) {
-  return engine::LaunchOption{
-      .name = engine::HELP_OPTION,
-      .takesValue = false,
-      .record = [&values]([[maybe_unused]] std::string_view value) {
-        values.helpRequested = true;
-      }};
-}
-
 /** @returns The lines of the usage that describe the options that give a
  * setting a value of its own kind. */
 std::string settingOptionEntries() {
@@ -243,11 +213,14 @@ LaunchOptions LaunchOptions::read(std::span<const std::string_view> arguments) {
       seedOption(options.values_),
       stateRateOption(options.values_),
       inputDelayOption(options.values_),
-      databaseOption(options.values_),
-      setOption(options.values_),
+      engine::settingOption(
+          engine::ForcedSetting{.option = DATABASE_OPTION,
+                                .setting = DATABASE_SETTING_NAME},
+          options.values_.forcedLines),
+      engine::setOption(options.values_.forcedLines),
       engine::pathOption(network::TRAFFIC_CSV_OPTION,
                          options.values_.trafficCsvFile),
-      helpOption(options.values_)};
+      engine::helpOption(options.values_.helpRequested)};
   const std::array<engine::LaunchOptionReader, 2> readers{
       std::bind_front(&network::SimulatorLaunchOptions::readOption,
                       &options.simulatorOptions_),
