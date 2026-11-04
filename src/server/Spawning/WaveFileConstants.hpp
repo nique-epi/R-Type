@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <string_view>
 #include <utility>
-#include "BydoKind.hpp"
+#include "EnemyKind.hpp"
 #include "WholeNumberRange.hpp"
 
 namespace rtype::server {
@@ -53,8 +53,8 @@ constexpr std::array WAVE_PLAN_KEYS{ENEMIES_KEY,
 constexpr std::string_view DRIFTER_NAME = "drifter";
 constexpr std::string_view WEAVER_NAME = "weaver";
 constexpr std::array ENEMY_NAMES{
-    std::pair{DRIFTER_NAME, game::BydoKind::Drifter},
-    std::pair{WEAVER_NAME, game::BydoKind::Weaver}};
+    std::pair{DRIFTER_NAME, game::EnemyKind::Drifter},
+    std::pair{WEAVER_NAME, game::EnemyKind::Weaver}};
 
 /**
  * @brief The most Bydos a first wave may hold or a wave may add, and the most

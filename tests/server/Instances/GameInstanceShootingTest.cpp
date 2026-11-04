@@ -1,9 +1,9 @@
 #include <gtest/gtest.h>
 #include <cstddef>
 #include <cstdint>
-#include "BydoKind.hpp"
-#include "BydoPointsConstants.hpp"
 #include "ConnectedPlayer.hpp"
+#include "EnemyKind.hpp"
+#include "EnemyPointsConstants.hpp"
 #include "EntityDestruction.hpp"
 #include "GameInstanceConstants.hpp"
 #include "GameInstanceShootingFixture.hpp"
@@ -220,7 +220,7 @@ TEST_F(GameInstanceShootingFixture, DestroysABydoInTheNextGameToo) {
  */
 TEST_F(GameInstanceShootingFixture, BydosFireWhileInProgress) {
   startGame();
-  world().spawnBydo(BYDO_FAR_AHEAD_OF_THE_SHIPS, game::BydoKind::Drifter);
+  world().spawnBydo(BYDO_FAR_AHEAD_OF_THE_SHIPS, game::EnemyKind::Drifter);
 
   runTicksDispatching(ONE_AND_A_HALF_SECONDS_IN_TICKS);
 

@@ -8,13 +8,13 @@
 #include <random>
 #include <string>
 #include <utility>
-#include "BydoKind.hpp"
 #include "BydoSpawnPosition.hpp"
 #include "BydoSpawnerConstants.hpp"
 #include "BydoSpawnerParts.hpp"
 #include "BydoWave.hpp"
 #include "ComponentRegistry.hpp"
 #include "ConnectedPlayer.hpp"
+#include "EnemyKind.hpp"
 #include "EngineException.hpp"
 #include "Entity.hpp"
 #include "EntitySpawnSender.hpp"
@@ -71,12 +71,12 @@ game::Position BydoSpawner::nextPosition() {
   return game::bydoSpawnPosition(std::min(unitDraw(random_), highestDraw));
 }
 
-game::BydoKind BydoSpawner::nextKind() const {
+game::EnemyKind BydoSpawner::nextKind() const {
   return enemies_[spawnedCount_ % enemies_.size()];
 }
 
 std::optional<std::uint32_t> BydoSpawner::createBydo(game::Position position,
-                                                     game::BydoKind kind) {
+                                                     game::EnemyKind kind) {
   try {
     return world_->spawnBydo(position, kind);
   } catch (const engine::NetworkIdExhaustedException&) {

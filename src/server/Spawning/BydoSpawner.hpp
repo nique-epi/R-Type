@@ -5,8 +5,8 @@
 #include <optional>
 #include <random>
 #include <vector>
-#include "BydoKind.hpp"
 #include "BydoSpawnerParts.hpp"
+#include "EnemyKind.hpp"
 #include "EntitySpawnSender.hpp"
 #include "Logger.hpp"
 #include "PlayerRoster.hpp"
@@ -61,9 +61,9 @@ class BydoSpawner {
  private:
   void spawnOne();
   [[nodiscard]] game::Position nextPosition();
-  [[nodiscard]] game::BydoKind nextKind() const;
+  [[nodiscard]] game::EnemyKind nextKind() const;
   [[nodiscard]] std::optional<std::uint32_t> createBydo(game::Position position,
-                                                        game::BydoKind kind);
+                                                        game::EnemyKind kind);
   void announce(std::uint32_t networkId, game::Position position);
   [[nodiscard]] std::size_t bydosInPlay();
   void logCurrentWave();
@@ -73,7 +73,7 @@ class BydoSpawner {
   SendDatagram send_;
   logging::Logger logger_;
   std::mt19937 random_;
-  std::vector<game::BydoKind> enemies_;
+  std::vector<game::EnemyKind> enemies_;
   std::size_t spawnedCount_{0};
   game::WaveDirector waveDirector_;
   std::size_t loggedWaveNumber_{0};

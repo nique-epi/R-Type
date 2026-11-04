@@ -5,8 +5,8 @@
 #include <utility>
 #include <vector>
 #include "BydoControlSystem.hpp"
-#include "BydoKind.hpp"
 #include "ComponentRegistry.hpp"
+#include "EnemyKind.hpp"
 #include "Entity.hpp"
 #include "EntitySpawned.hpp"
 #include "EntityType.hpp"
@@ -32,7 +32,7 @@ void WeaponSystemFixture::connectWithoutShip(std::size_t index) {
 }
 
 void WeaponSystemFixture::bydoAt(game::Position position) {
-  world_.spawnBydo(position, game::BydoKind::Drifter);
+  world_.spawnBydo(position, game::EnemyKind::Drifter);
 }
 
 void WeaponSystemFixture::runTicks(std::size_t count) {

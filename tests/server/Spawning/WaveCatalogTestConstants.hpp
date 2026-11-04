@@ -4,8 +4,8 @@
 #include <chrono>
 #include <string_view>
 #include <utility>
-#include "BydoKind.hpp"
 #include "BydoWave.hpp"
+#include "EnemyKind.hpp"
 #include "WaveCurve.hpp"
 
 namespace rtype::server::testing {
@@ -41,8 +41,8 @@ constexpr game::WaveCurve CALM_CURVE{
     .spawnIntervalCutPerWave = std::chrono::milliseconds(250),
     .shortestSpawnInterval = std::chrono::milliseconds(1500),
     .wavePause = std::chrono::milliseconds(5000)};
-constexpr std::array CALM_ENEMIES{game::BydoKind::Drifter,
-                                  game::BydoKind::Weaver};
+constexpr std::array CALM_ENEMIES{game::EnemyKind::Drifter,
+                                  game::EnemyKind::Weaver};
 
 /** @brief A difficulty storm, written before calm in a file, and its waves. */
 constexpr std::string_view STORM_TABLE = R"([difficulty.storm]
@@ -63,7 +63,7 @@ constexpr game::WaveCurve STORM_CURVE{
     .shortestSpawnInterval = std::chrono::milliseconds(500),
     .wavePause = std::chrono::milliseconds(3000)};
 constexpr std::array STORM_ENEMIES{
-    game::BydoKind::Weaver, game::BydoKind::Drifter, game::BydoKind::Weaver};
+    game::EnemyKind::Weaver, game::EnemyKind::Drifter, game::EnemyKind::Weaver};
 
 /**
  * @brief Files that do not describe difficulties: an empty one, and one whose

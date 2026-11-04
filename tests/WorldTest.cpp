@@ -3,10 +3,10 @@
 #include <cstdint>
 #include <optional>
 #include <vector>
-#include "BydoKind.hpp"
-#include "BydoPointsConstants.hpp"
 #include "CollisionBox.hpp"
 #include "ComponentRegistry.hpp"
+#include "EnemyKind.hpp"
+#include "EnemyPointsConstants.hpp"
 #include "Entity.hpp"
 #include "EntityIdConstants.hpp"
 #include "EntitySizeConstants.hpp"
@@ -128,7 +128,7 @@ TEST(World, SpawnedBydoIsAnEnemyAtItsPosition) {
 
   const std::uint32_t networkId =
       world.spawnBydo(rtype::game::Position{.x = SOME_X, .y = SOME_Y},
-                      rtype::game::BydoKind::Drifter);
+                      rtype::game::EnemyKind::Drifter);
 
   EXPECT_EQ(world.entityCount(), 1U);
   EXPECT_NE(networkId, rtype::identifiers::NO_ENTITY_ID);
@@ -163,7 +163,7 @@ TEST(World, ABydoAndAPlayerGetDistinctNetworkIds) {
       world.spawnPlayer(rtype::game::Position{.x = SOME_X, .y = SOME_Y});
   const std::uint32_t bydo =
       world.spawnBydo(rtype::game::Position{.x = SOME_X, .y = SOME_Y},
-                      rtype::game::BydoKind::Drifter);
+                      rtype::game::EnemyKind::Drifter);
 
   EXPECT_NE(player, bydo);
 }
@@ -249,7 +249,7 @@ TEST(World, RemovesNoBydoAsAShip) {
   rtype::game::World world;
   const std::uint32_t bydo =
       world.spawnBydo(rtype::game::Position{.x = SOME_X, .y = SOME_Y},
-                      rtype::game::BydoKind::Drifter);
+                      rtype::game::EnemyKind::Drifter);
 
   const bool removed = world.removePlayer(bydo);
 
@@ -267,10 +267,10 @@ TEST(World, SpawnedBydosMoveLeftAlongThePatternOfTheirKind) {
   rtype::game::World world;
   static_cast<void>(
       world.spawnBydo(rtype::game::Position{.x = SOME_X, .y = SOME_Y},
-                      rtype::game::BydoKind::Drifter));
+                      rtype::game::EnemyKind::Drifter));
   static_cast<void>(
       world.spawnBydo(rtype::game::Position{.x = SOME_X, .y = SOME_Y},
-                      rtype::game::BydoKind::Weaver));
+                      rtype::game::EnemyKind::Weaver));
 
   std::size_t straight = 0;
   std::size_t waves = 0;
@@ -300,7 +300,7 @@ TEST(World, SpawnedBydoHasThreeHealthPoints) {
 
   static_cast<void>(
       world.spawnBydo(rtype::game::Position{.x = SOME_X, .y = SOME_Y},
-                      rtype::game::BydoKind::Drifter));
+                      rtype::game::EnemyKind::Drifter));
 
   int bydosWithHealth = 0;
   world.components().forEach<rtype::game::EntityType, rtype::game::Health>(
@@ -344,9 +344,9 @@ TEST(World, SpawnedBydoIsWorthThePointsOfItsKind) {
   const rtype::game::Position position{.x = SOME_X, .y = SOME_Y};
 
   const std::uint32_t drifterId =
-      world.spawnBydo(position, rtype::game::BydoKind::Drifter);
+      world.spawnBydo(position, rtype::game::EnemyKind::Drifter);
   const std::uint32_t weaverId =
-      world.spawnBydo(position, rtype::game::BydoKind::Weaver);
+      world.spawnBydo(position, rtype::game::EnemyKind::Weaver);
 
   std::uint32_t drifterPoints = 0;
   std::uint32_t weaverPoints = 0;
@@ -373,7 +373,7 @@ TEST(World, SpawnedBydoHasTheBoxOfItsSprite) {
 
   const std::uint32_t networkId =
       world.spawnBydo(rtype::game::Position{.x = SOME_X, .y = SOME_Y},
-                      rtype::game::BydoKind::Drifter);
+                      rtype::game::EnemyKind::Drifter);
 
   const std::optional<rtype::game::CollisionBox> box =
       componentOf<rtype::game::CollisionBox>(world, networkId);
@@ -428,7 +428,7 @@ TEST(World, GivesNoShipPositionForTheIdOfABydo) {
   rtype::game::World world;
   const std::uint32_t bydo =
       world.spawnBydo(rtype::game::Position{.x = SOME_X, .y = SOME_Y},
-                      rtype::game::BydoKind::Drifter);
+                      rtype::game::EnemyKind::Drifter);
 
   EXPECT_EQ(world.shipPositionOf(bydo), nullptr);
 }
@@ -552,7 +552,7 @@ TEST(World, SpawnedBydoHasAGunThatWaitsAWholeIntervalFirst) {
 
   const std::uint32_t networkId =
       world.spawnBydo(rtype::game::Position{.x = SOME_X, .y = SOME_Y},
-                      rtype::game::BydoKind::Drifter);
+                      rtype::game::EnemyKind::Drifter);
 
   const std::optional<rtype::game::Gun> gun =
       componentOf<rtype::game::Gun>(world, networkId);

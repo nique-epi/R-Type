@@ -2,9 +2,9 @@
 #include <cstddef>
 #include <cstdint>
 #include <optional>
-#include "BydoKind.hpp"
 #include "CollisionBox.hpp"
 #include "ComponentRegistry.hpp"
+#include "EnemyKind.hpp"
 #include "Entity.hpp"
 #include "EntitySizeConstants.hpp"
 #include "EntityType.hpp"
@@ -59,7 +59,7 @@ bool World::removePlayer(std::uint32_t shipNetworkId) {
   return true;
 }
 
-std::uint32_t World::spawnBydo(Position position, BydoKind kind) {
+std::uint32_t World::spawnBydo(Position position, EnemyKind kind) {
   const std::uint32_t networkId = networkIds_.allocate();
   const engine::Entity bydo = registry_.create();
   components_.add(bydo, position);

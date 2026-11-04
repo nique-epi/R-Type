@@ -8,8 +8,8 @@
 #include <string>
 #include <utility>
 #include <vector>
-#include "BydoKind.hpp"
 #include "ConnectedPlayer.hpp"
+#include "EnemyKind.hpp"
 #include "Entity.hpp"
 #include "EntityDestruction.hpp"
 #include "LifeKeeper.hpp"
@@ -83,7 +83,7 @@ std::uint32_t LifeKeeperFixture::bydoOn(const ConnectedPlayer& player) {
   const game::Position* const ship = world_.shipPositionOf(player.shipEntityId);
   EXPECT_NE(ship, nullptr);
   const game::Position position = ship == nullptr ? game::Position{} : *ship;
-  return world_.spawnBydo(position, game::BydoKind::Drifter);
+  return world_.spawnBydo(position, game::EnemyKind::Drifter);
 }
 
 void LifeKeeperFixture::publishContact(std::uint32_t shipId,

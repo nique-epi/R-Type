@@ -18,8 +18,8 @@
 #include <toml++/toml.hpp>
 #include <utility>
 #include <vector>
-#include "BydoKind.hpp"
 #include "BydoWave.hpp"
+#include "EnemyKind.hpp"
 #include "ServerException.hpp"
 #include "TimeConstants.hpp"
 #include "WaveCurve.hpp"
@@ -157,7 +157,7 @@ std::vector<std::string> enemyNames() {
  * @throws InvalidEnemyListException when it is not a string, and
  * UnknownEnemyException when it is no name of ENEMY_NAMES.
  */
-game::BydoKind kindNamed(const toml::node& name, const FileTable& table) {
+game::EnemyKind kindNamed(const toml::node& name, const FileTable& table) {
   const std::optional<std::string> text = name.value_exact<std::string>();
   if (!text.has_value()) {
     throw InvalidEnemyListException(placeOf(name.source(), table, ENEMIES_KEY),
@@ -178,14 +178,14 @@ game::BydoKind kindNamed(const toml::node& name, const FileTable& table) {
  * InvalidEnemyListException when they are not a list of ENEMY_LIST_LENGTH
  * names, and UnknownEnemyException for a name of no kind.
  */
-std::vector<game::BydoKind> enemiesFrom(const FileTable& table) {
+std::vector<game::EnemyKind> enemiesFrom(const FileTable& table) {
   const toml::node& node = nodeAt(table, ENEMIES_KEY);
   const toml::array* const names = node.as_array();
   if (names == nullptr || !countFits(names->size(), ENEMY_LIST_LENGTH)) {
     throw InvalidEnemyListException(placeOf(node.source(), table, ENEMIES_KEY),
                                     ENEMY_LIST_LENGTH);
   }
-  std::vector<game::BydoKind> kinds;
+  std::vector<game::EnemyKind> kinds;
   kinds.reserve(names->size());
   for (const toml::node& name : *names) {
     kinds.push_back(kindNamed(name, table));

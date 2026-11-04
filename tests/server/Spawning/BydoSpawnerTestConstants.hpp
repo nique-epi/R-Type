@@ -5,7 +5,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <string_view>
-#include "BydoKind.hpp"
+#include "EnemyKind.hpp"
 #include "TicksToReach.hpp"
 #include "TimeConstants.hpp"
 #include "game/Waves/WaveTestConstants.hpp"
@@ -30,10 +30,10 @@ constexpr std::size_t TICKS_TO_THE_SECOND_BYDO = engine::testing::ticksToReach(
  * @brief The kinds the Bydos of the spawner tests take in turn: today's
  * Drifter then Weaver, and a cycle that starts with the Weaver.
  */
-constexpr std::array TEST_ENEMY_CYCLE{game::BydoKind::Drifter,
-                                      game::BydoKind::Weaver};
-constexpr std::array WEAVER_FIRST_CYCLE{game::BydoKind::Weaver,
-                                        game::BydoKind::Drifter};
+constexpr std::array TEST_ENEMY_CYCLE{game::EnemyKind::Drifter,
+                                      game::EnemyKind::Weaver};
+constexpr std::array WEAVER_FIRST_CYCLE{game::EnemyKind::Weaver,
+                                        game::EnemyKind::Drifter};
 
 /**
  * @brief The seed the spawner tests start from, and another one, which gives

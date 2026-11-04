@@ -7,7 +7,7 @@ target_include_directories(rtype_server_spawning PUBLIC ${CMAKE_CURRENT_SOURCE_D
 target_link_libraries(rtype_server_spawning
   PUBLIC
     rtype_game
-    rtype_game_bydo_kind
+    rtype_game_enemy_kind
     rtype_game_components
     rtype_game_wave_director
     rtype_game_waves

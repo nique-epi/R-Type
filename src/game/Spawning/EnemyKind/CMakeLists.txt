@@ -1,0 +1,7 @@
+add_library(rtype_game_enemy_kind STATIC EnemyKind.cpp)
+
+target_include_directories(rtype_game_enemy_kind PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+
+target_link_libraries(rtype_game_enemy_kind PUBLIC rtype_game_components)
+
+rtype_enable_warnings(rtype_game_enemy_kind)

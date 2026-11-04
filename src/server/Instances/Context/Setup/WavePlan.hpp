@@ -1,7 +1,7 @@
 #pragma once
 
 #include <vector>
-#include "BydoKind.hpp"
+#include "EnemyKind.hpp"
 #include "WaveCurve.hpp"
 
 namespace rtype::server {
@@ -12,7 +12,7 @@ namespace rtype::server {
  */
 struct WavePlan {
   game::WaveCurve curve;
-  std::vector<game::BydoKind> enemies;
+  std::vector<game::EnemyKind> enemies;
 
   bool operator==(const WavePlan&) const = default;
 };

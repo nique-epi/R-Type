@@ -19,7 +19,7 @@ target_link_libraries(rtype_game
     rtype_game_bydo_control_system
     rtype_game_pattern_system
     rtype_game_playfield_exit_system
-    rtype_game_bydo_kind
+    rtype_game_enemy_kind
     rtype_game_collision_system
     rtype_game_collision_rules
     rtype_game_damage_rules

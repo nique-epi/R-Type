@@ -3,8 +3,8 @@
 #include <cstddef>
 #include <cstdint>
 #include <optional>
-#include "BydoKind.hpp"
 #include "ComponentRegistry.hpp"
+#include "EnemyKind.hpp"
 #include "Entity.hpp"
 #include "EntityRegistry.hpp"
 #include "LivesConstants.hpp"
@@ -65,7 +65,7 @@ class World {
    * @returns The network id the Bydo was given, never NO_ENTITY_ID.
    * @throws NetworkIdExhaustedException when every network id was given.
    */
-  std::uint32_t spawnBydo(Position position, BydoKind kind);
+  std::uint32_t spawnBydo(Position position, EnemyKind kind);
 
   /**
    * @brief Creates, at @p position, a missile fired by the player numbered

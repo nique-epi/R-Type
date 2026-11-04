@@ -48,8 +48,8 @@ Every key is required, and any other key is refused, so a misspelt key stops the
 
 | Name | Kind | On screen | Points |
 |---|---|---|---|
-| `drifter` | `BydoKind::Drifter` | goes straight | 100 |
-| `weaver` | `BydoKind::Weaver` | weaves up and down, 48 logical units each way, every 2 seconds | 200 |
+| `drifter` | `EnemyKind::Drifter` | goes straight | 100 |
+| `weaver` | `EnemyKind::Weaver` | weaves up and down, 48 logical units each way, every 2 seconds | 200 |
 
 The Bydos take the names of the list in turn, and the turn carries on from one wave to the next. With `["drifter", "weaver"]` and three Bydos in the first wave, wave 1 brings a Drifter, a Weaver and a Drifter, and wave 2 starts with a Weaver. A name may appear several times to weight a kind: `["drifter", "drifter", "weaver"]` brings two Drifters for each Weaver.
 
@@ -102,4 +102,4 @@ Neither of the last two depends on the folder the server is started from. No ass
 
 ## Adding a kind of enemy
 
-A new kind takes a value of `BydoKind` with its pattern (`patternShapeOf`) and its points (`pointsOf`) in `src/game/Spawning/BydoKind/`, then a name in `ENEMY_NAMES` in `src/server/Spawning/WaveFileConstants.hpp`; the file can name it at once. Every Bydo goes over the network as a `Bydo` today, so the client draws every kind with the same sprite: a kind that must look different also needs a network entity type of its own and a sprite on the client.
+A new kind takes a value of `EnemyKind` with its pattern (`patternShapeOf`) and its points (`pointsOf`) in `src/game/Spawning/EnemyKind/`, then a name in `ENEMY_NAMES` in `src/server/Spawning/WaveFileConstants.hpp`; the file can name it at once. Every Bydo goes over the network as a `Bydo` today, so the client draws every kind with the same sprite: a kind that must look different also needs a network entity type of its own and a sprite on the client.

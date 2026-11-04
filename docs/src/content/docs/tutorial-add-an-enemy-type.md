@@ -26,14 +26,14 @@ The server owns the game. It creates the Bydos, moves them and tells each client
 | Step | What you add | Where |
 |---|---|---|
 | 1 | A new path for the Bydo to follow | `src/game/Components/MovementPattern.hpp`, `src/game/Systems/PatternSystem/` |
-| 2 | The kind of enemy and its points | `src/game/Spawning/BydoKind/` |
+| 2 | The kind of enemy and its points | `src/game/Spawning/EnemyKind/` |
 | 3 | The name the waves file gives it | `src/server/Spawning/WaveFileConstants.hpp` |
 | 4 | Tests | `tests/` |
 | 5 | The enemy in the waves | `assets/waves/waves.toml` |
 | 6 | See it on screen | the client, unchanged |
 | 7 | Document it | `docs/src/content/docs/` |
 
-How a kind reaches the world: `BydoKind` is read by `World::spawnBydo`, which gives the new entity its `MovementPattern` (the path, from `patternShapeOf(kind)`) and its `ScoreValue` (from `pointsOf(kind)`). `BydoSpawner` picks the kinds in turn from the waves file. `BydoControlSystem` makes every Bydo shoot, and the weapon system fires it, exactly as it fires a player: a new kind shoots without a line of yours.
+How a kind reaches the world: `EnemyKind` is read by `World::spawnBydo`, which gives the new entity its `MovementPattern` (the path, from `patternShapeOf(kind)`) and its `ScoreValue` (from `pointsOf(kind)`). `BydoSpawner` picks the kinds in turn from the waves file. `BydoControlSystem` makes every Bydo shoot, and the weapon system fires it, exactly as it fires a player: a new kind shoots without a line of yours.
 
 ## Step 1: a new path
 
@@ -104,17 +104,17 @@ cmake --build build --parallel
 
 ## Step 2: the kind and its points
 
-A `BydoKind` is the name of an enemy in the code. In `src/game/Spawning/BydoKind/BydoKind.hpp`, add the enumerator (and say what it does in the doc comment of `patternShapeOf`):
+A `EnemyKind` is the name of an enemy in the code. In `src/game/Spawning/EnemyKind/EnemyKind.hpp`, add the enumerator (and say what it does in the doc comment of `patternShapeOf`):
 
 ```cpp
-enum class BydoKind : std::uint8_t {
+enum class EnemyKind : std::uint8_t {
   Drifter,
   Weaver,
   Zigzagger,
 };
 ```
 
-Its points are a named constant in `src/game/Spawning/BydoKind/BydoPointsConstants.hpp`:
+Its points are a named constant in `src/game/Spawning/EnemyKind/EnemyPointsConstants.hpp`:
 
 ```cpp
 /**
@@ -126,15 +126,15 @@ Its points are a named constant in `src/game/Spawning/BydoKind/BydoPointsConstan
 constexpr std::uint32_t ZIGZAGGER_POINTS = 300;
 ```
 
-And the two functions of `src/game/Spawning/BydoKind/BydoKind.cpp` each get a case, which is the whole link between your kind, its path and its score:
+And the two functions of `src/game/Spawning/EnemyKind/EnemyKind.cpp` each get a case, which is the whole link between your kind, its path and its score:
 
 ```cpp
-    case BydoKind::Zigzagger:
+    case EnemyKind::Zigzagger:
       return PatternShape::Zigzag;
 ```
 
 ```cpp
-    case BydoKind::Zigzagger:
+    case EnemyKind::Zigzagger:
       return ZIGZAGGER_POINTS;
 ```
 
@@ -147,9 +147,9 @@ The waves file names enemies with a word. In `src/server/Spawning/WaveFileConsta
 ```cpp
 constexpr std::string_view ZIGZAGGER_NAME = "zigzagger";
 constexpr std::array ENEMY_NAMES{
-    std::pair{DRIFTER_NAME, game::BydoKind::Drifter},
-    std::pair{WEAVER_NAME, game::BydoKind::Weaver},
-    std::pair{ZIGZAGGER_NAME, game::BydoKind::Zigzagger}};
+    std::pair{DRIFTER_NAME, game::EnemyKind::Drifter},
+    std::pair{WEAVER_NAME, game::EnemyKind::Weaver},
+    std::pair{ZIGZAGGER_NAME, game::EnemyKind::Zigzagger}};
 ```
 
 A file that names an enemy missing from this list stops the server with an error that lists the names it knows, so a typo never goes unnoticed.
@@ -206,7 +206,7 @@ TEST(World, ASpawnedZigzaggerFollowsAZigzagAndIsWorthItsPoints) {
 
   static_cast<void>(
       world.spawnBydo(rtype::game::Position{.x = SOME_X, .y = SOME_Y},
-                      rtype::game::BydoKind::Zigzagger));
+                      rtype::game::EnemyKind::Zigzagger));
 
   std::size_t zigzags = 0;
   world.components()
@@ -236,8 +236,8 @@ TEST(WaveCatalog, ReadsTheZigzaggerByItsName) {
       calmFileWith("enemies", R"(["zigzagger"])"), TEST_FILE_NAME);
 
   EXPECT_EQ(catalog.planOf("calm").enemies,
-            std::vector<rtype::game::BydoKind>{
-                rtype::game::BydoKind::Zigzagger});
+            std::vector<rtype::game::EnemyKind>{
+                rtype::game::EnemyKind::Zigzagger});
 }
 ```
 
@@ -312,7 +312,7 @@ cd docs && npm ci && npm run build
 
 | What you see | What it means |
 |---|---|
-| `enumeration value 'Zigzag' not handled in switch` | a `switch` over `PatternShape` or `BydoKind` has no case for yours; add it where the compiler points |
+| `enumeration value 'Zigzag' not handled in switch` | a `switch` over `PatternShape` or `EnemyKind` has no case for yours; add it where the compiler points |
 | The server stops with `unknown enemy "..."; known: ...` | the name in `waves.toml` is not in `ENEMY_NAMES` (step 3), or is misspelt |
 | The server stops at start with an error naming a line of `waves.toml` | the file is invalid; the message names the line and the key |
 | The Bydos move but do not zigzag | the enemy is not in the `enemies` list of the difficulty you play (`normal`) |

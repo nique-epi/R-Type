@@ -3,7 +3,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <vector>
-#include "BydoKind.hpp"
+#include "EnemyKind.hpp"
 #include "EntityDestruction.hpp"
 #include "EntitySpawned.hpp"
 #include "GameInstanceFixtures.hpp"
@@ -83,7 +83,7 @@ std::uint32_t GameInstanceShootingFixture::aimAtADrifter() {
   const game::Position ship = shipPositionOf(FIRST_PLAYER);
   const std::uint32_t drifter = world().spawnBydo(
       game::Position{.x = ship.x + BYDO_DISTANCE_AHEAD, .y = ship.y},
-      game::BydoKind::Drifter);
+      game::EnemyKind::Drifter);
   holdForNextTick(FIRST_PLAYER, HOLDS_SHOOT);
   return drifter;
 }

@@ -5,8 +5,8 @@
 #include <cstdint>
 #include <initializer_list>
 #include <vector>
-#include "BydoKind.hpp"
 #include "ConnectedPlayer.hpp"
+#include "EnemyKind.hpp"
 #include "GameInstanceFixtures.hpp"
 #include "GameInstanceTestConstants.hpp"
 #include "Lives.hpp"
@@ -22,7 +22,7 @@
 namespace rtype::server::testing {
 
 void GameInstanceLivesFixture::hitTheShipOf(std::size_t player) {
-  world().spawnBydo(shipPositionOf(player), game::BydoKind::Drifter);
+  world().spawnBydo(shipPositionOf(player), game::EnemyKind::Drifter);
   runTicksDispatching(1);
 }
 

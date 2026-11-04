@@ -1,4 +1,4 @@
-add_subdirectory(BydoKind)
+add_subdirectory(EnemyKind)
 add_subdirectory(EnemyMissileStartPosition)
 
 add_library(rtype_game_spawning_constants INTERFACE)
