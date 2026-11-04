@@ -653,7 +653,8 @@ TEST_F(DatagramSorterFixture, LetsABannedPlayerBackOnceTheBanEnds) {
 /**
  * Given an admitted player banned for a flood with its own token
  * When it is admitted again with the same token
- * Then its next heartbeat is still dropped: asking again never lifts a ban
+ * Then its next heartbeat is still dropped: admitting one session twice never
+ * lifts its ban
  */
 TEST_F(DatagramSorterFixture, KeepsTheBanOfAPlayerAdmittedAgainWithItsToken) {
   admit(player());
