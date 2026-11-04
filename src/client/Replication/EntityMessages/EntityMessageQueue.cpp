@@ -1,8 +1,10 @@
 #include "EntityMessageQueue.hpp"
 #include <algorithm>
 #include <iterator>
+#include <optional>
 #include <utility>
 #include <vector>
+#include "DeltaWorldState.hpp"
 #include "EntityDestroyed.hpp"
 #include "EntityMessage.hpp"
 #include "EntitySpawned.hpp"
@@ -44,6 +46,15 @@ EntityMessageQueue::EntityMessageQueue(network::MessageDispatcher& dispatcher,
         room_->startGame();
         keep(state);
       });
+  dispatcher.registerHandler<network::DeltaWorldState>(
+      [this](const network::MessageOrigin&,
+             const network::DeltaWorldState& part) {
+        reminder_->worldStateArrived();
+        room_->startGame();
+        if (std::optional<network::WorldState> state = assembler_.add(part)) {
+          keep(std::move(*state));
+        }
+      });
   keepEachOf<network::EntitySpawned, network::EntityDestroyed,
              network::PlayerLeft>(
       dispatcher, [this](EntityMessage message) { keep(std::move(message)); });
@@ -78,6 +89,7 @@ void EntityMessageQueue::sessionOpened(
 
 void EntityMessageQueue::sessionClosed() {
   messages_.clear();
+  assembler_.clear();
   gameEvents_.forget();
 }
 
