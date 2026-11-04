@@ -47,6 +47,11 @@ constexpr std::string_view NICKNAME_SETTING_NAME = "nickname";
 constexpr std::string_view SERVER_ADDRESS_SETTING_NAME = "server-address";
 constexpr std::string_view SERVER_PORT_SETTING_NAME = "server-port";
 
+/** @brief Every setting of the client, in the order its usage lists them. */
+constexpr std::array CLIENT_SETTING_NAMES{NICKNAME_SETTING_NAME,
+                                          SERVER_ADDRESS_SETTING_NAME,
+                                          SERVER_PORT_SETTING_NAME};
+
 /**
  * @brief Launch option that starts the client without sound.
  */

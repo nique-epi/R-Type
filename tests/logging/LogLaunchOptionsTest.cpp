@@ -44,6 +44,7 @@ using rtype::logging::testing::NOT_A_LEVEL_ARGUMENT;
 using rtype::logging::testing::OPTION_LINE_START;
 using rtype::logging::testing::SHOWN_LINE;
 using rtype::logging::testing::STILL_ON_STDERR_LINE;
+using rtype::logging::testing::UNOPENED_JOURNAL_LINE_START;
 using rtype::logging::testing::UNUSED_JOURNAL;
 
 using Arguments = std::vector<std::string_view>;
@@ -299,6 +300,47 @@ TEST_F(LogLaunchOptionsFixture, UnopenableJournalChangesNothing) {
 }
 
 /**
+ * Given a level and a default journal in a folder that does not exist
+ * When the options are applied
+ * Then nothing is raised, the level is set, no file is created, and standard
+ * error names the absolute path of the journal it could not open, as Windows
+ * writes it with its own separators, and says there is none
+ */
+TEST_F(LogLaunchOptionsFixture,
+       UnopenableDefaultJournalWritesToStandardErrorOnly) {
+  const std::filesystem::path missing =
+      std::filesystem::temp_directory_path() / MISSING_JOURNAL;
+  const LogLaunchOptions options =
+      logOptionsOf(Arguments{LEVEL_OPTION, DEBUG_LEVEL_ARGUMENT}, missing);
+
+  EXPECT_NO_THROW(options.apply());
+
+  EXPECT_EQ(Logger::level(), LogLevel::Debug);
+  EXPECT_FALSE(std::filesystem::exists(missing));
+  EXPECT_NE(standardError().find(std::string(UNOPENED_JOURNAL_LINE_START) +
+                                 std::filesystem::absolute(missing).string()),
+            std::string::npos);
+  EXPECT_NE(standardError().find(NO_JOURNAL_LINE), std::string::npos);
+}
+
+/**
+ * Given `--no-log-stderr` and a default journal that cannot be opened
+ * When the options are applied and a warning is logged
+ * Then nothing is raised and nothing reaches standard error, as asked
+ */
+TEST_F(LogLaunchOptionsFixture, UnopenableDefaultJournalKeepsStandardErrorOff) {
+  const std::filesystem::path missing =
+      std::filesystem::temp_directory_path() / MISSING_JOURNAL;
+  const LogLaunchOptions options =
+      logOptionsOf(Arguments{NO_STDERR_OPTION}, missing);
+
+  EXPECT_NO_THROW(options.apply());
+
+  Logger(std::string(LAUNCH_LOGGER_NAME)).warn(LOST_LINE);
+  EXPECT_EQ(standardError(), "");
+}
+
+/**
  * Given an option that needs a value as the last argument
  * When the options are read
  * Then the missing value is reported
@@ -442,7 +484,8 @@ TEST(LogLaunchOptionsUsage, NamesEveryLoggingOption) {
 /**
  * Given the name of a default journal
  * When the usage of the logging options is built
- * Then it names that journal and says it sits next to the executable
+ * Then it names that journal, says it sits next to the executable, and that
+ * there is none when that file cannot be opened
  */
 TEST(LogLaunchOptionsUsage, NamesTheDefaultJournalAndItsPlace) {
   const std::string usage = LogLaunchOptions::usage(SERVER_LOG_FILE_NAME);

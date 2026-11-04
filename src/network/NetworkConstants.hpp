@@ -33,6 +33,12 @@ constexpr std::size_t RECEIVE_BUFFER_SIZE = MAX_DATAGRAM_SIZE + 1;
 constexpr std::uint16_t DEFAULT_SERVER_PORT = 4242;
 
 /**
+ * @brief TCP port the HTTP API of the master listens on when no port is given
+ * at launch: 8080, the usual port of an HTTP service other than the web.
+ */
+constexpr std::uint16_t DEFAULT_MASTER_PORT = 8080;
+
+/**
  * @brief Lowest port a program may be given at launch. Port 0 asks the system
  * for any free port, which the players could not know.
  */

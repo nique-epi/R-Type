@@ -26,6 +26,9 @@ add_executable(r-type_server main.cpp)
 target_link_libraries(r-type_server
   PRIVATE
     rtype_logging
+    rtype_master_constants
+    rtype_master_launch_options
+    rtype_master_modules
     rtype_server_constants
     rtype_server_modules
 )
