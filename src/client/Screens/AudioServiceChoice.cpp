@@ -6,7 +6,7 @@ namespace rtype::client {
 
 IAudioService& chooseAudioService(const engine::InstallContext& context,
                                   IAudioService& silence) {
-  IAudioService* const provided = context.find<IAudioService>();
+  auto* const provided = context.find<IAudioService>();
   return provided != nullptr ? *provided : silence;
 }
 

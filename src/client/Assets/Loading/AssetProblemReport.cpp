@@ -1,5 +1,4 @@
 #include "AssetProblemReport.hpp"
-#include <string>
 #include <string_view>
 #include "AssetLibrary.hpp"
 #include "AssetLoadResult.hpp"

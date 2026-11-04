@@ -8,6 +8,7 @@
 #include "LoadingScreenFixture.hpp"
 #include "MenuScreenIdConstants.hpp"
 #include "PathText.hpp"
+#include "RecordingScreen.hpp"
 #include "ScreenTestConstants.hpp"
 
 using rtype::client::AssetKind;
