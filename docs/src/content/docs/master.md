@@ -100,7 +100,7 @@ An admin issues the key of a game server on the machine of the master, which pri
 - **A key that is not 64 lowercase hexadecimal digits** is refused before its fingerprint is computed.
 - **A `master.cfg` that turns `server-keys` off** leaves no key to print: the binary says so and exits with code 1.
 
-Revoking a key, and issuing one from the web site, are not written yet.
+The host of the game server then writes the key in the `server.cfg` of that server, as the setting `master_key`, next to `master_url`; `server.cfg` is never committed, only `server.cfg.example`, with an empty key. The game server does not read them yet: that is the link with the master, still to be written. Revoking a key, and issuing one from the web site, are not written yet.
 
 ## Routes of a game server: `ServersModule`
 

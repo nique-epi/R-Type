@@ -138,7 +138,7 @@ The same binary runs the master in this mode: the program that will list the gam
 ./r-type_server --mode master --new-server-key "Paris 1"
 ```
 
-The key is printed once on the standard output and the master stops; it keeps only a hash of the key. No game server sends its registration yet.
+The key is printed once on the standard output and the master stops; it keeps only a hash of the key. The host then writes it in the `server.cfg` of the game server, as `master_key`. No game server reads it or sends its registration yet.
 
 - **Why HTTP:** the subject requires UDP for every message of a game and accepts TCP for other needs when it is justified. The master carries no message of a game, and the web administration the subject accepts needs HTTP in a browser, so one protocol serves the programs and the web site, readable with `curl`. A player still joins a server over UDP when the master is stopped.
 - **Why a mode and not a third binary:** the subject lists two binaries, `r-type_server` and `r-type_client`. The master ships inside the first and reuses its stop on Ctrl-C, its configuration file and its journal; it still runs as a process of its own, so a master that stops stops no game.
