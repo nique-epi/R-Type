@@ -6,23 +6,15 @@
 #include <iterator>
 #include <string>
 #include <string_view>
-#include "MasterDatabase.hpp"
 #include "ServerKeys.hpp"
 #include "ServerKeysTestConstants.hpp"
 
-ServerKeysFixture::ServerKeysFixture() {
-  database_.open((folder_.path() / KEYS_DATABASE_FILE).string());
-}
-
 rtype::master::ServerKeys& ServerKeysFixture::keys() { return keys_; }
 
-void ServerKeysFixture::restart() {
-  database_.close();
-  database_.open((folder_.path() / KEYS_DATABASE_FILE).string());
-}
+void ServerKeysFixture::restart() { databaseFile_.restart(); }
 
 bool ServerKeysFixture::databaseFilesHold(std::string_view text) const {
-  const std::filesystem::path file = folder_.path() / KEYS_DATABASE_FILE;
+  const std::filesystem::path file = databaseFile_.file();
   for (const std::filesystem::path& part :
        {file, std::filesystem::path{file.string() +
                                     std::string{KEYS_DATABASE_LOG_SUFFIX}}}) {

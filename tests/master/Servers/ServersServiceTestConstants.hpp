@@ -5,12 +5,6 @@
 #include <cstdint>
 #include <string_view>
 
-/** @brief The database file the tests give the servers, in their folder. */
-constexpr std::string_view SERVERS_DATABASE_FILE = "master.db";
-
-/** @brief The name the keys of the tests are issued under. */
-constexpr std::string_view TEST_KEY_NAME = "test server";
-
 /** @brief When the first heartbeat of a test arrives, and later dates. */
 constexpr std::chrono::sys_seconds FIRST_HEARTBEAT_DATE{
     std::chrono::seconds{1'800'000'000}};

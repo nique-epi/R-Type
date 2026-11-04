@@ -21,7 +21,7 @@
 #include "LoopStages.hpp"
 #include "MasterConstants.hpp"
 #include "MasterModules.hpp"
-#include "MasterModulesTestConstants.hpp"
+#include "MasterTestConstants.hpp"
 #include "ServerKeyOrder.hpp"
 #include "SettingLine.hpp"
 

@@ -8,6 +8,7 @@
 #include "MasterConstants.hpp"
 #include "MasterLaunchOptions.hpp"
 #include "MasterLaunchOptionsTestConstants.hpp"
+#include "MasterTestConstants.hpp"
 #include "NetworkException.hpp"
 
 using rtype::engine::DATABASE_OPTION;
@@ -114,9 +115,9 @@ TEST(MasterLaunchOptions, AnOptionOfAnotherProgramIsRefused) {
  */
 TEST(MasterLaunchOptions, ANewServerKeyRecordsTheNameOfTheServer) {
   const MasterLaunchOptions options = MasterLaunchOptions::read(
-      Arguments{NEW_SERVER_KEY_OPTION, KEY_SERVER_NAME});
+      Arguments{NEW_SERVER_KEY_OPTION, TEST_SERVER_NAME});
 
-  EXPECT_EQ(options.newServerKeyName(), std::string{KEY_SERVER_NAME});
+  EXPECT_EQ(options.newServerKeyName(), std::string{TEST_SERVER_NAME});
   EXPECT_TRUE(options.forcedLines().empty());
 }
 

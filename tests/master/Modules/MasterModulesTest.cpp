@@ -102,7 +102,7 @@ TEST_F(MasterModulesFixture, ANewServerKeyIsHandedToTheOrder) {
   std::string issued;
   const std::unique_ptr<Application> application =
       keyApplication(ServerKeyOrder{
-          .name = std::string{KEY_ORDER_NAME},
+          .name = std::string{TEST_SERVER_NAME},
           .onIssued = [&issued](const std::string& key) { issued = key; }});
 
   application->start();
@@ -119,7 +119,7 @@ TEST_F(MasterModulesFixture, ANewServerKeyIsHandedToTheOrder) {
 TEST_F(MasterModulesFixture, ANewServerKeyOpensNoPort) {
   const std::unique_ptr<Application> application =
       keyApplication(ServerKeyOrder{
-          .name = std::string{KEY_ORDER_NAME},
+          .name = std::string{TEST_SERVER_NAME},
           .onIssued = []([[maybe_unused]] const std::string& key) {}});
 
   application->start();

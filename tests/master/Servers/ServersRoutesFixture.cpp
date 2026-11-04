@@ -14,8 +14,10 @@
 #include "LoggingConstants.hpp"
 #include "LoopStages.hpp"
 #include "MasterConstants.hpp"
-#include "MasterDatabase.hpp"
+#include "MasterMessageText.hpp"
+#include "MasterMessageTextFixtures.hpp"
 #include "MasterModules.hpp"
+#include "MasterTestConstants.hpp"
 #include "RouteCall.hpp"
 #include "ServerKeys.hpp"
 #include "ServersRoutesTestConstants.hpp"
@@ -30,11 +32,11 @@ ServersRoutesFixture::ServersRoutesFixture()
           logOptionsOf(quiet, journal_.path()),
           []([[maybe_unused]] const std::string& reason) {}, std::nullopt),
       rtype::engine::configurationStep(
-          folder_.path() / rtype::master::MASTER_CONFIGURATION_FILE_NAME,
+          databaseFile_.file().parent_path() /
+              rtype::master::MASTER_CONFIGURATION_FILE_NAME,
           std::vector<std::string>{
-              rtype::engine::settingLine(
-                  rtype::master::DATABASE_SETTING_NAME,
-                  (folder_.path() / ROUTES_DATABASE_FILE).string()),
+              rtype::engine::settingLine(rtype::master::DATABASE_SETTING_NAME,
+                                         databaseFile_.file().string()),
               rtype::engine::settingLine(rtype::master::PORT_SETTING_NAME,
                                          std::to_string(port_))},
           report_));
@@ -47,25 +49,30 @@ const std::string& ServersRoutesFixture::key() const { return key_; }
 
 httplib::Result ServersRoutesFixture::put(const RouteCall& call) const {
   httplib::Request request;
-  request.method = std::string{PUT_METHOD_NAME};
+  request.method = std::string{PUT_METHOD};
   request.path = std::string{call.path};
   request.body = call.body;
-  request.set_header(std::string{CONTENT_TYPE_NAME},
-                     std::string{JSON_TYPE_NAME});
+  request.set_header(std::string{CONTENT_TYPE_HEADER},
+                     std::string{EXPECTED_JSON_TYPE});
   if (!call.key.empty()) {
-    request.set_header(std::string{AUTHORIZATION_NAME},
+    request.set_header(std::string{AUTHORIZATION_HEADER_NAME},
                        std::string{BEARER_PREFIX_TEXT} + std::string{call.key});
   }
   return httpSend(port_, request);
 }
 
-std::string ServersRoutesFixture::issuedKey() const {
-  rtype::master::MasterDatabase database;
-  database.open((folder_.path() / ROUTES_DATABASE_FILE).string());
-  rtype::master::ServerKeys keys{database};
-  std::string key = keys.issue(std::string{ROUTES_KEY_NAME},
+httplib::Result ServersRoutesFixture::registerParis() const {
+  return put(RouteCall{.path = OWN_SERVER_URL,
+                       .key = key_,
+                       .body = rtype::network::registrationText(
+                           rtype::network::testing::parisRegistration())});
+}
+
+std::string ServersRoutesFixture::issuedKey() {
+  rtype::master::ServerKeys keys{databaseFile_.database()};
+  std::string key = keys.issue(std::string{TEST_SERVER_NAME},
                                std::chrono::floor<std::chrono::seconds>(
                                    std::chrono::system_clock::now()));
-  database.close();
+  databaseFile_.close();
   return key;
 }

@@ -2,6 +2,7 @@
 #include <cstdint>
 #include <optional>
 #include <string>
+#include "MasterTestConstants.hpp"
 #include "ServerKeyTextTestConstants.hpp"
 #include "ServerKeysFixture.hpp"
 #include "ServerKeysTestConstants.hpp"
@@ -13,7 +14,7 @@
  */
 TEST_F(ServerKeysFixture, RecognisesAKeyItIssued) {
   const std::string key =
-      keys().issue(std::string{PARIS_KEY_NAME}, KEY_ISSUE_DATE);
+      keys().issue(std::string{TEST_SERVER_NAME}, KEY_ISSUE_DATE);
 
   EXPECT_TRUE(keys().keyIdOf(key).has_value());
 }
@@ -25,7 +26,7 @@ TEST_F(ServerKeysFixture, RecognisesAKeyItIssued) {
  */
 TEST_F(ServerKeysFixture, TwoKeysAreTwoIds) {
   const std::string paris =
-      keys().issue(std::string{PARIS_KEY_NAME}, KEY_ISSUE_DATE);
+      keys().issue(std::string{TEST_SERVER_NAME}, KEY_ISSUE_DATE);
   const std::string lyon =
       keys().issue(std::string{LYON_KEY_NAME}, KEY_ISSUE_DATE);
 
@@ -41,10 +42,10 @@ TEST_F(ServerKeysFixture, TwoKeysAreTwoIds) {
  */
 TEST_F(ServerKeysFixture, TheDatabaseNeverHoldsTheKey) {
   const std::string key =
-      keys().issue(std::string{PARIS_KEY_NAME}, KEY_ISSUE_DATE);
+      keys().issue(std::string{TEST_SERVER_NAME}, KEY_ISSUE_DATE);
 
   EXPECT_FALSE(databaseFilesHold(key));
-  EXPECT_TRUE(databaseFilesHold(PARIS_KEY_NAME));
+  EXPECT_TRUE(databaseFilesHold(TEST_SERVER_NAME));
 }
 
 /**
@@ -53,7 +54,8 @@ TEST_F(ServerKeysFixture, TheDatabaseNeverHoldsTheKey) {
  * Then the master knows no such key
  */
 TEST_F(ServerKeysFixture, RefusesAKeyItNeverIssued) {
-  static_cast<void>(keys().issue(std::string{PARIS_KEY_NAME}, KEY_ISSUE_DATE));
+  static_cast<void>(
+      keys().issue(std::string{TEST_SERVER_NAME}, KEY_ISSUE_DATE));
 
   EXPECT_EQ(keys().keyIdOf(KEY_NEVER_ISSUED), std::nullopt);
 }
@@ -65,7 +67,7 @@ TEST_F(ServerKeysFixture, RefusesAKeyItNeverIssued) {
  */
 TEST_F(ServerKeysFixture, KnowsAKeyAfterARestart) {
   const std::string key =
-      keys().issue(std::string{PARIS_KEY_NAME}, KEY_ISSUE_DATE);
+      keys().issue(std::string{TEST_SERVER_NAME}, KEY_ISSUE_DATE);
 
   restart();
 

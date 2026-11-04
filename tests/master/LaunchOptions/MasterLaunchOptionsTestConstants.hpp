@@ -22,9 +22,6 @@ constexpr std::string_view FORCED_DATABASE_LINE = "set database /tmp/master.db";
 constexpr std::string_view CLIENT_ADDRESS_OPTION = "-h";
 constexpr std::string_view CLIENT_ADDRESS = "127.0.0.1";
 
-/** @brief The name of a game server a key is asked for. */
-constexpr std::string_view KEY_SERVER_NAME = "Paris 1";
-
 /** @brief Names no game server may have: empty, of 33 bytes, holding a line
  * feed. */
 constexpr std::string_view EMPTY_SERVER_NAME;

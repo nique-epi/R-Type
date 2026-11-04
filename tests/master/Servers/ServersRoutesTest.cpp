@@ -6,16 +6,23 @@
 #include <string>
 #include "MasterMessageText.hpp"
 #include "MasterMessageTextFixtures.hpp"
+#include "MasterMessageTextTestConstants.hpp"
+#include "MasterTestConstants.hpp"
 #include "RouteCall.hpp"
+#include "ServerKeyTextTestConstants.hpp"
 #include "ServersRoutesFixture.hpp"
 #include "ServersRoutesTestConstants.hpp"
 
 using rtype::network::heartbeatText;
 using rtype::network::registrationText;
+using rtype::network::testing::ADDRESS_POINTER;
 using rtype::network::testing::parisHeartbeat;
 using rtype::network::testing::parisRegistration;
+using rtype::network::testing::PORT_AS_TEXT;
+using rtype::network::testing::quoted;
 using rtype::network::testing::registrationTextWith;
 using rtype::network::testing::registrationTextWithout;
+using rtype::network::testing::UDP_PORT_POINTER;
 
 /**
  * Given a master
@@ -29,7 +36,7 @@ TEST_F(ServersRoutesFixture, ARegistrationWithoutAKeyIsAskedForOne) {
                     .body = registrationText(parisRegistration())});
 
   ASSERT_TRUE(answer);
-  EXPECT_EQ(answer->status, EXPECTED_ROUTE_UNAUTHORIZED);
+  EXPECT_EQ(answer->status, EXPECTED_UNAUTHORIZED);
   EXPECT_EQ(answer->get_header_value(std::string{CHALLENGE_HEADER_NAME}),
             EXPECTED_CHALLENGE);
 }
@@ -42,11 +49,11 @@ TEST_F(ServersRoutesFixture, ARegistrationWithoutAKeyIsAskedForOne) {
 TEST_F(ServersRoutesFixture, ARegistrationWithAKeyNeverIssuedIsRefused) {
   const httplib::Result answer =
       put(RouteCall{.path = OWN_SERVER_URL,
-                    .key = FOREIGN_KEY,
+                    .key = KEY_NEVER_ISSUED,
                     .body = registrationText(parisRegistration())});
 
   ASSERT_TRUE(answer);
-  EXPECT_EQ(answer->status, EXPECTED_ROUTE_UNAUTHORIZED);
+  EXPECT_EQ(answer->status, EXPECTED_UNAUTHORIZED);
 }
 
 /**
@@ -55,14 +62,11 @@ TEST_F(ServersRoutesFixture, ARegistrationWithAKeyNeverIssuedIsRefused) {
  * Then it gets 201 and the Location of the server, whose id the body carries
  */
 TEST_F(ServersRoutesFixture, AFirstRegistrationTellsWhereTheServerLives) {
-  const httplib::Result answer =
-      put(RouteCall{.path = OWN_SERVER_URL,
-                    .key = key(),
-                    .body = registrationText(parisRegistration())});
+  const httplib::Result answer = registerParis();
 
   ASSERT_TRUE(answer);
-  EXPECT_EQ(answer->status, EXPECTED_ROUTE_CREATED);
-  EXPECT_EQ(answer->get_header_value(std::string{LOCATION_NAME}),
+  EXPECT_EQ(answer->status, EXPECTED_CREATED);
+  EXPECT_EQ(answer->get_header_value(std::string{LOCATION_HEADER_NAME}),
             std::string{EXPECTED_SERVER_LOCATION_PREFIX} +
                 std::to_string(nlohmann::json::parse(answer->body)
                                    .at(ID_MEMBER_NAME)
@@ -75,19 +79,13 @@ TEST_F(ServersRoutesFixture, AFirstRegistrationTellsWhereTheServerLives) {
  * Then it gets 200 and the same id
  */
 TEST_F(ServersRoutesFixture, ARegistrationAgainKeepsTheServer) {
-  const httplib::Result first =
-      put(RouteCall{.path = OWN_SERVER_URL,
-                    .key = key(),
-                    .body = registrationText(parisRegistration())});
+  const httplib::Result first = registerParis();
   ASSERT_TRUE(first);
 
-  const httplib::Result second =
-      put(RouteCall{.path = OWN_SERVER_URL,
-                    .key = key(),
-                    .body = registrationText(parisRegistration())});
+  const httplib::Result second = registerParis();
 
   ASSERT_TRUE(second);
-  EXPECT_EQ(second->status, EXPECTED_ROUTE_OK);
+  EXPECT_EQ(second->status, EXPECTED_OK);
   EXPECT_EQ(nlohmann::json::parse(second->body).at(ID_MEMBER_NAME),
             nlohmann::json::parse(first->body).at(ID_MEMBER_NAME));
 }
@@ -101,13 +99,13 @@ TEST_F(ServersRoutesFixture, ARegistrationWithoutAddressTakesThePeer) {
   const httplib::Result answer =
       put(RouteCall{.path = OWN_SERVER_URL,
                     .key = key(),
-                    .body = registrationTextWithout(ADDRESS_POINTER_NAME)});
+                    .body = registrationTextWithout(ADDRESS_POINTER)});
 
   ASSERT_TRUE(answer);
   EXPECT_EQ(nlohmann::json::parse(answer->body)
                 .at(ADDRESS_MEMBER_NAME)
                 .get<std::string>(),
-            PEER_ADDRESS);
+            LOOPBACK_ADDRESS);
 }
 
 /**
@@ -116,18 +114,17 @@ TEST_F(ServersRoutesFixture, ARegistrationWithoutAddressTakesThePeer) {
  * Then it gets 400, whose detail names the port
  */
 TEST_F(ServersRoutesFixture, AnInvalidRegistrationNamesItsFaultyMember) {
-  const httplib::Result answer =
-      put(RouteCall{.path = OWN_SERVER_URL,
-                    .key = key(),
-                    .body = registrationTextWith(UDP_PORT_POINTER_NAME,
-                                                 PORT_WRITTEN_AS_TEXT)});
+  const httplib::Result answer = put(
+      RouteCall{.path = OWN_SERVER_URL,
+                .key = key(),
+                .body = registrationTextWith(UDP_PORT_POINTER, PORT_AS_TEXT)});
 
   ASSERT_TRUE(answer);
-  EXPECT_EQ(answer->status, EXPECTED_ROUTE_BAD_REQUEST);
+  EXPECT_EQ(answer->status, EXPECTED_BAD_REQUEST);
   EXPECT_NE(nlohmann::json::parse(answer->body)
-                .at(DETAIL_MEMBER_NAME)
+                .at(PROBLEM_DETAIL_MEMBER_NAME)
                 .get<std::string>()
-                .find(QUOTED_UDP_PORT_POINTER),
+                .find(quoted(UDP_PORT_POINTER)),
             std::string::npos);
 }
 
@@ -143,7 +140,7 @@ TEST_F(ServersRoutesFixture, AHeartbeatBeforeTheRegistrationIsNotFound) {
                     .body = heartbeatText(parisHeartbeat())});
 
   ASSERT_TRUE(answer);
-  EXPECT_EQ(answer->status, EXPECTED_ROUTE_NOT_FOUND);
+  EXPECT_EQ(answer->status, EXPECTED_NOT_FOUND);
 }
 
 /**
@@ -152,9 +149,7 @@ TEST_F(ServersRoutesFixture, AHeartbeatBeforeTheRegistrationIsNotFound) {
  * Then it gets 200 and the orders waiting for it, none yet
  */
 TEST_F(ServersRoutesFixture, AHeartbeatGetsTheOrdersWaiting) {
-  ASSERT_TRUE(put(RouteCall{.path = OWN_SERVER_URL,
-                            .key = key(),
-                            .body = registrationText(parisRegistration())}));
+  ASSERT_TRUE(registerParis());
 
   const httplib::Result answer =
       put(RouteCall{.path = OWN_HEARTBEAT_URL,
@@ -162,7 +157,7 @@ TEST_F(ServersRoutesFixture, AHeartbeatGetsTheOrdersWaiting) {
                     .body = heartbeatText(parisHeartbeat())});
 
   ASSERT_TRUE(answer);
-  EXPECT_EQ(answer->status, EXPECTED_ROUTE_OK);
+  EXPECT_EQ(answer->status, EXPECTED_OK);
   EXPECT_EQ(nlohmann::json::parse(answer->body).at(COMMANDS_MEMBER_NAME),
             nlohmann::json::array());
 }

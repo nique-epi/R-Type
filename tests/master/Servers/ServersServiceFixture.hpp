@@ -4,16 +4,13 @@
 #include <cstdint>
 #include <optional>
 #include <string>
-#include "MasterDatabase.hpp"
+#include "MasterDatabaseFile.hpp"
 #include "ServerKeys.hpp"
 #include "ServersService.hpp"
-#include "TemporaryFolder.hpp"
 
 /** @brief The servers of the master on a database of their own, with keys. */
 class ServersServiceFixture : public ::testing::Test {
  protected:
-  ServersServiceFixture();
-
   [[nodiscard]] rtype::master::ServersService& service();
 
   /** @returns The id of a key issued for the test. */
@@ -39,8 +36,7 @@ class ServersServiceFixture : public ::testing::Test {
   void restart();
 
  private:
-  TemporaryFolder folder_;
-  rtype::master::MasterDatabase database_;
-  rtype::master::ServerKeys keys_{database_};
-  rtype::master::ServersService service_{database_};
+  MasterDatabaseFile databaseFile_;
+  rtype::master::ServerKeys keys_{databaseFile_.database()};
+  rtype::master::ServersService service_{databaseFile_.database()};
 };
