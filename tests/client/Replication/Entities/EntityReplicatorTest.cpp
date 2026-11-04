@@ -20,8 +20,10 @@
 #include "EntityType.hpp"
 #include "LastListedTicksTestConstants.hpp"
 #include "PilotTestConstants.hpp"
+#include "ProtocolConstants.hpp"
 #include "SoundConstants.hpp"
 #include "SpriteAnimation.hpp"
+#include "WireReading.hpp"
 #include "WorldState.hpp"
 #include "WorldStateFilterTestConstants.hpp"
 
@@ -1006,4 +1008,22 @@ TEST_F(EntityReplicatorFixture, ReadsTheNewProjectileTypesAsEnemyMissiles) {
         ++kinds;
       });
   EXPECT_EQ(kinds, 0U);
+}
+
+/**
+ * Given every value of the protocol entity type, from the first to the last
+ * When each is read
+ * Then each is something the client creates, and the value just outside is not
+ */
+TEST(WireReading, EveryProtocolEntityTypeIsRead) {
+  for (unsigned int value = rtype::network::FIRST_WIRE_ENTITY_TYPE;
+       value <= rtype::network::LAST_WIRE_ENTITY_TYPE; ++value) {
+    SCOPED_TRACE(value);
+
+    EXPECT_TRUE(
+        rtype::client::announcedEntityOf(static_cast<WireEntityType>(value))
+            .has_value());
+  }
+  EXPECT_FALSE(
+      rtype::client::announcedEntityOf(WIRE_TYPE_AFTER_THE_LAST).has_value());
 }
