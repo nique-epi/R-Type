@@ -93,7 +93,7 @@ TEST_F(RtypeGameFixture, GameReplicationSendsTheWorldOnAProgressTick) {
 
   replication.onProgressTick(0, world().components());
 
-  expectFirstMessageSentTo(0, network::MessageType::WorldState);
+  expectFirstMessageSentTo(0, network::MessageType::DeltaWorldState);
 }
 
 }  // namespace rtype::server::testing

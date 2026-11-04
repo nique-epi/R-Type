@@ -117,6 +117,7 @@ void GameSessions::readDatagram(const network::IncomingDatagram& datagram) {
   readable->player->ticksSinceReceived = 0;
   readable->player->away = false;
   readable->player->unacknowledged.acknowledge(readable->origin.header);
+  readable->player->sentStates.acknowledge(readable->origin.header);
   dispatcher_.dispatch(readable->origin, readable->messages);
 }
 

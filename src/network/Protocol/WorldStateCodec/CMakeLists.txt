@@ -1,4 +1,4 @@
-add_library(rtype_network_world_state_codec STATIC WorldStateCodec.cpp)
+add_library(rtype_network_world_state_codec STATIC DeltaWorldStateCodec.cpp WorldStateCodec.cpp WorldStateFields.cpp)
 
 target_include_directories(rtype_network_world_state_codec PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 

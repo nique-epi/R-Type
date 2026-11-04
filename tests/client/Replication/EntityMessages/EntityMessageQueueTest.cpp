@@ -2,6 +2,7 @@
 #include <gtest/gtest.h>
 #include <cstddef>
 #include <vector>
+#include "DeltaWorldState.hpp"
 #include "EntityAnnouncements.hpp"
 #include "EntityDestroyed.hpp"
 #include "EntityMessage.hpp"
@@ -11,6 +12,7 @@
 #include "GameEvent.hpp"
 #include "GameStarted.hpp"
 #include "PlayerLeft.hpp"
+#include "ProtocolConstants.hpp"
 #include "ServerSessionFixtures.hpp"
 #include "ServerSessionTestConstants.hpp"
 #include "TimeConstants.hpp"
@@ -100,6 +102,32 @@ TEST_F(EntityMessageQueueFixture, HandsOverTheWorldStateThatStartsTheGame) {
   update();
 
   EXPECT_THAT(drainedEntityMessages(), ElementsAre(EntityMessage{state}));
+}
+
+/**
+ * Given a session whose GameStarted was lost
+ * When the first state arrives as a DeltaWorldState written without reference
+ * Then the connection hands over the state rebuilt in full, as it hands over a
+ * WorldState
+ */
+TEST_F(EntityMessageQueueFixture, HandsOverTheStateRebuiltFromADelta) {
+  accept();
+  const network::EntityState ship =
+      listed(SHIP_ID, network::WireEntityType::PlayerShip, FIRST_POSITION);
+  deliverDeltaInSession(
+      network::DeltaWorldState{.tick = APPLIED_TICK,
+                               .baseDistance = network::NO_REFERENCE_DISTANCE,
+                               .partIndex = 0,
+                               .partCount = 1,
+                               .players = {},
+                               .changed = {ship},
+                               .removed = {}},
+      FIRST_SEQUENCE);
+
+  update();
+
+  EXPECT_THAT(drainedEntityMessages(),
+              ElementsAre(EntityMessage{stateListing(APPLIED_TICK, {ship})}));
 }
 
 /**
