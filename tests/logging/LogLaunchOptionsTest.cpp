@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 #include <filesystem>
+#include <fstream>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -14,6 +15,8 @@
 #include "LoggingConstants.hpp"
 #include "LoggingException.hpp"
 #include "LoggingOptionTestConstants.hpp"
+#include "NonAnsiFolderTestConstants.hpp"
+#include "TemporaryFolder.hpp"
 
 using rtype::logging::FILE_OPTION;
 using rtype::logging::InvalidLogOptionException;
@@ -22,6 +25,7 @@ using rtype::logging::LogFileOpenException;
 using rtype::logging::Logger;
 using rtype::logging::LogLaunchOptions;
 using rtype::logging::LogLevel;
+using rtype::logging::LogOutput;
 using rtype::logging::MissingLogOptionValueException;
 using rtype::logging::NO_FILE_OPTION;
 using rtype::logging::NO_STDERR_OPTION;
@@ -46,6 +50,8 @@ using rtype::logging::testing::SHOWN_LINE;
 using rtype::logging::testing::STILL_ON_STDERR_LINE;
 using rtype::logging::testing::UNOPENED_JOURNAL_LINE_START;
 using rtype::logging::testing::UNUSED_JOURNAL;
+using rtype::testing::NON_ANSI_FOLDER_BYTES;
+using rtype::testing::NON_ANSI_FOLDER_NAME;
 
 using Arguments = std::vector<std::string_view>;
 
@@ -127,6 +133,28 @@ TEST_F(LogLaunchOptionsFixture, FirstLineNamesTheJournal) {
   ASSERT_FALSE(lines.empty());
   EXPECT_NE(lines.front().find(std::string(JOURNAL_LINE_START) +
                                journal.path().string()),
+            std::string::npos);
+}
+
+/**
+ * Given a default journal in a folder whose name is outside the code page
+ * When the options are applied at the info level
+ * Then the first line of the journal names it in UTF-8, and nothing is thrown
+ */
+TEST_F(LogLaunchOptionsFixture, FirstLineNamesAJournalInANonAnsiFolder) {
+  const TemporaryFolder folder;
+  const std::filesystem::path journalFolder =
+      folder.path() / NON_ANSI_FOLDER_NAME;
+  std::filesystem::create_directories(journalFolder);
+  const std::filesystem::path journal = journalFolder / "journal.log";
+
+  logOptionsOf(Arguments{LEVEL_OPTION, INFO_LEVEL_ARGUMENT}, journal).apply();
+  Logger::setOutput(LogOutput{});
+
+  std::ifstream written(journal);
+  std::string firstLine;
+  std::getline(written, firstLine);
+  EXPECT_NE(firstLine.find(std::string(NON_ANSI_FOLDER_BYTES) + "/journal.log"),
             std::string::npos);
 }
 
