@@ -1,8 +1,10 @@
 add_library(rtype_tools_load_test_bots STATIC
   Bot.cpp
+  BotInputSender.cpp
   BotLaunchOptions.cpp
   BotPilot.cpp
   BotSquad.cpp
+  BotTally.cpp
   ReadyRule.cpp
 )
 
