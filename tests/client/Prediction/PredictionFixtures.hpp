@@ -14,6 +14,9 @@ namespace rtype::client::testing {
 game::MovingShip shipAfterCommands(game::ShipDirections held,
                                    std::uint32_t count);
 
+/** @returns The distance between @p first and @p second. */
+float distanceBetween(game::Position first, game::Position second);
+
 /** @returns @p ship moved by @p offsetX along the x axis. */
 game::Position shiftedRight(game::Position ship, float offsetX);
 

@@ -350,7 +350,7 @@ A new module is written directly in its own folder, `src/<program>/<Name>/`, cla
 
 Player A holds the Up arrow and player B sees A's ship move. Each step happens in one place.
 
-This is the path the design aims for; the server half and the prediction of the own ship run today. The inputs of client A reach its game, each tick of a game in progress moves the ships by their `Intent` with `ShipControl` in `MovementSystem`, and the world state goes to every player 20 times per second by default, as many as the host chose with `--state-rate`. Client A moves its ship at once with `ShipControl`, one input per tick, and when a world state confirms an input at a position far from the predicted one it restarts from the server position and replays the inputs after it (`client/Prediction`, with PREDICTION on); the other entities are interpolated (`client/Replication`, `client/Prediction`): both clients draw them two state intervals in the past, 100 ms at the default rate, between two world states. `network/Sessions` and `network/Snapshots` do not exist either: the session token is checked by `DatagramSorter` and the sequence by `DatagramReader`, both in `src/server/`, and the world state is written by `WorldStateCodec` in `network/Protocol`.
+This is the path the design aims for; the server half and the prediction of the own ship run today. The inputs of client A reach its game, each tick of a game in progress moves the ships by their `Intent` with `ShipControl` in `MovementSystem`, and the world state goes to every player 20 times per second by default, as many as the host chose with `--state-rate`. Client A moves its ship at once with `ShipControl`, one input per tick, and when a world state confirms an input at a position far from the predicted one it restarts from the server position and replays the inputs after it, and the ship drawn glides to the result unless the gap is large (`client/Prediction`, with PREDICTION on); the other entities are interpolated (`client/Replication`, `client/Prediction`): both clients draw them two state intervals in the past, 100 ms at the default rate, between two world states. `network/Sessions` and `network/Snapshots` do not exist either: the session token is checked by `DatagramSorter` and the sequence by `DatagramReader`, both in `src/server/`, and the world state is written by `WorldStateCodec` in `network/Protocol`.
 
 ```mermaid
 sequenceDiagram
@@ -378,7 +378,7 @@ sequenceDiagram
 | queue | Token and sequence checked, input queued for A's game | `network/Sessions`, `server/Instances` |
 | tick | Ship control, then the systems | `game/ShipControl`, `game/Systems` |
 | snapshot | The world is sent to every player, 20 times per second by default | `server/Replication`, `network/Snapshots` |
-| corrects its ship | A restarts from the server position and replays its newer inputs | `client/Prediction` |
+| corrects its ship | A restarts from the server position, replays its newer inputs and glides to the result | `client/Prediction` |
 | draws A's ship | B shows A's ship two state intervals in the past (100 ms at the default rate), between two states | `client/Replication`, `client/Prediction` |
 
 ## Moves from today's code

@@ -4,6 +4,7 @@
 #include <deque>
 #include "Position.hpp"
 #include "ShipControl.hpp"
+#include "ShipCorrection.hpp"
 #include "ShipDirections.hpp"
 
 namespace rtype::client {
@@ -28,6 +29,11 @@ struct PendingCommand {
  * motion kept after N and replays the commands after N. A server within the
  * tolerance changes nothing, so the ship never jumps for a small difference.
  *
+ * The replay moves the predicted ship at once, but position() is the ship
+ * shown: a ShipCorrection keeps the gap between the two and shrinks it each
+ * tick, so a correction glides unless it is beyond SNAP_DISTANCE, where the
+ * ship is shown at the replayed position at once.
+ *
  * The prediction knows nothing of the network: it is given the numbers of the
  * commands and the confirmations.
  */
@@ -47,6 +53,8 @@ class ShipPrediction {
   void reconcile(game::Position server, std::uint32_t acknowledged);
 
   [[nodiscard]] bool isStarted() const;
+  /** @returns Where the ship is shown: the predicted ship moved by the gap
+   * of the correction that is still closing. */
   [[nodiscard]] game::Position position() const;
 
  private:
@@ -57,6 +65,7 @@ class ShipPrediction {
   game::MovingShip current_{};
   game::ShipDirections lastHeld_{};
   std::deque<PendingCommand> pending_;
+  ShipCorrection correction_;
 };
 
 }  // namespace rtype::client

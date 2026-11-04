@@ -30,6 +30,7 @@ void ShipPrediction::restart(game::Position start) {
   current_ = game::MovingShip{.position = start, .motion = {}};
   lastHeld_ = {};
   pending_.clear();
+  correction_.clear();
 }
 
 void ShipPrediction::predict(game::ShipDirections held,
@@ -37,6 +38,7 @@ void ShipPrediction::predict(game::ShipDirections held,
   if (!started_) {
     return;
   }
+  correction_.decay();
   current_ =
       oneTickLater(current_, game::HeldChange{.before = lastHeld_,
                                               .now = held,
@@ -59,13 +61,17 @@ void ShipPrediction::reconcile(game::Position server,
   if (distanceBetween(confirmed.position, server) <= RECONCILIATION_TOLERANCE) {
     return;
   }
+  const game::Position shown = position();
   replayAfterFront(
       game::MovingShip{.position = server, .motion = confirmed.motion});
+  correction_.absorb(shown, current_.position);
 }
 
 bool ShipPrediction::isStarted() const { return started_; }
 
-game::Position ShipPrediction::position() const { return current_.position; }
+game::Position ShipPrediction::position() const {
+  return correction_.shownFor(current_.position);
+}
 
 void ShipPrediction::dropBefore(std::uint32_t inputNumber) {
   while (!pending_.empty() && pending_.front().inputNumber < inputNumber) {

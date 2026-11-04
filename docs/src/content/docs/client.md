@@ -684,18 +684,36 @@ Without prediction, a key shows after the input reached the server, the server m
 |---|---|---|
 | Own ship | where the last state puts it | moved at once by `shipAfter`, corrected from the states |
 | Inputs sent | one per `PLAYER_INPUT_INTERVAL`, at most one per frame | one per simulation tick, up to `MAXIMUM_TICKS_PER_ADVANCE` (5) per frame |
-| Cost | none | the ship can be wrong for a moment; the correction can show as a jump |
+| Cost | none | the ship can be wrong for a moment; a correction glides, or jumps only for a gap beyond `SNAP_DISTANCE` |
 
 The technique is the one described by Gabriel Gambetta in *Client-Side Prediction and Server Reconciliation*: number each input, keep it until the server confirms it, and replay the unconfirmed ones on top of the server state. It needs a deterministic movement, which is why the client runs `shipAfter` (`rtype_game_ship_control`) and not its own copy. The article notes that a prediction is usually right and not always.
 
 - `OwnShipPredictor` (`src/client/Prediction/`) counts the time of each update into whole simulation ticks, as the server does, because the drift of `shipAfter` depends on the length of the step. For each tick it sends the actions held through `IPlayerInputLink::sendPlayerInput()` and predicts the number it was sent under. Time past `MAXIMUM_TICKS_PER_ADVANCE` ticks is dropped.
 - `ShipPrediction` keeps each command, its number, its directions and the ship predicted right after it, until the server confirms a newer one. Each `WorldState` carries `acknowledgedInput` (see [Protocol](/R-Type/protocol/#world-state)); `OwnShip` reads it with the position of the own ship. A state cut into several datagrams lists every player in each part and the entities in one of them, so only the part that lists the ship reconciles.
-- Reconciling drops the commands before the confirmed one, then compares its predicted position with the position of the server. Within `RECONCILIATION_TOLERANCE` (two ticks at full speed, 16 units) nothing changes, so the ship does not jump for a small difference: the server can be a tick ahead, since it repeats the directions of a tick that brought no input. Beyond it, the prediction restarts from the server position with the motion kept after the confirmed command, and replays the commands after it.
+- Reconciling drops the commands before the confirmed one, then compares its predicted position with the position of the server. Within `RECONCILIATION_TOLERANCE` (two ticks at full speed, 16 units) nothing changes, so the ship does not jump for a small difference: the server can be a tick ahead, since it repeats the directions of a tick that brought no input. Beyond it, the prediction restarts from the server position with the motion kept after the confirmed command, and replays the commands after it. That replay moves the predicted ship at once, but it is not what is drawn: see [Correcting the ship without a jump](#correcting-the-ship-without-a-jump-shipcorrection).
 - The velocity and the maneuver of the ship are not in the state, so the client keeps its own after each command and restarts from that.
-- `placePredictedShip()` puts the predicted position on the entity of the own ship after the state was applied, so the position of the last state never shows.
+- `placePredictedShip()` puts the position of `ShipPrediction::position()` on the entity of the own ship after the state was applied, so the position of the last state never shows.
 - The prediction starts from the first state that lists the ship, and starts again from a ship with another entity id: the player came back after a hit.
 
 The movement of the other ships is not predicted: they are interpolated (see [Other entities: interpolation](#other-entities-interpolation-interpolationclock-positionhistory)).
+
+### Correcting the ship without a jump: `ShipCorrection`
+
+Replaying from the position of the server puts the predicted ship somewhere else in one step, and drawing it there makes the ship jump. The client separates what it computes from what it draws. The prediction stays exact: it restarts from the server and replays. The ship drawn is the predicted ship plus a gap that shrinks each tick, kept by `ShipCorrection` (`src/client/Prediction/`).
+
+At a correction, the gap is the position shown before it minus the position predicted after it, so the ship does not move on the frame of the correction. Each simulation tick `ShipCorrection::decay()` multiplies the gap by `CORRECTION_KEPT_PER_TICK` (0.9, exponential decay): the ship starts fast, eases out and stops without a jerk, and a gap of 60 units is half closed after about 6.6 ticks (110 ms). A gap under `CORRECTION_REST` (0.5 unit) is dropped. A second correction before the gap is closed starts from the position really shown, so nothing jumps between two corrections.
+
+| Gap between the ship predicted after the confirmed command and the server | What the player sees |
+|---|---|
+| up to `RECONCILIATION_TOLERANCE` (16 units) | nothing changes |
+| up to `SNAP_DISTANCE` (120 units, 15 ticks at full speed) | the prediction restarts and replays; the ship glides to it |
+| beyond `SNAP_DISTANCE` | the ship is shown at the replayed position at once, since a long glide would only hide a teleport or a stall |
+
+A linear decay was considered and not kept: it starts and stops at a constant speed, which shows as a jerk, where the exponential decay eases out. The three constants are starting values, to tune in the game. Both animations below draw the same correction of 60 units; the red ring is the predicted ship, the blue arrow the ship drawn and the dots the places it was drawn at. The scene is an illustration, not a capture of the client.
+
+![The ship drawn jumps to the predicted ship at the correction](/R-Type/own-ship-correction/own-ship-correction-without-smoothing.gif)
+
+![The ship drawn glides to the predicted ship after the correction](/R-Type/own-ship-correction/own-ship-correction-with-smoothing.gif)
 
 ## Other entities: interpolation: `InterpolationClock`, `PositionHistory`
 
@@ -907,7 +925,7 @@ The dialog is a `DialogScreen` (`src/client/Screens/Common/`), which shows any m
 | Change how often the client sends its inputs | With PREDICTION off: `PLAYER_INPUTS_PER_SECOND` in `src/client/Input/Commands/PlayerCommandConstants.hpp`, `PlayerInputPacer` in `src/client/Input/Commands/`. With PREDICTION on, one input per simulation tick: `OwnShipPredictor::advance()` in `src/client/Prediction/` |
 | Change how far in the past the other entities are shown, or how the clock follows the states | `INTERPOLATION_INTERVALS` and the other constants of `InterpolationConstants.hpp`, `InterpolationClock`, in `src/client/Prediction/` |
 | Change how long a missing state is covered for the other entities | `MAXIMUM_EXTRAPOLATION` in `src/client/Replication/Entities/PositionHistoryConstants.hpp`, `PositionHistory::at()` in `src/client/Replication/Entities/PositionHistory.cpp` |
-| Change how the own ship is predicted, or when the client takes the server position back | `ShipPrediction` and `PredictionConstants.hpp` (`RECONCILIATION_TOLERANCE`) in `src/client/Prediction/`; the movement itself is `shipAfter` in `src/game/ShipControl/` |
+| Change how the own ship is predicted, or when the client takes the server position back | `ShipPrediction`, `ShipCorrection` and `PredictionConstants.hpp` (`RECONCILIATION_TOLERANCE`, `SNAP_DISTANCE`, `CORRECTION_KEPT_PER_TICK`) in `src/client/Prediction/`; the movement itself is `shipAfter` in `src/game/ShipControl/` |
 | Change what an input carries | `ServerSession::sendPlayerInput()` in `src/client/Connection/`, `GameScreen::update()` and `GameScreen::playerActions()`, which adds the shoot of AUTO-FIRE, in `src/client/Game/` |
 | Change the texts, sizes or checks of the connection screen | `src/client/Menus/Title/ConnectionScreenConstants.hpp`, `ConnectionScreen::connect()` |
 | Change what the fields of the connection screen start with | `ServerChoice` (`src/client/Screens/Registry/ServerChoice.hpp`), written by `ConnectionScreen::connect()`, kept by `ClientScreens` |
