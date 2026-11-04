@@ -3,6 +3,8 @@
 #include <optional>
 #include <utility>
 #include "EncodedMessage.hpp"
+#include "EnemyAction.hpp"
+#include "EnemyActionStarted.hpp"
 #include "EntityDamage.hpp"
 #include "EntityDestroyed.hpp"
 #include "EntityDestruction.hpp"
@@ -43,6 +45,20 @@ network::DepartureReason toWireReason(game::DepartureCause cause) {
   return network::DepartureReason::TimedOut;
 }
 
+network::EnemyActionPhase toWirePhase(game::EnemyPhase phase) {
+  switch (phase) {
+    case game::EnemyPhase::Signal:
+      return network::EnemyActionPhase::Signal;
+    case game::EnemyPhase::Strike:
+      return network::EnemyActionPhase::Strike;
+    case game::EnemyPhase::Recover:
+      return network::EnemyActionPhase::Recover;
+    case game::EnemyPhase::Enraged:
+      return network::EnemyActionPhase::Enraged;
+  }
+  return network::EnemyActionPhase::Signal;
+}
+
 }  // namespace
 
 EventMessage GameEventEncoder::encode(const game::EntitySpawn& event) {
@@ -80,6 +96,14 @@ EventMessage GameEventEncoder::encode(const game::PlayerElimination& event) {
 EventMessage GameEventEncoder::encode(const game::PlayerDeparture& event) {
   const network::PlayerLeft message{.playerNumber = event.playerNumber,
                                     .reason = toWireReason(event.cause)};
+  return EventMessage{.message = network::encodedMessage(message),
+                      .guaranteed = true};
+}
+
+EventMessage GameEventEncoder::encode(const game::EnemyActionStarted& event) {
+  const network::EnemyAction message{.entityId = event.networkId,
+                                     .attack = event.attack,
+                                     .phase = toWirePhase(event.phase)};
   return EventMessage{.message = network::encodedMessage(message),
                       .guaranteed = true};
 }

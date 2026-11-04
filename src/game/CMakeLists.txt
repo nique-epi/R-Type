@@ -1,4 +1,5 @@
 add_subdirectory(Components)
+add_subdirectory(EnemyActions)
 add_subdirectory(Events)
 add_subdirectory(Exceptions)
 add_subdirectory(ShipControl)
@@ -14,6 +15,7 @@ target_link_libraries(rtype_game
   PUBLIC
     rtype_engine
     rtype_game_components
+    rtype_game_enemy_actions
     rtype_game_events
     rtype_game_movement_system
     rtype_game_bydo_control_system

@@ -57,12 +57,12 @@ class World {
   /**
    * @brief Creates a Bydo of @p kind at @p position, with the Position, the
    * EntityType::Enemy and the NetworkIdentity that make it a networked entity,
-   * an EnemyKind naming @p kind, a CollisionBox of BYDO_WIDTH by BYDO_HEIGHT,
-   * an Intent that wants nothing until a controller writes it, and a Gun that
-   * fires a missile of an enemy every ENEMY_SHOT_INTERVAL_TICKS ticks, the
-   * first one after a whole interval. It moves left at BYDO_SPEED, and follows
-   * the pattern of its kind around the row it appeared on: MovementSystem and
-   * PatternSystem move it.
+   * an EnemyKind naming @p kind, an empty CurrentAction, a CollisionBox of
+   * BYDO_WIDTH by BYDO_HEIGHT, an Intent that wants nothing until a controller
+   * writes it, and a Gun that fires a missile of an enemy every
+   * ENEMY_SHOT_INTERVAL_TICKS ticks, the first one after a whole interval. It
+   * moves left at BYDO_SPEED, and follows the pattern of its kind around the
+   * row it appeared on: MovementSystem and PatternSystem move it.
    * @returns The network id the Bydo was given, never NO_ENTITY_ID.
    * @throws NetworkIdExhaustedException when every network id was given.
    */

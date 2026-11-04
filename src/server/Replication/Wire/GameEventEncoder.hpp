@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include "EnemyActionStarted.hpp"
 #include "EntityDamage.hpp"
 #include "EntityDestruction.hpp"
 #include "EntitySpawn.hpp"
@@ -42,6 +43,11 @@ class GameEventEncoder {
   /** @returns A GameEvent of kind PlayerEliminated with the next event number,
    * guaranteed. */
   [[nodiscard]] EventMessage encode(const game::PlayerElimination& event);
+
+  /** @returns An EnemyAction naming the enemy, the attack and the phase,
+   * guaranteed. */
+  [[nodiscard]] static EventMessage encode(
+      const game::EnemyActionStarted& event);
 
   /** @returns A PlayerLeft with the number of the player and why it left,
    * guaranteed. */

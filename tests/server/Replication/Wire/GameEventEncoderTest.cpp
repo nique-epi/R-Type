@@ -1,7 +1,10 @@
 #include <gtest/gtest.h>
 #include <cstddef>
 #include <cstdint>
+#include <utility>
 #include <vector>
+#include "EnemyAction.hpp"
+#include "EnemyActionStarted.hpp"
 #include "EntityDamage.hpp"
 #include "EntityDestroyed.hpp"
 #include "EntityDestruction.hpp"
@@ -180,6 +183,52 @@ TEST(GameEventEncoderTest, KeepsTheEventNumberWhenAnEventIsRefused) {
   EXPECT_EQ(network::decodeMessage<network::GameEvent>(next.message.payload)
                 .eventNumber,
             FIRST_EVENT_NUMBER);
+}
+
+/**
+ * Given an encoder
+ * When an enemy entering the phase Strike of attack 2 is encoded
+ * Then the message is an EnemyAction with that enemy, attack and phase,
+ * guaranteed
+ */
+TEST(GameEventEncoderTest, EncodesAnEnemyActionAsAGuaranteedMessage) {
+  const EventMessage message = GameEventEncoder::encode(
+      game::EnemyActionStarted{.networkId = MONSTER_NETWORK_ID,
+                               .attack = 2,
+                               .phase = game::EnemyPhase::Strike});
+
+  EXPECT_EQ(message.message.type, network::MessageType::EnemyAction);
+  EXPECT_TRUE(message.guaranteed);
+  EXPECT_EQ(
+      network::decodeMessage<network::EnemyAction>(message.message.payload),
+      (network::EnemyAction{.entityId = MONSTER_NETWORK_ID,
+                            .attack = 2,
+                            .phase = network::EnemyActionPhase::Strike}));
+}
+
+/**
+ * Given an encoder
+ * When an enemy entering each of the four phases is encoded
+ * Then each message names the phase of the same name on the wire
+ */
+TEST(GameEventEncoderTest, EncodesEachPhaseOfAnEnemyAction) {
+  const std::pair<game::EnemyPhase, network::EnemyActionPhase> phases[] = {
+      {game::EnemyPhase::Signal, network::EnemyActionPhase::Signal},
+      {game::EnemyPhase::Strike, network::EnemyActionPhase::Strike},
+      {game::EnemyPhase::Recover, network::EnemyActionPhase::Recover},
+      {game::EnemyPhase::Enraged, network::EnemyActionPhase::Enraged}};
+
+  for (const auto& [phase, wirePhase] : phases) {
+    SCOPED_TRACE(static_cast<int>(phase));
+    const EventMessage message =
+        GameEventEncoder::encode(game::EnemyActionStarted{
+            .networkId = MONSTER_NETWORK_ID, .attack = 1, .phase = phase});
+
+    EXPECT_EQ(
+        network::decodeMessage<network::EnemyAction>(message.message.payload)
+            .phase,
+        wirePhase);
+  }
 }
 
 }  // namespace rtype::server::testing

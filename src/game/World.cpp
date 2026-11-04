@@ -4,6 +4,7 @@
 #include <optional>
 #include "CollisionBox.hpp"
 #include "ComponentRegistry.hpp"
+#include "CurrentAction.hpp"
 #include "EnemyKind.hpp"
 #include "Entity.hpp"
 #include "EntitySizeConstants.hpp"
@@ -71,6 +72,7 @@ std::uint32_t World::spawnBydo(Position position, EnemyKind kind) {
                   CollisionBox{.width = BYDO_WIDTH, .height = BYDO_HEIGHT});
   components_.add(bydo, EntityType::Enemy);
   components_.add(bydo, kind);
+  components_.add(bydo, CurrentAction{});
   components_.add(bydo, Health{.points = BYDO_HEALTH});
   components_.add(bydo, ScoreValue{.points = pointsOf(kind)});
   components_.add(bydo, Intent{});

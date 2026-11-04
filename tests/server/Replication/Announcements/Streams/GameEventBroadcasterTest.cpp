@@ -1,5 +1,7 @@
 #include <gtest/gtest.h>
 #include <vector>
+#include "EnemyAction.hpp"
+#include "EnemyActionStarted.hpp"
 #include "EntityDamage.hpp"
 #include "EntityDestroyed.hpp"
 #include "EntityDestruction.hpp"
@@ -178,6 +180,26 @@ TEST_F(GameEventBroadcasterFixture, StopsListeningOnceDestroyed) {
                               .cause = game::DestructionCause::Killed});
 
   EXPECT_EQ(messageCount(), 0U);
+}
+
+/**
+ * Given a broadcaster
+ * When an enemy entering the phase Signal of attack 1 is published
+ * Then one EnemyAction naming it is guaranteed to every player, and none is
+ * sent once
+ */
+TEST_F(GameEventBroadcasterFixture, GuaranteesAnEnemyAction) {
+  publishAndDispatch(
+      game::EnemyActionStarted{.networkId = MONSTER_NETWORK_ID,
+                               .attack = 1,
+                               .phase = game::EnemyPhase::Signal});
+
+  const std::vector<network::EnemyAction> expected{
+      {.entityId = MONSTER_NETWORK_ID,
+       .attack = 1,
+       .phase = network::EnemyActionPhase::Signal}};
+  EXPECT_EQ(guaranteed<network::EnemyAction>(), expected);
+  EXPECT_TRUE(sentOnce<network::EnemyAction>().empty());
 }
 
 }  // namespace rtype::server::testing
