@@ -24,3 +24,22 @@ See the rule file of the same name in `.claude/rules/code-style/`: a test `.cpp`
 
 - ❌ **Before (wrong)**: `CameraShakeTest.cpp` with eight constants, `struct ShakeOverASecond` and `shakeKeeping()` in an anonymous namespace.
 - ✅ **After (right)**: `CameraShakeTestConstants.hpp` and `CameraShakeFixtures.{hpp,cpp}` next to the test, `CameraShakeFixtures.cpp` listed in the sources of `client_effect_tests`, and the test file holding its tests only.
+
+## Update (2026-11-03) — A helper taken out of an anonymous namespace collides with a shared helper
+
+### Context
+
+The fixtures of `ConnectionAcceptorTest.cpp` were moved into files of their own under this rule, while the server was made to survive the exceptions of its handlers.
+
+### Mistake
+
+`playerEndpoint`, `messageTypeOf` and `messageOf`, local to the anonymous namespace of the test, went into `ConnectionAcceptorFixtures.{hpp,cpp}` in `rtype::server::testing`. `tests/server/SentDatagrams.{hpp,cpp}`, in the `server_test_datagrams` library the lobby tests link, already defined `playerEndpoint(std::size_t)` in that namespace, with the same body, and `onlyMessageTypeOf` and `onlyMessageIn` for the other two. The build and the 3002 tests passed: no lobby test used another function of `SentDatagrams.o`, so the linker never pulled in the second definition. A reuse review found it.
+
+### Root cause
+
+The rule said where helpers go, never that leaving the anonymous namespace changes their linkage, so nothing asked to search the namespace they land in.
+
+### Rule
+
+See the subsection "A helper taken out of an anonymous namespace is searched for in its new namespace".
+

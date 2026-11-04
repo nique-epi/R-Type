@@ -1,5 +1,6 @@
 #pragma once
 
+#include <memory>
 #include <string>
 #include <vector>
 #include "EventListeners.hpp"
@@ -16,7 +17,10 @@ namespace rtype::client {
  * listeners of its events, and the frame loop main() runs, which it provides
  * to the modules installed after it with the window and the listeners.
  *
- * install() provides them, the window still closed, and adds three works. In
+ * install() builds the window, still closed, provides it with the
+ * listeners and the loop, and adds three works. Building the module builds no
+ * window, since an sf::RenderWindow opens the OpenGL context of SFML, which
+ * needs a display: a list of modules can be built where there is none. In
  * EVENT_STAGE, each event of the window goes to the listeners, the last added
  * first, then the loop stops once the window was closed. In RENDER_STAGE, the
  * window is cleared before the modules listed after it draw. In
@@ -47,7 +51,7 @@ class ClientWindowModule final : public engine::IModule {
 
   FrameLoop* loop_;
   const PlayerSettings* settings_{nullptr};
-  GameWindow window_;
+  std::unique_ptr<GameWindow> window_;
   EventListeners listeners_;
 };
 

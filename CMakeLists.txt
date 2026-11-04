@@ -62,6 +62,21 @@ message(STATUS
   "Log level: ${LOG_LEVEL_LOWER} (RT_LOG_BUILD_LEVEL=${RT_LOG_BUILD_LEVEL})")
 add_compile_definitions(RT_LOG_BUILD_LEVEL=${RT_LOG_BUILD_LEVEL})
 
+option(ENABLE_SANITIZERS "Build with AddressSanitizer and UndefinedBehaviorSanitizer" OFF)
+
+# The sanitizers instrument every target of the repository. LeakSanitizer
+# runs with AddressSanitizer by default on Linux x86_64 only. MSVC is left
+# out: its AddressSanitizer cannot see into the vcpkg libraries, built
+# without it.
+if(ENABLE_SANITIZERS)
+  if(MSVC)
+    message(FATAL_ERROR "ENABLE_SANITIZERS needs GCC or Clang")
+  endif()
+  add_compile_options(-fsanitize=address,undefined
+    -fno-sanitize-recover=undefined -fno-omit-frame-pointer)
+  add_link_options(-fsanitize=address,undefined)
+endif()
+
 add_subdirectory(src)
 
 # The packages hold bin/ and assets/ side by side: locateAssetFolder() finds

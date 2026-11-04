@@ -13,7 +13,7 @@ namespace rtype::engine {
  * @brief Which modules of a program are turned off, and the `module` command
  * that turns them on and off.
  *
- * A module that is off is installed and never started. The command refuses a
+ * A module that is off is never installed nor started. The command refuses a
  * change that would leave a started module without a module it depends on:
  * turning off a module a started module depends on, and turning on a module
  * whose dependency is off.

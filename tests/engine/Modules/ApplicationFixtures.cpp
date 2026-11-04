@@ -4,6 +4,7 @@
 #include "ApplicationTestConstants.hpp"
 #include "IModule.hpp"
 #include "JournalModule.hpp"
+#include "OptionallyDependentModule.hpp"
 #include "RecordingModule.hpp"
 #include "RecordingModuleSetup.hpp"
 
@@ -63,6 +64,23 @@ std::vector<std::unique_ptr<IModule>> firstDependingOnSecond(
                             .dependencies = {SECOND_MODULE}},
        RecordingModuleSetup{.name = SECOND_MODULE, .dependencies = {}}},
       journal);
+}
+
+std::vector<std::unique_ptr<IModule>> optionalModuleListedAfter(
+    JournalModule& journal) {
+  std::vector<std::unique_ptr<IModule>> modules;
+  modules.push_back(
+      std::make_unique<OptionallyDependentModule>(SECOND_MODULE, FIRST_MODULE));
+  modules.push_back(std::make_unique<RecordingModule>(
+      RecordingModuleSetup{.name = FIRST_MODULE, .dependencies = {}}, journal));
+  return modules;
+}
+
+std::vector<std::unique_ptr<IModule>> optionalModuleAbsent() {
+  std::vector<std::unique_ptr<IModule>> modules;
+  modules.push_back(
+      std::make_unique<OptionallyDependentModule>(SECOND_MODULE, FIRST_MODULE));
+  return modules;
 }
 
 std::vector<std::unique_ptr<IModule>> secondDependingOnFirst(

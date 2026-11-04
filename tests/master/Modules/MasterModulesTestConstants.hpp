@@ -8,9 +8,6 @@ constexpr std::string_view HEALTH_URL = "/api/health";
 /** @brief The member of the answer of HEALTH_URL that holds the version. */
 constexpr std::string_view VERSION_MEMBER_NAME = "version";
 
-/** @brief The database file the tests give the master, in their folder. */
-constexpr std::string_view TEST_DATABASE_FILE = "master.db";
-
 /** @brief A folder no test creates, so a file in it cannot be opened. */
 constexpr std::string_view MISSING_FOLDER = "no-such-folder";
 

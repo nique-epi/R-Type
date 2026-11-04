@@ -64,7 +64,7 @@ Master settings (see [Master](/R-Type/master/#configuration-mastercfg)):
 
 ### `module`
 
-`module` takes exactly two words: the name of a module and `on` or `off`. A module that is off is installed and never started, and the work it added to the loop in `install()` is taken out, so it opens nothing and runs nothing. Every module is on until a line turns it off.
+`module` takes exactly two words: the name of a module and `on` or `off`. A module that is off is never installed: the `module` lines run once before any install, so it provides no service, adds no work, opens nothing and runs nothing. The whole file then runs again once every module is installed, so a `set` line finds the settings the modules declared. Every module is on until a line turns it off.
 
 A module cannot be turned off while a module that stays on needs it, and cannot be turned on while a module it needs is off. The check uses the state at the time of the line, so turn off the dependents first and turn on the dependencies first.
 
@@ -89,7 +89,7 @@ Client modules:
 | `settings` | `logger` |
 | `window` | `settings` |
 | `audio` | `assets`, `settings` |
-| `screens` | `assets`, `settings`, `audio`, `window`, `connection` |
+| `screens` | `assets`, `settings`, `window`, `connection`; it uses `audio` when it is on, and plays nothing otherwise |
 | `menus`, `lobby`, `game` | `screens` |
 
 Master modules:
@@ -99,6 +99,7 @@ Master modules:
 | `logger` | nothing | Applies the logging options when it starts. |
 | `storage` | `logger` | Opens the database of the master. |
 | `http` | `logger` | Opens the port of the HTTP API. |
+| `servers` | `logger`, `storage`, `http` | Creates the game servers with their keys, and takes their registration and their heartbeats. |
 
 Turning off a module the program cannot run without is accepted when nothing that stays on needs it, and the program then does less. For example, `module lobby off` on the server leaves a server that accepts nobody. On the client, `menus`, `lobby` and `game` need `screens`, and `screens` needs five modules, so turning one of those off is refused until the modules that need it are off first.
 
