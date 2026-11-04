@@ -5,6 +5,7 @@
 #include <vector>
 #include "ConnectedPlayer.hpp"
 #include "GameResult.hpp"
+#include "GameSettings.hpp"
 #include "GameState.hpp"
 #include "IResultsArchive.hpp"
 #include "PlayerRoster.hpp"
@@ -28,10 +29,11 @@ class GameResultKeeper {
   /**
    * @param roster The players of the game; it must outlive the keeper.
    * @param archive Takes the result of each game; it must outlive the keeper.
-   * @param difficulty The name the results of the game are filed under.
+   * @param settings The settings of the game: its results are filed under its
+   * difficulty, and say whether it is vanilla.
    */
   GameResultKeeper(PlayerRoster& roster, IResultsArchive& archive,
-                   std::string difficulty);
+                   const GameSettings& settings);
 
   /** @brief Keeps what @p departed leaves when the game is in progress, as the
    * state given to the latest followState() says. Outside a game it keeps
@@ -49,6 +51,7 @@ class GameResultKeeper {
   PlayerRoster& roster_;
   IResultsArchive& archive_;
   std::string difficulty_;
+  bool vanilla_{false};
   GameState state_{GameState::WaitingForPlayers};
   std::uint8_t playersAtStart_{0};
   std::vector<PlayerResult> departed_;

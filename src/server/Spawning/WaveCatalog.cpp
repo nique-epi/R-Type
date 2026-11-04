@@ -21,6 +21,7 @@
 #include "BydoKind.hpp"
 #include "BydoWave.hpp"
 #include "ServerException.hpp"
+#include "SipHash.hpp"
 #include "TimeConstants.hpp"
 #include "WaveCurve.hpp"
 #include "WaveFileConstants.hpp"
@@ -283,7 +284,8 @@ WaveCatalog WaveCatalog::fromText(std::string_view text,
                                   std::string{error.description()});
   }
   return WaveCatalog{
-      plansFrom(FileTable{.table = root, .source = source, .name = {}})};
+      plansFrom(FileTable{.table = root, .source = source, .name = {}}),
+      network::sipHash(WAVES_FINGERPRINT_KEY, std::as_bytes(std::span{text}))};
 }
 
 WaveCatalog WaveCatalog::fromFile(const std::filesystem::path& file) {
@@ -307,6 +309,9 @@ std::vector<std::string> WaveCatalog::difficulties() const {
   return names;
 }
 
-WaveCatalog::WaveCatalog(PlansByDifficulty plans) : plans_(std::move(plans)) {}
+std::uint64_t WaveCatalog::fingerprint() const { return fingerprint_; }
+
+WaveCatalog::WaveCatalog(PlansByDifficulty plans, std::uint64_t fingerprint)
+    : plans_(std::move(plans)), fingerprint_(fingerprint) {}
 
 }  // namespace rtype::server

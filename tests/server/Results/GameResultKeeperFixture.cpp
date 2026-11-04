@@ -6,6 +6,7 @@
 #include "ConnectedPlayer.hpp"
 #include "GameResult.hpp"
 #include "GameResultKeeperTestConstants.hpp"
+#include "GameSettings.hpp"
 #include "GameState.hpp"
 #include "RecordingResultsArchive.hpp"
 #include "SentDatagrams.hpp"
@@ -14,7 +15,10 @@
 namespace rtype::server::testing {
 
 GameResultKeeperFixture::GameResultKeeperFixture()
-    : keeper_(roster_, archive_, std::string{KEEPER_DIFFICULTY}) {}
+    : keeper_(roster_, archive_,
+              GameSettings{.waves = {},
+                           .difficulty = std::string{KEEPER_DIFFICULTY},
+                           .vanilla = true}) {}
 
 ConnectedPlayer& GameResultKeeperFixture::seat(std::size_t index) {
   return *roster_.add(playerEndpoint(index), std::string{NICKNAMES.at(index)},
