@@ -13,6 +13,7 @@
 #include "CreationQuota.hpp"
 #include "HeartbeatRecord.hpp"
 #include "HostedGame.hpp"
+#include "HostedGameState.hpp"
 #include "KnownServer.hpp"
 #include "MasterDatabase.hpp"
 #include "MasterMessageConstants.hpp"
@@ -36,6 +37,24 @@ std::string pointerOfGame(std::size_t index, std::string_view member) {
 }
 
 /**
+ * @throws network::InvalidMasterMessageException naming the state of the game
+ * @p game, the one at @p index, when it says the game waits for players but the
+ * seats do not agree: Full without every seat taken, or Waiting with every seat
+ * taken.
+ */
+void requireStateToFitPlayers(const network::HostedGame& game,
+                              const ServerLimits& limits, std::size_t index) {
+  const bool seatsTaken = game.players.size() == limits.maximumPlayersPerGame;
+  const bool refused =
+      (game.state == network::HostedGameState::Full && !seatsTaken) ||
+      (game.state == network::HostedGameState::Waiting && seatsTaken);
+  if (refused) {
+    throw network::InvalidMasterMessageException(
+        pointerOfGame(index, network::STATE_MEMBER));
+  }
+}
+
+/**
  * @throws network::InvalidMasterMessageException naming the first member of
  * @p heartbeat beyond @p limits.
  */
@@ -56,6 +75,7 @@ void requireWithinLimits(const network::ServerHeartbeat& heartbeat,
       throw network::InvalidMasterMessageException(
           pointerOfGame(index, network::PLAYERS_MEMBER));
     }
+    requireStateToFitPlayers(game, limits, index);
   }
 }
 

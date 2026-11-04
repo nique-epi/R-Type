@@ -31,18 +31,23 @@ using rtype::network::testing::AVERAGE_PING_POINTER;
 using rtype::network::testing::CONFLICT_DETAIL;
 using rtype::network::testing::CONFLICT_PROBLEM;
 using rtype::network::testing::createdServerRefusal;
+using rtype::network::testing::EMPTY_GAME_NAME;
 using rtype::network::testing::FIFTH_PILOT;
 using rtype::network::testing::FIRST_GAME_FIRST_PLAYER_POINTER;
+using rtype::network::testing::FIRST_GAME_NAME_POINTER;
 using rtype::network::testing::FIRST_GAME_PLAYERS_POINTER;
 using rtype::network::testing::FIRST_GAME_STATE_POINTER;
 using rtype::network::testing::FIRST_PILOT;
 using rtype::network::testing::FIVE_PLAYERS;
 using rtype::network::testing::FOURTH_PILOT;
+using rtype::network::testing::FULL_STATE;
+using rtype::network::testing::GAME_NAME_OF_17_BYTES;
 using rtype::network::testing::GAMES_ABOVE_THE_MOST;
 using rtype::network::testing::GAMES_POINTER;
 using rtype::network::testing::heartbeatRefusal;
 using rtype::network::testing::heartbeatTextOfGames;
 using rtype::network::testing::heartbeatTextWith;
+using rtype::network::testing::heartbeatTextWithout;
 using rtype::network::testing::HOST_NAME_ADDRESS;
 using rtype::network::testing::KEY_POINTER;
 using rtype::network::testing::KEY_WITHOUT_PREFIX;
@@ -267,6 +272,49 @@ TEST(MasterMessageText, RefusesAStateNoGameHas) {
   EXPECT_THAT(heartbeatRefusal(
                   heartbeatTextWith(FIRST_GAME_STATE_POINTER, PAUSED_STATE)),
               HasSubstr(quoted(FIRST_GAME_STATE_POINTER)));
+}
+
+/**
+ * Given a heartbeat whose first game has a name of 17 bytes, the most being 16
+ * When it is read
+ * Then the refusal names the name of that game
+ */
+TEST(MasterMessageText, RefusesAGameNameThatIsTooLong) {
+  EXPECT_THAT(heartbeatRefusal(heartbeatTextWith(FIRST_GAME_NAME_POINTER,
+                                                 GAME_NAME_OF_17_BYTES)),
+              HasSubstr(quoted(FIRST_GAME_NAME_POINTER)));
+}
+
+/**
+ * Given a heartbeat whose first game has an empty name
+ * When it is read
+ * Then the refusal names the name of that game
+ */
+TEST(MasterMessageText, RefusesAnEmptyGameName) {
+  EXPECT_THAT(heartbeatRefusal(
+                  heartbeatTextWith(FIRST_GAME_NAME_POINTER, EMPTY_GAME_NAME)),
+              HasSubstr(quoted(FIRST_GAME_NAME_POINTER)));
+}
+
+/**
+ * Given a heartbeat whose first game has no name
+ * When it is read
+ * Then the refusal names the name of that game
+ */
+TEST(MasterMessageText, RefusesAGameWithoutAName) {
+  EXPECT_THAT(heartbeatRefusal(heartbeatTextWithout(FIRST_GAME_NAME_POINTER)),
+              HasSubstr(quoted(FIRST_GAME_NAME_POINTER)));
+}
+
+/**
+ * Given a heartbeat whose first game is full
+ * When it is read
+ * Then it is accepted, since full is a state a game has
+ */
+TEST(MasterMessageText, ReadsAFullGame) {
+  EXPECT_THAT(
+      heartbeatRefusal(heartbeatTextWith(FIRST_GAME_STATE_POINTER, FULL_STATE)),
+      IsEmpty());
 }
 
 /**

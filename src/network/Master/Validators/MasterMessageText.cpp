@@ -202,6 +202,8 @@ HostedGame gameOf(const JsonField& game) {
                         memberOf(game, NUMBER_MEMBER),
                         IntegerBounds{.lowest = FIRST_HOSTED_GAME_NUMBER,
                                       .highest = MAXIMUM_HOSTED_GAMES})),
+                    .name = boundedTextOf(memberOf(game, NAME_MEMBER),
+                                          MAXIMUM_GAME_NAME_SIZE),
                     .state = stateOf(memberOf(game, STATE_MEMBER)),
                     .difficulty = nicknameOf(memberOf(game, DIFFICULTY_MEMBER)),
                     .players = playersOf(game)};
@@ -277,6 +279,7 @@ ServerMeasures measuresOf(const JsonField& heartbeat) {
 nlohmann::json gameDocument(const HostedGame& game) {
   nlohmann::json document;
   document[NUMBER_MEMBER] = game.number;
+  document[NAME_MEMBER] = game.name;
   document[STATE_MEMBER] =
       HOSTED_GAME_STATE_TEXTS.at(static_cast<std::size_t>(game.state));
   document[DIFFICULTY_MEMBER] = game.difficulty;

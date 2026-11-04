@@ -75,7 +75,8 @@ namespace rtype::network {
  * @throws InvalidMasterMessageException naming the first member that is
  * missing, of another type or out of its bounds: more than
  * MAXIMUM_HOSTED_GAMES games, two games of one number, a number below
- * FIRST_HOSTED_GAME_NUMBER, a state that is not one of
+ * FIRST_HOSTED_GAME_NUMBER, a name that is empty, longer than
+ * MAXIMUM_GAME_NAME_SIZE or not printable UTF-8, a state that is not one of
  * HOSTED_GAME_STATE_TEXTS, a difficulty or a player that is no valid nickname,
  * more than MAXIMUM_PLAYERS players in a game, a measure that is negative or
  * not a number, a loss above MAXIMUM_LOSS_PERCENT.

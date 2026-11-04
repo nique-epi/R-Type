@@ -63,9 +63,13 @@ constexpr std::string_view WAITING_STATE_TEXT = "waiting";
 constexpr std::string_view STARTING_STATE_TEXT = "starting";
 constexpr std::string_view PLAYING_STATE_TEXT = "playing";
 constexpr std::string_view FINISHED_STATE_TEXT = "finished";
-constexpr auto HOSTED_GAME_STATE_TEXTS =
-    std::to_array<std::string_view>({WAITING_STATE_TEXT, STARTING_STATE_TEXT,
-                                     PLAYING_STATE_TEXT, FINISHED_STATE_TEXT});
+constexpr std::string_view FULL_STATE_TEXT = "full";
+constexpr auto HOSTED_GAME_STATE_TEXTS = std::to_array<std::string_view>(
+    {WAITING_STATE_TEXT, STARTING_STATE_TEXT, PLAYING_STATE_TEXT,
+     FINISHED_STATE_TEXT, FULL_STATE_TEXT});
+
+/** @brief The longest name of a game, in bytes of UTF-8. */
+constexpr std::size_t MAXIMUM_GAME_NAME_SIZE = 16;
 
 /** @brief The longest name of a server, in bytes of UTF-8. */
 constexpr std::size_t MAXIMUM_SERVER_NAME_SIZE = 32;

@@ -49,10 +49,12 @@ ServerRegistration parisRegistration() {
 ServerHeartbeat parisHeartbeat() {
   return ServerHeartbeat{
       .games = {HostedGame{.number = WAITING_GAME_NUMBER,
+                           .name = std::string{WAITING_GAME_NAME},
                            .state = HostedGameState::Waiting,
                            .difficulty = std::string{PARIS_DIFFICULTY},
                            .players = {std::string{FIRST_PILOT}}},
                 HostedGame{.number = PLAYING_GAME_NUMBER,
+                           .name = std::string{PLAYING_GAME_NAME},
                            .state = HostedGameState::Playing,
                            .difficulty = std::string{PARIS_DIFFICULTY},
                            .players = {std::string{SECOND_PILOT},
@@ -86,11 +88,12 @@ std::string heartbeatTextWithout(std::string_view pointer) {
 std::string heartbeatTextOfGames(std::size_t gameCount) {
   ServerHeartbeat heartbeat;
   for (std::size_t index = 0; index < gameCount; ++index) {
-    heartbeat.games.push_back(
-        HostedGame{.number = static_cast<std::uint16_t>(index + 1),
-                   .state = HostedGameState::Waiting,
-                   .difficulty = std::string{PARIS_DIFFICULTY},
-                   .players = {}});
+    heartbeat.games.push_back(HostedGame{
+        .number = static_cast<std::uint16_t>(index + 1),
+        .name = std::string{GAME_NAME_PREFIX} + std::to_string(index + 1),
+        .state = HostedGameState::Waiting,
+        .difficulty = std::string{PARIS_DIFFICULTY},
+        .players = {}});
   }
   return heartbeatText(heartbeat);
 }

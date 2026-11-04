@@ -41,6 +41,9 @@ constexpr std::uint64_t FIVE_PLAYERS = 5;
 /** @brief The two games of the heartbeat of "Paris 1". */
 constexpr std::uint16_t WAITING_GAME_NUMBER = 1;
 constexpr std::uint16_t PLAYING_GAME_NUMBER = 2;
+constexpr std::string_view GAME_NAME_PREFIX = "GAME ";
+constexpr std::string_view WAITING_GAME_NAME = "GAME 1";
+constexpr std::string_view PLAYING_GAME_NAME = "GAME 2";
 constexpr std::string_view PARIS_DIFFICULTY = "normal";
 constexpr std::string_view FIRST_PILOT = "ACE";
 constexpr std::string_view SECOND_PILOT = "BYDO_HUNTER";
@@ -55,6 +58,9 @@ constexpr double PARIS_LOSS_PERCENT = 0.5;
 
 /** @brief Values just outside what a game or a measure may hold. */
 constexpr std::string_view PAUSED_STATE = "paused";
+constexpr std::string_view FULL_STATE = "full";
+constexpr std::string_view GAME_NAME_OF_17_BYTES = "ABCDEFGHIJKLMNOPQ";
+constexpr std::string_view EMPTY_GAME_NAME = "";
 constexpr double NEGATIVE_MEASURE = -1.0;
 constexpr double LOSS_ABOVE_ALL = 100.5;
 constexpr std::size_t GAMES_ABOVE_THE_MOST = 65;
@@ -78,6 +84,7 @@ constexpr std::string_view MAXIMUM_PLAYERS_PER_GAME_POINTER =
     "/maximumPlayersPerGame";
 constexpr std::string_view SECOND_GAME_NUMBER_POINTER = "/games/1/number";
 constexpr std::string_view FIRST_GAME_STATE_POINTER = "/games/0/state";
+constexpr std::string_view FIRST_GAME_NAME_POINTER = "/games/0/name";
 constexpr std::string_view FIRST_GAME_FIRST_PLAYER_POINTER =
     "/games/0/players/0";
 constexpr std::string_view FIRST_GAME_PLAYERS_POINTER = "/games/0/players";
