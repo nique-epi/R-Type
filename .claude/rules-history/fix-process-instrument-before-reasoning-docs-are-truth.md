@@ -39,7 +39,7 @@ Copy the qualifiers with the claim; before writing "never", "always" or "on any 
 
 **Context.** A review of the load-test bots (RTY-98) asked to qualify `PlayerConnection::leave()`: the server frees the seat of a player who leaves as soon as one copy of its `Disconnection` arrives, and otherwise later.
 
-**Mistake.** The new doc comment, and the same sentence in `ClientConnectionModule.hpp`, said the server frees the place "once the player was silent for SESSION_TIMEOUT". A second review found that at `SESSION_TIMEOUT` the server only marks the player away and keeps its seat for `RECONNECTION_GRACE`; the session closes, and the seat is freed, at `SESSION_SILENCE_LIMIT`, 20 s.
+**Mistake.** The new doc comment, and the same sentence in `ClientConnectionModule.hpp`, said the server frees the place "once the player was silent for SESSION_TIMEOUT". A second review found that at `SESSION_TIMEOUT` the server only marks the player away and keeps its seat for `RECONNECTION_GRACE`; the session closes, and the seat is freed, after `SESSION_CLOSING_TICKS` ticks of silence (`SESSION_SILENCE_LIMIT`, 20 s while the server keeps its pace). A third review added that last condition: the server counts the ticks it runs, so a stall makes the real delay longer.
 
 **Root cause.** The delay was taken from `server.md` ("timed out: nothing received … for 5 s") and from the name of the constant, not from the line of `Departures.cpp` that closes the session; the doc comment of `RECONNECTION_GRACE`, two constants further in the same header, said it is counted from `SESSION_TIMEOUT`.
 
