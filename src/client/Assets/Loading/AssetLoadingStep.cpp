@@ -18,7 +18,6 @@ AssetLoadingStep::AssetLoadingStep(AssetLibrary& library,
     : library_(&library) {
   library_->releaseAllExcept(assets);
   queueMissing(AssetKind::Texture, assets.textures);
-  queueMissing(AssetKind::Sound, assets.sounds);
   queueMissing(AssetKind::Font, assets.fonts);
   queueMissing(AssetKind::Music, assets.music);
 }

@@ -7,7 +7,6 @@ target_include_directories(rtype_client_asset_library PUBLIC ${CMAKE_CURRENT_SOU
 
 target_link_libraries(rtype_client_asset_library
   PUBLIC
-    SFML::Audio
     SFML::Graphics
     SFML::System
     rtype_client_exceptions

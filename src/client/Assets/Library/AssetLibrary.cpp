@@ -1,5 +1,4 @@
 #include "AssetLibrary.hpp"
-#include <SFML/Audio/SoundBuffer.hpp>
 #include <SFML/Graphics/Font.hpp>
 #include <SFML/Graphics/Texture.hpp>
 #include <algorithm>
@@ -61,8 +60,6 @@ AssetLoadResult AssetLibrary::load(AssetKind kind, std::string_view assetId) {
   switch (kind) {
     case AssetKind::Texture:
       return loadAssetFile(textures_, assetId, file);
-    case AssetKind::Sound:
-      return loadAssetFile(sounds_, assetId, file);
     case AssetKind::Font:
       return loadAssetFile(fonts_, assetId, file);
     case AssetKind::Music:
@@ -75,8 +72,6 @@ bool AssetLibrary::isLoaded(AssetKind kind, std::string_view assetId) const {
   switch (kind) {
     case AssetKind::Texture:
       return textures_.contains(assetId);
-    case AssetKind::Sound:
-      return sounds_.contains(assetId);
     case AssetKind::Font:
       return fonts_.contains(assetId);
     case AssetKind::Music:
@@ -87,21 +82,18 @@ bool AssetLibrary::isLoaded(AssetKind kind, std::string_view assetId) const {
 
 bool AssetLibrary::isLoaded(const AssetList& assets) const {
   return holdsEvery(textures_, assets.textures) &&
-         holdsEvery(sounds_, assets.sounds) &&
          holdsEvery(fonts_, assets.fonts) &&
          holdsEvery(musicFiles_, assets.music);
 }
 
 void AssetLibrary::keepPermanently(const AssetList& permanent) {
   appendAll(permanent_.textures, permanent.textures);
-  appendAll(permanent_.sounds, permanent.sounds);
   appendAll(permanent_.fonts, permanent.fonts);
   appendAll(permanent_.music, permanent.music);
 }
 
 void AssetLibrary::releaseAllExcept(const AssetList& kept) {
   keepOnly(textures_, kept.textures, permanent_.textures);
-  keepOnly(sounds_, kept.sounds, permanent_.sounds);
   keepOnly(fonts_, kept.fonts, permanent_.fonts);
   keepOnly(musicFiles_, kept.music, permanent_.music);
 }
@@ -113,10 +105,6 @@ const sf::Texture& AssetLibrary::texture(std::string_view assetId) const {
 const sf::Texture* AssetLibrary::findTexture(std::string_view assetId) const {
   const auto found = textures_.find(assetId);
   return found == textures_.end() ? nullptr : &found->second;
-}
-
-const sf::SoundBuffer& AssetLibrary::sound(std::string_view assetId) const {
-  return loadedAsset(sounds_, assetId);
 }
 
 const sf::Font& AssetLibrary::font(std::string_view assetId) const {

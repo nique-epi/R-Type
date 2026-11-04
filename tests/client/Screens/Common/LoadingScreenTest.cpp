@@ -1,6 +1,5 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
-#include <cstdint>
 #include <filesystem>
 #include <memory>
 #include <vector>
@@ -18,7 +17,6 @@
 #include "ScreenId.hpp"
 #include "ScreenStack.hpp"
 #include "ScreenTestConstants.hpp"
-#include "SilentSound.hpp"
 #include "TemporaryFolder.hpp"
 
 using rtype::client::AssetKind;
@@ -40,18 +38,18 @@ using ::testing::ThrowsMessage;
 
 namespace {
 
-constexpr const char* SHOT_SOUND_ID = "sounds/shot.wav";
-constexpr const char* EXPLOSION_SOUND_ID = "sounds/explosion.wav";
-constexpr std::uint64_t SOUND_SAMPLE_COUNT = 100;
+constexpr const char* STAGE_MUSIC_ID = "music/stage.ogg";
+constexpr const char* BOSS_MUSIC_ID = "music/boss.ogg";
+constexpr const char* MUSIC_CONTENT = "a music the library only locates";
 
 /** @brief A stack whose first screen is a loading screen for toLoad_, and
  * whose next screens are recording doubles. */
 class LoadingScreenTest : public ::testing::Test {
  protected:
-  void loadTwoSounds() {
-    writeSilentSound(folder_.path() / SHOT_SOUND_ID, SOUND_SAMPLE_COUNT);
-    writeSilentSound(folder_.path() / EXPLOSION_SOUND_ID, SOUND_SAMPLE_COUNT);
-    toLoad_ = AssetList{.sounds = {SHOT_SOUND_ID, EXPLOSION_SOUND_ID}};
+  void loadTwoMusicFiles() {
+    folder_.write(STAGE_MUSIC_ID, MUSIC_CONTENT);
+    folder_.write(BOSS_MUSIC_ID, MUSIC_CONTENT);
+    toLoad_ = AssetList{.music = {STAGE_MUSIC_ID, BOSS_MUSIC_ID}};
   }
 
   void showLoadingScreenOf(ScreenId screen) {
@@ -100,27 +98,27 @@ class LoadingScreenTest : public ::testing::Test {
 }  // namespace
 
 /**
- * Given a loading screen for two sounds
+ * Given a loading screen for two music files
  * When one frame passes
  * Then exactly one of the two files has been read
  */
 TEST_F(LoadingScreenTest, ReadsOneFilePerFrame) {
-  loadTwoSounds();
+  loadTwoMusicFiles();
   showLoadingScreenOf(GAME_SCREEN);
 
   screens().update(ONE_FRAME);
 
-  EXPECT_NE(library().isLoaded(AssetKind::Sound, SHOT_SOUND_ID),
-            library().isLoaded(AssetKind::Sound, EXPLOSION_SOUND_ID));
+  EXPECT_NE(library().isLoaded(AssetKind::Music, STAGE_MUSIC_ID),
+            library().isLoaded(AssetKind::Music, BOSS_MUSIC_ID));
 }
 
 /**
- * Given a loading screen for two sounds
+ * Given a loading screen for two music files
  * When one frame passes
  * Then its screen is not shown yet
  */
 TEST_F(LoadingScreenTest, WaitsForEveryFileBeforeShowingItsScreen) {
-  loadTwoSounds();
+  loadTwoMusicFiles();
   showLoadingScreenOf(GAME_SCREEN);
 
   runFrame();
@@ -129,12 +127,12 @@ TEST_F(LoadingScreenTest, WaitsForEveryFileBeforeShowingItsScreen) {
 }
 
 /**
- * Given a loading screen for two sounds
+ * Given a loading screen for two music files
  * When two frames pass
  * Then its screen replaces it
  */
 TEST_F(LoadingScreenTest, GivesWayToItsScreenOnceEveryFileIsLoaded) {
-  loadTwoSounds();
+  loadTwoMusicFiles();
   showLoadingScreenOf(GAME_SCREEN);
 
   runFrame();
@@ -188,15 +186,15 @@ TEST_F(LoadingScreenTest, LeavesTheStackOnceItsScreenIsShown) {
 }
 
 /**
- * Given a loading screen for a sound whose file is missing
+ * Given a loading screen for a music whose file is missing
  * When the frame that loads it passes
  * Then an error naming the missing file stops the loading
  */
 TEST_F(LoadingScreenTest, MissingFileStopsTheLoadingWithItsPath) {
-  loadOnly(AssetList{.sounds = {SHOT_SOUND_ID}});
+  loadOnly(AssetList{.music = {STAGE_MUSIC_ID}});
   showLoadingScreenOf(GAME_SCREEN);
 
   EXPECT_THAT([this] { screens().update(ONE_FRAME); },
               ThrowsMessage<AssetLoadingException>(
-                  HasSubstr(genericText(folder() / "sounds" / "shot.wav"))));
+                  HasSubstr(genericText(folder() / "music" / "stage.ogg"))));
 }

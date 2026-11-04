@@ -1,6 +1,5 @@
 #pragma once
 
-#include <SFML/Audio/SoundBuffer.hpp>
 #include <SFML/Graphics/Font.hpp>
 #include <SFML/Graphics/Texture.hpp>
 #include <filesystem>
@@ -53,7 +52,6 @@ class AssetLibrary {
    * unlike texture(), it never throws. */
   [[nodiscard]] const sf::Texture* findTexture(std::string_view assetId) const;
 
-  [[nodiscard]] const sf::SoundBuffer& sound(std::string_view assetId) const;
   [[nodiscard]] const sf::Font& font(std::string_view assetId) const;
   [[nodiscard]] const std::filesystem::path& musicFile(
       std::string_view assetId) const;
@@ -61,7 +59,6 @@ class AssetLibrary {
  private:
   std::filesystem::path folder_;
   AssetsById<sf::Texture> textures_;
-  AssetsById<sf::SoundBuffer> sounds_;
   AssetsById<sf::Font> fonts_;
   AssetsById<std::filesystem::path> musicFiles_;
   AssetList permanent_;

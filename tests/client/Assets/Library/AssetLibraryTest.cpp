@@ -1,14 +1,11 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
-#include <SFML/Audio/SoundBuffer.hpp>
-#include <cstdint>
 #include <filesystem>
 #include "AssetKind.hpp"
 #include "AssetLibrary.hpp"
 #include "AssetList.hpp"
 #include "AssetLoadResult.hpp"
 #include "ClientException.hpp"
-#include "SilentSound.hpp"
 #include "TemporaryFolder.hpp"
 
 using rtype::client::AssetKind;
@@ -22,88 +19,16 @@ using ::testing::ThrowsMessage;
 namespace {
 
 constexpr const char* ASSETS_FOLDER = "assets";
-constexpr const char* SHOT_SOUND_ID = "sounds/weapons/shot.wav";
-constexpr const char* EXPLOSION_SOUND_ID = "sounds/explosion.wav";
 constexpr const char* PLAYER_SHIP_ID = "sprites/player_ship.png";
 constexpr const char* HUD_FONT_ID = "fonts/hud.ttf";
 constexpr const char* STAGE_MUSIC_ID = "music/stage.ogg";
+constexpr const char* BOSS_MUSIC_ID = "music/boss.ogg";
 constexpr const char* CORRUPT_ID = "corrupt/asset.bin";
-constexpr const char* OUTSIDE_FILE_NAME = "outside.wav";
-constexpr const char* ESCAPING_SOUND_ID = "../outside.wav";
-constexpr const char* CORRUPT_CONTENT = "neither an image, a font nor a sound";
-constexpr std::uint64_t SHORT_SOUND_SAMPLES = 100;
-constexpr std::uint64_t LONG_SOUND_SAMPLES = 200;
-
-class UnreadableSoundOrFont : public ::testing::TestWithParam<AssetKind> {};
+constexpr const char* OUTSIDE_FILE_NAME = "outside.ogg";
+constexpr const char* ESCAPING_MUSIC_ID = "../outside.ogg";
+constexpr const char* CORRUPT_CONTENT = "neither an image, a font nor a music";
 
 }  // namespace
-
-/**
- * Given a sound file in a nested folder of sounds
- * When it is loaded by its path in the folder
- * Then it is found by that id and holds the samples of its file
- */
-TEST(AssetLibrary, LoadsASoundAndFindsItById) {
-  const TemporaryFolder assets;
-  writeSilentSound(assets.path() / SHOT_SOUND_ID, SHORT_SOUND_SAMPLES);
-  AssetLibrary library{assets.path()};
-
-  const AssetLoadResult result = library.load(AssetKind::Sound, SHOT_SOUND_ID);
-
-  EXPECT_EQ(result, AssetLoadResult::Loaded);
-  EXPECT_EQ(library.sound(SHOT_SOUND_ID).getSampleCount(), SHORT_SOUND_SAMPLES);
-}
-
-/**
- * Given a loaded sound
- * When its id is asked for twice
- * Then both answers are the same buffer
- */
-TEST(AssetLibrary, SameIdGivesTheSameResource) {
-  const TemporaryFolder assets;
-  writeSilentSound(assets.path() / SHOT_SOUND_ID, SHORT_SOUND_SAMPLES);
-  AssetLibrary library{assets.path()};
-  static_cast<void>(library.load(AssetKind::Sound, SHOT_SOUND_ID));
-
-  const sf::SoundBuffer& first = library.sound(SHOT_SOUND_ID);
-  const sf::SoundBuffer& second = library.sound(SHOT_SOUND_ID);
-
-  EXPECT_EQ(&first, &second);
-}
-
-/**
- * Given a loaded sound
- * When its file is deleted and its id asked for
- * Then the loaded sound is returned, the disk is not read again
- */
-TEST(AssetLibrary, LookUpsNeverReadTheDisk) {
-  const TemporaryFolder assets;
-  writeSilentSound(assets.path() / SHOT_SOUND_ID, SHORT_SOUND_SAMPLES);
-  AssetLibrary library{assets.path()};
-  static_cast<void>(library.load(AssetKind::Sound, SHOT_SOUND_ID));
-
-  std::filesystem::remove(assets.path() / SHOT_SOUND_ID);
-
-  EXPECT_EQ(library.sound(SHOT_SOUND_ID).getSampleCount(), SHORT_SOUND_SAMPLES);
-}
-
-/**
- * Given a loaded sound whose file is then replaced by a longer sound
- * When it is loaded again
- * Then the first sound is kept, the file is read only once
- */
-TEST(AssetLibrary, LoadingAgainKeepsTheFirstResource) {
-  const TemporaryFolder assets;
-  writeSilentSound(assets.path() / SHOT_SOUND_ID, SHORT_SOUND_SAMPLES);
-  AssetLibrary library{assets.path()};
-  static_cast<void>(library.load(AssetKind::Sound, SHOT_SOUND_ID));
-  writeSilentSound(assets.path() / SHOT_SOUND_ID, LONG_SOUND_SAMPLES);
-
-  const AssetLoadResult result = library.load(AssetKind::Sound, SHOT_SOUND_ID);
-
-  EXPECT_EQ(result, AssetLoadResult::Loaded);
-  EXPECT_EQ(library.sound(SHOT_SOUND_ID).getSampleCount(), SHORT_SOUND_SAMPLES);
-}
 
 /**
  * Given an empty assets folder
@@ -119,35 +44,32 @@ TEST(AssetLibrary, ReportsAMissingFile) {
 }
 
 /**
- * Given a sound file outside the assets folder
+ * Given a music file outside the assets folder
  * When it is loaded through an id that climbs out of the folder
- * Then the id is rejected instead of the file being read
+ * Then the id is rejected instead of the file being located
  */
 TEST(AssetLibrary, RejectsAnIdThatLeavesTheFolder) {
   const TemporaryFolder repository;
-  writeSilentSound(repository.path() / OUTSIDE_FILE_NAME, SHORT_SOUND_SAMPLES);
+  repository.write(OUTSIDE_FILE_NAME, CORRUPT_CONTENT);
   AssetLibrary library{repository.path() / ASSETS_FOLDER};
 
-  EXPECT_EQ(library.load(AssetKind::Sound, ESCAPING_SOUND_ID),
+  EXPECT_EQ(library.load(AssetKind::Music, ESCAPING_MUSIC_ID),
             AssetLoadResult::InvalidId);
 }
 
 /**
- * Given a file that holds no sound or font
- * When it is loaded as one of them
+ * Given a file that holds no font
+ * When it is loaded as a font
  * Then it is reported unreadable
  */
-TEST_P(UnreadableSoundOrFont, IsReportedUnreadable) {
+TEST(AssetLibrary, ReportsAnUnreadableFont) {
   const TemporaryFolder assets;
   assets.write(CORRUPT_ID, CORRUPT_CONTENT);
   AssetLibrary library{assets.path()};
 
-  EXPECT_EQ(library.load(GetParam(), CORRUPT_ID),
+  EXPECT_EQ(library.load(AssetKind::Font, CORRUPT_ID),
             AssetLoadResult::UnreadableFile);
 }
-
-INSTANTIATE_TEST_SUITE_P(KindsLoadedWithoutADisplay, UnreadableSoundOrFont,
-                         ::testing::Values(AssetKind::Sound, AssetKind::Font));
 
 /**
  * Given a music file that holds no music
@@ -220,103 +142,105 @@ TEST(AssetLibrary, FontThatIsNotLoadedIsNamed) {
 }
 
 /**
- * Given two loaded sounds
+ * Given two located music files
  * When every asset but the first is released
- * Then the first is still the same buffer
+ * Then the first is still the same path
  */
 TEST(AssetLibrary, ReleaseKeepsTheListedAssets) {
   const TemporaryFolder assets;
-  writeSilentSound(assets.path() / SHOT_SOUND_ID, SHORT_SOUND_SAMPLES);
-  writeSilentSound(assets.path() / EXPLOSION_SOUND_ID, LONG_SOUND_SAMPLES);
+  assets.write(STAGE_MUSIC_ID, CORRUPT_CONTENT);
+  assets.write(BOSS_MUSIC_ID, CORRUPT_CONTENT);
   AssetLibrary library{assets.path()};
-  static_cast<void>(library.load(AssetKind::Sound, SHOT_SOUND_ID));
-  static_cast<void>(library.load(AssetKind::Sound, EXPLOSION_SOUND_ID));
-  const sf::SoundBuffer* shotBeforeRelease = &library.sound(SHOT_SOUND_ID);
+  static_cast<void>(library.load(AssetKind::Music, STAGE_MUSIC_ID));
+  static_cast<void>(library.load(AssetKind::Music, BOSS_MUSIC_ID));
+  const std::filesystem::path* stageBeforeRelease =
+      &library.musicFile(STAGE_MUSIC_ID);
 
-  library.releaseAllExcept(AssetList{.sounds = {SHOT_SOUND_ID}});
+  library.releaseAllExcept(AssetList{.music = {STAGE_MUSIC_ID}});
 
-  EXPECT_EQ(&library.sound(SHOT_SOUND_ID), shotBeforeRelease);
+  EXPECT_EQ(&library.musicFile(STAGE_MUSIC_ID), stageBeforeRelease);
 }
 
 /**
- * Given two loaded sounds
+ * Given two located music files
  * When every asset but the first is released
  * Then the second is no longer loaded
  */
 TEST(AssetLibrary, ReleaseDropsTheOtherAssets) {
   const TemporaryFolder assets;
-  writeSilentSound(assets.path() / SHOT_SOUND_ID, SHORT_SOUND_SAMPLES);
-  writeSilentSound(assets.path() / EXPLOSION_SOUND_ID, LONG_SOUND_SAMPLES);
+  assets.write(STAGE_MUSIC_ID, CORRUPT_CONTENT);
+  assets.write(BOSS_MUSIC_ID, CORRUPT_CONTENT);
   AssetLibrary library{assets.path()};
-  static_cast<void>(library.load(AssetKind::Sound, SHOT_SOUND_ID));
-  static_cast<void>(library.load(AssetKind::Sound, EXPLOSION_SOUND_ID));
+  static_cast<void>(library.load(AssetKind::Music, STAGE_MUSIC_ID));
+  static_cast<void>(library.load(AssetKind::Music, BOSS_MUSIC_ID));
 
-  library.releaseAllExcept(AssetList{.sounds = {SHOT_SOUND_ID}});
+  library.releaseAllExcept(AssetList{.music = {STAGE_MUSIC_ID}});
 
-  EXPECT_THROW(static_cast<void>(library.sound(EXPLOSION_SOUND_ID)),
+  EXPECT_THROW(static_cast<void>(library.musicFile(BOSS_MUSIC_ID)),
                AssetNotLoadedException);
 }
 
 /**
- * Given a sound file that was never loaded
- * When the library is asked whether that sound is loaded
+ * Given a music file that was never loaded
+ * When the library is asked whether that music is loaded
  * Then it answers no
  */
 TEST(AssetLibrary, AssetNeverLoadedIsNotLoaded) {
   const TemporaryFolder assets;
-  writeSilentSound(assets.path() / SHOT_SOUND_ID, SHORT_SOUND_SAMPLES);
+  assets.write(STAGE_MUSIC_ID, CORRUPT_CONTENT);
   const AssetLibrary library{assets.path()};
 
-  EXPECT_FALSE(library.isLoaded(AssetKind::Sound, SHOT_SOUND_ID));
+  EXPECT_FALSE(library.isLoaded(AssetKind::Music, STAGE_MUSIC_ID));
 }
 
 /**
- * Given a loaded sound
- * When the library is asked whether that sound is loaded
+ * Given a located music file
+ * When the library is asked whether that music is loaded
  * Then it answers yes
  */
 TEST(AssetLibrary, LoadedAssetIsLoaded) {
   const TemporaryFolder assets;
-  writeSilentSound(assets.path() / SHOT_SOUND_ID, SHORT_SOUND_SAMPLES);
+  assets.write(STAGE_MUSIC_ID, CORRUPT_CONTENT);
   AssetLibrary library{assets.path()};
-  static_cast<void>(library.load(AssetKind::Sound, SHOT_SOUND_ID));
+  static_cast<void>(library.load(AssetKind::Music, STAGE_MUSIC_ID));
 
-  EXPECT_TRUE(library.isLoaded(AssetKind::Sound, SHOT_SOUND_ID));
+  EXPECT_TRUE(library.isLoaded(AssetKind::Music, STAGE_MUSIC_ID));
 }
 
 /**
- * Given a loaded sound made permanent
+ * Given a located music file made permanent
  * When every asset is released
- * Then the sound is still the same buffer
+ * Then the music is still the same path
  */
 TEST(AssetLibrary, ReleaseKeepsPermanentAssets) {
   const TemporaryFolder assets;
-  writeSilentSound(assets.path() / SHOT_SOUND_ID, SHORT_SOUND_SAMPLES);
+  assets.write(STAGE_MUSIC_ID, CORRUPT_CONTENT);
   AssetLibrary library{assets.path()};
-  static_cast<void>(library.load(AssetKind::Sound, SHOT_SOUND_ID));
-  const sf::SoundBuffer* shotBeforeRelease = &library.sound(SHOT_SOUND_ID);
-  library.keepPermanently(AssetList{.sounds = {SHOT_SOUND_ID}});
+  static_cast<void>(library.load(AssetKind::Music, STAGE_MUSIC_ID));
+  const std::filesystem::path* stageBeforeRelease =
+      &library.musicFile(STAGE_MUSIC_ID);
+  library.keepPermanently(AssetList{.music = {STAGE_MUSIC_ID}});
 
   library.releaseAllExcept(AssetList{});
 
-  EXPECT_EQ(&library.sound(SHOT_SOUND_ID), shotBeforeRelease);
+  EXPECT_EQ(&library.musicFile(STAGE_MUSIC_ID), stageBeforeRelease);
 }
 
 /**
- * Given a sound made permanent before it was loaded, then loaded
+ * Given a music made permanent before it was located, then located
  * When every asset is released
- * Then the sound is still loaded
+ * Then the music is still located
  */
 TEST(AssetLibrary, PermanenceAppliesToAssetsLoadedLater) {
   const TemporaryFolder assets;
-  writeSilentSound(assets.path() / SHOT_SOUND_ID, SHORT_SOUND_SAMPLES);
+  assets.write(STAGE_MUSIC_ID, CORRUPT_CONTENT);
   AssetLibrary library{assets.path()};
-  library.keepPermanently(AssetList{.sounds = {SHOT_SOUND_ID}});
-  static_cast<void>(library.load(AssetKind::Sound, SHOT_SOUND_ID));
+  library.keepPermanently(AssetList{.music = {STAGE_MUSIC_ID}});
+  static_cast<void>(library.load(AssetKind::Music, STAGE_MUSIC_ID));
 
   library.releaseAllExcept(AssetList{});
 
-  EXPECT_TRUE(library.isLoaded(AssetKind::Sound, SHOT_SOUND_ID));
+  EXPECT_TRUE(library.isLoaded(AssetKind::Music, STAGE_MUSIC_ID));
 }
 
 /**
@@ -332,34 +256,34 @@ TEST(AssetLibrary, EmptyListIsLoaded) {
 }
 
 /**
- * Given two sounds of which only one is loaded
+ * Given two music files of which only one is located
  * When the library is asked whether the list of both is loaded
  * Then it answers no
  */
 TEST(AssetLibrary, ListIsNotLoadedWhileOneAssetIsMissing) {
   const TemporaryFolder assets;
-  writeSilentSound(assets.path() / SHOT_SOUND_ID, SHORT_SOUND_SAMPLES);
-  writeSilentSound(assets.path() / EXPLOSION_SOUND_ID, LONG_SOUND_SAMPLES);
+  assets.write(STAGE_MUSIC_ID, CORRUPT_CONTENT);
+  assets.write(BOSS_MUSIC_ID, CORRUPT_CONTENT);
   AssetLibrary library{assets.path()};
-  static_cast<void>(library.load(AssetKind::Sound, SHOT_SOUND_ID));
+  static_cast<void>(library.load(AssetKind::Music, STAGE_MUSIC_ID));
 
-  EXPECT_FALSE(library.isLoaded(
-      AssetList{.sounds = {SHOT_SOUND_ID, EXPLOSION_SOUND_ID}}));
+  EXPECT_FALSE(
+      library.isLoaded(AssetList{.music = {STAGE_MUSIC_ID, BOSS_MUSIC_ID}}));
 }
 
 /**
- * Given two loaded sounds
+ * Given two located music files
  * When the library is asked whether the list of both is loaded
  * Then it answers yes
  */
 TEST(AssetLibrary, ListIsLoadedOnceEveryAssetIs) {
   const TemporaryFolder assets;
-  writeSilentSound(assets.path() / SHOT_SOUND_ID, SHORT_SOUND_SAMPLES);
-  writeSilentSound(assets.path() / EXPLOSION_SOUND_ID, LONG_SOUND_SAMPLES);
+  assets.write(STAGE_MUSIC_ID, CORRUPT_CONTENT);
+  assets.write(BOSS_MUSIC_ID, CORRUPT_CONTENT);
   AssetLibrary library{assets.path()};
-  static_cast<void>(library.load(AssetKind::Sound, SHOT_SOUND_ID));
-  static_cast<void>(library.load(AssetKind::Sound, EXPLOSION_SOUND_ID));
+  static_cast<void>(library.load(AssetKind::Music, STAGE_MUSIC_ID));
+  static_cast<void>(library.load(AssetKind::Music, BOSS_MUSIC_ID));
 
-  EXPECT_TRUE(library.isLoaded(
-      AssetList{.sounds = {SHOT_SOUND_ID, EXPLOSION_SOUND_ID}}));
+  EXPECT_TRUE(
+      library.isLoaded(AssetList{.music = {STAGE_MUSIC_ID, BOSS_MUSIC_ID}}));
 }
