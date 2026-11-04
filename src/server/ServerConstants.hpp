@@ -140,10 +140,10 @@ constexpr std::size_t INCOMING_DATAGRAM_QUEUE_CAPACITY = 256;
  * requests in one tick (the one sent again every 500 ms and the answer to a
  * challenge), so 16 is eight clients joining at once, about 9 microseconds of
  * answers per tick. After a stall, a client answers every challenge sent for
- * its waiting requests, up to 10 in one tick before it gives up at 5 s. Above
- * the room, the oldest are discarded and the clients send again. One address
- * and port places at most REQUEST_BURST (10) of them between two ticks (see
- * REQUEST_RATE_LIMIT).
+ * its waiting requests, up to 10 in one tick before it gives up at 5 s
+ * (REQUESTS_BEFORE_GIVING_UP). Above the room, the oldest are discarded and
+ * the clients send again. One address and port places at most REQUEST_BURST
+ * (10) of them between two ticks (see REQUEST_RATE_LIMIT).
  */
 constexpr std::size_t CONNECTION_REQUEST_QUEUE_CAPACITY = 16;
 

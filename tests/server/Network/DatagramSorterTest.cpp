@@ -23,8 +23,6 @@
 using rtype::network::Endpoint;
 using rtype::network::IncomingDatagram;
 using rtype::network::NO_SESSION_TOKEN;
-using rtype::network::testing::ANSWERS_AFTER_A_STALL;
-using rtype::network::testing::INPUTS_AT_ONCE;
 using rtype::network::testing::PROTOCOL_BAN_DURATION;
 using rtype::server::testing::DROPPED_TOGETHER_COUNT;
 using rtype::server::testing::NEXT_PROTOCOL_VERSION;
@@ -562,9 +560,9 @@ TEST_F(DatagramSorterLogFixture, WritesTheNextLineOnceTheIntervalIsOver) {
  * Then ten reach the request queue: the eleventh is over its limit
  */
 TEST_F(DatagramSorterFixture, PlacesNoMoreThanTenRequestsOfAStrangerAtOnce) {
-  sortRepeatedly(stranger(), requestDatagram(), ANSWERS_AFTER_A_STALL + 1);
+  sortRepeatedly(stranger(), requestDatagram(), REQUESTS_PLACED_AT_ONCE + 1);
 
-  EXPECT_EQ(drainRequests().size(), ANSWERS_AFTER_A_STALL);
+  EXPECT_EQ(drainRequests().size(), REQUESTS_PLACED_AT_ONCE);
 }
 
 /**
@@ -611,9 +609,9 @@ TEST_F(DatagramSorterFixture,
   admit(player());
 
   sortRepeatedly(player(), heartbeatDatagram(playerHeader()),
-                 INPUTS_AT_ONCE + 1);
+                 PLAYER_DATAGRAMS_PLACED_AT_ONCE + 1);
 
-  EXPECT_EQ(drainPlayers().size(), INPUTS_AT_ONCE);
+  EXPECT_EQ(drainPlayers().size(), PLAYER_DATAGRAMS_PLACED_AT_ONCE);
 }
 
 /**
@@ -678,9 +676,9 @@ TEST_F(DatagramSorterFixture, LimitsTheDatagramsOfAnotherVersionLikeRequests) {
   header.version = NEXT_PROTOCOL_VERSION;
 
   sortRepeatedly(stranger(), requestDatagram(header),
-                 ANSWERS_AFTER_A_STALL + 1);
+                 REQUESTS_PLACED_AT_ONCE + 1);
 
-  EXPECT_EQ(drainRequests().size(), ANSWERS_AFTER_A_STALL);
+  EXPECT_EQ(drainRequests().size(), REQUESTS_PLACED_AT_ONCE);
 }
 
 /**
@@ -690,7 +688,7 @@ TEST_F(DatagramSorterFixture, LimitsTheDatagramsOfAnotherVersionLikeRequests) {
  * went over the rate limit of its sender
  */
 TEST_F(DatagramSorterLogFixture, LogsWhyItDropsADatagramOverTheLimit) {
-  sortRepeatedly(stranger(), requestDatagram(), ANSWERS_AFTER_A_STALL + 1);
+  sortRepeatedly(stranger(), requestDatagram(), REQUESTS_PLACED_AT_ONCE + 1);
 
   const std::vector<std::string> lines = dropLines();
   ASSERT_EQ(lines.size(), 1U);

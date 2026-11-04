@@ -5,6 +5,7 @@
 #include <vector>
 #include "AllowanceSpending.hpp"
 #include "AllowanceVerdict.hpp"
+#include "ProtocolConstants.hpp"
 #include "RateLimit.hpp"
 #include "RateLimitConstantsTestConstants.hpp"
 #include "SenderAllowance.hpp"
@@ -12,21 +13,43 @@
 
 namespace rtype::network::testing {
 
-std::vector<std::chrono::nanoseconds> joiningClientTimes(
+namespace {
+
+/**
+ * @returns When an attempt sends its requests for @p duration: one at its
+ * start, then one every CONNECTION_REQUEST_INTERVAL.
+ */
+std::vector<std::chrono::nanoseconds> requestTimes(
     std::chrono::nanoseconds duration) {
   std::vector<std::chrono::nanoseconds> times;
   for (std::chrono::nanoseconds request{0}; request < duration;
-       request += CLIENT_REQUEST_INTERVAL) {
+       request += CONNECTION_REQUEST_INTERVAL) {
+    times.push_back(request);
+  }
+  return times;
+}
+
+}  // namespace
+
+std::vector<std::chrono::nanoseconds> joiningClientTimes(
+    std::chrono::nanoseconds duration) {
+  std::vector<std::chrono::nanoseconds> times;
+  for (const std::chrono::nanoseconds request : requestTimes(duration)) {
     times.push_back(request);
     times.emplace_back(request + CHALLENGE_ROUND_TRIP);
   }
   return times;
 }
 
+std::vector<std::chrono::nanoseconds> answersAfterAStall() {
+  return std::vector<std::chrono::nanoseconds>(
+      requestTimes(CONNECTION_ATTEMPT_TIMEOUT).size());
+}
+
 std::vector<std::chrono::nanoseconds> playerTimes(
     std::chrono::nanoseconds duration) {
   const auto inputsPerSecond =
-      static_cast<std::chrono::nanoseconds::rep>(INPUTS_PER_SECOND);
+      static_cast<std::chrono::nanoseconds::rep>(PLAYER_INPUTS_PER_SECOND);
   std::vector<std::chrono::nanoseconds> times;
   for (std::chrono::nanoseconds second{0}; second < duration;
        second += engine::testing::ONE_SECOND) {

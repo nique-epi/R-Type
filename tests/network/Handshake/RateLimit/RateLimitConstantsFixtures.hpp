@@ -10,14 +10,20 @@ namespace rtype::network::testing {
 
 /**
  * @returns When a joining client sends for @p duration: a request every
- * CLIENT_REQUEST_INTERVAL and its answer CHALLENGE_ROUND_TRIP later.
+ * CONNECTION_REQUEST_INTERVAL and its answer CHALLENGE_ROUND_TRIP later.
  */
 [[nodiscard]] std::vector<std::chrono::nanoseconds> joiningClientTimes(
     std::chrono::nanoseconds duration);
 
 /**
- * @returns When a player sends for @p duration: INPUTS_PER_SECOND inputs
- * evenly spread over each second, and a heartbeat at its start.
+ * @returns When a client sends its answers after a stall of the server: one
+ * for each request of an attempt, all at once.
+ */
+[[nodiscard]] std::vector<std::chrono::nanoseconds> answersAfterAStall();
+
+/**
+ * @returns When a player sends for @p duration: PLAYER_INPUTS_PER_SECOND
+ * inputs evenly spread over each second, and a heartbeat at its start.
  */
 [[nodiscard]] std::vector<std::chrono::nanoseconds> playerTimes(
     std::chrono::nanoseconds duration);

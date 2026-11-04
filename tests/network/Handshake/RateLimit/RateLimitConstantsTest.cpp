@@ -3,22 +3,24 @@
 #include <chrono>
 #include <vector>
 #include "AllowanceVerdict.hpp"
+#include "ProtocolConstants.hpp"
 #include "RateLimitConstants.hpp"
 #include "RateLimitConstantsFixtures.hpp"
 #include "RateLimitConstantsTestConstants.hpp"
+#include "RateLimitTestConstants.hpp"
 
 using rtype::network::AllowanceVerdict;
+using rtype::network::CONNECTION_ATTEMPT_TIMEOUT;
+using rtype::network::PLAYER_INPUTS_PER_SECOND;
 using rtype::network::PLAYER_RATE_LIMIT;
 using rtype::network::REQUEST_RATE_LIMIT;
 using rtype::network::testing::allowedCount;
-using rtype::network::testing::ANSWERS_AFTER_A_STALL;
-using rtype::network::testing::CLIENT_GIVE_UP;
-using rtype::network::testing::INPUTS_AT_ONCE;
+using rtype::network::testing::answersAfterAStall;
+using rtype::network::testing::FLOOD_DATAGRAM_COUNT;
 using rtype::network::testing::joiningClientTimes;
 using rtype::network::testing::LONG_RUN_DURATION;
 using rtype::network::testing::playerTimes;
 using rtype::network::testing::PROTOCOL_BAN_DURATION;
-using rtype::network::testing::REQUEST_FLOOD_COUNT;
 using rtype::network::testing::verdictsAt;
 
 /**
@@ -28,7 +30,7 @@ using rtype::network::testing::verdictsAt;
  */
 TEST(RateLimitConstants, LetsAJoiningClientThroughUntilItGivesUp) {
   const std::vector<std::chrono::nanoseconds> times =
-      joiningClientTimes(CLIENT_GIVE_UP);
+      joiningClientTimes(CONNECTION_ATTEMPT_TIMEOUT);
 
   EXPECT_EQ(allowedCount(verdictsAt(REQUEST_RATE_LIMIT, times)), times.size());
 }
@@ -49,24 +51,24 @@ TEST(RateLimitConstants, LetsAClientThatKeepsToThePaceOfTheProtocolThrough) {
 
 /**
  * Given a client whose challenges piled up during a stall of the server
- * When it sends its ten answers in the same tick
- * Then all ten are allowed
+ * When it sends its answers in the same tick, one for each request of its
+ * attempt
+ * Then all of them are allowed
  */
 TEST(RateLimitConstants, LetsTheAnswersOfAClientThroughAfterAStall) {
-  const std::vector<std::chrono::nanoseconds> times(ANSWERS_AFTER_A_STALL);
+  const std::vector<std::chrono::nanoseconds> times = answersAfterAStall();
 
-  EXPECT_EQ(allowedCount(verdictsAt(REQUEST_RATE_LIMIT, times)),
-            ANSWERS_AFTER_A_STALL);
+  EXPECT_EQ(allowedCount(verdictsAt(REQUEST_RATE_LIMIT, times)), times.size());
 }
 
 /**
- * Given a sender that sends at once ten times the requests of a client in a
- * second
+ * Given a sender that sends a thousand requests at once, far more than a
+ * client sends in a whole attempt
  * When its requests are spent
  * Then one of them starts a ban
  */
 TEST(RateLimitConstants, BansASenderThatFloodsRequests) {
-  const std::vector<std::chrono::nanoseconds> times(REQUEST_FLOOD_COUNT);
+  const std::vector<std::chrono::nanoseconds> times(FLOOD_DATAGRAM_COUNT);
 
   const std::vector<AllowanceVerdict> verdicts =
       verdictsAt(REQUEST_RATE_LIMIT, times);
@@ -93,9 +95,10 @@ TEST(RateLimitConstants, LetsEveryDatagramOfAPlayerThrough) {
  * Then all sixty are allowed
  */
 TEST(RateLimitConstants, LetsASecondOfInputsThroughAtOnce) {
-  const std::vector<std::chrono::nanoseconds> times(INPUTS_AT_ONCE);
+  const std::vector<std::chrono::nanoseconds> times(PLAYER_INPUTS_PER_SECOND);
 
-  EXPECT_EQ(allowedCount(verdictsAt(PLAYER_RATE_LIMIT, times)), INPUTS_AT_ONCE);
+  EXPECT_EQ(allowedCount(verdictsAt(PLAYER_RATE_LIMIT, times)),
+            PLAYER_INPUTS_PER_SECOND);
 }
 
 /**
