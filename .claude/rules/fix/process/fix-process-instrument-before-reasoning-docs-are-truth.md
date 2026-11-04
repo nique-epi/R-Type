@@ -44,6 +44,11 @@ When two primitives exist, choose the one whose **shape** rules out the class of
 1. **Before calling a constructor or a function template of a library with a type of my choice**, read its definition too (the `.inl` or the body in the header), not only its declaration: the declaration says what it takes, the definition says which conversions it does, and an implicit conversion inside it refuses the types that would lose precision.
 2. **When a duration, a number or a string goes through such a conversion, pass the type the definition stores**: `sf::Time(std::chrono::duration_cast<std::chrono::microseconds>(duration))`, since `sf::Time` keeps microseconds.
 
+### 8. A delay written next to an effect is the one the code compares where the effect happens
+
+1. **Before writing "X happens after <a delay>"** in a doc comment, a page or a reply (a seat freed, a session closed, a retry given up), find the line of code that does X and copy the constant it compares there: `git grep -n '<the call that does X>'`, then read the condition above it.
+2. **A constant named after a timeout may only start a stage that a second delay ends.** Read the doc comment of every constant the condition names, and of the constants next to it in the same header: `RECONNECTION_GRACE` says it is "counted from SESSION_TIMEOUT".
+
 ## Example
 
 - ❌ **Before (wrong)**: "the client doesn't see the other players, it must be the interpolation" → three fixes to the interpolation.
@@ -52,3 +57,5 @@ When two primitives exist, choose the one whose **shape** rules out the class of
 - ✅ **After (right)**: "QUIC relies on the same figure and expects it to pass on all IPv6 paths and on modern IPv4 paths; a path with a smaller MTU may still fragment or drop one of this protocol's datagrams." (RFC 9000's ban on IP fragmentation binds QUIC senders, not this protocol.)
 - ❌ **Before (wrong)**: `sf::Time(THEME_FIRST_BEAT)` with a duration in nanoseconds, after reading only `Time(const std::chrono::duration<Rep, Period>&)` in `Time.hpp:57` → `no matching constructor for initialization of 'std::chrono::microseconds'` from `Time.inl:39`.
 - ✅ **After (right)**: `Time.inl:39` read: it initializes `std::chrono::microseconds` from the duration, so the call casts first, `duration_cast<std::chrono::microseconds>(THEME_FIRST_BEAT)`.
+- ❌ **Before (wrong)**: the doc comment of `PlayerConnection::leave()` said that when no copy of the `Disconnection` arrives, the server "frees the place once the player was silent for SESSION_TIMEOUT", taken from the first timeout found; at 5 s the server only marks the player away and keeps its seat.
+- ✅ **After (right)**: `Departures.cpp:50` read: the session closes at `SESSION_CLOSING_TICKS`, the ticks of `SESSION_SILENCE_LIMIT` (`SESSION_TIMEOUT` plus `RECONNECTION_GRACE`, 20 s), so the comment names `SESSION_SILENCE_LIMIT`.
