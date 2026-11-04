@@ -4,8 +4,15 @@
 #include "ConnectedPlayer.hpp"
 #include "GameInstanceTestConstants.hpp"
 #include "GameResult.hpp"
+#include "GameResultKeeper.hpp"
 #include "GameResultKeeperFixture.hpp"
 #include "GameResultKeeperTestConstants.hpp"
+#include "GameSettings.hpp"
+#include "GameState.hpp"
+#include "PlayerRoster.hpp"
+#include "RecordingResultsArchive.hpp"
+#include "SentDatagrams.hpp"
+#include "ServerLobbyTestConstants.hpp"
 
 namespace rtype::server::testing {
 
@@ -42,6 +49,42 @@ TEST_F(GameResultKeeperFixture, CountsNoDeathForAPlayerWhoLostNoLife) {
   finishTheGame();
 
   EXPECT_EQ(onlyResult().players.at(0).deaths, 0U);
+}
+
+/**
+ * Given a keeper of a vanilla game
+ * When the game finishes
+ * Then its result says the game was vanilla
+ */
+TEST_F(GameResultKeeperFixture, SaysTheResultOfAVanillaGameIsVanilla) {
+  seat(FIRST_PLAYER);
+  startTheGame();
+
+  finishTheGame();
+
+  EXPECT_TRUE(onlyResult().vanilla);
+}
+
+/**
+ * Given a keeper of a game that is not vanilla
+ * When the game finishes
+ * Then its result says the game was not vanilla
+ */
+TEST(GameResultKeeper, SaysTheResultOfAGameThatIsNotVanillaIsNot) {
+  PlayerRoster roster;
+  RecordingResultsArchive archive;
+  GameResultKeeper keeper{roster, archive,
+                          GameSettings{.waves = {}, .vanilla = false}};
+  ASSERT_NE(roster.add(playerEndpoint(FIRST_PLAYER),
+                       std::string{NICKNAMES.at(FIRST_PLAYER)}, SESSION_TOKEN),
+            nullptr);
+  keeper.followState(GameState::Starting);
+  keeper.followState(GameState::InProgress);
+
+  keeper.followState(GameState::Finished);
+
+  ASSERT_EQ(archive.results().size(), 1U);
+  EXPECT_FALSE(archive.results().front().vanilla);
 }
 
 /**

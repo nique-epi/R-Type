@@ -33,7 +33,7 @@ void ResultsModule::install(GameContext& game,
 
 void ResultsModule::start() {
   keeper_ = std::make_unique<GameResultKeeper>(game_->roster, archive_,
-                                               game_->settings.difficulty);
+                                               game_->settings);
   desk_ =
       std::make_unique<LeaderboardDesk>(game_->roster, archive_, game_->send);
   game_->hooks.get().closing.emplace_back(
