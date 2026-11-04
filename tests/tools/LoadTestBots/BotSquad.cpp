@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>
+#include <exception>
 #include <string>
 #include <vector>
 #include "Bot.hpp"
@@ -54,8 +55,18 @@ std::vector<BotReport> BotSquad::report() const {
 }
 
 void BotSquad::leave() {
+  std::exception_ptr firstFailure;
   for (Bot& bot : bots_) {
-    bot.leave();
+    try {
+      bot.leave();
+    } catch (const std::exception&) {
+      if (!firstFailure) {
+        firstFailure = std::current_exception();
+      }
+    }
+  }
+  if (firstFailure) {
+    std::rethrow_exception(firstFailure);
   }
 }
 

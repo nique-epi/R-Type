@@ -126,16 +126,17 @@ void playFor(BotSquad& squad, std::chrono::seconds duration) {
 
 /**
  * @returns The exit code of the run @p launch asks: 0 when every bot is still
- * in session at the end, 1 otherwise. An error stops the run and is printed:
- * no exception leaves it.
+ * in session at the end, 1 otherwise. The report is printed before the bots
+ * leave, so a bot that fails to leave cannot hide it. An error stops the run
+ * and is printed: no exception leaves it.
  */
 int runBots(const BotLaunch& launch) {
   try {
     BotSquad squad{launch};
     playFor(squad, launch.duration);
     const std::vector<BotReport> reports = squad.report();
-    squad.leave();
     printReport(launch, reports);
+    squad.leave();
     return inSessionCount(reports) == reports.size() ? 0 : 1;
   } catch (const std::exception& error) {
     std::cerr << rtype::tools::BOTS_PROGRAM_NAME << " stopped: " << error.what()

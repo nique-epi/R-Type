@@ -31,7 +31,12 @@ class BotSquad {
   /** @returns The report of each bot, in the order they were built. */
   [[nodiscard]] std::vector<BotReport> report() const;
 
-  /** @brief Has every bot leave its session, one after the other. */
+  /**
+   * @brief Has every bot leave its session, one after the other. A bot that
+   * fails to leave does not keep the next ones from leaving, so each of them
+   * frees its seat at once.
+   * @throws The first failure of a bot, once every bot tried to leave.
+   */
   void leave();
 
  private:
