@@ -68,6 +68,14 @@ class DeltaStateSenderFixture : public ::testing::Test {
   void acknowledgeOnlyTheNewestSentTo(ConnectedPlayer& player);
 
   /**
+   * @brief Runs MEASURED_SECONDS of a game for a player on FIRST_PLAYER_PORT
+   * who acknowledges every state at once, in a scene of MEASURED_ENTITIES
+   * enemies of which the first @p movingEntities move at every tick.
+   * @returns The bytes of the datagrams sent to the player.
+   */
+  [[nodiscard]] std::size_t bytesOfAMeasuredRun(std::size_t movingEntities);
+
+  /**
    * @returns The parts of states handed over to the player at @p port, oldest
    * first.
    */

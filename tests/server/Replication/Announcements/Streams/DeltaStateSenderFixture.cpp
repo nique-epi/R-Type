@@ -7,6 +7,7 @@
 #include <utility>
 #include <vector>
 #include "ConnectedPlayer.hpp"
+#include "DeltaStateSenderTestConstants.hpp"
 #include "DeltaWorldState.hpp"
 #include "Entity.hpp"
 #include "EntityType.hpp"
@@ -18,6 +19,7 @@
 #include "SentDatagrams.hpp"
 #include "ServerConstants.hpp"
 #include "ServerLobbyTestConstants.hpp"
+#include "StateRateMeasurementFixtures.hpp"
 #include "WorldStateSender.hpp"
 #include "WorldStateSenderFixture.hpp"
 #include "WorldStateSenderTestConstants.hpp"
@@ -78,6 +80,26 @@ void DeltaStateSenderFixture::acknowledgeOnlyTheNewestSentTo(
   header.acknowledgedSequence =
       static_cast<std::uint16_t>(player.nextSequence - 1);
   player.sentStates.acknowledge(header);
+}
+
+std::size_t DeltaStateSenderFixture::bytesOfAMeasuredRun(
+    std::size_t movingEntities) {
+  std::vector<engine::Entity> enemies;
+  for (std::uint32_t id = 1; id <= MEASURED_ENTITIES; ++id) {
+    enemies.push_back(
+        addEnemy(id, game::Position{.x = static_cast<float>(id), .y = 0.0F}));
+  }
+  ConnectedPlayer& player = connect(FIRST_PLAYER_PORT);
+  for (std::size_t tick = 1; tick <= MEASURED_TICKS; ++tick) {
+    runTicks(1);
+    for (std::size_t index = 0; index < movingEntities; ++index) {
+      move(
+          enemies.at(index),
+          game::Position{.x = static_cast<float>(index + 1 + tick), .y = 0.0F});
+    }
+    acknowledgeEverythingSentTo(player);
+  }
+  return bytesSentTo(sent_, client(FIRST_PLAYER_PORT));
 }
 
 std::vector<network::DeltaWorldState> DeltaStateSenderFixture::partsSentTo(

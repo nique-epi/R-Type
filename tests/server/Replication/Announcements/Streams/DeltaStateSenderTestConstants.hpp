@@ -34,4 +34,26 @@ constexpr std::size_t ENEMIES_FOR_THREE_PARTS = 300;
 constexpr std::uint16_t FIRST_PLAYER_PORT = 4100;
 constexpr std::uint16_t SECOND_PLAYER_PORT = 4101;
 
+/** @brief The scene of the measure: ten seconds, so 600 ticks and 200 states
+ * at the default rate, of 30 enemies. */
+constexpr std::size_t MEASURED_ENTITIES = 30;
+constexpr std::size_t MEASURED_TICKS = 600;
+constexpr std::size_t MEASURED_STATES = 200;
+constexpr std::size_t MEASURED_SECONDS = 10;
+
+/** @brief The enemies that move in the measure of half the scene. */
+constexpr std::size_t HALF_THE_ENTITIES = 15;
+
+/** @brief The bytes of a state of one datagram, from the protocol page: the
+ * packet header and the message prefix (22 + 3), the fixed part of a
+ * DeltaWorldState (10), one player (16), then 9 per entity listed. */
+constexpr std::size_t HEADER_AND_PREFIX_BYTES = 25;
+constexpr std::size_t DELTA_FIXED_BYTES = 10;
+constexpr std::size_t PLAYER_BYTES = 16;
+constexpr std::size_t ENTITY_BYTES = 9;
+constexpr std::size_t STATE_BYTES_WITHOUT_ENTITIES =
+    HEADER_AND_PREFIX_BYTES + DELTA_FIXED_BYTES + PLAYER_BYTES;
+constexpr std::size_t FULL_STATE_BYTES =
+    STATE_BYTES_WITHOUT_ENTITIES + (MEASURED_ENTITIES * ENTITY_BYTES);
+
 }  // namespace rtype::server::testing
