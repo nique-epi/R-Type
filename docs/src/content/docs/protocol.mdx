@@ -316,7 +316,7 @@ This section gathers what each side does when something goes wrong, from a datag
 
 - Nothing in a datagram stops a program or closes a session: an error ends with a datagram or a message dropped, never with a crash.
 - A dropped datagram or message gets no answer, with one exception: the server answers a datagram of another version from an unknown sender with `ConnectionRefused` (`IncompatibleVersion`), under the size condition of [Receiving a datagram](#receiving-a-datagram).
-- A dropped datagram or message changes nothing in the session or the game: at most, the receiver logs it and counts it.
+- A dropped datagram or message changes nothing in the session or the game: at most, the receiver logs it and counts it, and the server counts one dropped for its rate limit against its sender (see [A sender that sends too much](#a-sender-that-sends-too-much)).
 
 ### A datagram or a message that cannot be read
 
@@ -330,6 +330,17 @@ This section gathers what each side does when something goes wrong, from a datag
 | A message of a type that only the other side receives, such as `ConnectionAccepted` reaching the server or `PlayerInput` reaching a client | skips that message, as if its type were unknown | nothing |
 | A payload of the wrong size, or a value out of range: a `bool` other than 0 or 1, an enumeration value not listed, a bit 5 to 7 set in `actions`, a bit 6 or 7 set in `motion`, a nickname that is empty, longer than 16 bytes, not UTF-8 or holding a control character (U+0000 to U+001F, U+007F) | drops that message; the other messages of the datagram are read | nothing, even to a `ConnectionRequest` dropped this way |
 | An entity of an unknown type in a `WorldState` | skips that entity and reads the next one (see [World state](#world-state)) | nothing |
+
+### A sender that sends too much
+
+The server limits what each sender may send, so that one sender cannot crowd out the others. After a silence, a sender may send a burst at once, then at a steady rate:
+
+| Datagrams | At once | Then | Banned after |
+|---|---|---|---|
+| holding a `ConnectionRequest` without the session token of a player, or of another `version`, from one address and port | 10 | 4 a second | 20 dropped within a second |
+| carrying the session token of a player | 60 | 120 a second | 60 dropped within a second |
+
+A datagram past its limit is dropped without an answer. A ban lasts 10 s: every datagram of that kind from that sender is dropped until then, and sending more does not lengthen it. A client that keeps to this page stays below these limits: it sends a request every 500 ms and the answer to each challenge, and 60 inputs a second during a game. The datagrams of a banned player never reach its session, so the server marks the player away after `SESSION_TIMEOUT` (5 s) and keeps its seat, since the ban ends before the 20 s that free it. Whoever uses the address of a player without its token spends the limit of that address, never the one of the player. These values are **provisional**: code must read them (`src/network/Handshake/RateLimit/RateLimitConstants.hpp`).
 
 ### A message at the wrong moment
 
@@ -434,6 +445,7 @@ The code of this repository applies the rules above, with the exceptions listed 
 - Each side sends a `Heartbeat` after 1 s without sending anything else. The server keeps the seat of a silent player for 20 s in all, as [A session](#a-session) describes, and the client closes its session after 20 s without a datagram of the server.
 
 - The client sends `LeaderboardRequest` from its leaderboard screen, and the server answers it.
+- The server limits the datagrams of each address and port, and of each player, on its network thread, as [A sender that sends too much](#a-sender-that-sends-too-much) says.
 
 What the programs do not do yet is listed at the end of [A peer disappears](#a-peer-disappears).
 

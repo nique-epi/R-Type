@@ -125,7 +125,7 @@ src/network/
 ├── Transport/        UDP socket, relay to queues, lag and loss simulator
 ├── Serialization/    bit reader and writer, every read bounded
 ├── Protocol/         one struct per message, encoding, dispatch by type
-├── Handshake/        challenge, rate limit, version check
+├── Handshake/        Cookies/ the challenge, RateLimit/ the limit per sender, version check
 ├── Sessions/         session token, sequence numbers, timeouts
 ├── Reliability/      acknowledgements, ordered channel, fragments
 ├── Snapshots/        history and delta encoding of the world state
@@ -134,7 +134,7 @@ src/network/
 └── Exceptions/
 ```
 
-`NetworkContext`, `Transport` (the UDP socket, the relay to queues and the network simulator), `Serialization`, `Exceptions`, `Protocol` (the datagram header, every message of version 2 and the dispatch by type), `Reliability` (the acknowledgements and the guaranteed messages; no ordered channel or fragments), `Handshake` (the connection cookies; no rate limit or version answer yet) and `Statistics` (in `Counting/` the traffic by peer and by message type, in `Recording/` its line in the journal and its file) exist; see [Network](/R-Type/network/). `Sessions` is not written: the heartbeat and session timeout delays are in `Protocol/ProtocolConstants.hpp`, and each program counts them itself, the server in `GameSessions` (`src/server/Sessions/`) and the client in `SessionOutbox` (see [Network](/R-Type/network/#transport-sessions-and-replication)).
+`NetworkContext`, `Transport` (the UDP socket, the relay to queues and the network simulator), `Serialization`, `Exceptions`, `Protocol` (the datagram header, every message of version 2 and the dispatch by type), `Reliability` (the acknowledgements and the guaranteed messages; no ordered channel or fragments), `Handshake` (the connection cookies in `Cookies/`, the rate limit per sender in `RateLimit/`; no version answer yet) and `Statistics` (in `Counting/` the traffic by peer and by message type, in `Recording/` its line in the journal and its file) exist; see [Network](/R-Type/network/). `Sessions` is not written: the heartbeat and session timeout delays are in `Protocol/ProtocolConstants.hpp`, and each program counts them itself, the server in `GameSessions` (`src/server/Sessions/`) and the client in `SessionOutbox` (see [Network](/R-Type/network/#transport-sessions-and-replication)).
 
 ## The programs
 

@@ -19,12 +19,13 @@ This page tells you where to look when you need to change something. It describe
 | Network conditions applied by the system: netem on Linux, dummynet on macOS | Available, never shipped | `tests/tools/network-conditions/` |
 | Serialization | Available | `src/network/Serialization/` |
 | Protocol messages, datagram header, dispatch by type | Available | `src/network/Protocol/` |
-| Connection cookies | Available | `src/network/Handshake/` |
+| Connection cookies | Available | `src/network/Handshake/Cookies/` |
+| Rate limit per sender, with temporary bans | Available | `src/network/Handshake/RateLimit/` |
 | Traffic counters: datagrams and bytes by peer and by message type, journal and CSV file | Available | `src/network/Statistics/`: `Counting/` and `Recording/` |
 | Sessions: admission, session token, sequence, heartbeats, timeouts | Available, written in the server and the client | `src/server/Lobby/`, `src/server/Sessions/`, `src/client/Connection/` |
 | Replication: entities to messages, and back | Available, written in the server and the client | `src/server/Replication/`, `src/client/Replication/` |
 | Guaranteed messages: acknowledgements, sending again | Available | `src/network/Reliability/` |
-| Rate limit of the requests, history of states | Not yet written | — |
+| History of states | Not yet written | — |
 | Test tool that sends malformed datagrams | Available, never shipped | `tests/tools/` |
 
 ## Transport, sessions and replication
@@ -55,7 +56,7 @@ Transport carries datagrams and knows nothing of players. Each program runs its 
 
 A session starts when the server accepts a player and ends when the player leaves or stays silent too long. Every datagram of a session carries the session token of the player, the next sequence of its sender and the acknowledgement of the datagrams its sender accepted, so each side drops a forged datagram, which lacks the token, and a late copy, which is not newer than the newest datagram it read (see [Protocol](/R-Type/protocol/#a-session)), and the server knows which guaranteed messages arrived.
 
-- On the server, `ConnectionAcceptor` (`src/server/Lobby/`) answers the connection requests and gives a place only to a sender that sends back its cookie (`CookieIssuer`, below). `DatagramSorter` checks the token on the network thread, before any queue. The `GameSessions` of each game (`src/server/Sessions/`) checks the sequence, drops the guaranteed messages a datagram acknowledges and sends again the others, keeps the ready state and the newest input of each player, sends the heartbeats and closes the session of a player it hears nothing from (see [Server](/R-Type/server/#sessions-of-a-game-gamesessions)); `SessionDatagram` gives every datagram to a player its header.
+- On the server, `ConnectionAcceptor` (`src/server/Lobby/`) answers the connection requests and gives a place only to a sender that sends back its cookie (`CookieIssuer`, below). `DatagramSorter` checks the token on the network thread, before any queue, then the rate limit of the sender (see [Rate limit](#rate-limit-spendallowance-requestallowances)). The `GameSessions` of each game (`src/server/Sessions/`) checks the sequence, drops the guaranteed messages a datagram acknowledges and sends again the others, keeps the ready state and the newest input of each player, sends the heartbeats and closes the session of a player it hears nothing from (see [Server](/R-Type/server/#sessions-of-a-game-gamesessions)); `SessionDatagram` gives every datagram to a player its header.
 - On the client, `ServerSession` (`src/client/Connection/`) holds the one session with the server it joined: it sends the request, answers the challenge, checks the token and the sequence, acknowledges what it accepted, sends the heartbeats, and takes the server for lost after `SESSION_SILENCE_LIMIT` (20 s) without a datagram (see [Client](/R-Type/client/#joining-a-server-serversession-waitingroom-entitymessagequeue)).
 - Both programs read the same delays, `HEARTBEAT_INTERVAL` (1 s), `SESSION_TIMEOUT` (5 s) and `RECONNECTION_GRACE` (15 s), in `src/network/Protocol/ProtocolConstants.hpp`. They are **provisional**, like every delay of the protocol: code must read them.
 
@@ -366,6 +367,23 @@ The tests run it under losses: `UnacknowledgedMessagesFixture` links a sender an
 
 `sipHash()` follows the reference implementation of Aumasson and Bernstein, and its tests check the reference vectors. The window duration is **provisional**, like every delay of the protocol page: code must read `COOKIE_WINDOW_DURATION` (`HandshakeConstants.hpp`).
 
+## Rate limit: `spendAllowance`, `RequestAllowances`
+
+`spendAllowance(allowance, limit, now)` (`rtype_network_handshake_rate_limit`, `src/network/Handshake/RateLimit/`) decides whether one datagram of a sender goes through. A `RateLimit` lets a sender send `burst` datagrams at once after a silence, then one every `interval`. A datagram past that is dropped, and the drop that reaches `dropsBeforeBan` within `BAN_WINDOW` (1 s), counted from the first drop, bans the sender for `banDuration`: every datagram it sends until then is dropped. It is the generic cell rate algorithm of ITU-T I.371: a `SenderAllowance` keeps when the next datagram is due if the sender had kept to the interval, so a silence gives back one burst, never more, and a sender costs four fields.
+
+- The verdict is `Allowed`, `OverCap`, `NewlyBanned`, once per ban, or `Banned` (`AllowanceVerdict`). Sending during a ban does not lengthen it, and the sender starts again with a whole burst when it ends.
+- `RequestAllowances` keeps the allowances of the senders of connection requests, one per address and port, in a table that never grows: `REQUEST_ALLOWANCE_ROWS` (256) rows of `REQUEST_ALLOWANCE_SLOTS_PER_ROW` (4) slots, 104 bytes each on macOS, so about 104 KiB. The row of a sender is the SipHash of its address and port under a key drawn when the table is built, so nobody can aim at the row of another sender. A new sender takes an empty slot of its row, else the one seen longest ago among those not banned, else the one whose ban ends first: forged addresses replace one another, never a banned sender while its row holds one that is not. A sender replaced that way starts again with a whole burst.
+- `now` is any monotonic time, the same origin for every call. `RequestAllowances` is not thread-safe.
+
+The limits the server applies are in `RateLimitConstants.hpp`; what a sender must respect is in [Protocol](/R-Type/protocol/#a-sender-that-sends-too-much), and where the server spends them in [Server](/R-Type/server/#sorting-the-datagrams-datagramsorter).
+
+| Limit | For | At once | Then | Banned after | For |
+|---|---|---|---|---|---|
+| `REQUEST_RATE_LIMIT` | the connection requests of one address and port | `REQUEST_BURST` (10) | `REQUESTS_PER_SECOND` (4) a second | `REQUEST_DROPS_BEFORE_BAN` (20) drops in a second | `BAN_DURATION` (10 s) |
+| `PLAYER_RATE_LIMIT` | the datagrams carrying the session token of one player | `PLAYER_BURST` (60) | `PLAYER_DATAGRAMS_PER_SECOND` (120) a second | `PLAYER_DROPS_BEFORE_BAN` (60) drops in a second | `BAN_DURATION` (10 s) |
+
+These values are **provisional**: they come from what the client of this repository sends, a request every 500 ms and the answer to each challenge, ten answers at once after a stall of the server, and 60 inputs a second during a game, and they will be revised with the measurements of the load tests. A `static_assert` keeps `BAN_DURATION` below `SESSION_SILENCE_LIMIT` (20 s), so a banned player keeps its seat. Code must read the constants.
+
 ## World state: `WorldStateCodec`
 
 A `WorldState` (`src/network/Protocol/WorldState.hpp`) is the picture of the game at one server tick: the `tick`, the players, and every entity with its network id, a `WireEntityType` and its position in logical units. It is plain data and knows nothing of the game's components, so the server and the client each translate to and from their own. `WorldStateCodec` (`src/network/Protocol/WorldStateCodec/`) turns it into the payloads of the `WorldState` message and back; the byte layout is in [Protocol](/R-Type/protocol/#world-state).
@@ -389,7 +407,7 @@ const rtype::network::WorldState received =
 
 Anyone can send a datagram to the server, and a client reads whatever comes from the address of its server, so both must survive bytes that are not a valid message. The unit tests check each reader on its own; `malformed_datagrams` checks the programs as they run. It is a test tool in `tests/tools/`, built with the `test` preset into `build/tests/` and never shipped, and it only talks to the loopback address, 127.0.0.1.
 
-For `FLOOD_DURATION` (60 s) it sends `FLOOD_DATAGRAMS_PER_SECOND` (1000) datagrams per second, seven kinds in turn, written by `MalformedDatagramBuilder` from a fixed seed (`FLOOD_SEED`), so a run can be replayed. Every kind but oversized and random bytes starts from a valid message of the protocol and breaks it in one way:
+For `FLOOD_DURATION` (60 s) it sends seven kinds of datagrams in turn, `SERVER_FLOOD_DATAGRAMS_PER_SECOND` (100) a second to a server and `CLIENT_FLOOD_DATAGRAMS_PER_SECOND` (1000) to a client, written by `MalformedDatagramBuilder` from a fixed seed (`FLOOD_SEED`), so a run can be replayed. Every kind but oversized and random bytes starts from a valid message of the protocol and breaks it in one way:
 
 | Kind | What the datagram holds | Where a receiver stops it |
 |---|---|---|
@@ -407,9 +425,11 @@ The tests of the tool (`malformed_datagram_tests`) check that each kind is stopp
 ./build/tests/malformed_datagrams --server 4242
 ```
 
-This joins the server listening on port 4242 as a player, so the datagrams carry a session token and reach the readers of the game instead of stopping at the sorting of the network thread. After the flood, it checks that the server still answers a connection request: the exit code is 0 if it does, 1 otherwise. `--client 4243` waits on port 4243 for a client launched with `-h 127.0.0.1 -p 4243`, accepts it as player 1, floods it, then checks that the client still sends a datagram in its session: the exit code is 0 if it does, 1 otherwise. At 1000 per second the flood stays below what the player queue of the server takes (256 datagrams per tick, 60 ticks per second), so it tests the readers, not the queue. A player flooding with its own token can still push the datagrams of the others out of that shared queue (see [Flood protection](/R-Type/server/#flood-protection)).
+This joins the server listening on port 4242 as a player, so the datagrams carry a session token and reach the readers of the game instead of stopping at the sorting of the network thread. After the flood, it checks that the server still answers a connection request: the exit code is 0 if it does, 1 otherwise. `--client 4243` waits on port 4243 for a client launched with `-h 127.0.0.1 -p 4243`, accepts it as player 1, floods it, then checks that the client still sends a datagram in its session: the exit code is 0 if it does, 1 otherwise. To a server, the flood stays below the rate limit of a player, `PLAYER_DATAGRAMS_PER_SECOND` (120), whatever kinds pass its sorting, which a `static_assert` checks, so it tests the readers of the game, not the limit (see [Flood protection](/R-Type/server/#flood-protection)). To a client, which limits nothing, 1000 a second stay below what its queue takes, 256 datagrams between two frames.
 
-Measured on 27 October 2026 on an Apple M4 Pro under macOS 27.0, with the server built in Release: the tool sent 59,999 datagrams in the minute, none refused by the system, and received 121 datagrams from the server meanwhile; the server only sends to the players of its game, so the session of the tool stayed open. The resident memory of the server was 2,576 KiB before the flood. It rose to 3,264 KiB during the first 25 seconds, then stayed at 3,264 KiB until 10 seconds after the flood. The server still answered a connection request, and its log held 48 lines, at most one per kind of rejection every 10 seconds. The client, built in Release and accepted by `--client` on the same machine, stayed connected for the whole minute and kept sending the tool about one datagram per second (59). Its resident memory rose from 101,120 KiB to 103,552 KiB in the first 15 seconds of the flood, then by about 16 KiB every 5 seconds. Without the flood, in the waiting room of a real server, it rises at the same pace (102,688 to 103,136 KiB over 65 seconds), so the flood adds no growth of its own after its first seconds.
+Measured on 27 October 2026 on an Apple M4 Pro under macOS 27.0, with the server built in Release, before its rate limit and at 1000 datagrams a second: the tool sent 59,999 datagrams in the minute, none refused by the system, and received 121 datagrams from the server meanwhile; the server only sends to the players of its game, so the session of the tool stayed open. The resident memory of the server was 2,576 KiB before the flood. It rose to 3,264 KiB during the first 25 seconds, then stayed at 3,264 KiB until 10 seconds after the flood. The server still answered a connection request, and its log held 48 lines, at most one per kind of rejection every 10 seconds. The client, built in Release and accepted by `--client` on the same machine, stayed connected for the whole minute and kept sending the tool about one datagram per second (59). Its resident memory rose from 101,120 KiB to 103,552 KiB in the first 15 seconds of the flood, then by about 16 KiB every 5 seconds. Without the flood, in the waiting room of a real server, it rises at the same pace (102,688 to 103,136 KiB over 65 seconds), so the flood adds no growth of its own after its first seconds.
+
+Measured again on 4 November 2026 at 100 datagrams a second, with the server built with the `test` preset on the same machine: the tool sent 5,999 datagrams in the minute, none refused by the system, and received 121 from the server. No datagram was dropped for the rate limit, since no line of the journal at the `debug` level gave that reason, so the session stayed open, and the server still answered a connection request. The memory was not measured in that run.
 
 ## Where to intervene
 
@@ -437,6 +457,7 @@ Measured on 27 October 2026 on an Apple M4 Pro under macOS 27.0, with the server
 | Change how a `bool`, a position or a nickname is checked | `src/network/Protocol/WireTypes.hpp`, and `Utf8Constants.hpp` for UTF-8 |
 | Change how often a rejected datagram or message is logged | `REJECTION_LINE_INTERVAL` in `src/network/NetworkConstants.hpp`, read by the network and the server (see [Logging](/R-Type/logging/#repeated-events-throttledlog)) |
 | Handle a received message | `registerHandler<Message>()` on a `MessageDispatcher` |
+| Change how many datagrams a sender may send, or how long a ban lasts | `RateLimitConstants.hpp` in `src/network/Handshake/RateLimit/`; the table of the requests in `RequestAllowances` |
 | Change how a connection cookie is computed, or how long it lives | `CookieIssuer` in `src/network/Handshake/Cookies/`, `COOKIE_WINDOW_DURATION` in `src/network/Handshake/Cookies/HandshakeConstants.hpp` |
 | Change how a player is let in, challenged or refused | `ConnectionAcceptor` in `src/server/Lobby/` and `ServerSession` in `src/client/Connection/`, then the [Protocol](/R-Type/protocol/#connection) page |
 | Change what a session checks on a received datagram | `DatagramSorter` (`src/server/Network/`) for the token, `DatagramReader` and `ArrivalLedger` (`src/server/Sessions/Tracking/`, `src/server/Sessions/Roster/`) for the sequence; `SessionInbound` on the client |
