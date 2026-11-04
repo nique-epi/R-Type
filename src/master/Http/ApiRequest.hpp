@@ -2,6 +2,7 @@
 
 #include <optional>
 #include <string>
+#include <unordered_map>
 
 namespace rtype::master {
 
@@ -19,6 +20,12 @@ struct ApiRequest {
    * header names.
    */
   std::string remoteAddress;
+  /**
+   * @brief The parameters the path of the route names, such as `id` for
+   * `/servers/:id/games`, as the text the client wrote; none for a path
+   * without parameter.
+   */
+  std::unordered_map<std::string, std::string> pathParameters;
 };
 
 }  // namespace rtype::master

@@ -6,8 +6,11 @@
 #include <optional>
 #include <string>
 #include <string_view>
+#include "GameListing.hpp"
 #include "HostedGame.hpp"
 #include "HostedGameState.hpp"
+#include "ListedGame.hpp"
+#include "ListedGameState.hpp"
 #include "MasterMessageText.hpp"
 #include "MasterMessageTextTestConstants.hpp"
 #include "NetworkException.hpp"
@@ -65,6 +68,44 @@ ServerHeartbeat parisHeartbeat() {
                                  .sentBytesPerSecond = PARIS_SENT_BYTES,
                                  .lossPercent = PARIS_LOSS_PERCENT,
                                  .averagePingMilliseconds = std::nullopt}};
+}
+
+GameListing parisGameListing() {
+  return GameListing{
+      .games = {ListedGame{.number = WAITING_GAME_NUMBER,
+                           .name = std::string{WAITING_GAME_NAME},
+                           .state = ListedGameState::Waiting,
+                           .playerCount = WAITING_GAME_PLAYER_COUNT},
+                ListedGame{.number = PLAYING_GAME_NUMBER,
+                           .name = std::string{PLAYING_GAME_NAME},
+                           .state = ListedGameState::InGame,
+                           .playerCount = PLAYING_GAME_PLAYER_COUNT}}};
+}
+
+std::string gameListingTextWith(std::string_view pointer,
+                                const nlohmann::json& value) {
+  return withValueAt(gameListingText(parisGameListing()), pointer, value);
+}
+
+std::string gameListingTextOfGames(std::size_t gameCount) {
+  GameListing listing;
+  for (std::size_t index = 0; index < gameCount; ++index) {
+    listing.games.push_back(ListedGame{
+        .number = static_cast<std::uint16_t>(index + 1),
+        .name = std::string{GAME_NAME_PREFIX} + std::to_string(index + 1),
+        .state = ListedGameState::Waiting,
+        .playerCount = 0});
+  }
+  return gameListingText(listing);
+}
+
+std::string gameListingRefusal(std::string_view text) {
+  try {
+    static_cast<void>(gameListingFromText(text));
+  } catch (const InvalidMasterMessageException& refusal) {
+    return refusal.what();
+  }
+  return {};
 }
 
 std::string registrationTextWith(std::string_view pointer,

@@ -14,6 +14,7 @@
 #include "ServerCreation.hpp"
 
 using rtype::network::CreatedServer;
+using rtype::network::GameListing;
 using rtype::network::InvalidMasterUrlException;
 using rtype::network::isWellFormedServerKey;
 using rtype::network::MasterAccess;
@@ -21,6 +22,7 @@ using rtype::network::MasterClient;
 using rtype::network::MasterRefusedException;
 using rtype::network::MasterUnreachableException;
 using rtype::network::ServerCreation;
+using rtype::network::testing::parisGameListing;
 using rtype::network::testing::parisHeartbeat;
 using rtype::network::testing::parisRegistration;
 
@@ -102,4 +104,35 @@ TEST(MasterClient, AnHttpsUrlIsRefused) {
   EXPECT_THROW(MasterClient(MasterAccess{.url = std::string{HTTPS_MASTER_URL},
                                          .key = std::string{}}),
                InvalidMasterUrlException);
+}
+
+/**
+ * Given a registered server that sent its heartbeat
+ * When a client with no key lists its games
+ * Then it reads the games of that heartbeat
+ */
+TEST_F(MasterClientFixture, AClientWithNoKeyListsTheGamesOfAServer) {
+  const CreatedServer created = createdParis();
+  MasterClient server = clientWith(created.key);
+  server.registerServer(parisRegistration());
+  server.sendHeartbeat(parisHeartbeat());
+  MasterClient player = clientWith(std::string{});
+
+  const GameListing listing = player.listGames(created.id);
+
+  EXPECT_EQ(listing, parisGameListing());
+}
+
+/**
+ * Given a running master with no server of this id
+ * When a client lists the games of that id
+ * Then the master refuses it with 404
+ */
+TEST_F(MasterClientFixture, TheGamesOfAnUnknownServerAreRefusedWith404) {
+  MasterClient player = clientWith(std::string{});
+
+  const MasterRefusedException refusal =
+      refusalOf([&player] { static_cast<void>(player.listGames(UNKNOWN_ID)); });
+
+  EXPECT_EQ(refusal.status(), EXPECTED_NOT_FOUND);
 }

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <string_view>
 
 /** @brief The statuses the master refuses with in the tests of the client. */
@@ -12,6 +13,9 @@ constexpr std::string_view UNREGISTERED_DETAIL_TEXT =
 
 /** @brief A url of the master over TLS, which the client does not speak. */
 constexpr std::string_view HTTPS_MASTER_URL = "https://master.example.org";
+
+/** @brief An id no server of the tests has. */
+constexpr std::int64_t UNKNOWN_ID = 999;
 
 /** @brief A status that tells no refusal was caught. */
 constexpr int NO_REFUSAL = 0;

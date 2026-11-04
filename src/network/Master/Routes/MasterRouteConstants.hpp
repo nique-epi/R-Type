@@ -28,6 +28,14 @@ constexpr MasterRoute REPLACE_OWN_SERVER_ROUTE{.method = RouteMethod::Put,
 constexpr MasterRoute REPLACE_OWN_HEARTBEAT_ROUTE{
     .method = RouteMethod::Put, .path = "/servers/me/heartbeat"};
 
+/** @brief The parameter of a path that names a server, after the prefix. */
+constexpr std::string_view PATH_PARAMETER_PREFIX = ":";
+constexpr std::string_view SERVER_ID_PATH_PARAMETER = "id";
+
+/** @brief Lists the games of the server named in the path; open to everyone. */
+constexpr MasterRoute LIST_SERVER_GAMES_ROUTE{.method = RouteMethod::Get,
+                                              .path = "/servers/:id/games"};
+
 /** @brief What joins the path of the servers and the id of one of them. */
 constexpr std::string_view PATH_SEPARATOR = "/";
 

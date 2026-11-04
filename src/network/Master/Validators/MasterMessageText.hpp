@@ -3,6 +3,7 @@
 #include <string>
 #include <string_view>
 #include "CreatedServer.hpp"
+#include "GameListing.hpp"
 #include "ServerCreation.hpp"
 #include "ServerHeartbeat.hpp"
 #include "ServerRegistration.hpp"
@@ -82,6 +83,19 @@ namespace rtype::network {
  * not a number, a loss above MAXIMUM_LOSS_PERCENT.
  */
 [[nodiscard]] ServerHeartbeat heartbeatFromText(std::string_view text);
+
+/** @returns @p listing as the JSON answer of `GET /api/servers/{id}/games`. */
+[[nodiscard]] std::string gameListingText(const GameListing& listing);
+
+/**
+ * @returns The listing the master answered as @p text.
+ * @throws InvalidMasterMessageException naming the first member missing, of
+ * another type or out of its bounds: more than MAXIMUM_HOSTED_GAMES games, two
+ * games of one number, a number below FIRST_HOSTED_GAME_NUMBER, a name as for a
+ * heartbeat, a state that is not one of LISTED_GAME_STATE_TEXTS, more than
+ * MAXIMUM_PLAYERS players.
+ */
+[[nodiscard]] GameListing gameListingFromText(std::string_view text);
 
 /**
  * @returns The `detail` of the problem document (RFC 9457) @p text holds, or

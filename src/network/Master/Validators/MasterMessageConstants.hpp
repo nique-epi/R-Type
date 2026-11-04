@@ -68,6 +68,17 @@ constexpr auto HOSTED_GAME_STATE_TEXTS = std::to_array<std::string_view>(
     {WAITING_STATE_TEXT, STARTING_STATE_TEXT, PLAYING_STATE_TEXT,
      FINISHED_STATE_TEXT, FULL_STATE_TEXT});
 
+/** @brief How each ListedGameState is written, in the order of the enum. */
+constexpr std::string_view IN_GAME_STATE_TEXT = "inGame";
+constexpr auto LISTED_GAME_STATE_TEXTS = std::to_array<std::string_view>(
+    {WAITING_STATE_TEXT, IN_GAME_STATE_TEXT, FULL_STATE_TEXT});
+
+/** @brief The member of a listed game that counts its players. */
+constexpr std::string_view PLAYER_COUNT_MEMBER = "playerCount";
+
+/** @brief The fewest players a listed game may hold. */
+constexpr std::uint64_t MINIMUM_LISTED_PLAYERS = 0;
+
 /** @brief The longest name of a game, in bytes of UTF-8. */
 constexpr std::size_t MAXIMUM_GAME_NAME_SIZE = 16;
 

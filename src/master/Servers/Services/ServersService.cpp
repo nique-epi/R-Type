@@ -11,10 +11,14 @@
 #include "CreatedServer.hpp"
 #include "CreationAttempt.hpp"
 #include "CreationQuota.hpp"
+#include "GameListing.hpp"
 #include "HeartbeatRecord.hpp"
 #include "HostedGame.hpp"
 #include "HostedGameState.hpp"
 #include "KnownServer.hpp"
+#include "LastHeartbeat.hpp"
+#include "ListedGame.hpp"
+#include "ListedGameState.hpp"
 #include "MasterDatabase.hpp"
 #include "MasterMessageConstants.hpp"
 #include "MasterMessageText.hpp"
@@ -79,6 +83,28 @@ void requireWithinLimits(const network::ServerHeartbeat& heartbeat,
   }
 }
 
+network::ListedGameState listedStateOf(network::HostedGameState state) {
+  switch (state) {
+    case network::HostedGameState::Waiting:
+      return network::ListedGameState::Waiting;
+    case network::HostedGameState::Full:
+      return network::ListedGameState::Full;
+    case network::HostedGameState::Starting:
+    case network::HostedGameState::Playing:
+    case network::HostedGameState::Finished:
+      return network::ListedGameState::InGame;
+  }
+  return network::ListedGameState::InGame;
+}
+
+network::ListedGame listedGameOf(const network::HostedGame& game) {
+  return network::ListedGame{
+      .number = game.number,
+      .name = game.name,
+      .state = listedStateOf(game.state),
+      .playerCount = static_cast<std::uint8_t>(game.players.size())};
+}
+
 }  // namespace
 
 ServersService::ServersService(MasterDatabase& database)
@@ -125,6 +151,21 @@ bool ServersService::replaceOwnHeartbeat(const KnownServer& server,
   servers_.saveLastHeartbeat(record);
   samples_.add(record);
   return true;
+}
+
+std::optional<network::GameListing> ServersService::gameListingOf(
+    std::int64_t serverId) {
+  const std::optional<LastHeartbeat> last = servers_.lastHeartbeatOf(serverId);
+  if (!last.has_value()) {
+    return std::nullopt;
+  }
+  network::GameListing listing;
+  if (last->heartbeat.has_value()) {
+    for (const network::HostedGame& game : last->heartbeat->games) {
+      listing.games.push_back(listedGameOf(game));
+    }
+  }
+  return listing;
 }
 
 }  // namespace rtype::master

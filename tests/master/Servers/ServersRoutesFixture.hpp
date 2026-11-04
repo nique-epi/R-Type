@@ -4,8 +4,10 @@
 #include <httplib.h>
 #include <cstdint>
 #include <string>
+#include <string_view>
 #include "RouteCall.hpp"
 #include "RunningMaster.hpp"
+#include "ServerHeartbeat.hpp"
 
 /**
  * @brief The master, started on a free port and a database of its own, with
@@ -29,6 +31,14 @@ class ServersRoutesFixture : public ::testing::Test {
 
   /** @returns The answer to the registration of "Paris 1" with key(). */
   [[nodiscard]] httplib::Result registerParis() const;
+
+  /** @returns The answer to the heartbeat @p heartbeat sent with key(). */
+  [[nodiscard]] httplib::Result sendHeartbeat(
+      const rtype::network::ServerHeartbeat& heartbeat) const;
+
+  /** @returns The answer to the games of the server @p serverId, no key sent.
+   */
+  [[nodiscard]] httplib::Result readGames(std::string_view serverId) const;
 
  private:
   RunningMaster master_;
