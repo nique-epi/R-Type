@@ -1,8 +1,15 @@
 #pragma once
 
+#include <array>
 #include <string_view>
 
 namespace rtype::master {
+
+/**
+ * @brief The stages of the loop of the master: none, since the threads of its
+ * HTTP server answer every request and nothing runs at a tick.
+ */
+constexpr std::array<std::string_view, 0> MASTER_LOOP_STAGES{};
 
 /**
  * @brief How the master names itself at the start of its usage and of the

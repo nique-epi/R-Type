@@ -3,6 +3,7 @@ find_package(nlohmann_json CONFIG REQUIRED)
 
 add_library(rtype_master_http_module STATIC
   HealthResponse.cpp
+  MasterHttpModule.cpp
   MasterHttpServer.cpp
   ProblemDetails.cpp
 )
@@ -11,6 +12,8 @@ target_include_directories(rtype_master_http_module PUBLIC ${CMAKE_CURRENT_SOURC
 
 target_link_libraries(rtype_master_http_module
   PUBLIC
+    rtype_engine_commands
+    rtype_engine_modules
     rtype_logging
   PRIVATE
     httplib::httplib

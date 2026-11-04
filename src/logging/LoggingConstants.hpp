@@ -21,6 +21,7 @@ constexpr std::string_view LOGGING_LOGGER_NAME = "Logging";
 
 constexpr std::string_view SERVER_LOG_FILE_NAME = "r-type_server.log";
 constexpr std::string_view CLIENT_LOG_FILE_NAME = "r-type_client.log";
+constexpr std::string_view MASTER_LOG_FILE_NAME = "r-type_master.log";
 
 constexpr std::string_view TRACE_NAME = "trace";
 constexpr std::string_view DEBUG_NAME = "debug";
