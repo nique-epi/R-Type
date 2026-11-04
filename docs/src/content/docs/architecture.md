@@ -216,10 +216,10 @@ A message is its fields written one after the other at a fixed size, so its size
 
 | Datagram | Binary | JSON |
 |---|---|---|
-| `PlayerInput` (60 per second) | 30 bytes | 196 bytes |
+| `PlayerInput` (60 per second) | 31 bytes | 196 bytes |
 | `WorldState`, 2 players and 6 entities (20 per second) | 113 bytes | 722 bytes |
 
-The binary `PlayerInput` is the output of `DatagramCodec::encode`. The binary `WorldState` is the average of the capture described in [Protocol](/R-Type/protocol/#world-state), 105 bytes, plus the 4 bytes per player of `acknowledgedInput` that were added after it (2 × 4 = 8, not captured again). Its JSON is a constructed example, not a capture, and was not rewritten with that field. That is about 1.8 kB per second against 11.8 kB for the inputs of one player, and 2.3 kB against 14.4 kB for the states sent to one: between six and seven times less.
+The binary `PlayerInput` is the output of `DatagramCodec::encode`. The binary `WorldState` is the average of the capture described in [Protocol](/R-Type/protocol/#world-state), 105 bytes, plus the 4 bytes per player of `acknowledgedInput` that were added after it (2 × 4 = 8, not captured again). Its JSON is a constructed example, not a capture, and was not rewritten with that field. That is about 1.9 kB per second against 11.8 kB for the inputs of one player (before the inputs a datagram repeats: with about 6 repeated at a 100 ms round trip, an estimate not measured, 37 bytes and 2.2 kB per second), and 2.3 kB against 14.4 kB for the states sent to one: between six and seven times less.
 
 The cost is that nobody reads a capture without the specification. The protocol page therefore gives every field byte by byte, in big-endian order so a number reads in a capture the way it is written, and a new field changes the version.
 
