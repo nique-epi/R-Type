@@ -38,10 +38,10 @@ constexpr std::size_t PROTOCOL_RECONNECTION_GRACE_TICKS = 900;
 constexpr std::size_t PROTOCOL_SESSION_CLOSING_TICKS = 1200;
 
 /**
- * @brief The 1 s of the protocol page after which a side sends a Heartbeat
- * when it sent nothing else, at 60 ticks per second.
+ * @brief The 500 ms of the protocol page between two Heartbeats, at 60 ticks
+ * per second.
  */
-constexpr std::size_t PROTOCOL_HEARTBEAT_TICKS = 60;
+constexpr std::size_t PROTOCOL_HEARTBEAT_TICKS = 30;
 
 /**
  * @brief A stall of the server 400 ms shorter than the 20 s a client waits
@@ -206,6 +206,17 @@ static_assert(SHUFFLED_INPUT_COUNT <= network::PLAYER_ACTION_BITS + 1U,
  */
 constexpr float WIRE_COORDINATE_TOLERANCE =
     1.0F / network::WIRE_COORDINATE_STEPS_PER_UNIT;
+
+/**
+ * @brief The echo a player sends back for a Heartbeat of the game: it arrives
+ * 45 ms after the Heartbeat left, the client having held it 3 ms, so the round
+ * trip is 42 ms, 42000 µs on the wire. Its sequence is above those of the
+ * datagrams the player sent before.
+ */
+constexpr std::chrono::milliseconds ECHO_TRAVEL_TIME{45};
+constexpr std::uint32_t ECHO_HELD_FOR = 3'000;
+constexpr std::uint32_t ECHO_ROUND_TRIP_ON_THE_WIRE = 42'000;
+constexpr std::uint16_t ECHO_SEQUENCE = 1'000;
 
 /** @brief A score worth some points, when the number does not matter. */
 constexpr std::uint32_t SOME_POINTS = 100;

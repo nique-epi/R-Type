@@ -14,6 +14,7 @@ target_link_libraries(rtype_server_sessions_roster
     rtype_game_components
     rtype_identifiers
     rtype_network_protocol
+    rtype_network_statistics_round_trip
     rtype_network_reliability
     rtype_network_transport
   PRIVATE

@@ -1,11 +1,14 @@
 #include <gtest/gtest.h>
 #include <cstddef>
+#include <cstdint>
+#include <optional>
 #include <string>
 #include <vector>
 #include "ByteSequence.hpp"
 #include "ByteWriter.hpp"
 #include "ConnectionAccepted.hpp"
 #include "ConnectionChallenge.hpp"
+#include "ConnectionMessagesFixtures.hpp"
 #include "ConnectionRefused.hpp"
 #include "ConnectionRequest.hpp"
 #include "DatagramCodec.hpp"
@@ -14,27 +17,32 @@
 #include "MessagePayload.hpp"
 #include "NetworkException.hpp"
 #include "PacketHeader.hpp"
+#include "ProtocolConstants.hpp"
 #include "ProtocolTestConstants.hpp"
+#include "RoundTrips.hpp"
 
 namespace rtype::network {
-namespace {
 
 using testing::byteSequence;
 using testing::CHALLENGE_DATAGRAM_SIZE_ON_THE_PAGE;
+using testing::ECHO_HELD_FOR;
+using testing::ECHOED_SENT_AT;
+using testing::FIRST_PLAYER_JITTER;
+using testing::FIRST_PLAYER_ROUND_TRIP;
 using testing::FOUR_ROCKETS;
+using testing::HEARTBEAT_SENT_AT;
 using testing::LAST_PLAYER_NUMBER;
 using testing::NICKNAME_WITH_LINE_FEED;
 using testing::ONE_BYTE_NICKNAME;
 using testing::PLAYER_NUMBER_ABOVE_THE_LAST;
 using testing::REFUSAL_REASON_ABOVE_THE_LAST;
+using testing::SECOND_PLAYER_JITTER;
+using testing::SECOND_PLAYER_NUMBER;
+using testing::SECOND_PLAYER_ROUND_TRIP;
 using testing::SEVENTEEN_BYTE_NICKNAME;
 using testing::SMALLEST_REQUEST_DATAGRAM_SIZE_ON_THE_PAGE;
+using testing::smallestRequest;
 using testing::SOME_COOKIE;
-
-ConnectionRequest smallestRequest() {
-  return ConnectionRequest{.cookie = 0,
-                           .nickname = std::string{ONE_BYTE_NICKNAME}};
-}
 
 /**
  * Given a request with a cookie and the nickname "A"
@@ -470,35 +478,246 @@ TEST(Disconnection, RefusesAnyByteInThePayload) {
 }
 
 /**
- * Given a heartbeat
+ * Given a heartbeat sent at 7 µs that echoes a heartbeat sent at 5 µs, held
+ * 3000 µs
  * When it is encoded
- * Then the payload is empty
+ * Then the payload is its time on four bytes, then 1, then the echoed time
+ * and the time held, four bytes each
  */
-TEST(Heartbeat, EncodesAnEmptyPayload) {
-  EXPECT_TRUE(encodeMessage(Heartbeat{}).empty());
+TEST(Heartbeat, EncodesItsTimeThenItsEcho) {
+  const auto expected = byteSequence({0x00, 0x00, 0x00, 0x07, 0x01, 0x00, 0x00,
+                                      0x00, 0x05, 0x00, 0x00, 0x0B, 0xB8});
+
+  EXPECT_EQ(
+      encodeMessage(Heartbeat{.sentAt = HEARTBEAT_SENT_AT,
+                              .echo = HeartbeatEcho{.sentAt = ECHOED_SENT_AT,
+                                                    .heldFor = ECHO_HELD_FOR}}),
+      expected);
 }
 
 /**
- * Given an empty payload
- * When it is decoded as a heartbeat
- * Then a heartbeat comes back
+ * Given a heartbeat sent at 7 µs that echoes nothing
+ * When it is encoded
+ * Then the payload is its time, then 0, then eight bytes of 0, so it has the
+ * size of a heartbeat with an echo
  */
-TEST(Heartbeat, DecodesAnEmptyPayload) {
+TEST(Heartbeat, EncodesAMissingEchoAsZeros) {
+  const auto expected = byteSequence({0x00, 0x00, 0x00, 0x07, 0x00, 0x00, 0x00,
+                                      0x00, 0x00, 0x00, 0x00, 0x00, 0x00});
+
+  EXPECT_EQ(encodeMessage(
+                Heartbeat{.sentAt = HEARTBEAT_SENT_AT, .echo = std::nullopt}),
+            expected);
+}
+
+/**
+ * Given a heartbeat with an echo
+ * When it is encoded then decoded
+ * Then the same heartbeat comes back
+ */
+TEST(Heartbeat, ReadsAHeartbeatWithAnEchoAsItWasWritten) {
+  const Heartbeat heartbeat{.sentAt = HEARTBEAT_SENT_AT,
+                            .echo = HeartbeatEcho{.sentAt = ECHOED_SENT_AT,
+                                                  .heldFor = ECHO_HELD_FOR}};
+
+  EXPECT_EQ(decodeMessage<Heartbeat>(encodeMessage(heartbeat)), heartbeat);
+}
+
+/**
+ * Given a heartbeat without an echo
+ * When it is encoded then decoded
+ * Then the same heartbeat comes back, still without an echo
+ */
+TEST(Heartbeat, ReadsAHeartbeatWithoutAnEchoAsItWasWritten) {
+  const Heartbeat heartbeat{.sentAt = HEARTBEAT_SENT_AT, .echo = std::nullopt};
+
+  EXPECT_EQ(decodeMessage<Heartbeat>(encodeMessage(heartbeat)), heartbeat);
+}
+
+/**
+ * Given a payload that says no echo follows, then an echoed time of 1
+ * When it is decoded as a heartbeat
+ * Then an InvalidFieldValueException is raised: a heartbeat has one encoding
+ */
+TEST(Heartbeat, RefusesAnEchoedTimeBehindAMissingEcho) {
+  const auto bytes = byteSequence({0x00, 0x00, 0x00, 0x07, 0x00, 0x00, 0x00,
+                                   0x00, 0x01, 0x00, 0x00, 0x00, 0x00});
+
+  EXPECT_THROW((void)decodeMessage<Heartbeat>(bytes),
+               InvalidFieldValueException);
+}
+
+/**
+ * Given a payload that says no echo follows, then a time held of 1
+ * When it is decoded as a heartbeat
+ * Then an InvalidFieldValueException is raised
+ */
+TEST(Heartbeat, RefusesATimeHeldBehindAMissingEcho) {
+  const auto bytes = byteSequence({0x00, 0x00, 0x00, 0x07, 0x00, 0x00, 0x00,
+                                   0x00, 0x00, 0x00, 0x00, 0x00, 0x01});
+
+  EXPECT_THROW((void)decodeMessage<Heartbeat>(bytes),
+               InvalidFieldValueException);
+}
+
+/**
+ * Given a payload whose byte that says whether an echo follows is 2
+ * When it is decoded as a heartbeat
+ * Then an InvalidBoolException is raised
+ */
+TEST(Heartbeat, RefusesAnEchoFlagThatIsNeitherTrueNorFalse) {
+  const auto bytes = byteSequence({0x00, 0x00, 0x00, 0x07, 0x02, 0x00, 0x00,
+                                   0x00, 0x00, 0x00, 0x00, 0x00, 0x00});
+
+  EXPECT_THROW((void)decodeMessage<Heartbeat>(bytes), InvalidBoolException);
+}
+
+/**
+ * Given a payload of 12 bytes, one fewer than a heartbeat
+ * When it is decoded as a heartbeat
+ * Then a BufferUnderflowException is raised
+ */
+TEST(Heartbeat, RefusesAPayloadCutShort) {
+  const auto bytes = byteSequence(
+      {0x00, 0x00, 0x00, 0x07, 0x01, 0x00, 0x00, 0x00, 0x05, 0x00, 0x00, 0x0B});
+
+  EXPECT_THROW((void)decodeMessage<Heartbeat>(bytes), BufferUnderflowException);
+}
+
+/**
+ * Given the empty payload a build older than the echo sends
+ * When it is decoded as a heartbeat
+ * Then a BufferUnderflowException is raised, so the dispatcher skips it
+ */
+TEST(Heartbeat, RefusesTheEmptyPayloadOfAnOlderBuild) {
   const std::vector<std::byte> empty;
 
-  EXPECT_EQ(decodeMessage<Heartbeat>(empty), Heartbeat{});
+  EXPECT_THROW((void)decodeMessage<Heartbeat>(empty), BufferUnderflowException);
 }
 
 /**
- * Given a payload of one byte
+ * Given a heartbeat followed by one more byte
  * When it is decoded as a heartbeat
  * Then a TrailingBytesException is raised
  */
-TEST(Heartbeat, RefusesAnyByteInThePayload) {
-  const auto bytes = byteSequence({0x00});
+TEST(Heartbeat, RefusesAByteAfterTheEcho) {
+  const auto bytes = byteSequence({0x00, 0x00, 0x00, 0x07, 0x01, 0x00, 0x00,
+                                   0x00, 0x05, 0x00, 0x00, 0x0B, 0xB8, 0x00});
 
   EXPECT_THROW((void)decodeMessage<Heartbeat>(bytes), TrailingBytesException);
 }
 
-}  // namespace
+/**
+ * Given the round trips of players 1 and 2: 42000 µs with a jitter of 3200 µs,
+ * and 80000 µs with a jitter of 12500 µs
+ * When they are encoded
+ * Then the payload is the number of players, then each one: its number, its
+ * round trip and its jitter on four bytes each
+ */
+TEST(RoundTrips, EncodesTheNumberThenEachPlayer) {
+  const auto expected =
+      byteSequence({0x02, 0x01, 0x00, 0x00, 0xA4, 0x10, 0x00, 0x00, 0x0C, 0x80,
+                    0x02, 0x00, 0x01, 0x38, 0x80, 0x00, 0x00, 0x30, 0xD4});
+
+  EXPECT_EQ(encodeMessage(
+                RoundTrips{.players = {{.playerNumber = FIRST_PLAYER_NUMBER,
+                                        .roundTrip = FIRST_PLAYER_ROUND_TRIP,
+                                        .jitter = FIRST_PLAYER_JITTER},
+                                       {.playerNumber = SECOND_PLAYER_NUMBER,
+                                        .roundTrip = SECOND_PLAYER_ROUND_TRIP,
+                                        .jitter = SECOND_PLAYER_JITTER}}}),
+            expected);
+}
+
+/**
+ * Given round trips of no player, of one, and of the most players a game
+ * holds, each with its own round trip and jitter
+ * When each is encoded then decoded
+ * Then the same round trips come back
+ */
+TEST(RoundTrips, ReadsWhatItWrites) {
+  RoundTrips everyPlayer;
+  for (std::uint8_t number = FIRST_PLAYER_NUMBER; number <= MAXIMUM_PLAYERS;
+       ++number) {
+    everyPlayer.players.push_back(
+        PlayerRoundTrip{.playerNumber = number,
+                        .roundTrip = FIRST_PLAYER_ROUND_TRIP * number,
+                        .jitter = FIRST_PLAYER_JITTER * number});
+  }
+  const std::vector<RoundTrips> written{
+      RoundTrips{.players = {}},
+      RoundTrips{.players = {{.playerNumber = FIRST_PLAYER_NUMBER,
+                              .roundTrip = FIRST_PLAYER_ROUND_TRIP,
+                              .jitter = FIRST_PLAYER_JITTER}}},
+      everyPlayer};
+
+  for (const RoundTrips& roundTrips : written) {
+    EXPECT_EQ(decodeMessage<RoundTrips>(encodeMessage(roundTrips)), roundTrips);
+  }
+}
+
+/**
+ * Given a payload that announces five players
+ * When it is decoded as round trips
+ * Then a TooManyPlayersException is raised before any player is read
+ */
+TEST(RoundTrips, RefusesFivePlayersBeforeReadingThem) {
+  const auto bytes = byteSequence({0x05});
+
+  EXPECT_THROW((void)decodeMessage<RoundTrips>(bytes), TooManyPlayersException);
+}
+
+/**
+ * Given a payload that lists player 1 twice
+ * When it is decoded as round trips
+ * Then a DuplicatePlayerNumberException is raised
+ */
+TEST(RoundTrips, RefusesTheSameNumberTwice) {
+  const auto bytes =
+      byteSequence({0x02, 0x01, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01,
+                    0x01, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01});
+
+  EXPECT_THROW((void)decodeMessage<RoundTrips>(bytes),
+               DuplicatePlayerNumberException);
+}
+
+/**
+ * Given a payload that lists player 0
+ * When it is decoded as round trips
+ * Then an InvalidFieldValueException is raised: players are numbered from 1
+ */
+TEST(RoundTrips, RefusesPlayerNumberZero) {
+  const auto bytes = byteSequence(
+      {0x01, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01});
+
+  EXPECT_THROW((void)decodeMessage<RoundTrips>(bytes),
+               InvalidFieldValueException);
+}
+
+/**
+ * Given a payload that announces one player and holds eight of its nine
+ * bytes
+ * When it is decoded as round trips
+ * Then a BufferUnderflowException is raised
+ */
+TEST(RoundTrips, RefusesAPlayerCutShort) {
+  const auto bytes =
+      byteSequence({0x01, 0x01, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00});
+
+  EXPECT_THROW((void)decodeMessage<RoundTrips>(bytes),
+               BufferUnderflowException);
+}
+
+/**
+ * Given a payload that holds one player, then one more byte
+ * When it is decoded as round trips
+ * Then a TrailingBytesException is raised
+ */
+TEST(RoundTrips, RefusesAByteAfterTheLastPlayer) {
+  const auto bytes = byteSequence(
+      {0x01, 0x01, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01, 0x00});
+
+  EXPECT_THROW((void)decodeMessage<RoundTrips>(bytes), TrailingBytesException);
+}
+
 }  // namespace rtype::network

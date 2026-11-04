@@ -129,12 +129,12 @@ src/network/
 ├── Sessions/         session token, sequence numbers, timeouts
 ├── Reliability/      acknowledgements, ordered channel, fragments
 ├── Snapshots/        planned; today the delta of a state is in Protocol/WorldStateDelta/, the history of sent states in the server's SentStates
-├── Statistics/       the traffic: Counting/ by peer and message type, Recording/ its line and file
+├── Statistics/       the traffic: Counting/ by peer and message type, Recording/ its line and file; RoundTrip/ the round trip and jitter of a session
 ├── Master/           what the master and a game server share: Routes/, Messages/, Validators/, Client/
 └── Exceptions/
 ```
 
-`NetworkContext`, `Transport` (the UDP socket, the relay to queues and the network simulator), `Serialization`, `Exceptions`, `Protocol` (the datagram header, every message of version 2 and the dispatch by type), `Reliability` (the acknowledgements and the guaranteed messages; no ordered channel or fragments), `Handshake` (the connection cookies; no rate limit or version answer yet) `Statistics` (in `Counting/` the traffic by peer and by message type, in `Recording/` its line in the journal and its file) and `Master` (laid out like the `common/` of a cRPC: `Routes/` declares the method and path of each route of the master once, `Messages/` holds one plain struct per message, `Validators/` reads, checks and writes them in JSON in `rtype_network_master`, and `Client/` holds `MasterClient`, the calls of a game server, in `rtype_network_master_client`; none needs Asio or the game) exist; see [Network](/R-Type/network/). `Sessions` is not written: the heartbeat and session timeout delays are in `Protocol/ProtocolConstants.hpp`, and each program counts them itself, the server in `GameSessions` (`src/server/Sessions/`) and the client in `SessionOutbox` (see [Network](/R-Type/network/#transport-sessions-and-replication)).
+`NetworkContext`, `Transport` (the UDP socket, the relay to queues and the network simulator), `Serialization`, `Exceptions`, `Protocol` (the datagram header, every message of version 2 and the dispatch by type), `Reliability` (the acknowledgements and the guaranteed messages; no ordered channel or fragments), `Handshake` (the connection cookies; no rate limit or version answer yet), `Statistics` (in `Counting/` the traffic by peer and by message type, in `Recording/` its line in the journal and its file, in `RoundTrip/` the round trip and the jitter of a session, measured from the heartbeats) and `Master` (laid out like the `common/` of a cRPC: `Routes/` declares the method and path of each route of the master once, `Messages/` holds one plain struct per message, `Validators/` reads, checks and writes them in JSON in `rtype_network_master`, and `Client/` holds `MasterClient`, the calls of a game server, in `rtype_network_master_client`; none needs Asio or the game) exist; see [Network](/R-Type/network/). `Sessions` is not written: the heartbeat and session timeout delays are in `Protocol/ProtocolConstants.hpp`, and each program counts them itself, the server in `GameSessions` (`src/server/Sessions/`) and the client in `RoundTripWatch` (see [Network](/R-Type/network/#transport-sessions-and-replication)).
 
 ## The programs
 
@@ -149,7 +149,7 @@ src/server/
 ├── Network/          the network module: the socket, the network thread and the simulation thread
 ├── Games/            the games module: the games, where a new player goes, the modules of each game
 ├── Lobby/            the lobby module: players not in a game; list, create, join, chat
-├── Metrics/          the metrics module: Measures/, tick time, counts of games, players and entities; Report/, the report and its lines; the traffic of the socket; the heartbeat to come
+├── Metrics/          the metrics module: Measures/, tick time, counts of games, players and entities; Report/, the report and its lines; the traffic of the socket; the round trip of each player; the heartbeat to come
 ├── Instances/        one GameInstance per game, what a game hosts whatever its rules; Context/, what it shares with its modules, split into Interfaces/ and Setup/
 ├── Rules/            the rtype rules module: Match/, the states, the tick and the world of a match; Players/, the lives, score and ship of each player
 ├── Replication/      the replication module: Announcements/, what the players are told, once (Milestones/) or all through a match (Streams/); Wire/, how it is written

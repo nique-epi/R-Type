@@ -29,7 +29,7 @@ class DatagramRelay {
 
   /**
    * @brief From now on, copies every datagram the socket receives, with its
-   * sender, into the incoming queue.
+   * sender and the time it arrived, into the incoming queue.
    */
   void startReceiving();
 

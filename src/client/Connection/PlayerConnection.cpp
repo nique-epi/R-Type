@@ -25,12 +25,14 @@ PlayerConnection::PlayerConnection(const network::NetworkConditions& conditions)
       router_(network_),
       waitingRoom_(dispatcher_, gameLoaded_),
       entityMessages_(dispatcher_, waitingRoom_, gameLoaded_),
+      roundTrips_(dispatcher_, clock_),
       leaderboard_(dispatcher_),
-      session_(ServerSessionParts{.link = router_.addRoute(),
-                                  .dispatcher = dispatcher_,
-                                  .gameLoaded = gameLoaded_,
-                                  .observers = {waitingRoom_, entityMessages_,
-                                                gameLoaded_, leaderboard_}}) {}
+      session_(ServerSessionParts{
+          .link = router_.addRoute(),
+          .dispatcher = dispatcher_,
+          .gameLoaded = gameLoaded_,
+          .observers = {waitingRoom_, entityMessages_, gameLoaded_, roundTrips_,
+                        leaderboard_}}) {}
 
 void PlayerConnection::update(engine::Duration elapsed) {
   entityMessages_.advance(elapsed);
@@ -62,5 +64,7 @@ EntityMessageQueue& PlayerConnection::entityMessages() {
 }
 
 ServerLeaderboard& PlayerConnection::leaderboard() { return leaderboard_; }
+
+RoundTripWatch& PlayerConnection::roundTrips() { return roundTrips_; }
 
 }  // namespace rtype::client

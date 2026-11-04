@@ -73,9 +73,11 @@ void ServerMetricsModule::reportTheTicks() {
   MetricsReport report{.ticks = durations_.takeSummary(),
                        .games = censusOf(*games_),
                        .systemTimes = takeSystemTimesOf(*games_),
-                       .traffic = traffic_->report()};
+                       .traffic = traffic_->report(),
+                       .roundTrips = roundTripsOf(*games_)};
   logger_.info(ticksLineOf(report));
   logger_.info(systemsLineOf(report));
+  logger_.info(roundTripsLineOf(report));
   latest_.publish(std::move(report));
 }
 

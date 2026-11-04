@@ -12,12 +12,13 @@ namespace rtype::client {
 
 /**
  * @brief The module of the connection to a server: the PlayerConnection of the
- * client, whose four parts it provides to the modules installed after it: the
+ * client, whose parts it provides to the modules installed after it: the
  * ServerSession (the attempt and the session), the WaitingRoom, the
- * EntityMessageQueue and the ServerLeaderboard. It also provides the
- * network::TrafficCounters of its socket.
+ * EntityMessageQueue, the ServerLeaderboard, and IPlayerRoundTrips, the round
+ * trip of each player. It also provides the network::TrafficCounters of its
+ * socket.
  *
- * install() provides the four parts, over a socket still closed, and adds to
+ * install() provides those parts, over a socket still closed, and adds to
  * NETWORK_STAGE the work that reads what the server sent and sends what is
  * due. start() opens the socket on every IPv4 interface, on a port the
  * system picks, and starts the network thread. stop() leaves the session with

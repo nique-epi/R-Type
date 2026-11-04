@@ -30,7 +30,7 @@ class ISessionObserver {
 
   /**
    * @brief One frame of an open session went by, after the datagrams of the
-   * server were read and before the next Heartbeat is due.
+   * server were read.
    * @param elapsed Time since the previous frame.
    */
   virtual void sessionHeld(engine::Duration elapsed) = 0;

@@ -6,8 +6,10 @@
 #include "MessageDispatcher.hpp"
 #include "NetworkConditions.hpp"
 #include "NetworkThread.hpp"
+#include "RoundTripWatch.hpp"
 #include "ServerLeaderboard.hpp"
 #include "ServerSession.hpp"
+#include "SystemClock.hpp"
 #include "TimeConstants.hpp"
 #include "WaitingRoom.hpp"
 
@@ -15,9 +17,10 @@ namespace rtype::client {
 
 /**
  * @brief The connection of one player to a server: the UDP socket on its
- * NetworkThread, a DatagramRouter in front of it, and the four parts the
- * screens and the game use, the ServerSession (the attempt and the session),
- * the WaitingRoom, the EntityMessageQueue and the ServerLeaderboard.
+ * NetworkThread, a DatagramRouter in front of it, and the parts the screens
+ * and the game use, the ServerSession (the attempt and the session), the
+ * WaitingRoom, the EntityMessageQueue, the ServerLeaderboard and the
+ * RoundTripWatch, which sends the heartbeats and measures the round trips.
  * ClientConnectionModule holds the one of the client; each load-test bot holds
  * its own.
  *
@@ -60,6 +63,7 @@ class PlayerConnection {
   [[nodiscard]] const WaitingRoom& waitingRoom() const;
   [[nodiscard]] EntityMessageQueue& entityMessages();
   [[nodiscard]] ServerLeaderboard& leaderboard();
+  [[nodiscard]] RoundTripWatch& roundTrips();
 
  private:
   NetworkThread network_;
@@ -68,6 +72,8 @@ class PlayerConnection {
   GameLoadedReminder gameLoaded_;
   WaitingRoom waitingRoom_;
   EntityMessageQueue entityMessages_;
+  engine::SystemClock clock_;
+  RoundTripWatch roundTrips_;
   ServerLeaderboard leaderboard_;
   ServerSession session_;
 };

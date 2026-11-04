@@ -16,8 +16,8 @@ struct GameSessionsParts {
   std::reference_wrapper<engine::EventBus> events;
   /** @brief What is called for each datagram to send. Must not be empty. */
   std::function<void(network::OutgoingDatagram)> send;
-  /** @brief Read at the start of each tick (see ConnectedPlayer::sinceSent);
-   * it must outlive the sessions. */
+  /** @brief Read at the start and the end of each tick for the Heartbeats
+   * (see ConnectedPlayer::sinceHeartbeat); it must outlive the sessions. */
   std::reference_wrapper<const engine::IClock> clock;
   /** @brief Tells whether a ReadyState counts right now. Must not be empty. */
   std::function<bool()> readyAccepted;

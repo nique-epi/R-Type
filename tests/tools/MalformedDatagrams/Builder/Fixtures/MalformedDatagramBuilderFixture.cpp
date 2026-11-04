@@ -24,6 +24,7 @@
 #include "PlayerInput.hpp"
 #include "PlayerLeft.hpp"
 #include "ReadyState.hpp"
+#include "RoundTrips.hpp"
 #include "WorldState.hpp"
 
 namespace rtype::tools::testing {
@@ -56,6 +57,7 @@ MalformedDatagramBuilderFixture::MalformedDatagramBuilderFixture()
   readEvery<network::PlayerLeft>(dispatcher_);
   readEvery<network::GameEnded>(dispatcher_);
   readEvery<network::ConnectionChallenge>(dispatcher_);
+  readEvery<network::RoundTrips>(dispatcher_);
 }
 
 std::vector<std::vector<std::byte>> MalformedDatagramBuilderFixture::draw(
