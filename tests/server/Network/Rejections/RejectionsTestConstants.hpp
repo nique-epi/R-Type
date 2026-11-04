@@ -7,6 +7,9 @@
 /** @brief The address every sender of the ledger tests sends from. */
 constexpr std::string_view REJECTED_ADDRESS = "198.51.100.7";
 
+/** @brief Another address, for a sender on the port of another one. */
+constexpr std::string_view OTHER_REJECTED_ADDRESS = "198.51.100.8";
+
 /**
  * @brief The port of the first sender of the ledger tests; the next ones
  * follow it.

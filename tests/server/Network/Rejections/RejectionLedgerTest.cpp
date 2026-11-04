@@ -1,5 +1,7 @@
 #include <gtest/gtest.h>
 #include <cstddef>
+#include <string>
+#include "Endpoint.hpp"
 #include "RejectionCause.hpp"
 #include "RejectionCounts.hpp"
 #include "RejectionLedger.hpp"
@@ -8,6 +10,7 @@
 #include "RejectionsFixtures.hpp"
 #include "RejectionsTestConstants.hpp"
 
+using rtype::network::Endpoint;
 using rtype::server::REJECTED_SENDER_CAPACITY;
 using rtype::server::RejectionCause;
 using rtype::server::RejectionLedger;
@@ -58,6 +61,27 @@ TEST(RejectionLedger, CountsEachCauseForEachSender) {
   EXPECT_EQ(report.mostRejected[1].endpoint, rejectedSender(1));
   EXPECT_EQ(report.mostRejected[1].counts,
             countsOf({RejectionCause::Stranger}));
+}
+
+/**
+ * Given a ledger
+ * When a stranger is rejected from one address, then from another address on
+ * the same port
+ * Then the report names two senders, one datagram each
+ */
+TEST(RejectionLedger, CountsTwoAddressesOnTheSamePortApart) {
+  RejectionLedger ledger;
+  const Endpoint first = rejectedSender(0);
+  const Endpoint second{.address = std::string{OTHER_REJECTED_ADDRESS},
+                        .port = first.port};
+
+  ledger.record(RejectionCause::Stranger, first);
+  ledger.record(RejectionCause::Stranger, second);
+
+  const RejectionReport report = ledger.takeReport();
+  ASSERT_EQ(report.mostRejected.size(), 2U);
+  EXPECT_EQ(report.mostRejected[0].endpoint, second);
+  EXPECT_EQ(report.mostRejected[1].endpoint, first);
 }
 
 /**
