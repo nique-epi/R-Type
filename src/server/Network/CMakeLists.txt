@@ -1,3 +1,5 @@
+add_subdirectory(Rejections)
+
 add_library(rtype_server_network_module STATIC
   DatagramSorter.cpp
   DiscardReport.cpp
