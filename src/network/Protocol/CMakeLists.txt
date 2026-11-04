@@ -26,6 +26,7 @@ target_include_directories(rtype_network_sequence_order PUBLIC ${CMAKE_CURRENT_S
 rtype_enable_warnings(rtype_network_sequence_order)
 
 add_subdirectory(WorldStateCodec)
+add_subdirectory(WorldStateDelta)
 add_subdirectory(DatagramCodec)
 add_subdirectory(Messages)
 add_subdirectory(MessageDispatcher)

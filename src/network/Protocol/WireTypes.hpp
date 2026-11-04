@@ -34,6 +34,14 @@ bool readBool(ByteReader& reader);
 void writeCoordinate(ByteWriter& writer, float coordinate);
 
 /**
+ * @returns The count of eighths of a unit that writeCoordinate() sends for
+ * @p coordinate: rounded to the nearest eighth and clamped to the range of the
+ * wire. Two coordinates with the same count are the same to a receiver.
+ * @throws InvalidCoordinateException when @p coordinate is NaN.
+ */
+[[nodiscard]] std::int16_t wireStepsOf(float coordinate);
+
+/**
  * @brief Reads a coordinate written by writeCoordinate(), in logical units.
  * @throws BufferUnderflowException when fewer than two bytes remain.
  */

@@ -63,20 +63,20 @@ bool isOfAnotherVersion(std::span<const std::byte> datagram) {
 }
 
 /**
- * @returns Why a sender that is not in @p roster is refused when it asks for
- * @p nickname: a game in progress, a full roster, then a nickname taken, in
- * that order; nothing when it may join.
+ * @returns Why a newcomer asking for @p request must be refused: a game is in
+ * progress, the game is full, or the nickname is taken, checked in that order.
+ * Nothing when the newcomer may join.
  */
-std::optional<network::RefusalReason> refusalOf(const PlayerRoster& roster,
-                                                bool gameInProgress,
-                                                std::string_view nickname) {
+std::optional<network::RefusalReason> refusalOf(
+    const PlayerRoster& roster, const network::ConnectionRequest& request,
+    bool gameInProgress) {
   if (gameInProgress) {
     return network::RefusalReason::GameInProgress;
   }
   if (roster.isFull()) {
     return network::RefusalReason::GameFull;
   }
-  if (roster.hasNickname(nickname)) {
+  if (roster.hasNickname(request.nickname)) {
     return network::RefusalReason::NicknameTaken;
   }
   return std::nullopt;
@@ -158,9 +158,9 @@ void ConnectionAcceptor::answer(const network::Endpoint& sender,
     }
     return;
   }
-  if (const std::optional<network::RefusalReason> reason =
-          refusalOf(*roster_, gameInProgress_, request.nickname)) {
-    refuse(sender, *reason);
+  if (const std::optional<network::RefusalReason> refusal =
+          refusalOf(*roster_, request, gameInProgress_)) {
+    refuse(sender, *refusal);
     return;
   }
   if (!hasValidCookie) {

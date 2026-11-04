@@ -1,84 +1,16 @@
 #include <gtest/gtest.h>
-#include <cstddef>
-#include <cstdint>
-#include <string>
-#include <utility>
 #include <vector>
 #include "ConnectedPlayer.hpp"
 #include "DatagramCodec.hpp"
 #include "LobbyState.hpp"
-#include "LobbyStateAnnouncer.hpp"
-#include "LobbyStateAnnouncerTestConstants.hpp"
+#include "LobbyStateAnnouncerFixture.hpp"
+#include "LobbyStateAnnouncerFixtures.hpp"
 #include "OutgoingDatagram.hpp"
 #include "PacketHeader.hpp"
-#include "PlayerRoster.hpp"
-#include "ProtocolConstants.hpp"
 #include "SentDatagrams.hpp"
 #include "ServerLobbyTestConstants.hpp"
-#include "TimeConstants.hpp"
 
-namespace rtype::server {
-namespace {
-
-using testing::LONGEST_LOBBY_STATE_GAP;
-using testing::onlyMessageIn;
-using testing::OTHER_SESSION_TOKEN;
-using testing::PLAYER_NICKNAME;
-using testing::playerEndpoint;
-using testing::SESSION_TOKEN;
-
-/** @returns The line of the room for the player at @p index, under the test
- * nickname. */
-network::LobbyPlayer lobbyPlayer(std::size_t index, bool ready) {
-  return network::LobbyPlayer{.playerNumber = static_cast<std::uint8_t>(
-                                  network::FIRST_PLAYER_NUMBER + index),
-                              .ready = ready,
-                              .nickname = std::string{PLAYER_NICKNAME}};
-}
-
-/** @returns How many ticks fit in the longest gap the protocol allows. */
-std::size_t ticksInTheLongestGap() {
-  return static_cast<std::size_t>(LONGEST_LOBBY_STATE_GAP /
-                                  engine::SIMULATION_TICK_DURATION);
-}
-
-/** @brief An announcer over a roster, whose datagrams are recorded instead of
- * sent. */
-class LobbyStateAnnouncerTest : public ::testing::Test {
- protected:
-  /** @brief Connects the player number @p index + 1, under @p sessionToken. */
-  ConnectedPlayer& join(std::size_t index,
-                        std::uint64_t sessionToken = SESSION_TOKEN) {
-    ConnectedPlayer* const player = roster_.add(
-        playerEndpoint(index), std::string{PLAYER_NICKNAME}, sessionToken);
-    return *player;
-  }
-
-  /** @brief Lets @p count ticks of the waiting room pass. */
-  void runWaitingTicks(std::size_t count) {
-    for (std::size_t tick = 0; tick < count; ++tick) {
-      announcer_.onWaitingTick();
-    }
-  }
-
-  /** @returns The datagrams sent to the player at @p index, oldest first. */
-  [[nodiscard]] std::vector<network::OutgoingDatagram> sentTo(
-      std::size_t index) const {
-    return testing::sentTo(sent_, playerEndpoint(index));
-  }
-
-  [[nodiscard]] const std::vector<network::OutgoingDatagram>& sent() const {
-    return sent_;
-  }
-
- private:
-  PlayerRoster roster_;
-  std::vector<network::OutgoingDatagram> sent_;
-  LobbyStateAnnouncer announcer_{roster_,
-                                 [this](network::OutgoingDatagram datagram) {
-                                   sent_.push_back(std::move(datagram));
-                                 }};
-};
+namespace rtype::server::testing {
 
 /**
  * Given two connected players, the second one ready
@@ -86,7 +18,7 @@ class LobbyStateAnnouncerTest : public ::testing::Test {
  * Then each player is sent one room listing both, in order of number, with
  * their ready state and their nickname
  */
-TEST_F(LobbyStateAnnouncerTest, SendsTheRoomAtTheFirstTick) {
+TEST_F(LobbyStateAnnouncerFixture, SendsTheRoomAtTheFirstTick) {
   join(0);
   join(1).ready = true;
 
@@ -107,7 +39,7 @@ TEST_F(LobbyStateAnnouncerTest, SendsTheRoomAtTheFirstTick) {
  * When the player becomes ready and the next tick passes
  * Then the player is sent the room again, showing it ready
  */
-TEST_F(LobbyStateAnnouncerTest, SendsAChangeOfReadinessAtOnce) {
+TEST_F(LobbyStateAnnouncerFixture, SendsAChangeOfReadinessAtOnce) {
   ConnectedPlayer& player = join(0);
   runWaitingTicks(1);
 
@@ -125,7 +57,7 @@ TEST_F(LobbyStateAnnouncerTest, SendsAChangeOfReadinessAtOnce) {
  * When a second player joins and the next tick passes
  * Then both players are sent the room listing the two of them
  */
-TEST_F(LobbyStateAnnouncerTest, SendsANewPlayerAtOnce) {
+TEST_F(LobbyStateAnnouncerFixture, SendsANewPlayerAtOnce) {
   join(0);
   runWaitingTicks(1);
 
@@ -147,7 +79,7 @@ TEST_F(LobbyStateAnnouncerTest, SendsANewPlayerAtOnce) {
  * When the next tick passes without change
  * Then nothing more is sent: an unchanged room is not sent every tick
  */
-TEST_F(LobbyStateAnnouncerTest, DoesNotSendAnUnchangedRoomAtTheNextTick) {
+TEST_F(LobbyStateAnnouncerFixture, DoesNotSendAnUnchangedRoomAtTheNextTick) {
   join(0);
   runWaitingTicks(1);
 
@@ -162,7 +94,7 @@ TEST_F(LobbyStateAnnouncerTest, DoesNotSendAnUnchangedRoomAtTheNextTick) {
  * protocol allows between two LobbyState, 500 ms
  * Then the player was sent the room again within them
  */
-TEST_F(LobbyStateAnnouncerTest, RepeatsAnUnchangedRoomWithinTheLongestGap) {
+TEST_F(LobbyStateAnnouncerFixture, RepeatsAnUnchangedRoomWithinTheLongestGap) {
   join(0);
   runWaitingTicks(1);
 
@@ -177,7 +109,8 @@ TEST_F(LobbyStateAnnouncerTest, RepeatsAnUnchangedRoomWithinTheLongestGap) {
  * When the room is sent
  * Then the datagram to each player carries its token and its next sequence
  */
-TEST_F(LobbyStateAnnouncerTest, CarriesTheTokenAndTheNextSequenceOfEachPlayer) {
+TEST_F(LobbyStateAnnouncerFixture,
+       CarriesTheTokenAndTheNextSequenceOfEachPlayer) {
   join(0, SESSION_TOKEN);
   join(1, OTHER_SESSION_TOKEN).nextSequence = 1;
 
@@ -202,11 +135,10 @@ TEST_F(LobbyStateAnnouncerTest, CarriesTheTokenAndTheNextSequenceOfEachPlayer) {
  * When as many ticks pass as fit in the longest gap
  * Then nothing is sent
  */
-TEST_F(LobbyStateAnnouncerTest, SendsNothingWithoutPlayers) {
+TEST_F(LobbyStateAnnouncerFixture, SendsNothingWithoutPlayers) {
   runWaitingTicks(ticksInTheLongestGap());
 
   EXPECT_TRUE(sent().empty());
 }
 
-}  // namespace
-}  // namespace rtype::server
+}  // namespace rtype::server::testing

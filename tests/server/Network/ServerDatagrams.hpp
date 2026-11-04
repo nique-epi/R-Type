@@ -7,6 +7,7 @@
 #include "Endpoint.hpp"
 #include "PacketHeader.hpp"
 #include "PlayerInput.hpp"
+#include "ServerLobbyTestConstants.hpp"
 
 /** @returns A datagram holding a ConnectionRequest without a cookie. */
 [[nodiscard]] std::vector<std::byte> requestDatagram(
@@ -24,6 +25,15 @@
 /** @returns A datagram holding a ReadyState, which only a player sends. */
 [[nodiscard]] std::vector<std::byte> readyDatagram(
     const rtype::network::PacketHeader& header = {});
+
+/** @returns A header carrying @p sessionToken, as an admitted player sends. */
+[[nodiscard]] rtype::network::PacketHeader playerHeader(
+    std::uint64_t sessionToken = rtype::server::testing::SESSION_TOKEN);
+
+/** @returns A ReadyState carrying @p sessionToken, as an admitted player
+ * sends. */
+[[nodiscard]] std::vector<std::byte> playerReady(
+    std::uint64_t sessionToken = rtype::server::testing::SESSION_TOKEN);
 
 /**
  * @returns How a log line names @p sender: "from", its address, "port" and its

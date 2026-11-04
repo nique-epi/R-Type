@@ -8,6 +8,7 @@
 #include "Endpoint.hpp"
 #include "EntityIdConstants.hpp"
 #include "LivesConstants.hpp"
+#include "SentStates.hpp"
 #include "TimeConstants.hpp"
 #include "UnacknowledgedMessages.hpp"
 
@@ -93,6 +94,11 @@ struct ConnectedPlayer {
    * acknowledge, and makes them older at the start of each tick;
    * guaranteeToEveryPlayer() and resendGuaranteedMessages() send them. */
   network::UnacknowledgedMessages unacknowledged;
+  /** @brief The world states sent to the player and the newest one it
+   * acknowledged in full. GameSessions gives it the acknowledgement of each
+   * datagram of the player; the world state sender writes each state against
+   * the acknowledged one. */
+  SentStates sentStates;
 };
 
 }  // namespace rtype::server
