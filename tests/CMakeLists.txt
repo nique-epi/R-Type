@@ -174,16 +174,8 @@ rtype_add_test(NAME client_settings_tests SOURCES client/Settings/Storage/Settin
 target_include_directories(client_settings_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} doubles)
 rtype_add_test(NAME client_launch_options_tests SOURCES client/LaunchOptions/LaunchOptionsTest.cpp logging/LogLaunchOptionsFixture.cpp LIBS rtype_client_launch_options rtype_client_constants rtype_network_constants rtype_logging)
 target_include_directories(client_launch_options_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/logging)
-add_library(malformed_datagram_builder STATIC tools/MalformedDatagramBuilder.cpp)
-target_include_directories(malformed_datagram_builder PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/tools)
-target_link_libraries(malformed_datagram_builder PUBLIC rtype_network)
-rtype_enable_warnings(malformed_datagram_builder)
-rtype_add_test(NAME malformed_datagram_tests SOURCES tools/MalformedDatagramBuilderTest.cpp tools/MalformedDatagramBuilderFixture.cpp LIBS malformed_datagram_builder)
-target_include_directories(malformed_datagram_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/network/Protocol)
-add_executable(malformed_datagrams tools/main.cpp tools/LoopbackPeer.cpp tools/SessionOpening.cpp tools/DatagramFlood.cpp tools/FloodLaunchOptions.cpp)
-target_link_libraries(malformed_datagrams PRIVATE malformed_datagram_builder rtype_network_asio rtype_engine_launch_arguments)
-set_target_properties(malformed_datagrams PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
-rtype_enable_warnings(malformed_datagrams)
+add_subdirectory(tools/MalformedDatagrams)
+add_subdirectory(tools/LoadTestBots)
 
 # The scripts of tools/network-conditions/ are POSIX shell: their checks run
 # where a shell does.

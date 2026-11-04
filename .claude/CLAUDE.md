@@ -86,6 +86,7 @@ Paths below are relative to `.claude/rules/`.
 - `architecture/fix-architecture-inherit-interfaces-compose-implementations.md`
 - `architecture/fix-architecture-magic-values-as-named-constants.md`
 - `architecture/fix-architecture-no-type-nested-in-a-class.md`
+- `architecture/fix-architecture-the-table-of-categories-is-rerun-on-every-header.md`
 
 **Build architecture — `fix/architecture/` (loaded every session)**
 - `fix/architecture/fix-architecture-a-link-never-points-back-at-a-folder-that-links-it.md`

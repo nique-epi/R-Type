@@ -35,14 +35,14 @@ Why: the subject (page 16) makes an engine modular through what a developer choo
 6. **A folder has one `CMakeLists.txt` declaring one target** named `rtype_<owner>_<folder in snake_case>`, ended by `_module` for a module (`rtype_server_metrics_module`). It lists the `.cpp` of every class of the folder and exposes the folder (`fix-architecture-one-cmakelists-per-folder.md`).
 7. **Inside a folder, everything is a file of that folder or of the sub-folder of its category (point 8), never a folder of its own**: a concrete class, an abstract class, free functions, an exception, an interface, a plain struct, a constants header. One class per `.hpp`/`.cpp` pair, named after it (`code-style-file-named-after-its-class.md`); a helper class a class needs is a pair of the same folder, never a type nested in it (`fix-architecture-no-type-nested-in-a-class.md`).
 8. **A folder whose classes fall into categories has a sub-folder for each.** A category is a group of at least three classes that change for the same reason and that a reader names in a few words: in `src/engine/Commands/`, the interpreter (the table of commands and the cutting of a line), the settings (the declared settings and `set`) and the configuration (reading `server.cfg` and `client.cfg`). The per-platform files of one class (`BorderlessScreenLinux.cpp`, `…MacOs.cpp`, `…Windows.cpp`) count as one class. What serves the whole folder stays at its root: the module class, the constants header and the interfaces several categories use. A folder with fewer than two categories stays flat, whatever it holds: there is no count of files to reach, the name of the category tells the reader where to look.
-9. **A sub-folder exists only in three cases**, with a `CMakeLists.txt` and a target of its own:
+9. **A sub-folder exists only in three cases**, with a `CMakeLists.txt` and a target of its own (the `Fixtures/` of a folder of `tests/tools/`, point 11, is the one exception):
    - it is a category (point 8);
    - a group of classes needs a dependency the rest must not link (a file parser, a platform API);
    - it is the `Contract/` of an optional module.
 
    Never one per class, and never deeper than three levels: a sub-folder has sub-folders of its own only when it meets point 8 itself, at least two categories of three classes (`Menus/Options/` splits into the screen with its dialogs and the tabs with their rows), and a folder of the third level has none. At every level, the parent links the sub-folder and never the other way round.
 10. **Two classes of a folder never include each other**, directly or through a third, since the build no longer stops them: when both need the same thing, it moves to an interface or a plain struct they both include.
-11. **Tests mirror the folder** (`tests/server/Spawning/`), one test file per class; a test double stays in `tests/doubles/`.
+11. **Tests mirror the folder** (`tests/server/Spawning/`), one test file per class; a test double stays in `tests/doubles/`. In a folder of `tests/tools/`, the fixtures of its tests sit in its `Fixtures/` sub-folder, which has a `CMakeLists.txt` but no target of its own: it gives its `.cpp` to the test target of its parent (`fix-format-a-test-file-holds-only-tests.md`).
 
 ### A new module, and what stays tolerated
 

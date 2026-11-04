@@ -6,6 +6,7 @@ add_subdirectory(Leaderboard)
 
 add_library(rtype_client_connection_module STATIC
   ClientConnectionModule.cpp
+  PlayerConnection.cpp
   ServerSession.cpp
 )
 
