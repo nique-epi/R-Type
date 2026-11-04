@@ -6,8 +6,8 @@
 #include <span>
 #include <string>
 #include <string_view>
-#include "BotConstants.hpp"
 #include "BotLaunch.hpp"
+#include "BotLaunchConstants.hpp"
 #include "ClientConstants.hpp"
 #include "EndpointText.hpp"
 #include "EngineException.hpp"

@@ -3,7 +3,7 @@
 #include <cstdint>
 #include <random>
 #include "ActionSet.hpp"
-#include "BotConstants.hpp"
+#include "BotPilotConstants.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::tools {

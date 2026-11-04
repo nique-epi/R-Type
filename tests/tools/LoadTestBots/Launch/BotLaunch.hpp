@@ -4,7 +4,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <string>
-#include "BotConstants.hpp"
+#include "BotLaunchConstants.hpp"
 #include "ClientConstants.hpp"
 #include "Endpoint.hpp"
 #include "NetworkConstants.hpp"

@@ -5,7 +5,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <string_view>
-#include "BotConstants.hpp"
+#include "BotLaunchConstants.hpp"
 #include "ClientConstants.hpp"
 #include "LaunchArgumentsConstants.hpp"
 

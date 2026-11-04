@@ -10,6 +10,7 @@
 #include <vector>
 #include "BotConstants.hpp"
 #include "BotLaunch.hpp"
+#include "BotLaunchConstants.hpp"
 #include "BotLaunchOptions.hpp"
 #include "BotReport.hpp"
 #include "BotSquad.hpp"

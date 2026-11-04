@@ -6,9 +6,9 @@
 #include <string>
 #include <vector>
 #include "Bot.hpp"
-#include "BotConstants.hpp"
 #include "BotLaunch.hpp"
 #include "BotReport.hpp"
+#include "BotSquadConstants.hpp"
 #include "ConnectionPhase.hpp"
 #include "ReadyRule.hpp"
 #include "TimeConstants.hpp"
