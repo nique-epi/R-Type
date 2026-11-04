@@ -12,6 +12,7 @@ namespace rtype::server {
 
 using testing::AVERAGE_TICK;
 using testing::ENTITIES_ALIVE;
+using testing::EXPECTED_HOSTILE_ROUND_TRIPS_LINE;
 using testing::EXPECTED_LINE_WITHOUT_ROUND_TRIPS;
 using testing::EXPECTED_LINE_WITHOUT_TICKS;
 using testing::EXPECTED_ROUND_TRIPS_LINE;
@@ -25,6 +26,7 @@ using testing::FIRST_MEASURED_NICKNAME;
 using testing::FIRST_MEASURED_ROUND_TRIP;
 using testing::GAMES_HOSTED;
 using testing::GAMES_IN_PROGRESS;
+using testing::HOSTILE_NICKNAME;
 using testing::MEASURED_PLAYER_NUMBER;
 using testing::MEDIAN_TICK;
 using testing::NINETY_FIFTH_PERCENTILE_TICK;
@@ -125,6 +127,29 @@ TEST(MetricsLines, TheRoundTripsLineGivesEachPlayerMeasured) {
                                      .jitter = SECOND_MEASURED_JITTER}}}};
 
   EXPECT_EQ(roundTripsLineOf(report), EXPECTED_ROUND_TRIPS_LINE);
+}
+
+/**
+ * Given a report holding a player whose nickname holds a control of Unicode
+ * (U+0085), a quote, a backslash and what looks like another field
+ * When its line about the round trips is written
+ * Then the nickname is one quoted word, the control, the quote and the
+ * backslash escaped, so it neither ends the line nor adds a field
+ */
+TEST(MetricsLines, TheRoundTripsLineQuotesAHostileNickname) {
+  const MetricsReport report{
+      .ticks = TickDurationSummary{},
+      .games = GamesCensus{},
+      .systemTimes = {},
+      .traffic = {},
+      .roundTrips = {PlayerRoundTripMeasure{
+          .gameNumber = FIRST_MEASURED_GAME,
+          .playerNumber = MEASURED_PLAYER_NUMBER,
+          .nickname = std::string{HOSTILE_NICKNAME},
+          .figures = {.roundTrip = FIRST_MEASURED_ROUND_TRIP,
+                      .jitter = FIRST_MEASURED_JITTER}}}};
+
+  EXPECT_EQ(roundTripsLineOf(report), EXPECTED_HOSTILE_ROUND_TRIPS_LINE);
 }
 
 /**

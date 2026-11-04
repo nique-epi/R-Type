@@ -17,12 +17,12 @@ using testing::FIRST_HEARTBEAT_SENT_AT;
 using testing::HELD_BY_THE_SERVER;
 using testing::HELD_UNTIL_THE_CLIENT_SENDS;
 using testing::ONE_FRAME;
-using testing::REPORTED_PLAYER_NUMBER;
+using testing::ONE_HEARTBEAT_INTERVAL;
 using testing::OWN_PLAYER_NUMBER;
 using testing::OWN_ROUND_TRIP;
-using testing::ONE_HEARTBEAT_INTERVAL;
 using testing::REPORTED_JITTER;
 using testing::REPORTED_JITTER_DURATION;
+using testing::REPORTED_PLAYER_NUMBER;
 using testing::REPORTED_ROUND_TRIP;
 using testing::REPORTED_ROUND_TRIP_DURATION;
 using testing::RoundTripWatchFixture;
@@ -172,10 +172,11 @@ TEST_F(RoundTripWatchFixture, GivesNothingForItsOwnPlayerBeforeAnEcho) {
 TEST_F(RoundTripWatchFixture, GivesTheRoundTripsTheServerReportedForTheOthers) {
   openSession();
 
-  deliver(network::RoundTrips{.players = {{.playerNumber = REPORTED_PLAYER_NUMBER,
-                                           .roundTrip = REPORTED_ROUND_TRIP,
-                                           .jitter = REPORTED_JITTER}}},
-          SERVER_HEARTBEAT_ARRIVAL);
+  deliver(
+      network::RoundTrips{.players = {{.playerNumber = REPORTED_PLAYER_NUMBER,
+                                       .roundTrip = REPORTED_ROUND_TRIP,
+                                       .jitter = REPORTED_JITTER}}},
+      SERVER_HEARTBEAT_ARRIVAL);
 
   EXPECT_EQ(
       watch().roundTripOf(REPORTED_PLAYER_NUMBER),
@@ -190,10 +191,11 @@ TEST_F(RoundTripWatchFixture, GivesTheRoundTripsTheServerReportedForTheOthers) {
  */
 TEST_F(RoundTripWatchFixture, GivesNothingForAPlayerNotReported) {
   openSession();
-  deliver(network::RoundTrips{.players = {{.playerNumber = REPORTED_PLAYER_NUMBER,
-                                           .roundTrip = REPORTED_ROUND_TRIP,
-                                           .jitter = REPORTED_JITTER}}},
-          SERVER_HEARTBEAT_ARRIVAL);
+  deliver(
+      network::RoundTrips{.players = {{.playerNumber = REPORTED_PLAYER_NUMBER,
+                                       .roundTrip = REPORTED_ROUND_TRIP,
+                                       .jitter = REPORTED_JITTER}}},
+      SERVER_HEARTBEAT_ARRIVAL);
 
   EXPECT_FALSE(watch().roundTripOf(UNREPORTED_PLAYER_NUMBER).has_value());
 }
@@ -203,12 +205,14 @@ TEST_F(RoundTripWatchFixture, GivesNothingForAPlayerNotReported) {
  * When the session closes
  * Then no player has a round trip any more
  */
-TEST_F(RoundTripWatchFixture, ForgetsTheReportedRoundTripsWhenTheSessionCloses) {
+TEST_F(RoundTripWatchFixture,
+       ForgetsTheReportedRoundTripsWhenTheSessionCloses) {
   openSession();
-  deliver(network::RoundTrips{.players = {{.playerNumber = REPORTED_PLAYER_NUMBER,
-                                           .roundTrip = REPORTED_ROUND_TRIP,
-                                           .jitter = REPORTED_JITTER}}},
-          SERVER_HEARTBEAT_ARRIVAL);
+  deliver(
+      network::RoundTrips{.players = {{.playerNumber = REPORTED_PLAYER_NUMBER,
+                                       .roundTrip = REPORTED_ROUND_TRIP,
+                                       .jitter = REPORTED_JITTER}}},
+      SERVER_HEARTBEAT_ARRIVAL);
 
   watch().sessionClosed();
 
@@ -264,10 +268,11 @@ TEST_F(RoundTripWatchFixture, EchoesNothingOfTheSessionBefore) {
  */
 TEST_F(RoundTripWatchFixture, ForgetsTheReportOfTheSessionBefore) {
   openSession();
-  deliver(network::RoundTrips{.players = {{.playerNumber = REPORTED_PLAYER_NUMBER,
-                                           .roundTrip = REPORTED_ROUND_TRIP,
-                                           .jitter = REPORTED_JITTER}}},
-          SERVER_HEARTBEAT_ARRIVAL);
+  deliver(
+      network::RoundTrips{.players = {{.playerNumber = REPORTED_PLAYER_NUMBER,
+                                       .roundTrip = REPORTED_ROUND_TRIP,
+                                       .jitter = REPORTED_JITTER}}},
+      SERVER_HEARTBEAT_ARRIVAL);
   watch().sessionClosed();
 
   openSession();
@@ -281,10 +286,11 @@ TEST_F(RoundTripWatchFixture, ForgetsTheReportOfTheSessionBefore) {
  * Then the round trips that came before it are not kept
  */
 TEST_F(RoundTripWatchFixture, IgnoresAReportWithoutASession) {
-  deliver(network::RoundTrips{.players = {{.playerNumber = REPORTED_PLAYER_NUMBER,
-                                           .roundTrip = REPORTED_ROUND_TRIP,
-                                           .jitter = REPORTED_JITTER}}},
-          SERVER_HEARTBEAT_ARRIVAL);
+  deliver(
+      network::RoundTrips{.players = {{.playerNumber = REPORTED_PLAYER_NUMBER,
+                                       .roundTrip = REPORTED_ROUND_TRIP,
+                                       .jitter = REPORTED_JITTER}}},
+      SERVER_HEARTBEAT_ARRIVAL);
 
   openSession();
 

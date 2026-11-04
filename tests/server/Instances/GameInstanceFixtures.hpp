@@ -163,6 +163,9 @@ class GameInstanceTest : public ::testing::Test {
 
   [[nodiscard]] GameInstance& game();
 
+  /** @returns The time on the clock the game reads real time on. */
+  [[nodiscard]] engine::Duration clockNow() const;
+
   /** @returns The world of the game, which the rules of R-Type own. A new
    * one replaces it when the game waits for players again. */
   [[nodiscard]] game::World& world();

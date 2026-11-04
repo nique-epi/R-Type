@@ -27,12 +27,12 @@ PlayerConnection::PlayerConnection(const network::NetworkConditions& conditions)
       entityMessages_(dispatcher_, waitingRoom_, gameLoaded_),
       roundTrips_(dispatcher_, clock_),
       leaderboard_(dispatcher_),
-      session_(ServerSessionParts{.link = router_.addRoute(),
-                                  .dispatcher = dispatcher_,
-                                  .gameLoaded = gameLoaded_,
-                                  .observers = {waitingRoom_, entityMessages_,
-                                                gameLoaded_, roundTrips_,
-                                                leaderboard_}}) {}
+      session_(ServerSessionParts{
+          .link = router_.addRoute(),
+          .dispatcher = dispatcher_,
+          .gameLoaded = gameLoaded_,
+          .observers = {waitingRoom_, entityMessages_, gameLoaded_, roundTrips_,
+                        leaderboard_}}) {}
 
 void PlayerConnection::update(engine::Duration elapsed) {
   entityMessages_.advance(elapsed);

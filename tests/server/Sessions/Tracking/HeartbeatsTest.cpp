@@ -58,6 +58,26 @@ TEST(Heartbeats, AddsTheTimeOfTheTickToEveryPlayer) {
 }
 
 /**
+ * Given two players, only the first of them due a Heartbeat
+ * When the heartbeats are sent
+ * Then the first is sent a Heartbeat and the round trips, and the second is
+ * sent nothing
+ */
+TEST(Heartbeats, SendsOnlyThePlayersWhoAreDue) {
+  PlayerRoster roster;
+  ConnectedPlayer& due = addPlayer(roster, 0);
+  ConnectedPlayer& notDue = addPlayer(roster, 1);
+  due.sinceHeartbeat = PROTOCOL_TIME_BETWEEN_HEARTBEATS;
+  notDue.sinceHeartbeat = PROTOCOL_TIME_BETWEEN_HEARTBEATS - ONE_NANOSECOND;
+
+  const std::vector<network::OutgoingDatagram> sent =
+      heartbeatsSentAt(roster, HEARTBEAT_SENDING_TIME);
+
+  EXPECT_EQ(sentTo(sent, due.endpoint).size(), 2U);
+  EXPECT_TRUE(sentTo(sent, notDue.endpoint).empty());
+}
+
+/**
  * Given a player the server sent no Heartbeat for one nanosecond less than
  * the whole ticks that fit in the interval of the protocol
  * When the heartbeats are sent

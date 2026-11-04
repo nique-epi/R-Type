@@ -45,7 +45,7 @@ constexpr std::chrono::microseconds ONE_MILLISECOND_BEFORE_THE_WRAP{
  * Heartbeat sent then is not the time itself.
  */
 constexpr std::chrono::microseconds ONE_MILLISECOND_BEFORE_THE_SECOND_WRAP{
-    2 * 4'294'967'296 - 1'000};
+    (2 * 4'294'967'296) - 1'000};
 
 /**
  * @brief A time held longer than the 45 ms since the Heartbeat was sent.

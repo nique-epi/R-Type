@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 #include <algorithm>
 #include <array>
+#include <chrono>
 #include <cstddef>
 #include <cstdint>
 #include <initializer_list>
@@ -22,6 +23,7 @@
 #include "GameInstanceTestConstants.hpp"
 #include "GameState.hpp"
 #include "GuaranteedMessageTestConstants.hpp"
+#include "Heartbeat.hpp"
 #include "IncomingDatagram.hpp"
 #include "LobbyState.hpp"
 #include "MessageType.hpp"
@@ -34,6 +36,7 @@
 #include "PlayerRoster.hpp"
 #include "Position.hpp"
 #include "ProtocolConstants.hpp"
+#include "RoundTrips.hpp"
 #include "SentDatagrams.hpp"
 #include "ServerConstants.hpp"
 #include "ServerDatagrams.hpp"
@@ -53,6 +56,10 @@ using game::testing::ROLL_DISTANCE;
 using game::testing::ROLL_END_TICK;
 using testing::bydosAmong;
 using testing::bydosIn;
+using testing::ECHO_HELD_FOR;
+using testing::ECHO_ROUND_TRIP_ON_THE_WIRE;
+using testing::ECHO_SEQUENCE;
+using testing::ECHO_TRAVEL_TIME;
 using testing::entityOf;
 using testing::FIRST_PLAYER;
 using testing::FIRST_SENT;
@@ -1117,6 +1124,60 @@ TEST_F(GameInstanceTest, SendsTheHeartbeatUnderTheSessionOfThePlayer) {
   EXPECT_EQ(network::DatagramCodec::decodeHeader(heartbeats.back().payload)
                 .sessionToken,
             testing::SESSION_TOKEN);
+}
+
+/**
+ * Given a game in progress that sent its player a Heartbeat, at the time on
+ * its clock
+ * When the player sends the echo of it, held 3 ms, arriving 45 ms after the
+ * Heartbeat left, and the ticks of one interval run
+ * Then the Heartbeat carried the time on the clock of the game, and the
+ * RoundTrips the player is sent next lists it with a round trip of 42 ms
+ */
+TEST_F(GameInstanceTest, MeasuresThePlayerFromTheEchoOfItsHeartbeat) {
+  startGameWithOnePlayer();
+  const std::size_t before = heartbeatsIn(sentTo(FIRST_PLAYER));
+  for (std::size_t ticks = 0; ticks <= PROTOCOL_HEARTBEAT_TICKS &&
+                              heartbeatsIn(sentTo(FIRST_PLAYER)) == before;
+       ++ticks) {
+    tick();
+  }
+  ASSERT_EQ(heartbeatsIn(sentTo(FIRST_PLAYER)), before + 1);
+  const std::vector<network::Heartbeat> sent =
+      testing::messagesIn<network::Heartbeat>(
+          ofType(network::MessageType::Heartbeat, sentTo(FIRST_PLAYER)).back());
+  ASSERT_EQ(sent.size(), 1U);
+  const network::Heartbeat heartbeat = sent.front();
+  EXPECT_EQ(std::chrono::microseconds{heartbeat.sentAt},
+            std::chrono::duration_cast<std::chrono::microseconds>(clockNow()));
+  const ConnectedPlayer* const player =
+      game().roster().find(playerEndpoint(FIRST_PLAYER));
+  ASSERT_NE(player, nullptr);
+  network::PacketHeader header;
+  header.sessionToken = player->sessionToken;
+  header.sequence = ECHO_SEQUENCE;
+  const std::chrono::microseconds leftAt{heartbeat.sentAt};
+
+  queue(network::IncomingDatagram{
+      .sender = player->endpoint,
+      .payload = heartbeatDatagram(
+          header,
+          network::Heartbeat{
+              .sentAt = 0,
+              .echo = network::HeartbeatEcho{.sentAt = heartbeat.sentAt,
+                                             .heldFor = ECHO_HELD_FOR}}),
+      .receivedAt = leftAt + ECHO_TRAVEL_TIME});
+  tick();
+  runTicks(PROTOCOL_HEARTBEAT_TICKS);
+
+  const std::vector<network::OutgoingDatagram> reports =
+      ofType(network::MessageType::RoundTrips, sentTo(FIRST_PLAYER));
+  ASSERT_FALSE(reports.empty());
+  EXPECT_EQ(testing::onlyMessageIn<network::RoundTrips>(reports.back()).players,
+            (std::vector<network::PlayerRoundTrip>{
+                {.playerNumber = player->playerNumber,
+                 .roundTrip = ECHO_ROUND_TRIP_ON_THE_WIRE,
+                 .jitter = 0}}));
 }
 
 /**

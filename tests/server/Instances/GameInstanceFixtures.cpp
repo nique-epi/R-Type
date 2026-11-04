@@ -258,6 +258,8 @@ std::uint32_t GameInstanceTest::shipOf(std::size_t index) {
   return player == nullptr ? identifiers::NO_ENTITY_ID : player->shipEntityId;
 }
 
+engine::Duration GameInstanceTest::clockNow() const { return clock_.now(); }
+
 std::vector<network::OutgoingDatagram> GameInstanceTest::sentTo(
     std::size_t index) const {
   return testing::sentTo(sent_, playerEndpoint(index));

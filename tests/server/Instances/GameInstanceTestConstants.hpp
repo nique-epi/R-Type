@@ -207,6 +207,17 @@ static_assert(SHUFFLED_INPUT_COUNT <= network::PLAYER_ACTION_BITS + 1U,
 constexpr float WIRE_COORDINATE_TOLERANCE =
     1.0F / network::WIRE_COORDINATE_STEPS_PER_UNIT;
 
+/**
+ * @brief The echo a player sends back for a Heartbeat of the game: it arrives
+ * 45 ms after the Heartbeat left, the client having held it 3 ms, so the round
+ * trip is 42 ms, 42000 µs on the wire. Its sequence is above those of the
+ * datagrams the player sent before.
+ */
+constexpr std::chrono::milliseconds ECHO_TRAVEL_TIME{45};
+constexpr std::uint32_t ECHO_HELD_FOR = 3'000;
+constexpr std::uint32_t ECHO_ROUND_TRIP_ON_THE_WIRE = 42'000;
+constexpr std::uint16_t ECHO_SEQUENCE = 1'000;
+
 /** @brief A score worth some points, when the number does not matter. */
 constexpr std::uint32_t SOME_POINTS = 100;
 
