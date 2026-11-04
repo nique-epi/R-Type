@@ -1,4 +1,5 @@
 #include <gtest/gtest.h>
+#include <cstdint>
 #include "EnemyKind.hpp"
 #include "MovementPattern.hpp"
 

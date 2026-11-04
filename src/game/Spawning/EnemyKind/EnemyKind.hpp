@@ -27,8 +27,8 @@ enum class EnemyKind : std::uint8_t {
 
 /** @brief Every kind, in the order of the enumeration. */
 constexpr std::array ALL_ENEMY_KINDS{
-    EnemyKind::Drifter,    EnemyKind::Weaver,     EnemyKind::Voltjelly,
-    EnemyKind::Reaper,     EnemyKind::Bydomancer, EnemyKind::Drillback,
+    EnemyKind::Drifter,   EnemyKind::Weaver,     EnemyKind::Voltjelly,
+    EnemyKind::Reaper,    EnemyKind::Bydomancer, EnemyKind::Drillback,
     EnemyKind::BydoTyrant};
 
 static_assert(ALL_ENEMY_KINDS.size() ==

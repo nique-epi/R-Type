@@ -6,7 +6,7 @@
 namespace rtype::client {
 
 struct SeenEnemyAction {
-  network::EnemyAction action;
+  network::EnemyAction action{};
   engine::Duration age{};
 };
 

@@ -1,6 +1,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include <SFML/Graphics/Color.hpp>
+#include <array>
 #include <cstddef>
 #include <cstdint>
 #include <utility>
@@ -10,6 +11,7 @@
 #include "EffectConstants.hpp"
 #include "EnemyAction.hpp"
 #include "EnemyKind.hpp"
+#include "Entity.hpp"
 #include "EntityAnnouncements.hpp"
 #include "EntityIdConstants.hpp"
 #include "EntityReplicatorFixture.hpp"
@@ -894,18 +896,18 @@ TEST_F(EntityReplicatorFixture,
  * carries the kind Drifter
  */
 TEST_F(EntityReplicatorFixture, ReadsEachEnemyWireTypeAsAnEnemyOfItsKind) {
-  const std::pair<WireEntityType, EnemyKind> reserved[] = {
-      {WireEntityType::Bydo, EnemyKind::Drifter},
-      {WireEntityType::Voltjelly, EnemyKind::Voltjelly},
-      {WireEntityType::Reaper, EnemyKind::Reaper},
-      {WireEntityType::Bydomancer, EnemyKind::Bydomancer},
-      {WireEntityType::Drillback, EnemyKind::Drillback},
-      {WireEntityType::BydoTyrant, EnemyKind::BydoTyrant}};
-  std::uint32_t id = BYDO_ID;
+  const auto reserved = std::to_array<std::pair<WireEntityType, EnemyKind>>(
+      {{WireEntityType::Bydo, EnemyKind::Drifter},
+       {WireEntityType::Voltjelly, EnemyKind::Voltjelly},
+       {WireEntityType::Reaper, EnemyKind::Reaper},
+       {WireEntityType::Bydomancer, EnemyKind::Bydomancer},
+       {WireEntityType::Drillback, EnemyKind::Drillback},
+       {WireEntityType::BydoTyrant, EnemyKind::BydoTyrant}});
+  std::uint32_t networkId = BYDO_ID;
 
   for (const auto& [wireType, kind] : reserved) {
     SCOPED_TRACE(static_cast<int>(wireType));
-    replicator().apply(spawned(id, wireType, BYDO_POSITION));
+    replicator().apply(spawned(networkId, wireType, BYDO_POSITION));
 
     std::size_t found = 0;
     components().forEach<EnemyKind, EntityType>(
@@ -916,7 +918,7 @@ TEST_F(EntityReplicatorFixture, ReadsEachEnemyWireTypeAsAnEnemyOfItsKind) {
           }
         });
     EXPECT_EQ(found, 1U);
-    ++id;
+    ++networkId;
   }
 }
 
@@ -980,13 +982,13 @@ TEST_F(EntityReplicatorFixture,
  * Then each is an EnemyMissile with no kind
  */
 TEST_F(EntityReplicatorFixture, ReadsTheNewProjectileTypesAsEnemyMissiles) {
-  const WireEntityType projectiles[] = {
-      WireEntityType::RuneOrb, WireEntityType::Bone, WireEntityType::Beam};
-  std::uint32_t id = ENEMY_MISSILE_ID;
+  const auto projectiles = std::to_array<WireEntityType>(
+      {WireEntityType::RuneOrb, WireEntityType::Bone, WireEntityType::Beam});
+  std::uint32_t networkId = ENEMY_MISSILE_ID;
 
   for (const WireEntityType wireType : projectiles) {
-    replicator().apply(spawned(id, wireType, ENEMY_MISSILE_POSITION));
-    ++id;
+    replicator().apply(spawned(networkId, wireType, ENEMY_MISSILE_POSITION));
+    ++networkId;
   }
 
   std::size_t missiles = 0;

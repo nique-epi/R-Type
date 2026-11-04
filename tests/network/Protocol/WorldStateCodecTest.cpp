@@ -1,5 +1,7 @@
 #include <gtest/gtest.h>
+#include <array>
 #include <cstddef>
+#include <utility>
 #include <vector>
 #include "ByteSequence.hpp"
 #include "NetworkException.hpp"
@@ -331,15 +333,15 @@ TEST(WorldStateCodec, DecodesTheLastEntityType) {
  * Then the entity is in the state, with the type of that number
  */
 TEST(WorldStateCodec, DecodesEveryReservedEntityTypeByItsNumber) {
-  const std::pair<unsigned int, WireEntityType> reserved[] = {
-      {VOLTJELLY_TYPE, WireEntityType::Voltjelly},
-      {REAPER_TYPE, WireEntityType::Reaper},
-      {BYDOMANCER_TYPE, WireEntityType::Bydomancer},
-      {DRILLBACK_TYPE, WireEntityType::Drillback},
-      {BYDO_TYRANT_TYPE, WireEntityType::BydoTyrant},
-      {RUNE_ORB_TYPE, WireEntityType::RuneOrb},
-      {BONE_TYPE, WireEntityType::Bone},
-      {BEAM_TYPE, WireEntityType::Beam}};
+  const auto reserved = std::to_array<std::pair<unsigned int, WireEntityType>>(
+      {{VOLTJELLY_TYPE, WireEntityType::Voltjelly},
+       {REAPER_TYPE, WireEntityType::Reaper},
+       {BYDOMANCER_TYPE, WireEntityType::Bydomancer},
+       {DRILLBACK_TYPE, WireEntityType::Drillback},
+       {BYDO_TYRANT_TYPE, WireEntityType::BydoTyrant},
+       {RUNE_ORB_TYPE, WireEntityType::RuneOrb},
+       {BONE_TYPE, WireEntityType::Bone},
+       {BEAM_TYPE, WireEntityType::Beam}});
 
   for (const auto& [number, type] : reserved) {
     SCOPED_TRACE(number);

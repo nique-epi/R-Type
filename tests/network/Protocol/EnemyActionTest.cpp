@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 #include <cstddef>
-#include <vector>
+#include <cstdint>
 #include "ByteSequence.hpp"
 #include "EnemyAction.hpp"
 #include "MessagePayload.hpp"

@@ -3,7 +3,6 @@
 #include "EnemyActionHistoryTestConstants.hpp"
 #include "GameEventHistoryTestConstants.hpp"
 #include "NetworkTestConstants.hpp"
-#include "ServerSessionTestConstants.hpp"
 #include "TimeTestConstants.hpp"
 
 using rtype::client::EnemyActionHistory;

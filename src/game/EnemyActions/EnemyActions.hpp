@@ -14,7 +14,7 @@ namespace rtype::game {
 
 /** @brief An enemy and the action it enters. */
 struct EnemyActionStart {
-  engine::Entity enemy;
+  engine::Entity enemy{};
   ActionKey action;
 };
 

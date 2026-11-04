@@ -6,7 +6,7 @@
 #include "EnemyActionStarted.hpp"
 #include "EnemyActions.hpp"
 #include "EnemyActionsFixture.hpp"
-#include "EnemyKind.hpp"
+#include "EnemyPhase.hpp"
 #include "Entity.hpp"
 #include "EntityRegistry.hpp"
 

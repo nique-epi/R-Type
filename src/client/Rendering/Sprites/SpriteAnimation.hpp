@@ -21,7 +21,7 @@ struct SpriteAnimation {
   engine::Duration elapsed{};
   /** @brief The animation that takes over when `animation`, played once, has
    * ended; nothing for an effect, which is destroyed instead. */
-  std::optional<Animation> afterwards;
+  std::optional<Animation> afterwards = std::nullopt;
 };
 
 }  // namespace rtype::client

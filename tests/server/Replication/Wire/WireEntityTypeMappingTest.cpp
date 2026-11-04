@@ -1,4 +1,5 @@
 #include <gtest/gtest.h>
+#include <array>
 #include <optional>
 #include <utility>
 #include "EnemyKind.hpp"
@@ -18,14 +19,14 @@ using rtype::server::toWireEntityType;
  * the protocol page reserves for it
  */
 TEST(WireEntityTypeMapping, EachKindOfEnemyHasItsWireType) {
-  const std::pair<EnemyKind, WireEntityType> expected[] = {
-      {EnemyKind::Drifter, WireEntityType::Bydo},
-      {EnemyKind::Weaver, WireEntityType::Bydo},
-      {EnemyKind::Voltjelly, WireEntityType::Voltjelly},
-      {EnemyKind::Reaper, WireEntityType::Reaper},
-      {EnemyKind::Bydomancer, WireEntityType::Bydomancer},
-      {EnemyKind::Drillback, WireEntityType::Drillback},
-      {EnemyKind::BydoTyrant, WireEntityType::BydoTyrant}};
+  const auto expected = std::to_array<std::pair<EnemyKind, WireEntityType>>(
+      {{EnemyKind::Drifter, WireEntityType::Bydo},
+       {EnemyKind::Weaver, WireEntityType::Bydo},
+       {EnemyKind::Voltjelly, WireEntityType::Voltjelly},
+       {EnemyKind::Reaper, WireEntityType::Reaper},
+       {EnemyKind::Bydomancer, WireEntityType::Bydomancer},
+       {EnemyKind::Drillback, WireEntityType::Drillback},
+       {EnemyKind::BydoTyrant, WireEntityType::BydoTyrant}});
 
   for (const auto& [kind, wireType] : expected) {
     SCOPED_TRACE(static_cast<int>(kind));

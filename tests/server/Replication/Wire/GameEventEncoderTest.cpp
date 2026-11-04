@@ -1,10 +1,12 @@
 #include <gtest/gtest.h>
+#include <array>
 #include <cstddef>
 #include <cstdint>
 #include <utility>
 #include <vector>
 #include "EnemyAction.hpp"
 #include "EnemyActionStarted.hpp"
+#include "EnemyPhase.hpp"
 #include "EntityDamage.hpp"
 #include "EntityDestroyed.hpp"
 #include "EntityDestruction.hpp"
@@ -212,11 +214,12 @@ TEST(GameEventEncoderTest, EncodesAnEnemyActionAsAGuaranteedMessage) {
  * Then each message names the phase of the same name on the wire
  */
 TEST(GameEventEncoderTest, EncodesEachPhaseOfAnEnemyAction) {
-  const std::pair<game::EnemyPhase, network::EnemyActionPhase> phases[] = {
-      {game::EnemyPhase::Signal, network::EnemyActionPhase::Signal},
-      {game::EnemyPhase::Strike, network::EnemyActionPhase::Strike},
-      {game::EnemyPhase::Recover, network::EnemyActionPhase::Recover},
-      {game::EnemyPhase::Enraged, network::EnemyActionPhase::Enraged}};
+  const auto phases =
+      std::to_array<std::pair<game::EnemyPhase, network::EnemyActionPhase>>(
+          {{game::EnemyPhase::Signal, network::EnemyActionPhase::Signal},
+           {game::EnemyPhase::Strike, network::EnemyActionPhase::Strike},
+           {game::EnemyPhase::Recover, network::EnemyActionPhase::Recover},
+           {game::EnemyPhase::Enraged, network::EnemyActionPhase::Enraged}});
 
   for (const auto& [phase, wirePhase] : phases) {
     SCOPED_TRACE(static_cast<int>(phase));

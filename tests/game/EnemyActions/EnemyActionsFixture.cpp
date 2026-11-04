@@ -16,9 +16,9 @@ EnemyActionsFixture::EnemyActionsFixture()
     : subscription_(events_.subscribe<EnemyActionStarted>(
           [this](const EnemyActionStarted& event) {
             delivered_.push_back(event);
-          })) {
-  enemyNetworkId_ =
-      world_.spawnBydo(Position{.x = SOME_X, .y = SOME_Y}, EnemyKind::Reaper);
+          })),
+      enemyNetworkId_(world_.spawnBydo(Position{.x = SOME_X, .y = SOME_Y},
+                                       EnemyKind::Reaper)) {
   world_.components().forEach<NetworkIdentity, NetworkIdentity>(
       [this](engine::Entity entity, const NetworkIdentity& identity,
              const NetworkIdentity&) {

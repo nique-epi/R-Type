@@ -1,7 +1,6 @@
 #include "EnemyAppearance.hpp"
 #include <algorithm>
 #include <optional>
-#include <utility>
 #include "ActionKey.hpp"
 #include "ComponentRegistry.hpp"
 #include "EnemyKind.hpp"
@@ -52,9 +51,9 @@ std::optional<SpriteAnimation> startedActionOf(
 
 void showEnemyAction(engine::ComponentRegistry& components,
                      engine::Entity enemy, game::ActionKey action) {
-  const game::EnemyKind* const kind = components.get<game::EnemyKind>(enemy);
-  game::Sprite* const sprite = components.get<game::Sprite>(enemy);
-  SpriteAnimation* const animation = components.get<SpriteAnimation>(enemy);
+  const auto* const kind = components.get<game::EnemyKind>(enemy);
+  auto* const sprite = components.get<game::Sprite>(enemy);
+  auto* const animation = components.get<SpriteAnimation>(enemy);
   if (kind == nullptr || sprite == nullptr || animation == nullptr) {
     return;
   }
@@ -65,7 +64,7 @@ void showEnemyAction(engine::ComponentRegistry& components,
   }
   sprite->frame =
       started->animation.frameAt(started->elapsed).value_or(sprite->frame);
-  *animation = std::move(*started);
+  *animation = *started;
 }
 
 }  // namespace rtype::client

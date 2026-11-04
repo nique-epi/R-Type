@@ -1,8 +1,9 @@
 #pragma once
 
+#include <SFML/System/Vector2.hpp>
 #include <array>
 #include <chrono>
-#include "ActionKey.hpp"
+#include <cstdint>
 #include "Animation.hpp"
 #include "EnemyAppearance.hpp"
 #include "EnemyPhase.hpp"

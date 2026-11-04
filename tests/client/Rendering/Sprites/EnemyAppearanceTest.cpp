@@ -6,8 +6,11 @@
 #include "EnemyAppearance.hpp"
 #include "EnemyAppearanceTestConstants.hpp"
 #include "EnemyKind.hpp"
+#include "EnemyPhase.hpp"
+#include "Entity.hpp"
 #include "EntityRegistry.hpp"
 #include "EntitySpriteConstants.hpp"
+#include "Layer.hpp"
 #include "Sprite.hpp"
 #include "SpriteAnimation.hpp"
 

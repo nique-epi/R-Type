@@ -1,5 +1,9 @@
 #include <gtest/gtest.h>
+#include <array>
+#include <cstddef>
+#include <cstdint>
 #include <limits>
+#include <utility>
 #include <vector>
 #include "ByteSequence.hpp"
 #include "ByteWriter.hpp"
@@ -191,11 +195,15 @@ TEST(EntitySpawned, RefusesToReadTheEntityIdZero) {
  * Then the type byte is the number the page gives that type, 5 to 12
  */
 TEST(EntitySpawned, EncodesEachReservedEntityTypeAsItsNumber) {
-  const std::pair<WireEntityType, std::uint8_t> reserved[] = {
-      {WireEntityType::Voltjelly, 0x05},  {WireEntityType::Reaper, 0x06},
-      {WireEntityType::Bydomancer, 0x07}, {WireEntityType::Drillback, 0x08},
-      {WireEntityType::BydoTyrant, 0x09}, {WireEntityType::RuneOrb, 0x0A},
-      {WireEntityType::Bone, 0x0B},       {WireEntityType::Beam, 0x0C}};
+  const auto reserved = std::to_array<std::pair<WireEntityType, std::uint8_t>>(
+      {{WireEntityType::Voltjelly, 0x05},
+       {WireEntityType::Reaper, 0x06},
+       {WireEntityType::Bydomancer, 0x07},
+       {WireEntityType::Drillback, 0x08},
+       {WireEntityType::BydoTyrant, 0x09},
+       {WireEntityType::RuneOrb, 0x0A},
+       {WireEntityType::Bone, 0x0B},
+       {WireEntityType::Beam, 0x0C}});
 
   for (const auto& [type, number] : reserved) {
     SCOPED_TRACE(static_cast<int>(number));

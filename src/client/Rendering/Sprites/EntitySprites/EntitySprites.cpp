@@ -7,6 +7,7 @@
 #include "AnimatedSprite.hpp"
 #include "Animation.hpp"
 #include "EnemyAppearance.hpp"
+#include "EnemyKind.hpp"
 #include "EntitySpriteConstants.hpp"
 #include "EntityType.hpp"
 #include "Layer.hpp"

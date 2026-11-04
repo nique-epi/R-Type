@@ -5,6 +5,7 @@
 #include "EncodedMessage.hpp"
 #include "EnemyAction.hpp"
 #include "EnemyActionStarted.hpp"
+#include "EnemyPhase.hpp"
 #include "EntityDamage.hpp"
 #include "EntityDestroyed.hpp"
 #include "EntityDestruction.hpp"

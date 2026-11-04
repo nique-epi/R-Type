@@ -41,7 +41,7 @@ struct Animation {
   /** @brief How many pixels of the canvas the frames are drawn away from the
    * Position of the entity: the body of an enemy stays where it is when a
    * frame is wider than the 24 pixels of the body. Zero for the idle. */
-  sf::Vector2i anchor{};
+  sf::Vector2i anchor = sf::Vector2i(0, 0);
 
   /**
    * @param elapsed Time since the animation started. A negative time shows

@@ -20,8 +20,8 @@ namespace rtype::client {
 
 /** @brief The animation an enemy plays in one phase of one attack. */
 struct ActionLook {
-  std::uint8_t attack;
-  game::EnemyPhase phase;
+  std::uint8_t attack{0};
+  game::EnemyPhase phase{game::EnemyPhase::Signal};
   Animation animation;
 };
 
