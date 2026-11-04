@@ -2,119 +2,33 @@
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>
-#include <optional>
 #include <span>
 #include <type_traits>
 #include <vector>
 #include "ByteReader.hpp"
 #include "ByteWriter.hpp"
-#include "EntityIdConstants.hpp"
 #include "NetworkException.hpp"
 #include "ProtocolConstants.hpp"
 #include "WireTypes.hpp"
 #include "WorldState.hpp"
+#include "WorldStateFields.hpp"
 
 namespace rtype::network {
 
 namespace {
-
-void writePlayers(ByteWriter& writer, const std::vector<PlayerState>& players) {
-  writer.writeUint8(static_cast<std::uint8_t>(players.size()));
-  for (const PlayerState& player : players) {
-    writer.writeUint8(player.playerNumber);
-    writer.writeUint32(player.shipEntityId);
-    writer.writeUint8(player.lives);
-    writer.writeUint32(player.score);
-    writeBool(writer, player.invulnerable);
-    writer.writeUint8(player.motion);
-    writer.writeUint32(player.acknowledgedInput);
-  }
-}
-
-void writeEntity(ByteWriter& writer, const EntityState& entity) {
-  writer.writeUint32(entity.entityId);
-  writer.writeUint8(static_cast<std::uint8_t>(entity.entityType));
-  writeCoordinate(writer, entity.x);
-  writeCoordinate(writer, entity.y);
-}
 
 std::vector<std::byte> encodePart(const WorldState& state,
                                   std::size_t firstEntity,
                                   std::size_t entityCount) {
   ByteWriter writer;
   writer.writeUint32(state.tick);
-  writePlayers(writer, state.players);
+  writePlayers(writer, std::span<const PlayerState>{state.players});
   writer.writeUint8(static_cast<std::uint8_t>(entityCount));
   for (std::size_t index = firstEntity; index < firstEntity + entityCount;
        ++index) {
     writeEntity(writer, state.entities[index]);
   }
   return writer.bytes();
-}
-
-/** @returns The motion of a player.
- * @throws InvalidFieldValueException When a bit past PLAYER_MOTION_BITS is
- * set. */
-std::uint8_t readMotion(ByteReader& reader) {
-  const std::uint8_t motion = reader.readUint8();
-  if ((motion & static_cast<std::uint8_t>(~PLAYER_MOTION_BITS)) != 0) {
-    throw InvalidFieldValueException(MOTION_FIELD, motion);
-  }
-  return motion;
-}
-
-std::vector<PlayerState> readPlayers(ByteReader& reader) {
-  const std::uint8_t playerCount = readPlayerCount(reader);
-  std::vector<PlayerState> players;
-  players.reserve(playerCount);
-  for (std::uint8_t index = 0; index < playerCount; ++index) {
-    players.push_back(PlayerState{.playerNumber = reader.readUint8(),
-                                  .shipEntityId = reader.readUint32(),
-                                  .lives = reader.readUint8(),
-                                  .score = reader.readUint32(),
-                                  .invulnerable = readBool(reader),
-                                  .motion = readMotion(reader),
-                                  .acknowledgedInput = reader.readUint32()});
-  }
-  return players;
-}
-
-std::optional<WireEntityType> toKnownEntityType(std::uint8_t type) {
-  if (type < FIRST_WIRE_ENTITY_TYPE || type > LAST_WIRE_ENTITY_TYPE) {
-    return std::nullopt;
-  }
-  return static_cast<WireEntityType>(type);
-}
-
-std::optional<EntityState> readEntity(ByteReader& reader) {
-  const std::uint32_t entityId = reader.readUint32();
-  const std::optional<WireEntityType> type =
-      toKnownEntityType(reader.readUint8());
-  const float horizontal = readCoordinate(reader);
-  const float vertical = readCoordinate(reader);
-  if (entityId == identifiers::NO_ENTITY_ID) {
-    throw InvalidFieldValueException(ENTITY_ID_FIELD, entityId);
-  }
-  if (!type.has_value()) {
-    return std::nullopt;
-  }
-  return EntityState{.entityId = entityId,
-                     .entityType = *type,
-                     .x = horizontal,
-                     .y = vertical};
-}
-
-std::vector<EntityState> readEntities(ByteReader& reader) {
-  const std::uint8_t entityCount = reader.readUint8();
-  std::vector<EntityState> entities;
-  entities.reserve(entityCount);
-  for (std::uint8_t index = 0; index < entityCount; ++index) {
-    const std::optional<EntityState> entity = readEntity(reader);
-    if (entity.has_value()) {
-      entities.push_back(*entity);
-    }
-  }
-  return entities;
 }
 
 }  // namespace

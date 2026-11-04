@@ -196,6 +196,15 @@ class TooManyPlayersException : public MalformedMessageException {
 };
 
 /**
+ * @brief A state would need more datagrams than MAXIMUM_DELTA_PARTS, so it
+ * cannot be written.
+ */
+class TooManyDeltaPartsException : public NetworkException {
+ public:
+  TooManyDeltaPartsException(std::size_t partCount, std::size_t maximumCount);
+};
+
+/**
  * @brief A message handler was registered empty.
  */
 class EmptyMessageHandlerException : public NetworkException {

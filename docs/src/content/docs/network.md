@@ -375,6 +375,12 @@ A `WorldState` (`src/network/Protocol/WorldState.hpp`) is the picture of the gam
 - `decode(payload)` throws `BufferUnderflowException` for a truncated payload, and `MalformedMessageException` for more than 4 players, a player number outside 1 to 4 or listed twice, a boolean other than 0 and 1, an entity of id 0, or bytes after the last entity. An entity of a type outside 1 to 4 is left out of the state and the others are decoded, so a server with a new kind of entity does not blind an older client. Whatever a payload announces, it makes the receiver allocate for at most 4 players and 255 entities. It accepts 0 players, where the protocol page says 1 to 4: the server sends none until the game has players.
 - The server puts each payload in its own datagram with `DatagramCodec::encode(header, MessageType::WorldState, payload)`, which adds the packet header and the message prefix; the header carries the session token and the next sequence of the player it goes to (see [Server](/R-Type/server/#session-headers-sessiondatagram)).
 
+A `DeltaWorldState` (`src/network/Protocol/DeltaWorldState.hpp`) is a state written as the difference from an earlier one, and travels in the datagrams the server sends during a game. Three pieces carry it, all in `src/network/Protocol/`:
+
+- `DeltaWorldStateCodec` (`WorldStateCodec/`, with the field codecs it shares with `WorldStateCodec` in `WorldStateFields`) encodes it as one payload per datagram: each takes changed entities first, then removed ids, until its room (1175 bytes less the 10-byte fixed part and the players) or its count of 255 is used, and every payload lists the players. A state needing more than `MAXIMUM_DELTA_PARTS` (16) payloads throws `TooManyDeltaPartsException`. `decode` throws `InvalidFieldValueException` for a `baseDistance` above `MAXIMUM_REFERENCE_DISTANCE` (60), a `partCount` of 0 or above 16, a `partIndex` not below `partCount`, or an entity or removed id of 0; the other checks are `WorldStateCodec`'s.
+- `diffStates(base, current)` and `applyDelta(base, delta)` (`WorldStateDelta/`) compute and apply the two lists, on entities sorted by id. They compare positions as the wire rounds them, with `wireStepsOf()` (`WireTypes.hpp`), so a move below an eighth of a unit is not a change.
+- Both programs use them as [Server](/R-Type/server/#world-state-worldstatesender) and [Client](/R-Type/client/#world-state-worldstateassembler) describe.
+
 ```cpp
 for (const std::vector<std::byte>& payload :
      rtype::network::WorldStateCodec::encode(state)) {
@@ -431,6 +437,7 @@ Measured on 27 October 2026 on an Apple M4 Pro under macOS 27.0, with the server
 | Write a class that needs Asio | A folder in `src/network` whose target links `rtype_network_asio` privately |
 | Change how an integer, a float or a string is encoded | `src/network/Serialization/ByteWriter/` and `ByteReader/`, then the [Protocol](/R-Type/protocol/#encoding) page |
 | Change the string length limit or the sizes | `src/network/Serialization/SerializationConstants.hpp` |
+| Change how a delta is computed or applied | `src/network/Protocol/WorldStateDelta/`, then the [Protocol](/R-Type/protocol/#delta-world-state) page |
 | Change the layout or the limits of the world state | `src/network/Protocol/WorldStateCodec/`, the sizes in `src/network/Protocol/ProtocolConstants.hpp`, then the [Protocol](/R-Type/protocol/#world-state) page |
 | Add a message, or change the fields or the checks of one | `src/network/Protocol/Messages/`, its value in `src/network/Protocol/MessageType.hpp`, then the [Protocol](/R-Type/protocol/#messages) page; the [tutorial](/R-Type/tutorial-add-a-network-message/) adds one from the specification to the handler |
 | Change the datagram header or how messages are framed | `src/network/Protocol/DatagramCodec/` and `PacketHeader.hpp`, then the [Protocol](/R-Type/protocol/#datagram) page |
