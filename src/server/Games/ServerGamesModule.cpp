@@ -144,7 +144,7 @@ void ServerGamesModule::stop() {
 WavePlan ServerGamesModule::readWaves(std::string_view difficulty) const {
   const WaveCatalog catalog = WaveCatalog::fromFile(settings_.wavesFile);
   WavePlan waves = catalog.planOf(difficulty);
-  logger_.info("waves file ", engine::genericText(settings_.wavesFile), ": ",
+  logger_.info("waves file ", logging::genericText(settings_.wavesFile), ": ",
                catalog.difficulties().size(), " difficulties, games play ",
                difficulty);
   return waves;

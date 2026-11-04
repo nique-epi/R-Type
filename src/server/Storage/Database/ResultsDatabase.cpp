@@ -46,7 +46,7 @@ network::LeaderboardRow rowOf(const SQLite::Statement& query) {
 }  // namespace
 
 ResultsDatabase::ResultsDatabase(const std::filesystem::path& file)
-    : database_(storage::openDatabaseFile(engine::genericText(file),
+    : database_(storage::openDatabaseFile(logging::genericText(file),
                                           RESULTS_MIGRATIONS)) {}
 
 void ResultsDatabase::save(const GameResult& result) {

@@ -9,7 +9,6 @@ target_link_libraries(rtype_master_storage_module
     rtype_logging
     rtype_storage
   PRIVATE
-    rtype_engine_paths
     rtype_master_constants
 )
 

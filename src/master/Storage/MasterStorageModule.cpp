@@ -42,8 +42,8 @@ void MasterStorageModule::install(engine::InstallContext& context) {
 void MasterStorageModule::start() {
   const std::filesystem::path file = databaseFile();
   database_.emplace(
-      storage::openDatabaseFile(engine::genericText(file), MASTER_MIGRATIONS));
-  logger_.info("database ", engine::genericText(file));
+      storage::openDatabaseFile(logging::genericText(file), MASTER_MIGRATIONS));
+  logger_.info("database ", logging::genericText(file));
 }
 
 void MasterStorageModule::stop() { database_.reset(); }
