@@ -2,6 +2,8 @@
 
 #include <string>
 #include <string_view>
+#include "CreatedServer.hpp"
+#include "ServerCreation.hpp"
 #include "ServerHeartbeat.hpp"
 #include "ServerRegistration.hpp"
 
@@ -12,6 +14,34 @@ namespace rtype::network {
  * MAXIMUM_SERVER_NAME_SIZE bytes of printable UTF-8 (isPrintableUtf8()).
  */
 [[nodiscard]] bool isValidServerName(std::string_view name);
+
+/**
+ * @returns Whether @p text has the shape of a key the master issues:
+ * SERVER_KEY_PREFIX, then lowercase hexadecimal digits, SERVER_KEY_SIZE in
+ * all. Anything else is refused before the master looks it up.
+ */
+[[nodiscard]] bool isWellFormedServerKey(std::string_view text);
+
+/** @returns @p creation as the JSON body of `POST /api/servers`. */
+[[nodiscard]] std::string serverCreationText(const ServerCreation& creation);
+
+/**
+ * @returns The creation the web site sent as @p text.
+ * @throws InvalidMasterMessageException naming `/name` when it is missing,
+ * empty, longer than MAXIMUM_SERVER_NAME_SIZE or not printable UTF-8.
+ */
+[[nodiscard]] ServerCreation serverCreationFromText(std::string_view text);
+
+/** @returns @p created as the JSON answer of `POST /api/servers`. */
+[[nodiscard]] std::string createdServerText(const CreatedServer& created);
+
+/**
+ * @returns The created server the master answered as @p text.
+ * @throws InvalidMasterMessageException naming the first member missing or out
+ * of its bounds: an id below FIRST_SERVER_ID, a name as for a creation, or a
+ * key that is not well formed.
+ */
+[[nodiscard]] CreatedServer createdServerFromText(std::string_view text);
 
 /**
  * @returns @p registration as the JSON body of `PUT /api/servers/me`, its

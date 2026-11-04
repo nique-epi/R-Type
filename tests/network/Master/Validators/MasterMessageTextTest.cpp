@@ -5,19 +5,29 @@
 #include <optional>
 #include <string>
 #include <string_view>
+#include "CreatedServer.hpp"
 #include "MasterMessageText.hpp"
 #include "MasterMessageTextFixtures.hpp"
 #include "MasterMessageTextTestConstants.hpp"
 #include "ProtocolTestConstants.hpp"
+#include "ServerCreation.hpp"
 #include "ServerRegistration.hpp"
 
+using rtype::network::CreatedServer;
+using rtype::network::createdServerFromText;
+using rtype::network::createdServerText;
 using rtype::network::heartbeatFromText;
 using rtype::network::heartbeatText;
+using rtype::network::isWellFormedServerKey;
 using rtype::network::registrationFromText;
 using rtype::network::registrationText;
+using rtype::network::ServerCreation;
+using rtype::network::serverCreationFromText;
+using rtype::network::serverCreationText;
 using rtype::network::ServerRegistration;
 using rtype::network::testing::ADDRESS_POINTER;
 using rtype::network::testing::AVERAGE_PING_POINTER;
+using rtype::network::testing::createdServerRefusal;
 using rtype::network::testing::FIFTH_PILOT;
 using rtype::network::testing::FIRST_GAME_FIRST_PLAYER_POINTER;
 using rtype::network::testing::FIRST_GAME_PLAYERS_POINTER;
@@ -31,6 +41,8 @@ using rtype::network::testing::heartbeatRefusal;
 using rtype::network::testing::heartbeatTextOfGames;
 using rtype::network::testing::heartbeatTextWith;
 using rtype::network::testing::HOST_NAME_ADDRESS;
+using rtype::network::testing::KEY_POINTER;
+using rtype::network::testing::KEY_WITHOUT_PREFIX;
 using rtype::network::testing::LOSS_ABOVE_ALL;
 using rtype::network::testing::LOSS_PERCENT_POINTER;
 using rtype::network::testing::MAXIMUM_GAMES_POINTER;
@@ -42,6 +54,9 @@ using rtype::network::testing::NAME_WITH_LINE_FEED;
 using rtype::network::testing::NEGATIVE_MEASURE;
 using rtype::network::testing::NO_GAME;
 using rtype::network::testing::NOT_JSON;
+using rtype::network::testing::PARIS_ID;
+using rtype::network::testing::PARIS_KEY;
+using rtype::network::testing::PARIS_NAME;
 using rtype::network::testing::parisHeartbeat;
 using rtype::network::testing::parisRegistration;
 using rtype::network::testing::PAUSED_STATE;
@@ -56,11 +71,13 @@ using rtype::network::testing::registrationTextWithout;
 using rtype::network::testing::SECOND_GAME_NUMBER_POINTER;
 using rtype::network::testing::SECOND_PILOT;
 using rtype::network::testing::SEVENTEEN_BYTE_NICKNAME;
+using rtype::network::testing::SHORT_KEY;
 using rtype::network::testing::THIRD_PILOT;
 using rtype::network::testing::TICK_P50_POINTER;
 using rtype::network::testing::UDP_PORT_POINTER;
 using rtype::network::testing::UNKNOWN_MEMBER_POINTER;
 using rtype::network::testing::UNKNOWN_MEMBER_VALUE;
+using rtype::network::testing::UPPERCASE_KEY;
 using rtype::network::testing::WAITING_GAME_NUMBER;
 using ::testing::HasSubstr;
 using ::testing::IsEmpty;
@@ -289,4 +306,64 @@ TEST(MasterMessageText, RefusesAMeasureOutOfItsBounds) {
   EXPECT_THAT(
       heartbeatRefusal(heartbeatTextWith(LOSS_PERCENT_POINTER, LOSS_ABOVE_ALL)),
       HasSubstr(quoted(LOSS_PERCENT_POINTER)));
+}
+
+/**
+ * Given the creation of "Paris 1"
+ * When it is written as JSON and read back
+ * Then its name comes back as it was
+ */
+TEST(MasterMessageText, ReadsBackAWrittenCreation) {
+  const ServerCreation creation{.name = std::string{PARIS_NAME}};
+
+  EXPECT_EQ(serverCreationFromText(serverCreationText(creation)), creation);
+}
+
+/**
+ * Given the answer to the creation of "Paris 1", with its id and its key
+ * When it is written as JSON and read back
+ * Then its id, name and key come back as they were
+ */
+TEST(MasterMessageText, ReadsBackAWrittenCreatedServer) {
+  const CreatedServer created{.id = PARIS_ID,
+                              .name = std::string{PARIS_NAME},
+                              .key = std::string{PARIS_KEY}};
+
+  EXPECT_EQ(createdServerFromText(createdServerText(created)), created);
+}
+
+/**
+ * Given a key of the shape the master issues
+ * When it is checked
+ * Then it is well formed
+ */
+TEST(MasterMessageText, AcceptsAKeyOfTheShapeTheMasterIssues) {
+  EXPECT_TRUE(isWellFormedServerKey(PARIS_KEY));
+}
+
+/**
+ * Given keys without the prefix, in uppercase, or one digit short
+ * When each is checked
+ * Then none is well formed
+ */
+TEST(MasterMessageText, RefusesAKeyShapedAlmostRight) {
+  for (const std::string_view key :
+       {KEY_WITHOUT_PREFIX, UPPERCASE_KEY, SHORT_KEY}) {
+    SCOPED_TRACE(key);
+    EXPECT_FALSE(isWellFormedServerKey(key));
+  }
+}
+
+/**
+ * Given an answer to a creation whose key is not well formed
+ * When it is read
+ * Then the refusal names the key
+ */
+TEST(MasterMessageText, RefusesACreatedServerWithAMalformedKey) {
+  const std::string text =
+      createdServerText(CreatedServer{.id = PARIS_ID,
+                                      .name = std::string{PARIS_NAME},
+                                      .key = std::string{SHORT_KEY}});
+
+  EXPECT_THAT(createdServerRefusal(text), HasSubstr(quoted(KEY_POINTER)));
 }

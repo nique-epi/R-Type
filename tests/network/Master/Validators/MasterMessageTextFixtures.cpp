@@ -104,6 +104,15 @@ std::string registrationRefusal(std::string_view text) {
   return {};
 }
 
+std::string createdServerRefusal(std::string_view text) {
+  try {
+    static_cast<void>(createdServerFromText(text));
+  } catch (const InvalidMasterMessageException& refusal) {
+    return refusal.what();
+  }
+  return {};
+}
+
 std::string heartbeatRefusal(std::string_view text) {
   try {
     static_cast<void>(heartbeatFromText(text));

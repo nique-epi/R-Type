@@ -1,4 +1,5 @@
 #include "MasterMessageText.hpp"
+#include <algorithm>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
@@ -10,6 +11,7 @@
 #include <string_view>
 #include <utility>
 #include <vector>
+#include "CreatedServer.hpp"
 #include "EndpointText.hpp"
 #include "HostedGame.hpp"
 #include "HostedGameState.hpp"
@@ -17,6 +19,7 @@
 #include "NetworkConstants.hpp"
 #include "NetworkException.hpp"
 #include "ProtocolConstants.hpp"
+#include "ServerCreation.hpp"
 #include "ServerHeartbeat.hpp"
 #include "ServerMeasures.hpp"
 #include "ServerRegistration.hpp"
@@ -298,10 +301,61 @@ nlohmann::json measuresDocument(const ServerMeasures& measures) {
   return document;
 }
 
+std::string serverKeyOf(const JsonField& field) {
+  std::string key = stringOf(field);
+  if (!isWellFormedServerKey(key)) {
+    refuse(field);
+  }
+  return key;
+}
+
 }  // namespace
 
 bool isValidServerName(std::string_view name) {
   return isValidBoundedText(name, MAXIMUM_SERVER_NAME_SIZE);
+}
+
+bool isWellFormedServerKey(std::string_view text) {
+  return text.size() == SERVER_KEY_SIZE &&
+         text.starts_with(SERVER_KEY_PREFIX) &&
+         std::ranges::all_of(
+             text.substr(SERVER_KEY_PREFIX.size()), [](char digit) {
+               return std::ranges::find(SERVER_KEY_DIGITS, digit) !=
+                      SERVER_KEY_DIGITS.end();
+             });
+}
+
+std::string serverCreationText(const ServerCreation& creation) {
+  nlohmann::json document;
+  document[NAME_MEMBER] = creation.name;
+  return textOf(document);
+}
+
+ServerCreation serverCreationFromText(std::string_view text) {
+  const nlohmann::json document = parsedObject(text);
+  const JsonField creation = wholeMessage(document);
+  return ServerCreation{.name = boundedTextOf(memberOf(creation, NAME_MEMBER),
+                                              MAXIMUM_SERVER_NAME_SIZE)};
+}
+
+std::string createdServerText(const CreatedServer& created) {
+  nlohmann::json document;
+  document[ID_MEMBER] = created.id;
+  document[NAME_MEMBER] = created.name;
+  document[KEY_MEMBER] = created.key;
+  return textOf(document);
+}
+
+CreatedServer createdServerFromText(std::string_view text) {
+  const nlohmann::json document = parsedObject(text);
+  const JsonField created = wholeMessage(document);
+  return CreatedServer{.id = static_cast<std::int64_t>(integerOf(
+                           memberOf(created, ID_MEMBER),
+                           IntegerBounds{.lowest = FIRST_SERVER_ID,
+                                         .highest = HIGHEST_SERVER_ID})),
+                       .name = boundedTextOf(memberOf(created, NAME_MEMBER),
+                                             MAXIMUM_SERVER_NAME_SIZE),
+                       .key = serverKeyOf(memberOf(created, KEY_MEMBER))};
 }
 
 std::string registrationText(const ServerRegistration& registration) {

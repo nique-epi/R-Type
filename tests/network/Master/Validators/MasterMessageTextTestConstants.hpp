@@ -87,6 +87,20 @@ constexpr std::string_view LOSS_PERCENT_POINTER = "/measures/lossPercent";
 constexpr std::string_view AVERAGE_PING_POINTER =
     "/measures/averagePingMilliseconds";
 
+/** @brief The id and the key the master gives "Paris 1" when it creates it. */
+constexpr std::int64_t PARIS_ID = 7;
+constexpr std::string_view PARIS_KEY =
+    "rtk_0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
+
+/** @brief Texts shaped almost like a key: no prefix, uppercase, one short. */
+constexpr std::string_view KEY_WITHOUT_PREFIX =
+    "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
+constexpr std::string_view UPPERCASE_KEY =
+    "rtk_0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF";
+constexpr std::string_view SHORT_KEY =
+    "rtk_0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcde";
+constexpr std::string_view KEY_POINTER = "/key";
+
 /** @brief How a refusal quotes the pointer it names, and the whole message. */
 constexpr std::string_view POINTER_QUOTE = "\"";
 constexpr std::string_view QUOTED_WHOLE_MESSAGE = "\"\"";

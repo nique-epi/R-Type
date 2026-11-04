@@ -37,6 +37,27 @@ constexpr std::string_view AVERAGE_PING_MEMBER = "averagePingMilliseconds";
 /** @brief The member of the answer to a heartbeat that lists the orders. */
 constexpr std::string_view COMMANDS_MEMBER = "commands";
 
+/** @brief The members of a created server, beside NAME_MEMBER. */
+constexpr std::string_view ID_MEMBER = "id";
+constexpr std::string_view KEY_MEMBER = "key";
+
+/** @brief The lowest and the highest id of a game server. */
+constexpr std::uint64_t FIRST_SERVER_ID = 1;
+constexpr std::uint64_t HIGHEST_SERVER_ID =
+    std::numeric_limits<std::int64_t>::max();
+
+/**
+ * @brief The key of a game server: SERVER_KEY_PREFIX, so a key that leaks in a
+ * log or a repository is recognized, then SERVER_KEY_BYTES random bytes in
+ * lowercase hexadecimal, SERVER_KEY_SIZE characters in all.
+ */
+constexpr std::string_view SERVER_KEY_PREFIX = "rtk_";
+constexpr std::size_t SERVER_KEY_BYTES = 32;
+constexpr std::size_t HEX_DIGITS_PER_BYTE = 2;
+constexpr std::size_t SERVER_KEY_SIZE =
+    SERVER_KEY_PREFIX.size() + (SERVER_KEY_BYTES * HEX_DIGITS_PER_BYTE);
+constexpr std::string_view SERVER_KEY_DIGITS = "0123456789abcdef";
+
 /** @brief How each HostedGameState is written, in the order of the enum. */
 constexpr std::string_view WAITING_STATE_TEXT = "waiting";
 constexpr std::string_view STARTING_STATE_TEXT = "starting";
