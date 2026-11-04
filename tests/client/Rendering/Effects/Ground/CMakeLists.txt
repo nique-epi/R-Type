@@ -1,0 +1,1 @@
+target_sources(client_effect_tests PRIVATE PixelEffectsTest.cpp GroundEffectsTest.cpp GroundEffectSystemTest.cpp GroundEffectScene.cpp GroundEffectsFixture.cpp PixelScene.cpp PixelEffectsFixtures.cpp)

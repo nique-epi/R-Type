@@ -1,0 +1,1 @@
+target_sources(client_animation_tests PRIVATE HitFlashSystemTest.cpp FlashedScene.cpp)

@@ -1,0 +1,1 @@
+target_sources(client_settings_tests PRIVATE SettingsTextTest.cpp SettingsFileTest.cpp)

@@ -1,0 +1,5 @@
+rtype_add_test(NAME server_sessions_tests SOURCES SessionsFixtures.cpp LIBS rtype_server_sessions rtype_network_entity_destroyed rtype_network_player_left rtype_network_connection_accepted server_test_datagrams)
+target_include_directories(server_sessions_tests PRIVATE ${RTYPE_TEST_SOURCE_DIR} ${RTYPE_TEST_SOURCE_DIR}/server ${RTYPE_TEST_SOURCE_DIR}/server/Sessions $<TARGET_PROPERTY:rtype_network_round_trips,INTERFACE_INCLUDE_DIRECTORIES>)
+
+add_subdirectory(Roster)
+add_subdirectory(Tracking)

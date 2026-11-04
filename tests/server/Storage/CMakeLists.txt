@@ -1,0 +1,6 @@
+rtype_add_test(NAME server_storage_tests LIBS rtype_server_storage_archive server_test_datagrams rtype_test_support TIMEOUT ${RTYPE_THREAD_TEST_TIMEOUT_SECONDS})
+target_include_directories(server_storage_tests PRIVATE ${RTYPE_TEST_SOURCE_DIR} ${RTYPE_TEST_SOURCE_DIR}/server ${RTYPE_TEST_SOURCE_DIR}/server/Storage/Database)
+target_sources(server_module_tests PRIVATE ServerStorageModuleTest.cpp ServerStorageModuleFixture.cpp)
+
+add_subdirectory(Archive)
+add_subdirectory(Database)
