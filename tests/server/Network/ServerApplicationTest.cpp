@@ -14,6 +14,7 @@
 #include "NetworkContext.hpp"
 #include "NetworkException.hpp"
 #include "OutgoingDatagram.hpp"
+#include "ReceivedDatagrams.hpp"
 #include "ServerApplication.hpp"
 #include "ServerApplicationFixtures.hpp"
 #include "ServerDatagrams.hpp"
@@ -26,6 +27,7 @@
 using rtype::network::ANY_PORT;
 using rtype::network::Endpoint;
 using rtype::network::IncomingDatagram;
+using rtype::server::ReceivedDatagrams;
 using rtype::server::ServerApplication;
 using rtype::server::testing::SESSION_TOKEN;
 
@@ -97,8 +99,7 @@ TEST(ServerApplication, HandsAConnectionRequestToTheTick) {
   std::atomic<bool> delivered{false};
   ServerApplication server{
       loopbackEndpoint(ANY_PORT),
-      [&firstRequest,
-       &delivered](const ServerApplication::ReceivedDatagrams& datagrams) {
+      [&firstRequest, &delivered](const ReceivedDatagrams& datagrams) {
         if (!datagrams.connectionRequests.empty() &&
             !delivered.exchange(true)) {
           firstRequest.set_value(datagrams.connectionRequests.front());
@@ -132,8 +133,7 @@ TEST(ServerApplication, HandsAnAdmittedPlayersDatagramToTheTick) {
   std::atomic<bool> delivered{false};
   ServerApplication server{
       loopbackEndpoint(ANY_PORT),
-      [&firstDatagram,
-       &delivered](const ServerApplication::ReceivedDatagrams& datagrams) {
+      [&firstDatagram, &delivered](const ReceivedDatagrams& datagrams) {
         if (!datagrams.players.empty() && !delivered.exchange(true)) {
           firstDatagram.set_value(datagrams.players.front());
         }
@@ -171,8 +171,7 @@ TEST(ServerApplication, HandsTheTickTheDatagramOfAPlayerItAdmitted) {
   std::atomic<bool> delivered{false};
   ServerApplication* serverPointer = nullptr;
   ServerApplication server{
-      loopbackEndpoint(ANY_PORT),
-      [&](const ServerApplication::ReceivedDatagrams& datagrams) {
+      loopbackEndpoint(ANY_PORT), [&](const ReceivedDatagrams& datagrams) {
         if (!datagrams.connectionRequests.empty() &&
             !admissionDone.exchange(true)) {
           serverPointer->admit(datagrams.connectionRequests.front().sender,
@@ -254,8 +253,9 @@ TEST(ServerApplication, DropsTheDatagramOfAForgottenPlayerBeforeTheTick) {
 TEST(ServerApplication, RethrowsWhatTheTickThrew) {
   ServerApplication server{
       loopbackEndpoint(ANY_PORT),
-      []([[maybe_unused]] const ServerApplication::ReceivedDatagrams&
-             received) { throw TickFailure{}; }};
+      []([[maybe_unused]] const ReceivedDatagrams& received) {
+        throw TickFailure{};
+      }};
   server.open();
 
   EXPECT_THROW(server.run(), TickFailure);
@@ -286,8 +286,7 @@ TEST(ServerApplication, SendsTheDatagramsTheTickQueued) {
   ServerApplication* serverPointer = nullptr;
   ServerApplication server{
       loopbackEndpoint(ANY_PORT),
-      [&]([[maybe_unused]] const ServerApplication::ReceivedDatagrams&
-              datagrams) {
+      [&]([[maybe_unused]] const ReceivedDatagrams& datagrams) {
         if (!queued.exchange(true)) {
           serverPointer->queueDatagram(rtype::network::OutgoingDatagram{
               .destination = loopbackEndpoint(client.localEndpoint().port),
