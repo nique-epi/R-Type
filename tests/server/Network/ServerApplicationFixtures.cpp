@@ -10,10 +10,8 @@
 #include "ListenOnFixtures.hpp"
 #include "NetworkConstants.hpp"
 #include "NetworkContext.hpp"
-#include "PacketHeader.hpp"
 #include "ServerApplication.hpp"
 #include "ServerDatagrams.hpp"
-#include "ServerLobbyTestConstants.hpp"
 #include "ServerTestConstants.hpp"
 #include "UdpSocket.hpp"
 
@@ -56,12 +54,6 @@ ServerApplication::TickHandler readyStateWatcher(
 }
 
 }  // namespace
-
-std::vector<std::byte> playerReady() {
-  rtype::network::PacketHeader header;
-  header.sessionToken = rtype::server::testing::SESSION_TOKEN;
-  return readyDatagram(header);
-}
 
 SortedReadyState sortReadyStateThenRequest(
     const std::function<void(ServerApplication&, const Endpoint&)>& prepare,

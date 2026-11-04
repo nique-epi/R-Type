@@ -280,8 +280,42 @@ jobs:
       - name: Test
         run: ctest --preset test
 
+  # A pull request builds the packages only when it changes what makes them;
+  # a push to main always builds them, and a release builds them again.
+  packaging-changes:
+    name: Packaging changes
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      changed: ${{ steps.select.outputs.changed }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Look for changes to the packaging
+        id: select
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          if [ -z "$BASE_SHA" ]; then
+            echo "Not a pull request: the packages are built."
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          elif ! git diff --quiet "$BASE_SHA"...HEAD -- packaging assets tests/tools/packaging \
+              CMakeLists.txt CMakePresets.json vcpkg.json vcpkg \
+              .github/workflows/package.yaml .github/workflows/release.yaml \
+              .github/workflows/build-and-test.yaml; then
+            echo "The pull request changes the packaging: the packages are built."
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "The pull request does not change the packaging: no package is built."
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          fi
+
   package:
     name: Package
+    needs: packaging-changes
+    if: needs.packaging-changes.outputs.changed == 'true'
     uses: ./.github/workflows/package.yaml
 
   network-condition-scripts:
