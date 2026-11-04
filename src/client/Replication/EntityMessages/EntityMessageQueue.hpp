@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include "EnemyActionHistory.hpp"
 #include "EntityMessage.hpp"
 #include "GameEventHistory.hpp"
 #include "GameLoadedReminder.hpp"
@@ -65,6 +66,7 @@ class EntityMessageQueue final : public IEntityMessageSource,
   GameLoadedReminder* reminder_;
   std::vector<EntityMessage> messages_;
   GameEventHistory gameEvents_;
+  EnemyActionHistory enemyActions_;
 };
 
 }  // namespace rtype::client

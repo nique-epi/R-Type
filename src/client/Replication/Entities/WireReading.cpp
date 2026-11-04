@@ -1,6 +1,9 @@
 #include "WireReading.hpp"
 #include <optional>
+#include "ActionKey.hpp"
+#include "EnemyAction.hpp"
 #include "EnemyKind.hpp"
+#include "EnemyPhase.hpp"
 #include "EntityType.hpp"
 #include "WorldState.hpp"
 
@@ -44,6 +47,20 @@ std::optional<AnnouncedEntity> announcedEntityOf(
       return plain(game::EntityType::EnemyMissile);
   }
   return std::nullopt;
+}
+
+game::ActionKey actionKeyOf(const network::EnemyAction& message) {
+  switch (message.phase) {
+    case network::EnemyActionPhase::Signal:
+      return {.attack = message.attack, .phase = game::EnemyPhase::Signal};
+    case network::EnemyActionPhase::Strike:
+      return {.attack = message.attack, .phase = game::EnemyPhase::Strike};
+    case network::EnemyActionPhase::Recover:
+      return {.attack = message.attack, .phase = game::EnemyPhase::Recover};
+    case network::EnemyActionPhase::Enraged:
+      return {.attack = message.attack, .phase = game::EnemyPhase::Enraged};
+  }
+  return {.attack = message.attack, .phase = game::EnemyPhase::Signal};
 }
 
 }  // namespace rtype::client

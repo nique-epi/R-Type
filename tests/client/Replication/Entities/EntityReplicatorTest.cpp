@@ -6,7 +6,9 @@
 #include <utility>
 #include <vector>
 #include "AllEntityTypes.hpp"
+#include "Animation.hpp"
 #include "EffectConstants.hpp"
+#include "EnemyAction.hpp"
 #include "EnemyKind.hpp"
 #include "EntityAnnouncements.hpp"
 #include "EntityIdConstants.hpp"
@@ -17,6 +19,7 @@
 #include "LastListedTicksTestConstants.hpp"
 #include "PilotTestConstants.hpp"
 #include "SoundConstants.hpp"
+#include "SpriteAnimation.hpp"
 #include "WorldState.hpp"
 #include "WorldStateFilterTestConstants.hpp"
 
@@ -915,6 +918,60 @@ TEST_F(EntityReplicatorFixture, ReadsEachEnemyWireTypeAsAnEnemyOfItsKind) {
     EXPECT_EQ(found, 1U);
     ++id;
   }
+}
+
+/**
+ * Given a replicator that has applied nothing
+ * When an EnemyAction names an entity it does not have
+ * Then nothing is created and nothing is drawn
+ */
+TEST_F(EntityReplicatorFixture, IgnoresAnEnemyActionForAnEntityItDoesNotHave) {
+  const std::size_t before = entityCount();
+
+  replicator().apply(rtype::network::EnemyAction{
+      .entityId = BYDO_ID,
+      .attack = 1,
+      .phase = rtype::network::EnemyActionPhase::Signal});
+
+  EXPECT_EQ(entityCount(), before);
+}
+
+/**
+ * Given a replicator that announced a Bydo
+ * When an EnemyAction names it for an attack its kind has no animation for
+ * Then the Bydo keeps its idle loop
+ */
+TEST_F(EntityReplicatorFixture,
+       KeepsTheIdleWhenTheKindHasNoAnimationForTheAction) {
+  replicator().apply(spawned(BYDO_ID, WireEntityType::Reaper, BYDO_POSITION));
+  std::size_t loopsBefore = 0;
+  components().forEach<rtype::client::SpriteAnimation, EnemyKind>(
+      [&loopsBefore](rtype::engine::Entity,
+                     const rtype::client::SpriteAnimation& animation,
+                     const EnemyKind&) {
+        loopsBefore += animation.animation.playback ==
+                               rtype::client::Animation::Playback::Loop
+                           ? 1U
+                           : 0U;
+      });
+
+  replicator().apply(rtype::network::EnemyAction{
+      .entityId = BYDO_ID,
+      .attack = 1,
+      .phase = rtype::network::EnemyActionPhase::Strike});
+
+  std::size_t loopsAfter = 0;
+  components().forEach<rtype::client::SpriteAnimation, EnemyKind>(
+      [&loopsAfter](rtype::engine::Entity,
+                    const rtype::client::SpriteAnimation& animation,
+                    const EnemyKind&) {
+        loopsAfter += animation.animation.playback ==
+                              rtype::client::Animation::Playback::Loop
+                          ? 1U
+                          : 0U;
+      });
+  EXPECT_EQ(loopsBefore, 1U);
+  EXPECT_EQ(loopsAfter, 1U);
 }
 
 /**

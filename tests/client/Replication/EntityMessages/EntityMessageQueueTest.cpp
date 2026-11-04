@@ -2,6 +2,7 @@
 #include <gtest/gtest.h>
 #include <cstddef>
 #include <vector>
+#include "EnemyActionHistoryTestConstants.hpp"
 #include "EntityAnnouncements.hpp"
 #include "EntityDestroyed.hpp"
 #include "EntityMessage.hpp"
@@ -36,9 +37,11 @@ using testing::PROTOCOL_SILENCE_LIMIT;
 using testing::SECOND_POSITION;
 using testing::SECOND_SEQUENCE;
 using testing::SHIP_ID;
+using testing::SIGNAL;
 using ::testing::SizeIs;
 using testing::spawned;
 using testing::stateListing;
+using testing::STRIKE;
 using testing::THIRD_SEQUENCE;
 
 /**
@@ -153,6 +156,41 @@ TEST_F(EntityMessageQueueFixture, KeepsTheFirstCopyOfAGameEventOnly) {
   update();
 
   EXPECT_THAT(drainedEntityMessages(), ElementsAre(EntityMessage{event}));
+}
+
+/**
+ * Given a game started in the session
+ * When the three copies of an EnemyAction arrive, each in its own datagram
+ * Then the connection hands over one EnemyAction
+ */
+TEST_F(EntityMessageQueueFixture, KeepsTheFirstCopyOfAnEnemyActionOnly) {
+  accept();
+  deliverInSession(network::GameStarted{}, FIRST_SEQUENCE);
+  deliverInSession(SIGNAL, SECOND_SEQUENCE);
+  deliverInSession(SIGNAL, THIRD_SEQUENCE);
+  deliverInSession(SIGNAL, FOURTH_SEQUENCE);
+
+  update();
+
+  EXPECT_THAT(drainedEntityMessages(), ElementsAre(EntityMessage{SIGNAL}));
+}
+
+/**
+ * Given a game started in the session
+ * When a Signal, a Strike and a late copy of the Signal arrive
+ * Then the connection hands over the Signal and the Strike only
+ */
+TEST_F(EntityMessageQueueFixture, DropsALateCopyOfAnEarlierPhase) {
+  accept();
+  deliverInSession(network::GameStarted{}, FIRST_SEQUENCE);
+  deliverInSession(SIGNAL, SECOND_SEQUENCE);
+  deliverInSession(STRIKE, THIRD_SEQUENCE);
+  deliverInSession(SIGNAL, FOURTH_SEQUENCE);
+
+  update();
+
+  EXPECT_THAT(drainedEntityMessages(),
+              ElementsAre(EntityMessage{SIGNAL}, EntityMessage{STRIKE}));
 }
 
 /**

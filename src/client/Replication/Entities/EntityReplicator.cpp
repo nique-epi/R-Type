@@ -8,6 +8,8 @@
 #include "AnimatedSprite.hpp"
 #include "ComponentRegistry.hpp"
 #include "EffectSpawner.hpp"
+#include "EnemyAction.hpp"
+#include "EnemyAppearance.hpp"
 #include "Entity.hpp"
 #include "EntityDestroyed.hpp"
 #include "EntityFeedback.hpp"
@@ -229,7 +231,15 @@ void EntityReplicator::apply(const network::WorldState& state) {
   }
   const std::vector<engine::Entity> created =
       applyEntities(state.entities, state.tick);
-  removeUnlistedAt(state.tick);
+  for (const std::uint32_t networkId :
+       lastListedTicks_.takeUnlistedAt(state.tick)) {
+    const std::optional<engine::Entity> known =
+        entityByNetworkId_.find(networkId);
+    if (known.has_value()) {
+      components_->destroy(*known);
+      entityByNetworkId_.unbind(networkId);
+    }
+  }
   applyPlayers(state.players);
   for (const engine::Entity entity : created) {
     announce(feedback_, *components_, entity);
@@ -248,6 +258,14 @@ void EntityReplicator::apply(const network::EntityDestroyed& message) {
   components_->destroy(*known);
   entityByNetworkId_.unbind(message.entityId);
   lastListedTicks_.forget(message.entityId);
+}
+
+void EntityReplicator::apply(const network::EnemyAction& message) {
+  if (const std::optional<engine::Entity> known =
+          entityByNetworkId_.find(message.entityId);
+      known.has_value()) {
+    showEnemyAction(*components_, *known, actionKeyOf(message));
+  }
 }
 
 void EntityReplicator::apply(const network::GameEvent& event) {
@@ -339,17 +357,6 @@ void EntityReplicator::applyPlayers(
 std::optional<engine::Entity> EntityReplicator::shipEntityOf(
     std::uint32_t networkId) const {
   return shipOf(entityByNetworkId_, *components_, networkId);
-}
-
-void EntityReplicator::removeUnlistedAt(std::uint32_t tick) {
-  for (const std::uint32_t networkId : lastListedTicks_.takeUnlistedAt(tick)) {
-    const std::optional<engine::Entity> known =
-        entityByNetworkId_.find(networkId);
-    if (known.has_value()) {
-      components_->destroy(*known);
-      entityByNetworkId_.unbind(networkId);
-    }
-  }
 }
 
 }  // namespace rtype::client

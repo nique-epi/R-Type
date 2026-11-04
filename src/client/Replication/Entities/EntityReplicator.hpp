@@ -21,6 +21,7 @@ class EntityRegistry;
 
 namespace rtype::network {
 
+struct EnemyAction;
 struct EntityDestroyed;
 struct EntitySpawned;
 struct EntityState;
@@ -128,6 +129,14 @@ class EntityReplicator {
   void apply(const network::GameEvent& event);
 
   /**
+   * @brief Shows the action the message names on the enemy it names, if the
+   * client has it and its kind has an animation for that action; nothing
+   * otherwise. The connection hands over the first copy of an EnemyAction
+   * only.
+   */
+  void apply(const network::EnemyAction& message);
+
+  /**
    * @returns The ship the network id @p networkId names, or nothing when the
    * client has no entity of that id or it is no ship.
    */
@@ -161,13 +170,6 @@ class EntityReplicator {
    * can be hit when the client has that ship, and notes its score; see the
    * class. */
   void applyPlayers(std::span<const network::PlayerState> players);
-
-  /**
-   * @brief Removes, without an effect, every entity unlisted for
-   * UNLISTED_ENTITY_TICKS up to the tick @p tick closes: nothing for another
-   * part of the newest tick.
-   */
-  void removeUnlistedAt(std::uint32_t tick);
 
   engine::EntityRegistry* entities_{};
   engine::ComponentRegistry* components_{};

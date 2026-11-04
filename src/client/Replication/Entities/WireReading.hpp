@@ -1,6 +1,8 @@
 #pragma once
 
 #include <optional>
+#include "ActionKey.hpp"
+#include "EnemyAction.hpp"
 #include "EnemyKind.hpp"
 #include "EntityType.hpp"
 #include "WorldState.hpp"
@@ -23,5 +25,8 @@ struct AnnouncedEntity {
  */
 [[nodiscard]] std::optional<AnnouncedEntity> announcedEntityOf(
     network::WireEntityType wireType);
+
+/** @returns The attack and phase an EnemyAction names. */
+[[nodiscard]] game::ActionKey actionKeyOf(const network::EnemyAction& message);
 
 }  // namespace rtype::client

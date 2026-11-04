@@ -16,11 +16,13 @@ target_link_libraries(rtype_client_entities
     rtype_engine_time
     rtype_game_components
     rtype_game_enemy_kind
+    rtype_network_enemy_action
     rtype_network_entity_destroyed
     rtype_network_entity_spawned
     rtype_network_game_event
     rtype_network_protocol
   PRIVATE
+    rtype_client_enemy_appearance
     rtype_client_entity_sprites
     rtype_identifiers
 )
