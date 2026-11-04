@@ -116,4 +116,13 @@ LaunchOption pathOption(std::string_view name,
                       }};
 }
 
+LaunchOption helpOption(bool& helpRequested) {
+  return LaunchOption{
+      .name = HELP_OPTION,
+      .takesValue = false,
+      .record = [&helpRequested]([[maybe_unused]] std::string_view value) {
+        helpRequested = true;
+      }};
+}
+
 }  // namespace rtype::engine

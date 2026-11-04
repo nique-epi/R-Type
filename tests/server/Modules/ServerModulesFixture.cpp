@@ -10,6 +10,7 @@
 #include "ConnectionChallenge.hpp"
 #include "DatagramCodec.hpp"
 #include "Endpoint.hpp"
+#include "LaunchArgumentsConstants.hpp"
 #include "LaunchOptions.hpp"
 #include "LoopStages.hpp"
 #include "MessagePayload.hpp"
@@ -30,7 +31,7 @@ std::vector<std::string_view> launchArguments(const std::string& portText,
           portText,
           rtype::server::SEED_OPTION,
           "1",
-          rtype::server::DATABASE_OPTION,
+          rtype::engine::DATABASE_OPTION,
           databaseText};
 }
 

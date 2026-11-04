@@ -3,7 +3,7 @@ title: Modules
 description: How a program is built from modules, what each module does at each moment of its life, how modules talk, and how to turn one on or off.
 ---
 
-Both programs are built the same way: a list of **modules** that an `Application` installs, starts, runs and stops. A module is a feature you can switch on, switch off or replace: the logger, the network, the games, the lobby, the metrics on the server; the window, the connection, the metrics, the sound, the screens on the client. This page tells you what a module is, when its code runs, how it reaches the others and how to switch one off. To write one, follow the [tutorial](/R-Type/tutorial-write-a-module/).
+Every program is built the same way: a list of **modules** that an `Application` installs, starts, runs and stops. A module is a feature you can switch on, switch off or replace: the logger, the network, the games, the lobby, the metrics on the server; the logger, the storage and the HTTP API on the master; the window, the connection, the metrics, the sound, the screens on the client. This page tells you what a module is, when its code runs, how it reaches the others and how to switch one off. To write one, follow the [tutorial](/R-Type/tutorial-write-a-module/).
 
 A module is a folder with one class implementing `IModule` (or `IGameModule`) at its root. Everything the folder holds belongs to it, sub-folders included: the class builds those objects and hands them to the others with `provide()`. A folder without that class is a library: code with no life cycle. A system (`ISystem`) and a service are not modules. [Project layout](/R-Type/project-layout/#modules-and-libraries) lists the modules and says where their code goes.
 
