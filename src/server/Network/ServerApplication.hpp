@@ -1,10 +1,8 @@
 #pragma once
 
 #include <cstdint>
-#include <functional>
 #include <memory>
 #include <optional>
-#include <span>
 #include <vector>
 #include "BoundedQueue.hpp"
 #include "DatagramQueues.hpp"
@@ -21,6 +19,7 @@
 #include "RejectionLedger.hpp"
 #include "RejectionReporter.hpp"
 #include "SystemClock.hpp"
+#include "TickHandler.hpp"
 #include "TrafficCounters.hpp"
 
 namespace rtype::server {
@@ -51,32 +50,6 @@ namespace rtype::server {
 class ServerApplication final : public IDatagramSender,
                                 public IPlayerAdmission {
  public:
-  /**
-   * @brief What arrived since the previous tick, oldest first in each list;
-   * often nothing.
-   */
-  struct ReceivedDatagrams {
-    /** @brief The datagrams of the players admitted with admit(), each
-     * carrying the session token of its player. */
-    std::span<const network::IncomingDatagram> players;
-    /** @brief The datagrams holding a ConnectionRequest, from strangers or
-     * from players with their token or none: at most
-     * CONNECTION_REQUEST_QUEUE_CAPACITY. */
-    std::span<const network::IncomingDatagram> connectionRequests;
-  };
-
-  /**
-   * @brief Called once per tick, on the simulation thread, with the datagrams
-   * received since the previous tick. An exception it throws stops the server
-   * and leaves run().
-   *
-   * Anyone can send a datagram, so the handler must drop and count a datagram
-   * it cannot decode, and never let an exception caused by a datagram's
-   * content escape: one truncated datagram would otherwise stop the server
-   * for every player.
-   */
-  using TickHandler = std::function<void(const ReceivedDatagrams&)>;
-
   /**
    * @brief Prepares a server that will listen on @p localEndpoint once open()
    * is called; port 0 lets the system pick a free port. Binds nothing.

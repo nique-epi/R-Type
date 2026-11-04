@@ -4,11 +4,12 @@
 #include "Endpoint.hpp"
 #include "ListenOnTestConstants.hpp"
 #include "NetworkConstants.hpp"
-#include "ServerApplication.hpp"
+#include "ReceivedDatagrams.hpp"
+#include "TickHandler.hpp"
 
-rtype::server::ServerApplication::TickHandler ignoringTicks() {
-  return []([[maybe_unused]] const rtype::server::ServerApplication::
-                ReceivedDatagrams& received) {};
+rtype::server::TickHandler ignoringTicks() {
+  return
+      []([[maybe_unused]] const rtype::server::ReceivedDatagrams& received) {};
 }
 
 rtype::network::Endpoint loopbackEndpoint(std::uint16_t port) {

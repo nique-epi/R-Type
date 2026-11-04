@@ -11,16 +11,20 @@
 #include "NetworkConstants.hpp"
 #include "NetworkContext.hpp"
 #include "PacketHeader.hpp"
+#include "ReceivedDatagrams.hpp"
 #include "ServerApplication.hpp"
 #include "ServerDatagrams.hpp"
 #include "ServerLobbyTestConstants.hpp"
 #include "ServerTestConstants.hpp"
+#include "TickHandler.hpp"
 #include "UdpSocket.hpp"
 
 using rtype::network::ANY_PORT;
 using rtype::network::Endpoint;
 using rtype::network::IncomingDatagram;
+using rtype::server::ReceivedDatagrams;
 using rtype::server::ServerApplication;
+using rtype::server::TickHandler;
 
 namespace {
 
@@ -36,10 +40,9 @@ struct ReadyStateWatch {
  * @p readyState, and fulfils its promise at the first connection request.
  * Both must outlive the server.
  */
-ServerApplication::TickHandler readyStateWatcher(
-    ReadyStateWatch& watch, const std::vector<std::byte>& readyState) {
-  return [&watch,
-          &readyState](const ServerApplication::ReceivedDatagrams& datagrams) {
+TickHandler readyStateWatcher(ReadyStateWatch& watch,
+                              const std::vector<std::byte>& readyState) {
+  return [&watch, &readyState](const ReceivedDatagrams& datagrams) {
     for (const auto* list :
          {&datagrams.players, &datagrams.connectionRequests}) {
       for (const IncomingDatagram& datagram : *list) {

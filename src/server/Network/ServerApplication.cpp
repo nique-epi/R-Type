@@ -15,8 +15,10 @@
 #include "IDatagramSocket.hpp"
 #include "NetworkConditions.hpp"
 #include "OutgoingDatagram.hpp"
+#include "ReceivedDatagrams.hpp"
 #include "ServerConstants.hpp"
 #include "ServerException.hpp"
+#include "TickHandler.hpp"
 #include "TickLoop.hpp"
 #include "TrafficCounters.hpp"
 
