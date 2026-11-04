@@ -12,6 +12,7 @@
 #include "MasterStorageModule.hpp"
 #include "ServerKeyOrder.hpp"
 #include "ServerKeysModule.hpp"
+#include "ServersModule.hpp"
 
 namespace rtype::master {
 
@@ -24,6 +25,7 @@ std::vector<std::unique_ptr<engine::IModule>> masterModules(
       std::make_unique<MasterStorageModule>(engine::executableFolder()));
   modules.push_back(std::make_unique<ServerKeysModule>(std::nullopt));
   modules.push_back(std::make_unique<MasterHttpModule>(onFailure));
+  modules.push_back(std::make_unique<ServersModule>());
   return modules;
 }
 
