@@ -241,6 +241,31 @@ Alternative considered: peer to peer, with every peer running the game. It needs
 
 The second part answers each point (see [Version 2](/R-Type/protocol/#version-2)): guaranteed messages replaced the three copies in version 2; an input is to be repeated until the server confirms it, and states are to be sent as differences. The state already confirms the newest input of each player, which is what lets the client replay its newest inputs on top of a state and correct its ship. Prediction and interpolation themselves are client work, placed in `client/Prediction` (see [Project layout](/R-Type/project-layout/)).
 
+## Master
+
+The master lists the game servers and directs them: each server tells it the games it hosts, a player reads that list, an admin sends orders. It never runs a game and nothing of a game goes through it, so a game never waits for it and goes on when it stops. Its code is described in [Master](/R-Type/master/).
+
+### HTTP between the programs and the master
+
+The subject requires UDP between the server and the clients, accepts a second connection over TCP for specific cases with a strong justification, and requires every in-game message (entities, movements, events) to travel over UDP. The master carries no in-game message: a list of servers, a choice of server, the news a server sends every few seconds and the orders of an admin. It answers them over HTTP, which runs over TCP, for four reasons:
+
+- **The browser.** The subject accepts a web administration, and a browser speaks HTTP, never raw UDP or TCP: the master needs HTTP for the web site whatever the game uses.
+- **One protocol, not two.** HTTP already frames a message, names its route and its status, and carries the errors; a protocol of our own over TCP or UDP would write all of it again, beside the HTTP the browser needs.
+- **The tools.** A request reads with `curl`, and a reverse proxy adds HTTPS in front of the master without a line of code in it.
+- **Nothing depends on it to play.** A player still joins a server by its address, over UDP, when the master is stopped.
+
+The game protocol stays binary, as the subject requires for the communications between the client and the server; the API of the master answers JSON, the text a browser reads, for messages a few times a minute. DDNet registers its servers the same way, with an HTTP request to its master server.
+
+Alternative considered: UDP with messages of our own. It keeps one transport for everything, but the web site would still need HTTP, so the master would speak two protocols, and the messages would have to be made reliable again over UDP.
+
+### A mode of the server binary
+
+The master is `r-type_server --mode master`. The subject lists two binaries, `r-type_server` and `r-type_client`: the master ships inside the first, with nothing more to build or deliver. It reuses what the server already has, the stop on Ctrl-C and SIGTERM, the configuration file and the journal, so `main()` runs either program through one function. A failure stays apart all the same, since the master and a server are two processes: the master that crashes stops no game.
+
+The cost is that the server binary holds the code of the master, cpp-httplib and nlohmann-json included, even where it only hosts games. `rtype_forbid_reachable_links` keeps the master away from SFML, Asio, the game and the code of the server, through every link it reaches.
+
+Alternative considered: a third binary, `r-type_master`. It keeps the server smaller and the master deployable alone, but it is a binary the subject does not list, one more to build, package and ship, and it would have needed the stop and the launch of the server moved into the engine first.
+
 ## Consequences
 
 - `EntityRegistry`, `ComponentRegistry`, `ISystem`, `SystemScheduler`, `EventBus` and `BoundedQueue` exist today. The game screen of the client calls a scheduler once per frame to play its animations; the tick of the server runs the stages of its `Application`: the games move on and run their systems and their timers, the connection requests are answered, and the events of the bus are delivered.

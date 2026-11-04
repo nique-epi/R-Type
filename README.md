@@ -96,7 +96,18 @@ Without these options, `tests/tools/network-conditions/` applies the same scenar
 
 Both programs write what crosses their socket to the journal every 10 s; with `--traffic-csv` they also write it to a file every second, by player and by message type, for a measurement campaign (see [the network page](https://nique-epi.github.io/R-Type/network/#traffic-counters-trafficcounters)).
 
-`--help` prints the options of either program. An invalid argument stops it with a message and exit code 1.
+```bash
+./r-type_server --mode master -p 8080
+```
+
+The same binary runs the master in this mode: the program that will list the game servers for the players and take the orders of an admin. `--mode` comes before every other option. Today it answers an HTTP API under `/api` on TCP port 8080 of every IPv4 interface (`curl http://127.0.0.1:8080/api/health` answers `{"version":"0.1.0"}`), keeps its data in `r-type_master.db` next to the executable, and reads `master.cfg`, modelled by `master.cfg.example` (see [the master page](https://nique-epi.github.io/R-Type/master/)).
+
+- **Why HTTP:** the subject requires UDP for every message of a game and accepts TCP for other needs when it is justified. The master carries no message of a game, and the web administration the subject accepts needs HTTP in a browser, so one protocol serves the programs and the web site, readable with `curl`. A player still joins a server over UDP when the master is stopped.
+- **Why a mode and not a third binary:** the subject lists two binaries, `r-type_server` and `r-type_client`. The master ships inside the first and reuses its stop on Ctrl-C, its configuration file and its journal; it still runs as a process of its own, so a master that stops stops no game.
+
+Both choices are told in full in [Architecture](https://nique-epi.github.io/R-Type/architecture/#master).
+
+`--help` prints the options of either program, and `--mode master --help` those of the master. An invalid argument stops it with a message and exit code 1.
 
 ## Tests
 
@@ -112,7 +123,7 @@ Once the test preset is built, this sends the server running on port 4242 of the
 
 ## Logging
 
-The client and the server write a timestamped journal, `r-type_server.log` or `r-type_client.log` next to their executable, and show the same lines in the terminal; the first line gives the absolute path of the journal. The level and the output are chosen at launch:
+The client, the server and the master write a timestamped journal, `r-type_client.log`, `r-type_server.log` or `r-type_master.log` next to their executable, and show the same lines in the terminal; the first line gives the absolute path of the journal. The level and the output are chosen at launch:
 
 ```bash
 ./r-type_server --log-level debug
