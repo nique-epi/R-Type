@@ -1,7 +1,6 @@
 #pragma once
 
 #include <cstddef>
-#include <cstdint>
 #include <vector>
 #include "DeltaWorldState.hpp"
 
@@ -15,11 +14,16 @@ namespace rtype::network::testing {
 DeltaWorldState oneShipDelta();
 
 /**
- * @returns A delta of four players, @p changedCount changed Bydo numbered from
- * 1 and @p removedCount removed ids numbered from 1, without a reference.
+ * @returns A delta of four players and @p changedCount changed Bydo numbered
+ * from 1, without a reference and with nothing removed.
  */
-DeltaWorldState deltaOfLists(std::size_t changedCount,
-                             std::size_t removedCount);
+DeltaWorldState deltaWithChanged(std::size_t changedCount);
+
+/**
+ * @returns A delta of four players and @p removedCount removed ids numbered
+ * from 1, without a reference and with nothing changed.
+ */
+DeltaWorldState deltaWithRemoved(std::size_t removedCount);
 
 /**
  * @returns @p payload with the byte at @p offset replaced by @p value.

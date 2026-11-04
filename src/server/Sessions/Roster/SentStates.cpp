@@ -1,6 +1,7 @@
 #include "SentStates.hpp"
 #include <algorithm>
 #include <cstdint>
+#include <ranges>
 #include <utility>
 #include "GuaranteedDelivery.hpp"
 #include "PacketHeader.hpp"
@@ -35,12 +36,12 @@ void SentStates::remember(SentState state) {
 }
 
 void SentStates::acknowledge(const network::PacketHeader& header) {
-  for (auto state = history_.rbegin(); state != history_.rend(); ++state) {
-    if (acknowledgedTick_.has_value() && state->tick <= *acknowledgedTick_) {
+  for (const SentState& state : std::views::reverse(history_)) {
+    if (acknowledgedTick_.has_value() && state.tick <= *acknowledgedTick_) {
       return;
     }
-    if (everyPartAcknowledged(header, *state)) {
-      acknowledgedTick_ = state->tick;
+    if (everyPartAcknowledged(header, state)) {
+      acknowledgedTick_ = state.tick;
       return;
     }
   }

@@ -1,7 +1,6 @@
 #pragma once
 
 #include <cstdint>
-#include "ProtocolConstants.hpp"
 
 namespace rtype::server::testing {
 

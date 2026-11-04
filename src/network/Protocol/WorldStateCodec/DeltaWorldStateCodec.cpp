@@ -45,7 +45,8 @@ std::vector<PartSlices> slicesOf(const DeltaWorldState& whole) {
   std::vector<PartSlices> slices;
   std::size_t nextChanged = 0;
   std::size_t nextRemoved = 0;
-  do {
+  while (slices.empty() || nextChanged < whole.changed.size() ||
+         nextRemoved < whole.removed.size()) {
     const std::size_t changedCount = std::min(
         {whole.changed.size() - nextChanged, room / ENTITY_STATE_WIRE_SIZE,
          MAXIMUM_ENTITIES_PER_DELTA_LIST});
@@ -61,8 +62,7 @@ std::vector<PartSlices> slicesOf(const DeltaWorldState& whole) {
                                 .partCount = 0});
     nextChanged += changedCount;
     nextRemoved += removedCount;
-  } while (nextChanged < whole.changed.size() ||
-           nextRemoved < whole.removed.size());
+  }
   for (PartSlices& part : slices) {
     part.partCount = slices.size();
   }

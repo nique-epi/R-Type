@@ -10,7 +10,6 @@
 #include "DeltaWorldState.hpp"
 #include "Entity.hpp"
 #include "EntityRegistry.hpp"
-#include "EntityType.hpp"
 #include "OutgoingDatagram.hpp"
 #include "PlayerRoster.hpp"
 #include "Position.hpp"
@@ -60,7 +59,7 @@ class DeltaStateSenderFixture : public ::testing::Test {
    * it and, by the bits of @p earlier, of the datagrams before it, as a client
    * would that accepted them.
    */
-  void acknowledgeSentTo(ConnectedPlayer& player, std::uint32_t earlier);
+  static void acknowledgeSentTo(ConnectedPlayer& player, std::uint32_t earlier);
 
   /**
    * @brief Runs MEASURED_SECONDS of a game for a player on FIRST_PLAYER_PORT

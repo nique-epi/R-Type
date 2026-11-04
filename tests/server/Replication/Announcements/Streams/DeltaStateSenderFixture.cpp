@@ -21,7 +21,6 @@
 #include "StateRateMeasurementFixtures.hpp"
 #include "WorldStateSender.hpp"
 #include "WorldStateSenderFixture.hpp"
-#include "WorldStateSenderTestConstants.hpp"
 
 namespace rtype::server::testing {
 

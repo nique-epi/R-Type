@@ -15,9 +15,9 @@ struct PartPosition {
 };
 
 /**
- * @returns A Bydo of id @p entityId at (@p x, 0).
+ * @returns A Bydo of id @p entityId at (@p abscissa, 0).
  */
-network::EntityState bydoAt(std::uint32_t entityId, float x);
+network::EntityState bydoAt(std::uint32_t entityId, float abscissa);
 
 /**
  * @returns A state of one part at @p tick with no reference, listing

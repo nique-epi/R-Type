@@ -91,6 +91,9 @@ bool WorldStateAssembler::fillsASlot(
 }
 
 std::optional<network::WorldState> WorldStateAssembler::rebuild() {
+  if (!pending_.has_value()) {
+    return std::nullopt;
+  }
   const PendingDelta pending = std::move(*pending_);
   pending_.reset();
   const network::WorldState* const reference = referenceOf(pending);

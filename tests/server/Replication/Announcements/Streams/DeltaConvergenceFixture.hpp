@@ -2,7 +2,12 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <vector>
+#include "ConnectedPlayer.hpp"
 #include "DeltaStateSenderFixture.hpp"
+#include "Entity.hpp"
+#include "ReceivedSequences.hpp"
+#include "WorldStateAssembler.hpp"
 
 namespace rtype::server::testing {
 
@@ -32,6 +37,25 @@ class DeltaConvergenceFixture : public DeltaStateSenderFixture {
    * written against an earlier state or in full.
    */
   [[nodiscard]] ConvergenceReport playOverALossyNetwork();
+
+ private:
+  /** @brief Hands the client each datagram sent since the last call that the
+   * network did not lose, and counts what it rebuilds. */
+  void receiveSentDatagrams();
+  /** @brief Moves the first half of the enemies to where @p tick puts them. */
+  void moveHalfOfTheEnemies(std::uint32_t tick);
+  /** @brief Gives @p player the acknowledgement of what the client accepted. */
+  void acknowledgeAcceptedBy(ConnectedPlayer& player);
+
+  std::vector<engine::Entity> enemies_;
+  client::WorldStateAssembler assembler_;
+  network::ReceivedSequences received_;
+  ConvergenceReport report_{.delivered = 0,
+                            .rebuilt = 0,
+                            .mismatching = 0,
+                            .rebuiltFromDeltas = 0,
+                            .rebuiltInFull = 0};
+  std::size_t handled_{0};
 };
 
 }  // namespace rtype::server::testing

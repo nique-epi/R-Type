@@ -4,7 +4,6 @@
 #include <cstdint>
 #include <iterator>
 #include <span>
-#include <utility>
 #include <vector>
 #include "StateDelta.hpp"
 #include "WireTypes.hpp"

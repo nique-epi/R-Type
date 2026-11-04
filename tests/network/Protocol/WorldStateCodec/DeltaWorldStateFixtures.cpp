@@ -22,13 +22,10 @@ DeltaWorldState oneShipDelta() {
                          .removed = {EXAMPLE_REMOVED_ENTITY_ID}};
 }
 
+namespace {
+
 DeltaWorldState deltaOfLists(std::size_t changedCount,
-                             std::size_t removedCount) {
-  std::vector<std::uint32_t> removed;
-  removed.reserve(removedCount);
-  for (std::size_t index = 0; index < removedCount; ++index) {
-    removed.push_back(static_cast<std::uint32_t>(index + 1));
-  }
+                             std::vector<std::uint32_t> removed) {
   return DeltaWorldState{.tick = SOME_TICK,
                          .baseDistance = NO_REFERENCE_DISTANCE,
                          .partIndex = 0,
@@ -36,6 +33,21 @@ DeltaWorldState deltaOfLists(std::size_t changedCount,
                          .players = fourPlayers(),
                          .changed = someEntities(changedCount),
                          .removed = std::move(removed)};
+}
+
+}  // namespace
+
+DeltaWorldState deltaWithChanged(std::size_t changedCount) {
+  return deltaOfLists(changedCount, {});
+}
+
+DeltaWorldState deltaWithRemoved(std::size_t removedCount) {
+  std::vector<std::uint32_t> removed;
+  removed.reserve(removedCount);
+  for (std::size_t index = 0; index < removedCount; ++index) {
+    removed.push_back(static_cast<std::uint32_t>(index + 1));
+  }
+  return deltaOfLists(0, std::move(removed));
 }
 
 std::vector<std::byte> withByteAt(std::vector<std::byte> payload,

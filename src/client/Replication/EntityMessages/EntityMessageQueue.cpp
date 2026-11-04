@@ -40,21 +40,7 @@ EntityMessageQueue::EntityMessageQueue(network::MessageDispatcher& dispatcher,
                                        WaitingRoom& room,
                                        GameLoadedReminder& reminder)
     : room_(&room), reminder_(&reminder) {
-  dispatcher.registerHandler<network::WorldState>(
-      [this](const network::MessageOrigin&, const network::WorldState& state) {
-        reminder_->worldStateArrived();
-        room_->startGame();
-        keep(state);
-      });
-  dispatcher.registerHandler<network::DeltaWorldState>(
-      [this](const network::MessageOrigin&,
-             const network::DeltaWorldState& part) {
-        reminder_->worldStateArrived();
-        room_->startGame();
-        if (std::optional<network::WorldState> state = assembler_.add(part)) {
-          keep(std::move(*state));
-        }
-      });
+  registerStateHandlers(dispatcher);
   keepEachOf<network::EntitySpawned, network::EntityDestroyed,
              network::PlayerLeft>(
       dispatcher, [this](EntityMessage message) { keep(std::move(message)); });
@@ -69,6 +55,25 @@ EntityMessageQueue::EntityMessageQueue(network::MessageDispatcher& dispatcher,
         if (room_->gameStarted()) {
           keep(ended);
           room_->endGame();
+        }
+      });
+}
+
+void EntityMessageQueue::registerStateHandlers(
+    network::MessageDispatcher& dispatcher) {
+  dispatcher.registerHandler<network::WorldState>(
+      [this](const network::MessageOrigin&, const network::WorldState& state) {
+        reminder_->worldStateArrived();
+        room_->startGame();
+        keep(state);
+      });
+  dispatcher.registerHandler<network::DeltaWorldState>(
+      [this](const network::MessageOrigin&,
+             const network::DeltaWorldState& part) {
+        reminder_->worldStateArrived();
+        room_->startGame();
+        if (std::optional<network::WorldState> state = assembler_.add(part)) {
+          keep(std::move(*state));
         }
       });
 }

@@ -6,6 +6,7 @@
 #include "DeltaWorldState.hpp"
 #include "DeltaWorldStateCodec.hpp"
 #include "MessageType.hpp"
+#include "ServerSessionFixtures.hpp"
 
 namespace rtype::client::testing {
 

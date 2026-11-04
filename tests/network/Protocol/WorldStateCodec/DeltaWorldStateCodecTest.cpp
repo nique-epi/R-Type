@@ -7,7 +7,6 @@
 #include "DeltaWorldStateCodecTestConstants.hpp"
 #include "DeltaWorldStateFixtures.hpp"
 #include "NetworkException.hpp"
-#include "ProtocolConstants.hpp"
 
 using rtype::network::BufferUnderflowException;
 using rtype::network::DeltaWorldState;
@@ -22,7 +21,8 @@ using rtype::network::testing::CHANGED_FILLING_TWO_PARTS;
 using rtype::network::testing::CHANGED_FITTING_WITH_FOUR_PLAYERS;
 using rtype::network::testing::CHANGED_LEFT_FOR_THE_SECOND_PART;
 using rtype::network::testing::CHANGED_NEEDING_TOO_MANY_PARTS;
-using rtype::network::testing::deltaOfLists;
+using rtype::network::testing::deltaWithChanged;
+using rtype::network::testing::deltaWithRemoved;
 using rtype::network::testing::LARGEST_BASE_DISTANCE;
 using rtype::network::testing::LARGEST_LIST_COUNT;
 using rtype::network::testing::LARGEST_PART_COUNT;
@@ -76,7 +76,7 @@ TEST(DeltaWorldStateCodec, DecodesWhatItEncoded) {
  * changed entities put end to end are the original ones
  */
 TEST(DeltaWorldStateCodec, SplitsChangedEntitiesThatDoNotFitOnePart) {
-  const DeltaWorldState delta = deltaOfLists(CHANGED_FILLING_TWO_PARTS, 0);
+  const DeltaWorldState delta = deltaWithChanged(CHANGED_FILLING_TWO_PARTS);
 
   const auto payloads = DeltaWorldStateCodec::encode(delta);
 
@@ -97,7 +97,8 @@ TEST(DeltaWorldStateCodec, SplitsChangedEntitiesThatDoNotFitOnePart) {
  * Then the first part holds 255 ids and the second the others
  */
 TEST(DeltaWorldStateCodec, CapsAListAtWhatItsCountHolds) {
-  const DeltaWorldState delta = deltaOfLists(0, REMOVED_IDS_OVERFLOWING_A_LIST);
+  const DeltaWorldState delta =
+      deltaWithRemoved(REMOVED_IDS_OVERFLOWING_A_LIST);
 
   const auto payloads = DeltaWorldStateCodec::encode(delta);
 
@@ -114,7 +115,8 @@ TEST(DeltaWorldStateCodec, CapsAListAtWhatItsCountHolds) {
  * Then TooManyDeltaPartsException is thrown
  */
 TEST(DeltaWorldStateCodec, RefusesAStateNeedingTooManyParts) {
-  const DeltaWorldState delta = deltaOfLists(CHANGED_NEEDING_TOO_MANY_PARTS, 0);
+  const DeltaWorldState delta =
+      deltaWithChanged(CHANGED_NEEDING_TOO_MANY_PARTS);
 
   EXPECT_THROW(static_cast<void>(DeltaWorldStateCodec::encode(delta)),
                TooManyDeltaPartsException);

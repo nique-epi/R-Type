@@ -6,7 +6,7 @@
 #include "DeltaStateSenderFixture.hpp"
 #include "DeltaStateSenderTestConstants.hpp"
 #include "DeltaWorldState.hpp"
-#include "EntityType.hpp"
+#include "Entity.hpp"
 #include "ProtocolConstants.hpp"
 #include "WorldState.hpp"
 #include "WorldStateSenderFixture.hpp"

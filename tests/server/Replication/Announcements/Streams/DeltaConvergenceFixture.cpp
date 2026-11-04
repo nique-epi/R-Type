@@ -46,51 +46,52 @@ std::vector<network::EntityState> worldAt(std::uint32_t tick) {
 
 }  // namespace
 
+void DeltaConvergenceFixture::receiveSentDatagrams() {
+  for (; handled_ < sentDatagrams().size(); ++handled_) {
+    if (isLost(handled_)) {
+      continue;
+    }
+    const network::OutgoingDatagram& datagram = sentDatagrams().at(handled_);
+    ++report_.delivered;
+    static_cast<void>(received_.accept(
+        network::DatagramCodec::decodeHeader(datagram.payload).sequence));
+    const auto part = onlyMessageIn<network::DeltaWorldState>(datagram);
+    const std::optional<network::WorldState> state = assembler_.add(part);
+    if (state.has_value()) {
+      ++report_.rebuilt;
+      report_.mismatching += state->entities == worldAt(state->tick) ? 0 : 1;
+      ++(part.baseDistance == 0 ? report_.rebuiltInFull
+                                : report_.rebuiltFromDeltas);
+    }
+  }
+}
+
+void DeltaConvergenceFixture::moveHalfOfTheEnemies(std::uint32_t tick) {
+  for (std::size_t index = 0; index < HALF_THE_ENTITIES; ++index) {
+    move(enemies_.at(index),
+         game::Position{.x = static_cast<float>(index + 1 + tick), .y = 0.0F});
+  }
+}
+
+void DeltaConvergenceFixture::acknowledgeAcceptedBy(ConnectedPlayer& player) {
+  network::PacketHeader acknowledgement;
+  received_.acknowledgeIn(acknowledgement);
+  player.sentStates.acknowledge(acknowledgement);
+}
+
 ConvergenceReport DeltaConvergenceFixture::playOverALossyNetwork() {
-  std::vector<engine::Entity> enemies;
   for (std::uint32_t id = 1; id <= MEASURED_ENTITIES; ++id) {
-    enemies.push_back(
+    enemies_.push_back(
         addEnemy(id, game::Position{.x = static_cast<float>(id), .y = 0.0F}));
   }
   ConnectedPlayer& player = connect(FIRST_PLAYER_PORT);
-  client::WorldStateAssembler assembler;
-  network::ReceivedSequences received;
-  ConvergenceReport report{.delivered = 0,
-                           .rebuilt = 0,
-                           .mismatching = 0,
-                           .rebuiltFromDeltas = 0,
-                           .rebuiltInFull = 0};
-  std::size_t handled = 0;
   for (std::uint32_t tick = 1; tick <= CONVERGENCE_TICKS; ++tick) {
     runTicks(1);
-    for (; handled < sentDatagrams().size(); ++handled) {
-      if (isLost(handled)) {
-        continue;
-      }
-      const network::OutgoingDatagram& datagram = sentDatagrams().at(handled);
-      ++report.delivered;
-      static_cast<void>(received.accept(
-          network::DatagramCodec::decodeHeader(datagram.payload).sequence));
-      const network::DeltaWorldState part =
-          onlyMessageIn<network::DeltaWorldState>(datagram);
-      const std::optional<network::WorldState> state = assembler.add(part);
-      if (state.has_value()) {
-        ++report.rebuilt;
-        report.mismatching += state->entities == worldAt(state->tick) ? 0 : 1;
-        ++(part.baseDistance == 0 ? report.rebuiltInFull
-                                  : report.rebuiltFromDeltas);
-      }
-    }
-    for (std::size_t index = 0; index < HALF_THE_ENTITIES; ++index) {
-      move(
-          enemies.at(index),
-          game::Position{.x = static_cast<float>(index + 1 + tick), .y = 0.0F});
-    }
-    network::PacketHeader acknowledgement;
-    received.acknowledgeIn(acknowledgement);
-    player.sentStates.acknowledge(acknowledgement);
+    receiveSentDatagrams();
+    moveHalfOfTheEnemies(tick);
+    acknowledgeAcceptedBy(player);
   }
-  return report;
+  return report_;
 }
 
 }  // namespace rtype::server::testing

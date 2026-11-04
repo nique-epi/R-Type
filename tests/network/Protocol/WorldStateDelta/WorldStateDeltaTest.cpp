@@ -1,6 +1,5 @@
 #include <gtest/gtest.h>
 #include <algorithm>
-#include <cmath>
 #include <cstdint>
 #include <limits>
 #include <vector>
@@ -17,11 +16,17 @@ using rtype::network::EntityState;
 using rtype::network::InvalidCoordinateException;
 using rtype::network::StateDelta;
 using rtype::network::WireEntityType;
+using rtype::network::testing::ADDED_X;
+using rtype::network::testing::ADDED_Y;
+using rtype::network::testing::APPLIED_X;
+using rtype::network::testing::APPLIED_Y;
 using rtype::network::testing::ENTITIES_IN_A_LIST;
 using rtype::network::testing::FAR_BELOW_AN_EIGHTH;
+using rtype::network::testing::FIRST_DUPLICATE_X;
 using rtype::network::testing::MOVED_ENTITY_ID;
 using rtype::network::testing::NEW_ENTITY_ID;
 using rtype::network::testing::ONE_EIGHTH;
+using rtype::network::testing::SECOND_DUPLICATE_X;
 using rtype::network::testing::someEntities;
 using rtype::network::testing::VANISHED_ENTITY_ID;
 
@@ -93,8 +98,8 @@ TEST(WorldStateDelta, ListsANewEntityAsChangedAndAMissingOneAsRemoved) {
   current.erase(current.begin() + (VANISHED_ENTITY_ID - 1));
   const EntityState added{.entityId = NEW_ENTITY_ID,
                           .entityType = WireEntityType::PlayerMissile,
-                          .x = 1.0F,
-                          .y = 2.0F};
+                          .x = ADDED_X,
+                          .y = ADDED_Y};
   current.push_back(added);
 
   const StateDelta delta = diffStates(base, current);
@@ -158,8 +163,8 @@ TEST(WorldStateDelta, ApplyingTheDiffGivesTheLaterList) {
   current.erase(current.begin() + (VANISHED_ENTITY_ID - 1));
   current.push_back(EntityState{.entityId = NEW_ENTITY_ID,
                                 .entityType = WireEntityType::Bydo,
-                                .x = 3.0F,
-                                .y = 4.0F});
+                                .x = APPLIED_X,
+                                .y = APPLIED_Y});
 
   EXPECT_EQ(applyDelta(base, diffStates(base, current)), current);
 }
@@ -207,10 +212,10 @@ TEST(WorldStateDelta, ApplyingToNothingGivesTheChangedEntities) {
 TEST(WorldStateDelta, AnIdListedTwiceKeepsItsFirstEntry) {
   const EntityState first{.entityId = NEW_ENTITY_ID,
                           .entityType = WireEntityType::Bydo,
-                          .x = 1.0F,
-                          .y = 1.0F};
+                          .x = FIRST_DUPLICATE_X,
+                          .y = FIRST_DUPLICATE_X};
   EntityState second = first;
-  second.x = 2.0F;
+  second.x = SECOND_DUPLICATE_X;
 
   const std::vector<EntityState> applied =
       applyDelta({}, StateDelta{.changed = {first, second}, .removed = {}});

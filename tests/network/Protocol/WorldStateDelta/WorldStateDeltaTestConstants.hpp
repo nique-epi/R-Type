@@ -22,4 +22,15 @@ constexpr std::uint32_t VANISHED_ENTITY_ID = 4;
 /** @brief The id of an entity such a list lacks. */
 constexpr std::uint32_t NEW_ENTITY_ID = 9;
 
+/** @brief Where the entity a delta adds is placed, and where the one a delta
+ * applied to nothing is placed. */
+constexpr float ADDED_X = 1.0F;
+constexpr float ADDED_Y = 2.0F;
+constexpr float APPLIED_X = 3.0F;
+constexpr float APPLIED_Y = 4.0F;
+
+/** @brief The abscissas of two entries with the same id in one delta. */
+constexpr float FIRST_DUPLICATE_X = 1.0F;
+constexpr float SECOND_DUPLICATE_X = 2.0F;
+
 }  // namespace rtype::network::testing

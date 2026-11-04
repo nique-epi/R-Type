@@ -47,8 +47,7 @@ network::MessageType onlyMessageTypeOf(
 }
 
 network::WorldState fullStateIn(const network::OutgoingDatagram& datagram) {
-  const network::DeltaWorldState delta =
-      onlyMessageIn<network::DeltaWorldState>(datagram);
+  const auto delta = onlyMessageIn<network::DeltaWorldState>(datagram);
   EXPECT_EQ(delta.baseDistance, network::NO_REFERENCE_DISTANCE);
   EXPECT_EQ(delta.partCount, ONE_PART);
   return network::WorldState{

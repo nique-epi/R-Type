@@ -98,12 +98,13 @@ TEST(WorldStateAssembler, WaitsForEveryPartOfATick) {
   WorldStateAssembler assembler;
   const DeltaWorldState whole =
       fullPart(FIRST_TICK, {bydoAt(FIRST_ENTITY_ID, 0)});
-  DeltaWorldState other = fullPart(FIRST_TICK, {bydoAt(SECOND_ENTITY_ID, 0)});
+  const DeltaWorldState other =
+      fullPart(FIRST_TICK, {bydoAt(SECOND_ENTITY_ID, 0)});
 
-  const std::optional<WorldState> afterOne =
-      assembler.add(partOf(other, PartPosition{SECOND_PART, TWO_PARTS}));
-  const std::optional<WorldState> afterBoth =
-      assembler.add(partOf(whole, PartPosition{FIRST_PART, TWO_PARTS}));
+  const std::optional<WorldState> afterOne = assembler.add(
+      partOf(other, PartPosition{.index = SECOND_PART, .count = TWO_PARTS}));
+  const std::optional<WorldState> afterBoth = assembler.add(
+      partOf(whole, PartPosition{.index = FIRST_PART, .count = TWO_PARTS}));
 
   EXPECT_FALSE(afterOne.has_value());
   ASSERT_TRUE(afterBoth.has_value());
@@ -121,7 +122,7 @@ TEST(WorldStateAssembler, CountsAPartOnceWhenItArrivesTwice) {
   WorldStateAssembler assembler;
   const DeltaWorldState first =
       partOf(fullPart(FIRST_TICK, {bydoAt(FIRST_ENTITY_ID, 0)}),
-             PartPosition{FIRST_PART, TWO_PARTS});
+             PartPosition{.index = FIRST_PART, .count = TWO_PARTS});
 
   EXPECT_FALSE(assembler.add(first).has_value());
   EXPECT_FALSE(assembler.add(first).has_value());
@@ -134,15 +135,17 @@ TEST(WorldStateAssembler, CountsAPartOnceWhenItArrivesTwice) {
  */
 TEST(WorldStateAssembler, LeavesOutAPartThatDisagreesOnThePartCount) {
   WorldStateAssembler assembler;
-  ASSERT_FALSE(assembler
-                   .add(partOf(fullPart(FIRST_TICK, {}),
-                               PartPosition{FIRST_PART, TWO_PARTS}))
-                   .has_value());
+  ASSERT_FALSE(
+      assembler
+          .add(partOf(fullPart(FIRST_TICK, {}),
+                      PartPosition{.index = FIRST_PART, .count = TWO_PARTS}))
+          .has_value());
 
   EXPECT_FALSE(
       assembler
           .add(partOf(fullPart(FIRST_TICK, {}),
-                      PartPosition{SECOND_PART, THREE_PARTS_COUNT_MISMATCH}))
+                      PartPosition{.index = SECOND_PART,
+                                   .count = THREE_PARTS_COUNT_MISMATCH}))
           .has_value());
 }
 
@@ -153,10 +156,11 @@ TEST(WorldStateAssembler, LeavesOutAPartThatDisagreesOnThePartCount) {
  */
 TEST(WorldStateAssembler, DropsAnIncompleteTickWhenANewerOneComes) {
   WorldStateAssembler assembler;
-  ASSERT_FALSE(assembler
-                   .add(partOf(fullPart(FIRST_TICK, {}),
-                               PartPosition{FIRST_PART, TWO_PARTS}))
-                   .has_value());
+  ASSERT_FALSE(
+      assembler
+          .add(partOf(fullPart(FIRST_TICK, {}),
+                      PartPosition{.index = FIRST_PART, .count = TWO_PARTS}))
+          .has_value());
 
   const std::optional<WorldState> state =
       assembler.add(fullPart(SECOND_TICK, {bydoAt(FIRST_ENTITY_ID, 0)}));

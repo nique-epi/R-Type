@@ -1,4 +1,5 @@
 #include "WorldStateSenderFixture.hpp"
+#include <gtest/gtest.h>
 #include <cstddef>
 #include <cstdint>
 #include <memory>
@@ -7,6 +8,7 @@
 #include <vector>
 #include "ConnectedPlayer.hpp"
 #include "DatagramCodec.hpp"
+#include "DeltaWorldState.hpp"
 #include "Endpoint.hpp"
 #include "Entity.hpp"
 #include "EntityType.hpp"
@@ -19,6 +21,7 @@
 #include "PacketHeader.hpp"
 #include "PlayerRoster.hpp"
 #include "Position.hpp"
+#include "ProtocolConstants.hpp"
 #include "SentDatagrams.hpp"
 #include "ServerConstants.hpp"
 #include "ServerLobbyTestConstants.hpp"
@@ -106,7 +109,7 @@ void WorldStateSenderFixture::runTicks(std::size_t count) {
 
 network::WorldState WorldStateSenderFixture::decodedState(
     std::size_t sentIndex) const {
-  const network::DeltaWorldState part =
+  const auto part =
       onlyMessageIn<network::DeltaWorldState>(sent_.at(sentIndex));
   EXPECT_EQ(part.baseDistance, network::NO_REFERENCE_DISTANCE);
   return network::WorldState{

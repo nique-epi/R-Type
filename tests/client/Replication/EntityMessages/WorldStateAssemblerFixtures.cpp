@@ -23,10 +23,10 @@ network::PlayerState onlyPlayer() {
 
 }  // namespace
 
-network::EntityState bydoAt(std::uint32_t entityId, float x) {
+network::EntityState bydoAt(std::uint32_t entityId, float abscissa) {
   return network::EntityState{.entityId = entityId,
                               .entityType = network::WireEntityType::Bydo,
-                              .x = x,
+                              .x = abscissa,
                               .y = 0.0F};
 }
 

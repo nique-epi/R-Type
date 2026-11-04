@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 #include <cstdint>
 #include "ProtocolConstants.hpp"
+#include "SentState.hpp"
 #include "SentStates.hpp"
 #include "SentStatesConstants.hpp"
 #include "SentStatesFixtures.hpp"

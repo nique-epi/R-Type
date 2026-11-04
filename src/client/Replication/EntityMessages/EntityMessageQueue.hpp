@@ -61,6 +61,10 @@ class EntityMessageQueue final : public IEntityMessageSource,
   void sessionHeld(engine::Duration elapsed) override;
 
  private:
+  /** @brief Registers the handlers of the two messages that carry a state: a
+   * WorldState is kept as it is, a DeltaWorldState once the assembler rebuilt
+   * it. */
+  void registerStateHandlers(network::MessageDispatcher& dispatcher);
   /** @brief Keeps @p message until the next drain, once the game started. */
   void keep(EntityMessage message);
 
