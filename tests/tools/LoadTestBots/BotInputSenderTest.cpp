@@ -3,13 +3,19 @@
 #include <cstddef>
 #include <vector>
 #include "ActionSet.hpp"
+#include "BotInputSender.hpp"
 #include "BotInputSenderFixture.hpp"
 #include "BotInputSenderTestConstants.hpp"
 #include "BotPilot.hpp"
 #include "BotPilotFixtures.hpp"
 #include "BotPilotTestConstants.hpp"
+#include "RecordingWaitingRoom.hpp"
+#include "RefusingPlayerInputLink.hpp"
+#include "TimeConstants.hpp"
 
 using rtype::client::ActionSet;
+using rtype::engine::SIMULATION_TICK_DURATION;
+using rtype::tools::BotInputSender;
 using rtype::tools::BotPilot;
 using rtype::tools::testing::BotInputSenderFixture;
 using rtype::tools::testing::FRAMES_IN_A_SECOND;
@@ -87,6 +93,22 @@ TEST_F(BotInputSenderFixture, NothingGoesOutOnceTheGameEnded) {
   static_cast<void>(advanceFor(FRAMES_IN_A_SECOND));
 
   EXPECT_EQ(link().sentActions().size(), INPUTS_IN_A_SECOND);
+}
+
+/**
+ * Given a sender whose game started, over a link that sends nothing
+ * When its first frame passes, in which the pace has an input due
+ * Then it says no input went out
+ */
+TEST(BotInputSender, SaysNothingWentOutWhenTheLinkSendsNothing) {
+  RecordingWaitingRoom room;
+  room.setGameStarted(true);
+  RefusingPlayerInputLink link;
+  BotInputSender sender{PILOT_SEED, room, link};
+
+  const bool said = sender.advance(SIMULATION_TICK_DURATION);
+
+  EXPECT_FALSE(said);
 }
 
 /**
