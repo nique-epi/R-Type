@@ -2,7 +2,6 @@ add_subdirectory(Rejections)
 
 add_library(rtype_server_network_module STATIC
   DatagramSorter.cpp
-  DiscardReport.cpp
   ServerApplication.cpp
   ServerNetworkModule.cpp
   TickDatagrams.cpp
@@ -25,6 +24,7 @@ target_link_libraries(rtype_server_network_module
     rtype_network_simulator
     rtype_network_statistics
     rtype_network_transport
+    rtype_server_network_rejections
     rtype_server_platform
   PRIVATE
     rtype_network_constants

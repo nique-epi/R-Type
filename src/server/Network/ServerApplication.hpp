@@ -10,7 +10,6 @@
 #include "DatagramQueues.hpp"
 #include "DatagramRelay.hpp"
 #include "DatagramSorter.hpp"
-#include "DiscardReport.hpp"
 #include "Endpoint.hpp"
 #include "IDatagramSender.hpp"
 #include "IDatagramSocket.hpp"
@@ -19,6 +18,8 @@
 #include "NetworkConditions.hpp"
 #include "NetworkContext.hpp"
 #include "OutgoingDatagram.hpp"
+#include "RejectionLedger.hpp"
+#include "RejectionReporter.hpp"
 #include "SystemClock.hpp"
 #include "TrafficCounters.hpp"
 
@@ -39,7 +40,9 @@ namespace rtype::server {
  * queue; a player flooding with its own token still can.
  * Each tick, the simulation thread drains both queues, hands what they held
  * to the tick handler, then asks the network thread to send what was queued.
- * The DatagramRelay only sends.
+ * The DatagramRelay only sends. Every TICKS_PER_REPORT ticks, the simulation
+ * thread writes the rejection report at the warn level (see RejectionReporter),
+ * from the RejectionLedger the sorter feeds on the network thread.
  *
  * Building the object binds nothing: the socket is bound by open(), so a part
  * of a program that builds it while it installs keeps no resource open until
@@ -166,8 +169,9 @@ class ServerApplication final : public IDatagramSender,
   concurrency::BoundedQueue<network::IncomingDatagram> connectionRequests_;
   concurrency::BoundedQueue<network::OutgoingDatagram> outgoing_;
   DatagramQueues destinations_;
+  RejectionLedger rejections_;
   DatagramSorter sorter_;
-  DiscardReport discardReport_;
+  RejectionReporter rejectionReporter_;
   std::optional<network::DatagramRelay> relay_;
   TickHandler handleTick_;
   std::vector<network::IncomingDatagram> received_;

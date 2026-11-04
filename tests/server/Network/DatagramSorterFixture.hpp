@@ -3,17 +3,21 @@
 #include <gtest/gtest.h>
 #include <cstddef>
 #include <cstdint>
-#include <optional>
 #include <vector>
 #include "BoundedQueue.hpp"
 #include "DatagramSorter.hpp"
 #include "Endpoint.hpp"
 #include "IncomingDatagram.hpp"
+#include "RejectionLedger.hpp"
+#include "RejectionReport.hpp"
 #include "ServerLobbyTestConstants.hpp"
 #include "SimulatedClock.hpp"
 #include "TimeConstants.hpp"
 
-/** @brief A sorter in front of two queues of the server's sizes. */
+/**
+ * @brief A sorter in front of two queues of the server's sizes, counting its
+ * rejections in a ledger the test reads.
+ */
 class DatagramSorterFixture : public ::testing::Test {
  protected:
   DatagramSorterFixture();
@@ -27,9 +31,7 @@ class DatagramSorterFixture : public ::testing::Test {
       const rtype::network::Endpoint& endpoint,
       std::uint64_t sessionToken = rtype::server::testing::SESSION_TOKEN);
   void advanceClock(rtype::engine::Duration elapsed);
-  [[nodiscard]] std::size_t droppedCount() const;
-  [[nodiscard]] std::size_t wrongTokenCount() const;
-  [[nodiscard]] std::optional<rtype::network::Endpoint> takeWrongTokenSender();
+  [[nodiscard]] rtype::server::RejectionReport takeReport();
   [[nodiscard]] std::vector<rtype::network::IncomingDatagram> drainPlayers();
   [[nodiscard]] std::vector<rtype::network::IncomingDatagram> drainRequests();
 
@@ -38,5 +40,6 @@ class DatagramSorterFixture : public ::testing::Test {
   rtype::concurrency::BoundedQueue<rtype::network::IncomingDatagram>
       connectionRequests_;
   SimulatedClock clock_;
+  rtype::server::RejectionLedger rejections_;
   rtype::server::DatagramSorter sorter_;
 };

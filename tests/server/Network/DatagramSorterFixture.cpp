@@ -1,11 +1,11 @@
 #include "DatagramSorterFixture.hpp"
 #include <cstddef>
 #include <cstdint>
-#include <optional>
 #include <vector>
 #include "DatagramQueues.hpp"
 #include "Endpoint.hpp"
 #include "IncomingDatagram.hpp"
+#include "RejectionReport.hpp"
 #include "ServerConstants.hpp"
 #include "TimeConstants.hpp"
 
@@ -15,7 +15,7 @@ DatagramSorterFixture::DatagramSorterFixture()
       sorter_(
           rtype::server::DatagramQueues{
               .players = &players_, .connectionRequests = &connectionRequests_},
-          clock_) {}
+          rejections_, clock_) {}
 
 void DatagramSorterFixture::sort(const rtype::network::Endpoint& sender,
                                  const std::vector<std::byte>& datagram) {
@@ -36,17 +36,8 @@ void DatagramSorterFixture::advanceClock(rtype::engine::Duration elapsed) {
   clock_.advance(elapsed);
 }
 
-std::size_t DatagramSorterFixture::droppedCount() const {
-  return sorter_.droppedCount();
-}
-
-std::size_t DatagramSorterFixture::wrongTokenCount() const {
-  return sorter_.wrongTokenCount();
-}
-
-std::optional<rtype::network::Endpoint>
-DatagramSorterFixture::takeWrongTokenSender() {
-  return sorter_.takeWrongTokenSender();
+rtype::server::RejectionReport DatagramSorterFixture::takeReport() {
+  return rejections_.takeReport();
 }
 
 std::vector<rtype::network::IncomingDatagram>

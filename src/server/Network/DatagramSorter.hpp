@@ -1,10 +1,7 @@
 #pragma once
 
-#include <atomic>
 #include <cstddef>
 #include <cstdint>
-#include <mutex>
-#include <optional>
 #include <span>
 #include <string_view>
 #include <vector>
@@ -13,6 +10,8 @@
 #include "Endpoint.hpp"
 #include "IClock.hpp"
 #include "PacketHeader.hpp"
+#include "RejectionCause.hpp"
+#include "RejectionLedger.hpp"
 #include "ThrottledLog.hpp"
 
 namespace rtype::server {
@@ -28,8 +27,7 @@ namespace rtype::server {
  * version does not know, and whose messages add up to its end, is kept only
  * if, coming from the address and port of an admitted player, it carries the
  * session token of that player, or NO_SESSION_TOKEN when it holds a
- * ConnectionRequest; any other token drops it, counted apart from the other
- * drops. A datagram kept goes:
+ * ConnectionRequest; any other token drops it. A datagram kept goes:
  *
  * - to the connection request queue when it holds a ConnectionRequest: a
  *   player whose acceptance was lost asks again;
@@ -40,24 +38,28 @@ namespace rtype::server {
  * queue, where the ConnectionAcceptor refuses it as IncompatibleVersion, when
  * its sender was not admitted and it holds at least
  * CONNECTION_REFUSED_DATAGRAM_SIZE bytes: the refusal is then never larger
- * than what it answers. Every other datagram is dropped. Besides the counts the
- * server reports, each drop is logged at the debug level with its sender and
- * why, at most once per REJECTION_LINE_INTERVAL (see ThrottledLog). The sorter
- * reads the header and the type of each message, never a payload, throws
- * nothing on a malformed datagram, and reads the clock only to drop one, so its
- * cost per datagram stays close to that of the copy into a queue, whatever the
- * datagram holds. Not thread-safe, except droppedCount(),
- * wrongTokenCount() and takeWrongTokenSender(): call the rest on the network
- * thread only.
+ * than what it answers. Every other datagram is dropped.
+ *
+ * Each datagram dropped, and each datagram kept that made its queue discard the
+ * oldest one, is counted in the RejectionLedger with its cause and its sender.
+ * Each drop is also logged at the debug level with its sender and why, at most
+ * once per REJECTION_LINE_INTERVAL (see ThrottledLog). The sorter reads the
+ * header and the type of each message, never a payload, throws nothing on a
+ * malformed datagram, and reads the clock only to drop one, so its cost per
+ * datagram stays close to that of the copy into a queue, whatever the datagram
+ * holds. Not thread-safe: call it on the network thread only.
  */
 class DatagramSorter {
  public:
   /**
    * @param destinations Neither queue may be null.
+   * @param rejections Where each datagram rejected is counted; it must outlive
+   * the sorter.
    * @param clock The time of the lines about the datagrams dropped; it must
    * outlive the sorter.
    */
-  DatagramSorter(DatagramQueues destinations, const engine::IClock& clock);
+  DatagramSorter(DatagramQueues destinations, RejectionLedger& rejections,
+                 const engine::IClock& clock);
 
   /**
    * @brief Puts a copy of @p datagram, sent by @p sender, in the queue it
@@ -85,28 +87,6 @@ class DatagramSorter {
    */
   bool forget(const network::Endpoint& player, std::uint64_t sessionToken);
 
-  /**
-   * @returns How many datagrams sort() dropped since the sorter was built,
-   * those with a wrong session token apart. Call it from any thread.
-   */
-  [[nodiscard]] std::size_t droppedCount() const;
-
-  /**
-   * @returns How many datagrams sort() dropped since the sorter was built
-   * because they came from the address of an admitted player with another
-   * session token. Call it from any thread.
-   */
-  [[nodiscard]] std::size_t wrongTokenCount() const;
-
-  /**
-   * @returns The sender of the first datagram dropped for another session
-   * token since the previous call, or nothing when none was; the next call
-   * starts afresh. The sender is kept before the drop is counted, so a call
-   * made after wrongTokenCount() grew finds it, unless an earlier call took
-   * it in between. Call it from any thread.
-   */
-  [[nodiscard]] std::optional<network::Endpoint> takeWrongTokenSender();
-
  private:
   [[nodiscard]] const AdmittedPlayer* findAdmitted(
       const network::Endpoint& sender) const;
@@ -125,16 +105,26 @@ class DatagramSorter {
   [[nodiscard]] bool isRefusedForItsVersion(const network::Endpoint& sender,
                                             const network::PacketHeader& header,
                                             std::size_t datagramSize) const;
-  void drop(const network::Endpoint& sender, std::string_view reason);
-  void dropWrongToken(const network::Endpoint& sender);
+
+  /** @brief Puts a copy of @p datagram in the connection request queue, and
+   * counts it as RequestQueueFull when the queue discarded its oldest. */
+  void queueRequest(const network::Endpoint& sender,
+                    std::span<const std::byte> datagram);
+
+  /** @brief Puts a copy of @p datagram in the player queue, and counts it as
+   * PlayerQueueFull when the queue discarded its oldest. */
+  void queuePlayerDatagram(const network::Endpoint& sender,
+                           std::span<const std::byte> datagram);
+
+  /** @brief Counts the datagram of @p sender as rejected for @p cause, and
+   * logs @p reason. */
+  void drop(const network::Endpoint& sender, RejectionCause cause,
+            std::string_view reason);
 
   DatagramQueues destinations_;
+  RejectionLedger* rejections_;
   const engine::IClock* clock_;
   std::vector<AdmittedPlayer> admitted_;
-  std::atomic<std::size_t> droppedCount_{0};
-  std::atomic<std::size_t> wrongTokenCount_{0};
-  std::mutex wrongTokenSenderMutex_;
-  std::optional<network::Endpoint> wrongTokenSender_;
   logging::ThrottledLog dropLog_;
 };
 
