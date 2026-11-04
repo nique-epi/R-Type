@@ -1,5 +1,7 @@
 find_package(GTest CONFIG REQUIRED)
 find_package(SFML 3 COMPONENTS Graphics Audio CONFIG REQUIRED)
+find_package(httplib CONFIG REQUIRED)
+find_package(nlohmann_json CONFIG REQUIRED)
 
 include(GoogleTest)
 
@@ -97,6 +99,8 @@ rtype_add_test(NAME server_metrics_tests SOURCES server/Metrics/Measures/TickDur
 target_include_directories(server_metrics_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/server)
 rtype_add_test(NAME server_platform_tests SOURCES server/Platform/FineTimerResolutionTest.cpp server/Platform/StopRequestTest.cpp server/Platform/StopSignalsTest.cpp LIBS rtype_server_platform)
 target_include_directories(server_platform_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/server/Platform)
+rtype_add_test(NAME master_tests SOURCES master/Http/MasterHttpServerTest.cpp master/Http/MasterHttpServerFixture.cpp LIBS rtype_master_http_module rtype_master_exceptions rtype_network_constants httplib::httplib nlohmann_json::nlohmann_json TIMEOUT ${RTYPE_THREAD_TEST_TIMEOUT_SECONDS})
+target_include_directories(master_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/master/Http)
 rtype_add_test(NAME storage_tests SOURCES storage/DatabaseFileTest.cpp storage/DatabaseFileFixture.cpp TemporaryFolder.cpp LIBS rtype_storage)
 target_include_directories(storage_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 rtype_add_test(NAME server_storage_tests SOURCES server/Storage/Database/ResultsDatabaseTest.cpp server/Storage/Database/ResultsDatabaseFixture.cpp server/Storage/Archive/ResultsArchiveTest.cpp server/Storage/Archive/ResultsArchiveFixture.cpp TemporaryFolder.cpp LIBS rtype_server_storage_archive server_test_datagrams TIMEOUT ${RTYPE_THREAD_TEST_TIMEOUT_SECONDS})
