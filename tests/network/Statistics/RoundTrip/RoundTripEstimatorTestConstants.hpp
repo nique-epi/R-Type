@@ -40,8 +40,8 @@ constexpr std::chrono::milliseconds JITTER_OF_A_SPIKE_THEN_A_DROP_IN_THE_WINDOW{
     10};
 
 /**
- * @brief The round trips the jitter is computed on, as RTY-94 asks: the 16
- * newest.
+ * @brief The round trips the jitter is computed on: the 16 newest, 8 s at two
+ * Heartbeats per second.
  */
 constexpr std::size_t ROUND_TRIPS_IN_THE_WINDOW = 16;
 

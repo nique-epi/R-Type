@@ -24,7 +24,10 @@ namespace rtype::network {
  * time a datagram arrived (IncomingDatagram::receivedAt) and the time read
  * when a Heartbeat is built. An echo that gives no round trip from 0 to
  * LONGEST_ROUND_TRIP is ignored: one held longer than since it was sent, or
- * one of a sentAt this side did not send in the session.
+ * one whose round trip is longer than LONGEST_ROUND_TRIP. The meter does not
+ * remember the sentAt it sent, so an echo of a sentAt it never sent is
+ * measured all the same when it falls in that range: a peer can fix its own
+ * round trip anywhere from 0 to LONGEST_ROUND_TRIP.
  *
  * Not thread-safe.
  */

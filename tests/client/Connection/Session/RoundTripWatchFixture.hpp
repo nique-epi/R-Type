@@ -33,6 +33,10 @@ class RoundTripWatchFixture : public ::testing::Test {
    * go by. */
   void hold(engine::Duration elapsed);
 
+  /** @brief Opens a session at 3.5 s, measures the own round trip from the
+   * echo of its first Heartbeat, closes the session, then opens another. */
+  void reopenAfterAMeasuredRoundTrip();
+
   /** @brief Makes the outbox owe the server an acknowledgement: a datagram of
    * the server that holds guaranteed messages was accepted, and waited
    * ACKNOWLEDGEMENT_DELAY. */

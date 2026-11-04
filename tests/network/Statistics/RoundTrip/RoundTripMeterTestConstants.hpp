@@ -40,9 +40,29 @@ constexpr std::chrono::microseconds ONE_MILLISECOND_BEFORE_THE_WRAP{
     4'294'967'296 - 1'000};
 
 /**
+ * @brief 1 ms before the second wrap of the microsecond counter, 2 * 2^32 - 1
+ * ms: a time whose full value is above 2^32 µs, so that the counter of a
+ * Heartbeat sent then is not the time itself.
+ */
+constexpr std::chrono::microseconds ONE_MILLISECOND_BEFORE_THE_SECOND_WRAP{
+    2 * 4'294'967'296 - 1'000};
+
+/**
  * @brief A time held longer than the 45 ms since the Heartbeat was sent.
  */
 constexpr std::uint32_t HELD_LONGER_THAN_THE_TRIP = 50'000;
+
+/**
+ * @brief A time held exactly as long as the 45 ms since the Heartbeat was
+ * sent: a round trip of 0.
+ */
+constexpr std::uint32_t HELD_AS_LONG_AS_THE_TRIP = 45'000;
+
+/**
+ * @brief How long after it left an echo of a Heartbeat held for nothing comes
+ * back to give exactly the longest round trip, 20 s.
+ */
+constexpr std::chrono::seconds LONGEST_ROUND_TRIP_ECHO_BACK_AFTER{20};
 
 /**
  * @brief The largest time held a Heartbeat carries, 2^32 - 1 µs.
@@ -51,7 +71,7 @@ constexpr std::uint32_t LARGEST_TIME_HELD = 4'294'967'295;
 
 /**
  * @brief An echo that comes back at 30 s of a sentAt of 5 s, 25 s earlier:
- * longer than the 20 s a session lives without a datagram.
+ * a round trip longer than the 20 s a session lives without a datagram.
  */
 constexpr std::chrono::seconds LATE_ARRIVAL{30};
 constexpr std::uint32_t SENT_AT_TWENTY_FIVE_SECONDS_EARLIER = 5'000'000;

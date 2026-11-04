@@ -17,10 +17,10 @@ using testing::FIRST_HEARTBEAT_SENT_AT;
 using testing::HELD_BY_THE_SERVER;
 using testing::HELD_UNTIL_THE_CLIENT_SENDS;
 using testing::ONE_FRAME;
-using testing::OTHER_PLAYER_NUMBER;
+using testing::REPORTED_PLAYER_NUMBER;
 using testing::OWN_PLAYER_NUMBER;
 using testing::OWN_ROUND_TRIP;
-using testing::PROTOCOL_HEARTBEAT_INTERVAL;
+using testing::ONE_HEARTBEAT_INTERVAL;
 using testing::REPORTED_JITTER;
 using testing::REPORTED_JITTER_DURATION;
 using testing::REPORTED_ROUND_TRIP;
@@ -37,7 +37,7 @@ using testing::UNREPORTED_PLAYER_NUMBER;
  * Then no Heartbeat is sent
  */
 TEST_F(RoundTripWatchFixture, SendsNothingWithoutASession) {
-  hold(PROTOCOL_HEARTBEAT_INTERVAL);
+  hold(ONE_HEARTBEAT_INTERVAL);
 
   EXPECT_EQ(heartbeatsSent(), 0U);
 }
@@ -50,7 +50,7 @@ TEST_F(RoundTripWatchFixture, SendsNothingWithoutASession) {
 TEST_F(RoundTripWatchFixture, WaitsAnIntervalBeforeTheFirstHeartbeat) {
   openSession();
 
-  hold(PROTOCOL_HEARTBEAT_INTERVAL - ONE_NANOSECOND);
+  hold(ONE_HEARTBEAT_INTERVAL - ONE_NANOSECOND);
   const std::size_t sentBeforeTheInterval = heartbeatsSent();
   hold(ONE_NANOSECOND);
 
@@ -66,9 +66,9 @@ TEST_F(RoundTripWatchFixture, WaitsAnIntervalBeforeTheFirstHeartbeat) {
 TEST_F(RoundTripWatchFixture, SendsAHeartbeatEveryInterval) {
   openSession();
 
-  hold(PROTOCOL_HEARTBEAT_INTERVAL);
-  hold(PROTOCOL_HEARTBEAT_INTERVAL);
-  hold(PROTOCOL_HEARTBEAT_INTERVAL);
+  hold(ONE_HEARTBEAT_INTERVAL);
+  hold(ONE_HEARTBEAT_INTERVAL);
+  hold(ONE_HEARTBEAT_INTERVAL);
 
   EXPECT_EQ(heartbeatsSent(), 3U);
 }
@@ -83,7 +83,7 @@ TEST_F(RoundTripWatchFixture, TheHeartbeatCarriesTheTimeOnTheClock) {
   advanceClock(CLOCK_WHEN_THE_SESSION_OPENS);
   openSession();
 
-  hold(PROTOCOL_HEARTBEAT_INTERVAL);
+  hold(ONE_HEARTBEAT_INTERVAL);
 
   EXPECT_EQ(lastSentHeartbeat(),
             (network::Heartbeat{.sentAt = FIRST_HEARTBEAT_SENT_AT,
@@ -121,7 +121,7 @@ TEST_F(RoundTripWatchFixture, EchoesTheNewestHeartbeatOfTheServer) {
                              .echo = std::nullopt},
           SERVER_HEARTBEAT_ARRIVAL);
 
-  hold(PROTOCOL_HEARTBEAT_INTERVAL);
+  hold(ONE_HEARTBEAT_INTERVAL);
 
   EXPECT_EQ(lastSentHeartbeat().echo,
             (network::HeartbeatEcho{.sentAt = SERVER_HEARTBEAT_SENT_AT,
@@ -136,7 +136,7 @@ TEST_F(RoundTripWatchFixture, EchoesTheNewestHeartbeatOfTheServer) {
 TEST_F(RoundTripWatchFixture, MeasuresItsOwnRoundTripFromTheEcho) {
   advanceClock(CLOCK_WHEN_THE_SESSION_OPENS);
   openSession();
-  hold(PROTOCOL_HEARTBEAT_INTERVAL);
+  hold(ONE_HEARTBEAT_INTERVAL);
 
   deliver(
       network::Heartbeat{
@@ -172,13 +172,13 @@ TEST_F(RoundTripWatchFixture, GivesNothingForItsOwnPlayerBeforeAnEcho) {
 TEST_F(RoundTripWatchFixture, GivesTheRoundTripsTheServerReportedForTheOthers) {
   openSession();
 
-  deliver(network::RoundTrips{.players = {{.playerNumber = OTHER_PLAYER_NUMBER,
+  deliver(network::RoundTrips{.players = {{.playerNumber = REPORTED_PLAYER_NUMBER,
                                            .roundTrip = REPORTED_ROUND_TRIP,
                                            .jitter = REPORTED_JITTER}}},
           SERVER_HEARTBEAT_ARRIVAL);
 
   EXPECT_EQ(
-      watch().roundTripOf(OTHER_PLAYER_NUMBER),
+      watch().roundTripOf(REPORTED_PLAYER_NUMBER),
       (network::RoundTripFigures{.roundTrip = REPORTED_ROUND_TRIP_DURATION,
                                  .jitter = REPORTED_JITTER_DURATION}));
 }
@@ -190,7 +190,7 @@ TEST_F(RoundTripWatchFixture, GivesTheRoundTripsTheServerReportedForTheOthers) {
  */
 TEST_F(RoundTripWatchFixture, GivesNothingForAPlayerNotReported) {
   openSession();
-  deliver(network::RoundTrips{.players = {{.playerNumber = OTHER_PLAYER_NUMBER,
+  deliver(network::RoundTrips{.players = {{.playerNumber = REPORTED_PLAYER_NUMBER,
                                            .roundTrip = REPORTED_ROUND_TRIP,
                                            .jitter = REPORTED_JITTER}}},
           SERVER_HEARTBEAT_ARRIVAL);
@@ -200,21 +200,61 @@ TEST_F(RoundTripWatchFixture, GivesNothingForAPlayerNotReported) {
 
 /**
  * Given a session whose server reported another player
- * When the session closes, then an interval passes
- * Then no player has a round trip any more, and no Heartbeat is sent
+ * When the session closes
+ * Then no player has a round trip any more
  */
-TEST_F(RoundTripWatchFixture, ForgetsEverythingWhenTheSessionCloses) {
+TEST_F(RoundTripWatchFixture, ForgetsTheReportedRoundTripsWhenTheSessionCloses) {
   openSession();
-  deliver(network::RoundTrips{.players = {{.playerNumber = OTHER_PLAYER_NUMBER,
+  deliver(network::RoundTrips{.players = {{.playerNumber = REPORTED_PLAYER_NUMBER,
                                            .roundTrip = REPORTED_ROUND_TRIP,
                                            .jitter = REPORTED_JITTER}}},
           SERVER_HEARTBEAT_ARRIVAL);
 
   watch().sessionClosed();
-  hold(PROTOCOL_HEARTBEAT_INTERVAL);
 
-  EXPECT_FALSE(watch().roundTripOf(OTHER_PLAYER_NUMBER).has_value());
+  EXPECT_FALSE(watch().roundTripOf(REPORTED_PLAYER_NUMBER).has_value());
+}
+
+/**
+ * Given a session that closed
+ * When an interval passes
+ * Then no Heartbeat is sent
+ */
+TEST_F(RoundTripWatchFixture, SendsNothingOnceTheSessionClosed) {
+  openSession();
+
+  watch().sessionClosed();
+  hold(ONE_HEARTBEAT_INTERVAL);
+
   EXPECT_EQ(heartbeatsSent(), 0U);
+}
+
+/**
+ * Given a session that measured a round trip of 48 ms, closed, then a new one
+ * opened
+ * When the round trip of the own player is asked
+ * Then there is none: the figures of the session before are not the new
+ * server's
+ */
+TEST_F(RoundTripWatchFixture, ForgetsItsOwnRoundTripWhenTheSessionCloses) {
+  reopenAfterAMeasuredRoundTrip();
+
+  EXPECT_FALSE(watch().roundTripOf(OWN_PLAYER_NUMBER).has_value());
+}
+
+/**
+ * Given a session that received a Heartbeat of its server, closed, then a new
+ * one opened
+ * When the interval passes
+ * Then the Heartbeat sent echoes nothing: the Heartbeat kept came from the
+ * clock of the server before
+ */
+TEST_F(RoundTripWatchFixture, EchoesNothingOfTheSessionBefore) {
+  reopenAfterAMeasuredRoundTrip();
+
+  hold(ONE_HEARTBEAT_INTERVAL);
+
+  EXPECT_EQ(lastSentHeartbeat().echo, std::nullopt);
 }
 
 /**
@@ -224,7 +264,7 @@ TEST_F(RoundTripWatchFixture, ForgetsEverythingWhenTheSessionCloses) {
  */
 TEST_F(RoundTripWatchFixture, ForgetsTheReportOfTheSessionBefore) {
   openSession();
-  deliver(network::RoundTrips{.players = {{.playerNumber = OTHER_PLAYER_NUMBER,
+  deliver(network::RoundTrips{.players = {{.playerNumber = REPORTED_PLAYER_NUMBER,
                                            .roundTrip = REPORTED_ROUND_TRIP,
                                            .jitter = REPORTED_JITTER}}},
           SERVER_HEARTBEAT_ARRIVAL);
@@ -232,7 +272,7 @@ TEST_F(RoundTripWatchFixture, ForgetsTheReportOfTheSessionBefore) {
 
   openSession();
 
-  EXPECT_FALSE(watch().roundTripOf(OTHER_PLAYER_NUMBER).has_value());
+  EXPECT_FALSE(watch().roundTripOf(REPORTED_PLAYER_NUMBER).has_value());
 }
 
 /**
@@ -241,14 +281,14 @@ TEST_F(RoundTripWatchFixture, ForgetsTheReportOfTheSessionBefore) {
  * Then the round trips that came before it are not kept
  */
 TEST_F(RoundTripWatchFixture, IgnoresAReportWithoutASession) {
-  deliver(network::RoundTrips{.players = {{.playerNumber = OTHER_PLAYER_NUMBER,
+  deliver(network::RoundTrips{.players = {{.playerNumber = REPORTED_PLAYER_NUMBER,
                                            .roundTrip = REPORTED_ROUND_TRIP,
                                            .jitter = REPORTED_JITTER}}},
           SERVER_HEARTBEAT_ARRIVAL);
 
   openSession();
 
-  EXPECT_FALSE(watch().roundTripOf(OTHER_PLAYER_NUMBER).has_value());
+  EXPECT_FALSE(watch().roundTripOf(REPORTED_PLAYER_NUMBER).has_value());
 }
 
 }  // namespace rtype::client

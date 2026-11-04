@@ -20,7 +20,7 @@ void addTimeSinceHeartbeat(PlayerRoster& roster, engine::Duration elapsed);
  * @brief Sends each player of @p roster whose sinceHeartbeat reached
  * TIME_BETWEEN_HEARTBEATS a Heartbeat its RoundTripMeter builds at @p now,
  * then RoundTrips, the round trip of every player of @p roster measured; its
- * sinceHeartbeat then starts over. Two datagrams, since a sender of version 1
+ * sinceHeartbeat then starts over. Two datagrams, since sessionDatagram()
  * puts one message in each.
  * @param now The time on the clock of the sessions: the steady clock the
  * network thread stamps each datagram with (see IncomingDatagram::receivedAt).

@@ -32,6 +32,20 @@ void RoundTripWatchFixture::hold(engine::Duration elapsed) {
   watch_.sessionHeld(elapsed);
 }
 
+void RoundTripWatchFixture::reopenAfterAMeasuredRoundTrip() {
+  advanceClock(CLOCK_WHEN_THE_SESSION_OPENS);
+  openSession();
+  hold(ONE_HEARTBEAT_INTERVAL);
+  deliver(
+      network::Heartbeat{
+          .sentAt = SERVER_HEARTBEAT_SENT_AT,
+          .echo = network::HeartbeatEcho{.sentAt = FIRST_HEARTBEAT_SENT_AT,
+                                         .heldFor = HELD_BY_THE_SERVER}},
+      ECHO_ARRIVAL);
+  watch_.sessionClosed();
+  openSession();
+}
+
 void RoundTripWatchFixture::oweAnAcknowledgement() {
   acknowledgements_.open(SERVER_ACCEPTANCE_SEQUENCE);
   network::PacketHeader guaranteed;

@@ -22,8 +22,9 @@ constexpr std::size_t JITTER_WINDOW_SIZE = 16;
 /**
  * @brief The longest round trip a RoundTripMeter accepts, and the longest it
  * keeps a Heartbeat to echo: a side takes its peer for gone after
- * SESSION_SILENCE_LIMIT, so a longer one comes from a sentAt this side never
- * sent in the session.
+ * SESSION_SILENCE_LIMIT, so a longer one is not a round trip of this session.
+ * A shorter one is accepted whatever its sentAt: the meter does not check that
+ * this side sent it.
  */
 constexpr std::chrono::microseconds LONGEST_ROUND_TRIP = SESSION_SILENCE_LIMIT;
 

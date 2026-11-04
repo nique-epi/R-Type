@@ -11,14 +11,14 @@ namespace rtype::client::testing {
  * player of the game, and a player the server never reported.
  */
 constexpr std::uint8_t OWN_PLAYER_NUMBER = 1;
-constexpr std::uint8_t OTHER_PLAYER_NUMBER = 2;
+constexpr std::uint8_t REPORTED_PLAYER_NUMBER = 2;
 constexpr std::uint8_t UNREPORTED_PLAYER_NUMBER = 3;
 constexpr std::string_view OWN_NICKNAME = "ACE";
 
 /**
  * @brief The 500 ms of the protocol page between two Heartbeats.
  */
-constexpr std::chrono::milliseconds PROTOCOL_HEARTBEAT_INTERVAL{500};
+constexpr std::chrono::milliseconds ONE_HEARTBEAT_INTERVAL{500};
 
 /**
  * @brief The time on the clock before the session opens, so the first

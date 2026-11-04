@@ -11,13 +11,16 @@ namespace rtype::network {
 using testing::ECHO_BACK_AFTER;
 using testing::FIRST_SENDING_TIME;
 using testing::FIRST_SENDING_TIME_ON_THE_WIRE;
+using testing::HELD_AS_LONG_AS_THE_TRIP;
 using testing::HELD_LONGER_THAN_THE_TRIP;
 using testing::HELD_THE_LONGEST_ROUND_TRIP;
 using testing::LARGEST_TIME_HELD;
+using testing::LONGEST_ROUND_TRIP_ECHO_BACK_AFTER;
 using testing::LATE_ARRIVAL;
 using testing::MEASURED_ROUND_TRIP;
 using testing::MEASURED_SENDING_TIME;
 using testing::NEWER_PEER_ARRIVAL;
+using testing::ONE_MILLISECOND_BEFORE_THE_SECOND_WRAP;
 using testing::NEWER_PEER_SENT_AT;
 using testing::OLDER_PEER_ARRIVAL;
 using testing::OLDER_PEER_SENT_AT;
@@ -109,6 +112,30 @@ TEST(RoundTripMeter, MeasuresAcrossTheWrapOfTheMicrosecondCounter) {
 }
 
 /**
+ * Given a meter that sent a Heartbeat at 2 * 2^32 - 1000 µs, a time whose full
+ * value is above what the counter of a Heartbeat holds
+ * When its echo, held 3 ms, arrives 45 ms after it left
+ * Then the meter measured a round trip of 42 ms: the time of arrival is
+ * reduced to the counter before the two are subtracted
+ */
+TEST(RoundTripMeter, MeasuresAHeartbeatSentAfterTheCounterWrappedOnce) {
+  RoundTripMeter meter;
+  const Heartbeat sent =
+      meter.nextHeartbeat(ONE_MILLISECOND_BEFORE_THE_SECOND_WRAP);
+
+  meter.receive(
+      Heartbeat{.sentAt = NEWER_PEER_SENT_AT,
+                .echo = HeartbeatEcho{.sentAt = sent.sentAt,
+                                      .heldFor = THREE_MILLISECONDS_HELD}},
+      ONE_MILLISECOND_BEFORE_THE_SECOND_WRAP + ECHO_BACK_AFTER);
+
+  const std::optional<RoundTripFigures> figures = meter.figures();
+  ASSERT_TRUE(figures.has_value());
+  EXPECT_EQ(figures.value_or(RoundTripFigures{}).roundTrip,
+            MEASURED_ROUND_TRIP);
+}
+
+/**
  * Given a meter that sent a Heartbeat at 10 s
  * When an echo of it held 50 ms arrives 45 ms after it left
  * Then the meter measured nothing: no peer holds a Heartbeat longer than it
@@ -147,12 +174,54 @@ TEST(RoundTripMeter, IgnoresAnEchoHeldForTheLargestTime) {
 }
 
 /**
+ * Given a meter that sent a Heartbeat at 10 s
+ * When an echo of it held 45 ms, as long as it took to come back, arrives
+ * 45 ms after it left
+ * Then the meter measured a round trip of 0, which it accepts
+ */
+TEST(RoundTripMeter, AcceptsARoundTripOfNothing) {
+  RoundTripMeter meter;
+  const Heartbeat sent = meter.nextHeartbeat(MEASURED_SENDING_TIME);
+
+  meter.receive(
+      Heartbeat{.sentAt = NEWER_PEER_SENT_AT,
+                .echo = HeartbeatEcho{.sentAt = sent.sentAt,
+                                      .heldFor = HELD_AS_LONG_AS_THE_TRIP}},
+      MEASURED_SENDING_TIME + ECHO_BACK_AFTER);
+
+  const std::optional<RoundTripFigures> figures = meter.figures();
+  ASSERT_TRUE(figures.has_value());
+  EXPECT_EQ(figures.value_or(RoundTripFigures{}).roundTrip,
+            std::chrono::microseconds::zero());
+}
+
+/**
+ * Given a meter that sent a Heartbeat at 10 s
+ * When an echo of it held for nothing arrives exactly 20 s after it left
+ * Then the meter measured a round trip of 20 s, the longest it accepts
+ */
+TEST(RoundTripMeter, AcceptsARoundTripOfExactlyTheLongest) {
+  RoundTripMeter meter;
+  const Heartbeat sent = meter.nextHeartbeat(MEASURED_SENDING_TIME);
+
+  meter.receive(
+      Heartbeat{.sentAt = NEWER_PEER_SENT_AT,
+                .echo = HeartbeatEcho{.sentAt = sent.sentAt, .heldFor = 0}},
+      MEASURED_SENDING_TIME + LONGEST_ROUND_TRIP_ECHO_BACK_AFTER);
+
+  const std::optional<RoundTripFigures> figures = meter.figures();
+  ASSERT_TRUE(figures.has_value());
+  EXPECT_EQ(figures.value_or(RoundTripFigures{}).roundTrip,
+            LONGEST_ROUND_TRIP_ECHO_BACK_AFTER);
+}
+
+/**
  * Given a meter
  * When an echo of a time 25 s before its arrival comes, held for nothing
- * Then the meter measured nothing: a session lives at most 20 s without a
- * datagram, so this side never sent that time
+ * Then the meter measured nothing: that is a round trip longer than the 20 s
+ * a session lives without a datagram
  */
-TEST(RoundTripMeter, IgnoresAnEchoOfATimeNeverSent) {
+TEST(RoundTripMeter, IgnoresAnEchoOfARoundTripBeyondTheLongest) {
   RoundTripMeter meter;
 
   meter.receive(

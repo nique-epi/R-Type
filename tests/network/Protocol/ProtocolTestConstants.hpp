@@ -224,8 +224,9 @@ constexpr std::uint16_t SOME_SENDER_PORT = 50000;
 
 /**
  * @brief Message type bytes no message has: the byte before the first type,
- * the byte after the last, read from the list of types so that a new message
- * moves it, and the largest byte.
+ * the byte after the last, and the largest byte. The byte after the last is
+ * read from the name of the last message, MessageType::RoundTrips: a message
+ * added after it needs this line to follow.
  */
 constexpr std::uint8_t TYPE_BELOW_THE_FIRST = 0;
 constexpr std::uint8_t TYPE_ABOVE_THE_LAST =
