@@ -1,4 +1,5 @@
 #include <gtest/gtest.h>
+#include <array>
 #include <cstddef>
 #include <cstdint>
 #include "ByteSequence.hpp"
@@ -97,7 +98,7 @@ TEST(EnemyAction, RefusesBytesAfterThePhase) {
  * Then the attack is kept: the protocol does not list the attacks
  */
 TEST(EnemyAction, KeepsAnyAttackNumber) {
-  for (const std::uint8_t attack : {0, 7, 255}) {
+  for (const std::uint8_t attack : std::to_array<std::uint8_t>({0, 7, 255})) {
     SCOPED_TRACE(static_cast<int>(attack));
     const EnemyAction action{
         .entityId = 9, .attack = attack, .phase = EnemyActionPhase::Signal};
