@@ -10,8 +10,8 @@ namespace rtype::master {
 
 /**
  * @brief The modules of the master, in the order an Application installs and
- * starts them (and stops them in reverse): the logger, the storage and the
- * HTTP API. This is the one place that lists them.
+ * starts them (and stops them in reverse): the logger, the storage, the HTTP
+ * API and the game servers. This is the one place that lists them.
  *
  * The storage comes before the HTTP API, so a database the master cannot open
  * stops it before its port opens, and the API stops before the database

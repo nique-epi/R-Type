@@ -57,6 +57,20 @@ Why: the subject (page 16) makes an engine modular through what a developer choo
 17. **A class two categories share never keeps the folder flat.** It goes into the sub-folder of the category that needs it first, and the other sub-folder includes it there, the two including each other in one direction only; or it goes into `Contract/` when other folders read it too. Only the interfaces and the constants header of point 8 stay at the root.
 18. **Before moving the first file, write the table of the categories of each folder the change adds or flattens**: the folder, each category with its classes, the result. It goes in the plan or the pull request. A table where most folders keep one category and stay flat is the symptom of a reading finer than point 8: reread it at the grain of `Commands/` before moving anything.
 
+### A feature of the master is laid out like a web backend
+
+19. **A folder of a feature of the master** (`src/master/<Feature>/`) holds its module class at its root, and one sub-folder per role, as a module of Yuno backend does, whatever the number of classes:
+
+    | Sub-folder | Holds | Links |
+    |---|---|---|
+    | `Controllers/` | one class that reads the requests of the routes and writes their answers | `Services/` |
+    | `Services/` | the rules; `Services/Helpers/` for pure functions with no I/O | `Repositories/` |
+    | `Repositories/` | the only code with the SQL of the tables of the feature, one class per table | `Models/` |
+    | `Models/` | the plain structs the layers hand each other | nothing of the feature |
+
+    A sub-folder exists only when the feature has a class of that role. Points 7 to 9 do not apply to these folders: the role, not the count, makes the sub-folder.
+20. **What the master and the game server both read** (`src/network/Master/`) is laid out like the `common/` of a cRPC: `Routes/` (the method and path of each route, declared once), `Messages/` (one plain struct per message), `Validators/` (reading, checking and writing each message), `Client/` (the class the game server calls). The master and the client use the same declarations, so they cannot disagree on a route or a member.
+
 ## Example
 
 - ❌ **Before (wrong)**: `src/engine/Commands/` with its 26 files side by side: the command table, the cutting of a line, the settings, the reader of the file and its report, so a reader opens a list of names to find where `set` is.
