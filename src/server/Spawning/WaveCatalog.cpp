@@ -20,6 +20,7 @@
 #include <vector>
 #include "BydoKind.hpp"
 #include "BydoWave.hpp"
+#include "PathText.hpp"
 #include "ServerException.hpp"
 #include "TimeConstants.hpp"
 #include "WaveCurve.hpp"
@@ -249,7 +250,7 @@ PlansByDifficulty plansFrom(const FileTable& root) {
 std::string shownPath(const std::filesystem::path& file) {
   std::error_code error;
   const std::filesystem::path absolute = std::filesystem::absolute(file, error);
-  return (error ? file : absolute).generic_string();
+  return logging::genericText(error ? file : absolute);
 }
 
 /**
