@@ -23,6 +23,7 @@
 #include "NetworkTestConstants.hpp"
 #include "PacketHeader.hpp"
 #include "PlayerInput.hpp"
+#include "ProtocolConstants.hpp"
 #include "ServerSessionFixture.hpp"
 #include "ServerSessionFixtures.hpp"
 #include "ServerSessionLogFixture.hpp"
@@ -34,6 +35,8 @@
 
 namespace rtype::client {
 
+using network::CONNECTION_ATTEMPT_TIMEOUT;
+using network::CONNECTION_REQUEST_INTERVAL;
 using testing::ACCEPTANCE_SEQUENCE;
 using testing::ACCEPTED_PLAYER_NUMBER;
 using testing::APPLIED_TICK;

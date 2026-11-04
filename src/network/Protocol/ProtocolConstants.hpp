@@ -155,6 +155,27 @@ constexpr auto PLAYER_MOTION_BITS =
 constexpr std::uint32_t FIRST_INPUT_NUMBER = 1;
 
 /**
+ * @brief PlayerInput a client sends per second during a game. The server
+ * derives the rate limit of a player from it. Provisional, see the protocol
+ * page.
+ */
+constexpr std::size_t PLAYER_INPUTS_PER_SECOND = 60;
+
+/**
+ * @brief Time between two ConnectionRequest of an attempt while the server
+ * has not answered. The server derives the rate limit of the requests from
+ * it. Provisional, see the protocol page.
+ */
+constexpr std::chrono::milliseconds CONNECTION_REQUEST_INTERVAL{500};
+
+/**
+ * @brief Time after the start of an attempt at which the client gives up,
+ * when the server has neither accepted nor refused it: it bounds the requests
+ * one attempt sends. Provisional, see the protocol page.
+ */
+constexpr std::chrono::seconds CONNECTION_ATTEMPT_TIMEOUT{5};
+
+/**
  * @brief The longest time either side of a session lets pass without sending
  * its peer anything: once it passed, a Heartbeat goes out, so the peer knows
  * the sender is still there. Provisional, see the protocol page.
