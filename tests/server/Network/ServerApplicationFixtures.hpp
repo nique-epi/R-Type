@@ -62,10 +62,6 @@ struct SortedReadyState {
   bool readyStateReachedATick{};
 };
 
-/** @returns A ReadyState carrying SESSION_TOKEN, as an admitted player sends.
- */
-[[nodiscard]] std::vector<std::byte> playerReady();
-
 /**
  * @brief Runs a server on the loopback address, lets @p prepare admit or forget
  * the address of a client before the server starts, then has that client send

@@ -14,17 +14,16 @@
 #include "MessageType.hpp"
 #include "ModuleConstants.hpp"
 #include "NetworkConstants.hpp"
-#include "ServerConstants.hpp"
 #include "ServerModuleTestConstants.hpp"
 #include "ServerModules.hpp"
 #include "ServerModulesFixture.hpp"
 #include "TrafficFileTestConstants.hpp"
 #include "UdpTestClient.hpp"
 
+using rtype::engine::DATABASE_OPTION;
 using rtype::engine::PORT_OPTION;
 using rtype::network::MessageType;
 using rtype::network::TRAFFIC_CSV_OPTION;
-using rtype::server::DATABASE_OPTION;
 using rtype::server::LaunchOptions;
 using rtype::server::serverModules;
 

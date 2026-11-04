@@ -1,13 +1,13 @@
 ---
 title: Configuration commands
-description: The language of server.cfg and client.cfg, every command and setting the server and the client accept, and what happens to a line that is refused.
+description: The language of server.cfg, client.cfg and master.cfg, every command and setting the server, the client and the master accept, and what happens to a line that is refused.
 sidebar:
   label: Configuration commands
 ---
 
-`server.cfg` and `client.cfg` are files of commands: one command per line, read when the program starts, before its modules start. This page lists every command and every setting they accept. How the interpreter is built, and how a module adds a command or a setting, is on the [Engine](/R-Type/engine/#commands-and-configuration-commandinterpreter) page.
+`server.cfg`, `client.cfg` and `master.cfg` are files of commands: one command per line, read when the program starts, before its modules start. This page lists every command and every setting they accept. How the interpreter is built, and how a module adds a command or a setting, is on the [Engine](/R-Type/engine/#commands-and-configuration-commandinterpreter) page.
 
-The repository holds a model of each file, `server.cfg.example` and `client.cfg.example`, at its root. Each one lists every setting with its default, so it changes nothing as it is. Copy it to `server.cfg` or `client.cfg` in the folder the program is started from: the program never reads the `.example` file.
+The repository holds a model of each file, `server.cfg.example`, `client.cfg.example` and `master.cfg.example`, at its root. Each one lists every setting with its default, so it changes nothing as it is. Copy it to `server.cfg`, `client.cfg` or `master.cfg` in the folder the program is started from: the program never reads the `.example` file.
 
 ## The language
 
@@ -26,8 +26,8 @@ set port 4300
 
 | Command | Program | Effect |
 |---|---|---|
-| `set <setting> <value>` | server and client | Gives a setting a value, after checking it. |
-| `module <name> on\|off` | server and client | Turns a module of the program on or off before the modules start. |
+| `set <setting> <value>` | server, client and master | Gives a setting a value, after checking it. |
+| `module <name> on\|off` | server, client and master | Turns a module of the program on or off before the modules start. |
 
 No other command exists today. The interpreter keeps a help text for each command, but nothing prints it yet. A module that registers a command in its `install()` makes it usable in the file with no other change.
 
@@ -43,6 +43,7 @@ Server settings:
 | `seed` | 0 to 4294967295, or `none` | `none` | The seed of the first game; `none` draws one at random. |
 | `state-rate` | 2 to 60 | 20 | The world states sent to each player per second. |
 | `input-delay` | 0 to 30 | 3 | The ticks every player's input is held before it is applied. |
+| `database` | a path | empty | The SQLite file the leaderboard of the server is kept in; empty for `r-type_server_<port>.db` next to the executable. |
 
 Client settings:
 
@@ -53,6 +54,13 @@ Client settings:
 | `server-port` | 1 to 65535 | 4242 | The port the connection screen starts with. |
 
 The client settings only change what the connection screen offers first: the player can still edit the fields.
+
+Master settings (see [Master](/R-Type/master/#configuration-mastercfg)):
+
+| Setting | Value | Default | Effect |
+|---|---|---|---|
+| `port` | 1 to 65535 | 8080 | The TCP port the HTTP API listens on, on every interface. |
+| `database` | a path | empty | The SQLite file of the master; empty for `r-type_master.db` next to the executable. |
 
 ### `module`
 
@@ -66,9 +74,10 @@ Server modules:
 |---|---|---|
 | `logger` | nothing | Applies the logging options when it starts. |
 | `network` | `logger` | Owns the UDP socket and the network thread. |
-| `games` | `network` | Hosts the games. |
+| `storage` | `logger`, `network` | Opens the database of the leaderboard. |
+| `games` | `network`, `storage` | Hosts the games. |
 | `lobby` | `network`, `games` | Answers the connection requests of the players. |
-| `metrics` | `games` | Measures the ticks and writes a report to the journal. |
+| `metrics` | `games`, `network` | Measures the ticks and writes a report to the journal. |
 
 Client modules:
 
@@ -82,6 +91,14 @@ Client modules:
 | `audio` | `assets`, `settings` |
 | `screens` | `assets`, `settings`, `audio`, `window`, `connection` |
 | `menus`, `lobby`, `game` | `screens` |
+
+Master modules:
+
+| Module | Needs | Does |
+|---|---|---|
+| `logger` | nothing | Applies the logging options when it starts. |
+| `storage` | `logger` | Opens the database of the master. |
+| `http` | `logger` | Opens the port of the HTTP API. |
 
 Turning off a module the program cannot run without is accepted when nothing that stays on needs it, and the program then does less. For example, `module lobby off` on the server leaves a server that accepts nobody. On the client, `menus`, `lobby` and `game` need `screens`, and `screens` needs five modules, so turning one of those off is refused until the modules that need it are off first.
 
@@ -113,10 +130,10 @@ The reasons:
 From the lowest priority to the highest:
 
 1. The default of the setting, written in the module that declares it.
-2. The file: `server.cfg` or `client.cfg`, in the folder the program is started from.
-3. The launch options. `-p`, `--seed`, `--state-rate` and `--input-delay` on the server, `-h`, `-p` and `-n` on the client, and `--set <name>=<value>` on both, are turned into `set` lines that run after the file. The last value given wins, so a launch option always wins over the file.
+2. The file: `server.cfg`, `client.cfg` or `master.cfg`, in the folder the program is started from.
+3. The launch options. `-p`, `--seed`, `--state-rate`, `--input-delay` and `--database` on the server, `-h`, `-p` and `-n` on the client, `-p` and `--database` on the master, and `--set <name>=<value>` on all three, are turned into `set` lines that run after the file. The last value given wins, so a launch option always wins over the file.
 
-A missing file is not an error: the defaults apply and the journal says `server.cfg not found, the defaults apply` (or `client.cfg`). The `info` lines are hidden at the default log level; start the program with `--log-level info` to see them.
+A missing file is not an error: the defaults apply and the journal says `server.cfg not found, the defaults apply` (or `client.cfg`, `master.cfg`). The `info` lines are hidden at the default log level; start the program with `--log-level info` to see them.
 
 A module reads its settings when it starts, never when it installs, because the file is read between the two. A change to the file therefore takes effect at the next launch.
 

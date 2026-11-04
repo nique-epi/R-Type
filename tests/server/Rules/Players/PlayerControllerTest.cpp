@@ -13,7 +13,6 @@
 #include "ShipMotion.hpp"
 
 namespace rtype::server::testing {
-namespace {
 
 /**
  * Given a player with a ship that wants nothing
@@ -176,5 +175,4 @@ TEST_F(PlayerControllerFixture, SecondPressOfASteeredShipStartsADash) {
   EXPECT_EQ(motion->maneuver, game::ManeuverKind::Dash);
 }
 
-}  // namespace
 }  // namespace rtype::server::testing

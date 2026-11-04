@@ -11,13 +11,13 @@ Most folders below do not exist yet. Each section says which ones do; the story 
 
 ## Who may link what
 
-The repository builds three programs on seven libraries. Programs link libraries, never the reverse. Between libraries, the only links are `rtype_game` to `rtype_engine`, and any library to `rtype_logging`, `rtype_concurrency` and `rtype_identifiers`.
+The repository builds two binaries on seven libraries, and the server binary runs one of two programs: the game server, or the master with `--mode master`. Programs link libraries, never the reverse. Between libraries, the only links are `rtype_game` to `rtype_engine`, and any library to `rtype_logging`, `rtype_concurrency` and `rtype_identifiers`.
 
 | Target | Holds | Never links |
 |---|---|---|
 | `r-type_client` | what the player sees, hears and presses | server or master code |
 | `r-type_server` | the lobby, the games running in parallel, the link with the master | SFML, Asio |
-| `r-type_master` | the list of game servers, their status, administration, the HTTP API | SFML, `rtype_game` |
+| `src/master` | the master, run by `r-type_server --mode master`: the list of game servers, their status, administration, the HTTP API | SFML, Asio, `rtype_game`, server code |
 | `rtype_game` | what happens during a match | SFML, Asio, `rtype_network` |
 | `rtype_network` | everything that crosses the wire | SFML, `rtype_engine`, `rtype_game` |
 | `rtype_engine` | the building blocks any game needs | SFML, Asio, `rtype_game`, `rtype_network` |
@@ -26,7 +26,7 @@ The repository builds three programs on seven libraries. Programs link libraries
 | `rtype_identifiers` | the values the engine and the wire must agree on; every other target may link it | anything else |
 | `rtype_storage` | opening a SQLite file and applying its numbered migrations; the programs that keep a database link it | anything else, but SQLiteCpp |
 
-`rtype_logging`, `rtype_concurrency` and `rtype_identifiers` stand alone because `rtype_network` may not link `rtype_engine`, and code on both sides of that line writes logs, hands data from one thread to another and names entities by the same ids. A forbidden link fails the CMake configure step (`rtype_forbid_links` in the root `CMakeLists.txt`).
+`rtype_logging`, `rtype_concurrency` and `rtype_identifiers` stand alone because `rtype_network` may not link `rtype_engine`, and code on both sides of that line writes logs, hands data from one thread to another and names entities by the same ids. A forbidden link fails the CMake configure step (`rtype_forbid_links` in the root `CMakeLists.txt`); for the libraries of the master, `rtype_forbid_reachable_links` follows every link they reach, `PRIVATE` ones included.
 
 ## Where does a new class go?
 
@@ -247,24 +247,28 @@ Every folder of this tree exists today; some of what the comments name is not wr
 
 ### Master
 
-`src/master` builds `r-type_master`, the directory of game servers: it records their heartbeats, computes their status, runs administration and serves the web frontend. Game servers send a heartbeat every 5 seconds and receive admin commands in the reply. Like the other programs, it has `Application/` and `LaunchOptions/`.
+`src/master` holds the master, the program `r-type_server --mode master` runs: it will list the game servers and their games, record their heartbeats, run the administration and serve the web frontend. Its folders are libraries, and only the server binary links them, so the master never links SFML, Asio, `rtype_game` or the code of the server. Today it starts, opens its database and answers `GET /api/health` (see [Master](/R-Type/master/)).
 
 ```
 src/master/
-├── Http/             routes, server key and admin secret check
-├── Storage/          its tables and queries, on the connection and migrations of rtype_storage
-├── GameServers/      registration, heartbeats, status, top 10 of each server
-├── Administration/   bans, kicks, maintenance, audit log
-├── Matchmaking/      quick play
-└── Accounts/         optional, with Tickets/
+├── LaunchOptions/    -p, --database, --set, --help after --mode master
+├── Logger/           the module logger
+├── Storage/          the module storage: the database, on the connection and migrations of rtype_storage
+├── Http/             the module http: the HTTP server, its errors, GET /api/health
+├── Modules/          masterModules(), the list of the modules
+├── GameServers/      registration, heartbeats, status: being written
+├── Administration/   bans, kicks, maintenance, audit log: being written
+├── Matchmaking/      a server chosen to create a game: being written
+└── Accounts/         optional, with Tickets/: being written
 ```
 
-Each folder splits its classes into a controller (HTTP in and out), a service (the rules) and repositories (the only place with SQL). Nothing exists yet.
+`LaunchOptions/`, `Logger/`, `Storage/`, `Http/` and `Modules/` exist; the others are being written. A folder of a feature splits its classes into a controller (HTTP in and out), a service (the rules) and repositories (the only place with SQL).
 
 ### Tests, web frontend, assets
 
-- **`tests/`** mirrors `src/`: the test of `src/game/Waves/WaveDirector` is `tests/game/Waves/WaveDirectorTest.cpp`, built into `game_tests`, one executable per library or program. Test doubles (fake clock, lossy transport) go in `tests/doubles/`; test tools in `tests/tools/`, never shipped: today the tool that sends malformed datagrams (see [Network](/R-Type/network/#malformed-datagrams-malformed_datagrams)) and, in `tests/tools/network-conditions/`, the scripts that apply the network scenarios to the loopback interface from the system (see [Network](/R-Type/network/#network-conditions-from-the-system-teststoolsnetwork-conditions)), later the load-test bots. Today the older tests sit at the root of `tests/`; `tests/client/`, `tests/concurrency/`, `tests/engine/`, `tests/network/` and `tests/server/` already follow this layout, and `tests/doubles/` holds a socket that records instead of sending, a datagram link that records what is sent and hands over what a test delivers, a connection to a server that records what a screen asks, a settings storage that records each save, a settings listener that records each change it is told, a window on a desktop of a given size, a draw surface that records each rectangle it is asked to draw, an entity layer that records what it paints, a sound player that records the ids it plays, a music clock whose position the test sets, a module that writes down when it is installed, started and stopped, a loss drawn from a seed for each datagram, and a network that delivers the datagrams a test sends late, twice or never, in an order the test gives or draws from a seed. A test file holds only its tests: its constants are in `<Subject>TestConstants.hpp`, its fixture in `<Subject>Fixture.{hpp,cpp}` and its helpers in `<Subject>Fixtures.{hpp,cpp}`, next to it.
+- **`tests/`** mirrors `src/`: the test of `src/game/Waves/WaveDirector` is `tests/game/Waves/WaveDirectorTest.cpp`, built into `game_tests`, one executable per library or program. Test doubles (fake clock, lossy transport) go in `tests/doubles/`; test tools in `tests/tools/`, never shipped: today the tool that sends malformed datagrams (see [Network](/R-Type/network/#malformed-datagrams-malformed_datagrams)) and, in `tests/tools/network-conditions/`, the scripts that apply the network scenarios to the loopback interface from the system (see [Network](/R-Type/network/#network-conditions-from-the-system-teststoolsnetwork-conditions)), in `tests/tools/packaging/`, the script the CI runs to check the packages from another folder (see [Packages](https://github.com/nique-epi/R-Type#packages) in the README), later the load-test bots. Today the older tests sit at the root of `tests/`; `tests/client/`, `tests/concurrency/`, `tests/engine/`, `tests/network/` and `tests/server/` already follow this layout, and `tests/doubles/` holds a socket that records instead of sending, a datagram link that records what is sent and hands over what a test delivers, a connection to a server that records what a screen asks, a settings storage that records each save, a settings listener that records each change it is told, a window on a desktop of a given size, a draw surface that records each rectangle it is asked to draw, an entity layer that records what it paints, a sound player that records the ids it plays, a music clock whose position the test sets, a module that writes down when it is installed, started and stopped, a loss drawn from a seed for each datagram, and a network that delivers the datagrams a test sends late, twice or never, in an order the test gives or draws from a seed. A test file holds only its tests: its constants are in `<Subject>TestConstants.hpp`, its fixture in `<Subject>Fixture.{hpp,cpp}` and its helpers in `<Subject>Fixtures.{hpp,cpp}`, next to it.
 - **`web/`** is the React frontend served by the master: `src/api/` (one function per route), `src/pages/`, `src/components/`.
+- **`packaging/`** holds what CPack needs beyond the install rules, which sit with the CPack settings in the root `CMakeLists.txt`: the CPack config of each program (`CPackPartConfig.cmake.in`), the settings that differ per generator (`CPackGeneratorConfig.cmake`), the script that builds the AppImage, the `Info.plist` of the app, the `.desktop` file and the icon.
 - **`assets/`** holds the files read at run time: `sprites/`, `sounds/`, `music/`, `fonts/` and `icons/` for the client, `waves/` for the server (`waves.toml`, see [Writing the waves file](/R-Type/waves-file/)).
 
 ## Modules and libraries
@@ -291,6 +295,12 @@ This list describes the code as it is today. A pull request that adds, removes o
 | `replication` | `ReplicationModule` | `src/server/Replication/` | required |
 | `rtype rules` | `RtypeRulesModule` | `src/server/Rules/` | required |
 | `results` | `ResultsModule` | `src/server/Results/` | required |
+
+| Module of the master | Class | Folder | Kind |
+|---|---|---|---|
+| `logger` | `MasterLoggerModule` | `src/master/Logger/` | required |
+| `storage` | `MasterStorageModule` | `src/master/Storage/` | required |
+| `http` | `MasterHttpModule` | `src/master/Http/` | required |
 
 | Module of the client | Class | Folder | Kind |
 |---|---|---|---|
@@ -352,10 +362,10 @@ A new module is written directly in its own folder, `src/<program>/<Name>/`, cla
 | belongs to the server and lives as long as the program | `serverModules()`, `src/server/Modules/ServerModules.cpp` |
 | belongs to the client | `clientModules()`, `src/client/Modules/ClientModules.cpp` |
 | is a rule or a service of one game, and each game has its own | `rtypeGameModules()`, `src/server/Games/RtypeGameModules.cpp` |
-| would serve a program that is neither (the master) | its own list, built the same way |
+| belongs to the master | `masterModules()`, `src/master/Modules/MasterModules.cpp` |
 
 - The folder follows [Adding a class](#adding-a-class): one `CMakeLists.txt`, one CMake library `rtype_<owner>_<name>_module`, the class `<Owner><Name>Module` as a `.hpp` and `.cpp` pair (`ServerLobbyModule`; the class of a game module is `<Name>Module`, as `ReplicationModule` and `RtypeRulesModule` are).
-- `Modules/` receives nothing but its line in the list, and `ModuleConstants.hpp` the constant of its name, next to the other names: in `src/server/` or `src/client/`.
+- `Modules/` receives nothing but its line in the list, and `ModuleConstants.hpp` the constant of its name, next to the other names: in `src/server/` or `src/client/`, or `MasterModuleConstants.hpp` in `src/master/`.
 - Its pull request adds its row to [the list of modules](#the-list-of-modules), required or optional. An optional module puts what others need in its `Contract/`, and nothing else includes it.
 - A module of the program never goes in `src/engine`, unless every game would need it unchanged. `IModule` itself lives there; the modules of R-Type do not.
 
@@ -404,9 +414,8 @@ A few files predate these conventions. Each move is a `refactor` pull request th
 | `src/engine/Components/ComponentStorage.hpp` | `src/engine/Components/ComponentStorage/` |
 | `tests/*.cpp`, `tests/SimulatedClock.hpp` | `tests/<owner>/<Folder>/`, `tests/doubles/` |
 
-`rtype_forbid_links` also reads only the direct links of a target: a class library inside `rtype_engine` that linked SFML would pass. It must walk the links recursively.
+`rtype_forbid_links` also reads only the direct links of a target: a class library inside `rtype_engine` that linked SFML would pass. `rtype_forbid_reachable_links` walks the links, but only the libraries of the master use it: `r-type_server` reaches Asio through `rtype_network_context`, which its network module links and the direct check does not follow, so the line "`r-type_server` never links Asio" holds for its direct links only.
 
 ## Not decided yet
 
-- **HTTP or UDP between the programs and the master.** Only the inside of `src/network/Master` changes.
 - **Track 1** (the engine as its own project, scripting). It would add folders to `src/engine`; until it is decided, the sound, the window and the rendering stay in `src/client`.

@@ -1,5 +1,4 @@
 #include <gtest/gtest.h>
-#include <cstddef>
 #include <optional>
 #include "DatagramReader.hpp"
 #include "DatagramReaderFixtures.hpp"

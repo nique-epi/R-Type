@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=R-Type
+Comment=Networked shoot'em up
+Exec=r-type_client
+Icon=r-type
+Categories=Game;ArcadeGame;
+Terminal=false
