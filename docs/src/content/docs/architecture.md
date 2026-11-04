@@ -90,6 +90,45 @@ Destroying an entity inside a `forEach` is postponed until the outermost `forEac
 
 Alternative considered: a numeric priority on each system, sorted by the scheduler. It lets a system be placed without touching the others, but the order then lives in numbers scattered across classes and two systems can tie. A single list of `add()` calls is the one place that says what runs after what.
 
+## Entity types
+
+An entity type (a Drifter, the ship of a player, a missile) is a sheet of data, not a piece of C++: a name, the components an entity of that type starts with and their values, the pilot that steers it, and how it looks. The engine and the systems only know components, so a new enemy is a new sheet, plus a new behaviour when none fits, and never a change to a system or to the protocol. The subject of the Advanced Architecture track asks for an engine with proper abstractions and notes that entity behaviours are usually deferred to scripts; a named behaviour is the place where a script will plug in.
+
+This is a contract: none of it exists yet. Today the types are written in C++ (`World::spawnPlayer`, `World::spawnBydo`, `BydoKind`) and fixed on the wire (`WireEntityType`). The code must follow the rules below as it moves to sheets.
+
+### Pilot and body
+
+A body is an entity with an `Intent`, what it wants at this tick: a direction and whether it fires. A pilot writes the `Intent`; the systems that move and arm a body read the `Intent` only and never ask who wrote it. A pilot is either a player, whose input sets the `Intent` of its ship (`steerShipByInput()`, as today), or a behaviour: a named piece of code the server registers when it starts, which reads its own body and writes its `Intent` once per tick. A behaviour may read the `Position` of its body, how long the body has existed, the length of the tick and its own settings from the sheet; it writes nothing but that `Intent`. A sheet naming an unknown behaviour stops the server before it listens.
+
+The direction of an `Intent` becomes two numbers, x and y, each from -1 to 1, instead of the four held directions of `ShipDirections`: a wave cannot be steered with four switches. A player writes -1, 0 or 1 on each axis, so a ship moves exactly as today. How a direction becomes movement is the motion of the body, declared by its sheet:
+
+| Motion | Moves the body | Used by |
+|---|---|---|
+| `ship` | drift, roll and dash of `shipAfter()`, which reads the sign of each axis | the ships; the client runs the same `shipAfter()` to predict its own ship |
+| `steady` | at its top speed times the direction, on each axis | the Bydos and the missiles |
+
+A Weaver is a `steady` body with a top speed of 240 logical units per second (`BYDO_SPEED`): its behaviour writes x = -1 and picks y so the body ends the tick 48 logical units times sin(2π × age / 2 s) away from its row, the path `PatternSystem` draws today. A path faster than the top speed on an axis is clamped to it. The pilots run before every system that reads the `Intent`, as `BydoControlSystem` runs before `PatternSystem` and `MovementSystem` now; `PatternSystem` and `MovementPattern` go away.
+
+Alternative considered: keep paths that write the position, as `PatternSystem` does. It is exact and shorter, but a body then has two movers that ignore each other, the ships and the Bydos move by different rules, and a script could only replace a path, never steer.
+
+Alternative considered: one system per kind of path. It needs no registry, but every new enemy would add a system and a line to the list of systems.
+
+### The type sheet
+
+Each type is a TOML file in `assets/entities/`, named after the type: lowercase letters, digits and underscores, `weaver.toml` for `weaver`. The table `[gameplay]` is read by the server only, `[appearance]` by the client only. The file is as strict as the [waves file](/R-Type/waves-file/): a missing or unknown key stops the program when it starts, a number is an integer, and a key with a unit says it in its name (`_ms`). The waves file names sheets, and a name with no sheet stops the server.
+
+The keys are **provisional**: they are fixed when the loader is written, and code must read them through the loader's constants, never by spelling them again. `[gameplay]` holds the side of the body (`player`, `enemy`, `player_missile`, `enemy_missile`, which becomes its `EntityType`), its hitbox in logical units, its health or its lives, its points, its pilot (`player` or the name of a behaviour), its motion and top speed, and its gun if it has one: the interval between two shots in milliseconds and the type of its projectile. The settings of a behaviour sit in `[gameplay.behaviour]`; each behaviour declares the keys it reads, and they are checked when the server starts, so a misspelt setting stops the server instead of running with a default. `[appearance]` holds the sprite sheet, the idle animation and one animation per action.
+
+Alternative considered: JSON. It is just as easy to read, but the project has no JSON library, it allows no comment to explain a value, and the waves file already sets the TOML rules.
+
+Alternative considered: sheets written in Lua. A sheet could compute its values, but the server would need an interpreter before any behaviour needs one, and a sheet that runs code can no longer be checked before a game starts.
+
+### Types on the network
+
+A type is named by its sheet, never by a number in the code. The server numbers the types it loaded, from 1 to 255, and sends the table of names and numbers to a player once admitted, before any `EntitySpawned`; `EntitySpawned` then carries that number, still one byte. A number belongs to a session, so two changes that add a type never compete for a value, and a client that has no sheet for a name knows it on admission rather than in the middle of a game. The table is sent to an admitted session only, never in answer to a datagram from an unknown sender. Its wire layout, how its delivery is guaranteed and its size bounds are written on the [Protocol](/R-Type/protocol/) page with the message; the change needs a new protocol version.
+
+Alternative considered: a hash of the name instead of a table. It saves the message, but two names can give the same hash, and the collision shows only the day it happens.
+
 ## Modules
 
 A module is a feature a program can switch on, switch off or replace. The subject expects an engine to take no more space than needed, on disk and in memory, and gives modularization as a good way to get there: choosing what is compiled, linked or loaded at run time. So code with no life cycle, a system or a service is not a module; the [Modules](/R-Type/modules/) page gives the definition.
