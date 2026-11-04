@@ -60,6 +60,7 @@ using testing::FIRST_SEQUENCE;
 using testing::FOURTH_PLAYER;
 using testing::FOURTH_SENT;
 using testing::FOURTH_SEQUENCE;
+using testing::fullStateIn;
 using testing::GameInstanceArrowTest;
 using testing::GameInstanceInputDelayTest;
 using testing::GameInstanceInputShuffleTest;
@@ -450,7 +451,7 @@ TEST_F(GameInstanceTest, SendsGameStartedBeforeTheFirstWorldState) {
   EXPECT_EQ(messageTypesOf(sentTo(FIRST_PLAYER)),
             (std::vector{network::MessageType::EntitySpawned,
                          network::MessageType::GameStarted,
-                         network::MessageType::WorldState}));
+                         network::MessageType::DeltaWorldState}));
 }
 
 /**
@@ -466,11 +467,10 @@ TEST_F(GameInstanceTest, SendsTheWorldStatesUnderTheTokenOfThePlayer) {
   runTicks(DEFAULT_TICKS_PER_WORLD_STATE);
 
   const std::vector<network::OutgoingDatagram> states =
-      ofType(network::MessageType::WorldState, sentTo(FIRST_PLAYER));
+      ofType(network::MessageType::DeltaWorldState, sentTo(FIRST_PLAYER));
   ASSERT_EQ(states.size(), 2U);
-  EXPECT_EQ(onlyMessageIn<network::WorldState>(states.at(0)).tick, 0U);
-  EXPECT_EQ(onlyMessageIn<network::WorldState>(states.at(1)).tick,
-            DEFAULT_TICKS_PER_WORLD_STATE);
+  EXPECT_EQ(fullStateIn(states.at(0)).tick, 0U);
+  EXPECT_EQ(fullStateIn(states.at(1)).tick, DEFAULT_TICKS_PER_WORLD_STATE);
   for (const network::OutgoingDatagram& state : states) {
     EXPECT_EQ(network::DatagramCodec::decodeHeader(state.payload).sessionToken,
               testing::SESSION_TOKEN);
@@ -495,12 +495,12 @@ TEST_F(GameInstanceTest, NumbersEveryDatagramToAPlayerFromOneCounter) {
   runTicks(DEFAULT_TICKS_PER_WORLD_STATE);
 
   const std::vector<network::OutgoingDatagram> toPlayer = sentTo(FIRST_PLAYER);
-  ASSERT_EQ(
-      messageTypesOf(toPlayer),
-      (std::vector{
-          network::MessageType::EntitySpawned, network::MessageType::LobbyState,
-          network::MessageType::GameStarted, network::MessageType::WorldState,
-          network::MessageType::WorldState}));
+  ASSERT_EQ(messageTypesOf(toPlayer),
+            (std::vector{network::MessageType::EntitySpawned,
+                         network::MessageType::LobbyState,
+                         network::MessageType::GameStarted,
+                         network::MessageType::DeltaWorldState,
+                         network::MessageType::DeltaWorldState}));
   for (std::size_t index = 0; index < toPlayer.size(); ++index) {
     EXPECT_EQ(network::DatagramCodec::decodeHeader(toPlayer.at(index).payload)
                   .sequence,
@@ -557,7 +557,8 @@ TEST_F(GameInstanceTest, AnnouncesNoStartWhileAPlayerIsNotReady) {
   for (const std::size_t player : {FIRST_PLAYER, SECOND_PLAYER}) {
     const std::vector<network::OutgoingDatagram> toPlayer = sentTo(player);
     EXPECT_TRUE(ofType(network::MessageType::GameStarted, toPlayer).empty());
-    EXPECT_TRUE(ofType(network::MessageType::WorldState, toPlayer).empty());
+    EXPECT_TRUE(
+        ofType(network::MessageType::DeltaWorldState, toPlayer).empty());
   }
 }
 
@@ -572,7 +573,8 @@ TEST_F(GameInstanceTest, SendsNoWorldStateWhileWaiting) {
   runTicks(DEFAULT_TICKS_PER_WORLD_STATE);
 
   EXPECT_TRUE(
-      ofType(network::MessageType::WorldState, sentTo(FIRST_PLAYER)).empty());
+      ofType(network::MessageType::DeltaWorldState, sentTo(FIRST_PLAYER))
+          .empty());
 }
 
 /**
@@ -806,18 +808,19 @@ TEST_F(GameInstanceTest, TheOthersPlayOnWhenOneOfThreePlayersTimesOut) {
       shipOf(FIRST_PLAYER), shipOf(SECOND_PLAYER), shipOf(THIRD_PLAYER)};
   timeOut(SECOND_PLAYER);
   const std::size_t sentToTheFirst =
-      ofType(network::MessageType::WorldState, sentTo(FIRST_PLAYER)).size();
+      ofType(network::MessageType::DeltaWorldState, sentTo(FIRST_PLAYER))
+          .size();
 
   runTicks(DEFAULT_TICKS_PER_WORLD_STATE);
 
   EXPECT_EQ(game().state(), GameState::InProgress);
   for (const std::size_t player : {FIRST_PLAYER, THIRD_PLAYER}) {
     const std::vector<network::OutgoingDatagram> states =
-        ofType(network::MessageType::WorldState, sentTo(player));
+        ofType(network::MessageType::DeltaWorldState, sentTo(player));
     ASSERT_EQ(states.size(), sentToTheFirst + 1);
     std::vector<std::uint32_t> listed;
     for (const network::EntityState& entity :
-         onlyMessageIn<network::WorldState>(states.back()).entities) {
+         fullStateIn(states.back()).entities) {
       listed.push_back(entity.entityId);
     }
     EXPECT_EQ(std::ranges::count(listed, ships.at(FIRST_PLAYER)), 1);
@@ -1692,9 +1695,9 @@ TEST_F(GameInstanceMovementTest, SendsTheShipWhereItMovedInTheSameTick) {
   const game::Position moved = shipPositionOf(FIRST_PLAYER);
   ASSERT_NE(moved.x, start.x);
   const std::vector<network::OutgoingDatagram> states =
-      ofType(network::MessageType::WorldState, sentTo(FIRST_PLAYER));
+      ofType(network::MessageType::DeltaWorldState, sentTo(FIRST_PLAYER));
   ASSERT_EQ(states.size(), 2U);
-  const auto state = onlyMessageIn<network::WorldState>(states.back());
+  const auto state = fullStateIn(states.back());
   ASSERT_EQ(state.tick, DEFAULT_TICKS_PER_WORLD_STATE);
   const std::optional<network::EntityState> ship =
       entityOf(state, shipIdOf(FIRST_PLAYER));

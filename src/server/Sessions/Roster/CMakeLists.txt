@@ -2,6 +2,7 @@ add_library(rtype_server_sessions_roster STATIC
   ArrivalLedger.cpp
   ConnectedPlayers.cpp
   PlayerRoster.cpp
+  SentStates.cpp
   SessionDatagram.cpp
 )
 
