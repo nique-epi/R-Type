@@ -15,9 +15,6 @@ class ServersRoutesFixture : public ::testing::Test {
  protected:
   ServersRoutesFixture();
 
-  /** @brief Stops the master. */
-  void TearDown() override;
-
   /** @returns The id of the server the fixture created. */
   [[nodiscard]] std::int64_t createdId() const;
 

@@ -1,4 +1,5 @@
 add_library(rtype_master_servers_repositories STATIC
+  EpochSeconds.cpp
   HeartbeatSampleRepository.cpp
   ServerRepository.cpp
 )

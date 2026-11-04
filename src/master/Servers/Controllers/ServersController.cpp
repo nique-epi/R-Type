@@ -18,10 +18,12 @@
 #include "MasterMessageConstants.hpp"
 #include "MasterMessageText.hpp"
 #include "MasterRouteConstants.hpp"
+#include "MasterRoutePath.hpp"
 #include "NetworkException.hpp"
 #include "ServerRecord.hpp"
 #include "ServerRegistration.hpp"
 #include "ServersControllerConstants.hpp"
+#include "ServersService.hpp"
 
 namespace rtype::master {
 
@@ -56,19 +58,30 @@ ApiResponse answerOrRefuse(Answer answer) {
   }
 }
 
-/** @returns Where the server @p serverId lives: `/api/servers/<id>`. */
-std::string locationOf(std::int64_t serverId) {
-  return std::string{network::MASTER_API_PREFIX} +
-         std::string{network::CREATE_SERVER_ROUTE.path} +
-         std::string{network::PATH_SEPARATOR} + std::to_string(serverId);
+/**
+ * @returns What @p answer gives for the server of the key of @p request: 401
+ * when no server has that key, checked before the body is read, or 400 naming
+ * the member @p answer refused.
+ */
+template <typename Answer>
+ApiResponse answerAsServerOfKey(ServersService& service,
+                                const ApiRequest& request, Answer answer) {
+  const std::optional<KnownServer> server =
+      service.serverOfKey(request.bearerToken.value_or(std::string{}));
+  if (!server.has_value()) {
+    return unauthorizedResponse();
+  }
+  return answerOrRefuse([&answer, &server] { return answer(*server); });
 }
 
 ApiResponse createdResponse(const network::CreatedServer& created) {
-  return ApiResponse{.status = CREATED_STATUS,
-                     .body = network::createdServerText(created),
-                     .detail = std::nullopt,
-                     .header = HttpHeader{.name = std::string{LOCATION_HEADER},
-                                          .value = locationOf(created.id)}};
+  return ApiResponse{
+      .status = CREATED_STATUS,
+      .body = network::createdServerText(created),
+      .detail = std::nullopt,
+      .header = HttpHeader{.name = std::string{LOCATION_HEADER},
+                           .value = network::memberPathOf(
+                               network::CREATE_SERVER_ROUTE, created.id)}};
 }
 
 /** @returns The registration @p request sends, its address always known. */
@@ -115,33 +128,26 @@ ApiResponse ServersController::createServer(const ApiRequest& request) {
 }
 
 ApiResponse ServersController::replaceOwnServer(const ApiRequest& request) {
-  const std::optional<KnownServer> server =
-      service_.serverOfKey(request.bearerToken.value_or(std::string{}));
-  if (!server.has_value()) {
-    return unauthorizedResponse();
-  }
-  return answerOrRefuse([this, &request, &server] {
-    const network::ServerRegistration registration = registrationOf(request);
-    service_.replaceOwnServer(ServerRecord{.serverId = server->id,
-                                           .registration = registration,
-                                           .registeredAt = now()});
-    return serverResponse(server->id, registration);
-  });
+  return answerAsServerOfKey(
+      service_, request, [this, &request](const KnownServer& server) {
+        const network::ServerRegistration registration =
+            registrationOf(request);
+        service_.replaceOwnServer(ServerRecord{.serverId = server.id,
+                                               .registration = registration,
+                                               .registeredAt = now()});
+        return serverResponse(server.id, registration);
+      });
 }
 
 ApiResponse ServersController::replaceOwnHeartbeat(const ApiRequest& request) {
-  const std::optional<KnownServer> server =
-      service_.serverOfKey(request.bearerToken.value_or(std::string{}));
-  if (!server.has_value()) {
-    return unauthorizedResponse();
-  }
-  return answerOrRefuse([this, &request, &server] {
-    if (!service_.replaceOwnHeartbeat(
-            *server, network::heartbeatFromText(request.body), now())) {
-      return refusal(CONFLICT_STATUS, UNREGISTERED_SERVER_DETAIL);
-    }
-    return heartbeatAnswer();
-  });
+  return answerAsServerOfKey(
+      service_, request, [this, &request](const KnownServer& server) {
+        if (!service_.replaceOwnHeartbeat(
+                server, network::heartbeatFromText(request.body), now())) {
+          return refusal(CONFLICT_STATUS, UNREGISTERED_SERVER_DETAIL);
+        }
+        return heartbeatAnswer();
+      });
 }
 
 }  // namespace rtype::master

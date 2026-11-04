@@ -14,9 +14,6 @@ constexpr std::chrono::seconds TEST_DAY{86'400};
 constexpr std::chrono::seconds SEVEN_DAYS = 7 * TEST_DAY;
 constexpr std::chrono::seconds EIGHT_DAYS = 8 * TEST_DAY;
 
-/** @brief The servers one address may create in an hour, and one more. */
-constexpr std::size_t CREATIONS_PER_HOUR = 5;
-
 /** @brief The address servers are created from, and the start of others. */
 constexpr std::string_view CREATOR_ADDRESS = "198.51.100.7";
 constexpr std::string_view OTHER_CREATOR_ADDRESS = "198.51.100.8";

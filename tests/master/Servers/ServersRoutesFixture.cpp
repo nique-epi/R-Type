@@ -20,8 +20,6 @@ ServersRoutesFixture::ServersRoutesFixture() {
   }
 }
 
-void ServersRoutesFixture::TearDown() { master_.stop(); }
-
 std::int64_t ServersRoutesFixture::createdId() const { return createdId_; }
 
 const std::string& ServersRoutesFixture::key() const { return key_; }

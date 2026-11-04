@@ -11,9 +11,6 @@
 /** @brief A running master, and clients that call it as a game server does. */
 class MasterClientFixture : public ::testing::Test {
  protected:
-  /** @brief Stops the master. */
-  void TearDown() override;
-
   /** @returns A client of the master that sends @p key. */
   [[nodiscard]] rtype::network::MasterClient clientWith(
       const std::string& key) const;

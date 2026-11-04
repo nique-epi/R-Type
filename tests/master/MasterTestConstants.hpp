@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstddef>
 #include <string_view>
 
 /** @brief The statuses the routes of the master answer in the tests. */
@@ -30,6 +31,9 @@ constexpr std::string_view PORT_SEPARATOR = ":";
 
 /** @brief The database file the tests give the master, in their folder. */
 constexpr std::string_view TEST_DATABASE_FILE = "master.db";
+
+/** @brief The servers one address may create in an hour. */
+constexpr std::size_t CREATIONS_PER_HOUR = 5;
 
 /** @brief The game server the tests create and register. */
 constexpr std::string_view TEST_SERVER_NAME = "Paris 1";

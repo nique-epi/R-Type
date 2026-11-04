@@ -1,7 +1,7 @@
 #include "ServersModule.hpp"
+#include <functional>
 #include <string>
 #include <vector>
-#include "ApiRequest.hpp"
 #include "InstallContext.hpp"
 #include "MasterDatabase.hpp"
 #include "MasterHttpServer.hpp"
@@ -25,17 +25,13 @@ void ServersModule::install(engine::InstallContext& context) {
       controller_.emplace(context.require<MasterDatabase>());
   auto& server = context.require<MasterHttpServer>();
   server.add(network::CREATE_SERVER_ROUTE,
-             [&controller](const ApiRequest& request) {
-               return controller.createServer(request);
-             });
-  server.add(network::REPLACE_OWN_SERVER_ROUTE,
-             [&controller](const ApiRequest& request) {
-               return controller.replaceOwnServer(request);
-             });
-  server.add(network::REPLACE_OWN_HEARTBEAT_ROUTE,
-             [&controller](const ApiRequest& request) {
-               return controller.replaceOwnHeartbeat(request);
-             });
+             std::bind_front(&ServersController::createServer, &controller));
+  server.add(
+      network::REPLACE_OWN_SERVER_ROUTE,
+      std::bind_front(&ServersController::replaceOwnServer, &controller));
+  server.add(
+      network::REPLACE_OWN_HEARTBEAT_ROUTE,
+      std::bind_front(&ServersController::replaceOwnHeartbeat, &controller));
 }
 
 void ServersModule::start() {}

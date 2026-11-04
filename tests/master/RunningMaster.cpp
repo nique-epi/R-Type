@@ -38,9 +38,9 @@ RunningMaster::RunningMaster() : port_(freeHttpPort()) {
 
 std::uint16_t RunningMaster::port() const { return port_; }
 
-std::string RunningMaster::url() const {
-  return std::string{HTTP_URL_PREFIX} + std::string{LOOPBACK_ADDRESS} +
-         std::string{PORT_SEPARATOR} + std::to_string(port_);
-}
+std::string RunningMaster::url() const { return urlOf(port_); }
 
-void RunningMaster::stop() { application_->stop(); }
+std::string RunningMaster::urlOf(std::uint16_t port) {
+  return std::string{HTTP_URL_PREFIX} + std::string{LOOPBACK_ADDRESS} +
+         std::string{PORT_SEPARATOR} + std::to_string(port);
+}

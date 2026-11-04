@@ -10,6 +10,7 @@
 #include "MasterMessageTextFixtures.hpp"
 #include "MasterTestConstants.hpp"
 #include "NetworkException.hpp"
+#include "RunningMaster.hpp"
 #include "ServerCreation.hpp"
 
 using rtype::network::CreatedServer;
@@ -84,10 +85,8 @@ TEST_F(MasterClientFixture, AHeartbeatBeforeTheRegistrationIsRefusedWith409) {
  * Then it throws MasterUnreachableException
  */
 TEST_F(MasterClientFixture, AMasterThatDoesNotListenIsUnreachable) {
-  MasterClient client{MasterAccess{
-      .url = std::string{HTTP_URL_PREFIX} + std::string{LOOPBACK_ADDRESS} +
-             std::string{PORT_SEPARATOR} + std::to_string(freeHttpPort()),
-      .key = std::string{}}};
+  MasterClient client{MasterAccess{.url = RunningMaster::urlOf(freeHttpPort()),
+                                   .key = std::string{}}};
 
   EXPECT_THROW(static_cast<void>(client.createServer(
                    ServerCreation{.name = std::string{TEST_SERVER_NAME}})),

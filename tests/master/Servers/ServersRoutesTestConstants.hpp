@@ -1,6 +1,5 @@
 #pragma once
 
-#include <cstddef>
 #include <string_view>
 
 /** @brief The routes of the game servers, as a client calls them. */
@@ -21,10 +20,6 @@ constexpr std::string_view EXPECTED_SERVER_LOCATION_PREFIX = "/api/servers/";
 constexpr std::string_view PARIS_CREATION_BODY = R"({"name":"Paris 1"})";
 constexpr std::string_view EMPTY_OBJECT_BODY = "{}";
 constexpr std::string_view NAME_POINTER_TEXT = "/name";
-
-/** @brief The creations one address may make in an hour, the fixture's first
- * among them. */
-constexpr std::size_t CREATIONS_PER_HOUR = 5;
 
 /** @brief The members of the answers the tests read. */
 constexpr std::string_view ID_MEMBER_NAME = "id";

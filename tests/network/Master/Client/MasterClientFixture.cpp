@@ -9,8 +9,6 @@
 #include "NetworkException.hpp"
 #include "ServerCreation.hpp"
 
-void MasterClientFixture::TearDown() { master_.stop(); }
-
 rtype::network::MasterClient MasterClientFixture::clientWith(
     const std::string& key) const {
   return rtype::network::MasterClient{

@@ -7,6 +7,7 @@
 #include <optional>
 #include <string>
 #include "CreationQuota.hpp"
+#include "EpochSeconds.hpp"
 #include "HeartbeatRecord.hpp"
 #include "KnownServer.hpp"
 #include "MasterDatabase.hpp"
@@ -21,16 +22,12 @@ namespace rtype::master {
 
 namespace {
 
-std::int64_t secondsOf(std::chrono::sys_seconds date) {
-  return static_cast<std::int64_t>(date.time_since_epoch().count());
-}
-
 std::int64_t creationsSince(SQLite::Database& connection,
                             const std::string& address,
                             std::chrono::sys_seconds since) {
   SQLite::Statement query{connection, std::string{CREATIONS_SINCE_QUERY}};
   query.bind(std::string{CREATED_BY_PARAMETER}, address);
-  query.bind(std::string{SINCE_PARAMETER}, secondsOf(since));
+  query.bind(std::string{SINCE_PARAMETER}, epochSecondsOf(since));
   query.executeStep();
   return query.getColumn(CREATION_COUNT_COLUMN).getInt64();
 }
@@ -41,7 +38,8 @@ std::int64_t insertedServerId(SQLite::Database& connection,
   insert.bind(std::string{SERVER_NAME_PARAMETER}, server.name);
   insert.bind(std::string{KEY_FINGERPRINT_PARAMETER}, server.keyFingerprint);
   insert.bind(std::string{CREATED_BY_PARAMETER}, server.createdByAddress);
-  insert.bind(std::string{CREATED_AT_PARAMETER}, secondsOf(server.createdAt));
+  insert.bind(std::string{CREATED_AT_PARAMETER},
+              epochSecondsOf(server.createdAt));
   insert.executeStep();
   return insert.getColumn(SERVER_ID_COLUMN).getInt64();
 }
@@ -114,7 +112,7 @@ void ServerRepository::saveRegistration(const ServerRecord& record) {
                              std::string{UPDATE_REGISTRATION_STATEMENT}};
     bindRegistration(update, record.registration);
     update.bind(std::string{REGISTERED_AT_PARAMETER},
-                secondsOf(record.registeredAt));
+                epochSecondsOf(record.registeredAt));
     update.bind(std::string{SERVER_ID_PARAMETER}, record.serverId);
     update.exec();
   });
@@ -126,7 +124,8 @@ void ServerRepository::saveLastHeartbeat(const HeartbeatRecord& record) {
     SQLite::Statement update{connection,
                              std::string{UPDATE_LAST_HEARTBEAT_STATEMENT}};
     update.bind(std::string{HEARTBEAT_PARAMETER}, text);
-    update.bind(std::string{TAKEN_AT_PARAMETER}, secondsOf(record.receivedAt));
+    update.bind(std::string{TAKEN_AT_PARAMETER},
+                epochSecondsOf(record.receivedAt));
     update.bind(std::string{SERVER_ID_PARAMETER}, record.serverId);
     update.exec();
   });

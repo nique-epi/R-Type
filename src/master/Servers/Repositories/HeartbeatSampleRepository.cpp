@@ -7,6 +7,7 @@
 #include <optional>
 #include <string>
 #include <string_view>
+#include "EpochSeconds.hpp"
 #include "HeartbeatRecord.hpp"
 #include "HostedGame.hpp"
 #include "MasterDatabase.hpp"
@@ -17,10 +18,6 @@
 namespace rtype::master {
 
 namespace {
-
-std::int64_t secondsOf(std::chrono::sys_seconds date) {
-  return static_cast<std::int64_t>(date.time_since_epoch().count());
-}
 
 void bindMeasure(SQLite::Statement& statement, std::string_view parameter,
                  std::optional<double> measure) {
@@ -43,7 +40,8 @@ void insertSample(SQLite::Database& connection, const HeartbeatRecord& record) {
   const network::ServerMeasures& measures = record.heartbeat.measures;
   SQLite::Statement insert{connection, std::string{INSERT_SAMPLE_STATEMENT}};
   insert.bind(std::string{SERVER_ID_PARAMETER}, record.serverId);
-  insert.bind(std::string{TAKEN_AT_PARAMETER}, secondsOf(record.receivedAt));
+  insert.bind(std::string{TAKEN_AT_PARAMETER},
+              epochSecondsOf(record.receivedAt));
   insert.bind(std::string{GAME_COUNT_PARAMETER},
               static_cast<std::int64_t>(record.heartbeat.games.size()));
   insert.bind(std::string{PLAYER_COUNT_PARAMETER},
@@ -61,7 +59,8 @@ void insertSample(SQLite::Database& connection, const HeartbeatRecord& record) {
 void eraseOldSamples(SQLite::Database& connection,
                      std::chrono::sys_seconds now) {
   SQLite::Statement erase{connection, std::string{ERASE_OLD_SAMPLES_STATEMENT}};
-  erase.bind(std::string{OLDEST_PARAMETER}, secondsOf(now - SAMPLE_RETENTION));
+  erase.bind(std::string{OLDEST_PARAMETER},
+             epochSecondsOf(now - SAMPLE_RETENTION));
   erase.exec();
 }
 

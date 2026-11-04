@@ -22,7 +22,7 @@
 #include "MasterException.hpp"
 #include "MasterHttpConstants.hpp"
 #include "MasterRoute.hpp"
-#include "MasterRouteConstants.hpp"
+#include "MasterRoutePath.hpp"
 #include "NetworkConstants.hpp"
 #include "RouteMethod.hpp"
 
@@ -143,10 +143,6 @@ httplib::Server::Handler handlerOf(ApiHandler route) {
   };
 }
 
-std::string apiPathOf(std::string_view path) {
-  return std::string{network::MASTER_API_PREFIX} + std::string{path};
-}
-
 /** @returns What @p error says, for the journal. */
 std::string reasonOf(const std::exception_ptr& error) {
   try {
@@ -180,7 +176,7 @@ MasterHttpServer::MasterHttpServer(FailureReport onFailure)
 MasterHttpServer::~MasterHttpServer() { server_->stop(); }
 
 void MasterHttpServer::add(network::MasterRoute route, ApiHandler handler) {
-  const std::string path = apiPathOf(route.path);
+  const std::string path = network::apiPathOf(route);
   switch (route.method) {
     case network::RouteMethod::Get:
       server_->Get(path, handlerOf(std::move(handler)));

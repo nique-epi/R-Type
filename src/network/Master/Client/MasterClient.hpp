@@ -21,7 +21,8 @@ namespace rtype::network {
  *
  * Every call waits for the answer, within MASTER_CONNECTION_TIMEOUT and
  * MASTER_TRANSFER_TIMEOUT, so it is made away from the game loop. One call at
- * a time: two threads never call the same client together.
+ * a time: two threads never call the same client together. The connection is
+ * kept between calls, as long as the master keeps it open.
  *
  * Every call throws MasterRefusedException when the master answers an error
  * status (a key it does not know, a heartbeat before the registration, a
@@ -69,7 +70,7 @@ class MasterClient {
   [[nodiscard]] std::string answerOf(MasterRoute route,
                                      const std::string& body);
 
-  MasterAccess access_;
+  std::string key_;
   std::unique_ptr<httplib::Client> client_;
 };
 

@@ -3,7 +3,6 @@
 #include <memory>
 #include <stdexcept>
 #include <string>
-#include <string_view>
 #include <utility>
 #include "CreatedServer.hpp"
 #include "MasterAccess.hpp"
@@ -12,8 +11,8 @@
 #include "MasterMessageText.hpp"
 #include "MasterRoute.hpp"
 #include "MasterRouteConstants.hpp"
+#include "MasterRoutePath.hpp"
 #include "NetworkException.hpp"
-#include "RouteMethod.hpp"
 #include "ServerCreation.hpp"
 #include "ServerHeartbeat.hpp"
 #include "ServerRegistration.hpp"
@@ -23,23 +22,11 @@ namespace rtype::network {
 
 namespace {
 
-std::string_view methodOf(RouteMethod method) {
-  switch (method) {
-    case RouteMethod::Get:
-      return GET_METHOD;
-    case RouteMethod::Post:
-      return POST_METHOD;
-    case RouteMethod::Put:
-      return PUT_METHOD;
-  }
-  return GET_METHOD;
-}
-
 /** @returns The request of @p route carrying @p body in JSON. */
 httplib::Request requestOf(MasterRoute route, const std::string& body) {
   httplib::Request request;
-  request.method = std::string{methodOf(route.method)};
-  request.path = std::string{MASTER_API_PREFIX} + std::string{route.path};
+  request.method = std::string{methodNameOf(route.method)};
+  request.path = apiPathOf(route);
   request.body = body;
   request.set_header(std::string{CONTENT_TYPE_HEADER},
                      std::string{JSON_CONTENT_TYPE});
@@ -70,7 +57,8 @@ std::unique_ptr<httplib::Client> clientOf(const std::string& url) {
 }  // namespace
 
 MasterClient::MasterClient(MasterAccess access)
-    : access_(std::move(access)), client_(clientOf(access_.url)) {
+    : key_(std::move(access.key)), client_(clientOf(access.url)) {
+  client_->set_keep_alive(true);
   client_->set_connection_timeout(MASTER_CONNECTION_TIMEOUT);
   client_->set_read_timeout(MASTER_TRANSFER_TIMEOUT);
   client_->set_write_timeout(MASTER_TRANSFER_TIMEOUT);
@@ -95,7 +83,7 @@ void MasterClient::sendHeartbeat(const ServerHeartbeat& heartbeat) {
 
 std::string MasterClient::answerOf(MasterRoute route, const std::string& body) {
   httplib::Request request = requestOf(route, body);
-  authorize(request, access_.key);
+  authorize(request, key_);
   const httplib::Result result = client_->send(request);
   if (!result) {
     throw MasterUnreachableException(httplib::to_string(result.error()));

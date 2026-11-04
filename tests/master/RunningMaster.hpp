@@ -10,7 +10,8 @@
 
 /**
  * @brief The modules of the master, started on a free port and a database of
- * their own, writing to a journal of their own and nothing on stderr.
+ * their own, writing to a journal of their own and nothing on stderr; it stops
+ * when it is destroyed.
  */
 class RunningMaster {
  public:
@@ -22,8 +23,8 @@ class RunningMaster {
   /** @returns Where a MasterClient reaches it: `http://127.0.0.1:<port>`. */
   [[nodiscard]] std::string url() const;
 
-  /** @brief Stops the master. */
-  void stop();
+  /** @returns Where a master on @p port of the loopback would answer. */
+  [[nodiscard]] static std::string urlOf(std::uint16_t port);
 
  private:
   JournalFile journal_;

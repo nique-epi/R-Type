@@ -1,3 +1,5 @@
-add_library(rtype_network_master_routes INTERFACE)
+add_library(rtype_network_master_routes STATIC MasterRoutePath.cpp)
 
-target_include_directories(rtype_network_master_routes INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories(rtype_network_master_routes PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+
+rtype_enable_warnings(rtype_network_master_routes)
