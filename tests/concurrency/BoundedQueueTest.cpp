@@ -109,6 +109,21 @@ TEST(BoundedQueue, CountsNothingWhileThereIsRoom) {
 }
 
 /**
+ * Given a queue with room for a single message, holding one
+ * When a second message is pushed
+ * Then the push says it discarded the oldest, where the first push did not
+ */
+TEST(BoundedQueue, PushTellsWhetherItDiscardedTheOldestMessage) {
+  BoundedQueue<int> queue{SINGLE_MESSAGE_CAPACITY};
+  const bool firstDiscarded = queue.push(1);
+
+  const bool secondDiscarded = queue.push(2);
+
+  EXPECT_FALSE(firstDiscarded);
+  EXPECT_TRUE(secondDiscarded);
+}
+
+/**
  * Given a queue that discarded one message, then was drained
  * When it is filled again, then drained
  * Then the new messages come out in the order they were pushed
