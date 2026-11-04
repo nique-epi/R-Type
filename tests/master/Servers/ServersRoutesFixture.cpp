@@ -1,46 +1,17 @@
 #include "ServersRoutesFixture.hpp"
 #include <httplib.h>
-#include <array>
 #include <cstdint>
-#include <memory>
 #include <nlohmann/json.hpp>
 #include <nlohmann/json_fwd.hpp>
 #include <string>
-#include <string_view>
-#include <vector>
-#include "Application.hpp"
-#include "ConfigurationReader.hpp"
 #include "HttpPortProbe.hpp"
-#include "LogLaunchOptionsFixtures.hpp"
-#include "LoggingConstants.hpp"
-#include "LoopStages.hpp"
-#include "MasterConstants.hpp"
 #include "MasterMessageText.hpp"
 #include "MasterMessageTextFixtures.hpp"
-#include "MasterModules.hpp"
 #include "MasterTestConstants.hpp"
 #include "RouteCall.hpp"
 #include "ServersRoutesTestConstants.hpp"
-#include "SettingLine.hpp"
 
-ServersRoutesFixture::ServersRoutesFixture() : port_(freeHttpPort()) {
-  databaseFile_.close();
-  const std::array<std::string_view, 1> quiet{rtype::logging::NO_STDERR_OPTION};
-  application_ = std::make_unique<rtype::engine::Application>(
-      rtype::engine::LoopStages(rtype::master::MASTER_LOOP_STAGES),
-      rtype::master::masterModules(
-          logOptionsOf(quiet, journal_.path()),
-          []([[maybe_unused]] const std::string& reason) {}),
-      rtype::engine::configurationStep(
-          databaseFile_.file().parent_path() /
-              rtype::master::MASTER_CONFIGURATION_FILE_NAME,
-          std::vector<std::string>{
-              rtype::engine::settingLine(rtype::master::DATABASE_SETTING_NAME,
-                                         databaseFile_.file().string()),
-              rtype::engine::settingLine(rtype::master::PORT_SETTING_NAME,
-                                         std::to_string(port_))},
-          report_));
-  application_->start();
+ServersRoutesFixture::ServersRoutesFixture() {
   const httplib::Result created = createParis();
   if (created) {
     const nlohmann::json creation = nlohmann::json::parse(created->body);
@@ -49,7 +20,7 @@ ServersRoutesFixture::ServersRoutesFixture() : port_(freeHttpPort()) {
   }
 }
 
-void ServersRoutesFixture::TearDown() { application_->stop(); }
+void ServersRoutesFixture::TearDown() { master_.stop(); }
 
 std::int64_t ServersRoutesFixture::createdId() const { return createdId_; }
 
@@ -66,7 +37,7 @@ httplib::Result ServersRoutesFixture::send(const RouteCall& call) const {
     request.set_header(std::string{AUTHORIZATION_HEADER_NAME},
                        std::string{BEARER_PREFIX_TEXT} + std::string{call.key});
   }
-  return httpSend(port_, request);
+  return httpSend(master_.port(), request);
 }
 
 httplib::Result ServersRoutesFixture::createParis() const {

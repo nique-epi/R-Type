@@ -11,6 +11,7 @@ target_link_libraries(rtype_network_master_validators
   PRIVATE
     nlohmann_json::nlohmann_json
     rtype_network_constants
+    rtype_network_master_routes
     rtype_network_transport
     rtype_network_wire_types
 )

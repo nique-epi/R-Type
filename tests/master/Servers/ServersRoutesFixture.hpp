@@ -3,13 +3,9 @@
 #include <gtest/gtest.h>
 #include <httplib.h>
 #include <cstdint>
-#include <memory>
 #include <string>
-#include "Application.hpp"
-#include "ConfigurationReport.hpp"
-#include "JournalFile.hpp"
-#include "MasterDatabaseFile.hpp"
 #include "RouteCall.hpp"
+#include "RunningMaster.hpp"
 
 /**
  * @brief The master, started on a free port and a database of its own, with
@@ -38,11 +34,7 @@ class ServersRoutesFixture : public ::testing::Test {
   [[nodiscard]] httplib::Result registerParis() const;
 
  private:
-  JournalFile journal_;
-  MasterDatabaseFile databaseFile_;
-  std::uint16_t port_;
-  rtype::engine::ConfigurationReport report_;
-  std::unique_ptr<rtype::engine::Application> application_;
+  RunningMaster master_;
   std::int64_t createdId_{};
   std::string key_;
 };

@@ -11,9 +11,9 @@ struct ApiResponse {
   /** @brief The HTTP status, OK_STATUS when the route succeeded. */
   int status{};
   /**
-   * @brief The JSON text of the answer, sent as JSON_CONTENT_TYPE. An error
-   * status (LOWEST_ERROR_STATUS or more) with no body is sent as the problem
-   * document of RFC 9457 of that status.
+   * @brief The JSON text of the answer, sent as network::JSON_CONTENT_TYPE. An
+   * error status (network::LOWEST_ERROR_STATUS or more) with no body is sent as
+   * the problem document of RFC 9457 of that status.
    */
   std::string body;
   /** @brief The `detail` of that problem document: what the client got wrong.

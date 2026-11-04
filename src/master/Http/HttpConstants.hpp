@@ -5,20 +5,6 @@
 
 namespace rtype::master {
 
-/** @brief The media type of every answer of a route. */
-constexpr std::string_view JSON_CONTENT_TYPE = "application/json";
-
-/**
- * @brief The media type of an error, a problem document of RFC 9457, whose
- * `title` is the phrase of its status.
- */
-constexpr std::string_view PROBLEM_CONTENT_TYPE = "application/problem+json";
-
-/** @brief The members of a problem document of RFC 9457 the master writes. */
-constexpr std::string_view PROBLEM_TITLE_MEMBER = "title";
-constexpr std::string_view PROBLEM_STATUS_MEMBER = "status";
-constexpr std::string_view PROBLEM_DETAIL_MEMBER = "detail";
-
 /** @brief The member of the answer of network::HEALTH_ROUTE that holds the
  * version. */
 constexpr std::string_view VERSION_MEMBER = "version";
@@ -32,20 +18,9 @@ constexpr int NOT_FOUND_STATUS = 404;
 constexpr int CONFLICT_STATUS = 409;
 constexpr int TOO_MANY_REQUESTS_STATUS = 429;
 
-/** @brief The lowest status of an error, which gets a problem document. */
-constexpr int LOWEST_ERROR_STATUS = 400;
-
-/** @brief The headers the master reads and writes. */
-constexpr std::string_view AUTHORIZATION_HEADER = "Authorization";
+/** @brief The headers only the master writes (see MasterHttpConstants.hpp). */
 constexpr std::string_view LOCATION_HEADER = "Location";
 constexpr std::string_view WWW_AUTHENTICATE_HEADER = "WWW-Authenticate";
-
-/**
- * @brief The scheme of RFC 6750 a key is sent with, read in any case as RFC
- * 9110 asks, and what an answer of UNAUTHORIZED_STATUS asks for.
- */
-constexpr std::string_view BEARER_SCHEME = "Bearer";
-constexpr std::string_view BEARER_SCHEME_SEPARATOR = " ";
 
 /** @brief What cpp-httplib gives in place of a port it could not bind. */
 constexpr int NO_PORT_BOUND = -1;

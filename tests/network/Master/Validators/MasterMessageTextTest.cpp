@@ -19,6 +19,7 @@ using rtype::network::createdServerText;
 using rtype::network::heartbeatFromText;
 using rtype::network::heartbeatText;
 using rtype::network::isWellFormedServerKey;
+using rtype::network::problemDetailOf;
 using rtype::network::registrationFromText;
 using rtype::network::registrationText;
 using rtype::network::ServerCreation;
@@ -27,6 +28,8 @@ using rtype::network::serverCreationText;
 using rtype::network::ServerRegistration;
 using rtype::network::testing::ADDRESS_POINTER;
 using rtype::network::testing::AVERAGE_PING_POINTER;
+using rtype::network::testing::CONFLICT_DETAIL;
+using rtype::network::testing::CONFLICT_PROBLEM;
 using rtype::network::testing::createdServerRefusal;
 using rtype::network::testing::FIFTH_PILOT;
 using rtype::network::testing::FIRST_GAME_FIRST_PLAYER_POINTER;
@@ -60,6 +63,7 @@ using rtype::network::testing::PARIS_NAME;
 using rtype::network::testing::parisHeartbeat;
 using rtype::network::testing::parisRegistration;
 using rtype::network::testing::PAUSED_STATE;
+using rtype::network::testing::PLAIN_TEXT_ERROR;
 using rtype::network::testing::PORT_ABOVE_THE_RANGE;
 using rtype::network::testing::PORT_AS_TEXT;
 using rtype::network::testing::PORT_BELOW_THE_RANGE;
@@ -366,4 +370,22 @@ TEST(MasterMessageText, RefusesACreatedServerWithAMalformedKey) {
                                       .key = std::string{SHORT_KEY}});
 
   EXPECT_THAT(createdServerRefusal(text), HasSubstr(quoted(KEY_POINTER)));
+}
+
+/**
+ * Given a problem document of the master
+ * When its detail is read
+ * Then it is the detail the master wrote
+ */
+TEST(MasterMessageText, ReadsTheDetailOfAProblemDocument) {
+  EXPECT_EQ(problemDetailOf(CONFLICT_PROBLEM), CONFLICT_DETAIL);
+}
+
+/**
+ * Given an error body that is no JSON, as a proxy may answer
+ * When its detail is read
+ * Then it is empty
+ */
+TEST(MasterMessageText, AnErrorThatIsNoJsonHasNoDetail) {
+  EXPECT_EQ(problemDetailOf(PLAIN_TEXT_ERROR), std::string{});
 }

@@ -14,6 +14,7 @@
 #include "HttpHeader.hpp"
 #include "KnownServer.hpp"
 #include "MasterDatabase.hpp"
+#include "MasterHttpConstants.hpp"
 #include "MasterMessageConstants.hpp"
 #include "MasterMessageText.hpp"
 #include "MasterRouteConstants.hpp"
@@ -42,7 +43,7 @@ ApiResponse unauthorizedResponse() {
       .body = {},
       .detail = std::string{UNKNOWN_KEY_DETAIL},
       .header = HttpHeader{.name = std::string{WWW_AUTHENTICATE_HEADER},
-                           .value = std::string{BEARER_SCHEME}}};
+                           .value = std::string{network::BEARER_SCHEME}}};
 }
 
 /** @returns What @p answer gives, or 400 naming the member it refused. */

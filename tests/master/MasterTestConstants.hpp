@@ -24,6 +24,10 @@ constexpr std::string_view PROBLEM_DETAIL_MEMBER_NAME = "detail";
 /** @brief The address every test client connects from. */
 constexpr std::string_view LOOPBACK_ADDRESS = "127.0.0.1";
 
+/** @brief What a url of the master is made of, around its address. */
+constexpr std::string_view HTTP_URL_PREFIX = "http://";
+constexpr std::string_view PORT_SEPARATOR = ":";
+
 /** @brief The database file the tests give the master, in their folder. */
 constexpr std::string_view TEST_DATABASE_FILE = "master.db";
 

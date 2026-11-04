@@ -101,6 +101,13 @@ constexpr std::string_view SHORT_KEY =
     "rtk_0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcde";
 constexpr std::string_view KEY_POINTER = "/key";
 
+/** @brief A problem document of the master, its detail, and text that is no
+ * JSON. */
+constexpr std::string_view CONFLICT_PROBLEM =
+    R"({"status":409,"title":"Conflict","detail":"register first"})";
+constexpr std::string_view CONFLICT_DETAIL = "register first";
+constexpr std::string_view PLAIN_TEXT_ERROR = "Bad Gateway";
+
 /** @brief How a refusal quotes the pointer it names, and the whole message. */
 constexpr std::string_view POINTER_QUOTE = "\"";
 constexpr std::string_view QUOTED_WHOLE_MESSAGE = "\"\"";

@@ -15,6 +15,7 @@
 #include "EndpointText.hpp"
 #include "HostedGame.hpp"
 #include "HostedGameState.hpp"
+#include "MasterHttpConstants.hpp"
 #include "MasterMessageConstants.hpp"
 #include "NetworkConstants.hpp"
 #include "NetworkException.hpp"
@@ -414,6 +415,18 @@ ServerHeartbeat heartbeatFromText(std::string_view text) {
   const JsonField heartbeat = wholeMessage(document);
   return ServerHeartbeat{.games = gamesOf(heartbeat),
                          .measures = measuresOf(heartbeat)};
+}
+
+std::string problemDetailOf(std::string_view text) {
+  const nlohmann::json document = nlohmann::json::parse(text, nullptr, false);
+  if (!document.is_object()) {
+    return std::string{};
+  }
+  const auto detail = document.find(std::string{PROBLEM_DETAIL_MEMBER});
+  if (detail == document.end() || !detail->is_string()) {
+    return std::string{};
+  }
+  return detail->get<std::string>();
 }
 
 }  // namespace rtype::network

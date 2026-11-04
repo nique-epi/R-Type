@@ -1,6 +1,7 @@
 add_subdirectory(Routes)
 add_subdirectory(Messages)
 add_subdirectory(Validators)
+add_subdirectory(Client)
 
 add_library(rtype_network_master INTERFACE)
 

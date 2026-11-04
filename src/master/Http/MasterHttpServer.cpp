@@ -20,6 +20,7 @@
 #include "HttpConstants.hpp"
 #include "MasterConstants.hpp"
 #include "MasterException.hpp"
+#include "MasterHttpConstants.hpp"
 #include "MasterRoute.hpp"
 #include "MasterRouteConstants.hpp"
 #include "NetworkConstants.hpp"
@@ -69,10 +70,10 @@ int boundPortOf(httplib::Server& server, const network::Endpoint& endpoint) {
 std::string problemDetailsText(int status,
                                const std::optional<std::string>& detail) {
   nlohmann::json problem;
-  problem[PROBLEM_STATUS_MEMBER] = status;
-  problem[PROBLEM_TITLE_MEMBER] = httplib::status_message(status);
+  problem[network::PROBLEM_STATUS_MEMBER] = status;
+  problem[network::PROBLEM_TITLE_MEMBER] = httplib::status_message(status);
   if (detail.has_value()) {
-    problem[PROBLEM_DETAIL_MEMBER] = *detail;
+    problem[network::PROBLEM_DETAIL_MEMBER] = *detail;
   }
   return problem.dump(-1, ' ', false, nlohmann::json::error_handler_t::replace);
 }
@@ -84,17 +85,18 @@ std::string problemDetailsText(int status,
 void writeProblemDocument(httplib::Response& response) {
   if (response.body.empty()) {
     response.set_content(problemDetailsText(response.status, std::nullopt),
-                         std::string{PROBLEM_CONTENT_TYPE});
+                         std::string{network::PROBLEM_CONTENT_TYPE});
   }
 }
 
 /**
- * @returns The token after BEARER_SCHEME and its separator in @p authorization,
- * the scheme read in any case, or nothing for another scheme or an empty token.
+ * @returns The token after network::BEARER_SCHEME and its separator in @p
+ * authorization, the scheme read in any case, or nothing for another scheme or
+ * an empty token.
  */
 std::optional<std::string> bearerTokenIn(std::string_view authorization) {
-  const std::string prefix =
-      std::string{BEARER_SCHEME} + std::string{BEARER_SCHEME_SEPARATOR};
+  const std::string prefix = std::string{network::BEARER_SCHEME} +
+                             std::string{network::BEARER_SCHEME_SEPARATOR};
   const bool hasPrefix =
       authorization.size() > prefix.size() &&
       std::ranges::equal(
@@ -112,7 +114,7 @@ std::optional<std::string> bearerTokenIn(std::string_view authorization) {
 ApiRequest apiRequestOf(const httplib::Request& request) {
   return ApiRequest{.body = request.body,
                     .bearerToken = bearerTokenIn(request.get_header_value(
-                        std::string{AUTHORIZATION_HEADER})),
+                        std::string{network::AUTHORIZATION_HEADER})),
                     .remoteAddress = request.remote_addr};
 }
 
@@ -125,12 +127,13 @@ void writeReply(ApiResponse reply, httplib::Response& response) {
   if (reply.header.has_value()) {
     response.set_header(reply.header->name, reply.header->value);
   }
-  if (reply.status >= LOWEST_ERROR_STATUS && reply.body.empty()) {
+  if (reply.status >= network::LOWEST_ERROR_STATUS && reply.body.empty()) {
     response.set_content(problemDetailsText(reply.status, reply.detail),
-                         std::string{PROBLEM_CONTENT_TYPE});
+                         std::string{network::PROBLEM_CONTENT_TYPE});
     return;
   }
-  response.set_content(std::move(reply.body), std::string{JSON_CONTENT_TYPE});
+  response.set_content(std::move(reply.body),
+                       std::string{network::JSON_CONTENT_TYPE});
 }
 
 httplib::Server::Handler handlerOf(ApiHandler route) {

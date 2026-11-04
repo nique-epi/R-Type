@@ -82,4 +82,10 @@ namespace rtype::network {
  */
 [[nodiscard]] ServerHeartbeat heartbeatFromText(std::string_view text);
 
+/**
+ * @returns The `detail` of the problem document (RFC 9457) @p text holds, or
+ * an empty text when @p text is no JSON object or has no `detail` text.
+ */
+[[nodiscard]] std::string problemDetailOf(std::string_view text);
+
 }  // namespace rtype::network

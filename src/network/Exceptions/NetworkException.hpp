@@ -265,4 +265,39 @@ class InvalidMasterMessageException : public NetworkException {
   explicit InvalidMasterMessageException(const std::string& pointer);
 };
 
+/**
+ * @brief The master answered a request with an error status: the status, and
+ * the `detail` of its problem document (RFC 9457), empty when it gave none.
+ */
+class MasterRefusedException : public NetworkException {
+ public:
+  MasterRefusedException(int status, const std::string& detail);
+
+  /** @returns The HTTP status the master answered, 400 or more. */
+  [[nodiscard]] int status() const;
+
+ private:
+  int status_;
+};
+
+/**
+ * @brief A url of the master the client cannot call: not `http://<host>`,
+ * with an optional port. HTTPS is refused too, since cpp-httplib is built
+ * without TLS.
+ */
+class InvalidMasterUrlException : public NetworkException {
+ public:
+  explicit InvalidMasterUrlException(const std::string& url);
+};
+
+/**
+ * @brief No answer came from the master: no connection, a timeout, or a
+ * connection cut before the answer; @p reason says which, as cpp-httplib names
+ * it.
+ */
+class MasterUnreachableException : public NetworkException {
+ public:
+  explicit MasterUnreachableException(const std::string& reason);
+};
+
 }  // namespace rtype::network
