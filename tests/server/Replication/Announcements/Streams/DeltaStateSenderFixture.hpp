@@ -82,6 +82,12 @@ class DeltaStateSenderFixture : public ::testing::Test {
   [[nodiscard]] std::vector<network::DeltaWorldState> partsSentTo(
       std::uint16_t port) const;
 
+  /**
+   * @returns Every datagram the sender handed over, oldest first.
+   */
+  [[nodiscard]] const std::vector<network::OutgoingDatagram>& sentDatagrams()
+      const;
+
  private:
   engine::EntityRegistry entities_;
   engine::ComponentRegistry components_{entities_};

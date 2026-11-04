@@ -102,6 +102,11 @@ std::size_t DeltaStateSenderFixture::bytesOfAMeasuredRun(
   return bytesSentTo(sent_, client(FIRST_PLAYER_PORT));
 }
 
+const std::vector<network::OutgoingDatagram>&
+DeltaStateSenderFixture::sentDatagrams() const {
+  return sent_;
+}
+
 std::vector<network::DeltaWorldState> DeltaStateSenderFixture::partsSentTo(
     std::uint16_t port) const {
   std::vector<network::DeltaWorldState> parts;
