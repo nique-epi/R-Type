@@ -75,4 +75,10 @@ void readLaunchArguments(std::span<const std::string_view> arguments,
 [[nodiscard]] LaunchOption pathOption(
     std::string_view name, std::optional<std::filesystem::path>& path);
 
+/**
+ * @returns `--help`, which sets @p helpRequested: the program then prints its
+ * usage and starts nothing. @p helpRequested must outlive the option.
+ */
+[[nodiscard]] LaunchOption helpOption(bool& helpRequested);
+
 }  // namespace rtype::engine

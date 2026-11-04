@@ -1,0 +1,5 @@
+add_library(rtype_master_exceptions STATIC MasterException.cpp)
+
+target_include_directories(rtype_master_exceptions PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+
+rtype_enable_warnings(rtype_master_exceptions)

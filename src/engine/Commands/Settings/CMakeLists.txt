@@ -1,6 +1,7 @@
 add_library(rtype_engine_command_settings STATIC
   ConfigurationRegistry.cpp
   SettingLine.cpp
+  SettingOptions.cpp
   SettingValue.cpp
 )
 
