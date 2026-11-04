@@ -26,8 +26,8 @@ namespace rtype::client {
  * player as soon as one copy reaches it; then it closes the socket. Over a
  * simulated network, the copies still in flight then never arrive (see
  * NetworkThread::close()), and the server frees the place once the player was
- * silent for SESSION_SILENCE_LIMIT. A failure while leaving is logged, never
- * thrown.
+ * silent for SESSION_SILENCE_LIMIT, counted in the ticks it runs, so longer
+ * when the server stalls. A failure while leaving is logged, never thrown.
  */
 class ClientConnectionModule final : public engine::IModule {
  public:
