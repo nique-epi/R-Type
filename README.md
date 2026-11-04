@@ -34,6 +34,38 @@ The client and the server read their files from `assets/`, next to their executa
 
 If the repository was cloned without its submodules, run `git submodule update --init` first.
 
+### Packages
+
+```bash
+cmake --workflow --preset package
+```
+
+This builds in Release, then writes in `build/` one set of packages for the client and one for the server, so a player installs the client alone and a host the server alone:
+
+| System | Client | Server |
+|---|---|---|
+| Linux | `R-Type-client-<version>-Linux.tar.gz`, `R-Type-client-<version>-Linux.AppImage` | `R-Type-server-<version>-Linux.tar.gz` |
+| Windows | `R-Type-client-<version>-win64.zip`, `R-Type-client-<version>-win64.exe` (installer) | `R-Type-server-<version>-win64.zip`, `R-Type-server-<version>-win64.exe` (installer) |
+| macOS | `R-Type-client-<version>-Darwin.dmg`, holding `R-Type.app` | `R-Type-server-<version>-Darwin.tar.gz` |
+
+Each package holds its program and the part of `assets/` it reads, in the folder above the executable (`bin/` and `assets/`; `usr/bin/` and `usr/assets/` in the AppImage; `Contents/MacOS/` and `Contents/assets/` in the app), so it starts from any folder. The version is the one of `project()` in `CMakeLists.txt`. The files that build the packages are in `packaging/`.
+
+- Linux: the programs need X11, OpenGL and udev from the distribution, and a glibc at least as recent as the one of the machine that built them (Ubuntu 24.04 on the CI). The AppImage needs FUSE, which most desktops have. Packaging the client on Linux needs [`appimagetool`](https://github.com/AppImage/appimagetool) on the `PATH`.
+- Windows: the installer of each program puts it in its own folder (`R-Type`, `R-Type Server`) with a Start menu shortcut and an uninstaller. Packaging needs [NSIS](https://nsis.sourceforge.io).
+- macOS: the app is built for Apple Silicon only and is not notarized: the first time, open it with right-click > Open.
+
+The CI builds the packages of the three systems on every pull request and keeps them 7 days as artifacts of the run (`packages-Linux`, `packages-Windows`, `packages-macOS`). Pushing a tag `v<version>` that matches the version of `project()` publishes them in a GitHub release, with notes listing the pull requests merged since the previous tag:
+
+```bash
+git tag v0.1.0
+```
+
+```bash
+git push origin v0.1.0
+```
+
+The release refuses a tag whose version is not the one of `project()`; change the version in a pull request first. `assets/README.md` says the licence of the Epidemic Sound files is not confirmed for a public release.
+
 ## Run
 
 ```bash
@@ -123,7 +155,7 @@ Once the test preset is built, this sends the server running on port 4242 of the
 
 ## Logging
 
-The client, the server and the master write a timestamped journal, `r-type_client.log`, `r-type_server.log` or `r-type_master.log` next to their executable, and show the same lines in the terminal; the first line gives the absolute path of the journal. The level and the output are chosen at launch:
+The client, the server and the master write a timestamped journal, `r-type_client.log`, `r-type_server.log` or `r-type_master.log` next to their executable, and show the same lines in the terminal; the first line gives the absolute path of the journal. Installed in a folder they cannot write to, they write no journal and say so in the terminal. The level and the output are chosen at launch:
 
 ```bash
 ./r-type_server --log-level debug

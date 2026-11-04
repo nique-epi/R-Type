@@ -40,6 +40,12 @@ constexpr std::string_view OPTION_LINE_START = "\n  ";
 
 /** @brief What the usage says of the default journal of the server. */
 constexpr std::string_view DEFAULT_SERVER_JOURNAL_TEXT =
-    "Default: r-type_server.log next to the executable.";
+    "Default: r-type_server.log next to the executable, or none when that "
+    "file cannot be opened.";
+
+/** @brief How the warning about a default journal that cannot be opened
+ * starts, before the path of that journal. */
+constexpr std::string_view UNOPENED_JOURNAL_LINE_START =
+    "cannot open the journal ";
 
 }  // namespace rtype::logging::testing

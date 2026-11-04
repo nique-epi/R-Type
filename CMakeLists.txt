@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 4.2)
 
-project(r-type LANGUAGES CXX)
+project(r-type VERSION 0.1.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -63,6 +63,166 @@ message(STATUS
 add_compile_definitions(RT_LOG_BUILD_LEVEL=${RT_LOG_BUILD_LEVEL})
 
 add_subdirectory(src)
+
+# The packages hold bin/ and assets/ side by side: locateAssetFolder() finds
+# assets/ in the folder above the executable, whatever folder it is launched
+# from.
+#
+# Each rule belongs to the package of one program: the client one holds the
+# assets it draws and plays, the server one the waves it spawns.
+include(GNUInstallDirs)
+
+# On macOS the client is the R-Type.app bundle: its executable in
+# Contents/MacOS, its assets in Contents, the folder above.
+if(APPLE)
+  set(RTYPE_CLIENT_BINARY_FOLDER R-Type.app/Contents/MacOS)
+  set(RTYPE_CLIENT_ASSETS_PARENT R-Type.app/Contents)
+  configure_file(packaging/Info.plist.in Info.plist @ONLY)
+  install(FILES ${CMAKE_BINARY_DIR}/Info.plist
+    DESTINATION R-Type.app/Contents COMPONENT client
+  )
+  install(FILES packaging/r-type.icns
+    DESTINATION R-Type.app/Contents/Resources COMPONENT client
+  )
+else()
+  set(RTYPE_CLIENT_BINARY_FOLDER ${CMAKE_INSTALL_BINDIR})
+  set(RTYPE_CLIENT_ASSETS_PARENT .)
+endif()
+
+# On Windows the executable of the client carries the icon of the game.
+if(WIN32)
+  configure_file(packaging/r-type.rc.in r-type.rc @ONLY)
+  target_sources(r-type_client PRIVATE ${CMAKE_BINARY_DIR}/r-type.rc)
+endif()
+
+# The shared libraries each program needs are collected on Windows and Linux;
+# on macOS the app needs none but the system's.
+if(APPLE)
+  install(TARGETS r-type_client
+    RUNTIME DESTINATION ${RTYPE_CLIENT_BINARY_FOLDER} COMPONENT client
+  )
+  install(TARGETS r-type_server
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT server
+  )
+else()
+  install(TARGETS r-type_client
+    RUNTIME_DEPENDENCY_SET rtype_client_libraries
+    RUNTIME DESTINATION ${RTYPE_CLIENT_BINARY_FOLDER} COMPONENT client
+  )
+  install(TARGETS r-type_server
+    RUNTIME_DEPENDENCY_SET rtype_server_libraries
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT server
+  )
+endif()
+install(DIRECTORY ${CMAKE_SOURCE_DIR}/assets
+  DESTINATION ${RTYPE_CLIENT_ASSETS_PARENT} COMPONENT client
+  PATTERN waves EXCLUDE
+)
+install(DIRECTORY ${CMAKE_SOURCE_DIR}/assets/waves DESTINATION assets
+  COMPONENT server
+)
+
+# Once the bundle is complete, it is signed without an identity, so macOS
+# reports an unidentified developer instead of a damaged app. This rule stays
+# after every rule of the client.
+if(APPLE)
+  install(CODE [[
+    execute_process(
+      COMMAND codesign --force --deep --sign -
+        "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/R-Type.app"
+      COMMAND_ERROR_IS_FATAL ANY)
+  ]] COMPONENT client)
+endif()
+
+# vcpkg links its libraries statically on Linux and macOS and as DLLs on
+# Windows. The DLLs are found in the vcpkg folder; the system ones and the
+# API sets are left to Windows. The MSVC runtime goes in both packages, so
+# InstallRequiredSystemLibraries only lists it.
+if(WIN32)
+  set(CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS_SKIP TRUE)
+  include(InstallRequiredSystemLibraries)
+  foreach(program IN ITEMS client server)
+    install(RUNTIME_DEPENDENCY_SET rtype_${program}_libraries
+      DIRECTORIES ${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/bin
+      PRE_EXCLUDE_REGEXES "^api-ms-" "^ext-ms-"
+      POST_EXCLUDE_REGEXES ".*[Ss]ystem32/.*"
+      DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT ${program}
+    )
+    install(PROGRAMS ${CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS}
+      DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT ${program}
+    )
+  endforeach()
+elseif(NOT APPLE)
+  # On Linux the package carries the shared libraries the programs need (the
+  # X11 extensions, udev), next to bin/ in lib/, except those every system
+  # has and must provide itself: the C library, the C++ runtime, the graphics
+  # drivers. The list is the excludelist of the AppImage project.
+  set(RTYPE_LIBRARIES_OF_EVERY_LINUX
+    "^ld-linux" "^linux-vdso" "^libc\\." "^libdl\\." "^libm\\." "^libmvec\\."
+    "^libpthread\\." "^librt\\." "^libresolv\\." "^libutil\\." "^libanl\\."
+    "^libnss_" "^libthread_db\\." "^libBrokenLocale\\." "^libcidn\\."
+    "^libstdc\\+\\+\\." "^libgcc_s\\."
+    "^libGL\\." "^libEGL\\." "^libGLdispatch\\." "^libGLX\\." "^libOpenGL\\."
+    "^libdrm\\." "^libglapi\\." "^libgbm\\."
+    "^libxcb\\." "^libxcb-dri[23]\\." "^libX11\\." "^libX11-xcb\\."
+    "^libwayland-client\\." "^libasound\\." "^libjack\\." "^libpipewire-"
+    "^libfontconfig\\." "^libfreetype\\." "^libharfbuzz\\." "^libfribidi\\."
+    "^libexpat\\." "^libz\\." "^libICE\\." "^libSM\\." "^libusb-1\\.0\\."
+    "^libuuid\\." "^libcom_err\\." "^libgpg-error\\." "^libgmp\\."
+  )
+  foreach(program IN ITEMS client server)
+    install(RUNTIME_DEPENDENCY_SET rtype_${program}_libraries
+      PRE_EXCLUDE_REGEXES ${RTYPE_LIBRARIES_OF_EVERY_LINUX}
+      DESTINATION ${CMAKE_INSTALL_LIBDIR} COMPONENT ${program}
+    )
+  endforeach()
+  set_target_properties(r-type_client r-type_server PROPERTIES
+    INSTALL_RPATH "$ORIGIN/../${CMAKE_INSTALL_LIBDIR}"
+  )
+endif()
+
+set(CPACK_PACKAGE_NAME "R-Type")
+set(CPACK_PACKAGE_VENDOR "R-Type team")
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Networked shoot'em up")
+# The project has no licence file: without this, the installer would show
+# CPack's placeholder licence.
+set(CPACK_NSIS_IGNORE_LICENSE_PAGE ON)
+# The icon of the game on the installer and the uninstaller; the executable
+# carries it through r-type.rc.
+set(CPACK_NSIS_MUI_ICON ${CMAKE_SOURCE_DIR}/packaging/r-type.ico)
+set(CPACK_NSIS_MUI_UNIICON ${CMAKE_SOURCE_DIR}/packaging/r-type.ico)
+# The packages hold no debug symbols.
+set(CPACK_STRIP_FILES ON)
+# One archive per component; each package config lists a single one.
+set(CPACK_ARCHIVE_COMPONENT_INSTALL ON)
+set(CPACK_DMG_VOLUME_NAME "R-Type")
+set(CPACK_PROJECT_CONFIG_FILE ${CMAKE_SOURCE_DIR}/packaging/CPackGeneratorConfig.cmake)
+include(CPack)
+
+# One CPack config per program, read by the package presets "client" and
+# "server" instead of CPackConfig.cmake. The server gets a plain archive, and
+# an installer on Windows; the client gets the formats a player opens: an app
+# in a disk image on macOS, and an AppImage next to its archive on Linux.
+foreach(RTYPE_PACKAGE_PART IN ITEMS client server)
+  string(TOUPPER ${RTYPE_PACKAGE_PART} RTYPE_PACKAGE_PART_UPPER)
+  set(RTYPE_PACKAGE_TITLE "R-Type Server")
+  set(RTYPE_POST_BUILD_SCRIPTS "")
+  if(WIN32)
+    set(RTYPE_PACKAGE_GENERATORS "ZIP;NSIS")
+  else()
+    set(RTYPE_PACKAGE_GENERATORS "TGZ")
+  endif()
+  if(RTYPE_PACKAGE_PART STREQUAL "client")
+    set(RTYPE_PACKAGE_TITLE "R-Type")
+    if(APPLE)
+      set(RTYPE_PACKAGE_GENERATORS "DragNDrop")
+    elseif(NOT WIN32)
+      set(RTYPE_POST_BUILD_SCRIPTS ${CMAKE_SOURCE_DIR}/packaging/AppImage.cmake)
+    endif()
+  endif()
+  configure_file(packaging/CPackPartConfig.cmake.in
+    CPackConfig-${RTYPE_PACKAGE_PART}.cmake @ONLY)
+endforeach()
 
 function(rtype_forbid_links target)
   get_target_property(linked ${target} LINK_LIBRARIES)
