@@ -81,7 +81,7 @@ In `tests/network/Protocol/ProtocolTestConstants.hpp`:
 constexpr std::uint8_t TYPE_ABOVE_THE_LAST = 21;
 ```
 
-In `tests/tools/MalformedDatagrams/MalformedDatagramConstants.hpp`, where the tool that sends malformed datagrams draws its unknown types, and in the comment above it:
+In `tests/tools/MalformedDatagrams/Builder/MalformedDatagramConstants.hpp`, where the tool that sends malformed datagrams draws its unknown types, and in the comment above it:
 
 ```cpp
 constexpr std::uint8_t FIRST_UNKNOWN_MESSAGE_TYPE =

@@ -394,7 +394,7 @@ const rtype::network::WorldState received =
 
 ## Malformed datagrams: `malformed_datagrams`
 
-Anyone can send a datagram to the server, and a client reads whatever comes from the address of its server, so both must survive bytes that are not a valid message. The unit tests check each reader on its own; `malformed_datagrams` checks the programs as they run. It is a test tool in `tests/tools/MalformedDatagrams/`, built with the `test` preset into `build/tests/` and never shipped, and it only talks to the loopback address, 127.0.0.1.
+Anyone can send a datagram to the server, and a client reads whatever comes from the address of its server, so both must survive bytes that are not a valid message. The unit tests check each reader on its own; `malformed_datagrams` checks the programs as they run. It is a test tool in `tests/tools/MalformedDatagrams/`, built with the `test` preset into `build/tests/` and never shipped, and it only talks to the loopback address, 127.0.0.1. Its folder has one sub-folder per role: `Builder/` writes the malformed datagrams, `Flood/` opens a session and sends them, and `Launch/` reads the options; `FloodConstants.hpp`, which all three read, stays at its root next to `main.cpp`.
 
 For `FLOOD_DURATION` (60 s) it sends `FLOOD_DATAGRAMS_PER_SECOND` (1000) datagrams per second, seven kinds in turn, written by `MalformedDatagramBuilder` from a fixed seed (`FLOOD_SEED`), so a run can be replayed. Every kind but oversized and random bytes starts from a valid message of the protocol and breaks it in one way:
 
