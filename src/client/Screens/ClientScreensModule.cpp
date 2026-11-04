@@ -7,6 +7,7 @@
 #include <utility>
 #include <vector>
 #include "AssetLibrary.hpp"
+#include "AudioServiceChoice.hpp"
 #include "ClientConstants.hpp"
 #include "ClientScreens.hpp"
 #include "ConfigurationRegistry.hpp"
@@ -78,8 +79,7 @@ std::string ClientScreensModule::name() const {
 
 std::vector<std::string> ClientScreensModule::dependencies() const {
   return {std::string{ASSETS_MODULE_NAME}, std::string{SETTINGS_MODULE_NAME},
-          std::string{AUDIO_MODULE_NAME}, std::string{WINDOW_MODULE_NAME},
-          std::string{CONNECTION_MODULE_NAME}};
+          std::string{WINDOW_MODULE_NAME}, std::string{CONNECTION_MODULE_NAME}};
 }
 
 void ClientScreensModule::install(engine::InstallContext& context) {
@@ -87,7 +87,7 @@ void ClientScreensModule::install(engine::InstallContext& context) {
   settings_ = &context.require<PlayerSettings>();
   settingsService_ = &context.require<SettingsService>();
   assets_ = &context.require<AssetLibrary>();
-  audio_ = &context.require<IAudioService>();
+  audio_ = &chooseAudioService(context, silence_);
   window_ = &context.require<GameWindow>();
   connection_ = &context.require<ServerSession>();
   waitingRoom_ = &context.require<WaitingRoom>();
@@ -133,6 +133,9 @@ network::Endpoint ClientScreensModule::configuredServer() const {
 void ClientScreensModule::start() {
   const network::Endpoint server = configuredServer();
   logger_.info("server: ", server.address, " port ", server.port);
+  if (audio_ == &silence_) {
+    logger_.info("no sound module: the client runs without sound");
+  }
   screens_ = std::make_unique<ClientScreens>(
       ScreenServices{.settings = *settings_,
                      .settingsService = *settingsService_,
