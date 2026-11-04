@@ -1,6 +1,8 @@
 #pragma once
 
 #include <chrono>
+#include <cstddef>
+#include <string_view>
 #include "ProtocolConstants.hpp"
 #include "TimeConstants.hpp"
 
@@ -17,5 +19,14 @@ constexpr engine::Duration GAME_EVENT_DELAY_SPREAD = std::chrono::seconds(1);
  * may travel GAME_EVENT_DELAY_SPREAD longer than the first. */
 constexpr engine::Duration GAME_EVENT_MEMORY =
     network::GUARANTEED_MESSAGE_LIFETIME + GAME_EVENT_DELAY_SPREAD;
+
+/** @brief How many rebuilt world states are kept: a delta reaches back at most
+ * MAXIMUM_REFERENCE_DISTANCE ticks and the server sends a state at most once a
+ * tick, so the state it reaches back to is among them. */
+constexpr std::size_t REBUILT_STATE_HISTORY_SIZE =
+    network::MAXIMUM_REFERENCE_DISTANCE;
+
+/** @brief The name the world state assembler logs under. */
+constexpr std::string_view ASSEMBLER_LOGGER_NAME = "Replication";
 
 }  // namespace rtype::client

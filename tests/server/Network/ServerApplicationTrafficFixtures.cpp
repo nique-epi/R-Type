@@ -11,7 +11,7 @@
 #include "NetworkContext.hpp"
 #include "OutgoingDatagram.hpp"
 #include "ServerApplication.hpp"
-#include "ServerApplicationFixtures.hpp"
+#include "ServerDatagrams.hpp"
 #include "ServerTestConstants.hpp"
 #include "TrafficReport.hpp"
 #include "TrafficTotals.hpp"

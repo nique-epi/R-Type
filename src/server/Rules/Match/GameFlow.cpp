@@ -62,6 +62,15 @@ std::optional<std::string_view> reasonToFinish(GameState state,
   return std::nullopt;
 }
 
+/**
+ * @brief Makes the ship of every player who is away want nothing (see
+ * silenceAwayShips), then runs the systems of @p world for one tick.
+ */
+void runWorldSystems(GameContext& game, game::World& world) {
+  silenceAwayShips(world, game.roster.get());
+  game.systems.get().run(world.components(), engine::SIMULATION_TICK_DURATION);
+}
+
 }  // namespace
 
 GameFlow::GameFlow(GameContext& game, WorldSlot& world,
@@ -105,17 +114,13 @@ void GameFlow::advanceState() {
                      game_.roster.get().connected().size());
       }
       break;
-    case GameState::InProgress: {
-      game::World& currentWorld = world();
+    case GameState::InProgress:
       ++tick_;
-      silenceAwayShips(currentWorld, game_.roster.get());
-      game_.systems.get().run(currentWorld.components(),
-                              engine::SIMULATION_TICK_DURATION);
+      runWorldSystems(game_, world());
       weaponSystem_->onTick();
       bydoSpawner_->onTick();
       lifeKeeper_->onTick();
       break;
-    }
     case GameState::Finished:
       ++finishedTicks_;
       if (finishedTicks_ >= FINISHED_STATE_TICKS) {
