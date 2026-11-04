@@ -348,3 +348,15 @@ TEST(ServerApplication, GivesItsPortBackWhenClosed) {
       rtype::network::UdpSocket(otherContext, loopbackEndpoint(port)));
   EXPECT_NO_THROW(server.open());
 }
+
+/**
+ * Given a running server, and a client that floods it with connection
+ * requests from one socket
+ * When a second client sends one request in the middle of that flood, all
+ * through real sockets on the loopback address
+ * Then a tick hands the request of the second client: the flood placed no
+ * more than its limit in the request queue
+ */
+TEST(ServerApplication, HandsTheRequestOfAClientThroughTheFloodOfAnother) {
+  EXPECT_TRUE(requestOfAClientReachesATickThroughAFlood());
+}

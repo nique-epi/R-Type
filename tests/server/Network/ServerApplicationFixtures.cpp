@@ -1,6 +1,7 @@
 #include "ServerApplicationFixtures.hpp"
 #include <atomic>
 #include <cstddef>
+#include <cstdint>
 #include <functional>
 #include <future>
 #include <thread>
@@ -56,7 +57,58 @@ TickHandler readyStateWatcher(ReadyStateWatch& watch,
   };
 }
 
+/** @brief What the ticks of a server saw of one client, as requestWatcher()
+ * notes it. */
+struct RequestWatch {
+  std::promise<void> requestArrived;
+  std::atomic<bool> delivered{false};
+  std::atomic<std::uint16_t> clientPort{0};
+};
+
+/**
+ * @returns A tick handler that fulfils the promise of @p watch at the first
+ * connection request of the client on its port. @p watch must outlive the
+ * server.
+ */
+TickHandler requestWatcher(RequestWatch& watch) {
+  return [&watch](const ReceivedDatagrams& datagrams) {
+    for (const IncomingDatagram& request : datagrams.connectionRequests) {
+      if (request.sender.port == watch.clientPort &&
+          !watch.delivered.exchange(true)) {
+        watch.requestArrived.set_value();
+      }
+    }
+  };
+}
+
+/** @brief Has @p socket send @p count connection requests to @p server. */
+void sendRequests(rtype::network::UdpSocket& socket, const Endpoint& server,
+                  std::size_t count) {
+  for (std::size_t sent = 0; sent < count; ++sent) {
+    socket.send(server, requestDatagram());
+  }
+}
+
 }  // namespace
+
+bool requestOfAClientReachesATickThroughAFlood() {
+  RequestWatch watch;
+  const std::future<void> arrived = watch.requestArrived.get_future();
+  ServerApplication server{loopbackEndpoint(ANY_PORT), requestWatcher(watch)};
+  rtype::network::NetworkContext clientContext;
+  rtype::network::UdpSocket flooder{clientContext, loopbackEndpoint(ANY_PORT)};
+  rtype::network::UdpSocket client{clientContext, loopbackEndpoint(ANY_PORT)};
+  watch.clientPort = client.localEndpoint().port;
+  const Endpoint bound = loopbackEndpoint(server.open().port);
+  const std::jthread runner{[&server] { server.run(); }};
+  sendRequests(flooder, bound, FLOOD_REQUESTS_AROUND_A_CLIENT);
+  client.send(bound, requestDatagram());
+  sendRequests(flooder, bound, FLOOD_REQUESTS_AROUND_A_CLIENT);
+  clientContext.run();
+  const std::future_status status = arrived.wait_for(THREAD_TIMEOUT);
+  server.stop();
+  return status == std::future_status::ready;
+}
 
 SortedReadyState sortReadyStateThenRequest(
     const std::function<void(ServerApplication&, const Endpoint&)>& prepare,

@@ -111,3 +111,13 @@ constexpr std::uint16_t FIRST_FLOODING_STRANGER_PORT = 42000;
  */
 constexpr std::size_t FLOODING_REQUEST_COUNT =
     2 * rtype::server::INCOMING_DATAGRAM_QUEUE_CAPACITY;
+
+/**
+ * @brief The connection requests a client floods with on each side of the
+ * request of another client, in the test through real sockets: four times the
+ * room of the request queue, so that without a limit the request of the other
+ * client is pushed out of the queue of its tick, and few enough for the
+ * receive buffer of the system.
+ */
+constexpr std::size_t FLOOD_REQUESTS_AROUND_A_CLIENT =
+    4 * rtype::server::CONNECTION_REQUEST_QUEUE_CAPACITY;
