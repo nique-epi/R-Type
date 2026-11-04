@@ -5,6 +5,7 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include "ApiRequest.hpp"
 #include "ApiResponse.hpp"
 #include "ConfigurationRegistry.hpp"
 #include "Endpoint.hpp"
@@ -25,7 +26,7 @@ namespace {
  * `{"version":"<MASTER_VERSION>"}`. It reads nothing else, so it answers as
  * long as the HTTP server runs.
  */
-ApiResponse healthResponse() {
+ApiResponse healthResponse([[maybe_unused]] const ApiRequest& request) {
   nlohmann::json health;
   health[VERSION_MEMBER] = MASTER_VERSION;
   return ApiResponse{.status = OK_STATUS, .body = health.dump()};

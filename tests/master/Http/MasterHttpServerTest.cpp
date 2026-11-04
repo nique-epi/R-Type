@@ -3,9 +3,13 @@
 #include <memory>
 #include <nlohmann/json.hpp>
 #include <nlohmann/json_fwd.hpp>
+#include <optional>
 #include <string>
+#include <string_view>
+#include "ApiRequest.hpp"
 #include "ApiResponse.hpp"
 #include "Endpoint.hpp"
+#include "HttpHeader.hpp"
 #include "HttpPortProbe.hpp"
 #include "MasterException.hpp"
 #include "MasterHttpServer.hpp"
@@ -14,7 +18,9 @@
 #include "MasterTestConstants.hpp"
 #include "NetworkConstants.hpp"
 
+using rtype::master::ApiRequest;
 using rtype::master::ApiResponse;
+using rtype::master::HttpHeader;
 using rtype::master::HttpPortUnavailableException;
 using rtype::master::MasterException;
 using rtype::master::MasterHttpServer;
@@ -67,9 +73,11 @@ TEST_F(MasterHttpServerFixture, AnUnknownPathGetsAProblemDocumentOfNotFound) {
  * hold the reason of the failure
  */
 TEST_F(MasterHttpServerFixture, AFailingRouteHidesItsReasonFromTheClient) {
-  server().addGet(TEST_ROUTE, []() -> ApiResponse {
-    throw MasterException(std::string{SECRET_REASON});
-  });
+  server().addGet(
+      TEST_ROUTE,
+      []([[maybe_unused]] const ApiRequest& request) -> ApiResponse {
+        throw MasterException(std::string{SECRET_REASON});
+      });
   openServer();
 
   const httplib::Result answer = get(TEST_ROUTE_URL);
@@ -148,4 +156,143 @@ TEST_F(MasterHttpServerFixture, ClosingIsNotReportedAsAFailure) {
   server().close();
 
   EXPECT_EQ(failureCount(), 0);
+}
+
+/**
+ * Given a PUT route of an open server
+ * When a client sends it a body
+ * Then the route reads that body
+ */
+TEST_F(MasterHttpServerFixture, APutRouteReadsTheBodySent) {
+  addEchoRoute();
+  openServer();
+
+  const httplib::Result answer = put(TEST_ROUTE_URL, {});
+
+  ASSERT_TRUE(answer);
+  EXPECT_EQ(nlohmann::json::parse(answer->body)
+                .at(ECHO_BODY_MEMBER)
+                .get<std::string>(),
+            ECHOED_BODY);
+}
+
+/**
+ * Given a route of an open server
+ * When a client sends a key with the Bearer scheme, written in either case
+ * Then the route reads the key alone
+ */
+TEST_F(MasterHttpServerFixture, ARouteReadsTheBearerTokenInAnyCase) {
+  addEchoRoute();
+  openServer();
+
+  for (const std::string_view authorization :
+       {BEARER_AUTHORIZATION, LOWERCASE_BEARER_AUTHORIZATION}) {
+    SCOPED_TRACE(authorization);
+    const httplib::Result answer =
+        put(TEST_ROUTE_URL,
+            httplib::Headers{{std::string{AUTHORIZATION_HEADER_NAME},
+                              std::string{authorization}}});
+
+    ASSERT_TRUE(answer);
+    EXPECT_EQ(nlohmann::json::parse(answer->body)
+                  .at(ECHO_TOKEN_MEMBER)
+                  .get<std::string>(),
+              SENT_TOKEN);
+  }
+}
+
+/**
+ * Given a route of an open server
+ * When a client sends another scheme, a header too short for any scheme, or
+ * the Bearer scheme with no key
+ * Then the route reads no key, and still answers
+ */
+TEST_F(MasterHttpServerFixture, ARouteReadsNoTokenOutsideTheBearerScheme) {
+  addEchoRoute();
+  openServer();
+
+  for (const std::string_view authorization :
+       {BASIC_AUTHORIZATION, SHORT_AUTHORIZATION, BARE_BEARER_AUTHORIZATION}) {
+    SCOPED_TRACE(authorization);
+    const httplib::Result answer =
+        put(TEST_ROUTE_URL,
+            httplib::Headers{{std::string{AUTHORIZATION_HEADER_NAME},
+                              std::string{authorization}}});
+
+    ASSERT_TRUE(answer);
+    EXPECT_EQ(answer->status, EXPECTED_OK);
+    EXPECT_TRUE(
+        nlohmann::json::parse(answer->body).at(ECHO_TOKEN_MEMBER).is_null());
+  }
+}
+
+/**
+ * Given a route of an open server
+ * When a client on the loopback names another address in X-Forwarded-For
+ * Then the route reads the loopback, the address of the TCP peer
+ */
+TEST_F(MasterHttpServerFixture,
+       ARouteReadsTheAddressOfThePeerNotAForwardedOne) {
+  addEchoRoute();
+  openServer();
+
+  const httplib::Result answer =
+      put(TEST_ROUTE_URL, httplib::Headers{{std::string{FORWARDED_FOR_HEADER},
+                                            std::string{FORGED_ADDRESS}}});
+
+  ASSERT_TRUE(answer);
+  EXPECT_EQ(nlohmann::json::parse(answer->body)
+                .at(ECHO_ADDRESS_MEMBER)
+                .get<std::string>(),
+            LOOPBACK_ADDRESS);
+}
+
+/**
+ * Given a route that refuses a request with a detail
+ * When a client calls it
+ * Then it gets a problem document of Bad Request that carries the detail
+ */
+TEST_F(MasterHttpServerFixture, ARefusalCarriesItsDetail) {
+  server().addPut(TEST_ROUTE, []([[maybe_unused]] const ApiRequest& request) {
+    return ApiResponse{.status = EXPECTED_BAD_REQUEST,
+                       .body = {},
+                       .detail = std::string{BAD_REQUEST_DETAIL},
+                       .header = std::nullopt};
+  });
+  openServer();
+
+  const httplib::Result answer = put(TEST_ROUTE_URL, {});
+
+  ASSERT_TRUE(answer);
+  EXPECT_EQ(answer->status, EXPECTED_BAD_REQUEST);
+  EXPECT_EQ(answer->get_header_value(std::string{CONTENT_TYPE_HEADER}),
+            EXPECTED_PROBLEM_TYPE);
+  EXPECT_EQ(nlohmann::json::parse(answer->body)
+                .at(PROBLEM_DETAIL_MEMBER_NAME)
+                .get<std::string>(),
+            BAD_REQUEST_DETAIL);
+}
+
+/**
+ * Given a route that answers a creation with the place of what it created
+ * When a client calls it
+ * Then the answer carries that Location header
+ */
+TEST_F(MasterHttpServerFixture, ARouteSetsTheHeaderOfItsAnswer) {
+  server().addPut(TEST_ROUTE, []([[maybe_unused]] const ApiRequest& request) {
+    return ApiResponse{
+        .status = EXPECTED_CREATED,
+        .body = std::string{TEST_ROUTE_BODY},
+        .detail = std::nullopt,
+        .header = HttpHeader{.name = std::string{LOCATION_HEADER_NAME},
+                             .value = std::string{CREATED_LOCATION}}};
+  });
+  openServer();
+
+  const httplib::Result answer = put(TEST_ROUTE_URL, {});
+
+  ASSERT_TRUE(answer);
+  EXPECT_EQ(answer->status, EXPECTED_CREATED);
+  EXPECT_EQ(answer->get_header_value(std::string{LOCATION_HEADER_NAME}),
+            CREATED_LOCATION);
 }

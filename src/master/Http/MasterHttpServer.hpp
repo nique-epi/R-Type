@@ -23,7 +23,8 @@ namespace rtype::master {
  * then listens on a thread of its own until close(); close() stops it, lets
  * the requests in progress finish and frees the port. An answer of
  * an error status (400 or more) without a body gets a problem document of RFC
- * 9457 (PROBLEM_CONTENT_TYPE), so every error is JSON: an unknown path gets
+ * 9457 (PROBLEM_CONTENT_TYPE), with the ApiResponse::detail of the route, so
+ * every error is JSON: an unknown path gets
  * 404, and a body over MAX_REQUEST_BODY_BYTES sent to a route gets 413. A route
  * that throws gets 500, and only the journal reads why. No other socket may
  * listen on the port while the server holds it.
@@ -49,6 +50,10 @@ class MasterHttpServer {
    * open(): the threads open() starts read the routes.
    */
   void addGet(std::string_view path, ApiHandler route);
+
+  /** @brief Answers PUT API_PATH_PREFIX + @p path with @p route, as addGet().
+   */
+  void addPut(std::string_view path, ApiHandler route);
 
   /**
    * @brief Binds @p endpoint, an IPv4 address of the machine or
