@@ -30,6 +30,12 @@ ConnectedPlayer& addPlayer(PlayerRoster& roster, std::size_t index) {
                      SESSION_TOKEN);
 }
 
+void addPlayers(PlayerRoster& roster, std::size_t count) {
+  for (std::size_t index = 0; index < count; ++index) {
+    static_cast<void>(addPlayer(roster, index));
+  }
+}
+
 void ignoreInput(const ConnectedPlayer& /*player*/,
                  const network::PlayerInput& /*input*/) {}
 

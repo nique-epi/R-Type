@@ -10,30 +10,18 @@
 #include "EntityIdConstants.hpp"
 #include "PlayerRoster.hpp"
 #include "ProtocolConstants.hpp"
+#include "SentDatagrams.hpp"
 #include "ServerLobbyTestConstants.hpp"
+#include "SessionsFixtures.hpp"
 
 namespace rtype::server {
-namespace {
 
-using testing::FIVE_PLAYER_PORTS;
+using testing::addPlayers;
 using testing::OTHER_SESSION_TOKEN;
-using testing::PLAYER_ADDRESS;
 using testing::PLAYER_NICKNAME;
+using testing::playerEndpoint;
 using testing::SESSION_TOKEN;
 using testing::SOME_SHIP_ID;
-
-network::Endpoint playerEndpoint(std::size_t player) {
-  return network::Endpoint{.address = std::string{PLAYER_ADDRESS},
-                           .port = FIVE_PLAYER_PORTS.at(player)};
-}
-
-/** @brief Adds players 0 to @p count - 1 of FIVE_PLAYER_PORTS. */
-void addPlayers(PlayerRoster& roster, std::size_t count) {
-  for (std::size_t player = 0; player < count; ++player) {
-    static_cast<void>(roster.add(playerEndpoint(player),
-                                 std::string{PLAYER_NICKNAME}, SESSION_TOKEN));
-  }
-}
 
 /**
  * Given an empty roster
@@ -426,5 +414,4 @@ TEST(PlayerRoster, ListsTheAddressesOfTheConnectedPlayersInOrder) {
             (std::vector{playerEndpoint(0), playerEndpoint(2)}));
 }
 
-}  // namespace
 }  // namespace rtype::server
