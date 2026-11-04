@@ -19,6 +19,7 @@
 #include "MasterConstants.hpp"
 #include "MasterModules.hpp"
 #include "MasterModulesTestConstants.hpp"
+#include "ServerKeyOrder.hpp"
 #include "SettingLine.hpp"
 
 MasterModulesFixture::MasterModulesFixture() : port_(freeHttpPort()) {}
@@ -44,6 +45,20 @@ MasterModulesFixture::masterApplication(
       rtype::engine::configurationStep(
           folder() / rtype::master::MASTER_CONFIGURATION_FILE_NAME,
           std::move(configuration), report_));
+}
+
+std::unique_ptr<rtype::engine::Application>
+MasterModulesFixture::keyApplication(rtype::master::ServerKeyOrder order) {
+  return std::make_unique<rtype::engine::Application>(
+      rtype::engine::LoopStages(rtype::master::MASTER_LOOP_STAGES),
+      rtype::master::serverKeyModules(journalOptions(), std::move(order)),
+      rtype::engine::configurationStep(
+          folder() / rtype::master::MASTER_CONFIGURATION_FILE_NAME,
+          std::vector<std::string>{
+              databaseLine(folder() / TEST_DATABASE_FILE),
+              rtype::engine::settingLine(rtype::master::PORT_SETTING_NAME,
+                                         std::to_string(port_))},
+          report_));
 }
 
 std::string MasterModulesFixture::databaseLine(

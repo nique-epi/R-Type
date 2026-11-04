@@ -3,6 +3,7 @@
 #include <functional>
 #include <iostream>
 #include <memory>
+#include <optional>
 #include <span>
 #include <string>
 #include <string_view>
@@ -20,6 +21,7 @@
 #include "MasterLaunchOptions.hpp"
 #include "MasterModules.hpp"
 #include "ServerConstants.hpp"
+#include "ServerKeyOrder.hpp"
 #include "ServerMode.hpp"
 #include "ServerModeChoice.hpp"
 #include "ServerModeOption.hpp"
@@ -121,7 +123,43 @@ int runServer(std::span<const std::string_view> options) {
 }
 
 /**
- * @brief Runs the master with @p options, or prints its usage.
+ * @returns How the master runs with @p launchOptions, its modules left for the
+ * caller to choose.
+ */
+ProgramRun masterProgram(
+    const rtype::master::MasterLaunchOptions& launchOptions) {
+  return ProgramRun{
+      .label = rtype::server::MASTER_MODE_NAME,
+      .loggerName = rtype::master::MASTER_LOGGER_NAME,
+      .configurationFile = rtype::master::MASTER_CONFIGURATION_FILE_NAME,
+      .stages = rtype::master::MASTER_LOOP_STAGES,
+      .forcedLines = launchOptions.forcedLines(),
+      .modules = {}};
+}
+
+/**
+ * @brief Issues a key for the game server @p name: the key is printed on the
+ * standard output once, never in the journal, and the master stops.
+ * @returns the exit code: 0 once the key is printed.
+ */
+int issueServerKey(const rtype::master::MasterLaunchOptions& launchOptions,
+                   const std::string& name) {
+  ProgramRun program = masterProgram(launchOptions);
+  program.modules = [&launchOptions,
+                     &name](rtype::server::StopRequest& stopRequest) {
+    return rtype::master::serverKeyModules(
+        launchOptions.logOptions(),
+        rtype::master::ServerKeyOrder{
+            .name = name, .onIssued = [&stopRequest](const std::string& key) {
+              std::cout << key << '\n';
+              stopRequest.request();
+            }});
+  };
+  return runUntilStopped(program);
+}
+
+/**
+ * @brief Runs the master with @p options, issues a key, or prints its usage.
  * @returns the exit code of the master.
  */
 int runMaster(std::span<const std::string_view> options) {
@@ -131,19 +169,18 @@ int runMaster(std::span<const std::string_view> options) {
     std::cout << rtype::master::MasterLaunchOptions::usage();
     return 0;
   }
-  return runUntilStopped(ProgramRun{
-      .label = rtype::server::MASTER_MODE_NAME,
-      .loggerName = rtype::master::MASTER_LOGGER_NAME,
-      .configurationFile = rtype::master::MASTER_CONFIGURATION_FILE_NAME,
-      .stages = rtype::master::MASTER_LOOP_STAGES,
-      .forcedLines = launchOptions.forcedLines(),
-      .modules = [&launchOptions](rtype::server::StopRequest& stopRequest) {
-        return rtype::master::masterModules(
-            launchOptions.logOptions(),
-            [&stopRequest](const std::string& reason) {
-              stopRequest.fail(reason);
-            });
-      }});
+  if (const std::optional<std::string>& name = launchOptions.newServerKeyName();
+      name.has_value()) {
+    return issueServerKey(launchOptions, *name);
+  }
+  ProgramRun program = masterProgram(launchOptions);
+  program.modules = [&launchOptions](rtype::server::StopRequest& stopRequest) {
+    return rtype::master::masterModules(
+        launchOptions.logOptions(), [&stopRequest](const std::string& reason) {
+          stopRequest.fail(reason);
+        });
+  };
+  return runUntilStopped(program);
 }
 
 }  // namespace

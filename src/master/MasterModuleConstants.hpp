@@ -8,5 +8,6 @@ namespace rtype::master {
 constexpr std::string_view LOGGER_MODULE_NAME = "logger";
 constexpr std::string_view STORAGE_MODULE_NAME = "storage";
 constexpr std::string_view HTTP_MODULE_NAME = "http";
+constexpr std::string_view SERVER_KEYS_MODULE_NAME = "server-keys";
 
 }  // namespace rtype::master

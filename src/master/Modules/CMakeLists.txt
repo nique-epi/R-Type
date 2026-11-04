@@ -7,6 +7,7 @@ target_link_libraries(rtype_master_modules
     rtype_engine_modules
     rtype_logging
     rtype_master_http_module
+    rtype_master_server_keys_module
   PRIVATE
     rtype_engine_paths
     rtype_master_logger_module

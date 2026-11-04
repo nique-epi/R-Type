@@ -46,4 +46,10 @@ constexpr std::array MASTER_SETTING_NAMES{PORT_SETTING_NAME,
  */
 constexpr std::string_view DATABASE_FILE_NAME = "r-type_master.db";
 
+/**
+ * @brief The option that issues a key for a game server, prints it once and
+ * starts nothing else.
+ */
+constexpr std::string_view NEW_SERVER_KEY_OPTION = "--new-server-key";
+
 }  // namespace rtype::master

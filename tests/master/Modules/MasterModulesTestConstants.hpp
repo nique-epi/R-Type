@@ -17,3 +17,6 @@ constexpr std::string_view MISSING_FOLDER = "no-such-folder";
 /** @brief The route a feature module adds, and the path a client calls. */
 constexpr std::string_view FEATURE_ROUTE = "/feature";
 constexpr std::string_view FEATURE_URL = "/api/feature";
+
+/** @brief The game server a test asks a key for. */
+constexpr std::string_view KEY_ORDER_NAME = "Paris 1";

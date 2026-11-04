@@ -1,5 +1,6 @@
 #pragma once
 
+#include <optional>
 #include <span>
 #include <string>
 #include <string_view>
@@ -13,6 +14,7 @@ namespace rtype::master {
  * @brief What the master is told at launch: the settings it is forced to and
  * the logging options, or a request for its usage.
  *
+ * `--new-server-key <name>` asks for a key instead of a running master.
  * `-p`, `--database` and `--set` do not hold a value of their own: each
  * becomes the line of the command `set` that gives the setting that value, and
  * the lines run after master.cfg, so a launch option wins over the file.
@@ -22,7 +24,8 @@ class MasterLaunchOptions {
   /**
    * @brief Reads every option of the master from @p arguments, the arguments
    * it was launched with after `--mode master`, in one pass: `-p <port>`,
-   * `--database <file>`, `--set <name>=<value>` and `--help`, and the logging
+   * `--database <file>`, `--set <name>=<value>`, `--new-server-key <name>`
+   * and `--help`, and the logging
    * options (see logging::LogLaunchOptions::readOption()), whose exceptions
    * this throws too. Without a logging option the journal is
    * MASTER_LOG_FILE_NAME next to the executable.
@@ -36,7 +39,9 @@ class MasterLaunchOptions {
    * @throws network::InvalidPortException when the value of `-p` is not a
    *         port from LOWEST_PORT to HIGHEST_PORT.
    * @throws engine::InvalidLaunchOptionValueException when the value of
-   *         `--set` is not `name=value`.
+   *         `--set` is not `name=value`, or the name of `--new-server-key` is
+   *         empty, longer than network::MAXIMUM_SERVER_NAME_SIZE bytes or not
+   *         printable UTF-8.
    */
   [[nodiscard]] static MasterLaunchOptions read(
       std::span<const std::string_view> arguments);
@@ -58,6 +63,12 @@ class MasterLaunchOptions {
    *          and starts nothing.
    */
   [[nodiscard]] bool helpRequested() const;
+
+  /**
+   * @returns The name of the game server `--new-server-key` issues a key for,
+   * or nothing when the master is to run.
+   */
+  [[nodiscard]] const std::optional<std::string>& newServerKeyName() const;
 
   /**
    * @returns The logging options given at launch, which the logger module
