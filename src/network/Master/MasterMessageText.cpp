@@ -29,7 +29,7 @@ namespace {
 /** @brief A value of a message read from JSON, with its JSON Pointer. */
 struct JsonField {
   std::reference_wrapper<const nlohmann::json> value;
-  std::string pointer;
+  nlohmann::json::json_pointer pointer;
 };
 
 /** @brief The lowest and the highest value an integer member may hold. */
@@ -39,7 +39,7 @@ struct IntegerBounds {
 };
 
 [[noreturn]] void refuse(const JsonField& field) {
-  throw InvalidMasterMessageException(field.pointer);
+  throw InvalidMasterMessageException(field.pointer.to_string());
 }
 
 /** @returns The text of @p document; never throws, see registrationText(). */
@@ -56,14 +56,15 @@ std::string textOf(const nlohmann::json& document) {
 nlohmann::json parsedObject(std::string_view text) {
   nlohmann::json document = nlohmann::json::parse(text, nullptr, false);
   if (document.is_discarded() || !document.is_object()) {
-    throw InvalidMasterMessageException(std::string{WHOLE_MESSAGE_POINTER});
+    throw InvalidMasterMessageException(
+        nlohmann::json::json_pointer{}.to_string());
   }
   return document;
 }
 
 JsonField wholeMessage(const nlohmann::json& document) {
   return JsonField{.value = std::cref(document),
-                   .pointer = std::string{WHOLE_MESSAGE_POINTER}};
+                   .pointer = nlohmann::json::json_pointer{}};
 }
 
 void requireObject(const JsonField& field) {
@@ -80,15 +81,14 @@ std::optional<JsonField> optionalMemberOf(const JsonField& object,
     return std::nullopt;
   }
   return JsonField{.value = std::cref(*found),
-                   .pointer = object.pointer + std::string{POINTER_SEPARATOR} +
-                              std::string{member}};
+                   .pointer = object.pointer / std::string{member}};
 }
 
 JsonField memberOf(const JsonField& object, std::string_view member) {
   std::optional<JsonField> found = optionalMemberOf(object, member);
   if (!found.has_value()) {
     throw InvalidMasterMessageException(
-        object.pointer + std::string{POINTER_SEPARATOR} + std::string{member});
+        (object.pointer / std::string{member}).to_string());
   }
   return std::move(found).value();
 }
@@ -108,8 +108,7 @@ std::size_t arraySizeOf(const JsonField& field, std::size_t maximumSize) {
 
 JsonField elementOf(const JsonField& array, std::size_t index) {
   return JsonField{.value = std::cref(array.value.get().at(index)),
-                   .pointer = array.pointer + std::string{POINTER_SEPARATOR} +
-                              std::to_string(index)};
+                   .pointer = array.pointer / index};
 }
 
 /**
@@ -128,14 +127,23 @@ std::uint64_t integerOf(const JsonField& field, IntegerBounds bounds) {
   return number;
 }
 
-/** @returns The text @p field holds: 1 to @p maximumSize printable bytes. */
-std::string boundedTextOf(const JsonField& field, std::size_t maximumSize) {
+/** @returns The string @p field holds. */
+std::string stringOf(const JsonField& field) {
   const nlohmann::json& value = field.value.get();
   if (!value.is_string()) {
     refuse(field);
   }
-  std::string text = value.get<std::string>();
-  if (text.empty() || text.size() > maximumSize || !isPrintableUtf8(text)) {
+  return value.get<std::string>();
+}
+
+bool isValidBoundedText(std::string_view text, std::size_t maximumSize) {
+  return !text.empty() && text.size() <= maximumSize && isPrintableUtf8(text);
+}
+
+/** @returns The text @p field holds: 1 to @p maximumSize printable bytes. */
+std::string boundedTextOf(const JsonField& field, std::size_t maximumSize) {
+  std::string text = stringOf(field);
+  if (!isValidBoundedText(text, maximumSize)) {
     refuse(field);
   }
   return text;
@@ -143,11 +151,7 @@ std::string boundedTextOf(const JsonField& field, std::size_t maximumSize) {
 
 /** @returns The nickname, or the difficulty, @p field holds. */
 std::string nicknameOf(const JsonField& field) {
-  const nlohmann::json& value = field.value.get();
-  if (!value.is_string()) {
-    refuse(field);
-  }
-  std::string nickname = value.get<std::string>();
+  std::string nickname = stringOf(field);
   if (!isValidNickname(nickname)) {
     refuse(field);
   }
@@ -160,25 +164,18 @@ std::optional<std::string> addressOf(const JsonField& registration) {
   if (!field.has_value()) {
     return std::nullopt;
   }
-  if (!field->value.get().is_string()) {
-    refuse(*field);
-  }
   try {
-    return ipv4AddressFromText(field->value.get().get<std::string>());
+    return ipv4AddressFromText(stringOf(*field));
   } catch (const InvalidIpv4AddressException&) {
     refuse(*field);
   }
 }
 
 HostedGameState stateOf(const JsonField& field) {
-  const nlohmann::json& value = field.value.get();
-  if (value.is_string()) {
-    const auto text = value.get<std::string>();
-    for (std::size_t index = 0; index < HOSTED_GAME_STATE_TEXTS.size();
-         ++index) {
-      if (text == HOSTED_GAME_STATE_TEXTS.at(index)) {
-        return static_cast<HostedGameState>(index);
-      }
+  const std::string text = stringOf(field);
+  for (std::size_t index = 0; index < HOSTED_GAME_STATE_TEXTS.size(); ++index) {
+    if (text == HOSTED_GAME_STATE_TEXTS.at(index)) {
+      return static_cast<HostedGameState>(index);
     }
   }
   refuse(field);
@@ -302,6 +299,10 @@ nlohmann::json measuresDocument(const ServerMeasures& measures) {
 }
 
 }  // namespace
+
+bool isValidServerName(std::string_view name) {
+  return isValidBoundedText(name, MAXIMUM_SERVER_NAME_SIZE);
+}
 
 std::string registrationText(const ServerRegistration& registration) {
   nlohmann::json document;

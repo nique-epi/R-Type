@@ -29,8 +29,7 @@ std::chrono::sys_seconds now() {
 }
 
 ApiResponse refusal(int status, const std::string& detail) {
-  return ApiResponse{
-      .status = status, .body = {}, .detail = detail, .header = std::nullopt};
+  return ApiResponse{.status = status, .body = {}, .detail = detail};
 }
 
 ApiResponse unauthorizedResponse() {
@@ -40,6 +39,25 @@ ApiResponse unauthorizedResponse() {
       .detail = std::string{UNKNOWN_KEY_DETAIL},
       .header = HttpHeader{.name = std::string{WWW_AUTHENTICATE_HEADER},
                            .value = std::string{BEARER_SCHEME}}};
+}
+
+/**
+ * @returns What @p answer gives for the key of @p request, 401 when the master
+ * issued no such key, or 400 naming the member @p answer refused.
+ */
+template <typename Answer>
+ApiResponse answerWithKey(ServerKeys& keys, const ApiRequest& request,
+                          Answer answer) {
+  const std::optional<std::int64_t> keyId =
+      keys.keyIdOf(request.bearerToken.value_or(std::string{}));
+  if (!keyId.has_value()) {
+    return unauthorizedResponse();
+  }
+  try {
+    return answer(*keyId);
+  } catch (const network::InvalidMasterMessageException& invalid) {
+    return refusal(BAD_REQUEST_STATUS, invalid.what());
+  }
 }
 
 /** @returns The registration @p request sends, its address always known. */
@@ -58,28 +76,20 @@ ApiResponse registeredResponse(
   nlohmann::json server =
       nlohmann::json::parse(network::registrationText(registration));
   server[SERVER_ID_MEMBER] = saved.id;
-  if (!saved.created) {
-    return ApiResponse{.status = OK_STATUS,
-                       .body = server.dump(),
-                       .detail = std::nullopt,
-                       .header = std::nullopt};
+  ApiResponse response{.status = OK_STATUS, .body = server.dump()};
+  if (saved.created) {
+    response.status = CREATED_STATUS;
+    response.header = HttpHeader{.name = std::string{LOCATION_HEADER},
+                                 .value = std::string{SERVER_LOCATION_PREFIX} +
+                                          std::to_string(saved.id)};
   }
-  return ApiResponse{
-      .status = CREATED_STATUS,
-      .body = server.dump(),
-      .detail = std::nullopt,
-      .header = HttpHeader{.name = std::string{LOCATION_HEADER},
-                           .value = std::string{SERVER_LOCATION_PREFIX} +
-                                    std::to_string(saved.id)}};
+  return response;
 }
 
 ApiResponse heartbeatAnswer() {
   nlohmann::json answer;
   answer[network::COMMANDS_MEMBER] = nlohmann::json::array();
-  return ApiResponse{.status = OK_STATUS,
-                     .body = answer.dump(),
-                     .detail = std::nullopt,
-                     .header = std::nullopt};
+  return ApiResponse{.status = OK_STATUS, .body = answer.dump()};
 }
 
 }  // namespace
@@ -88,38 +98,24 @@ ServersController::ServersController(ServerKeys& keys, MasterDatabase& database)
     : keys_(keys), service_(database) {}
 
 ApiResponse ServersController::registration(const ApiRequest& request) {
-  const std::optional<std::int64_t> keyId =
-      keys_.keyIdOf(request.bearerToken.value_or(std::string{}));
-  if (!keyId.has_value()) {
-    return unauthorizedResponse();
-  }
-  try {
+  return answerWithKey(keys_, request, [this, &request](std::int64_t keyId) {
     const network::ServerRegistration registration = registrationOf(request);
     return registeredResponse(
-        service_.registerServer(ServerRecord{.keyId = *keyId,
+        service_.registerServer(ServerRecord{.keyId = keyId,
                                              .registration = registration,
                                              .registeredAt = now()}),
         registration);
-  } catch (const network::InvalidMasterMessageException& invalid) {
-    return refusal(BAD_REQUEST_STATUS, invalid.what());
-  }
+  });
 }
 
 ApiResponse ServersController::heartbeat(const ApiRequest& request) {
-  const std::optional<std::int64_t> keyId =
-      keys_.keyIdOf(request.bearerToken.value_or(std::string{}));
-  if (!keyId.has_value()) {
-    return unauthorizedResponse();
-  }
-  try {
+  return answerWithKey(keys_, request, [this, &request](std::int64_t keyId) {
     if (!service_.recordHeartbeat(
-            *keyId, network::heartbeatFromText(request.body), now())) {
+            keyId, network::heartbeatFromText(request.body), now())) {
       return refusal(NOT_FOUND_STATUS, std::string{UNREGISTERED_SERVER_DETAIL});
     }
     return heartbeatAnswer();
-  } catch (const network::InvalidMasterMessageException& invalid) {
-    return refusal(BAD_REQUEST_STATUS, invalid.what());
-  }
+  });
 }
 
 }  // namespace rtype::master

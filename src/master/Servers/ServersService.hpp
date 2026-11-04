@@ -27,8 +27,7 @@ class ServersService {
    * maximumGames, a game numbered above it, or more players in a game than its
    * maximumPlayersPerGame. Nothing is recorded then.
    */
-  bool recordHeartbeat(std::int64_t keyId,
-                       const network::ServerHeartbeat& heartbeat,
+  bool recordHeartbeat(std::int64_t keyId, network::ServerHeartbeat heartbeat,
                        std::chrono::sys_seconds now);
 
  private:

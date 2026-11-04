@@ -22,7 +22,8 @@ CREATE TABLE server_keys (
 /**
  * @brief The second version: the game servers, one per key, with the last
  * state their heartbeat told, and a sample of each heartbeat at most once a
- * second (the primary key of the samples is the server and the second). The
+ * second (the primary key of the samples is the server and the second, and
+ * the table has no rowid, so a sample is one row of one B-tree). The
  * nicknames of the players live in the last state only, never in a sample.
  */
 constexpr std::string_view SERVERS_MIGRATION = R"sql(
@@ -53,7 +54,7 @@ CREATE TABLE heartbeat_samples (
   loss_percent              REAL,
   average_ping_milliseconds REAL,
   PRIMARY KEY (server_id, taken_at)
-) STRICT;
+) STRICT, WITHOUT ROWID;
 
 CREATE INDEX heartbeat_samples_by_date ON heartbeat_samples (taken_at);
 )sql";

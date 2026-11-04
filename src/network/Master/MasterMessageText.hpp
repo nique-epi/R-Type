@@ -8,6 +8,12 @@
 namespace rtype::network {
 
 /**
+ * @returns Whether @p name is a name a game server may have: 1 to
+ * MAXIMUM_SERVER_NAME_SIZE bytes of printable UTF-8 (isPrintableUtf8()).
+ */
+[[nodiscard]] bool isValidServerName(std::string_view name);
+
+/**
  * @returns @p registration as the JSON body of `PUT /api/servers/me`, its
  * address left out when it is empty. A text that is not UTF-8 is written with
  * U+FFFD in place of its bad bytes, so writing never throws.

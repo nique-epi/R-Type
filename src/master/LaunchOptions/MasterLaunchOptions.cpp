@@ -19,11 +19,10 @@
 #include "LoggingConstants.hpp"
 #include "MasterConstants.hpp"
 #include "MasterLaunchValues.hpp"
-#include "MasterMessageConstants.hpp"
+#include "MasterMessageText.hpp"
 #include "NetworkConstants.hpp"
 #include "SettingLine.hpp"
 #include "SettingOptions.hpp"
-#include "WireTypes.hpp"
 
 namespace rtype::master {
 
@@ -51,8 +50,7 @@ engine::LaunchOption newServerKeyOption(MasterLaunchValues& values) {
       .name = NEW_SERVER_KEY_OPTION,
       .takesValue = true,
       .record = [&values](std::string_view name) {
-        if (name.empty() || name.size() > network::MAXIMUM_SERVER_NAME_SIZE ||
-            !network::isPrintableUtf8(name)) {
+        if (!network::isValidServerName(name)) {
           throw engine::InvalidLaunchOptionValueException(
               std::string{NEW_SERVER_KEY_OPTION}, std::string{name});
         }

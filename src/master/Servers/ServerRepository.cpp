@@ -44,14 +44,18 @@ void bindRegistration(SQLite::Statement& statement,
                  registration.maximumPlayersPerGame);
 }
 
-std::optional<std::int64_t> serverIdOfKey(SQLite::Database& connection,
-                                          std::int64_t keyId) {
+std::optional<ServerLimits> limitsOf(SQLite::Database& connection,
+                                     std::int64_t keyId) {
   SQLite::Statement query{connection, std::string{SERVER_OF_KEY_QUERY}};
   query.bind(std::string{KEY_ID_PARAMETER}, keyId);
   if (!query.executeStep()) {
     return std::nullopt;
   }
-  return query.getColumn(SERVER_ID_COLUMN).getInt64();
+  return ServerLimits{.id = query.getColumn(SERVER_ID_COLUMN).getInt64(),
+                      .maximumGames = static_cast<std::uint16_t>(
+                          query.getColumn(MAXIMUM_GAMES_COLUMN).getUInt()),
+                      .maximumPlayersPerGame = static_cast<std::uint8_t>(
+                          query.getColumn(MAXIMUM_PLAYERS_COLUMN).getUInt())};
 }
 
 std::int64_t insertedServerId(SQLite::Database& connection,
@@ -73,14 +77,13 @@ void updateServer(SQLite::Database& connection, const ServerRecord& record) {
 /** @returns The server @p record names, inserted or updated. */
 RegisteredServer savedServer(SQLite::Database& connection,
                              const ServerRecord& record) {
-  const std::optional<std::int64_t> known =
-      serverIdOfKey(connection, record.keyId);
+  const std::optional<ServerLimits> known = limitsOf(connection, record.keyId);
   if (!known.has_value()) {
     return RegisteredServer{.id = insertedServerId(connection, record),
                             .created = true};
   }
   updateServer(connection, record);
-  return RegisteredServer{.id = *known, .created = false};
+  return RegisteredServer{.id = known->id, .created = false};
 }
 
 void bindMeasure(SQLite::Statement& statement, std::string_view parameter,
@@ -119,12 +122,13 @@ void insertSample(SQLite::Database& connection, const HeartbeatRecord& record) {
   insert.exec();
 }
 
+/** @brief Keeps @p text, the heartbeat of @p record, as its last state. */
 void updateLastHeartbeat(SQLite::Database& connection,
-                         const HeartbeatRecord& record) {
+                         const HeartbeatRecord& record,
+                         const std::string& text) {
   SQLite::Statement update{connection,
                            std::string{UPDATE_LAST_HEARTBEAT_STATEMENT}};
-  update.bind(std::string{HEARTBEAT_PARAMETER},
-              network::heartbeatText(record.heartbeat));
+  update.bind(std::string{HEARTBEAT_PARAMETER}, text);
   update.bind(std::string{TAKEN_AT_PARAMETER}, secondsOf(record.receivedAt));
   update.bind(std::string{SERVER_ID_PARAMETER}, record.serverId);
   update.exec();
@@ -153,27 +157,17 @@ RegisteredServer ServerRepository::save(const ServerRecord& record) {
 }
 
 std::optional<ServerLimits> ServerRepository::limitsOfKey(std::int64_t keyId) {
-  return database_.run(
-      [keyId](SQLite::Database& connection) -> std::optional<ServerLimits> {
-        SQLite::Statement query{connection, std::string{SERVER_OF_KEY_QUERY}};
-        query.bind(std::string{KEY_ID_PARAMETER}, keyId);
-        if (!query.executeStep()) {
-          return std::nullopt;
-        }
-        return ServerLimits{
-            .id = query.getColumn(SERVER_ID_COLUMN).getInt64(),
-            .maximumGames = static_cast<std::uint16_t>(
-                query.getColumn(MAXIMUM_GAMES_COLUMN).getUInt()),
-            .maximumPlayersPerGame = static_cast<std::uint8_t>(
-                query.getColumn(MAXIMUM_PLAYERS_COLUMN).getUInt())};
-      });
+  return database_.run([keyId](SQLite::Database& connection) {
+    return limitsOf(connection, keyId);
+  });
 }
 
 void ServerRepository::recordHeartbeat(const HeartbeatRecord& record) {
-  database_.run([&record](SQLite::Database& connection) {
+  const std::string text = network::heartbeatText(record.heartbeat);
+  database_.run([&record, &text](SQLite::Database& connection) {
     SQLite::Transaction transaction{connection,
                                     SQLite::TransactionBehavior::IMMEDIATE};
-    updateLastHeartbeat(connection, record);
+    updateLastHeartbeat(connection, record, text);
     insertSample(connection, record);
     eraseOldSamples(connection, record.receivedAt);
     transaction.commit();

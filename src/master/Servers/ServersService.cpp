@@ -2,9 +2,12 @@
 #include <chrono>
 #include <cstddef>
 #include <cstdint>
+#include <nlohmann/json.hpp>
+#include <nlohmann/json_fwd.hpp>
 #include <optional>
 #include <string>
 #include <string_view>
+#include <utility>
 #include "HeartbeatRecord.hpp"
 #include "HostedGame.hpp"
 #include "MasterDatabase.hpp"
@@ -20,10 +23,9 @@ namespace rtype::master {
 namespace {
 
 std::string pointerOfGame(std::size_t index, std::string_view member) {
-  return std::string{network::POINTER_SEPARATOR} +
-         std::string{network::GAMES_MEMBER} +
-         std::string{network::POINTER_SEPARATOR} + std::to_string(index) +
-         std::string{network::POINTER_SEPARATOR} + std::string{member};
+  return (nlohmann::json::json_pointer{} / std::string{network::GAMES_MEMBER} /
+          index / std::string{member})
+      .to_string();
 }
 
 /**
@@ -34,8 +36,8 @@ void requireWithinLimits(const network::ServerHeartbeat& heartbeat,
                          const ServerLimits& limits) {
   if (heartbeat.games.size() > limits.maximumGames) {
     throw network::InvalidMasterMessageException(
-        std::string{network::POINTER_SEPARATOR} +
-        std::string{network::GAMES_MEMBER});
+        (nlohmann::json::json_pointer{} / std::string{network::GAMES_MEMBER})
+            .to_string());
   }
   for (std::size_t index = 0; index < heartbeat.games.size(); ++index) {
     const network::HostedGame& game = heartbeat.games.at(index);
@@ -60,15 +62,16 @@ RegisteredServer ServersService::registerServer(const ServerRecord& record) {
 }
 
 bool ServersService::recordHeartbeat(std::int64_t keyId,
-                                     const network::ServerHeartbeat& heartbeat,
+                                     network::ServerHeartbeat heartbeat,
                                      std::chrono::sys_seconds now) {
   const std::optional<ServerLimits> limits = repository_.limitsOfKey(keyId);
   if (!limits.has_value()) {
     return false;
   }
   requireWithinLimits(heartbeat, *limits);
-  repository_.recordHeartbeat(HeartbeatRecord{
-      .serverId = limits->id, .heartbeat = heartbeat, .receivedAt = now});
+  repository_.recordHeartbeat(HeartbeatRecord{.serverId = limits->id,
+                                              .heartbeat = std::move(heartbeat),
+                                              .receivedAt = now});
   return true;
 }
 

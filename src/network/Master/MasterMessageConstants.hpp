@@ -74,11 +74,4 @@ constexpr std::uint8_t HIGHEST_PROTOCOL_VERSION =
 constexpr double MAXIMUM_MEASURE = std::numeric_limits<double>::max();
 constexpr double MAXIMUM_LOSS_PERCENT = 100.0;
 
-/**
- * @brief What joins two steps of a JSON Pointer (RFC 6901), and the pointer
- * of the whole message.
- */
-constexpr std::string_view POINTER_SEPARATOR = "/";
-constexpr std::string_view WHOLE_MESSAGE_POINTER;
-
 }  // namespace rtype::network
