@@ -28,7 +28,7 @@ struct ActionLook {
 /** @brief How a kind of enemy looks: the sheet its frames lie on, its idle
  * loop, and one animation per (attack, phase) it has one for. */
 struct EnemyAppearance {
-  const char* sheetId;
+  const char* sheetId{nullptr};
   Animation idle;
   std::span<const ActionLook> actions;
 };

@@ -13,10 +13,10 @@ namespace rtype::game {
  * time.
  */
 struct HurtBox {
-  float offsetX;
-  float offsetY;
-  float width;
-  float height;
+  float offsetX{0.0F};
+  float offsetY{0.0F};
+  float width{0.0F};
+  float height{0.0F};
   std::optional<ActionKey> activeIn;
 };
 

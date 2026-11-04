@@ -12,7 +12,7 @@ namespace rtype::client {
 /** @brief What the client makes of a type the protocol names: its game type,
  * and for an enemy its kind. */
 struct AnnouncedEntity {
-  game::EntityType type;
+  game::EntityType type{game::EntityType::Player};
   std::optional<game::EnemyKind> kind;
 };
 
