@@ -154,7 +154,7 @@ TEST_F(LogLaunchOptionsFixture, FirstLineNamesAJournalInANonAnsiFolder) {
   std::ifstream written(journal);
   std::string firstLine;
   std::getline(written, firstLine);
-  EXPECT_NE(firstLine.find(std::string(NON_ANSI_FOLDER_BYTES) + "/journal.log"),
+  EXPECT_NE(firstLine.find(std::string{NON_ANSI_FOLDER_BYTES} + "/journal.log"),
             std::string::npos);
 }
 

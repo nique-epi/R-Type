@@ -6,6 +6,7 @@ target_link_libraries(rtype_logging_launch_options
   PUBLIC
     rtype_logging_logger
     rtype_logging_exceptions
+  PRIVATE
     rtype_logging_path_text
 )
 

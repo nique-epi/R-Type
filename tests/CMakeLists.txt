@@ -145,7 +145,7 @@ target_include_directories(client_audio_tests PRIVATE client/Audio client/Audio/
 rtype_add_test(NAME client_null_audio_tests SOURCES client/Audio/Contract/Sounds/NullSoundPlayerTest.cpp client/Audio/Contract/Music/NullMusicPlayerTest.cpp LIBS rtype_client_audio_contract)
 target_include_directories(client_null_audio_tests PRIVATE client/Audio client/Audio/Music client/Audio/Sounds)
 rtype_add_test(NAME client_sound_player_tests SOURCES client/Audio/Sounds/SoundPlayerTest.cpp client/Audio/Sounds/SoundPlayerFixture.cpp client/Audio/Sounds/SoundBankTest.cpp client/Audio/SilentSound.cpp client/Screens/ScreenAssetsFixtures.cpp doubles/RecordingSettingsStorage.cpp TemporaryFolder.cpp LIBS rtype_client_audio_module GTest::gmock)
-target_include_directories(client_sound_player_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} client/Assets client/Audio client/Screens doubles $<TARGET_PROPERTY:rtype_client_exceptions,INTERFACE_INCLUDE_DIRECTORIES> $<TARGET_PROPERTY:rtype_engine_paths,INTERFACE_INCLUDE_DIRECTORIES>)
+target_include_directories(client_sound_player_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} client/Assets client/Audio client/Screens doubles $<TARGET_PROPERTY:rtype_client_exceptions,INTERFACE_INCLUDE_DIRECTORIES>)
 target_compile_definitions(client_sound_player_tests PRIVATE RTYPE_ASSETS_FOLDER="${CMAKE_SOURCE_DIR}/assets")
 rtype_add_test(NAME client_theme_tests SOURCES client/Audio/Contract/Music/ThemeMusicTest.cpp client/Audio/Contract/Music/GameMusicTest.cpp client/Audio/Contract/Music/ThemeLoopFixtures.cpp LIBS rtype_client_audio_contract SFML::Audio)
 target_include_directories(client_theme_tests PRIVATE client/Audio client/Audio/Music client/Audio/Sounds)
