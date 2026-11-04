@@ -26,6 +26,7 @@ constexpr int SHIP_EXPLOSION_WIDTH = 40;
 constexpr int SHIP_EXPLOSION_HEIGHT = 36;
 constexpr int IMPACT_SIZE = 10;
 constexpr int MUZZLE_FLASH_SIZE = 7;
+constexpr int MELEE_IMPACT_SIZE = 9;
 
 /**
  * @brief The first frame of each row of the effect sheet, from the top: each
@@ -67,12 +68,20 @@ constexpr game::SpriteFrame ENEMY_MUZZLE_FLASH_FRAME{
     .height = MUZZLE_FLASH_SIZE};
 constexpr game::SpriteFrame ENEMY_MUZZLE_FLASH_WITHOUT_FLASH_FRAME =
     frameUnder(ENEMY_MUZZLE_FLASH_FRAME, SPRITE_SPACING);
+constexpr game::SpriteFrame MELEE_IMPACT_FRAME{
+    .left = 0,
+    .top = bottomOf(ENEMY_MUZZLE_FLASH_WITHOUT_FLASH_FRAME) + SPRITE_SPACING,
+    .width = MELEE_IMPACT_SIZE,
+    .height = MELEE_IMPACT_SIZE};
+constexpr game::SpriteFrame MELEE_IMPACT_WITHOUT_FLASH_FRAME =
+    frameUnder(MELEE_IMPACT_FRAME, SPRITE_SPACING);
 
 /** @brief Number of frames of each effect. */
 constexpr std::size_t BYDO_EXPLOSION_FRAME_COUNT = 6;
 constexpr std::size_t SHIP_EXPLOSION_FRAME_COUNT = 10;
 constexpr std::size_t IMPACT_FRAME_COUNT = 3;
 constexpr std::size_t MUZZLE_FLASH_FRAME_COUNT = 2;
+constexpr std::size_t MELEE_IMPACT_FRAME_COUNT = 2;
 
 /**
  * @brief How long each frame of an effect shows. The ship explosion lays its
@@ -85,6 +94,8 @@ constexpr engine::Duration SHIP_EXPLOSION_FRAME_TIME =
 constexpr engine::Duration IMPACT_FRAME_TIME = std::chrono::milliseconds(50);
 constexpr engine::Duration MUZZLE_FLASH_FRAME_TIME =
     std::chrono::milliseconds(50);
+constexpr engine::Duration MELEE_IMPACT_FRAME_TIME =
+    std::chrono::milliseconds(70);
 
 /** @brief How long an entity hit stays flashed, or shaded. */
 constexpr engine::Duration HIT_FLASH_DURATION = std::chrono::milliseconds(60);
@@ -118,6 +129,11 @@ constexpr std::array ENEMY_MUZZLE_FLASH_FRAMES =
 constexpr std::array ENEMY_MUZZLE_FLASH_WITHOUT_FLASH_FRAMES =
     framesInRow<MUZZLE_FLASH_FRAME_COUNT>(
         ENEMY_MUZZLE_FLASH_WITHOUT_FLASH_FRAME, SPRITE_SPACING);
+constexpr std::array MELEE_IMPACT_FRAMES =
+    framesInRow<MELEE_IMPACT_FRAME_COUNT>(MELEE_IMPACT_FRAME, SPRITE_SPACING);
+constexpr std::array MELEE_IMPACT_WITHOUT_FLASH_FRAMES =
+    framesInRow<MELEE_IMPACT_FRAME_COUNT>(MELEE_IMPACT_WITHOUT_FLASH_FRAME,
+                                          SPRITE_SPACING);
 
 /**
  * @brief The effects, each played once: the burst of a Bydo, the three
@@ -158,6 +174,18 @@ constexpr EffectAnimations ENEMY_MUZZLE_FLASH{
                  .playback = Animation::Playback::Once},
     .withoutFlash = {.frames = ENEMY_MUZZLE_FLASH_WITHOUT_FLASH_FRAMES,
                      .frameDuration = MUZZLE_FLASH_FRAME_TIME,
+                     .playback = Animation::Playback::Once}};
+
+/**
+ * @brief The hit spark of a melee enemy, played once, with no outline. No code
+ * plays it yet: the first melee enemy does.
+ */
+constexpr EffectAnimations MELEE_IMPACT{
+    .standard = {.frames = MELEE_IMPACT_FRAMES,
+                 .frameDuration = MELEE_IMPACT_FRAME_TIME,
+                 .playback = Animation::Playback::Once},
+    .withoutFlash = {.frames = MELEE_IMPACT_WITHOUT_FLASH_FRAMES,
+                     .frameDuration = MELEE_IMPACT_FRAME_TIME,
                      .playback = Animation::Playback::Once}};
 
 /**

@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 #include <SFML/Graphics/Image.hpp>
+#include <chrono>
 #include <cstddef>
 #include <vector>
 #include "Animation.hpp"
@@ -25,6 +26,7 @@ using rtype::client::HIT_FLASH_DURATION;
 using rtype::client::IMPACT;
 using rtype::client::IMPACT_FLASH_AREA;
 using rtype::client::IMPACT_FLASH_FRAMES;
+using rtype::client::MELEE_IMPACT;
 using rtype::client::MUZZLE_FLASH_AREA;
 using rtype::client::PLAYER_MUZZLE_FLASH;
 using rtype::client::PLAYER_SHIP_FRAMES;
@@ -233,4 +235,38 @@ TEST(EffectConstants, TheFlashBudgetLendsTheAreasMeasured) {
   EXPECT_EQ(MUZZLE_FLASH_AREA, MEASURED_MUZZLE_FLASH);
   EXPECT_EQ(BYDO_SILHOUETTE_AREA, MEASURED_BYDO_SILHOUETTE);
   EXPECT_EQ(SHIP_SILHOUETTE_AREA, MEASURED_SHIP_SILHOUETTE);
+}
+
+/**
+ * Given the melee spark of the design: two frames of 9 by 9 pixels, 70 ms each
+ * When the constants of the spark are read
+ * Then they say the same
+ */
+TEST(EffectConstants, TheMeleeSparkIsTheSparkOfTheDesign) {
+  EXPECT_EQ(MELEE_IMPACT.standard.frames.size(), 2U);
+  EXPECT_EQ(MELEE_IMPACT.standard.frames.front().width,
+            MELEE_IMPACT_DESIGN_SIZE);
+  EXPECT_EQ(MELEE_IMPACT.standard.frames.front().height,
+            MELEE_IMPACT_DESIGN_SIZE);
+  EXPECT_EQ(MELEE_IMPACT.standard.frameDuration,
+            std::chrono::milliseconds(MELEE_IMPACT_DESIGN_FRAME_MS));
+}
+
+/**
+ * Given the effect sheet as shipped
+ * When the spark is compared with its version without flash
+ * Then only the bright core pixel of its first frame differs
+ */
+TEST(EffectConstants, TheMeleeSparkWithoutFlashLosesOnlyItsCore) {
+  const sf::Image sheet = shippedSheet(EFFECT_SHEET_ID);
+
+  EXPECT_EQ(changeOf(sheet, MELEE_IMPACT),
+            (Change{.pixels = MEASURED_MELEE_IMPACT_FLASH,
+                    .frames = MEASURED_MELEE_IMPACT_FLASH_FRAMES}));
+  EXPECT_TRUE(
+      showsColor(sheet, MELEE_IMPACT.standard.frames.front(), ENEMY_SHOT_CORE));
+  EXPECT_FALSE(showsColor(sheet, MELEE_IMPACT.withoutFlash.frames.front(),
+                          ENEMY_SHOT_CORE));
+  EXPECT_TRUE(showsColor(sheet, MELEE_IMPACT.withoutFlash.frames.front(),
+                         ENEMY_SHOT_MID));
 }

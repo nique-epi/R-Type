@@ -76,7 +76,7 @@ The game and the squadron of the title screen show the two frames in turn, each 
 
 ## The effect sheet
 
-`sprites/effects.png` is 418 × 234 pixels, laid out like the entity sheet: native size, one row per effect, frames and rows 2 pixels apart, transparent outside the frames. Each effect has two rows of as many frames: the standard one, then the one played when the player turns REDUCE FLASHES on, which shows no white.
+`sprites/effects.png` is 418 × 256 pixels, laid out like the entity sheet: native size, one row per effect, frames and rows 2 pixels apart, transparent outside the frames. Each effect has two rows of as many frames: the standard one, then the one played when the player turns REDUCE FLASHES on, which shows no white.
 
 | Effect | Frames | Frame size | Frame time | Top of the standard row, then of the row without flash |
 |---|---|---|---|---|
@@ -85,8 +85,9 @@ The game and the squadron of the title screen show the two frames in turn, each 
 | Impact of a missile | 3 | 10 × 10 | 50 ms | 176, 188 |
 | Muzzle flash of a player missile, cyan | 2 | 7 × 7 | 50 ms | 200, 209 |
 | Muzzle flash of an enemy missile, orange | 2 | 7 × 7 | 50 ms | 218, 227 |
+| Hit spark of a melee hit, no outline | 2 | 9 × 9 | 70 ms | 236, 247 |
 
-Without flash, the Bydo explosion starts on the Bydo in its own colors instead of its lilac silhouette, the fireballs and the impact turn their white to yellow, and a muzzle flash shows its smaller frame twice. The sheet was generated from the drafts of the animation proposal, the same drawings at the same size; the ship explosion lays its three fireballs on each frame, so the client plays one animation for it. The rows are written once, in `src/client/Rendering/Effects/EffectConstants.hpp`, each computed under the previous one, and `client_animation_tests` checks them against the shipped sheet: every frame lies inside it, shows a visible pixel, cuts no drawing and overlaps no other, and no frame without flash shows the white of the explosions (`#fffbe8`). The sheet is listed in `gameAssets()` only.
+Without flash, the Bydo explosion starts on the Bydo in its own colors instead of its lilac silhouette, the fireballs and the impact turn their white to yellow, a muzzle flash shows its smaller frame twice, and the melee spark loses the bright core of its first frame (`#fff2e0` becomes `#ffb36b`). The spark is drawn in the design system "R-Type — New mobs" and no code plays it yet. The sheet was generated from the drafts of the animation proposal, the same drawings at the same size; the ship explosion lays its three fireballs on each frame, so the client plays one animation for it. The rows are written once, in `src/client/Rendering/Effects/EffectConstants.hpp`, each computed under the previous one, and `client_animation_tests` checks them against the shipped sheet: every frame lies inside it, shows a visible pixel, cuts no drawing and overlaps no other, and no frame without flash shows the white of the explosions (`#fffbe8`). The sheet is listed in `gameAssets()` only.
 
 ## The HUD sheet
 

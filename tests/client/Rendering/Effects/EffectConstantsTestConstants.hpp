@@ -5,10 +5,17 @@
 #include "EffectConstants.hpp"
 
 /** @brief Every effect of the effect sheet, each with its two versions. */
-constexpr std::array ALL_EFFECTS{
-    rtype::client::BYDO_EXPLOSION, rtype::client::SHIP_EXPLOSION,
-    rtype::client::IMPACT, rtype::client::PLAYER_MUZZLE_FLASH,
-    rtype::client::ENEMY_MUZZLE_FLASH};
+constexpr std::array ALL_EFFECTS{rtype::client::BYDO_EXPLOSION,
+                                 rtype::client::SHIP_EXPLOSION,
+                                 rtype::client::IMPACT,
+                                 rtype::client::PLAYER_MUZZLE_FLASH,
+                                 rtype::client::ENEMY_MUZZLE_FLASH,
+                                 rtype::client::MELEE_IMPACT};
+
+/** @brief The bright core of an enemy shot and the color that replaces it
+ * without flash. */
+constexpr sf::Color ENEMY_SHOT_CORE(255, 242, 224);
+constexpr sf::Color ENEMY_SHOT_MID(255, 179, 107);
 
 /** @brief The white at the heart of an explosion, #fffbe8, which no version
  * without flash may show. */
@@ -23,6 +30,14 @@ constexpr int MEASURED_BYDO_EXPLOSION_FLASH_FRAMES = 1;
 constexpr int MEASURED_SHIP_EXPLOSION_FLASH = 23;
 constexpr int MEASURED_SHIP_EXPLOSION_FLASH_FRAMES = 8;
 constexpr int MEASURED_IMPACT_FLASH = 6;
+
+/** @brief The melee spark of the design shows one pixel of the bright core of
+ * an enemy shot, #fff2e0, in its first frame, and the version without flash
+ * shows #ffb36b there. */
+constexpr int MEASURED_MELEE_IMPACT_FLASH = 1;
+constexpr int MEASURED_MELEE_IMPACT_FLASH_FRAMES = 1;
+constexpr int MELEE_IMPACT_DESIGN_SIZE = 9;
+constexpr int MELEE_IMPACT_DESIGN_FRAME_MS = 70;
 constexpr int MEASURED_IMPACT_FLASH_FRAMES = 2;
 constexpr int MEASURED_MUZZLE_FLASH = 12;
 constexpr int MEASURED_MUZZLE_FLASH_FRAMES = 1;
