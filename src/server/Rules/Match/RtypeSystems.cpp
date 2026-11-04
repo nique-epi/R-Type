@@ -3,6 +3,7 @@
 #include "BydoControlSystem.hpp"
 #include "CollisionSystem.hpp"
 #include "EventBus.hpp"
+#include "HurtZoneSystem.hpp"
 #include "MovementSystem.hpp"
 #include "PatternSystem.hpp"
 #include "PlayfieldExitSystem.hpp"
@@ -19,6 +20,8 @@ void addRtypeSystems(engine::SystemScheduler& systems,
   systems.add(std::make_unique<game::MovementSystem>(), MOVEMENT_SYSTEM_NAME);
   systems.add(std::make_unique<game::PlayfieldExitSystem>(events),
               PLAYFIELD_EXIT_SYSTEM_NAME);
+  systems.add(std::make_unique<game::HurtZoneSystem>(events),
+              HURT_ZONE_SYSTEM_NAME);
   systems.add(std::make_unique<game::CollisionSystem>(events),
               COLLISION_SYSTEM_NAME);
 }
