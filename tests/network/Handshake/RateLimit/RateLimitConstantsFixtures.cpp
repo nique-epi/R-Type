@@ -41,9 +41,13 @@ std::vector<std::chrono::nanoseconds> joiningClientTimes(
   return times;
 }
 
-std::vector<std::chrono::nanoseconds> answersAfterAStall() {
-  return std::vector<std::chrono::nanoseconds>(
-      requestTimes(CONNECTION_ATTEMPT_TIMEOUT).size());
+std::vector<std::chrono::nanoseconds> stalledClientTimes() {
+  std::vector<std::chrono::nanoseconds> times =
+      requestTimes(CONNECTION_ATTEMPT_TIMEOUT);
+  const std::chrono::nanoseconds answers = times.back() + CHALLENGE_ROUND_TRIP;
+  const std::size_t requestCount = times.size();
+  times.insert(times.end(), requestCount, answers);
+  return times;
 }
 
 std::vector<std::chrono::nanoseconds> playerTimes(

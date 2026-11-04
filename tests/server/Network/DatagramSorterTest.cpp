@@ -556,10 +556,10 @@ TEST_F(DatagramSorterLogFixture, WritesTheNextLineOnceTheIntervalIsOver) {
 
 /**
  * Given a sorter that admitted nobody
- * When a stranger sends eleven connection requests at once
- * Then ten reach the request queue: the eleventh is over its limit
+ * When a stranger sends twelve connection requests at once
+ * Then eleven reach the request queue: the twelfth is over its limit
  */
-TEST_F(DatagramSorterFixture, PlacesNoMoreThanTenRequestsOfAStrangerAtOnce) {
+TEST_F(DatagramSorterFixture, PlacesNoMoreThanElevenRequestsOfAStrangerAtOnce) {
   sortRepeatedly(stranger(), requestDatagram(), REQUESTS_PLACED_AT_ONCE + 1);
 
   EXPECT_EQ(drainRequests().size(), REQUESTS_PLACED_AT_ONCE);
@@ -668,8 +668,9 @@ TEST_F(DatagramSorterFixture, KeepsTheBanOfAPlayerAdmittedAgainWithItsToken) {
 
 /**
  * Given a sorter that admitted nobody
- * When a stranger sends eleven connection requests of another version at once
- * Then ten reach the request queue: the refusals are limited like the requests
+ * When a stranger sends twelve connection requests of another version at once
+ * Then eleven reach the request queue: the refusals are limited like the
+ * requests
  */
 TEST_F(DatagramSorterFixture, LimitsTheDatagramsOfAnotherVersionLikeRequests) {
   rtype::network::PacketHeader header;

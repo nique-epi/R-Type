@@ -4,7 +4,11 @@
 
 namespace rtype::network::testing {
 
-/** @brief The round trip after which a joining client answers a challenge. */
+/**
+ * @brief The round trip after which a joining client answers a challenge. A
+ * client whose server stalled answers all its challenges a round trip after
+ * its last request too, the moment its allowance has the least room left.
+ */
 constexpr std::chrono::milliseconds CHALLENGE_ROUND_TRIP{1};
 
 /**

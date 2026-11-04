@@ -49,10 +49,11 @@ constexpr auto REQUESTS_BEFORE_GIVING_UP = static_cast<std::size_t>(
  * @brief The connection requests one address and port may send, from the pace
  * of a joining client: DATAGRAMS_PER_REQUEST_INTERVAL every
  * CONNECTION_REQUEST_INTERVAL, so one every 250 ms; at once, the answers to
- * the REQUESTS_BEFORE_GIVING_UP requests of an attempt after a stall: 10.
- * Twenty drops within BAN_WINDOW ban the sender.
+ * the REQUESTS_BEFORE_GIVING_UP requests of an attempt after a stall, and the
+ * request sent just before them, which the allowance still counts: 11. Twenty
+ * drops within BAN_WINDOW ban the sender.
  */
-constexpr std::size_t REQUEST_BURST = REQUESTS_BEFORE_GIVING_UP;
+constexpr std::size_t REQUEST_BURST = REQUESTS_BEFORE_GIVING_UP + 1;
 constexpr std::size_t REQUEST_DROPS_BEFORE_BAN = 20;
 constexpr RateLimit REQUEST_RATE_LIMIT{
     .interval = std::chrono::nanoseconds{CONNECTION_REQUEST_INTERVAL} /

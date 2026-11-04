@@ -7,9 +7,9 @@
 
 /**
  * @brief The connection requests one address and port places at once, from
- * the table of limits of the protocol page: ten.
+ * the table of limits of the protocol page: eleven.
  */
-constexpr std::size_t REQUESTS_PLACED_AT_ONCE = 10;
+constexpr std::size_t REQUESTS_PLACED_AT_ONCE = 11;
 
 /**
  * @brief The datagrams one player places at once with its token, from the

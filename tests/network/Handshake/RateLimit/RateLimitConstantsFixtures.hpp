@@ -16,10 +16,12 @@ namespace rtype::network::testing {
     std::chrono::nanoseconds duration);
 
 /**
- * @returns When a client sends its answers after a stall of the server: one
- * for each request of an attempt, all at once.
+ * @returns When a client whose server stalls sends: a request every
+ * CONNECTION_REQUEST_INTERVAL until CONNECTION_ATTEMPT_TIMEOUT, then, all
+ * CHALLENGE_ROUND_TRIP after the last one, the answer to the challenge of each
+ * of them.
  */
-[[nodiscard]] std::vector<std::chrono::nanoseconds> answersAfterAStall();
+[[nodiscard]] std::vector<std::chrono::nanoseconds> stalledClientTimes();
 
 /**
  * @returns When a player sends for @p duration: PLAYER_INPUTS_PER_SECOND

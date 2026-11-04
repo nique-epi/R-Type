@@ -15,12 +15,12 @@ using rtype::network::PLAYER_INPUTS_PER_SECOND;
 using rtype::network::PLAYER_RATE_LIMIT;
 using rtype::network::REQUEST_RATE_LIMIT;
 using rtype::network::testing::allowedCount;
-using rtype::network::testing::answersAfterAStall;
 using rtype::network::testing::FLOOD_DATAGRAM_COUNT;
 using rtype::network::testing::joiningClientTimes;
 using rtype::network::testing::LONG_RUN_DURATION;
 using rtype::network::testing::playerTimes;
 using rtype::network::testing::PROTOCOL_BAN_DURATION;
+using rtype::network::testing::stalledClientTimes;
 using rtype::network::testing::verdictsAt;
 
 /**
@@ -50,13 +50,13 @@ TEST(RateLimitConstants, LetsAClientThatKeepsToThePaceOfTheProtocolThrough) {
 }
 
 /**
- * Given a client whose challenges piled up during a stall of the server
- * When it sends its answers in the same tick, one for each request of its
- * attempt
- * Then all of them are allowed
+ * Given a client whose server stalls until just before the client gives up
+ * When it sends a request every 500 ms for 5 s, then answers the challenge of
+ * each of them at once, a round trip after the last one
+ * Then every request and every answer is allowed
  */
 TEST(RateLimitConstants, LetsTheAnswersOfAClientThroughAfterAStall) {
-  const std::vector<std::chrono::nanoseconds> times = answersAfterAStall();
+  const std::vector<std::chrono::nanoseconds> times = stalledClientTimes();
 
   EXPECT_EQ(allowedCount(verdictsAt(REQUEST_RATE_LIMIT, times)), times.size());
 }
