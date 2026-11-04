@@ -27,7 +27,7 @@ std::vector<std::uint32_t> ticksSentTo(
     const network::Endpoint& player) {
   std::vector<std::uint32_t> ticks;
   for (const network::OutgoingDatagram& datagram : sentTo(sent, player)) {
-    ticks.push_back(onlyMessageIn<network::WorldState>(datagram).tick);
+    ticks.push_back(fullStateIn(datagram).tick);
   }
   return ticks;
 }

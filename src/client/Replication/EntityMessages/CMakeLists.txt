@@ -2,6 +2,7 @@ add_library(rtype_client_entity_messages STATIC
   EnemyActionHistory.cpp
   EntityMessageQueue.cpp
   GameEventHistory.cpp
+  WorldStateAssembler.cpp
 )
 
 target_include_directories(rtype_client_entity_messages PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
@@ -12,6 +13,7 @@ target_link_libraries(rtype_client_entity_messages
     rtype_client_waiting_room
     rtype_engine_time
     rtype_network_enemy_action
+    rtype_logging
     rtype_network_entity_destroyed
     rtype_network_entity_spawned
     rtype_network_game_ended
@@ -22,6 +24,7 @@ target_link_libraries(rtype_client_entity_messages
     rtype_network_protocol
   PRIVATE
     rtype_network_world_state_codec
+    rtype_network_world_state_delta
 )
 
 rtype_enable_warnings(rtype_client_entity_messages)

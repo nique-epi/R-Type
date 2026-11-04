@@ -209,7 +209,7 @@ constexpr std::uint16_t SOME_SENDER_PORT = 50000;
  * the byte after the last, and the largest byte.
  */
 constexpr std::uint8_t TYPE_BELOW_THE_FIRST = 0;
-constexpr std::uint8_t TYPE_ABOVE_THE_LAST = 21;
+constexpr std::uint8_t TYPE_ABOVE_THE_LAST = 22;
 constexpr std::uint8_t LARGEST_TYPE_BYTE = 255;
 
 /**
@@ -236,5 +236,10 @@ constexpr std::string_view REJECTED_MESSAGE_LINE_TEXT = "a message of type";
  * bytes of the packet header and the 3 of the message prefix.
  */
 constexpr std::size_t DATAGRAM_PAYLOAD_LIMIT = 1175;
+
+/**
+ * @brief Words of the log line about a message whose handler threw.
+ */
+constexpr std::string_view FAILED_HANDLER_LINE_TEXT = "its handler threw";
 
 }  // namespace rtype::network::testing

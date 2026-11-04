@@ -331,6 +331,9 @@ constexpr std::string_view ACTIONS_FIELD = "actions";
 constexpr std::string_view MOTION_FIELD = "motion";
 constexpr std::string_view PLAYER_COUNT_FIELD = "playerCount";
 constexpr std::string_view RANK_FIELD = "rank";
+constexpr std::string_view PART_INDEX_FIELD = "partIndex";
+constexpr std::string_view PART_COUNT_FIELD = "partCount";
+constexpr std::string_view BASE_DISTANCE_FIELD = "baseDistance";
 
 /**
  * @brief Wire steps in one logical unit: a coordinate is sent in eighths of a
@@ -347,6 +350,47 @@ static_assert((WORLD_STATE_PAYLOAD_LIMIT - WORLD_STATE_FIXED_SIZE) /
                       ENTITY_STATE_WIRE_SIZE <=
                   std::numeric_limits<std::uint8_t>::max(),
               "entityCount is one byte: it must hold what a datagram fits");
+
+/**
+ * @brief The most ticks a DeltaWorldState reaches back to its reference: a
+ * server never builds a delta on a state older than this, and a receiver
+ * refuses a larger distance. 60 ticks are one second.
+ */
+constexpr std::uint8_t MAXIMUM_REFERENCE_DISTANCE = 60;
+
+/**
+ * @brief The baseDistance of a DeltaWorldState that has no reference: it lists
+ * every entity, and a receiver needs no earlier state to read it.
+ */
+constexpr std::uint8_t NO_REFERENCE_DISTANCE = 0;
+
+/**
+ * @brief The most datagrams one DeltaWorldState is split into. A receiver
+ * keeps the parts of a tick until the next tick comes, so this bounds what it
+ * holds.
+ */
+constexpr std::uint8_t MAXIMUM_DELTA_PARTS = 16;
+
+/**
+ * @brief Bytes of a removed entity in a DeltaWorldState: its id.
+ */
+constexpr std::size_t REMOVED_ENTITY_WIRE_SIZE = UINT32_WIRE_SIZE;
+
+/**
+ * @brief Bytes of a DeltaWorldState that do not depend on its players,
+ * changed and removed entities: tick, baseDistance, partIndex, partCount,
+ * playerCount, changedCount and removedCount.
+ */
+constexpr std::size_t DELTA_WORLD_STATE_FIXED_SIZE =
+    UINT32_WIRE_SIZE + UINT8_WIRE_SIZE + UINT8_WIRE_SIZE + UINT8_WIRE_SIZE +
+    UINT8_WIRE_SIZE + UINT8_WIRE_SIZE + UINT8_WIRE_SIZE;
+
+/**
+ * @brief The most changed or removed entities one DeltaWorldState holds: each
+ * count is one byte.
+ */
+constexpr std::size_t MAXIMUM_ENTITIES_PER_DELTA_LIST =
+    std::numeric_limits<std::uint8_t>::max();
 
 /**
  * @brief The smallest and the largest value of an entity type on the wire.

@@ -1,8 +1,10 @@
 #include "EntityMessageQueue.hpp"
 #include <algorithm>
 #include <iterator>
+#include <optional>
 #include <utility>
 #include <vector>
+#include "DeltaWorldState.hpp"
 #include "EnemyAction.hpp"
 #include "EntityDestroyed.hpp"
 #include "EntityMessage.hpp"
@@ -39,12 +41,7 @@ EntityMessageQueue::EntityMessageQueue(network::MessageDispatcher& dispatcher,
                                        WaitingRoom& room,
                                        GameLoadedReminder& reminder)
     : room_(&room), reminder_(&reminder) {
-  dispatcher.registerHandler<network::WorldState>(
-      [this](const network::MessageOrigin&, const network::WorldState& state) {
-        reminder_->worldStateArrived();
-        room_->startGame();
-        keep(state);
-      });
+  registerStateHandlers(dispatcher);
   keepEachOf<network::EntitySpawned, network::EntityDestroyed,
              network::PlayerLeft>(
       dispatcher, [this](EntityMessage message) { keep(std::move(message)); });
@@ -70,6 +67,25 @@ EntityMessageQueue::EntityMessageQueue(network::MessageDispatcher& dispatcher,
       });
 }
 
+void EntityMessageQueue::registerStateHandlers(
+    network::MessageDispatcher& dispatcher) {
+  dispatcher.registerHandler<network::WorldState>(
+      [this](const network::MessageOrigin&, const network::WorldState& state) {
+        reminder_->worldStateArrived();
+        room_->startGame();
+        keep(state);
+      });
+  dispatcher.registerHandler<network::DeltaWorldState>(
+      [this](const network::MessageOrigin&,
+             const network::DeltaWorldState& part) {
+        reminder_->worldStateArrived();
+        room_->startGame();
+        if (std::optional<network::WorldState> state = assembler_.add(part)) {
+          keep(std::move(*state));
+        }
+      });
+}
+
 void EntityMessageQueue::advance(engine::Duration elapsed) {
   gameEvents_.advance(elapsed);
   enemyActions_.advance(elapsed);
@@ -87,6 +103,7 @@ void EntityMessageQueue::sessionOpened(
 
 void EntityMessageQueue::sessionClosed() {
   messages_.clear();
+  assembler_.clear();
   gameEvents_.forget();
   enemyActions_.forget();
 }

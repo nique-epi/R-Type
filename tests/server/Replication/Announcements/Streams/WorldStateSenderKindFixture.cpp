@@ -4,6 +4,7 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include "DeltaWorldState.hpp"
 #include "EnemyKind.hpp"
 #include "Entity.hpp"
 #include "EntityType.hpp"
@@ -44,7 +45,7 @@ WorldStateSenderKindFixture::listedEntities() {
   for (std::uint32_t tick = 1; sent_.empty(); ++tick) {
     sender_.onTick(tick, components_);
   }
-  return onlyMessageIn<network::WorldState>(sent_.front()).entities;
+  return onlyMessageIn<network::DeltaWorldState>(sent_.front()).changed;
 }
 
 }  // namespace rtype::server::testing

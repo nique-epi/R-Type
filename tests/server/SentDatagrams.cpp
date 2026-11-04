@@ -8,12 +8,16 @@
 #include <string>
 #include <vector>
 #include "DatagramCodec.hpp"
+#include "DeltaWorldState.hpp"
 #include "Endpoint.hpp"
 #include "MessageFrame.hpp"
 #include "MessageType.hpp"
 #include "OutgoingDatagram.hpp"
 #include "PacketHeader.hpp"
+#include "ProtocolConstants.hpp"
+#include "SentDatagramsTestConstants.hpp"
 #include "ServerLobbyTestConstants.hpp"
+#include "WorldState.hpp"
 
 namespace rtype::server::testing {
 
@@ -40,6 +44,14 @@ network::MessageType onlyMessageTypeOf(
       network::DatagramCodec::splitMessages(datagram.payload);
   EXPECT_EQ(frames.size(), 1U);
   return static_cast<network::MessageType>(frames.at(0).type);
+}
+
+network::WorldState fullStateIn(const network::OutgoingDatagram& datagram) {
+  const auto delta = onlyMessageIn<network::DeltaWorldState>(datagram);
+  EXPECT_EQ(delta.baseDistance, network::NO_REFERENCE_DISTANCE);
+  EXPECT_EQ(delta.partCount, ONE_PART);
+  return network::WorldState{
+      .tick = delta.tick, .players = delta.players, .entities = delta.changed};
 }
 
 network::PacketHeader headerOf(const network::OutgoingDatagram& datagram) {

@@ -59,11 +59,10 @@ std::uint8_t GameInstanceLivesFixture::livesOf(std::size_t index) {
 network::PlayerState GameInstanceLivesFixture::newestStateOf(
     std::size_t index) {
   const std::vector<network::OutgoingDatagram> states =
-      ofType(network::MessageType::WorldState, sentTo(index));
+      ofType(network::MessageType::DeltaWorldState, sentTo(index));
   const std::vector<network::PlayerState> players =
-      states.empty()
-          ? std::vector<network::PlayerState>{}
-          : onlyMessageIn<network::WorldState>(states.back()).players;
+      states.empty() ? std::vector<network::PlayerState>{}
+                     : fullStateIn(states.back()).players;
   const auto listed = std::ranges::find(players, playerAt(index).playerNumber,
                                         &network::PlayerState::playerNumber);
   EXPECT_NE(listed, players.end());

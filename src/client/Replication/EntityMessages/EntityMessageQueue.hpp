@@ -12,21 +12,24 @@
 #include "MessageDispatcher.hpp"
 #include "TimeConstants.hpp"
 #include "WaitingRoom.hpp"
+#include "WorldStateAssembler.hpp"
 
 namespace rtype::client {
 
 /**
  * @brief The entity messages of the game: from the start of the game, it keeps
  * the EntitySpawned, WorldState, EntityDestroyed and every copy of PlayerLeft
- * of the server, and the first copy of each GameEvent (see GameEventHistory),
- * in the order they arrived, until drainEntityMessages() hands them over;
- * leaving the session drops those not handed over and forgets the events seen.
- * The game screen drains them every frame, behind the options too, so they
- * never pile up for longer than the loading of the game.
+ * of the server, with each state of the server rebuilt in full from its
+ * DeltaWorldState parts by the WorldStateAssembler, and the first copy of each
+ * GameEvent (see GameEventHistory), in the order they arrived, until
+ * drainEntityMessages() hands them over; leaving the session drops those not
+ * handed over and forgets the events seen. The game screen drains them every
+ * frame, behind the options too, so they never pile up for longer than the
+ * loading of the game.
  *
- * The game starts with a GameStarted, or with a WorldState when the
- * GameStarted was lost: the WorldState tells the waiting room. The first
- * GameEnded of a game goes to the game screen with the messages, and the
+ * The game starts with a GameStarted, or with a WorldState or a
+ * DeltaWorldState when the GameStarted was lost: it tells the waiting room. The
+ * first GameEnded of a game goes to the game screen with the messages, and the
  * session is no longer in a game; the copies the server repeats are dropped.
  * Before the game started nothing is kept, since the first WorldState of the
  * game lists every entity anyway.
@@ -59,6 +62,10 @@ class EntityMessageQueue final : public IEntityMessageSource,
   void sessionHeld(engine::Duration elapsed) override;
 
  private:
+  /** @brief Registers the handlers of the two messages that carry a state: a
+   * WorldState is kept as it is, a DeltaWorldState once the assembler rebuilt
+   * it. */
+  void registerStateHandlers(network::MessageDispatcher& dispatcher);
   /** @brief Keeps @p message until the next drain, once the game started. */
   void keep(EntityMessage message);
 
@@ -67,6 +74,7 @@ class EntityMessageQueue final : public IEntityMessageSource,
   std::vector<EntityMessage> messages_;
   GameEventHistory gameEvents_;
   EnemyActionHistory enemyActions_;
+  WorldStateAssembler assembler_;
 };
 
 }  // namespace rtype::client
