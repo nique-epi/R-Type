@@ -16,7 +16,7 @@ namespace rtype::network {
  * comes no earlier than burst - 1 intervals before the theoretical arrival
  * time, which then moves one interval past the later of that time and
  * @p now. Otherwise it is dropped and counted in the window of drops, which
- * its first drop opens for BAN_WINDOW; the drop that reaches dropsBeforeBan
+ * its first drop opens for dropWindow; the drop that reaches dropsBeforeBan
  * bans the sender until @p now + banDuration and forgets what it spent, so a
  * whole burst waits at the end of the ban. @p now never goes back from one
  * call to the next.

@@ -28,6 +28,11 @@ struct SortedReadyState {
  * whether any tick was handed @p readyState, among the datagrams of the players
  * or the requests.
  */
+[[nodiscard]] SortedReadyState sortReadyStateThenRequest(
+    const std::function<void(rtype::server::ServerApplication&,
+                             const rtype::network::Endpoint&)>& prepare,
+    const std::vector<std::byte>& readyState);
+
 /**
  * @brief Runs a server on the loopback address. One client sends it
  * FLOOD_REQUESTS_AROUND_A_CLIENT connection requests, a second client one
@@ -37,8 +42,3 @@ struct SortedReadyState {
  * THREAD_TIMEOUT.
  */
 [[nodiscard]] bool requestOfAClientReachesATickThroughAFlood();
-
-[[nodiscard]] SortedReadyState sortReadyStateThenRequest(
-    const std::function<void(rtype::server::ServerApplication&,
-                             const rtype::network::Endpoint&)>& prepare,
-    const std::vector<std::byte>& readyState);

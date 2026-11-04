@@ -55,9 +55,9 @@ AllowanceSlot& slotToReuse(std::span<AllowanceSlot> row,
 }
 
 AllowanceSlot& claim(AllowanceSlot& slot, const Endpoint& sender) {
-  slot = AllowanceSlot{.sender = sender,
-                       .lastSeen = std::nullopt,
-                       .allowance = SenderAllowance{}};
+  slot.sender = sender;
+  slot.lastSeen = std::nullopt;
+  slot.allowance = SenderAllowance{};
   return slot;
 }
 

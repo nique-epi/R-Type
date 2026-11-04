@@ -4,7 +4,6 @@
 #include <optional>
 #include "AllowanceVerdict.hpp"
 #include "RateLimit.hpp"
-#include "RateLimitConstants.hpp"
 #include "SenderAllowance.hpp"
 
 namespace rtype::network {
@@ -34,9 +33,10 @@ void accept(SenderAllowance& allowance, const RateLimit& limit,
       limit.interval;
 }
 
-void countDrop(SenderAllowance& allowance, std::chrono::nanoseconds now) {
+void countDrop(SenderAllowance& allowance, const RateLimit& limit,
+               std::chrono::nanoseconds now) {
   if (!allowance.dropWindowEnd.has_value() || now >= *allowance.dropWindowEnd) {
-    allowance.dropWindowEnd = now + BAN_WINDOW;
+    allowance.dropWindowEnd = now + limit.dropWindow;
     allowance.dropsInWindow = 0;
   }
   ++allowance.dropsInWindow;
@@ -66,7 +66,7 @@ AllowanceVerdict spendAllowance(SenderAllowance& allowance,
     accept(allowance, limit, now);
     return AllowanceVerdict::Allowed;
   }
-  countDrop(allowance, now);
+  countDrop(allowance, limit, now);
   if (!reachesBan(allowance, limit)) {
     return AllowanceVerdict::OverCap;
   }

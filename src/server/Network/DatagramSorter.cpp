@@ -2,7 +2,6 @@
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>
-#include <functional>
 #include <optional>
 #include <span>
 #include <string_view>
@@ -78,6 +77,17 @@ std::optional<std::string_view> dropReasonOf(
   return std::nullopt;
 }
 
+/** @returns Whether @p verdict lets the datagram of @p sender through; drops
+ * it in @p drops, with the reason, otherwise. */
+bool keptByLimit(network::AllowanceVerdict verdict,
+                 const network::Endpoint& sender, DatagramDrops& drops) {
+  const std::optional<std::string_view> reason = dropReasonOf(verdict);
+  if (reason.has_value()) {
+    drops.drop(sender, *reason);
+  }
+  return !reason.has_value();
+}
+
 }  // namespace
 
 DatagramSorter::DatagramSorter(DatagramQueues destinations,
@@ -104,7 +114,7 @@ void DatagramSorter::sort(const network::Endpoint& sender,
     return;
   }
   sortSpoken(SpokenDatagram{
-      .sender = std::cref(sender),
+      .sender = sender,
       .header = header,
       .holdsRequest = types->test(
           static_cast<std::size_t>(network::MessageType::ConnectionRequest)),
@@ -124,7 +134,7 @@ void DatagramSorter::sortSpoken(const SpokenDatagram& datagram) {
     drops_->drop(sender, STRANGER_DROP_REASON);
     return;
   }
-  if (keptByLimit(spendAllowanceOf(datagram, player), sender)) {
+  if (keptByLimit(spendAllowanceOf(datagram, player), sender, *drops_)) {
     pushCopy(datagram.holdsRequest ? *destinations_.connectionRequests
                                    : *destinations_.players,
              sender, datagram.bytes);
@@ -141,15 +151,6 @@ network::AllowanceVerdict DatagramSorter::spendAllowanceOf(
   return requests_.spend(datagram.sender.get(), clock_->now());
 }
 
-bool DatagramSorter::keptByLimit(network::AllowanceVerdict verdict,
-                                 const network::Endpoint& sender) {
-  const std::optional<std::string_view> reason = dropReasonOf(verdict);
-  if (reason.has_value()) {
-    drops_->drop(sender, *reason);
-  }
-  return !reason.has_value();
-}
-
 void DatagramSorter::sortForeignHeader(const network::Endpoint& sender,
                                        const network::PacketHeader& header,
                                        std::span<const std::byte> datagram) {
@@ -157,7 +158,7 @@ void DatagramSorter::sortForeignHeader(const network::Endpoint& sender,
     drops_->drop(sender, network::FOREIGN_HEADER_DROP_REASON);
     return;
   }
-  if (keptByLimit(requests_.spend(sender, clock_->now()), sender)) {
+  if (keptByLimit(requests_.spend(sender, clock_->now()), sender, *drops_)) {
     pushCopy(*destinations_.connectionRequests, sender, datagram);
   }
 }

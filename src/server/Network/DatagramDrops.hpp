@@ -54,6 +54,9 @@ class DatagramDrops {
   [[nodiscard]] std::optional<network::Endpoint> takeWrongTokenSender();
 
  private:
+  /** @brief Logs one datagram of @p sender dropped for @p reason. */
+  void logDrop(const network::Endpoint& sender, std::string_view reason);
+
   const engine::IClock* clock_;
   std::atomic<std::size_t> droppedCount_{0};
   std::atomic<std::size_t> wrongTokenCount_{0};

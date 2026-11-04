@@ -5,27 +5,26 @@
 #include "RateLimitFixtures.hpp"
 #include "RateLimitTestConstants.hpp"
 #include "SenderAllowance.hpp"
+#include "TimeTestConstants.hpp"
 
 using rtype::network::AllowanceVerdict;
 using rtype::network::SenderAllowance;
 using rtype::network::spendAllowance;
 using rtype::network::testing::bannedAtStart;
-using rtype::network::testing::bannedAtStartUnder;
 using rtype::network::testing::burstSpentAtStart;
 using rtype::network::testing::FLOOD_DATAGRAM_COUNT;
 using rtype::network::testing::HALFWAY_THROUGH_THE_BAN;
+using rtype::network::testing::HALFWAY_THROUGH_THE_DROP_WINDOW;
 using rtype::network::testing::LONG_SILENCE;
-using rtype::network::testing::ONE_NANOSECOND;
-using rtype::network::testing::ONE_WINDOW;
 using rtype::network::testing::SHORT_BAN_DURATION;
 using rtype::network::testing::SHORT_BAN_RATE_LIMIT;
-using rtype::network::testing::spendBurstUnder;
 using rtype::network::testing::spendEveryInterval;
 using rtype::network::testing::spendTimes;
 using rtype::network::testing::START;
 using rtype::network::testing::STEADY_DATAGRAM_COUNT;
 using rtype::network::testing::TEST_BAN_DURATION;
 using rtype::network::testing::TEST_BURST;
+using rtype::network::testing::TEST_DROP_WINDOW;
 using rtype::network::testing::TEST_DROPS_BEFORE_BAN;
 using rtype::network::testing::TEST_INTERVAL;
 using rtype::network::testing::TEST_RATE_LIMIT;
@@ -135,8 +134,9 @@ TEST(AllowanceSpending, BansOnTheDropThatReachesTheLimit) {
 }
 
 /**
- * Given a sender dropped once at the start, which opened a window of a second
- * When, one second later, it spends a burst and sends one datagram more
+ * Given a sender dropped once at the start, which opened a window of drops of
+ * two seconds
+ * When, two seconds later, it spends a burst and sends one datagram more
  * Then that datagram is only dropped: the window of the first drop had ended
  */
 TEST(AllowanceSpending, CountsTheDropsOfEachWindowApart) {
@@ -144,9 +144,25 @@ TEST(AllowanceSpending, CountsTheDropsOfEachWindowApart) {
   static_cast<void>(spendAllowance(allowance, TEST_RATE_LIMIT, START));
 
   const std::vector<AllowanceVerdict> verdicts =
-      spendTimes(allowance, TEST_BURST + 1, START + ONE_WINDOW);
+      spendTimes(allowance, TEST_BURST + 1, START + TEST_DROP_WINDOW);
 
   EXPECT_EQ(verdicts.back(), AllowanceVerdict::OverCap);
+}
+
+/**
+ * Given a sender dropped once at the start, which opened a window of drops of
+ * two seconds, twice BAN_WINDOW
+ * When, one second later, it spends a burst and sends one datagram more
+ * Then that datagram starts a ban: the window of its limit had not ended
+ */
+TEST(AllowanceSpending, CountsTheDropsWithinTheWindowOfItsLimit) {
+  SenderAllowance allowance = burstSpentAtStart();
+  static_cast<void>(spendAllowance(allowance, TEST_RATE_LIMIT, START));
+
+  const std::vector<AllowanceVerdict> verdicts = spendTimes(
+      allowance, TEST_BURST + 1, START + HALFWAY_THROUGH_THE_DROP_WINDOW);
+
+  EXPECT_EQ(verdicts.back(), AllowanceVerdict::NewlyBanned);
 }
 
 /**
@@ -197,10 +213,9 @@ TEST(AllowanceSpending, GivesAWholeBurstBackWhenTheBanEnds) {
  * Then all three are allowed: a ban forgets what the sender spent
  */
 TEST(AllowanceSpending, GivesAWholeBurstBackWhenABanShorterThanItsRefillEnds) {
-  SenderAllowance allowance = bannedAtStartUnder(SHORT_BAN_RATE_LIMIT);
+  SenderAllowance allowance = bannedAtStart(SHORT_BAN_RATE_LIMIT);
 
-  EXPECT_EQ(spendBurstUnder(allowance, SHORT_BAN_RATE_LIMIT,
-                            START + SHORT_BAN_DURATION),
+  EXPECT_EQ(spendTimes(allowance, TEST_BURST, START + SHORT_BAN_DURATION),
             (std::vector{AllowanceVerdict::Allowed, AllowanceVerdict::Allowed,
                          AllowanceVerdict::Allowed}));
 }

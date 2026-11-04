@@ -6,6 +6,7 @@
 #include <vector>
 #include "AllowanceVerdict.hpp"
 #include "Endpoint.hpp"
+#include "HandshakeTestConstants.hpp"
 #include "RateLimit.hpp"
 #include "RateLimitTestConstants.hpp"
 #include "RequestAllowances.hpp"
@@ -32,27 +33,16 @@ namespace rtype::network::testing {
 [[nodiscard]] SenderAllowance burstSpentAtStart();
 
 /**
- * @returns An allowance banned at START: its burst, then TEST_DROPS_BEFORE_BAN
- * drops.
- */
-[[nodiscard]] SenderAllowance bannedAtStart();
-
-/**
  * @returns An allowance banned at START under @p limit: its burst, then the
  * drops that ban it.
  */
-[[nodiscard]] SenderAllowance bannedAtStartUnder(const RateLimit& limit);
+[[nodiscard]] SenderAllowance bannedAtStart(
+    const RateLimit& limit = TEST_RATE_LIMIT);
 
 /**
- * @returns The verdicts of a whole burst of @p limit spent from @p allowance,
- * all at @p now.
+ * @returns The sender of the tests of the table, SENDER_ADDRESS, on @p port.
  */
-[[nodiscard]] std::vector<AllowanceVerdict> spendBurstUnder(
-    SenderAllowance& allowance, const RateLimit& limit,
-    std::chrono::nanoseconds now);
-
-/** @returns The sender of the tests of the table, on @p port. */
-[[nodiscard]] Endpoint limitedSender(std::uint16_t port = LIMITED_SENDER_PORT);
+[[nodiscard]] Endpoint limitedSender(std::uint16_t port = SENDER_PORT);
 
 /** @returns Forged sender @p number: FORGED_ADDRESS, a port each. */
 [[nodiscard]] Endpoint forgedSender(std::size_t number);

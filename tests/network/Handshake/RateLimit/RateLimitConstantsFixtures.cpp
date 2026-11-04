@@ -8,6 +8,7 @@
 #include "RateLimit.hpp"
 #include "RateLimitConstantsTestConstants.hpp"
 #include "SenderAllowance.hpp"
+#include "TimeTestConstants.hpp"
 
 namespace rtype::network::testing {
 
@@ -24,16 +25,16 @@ std::vector<std::chrono::nanoseconds> joiningClientTimes(
 
 std::vector<std::chrono::nanoseconds> playerTimes(
     std::chrono::nanoseconds duration) {
-  const std::chrono::nanoseconds oneSecond{std::chrono::seconds{1}};
   const auto inputsPerSecond =
       static_cast<std::chrono::nanoseconds::rep>(INPUTS_PER_SECOND);
   std::vector<std::chrono::nanoseconds> times;
   for (std::chrono::nanoseconds second{0}; second < duration;
-       second += oneSecond) {
+       second += engine::testing::ONE_SECOND) {
     times.push_back(second);
     for (std::chrono::nanoseconds::rep input = 0; input < inputsPerSecond;
          ++input) {
-      times.push_back(second + (oneSecond * input / inputsPerSecond));
+      times.push_back(second +
+                      (engine::testing::ONE_SECOND * input / inputsPerSecond));
     }
   }
   return times;

@@ -75,9 +75,10 @@ class DatagramSorter {
    * @brief From now on, the datagrams of @p player that carry
    * @p sessionToken go to the player queue. Admitting a player again keeps
    * one entry: a new token replaces the old one with a fresh allowance, and
-   * the same token keeps what its datagrams spent, so asking to join again
-   * never lifts a ban. The callers admit at most the players of the game, and
-   * forget each one that leaves, so the list stays as small as the game.
+   * the same token keeps what its datagrams spent, so admitting one session
+   * twice never lifts its ban. The callers admit at most the players of the
+   * game, and forget each one that leaves, so the list stays as small as the
+   * game.
    */
   void admit(const network::Endpoint& player, std::uint64_t sessionToken);
 
@@ -118,11 +119,6 @@ class DatagramSorter {
    * and port among the requests otherwise. */
   [[nodiscard]] network::AllowanceVerdict spendAllowanceOf(
       const SpokenDatagram& datagram, AdmittedPlayer* player);
-
-  /** @returns Whether @p verdict lets the datagram of @p sender through; drops
-   * it, with the reason, otherwise. */
-  [[nodiscard]] bool keptByLimit(network::AllowanceVerdict verdict,
-                                 const network::Endpoint& sender);
 
   DatagramQueues destinations_;
   DatagramDrops* drops_;

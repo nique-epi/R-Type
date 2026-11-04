@@ -14,6 +14,7 @@
 #include "NetworkConstants.hpp"
 #include "PacketHeader.hpp"
 #include "ProtocolConstants.hpp"
+#include "RateLimitConstantsTestConstants.hpp"
 #include "ServerConstants.hpp"
 #include "ServerDatagrams.hpp"
 #include "ServerLobbyTestConstants.hpp"
@@ -22,6 +23,9 @@
 using rtype::network::Endpoint;
 using rtype::network::IncomingDatagram;
 using rtype::network::NO_SESSION_TOKEN;
+using rtype::network::testing::ANSWERS_AFTER_A_STALL;
+using rtype::network::testing::INPUTS_AT_ONCE;
+using rtype::network::testing::PROTOCOL_BAN_DURATION;
 using rtype::server::testing::DROPPED_TOGETHER_COUNT;
 using rtype::server::testing::NEXT_PROTOCOL_VERSION;
 using rtype::server::testing::OTHER_PROTOCOL_ID;
@@ -531,9 +535,7 @@ TEST_F(DatagramSorterLogFixture, LogsNothingForTheDatagramsItQueues) {
  * floods the server cannot flood the log
  */
 TEST_F(DatagramSorterLogFixture, WritesOneLineForDatagramsDroppedTogether) {
-  for (std::size_t sent = 0; sent < DROPPED_TOGETHER_COUNT; ++sent) {
-    sort(stranger(), playerReady());
-  }
+  sortRepeatedly(stranger(), playerReady(), DROPPED_TOGETHER_COUNT);
 
   EXPECT_EQ(dropLines().size(), 1U);
 }
@@ -560,10 +562,9 @@ TEST_F(DatagramSorterLogFixture, WritesTheNextLineOnceTheIntervalIsOver) {
  * Then ten reach the request queue: the eleventh is over its limit
  */
 TEST_F(DatagramSorterFixture, PlacesNoMoreThanTenRequestsOfAStrangerAtOnce) {
-  sortRepeatedly(stranger(), requestDatagram(),
-                 REQUESTS_A_CLIENT_SENDS_AT_ONCE + 1);
+  sortRepeatedly(stranger(), requestDatagram(), ANSWERS_AFTER_A_STALL + 1);
 
-  EXPECT_EQ(drainRequests().size(), REQUESTS_A_CLIENT_SENDS_AT_ONCE);
+  EXPECT_EQ(drainRequests().size(), ANSWERS_AFTER_A_STALL);
 }
 
 /**
@@ -610,9 +611,9 @@ TEST_F(DatagramSorterFixture,
   admit(player());
 
   sortRepeatedly(player(), heartbeatDatagram(playerHeader()),
-                 DATAGRAMS_A_PLAYER_SENDS_AT_ONCE + 1);
+                 INPUTS_AT_ONCE + 1);
 
-  EXPECT_EQ(drainPlayers().size(), DATAGRAMS_A_PLAYER_SENDS_AT_ONCE);
+  EXPECT_EQ(drainPlayers().size(), INPUTS_AT_ONCE);
 }
 
 /**
@@ -643,7 +644,7 @@ TEST_F(DatagramSorterFixture, LetsABannedPlayerBackOnceTheBanEnds) {
                  PLAYER_FLOOD_TO_A_BAN);
   static_cast<void>(drainPlayers());
 
-  advanceClock(WHEN_THE_BAN_ENDS);
+  advanceClock(PROTOCOL_BAN_DURATION);
   sort(player(), heartbeatDatagram(playerHeader()));
 
   EXPECT_EQ(drainPlayers().size(), 1);
@@ -676,9 +677,9 @@ TEST_F(DatagramSorterFixture, LimitsTheDatagramsOfAnotherVersionLikeRequests) {
   header.version = NEXT_PROTOCOL_VERSION;
 
   sortRepeatedly(stranger(), requestDatagram(header),
-                 REQUESTS_A_CLIENT_SENDS_AT_ONCE + 1);
+                 ANSWERS_AFTER_A_STALL + 1);
 
-  EXPECT_EQ(drainRequests().size(), REQUESTS_A_CLIENT_SENDS_AT_ONCE);
+  EXPECT_EQ(drainRequests().size(), ANSWERS_AFTER_A_STALL);
 }
 
 /**
@@ -688,8 +689,7 @@ TEST_F(DatagramSorterFixture, LimitsTheDatagramsOfAnotherVersionLikeRequests) {
  * went over the rate limit of its sender
  */
 TEST_F(DatagramSorterLogFixture, LogsWhyItDropsADatagramOverTheLimit) {
-  sortRepeatedly(stranger(), requestDatagram(),
-                 REQUESTS_A_CLIENT_SENDS_AT_ONCE + 1);
+  sortRepeatedly(stranger(), requestDatagram(), ANSWERS_AFTER_A_STALL + 1);
 
   const std::vector<std::string> lines = dropLines();
   ASSERT_EQ(lines.size(), 1U);

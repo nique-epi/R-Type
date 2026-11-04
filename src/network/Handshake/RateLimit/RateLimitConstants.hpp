@@ -9,9 +9,9 @@
 namespace rtype::network {
 
 /**
- * @brief The window the drops of a sender are counted in, opened by its first
- * drop: the drop that reaches RateLimit::dropsBeforeBan within it bans the
- * sender.
+ * @brief The window both limits below count the drops of a sender in
+ * (RateLimit::dropWindow), opened by its first drop: the drop that reaches
+ * RateLimit::dropsBeforeBan within it bans the sender.
  */
 constexpr std::chrono::seconds BAN_WINDOW{1};
 
@@ -40,6 +40,7 @@ constexpr RateLimit REQUEST_RATE_LIMIT{
         std::chrono::nanoseconds{std::chrono::seconds{1}} / REQUESTS_PER_SECOND,
     .burst = REQUEST_BURST,
     .dropsBeforeBan = REQUEST_DROPS_BEFORE_BAN,
+    .dropWindow = BAN_WINDOW,
     .banDuration = BAN_DURATION};
 
 /**
@@ -56,6 +57,7 @@ constexpr RateLimit PLAYER_RATE_LIMIT{
                 PLAYER_DATAGRAMS_PER_SECOND,
     .burst = PLAYER_BURST,
     .dropsBeforeBan = PLAYER_DROPS_BEFORE_BAN,
+    .dropWindow = BAN_WINDOW,
     .banDuration = BAN_DURATION};
 
 /**

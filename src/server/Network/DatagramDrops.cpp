@@ -21,13 +21,11 @@ DatagramDrops::DatagramDrops(const engine::IClock& clock)
 void DatagramDrops::drop(const network::Endpoint& sender,
                          std::string_view reason) {
   droppedCount_.fetch_add(1, std::memory_order_relaxed);
-  dropLog_.debug(clock_->now(), "dropped a datagram from ", sender.address,
-                 " port ", sender.port, ": ", reason);
+  logDrop(sender, reason);
 }
 
 void DatagramDrops::dropWrongToken(const network::Endpoint& sender) {
-  dropLog_.debug(clock_->now(), "dropped a datagram from ", sender.address,
-                 " port ", sender.port, ": ", WRONG_TOKEN_DROP_REASON);
+  logDrop(sender, WRONG_TOKEN_DROP_REASON);
   const std::scoped_lock lock{wrongTokenSenderMutex_};
   if (!wrongTokenSender_.has_value()) {
     wrongTokenSender_ = sender;
@@ -46,6 +44,12 @@ std::size_t DatagramDrops::wrongTokenCount() const {
 std::optional<network::Endpoint> DatagramDrops::takeWrongTokenSender() {
   const std::scoped_lock lock{wrongTokenSenderMutex_};
   return std::exchange(wrongTokenSender_, std::nullopt);
+}
+
+void DatagramDrops::logDrop(const network::Endpoint& sender,
+                            std::string_view reason) {
+  dropLog_.debug(clock_->now(), "dropped a datagram from ", sender.address,
+                 " port ", sender.port, ": ", reason);
 }
 
 }  // namespace rtype::server

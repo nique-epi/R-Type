@@ -7,6 +7,7 @@
 #include "AllowanceSpending.hpp"
 #include "AllowanceVerdict.hpp"
 #include "Endpoint.hpp"
+#include "HandshakeTestConstants.hpp"
 #include "RateLimit.hpp"
 #include "RateLimitTestConstants.hpp"
 #include "RequestAllowances.hpp"
@@ -44,9 +45,7 @@ SenderAllowance burstSpentAtStart() {
   return allowance;
 }
 
-SenderAllowance bannedAtStart() { return bannedAtStartUnder(TEST_RATE_LIMIT); }
-
-SenderAllowance bannedAtStartUnder(const RateLimit& limit) {
+SenderAllowance bannedAtStart(const RateLimit& limit) {
   SenderAllowance allowance;
   for (std::size_t sent = 0; sent < limit.burst + limit.dropsBeforeBan;
        ++sent) {
@@ -55,19 +54,8 @@ SenderAllowance bannedAtStartUnder(const RateLimit& limit) {
   return allowance;
 }
 
-std::vector<AllowanceVerdict> spendBurstUnder(SenderAllowance& allowance,
-                                              const RateLimit& limit,
-                                              std::chrono::nanoseconds now) {
-  std::vector<AllowanceVerdict> verdicts;
-  verdicts.reserve(limit.burst);
-  for (std::size_t sent = 0; sent < limit.burst; ++sent) {
-    verdicts.push_back(spendAllowance(allowance, limit, now));
-  }
-  return verdicts;
-}
-
 Endpoint limitedSender(std::uint16_t port) {
-  return Endpoint{.address = std::string{LIMITED_SENDER_ADDRESS}, .port = port};
+  return Endpoint{.address = std::string{SENDER_ADDRESS}, .port = port};
 }
 
 Endpoint forgedSender(std::size_t number) {
