@@ -34,4 +34,6 @@ set_target_properties(load_test_bots PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE
 
 rtype_enable_warnings(load_test_bots)
 
-rtype_add_test(NAME load_test_bots_tests SOURCES BotPilotTest.cpp BotPilotFixtures.cpp ReadyRuleTest.cpp BotLaunchOptionsTest.cpp LIBS rtype_tools_load_test_bots)
+rtype_add_test(NAME load_test_bots_tests SOURCES BotPilotTest.cpp BotPilotFixtures.cpp ReadyRuleTest.cpp BotLaunchOptionsTest.cpp BotTallyTest.cpp BotTallyFixtures.cpp BotInputSenderTest.cpp BotInputSenderFixture.cpp ${CMAKE_SOURCE_DIR}/tests/doubles/RecordingPlayerInputLink.cpp ${CMAKE_SOURCE_DIR}/tests/doubles/RecordingWaitingRoom.cpp LIBS rtype_tools_load_test_bots)
+
+target_include_directories(load_test_bots_tests PRIVATE ${CMAKE_SOURCE_DIR}/tests/doubles)
