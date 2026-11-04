@@ -1,7 +1,6 @@
 #include "DeltaStateSenderFixture.hpp"
 #include <cstddef>
 #include <cstdint>
-#include <limits>
 #include <memory>
 #include <string>
 #include <utility>
@@ -63,22 +62,13 @@ void DeltaStateSenderFixture::runTicks(std::size_t count) {
   }
 }
 
-void DeltaStateSenderFixture::acknowledgeEverythingSentTo(
-    ConnectedPlayer& player) {
+void DeltaStateSenderFixture::acknowledgeSentTo(ConnectedPlayer& player,
+                                                std::uint32_t earlier) {
   network::PacketHeader header;
   header.flags = network::ACKNOWLEDGES_FLAG;
   header.acknowledgedSequence =
       static_cast<std::uint16_t>(player.nextSequence - 1);
-  header.acknowledgementBits = std::numeric_limits<std::uint32_t>::max();
-  player.sentStates.acknowledge(header);
-}
-
-void DeltaStateSenderFixture::acknowledgeOnlyTheNewestSentTo(
-    ConnectedPlayer& player) {
-  network::PacketHeader header;
-  header.flags = network::ACKNOWLEDGES_FLAG;
-  header.acknowledgedSequence =
-      static_cast<std::uint16_t>(player.nextSequence - 1);
+  header.acknowledgementBits = earlier;
   player.sentStates.acknowledge(header);
 }
 
@@ -97,7 +87,7 @@ std::size_t DeltaStateSenderFixture::bytesOfAMeasuredRun(
           enemies.at(index),
           game::Position{.x = static_cast<float>(index + 1 + tick), .y = 0.0F});
     }
-    acknowledgeEverythingSentTo(player);
+    acknowledgeSentTo(player, EVERY_EARLIER_DATAGRAM);
   }
   return bytesSentTo(sent_, client(FIRST_PLAYER_PORT));
 }

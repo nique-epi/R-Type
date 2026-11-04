@@ -56,4 +56,9 @@ constexpr std::size_t STATE_BYTES_WITHOUT_ENTITIES =
 constexpr std::size_t FULL_STATE_BYTES =
     STATE_BYTES_WITHOUT_ENTITIES + (MEASURED_ENTITIES * ENTITY_BYTES);
 
+/** @brief The bits of acknowledgementBits of a client that accepted every
+ * datagram before the newest, and of one that accepted none of them. */
+constexpr std::uint32_t EVERY_EARLIER_DATAGRAM = 0xFFFFFFFFU;
+constexpr std::uint32_t ONLY_THE_NEWEST_DATAGRAM = 0;
+
 }  // namespace rtype::server::testing

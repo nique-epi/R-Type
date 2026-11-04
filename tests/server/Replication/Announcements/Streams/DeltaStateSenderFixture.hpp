@@ -56,16 +56,11 @@ class DeltaStateSenderFixture : public ::testing::Test {
   void runTicks(std::size_t count);
 
   /**
-   * @brief Gives @p player the acknowledgement of every datagram sent to it so
-   * far, as a client that accepted them all would.
-   */
-  void acknowledgeEverythingSentTo(ConnectedPlayer& player);
-
-  /**
    * @brief Gives @p player the acknowledgement of the newest datagram sent to
-   * it and of no other, as a client would after losing the earlier ones.
+   * it and, by the bits of @p earlier, of the datagrams before it, as a client
+   * would that accepted them.
    */
-  void acknowledgeOnlyTheNewestSentTo(ConnectedPlayer& player);
+  void acknowledgeSentTo(ConnectedPlayer& player, std::uint32_t earlier);
 
   /**
    * @brief Runs MEASURED_SECONDS of a game for a player on FIRST_PLAYER_PORT

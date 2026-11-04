@@ -30,7 +30,7 @@ TEST_F(DeltaStateSenderFixture, SendsOnlyWhatChangedSinceTheAcknowledgedState) {
   addEnemy(STILL_ENEMY_ID, SECOND_PLACE);
   ConnectedPlayer& player = connect(FIRST_PLAYER_PORT);
   runTicks(TICKS_TO_THE_FIRST_STATE);
-  acknowledgeEverythingSentTo(player);
+  acknowledgeSentTo(player, EVERY_EARLIER_DATAGRAM);
   move(moving, MOVED_PLACE);
 
   runTicks(TICKS_PER_STATE);
@@ -54,7 +54,7 @@ TEST_F(DeltaStateSenderFixture, SendsAnEmptyDeltaWhenNothingChanged) {
   addEnemy(MOVING_ENEMY_ID, FIRST_PLACE);
   ConnectedPlayer& player = connect(FIRST_PLAYER_PORT);
   runTicks(TICKS_TO_THE_FIRST_STATE);
-  acknowledgeEverythingSentTo(player);
+  acknowledgeSentTo(player, EVERY_EARLIER_DATAGRAM);
 
   runTicks(TICKS_PER_STATE);
 
@@ -75,7 +75,7 @@ TEST_F(DeltaStateSenderFixture, ListsADestroyedEntityAsRemoved) {
   addEnemy(STILL_ENEMY_ID, SECOND_PLACE);
   ConnectedPlayer& player = connect(FIRST_PLAYER_PORT);
   runTicks(TICKS_TO_THE_FIRST_STATE);
-  acknowledgeEverythingSentTo(player);
+  acknowledgeSentTo(player, EVERY_EARLIER_DATAGRAM);
   destroy(vanishing);
 
   runTicks(TICKS_PER_STATE);
@@ -117,7 +117,7 @@ TEST_F(DeltaStateSenderFixture, FallsBackToAFullStateOnceTheReferenceIsTooOld) {
   addEnemy(MOVING_ENEMY_ID, FIRST_PLACE);
   ConnectedPlayer& player = connect(FIRST_PLAYER_PORT);
   runTicks(TICKS_TO_THE_FIRST_STATE);
-  acknowledgeEverythingSentTo(player);
+  acknowledgeSentTo(player, EVERY_EARLIER_DATAGRAM);
 
   runTicks(TICKS_TO_THE_FARTHEST_REFERENCE);
   const DeltaWorldState atTheReach = partsSentTo(FIRST_PLAYER_PORT).back();
@@ -141,7 +141,7 @@ TEST_F(DeltaStateSenderFixture, DoesNotUseAStateOfWhichAPartIsNotAcknowledged) {
   }
   ConnectedPlayer& player = connect(FIRST_PLAYER_PORT);
   runTicks(TICKS_TO_THE_FIRST_STATE);
-  acknowledgeOnlyTheNewestSentTo(player);
+  acknowledgeSentTo(player, ONLY_THE_NEWEST_DATAGRAM);
 
   runTicks(TICKS_PER_STATE);
 
@@ -164,7 +164,7 @@ TEST_F(DeltaStateSenderFixture, WritesEachPlayerAgainstItsOwnAcknowledgement) {
   ConnectedPlayer& first = connect(FIRST_PLAYER_PORT);
   connect(SECOND_PLAYER_PORT);
   runTicks(TICKS_TO_THE_FIRST_STATE);
-  acknowledgeEverythingSentTo(first);
+  acknowledgeSentTo(first, EVERY_EARLIER_DATAGRAM);
 
   runTicks(TICKS_PER_STATE);
 
