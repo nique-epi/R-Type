@@ -268,7 +268,7 @@ Alternative considered: a third binary, `r-type_master`. It keeps the server sma
 
 ### Keys and cryptography: libhydrogen
 
-A game server proves who it is with a key an admin issued, sent as `Authorization: Bearer <key>` (RFC 6750) and never named by an id in the path, so a key reaches its own server alone. The key is 256 bits from the random source of the system and the master keeps only its hash, so a copy of its database registers nobody. Both come from libhydrogen, which the accounts and the signed tickets will use too.
+A game server proves who it is with the key the master gave when its host created it (`POST /api/servers`), as a FiveM server is known by its license key, sent as `Authorization: Bearer <key>` (RFC 6750) and never named by an id in the path, so a key reaches its own server alone. Each server has a key of its own, so no host can act as another one. The key is 256 bits from the random source of the system, shown once, and the master keeps only its hash, so a copy of its database registers nobody. Both come from libhydrogen, which the accounts and the signed tickets will use too.
 
 The subject asks that dependencies go through the package manager and that the project build without altering the system. libhydrogen, by the author of libsodium, builds with CMake through vcpkg and needs nothing installed. Its password hash is not Argon2id: it costs computation and no memory, and a master key, outside the database, encrypts every stored hash, so a stolen database cannot be used to test passwords.
 

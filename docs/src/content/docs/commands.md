@@ -98,9 +98,8 @@ Master modules:
 |---|---|---|
 | `logger` | nothing | Applies the logging options when it starts. |
 | `storage` | `logger` | Opens the database of the master. |
-| `server-keys` | `logger`, `storage` | Recognizes the keys of the game servers. |
 | `http` | `logger` | Opens the port of the HTTP API. |
-| `servers` | `logger`, `storage`, `server-keys`, `http` | Takes the registration and the heartbeats of the game servers. |
+| `servers` | `logger`, `storage`, `http` | Creates the game servers with their keys, and takes their registration and their heartbeats. |
 
 Turning off a module the program cannot run without is accepted when nothing that stays on needs it, and the program then does less. For example, `module lobby off` on the server leaves a server that accepts nobody. On the client, `menus`, `lobby` and `game` need `screens`, and `screens` needs five modules, so turning one of those off is refused until the modules that need it are off first.
 

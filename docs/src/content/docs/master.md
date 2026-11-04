@@ -3,7 +3,7 @@ title: Master
 description: What the master does today, how to start it, and where to add a route, a table or a module.
 ---
 
-The master is the program that lists the game servers and will direct them: each server registers with a key and tells it, every few seconds, which games it hosts and who plays them; a player will read that list in the client, and an admin will send orders from the web site. It is a mode of the server binary, `r-type_server --mode master`, and it never runs a game: no datagram of a game goes through it, so the players of a server keep playing when the master stops. Why it speaks HTTP and why it is a mode rather than a binary of its own is told in [Architecture](/R-Type/architecture/#master).
+The master is the program that lists the game servers and will direct them: a host creates its server on the master and gets its key, then the server registers with that key and tells the master, every few seconds, which games it hosts and who plays them; a player will read that list in the client, and an admin will send orders from the web site. It is a mode of the server binary, `r-type_server --mode master`, and it never runs a game: no datagram of a game goes through it, so the players of a server keep playing when the master stops. Why it speaks HTTP and why it is a mode rather than a binary of its own is told in [Architecture](/R-Type/architecture/#master).
 
 This page tells you where to look when you need to change something. It describes what exists today and says plainly what does not exist yet.
 
@@ -11,9 +11,10 @@ This page tells you where to look when you need to change something. It describe
 |---|---|---|
 | Start and stop: `--mode master`, `master.cfg`, Ctrl-C and SIGTERM | Available | `src/server/main.cpp`, `src/master/LaunchOptions/` |
 | HTTP API under `/api`, every error in JSON | Available | `src/master/Http/` |
-| Database `r-type_master.db` | Available: keys, servers, samples | `src/master/Storage/` |
-| Keys of the game servers, `--new-server-key` | Available | `src/master/ServerKeys/` |
+| Database `r-type_master.db` | Available: servers, samples | `src/master/Storage/` |
+| Creation of a game server and its key, `POST /api/servers` | Available; the web site that calls it is not written | `src/master/Servers/` |
 | Registration and heartbeats of the game servers | Available; no server sends them yet | `src/master/Servers/`, `src/network/Master/` |
+| The client of the master for the game server, `MasterClient` | Available; the game server does not call it yet | `src/network/Master/Client/` |
 | The list of the servers and their games, for the client | Not yet written | |
 | Administration, global leaderboard, accounts, web site | Not yet written | |
 
@@ -30,7 +31,6 @@ This page tells you where to look when you need to change something. It describe
 | `-p <port>` | The TCP port of the HTTP API, from 1 to 65535, as the setting `port`. Default: `DEFAULT_MASTER_PORT` (8080). |
 | `--database <file>` | The SQLite file of the master, on a local disk, as the setting `database`. Default: empty, which keeps it in `r-type_master.db` next to the executable. |
 | `--set <name>=<value>` | Gives a setting a value, as the line `set <name> <value>` of `master.cfg` does. Can be given several times. |
-| `--new-server-key <name>` | Issues the key of the game server `<name>`, prints it, and starts nothing else (see [Keys of the game servers](#keys-of-the-game-servers-serverkeys)). |
 | `--help` | Prints the usage of the master, the logging options included, then exits with code 0. |
 
 - The journal is `r-type_master.log` next to the executable, unless a logging option says otherwise; in a folder the master cannot write to, it writes no journal and says so in the terminal, as the server does (see [Logging](/R-Type/logging/)).
@@ -54,15 +54,14 @@ The master reads `master.cfg`, in the folder it is started from, between the ins
 |---|---|---|---|
 | `logger` | `MasterLoggerModule` | nothing | the journal |
 | `storage` | `MasterStorageModule` | `logger` | the database, migrated |
-| `server-keys` | `ServerKeysModule` | `logger`, `storage` | nothing |
 | `http` | `MasterHttpModule` | `logger` | the port, and the thread that listens on it |
-| `servers` | `ServersModule` | `logger`, `storage`, `server-keys`, `http` | nothing: its routes run once `http` listens |
+| `servers` | `ServersModule` | `logger`, `storage`, `http` | nothing: its routes run once `http` listens |
 
-The storage starts before the HTTP API, so a database the master cannot open stops it before its port opens, and the API stops before the database closes. `--new-server-key` runs the same modules with `http` and `servers` turned off (`keyIssueLines()`, after `master.cfg`), so no port opens and every setting of `master.cfg` stays known; the master stops once its modules started.
+The storage starts before the HTTP API, so a database the master cannot open stops it before its port opens, and the API stops before the database closes.
 
 ## The HTTP API: `MasterHttpServer`
 
-`MasterHttpServer` (`src/master/Http/`) wraps cpp-httplib, which no other file of the master includes. Its routes sit under `/api`, answer `GET` or `PUT`, and answer `application/json`; they run on the threads of cpp-httplib, at least 8 of them, and must not block for long. A route reads an `ApiRequest`: the body, the key of an `Authorization: Bearer <key>` header (RFC 6750, the scheme in any case) and the address of the TCP peer. It answers an `ApiResponse`: a status, a body, the `detail` of a refusal and one header, such as `Location`.
+`MasterHttpServer` (`src/master/Http/`) wraps cpp-httplib, which no other file of the master includes. Its routes sit under `/api`, answer `GET`, `POST` or `PUT`, and answer `application/json`; each is declared once, with its method and path, in `MasterRouteConstants.hpp` (`src/network/Master/Routes/`), which the master and `MasterClient` both read; they run on the threads of cpp-httplib, at least 8 of them, and must not block for long. A route reads an `ApiRequest`: the body, the key of an `Authorization: Bearer <key>` header (RFC 6750, the scheme in any case) and the address of the TCP peer. It answers an `ApiResponse`: a status, a body, the `detail` of a refusal and one header, such as `Location`.
 
 `GET /api/health` answers 200 with the version of the master, `MASTER_VERSION`:
 
@@ -83,37 +82,37 @@ The storage module opens its file with `rtype_storage` (`openDatabaseFile()`, se
 
 | Version | Table | Holds |
 |---|---|---|
-| 1 | `server_keys` | each key an admin issued: its name, its fingerprint, the date |
-| 2 | `servers` | each registered server, one per key, and the last heartbeat it sent, nicknames included |
-| 2 | `heartbeat_samples` | the measures of each heartbeat, at most one per server and per second, kept 7 days |
+| 1 | `servers` | each created server: its name, the fingerprint of its key, the address and the date of its creation; once it registered, what it registered and the last heartbeat it sent, nicknames included |
+| 1 | `heartbeat_samples` | the measures of each heartbeat, at most one per server and per second, kept 7 days |
 
-## Keys of the game servers: `ServerKeys`
+## Creating a game server: `POST /api/servers`
 
-An admin issues the key of a game server on the machine of the master, which prints it once:
+A host creates its server on the web site, which calls `POST /api/servers` with the name players will read; the web site is not written yet, so today the call is made by hand or by `MasterClient::createServer()`. The master answers 201, `Location: /api/servers/<id>`, and the server with its key:
 
-```bash
-./r-type_server --mode master --new-server-key "Paris 1"
+```json
+{"id":7,"name":"Paris 1","key":"rtk_<64 hexadecimal digits>"}
 ```
 
-- **The key** is `SERVER_KEY_BYTES` (32) drawn by `hydro_random_buf()` of libhydrogen, which seeds itself from the system (`/dev/urandom` on Linux once `/dev/random` is ready, `/dev/urandom` on macOS, `RtlGenRandom` on Windows), written as 64 lowercase hexadecimal digits on the standard output, never in the journal.
-- **The database keeps its fingerprint only**, `hydro_hash_hash()` of the key in the context `FINGERPRINT_CONTEXT`, so a copy of the file lets nobody register as a server. A key is 256 random bits, so a fast hash is enough: nobody can try every key, unlike every password.
-- **A key that is not 64 lowercase hexadecimal digits** is refused before its fingerprint is computed.
-- **A `master.cfg` that turns `server-keys` off** leaves no key to print: the binary says so and exits with code 1.
+- **The key is shown this once.** It is `rtk_`, so a key that leaks in a log or a repository is recognized, then `SERVER_KEY_BYTES` (32) drawn by `hydro_random_buf()` of libhydrogen, which seeds itself from the system (`/dev/urandom` on Linux once `/dev/random` is ready, `/dev/urandom` on macOS, `RtlGenRandom` on Windows), in lowercase hexadecimal: 68 characters. It never goes in a URL or in the journal.
+- **The database keeps its fingerprint only**, `hydro_hash_hash()` of the key in the context `FINGERPRINT_CONTEXT`, so a copy of the file lets nobody act as a server. A key is 256 random bits, so a fast hash is enough: nobody can try every key, unlike every password.
+- **One address creates `MAXIMUM_CREATIONS_PER_ADDRESS` (5) servers per `CREATION_WINDOW` (1 hour) at most**; the next one answers 429. The count and the insert are one transaction, so requests sent at once cannot pass the quota together. The address is the one of the TCP peer: behind a reverse proxy, every host shares the quota of the proxy.
+- **Anyone who reaches the master may create a server** until accounts exist: the web site will then ask for a signed-in host. Revoking a key, and giving it an expiry, are not written yet.
 
-The host of the game server then writes the key in the `server.cfg` of that server, as the setting `master_key`, next to `master_url`; `server.cfg` is never committed, only `server.cfg.example`, with an empty key. The game server does not read them yet: that is the link with the master, still to be written. Revoking a key, and issuing one from the web site, are not written yet.
+The host then writes the key in the `server.cfg` of that server, as the setting `master_key`, next to `master_url`; `server.cfg` is never committed, only `server.cfg.example`, with an empty key. The game server does not read them yet: that is the link with the master, still to be written.
 
 ## Routes of a game server: `ServersModule`
 
-A game server is named by its key, sent as `Authorization: Bearer <key>`, never by an id in the path: a key reaches its own server alone. Both routes answer 401, with `WWW-Authenticate: Bearer`, to a request without a key the master issued.
+A game server is named by its key, sent as `Authorization: Bearer <key>`, never by an id in the path: a key reaches its own server alone. Both routes answer 401, with `WWW-Authenticate: Bearer`, to a request without a key the master issued; the key is checked before the body is read.
 
 | Route | Does | Answers |
 |---|---|---|
-| `PUT /api/servers/me` | registers the server of the key, or updates it; the same body twice gives the same server | 201 and `Location: /api/servers/<id>` the first time, 200 after; both carry the server, its `id` included |
-| `PUT /api/servers/me/heartbeat` | replaces the last state of the server, and keeps a sample of its measures | 200 and `{"commands":[]}`, the orders of the admins waiting for the server, none until administration exists; 404 before any registration |
+| `POST /api/servers` | creates a server and its key (see [Creating a game server](#creating-a-game-server-post-apiservers)) | 201, `Location: /api/servers/<id>` and the server with its key; 429 over the quota |
+| `PUT /api/servers/me` | replaces what the server of the key registered; the same body twice gives the same server | 200 and the server, its `id` included |
+| `PUT /api/servers/me/heartbeat` | replaces the last state of the server, and keeps a sample of its measures | 200 and `{"commands":[]}`, the orders of the admins waiting for the server, none until administration exists; 409 before the server registered |
 
 A registration is the state of a server that starts: it forgets the last heartbeat, since the server hosts no game yet. A registration with no `address` takes the address of the TCP peer, since a server often does not know its public address. A sample is written once per second of the clock at most, whatever the rate of the heartbeats, and every sample older than `SAMPLE_RETENTION` (7 days) is erased when a new one is written, of every server.
 
-The bodies are JSON, read and written by `rtype_network_master` (`src/network/Master/`), which the server will link to send them. A member it does not know is ignored, so a newer server still registers; a member missing, of another type or out of its bounds answers 400, whose `detail` names it by its JSON Pointer (RFC 6901), such as `/games/0/players/1`:
+The bodies are JSON, read and written by `rtype_network_master` (`src/network/Master/`), which `MasterClient` links to send them. A member it does not know is ignored, so a newer server still registers; a member missing, of another type or out of its bounds answers 400, whose `detail` names it by its JSON Pointer (RFC 6901), such as `/games/0/players/1`:
 
 ```json
 {"name":"Paris 1","udpPort":4242,"gameVersion":"0.4.0","protocolVersion":2,
@@ -136,31 +135,50 @@ The bodies are JSON, read and written by `rtype_network_master` (`src/network/Ma
 | `difficulty`, `players` | nicknames of the protocol, 1 to 16 bytes; as many players as the server registered per game at most |
 | `measures` | an object; each of `tickP50Milliseconds`, `tickP95Milliseconds`, `receivedBytesPerSecond`, `sentBytesPerSecond`, `lossPercent` (0 to 100) and `averagePingMilliseconds` is a number from 0, or left out when the server does not measure it, never sent as 0 |
 
+## The client of the game server: `MasterClient`
+
+`MasterClient` (`rtype_network_master_client`, `src/network/Master/Client/`) is what a game server calls: one function per route, each sending the message of its route with the key of `MasterAccess` as Bearer.
+
+```cpp
+rtype::network::MasterClient master{rtype::network::MasterAccess{
+    .url = "http://master.example.org:8080", .key = masterKey}};
+master.registerServer(registration);
+master.sendHeartbeat(heartbeat);
+```
+
+- **Every call waits for its answer**, `MASTER_CONNECTION_TIMEOUT` (5 s) to connect, then `MASTER_TRANSFER_TIMEOUT` (5 s) for each read and write, so it is made away from the game loop. Two threads never call the same client together.
+- **An error status** throws `MasterRefusedException`: `status()` and the `detail` of the problem document. **No answer** throws `MasterUnreachableException`.
+- **Plain HTTP only:** cpp-httplib is built without TLS, so an `https://` url throws `InvalidMasterUrlException`, and the key crosses the network in clear. The master and its game servers must stay on a local network until the client speaks HTTPS.
+
 ## Adding a route
 
 A module listed after `http` in `masterModules()` requires the `MasterHttpServer` while it installs, and adds its route there, before the server opens. Its `dependencies()` names `http`, so the application refuses a list where it comes first. The double of the tests, `RouteAddingModule` (`tests/doubles/`), does it this way:
 
 ```cpp
 void RouteAddingModule::install(rtype::engine::InstallContext& context) {
-  context.require<rtype::master::MasterHttpServer>().addGet(
-      path_, []([[maybe_unused]] const rtype::master::ApiRequest& request) {
+  context.require<rtype::master::MasterHttpServer>().add(
+      rtype::network::MasterRoute{.method = rtype::network::RouteMethod::Get,
+                                  .path = path_},
+      []([[maybe_unused]] const rtype::master::ApiRequest& request) {
         return rtype::master::ApiResponse{.status = rtype::master::OK_STATUS,
                                           .body = {}};
       });
 }
 ```
 
-`ServersModule` adds its two routes the same way, and keeps the SQL of its tables in `ServerRepository` alone: a route reads its request in a controller, applies its rules in a service, and writes through a repository.
+`ServersModule` adds its three routes the same way, from `MasterRouteConstants.hpp`, and is laid out like a web backend: `Controllers/` reads the request of each route and writes its answer, `Services/` applies the rules (`Services/Helpers/` for the key and its fingerprint), `Repositories/` holds the only SQL, one class per table, and `Models/` the plain structs the layers hand each other.
 
 ## Where to intervene
 
 | You want to… | Look at |
 |---|---|
-| Add a route of the API | a module of its own, as in [Adding a route](#adding-a-route); the route and its status in `src/master/Http/HttpConstants.hpp` |
+| Add a route of the API | its method and path in `src/network/Master/Routes/MasterRouteConstants.hpp`, its status in `src/master/Http/HttpConstants.hpp`, and the module that answers it, as in [Adding a route](#adding-a-route) |
 | Add a table | a migration at the end of `MASTER_MIGRATIONS`, never an edit of one a master already applied |
 | Change what a server sends, or its bounds | `src/network/Master/`: `MasterMessageText.cpp` and `MasterMessageConstants.hpp` |
-| Change what a registration or a heartbeat answers | `ServersController` (`src/master/Servers/`) |
-| Change how long samples are kept | `SAMPLE_RETENTION` in `src/master/Servers/ServersConstants.hpp` |
+| Change what a creation, a registration or a heartbeat answers | `ServersController` (`src/master/Servers/Controllers/`) |
+| Change the quota of creations | `MAXIMUM_CREATIONS_PER_ADDRESS` and `CREATION_WINDOW` in `src/master/Servers/Services/ServersServiceConstants.hpp` |
+| Change how long samples are kept | `SAMPLE_RETENTION` in `src/master/Servers/Repositories/ServersRepositoryConstants.hpp` |
+| Call the master from the game server | `MasterClient` (`src/network/Master/Client/`) |
 | Add a setting of the master | the `install()` of the module that reads it, `master.cfg.example` and the table above |
 | Change what an error answers | `problemDetailsText()` in `MasterHttpServer.cpp` |
 | Add a module | `src/master/<Name>/`, its line in `masterModules()` and its row in [the list of modules](/R-Type/project-layout/#the-list-of-modules) |
