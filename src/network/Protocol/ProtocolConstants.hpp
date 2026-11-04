@@ -21,9 +21,10 @@ constexpr std::uint32_t PROTOCOL_ID = 0x52545950;
 /**
  * @brief The version of the protocol this code speaks. Version 2 guarantees
  * the messages no state message repeats, see the Guaranteed messages section
- * of the protocol page.
+ * of the protocol page. Version 3 makes a PlayerInput repeat the inputs the
+ * server has not confirmed, see the Inputs section.
  */
-constexpr std::uint8_t PROTOCOL_VERSION = 2;
+constexpr std::uint8_t PROTOCOL_VERSION = 3;
 
 /**
  * @brief The session token of a datagram sent before the connection is
@@ -153,6 +154,14 @@ constexpr auto PLAYER_MOTION_BITS =
  * is one more.
  */
 constexpr std::uint32_t FIRST_INPUT_NUMBER = 1;
+
+/**
+ * @brief The most inputs before the newest that one PlayerInput repeats. At
+ * 60 inputs per second it covers 250 ms: the wait of the 50 ms between two
+ * WorldState that confirm inputs, plus a round trip. Provisional, see the
+ * protocol page.
+ */
+constexpr std::size_t MAXIMUM_REPEATED_INPUTS = 15;
 
 /**
  * @brief The longest time either side of a session lets pass without sending
@@ -327,6 +336,7 @@ constexpr std::string_view ENTITY_TYPE_FIELD = "entityType";
 constexpr std::string_view REASON_FIELD = "reason";
 constexpr std::string_view KIND_FIELD = "kind";
 constexpr std::string_view ACTIONS_FIELD = "actions";
+constexpr std::string_view EARLIER_COUNT_FIELD = "earlierCount";
 constexpr std::string_view MOTION_FIELD = "motion";
 constexpr std::string_view PLAYER_COUNT_FIELD = "playerCount";
 constexpr std::string_view RANK_FIELD = "rank";

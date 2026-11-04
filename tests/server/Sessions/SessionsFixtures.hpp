@@ -23,6 +23,12 @@ namespace rtype::server::testing {
 [[nodiscard]] network::PlayerInput inputNumbered(std::uint32_t inputNumber,
                                                  std::uint8_t actions);
 
+/** @returns The input numbered @p inputNumber that holds @p actions and repeats
+ * the inputs before it, whose actions are @p earlierActions, newest first. */
+[[nodiscard]] network::PlayerInput inputRepeating(
+    std::uint32_t inputNumber, std::uint8_t actions,
+    std::vector<std::uint8_t> earlierActions);
+
 /**
  * @brief Connects the player at @p index to @p roster, under SESSION_TOKEN.
  * @returns The player added; it stays at that address until it is removed.

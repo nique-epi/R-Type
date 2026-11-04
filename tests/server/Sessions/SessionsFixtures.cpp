@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <functional>
 #include <string>
+#include <utility>
 #include <vector>
 #include "ConnectedPlayer.hpp"
 #include "MessageOrigin.hpp"
@@ -22,7 +23,16 @@ network::MessageOrigin originOf(std::size_t index, std::uint16_t sequence) {
 
 network::PlayerInput inputNumbered(std::uint32_t inputNumber,
                                    std::uint8_t actions) {
-  return network::PlayerInput{.inputNumber = inputNumber, .actions = actions};
+  return network::PlayerInput{
+      .inputNumber = inputNumber, .actions = actions, .earlierActions = {}};
+}
+
+network::PlayerInput inputRepeating(std::uint32_t inputNumber,
+                                    std::uint8_t actions,
+                                    std::vector<std::uint8_t> earlierActions) {
+  return network::PlayerInput{.inputNumber = inputNumber,
+                              .actions = actions,
+                              .earlierActions = std::move(earlierActions)};
 }
 
 ConnectedPlayer& addPlayer(PlayerRoster& roster, std::size_t index) {

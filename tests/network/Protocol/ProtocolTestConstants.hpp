@@ -89,20 +89,20 @@ constexpr std::uint16_t SOME_SEQUENCE = 0x0A0B;
 
 /**
  * @brief Values for the header fields, all different, so a round trip shows
- * each one at its place. SOME_FLAGS sets bits 2 and 3, which version 2 does
+ * each one at its place. SOME_FLAGS sets bits 2 and 3, which version 3 does
  * not know.
  */
-constexpr std::uint8_t SOME_OTHER_VERSION = 3;
+constexpr std::uint8_t SOME_OTHER_VERSION = 4;
 constexpr std::uint32_t SOME_OTHER_PROTOCOL_ID = 0x52545951;
 constexpr std::uint8_t SOME_FLAGS = 0x0C;
 constexpr std::uint16_t SOME_ACKNOWLEDGED_SEQUENCE = 0x0D0E;
 constexpr std::uint32_t SOME_ACKNOWLEDGEMENT_BITS = 0x0F101112;
 
 /**
- * @brief The 22 bytes of a default header: RTYP, version 2, then zeros.
+ * @brief The 22 bytes of a default header: RTYP, version 3, then zeros.
  */
 constexpr auto DEFAULT_HEADER_BYTES = std::to_array<std::uint8_t>(
-    {0x52, 0x54, 0x59, 0x50, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    {0x52, 0x54, 0x59, 0x50, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00});
 
 /**
@@ -179,6 +179,14 @@ constexpr std::uint16_t SOME_EVENT_NUMBER = 0x0102;
  */
 constexpr std::uint8_t UP_AND_SHOOT = 0x11;
 constexpr std::uint8_t EVERY_ACTION = 0x1F;
+
+/**
+ * @brief The most inputs before the newest that a PlayerInput repeats, one
+ * more than that, and the number of the first input of a session.
+ */
+constexpr std::size_t REPEATED_INPUT_LIMIT = 15;
+constexpr std::size_t ONE_REPEATED_INPUT_TOO_MANY = REPEATED_INPUT_LIMIT + 1;
+constexpr std::uint32_t FIRST_SESSION_INPUT = 1;
 
 /**
  * @brief The first bit above the five actions, which must stay 0.
