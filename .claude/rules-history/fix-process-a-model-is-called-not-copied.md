@@ -22,3 +22,11 @@ The client animations draw a hit flash with a fragment shader. The approved plan
 
 - ❌ **Before (wrong)**: `SfmlDrawSurface::loadFlashShader()`, the same fifteen lines as `InterfaceCanvas::loadCrispText()`.
 - ✅ **After (right)**: `loadFragmentShader()` in `src/client/Rendering/FragmentShader.{hpp,cpp}`, called by both.
+
+## Update (3 November 2026) — A comment naming the model
+
+The YOU tag of `ItemList` copied the steps and the four values of the tag of the flight log, and its constants said so in a comment: "as YOU on the ink of the flight log". `paintInkTag()` now serves both.
+
+## Update (3 November 2026) — Two helpers of one pull request
+
+The leaderboard placed its chips with `chipAreaEndingAt()`, and the waiting room placed RANKING and HELP with `chipLeftOf()`; both took `MenuBuilder::chipArea()` and moved the chip so it ends at a given x. They were written in the same pull request, in two files, under two names, so neither search by name found the other; a review did. `MenuBuilder::chipArea()` now takes the right edge.

@@ -24,11 +24,11 @@
 #include "PlayerInput.hpp"
 #include "PlayerLeft.hpp"
 #include "Position.hpp"
+#include "RecordingResultsArchive.hpp"
 #include "RtypeRulesModule.hpp"
 #include "ServerLobbyTestConstants.hpp"
 #include "SimulatedClock.hpp"
 #include "TimeConstants.hpp"
-#include "TimerScheduler.hpp"
 #include "UnreliableNetwork.hpp"
 #include "World.hpp"
 #include "WorldState.hpp"
@@ -43,8 +43,8 @@ struct SentReadyState {
   std::uint64_t sessionToken{SESSION_TOKEN};
 };
 
-/** @returns Those of @p datagrams whose only message is of type @p type, in
- * order. */
+/** @returns Those of @p datagrams that hold a message of type @p type, in
+ * order: a resend may group several guaranteed messages in one datagram. */
 [[nodiscard]] std::vector<network::OutgoingDatagram> ofType(
     network::MessageType type,
     const std::vector<network::OutgoingDatagram>& datagrams);
@@ -100,12 +100,6 @@ class GameInstanceTest : public ::testing::Test {
   /** @brief Queues a Disconnection from the player at @p index for the next
    * tick, as one of the copies its client sends. */
   void queueDisconnectionFrom(std::size_t index);
-
-  /**
-   * @returns The timers the game plans the later copies of its events on:
-   * advancing them sends those copies.
-   */
-  [[nodiscard]] engine::TimerScheduler& timers();
 
   /** @returns Every datagram the game sent, oldest first. */
   [[nodiscard]] const std::vector<network::OutgoingDatagram>& sentDatagrams()
@@ -170,6 +164,9 @@ class GameInstanceTest : public ::testing::Test {
   [[nodiscard]] game::World& world();
   [[nodiscard]] engine::EventBus& events();
 
+  /** @returns What the game handed its results and leaderboard requests to. */
+  [[nodiscard]] RecordingResultsArchive& results();
+
  private:
   std::vector<network::OutgoingDatagram> sent_;
   /** @brief The indexes of the players the game hears from before each tick:
@@ -177,9 +174,9 @@ class GameInstanceTest : public ::testing::Test {
    * without a datagram whose sequence would have to follow the others. */
   std::vector<std::size_t> livePlayers_;
   engine::EventBus events_;
-  engine::TimerScheduler timers_;
   /** @brief The clock the game reads real time on; tick() moves it on. */
   SimulatedClock clock_;
+  RecordingResultsArchive results_;
   RtypeRulesModule* rules_{nullptr};
   GameInstance game_;
   std::vector<network::IncomingDatagram> incoming_;

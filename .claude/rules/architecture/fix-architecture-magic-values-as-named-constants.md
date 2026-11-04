@@ -28,6 +28,12 @@ Why: the repository's `.clang-tidy` disables `readability-magic-numbers`; this r
 2. **A color is named after its hue**, so a reader knows which color an RGB triplet is without decoding it.
 3. **Applies to every file a change touches**, entries already there included; untouched files are reported, not rewritten.
 
+### A value that must follow another is derived from it
+
+1. **Before writing a constant or a default whose right value is another one** (the rows a list holds and the rows an answer lists, the name of a difficulty and the waves chosen for it), write it from that other value, never as a second literal or a second use of the same constant somewhere else.
+2. **Name the value once where it is chosen**, and hand it to every place that needs it.
+3. **When the derived value has a limit of its own** (the room in a panel), say it next to the derivation, with the numbers computed.
+
 ## Example
 
 - ❌ **Before (wrong)**:
@@ -57,3 +63,5 @@ Why: the repository's `.clang-tidy` disables `readability-magic-numbers`; this r
 - ✅ **After (right)**: the five files include `ScreenTestConstants.hpp`; the shared frames and animations live in `tests/client/Rendering/AnimationTestConstants.hpp`.
 - ❌ **Before (wrong)**: `PLAYER_LIGHT_COLORS{sf::Color(127, 230, 255), sf::Color(255, 163, 207), …}`: a review asked which color each triplet is.
 - ✅ **After (right)**: `PLAYER_LIGHT_BLUE(127, 230, 255)`, `PLAYER_LIGHT_PINK(255, 163, 207)`, …, grouped with the ship colors of the same players in `PLAYER_COLORS{PlayerColors{.ship = PLAYER_BLUE, .light = PLAYER_LIGHT_BLUE}, …}`.
+- ❌ **Before (wrong)**: `LEADERBOARD_LIST.rowCapacity = 10` beside `MAXIMUM_LEADERBOARD_ROWS = 10`; `readWaves()` chose `DEFAULT_DIFFICULTY` while `GameSettings::difficulty` took the same constant as its own default.
+- ✅ **After (right)**: `.rowCapacity = network::MAXIMUM_LEADERBOARD_ROWS`, its comment saying ten rows end at y 203 in a panel that ends at 216; `ServerGamesModule::start()` names the difficulty once and passes it to `readWaves()` and to `GameSettings`.

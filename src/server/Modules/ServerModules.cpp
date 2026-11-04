@@ -4,6 +4,7 @@
 #include <optional>
 #include <vector>
 #include "AssetFolder.hpp"
+#include "ExecutablePath.hpp"
 #include "GamesSettings.hpp"
 #include "IModule.hpp"
 #include "LaunchOptions.hpp"
@@ -15,6 +16,7 @@
 #include "ServerLoggerModule.hpp"
 #include "ServerMetricsModule.hpp"
 #include "ServerNetworkModule.hpp"
+#include "ServerStorageModule.hpp"
 #include "StopRequest.hpp"
 #include "SystemClock.hpp"
 
@@ -28,12 +30,14 @@ std::vector<std::unique_ptr<engine::IModule>> serverModules(
   modules.push_back(std::make_unique<ServerNetworkModule>(
       network::DEFAULT_SERVER_PORT, stopRequest,
       launchOptions.networkConditions()));
+  modules.push_back(
+      std::make_unique<ServerStorageModule>(engine::executableFolder()));
   modules.push_back(std::make_unique<ServerGamesModule>(GamesSettings{
       .seed = std::nullopt,
       .wavesFile = engine::locateAssetFolder() / WAVE_FILE_IN_ASSETS}));
   modules.push_back(std::make_unique<ServerLobbyModule>());
   modules.push_back(std::make_unique<ServerMetricsModule>(
-      std::make_shared<engine::SystemClock>()));
+      std::make_shared<engine::SystemClock>(), launchOptions.trafficCsvFile()));
   return modules;
 }
 

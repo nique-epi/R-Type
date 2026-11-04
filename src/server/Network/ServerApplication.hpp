@@ -1,6 +1,5 @@
 #pragma once
 
-#include <cstddef>
 #include <cstdint>
 #include <functional>
 #include <memory>
@@ -8,18 +7,20 @@
 #include <span>
 #include <vector>
 #include "BoundedQueue.hpp"
+#include "DatagramQueues.hpp"
 #include "DatagramRelay.hpp"
 #include "DatagramSorter.hpp"
+#include "DiscardReport.hpp"
 #include "Endpoint.hpp"
 #include "IDatagramSender.hpp"
 #include "IDatagramSocket.hpp"
 #include "IPlayerAdmission.hpp"
 #include "IncomingDatagram.hpp"
-#include "Logger.hpp"
 #include "NetworkConditions.hpp"
 #include "NetworkContext.hpp"
 #include "OutgoingDatagram.hpp"
 #include "SystemClock.hpp"
+#include "TrafficCounters.hpp"
 
 namespace rtype::server {
 
@@ -101,9 +102,11 @@ class ServerApplication final : public IDatagramSender,
    * to listenOn() when it was called.
    * @throws ServerAlreadyOpenException when the socket is already bound.
    * @throws InvalidAddressException when the address is not an IP address.
+   * @returns The address and port the socket is bound to: on port 0, the port
+   * the system picked.
    * @throws SocketOpenException when the system refuses the port.
    */
-  void open();
+  network::Endpoint open();
 
   /**
    * @brief Unbinds the socket, so the port is free again. Call it once run()
@@ -144,37 +147,31 @@ class ServerApplication final : public IDatagramSender,
               std::uint64_t sessionToken) override;
 
   /**
-   * @returns The address and port the socket is bound to.
-   * @throws ServerNotOpenException when open() was not called.
+   * @returns What the socket of the server sent and received, by player and by
+   * type of message, since the object was built. Safe from any thread; it lives
+   * as long as this object, across close() and open().
    */
-  [[nodiscard]] network::Endpoint localEndpoint() const;
+  [[nodiscard]] network::TrafficCounters& traffic();
 
  private:
-  /** @throws ServerNotOpenException when open() was not called. */
-  [[nodiscard]] network::IDatagramSocket& openSocket();
-  [[nodiscard]] const network::IDatagramSocket& openSocket() const;
   void simulateTick();
-  void reportDiscardedDatagrams();
 
-  logging::Logger logger_;
   engine::SystemClock clock_;
   network::Endpoint listeningEndpoint_;
   network::NetworkConditions conditions_;
+  network::TrafficCounters traffic_;
   network::NetworkContext network_;
   std::unique_ptr<network::IDatagramSocket> socket_;
   concurrency::BoundedQueue<network::IncomingDatagram> incoming_;
   concurrency::BoundedQueue<network::IncomingDatagram> connectionRequests_;
   concurrency::BoundedQueue<network::OutgoingDatagram> outgoing_;
+  DatagramQueues destinations_;
   DatagramSorter sorter_;
+  DiscardReport discardReport_;
   std::optional<network::DatagramRelay> relay_;
   TickHandler handleTick_;
   std::vector<network::IncomingDatagram> received_;
   std::vector<network::IncomingDatagram> receivedRequests_;
-  std::size_t ticksSinceDiscardReport_{0};
-  std::size_t reportedDiscardCount_{0};
-  std::size_t reportedRequestDiscardCount_{0};
-  std::size_t reportedDroppedCount_{0};
-  std::size_t reportedWrongTokenCount_{0};
 };
 
 }  // namespace rtype::server

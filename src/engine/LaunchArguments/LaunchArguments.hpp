@@ -1,5 +1,7 @@
 #pragma once
 
+#include <filesystem>
+#include <optional>
 #include <span>
 #include <string>
 #include <string_view>
@@ -64,5 +66,19 @@ void readLaunchArguments(std::span<const std::string_view> arguments,
  */
 [[nodiscard]] std::string launchErrorText(std::string_view programName,
                                           std::string_view message);
+
+/**
+ * @returns The option @p name, which takes a value and writes it into @p path;
+ * a relative path is read from the folder the program was started in. @p path
+ * must outlive the option.
+ */
+[[nodiscard]] LaunchOption pathOption(
+    std::string_view name, std::optional<std::filesystem::path>& path);
+
+/**
+ * @returns `--help`, which sets @p helpRequested: the program then prints its
+ * usage and starts nothing. @p helpRequested must outlive the option.
+ */
+[[nodiscard]] LaunchOption helpOption(bool& helpRequested);
 
 }  // namespace rtype::engine

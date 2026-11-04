@@ -1,0 +1,99 @@
+#include <gtest/gtest.h>
+#include <span>
+#include <string_view>
+#include <vector>
+#include "EngineException.hpp"
+#include "ServerMode.hpp"
+#include "ServerModeChoice.hpp"
+#include "ServerModeOption.hpp"
+#include "ServerModeOptionTestConstants.hpp"
+
+using rtype::engine::InvalidLaunchOptionValueException;
+using rtype::engine::MissingLaunchOptionValueException;
+using rtype::server::chooseServerMode;
+using rtype::server::ServerMode;
+using rtype::server::ServerModeChoice;
+
+using Arguments = std::vector<std::string_view>;
+
+/**
+ * Given arguments that do not start with `--mode`
+ * When the mode is chosen
+ * Then the binary runs the game server with every argument, as before
+ */
+TEST(ServerModeOption, WithoutTheModeTheServerRunsWithEveryArgument) {
+  const Arguments arguments{PORT, SOME_PORT};
+
+  const ServerModeChoice choice = chooseServerMode(arguments);
+
+  EXPECT_EQ(choice.mode, ServerMode::Server);
+  EXPECT_EQ(Arguments(choice.options.begin(), choice.options.end()), arguments);
+}
+
+/**
+ * Given `--mode master` followed by an option
+ * When the mode is chosen
+ * Then the binary runs the master with the arguments after the mode
+ */
+TEST(ServerModeOption, ModeMasterRunsTheMasterWithTheArgumentsAfterIt) {
+  const Arguments arguments{MODE, MASTER_MODE, PORT, SOME_PORT};
+
+  const ServerModeChoice choice = chooseServerMode(arguments);
+
+  EXPECT_EQ(choice.mode, ServerMode::Master);
+  EXPECT_EQ(Arguments(choice.options.begin(), choice.options.end()),
+            (Arguments{PORT, SOME_PORT}));
+}
+
+/**
+ * Given `--mode server` alone
+ * When the mode is chosen
+ * Then the binary runs the game server with no option
+ */
+TEST(ServerModeOption, ModeServerRunsTheServer) {
+  const Arguments arguments{MODE, SERVER_MODE};
+
+  const ServerModeChoice choice = chooseServerMode(arguments);
+
+  EXPECT_EQ(choice.mode, ServerMode::Server);
+  EXPECT_TRUE(choice.options.empty());
+}
+
+/**
+ * Given `--mode` followed by a name that is no mode
+ * When the mode is chosen
+ * Then it is refused
+ */
+TEST(ServerModeOption, AnUnknownModeIsRefused) {
+  const Arguments arguments{MODE, UNKNOWN_MODE};
+
+  EXPECT_THROW(static_cast<void>(chooseServerMode(arguments)),
+               InvalidLaunchOptionValueException);
+}
+
+/**
+ * Given `--mode` as the last argument
+ * When the mode is chosen
+ * Then it is refused for its missing value
+ */
+TEST(ServerModeOption, AModeWithoutItsValueIsRefused) {
+  const Arguments arguments{MODE};
+
+  EXPECT_THROW(static_cast<void>(chooseServerMode(arguments)),
+               MissingLaunchOptionValueException);
+}
+
+/**
+ * Given `--mode master` after another option
+ * When the mode is chosen
+ * Then the binary runs the game server with every argument, whose options
+ * refuse the mode: it must come first
+ */
+TEST(ServerModeOption, AModeAfterAnotherOptionIsLeftToTheServer) {
+  const Arguments arguments{PORT, SOME_PORT, MODE, MASTER_MODE};
+
+  const ServerModeChoice choice = chooseServerMode(arguments);
+
+  EXPECT_EQ(choice.mode, ServerMode::Server);
+  EXPECT_EQ(choice.options.size(), arguments.size());
+}

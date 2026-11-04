@@ -5,6 +5,11 @@
   "dependencies": [
     "asio",
     {
+      "name": "cpp-httplib",
+      "default-features": false
+    },
+    "nlohmann-json",
+    {
       "name": "sfml",
       "default-features": false,
       "features": [
@@ -13,6 +18,7 @@
         "window"
       ]
     },
+    "sqlitecpp",
     "tomlplusplus"
   ],
   "features": {

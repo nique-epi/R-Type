@@ -1,6 +1,8 @@
 #include "LaunchOptions.hpp"
 #include <array>
+#include <filesystem>
 #include <functional>
+#include <optional>
 #include <span>
 #include <string>
 #include <string_view>
@@ -23,6 +25,7 @@
 #include "NetworkConstants.hpp"
 #include "ProtocolConstants.hpp"
 #include "SettingLine.hpp"
+#include "SettingOptions.hpp"
 #include "SimulatorLaunchOptions.hpp"
 #include "WireTypes.hpp"
 
@@ -79,17 +82,6 @@ engine::LaunchOption nicknameOption(LaunchValues& values) {
       }};
 }
 
-/** @returns `--set <name>=<value>`, which forces any setting. */
-engine::LaunchOption setOption(LaunchValues& values) {
-  return engine::LaunchOption{
-      .name = engine::SET_OPTION,
-      .takesValue = true,
-      .record = [&values](std::string_view assignment) {
-        values.forcedLines.push_back(
-            engine::settingLineFromSetOption(assignment));
-      }};
-}
-
 /** @returns `--no-sound`, which starts the client without sound. */
 engine::LaunchOption noSoundOption(LaunchValues& values) {
   return engine::LaunchOption{
@@ -97,16 +89,6 @@ engine::LaunchOption noSoundOption(LaunchValues& values) {
       .takesValue = false,
       .record = [&values]([[maybe_unused]] std::string_view value) {
         values.audioMode = AudioMode::Disabled;
-      }};
-}
-
-/** @returns `--help`, which asks for the usage. */
-engine::LaunchOption helpOption(LaunchValues& values) {
-  return engine::LaunchOption{
-      .name = engine::HELP_OPTION,
-      .takesValue = false,
-      .record = [&values]([[maybe_unused]] std::string_view value) {
-        values.helpRequested = true;
       }};
 }
 
@@ -130,15 +112,8 @@ std::string connectionOptionEntries() {
           std::to_string(network::MINIMUM_NICKNAME_SIZE) + " to " +
           std::to_string(network::MAXIMUM_NICKNAME_SIZE) +
           " bytes of UTF-8. Default: " + std::string(DEFAULT_NICKNAME) + ".");
-  text += engine::usageEntry(
-      std::string(engine::SET_OPTION) + " <name>=<value>",
-      "Gives a setting a value, as the line `set <name> <value>` of " +
-          std::string(CLIENT_CONFIGURATION_FILE_NAME) +
-          " does. It wins over that file and can be given several times. "
-          "Settings: " +
-          std::string(NICKNAME_SETTING_NAME) + ", " +
-          std::string(SERVER_ADDRESS_SETTING_NAME) + ", " +
-          std::string(SERVER_PORT_SETTING_NAME) + ".");
+  text += engine::setOptionEntry(CLIENT_CONFIGURATION_FILE_NAME,
+                                 CLIENT_SETTING_NAMES);
   return text;
 }
 
@@ -151,12 +126,18 @@ LaunchOptions LaunchOptions::read(std::span<const std::string_view> arguments) {
                             .port = network::DEFAULT_SERVER_PORT},
       .nickname = std::string(DEFAULT_NICKNAME),
       .audioMode = AudioMode::Enabled,
+      .trafficCsvFile = std::nullopt,
       .forcedLines = {},
       .helpRequested = false}};
   const std::array launchOptions{
-      addressOption(options.values_),  portOption(options.values_),
-      nicknameOption(options.values_), setOption(options.values_),
-      noSoundOption(options.values_),  helpOption(options.values_)};
+      addressOption(options.values_),
+      portOption(options.values_),
+      nicknameOption(options.values_),
+      engine::setOption(options.values_.forcedLines),
+      noSoundOption(options.values_),
+      engine::pathOption(network::TRAFFIC_CSV_OPTION,
+                         options.values_.trafficCsvFile),
+      engine::helpOption(options.values_.helpRequested)};
   const std::array<engine::LaunchOptionReader, 2> readers{
       std::bind_front(&network::SimulatorLaunchOptions::readOption,
                       &options.simulatorOptions_),
@@ -171,6 +152,8 @@ std::string LaunchOptions::usage() {
   text += connectionOptionEntries();
   text += engine::usageEntry(std::string(NO_SOUND_OPTION),
                              "Start the client without sound.");
+  text += engine::usageEntry(network::TRAFFIC_CSV_OPTION_WITH_VALUE,
+                             network::TRAFFIC_CSV_USAGE);
   text += engine::usageEntry(engine::HELP_OPTION,
                              "Print this help and open no window.");
   text += '\n';
@@ -200,6 +183,11 @@ const network::NetworkConditions& LaunchOptions::networkConditions() const {
 
 const logging::LogLaunchOptions& LaunchOptions::logOptions() const {
   return logOptions_;
+}
+
+const std::optional<std::filesystem::path>& LaunchOptions::trafficCsvFile()
+    const {
+  return values_.trafficCsvFile;
 }
 
 LaunchOptions::LaunchOptions(LaunchValues values)

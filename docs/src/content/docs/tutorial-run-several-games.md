@@ -7,7 +7,7 @@ This tutorial runs one `r-type_server` that hosts several games at once, fills a
 
 Every server command below was run before this page was written, and the lines come from the journals of those runs; the players of those runs were scripted over UDP, speaking the [protocol](/R-Type/protocol/), rather than client windows. You need the project built (see the [README](https://github.com/nique-epi/R-Type#readme)).
 
-The server has **no dashboard yet**: the journal is the only way to see its games, and it does not number them, though it gives how many are in progress every 10 s (see [Metrics](/R-Type/server/#metrics-servermetricsmodule)). A dashboard needs the master server, which does not exist yet; this page will gain its steps once it does.
+The server has **no dashboard yet**: the journal is the only way to see its games, and it does not number them, though it gives how many are in progress every 10 s (see [Metrics](/R-Type/server/#metrics-servermetricsmodule)). A dashboard needs the master to know the games of each server, and the master does not hear from the servers yet (see [Master](/R-Type/master/)); this page will gain its steps once it does.
 
 ## What you will have at the end
 
@@ -32,6 +32,7 @@ There is nothing to ask for: a server always hosts `DEFAULT_HOSTED_GAME_COUNT` (
 ```text
 [INFO ] [Server] - server starting
 [INFO ] [Server] - listening on UDP port 4242
+[INFO ] [Storage] - results database /path/to/r-type_server_4242.db
 [INFO ] [Server] - waves file assets/waves/waves.toml: 3 difficulties, games play normal
 [INFO ] [BydoSpawner] - Bydo spawning starts from the seed 42
 [INFO ] [BydoSpawner] - Bydo spawning starts from the seed 65578
@@ -100,7 +101,7 @@ More games cost more per tick, and the journal gives that cost every 10 s (see [
 
 ## Step 5: run two servers side by side
 
-Several servers can run on one machine, each on its own port, with nothing shared between them. Give each its own journal, or their lines mix in one file:
+Several servers can run on one machine, each on its own port, with nothing shared between them. Each keeps its leaderboard in a file named after its port, `r-type_server_4251.db` and `r-type_server_4252.db`, next to the executable. Give each its own journal, or their lines mix in one file:
 
 ```bash
 ./r-type_server -p 4251 --log-file first.log

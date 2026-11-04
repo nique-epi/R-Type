@@ -11,6 +11,7 @@
 #include "MessageDispatcher.hpp"
 #include "NetworkConditions.hpp"
 #include "NetworkThread.hpp"
+#include "ServerLeaderboard.hpp"
 #include "ServerSession.hpp"
 #include "WaitingRoom.hpp"
 
@@ -18,12 +19,13 @@ namespace rtype::client {
 
 /**
  * @brief The module of the connection to a server: the UDP socket on its
- * NetworkThread, a DatagramRouter in front of it, and the three parts the
+ * NetworkThread, a DatagramRouter in front of it, and the four parts the
  * screens and the game use, which it provides to the modules installed after
- * it: the ServerSession (the attempt and the session), the WaitingRoom and the
- * EntityMessageQueue.
+ * it: the ServerSession (the attempt and the session), the WaitingRoom, the
+ * EntityMessageQueue and the ServerLeaderboard. It also provides the
+ * network::TrafficCounters of the socket.
  *
- * install() provides the three parts, over a socket still closed, and adds to
+ * install() provides the four parts, over a socket still closed, and adds to
  * NETWORK_STAGE the work that reads what the server sent and sends what is
  * due. start() opens the socket on every IPv4 interface, on a port the
  * system picks, and starts the network thread. stop() leaves the session with
@@ -63,6 +65,7 @@ class ClientConnectionModule final : public engine::IModule {
   GameLoadedReminder gameLoaded_;
   WaitingRoom waitingRoom_;
   EntityMessageQueue entityMessages_;
+  ServerLeaderboard leaderboard_;
   ServerSession session_;
   logging::Logger logger_;
 };

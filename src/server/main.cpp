@@ -1,16 +1,28 @@
 #include <exception>
 #include <filesystem>
+#include <functional>
 #include <iostream>
+#include <memory>
+#include <span>
 #include <string>
+#include <string_view>
+#include <vector>
 #include "Application.hpp"
 #include "ConfigurationLog.hpp"
 #include "ConfigurationReader.hpp"
 #include "ConfigurationReport.hpp"
+#include "IModule.hpp"
 #include "LaunchArguments.hpp"
 #include "LaunchOptions.hpp"
 #include "Logger.hpp"
 #include "LoopStages.hpp"
+#include "MasterConstants.hpp"
+#include "MasterLaunchOptions.hpp"
+#include "MasterModules.hpp"
 #include "ServerConstants.hpp"
+#include "ServerMode.hpp"
+#include "ServerModeChoice.hpp"
+#include "ServerModeOption.hpp"
 #include "ServerModules.hpp"
 #include "StopReason.hpp"
 #include "StopRequest.hpp"
@@ -19,69 +31,137 @@
 namespace {
 
 /**
- * @brief Tells the operator and the journal that the server stopped on an
+ * @brief What tells apart the two programs the binary runs, the game server
+ * and the master, once their launch options are read.
+ */
+struct ProgramRun {
+  /** @brief The name of the mode, which starts the line of an error:
+   * `server stopped: …`. */
+  std::string_view label;
+  /** @brief The logger the program writes its errors with. */
+  std::string_view loggerName;
+  /** @brief The file of commands read in the folder the program starts in. */
+  std::string_view configurationFile;
+  /** @brief The stages of the loop of the program. */
+  std::span<const std::string_view> stages;
+  /** @brief The lines of `set` the launch options force. */
+  std::vector<std::string> forcedLines;
+  /** @brief Builds the modules, which tell the StopRequest when they fail. */
+  std::function<std::vector<std::unique_ptr<rtype::engine::IModule>>(
+      rtype::server::StopRequest&)>
+      modules;
+};
+
+/**
+ * @brief Tells the operator and the journal that @p program stopped on an
  * error.
  */
-void reportFailure(const std::string& text) {
-  const rtype::logging::Logger logger{
-      std::string{rtype::server::SERVER_LOGGER_NAME}};
-  logger.error("server stopped: ", text);
-  std::cerr << "server stopped: " << text << '\n';
+void reportFailure(const ProgramRun& program, const std::string& text) {
+  const rtype::logging::Logger logger{std::string{program.loggerName}};
+  logger.error(program.label, " stopped: ", text);
+  std::cerr << program.label << " stopped: " << text << '\n';
 }
 
 /**
- * @brief Runs the modules of the server until Ctrl-C, SIGTERM or a failure
+ * @brief Runs the modules of @p program until Ctrl-C, SIGTERM or a failure
  * asks it to stop, then stops them.
- * @returns the exit code: 0 once the server stopped when asked, 1 after an
+ * @returns the exit code: 0 once the program stopped when asked, 1 after an
  *          error, which is logged and printed. No exception leaves it.
  */
-int runServer(const rtype::server::LaunchOptions& launchOptions) {
+int runUntilStopped(const ProgramRun& program) {
   rtype::server::StopRequest stopRequest;
   const rtype::server::StopSignals stopSignals{stopRequest};
   int exitCode = 0;
   try {
     rtype::engine::ConfigurationReport configurationReport;
     rtype::engine::Application application{
-        rtype::engine::LoopStages{rtype::server::SERVER_LOOP_STAGES},
-        rtype::server::serverModules(launchOptions.logOptions(), launchOptions,
-                                     stopRequest),
+        rtype::engine::LoopStages{program.stages}, program.modules(stopRequest),
         rtype::engine::configurationStep(
-            std::filesystem::path{
-                rtype::server::SERVER_CONFIGURATION_FILE_NAME},
-            launchOptions.forcedLines(), configurationReport)};
+            std::filesystem::path{program.configurationFile},
+            program.forcedLines, configurationReport)};
     application.start();
     rtype::engine::logConfigurationReport(
-        configurationReport, rtype::server::SERVER_CONFIGURATION_FILE_NAME,
-        rtype::logging::Logger{std::string{rtype::server::SERVER_LOGGER_NAME}});
+        configurationReport, program.configurationFile,
+        rtype::logging::Logger{std::string{program.loggerName}});
     const rtype::server::StopReason reason = stopRequest.wait();
     application.stop();
     if (reason.failed) {
-      reportFailure(reason.text);
+      reportFailure(program, reason.text);
       exitCode = 1;
     }
   } catch (const std::exception& error) {
-    reportFailure(error.what());
+    reportFailure(program, error.what());
     exitCode = 1;
   }
   stopRequest.announceStopped();
   return exitCode;
 }
 
+/**
+ * @brief Runs the game server with @p options, or prints its usage.
+ * @returns the exit code of the server.
+ */
+int runServer(std::span<const std::string_view> options) {
+  const rtype::server::LaunchOptions launchOptions =
+      rtype::server::LaunchOptions::read(options);
+  if (launchOptions.helpRequested()) {
+    std::cout << rtype::server::LaunchOptions::usage();
+    return 0;
+  }
+  return runUntilStopped(ProgramRun{
+      .label = rtype::server::SERVER_MODE_NAME,
+      .loggerName = rtype::server::SERVER_LOGGER_NAME,
+      .configurationFile = rtype::server::SERVER_CONFIGURATION_FILE_NAME,
+      .stages = rtype::server::SERVER_LOOP_STAGES,
+      .forcedLines = launchOptions.forcedLines(),
+      .modules = [&launchOptions](rtype::server::StopRequest& stopRequest) {
+        return rtype::server::serverModules(launchOptions.logOptions(),
+                                            launchOptions, stopRequest);
+      }});
+}
+
+/**
+ * @brief Runs the master with @p options, or prints its usage.
+ * @returns the exit code of the master.
+ */
+int runMaster(std::span<const std::string_view> options) {
+  const rtype::master::MasterLaunchOptions launchOptions =
+      rtype::master::MasterLaunchOptions::read(options);
+  if (launchOptions.helpRequested()) {
+    std::cout << rtype::master::MasterLaunchOptions::usage();
+    return 0;
+  }
+  return runUntilStopped(ProgramRun{
+      .label = rtype::server::MASTER_MODE_NAME,
+      .loggerName = rtype::master::MASTER_LOGGER_NAME,
+      .configurationFile = rtype::master::MASTER_CONFIGURATION_FILE_NAME,
+      .stages = rtype::master::MASTER_LOOP_STAGES,
+      .forcedLines = launchOptions.forcedLines(),
+      .modules = [&launchOptions](rtype::server::StopRequest& stopRequest) {
+        return rtype::master::masterModules(
+            launchOptions.logOptions(),
+            [&stopRequest](const std::string& reason) {
+              stopRequest.fail(reason);
+            });
+      }});
+}
+
 }  // namespace
 
 int main(int argumentCount, char** arguments) {
+  std::string_view programName = rtype::server::PROGRAM_NAME;
   try {
-    const rtype::server::LaunchOptions launchOptions =
-        rtype::server::LaunchOptions::read(
-            rtype::engine::processArguments(argumentCount, arguments));
-    if (launchOptions.helpRequested()) {
-      std::cout << rtype::server::LaunchOptions::usage();
-      return 0;
+    const std::vector<std::string_view> launchArguments =
+        rtype::engine::processArguments(argumentCount, arguments);
+    const rtype::server::ServerModeChoice choice =
+        rtype::server::chooseServerMode(launchArguments);
+    if (choice.mode == rtype::server::ServerMode::Master) {
+      programName = rtype::master::MASTER_PROGRAM_NAME;
+      return runMaster(choice.options);
     }
-    return runServer(launchOptions);
+    return runServer(choice.options);
   } catch (const std::exception& error) {
-    std::cerr << rtype::engine::launchErrorText(rtype::server::PROGRAM_NAME,
-                                                error.what());
+    std::cerr << rtype::engine::launchErrorText(programName, error.what());
     return 1;
   }
 }

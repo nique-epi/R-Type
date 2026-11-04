@@ -30,6 +30,12 @@ Why: a review flagged a seven-parameter constructor. The C++ Core Guidelines set
    - Before trusting an empty result, calibrate the command on a function known to be over the limit.
 7. **A function over the limit that the change does not touch is reported, not extended.** Adding a parameter to it, or copying its list into a new function, extends it (`fix-process-rework-preexisting-inconsistencies.md`).
 
+### Two neighbouring parameters of one type cannot be told apart
+
+1. **Before writing two neighbouring parameters of the same or a convertible type** (two `std::string_view`, two `const BoundedQueue&`), change the shape: `bugprone-easily-swappable-parameters` reports them, and the tidy gate fails. The compiler does not, so code that builds without a warning can still fail there.
+2. **Take the struct that already groups them** (`DatagramSorter::Destinations`), **or give the helper one value only and let the caller join the rest**: `start + messageTypeText(type) + figuresText(figures)`, not `rowOf(start, message, figures)`.
+3. **A check of a plan's code by compiling it does not run tidy**: run the tidy gate on the code as soon as it is written, before calling a commit done.
+
 ## Example
 
 - ❌ **Before (wrong)**:

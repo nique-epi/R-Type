@@ -1,3 +1,4 @@
+add_subdirectory(Leaderboard)
 add_subdirectory(Options)
 add_subdirectory(Title)
 
@@ -13,6 +14,7 @@ target_link_libraries(rtype_client_menus_module
   PRIVATE
     rtype_client_constants
     rtype_client_input_keys
+    rtype_client_menus_leaderboard
     rtype_client_options
     rtype_client_title
 )

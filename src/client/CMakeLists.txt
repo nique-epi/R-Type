@@ -24,6 +24,7 @@ add_subdirectory(Lobby)
 add_subdirectory(Game)
 add_subdirectory(Application)
 add_subdirectory(Connection)
+add_subdirectory(Metrics)
 add_subdirectory(LaunchOptions)
 add_subdirectory(Modules)
 
@@ -35,6 +36,16 @@ target_link_libraries(r-type_client
     rtype_client_modules
     rtype_client_rendering
     rtype_logging
+)
+
+# In Release, the Windows client is a GUI program: no console window opens
+# next to the game. Its entry point stays main(), which the console runtime
+# start-up calls.
+set_target_properties(r-type_client PROPERTIES
+  WIN32_EXECUTABLE $<CONFIG:Release>
+)
+target_link_options(r-type_client PRIVATE
+  $<$<AND:$<CXX_COMPILER_ID:MSVC>,$<CONFIG:Release>>:/ENTRY:mainCRTStartup>
 )
 
 rtype_enable_warnings(r-type_client)

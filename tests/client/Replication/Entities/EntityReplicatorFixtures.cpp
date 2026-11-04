@@ -17,6 +17,7 @@
 #include "Lifetime.hpp"
 #include "PilotShip.hpp"
 #include "Position.hpp"
+#include "PositionHistory.hpp"
 #include "Reveal.hpp"
 #include "SpeedLine.hpp"
 #include "Sprite.hpp"
@@ -165,6 +166,17 @@ std::size_t announcedEntityCount(engine::ComponentRegistry& components) {
       [&count](engine::Entity, const game::EntityType&,
                const game::EntityType&) { ++count; });
   return count;
+}
+
+std::optional<game::Position> historyPositionAt(
+    engine::ComponentRegistry& components, double tick) {
+  std::optional<game::Position> position;
+  components.forEach<PositionHistory, game::EntityType>(
+      [&position, tick](engine::Entity, const PositionHistory& history,
+                        const game::EntityType&) {
+        position = history.at(tick);
+      });
+  return position;
 }
 
 }  // namespace rtype::client::testing

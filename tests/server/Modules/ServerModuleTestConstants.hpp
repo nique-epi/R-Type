@@ -10,6 +10,9 @@
 constexpr const char* PROBE_MODULE = "probe";
 constexpr const char* PORT_PROBE_MODULE = "port probe";
 
+/** @brief The database of a server a test starts, in a folder of the test. */
+constexpr std::string_view TEST_DATABASE_FILE = "results.db";
+
 /** @brief The text the failing stage work of the tests throws. */
 constexpr const char* STAGE_FAILURE_TEXT = "a stage failed";
 
@@ -21,11 +24,6 @@ constexpr std::uint64_t ADMITTED_TOKEN = 0xAB12;
 constexpr std::uint32_t SOME_SEED = 7;
 constexpr const char* PLAYER_NICKNAME = "ace";
 constexpr std::uint64_t PLAYER_TOKEN_BASE = 0x1000;
-
-/** @brief The simulation ticks that make two copies of a repeated message
- * 50 ms apart, with a tick to spare. */
-constexpr int TICKS_FOR_ONE_MORE_COPY = 4;
-constexpr int TICKS_FOR_THE_LAST_COPY = 8;
 
 /** @brief A waves file that is not there. */
 constexpr const char* MISSING_WAVES_FILE = "no/such/folder/waves.toml";
@@ -40,7 +38,7 @@ constexpr std::chrono::milliseconds GOODBYE_WAIT{400};
 constexpr std::size_t UNREACHABLE_COUNT = 100000;
 
 /** @brief The least time between two copies of the farewell as the client sees
- * it: REPEATED_MESSAGE_INTERVAL (50 ms) less what a loaded machine takes away
+ * it: FAREWELL_COPY_INTERVAL (50 ms) less what a loaded machine takes away
  * from one of two neighbours. */
 constexpr std::chrono::milliseconds MINIMUM_COPY_SPACING{20};
 

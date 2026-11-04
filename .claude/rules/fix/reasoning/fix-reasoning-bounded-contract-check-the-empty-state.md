@@ -22,6 +22,7 @@ Before shipping code whose result must stay **within a range** — index in a bu
 
 1. **Before writing the test of a guard such as `std::max(0, size - 1)`, compute the guarded and the unguarded value at each candidate size.** The test uses a size where they differ: size 0 for `max(0, size - 1)`, never size 1, where both give 0.
 2. **Find the smallest size the callers really pass**, by reading them: a box whose corners close passes a height of 0.
+3. **Compute both values in the type the code computes in**, not in the type of its result: a shift done in 64 bits and cut to 32 gives 0 with or without a bound on 32 for every distance up to 64. They differ only past the width of the computation, where the unguarded shift is undefined behavior: test there, and say in the report that the red proof goes through undefined behavior.
 
 ## Example
 
@@ -31,3 +32,5 @@ Before shipping code whose result must stay **within a range** — index in a bu
 - ✅ **After (right)**: "newer means ahead by 1 to 32767; exactly half the range (32768) is never newer".
 - ❌ **Before (wrong)**: the guard `lower = top + max(0, height - 1)` of `paintBoxCorners` tested on a box one row tall, where the unguarded `top + height - 1` gives the same row: the test could not fail.
 - ✅ **After (right)**: the test paints a closed box, 0 rows tall, as the squadron passes when its corners meet; without the guard the bottom strokes land one row above the box.
+- ❌ **Before (wrong)**: the bound `distance > 32` of `earlierAfterMoving` tested by a jump of 33 sequences; the bits move in 64 bits, so the unguarded code also gave 0 and the red proof left every test green.
+- ✅ **After (right)**: a jump of 65, the first past the 64 bits of the shift; without the bound the code shifts by 64, keeps a bit on arm64, and the test turns red, through undefined behavior.

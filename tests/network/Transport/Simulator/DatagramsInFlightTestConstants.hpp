@@ -30,7 +30,6 @@ constexpr std::chrono::milliseconds NEAR_NO_WAIT{5};
 constexpr std::chrono::milliseconds NEAR_HALF_OF_60_MS{25};
 
 /** @brief The shares of loss, duplicates and reordering the tests set. */
-constexpr rtype::network::NetworkConditions FULL_LOSS{.lossPercent = 100};
 constexpr rtype::network::NetworkConditions TENTH_LOSS{.lossPercent = 10};
 constexpr rtype::network::NetworkConditions FULL_DUPLICATES{.duplicatePercent =
                                                                 100};

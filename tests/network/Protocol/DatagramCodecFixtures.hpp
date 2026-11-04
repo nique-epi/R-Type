@@ -3,6 +3,7 @@
 #include <gtest/gtest.h>
 #include <cstddef>
 #include <ostream>
+#include <string>
 #include <string_view>
 #include <utility>
 #include <vector>
@@ -29,7 +30,11 @@ void PrintTo(const MalformedDatagram& datagram, std::ostream* output);
 /** @returns The bytes of a default header without its last byte. */
 std::vector<std::byte> headerOneByteShort();
 
-class DatagramCodecMalformedDatagram
-    : public ::testing::TestWithParam<MalformedDatagram> {};
+/** @returns One datagram for each fault splitMessages() refuses. */
+[[nodiscard]] std::vector<MalformedDatagram> malformedDatagrams();
+
+/** @returns The fault of the datagram of @p info, as the name of its test. */
+[[nodiscard]] std::string nameOfFault(
+    const ::testing::TestParamInfo<MalformedDatagram>& info);
 
 }  // namespace rtype::network::testing

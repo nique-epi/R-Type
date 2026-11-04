@@ -3,6 +3,7 @@ add_library(rtype_server_sessions_tracking STATIC
   Departures.cpp
   Heartbeats.cpp
   InputKeeper.cpp
+  MessageDelivery.cpp
   ReadyKeeper.cpp
 )
 

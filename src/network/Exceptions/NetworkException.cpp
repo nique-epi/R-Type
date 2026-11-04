@@ -40,6 +40,9 @@ DatagramTooLargeException::DatagramTooLargeException(std::size_t size)
                        std::to_string(MAX_DATAGRAM_SIZE) + " bytes, not " +
                        std::to_string(size)) {}
 
+EmptyDatagramException::EmptyDatagramException()
+    : NetworkException("A datagram holds at least one message") {}
+
 ReceivingAlreadyStartedException::ReceivingAlreadyStartedException()
     : NetworkException("The socket already hands its datagrams to a handler") {}
 
@@ -89,6 +92,17 @@ DuplicatePlayerNumberException::DuplicatePlayerNumberException(
     : MalformedMessageException(
           "player number " + std::to_string(playerNumber) + " appears twice") {}
 
+InvalidDifficultyException::InvalidDifficultyException(std::size_t size)
+    : MalformedMessageException("a difficulty of " + std::to_string(size) +
+                                " byte(s) is empty, too long, not UTF-8 or "
+                                "holds a control character") {}
+
+TooManyLeaderboardRowsException::TooManyLeaderboardRowsException(
+    std::size_t rowCount, std::size_t maximumCount)
+    : MalformedMessageException("a leaderboard lists at most " +
+                                std::to_string(maximumCount) + " rows, not " +
+                                std::to_string(rowCount)) {}
+
 TooManyPlayersException::TooManyPlayersException(std::size_t playerCount,
                                                  std::size_t maximumCount)
     : MalformedMessageException(
@@ -120,5 +134,8 @@ SimulatedDelayOutOfRangeException::SimulatedDelayOutOfRangeException(
           std::to_string(longest.count()) + " ms, not " +
           std::to_string(lag.count()) + " ms and " +
           std::to_string(jitter.count()) + " ms") {}
+
+TrafficFileOpenException::TrafficFileOpenException(const std::string& path)
+    : NetworkException("Cannot open the traffic file " + path) {}
 
 }  // namespace rtype::network

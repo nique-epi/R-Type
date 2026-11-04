@@ -21,6 +21,15 @@ A generic `std::` exception thrown from domain code carries no domain informatio
 - The `Exceptions/` files are added to the CMake target of that folder.
 - Writing `throw std::` is the signal that a class is missing in the `Exceptions/` of the owner.
 
+### A new top library has its `Exceptions/` folder from its first commit
+
+1. **A library added under `src/` that raises an error puts its root exception in `src/<library>/Exceptions/`**, with a `CMakeLists.txt` declaring `rtype_<library>_exceptions`, linked `PUBLIC` by the library, as `src/concurrency/Exceptions/` and `src/logging/Exceptions/` do. One exception class is enough to need the folder; never a `<Library>Exception.hpp` at the root of the library.
+2. **Before the push, list the top folders of `src/` without one**:
+   ```bash
+   for dir in src/*/; do [ -d "${dir}Exceptions" ] || echo "$dir"; done
+   ```
+   It prints only `src/identifiers/`, which holds constants and raises nothing. Calibrated on the leaderboard branch: before the fix it also printed `src/storage/`.
+
 ## Examples
 
 - ❌ **Forbidden**:

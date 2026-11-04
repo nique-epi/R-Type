@@ -1,0 +1,5 @@
+add_library(rtype_storage_exceptions STATIC StorageException.cpp)
+
+target_include_directories(rtype_storage_exceptions PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+
+rtype_enable_warnings(rtype_storage_exceptions)

@@ -2,6 +2,7 @@
 
 #include <memory>
 #include <string>
+#include <string_view>
 #include <vector>
 #include "ConfigurationRegistry.hpp"
 #include "EventBus.hpp"
@@ -12,33 +13,32 @@
 #include "IDatagramSender.hpp"
 #include "IModule.hpp"
 #include "IPlayerAdmission.hpp"
+#include "IResultsArchive.hpp"
 #include "IncomingDatagram.hpp"
 #include "InstallContext.hpp"
 #include "Logger.hpp"
 #include "SettingValue.hpp"
 #include "SystemClock.hpp"
 #include "TickDatagrams.hpp"
-#include "TimeConstants.hpp"
-#include "TimerScheduler.hpp"
 #include "WavePlan.hpp"
 
 namespace rtype::server {
 
 /**
  * @brief The module that runs the games: GamesSettings::gameCount games, each
- * with its own bus, and the timers they share.
+ * with its own bus.
  *
  * Every game runs on the simulation thread, one after the other in each tick:
  * no state is shared between games, so nothing needs a lock, but an exception
  * in one game stops the server and a slow game slows the others. In the
  * simulation stage, each game reads the datagrams of its own players (see
  * keepDatagramsOf()) and moves on, and the players whose session closed are
- * forgotten by the network. In the outputs stage, the timers advance and the
- * bus of each game delivers the events of the tick. The lobby module adds its
+ * forgotten by the network. In the outputs stage, the bus of each game delivers
+ * the events of the tick. The lobby module adds its
  * work to the simulation stage after this one. Each game reads real time on the
  * clock of the module for its Heartbeats.
  *
- * install() builds the timers and the empty list of games, declares the `seed`,
+ * install() builds the empty list of games, declares the `seed`,
  * `state-rate` and `input-delay` settings and provides Games. start() reads the
  * waves file once, then creates the games with the values of the settings, each
  * subscribing its rules and its broadcaster to its own bus. A finished game
@@ -54,7 +54,8 @@ class ServerGamesModule final : public engine::IModule {
 
   /**
    * @throws MissingServiceException when the network module did not provide
-   * the sender, the admission or the datagrams of the tick.
+   * the sender, the admission or the datagrams of the tick, or the storage
+   * module the results archive.
    */
   void install(engine::InstallContext& context) override;
 
@@ -72,23 +73,23 @@ class ServerGamesModule final : public engine::IModule {
   void stop() override;
 
  private:
-  [[nodiscard]] WavePlan readWaves() const;
+  /** @returns The waves of @p difficulty in the waves file. */
+  [[nodiscard]] WavePlan readWaves(std::string_view difficulty) const;
   [[nodiscard]] std::unique_ptr<GameInstance> createGame(
       engine::EventBus& events, GameSettings settings);
   void declareSettings(engine::ConfigurationRegistry& configuration);
   void playGames();
-  void deliverEvents(engine::Duration elapsed);
 
   GamesSettings settings_;
   const engine::SettingValue* seedSetting_{nullptr};
   const engine::SettingValue* stateRateSetting_{nullptr};
   const engine::SettingValue* inputDelaySetting_{nullptr};
   logging::Logger logger_;
-  engine::TimerScheduler timers_;
   engine::SystemClock clock_;
   Games games_;
   IDatagramSender* sender_{nullptr};
   IPlayerAdmission* admission_{nullptr};
+  IResultsArchive* results_{nullptr};
   TickDatagrams* tickDatagrams_{nullptr};
   std::vector<network::IncomingDatagram> datagramsOfGame_;
 };

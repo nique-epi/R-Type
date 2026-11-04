@@ -5,10 +5,16 @@
 namespace rtype::engine {
 
 /**
- * @brief Launch option followed by a UDP port, the one to listen on or the
- * one of the server to join.
+ * @brief Launch option followed by a port, the one a program listens on or
+ * the one of the server to join.
  */
 constexpr std::string_view PORT_OPTION = "-p";
+
+/**
+ * @brief Launch option followed by the file a program keeps its database in:
+ * it forces the setting `database` of that program to that path.
+ */
+constexpr std::string_view DATABASE_OPTION = "--database";
 
 /**
  * @brief Launch option followed by `name=value`, which forces a setting to a

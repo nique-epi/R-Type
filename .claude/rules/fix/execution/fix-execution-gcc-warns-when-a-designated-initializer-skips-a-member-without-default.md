@@ -10,10 +10,17 @@ Why: `-Wmissing-field-initializers` with warnings as errors failed the Linux job
 ## Rule
 
 1. **When a member is added to an aggregate**, grep every `Type{.` that builds it (`git grep -n 'Type{' -- src tests`) and list the new member in each one that does not set it, as `.member = std::nullopt` or `.member = {}`. A member with a default member initializer (`bool ready{false};`) may be skipped; one without may not.
-2. **Do not silence it by writing `{}` on the member** when it is of class type: `readability-redundant-member-init` reports it. Name the value at the construction site instead.
+2. **Do not silence it by writing `{}` on the member** when it is of class type: `readability-redundant-member-init` reports it. Name the value at the construction site instead. A `// NOLINT` above the braces is the same way out, not another one, and neighbouring code that does it is reported, not copied. A member that may stay absent can be a `std::optional` with `= std::nullopt`, which needs neither.
 3. **The local Clang run is not the verdict**: Clang's `-Wmissing-field-initializers` stayed silent on the failing line, so it does not calibrate this check. State in the report that GCC was not run, and read the Linux job.
+
+### A construction with a name is a construction too
+
+1. **The search of point 1 also looks for `Type name{`**: `git grep -n -E '\bType( [A-Za-z_]+)?\{' -- src tests`. A search for `Type{` misses `const Type report{…}`.
+2. **Homebrew clang reports what GCC reports, where Apple clang stays silent**: before the push, compile every file that names the aggregate with `/opt/homebrew/opt/llvm/bin/clang++ -fsyntax-only -Wmissing-designated-field-initializers` and the flags of its compile command. Calibrated on `MetricsLinesTest.cpp` with a member left out: three warnings there, none on a file that lists the member. It only narrows what is left to find on the Linux job.
 
 ## Example
 
 - ❌ **Before (wrong)**: `ConnectedPlayer` gains `std::optional<std::uint16_t> newestReceivedSequence;` and `PlayerRoster::add` keeps `ConnectedPlayer{.playerNumber = …, .nextSequence = 0}` → `missing initializer for member ‘newestReceivedSequence’` on Linux.
 - ✅ **After (right)**: `.nextSequence = 0, .newestReceivedSequence = std::nullopt}`.
+- ❌ **Before (wrong)**: `MetricsReport` gains `network::TrafficReport traffic;`; `git grep 'MetricsReport{'` finds one site, and the three `const MetricsReport report{…}` of `MetricsLinesTest.cpp` stay as they were.
+- ✅ **After (right)**: the search finds the four sites, each lists `.traffic = {}`, and the Homebrew clang run prints nothing.

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <functional>
+#include "ConnectionGoal.hpp"
 #include "IScreenNavigator.hpp"
 #include "IServerConnection.hpp"
 #include "ISoundPlayer.hpp"
@@ -25,6 +26,8 @@ struct ConnectionScreenParts {
    * replaces them with those of each attempt it starts. It must outlive the
    * screen. */
   std::reference_wrapper<ServerChoice> choice;
+  /** @brief What an accepted connection leads to. */
+  ConnectionGoal goal = ConnectionGoal::WaitingRoom;
 };
 
 }  // namespace rtype::client

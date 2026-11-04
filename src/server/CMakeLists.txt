@@ -12,8 +12,10 @@ add_subdirectory(LaunchOptions)
 add_subdirectory(Sessions)
 add_subdirectory(Replication)
 add_subdirectory(Spawning)
+add_subdirectory(Storage)
 add_subdirectory(Instances)
 add_subdirectory(Rules)
+add_subdirectory(Results)
 add_subdirectory(Games)
 add_subdirectory(Lobby)
 add_subdirectory(Metrics)
@@ -24,6 +26,9 @@ add_executable(r-type_server main.cpp)
 target_link_libraries(r-type_server
   PRIVATE
     rtype_logging
+    rtype_master_constants
+    rtype_master_launch_options
+    rtype_master_modules
     rtype_server_constants
     rtype_server_modules
 )

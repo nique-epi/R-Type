@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstddef>
+#include <filesystem>
 #include <memory>
 #include <optional>
 #include <vector>
@@ -27,6 +28,13 @@ class ServerMetricsFixture : public ServerLobbyFixture {
   /** @returns How many lines of the journal the metrics wrote. */
   [[nodiscard]] std::size_t metricsLinesInTheJournal() const;
 
+  /** @returns How many lines of the journal the traffic wrote. */
+  [[nodiscard]] std::size_t trafficLinesInTheJournal() const;
+
+  /** @brief Has the module write its rows to @p file; call it before
+   * startWithGames(). */
+  void writeTrafficTo(std::filesystem::path file);
+
   /** @returns The report the metrics module published last, if any. */
   [[nodiscard]] std::optional<rtype::server::MetricsReport> latestReport();
 
@@ -42,4 +50,5 @@ class ServerMetricsFixture : public ServerLobbyFixture {
 
  private:
   std::shared_ptr<SimulatedClock> clock_{std::make_shared<SimulatedClock>()};
+  std::optional<std::filesystem::path> trafficFile_;
 };

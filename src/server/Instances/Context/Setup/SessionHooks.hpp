@@ -3,6 +3,7 @@
 #include <functional>
 #include <vector>
 #include "ConnectedPlayer.hpp"
+#include "LeaderboardRequest.hpp"
 #include "PlayerInput.hpp"
 
 namespace rtype::server {
@@ -30,6 +31,11 @@ struct SessionHooks {
   std::vector<
       std::function<void(const ConnectedPlayer&, const network::PlayerInput&)>>
       newerInput;
+  /** @brief Called with a player and each LeaderboardRequest it sends, for a
+   * module to answer it. */
+  std::vector<std::function<void(const ConnectedPlayer&,
+                                 const network::LeaderboardRequest&)>>
+      leaderboardRequested;
 };
 
 }  // namespace rtype::server

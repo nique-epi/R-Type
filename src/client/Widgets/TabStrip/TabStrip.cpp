@@ -23,6 +23,8 @@ TabStrip::TabStrip(std::vector<std::string> labels, std::size_t openTab,
       keys_(std::move(keys)),
       topLeft_(topLeft) {}
 
+void TabStrip::setWidth(int width) { width_ = width; }
+
 void TabStrip::paint(IInterfaceCanvas& canvas) const {
   KeyCap(keys_.previous, KeyCap::Edge::Plain)
       .paint(canvas, previousKeyArea().position);
@@ -64,7 +66,7 @@ sf::IntRect TabStrip::previousKeyArea() const {
 }
 
 sf::IntRect TabStrip::nextKeyArea() const {
-  return {{topLeft_.x + TAB_STRIP_WIDTH - KEY_CAP_MINIMUM_WIDTH,
+  return {{topLeft_.x + width_ - KEY_CAP_MINIMUM_WIDTH,
            topLeft_.y + TAB_KEY_CAP_TOP},
           {KEY_CAP_MINIMUM_WIDTH, CONTROL_HEIGHT}};
 }
@@ -72,9 +74,8 @@ sf::IntRect TabStrip::nextKeyArea() const {
 sf::IntRect TabStrip::tabArea(std::size_t tab) const {
   const int count = static_cast<int>(labels_.size());
   const int firstLeft = KEY_CAP_MINIMUM_WIDTH + TAB_GAP;
-  const int width = (TAB_STRIP_WIDTH - (SIDES_PER_AXIS * firstLeft) -
-                     ((count - 1) * TAB_GAP)) /
-                    count;
+  const int width =
+      (width_ - (SIDES_PER_AXIS * firstLeft) - ((count - 1) * TAB_GAP)) / count;
   const int left =
       topLeft_.x + firstLeft + (static_cast<int>(tab) * (width + TAB_GAP));
   return {{left, topLeft_.y}, {width, TAB_HEIGHT}};

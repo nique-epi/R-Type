@@ -61,6 +61,21 @@
       "configurePreset": "sanitize"
     }
   ],
+  "packagePresets": [
+    {
+      "name": "client",
+      "configurePreset": "default",
+      "configFile": "CPackConfig-client.cmake",
+      "configurations": [
+        "Release"
+      ]
+    },
+    {
+      "name": "server",
+      "inherits": "client",
+      "configFile": "CPackConfig-server.cmake"
+    }
+  ],
   "workflowPresets": [
     {
       "name": "build",
@@ -106,6 +121,27 @@
         {
           "type": "test",
           "name": "sanitize"
+          }
+        ]
+      },
+      {
+      "name": "package",
+      "steps": [
+        {
+          "type": "configure",
+          "name": "default"
+        },
+        {
+          "type": "build",
+          "name": "default"
+        },
+        {
+          "type": "package",
+          "name": "client"
+        },
+        {
+          "type": "package",
+          "name": "server"
         }
       ]
     }

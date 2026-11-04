@@ -28,6 +28,12 @@ constexpr std::string_view PORT_SETTING_NAME = "port";
 constexpr std::string_view SEED_SETTING_NAME = "seed";
 constexpr std::string_view STATE_RATE_SETTING_NAME = "state-rate";
 constexpr std::string_view INPUT_DELAY_SETTING_NAME = "input-delay";
+constexpr std::string_view DATABASE_SETTING_NAME = "database";
+
+/** @brief Every setting of the server, in the order its usage lists them. */
+constexpr std::array SERVER_SETTING_NAMES{
+    PORT_SETTING_NAME, SEED_SETTING_NAME, STATE_RATE_SETTING_NAME,
+    INPUT_DELAY_SETTING_NAME, DATABASE_SETTING_NAME};
 
 /**
  * @brief The highest seed: the seed of a game is 32 bits.
@@ -86,6 +92,26 @@ constexpr std::string_view WAVE_FILE_IN_ASSETS = "waves/waves.toml";
  * choose another one.
  */
 constexpr std::string_view DEFAULT_DIFFICULTY = "normal";
+
+/**
+ * @brief Launch option followed by the program the binary runs:
+ * SERVER_MODE_NAME, the default, or MASTER_MODE_NAME. It comes first, before
+ * every other option.
+ */
+constexpr std::string_view MODE_OPTION = "--mode";
+constexpr std::string_view SERVER_MODE_NAME = "server";
+constexpr std::string_view MASTER_MODE_NAME = "master";
+
+/** @brief How many arguments MODE_OPTION takes, its value included. */
+constexpr std::size_t MODE_ARGUMENT_COUNT = 2;
+
+/**
+ * @brief The name of the database of a server while DATABASE_SETTING_NAME is
+ * empty: the prefix, its port, the suffix. Two servers on one machine listen
+ * on two ports, so they never merge their leaderboards by accident.
+ */
+constexpr std::string_view DATABASE_FILE_PREFIX = "r-type_server_";
+constexpr std::string_view DATABASE_FILE_SUFFIX = ".db";
 
 /**
  * @brief Logger name the simulation thread writes its tick reports under.
