@@ -28,7 +28,19 @@ Why: a review asked, for eleven places of one pull request, to move the constant
    ```
    It must print nothing. Calibration: on `git show '275b065:tests/client/Rendering/Effects/Camera/CameraShakeTest.cpp'` it prints the anonymous namespace, eight constants, `struct ShakeOverASecond` and `shakeKeeping`; on `git show 'origin/main:tests/server/Replication/Announcements/Streams/WorldStateSenderTest.cpp'` it prints nothing.
 
+### A helper taken out of an anonymous namespace is searched for in its new namespace
+
+1. **A free function of an anonymous namespace is local to its file; moved into `<Subject>Fixtures.{hpp,cpp}`, it becomes an external function of the named namespace** (`rtype::server::testing`), where a shared test helper may already define it. Two external definitions of one function break the one-definition rule; the link only fails the day a test pulls in the object of the other one.
+2. **Before moving each helper, search the test headers for its name**, from the repository root:
+   ```bash
+   git grep -n -w -e '<helper>' -e '<other helper>' -- 'tests/*.hpp' | grep -E '\('
+   ```
+   For each hit, read its namespace and signature. Same namespace and signature: delete the moved copy and include that header. Same purpose under another name (`onlyMessageIn` for `messageOf`): call it instead. Another namespace or signature (`frameOf` of the client sprites): no collision.
+3. **Calibration**, at commit `a90a9a0b`, with `-e playerEndpoint -e messageTypeOf -e messageOf`: the command prints `tests/server/SentDatagrams.hpp:21`, the `playerEndpoint` of the same namespace the moved copy collided with.
+
 ## Example
 
 - ❌ **Before (wrong)**: `GroundEffectsTest.cpp` opens an anonymous namespace holding nine constants (`ON_PIXEL_100_50`, `YOUNG`, `RING_RADIUS`…), `class GroundScene` with its bodies, and `shrinkingDropAged()`, then its tests.
 - ✅ **After (right)**: `GroundEffectsTestConstants.hpp` holds the nine constants; `GroundEffectsFixture.hpp` declares the fixture class `GroundEffectsFixture` (the former scene) and `GroundEffectsFixture.cpp` defines it; `GroundEffectsTest.cpp` holds its includes, its `using` lines and `TEST_F(GroundEffectsFixture, …)` blocks, and the grep of point 5 prints nothing.
+- ❌ **Before (wrong)**: `playerEndpoint`, `messageTypeOf` and `messageOf` moved from the anonymous namespace of `ConnectionAcceptorTest.cpp` into `ConnectionAcceptorFixtures.{hpp,cpp}`, in `rtype::server::testing`, where `SentDatagrams.hpp` already declares `playerEndpoint(std::size_t)` and offers `onlyMessageTypeOf` and `onlyMessageIn`.
+- ✅ **After (right)**: the search of the subsection prints `SentDatagrams.hpp:21`; the copies are deleted, the tests call `playerEndpoint`, `onlyMessageTypeOf` and `onlyMessageIn` from `SentDatagrams.hpp`.

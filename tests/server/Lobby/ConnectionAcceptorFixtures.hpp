@@ -12,7 +12,7 @@ namespace rtype::server::testing {
  */
 std::vector<std::byte> emptyNicknameRequestDatagram();
 
-/** @returns A nickname of its own for the requester at @p requester. */
-std::string nicknameOf(std::size_t requester);
+/** @returns A nickname of its own for the player at @p player. */
+std::string nicknameOf(std::size_t player);
 
 }  // namespace rtype::server::testing

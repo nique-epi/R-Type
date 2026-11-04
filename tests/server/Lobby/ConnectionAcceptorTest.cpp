@@ -1,4 +1,5 @@
 #include <gtest/gtest.h>
+#include <array>
 #include <cstddef>
 #include <cstdint>
 #include <span>
@@ -11,14 +12,15 @@
 #include "ConnectionAcceptor.hpp"
 #include "ConnectionAcceptorFixture.hpp"
 #include "ConnectionAcceptorFixtures.hpp"
-#include "ConnectionAcceptorLogFixture.hpp"
 #include "ConnectionChallenge.hpp"
 #include "ConnectionRefused.hpp"
 #include "ConnectionRequest.hpp"
 #include "DatagramCodec.hpp"
 #include "Endpoint.hpp"
+#include "IncomingDatagram.hpp"
 #include "MessageType.hpp"
 #include "NetworkConstants.hpp"
+#include "NetworkException.hpp"
 #include "OutgoingDatagram.hpp"
 #include "PacketHeader.hpp"
 #include "PlayerRoster.hpp"
@@ -33,8 +35,8 @@
 namespace rtype::server {
 
 using testing::ConnectionAcceptorFixture;
-using testing::ConnectionAcceptorLogFixture;
 using testing::COOKIE_EXPIRED_TIME;
+using testing::DROPPED_DATAGRAM_LINE_TEXT;
 using testing::DROPPED_TOGETHER_COUNT;
 using testing::emptyNicknameRequestDatagram;
 using testing::NEXT_PROTOCOL_VERSION;
@@ -176,7 +178,7 @@ TEST_F(ConnectionAcceptorFixture, AnnouncesAPlayerAcceptedAgainOnlyOnce) {
  */
 TEST_F(ConnectionAcceptorFixture, NumbersFourPlayersInTheOrderTheyConnect) {
   for (std::size_t player = 0; player < network::MAXIMUM_PLAYERS; ++player) {
-    connectAs(playerEndpoint(player), nicknameOf(player));
+    connect(playerEndpoint(player), nicknameOf(player));
 
     EXPECT_EQ(
         onlyMessageIn<network::ConnectionAccepted>(lastAnswer()).playerNumber,
@@ -191,7 +193,7 @@ TEST_F(ConnectionAcceptorFixture, NumbersFourPlayersInTheOrderTheyConnect) {
  */
 TEST_F(ConnectionAcceptorFixture, RefusesTheFifthPlayerBecauseTheGameIsFull) {
   for (std::size_t player = 0; player < network::MAXIMUM_PLAYERS; ++player) {
-    connectAs(playerEndpoint(player), nicknameOf(player));
+    connect(playerEndpoint(player), nicknameOf(player));
   }
 
   receive(playerEndpoint(network::MAXIMUM_PLAYERS),
@@ -209,7 +211,7 @@ TEST_F(ConnectionAcceptorFixture, RefusesTheFifthPlayerBecauseTheGameIsFull) {
  */
 TEST_F(ConnectionAcceptorFixture,
        RefusesANicknameTakenWhateverTheCaseOfItsLetters) {
-  connectAs(playerEndpoint(0), "Ace");
+  connect(playerEndpoint(0), "Ace");
 
   receive(playerEndpoint(1), requestDatagramOf("ACE", 0));
 
@@ -224,7 +226,7 @@ TEST_F(ConnectionAcceptorFixture,
  * Then it is refused because the nickname is taken
  */
 TEST_F(ConnectionAcceptorFixture, RefusesTheNicknameOfAPlayerWhoseSeatIsHeld) {
-  connectAs(playerEndpoint(0), "Ace");
+  connect(playerEndpoint(0), "Ace");
   roster().find(playerEndpoint(0))->away = true;
 
   receive(playerEndpoint(1), requestDatagramOf("Ace", 0));
@@ -241,9 +243,9 @@ TEST_F(ConnectionAcceptorFixture, RefusesTheNicknameOfAPlayerWhoseSeatIsHeld) {
  */
 TEST_F(ConnectionAcceptorFixture,
        AcceptsAgainThePlayerWhoSendsItsRequestTwice) {
-  connectAs(playerEndpoint(0), "Ace");
+  connect(playerEndpoint(0), "Ace");
 
-  connectAs(playerEndpoint(0), "Ace");
+  connect(playerEndpoint(0), "Ace");
 
   EXPECT_EQ(onlyMessageTypeOf(lastAnswer()), network::ConnectionAccepted::TYPE);
 }
@@ -254,10 +256,10 @@ TEST_F(ConnectionAcceptorFixture,
  * Then it is accepted: the nickname is free again
  */
 TEST_F(ConnectionAcceptorFixture, GivesANicknameBackOnceItsPlayerLeft) {
-  connectAs(playerEndpoint(0), "Ace");
+  connect(playerEndpoint(0), "Ace");
   static_cast<void>(roster().remove(playerEndpoint(0)));
 
-  connectAs(playerEndpoint(1), "Ace");
+  connect(playerEndpoint(1), "Ace");
 
   EXPECT_EQ(onlyMessageTypeOf(lastAnswer()), network::ConnectionAccepted::TYPE);
 }
@@ -555,10 +557,11 @@ TEST_F(ConnectionAcceptorFixture, IgnoresADatagramOfAnotherProtocol) {
  * Then the journal holds a line about the datagram dropped that names the
  * address and the port of its sender
  */
-TEST_F(ConnectionAcceptorLogFixture, LogsARefusedRequestWithItsSender) {
+TEST_F(ConnectionAcceptorFixture, LogsARefusedRequestWithItsSender) {
   receive(playerEndpoint(0), emptyNicknameRequestDatagram());
 
-  const std::vector<std::string> lines = dropLines();
+  const std::vector<std::string> lines =
+      journalLinesHolding(DROPPED_DATAGRAM_LINE_TEXT);
   ASSERT_EQ(lines.size(), 1U);
   EXPECT_NE(lines.front().find(senderText(playerEndpoint(0))),
             std::string::npos);
@@ -569,11 +572,11 @@ TEST_F(ConnectionAcceptorLogFixture, LogsARefusedRequestWithItsSender) {
  * When the acceptor receives it and challenges its sender
  * Then the journal holds no line about a datagram dropped
  */
-TEST_F(ConnectionAcceptorLogFixture, LogsNothingForARequestItAnswers) {
+TEST_F(ConnectionAcceptorFixture, LogsNothingForARequestItAnswers) {
   receive(playerEndpoint(0), requestDatagram(0));
 
   ASSERT_EQ(answers().size(), 1U);
-  EXPECT_TRUE(dropLines().empty());
+  EXPECT_TRUE(journalLinesHolding(DROPPED_DATAGRAM_LINE_TEXT).empty());
 }
 
 /**
@@ -582,12 +585,12 @@ TEST_F(ConnectionAcceptorLogFixture, LogsNothingForARequestItAnswers) {
  * Then the journal holds one line about them, not one per datagram: whoever
  * floods the server cannot flood the log
  */
-TEST_F(ConnectionAcceptorLogFixture, WritesOneLineForRequestsDroppedTogether) {
+TEST_F(ConnectionAcceptorFixture, WritesOneLineForRequestsDroppedTogether) {
   for (std::size_t sent = 0; sent < DROPPED_TOGETHER_COUNT; ++sent) {
     receive(playerEndpoint(0), emptyNicknameRequestDatagram());
   }
 
-  EXPECT_EQ(dropLines().size(), 1U);
+  EXPECT_EQ(journalLinesHolding(DROPPED_DATAGRAM_LINE_TEXT).size(), 1U);
 }
 
 /**
@@ -596,13 +599,50 @@ TEST_F(ConnectionAcceptorLogFixture, WritesOneLineForRequestsDroppedTogether) {
  * Then the journal holds a second line: the interval is measured on the time
  * the acceptor is given
  */
-TEST_F(ConnectionAcceptorLogFixture, WritesTheNextLineOnceTheIntervalIsOver) {
+TEST_F(ConnectionAcceptorFixture, WritesTheNextLineOnceTheIntervalIsOver) {
   receive(playerEndpoint(0), emptyNicknameRequestDatagram());
 
   receive(playerEndpoint(0), emptyNicknameRequestDatagram(),
           REQUEST_TIME + network::REJECTION_LINE_INTERVAL);
 
-  EXPECT_EQ(dropLines().size(), 2U);
+  EXPECT_EQ(journalLinesHolding(DROPPED_DATAGRAM_LINE_TEXT).size(), 2U);
+}
+
+/**
+ * Given an acceptor whose report of a joined player throws, and a sender
+ * that went through the challenge
+ * When that sender's request with its cookie and a request without a cookie
+ * from a second sender, under another nickname, arrive in the same tick
+ * Then the second sender is still challenged: only the datagram whose answer
+ * threw is dropped
+ */
+TEST(ConnectionAcceptor, AnswersTheNextRequestAfterOneWhoseAnswerThrew) {
+  PlayerRoster roster;
+  std::vector<network::OutgoingDatagram> answers;
+  ConnectionAcceptor acceptor{
+      roster,
+      [&answers](network::OutgoingDatagram datagram) {
+        answers.push_back(std::move(datagram));
+      },
+      [](const network::Endpoint&, std::uint64_t) {},
+      [](ConnectedPlayer&) { throw network::InvalidCoordinateException(); }};
+  const network::IncomingDatagram firstRequest{.sender = playerEndpoint(0),
+                                               .payload = requestDatagram(0)};
+  acceptor.receive(std::span{&firstRequest, 1}, REQUEST_TIME);
+  const std::uint64_t cookie =
+      onlyMessageIn<network::ConnectionChallenge>(answers.back()).cookie;
+  const std::array datagrams{
+      network::IncomingDatagram{.sender = playerEndpoint(0),
+                                .payload = requestDatagram(cookie)},
+      network::IncomingDatagram{
+          .sender = playerEndpoint(1),
+          .payload = requestDatagramOf(nicknameOf(1), 0)}};
+
+  acceptor.receive(datagrams, REQUEST_TIME);
+
+  EXPECT_EQ(answers.back().destination, playerEndpoint(1));
+  EXPECT_EQ(onlyMessageTypeOf(answers.back()),
+            network::MessageType::ConnectionChallenge);
 }
 
 }  // namespace rtype::server

@@ -2,6 +2,7 @@ add_subdirectory(Common)
 add_subdirectory(Registry)
 
 add_library(rtype_client_screens_module STATIC
+  AudioServiceChoice.cpp
   ClientScreens.cpp
   ClientScreensModule.cpp
   OpeningScreen.cpp

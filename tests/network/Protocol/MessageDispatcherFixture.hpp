@@ -2,18 +2,21 @@
 
 #include <gtest/gtest.h>
 #include <string>
+#include <string_view>
 #include <vector>
 #include "DebugJournal.hpp"
 
 namespace rtype::network::testing {
 
 /** @brief Dispatcher tests that read the log the dispatcher writes. */
-class MessageDispatcherLogFixture : public ::testing::Test {
+class MessageDispatcherFixture : public ::testing::Test {
  protected:
   /** @returns The lines of the journal about a rejected message. */
   [[nodiscard]] std::vector<std::string> rejectionLines() const;
 
-  [[nodiscard]] const DebugJournal& journal() const;
+  /** @returns The lines of the journal that hold @p text, oldest first. */
+  [[nodiscard]] std::vector<std::string> linesHolding(
+      std::string_view text) const;
 
  private:
   DebugJournal journal_;

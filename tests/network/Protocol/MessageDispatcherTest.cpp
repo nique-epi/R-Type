@@ -5,16 +5,15 @@
 #include "ByteSequence.hpp"
 #include "ConnectionAccepted.hpp"
 #include "ConnectionRequest.hpp"
-#include "DebugJournal.hpp"
 #include "Heartbeat.hpp"
+#include "LogLineTestConstants.hpp"
 #include "MessageDispatcher.hpp"
+#include "MessageDispatcherFixture.hpp"
 #include "MessageDispatcherFixtures.hpp"
-#include "MessageDispatcherLogFixture.hpp"
 #include "MessageFrame.hpp"
 #include "MessageOrigin.hpp"
 #include "MessagePayload.hpp"
 #include "MessageType.hpp"
-#include "NetworkConstants.hpp"
 #include "NetworkException.hpp"
 #include "NetworkTestConstants.hpp"
 #include "ProtocolTestConstants.hpp"
@@ -26,16 +25,18 @@
 namespace rtype::network {
 
 using testing::byteSequence;
+using testing::FAILED_HANDLER_LINE_TEXT;
 using testing::frameOf;
 using testing::LARGEST_TYPE_BYTE;
-using testing::MessageDispatcherLogFixture;
+using testing::MessageDispatcherFixture;
 using testing::oneShipState;
 using testing::ReadyStateRecord;
 using testing::recordReadyStates;
+using testing::registerThrowingHandler;
 using testing::REJECTED_MESSAGE_COUNT;
-using testing::SOME_SENDER_PORT;
 using testing::SOME_SESSION_TOKEN;
 using testing::someOrigin;
+using testing::someSenderText;
 using testing::TYPE_ABOVE_THE_LAST;
 using testing::TYPE_BELOW_THE_FIRST;
 
@@ -105,8 +106,8 @@ TEST(MessageDispatcher, HandsSeveralMessagesInOrder) {
 
 /**
  * Given a handler for ReadyState only
- * When messages of the type below the first, the type above the last and
- * type 255, which no message has, then a ReadyState are dispatched
+ * When messages of the types 0, 17 and 255, which no message has, then a
+ * ReadyState are dispatched
  * Then the three are skipped and counted, and the ReadyState is still handled
  */
 TEST(MessageDispatcher, SkipsUnknownTypesThenHandlesTheNextMessage) {
@@ -188,37 +189,31 @@ TEST(MessageDispatcher, DropsATruncatedPayloadWithoutThrowing) {
 /**
  * Given a handler for ConnectionAccepted that throws a network error
  * When a valid ConnectionAccepted is dispatched
- * Then the error leaves dispatch: it is a fault of the program
+ * Then the message is counted as dropped because its handler threw
  */
-TEST(MessageDispatcher, LetsAHandlerErrorThrough) {
+TEST(MessageDispatcher, CountsAMessageWhoseHandlerThrew) {
   MessageDispatcher dispatcher;
-  dispatcher.registerHandler<ConnectionAccepted>(
-      [](const MessageOrigin&, const ConnectionAccepted&) {
-        throw InvalidCoordinateException();
-      });
+  registerThrowingHandler<ConnectionAccepted>(dispatcher);
   const auto playerOne = byteSequence({0x01});
   const std::vector frames{frameOf(MessageType::ConnectionAccepted, playerOne)};
 
-  EXPECT_THROW(dispatcher.dispatch(someOrigin(), frames),
-               InvalidCoordinateException);
+  dispatcher.dispatch(someOrigin(), frames);
+
+  EXPECT_EQ(dispatcher.failedMessageCount(), 1U);
 }
 
 /**
  * Given a handler for ConnectionAccepted that throws a network error
- * When the error leaves dispatch
+ * When a valid ConnectionAccepted is dispatched
  * Then the message is not counted as malformed
  */
 TEST(MessageDispatcher, DoesNotCountAHandlerErrorAsMalformed) {
   MessageDispatcher dispatcher;
-  dispatcher.registerHandler<ConnectionAccepted>(
-      [](const MessageOrigin&, const ConnectionAccepted&) {
-        throw InvalidCoordinateException();
-      });
+  registerThrowingHandler<ConnectionAccepted>(dispatcher);
   const auto playerOne = byteSequence({0x01});
   const std::vector frames{frameOf(MessageType::ConnectionAccepted, playerOne)};
 
-  EXPECT_THROW(dispatcher.dispatch(someOrigin(), frames),
-               InvalidCoordinateException);
+  dispatcher.dispatch(someOrigin(), frames);
 
   EXPECT_EQ(dispatcher.malformedMessageCount(), 0U);
 }
@@ -240,12 +235,36 @@ TEST(MessageDispatcher, KeepsWorkingAfterAHandlerThrew) {
       });
   const auto ready = byteSequence({0x01});
   const std::vector frames{frameOf(MessageType::ReadyState, ready)};
-  EXPECT_THROW(dispatcher.dispatch(someOrigin(), frames),
-               InvalidCoordinateException);
+  dispatcher.dispatch(someOrigin(), frames);
 
   dispatcher.dispatch(someOrigin(), frames);
 
   EXPECT_EQ(callCount, 2U);
+}
+
+/**
+ * Given a ReadyState handler that throws a network error, and a Heartbeat
+ * handler
+ * When a ReadyState then a Heartbeat are dispatched together
+ * Then the Heartbeat is still handled: only the message whose handler threw
+ * is dropped
+ */
+TEST(MessageDispatcher, HandlesTheMessageAfterOneWhoseHandlerThrew) {
+  MessageDispatcher dispatcher;
+  registerThrowingHandler<ReadyState>(dispatcher);
+  std::size_t heartbeatCount = 0;
+  dispatcher.registerHandler<Heartbeat>(
+      [&heartbeatCount](const MessageOrigin&, const Heartbeat&) {
+        ++heartbeatCount;
+      });
+  const auto ready = byteSequence({0x01});
+  const std::vector<std::byte> heartbeat = encodeMessage(Heartbeat{});
+  const std::vector frames{frameOf(MessageType::ReadyState, ready),
+                           frameOf(MessageType::Heartbeat, heartbeat)};
+
+  dispatcher.dispatch(someOrigin(), frames);
+
+  EXPECT_EQ(heartbeatCount, 1U);
 }
 
 /**
@@ -318,7 +337,7 @@ TEST(MessageDispatcher, DoesNothingForNoMessage) {
  * Then the journal holds a line about it that names the address and the port
  * of that sender
  */
-TEST_F(MessageDispatcherLogFixture, LogsASkippedMessageWithItsSender) {
+TEST_F(MessageDispatcherFixture, LogsASkippedMessageWithItsSender) {
   MessageDispatcher dispatcher;
   const std::vector<std::byte> payload = encodeMessage(Heartbeat{});
   const std::vector frames{frameOf(MessageType::Heartbeat, payload)};
@@ -327,9 +346,7 @@ TEST_F(MessageDispatcherLogFixture, LogsASkippedMessageWithItsSender) {
 
   const std::vector<std::string> lines = rejectionLines();
   ASSERT_EQ(lines.size(), 1U);
-  EXPECT_NE(lines.front().find("from " + std::string{LOOPBACK_IPV4_ADDRESS} +
-                               " port " + std::to_string(SOME_SENDER_PORT)),
-            std::string::npos);
+  EXPECT_NE(lines.front().find(someSenderText()), std::string::npos);
 }
 
 /**
@@ -338,14 +355,14 @@ TEST_F(MessageDispatcherLogFixture, LogsASkippedMessageWithItsSender) {
  * Then the journal holds one line holding SKIPPED_MESSAGE_LINE_TEXT, the words
  * the tests that expect no such line look for
  */
-TEST_F(MessageDispatcherLogFixture, WritesTheWordsOfASkippedMessage) {
+TEST_F(MessageDispatcherFixture, WritesTheWordsOfASkippedMessage) {
   MessageDispatcher dispatcher;
   const std::vector<std::byte> payload = encodeMessage(Heartbeat{});
   const std::vector frames{frameOf(MessageType::Heartbeat, payload)};
 
   dispatcher.dispatch(someOrigin(), frames);
 
-  EXPECT_EQ(journal().linesHolding(SKIPPED_MESSAGE_LINE_TEXT).size(), 1U);
+  EXPECT_EQ(linesHolding(SKIPPED_MESSAGE_LINE_TEXT).size(), 1U);
 }
 
 /**
@@ -354,7 +371,7 @@ TEST_F(MessageDispatcherLogFixture, WritesTheWordsOfASkippedMessage) {
  * Then the journal holds one line about them, not one per message: whoever
  * floods the dispatcher cannot flood the log
  */
-TEST_F(MessageDispatcherLogFixture, WritesOneLineForMessagesRejectedTogether) {
+TEST_F(MessageDispatcherFixture, WritesOneLineForMessagesRejectedTogether) {
   MessageDispatcher dispatcher;
   ReadyStateRecord record;
   recordReadyStates(dispatcher, record);
@@ -365,6 +382,42 @@ TEST_F(MessageDispatcherLogFixture, WritesOneLineForMessagesRejectedTogether) {
   dispatcher.dispatch(someOrigin(), frames);
 
   EXPECT_EQ(rejectionLines().size(), 1U);
+}
+
+/**
+ * Given a handler for ConnectionAccepted that throws a network error
+ * When a valid ConnectionAccepted is dispatched
+ * Then the journal holds one line about it at the error level
+ */
+TEST_F(MessageDispatcherFixture, LogsAThrowingHandlerAtTheErrorLevel) {
+  MessageDispatcher dispatcher;
+  registerThrowingHandler<ConnectionAccepted>(dispatcher);
+  const auto playerOne = byteSequence({0x01});
+  const std::vector frames{frameOf(MessageType::ConnectionAccepted, playerOne)};
+
+  dispatcher.dispatch(someOrigin(), frames);
+
+  const std::vector<std::string> lines = linesHolding(FAILED_HANDLER_LINE_TEXT);
+  ASSERT_EQ(lines.size(), 1U);
+  EXPECT_NE(lines.front().find(ERROR_LINE_MARK), std::string::npos);
+}
+
+/**
+ * Given a handler for ConnectionAccepted that throws a network error
+ * When a valid ConnectionAccepted is dispatched
+ * Then its line names the address and the port of the sender
+ */
+TEST_F(MessageDispatcherFixture, LogsAThrowingHandlerWithItsSender) {
+  MessageDispatcher dispatcher;
+  registerThrowingHandler<ConnectionAccepted>(dispatcher);
+  const auto playerOne = byteSequence({0x01});
+  const std::vector frames{frameOf(MessageType::ConnectionAccepted, playerOne)};
+
+  dispatcher.dispatch(someOrigin(), frames);
+
+  const std::vector<std::string> lines = linesHolding(FAILED_HANDLER_LINE_TEXT);
+  ASSERT_EQ(lines.size(), 1U);
+  EXPECT_NE(lines.front().find(someSenderText()), std::string::npos);
 }
 
 }  // namespace rtype::network

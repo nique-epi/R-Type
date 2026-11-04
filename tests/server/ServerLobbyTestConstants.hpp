@@ -29,6 +29,12 @@ constexpr std::string_view PLAYER_NICKNAME = "Nolan";
 constexpr std::string_view SHORTEST_NICKNAME = "A";
 
 /**
+ * @brief The start of the nickname nicknameOf() gives each player, followed by
+ * the number of the player: Pilot0, Pilot1…
+ */
+constexpr std::string_view NICKNAME_PREFIX = "Pilot";
+
+/**
  * @brief Two session tokens a roster may be given.
  */
 constexpr std::uint64_t SESSION_TOKEN = 0x0123456789abcdef;

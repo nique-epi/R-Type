@@ -6,6 +6,7 @@
 #include "DatagramCodec.hpp"
 #include "MessageType.hpp"
 #include "PacketHeader.hpp"
+#include "ServerLobbyTestConstants.hpp"
 
 namespace rtype::server::testing {
 
@@ -18,8 +19,8 @@ std::vector<std::byte> emptyNicknameRequestDatagram() {
                                         payload.bytes());
 }
 
-std::string nicknameOf(std::size_t requester) {
-  return "Pilot" + std::to_string(requester);
+std::string nicknameOf(std::size_t player) {
+  return std::string{NICKNAME_PREFIX} + std::to_string(player);
 }
 
 }  // namespace rtype::server::testing

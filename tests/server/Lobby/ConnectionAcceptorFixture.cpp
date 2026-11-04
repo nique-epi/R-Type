@@ -3,9 +3,10 @@
 #include <cstdint>
 #include <span>
 #include <string>
+#include <string_view>
 #include <utility>
 #include <vector>
-#include "ConnectionAcceptor.hpp"
+#include "ConnectedPlayer.hpp"
 #include "ConnectionChallenge.hpp"
 #include "Endpoint.hpp"
 #include "IncomingDatagram.hpp"
@@ -16,6 +17,19 @@
 #include "TimeConstants.hpp"
 
 namespace rtype::server::testing {
+
+ConnectionAcceptorFixture::ConnectionAcceptorFixture()
+    : acceptor_(
+          roster_,
+          [this](network::OutgoingDatagram datagram) {
+            answers_.push_back(std::move(datagram));
+          },
+          [this](const network::Endpoint& player, std::uint64_t sessionToken) {
+            admitted_.emplace_back(player, sessionToken);
+          },
+          [this](ConnectedPlayer& player) {
+            joinedPlayers_.push_back(player.playerNumber);
+          }) {}
 
 void ConnectionAcceptorFixture::receive(const network::Endpoint& sender,
                                         std::vector<std::byte> datagram,
@@ -31,18 +45,8 @@ std::uint64_t ConnectionAcceptorFixture::challengeCookie(
   return onlyMessageIn<network::ConnectionChallenge>(lastAnswer()).cookie;
 }
 
-std::uint64_t ConnectionAcceptorFixture::challengeCookie(
-    const network::Endpoint& sender) {
-  receive(sender, requestDatagram(0));
-  return onlyMessageIn<network::ConnectionChallenge>(lastAnswer()).cookie;
-}
-
-void ConnectionAcceptorFixture::connect(const network::Endpoint& sender) {
-  receive(sender, requestDatagram(challengeCookie(sender)));
-}
-
-void ConnectionAcceptorFixture::connectAs(const network::Endpoint& sender,
-                                          const std::string& nickname) {
+void ConnectionAcceptorFixture::connect(const network::Endpoint& sender,
+                                        const std::string& nickname) {
   receive(sender,
           requestDatagramOf(nickname, challengeCookie(sender, nickname)));
 }
@@ -68,6 +72,11 @@ ConnectionAcceptor& ConnectionAcceptorFixture::acceptor() { return acceptor_; }
 const std::vector<std::uint8_t>& ConnectionAcceptorFixture::joinedPlayers()
     const {
   return joinedPlayers_;
+}
+
+std::vector<std::string> ConnectionAcceptorFixture::journalLinesHolding(
+    std::string_view text) const {
+  return journal_.linesHolding(text);
 }
 
 }  // namespace rtype::server::testing

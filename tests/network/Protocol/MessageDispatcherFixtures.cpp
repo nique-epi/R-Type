@@ -40,4 +40,9 @@ void recordReadyStates(MessageDispatcher& dispatcher,
       });
 }
 
+std::string someSenderText() {
+  return "from " + std::string{LOOPBACK_IPV4_ADDRESS} + " port " +
+         std::to_string(SOME_SENDER_PORT);
+}
+
 }  // namespace rtype::network::testing

@@ -1,15 +1,15 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
-#include <SFML/Audio/SoundBuffer.hpp>
 #include <cstddef>
-#include <cstdint>
+#include <filesystem>
 #include "AssetKind.hpp"
 #include "AssetLibrary.hpp"
 #include "AssetList.hpp"
 #include "AssetLoadingStep.hpp"
+#include "AssetLoadingStepTestConstants.hpp"
+#include "AssetTestConstants.hpp"
 #include "ClientException.hpp"
 #include "PathText.hpp"
-#include "SilentSound.hpp"
 #include "TemporaryFolder.hpp"
 
 using rtype::client::AssetKind;
@@ -18,24 +18,18 @@ using rtype::client::AssetList;
 using rtype::client::AssetLoadingException;
 using rtype::client::AssetLoadingStep;
 using rtype::client::AssetNotLoadedException;
+using rtype::client::testing::BADLY_NAMED_ID;
+using rtype::client::testing::BOSS_MUSIC_ID;
+using rtype::client::testing::CORRUPT_FONT_ID;
+using rtype::client::testing::NOT_AN_ASSET;
+using rtype::client::testing::ONE_ASSET;
+using rtype::client::testing::PLAYER_SHIP_ID;
+using rtype::client::testing::STAGE_MUSIC_ID;
+using rtype::client::testing::TWO_ASSETS;
 using rtype::engine::genericText;
 using ::testing::AllOf;
 using ::testing::HasSubstr;
 using ::testing::ThrowsMessage;
-
-namespace {
-
-constexpr const char* SHOT_SOUND_ID = "sounds/shot.wav";
-constexpr const char* EXPLOSION_SOUND_ID = "sounds/explosion.wav";
-constexpr const char* PLAYER_SHIP_ID = "sprites/player_ship.png";
-constexpr const char* BADLY_NAMED_ID = "sprites/Bydo.png";
-constexpr const char* CORRUPT_SOUND_ID = "sounds/corrupt.wav";
-constexpr const char* CORRUPT_CONTENT = "not a sound";
-constexpr std::uint64_t SOUND_SAMPLE_COUNT = 100;
-constexpr std::size_t ONE_ASSET = 1;
-constexpr std::size_t TWO_ASSETS = 2;
-
-}  // namespace
 
 /**
  * Given an empty asset list
@@ -52,17 +46,17 @@ TEST(AssetLoadingStep, EmptyListIsFinishedAtOnce) {
 }
 
 /**
- * Given a list of two sounds
+ * Given a list of two music files
  * When the step loads once
  * Then exactly one of them is processed and the step goes on
  */
 TEST(AssetLoadingStep, LoadsOneAssetPerCall) {
   const TemporaryFolder assets;
-  writeSilentSound(assets.path() / SHOT_SOUND_ID, SOUND_SAMPLE_COUNT);
-  writeSilentSound(assets.path() / EXPLOSION_SOUND_ID, SOUND_SAMPLE_COUNT);
+  assets.write(STAGE_MUSIC_ID, NOT_AN_ASSET);
+  assets.write(BOSS_MUSIC_ID, NOT_AN_ASSET);
   AssetLibrary library{assets.path()};
-  AssetLoadingStep step(
-      library, AssetList{.sounds = {SHOT_SOUND_ID, EXPLOSION_SOUND_ID}});
+  AssetLoadingStep step(library,
+                        AssetList{.music = {STAGE_MUSIC_ID, BOSS_MUSIC_ID}});
 
   step.loadNext();
 
@@ -72,24 +66,23 @@ TEST(AssetLoadingStep, LoadsOneAssetPerCall) {
 }
 
 /**
- * Given a list of two sounds
+ * Given a list of two music files
  * When the step loads twice
- * Then it is finished and both sounds are loaded
+ * Then it is finished and both music files are located
  */
 TEST(AssetLoadingStep, FinishesAfterTheLastAsset) {
   const TemporaryFolder assets;
-  writeSilentSound(assets.path() / SHOT_SOUND_ID, SOUND_SAMPLE_COUNT);
-  writeSilentSound(assets.path() / EXPLOSION_SOUND_ID, SOUND_SAMPLE_COUNT);
+  assets.write(STAGE_MUSIC_ID, NOT_AN_ASSET);
+  assets.write(BOSS_MUSIC_ID, NOT_AN_ASSET);
   AssetLibrary library{assets.path()};
-  AssetLoadingStep step(
-      library, AssetList{.sounds = {SHOT_SOUND_ID, EXPLOSION_SOUND_ID}});
+  AssetLoadingStep step(library,
+                        AssetList{.music = {STAGE_MUSIC_ID, BOSS_MUSIC_ID}});
 
   step.loadNext();
   step.loadNext();
 
   EXPECT_TRUE(step.isFinished());
-  EXPECT_EQ(library.sound(EXPLOSION_SOUND_ID).getSampleCount(),
-            SOUND_SAMPLE_COUNT);
+  EXPECT_TRUE(library.isLoaded(AssetKind::Music, BOSS_MUSIC_ID));
 }
 
 /**
@@ -109,55 +102,56 @@ TEST(AssetLoadingStep, LoadingAfterTheEndDoesNothing) {
 }
 
 /**
- * Given a sound loaded for a previous game
+ * Given a music located for a previous game
  * When a step starts for a list that does not name it
- * Then the sound is released
+ * Then the music is released
  */
 TEST(AssetLoadingStep, ReleasesWhatTheListDoesNotName) {
   const TemporaryFolder assets;
-  writeSilentSound(assets.path() / SHOT_SOUND_ID, SOUND_SAMPLE_COUNT);
+  assets.write(STAGE_MUSIC_ID, NOT_AN_ASSET);
   AssetLibrary library{assets.path()};
-  static_cast<void>(library.load(AssetKind::Sound, SHOT_SOUND_ID));
+  static_cast<void>(library.load(AssetKind::Music, STAGE_MUSIC_ID));
 
-  const AssetLoadingStep step(library,
-                              AssetList{.sounds = {EXPLOSION_SOUND_ID}});
+  const AssetLoadingStep step(library, AssetList{.music = {BOSS_MUSIC_ID}});
 
-  EXPECT_THROW(static_cast<void>(library.sound(SHOT_SOUND_ID)),
+  EXPECT_THROW(static_cast<void>(library.musicFile(STAGE_MUSIC_ID)),
                AssetNotLoadedException);
 }
 
 /**
- * Given a sound loaded for a previous game
+ * Given a music located for a previous game
  * When the next list names it too and its step finishes
- * Then the sound is the same buffer, it was not loaded again
+ * Then the music is the same path, it was not located again
  */
 TEST(AssetLoadingStep, KeepsWhatTheListNamesAgain) {
   const TemporaryFolder assets;
-  writeSilentSound(assets.path() / SHOT_SOUND_ID, SOUND_SAMPLE_COUNT);
+  assets.write(STAGE_MUSIC_ID, NOT_AN_ASSET);
   AssetLibrary library{assets.path()};
-  static_cast<void>(library.load(AssetKind::Sound, SHOT_SOUND_ID));
-  const sf::SoundBuffer* shotBeforeStep = &library.sound(SHOT_SOUND_ID);
-  AssetLoadingStep step(library, AssetList{.sounds = {SHOT_SOUND_ID}});
+  static_cast<void>(library.load(AssetKind::Music, STAGE_MUSIC_ID));
+  const std::filesystem::path* stageBeforeStep =
+      &library.musicFile(STAGE_MUSIC_ID);
+  AssetLoadingStep step(library, AssetList{.music = {STAGE_MUSIC_ID}});
 
   step.loadNext();
 
-  EXPECT_EQ(&library.sound(SHOT_SOUND_ID), shotBeforeStep);
+  EXPECT_EQ(&library.musicFile(STAGE_MUSIC_ID), stageBeforeStep);
 }
 
 /**
  * Given a list holding a badly named id, a missing texture, an unreadable
- * sound and a valid sound
+ * font and a music file
  * When the step loads every asset
  * Then the last load reports all three problems in one error
  */
 TEST(AssetLoadingStep, ReportsEveryProblemAfterTheLastAsset) {
   const TemporaryFolder assets;
-  writeSilentSound(assets.path() / SHOT_SOUND_ID, SOUND_SAMPLE_COUNT);
-  assets.write(CORRUPT_SOUND_ID, CORRUPT_CONTENT);
+  assets.write(STAGE_MUSIC_ID, NOT_AN_ASSET);
+  assets.write(CORRUPT_FONT_ID, NOT_AN_ASSET);
   AssetLibrary library{assets.path()};
   AssetLoadingStep step(library,
                         AssetList{.textures = {BADLY_NAMED_ID, PLAYER_SHIP_ID},
-                                  .sounds = {CORRUPT_SOUND_ID, SHOT_SOUND_ID}});
+                                  .fonts = {CORRUPT_FONT_ID},
+                                  .music = {STAGE_MUSIC_ID}});
   step.loadNext();
   step.loadNext();
   step.loadNext();
@@ -167,41 +161,40 @@ TEST(AssetLoadingStep, ReportsEveryProblemAfterTheLastAsset) {
       ThrowsMessage<AssetLoadingException>(AllOf(
           HasSubstr(BADLY_NAMED_ID),
           HasSubstr(genericText(assets.path() / "sprites" / "player_ship.png")),
-          HasSubstr(genericText(assets.path() / "sounds" / "corrupt.wav")))));
+          HasSubstr(genericText(assets.path() / "fonts" / "corrupt.ttf")))));
 }
 
 /**
- * Given a sound already loaded and a list naming it and another sound
+ * Given a music already located and a list naming it and another music
  * When the step starts
- * Then only the other sound counts as an asset to load
+ * Then only the other music counts as an asset to load
  */
 TEST(AssetLoadingStep, AssetsAlreadyLoadedAreNotCounted) {
   const TemporaryFolder assets;
-  writeSilentSound(assets.path() / SHOT_SOUND_ID, SOUND_SAMPLE_COUNT);
-  writeSilentSound(assets.path() / EXPLOSION_SOUND_ID, SOUND_SAMPLE_COUNT);
+  assets.write(STAGE_MUSIC_ID, NOT_AN_ASSET);
+  assets.write(BOSS_MUSIC_ID, NOT_AN_ASSET);
   AssetLibrary library{assets.path()};
-  static_cast<void>(library.load(AssetKind::Sound, SHOT_SOUND_ID));
+  static_cast<void>(library.load(AssetKind::Music, STAGE_MUSIC_ID));
 
   const AssetLoadingStep step(
-      library, AssetList{.sounds = {SHOT_SOUND_ID, EXPLOSION_SOUND_ID}});
+      library, AssetList{.music = {STAGE_MUSIC_ID, BOSS_MUSIC_ID}});
 
   EXPECT_EQ(step.assetCount(), ONE_ASSET);
 }
 
 /**
- * Given a loaded sound made permanent
+ * Given a located music made permanent
  * When a step starts for a list that does not name it
- * Then the sound is still loaded
+ * Then the music is still located
  */
 TEST(AssetLoadingStep, KeepsPermanentAssetsItDoesNotName) {
   const TemporaryFolder assets;
-  writeSilentSound(assets.path() / SHOT_SOUND_ID, SOUND_SAMPLE_COUNT);
+  assets.write(STAGE_MUSIC_ID, NOT_AN_ASSET);
   AssetLibrary library{assets.path()};
-  static_cast<void>(library.load(AssetKind::Sound, SHOT_SOUND_ID));
-  library.keepPermanently(AssetList{.sounds = {SHOT_SOUND_ID}});
+  static_cast<void>(library.load(AssetKind::Music, STAGE_MUSIC_ID));
+  library.keepPermanently(AssetList{.music = {STAGE_MUSIC_ID}});
 
-  const AssetLoadingStep step(library,
-                              AssetList{.sounds = {EXPLOSION_SOUND_ID}});
+  const AssetLoadingStep step(library, AssetList{.music = {BOSS_MUSIC_ID}});
 
-  EXPECT_TRUE(library.isLoaded(AssetKind::Sound, SHOT_SOUND_ID));
+  EXPECT_TRUE(library.isLoaded(AssetKind::Music, STAGE_MUSIC_ID));
 }
