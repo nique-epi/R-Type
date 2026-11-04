@@ -41,6 +41,10 @@ struct ConnectedPlayer;
  * gone is ignored, so two enemies touching one ship in the same dispatch cost
  * one life, and an enemy touching two ships destroys the one the bus delivers
  * first; an invulnerable ship and the enemy it touches are both left alone.
+ * An enemy that carries SurvivesContact stays in the world and nothing is
+ * announced for it: only the ship is destroyed and the life taken, and the
+ * invulnerability of the next ship keeps the same enemy from costing a second
+ * life at once.
  *
  * A hit costs a life when its target is, in the same way, the ship of a
  * connected player who has a life and is not invulnerable. Then the ship is

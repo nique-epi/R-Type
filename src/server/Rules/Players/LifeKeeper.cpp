@@ -22,6 +22,7 @@
 #include "PlayerHit.hpp"
 #include "PlayerRoster.hpp"
 #include "ShipContact.hpp"
+#include "SurvivesContact.hpp"
 #include "World.hpp"
 
 namespace rtype::server {
@@ -41,6 +42,7 @@ struct CostlyContact {
   DoomedShip ship;
   engine::Entity enemy;
   std::uint32_t enemyId{0};
+  bool enemySurvives{false};
 };
 
 /** @returns The lives of the ship @p shipId of @p world when it can be hit: it
@@ -100,13 +102,20 @@ std::optional<CostlyContact> costlyContactOf(game::World& world,
     return std::nullopt;
   }
   return CostlyContact{
-      .ship = *ship, .enemy = contact.enemy, .enemyId = enemy->networkId};
+      .ship = *ship,
+      .enemy = contact.enemy,
+      .enemyId = enemy->networkId,
+      .enemySurvives =
+          world.components().has<game::SurvivesContact>(contact.enemy)};
 }
 
-/** @brief Destroys the ship and the enemy of @p contact in @p world. */
-void destroyBoth(game::World& world, const CostlyContact& contact) {
+/** @brief Destroys the ship of @p contact in @p world, and the enemy too
+ * unless it survives contacts. */
+void resolveContact(game::World& world, const CostlyContact& contact) {
   world.removePlayer(contact.ship.shipId);
-  world.components().destroy(contact.enemy);
+  if (!contact.enemySurvives) {
+    world.components().destroy(contact.enemy);
+  }
 }
 
 /** @brief Takes a life and the ship from the player of @p ship, who keeps the
@@ -187,10 +196,12 @@ void LifeKeeper::onShipContact(const game::ShipContact& contact) {
   if (!costly.has_value()) {
     return;
   }
-  destroyBoth(world_, *costly);
+  resolveContact(world_, *costly);
   takeLifeFrom(costly->ship);
   announceKill(events_, costly->ship.shipId);
-  announceKill(events_, costly->enemyId);
+  if (!costly->enemySurvives) {
+    announceKill(events_, costly->enemyId);
+  }
   announceLifeLost(events_, logger_, *costly->ship.player);
 }
 

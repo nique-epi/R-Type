@@ -5,6 +5,7 @@
 #include "EntityIdConstants.hpp"
 #include "Instances/GameInstanceTestConstants.hpp"
 #include "LifeKeeperFixture.hpp"
+#include "LifeKeeperFixtures.hpp"
 #include "LifeKeeperTestConstants.hpp"
 #include "Lives.hpp"
 #include "PlayerElimination.hpp"
@@ -39,6 +40,55 @@ TEST_F(LifeKeeperFixture, DestroysTheShipAndTheBydoWithAnExplosion) {
 
   EXPECT_EQ(explosionsOf(ship), 1U);
   EXPECT_EQ(explosionsOf(bydo), 1U);
+}
+
+/**
+ * Given a player with a ship and an enemy that survives contacts on it
+ * When the ship touches that enemy
+ * Then the ship is destroyed and the player loses a life, but the enemy is
+ * still in the world
+ */
+TEST_F(LifeKeeperFixture, AnEnemyThatSurvivesContactsStaysWhenItHurtsAShip) {
+  const ConnectedPlayer& player = join(FIRST_PLAYER);
+  const std::uint32_t ship = player.shipEntityId;
+  const std::uint32_t enemy = bydoOn(player);
+  markAsSurvivor(world(), enemy);
+
+  publishContact(ship, enemy);
+  deliver();
+
+  EXPECT_EQ(livesOf(world(), player), THREE_LIVES - 1);
+  EXPECT_EQ(explosionsOf(ship), 1U);
+  EXPECT_TRUE(isInTheWorld(world(), enemy));
+}
+
+/**
+ * Given an enemy that survives contacts touching a ship
+ * When the contact is delivered
+ * Then no explosion is announced for the enemy
+ */
+TEST_F(LifeKeeperFixture, NoExplosionIsAnnouncedForAnEnemyThatSurvives) {
+  const ConnectedPlayer& player = join(FIRST_PLAYER);
+  const std::uint32_t enemy = bydoOn(player);
+  markAsSurvivor(world(), enemy);
+
+  publishContact(player.shipEntityId, enemy);
+  deliver();
+
+  EXPECT_EQ(explosionsOf(enemy), 0U);
+}
+
+/**
+ * Given an enemy that does not survive contacts touching a ship
+ * When the contact is delivered
+ * Then the enemy is gone from the world
+ */
+TEST_F(LifeKeeperFixture, AnOrdinaryEnemyIsStillDestroyedByTheContact) {
+  const ConnectedPlayer& player = join(FIRST_PLAYER);
+
+  const std::uint32_t bydo = touchABydo(player);
+
+  EXPECT_FALSE(isInTheWorld(world(), bydo));
 }
 
 /**
