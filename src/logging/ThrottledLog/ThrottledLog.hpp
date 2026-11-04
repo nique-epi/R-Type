@@ -43,6 +43,20 @@ class ThrottledLog {
     }
   }
 
+  /**
+   * @brief Counts one event that happened at @p now and, when it gets a line,
+   * writes @p args at the error level followed by the count: an event caused
+   * by a fault of the program, which the operator must see.
+   * @param now As for debug().
+   */
+  template <class... Args>
+  void error(std::chrono::nanoseconds now, Args&&... args) {
+    if (const std::optional<std::size_t> count = countEvent(now)) {
+      logger_.error(std::forward<Args>(args)..., EVENT_COUNT_OPENING, *count,
+                    EVENT_COUNT_CLOSING);
+    }
+  }
+
  private:
   /**
    * @returns How many events were counted since the previous line, the one at

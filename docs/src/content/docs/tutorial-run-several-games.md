@@ -97,7 +97,7 @@ cmake --workflow --preset build
 
 The server now creates two games, so the `BydoSpawner` line appears twice, and the ninth player is refused. Put the value back before you commit. A test that needs another number sets `GamesSettings::gameCount` itself, so no test depends on this constant.
 
-More games cost more per tick, and the journal gives that cost every 10 s (see [Metrics](/R-Type/server/#metrics-servermetricsmodule)). Every game runs on the simulation thread, one after the other, so a slow game slows the others, and an exception in one stops the server. The tick loop writes a line at the `warn` level when ticks stall; if you see `stalls since the previous report` in the journal, the server is holding more than the machine can run.
+More games cost more per tick, and the journal gives that cost every 10 s (see [Metrics](/R-Type/server/#metrics-servermetricsmodule)). Every game runs on the simulation thread, one after the other, so a slow game slows the others, and an exception a system of one game throws stops the server. The tick loop writes a line at the `warn` level when ticks stall; if you see `stalls since the previous report` in the journal, the server is holding more than the machine can run.
 
 ## Step 5: run two servers side by side
 
