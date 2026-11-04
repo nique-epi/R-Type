@@ -1,6 +1,5 @@
 #pragma once
 
-#include <optional>
 #include <string>
 #include <vector>
 
@@ -12,8 +11,6 @@ struct MasterLaunchValues {
   std::vector<std::string> forcedLines;
   /** @brief Whether `--help` was given. */
   bool helpRequested{false};
-  /** @brief The name `--new-server-key` gave, when it was given. */
-  std::optional<std::string> newServerKeyName = std::nullopt;
 };
 
 }  // namespace rtype::master

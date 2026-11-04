@@ -13,7 +13,6 @@
 #include "IModule.hpp"
 #include "JournalFile.hpp"
 #include "LogLaunchOptions.hpp"
-#include "ServerKeyOrder.hpp"
 #include "TemporaryFolder.hpp"
 
 /**
@@ -32,15 +31,6 @@ class MasterModulesFixture : public ::testing::Test {
   [[nodiscard]] std::unique_ptr<rtype::engine::Application> masterApplication(
       std::vector<std::unique_ptr<rtype::engine::IModule>> extra,
       std::vector<std::string> lines);
-
-  /**
-   * @returns An application of the modules of the master as
-   * `--new-server-key` runs them, with @p order, not started; it is given the
-   * database of the folder and the free port, so a module that listened would
-   * take that port.
-   */
-  [[nodiscard]] std::unique_ptr<rtype::engine::Application> keyApplication(
-      rtype::master::ServerKeyOrder order);
 
   /** @returns The line that gives the `database` setting @p file. */
   [[nodiscard]] static std::string databaseLine(

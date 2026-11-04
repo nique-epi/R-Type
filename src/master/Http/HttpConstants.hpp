@@ -5,12 +5,6 @@
 
 namespace rtype::master {
 
-/** @brief The path every route of the API of the master starts with. */
-constexpr std::string_view API_PATH_PREFIX = "/api";
-
-/** @brief The route that says the master answers, and in which version. */
-constexpr std::string_view HEALTH_PATH = "/health";
-
 /** @brief The media type of every answer of a route. */
 constexpr std::string_view JSON_CONTENT_TYPE = "application/json";
 
@@ -25,7 +19,8 @@ constexpr std::string_view PROBLEM_TITLE_MEMBER = "title";
 constexpr std::string_view PROBLEM_STATUS_MEMBER = "status";
 constexpr std::string_view PROBLEM_DETAIL_MEMBER = "detail";
 
-/** @brief The member of the answer of HEALTH_PATH that holds the version. */
+/** @brief The member of the answer of network::HEALTH_ROUTE that holds the
+ * version. */
 constexpr std::string_view VERSION_MEMBER = "version";
 
 /** @brief The statuses the routes of the master answer. */
@@ -34,6 +29,8 @@ constexpr int CREATED_STATUS = 201;
 constexpr int BAD_REQUEST_STATUS = 400;
 constexpr int UNAUTHORIZED_STATUS = 401;
 constexpr int NOT_FOUND_STATUS = 404;
+constexpr int CONFLICT_STATUS = 409;
+constexpr int TOO_MANY_REQUESTS_STATUS = 429;
 
 /** @brief The lowest status of an error, which gets a problem document. */
 constexpr int LOWEST_ERROR_STATUS = 400;

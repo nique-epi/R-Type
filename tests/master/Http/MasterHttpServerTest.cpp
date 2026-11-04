@@ -73,11 +73,10 @@ TEST_F(MasterHttpServerFixture, AnUnknownPathGetsAProblemDocumentOfNotFound) {
  * hold the reason of the failure
  */
 TEST_F(MasterHttpServerFixture, AFailingRouteHidesItsReasonFromTheClient) {
-  server().addGet(
-      TEST_ROUTE,
-      []([[maybe_unused]] const ApiRequest& request) -> ApiResponse {
-        throw MasterException(std::string{SECRET_REASON});
-      });
+  server().add(TEST_GET_ROUTE,
+               []([[maybe_unused]] const ApiRequest& request) -> ApiResponse {
+                 throw MasterException(std::string{SECRET_REASON});
+               });
   openServer();
 
   const httplib::Result answer = get(TEST_ROUTE_URL);
@@ -253,7 +252,7 @@ TEST_F(MasterHttpServerFixture,
  * Then it gets a problem document of Bad Request that carries the detail
  */
 TEST_F(MasterHttpServerFixture, ARefusalCarriesItsDetail) {
-  server().addPut(TEST_ROUTE, []([[maybe_unused]] const ApiRequest& request) {
+  server().add(TEST_PUT_ROUTE, []([[maybe_unused]] const ApiRequest& request) {
     return ApiResponse{.status = EXPECTED_BAD_REQUEST,
                        .body = {},
                        .detail = std::string{BAD_REQUEST_DETAIL},
@@ -279,7 +278,7 @@ TEST_F(MasterHttpServerFixture, ARefusalCarriesItsDetail) {
  * Then the answer carries that Location header
  */
 TEST_F(MasterHttpServerFixture, ARouteSetsTheHeaderOfItsAnswer) {
-  server().addPut(TEST_ROUTE, []([[maybe_unused]] const ApiRequest& request) {
+  server().add(TEST_PUT_ROUTE, []([[maybe_unused]] const ApiRequest& request) {
     return ApiResponse{
         .status = EXPECTED_CREATED,
         .body = std::string{TEST_ROUTE_BODY},

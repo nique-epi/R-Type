@@ -12,7 +12,6 @@ target_link_libraries(rtype_master_launch_options
     rtype_engine_paths
     rtype_master_constants
     rtype_network_constants
-    rtype_network_master
     rtype_network_transport
 )
 

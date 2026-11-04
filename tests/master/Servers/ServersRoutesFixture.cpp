@@ -1,9 +1,10 @@
 #include "ServersRoutesFixture.hpp"
 #include <httplib.h>
 #include <array>
-#include <chrono>
+#include <cstdint>
 #include <memory>
-#include <optional>
+#include <nlohmann/json.hpp>
+#include <nlohmann/json_fwd.hpp>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -19,18 +20,17 @@
 #include "MasterModules.hpp"
 #include "MasterTestConstants.hpp"
 #include "RouteCall.hpp"
-#include "ServerKeys.hpp"
 #include "ServersRoutesTestConstants.hpp"
 #include "SettingLine.hpp"
 
-ServersRoutesFixture::ServersRoutesFixture()
-    : port_(freeHttpPort()), key_(issuedKey()) {
+ServersRoutesFixture::ServersRoutesFixture() : port_(freeHttpPort()) {
+  databaseFile_.close();
   const std::array<std::string_view, 1> quiet{rtype::logging::NO_STDERR_OPTION};
   application_ = std::make_unique<rtype::engine::Application>(
       rtype::engine::LoopStages(rtype::master::MASTER_LOOP_STAGES),
       rtype::master::masterModules(
           logOptionsOf(quiet, journal_.path()),
-          []([[maybe_unused]] const std::string& reason) {}, std::nullopt),
+          []([[maybe_unused]] const std::string& reason) {}),
       rtype::engine::configurationStep(
           databaseFile_.file().parent_path() /
               rtype::master::MASTER_CONFIGURATION_FILE_NAME,
@@ -41,15 +41,23 @@ ServersRoutesFixture::ServersRoutesFixture()
                                          std::to_string(port_))},
           report_));
   application_->start();
+  const httplib::Result created = createParis();
+  if (created) {
+    const nlohmann::json creation = nlohmann::json::parse(created->body);
+    createdId_ = creation.at(ID_MEMBER_NAME).get<std::int64_t>();
+    key_ = creation.at(KEY_MEMBER_NAME).get<std::string>();
+  }
 }
 
 void ServersRoutesFixture::TearDown() { application_->stop(); }
 
+std::int64_t ServersRoutesFixture::createdId() const { return createdId_; }
+
 const std::string& ServersRoutesFixture::key() const { return key_; }
 
-httplib::Result ServersRoutesFixture::put(const RouteCall& call) const {
+httplib::Result ServersRoutesFixture::send(const RouteCall& call) const {
   httplib::Request request;
-  request.method = std::string{PUT_METHOD};
+  request.method = std::string{call.method};
   request.path = std::string{call.path};
   request.body = call.body;
   request.set_header(std::string{CONTENT_TYPE_HEADER},
@@ -61,18 +69,17 @@ httplib::Result ServersRoutesFixture::put(const RouteCall& call) const {
   return httpSend(port_, request);
 }
 
-httplib::Result ServersRoutesFixture::registerParis() const {
-  return put(RouteCall{.path = OWN_SERVER_URL,
-                       .key = key_,
-                       .body = rtype::network::registrationText(
-                           rtype::network::testing::parisRegistration())});
+httplib::Result ServersRoutesFixture::createParis() const {
+  return send(RouteCall{.method = POST_METHOD,
+                        .path = SERVERS_URL,
+                        .key = {},
+                        .body = std::string{PARIS_CREATION_BODY}});
 }
 
-std::string ServersRoutesFixture::issuedKey() {
-  rtype::master::ServerKeys keys{databaseFile_.database()};
-  std::string key = keys.issue(std::string{TEST_SERVER_NAME},
-                               std::chrono::floor<std::chrono::seconds>(
-                                   std::chrono::system_clock::now()));
-  databaseFile_.close();
-  return key;
+httplib::Result ServersRoutesFixture::registerParis() const {
+  return send(RouteCall{.method = PUT_METHOD,
+                        .path = OWN_SERVER_URL,
+                        .key = key_,
+                        .body = rtype::network::registrationText(
+                            rtype::network::testing::parisRegistration())});
 }

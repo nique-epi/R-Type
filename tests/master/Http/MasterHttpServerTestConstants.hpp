@@ -2,9 +2,14 @@
 
 #include <cstddef>
 #include <string_view>
+#include "MasterRoute.hpp"
+#include "RouteMethod.hpp"
 
 /** @brief The route a test adds, and the path a client calls it by. */
-constexpr std::string_view TEST_ROUTE = "/thing";
+constexpr rtype::network::MasterRoute TEST_GET_ROUTE{
+    .method = rtype::network::RouteMethod::Get, .path = "/thing"};
+constexpr rtype::network::MasterRoute TEST_PUT_ROUTE{
+    .method = rtype::network::RouteMethod::Put, .path = "/thing"};
 constexpr std::string_view TEST_ROUTE_URL = "/api/thing";
 
 /** @brief The body the test route answers. */

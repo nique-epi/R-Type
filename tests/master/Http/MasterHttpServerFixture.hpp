@@ -19,11 +19,12 @@ class MasterHttpServerFixture : public ::testing::Test {
   /** @returns The server, to add its routes before openServer(). */
   [[nodiscard]] rtype::master::MasterHttpServer& server();
 
-  /** @brief Adds TEST_ROUTE, which answers EXPECTED_OK and TEST_ROUTE_BODY. */
+  /** @brief Adds TEST_GET_ROUTE, which answers EXPECTED_OK and TEST_ROUTE_BODY.
+   */
   void addTestRoute();
 
   /**
-   * @brief Adds PUT TEST_ROUTE, which answers what it read of the request: its
+   * @brief Adds TEST_PUT_ROUTE, which answers what it read of the request: its
    * body, its token and its address, under the members ECHO_*_MEMBER.
    */
   void addEchoRoute();

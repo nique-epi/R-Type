@@ -1,14 +1,12 @@
 #include "MasterLaunchOptions.hpp"
 #include <array>
 #include <functional>
-#include <optional>
 #include <span>
 #include <string>
 #include <string_view>
 #include <utility>
 #include <vector>
 #include "EndpointText.hpp"
-#include "EngineException.hpp"
 #include "ExecutablePath.hpp"
 #include "ForcedSetting.hpp"
 #include "LaunchArguments.hpp"
@@ -19,7 +17,6 @@
 #include "LoggingConstants.hpp"
 #include "MasterConstants.hpp"
 #include "MasterLaunchValues.hpp"
-#include "MasterMessageText.hpp"
 #include "NetworkConstants.hpp"
 #include "SettingLine.hpp"
 #include "SettingOptions.hpp"
@@ -38,23 +35,6 @@ engine::LaunchOption portOption(MasterLaunchValues& values) {
       .record = [&values](std::string_view port) {
         values.forcedLines.push_back(engine::settingLine(
             PORT_SETTING_NAME, std::to_string(network::portFromText(port))));
-      }};
-}
-
-/**
- * @returns `--new-server-key <name>`, which records a name a server could
- * have, or refuses it.
- */
-engine::LaunchOption newServerKeyOption(MasterLaunchValues& values) {
-  return engine::LaunchOption{
-      .name = NEW_SERVER_KEY_OPTION,
-      .takesValue = true,
-      .record = [&values](std::string_view name) {
-        if (!network::isValidServerName(name)) {
-          throw engine::InvalidLaunchOptionValueException(
-              std::string{NEW_SERVER_KEY_OPTION}, std::string{name});
-        }
-        values.newServerKeyName = std::string{name};
       }};
 }
 
@@ -77,10 +57,6 @@ std::string settingOptionEntries() {
 std::string generalOptionEntries() {
   std::string text = engine::setOptionEntry(MASTER_CONFIGURATION_FILE_NAME,
                                             MASTER_SETTING_NAMES);
-  text += engine::usageEntry(
-      std::string(NEW_SERVER_KEY_OPTION) + " <name>",
-      "Issue a key for the game server <name>, print it once, and start "
-      "nothing else.");
   text += engine::usageEntry(engine::HELP_OPTION,
                              "Print this help and start nothing.");
   return text;
@@ -99,7 +75,6 @@ MasterLaunchOptions MasterLaunchOptions::read(
                                 .setting = DATABASE_SETTING_NAME},
           options.values_.forcedLines),
       engine::setOption(options.values_.forcedLines),
-      newServerKeyOption(options.values_),
       engine::helpOption(options.values_.helpRequested)};
   const std::array<engine::LaunchOptionReader, 1> readers{std::bind_front(
       &logging::LogLaunchOptions::readOption, &options.logOptions_)};
@@ -122,11 +97,6 @@ const std::vector<std::string>& MasterLaunchOptions::forcedLines() const {
 
 bool MasterLaunchOptions::helpRequested() const {
   return values_.helpRequested;
-}
-
-const std::optional<std::string>& MasterLaunchOptions::newServerKeyName()
-    const {
-  return values_.newServerKeyName;
 }
 
 const logging::LogLaunchOptions& MasterLaunchOptions::logOptions() const {

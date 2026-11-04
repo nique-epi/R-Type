@@ -1,23 +1,18 @@
 #include <gtest/gtest.h>
-#include <optional>
 #include <string>
 #include <string_view>
 #include <vector>
 #include "EngineException.hpp"
 #include "LaunchArgumentsConstants.hpp"
-#include "MasterConstants.hpp"
 #include "MasterLaunchOptions.hpp"
 #include "MasterLaunchOptionsTestConstants.hpp"
-#include "MasterTestConstants.hpp"
 #include "NetworkException.hpp"
 
 using rtype::engine::DATABASE_OPTION;
 using rtype::engine::HELP_OPTION;
-using rtype::engine::InvalidLaunchOptionValueException;
 using rtype::engine::PORT_OPTION;
 using rtype::engine::UnknownLaunchArgumentException;
 using rtype::master::MasterLaunchOptions;
-using rtype::master::NEW_SERVER_KEY_OPTION;
 using rtype::network::InvalidPortException;
 
 using Arguments = std::vector<std::string_view>;
@@ -106,54 +101,4 @@ TEST(MasterLaunchOptions, AnOptionOfAnotherProgramIsRefused) {
   EXPECT_THROW(static_cast<void>(MasterLaunchOptions::read(
                    Arguments{CLIENT_ADDRESS_OPTION, CLIENT_ADDRESS})),
                UnknownLaunchArgumentException);
-}
-
-/**
- * Given `--new-server-key` and the name of a game server
- * When the launch options of the master are read
- * Then a key is asked for that name, and no setting is forced
- */
-TEST(MasterLaunchOptions, ANewServerKeyRecordsTheNameOfTheServer) {
-  const MasterLaunchOptions options = MasterLaunchOptions::read(
-      Arguments{NEW_SERVER_KEY_OPTION, TEST_SERVER_NAME});
-
-  EXPECT_EQ(options.newServerKeyName(), std::string{TEST_SERVER_NAME});
-  EXPECT_TRUE(options.forcedLines().empty());
-}
-
-/**
- * Given no `--new-server-key`
- * When the launch options of the master are read
- * Then no key is asked for, so the master runs
- */
-TEST(MasterLaunchOptions, NoNewServerKeyRunsTheMaster) {
-  EXPECT_EQ(MasterLaunchOptions::read(Arguments{}).newServerKeyName(),
-            std::nullopt);
-}
-
-/**
- * Given `--new-server-key` with an empty name, one of 33 bytes, or one holding
- * a line feed
- * When the launch options of the master are read
- * Then each is refused, since no game server may have it
- */
-TEST(MasterLaunchOptions, ANameNoServerMayHaveIsRefused) {
-  for (const std::string_view name :
-       {EMPTY_SERVER_NAME, SERVER_NAME_OF_33_BYTES,
-        SERVER_NAME_WITH_LINE_FEED}) {
-    SCOPED_TRACE(name);
-    EXPECT_THROW(static_cast<void>(MasterLaunchOptions::read(
-                     Arguments{NEW_SERVER_KEY_OPTION, name})),
-                 InvalidLaunchOptionValueException);
-  }
-}
-
-/**
- * Given the usage of the master
- * When it is read
- * Then it describes `--new-server-key`
- */
-TEST(MasterLaunchOptions, TheUsageDescribesTheNewServerKey) {
-  EXPECT_NE(MasterLaunchOptions::usage().find(NEW_SERVER_KEY_OPTION),
-            std::string::npos);
 }

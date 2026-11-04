@@ -15,6 +15,7 @@
 #include "IntegerSettingDefinition.hpp"
 #include "MasterConstants.hpp"
 #include "MasterModuleConstants.hpp"
+#include "MasterRouteConstants.hpp"
 #include "NetworkConstants.hpp"
 
 namespace rtype::master {
@@ -54,7 +55,7 @@ void MasterHttpModule::install(engine::InstallContext& context) {
               .lowest = network::LOWEST_PORT,
               .highest = network::HIGHEST_PORT,
               .help = "TCP port the HTTP API listens on"});
-  server_.addGet(HEALTH_PATH, healthResponse);
+  server_.add(network::HEALTH_ROUTE, healthResponse);
   context.provide(server_);
 }
 

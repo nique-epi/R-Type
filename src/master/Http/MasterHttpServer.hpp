@@ -2,12 +2,12 @@
 
 #include <cstdint>
 #include <memory>
-#include <string_view>
 #include <thread>
 #include "ApiHandler.hpp"
 #include "Endpoint.hpp"
 #include "FailureReport.hpp"
 #include "Logger.hpp"
+#include "MasterRoute.hpp"
 
 namespace httplib {
 class Server;
@@ -17,7 +17,7 @@ namespace rtype::master {
 
 /**
  * @brief The HTTP server of the master: the routes of its API, under
- * API_PATH_PREFIX, answered in JSON on the threads of cpp-httplib.
+ * network::MASTER_API_PREFIX, answered in JSON on the threads of cpp-httplib.
  *
  * Every route is added before open(). open() binds the address and the port,
  * then listens on a thread of its own until close(); close() stops it, lets
@@ -46,14 +46,11 @@ class MasterHttpServer {
   MasterHttpServer& operator=(MasterHttpServer&&) = delete;
 
   /**
-   * @brief Answers GET API_PATH_PREFIX + @p path with @p route. Call it before
-   * open(): the threads open() starts read the routes.
+   * @brief Answers the method of @p route on network::MASTER_API_PREFIX and
+   * its path with @p handler. Call it before open(): the threads open() starts
+   * read the routes.
    */
-  void addGet(std::string_view path, ApiHandler route);
-
-  /** @brief Answers PUT API_PATH_PREFIX + @p path with @p route, as addGet().
-   */
-  void addPut(std::string_view path, ApiHandler route);
+  void add(network::MasterRoute route, ApiHandler handler);
 
   /**
    * @brief Binds @p endpoint, an IPv4 address of the machine or

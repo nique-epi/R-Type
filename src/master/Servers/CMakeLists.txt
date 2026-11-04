@@ -1,10 +1,10 @@
-find_package(nlohmann_json CONFIG REQUIRED)
+add_subdirectory(Models)
+add_subdirectory(Repositories)
+add_subdirectory(Services)
+add_subdirectory(Controllers)
 
 add_library(rtype_master_servers_module STATIC
-  ServerRepository.cpp
-  ServersController.cpp
   ServersModule.cpp
-  ServersService.cpp
 )
 
 target_include_directories(rtype_master_servers_module PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
@@ -12,13 +12,12 @@ target_include_directories(rtype_master_servers_module PUBLIC ${CMAKE_CURRENT_SO
 target_link_libraries(rtype_master_servers_module
   PUBLIC
     rtype_engine_modules
-    rtype_master_http_module
-    rtype_master_server_keys_module
-    rtype_master_storage_module
-    rtype_network_master
+    rtype_master_servers_controllers
   PRIVATE
-    nlohmann_json::nlohmann_json
     rtype_master_constants
+    rtype_master_http_module
+    rtype_master_storage_module
+    rtype_network_master_routes
 )
 
 rtype_enable_warnings(rtype_master_servers_module)

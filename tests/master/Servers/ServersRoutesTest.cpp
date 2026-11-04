@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 #include <httplib.h>
+#include <cstddef>
 #include <cstdint>
 #include <nlohmann/json.hpp>
 #include <nlohmann/json_fwd.hpp>
@@ -9,11 +10,11 @@
 #include "MasterMessageTextTestConstants.hpp"
 #include "MasterTestConstants.hpp"
 #include "RouteCall.hpp"
-#include "ServerKeyTextTestConstants.hpp"
 #include "ServersRoutesFixture.hpp"
 #include "ServersRoutesTestConstants.hpp"
 
 using rtype::network::heartbeatText;
+using rtype::network::isWellFormedServerKey;
 using rtype::network::registrationText;
 using rtype::network::testing::ADDRESS_POINTER;
 using rtype::network::testing::parisHeartbeat;
@@ -26,14 +27,72 @@ using rtype::network::testing::UDP_PORT_POINTER;
 
 /**
  * Given a master
- * When a server registers with no key
+ * When a host creates a server
+ * Then it gets 201, the Location of the server named by its id, and its key
+ */
+TEST_F(ServersRoutesFixture, ACreationAnswersWhereTheServerLivesAndItsKey) {
+  const httplib::Result answer = createParis();
+
+  ASSERT_TRUE(answer);
+  EXPECT_EQ(answer->status, EXPECTED_CREATED);
+  const nlohmann::json created = nlohmann::json::parse(answer->body);
+  EXPECT_EQ(answer->get_header_value(std::string{LOCATION_HEADER_NAME}),
+            std::string{EXPECTED_SERVER_LOCATION_PREFIX} +
+                std::to_string(created.at(ID_MEMBER_NAME).get<std::int64_t>()));
+  EXPECT_TRUE(
+      isWellFormedServerKey(created.at(KEY_MEMBER_NAME).get<std::string>()));
+}
+
+/**
+ * Given a master
+ * When a host creates a server without a name
+ * Then it gets 400, whose detail names the name
+ */
+TEST_F(ServersRoutesFixture, ACreationWithoutANameNamesTheMissingMember) {
+  const httplib::Result answer =
+      send(RouteCall{.method = POST_METHOD,
+                     .path = SERVERS_URL,
+                     .key = {},
+                     .body = std::string{EMPTY_OBJECT_BODY}});
+
+  ASSERT_TRUE(answer);
+  EXPECT_EQ(answer->status, EXPECTED_BAD_REQUEST);
+  EXPECT_NE(nlohmann::json::parse(answer->body)
+                .at(PROBLEM_DETAIL_MEMBER_NAME)
+                .get<std::string>()
+                .find(quoted(NAME_POINTER_TEXT)),
+            std::string::npos);
+}
+
+/**
+ * Given the loopback, which created the server of the fixture
+ * When it creates four more, then a sixth one
+ * Then the four are created and the sixth gets 429
+ */
+TEST_F(ServersRoutesFixture, ASixthCreationInAnHourIsTooManyRequests) {
+  for (std::size_t creation = 1; creation < CREATIONS_PER_HOUR; ++creation) {
+    const httplib::Result answer = createParis();
+    ASSERT_TRUE(answer);
+    ASSERT_EQ(answer->status, EXPECTED_CREATED);
+  }
+
+  const httplib::Result answer = createParis();
+
+  ASSERT_TRUE(answer);
+  EXPECT_EQ(answer->status, EXPECTED_TOO_MANY_REQUESTS);
+}
+
+/**
+ * Given a created server
+ * When it registers with no key
  * Then it gets 401, asked for a Bearer key
  */
 TEST_F(ServersRoutesFixture, ARegistrationWithoutAKeyIsAskedForOne) {
   const httplib::Result answer =
-      put(RouteCall{.path = OWN_SERVER_URL,
-                    .key = {},
-                    .body = registrationText(parisRegistration())});
+      send(RouteCall{.method = PUT_METHOD,
+                     .path = OWN_SERVER_URL,
+                     .key = {},
+                     .body = registrationText(parisRegistration())});
 
   ASSERT_TRUE(answer);
   EXPECT_EQ(answer->status, EXPECTED_UNAUTHORIZED);
@@ -42,52 +101,51 @@ TEST_F(ServersRoutesFixture, ARegistrationWithoutAKeyIsAskedForOne) {
 }
 
 /**
- * Given a master
+ * Given a created server
  * When a server registers with a well-formed key the master never issued
  * Then it gets 401
  */
 TEST_F(ServersRoutesFixture, ARegistrationWithAKeyNeverIssuedIsRefused) {
   const httplib::Result answer =
-      put(RouteCall{.path = OWN_SERVER_URL,
-                    .key = KEY_NEVER_ISSUED,
-                    .body = registrationText(parisRegistration())});
+      send(RouteCall{.method = PUT_METHOD,
+                     .path = OWN_SERVER_URL,
+                     .key = UNKNOWN_SERVER_KEY,
+                     .body = registrationText(parisRegistration())});
 
   ASSERT_TRUE(answer);
   EXPECT_EQ(answer->status, EXPECTED_UNAUTHORIZED);
 }
 
 /**
- * Given a key that registered no server
- * When a server registers with it
- * Then it gets 201 and the Location of the server, whose id the body carries
+ * Given a registration whose port is written as text, sent with no key
+ * When the master reads it
+ * Then it gets 401: the key is checked before the body
  */
-TEST_F(ServersRoutesFixture, AFirstRegistrationTellsWhereTheServerLives) {
-  const httplib::Result answer = registerParis();
+TEST_F(ServersRoutesFixture, TheKeyIsCheckedBeforeTheBody) {
+  const httplib::Result answer = send(
+      RouteCall{.method = PUT_METHOD,
+                .path = OWN_SERVER_URL,
+                .key = {},
+                .body = registrationTextWith(UDP_PORT_POINTER, PORT_AS_TEXT)});
 
   ASSERT_TRUE(answer);
-  EXPECT_EQ(answer->status, EXPECTED_CREATED);
-  EXPECT_EQ(answer->get_header_value(std::string{LOCATION_HEADER_NAME}),
-            std::string{EXPECTED_SERVER_LOCATION_PREFIX} +
-                std::to_string(nlohmann::json::parse(answer->body)
-                                   .at(ID_MEMBER_NAME)
-                                   .get<std::int64_t>()));
+  EXPECT_EQ(answer->status, EXPECTED_UNAUTHORIZED);
 }
 
 /**
- * Given a server already registered
- * When it registers again with the same key
- * Then it gets 200 and the same id
+ * Given a created server
+ * When it registers with its key
+ * Then it gets 200 and its representation, under the id of its creation
  */
-TEST_F(ServersRoutesFixture, ARegistrationAgainKeepsTheServer) {
-  const httplib::Result first = registerParis();
-  ASSERT_TRUE(first);
+TEST_F(ServersRoutesFixture, ARegistrationAnswersTheServer) {
+  const httplib::Result answer = registerParis();
 
-  const httplib::Result second = registerParis();
-
-  ASSERT_TRUE(second);
-  EXPECT_EQ(second->status, EXPECTED_OK);
-  EXPECT_EQ(nlohmann::json::parse(second->body).at(ID_MEMBER_NAME),
-            nlohmann::json::parse(first->body).at(ID_MEMBER_NAME));
+  ASSERT_TRUE(answer);
+  EXPECT_EQ(answer->status, EXPECTED_OK);
+  EXPECT_EQ(nlohmann::json::parse(answer->body)
+                .at(ID_MEMBER_NAME)
+                .get<std::int64_t>(),
+            createdId());
 }
 
 /**
@@ -97,9 +155,10 @@ TEST_F(ServersRoutesFixture, ARegistrationAgainKeepsTheServer) {
  */
 TEST_F(ServersRoutesFixture, ARegistrationWithoutAddressTakesThePeer) {
   const httplib::Result answer =
-      put(RouteCall{.path = OWN_SERVER_URL,
-                    .key = key(),
-                    .body = registrationTextWithout(ADDRESS_POINTER)});
+      send(RouteCall{.method = PUT_METHOD,
+                     .path = OWN_SERVER_URL,
+                     .key = key(),
+                     .body = registrationTextWithout(ADDRESS_POINTER)});
 
   ASSERT_TRUE(answer);
   EXPECT_EQ(nlohmann::json::parse(answer->body)
@@ -114,8 +173,9 @@ TEST_F(ServersRoutesFixture, ARegistrationWithoutAddressTakesThePeer) {
  * Then it gets 400, whose detail names the port
  */
 TEST_F(ServersRoutesFixture, AnInvalidRegistrationNamesItsFaultyMember) {
-  const httplib::Result answer = put(
-      RouteCall{.path = OWN_SERVER_URL,
+  const httplib::Result answer = send(
+      RouteCall{.method = PUT_METHOD,
+                .path = OWN_SERVER_URL,
                 .key = key(),
                 .body = registrationTextWith(UDP_PORT_POINTER, PORT_AS_TEXT)});
 
@@ -129,18 +189,19 @@ TEST_F(ServersRoutesFixture, AnInvalidRegistrationNamesItsFaultyMember) {
 }
 
 /**
- * Given a key that registered no server
- * When a heartbeat comes with it
- * Then it gets 404
+ * Given a created server that has not registered
+ * When its heartbeat comes
+ * Then it gets 409
  */
-TEST_F(ServersRoutesFixture, AHeartbeatBeforeTheRegistrationIsNotFound) {
+TEST_F(ServersRoutesFixture, AHeartbeatBeforeTheRegistrationIsAConflict) {
   const httplib::Result answer =
-      put(RouteCall{.path = OWN_HEARTBEAT_URL,
-                    .key = key(),
-                    .body = heartbeatText(parisHeartbeat())});
+      send(RouteCall{.method = PUT_METHOD,
+                     .path = OWN_HEARTBEAT_URL,
+                     .key = key(),
+                     .body = heartbeatText(parisHeartbeat())});
 
   ASSERT_TRUE(answer);
-  EXPECT_EQ(answer->status, EXPECTED_NOT_FOUND);
+  EXPECT_EQ(answer->status, EXPECTED_CONFLICT);
 }
 
 /**
@@ -152,9 +213,10 @@ TEST_F(ServersRoutesFixture, AHeartbeatGetsTheOrdersWaiting) {
   ASSERT_TRUE(registerParis());
 
   const httplib::Result answer =
-      put(RouteCall{.path = OWN_HEARTBEAT_URL,
-                    .key = key(),
-                    .body = heartbeatText(parisHeartbeat())});
+      send(RouteCall{.method = PUT_METHOD,
+                     .path = OWN_HEARTBEAT_URL,
+                     .key = key(),
+                     .body = heartbeatText(parisHeartbeat())});
 
   ASSERT_TRUE(answer);
   EXPECT_EQ(answer->status, EXPECTED_OK);

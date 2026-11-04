@@ -24,16 +24,16 @@ rtype::master::MasterHttpServer& MasterHttpServerFixture::server() {
 }
 
 void MasterHttpServerFixture::addTestRoute() {
-  server_.addGet(TEST_ROUTE,
-                 []([[maybe_unused]] const rtype::master::ApiRequest& request) {
-                   return rtype::master::ApiResponse{
-                       .status = EXPECTED_OK,
-                       .body = std::string{TEST_ROUTE_BODY}};
-                 });
+  server_.add(TEST_GET_ROUTE,
+              []([[maybe_unused]] const rtype::master::ApiRequest& request) {
+                return rtype::master::ApiResponse{
+                    .status = EXPECTED_OK,
+                    .body = std::string{TEST_ROUTE_BODY}};
+              });
 }
 
 void MasterHttpServerFixture::addEchoRoute() {
-  server_.addPut(TEST_ROUTE, [](const rtype::master::ApiRequest& request) {
+  server_.add(TEST_PUT_ROUTE, [](const rtype::master::ApiRequest& request) {
     nlohmann::json echo;
     echo[ECHO_BODY_MEMBER] = request.body;
     echo[ECHO_TOKEN_MEMBER] = request.bearerToken.has_value()

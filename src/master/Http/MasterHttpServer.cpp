@@ -20,7 +20,10 @@
 #include "HttpConstants.hpp"
 #include "MasterConstants.hpp"
 #include "MasterException.hpp"
+#include "MasterRoute.hpp"
+#include "MasterRouteConstants.hpp"
 #include "NetworkConstants.hpp"
+#include "RouteMethod.hpp"
 
 // NOLINTBEGIN(clang-analyzer-cplusplus.NewDeleteLeaks,clang-analyzer-unix.BlockInCriticalSection)
 namespace rtype::master {
@@ -138,7 +141,7 @@ httplib::Server::Handler handlerOf(ApiHandler route) {
 }
 
 std::string apiPathOf(std::string_view path) {
-  return std::string{API_PATH_PREFIX} + std::string{path};
+  return std::string{network::MASTER_API_PREFIX} + std::string{path};
 }
 
 /** @returns What @p error says, for the journal. */
@@ -173,12 +176,19 @@ MasterHttpServer::MasterHttpServer(FailureReport onFailure)
 
 MasterHttpServer::~MasterHttpServer() { server_->stop(); }
 
-void MasterHttpServer::addGet(std::string_view path, ApiHandler route) {
-  server_->Get(apiPathOf(path), handlerOf(std::move(route)));
-}
-
-void MasterHttpServer::addPut(std::string_view path, ApiHandler route) {
-  server_->Put(apiPathOf(path), handlerOf(std::move(route)));
+void MasterHttpServer::add(network::MasterRoute route, ApiHandler handler) {
+  const std::string path = apiPathOf(route.path);
+  switch (route.method) {
+    case network::RouteMethod::Get:
+      server_->Get(path, handlerOf(std::move(handler)));
+      return;
+    case network::RouteMethod::Post:
+      server_->Post(path, handlerOf(std::move(handler)));
+      return;
+    case network::RouteMethod::Put:
+      server_->Put(path, handlerOf(std::move(handler)));
+      return;
+  }
 }
 
 std::uint16_t MasterHttpServer::open(const network::Endpoint& endpoint) {

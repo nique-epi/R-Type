@@ -7,7 +7,6 @@
 #include <string>
 #include <utility>
 #include <vector>
-#include "Application.hpp"
 #include "EngineException.hpp"
 #include "HttpPortProbe.hpp"
 #include "IModule.hpp"
@@ -16,15 +15,10 @@
 #include "MasterModulesTestConstants.hpp"
 #include "MasterTestConstants.hpp"
 #include "RouteAddingModule.hpp"
-#include "ServerKeyOrder.hpp"
-#include "ServerKeyText.hpp"
 
-using rtype::engine::Application;
 using rtype::engine::IModule;
 using rtype::engine::ModuleStartFailedException;
-using rtype::master::isWellFormedServerKey;
 using rtype::master::MASTER_VERSION;
-using rtype::master::ServerKeyOrder;
 
 /**
  * Given the modules of the master
@@ -91,39 +85,4 @@ TEST_F(MasterModulesFixture, AModuleListedAfterTheHttpModuleAddsItsRoute) {
 
   ASSERT_TRUE(answer);
   EXPECT_EQ(answer->status, EXPECTED_OK);
-}
-
-/**
- * Given the modules of `--new-server-key`, with the order of a key
- * When they start
- * Then the order receives a well-formed key
- */
-TEST_F(MasterModulesFixture, ANewServerKeyIsHandedToTheOrder) {
-  std::string issued;
-  const std::unique_ptr<Application> application =
-      keyApplication(ServerKeyOrder{
-          .name = std::string{TEST_SERVER_NAME},
-          .onIssued = [&issued](const std::string& key) { issued = key; }});
-
-  application->start();
-
-  EXPECT_TRUE(isWellFormedServerKey(issued));
-  application->stop();
-}
-
-/**
- * Given the modules of `--new-server-key`, given the port of the HTTP API
- * When they start
- * Then nothing listens on that port
- */
-TEST_F(MasterModulesFixture, ANewServerKeyOpensNoPort) {
-  const std::unique_ptr<Application> application =
-      keyApplication(ServerKeyOrder{
-          .name = std::string{TEST_SERVER_NAME},
-          .onIssued = []([[maybe_unused]] const std::string& key) {}});
-
-  application->start();
-
-  EXPECT_TRUE(httpPortIsFree(port()));
-  application->stop();
 }
