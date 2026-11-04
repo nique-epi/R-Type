@@ -2,10 +2,15 @@
 #include <gtest/gtest.h>
 #include <SFML/Graphics/Image.hpp>
 #include <SFML/System/Vector2.hpp>
+#include <algorithm>
 #include <filesystem>
+#include <string>
+#include <vector>
 #include "AssetLibrary.hpp"
 #include "AssetLoadingStep.hpp"
 #include "EffectConstants.hpp"
+#include "EnemyAppearance.hpp"
+#include "EnemyKind.hpp"
 #include "EntitySpriteConstants.hpp"
 #include "FlightLogSheetConstants.hpp"
 #include "HudSpriteConstants.hpp"
@@ -90,6 +95,22 @@ TEST(ScreenAssets, EnteringAGameKeepsTheInterfaceFonts) {
  */
 TEST(ScreenAssets, AGameLoadsTheEntitySheet) {
   EXPECT_THAT(gameAssets().textures, Contains(ENTITY_SHEET_ID));
+}
+
+/**
+ * Given every kind of enemy
+ * When the textures of a game are listed
+ * Then each holds the sheet of every kind, and no sheet twice
+ */
+TEST(ScreenAssets, AGameLoadsTheSheetOfEveryEnemyKindOnce) {
+  const std::vector<std::string> textures = gameAssets().textures;
+
+  for (const rtype::game::EnemyKind kind : rtype::game::ALL_ENEMY_KINDS) {
+    SCOPED_TRACE(static_cast<int>(kind));
+    const std::string sheet = rtype::client::appearanceOf(kind).sheetId;
+
+    EXPECT_EQ(std::ranges::count(textures, sheet), 1);
+  }
 }
 
 /**

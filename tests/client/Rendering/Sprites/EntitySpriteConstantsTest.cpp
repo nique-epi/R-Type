@@ -2,6 +2,8 @@
 #include <SFML/Graphics/Image.hpp>
 #include <cstddef>
 #include "BackgroundConstants.hpp"
+#include "EnemyAppearance.hpp"
+#include "EnemyKind.hpp"
 #include "EntitySizeConstants.hpp"
 #include "EntitySpriteConstants.hpp"
 #include "EntitySprites.hpp"
@@ -73,6 +75,25 @@ TEST(EntitySpriteConstants, TheBydoDrawnIsTheBydoTheServerHits) {
                   BYDO_WIDTH);
   EXPECT_FLOAT_EQ(static_cast<float>(BYDO_FRAME.height) * BACKGROUND_PIXEL_SIZE,
                   BYDO_HEIGHT);
+}
+
+/**
+ * Given the idle animation of every kind of enemy
+ * When the size of its first frame is measured in logical units
+ * Then it is the box the server hits an enemy with; the frames of an attack,
+ * wider than the body, are not compared with it
+ */
+TEST(EntitySpriteConstants, TheIdleBodyOfEveryEnemyKindIsTheBoxTheServerHits) {
+  for (const rtype::game::EnemyKind kind : rtype::game::ALL_ENEMY_KINDS) {
+    SCOPED_TRACE(static_cast<int>(kind));
+    const SpriteFrame idle =
+        rtype::client::appearanceOf(kind).idle.frames.front();
+
+    EXPECT_FLOAT_EQ(static_cast<float>(idle.width) * BACKGROUND_PIXEL_SIZE,
+                    BYDO_WIDTH);
+    EXPECT_FLOAT_EQ(static_cast<float>(idle.height) * BACKGROUND_PIXEL_SIZE,
+                    BYDO_HEIGHT);
+  }
 }
 
 /**

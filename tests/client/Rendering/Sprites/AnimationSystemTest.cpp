@@ -107,3 +107,45 @@ TEST(AnimationSystem, AnAnimationWithoutFramesLeavesTheSpriteAsItIs) {
 
   EXPECT_EQ(scene.shownFrame(), FIRST);
 }
+
+/**
+ * Given an entity playing three frames once, a loop to follow
+ * When the system plays 300 ms
+ * Then the entity is alive and shows the first frame of the loop
+ */
+TEST(AnimationSystem, AnAnimationPlayedOnceHandsOverToWhatFollows) {
+  AnimatedScene scene(SpriteAnimation{.animation = ONCE, .afterwards = LOOP});
+
+  scene.play(THREE_FRAMES_LONG);
+
+  EXPECT_TRUE(scene.isAlive());
+  EXPECT_EQ(scene.shownFrame(), FIRST);
+}
+
+/**
+ * Given an entity playing three frames once, a loop to follow, 300 ms played
+ * When the system plays 100 ms more
+ * Then it shows the second frame of the loop: the loop plays on its own time
+ */
+TEST(AnimationSystem, WhatFollowsPlaysFromItsOwnStart) {
+  AnimatedScene scene(SpriteAnimation{.animation = ONCE, .afterwards = LOOP});
+  scene.play(THREE_FRAMES_LONG);
+
+  scene.play(FRAME_TIME);
+
+  EXPECT_EQ(scene.shownFrame(), SECOND);
+}
+
+/**
+ * Given an entity holding three frames
+ * When the system plays ten cycles
+ * Then the entity is alive and shows the last frame
+ */
+TEST(AnimationSystem, AHeldAnimationNeverDestroysItsEntity) {
+  AnimatedScene scene(SpriteAnimation{.animation = HOLD});
+
+  scene.play(THREE_FRAMES_LONG * MANY_CYCLES);
+
+  EXPECT_TRUE(scene.isAlive());
+  EXPECT_EQ(scene.shownFrame(), THIRD);
+}

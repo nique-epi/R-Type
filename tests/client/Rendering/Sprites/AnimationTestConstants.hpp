@@ -30,6 +30,10 @@ constexpr rtype::client::Animation ONCE{
     .frames = THREE_FRAMES,
     .frameDuration = FRAME_TIME,
     .playback = rtype::client::Animation::Playback::Once};
+constexpr rtype::client::Animation HOLD{
+    .frames = THREE_FRAMES,
+    .frameDuration = FRAME_TIME,
+    .playback = rtype::client::Animation::Playback::Hold};
 constexpr rtype::client::Animation WITHOUT_FRAMES{
     .frames = {},
     .frameDuration = FRAME_TIME,

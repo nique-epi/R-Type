@@ -129,3 +129,15 @@ TEST(Animation, AnAnimationWithoutFramesShowsNothing) {
 TEST(Animation, AnAnimationWithoutDurationShowsNothing) {
   EXPECT_FALSE(WITHOUT_DURATION.frameAt(FRAME_TIME).has_value());
 }
+
+/**
+ * Given an animation of three frames of 100 ms that holds
+ * When a very long time has passed
+ * Then it shows its last frame and has not ended
+ */
+TEST(Animation, AHeldAnimationStaysOnItsLastFrameAndNeverEnds) {
+  const Duration longAfter = THREE_FRAMES_LONG * 1000;
+
+  EXPECT_EQ(HOLD.frameAt(longAfter), THIRD);
+  EXPECT_FALSE(HOLD.hasEnded(longAfter));
+}
