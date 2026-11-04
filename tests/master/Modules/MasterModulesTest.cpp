@@ -33,8 +33,10 @@ TEST_F(MasterModulesFixture, TheMasterAnswersItsVersionOnceStarted) {
 
   ASSERT_TRUE(answer);
   EXPECT_EQ(answer->status, EXPECTED_OK);
-  EXPECT_EQ(nlohmann::json::parse(answer->body).at(VERSION_MEMBER_NAME),
-            std::string{MASTER_VERSION});
+  EXPECT_EQ(nlohmann::json::parse(answer->body)
+                .at(VERSION_MEMBER_NAME)
+                .get<std::string>(),
+            MASTER_VERSION);
 }
 
 /**

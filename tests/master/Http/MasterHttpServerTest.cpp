@@ -54,8 +54,10 @@ TEST_F(MasterHttpServerFixture, AnUnknownPathGetsAProblemDocumentOfNotFound) {
   EXPECT_EQ(answer->get_header_value(std::string{CONTENT_TYPE_HEADER}),
             EXPECTED_PROBLEM_TYPE);
   const nlohmann::json problem = nlohmann::json::parse(answer->body);
-  EXPECT_EQ(problem.at(PROBLEM_STATUS_MEMBER_NAME), EXPECTED_NOT_FOUND);
-  EXPECT_EQ(problem.at(PROBLEM_TITLE_MEMBER_NAME), EXPECTED_NOT_FOUND_TITLE);
+  EXPECT_EQ(problem.at(PROBLEM_STATUS_MEMBER_NAME).get<int>(),
+            EXPECTED_NOT_FOUND);
+  EXPECT_EQ(problem.at(PROBLEM_TITLE_MEMBER_NAME).get<std::string>(),
+            EXPECTED_NOT_FOUND_TITLE);
 }
 
 /**
@@ -74,7 +76,9 @@ TEST_F(MasterHttpServerFixture, AFailingRouteHidesItsReasonFromTheClient) {
 
   ASSERT_TRUE(answer);
   EXPECT_EQ(answer->status, EXPECTED_INTERNAL_SERVER_ERROR);
-  EXPECT_EQ(nlohmann::json::parse(answer->body).at(PROBLEM_TITLE_MEMBER_NAME),
+  EXPECT_EQ(nlohmann::json::parse(answer->body)
+                .at(PROBLEM_TITLE_MEMBER_NAME)
+                .get<std::string>(),
             EXPECTED_INTERNAL_SERVER_ERROR_TITLE);
   EXPECT_EQ(answer->body.find(SECRET_REASON), std::string::npos);
 }
