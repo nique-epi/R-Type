@@ -1,6 +1,7 @@
 #include "ConnectionAcceptor.hpp"
 #include <cstddef>
 #include <cstdint>
+#include <exception>
 #include <limits>
 #include <optional>
 #include <random>
@@ -61,6 +62,26 @@ bool isOfAnotherVersion(std::span<const std::byte> datagram) {
              network::DatagramCodec::decodeHeader(datagram));
 }
 
+/**
+ * @returns Why a newcomer asking for @p request must be refused: a game is in
+ * progress, the game is full, or the nickname is taken, checked in that order.
+ * Nothing when the newcomer may join.
+ */
+std::optional<network::RefusalReason> refusalOf(
+    const PlayerRoster& roster, const network::ConnectionRequest& request,
+    bool gameInProgress) {
+  if (gameInProgress) {
+    return network::RefusalReason::GameInProgress;
+  }
+  if (roster.isFull()) {
+    return network::RefusalReason::GameFull;
+  }
+  if (roster.hasNickname(request.nickname)) {
+    return network::RefusalReason::NicknameTaken;
+  }
+  return std::nullopt;
+}
+
 }  // namespace
 
 ConnectionAcceptor::ConnectionAcceptor(PlayerRoster& roster, Send send,
@@ -76,11 +97,17 @@ void ConnectionAcceptor::receive(
     std::span<const network::IncomingDatagram> datagrams,
     engine::Duration now) {
   for (const network::IncomingDatagram& datagram : datagrams) {
-    if (isOfAnotherVersion(datagram.payload)) {
-      refuseAnotherVersion(datagram, now);
-    } else if (const std::optional<network::ConnectionRequest> request =
-                   readRequest(datagram, now)) {
-      answer(datagram.sender, *request, now);
+    try {
+      if (isOfAnotherVersion(datagram.payload)) {
+        refuseAnotherVersion(datagram, now);
+      } else if (const std::optional<network::ConnectionRequest> request =
+                     readRequest(datagram, now)) {
+        answer(datagram.sender, *request, now);
+      }
+    } catch (const std::exception& error) {
+      failureLog_.error(now, "dropped a datagram from ",
+                        datagram.sender.address, " port ", datagram.sender.port,
+                        ": answering it threw: ", error.what());
     }
   }
 }
@@ -131,16 +158,9 @@ void ConnectionAcceptor::answer(const network::Endpoint& sender,
     }
     return;
   }
-  if (gameInProgress_) {
-    refuse(sender, network::RefusalReason::GameInProgress);
-    return;
-  }
-  if (roster_->isFull()) {
-    refuse(sender, network::RefusalReason::GameFull);
-    return;
-  }
-  if (roster_->hasNickname(request.nickname)) {
-    refuse(sender, network::RefusalReason::NicknameTaken);
+  if (const std::optional<network::RefusalReason> refusal =
+          refusalOf(*roster_, request, gameInProgress_)) {
+    refuse(sender, *refusal);
     return;
   }
   if (!hasValidCookie) {

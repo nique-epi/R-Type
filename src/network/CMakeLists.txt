@@ -37,6 +37,7 @@ target_link_libraries(rtype_network
     rtype_network_wire_types
     rtype_network_sequence_order
     rtype_network_world_state_codec
+    rtype_network_world_state_delta
     rtype_network_datagram_codec
     rtype_network_messages
     rtype_network_message_dispatcher

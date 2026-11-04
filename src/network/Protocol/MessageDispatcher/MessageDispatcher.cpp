@@ -3,6 +3,7 @@
 #include <chrono>
 #include <cstddef>
 #include <cstdint>
+#include <exception>
 #include <span>
 #include <string>
 #include "MessageFrame.hpp"
@@ -13,8 +14,8 @@
 namespace rtype::network {
 
 MessageDispatcher::MessageDispatcher()
-    : rejectionLog_(std::string{NETWORK_LOGGER_NAME}, REJECTION_LINE_INTERVAL) {
-}
+    : rejectionLog_(std::string{NETWORK_LOGGER_NAME}, REJECTION_LINE_INTERVAL),
+      failureLog_(std::string{NETWORK_LOGGER_NAME}, REJECTION_LINE_INTERVAL) {}
 
 void MessageDispatcher::dispatch(const MessageOrigin& origin,
                                  std::span<const MessageFrame> messages) {
@@ -31,6 +32,10 @@ std::size_t MessageDispatcher::malformedMessageCount() const {
   return malformedMessageCount_;
 }
 
+std::size_t MessageDispatcher::failedMessageCount() const {
+  return failedMessageCount_;
+}
+
 void MessageDispatcher::dispatchOne(const MessageOrigin& origin,
                                     const MessageFrame& message) {
   const Route& route = routes_.at(message.type);
@@ -45,7 +50,11 @@ void MessageDispatcher::dispatchOne(const MessageOrigin& origin,
     dropMalformed(origin, message.type, error);
     return;
   }
-  route.handle(origin, decoded);
+  try {
+    route.handle(origin, decoded);
+  } catch (const std::exception& error) {
+    dropFailed(origin, message.type, error);
+  }
 }
 
 void MessageDispatcher::skipUnhandled(const MessageOrigin& origin,
@@ -66,6 +75,17 @@ void MessageDispatcher::dropMalformed(const MessageOrigin& origin,
       std::chrono::steady_clock::now().time_since_epoch(),
       "dropped a message of type ", static_cast<unsigned int>(type), " from ",
       origin.sender.address, " port ", origin.sender.port, ": ", error.what());
+}
+
+void MessageDispatcher::dropFailed(const MessageOrigin& origin,
+                                   std::uint8_t type,
+                                   const std::exception& error) {
+  ++failedMessageCount_;
+  failureLog_.error(std::chrono::steady_clock::now().time_since_epoch(),
+                    "dropped a message of type ",
+                    static_cast<unsigned int>(type), " from ",
+                    origin.sender.address, " port ", origin.sender.port,
+                    ": its handler threw: ", error.what());
 }
 
 }  // namespace rtype::network

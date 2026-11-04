@@ -6,7 +6,6 @@
 #include "ProtocolConstants.hpp"
 
 namespace rtype::server {
-namespace {
 
 /**
  * Given a list nothing was appended to
@@ -42,5 +41,4 @@ TEST(ConnectedPlayers, ListsThePlayersInTheOrderTheyWereAppended) {
             appended);
 }
 
-}  // namespace
 }  // namespace rtype::server

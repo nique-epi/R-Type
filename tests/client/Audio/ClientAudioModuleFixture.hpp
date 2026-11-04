@@ -5,12 +5,14 @@
 #include "InstallContext.hpp"
 #include "LoopStages.hpp"
 #include "PlayerSettings.hpp"
+#include "RecordingSettingsStorage.hpp"
 #include "ServiceRegistry.hpp"
+#include "SettingsService.hpp"
 #include "TemporaryFolder.hpp"
 
 /** @brief The services the sound module is installed over: an asset library
- * on an empty folder and the settings of a first launch, the loop stages of
- * the client, and a registry nothing was provided to. */
+ * on an empty folder and the settings service of a first launch, the loop
+ * stages of the client, and a registry nothing was provided to. */
 class ClientAudioModuleFixture : public ::testing::Test {
  protected:
   ClientAudioModuleFixture();
@@ -29,6 +31,8 @@ class ClientAudioModuleFixture : public ::testing::Test {
   TemporaryFolder folder_;
   rtype::client::AssetLibrary library_;
   rtype::client::PlayerSettings settings_;
+  RecordingSettingsStorage storage_;
+  rtype::client::SettingsService settingsService_;
   rtype::engine::ServiceRegistry services_;
   rtype::engine::ServiceRegistry noServices_;
   rtype::engine::LoopStages stages_;

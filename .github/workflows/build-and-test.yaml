@@ -199,7 +199,7 @@ jobs:
           xargs -0 -a "$RUNNER_TEMP/files-to-lint" "/c/Program Files/LLVM/bin/clang-tidy.exe" -p build --quiet
 
   build:
-    name: Build and test (${{ matrix.os }})
+    name: Build and test (${{ matrix.os }}${{ matrix.preset == 'sanitize' && ', sanitizers' || '' }})
     runs-on: ${{ matrix.os }}
     timeout-minutes: 60
     strategy:
@@ -207,8 +207,13 @@ jobs:
       matrix:
         include:
           - os: ubuntu-latest
+            preset: test
+            generator_arguments: ""
+          - os: ubuntu-latest
+            preset: sanitize
             generator_arguments: ""
           - os: windows-latest
+            preset: test
             # Ninja compiles every file in parallel; the Visual Studio generator does not.
             # /Z7 puts the debug information in the object files, which sccache can cache.
             generator_arguments: >-
@@ -257,20 +262,20 @@ jobs:
         env:
           VCPKG_SSL_REVOKE_BEST_EFFORT: ${{ runner.os == 'Windows' && '1' || '0' }}
         run: >-
-          cmake --preset test ${{ matrix.generator_arguments }}
+          cmake --preset ${{ matrix.preset }} ${{ matrix.generator_arguments }}
           -DCMAKE_COMPILE_WARNING_AS_ERROR=ON
           -DCMAKE_C_COMPILER_LAUNCHER=sccache
           -DCMAKE_CXX_COMPILER_LAUNCHER=sccache
 
       - name: Save vcpkg binary cache
-        if: steps.vcpkg-cache.outputs.cache-hit != 'true'
+        if: steps.vcpkg-cache.outputs.cache-hit != 'true' && matrix.preset != 'sanitize'
         uses: actions/cache/save@v4
         with:
           path: ${{ runner.temp }}/vcpkg-cache
           key: ${{ steps.vcpkg-cache.outputs.cache-primary-key }}
 
       - name: Build
-        run: cmake --build --preset test --parallel
+        run: cmake --build --preset ${{ matrix.preset }} --parallel
 
       - name: Show the compiler cache statistics
         if: always()
@@ -278,10 +283,60 @@ jobs:
         run: ${SCCACHE_PATH} --show-stats
 
       - name: Test
-        run: ctest --preset test
+        run: ctest --preset ${{ matrix.preset }}
+
+      - name: Stop the server under the sanitizers
+        if: matrix.preset == 'sanitize'
+        timeout-minutes: 2
+        shell: bash
+        # Job control on, or bash starts the server with SIGINT ignored.
+        run: |
+          set -m
+          ./build-sanitize/r-type_server &
+          server=$!
+          sleep 5
+          kill -INT "$server"
+          code=0
+          wait "$server" || code=$?
+          echo "r-type_server exit code: $code"
+          test "$code" -eq 0
+
+  # A pull request builds the packages only when it changes what makes them;
+  # a push to main always builds them, and a release builds them again.
+  packaging-changes:
+    name: Packaging changes
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      changed: ${{ steps.select.outputs.changed }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Look for changes to the packaging
+        id: select
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          if [ -z "$BASE_SHA" ]; then
+            echo "Not a pull request: the packages are built."
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          elif ! git diff --quiet "$BASE_SHA"...HEAD -- packaging assets tests/tools/packaging \
+              CMakeLists.txt CMakePresets.json vcpkg.json vcpkg \
+              .github/workflows/package.yaml .github/workflows/release.yaml \
+              .github/workflows/build-and-test.yaml; then
+            echo "The pull request changes the packaging: the packages are built."
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "The pull request does not change the packaging: no package is built."
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          fi
 
   package:
     name: Package
+    needs: packaging-changes
+    if: needs.packaging-changes.outputs.changed == 'true'
     uses: ./.github/workflows/package.yaml
 
   network-condition-scripts:

@@ -68,13 +68,17 @@ bool readBool(ByteReader& reader) {
   return value == TRUE_WIRE_VALUE;
 }
 
-void writeCoordinate(ByteWriter& writer, float coordinate) {
+std::int16_t wireStepsOf(float coordinate) {
   if (std::isnan(coordinate)) {
     throw InvalidCoordinateException();
   }
   const float steps = std::round(coordinate * WIRE_COORDINATE_STEPS_PER_UNIT);
-  writer.writeInt16(static_cast<std::int16_t>(
-      std::clamp(steps, MINIMUM_WIRE_STEPS, MAXIMUM_WIRE_STEPS)));
+  return static_cast<std::int16_t>(
+      std::clamp(steps, MINIMUM_WIRE_STEPS, MAXIMUM_WIRE_STEPS));
+}
+
+void writeCoordinate(ByteWriter& writer, float coordinate) {
+  writer.writeInt16(wireStepsOf(coordinate));
 }
 
 float readCoordinate(ByteReader& reader) {

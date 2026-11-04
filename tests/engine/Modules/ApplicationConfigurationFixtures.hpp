@@ -8,8 +8,10 @@
 
 /**
  * @returns A configuration step that writes CONFIGURE_STEP in @p journal, then
- * runs each of @p lines as a command and appends the message of each refused
- * line to @p refusals. @p journal and @p refusals must outlive the step.
+ * runs each of @p lines as a command and keeps in @p refusals the message of
+ * each line it refused, those of its last run only, as configurationStep()
+ * keeps the report of its last run. @p journal and @p refusals must outlive
+ * the step.
  */
 rtype::engine::ConfigurationStep runningLines(
     std::vector<std::string> lines, JournalModule& journal,

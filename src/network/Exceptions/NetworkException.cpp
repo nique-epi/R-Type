@@ -109,6 +109,12 @@ TooManyPlayersException::TooManyPlayersException(std::size_t playerCount,
           "a message lists at most " + std::to_string(maximumCount) +
           " players, not " + std::to_string(playerCount)) {}
 
+TooManyDeltaPartsException::TooManyDeltaPartsException(std::size_t partCount,
+                                                       std::size_t maximumCount)
+    : NetworkException("a state is written in at most " +
+                       std::to_string(maximumCount) + " parts, not " +
+                       std::to_string(partCount)) {}
+
 EmptyMessageHandlerException::EmptyMessageHandlerException()
     : NetworkException("A message handler must not be empty") {}
 

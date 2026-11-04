@@ -10,33 +10,12 @@
 #include "SimulatedClock.hpp"
 #include "SystemClock.hpp"
 #include "TickLoop.hpp"
+#include "TickLoopFixtures.hpp"
 #include "TimeConstants.hpp"
 
 using rtype::engine::Duration;
 using rtype::engine::SIMULATION_TICK_DURATION;
 using rtype::server::TickLoop;
-
-namespace {
-
-/**
- * @brief Lets @p tickCount ticks and a half pass at once, then runs the ticks
- * due.
- */
-void stallFor(SimulatedClock& clock, TickLoop& loop, int tickCount) {
-  clock.advance(SIMULATION_TICK_DURATION * tickCount + HALF_TICK);
-  loop.runDueTicks();
-}
-
-/**
- * @brief The game time a stall of @p tickCount ticks and a half drops: all of
- * it past the ticks caught up.
- */
-Duration droppedBy(int tickCount) {
-  return SIMULATION_TICK_DURATION * (tickCount - CAUGHT_UP_TICK_COUNT) +
-         HALF_TICK;
-}
-
-}  // namespace
 
 /**
  * Given a loop whose clock has not reached the first tick

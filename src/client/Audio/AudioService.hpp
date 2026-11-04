@@ -6,6 +6,7 @@
 #include "ISoundPlayer.hpp"
 #include "MusicPlayer.hpp"
 #include "SettingsService.hpp"
+#include "SoundBank.hpp"
 #include "SoundPlayer.hpp"
 #include "Soundtrack.hpp"
 #include "TimeConstants.hpp"
@@ -13,18 +14,18 @@
 namespace rtype::client {
 
 /**
- * @brief The audio service of a client with sound: the sounds of every screen
- * on SOUND_VOICE_LIMIT voices for the whole client, the theme and the music
- * of a game, and the Soundtrack that switches between them. Their volumes
- * follow the settings service, which tells them when one changes.
+ * @brief The audio service of a client with sound: the bank of the sounds,
+ * played on SOUND_VOICE_LIMIT voices for the whole client, the theme and the
+ * music of a game, and the Soundtrack that switches between them. Their
+ * volumes follow the settings service, which tells them when one changes.
  *
- * Building it opens no music file: open() does, as the window opens in
- * open().
+ * Building it reads no file: open() reads the sounds and opens the music
+ * files, as the window opens in open().
  */
 class AudioService final : public IAudioService {
  public:
   /**
-   * @param library Holds the sounds and locates the music files; it must
+   * @param library Locates the files of the sounds and of the music; it must
    * outlive the service.
    * @param settings Tells the sounds and the music when a volume changes;
    * it must outlive the service.
@@ -41,12 +42,15 @@ class AudioService final : public IAudioService {
   [[nodiscard]] IMusicPlayer& theme() override;
   void playTheme() override;
   void playGameMusic() override;
+  /** @throws AssetLoadingException naming every sound of ALL_SOUND_IDS that
+   * could not be read. */
   void open() override;
   void update(engine::Duration elapsed) override;
 
  private:
   AssetLibrary* library_;
   SettingsService* settings_;
+  SoundBank bank_;
   SoundPlayer sounds_;
   MusicPlayer theme_;
   MusicPlayer gameMusic_;

@@ -13,6 +13,7 @@
 #include "GameWindow.hpp"
 #include "IAudioService.hpp"
 #include "IModule.hpp"
+#include "IOptionalDependencies.hpp"
 #include "InstallContext.hpp"
 #include "Logger.hpp"
 #include "PlayerSettings.hpp"
@@ -21,6 +22,7 @@
 #include "ServerSession.hpp"
 #include "SettingValue.hpp"
 #include "SettingsService.hpp"
+#include "SilentAudioService.hpp"
 #include "SubscriptionHandle.hpp"
 #include "TimeConstants.hpp"
 #include "WaitingRoom.hpp"
@@ -33,7 +35,10 @@ namespace rtype::client {
  * their screens to.
  *
  * install() provides the registry, still empty, requires the services of every
- * module listed before it and adds two works. In UPDATE_STAGE, the sky and
+ * module listed before it and adds two works. The sound is the one service it
+ * works without: with no sound module before it, the screens get a
+ * SilentAudioService the module holds, and start() writes in the journal that
+ * the client runs without sound. In UPDATE_STAGE, the sky and
  * every screen are updated, then the frame loop stops once no screen is left.
  * In RENDER_STAGE, the sky is drawn, then the screens over it.
  *
@@ -48,7 +53,8 @@ namespace rtype::client {
  * listener; the screens stay until the module is destroyed, after every module
  * stopped, so the music plays on while the connection module leaves the server.
  */
-class ClientScreensModule final : public engine::IModule {
+class ClientScreensModule final : public engine::IModule,
+                                  public engine::IOptionalDependencies {
  public:
   /**
    * @param server The server the connection screen starts with, unless the
@@ -61,8 +67,12 @@ class ClientScreensModule final : public engine::IModule {
   /** @returns SCREENS_MODULE_NAME. */
   [[nodiscard]] std::string name() const override;
   /** @returns The modules whose services the screens are built from: the
-   * assets, the settings, the sound, the window and the connection. */
+   * assets, the settings, the window and the connection. The sound is not
+   * among them: the screens run without it. */
   [[nodiscard]] std::vector<std::string> dependencies() const override;
+  /** @returns AUDIO_MODULE_NAME: the sound, used when it is listed and on,
+   * and listed before the screens then. */
+  [[nodiscard]] std::vector<std::string> optionalDependencies() const override;
   /** @throws MissingServiceException if a module listed before does not
    * provide a service the screens need. */
   void install(engine::InstallContext& context) override;
@@ -92,6 +102,7 @@ class ClientScreensModule final : public engine::IModule {
   PlayerSettings* settings_{nullptr};
   SettingsService* settingsService_{nullptr};
   AssetLibrary* assets_{nullptr};
+  SilentAudioService silence_;
   IAudioService* audio_{nullptr};
   GameWindow* window_{nullptr};
   ServerSession* connection_{nullptr};

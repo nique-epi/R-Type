@@ -13,6 +13,7 @@
 #include "MessageType.hpp"
 #include "OutgoingDatagram.hpp"
 #include "PacketHeader.hpp"
+#include "WorldState.hpp"
 
 namespace rtype::server::testing {
 
@@ -34,6 +35,16 @@ namespace rtype::server::testing {
  * the datagram holds another number of messages.
  */
 [[nodiscard]] network::MessageType onlyMessageTypeOf(
+    const network::OutgoingDatagram& datagram);
+
+/**
+ * @returns The world state the only message of @p datagram holds, a
+ * DeltaWorldState without reference, which lists every entity: as the sender
+ * writes the first state of a player, and every state while the player
+ * acknowledges none. The test fails when the datagram holds another number of
+ * messages, a state with a reference, or one part of several.
+ */
+[[nodiscard]] network::WorldState fullStateIn(
     const network::OutgoingDatagram& datagram);
 
 /** @returns The header of @p datagram. */
