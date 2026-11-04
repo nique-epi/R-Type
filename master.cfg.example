@@ -10,6 +10,6 @@ set port 8080
 # space goes in quotes. Empty: r-type_master.db next to the executable.
 set database ""
 
-# Turn a module off (it is installed, never started). Refused when a module
+# Turn a module off (it is never installed). Refused when a module
 # that stays on depends on it: storage and http need logger.
 # module http off
