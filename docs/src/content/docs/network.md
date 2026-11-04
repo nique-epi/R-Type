@@ -379,10 +379,10 @@ The limits the server applies are in `RateLimitConstants.hpp`; what a sender mus
 
 | Limit | For | At once | Then | Banned after | For |
 |---|---|---|---|---|---|
-| `REQUEST_RATE_LIMIT` | the connection requests of one address and port | `REQUEST_BURST` (10) | `REQUESTS_PER_SECOND` (4) a second | `REQUEST_DROPS_BEFORE_BAN` (20) drops within `BAN_WINDOW` (1 s) | `BAN_DURATION` (10 s) |
+| `REQUEST_RATE_LIMIT` | the connection requests of one address and port | `REQUEST_BURST` (11) | one every `CONNECTION_REQUEST_INTERVAL` / `DATAGRAMS_PER_REQUEST_INTERVAL` (250 ms) | `REQUEST_DROPS_BEFORE_BAN` (20) drops within `BAN_WINDOW` (1 s) | `BAN_DURATION` (10 s) |
 | `PLAYER_RATE_LIMIT` | the datagrams carrying the session token of one player | `PLAYER_BURST` (60) | `PLAYER_DATAGRAMS_PER_SECOND` (120) a second | `PLAYER_DROPS_BEFORE_BAN` (60) drops within `BAN_WINDOW` (1 s) | `BAN_DURATION` (10 s) |
 
-These values are **provisional**: they come from what the client of this repository sends, a request every 500 ms and the answer to each challenge, ten answers at once after a stall of the server, and 60 inputs a second during a game, and they will be revised with the measurements of the load tests. A `static_assert` keeps `BAN_DURATION` below `SESSION_SILENCE_LIMIT` (20 s), so a banned player keeps its seat. Code must read the constants.
+The bursts and the rates follow from the pace of a client, which `ProtocolConstants.hpp` holds for both programs, so changing that pace changes the limits with it. A joining client sends a request every `CONNECTION_REQUEST_INTERVAL` (500 ms) and the answer to each challenge, `DATAGRAMS_PER_REQUEST_INTERVAL` (2) datagrams per interval. After a stall of the server, it answers at once the `REQUESTS_BEFORE_GIVING_UP` (10) requests it sent before `CONNECTION_ATTEMPT_TIMEOUT` (5 s), right after the last one, which the allowance still counts: hence a burst of 11. A player sends `PLAYER_INPUTS_PER_SECOND` (60) inputs a second, and its limit lets `PLAYER_RATE_HEADROOM` (2) times as many through, a second of inputs at once. With PREDICTION on the client sends one input per simulation tick instead, so a `static_assert` of the server keeps `PLAYER_DATAGRAMS_PER_SECOND` above `SIMULATION_TICKS_PER_SECOND` (60). The drops that ban, their window and the ban are **provisional**, and will be revised with the measurements of the load tests. A `static_assert` keeps `BAN_DURATION` below `SESSION_SILENCE_LIMIT` (20 s), so a banned player keeps its seat. Code must read the constants.
 
 ## World state: `WorldStateCodec`
 
@@ -457,7 +457,7 @@ Measured again on 4 November 2026 at 100 datagrams a second, with the server bui
 | Change how a `bool`, a position or a nickname is checked | `src/network/Protocol/WireTypes.hpp`, and `Utf8Constants.hpp` for UTF-8 |
 | Change how often a rejected datagram or message is logged | `REJECTION_LINE_INTERVAL` in `src/network/NetworkConstants.hpp`, read by the network and the server (see [Logging](/R-Type/logging/#repeated-events-throttledlog)) |
 | Handle a received message | `registerHandler<Message>()` on a `MessageDispatcher` |
-| Change how many datagrams a sender may send, or how long a ban lasts | `RateLimitConstants.hpp` in `src/network/Handshake/RateLimit/`; the table of the requests in `RequestAllowances` |
+| Change how many datagrams a sender may send, or how long a ban lasts | `RateLimitConstants.hpp` in `src/network/Handshake/RateLimit/`, which follows the pace of a client in `src/network/Protocol/ProtocolConstants.hpp`; the table of the requests in `RequestAllowances` |
 | Change how a connection cookie is computed, or how long it lives | `CookieIssuer` in `src/network/Handshake/Cookies/`, `COOKIE_WINDOW_DURATION` in `src/network/Handshake/Cookies/HandshakeConstants.hpp` |
 | Change how a player is let in, challenged or refused | `ConnectionAcceptor` in `src/server/Lobby/` and `ServerSession` in `src/client/Connection/`, then the [Protocol](/R-Type/protocol/#connection) page |
 | Change what a session checks on a received datagram | `DatagramSorter` (`src/server/Network/`) for the token, `DatagramReader` and `ArrivalLedger` (`src/server/Sessions/Tracking/`, `src/server/Sessions/Roster/`) for the sequence; `SessionInbound` on the client |
