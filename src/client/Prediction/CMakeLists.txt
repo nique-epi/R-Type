@@ -4,6 +4,7 @@ add_library(rtype_client_prediction STATIC
   OwnShipPredictor.cpp
   PredictedShipPlacement.cpp
   PositionInterpolation.cpp
+  ShipCorrection.cpp
   ShipPrediction.cpp
 )
 

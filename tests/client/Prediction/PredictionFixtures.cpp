@@ -1,4 +1,5 @@
 #include "PredictionFixtures.hpp"
+#include <cmath>
 #include <cstdint>
 #include "Position.hpp"
 #include "PredictionTestConstants.hpp"
@@ -21,6 +22,10 @@ game::MovingShip shipAfterCommands(game::ShipDirections held,
     before = held;
   }
   return ship;
+}
+
+float distanceBetween(game::Position first, game::Position second) {
+  return std::hypot(first.x - second.x, first.y - second.y);
 }
 
 game::Position shiftedRight(game::Position ship, float offsetX) {

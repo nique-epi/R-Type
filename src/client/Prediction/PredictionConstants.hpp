@@ -26,4 +26,26 @@ constexpr std::size_t RECONCILIATION_TOLERANCE_TICKS = 2;
 constexpr float RECONCILIATION_TOLERANCE =
     TICK_DISTANCE * static_cast<float>(RECONCILIATION_TOLERANCE_TICKS);
 
+/** @brief How many ticks of distance at full speed a correction may cover
+ * before the client stops easing and puts the ship where the server says. */
+constexpr float TICKS_BEFORE_SNAP = 15.0F;
+
+/** @brief The distance, in logical units, beyond which the client puts its
+ * ship at the position of the server at once instead of easing it there:
+ * fifteen ticks at full speed, a quarter of a second. A larger gap is a
+ * teleport or a long stall, which a glide across the screen would only hide
+ * badly. */
+constexpr float SNAP_DISTANCE = TICK_DISTANCE * TICKS_BEFORE_SNAP;
+
+/** @brief The share of the gap between the ship shown and the ship predicted
+ * that is still there after one simulation tick: the gap decays
+ * exponentially, fast at first and slower as it closes, so the ship does not
+ * start or stop with a jerk. The gap halves in about 6.6 ticks (110 ms). */
+constexpr float CORRECTION_KEPT_PER_TICK = 0.9F;
+
+/** @brief The gap, in logical units, under which the ship shown is put on the
+ * ship predicted: it is too small to see and would take many more ticks to
+ * close. */
+constexpr float CORRECTION_REST = 0.5F;
+
 }  // namespace rtype::client
