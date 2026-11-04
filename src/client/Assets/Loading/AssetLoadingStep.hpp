@@ -6,7 +6,6 @@
 #include "AssetKind.hpp"
 #include "AssetLibrary.hpp"
 #include "AssetList.hpp"
-#include "AssetLoadResult.hpp"
 #include "ClientException.hpp"
 #include "PendingAsset.hpp"
 
@@ -33,7 +32,6 @@ class AssetLoadingStep {
   /** @brief Adds to what is left to load the assets of @p assetIds that the
    * library does not hold yet. */
   void queueMissing(AssetKind kind, const std::vector<std::string>& assetIds);
-  void record(const PendingAsset& asset, AssetLoadResult result);
 
   AssetLibrary* library_;
   std::vector<PendingAsset> pending_;

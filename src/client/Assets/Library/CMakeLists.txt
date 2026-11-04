@@ -9,7 +9,6 @@ target_link_libraries(rtype_client_asset_library
   PUBLIC
     SFML::Audio
     SFML::Graphics
-  PRIVATE
     SFML::System
     rtype_client_exceptions
 )

@@ -4,19 +4,13 @@
 #include <SFML/Graphics/Font.hpp>
 #include <SFML/Graphics/Texture.hpp>
 #include <filesystem>
-#include <functional>
-#include <map>
-#include <string>
 #include <string_view>
 #include "AssetKind.hpp"
 #include "AssetList.hpp"
 #include "AssetLoadResult.hpp"
+#include "AssetsById.hpp"
 
 namespace rtype::client {
-
-/** @brief Assets of one kind, found by asset id. */
-template <typename Asset>
-using AssetsById = std::map<std::string, Asset, std::less<>>;
 
 /** @brief The loaded assets of an assets folder, each loaded once and found by
  * id without reading the disk again; the permanent ones are never released. */
