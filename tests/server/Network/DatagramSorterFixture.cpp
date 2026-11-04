@@ -22,6 +22,14 @@ void DatagramSorterFixture::sort(const rtype::network::Endpoint& sender,
   sorter_.sort(sender, datagram);
 }
 
+void DatagramSorterFixture::sortRepeatedly(
+    const rtype::network::Endpoint& sender,
+    const std::vector<std::byte>& datagram, std::size_t count) {
+  for (std::size_t sent = 0; sent < count; ++sent) {
+    sorter_.sort(sender, datagram);
+  }
+}
+
 void DatagramSorterFixture::admit(const rtype::network::Endpoint& endpoint,
                                   std::uint64_t sessionToken) {
   sorter_.admit(endpoint, sessionToken);

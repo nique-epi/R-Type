@@ -14,8 +14,8 @@ namespace rtype::server {
 struct RejectionReport {
   /** @brief The datagrams rejected since the previous report, by cause. */
   RejectionCounts sincePreviousReport{};
-  /** @brief The datagrams rejected since the ledger was built, by cause. */
-  RejectionCounts sinceStart{};
+  /** @brief How many datagrams were rejected since the ledger was built. */
+  std::size_t rejectedSinceStart{0};
   /**
    * @brief At most REPORTED_SENDER_COUNT senders rejected since the previous
    * report: the most rejected first, and among those rejected as often, the

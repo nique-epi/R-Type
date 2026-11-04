@@ -8,7 +8,6 @@
 #include "RejectionsFixtures.hpp"
 #include "RejectionsTestConstants.hpp"
 
-using rtype::server::countOf;
 using rtype::server::REJECTED_SENDER_CAPACITY;
 using rtype::server::RejectionCause;
 using rtype::server::RejectionLedger;
@@ -27,7 +26,7 @@ TEST(RejectionLedger, ReportsNothingBeforeTheFirstRejection) {
   const RejectionReport report = ledger.takeReport();
 
   EXPECT_EQ(totalOf(report.sincePreviousReport), 0U);
-  EXPECT_EQ(totalOf(report.sinceStart), 0U);
+  EXPECT_EQ(report.rejectedSinceStart, 0U);
   EXPECT_TRUE(report.mostRejected.empty());
   EXPECT_EQ(report.otherSenders, 0U);
   EXPECT_EQ(report.forgottenSenders, 0U);
@@ -64,8 +63,8 @@ TEST(RejectionLedger, CountsEachCauseForEachSender) {
 /**
  * Given a ledger whose report was taken after one rejection
  * When one more datagram is rejected and the report is taken again
- * Then the counts since the start go on, while those since the previous
- * report and those of the sender start afresh
+ * Then the count since the start goes on, while the counts of each cause
+ * and those of the sender start afresh
  */
 TEST(RejectionLedger, StartsTheSendersAfreshAtEveryReport) {
   RejectionLedger ledger;
@@ -75,8 +74,8 @@ TEST(RejectionLedger, StartsTheSendersAfreshAtEveryReport) {
   ledger.record(RejectionCause::Stranger, rejectedSender(0));
 
   const RejectionReport report = ledger.takeReport();
-  EXPECT_EQ(countOf(report.sinceStart, RejectionCause::Stranger), 2U);
-  EXPECT_EQ(countOf(report.sincePreviousReport, RejectionCause::Stranger), 1U);
+  EXPECT_EQ(report.rejectedSinceStart, 2U);
+  EXPECT_EQ(report.sincePreviousReport, countsOf({RejectionCause::Stranger}));
   ASSERT_EQ(report.mostRejected.size(), 1U);
   EXPECT_EQ(totalOf(report.mostRejected[0].counts), 1U);
 }

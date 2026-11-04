@@ -22,7 +22,6 @@
 using rtype::network::Endpoint;
 using rtype::network::IncomingDatagram;
 using rtype::network::NO_SESSION_TOKEN;
-using rtype::server::countOf;
 using rtype::server::RejectionCause;
 using rtype::server::RejectionReport;
 using rtype::server::totalOf;
@@ -263,9 +262,7 @@ TEST_F(DatagramSorterFixture, KeepsAPlayersDatagramThroughAFloodOfRequests) {
   admit(player());
   sort(player(), playerReady());
 
-  for (std::size_t request = 0; request < FLOODING_REQUEST_COUNT; ++request) {
-    sort(stranger(), requestDatagram());
-  }
+  sortRepeatedly(stranger(), requestDatagram(), FLOODING_REQUEST_COUNT);
 
   EXPECT_EQ(drainPlayers(),
             (std::vector<IncomingDatagram>{
@@ -470,9 +467,7 @@ TEST_F(DatagramSorterFixture, CountsADropAgainstTheSenderItCameFrom) {
  * the stranger as RequestQueueFull
  */
 TEST_F(DatagramSorterFixture, CountsTheRequestsThatOverflowTheirQueue) {
-  for (std::size_t request = 0; request < FLOODING_REQUEST_COUNT; ++request) {
-    sort(stranger(), requestDatagram());
-  }
+  sortRepeatedly(stranger(), requestDatagram(), FLOODING_REQUEST_COUNT);
 
   const RejectionReport report = takeReport();
   EXPECT_EQ(
@@ -491,10 +486,8 @@ TEST_F(DatagramSorterFixture, CountsTheRequestsThatOverflowTheirQueue) {
 TEST_F(DatagramSorterFixture, FillsThePlayerQueueWithoutARejection) {
   admit(player());
 
-  for (std::size_t datagram = 0;
-       datagram < rtype::server::INCOMING_DATAGRAM_QUEUE_CAPACITY; ++datagram) {
-    sort(player(), playerReady());
-  }
+  sortRepeatedly(player(), playerReady(),
+                 rtype::server::INCOMING_DATAGRAM_QUEUE_CAPACITY);
 
   EXPECT_EQ(totalOf(takeReport().sincePreviousReport), 0U);
 }
@@ -507,11 +500,8 @@ TEST_F(DatagramSorterFixture, FillsThePlayerQueueWithoutARejection) {
 TEST_F(DatagramSorterFixture, CountsTheDatagramThatOverflowsThePlayerQueue) {
   admit(player());
 
-  for (std::size_t datagram = 0;
-       datagram <= rtype::server::INCOMING_DATAGRAM_QUEUE_CAPACITY;
-       ++datagram) {
-    sort(player(), playerReady());
-  }
+  sortRepeatedly(player(), playerReady(),
+                 rtype::server::INCOMING_DATAGRAM_QUEUE_CAPACITY + 1);
 
   const RejectionReport report = takeReport();
   EXPECT_EQ(report.sincePreviousReport,
@@ -573,9 +563,7 @@ TEST_F(DatagramSorterLogFixture, LogsNothingForTheDatagramsItQueues) {
  * floods the server cannot flood the log
  */
 TEST_F(DatagramSorterLogFixture, WritesOneLineForDatagramsDroppedTogether) {
-  for (std::size_t sent = 0; sent < DROPPED_TOGETHER_COUNT; ++sent) {
-    sort(stranger(), playerReady());
-  }
+  sortRepeatedly(stranger(), playerReady(), DROPPED_TOGETHER_COUNT);
 
   EXPECT_EQ(dropLines().size(), 1U);
 }

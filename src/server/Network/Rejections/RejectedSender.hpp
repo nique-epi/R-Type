@@ -1,6 +1,6 @@
 #pragma once
 
-#include <cstdint>
+#include <cstddef>
 #include "Endpoint.hpp"
 #include "RejectionCounts.hpp"
 
@@ -17,9 +17,7 @@ struct RejectedSender {
    * @brief When its latest datagram was rejected, as the number of rejections
    * the ledger recorded until then: the larger, the more recent.
    */
-  std::uint64_t latestRejection{0};
-
-  bool operator==(const RejectedSender&) const = default;
+  std::size_t latestRejection{0};
 };
 
 }  // namespace rtype::server

@@ -10,10 +10,6 @@ namespace rtype::server {
 /** @brief One count for each RejectionCause, in the order they are declared. */
 using RejectionCounts = std::array<std::size_t, REJECTION_CAUSE_COUNT>;
 
-/** @returns The count of @p cause in @p counts. */
-[[nodiscard]] std::size_t countOf(const RejectionCounts& counts,
-                                  RejectionCause cause);
-
 /** @brief Adds one to the count of @p cause in @p counts. */
 void addOneTo(RejectionCounts& counts, RejectionCause cause);
 

@@ -22,8 +22,8 @@ using rtype::server::RejectionReport;
  */
 TEST(RejectionLines,
      WritesNothingWhenNothingWasRejectedSinceThePreviousReport) {
-  const RejectionReport report{
-      .sinceStart = countsOf({RejectionCause::Stranger}), .mostRejected = {}};
+  const RejectionReport report{.rejectedSinceStart = REJECTED_SINCE_START,
+                               .mostRejected = {}};
 
   EXPECT_TRUE(rejectionLinesOf(report).empty());
 }
@@ -40,10 +40,7 @@ TEST(RejectionLines, CountsEachCauseThenEachSenderNamed) {
           countsOf({RejectionCause::Stranger, RejectionCause::WrongSessionToken,
                     RejectionCause::WrongSessionToken,
                     RejectionCause::WrongSessionToken}),
-      .sinceStart = countsOf(
-          {RejectionCause::Stranger, RejectionCause::Stranger,
-           RejectionCause::WrongSessionToken, RejectionCause::WrongSessionToken,
-           RejectionCause::WrongSessionToken}),
+      .rejectedSinceStart = REJECTED_SINCE_START,
       .mostRejected = {RejectedSender{
           .endpoint = Endpoint{.address = std::string{LINE_SENDER_ADDRESS},
                                .port = LINE_SENDER_PORT},
@@ -66,8 +63,8 @@ TEST(RejectionLines, CountsTheSendersItDoesNotName) {
   const RejectionReport report{
       .sincePreviousReport = countsOf({RejectionCause::Stranger}),
       .mostRejected = {},
-      .otherSenders = 2,
-      .forgottenSenders = 1};
+      .otherSenders = UNNAMED_SENDERS,
+      .forgottenSenders = FORGOTTEN_SENDERS};
 
   const std::vector<std::string> lines = rejectionLinesOf(report);
 

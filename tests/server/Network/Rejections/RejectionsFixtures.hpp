@@ -22,6 +22,10 @@ void recordStranger(rtype::server::RejectionLedger& ledger, std::size_t index);
  */
 void recordStrangers(rtype::server::RejectionLedger& ledger, std::size_t count);
 
+/** @returns The count of @p cause in @p counts. */
+[[nodiscard]] std::size_t countOf(const rtype::server::RejectionCounts& counts,
+                                  rtype::server::RejectionCause cause);
+
 /** @returns Counts holding one for each cause in @p causes. */
 [[nodiscard]] rtype::server::RejectionCounts countsOf(
     std::initializer_list<rtype::server::RejectionCause> causes);

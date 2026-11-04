@@ -38,7 +38,7 @@ std::string causesLineOf(const RejectionReport& report) {
   std::ostringstream line;
   line << "rejected " << totalOf(report.sincePreviousReport)
        << " datagrams in the last " << REPORT_SECONDS << " s ("
-       << totalOf(report.sinceStart)
+       << report.rejectedSinceStart
        << " since the start): " << causesTextOf(report.sincePreviousReport);
   return line.str();
 }

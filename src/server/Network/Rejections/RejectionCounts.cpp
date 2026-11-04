@@ -4,10 +4,6 @@
 
 namespace rtype::server {
 
-std::size_t countOf(const RejectionCounts& counts, RejectionCause cause) {
-  return counts.at(static_cast<std::size_t>(cause));
-}
-
 void addOneTo(RejectionCounts& counts, RejectionCause cause) {
   ++counts.at(static_cast<std::size_t>(cause));
 }

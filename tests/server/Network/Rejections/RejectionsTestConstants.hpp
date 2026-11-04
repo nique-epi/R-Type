@@ -22,6 +22,20 @@ constexpr std::string_view LINE_SENDER_ADDRESS = "203.0.113.7";
 /** @brief The port of the sender the lines of the report name. */
 constexpr std::uint16_t LINE_SENDER_PORT = 40000;
 
+/** @brief How many datagrams the report of the line tests says were rejected
+ * since the start. */
+constexpr std::size_t REJECTED_SINCE_START = 5;
+
+/** @brief How many senders that report does not name. */
+constexpr std::size_t UNNAMED_SENDERS = 2;
+
+/** @brief How many senders it says were forgotten. */
+constexpr std::size_t FORGOTTEN_SENDERS = 1;
+
+/** @brief How many lines a report of one sender holds: its causes, then the
+ * sender. */
+constexpr std::size_t ONE_SENDER_REPORT_LINES = 2;
+
 /** @brief What every line of the rejection report starts with. */
 constexpr std::string_view REPORT_LINE_TEXT = "rejected ";
 
