@@ -254,4 +254,15 @@ class TrafficFileOpenException : public NetworkException {
   explicit TrafficFileOpenException(const std::string& path);
 };
 
+/**
+ * @brief A message exchanged with the master, in JSON, that is not JSON or
+ * holds a member that is missing, of another type or out of its bounds. The
+ * member is named by its JSON Pointer (RFC 6901), such as
+ * `/games/2/players/1`; the empty pointer names the whole message.
+ */
+class InvalidMasterMessageException : public NetworkException {
+ public:
+  explicit InvalidMasterMessageException(const std::string& pointer);
+};
+
 }  // namespace rtype::network

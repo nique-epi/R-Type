@@ -1,0 +1,84 @@
+#pragma once
+
+#include <array>
+#include <cstddef>
+#include <cstdint>
+#include <limits>
+#include <string_view>
+
+namespace rtype::network {
+
+/** @brief The members of the registration of a server, in JSON. */
+constexpr std::string_view NAME_MEMBER = "name";
+constexpr std::string_view ADDRESS_MEMBER = "address";
+constexpr std::string_view UDP_PORT_MEMBER = "udpPort";
+constexpr std::string_view GAME_VERSION_MEMBER = "gameVersion";
+constexpr std::string_view PROTOCOL_VERSION_MEMBER = "protocolVersion";
+constexpr std::string_view MAXIMUM_GAMES_MEMBER = "maximumGames";
+constexpr std::string_view MAXIMUM_PLAYERS_PER_GAME_MEMBER =
+    "maximumPlayersPerGame";
+
+/** @brief The members of a heartbeat and of each game it lists, in JSON. */
+constexpr std::string_view GAMES_MEMBER = "games";
+constexpr std::string_view MEASURES_MEMBER = "measures";
+constexpr std::string_view NUMBER_MEMBER = "number";
+constexpr std::string_view STATE_MEMBER = "state";
+constexpr std::string_view DIFFICULTY_MEMBER = "difficulty";
+constexpr std::string_view PLAYERS_MEMBER = "players";
+
+/** @brief The members of the measures of a heartbeat, in JSON. */
+constexpr std::string_view TICK_P50_MEMBER = "tickP50Milliseconds";
+constexpr std::string_view TICK_P95_MEMBER = "tickP95Milliseconds";
+constexpr std::string_view RECEIVED_BYTES_MEMBER = "receivedBytesPerSecond";
+constexpr std::string_view SENT_BYTES_MEMBER = "sentBytesPerSecond";
+constexpr std::string_view LOSS_PERCENT_MEMBER = "lossPercent";
+constexpr std::string_view AVERAGE_PING_MEMBER = "averagePingMilliseconds";
+
+/** @brief The member of the answer to a heartbeat that lists the orders. */
+constexpr std::string_view COMMANDS_MEMBER = "commands";
+
+/** @brief How each HostedGameState is written, in the order of the enum. */
+constexpr std::string_view WAITING_STATE_TEXT = "waiting";
+constexpr std::string_view STARTING_STATE_TEXT = "starting";
+constexpr std::string_view PLAYING_STATE_TEXT = "playing";
+constexpr std::string_view FINISHED_STATE_TEXT = "finished";
+constexpr auto HOSTED_GAME_STATE_TEXTS =
+    std::to_array<std::string_view>({WAITING_STATE_TEXT, STARTING_STATE_TEXT,
+                                     PLAYING_STATE_TEXT, FINISHED_STATE_TEXT});
+
+/** @brief The longest name of a server, in bytes of UTF-8. */
+constexpr std::size_t MAXIMUM_SERVER_NAME_SIZE = 32;
+
+/** @brief The longest version of the game, in bytes: "1.12.0-rc.2" fits. */
+constexpr std::size_t MAXIMUM_VERSION_SIZE = 32;
+
+/**
+ * @brief The fewest and the most games a server may host, and the number of
+ * its first game. A server hosts 8 today (DEFAULT_HOSTED_GAME_COUNT of the
+ * server); a heartbeat of 64 games of four players, every nickname and
+ * difficulty of 16 bytes and every measure taken, is 9.8 KiB of JSON.
+ */
+constexpr std::uint16_t MINIMUM_HOSTED_GAMES = 1;
+constexpr std::uint16_t MAXIMUM_HOSTED_GAMES = 64;
+constexpr std::uint16_t FIRST_HOSTED_GAME_NUMBER = 1;
+
+/** @brief The fewest players a game of a server may take. */
+constexpr std::uint8_t MINIMUM_PLAYERS_PER_GAME = 1;
+
+/** @brief The lowest and the highest version of the UDP protocol. */
+constexpr std::uint8_t LOWEST_PROTOCOL_VERSION = 0;
+constexpr std::uint8_t HIGHEST_PROTOCOL_VERSION =
+    std::numeric_limits<std::uint8_t>::max();
+
+/** @brief The highest value of a measure, and of a share of lost datagrams. */
+constexpr double MAXIMUM_MEASURE = std::numeric_limits<double>::max();
+constexpr double MAXIMUM_LOSS_PERCENT = 100.0;
+
+/**
+ * @brief What joins two steps of a JSON Pointer (RFC 6901), and the pointer
+ * of the whole message.
+ */
+constexpr std::string_view POINTER_SEPARATOR = "/";
+constexpr std::string_view WHOLE_MESSAGE_POINTER;
+
+}  // namespace rtype::network

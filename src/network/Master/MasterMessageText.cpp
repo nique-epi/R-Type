@@ -1,0 +1,364 @@
+#include "MasterMessageText.hpp"
+#include <cmath>
+#include <cstddef>
+#include <cstdint>
+#include <functional>
+#include <nlohmann/json.hpp>
+#include <nlohmann/json_fwd.hpp>
+#include <optional>
+#include <string>
+#include <string_view>
+#include <utility>
+#include <vector>
+#include "EndpointText.hpp"
+#include "HostedGame.hpp"
+#include "HostedGameState.hpp"
+#include "MasterMessageConstants.hpp"
+#include "NetworkConstants.hpp"
+#include "NetworkException.hpp"
+#include "ProtocolConstants.hpp"
+#include "ServerHeartbeat.hpp"
+#include "ServerMeasures.hpp"
+#include "ServerRegistration.hpp"
+#include "WireTypes.hpp"
+
+namespace rtype::network {
+
+namespace {
+
+/** @brief A value of a message read from JSON, with its JSON Pointer. */
+struct JsonField {
+  std::reference_wrapper<const nlohmann::json> value;
+  std::string pointer;
+};
+
+/** @brief The lowest and the highest value an integer member may hold. */
+struct IntegerBounds {
+  std::uint64_t lowest{};
+  std::uint64_t highest{};
+};
+
+[[noreturn]] void refuse(const JsonField& field) {
+  throw InvalidMasterMessageException(field.pointer);
+}
+
+/** @returns The text of @p document; never throws, see registrationText(). */
+std::string textOf(const nlohmann::json& document) {
+  return document.dump(-1, ' ', false,
+                       nlohmann::json::error_handler_t::replace);
+}
+
+/**
+ * @returns The JSON object @p text holds.
+ * @throws InvalidMasterMessageException naming the whole message when @p text
+ * is no JSON, or no object.
+ */
+nlohmann::json parsedObject(std::string_view text) {
+  nlohmann::json document = nlohmann::json::parse(text, nullptr, false);
+  if (document.is_discarded() || !document.is_object()) {
+    throw InvalidMasterMessageException(std::string{WHOLE_MESSAGE_POINTER});
+  }
+  return document;
+}
+
+JsonField wholeMessage(const nlohmann::json& document) {
+  return JsonField{.value = std::cref(document),
+                   .pointer = std::string{WHOLE_MESSAGE_POINTER}};
+}
+
+void requireObject(const JsonField& field) {
+  if (!field.value.get().is_object()) {
+    refuse(field);
+  }
+}
+
+std::optional<JsonField> optionalMemberOf(const JsonField& object,
+                                          std::string_view member) {
+  const nlohmann::json& value = object.value.get();
+  const auto found = value.find(member);
+  if (found == value.end()) {
+    return std::nullopt;
+  }
+  return JsonField{.value = std::cref(*found),
+                   .pointer = object.pointer + std::string{POINTER_SEPARATOR} +
+                              std::string{member}};
+}
+
+JsonField memberOf(const JsonField& object, std::string_view member) {
+  std::optional<JsonField> found = optionalMemberOf(object, member);
+  if (!found.has_value()) {
+    throw InvalidMasterMessageException(
+        object.pointer + std::string{POINTER_SEPARATOR} + std::string{member});
+  }
+  return std::move(found).value();
+}
+
+/**
+ * @returns The number of elements of @p field.
+ * @throws InvalidMasterMessageException when it is no array, or holds more
+ * than @p maximumSize elements.
+ */
+std::size_t arraySizeOf(const JsonField& field, std::size_t maximumSize) {
+  const nlohmann::json& value = field.value.get();
+  if (!value.is_array() || value.size() > maximumSize) {
+    refuse(field);
+  }
+  return value.size();
+}
+
+JsonField elementOf(const JsonField& array, std::size_t index) {
+  return JsonField{.value = std::cref(array.value.get().at(index)),
+                   .pointer = array.pointer + std::string{POINTER_SEPARATOR} +
+                              std::to_string(index)};
+}
+
+/**
+ * @returns The integer @p field holds; JSON writes no integer below 0 here,
+ * since no member may hold one.
+ */
+std::uint64_t integerOf(const JsonField& field, IntegerBounds bounds) {
+  const nlohmann::json& value = field.value.get();
+  if (!value.is_number_unsigned()) {
+    refuse(field);
+  }
+  const auto number = value.get<std::uint64_t>();
+  if (number < bounds.lowest || number > bounds.highest) {
+    refuse(field);
+  }
+  return number;
+}
+
+/** @returns The text @p field holds: 1 to @p maximumSize printable bytes. */
+std::string boundedTextOf(const JsonField& field, std::size_t maximumSize) {
+  const nlohmann::json& value = field.value.get();
+  if (!value.is_string()) {
+    refuse(field);
+  }
+  std::string text = value.get<std::string>();
+  if (text.empty() || text.size() > maximumSize || !isPrintableUtf8(text)) {
+    refuse(field);
+  }
+  return text;
+}
+
+/** @returns The nickname, or the difficulty, @p field holds. */
+std::string nicknameOf(const JsonField& field) {
+  const nlohmann::json& value = field.value.get();
+  if (!value.is_string()) {
+    refuse(field);
+  }
+  std::string nickname = value.get<std::string>();
+  if (!isValidNickname(nickname)) {
+    refuse(field);
+  }
+  return nickname;
+}
+
+std::optional<std::string> addressOf(const JsonField& registration) {
+  const std::optional<JsonField> field =
+      optionalMemberOf(registration, ADDRESS_MEMBER);
+  if (!field.has_value()) {
+    return std::nullopt;
+  }
+  if (!field->value.get().is_string()) {
+    refuse(*field);
+  }
+  try {
+    return ipv4AddressFromText(field->value.get().get<std::string>());
+  } catch (const InvalidIpv4AddressException&) {
+    refuse(*field);
+  }
+}
+
+HostedGameState stateOf(const JsonField& field) {
+  const nlohmann::json& value = field.value.get();
+  if (value.is_string()) {
+    const auto text = value.get<std::string>();
+    for (std::size_t index = 0; index < HOSTED_GAME_STATE_TEXTS.size();
+         ++index) {
+      if (text == HOSTED_GAME_STATE_TEXTS.at(index)) {
+        return static_cast<HostedGameState>(index);
+      }
+    }
+  }
+  refuse(field);
+}
+
+std::vector<std::string> playersOf(const JsonField& game) {
+  const JsonField players = memberOf(game, PLAYERS_MEMBER);
+  const std::size_t count = arraySizeOf(players, MAXIMUM_PLAYERS);
+  std::vector<std::string> nicknames;
+  nicknames.reserve(count);
+  for (std::size_t index = 0; index < count; ++index) {
+    nicknames.push_back(nicknameOf(elementOf(players, index)));
+  }
+  return nicknames;
+}
+
+HostedGame gameOf(const JsonField& game) {
+  requireObject(game);
+  return HostedGame{.number = static_cast<std::uint16_t>(integerOf(
+                        memberOf(game, NUMBER_MEMBER),
+                        IntegerBounds{.lowest = FIRST_HOSTED_GAME_NUMBER,
+                                      .highest = MAXIMUM_HOSTED_GAMES})),
+                    .state = stateOf(memberOf(game, STATE_MEMBER)),
+                    .difficulty = nicknameOf(memberOf(game, DIFFICULTY_MEMBER)),
+                    .players = playersOf(game)};
+}
+
+/**
+ * @throws InvalidMasterMessageException naming the number of the first game
+ * of @p hosted whose number an earlier game already has.
+ */
+void requireDistinctNumbers(const JsonField& games,
+                            const std::vector<HostedGame>& hosted) {
+  for (std::size_t later = 0; later < hosted.size(); ++later) {
+    for (std::size_t earlier = 0; earlier < later; ++earlier) {
+      if (hosted.at(earlier).number == hosted.at(later).number) {
+        refuse(memberOf(elementOf(games, later), NUMBER_MEMBER));
+      }
+    }
+  }
+}
+
+std::vector<HostedGame> gamesOf(const JsonField& heartbeat) {
+  const JsonField games = memberOf(heartbeat, GAMES_MEMBER);
+  const std::size_t count = arraySizeOf(games, MAXIMUM_HOSTED_GAMES);
+  std::vector<HostedGame> hosted;
+  hosted.reserve(count);
+  for (std::size_t index = 0; index < count; ++index) {
+    hosted.push_back(gameOf(elementOf(games, index)));
+  }
+  requireDistinctNumbers(games, hosted);
+  return hosted;
+}
+
+/**
+ * @returns The measure @p member of @p measures, empty when it is left out.
+ * @throws InvalidMasterMessageException when it is no number, or lies outside
+ * 0 to @p highest.
+ */
+std::optional<double> measureOf(const JsonField& measures,
+                                std::string_view member, double highest) {
+  const std::optional<JsonField> field = optionalMemberOf(measures, member);
+  if (!field.has_value()) {
+    return std::nullopt;
+  }
+  const nlohmann::json& value = field->value.get();
+  if (!value.is_number()) {
+    refuse(*field);
+  }
+  const auto measure = value.get<double>();
+  if (!std::isfinite(measure) || measure < 0.0 || measure > highest) {
+    refuse(*field);
+  }
+  return measure;
+}
+
+ServerMeasures measuresOf(const JsonField& heartbeat) {
+  const JsonField measures = memberOf(heartbeat, MEASURES_MEMBER);
+  requireObject(measures);
+  return ServerMeasures{
+      .tickP50Milliseconds =
+          measureOf(measures, TICK_P50_MEMBER, MAXIMUM_MEASURE),
+      .tickP95Milliseconds =
+          measureOf(measures, TICK_P95_MEMBER, MAXIMUM_MEASURE),
+      .receivedBytesPerSecond =
+          measureOf(measures, RECEIVED_BYTES_MEMBER, MAXIMUM_MEASURE),
+      .sentBytesPerSecond =
+          measureOf(measures, SENT_BYTES_MEMBER, MAXIMUM_MEASURE),
+      .lossPercent =
+          measureOf(measures, LOSS_PERCENT_MEMBER, MAXIMUM_LOSS_PERCENT),
+      .averagePingMilliseconds =
+          measureOf(measures, AVERAGE_PING_MEMBER, MAXIMUM_MEASURE)};
+}
+
+nlohmann::json gameDocument(const HostedGame& game) {
+  nlohmann::json document;
+  document[NUMBER_MEMBER] = game.number;
+  document[STATE_MEMBER] =
+      HOSTED_GAME_STATE_TEXTS.at(static_cast<std::size_t>(game.state));
+  document[DIFFICULTY_MEMBER] = game.difficulty;
+  document[PLAYERS_MEMBER] = game.players;
+  return document;
+}
+
+void addMeasure(nlohmann::json& document, std::string_view member,
+                std::optional<double> measure) {
+  if (measure.has_value()) {
+    document[member] = *measure;
+  }
+}
+
+nlohmann::json measuresDocument(const ServerMeasures& measures) {
+  nlohmann::json document = nlohmann::json::object();
+  addMeasure(document, TICK_P50_MEMBER, measures.tickP50Milliseconds);
+  addMeasure(document, TICK_P95_MEMBER, measures.tickP95Milliseconds);
+  addMeasure(document, RECEIVED_BYTES_MEMBER, measures.receivedBytesPerSecond);
+  addMeasure(document, SENT_BYTES_MEMBER, measures.sentBytesPerSecond);
+  addMeasure(document, LOSS_PERCENT_MEMBER, measures.lossPercent);
+  addMeasure(document, AVERAGE_PING_MEMBER, measures.averagePingMilliseconds);
+  return document;
+}
+
+}  // namespace
+
+std::string registrationText(const ServerRegistration& registration) {
+  nlohmann::json document;
+  document[NAME_MEMBER] = registration.name;
+  if (registration.address.has_value()) {
+    document[ADDRESS_MEMBER] = *registration.address;
+  }
+  document[UDP_PORT_MEMBER] = registration.udpPort;
+  document[GAME_VERSION_MEMBER] = registration.gameVersion;
+  document[PROTOCOL_VERSION_MEMBER] = registration.protocolVersion;
+  document[MAXIMUM_GAMES_MEMBER] = registration.maximumGames;
+  document[MAXIMUM_PLAYERS_PER_GAME_MEMBER] =
+      registration.maximumPlayersPerGame;
+  return textOf(document);
+}
+
+ServerRegistration registrationFromText(std::string_view text) {
+  const nlohmann::json document = parsedObject(text);
+  const JsonField registration = wholeMessage(document);
+  return ServerRegistration{
+      .name = boundedTextOf(memberOf(registration, NAME_MEMBER),
+                            MAXIMUM_SERVER_NAME_SIZE),
+      .address = addressOf(registration),
+      .udpPort = static_cast<std::uint16_t>(integerOf(
+          memberOf(registration, UDP_PORT_MEMBER),
+          IntegerBounds{.lowest = LOWEST_PORT, .highest = HIGHEST_PORT})),
+      .gameVersion = boundedTextOf(memberOf(registration, GAME_VERSION_MEMBER),
+                                   MAXIMUM_VERSION_SIZE),
+      .protocolVersion = static_cast<std::uint8_t>(
+          integerOf(memberOf(registration, PROTOCOL_VERSION_MEMBER),
+                    IntegerBounds{.lowest = LOWEST_PROTOCOL_VERSION,
+                                  .highest = HIGHEST_PROTOCOL_VERSION})),
+      .maximumGames = static_cast<std::uint16_t>(
+          integerOf(memberOf(registration, MAXIMUM_GAMES_MEMBER),
+                    IntegerBounds{.lowest = MINIMUM_HOSTED_GAMES,
+                                  .highest = MAXIMUM_HOSTED_GAMES})),
+      .maximumPlayersPerGame = static_cast<std::uint8_t>(
+          integerOf(memberOf(registration, MAXIMUM_PLAYERS_PER_GAME_MEMBER),
+                    IntegerBounds{.lowest = MINIMUM_PLAYERS_PER_GAME,
+                                  .highest = MAXIMUM_PLAYERS}))};
+}
+
+std::string heartbeatText(const ServerHeartbeat& heartbeat) {
+  nlohmann::json document;
+  document[GAMES_MEMBER] = nlohmann::json::array();
+  for (const HostedGame& game : heartbeat.games) {
+    document[GAMES_MEMBER].push_back(gameDocument(game));
+  }
+  document[MEASURES_MEMBER] = measuresDocument(heartbeat.measures);
+  return textOf(document);
+}
+
+ServerHeartbeat heartbeatFromText(std::string_view text) {
+  const nlohmann::json document = parsedObject(text);
+  const JsonField heartbeat = wholeMessage(document);
+  return ServerHeartbeat{.games = gamesOf(heartbeat),
+                         .measures = measuresOf(heartbeat)};
+}
+
+}  // namespace rtype::network

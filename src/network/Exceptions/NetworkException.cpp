@@ -138,4 +138,9 @@ SimulatedDelayOutOfRangeException::SimulatedDelayOutOfRangeException(
 TrafficFileOpenException::TrafficFileOpenException(const std::string& path)
     : NetworkException("Cannot open the traffic file " + path) {}
 
+InvalidMasterMessageException::InvalidMasterMessageException(
+    const std::string& pointer)
+    : NetworkException("no valid value at \"" + pointer +
+                       "\": missing, of another type or out of its bounds") {}
+
 }  // namespace rtype::network
