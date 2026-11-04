@@ -47,7 +47,7 @@ std::string settingOptionEntries() {
           std::to_string(network::HIGHEST_PORT) +
           ". Default: " + std::to_string(network::DEFAULT_MASTER_PORT) + ".");
   text += engine::usageEntry(
-      std::string(DATABASE_OPTION) + " <file>",
+      std::string(engine::DATABASE_OPTION) + " <file>",
       "File the master keeps its data in, on a local disk. Default: " +
           std::string(DATABASE_FILE_NAME) + " next to the executable.");
   return text;
@@ -55,14 +55,8 @@ std::string settingOptionEntries() {
 
 /** @returns The lines of the usage that describe `--set` and `--help`. */
 std::string generalOptionEntries() {
-  std::string text = engine::usageEntry(
-      std::string(engine::SET_OPTION) + " <name>=<value>",
-      "Gives a setting a value, as the line `set <name> <value>` of " +
-          std::string(MASTER_CONFIGURATION_FILE_NAME) +
-          " does. It wins over that file and can be given several times. "
-          "Settings: " +
-          std::string(PORT_SETTING_NAME) + ", " +
-          std::string(DATABASE_SETTING_NAME) + ".");
+  std::string text = engine::setOptionEntry(MASTER_CONFIGURATION_FILE_NAME,
+                                            MASTER_SETTING_NAMES);
   text += engine::usageEntry(engine::HELP_OPTION,
                              "Print this help and start nothing.");
   return text;
@@ -77,7 +71,7 @@ MasterLaunchOptions MasterLaunchOptions::read(
   const std::array launchOptions{
       portOption(options.values_),
       engine::settingOption(
-          engine::ForcedSetting{.option = DATABASE_OPTION,
+          engine::ForcedSetting{.option = engine::DATABASE_OPTION,
                                 .setting = DATABASE_SETTING_NAME},
           options.values_.forcedLines),
       engine::setOption(options.values_.forcedLines),

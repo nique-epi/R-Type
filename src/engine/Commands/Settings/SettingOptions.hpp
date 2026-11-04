@@ -1,6 +1,8 @@
 #pragma once
 
+#include <span>
 #include <string>
+#include <string_view>
 #include <vector>
 #include "ForcedSetting.hpp"
 #include "LaunchOption.hpp"
@@ -23,5 +25,13 @@ namespace rtype::engine {
  */
 [[nodiscard]] LaunchOption settingOption(ForcedSetting forced,
                                          std::vector<std::string>& forcedLines);
+
+/**
+ * @returns The lines of a usage that describe `--set`, for a program that
+ * reads @p configurationFile and declares @p settings.
+ */
+[[nodiscard]] std::string setOptionEntry(
+    std::string_view configurationFile,
+    std::span<const std::string_view> settings);
 
 }  // namespace rtype::engine

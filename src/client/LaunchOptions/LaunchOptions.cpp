@@ -112,15 +112,8 @@ std::string connectionOptionEntries() {
           std::to_string(network::MINIMUM_NICKNAME_SIZE) + " to " +
           std::to_string(network::MAXIMUM_NICKNAME_SIZE) +
           " bytes of UTF-8. Default: " + std::string(DEFAULT_NICKNAME) + ".");
-  text += engine::usageEntry(
-      std::string(engine::SET_OPTION) + " <name>=<value>",
-      "Gives a setting a value, as the line `set <name> <value>` of " +
-          std::string(CLIENT_CONFIGURATION_FILE_NAME) +
-          " does. It wins over that file and can be given several times. "
-          "Settings: " +
-          std::string(NICKNAME_SETTING_NAME) + ", " +
-          std::string(SERVER_ADDRESS_SETTING_NAME) + ", " +
-          std::string(SERVER_PORT_SETTING_NAME) + ".");
+  text += engine::setOptionEntry(CLIENT_CONFIGURATION_FILE_NAME,
+                                 CLIENT_SETTING_NAMES);
   return text;
 }
 

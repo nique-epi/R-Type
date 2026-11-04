@@ -4,15 +4,14 @@
 #include <vector>
 #include "EngineException.hpp"
 #include "LaunchArgumentsConstants.hpp"
-#include "MasterConstants.hpp"
 #include "MasterLaunchOptions.hpp"
 #include "MasterLaunchOptionsTestConstants.hpp"
 #include "NetworkException.hpp"
 
+using rtype::engine::DATABASE_OPTION;
 using rtype::engine::HELP_OPTION;
 using rtype::engine::PORT_OPTION;
 using rtype::engine::UnknownLaunchArgumentException;
-using rtype::master::DATABASE_OPTION;
 using rtype::master::MasterLaunchOptions;
 using rtype::network::InvalidPortException;
 

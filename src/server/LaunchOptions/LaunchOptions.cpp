@@ -175,7 +175,7 @@ std::string settingOptionEntries() {
 /** @returns The line of the usage that describes `--database`. */
 std::string databaseOptionEntry() {
   return engine::usageEntry(
-      std::string(DATABASE_OPTION) + " <file>",
+      std::string(engine::DATABASE_OPTION) + " <file>",
       "File the leaderboard of this server is kept in, on a local disk. "
       "Default: " +
           std::string(DATABASE_FILE_PREFIX) + "<port>" +
@@ -198,17 +198,8 @@ std::string modeOptionEntry() {
 
 /** @returns The lines of the usage that describe `--set` and `--help`. */
 std::string generalOptionEntries() {
-  std::string text = engine::usageEntry(
-      std::string(engine::SET_OPTION) + " <name>=<value>",
-      "Gives a setting a value, as the line `set <name> <value>` of " +
-          std::string(SERVER_CONFIGURATION_FILE_NAME) +
-          " does. It wins over that file and can be given several times. "
-          "Settings: " +
-          std::string(PORT_SETTING_NAME) + ", " +
-          std::string(SEED_SETTING_NAME) + ", " +
-          std::string(STATE_RATE_SETTING_NAME) + ", " +
-          std::string(INPUT_DELAY_SETTING_NAME) + ", " +
-          std::string(DATABASE_SETTING_NAME) + ".");
+  std::string text = engine::setOptionEntry(SERVER_CONFIGURATION_FILE_NAME,
+                                            SERVER_SETTING_NAMES);
   text += engine::usageEntry(network::TRAFFIC_CSV_OPTION_WITH_VALUE,
                              network::TRAFFIC_CSV_USAGE);
   text += engine::usageEntry(engine::HELP_OPTION,
@@ -228,7 +219,7 @@ LaunchOptions LaunchOptions::read(std::span<const std::string_view> arguments) {
       stateRateOption(options.values_),
       inputDelayOption(options.values_),
       engine::settingOption(
-          engine::ForcedSetting{.option = DATABASE_OPTION,
+          engine::ForcedSetting{.option = engine::DATABASE_OPTION,
                                 .setting = DATABASE_SETTING_NAME},
           options.values_.forcedLines),
       engine::setOption(options.values_.forcedLines),

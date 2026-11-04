@@ -20,6 +20,7 @@
 #include "SimulatorLaunchOptions.hpp"
 #include "TrafficFileTestConstants.hpp"
 
+using rtype::engine::DATABASE_OPTION;
 using rtype::engine::HELP_OPTION;
 using rtype::engine::InvalidLaunchOptionValueException;
 using rtype::engine::MissingLaunchOptionValueException;
@@ -35,7 +36,6 @@ using rtype::logging::NO_FILE_OPTION;
 using rtype::logging::NO_STDERR_OPTION;
 using rtype::network::InvalidPortException;
 using rtype::network::TRAFFIC_CSV_OPTION;
-using rtype::server::DATABASE_OPTION;
 using rtype::server::INPUT_DELAY_OPTION;
 using rtype::server::LaunchOptions;
 using rtype::server::SEED_OPTION;
