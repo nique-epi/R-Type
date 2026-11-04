@@ -1,19 +1,25 @@
 #include <gtest/gtest.h>
 #include <httplib.h>
+#include <memory>
 #include <nlohmann/json.hpp>
+#include <nlohmann/json_fwd.hpp>
 #include <string>
 #include "ApiResponse.hpp"
-#include "HttpEndpoint.hpp"
+#include "Endpoint.hpp"
+#include "HttpPortProbe.hpp"
 #include "MasterException.hpp"
 #include "MasterHttpServer.hpp"
 #include "MasterHttpServerFixture.hpp"
 #include "MasterHttpServerTestConstants.hpp"
+#include "MasterTestConstants.hpp"
+#include "NetworkConstants.hpp"
 
 using rtype::master::ApiResponse;
-using rtype::master::HttpEndpoint;
 using rtype::master::HttpPortUnavailableException;
 using rtype::master::MasterException;
 using rtype::master::MasterHttpServer;
+using rtype::network::Endpoint;
+using rtype::network::LOOPBACK_IPV4_ADDRESS;
 
 /**
  * Given a route added under the API before the server opens
@@ -21,10 +27,7 @@ using rtype::master::MasterHttpServer;
  * Then it gets the status and the body of the route, as JSON
  */
 TEST_F(MasterHttpServerFixture, ARouteAnswersItsStatusAndBodyAsJson) {
-  server().addGet(TEST_ROUTE, [] {
-    return ApiResponse{.status = EXPECTED_OK,
-                       .body = std::string{TEST_ROUTE_BODY}};
-  });
+  addTestRoute();
   openServer();
 
   const httplib::Result answer = get(TEST_ROUTE_URL);
@@ -83,10 +86,7 @@ TEST_F(MasterHttpServerFixture, AFailingRouteHidesItsReasonFromTheClient) {
  * kept whole
  */
 TEST_F(MasterHttpServerFixture, ABodyOverTheLimitIsRefusedAsTooLarge) {
-  server().addGet(TEST_ROUTE, [] {
-    return ApiResponse{.status = EXPECTED_OK,
-                       .body = std::string{TEST_ROUTE_BODY}};
-  });
+  addTestRoute();
   openServer();
 
   const httplib::Result answer =
@@ -105,11 +105,12 @@ TEST_F(MasterHttpServerFixture, ABodyOverTheLimitIsRefusedAsTooLarge) {
  */
 TEST_F(MasterHttpServerFixture, ASecondServerOnATakenPortIsRefused) {
   openServer();
-  MasterHttpServer second{[]([[maybe_unused]] const std::string& reason) {}};
+  MasterHttpServer second = quietHttpServer();
 
-  EXPECT_THROW(static_cast<void>(second.open(HttpEndpoint{
-                   .address = std::string{LOOPBACK_ADDRESS}, .port = port()})),
-               HttpPortUnavailableException);
+  EXPECT_THROW(
+      static_cast<void>(second.open(Endpoint{
+          .address = std::string{LOOPBACK_IPV4_ADDRESS}, .port = port()})),
+      HttpPortUnavailableException);
 }
 
 /**
@@ -118,20 +119,17 @@ TEST_F(MasterHttpServerFixture, ASecondServerOnATakenPortIsRefused) {
  * Then close() returns and another server can open the same port
  */
 TEST_F(MasterHttpServerFixture, ClosingFreesThePortWhileAClientStaysConnected) {
-  server().addGet(TEST_ROUTE, [] {
-    return ApiResponse{.status = EXPECTED_OK,
-                       .body = std::string{TEST_ROUTE_BODY}};
-  });
+  addTestRoute();
   openServer();
-  httplib::Client client{std::string{LOOPBACK_ADDRESS}, port()};
-  client.set_keep_alive(true);
-  ASSERT_TRUE(client.Get(std::string{TEST_ROUTE_URL}));
+  const std::unique_ptr<httplib::Client> client =
+      keptAliveClient(port(), TEST_ROUTE_URL);
+  ASSERT_NE(client, nullptr);
 
   server().close();
 
-  MasterHttpServer second{[]([[maybe_unused]] const std::string& reason) {}};
-  EXPECT_EQ(second.open(HttpEndpoint{.address = std::string{LOOPBACK_ADDRESS},
-                                     .port = port()}),
+  MasterHttpServer second = quietHttpServer();
+  EXPECT_EQ(second.open(Endpoint{.address = std::string{LOOPBACK_IPV4_ADDRESS},
+                                 .port = port()}),
             port());
 }
 

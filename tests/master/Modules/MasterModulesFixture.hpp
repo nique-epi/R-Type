@@ -49,8 +49,6 @@ class MasterModulesFixture : public ::testing::Test {
   [[nodiscard]] rtype::logging::LogLaunchOptions journalOptions() const;
 
   JournalFile journal_;
-  std::string journalPath_;
-  std::vector<std::string_view> journalArguments_;
   TemporaryFolder folder_;
   std::uint16_t port_{};
   rtype::engine::ConfigurationReport report_;

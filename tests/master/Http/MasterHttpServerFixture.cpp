@@ -3,9 +3,12 @@
 #include <cstdint>
 #include <string>
 #include <string_view>
-#include "HttpEndpoint.hpp"
+#include "ApiResponse.hpp"
+#include "Endpoint.hpp"
+#include "HttpPortProbe.hpp"
 #include "MasterHttpServer.hpp"
 #include "MasterHttpServerTestConstants.hpp"
+#include "MasterTestConstants.hpp"
 #include "NetworkConstants.hpp"
 
 MasterHttpServerFixture::MasterHttpServerFixture()
@@ -17,15 +20,21 @@ rtype::master::MasterHttpServer& MasterHttpServerFixture::server() {
   return server_;
 }
 
+void MasterHttpServerFixture::addTestRoute() {
+  server_.addGet(TEST_ROUTE, [] {
+    return rtype::master::ApiResponse{.status = EXPECTED_OK,
+                                      .body = std::string{TEST_ROUTE_BODY}};
+  });
+}
+
 void MasterHttpServerFixture::openServer() {
-  port_ = server_.open(
-      rtype::master::HttpEndpoint{.address = std::string{LOOPBACK_ADDRESS},
-                                  .port = rtype::network::ANY_PORT});
+  port_ = server_.open(rtype::network::Endpoint{
+      .address = std::string{rtype::network::LOOPBACK_IPV4_ADDRESS},
+      .port = rtype::network::ANY_PORT});
 }
 
 httplib::Result MasterHttpServerFixture::get(std::string_view path) const {
-  httplib::Client client{std::string{LOOPBACK_ADDRESS}, port_};
-  return client.Get(std::string{path});
+  return httpGet(port_, path);
 }
 
 httplib::Result MasterHttpServerFixture::getWithBody(
@@ -36,8 +45,7 @@ httplib::Result MasterHttpServerFixture::getWithBody(
   request.body = body;
   request.set_header(std::string{CONTENT_TYPE_HEADER},
                      std::string{TEXT_CONTENT_TYPE});
-  httplib::Client client{std::string{LOOPBACK_ADDRESS}, port_};
-  return client.send(request);
+  return httpSend(port_, request);
 }
 
 std::uint16_t MasterHttpServerFixture::port() const { return port_; }

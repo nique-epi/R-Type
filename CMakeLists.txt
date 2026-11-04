@@ -116,8 +116,9 @@ rtype_forbid_links(rtype_server_replication_module "SFML::" "asio::" "rtype_netw
 rtype_forbid_links(rtype_server_replication_announcements_milestones "SFML::" "asio::" "rtype_network_asio" "rtype_client")
 rtype_forbid_links(rtype_server_replication_announcements_streams "SFML::" "asio::" "rtype_network_asio" "rtype_client")
 rtype_forbid_links(rtype_server_replication_wire "SFML::" "asio::" "rtype_network_asio" "rtype_client")
-rtype_forbid_reachable_links(rtype_master_modules "SFML::" "asio::" "rtype_network_asio" "rtype_game" "rtype_client" "rtype_server")
-rtype_forbid_reachable_links(rtype_master_launch_options "SFML::" "asio::" "rtype_network_asio" "rtype_game" "rtype_client" "rtype_server")
+set(RTYPE_MASTER_FORBIDDEN_LINKS "SFML::" "asio::" "rtype_network_asio" "rtype_game" "rtype_client" "rtype_server")
+rtype_forbid_reachable_links(rtype_master_modules ${RTYPE_MASTER_FORBIDDEN_LINKS})
+rtype_forbid_reachable_links(rtype_master_launch_options ${RTYPE_MASTER_FORBIDDEN_LINKS})
 
 if(BUILD_TESTS)
   enable_testing()

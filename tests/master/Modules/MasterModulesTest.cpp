@@ -3,7 +3,9 @@
 #include <filesystem>
 #include <memory>
 #include <nlohmann/json.hpp>
+#include <nlohmann/json_fwd.hpp>
 #include <string>
+#include <utility>
 #include <vector>
 #include "EngineException.hpp"
 #include "HttpPortProbe.hpp"
@@ -11,6 +13,7 @@
 #include "MasterConstants.hpp"
 #include "MasterModulesFixture.hpp"
 #include "MasterModulesTestConstants.hpp"
+#include "MasterTestConstants.hpp"
 #include "RouteAddingModule.hpp"
 
 using rtype::engine::IModule;
@@ -29,7 +32,7 @@ TEST_F(MasterModulesFixture, TheMasterAnswersItsVersionOnceStarted) {
   const httplib::Result answer = get(HEALTH_URL);
 
   ASSERT_TRUE(answer);
-  EXPECT_EQ(answer->status, EXPECTED_SUCCESS);
+  EXPECT_EQ(answer->status, EXPECTED_OK);
   EXPECT_EQ(nlohmann::json::parse(answer->body).at(VERSION_MEMBER_NAME),
             std::string{MASTER_VERSION});
 }
@@ -79,5 +82,5 @@ TEST_F(MasterModulesFixture, AModuleListedAfterTheHttpModuleAddsItsRoute) {
   const httplib::Result answer = get(FEATURE_URL);
 
   ASSERT_TRUE(answer);
-  EXPECT_EQ(answer->status, EXPECTED_SUCCESS);
+  EXPECT_EQ(answer->status, EXPECTED_OK);
 }

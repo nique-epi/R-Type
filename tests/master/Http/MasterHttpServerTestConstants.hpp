@@ -3,9 +3,6 @@
 #include <cstddef>
 #include <string_view>
 
-/** @brief The address every test server listens on and every client calls. */
-constexpr std::string_view LOOPBACK_ADDRESS = "127.0.0.1";
-
 /** @brief The route a test adds, and the path a client calls it by. */
 constexpr std::string_view TEST_ROUTE = "/thing";
 constexpr std::string_view TEST_ROUTE_URL = "/api/thing";
@@ -24,8 +21,7 @@ constexpr std::string_view EXPECTED_PROBLEM_TYPE = "application/problem+json";
 constexpr std::string_view PROBLEM_STATUS_MEMBER_NAME = "status";
 constexpr std::string_view PROBLEM_TITLE_MEMBER_NAME = "title";
 
-/** @brief The statuses the tests expect, with their standard phrase. */
-constexpr int EXPECTED_OK = 200;
+/** @brief The statuses of the errors the tests expect, with their phrase. */
 constexpr int EXPECTED_NOT_FOUND = 404;
 constexpr std::string_view EXPECTED_NOT_FOUND_TITLE = "Not Found";
 constexpr int EXPECTED_PAYLOAD_TOO_LARGE = 413;

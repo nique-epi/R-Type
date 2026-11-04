@@ -1,26 +1,24 @@
 #include "MasterHttpServer.hpp"
 #include <httplib.h>
-#if !defined(_WIN32)
-#include <sys/socket.h>
-#endif
 #include <cstdint>
 #include <exception>
-#include <future>
 #include <memory>
+#include <nlohmann/json.hpp>
+#include <nlohmann/json_fwd.hpp>
 #include <string>
 #include <string_view>
 #include <thread>
 #include <utility>
 #include "ApiHandler.hpp"
 #include "ApiResponse.hpp"
+#include "Endpoint.hpp"
 #include "FailureReport.hpp"
 #include "HttpConstants.hpp"
-#include "HttpEndpoint.hpp"
 #include "MasterConstants.hpp"
 #include "MasterException.hpp"
 #include "NetworkConstants.hpp"
-#include "ProblemDetails.hpp"
 
+// NOLINTBEGIN(clang-analyzer-cplusplus.NewDeleteLeaks,clang-analyzer-unix.BlockInCriticalSection)
 namespace rtype::master {
 
 namespace {
@@ -35,12 +33,12 @@ namespace {
  * nobody either.
  */
 void claimPortAlone(socket_t socket) {
-  const int enabled = 1;
 #if defined(_WIN32)
-  setsockopt(socket, SOL_SOCKET, SO_EXCLUSIVEADDRUSE,
-             reinterpret_cast<const char*>(&enabled), sizeof(enabled));
+  // NOLINTNEXTLINE(misc-include-cleaner)
+  httplib::set_socket_opt(socket, SOL_SOCKET, SO_EXCLUSIVEADDRUSE, 1);
 #else
-  setsockopt(socket, SOL_SOCKET, SO_REUSEADDR, &enabled, sizeof(enabled));
+  // NOLINTNEXTLINE(misc-include-cleaner)
+  httplib::set_socket_opt(socket, SOL_SOCKET, SO_REUSEADDR, 1);
 #endif
 }
 
@@ -48,7 +46,7 @@ void claimPortAlone(socket_t socket) {
  * @returns The port @p server bound for @p endpoint, or NO_PORT_BOUND when the
  * system refused the address or the port.
  */
-int boundPortOf(httplib::Server& server, const HttpEndpoint& endpoint) {
+int boundPortOf(httplib::Server& server, const network::Endpoint& endpoint) {
   if (endpoint.port == network::ANY_PORT) {
     return server.bind_to_any_port(endpoint.address);
   }
@@ -57,15 +55,26 @@ int boundPortOf(httplib::Server& server, const HttpEndpoint& endpoint) {
 }
 
 /**
+ * @returns The problem document of RFC 9457 for an error of @p status:
+ * `{"status":404,"title":"Not Found"}`. It names no type, so the type is
+ * `about:blank`: the status says everything, and nothing tells the client why
+ * a route failed.
+ */
+std::string problemDetailsText(int status) {
+  nlohmann::json problem;
+  problem[PROBLEM_STATUS_MEMBER] = status;
+  problem[PROBLEM_TITLE_MEMBER] = httplib::status_message(status);
+  return problem.dump();
+}
+
+/**
  * @brief Gives an error answer that has no body the problem document of its
  * status, so a client always reads JSON.
  */
 void writeProblemDocument(httplib::Response& response) {
   if (response.body.empty()) {
-    response.set_content(
-        problemDetailsText(response.status,
-                           httplib::status_message(response.status)),
-        std::string{PROBLEM_CONTENT_TYPE});
+    response.set_content(problemDetailsText(response.status),
+                         std::string{PROBLEM_CONTENT_TYPE});
   }
 }
 
@@ -102,29 +111,23 @@ MasterHttpServer::MasterHttpServer(FailureReport onFailure)
 MasterHttpServer::~MasterHttpServer() { server_->stop(); }
 
 void MasterHttpServer::addGet(std::string_view path, ApiHandler route) {
-  server_->Get(std::string{API_PATH_PREFIX} + std::string{path},
-               [answer = std::move(route)](
-                   [[maybe_unused]] const httplib::Request& request,
-                   httplib::Response& response) {
-                 const ApiResponse reply = answer();
-                 response.status = reply.status;
-                 response.set_content(reply.body,
-                                      std::string{JSON_CONTENT_TYPE});
-               });
+  server_->Get(
+      std::string{API_PATH_PREFIX} + std::string{path},
+      [answer = std::move(route), contentType = std::string{JSON_CONTENT_TYPE}](
+          [[maybe_unused]] const httplib::Request& request,
+          httplib::Response& response) {
+        ApiResponse reply = answer();
+        response.status = reply.status;
+        response.set_content(std::move(reply.body), contentType);
+      });
 }
 
-std::uint16_t MasterHttpServer::open(const HttpEndpoint& endpoint) {
-  std::promise<int> bound;
-  std::future<int> boundPort = bound.get_future();
-  listener_ =
-      std::jthread{[this, endpoint, bound = std::move(bound)]() mutable {
-        listen(endpoint, bound);
-      }};
-  const int port = boundPort.get();
+std::uint16_t MasterHttpServer::open(const network::Endpoint& endpoint) {
+  const int port = boundPortOf(*server_, endpoint);
   if (port == NO_PORT_BOUND) {
-    listener_.join();
     throw HttpPortUnavailableException(endpoint.address, endpoint.port);
   }
+  listener_ = std::jthread{[this] { listen(); }};
   server_->wait_until_ready();
   return static_cast<std::uint16_t>(port);
 }
@@ -137,13 +140,15 @@ void MasterHttpServer::close() {
   listener_.join();
 }
 
-void MasterHttpServer::listen(const HttpEndpoint& endpoint,
-                              std::promise<int>& boundPort) {
-  const int port = boundPortOf(*server_, endpoint);
-  boundPort.set_value(port);
-  if (port != NO_PORT_BOUND && !server_->listen_after_bind()) {
-    onFailure_(std::string{LISTENING_LOST_TEXT});
+void MasterHttpServer::listen() {
+  try {
+    if (!server_->listen_after_bind()) {
+      onFailure_(std::string{LISTENING_LOST_TEXT});
+    }
+  } catch (const std::exception& error) {
+    onFailure_(error.what());
   }
 }
 
 }  // namespace rtype::master
+// NOLINTEND(clang-analyzer-cplusplus.NewDeleteLeaks,clang-analyzer-unix.BlockInCriticalSection)

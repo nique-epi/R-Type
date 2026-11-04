@@ -1,5 +1,6 @@
 #include "MasterModulesFixture.hpp"
 #include <httplib.h>
+#include <array>
 #include <cstdint>
 #include <filesystem>
 #include <memory>
@@ -20,11 +21,7 @@
 #include "MasterModulesTestConstants.hpp"
 #include "SettingLine.hpp"
 
-MasterModulesFixture::MasterModulesFixture()
-    : journalPath_(journal_.path().string()),
-      journalArguments_{rtype::logging::FILE_OPTION, journalPath_,
-                        rtype::logging::NO_STDERR_OPTION},
-      port_(freeHttpPort()) {}
+MasterModulesFixture::MasterModulesFixture() : port_(freeHttpPort()) {}
 
 std::unique_ptr<rtype::engine::Application>
 MasterModulesFixture::masterApplication(
@@ -56,8 +53,7 @@ std::string MasterModulesFixture::databaseLine(
 }
 
 httplib::Result MasterModulesFixture::get(std::string_view path) const {
-  httplib::Client client{std::string{MASTER_TEST_ADDRESS}, port_};
-  return client.Get(std::string{path});
+  return httpGet(port_, path);
 }
 
 const std::filesystem::path& MasterModulesFixture::folder() const {
@@ -67,5 +63,6 @@ const std::filesystem::path& MasterModulesFixture::folder() const {
 std::uint16_t MasterModulesFixture::port() const { return port_; }
 
 rtype::logging::LogLaunchOptions MasterModulesFixture::journalOptions() const {
-  return logOptionsOf(journalArguments_, rtype::logging::MASTER_LOG_FILE_NAME);
+  const std::array<std::string_view, 1> quiet{rtype::logging::NO_STDERR_OPTION};
+  return logOptionsOf(quiet, journal_.path());
 }

@@ -17,8 +17,9 @@ namespace rtype::master {
  * and provides its MasterHttpServer so the modules listed after it add their
  * routes while they install.
  *
- * install() declares the `port` setting. start() listens on ALL_INTERFACES and
- * that port, network::DEFAULT_MASTER_PORT until a `set` changes it.
+ * install() declares the `port` setting. start() listens on every IPv4
+ * interface (network::ANY_IPV4_ADDRESS), as the server does, and on that port,
+ * network::DEFAULT_MASTER_PORT until a `set` changes it.
  */
 class MasterHttpModule final : public engine::IModule {
  public:

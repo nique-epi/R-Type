@@ -1,13 +1,15 @@
 #include "MasterHttpModule.hpp"
 #include <cstdint>
+#include <nlohmann/json.hpp>
+#include <nlohmann/json_fwd.hpp>
 #include <string>
 #include <utility>
 #include <vector>
+#include "ApiResponse.hpp"
 #include "ConfigurationRegistry.hpp"
+#include "Endpoint.hpp"
 #include "FailureReport.hpp"
-#include "HealthResponse.hpp"
 #include "HttpConstants.hpp"
-#include "HttpEndpoint.hpp"
 #include "InstallContext.hpp"
 #include "IntegerSettingDefinition.hpp"
 #include "MasterConstants.hpp"
@@ -15,6 +17,21 @@
 #include "NetworkConstants.hpp"
 
 namespace rtype::master {
+
+namespace {
+
+/**
+ * @returns The answer of GET /api/health: OK_STATUS and
+ * `{"version":"<MASTER_VERSION>"}`. It reads nothing else, so it answers as
+ * long as the HTTP server runs.
+ */
+ApiResponse healthResponse() {
+  nlohmann::json health;
+  health[VERSION_MEMBER] = MASTER_VERSION;
+  return ApiResponse{.status = OK_STATUS, .body = health.dump()};
+}
+
+}  // namespace
 
 MasterHttpModule::MasterHttpModule(FailureReport onFailure)
     : server_(std::move(onFailure)), logger_(std::string{MASTER_LOGGER_NAME}) {}
@@ -41,8 +58,9 @@ void MasterHttpModule::install(engine::InstallContext& context) {
 }
 
 void MasterHttpModule::start() {
-  const std::uint16_t port = server_.open(HttpEndpoint{
-      .address = std::string{ALL_INTERFACES}, .port = listeningPort()});
+  const std::uint16_t port = server_.open(
+      network::Endpoint{.address = std::string{network::ANY_IPV4_ADDRESS},
+                        .port = listeningPort()});
   logger_.info("HTTP API listening on TCP port ", port);
 }
 

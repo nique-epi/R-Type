@@ -30,9 +30,6 @@ constexpr std::string_view VERSION_MEMBER = "version";
 /** @brief The status of an answer that succeeded. */
 constexpr int OK_STATUS = 200;
 
-/** @brief The lowest status of an error: 400 and above are errors. */
-constexpr int FIRST_ERROR_STATUS = 400;
-
 /** @brief What cpp-httplib gives in place of a port it could not bind. */
 constexpr int NO_PORT_BOUND = -1;
 
@@ -43,12 +40,6 @@ constexpr int NO_PORT_BOUND = -1;
  * and its body is never read.
  */
 constexpr std::size_t MAX_REQUEST_BODY_BYTES = std::size_t{64} * 1024;
-
-/**
- * @brief The address the master listens on: every interface of the machine,
- * as the server does, so servers and players of the local network reach it.
- */
-constexpr std::string_view ALL_INTERFACES = "0.0.0.0";
 
 /** @brief What the journal says when the HTTP server stops on its own. */
 constexpr std::string_view LISTENING_LOST_TEXT =
