@@ -6,6 +6,7 @@ target_link_libraries(rtype_client_animation
   PUBLIC
     rtype_engine_time
     rtype_game_components
+    SFML::System
 )
 
 rtype_enable_warnings(rtype_client_animation)

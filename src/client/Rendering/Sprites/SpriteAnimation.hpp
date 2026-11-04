@@ -1,5 +1,6 @@
 #pragma once
 
+#include <optional>
 #include "Animation.hpp"
 #include "TimeConstants.hpp"
 
@@ -18,6 +19,9 @@ namespace rtype::client {
 struct SpriteAnimation {
   Animation animation;
   engine::Duration elapsed{};
+  /** @brief The animation that takes over when `animation`, played once, has
+   * ended; nothing for an effect, which is destroyed instead. */
+  std::optional<Animation> afterwards;
 };
 
 }  // namespace rtype::client

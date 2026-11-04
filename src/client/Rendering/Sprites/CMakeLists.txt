@@ -9,6 +9,7 @@ target_link_libraries(rtype_client_sprites
 )
 
 add_subdirectory(Animation)
+add_subdirectory(EnemyAppearance)
 add_subdirectory(EntitySprites)
 add_subdirectory(AnimationSystem)
 add_subdirectory(AssetTextureSource)

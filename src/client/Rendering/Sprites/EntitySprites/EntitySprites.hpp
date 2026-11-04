@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <optional>
 #include "AnimatedSprite.hpp"
+#include "EnemyKind.hpp"
 #include "EntityType.hpp"
 #include "Sprite.hpp"
 #include "SpriteAnimation.hpp"
@@ -45,6 +46,14 @@ namespace rtype::client {
  */
 [[nodiscard]] std::optional<AnimatedSprite> animatedSpriteOf(
     game::EntityType type, std::uint32_t networkId);
+
+/**
+ * @brief What code that creates an enemy gives it: the idle animation of its
+ * kind, and a sprite of the sheet of its kind showing the frame that animation
+ * starts on, in the layer of the enemies.
+ */
+[[nodiscard]] AnimatedSprite animatedEnemyOf(game::EnemyKind kind,
+                                             std::uint32_t networkId);
 
 /** @returns The rectangle of a frame of a sheet, as SFML takes it. */
 [[nodiscard]] sf::IntRect rectangleOf(game::SpriteFrame frame);

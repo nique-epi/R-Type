@@ -14,8 +14,13 @@ void AnimationSystem::update(engine::ComponentRegistry& components,
                              game::Sprite& sprite) {
         animation.elapsed += elapsed;
         if (animation.animation.hasEnded(animation.elapsed)) {
-          components.destroy(entity);
-          return;
+          if (!animation.afterwards.has_value()) {
+            components.destroy(entity);
+            return;
+          }
+          animation.animation = *animation.afterwards;
+          animation.afterwards.reset();
+          animation.elapsed = engine::Duration::zero();
         }
         sprite.frame = animation.animation.frameAt(animation.elapsed)
                            .value_or(sprite.frame);

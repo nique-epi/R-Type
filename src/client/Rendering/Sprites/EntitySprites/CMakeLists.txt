@@ -4,6 +4,7 @@ target_include_directories(rtype_client_entity_sprites PUBLIC ${CMAKE_CURRENT_SO
 
 target_link_libraries(rtype_client_entity_sprites
   PUBLIC
+    rtype_client_enemy_appearance
     rtype_client_sprites
   PRIVATE
     rtype_engine

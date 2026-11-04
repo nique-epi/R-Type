@@ -23,6 +23,8 @@ target_link_libraries(rtype_client_screens_module
     rtype_client_connection_leaderboard
     rtype_client_connection_module
     rtype_client_effect_interfaces
+    rtype_client_enemy_appearance
+    rtype_game_enemy_kind
     rtype_client_entity_messages
     rtype_client_handshake
     rtype_client_interface

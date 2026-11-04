@@ -1,10 +1,13 @@
 #include "ScreenAssets.hpp"
+#include <algorithm>
 #include <string>
 #include <vector>
 #include "AssetLibrary.hpp"
 #include "AssetList.hpp"
 #include "AssetLoadingStep.hpp"
 #include "EffectConstants.hpp"
+#include "EnemyAppearance.hpp"
+#include "EnemyKind.hpp"
 #include "EntitySpriteConstants.hpp"
 #include "FlightLogSheetConstants.hpp"
 #include "HudSpriteConstants.hpp"
@@ -27,6 +30,16 @@ void loadAtOnce(AssetLibrary& library, const AssetList& assets) {
   }
 }
 
+/** @brief Adds the sheet of every kind of enemy to @p assets, once each. */
+void addEnemySheets(AssetList& assets) {
+  for (const game::EnemyKind kind : game::ALL_ENEMY_KINDS) {
+    const std::string sheet = appearanceOf(kind).sheetId;
+    if (std::ranges::find(assets.textures, sheet) == assets.textures.end()) {
+      assets.textures.push_back(sheet);
+    }
+  }
+}
+
 }  // namespace
 
 AssetList interfaceAssets() {
@@ -42,6 +55,7 @@ AssetList titleAssets() {
 
 AssetList gameAssets() {
   AssetList assets = titleAssets();
+  addEnemySheets(assets);
   assets.textures.emplace_back(EFFECT_SHEET_ID);
   assets.textures.emplace_back(PLUG_ICON_ID);
   assets.textures.emplace_back(FLIGHT_LOG_SHEET_ID);

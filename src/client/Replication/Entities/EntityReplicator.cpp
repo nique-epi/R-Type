@@ -45,6 +45,16 @@ std::optional<AnnouncedEntity> creatableEntityOf(
   return announcedEntityOf(announced.entityType);
 }
 
+/** @returns The sprite and the animation a new entity of type @p what.type
+ * gets: those of its kind for an enemy, those of its type otherwise. */
+std::optional<AnimatedSprite> lookOf(const AnnouncedEntity& what,
+                                     std::uint32_t networkId) {
+  if (what.kind.has_value()) {
+    return animatedEnemyOf(*what.kind, networkId);
+  }
+  return animatedSpriteOf(what.type, networkId);
+}
+
 /** @returns The entity an EntitySpawned announces, as a WorldState lists
  * it. */
 network::EntityState announcedBy(const network::EntitySpawned& message) {
@@ -262,8 +272,7 @@ std::optional<engine::Entity> EntityReplicator::create(
   if (!what.has_value()) {
     return std::nullopt;
   }
-  std::optional<AnimatedSprite> look =
-      animatedSpriteOf(what->type, announced.entityId);
+  std::optional<AnimatedSprite> look = lookOf(*what, announced.entityId);
   if (!look.has_value()) {
     return std::nullopt;
   }

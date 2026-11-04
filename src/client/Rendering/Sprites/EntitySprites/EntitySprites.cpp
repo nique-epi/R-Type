@@ -6,6 +6,7 @@
 #include <optional>
 #include "AnimatedSprite.hpp"
 #include "Animation.hpp"
+#include "EnemyAppearance.hpp"
 #include "EntitySpriteConstants.hpp"
 #include "EntityType.hpp"
 #include "Layer.hpp"
@@ -99,6 +100,18 @@ std::optional<AnimatedSprite> animatedSpriteOf(game::EntityType type,
       .sprite = entitySpriteShowing(started.animation.frameAt(started.elapsed)
                                         .value_or(animation->frames.front()),
                                     layerOf(type)),
+      .animation = started};
+}
+
+AnimatedSprite animatedEnemyOf(game::EnemyKind kind, std::uint32_t networkId) {
+  const EnemyAppearance& appearance = appearanceOf(kind);
+  const SpriteAnimation started = startedAt(appearance.idle, networkId);
+  return AnimatedSprite{
+      .sprite =
+          game::Sprite{.assetId = appearance.sheetId,
+                       .frame = started.animation.frameAt(started.elapsed)
+                                    .value_or(appearance.idle.frames.front()),
+                       .layer = layerOf(game::EntityType::Enemy)},
       .animation = started};
 }
 

@@ -19,8 +19,10 @@ namespace rtype::client {
  * covers, then writes the frame the animation gives into the Sprite: the frame
  * follows the clock, however many pictures are drawn per second. An entity
  * whose animation played once has ended is destroyed, so an effect removes
- * itself after its last frame; the destruction waits until the walk over the
- * components ends, and the entity is not drawn again.
+ * itself after its last frame, unless its SpriteAnimation names an animation
+ * that follows: that one takes over, from its first frame, and the entity
+ * stays. Otherwise the destruction waits until the walk over the components
+ * ends, and the entity is not drawn again.
  */
 class AnimationSystem final : public engine::ISystem {
  public:

@@ -23,6 +23,7 @@
 #include "ShipFlight.hpp"
 #include "ShipFlightConstants.hpp"
 #include "Sprite.hpp"
+#include "SpriteAnimation.hpp"
 #include "SpriteAppearance.hpp"
 #include "SpriteDrawing.hpp"
 #include "SpriteFrame.hpp"
@@ -76,6 +77,12 @@ sf::Vector2i offsetOf(const Nudge* nudge) {
   const bool flipped = nudge->flipEvery > engine::Duration::zero() &&
                        (nudge->elapsed / nudge->flipEvery) % 2 == 1;
   return flipped ? -nudge->amount : nudge->amount;
+}
+
+/** @returns How many pixels of the canvas the animation of an entity draws it
+ * away, none without an animation. */
+sf::Vector2i anchorOf(const SpriteAnimation* animation) {
+  return animation == nullptr ? sf::Vector2i{} : animation->animation.anchor;
 }
 
 /** @returns How many rows of a frame @p height rows tall a reveal shows: none
@@ -228,7 +235,8 @@ SpriteAppearance RenderSystem::lookOf(engine::ComponentRegistry& components,
   return SpriteAppearance{
       .tone = toneOf(components.get<HitFlash>(entity), invulnerability),
       .outline = outlineOf(invulnerability),
-      .offset = offsetOf(components.get<Nudge>(entity)),
+      .offset = offsetOf(components.get<Nudge>(entity)) +
+                anchorOf(components.get<SpriteAnimation>(entity)),
       .shownRows = shownRowsOf(reveal, frameHeight),
       .leadingLine = reveal != nullptr && reveal->leadingLine,
       .rollAngle = rollAngleOf(components.get<ShipFlight>(entity))};

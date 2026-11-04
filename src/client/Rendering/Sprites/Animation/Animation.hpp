@@ -1,5 +1,6 @@
 #pragma once
 
+#include <SFML/System/Vector2.hpp>
 #include <cstdint>
 #include <optional>
 #include <span>
@@ -28,11 +29,19 @@ struct Animation {
      * frameDuration; AnimationSystem then destroys the entity showing it, so
      * only effects play once. */
     Once,
+    /** @brief Stays on the last frame and never ends: the animation of an
+     * attack of an enemy that lasts until the server announces the next
+     * phase. */
+    Hold,
   };
 
   std::span<const game::SpriteFrame> frames;
   engine::Duration frameDuration{};
   Playback playback{};
+  /** @brief How many pixels of the canvas the frames are drawn away from the
+   * Position of the entity: the body of an enemy stays where it is when a
+   * frame is wider than the 24 pixels of the body. Zero for the idle. */
+  sf::Vector2i anchor{};
 
   /**
    * @param elapsed Time since the animation started. A negative time shows
