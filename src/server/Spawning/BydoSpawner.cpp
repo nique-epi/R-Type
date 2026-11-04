@@ -24,6 +24,7 @@
 #include "Position.hpp"
 #include "ServerException.hpp"
 #include "TimeConstants.hpp"
+#include "WireEntityTypeMapping.hpp"
 #include "World.hpp"
 #include "WorldState.hpp"
 
@@ -56,13 +57,13 @@ void BydoSpawner::onTick() {
 
 void BydoSpawner::spawnOne() {
   const game::Position position = nextPosition();
-  const std::optional<std::uint32_t> networkId =
-      createBydo(position, nextKind());
+  const game::EnemyKind kind = nextKind();
+  const std::optional<std::uint32_t> networkId = createBydo(position, kind);
   if (!networkId.has_value()) {
     return;
   }
   ++spawnedCount_;
-  announce(*networkId, position);
+  announce(*networkId, position, kind);
 }
 
 game::Position BydoSpawner::nextPosition() {
@@ -85,14 +86,15 @@ std::optional<std::uint32_t> BydoSpawner::createBydo(game::Position position,
   }
 }
 
-void BydoSpawner::announce(std::uint32_t networkId, game::Position position) {
+void BydoSpawner::announce(std::uint32_t networkId, game::Position position,
+                           game::EnemyKind kind) {
   for (ConnectedPlayer* const player : roster_->connected()) {
-    sendEntitySpawned(
-        send_, *player,
-        network::EntitySpawned{.entityId = networkId,
-                               .entityType = network::WireEntityType::Bydo,
-                               .x = position.x,
-                               .y = position.y});
+    sendEntitySpawned(send_, *player,
+                      network::EntitySpawned{.entityId = networkId,
+                                             .entityType = toWireEntityType(
+                                                 game::EntityType::Enemy, kind),
+                                             .x = position.x,
+                                             .y = position.y});
   }
 }
 

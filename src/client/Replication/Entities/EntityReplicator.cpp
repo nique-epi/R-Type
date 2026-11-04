@@ -26,6 +26,7 @@
 #include "ProtocolConstants.hpp"
 #include "ShipFlight.hpp"
 #include "SoundConstants.hpp"
+#include "WireReading.hpp"
 #include "WorldState.hpp"
 
 namespace rtype::client {
@@ -33,36 +34,15 @@ namespace rtype::client {
 namespace {
 
 /**
- * @returns The game type of an entity the protocol names @p wireType, as the
- * entity type table of the protocol page lists them, or nothing for a value
- * outside WireEntityType. It is the inverse of what the server sends: a type
- * added to the protocol needs its case here and on the server.
+ * @returns What the entity a message announces is, or nothing when the client
+ * must not create it: the id NO_ENTITY_ID, or a type outside WireEntityType.
  */
-std::optional<game::EntityType> entityTypeOf(network::WireEntityType wireType) {
-  switch (wireType) {
-    case network::WireEntityType::PlayerShip:
-      return game::EntityType::Player;
-    case network::WireEntityType::PlayerMissile:
-      return game::EntityType::PlayerMissile;
-    case network::WireEntityType::Bydo:
-      return game::EntityType::Enemy;
-    case network::WireEntityType::EnemyMissile:
-      return game::EntityType::EnemyMissile;
-  }
-  return std::nullopt;
-}
-
-/**
- * @returns The game type of the entity a message announces, or nothing when
- * the client must not create it: the id NO_ENTITY_ID, or a type outside
- * WireEntityType.
- */
-std::optional<game::EntityType> creatableTypeOf(
+std::optional<AnnouncedEntity> creatableEntityOf(
     const network::EntityState& announced) {
   if (announced.entityId == identifiers::NO_ENTITY_ID) {
     return std::nullopt;
   }
-  return entityTypeOf(announced.entityType);
+  return announcedEntityOf(announced.entityType);
 }
 
 /** @returns The entity an EntitySpawned announces, as a WorldState lists
@@ -278,18 +258,21 @@ void EntityReplicator::apply(const network::GameEvent& event) {
 
 std::optional<engine::Entity> EntityReplicator::create(
     const network::EntityState& announced) {
-  const std::optional<game::EntityType> type = creatableTypeOf(announced);
-  if (!type.has_value()) {
+  const std::optional<AnnouncedEntity> what = creatableEntityOf(announced);
+  if (!what.has_value()) {
     return std::nullopt;
   }
   std::optional<AnimatedSprite> look =
-      animatedSpriteOf(*type, announced.entityId);
+      animatedSpriteOf(what->type, announced.entityId);
   if (!look.has_value()) {
     return std::nullopt;
   }
   const engine::Entity entity =
-      addEntity(*type, game::Position{.x = announced.x, .y = announced.y},
+      addEntity(what->type, game::Position{.x = announced.x, .y = announced.y},
                 std::move(*look));
+  if (what->kind.has_value()) {
+    components_->add(entity, *what->kind);
+  }
   entityByNetworkId_.bind(announced.entityId, entity);
   return entity;
 }

@@ -10,6 +10,7 @@ target_link_libraries(rtype_server_replication_wire
   PUBLIC
     rtype_engine_time
     rtype_game_components
+    rtype_game_enemy_kind
     rtype_game_events
     rtype_identifiers
     rtype_network_datagram_codec

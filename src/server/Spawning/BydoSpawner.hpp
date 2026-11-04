@@ -64,7 +64,8 @@ class BydoSpawner {
   [[nodiscard]] game::EnemyKind nextKind() const;
   [[nodiscard]] std::optional<std::uint32_t> createBydo(game::Position position,
                                                         game::EnemyKind kind);
-  void announce(std::uint32_t networkId, game::Position position);
+  void announce(std::uint32_t networkId, game::Position position,
+                game::EnemyKind kind);
   [[nodiscard]] std::size_t bydosInPlay();
   void logCurrentWave();
 

@@ -2,6 +2,7 @@ add_library(rtype_client_entities STATIC
   EntityReplicator.cpp
   LastListedTicks.cpp
   PositionHistory.cpp
+  WireReading.cpp
   WorldStateFilter.cpp
 )
 
@@ -14,6 +15,7 @@ target_link_libraries(rtype_client_entities
     rtype_engine
     rtype_engine_time
     rtype_game_components
+    rtype_game_enemy_kind
     rtype_network_entity_destroyed
     rtype_network_entity_spawned
     rtype_network_game_event

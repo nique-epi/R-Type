@@ -34,6 +34,7 @@ using rtype::server::testing::BydoSpawnerScene;
 using rtype::server::testing::FIRST_PLAYER;
 using rtype::server::testing::FIRST_WAVE_LINE_TEXT;
 using rtype::server::testing::OTHER_SPAWNER_SEED;
+using rtype::server::testing::REAPER_ONLY_CYCLE;
 using rtype::server::testing::SECOND_PLAYER;
 using rtype::server::testing::SPAWNER_SEED;
 using rtype::server::testing::TICKS_TO_THE_FIRST_BYDO;
@@ -200,6 +201,25 @@ TEST(BydoSpawner, TheBydosTakeTheKindsOfTheirPlanInTurn) {
   const std::vector<PatternShape> shapes = scene.patternsOfTheBydos();
   EXPECT_EQ(std::ranges::count(shapes, PatternShape::Straight), 2);
   EXPECT_EQ(std::ranges::count(shapes, PatternShape::Wave), 1);
+}
+
+/**
+ * Given a spawner whose plan names only the Reaper
+ * When the first Bydo appears
+ * Then the player is sent an EntitySpawned of the wire type of the Reaper, not
+ * of a Bydo
+ */
+TEST(BydoSpawner, AnnouncesTheWireTypeOfTheKindItSpawns) {
+  BydoSpawnerScene scene;
+  scene.connect(FIRST_PLAYER);
+  BydoSpawner spawner =
+      scene.makeSpawnerWith(SPAWNER_SEED, wavePlanOf(REAPER_ONLY_CYCLE));
+
+  BydoSpawnerScene::runTicks(spawner, TICKS_TO_THE_FIRST_BYDO);
+
+  const std::vector<EntitySpawned> spawns = scene.spawnsSent();
+  ASSERT_EQ(spawns.size(), 1U);
+  EXPECT_EQ(spawns.front().entityType, WireEntityType::Reaper);
 }
 
 /**

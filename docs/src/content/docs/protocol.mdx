@@ -253,10 +253,18 @@ Measured on October 24, 2026, before `acknowledgedInput` added 4 bytes per playe
 |---|---|
 | 1 | `PlayerShip` |
 | 2 | `PlayerMissile` |
-| 3 | `Bydo` |
+| 3 | `Bydo` (the Drifter and the Weaver) |
 | 4 | `EnemyMissile` |
+| 5 | `Voltjelly` |
+| 6 | `Reaper` |
+| 7 | `Bydomancer` |
+| 8 | `Drillback` |
+| 9 | `BydoTyrant` |
+| 10 | `RuneOrb` (a projectile of the Bydomancer) |
+| 11 | `Bone` (a projectile of the Reaper) |
+| 12 | `Beam` (a projectile of the boss) |
 
-An entity of unknown type is skipped: it is left out of the state, and the other entities of the same `WorldState` are read. An entity takes 9 bytes whatever its type, so the next one starts where it should. New kinds of entities are added to this table as the game gets them.
+Types 5 to 12 are reserved together for the enemies being added to the game and their projectiles, so adding an enemy changes no row of this table. A client draws each of them like a `Bydo` or an `EnemyMissile` until it has their pictures. An entity of unknown type is skipped: it is left out of the state, and the other entities of the same `WorldState` are read. An entity takes 9 bytes whatever its type, so the next one starts where it should. A client that does not know types 5 to 12 therefore does not see those enemies, and an `EntitySpawned` naming one is refused as a whole (see [Payload rules](#payload-rules)); the version of the protocol is not raised for them yet.
 
 ### Game events
 

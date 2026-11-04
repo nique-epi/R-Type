@@ -22,6 +22,14 @@ bool isListed(WireEntityType entityType) {
     case WireEntityType::PlayerMissile:
     case WireEntityType::Bydo:
     case WireEntityType::EnemyMissile:
+    case WireEntityType::Voltjelly:
+    case WireEntityType::Reaper:
+    case WireEntityType::Bydomancer:
+    case WireEntityType::Drillback:
+    case WireEntityType::BydoTyrant:
+    case WireEntityType::RuneOrb:
+    case WireEntityType::Bone:
+    case WireEntityType::Beam:
       return true;
   }
   return false;

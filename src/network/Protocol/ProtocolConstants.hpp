@@ -353,7 +353,7 @@ static_assert((WORLD_STATE_PAYLOAD_LIMIT - WORLD_STATE_FIXED_SIZE) /
 constexpr std::uint8_t FIRST_WIRE_ENTITY_TYPE =
     static_cast<std::uint8_t>(WireEntityType::PlayerShip);
 constexpr std::uint8_t LAST_WIRE_ENTITY_TYPE =
-    static_cast<std::uint8_t>(WireEntityType::EnemyMissile);
+    static_cast<std::uint8_t>(WireEntityType::Beam);
 
 /**
  * @brief The smallest and the largest count of eighths of a unit a wire

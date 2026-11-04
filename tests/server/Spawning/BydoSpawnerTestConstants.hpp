@@ -34,6 +34,7 @@ constexpr std::array TEST_ENEMY_CYCLE{game::EnemyKind::Drifter,
                                       game::EnemyKind::Weaver};
 constexpr std::array WEAVER_FIRST_CYCLE{game::EnemyKind::Weaver,
                                         game::EnemyKind::Drifter};
+constexpr std::array REAPER_ONLY_CYCLE{game::EnemyKind::Reaper};
 
 /**
  * @brief The seed the spawner tests start from, and another one, which gives

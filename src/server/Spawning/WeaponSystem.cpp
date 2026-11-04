@@ -44,10 +44,11 @@ bool countsDownToReady(game::Gun& gun) {
 network::EntitySpawned spawnAt(std::uint32_t projectileId,
                                game::EntityType type,
                                const game::Position& position) {
-  return network::EntitySpawned{.entityId = projectileId,
-                                .entityType = toWireEntityType(type),
-                                .x = position.x,
-                                .y = position.y};
+  return network::EntitySpawned{
+      .entityId = projectileId,
+      .entityType = toWireEntityType(type, std::nullopt),
+      .x = position.x,
+      .y = position.y};
 }
 
 /**

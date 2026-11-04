@@ -12,12 +12,25 @@ namespace rtype::network {
 /**
  * @brief What an entity is, as the wire names it. The values are the ones of
  * the protocol page and never change.
+ *
+ * Bydo is the Drifter and the Weaver. Voltjelly to BydoTyrant are the other
+ * kinds of enemy; RuneOrb, Bone and Beam are the projectiles of the Bydomancer,
+ * the Reaper and the boss. They are reserved together, so the pull request of
+ * an enemy adds no value to this list.
  */
 enum class WireEntityType : std::uint8_t {
   PlayerShip = 1,
   PlayerMissile = 2,
   Bydo = 3,
   EnemyMissile = 4,
+  Voltjelly = 5,
+  Reaper = 6,
+  Bydomancer = 7,
+  Drillback = 8,
+  BydoTyrant = 9,
+  RuneOrb = 10,
+  Bone = 11,
+  Beam = 12,
 };
 
 /**

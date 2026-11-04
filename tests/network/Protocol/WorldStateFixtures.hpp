@@ -70,16 +70,29 @@ constexpr float SMALLEST_WIRE_COORDINATE = -4096.0F;
 
 /**
  * @brief Entity type values that no entity has: one below and one above the
- * values 1 to 4 of the wire.
+ * values 1 to 12 of the wire.
  */
 constexpr unsigned int ENTITY_TYPE_BELOW_THE_FIRST = 0;
-constexpr unsigned int ENTITY_TYPE_ABOVE_THE_LAST = 5;
+constexpr unsigned int ENTITY_TYPE_ABOVE_THE_LAST = 13;
 
 /**
- * @brief The value of the last entity type, EnemyMissile, the upper bound of
- * the types the wire knows.
+ * @brief The value of the last entity type, Beam, the upper bound of the types
+ * the wire knows.
  */
-constexpr unsigned int LAST_ENTITY_TYPE = 4;
+constexpr unsigned int LAST_ENTITY_TYPE = 12;
+
+/**
+ * @brief The types the protocol page lists for the new enemies and their
+ * projectiles, by the number it gives each.
+ */
+constexpr unsigned int VOLTJELLY_TYPE = 5;
+constexpr unsigned int REAPER_TYPE = 6;
+constexpr unsigned int BYDOMANCER_TYPE = 7;
+constexpr unsigned int DRILLBACK_TYPE = 8;
+constexpr unsigned int BYDO_TYRANT_TYPE = 9;
+constexpr unsigned int RUNE_ORB_TYPE = 10;
+constexpr unsigned int BONE_TYPE = 11;
+constexpr unsigned int BEAM_TYPE = 12;
 
 /**
  * @brief A byte that is neither 0 nor 1, where a boolean is expected, and the

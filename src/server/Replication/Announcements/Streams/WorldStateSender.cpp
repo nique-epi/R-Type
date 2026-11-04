@@ -9,6 +9,7 @@
 #include "ComponentRegistry.hpp"
 #include "ConnectedPlayer.hpp"
 #include "ConnectedPlayers.hpp"
+#include "EnemyKind.hpp"
 #include "Entity.hpp"
 #include "EntityType.hpp"
 #include "Intent.hpp"
@@ -34,6 +35,13 @@
 namespace rtype::server {
 
 namespace {
+
+/** @returns The EnemyKind of @p entity, or nothing when it carries none. */
+std::optional<game::EnemyKind> kindOf(engine::ComponentRegistry& components,
+                                      engine::Entity entity) {
+  const game::EnemyKind* const kind = components.get<game::EnemyKind>(entity);
+  return kind != nullptr ? std::optional{*kind} : std::nullopt;
+}
 
 static_assert(game::PLAYFIELD_WIDTH <= LARGEST_PLAYFIELD_SIZE_ON_THE_WIRE &&
                   game::PLAYFIELD_HEIGHT <= LARGEST_PLAYFIELD_SIZE_ON_THE_WIRE,
@@ -191,11 +199,11 @@ network::WorldState WorldStateSender::capture(
           ++leftOutCount;
           return;
         }
-        state.entities.push_back(
-            network::EntityState{.entityId = identity.networkId,
-                                 .entityType = toWireEntityType(*type),
-                                 .x = position.x,
-                                 .y = position.y});
+        state.entities.push_back(network::EntityState{
+            .entityId = identity.networkId,
+            .entityType = toWireEntityType(*type, kindOf(components, entity)),
+            .x = position.x,
+            .y = position.y});
       });
   return state;
 }

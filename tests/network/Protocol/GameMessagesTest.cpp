@@ -185,7 +185,30 @@ TEST(EntitySpawned, RefusesToReadTheEntityIdZero) {
 }
 
 /**
- * Given the entity types 0 and 5, just outside the types 1 to 4
+ * Given an entity of each type the protocol page reserves for the new enemies
+ * and their projectiles
+ * When each EntitySpawned is encoded
+ * Then the type byte is the number the page gives that type, 5 to 12
+ */
+TEST(EntitySpawned, EncodesEachReservedEntityTypeAsItsNumber) {
+  const std::pair<WireEntityType, std::uint8_t> reserved[] = {
+      {WireEntityType::Voltjelly, 0x05},  {WireEntityType::Reaper, 0x06},
+      {WireEntityType::Bydomancer, 0x07}, {WireEntityType::Drillback, 0x08},
+      {WireEntityType::BydoTyrant, 0x09}, {WireEntityType::RuneOrb, 0x0A},
+      {WireEntityType::Bone, 0x0B},       {WireEntityType::Beam, 0x0C}};
+
+  for (const auto& [type, number] : reserved) {
+    SCOPED_TRACE(static_cast<int>(number));
+    const EntitySpawned spawned{
+        .entityId = 9, .entityType = type, .x = 100.0F, .y = 50.0F};
+
+    EXPECT_EQ(encodeMessage(spawned).at(4), static_cast<std::byte>(number));
+    EXPECT_EQ(decodeMessage<EntitySpawned>(encodeMessage(spawned)), spawned);
+  }
+}
+
+/**
+ * Given the entity types 0 and 13, just outside the types 1 to 12
  * When each payload is decoded
  * Then each is refused
  */
@@ -193,7 +216,7 @@ TEST(EntitySpawned, RefusesToReadAnUnknownEntityType) {
   const auto belowTheFirst =
       byteSequence({0x00, 0x00, 0x00, 0x09, 0x00, 0x03, 0x20, 0x01, 0x94});
   const auto aboveTheLast =
-      byteSequence({0x00, 0x00, 0x00, 0x09, 0x05, 0x03, 0x20, 0x01, 0x94});
+      byteSequence({0x00, 0x00, 0x00, 0x09, 0x0D, 0x03, 0x20, 0x01, 0x94});
 
   EXPECT_THROW((void)decodeMessage<EntitySpawned>(belowTheFirst),
                InvalidFieldValueException);

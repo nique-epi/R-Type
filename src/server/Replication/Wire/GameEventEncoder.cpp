@@ -1,5 +1,6 @@
 #include "GameEventEncoder.hpp"
 #include <cstdint>
+#include <optional>
 #include <utility>
 #include "EncodedMessage.hpp"
 #include "EntityDamage.hpp"
@@ -47,7 +48,7 @@ network::DepartureReason toWireReason(game::DepartureCause cause) {
 EventMessage GameEventEncoder::encode(const game::EntitySpawn& event) {
   const network::EntitySpawned message{
       .entityId = event.networkId,
-      .entityType = toWireEntityType(event.type),
+      .entityType = toWireEntityType(event.type, std::nullopt),
       .x = event.x,
       .y = event.y};
   return EventMessage{.message = network::encodedMessage(message),

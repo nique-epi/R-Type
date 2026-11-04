@@ -1,9 +1,13 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include <SFML/Graphics/Color.hpp>
+#include <cstddef>
+#include <cstdint>
+#include <utility>
 #include <vector>
 #include "AllEntityTypes.hpp"
 #include "EffectConstants.hpp"
+#include "EnemyKind.hpp"
 #include "EntityAnnouncements.hpp"
 #include "EntityIdConstants.hpp"
 #include "EntityReplicatorFixture.hpp"
@@ -79,6 +83,7 @@ using rtype::client::testing::TICK_BETWEEN_THE_LISTINGS;
 using rtype::client::testing::UNANNOUNCED_ID;
 using rtype::client::testing::WIRE_TYPE_AFTER_THE_LAST;
 using rtype::client::testing::WIRE_TYPE_BEFORE_THE_FIRST;
+using rtype::game::EnemyKind;
 using rtype::game::EntityType;
 using rtype::identifiers::NO_ENTITY_ID;
 using rtype::network::WireEntityType;
@@ -876,4 +881,70 @@ TEST_F(EntityReplicatorFixture,
   EXPECT_THAT(
       drawnEntities(components()),
       ElementsAre(drawnAs(EntityType::Enemy, BYDO_ID, SECOND_POSITION)));
+}
+
+/**
+ * Given a replicator that has applied nothing
+ * When an EntitySpawned announces each of the types the protocol reserves for
+ * the new enemies, one after the other
+ * Then each entity is an Enemy carrying the kind of its type, and a Bydo
+ * carries the kind Drifter
+ */
+TEST_F(EntityReplicatorFixture, ReadsEachEnemyWireTypeAsAnEnemyOfItsKind) {
+  const std::pair<WireEntityType, EnemyKind> reserved[] = {
+      {WireEntityType::Bydo, EnemyKind::Drifter},
+      {WireEntityType::Voltjelly, EnemyKind::Voltjelly},
+      {WireEntityType::Reaper, EnemyKind::Reaper},
+      {WireEntityType::Bydomancer, EnemyKind::Bydomancer},
+      {WireEntityType::Drillback, EnemyKind::Drillback},
+      {WireEntityType::BydoTyrant, EnemyKind::BydoTyrant}};
+  std::uint32_t id = BYDO_ID;
+
+  for (const auto& [wireType, kind] : reserved) {
+    SCOPED_TRACE(static_cast<int>(wireType));
+    replicator().apply(spawned(id, wireType, BYDO_POSITION));
+
+    std::size_t found = 0;
+    components().forEach<EnemyKind, EntityType>(
+        [&found, kind](rtype::engine::Entity, const EnemyKind& entityKind,
+                       const EntityType& type) {
+          if (entityKind == kind && type == EntityType::Enemy) {
+            ++found;
+          }
+        });
+    EXPECT_EQ(found, 1U);
+    ++id;
+  }
+}
+
+/**
+ * Given a replicator that has applied nothing
+ * When an EntitySpawned announces a rune orb, a bone and a beam
+ * Then each is an EnemyMissile with no kind
+ */
+TEST_F(EntityReplicatorFixture, ReadsTheNewProjectileTypesAsEnemyMissiles) {
+  const WireEntityType projectiles[] = {
+      WireEntityType::RuneOrb, WireEntityType::Bone, WireEntityType::Beam};
+  std::uint32_t id = ENEMY_MISSILE_ID;
+
+  for (const WireEntityType wireType : projectiles) {
+    replicator().apply(spawned(id, wireType, ENEMY_MISSILE_POSITION));
+    ++id;
+  }
+
+  std::size_t missiles = 0;
+  components().forEach<EntityType, EntityType>(
+      [&missiles](rtype::engine::Entity, const EntityType& type,
+                  const EntityType&) {
+        if (type == EntityType::EnemyMissile) {
+          ++missiles;
+        }
+      });
+  EXPECT_EQ(missiles, 3U);
+  std::size_t kinds = 0;
+  components().forEach<EnemyKind, EntityType>(
+      [&kinds](rtype::engine::Entity, const EnemyKind&, const EntityType&) {
+        ++kinds;
+      });
+  EXPECT_EQ(kinds, 0U);
 }

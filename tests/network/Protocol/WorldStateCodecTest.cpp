@@ -20,10 +20,15 @@ using rtype::network::TooManyPlayersException;
 using rtype::network::WireEntityType;
 using rtype::network::WorldState;
 using rtype::network::WorldStateCodec;
+using rtype::network::testing::BEAM_TYPE;
 using rtype::network::testing::BEYOND_RANGE_X;
 using rtype::network::testing::BEYOND_RANGE_Y;
+using rtype::network::testing::BONE_TYPE;
+using rtype::network::testing::BYDO_TYRANT_TYPE;
+using rtype::network::testing::BYDOMANCER_TYPE;
 using rtype::network::testing::byteSequence;
 using rtype::network::testing::DATAGRAM_PAYLOAD_LIMIT;
+using rtype::network::testing::DRILLBACK_TYPE;
 using rtype::network::testing::ENTITIES_FITTING_WITH_FOUR_PLAYERS;
 using rtype::network::testing::ENTITY_TYPE_ABOVE_THE_LAST;
 using rtype::network::testing::ENTITY_TYPE_BELOW_THE_FIRST;
@@ -52,7 +57,9 @@ using rtype::network::testing::oneShipState;
 using rtype::network::testing::payloadWithMotion;
 using rtype::network::testing::PLAYER_NUMBER_BYTE_ABOVE_THE_LAST;
 using rtype::network::testing::PLAYER_NUMBER_BYTE_BELOW_THE_FIRST;
+using rtype::network::testing::REAPER_TYPE;
 using rtype::network::testing::ROLLING_RIGHT_MOTION;
+using rtype::network::testing::RUNE_ORB_TYPE;
 using rtype::network::testing::SMALLEST_WIRE_COORDINATE;
 using rtype::network::testing::SOME_LIVES;
 using rtype::network::testing::SOME_SCORE;
@@ -61,6 +68,7 @@ using rtype::network::testing::someEntities;
 using rtype::network::testing::somePlayer;
 using rtype::network::testing::UNROUNDED_X;
 using rtype::network::testing::UNROUNDED_Y;
+using rtype::network::testing::VOLTJELLY_TYPE;
 
 /**
  * Given a state with one player and one entity
@@ -303,18 +311,44 @@ TEST(WorldStateCodec, SkipsAnEntityOfUnknownType) {
 }
 
 /**
- * Given a payload with an entity of the last type the wire knows, the enemy
- * missile
+ * Given a payload with an entity of the last type the wire knows, the beam
  * When it is decoded
  * Then the entity is in the state, with that type
  */
-TEST(WorldStateCodec, DecodesAnEnemyMissile) {
+TEST(WorldStateCodec, DecodesTheLastEntityType) {
   const WorldState decoded = WorldStateCodec::decode(
       byteSequence({0, 0, 0, 1, 0, 1, 0, 0, 0, EXAMPLE_ENTITY_ID,
                     LAST_ENTITY_TYPE, 0, 0, 0, 0}));
 
   ASSERT_EQ(decoded.entities.size(), 1U);
-  EXPECT_EQ(decoded.entities.front().entityType, WireEntityType::EnemyMissile);
+  EXPECT_EQ(decoded.entities.front().entityType, WireEntityType::Beam);
+}
+
+/**
+ * Given one entity of each type the protocol page reserves for the new
+ * enemies and their projectiles, by the number the page gives it
+ * When each payload is decoded
+ * Then the entity is in the state, with the type of that number
+ */
+TEST(WorldStateCodec, DecodesEveryReservedEntityTypeByItsNumber) {
+  const std::pair<unsigned int, WireEntityType> reserved[] = {
+      {VOLTJELLY_TYPE, WireEntityType::Voltjelly},
+      {REAPER_TYPE, WireEntityType::Reaper},
+      {BYDOMANCER_TYPE, WireEntityType::Bydomancer},
+      {DRILLBACK_TYPE, WireEntityType::Drillback},
+      {BYDO_TYRANT_TYPE, WireEntityType::BydoTyrant},
+      {RUNE_ORB_TYPE, WireEntityType::RuneOrb},
+      {BONE_TYPE, WireEntityType::Bone},
+      {BEAM_TYPE, WireEntityType::Beam}};
+
+  for (const auto& [number, type] : reserved) {
+    SCOPED_TRACE(number);
+    const WorldState decoded = WorldStateCodec::decode(byteSequence(
+        {0, 0, 0, 1, 0, 1, 0, 0, 0, EXAMPLE_ENTITY_ID, number, 0, 0, 0, 0}));
+
+    ASSERT_EQ(decoded.entities.size(), 1U);
+    EXPECT_EQ(decoded.entities.front().entityType, type);
+  }
 }
 
 /**
