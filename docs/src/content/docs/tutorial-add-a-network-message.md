@@ -518,7 +518,7 @@ TEST_F(GameInstanceTest, KeepsTheEmoteAPlayerSends) {
 
 Check that it can fail: remove the `registerHandler<network::Emote>` call, build, and this test turns red; put it back.
 
-Register the files in `tests/CMakeLists.txt`: add `network/Protocol/EmoteTest.cpp` to the `SOURCES` of `network_tests`; add `server/Sessions/Tracking/EmoteKeeperTest.cpp` to those of `server_sessions_tests`, which links `rtype_server_sessions` already. `GameInstanceTest.cpp` is already listed.
+Register the files in the `CMakeLists.txt` of their folders: add `EmoteTest.cpp` to the `target_sources(network_tests …)` line of `tests/network/Protocol/CMakeLists.txt`; add `EmoteKeeperTest.cpp` to the `target_sources(server_sessions_tests …)` line of `tests/server/Sessions/Tracking/CMakeLists.txt`, since `server_sessions_tests` links `rtype_server_sessions` already. `GameInstanceTest.cpp` is already listed.
 
 Run them:
 

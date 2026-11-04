@@ -20,7 +20,7 @@ Why: a review asked, for eleven places of one pull request, to move the constant
    - a scene the tests build (registries and systems, `GroundScene`) → a `TEST_F` fixture, or a class in `<ClassName>.{hpp,cpp}` as `tests/CollisionScene.{hpp,cpp}` does;
    - free helper functions and the structs they return (`shakeKeeping`, `ShakeOverASecond`) → `<Subject>Fixtures.{hpp,cpp}`, as `ProtocolFixtures.hpp` does;
    - a class that stands in for a production interface → `tests/doubles/` (`fix-process-read-the-project-map-before-placing-a-folder.md`).
-   The constants a fixture uses are in the `…TestConstants.hpp`, never defined in the fixture files. Each fixture `.cpp` is listed in the `SOURCES` of its test target in `tests/CMakeLists.txt`; in `tests/tools/`, the `CMakeLists.txt` of its `Fixtures/` folder adds it.
+   The constants a fixture uses are in the `…TestConstants.hpp`, never defined in the fixture files. Each fixture `.cpp` is added to its test target by the `CMakeLists.txt` of its own folder: in the `SOURCES` of `rtype_add_test()` when the executable is declared there, with `target_sources(<executable> PRIVATE …)` otherwise; in `tests/tools/`, the `CMakeLists.txt` of its `Fixtures/` folder adds it.
 4. **A test file the change adds or changes is brought to this shape whole**, its constants and fixtures already there included, in a `refactor` or `test` commit of its own (`fix-process-rework-preexisting-inconsistencies.md`). A test file the change only moves is reported. A file whose only change is an `#include` line rewritten because the header it names was renamed is not touched by the change: it is reported, not reworked.
 5. **Check every `…Test.cpp` the change adds or changes, before the push**, after `clang-format`:
    ```bash
