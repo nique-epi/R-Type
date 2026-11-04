@@ -2,6 +2,7 @@
 #include <string>
 #include <vector>
 #include "AudioMode.hpp"
+#include "AudioService.hpp"
 #include "AudioTestConstants.hpp"
 #include "ClientAudioModule.hpp"
 #include "ClientAudioModuleFixture.hpp"
@@ -10,9 +11,12 @@
 #include "InstallContext.hpp"
 #include "ModuleConstants.hpp"
 #include "ScreenTestConstants.hpp"
+#include "SoundConstants.hpp"
 
 using rtype::client::ASSETS_MODULE_NAME;
 using rtype::client::AudioMode;
+using rtype::client::AudioService;
+using rtype::client::CLICK_SOUND_ID;
 using rtype::client::ClientAudioModule;
 using rtype::client::IAudioService;
 using rtype::client::SETTINGS_MODULE_NAME;
@@ -88,4 +92,34 @@ TEST_F(ClientAudioModuleFixture, ModuleDependsOnTheAssetsAndTheSettings) {
   EXPECT_EQ(dependencies,
             (std::vector<std::string>{std::string{ASSETS_MODULE_NAME},
                                       std::string{SETTINGS_MODULE_NAME}}));
+}
+
+/**
+ * Given the sound module of a client with sound
+ * When it is installed
+ * Then the modules after it find the service that plays
+ */
+TEST_F(ClientAudioModuleFixture, EnabledModuleProvidesTheServiceThatPlays) {
+  ClientAudioModule module(AudioMode::Enabled);
+  InstallContext installing = context();
+
+  module.install(installing);
+
+  EXPECT_NE(dynamic_cast<AudioService*>(services().find<IAudioService>()),
+            nullptr);
+}
+
+/**
+ * Given the sound module of a client with sound, installed and turned off by
+ * the configuration, so never started
+ * When a screen plays the click through its service
+ * Then nothing plays and nothing fails, as without the module
+ */
+TEST_F(ClientAudioModuleFixture, EnabledModuleNeverStartedPlaysNothing) {
+  ClientAudioModule module(AudioMode::Enabled);
+  InstallContext installing = context();
+  module.install(installing);
+
+  EXPECT_NO_THROW(
+      services().find<IAudioService>()->sounds().play(CLICK_SOUND_ID));
 }

@@ -6,7 +6,7 @@
 #include "AssetKind.hpp"
 #include "AssetLibrary.hpp"
 #include "AssetList.hpp"
-#include "ClientException.hpp"
+#include "AssetProblemReport.hpp"
 #include "PendingAsset.hpp"
 
 namespace rtype::client {
@@ -36,7 +36,7 @@ class AssetLoadingStep {
   AssetLibrary* library_;
   std::vector<PendingAsset> pending_;
   std::size_t processedCount_{0};
-  AssetProblems problems_;
+  AssetProblemReport problems_;
 };
 
 }  // namespace rtype::client

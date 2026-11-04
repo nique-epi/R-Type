@@ -12,7 +12,7 @@ constexpr const char* BOSS_MUSIC_ID = "music/boss.ogg";
 constexpr const char* PLAYER_SHIP_ID = "sprites/player_ship.png";
 
 /** @brief What the tests write in a file: enough for a music, which is only
- * located, and unreadable as an image or a font. */
+ * located, and unreadable as an image, a font or a sound. */
 constexpr const char* NOT_AN_ASSET = "neither an image, a font nor a music";
 
 }  // namespace rtype::client::testing

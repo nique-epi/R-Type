@@ -59,7 +59,6 @@ class AudioService final : public IAudioService {
   SoundBank bank_;
   SoundPlayer sounds_;
   NullSoundPlayer silence_;
-  bool soundsRead_{false};
   MusicPlayer theme_;
   MusicPlayer gameMusic_;
   Soundtrack soundtrack_;

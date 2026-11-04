@@ -5,17 +5,14 @@
 #include "AssetKind.hpp"
 #include "AssetLibrary.hpp"
 #include "AssetList.hpp"
-#include "AssetLoadAttempt.hpp"
-#include "AssetProblemRecording.hpp"
-#include "ClientException.hpp"
-#include "PathText.hpp"
+#include "AssetProblemReport.hpp"
 #include "PendingAsset.hpp"
 
 namespace rtype::client {
 
 AssetLoadingStep::AssetLoadingStep(AssetLibrary& library,
                                    const AssetList& assets)
-    : library_(&library) {
+    : library_(&library), problems_(library) {
   library_->releaseAllExcept(assets);
   queueMissing(AssetKind::Texture, assets.textures);
   queueMissing(AssetKind::Font, assets.fonts);
@@ -27,15 +24,10 @@ void AssetLoadingStep::loadNext() {
     return;
   }
   const PendingAsset& asset = pending_[processedCount_];
-  recordProblem(
-      problems_,
-      AssetLoadAttempt{.assetId = asset.assetId,
-                       .file = library_->fileOf(asset.assetId),
-                       .result = library_->load(asset.kind, asset.assetId)});
+  problems_.record(asset.assetId, library_->load(asset.kind, asset.assetId));
   ++processedCount_;
-  if (isFinished() && hasProblems(problems_)) {
-    throw AssetLoadingException(engine::genericText(library_->folder()),
-                                problems_);
+  if (isFinished()) {
+    problems_.throwIfAny();
   }
 }
 

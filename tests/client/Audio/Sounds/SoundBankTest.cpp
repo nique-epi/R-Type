@@ -3,6 +3,7 @@
 #include <SFML/Audio/SoundBuffer.hpp>
 #include <filesystem>
 #include "AssetLibrary.hpp"
+#include "AssetTestConstants.hpp"
 #include "ClientException.hpp"
 #include "PathText.hpp"
 #include "ScreenAssetsFixtures.hpp"
@@ -18,11 +19,11 @@ using rtype::client::AssetLoadingException;
 using rtype::client::AssetNotLoadedException;
 using rtype::client::SoundBank;
 using rtype::client::testing::BADLY_NAMED_SOUND_ID;
-using rtype::client::testing::CORRUPT_CONTENT;
 using rtype::client::testing::CORRUPT_SOUND_ID;
 using rtype::client::testing::EXPLOSION_SOUND_ID;
 using rtype::client::testing::LONG_SOUND_SAMPLES;
 using rtype::client::testing::MISSING_SOUND_ID;
+using rtype::client::testing::NOT_AN_ASSET;
 using rtype::client::testing::ONLY_THE_SHOT;
 using rtype::client::testing::SHORT_SOUND_SAMPLES;
 using rtype::client::testing::SHOT_SOUND_ID;
@@ -110,7 +111,7 @@ TEST(SoundBank, LoadingAgainKeepsTheFirstSound) {
  */
 TEST(SoundBank, ReportsEverySoundItCouldNotRead) {
   const TemporaryFolder assets;
-  assets.write(CORRUPT_SOUND_ID, CORRUPT_CONTENT);
+  assets.write(CORRUPT_SOUND_ID, NOT_AN_ASSET);
   writeSilentSound(assets.path() / SHOT_SOUND_ID, SHORT_SOUND_SAMPLES);
   const AssetLibrary library{assets.path()};
   SoundBank bank;

@@ -15,7 +15,6 @@ constexpr const char* EXPLOSION_SOUND_ID = "sounds/explosion.wav";
 constexpr const char* CORRUPT_SOUND_ID = "sounds/corrupt.wav";
 constexpr const char* MISSING_SOUND_ID = "sounds/missing.wav";
 constexpr const char* BADLY_NAMED_SOUND_ID = "sounds/Shot.wav";
-constexpr const char* CORRUPT_CONTENT = "not a sound";
 
 /** @brief Two lengths of silence, so a test tells which file was read. */
 constexpr std::uint64_t SHORT_SOUND_SAMPLES = 100;

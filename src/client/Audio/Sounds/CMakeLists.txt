@@ -17,8 +17,6 @@ target_link_libraries(rtype_client_audio_sounds
     rtype_client_settings_values
   PRIVATE
     rtype_client_asset_loading
-    rtype_client_exceptions
-    rtype_engine_paths
 )
 
 rtype_enable_warnings(rtype_client_audio_sounds)

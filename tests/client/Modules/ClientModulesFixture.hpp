@@ -8,7 +8,7 @@
 #include "FrameLoop.hpp"
 #include "IModule.hpp"
 #include "LaunchOptions.hpp"
-#include "SystemClock.hpp"
+#include "SimulatedClock.hpp"
 
 /** @brief The modules of a client launched without any option, built and
  * never installed: building them opens no window and no socket. */
@@ -29,7 +29,7 @@ class ClientModulesFixture : public ::testing::Test {
   [[nodiscard]] std::size_t positionOf(std::string_view name);
 
  private:
-  rtype::engine::SystemClock clock_;
+  SimulatedClock clock_;
   rtype::client::FrameLoop loop_;
   rtype::client::LaunchOptions options_;
 };

@@ -29,7 +29,7 @@ AudioService::~AudioService() {
 }
 
 ISoundPlayer& AudioService::sounds() {
-  if (!soundsRead_) {
+  if (bank_.isEmpty()) {
     return silence_;
   }
   return sounds_;
@@ -43,7 +43,6 @@ void AudioService::playGameMusic() { soundtrack_.playGameMusic(); }
 
 void AudioService::open() {
   bank_.load(*library_, ALL_SOUND_IDS);
-  soundsRead_ = true;
   theme_.open(*library_);
   gameMusic_.open(*library_);
 }
