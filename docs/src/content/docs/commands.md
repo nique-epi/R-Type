@@ -89,7 +89,7 @@ Client modules:
 | `settings` | `logger` |
 | `window` | `settings` |
 | `audio` | `assets`, `settings` |
-| `screens` | `assets`, `settings`, `audio`, `window`, `connection` |
+| `screens` | `assets`, `settings`, `window`, `connection`; it uses `audio` when it is on, and plays nothing otherwise |
 | `menus`, `lobby`, `game` | `screens` |
 
 Master modules:
