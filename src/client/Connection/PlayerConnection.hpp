@@ -45,7 +45,7 @@ class PlayerConnection {
    * the next copy. The server frees the place of the player as soon as one
    * copy reaches it. When none does, lost on the way, or still in flight over
    * a simulated network when the socket closes (see NetworkThread::close()),
-   * it frees the place once the player was silent for SESSION_TIMEOUT.
+   * it frees the place once the player was silent for SESSION_SILENCE_LIMIT.
    */
   void leave();
 
