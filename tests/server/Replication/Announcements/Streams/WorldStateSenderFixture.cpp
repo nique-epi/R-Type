@@ -106,7 +106,11 @@ void WorldStateSenderFixture::runTicks(std::size_t count) {
 
 network::WorldState WorldStateSenderFixture::decodedState(
     std::size_t sentIndex) const {
-  return onlyMessageIn<network::WorldState>(sent_.at(sentIndex));
+  const network::DeltaWorldState part =
+      onlyMessageIn<network::DeltaWorldState>(sent_.at(sentIndex));
+  EXPECT_EQ(part.baseDistance, network::NO_REFERENCE_DISTANCE);
+  return network::WorldState{
+      .tick = part.tick, .players = part.players, .entities = part.changed};
 }
 
 network::PacketHeader WorldStateSenderFixture::headerOf(
