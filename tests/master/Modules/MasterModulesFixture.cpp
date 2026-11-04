@@ -1,9 +1,12 @@
 #include "MasterModulesFixture.hpp"
 #include <httplib.h>
+#include <algorithm>
 #include <array>
 #include <cstdint>
 #include <filesystem>
+#include <iterator>
 #include <memory>
+#include <optional>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -30,7 +33,8 @@ MasterModulesFixture::masterApplication(
     std::vector<std::string> lines) {
   std::vector<std::unique_ptr<rtype::engine::IModule>> modules =
       rtype::master::masterModules(
-          journalOptions(), []([[maybe_unused]] const std::string& reason) {});
+          journalOptions(), []([[maybe_unused]] const std::string& reason) {},
+          std::nullopt);
   for (std::unique_ptr<rtype::engine::IModule>& module : extra) {
     modules.push_back(std::move(module));
   }
@@ -49,16 +53,20 @@ MasterModulesFixture::masterApplication(
 
 std::unique_ptr<rtype::engine::Application>
 MasterModulesFixture::keyApplication(rtype::master::ServerKeyOrder order) {
+  std::vector<std::string> configuration{
+      databaseLine(folder() / TEST_DATABASE_FILE),
+      rtype::engine::settingLine(rtype::master::PORT_SETTING_NAME,
+                                 std::to_string(port_))};
+  std::ranges::copy(rtype::master::keyIssueLines(),
+                    std::back_inserter(configuration));
   return std::make_unique<rtype::engine::Application>(
       rtype::engine::LoopStages(rtype::master::MASTER_LOOP_STAGES),
-      rtype::master::serverKeyModules(journalOptions(), std::move(order)),
+      rtype::master::masterModules(
+          journalOptions(), []([[maybe_unused]] const std::string& reason) {},
+          std::move(order)),
       rtype::engine::configurationStep(
           folder() / rtype::master::MASTER_CONFIGURATION_FILE_NAME,
-          std::vector<std::string>{
-              databaseLine(folder() / TEST_DATABASE_FILE),
-              rtype::engine::settingLine(rtype::master::PORT_SETTING_NAME,
-                                         std::to_string(port_))},
-          report_));
+          std::move(configuration), report_));
 }
 
 std::string MasterModulesFixture::databaseLine(

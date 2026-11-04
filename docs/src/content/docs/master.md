@@ -58,7 +58,7 @@ The master reads `master.cfg`, in the folder it is started from, between the ins
 | `http` | `MasterHttpModule` | `logger` | the port, and the thread that listens on it |
 | `servers` | `ServersModule` | `logger`, `storage`, `server-keys`, `http` | nothing: its routes run once `http` listens |
 
-The storage starts before the HTTP API, so a database the master cannot open stops it before its port opens, and the API stops before the database closes. `--new-server-key` runs `serverKeyModules()` instead: `logger`, `storage` and `server-keys` only, so no port opens.
+The storage starts before the HTTP API, so a database the master cannot open stops it before its port opens, and the API stops before the database closes. `--new-server-key` runs the same modules with `http` and `servers` turned off (`keyIssueLines()`, after `master.cfg`), so no port opens and every setting of `master.cfg` stays known; the master stops once its modules started.
 
 ## The HTTP API: `MasterHttpServer`
 
@@ -98,7 +98,7 @@ An admin issues the key of a game server on the machine of the master, which pri
 - **The key** is `SERVER_KEY_BYTES` (32) drawn by `hydro_random_buf()` of libhydrogen, which seeds itself from the system (`/dev/urandom` on Linux once `/dev/random` is ready, `/dev/urandom` on macOS, `RtlGenRandom` on Windows), written as 64 lowercase hexadecimal digits on the standard output, never in the journal.
 - **The database keeps its fingerprint only**, `hydro_hash_hash()` of the key in the context `FINGERPRINT_CONTEXT`, so a copy of the file lets nobody register as a server. A key is 256 random bits, so a fast hash is enough: nobody can try every key, unlike every password.
 - **A key that is not 64 lowercase hexadecimal digits** is refused before its fingerprint is computed.
-- **In this mode** the HTTP module does not run, so a `set port` line of `master.cfg` is reported as an unknown setting; the key is issued all the same.
+- **A `master.cfg` that turns `server-keys` off** leaves no key to print: the binary says so and exits with code 1.
 
 Revoking a key, and issuing one from the web site, are not written yet.
 

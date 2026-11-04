@@ -34,9 +34,10 @@ class MasterModulesFixture : public ::testing::Test {
       std::vector<std::string> lines);
 
   /**
-   * @returns An application of the modules `--new-server-key` runs, with
-   * @p order, not started; it is given the database of the folder and the
-   * free port, so a module that listened would take that port.
+   * @returns An application of the modules of the master as
+   * `--new-server-key` runs them, with @p order, not started; it is given the
+   * database of the folder and the free port, so a module that listened would
+   * take that port.
    */
   [[nodiscard]] std::unique_ptr<rtype::engine::Application> keyApplication(
       rtype::master::ServerKeyOrder order);

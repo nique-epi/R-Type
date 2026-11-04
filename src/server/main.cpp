@@ -1,12 +1,15 @@
+#include <algorithm>
 #include <exception>
 #include <filesystem>
 #include <functional>
 #include <iostream>
+#include <iterator>
 #include <memory>
 #include <optional>
 #include <span>
 #include <string>
 #include <string_view>
+#include <utility>
 #include <vector>
 #include "Application.hpp"
 #include "ConfigurationLog.hpp"
@@ -52,6 +55,8 @@ struct ProgramRun {
   std::function<std::vector<std::unique_ptr<rtype::engine::IModule>>(
       rtype::server::StopRequest&)>
       modules;
+  /** @brief Whether it runs until asked to stop, or stops once started. */
+  bool waitsForStop{true};
 };
 
 /**
@@ -85,7 +90,8 @@ int runUntilStopped(const ProgramRun& program) {
     rtype::engine::logConfigurationReport(
         configurationReport, program.configurationFile,
         rtype::logging::Logger{std::string{program.loggerName}});
-    const rtype::server::StopReason reason = stopRequest.wait();
+    const rtype::server::StopReason reason =
+        program.waitsForStop ? stopRequest.wait() : rtype::server::StopReason{};
     application.stop();
     if (reason.failed) {
       reportFailure(program, reason.text);
@@ -122,40 +128,54 @@ int runServer(std::span<const std::string_view> options) {
       }});
 }
 
-/**
- * @returns How the master runs with @p launchOptions, its modules left for the
- * caller to choose.
- */
+/** @returns How the master runs with @p launchOptions and @p modules. */
 ProgramRun masterProgram(
-    const rtype::master::MasterLaunchOptions& launchOptions) {
+    const rtype::master::MasterLaunchOptions& launchOptions,
+    std::function<std::vector<std::unique_ptr<rtype::engine::IModule>>(
+        rtype::server::StopRequest&)>
+        modules) {
   return ProgramRun{
       .label = rtype::server::MASTER_MODE_NAME,
       .loggerName = rtype::master::MASTER_LOGGER_NAME,
       .configurationFile = rtype::master::MASTER_CONFIGURATION_FILE_NAME,
       .stages = rtype::master::MASTER_LOOP_STAGES,
       .forcedLines = launchOptions.forcedLines(),
-      .modules = {}};
+      .modules = std::move(modules)};
 }
 
 /**
- * @brief Issues a key for the game server @p name: the key is printed on the
- * standard output once, never in the journal, and the master stops.
- * @returns the exit code: 0 once the key is printed.
+ * @brief Issues a key for the game server @p name with the modules of the
+ * master, `http` and `servers` off: the key is printed on the standard output
+ * once, never in the journal, and the master stops at once.
+ * @returns the exit code: 0 once the key is printed, 1 when none was issued,
+ * as when master.cfg turns `server-keys` off.
  */
 int issueServerKey(const rtype::master::MasterLaunchOptions& launchOptions,
                    const std::string& name) {
-  ProgramRun program = masterProgram(launchOptions);
-  program.modules = [&launchOptions,
-                     &name](rtype::server::StopRequest& stopRequest) {
-    return rtype::master::serverKeyModules(
-        launchOptions.logOptions(),
-        rtype::master::ServerKeyOrder{
-            .name = name, .onIssued = [&stopRequest](const std::string& key) {
-              std::cout << key << '\n';
-              stopRequest.request();
-            }});
-  };
-  return runUntilStopped(program);
+  bool issued = false;
+  ProgramRun program = masterProgram(
+      launchOptions, [&launchOptions, &name,
+                      &issued](rtype::server::StopRequest& stopRequest) {
+        return rtype::master::masterModules(
+            launchOptions.logOptions(),
+            [&stopRequest](const std::string& reason) {
+              stopRequest.fail(reason);
+            },
+            rtype::master::ServerKeyOrder{
+                .name = name, .onIssued = [&issued](const std::string& key) {
+                  std::cout << key << '\n';
+                  issued = true;
+                }});
+      });
+  program.waitsForStop = false;
+  std::ranges::copy(rtype::master::keyIssueLines(),
+                    std::back_inserter(program.forcedLines));
+  const int exitCode = runUntilStopped(program);
+  if (exitCode == 0 && !issued) {
+    reportFailure(program, std::string{rtype::master::NO_KEY_ISSUED_TEXT});
+    return 1;
+  }
+  return exitCode;
 }
 
 /**
@@ -173,14 +193,15 @@ int runMaster(std::span<const std::string_view> options) {
       name.has_value()) {
     return issueServerKey(launchOptions, *name);
   }
-  ProgramRun program = masterProgram(launchOptions);
-  program.modules = [&launchOptions](rtype::server::StopRequest& stopRequest) {
-    return rtype::master::masterModules(
-        launchOptions.logOptions(), [&stopRequest](const std::string& reason) {
-          stopRequest.fail(reason);
-        });
-  };
-  return runUntilStopped(program);
+  return runUntilStopped(masterProgram(
+      launchOptions, [&launchOptions](rtype::server::StopRequest& stopRequest) {
+        return rtype::master::masterModules(
+            launchOptions.logOptions(),
+            [&stopRequest](const std::string& reason) {
+              stopRequest.fail(reason);
+            },
+            std::nullopt);
+      }));
 }
 
 }  // namespace

@@ -1,6 +1,8 @@
 #pragma once
 
 #include <memory>
+#include <optional>
+#include <string>
 #include <vector>
 #include "FailureReport.hpp"
 #include "IModule.hpp"
@@ -21,19 +23,20 @@ namespace rtype::master {
  *
  * @param logOptions Applied by the logger module when it starts.
  * @param onFailure Told by the HTTP module when its server stops on its own.
+ * @param order The key the keys module issues when it starts, for
+ * `--new-server-key`; empty for a master that runs.
  * @throws engine::UnknownExecutablePathException when the system does not
  * tell where the executable is, next to which the database lies by default.
  */
 [[nodiscard]] std::vector<std::unique_ptr<engine::IModule>> masterModules(
-    const logging::LogLaunchOptions& logOptions,
-    const FailureReport& onFailure);
+    const logging::LogLaunchOptions& logOptions, const FailureReport& onFailure,
+    std::optional<ServerKeyOrder> order);
 
 /**
- * @brief The modules `--new-server-key` runs: the logger, the storage and the
- * keys, which issue the key of @p order when they start. No port opens.
- * @throws engine::UnknownExecutablePathException as masterModules() does.
+ * @returns The lines `--new-server-key` adds after the configuration: they
+ * turn off `servers`, then `http`, which `servers` needs, so the master opens
+ * no port while every setting of master.cfg stays known.
  */
-[[nodiscard]] std::vector<std::unique_ptr<engine::IModule>> serverKeyModules(
-    const logging::LogLaunchOptions& logOptions, ServerKeyOrder order);
+[[nodiscard]] std::vector<std::string> keyIssueLines();
 
 }  // namespace rtype::master

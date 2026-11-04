@@ -52,4 +52,8 @@ constexpr std::string_view DATABASE_FILE_NAME = "r-type_master.db";
  */
 constexpr std::string_view NEW_SERVER_KEY_OPTION = "--new-server-key";
 
+/** @brief Why `--new-server-key` ends in error with no key printed. */
+constexpr std::string_view NO_KEY_ISSUED_TEXT =
+    "no key issued: master.cfg turns the module server-keys off";
+
 }  // namespace rtype::master

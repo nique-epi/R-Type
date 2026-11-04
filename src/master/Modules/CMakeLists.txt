@@ -9,7 +9,9 @@ target_link_libraries(rtype_master_modules
     rtype_master_http_module
     rtype_master_server_keys_module
   PRIVATE
+    rtype_engine_module_switches
     rtype_engine_paths
+    rtype_master_constants
     rtype_master_logger_module
     rtype_master_servers_module
     rtype_master_storage_module

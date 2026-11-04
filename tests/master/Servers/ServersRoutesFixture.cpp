@@ -3,6 +3,7 @@
 #include <array>
 #include <chrono>
 #include <memory>
+#include <optional>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -27,7 +28,7 @@ ServersRoutesFixture::ServersRoutesFixture()
       rtype::engine::LoopStages(rtype::master::MASTER_LOOP_STAGES),
       rtype::master::masterModules(
           logOptionsOf(quiet, journal_.path()),
-          []([[maybe_unused]] const std::string& reason) {}),
+          []([[maybe_unused]] const std::string& reason) {}, std::nullopt),
       rtype::engine::configurationStep(
           folder_.path() / rtype::master::MASTER_CONFIGURATION_FILE_NAME,
           std::vector<std::string>{
