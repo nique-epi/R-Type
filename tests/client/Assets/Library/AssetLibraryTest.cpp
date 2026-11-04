@@ -3,8 +3,10 @@
 #include <filesystem>
 #include "AssetKind.hpp"
 #include "AssetLibrary.hpp"
+#include "AssetLibraryTestConstants.hpp"
 #include "AssetList.hpp"
 #include "AssetLoadResult.hpp"
+#include "AssetTestConstants.hpp"
 #include "ClientException.hpp"
 #include "TemporaryFolder.hpp"
 
@@ -13,22 +15,17 @@ using rtype::client::AssetLibrary;
 using rtype::client::AssetList;
 using rtype::client::AssetLoadResult;
 using rtype::client::AssetNotLoadedException;
+using rtype::client::testing::ASSETS_FOLDER;
+using rtype::client::testing::BOSS_MUSIC_ID;
+using rtype::client::testing::CORRUPT_ID;
+using rtype::client::testing::ESCAPING_MUSIC_ID;
+using rtype::client::testing::HUD_FONT_ID;
+using rtype::client::testing::NOT_AN_ASSET;
+using rtype::client::testing::OUTSIDE_FILE_NAME;
+using rtype::client::testing::PLAYER_SHIP_ID;
+using rtype::client::testing::STAGE_MUSIC_ID;
 using ::testing::HasSubstr;
 using ::testing::ThrowsMessage;
-
-namespace {
-
-constexpr const char* ASSETS_FOLDER = "assets";
-constexpr const char* PLAYER_SHIP_ID = "sprites/player_ship.png";
-constexpr const char* HUD_FONT_ID = "fonts/hud.ttf";
-constexpr const char* STAGE_MUSIC_ID = "music/stage.ogg";
-constexpr const char* BOSS_MUSIC_ID = "music/boss.ogg";
-constexpr const char* CORRUPT_ID = "corrupt/asset.bin";
-constexpr const char* OUTSIDE_FILE_NAME = "outside.ogg";
-constexpr const char* ESCAPING_MUSIC_ID = "../outside.ogg";
-constexpr const char* CORRUPT_CONTENT = "neither an image, a font nor a music";
-
-}  // namespace
 
 /**
  * Given an empty assets folder
@@ -50,7 +47,7 @@ TEST(AssetLibrary, ReportsAMissingFile) {
  */
 TEST(AssetLibrary, RejectsAnIdThatLeavesTheFolder) {
   const TemporaryFolder repository;
-  repository.write(OUTSIDE_FILE_NAME, CORRUPT_CONTENT);
+  repository.write(OUTSIDE_FILE_NAME, NOT_AN_ASSET);
   AssetLibrary library{repository.path() / ASSETS_FOLDER};
 
   EXPECT_EQ(library.load(AssetKind::Music, ESCAPING_MUSIC_ID),
@@ -64,7 +61,7 @@ TEST(AssetLibrary, RejectsAnIdThatLeavesTheFolder) {
  */
 TEST(AssetLibrary, ReportsAnUnreadableFont) {
   const TemporaryFolder assets;
-  assets.write(CORRUPT_ID, CORRUPT_CONTENT);
+  assets.write(CORRUPT_ID, NOT_AN_ASSET);
   AssetLibrary library{assets.path()};
 
   EXPECT_EQ(library.load(AssetKind::Font, CORRUPT_ID),
@@ -78,7 +75,7 @@ TEST(AssetLibrary, ReportsAnUnreadableFont) {
  */
 TEST(AssetLibrary, LocatesMusicWithoutReadingIt) {
   const TemporaryFolder assets;
-  assets.write(STAGE_MUSIC_ID, CORRUPT_CONTENT);
+  assets.write(STAGE_MUSIC_ID, NOT_AN_ASSET);
   AssetLibrary library{assets.path()};
 
   const AssetLoadResult result = library.load(AssetKind::Music, STAGE_MUSIC_ID);
@@ -148,8 +145,8 @@ TEST(AssetLibrary, FontThatIsNotLoadedIsNamed) {
  */
 TEST(AssetLibrary, ReleaseKeepsTheListedAssets) {
   const TemporaryFolder assets;
-  assets.write(STAGE_MUSIC_ID, CORRUPT_CONTENT);
-  assets.write(BOSS_MUSIC_ID, CORRUPT_CONTENT);
+  assets.write(STAGE_MUSIC_ID, NOT_AN_ASSET);
+  assets.write(BOSS_MUSIC_ID, NOT_AN_ASSET);
   AssetLibrary library{assets.path()};
   static_cast<void>(library.load(AssetKind::Music, STAGE_MUSIC_ID));
   static_cast<void>(library.load(AssetKind::Music, BOSS_MUSIC_ID));
@@ -168,8 +165,8 @@ TEST(AssetLibrary, ReleaseKeepsTheListedAssets) {
  */
 TEST(AssetLibrary, ReleaseDropsTheOtherAssets) {
   const TemporaryFolder assets;
-  assets.write(STAGE_MUSIC_ID, CORRUPT_CONTENT);
-  assets.write(BOSS_MUSIC_ID, CORRUPT_CONTENT);
+  assets.write(STAGE_MUSIC_ID, NOT_AN_ASSET);
+  assets.write(BOSS_MUSIC_ID, NOT_AN_ASSET);
   AssetLibrary library{assets.path()};
   static_cast<void>(library.load(AssetKind::Music, STAGE_MUSIC_ID));
   static_cast<void>(library.load(AssetKind::Music, BOSS_MUSIC_ID));
@@ -187,7 +184,7 @@ TEST(AssetLibrary, ReleaseDropsTheOtherAssets) {
  */
 TEST(AssetLibrary, AssetNeverLoadedIsNotLoaded) {
   const TemporaryFolder assets;
-  assets.write(STAGE_MUSIC_ID, CORRUPT_CONTENT);
+  assets.write(STAGE_MUSIC_ID, NOT_AN_ASSET);
   const AssetLibrary library{assets.path()};
 
   EXPECT_FALSE(library.isLoaded(AssetKind::Music, STAGE_MUSIC_ID));
@@ -200,7 +197,7 @@ TEST(AssetLibrary, AssetNeverLoadedIsNotLoaded) {
  */
 TEST(AssetLibrary, LoadedAssetIsLoaded) {
   const TemporaryFolder assets;
-  assets.write(STAGE_MUSIC_ID, CORRUPT_CONTENT);
+  assets.write(STAGE_MUSIC_ID, NOT_AN_ASSET);
   AssetLibrary library{assets.path()};
   static_cast<void>(library.load(AssetKind::Music, STAGE_MUSIC_ID));
 
@@ -214,7 +211,7 @@ TEST(AssetLibrary, LoadedAssetIsLoaded) {
  */
 TEST(AssetLibrary, ReleaseKeepsPermanentAssets) {
   const TemporaryFolder assets;
-  assets.write(STAGE_MUSIC_ID, CORRUPT_CONTENT);
+  assets.write(STAGE_MUSIC_ID, NOT_AN_ASSET);
   AssetLibrary library{assets.path()};
   static_cast<void>(library.load(AssetKind::Music, STAGE_MUSIC_ID));
   const std::filesystem::path* stageBeforeRelease =
@@ -233,7 +230,7 @@ TEST(AssetLibrary, ReleaseKeepsPermanentAssets) {
  */
 TEST(AssetLibrary, PermanenceAppliesToAssetsLoadedLater) {
   const TemporaryFolder assets;
-  assets.write(STAGE_MUSIC_ID, CORRUPT_CONTENT);
+  assets.write(STAGE_MUSIC_ID, NOT_AN_ASSET);
   AssetLibrary library{assets.path()};
   library.keepPermanently(AssetList{.music = {STAGE_MUSIC_ID}});
   static_cast<void>(library.load(AssetKind::Music, STAGE_MUSIC_ID));
@@ -262,8 +259,8 @@ TEST(AssetLibrary, EmptyListIsLoaded) {
  */
 TEST(AssetLibrary, ListIsNotLoadedWhileOneAssetIsMissing) {
   const TemporaryFolder assets;
-  assets.write(STAGE_MUSIC_ID, CORRUPT_CONTENT);
-  assets.write(BOSS_MUSIC_ID, CORRUPT_CONTENT);
+  assets.write(STAGE_MUSIC_ID, NOT_AN_ASSET);
+  assets.write(BOSS_MUSIC_ID, NOT_AN_ASSET);
   AssetLibrary library{assets.path()};
   static_cast<void>(library.load(AssetKind::Music, STAGE_MUSIC_ID));
 
@@ -278,8 +275,8 @@ TEST(AssetLibrary, ListIsNotLoadedWhileOneAssetIsMissing) {
  */
 TEST(AssetLibrary, ListIsLoadedOnceEveryAssetIs) {
   const TemporaryFolder assets;
-  assets.write(STAGE_MUSIC_ID, CORRUPT_CONTENT);
-  assets.write(BOSS_MUSIC_ID, CORRUPT_CONTENT);
+  assets.write(STAGE_MUSIC_ID, NOT_AN_ASSET);
+  assets.write(BOSS_MUSIC_ID, NOT_AN_ASSET);
   AssetLibrary library{assets.path()};
   static_cast<void>(library.load(AssetKind::Music, STAGE_MUSIC_ID));
   static_cast<void>(library.load(AssetKind::Music, BOSS_MUSIC_ID));

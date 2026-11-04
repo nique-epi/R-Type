@@ -1,108 +1,34 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
-#include <filesystem>
-#include <memory>
-#include <vector>
 #include "AssetKind.hpp"
-#include "AssetLibrary.hpp"
 #include "AssetList.hpp"
+#include "AssetTestConstants.hpp"
 #include "ClientException.hpp"
 #include "GameScreenIdConstants.hpp"
-#include "IScreen.hpp"
-#include "LoadingScreen.hpp"
-#include "LoadingScreenParts.hpp"
+#include "LoadingScreenFixture.hpp"
 #include "MenuScreenIdConstants.hpp"
 #include "PathText.hpp"
-#include "RecordingScreen.hpp"
-#include "ScreenId.hpp"
-#include "ScreenStack.hpp"
 #include "ScreenTestConstants.hpp"
-#include "TemporaryFolder.hpp"
 
 using rtype::client::AssetKind;
-using rtype::client::AssetLibrary;
 using rtype::client::AssetList;
 using rtype::client::AssetLoadingException;
 using rtype::client::GAME_SCREEN;
-using rtype::client::IScreen;
-using rtype::client::LoadingScreen;
-using rtype::client::LoadingScreenParts;
 using rtype::client::OPTIONS_SCREEN;
-using rtype::client::ScreenId;
-using rtype::client::ScreenStack;
+using rtype::client::testing::BOSS_MUSIC_ID;
+using rtype::client::testing::STAGE_MUSIC_ID;
 using rtype::engine::genericText;
 using ::testing::ElementsAre;
 using ::testing::HasSubstr;
 using ::testing::IsEmpty;
 using ::testing::ThrowsMessage;
 
-namespace {
-
-constexpr const char* STAGE_MUSIC_ID = "music/stage.ogg";
-constexpr const char* BOSS_MUSIC_ID = "music/boss.ogg";
-constexpr const char* MUSIC_CONTENT = "a music the library only locates";
-
-/** @brief A stack whose first screen is a loading screen for toLoad_, and
- * whose next screens are recording doubles. */
-class LoadingScreenTest : public ::testing::Test {
- protected:
-  void loadTwoMusicFiles() {
-    folder_.write(STAGE_MUSIC_ID, MUSIC_CONTENT);
-    folder_.write(BOSS_MUSIC_ID, MUSIC_CONTENT);
-    toLoad_ = AssetList{.music = {STAGE_MUSIC_ID, BOSS_MUSIC_ID}};
-  }
-
-  void showLoadingScreenOf(ScreenId screen) {
-    screens_.replaceAll(screen);
-    screens_.applyPendingChanges();
-  }
-
-  void runFrame() {
-    screens_.update(ONE_FRAME);
-    screens_.applyPendingChanges();
-  }
-
-  void loadOnly(const AssetList& assets) { toLoad_ = assets; }
-
-  ScreenStack& screens() { return screens_; }
-
-  [[nodiscard]] const AssetLibrary& library() const { return library_; }
-
-  [[nodiscard]] const std::filesystem::path& folder() const {
-    return folder_.path();
-  }
-
-  [[nodiscard]] const std::vector<JournalEntry>& journal() const {
-    return journal_;
-  }
-
- private:
-  TemporaryFolder folder_;
-  AssetLibrary library_{folder_.path()};
-  AssetList toLoad_;
-  bool loadingScreenBuilt_ = false;
-  std::vector<JournalEntry> journal_;
-  ScreenStack screens_{[this](ScreenId screen) -> std::unique_ptr<IScreen> {
-    if (!loadingScreenBuilt_) {
-      loadingScreenBuilt_ = true;
-      return std::make_unique<LoadingScreen>(
-          LoadingScreenParts{.navigator = screens_,
-                             .library = library_,
-                             .assets = toLoad_,
-                             .nextScreen = screen});
-    }
-    return std::make_unique<RecordingScreen>(screen, journal_);
-  }};
-};
-
-}  // namespace
-
 /**
  * Given a loading screen for two music files
  * When one frame passes
  * Then exactly one of the two files has been read
  */
-TEST_F(LoadingScreenTest, ReadsOneFilePerFrame) {
+TEST_F(LoadingScreenFixture, ReadsOneFilePerFrame) {
   loadTwoMusicFiles();
   showLoadingScreenOf(GAME_SCREEN);
 
@@ -117,7 +43,7 @@ TEST_F(LoadingScreenTest, ReadsOneFilePerFrame) {
  * When one frame passes
  * Then its screen is not shown yet
  */
-TEST_F(LoadingScreenTest, WaitsForEveryFileBeforeShowingItsScreen) {
+TEST_F(LoadingScreenFixture, WaitsForEveryFileBeforeShowingItsScreen) {
   loadTwoMusicFiles();
   showLoadingScreenOf(GAME_SCREEN);
 
@@ -131,7 +57,7 @@ TEST_F(LoadingScreenTest, WaitsForEveryFileBeforeShowingItsScreen) {
  * When two frames pass
  * Then its screen replaces it
  */
-TEST_F(LoadingScreenTest, GivesWayToItsScreenOnceEveryFileIsLoaded) {
+TEST_F(LoadingScreenFixture, GivesWayToItsScreenOnceEveryFileIsLoaded) {
   loadTwoMusicFiles();
   showLoadingScreenOf(GAME_SCREEN);
 
@@ -147,7 +73,7 @@ TEST_F(LoadingScreenTest, GivesWayToItsScreenOnceEveryFileIsLoaded) {
  * When the first frame passes
  * Then the options are shown, by their identifier
  */
-TEST_F(LoadingScreenTest, AsksForTheScreenItLoadsFor) {
+TEST_F(LoadingScreenFixture, AsksForTheScreenItLoadsFor) {
   showLoadingScreenOf(OPTIONS_SCREEN);
 
   runFrame();
@@ -161,7 +87,7 @@ TEST_F(LoadingScreenTest, AsksForTheScreenItLoadsFor) {
  * When the first frame passes
  * Then its screen is shown at once
  */
-TEST_F(LoadingScreenTest, NothingToLoadShowsItsScreenAtTheFirstFrame) {
+TEST_F(LoadingScreenFixture, NothingToLoadShowsItsScreenAtTheFirstFrame) {
   showLoadingScreenOf(GAME_SCREEN);
 
   runFrame();
@@ -175,7 +101,7 @@ TEST_F(LoadingScreenTest, NothingToLoadShowsItsScreenAtTheFirstFrame) {
  * When that screen leaves the stack
  * Then the stack is empty, the loading screen being gone
  */
-TEST_F(LoadingScreenTest, LeavesTheStackOnceItsScreenIsShown) {
+TEST_F(LoadingScreenFixture, LeavesTheStackOnceItsScreenIsShown) {
   showLoadingScreenOf(GAME_SCREEN);
   runFrame();
 
@@ -190,7 +116,7 @@ TEST_F(LoadingScreenTest, LeavesTheStackOnceItsScreenIsShown) {
  * When the frame that loads it passes
  * Then an error naming the missing file stops the loading
  */
-TEST_F(LoadingScreenTest, MissingFileStopsTheLoadingWithItsPath) {
+TEST_F(LoadingScreenFixture, MissingFileStopsTheLoadingWithItsPath) {
   loadOnly(AssetList{.music = {STAGE_MUSIC_ID}});
   showLoadingScreenOf(GAME_SCREEN);
 
