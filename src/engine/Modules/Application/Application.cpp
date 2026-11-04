@@ -9,6 +9,7 @@
 #include <string_view>
 #include <utility>
 #include <vector>
+#include "CommandInterpreter.hpp"
 #include "ConfigurationStep.hpp"
 #include "EngineException.hpp"
 #include "IModule.hpp"
