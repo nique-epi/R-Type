@@ -8,6 +8,7 @@
 #include <string_view>
 #include <system_error>
 #include <utility>
+#include "LogLaunchSettings.hpp"
 #include "Logger.hpp"
 #include "LoggingConstants.hpp"
 #include "LoggingException.hpp"
@@ -16,39 +17,35 @@ namespace rtype::logging {
 
 namespace {
 
-struct LaunchSettings {
-  std::optional<LogLevel> level;
-  LogOutput output;
-};
-
 struct LaunchOption {
   std::string_view name;
   bool takesValue;
-  void (*record)(LaunchSettings& settings, std::string_view value);
+  void (*record)(LogLaunchSettings& settings, std::string_view value);
 };
 
-void recordLevel(LaunchSettings& settings, std::string_view levelName) {
+void recordLevel(LogLaunchSettings& settings, std::string_view levelName) {
   settings.level = Logger::parseLevel(levelName);
   if (!settings.level.has_value()) {
     throw UnknownLogLevelException(std::string(levelName));
   }
 }
 
-void recordFilePath(LaunchSettings& settings, std::string_view filePath) {
+void recordFilePath(LogLaunchSettings& settings, std::string_view filePath) {
   settings.output.filePath = std::filesystem::path(filePath);
+  settings.journalIsDefault = false;
 }
 
-void recordNoFile(LaunchSettings& settings,
+void recordNoFile(LogLaunchSettings& settings,
                   [[maybe_unused]] std::string_view value) {
   settings.output.filePath.reset();
 }
 
-void recordStderr(LaunchSettings& settings,
+void recordStderr(LogLaunchSettings& settings,
                   [[maybe_unused]] std::string_view value) {
   settings.output.toStderr = true;
 }
 
-void recordNoStderr(LaunchSettings& settings,
+void recordNoStderr(LogLaunchSettings& settings,
                     [[maybe_unused]] std::string_view value) {
   settings.output.toStderr = false;
 }
@@ -146,10 +143,43 @@ void announceJournal(const LogOutput& output) {
   logger.info("journal: ", absoluteJournalPath(*output.filePath).string());
 }
 
+/**
+ * @brief Sends the Logger to the output of @p settings. When the default
+ * journal cannot be opened, as in a folder the player cannot write to, it sends
+ * it to standard error alone, if asked, instead.
+ * @returns the output the Logger writes to.
+ * @throws LogFileOpenException when a journal given with `--log-file` cannot be
+ * opened.
+ */
+LogOutput applyOutput(const LogLaunchSettings& settings) {
+  try {
+    Logger::setOutput(settings.output);
+    return settings.output;
+  } catch (const LogFileOpenException&) {
+    if (!settings.journalIsDefault) {
+      throw;
+    }
+  }
+  const LogOutput withoutJournal{.toStderr = settings.output.toStderr,
+                                 .filePath = std::nullopt};
+  Logger::setOutput(withoutJournal);
+  return withoutJournal;
+}
+
+/** @brief Writes, at the warn level, that the default journal @p journal could
+ * not be opened, so the player knows why no file holds the lines. */
+void announceUnopenedJournal(const std::filesystem::path& journal) {
+  const Logger logger{std::string{LOGGING_LOGGER_NAME}};
+  logger.warn("cannot open the journal ", absoluteJournalPath(journal).string(),
+              ", writing none");
+}
+
 }  // namespace
 
 LogLaunchOptions::LogLaunchOptions(const std::filesystem::path& defaultJournal)
-    : output_{.toStderr = true, .filePath = defaultJournal} {}
+    : settings_{
+          .level = std::nullopt,
+          .output = LogOutput{.toStderr = true, .filePath = defaultJournal}} {}
 
 std::size_t LogLaunchOptions::readOption(
     std::span<const std::string_view> arguments) {
@@ -160,19 +190,21 @@ std::size_t LogLaunchOptions::readOption(
   std::size_t index = 0;
   const std::string_view value =
       option->takesValue ? valueAfter(arguments, index) : std::string_view{};
-  LaunchSettings settings{.level = level_, .output = output_};
+  LogLaunchSettings settings = settings_;
   option->record(settings, value);
-  level_ = settings.level;
-  output_ = std::move(settings.output);
+  settings_ = std::move(settings);
   return index + 1;
 }
 
 void LogLaunchOptions::apply() const {
-  Logger::setOutput(output_);
-  if (level_.has_value()) {
-    Logger::setLevel(*level_);
+  const LogOutput applied = applyOutput(settings_);
+  if (settings_.level.has_value()) {
+    Logger::setLevel(*settings_.level);
   }
-  announceJournal(output_);
+  if (settings_.output.filePath.has_value() && !applied.filePath.has_value()) {
+    announceUnopenedJournal(*settings_.output.filePath);
+  }
+  announceJournal(applied);
 }
 
 std::string LogLaunchOptions::usage(std::string_view defaultJournalName) {
@@ -186,7 +218,8 @@ std::string LogLaunchOptions::usage(std::string_view defaultJournalName) {
   appendUsageEntry(
       text, std::string(FILE_OPTION) + " <path>",
       "Journal to append to. Default: " + std::string(defaultJournalName) +
-          " next to the executable.");
+          " next to the executable, or none when that file cannot be"
+          " opened.");
   appendUsageEntry(text, NO_FILE_OPTION, "Write no journal.");
   appendUsageEntry(text, STDERR_OPTION,
                    "Write to standard error too. This is the default.");

@@ -1,0 +1,151 @@
+name: package
+
+# Builds the packages of the client and the server on Linux, Windows and
+# macOS, checks them from another folder, and uploads them as artifacts.
+# Called by the pull request workflow and by the release workflow, so a release
+# ships exactly what the pull requests checked.
+on:
+  workflow_call:
+
+jobs:
+  package:
+    name: Package (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # The oldest image GitHub offers: a Linux binary needs a C library
+          # at least as recent as the one it was built against, so building
+          # on Ubuntu 22.04 (glibc 2.35) lets it run on 22.04, Debian 12 and
+          # newer.
+          - os: ubuntu-22.04
+            generator_arguments: ""
+          - os: windows-latest
+            # Ninja compiles every file in parallel; the Visual Studio generator does not.
+            generator_arguments: >-
+              -G Ninja
+              -DCMAKE_CXX_SCAN_FOR_MODULES=OFF
+          - os: macos-latest
+            generator_arguments: ""
+    env:
+      SCCACHE_GHA_ENABLED: "true"
+      # The runners have no FUSE: an AppImage, appimagetool included, extracts
+      # itself instead of mounting.
+      APPIMAGE_EXTRACT_AND_RUN: "1"
+      APPIMAGETOOL_VERSION: "1.9.1"
+      APPIMAGETOOL_SHA256: "ed4ce84f0d9caff66f50bcca6ff6f35aae54ce8135408b3fa33abfc3cb384eb0"
+      APPIMAGE_RUNTIME_VERSION: "20251108"
+      APPIMAGE_RUNTIME_SHA256: "2fca8b443c92510f1483a883f60061ad09b46b978b2631c807cd873a47ec260d"
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          submodules: true
+
+      - name: Set up the MSVC environment
+        if: runner.os == 'Windows'
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Install CMake 4.2
+        uses: lukka/get-cmake@v4.2.3
+
+      - name: Set up sccache
+        uses: mozilla-actions/sccache-action@v0.0.11
+
+      # GCC 12, installed on the image, ships the C++ runtime of Ubuntu 22.04
+      # and Debian 12; the default GCC 11 never built this project.
+      - name: Use GCC 12
+        if: runner.os == 'Linux'
+        run: |
+          echo "CC=gcc-12" >> "$GITHUB_ENV"
+          echo "CXX=g++-12" >> "$GITHUB_ENV"
+
+      - name: Install system dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libx11-dev libxi-dev libxrandr-dev libxcursor-dev libudev-dev libgl1-mesa-dev
+
+      - name: Install NSIS
+        if: runner.os == 'Windows'
+        run: choco install nsis --no-progress -y
+
+      # Both pinned with their checksum: appimagetool would otherwise download
+      # whatever runtime is the latest the day the package is built.
+      - name: Install appimagetool and the AppImage runtime
+        if: runner.os == 'Linux'
+        run: |
+          tools="$RUNNER_TEMP/appimage"
+          mkdir -p "$tools"
+          curl -fsSL -o "$tools/appimagetool" \
+            "https://github.com/AppImage/appimagetool/releases/download/$APPIMAGETOOL_VERSION/appimagetool-x86_64.AppImage"
+          curl -fsSL -o "$tools/runtime-x86_64" \
+            "https://github.com/AppImage/type2-runtime/releases/download/$APPIMAGE_RUNTIME_VERSION/runtime-x86_64"
+          echo "$APPIMAGETOOL_SHA256  $tools/appimagetool" | sha256sum -c -
+          echo "$APPIMAGE_RUNTIME_SHA256  $tools/runtime-x86_64" | sha256sum -c -
+          chmod +x "$tools/appimagetool"
+          echo "$tools" >> "$GITHUB_PATH"
+          echo "APPIMAGETOOL_RUNTIME_FILE=$tools/runtime-x86_64" >> "$GITHUB_ENV"
+
+      - name: Point vcpkg at a local binary cache
+        shell: bash
+        run: |
+          cmake -E make_directory "$RUNNER_TEMP/vcpkg-cache"
+          echo "VCPKG_BINARY_SOURCES=clear;files,$RUNNER_TEMP/vcpkg-cache,readwrite" >> "$GITHUB_ENV"
+
+      - name: Restore vcpkg binary cache
+        id: vcpkg-cache
+        uses: actions/cache/restore@v4
+        with:
+          path: ${{ runner.temp }}/vcpkg-cache
+          # A key of its own, per image: this job builds no test dependency,
+          # and its Linux image is older than the one of the test jobs.
+          key: vcpkg-release-${{ matrix.os }}-${{ hashFiles('vcpkg.json') }}
+          restore-keys: vcpkg-release-${{ matrix.os }}-
+
+      # Warnings are not errors here: the build-and-test jobs hold the code to
+      # zero warnings with GCC 13 and MSVC, and GCC 12 adds false positives of
+      # its own (maybe-uninitialized in std::optional, unused constexpr arrays
+      # of a header).
+      - name: Configure
+        shell: bash
+        env:
+          VCPKG_SSL_REVOKE_BEST_EFFORT: ${{ runner.os == 'Windows' && '1' || '0' }}
+        run: >-
+          cmake --preset default ${{ matrix.generator_arguments }}
+          -DCMAKE_C_COMPILER_LAUNCHER=sccache
+          -DCMAKE_CXX_COMPILER_LAUNCHER=sccache
+
+      - name: Save vcpkg binary cache
+        if: steps.vcpkg-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: ${{ runner.temp }}/vcpkg-cache
+          key: ${{ steps.vcpkg-cache.outputs.cache-primary-key }}
+
+      - name: Build
+        run: cmake --build --preset default --parallel
+
+      - name: Package the client
+        run: cpack --preset client
+
+      - name: Package the server
+        run: cpack --preset server
+
+      - name: Launch the packaged programs from another folder
+        shell: bash
+        run: sh tests/tools/packaging/check-package.sh build
+
+      - name: Upload the packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: packages-${{ runner.os }}
+          path: |
+            build/R-Type-*.tar.gz
+            build/R-Type-*.AppImage
+            build/R-Type-*.zip
+            build/R-Type-*.exe
+            build/R-Type-*.dmg
+          if-no-files-found: error
+          retention-days: 7

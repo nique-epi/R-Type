@@ -1,0 +1,59 @@
+name: release
+
+# Publishes a GitHub release for every version tag: the packages of the client
+# and the server, built by the package workflow, and notes listing the pull
+# requests merged since the previous tag.
+on:
+  push:
+    tags:
+      - "v*"
+
+# Read only by default; the publishing job alone may write the release.
+permissions:
+  contents: read
+
+jobs:
+  version:
+    name: Check the tag against the project version
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      # The package files are named after project(VERSION): a tag naming
+      # another version would publish files named after the wrong one.
+      - name: Compare the tag with project(VERSION)
+        shell: bash
+        run: |
+          version=$(sed -n -E 's/^project\(r-type VERSION ([0-9.]+) .*/\1/p' CMakeLists.txt)
+          if [ "v$version" != "$GITHUB_REF_NAME" ]; then
+            echo "tag $GITHUB_REF_NAME does not match the project version $version"
+            exit 1
+          fi
+
+  package:
+    name: Package
+    needs: version
+    uses: ./.github/workflows/package.yaml
+
+  publish:
+    name: Publish the release
+    needs: package
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: packages-*
+          merge-multiple: true
+          path: packages
+
+      - name: Create the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >-
+          gh release create "$GITHUB_REF_NAME" packages/*
+          --repo "$GITHUB_REPOSITORY"
+          --title "R-Type $GITHUB_REF_NAME"
+          --generate-notes
+          --verify-tag

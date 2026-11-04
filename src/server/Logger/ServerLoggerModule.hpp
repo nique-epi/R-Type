@@ -32,7 +32,8 @@ class ServerLoggerModule final : public engine::IModule {
 
   /**
    * @brief Applies the logging options, then logs that the server starts.
-   * @throws LogFileOpenException when the journal cannot be opened.
+   * @throws LogFileOpenException when a journal given with --log-file
+   * cannot be opened.
    */
   void start() override;
 
