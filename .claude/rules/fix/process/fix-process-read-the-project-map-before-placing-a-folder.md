@@ -16,7 +16,7 @@ Why: a plan put the starfield in a new `src/client/Background/` while `project-l
 ### A test double follows the map, not its neighbours
 
 1. **A test class that stands in for a production type or records what reaches it** (a `Recording…`, a `Fake…`, a subclass of a production interface or abstract class) **goes in `tests/doubles/`**, as the map says, even when the test folder next to it already holds doubles. Those are a pre-existing inconsistency to report, never the convention to follow.
-2. **A test helper that only builds values** (`KeyPress`, `PointerEvents`, `MenuPainting`) stays next to the tests that use it.
+2. **A test helper that only builds values** (`KeyPress`, `PointerEvents`, `MenuPainting`) stays next to the tests that use it; in a folder of `tests/tools/`, in the `Fixtures/` folder beside them (`fix-format-a-test-file-holds-only-tests.md`).
 3. **Decide which of the two a new test file is before creating it**, and say it in the plan's tree.
 
 ### A test file mirrors the folder of its source, sub-folders included

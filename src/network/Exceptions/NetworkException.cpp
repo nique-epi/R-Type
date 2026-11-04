@@ -144,4 +144,25 @@ SimulatedDelayOutOfRangeException::SimulatedDelayOutOfRangeException(
 TrafficFileOpenException::TrafficFileOpenException(const std::string& path)
     : NetworkException("Cannot open the traffic file " + path) {}
 
+InvalidMasterMessageException::InvalidMasterMessageException(
+    const std::string& pointer)
+    : NetworkException("no valid value at \"" + pointer +
+                       "\": missing, of another type or out of its bounds") {}
+
+MasterRefusedException::MasterRefusedException(int status,
+                                               const std::string& detail)
+    : NetworkException("the master refused the request with status " +
+                       std::to_string(status) + ": " + detail),
+      status_(status) {}
+
+int MasterRefusedException::status() const { return status_; }
+
+InvalidMasterUrlException::InvalidMasterUrlException(const std::string& url)
+    : NetworkException("no master can be called at \"" + url +
+                       "\": expected http://<host>[:<port>]") {}
+
+MasterUnreachableException::MasterUnreachableException(
+    const std::string& reason)
+    : NetworkException("the master did not answer: " + reason) {}
+
 }  // namespace rtype::network

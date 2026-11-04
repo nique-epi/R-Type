@@ -21,4 +21,13 @@ class HttpPortUnavailableException : public MasterException {
   HttpPortUnavailableException(const std::string& address, std::uint16_t port);
 };
 
+/**
+ * @brief A request read the database of the master while it is not open:
+ * before the storage module started, or after it stopped.
+ */
+class DatabaseClosedException : public MasterException {
+ public:
+  DatabaseClosedException();
+};
+
 }  // namespace rtype::master
