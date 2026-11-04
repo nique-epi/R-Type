@@ -70,8 +70,9 @@ void DiscardReport::report() {
           countedSince(drops_->droppedCount(), reportedDroppedCount_)) {
     logger_.warn(fresh, " datagrams dropped before any queue in the last ",
                  REPORT_SECONDS,
-                 " s: not of this protocol and version, malformed, or from a "
-                 "sender that was not admitted");
+                 " s: not of this protocol and version, malformed, from a "
+                 "sender that was not admitted, or over the rate limit of "
+                 "its sender");
   }
   if (const std::size_t fresh =
           countedSince(drops_->wrongTokenCount(), reportedWrongTokenCount_)) {

@@ -1,4 +1,5 @@
 #include <gtest/gtest.h>
+#include <algorithm>
 #include <cstddef>
 #include <optional>
 #include <string>
@@ -7,6 +8,7 @@
 #include "DatagramSorterFixture.hpp"
 #include "DatagramSorterFixtures.hpp"
 #include "DatagramSorterLogFixture.hpp"
+#include "DatagramSorterTestConstants.hpp"
 #include "Endpoint.hpp"
 #include "IncomingDatagram.hpp"
 #include "NetworkConstants.hpp"
@@ -245,8 +247,8 @@ TEST_F(DatagramSorterFixture, CountsEveryDatagramItDrops) {
 
 /**
  * Given an admitted player whose datagram waits in the player queue
- * When strangers then flood the server with twice more requests than the
- * player queue holds
+ * When strangers then flood the server, one request each, with twice more
+ * requests than the player queue holds
  * Then the player's datagram is still the one in the player queue, and the
  * request queue holds no more than its room
  */
@@ -255,7 +257,7 @@ TEST_F(DatagramSorterFixture, KeepsAPlayersDatagramThroughAFloodOfRequests) {
   sort(player(), playerReady());
 
   for (std::size_t request = 0; request < FLOODING_REQUEST_COUNT; ++request) {
-    sort(stranger(), requestDatagram());
+    sort(floodingStranger(request), requestDatagram());
   }
 
   EXPECT_EQ(drainPlayers(),
@@ -550,4 +552,147 @@ TEST_F(DatagramSorterLogFixture, WritesTheNextLineOnceTheIntervalIsOver) {
   sort(stranger(), playerReady());
 
   EXPECT_EQ(dropLines().size(), 2U);
+}
+
+/**
+ * Given a sorter that admitted nobody
+ * When a stranger sends eleven connection requests at once
+ * Then ten reach the request queue: the eleventh is over its limit
+ */
+TEST_F(DatagramSorterFixture, PlacesNoMoreThanTenRequestsOfAStrangerAtOnce) {
+  sortRepeatedly(stranger(), requestDatagram(),
+                 REQUESTS_A_CLIENT_SENDS_AT_ONCE + 1);
+
+  EXPECT_EQ(drainRequests().size(), REQUESTS_A_CLIENT_SENDS_AT_ONCE);
+}
+
+/**
+ * Given a stranger whose connection request waits in the request queue
+ * When another stranger then floods the server with twice more requests than
+ * the player queue holds
+ * Then the request of the first stranger is still in the request queue: the
+ * flood placed no more than its limit
+ */
+TEST_F(DatagramSorterFixture, KeepsRoomForTheRequestOfAnotherStranger) {
+  sort(otherStranger(), requestDatagram());
+
+  sortRepeatedly(stranger(), requestDatagram(), FLOODING_REQUEST_COUNT);
+
+  const std::vector<IncomingDatagram> requests = drainRequests();
+  EXPECT_NE(
+      std::ranges::find(requests, otherStranger(), &IncomingDatagram::sender),
+      requests.end());
+}
+
+/**
+ * Given an admitted player, and a forger that floods connection requests
+ * without a session token from the address of that player
+ * When the player sends a heartbeat with its token
+ * Then the heartbeat reaches the player queue: the forger spent nothing of
+ * the player's allowance
+ */
+TEST_F(DatagramSorterFixture, KeepsAPlayersDatagramsWhenAForgerUsesItsAddress) {
+  admit(player());
+  sortRepeatedly(player(), requestDatagram(), FLOODING_REQUEST_COUNT);
+
+  sort(player(), heartbeatDatagram(playerHeader()));
+
+  EXPECT_EQ(drainPlayers().size(), 1);
+}
+
+/**
+ * Given an admitted player
+ * When it sends sixty-one heartbeats at once with its token
+ * Then sixty reach the player queue: the last is over its limit
+ */
+TEST_F(DatagramSorterFixture,
+       PlacesNoMoreThanASecondOfAPlayersDatagramsAtOnce) {
+  admit(player());
+
+  sortRepeatedly(player(), heartbeatDatagram(playerHeader()),
+                 DATAGRAMS_A_PLAYER_SENDS_AT_ONCE + 1);
+
+  EXPECT_EQ(drainPlayers().size(), DATAGRAMS_A_PLAYER_SENDS_AT_ONCE);
+}
+
+/**
+ * Given an admitted player banned for a flood with its own token
+ * When it sends a heartbeat a nanosecond before the end of the ban
+ * Then the heartbeat reaches no queue
+ */
+TEST_F(DatagramSorterFixture, DropsTheDatagramsOfABannedPlayer) {
+  admit(player());
+  sortRepeatedly(player(), heartbeatDatagram(playerHeader()),
+                 PLAYER_FLOOD_TO_A_BAN);
+  static_cast<void>(drainPlayers());
+
+  advanceClock(JUST_BEFORE_THE_BAN_ENDS);
+  sort(player(), heartbeatDatagram(playerHeader()));
+
+  EXPECT_TRUE(drainPlayers().empty());
+}
+
+/**
+ * Given an admitted player banned for a flood with its own token
+ * When it sends a heartbeat once the ban ended
+ * Then the heartbeat reaches the player queue
+ */
+TEST_F(DatagramSorterFixture, LetsABannedPlayerBackOnceTheBanEnds) {
+  admit(player());
+  sortRepeatedly(player(), heartbeatDatagram(playerHeader()),
+                 PLAYER_FLOOD_TO_A_BAN);
+  static_cast<void>(drainPlayers());
+
+  advanceClock(WHEN_THE_BAN_ENDS);
+  sort(player(), heartbeatDatagram(playerHeader()));
+
+  EXPECT_EQ(drainPlayers().size(), 1);
+}
+
+/**
+ * Given an admitted player banned for a flood with its own token
+ * When it is admitted again with the same token
+ * Then its next heartbeat is still dropped: asking again never lifts a ban
+ */
+TEST_F(DatagramSorterFixture, KeepsTheBanOfAPlayerAdmittedAgainWithItsToken) {
+  admit(player());
+  sortRepeatedly(player(), heartbeatDatagram(playerHeader()),
+                 PLAYER_FLOOD_TO_A_BAN);
+  static_cast<void>(drainPlayers());
+
+  admit(player());
+  sort(player(), heartbeatDatagram(playerHeader()));
+
+  EXPECT_TRUE(drainPlayers().empty());
+}
+
+/**
+ * Given a sorter that admitted nobody
+ * When a stranger sends eleven connection requests of another version at once
+ * Then ten reach the request queue: the refusals are limited like the requests
+ */
+TEST_F(DatagramSorterFixture, LimitsTheDatagramsOfAnotherVersionLikeRequests) {
+  rtype::network::PacketHeader header;
+  header.version = NEXT_PROTOCOL_VERSION;
+
+  sortRepeatedly(stranger(), requestDatagram(header),
+                 REQUESTS_A_CLIENT_SENDS_AT_ONCE + 1);
+
+  EXPECT_EQ(drainRequests().size(), REQUESTS_A_CLIENT_SENDS_AT_ONCE);
+}
+
+/**
+ * Given a sorter that admitted nobody
+ * When a stranger sends one connection request more than its limit
+ * Then the journal holds one line about the datagram dropped, which says it
+ * went over the rate limit of its sender
+ */
+TEST_F(DatagramSorterLogFixture, LogsWhyItDropsADatagramOverTheLimit) {
+  sortRepeatedly(stranger(), requestDatagram(),
+                 REQUESTS_A_CLIENT_SENDS_AT_ONCE + 1);
+
+  const std::vector<std::string> lines = dropLines();
+  ASSERT_EQ(lines.size(), 1U);
+  EXPECT_NE(lines.front().find(rtype::server::OVER_RATE_LIMIT_DROP_REASON),
+            std::string::npos);
 }

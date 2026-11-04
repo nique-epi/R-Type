@@ -16,7 +16,7 @@ DatagramSorterFixture::DatagramSorterFixture()
       sorter_(
           rtype::server::DatagramQueues{
               .players = &players_, .connectionRequests = &connectionRequests_},
-          drops_) {}
+          drops_, clock_) {}
 
 void DatagramSorterFixture::sort(const rtype::network::Endpoint& sender,
                                  const std::vector<std::byte>& datagram) {
@@ -31,6 +31,14 @@ void DatagramSorterFixture::admit(const rtype::network::Endpoint& endpoint,
 void DatagramSorterFixture::forget(const rtype::network::Endpoint& endpoint,
                                    std::uint64_t sessionToken) {
   sorter_.forget(endpoint, sessionToken);
+}
+
+void DatagramSorterFixture::sortRepeatedly(
+    const rtype::network::Endpoint& sender,
+    const std::vector<std::byte>& datagram, std::size_t count) {
+  for (std::size_t sorted = 0; sorted < count; ++sorted) {
+    sorter_.sort(sender, datagram);
+  }
 }
 
 void DatagramSorterFixture::advanceClock(rtype::engine::Duration elapsed) {

@@ -49,7 +49,7 @@ ServerApplication::ServerApplication(
       destinations_{.players = &incoming_,
                     .connectionRequests = &connectionRequests_},
       drops_(clock_),
-      sorter_(destinations_, drops_),
+      sorter_(destinations_, drops_, clock_),
       discardReport_(destinations_, drops_),
       handleTick_(std::move(handleTick)) {}
 
