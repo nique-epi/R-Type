@@ -1,4 +1,5 @@
 add_library(rtype_server_network_module STATIC
+  DatagramDrops.cpp
   DatagramSorter.cpp
   DiscardReport.cpp
   ServerApplication.cpp

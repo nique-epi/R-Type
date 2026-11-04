@@ -1,21 +1,16 @@
 #include "DatagramSorter.hpp"
 #include <algorithm>
-#include <atomic>
 #include <cstddef>
 #include <cstdint>
-#include <mutex>
 #include <optional>
 #include <span>
-#include <string>
-#include <string_view>
-#include <utility>
 #include <vector>
 #include "AdmittedPlayer.hpp"
 #include "BoundedQueue.hpp"
 #include "DatagramCodec.hpp"
+#include "DatagramDrops.hpp"
 #include "DatagramQueues.hpp"
 #include "Endpoint.hpp"
-#include "IClock.hpp"
 #include "IncomingDatagram.hpp"
 #include "MessageType.hpp"
 #include "NetworkConstants.hpp"
@@ -47,16 +42,13 @@ void pushCopy(concurrency::BoundedQueue<network::IncomingDatagram>& queue,
 }  // namespace
 
 DatagramSorter::DatagramSorter(DatagramQueues destinations,
-                               const engine::IClock& clock)
-    : destinations_(destinations),
-      clock_(&clock),
-      dropLog_(std::string{SERVER_LOGGER_NAME},
-               network::REJECTION_LINE_INTERVAL) {}
+                               DatagramDrops& drops)
+    : destinations_(destinations), drops_(&drops) {}
 
 void DatagramSorter::sort(const network::Endpoint& sender,
                           std::span<const std::byte> datagram) {
   if (datagram.size() < network::PACKET_HEADER_SIZE) {
-    drop(sender, SHORTER_THAN_HEADER_DROP_REASON);
+    drops_->drop(sender, SHORTER_THAN_HEADER_DROP_REASON);
     return;
   }
   const network::PacketHeader header =
@@ -68,7 +60,7 @@ void DatagramSorter::sort(const network::Endpoint& sender,
   const std::optional<network::DatagramCodec::MessageTypes> types =
       network::DatagramCodec::messageTypes(datagram);
   if (!types.has_value()) {
-    drop(sender, MESSAGE_SIZES_DROP_REASON);
+    drops_->drop(sender, MESSAGE_SIZES_DROP_REASON);
     return;
   }
   const bool holdsRequest = types->test(
@@ -76,7 +68,7 @@ void DatagramSorter::sort(const network::Endpoint& sender,
   const AdmittedPlayer* const player = findAdmitted(sender);
   if (player != nullptr &&
       !carriesSessionToken(header, player->sessionToken, holdsRequest)) {
-    dropWrongToken(sender);
+    drops_->dropWrongToken(sender);
     return;
   }
   if (holdsRequest) {
@@ -84,7 +76,7 @@ void DatagramSorter::sort(const network::Endpoint& sender,
   } else if (player != nullptr) {
     pushCopy(*destinations_.players, sender, datagram);
   } else {
-    drop(sender, STRANGER_DROP_REASON);
+    drops_->drop(sender, STRANGER_DROP_REASON);
   }
 }
 
@@ -95,7 +87,7 @@ void DatagramSorter::sortForeignHeader(const network::Endpoint& sender,
     pushCopy(*destinations_.connectionRequests, sender, datagram);
     return;
   }
-  drop(sender, network::FOREIGN_HEADER_DROP_REASON);
+  drops_->drop(sender, network::FOREIGN_HEADER_DROP_REASON);
 }
 
 bool DatagramSorter::isRefusedForItsVersion(const network::Endpoint& sender,
@@ -127,41 +119,11 @@ bool DatagramSorter::forget(const network::Endpoint& player,
                        }) > 0;
 }
 
-std::size_t DatagramSorter::droppedCount() const {
-  return droppedCount_.load(std::memory_order_relaxed);
-}
-
-std::size_t DatagramSorter::wrongTokenCount() const {
-  return wrongTokenCount_.load(std::memory_order_relaxed);
-}
-
-std::optional<network::Endpoint> DatagramSorter::takeWrongTokenSender() {
-  const std::scoped_lock lock{wrongTokenSenderMutex_};
-  return std::exchange(wrongTokenSender_, std::nullopt);
-}
-
 const AdmittedPlayer* DatagramSorter::findAdmitted(
     const network::Endpoint& sender) const {
   const auto admitted =
       std::ranges::find(admitted_, sender, &AdmittedPlayer::endpoint);
   return admitted == admitted_.end() ? nullptr : &*admitted;
-}
-
-void DatagramSorter::drop(const network::Endpoint& sender,
-                          std::string_view reason) {
-  droppedCount_.fetch_add(1, std::memory_order_relaxed);
-  dropLog_.debug(clock_->now(), "dropped a datagram from ", sender.address,
-                 " port ", sender.port, ": ", reason);
-}
-
-void DatagramSorter::dropWrongToken(const network::Endpoint& sender) {
-  dropLog_.debug(clock_->now(), "dropped a datagram from ", sender.address,
-                 " port ", sender.port, ": ", WRONG_TOKEN_DROP_REASON);
-  const std::scoped_lock lock{wrongTokenSenderMutex_};
-  if (!wrongTokenSender_.has_value()) {
-    wrongTokenSender_ = sender;
-  }
-  wrongTokenCount_.fetch_add(1, std::memory_order_relaxed);
 }
 
 }  // namespace rtype::server

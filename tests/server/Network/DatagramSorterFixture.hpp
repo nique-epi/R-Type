@@ -6,6 +6,7 @@
 #include <optional>
 #include <vector>
 #include "BoundedQueue.hpp"
+#include "DatagramDrops.hpp"
 #include "DatagramSorter.hpp"
 #include "Endpoint.hpp"
 #include "IncomingDatagram.hpp"
@@ -38,5 +39,6 @@ class DatagramSorterFixture : public ::testing::Test {
   rtype::concurrency::BoundedQueue<rtype::network::IncomingDatagram>
       connectionRequests_;
   SimulatedClock clock_;
+  rtype::server::DatagramDrops drops_;
   rtype::server::DatagramSorter sorter_;
 };

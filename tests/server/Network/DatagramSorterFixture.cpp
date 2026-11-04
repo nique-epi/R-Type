@@ -12,10 +12,11 @@
 DatagramSorterFixture::DatagramSorterFixture()
     : players_(rtype::server::INCOMING_DATAGRAM_QUEUE_CAPACITY),
       connectionRequests_(rtype::server::CONNECTION_REQUEST_QUEUE_CAPACITY),
+      drops_(clock_),
       sorter_(
           rtype::server::DatagramQueues{
               .players = &players_, .connectionRequests = &connectionRequests_},
-          clock_) {}
+          drops_) {}
 
 void DatagramSorterFixture::sort(const rtype::network::Endpoint& sender,
                                  const std::vector<std::byte>& datagram) {
@@ -37,16 +38,16 @@ void DatagramSorterFixture::advanceClock(rtype::engine::Duration elapsed) {
 }
 
 std::size_t DatagramSorterFixture::droppedCount() const {
-  return sorter_.droppedCount();
+  return drops_.droppedCount();
 }
 
 std::size_t DatagramSorterFixture::wrongTokenCount() const {
-  return sorter_.wrongTokenCount();
+  return drops_.wrongTokenCount();
 }
 
 std::optional<rtype::network::Endpoint>
 DatagramSorterFixture::takeWrongTokenSender() {
-  return sorter_.takeWrongTokenSender();
+  return drops_.takeWrongTokenSender();
 }
 
 std::vector<rtype::network::IncomingDatagram>

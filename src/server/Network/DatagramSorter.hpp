@@ -1,19 +1,14 @@
 #pragma once
 
-#include <atomic>
 #include <cstddef>
 #include <cstdint>
-#include <mutex>
-#include <optional>
 #include <span>
-#include <string_view>
 #include <vector>
 #include "AdmittedPlayer.hpp"
+#include "DatagramDrops.hpp"
 #include "DatagramQueues.hpp"
 #include "Endpoint.hpp"
-#include "IClock.hpp"
 #include "PacketHeader.hpp"
-#include "ThrottledLog.hpp"
 
 namespace rtype::server {
 
@@ -40,24 +35,21 @@ namespace rtype::server {
  * queue, where the ConnectionAcceptor refuses it as IncompatibleVersion, when
  * its sender was not admitted and it holds at least
  * CONNECTION_REFUSED_DATAGRAM_SIZE bytes: the refusal is then never larger
- * than what it answers. Every other datagram is dropped. Besides the counts the
- * server reports, each drop is logged at the debug level with its sender and
- * why, at most once per REJECTION_LINE_INTERVAL (see ThrottledLog). The sorter
- * reads the header and the type of each message, never a payload, throws
- * nothing on a malformed datagram, and reads the clock only to drop one, so its
- * cost per datagram stays close to that of the copy into a queue, whatever the
- * datagram holds. Not thread-safe, except droppedCount(),
- * wrongTokenCount() and takeWrongTokenSender(): call the rest on the network
- * thread only.
+ * than what it answers. Every other datagram is dropped, counted and logged by
+ * the DatagramDrops the sorter is given. The sorter reads the header and the
+ * type of each message, never a payload, throws nothing on a malformed
+ * datagram, and the clock is read only to drop one, so its cost per datagram
+ * stays close to that of the copy into a queue, whatever the datagram holds.
+ * Not thread-safe: call it on the network thread only.
  */
 class DatagramSorter {
  public:
   /**
    * @param destinations Neither queue may be null.
-   * @param clock The time of the lines about the datagrams dropped; it must
+   * @param drops Where the datagrams dropped are counted and logged; it must
    * outlive the sorter.
    */
-  DatagramSorter(DatagramQueues destinations, const engine::IClock& clock);
+  DatagramSorter(DatagramQueues destinations, DatagramDrops& drops);
 
   /**
    * @brief Puts a copy of @p datagram, sent by @p sender, in the queue it
@@ -85,28 +77,6 @@ class DatagramSorter {
    */
   bool forget(const network::Endpoint& player, std::uint64_t sessionToken);
 
-  /**
-   * @returns How many datagrams sort() dropped since the sorter was built,
-   * those with a wrong session token apart. Call it from any thread.
-   */
-  [[nodiscard]] std::size_t droppedCount() const;
-
-  /**
-   * @returns How many datagrams sort() dropped since the sorter was built
-   * because they came from the address of an admitted player with another
-   * session token. Call it from any thread.
-   */
-  [[nodiscard]] std::size_t wrongTokenCount() const;
-
-  /**
-   * @returns The sender of the first datagram dropped for another session
-   * token since the previous call, or nothing when none was; the next call
-   * starts afresh. The sender is kept before the drop is counted, so a call
-   * made after wrongTokenCount() grew finds it, unless an earlier call took
-   * it in between. Call it from any thread.
-   */
-  [[nodiscard]] std::optional<network::Endpoint> takeWrongTokenSender();
-
  private:
   [[nodiscard]] const AdmittedPlayer* findAdmitted(
       const network::Endpoint& sender) const;
@@ -125,17 +95,10 @@ class DatagramSorter {
   [[nodiscard]] bool isRefusedForItsVersion(const network::Endpoint& sender,
                                             const network::PacketHeader& header,
                                             std::size_t datagramSize) const;
-  void drop(const network::Endpoint& sender, std::string_view reason);
-  void dropWrongToken(const network::Endpoint& sender);
 
   DatagramQueues destinations_;
-  const engine::IClock* clock_;
+  DatagramDrops* drops_;
   std::vector<AdmittedPlayer> admitted_;
-  std::atomic<std::size_t> droppedCount_{0};
-  std::atomic<std::size_t> wrongTokenCount_{0};
-  std::mutex wrongTokenSenderMutex_;
-  std::optional<network::Endpoint> wrongTokenSender_;
-  logging::ThrottledLog dropLog_;
 };
 
 }  // namespace rtype::server

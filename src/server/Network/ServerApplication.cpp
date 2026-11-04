@@ -48,8 +48,9 @@ ServerApplication::ServerApplication(
       outgoing_(OUTGOING_DATAGRAM_QUEUE_CAPACITY),
       destinations_{.players = &incoming_,
                     .connectionRequests = &connectionRequests_},
-      sorter_(destinations_, clock_),
-      discardReport_(destinations_, sorter_),
+      drops_(clock_),
+      sorter_(destinations_, drops_),
+      discardReport_(destinations_, drops_),
       handleTick_(std::move(handleTick)) {}
 
 void ServerApplication::listenOn(network::Endpoint localEndpoint) {

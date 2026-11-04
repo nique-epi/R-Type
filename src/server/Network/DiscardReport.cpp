@@ -3,8 +3,8 @@
 #include <optional>
 #include <string>
 #include "BoundedQueue.hpp"
+#include "DatagramDrops.hpp"
 #include "DatagramQueues.hpp"
-#include "DatagramSorter.hpp"
 #include "Endpoint.hpp"
 #include "ServerConstants.hpp"
 
@@ -36,10 +36,10 @@ std::size_t countedSince(std::size_t current, std::size_t& reported) {
 
 }  // namespace
 
-DiscardReport::DiscardReport(DatagramQueues queues, DatagramSorter& sorter)
+DiscardReport::DiscardReport(DatagramQueues queues, DatagramDrops& drops)
     : logger_(std::string{SERVER_LOGGER_NAME}),
       queues_(queues),
-      sorter_(&sorter) {}
+      drops_(&drops) {}
 
 void DiscardReport::countTick() {
   ++ticksSinceReport_;
@@ -67,18 +67,18 @@ void DiscardReport::report() {
                  " arrived between two ticks");
   }
   if (const std::size_t fresh =
-          countedSince(sorter_->droppedCount(), reportedDroppedCount_)) {
+          countedSince(drops_->droppedCount(), reportedDroppedCount_)) {
     logger_.warn(fresh, " datagrams dropped before any queue in the last ",
                  REPORT_SECONDS,
                  " s: not of this protocol and version, malformed, or from a "
                  "sender that was not admitted");
   }
   if (const std::size_t fresh =
-          countedSince(sorter_->wrongTokenCount(), reportedWrongTokenCount_)) {
+          countedSince(drops_->wrongTokenCount(), reportedWrongTokenCount_)) {
     logger_.warn(fresh, " datagrams dropped in the last ", REPORT_SECONDS,
                  " s: sent from the address of a player with another session "
                  "token",
-                 firstSenderText(sorter_->takeWrongTokenSender()));
+                 firstSenderText(drops_->takeWrongTokenSender()));
   }
 }
 
