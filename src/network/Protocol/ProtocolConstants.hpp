@@ -325,6 +325,7 @@ constexpr std::string_view PLAYER_NUMBER_FIELD = "playerNumber";
 constexpr std::string_view ENTITY_ID_FIELD = "entityId";
 constexpr std::string_view ENTITY_TYPE_FIELD = "entityType";
 constexpr std::string_view REASON_FIELD = "reason";
+constexpr std::string_view PHASE_FIELD = "phase";
 constexpr std::string_view KIND_FIELD = "kind";
 constexpr std::string_view ACTIONS_FIELD = "actions";
 constexpr std::string_view MOTION_FIELD = "motion";

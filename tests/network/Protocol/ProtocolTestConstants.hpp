@@ -209,7 +209,7 @@ constexpr std::uint16_t SOME_SENDER_PORT = 50000;
  * the byte after the last, and the largest byte.
  */
 constexpr std::uint8_t TYPE_BELOW_THE_FIRST = 0;
-constexpr std::uint8_t TYPE_ABOVE_THE_LAST = 20;
+constexpr std::uint8_t TYPE_ABOVE_THE_LAST = 21;
 constexpr std::uint8_t LARGEST_TYPE_BYTE = 255;
 
 /**
