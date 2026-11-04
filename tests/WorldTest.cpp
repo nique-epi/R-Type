@@ -670,3 +670,27 @@ TEST(World, ShipIsSpawnedWithAnIntentThatWantsNothing) {
   EXPECT_FALSE(intent->shooting);
   EXPECT_EQ(world.shipComponentOf<rtype::game::Intent>(shipId + 1), nullptr);
 }
+
+/**
+ * Given a world
+ * When a Reaper is spawned
+ * Then the entity carries the kind Reaper and still the type Enemy
+ */
+TEST(World, ASpawnedEnemyKeepsItsKindAndStaysAnEnemy) {
+  rtype::game::World world;
+
+  static_cast<void>(
+      world.spawnBydo(rtype::game::Position{.x = SOME_X, .y = SOME_Y},
+                      rtype::game::EnemyKind::Reaper));
+
+  std::size_t reapers = 0;
+  world.components().forEach<rtype::game::EnemyKind, rtype::game::EntityType>(
+      [&reapers](rtype::engine::Entity, const rtype::game::EnemyKind& kind,
+                 const rtype::game::EntityType& type) {
+        if (kind == rtype::game::EnemyKind::Reaper &&
+            type == rtype::game::EntityType::Enemy) {
+          ++reapers;
+        }
+      });
+  EXPECT_EQ(reapers, 1U);
+}
