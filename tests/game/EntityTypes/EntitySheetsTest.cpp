@@ -363,10 +363,10 @@ TEST(EntitySheets, APilotStillHoldsAfterTheSheetsAreMoved) {
 /**
  * Given the folder of the sheets the game ships with
  * When its sheets are read
- * Then they are the five types of today, in the order of their names:
- * drifter, enemy_missile, player_missile, ship and weaver
+ * Then they are the types of today, in the order of their names:
+ * drifter, enemy_missile, player_missile, ship, voltjelly and weaver
  */
-TEST(EntitySheets, TheShippedSheetsAreTheFiveTypesOfToday) {
+TEST(EntitySheets, TheShippedSheetsAreTheTypesOfToday) {
   const EntitySheets& sheets = shippedEntitySheets();
 
   EXPECT_THAT(namesIn(sheets), ElementsAreArray(SHIPPED_SHEET_NAMES));

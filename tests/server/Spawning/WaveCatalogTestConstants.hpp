@@ -143,7 +143,7 @@ constexpr std::string_view NO_WAVE_MESSAGE =
     "test.toml:9:15: difficulty.calm.level_waves must be an integer from "
     "1 to 100";
 constexpr std::string_view UNKNOWN_ENEMY_MESSAGE =
-    R"(test.toml:8:23: difficulty.calm.enemies: unknown enemy "bos"; known: drifter, weaver)";
+    R"(test.toml:8:23: difficulty.calm.enemies: unknown enemy "bos"; known: drifter, voltjelly, weaver)";
 constexpr std::string_view MISSING_LEVEL_WAVES_TEXT =
     "difficulty.calm.level_waves is missing";
 constexpr std::string_view MISSING_PAUSE_TEXT =

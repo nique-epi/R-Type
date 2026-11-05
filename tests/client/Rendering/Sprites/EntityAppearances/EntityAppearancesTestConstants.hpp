@@ -213,3 +213,8 @@ frame_ms = 120
 /** @brief The most frames an idle animation holds, as the sheet format of
  * the architecture page writes it. */
 constexpr std::size_t MOST_FRAMES_A_SHEET_HOLDS = 16;
+
+/** @brief The Voltjelly as its design draws it: a frame of 40 by 40 sheet
+ * pixels holding its aura, around a bell of 24 by 24. */
+constexpr int VOLTJELLY_FRAME_SIDE = 40;
+constexpr int VOLTJELLY_BELL_SIDE = 24;

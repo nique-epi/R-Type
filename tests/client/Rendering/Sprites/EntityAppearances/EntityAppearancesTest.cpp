@@ -38,6 +38,7 @@ using rtype::game::testing::PLAYER_MISSILE_SHEET;
 using rtype::game::testing::SHIP_SHEET;
 using rtype::game::testing::SHIPPED_SHEET_NAMES;
 using rtype::game::testing::shippedEntitySheets;
+using rtype::game::testing::VOLTJELLY_SHEET;
 using rtype::game::testing::WEAVER_SHEET;
 using ::testing::ElementsAre;
 using ::testing::ElementsAreArray;
@@ -272,15 +273,16 @@ TEST(EntityAppearances, EveryShippedFrameShowsOneWholeSprite) {
  * When the frame time of each is read
  * Then it is the one assets/README.md lists for its sprite: 80 ms for the
  * ship, 250 ms for a Bydo, 60 ms for a missile of a player, 120 ms for a
- * missile of an enemy
+ * missile of an enemy and for the Voltjelly
  */
 TEST(EntityAppearances, ShippedFramesLastWhatTheSheetReadmeLists) {
-  const std::array<std::pair<std::string_view, Duration>, 5> listed{{
+  const std::array<std::pair<std::string_view, Duration>, 6> listed{{
       {SHIP_SHEET, SHIP_FRAME_TIME_LISTED},
       {DRIFTER_SHEET, BYDO_FRAME_TIME_LISTED},
       {WEAVER_SHEET, BYDO_FRAME_TIME_LISTED},
       {PLAYER_MISSILE_SHEET, PLAYER_MISSILE_FRAME_TIME_LISTED},
       {ENEMY_MISSILE_SHEET, ENEMY_MISSILE_FRAME_TIME_LISTED},
+      {VOLTJELLY_SHEET, VOLTJELLY_FRAME_TIME_LISTED},
   }};
   const EntityAppearances appearances = shippedAppearances();
   for (const auto& [name, frameTime] : listed) {
@@ -296,7 +298,7 @@ TEST(EntityAppearances, ShippedFramesLastWhatTheSheetReadmeLists) {
  * Given every pair of shipped sheets
  * When their idle frames are compared
  * Then two sheets either show the very same frames, as the drifter and the
- * weaver do today, or share no pixel of the sprite sheet
+ * weaver do today, or share no pixel of the sprite sheet they both draw from
  */
 TEST(EntityAppearances, ShippedSheetsShareTheirFramesWholeOrNotAtAll) {
   const EntityAppearances appearances = shippedAppearances();
@@ -306,7 +308,8 @@ TEST(EntityAppearances, ShippedSheetsShareTheirFramesWholeOrNotAtAll) {
       const EntityAppearance* const other = appearances.named(second);
       ASSERT_NE(one, nullptr);
       ASSERT_NE(other, nullptr);
-      if (first == second || one->idleFrames == other->idleFrames) {
+      if (first == second || one->sheet != other->sheet ||
+          one->idleFrames == other->idleFrames) {
         continue;
       }
       SCOPED_TRACE(first);
@@ -336,11 +339,15 @@ TEST(EntityAppearances, TheShippedShipStartsOnTheFirstPilotColorRow) {
  * server for their hitbox
  * When the idle frame of each is measured in logical units, each pixel of the
  * sheet covering BACKGROUND_PIXEL_SIZE
- * Then it is the box the server hits that type with
+ * Then it is the box the server hits that type with, for every sheet but the
+ * Voltjelly, whose frame also holds its aura
  */
 TEST(EntityAppearances, EveryShippedSheetDrawsTheBoxTheServerHits) {
   const EntityAppearances appearances = shippedAppearances();
   for (const EntitySheet& sheet : shippedEntitySheets().all()) {
+    if (sheet.name == VOLTJELLY_SHEET) {
+      continue;
+    }
     SCOPED_TRACE(sheet.name);
     const EntityAppearance* const look = appearances.named(sheet.name);
     ASSERT_NE(look, nullptr);
@@ -351,4 +358,26 @@ TEST(EntityAppearances, EveryShippedSheetDrawsTheBoxTheServerHits) {
     EXPECT_FLOAT_EQ(static_cast<float>(frame.height) * BACKGROUND_PIXEL_SIZE,
                     sheet.hitbox.height);
   }
+}
+
+/**
+ * Given the shipped sheet of the Voltjelly, whose aura hurts but lets a shot
+ * through to its bell
+ * When its idle frame and its hitbox are measured, each pixel of the sheet
+ * covering BACKGROUND_PIXEL_SIZE
+ * Then the frame is 40 by 40 pixels and the hitbox is the bell of 24 by 24
+ * pixels at its center
+ */
+TEST(EntityAppearances, TheVoltjellyDrawsItsAuraAroundTheBoxTheServerHits) {
+  const EntityAppearances appearances = shippedAppearances();
+  const EntityAppearance* const look = appearances.named(VOLTJELLY_SHEET);
+  ASSERT_NE(look, nullptr);
+  const EntitySheet& sheet = shippedEntitySheets().named(VOLTJELLY_SHEET);
+
+  EXPECT_EQ(look->idleFrames.front().width, VOLTJELLY_FRAME_SIDE);
+  EXPECT_EQ(look->idleFrames.front().height, VOLTJELLY_FRAME_SIDE);
+  EXPECT_FLOAT_EQ(sheet.hitbox.width, static_cast<float>(VOLTJELLY_BELL_SIDE) *
+                                          BACKGROUND_PIXEL_SIZE);
+  EXPECT_FLOAT_EQ(sheet.hitbox.height, static_cast<float>(VOLTJELLY_BELL_SIDE) *
+                                           BACKGROUND_PIXEL_SIZE);
 }
